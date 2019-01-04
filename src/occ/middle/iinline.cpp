@@ -42,7 +42,7 @@ extern int nextLabel;
 extern int codeLabelOffset;
 extern int retcount;
 extern LIST* temporarySymbols;
-
+extern SYMBOL *theCurrentFunc;
 int inlinesym_count;
 EXPRESSION* inlinesym_thisptr[MAX_INLINE_NESTING];
 static SYMBOL* inlinesym_list[MAX_INLINE_NESTING];
@@ -84,7 +84,7 @@ static EXPRESSION* inlineGetThisPtr(EXPRESSION* exp)
         }
         else
         {
-            EXPRESSION* rv = Alloc(sizeof(EXPRESSION));
+            EXPRESSION* rv = (EXPRESSION *)Alloc(sizeof(EXPRESSION));
             *rv = *exp;
             rv->left = inlineGetThisPtr(rv->left);
             rv->right = inlineGetThisPtr(rv->right);
@@ -105,7 +105,7 @@ static void inlineBindThis(SYMBOL* funcsp, HASHREC* hr, EXPRESSION* thisptr)
             {
                 IMODE *src, *ap1, *idest;
                 EXPRESSION* dest;
-                LIST* lst = Alloc(sizeof(LIST));
+                LIST* lst = (LIST *)Alloc(sizeof(LIST));
                 thisptr = inlinesym_count == 0 || inlinesym_thisptr[inlinesym_count - 1] == NULL || !hasRelativeThis(thisptr)
                               ? thisptr
                               : inlineGetThisPtr(thisptr);
@@ -154,7 +154,7 @@ static void inlineBindArgs(SYMBOL* funcsp, HASHREC* hr, INITLIST* args)
             hr1 = hr1->next;
         }
         hr1 = hr;
-        list = (EXPRESSION**)Alloc(sizeof(EXPRESSION*) * cnt);
+        list = (EXPRESSION**)(EXPRESSION *)Alloc(sizeof(EXPRESSION*) * cnt);
         cnt = 0;
         while (hr && args)  // args might go to NULL for a destructor, which currently has a VOID at the end of the arg list
         {
@@ -164,7 +164,7 @@ static void inlineBindArgs(SYMBOL* funcsp, HASHREC* hr, INITLIST* args)
                 IMODE *src, *ap1, *idest;
                 EXPRESSION* dest;
                 SYMBOL* sym2 = makeID(sc_auto, sym->tp, NULL, AnonymousName());
-                LIST* lst = Alloc(sizeof(LIST));
+                LIST* lst = (LIST *)Alloc(sizeof(LIST));
                 sym2->allocate = TRUE;
                 sym2->inAllocTable = TRUE;
                 lst->data = sym2;
@@ -180,7 +180,7 @@ static void inlineBindArgs(SYMBOL* funcsp, HASHREC* hr, INITLIST* args)
                     deref(sym->tp, &dest);
                 }
                 list[cnt++] = dest;
-                sym->inlineFunc.stmt = dest;
+                sym->inlineFunc.stmt = (STATEMENT *)dest;
                 idest = gen_expr(funcsp, dest, F_STORE, natural_size(dest));
                 src = gen_expr(funcsp, args->exp, 0, natural_size(args->exp));
                 ap1 = LookupLoadTemp(NULL, src);
@@ -263,7 +263,7 @@ static void inlineCopySyms(HASHTABLE* src)
             {
                 if (!sym->inAllocTable)
                 {
-                    LIST* lst = Alloc(sizeof(LIST));
+                    LIST* lst = (LIST *)Alloc(sizeof(LIST));
                     lst->data = sym;
                     lst->next = temporarySymbols;
                     temporarySymbols = lst;
@@ -365,7 +365,7 @@ IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
         f->sp->dumpInlineToFile = TRUE;
         return NULL;
     }
-    if (basetype(basetype(f->sp->tp)->btp) == bt_memberptr)
+    if (basetype(basetype(f->sp->tp)->btp)->type == bt_memberptr) // DAL FIXED
     {
         f->sp->dumpInlineToFile = TRUE;
         return NULL;

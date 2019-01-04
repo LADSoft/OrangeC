@@ -111,14 +111,16 @@ typedef struct
     int top;
 } BRIGGS_SET;
 
+enum vop
+{
+    vo_top,
+    vo_bottom,
+    vo_constant
+} ;
+
 typedef struct _value_of
 {
-    enum vop
-    {
-        vo_top,
-        vo_bottom,
-        vo_constant
-    } type;
+    enum vop type;
     IMODE* imode;
 } VALUEOF;
 typedef struct _ins_list
@@ -160,16 +162,17 @@ typedef struct inductionList
     LIST* vars;
 } INDUCTION_LIST;
 
+enum e_lptype
+{
+    LT_SINGLE,
+    LT_MULTI,
+    LT_ROOT,
+    LT_BLOCK
+};
 typedef struct _loop
 {
     struct _loop* next;
-    enum e_lptype
-    {
-        LT_SINGLE,
-        LT_MULTI,
-        LT_ROOT,
-        LT_BLOCK
-    } type;
+    enum e_lptype type;
     int loopnum;
     struct _block* entry; /* will be the block for blocks */
     struct _loop* parent;
@@ -213,14 +216,16 @@ typedef struct
     IMODE* lastName;
 } RESHAPE_EXPRESSION;
 
+struct UIVOffset
+{
+    struct UIVOffset* next;
+    int offset;
+};
+
 typedef struct _uiv
 {
     IMODE* im;
-    struct UIVOffset
-    {
-        struct UIVOffset* next;
-        int offset;
-    } * offset;
+    struct UIVOffset *offset;
     struct _uiv* alias;
     struct _uiv* base;
 } UIV;
@@ -360,48 +365,50 @@ typedef struct _exceedPressure
     int prio;
 } EXCEED_PRESSURE;
 
+struct _block
+{
+    short blocknum;
+    /*        short dfstnum; */
+    int critical : 1;
+    int dead : 1;
+    int unuseThunk : 1;
+    int stopdfst : 1;
+    int visiteddfst : 1;
+    int onstack : 1;
+    int globalChanged : 1;
+    int alwayslive : 1;
+    short callcount;
+    short preWalk;
+    short postWalk;
+    int temp;
+    int idom;
+    int pdom;
+    int dfstOrder;
+    int reversePostOrder;
+    int spillCost;
+    int nesting;
+    struct _blocklist* dominates;
+    struct _blocklist* dominanceFrontier;
+    struct _blocklist *pred, *succ;
+    struct _blocklist* loopGenerators;
+    LOOP* loopParent;
+    LOOP* inclusiveLoopParent;
+    LOOP* loopName;
+
+    /*		struct _blocklist *defines; */
+    BITINT* liveGen;
+    BITINT* liveKills;
+    BITINT* liveIn;
+    BITINT* liveOut;
+    QUAD *head, *tail;
+    struct _blocklist* edgereached;
+    LIST* occurs;
+} ;
+
 typedef struct _blocklist
 {
     struct _blocklist* next;
-    struct _block
-    {
-        short blocknum;
-        /*        short dfstnum; */
-        int critical : 1;
-        int dead : 1;
-        int unuseThunk : 1;
-        int stopdfst : 1;
-        int visiteddfst : 1;
-        int onstack : 1;
-        int globalChanged : 1;
-        int alwayslive : 1;
-        short callcount;
-        short preWalk;
-        short postWalk;
-        int temp;
-        int idom;
-        int pdom;
-        int dfstOrder;
-        int reversePostOrder;
-        int spillCost;
-        int nesting;
-        struct _blocklist* dominates;
-        struct _blocklist* dominanceFrontier;
-        struct _blocklist *pred, *succ;
-        struct _blocklist* loopGenerators;
-        LOOP* loopParent;
-        LOOP* inclusiveLoopParent;
-        LOOP* loopName;
-
-        /*		struct _blocklist *defines; */
-        BITINT* liveGen;
-        BITINT* liveKills;
-        BITINT* liveIn;
-        BITINT* liveOut;
-        QUAD *head, *tail;
-        struct _blocklist* edgereached;
-        LIST* occurs;
-    } * block;
+    struct _block *block;
 } BLOCKLIST;
 
 enum e_fgtype

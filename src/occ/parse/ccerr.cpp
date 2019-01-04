@@ -61,13 +61,13 @@ static LIST* listErrors;
 static char* currentErrorFile;
 static LIST* warningStack;
 
-enum e_kw skim_end[] = {end, 0};
-enum e_kw skim_closepa[] = {closepa, semicolon, end, 0};
-enum e_kw skim_semi[] = {semicolon, end, 0};
-enum e_kw skim_semi_declare[] = {semicolon, 0};
-enum e_kw skim_closebr[] = {closebr, semicolon, end, 0};
-enum e_kw skim_comma[] = {comma, closepa, closebr, semicolon, end, 0};
-enum e_kw skim_colon[] = {colon, kw_case, kw_default, semicolon, end, 0};
+enum e_kw skim_end[] = {end, kw_none};
+enum e_kw skim_closepa[] = {closepa, semicolon, end, kw_none};
+enum e_kw skim_semi[] = {semicolon, end, kw_none};
+enum e_kw skim_semi_declare[] = {semicolon, kw_none};
+enum e_kw skim_closebr[] = {closebr, semicolon, end, kw_none};
+enum e_kw skim_comma[] = {comma, closepa, closebr, semicolon, end, kw_none};
+enum e_kw skim_colon[] = {colon, kw_case, kw_default, semicolon, end, kw_none};
 
 static struct
 {
@@ -629,7 +629,7 @@ void AllWarningsDisable()
 }
 void PushWarnings()
 {
-    LIST* lst = calloc(1, sizeof(LIST));
+    LIST* lst = (LIST *)calloc(1, sizeof(LIST));
     if (lst)
     {
         lst->data = calloc(1, sizeof(warningFlags));
@@ -1138,7 +1138,7 @@ void errskim(LEXEME** lex, enum e_kw* skimlist)
         {
             int i;
             enum e_kw kw = KW(*lex);
-            for (i = 0; skimlist[i]; i++)
+            for (i = 0; skimlist[i] != kw_none; i++)
                 if (kw == skimlist[i])
                     return;
         }
@@ -1214,7 +1214,7 @@ void AddErrorToList(char* tag, char* str)
         LIST* l;
         my_sprintf(buf, "******** %s: %s", tag, str);
         p = litlate(buf);
-        l = Alloc(sizeof(LIST));
+        l = (LIST *)Alloc(sizeof(LIST));
         l->data = p;
         l->next = listErrors;
         listErrors = l;
@@ -1352,23 +1352,24 @@ static void labelIndexes(STATEMENT* stmt, int* min, int* max)
         stmt = stmt->next;
     }
 }
+enum _vlaTypes
+{
+    v_label,
+    v_goto,
+    v_return,
+    v_branch,
+    v_vla,
+    v_declare,
+    v_blockstart,
+    v_blockend
+};
 typedef struct vlaShim
 {
     struct vlaShim *next, *lower;
     struct vlaShim* fwd;
     struct vlaShim* parent;
     LIST* backs;
-    enum
-    {
-        v_label,
-        v_goto,
-        v_return,
-        v_branch,
-        v_vla,
-        v_declare,
-        v_blockstart,
-        v_blockend
-    } type;
+    enum _vlaTypes type;
     STATEMENT* stmt;
     int level;
     int blocknum;
@@ -1379,13 +1380,13 @@ typedef struct vlaShim
     int mark : 1;
     char* file;
 } VLASHIM;
-static VLASHIM* mkshim(int type, int level, int label, STATEMENT* stmt, VLASHIM* last, VLASHIM* parent, int blocknum,
+static VLASHIM* mkshim(_vlaTypes type, int level, int label, STATEMENT* stmt, VLASHIM* last, VLASHIM* parent, int blocknum,
                        int blockindex)
 {
-    VLASHIM* rv = Alloc(sizeof(VLASHIM));
+    VLASHIM* rv = (VLASHIM *)Alloc(sizeof(VLASHIM));
     if (last && last->type != v_return && last->type != v_goto)
     {
-        rv->backs = (LIST*)Alloc(sizeof(LIST));
+        rv->backs = (LIST*)(LIST *)Alloc(sizeof(LIST));
         rv->backs->data = last;
     }
     rv->type = type;
@@ -1543,7 +1544,7 @@ static void fillPrevious(VLASHIM* shim, VLASHIM** labels, int minLabel)
                 selected = labels[shim->label - minLabel];
                 if (selected)
                 {
-                    prev = (LIST*)Alloc(sizeof(LIST));
+                    prev = (LIST*)(LIST *)Alloc(sizeof(LIST));
                     prev->data = shim;
                     prev->next = selected->backs;
                     selected->backs = prev;
@@ -1680,7 +1681,7 @@ void checkGotoPastVLA(STATEMENT* stmt, BOOLEAN first)
         labelIndexes(stmt, &min, &max);
         if (min > max)
             return;
-        VLASHIM** labels = (VLASHIM*)Alloc((max + 1 - min) * sizeof(VLASHIM*));
+        VLASHIM** labels = (VLASHIM**)Alloc((max + 1 - min) * sizeof(VLASHIM*));
 
         int blockNum = 0;
         BOOLEAN branched = FALSE;

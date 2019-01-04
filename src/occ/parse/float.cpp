@@ -6,7 +6,7 @@
 #define TRUE 1
 #define FALSE 0
 #include "floating.h"
-void diag(char* s);
+void diag(const char* s, ...);
 #if defined(TEST) || defined(LIBFLOAT)
 #    define diag(s) puts(s)
 #endif
@@ -1244,6 +1244,7 @@ char* FPFToString(char* dest, FPFC* src)
             }
             else
                 *dest++ = '+';
+            void my_sprintf(char *dest, const char *fmt, ...);
             my_sprintf(dest, "%d", power);  // undefined in local context
         }
         else

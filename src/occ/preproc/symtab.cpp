@@ -30,8 +30,8 @@ extern COMPILER_PARAMS cparams;
 void syminit(void) {}
 HASHTABLE* CreateHashTable(int size)
 {
-    HASHTABLE* rv = Alloc(sizeof(HASHTABLE));
-    rv->table = Alloc(sizeof(HASHREC*) * size);
+    HASHTABLE* rv = (HASHTABLE *) Alloc(sizeof(HASHTABLE));
+    rv->table = (HASHREC **)Alloc(sizeof(HASHREC*) * size);
     rv->size = size;
     return rv;
 }
@@ -61,15 +61,15 @@ HASHREC* AddName(SYMBOL* item, HASHTABLE* table)
                 return (r);
             q = q->next;
         }
-        newRec = Alloc(sizeof(HASHREC));
+        newRec = (HASHREC *)Alloc(sizeof(HASHREC));
         r->next = newRec;
-        newRec->p = (struct _hrintern_*)item;
+        newRec->p = (sym *)item;
     }
     else
     {
-        newRec = Alloc(sizeof(HASHREC));
+        newRec = (HASHREC *)Alloc(sizeof(HASHREC));
         *p = newRec;
-        newRec->p = (struct _hrintern_*)item;
+        newRec->p = (sym *)item;
     }
     return (0);
 }

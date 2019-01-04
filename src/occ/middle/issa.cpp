@@ -96,8 +96,8 @@ static void DominancePrime(BLOCK* workList[], BRIGGS_SET* dest, BLOCKLIST* src)
  */
 static void insertPhiOp(BLOCK* b, int tnum)
 {
-    QUAD *q = Alloc(sizeof(QUAD)), *I;
-    PHIDATA* phi = oAlloc(sizeof(PHIDATA));
+    QUAD *q = (QUAD *)Alloc(sizeof(QUAD)), *I;
+    PHIDATA* phi = (PHIDATA *) oAlloc(sizeof(PHIDATA));
     BLOCKLIST* pred = b->pred;
     struct _phiblock** pbhold;
     LIST* list;
@@ -119,7 +119,7 @@ static void insertPhiOp(BLOCK* b, int tnum)
     pbhold = &phi->temps;
     while (pred)
     {
-        struct _phiblock* pb = oAlloc(sizeof(struct _phiblock));
+        struct _phiblock* pb = (_phiblock *)oAlloc(sizeof(struct _phiblock));
         LIST* list;
         phi->nblocks++;
         *pbhold = pb;
@@ -136,9 +136,9 @@ static void insertPhiOp(BLOCK* b, int tnum)
  */
 static void insertPhiNodes(void)
 {
-    BLOCK** workList = oAlloc(blockCount * sizeof(BLOCK*));
+    BLOCK** workList = (BLOCK **)oAlloc(blockCount * sizeof(BLOCK*));
     BRIGGS_SET* bset = briggsAlloc(blockCount);
-    BLOCKLIST* entry = oAlloc(sizeof(BLOCKLIST));
+    BLOCKLIST* entry = (BLOCKLIST *)oAlloc(sizeof(BLOCKLIST));
     int i, max = tempCount;
 
     entry->block = blockArray[0];
@@ -190,7 +190,7 @@ static IMODE* renameTemp(BLOCK* b, QUAD* head, IMODE* adr)
         {
             if (adr->bits)
             {
-                im = Alloc(sizeof(IMODE));
+                im = (IMODE *)Alloc(sizeof(IMODE));
                 *im = *adr;
                 im->offset = t->enode;
             }
@@ -208,8 +208,8 @@ static IMODE* renameTemp(BLOCK* b, QUAD* head, IMODE* adr)
                 }
                 if (!iml)
                 {
-                    IMODELIST* iml2 = Alloc(sizeof(IMODELIST));
-                    im = Alloc(sizeof(IMODE));
+                    IMODELIST* iml2 = (IMODELIST *)Alloc(sizeof(IMODELIST));
+                    im = (IMODE *)Alloc(sizeof(IMODE));
                     *im = *adr;
                     im->offset = t->enode;
                     iml2->im = im;
@@ -240,18 +240,18 @@ static DAGLIST* InsertHash(QUAD* rv, UBYTE* key, int size, DAGLIST** table)
 {
     int hashval = dhash(key, size);
     DAGLIST* newDag;
-    newDag = oAlloc(sizeof(DAGLIST));
+    newDag = (DAGLIST *)oAlloc(sizeof(DAGLIST));
     newDag->rv = (UBYTE*)rv;
     newDag->key = key;
     newDag->next = *table;
     *table = newDag;
     return newDag;
 }
-DAGLIST* getSavedDAG(void)
+DAGLIST** getSavedDAG(void)
 {
     if (savedDag)
     {
-        DAGLIST** rv = (DAGLIST*)savedDag;
+        DAGLIST** rv = (DAGLIST**)savedDag;
         savedDag = (LIST*)rv[0];
         return rv;
     }
@@ -293,7 +293,7 @@ static void renameToPhi(BLOCK* b)
             LIST* list;
             IMODE* rv = InitTempOpt(tempInfo[pd->T0]->enode->v.sp->imvalue->size, tempInfo[pd->T0]->size);
             int n = rv->offset->v.sp->value.i;
-            list = oAlloc(sizeof(LIST));
+            list = (LIST *)oAlloc(sizeof(LIST));
             list->next = tempInfo[pd->T0]->renameStack;
             list->data = (void*)n;
             tempInfo[pd->T0]->renameStack = list;
@@ -360,7 +360,7 @@ static void renameToPhi(BLOCK* b)
                 int n = rv->offset->v.sp->value.i;
                 rv->vol = head->ans->vol;
                 rv->restricted = head->ans->restricted;
-                list = oAlloc(sizeof(LIST));
+                list = (LIST *)oAlloc(sizeof(LIST));
                 list->next = tempInfo[tnum]->renameStack;
                 list->data = (void*)n;
                 tempInfo[tnum]->renameStack = list;
@@ -523,11 +523,11 @@ void TranslateToSSA(void)
         tempInfo[i]->elimPredecessors = NULL;
         tempInfo[i]->elimSuccessors = NULL;
     }
-    trueName = Alloc(sizeof(QUAD));
+    trueName = (IMODE *)Alloc(sizeof(IMODE));
     trueName->mode = i_immed;
     trueName->size = -ISZ_UINT;
     trueName->offset = intNode(en_c_i, 1);
-    falseName = Alloc(sizeof(QUAD));
+    falseName = (IMODE *)Alloc(sizeof(IMODE));
     falseName->mode = i_immed;
     falseName->size = -ISZ_UINT;
     falseName->offset = intNode(en_c_i, 0);
@@ -773,7 +773,7 @@ static void returnToNormal(IMODE** adr, BOOLEAN all)
             {
                 if ((*adr)->bits)
                 {
-                    im = Alloc(sizeof(IMODE));
+                    im = (IMODE *)Alloc(sizeof(IMODE));
                     *im = **adr;
                     im->offset = t->enode;
                 }
@@ -791,8 +791,8 @@ static void returnToNormal(IMODE** adr, BOOLEAN all)
                     }
                     if (!iml)
                     {
-                        IMODELIST* iml2 = Alloc(sizeof(IMODELIST));
-                        im = Alloc(sizeof(IMODE));
+                        IMODELIST* iml2 = (IMODELIST *)Alloc(sizeof(IMODELIST));
+                        im = (IMODE *)Alloc(sizeof(IMODE));
                         *im = **adr;
                         im->offset = t->enode;
                         iml2->im = im;
@@ -808,7 +808,7 @@ static void returnToNormal(IMODE** adr, BOOLEAN all)
         }
         else
         {
-            im = Alloc(sizeof(IMODE));
+            im = (IMODE *)Alloc(sizeof(IMODE));
             *im = **adr;
             im->offset = t->enode;
         }
@@ -817,7 +817,7 @@ static void returnToNormal(IMODE** adr, BOOLEAN all)
     {
         if (!im)
         {
-            im = Alloc(sizeof(IMODE));
+            im = (IMODE *)Alloc(sizeof(IMODE));
             *im = **adr;
         }
         else
@@ -850,7 +850,7 @@ static void returnToNormal(IMODE** adr, BOOLEAN all)
 }
 static void copyInstruction(BLOCK* blk, int dest, int src, BOOLEAN all)
 {
-    QUAD *q = Alloc(sizeof(QUAD)), *tail = blk->tail;
+    QUAD *q = (QUAD *)Alloc(sizeof(QUAD)), *tail = blk->tail;
     IMODE *destim, *srcim;
     destim = tempInfo[dest]->enode->v.sp->imvalue;
     srcim = tempInfo[src]->enode->v.sp->imvalue;
@@ -897,12 +897,12 @@ static void BuildAuxGraph(BLOCK* b, int which, BRIGGS_SET* nodes)
                     tempInfo[Tip]->elimPredecessors = NULL;
                     tempInfo[Tip]->elimSuccessors = NULL;
                 }
-                l = oAlloc(sizeof(LIST));
+                l = (LIST *)oAlloc(sizeof(LIST));
                 l->data = (void*)T0p;
                 l->next = tempInfo[Tip]->elimPredecessors;
                 tempInfo[Tip]->elimPredecessors = l;
 
-                l = oAlloc(sizeof(LIST));
+                l = (LIST *)oAlloc(sizeof(LIST));
                 l->data = (void*)Tip;
                 l->next = tempInfo[T0p]->elimSuccessors;
                 tempInfo[T0p]->elimSuccessors = l;
@@ -927,7 +927,7 @@ static void ElimForward(BRIGGS_SET* visited, LIST** stack, int T)
         }
         l = l->next;
     }
-    l = oAlloc(sizeof(LIST));
+    l = (LIST *)oAlloc(sizeof(LIST));
     l->data = (void*)T;
     l->next = *stack;
     *stack = l;

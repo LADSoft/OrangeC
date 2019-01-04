@@ -573,7 +573,7 @@ void DeduceAuto(TYPE** pat, TYPE* nt)
             if ((*pat)->decltypeauto)
                 if ((*pat)->decltypeautoextended)
                 {
-                    *pat = (TYPE*)Alloc(sizeof(TYPE));
+                    *pat = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
                     (*pat)->type = bt_lref;
                     (*pat)->size = getSize(bt_pointer);
                     (*pat)->btp = nt;
@@ -627,7 +627,7 @@ LEXEME* concatStringsInternal(LEXEME* lex, STRING** str, int* elems)
     enum e_lexType type = l_astr;
     STRING* string;
     IncGlobalFlag();
-    list = (SLCHAR**)Alloc(sizeof(SLCHAR*) * count);
+    list = (SLCHAR**)(SLCHAR **)Alloc(sizeof(SLCHAR*) * count);
     while (lex &&
            (lex->type == l_astr || lex->type == l_wstr || lex->type == l_ustr || lex->type == l_Ustr || lex->type == l_msilstr))
     {
@@ -653,7 +653,7 @@ LEXEME* concatStringsInternal(LEXEME* lex, STRING** str, int* elems)
         }
         if (pos >= count)
         {
-            SLCHAR** h = (SLCHAR**)Alloc(sizeof(SLCHAR*) * (count + 10));
+            SLCHAR** h = (SLCHAR**)(SLCHAR **)Alloc(sizeof(SLCHAR*) * (count + 10));
             memcpy(h, list, sizeof(SLCHAR*) * count);
             list = h;
             count += 10;
@@ -666,7 +666,7 @@ LEXEME* concatStringsInternal(LEXEME* lex, STRING** str, int* elems)
     string = (STRING*)Alloc(sizeof(STRING));
     string->strtype = type;
     string->size = pos;
-    string->pointers = Alloc(pos * sizeof(SLCHAR*));
+    string->pointers = (SLCHAR **)Alloc(pos * sizeof(SLCHAR*));
     string->suffix = suffix;
     memcpy(string->pointers, list, pos * sizeof(SLCHAR*));
     *str = string;
@@ -748,7 +748,7 @@ EXPRESSION* anonymousVar(enum e_sc storage_class, TYPE* tp)
 {
     static int anonct = 1;
     char buf[256];
-    SYMBOL* rv = (SYMBOL*)Alloc(sizeof(SYMBOL));
+    SYMBOL* rv = (SYMBOL*)(SYMBOL *)Alloc(sizeof(SYMBOL));
     if (tp->size == 0 && isstructured(tp))
         tp = basetype(tp)->sp->tp;
     rv->storage_class = storage_class;
@@ -763,7 +763,7 @@ EXPRESSION* anonymousVar(enum e_sc storage_class, TYPE* tp)
     rv->name = litlate(buf);
     tp->size = basetype(tp)->size;
     if (theCurrentFunc && localNameSpace->syms && !inDefaultParam && !anonymousNotAlloc)
-        InsertSymbol(rv, storage_class, FALSE, FALSE);
+        InsertSymbol(rv, storage_class, lk_none, FALSE);
     SetLinkerNames(rv, lk_none);
     return varNode(storage_class == sc_auto || storage_class == sc_parameter ? en_auto : en_global, rv);
 }
@@ -1749,7 +1749,7 @@ BOOLEAN isconstaddress(EXPRESSION* exp)
 }
 SYMBOL* clonesym(SYMBOL* sym)
 {
-    SYMBOL* rv = (SYMBOL*)Alloc(sizeof(SYMBOL));
+    SYMBOL* rv = (SYMBOL*)(SYMBOL *)Alloc(sizeof(SYMBOL));
     *rv = *sym;
     return rv;
 }
@@ -1785,6 +1785,10 @@ static TYPE* inttype(enum e_bt t1)
         case bt_unsigned_long_long:
             return &stdunsignedlonglong;
     }
+}
+inline e_bt btmax(e_bt left, e_bt right)
+{
+    return left < right ? left : right;
 }
 TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, BOOLEAN minimizeInt, TYPE* atp)
 /*
@@ -1972,7 +1976,7 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, BOOLE
             t1 = bt_int;
         if (t2 < bt_int)
             t2 = bt_int;
-        t1 = imax(t1, t2);
+        t1 = btmax(t1, t2);
         rv = inttype(t1);
         if (rv->type != tp1->type && exp1)
             cast(rv, exp1);
@@ -2054,7 +2058,7 @@ EXPRESSION* RemoveAutoIncDec(EXPRESSION* exp)
     EXPRESSION* newExp;
     if (exp->type == en_autoinc || exp->type == en_autodec)
         return RemoveAutoIncDec(exp->left);
-    newExp = Alloc(sizeof(EXPRESSION));
+    newExp = (EXPRESSION *)Alloc(sizeof(EXPRESSION));
     *newExp = *exp;
     if (newExp->left)
         newExp->left = RemoveAutoIncDec(newExp->left);
@@ -2110,7 +2114,7 @@ void my_sprintf(char* dest, const char* fmt, ...)
     va_start(aa, fmt);
     while (*fmt)
     {
-        char* q = strchr(fmt, '%');
+        const char* q = strchr(fmt, '%');
         if (!q)
             q = fmt + strlen(fmt);
         memcpy(dest, fmt, q - fmt);

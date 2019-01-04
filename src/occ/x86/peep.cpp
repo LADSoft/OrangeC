@@ -32,20 +32,20 @@
  * the compiler actually generated risc-like instruction sequences
  * and some of the things in this module re-cisc it :)
  */
-extern "C" COMPILER_PARAMS cparams;
-extern "C" int regmap[REG_MAX][2];
+extern COMPILER_PARAMS cparams;
+extern int regmap[REG_MAX][2];
 
-extern "C" int prm_assembler;
-extern "C" int prm_asmfile;
-extern "C" int prm_bepeep;
-extern "C" int prm_useesp;
-extern "C" int usingEsp;
-extern "C" int pushlevel;
-extern "C" int funcstackheight;
+extern int prm_assembler;
+extern int prm_asmfile;
+extern int prm_bepeep;
+extern int prm_useesp;
+extern int usingEsp;
+extern int pushlevel;
+extern int funcstackheight;
 
 #define live(mask, reg) (mask & (1 << reg))
 
-extern "C" OCODE *peep_head = 0, *peep_tail = 0, *peep_insert = 0;
+extern OCODE *peep_head = 0, *peep_tail = 0, *peep_insert = 0;
 void insert_peep_entry(OCODE* after, enum e_opcode opcode, int size, AMODE* ap1, AMODE* ap2);
 
 void o_peepini(void) { peep_head = peep_tail = 0; }

@@ -36,15 +36,11 @@
 #include <deque>
 #include <string>
 using namespace DotNetPELib;
-
-extern "C"
-{
     extern PELib *peLib;
     extern NAMESPACEVALUES *globalNameSpace;
     extern LIST *nameSpaceList;
     extern BOOLEAN managed_library;
     extern TYPE stdint;
-}
 
 void AddType(SYMBOL *sym, Type *type);
 

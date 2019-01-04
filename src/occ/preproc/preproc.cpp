@@ -26,8 +26,8 @@
 #include "compiler.h"
 #include "sys/stat.h"
 //#include "dir.h"
-
-char* getcwd(char*, int);
+#include "io.h"
+extern "C" char* getcwd(char*, int);
 
 #ifdef PARSER_ONLY
 size_t ccReadFile(void* __ptr, size_t __size, size_t __n, FILE* __stream);
@@ -38,7 +38,7 @@ void ccNewFile(char* fileName, BOOLEAN main);
 extern ARCH_ASM* chosenAssembler;
 extern char infile[];
 extern int ignore_global_init;
-extern void *linesHead, *linesTail;
+extern LINEDATA *linesHead, *linesTail;
 #endif
 extern COMPILER_PARAMS cparams;
 extern char *prm_searchpath, *sys_searchpath;
@@ -116,7 +116,7 @@ void pushif(void), popif(void);
 /* Moudle init */
 void preprocini(char* name, FILE* fil)
 {
-    INCLUDES* p = globalAlloc(sizeof(INCLUDES));
+    INCLUDES* p = (INCLUDES *)globalAlloc(sizeof(INCLUDES));
     p->fname = litlate(name);
     p->handle = fil;
     p->first = TRUE;
@@ -432,7 +432,7 @@ int getstring(unsigned char* s, int len, FILE* file)
         }
         if (file == stdin)
         {
-            char* p = fgets(includes->inputbuffer, sizeof(includes->inputbuffer), file);
+            char* p = fgets((char *)includes->inputbuffer, sizeof(includes->inputbuffer), file);
             if (p)
                 includes->inputlen = strlen(p);
             else
@@ -560,8 +560,8 @@ BOOLEAN GetLine(void)
                 fclose(includes->handle);
 #endif
 #ifndef CPREPROCESSOR
-                linesHead = includes->linesHead;
-                linesTail = includes->linesTail;
+                linesHead = (LINEDATA *)includes->linesHead;
+                linesTail = (LINEDATA *)includes->linesTail;
 #endif
                 includes = includes->next;
                 FreeInclData(p);
@@ -721,7 +721,7 @@ unsigned onceCRC(FILE* handle)
     unsigned crc = 0;
     unsigned PartialCRC32(unsigned crc, unsigned char* data, size_t len);
 #    ifdef PARSER_ONLY
-    crc = PartialCRC32(crc, includes->handle, includes->filesize);
+    crc = PartialCRC32(crc, (unsigned char *)includes->handle, includes->filesize);
 #    else
     int hnd = dup(fileno(handle));
     unsigned char buf[8192];
@@ -755,7 +755,7 @@ void pragonce(void)
         }
     }
     IncGlobalFlag();
-    oncePos = Alloc(sizeof(ONCE));
+    oncePos = (ONCE *)Alloc(sizeof(ONCE));
     DecGlobalFlag();
     oncePos->filesize = includes->filesize;
     oncePos->filetime = filetime;
@@ -819,7 +819,7 @@ static void pragerror(int error)
                         s++;
                     while (isdigit(*s))
                     {
-                        func(atoi(s));
+                        func(atoi((char *)s));
                         while (isdigit(*s))
                             s++;
                         while (isspace(*s))
@@ -929,7 +929,7 @@ void dopragma(void)
                 return;
             IncGlobalFlag();
             f = litlate(buf);
-            l = (LIST*)Alloc(sizeof(LIST));
+            l = (LIST*)(LIST *)Alloc(sizeof(LIST));
             l->data = f;
             l->next = libincludes;
             libincludes = l;
@@ -1045,21 +1045,21 @@ void dopragma(void)
 #endif
 }
 
-char* getMacroBuffer()
+unsigned char* getMacroBuffer()
 {
-    char* rv;
+    unsigned char* rv;
     if (macroBuffers)
     {
-        rv = (char*)macroBuffers;
+        rv = (unsigned char *)macroBuffers;
         macroBuffers = macroBuffers->next;
     }
     else
     {
-        rv = (char*)Alloc(sizeof(MACROLIST));
+        rv = (unsigned char*)Alloc(sizeof(MACROLIST));
     }
     return rv;
 }
-void freeMacroBuffer(char* buf)
+void freeMacroBuffer(unsigned char* buf)
 {
     MACROLIST* item = (MACROLIST*)buf;
     item->next = macroBuffers;
@@ -1144,7 +1144,7 @@ INCLUDES* GetIncludeData(void)
     }
     else
     {
-        rv = globalAlloc(sizeof(INCLUDES));
+        rv = (INCLUDES *)globalAlloc(sizeof(INCLUDES));
     }
     rv->anonymousid = 1;
     return rv;
@@ -1225,7 +1225,7 @@ void doinclude(void)
     inc->fname = litlate(name);
     if (nonSys)
     {
-        LIST* fil = (LIST*)Alloc(sizeof(LIST));
+        LIST* fil = (LIST*)(LIST *)Alloc(sizeof(LIST));
         fil->data = inc->fname;
         fil->next = nonSysIncludeFiles;
         nonSysIncludeFiles = fil;
@@ -1262,7 +1262,7 @@ void doinclude(void)
 
         linesHead = linesTail = NULL;
 #    ifdef PARSER_ONLY
-        inc->filesize = strlen(inc->handle);
+        inc->filesize = strlen((char *)inc->handle);
 #    else
         fseek(inc->handle, 0, SEEK_END);
         inc->filesize = ftell(inc->handle);
@@ -1361,7 +1361,7 @@ void dodefine(void)
             return;
 
     IncGlobalFlag();
-    def = globalAlloc(sizeof(DEFSTRUCT));
+    def = (DEFSTRUCT *) globalAlloc(sizeof(DEFSTRUCT));
     def->name = litlate(name);
     def->args = 0;
     def->argcount = 0;
@@ -1441,7 +1441,7 @@ void dodefine(void)
     if (i[includes->lptr] == '#' || i[includes->lptr] == REPLACED_TOKENIZING)
         pperror(ERR_PP_INV_DEFINITION, 0);
 
-    ps = Alloc((p = strlen((char*)includes->lptr)) + 1);
+    ps = (char *)Alloc((p = strlen((char*)includes->lptr)) + 1);
     strcpy(ps, (char*)includes->lptr);
     def->string = ps;
     if (hr)
@@ -1695,7 +1695,7 @@ int defreplaceargs(unsigned char* macro, int count, unsigned char** oldargs, uns
                 }
                 else
                 {
-                    if ((rv = definsert(macro, p, q, "", "", MACRO_REPLACE_SIZE - (q - macro), p - q)) < -MACRO_REPLACE_SIZE)
+                    if ((rv = definsert(macro, p, q, (UBYTE*)"", (UBYTE *)"", MACRO_REPLACE_SIZE - (q - macro), p - q)) < -MACRO_REPLACE_SIZE)
                         return (FALSE);
                     else
                     {

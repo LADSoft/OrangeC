@@ -29,16 +29,16 @@
 #include <limits.h>
 #include "be.h"
 
-extern "C" ARCH_ASM* chosenAssembler;
-extern "C" EXPRESSION* fltexp;
-extern "C" OCODE* peep_tail;
-extern "C" int startlab, retlab;
-extern "C" int usingEsp;
-extern "C" int prm_lscrtdll;
+extern ARCH_ASM* chosenAssembler;
+extern EXPRESSION* fltexp;
+extern OCODE* peep_tail;
+extern int startlab, retlab;
+extern int usingEsp;
+extern int prm_lscrtdll;
 
 #define MAX_ALIGNS 50
-extern "C" int pushlevel = 0;
-extern "C" int funcstackheight = 0;
+extern int pushlevel = 0;
+extern int funcstackheight = 0;
 
 AMODE* singleLabel, *doubleLabel, *zerolabel;
 
@@ -60,7 +60,7 @@ static int switchTreePos;
 /*static int floatArea; */
 
 /* map the icode version of the regs to the processor version */
-extern "C" int regmap[REG_MAX][2];
+extern int regmap[REG_MAX][2];
 
 BOOLEAN BackendIntrinsic(QUAD* q);
 //-------------------------------------------------------------------------
@@ -81,7 +81,7 @@ AMODE* make_label(int lab)
 {
     EXPRESSION* lnode;
     AMODE* ap;
-    lnode = (EXPRESSION*)beLocalAlloc(sizeof(EXPRESSION));
+    lnode = (EXPRESSION*)(EXPRESSION *)beLocalAlloc(sizeof(EXPRESSION));
     lnode->type = en_labcon;
     lnode->v.i = lab;
     ap = (AMODE*)beLocalAlloc(sizeof(AMODE));
@@ -231,7 +231,7 @@ AMODE* aimmed(ULLONG_TYPE i)
     AMODE* ap;
     EXPRESSION* ep;
     i &= 0xffffffffU;
-    ep = (EXPRESSION*)beLocalAlloc(sizeof(EXPRESSION));
+    ep = (EXPRESSION*)(EXPRESSION *)beLocalAlloc(sizeof(EXPRESSION));
     ep->type = en_c_i;
     ep->v.i = i;
     ap = (AMODE*)beLocalAlloc(sizeof(AMODE));
@@ -313,7 +313,7 @@ AMODE* make_offset(EXPRESSION* node)
 AMODE* make_stack(int number)
 {
     AMODE* ap = (AMODE*)beLocalAlloc(sizeof(AMODE));
-    EXPRESSION* ep = (EXPRESSION*)beLocalAlloc(sizeof(EXPRESSION));
+    EXPRESSION* ep = (EXPRESSION*)(EXPRESSION *)beLocalAlloc(sizeof(EXPRESSION));
     ep->type = en_c_i;
     ep->v.i = -number;
     ap->mode = am_indisp;
@@ -1826,7 +1826,7 @@ static void compactSwitchHeader(LLONG_TYPE bottom)
     }
 
     peep_tail->noopt = TRUE;
-    lnode = (EXPRESSION*)beLocalAlloc(sizeof(EXPRESSION));
+    lnode = (EXPRESSION*)(EXPRESSION *)beLocalAlloc(sizeof(EXPRESSION));
     lnode->type = en_labcon;
     lnode->v.i = tablab;
     if (bottom)

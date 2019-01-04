@@ -269,7 +269,7 @@ static RESHAPE_LIST* cloneReshape(RESHAPE_LIST* in)
     RESHAPE_LIST *rv = NULL, **p = &rv;
     while (in)
     {
-        *p = tAlloc(sizeof(RESHAPE_LIST));
+        *p = (RESHAPE_LIST *)tAlloc(sizeof(RESHAPE_LIST));
         **p = *in;
         (*p)->next = NULL;
         in = in->next;
@@ -377,7 +377,7 @@ void ReplaceHashReshape(QUAD* rv, UBYTE* key, int size, DAGLIST** table)
 {
     int hashval = dhash(key, size);
     DAGLIST* newDag;
-    newDag = tAlloc(sizeof(DAGLIST));
+    newDag = (DAGLIST *)tAlloc(sizeof(DAGLIST));
     newDag->rv = (UBYTE*)rv;
     newDag->key = key;
     newDag->next = table[hashval];
@@ -411,8 +411,8 @@ static void replaceIM(IMODE** iml, IMODE* im)
             {
                 IncGlobalFlag();
             }
-            imind = Alloc(sizeof(IMODE));
-            imindl = Alloc(sizeof(IMODELIST));
+            imind = (IMODE *)Alloc(sizeof(IMODE));
+            imindl = (IMODELIST *)Alloc(sizeof(IMODELIST));
             if (sp && sp->storage_class != sc_auto && sp->storage_class != sc_register)
             {
                 DecGlobalFlag();
@@ -443,7 +443,7 @@ static void CopyExpressionTree(enum i_ops op, BLOCK* b, QUAD* insertBefore, IMOD
         {
             QUAD* newIns;
             op = i_nop;
-            newIns = Alloc(sizeof(QUAD));
+            newIns = (QUAD *)Alloc(sizeof(QUAD));
             newIns->ans = InitTempOpt(def->ans->offset->v.sp->imvalue->size, def->ans->offset->v.sp->imvalue->size);
             newIns->dc.left = def->dc.left;
             newIns->dc.right = def->dc.right;
@@ -467,7 +467,7 @@ static void CopyExpressionTree(enum i_ops op, BLOCK* b, QUAD* insertBefore, IMOD
         {
             QUAD* newIns;
             op = i_nop;
-            newIns = Alloc(sizeof(QUAD));
+            newIns = (QUAD *)Alloc(sizeof(QUAD));
             newIns->ans = InitTempOpt(def->ans->offset->v.sp->imvalue->size, def->ans->offset->v.sp->imvalue->size);
             newIns->dc.left = def->dc.left;
             newIns->dc.right = def->dc.right;
@@ -487,7 +487,7 @@ static IMODE* InsertAddInstruction(BLOCK* b, int size, QUAD* insertBefore, int f
         CopyExpressionTree(i_add, b, insertBefore, &iml, &imr);
     if (flagsl & (RF_NEG | RF_NOT))
     {
-        insn = Alloc(sizeof(QUAD));
+        insn = (QUAD *)Alloc(sizeof(QUAD));
         insn->ans = InitTempOpt(size, size);
         insn->dc.opcode = flagsl & RF_NEG ? i_neg : i_not;
         insn->dc.left = iml;
@@ -496,14 +496,14 @@ static IMODE* InsertAddInstruction(BLOCK* b, int size, QUAD* insertBefore, int f
     /*
     if (flagsr & (RF_NEG | RF_NOT))
     {
-        insn2 = Alloc(sizeof(QUAD));
+        insn2 = (QUAD *)Alloc(sizeof(QUAD));
         insn2->ans = InitTempOpt(size,size);
         insn2->dc.opcode = flagsr & RF_NEG ? i_neg : i_not;
         insn2->dc.left = imr;
         imr = insn2->ans;
     }
     */
-    ins = Alloc(sizeof(QUAD));
+    ins = (QUAD *)Alloc(sizeof(QUAD));
     ins->dc.opcode = flagsr & RF_NEG ? i_sub : i_add;
     ins->dc.left = iml;
     ins->dc.right = imr;
@@ -549,7 +549,7 @@ static IMODE* InsertMulInstruction(BLOCK* b, int size, QUAD* insertBefore, int f
         }
         else
         {
-            insn = Alloc(sizeof(QUAD));
+            insn = (QUAD *)Alloc(sizeof(QUAD));
             insn->ans = InitTempOpt(size, size);
             insn->dc.left = make_immed(size, 1);
             insn->dc.opcode = i_lsl;
@@ -557,7 +557,7 @@ static IMODE* InsertMulInstruction(BLOCK* b, int size, QUAD* insertBefore, int f
             iml = insn->ans;
         }
     }
-    ins = Alloc(sizeof(QUAD));
+    ins = (QUAD *)Alloc(sizeof(QUAD));
     ins->dc.opcode = flagsr & RF_SHIFT ? i_lsl : i_mul;
     ins->dc.left = iml;
     ins->dc.right = imr;

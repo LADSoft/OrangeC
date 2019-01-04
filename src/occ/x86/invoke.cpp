@@ -49,8 +49,10 @@ static char outputFileName[256];
 static char *asm_params, *rc_params, *link_params;
 #ifdef _WIN32
 #    define system(x) winsystem(x)
-extern int winsystem(const char*);
+extern "C" int winsystem(const char*);
 #endif
+int strcasecmp_internal(const char* left, const char* right);
+
 static BOOLEAN InsertOption(char* name)
 {
     char** p;
@@ -71,7 +73,7 @@ static BOOLEAN InsertOption(char* name)
     int len = 0;
     if (*p)
         len = strlen(*p);
-    *p = realloc(*p, 2 + len + strlen(name + 1));
+    *p = (char *)realloc(*p, 2 + len + strlen(name + 1));
     (*p)[len] = 0;
     strcat(*p, " ");
     strcat(*p, name + 1);
@@ -97,7 +99,7 @@ static void InsertFile(LIST** r, char* name, char* ext, BOOLEAN primary)
     lst = *r;
     while (lst)
     {
-        if (!strcasecmp_internal(lst->data, buf))
+        if (!strcasecmp_internal((char *)lst->data, buf))
             return;
         lst = lst->next;
     }
@@ -109,7 +111,7 @@ static void InsertFile(LIST** r, char* name, char* ext, BOOLEAN primary)
     /* Insert file */
     while (*r)
         r = &(*r)->next;
-    *r = malloc(sizeof(LIST));
+    *r = (LIST *) malloc(sizeof(LIST));
     if (!r)
         return;
     (*r)->next = 0;
@@ -208,7 +210,7 @@ int RunExternalFiles(char* rootPath)
     strcpy(outName, outputFileName);
     if (objlist && outName[0] && outName[strlen(outName) - 1] == '\\')
     {
-        strcat(outName, objlist->data);
+        strcat(outName, (char *) objlist->data);
         StripExt(outName);
         strcat(outName, ".exe");
         strcpy(temp, outputFileName);

@@ -164,7 +164,7 @@ static KEYWORD prockeywords[] =
     {"near", 4, kw__near, KW_NONANSI, 0 },
     */
     {
-        0, 0, 0
+        0, 0, kw_none
     }
 };
 static ARCH_DEFINES defines[] = {
@@ -279,6 +279,9 @@ static ARCH_CHARACTERISTICS architecture = {
     &regCosts,
     allocOrder,
     peeps,   /* defines peephole information */
+    0,    /* Max number of regs considered for fastcall */
+    0,         /* register list for regs used in fastcall */
+
     OPT_REVERSESTORE | OPT_REVERSEPARAM | OPT_ARGSTRUCTREF | 
         OPT_EXPANDSWITCH | OPT_THUNKRETVAL, /* preferred optimizations */
     DO_NOGLOBAL | DO_NOLOCAL | DO_NOREGALLOC | DO_NOADDRESSINIT | 
@@ -310,7 +313,7 @@ ARCH_MSIL msilData = {
     oa_get_unboxed,                 /* msil - get an unboxed version of type*/
     msil_create_property,   /* create a property instance */
 };
-ARCH_GEN outputfunctions ;
+
 
 static void WinmodeSetup(char select, char *string);
 static int initnasm(COMPILER_PARAMS *parms, ARCH_ASM *data, ARCH_DEBUG *debug)
@@ -473,6 +476,7 @@ ARCH_GEN outputfunctions = {
     oa_gen_importThunk,                 /* do an import thunk entry */
     NULL,             /* generate uninitialized storage */
     NULL,                  /* put an alignment command */
+    NULL,                    /* segment alignments */
     oa_enterseg,               /* switch to new seg */
     NULL,                /* exit current segment */
     NULL,          /* put a global definition */
@@ -579,8 +583,8 @@ ARCH_ASM assemblerInterface[] = {
     sizeof(args)/sizeof(args[0]),			/* number of args */
     NULL,                             /* inline assembler opcode list, or null */
     NULL,                             /* inline assembler register list, or null */
-    prockeywords,                         /* specific keywords, e.g. allow a 'bit' keyword and so forth */
-    defines,                     /* defines list to create at compile time, or null */
+//    prockeywords,                         /* specific keywords, e.g. allow a 'bit' keyword and so forth */
+   // defines,                     /* defines list to create at compile time, or null */
     &dbgStruct[0],                         /* debug structure, or NULL */
     &architecture,                /* architecture characteristics */
     &outputfunctions,                              /* pointer to backend function linkages */

@@ -57,17 +57,17 @@ void operator delete(void * p) throw()
 #endif
 #define FULLVERSION
 
-extern "C" char realOutFile[260];
-extern "C" ARCH_ASM* chosenAssembler;
-extern "C" MULDIV* muldivlink;
-extern "C" ASMNAME oplst[];
-extern "C" enum e_sg oa_currentSeg;
-extern "C" DBGBLOCK* DbgBlocks[];
-extern "C" SYMBOL* theCurrentFunc;
-extern "C" int fastcallAlias;
-extern "C" FILE *outputFile, *browseFile;
-extern "C" char infile[];
-extern "C" BOOLEAN usingEsp;
+extern char realOutFile[260];
+extern ARCH_ASM* chosenAssembler;
+extern MULDIV* muldivlink;
+extern ASMNAME oplst[];
+extern enum e_sg oa_currentSeg;
+extern DBGBLOCK* DbgBlocks[];
+extern SYMBOL* theCurrentFunc;
+extern int fastcallAlias;
+extern FILE *outputFile, *browseFile;
+extern char infile[];
+extern int usingEsp;
 extern AMODE* singleLabel, *doubleLabel, *zerolabel;
 LIST* includedFiles;
 InstructionParser* instructionParser;
@@ -99,7 +99,7 @@ static int segFlags[] = {0,
                          ObjSection::rom};
 static int virtualSegFlags = ObjSection::max | ObjSection::virt;
 
-extern "C" int segAligns[MAX_SEGS] = {};
+extern int segAligns[MAX_SEGS] = {};
 
 static int virtualSegmentNumber;
 static int lastIncludeNum;
@@ -142,8 +142,8 @@ static std::deque<BROWSEINFO*> browseInfo;
 static BROWSEFILE* browseFiles;
 static std::map<int, ObjSourceFile*> sourceFiles;
 
-extern "C" void adjustUsesESP();
-extern "C" int dbgblocknum = 0;
+extern void adjustUsesESP();
+extern int dbgblocknum = 0;
 
 static int sectofs;
 
@@ -551,7 +551,7 @@ void output_obj_file(void)
 
 void compile_start(char* name)
 {
-    LIST* newItem = (LIST*)beGlobalAlloc(sizeof(LIST));
+    LIST* newItem = (LIST*)(LIST *)beGlobalAlloc(sizeof(LIST));
     newItem->data = beGlobalAlloc(strlen(name) + 1);
     strcpy((char*)newItem->data, name);
 
@@ -564,7 +564,7 @@ void include_start(char* name, int num)
 {
     if (num > lastIncludeNum)
     {
-        LIST* newItem = (LIST*)beGlobalAlloc(sizeof(LIST));
+        LIST* newItem = (LIST*)(LIST *)beGlobalAlloc(sizeof(LIST));
         newItem->data = beGlobalAlloc(strlen(name) + 1);
         strcpy((char*)newItem->data, name);
 

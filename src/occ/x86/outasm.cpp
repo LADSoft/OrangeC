@@ -32,13 +32,13 @@
 
 #define IEEE
 
-extern "C" ARCH_ASM* chosenAssembler;
-extern "C" int prm_nodos;
-extern "C" int prm_flat;
-extern "C" int fastcallAlias;
-extern "C" SYMBOL* theCurrentFunc;
-extern "C" int segAligns[];
-extern "C" BOOLEAN usingEsp;
+extern ARCH_ASM* chosenAssembler;
+extern int prm_nodos;
+extern int prm_flat;
+extern int fastcallAlias;
+extern SYMBOL* theCurrentFunc;
+extern int segAligns[];
+extern int usingEsp;
 int skipsize = 0;
 int addsize = 0;
 
@@ -46,13 +46,13 @@ int addsize = 0;
 
 char segregs[] = "csdsesfsgsss";
 
-extern "C" int prm_assembler;
+extern int prm_assembler;
 
 static int uses_float;
 
-extern "C" MULDIV* muldivlink = 0;
+extern MULDIV* muldivlink = 0;
 static enum e_gt oa_gentype = nogen;        /* Current DC type */
-extern "C" enum e_sg oa_currentSeg = noseg; /* Current seg */
+extern enum e_sg oa_currentSeg = noseg; /* Current seg */
 static int oa_outcol = 0;                   /* Curront col (roughly) */
 int newlabel;
 int needpointer;

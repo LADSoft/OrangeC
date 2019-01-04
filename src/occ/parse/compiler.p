@@ -1,6 +1,3 @@
-#ifdef __cplusplus
-extern "C" {
-#endif
 /* Protogen Version 1.00 Saturday November 18, 2006  21:08:23 */
 
                              /* Beinterf.c */
@@ -117,6 +114,10 @@ unsigned CRC32(unsigned char *data, size_t len);
 void displayLexeme(LEXEME *lex);
 
                               /* Declare.c */
+int CountPacks(TEMPLATEPARAMLIST* packs);
+void calculateVirtualBaseOffsets(SYMBOL* sp);
+
+
 SYMBOL* finishSearch(char* name, SYMBOL* encloser, NAMESPACEVALUES* ns, BOOLEAN tagsOnly, BOOLEAN throughClass,
                      BOOLEAN namespaceOnly);
 
@@ -124,6 +125,8 @@ BOOLEAN intcmp(TYPE *t1, TYPE *t2);
 EXPRESSION *GetSymRef(EXPRESSION *n);
 EXPRESSION *copy_expression(EXPRESSION *exp);
 BOOLEAN equalTemplateIntNode(EXPRESSION *exp1, EXPRESSION *exp2);
+BOOLEAN matchTemplateSpecializationToParams(TEMPLATEPARAMLIST* param, TEMPLATEPARAMLIST* special, SYMBOL* sp);
+
 BOOLEAN templatecomparetypes(TYPE *tp1, TYPE *tp2, BOOLEAN exact);
 BOOLEAN templatecompareexpressions(EXPRESSION *exp1, EXPRESSION *exp2);
 BOOLEAN templateselectorcompare(TEMPLATESELECTOR *ts1, TEMPLATESELECTOR *ts2);
@@ -564,6 +567,7 @@ void LocalOptimization(void);
 							  /* iinline.c */
 
 void iinlineInit(void);
+void dumpImportThunks(void);
 void dumpvc1Thunks(void);
 IMODE *gen_inline(SYMBOL *funcsp, EXPRESSION *node, int flags);
 
@@ -1051,6 +1055,3 @@ void typenumptr(char *buf, TYPE *tp);
 TYPE *typenum(char *buf, TYPE *tp);
 void typeToString(char *buf, TYPE *typ);
 
-#ifdef __cplusplus
-}
-#endif

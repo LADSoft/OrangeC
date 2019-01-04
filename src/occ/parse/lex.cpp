@@ -356,9 +356,9 @@ void lexini(void)
 #endif
     llminus1 = 0;
     llminus1--;
-    context = Alloc(sizeof(LEXCONTEXT));
+    context = (LEXCONTEXT *)Alloc(sizeof(LEXCONTEXT));
     nextFree = 0;
-    pool = Alloc(sizeof(LEXEME) * MAX_LOOKBACK);
+    pool = (LEXEME *)Alloc(sizeof(LEXEME) * MAX_LOOKBACK);
 }
 
 /*-------------------------------------------------------------------------*/
@@ -663,7 +663,7 @@ SLCHAR* getString(unsigned char** source, enum e_lexType* tp)
                         int i;
                         *source = p;
                         IncGlobalFlag();
-                        rv = Alloc(sizeof(SLCHAR));
+                        rv = (SLCHAR *)Alloc(sizeof(SLCHAR));
                         rv->str = (LCHAR*)Alloc(1);
                         rv->str[0] = 0;
                         rv->count = 1;
@@ -831,7 +831,7 @@ SLCHAR* getString(unsigned char** source, enum e_lexType* tp)
         SLCHAR* rv;
         int i;
         IncGlobalFlag();
-        rv = Alloc(sizeof(SLCHAR));
+        rv = (SLCHAR *)Alloc(sizeof(SLCHAR));
         rv->str = (LCHAR*)Alloc(count * sizeof(LCHAR));
         for (i = 0; i < count; i++)
             rv->str[i] = data[i];
@@ -956,7 +956,7 @@ static int getexp(char** ptr)
  *      getnum handles all of the numeric input. it accepts
  *      decimal, octal, hexidecimal, and floating point numbers.
  */
-int getNumber(unsigned char** ptr, unsigned char** end, unsigned char* suffix, FPFC* rval, LLONG_TYPE* ival)
+e_lexType getNumber(unsigned char** ptr, unsigned char** end, unsigned char* suffix, FPFC* rval, LLONG_TYPE* ival)
 {
     char buf[200], *p = buf;
     int radix = 10;
@@ -965,9 +965,9 @@ int getNumber(unsigned char** ptr, unsigned char** end, unsigned char* suffix, F
     BOOLEAN hasdot = FALSE;
     enum e_lexType lastst;
     if (!isdigit((unsigned char)**ptr) && **ptr != '.')
-        return INT_MIN;
+        return (e_lexType) INT_MIN;
     if (**ptr == '.' && !isdigit((unsigned char)*(*ptr + 1)))
-        return INT_MIN;
+        return (e_lexType)INT_MIN;
     if (**ptr == '0')
     {
         (*ptr)++;
@@ -1050,11 +1050,11 @@ int getNumber(unsigned char** ptr, unsigned char** end, unsigned char* suffix, F
                 q++;
             if (*q)
             {
-                return INT_MIN;
+                return (e_lexType)INT_MIN;
             }
             if (**ptr != 'H' && **ptr != 'h')
             {
-                return INT_MIN;
+                return (e_lexType)INT_MIN;
             }
             (*ptr)++;
         }
@@ -1275,7 +1275,7 @@ LEXEME* getGTSym(LEXEME* in)
     static LEXEME lex;
     char pgreater[2] = {'>', 0}, *ppgreater = pgreater;
     KEYWORD* kw;
-    kw = searchkw(&ppgreater);
+    kw = searchkw((UBYTE **)&ppgreater);
     lex = *in;
     lex.type = l_kw;
     lex.kw = kw;
@@ -1292,7 +1292,7 @@ LEXEME* getsym(void)
     LLONG_TYPE ival;
     static unsigned char buf[16384];
     static int pos = 0;
-    int cval;
+    char cval;
     SLCHAR* strptr;
 
     if (context->cur)
@@ -1353,7 +1353,7 @@ LEXEME* getsym(void)
         if ((cval = getChar(&includes->lptr, &tp)) != INT_MIN)
         {
             if (tp == l_achr && !cparams.prm_charisunsigned && !(cval & 0xffffff00))
-                cval = (int)(char)cval;
+                cval = (e_lexType)(char)cval;
             if (tp == l_uchr && (cval & 0xffff0000))
                 error(ERR_INVALID_CHAR_CONSTANT);
             lex->value.i = cval;
@@ -1394,9 +1394,10 @@ LEXEME* getsym(void)
             unsigned char suffix[256];
             unsigned char* start = includes->lptr;
             unsigned char* end = includes->lptr;
-            if ((cval = getNumber(&includes->lptr, &end, suffix, &rval, &ival)) != INT_MIN)
+            enum e_lexType tp;
+            if ((tp = getNumber(&includes->lptr, &end, suffix, &rval, &ival)) != INT_MIN)
             {
-                if (cval < l_f)
+                if (tp < l_f)
                     lex->value.i = ival;
                 else
                     lex->value.f = rval;
@@ -1407,7 +1408,7 @@ LEXEME* getsym(void)
                     suffix[end - start] = 0;
                     lex->litaslit = litlate((char*)suffix);
                 }
-                lex->type = cval;
+                lex->type = tp;
             }
             else if ((kw = searchkw(&includes->lptr)) != NULL)
             {
@@ -1472,7 +1473,7 @@ LEXEME* SetAlternateLex(LEXEME* lexList)
 {
     if (lexList)
     {
-        LEXCONTEXT* newContext = Alloc(sizeof(LEXCONTEXT));
+        LEXCONTEXT* newContext = (LEXCONTEXT *)Alloc(sizeof(LEXCONTEXT));
         newContext->next = context;
         context = newContext;
         context->cur = lexList->next;

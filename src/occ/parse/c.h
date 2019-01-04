@@ -521,6 +521,21 @@ struct _ccNamespaceData
 // clang-format off
 enum e_cm { cmNone, cmValue, cmRef, cmThis, cmExplicitValue };
 // clang-format on
+
+// order is important for this next, a comparison is done based on this ordering
+// clang-format off
+enum e_xc { xc_unspecified, xc_all, xc_dynamic, xc_none };
+// clang-format on
+struct xcept
+{
+    LIST* xcDynamic;           // list of types, the exception specification when dynamic
+    int xcInitLab, xcDestLab;  // for auto vars
+    struct sym* xctab;
+    struct sym* xclab;
+    EXPRESSION* xcInitializeFunc;
+    EXPRESSION* xcRundownFunc;
+};
+
 /* symbols */
 typedef struct sym
 {
@@ -698,17 +713,9 @@ typedef struct sym
     struct init *init, *lastInit, *dest;
     // order is important for this next, a comparison is done based on this ordering
     // clang-format off
-    enum e_xc { xc_unspecified, xc_all, xc_dynamic, xc_none } xcMode;
+    enum e_xc xcMode;
     // clang-format on
-    struct xcept
-    {
-        LIST* xcDynamic;           // list of types, the exception specification when dynamic
-        int xcInitLab, xcDestLab;  // for auto vars
-        struct sym* xctab;
-        struct sym* xclab;
-        EXPRESSION* xcInitializeFunc;
-        EXPRESSION* xcRundownFunc;
-    } * xc;
+    struct xcept *xc;
     LIST* friends;
     /* Type declarations */
     struct typ* tp;
@@ -935,58 +942,61 @@ struct balance
     short count;
 };
 
+// clang-format off
+enum _matchFlags
+{
+    KW_NONE = 0, KW_CPLUSPLUS = 1, KW_INLINEASM = 2, KW_NONANSI = 4, KW_C99 = 8,
+    KW_C1X = 16, KW_ASSEMBLER = 32, KW_MSIL = 64,
+    KW_386 = 128, KW_68K = 256, KW_ALL = 0x40000000
+};
+// clang-format on
+// clang-format off
+
+enum _tokenTypes
+{
+    TT_BASE = 1,
+    TT_BOOL = 2,
+    TT_INT = 4,
+    TT_FLOAT = 8,
+    TT_COMPLEX = 16,
+    TT_TYPEQUAL = 32,
+    TT_POINTERQUAL = 64,
+    TT_UNARY = 128,
+    TT_BINARY = 0x100,
+    TT_OPERATOR = 0x200,
+    TT_ASSIGN = 0x400,
+    TT_RELATION = 0x800,
+    TT_EQUALITY = 0x1000,
+    TT_INEQUALITY = 0x2000,
+    TT_POINTER = 0x4000,
+    TT_STORAGE_CLASS = 0x8000,
+    TT_CONTROL = 0x10000,
+    TT_BLOCK = 0x20000,
+    TT_PRIMARY = 0x40000,
+    TT_SELECTOR = 0x80000,
+    TT_VAR = 0x100000,
+    TT_BASETYPE = 0x200000,
+    TT_INCREMENT = 0x400000,
+    TT_SWITCH = 0x800000,
+    TT_ENUM = 0x1000000,
+    TT_STRUCT = 0x2000000,
+    TT_TYPENAME = 0x4000000,
+    TT_TYPEDEF = 0x8000000,
+    TT_VOID = 0x10000000,
+    TT_CLASS = 0x20000000,
+    TT_LINKAGE = 0x40000000,
+    TT_DECLARE = 0x80000000,
+    TT_UNKNOWN = 0
+};
+// clang-format on
+
 typedef struct kwblk
 {
     char* name;
     int len;
     enum e_kw key;
-    // clang-format off
-    enum
-    {
-        KW_NONE = 0, KW_CPLUSPLUS = 1, KW_INLINEASM = 2, KW_NONANSI = 4, KW_C99 = 8, 
-        KW_C1X = 16, KW_ASSEMBLER = 32, KW_MSIL = 64,
-        KW_386 = 128, KW_68K= 256, KW_ALL = 0x40000000
-    } matchFlags;
-    // clang-format on
-
-    // clang-format off
-    enum
-    {
-        TT_BASE = 1,
-        TT_BOOL = 2,
-        TT_INT = 4,
-        TT_FLOAT = 8,
-        TT_COMPLEX = 16,
-        TT_TYPEQUAL = 32,
-        TT_POINTERQUAL = 64,
-        TT_UNARY = 128,
-        TT_BINARY = 0x100,
-        TT_OPERATOR = 0x200,
-        TT_ASSIGN = 0x400,
-        TT_RELATION = 0x800,
-        TT_EQUALITY = 0x1000,
-        TT_INEQUALITY = 0x2000,
-        TT_POINTER = 0x4000,
-        TT_STORAGE_CLASS = 0x8000,
-        TT_CONTROL = 0x10000,
-        TT_BLOCK = 0x20000,
-        TT_PRIMARY = 0x40000,
-        TT_SELECTOR = 0x80000,
-        TT_VAR = 0x100000,
-        TT_BASETYPE = 0x200000,
-        TT_INCREMENT = 0x400000,
-        TT_SWITCH = 0x800000,
-        TT_ENUM = 0x1000000,
-        TT_STRUCT = 0x2000000,
-        TT_TYPENAME = 0x4000000,
-        TT_TYPEDEF = 0x8000000,
-        TT_VOID = 0x10000000,
-        TT_CLASS = 0x20000000,
-        TT_LINKAGE = 0x40000000,
-        TT_DECLARE = 0x80000000,
-        TT_UNKNOWN = 0
-    } tokenTypes;
-    // clang-format on
+    int matchFlags;
+    int tokenTypes;
     /*    ASMNAME *data; */
 } KEYWORD;
 

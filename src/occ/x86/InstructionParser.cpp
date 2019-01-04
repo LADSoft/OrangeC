@@ -34,7 +34,7 @@
 #include <iostream>
 #include "Token.h"
 #include "be.h"
-extern "C" TYPE stdint;
+extern TYPE stdint;
 extern bool assembling;
 
 static const unsigned mask[32] = {

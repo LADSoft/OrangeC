@@ -47,7 +47,9 @@ int __dtabuflen = 32 * 1024;
 #endif
 
 #if defined(WIN32) || defined(MICROSOFT)
-char* __stdcall GetModuleFileNameA(void* handle, char* buf, int size);
+extern "C" {
+    char* __stdcall GetModuleFileNameA(void* handle, char* buf, int size);
+}
 #endif
 
 extern COMPILER_PARAMS cparams;
@@ -586,12 +588,12 @@ void sysincl_setup(char select, char* string)
     (void)select;
     if (sys_searchpath)
     {
-        sys_searchpath = realloc(sys_searchpath, strlen(string) + strlen(sys_searchpath) + 2);
+        sys_searchpath = (char *)realloc(sys_searchpath, strlen(string) + strlen(sys_searchpath) + 2);
         strcat(sys_searchpath, ";");
     }
     else
     {
-        sys_searchpath = malloc(strlen(string) + 1);
+        sys_searchpath = (char *)malloc(strlen(string) + 1);
         sys_searchpath[0] = 0;
     }
     fflush(stdout);
@@ -605,12 +607,12 @@ void incl_setup(char select, char* string)
     (void)select;
     if (*set_searchpath)
     {
-        *set_searchpath = realloc(*set_searchpath, strlen(string) + strlen(*set_searchpath) + 2);
+        *set_searchpath = (char *)realloc(*set_searchpath, strlen(string) + strlen(*set_searchpath) + 2);
         strcat(*set_searchpath, ";");
     }
     else
     {
-        *set_searchpath = malloc(strlen(string) + 1);
+        *set_searchpath = (char *)malloc(strlen(string) + 1);
         *set_searchpath[0] = 0;
     }
     fflush(stdout);
@@ -621,12 +623,12 @@ void libpath_setup(char select, char* string)
     (void)select;
     if (*set_libpath)
     {
-        *set_libpath = realloc(*set_libpath, strlen(string) + strlen(*set_libpath) + 2);
+        *set_libpath = (char *)realloc(*set_libpath, strlen(string) + strlen(*set_libpath) + 2);
         strcat(*set_libpath, ";");
     }
     else
     {
-        *set_libpath = malloc(strlen(string) + 1);
+        *set_libpath = (char *)malloc(strlen(string) + 1);
         *set_libpath[0] = 0;
     }
     fflush(stdout);
@@ -646,8 +648,8 @@ void def_setup(char select, char* string)
  * activation for command line #defines
  */
 {
-    char* s = malloc(strlen(string) + 1);
-    LIST* l = malloc(sizeof(LIST));
+    char* s = (char *)malloc(strlen(string) + 1);
+    LIST* l = (LIST *)malloc(sizeof(LIST));
     (void)select;
     strcpy(s, string);
     l->next = deflist;
@@ -657,8 +659,8 @@ void def_setup(char select, char* string)
 
 void undef_setup(char select, char* string)
 {
-    char* s = malloc(strlen(string) + 1);
-    LIST* l = malloc(sizeof(LIST));
+    char* s = (char *)malloc(strlen(string) + 1);
+    LIST* l = (LIST *)malloc(sizeof(LIST));
     (void)select;
     strcpy(s, string);
     l->next = undeflist;
@@ -692,7 +694,7 @@ void setglbdefs(void)
     int major, temp, minor, build;
     while (l)
     {
-        char* s = l->data;
+        char* s = (char *)l->data;
         char* n = s;
         while (*s && *s != '=')
             s++;
@@ -700,7 +702,7 @@ void setglbdefs(void)
             *s++ = 0;
         if (*s)
         {
-            char* q = calloc(1, strlen(s) + 3);
+            char* q = (char *)calloc(1, strlen(s) + 3);
             q[0] = MACRO_PLACEHOLDER;
             strcpy(q + 1, s);
             q[strlen(s) + 1] = MACRO_PLACEHOLDER;
@@ -718,7 +720,7 @@ void setglbdefs(void)
     l = undeflist;
     while (l)
     {
-        char* s = l->data;
+        char* s = (char *)l->data;
         char* n = s;
         while (*s && *s != '=')
             s++;
@@ -827,7 +829,7 @@ void InsertOneFile(char* filename, char* path, int drive, BOOLEAN primary)
 
         while ((*r))
             r = &(*r)->next;
-        (*r) = malloc(sizeof(LIST));
+        (*r) = (LIST *) malloc(sizeof(LIST));
         s = (*r);
         if (!s)
             return;
@@ -1023,7 +1025,7 @@ void addinclude(void)
             strcat(temp, *set_searchpath);
             free(*set_searchpath);
         }
-        *set_searchpath = malloc(strlen(temp) + 1);
+        *set_searchpath = (char *)malloc(strlen(temp) + 1);
         strcpy(*set_searchpath, temp);
     }
     string = getenv("CPATH");
@@ -1037,7 +1039,7 @@ void addinclude(void)
             strcat(temp, *set_searchpath);
             free(*set_searchpath);
         }
-        *set_searchpath = malloc(strlen(temp) + 1);
+        *set_searchpath = (char *)(strlen(temp) + 1);
         strcpy(*set_searchpath, temp);
     }
 }
@@ -1242,7 +1244,7 @@ void ccinit(int argc, char* argv[])
         LIST* t = clist;
         while (t)
         {
-            t->data = litlate(fullqualify(t->data));
+            t->data = litlate(fullqualify((char *)t->data));
             t = t->next;
         }
     }

@@ -56,6 +56,7 @@ extern STRUCTSYM* structSyms;
 extern char* deprecationText;
 extern TYPE stdany;
 extern int noSpecializationError;
+extern SYMBOL *theCurrentFunc;
 
 LIST* nameSpaceList;
 char anonymousNameSpaceName[512];
@@ -105,7 +106,7 @@ static int dumpVTabEntries(int count, THUNK* thunks, SYMBOL* sym, VTABENTRY* ent
                         }
                         else if (sym->tp->type != bt_void)
                         {
-                            *args = Alloc(sizeof(INITLIST));
+                            *args = (INITLIST *)Alloc(sizeof(INITLIST));
                             (*args)->tp = sym->tp;
                             (*args)->exp = exp;
                             args = &(*args)->next;
@@ -359,7 +360,7 @@ static void copyVTabEntries(VTABENTRY* lst, VTABENTRY** pos, int offset, BOOLEAN
         vfc = &vt->virtuals;
         while (vf)
         {
-            *vfc = Alloc(sizeof(VIRTUALFUNC));
+            *vfc = (VIRTUALFUNC *) Alloc(sizeof(VIRTUALFUNC));
             (*vfc)->func = vf->func;
             vfc = &(*vfc)->next;
             vf = vf->next;
@@ -526,7 +527,7 @@ void calculateVTabEntries(SYMBOL* sp, SYMBOL* base, VTABENTRY** pos, int offset)
             vfc = &vt->virtuals;
             while (vf)
             {
-                *vfc = Alloc(sizeof(VIRTUALFUNC));
+                *vfc = (VIRTUALFUNC *)Alloc(sizeof(VIRTUALFUNC));
                 (*vfc)->func = vf->func;
                 vfc = &(*vfc)->next;
                 vf = vf->next;
@@ -1126,7 +1127,7 @@ BASECLASS* innerBaseClass(SYMBOL* declsym, SYMBOL* bcsym, BOOLEAN isvirtual, enu
         error(ERR_UNION_CANNOT_BE_BASE_CLASS);
     if (bcsym->isfinal)
         errorsym(ERR_FINAL_BASE_CLASS, bcsym);
-    bc = Alloc(sizeof(BASECLASS));
+    bc = (BASECLASS *)Alloc(sizeof(BASECLASS));
     bc->accessLevel = currentAccess;
     bc->isvirtual = isvirtual;
     bc->cls = bcsym;
@@ -1155,7 +1156,7 @@ LEXEME* baseClasses(LEXEME* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac defa
     lex = getsym();  // past ':'
     if (basetype(declsym->tp)->type == bt_union)
         error(ERR_UNION_CANNOT_HAVE_BASE_CLASSES);
-    l.str = (void*)declsym;
+    l.str = (SYMBOL*)declsym;
     addStructureDeclaration(&l);
     do
     {
@@ -1215,7 +1216,8 @@ LEXEME* baseClasses(LEXEME* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac defa
                 if (MATCHKW(lex, lt))
                 {
                     inTemplateSpecialization++;
-                    lex = GetTemplateArguments(lex, funcsp, bcsym, &lst);
+                    TEMPLATEPARAMLIST *nullLst;
+                    lex = GetTemplateArguments(lex, funcsp, bcsym, &nullLst);
                     inTemplateSpecialization--;
                 }
                 bcsym = NULL;
@@ -1288,8 +1290,8 @@ LEXEME* baseClasses(LEXEME* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac defa
                                     src = lst;
                                     while (src && dest)
                                     {
-                                        *workingListPtr = (TEMPLATEPARAMLIST*)Alloc(sizeof(TEMPLATEPARAMLIST));
-                                        (*workingListPtr)->p = (TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
+                                        *workingListPtr = (TEMPLATEPARAMLIST*)(TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
+                                        (*workingListPtr)->p = (TEMPLATEPARAM*)(TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
                                         if (src->p->packed)
                                         {
                                             TEMPLATEPARAMLIST* p = src->p->byPack.pack;
@@ -1724,7 +1726,7 @@ void GatherPackedVars(int* count, SYMBOL** arg, EXPRESSION* packedExp)
                 if (tpl->p->packed)
                 {
                     SYMBOL* sym = clonesym(spx);
-                    sym->tp = Alloc(sizeof(TYPE));
+                    sym->tp = (TYPE *)Alloc(sizeof(TYPE));
                     sym->tp->type = bt_templateparam;
                     sym->tp->templateParam = tpl;
                     arg[(*count)++] = sym;
@@ -1798,7 +1800,7 @@ INITLIST** expandPackedInitList(INITLIST** lptr, SYMBOL* funcsp, LEXEME* start, 
                 while (hr)
                 {
                     SYMBOL* sym = (SYMBOL*)hr->p;
-                    INITLIST* p = Alloc(sizeof(INITLIST));
+                    INITLIST* p = (INITLIST *)Alloc(sizeof(INITLIST));
                     p->tp = sym->tp;
                     p->exp = varNode(en_auto, sym);
                     if (isref(p->tp))
@@ -1832,7 +1834,7 @@ INITLIST** expandPackedInitList(INITLIST** lptr, SYMBOL* funcsp, LEXEME* start, 
             if (n > 1 || !packedExp->v.func->arguments || packedExp->v.func->arguments->tp->type != bt_void)
                 for (i = 0; i < n; i++)
                 {
-                    INITLIST* p = Alloc(sizeof(INITLIST));
+                    INITLIST* p = (INITLIST *)Alloc(sizeof(INITLIST));
                     LEXEME* lex = SetAlternateLex(start);
                     packIndex = i;
                     expression_assign(lex, funcsp, NULL, &p->tp, &p->exp, NULL, _F_PACKABLE);
@@ -2019,7 +2021,7 @@ MEMBERINITIALIZERS* expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, MEMBERI
                         getMemberInitializers(lex, funcsp, &shim, MATCHKW(lex, openpa) ? closepa : end, FALSE);
                         while (shim.arguments)
                         {
-                            *xinit = (INITIALIZER*)Alloc(sizeof(INITIALIZER));
+                            *xinit = (INITIALIZER*)(INITIALIZER *)Alloc(sizeof(INITIALIZER));
                             (*xinit)->basetp = shim.arguments->tp;
                             (*xinit)->exp = shim.arguments->exp;
                             xinit = &(*xinit)->next;
@@ -2078,7 +2080,7 @@ void expandPackedMemberInitializers(SYMBOL* cls, SYMBOL* funcsp, TEMPLATEPARAMLI
         for (i = 0; i < n; i++)
         {
             LEXEME* lex = SetAlternateLex(start);
-            MEMBERINITIALIZERS* mi = Alloc(sizeof(MEMBERINITIALIZERS));
+            MEMBERINITIALIZERS* mi = (MEMBERINITIALIZERS *)Alloc(sizeof(MEMBERINITIALIZERS));
             TYPE* tp = templatePack->p->byClass.val;
             BASECLASS* bc = cls->baseClasses;
             int offset = 0;
@@ -2135,7 +2137,7 @@ void expandPackedMemberInitializers(SYMBOL* cls, SYMBOL* funcsp, TEMPLATEPARAMLI
                     SetAlternateLex(NULL);
                     while (shim.arguments)
                     {
-                        *xinit = (INITIALIZER*)Alloc(sizeof(INITIALIZER));
+                        *xinit = (INITIALIZER*)(INITIALIZER *)Alloc(sizeof(INITIALIZER));
                         (*xinit)->basetp = shim.arguments->tp;
                         (*xinit)->exp = shim.arguments->exp;
                         xinit = &(*xinit)->next;
@@ -2535,8 +2537,8 @@ LEXEME* handleStaticAssert(LEXEME* lex)
     if (getStructureDeclaration())
     {
         SYMBOL* sym = getStructureDeclaration();
-        LIST* staticAssert = Alloc(sizeof(LIST));
-        LEXEME **cur = &staticAssert->data, *last = NULL;
+        LIST* staticAssert = (LIST *)Alloc(sizeof(LIST));
+        LEXEME **cur = &(LEXEME *)staticAssert->data, *last = NULL;
         int paren = 0;
         int brack = 0;
         staticAssert->next = sym->staticAsserts;
@@ -2563,7 +2565,7 @@ LEXEME* handleStaticAssert(LEXEME* lex)
             {
                 brack--;
             }
-            *cur = Alloc(sizeof(LEXEME));
+            *cur = (LEXEME *)Alloc(sizeof(LEXEME));
             if (lex->type == l_id)
                 lex->value.s.a = litlate(lex->value.s.a);
             **cur = *lex;
@@ -2589,7 +2591,7 @@ LEXEME* handleStaticAssert(LEXEME* lex)
         TYPE* tp;
         EXPRESSION *expr = NULL, *expr2 = NULL;
         lex = expression_no_comma(lex, NULL, NULL, &tp, &expr, NULL, 0);
-        expr2 = Alloc(sizeof(EXPRESSION));
+        expr2 = (EXPRESSION *)Alloc(sizeof(EXPRESSION));
         expr2->type = en_x_bool;
         expr2->left = expr;
         optimize_for_constants(&expr2);
@@ -2683,12 +2685,12 @@ LEXEME* insertNamespace(LEXEME* lex, enum e_lk linkage, enum e_sc storage_class,
                                 return lex;
                             }
                         }
-                        tp = (TYPE*)Alloc(sizeof(TYPE));
+                        tp = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
                         tp->type = bt_void;
                         sp = makeID(sc_namespacealias, tp, NULL, litlate(buf));
                         if (nameSpaceList)
                         {
-                            sp->parentNameSpace = nameSpaceList->data;
+                            sp->parentNameSpace = (SYMBOL *)nameSpaceList->data;
                         }
                         SetLinkerNames(sp, lk_none);
                         if (storage_class == sc_auto)
@@ -2701,7 +2703,7 @@ LEXEME* insertNamespace(LEXEME* lex, enum e_lk linkage, enum e_sc storage_class,
                             insert(sp, globalNameSpace->syms);
                             insert(sp, globalNameSpace->tags);
                         }
-                        sp->nameSpaceValues = Alloc(sizeof(NAMESPACEVALUES));
+                        sp->nameSpaceValues = (NAMESPACEVALUES *)Alloc(sizeof(NAMESPACEVALUES));
                         *sp->nameSpaceValues = *src->nameSpaceValues;
                         sp->nameSpaceValues->name = sp;  // this is to rename it with the alias e.g. for errors
                     }
@@ -2736,7 +2738,7 @@ LEXEME* insertNamespace(LEXEME* lex, enum e_lk linkage, enum e_sc storage_class,
             else
                 p++;
 
-            my_sprintf(anonymousNameSpaceName, "__%s__%d", p, CRC32(infile, strlen(infile)));
+            my_sprintf(anonymousNameSpaceName, "__%s__%d", p, CRC32((unsigned char *)infile, strlen(infile)));
             while ((p = strchr(anonymousNameSpaceName, '.')) != 0)
                 *p = '_';
         }
@@ -2749,10 +2751,10 @@ LEXEME* insertNamespace(LEXEME* lex, enum e_lk linkage, enum e_sc storage_class,
     hr = LookupName(buf, globalNameSpace->syms);
     if (!hr)
     {
-        TYPE* tp = (TYPE*)Alloc(sizeof(TYPE));
+        TYPE* tp = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
         tp->type = bt_void;
         sp = makeID(sc_namespace, tp, NULL, litlate(buf));
-        sp->nameSpaceValues = Alloc(sizeof(NAMESPACEVALUES));
+        sp->nameSpaceValues = (NAMESPACEVALUES *)Alloc(sizeof(NAMESPACEVALUES));
         sp->nameSpaceValues->syms = CreateHashTable(GLOBALHASHSIZE);
         sp->nameSpaceValues->tags = CreateHashTable(GLOBALHASHSIZE);
         sp->nameSpaceValues->origname = sp;
@@ -2761,7 +2763,7 @@ LEXEME* insertNamespace(LEXEME* lex, enum e_lk linkage, enum e_sc storage_class,
         sp->linkage = linkage;
         if (nameSpaceList)
         {
-            sp->parentNameSpace = nameSpaceList->data;
+            sp->parentNameSpace = (SYMBOL *)nameSpaceList->data;
         }
         SetLinkerNames(sp, lk_none);
         insert(sp, globalNameSpace->syms);
@@ -2769,7 +2771,7 @@ LEXEME* insertNamespace(LEXEME* lex, enum e_lk linkage, enum e_sc storage_class,
         if (anon || linkage == lk_inline)
         {
             // plop in a using directive for the anonymous namespace we are declaring
-            list = Alloc(sizeof(LIST));
+            list = (LIST *)Alloc(sizeof(LIST));
             list->data = sp;
             if (linkage == lk_inline)
             {
@@ -2797,7 +2799,7 @@ LEXEME* insertNamespace(LEXEME* lex, enum e_lk linkage, enum e_sc storage_class,
     }
     sp->value.i++;
 
-    list = Alloc(sizeof(LIST));
+    list = (LIST *)Alloc(sizeof(LIST));
     list->next = nameSpaceList;
     list->data = sp;
     nameSpaceList = list;
@@ -2813,7 +2815,7 @@ void unvisitUsingDirectives(NAMESPACEVALUES* v)
     LIST* t = v->usingDirectives;
     while (t)
     {
-        SYMBOL* sym = t->data;
+        SYMBOL* sym = (SYMBOL *)t->data;
         //        if (sym->visited)
         {
             sym->visited = FALSE;
@@ -2824,7 +2826,7 @@ void unvisitUsingDirectives(NAMESPACEVALUES* v)
     t = v->inlineDirectives;
     while (t)
     {
-        SYMBOL* sym = t->data;
+        SYMBOL* sym = (SYMBOL *)t->data;
         //        if (sym->visited)
         {
             sym->visited = FALSE;
@@ -2882,7 +2884,7 @@ LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc st
                     }
                     if (!t)
                     {
-                        LIST* l = Alloc(sizeof(LIST));
+                        LIST* l = (LIST *)Alloc(sizeof(LIST));
                         l->data = sp;
                         if (storage_class == sc_auto)
                         {
@@ -2896,7 +2898,7 @@ LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc st
                         }
 #ifdef PARSER_ONLY
                         if (lex)
-                            ccInsertUsing(sp, nameSpaceList ? nameSpaceList->data : NULL, lex->file, lex->line);
+                            ccInsertUsing(sp, nameSpaceList ? (SYMBOL *)nameSpaceList->data : NULL, lex->file, lex->line);
 #endif
                     }
                 }
@@ -2936,7 +2938,7 @@ LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc st
                 sp = makeID(sc_typedef, tp, NULL, litlate(idsym->value.s.a));
                 if (inTemplate)
                 {
-                    TYPE* tp1 = (TYPE*)Alloc(sizeof(TYPE));
+                    TYPE* tp1 = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
                     tp1->type = bt_typedef;
                     tp1->btp = tp;
                     tp1->sp = sp;
@@ -3371,7 +3373,7 @@ LEXEME* getDeclType(LEXEME* lex, SYMBOL* funcsp, TYPE** tn)
         }
         if (extended)
             needkw(&lex, closepa);
-        (*tn) = (TYPE*)Alloc(sizeof(TYPE));
+        (*tn) = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
         (*tn)->type = bt_auto;
         (*tn)->decltypeauto = TRUE;
         (*tn)->decltypeautoextended = extended;
@@ -3387,7 +3389,7 @@ LEXEME* getDeclType(LEXEME* lex, SYMBOL* funcsp, TYPE** tn)
             exp->v.func->sp = (SYMBOL*)hr->p;
             if (hasAmpersand)
             {
-                (*tn) = (TYPE*)Alloc(sizeof(TYPE));
+                (*tn) = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
                 if (ismember(exp->v.func->sp))
                 {
                     (*tn)->type = bt_memberptr;
@@ -3411,7 +3413,7 @@ LEXEME* getDeclType(LEXEME* lex, SYMBOL* funcsp, TYPE** tn)
             optimize_for_constants(&exp);
             if (templateNestingCount && !instantiatingTemplate)
             {
-                TYPE* tp2 = Alloc(sizeof(TYPE));
+                TYPE* tp2 = (TYPE *)Alloc(sizeof(TYPE));
                 tp2->type = bt_templatedecltype;
                 tp2->rootType = tp2;
                 tp2->templateDeclType = exp;
@@ -3429,7 +3431,7 @@ LEXEME* getDeclType(LEXEME* lex, SYMBOL* funcsp, TYPE** tn)
         {
             if (!lambdas && xvalue(exp))
             {
-                TYPE* tp2 = Alloc(sizeof(TYPE));
+                TYPE* tp2 = (TYPE *)Alloc(sizeof(TYPE));
                 if (isref((*tn)))
                     (*tn) = basetype((*tn))->btp;
                 tp2->type = bt_rref;
@@ -3440,7 +3442,7 @@ LEXEME* getDeclType(LEXEME* lex, SYMBOL* funcsp, TYPE** tn)
             }
             else if (lvalue(exp))
             {
-                TYPE* tp2 = Alloc(sizeof(TYPE));
+                TYPE* tp2 = (TYPE *)Alloc(sizeof(TYPE));
                 if (isref((*tn)))
                     (*tn) = basetype((*tn))->btp;
                 if (lambdas && !lambdas->isMutable)
@@ -3450,7 +3452,7 @@ LEXEME* getDeclType(LEXEME* lex, SYMBOL* funcsp, TYPE** tn)
                     tp2->btp = (*tn);
                     tp2->rootType = (*tn)->rootType;
                     (*tn) = tp2;
-                    tp2 = Alloc(sizeof(TYPE));
+                    tp2 = (TYPE *)Alloc(sizeof(TYPE));
                 }
                 tp2->type = bt_lref;
                 tp2->size = getSize(bt_pointer);

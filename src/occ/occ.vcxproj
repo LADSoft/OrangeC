@@ -172,7 +172,7 @@
     <ClCompile Include="..\oasm\Instruction.cpp" />
     <ClCompile Include="..\oasm\Section.cpp" />
     <ClCompile Include="..\oasm\x64Instructions.cpp" />
-    <ClCompile Include="..\util\winsystem.cpp" />
+    <ClCompile Include="..\util\winsystem.c" />
     <ClCompile Include="middle\ialias.cpp" />
     <ClCompile Include="middle\iblock.cpp" />
     <ClCompile Include="middle\iconfl.cpp" />

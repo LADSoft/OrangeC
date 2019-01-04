@@ -281,8 +281,8 @@ TEMPLATEPARAMLIST* TemplateGetParams(SYMBOL* sym)
     }
     if (!params)
     {
-        params = Alloc(sizeof(TEMPLATEPARAMLIST));
-        params->p = Alloc(sizeof(TEMPLATEPARAM));
+        params = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
+        params->p = (TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
     }
     return params;
 }
@@ -292,7 +292,7 @@ void TemplateRegisterDeferred(LEXEME* lex)
     {
         if (!lex->registered)
         {
-            LEXEME* cur = globalAlloc(sizeof(LEXEME));
+            LEXEME* cur = (LEXEME *)globalAlloc(sizeof(LEXEME));
             if (lex->type == l_id)
                 lex->value.s.a = litlate(lex->value.s.a);
             *cur = *lex;
@@ -735,15 +735,15 @@ TEMPLATEPARAMLIST** expandArgs(TEMPLATEPARAMLIST** lst, LEXEME* start, SYMBOL* f
                 templateParam = templateParam->next;
             if (templateParam)
             {
-                *lst = Alloc(sizeof(TEMPLATEPARAMLIST));
-                (*lst)->p = Alloc(sizeof(TEMPLATEPARAM));
+                *lst = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
+                (*lst)->p = (TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
                 *(*lst)->p = *templateParam->p;
                 (*lst)->p->byClass.dflt = (*lst)->p->byClass.val;
                 lst = &(*lst)->next;
                 return lst;
             }
         }
-        *lst = Alloc(sizeof(TEMPLATEPARAMLIST));
+        *lst = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
         (*lst)->p = select->p;
         (*lst)->argsym = select->argsym;
         lst = &(*lst)->next;
@@ -774,17 +774,17 @@ TEMPLATEPARAMLIST** expandArgs(TEMPLATEPARAMLIST** lst, LEXEME* start, SYMBOL* f
             SetAlternateLex(NULL);
             if (tp)
             {
-                *lst = Alloc(sizeof(TEMPLATEPARAMLIST));
-                (*lst)->p = Alloc(sizeof(TEMPLATEPARAM));
+                *lst = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
+                (*lst)->p = (TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
                 (*lst)->p->type = kw_typename;
-                (*lst)->p->byNonType.dflt = tp;
+                (*lst)->p->byClass.dflt = tp;
                 lst = &(*lst)->next;
             }
         }
     }
     else if (select)
     {
-        *lst = Alloc(sizeof(TEMPLATEPARAMLIST));
+        *lst = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
         (*lst)->p = select->p;
         (*lst)->argsym = select->argsym;
         lst = &(*lst)->next;
@@ -813,8 +813,8 @@ TEMPLATEPARAMLIST** expandTemplateSelector(TEMPLATEPARAMLIST** lst, TEMPLATEPARA
         if (clst && clst->p->packed && clst->p->byPack.pack)
         {
             clst = clst->p->byPack.pack;
-            *lst = (TEMPLATEPARAMLIST*)Alloc(sizeof(TEMPLATEPARAMLIST));
-            (*lst)->p = (TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
+            *lst = (TEMPLATEPARAMLIST*)(TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
+            (*lst)->p = (TEMPLATEPARAM*)(TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
             (*lst)->p->type = kw_typename;
             (*lst)->p->packed = TRUE;
             (*lst)->argsym = orig->argsym;
@@ -835,8 +835,8 @@ TEMPLATEPARAMLIST** expandTemplateSelector(TEMPLATEPARAMLIST** lst, TEMPLATEPARA
                 }
                 if (!sel && s)
                 {
-                    *last = (TEMPLATEPARAMLIST*)Alloc(sizeof(TEMPLATEPARAMLIST));
-                    (*last)->p = (TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
+                    *last = (TEMPLATEPARAMLIST*)(TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
+                    (*last)->p = (TEMPLATEPARAM*)(TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
                     if (s->storage_class == sc_constant || s->storage_class == sc_constexpr || s->storage_class == sc_enumconstant)
                     {
                         (*lst)->p->type = (*last)->p->type = kw_int;
@@ -942,7 +942,7 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
                             lst = &(*lst)->next;
                         if (templateNestingCount && tp->type == bt_templateparam)
                         {
-                            *lst = Alloc(sizeof(TEMPLATEPARAMLIST));
+                            *lst = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
                             (*lst)->argsym = tp->templateParam->argsym;
                             (*lst)->p = tp->templateParam->p;
                             if (isref(tp1))
@@ -969,8 +969,8 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
                         }
                         else if (orig && orig->p->type == kw_typename && orig->p->packed && isstructured(tp))
                         {
-                            TEMPLATEPARAMLIST* a = (TEMPLATEPARAMLIST*)Alloc(sizeof(TEMPLATEPARAMLIST));
-                            TEMPLATEPARAM* b = (TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
+                            TEMPLATEPARAMLIST* a = (TEMPLATEPARAMLIST*)(TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
+                            TEMPLATEPARAM* b = (TEMPLATEPARAM*)(TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
                             a->p = b;
                             b->type = kw_typename;
                             b->byClass.dflt = tp;
@@ -978,8 +978,8 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
                         }
                         else
                         {
-                            *lst = Alloc(sizeof(TEMPLATEPARAMLIST));
-                            (*lst)->p = Alloc(sizeof(TEMPLATEPARAM));
+                            *lst = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
+                            (*lst)->p = (TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
                             if (orig && orig->p->type == kw_template && isstructured(tp) && basetype(tp)->sp->templateLevel)
                             {
                                 (*lst)->p->type = kw_template;
@@ -999,8 +999,8 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
                     if (inTemplateArgs > 1 && tp->templateParam->p->packed)
                     {
                         // unpacked pack gets treated as a single template param
-                        *lst = Alloc(sizeof(TEMPLATEPARAMLIST));
-                        (*lst)->p = Alloc(sizeof(TEMPLATEPARAM));
+                        *lst = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
+                        (*lst)->p = (TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
                         *(*lst)->p = *tp->templateParam->p;
                         (*lst)->p->usedAsUnpacked = TRUE;
                         (*lst)->argsym = tp->templateParam->argsym;
@@ -1008,7 +1008,7 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
                     }
                     else if (inTemplateSpecialization)
                     {
-                        *lst = Alloc(sizeof(TEMPLATEPARAMLIST));
+                        *lst = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
                         (*lst)->p = tp->templateParam->p;
                         (*lst)->argsym = tp->templateParam->argsym;
                         lst = &(*lst)->next;
@@ -1041,8 +1041,8 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
                     TEMPLATEPARAMLIST** p;
                     if (first)
                     {
-                        *lst = Alloc(sizeof(TEMPLATEPARAMLIST));
-                        (*lst)->p = Alloc(sizeof(TEMPLATEPARAM));
+                        *lst = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
+                        (*lst)->p = (TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
                         if (orig && orig->p->type == kw_template && isstructured(tp) && basetype(tp)->sp->templateLevel)
                         {
                             (*lst)->p->type = kw_template;
@@ -1058,8 +1058,8 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
                     p = &(*lst)->p->byPack.pack;
                     while (*p)
                         p = &(*p)->next;
-                    *p = Alloc(sizeof(TEMPLATEPARAMLIST));
-                    (*p)->p = Alloc(sizeof(TEMPLATEPARAM));
+                    *p = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
+                    (*p)->p = (TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
                     if (orig && orig->p->type == kw_template && isstructured(tp) && basetype(tp)->sp->templateLevel)
                     {
                         (*p)->p->type = kw_template;
@@ -1078,8 +1078,8 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
                 }
                 else
                 {
-                    *lst = Alloc(sizeof(TEMPLATEPARAMLIST));
-                    (*lst)->p = Alloc(sizeof(TEMPLATEPARAM));
+                    *lst = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
+                    (*lst)->p = (TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
 
                     if (orig && orig->p->type == kw_template && isstructured(tp) && basetype(tp)->sp->templateLevel)
                     {
@@ -1117,7 +1117,7 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
                             }
                             else
                             {
-                                *lst = Alloc(sizeof(TEMPLATEPARAMLIST));
+                                *lst = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
                                 (*lst)->p = sp->tp->templateParam->p;
                                 lst = &(*lst)->next;
                             }
@@ -1192,8 +1192,8 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
                                     {
                                         TEMPLATEPARAMLIST* tpl = name->tp->templateParam;
                                         TEMPLATEPARAMLIST** working;
-                                        *lst = Alloc(sizeof(TEMPLATEPARAMLIST));
-                                        (*lst)->p = Alloc(sizeof(TEMPLATEPARAM));
+                                        *lst = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
+                                        (*lst)->p = (TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
                                         *(*lst)->p = *tpl->p;
                                         (*lst)->p->packed = TRUE;
                                         (*lst)->argsym = name;
@@ -1205,7 +1205,7 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
                                             tpl = tpl->p->byPack.pack;
                                             while (tpl)
                                             {
-                                                *working = Alloc(sizeof(TEMPLATEPARAMLIST));
+                                                *working = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
                                                 (*working)->p = tpl->p;
                                                 working = &(*working)->next;
                                                 tpl = tpl->next;
@@ -1213,7 +1213,7 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
                                         }
                                         else
                                         {
-                                            *working = Alloc(sizeof(TEMPLATEPARAMLIST));
+                                            *working = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
                                             (*working)->p = tpl->p;
                                         }
                                         lex = getsym();
@@ -1260,19 +1260,19 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
                             lex = getsym();
                             if (templateNestingCount && tp->type == bt_templateparam)
                             {
-                                *lst = Alloc(sizeof(TEMPLATEPARAMLIST));
+                                *lst = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
                                 (*lst)->p = tp->templateParam->p;
                                 if (!tp->templateParam->p->packed)
                                     error(ERR_PACK_SPECIFIER_REQUIRES_PACKED_TEMPLATE_PARAMETER);
                             }
                             else if (templateNestingCount)
                             {
-                                *lst = Alloc(sizeof(TEMPLATEPARAMLIST));
-                                (*lst)->p = Alloc(sizeof(TEMPLATEPARAM));
+                                *lst = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
+                                (*lst)->p = (TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
                                 (*lst)->p->packed = TRUE;
                                 (*lst)->p->type = kw_int;
-                                (*lst)->p->bySpecialization.types = Alloc(sizeof(TEMPLATEPARAMLIST));
-                                (*lst)->p->bySpecialization.types->p = Alloc(sizeof(TEMPLATEPARAM));
+                                (*lst)->p->bySpecialization.types = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
+                                (*lst)->p->bySpecialization.types->p = (TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
                                 (*lst)->p->bySpecialization.types->p->type = kw_int;
                                 (*lst)->p->bySpecialization.types->p->byNonType.tp = tp;
                                 (*lst)->p->bySpecialization.types->p->byNonType.dflt = exp;
@@ -1311,8 +1311,8 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
                                         SetAlternateLex(NULL);
                                         if (tp)
                                         {
-                                            *lst = Alloc(sizeof(TEMPLATEPARAMLIST));
-                                            (*lst)->p = Alloc(sizeof(TEMPLATEPARAM));
+                                            *lst = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
+                                            (*lst)->p = (TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
                                             (*lst)->p->type = kw_int;
                                             (*lst)->p->byNonType.dflt = exp;
                                             (*lst)->p->byNonType.tp = tp;
@@ -1335,13 +1335,13 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
                             }
                             if (tp && tp->type == bt_templateparam)
                             {
-                                *lst = Alloc(sizeof(TEMPLATEPARAMLIST));
-                                (*lst)->p = Alloc(sizeof(TEMPLATEPARAM));
+                                *lst = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
+                                (*lst)->p = (TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
                                 *(*lst)->p = *tp->templateParam->p;
                                 if ((*lst)->p->packed)
                                 {
-                                    (*lst)->p->byPack.pack = Alloc(sizeof(TEMPLATEPARAMLIST));
-                                    (*lst)->p->byPack.pack->p = Alloc(sizeof(TEMPLATEPARAM));
+                                    (*lst)->p->byPack.pack = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
+                                    (*lst)->p->byPack.pack->p = (TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
                                     (*lst)->p->byPack.pack->p->type = kw_int;
                                     (*lst)->p->byPack.pack->p->byNonType.dflt = exp;
                                     (*lst)->p->byPack.pack->p->byNonType.val = NULL;
@@ -1361,8 +1361,8 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
                                 TEMPLATEPARAMLIST** p;
                                 if (first)
                                 {
-                                    *lst = Alloc(sizeof(TEMPLATEPARAMLIST));
-                                    (*lst)->p = Alloc(sizeof(TEMPLATEPARAM));
+                                    *lst = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
+                                    (*lst)->p = (TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
                                     (*lst)->p->type = kw_int;
                                     (*lst)->p->packed = TRUE;
                                     if (orig)
@@ -1372,8 +1372,8 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
                                 p = &(*lst)->p->byPack.pack;
                                 while (*p)
                                     p = &(*p)->next;
-                                *p = Alloc(sizeof(TEMPLATEPARAMLIST));
-                                (*p)->p = Alloc(sizeof(TEMPLATEPARAM));
+                                *p = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
+                                (*p)->p = (TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
                                 (*p)->p->type = kw_int;
                                 (*p)->p->byNonType.dflt = exp;
                                 (*p)->p->byNonType.tp = tp;
@@ -1381,8 +1381,8 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
                             else
                             {
                                 checkUnpackedExpression(exp);
-                                *lst = Alloc(sizeof(TEMPLATEPARAMLIST));
-                                (*lst)->p = Alloc(sizeof(TEMPLATEPARAM));
+                                *lst = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
+                                (*lst)->p = (TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
                                 (*lst)->p->type = kw_int;
                                 (*lst)->p->byNonType.dflt = exp;
                                 (*lst)->p->byNonType.tp = tp;
@@ -1570,14 +1570,14 @@ SYMBOL* LookupSpecialization(SYMBOL* sym, TEMPLATEPARAMLIST* templateParams)
     if (!lst)
     {
         candidate = clonesym(sym);
-        candidate->tp = (TYPE*)Alloc(sizeof(TYPE));
+        candidate->tp = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
         *candidate->tp = *sym->tp;
         candidate->tp->sp = candidate;
         UpdateRootTypes(candidate->tp);
     }
     candidate->maintemplate = candidate;
     candidate->templateParams = templateParams;
-    lst = Alloc(sizeof(LIST));
+    lst = (LIST *)Alloc(sizeof(LIST));
     lst->data = candidate;
     lst->next = sym->specializations;
     sym->specializations = lst;
@@ -1588,7 +1588,7 @@ SYMBOL* LookupSpecialization(SYMBOL* sym, TEMPLATEPARAMLIST* templateParams)
     candidate->baseClasses = NULL;
     candidate->vbaseEntries = NULL;
     candidate->vtabEntries = NULL;
-    tp = Alloc(sizeof(TYPE));
+    tp = (TYPE *)Alloc(sizeof(TYPE));
     *tp = *candidate->tp;
     UpdateRootTypes(tp);
     candidate->tp = tp;
@@ -1697,7 +1697,7 @@ static void restoreParams(SYMBOL** table, int count)
             while (params)
             {
                 if (params->p->type != kw_new)
-                    params->p->byClass.val = params->p->hold;
+                    params->p->byClass.val = (TYPE *)params->p->hold;
                 params = params->next;
             }
         }
@@ -1762,7 +1762,7 @@ LEXEME* TemplateArgGetDefault(LEXEME** lex, BOOLEAN isExpression)
     }
     while (current && current != end)
     {
-        *cur = Alloc(sizeof(LEXEME));
+        *cur = (LEXEME *)Alloc(sizeof(LEXEME));
         **cur = *current;
         (*cur)->next = NULL;
         if (ISID(current))
@@ -1783,14 +1783,14 @@ static LEXEME* TemplateHeader(LEXEME* lex, SYMBOL* funcsp, TEMPLATEPARAMLIST** a
         {
             if (MATCHKW(lex, gt) || MATCHKW(lex, rightshift))
                 break;
-            *args = Alloc(sizeof(TEMPLATEPARAMLIST));
-            (*args)->p = Alloc(sizeof(TEMPLATEPARAM));
+            *args = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
+            (*args)->p = (TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
             lex = TemplateArg(lex, funcsp, *args, lst);
             if (*args)
             {
                 if (!structSyms)
                 {
-                    structSyms = Alloc(sizeof(STRUCTSYM));
+                    structSyms = (STRUCTSYM *)Alloc(sizeof(STRUCTSYM));
                     structSyms->tmpl = *args;
                     addTemplateDeclaration(structSyms);
                 }
@@ -1809,7 +1809,7 @@ static LEXEME* TemplateHeader(LEXEME* lex, SYMBOL* funcsp, TEMPLATEPARAMLIST** a
                 search = *begin;
                 while (search)
                 {
-                    *hold = (LIST*)Alloc(sizeof(LIST));
+                    *hold = (LIST*)(LIST *)Alloc(sizeof(LIST));
                     (*hold)->data = search->argsym;
                     hold = &(*hold)->next;
                     search = search->next;
@@ -1871,16 +1871,16 @@ static LEXEME* TemplateArg(LEXEME* lex, SYMBOL* funcsp, TEMPLATEPARAMLIST* arg, 
                     else if (ISID(lex))
                     {
                         TEMPLATESELECTOR** last;
-                        tp = Alloc(sizeof(TYPE));
+                        tp = (TYPE *)Alloc(sizeof(TYPE));
                         tp->rootType = tp;
                         tp->type = bt_templateselector;
                         sp = sym = makeID(sc_type, tp, NULL, lex->value.s.a);
                         tp->sp = sym;
                         last = &sym->templateSelector;
-                        *last = Alloc(sizeof(TEMPLATESELECTOR));
+                        *last = (TEMPLATESELECTOR *)Alloc(sizeof(TEMPLATESELECTOR));
                         (*last)->sym = NULL;
                         last = &(*last)->next;
-                        *last = Alloc(sizeof(TEMPLATESELECTOR));
+                        *last = (TEMPLATESELECTOR *)Alloc(sizeof(TEMPLATESELECTOR));
                         (*last)->sym = strsym;
                         if (strsym->templateLevel)
                         {
@@ -1888,7 +1888,7 @@ static LEXEME* TemplateArg(LEXEME* lex, SYMBOL* funcsp, TEMPLATEPARAMLIST* arg, 
                             (*last)->templateParams = strsym->templateParams;
                         }
                         last = &(*last)->next;
-                        *last = Alloc(sizeof(TEMPLATESELECTOR));
+                        *last = (TEMPLATESELECTOR *)Alloc(sizeof(TEMPLATESELECTOR));
                         (*last)->name = litlate(lex->value.s.a);
                         last = &(*last)->next;
                         lex = getsym();
@@ -1903,7 +1903,7 @@ static LEXEME* TemplateArg(LEXEME* lex, SYMBOL* funcsp, TEMPLATEPARAMLIST* arg, 
                 }
                 else if (ISID(lex))
                 {
-                    TYPE* tp = Alloc(sizeof(TYPE));
+                    TYPE* tp = (TYPE *)Alloc(sizeof(TYPE));
                     tp->rootType = tp;
                     tp->type = bt_templateparam;
                     tp->templateParam = arg;
@@ -1919,7 +1919,7 @@ static LEXEME* TemplateArg(LEXEME* lex, SYMBOL* funcsp, TEMPLATEPARAMLIST* arg, 
             }
             else
             {
-                TYPE* tp = Alloc(sizeof(TYPE));
+                TYPE* tp = (TYPE *)Alloc(sizeof(TYPE));
                 tp->type = bt_templateparam;
                 tp->rootType = tp;
                 tp->templateParam = arg;
@@ -1965,7 +1965,7 @@ static LEXEME* TemplateArg(LEXEME* lex, SYMBOL* funcsp, TEMPLATEPARAMLIST* arg, 
             }
             if (ISID(lex))
             {
-                TYPE* tp = Alloc(sizeof(TYPE));
+                TYPE* tp = (TYPE *)Alloc(sizeof(TYPE));
                 tp->type = bt_templateparam;
                 tp->rootType = tp;
                 tp->templateParam = arg;
@@ -1974,7 +1974,7 @@ static LEXEME* TemplateArg(LEXEME* lex, SYMBOL* funcsp, TEMPLATEPARAMLIST* arg, 
             }
             else
             {
-                TYPE* tp = Alloc(sizeof(TYPE));
+                TYPE* tp = (TYPE *)Alloc(sizeof(TYPE));
                 tp->type = bt_templateparam;
                 tp->rootType = tp;
                 tp->templateParam = arg;
@@ -2053,7 +2053,7 @@ static LEXEME* TemplateArg(LEXEME* lex, SYMBOL* funcsp, TEMPLATEPARAMLIST* arg, 
                     sp = makeID(sc_templateparam, NULL, NULL, AnonymousName());
                 }
             non_type_join:
-                tpa = Alloc(sizeof(TYPE));
+                tpa = (TYPE *)Alloc(sizeof(TYPE));
                 tpa->type = bt_templateparam;
                 tpa->templateParam = arg;
                 tpa->rootType = tpa;
@@ -2065,7 +2065,7 @@ static LEXEME* TemplateArg(LEXEME* lex, SYMBOL* funcsp, TEMPLATEPARAMLIST* arg, 
                 {
                     if (isarray(tp))
                         tp = tp->btp;
-                    tp1 = Alloc(sizeof(TYPE));
+                    tp1 = (TYPE *)Alloc(sizeof(TYPE));
                     tp1->type = bt_pointer;
                     tp1->size = getSize(bt_pointer);
                     tp1->btp = tp;
@@ -2148,15 +2148,15 @@ static TEMPLATEPARAMLIST* copyParams(TEMPLATEPARAMLIST* t, BOOLEAN alsoSpecializ
         while (parse)
         {
             SYMBOL* sp;
-            *last = Alloc(sizeof(TEMPLATEPARAMLIST));
-            (*last)->p = Alloc(sizeof(TEMPLATEPARAM));
+            *last = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
+            (*last)->p = (TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
             *((*last)->p) = *(parse->p);
             (*last)->argsym = parse->argsym;
             sp = (*last)->argsym;
             if (sp)
             {
                 sp = clonesym(sp);
-                sp->tp = Alloc(sizeof(TYPE));
+                sp->tp = (TYPE *)Alloc(sizeof(TYPE));
                 sp->tp->type = bt_templateparam;
                 sp->tp->templateParam = *last;
                 sp->tp->rootType = sp->tp;
@@ -2172,8 +2172,8 @@ static TEMPLATEPARAMLIST* copyParams(TEMPLATEPARAMLIST* t, BOOLEAN alsoSpecializ
             parse = t->p->bySpecialization.types;
             while (parse)
             {
-                *last = Alloc(sizeof(TEMPLATEPARAMLIST));
-                (*last)->p = Alloc(sizeof(TEMPLATEPARAM));
+                *last = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
+                (*last)->p = (TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
                 *((*last)->p) = *(parse->p);
                 (*last)->argsym = parse->argsym;
                 last = &(*last)->next;
@@ -2197,7 +2197,7 @@ static TEMPLATEPARAMLIST* copyParams(TEMPLATEPARAMLIST* t, BOOLEAN alsoSpecializ
                             if (t1->p == parse->p->byNonType.tp->templateParam->p)
                             {
                                 TYPE* old = rv1->p->byNonType.tp;
-                                rv1->p->byNonType.tp = (TYPE*)Alloc(sizeof(TYPE));
+                                rv1->p->byNonType.tp = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
                                 *rv1->p->byNonType.tp = *old;
                                 UpdateRootTypes(rv1->p->byNonType.tp);
                                 rv1->p->byNonType.tp->templateParam = rv2;
@@ -2226,8 +2226,8 @@ static SYMBOL* SynthesizeTemplate(TYPE* tp, BOOLEAN alt)
         p = tp->sp->templateParams->next;
     while (p)
     {
-        *last = Alloc(sizeof(TEMPLATEPARAMLIST));
-        (*last)->p = Alloc(sizeof(TEMPLATEPARAM));
+        *last = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
+        (*last)->p = (TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
         *((*last)->p) = *(p->p);
         last = &(*last)->next;
         p = p->next;
@@ -2260,12 +2260,12 @@ static SYMBOL* SynthesizeTemplate(TYPE* tp, BOOLEAN alt)
         p = p->next;
     }
     rv = clonesym(tp->sp);
-    rv->tp = Alloc(sizeof(TYPE));
+    rv->tp = (TYPE *)Alloc(sizeof(TYPE));
     *rv->tp = *tp;
     UpdateRootTypes(rv->tp);
     rv->tp->sp = rv;
-    rv->templateParams = Alloc(sizeof(TEMPLATEPARAMLIST));
-    rv->templateParams->p = Alloc(sizeof(TEMPLATEPARAM));
+    rv->templateParams = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
+    rv->templateParams->p = (TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
     rv->templateParams->p->type = kw_new;  // specialization
     rv->templateParams->p->bySpecialization.types = r;
     return rv;
@@ -2280,7 +2280,7 @@ void SynthesizeQuals(TYPE*** last, TYPE** qual, TYPE*** lastQual)
         int sz = basetype(**last)->size;
         while (p && p->type == bt_derivedfromtemplate)
         {
-            **last = Alloc(sizeof(TYPE));
+            **last = (TYPE *)Alloc(sizeof(TYPE));
             ***last = *p;
             *last = &(**last)->btp;
             p = p->btp;
@@ -2289,7 +2289,7 @@ void SynthesizeQuals(TYPE*** last, TYPE** qual, TYPE*** lastQual)
         {
             while (p && p != basetype(p))
             {
-                **last = Alloc(sizeof(TYPE));
+                **last = (TYPE *)Alloc(sizeof(TYPE));
                 ***last = *p;
                 *last = &(**last)->btp;
                 p = p->btp;
@@ -2297,7 +2297,7 @@ void SynthesizeQuals(TYPE*** last, TYPE** qual, TYPE*** lastQual)
         }
         while (v)
         {
-            **last = Alloc(sizeof(TYPE));
+            **last = (TYPE *)Alloc(sizeof(TYPE));
             ***last = *v;
             (**last)->size = sz;
             *last = &(**last)->btp;
@@ -2306,7 +2306,7 @@ void SynthesizeQuals(TYPE*** last, TYPE** qual, TYPE*** lastQual)
         **last = NULL;
         while (p)
         {
-            **last = Alloc(sizeof(TYPE));
+            **last = (TYPE *)Alloc(sizeof(TYPE));
             ***last = *p;
             if (p->btp)
                 *last = &(**last)->btp;
@@ -2318,7 +2318,7 @@ void SynthesizeQuals(TYPE*** last, TYPE** qual, TYPE*** lastQual)
 }
 EXPRESSION* copy_expression(EXPRESSION* exp)
 {
-    EXPRESSION* rv = (EXPRESSION*)Alloc(sizeof(EXPRESSION));
+    EXPRESSION* rv = (EXPRESSION*)(EXPRESSION *)Alloc(sizeof(EXPRESSION));
     *rv = *exp;
     if (rv->left)
         rv->left = copy_expression(rv->left);
@@ -2331,8 +2331,8 @@ static TEMPLATEPARAMLIST* paramsToDefault(TEMPLATEPARAMLIST* templateParams)
     TEMPLATEPARAMLIST *params = NULL, **pt = &params, *find = templateParams;
     while (find)
     {
-        *pt = Alloc(sizeof(TEMPLATEPARAMLIST));
-        (*pt)->p = Alloc(sizeof(TEMPLATEPARAM));
+        *pt = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
+        (*pt)->p = (TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
         *(*pt)->p = *find->p;
         if (find->p->packed)
         {
@@ -2342,7 +2342,7 @@ static TEMPLATEPARAMLIST* paramsToDefault(TEMPLATEPARAMLIST* templateParams)
                 TEMPLATEPARAMLIST* tpl = (*pt)->p->byPack.pack;
                 while (tpl)
                 {
-                    TYPE* tp1 = Alloc(sizeof(TYPE));
+                    TYPE* tp1 = (TYPE *)Alloc(sizeof(TYPE));
                     tp1->type = find->p->lref ? bt_lref : bt_rref;
                     tp1->size = getSize(bt_pointer);
                     tp1->btp = tpl->p->byClass.dflt;
@@ -2369,8 +2369,8 @@ static TEMPLATEPARAMLIST** addStructParam(TEMPLATEPARAMLIST** pt, TEMPLATEPARAML
     {
         if (!search->p->byClass.dflt)
             return NULL;
-        *pt = Alloc(sizeof(TEMPLATEPARAMLIST));
-        (*pt)->p = Alloc(sizeof(TEMPLATEPARAM));
+        *pt = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
+        (*pt)->p = (TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
         *(*pt)->p = *search->p;
         if (!templateNestingCount || instantiatingTemplate)
             (*pt)->p->byClass.dflt = SynthesizeType((*pt)->p->byClass.dflt, enclosing, FALSE);
@@ -2397,7 +2397,7 @@ static TEMPLATEPARAMLIST** addStructParam(TEMPLATEPARAMLIST** pt, TEMPLATEPARAML
                 return NULL;
             find = sym->tp->templateParam;
         }
-        *pt = Alloc(sizeof(TEMPLATEPARAMLIST));
+        *pt = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
         (*pt)->p = find->p;
     }
     return &(*pt)->next;
@@ -2421,8 +2421,8 @@ static TYPE* SynthesizeStructure(TYPE* tp_in, TEMPLATEPARAMLIST* enclosing)
                     {
                         if (search->p->byClass.dflt && (search->p->byClass.dflt)->type == bt_memberptr)
                         {
-                            *pt = Alloc(sizeof(TEMPLATEPARAMLIST));
-                            (*pt)->p = Alloc(sizeof(TEMPLATEPARAM));
+                            *pt = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
+                            (*pt)->p = (TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
                             *(*pt)->p = *search->p;
                             (*pt)->p->byClass.dflt = SynthesizeType(search->p->byClass.dflt, enclosing, FALSE);
                             pt = &(*pt)->next;
@@ -2436,7 +2436,7 @@ static TYPE* SynthesizeStructure(TYPE* tp_in, TEMPLATEPARAMLIST* enclosing)
                     }
                     else
                     {
-                        *pt = Alloc(sizeof(TEMPLATEPARAMLIST));
+                        *pt = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
                         (*pt)->p = search->p;
                         pt = &(*pt)->next;
                     }
@@ -2448,7 +2448,7 @@ static TYPE* SynthesizeStructure(TYPE* tp_in, TEMPLATEPARAMLIST* enclosing)
             {
                 TEMPLATEPARAMLIST* params = paramsToDefault(sp->templateParams->next);
                 SYMBOL* sp1 = clonesym(sp);
-                sp1->tp = Alloc(sizeof(TYPE));
+                sp1->tp = (TYPE *)Alloc(sizeof(TYPE));
                 *sp1->tp = *sp->tp;
                 UpdateRootTypes(sp1->tp);
 
@@ -2465,21 +2465,21 @@ static TYPE* SynthesizeStructure(TYPE* tp_in, TEMPLATEPARAMLIST* enclosing)
                     sz = tp->size;
                 if (isconst(tp_in))
                 {
-                    *tpp = Alloc(sizeof(TYPE));
+                    *tpp = (TYPE *)Alloc(sizeof(TYPE));
                     (*tpp)->size = sz;
                     (*tpp)->type = bt_const;
                     tpp = &(*tpp)->btp;
                 }
                 if (isvolatile(tp_in))
                 {
-                    *tpp = Alloc(sizeof(TYPE));
+                    *tpp = (TYPE *)Alloc(sizeof(TYPE));
                     (*tpp)->size = sz;
                     (*tpp)->type = bt_volatile;
                     tpp = &(*tpp)->btp;
                 }
                 if (isref(tp_in))
                 {
-                    *tpp = Alloc(sizeof(TYPE));
+                    *tpp = (TYPE *)Alloc(sizeof(TYPE));
                     (*tpp)->size = sz;
                     (*tpp)->type = basetype(tp_in)->type;
                     tpp = &(*tpp)->btp;
@@ -2510,13 +2510,13 @@ static INITLIST *ExpandArguments(EXPRESSION *exp)
                 TEMPLATEPARAMLIST *old1 = call->templateParams;
                 INITLIST *old2 = call->arguments;
                 TEMPLATEPARAMLIST tpl = { 0 };
-                TEMPLATEPARAM pm = { 0 };
+                TEMPLATEPARAM pm = { kw_typename };
                 tpl.p = &pm;
                 pm.type = kw_typename;
                 call->templateParams = &tpl;
                 while (scan)
                 {
-                    INITLIST *rv1 = Alloc(sizeof(INITLIST));
+                    INITLIST *rv1 = (INITLIST *)Alloc(sizeof(INITLIST));
                     rv1->exp = intNode(en_c_i, 0);
                     rv1->tp = scan->p->byClass.val;
                     call->arguments = rv1;
@@ -2718,7 +2718,7 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, BO
             {
                 if (exp->v.func->asaddress)
                 {
-                    rv = (TYPE*)Alloc(sizeof(TYPE));
+                    rv = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
                     rv->type = bt_pointer;
                     rv->size = getSize(bt_pointer);
                     rv->btp = exp->v.func->functp;
@@ -2768,7 +2768,7 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, BO
                     if (isconst(rve))
                     {
                         // to make LIBCXX happy
-                        rve = Alloc(sizeof(TYPE));
+                        rve = (TYPE *)Alloc(sizeof(TYPE));
                         rve->type = bt_const;
                         rve->size = rv->size;
                         rve->btp = rv;
@@ -2795,7 +2795,7 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, BO
                     if (isconst(rve))
                     {
                         // to make LIBCXX happy
-                        rve = Alloc(sizeof(TYPE));
+                        rve = (TYPE *)Alloc(sizeof(TYPE));
                         rve->type = bt_const;
                         rve->size = rv->size;
                         rve->btp = rv;
@@ -2935,7 +2935,7 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, BOOLEAN alt)
                 {
                     tp->etype = SynthesizeType(tp->etype, enclosing, alt);
                 }
-                *last = (TYPE*)Alloc(sizeof(TYPE));
+                *last = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
                 **last = *tp;
                 (*last)->btp = SynthesizeType(tp->btp, enclosing, alt);
                 SynthesizeQuals(&last, &qual, &lastQual);
@@ -2958,7 +2958,7 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, BOOLEAN alt)
                 {
                     TEMPLATEPARAMLIST* current = tp->sp->templateSelector->next->templateParams;
                     TEMPLATEPARAMLIST* symtp = ts->templateParams->next;
-                    void* defaults[200];
+                    TYPE* defaults[200];
                     int count = 0;
                     while (current)
                     {
@@ -3084,7 +3084,7 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, BOOLEAN alt)
                     }
                     if (rv)
                     {
-                        tp = Alloc(sizeof(TYPE));
+                        tp = (TYPE *)Alloc(sizeof(TYPE));
                         tp->type = bt_derivedfromtemplate;
                         tp->btp = rv;
                         tp->size = rv->size;
@@ -3098,7 +3098,7 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, BOOLEAN alt)
             }
             case bt_lref:
             case bt_rref:
-                *last = Alloc(sizeof(TYPE));
+                *last = (TYPE *)Alloc(sizeof(TYPE));
                 **last = *tp;
                 last = &(*last)->btp;
                 tp = tp->btp;
@@ -3112,7 +3112,7 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, BOOLEAN alt)
             case bt_lrqual:
             case bt_rrqual:
             case bt_derivedfromtemplate:
-                *lastQual = Alloc(sizeof(TYPE));
+                *lastQual = (TYPE *)Alloc(sizeof(TYPE));
                 **lastQual = *tp;
                 (*lastQual)->btp = NULL;
                 lastQual = &(*lastQual)->btp;
@@ -3121,7 +3121,7 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, BOOLEAN alt)
             case bt_memberptr:
                 SynthesizeQuals(&last, &qual, &lastQual);
 
-                *last = Alloc(sizeof(TYPE));
+                *last = (TYPE *)Alloc(sizeof(TYPE));
                 **last = *tp;
                 {
                     TYPE* tp1 = tp->sp->tp;
@@ -3141,7 +3141,7 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, BOOLEAN alt)
             {
                 TYPE* func;
                 HASHREC* hr = tp->syms->table[0];
-                *last = Alloc(sizeof(TYPE));
+                *last = (TYPE *)Alloc(sizeof(TYPE));
                 **last = *tp;
                 (*last)->syms = CreateHashTable(1);
                 (*last)->btp = NULL;
@@ -3199,7 +3199,7 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, BOOLEAN alt)
                                         SynthesizeQuals(&last1, &qual1, &lastQual1);
                                         *btp = next;
                                     }
-                                    tp1 = Alloc(sizeof(TYPE));
+                                    tp1 = (TYPE *)Alloc(sizeof(TYPE));
                                     tp1->type = bt_derivedfromtemplate;
                                     tp1->btp = clone->tp;
                                     tp1->size = clone->tp->size;
@@ -3230,7 +3230,7 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, BOOLEAN alt)
                         clone->tp = SynthesizeType(clone->tp, enclosing, alt);
                         if (clone->tp->type != bt_void && clone->tp->type != bt_any)
                         {
-                            tp1 = Alloc(sizeof(TYPE));
+                            tp1 = (TYPE *)Alloc(sizeof(TYPE));
                             tp1->type = bt_derivedfromtemplate;
                             tp1->btp = clone->tp;
                             tp1->size = clone->tp->size;
@@ -3271,7 +3271,7 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, BOOLEAN alt)
                     if (type)
                     {
                         TYPE* tx = qual;
-                        *last = Alloc(sizeof(TYPE));
+                        *last = (TYPE *)Alloc(sizeof(TYPE));
                         **last = *type;
                         (*last)->templateTop = TRUE;
                         while (tx)
@@ -3282,7 +3282,7 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, BOOLEAN alt)
                                 (*last)->templateVol = TRUE;
                             tx = tx->btp;
                         }
-                        tp = Alloc(sizeof(TYPE));
+                        tp = (TYPE *)Alloc(sizeof(TYPE));
                         tp->type = bt_derivedfromtemplate;
                         tp->btp = rv;
                         tp->size = rv->size;
@@ -3301,7 +3301,7 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, BOOLEAN alt)
                                     SYMBOL* s = templatesearch(tpa->argsym->name, p->tmpl);
                                     if (s && s->tp->templateParam->p->byClass.val)
                                     {
-                                        *last = Alloc(sizeof(TYPE));
+                                        *last = (TYPE *)Alloc(sizeof(TYPE));
                                         **last = *s->tp->templateParam->p->byClass.val;
                                         break;
                                     }
@@ -3310,13 +3310,13 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, BOOLEAN alt)
                             }
                             if (!p)
                             {
-                                *last = Alloc(sizeof(TYPE));
+                                *last = (TYPE *)Alloc(sizeof(TYPE));
                                 **last = *tp;
                             }
                         }
                         else
                         {
-                            *last = Alloc(sizeof(TYPE));
+                            *last = (TYPE *)Alloc(sizeof(TYPE));
                             **last = *tp;
                         }
                     }
@@ -3329,7 +3329,7 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, BOOLEAN alt)
                     if (type)
                     {
                         TYPE* tx = qual;
-                        *last = Alloc(sizeof(TYPE));
+                        *last = (TYPE *)Alloc(sizeof(TYPE));
                         **last = *type;
                         (*last)->templateTop = TRUE;
                         while (tx)
@@ -3340,7 +3340,7 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, BOOLEAN alt)
                                 (*last)->templateVol = TRUE;
                             tx = tx->btp;
                         }
-                        tp = Alloc(sizeof(TYPE));
+                        tp = (TYPE *)Alloc(sizeof(TYPE));
                         tp->type = bt_derivedfromtemplate;
                         tp->btp = rv;
                         tp->size = rv->size;
@@ -3359,16 +3359,16 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, BOOLEAN alt)
                 if (alt && isstructured(tp))
                 {
                     TEMPLATEPARAMLIST *p = NULL, **pt = &p, *tpl;
-                    tp_in = Alloc(sizeof(TYPE));
+                    tp_in = (TYPE *)Alloc(sizeof(TYPE));
                     *tp_in = *tp;
                     tp_in->sp = clonesym(tp_in->sp);
                     tpl = tp_in->sp->templateParams;
                     while (tpl)
                     {
-                        *pt = (TEMPLATEPARAMLIST*)Alloc(sizeof(TEMPLATEPARAMLIST));
+                        *pt = (TEMPLATEPARAMLIST*)(TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
                         if (tpl->p->type == kw_typename && tpl->p->byClass.temp)
                         {
-                            (*pt)->p = (TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
+                            (*pt)->p = (TEMPLATEPARAM*)(TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
                             *(*pt)->p = *tpl->p;
                             (*pt)->p->byClass.val = SynthesizeType(tpl->p->byClass.temp, enclosing, FALSE);
                         }
@@ -3387,7 +3387,7 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, BOOLEAN alt)
                     tp_in = SynthesizeStructure(tp, /*basetype(tp)->sp ? basetype(tp)->sp->templateParams :*/ enclosing);
                     if (tp_in)
                     {
-                        tp = Alloc(sizeof(TYPE));
+                        tp = (TYPE *)Alloc(sizeof(TYPE));
                         tp->type = bt_derivedfromtemplate;
                         tp->btp = rv;
                         tp->rootType = tp;
@@ -3529,7 +3529,7 @@ static TYPE* rewriteNonRef(TYPE* A)
 {
     if (isarray(A))
     {
-        TYPE* x = Alloc(sizeof(TYPE));
+        TYPE* x = (TYPE *)Alloc(sizeof(TYPE));
         x->type = bt_pointer;
         x->size = getSize(bt_pointer);
         while (isarray(A))
@@ -3540,7 +3540,7 @@ static TYPE* rewriteNonRef(TYPE* A)
     }
     else if (isfunction(A))
     {
-        TYPE* x = Alloc(sizeof(TYPE));
+        TYPE* x = (TYPE *)Alloc(sizeof(TYPE));
         x->type = bt_pointer;
         x->size = getSize(bt_pointer);
         A = basetype(A);
@@ -3857,7 +3857,7 @@ static BOOLEAN DeduceFromTemplates(TYPE* P, TYPE* A, BOOLEAN change, BOOLEAN byC
                         TA = TA->p->byPack.pack;
                     if (TA)
                     {
-                        *newList = (TEMPLATEPARAMLIST*)Alloc(sizeof(TEMPLATEPARAMLIST));
+                        *newList = (TEMPLATEPARAMLIST*)(TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
                         (*newList)->p = TA->p;
                         newList = &(*newList)->next;
                         TA = TA->next;
@@ -3948,7 +3948,7 @@ static TYPE* FixConsts(TYPE* P, TYPE* A)
         {
             if ((constant && isconst(P)) || (vol && isvolatile(P)))
             {
-                *last = Alloc(sizeof(TYPE));
+                *last = (TYPE *)Alloc(sizeof(TYPE));
                 **last = *P;
                 last = &(*last)->btp;
                 *last = NULL;
@@ -3959,14 +3959,14 @@ static TYPE* FixConsts(TYPE* P, TYPE* A)
         {
             if (A->type == bt_const && !isconst(Pb))
             {
-                *last = Alloc(sizeof(TYPE));
+                *last = (TYPE *)Alloc(sizeof(TYPE));
                 **last = *A;
                 last = &(*last)->btp;
                 *last = NULL;
             }
             else if (A->type == bt_volatile && !isvolatile(Pb))
             {
-                *last = Alloc(sizeof(TYPE));
+                *last = (TYPE *)Alloc(sizeof(TYPE));
                 **last = *A;
                 last = &(*last)->btp;
                 *last = NULL;
@@ -3974,7 +3974,7 @@ static TYPE* FixConsts(TYPE* P, TYPE* A)
             A = A->btp;
         }
         A = basetype(A);
-        *last = Alloc(sizeof(TYPE));
+        *last = (TYPE *)Alloc(sizeof(TYPE));
         **last = *A;
         last = &(*last)->btp;
         *last = NULL;
@@ -4574,7 +4574,7 @@ static BOOLEAN TemplateDeduceFromArg(TYPE* orig, TYPE* sym, EXPRESSION* exp, BOO
     {
         if (lvalue(exp))
         {
-            TYPE* x = Alloc(sizeof(TYPE));
+            TYPE* x = (TYPE *)Alloc(sizeof(TYPE));
             if (isref(A))
                 A = basetype(A)->btp;
             x->type = bt_lref;
@@ -4663,6 +4663,7 @@ static BOOLEAN TemplateDeduceArgList(HASHREC* funcArgs, HASHREC* templateArgs, I
         }
         else if (symArgs->nested && funcArgs)
         {
+            /* DAL COMMENTED OUT
             INITLIST* a = symArgs->nested;
             TEMPLATEPARAMLIST* b = ((SYMBOL*)funcArgs->p)->templateParams;
             while (a && b)
@@ -4677,6 +4678,7 @@ static BOOLEAN TemplateDeduceArgList(HASHREC* funcArgs, HASHREC* templateArgs, I
                 TEMPLATEPARAMLIST* b = ((SYMBOL*)funcArgs->p)->templateParams;
                 rv &= TemplateDeduceArgList(NULL, b, a, allowSelectors);
             }
+            */
             symArgs = symArgs->next;
             if (funcArgs)
                 funcArgs = funcArgs->next;
@@ -4700,7 +4702,7 @@ static void SwapDefaultNames(TEMPLATEPARAMLIST* params, LIST* origNames)
         char* temp = ((SYMBOL*)origNames->data)->name;
         if (params->argsym)
         {
-            ((SYMBOL*)origNames->data)->name = (void*)params->argsym->name;
+            ((SYMBOL*)origNames->data)->name = params->argsym->name;
             params->argsym->name = temp;
         }
         else if (params->argsym == (SYMBOL*)origNames->data)
@@ -4763,7 +4765,7 @@ static BOOLEAN TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* d
                     TEMPLATEPARAMLIST* two = declareSym->templateParams->p->bySpecialization.types;
                     while (one && two)
                     {
-                        *lst = Alloc(sizeof(TEMPLATEPARAMLIST));
+                        *lst = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
                         (*lst)->argsym = one->argsym;
                         (*lst)->p = two->p;
                         lst = &(*lst)->next;
@@ -4929,9 +4931,9 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
                 break;
             if (params->p->packed)
             {
-                TEMPLATEPARAMLIST* nparam = Alloc(sizeof(TEMPLATEPARAMLIST));
+                TEMPLATEPARAMLIST* nparam = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
                 TEMPLATEPARAMLIST** p = &params->p->byPack.pack;
-                nparam->p = Alloc(sizeof(TEMPLATEPARAM));
+                nparam->p = (TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
                 while (*p)
                     p = &(*p)->next;
                 nparam->p->type = params->p->type;
@@ -5026,8 +5028,8 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
                     TEMPLATEPARAMLIST** p = &base->p->byPack.pack;
                     while (symArgs)
                     {
-                        *p = Alloc(sizeof(TEMPLATEPARAMLIST));
-                        (*p)->p = Alloc(sizeof(TEMPLATEPARAM));
+                        *p = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
+                        (*p)->p = (TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
                         (*p)->p->type = kw_typename;
                         (*p)->p->byClass.val = symArgs->tp;
                         p = &(*p)->next;
@@ -5168,8 +5170,8 @@ SYMBOL* TemplateDeduceArgsFromType(SYMBOL* sym, TYPE* tp)
                 TEMPLATEPARAMLIST** p = &base->p->byPack.pack;
                 while (symArgs)
                 {
-                    *p = Alloc(sizeof(TEMPLATEPARAMLIST));
-                    (*p)->p = Alloc(sizeof(TEMPLATEPARAM));
+                    *p = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
+                    (*p)->p = (TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
                     (*p)->p->type = kw_typename;
                     (*p)->p->byClass.val = sp->tp;
                     symArgs = symArgs->next;
@@ -5382,7 +5384,7 @@ void TemplatePartialOrdering(SYMBOL** table, int count, FUNCTIONCALL* funcparams
     if (c > 1)
     {
         LIST *types = NULL, *exprs = NULL, *classes = NULL;
-        TYPE** typetab = Alloc(sizeof(TYPE*) * count);
+        TYPE** typetab = (TYPE **) Alloc(sizeof(TYPE*) * count);
         if (save)
             saveParams(table, count);
         for (i = 0; i < count; i++)
@@ -5412,8 +5414,8 @@ void TemplatePartialOrdering(SYMBOL** table, int count, FUNCTIONCALL* funcparams
                             }
                             else
                             {
-                                LIST* lst = Alloc(sizeof(LIST));
-                                TYPE* tp = Alloc(sizeof(TYPE));
+                                LIST* lst = (LIST *)Alloc(sizeof(LIST));
+                                TYPE* tp = (TYPE *)Alloc(sizeof(TYPE));
                                 tp->type = bt_class;
                                 tp->sp = params->argsym;
                                 tp->size = tp->sp->tp->size;
@@ -5447,7 +5449,7 @@ void TemplatePartialOrdering(SYMBOL** table, int count, FUNCTIONCALL* funcparams
                             }
                             else
                             {
-                                LIST *lst = Alloc(sizeof(LIST));
+                                LIST *lst = (LIST *)Alloc(sizeof(LIST));
                                 EXPRESSION *exp = intNode(en_c_i, 47);
                                 params->p->byNonType.temp = exp;
                                 lst->data = exp;
@@ -5827,14 +5829,14 @@ static int pushContext(SYMBOL* cls, BOOLEAN all)
     rv = pushContext(cls->parentClass, TRUE);
     if (cls->templateLevel)
     {
-        s = Alloc(sizeof(STRUCTSYM));
+        s = (STRUCTSYM *)Alloc(sizeof(STRUCTSYM));
         s->tmpl = copyParams(cls->templateParams, FALSE);
         addTemplateDeclaration(s);
         rv++;
     }
     if (all)
     {
-        s = Alloc(sizeof(STRUCTSYM));
+        s = (STRUCTSYM *) Alloc(sizeof(STRUCTSYM));
         s->str = cls;
         addStructureDeclaration(s);
         rv++;
@@ -5847,7 +5849,7 @@ void SetTemplateNamespace(SYMBOL* sym)
     sym->templateNameSpace = NULL;
     while (list)
     {
-        LIST* nlist = Alloc(sizeof(LIST));
+        LIST* nlist = (LIST *)Alloc(sizeof(LIST));
         nlist->data = list->data;
         nlist->next = sym->templateNameSpace;
         sym->templateNameSpace = nlist;
@@ -5873,7 +5875,7 @@ int PushTemplateNamespace(SYMBOL* sym)
             LIST* nlist;
             sp->value.i++;
 
-            nlist = Alloc(sizeof(LIST));
+            nlist = (LIST *)Alloc(sizeof(LIST));
             nlist->next = nameSpaceList;
             nlist->data = sp;
             nameSpaceList = nlist;
@@ -5968,7 +5970,7 @@ static void SetAccessibleTemplateArgs(TEMPLATEPARAMLIST* args, BOOLEAN accessibl
                         {
                             SetTemplateArgAccess(basetype(args->p->byClass.val)->sp, accessible);
                         }
-                        else if (basetype(args->p->byClass.val) == bt_enum)
+                        else if (basetype(args->p->byClass.val)->type == bt_enum) // DAL FIXED
                         {
                             SetTemplateArgAccess(basetype(args->p->byClass.val)->sp, accessible);
                         }
@@ -6082,7 +6084,7 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, TEMPLATEPARAMLIST* args, B
                         */
             pushCount = pushContext(cls, FALSE);
             cls->linkage = lk_virtual;
-            cls->tp = Alloc(sizeof(TYPE));
+            cls->tp = (TYPE *)Alloc(sizeof(TYPE));
             *cls->tp = *old.tp;
             UpdateRootTypes(cls->tp);
             cls->tp->syms = NULL;
@@ -6142,8 +6144,8 @@ SYMBOL* TemplateClassInstantiate(SYMBOL* sym, TEMPLATEPARAMLIST* args, BOOLEAN i
         {
             TEMPLATEPARAMLIST* tpm;
             TYPE **tpx, *tp = sym1->tp;
-            tpm = Alloc(sizeof(TEMPLATEPARAMLIST));
-            tpm->p = Alloc(sizeof(TEMPLATEPARAM));
+            tpm = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
+            tpm->p = (TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
             tpm->p->type = kw_new;
             tpm->next = args;
             sym1 = clonesym(sym1);
@@ -6151,7 +6153,7 @@ SYMBOL* TemplateClassInstantiate(SYMBOL* sym, TEMPLATEPARAMLIST* args, BOOLEAN i
             tpx = &sym1->tp;
             while (tp)
             {
-                *tpx = Alloc(sizeof(TYPE));
+                *tpx = (TYPE *)Alloc(sizeof(TYPE));
                 **tpx = *tp;
                 UpdateRootTypes(*tpx);
                 if (!tp->btp)
@@ -6597,8 +6599,8 @@ static void TransferClassTemplates(TEMPLATEPARAMLIST* dflt, TEMPLATEPARAMLIST* v
                     }
                     else
                     {
-                        find->p->byPack.pack = (TEMPLATEPARAMLIST*)Alloc(sizeof(TEMPLATEPARAMLIST));
-                        find->p->byPack.pack->p = (TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
+                        find->p->byPack.pack = (TEMPLATEPARAMLIST*)(TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
+                        find->p->byPack.pack->p = (TEMPLATEPARAM*)(TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
                         find->p->byPack.pack->p->type = kw_typename;
                         find->p->byPack.pack->p->byClass.val = tpv;
                     }
@@ -6635,8 +6637,8 @@ static void TransferClassTemplates(TEMPLATEPARAMLIST* dflt, TEMPLATEPARAMLIST* v
                             }
                             else
                             {
-                                find->p->byPack.pack = (TEMPLATEPARAMLIST*)Alloc(sizeof(TEMPLATEPARAMLIST));
-                                find->p->byPack.pack->p = (TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
+                                find->p->byPack.pack = (TEMPLATEPARAMLIST*)(TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
+                                find->p->byPack.pack->p = (TEMPLATEPARAM*)(TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
                                 find->p->byPack.pack->p->type = kw_typename;
                                 find->p->byPack.pack->p->byClass.val = tpv;
                             }
@@ -6646,8 +6648,8 @@ static void TransferClassTemplates(TEMPLATEPARAMLIST* dflt, TEMPLATEPARAMLIST* v
                             TEMPLATEPARAMLIST* next = find->p->byPack.pack;
                             while (next->next)
                                 next = next->next;
-                            next->next = (TEMPLATEPARAMLIST*)Alloc(sizeof(TEMPLATEPARAMLIST));
-                            next->next->p = (TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
+                            next->next = (TEMPLATEPARAMLIST*)(TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
+                            next->next->p = (TEMPLATEPARAM*)(TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
                             next->next->p->type = kw_typename;
                             next->next->p->byClass.val = tpv;
                         }
@@ -6733,13 +6735,13 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* unspecialize
                 {
                     if (params->p->packed)
                     {
-                        TEMPLATEPARAMLIST* nparam = Alloc(sizeof(TEMPLATEPARAMLIST));
+                        TEMPLATEPARAMLIST* nparam = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
                         TEMPLATEPARAMLIST** p = &params->p->byPack.pack;
-                        nparam->p = Alloc(sizeof(TEMPLATEPARAM));
+                        nparam->p = (TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
                         while (*p)
                             p = &(*p)->next;
                         nparam->p->type = params->p->type;
-                        nparam->p->byClass.val = dflt;
+                        nparam->p->byClass.val = (TYPE *) dflt;
                         if (params->p->type == kw_int)
                             nparam->p->byNonType.tp = params->p->byNonType.tp;
                         *p = nparam;
@@ -6758,7 +6760,7 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* unspecialize
                             switch (test->p->type)
                             {
                                 case kw_typename:
-                                    if (!templatecomparetypes(params->p->byClass.val, dflt, TRUE))
+                                    if (!templatecomparetypes(params->p->byClass.val, (TYPE *)dflt, TRUE))
                                         rv = NULL;
                                     break;
                                 case kw_int:
@@ -6766,14 +6768,14 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* unspecialize
                                     {
                                         EXPRESSION* exp = copy_expression(params->p->byNonType.val);
                                         optimize_for_constants(&exp);
-                                        if (params->p->byNonType.val && !equalTemplateIntNode(exp, dflt))
+                                        if (params->p->byNonType.val && !equalTemplateIntNode(exp, (EXPRESSION *)dflt))
                                             rv = NULL;
                                     }
                                     //#endif
                                     break;
                             }
                         }
-                        params->p->byClass.val = dflt;
+                        params->p->byClass.val = (TYPE *) dflt;
                         if (spsyms)
                         {
                             if (params->p->type == kw_typename)
@@ -7088,10 +7090,10 @@ void DuplicateTemplateParamList(TEMPLATEPARAMLIST** pptr)
     TEMPLATEPARAMLIST* params = *pptr;
     while (params)
     {
-        *pptr = Alloc(sizeof(TEMPLATEPARAMLIST));
+        *pptr = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
         if (params->p->type == kw_typename)
         {
-            (*pptr)->p = Alloc(sizeof(TEMPLATEPARAM));
+            (*pptr)->p = (TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
             *(*pptr)->p = *params->p;
             if (params->p->packed)
             {
@@ -7202,7 +7204,7 @@ static TEMPLATEPARAMLIST* ResolveTemplateSelectors(TEMPLATEPARAMLIST* args)
             if (locate)
             {
                 TYPE* tp = locate->p->byClass.dflt;
-                *last = Alloc(sizeof(TEMPLATEPARAMLIST));
+                *last = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
                 if (locate->p->type == kw_typename && tp)
                 {
                     while (ispointer(tp) || isref(tp))
@@ -7247,13 +7249,13 @@ static TEMPLATEPARAMLIST* ResolveTemplateSelectors(TEMPLATEPARAMLIST* args)
                             if (!find && sp && istype(sp))
                             {
                                 TYPE** tx;
-                                (*last)->p = (TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
+                                (*last)->p = (TEMPLATEPARAM*)(TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
                                 *(*last)->p = *locate->p;
                                 tx = &(*last)->p->byClass.dflt;
                                 tp = locate->p->byClass.dflt;
                                 while (tp->type != bt_templateselector)
                                 {
-                                    *tx = (TYPE*)Alloc(sizeof(TYPE));
+                                    *tx = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
                                     **tx = *tp;
                                     UpdateRootTypes(*tx);
                                     tx = &(*tx)->btp;
@@ -7300,7 +7302,7 @@ static void copySyms(SYMBOL* found1, SYMBOL* sym)
     {
         SYMBOL* hold = dest->argsym;
         dest->argsym = clonesym(src->argsym);
-        dest->argsym->tp = (TYPE*)Alloc(sizeof(TYPE));
+        dest->argsym->tp = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
         if (hold)
         {
             dest->argsym->name = hold->name;
@@ -7335,8 +7337,8 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, BOOLEAN noErr)
         n++;
         l = l->next;
     }
-    spList = Alloc(sizeof(SYMBOL*) * n);
-    origList = Alloc(sizeof(SYMBOL*) * n);
+    spList = (SYMBOL **)Alloc(sizeof(SYMBOL*) * n);
+    origList = (SYMBOL **)Alloc(sizeof(SYMBOL*) * n);
     origList[i++] = sp;
     l = sp->specializations;
     while (i < n)
@@ -7484,7 +7486,7 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, BOOLEAN noErr)
             }
             while (instants)
             {
-                if (TemplateInstantiationMatch(instants->data, &test))
+                if (TemplateInstantiationMatch((SYMBOL *)instants->data, &test))
                 {
                     restoreParams(origList, n);
                     return (SYMBOL*)instants->data;
@@ -7493,7 +7495,7 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, BOOLEAN noErr)
             }
             found1 = clonesym(&test);
             found1->maintemplate = sym;
-            found1->tp = Alloc(sizeof(TYPE));
+            found1->tp = (TYPE *)Alloc(sizeof(TYPE));
             *found1->tp = *sym->tp;
             UpdateRootTypes(found1->tp);
             found1->tp->sp = found1;
@@ -7509,7 +7511,7 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, BOOLEAN noErr)
             }
             copySyms(found1, sym);
             SetLinkerNames(found1, lk_cdecl);
-            instants = Alloc(sizeof(LIST));
+            instants = (LIST *)Alloc(sizeof(LIST));
             instants->data = found1;
             instants->next = parent->instantiations;
             parent->instantiations = instants;
@@ -7518,13 +7520,13 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, BOOLEAN noErr)
         {
             found1 = clonesym(found1);
             found1->maintemplate = sym;
-            found1->tp = Alloc(sizeof(TYPE));
+            found1->tp = (TYPE *)Alloc(sizeof(TYPE));
             *found1->tp = *sym->tp;
             UpdateRootTypes(found1->tp);
             found1->tp->sp = found1;
 
-            found1->templateParams = (TEMPLATEPARAMLIST*)Alloc(sizeof(TEMPLATEPARAMLIST));
-            found1->templateParams->p = (TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
+            found1->templateParams = (TEMPLATEPARAMLIST*)(TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
+            found1->templateParams->p = (TEMPLATEPARAM*)(TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
             *found1->templateParams->p = *sym->templateParams->p;
             if (args)
             {
@@ -7554,8 +7556,8 @@ SYMBOL* GetVariableTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args)
         n++;
         l = l->next;
     }
-    spList = Alloc(sizeof(SYMBOL*) * n);
-    origList = Alloc(sizeof(SYMBOL*) * n);
+    spList = (SYMBOL **)Alloc(sizeof(SYMBOL*) * n);
+    origList = (SYMBOL **)Alloc(sizeof(SYMBOL*) * n);
     origList[0] = sp;
     spList[0] = ValidateClassTemplate(sp, unspecialized, args);
     tpi = &spList[0]->tp;
@@ -7673,7 +7675,7 @@ SYMBOL* GetVariableTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args)
             }
             while (instants)
             {
-                if (TemplateInstantiationMatch(instants->data, &test))
+                if (TemplateInstantiationMatch((SYMBOL *)instants->data, &test))
                 {
                     return (SYMBOL*)instants->data;
                 }
@@ -7681,7 +7683,7 @@ SYMBOL* GetVariableTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args)
             }
             found1 = clonesym(&test);
             found1->maintemplate = sym;
-            found1->tp = Alloc(sizeof(TYPE));
+            found1->tp = (TYPE *)Alloc(sizeof(TYPE));
             *found1->tp = *sym->tp;
             UpdateRootTypes(found1->tp);
             found1->tp->sp = found1;
@@ -7696,7 +7698,7 @@ SYMBOL* GetVariableTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args)
             }
             copySyms(found1, sym);
             SetLinkerNames(found1, lk_cdecl);
-            instants = Alloc(sizeof(LIST));
+            instants = (LIST *)Alloc(sizeof(LIST));
             instants->data = found1;
             instants->next = parent->instantiations;
             parent->instantiations = instants;
@@ -7715,13 +7717,13 @@ SYMBOL* GetVariableTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args)
         {
             found1 = clonesym(found1);
             found1->maintemplate = sym;
-            found1->tp = Alloc(sizeof(TYPE));
+            found1->tp = (TYPE *)Alloc(sizeof(TYPE));
             *found1->tp = *sym->tp;
             UpdateRootTypes(found1->tp);
             found1->tp->sp = found1;
 
-            found1->templateParams = (TEMPLATEPARAMLIST*)Alloc(sizeof(TEMPLATEPARAMLIST));
-            found1->templateParams->p = (TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
+            found1->templateParams = (TEMPLATEPARAMLIST*)(TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
+            found1->templateParams->p = (TEMPLATEPARAM*)(TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
             *found1->templateParams->p = *sym->templateParams->p;
             if (args)
             {
@@ -7744,7 +7746,7 @@ static TYPE* SpecifyArgType(SYMBOL* sym, TYPE* tp, TEMPLATEPARAMLIST* inargs, TE
     TYPE *rv = NULL, **last = &rv;
     while (tp)
     {
-        *last = (TYPE*)Alloc(sizeof(TYPE));
+        *last = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
         **last = *tp;
         tp = tp->btp;
         last = &(*last)->btp;
@@ -7813,7 +7815,7 @@ static void SpecifyArg(SYMBOL* sym, TEMPLATEPARAMLIST* current, TEMPLATEPARAMLIS
         }
     }
 }
-static EXPRESSION* SpecifyReplaceInt(EXPRESSION* orig, TEMPLATEPARAMLIST* subs, char* name)
+static EXPRESSION* SpecifyReplaceInt(EXPRESSION* orig, EXPRESSION * subs, char* name)
 {
     if (orig->left)
     {
@@ -7839,7 +7841,7 @@ static TEMPLATEPARAMLIST* SpecifyPackedInt(TEMPLATEPARAMLIST* arg, TEMPLATEPARAM
         if (orig->p->type == kw_int && orig->p->packed)
         {
             TEMPLATEPARAM temp = *(arg->p);
-            arg->p = Alloc(sizeof(TEMPLATEPARAM));
+            arg->p = (TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
             *(arg->p) = temp;
             TEMPLATEPARAMLIST** x = &arg->p->byPack.pack;
             TEMPLATEPARAMLIST* old = *x;
@@ -7848,8 +7850,8 @@ static TEMPLATEPARAMLIST* SpecifyPackedInt(TEMPLATEPARAMLIST* arg, TEMPLATEPARAM
             EXPRESSION* exp = orig->p->byPack.pack->p->byNonType.dflt;
             for (TEMPLATEPARAMLIST* test = inargs->p->byPack.pack; test; test = test->next)
             {
-                *x = Alloc(sizeof(TEMPLATEPARAMLIST));
-                (*x)->p = Alloc(sizeof(TEMPLATEPARAM));
+                *x = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
+                (*x)->p = (TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
                 *((*x)->p) = *(old->p);
                 TEMPLATEPARAMLIST* temp = (*x);
                 x = &(*x)->next;
@@ -7882,7 +7884,7 @@ static BOOLEAN SpecifyAllTemplateArgs_unused(SYMBOL* sym, TEMPLATEPARAMLIST* arg
                         TEMPLATEPARAMLIST* srch = sym->templateParams->next;
                         while (srch)
                         {
-                            if (srch->argsym && !strcmp(srch->argsym, args->p->byClass.dflt->templateParam->argsym->name))
+                            if (srch->argsym && !strcmp(srch->argsym->name, args->p->byClass.dflt->templateParam->argsym->name)) // DAL fixed
                             {
                                 args->p->byClass.val = srch->p->byClass.val;
                                 break;
@@ -7898,7 +7900,7 @@ static BOOLEAN SpecifyAllTemplateArgs_unused(SYMBOL* sym, TEMPLATEPARAMLIST* arg
                 case kw_int:
                     if (args->p->packed)
                     {
-                        args->p->byPack.pack = SpecifyPackedInt(spl->argsym, spl->p->byPack.pack, orig);
+                        args->p->byPack.pack = SpecifyPackedInt(spl->argsym->templateParams, spl->p->byPack.pack, orig); // DAL fixed
                     }
                     else if (args->p->byNonType.dflt->type == en_templateparam)
                     {
@@ -7907,7 +7909,7 @@ static BOOLEAN SpecifyAllTemplateArgs_unused(SYMBOL* sym, TEMPLATEPARAMLIST* arg
                         {
                             if (srch->argsym && !strcmp(srch->argsym->name, args->p->byNonType.dflt->v.sp->name))
                             {
-                                args->p->byClass.val = srch->p->byNonType.val;
+                                args->p->byClass.val = srch->p->byClass.val;
                                 break;
                             }
                             srch = srch->next;
@@ -7955,9 +7957,9 @@ static TEMPLATEPARAMLIST* GetUsingArgs(SYMBOL* sp, TEMPLATEPARAMLIST* find, TEMP
     TEMPLATEPARAMLIST* temp = orig;
     while (temp)
     {
-        *last = (TEMPLATEPARAMLIST*)Alloc(sizeof(TEMPLATEPARAMLIST));
+        *last = (TEMPLATEPARAMLIST*)(TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
         (*last)->argsym = temp->argsym;
-        (*last)->p = (TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
+        (*last)->p = (TEMPLATEPARAM*)(TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
         *(*last)->p = *(temp->p);
         (*last)->p->byClass.val = temp->p->byClass.dflt;
         if ((*last)->argsym)
@@ -8004,7 +8006,7 @@ SYMBOL* GetTypedefSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args)
     {
         if ((*tpi)->type == bt_typedef)
         {
-            TYPE* tp1 = (TYPE*)Alloc(sizeof(TYPE));
+            TYPE* tp1 = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
             *tp1 = *(*tpi);
             *tpi = tp1;
             tpi = &(*tpi)->btp;
@@ -8022,7 +8024,7 @@ SYMBOL* GetTypedefSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args)
         }
         while (isref(*tpi) || ispointer(*tpi))
         {
-            TYPE* tp1 = (TYPE*)Alloc(sizeof(TYPE));
+            TYPE* tp1 = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
             *tp1 = *(*tpi);
             *tpi = tp1;
             tpi = &basetype(*tpi)->btp;
@@ -8074,7 +8076,7 @@ SYMBOL* GetTypedefSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args)
         }
         while (instants)
         {
-            if (TemplateInstantiationMatch(instants->data, &test))
+            if (TemplateInstantiationMatch((SYMBOL *)instants->data, &test))
             {
                 return (SYMBOL*)instants->data;
             }
@@ -8082,7 +8084,7 @@ SYMBOL* GetTypedefSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args)
         }
         found1 = clonesym(&test);
         found1->maintemplate = test.maintemplate;
-        found1->tp = Alloc(sizeof(TYPE));
+        found1->tp = (TYPE *)Alloc(sizeof(TYPE));
         *found1->tp = *test.tp;
         UpdateRootTypes(found1->tp);
         found1->gentemplate = TRUE;
@@ -8096,7 +8098,7 @@ SYMBOL* GetTypedefSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args)
         }
         copySyms(found1, sp);
         SetLinkerNames(found1, lk_cdecl);
-        instants = Alloc(sizeof(LIST));
+        instants = (LIST *)Alloc(sizeof(LIST));
         instants->data = found1;
         instants->next = sp->instantiations;
         sp->instantiations = instants;
@@ -8105,7 +8107,7 @@ SYMBOL* GetTypedefSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args)
     {
         found1 = clonesym(found1);
         found1->maintemplate = sp;
-        found1->tp = Alloc(sizeof(TYPE));
+        found1->tp = (TYPE *)Alloc(sizeof(TYPE));
         *found1->tp = *sp->tp;
         UpdateRootTypes(found1->tp);
         /*
@@ -8115,8 +8117,8 @@ SYMBOL* GetTypedefSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args)
         basetype(*tpi)->sp = found1;
 */
         found1->mainsym = sp;
-        found1->templateParams = (TEMPLATEPARAMLIST*)Alloc(sizeof(TEMPLATEPARAMLIST));
-        found1->templateParams->p = (TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
+        found1->templateParams = (TEMPLATEPARAMLIST*)(TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
+        found1->templateParams->p = (TEMPLATEPARAM*)(TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
         *found1->templateParams->p = *sp->templateParams->p;
         if (args)
         {
@@ -8161,7 +8163,7 @@ void DoInstantiateTemplateFunction(TYPE* tp, SYMBOL** sp, NAMESPACEVALUES* nsv, 
     {
         if (spi->storage_class == sc_overloads)
         {
-            FUNCTIONCALL* funcparams = Alloc(sizeof(FUNCTIONCALL));
+            FUNCTIONCALL* funcparams = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
             SYMBOL* instance;
             HASHREC* hr = basetype(tp)->syms->table[0];
             INITLIST** init = &funcparams->arguments;
@@ -8173,7 +8175,7 @@ void DoInstantiateTemplateFunction(TYPE* tp, SYMBOL** sp, NAMESPACEVALUES* nsv, 
                 hr = hr->next;
             while (hr)
             {
-                *init = Alloc(sizeof(INITLIST));
+                *init = (INITLIST *)Alloc(sizeof(INITLIST));
                 (*init)->tp = ((SYMBOL*)hr->p)->tp;
                 (*init)->exp = intNode(en_c_i, 0);
                 init = &(*init)->next;
@@ -8181,7 +8183,7 @@ void DoInstantiateTemplateFunction(TYPE* tp, SYMBOL** sp, NAMESPACEVALUES* nsv, 
             }
             if (spi->parentClass)
             {
-                TYPE* tp = Alloc(sizeof(TYPE));
+                TYPE* tp = (TYPE *)Alloc(sizeof(TYPE));
                 tp->type = bt_pointer;
                 tp->size = getSize(bt_pointer);
                 tp->btp = spi->parentClass->tp;
@@ -8545,8 +8547,8 @@ LEXEME* TemplateDeclaration(LEXEME* lex, SYMBOL* funcsp, enum e_ac access, enum 
         {
             TEMPLATEPARAMLIST* temp;
             templateHeaderCount++;
-            temp = (*currents->ptail) = Alloc(sizeof(TEMPLATEPARAMLIST));
-            temp->p = Alloc(sizeof(TEMPLATEPARAM));
+            temp = (*currents->ptail) = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
+            temp->p = (TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
             temp->p->type = kw_new;
             lex = getsym();
             currents->ptail = &(*currents->ptail)->p->bySpecialization.next;

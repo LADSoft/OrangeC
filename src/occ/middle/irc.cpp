@@ -128,7 +128,7 @@ static void InitRegAliases(ARCH_REGDESC* desc)
     for (i = 0; i < REG_MAX; i++)
     {
         int j;
-        desc[i].aliasBits = calloc(sizeof(BITINT), sizeof(BITARRAY) + (REG_MAX + BITINTBITS - 1) / BITINTBITS);
+        desc[i].aliasBits = (BITARRAY *)calloc(sizeof(BITINT), sizeof(BITARRAY) + (REG_MAX + BITINTBITS - 1) / BITINTBITS);
 #ifdef TESTBITS
         desc[i].aliasBits->count = REG_MAX;
 #endif
@@ -150,11 +150,11 @@ static void InitTree(ARCH_REGVERTEX* parent, ARCH_REGVERTEX* child)
     {
         c->vertex = child->index;
         c->index = classCount++;
-        c->aliasBits = calloc(sizeof(BITINT), sizeof(BITARRAY) + (REG_MAX + BITINTBITS - 1) / BITINTBITS);
+        c->aliasBits = (BITARRAY *)calloc(sizeof(BITINT), sizeof(BITARRAY) + (REG_MAX + BITINTBITS - 1) / BITINTBITS);
 #ifdef TESTBITS
         c->aliasBits->count = REG_MAX;
 #endif
-        c->regBits = calloc(sizeof(BITINT), sizeof(BITARRAY) + (REG_MAX + BITINTBITS - 1) / BITINTBITS);
+        c->regBits = (BITARRAY *)calloc(sizeof(BITINT), sizeof(BITARRAY) + (REG_MAX + BITINTBITS - 1) / BITINTBITS);
 #ifdef TESTBITS
         c->regBits->count = REG_MAX;
 #endif
@@ -191,7 +191,7 @@ static void LoadVertexes(ARCH_REGVERTEX* child)
 static void LoadWorstCase(void)
 {
     int i, j, k, m;
-    worstCase = calloc(classCount * classCount, sizeof(unsigned));
+    worstCase = (unsigned *)calloc(classCount * classCount, sizeof(unsigned));
     for (i = 0; i < classCount; i++)
     {
         for (j = 0; j < classCount; j++)
@@ -228,7 +228,7 @@ static void LoadAliases(ARCH_REGVERTEX* v)
         LoadAliases(v->left);
     if (v->right)
         LoadAliases(v->right);
-    v->aliasBits = calloc(sizeof(BITINT), sizeof(BITARRAY) + (REG_MAX + BITINTBITS - 1) / BITINTBITS);
+    v->aliasBits = (BITARRAY *)calloc(sizeof(BITINT), sizeof(BITARRAY) + (REG_MAX + BITINTBITS - 1) / BITINTBITS);
 #ifdef TESTBITS
     v->aliasBits->count = REG_MAX;
 #endif
@@ -280,8 +280,8 @@ void regInit(void)
     classCount = vertexCount = 0;
     InitRegAliases(chosenAssembler->arch->regNames);
     InitTree(NULL, chosenAssembler->arch->regRoot);
-    vertexes = calloc(sizeof(ARCH_REGVERTEX*), vertexCount);
-    classes = calloc(sizeof(ARCH_REGCLASS*), classCount);
+    vertexes = (ARCH_REGVERTEX**)calloc(sizeof(ARCH_REGVERTEX*), vertexCount);
+    classes = (ARCH_REGCLASS**)calloc(sizeof(ARCH_REGCLASS*), classCount);
     LoadVertexes(chosenAssembler->arch->regRoot);
     LoadWorstCase();
     LoadAliases(chosenAssembler->arch->regRoot);
@@ -295,7 +295,7 @@ void cacheTempSymbol(SYMBOL* sp)
     {
         if (sp->allocate && !sp->inAllocTable)
         {
-            LIST* lst = Alloc(sizeof(LIST));
+            LIST* lst = (LIST *)Alloc(sizeof(LIST));
             lst->data = sp;
             lst->next = temporarySymbols;
             temporarySymbols = lst;
@@ -509,10 +509,10 @@ static void GetSpillVar(int i)
     SPILL* spill;
     EXPRESSION* exp;
     exp = spillVar(sc_auto, tempInfo[i]->enode->v.sp->tp);
-    spill = tAlloc(sizeof(SPILL));
+    spill = (SPILL *)tAlloc(sizeof(SPILL));
     tempInfo[i]->spillVar = spill->imode = make_ioffset(exp);
     spill->imode->size = tempInfo[i]->enode->v.sp->imvalue->size;
-    spill->uses = tAlloc(sizeof(LIST));
+    spill->uses = (LIST *)tAlloc(sizeof(LIST));
     spill->uses->data = (void*)i;
 }
 static void CopyLocalColors(void)
@@ -600,7 +600,7 @@ void SqueezeInit(void)
             if (tempInfo[i]->rawSqueeze)
                 memset(tempInfo[i]->rawSqueeze, 0, sizeof(tempInfo[0]->rawSqueeze[0]) * vertexCount);
             else
-                tempInfo[i]->rawSqueeze = aAlloc(sizeof(tempInfo[0]->rawSqueeze[0]) * vertexCount);
+                tempInfo[i]->rawSqueeze = (int *)aAlloc(sizeof(tempInfo[0]->rawSqueeze[0]) * vertexCount);
             tempInfo[i]->degree = 0;
         }
     for (i = 0; i < tempCount; i++)
@@ -806,8 +806,8 @@ static void CountInstructions(BOOLEAN first)
     frozenMoves = tallocbit(instructionCount);
     tempMoves[0] = tallocbit(instructionCount);
     tempMoves[1] = tallocbit(instructionCount);
-    hiMoves = tAlloc(sizeof(short) * (instructionCount));
-    instructionList = tAlloc(sizeof(QUAD*) * (instructionCount));
+    hiMoves = (short *)tAlloc(sizeof(short) * (instructionCount));
+    instructionList = (QUAD **)tAlloc(sizeof(QUAD *) * (instructionCount));
     instructionCount -= 1000;
     head = intermed_head;
     while (head)
@@ -1254,7 +1254,7 @@ static int Combine(int u, int v)
         {
             if (!tu)
             {
-                tempInfo[u] = tu = tallocbit(instructionCount);
+                tempInfo[u]->workingMoves = tu = tallocbit(instructionCount); // DAL this was modified....
             }
             for (i = 0; i < instructionByteCount; i++)
                 (bits(tu))[i] |= (bits(tv))[i];
@@ -1626,7 +1626,7 @@ static IMODE* InsertLoad(QUAD* head, IMODE* mem)
     tempInfo[t->offset->v.sp->value.i]->spilled = TRUE;
     tempInfo[t->offset->v.sp->value.i]->ircinitial = TRUE;
     head = head->back;
-    insert = Alloc(sizeof(QUAD));
+    insert = (QUAD *)Alloc(sizeof(QUAD));
     insert->dc.opcode = i_assn;
     insert->ans = t;
     insert->dc.left = mem;
@@ -1649,7 +1649,7 @@ static void InsertStore(QUAD* head, IMODE** im, IMODE* mem)
     tempInfo[tn]->color = tempInfo[ta]->color;
     tempInfo[tn]->ircinitial = TRUE;
     *im = t;
-    insert = Alloc(sizeof(QUAD));
+    insert = (QUAD *)Alloc(sizeof(QUAD));
     insert->dc.opcode = i_assn;
     insert->ans = mem;
     insert->dc.left = t;
@@ -1730,7 +1730,7 @@ static void RewriteAllSpillNodes(void)
             }
         if (spillNodes[0] || spillNodes[1])
         {
-            IMODE* im = Alloc(sizeof(IMODE));
+            IMODE* im = (IMODE *)Alloc(sizeof(IMODE));
             *im = *head->ans;
             head->ans = im;
         }
@@ -1740,7 +1740,7 @@ static void RewriteAllSpillNodes(void)
             head->ans->offset2 = spillNodes[1]->offset;
         if (spillNodes[2] || spillNodes[3])
         {
-            IMODE* im = Alloc(sizeof(IMODE));
+            IMODE* im = (IMODE *)Alloc(sizeof(IMODE));
             *im = *head->dc.left;
             head->dc.left = im;
         }
@@ -1750,7 +1750,7 @@ static void RewriteAllSpillNodes(void)
             head->dc.left->offset2 = spillNodes[3]->offset;
         if (spillNodes[4] || spillNodes[5])
         {
-            IMODE* im = Alloc(sizeof(IMODE));
+            IMODE* im = (IMODE *)Alloc(sizeof(IMODE));
             *im = *head->dc.right;
             head->dc.right = im;
         }
@@ -1841,7 +1841,7 @@ static void SpillCoalesce(BRIGGS_SET* C, BRIGGS_SET* S)
                                                         }
                                                         if (!*l)
                                                         {
-                                                            *l = tAlloc(sizeof(LIST));
+                                                            *l = (LIST *)tAlloc(sizeof(LIST));
                                                             (*l)->data = (void*)head;
                                                             (*mt)->cost += head->block->spillCost;
                                                         }
@@ -1851,11 +1851,11 @@ static void SpillCoalesce(BRIGGS_SET* C, BRIGGS_SET* S)
                                                 }
                                                 if (!*mt)
                                                 {
-                                                    *mt = tAlloc(sizeof(MOVE));
+                                                    *mt =(MOVE *) tAlloc(sizeof(MOVE));
                                                     (*mt)->a = a;
                                                     (*mt)->b = b;
                                                     (*mt)->cost = head->block->spillCost;
-                                                    (*mt)->uses = tAlloc(sizeof(LIST));
+                                                    (*mt)->uses = (LIST *)tAlloc(sizeof(LIST));
                                                     (*mt)->uses->data = (void*)head;
                                                 }
                                             }
@@ -2135,7 +2135,7 @@ static void RewriteProgram(void)
 }
 static IMODE* copyImode(IMODE* in)
 {
-    IMODE* im = Alloc(sizeof(IMODE));
+    IMODE* im = (IMODE *)Alloc(sizeof(IMODE));
     *im = *in;
     if (im->offset)
     {
@@ -2375,7 +2375,7 @@ void AllocateRegisters(QUAD* head)
         CountInstructions(first);
         simplifyBottom = simplifyTop = 0;
         tempCount += 1000;
-        simplifyWorklist = tAlloc(tempCount * sizeof(unsigned short));
+        simplifyWorklist = (unsigned short *)tAlloc(tempCount * sizeof(unsigned short));
         freezeWorklist = briggsAlloct(tempCount);
         spillWorklist = briggsAlloct(tempCount);
         spilledNodes = briggsAlloct(tempCount);
@@ -2383,7 +2383,7 @@ void AllocateRegisters(QUAD* head)
         adjacent = tallocbit(tempCount);
         adjacent1 = tallocbit(tempCount);
         stackedTemps = tallocbit(tempCount);
-        tempStack = tAlloc(tempCount * sizeof(int));
+        tempStack = (int *)tAlloc(tempCount * sizeof(int));
         tempCount -= 1000;
         liveVariables();
         CalculateFunctionFlags();

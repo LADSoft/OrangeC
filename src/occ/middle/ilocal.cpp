@@ -109,7 +109,7 @@ static void renameOneSym(SYMBOL* sp, BOOLEAN structret)
         }
         if (sp->imaddress)
         {
-            IMODE* im = Alloc(sizeof(IMODE));
+            IMODE* im = (IMODE *)Alloc(sizeof(IMODE));
             *im = *sp->imaddress;
             im->size = sizeFromType(sp->tp);
             im->mode = i_direct;
@@ -117,7 +117,7 @@ static void renameOneSym(SYMBOL* sp, BOOLEAN structret)
         }
         else if (sp->imind)
         {
-            IMODE* im = Alloc(sizeof(IMODE));
+            IMODE* im = (IMODE *)Alloc(sizeof(IMODE));
             *im = *sp->imind->im;
             im->size = ISZ_ADDR;
             im->mode = i_direct;
@@ -184,13 +184,13 @@ static void renameOneSym(SYMBOL* sp, BOOLEAN structret)
                 }
                 else
                 {
-                    parmName = (IMODE*)Alloc(sizeof(IMODE));
+                    parmName = (IMODE*)(IMODE *)Alloc(sizeof(IMODE));
                     *parmName = *sp->imvalue;
                 }
             }
             else
             {
-                parmName = (IMODE*)Alloc(sizeof(IMODE));
+                parmName = (IMODE*)(IMODE *)Alloc(sizeof(IMODE));
                 *parmName = *sp->imvalue;
             }
         }
@@ -302,7 +302,7 @@ static int AllocTempOpt(int size1)
     t = rv->offset->v.sp->value.i;
     if (t >= tempSize)
     {
-        TEMP_INFO** temp = oAlloc((tempSize + 1000) * sizeof(TEMP_INFO*));
+        TEMP_INFO** temp = (TEMP_INFO **)oAlloc((tempSize + 1000) * sizeof(TEMP_INFO*));
         memcpy(temp, tempInfo, sizeof(TEMP_INFO*) * tempSize);
         tempSize += 1000;
         tempInfo = temp;
@@ -352,7 +352,7 @@ static void InitTempInfo(void)
 
     for (i = 0; i < tempCount; i++)
     {
-        tempInfo[i] = oAlloc(sizeof(TEMP_INFO));
+        tempInfo[i] = (TEMP_INFO *) oAlloc(sizeof(TEMP_INFO));
         tempInfo[i]->partition = i;
         tempInfo[i]->color = -1;
         tempInfo[i]->inUse = TRUE;
@@ -434,12 +434,12 @@ static void InitTempInfo(void)
 }
 void insertDefines(QUAD* head, BLOCK* b, int tnum)
 {
-    LIST* l = oAlloc(sizeof(LIST));
+    LIST* l = (LIST *)oAlloc(sizeof(LIST));
     l->data = (void*)head;
     l->next = tempInfo[tnum]->idefines;
     tempInfo[tnum]->idefines = l;
 
-    l = oAlloc(sizeof(LIST));
+    l = (LIST *)oAlloc(sizeof(LIST));
     l->data = (void*)b;
     l->next = tempInfo[tnum]->bdefines;
     tempInfo[tnum]->bdefines = l;
@@ -453,7 +453,7 @@ void insertUses(QUAD* head, int dest)
             return;
         l = &(*l)->next;
     }
-    *l = oAlloc(sizeof(LIST));
+    *l = (LIST *)oAlloc(sizeof(LIST));
     (*l)->data = (void*)head;
 }
 void definesInfo(void)

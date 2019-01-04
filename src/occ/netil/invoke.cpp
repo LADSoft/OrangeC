@@ -42,6 +42,7 @@ extern int showBanner;
 
 LIST *objlist,  *reslist,  *rclist;
 static char outputFileName[260];
+int strcasecmp_internal(const char* left, const char* right);
 
 #ifdef MICROSOFT
 #define system(x) winsystem(x)
@@ -67,7 +68,7 @@ static void InsertFile(LIST **r, char *name, char *ext)
     lst = *r;
     while (lst)
     {
-        if (!strcasecmp(lst->data, buf))
+        if (!strcasecmp_internal((char *)lst->data, buf))
             return;
         lst = lst->next;
     }
@@ -79,7 +80,7 @@ static void InsertFile(LIST **r, char *name, char *ext)
     /* Insert file */
     while (*r)
         r = &(*r)->next;
-    *r = malloc(sizeof(LIST));
+    *r = (LIST *)malloc(sizeof(LIST));
     if (!r)
         return ;
     (*r)->next = 0;
@@ -88,7 +89,7 @@ static void InsertFile(LIST **r, char *name, char *ext)
 
 /*-------------------------------------------------------------------------*/
 
-int InsertExternalFile(char *name)
+int InsertExternalFile(char *name, unsigned char)
 {
     char buf[260], *p;
     
@@ -143,7 +144,7 @@ void GetOutputFileName(char *name, char *path, BOOLEAN obj)
             p = name;
         else
             p++;
-        strcpy(p, objPosition->data);
+        strcpy(p, (char *)objPosition->data);
         strcpy(path, name);
     }
     else
@@ -152,7 +153,7 @@ void GetOutputFileName(char *name, char *path, BOOLEAN obj)
         strcpy(name, outputFileName);
         if (objlist && name[0] && name[strlen(name) - 1] == '\\')
         {
-            strcat(name, objlist->data);
+            strcat(name, (char *)objlist->data);
             StripExt(name);
             strcat(name, ".exe");
             strcpy(path, outputFileName);

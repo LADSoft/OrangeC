@@ -103,10 +103,10 @@ static void makeNonInfinite(BLOCK* b)
     blockArray[bi->block->blocknum] = bi->block;
     bi->block->unuseThunk = TRUE;
 
-    bi->block->succ = oAlloc(sizeof(BLOCKLIST));
+    bi->block->succ = (BLOCKLIST *)oAlloc(sizeof(BLOCKLIST));
     bi->block->succ->block = blockArray[exitBlock];
 
-    bi->block->pred = oAlloc(sizeof(BLOCKLIST));
+    bi->block->pred = (BLOCKLIST *)oAlloc(sizeof(BLOCKLIST));
     bi->block->pred->block = b;
 
     bt = &b->succ;
@@ -114,7 +114,7 @@ static void makeNonInfinite(BLOCK* b)
         bt = &(*bt)->next;
     *bt = bi;
 
-    bi2 = oAlloc(sizeof(BLOCKLIST));
+    bi2 = (BLOCKLIST *)oAlloc(sizeof(BLOCKLIST));
     bi2->block = bi->block;
 
     bt = &blockArray[exitBlock]->pred;
@@ -125,13 +125,13 @@ static void makeNonInfinite(BLOCK* b)
     /* note : the following does NOT insert jmps for the
      * newly added block
      */
-    *criticalThunkPtr = quad = Alloc(sizeof(QUAD));
+    *criticalThunkPtr = quad = (QUAD *)Alloc(sizeof(QUAD));
     criticalThunkPtr = &quad->fwd;
     quad->dc.opcode = i_block;
     quad->block = bi->block;
     quad->dc.v.label = bi->block->blocknum;
 
-    *criticalThunkPtr = quad2 = Alloc(sizeof(QUAD));
+    *criticalThunkPtr = quad2 = (QUAD *)Alloc(sizeof(QUAD));
     criticalThunkPtr = &quad2->fwd;
     quad2->back = quad;
     quad2->dc.opcode = i_blockend;
@@ -227,7 +227,7 @@ static void FindBody(BLOCKLIST* gen, BLOCK* head, enum e_lptype type)
         LOOP* l = LoopAncestor(gen->block);
         if (l && !briggsTest(loopItems, l->loopnum))
         {
-            LIST* bl = oAlloc(sizeof(LIST));
+            LIST* bl = (LIST *)oAlloc(sizeof(LIST));
             bl->data = l;
             bl->next = queue;
             queue = bl;
@@ -248,7 +248,7 @@ static void FindBody(BLOCKLIST* gen, BLOCK* head, enum e_lptype type)
                     LOOP* l = LoopAncestor(p->block);
                     if (l && !briggsTest(loopItems, l->loopnum))
                     {
-                        LIST* bl = oAlloc(sizeof(LIST));
+                        LIST* bl = (LIST *)oAlloc(sizeof(LIST));
                         bl->data = l;
                         bl->next = queue;
                         queue = bl;
@@ -261,7 +261,7 @@ static void FindBody(BLOCKLIST* gen, BLOCK* head, enum e_lptype type)
         else
             queue = queue->next;
     }
-    lp = oAlloc(sizeof(LOOP));
+    lp = (LOOP *)oAlloc(sizeof(LOOP));
     loopArray[loopCount] = lp;
     lp->type = type;
     lp->loopnum = loopCount++;
@@ -269,12 +269,12 @@ static void FindBody(BLOCKLIST* gen, BLOCK* head, enum e_lptype type)
     lp->parent = NULL;
     head->loopParent = lp;
     qx = &lp->contains;
-    *qx = oAlloc(sizeof(LIST));
+    *qx = (LIST *)oAlloc(sizeof(LIST));
     (*qx)->data = head->loopName;
     qx = &(*qx)->next;
     for (i = 0; i < loopItems->top; i++)
     {
-        LIST* l = oAlloc(sizeof(LIST));
+        LIST* l = (LIST *)oAlloc(sizeof(LIST));
         int n = loopItems->data[i];
         l->data = loopArray[n];
         *qx = l;
@@ -314,7 +314,7 @@ static void FindLoop(BLOCK* b)
             Z = findCommonDominator(Z, bl->block);
             if (bl->block != b)  // we don't care about duplicates, they will be filtered later
             {
-                BLOCKLIST* bm = oAlloc(sizeof(BLOCKLIST));
+                BLOCKLIST* bm = (BLOCKLIST *)oAlloc(sizeof(BLOCKLIST));
                 bm->block = bl->block;
                 bm->next = loop;
                 loop = bm;
@@ -401,7 +401,7 @@ static void CalculateSuccessors(LOOP* lp)
             BLOCKLIST* bl = inner->entry->succ;
             while (bl)
             {
-                BLOCKLIST* newExit = oAlloc(sizeof(BLOCKLIST));
+                BLOCKLIST* newExit = (BLOCKLIST *)oAlloc(sizeof(BLOCKLIST));
                 newExit->next = lp->successors;
                 lp->successors = newExit;
                 newExit->block = bl->block;
@@ -418,7 +418,7 @@ static void CalculateSuccessors(LOOP* lp)
             {
                 if (!briggsTest(inner->blocks, prevSuccessors->block->blocknum))
                 {
-                    BLOCKLIST* newExit = oAlloc(sizeof(BLOCKLIST));
+                    BLOCKLIST* newExit = (BLOCKLIST *)oAlloc(sizeof(BLOCKLIST));
                     newExit->next = lp->successors;
                     lp->successors = newExit;
                     newExit->block = prevSuccessors->block;
@@ -438,7 +438,7 @@ void BuildLoopTree(void)
     BOOLEAN skip = FALSE;
     /* this is padded, but, in a really really complex program it could get to be too small
      */
-    loopArray = oAlloc(sizeof(LOOP*) * blockCount * 4);
+    loopArray = (LOOP **)oAlloc(sizeof(LOOP*) * blockCount * 4);
     loopItems = briggsAlloc((blockCount)*4);
     loopCount = 0;
     for (i = 0; i < blockCount; i++)
@@ -447,7 +447,7 @@ void BuildLoopTree(void)
         {
             blockArray[i]->visiteddfst = FALSE;
             blockArray[i]->loopParent = NULL;
-            blockArray[i]->loopName = oAlloc(sizeof(LOOP));
+            blockArray[i]->loopName = (LOOP *)oAlloc(sizeof(LOOP));
             blockArray[i]->loopName->type = LT_BLOCK;
             blockArray[i]->loopName->entry = blockArray[i];
             blockArray[i]->loopName->loopnum = loopCount;
@@ -879,12 +879,12 @@ LIST* strongRegiondfs(int tnum)
         {
             vp = strongStack[--strongStackTop];
             tempInfo[vp]->onstack = FALSE;
-            temp = oAlloc(sizeof(LIST));
+            temp = (LIST *)oAlloc(sizeof(LIST));
             temp->data = (void*)vp;
             temp->next = region;
             region = temp;
         } while (vp != tnum);
-        temp = oAlloc(sizeof(LIST));
+        temp = (LIST *)oAlloc(sizeof(LIST));
         temp->data = region;
         temp->next = rv;
         rv = temp;
@@ -902,7 +902,7 @@ static LIST* strongRegions(LOOP* lp, LIST** anchors)
     QUAD* head;
     LIST* rv = NULL;
     *anchors = NULL;
-    strongStack = oAlloc(sizeof(unsigned short) * tempCount);
+    strongStack = (unsigned short *)oAlloc(sizeof(unsigned short) * tempCount);
     max_dfs = 0;
     strongStackTop = 0;
     for (i = 0; i < tempCount; i++)
@@ -925,7 +925,7 @@ static LIST* strongRegions(LOOP* lp, LIST** anchors)
                 l1->next = rv;
                 rv = l1;
             }
-            l1 = oAlloc(sizeof(LIST));
+            l1 = (LIST *)oAlloc(sizeof(LIST));
             l1->data = (void*)pd->T0;
             l1->next = *anchors;
             *anchors = l1;
@@ -937,7 +937,7 @@ static LIST* strongRegions(LOOP* lp, LIST** anchors)
 void CalculateInduction(void)
 {
     int i;
-    inductionCandidateStack = oAlloc(sizeof(unsigned short) * tempCount);
+    inductionCandidateStack = (unsigned short *)oAlloc(sizeof(unsigned short) * tempCount);
 
     candidates = briggsAlloc(tempCount);
     CalculateLoopInvariants(blockArray[0]);
@@ -974,12 +974,12 @@ void CalculateInduction(void)
                         }
                         if (t || r)
                         {
-                            INDUCTION_LIST* temp = oAlloc(sizeof(INDUCTION_LIST));
+                            INDUCTION_LIST* temp = (INDUCTION_LIST *)oAlloc(sizeof(INDUCTION_LIST));
                             LIST* q;
-                            temp->vars = regions->data;
+                            temp->vars = (LIST *)regions->data;
                             temp->next = lp->inductionSets;
                             lp->inductionSets = temp;
-                            q = regions->data;
+                            q = (LIST *)regions->data;
                             while (q)
                             {
                                 /* the dominator walk will visit inner loops first,

@@ -40,7 +40,7 @@ typedef struct builtins
 static BUILTINS builtins[] = {
 #include "beIntrinsicProtos.h"
 };
-extern "C" char BackendIntrinsicPrototypes[] =
+extern char BackendIntrinsicPrototypes[] =
 #include "beIntrinsicProtos.h"
     ;
 

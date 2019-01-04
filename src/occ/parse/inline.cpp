@@ -72,9 +72,9 @@ static void inInsert(SYMBOL* sp)
 {
     // assumes the symbol isn't already there...
     HASHREC** hr = GetHashLink(didInlines, sp->decoratedName);
-    HASHREC* added = Alloc(sizeof(HASHREC));
+    HASHREC* added = (HASHREC *)Alloc(sizeof(HASHREC));
     sp->mainsym = NULL;
-    added->p = (struct _hrintern_*)sp;
+    added->p = (struct sym *)sp;
     added->next = *hr;
     *hr = added;
 }
@@ -187,7 +187,7 @@ void dumpInlines(void)
                     LIST* instants = parentTemplate->instantiations;
                     while (instants)
                     {
-                        if (TemplateInstantiationMatch(instants->data, sym->parentClass))
+                        if (TemplateInstantiationMatch((SYMBOL *)instants->data, sym->parentClass))
                         {
                             parentTemplate = (SYMBOL*)instants->data;
                             break;
@@ -308,7 +308,7 @@ SYMBOL* getvc1Thunk(int offset)
     rv = search(name, vc1Thunks);
     if (!rv)
     {
-        rv = Alloc(sizeof(SYMBOL));
+        rv = (SYMBOL *)Alloc(sizeof(SYMBOL));
         rv->name = rv->errname = rv->decoratedName = litlate(name);
         rv->storage_class = sc_static;
         rv->linkage = lk_virtual;
@@ -320,7 +320,7 @@ SYMBOL* getvc1Thunk(int offset)
 }
 void InsertInline(SYMBOL* sp)
 {
-    LIST* temp = Alloc(sizeof(LIST));
+    LIST* temp = (LIST *)Alloc(sizeof(LIST));
     temp->data = sp;
     if (isfunction(sp->tp))
     {
@@ -339,7 +339,7 @@ void InsertInline(SYMBOL* sp)
 }
 void InsertInlineData(SYMBOL* sp)
 {
-    LIST* temp = Alloc(sizeof(LIST));
+    LIST* temp = (LIST *)Alloc(sizeof(LIST));
     temp->data = sp;
     if (inlineDataHead)
         inlineDataTail = inlineDataTail->next = temp;
@@ -361,7 +361,7 @@ EXPRESSION* inlineexpr(EXPRESSION* node, BOOLEAN* fromlval)
     (void)fromlval;
     if (node == 0)
         return 0;
-    temp = (EXPRESSION*)Alloc(sizeof(EXPRESSION));
+    temp = (EXPRESSION*)(EXPRESSION *)Alloc(sizeof(EXPRESSION));
     memcpy(temp, node, sizeof(EXPRESSION));
     switch (temp->type)
     {
@@ -617,13 +617,13 @@ EXPRESSION* inlineexpr(EXPRESSION* node, BOOLEAN* fromlval)
             {
                 INITLIST* args = fp->arguments;
                 INITLIST** p;
-                temp->v.func = Alloc(sizeof(FUNCTIONCALL));
+                temp->v.func = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
                 *temp->v.func = *fp;
                 p = &temp->v.func->arguments;
                 *p = NULL;
                 while (args)
                 {
-                    *p = Alloc(sizeof(INITLIST));
+                    *p = (INITLIST *)Alloc(sizeof(INITLIST));
                     **p = *args;
                     (*p)->exp = inlineexpr((*p)->exp, FALSE);
                     args = args->next;
@@ -651,7 +651,7 @@ STATEMENT* inlinestmt(STATEMENT* block)
     STATEMENT *out = NULL, **outptr = &out;
     while (block != NULL)
     {
-        *outptr = (STATEMENT*)Alloc(sizeof(STATEMENT));
+        *outptr = (STATEMENT*)(STATEMENT *)Alloc(sizeof(STATEMENT));
         memcpy(*outptr, block, sizeof(STATEMENT));
         (*outptr)->next = NULL;
         switch (block->type)
@@ -690,7 +690,7 @@ STATEMENT* inlinestmt(STATEMENT* block)
             case st_passthrough:
                 if (block->lower)
                     if (chosenAssembler->inlineAsmStmt)
-                        block->lower = (*chosenAssembler->inlineAsmStmt)(block->lower);
+                        block->lower = (STATEMENT *)(*chosenAssembler->inlineAsmStmt)(block->lower);
                 break;
             case st_nop:
                 break;
@@ -1066,7 +1066,7 @@ static void setExp(SYMBOL* sx, EXPRESSION* exp, STATEMENT*** stp)
         deref(sx->tp, &tnode);
         sx->inlineFunc.stmt = (STATEMENT*)tnode;
         tnode = exprNode(en_assign, tnode, exp);
-        **stp = Alloc(sizeof(STATEMENT));
+        **stp = (STATEMENT *)Alloc(sizeof(STATEMENT));
         (**stp)->type = st_expr;
         (**stp)->select = tnode;
         *stp = &(**stp)->next;
@@ -1172,7 +1172,7 @@ EXPRESSION* doinline(FUNCTIONCALL* params, SYMBOL* funcsp)
     if (stmt1)
     {
         // this will kill the ret val but we don't care since we've modified params
-        stmt = Alloc(sizeof(STATEMENT));
+        stmt = (STATEMENT *)Alloc(sizeof(STATEMENT));
         stmt->type = st_block;
         stmt->lower = stmt1;
     }

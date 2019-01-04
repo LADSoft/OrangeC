@@ -167,9 +167,6 @@
     <ClCompile Include="x86\rewrite.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\util\winsystem.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="parse\cppbltin.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -252,6 +249,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="x86\dbgtypes.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\util\winsystem.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

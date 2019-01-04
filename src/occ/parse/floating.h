@@ -97,10 +97,6 @@ typedef struct
 /*
 ** PROTOTYPES
 */
-#ifdef __cplusplus
-extern "C"
-{
-#endif
 #ifdef XXXXX
     void SetupCPUEmFloatArrays(FPFC* abase, FPFC* bbase, FPFC* cbase, ulong arraysize);
     ulong DoEmFloatIteration(FPFC* abase, FPFC* bbase, FPFC* cbase, ulong arraysize, ulong loops);
@@ -131,6 +127,3 @@ extern "C"
     int FPFToLongDouble(unsigned char* dest, FPFC* src);
     void FPFTruncate(FPFC* value, int bits, int maxexp, int minexp);
     int LongDoubleToFPF(FPFC* dest, unsigned char* src);
-#ifdef __cplusplus
-}
-#endif

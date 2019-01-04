@@ -220,13 +220,13 @@ static ALIASNAME* LookupMem(IMODE* im)
         }
         p = &(*p)->next;
     }
-    *p = aAlloc(sizeof(ALIASNAME));
+    *p = (ALIASNAME *) aAlloc(sizeof(ALIASNAME));
     (*p)->v.name = im;
     switch (im->offset->type)
     {
         case en_auto:
         case en_global:
-            (*p)->v.uiv = aAlloc(sizeof(UIV));
+            (*p)->v.uiv = (UIV *)aAlloc(sizeof(UIV));
             (*p)->v.uiv->im = im;
             (*p)->byUIV = TRUE;
             break;
@@ -265,7 +265,7 @@ static void AliasUnion(ALIASLIST** dest, ALIASLIST* src)
         }
         if (!*q)
         {
-            ALIASLIST* al = aAlloc(sizeof(ALIASLIST));
+            ALIASLIST* al = (ALIASLIST *)aAlloc(sizeof(ALIASLIST));
             al->address = src->address;
             *q = al;
             changed = TRUE;
@@ -288,7 +288,7 @@ static void AliasUnionParm(ALIASLIST** dest, ALIASLIST* src)
         }
         if (!*q)
         {
-            ALIASLIST* al = aAlloc(sizeof(ALIASLIST));
+            ALIASLIST* al = (ALIASLIST *)aAlloc(sizeof(ALIASLIST));
             al->address = src->address;
             *q = al;
             changed = TRUE;
@@ -312,12 +312,12 @@ static ALIASNAME* LookupAliasName(ALIASNAME* name, int offset)
             return (*uivs)->result;
         uivs = &(*uivs)->next;
     }
-    *uivs = aAlloc(sizeof(struct UIVHash));
+    *uivs = (UIVHash *)aAlloc(sizeof(struct UIVHash));
     (*uivs)->name = name;
     (*uivs)->offset = offset;
-    result = aAlloc(sizeof(ALIASNAME));
+    result = (ALIASNAME *)aAlloc(sizeof(ALIASNAME));
     result->byUIV = TRUE;
-    result->v.uiv = aAlloc(sizeof(UIV));
+    result->v.uiv = (UIV *)aAlloc(sizeof(UIV));
     if (name->byUIV)
     {
         *result->v.uiv = *name->v.uiv;
@@ -327,7 +327,7 @@ static ALIASNAME* LookupAliasName(ALIASNAME* name, int offset)
     {
         result->v.uiv->im = name->v.name;
     }
-    result->v.uiv->offset = aAlloc(sizeof(struct UIVOffset));
+    result->v.uiv->offset = (UIVOffset *)aAlloc(sizeof(struct UIVOffset));
     result->v.uiv->offset->offset = offset;
     if (name->byUIV)
         result->v.uiv->offset->next = name->v.uiv->offset;
@@ -369,7 +369,7 @@ static ALIASADDRESS* LookupAddress(ALIASNAME* name, int offset)
             return (*search);
         search = &(*search)->next;
     }
-    addr = (*search) = aAlloc(sizeof(ALIASADDRESS));
+    addr = (*search) = (ALIASADDRESS *)aAlloc(sizeof(ALIASADDRESS));
     addr->name = name;
     addr->offset = offset;
     if (addr->name->byUIV)
@@ -387,7 +387,7 @@ static ALIASADDRESS* LookupAddress(ALIASNAME* name, int offset)
             break;
         case en_global:
         {
-            ALIASLIST* l = aAlloc(sizeof(ALIASLIST));
+            ALIASLIST* l = (ALIASLIST *)aAlloc(sizeof(ALIASLIST));
             l->address = addr;
             AliasUnion(&parmList, l);
         }
@@ -395,11 +395,11 @@ static ALIASADDRESS* LookupAddress(ALIASNAME* name, int offset)
         default:
             break;
     }
-    li = aAlloc(sizeof(LIST));
+    li = (LIST *)(LIST *)aAlloc(sizeof(LIST));
     li->data = addr;
     li->next = name->addresses;
     name->addresses = li;
-    hash = dhash(&name, sizeof(name));
+    hash = dhash((UBYTE *)&name, sizeof(name));
     ADDRBYNAME* q = addrNames[hash];
     while (q)
     {
@@ -414,7 +414,7 @@ static ALIASADDRESS* LookupAddress(ALIASNAME* name, int offset)
         addrNames[hash] = q;
         q->name = name;
     }
-    ALIASLIST* ali = aAlloc(sizeof(ALIASLIST));
+    ALIASLIST* ali = (ALIASLIST *)aAlloc(sizeof(ALIASLIST));
     ali->address = addr;
     ali->next = q->addresses;
     q->addresses = ali;
@@ -450,7 +450,7 @@ static void CreateMem(IMODE* im)
             {
                 // make one in the case of global addresses that aren't used
                 // directly
-                IMODE* ap2 = (IMODE*)Alloc(sizeof(IMODE));
+                IMODE* ap2 = (IMODE*)(IMODE *)Alloc(sizeof(IMODE));
                 ap2->offset = im->offset;
                 ap2->mode = i_direct;
                 ap2->size = ISZ_ADDR;
@@ -471,7 +471,7 @@ static void CreateMem(IMODE* im)
             if (!aa->pointsto)
             {
                 ALIASNAME* an = LookupAliasName(p, 0);
-                aa->pointsto = aAlloc(sizeof(ALIASLIST));
+                aa->pointsto = (_aliaslist *)(ALIASLIST *)aAlloc(sizeof(ALIASLIST));
                 aa->pointsto->address = LookupAddress(an, 0);
             }
         }
@@ -584,7 +584,7 @@ static void HandleAssn(QUAD* head)
                 {
                     ALIASNAME* an = LookupAliasName(addr->address->name, addr->address->offset);
                     ALIASADDRESS* aa = LookupAddress(an, 0);
-                    ALIASLIST* al = aAlloc(sizeof(ALIASLIST));
+                    ALIASLIST* al = (ALIASLIST *)aAlloc(sizeof(ALIASLIST));
                     al->address = aa;
                     AliasUnion(&addr->address->pointsto, al);
                 }
@@ -618,7 +618,7 @@ static void HandleAssn(QUAD* head)
                 {
                     ALIASNAME* an = LookupMem(head->ans->offset->v.sp->imvalue);
                     ALIASADDRESS* aa;
-                    ALIASLIST* al = aAlloc(sizeof(ALIASLIST));
+                    ALIASLIST* al = (ALIASLIST *)aAlloc(sizeof(ALIASLIST));
                     al->address = aa2;
                     if (head->ans->mode == i_direct)
                         an = LookupAliasName(an, 0);
@@ -636,7 +636,7 @@ static void HandleAssn(QUAD* head)
                 BOOLEAN xchanged = changed;
                 ALIASNAME* an = LookupMem(head->dc.left);
                 ALIASADDRESS* aa = LookupAddress(an, 0);
-                ALIASLIST* al = (ALIASLIST*)aAlloc(sizeof(ALIASLIST));
+                ALIASLIST* al = (ALIASLIST*)(ALIASLIST *)aAlloc(sizeof(ALIASLIST));
                 al->address = aa;
                 tempInfo[head->ans->offset->v.sp->value.i]->pointsto = NULL;
                 AliasUnion(&tempInfo[head->ans->offset->v.sp->value.i]->pointsto, al);
@@ -750,7 +750,7 @@ static int InferStride(IMODE* im)
 }
 static void SetStride(ALIASADDRESS* addr, int stride)
 {
-    int hash = dhash(&addr->name, sizeof(addr->name));
+    int hash = dhash((UBYTE *)&addr->name, sizeof(addr->name));
     ADDRBYNAME* q = addrNames[hash];
     while (q)
     {
@@ -806,7 +806,7 @@ static void Infer(IMODE* ans, IMODE* reg, ALIASLIST* pointsto)
             while (pointsto)
             {
                 ALIASADDRESS* addr = LookupAddress(pointsto->address->name, pointsto->address->offset + c);
-                ALIASLIST* al = aAlloc(sizeof(ALIASLIST));
+                ALIASLIST* al = (ALIASLIST *)aAlloc(sizeof(ALIASLIST));
                 al->address = addr;
                 AliasUnion(&result, al);
                 SetStride(pointsto->address, l);
@@ -834,7 +834,7 @@ static void HandleAdd(QUAD* head)
                     while (scan)
                     {
                         ALIASADDRESS* addr = LookupAddress(scan->address->name, scan->address->offset + head->dc.left->offset->v.i);
-                        ALIASLIST* al = aAlloc(sizeof(ALIASLIST));
+                        ALIASLIST* al = (ALIASLIST *)aAlloc(sizeof(ALIASLIST));
                         al->address = addr;
                         AliasUnion(&result, al);
                         scan = scan->next;
@@ -849,7 +849,7 @@ static void HandleAdd(QUAD* head)
                     {
                         ALIASNAME* nm = LookupMem(head->dc.left->offset->v.sp->imvalue);
                         ALIASADDRESS* aa = LookupAddress(nm, 0);
-                        ALIASLIST* al = aAlloc(sizeof(ALIASLIST));
+                        ALIASLIST* al = (ALIASLIST *)aAlloc(sizeof(ALIASLIST));
                         al->address = aa;
                         Infer(head->ans, head->dc.right, al);
                     }
@@ -862,7 +862,7 @@ static void HandleAdd(QUAD* head)
                     // p + C
                     ALIASNAME* nm = LookupMem(head->dc.left->offset->v.sp->imvalue);
                     ALIASADDRESS* aa = LookupAddress(nm, head->dc.right->offset->v.i);
-                    ALIASLIST* al = aAlloc(sizeof(ALIASLIST));
+                    ALIASLIST* al = (ALIASLIST *)aAlloc(sizeof(ALIASLIST));
                     al->address = aa;
                     AliasUnion(&tempInfo[head->ans->offset->v.sp->value.i]->pointsto, al);
                 }
@@ -871,7 +871,7 @@ static void HandleAdd(QUAD* head)
                     // C + p
                     ALIASNAME* nm = LookupMem(head->dc.right->offset->v.sp->imvalue);
                     ALIASADDRESS* aa = LookupAddress(nm, head->dc.left->offset->v.i);
-                    ALIASLIST* al = aAlloc(sizeof(ALIASLIST));
+                    ALIASLIST* al = (ALIASLIST *)aAlloc(sizeof(ALIASLIST));
                     al->address = aa;
                     AliasUnion(&tempInfo[head->ans->offset->v.sp->value.i]->pointsto, al);
                 }
@@ -892,7 +892,7 @@ static void HandleAdd(QUAD* head)
                     while (scan)
                     {
                         ALIASADDRESS* addr = LookupAddress(scan->address->name, scan->address->offset + c);
-                        ALIASLIST* al = aAlloc(sizeof(ALIASLIST));
+                        ALIASLIST* al = (ALIASLIST *)aAlloc(sizeof(ALIASLIST));
                         al->address = addr;
                         AliasUnion(&result, al);
                         scan = scan->next;
@@ -907,7 +907,7 @@ static void HandleAdd(QUAD* head)
                     {
                         ALIASNAME* nm = LookupMem(head->dc.right->offset->v.sp->imvalue);
                         ALIASADDRESS* aa = LookupAddress(nm, 0);
-                        ALIASLIST* al = aAlloc(sizeof(ALIASLIST));
+                        ALIASLIST* al = (ALIASLIST *)aAlloc(sizeof(ALIASLIST));
                         al->address = aa;
                         Infer(head->ans, head->dc.left, al);
                     }
@@ -1031,7 +1031,7 @@ static void HandleParm(QUAD* head)
                     {
                         ALIASNAME* an = LookupAliasName(addr->address->name, 0);
                         ALIASADDRESS* aa = LookupAddress(an, 0);
-                        ALIASLIST* al = aAlloc(sizeof(ALIASLIST));
+                        ALIASLIST* al = (ALIASLIST *)aAlloc(sizeof(ALIASLIST));
                         al->address = aa;
                         AliasUnion(&addr->address->pointsto, al);
                     }

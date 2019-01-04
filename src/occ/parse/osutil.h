@@ -74,10 +74,7 @@ typedef struct _memblk_
 typedef struct _hashrec_
 {
     struct _hashrec_* next; /* next to next element in list */
-    struct _hrintern_
-    {
-        char* name;
-    } * p;
+    struct sym *p;
 } HASHREC;
 
 typedef struct _hashtable_
@@ -91,12 +88,5 @@ typedef struct _hashtable_
 
 } HASHTABLE;
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-    extern char* getUsageText(void);
-#ifdef __cplusplus
-}
-#endif
+   extern char* getUsageText(void);
 #endif

@@ -84,11 +84,12 @@ typedef struct _imode_
     struct expr* offset;  /* offset */
     struct expr* offset2; /* a second temp reg */
     struct expr* offset3; /* an address */
-    struct exprlist
-    {
-        struct exprlist* next;
-        struct expr* offset;
-    } * vararg;
+    struct expr *vararg;
+//    struct exprlist
+//    {
+//        struct exprlist* next;
+//        struct expr* offset;
+//    } * vararg;
     int scale; /* scale factor on the second temp reg */
     char useindx;
     char size;                    /* size */
@@ -108,45 +109,48 @@ typedef struct _imode_
 #define IM_LIVELEFT 1
 #define IM_LIVERIGHT 2
 #define IM_LIVEANS 4
+struct _phiblock
+{
+    struct _phiblock* next;
+    int Tn;
+    struct _block* block;
+};
+
 typedef struct _phidata
 {
     int nblocks;
     int T0;
-    struct _phiblock
-    {
-        struct _phiblock* next;
-        int Tn;
-        struct _block* block;
-    } * temps;
+    struct _phiblock *temps;
 } PHIDATA;
 
 /*
  * icode node
  * this is also used for dag nodes
  */
+struct _basic_dag
+{
+    enum i_ops opcode; /* opcode */
+    IMODE* left;       /* ans = left opcode right */
+    IMODE* right;
+    union ival
+    {
+        /* values for constant nodes */
+        LLONG_TYPE i;
+        FPFC f;
+        struct
+        {
+            FPFC r;
+            FPFC i;
+        } c;
+        void* data; /* generic data, won't be filled in until after LCSE */
+        PHIDATA* phi;
+        long label;  // branches
+    } v;
+};
 
 typedef struct quad
 {
-    struct _basic_dag
-    {
-        enum i_ops opcode; /* opcode */
-        IMODE* left;       /* ans = left opcode right */
-        IMODE* right;
-        union ival
-        {
-            /* values for constant nodes */
-            LLONG_TYPE i;
-            FPFC f;
-            struct
-            {
-                FPFC r;
-                FPFC i;
-            } c;
-            void* data; /* generic data, won't be filled in until after LCSE */
-            PHIDATA* phi;
-            long label;  // branches
-        } v;
-    } dc;
+    struct _basic_dag dc;
     IMODE* ans;
     ULLONG_TYPE liveRegs;
     struct quad *fwd, *back;
@@ -231,16 +235,17 @@ enum e_icmode {
     ical,icla,icaa
 };
 // clang-format on
+struct caseptrs
+{
+    int label;
+    LLONG_TYPE id;
+};
 struct cases
 {
     LLONG_TYPE bottom;
     LLONG_TYPE top;
     int count;
-    struct caseptrs
-    {
-        int label;
-        LLONG_TYPE id;
-    } * ptrs;
+    struct caseptrs *ptrs;
 };
 // clang-format off
 enum e_gt

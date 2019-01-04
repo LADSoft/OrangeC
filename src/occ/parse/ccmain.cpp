@@ -39,7 +39,9 @@ extern int optflags;
 extern LIST* nonSysIncludeFiles;
 
 #ifdef _WIN32
-char* __stdcall GetModuleFileNameA(int handle, char* buf, int size);
+extern "C" {
+    char* __stdcall GetModuleFileNameA(int handle, char* buf, int size);
+}
 #endif
 
 #ifdef PARSER_ONLY
@@ -434,11 +436,11 @@ void compile(BOOLEAN global)
     if (chosenAssembler->outcode_init)
         chosenAssembler->outcode_init();
     if (chosenAssembler->enter_filename)
-        chosenAssembler->enter_filename(clist->data);
+        chosenAssembler->enter_filename((char *)clist->data);
     if (cparams.prm_debug && chosenDebugger && chosenDebugger->init)
         chosenDebugger->init();
     if (cparams.prm_browse && chosenDebugger && chosenDebugger->init_browsedata)
-        chosenDebugger->init_browsedata(clist->data);
+        chosenDebugger->init_browsedata((char *)clist->data);
     browse_init();
     browse_startfile(infile, 0);
     if (cparams.prm_assemble)
@@ -459,7 +461,7 @@ void compile(BOOLEAN global)
     else
     {
 #ifndef PARSER_ONLY
-        asm_header(clist->data, version);
+        asm_header((char *)clist->data, version);
 #endif
         lex = getsym();
         if (lex)
@@ -533,7 +535,7 @@ int main(int argc, char* argv[])
 
     if (chosenAssembler->Args)
     {
-        CMDLIST* newArgs = calloc(sizeof(Args) + sizeof(Args[0]) * chosenAssembler->ArgCount, 1);
+        CMDLIST* newArgs = (CMDLIST *)calloc(sizeof(Args) + sizeof(Args[0]) * chosenAssembler->ArgCount, 1);
         if (newArgs)
         {
             memcpy(&newArgs[0], chosenAssembler->Args, chosenAssembler->ArgCount * sizeof(Args[0]));
@@ -548,7 +550,7 @@ int main(int argc, char* argv[])
     if (clist && clist->next)
         multipleFiles = TRUE;
 #ifdef PARSER_ONLY
-    strcpy(buffer, clist->data);
+    strcpy(buffer, (char *)clist->data);
     strcpy(realOutFile, outfile);
     outputfile(realOutFile, buffer, ".ods");
     if (!ccDBOpen(realOutFile))
@@ -562,7 +564,7 @@ int main(int argc, char* argv[])
     while (clist)
     {
         cparams.prm_cplusplus = FALSE;
-        strcpy(buffer, clist->data);
+        strcpy(buffer, (char *)clist->data);
 #ifndef PARSER_ONLY
         if (buffer[0] == '-')
             strcpy(buffer, "a.c");
@@ -631,7 +633,7 @@ int main(int argc, char* argv[])
         {
             preprocini(infile, inputFile);
             if (chosenAssembler->enter_filename)
-                chosenAssembler->enter_filename(clist->data);
+                chosenAssembler->enter_filename((char *)clist->data);
             MakeStubs();
         }
         else

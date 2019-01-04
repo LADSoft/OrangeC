@@ -187,7 +187,7 @@ static void liveSetup(void)
 static void liveOut()
 {
     BITINT inWorkList[8192];
-    unsigned short* workList = sAlloc((blockCount + 1) * sizeof(unsigned short));
+    unsigned short* workList = (unsigned short *)sAlloc((blockCount + 1) * sizeof(unsigned short));
     int i;
     int head = 0, tail = 0;
     int tempDWords = (tempCount + BITINTBITS - 1) / BITINTBITS;
@@ -293,7 +293,7 @@ static void liveOut()
 
                 if (blockArray[i]->liveOut)
                 {
-                    QUAD* q = Alloc(sizeof(QUAD));
+                    QUAD* q = (QUAD *)Alloc(sizeof(QUAD));
                     t = blockArray[i]->tail;
                     q->dc.opcode = i_blockend;
                     q->dc.v.data = blockArray[i]->liveOut;

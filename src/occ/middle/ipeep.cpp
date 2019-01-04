@@ -289,7 +289,7 @@ void kill_jumpover(BLOCK* b, QUAD* head)
  * Conditionnal jumps over gotos get squashed here
  */
 {
-    int newtype;
+    i_ops newtype;
     QUAD* newhead = head->fwd;
     (void)b;
     while (newhead->dc.opcode == i_block || newhead->dc.opcode == i_blockend || newhead->dc.opcode == i_dbgblock ||
@@ -499,7 +499,7 @@ void peep_icode(BOOLEAN branches)
 {
     int i;
     BOOLEAN changed;
-    golist = oAlloc(sizeof(QUAD*) * (nextLabel - firstLabel));
+    golist = (QUAD **)oAlloc(sizeof(QUAD*) * (nextLabel - firstLabel));
     scan_gotos(intermed_head);
     scan_abnormal();
     for (i = 0; i < blockCount; i++)

@@ -872,7 +872,7 @@ static void iop_blockend(QUAD* q)
         int i, j;
         BITINT* p;
         oprintf(icdFile, "\n;\tLive: ");
-        p = q->dc.v.data;
+        p = (BITINT *)q->dc.v.data;
 
         for (i = 0; i < (tempCount + BITINTBITS - 1) / BITINTBITS; i++, p++)
             if (*p)
@@ -2099,7 +2099,7 @@ int genstring(STRING* str)
                         genuint32(*p++);
                         break;
                     default:
-                        if (p >= 0x20 && p < 0x7f || *p == ' ')
+                        if (*p >= 0x20 && *p < 0x7f || *p == ' ')
                         {
                             if (!instring)
                             {
@@ -2450,7 +2450,7 @@ void nl(void)
 static void exitseg(void)
 {
     if (curseg != noseg && chosenAssembler->gen->exitseg)
-        chosenAssembler->gen->exitseg(curseg);
+        chosenAssembler->gen->exitseg((e_sg)curseg);
     curseg = noseg;
 }
 static void enterseg(enum e_sg seg)
@@ -2725,13 +2725,13 @@ void putexterns(void)
         exitseg();
         while (globalCache)
         {
-            SYMBOL* sp = globalCache->data;
+            SYMBOL* sp = (SYMBOL *)globalCache->data;
             globaldef(sp);
             globalCache = globalCache->next;
         }
         while (externList)
         {
-            SYMBOL* sp = externList->data;
+            SYMBOL* sp = (SYMBOL *)externList->data;
             if (!sp->ispure &&
                 (sp->dontinstantiate && sp->genreffed ||
                  !sp->inlineFunc.stmt && !sp->init &&
@@ -2752,7 +2752,7 @@ void putexterns(void)
         while (libincludes)
         {
             if (chosenAssembler->gen->output_includelib)
-                chosenAssembler->gen->output_includelib(libincludes->data);
+                chosenAssembler->gen->output_includelib((char *)libincludes->data);
 
             oprintf(icdFile, "\tINCLUDELIB\t%s\n", libincludes->data);
             libincludes = libincludes->next;

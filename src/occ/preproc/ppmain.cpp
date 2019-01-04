@@ -130,7 +130,7 @@ int main(int argc, char* argv[])
     while (clist)
     {
         cparams.prm_cplusplus = FALSE;
-        strcpy(buffer, clist->data);
+        strcpy(buffer, (char *)clist->data);
         if (buffer[0] == '-')
             buffer[0] = 'a';
         if (getenv("OCC_LEGACY_OPTIONS") && !outfile[0])

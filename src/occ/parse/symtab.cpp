@@ -53,17 +53,17 @@ void ccSetSymbol(SYMBOL* s);
 
 void syminit(void)
 {
-    globalNameSpace = Alloc(sizeof(NAMESPACEVALUES));
+    globalNameSpace = (NAMESPACEVALUES *)Alloc(sizeof(NAMESPACEVALUES));
     globalNameSpace->syms = CreateHashTable(GLOBALHASHSIZE);
     globalNameSpace->tags = CreateHashTable(GLOBALHASHSIZE);
-    localNameSpace = Alloc(sizeof(NAMESPACEVALUES));
+    localNameSpace = (NAMESPACEVALUES *)Alloc(sizeof(NAMESPACEVALUES));
     usingDirectives = NULL;
     inMatchOverload = FALSE;
 }
 HASHTABLE* CreateHashTable(int size)
 {
-    HASHTABLE* rv = Alloc(sizeof(HASHTABLE));
-    rv->table = Alloc(sizeof(HASHREC*) * size);
+    HASHTABLE* rv = (HASHTABLE *)Alloc(sizeof(HASHTABLE));
+    rv->table = (HASHREC **)Alloc(sizeof(HASHREC*) * size);
     rv->size = size;
     return rv;
 }
@@ -93,7 +93,7 @@ void AllocateLocalContext(BLOCKDATA* block, SYMBOL* sp, int label)
     if (sp)
         localNameSpace->tags->blockLevel = sp->value.i++;
 
-    l = Alloc(sizeof(LIST));
+    l = (LIST *)Alloc(sizeof(LIST));
     l->data = localNameSpace->usingDirectives;
     l->next = usingDirectives;
     usingDirectives = l;
@@ -148,7 +148,7 @@ void FreeLocalContext(BLOCKDATA* block, SYMBOL* sp, int label)
     localNameSpace->syms = localNameSpace->syms->next;
     localNameSpace->tags = localNameSpace->tags->next;
 
-    localNameSpace->usingDirectives = usingDirectives->data;
+    localNameSpace->usingDirectives = (LIST *) usingDirectives->data;
     usingDirectives = usingDirectives->next;
 
 #    ifdef PARSER_ONLY
@@ -199,15 +199,15 @@ HASHREC* AddName(SYMBOL* item, HASHTABLE* table)
                 return (r);
             q = q->next;
         }
-        newRec = Alloc(sizeof(HASHREC));
+        newRec = (HASHREC *)Alloc(sizeof(HASHREC));
         r->next = newRec;
-        newRec->p = (struct _hrintern_*)item;
+        newRec->p = (struct sym *)item;
     }
     else
     {
-        newRec = Alloc(sizeof(HASHREC));
+        newRec = (HASHREC *)Alloc(sizeof(HASHREC));
         *p = newRec;
-        newRec->p = (struct _hrintern_*)item;
+        newRec->p = (struct sym *)item;
     }
     return (0);
 }
@@ -233,15 +233,15 @@ HASHREC* AddOverloadName(SYMBOL* item, HASHTABLE* table)
                 return (r);
             q = q->next;
         }
-        newRec = Alloc(sizeof(HASHREC));
+        newRec = (HASHREC *)Alloc(sizeof(HASHREC));
         r->next = newRec;
-        newRec->p = (struct _hrintern_*)item;
+        newRec->p = (struct sym *)item;
     }
     else
     {
-        newRec = Alloc(sizeof(HASHREC));
+        newRec = (HASHREC *)Alloc(sizeof(HASHREC));
         *p = newRec;
-        newRec->p = (struct _hrintern_*)item;
+        newRec->p = (struct sym *)item;
     }
     return (0);
 }

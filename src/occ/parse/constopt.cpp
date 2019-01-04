@@ -73,10 +73,10 @@ static int isoptconst(EXPRESSION* en)
 
 /*-------------------------------------------------------------------------*/
 
-static int maxinttype(EXPRESSION* ep1, EXPRESSION* ep2)
+static e_node maxinttype(EXPRESSION* ep1, EXPRESSION* ep2)
 {
-    int type1 = ep1->type;
-    int type2 = ep2->type;
+    e_node type1 = ep1->type;
+    e_node type2 = ep2->type;
     if (type1 == en_c_ull || type2 == en_c_ull)
         return en_c_ull;
     if (type1 == en_c_ll || type2 == en_c_ll)
@@ -119,10 +119,10 @@ static int isunsignedexpr(EXPRESSION* ep1)
 
 /*-------------------------------------------------------------------------*/
 
-static int maxfloattype(EXPRESSION* ep1, EXPRESSION* ep2)
+static e_node maxfloattype(EXPRESSION* ep1, EXPRESSION* ep2)
 {
-    int type1 = ep1->type;
-    int type2 = ep2->type;
+    e_node type1 = ep1->type;
+    e_node type2 = ep2->type;
     if (type1 == en_c_ld || type2 == en_c_ld || type1 == en_c_ldi || type2 == en_c_ldi)
         return en_c_ld;
     if (type1 == en_c_d || type2 == en_c_d || type1 == en_c_di || type2 == en_c_di)
@@ -132,10 +132,10 @@ static int maxfloattype(EXPRESSION* ep1, EXPRESSION* ep2)
 
 /*-------------------------------------------------------------------------*/
 
-static int maximaginarytype(EXPRESSION* ep1, EXPRESSION* ep2)
+static e_node maximaginarytype(EXPRESSION* ep1, EXPRESSION* ep2)
 {
-    int type1 = ep1->type;
-    int type2 = ep2->type;
+    e_node type1 = ep1->type;
+    e_node type2 = ep2->type;
     if (type1 == en_c_ld || type2 == en_c_ld || type1 == en_c_ldi || type2 == en_c_ldi)
         return en_c_ldi;
     if (type1 == en_c_d || type2 == en_c_d || type1 == en_c_di || type2 == en_c_di)
@@ -145,10 +145,10 @@ static int maximaginarytype(EXPRESSION* ep1, EXPRESSION* ep2)
 
 /*-------------------------------------------------------------------------*/
 
-static int maxcomplextype(EXPRESSION* ep1, EXPRESSION* ep2)
+static e_node maxcomplextype(EXPRESSION* ep1, EXPRESSION* ep2)
 {
-    int type1 = ep1->type;
-    int type2 = ep2->type;
+    e_node type1 = ep1->type;
+    e_node type2 = ep2->type;
     if (type1 == en_c_ld || type2 == en_c_ld || type1 == en_c_ldi || type2 == en_c_ldi || type1 == en_c_ldc || type2 == en_c_ldc)
         return en_c_ldc;
     if (type1 == en_c_d || type2 == en_c_d || type1 == en_c_di || type2 == en_c_di || type1 == en_c_dc || type2 == en_c_dc)
@@ -1413,7 +1413,7 @@ int opt0(EXPRESSION** node)
     int rv = FALSE;
     int mode;
     FPFC dval;
-    int negtype = en_uminus;
+    e_node negtype = en_uminus;
 
     ep = *node;
 
@@ -2472,7 +2472,7 @@ int fold_const(EXPRESSION* node)
                     case en_structadd:
                         if (isoptconst(node->left->left))
                         {
-                            int type = en_add;
+                            e_node type = en_add;
                             if (node->type == en_arrayadd || node->left->type == en_arrayadd)
                                 type = en_arrayadd;
                             if (node->type == en_structadd || node->left->type == en_structadd)
@@ -2484,7 +2484,7 @@ int fold_const(EXPRESSION* node)
                         }
                         else if (isoptconst(node->left->right))
                         {
-                            int type = en_add;
+                            e_node type = en_add;
 
                             if (node->type == en_arrayadd || node->left->type == en_arrayadd)
                                 type = en_arrayadd;
@@ -2499,7 +2499,7 @@ int fold_const(EXPRESSION* node)
                     case en_sub:
                         if (isoptconst(node->left->left))
                         {
-                            int type = en_add;
+                            e_node type = en_add;
                             if (node->type == en_arrayadd)
                                 type = en_arrayadd;
                             if (node->type == en_structadd)
@@ -2511,7 +2511,7 @@ int fold_const(EXPRESSION* node)
                         }
                         else if (isoptconst(node->left->right))
                         {
-                            int type = en_add;
+                            e_node type = en_add;
                             if (node->type == en_arrayadd)
                                 type = en_arrayadd;
                             if (node->type == en_structadd)
@@ -2535,7 +2535,7 @@ int fold_const(EXPRESSION* node)
                     case en_structadd:
                         if (isoptconst(node->right->left))
                         {
-                            int type = en_add;
+                            e_node type = en_add;
                             if (node->type == en_arrayadd || node->right->type == en_arrayadd)
                                 type = en_arrayadd;
                             if (node->type == en_structadd || node->right->type == en_structadd)
@@ -2547,7 +2547,7 @@ int fold_const(EXPRESSION* node)
                         }
                         else if (isoptconst(node->right->right))
                         {
-                            int type = en_add;
+                            e_node type = en_add;
                             if (node->type == en_arrayadd || node->right->type == en_arrayadd)
                                 type = en_arrayadd;
                             if (node->type == en_structadd || node->right->type == en_structadd)
@@ -2569,7 +2569,7 @@ int fold_const(EXPRESSION* node)
                         }
                         else if (isoptconst(node->right->right))
                         {
-                            int type = en_add;
+                            e_node type = en_add;
                             if (node->type == en_arrayadd)
                                 type = en_arrayadd;
                             if (node->type == en_structadd)

@@ -46,7 +46,7 @@ int prm_bepeep = TRUE;
 int prm_crtdll = FALSE;
 int prm_lscrtdll = FALSE;
 int prm_msvcrt = FALSE;
-enum asmTypes prm_assembler;
+int prm_assembler;
 int prm_flat = FALSE;
 int prm_nodos = FALSE;
 int prm_useesp = TRUE;
@@ -144,7 +144,7 @@ static KEYWORD prockeywords[] = {
         {"far", 3, kw__far, KW_NONANSI, 0 },
         {"near", 4, kw__near, KW_NONANSI, 0 },
         */
-    {0, 0, 0}};
+    {0, 0, kw_none }};
 static ARCH_DEFINES defines[] = {
     /* must come first in this order */
     {"__WIN32__", "1", FALSE, TRUE},
@@ -271,7 +271,6 @@ static ARCH_CHARACTERISTICS architecture = {
     0,     /* ret block param adjust */
 };
 extern ARCH_GEN outputfunctions;
-ARCH_GEN outputfunctions;
 
 enum e_lk get_dll_linkage() { return prm_lscrtdll ? lk_import : lk_none; }
 
@@ -809,6 +808,8 @@ ARCH_ASM assemblerInterface[] = {
         &dbgStruct[0],                  /* debug structure, or NULL */
         &architecture,                  /* architecture characteristics */
         &outputfunctions,               /* pointer to backend function linkages */
+        NULL,                           /* pointer to MSIL-specific data and functions */
+        BackendIntrinsicPrototypes,     /* pointer to extra builtin data */
         initgeneric,                    /* return 1 to proceed */
         0,                              /* precompile function, or NULL */
         0,                              /* postcompile function, or NULL */

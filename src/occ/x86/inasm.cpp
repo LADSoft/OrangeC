@@ -30,12 +30,13 @@
 #include <string.h>
 #include "be.h"
 
-extern "C" INCLUDES* includes;
-extern "C" int codeLabel;
-extern "C" int prm_assembler;
-extern "C" HASHTABLE* labelSyms;
-extern "C" int usingEsp;
+extern INCLUDES* includes;
+extern int codeLabel;
+extern int prm_assembler;
+extern HASHTABLE* labelSyms;
+extern int usingEsp;
 extern InstructionParser* instructionParser;
+extern SYMBOL *theCurrentFunc;
 
 bool assembling;
 static ASMREG* regimage;
@@ -80,7 +81,7 @@ ASMNAME directiveLst[] = {{"db", op_reserved, ISZ_UCHAR, 0},
                           {"dt", op_reserved, ISZ_LDOUBLE, 0},
                           {"label", op_label, 0, 0},
                           {0}};
-extern "C" ASMREG reglst[] = {{"cs", am_seg, 1, ISZ_USHORT},     {"ds", am_seg, 2, ISZ_USHORT},
+extern ASMREG reglst[] = {{"cs", am_seg, 1, ISZ_USHORT},     {"ds", am_seg, 2, ISZ_USHORT},
                               {"es", am_seg, 3, ISZ_USHORT},     {"fs", am_seg, 4, ISZ_USHORT},
                               {"gs", am_seg, 5, ISZ_USHORT},     {"ss", am_seg, 6, ISZ_USHORT},
                               {"al", am_dreg, 0, ISZ_UCHAR},     {"cl", am_dreg, 1, ISZ_UCHAR},
@@ -251,7 +252,7 @@ static EXPRESSION* inasm_ident(void)
             sp->realdeclline = lex->realline;
             sp->declfilenum = lex->filenum;
             sp->used = TRUE;
-            sp->tp = (TYPE*)beLocalAlloc(sizeof(TYPE));
+            sp->tp = (TYPE*)(TYPE *)beLocalAlloc(sizeof(TYPE));
             sp->tp->type = bt_unsigned;
             sp->tp->bits = sp->tp->startbit = -1;
             sp->offset = codeLabel++;
@@ -327,7 +328,7 @@ static EXPRESSION* inasm_label(void)
         sp->declline = sp->origdeclline = lex->line;
         sp->realdeclline = lex->realline;
         sp->declfilenum = lex->filenum;
-        sp->tp = (TYPE*)beLocalAlloc(sizeof(TYPE));
+        sp->tp = (TYPE*)(TYPE *)beLocalAlloc(sizeof(TYPE));
         sp->tp->type = bt_unsigned;
         sp->tp->bits = sp->tp->startbit = -1;
         sp->offset = codeLabel++;

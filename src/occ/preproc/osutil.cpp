@@ -32,7 +32,10 @@
 #include "../../version.h"
 
 #if defined(WIN32) || defined(MICROSOFT)
-char* __stdcall GetModuleFileNameA(void* handle, char* buf, int size);
+extern "C"
+{
+    char* __stdcall GetModuleFileNameA(void* handle, char* buf, int size);
+}
 #endif
 
 #ifdef __CCDL__
@@ -523,12 +526,12 @@ void incl_setup(char select, char* string)
     (void)select;
     if (*set_searchpath)
     {
-        *set_searchpath = realloc(*set_searchpath, strlen(string) + strlen(*set_searchpath) + 2);
+        *set_searchpath = (char *)realloc(*set_searchpath, strlen(string) + strlen(*set_searchpath) + 2);
         strcat(*set_searchpath, ";");
     }
     else
     {
-        *set_searchpath = malloc(strlen(string) + 1);
+        *set_searchpath = (char *) malloc(strlen(string) + 1);
         *set_searchpath[0] = 0;
     }
     fflush(stdout);
@@ -542,8 +545,8 @@ void def_setup(char select, char* string)
  * activation for command line #defines
  */
 {
-    char* s = malloc(strlen(string) + 1);
-    LIST* l = malloc(sizeof(LIST));
+    char* s = (char *)malloc(strlen(string) + 1);
+    LIST* l = (LIST *)malloc(sizeof(LIST));
     (void)select;
     strcpy(s, string);
     l->next = deflist;
@@ -553,8 +556,8 @@ void def_setup(char select, char* string)
 
 void undef_setup(char select, char* string)
 {
-    char* s = malloc(strlen(string) + 1);
-    LIST* l = malloc(sizeof(LIST));
+    char* s = (char *)malloc(strlen(string) + 1);
+    LIST* l = (LIST *)malloc(sizeof(LIST));
     (void)select;
     strcpy(s, string);
     l->next = undeflist;
@@ -588,7 +591,7 @@ void setglbdefs(void)
     int major, minor;
     while (l)
     {
-        char* s = l->data;
+        char* s = (char *)l->data;
         char* n = s;
         while (*s && *s != '=')
             s++;
@@ -600,7 +603,7 @@ void setglbdefs(void)
     l = undeflist;
     while (l)
     {
-        char* s = l->data;
+        char* s = (char *)l->data;
         char* n = s;
         while (*s && *s != '=')
             s++;
@@ -683,7 +686,7 @@ void InsertAnyFile(char* filename, char* path, int drive, BOOLEAN primary)
 
         while ((*r))
             r = &(*r)->next;
-        (*r) = malloc(sizeof(LIST));
+        (*r) = (LIST *)malloc(sizeof(LIST));
         s = (*r);
         if (!s)
             return;
@@ -835,7 +838,7 @@ void addinclude(void)
             strcat(temp, *set_searchpath);
             free(*set_searchpath);
         }
-        *set_searchpath = malloc(strlen(temp) + 1);
+        *set_searchpath = (char *)malloc(strlen(temp) + 1);
         strcpy(*set_searchpath, temp);
     }
     string = getenv("CPATH");
@@ -849,7 +852,7 @@ void addinclude(void)
             strcat(temp, *set_searchpath);
             free(*set_searchpath);
         }
-        *set_searchpath = malloc(strlen(temp) + 1);
+        *set_searchpath = (char *) malloc(strlen(temp) + 1);
         strcpy(*set_searchpath, temp);
     }
 }

@@ -1249,7 +1249,7 @@ static BOOLEAN eval(QUAD* q)
                     set = vo_constant;
                     if (isintconst(q->dc.left->offset))
                     {
-                        val = Alloc(sizeof(IMODE));
+                        val = (IMODE *)Alloc(sizeof(IMODE));
                         *val = *q->dc.left;
                     }
                     else
@@ -1406,7 +1406,7 @@ static void pushBlock(BLOCK* block, BLOCK* source)
     }
     if (*edgereached && source == (*edgereached)->block)
         return;
-    bl = tAlloc(sizeof(BLOCKLIST));
+    bl = (BLOCKLIST *)tAlloc(sizeof(BLOCKLIST));
     bl->block = source;
     bl->next = *edgereached;
     *edgereached = bl;
@@ -1427,7 +1427,7 @@ static void pushBlock(BLOCK* block, BLOCK* source)
         }
         else
         {
-            l1 = tAlloc(sizeof(BLOCKLIST));
+            l1 = (BLOCKLIST *)tAlloc(sizeof(BLOCKLIST));
         }
         l1->block = block;
         l1->next = NULL;
@@ -1586,7 +1586,7 @@ static BOOLEAN emulInstruction(QUAD* head, BLOCK* b)
                     }
                     else
                     {
-                        l1 = tAlloc(sizeof(INSTRUCTIONLIST));
+                        l1 = (INSTRUCTIONLIST *)tAlloc(sizeof(INSTRUCTIONLIST));
                     }
                     l1->ins = uses->ins;
                     l1->next = NULL;
@@ -1872,7 +1872,7 @@ void ConstantFlow(void)
     visited = briggsAlloc(blockCount);
     insWorkHead = insWorkTail = NULL;
     listHolder = NULL;
-    blockWorkHead = blockWorkTail = tAlloc(sizeof(BLOCKLIST));
+    blockWorkHead = blockWorkTail = (BLOCKLIST *)tAlloc(sizeof(BLOCKLIST));
 
     /* value defaults to top */
     /* now reassign any temp which is a parameter to bottom */

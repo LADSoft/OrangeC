@@ -827,7 +827,7 @@ static void HandleOCP(QUAD* after, int tn)
     {
         QUAD* p = (QUAD*)(tempInfo[tn]->idefines->data);
         QUAD* tail = after;
-        QUAD* ins = Alloc(sizeof(QUAD));
+        QUAD* ins = (QUAD *)Alloc(sizeof(QUAD));
         QUAD* bans;
         BOOLEAN a = FALSE, l = FALSE;
         if (after->dc.opcode != i_block && after->dc.opcode != i_label)
@@ -875,7 +875,7 @@ static void HandleOCP(QUAD* after, int tn)
         ins->block = after->block;
         if (after == after->block->tail)
             after->block->tail = ins;
-        bans = Alloc(sizeof(QUAD));
+        bans = (QUAD *)Alloc(sizeof(QUAD));
         bans->ans = tempInfo[tn]->copy;
         bans->dc.left = ins->ans;
         bans->dc.opcode = i_assn;
@@ -907,8 +907,8 @@ static IMODE* GetROVar(IMODE* oldvar, IMODE* newvar, BOOLEAN mov)
         }
         if (!iml)
         {
-            IMODELIST* iml2 = Alloc(sizeof(IMODELIST));
-            im = Alloc(sizeof(IMODE));
+            IMODELIST* iml2 = (IMODELIST *)Alloc(sizeof(IMODELIST));
+            im = (IMODE *)Alloc(sizeof(IMODE));
             *im = *newvar;
             im->mode = i_ind;
             im->size = oldvar->size;
@@ -1036,7 +1036,7 @@ void RearrangePrecolors(void)
     {
         if ((head->precolored & TEMP_ANS) && !head->ans->retval)
         {
-            QUAD* newIns = Alloc(sizeof(QUAD));
+            QUAD* newIns = (QUAD *)Alloc(sizeof(QUAD));
             i = head->ans->offset->v.sp->value.i;
             if (tempInfo[i]->temp < 0)
             {
@@ -1055,7 +1055,7 @@ void RearrangePrecolors(void)
         }
         if ((head->precolored & TEMP_LEFT) && !head->dc.left->retval)
         {
-            QUAD* newIns = Alloc(sizeof(QUAD));
+            QUAD* newIns = (QUAD *)Alloc(sizeof(QUAD));
             i = head->dc.left->offset->v.sp->value.i;
             if (tempInfo[i]->temp < 0)
             {
@@ -1074,7 +1074,7 @@ void RearrangePrecolors(void)
         }
         if ((head->precolored & TEMP_RIGHT) && !head->dc.right->retval)
         {
-            QUAD* newIns = Alloc(sizeof(QUAD));
+            QUAD* newIns = (QUAD *)Alloc(sizeof(QUAD));
             i = head->dc.right->offset->v.sp->value.i;
             if (tempInfo[i]->temp < 0)
             {
@@ -1103,7 +1103,7 @@ static void PadBlocks(void)
         BLOCK* b = blockArray[i];
         if (b && b->head == b->tail)
         {
-            QUAD* ins = Alloc(sizeof(QUAD));
+            QUAD* ins = (QUAD *)Alloc(sizeof(QUAD));
             ins->dc.opcode = i_blockend;
             InsertInstruction(b->head, ins);
         }
@@ -1117,8 +1117,8 @@ void SetGlobalTerms(void)
     for (i = 0; i < tempCount; i++)
         if (tempInfo[i]->inUse)
             termCount++;
-    termMap = Alloc(sizeof(unsigned short) * tempCount);
-    termMapUp = Alloc(sizeof(unsigned short) * termCount);
+    termMap = (unsigned short *) Alloc(sizeof(unsigned short) * tempCount);
+    termMapUp = (unsigned short *)Alloc(sizeof(unsigned short) * termCount);
     for (i = 0, j = 0; i < tempCount; i++)
         if (tempInfo[i]->inUse)
         {
@@ -1131,7 +1131,7 @@ void GlobalOptimization(void)
 {
     int i;
     PadBlocks();
-    forwardOrder = oAlloc(sizeof(BLOCK*) * blockCount);
+    forwardOrder = (BLOCK**)oAlloc(sizeof(BLOCK*) * blockCount);
     blocks = 0;
     for (i = 0; i < blockCount; i++)
         if (blockArray[i])
@@ -1151,7 +1151,7 @@ void GlobalOptimization(void)
             bl = bl->next;
         }
     }
-    reverseOrder = oAlloc(sizeof(BLOCK*) * blockCount);
+    reverseOrder = (BLOCK**)oAlloc(sizeof(BLOCK*) * blockCount);
     blocks = 0;
     for (i = 0; i < blockCount; i++)
         if (blockArray[i])

@@ -25,7 +25,6 @@
 
 #include "compiler.h"
 
-
 /*
  *      code generation structures and constants
  */

@@ -90,7 +90,7 @@ void ParseBuiltins(void)
     }
     if (chosenAssembler->bltins)
     {
-        includes->lptr = chosenAssembler->bltins;
+        includes->lptr = (unsigned char *)chosenAssembler->bltins;
         lex = getsym();
         if (lex)
         {

@@ -34,8 +34,8 @@
 #include "ObjType.h"
 #include "ObjFile.h"
 
-extern "C" TYPE stdvoid;
-extern "C" TYPE stdint;
+extern TYPE stdvoid;
+extern TYPE stdint;
 #define DEBUG_VERSION 4.0
 
 bool dbgtypes::typecompare::operator()(const TYPE* left, const TYPE* right) const

@@ -67,7 +67,7 @@ static struct reflist
 } * refs;
 static void EnterRef(QUAD* old, QUAD* newVal)
 {
-    struct reflist* newRef = oAlloc(sizeof(struct reflist));
+    struct reflist* newRef = (reflist *)oAlloc(sizeof(struct reflist));
     newRef->old = old;
     newRef->newVal = newVal;
     newRef->next = refs;
@@ -128,7 +128,7 @@ static BOOLEAN IsAncestor(BLOCK* b1, BLOCK* b2)
 static void MoveTo(BLOCK* dest, BLOCK* src, QUAD* head)
 {
     QUAD* insert = beforeJmp(dest->tail, TRUE);
-    QUAD* head2 = Alloc(sizeof(QUAD));
+    QUAD* head2 = (QUAD *)Alloc(sizeof(QUAD));
     *head2 = *head;
     EnterRef(head, head2);
     head = head2;
@@ -282,7 +282,14 @@ void ScanForInvariants(BLOCK* b)
                                 }
                             }
                         }
-                        
+                        
+
+
+
+
+
+
+
                     }
                 }
                 */

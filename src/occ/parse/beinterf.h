@@ -526,10 +526,6 @@ typedef struct
 #define beGetCurrentInstruction currentQuad
 #define beGlobalAlloc(x) globalAlloc(x)
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
     extern COMPILER_PARAMS cparams;
     extern int nextLabel;
     extern SYMBOL* theCurrentFunc;
@@ -544,6 +540,3 @@ extern "C"
     BE_IMODEDATA* beArgType(IMODE* in);
     void beDecorateSymName(char* buf, SYMBOL* sp);
     int beVariableLive(IMODE* m);
-#ifdef __cplusplus
-}
-#endif

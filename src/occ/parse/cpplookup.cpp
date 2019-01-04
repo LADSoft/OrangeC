@@ -48,6 +48,7 @@ extern BOOLEAN inTemplateType;
 extern LIST* nameSpaceList;
 extern int funcLevel;
 extern int inDeduceArgs;
+extern SYMBOL *theCurrentFunc;
 static int insertFuncs(SYMBOL** spList, SYMBOL** spFilterList, LIST* gather, FUNCTIONCALL* args, TYPE* atp);
 
 #define DEBUG
@@ -78,7 +79,7 @@ LIST* tablesearchone(char* name, NAMESPACEVALUES* ns, BOOLEAN tagsOnly)
             rv = search(name, ns->tags);
     if (rv)
     {
-        LIST* l = Alloc(sizeof(LIST));
+        LIST* l = (LIST *)Alloc(sizeof(LIST));
         l->data = rv;
         return l;
     }
@@ -92,7 +93,7 @@ LIST* tablesearchinline(char* name, NAMESPACEVALUES* ns, BOOLEAN tagsOnly)
     // included inlines
     while (lst)
     {
-        SYMBOL* x = lst->data;
+        SYMBOL* x = (SYMBOL *)lst->data;
         if (!x->visited)
         {
             LIST* rv1;
@@ -144,7 +145,7 @@ static LIST* namespacesearchone(char* name, NAMESPACEVALUES* ns, LIST* gather, B
         LIST* lst = ns->usingDirectives;
         while (lst)
         {
-            SYMBOL* x = lst->data;
+            SYMBOL* x = (SYMBOL *)lst->data;
             if (!x->visited)
             {
                 x->visited = TRUE;
@@ -184,7 +185,7 @@ SYMBOL* namespacesearch(char* name, NAMESPACEVALUES* ns, BOOLEAN qualified, BOOL
             if (!a)
             {
                 HASHREC** dest;
-                TYPE* tp = Alloc(sizeof(TYPE));
+                TYPE* tp = (TYPE *)Alloc(sizeof(TYPE));
                 SYMBOL* sp = makeID(sc_overloads, tp, NULL, ((SYMBOL*)lst->data)->name);
                 tp->type = bt_aggregate;
                 tp->rootType = tp;
@@ -198,7 +199,7 @@ SYMBOL* namespacesearch(char* name, NAMESPACEVALUES* ns, BOOLEAN qualified, BOOL
 
                     while (b)
                     {
-                        *dest = Alloc(sizeof(HASHREC));
+                        *dest = (HASHREC *)Alloc(sizeof(HASHREC));
                         (*dest)->p = b->p;
                         dest = &(*dest)->next;
                         b = b->next;
@@ -211,7 +212,7 @@ SYMBOL* namespacesearch(char* name, NAMESPACEVALUES* ns, BOOLEAN qualified, BOOL
         while (lst->next)
         {
             // collision
-            SYMBOL* test = lst->data;
+            SYMBOL* test = (SYMBOL *)lst->data;
             LIST* lst1 = lst->next;
             while (lst1)
             {
@@ -280,7 +281,7 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUES** ns, BOOLEAN* thr
         {
             lex = getIdName(lex, NULL, buf, &ovdummy, NULL);
             lex = getsym();
-            *last = Alloc(sizeof(TEMPLATESELECTOR));
+            *last = (TEMPLATESELECTOR *)Alloc(sizeof(TEMPLATESELECTOR));
             (*last)->name = litlate(buf);
             if (hasTemplate)
             {
@@ -382,16 +383,16 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUES** ns, BOOLEAN* thr
                 dropStructureDeclaration();
                 if (!sp && templateNestingCount)
                 {
-                    *last = (TEMPLATESELECTOR*)Alloc(sizeof(TEMPLATESELECTOR));
+                    *last = (TEMPLATESELECTOR*)(TEMPLATESELECTOR *)Alloc(sizeof(TEMPLATESELECTOR));
                     (*last)->sym = NULL;
                     last = &(*last)->next;
-                    *last = (TEMPLATESELECTOR*)Alloc(sizeof(TEMPLATESELECTOR));
+                    *last = (TEMPLATESELECTOR*)(TEMPLATESELECTOR *)Alloc(sizeof(TEMPLATESELECTOR));
                     (*last)->sym = strSym;
                     (*last)->templateParams = current;
                     (*last)->isTemplate = TRUE;
                     last = &(*last)->next;
 
-                    *last = Alloc(sizeof(TEMPLATESELECTOR));
+                    *last = (TEMPLATESELECTOR *)Alloc(sizeof(TEMPLATESELECTOR));
                     (*last)->name = litlate(buf);
                     if (hasTemplate)
                     {
@@ -572,7 +573,7 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUES** ns, BOOLEAN* thr
                     TEMPLATESELECTOR* s = basetype(sp->tp)->sp->templateSelector;
                     while (s)
                     {
-                        *last = (TEMPLATESELECTOR*)Alloc(sizeof(TEMPLATESELECTOR));
+                        *last = (TEMPLATESELECTOR*)(TEMPLATESELECTOR *)Alloc(sizeof(TEMPLATESELECTOR));
                         **last = *s;
                         last = &(*last)->next;
                         s = s->next;
@@ -582,10 +583,10 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUES** ns, BOOLEAN* thr
                 }
                 else
                 {
-                    *last = (TEMPLATESELECTOR*)Alloc(sizeof(TEMPLATESELECTOR));
+                    *last = (TEMPLATESELECTOR*)(TEMPLATESELECTOR *)Alloc(sizeof(TEMPLATESELECTOR));
                     (*last)->sym = strSym;
                     last = &(*last)->next;
-                    *last = (TEMPLATESELECTOR*)Alloc(sizeof(TEMPLATESELECTOR));
+                    *last = (TEMPLATESELECTOR*)(TEMPLATESELECTOR *)Alloc(sizeof(TEMPLATESELECTOR));
                     (*last)->sym = sp;
                     (*last)->templateParams = current;
                     (*last)->isTemplate = TRUE;
@@ -604,10 +605,10 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUES** ns, BOOLEAN* thr
             }
             else if (sp && (basetype(sp->tp)->type == bt_templateparam || basetype(sp->tp)->type == bt_templateselector))
             {
-                *last = Alloc(sizeof(TEMPLATESELECTOR));
+                *last = (TEMPLATESELECTOR *)Alloc(sizeof(TEMPLATESELECTOR));
                 (*last)->sym = strSym;
                 last = &(*last)->next;
-                *last = Alloc(sizeof(TEMPLATESELECTOR));
+                *last = (TEMPLATESELECTOR *)Alloc(sizeof(TEMPLATESELECTOR));
                 (*last)->sym = sp;
                 last = &(*last)->next;
             }
@@ -639,7 +640,7 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUES** ns, BOOLEAN* thr
     lex = prevsym(finalPos);
     if (templateSelector)
     {
-        TYPE* tp = Alloc(sizeof(TYPE));
+        TYPE* tp = (TYPE *)Alloc(sizeof(TYPE));
         tp->type = bt_templateselector;
         tp->rootType = tp;
         *sym = makeID(sc_global, tp, NULL, AnonymousName());
@@ -873,7 +874,7 @@ SYMBOL* finishSearch(char* name, SYMBOL* encloser, NAMESPACEVALUES* ns, BOOLEAN 
         else if (encloser)
         {
             STRUCTSYM l;
-            l.str = (void*)encloser;
+            l.str = (SYMBOL*)encloser;
             addStructureDeclaration(&l);
             rv = classsearch(name, tagsOnly, TRUE);
             dropStructureDeclaration();
@@ -949,7 +950,7 @@ LEXEME* nestedSearch(LEXEME* lex, SYMBOL** sym, SYMBOL** strSym, NAMESPACEVALUES
                 l = l->next;
             if (destructor && *destructor && !encloser->templateSelector->next->next)
             {
-                l->next = Alloc(sizeof(TEMPLATESELECTOR));
+                l->next = (TEMPLATESELECTOR *)Alloc(sizeof(TEMPLATESELECTOR));
                 l->next->name = l->sym->name;
                 l = l->next;
             }
@@ -1070,7 +1071,7 @@ LEXEME* getIdName(LEXEME* lex, SYMBOL* funcsp, char* buf, int* ov, TYPE** castTy
                     }
                     else
                     {
-                        kw = kw - kw_new + complx + 1;
+                        kw = (e_kw)( kw - kw_new + complx + 1);
                         lex = getsym();
                         if (!MATCHKW(lex, closebr))
                         {
@@ -1621,7 +1622,7 @@ static void GatherConversions(SYMBOL* sp, SYMBOL** spList, int n, FUNCTIONCALL* 
                 memcpy(icsList[i], arr, n1 * sizeof(enum e_cvsrn));
                 lenList[i] = (int*)Alloc(sizeof(int) * argCount);
                 memcpy(lenList[i], counts, argCount * sizeof(int));
-                funcList[i] = (SYMBOL**)Alloc(sizeof(SYMBOL*) * argCount);
+                funcList[i] = (SYMBOL**)(SYMBOL **)Alloc(sizeof(SYMBOL*) * argCount);
                 memcpy(funcList[i], funcs, argCount * sizeof(SYMBOL*));
             }
         }
@@ -1670,7 +1671,7 @@ static TYPE* toThis(TYPE* tp)
     TYPE* tpx;
     if (ispointer(tp))
         return tp;
-    tpx = Alloc(sizeof(TYPE));
+    tpx = (TYPE *)Alloc(sizeof(TYPE));
     tpx->type = bt_pointer;
     tpx->size = getSize(bt_pointer);
     tpx->btp = tp;
@@ -2347,7 +2348,7 @@ static LIST* GetMemberCasts(LIST* gather, SYMBOL* sp)
         SYMBOL* find = search(overloadNameTab[CI_CAST], basetype(sp->tp)->syms);
         if (find)
         {
-            LIST* lst = Alloc(sizeof(LIST));
+            LIST* lst = (LIST *)Alloc(sizeof(LIST));
             lst->data = find;
             lst->next = gather;
             gather = lst;
@@ -2370,7 +2371,7 @@ static LIST* GetMemberConstructors(LIST* gather, SYMBOL* sp)
         SYMBOL* find = search(overloadNameTab[CI_CONSTRUCTOR], basetype(sym->tp)->syms);
         if (find)
         {
-            LIST* lst = Alloc(sizeof(LIST));
+            LIST* lst = (LIST *)Alloc(sizeof(LIST));
             lst->data = find;
             lst->next = gather;
             gather = lst;
@@ -2457,8 +2458,8 @@ static SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* ex
                 }
                 lst2 = lst2->next;
             }
-            spList = (SYMBOL**)Alloc(sizeof(SYMBOL*) * funcs);
-            spFilterList = (SYMBOL**)Alloc(sizeof(SYMBOL*) * funcs);
+            spList = (SYMBOL**)(SYMBOL **)Alloc(sizeof(SYMBOL*) * funcs);
+            spFilterList = (SYMBOL**)(SYMBOL **)Alloc(sizeof(SYMBOL*) * funcs);
             icsList = (enum e_cvsrn**)Alloc(sizeof(enum e_cvsrn*) * funcs);
             lenList = (int**)Alloc(sizeof(int*) * funcs);
             lst2 = gather;
@@ -2566,7 +2567,7 @@ static SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* ex
                                             spf = spf->mainsym;
                                             if (spf)
                                             {
-                                                TEMPLATEPARAMLIST* hold[100];
+                                                TYPE* hold[100];
                                                 int count = 0;
                                                 TEMPLATEPARAMLIST* srch = args;
                                                 while (srch)
@@ -2653,8 +2654,8 @@ static SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* ex
                             m1--;
                         if (j >= n2 + n3 && m1 <= 7)
                         {
-                            lenList[i] = Alloc(sizeof(int) * 2);
-                            icsList[i] = Alloc(sizeof(enum e_cvsrn) * (n2 + n3));
+                            lenList[i] = (int *)Alloc(sizeof(int) * 2);
+                            icsList[i] = (e_cvsrn *)Alloc(sizeof(enum e_cvsrn) * (n2 + n3));
                             lenList[i][0] = n2;
                             lenList[i][1] = n3;
                             memcpy(&icsList[i][0], seq3, (n2 + n3) * sizeof(enum e_cvsrn));
@@ -3886,7 +3887,7 @@ SYMBOL* detemplate(SYMBOL* sym, FUNCTIONCALL* args, TYPE* atp)
                 linked = TRUE;
                 ns->value.i++;
 
-                list = Alloc(sizeof(LIST));
+                list = (LIST *)Alloc(sizeof(LIST));
                 list->next = nameSpaceList;
                 list->data = ns;
                 nameSpaceList = list;
@@ -3968,8 +3969,8 @@ SYMBOL* GetOverloadedTemplate(SYMBOL* sp, FUNCTIONCALL* args)
         search = search->next;
         n++;
     }
-    spList = (SYMBOL**)Alloc(sizeof(SYMBOL*) * n);
-    spFilterList = (SYMBOL**)Alloc(sizeof(SYMBOL*) * n);
+    spList = (SYMBOL**)(SYMBOL **)Alloc(sizeof(SYMBOL*) * n);
+    spFilterList = (SYMBOL**)(SYMBOL **)Alloc(sizeof(SYMBOL*) * n);
     icsList = (enum e_cvsrn**)Alloc(sizeof(enum e_cvsrn*) * n);
     lenList = (int**)Alloc(sizeof(int*) * n);
     funcList = (struct sym***)Alloc(sizeof(SYMBOL**) * n);
@@ -4148,7 +4149,7 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                 }
                 if (!lst)
                 {
-                    lst = Alloc(sizeof(LIST));
+                    lst = (LIST *)Alloc(sizeof(LIST));
                     lst->data = sp;
                     lst->next = gather;
                     gather = lst;
@@ -4238,8 +4239,8 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                     if (*hr && ismember(((SYMBOL*)(*hr)->p)))
                         argCount++;
                 }
-                spList = (SYMBOL**)Alloc(sizeof(SYMBOL*) * n);
-                spFilterList = (SYMBOL**)Alloc(sizeof(SYMBOL*) * n);
+                spList = (SYMBOL**)(SYMBOL **)Alloc(sizeof(SYMBOL*) * n);
+                spFilterList = (SYMBOL**)(SYMBOL **)Alloc(sizeof(SYMBOL*) * n);
                 icsList = (enum e_cvsrn**)Alloc(sizeof(enum e_cvsrn*) * n);
                 lenList = (int**)Alloc(sizeof(int*) * n);
                 funcList = (struct sym***)Alloc(sizeof(SYMBOL**) * n);
@@ -4339,7 +4340,7 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                 }
                 else
                 {
-                    SYMBOL* sym = Alloc(sizeof(SYMBOL));
+                    SYMBOL* sym = (SYMBOL *)Alloc(sizeof(SYMBOL));
                     sym->parentClass = sp->parentClass;
                     sym->name = sp->name;
                     if (atp)
@@ -4350,7 +4351,7 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                     {
                         int v = 1;
                         INITLIST* a = args->arguments;
-                        sym->tp = Alloc(sizeof(TYPE));
+                        sym->tp = (TYPE *)Alloc(sizeof(TYPE));
                         sym->tp->type = bt_func;
                         sym->tp->size = getSize(bt_pointer);
                         sym->tp->btp = &stdint;
@@ -4359,7 +4360,7 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                         sym->tp->sp = sym;
                         while (a)
                         {
-                            SYMBOL* sym1 = Alloc(sizeof(SYMBOL));
+                            SYMBOL* sym1 = (SYMBOL *)Alloc(sizeof(SYMBOL));
                             char nn[10];
                             my_sprintf(nn, "%d", v++);
                             sym1->name = litlate(nn);
@@ -4498,7 +4499,7 @@ SYMBOL* MatchOverloadedFunction(TYPE* tp, TYPE** mtp, SYMBOL* sp, EXPRESSION** e
     }
     else if (tp->type == bt_memberptr)
     {
-        fpargs.thistp = Alloc(sizeof(TYPE));
+        fpargs.thistp = (TYPE *)Alloc(sizeof(TYPE));
         fpargs.thistp->type = bt_pointer;
         fpargs.thistp->size = getSize(bt_pointer);
         fpargs.thistp->btp = tp->sp->tp;
@@ -4507,7 +4508,7 @@ SYMBOL* MatchOverloadedFunction(TYPE* tp, TYPE** mtp, SYMBOL* sp, EXPRESSION** e
     }
     while (hrp)
     {
-        *args = Alloc(sizeof(INITLIST));
+        *args = (INITLIST *)Alloc(sizeof(INITLIST));
         (*args)->tp = ((SYMBOL*)hrp->p)->tp;
         (*args)->exp = intNode(en_c_i, 0);
         if (isref((*args)->tp))

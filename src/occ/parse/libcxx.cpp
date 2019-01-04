@@ -101,7 +101,7 @@ static LEXEME* getTypeList(LEXEME* lex, SYMBOL* funcsp, INITLIST** lptr)
             break;
         if (basetype(tp)->type != bt_templateparam)
         {
-            *lptr = Alloc(sizeof(INITLIST));
+            *lptr = (INITLIST *)Alloc(sizeof(INITLIST));
             (*lptr)->tp = tp;
             (*lptr)->exp = intNode(en_c_i, 0);
             lptr = &(*lptr)->next;
@@ -117,7 +117,7 @@ static LEXEME* getTypeList(LEXEME* lex, SYMBOL* funcsp, INITLIST** lptr)
                 {
                     if (tpl->p->byClass.val)
                     {
-                        *lptr = Alloc(sizeof(INITLIST));
+                        *lptr = (INITLIST *)Alloc(sizeof(INITLIST));
                         (*lptr)->tp = tpl->p->byClass.val;
                         (*lptr)->exp = intNode(en_c_i, 0);
                         lptr = &(*lptr)->next;
@@ -129,7 +129,7 @@ static LEXEME* getTypeList(LEXEME* lex, SYMBOL* funcsp, INITLIST** lptr)
             {
                 if (tp->templateParam->p->byClass.val)
                 {
-                    *lptr = Alloc(sizeof(INITLIST));
+                    *lptr = (INITLIST *)Alloc(sizeof(INITLIST));
                     (*lptr)->tp = tp->templateParam->p->byClass.val;
                     (*lptr)->exp = intNode(en_c_i, 0);
                     lptr = &(*lptr)->next;
@@ -424,11 +424,11 @@ static BOOLEAN trivialStructureWithBases(TYPE* tp)
 static BOOLEAN isPOD(TYPE* tp)
 {
     SYMBOL* found = NULL;
-    if (isStandardLayout(tp, found) && trivialStructureWithBases(tp))
+    if (isStandardLayout(tp,& found) && trivialStructureWithBases(tp)) // DAL fixed
     {
         if (found)
         {
-            HASHREC* hr = basetype(found->tp)->syms->table;
+            HASHREC* hr = basetype(found->tp)->syms->table[0]; // DAL fixed
             while (hr)
             {
                 SYMBOL* sym = (SYMBOL*)hr->p;
@@ -568,7 +568,7 @@ static BOOLEAN is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE*
                         INITLIST** arg = &funcparams.arguments;
                         SYMBOL* bcall = search(overloadNameTab[CI_FUNC], basetype(funcparams.arguments->next->tp)->syms);
                         funcparams.thisptr = intNode(en_c_i, 0);
-                        funcparams.thistp = Alloc(sizeof(TYPE));
+                        funcparams.thistp = (TYPE *)Alloc(sizeof(TYPE));
                         funcparams.thistp->type = bt_pointer;
                         funcparams.thistp->btp = basetype(funcparams.arguments->next->tp);
                         funcparams.thistp->rootType = funcparams.thistp;
@@ -579,7 +579,7 @@ static BOOLEAN is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE*
                         hr = basetype(basetype(tp2)->btp)->syms->table[0];
                         while (hr)
                         {
-                            *arg = (INITLIST*)Alloc(sizeof(INITLIST));
+                            *arg = (INITLIST*)(INITLIST *)Alloc(sizeof(INITLIST));
                             (*arg)->tp = ((SYMBOL*)hr->p)->tp;
                             (*arg)->exp = intNode(en_c_i, 0);
                             arg = &(*arg)->next;
@@ -620,7 +620,7 @@ static BOOLEAN is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE*
                     EXPRESSION* cexp = NULL;
                     SYMBOL* cons = search(overloadNameTab[CI_CONSTRUCTOR], basetype(tp2)->syms);
                     funcparams.thisptr = intNode(en_c_i, 0);
-                    funcparams.thistp = Alloc(sizeof(TYPE));
+                    funcparams.thistp = (TYPE *)Alloc(sizeof(TYPE));
                     funcparams.thistp->type = bt_pointer;
                     funcparams.thistp->btp = basetype(tp2);
                     funcparams.thistp->rootType = funcparams.thistp;
@@ -632,7 +632,7 @@ static BOOLEAN is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE*
                     {
                         holdl[i] = temp->tp->lref;
                         holdr[i] = temp->tp->rref;
-                        if (!temp->tp->rref && basetype(temp->tp) != bt_rref)
+                        if (!temp->tp->rref && basetype(temp->tp)->type != bt_rref)// DAL FIXED
                         {
                             temp->tp->lref = TRUE;
                         }

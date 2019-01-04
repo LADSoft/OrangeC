@@ -172,7 +172,7 @@ int GetGlobalFlag(void) { return globalFlag; }
 char* litlate(char* name)
 {
     int l;
-    char* rv = Alloc((l = strlen(name)) + 1);
+    char* rv = (char *)Alloc((l = strlen(name)) + 1);
     memcpy(rv, name, l);
     return rv;
 }

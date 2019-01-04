@@ -27,45 +27,45 @@ NAME=occpr
 MAIN_FILE=ccmain.c
 C_DEPENDENCIES= \
     $(BACKEND_FILES) \
-    ccmain.c \
-    ccif.c \
-    crc32.c \
-    db.c \
-    piper.c \
-    beinterf.c \
-    browse.c \
-    ccerr.c \
-    constopt.c \
-    cppbltin.c \
-    cpplookup.c \
-    debug.c \
-    declare.c \
-    declcons.c \
-    declcpp.c \
-    expr.c \
-    exprcpp.c \
-    float.c \
-    help.c \
-    init.c \
-    inline.c \
-    lambda.c \
-    lex.c \
-    libcxx.c \
-    list.c \
-    mangle.c \
-    memory.c \
-    osutil.c \
-    output.c \
-    preproc.c \
-    property.c \
-    ppexpr.c \
-    rtti.c \
-    stmt.c \
-    symtab.c \
-    template.c \
-    types.c \
-    unmangle.c \
-    wseh.c
+    ccmain.cpp \
+    ccif.cpp \
+    crc32.cpp \
+    db.cpp \
+    piper.cpp \
+    beinterf.cpp \
+    browse.cpp \
+    ccerr.cpp \
+    constopt.cpp \
+    cppbltin.cpp \
+    cpplookup.cpp \
+    debug.cpp \
+    declare.cpp \
+    declcons.cpp \
+    declcpp.cpp \
+    expr.cpp \
+    exprcpp.cpp \
+    float.cpp \
+    help.cpp \
+    init.cpp \
+    inline.cpp \
+    lambda.cpp \
+    lex.cpp \
+    libcxx.cpp \
+    list.cpp \
+    mangle.cpp \
+    memory.cpp \
+    osutil.cpp \
+    output.cpp \
+    preproc.cpp \
+    property.cpp \
+    ppexpr.cpp \
+    rtti.cpp \
+    stmt.cpp \
+    symtab.cpp \
+    template.cpp \
+    types.cpp \
+    unmangle.cpp \
+    wseh.cpp
 LIB_DEPENDENCIES=sqlite3
 #determine if we can ignore the banner for a batch compile
 #use long long type

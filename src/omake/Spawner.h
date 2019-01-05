@@ -124,6 +124,6 @@ class Spawner
     bool done;
     int retVal;
     OutputType outputType;
-    static int runningProcesses;
+    static long runningProcesses;
 };
 #endif

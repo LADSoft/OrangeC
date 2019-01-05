@@ -34,17 +34,31 @@
 #include "Utils.h"
 #include <algorithm>
 #include <chrono>
-
+#ifdef GCCLINUX
+#else
+#include <windows.h>
+#undef WriteConsole
+#undef Yield
+#endif
 const char Spawner::escapeStart = '\x1';
 const char Spawner::escapeEnd = '\x2';
-int Spawner::runningProcesses;
+long Spawner::runningProcesses;
 
 unsigned WINFUNC Spawner::Thread(void* cls)
 {
     Spawner* ths = (Spawner*)cls;
+#ifdef GCCLINUX
+
     ++runningProcesses;
+#else
+    InterlockedIncrement(&runningProcesses);
+#endif
     ths->RetVal(ths->InternalRun());
+#ifdef GCCLINUX
     --runningProcesses;
+#else
+    InterlockedDecrement(&runningProcesses);
+#endif
     ths->done = true;
     return 0;
 }

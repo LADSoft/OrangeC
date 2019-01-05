@@ -995,8 +995,8 @@ typedef struct kwblk
     char* name;
     int len;
     enum e_kw key;
-    int matchFlags;
-    int tokenTypes;
+    unsigned matchFlags;
+    unsigned tokenTypes;
     /*    ASMNAME *data; */
 } KEYWORD;
 

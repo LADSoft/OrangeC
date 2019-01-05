@@ -1999,9 +1999,14 @@ static LEXEME* TemplateArg(LEXEME* lex, SYMBOL* funcsp, TEMPLATEPARAMLIST* arg, 
             break;
         default:  // non-type
         {
-            enum e_lk linkage = lk_none, linkage2 = lk_none, linkage3 = lk_none;
-            BOOLEAN defd = FALSE;
-            BOOLEAN notype = FALSE;
+            enum e_lk linkage, linkage2, linkage3;
+            BOOLEAN defd;
+            BOOLEAN notype;
+            linkage = lk_none;
+            linkage2 = lk_none;
+            linkage3 = lk_none;
+            defd = FALSE;
+            notype = FALSE;
             arg->p->type = kw_int;
             arg->p->packed = FALSE;
             tp = NULL;

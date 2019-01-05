@@ -24,7 +24,7 @@
 include ../../pathext2.mak
 
 NAME=occpr
-MAIN_FILE=ccmain.c
+MAIN_FILE=ccmain.cpp
 CPP_DEPENDENCIES= \
     $(BACKEND_FILES) \
     ccmain.cpp \
@@ -87,6 +87,7 @@ BACKEND_FILES = config.cpp
 
 
 vpath %.c $(SRCPATH)
+vpath %.cpp $(SRCPATH)
 
 ifndef _TREEROOT
 _TREEROOT := $(CURDIR)$(PATHEXT2)..$(PATHEXT2)..$(PATHEXT2)treetop.mak

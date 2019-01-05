@@ -2538,7 +2538,7 @@ LEXEME* handleStaticAssert(LEXEME* lex)
     {
         SYMBOL* sym = getStructureDeclaration();
         LIST* staticAssert = (LIST *)Alloc(sizeof(LIST));
-        LEXEME **cur = &(LEXEME *)staticAssert->data, *last = NULL;
+        LEXEME **cur = (LEXEME **)&staticAssert->data, *last = NULL;
         int paren = 0;
         int brack = 0;
         staticAssert->next = sym->staticAsserts;

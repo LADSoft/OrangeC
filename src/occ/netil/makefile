@@ -23,9 +23,13 @@
 # 
 
 NAME=occil
-MAIN_FILE=ccmain.c
+MAIN_FILE=ccmain.cpp
 INCLUDES=..\parse ..\preproc ..\middle netlib\ ..\..\util 
-C_DEPENDENCIES= \
+
+C_DEPENDENCIES =\
+    winsystem.c
+
+CPP_DEPENDENCIES= \
     $(BACKEND_FILES) \
     ccmain.cpp \
     crc.cpp \
@@ -84,11 +88,12 @@ C_DEPENDENCIES= \
     symtab.cpp \
     template.cpp \
     types.cpp \
-    unmangle.c\
-    winsystem.c \
-    wseh.cpp
-CPP_DEPENDENCIES=\
-    using.cpp gen.cpp process.cpp import.cpp
+    unmangle.cpp \
+    wseh.cpp \
+    using.cpp \
+    gen.cpp \
+    process.cpp \
+    import.cpp
 LIB_DEPENDENCIES=util netlib
 
 #determine if we can ignore the banner for a batch compile
@@ -100,13 +105,13 @@ DEFINES=$(i386) $(LL) $(MSDOS) $(WIN32)
 SOURCE = ..\parse;..\preproc;..\middle
 
 SRCPATH=$(BACKEND_INCLUDE_PATH);$(SOURCE);..;..\..\util
-BACKEND_FILES = config.c
+BACKEND_FILES = config.cpp
 
 BACKEND_INCLUDE_PATH=.
 
 vpath %.c $(SRCPATH);dll
 vpath %.cs $(SRCPATH);dll
-
+vpath %.cpp $(SRCPATH);dll
 compiler: netlib redirect netlink lsmsilcrtl.dll occmsil testsqlite.exe
 
 redirect:

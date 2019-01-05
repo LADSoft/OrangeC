@@ -164,13 +164,17 @@ __ATOMIC_TYPE__(uintmax_t, atomic_uintmax_t);
 
 #define atomic_store_explicit(__a__, __m__, __x__) __atomic_store(__a__, __m__, __x__)
 
-#define atomic_swap(__a__, __m__) __atomic_modify(__a__, =, __m__, memory_order_seq_cst)
+#define atomic_exchange(__a__, __m__) __atomic_modify(__a__, =, __m__, memory_order_seq_cst)
 
-#define atomic_swap_explicit(__a__, __m__, __x__) __atomic_modify(__a__, =, __m__, __x__)
+#define atomic_exchange_explicit(__a__, __m__, __x__) __atomic_modify(__a__, =, __m__, __x__)
 
-#define atomic_compare_swap(__a__, __e__, __m__) __atomic_cmpswp(__a__, __e__, __m__, memory_order_seq_cst, memory_order_seq_cst)
+#define atomic_compare_exchange_strong(__a__, __e__, __m__) __atomic_cmpswp(__a__, __e__, __m__, memory_order_seq_cst, memory_order_seq_cst)
 
-#define atomic_compare_swap_explicit(__a__, __e__, __m__, __x__, __y__) __atomic_cmpswp(__a__, __e__, __m__, __x__, __y__)
+#define atomic_compare_exchange_strong_explicit(__a__, __e__, __m__, __x__, __y__) __atomic_cmpswp(__a__, __e__, __m__, __x__, __y__)
+
+#define atomic_compare_exchange_weak(__a__, __e__, __m__) __atomic_cmpswp(__a__, __e__, __m__, memory_order_seq_cst, memory_order_seq_cst)
+
+#define atomic_compare_exchange_weak_explicit(__a__, __e__, __m__, __x__, __y__) __atomic_cmpswp(__a__, __e__, __m__, __x__, __y__)
 
 #define atomic_fetch_add_explicit(__a__, __m__, __x__) __atomic_modify(__a__, +=, __m__, __x__)
 

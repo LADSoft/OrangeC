@@ -316,7 +316,7 @@ static void DumpSymbolType(SYMBOL* sym)
     if (isvolatile(sym->tp))
         type |= ST_VOLATILE;
         */
-    ccWriteSymbolType(name, main_id, sym->origdeclfile ? sym->origdeclfile : "$$$", sym->origdeclline, sym->ccEndLine, type);
+    ccWriteSymbolType(name, main_id, sym->origdeclfile ? sym->origdeclfile : (char *)"$$$", sym->origdeclline, sym->ccEndLine, type);
 }
 static void DumpSymbol(SYMBOL* sym);
 static void DumpNamespace(SYMBOL* sym)
@@ -390,7 +390,7 @@ static void DumpSymbol(SYMBOL* sym)
         if (sym->storage_class == sc_namespace)
             DumpNamespace(sym);
         // use sym->declline here to get real function addresses
-        else if (ccWriteLineNumbers(name, litlate(type_name), sym->declfile ? sym->declfile : "$$$", indirectCount, struct_id,
+        else if (ccWriteLineNumbers(name, litlate(type_name), sym->declfile ? sym->declfile : (char *)"$$$", indirectCount, struct_id,
                                     main_id, sym->declline, sym->ccEndLine, sym->endLine, isfunction(sym->tp), &id))
         {
             if (isfunction(sym->tp) && sym->tp->syms)
@@ -430,7 +430,7 @@ static void DumpSymbols(void)
         HASHREC* hr = defsyms->table[i];
         while (hr)
         {
-            ccWriteSymbolType(((SYMBOL*)hr->p)->name, main_id, "$$$", 1, 0, ST_DEFINE);
+            ccWriteSymbolType(((SYMBOL*)hr->p)->name, main_id, (char *)"$$$", 1, 0, ST_DEFINE);
             hr = hr->next;
         }
     }

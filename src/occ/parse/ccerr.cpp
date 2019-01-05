@@ -993,8 +993,8 @@ void errorNotMember(SYMBOL* strSym, NAMESPACEVALUES* nsv, char* name)
 }
 void error(int err) { printerr(err, preprocFile, preprocLine); }
 void errorint(int err, int val) { printerr(err, preprocFile, preprocLine, val); }
-void errorstr(int err, char* val) { printerr(err, preprocFile, preprocLine, val); }
-void errorstr2(int err, char* val, char* two) { printerr(err, preprocFile, preprocLine, val, two); }
+void errorstr(int err, const char* val) { printerr(err, preprocFile, preprocLine, (char *)val); }
+void errorstr2(int err, const char* val, const char* two) { printerr(err, preprocFile, preprocLine, (char *)val, (char *)two); }
 void errorsym(int err, SYMBOL* sym)
 {
     char buf[2048];

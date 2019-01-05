@@ -2890,7 +2890,7 @@ void AdjustParams(SYMBOL* func, HASHREC* hr, INITLIST** lptr, BOOLEAN operands, 
                                         // make numeric temp and perform cast
                                         if (isarray(tp1))
                                         {
-                                            TYPE tp2 = {0};
+                                            TYPE tp2 = {};
                                             tp2.type = bt_lref;
                                             tp2.size = getSize(bt_pointer);
                                             tp2.btp = &stdpointer;

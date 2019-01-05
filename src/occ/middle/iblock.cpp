@@ -399,7 +399,7 @@ static QUAD* add_dag(QUAD* newQuad)
         QUAD *tquad;
         IMODE *treg;
         treg = tempreg(newQuad->ans->size, 0);
-        tquad = (QUAD *)(QUAD *)Alloc(sizeof(QUAD));
+        tquad = (QUAD *)Alloc(sizeof(QUAD));
         tquad->ans = newQuad->ans;
         tquad->dc.left = treg;
         tquad->dc.opcode = i_assn;

@@ -1292,7 +1292,7 @@ LEXEME* getsym(void)
     LLONG_TYPE ival;
     static unsigned char buf[16384];
     static int pos = 0;
-    char cval;
+    int cval;
     SLCHAR* strptr;
 
     if (context->cur)

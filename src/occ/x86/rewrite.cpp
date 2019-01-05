@@ -1236,7 +1236,7 @@ int examine_icode(QUAD* head)
     
                     if (prm_lscrtdll)
                     {
-                        QUAD *q = (QUAD *)(QUAD *)Alloc(sizeof(QUAD));
+                        QUAD *q = (QUAD *)Alloc(sizeof(QUAD));
                         q->dc.opcode = i_assn;
                         q->dc.left = set_symbol("__fzero", FALSE);
                         q->dc.left->mode = i_direct;
@@ -1269,7 +1269,7 @@ int examine_icode(QUAD* head)
                     q->dc.left = head->dc.left;
                     if (head->dc.left->size == ISZ_FLOAT || head->dc.left->size == ISZ_IFLOAT || head->dc.left->size == ISZ_CFLOAT)
                     {
-                        QUAD* q1 = (QUAD *)(QUAD *)Alloc(sizeof(QUAD));
+                        QUAD* q1 = (QUAD *)Alloc(sizeof(QUAD));
                         q1->dc.opcode = i_assn;
                         q1->dc.left = head->dc.left;
                         q->dc.left = q1->ans = InitTempOpt(head->dc.left->size + 1, head->dc.left->size + 1);
@@ -1341,12 +1341,12 @@ int examine_icode(QUAD* head)
                     q->dc.opcode = i_parm;
                     q->dc.left = make_immed(ISZ_UINT, n);
                     insert_parm(head->back, q);
-                    q = (QUAD *)(QUAD *)Alloc(sizeof(QUAD));
+                    q = (QUAD *)Alloc(sizeof(QUAD));
                     q->dc.opcode = i_parm;
                     q->dc.left = head->dc.left;
                     if (head->dc.left->size == ISZ_FLOAT || head->dc.left->size == ISZ_IFLOAT || head->dc.left->size == ISZ_CFLOAT)
                     {
-                        QUAD* q1 = (QUAD *)(QUAD *)Alloc(sizeof(QUAD));
+                        QUAD* q1 = (QUAD *)Alloc(sizeof(QUAD));
                         q1->dc.opcode = i_assn;
                         q1->dc.left = head->dc.left;
                         q->dc.left = q1->ans = InitTempOpt(head->dc.left->size + 1, head->dc.left->size + 1);
@@ -1486,14 +1486,14 @@ int examine_icode(QUAD* head)
                 /*
                if (head->dc.left->mode != i_immed || head->dc.left->offset->v.i > 4080)
                {
-                   QUAD *q = (QUAD *)(QUAD *)beLocalAlloc(sizeof(QUAD));
+                   QUAD *q = (QUAD *)beLocalAlloc(sizeof(QUAD));
                     IMODE *ret ;
                    ret = AllocateTemp(head->ans->size);
                    ret->retval = TRUE;
                    q->dc.opcode = i_parm;
                    q->dc.left = head->dc.left;
                    insert_parm(head->back, q);
-                   q = (QUAD *)(QUAD *)beLocalAlloc(sizeof(QUAD));
+                   q = (QUAD *)beLocalAlloc(sizeof(QUAD));
                    q->dc.opcode = i_gosub;
                    q->dc.left = set_symbol( "___substackp", TRUE);
                    InsertInstruction(head->back, q);
@@ -1979,7 +1979,7 @@ int examine_icode(QUAD* head)
                     ret->retval = TRUE;
                     if (head->ans->size == ISZ_CFLOAT)
                     {
-                        q = (QUAD *)(QUAD *)beLocalAlloc(sizeof(QUAD));
+                        q = (QUAD *)beLocalAlloc(sizeof(QUAD));
                         q->dc.opcode = i_assn;
                         q->alwayslive = TRUE;
                         q->ans = InitTempOpt(ISZ_CLDOUBLE, ISZ_CLDOUBLE);
@@ -1994,7 +1994,7 @@ int examine_icode(QUAD* head)
                     insert_parm(head->back, q);
                     if (head->ans->size == ISZ_CFLOAT)
                     {
-                        q = (QUAD *)(QUAD *)beLocalAlloc(sizeof(QUAD));
+                        q = (QUAD *)beLocalAlloc(sizeof(QUAD));
                         q->dc.opcode = i_assn;
                         q->alwayslive = TRUE;
                         q->ans = InitTempOpt(ISZ_CLDOUBLE, ISZ_CLDOUBLE);
@@ -2032,7 +2032,7 @@ int examine_icode(QUAD* head)
                     insert_nullparmadj(head->back, 8 * 4);
                     if (head->ans->size == ISZ_CFLOAT)
                     {
-                        QUAD* q1 = (QUAD *)(QUAD *)Alloc(sizeof(QUAD));
+                        QUAD* q1 = (QUAD *)Alloc(sizeof(QUAD));
                         q1->dc.opcode = i_assn;
                         q1->dc.left = ret;
                         ret = q1->ans = InitTempOpt(ret->size, ret->size);
@@ -2166,14 +2166,14 @@ int examine_icode(QUAD* head)
     {
     case ISZ_FLOAT:
     case ISZ_DOUBLE:
-        fltret = (TYPE *)(TYPE *)Alloc(sizeof(TYPE));
+        fltret = (TYPE *)Alloc(sizeof(TYPE));
         fltret->type = bt_double;
         fltret->size = 8;
         fltret->rootType = fltret;
         break;
     case ISZ_CFLOAT:
     case ISZ_CDOUBLE:
-        fltret = (TYPE *)(TYPE *)Alloc(sizeof(TYPE));
+        fltret = (TYPE *)Alloc(sizeof(TYPE));
         fltret->type = bt_double_complex;
         fltret->size = 16;
         fltret->rootType = fltret;

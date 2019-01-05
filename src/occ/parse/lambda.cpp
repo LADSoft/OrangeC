@@ -527,7 +527,7 @@ static void createConverter(SYMBOL* self)
     func->storage_class = sc_member;
     func->castoperator = TRUE;
     func->tp->syms = CreateHashTable(1);
-    hr->p = (struct sym *)sym;
+    hr->p = (SYMBOL *)sym;
     func->tp->syms->table[0] = hr;
     injectThisPtr(func, func->tp->syms);
     func->parentClass = lambdas->cls;

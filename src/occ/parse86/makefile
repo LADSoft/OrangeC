@@ -25,7 +25,7 @@ include ../../pathext2.mak
 
 NAME=occpr
 MAIN_FILE=ccmain.c
-C_DEPENDENCIES= \
+CPP_DEPENDENCIES= \
     $(BACKEND_FILES) \
     ccmain.cpp \
     ccif.cpp \
@@ -83,7 +83,7 @@ SOURCE = ..$(PATHEXT2)parse;..$(PATHEXT2)preproc;..$(PATHEXT2)middle
 INCLUDES=..$(PATHEXT2)parse ..$(PATHEXT2)preproc ..$(PATHEXT2)middle
 SRCPATH:=$(BACKEND_INCLUDE_PATH);$(SOURCE);..
 endif
-BACKEND_FILES = config.c
+BACKEND_FILES = config.cpp
 
 
 vpath %.c $(SRCPATH)

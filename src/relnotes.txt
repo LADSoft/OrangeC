@@ -24,6 +24,7 @@ version 6.0.40:
     occ: fix unary operators - would apply the conversion AFTER any cast to the destination size instead of before
     occ: fix various problems with complex and imaginary number handling
     occ: in assembly file, represent floating point numbers as a byte sequence instead of as a decimal value
+    occ: in C++ code, allow conversion from a pointer to enum to a pointer to void in argument matching
     oasm: speed up assembly of large files
     oasm: negative floating point numbers were being represented as positive in the output
     dlpe/oimplib: handle -y switch 

@@ -25,8 +25,11 @@
 include ../../pathext2.mak
 
 NAME=occ
-MAIN_FILE=ccmain.c
+MAIN_FILE=ccmain.cpp
 C_DEPENDENCIES= \
+    winsystem.c
+
+CPP_DEPENDENCIES= \
     ccmain.cpp \
     config.cpp \
     crc32.cpp \
@@ -86,10 +89,7 @@ C_DEPENDENCIES= \
     template.cpp \
     types.cpp \
     unmangle.cpp \
-    winsystem.c \
-    wseh.cpp
-
-CPP_DEPENDENCIES = \
+    wseh.cpp \
     beIntrins.cpp \
     dbgtypes.cpp \
     gen.cpp \

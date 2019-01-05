@@ -2767,7 +2767,11 @@ static void getQualConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* exp, int* n, enu
                 hasvol = FALSE;
         }
         first = FALSE;
+        if (tpa->type == bt_enum)
+            tpa = tpa->btp;
         tpa = basetype(tpa)->btp;
+        if (tpp->type == bt_enum)
+            tpp = tpp->btp;
         tpp = basetype(tpp)->btp;
     }
     if ((!tpa && !tpp) || (tpa && tpp && tpa->type != bt_pointer && tpp->type != bt_pointer))

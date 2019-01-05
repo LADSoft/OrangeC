@@ -24,6 +24,7 @@
  */
 
 #include "compiler.h"
+#include <wchar.h>
 /* locally declared func gloabal memory
  when redeclaring sym, make sure it gets in the global func list
 */

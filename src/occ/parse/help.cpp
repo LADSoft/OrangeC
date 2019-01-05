@@ -1788,7 +1788,7 @@ static TYPE* inttype(enum e_bt t1)
 }
 inline e_bt btmax(e_bt left, e_bt right)
 {
-    return left < right ? left : right;
+    return left > right ? left : right;
 }
 TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, BOOLEAN minimizeInt, TYPE* atp)
 /*

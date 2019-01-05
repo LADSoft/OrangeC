@@ -26,7 +26,12 @@
 #include "compiler.h"
 #include "sys/stat.h"
 //#include "dir.h"
-#include "io.h"
+#ifdef GCCLINUX
+#include <unistd.h>
+#else
+#include <io.h>
+#endif
+
 extern "C" char* getcwd(char*, int);
 
 #ifdef PARSER_ONLY

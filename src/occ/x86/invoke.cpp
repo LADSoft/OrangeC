@@ -29,6 +29,10 @@
 #include "be.h"
 #include "winmode.h"
 
+#ifdef GCCLINUX
+#include <unistd.h>
+#endif
+
 extern COMPILER_PARAMS cparams;
 extern int prm_targettype;
 extern int prm_crtdll;

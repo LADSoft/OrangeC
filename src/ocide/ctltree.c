@@ -27,7 +27,7 @@
 #include <windows.h>
 #include <commctrl.h>
 #include <stdio.h>
-#include "HEADER.H"
+#include "header.h"
 #include "idewinconst.h"
 
 extern LOGFONT systemDialogFont;

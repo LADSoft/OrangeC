@@ -125,7 +125,7 @@ int printerr(char* buf, int errnum, void* data)
             sprintf(buf, "Invalid preprocessor directive '%s'", (char*)data);
             break;
         case ERR_INCLFILE:
-            sprintf(buf, "File name expected in #include directive");
+            sprintf(buf, "file name expected in #include directive");
             break;
         case ERR_CANTOPEN:
             sprintf(buf, "Cannot open file \"%s\" for read access", (char*)data);

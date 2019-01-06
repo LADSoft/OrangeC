@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -442,9 +442,11 @@ static DWORD LoadFirstWorkArea(void* v)
         {
             int i;
             char cwd[256];
+            char *ext = NULL;
             int munged = FALSE;
             StringToProfile("FILEDIR", (char*)getcwd(cwd, 256));
-            if (argc == 2 &&strstr(argv[1], ".cwa"))
+            if (argc == 2) ext = strrchr(argv[1], '.') + 1;
+            if (ext && !stricmp(ext, "cwa"))
             {
                 LoadWorkArea(argv[1], TRUE);
             }

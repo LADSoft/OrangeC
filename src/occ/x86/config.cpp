@@ -210,7 +210,7 @@ static ARCH_SIZING locks = {
     0, /*char a_enum; */
     0, /*char a_int; */
     0, /*char a_long; */
-    1, /*char a_longlong; */
+    0, /*char a_longlong; */
     0, /*char a_addr; */
     1, /*char a_farptr; */
     1, /*char a_farseg; */

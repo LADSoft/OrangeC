@@ -25,6 +25,9 @@ version 6.0.40:
     occ: fix various problems with complex and imaginary number handling
     occ: in assembly file, represent floating point numbers as a byte sequence instead of as a decimal value
     occ: in C++ code, allow conversion from a pointer to enum to a pointer to void in argument matching
+    occ: make operator << instantiation for ostream work with enums
+    occ: fix stdatomic.h header
+    occ: fix atomic code generation
     oasm: speed up assembly of large files
     oasm: negative floating point numbers were being represented as positive in the output
     dlpe/oimplib: handle -y switch 

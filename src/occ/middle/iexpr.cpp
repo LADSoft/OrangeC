@@ -2716,11 +2716,11 @@ IMODE* gen_atomic_barrier(SYMBOL* funcsp, ATOMICDATA* ad, IMODE* addr, IMODE* ba
     {
         if (barrier)
         {
-            left = make_immed(ISZ_UINT, -ad->memoryOrder1->v.i);
+            left = make_immed(ISZ_UINT, -ad->memoryOrder1->v.i- (ad->atomicOp == ao_store? 0x80 : 0));
         }
         else
         {
-            left = make_immed(ISZ_UINT, ad->memoryOrder1->v.i);
+            left = make_immed(ISZ_UINT, ad->memoryOrder1->v.i+ (ad->atomicOp == ao_store ? 0x80 : 0));
         }
         gen_icode(i_atomic_fence, NULL, left, NULL);
         return (IMODE*)-1;
@@ -2753,14 +2753,14 @@ IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
             break;
         case ao_flag_set_test:
             left = gen_expr(funcsp, node->v.ad->memoryOrder1, 0, ISZ_UINT);
-            right = gen_expr(funcsp, node->v.ad->flg, 0, ISZ_UINT);
+            right = gen_expr(funcsp, node->v.ad->flg, F_STORE, ISZ_UINT);
             rv = tempreg(ISZ_UINT, 0);
             gen_icode(i_atomic_flag_test_and_set, rv, left, right);
             intermed_tail->alwayslive = TRUE;
             break;
         case ao_flag_clear:
             left = gen_expr(funcsp, node->v.ad->memoryOrder1, 0, ISZ_UINT);
-            right = gen_expr(funcsp, node->v.ad->flg, 0, ISZ_UINT);
+            right = gen_expr(funcsp, node->v.ad->flg, F_STORE, ISZ_UINT);
             gen_icode(i_atomic_flag_clear, NULL, left, right);
             break;
         case ao_fence:
@@ -2773,6 +2773,7 @@ IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
             rv = tempreg(sizeFromType(node->v.ad->tp), 0);
             barrier = gen_atomic_barrier(funcsp, node->v.ad, av, 0);
             gen_icode(i_assn, rv, left, NULL);
+            intermed_tail->atomic = TRUE;
             intermed_tail->alwayslive = TRUE;
             gen_atomic_barrier(funcsp, node->v.ad, av, barrier);
             break;
@@ -2787,10 +2788,6 @@ IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
             rv = right;
             break;
         case ao_modify:
-            sz = sizeFromType(node->v.ad->tp);
-            av = gen_expr(funcsp, node->v.ad->address, 0, ISZ_ADDR);
-            left = indnode(av, sz);
-            right = gen_expr(funcsp, node->v.ad->value, 0, sz);
             switch ((int)node->v.ad->third->v.i)
             {
                 default:
@@ -2809,12 +2806,20 @@ IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
                 case asxor:
                     op = i_eor;
                     break;
+                case assign:
+                    op = i_xchg;
+                    break;
             }
+            sz = sizeFromType(node->v.ad->tp);
+            av = gen_expr(funcsp, node->v.ad->address, 0, ISZ_ADDR);
+            left = indnode(av, sz);
+            right = gen_expr(funcsp, node->v.ad->value, F_STORE, sz);
 
             barrier = gen_atomic_barrier(funcsp, node->v.ad, av, 0);
             rv = tempreg(sz, 0);
-            gen_icode(i_assn, rv, left, NULL);
-            gen_icode(op, left, left, right);
+            gen_icode(op, rv, left, right);
+            intermed_tail->atomic = TRUE;
+            intermed_tail->alwayslive = TRUE;
             gen_atomic_barrier(funcsp, node->v.ad, av, barrier);
             break;
         case ao_cmpswp:

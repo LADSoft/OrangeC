@@ -4446,6 +4446,7 @@ static LEXEME* expression_atomic_func(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EX
                             case asor:
                             case asand:
                             case asxor:
+                            case assign:
                                 d->third = intNode(en_c_i, KW(lex));
                                 break;
                         }

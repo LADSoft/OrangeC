@@ -60,7 +60,7 @@ typedef enum memory_order
 #define ATOMIC_SHORT_LOCK_FREE 1
 #define ATOMIC_INT_LOCK_FREE 1
 #define ATOMIC_LONG_LOCK_FREE 1
-#define ATOMIC_LLONG_LOCK_FREE 0
+#define ATOMIC_LLONG_LOCK_FREE 1
 #define ATOMIC_POINTER_LOCK_FREE 1
 
 #define atomic_is_lock_free(A) \
@@ -100,7 +100,7 @@ typedef enum memory_order
 
 typedef struct atomic_flag
 {
-    unsigned __f__;
+    unsigned char __f__;
 } atomic_flag;
 
 #define atomic_flag_test_and_set_explicit(object, order) __atomic_flag_test_set(object, order)
@@ -108,7 +108,7 @@ typedef struct atomic_flag
 #define atomic_flag_clear_explicit(object, order) __atomic_flag_clear(object, order)
 #define atomic_flag_clear(object) __atomic_flag_clear(object, memory_order_seq_cst)
 
-#define atomic_thread_fence(order) __atomic_fence(order)
+#define atomic_thread_fence(order) __atomic_fence(order+ 0x80)
 #define atomic_signal_fence(order) __atomic_fence(order)
 
 #define __ATOMIC_TYPE__(__x__, __y__) typedef _Atomic(__x__) __y__;

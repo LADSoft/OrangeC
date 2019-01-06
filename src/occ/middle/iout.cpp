@@ -1123,14 +1123,23 @@ static void iop_atomic_flag_clear(QUAD* q)
     oprintf(icdFile, "\tATOMIC CLEAR");
     oputc(' ', icdFile);
     putamode(q, q->dc.left);
-    oputc(',', icdFile);
-    putamode(q, q->dc.right);
 }
 static void iop_cmpswp(QUAD* q)
 {
     if (chosenAssembler->gen->asm_atomic)
         chosenAssembler->gen->asm_atomic(q);
     oprintf(icdFile, "\tCMPSWP\t");
+    putamode(q, q->ans);
+    oputc(',', icdFile);
+    putamode(q, q->dc.left);
+    oputc(',', icdFile);
+    putamode(q, q->dc.right);
+}
+static void iop_xchg(QUAD *q)
+{
+    if (chosenAssembler->gen->asm_atomic)
+        chosenAssembler->gen->asm_atomic(q);
+    oprintf(icdFile, "\tXCHG\t");
     putamode(q, q->ans);
     oputc(',', icdFile);
     putamode(q, q->dc.left);
@@ -1227,6 +1236,7 @@ static void (*oplst[])(QUAD* q) = {
     iop_atomic_fence,
     iop_atomic_flag_fence,
     iop_cmpswp,
+    iop_xchg,
     iop_prologue,
     iop_epilogue,
     iop_pushcontext,

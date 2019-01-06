@@ -985,7 +985,7 @@ enum _tokenTypes
     TT_VOID = 0x10000000,
     TT_CLASS = 0x20000000,
     TT_LINKAGE = 0x40000000,
-    TT_DECLARE = 0x80000000,
+    TT_DECLARE = 0x80000000UL,
     TT_UNKNOWN = 0
 };
 // clang-format on

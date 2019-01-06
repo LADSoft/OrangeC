@@ -159,7 +159,6 @@ extern "C"
 #    define signbit(x) ((sizeof(x) == sizeof(float)) ? signbitf(x) : (sizeof(x) == sizeof(double)) ? signbit(x) : signbitl(x))
 
 #    define isfinite(x) (fpclassify(x) >= FP_NORMAL)
-#    define finite(x) isfinite(x)
 #    define isinf(x) (fpclassify(x) == FP_INFINITE)
 #    define isnan(x) (fpclassify(x) == FP_NAN)
 #    define isnormal(x) (fpclassify(x) == FP_NORMAL)

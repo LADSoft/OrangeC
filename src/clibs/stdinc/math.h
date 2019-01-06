@@ -159,6 +159,7 @@ extern "C"
 #    define signbit(x) ((sizeof(x) == sizeof(float)) ? signbitf(x) : (sizeof(x) == sizeof(double)) ? signbit(x) : signbitl(x))
 
 #    define isfinite(x) (fpclassify(x) >= FP_NORMAL)
+#    define finite(x) isfinite(x)
 #    define isinf(x) (fpclassify(x) == FP_INFINITE)
 #    define isnan(x) (fpclassify(x) == FP_NAN)
 #    define isnormal(x) (fpclassify(x) == FP_NORMAL)
@@ -171,6 +172,9 @@ extern "C"
 #    define isunordered(x, y) __nancompare((x), (y), 0)
 
 #endif
+    int _RTL_FUNC finitef(float x);
+    int _RTL_FUNC finite(double x);
+    int _RTL_FUNC finitel(long double x);
 
     float _RTL_FUNC _IMPORTMM acosf(float __x);
     float _RTL_FUNC _IMPORTMM asinf(float __x);

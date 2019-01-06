@@ -1,4 +1,4 @@
-Release notes:
+-Release notes:
 
 version 6.0.40:
     occ: fix stack frame in the presence of try/catch processing: don't optimize out the EBP references
@@ -53,6 +53,7 @@ version 6.0.40:
     rtl: fix sprintf() and friends to print floating point numbers correctly
     rtl: replace 8087 math functions with cephes library
     rtl: fix startup routines to pass correct version of hInstance to WinMain and DLLMain when compiled against LSCRTL.DLL
+    rtl: add bsd finite() functions
 
 version 6.0.39: 11/15/2018
     rtl: add msvcrt.l and crtdll.l back into the project

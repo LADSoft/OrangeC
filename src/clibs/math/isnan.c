@@ -303,3 +303,15 @@ int _RTL_FUNC isinfl(long double x)
 {
     return !isfinitel(x);
 }
+int _RTL_FUNC finite(double x)
+{
+    return isfinite(x);
+}
+int _RTL_FUNC finitef(float x)
+{
+    return isfinitef(x);
+}
+int _RTL_FUNC finitel(long double x)
+{
+    return isfinitel(x);
+}

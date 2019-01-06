@@ -42,6 +42,12 @@ extern LIST* nonSysIncludeFiles;
 extern "C" {
     char* __stdcall GetModuleFileNameA(int handle, char* buf, int size);
 }
+#else
+#define HAVE_UNISTD_H /* assumption as work-around, not generally correct */
+#endif
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
 #endif
 
 #ifdef PARSER_ONLY

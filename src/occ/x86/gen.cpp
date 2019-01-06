@@ -1922,13 +1922,13 @@ static void llongatomicmath(e_opcode low, e_opcode high, QUAD *q)
         gen_code(op_push, makedreg(EBX), NULL);
         pushlevel += 4;
     }
-    if (low != op_xchg && /*(apal->liveRegs & (1 << ESI)) &&*/ reg1 != ESI && reg2 != ESI)
+    if (low != op_xchg && aprl->mode != am_immed &&/*(apal->liveRegs & (1 << ESI)) &&*/ reg1 != ESI && reg2 != ESI)
     {
         pushsi = TRUE;
         gen_code(op_push, makedreg(ESI), NULL);
         pushlevel += 4;
     }
-    if (low != op_xchg && /*(apal->liveRegs & (1 << EDI)) &&*/ reg1 != EDI && reg2 != EDI)
+    if (low != op_xchg && aprl->mode != am_immed && /*(apal->liveRegs & (1 << EDI)) &&*/ reg1 != EDI && reg2 != EDI)
     {
         pushdi = TRUE;
         gen_code(op_push, makedreg(EDI), NULL);
@@ -1941,7 +1941,7 @@ static void llongatomicmath(e_opcode low, e_opcode high, QUAD *q)
         pushlevel += 4;
 
     }
-    if (aprl->mode != am_direct && aprl->mode != am_immed && (aprl->mode != am_indisp || aprl->preg != ESP))
+    if (aprl->mode != am_direct && aprl->mode != am_immed && (aprl->mode != am_indisp || aprl->preg != ESP && aprl->preg != EBP))
     {
         gen_code(op_lea, makedreg(EAX), aprl);
         aprl = makedreg(EAX);
@@ -1972,13 +1972,16 @@ static void llongatomicmath(e_opcode low, e_opcode high, QUAD *q)
     }
     else
     {
+        if (aprl->mode != am_immed)
+        {
 
-        gen_codes(op_mov, ISZ_UINT, low == op_xchg ? makedreg(EBX) : makedreg(ESI), aprl);
-        gen_codes(op_mov, ISZ_UINT, low == op_xchg ? makedreg(ECX) : makedreg(EDI), aprh);
+            gen_codes(op_mov, ISZ_UINT, low == op_xchg ? makedreg(EBX) : makedreg(ESI), aprl);
+            gen_codes(op_mov, ISZ_UINT, low == op_xchg ? makedreg(ECX) : makedreg(EDI), aprh);
+        }
         gen_codes(op_mov, ISZ_UINT, makedreg(EAX), apll);
         gen_codes(op_mov, ISZ_UINT, makedreg(EDX), aplh);
     }
-    if (low != op_xchg)
+    if (low != op_xchg && aprl->mode != am_immed)
     {
         aprl = makedreg(ESI);
         aprh = makedreg(EDI);
@@ -2040,7 +2043,9 @@ static void llongatomicmath(e_opcode low, e_opcode high, QUAD *q)
 }
 static void addsubatomic(e_opcode op, QUAD *q)
 {
-    if (q->ans->size <= ISZ_U32 && q->ans->size != -ISZ_ULONGLONG|| q->ans->size == ISZ_ADDR)
+    if ((q->ans->size <= ISZ_U32 && q->ans->size != -ISZ_ULONGLONG|| q->ans->size == ISZ_ADDR) 
+        || (q->dc.left->size <= ISZ_U32 && q->dc.left->size != -ISZ_ULONGLONG || q->dc.left->size == ISZ_ADDR)
+        || (q->dc.right->size <= ISZ_U32 && q->dc.right->size != -ISZ_ULONGLONG || q->dc.right->size == ISZ_ADDR))
     {
         BOOLEAN pushbp = FALSE;
         enum e_opcode opa, opl, opr;
@@ -2110,7 +2115,9 @@ static void addsubatomic(e_opcode op, QUAD *q)
 }
 static void logicatomic(e_opcode op, QUAD *q)
 {
-    if (q->ans->size <= ISZ_U32 && q->ans->size != -ISZ_ULONGLONG || q->ans->size == ISZ_ADDR)
+    if ((q->ans->size <= ISZ_U32 && q->ans->size != -ISZ_ULONGLONG || q->ans->size == ISZ_ADDR)
+        || (q->dc.left->size <= ISZ_U32 && q->dc.left->size != -ISZ_ULONGLONG || q->dc.left->size == ISZ_ADDR)
+        || (q->dc.right->size <= ISZ_U32 && q->dc.right->size != -ISZ_ULONGLONG || q->dc.right->size == ISZ_ADDR))
     {
         BOOLEAN pushbp = FALSE;
         enum e_opcode opa, opl, opr;
@@ -4812,7 +4819,9 @@ void asm_atomic(QUAD* q)
             }
             break;
         case i_xchg:
-            if (q->ans->size == ISZ_ULONGLONG || q->ans->size == -ISZ_ULONGLONG)
+            if ((q->ans->size == ISZ_ULONGLONG || q->ans->size == -ISZ_ULONGLONG) && 
+                (q->dc.left->size == ISZ_ULONGLONG || q->dc.left->size == -ISZ_ULONGLONG) && 
+                (q->dc.right->size == ISZ_ULONGLONG || q->dc.right->size == -ISZ_ULONGLONG))
             {
                 llongatomicmath(op_xchg, op_xchg, q);
             }
@@ -4871,7 +4880,9 @@ void asm_atomic(QUAD* q)
               */
             {
                 int sz = q->ans->size;
-                if (sz == ISZ_ULONGLONG || sz == -ISZ_ULONGLONG)
+                if ((sz == ISZ_ULONGLONG || sz == -ISZ_ULONGLONG) && 
+                    (q->dc.left->size == ISZ_ULONGLONG || q->dc.left->size == -ISZ_ULONGLONG) &&
+                    (q->dc.right->size == ISZ_ULONGLONG || q->dc.right->size == -ISZ_ULONGLONG))
                 {
                     llongatomicmath(op_xchg, op_cmpxchg8b, q);
                 }

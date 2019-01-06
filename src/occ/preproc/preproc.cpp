@@ -30,9 +30,8 @@
 #include <unistd.h>
 #else
 #include <io.h>
-#endif
-
 extern "C" char* getcwd(char*, int);
+#endif
 
 #ifdef PARSER_ONLY
 size_t ccReadFile(void* __ptr, size_t __size, size_t __n, FILE* __stream);

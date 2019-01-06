@@ -2370,7 +2370,7 @@ static TEMPLATEPARAMLIST* paramsToDefault(TEMPLATEPARAMLIST* templateParams)
 static TEMPLATEPARAMLIST** addStructParam(TEMPLATEPARAMLIST** pt, TEMPLATEPARAMLIST* search, TEMPLATEPARAMLIST* enclosing)
 {
     TEMPLATEPARAMLIST* find = enclosing->next;
-    if (!search->argsym)
+    if (!search->argsym || search->p->byClass.dflt && !search->p->byClass.val)
     {
         if (!search->p->byClass.dflt)
             return NULL;

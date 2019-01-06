@@ -71,7 +71,7 @@ enum e_kw skim_colon[] = {colon, kw_case, kw_default, semicolon, end, kw_none};
 
 static struct
 {
-    char* name;
+    const char* name;
     int level;
 } errors[] = {
     {"Unknown error", ERROR},

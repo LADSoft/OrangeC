@@ -260,7 +260,7 @@ KEYWORD keywords[] = {
     {"compl", 5, complx, KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR},
     {"const", 5, kw_const, KW_ASSEMBLER, TT_POINTERQUAL | TT_TYPEQUAL},
     {"const_cast", 10, kw_const_cast, KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR},
-    {"constexpr", 9, kw_constexpr, KW_CPLUSPLUS, TT_DECLARE},
+    {"constexpr", 9, kw_constexpr, KW_CPLUSPLUS, (unsigned long)TT_DECLARE},
     {"continue", 8, kw_continue, 0, TT_CONTROL},
     {"decltype", 8, kw_decltype, KW_CPLUSPLUS, TT_OPERATOR},
     {"default", 7, kw_default, 0, TT_CONTROL},

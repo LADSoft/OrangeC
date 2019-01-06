@@ -46,7 +46,7 @@ static char* currentpreprocFile;
 
 static struct
 {
-    char* name;
+    const char* name;
     int level;
 } errors[] = {
     {"Unknown error", ERROR},

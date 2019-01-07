@@ -577,17 +577,17 @@ static struct
 
 unsigned char warningFlags[sizeof(errors) / sizeof(errors[0])];
 
-static BOOLEAN ValidateWarning(int num)
+static bool ValidateWarning(int num)
 {
     if (num && num < sizeof(warningFlags))
     {
         if (!(errors[num].level & ERROR))
         {
-            return TRUE;
+            return true;
         }
     }
     printf("Warning: /w index %d does not correspond to a warning\n", num);
-    return FALSE;
+    return false;
 }
 void DisableWarning(int num)
 {
@@ -705,7 +705,7 @@ static char kwtosym(enum e_kw kw)
             return '?';
     }
 };
-static BOOLEAN IsReturnErr(int err)
+static bool IsReturnErr(int err)
 {
     switch (err)
     {
@@ -717,10 +717,10 @@ static BOOLEAN IsReturnErr(int err)
         case ERR_FUNCTION_RETURNING_ADDRESS_STACK_VARIABLE:
             return chosenAssembler->arch->erropts & EO_RETURNASERR;
         default:
-            return FALSE;
+            return false;
     }
 }
-static BOOLEAN alwaysErr(int err)
+static bool alwaysErr(int err)
 {
     switch (err)
     {
@@ -734,12 +734,12 @@ static BOOLEAN alwaysErr(int err)
         case ERR_CANNOT_ACCESS:
         case ERR_REF_CLASS_NO_CONSTRUCTORS:
         case ERR_CONST_CLASS_NO_CONSTRUCTORS:
-            return TRUE;
+            return true;
         default:
-            return FALSE;
+            return false;
     }
 }
-static BOOLEAN ignoreErrtemplateNestingCount(int err)
+static bool ignoreErrtemplateNestingCount(int err)
 {
     switch (err)
     {
@@ -766,18 +766,18 @@ static BOOLEAN ignoreErrtemplateNestingCount(int err)
         case ERR_NO_OVERLOAD_MATCH_FOUND:
         case ERR_POINTER_TYPE_EXPECTED:
         case ERR_NEED_TYPEINFO_H:
-            return TRUE;
+            return true;
     }
-    return FALSE;
+    return false;
 }
-BOOLEAN printerrinternal(int err, char* file, int line, va_list args)
+bool printerrinternal(int err, char* file, int line, va_list args)
 {
     char buf[2048];
     char infunc[2048];
     char* listerr;
     char nameb[265], *name = nameb;
     if (cparams.prm_makestubs || inDeduceArgs || templateNestingCount && ignoreErrtemplateNestingCount(err))
-        return FALSE;
+        return false;
     if (!file)
     {
 #ifndef CPREPROCESSOR
@@ -803,9 +803,9 @@ BOOLEAN printerrinternal(int err, char* file, int line, va_list args)
         name = fullqualify(nameb);
     }
     if (total_errors > cparams.prm_maxerr)
-        return FALSE;
+        return false;
     if (!alwaysErr(err) && currentErrorFile && !strcmp(currentErrorFile, includes->fname) && includes->line == currentErrorLine)
-        return FALSE;
+        return false;
     if (err >= sizeof(errors) / sizeof(errors[0]))
     {
         my_sprintf(buf, "Error %d", err);
@@ -831,9 +831,9 @@ BOOLEAN printerrinternal(int err, char* file, int line, va_list args)
     else
     {
         if (warningFlags[err] & WARNING_DISABLE)
-            return FALSE;
+            return false;
         if ((warningFlags[err] & (WARNING_ONLY_ONCE | WARNING_EMITTED)) == (WARNING_ONLY_ONCE | WARNING_EMITTED))
-            return FALSE;
+            return false;
         warningFlags[err] |= WARNING_EMITTED;
         if (warningFlags[err] & WARNING_AS_ERROR)
         {
@@ -883,11 +883,11 @@ BOOLEAN printerrinternal(int err, char* file, int line, va_list args)
         exit(1);
     }
 #endif
-    return TRUE;
+    return true;
 }
 int printerr(int err, char* file, int line, ...)
 {
-    BOOLEAN canprint = FALSE;
+    bool canprint = false;
     va_list arg;
     va_start(arg, line);
     canprint = printerrinternal(err, file, line, arg);
@@ -965,7 +965,7 @@ void errorqualified(int err, SYMBOL* strSym, NAMESPACEVALUES* nsv, char* name)
         }
         else
         {
-            unmang1(unopped, name + 1, last, FALSE);
+            unmang1(unopped, name + 1, last, false);
         }
     }
     else
@@ -1130,7 +1130,7 @@ static void setbalance(LEXEME* lex, BALANCE** bal)
 void errskim(LEXEME** lex, enum e_kw* skimlist)
 {
     BALANCE* bal = 0;
-    while (TRUE)
+    while (true)
     {
         if (!*lex)
             break;
@@ -1151,17 +1151,17 @@ void skip(LEXEME** lex, enum e_kw kw)
     if (MATCHKW(*lex, kw))
         *lex = getsym();
 }
-BOOLEAN needkw(LEXEME** lex, enum e_kw kw)
+bool needkw(LEXEME** lex, enum e_kw kw)
 {
     if (MATCHKW(*lex, kw))
     {
         *lex = getsym();
-        return TRUE;
+        return true;
     }
     else
     {
         errorint(ERR_NEEDY, kwtosym(kw));
-        return FALSE;
+        return false;
     }
 }
 void specerror(int err, char* name, char* file, int line) { printerr(err, file, line, name); }
@@ -1220,7 +1220,7 @@ void AddErrorToList(char* tag, char* str)
         listErrors = l;
     }
 }
-static BOOLEAN hasGoto(STATEMENT* stmt)
+static bool hasGoto(STATEMENT* stmt)
 {
     while (stmt)
     {
@@ -1235,13 +1235,13 @@ static BOOLEAN hasGoto(STATEMENT* stmt)
             case st___finally:
             case st___fault:
                 if (hasGoto(stmt->lower))
-                    return TRUE;
+                    return true;
                 break;
             case st_declare:
             case st_expr:
                 break;
             case st_goto:
-                return TRUE;
+                return true;
             case st_return:
             case st_select:
             case st_notselect:
@@ -1261,9 +1261,9 @@ static BOOLEAN hasGoto(STATEMENT* stmt)
         }
         stmt = stmt->next;
     }
-    return FALSE;
+    return false;
 }
-static BOOLEAN hasDeclarations(STATEMENT* stmt)
+static bool hasDeclarations(STATEMENT* stmt)
 {
     while (stmt)
     {
@@ -1278,12 +1278,12 @@ static BOOLEAN hasDeclarations(STATEMENT* stmt)
             case st___finally:
             case st___fault:
                 if (hasDeclarations(stmt->lower))
-                    return TRUE;
+                    return true;
                 break;
             case st_declare:
             case st_expr:
                 if (stmt->hasvla || stmt->hasdeclare)
-                    return TRUE;
+                    return true;
                 break;
             case st_return:
             case st_goto:
@@ -1305,7 +1305,7 @@ static BOOLEAN hasDeclarations(STATEMENT* stmt)
         }
         stmt = stmt->next;
     }
-    return FALSE;
+    return false;
 }
 static void labelIndexes(STATEMENT* stmt, int* min, int* max)
 {
@@ -1402,7 +1402,7 @@ static VLASHIM* mkshim(_vlaTypes type, int level, int label, STATEMENT* stmt, VL
 }
 /* thisll be sluggish if there are lots of gotos & labels... */
 static VLASHIM* getVLAList(STATEMENT* stmt, VLASHIM* last, VLASHIM* parent, VLASHIM** labels, int minLabel, int* blocknum,
-                           int level, BOOLEAN* branched)
+                           int level, bool* branched)
 {
     int curBlockNum = (*blocknum)++;
     int curBlockIndex = 0;
@@ -1413,7 +1413,7 @@ static VLASHIM* getVLAList(STATEMENT* stmt, VLASHIM* last, VLASHIM* parent, VLAS
         {
             case st_switch:
             {
-                BOOLEAN first = TRUE;
+                bool first = true;
                 CASEDATA* cases = stmt->cases;
                 while (cases)
                 {
@@ -1421,7 +1421,7 @@ static VLASHIM* getVLAList(STATEMENT* stmt, VLASHIM* last, VLASHIM* parent, VLAS
                     last = *cur;
                     if (first)
                         nextParent = last;
-                    first = FALSE;
+                    first = false;
                     cur = &(*cur)->next;
                     cases = cases->next;
                 }
@@ -1441,7 +1441,7 @@ static VLASHIM* getVLAList(STATEMENT* stmt, VLASHIM* last, VLASHIM* parent, VLAS
                     last = *cur;
                     last->checkme = stmt->lower->explicitGoto;
                     cur = &(*cur)->next;
-                    *branched = TRUE;
+                    *branched = true;
                 }
                 else
                 {
@@ -1479,14 +1479,14 @@ static VLASHIM* getVLAList(STATEMENT* stmt, VLASHIM* last, VLASHIM* parent, VLAS
                 }
                 break;
             case st_return:
-                *branched = TRUE;
+                *branched = true;
                 *cur = mkshim(v_return, level, stmt->label, stmt, last, parent, curBlockNum, curBlockIndex++);
                 last = *cur;
                 cur = &(*cur)->next;
                 break;
             case st_select:
             case st_notselect:
-                *branched = TRUE;
+                *branched = true;
                 *cur = mkshim(v_branch, level, stmt->label, stmt, last, parent, curBlockNum, curBlockIndex++);
                 last = *cur;
                 cur = &(*cur)->next;
@@ -1502,7 +1502,7 @@ static VLASHIM* getVLAList(STATEMENT* stmt, VLASHIM* last, VLASHIM* parent, VLAS
             case st_nop:
                 break;
             case st_goto:
-                *branched = TRUE;
+                *branched = true;
                 *cur = mkshim(v_goto, level, stmt->label, stmt, last, parent, curBlockNum, curBlockIndex++);
                 last = *cur;
                 last->checkme = stmt->explicitGoto;
@@ -1572,13 +1572,13 @@ static void declError(VLASHIM* gotoShim, VLASHIM* errShim)
     currentErrorLine = 0;
     specerror(ERR_GOTO_BYPASSES_INITIALIZATION, buf, errShim->file, errShim->line);
 }
-static BOOLEAN scanGoto(VLASHIM* shim, VLASHIM* gotoshim, VLASHIM* matchshim, int* currentLevel)
+static bool scanGoto(VLASHIM* shim, VLASHIM* gotoshim, VLASHIM* matchshim, int* currentLevel)
 {
     if (shim == matchshim || shim->level < matchshim->level)
-        return TRUE;
+        return true;
     if (shim && !shim->mark && shim != gotoshim)
     {
-        shim->mark = TRUE;
+        shim->mark = true;
         if (shim->level <= *currentLevel)
         {
             *currentLevel = shim->level;
@@ -1591,7 +1591,7 @@ static BOOLEAN scanGoto(VLASHIM* shim, VLASHIM* gotoshim, VLASHIM* matchshim, in
         while (lst)
         {
             if (lst->data == matchshim)
-                return TRUE;
+                return true;
             lst = lst->next;
         }
         lst = shim->backs;
@@ -1599,17 +1599,17 @@ static BOOLEAN scanGoto(VLASHIM* shim, VLASHIM* gotoshim, VLASHIM* matchshim, in
         {
             VLASHIM* s = (VLASHIM*)lst->data;
             if (!s->checkme && scanGoto(s, gotoshim, matchshim, currentLevel))
-                return TRUE;
+                return true;
             lst = lst->next;
         }
     }
-    return FALSE;
+    return false;
 }
 void unmarkGotos(VLASHIM* shim)
 {
     while (shim)
     {
-        shim->mark = FALSE;
+        shim->mark = false;
         if (shim->type == v_blockstart)
             unmarkGotos(shim->lower);
         shim = shim->next;
@@ -1673,7 +1673,7 @@ static void validateGotos(VLASHIM* shim, VLASHIM* root)
         shim = shim->next;
     }
 }
-void checkGotoPastVLA(STATEMENT* stmt, BOOLEAN first)
+void checkGotoPastVLA(STATEMENT* stmt, bool first)
 {
     if (hasGoto(stmt) && hasDeclarations(stmt))
     {
@@ -1684,7 +1684,7 @@ void checkGotoPastVLA(STATEMENT* stmt, BOOLEAN first)
         VLASHIM** labels = (VLASHIM**)Alloc((max + 1 - min) * sizeof(VLASHIM*));
 
         int blockNum = 0;
-        BOOLEAN branched = FALSE;
+        bool branched = false;
         VLASHIM* list = getVLAList(stmt, NULL, NULL, labels, min, &blockNum, 0, &branched);
         fillPrevious(list, labels, min);
         validateGotos(list, list);
@@ -1800,7 +1800,7 @@ static void usageErrorCheck(SYMBOL* sp)
         if (!structLevel || !sp->deferredCompile)
             errorsym(ERR_USED_WITHOUT_ASSIGNMENT, sp);
     }
-    sp->used = TRUE;
+    sp->used = true;
 }
 static SYMBOL* getAssignSP(EXPRESSION* exp)
 {
@@ -1820,7 +1820,7 @@ static SYMBOL* getAssignSP(EXPRESSION* exp)
             return NULL;
     }
 }
-static void assignmentAssign(EXPRESSION* left, BOOLEAN assign)
+static void assignmentAssign(EXPRESSION* left, bool assign)
 {
     while (castvalue(left))
     {
@@ -1835,14 +1835,14 @@ static void assignmentAssign(EXPRESSION* left, BOOLEAN assign)
             if (sp->storage_class == sc_auto || sp->storage_class == sc_register || sp->storage_class == sc_parameter)
             {
                 if (assign)
-                    sp->assigned = TRUE;
-                sp->altered = TRUE;
-                //				sp->used = FALSE;
+                    sp->assigned = true;
+                sp->altered = true;
+                //				sp->used = false;
             }
         }
     }
 }
-void assignmentUsages(EXPRESSION* node, BOOLEAN first)
+void assignmentUsages(EXPRESSION* node, bool first)
 {
     FUNCTIONCALL* fp;
     if (node == 0)
@@ -1850,7 +1850,7 @@ void assignmentUsages(EXPRESSION* node, BOOLEAN first)
     switch (node->type)
     {
         case en_auto:
-            node->v.sp->used = TRUE;
+            node->v.sp->used = true;
             break;
         case en_const:
         case en_msil_array_access:
@@ -1927,7 +1927,7 @@ void assignmentUsages(EXPRESSION* node, BOOLEAN first)
             }
             else
             {
-                assignmentUsages(node->left, FALSE);
+                assignmentUsages(node->left, false);
             }
             break;
         case en_uminus:
@@ -1972,19 +1972,19 @@ void assignmentUsages(EXPRESSION* node, BOOLEAN first)
         case en_loadstack:
         case en_savestack:
         case en_literalclass:
-            assignmentUsages(node->left, FALSE);
+            assignmentUsages(node->left, false);
             break;
         case en_assign:
         case en__initblk:
         case en__cpblk:
-            assignmentUsages(node->right, FALSE);
-            assignmentUsages(node->left, TRUE);
-            assignmentAssign(node->left, TRUE);
+            assignmentUsages(node->right, false);
+            assignmentUsages(node->left, true);
+            assignmentAssign(node->left, true);
             break;
         case en_autoinc:
         case en_autodec:
-            assignmentUsages(node->left, FALSE);
-            assignmentAssign(node->left, TRUE);
+            assignmentUsages(node->left, false);
+            assignmentAssign(node->left, true);
             break;
         case en_add:
         case en_sub:
@@ -2028,8 +2028,8 @@ void assignmentUsages(EXPRESSION* node, BOOLEAN first)
         case en_blockassign:
         case en_mp_compare:
             /*		case en_array: */
-            assignmentUsages(node->left, FALSE);
-            assignmentUsages(node->right, FALSE);
+            assignmentUsages(node->left, false);
+            assignmentUsages(node->right, false);
             break;
         case en_mp_as_bool:
         case en_blockclear:
@@ -2038,14 +2038,14 @@ void assignmentUsages(EXPRESSION* node, BOOLEAN first)
         case en_thisref:
         case en_lvalue:
         case en_funcret:
-            assignmentUsages(node->left, FALSE);
+            assignmentUsages(node->left, false);
             break;
         case en_atomic:
-            assignmentUsages(node->v.ad->flg, FALSE);
-            assignmentUsages(node->v.ad->memoryOrder1, FALSE);
-            assignmentUsages(node->v.ad->memoryOrder2, FALSE);
-            assignmentUsages(node->v.ad->address, FALSE);
-            assignmentUsages(node->v.ad->third, FALSE);
+            assignmentUsages(node->v.ad->flg, false);
+            assignmentUsages(node->v.ad->memoryOrder1, false);
+            assignmentUsages(node->v.ad->memoryOrder2, false);
+            assignmentUsages(node->v.ad->address, false);
+            assignmentUsages(node->v.ad->third, false);
             break;
         case en_func:
             fp = node->v.func;
@@ -2053,7 +2053,7 @@ void assignmentUsages(EXPRESSION* node, BOOLEAN first)
                 INITLIST* args = fp->arguments;
                 while (args)
                 {
-                    assignmentUsages(args->exp, FALSE);
+                    assignmentUsages(args->exp, false);
                     args = args->next;
                 }
                 if (cparams.prm_cplusplus && fp->thisptr && !fp->fcall)
@@ -2076,14 +2076,14 @@ void assignmentUsages(EXPRESSION* node, BOOLEAN first)
 static int checkDefaultExpression(EXPRESSION* node)
 {
     FUNCTIONCALL* fp;
-    BOOLEAN rv = FALSE;
+    bool rv = false;
     if (node == 0)
         return 0;
     switch (node->type)
     {
         case en_auto:
             if (!node->v.sp->anonymous)
-                rv = TRUE;
+                rv = true;
             break;
         case en_const:
             break;

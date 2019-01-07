@@ -53,34 +53,34 @@ extern int templateNestingCount;
 int funcNesting;
 int funcLevel;
 
-BOOLEAN hasXCInfo;
+bool hasXCInfo;
 int startlab, retlab;
 int codeLabel;
 int nextLabel = 1;
-BOOLEAN setjmp_used;
-BOOLEAN functionHasAssembly;
-BOOLEAN declareAndInitialize;
-BOOLEAN functionCanThrow;
+bool setjmp_used;
+bool functionHasAssembly;
+bool declareAndInitialize;
+bool functionCanThrow;
 
 LINEDATA *linesHead, *linesTail;
 
 static int matchReturnTypes;
 static int endline;
 
-static LEXEME* autodeclare(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, BLOCKDATA* parent, BOOLEAN asExpression);
+static LEXEME* autodeclare(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, BLOCKDATA* parent, int asExpression);
 
 static BLOCKDATA* caseDestructBlock;
 
-void statement_ini(BOOLEAN global)
+void statement_ini(bool global)
 {
     if (!global)
         nextLabel = 1;
     linesHead = linesTail = NULL;
-    functionCanThrow = FALSE;
+    functionCanThrow = false;
     funcNesting = 0;
     funcLevel = 0;
     caseDestructBlock = NULL;
-    matchReturnTypes = FALSE;
+    matchReturnTypes = false;
 }
 void InsertLineData(int lineno, int fileindex, char* fname, char* line)
 {
@@ -157,17 +157,17 @@ static void AddBlock(LEXEME* lex, BLOCKDATA* parent, BLOCKDATA* newbl)
     st->blockTail = newbl->blockTail;
     st->lower = newbl->head;
 }
-static BOOLEAN isselecttrue(EXPRESSION* exp)
+static bool isselecttrue(EXPRESSION* exp)
 {
     if (isintconst(exp))
         return !!exp->v.i;
-    return FALSE;
+    return false;
 }
-static BOOLEAN isselectfalse(EXPRESSION* exp)
+static bool isselectfalse(EXPRESSION* exp)
 {
     if (isintconst(exp))
         return !exp->v.i;
-    return FALSE;
+    return false;
 }
 static void markInitializers(STATEMENT* prev)
 {
@@ -177,21 +177,21 @@ static void markInitializers(STATEMENT* prev)
         while (prev)
         {
             if (prev->type == st_expr)
-                prev->hasdeclare = TRUE;
+                prev->hasdeclare = true;
             prev = prev->next;
         }
     }
 }
 static LEXEME* selection_expression(LEXEME* lex, BLOCKDATA* parent, EXPRESSION** exp, SYMBOL* funcsp, enum e_kw kw,
-                                    BOOLEAN* declaration)
+                                    bool* declaration)
 {
     TYPE* tp = NULL;
-    BOOLEAN hasAttributes = ParseAttributeSpecifiers(&lex, funcsp, TRUE);
+    bool hasAttributes = ParseAttributeSpecifiers(&lex, funcsp, true);
     (void)parent;
-    if (startOfType(lex, FALSE) && (!cparams.prm_cplusplus || resolveToDeclaration(lex)))
+    if (startOfType(lex, false) && (!cparams.prm_cplusplus || resolveToDeclaration(lex)))
     {
         if (declaration)
-            *declaration = TRUE;
+            *declaration = true;
         if ((cparams.prm_cplusplus && kw != kw_do && kw != kw_else) || (cparams.prm_c99 && (kw == kw_for || kw == kw_rangefor)))
         {
             // empty
@@ -213,9 +213,9 @@ static LEXEME* selection_expression(LEXEME* lex, BLOCKDATA* parent, EXPRESSION**
     {
         if (hasAttributes)
             error(ERR_NO_ATTRIBUTE_SPECIFIERS_HERE);
-        /*		BOOLEAN openparen = MATCHKW(lex, openpa); */
+        /*		bool openparen = MATCHKW(lex, openpa); */
         if (declaration)
-            *declaration = FALSE;
+            *declaration = false;
         lex = expression(lex, funcsp, NULL, &tp, exp, kw != kw_for && kw != kw_rangefor ? _F_SELECTOR : 0);
         if (tp)
         {
@@ -231,8 +231,8 @@ static LEXEME* selection_expression(LEXEME* lex, BLOCKDATA* parent, EXPRESSION**
 
     if (cparams.prm_cplusplus && tp && isstructured(tp) && kw != kw_for && kw != kw_rangefor)
     {
-        if (!castToArithmeticInternal(FALSE, &tp, exp, (enum e_kw) - 1, &stdbool, FALSE))
-            if (!castToArithmeticInternal(FALSE, &tp, exp, (enum e_kw) - 1, &stdint, FALSE))
+        if (!castToArithmeticInternal(false, &tp, exp, (enum e_kw) - 1, &stdbool, false))
+            if (!castToArithmeticInternal(false, &tp, exp, (enum e_kw) - 1, &stdint, false))
                 if (!castToPointer(&tp, exp, (enum e_kw) - 1, &stdpointer))
                     errortype(ERR_CANNOT_CONVERT_TYPE, tp, &stdint);
     }
@@ -274,8 +274,8 @@ void makeXCTab(SYMBOL* funcsp)
     {
         sp = makeID(sc_auto, &stdXC, NULL, "$$xctab");
         sp->decoratedName = sp->errname = sp->name;
-        sp->allocate = TRUE;
-        sp->used = sp->assigned = TRUE;
+        sp->allocate = true;
+        sp->used = sp->assigned = true;
         insert(sp, localNameSpace->syms);
         funcsp->xc->xctab = sp;
     }
@@ -287,7 +287,7 @@ static void thunkCatchCleanup(STATEMENT* st, SYMBOL* funcsp, BLOCKDATA* src, BLO
     {
         if (srch->type == kw_catch)
         {
-            SYMBOL* sp = namespacesearch("_CatchCleanup", globalNameSpace, FALSE, FALSE);
+            SYMBOL* sp = namespacesearch("_CatchCleanup", globalNameSpace, false, false);
             if (sp)
             {
                 FUNCTIONCALL* funcparams = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
@@ -295,7 +295,7 @@ static void thunkCatchCleanup(STATEMENT* st, SYMBOL* funcsp, BLOCKDATA* src, BLO
                 INITLIST* arg1 = (INITLIST *)Alloc(sizeof(INITLIST));  // exception table
                 makeXCTab(funcsp);
                 sp = (SYMBOL*)basetype(sp->tp)->syms->table[0]->p;
-                funcparams->ascall = TRUE;
+                funcparams->ascall = true;
                 funcparams->sp = sp;
                 funcparams->functp = sp->tp;
                 funcparams->fcall = varNode(en_pc, sp);
@@ -335,7 +335,7 @@ static void ThunkUndestructSyms(HASHTABLE* syms)
     while (hr)
     {
         SYMBOL* sp = (SYMBOL*)hr->p;
-        sp->destructed = TRUE;
+        sp->destructed = true;
         hr = hr->next;
     }
 }
@@ -346,7 +346,7 @@ static void thunkRetDestructors(EXPRESSION** exp, HASHTABLE* top, HASHTABLE* sym
         if (syms != top)
         {
             thunkRetDestructors(exp, top, syms->chain);
-            destructBlock(exp, syms->table[0], FALSE);
+            destructBlock(exp, syms->table[0], false);
         }
     }
 }
@@ -381,7 +381,7 @@ static void HandleEndOfCase(BLOCKDATA* parent)
         EXPRESSION* exp = NULL;
         STATEMENT* st;
         // the destruct is only used for endin
-        destructBlock(&exp, localNameSpace->syms->table[0], FALSE);
+        destructBlock(&exp, localNameSpace->syms->table[0], false);
         if (exp)
         {
             st = stmtNode(NULL, parent, st_nop);
@@ -424,9 +424,9 @@ static LEXEME* statement_break(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
         st->label = breakableStatement->breaklabel;
         st->destexp = exp;
         thunkCatchCleanup(st, funcsp, parent, breakableStatement);
-        parent->needlabel = TRUE;
-        breakableStatement->needlabel = FALSE;
-        breakableStatement->hasbreak = TRUE;
+        parent->needlabel = true;
+        breakableStatement->needlabel = false;
+        breakableStatement->hasbreak = true;
     }
     return getsym();
 }
@@ -451,11 +451,11 @@ static LEXEME* statement_case(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     }
     else
     {
-        switchstmt->needlabel = FALSE;
-        parent->needlabel = FALSE;
+        switchstmt->needlabel = false;
+        parent->needlabel = false;
     }
 
-    lex = optimized_expression(lex, funcsp, NULL, &tp, &exp, FALSE);
+    lex = optimized_expression(lex, funcsp, NULL, &tp, &exp, false);
     if (!tp)
     {
         error(ERR_EXPRESSION_SYNTAX);
@@ -525,7 +525,7 @@ static LEXEME* statement_continue(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent
         st->label = continuableStatement->continuelabel;
         st->destexp = exp;
         thunkCatchCleanup(st, funcsp, parent, continuableStatement);
-        parent->needlabel = TRUE;
+        parent->needlabel = true;
     }
     return getsym();
 }
@@ -546,8 +546,8 @@ static LEXEME* statement_default(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
         if (defaultableStatement->defaultlabel != -1)
             error(ERR_SWITCH_HAS_DEFAULT);
         defaultableStatement->defaultlabel = st->label;
-        defaultableStatement->needlabel = FALSE;
-        parent->needlabel = FALSE;
+        defaultableStatement->needlabel = false;
+        parent->needlabel = false;
     }
     needkw(&lex, colon);
     return lex;
@@ -576,14 +576,14 @@ static LEXEME* statement_do(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     do
     {
         lastLabelStmt = dostmt->tail;
-        lex = statement(lex, funcsp, dostmt, TRUE);
+        lex = statement(lex, funcsp, dostmt, true);
     } while (lex && dostmt->tail != lastLabelStmt && dostmt->tail->purelabel);
     if (cparams.prm_cplusplus || cparams.prm_c99)
     {
         addedBlock--;
         FreeLocalContext(dostmt, funcsp, codeLabel++);
     }
-    parent->nosemi = FALSE;
+    parent->nosemi = false;
     if (MATCHKW(lex, kw_while))
     {
         lex = getsym();
@@ -610,7 +610,7 @@ static LEXEME* statement_do(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
             st = stmtNode(lex, dostmt, st_select);
             st->select = select;
             if (!dostmt->hasbreak && (dostmt->needlabel || isselecttrue(st->select)))
-                parent->needlabel = TRUE;
+                parent->needlabel = true;
             st->label = loopLabel;
             st = stmtNode(lex, dostmt, st_label);
             st->label = dostmt->breaklabel;
@@ -624,7 +624,7 @@ static LEXEME* statement_do(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     }
     else
     {
-        parent->nosemi = TRUE;
+        parent->nosemi = true;
         error(ERR_DO_STMT_NEEDS_WHILE);
         errskim(&lex, skim_semi);
         skip(&lex, semicolon);
@@ -652,11 +652,11 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     lex = getsym();
     if (MATCHKW(lex, openpa))
     {
-        BOOLEAN declaration = FALSE;
+        bool declaration = false;
         lex = getsym();
         if (!MATCHKW(lex, semicolon))
         {
-            BOOLEAN hasColon = FALSE;
+            bool hasColon = false;
             if ((cparams.prm_cplusplus && !cparams.prm_oldfor) || cparams.prm_c99)
             {
                 addedBlock++;
@@ -692,7 +692,7 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                     }
                     declSP->dest = NULL;
                     declExp = varNode(en_auto, declSP);
-                    declSP->assigned = declSP->used = TRUE;
+                    declSP->assigned = declSP->used = true;
                 }
                 lex = getsym();
                 if (MATCHKW(lex, begin))
@@ -764,18 +764,18 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                             memset(&fcb, 0, sizeof(fcb));
                             fcb.thistp = &thisTP;
                             fcb.thisptr = rangeExp;
-                            fcb.ascall = TRUE;
+                            fcb.ascall = true;
                             ctp = rangeSP->tp;
-                            beginFunc = GetOverloadedFunction(&ctp, &fcb.fcall, sbegin, &fcb, NULL, FALSE, FALSE, TRUE, 0);
+                            beginFunc = GetOverloadedFunction(&ctp, &fcb.fcall, sbegin, &fcb, NULL, false, false, true, 0);
                             memset(&fce, 0, sizeof(fce));
                             fce.thistp = &thisTP;
                             fce.thisptr = rangeExp;
-                            fce.ascall = TRUE;
+                            fce.ascall = true;
                             ctp = rangeSP->tp;
-                            endFunc = GetOverloadedFunction(&ctp, &fce.fcall, send, &fce, NULL, FALSE, FALSE, TRUE, 0);
+                            endFunc = GetOverloadedFunction(&ctp, &fce.fcall, send, &fce, NULL, false, false, true, 0);
                             if (beginFunc && endFunc)
                             {
-                                if (!comparetypes(basetype(beginFunc->tp)->btp, basetype(endFunc->tp)->btp, TRUE))
+                                if (!comparetypes(basetype(beginFunc->tp)->btp, basetype(endFunc->tp)->btp, true))
                                 {
                                     error(ERR_MISMATCHED_FORRANGE_BEGIN_END_TYPES);
                                 }
@@ -791,30 +791,30 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                         fcb.returnSP = fcb.returnEXP->v.sp;
                                         exp = fcb.returnEXP;
                                         dest = NULL;
-                                        callDestructor(fcb.returnSP, NULL, &exp, NULL, TRUE, FALSE, FALSE);
-                                        initInsert(&dest, iteratorType, exp, 0, TRUE);
+                                        callDestructor(fcb.returnSP, NULL, &exp, NULL, true, false, false);
+                                        initInsert(&dest, iteratorType, exp, 0, true);
                                         fcb.returnSP->dest = dest;
 
                                         fce.returnEXP = anonymousVar(sc_auto, iteratorType);
                                         fce.returnSP = fcb.returnEXP->v.sp;
                                         exp = fce.returnEXP;
                                         dest = NULL;
-                                        callDestructor(fce.returnSP, NULL, &exp, NULL, TRUE, FALSE, FALSE);
-                                        initInsert(&dest, iteratorType, exp, 0, TRUE);
+                                        callDestructor(fce.returnSP, NULL, &exp, NULL, true, false, false);
+                                        initInsert(&dest, iteratorType, exp, 0, true);
                                         fce.returnSP->dest = dest;
                                     }
                                     fc = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
                                     *fc = fcb;
                                     fc->sp = beginFunc;
                                     fc->functp = beginFunc->tp;
-                                    fc->ascall = TRUE;
+                                    fc->ascall = true;
                                     ibegin = exprNode(en_func, NULL, NULL);
                                     ibegin->v.func = fc;
                                     fc = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
                                     *fc = fce;
                                     fc->sp = endFunc;
                                     fc->functp = endFunc->tp;
-                                    fc->ascall = TRUE;
+                                    fc->ascall = true;
                                     iend = exprNode(en_func, NULL, NULL);
                                     iend->v.func = fc;
                                     iteratorType = basetype(beginFunc->tp)->btp;
@@ -828,26 +828,26 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                         // possibly lookup in search area
                         if (!ibegin && !iend)
                         {
-                            sbegin = namespacesearch("begin", globalNameSpace, FALSE, FALSE);
-                            send = namespacesearch("end", globalNameSpace, FALSE, FALSE);
+                            sbegin = namespacesearch("begin", globalNameSpace, false, false);
+                            send = namespacesearch("end", globalNameSpace, false, false);
                             // now possibly lookup in namespace std
                             if (!sbegin || !send)
                             {
-                                SYMBOL* standard = namespacesearch("std", globalNameSpace, FALSE, FALSE);
+                                SYMBOL* standard = namespacesearch("std", globalNameSpace, false, false);
                                 if (standard)
                                 {
-                                    sbegin = namespacesearch("begin", standard->nameSpaceValues, FALSE, FALSE);
-                                    send = namespacesearch("end", standard->nameSpaceValues, FALSE, FALSE);
+                                    sbegin = namespacesearch("begin", standard->nameSpaceValues, false, false);
+                                    send = namespacesearch("end", standard->nameSpaceValues, false, false);
                                 }
                             }
                             if (!sbegin || !send)
                             {
                                 if (rangeSP->tp->btp->sp->parentNameSpace)
                                 {
-                                    sbegin = namespacesearch("begin", rangeSP->tp->btp->sp->parentNameSpace->nameSpaceValues, FALSE,
-                                                             FALSE);
-                                    send = namespacesearch("end", rangeSP->tp->btp->sp->parentNameSpace->nameSpaceValues, FALSE,
-                                                           FALSE);
+                                    sbegin = namespacesearch("begin", rangeSP->tp->btp->sp->parentNameSpace->nameSpaceValues, false,
+                                                             false);
+                                    send = namespacesearch("end", rangeSP->tp->btp->sp->parentNameSpace->nameSpaceValues, false,
+                                                           false);
                                 }
                             }
                             {
@@ -860,21 +860,21 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                 args.tp = rangeSP->tp->btp;
                                 args.exp = rangeExp;
                                 fcb.arguments = &args;
-                                fcb.ascall = TRUE;
+                                fcb.ascall = true;
                                 ctp = rangeSP->tp;
-                                beginFunc = GetOverloadedFunction(&ctp, &fcb.fcall, sbegin, &fcb, NULL, FALSE, FALSE, TRUE, 0);
+                                beginFunc = GetOverloadedFunction(&ctp, &fcb.fcall, sbegin, &fcb, NULL, false, false, true, 0);
                                 memset(&fce, 0, sizeof(fce));
                                 fce.arguments = &args;
-                                fce.ascall = TRUE;
+                                fce.ascall = true;
                                 ctp = rangeSP->tp;
-                                endFunc = GetOverloadedFunction(&ctp, &fce.fcall, send, &fce, NULL, FALSE, FALSE, TRUE, 0);
+                                endFunc = GetOverloadedFunction(&ctp, &fce.fcall, send, &fce, NULL, false, false, true, 0);
                                 if (beginFunc && endFunc)
                                 {
                                     TYPE* it2;
                                     it2 = iteratorType = basetype(beginFunc->tp)->btp;
                                     if (isref(it2))
                                         it2 = it2->btp;
-                                    if (!comparetypes(basetype(beginFunc->tp)->btp, basetype(endFunc->tp)->btp, TRUE))
+                                    if (!comparetypes(basetype(beginFunc->tp)->btp, basetype(endFunc->tp)->btp, true))
                                     {
                                         error(ERR_MISMATCHED_FORRANGE_BEGIN_END_TYPES);
                                     }
@@ -889,23 +889,23 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                             fcb.returnSP = fcb.returnEXP->v.sp;
                                             exp = fcb.returnEXP;
                                             dest = NULL;
-                                            callDestructor(fcb.returnSP, NULL, &exp, NULL, TRUE, FALSE, FALSE);
-                                            initInsert(&dest, iteratorType, exp, 0, TRUE);
+                                            callDestructor(fcb.returnSP, NULL, &exp, NULL, true, false, false);
+                                            initInsert(&dest, iteratorType, exp, 0, true);
                                             fcb.returnSP->dest = dest;
 
                                             fce.returnEXP = anonymousVar(sc_auto, iteratorType);
                                             fce.returnSP = fcb.returnEXP->v.sp;
                                             exp = fce.returnEXP;
                                             dest = NULL;
-                                            callDestructor(fce.returnSP, NULL, &exp, NULL, TRUE, FALSE, FALSE);
-                                            initInsert(&dest, iteratorType, exp, 0, TRUE);
+                                            callDestructor(fce.returnSP, NULL, &exp, NULL, true, false, false);
+                                            initInsert(&dest, iteratorType, exp, 0, true);
                                             fce.returnSP->dest = dest;
                                         }
                                         fc = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
                                         *fc = fcb;
                                         fc->sp = beginFunc;
                                         fc->functp = beginFunc->tp;
-                                        fc->ascall = TRUE;
+                                        fc->ascall = true;
                                         fc->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
                                         *fc->arguments = *fcb.arguments;
                                         if (isstructured(it2) && isstructured(((SYMBOL*)(it2->syms->table[0]->p))->tp))
@@ -915,11 +915,11 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                             SYMBOL* esp = consexp->v.sp;
                                             FUNCTIONCALL* funcparams = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
                                             TYPE* ctype = basetype(rangeSP->tp)->btp;
-                                            esp->stackblock = TRUE;
+                                            esp->stackblock = true;
                                             funcparams->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
                                             *funcparams->arguments = *fc->arguments;
-                                            callConstructor(&ctype, &consexp, funcparams, FALSE, 0, TRUE, FALSE, TRUE, FALSE,
-                                                            FALSE);
+                                            callConstructor(&ctype, &consexp, funcparams, false, 0, true, false, true, false,
+                                                            false);
                                             fc->arguments->exp = consexp;
                                         }
                                         else
@@ -936,7 +936,7 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                         *fc = fce;
                                         fc->sp = endFunc;
                                         fc->functp = endFunc->tp;
-                                        fc->ascall = TRUE;
+                                        fc->ascall = true;
                                         fc->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
                                         *fc->arguments = *fce.arguments;
                                         if (isstructured(it2) && isstructured(((SYMBOL*)(it2->syms->table[0]->p))->tp))
@@ -946,11 +946,11 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                             SYMBOL* esp = consexp->v.sp;
                                             FUNCTIONCALL* funcparams = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
                                             TYPE* ctype = basetype(rangeSP->tp)->btp;
-                                            esp->stackblock = TRUE;
+                                            esp->stackblock = true;
                                             funcparams->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
                                             *funcparams->arguments = *fc->arguments;
-                                            callConstructor(&ctype, &consexp, funcparams, FALSE, 0, TRUE, FALSE, TRUE, FALSE,
-                                                            FALSE);
+                                            callConstructor(&ctype, &consexp, funcparams, false, 0, true, false, true, false,
+                                                            false);
                                             fc->arguments->exp = consexp;
                                         }
                                         else
@@ -1037,7 +1037,7 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                             if (ispointer(selectTP) && ispointer(declSP->tp))
                                 declSP->tp = basetype(declSP->tp)->btp;
                             UpdateRootTypes(declSP->tp);
-                            if (isarray(selectTP) && !comparetypes(declSP->tp, basetype(selectTP)->btp, TRUE))
+                            if (isarray(selectTP) && !comparetypes(declSP->tp, basetype(selectTP)->btp, true))
                             {
                                 error(ERR_OPERATOR_STAR_FORRANGE_WRONG_TYPE);
                             }
@@ -1050,10 +1050,10 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                 funcparams->arguments = args;
                                 args->tp = declSP->tp;
                                 args->exp = eBegin;
-                                callConstructor(&ctype, &decl, funcparams, FALSE, 0, TRUE, FALSE, TRUE, FALSE, FALSE);
+                                callConstructor(&ctype, &decl, funcparams, false, 0, true, false, true, false, false);
                                 st->select = decl;
                                 declDest = declExp;
-                                callDestructor(declSP, NULL, &declDest, NULL, TRUE, FALSE, FALSE);
+                                callDestructor(declSP, NULL, &declDest, NULL, true, false, false);
                             }
                             else if (isarray(selectTP))
                             {
@@ -1073,7 +1073,7 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                             {
                                 DeduceAuto(&declSP->tp, iteratorType);
                                 UpdateRootTypes(declSP->tp);
-                                if (!comparetypes(declSP->tp, basetype(iteratorType)->btp, TRUE))
+                                if (!comparetypes(declSP->tp, basetype(iteratorType)->btp, true))
                                 {
                                     error(ERR_OPERATOR_STAR_FORRANGE_WRONG_TYPE);
                                 }
@@ -1095,10 +1095,10 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                     funcparams->arguments = args;
                                     args->tp = declSP->tp;
                                     args->exp = eBegin;
-                                    callConstructor(&ctype, &decl, funcparams, FALSE, 0, TRUE, FALSE, TRUE, FALSE, FALSE);
+                                    callConstructor(&ctype, &decl, funcparams, false, 0, true, false, true, false, false);
                                     st->select = decl;
                                     declDest = declExp;
-                                    callDestructor(declSP, NULL, &declDest, NULL, TRUE, FALSE, FALSE);
+                                    callDestructor(declSP, NULL, &declDest, NULL, true, false, false);
                                 }
                             }
                             else if (!insertOperatorFunc(ovcl_unary_prefix, star, funcsp, &starType, &st->select, NULL, NULL, NULL,
@@ -1108,14 +1108,14 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                             }
                             else
                             {
-                                BOOLEAN ref = FALSE;
+                                bool ref = false;
                                 if (isref(declSP->tp))
                                 {
-                                    ref = TRUE;
+                                    ref = true;
                                 }
                                 DeduceAuto(&declSP->tp, starType);
                                 UpdateRootTypes(declSP->tp);
-                                if (!comparetypes(declSP->tp, starType, TRUE) &&
+                                if (!comparetypes(declSP->tp, starType, true) &&
                                     (!isarithmetic(declSP->tp) || !isarithmetic(starType)))
                                 {
                                     error(ERR_OPERATOR_STAR_FORRANGE_WRONG_TYPE);
@@ -1142,17 +1142,17 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                     funcparams->arguments = args;
                                     args->tp = declSP->tp;
                                     args->exp = st->select;
-                                    callConstructor(&ctype, &decl, funcparams, FALSE, 0, TRUE, FALSE, TRUE, FALSE, FALSE);
+                                    callConstructor(&ctype, &decl, funcparams, false, 0, true, false, true, false, false);
                                     st->select = decl;
                                     declDest = declExp;
-                                    callDestructor(declSP, NULL, &declDest, NULL, TRUE, FALSE, FALSE);
+                                    callDestructor(declSP, NULL, &declDest, NULL, true, false, false);
                                 }
                             }
                         }
                         do
                         {
                             lastLabelStmt = forstmt->tail;
-                            lex = statement(lex, funcsp, forstmt, TRUE);
+                            lex = statement(lex, funcsp, forstmt, true);
                         } while (lex && forstmt->tail != lastLabelStmt && forstmt->tail->purelabel);
                         FreeLocalContext(forstmt, funcsp, codeLabel++);
                         if (declDest)
@@ -1195,7 +1195,7 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                     st->select->v.func->returnEXP = anonymousVar(sc_auto, ppType);
                                     st->select->v.func->returnSP = st->select->v.func->returnEXP->v.sp;
                                     declDest = st->select->v.func->returnEXP;
-                                    callDestructor(st->select->v.func->returnSP, NULL, &declDest, NULL, TRUE, FALSE, FALSE);
+                                    callDestructor(st->select->v.func->returnSP, NULL, &declDest, NULL, true, false, false);
                                     st = stmtNode(lex, forstmt, st_expr);
                                     st->select = declDest;
                                 }
@@ -1219,7 +1219,7 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                         st->select = compare;
 
                         if (!forstmt->hasbreak && (!st->select || isselectfalse(st->select)))
-                            parent->needlabel = TRUE;
+                            parent->needlabel = true;
                         st = stmtNode(lex, forstmt, st_label);
                         st->label = forstmt->breaklabel;
                         parent->hassemi = forstmt->hassemi;
@@ -1253,7 +1253,7 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                         {
                             if (isstructured(declSP->tp) && !basetype(declSP->tp)->sp->trivialCons)
                             {
-                                lex = initialize(lex, funcsp, declSP, sc_auto, FALSE, 0);
+                                lex = initialize(lex, funcsp, declSP, sc_auto, false, 0);
                             }
                             else
                             {
@@ -1276,7 +1276,7 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
             if (!MATCHKW(lex, semicolon))
             {
                 TYPE* tp = NULL;
-                lex = optimized_expression(lex, funcsp, NULL, &tp, &select, TRUE);
+                lex = optimized_expression(lex, funcsp, NULL, &tp, &select, true);
                 if (!tp)
                 {
                     error(ERR_EXPRESSION_SYNTAX);
@@ -1339,7 +1339,7 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                     do
                     {
                         lastLabelStmt = forstmt->tail;
-                        lex = statement(lex, funcsp, forstmt, TRUE);
+                        lex = statement(lex, funcsp, forstmt, true);
                     } while (lex && forstmt->tail != lastLabelStmt && forstmt->tail->purelabel);
                     if (cparams.prm_cplusplus || cparams.prm_c99)
                     {
@@ -1347,7 +1347,7 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                         FreeLocalContext(forstmt, funcsp, codeLabel++);
                     }
                     if (before)
-                        assignmentUsages(before, FALSE);
+                        assignmentUsages(before, false);
                     st = stmtNode(lex, forstmt, st_label);
                     st->label = forstmt->continuelabel;
                     st = stmtNode(lex, forstmt, st_expr);
@@ -1375,7 +1375,7 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                         st->label = loopLabel;
                     }
                     if (!forstmt->hasbreak && (!st->select || isselectfalse(st->select)))
-                        parent->needlabel = TRUE;
+                        parent->needlabel = true;
                     st = stmtNode(lex, forstmt, st_label);
                     st->label = forstmt->breaklabel;
                     parent->hassemi = forstmt->hassemi;
@@ -1400,8 +1400,8 @@ static LEXEME* statement_if(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     STATEMENT *st, *st1, *st2, *lastLabelStmt;
     EXPRESSION* select = NULL;
     int addedBlock = 0;
-    BOOLEAN needlabelif;
-    BOOLEAN needlabelelse = FALSE;
+    bool needlabelif;
+    bool needlabelelse = false;
     int ifbranch = codeLabel++;
     lex = getsym();
     if (MATCHKW(lex, openpa))
@@ -1415,7 +1415,7 @@ static LEXEME* statement_if(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
         lex = selection_expression(lex, parent, &select, funcsp, kw_if, NULL);
         if (MATCHKW(lex, closepa))
         {
-            BOOLEAN optimized = FALSE;
+            bool optimized = false;
             STATEMENT* sti;
             currentLineData(parent, lex, 0);
             lex = getsym();
@@ -1423,7 +1423,7 @@ static LEXEME* statement_if(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
             st->label = ifbranch;
             st->select = select;
             sti = st;
-            parent->needlabel = FALSE;
+            parent->needlabel = false;
             if (cparams.prm_cplusplus || cparams.prm_c99)
             {
                 addedBlock++;
@@ -1432,7 +1432,7 @@ static LEXEME* statement_if(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
             do
             {
                 lastLabelStmt = parent->tail;
-                lex = statement(lex, funcsp, parent, TRUE);
+                lex = statement(lex, funcsp, parent, true);
             } while (lex && parent->tail != lastLabelStmt && parent->tail->purelabel);
             needlabelif = parent->needlabel;
             if (MATCHKW(lex, kw_else))
@@ -1456,7 +1456,7 @@ static LEXEME* statement_if(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                     }
                     if (st1 && st1->type == st_goto)
                     {
-                        optimized = TRUE;
+                        optimized = true;
                         st2->next = NULL;
                         parent->tail = st2;
                         sti->type = st_select;
@@ -1471,11 +1471,11 @@ static LEXEME* statement_if(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                     error(ERR_MISPLACED_ELSE);
                 currentLineData(parent, lex, 0);
                 lex = getsym();
-                parent->needlabel = FALSE;
+                parent->needlabel = false;
                 do
                 {
                     lastLabelStmt = parent->tail;
-                    lex = statement(lex, funcsp, parent, TRUE);
+                    lex = statement(lex, funcsp, parent, true);
                 } while (lex && parent->tail != lastLabelStmt && parent->tail->purelabel);
                 if ((cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size) && !optimized)
                 {
@@ -1488,7 +1488,7 @@ static LEXEME* statement_if(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                     }
                     if (st1 && st1->type == st_goto)
                     {
-                        //						optimized = TRUE;
+                        //						optimized = true;
                         st2->next = NULL;
                         parent->tail = st2;
                         sti->label = st1->label;
@@ -1516,7 +1516,7 @@ static LEXEME* statement_if(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                     }
                     if (st1 && st1->type == st_goto)
                     {
-                        //						optimized = TRUE;
+                        //						optimized = true;
                         st2->next = NULL;
                         parent->tail = st2;
                         sti->type = st_select;
@@ -1532,7 +1532,7 @@ static LEXEME* statement_if(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                 st->label = ifbranch;
             }
             if (parent->hassemi)
-                parent->nosemi = TRUE;
+                parent->nosemi = true;
             parent->needlabel = (needlabelif && needlabelelse);
         }
         else
@@ -1563,7 +1563,7 @@ static LEXEME* statement_goto(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
         SYMBOL* spx = search(lex->value.s.a, labelSyms);
         BLOCKDATA* block = (BLOCKDATA *)Alloc(sizeof(BLOCKDATA));
         STATEMENT* st = stmtNode(lex, block, st_goto);
-        st->explicitGoto = TRUE;
+        st->explicitGoto = true;
         block->next = parent;
         block->type = begin;
         block->table = localNameSpace->syms;
@@ -1586,7 +1586,7 @@ static LEXEME* statement_goto(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
         }
         st->label = spx->offset;
         lex = getsym();
-        parent->needlabel = TRUE;
+        parent->needlabel = true;
         AddBlock(lex, parent, block);
     }
     else
@@ -1631,10 +1631,10 @@ static LEXEME* statement_label(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
         insert(spx, labelSyms);
     }
     st->label = spx->offset;
-    st->purelabel = TRUE;
+    st->purelabel = true;
     getsym();       /* colon */
     lex = getsym(); /* next sym */
-    parent->needlabel = FALSE;
+    parent->needlabel = false;
     return lex;
 }
 static EXPRESSION* ConvertReturnToRef(EXPRESSION* exp, TYPE* tp, TYPE* boundTP)
@@ -1745,7 +1745,7 @@ static void MatchReturnTypes(SYMBOL* funcsp, TYPE* tp1, TYPE* tp2)
 {
     if (matchReturnTypes)
     {
-        BOOLEAN err = FALSE;
+        bool err = false;
         if (isref(tp1))
             tp1 = basetype(tp1)->btp;
         if (isref(tp2))
@@ -1753,11 +1753,11 @@ static void MatchReturnTypes(SYMBOL* funcsp, TYPE* tp1, TYPE* tp2)
         while (tp1 && tp2 && !err)
         {
             // if (isconst(tp1) != isconst(tp2) || isvolatile(tp1) != isvolatile(tp2))
-            //    err = TRUE;
+            //    err = true;
             tp1 = basetype(tp1);
             tp2 = basetype(tp2);
             if (tp1->type != tp2->type)
-                err = TRUE;
+                err = true;
             tp1 = tp1->btp;
             tp2 = tp2->btp;
         }
@@ -1806,16 +1806,16 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
             tp = basetype(funcsp->tp)->btp;
             UpdateRootTypes(funcsp->tp);
             SetLinkerNames(funcsp, funcsp->linkage);
-            matchReturnTypes = TRUE;
+            matchReturnTypes = true;
         }
         if (isstructured(tp) || basetype(tp)->type == bt_memberptr)
         {
             EXPRESSION* en = anonymousVar(sc_parameter, &stdpointer);
             SYMBOL* sp = en->v.sp;
-            BOOLEAN maybeConversion = TRUE;
-            sp->allocate = FALSE;  // static var
+            bool maybeConversion = true;
+            sp->allocate = false;  // static var
             sp->offset = chosenAssembler->arch->retblocksize;
-            sp->structuredReturn = TRUE;
+            sp->structuredReturn = true;
             sp->name = "__retblock";
             if ((funcsp->linkage == lk_pascal) && basetype(funcsp->tp)->syms->table[0] &&
                 ((SYMBOL*)basetype(funcsp->tp)->syms->table[0])->tp->type != bt_void)
@@ -1823,29 +1823,29 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
             deref(&stdpointer, &en);
             if (cparams.prm_cplusplus && isstructured(tp))
             {
-                BOOLEAN implicit = FALSE;
+                bool implicit = false;
                 if (basetype(tp)->sp->templateLevel && basetype(tp)->sp->templateParams && !basetype(tp)->sp->instantiated)
                 {
                     SYMBOL* sp = basetype(tp)->sp;
                     if (!allTemplateArgsSpecified(sp, sp->templateParams))
-                        sp = GetClassTemplate(sp, sp->templateParams->next, FALSE);
+                        sp = GetClassTemplate(sp, sp->templateParams->next, false);
                     if (sp)
-                        tp = TemplateClassInstantiate(sp, sp->templateParams, FALSE, sc_global)->tp;
+                        tp = TemplateClassInstantiate(sp, sp->templateParams, false, sc_global)->tp;
                 }
                 if (MATCHKW(lex, begin))
                 {
                     INITIALIZER *init = NULL, *dest = NULL;
                     SYMBOL* sp = NULL;
                     sp = anonymousVar(sc_localstatic, tp)->v.sp;
-                    lex = initType(lex, funcsp, 0, sc_auto, &init, &dest, tp, sp, FALSE, 0);
-                    returnexp = convertInitToExpression(tp, NULL, funcsp, init, en, FALSE);
+                    lex = initType(lex, funcsp, 0, sc_auto, &init, &dest, tp, sp, false, 0);
+                    returnexp = convertInitToExpression(tp, NULL, funcsp, init, en, false);
                     returntype = tp;
                     if (sp)
                         sp->dest = dest;
                 }
                 else
                 {
-                    BOOLEAN oldrref, oldlref;
+                    bool oldrref, oldlref;
                     FUNCTIONCALL* funcparams = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
                     TYPE* ctype = tp;
                     // shortcut for conversion from single expression
@@ -1863,9 +1863,9 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                         {
                             SYMBOL* sp = basetype(tp1)->sp;
                             if (!allTemplateArgsSpecified(sp, sp->templateParams))
-                                sp = GetClassTemplate(sp, sp->templateParams->next, FALSE);
+                                sp = GetClassTemplate(sp, sp->templateParams->next, false);
                             if (sp)
-                                ctype = tp1 = TemplateClassInstantiate(sp, sp->templateParams, FALSE, sc_global)->tp;
+                                ctype = tp1 = TemplateClassInstantiate(sp, sp->templateParams, false, sc_global)->tp;
                         }
                         optimize_for_constants(&exp1);
                     }
@@ -1879,9 +1879,9 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                         else if (exp2->v.func->returnEXP)
                             exp3 = baseNode(exp2->v.func->returnEXP);
                     if (exp2->type == en_func && exp3 && exp3->type == en_auto && exp3->v.sp->anonymous &&
-                        (exp2->v.func->sp->isConstructor && comparetypes(basetype(exp2->v.func->thistp)->btp, tp1, TRUE) ||
+                        (exp2->v.func->sp->isConstructor && comparetypes(basetype(exp2->v.func->thistp)->btp, tp1, true) ||
                          !exp2->v.func->sp->isConstructor && exp2->v.func->returnSP && comparetypes(exp2->v.func->returnSP->tp, tp1,
-                    TRUE)))
+                    true)))
                     {
                         // either a constructor for the return type or function returning the return type
                         if (exp2->v.func->sp->isConstructor)
@@ -1898,7 +1898,7 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                     else
                     */
                     {
-                        BOOLEAN nonconst = funcsp->nonConstVariableUsed;
+                        bool nonconst = funcsp->nonConstVariableUsed;
                         funcparams->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
                         funcparams->arguments->tp = tp1;
                         funcparams->arguments->exp = exp1;
@@ -1911,15 +1911,15 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                     sc_parameter;  // || lvalue(exp1) && (exp1->type != en_l_ref || exp1->left->type != en_auto ||
                                                    // exp1->left->v.sp->storage_class != sc_parameter);
                         basetype(tp1)->lref = !basetype(tp1)->rref;
-                        maybeConversion = FALSE;
+                        maybeConversion = false;
                         returntype = tp;
-                        implicit = TRUE;
-                        callConstructor(&ctype, &en, funcparams, FALSE, NULL, TRUE, maybeConversion, FALSE, FALSE, FALSE);
+                        implicit = true;
+                        callConstructor(&ctype, &en, funcparams, false, NULL, true, maybeConversion, false, false, false);
                         funcsp->nonConstVariableUsed = nonconst;
                         returnexp = en;
                         basetype(tp1)->rref = oldrref;
                         basetype(tp1)->lref = oldlref;
-                        if (funcparams->sp && matchesCopy(funcparams->sp, TRUE))
+                        if (funcparams->sp && matchesCopy(funcparams->sp, true))
                         {
                             switch (exp1->type)
                             {
@@ -1937,14 +1937,14 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
             {
 
                 TYPE* tp1;
-                lex = optimized_expression(lex, funcsp, NULL, &tp1, &returnexp, TRUE);
+                lex = optimized_expression(lex, funcsp, NULL, &tp1, &returnexp, true);
                 if (!tp1)
                 {
                     error(ERR_EXPRESSION_SYNTAX);
                 }
                 else
                     MatchReturnTypes(funcsp, tp, tp1);
-                if (!comparetypes(tp, tp1, TRUE) &&
+                if (!comparetypes(tp, tp1, true) &&
                     (!chosenAssembler->msil || !isstructured(tp) || !isconstzero(&stdint, returnexp)))
                 {
                     errortype(ERR_CANNOT_CONVERT_TYPE, tp1, tp);
@@ -1961,18 +1961,18 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                             funcsp = MatchOverloadedFunction(tp, &tp1, returnexp->v.func->sp, &returnexp, 0);
                             if (funcsp && basetype(tp)->type == bt_memberptr)
                             {
-                                int lbl = dumpMemberPtr(funcsp, tp, TRUE);
+                                int lbl = dumpMemberPtr(funcsp, tp, true);
                                 returnexp = intNode(en_labcon, lbl);
                             }
                         }
                         else
                         {
-                            returnexp = intNode(en_labcon, dumpMemberPtr(returnexp->v.func->sp, tp, TRUE));
+                            returnexp = intNode(en_labcon, dumpMemberPtr(returnexp->v.func->sp, tp, true));
                         }
                     }
                     else if (returnexp->type == en_pc || returnexp->type == en_memberptr)
                     {
-                        returnexp = intNode(en_labcon, dumpMemberPtr(returnexp->v.sp, tp, TRUE));
+                        returnexp = intNode(en_labcon, dumpMemberPtr(returnexp->v.sp, tp, true));
                     }
                     if (!chosenAssembler->msil || funcsp->linkage2 == lk_unmanaged || !chosenAssembler->msil->managed(funcsp))
                     {
@@ -1987,13 +1987,13 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
         else
         {
             TYPE* tp1 = NULL;
-            BOOLEAN needend = FALSE;
+            bool needend = false;
             if (MATCHKW(lex, begin))
             {
-                needend = TRUE;
+                needend = true;
                 lex = getsym();
             }
-            lex = optimized_expression(lex, funcsp, tp, &tp1, &returnexp, TRUE);
+            lex = optimized_expression(lex, funcsp, tp, &tp1, &returnexp, true);
             if (!tp1)
             {
                 tp1 = &stdint;
@@ -2009,7 +2009,7 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                     returnexp = exprNode(en_x_string, returnexp, NULL);
                 tp1 = &std__string;
             }
-            else if (!comparetypes(tp1, tp, TRUE) && ismsil(tp1))
+            else if (!comparetypes(tp1, tp, true) && ismsil(tp1))
             {
                 errortype(ERR_CANNOT_CONVERT_TYPE, tp1, tp);
             }
@@ -2028,7 +2028,7 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
             {
                 if (cparams.prm_cplusplus)
                 {
-                    castToArithmetic(FALSE, &tp1, &returnexp, (enum e_kw) - 1, tp, TRUE);
+                    castToArithmetic(false, &tp1, &returnexp, (enum e_kw) - 1, tp, true);
                 }
                 else
                 {
@@ -2101,24 +2101,24 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
             }
             else if (isstructured(returntype) || isstructured(tp))
             {
-                if (!comparetypes(returntype, tp, FALSE) && !sameTemplate(returntype, tp))
+                if (!comparetypes(returntype, tp, false) && !sameTemplate(returntype, tp))
                     error(ERR_RETMISMATCH);
             }
             else if (basetype(returntype)->type == bt_memberptr || basetype(tp)->type == bt_memberptr)
             {
                 if (isconstzero(tp, st->select))
                 {
-                    int lbl = dumpMemberPtr(NULL, returntype, TRUE);
+                    int lbl = dumpMemberPtr(NULL, returntype, true);
                     st->select = intNode(en_labcon, lbl);
                 }
                 else
                 {
                     if (st->select->type == en_memberptr)
                     {
-                        int lbl = dumpMemberPtr(st->select->v.sp, returntype, TRUE);
+                        int lbl = dumpMemberPtr(st->select->v.sp, returntype, true);
                         st->select = intNode(en_labcon, lbl);
                     }
-                    if (!comparetypes(returntype, tp, TRUE))
+                    if (!comparetypes(returntype, tp, true))
                         error(ERR_RETMISMATCH);
                 }
             }
@@ -2146,7 +2146,7 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                     }
                     else if (ispointer(tp))
                     {
-                        if (!comparetypes(returntype, tp, TRUE))
+                        if (!comparetypes(returntype, tp, true))
                         {
                             if (!isvoidptr(returntype) && !isvoidptr(tp))
                             {
@@ -2164,7 +2164,7 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                     else if (isfunction(tp))
                     {
                         if (!isvoidptr(returntype) &&
-                            (!isfunction(basetype(returntype)->btp) || !comparetypes(returntype, tp, TRUE)))
+                            (!isfunction(basetype(returntype)->btp) || !comparetypes(returntype, tp, true)))
                             error(ERR_SUSPICIOUS_POINTER_CONVERSION);
                     }
                     else
@@ -2191,7 +2191,7 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
             }
         }
     }
-    parent->needlabel = TRUE;
+    parent->needlabel = true;
     return lex;
 }
 static LEXEME* statement_switch(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
@@ -2200,7 +2200,7 @@ static LEXEME* statement_switch(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     STATEMENT* st;
     EXPRESSION* select = NULL;
     int addedBlock = 0;
-    funcsp->noinline = TRUE;
+    funcsp->noinline = true;
     switchstmt->breaklabel = codeLabel++;
     switchstmt->next = parent;
     switchstmt->defaultlabel = -1; /* no default */
@@ -2223,11 +2223,11 @@ static LEXEME* statement_switch(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
             st = stmtNode(lex, switchstmt, st_switch);
             st->select = select;
             st->breaklabel = switchstmt->breaklabel;
-            lex = statement(lex, funcsp, switchstmt, TRUE);
+            lex = statement(lex, funcsp, switchstmt, true);
             st->cases = switchstmt->cases;
             st->label = switchstmt->defaultlabel;
             if (st->label != -1 && switchstmt->needlabel && !switchstmt->hasbreak)
-                parent->needlabel = TRUE;
+                parent->needlabel = true;
             /* force a default if there was none */
             if (st->label == -1)
             {
@@ -2264,7 +2264,7 @@ static LEXEME* statement_while(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     STATEMENT *st, *lastLabelStmt;
     STATEMENT* whileline;
     EXPRESSION* select = NULL;
-    BOOLEAN addedBlock = FALSE;
+    int addedBlock = 0;
     int loopLabel = codeLabel++;
     whilestmt->breaklabel = codeLabel++;
     whilestmt->continuelabel = codeLabel++;
@@ -2315,7 +2315,7 @@ static LEXEME* statement_while(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
             do
             {
                 lastLabelStmt = whilestmt->tail;
-                lex = statement(lex, funcsp, whilestmt, TRUE);
+                lex = statement(lex, funcsp, whilestmt, true);
             } while (lex && whilestmt->tail != lastLabelStmt && whilestmt->tail->purelabel);
             if (cparams.prm_cplusplus || cparams.prm_c99)
             {
@@ -2337,7 +2337,7 @@ static LEXEME* statement_while(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
             st->label = loopLabel;
             st->select = select;
             if (!whilestmt->hasbreak && isselecttrue(st->select))
-                parent->needlabel = TRUE;
+                parent->needlabel = true;
             st = stmtNode(lex, whilestmt, st_label);
             st->label = whilestmt->breaklabel;
             parent->hassemi = whilestmt->hassemi;
@@ -2355,10 +2355,10 @@ static LEXEME* statement_while(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     AddBlock(lex, parent, whilestmt);
     return lex;
 }
-static BOOLEAN checkNoEffect(EXPRESSION* exp)
+static bool checkNoEffect(EXPRESSION* exp)
 {
     if (exp->noexprerr)
-        return FALSE;
+        return false;
     switch (exp->type)
     {
         case en_func:
@@ -2373,7 +2373,7 @@ static BOOLEAN checkNoEffect(EXPRESSION* exp)
         case en_void:
         case en__initblk:
         case en__cpblk:
-            return FALSE;
+            return false;
             break;
         case en_not_lvalue:
         case en_lvalue:
@@ -2384,7 +2384,7 @@ static BOOLEAN checkNoEffect(EXPRESSION* exp)
         case en_cond:
             return checkNoEffect(exp->right->left) | checkNoEffect(exp->right->right);
         default:
-            return TRUE;
+            return true;
     }
 }
 static LEXEME* statement_expr(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
@@ -2395,7 +2395,7 @@ static LEXEME* statement_expr(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     LINEDATA *oldLineHead = linesHead, *oldLineTail = linesTail;
     linesHead = linesTail = NULL;
     (void)parent;
-    lex = optimized_expression(lex, funcsp, NULL, &tp, &select, TRUE);
+    lex = optimized_expression(lex, funcsp, NULL, &tp, &select, true);
     linesHead = oldLineHead;
     linesTail = oldLineTail;
     currentLineData(parent, lex, 0);
@@ -2417,8 +2417,8 @@ static LEXEME* statement_expr(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
             {
                 INITIALIZER* init = NULL;
                 EXPRESSION* exp = select->v.func->returnEXP;
-                callDestructor(basetype(tp)->sp, NULL, &exp, NULL, TRUE, FALSE, FALSE);
-                initInsert(&init, sp->tp, exp, 0, FALSE);
+                callDestructor(basetype(tp)->sp, NULL, &exp, NULL, true, false, false);
+                initInsert(&init, sp->tp, exp, 0, false);
                 sp->dest = init;
             }
         }
@@ -2427,7 +2427,7 @@ static LEXEME* statement_expr(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     {
         if (select->type == en_func && select->v.func->sp && select->v.func->sp->linkage3 == lk_noreturn)
         {
-            parent->needlabel = TRUE;
+            parent->needlabel = true;
         }
     }
     return lex;
@@ -2478,7 +2478,7 @@ static LEXEME* asm_declare(LEXEME* lex)
 }
 LEXEME* statement_catch(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, int label, int startlab, int endlab)
 {
-    BOOLEAN last = FALSE;
+    bool last = false;
     if (!MATCHKW(lex, kw_catch))
     {
         error(ERR_EXPECTED_CATCH_CLAUSE);
@@ -2493,7 +2493,7 @@ LEXEME* statement_catch(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, int labe
             STATEMENT* st;
             TYPE* tp = NULL;
             BLOCKDATA* catchstmt = (BLOCKDATA *)Alloc(sizeof(BLOCKDATA));
-            ParseAttributeSpecifiers(&lex, funcsp, TRUE);
+            ParseAttributeSpecifiers(&lex, funcsp, true);
             catchstmt->breaklabel = label;
             catchstmt->next = parent;
             catchstmt->defaultlabel = -1; /* no default */
@@ -2502,22 +2502,22 @@ LEXEME* statement_catch(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, int labe
             AllocateLocalContext(catchstmt, funcsp, codeLabel++);
             if (MATCHKW(lex, ellipse))
             {
-                last = TRUE;
+                last = true;
                 lex = getsym();
             }
             else
             {
-                lex = declare(lex, funcsp, &tp, sc_catchvar, lk_none, catchstmt, FALSE, TRUE, FALSE, ac_public);
+                lex = declare(lex, funcsp, &tp, sc_catchvar, lk_none, catchstmt, false, true, false, ac_public);
             }
             if (needkw(&lex, closepa))
             {
                 if (MATCHKW(lex, begin))
                 {
-                    lex = compound(lex, funcsp, catchstmt, FALSE);
-                    parent->nosemi = TRUE;
+                    lex = compound(lex, funcsp, catchstmt, false);
+                    parent->nosemi = true;
                     parent->needlabel &= catchstmt->needlabel;
                     if (parent->next)
-                        parent->next->nosemi = TRUE;
+                        parent->next->nosemi = true;
                 }
                 else
                 {
@@ -2545,7 +2545,7 @@ LEXEME* statement_try(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
 {
     STATEMENT* st;
     BLOCKDATA* trystmt = (BLOCKDATA *)Alloc(sizeof(BLOCKDATA));
-    hasXCInfo = TRUE;
+    hasXCInfo = true;
     trystmt->breaklabel = codeLabel++;
     trystmt->next = parent;
     trystmt->defaultlabel = -1; /* no default */
@@ -2559,7 +2559,7 @@ LEXEME* statement_try(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     else
     {
         AllocateLocalContext(trystmt, funcsp, codeLabel++);
-        lex = compound(lex, funcsp, trystmt, FALSE);
+        lex = compound(lex, funcsp, trystmt, false);
         FreeLocalContext(trystmt, funcsp, codeLabel++);
         parent->needlabel = trystmt->needlabel;
         st = stmtNode(lex, parent, st_try);
@@ -2568,9 +2568,9 @@ LEXEME* statement_try(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
         st->breaklabel = trystmt->breaklabel;
         st->blockTail = trystmt->blockTail;
         st->lower = trystmt->head;
-        parent->nosemi = TRUE;
+        parent->nosemi = true;
         if (parent->next)
-            parent->next->nosemi = TRUE;
+            parent->next->nosemi = true;
         lex = statement_catch(lex, funcsp, parent, st->breaklabel, st->label, st->endlabel);
     }
 
@@ -2580,10 +2580,10 @@ LEXEME* statement_asm(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
 {
     (void)funcsp;
     (void)parent;
-    functionHasAssembly = TRUE;
+    functionHasAssembly = true;
     if (chosenAssembler->inlineAsm)
     {
-        parent->hassemi = FALSE;
+        parent->hassemi = false;
         lex = getsym();
         if (MATCHKW(lex, begin))
         {
@@ -2598,7 +2598,7 @@ LEXEME* statement_asm(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                 }
             }
             needkw(&lex, end);
-            parent->nosemi = TRUE;
+            parent->nosemi = true;
             return lex;
         }
         else
@@ -2624,7 +2624,7 @@ LEXEME* statement_asm(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                         skip(&lex, semicolon);
                 }
             }
-            parent->hassemi = TRUE;
+            parent->hassemi = true;
         }
     }
     else
@@ -2642,13 +2642,13 @@ LEXEME* statement_asm(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                 lex = getsym();
             }
             needkw(&lex, end);
-            parent->nosemi = TRUE;
+            parent->nosemi = true;
         }
         else
         {
             /* problematic, ASM keyword without a block->  Skip to end of line... */
             currentLineData(parent, lex, 0);
-            parent->hassemi = TRUE;
+            parent->hassemi = true;
             while (*includes->lptr)
                 includes->lptr++;
             lex = getsym();
@@ -2670,13 +2670,13 @@ static void reverseAssign(STATEMENT* current, EXPRESSION** exp)
         }
     }
 }
-static LEXEME* autodeclare(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, BLOCKDATA* parent, BOOLEAN asExpression)
+static LEXEME* autodeclare(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, BLOCKDATA* parent, int asExpression)
 {
     BLOCKDATA block;
     (void)parent;
-    declareAndInitialize = FALSE;
+    declareAndInitialize = false;
     memset(&block, 0, sizeof(block));
-    lex = declare(lex, funcsp, tp, sc_auto, lk_none, &block, FALSE, asExpression, FALSE, ac_public);
+    lex = declare(lex, funcsp, tp, sc_auto, lk_none, &block, false, asExpression, false, ac_public);
 
     // move any auto assignments
     reverseAssign(block.head, exp);
@@ -2699,7 +2699,7 @@ static LEXEME* autodeclare(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** 
 
     return lex;
 }
-BOOLEAN resolveToDeclaration(LEXEME* lex)
+bool resolveToDeclaration(LEXEME* lex)
 {
     LEXEME* placeholder = lex;
     if (ISKW(lex))
@@ -2709,13 +2709,13 @@ BOOLEAN resolveToDeclaration(LEXEME* lex)
             case kw_union:
             case kw_class:
             case kw_decltype:
-                return TRUE;
+                return true;
         }
     lex = getsym();
     if (MATCHKW(lex, begin))
     {
         prevsym(placeholder);
-        return FALSE;
+        return false;
     }
     while (MATCHKW(lex, classsel))
     {
@@ -2764,18 +2764,18 @@ BOOLEAN resolveToDeclaration(LEXEME* lex)
         if (MATCHKW(lex, assign) || MATCHKW(lex, openpa) || MATCHKW(lex, openbr))
         {
             prevsym(placeholder);
-            return TRUE;
+            return true;
         }
         prevsym(placeholder);
-        return FALSE;
+        return false;
     }
     prevsym(placeholder);
-    return TRUE;
+    return true;
 }
-LEXEME* statement(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, BOOLEAN viacontrol)
+LEXEME* statement(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool viacontrol)
 {
     LEXEME* start = lex;
-    ParseAttributeSpecifiers(&lex, funcsp, TRUE);
+    ParseAttributeSpecifiers(&lex, funcsp, true);
     if (ISID(lex))
     {
         lex = getsym();
@@ -2783,8 +2783,8 @@ LEXEME* statement(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, BOOLEAN viacon
         {
             lex = backupsym();
             lex = statement_label(lex, funcsp, parent);
-            parent->needlabel = FALSE;
-            parent->nosemi = TRUE;
+            parent->needlabel = false;
+            parent->nosemi = true;
             return lex;
         }
         else
@@ -2797,11 +2797,11 @@ LEXEME* statement(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, BOOLEAN viacon
 
     if (!MATCHKW(lex, begin))
         if (MATCHKW(lex, kw_throw))
-            parent->needlabel = TRUE;
+            parent->needlabel = true;
         else
-            parent->needlabel = FALSE;
+            parent->needlabel = false;
 
-    parent->nosemi = FALSE;
+    parent->nosemi = false;
     switch (KW(lex))
     {
         case kw_try:
@@ -2812,16 +2812,16 @@ LEXEME* statement(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, BOOLEAN viacon
             lex = statement_catch(lex, funcsp, parent, 1, 1, 1);
             break;
         case begin:
-            lex = compound(lex, funcsp, parent, FALSE);
-            parent->nosemi = TRUE;
+            lex = compound(lex, funcsp, parent, false);
+            parent->nosemi = true;
             if (parent->next)
-                parent->next->nosemi = TRUE;
+                parent->next->nosemi = true;
             break;
         case end:
             /* don't know how it could get here :) */
             //			error(ERR_UNEXPECTED_END_OF_BLOCKDATA);
             //			lex = getsym();
-            parent->hassemi = TRUE;
+            parent->hassemi = true;
             return lex;
             break;
         case kw_do:
@@ -2842,25 +2842,25 @@ LEXEME* statement(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, BOOLEAN viacon
         case kw_else:
             error(ERR_MISPLACED_ELSE);
             skip(&lex, kw_else);
-            parent->nosemi = TRUE;
+            parent->nosemi = true;
             break;
         case kw_case:
             if (cparams.prm_cplusplus)
                 HandleEndOfCase(parent);
             lex = statement_case(lex, funcsp, parent);
-            parent->nosemi = TRUE;
+            parent->nosemi = true;
             if (cparams.prm_cplusplus)
                 HandleStartOfCase(parent);
-            parent->lastcaseordefault = TRUE;
+            parent->lastcaseordefault = true;
             break;
         case kw_default:
             if (cparams.prm_cplusplus)
                 HandleEndOfCase(parent);
             lex = statement_default(lex, funcsp, parent);
-            parent->nosemi = TRUE;
+            parent->nosemi = true;
             if (cparams.prm_cplusplus)
                 HandleStartOfCase(parent);
-            parent->lastcaseordefault = TRUE;
+            parent->lastcaseordefault = true;
             break;
         case kw_continue:
             lex = statement_continue(lex, funcsp, parent);
@@ -2897,7 +2897,7 @@ LEXEME* statement(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, BOOLEAN viacon
             lex = statement_SEH(lex, funcsp, parent);
             break;
         default:
-            if ((startOfType(lex, FALSE) &&
+            if ((startOfType(lex, false) &&
                  (!cparams.prm_cplusplus && (!chosenAssembler->msil || !chosenAssembler->msil->allowExtensions) ||
                   resolveToDeclaration(lex))) ||
                 MATCHKW(lex, kw_namespace) || MATCHKW(lex, kw_using) || MATCHKW(lex, kw_decltype) || MATCHKW(lex, kw_static_assert))
@@ -2911,22 +2911,22 @@ LEXEME* statement(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, BOOLEAN viacon
                     AllocateLocalContext(parent, funcsp, codeLabel++);
                 }
                 while (
-                    (startOfType(lex, FALSE) && (!cparams.prm_cplusplus && !chosenAssembler->msil || resolveToDeclaration(lex))) ||
+                    (startOfType(lex, false) && (!cparams.prm_cplusplus && !chosenAssembler->msil || resolveToDeclaration(lex))) ||
                     MATCHKW(lex, kw_namespace) || MATCHKW(lex, kw_using) || MATCHKW(lex, kw_decltype) ||
                     MATCHKW(lex, kw_static_assert))
                 {
                     STATEMENT* current = parent->tail;
-                    declareAndInitialize = FALSE;
+                    declareAndInitialize = false;
                     if (start)
                     {
                         lex = prevsym(start);
                         start = NULL;
                     }
-                    lex = declare(lex, funcsp, NULL, sc_auto, lk_none, parent, FALSE, FALSE, FALSE, ac_public);
+                    lex = declare(lex, funcsp, NULL, sc_auto, lk_none, parent, false, false, false, ac_public);
                     markInitializers(current);
                     if (MATCHKW(lex, semicolon))
                     {
-                        parent->hassemi = TRUE;
+                        parent->hassemi = true;
                         skip(&lex, semicolon);
                     }
                     else
@@ -2945,22 +2945,22 @@ LEXEME* statement(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, BOOLEAN viacon
     }
     if (MATCHKW(lex, semicolon))
     {
-        parent->hassemi = TRUE;
+        parent->hassemi = true;
         skip(&lex, semicolon);
     }
     else
-        parent->hassemi = FALSE;
+        parent->hassemi = false;
     return lex;
 }
-static BOOLEAN thunkmainret(SYMBOL* funcsp, BLOCKDATA* parent, BOOLEAN always)
+static bool thunkmainret(SYMBOL* funcsp, BLOCKDATA* parent, bool always)
 {
     if (always || !strcmp(funcsp->name, "main") && !funcsp->parentClass && !funcsp->parentNameSpace)
     {
         STATEMENT* s = stmtNode(NULL, parent, st_return);
         s->select = intNode(en_c_i, 0);
-        return TRUE;
+        return true;
     }
-    return FALSE;
+    return false;
 }
 static void thunkThisReturns(STATEMENT* st, EXPRESSION* thisptr)
 {
@@ -2982,13 +2982,13 @@ static void insertXCInfo(SYMBOL* funcsp)
     sp = makeID(sc_global, &stdpointer, NULL, litlate(name));
     sp->linkage = lk_virtual;
     sp->decoratedName = sp->errname = sp->name;
-    sp->allocate = TRUE;
-    sp->used = sp->assigned = TRUE;
+    sp->allocate = true;
+    sp->used = sp->assigned = true;
     funcsp->xc->xcInitLab = codeLabel++;
     funcsp->xc->xcDestLab = codeLabel++;
     funcsp->xc->xclab = sp;
 
-    sp = namespacesearch("_InitializeException", globalNameSpace, FALSE, FALSE);
+    sp = namespacesearch("_InitializeException", globalNameSpace, false, false);
     if (sp)
     {
         FUNCTIONCALL* funcparams = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
@@ -2999,7 +2999,7 @@ static void insertXCInfo(SYMBOL* funcsp)
         funcparams->functp = sp->tp;
         funcparams->sp = sp;
         funcparams->fcall = varNode(en_pc, sp);
-        funcparams->ascall = TRUE;
+        funcparams->ascall = true;
         funcparams->arguments = arg1;
         arg1->next = arg2;
         arg1->tp = &stdpointer;
@@ -3010,7 +3010,7 @@ static void insertXCInfo(SYMBOL* funcsp)
         exp = exprNode(en_func, 0, 0);
         exp->v.func = funcparams;
         funcsp->xc->xcInitializeFunc = exp;
-        sp = namespacesearch("_RundownException", globalNameSpace, FALSE, FALSE);
+        sp = namespacesearch("_RundownException", globalNameSpace, false, false);
         if (sp)
         {
             sp = (SYMBOL*)basetype(sp->tp)->syms->table[0]->p;
@@ -3018,14 +3018,14 @@ static void insertXCInfo(SYMBOL* funcsp)
             funcparams->functp = sp->tp;
             funcparams->sp = sp;
             funcparams->fcall = varNode(en_pc, sp);
-            funcparams->ascall = TRUE;
+            funcparams->ascall = true;
             exp = exprNode(en_func, 0, 0);
             exp->v.func = funcparams;
             funcsp->xc->xcRundownFunc = exp;
         }
     }
 }
-LEXEME* compound(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, BOOLEAN first)
+LEXEME* compound(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
 {
     BLOCKDATA* blockstmt = (BLOCKDATA *)Alloc(sizeof(BLOCKDATA));
     int pragmas = stdpragmas;
@@ -3038,7 +3038,7 @@ LEXEME* compound(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, BOOLEAN first)
     blockstmt->table = localNameSpace->syms;
     currentLineData(blockstmt, lex, 0);
     AllocateLocalContext(blockstmt, funcsp, codeLabel++);
-    parent->needlabel = FALSE;
+    parent->needlabel = false;
     if (first)
     {
         HASHREC* hr = basetype(funcsp->tp)->syms->table[0];
@@ -3049,7 +3049,7 @@ LEXEME* compound(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, BOOLEAN first)
             SYMBOL* sp2 = (SYMBOL*)hr->p;
             if (!cparams.prm_cplusplus && sp2->tp->type != bt_ellipse && !isvoid(sp2->tp) && sp2->anonymous)
                 errorarg(ERR_PARAMETER_MUST_HAVE_NAME, n, sp2, funcsp);
-            sp2->destructed = FALSE;
+            sp2->destructed = false;
             insert(sp2, localNameSpace->syms);
             browse_variable(sp2);
             n++;
@@ -3058,7 +3058,7 @@ LEXEME* compound(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, BOOLEAN first)
         if (cparams.prm_cplusplus && funcsp->isConstructor && funcsp->parentClass)
         {
             ParseMemberInitializers(funcsp->parentClass, funcsp);
-            thisptr = thunkConstructorHead(blockstmt, funcsp->parentClass, funcsp, basetype(funcsp->tp)->syms, TRUE, FALSE);
+            thisptr = thunkConstructorHead(blockstmt, funcsp->parentClass, funcsp, basetype(funcsp->tp)->syms, true, false);
         }
     }
     lex = getsym(); /* past { */
@@ -3067,11 +3067,11 @@ LEXEME* compound(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, BOOLEAN first)
     if (!cparams.prm_cplusplus)
     {
         // have to defer so we can get expression like constructor calls
-        while (startOfType(lex, FALSE))
+        while (startOfType(lex, false))
         {
             STATEMENT* current = blockstmt->tail;
-            declareAndInitialize = FALSE;
-            lex = declare(lex, funcsp, NULL, sc_auto, lk_none, blockstmt, FALSE, FALSE, FALSE, ac_public);
+            declareAndInitialize = false;
+            lex = declare(lex, funcsp, NULL, sc_auto, lk_none, blockstmt, false, false, false, ac_public);
             markInitializers(current);
             if (MATCHKW(lex, semicolon))
             {
@@ -3090,13 +3090,13 @@ LEXEME* compound(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, BOOLEAN first)
             error(ERR_INITIALIZATION_MAY_BE_BYPASSED);
     }
     currentLineData(blockstmt, lex, -1);
-    blockstmt->nosemi = TRUE; /* in case it is an empty body */
+    blockstmt->nosemi = true; /* in case it is an empty body */
     while (lex && !MATCHKW(lex, end))
     {
         if (!blockstmt->hassemi && !blockstmt->nosemi)
             errorint(ERR_NEEDY, ';');
-        blockstmt->lastcaseordefault = FALSE;
-        lex = statement(lex, funcsp, blockstmt, FALSE);
+        blockstmt->lastcaseordefault = false;
+        lex = statement(lex, funcsp, blockstmt, false);
     }
     if (first)
     {
@@ -3119,7 +3119,7 @@ LEXEME* compound(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, BOOLEAN first)
     st = blockstmt->head;
     if (st)
     {
-        BOOLEAN hasvla = FALSE;
+        bool hasvla = false;
         while (st)
         {
             hasvla |= st->hasvla;
@@ -3129,7 +3129,7 @@ LEXEME* compound(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, BOOLEAN first)
         {
             if (first)
             {
-                funcsp->allocaUsed = TRUE;
+                funcsp->allocaUsed = true;
             }
         }
     }
@@ -3139,14 +3139,14 @@ LEXEME* compound(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, BOOLEAN first)
         {
             if (funcsp->xcMode == xc_none || funcsp->xcMode == xc_dynamic)
             {
-                hasXCInfo = TRUE;
+                hasXCInfo = true;
             }
         }
         else if (funcsp->xcMode == xc_dynamic && funcsp->xc && funcsp->xc->xcDynamic)
-            hasXCInfo = TRUE;
+            hasXCInfo = true;
         if (hasXCInfo && cparams.prm_xcept)
         {
-            funcsp->noinline = TRUE;
+            funcsp->noinline = true;
             insertXCInfo(funcsp);
         }
         if (!strcmp(funcsp->name, overloadNameTab[CI_DESTRUCTOR]))
@@ -3162,7 +3162,7 @@ LEXEME* compound(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, BOOLEAN first)
             error(ERR_NORETURN);
         else if (cparams.prm_c99 || cparams.prm_cplusplus)
         {
-            if (!thunkmainret(funcsp, blockstmt, FALSE))
+            if (!thunkmainret(funcsp, blockstmt, false))
             {
                 if (isref(basetype(funcsp->tp)->btp))
                     error(ERR_FUNCTION_RETURNING_REF_SHOULD_RETURN_VALUE);
@@ -3170,7 +3170,7 @@ LEXEME* compound(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, BOOLEAN first)
                 {
                     error(ERR_FUNCTION_SHOULD_RETURN_VALUE);
                     if (chosenAssembler->arch->preferopts & OPT_THUNKRETVAL)
-                        thunkmainret(funcsp, blockstmt, TRUE);
+                        thunkmainret(funcsp, blockstmt, true);
                 }
             }
         }
@@ -3178,7 +3178,7 @@ LEXEME* compound(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, BOOLEAN first)
         {
             error(ERR_FUNCTION_SHOULD_RETURN_VALUE);
             if (chosenAssembler->arch->preferopts & OPT_THUNKRETVAL)
-                thunkmainret(funcsp, blockstmt, TRUE);
+                thunkmainret(funcsp, blockstmt, true);
         }
     }
     needkw(&lex, end);
@@ -3199,12 +3199,12 @@ LEXEME* compound(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, BOOLEAN first)
                     last = last->next;
                 } while (last);
             }
-            hasXCInfo = TRUE;
+            hasXCInfo = true;
         }
     }
     if (parent->type == kw_catch)
     {
-        SYMBOL* sp = namespacesearch("_CatchCleanup", globalNameSpace, FALSE, FALSE);
+        SYMBOL* sp = namespacesearch("_CatchCleanup", globalNameSpace, false, false);
         if (sp)
         {
             FUNCTIONCALL* funcparams = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
@@ -3212,7 +3212,7 @@ LEXEME* compound(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, BOOLEAN first)
             INITLIST* arg1 = (INITLIST *)Alloc(sizeof(INITLIST));  // exception table
             makeXCTab(funcsp);
             sp = (SYMBOL*)basetype(sp->tp)->syms->table[0]->p;
-            funcparams->ascall = TRUE;
+            funcparams->ascall = true;
             funcparams->sp = sp;
             funcparams->functp = sp->tp;
             funcparams->fcall = varNode(en_pc, sp);
@@ -3242,7 +3242,7 @@ void assignParam(SYMBOL* funcsp, int* base, SYMBOL* param)
     if (tp->type == bt_void)
         return;
     if (isstructured(tp) && !basetype(tp)->sp->pureDest)
-        hasXCInfo = TRUE;
+        hasXCInfo = true;
     if (chosenAssembler->arch->denyopts & DO_NOPARMADJSIZE)
     {
         // calculate index for CIL
@@ -3424,7 +3424,7 @@ static void handleInlines(SYMBOL* funcsp)
     if (!funcsp->isInline)
         return;
     if (cparams.prm_c99)
-        funcsp->used = TRUE;
+        funcsp->used = true;
     /* this unqualified the current function if it has structured
      * args or return value, or if it has nested declarations
      */
@@ -3439,7 +3439,7 @@ static void handleInlines(SYMBOL* funcsp)
             {
                 if (ht->table[0])
                 {
-                    funcsp->noinline = TRUE;
+                    funcsp->noinline = true;
                     break;
                 }
                 ht = ht->next;
@@ -3447,7 +3447,7 @@ static void handleInlines(SYMBOL* funcsp)
             if (funcsp->inlineFunc.syms->next)
             {
                 if (funcsp->inlineFunc.syms->next->table[0])
-                    funcsp->noinline = TRUE;
+                    funcsp->noinline = true;
             }
         }
         if (funcsp->linkage == lk_virtual)
@@ -3460,7 +3460,7 @@ static void handleInlines(SYMBOL* funcsp)
                 head = (SYMBOL*)hr->p;
                 if (isstructured(head->tp))
                 {
-                    funcsp->noinline = TRUE;
+                    funcsp->noinline = true;
                     break;
                 }
                 hr = hr->next;
@@ -3468,18 +3468,18 @@ static void handleInlines(SYMBOL* funcsp)
         }
         if (inlineStatementCount(funcsp->inlineFunc.stmt) > 100)
         {
-            funcsp->noinline = TRUE;
+            funcsp->noinline = true;
         }
     }
 }
 LEXEME* body(LEXEME* lex, SYMBOL* funcsp)
 {
     int n1;
-    BOOLEAN oldsetjmp_used = setjmp_used;
-    BOOLEAN oldfunctionHasAssembly = functionHasAssembly;
-    BOOLEAN oldDeclareAndInitialize = declareAndInitialize;
-    BOOLEAN oldHasXCInfo = hasXCInfo;
-    BOOLEAN oldFunctionCanThrow = functionCanThrow;
+    bool oldsetjmp_used = setjmp_used;
+    bool oldfunctionHasAssembly = functionHasAssembly;
+    bool oldDeclareAndInitialize = declareAndInitialize;
+    bool oldHasXCInfo = hasXCInfo;
+    bool oldFunctionCanThrow = functionCanThrow;
     HASHTABLE* oldSyms = localNameSpace->syms;
     HASHTABLE* oldLabelSyms = labelSyms;
     SYMBOL* oldtheCurrentFunc = theCurrentFunc;
@@ -3489,13 +3489,13 @@ LEXEME* body(LEXEME* lex, SYMBOL* funcsp)
     int oldMatchReturnTypes = matchReturnTypes;
     funcNesting++;
     funcLevel++;
-    functionCanThrow = FALSE;
+    functionCanThrow = false;
     codeLabel = INT_MIN;
-    hasXCInfo = FALSE;
+    hasXCInfo = false;
     localNameSpace->syms = NULL;
-    functionHasAssembly = FALSE;
-    setjmp_used = FALSE;
-    declareAndInitialize = FALSE;
+    functionHasAssembly = false;
+    setjmp_used = false;
+    declareAndInitialize = false;
     block->type = funcsp->hasTry ? kw_try : begin;
     theCurrentFunc = funcsp;
 
@@ -3507,18 +3507,18 @@ LEXEME* body(LEXEME* lex, SYMBOL* funcsp)
         if (startStmt)
             funcsp->linedata = startStmt->lineData;
     }
-    funcsp->declaring = TRUE;
+    funcsp->declaring = true;
     labelSyms = CreateHashTable(1);
     assignParameterSizes(lex, funcsp, block);
     funcsp->startLine = lex->line;
-    lex = compound(lex, funcsp, block, TRUE);
+    lex = compound(lex, funcsp, block, true);
     checkUnlabeledReferences(block);
-    checkGotoPastVLA(block->head, TRUE);
+    checkGotoPastVLA(block->head, true);
     if (isautotype(basetype(funcsp->tp)->btp) && !templateNestingCount)
         basetype(funcsp->tp)->btp = &stdvoid;  // return value for auto function without return statements
     if (cparams.prm_cplusplus)
         if (!funcsp->constexpression)
-            funcsp->nonConstVariableUsed = TRUE;
+            funcsp->nonConstVariableUsed = true;
         else
             funcsp->nonConstVariableUsed |= !MatchesConstFunction(funcsp);
     funcsp->labelCount = codeLabel - INT_MIN;
@@ -3528,11 +3528,11 @@ LEXEME* body(LEXEME* lex, SYMBOL* funcsp)
         funcsp->inlineFunc.stmt = stmtNode(lex, NULL, st_block);
         funcsp->inlineFunc.stmt->lower = block->head;
         funcsp->inlineFunc.stmt->blockTail = block->blockTail;
-        funcsp->declaring = FALSE;
+        funcsp->declaring = false;
         if (funcsp->isInline && (functionHasAssembly || funcsp->linkage2 == lk_export))
-            funcsp->isInline = funcsp->dumpInlineToFile = funcsp->promotedToInline = FALSE;
+            funcsp->isInline = funcsp->dumpInlineToFile = funcsp->promotedToInline = false;
         if (!cparams.prm_allowinline)
-            funcsp->isInline = funcsp->dumpInlineToFile = funcsp->promotedToInline = FALSE;
+            funcsp->isInline = funcsp->dumpInlineToFile = funcsp->promotedToInline = false;
         // if it is variadic don't allow it to be inline
         if (funcsp->isInline)
         {
@@ -3542,7 +3542,7 @@ LEXEME* body(LEXEME* lex, SYMBOL* funcsp)
                 while (hr->next)
                     hr = hr->next;
                 if (((SYMBOL*)hr->p)->tp->type == bt_ellipse)
-                    funcsp->isInline = funcsp->dumpInlineToFile = funcsp->promotedToInline = FALSE;
+                    funcsp->isInline = funcsp->dumpInlineToFile = funcsp->promotedToInline = false;
             }
         }
         if (funcsp->linkage == lk_virtual || funcsp->isInline)
@@ -3556,12 +3556,12 @@ LEXEME* body(LEXEME* lex, SYMBOL* funcsp)
 #ifndef PARSER_ONLY
         else
         {
-            BOOLEAN isTemplate = FALSE;
+            bool isTemplate = false;
             SYMBOL* spt = funcsp;
             while (spt && !isTemplate)
             {
                 if (spt->templateLevel)
-                    isTemplate = TRUE;
+                    isTemplate = true;
                 else
                     spt = spt->parentClass;
             }
@@ -3574,7 +3574,7 @@ LEXEME* body(LEXEME* lex, SYMBOL* funcsp)
                     int oldretlab = retlab;
                     startlab = nextLabel++;
                     retlab = nextLabel++;
-                    genfunc(funcsp, TRUE);
+                    genfunc(funcsp, true);
                     retlab = oldretlab;
                     startlab = oldstartlab;
                 }

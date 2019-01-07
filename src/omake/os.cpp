@@ -301,7 +301,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
         if (output)
         {
             DWORD avail = 0;
-            PeekNamedPipe(pipeRead, NULL, 0, NULL, &avail, NULL);
+            PeekNamedPipe(pipeRead, nullptr, 0, nullptr, &avail, nullptr);
             if (avail > 0)
             {
                 char* buffer = new char[avail + 1];
@@ -328,7 +328,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
             if (output)
             {
                 DWORD avail = 0;
-                PeekNamedPipe(pipeRead, NULL, 0, NULL, &avail, NULL);
+                PeekNamedPipe(pipeRead, nullptr, 0, nullptr, &avail, nullptr);
                 if (avail > 0)
                 {
                     char* buffer = new char[avail + 1];
@@ -396,7 +396,7 @@ std::string OS::SpawnWithRedirect(const std::string command)
     {
         WaitForSingleObject(pi.hProcess, INFINITE);
         DWORD avail = 0;
-        PeekNamedPipe(pipeRead, NULL, 0, NULL, &avail, NULL);
+        PeekNamedPipe(pipeRead, nullptr, 0, nullptr, &avail, nullptr);
         if (avail > 0)
         {
             char* buffer = new char[avail + 1];
@@ -542,7 +542,7 @@ std::string OS::NormalizeFileName(const std::string file)
 void OS::CreateThread(void* func, void* data)
 {
 #ifdef _WIN32
-    CloseHandle((HANDLE)_beginthreadex(nullptr, 0, (unsigned(CALLBACK*)(void*))func, data, 0, NULL));
+    CloseHandle((HANDLE)_beginthreadex(nullptr, 0, (unsigned(CALLBACK*)(void*))func, data, 0, nullptr));
 #endif
 }
 void OS::Yield()

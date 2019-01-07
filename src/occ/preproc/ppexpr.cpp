@@ -29,7 +29,7 @@
 extern INCLUDES* includes;
 extern COMPILER_PARAMS cparams;
 
-static PPINT iecommaop(BOOLEAN* uns);
+static PPINT iecommaop(bool* uns);
 
 int getsch(int bytes, unsigned char** source) /* return an in-quote character */
 {
@@ -122,7 +122,7 @@ int getsch(int bytes, unsigned char** source) /* return an in-quote character */
             return (char)i;
     }
 }
-static PPINT ieprimary(BOOLEAN* uns)
+static PPINT ieprimary(bool* uns)
 /*
  * Primary integer
  *    id
@@ -132,7 +132,7 @@ static PPINT ieprimary(BOOLEAN* uns)
  */
 {
     PPINT temp;
-    *uns = FALSE;
+    *uns = false;
 
     if (isdigit(*ILP))
     {
@@ -191,7 +191,7 @@ static PPINT ieprimary(BOOLEAN* uns)
  *   ~unary
  *   primary
  */
-static PPINT ieunary(BOOLEAN* uns)
+static PPINT ieunary(bool* uns)
 {
     PPINT temp;
     skipspace();
@@ -220,14 +220,14 @@ static PPINT ieunary(BOOLEAN* uns)
     skipspace();
     return (temp);
 }
-static PPINT iemultops(BOOLEAN* uns)
+static PPINT iemultops(bool* uns)
 /* Multiply ops */
 {
     PPINT val1 = ieunary(uns), val2;
     while (ILP[0] == '*' || ILP[0] == '/' || ILP[0] == '%')
     {
         char type = *ILP++;
-        BOOLEAN uns1;
+        bool uns1;
         val2 = ieunary(&uns1);
         *uns = *uns | uns1;
         switch (type)
@@ -262,14 +262,14 @@ static PPINT iemultops(BOOLEAN* uns)
     skipspace();
     return (val1);
 }
-static PPINT ieaddops(BOOLEAN* uns)
+static PPINT ieaddops(bool* uns)
 /* Add ops */
 {
     PPINT val1 = iemultops(uns), val2;
     while ((ILP[0] == '+' && ILP[1] != '+') || (ILP[0] == '-' && ILP[1] != '-'))
     {
         char type = ILP[0];
-        BOOLEAN uns1;
+        bool uns1;
         ILP++;
         val2 = iemultops(&uns1);
         *uns = *uns | uns1;
@@ -281,14 +281,14 @@ static PPINT ieaddops(BOOLEAN* uns)
     skipspace();
     return (val1);
 }
-static PPINT ieshiftops(BOOLEAN* uns)
+static PPINT ieshiftops(bool* uns)
 /* Shift ops */
 {
     PPINT val1 = ieaddops(uns), val2;
     while ((ILP[0] == '<' && ILP[1] == '<') || (ILP[0] == '>' && ILP[1] == '>'))
     {
         int type = ILP[0];
-        BOOLEAN uns1;
+        bool uns1;
         ILP += 2;
         val2 = ieaddops(&uns1);
         if (type == '<')
@@ -299,19 +299,19 @@ static PPINT ieshiftops(BOOLEAN* uns)
     skipspace();
     return (val1);
 }
-static PPINT ierelation(BOOLEAN* uns)
+static PPINT ierelation(bool* uns)
 /* non-eq relations */
 {
     PPINT val1 = ieshiftops(uns), val2;
     while ((ILP[0] == '<' && ILP[1] != '<') || (ILP[0] == '>' && ILP[1] != '>'))
     {
-        BOOLEAN eq = FALSE;
-        BOOLEAN uns1;
+        bool eq = false;
+        bool uns1;
         int type = ILP[0];
         ILP++;
         if (*ILP == '=')
         {
-            eq = TRUE;
+            eq = true;
             ILP++;
         }
         val2 = ieshiftops(&uns1);
@@ -344,13 +344,13 @@ static PPINT ierelation(BOOLEAN* uns)
     skipspace();
     return (val1);
 }
-static PPINT ieequalops(BOOLEAN* uns)
+static PPINT ieequalops(bool* uns)
 /* eq relations */
 {
     PPINT val1 = ierelation(uns), val2;
     while ((ILP[0] == '=' || ILP[0] == '!') && ILP[1] == '=')
     {
-        BOOLEAN uns1;
+        bool uns1;
         char type = ILP[0];
         ILP += 2;
         val2 = ierelation(&uns1);
@@ -363,13 +363,13 @@ static PPINT ieequalops(BOOLEAN* uns)
     skipspace();
     return (val1);
 }
-static PPINT ieandop(BOOLEAN* uns)
+static PPINT ieandop(bool* uns)
 /* and op */
 {
     PPINT val1 = ieequalops(uns), val2;
     while (ILP[0] == '&' && ILP[1] != '&')
     {
-        BOOLEAN uns1;
+        bool uns1;
         ILP += 1;
         val2 = ieequalops(&uns1);
         *uns = *uns | uns1;
@@ -378,13 +378,13 @@ static PPINT ieandop(BOOLEAN* uns)
     skipspace();
     return (val1);
 }
-static PPINT iexorop(BOOLEAN* uns)
+static PPINT iexorop(bool* uns)
 /* xor op */
 {
     PPINT val1 = ieandop(uns), val2;
     while (ILP[0] == '^')
     {
-        BOOLEAN uns1;
+        bool uns1;
         ILP++;
         val2 = ieandop(&uns1);
         *uns = *uns | uns1;
@@ -393,13 +393,13 @@ static PPINT iexorop(BOOLEAN* uns)
     skipspace();
     return (val1);
 }
-static PPINT ieorop(BOOLEAN* uns)
+static PPINT ieorop(bool* uns)
 /* or op */
 {
     PPINT val1 = iexorop(uns), val2;
     while (ILP[0] == '|' && ILP[1] != '|')
     {
-        BOOLEAN uns1;
+        bool uns1;
         ILP++;
         val2 = iexorop(&uns1);
         *uns = *uns | uns1;
@@ -408,7 +408,7 @@ static PPINT ieorop(BOOLEAN* uns)
     skipspace();
     return (val1);
 }
-static PPINT ielandop(BOOLEAN* uns)
+static PPINT ielandop(bool* uns)
 /* logical and op */
 {
     PPINT val1 = ieorop(uns), val2;
@@ -416,13 +416,13 @@ static PPINT ielandop(BOOLEAN* uns)
     {
         ILP += 2;
         val2 = ieorop(uns);
-        *uns = FALSE;
+        *uns = false;
         val1 = val1 && val2;
     }
     skipspace();
     return (val1);
 }
-static PPINT ielorop(BOOLEAN* uns)
+static PPINT ielorop(bool* uns)
 /* logical or op */
 {
     PPINT val1 = ielandop(uns), val2;
@@ -430,19 +430,19 @@ static PPINT ielorop(BOOLEAN* uns)
     {
         ILP += 2;
         val2 = ielandop(uns);
-        *uns = FALSE;
+        *uns = false;
         val1 = val1 || val2;
     }
     skipspace();
     return (val1);
 }
-static PPINT iecondop(BOOLEAN* uns)
+static PPINT iecondop(bool* uns)
 /* Hook op */
 {
     PPINT val1 = ielorop(uns), val2, val3;
     if (*ILP == '?')
     {
-        BOOLEAN uns1, uns2;
+        bool uns1, uns2;
         ILP++;
         val2 = iecommaop(&uns1);
         if (*ILP != ':')
@@ -458,13 +458,13 @@ static PPINT iecondop(BOOLEAN* uns)
     skipspace();
     return (val1);
 }
-static PPINT iecommaop(BOOLEAN* uns)
+static PPINT iecommaop(bool* uns)
 /* Hook op */
 {
     PPINT val1 = iecondop(uns);
     while (*ILP == ',')
     {
-        BOOLEAN throwaway;
+        bool throwaway;
         ILP++;
         iecondop(&throwaway);
     }
@@ -474,7 +474,7 @@ static PPINT iecommaop(BOOLEAN* uns)
 PPINT ppexpr()
 /* Integer expressions */
 {
-    BOOLEAN uns = FALSE;
+    bool uns = false;
     PPINT val1 = iecommaop(&uns);
     skipspace();
     return val1;

@@ -38,39 +38,39 @@ static int stoponerr = 0;
 COMPILER_PARAMS cparams = {
     25,    /* int  prm_maxerr;*/
     0,     /* prm_stackalign */
-    FALSE, /* optimize */
-    FALSE, /* char prm_quieterrors;*/
-    TRUE,  /* char prm_warning;*/
-    FALSE, /* char prm_extwarning;*/
-    FALSE, /* char prm_diag;*/
-    FALSE, /* char prm_ansi;*/
-    TRUE,  /* char prm_cmangle;*/
-    FALSE, /* char prm_c99;*/
-    FALSE, /* char prm_c1x;*/
-    FALSE, /* char prm_cplusplus;*/
-    TRUE,  /* char prm_xcept;*/
-    FALSE, /* char prm_icdfile;*/
-    TRUE,  /* char prm_asmfile;*/
-    FALSE, /* char prm_compileonly;*/
-    FALSE, /* char prm_debug;*/
-    FALSE, /* char prm_listfile;*/
-    FALSE, /* char prm_cppfile;*/
-    FALSE, /* char prm_errfile;*/
-    FALSE, /* char prm_browse;*/
-    TRUE,  /* char prm_trigraph;*/
-    FALSE, /* char prm_oldfor;*/
-    FALSE, /* char prm_stackcheck;*/
-    TRUE,  /* char prm_allowinline;*/
-    FALSE, /* char prm_profiler;*/
-    TRUE,  /* char prm_mergstrings;*/
-    FALSE, /* char prm_revbits;*/
-    TRUE,  /* char prm_lines;*/
-    TRUE,  /* char prm_bss;*/
-    FALSE, /* char prm_intrinsic;*/
-    FALSE, /* char prm_smartframes;*/
-    FALSE, /* char prm_farkeyword;*/
-    FALSE, /* char prm_linkreg;*/
-    FALSE, /* char prm_charisunsigned;*/
+    false, /* optimize */
+    false, /* char prm_quieterrors;*/
+    true,  /* char prm_warning;*/
+    false, /* char prm_extwarning;*/
+    false, /* char prm_diag;*/
+    false, /* char prm_ansi;*/
+    true,  /* char prm_cmangle;*/
+    false, /* char prm_c99;*/
+    false, /* char prm_c1x;*/
+    false, /* char prm_cplusplus;*/
+    true,  /* char prm_xcept;*/
+    false, /* char prm_icdfile;*/
+    true,  /* char prm_asmfile;*/
+    false, /* char prm_compileonly;*/
+    false, /* char prm_debug;*/
+    false, /* char prm_listfile;*/
+    false, /* char prm_cppfile;*/
+    false, /* char prm_errfile;*/
+    false, /* char prm_browse;*/
+    true,  /* char prm_trigraph;*/
+    false, /* char prm_oldfor;*/
+    false, /* char prm_stackcheck;*/
+    true,  /* char prm_allowinline;*/
+    false, /* char prm_profiler;*/
+    true,  /* char prm_mergstrings;*/
+    false, /* char prm_revbits;*/
+    true,  /* char prm_lines;*/
+    true,  /* char prm_bss;*/
+    false, /* char prm_intrinsic;*/
+    false, /* char prm_smartframes;*/
+    false, /* char prm_farkeyword;*/
+    false, /* char prm_linkreg;*/
+    false, /* char prm_charisunsigned;*/
 };
 
 char* getUsageText(void)
@@ -107,7 +107,7 @@ void bool_setup(char select, char* string)
  * activation routine (callback) for boolean command line arguments
  */
 {
-    BOOLEAN v = (BOOLEAN)string;
+    bool v = (bool)string;
     if (select == '9')
         cparams.prm_c99 = v;
     if (select == 'A')
@@ -129,7 +129,7 @@ int main(int argc, char* argv[])
     /* loop through and preprocess all the files on the file list */
     while (clist)
     {
-        cparams.prm_cplusplus = FALSE;
+        cparams.prm_cplusplus = false;
         strcpy(buffer, (char *)clist->data);
         if (buffer[0] == '-')
             buffer[0] = 'a';
@@ -143,14 +143,14 @@ int main(int argc, char* argv[])
                 if (p[2] == 'p' || p[2] == 'P')
                 {
                     if (p[3] == 'p' || p[3] == 'P')
-                        cparams.prm_cplusplus = TRUE;
+                        cparams.prm_cplusplus = true;
                 }
                 else
                 {
                     if (p[2] == 'x' || p[2] == 'X')
                     {
                         if (p[3] == 'x' || p[3] == 'X')
-                            cparams.prm_cplusplus = TRUE;
+                            cparams.prm_cplusplus = true;
                     }
                 }
             else
@@ -158,7 +158,7 @@ int main(int argc, char* argv[])
                 if (p[2] == '+')
                 {
                     if (p[3] == '+')
-                        cparams.prm_cplusplus = TRUE;
+                        cparams.prm_cplusplus = true;
                 }
             }
         }

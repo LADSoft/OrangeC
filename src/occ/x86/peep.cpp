@@ -229,7 +229,7 @@ OCODE* gen_codes(int op, int len, AMODE* ap1, AMODE* ap2)
 void gen_coden(int op, int len, AMODE* ap1, AMODE* ap2)
 {
     OCODE* newitem = gen_codes(op, len, ap1, ap2);
-    newitem->noopt = TRUE;
+    newitem->noopt = true;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -792,7 +792,7 @@ void peep_cmp(OCODE* ip)
                     {
                         case ISZ_UCHAR:
                         case -ISZ_UCHAR:
-                        case ISZ_BOOLEAN:
+                        case ISZ_bool:
                             m = 255;
                             break;
                         case ISZ_USHORT:
@@ -1086,7 +1086,7 @@ void peep_movzx2(OCODE* ip)
                     ip->back = c1;
                     ip->opcode = op_mov;
                     ip->oper1->length = ip->oper2->length;
-                    ip->noopt = TRUE;
+                    ip->noopt = true;
                 }
             }
             else
@@ -1111,7 +1111,7 @@ void peep_movzx2(OCODE* ip)
                     ip->back = c1;
                     ip->opcode = op_mov;
                     ip->oper1->length = ip->oper2->length;
-                    ip->noopt = TRUE;
+                    ip->noopt = true;
                 }
             }
         }
@@ -1132,7 +1132,7 @@ void peep_movzx2(OCODE* ip)
                     ip->back = c1;
                     ip->opcode = op_mov;
                     ip->oper1->length = ip->oper2->length;
-                    ip->noopt = TRUE;
+                    ip->noopt = true;
                 }
                 else
                 {
@@ -1149,7 +1149,7 @@ void peep_movzx2(OCODE* ip)
                     ip->fwd = c1;
                     ip->opcode = op_mov;
                     ip->oper1->length = ip->oper2->length;
-                    ip->noopt = TRUE;
+                    ip->noopt = true;
                 }
             }
         }
@@ -1396,7 +1396,7 @@ int novalue(OCODE* ip) { return ip->fwd->opcode == op_void; }
 int equal_address(AMODE* ap1, AMODE* ap2)
 {
     if (ap1->mode != ap2->mode)
-        return (FALSE);
+        return (false);
     if (ap1->length != ap2->length && ap1->length != -ap2->length)
     {
         int n1 = ap1->length < 0 ? -ap1->length : ap1->length;
@@ -1406,53 +1406,53 @@ int equal_address(AMODE* ap1, AMODE* ap2)
         if (n2 == ISZ_ULONG || n2 == ISZ_ADDR || n2 == ISZ_UINT || n2 == ISZ_U32)
             n2 = ISZ_UINT;
         if (n1 != n2)
-            return FALSE;
+            return false;
     }
     switch (ap1->mode)
     {
         case am_axdx:
-            return TRUE;
+            return true;
         case am_immed:
             return equalnode(ap1->offset, ap2->offset);
         case am_indispscale:
             if (ap1->scale != ap2->scale || ap1->sreg != ap2->sreg)
-                return (FALSE);
+                return (false);
             if (ap1->sreg != ap2->sreg)
-                return FALSE;
+                return false;
         case am_indisp:
             if (ap1->offset)
                 if (ap2->offset)
                 {
                     if (!equalnode(ap1->offset, ap2->offset))
-                        return FALSE;
+                        return false;
                 }
                 else
-                    return (FALSE);
+                    return (false);
             else if (ap2->offset)
-                return (FALSE);
+                return (false);
         case am_dreg:
             if (ap1->preg != ap2->preg)
-                return (FALSE);
-            return TRUE;
+                return (false);
+            return true;
         case am_freg:
             if (ap1->preg != ap2->preg)
-                return (FALSE);
-            return TRUE;
+                return (false);
+            return true;
         case am_xmmreg:
             if (ap1->preg != ap2->preg)
-                return (FALSE);
-            return TRUE;
+                return (false);
+            return true;
         case am_mmreg:
             if (ap1->preg != ap2->preg)
-                return (FALSE);
-            return TRUE;
+                return (false);
+            return true;
 
         case am_direct:
             return equalnode(ap1->offset, ap2->offset);
         default:
             break;
     }
-    return (FALSE);
+    return (false);
 }
 
 /*

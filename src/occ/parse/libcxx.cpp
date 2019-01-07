@@ -30,24 +30,24 @@ extern TYPE stdint;
 
 static HASHTABLE* intrinsicHash;
 
-typedef BOOLEAN INTRINS_FUNC(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
-static BOOLEAN is_base_of(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
-static BOOLEAN is_class(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
-static BOOLEAN is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
-static BOOLEAN is_convertible_to(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
-static BOOLEAN is_empty(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
-static BOOLEAN is_enum(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
-static BOOLEAN is_final(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
-static BOOLEAN is_literal(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
-static BOOLEAN is_nothrow_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
-static BOOLEAN is_pod(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
-static BOOLEAN is_polymorphic(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
-static BOOLEAN is_standard_layout(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
-static BOOLEAN is_trivial(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
-static BOOLEAN is_trivially_assignable(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
-static BOOLEAN is_trivially_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
-static BOOLEAN is_trivially_copyable(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
-static BOOLEAN is_union(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
+typedef bool INTRINS_FUNC(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
+static bool is_base_of(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
+static bool is_class(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
+static bool is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
+static bool is_convertible_to(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
+static bool is_empty(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
+static bool is_enum(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
+static bool is_final(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
+static bool is_literal(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
+static bool is_nothrow_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
+static bool is_pod(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
+static bool is_polymorphic(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
+static bool is_standard_layout(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
+static bool is_trivial(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
+static bool is_trivially_assignable(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
+static bool is_trivially_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
+static bool is_trivially_copyable(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
+static bool is_union(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
 static struct _ihash
 {
     char* name;
@@ -79,7 +79,7 @@ void libcxx_init(void)
     for (i = 0; i < sizeof(defaults) / sizeof(defaults[0]); i++)
         AddName((SYMBOL*)&defaults[i], intrinsicHash);
 }
-BOOLEAN parseBuiltInTypelistFunc(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
+bool parseBuiltInTypelistFunc(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
     HASHREC** hr = LookupName(sym->name, intrinsicHash);
     if (hr)
@@ -87,7 +87,7 @@ BOOLEAN parseBuiltInTypelistFunc(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE
         struct _ihash* p = (struct _ihash*)(*hr)->p;
         return p->func(lex, funcsp, sym, tp, exp);
     }
-    return FALSE;
+    return false;
 }
 static LEXEME* getTypeList(LEXEME* lex, SYMBOL* funcsp, INITLIST** lptr)
 {
@@ -96,7 +96,7 @@ static LEXEME* getTypeList(LEXEME* lex, SYMBOL* funcsp, INITLIST** lptr)
     {
         TYPE* tp = NULL;
         lex = getsym(); /* past ( or , */
-        lex = get_type_id(lex, &tp, funcsp, sc_cast, FALSE, TRUE);
+        lex = get_type_id(lex, &tp, funcsp, sc_cast, false, true);
         if (!tp)
             break;
         if (basetype(tp)->type != bt_templateparam)
@@ -167,7 +167,7 @@ static int FindBaseClassWithData(SYMBOL* sym, SYMBOL** result)
     }
     return n;
 }
-static BOOLEAN isStandardLayout(TYPE* tp, SYMBOL** result)
+static bool isStandardLayout(TYPE* tp, SYMBOL** result)
 {
     if (isstructured(tp) && !hasVTab(basetype(tp)->sp) && !basetype(tp)->sp->vbaseEntries)
     {
@@ -177,7 +177,7 @@ static BOOLEAN isStandardLayout(TYPE* tp, SYMBOL** result)
         HASHREC* hr;
         n = FindBaseClassWithData(tp->sp, &found);
         if (n > 1)
-            return FALSE;
+            return false;
         if (n)
         {
             SYMBOL* first = NULL;
@@ -190,11 +190,11 @@ static BOOLEAN isStandardLayout(TYPE* tp, SYMBOL** result)
                 if (sp->storage_class == sc_member || sp->storage_class == sc_mutable)
                 {
                     if (isstructured(sp->tp) && !isStandardLayout(sp->tp, NULL))
-                        return FALSE;
+                        return false;
                     if (access != -1)
                     {
                         if (access != sp->access)
-                            return FALSE;
+                            return false;
                     }
                     access = sp->access;
                 }
@@ -205,17 +205,17 @@ static BOOLEAN isStandardLayout(TYPE* tp, SYMBOL** result)
                 BASECLASS* bc = found->baseClasses;
                 while (bc)
                 {
-                    if (comparetypes(bc->cls->tp, first->tp, TRUE))
-                        return FALSE;
+                    if (comparetypes(bc->cls->tp, first->tp, true))
+                        return false;
                     bc = bc->next;
                 }
             }
         }
         if (result)
             *result = found;
-        return TRUE;
+        return true;
     }
-    return FALSE;
+    return false;
     /*
  hasnonon-staticdatamembersoftypenon-standard-layoutclass(orarrayofsuchtypes)orreference,
  � has no virtual functions (10.3) and no virtual base classes (10.1),
@@ -226,7 +226,7 @@ static BOOLEAN isStandardLayout(TYPE* tp, SYMBOL** result)
  � has no base classes of the same type as the ?rst non-static data member.
  */
 }
-static BOOLEAN trivialFunc(SYMBOL* func, BOOLEAN move)
+static bool trivialFunc(SYMBOL* func, bool move)
 {
     HASHREC* hr = basetype(func->tp)->syms->table[0];
     while (hr)
@@ -238,9 +238,9 @@ static BOOLEAN trivialFunc(SYMBOL* func, BOOLEAN move)
         }
         hr = hr->next;
     }
-    return TRUE;
+    return true;
 }
-static BOOLEAN trivialCopyConstructible(TYPE* tp)
+static bool trivialCopyConstructible(TYPE* tp)
 {
     if (isstructured(tp))
     {
@@ -250,14 +250,14 @@ static BOOLEAN trivialCopyConstructible(TYPE* tp)
         ovl = search(overloadNameTab[CI_CONSTRUCTOR], basetype(tp)->syms);
         if (ovl)
         {
-            if (!trivialFunc(ovl, FALSE) || !trivialFunc(ovl, TRUE))
-                return FALSE;
+            if (!trivialFunc(ovl, false) || !trivialFunc(ovl, true))
+                return false;
         }
         bc = basetype(tp)->sp->baseClasses;
         while (bc)
         {
             if (!trivialCopyConstructible(bc->cls->tp))
-                return FALSE;
+                return false;
             bc = bc->next;
         }
         hr = basetype(tp)->syms->table[0];
@@ -266,13 +266,13 @@ static BOOLEAN trivialCopyConstructible(TYPE* tp)
             SYMBOL* sym = (SYMBOL*)hr->p;
             if (sym->storage_class == sc_mutable || sym->storage_class == sc_member)
                 if (!trivialCopyConstructible(sym->tp))
-                    return FALSE;
+                    return false;
             hr = hr->next;
         }
     }
-    return TRUE;
+    return true;
 }
-static BOOLEAN trivialCopyAssignable(TYPE* tp)
+static bool trivialCopyAssignable(TYPE* tp)
 {
     if (isstructured(tp))
     {
@@ -282,14 +282,14 @@ static BOOLEAN trivialCopyAssignable(TYPE* tp)
         ovl = search(overloadNameTab[assign - kw_new + CI_NEW], basetype(tp)->syms);
         if (ovl)
         {
-            if (!trivialFunc(ovl, FALSE) || !trivialFunc(ovl, TRUE))
-                return FALSE;
+            if (!trivialFunc(ovl, false) || !trivialFunc(ovl, true))
+                return false;
         }
         bc = basetype(tp)->sp->baseClasses;
         while (bc)
         {
             if (!trivialCopyAssignable(bc->cls->tp))
-                return FALSE;
+                return false;
             bc = bc->next;
         }
         hr = basetype(tp)->syms->table[0];
@@ -298,13 +298,13 @@ static BOOLEAN trivialCopyAssignable(TYPE* tp)
             SYMBOL* sym = (SYMBOL*)hr->p;
             if (sym->storage_class == sc_mutable || sym->storage_class == sc_member)
                 if (!trivialCopyAssignable(sym->tp))
-                    return FALSE;
+                    return false;
             hr = hr->next;
         }
     }
-    return TRUE;
+    return true;
 }
-static BOOLEAN trivialDestructor(TYPE* tp)
+static bool trivialDestructor(TYPE* tp)
 {
     if (isstructured(tp))
     {
@@ -316,13 +316,13 @@ static BOOLEAN trivialDestructor(TYPE* tp)
         {
             ovl = (SYMBOL*)ovl->tp->syms->table[0]->p;
             if (!ovl->defaulted)
-                return FALSE;
+                return false;
         }
         bc = basetype(tp)->sp->baseClasses;
         while (bc)
         {
             if (!trivialDestructor(bc->cls->tp))
-                return FALSE;
+                return false;
             bc = bc->next;
         }
         hr = basetype(tp)->syms->table[0];
@@ -331,13 +331,13 @@ static BOOLEAN trivialDestructor(TYPE* tp)
             SYMBOL* sym = (SYMBOL*)hr->p;
             if (sym->storage_class == sc_mutable || sym->storage_class == sc_member)
                 if (!trivialDestructor(sym->tp))
-                    return FALSE;
+                    return false;
             hr = hr->next;
         }
     }
-    return TRUE;
+    return true;
 }
-static BOOLEAN trivialDefaultConstructor(TYPE* tp)
+static bool trivialDefaultConstructor(TYPE* tp)
 {
     if (isstructured(tp))
     {
@@ -355,7 +355,7 @@ static BOOLEAN trivialDefaultConstructor(TYPE* tp)
 
                 if (!hr1->next || !hr1->next->next || ((SYMBOL*)hr1->next->next->p)->tp->type == bt_void)
                     if (!sym->defaulted)
-                        return FALSE;
+                        return false;
                     else
                         break;
                 hr = hr->next;
@@ -365,7 +365,7 @@ static BOOLEAN trivialDefaultConstructor(TYPE* tp)
         while (bc)
         {
             if (!trivialDefaultConstructor(bc->cls->tp))
-                return FALSE;
+                return false;
             bc = bc->next;
         }
         hr = basetype(tp)->syms->table[0];
@@ -374,17 +374,17 @@ static BOOLEAN trivialDefaultConstructor(TYPE* tp)
             SYMBOL* sym = (SYMBOL*)hr->p;
             if (sym->storage_class == sc_mutable || sym->storage_class == sc_member)
                 if (!trivialDefaultConstructor(sym->tp))
-                    return FALSE;
+                    return false;
             hr = hr->next;
         }
     }
-    return TRUE;
+    return true;
 }
-static BOOLEAN triviallyCopyable(TYPE* tp)
+static bool triviallyCopyable(TYPE* tp)
 {
     return trivialCopyConstructible(tp) && trivialCopyAssignable(tp) && trivialDestructor(tp);
 }
-static BOOLEAN trivialStructure(TYPE* tp)
+static bool trivialStructure(TYPE* tp)
 {
     if (isref(tp))
         tp = basetype(tp)->btp;
@@ -392,7 +392,7 @@ static BOOLEAN trivialStructure(TYPE* tp)
     {
         return triviallyCopyable(tp) && trivialDefaultConstructor(tp);
     }
-    return FALSE;
+    return false;
 }
 /*
 A trivially copyable class is a class that:
@@ -404,24 +404,24 @@ A trivially copyable class is a class that:
 
 A trivial class is a class that has a trivial default constructor (12.1) and is trivially copyable.
 */
-static BOOLEAN trivialStructureWithBases(TYPE* tp)
+static bool trivialStructureWithBases(TYPE* tp)
 {
     if (isstructured(tp))
     {
         BASECLASS* bc;
         if (!trivialStructure(tp))
-            return FALSE;
+            return false;
         bc = basetype(tp)->sp->baseClasses;
         while (bc)
         {
             if (!trivialStructureWithBases(bc->cls->tp))
-                return FALSE;
+                return false;
             bc = bc->next;
         }
     }
-    return TRUE;
+    return true;
 }
-static BOOLEAN isPOD(TYPE* tp)
+static bool isPOD(TYPE* tp)
 {
     SYMBOL* found = NULL;
     if (isStandardLayout(tp,& found) && trivialStructureWithBases(tp)) // DAL fixed
@@ -433,15 +433,15 @@ static BOOLEAN isPOD(TYPE* tp)
             {
                 SYMBOL* sym = (SYMBOL*)hr->p;
                 if (isstructured(sym->tp) && !trivialStructureWithBases(sym->tp))
-                    return FALSE;
+                    return false;
                 hr = hr->next;
             }
         }
-        return TRUE;
+        return true;
     }
-    return FALSE;
+    return false;
 }
-static BOOLEAN nothrowConstructible(TYPE* tp)
+static bool nothrowConstructible(TYPE* tp)
 {
     if (isstructured(tp))
     {
@@ -456,22 +456,22 @@ static BOOLEAN nothrowConstructible(TYPE* tp)
             {
                 SYMBOL* sp = (SYMBOL*)hr->p;
                 HASHREC* hr1 = basetype(sp->tp)->syms->table[0];
-                if (matchesCopy(sp, FALSE) || matchesCopy(sp, TRUE) || !hr1->next || !hr1->next->next ||
+                if (matchesCopy(sp, false) || matchesCopy(sp, true) || !hr1->next || !hr1->next->next ||
                     ((SYMBOL*)hr1->next->next->p)->tp->type == bt_void)
                 {
                     if (sp->xcMode != xc_none)
-                        return FALSE;
+                        return false;
                 }
                 hr = hr->next;
             }
         }
     }
-    return TRUE;
+    return true;
 }
-static BOOLEAN is_base_of(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
+static bool is_base_of(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
     INITLIST* lst;
-    BOOLEAN rv = FALSE;
+    bool rv = false;
     FUNCTIONCALL funcparams;
     memset(&funcparams, 0, sizeof(funcparams));
     funcparams.sp = sym;
@@ -489,12 +489,12 @@ static BOOLEAN is_base_of(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, 
     }
     *exp = intNode(en_c_i, rv);
     *tp = &stdint;
-    return TRUE;
+    return true;
 }
-static BOOLEAN is_class(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
+static bool is_class(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
     INITLIST* lst;
-    BOOLEAN rv = FALSE;
+    bool rv = false;
     FUNCTIONCALL funcparams;
     memset(&funcparams, 0, sizeof(funcparams));
     funcparams.sp = sym;
@@ -505,12 +505,12 @@ static BOOLEAN is_class(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EX
     }
     *exp = intNode(en_c_i, rv);
     *tp = &stdint;
-    return TRUE;
+    return true;
 }
-static BOOLEAN is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
+static bool is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
     INITLIST* lst;
-    BOOLEAN rv = FALSE;
+    bool rv = false;
     FUNCTIONCALL funcparams;
     memset(&funcparams, 0, sizeof(funcparams));
     funcparams.sp = sym;
@@ -531,7 +531,7 @@ static BOOLEAN is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE*
 
             if (isarray(tp2))
             {
-                tp2 = FALSE;
+                tp2 = nullptr;
             }
         }
         if (tp2)
@@ -548,7 +548,7 @@ static BOOLEAN is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE*
                     {
                         if (isref(tpy))
                             tpy = basetype(tpy)->btp;
-                        rv = comparetypes(tp2, tpy, TRUE);
+                        rv = comparetypes(tp2, tpy, true);
                     }
                 }
             }
@@ -558,7 +558,7 @@ static BOOLEAN is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE*
                 {
                     if (isfunction(funcparams.arguments->next->tp))
                     {
-                        rv = comparetypes(basetype(tp2)->btp, funcparams.arguments->next->tp, TRUE);
+                        rv = comparetypes(basetype(tp2)->btp, funcparams.arguments->next->tp, true);
                     }
                     else if (isstructured(funcparams.arguments->next->tp))
                     {
@@ -573,7 +573,7 @@ static BOOLEAN is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE*
                         funcparams.thistp->btp = basetype(funcparams.arguments->next->tp);
                         funcparams.thistp->rootType = funcparams.thistp;
                         funcparams.thistp->size = getSize(bt_pointer);
-                        funcparams.ascall = TRUE;
+                        funcparams.ascall = true;
                         funcparams.arguments = NULL;
                         funcparams.sp = NULL;
                         hr = basetype(basetype(tp2)->btp)->syms->table[0];
@@ -585,12 +585,12 @@ static BOOLEAN is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE*
                             arg = &(*arg)->next;
                             hr = hr->next;
                         }
-                        rv = GetOverloadedFunction(tp, &funcparams.fcall, bcall, &funcparams, NULL, FALSE, FALSE, FALSE,
+                        rv = GetOverloadedFunction(tp, &funcparams.fcall, bcall, &funcparams, NULL, false, false, false,
                                                    _F_SIZEOF) != NULL;
                     }
                     else
                     {
-                        rv = comparetypes(tp2, funcparams.arguments->next->tp, TRUE);
+                        rv = comparetypes(tp2, funcparams.arguments->next->tp, true);
                     }
                 }
             }
@@ -598,19 +598,19 @@ static BOOLEAN is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE*
             {
                 if (!funcparams.arguments->next)
                 {
-                    rv = TRUE;
+                    rv = true;
                 }
                 else if (!funcparams.arguments->next->next)
                 {
-                    rv = comparetypes(tp2, funcparams.arguments->next->tp, TRUE);
+                    rv = comparetypes(tp2, funcparams.arguments->next->tp, true);
                 }
             }
             else if (isstructured(tp2))
             {
                 if (funcparams.arguments->next && isstructured(funcparams.arguments->next->tp) &&
-                    (comparetypes(tp2, funcparams.arguments->next->tp, TRUE) || sameTemplate(tp2, funcparams.arguments->next->tp)))
+                    (comparetypes(tp2, funcparams.arguments->next->tp, true) || sameTemplate(tp2, funcparams.arguments->next->tp)))
                 {
-                    rv = TRUE;
+                    rv = true;
                 }
                 else
                 {
@@ -625,7 +625,7 @@ static BOOLEAN is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE*
                     funcparams.thistp->btp = basetype(tp2);
                     funcparams.thistp->rootType = funcparams.thistp;
                     funcparams.thistp->size = getSize(bt_pointer);
-                    funcparams.ascall = TRUE;
+                    funcparams.ascall = true;
                     funcparams.arguments = funcparams.arguments->next;
                     temp = funcparams.arguments;
                     while (temp)
@@ -634,11 +634,11 @@ static BOOLEAN is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE*
                         holdr[i] = temp->tp->rref;
                         if (!temp->tp->rref && basetype(temp->tp)->type != bt_rref)// DAL FIXED
                         {
-                            temp->tp->lref = TRUE;
+                            temp->tp->lref = true;
                         }
                         temp = temp->next;
                     }
-                    rv = GetOverloadedFunction(tp, &funcparams.fcall, cons, &funcparams, NULL, FALSE, FALSE, FALSE, _F_SIZEOF) !=
+                    rv = GetOverloadedFunction(tp, &funcparams.fcall, cons, &funcparams, NULL, false, false, false, _F_SIZEOF) !=
                          NULL;
                     temp = funcparams.arguments;
                     while (temp)
@@ -653,11 +653,11 @@ static BOOLEAN is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE*
     }
     *exp = intNode(en_c_i, rv);
     *tp = &stdint;
-    return TRUE;
+    return true;
 }
-static BOOLEAN is_convertible_to(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
+static bool is_convertible_to(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
-    BOOLEAN rv = TRUE;
+    bool rv = true;
     FUNCTIONCALL funcparams;
     memset(&funcparams, 0, sizeof(funcparams));
     funcparams.sp = sym;
@@ -672,11 +672,11 @@ static BOOLEAN is_convertible_to(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE
             {
                 if (basetype(to)->type == bt_lref)
                     if (basetype(from)->type == bt_rref)
-                        rv = FALSE;
+                        rv = false;
             }
             else
             {
-                rv = FALSE;
+                rv = false;
             }
         }
         if (isfunction(from))
@@ -687,11 +687,11 @@ static BOOLEAN is_convertible_to(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE
                 from = basetype(from)->btp;
             while (isref(to))
                 to = basetype(to)->btp;
-            rv = comparetypes(to, from, FALSE);
+            rv = comparetypes(to, from, false);
             if (!rv && isstructured(from) && isstructured(to))
             {
                 if (classRefCount(basetype(to)->sp, basetype(from)->sp) == 1)
-                    rv = TRUE;
+                    rv = true;
             }
             if (!rv && isstructured(from))
             {
@@ -701,9 +701,9 @@ static BOOLEAN is_convertible_to(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE
                     HASHREC* hr = sp->tp->syms->table[0];
                     while (hr)
                     {
-                        if (comparetypes(basetype(((SYMBOL*)hr->p)->tp)->btp, to, FALSE))
+                        if (comparetypes(basetype(((SYMBOL*)hr->p)->tp)->btp, to, false))
                         {
-                            rv = TRUE;
+                            rv = true;
                             break;
                         }
                         hr = hr->next;
@@ -714,16 +714,16 @@ static BOOLEAN is_convertible_to(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE
     }
     else
     {
-        rv = FALSE;
+        rv = false;
     }
     *exp = intNode(en_c_i, rv);
     *tp = &stdint;
-    return TRUE;
+    return true;
 }
-static BOOLEAN is_empty(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
+static bool is_empty(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
     INITLIST* lst;
-    BOOLEAN rv = FALSE;
+    bool rv = false;
     FUNCTIONCALL funcparams;
     memset(&funcparams, 0, sizeof(funcparams));
     funcparams.sp = sym;
@@ -741,12 +741,12 @@ static BOOLEAN is_empty(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EX
     }
     *exp = intNode(en_c_i, rv);
     *tp = &stdint;
-    return TRUE;
+    return true;
 }
-static BOOLEAN is_enum(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
+static bool is_enum(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
     INITLIST* lst;
-    BOOLEAN rv = FALSE;
+    bool rv = false;
     FUNCTIONCALL funcparams;
     memset(&funcparams, 0, sizeof(funcparams));
     funcparams.sp = sym;
@@ -757,12 +757,12 @@ static BOOLEAN is_enum(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXP
     }
     *exp = intNode(en_c_i, rv);
     *tp = &stdint;
-    return TRUE;
+    return true;
 }
-static BOOLEAN is_final(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
+static bool is_final(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
     INITLIST* lst;
-    BOOLEAN rv = FALSE;
+    bool rv = false;
     FUNCTIONCALL funcparams;
     memset(&funcparams, 0, sizeof(funcparams));
     funcparams.sp = sym;
@@ -774,12 +774,12 @@ static BOOLEAN is_final(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EX
     }
     *exp = intNode(en_c_i, rv);
     *tp = &stdint;
-    return TRUE;
+    return true;
 }
-static BOOLEAN is_literal(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
+static bool is_literal(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
     INITLIST* lst;
-    BOOLEAN rv = FALSE;
+    bool rv = false;
     FUNCTIONCALL funcparams;
     memset(&funcparams, 0, sizeof(funcparams));
     funcparams.sp = sym;
@@ -791,12 +791,12 @@ static BOOLEAN is_literal(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, 
     }
     *exp = intNode(en_c_i, rv);
     *tp = &stdint;
-    return TRUE;
+    return true;
 }
-static BOOLEAN is_nothrow_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
+static bool is_nothrow_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
     INITLIST* lst;
-    BOOLEAN rv = FALSE;
+    bool rv = false;
     FUNCTIONCALL funcparams;
     memset(&funcparams, 0, sizeof(funcparams));
     funcparams.sp = sym;
@@ -817,12 +817,12 @@ static BOOLEAN is_nothrow_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sy
     }
     *exp = intNode(en_c_i, rv);
     *tp = &stdint;
-    return TRUE;
+    return true;
 }
-static BOOLEAN is_pod(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
+static bool is_pod(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
     INITLIST* lst;
-    BOOLEAN rv = FALSE;
+    bool rv = false;
     FUNCTIONCALL funcparams;
     memset(&funcparams, 0, sizeof(funcparams));
     funcparams.sp = sym;
@@ -839,12 +839,12 @@ static BOOLEAN is_pod(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPR
     }
     *exp = intNode(en_c_i, rv);
     *tp = &stdint;
-    return TRUE;
+    return true;
 }
-static BOOLEAN is_polymorphic(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
+static bool is_polymorphic(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
     INITLIST* lst;
-    BOOLEAN rv = FALSE;
+    bool rv = false;
     FUNCTIONCALL funcparams;
     memset(&funcparams, 0, sizeof(funcparams));
     funcparams.sp = sym;
@@ -863,12 +863,12 @@ static BOOLEAN is_polymorphic(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** 
     }
     *exp = intNode(en_c_i, rv);
     *tp = &stdint;
-    return TRUE;
+    return true;
 }
-static BOOLEAN is_standard_layout(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
+static bool is_standard_layout(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
     INITLIST* lst;
-    BOOLEAN rv = FALSE;
+    bool rv = false;
     FUNCTIONCALL funcparams;
     memset(&funcparams, 0, sizeof(funcparams));
     funcparams.sp = sym;
@@ -885,12 +885,12 @@ static BOOLEAN is_standard_layout(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYP
     }
     *exp = intNode(en_c_i, rv);
     *tp = &stdint;
-    return TRUE;
+    return true;
 }
-static BOOLEAN is_trivial(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
+static bool is_trivial(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
     INITLIST* lst;
-    BOOLEAN rv = FALSE;
+    bool rv = false;
     FUNCTIONCALL funcparams;
     memset(&funcparams, 0, sizeof(funcparams));
     funcparams.sp = sym;
@@ -907,12 +907,12 @@ static BOOLEAN is_trivial(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, 
     }
     *exp = intNode(en_c_i, rv);
     *tp = &stdint;
-    return TRUE;
+    return true;
 }
-static BOOLEAN is_trivially_assignable(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
+static bool is_trivially_assignable(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
     INITLIST* lst;
-    BOOLEAN rv = FALSE;
+    bool rv = false;
     FUNCTIONCALL funcparams;
     memset(&funcparams, 0, sizeof(funcparams));
     funcparams.sp = sym;
@@ -930,12 +930,12 @@ static BOOLEAN is_trivially_assignable(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym
     }
     *exp = intNode(en_c_i, rv);
     *tp = &stdint;
-    return TRUE;
+    return true;
 }
-static BOOLEAN is_trivially_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
+static bool is_trivially_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
     INITLIST* lst;
-    BOOLEAN rv = FALSE;
+    bool rv = false;
     FUNCTIONCALL funcparams;
     memset(&funcparams, 0, sizeof(funcparams));
     funcparams.sp = sym;
@@ -952,12 +952,12 @@ static BOOLEAN is_trivially_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* 
     }
     *exp = intNode(en_c_i, rv);
     *tp = &stdint;
-    return TRUE;
+    return true;
 }
-static BOOLEAN is_trivially_copyable(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
+static bool is_trivially_copyable(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
     INITLIST* lst;
-    BOOLEAN rv = FALSE;
+    bool rv = false;
     FUNCTIONCALL funcparams;
     memset(&funcparams, 0, sizeof(funcparams));
     funcparams.sp = sym;
@@ -975,12 +975,12 @@ static BOOLEAN is_trivially_copyable(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, 
     }
     *exp = intNode(en_c_i, rv);
     *tp = &stdint;
-    return TRUE;
+    return true;
 }
-static BOOLEAN is_union(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
+static bool is_union(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
     INITLIST* lst;
-    BOOLEAN rv = FALSE;
+    bool rv = false;
     FUNCTIONCALL funcparams;
     memset(&funcparams, 0, sizeof(funcparams));
     funcparams.sp = sym;
@@ -991,5 +991,5 @@ static BOOLEAN is_union(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EX
     }
     *exp = intNode(en_c_i, rv);
     *tp = &stdint;
-    return TRUE;
+    return true;
 }

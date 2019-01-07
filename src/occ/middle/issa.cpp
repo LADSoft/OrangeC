@@ -53,9 +53,9 @@ extern DAGLIST* ins_hash[DAGSIZE];
 extern DAGLIST* name_hash[DAGSIZE];
 extern int cachedTempCount;
 extern BITINT bittab[BITINTBITS];
-extern BOOLEAN functionHasAssembly;
+extern bool functionHasAssembly;
 /* don't make this too large, we are stacking a copy... */
-static BOOLEAN changed;
+static bool changed;
 static LIST* savedDag;
 
 IMODE *trueName, *falseName;
@@ -270,12 +270,12 @@ static void renameToPhi(BLOCK* b)
 {
     QUAD *head = b->head, *tail;
     BLOCKLIST* bl;
-    BOOLEAN done = FALSE;
+    bool done = false;
     DAGLIST** saved_ins = getSavedDAG();
     DAGLIST** saved_name = getSavedDAG();
     if (b->visiteddfst)
         return;
-    b->visiteddfst = TRUE;
+    b->visiteddfst = true;
 
     memcpy(saved_ins, ins_hash, sizeof(ins_hash));
     memcpy(saved_name, name_hash, sizeof(name_hash));
@@ -332,7 +332,7 @@ static void renameToPhi(BLOCK* b)
         }
         /* evaluate the node if both args are constants */
         //		if (!(head->temps & (TEMP_LEFT | TEMP_RIGHT)))
-        //			ConstantFold(head, TRUE);
+        //			ConstantFold(head, true);
         if (head->temps & TEMP_ANS)
         {
             int tnum = head->ans->offset->v.sp->value.i;
@@ -383,7 +383,7 @@ static void renameToPhi(BLOCK* b)
             InsertUses(head, tnum);
         }
         if (head == b->tail)
-            done = TRUE;
+            done = true;
         else
             head = head->fwd;
     }
@@ -435,7 +435,7 @@ static void renameToPhi(BLOCK* b)
      * temporary stacks
      */
     tail = b->tail;
-    done = FALSE;
+    done = false;
     while (!done)
     {
         /* if it is an i_nop get rid of it
@@ -478,7 +478,7 @@ static void renameToPhi(BLOCK* b)
             }
         }
         if (tail == b->head)
-            done = TRUE;
+            done = true;
         else
             tail = tail->back;
     }
@@ -535,13 +535,13 @@ void TranslateToSSA(void)
     insertPhiNodes();
     for (i = 0; i < blockCount; i++)
         if (blockArray[i])
-            blockArray[i]->visiteddfst = FALSE;
+            blockArray[i]->visiteddfst = false;
     renameToPhi(blockArray[0]);
     AliasRundown();
     tFree();
 }
 
-static void findCopies(BRIGGS_SET* copies, BOOLEAN all)
+static void findCopies(BRIGGS_SET* copies, bool all)
 {
     QUAD* head = intermed_head;
     while (head)
@@ -593,7 +593,7 @@ static void mergePartition(int tnew, int told)
     }
     JoinConflictLists(told, tnew);
     tempInfo[told]->partition = tnew;
-    changed = TRUE;
+    changed = true;
 }
 static void convergeCriticals(void)
 {
@@ -632,7 +632,7 @@ static void CheckCoalesce(int T0, int Ti)
     }
 }
 /* walks the loop tree to hit inner loops first */
-static void CoalesceTemps(LOOP* l, BOOLEAN all)
+static void CoalesceTemps(LOOP* l, bool all)
 {
     LIST* p = l->contains;
     while (p)
@@ -650,7 +650,7 @@ static void CoalesceTemps(LOOP* l, BOOLEAN all)
         {
             if (!all || (t->entry->blocknum && !t->entry->critical))
             {
-                BOOLEAN done = all;
+                bool done = all;
                 BLOCKLIST* bl;
                 QUAD* head = t->entry->head;
                 while (!done)
@@ -682,7 +682,7 @@ static void CoalesceTemps(LOOP* l, BOOLEAN all)
                         }
                     }
                     if (head == t->entry->tail)
-                        done = TRUE;
+                        done = true;
                     else
                         head = head->fwd;
                 }
@@ -699,7 +699,7 @@ static void CoalesceTemps(LOOP* l, BOOLEAN all)
                             bb = bb->next;
                         }
                         head = bl->block->head;
-                        done = FALSE;
+                        done = false;
                         while (!done)
                         {
                             if (head->dc.opcode == i_phi)
@@ -714,7 +714,7 @@ static void CoalesceTemps(LOOP* l, BOOLEAN all)
                                 CheckCoalesce(pd->T0, pb->Tn);
                             }
                             if (head == bl->block->tail)
-                                done = TRUE;
+                                done = true;
                             else
                                 head = head->fwd;
                         }
@@ -726,7 +726,7 @@ static void CoalesceTemps(LOOP* l, BOOLEAN all)
         p = p->next;
     }
 }
-static void partition(BOOLEAN all)
+static void partition(bool all)
 {
     int i;
     BRIGGS_SET* copied = briggsAlloc(tempCount * 2);
@@ -734,15 +734,15 @@ static void partition(BOOLEAN all)
     // each temp was partitioned to itself when we allocated the temp
     // now handle critical edges
     convergeCriticals();
-    changed = TRUE;
+    changed = true;
     while (changed)
     {
-        changed = FALSE;
-        CalculateConflictGraph(copied, FALSE);
+        changed = false;
+        CalculateConflictGraph(copied, false);
         CoalesceTemps(loopArray[loopCount - 1], all);
     }
 }
-static void returnToNormal(IMODE** adr, BOOLEAN all)
+static void returnToNormal(IMODE** adr, bool all)
 {
     IMODE* im = NULL;
     if ((*adr)->offset)
@@ -766,7 +766,7 @@ static void returnToNormal(IMODE** adr, BOOLEAN all)
             t->enode->v.sp->imvalue->vol |= tempInfo[tnum]->enode->v.sp->imvalue->vol;
             t->enode->v.sp->imvalue->restricted |= tempInfo[tnum]->enode->v.sp->imvalue->restricted;
         }
-        t->temp = TRUE;
+        t->temp = true;
         if (!(*adr)->offset2 && !(*adr)->offset3)
         {
             if ((*adr)->mode == i_ind)
@@ -842,19 +842,19 @@ static void returnToNormal(IMODE** adr, BOOLEAN all)
                 t->enode->v.sp->imvalue->vol |= tempInfo[tnum]->enode->v.sp->imvalue->vol;
                 t->enode->v.sp->imvalue->restricted |= tempInfo[tnum]->enode->v.sp->imvalue->restricted;
             }
-            t->temp = TRUE;
+            t->temp = true;
             im->offset2 = t->enode;
         }
     }
     (*adr) = im;
 }
-static void copyInstruction(BLOCK* blk, int dest, int src, BOOLEAN all)
+static void copyInstruction(BLOCK* blk, int dest, int src, bool all)
 {
     QUAD *q = (QUAD *)Alloc(sizeof(QUAD)), *tail = blk->tail;
     IMODE *destim, *srcim;
     destim = tempInfo[dest]->enode->v.sp->imvalue;
     srcim = tempInfo[src]->enode->v.sp->imvalue;
-    tail = beforeJmp(tail, TRUE);
+    tail = beforeJmp(tail, true);
     q->dc.opcode = i_assn;
     q->dc.left = srcim;
     q->ans = destim;
@@ -866,7 +866,7 @@ static void copyInstruction(BLOCK* blk, int dest, int src, BOOLEAN all)
 static void BuildAuxGraph(BLOCK* b, int which, BRIGGS_SET* nodes)
 {
     QUAD* head = b->head;
-    BOOLEAN done = FALSE;
+    bool done = false;
     briggsClear(nodes);
     while (!done)
     {
@@ -909,7 +909,7 @@ static void BuildAuxGraph(BLOCK* b, int which, BRIGGS_SET* nodes)
             }
         }
         if (head == b->tail)
-            done = TRUE;
+            done = true;
         else
             head = head->fwd;
     }
@@ -932,18 +932,18 @@ static void ElimForward(BRIGGS_SET* visited, LIST** stack, int T)
     l->next = *stack;
     *stack = l;
 }
-static BOOLEAN unvisitedPredecessor(BRIGGS_SET* visited, int T)
+static bool unvisitedPredecessor(BRIGGS_SET* visited, int T)
 {
     LIST* l = tempInfo[T]->elimPredecessors;
     while (l)
     {
         if (!briggsTest(visited, (int)l->data))
-            return TRUE;
+            return true;
         l = l->next;
     }
-    return FALSE;
+    return false;
 }
-static void ElimBackward(BRIGGS_SET* visited, BLOCK* pred, int T, BOOLEAN all)
+static void ElimBackward(BRIGGS_SET* visited, BLOCK* pred, int T, bool all)
 {
     LIST* l;
     briggsSet(visited, T);
@@ -959,7 +959,7 @@ static void ElimBackward(BRIGGS_SET* visited, BLOCK* pred, int T, BOOLEAN all)
         l = l->next;
     }
 }
-static void CreateCopy(BRIGGS_SET* visited, BLOCK* pred, int T, BOOLEAN all)
+static void CreateCopy(BRIGGS_SET* visited, BLOCK* pred, int T, bool all)
 {
     /* we are going to ignore copy instructions involving T
      * if T is not live at the end of the block
@@ -997,7 +997,7 @@ static void CreateCopy(BRIGGS_SET* visited, BLOCK* pred, int T, BOOLEAN all)
         }
     }
 }
-static void EliminatePredecessors(BRIGGS_SET* nodes, BLOCK* pred, BLOCK* b, int which, BOOLEAN all)
+static void EliminatePredecessors(BRIGGS_SET* nodes, BLOCK* pred, BLOCK* b, int which, bool all)
 {
     BuildAuxGraph(b, which, nodes);
     if (nodes->top)
@@ -1033,14 +1033,14 @@ static void cancelPartition(void)
             tempInfo[tempInfo[i]->partition]->preSSATemp = -1;
     }
 }
-void TranslateFromSSA(BOOLEAN all)
+void TranslateFromSSA(bool all)
 {
     int i;
     QUAD* head;
     BRIGGS_SET* nodes;
     for (i = 0; i < tempCount; i++)
     {
-        tempInfo[i]->temp = FALSE;
+        tempInfo[i]->temp = false;
         if (all && tempInfo[i]->enode)  // && !tempInfo[i]->enode->v.sp->imaddress)
             tempInfo[i]->preSSATemp = i;
         //        tempInfo[i]->conflicts = allocbit(tempCount*2);
@@ -1052,7 +1052,7 @@ void TranslateFromSSA(BOOLEAN all)
     /* go through the code in the block in forward order */
     for (i = 0; i < blockCount; i++)
     {
-        BOOLEAN done = FALSE;
+        bool done = false;
         BLOCKLIST* bl;
         int j;
         if (blockArray[i])
@@ -1082,14 +1082,14 @@ void TranslateFromSSA(BOOLEAN all)
                             if (head == blockArray[i]->tail)
                             {
                                 blockArray[i]->tail = head->back;
-                                done = TRUE;
+                                done = true;
                             }
                             RemoveInstruction(head);
                         }
                     }
                 }
                 if (head == blockArray[i]->tail)
-                    done = TRUE;
+                    done = true;
                 else
                     head = head->fwd;
             }
@@ -1107,7 +1107,7 @@ void TranslateFromSSA(BOOLEAN all)
     // get rid of phi nodes
     for (i = 0; i < blockCount; i++)
     {
-        BOOLEAN done = FALSE;
+        bool done = false;
         if (blockArray[i])
         {
             head = blockArray[i]->head;
@@ -1122,12 +1122,12 @@ void TranslateFromSSA(BOOLEAN all)
                     if (head == blockArray[i]->tail)
                     {
                         blockArray[i]->tail = head->back;
-                        done = TRUE;
+                        done = true;
                     }
                     RemoveInstruction(head);
                 }
                 if (head == blockArray[i]->tail)
-                    done = TRUE;
+                    done = true;
                 else
                     head = head->fwd;
             }

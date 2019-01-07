@@ -173,7 +173,7 @@ static void ScanVarStrength(INSTRUCTIONLIST* l, IMODE* multiplier, int tnum, int
                     tempInfo[(int)v->data]->sl = s1;
                     s1->multiplier = multiplier;
                     s1->strengthName = n;
-                    tempInfo[n]->enode->v.sp->pushedtotemp = TRUE;
+                    tempInfo[n]->enode->v.sp->pushedtotemp = true;
                     tempInfo[n]->inductionLoop = tempInfo[(int)v->data]->inductionLoop;
                     tempInfo[n]->oldInductionVar = (int)v->data;
                     v = v->next;
@@ -291,7 +291,7 @@ static IMODE* StrengthConstant(QUAD* head, IMODE* im1, IMODE* im2, int size)
             return make_immed(ISZ_UINT, im1->offset->v.i * im2->offset->v.i);
         }
     if (im2->offset && im2->offset->type == en_tempref && im2->mode == i_direct)
-        while (TRUE)
+        while (true)
         {
             QUAD* q = tempInfo[im2->offset->v.sp->value.i]->instructionDefines;
             if (q->dc.opcode != i_assn || q->dc.left->size != q->ans->size || q->dc.left->offset->type != en_tempref)

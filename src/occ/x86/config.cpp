@@ -42,15 +42,15 @@ int prm_targettype = DOS32A;
 #else
 int prm_targettype = CONSOLE;
 #endif
-int prm_bepeep = TRUE;
-int prm_crtdll = FALSE;
-int prm_lscrtdll = FALSE;
-int prm_msvcrt = FALSE;
+int prm_bepeep = true;
+int prm_crtdll = false;
+int prm_lscrtdll = false;
+int prm_msvcrt = false;
 int prm_assembler;
-int prm_flat = FALSE;
-int prm_nodos = FALSE;
-int prm_useesp = TRUE;
-int usingEsp = FALSE;
+int prm_flat = false;
+int prm_nodos = false;
+int prm_useesp = true;
+int usingEsp = false;
 static char usage_text[] =
     "[options] [@response file] files\n"
     "\n"
@@ -147,18 +147,18 @@ static KEYWORD prockeywords[] = {
     {0, 0, kw_none }};
 static ARCH_DEFINES defines[] = {
     /* must come first in this order */
-    {"__WIN32__", "1", FALSE, TRUE},
-    {"__LSCRTL_DLL", "1", FALSE, TRUE},
-    {"__DOS__", "1", FALSE, TRUE},
-    {"_WIN32", "1", FALSE, TRUE},
-    {"__MSVCRT_DLL", "1", FALSE, TRUE},
-    {"__CRTDLL_DLL", "1", FALSE, TRUE},
-    {"__RAW_IMAGE__", "1", FALSE, TRUE},
+    {"__WIN32__", "1", false, true},
+    {"__LSCRTL_DLL", "1", false, true},
+    {"__DOS__", "1", false, true},
+    {"_WIN32", "1", false, true},
+    {"__MSVCRT_DLL", "1", false, true},
+    {"__CRTDLL_DLL", "1", false, true},
+    {"__RAW_IMAGE__", "1", false, true},
     /* end ordered */
-    {"__386__", "1", TRUE, TRUE},
-    {"__i386__", "1", TRUE, TRUE},
-    {"_i386_", "1", TRUE, TRUE},
-    {"__i386", "1", TRUE, TRUE},
+    {"__386__", "1", true, true},
+    {"__i386__", "1", true, true},
+    {"_i386_", "1", true, true},
+    {"__i386", "1", true, true},
     {0},
 };
 static ARCH_SIZING sizes = {
@@ -254,20 +254,20 @@ static ARCH_CHARACTERISTICS architecture = {
     OPT_BYTECOMPARE,                                                     /* preferred optimizations */
     0,                                                                   /* optimizations we don't want */
     0,                                                                   /* error options */
-    TRUE,                                                                /* true if has floating point regs */
+    true,                                                                /* true if has floating point regs */
     0,                                                                   /* floating point modes, not honored currently */
-    ABM_USESIZE,                                                         /* BOOLEAN is determined by sizing above */
+    ABM_USESIZE,                                                         /* bool is determined by sizing above */
     ARM_FUNCTIONSCOPE,                                                   /* register allocation across entire function */
     8,     /* number of bits in a MAU.  values other than 8 not supported */
-    FALSE, /* little endian */
-    FALSE, /* normal bit allocation*/
-    FALSE, /* locals in stack memory*/
-    FALSE, /* stack pointer grows down */
-    FALSE, /* preallocate locals */
+    false, /* little endian */
+    false, /* normal bit allocation*/
+    false, /* locals in stack memory*/
+    false, /* stack pointer grows down */
+    false, /* preallocate locals */
     4,     /* size of a return block on stack (e.g. function ret addr & frame ptr) */
     4,     /* minimium width/ padding of passed parameters in maus */
     4,     /* minimum stack alignment */
-    FALSE, /* library functions should bes genned as import calls */
+    false, /* library functions should bes genned as import calls */
     0,     /* ret block param adjust */
 };
 extern ARCH_GEN outputfunctions;
@@ -281,7 +281,7 @@ static void chkdos(void)
     if (a && *a)
     {
         WinmodeSetup(0, "a");  // DOS32A
-        prm_useesp = FALSE;
+        prm_useesp = false;
     }
     else
     {
@@ -312,7 +312,7 @@ static int initgeneric(COMPILER_PARAMS* parms, ARCH_ASM* data, ARCH_DEBUG* debug
     (void)data;
     (void)debug;
     initnasm(parms, data, debug);
-    prm_nodos = TRUE;
+    prm_nodos = true;
     chkdos();
     return 1;
 }
@@ -341,59 +341,59 @@ static void WinmodeSetup(char select, char* string)
     {
         case 'r':
             prm_targettype = RAW;
-            defines[3].respect = FALSE;
-            defines[2].respect = FALSE;
-            defines[0].respect = FALSE;
-            defines[6].respect = TRUE;
+            defines[3].respect = false;
+            defines[2].respect = false;
+            defines[0].respect = false;
+            defines[6].respect = true;
             break;
         case 'a':
             prm_targettype = DOS32A;
-            defines[3].respect = FALSE;
-            defines[2].respect = TRUE;
-            defines[0].respect = FALSE;
-            defines[6].respect = FALSE;
+            defines[3].respect = false;
+            defines[2].respect = true;
+            defines[0].respect = false;
+            defines[6].respect = false;
             break;
         case 'd':
             prm_targettype = DLL;
-            defines[0].respect = TRUE;
-            defines[2].respect = FALSE;
-            defines[3].respect = TRUE;
-            defines[6].respect = FALSE;
+            defines[0].respect = true;
+            defines[2].respect = false;
+            defines[3].respect = true;
+            defines[6].respect = false;
             break;
         case 'c':
             prm_targettype = CONSOLE;
-            defines[0].respect = TRUE;
-            defines[2].respect = FALSE;
-            defines[3].respect = TRUE;
-            defines[6].respect = FALSE;
+            defines[0].respect = true;
+            defines[2].respect = false;
+            defines[3].respect = true;
+            defines[6].respect = false;
             break;
         case 'g':
             prm_targettype = GUI;
-            defines[0].respect = TRUE;
-            defines[2].respect = FALSE;
-            defines[3].respect = TRUE;
-            defines[6].respect = FALSE;
+            defines[0].respect = true;
+            defines[2].respect = false;
+            defines[3].respect = true;
+            defines[6].respect = false;
             break;
         case 'e':
             prm_targettype = DOS;
-            defines[3].respect = FALSE;
-            defines[2].respect = TRUE;
-            defines[0].respect = FALSE;
-            defines[6].respect = FALSE;
+            defines[3].respect = false;
+            defines[2].respect = true;
+            defines[0].respect = false;
+            defines[6].respect = false;
             break;
         case 'h':
             prm_targettype = HXDOS;
-            defines[3].respect = TRUE;
-            defines[2].respect = TRUE;
-            defines[0].respect = TRUE;
-            defines[6].respect = FALSE;
+            defines[3].respect = true;
+            defines[2].respect = true;
+            defines[0].respect = true;
+            defines[6].respect = false;
             break;
         case 'x':
             prm_targettype = WHXDOS;
-            defines[3].respect = FALSE;
-            defines[2].respect = TRUE;
-            defines[0].respect = FALSE;
-            defines[6].respect = FALSE;
+            defines[3].respect = false;
+            defines[2].respect = true;
+            defines[0].respect = false;
+            defines[6].respect = false;
             break;
         default:
             fatal("Invalid executable type");
@@ -402,23 +402,23 @@ static void WinmodeSetup(char select, char* string)
     {
         if (!defines[0].respect)
             fatal("Invalid use of LSCRTDLL");
-        prm_msvcrt = TRUE;
-        defines[4].respect = TRUE;
+        prm_msvcrt = true;
+        defines[4].respect = true;
     }
     if (string[1] == 'c')
     {
         if (!defines[0].respect)
             fatal("Invalid use of CRTDLL");
-        prm_crtdll = TRUE;
-        defines[5].respect = TRUE;
+        prm_crtdll = true;
+        defines[5].respect = true;
     }
     else if (string[1] == 'l')
     {
         if (!defines[0].respect)
             fatal("Invalid use of LSCRTDLL");
-        prm_lscrtdll = TRUE;
-        defines[1].respect = TRUE;
-        architecture.libsasimports = TRUE;
+        prm_lscrtdll = true;
+        defines[1].respect = true;
+        architecture.libsasimports = true;
     }
 }
 static int parse_param(char select, char* string)
@@ -428,7 +428,7 @@ static int parse_param(char select, char* string)
         WinmodeSetup(select, string);
     }
     else if (select == 'P')
-        prm_bepeep = FALSE;
+        prm_bepeep = false;
     return 0;
 }
 static int parse_codegen(char mode, char* string)
@@ -455,18 +455,18 @@ static int parse_codegen(char mode, char* string)
     }
     return 1; /* eat one char */
 }
-void SetUsesESP(BOOLEAN yes)
+void SetUsesESP(bool yes)
 {
     int whichway = 0;
     if (yes && !usingEsp)
     {
         whichway = 1;
-        usingEsp = TRUE;
+        usingEsp = true;
     }
     else if (!yes && usingEsp)
     {
         whichway = -1;
-        usingEsp = FALSE;
+        usingEsp = false;
     }
     if (whichway)
     {
@@ -483,7 +483,7 @@ void adjustUsesESP()
 {
     if (cparams.prm_debug || cparams.prm_stackalign || !cparams.prm_optimize_for_speed)
     {
-        prm_useesp = FALSE;
+        prm_useesp = false;
     }
     SetUsesESP(prm_useesp);
 }

@@ -51,7 +51,7 @@ typedef unsigned BITINT;
 
 typedef unsigned long ADDRESS;
 typedef unsigned LCHAR;
-typedef unsigned char BOOLEAN;
+
 typedef unsigned char UBYTE;
 
 #include <stdio.h>

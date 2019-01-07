@@ -339,7 +339,7 @@ KEYWORD keywords[] = {
 };
 
 #define TABSIZE (sizeof(keywords) / sizeof(keywords[0]))
-static BOOLEAN kwmatches(KEYWORD* kw);
+static bool kwmatches(KEYWORD* kw);
 void lexini(void)
 /*
  * create a keyword hash table
@@ -393,12 +393,12 @@ static KEYWORD* binarySearch(char* name)
     return &keywords[bottom];
 }
 #endif
-static BOOLEAN kwmatches(KEYWORD* kw)
+static bool kwmatches(KEYWORD* kw)
 {
     if (cparams.prm_assemble)
         return !!(kw->matchFlags & KW_ASSEMBLER);
     else if (!kw->matchFlags || kw->matchFlags == KW_ASSEMBLER)
-        return TRUE;
+        return true;
     else if (((kw->matchFlags & KW_CPLUSPLUS) && cparams.prm_cplusplus) || (kw->matchFlags & (KW_C99 | KW_C1X)) ||
              ((kw->matchFlags & KW_MSIL) && chosenAssembler->msil && chosenAssembler->msil->allowExtensions) ||
              ((kw->matchFlags & (KW_NONANSI | KW_INLINEASM)) && !cparams.prm_ansi))
@@ -407,9 +407,9 @@ static BOOLEAN kwmatches(KEYWORD* kw)
         {
             /* fill in here for processor specific */
         }
-        return TRUE;
+        return true;
     }
-    return FALSE;
+    return false;
 }
 KEYWORD* searchkw(unsigned char** p)
 /*
@@ -437,7 +437,7 @@ KEYWORD* searchkw(unsigned char** p)
         {
             if (len == kw->len)
             {
-                BOOLEAN count = 0;
+                int count = 0;
                 if (kw->matchFlags & (KW_C99 | KW_C1X))
                 {
                     if (cparams.prm_c99 && (kw->matchFlags & KW_C99))
@@ -573,13 +573,13 @@ SLCHAR* getString(unsigned char** source, enum e_lexType* tp)
     // the static declaration speeds it up by about 5% on windows platforms.
     static LCHAR data[32768];
     LCHAR* dest = data;
-    BOOLEAN raw = FALSE;
-    BOOLEAN found = FALSE;
-    BOOLEAN msil = FALSE;
+    bool raw = false;
+    bool found = false;
+    bool msil = false;
     unsigned char* p = (unsigned char*)*source;
     int len = sizeof(data) / sizeof(data[0]);
     int count = 0;
-    BOOLEAN errored = FALSE;
+    int errored = 0;
     enum e_lexType v = l_astr;
     if (*p == 'L')
     {
@@ -621,7 +621,7 @@ SLCHAR* getString(unsigned char** source, enum e_lexType* tp)
     }
     if (cparams.prm_cplusplus && *p == 'R')
     {
-        raw = TRUE;
+        raw = true;
         do
             p++;
         while (*p == MACRO_PLACEHOLDER);
@@ -639,8 +639,8 @@ SLCHAR* getString(unsigned char** source, enum e_lexType* tp)
             LCHAR* qpos = 0;
             int lineno = includes->line;
             unsigned char st[2];
-            BOOLEAN err = FALSE;
-            while (TRUE)
+            bool err = false;
+            while (true)
             {
                 if (*p)
                 {
@@ -679,7 +679,7 @@ SLCHAR* getString(unsigned char** source, enum e_lexType* tp)
                          count >= 16)
                 {
                     error(ERR_RAW_STRING_INVALID_CHAR);
-                    err = TRUE;
+                    err = true;
                 }
                 else
                 {
@@ -689,7 +689,7 @@ SLCHAR* getString(unsigned char** source, enum e_lexType* tp)
             if (st[0] != '(')
                 error(ERR_RAW_STRING_INVALID_CHAR);
             else
-                while (TRUE)
+                while (true)
                 {
                     if (*p)
                     {
@@ -744,7 +744,7 @@ SLCHAR* getString(unsigned char** source, enum e_lexType* tp)
                     }
                 }
             *dest = 0;
-            found = TRUE;
+            found = true;
             while (isspace(*p) || *p == MACRO_PLACEHOLDER)
                 p++;
             *source = p;
@@ -819,7 +819,7 @@ SLCHAR* getString(unsigned char** source, enum e_lexType* tp)
                 do
                     p++;
                 while (*p == MACRO_PLACEHOLDER);
-            found = TRUE;
+            found = true;
             while (*p == MACRO_PLACEHOLDER)
                 p++;
             *source = p;
@@ -932,11 +932,11 @@ static int getfrac(int radix, char** ptr, FPFC* rval)
  */
 static int getexp(char** ptr)
 {
-    BOOLEAN neg = FALSE;
+    bool neg = false;
     int ival;
     if (**ptr == '-')
     {
-        neg = TRUE;
+        neg = true;
         (*ptr)++;
     }
     else
@@ -962,7 +962,7 @@ e_lexType getNumber(unsigned char** ptr, unsigned char** end, unsigned char* suf
     int radix = 10;
     int floatradix = 0;
     int frac = 0;
-    BOOLEAN hasdot = FALSE;
+    bool hasdot = false;
     enum e_lexType lastst;
     if (!isdigit((unsigned char)**ptr) && **ptr != '.')
         return (e_lexType) INT_MIN;
@@ -999,7 +999,7 @@ e_lexType getNumber(unsigned char** ptr, unsigned char** end, unsigned char* suf
     }
     if (**ptr == '.')
     {
-        hasdot = TRUE;
+        hasdot = true;
         if (radix == 8)
             radix = 10;
         *p++ = **ptr;
@@ -1287,7 +1287,7 @@ LEXEME* getsym(void)
     LEXEME* lex;
     KEYWORD* kw;
     enum e_lexType tp;
-    BOOLEAN contin;
+    bool contin;
     FPFC rval;
     LLONG_TYPE ival;
     static unsigned char buf[16384];
@@ -1325,12 +1325,12 @@ LEXEME* getsym(void)
         lex->prev->next = lex;
     if (++nextFree >= MAX_LOOKBACK)
         nextFree = 0;
-    lex->registered = FALSE;
+    lex->registered = false;
     TemplateRegisterDeferred(last);
     last = NULL;
     do
     {
-        contin = FALSE;
+        contin = false;
         do
         {
             if (!includes)
@@ -1425,13 +1425,13 @@ LEXEME* getsym(void)
             }
             else
             {
-                contin = TRUE;
+                contin = true;
                 errorint(ERR_UNKNOWN_CHAR, *includes->lptr++);
             }
         }
         else
         {
-            contin = TRUE;
+            contin = true;
         }
     } while (contin);
     if (linesHead)

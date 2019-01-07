@@ -322,7 +322,7 @@ typedef struct _attribdata
         SYMBOL* sp;
         void* section;
     } v;
-    BOOLEAN start;
+    bool start;
 } ATTRIBDATA;
 
 #include "be.p"

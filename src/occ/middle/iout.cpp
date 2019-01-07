@@ -76,7 +76,7 @@ void outcodeini(void)
     curseg = noseg;
     outcol = 0;
     virtual_mode = 0;
-    newlabel = FALSE;
+    newlabel = false;
     strtab = NULL;
 }
 static void iop_nop(QUAD* q)
@@ -1046,7 +1046,7 @@ static void iop_functailstart(QUAD* q)
         int r = getSize(theCurrentFunc->tp->btp->type);
         if (r < 0)
             r = -r;
-        chosenAssembler->gen->asm_functail(q, TRUE, r);
+        chosenAssembler->gen->asm_functail(q, true, r);
     }
     oprintf(icdFile, "\tTAILBEGIN");
 }
@@ -1057,7 +1057,7 @@ static void iop_functailend(QUAD* q)
         int r = getSize(theCurrentFunc->tp->btp->type);
         if (r < 0)
             r = -r;
-        chosenAssembler->gen->asm_functail(q, FALSE, r);
+        chosenAssembler->gen->asm_functail(q, false, r);
     }
     oprintf(icdFile, "\tTAILEND");
 }
@@ -1412,7 +1412,7 @@ void putlen(int l)
         case ISZ_NONE:
             oprintf(icdFile, ".N");
             break;
-        case ISZ_BOOLEAN:
+        case ISZ_bool:
             oprintf(icdFile, ".BOOL");
             break;
         case ISZ_STRING:
@@ -1655,10 +1655,10 @@ int beVariableLive(IMODE* m)
     while (q && q->dc.opcode != i_blockend)
     {
         if (q->ans == m || q->dc.left == m || q->dc.right == m)
-            return TRUE;
+            return true;
         q = q->fwd;
     }
-    return FALSE;
+    return false;
 }
 
 /*
@@ -1723,7 +1723,7 @@ void gen_strlab(SYMBOL* sp)
     if (!icdFile)
         return;
 
-    newlabel = TRUE;
+    newlabel = true;
     gentype = nogen;
     oprintf(icdFile, "%s:\n", sp->decoratedName);
 }
@@ -2086,7 +2086,7 @@ int genstring(STRING* str)
     {
         int size = 1;
         int i;
-        BOOLEAN instring = FALSE;
+        bool instring = false;
         gentype = nogen;
         for (i = 0; i < str->size; i++)
         {
@@ -2116,7 +2116,7 @@ int genstring(STRING* str)
                                 gentype = nogen;
                                 nl();
                                 oprintf(icdFile, "\tDC.B\t\"");
-                                instring = TRUE;
+                                instring = true;
                             }
                             oputc(*p++, icdFile);
                         }
@@ -2125,7 +2125,7 @@ int genstring(STRING* str)
                             if (instring)
                             {
                                 oprintf(icdFile, "\"\n");
-                                instring = FALSE;
+                                instring = false;
                             }
                             oprintf(icdFile, "\tDB\t$%02X\n", *p++);
                         }
@@ -2344,7 +2344,7 @@ void gen_labdifref(int n1, int n2)
             if (!newlabel)
                 nl();
             else
-                newlabel = FALSE;
+                newlabel = false;
             oprintf(icdFile, "\tDC.A\tL_%d-L_%d", n1, n2);
             outcol = 22;
             gentype = longgen;
@@ -2683,7 +2683,7 @@ int put_exfunc(SYMBOL* sp, int notyet)
 {
     if (notyet)
     {
-        notyet = FALSE;
+        notyet = false;
         cseg();
     }
     IncGlobalFlag();
@@ -2729,7 +2729,7 @@ void putexterns(void)
     SYMBOL* sp;
     int i;
     {
-        int notyet = TRUE;
+        int notyet = true;
         LIST* externList = externals;
         nl();
         exitseg();
@@ -2751,7 +2751,7 @@ void putexterns(void)
                     !sp->noextern)
             {
                 notyet = put_exfunc(sp, notyet);
-                sp->genreffed = FALSE;
+                sp->genreffed = false;
                 /*            if (sp->mainsym->exportable && !(sp->value.classdata.cppflags & PF_INLINE))
                                 notyet = put_expfunc(sp, notyet);
                 */

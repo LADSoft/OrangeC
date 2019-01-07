@@ -36,8 +36,8 @@
 
 /* Valid arg separators */
 #define ARG_SEPSWITCH '/'
-#define ARG_SEPFALSE '-'
-#define ARG_SEPTRUE '+'
+#define ARG_SEPfalse '-'
+#define ARG_SEPtrue '+'
 
 /* Return values for dispatch routine */
 #define ARG_NEXTCHAR 1

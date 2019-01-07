@@ -99,14 +99,14 @@ void dumpInlines(void)
 #ifndef PARSER_ONLY
     if (!total_errors)
     {
-        BOOLEAN done;
+        bool done;
         LIST* vtabList;
         LIST* dataList;
         cseg();
         do
         {
             LIST* funcList = inlineHead;
-            done = TRUE;
+            done = true;
             while (funcList)
             {
                 SYMBOL* sym = (SYMBOL*)funcList->data;
@@ -114,7 +114,7 @@ void dumpInlines(void)
                 {
                     if (sym->parentClass && sym->parentClass->dontinstantiate && !sym->templateLevel || sym->linkage2 == lk_import)
                     {
-                        sym->dontinstantiate = TRUE;
+                        sym->dontinstantiate = true;
                         InsertExtern(sym);
                     }
                     if (!sym->didinline && !sym->dontinstantiate)
@@ -123,7 +123,7 @@ void dumpInlines(void)
                         if (srch)
                         {
                             sym->mainsym = srch;
-                            sym->didinline = TRUE;
+                            sym->didinline = true;
                         }
                         else
                         {
@@ -134,14 +134,14 @@ void dumpInlines(void)
                             if ((sym->isInline || sym->linkage == lk_virtual) && sym->inlineFunc.stmt)
                             {
                                 inInsert(sym);
-                                sym->genreffed = FALSE;
-                                sym->noextern = TRUE;
+                                sym->genreffed = false;
+                                sym->noextern = true;
                                 UndoPreviousCodegen(sym);
                                 startlab = nextLabel++;
                                 retlab = nextLabel++;
-                                genfunc(sym, TRUE);
-                                done = FALSE;
-                                sym->didinline = TRUE;
+                                genfunc(sym, true);
+                                done = false;
+                                sym->didinline = true;
                             }
                         }
                     }
@@ -163,11 +163,11 @@ void dumpInlines(void)
                     }
                     else
                     {
-                        sym->vtabsp->didinline = TRUE;
-                        sym->vtabsp->genreffed = FALSE;
-                        sym->vtabsp->noextern = TRUE;
+                        sym->vtabsp->didinline = true;
+                        sym->vtabsp->genreffed = false;
+                        sym->vtabsp->noextern = true;
                         dumpVTab(sym);
-                        done = FALSE;
+                        done = false;
                     }
                 }
                 vtabList = vtabList->next;
@@ -205,14 +205,14 @@ void dumpInlines(void)
 
                     if (sym->parentClass && sym->parentClass->dontinstantiate)
                     {
-                        sym->dontinstantiate = TRUE;
+                        sym->dontinstantiate = true;
                         InsertExtern(sym);
                     }
                     if (origsym && origsym->storage_class == sc_global && !sym->didinline && !sym->dontinstantiate)
                     {
-                        sym->didinline = TRUE;
-                        sym->genreffed = FALSE;
-                        sym->noextern = TRUE;
+                        sym->didinline = true;
+                        sym->genreffed = false;
+                        sym->noextern = true;
                         sym->storage_class = sc_global;
                         sym->linkage = lk_virtual;
                         if (origsym->deferredCompile)
@@ -225,12 +225,12 @@ void dumpInlines(void)
                             addTemplateDeclaration(&s);
                             lex = SetAlternateLex(origsym->deferredCompile);
                             sym->init = NULL;
-                            lex = initialize(lex, NULL, sym, sc_global, TRUE, 0);
+                            lex = initialize(lex, NULL, sym, sc_global, true, 0);
                             SetAlternateLex(NULL);
                             dropStructureDeclaration();
                             dropStructureDeclaration();
                         }
-                        gen_virtual(sym, TRUE);
+                        gen_virtual(sym, true);
                         if (sym->init)
                         {
                             dumpInitGroup(sym, sym->tp);
@@ -250,12 +250,12 @@ void dumpInlines(void)
                         if (srch)
                         {
                             sym->mainsym = srch;
-                            sym->didinline = TRUE;
+                            sym->didinline = true;
                         }
                         else
                         {
                             inInsert(sym);
-                            gen_virtual(sym, TRUE);
+                            gen_virtual(sym, true);
                             if (sym->init)
                             {
                                 dumpInitGroup(sym, sym->tp);
@@ -278,7 +278,7 @@ void dumpImportThunks(void)
     LIST* l = importThunks;
     while (l)
     {
-        gen_virtual((SYMBOL*)l->data, FALSE);
+        gen_virtual((SYMBOL*)l->data, false);
         gen_importThunk((SYMBOL*)l->data);
         gen_endvirtual((SYMBOL*)l->data);
         l = l->next;
@@ -293,7 +293,7 @@ void dumpvc1Thunks(void)
     hr = vc1Thunks->table[0];
     while (hr)
     {
-        gen_virtual((SYMBOL*)hr->p, FALSE);
+        gen_virtual((SYMBOL*)hr->p, false);
         gen_vc1((SYMBOL*)hr->p);
         gen_endvirtual((SYMBOL*)hr->p);
         hr = hr->next;
@@ -348,7 +348,7 @@ void InsertInlineData(SYMBOL* sp)
 }
 /*-------------------------------------------------------------------------*/
 
-EXPRESSION* inlineexpr(EXPRESSION* node, BOOLEAN* fromlval)
+EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
 {
     /*
      * routine takes an enode tree and replaces it with a copy of itself.
@@ -405,7 +405,7 @@ EXPRESSION* inlineexpr(EXPRESSION* node, BOOLEAN* fromlval)
                 temp = ((EXPRESSION*)(temp->v.sp->inlineFunc.stmt));
                 temp = inlineexpr(temp, fromlval);
                 if (fromlval)
-                    *fromlval = TRUE;
+                    *fromlval = true;
                 else if (lvalue(temp))
                     temp = temp->left;
             }
@@ -422,7 +422,7 @@ EXPRESSION* inlineexpr(EXPRESSION* node, BOOLEAN* fromlval)
                     temp = function_list[n]->returnEXP;
                     temp = inlineexpr(temp, fromlval);
                     if (fromlval)
-                        *fromlval = TRUE;
+                        *fromlval = true;
                 }
             }
             break;
@@ -468,7 +468,7 @@ EXPRESSION* inlineexpr(EXPRESSION* node, BOOLEAN* fromlval)
             else
             */
             {
-                BOOLEAN lval = FALSE;
+                bool lval = false;
                 temp->left = inlineexpr(temp->left, &lval);
                 if (lval)
                     temp = temp->left;
@@ -518,7 +518,7 @@ EXPRESSION* inlineexpr(EXPRESSION* node, BOOLEAN* fromlval)
         case en_literalclass:
         case en_x_string:
         case en_x_object:
-            temp->left = inlineexpr(node->left, FALSE);
+            temp->left = inlineexpr(node->left, nullptr);
             break;
         case en_autoinc:
         case en_autodec:
@@ -567,21 +567,21 @@ EXPRESSION* inlineexpr(EXPRESSION* node, BOOLEAN* fromlval)
         case en__initblk:
         case en__cpblk:
             /*		case en_array: */
-            temp->right = inlineexpr(node->right, FALSE);
+            temp->right = inlineexpr(node->right, nullptr);
         case en_mp_as_bool:
         case en_blockclear:
         case en_argnopush:
         case en_thisref:
         case en_funcret:
-            temp->left = inlineexpr(node->left, FALSE);
+            temp->left = inlineexpr(node->left, nullptr);
             break;
         case en_atomic:
-            temp->v.ad->flg = inlineexpr(node->v.ad->flg, FALSE);
-            temp->v.ad->memoryOrder1 = inlineexpr(node->v.ad->memoryOrder1, FALSE);
-            temp->v.ad->memoryOrder2 = inlineexpr(node->v.ad->memoryOrder2, FALSE);
-            temp->v.ad->address = inlineexpr(node->v.ad->address, FALSE);
-            temp->v.ad->value = inlineexpr(node->v.ad->value, FALSE);
-            temp->v.ad->third = inlineexpr(node->v.ad->third, FALSE);
+            temp->v.ad->flg = inlineexpr(node->v.ad->flg, nullptr);
+            temp->v.ad->memoryOrder1 = inlineexpr(node->v.ad->memoryOrder1, nullptr);
+            temp->v.ad->memoryOrder2 = inlineexpr(node->v.ad->memoryOrder2, nullptr);
+            temp->v.ad->address = inlineexpr(node->v.ad->address, nullptr);
+            temp->v.ad->value = inlineexpr(node->v.ad->value, nullptr);
+            temp->v.ad->third = inlineexpr(node->v.ad->third, nullptr);
             break;
         case en_func:
             temp->v.func = NULL;
@@ -625,17 +625,17 @@ EXPRESSION* inlineexpr(EXPRESSION* node, BOOLEAN* fromlval)
                 {
                     *p = (INITLIST *)Alloc(sizeof(INITLIST));
                     **p = *args;
-                    (*p)->exp = inlineexpr((*p)->exp, FALSE);
+                    (*p)->exp = inlineexpr((*p)->exp, nullptr);
                     args = args->next;
                     p = &(*p)->next;
                 }
                 if (temp->v.func->thisptr)
-                    temp->v.func->thisptr = inlineexpr(temp->v.func->thisptr, FALSE);
+                    temp->v.func->thisptr = inlineexpr(temp->v.func->thisptr, nullptr);
             }
             break;
         case en_stmt:
             temp->v.stmt = inlinestmt(temp->v.stmt);
-            temp->left = inlineexpr(temp->left, FALSE);
+            temp->left = inlineexpr(temp->left, nullptr);
             break;
         default:
             diag("Invalid expr type in inlineexpr");
@@ -670,17 +670,17 @@ STATEMENT* inlinestmt(STATEMENT* block)
             case st_return:
             case st_expr:
             case st_declare:
-                (*outptr)->select = inlineexpr(block->select, FALSE);
+                (*outptr)->select = inlineexpr(block->select, nullptr);
                 break;
             case st_goto:
             case st_label:
                 break;
             case st_select:
             case st_notselect:
-                (*outptr)->select = inlineexpr(block->select, FALSE);
+                (*outptr)->select = inlineexpr(block->select, nullptr);
                 break;
             case st_switch:
-                (*outptr)->select = inlineexpr(block->select, FALSE);
+                (*outptr)->select = inlineexpr(block->select, nullptr);
                 (*outptr)->lower = inlinestmt(block->lower);
                 break;
             case st_block:
@@ -851,9 +851,9 @@ static EXPRESSION* scanReturn(STATEMENT* block, TYPE* rettp)
 }
 
 /*-------------------------------------------------------------------------*/
-static BOOLEAN sideEffects(EXPRESSION* node)
+static bool sideEffects(EXPRESSION* node)
 {
-    BOOLEAN rv = FALSE;
+    bool rv = false;
     if (node == 0)
         return rv;
     switch (node->type)
@@ -882,7 +882,7 @@ static BOOLEAN sideEffects(EXPRESSION* node)
         case en_c_string:
         case en_nullptr:
         case en_structelem:
-            rv = FALSE;
+            rv = false;
             break;
         case en_global:
         case en_pc:
@@ -890,7 +890,7 @@ static BOOLEAN sideEffects(EXPRESSION* node)
         case en_labcon:
         case en_const:
         case en_auto:
-            rv = FALSE;
+            rv = false;
             break;
         case en_l_sp:
         case en_l_fp:
@@ -978,7 +978,7 @@ static BOOLEAN sideEffects(EXPRESSION* node)
         case en_trapcall:
         case en__initblk:
         case en__cpblk:
-            rv = TRUE;
+            rv = true;
             break;
         case en_add:
         case en_sub:
@@ -1039,10 +1039,10 @@ static BOOLEAN sideEffects(EXPRESSION* node)
             rv |= sideEffects(node->v.ad->third);
             break;
         case en_func:
-            rv = TRUE;
+            rv = true;
             break;
         case en_stmt:
-            rv = TRUE;
+            rv = true;
             break;
         case en_thisshim:
             break;
@@ -1122,50 +1122,50 @@ void SetupVariables(SYMBOL* sp)
 
 EXPRESSION* doinline(FUNCTIONCALL* params, SYMBOL* funcsp)
 {
-    BOOLEAN found = FALSE;
+    bool found = false;
     STATEMENT *stmt = NULL, **stp = &stmt, *stmt1;
     EXPRESSION* newExpression;
-    BOOLEAN allocated = FALSE;
+    bool allocated = false;
 
     if (function_list_count >= MAX_INLINE_NESTING)
     {
-        params->sp->dumpInlineToFile = TRUE;
+        params->sp->dumpInlineToFile = true;
         return NULL;
     }
     if (!isfunction(params->functp))
     {
-        params->sp->dumpInlineToFile = TRUE;
+        params->sp->dumpInlineToFile = true;
         return NULL;
     }
     if (!params->sp->isInline)
     {
-        params->sp->dumpInlineToFile = TRUE;
+        params->sp->dumpInlineToFile = true;
         return NULL;
     }
     if (params->sp->templateParams)
     {
-        params->sp->dumpInlineToFile = TRUE;
+        params->sp->dumpInlineToFile = true;
         return NULL;
     }
     if (params->sp->noinline)
     {
-        params->sp->dumpInlineToFile = TRUE;
+        params->sp->dumpInlineToFile = true;
         return NULL;
     }
     if (!params->sp->inlineFunc.syms)
     {
-        params->sp->dumpInlineToFile = TRUE;
+        params->sp->dumpInlineToFile = true;
         return NULL;
     }
     if (!params->sp->inlineFunc.stmt)
     {
         // recursive
-        params->sp->dumpInlineToFile = TRUE;
+        params->sp->dumpInlineToFile = true;
         return NULL;
     }
     if (!localNameSpace->syms)
     {
-        allocated = TRUE;
+        allocated = true;
         AllocateLocalContext(NULL, NULL, nextLabel++);
     }
     stmt1 = SetupArguments(params);
@@ -1217,9 +1217,9 @@ EXPRESSION* doinline(FUNCTIONCALL* params, SYMBOL* funcsp)
     }
     return newExpression;
 }
-static BOOLEAN IsEmptyBlocks(STATEMENT* block)
+static bool IsEmptyBlocks(STATEMENT* block)
 {
-    BOOLEAN rv = TRUE;
+    bool rv = true;
     while (block != NULL && rv)
     {
         switch (block->type)
@@ -1244,7 +1244,7 @@ static BOOLEAN IsEmptyBlocks(STATEMENT* block)
             case st_switch:
             case st_passthrough:
             case st_datapassthrough:
-                rv = FALSE;
+                rv = false;
                 break;
             case st_nop:
                 break;
@@ -1261,19 +1261,19 @@ static BOOLEAN IsEmptyBlocks(STATEMENT* block)
     }
     return rv;
 }
-BOOLEAN IsEmptyFunction(FUNCTIONCALL* params, SYMBOL* funcsp)
+bool IsEmptyFunction(FUNCTIONCALL* params, SYMBOL* funcsp)
 {
     STATEMENT* st;
     if (!isfunction(params->functp))
-        return FALSE;
+        return false;
     if (!params->sp->inlineFunc.stmt)
-        return FALSE;
+        return false;
     st = params->sp->inlineFunc.stmt;
     while (st && st->type == st_expr)
     {
         st = st->next;
     }
     if (!st)
-        return TRUE;
-    return TRUE || IsEmptyBlocks(st);
+        return true;
+    return true || IsEmptyBlocks(st);
 }

@@ -39,7 +39,7 @@ NAMESPACEVALUES *globalNameSpace, *localNameSpace;
 HASHTABLE* labelSyms;
 
 HASHTABLE* CreateHashTable(int size);
-BOOLEAN inMatchOverload;
+int matchOverloadLevel;
 
 static LIST* usingDirectives;
 
@@ -58,7 +58,7 @@ void syminit(void)
     globalNameSpace->tags = CreateHashTable(GLOBALHASHSIZE);
     localNameSpace = (NAMESPACEVALUES *)Alloc(sizeof(NAMESPACEVALUES));
     usingDirectives = NULL;
-    inMatchOverload = FALSE;
+    matchOverloadLevel = 0;
 }
 HASHTABLE* CreateHashTable(int size)
 {
@@ -144,7 +144,7 @@ void FreeLocalContext(BLOCKDATA* block, SYMBOL* sp, int label)
         sp->value.i--;
 
     st = stmtNode(NULL, block, st_expr);
-    destructBlock(&st->select, localNameSpace->syms->table[0], TRUE);
+    destructBlock(&st->select, localNameSpace->syms->table[0], true);
     localNameSpace->syms = localNameSpace->syms->next;
     localNameSpace->tags = localNameSpace->tags->next;
 
@@ -218,7 +218,7 @@ HASHREC* AddOverloadName(SYMBOL* item, HASHTABLE* table)
 #ifdef PARSER_ONLY
     if (!item->parserSet)
     {
-        item->parserSet = TRUE;
+        item->parserSet = true;
         ccSetSymbol(item);
     }
 #endif
@@ -278,23 +278,23 @@ SYMBOL* search(char* name, HASHTABLE* table)
     }
     return NULL;
 }
-BOOLEAN matchOverload(TYPE* tnew, TYPE* told, BOOLEAN argsOnly)
+bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
 {
     HASHREC* hnew = basetype(tnew)->syms->table[0];
     HASHREC* hold = basetype(told)->syms->table[0];
     unsigned tableOld[100], tableNew[100];
     int tCount = 0;
     if (!cparams.prm_cplusplus)
-        argsOnly = TRUE;
+        argsOnly = true;
     if (isconst(tnew) != isconst(told))
-        return FALSE;
+        return false;
     if (isvolatile(tnew) != isvolatile(told))
-        return FALSE;
+        return false;
     if (islrqual(tnew) != islrqual(told))
-        return FALSE;
+        return false;
     if (isrrqual(tnew) != isrrqual(told))
-        return FALSE;
-    inMatchOverload++;
+        return false;
+    matchOverloadLevel++;
     while (hnew && hold)
     {
         SYMBOL* snew = (SYMBOL*)hnew->p;
@@ -318,7 +318,7 @@ BOOLEAN matchOverload(TYPE* tnew, TYPE* told, BOOLEAN argsOnly)
         told = basetype(sold->tp);
         if (told->type != bt_any || tnew->type != bt_any)  // packed template param
         {
-            if ((!comparetypes(told, tnew, TRUE) && !sameTemplatePointedTo(told, tnew)) || told->type != tnew->type)
+            if ((!comparetypes(told, tnew, true) && !sameTemplatePointedTo(told, tnew)) || told->type != tnew->type)
                 break;
             else
             {
@@ -332,16 +332,16 @@ BOOLEAN matchOverload(TYPE* tnew, TYPE* told, BOOLEAN argsOnly)
                 {
                     if (isconst(tpn) != isconst(tps) || isvolatile(tpn) != isvolatile(tps))
                     {
-                        inMatchOverload--;
-                        return FALSE;
+                        matchOverloadLevel--;
+                        return false;
                     }
                     tpn = basetype(tpn)->btp;
                     tps = basetype(tps)->btp;
                 }
                 if (isconst(tpn) != isconst(tps) || isvolatile(tpn) != isvolatile(tps))
                 {
-                    inMatchOverload--;
-                    return FALSE;
+                    matchOverloadLevel--;
+                    return false;
                 }
                 tpn = basetype(tpn);
                 tps = basetype(tps);
@@ -360,7 +360,7 @@ BOOLEAN matchOverload(TYPE* tnew, TYPE* told, BOOLEAN argsOnly)
         hold = hold->next;
         hnew = hnew->next;
     }
-    inMatchOverload--;
+    matchOverloadLevel--;
     if (!hold && !hnew)
     {
         if (tCount)
@@ -395,18 +395,18 @@ BOOLEAN matchOverload(TYPE* tnew, TYPE* told, BOOLEAN argsOnly)
                         break;
                 if (k != l)
                 {
-                    return FALSE;
+                    return false;
                 }
                 for (j = i + 1; j < tCount; j++)
                     if (tableOld[i] == tableOld[j])
                     {
                         if (tableNew[i] != tableNew[j])
-                            return FALSE;
+                            return false;
                     }
                     else
                     {
                         if (tableNew[i] == tableNew[j])
-                            return FALSE;
+                            return false;
                     }
             }
         }
@@ -416,7 +416,7 @@ BOOLEAN matchOverload(TYPE* tnew, TYPE* told, BOOLEAN argsOnly)
             {
                 TYPE* tps = basetype(told)->btp;
                 TYPE* tpn = basetype(tnew)->btp;
-                if (!templatecomparetypes(tpn, tps, TRUE) && !sameTemplate(tpn, tps))
+                if (!templatecomparetypes(tpn, tps, true) && !sameTemplate(tpn, tps))
                 {
                     if (isref(tps))
                         tps = basetype(tps)->btp;
@@ -425,22 +425,22 @@ BOOLEAN matchOverload(TYPE* tnew, TYPE* told, BOOLEAN argsOnly)
                     while (ispointer(tpn) && ispointer(tps))
                     {
                         if (isconst(tpn) != isconst(tps) || isvolatile(tpn) != isvolatile(tps))
-                            return FALSE;
+                            return false;
                         tpn = basetype(tpn)->btp;
                         tps = basetype(tps)->btp;
                     }
                     if (isconst(tpn) != isconst(tps) || isvolatile(tpn) != isvolatile(tps))
                         if (basetype(tpn)->type != bt_templateselector)
-                            return FALSE;
+                            return false;
                     tpn = basetype(tpn);
                     tps = basetype(tps);
-                    if (comparetypes(tpn, tps, TRUE) || tpn->type == bt_templateparam && tps->type == bt_templateparam)
+                    if (comparetypes(tpn, tps, true) || tpn->type == bt_templateparam && tps->type == bt_templateparam)
                     {
-                        return TRUE;
+                        return true;
                     }
                     else if (isarithmetic(tpn) && isarithmetic(tps))
                     {
-                        return FALSE;
+                        return false;
                     }
                     else if (tpn->type == bt_templateselector)
                     {
@@ -460,12 +460,12 @@ BOOLEAN matchOverload(TYPE* tnew, TYPE* told, BOOLEAN argsOnly)
                                         while (ts1 && ts2)
                                         {
                                             if (strcmp(ts1->name, ts2->name))
-                                                return FALSE;
+                                                return false;
                                             ts1 = ts1->next;
                                             ts2 = ts2->next;
                                         }
                                         if (ts1 || ts2)
-                                            return FALSE;
+                                            return false;
                                     }
                                 }
                             }
@@ -484,47 +484,47 @@ BOOLEAN matchOverload(TYPE* tnew, TYPE* told, BOOLEAN argsOnly)
                                 fsp = search(find->name, basetype(sp->tp)->syms);
                                 if (!fsp)
                                 {
-                                    fsp = classdata(find->name, basetype(sp->tp)->sp, NULL, FALSE, FALSE);
+                                    fsp = classdata(find->name, basetype(sp->tp)->sp, NULL, false, false);
                                     if (fsp == (SYMBOL*)-1)
                                         fsp = NULL;
                                 }
                                 sp = fsp;
                                 find = find->next;
                             }
-                            if (find || !sp || !comparetypes(sp->tp, tps, TRUE) && !sameTemplate(sp->tp, tps))
-                                return FALSE;
+                            if (find || !sp || !comparetypes(sp->tp, tps, true) && !sameTemplate(sp->tp, tps))
+                                return false;
                         }
-                        return TRUE;
+                        return true;
                     }
                     else if (tpn->type == bt_templatedecltype && tps->type == bt_templatedecltype)
                     {
                         return templatecompareexpressions(tpn->templateDeclType, tps->templateDeclType);
                     }
-                    return TRUE;
+                    return true;
                 }
                 if (tpn->type == bt_templateselector && tps->type == bt_templateselector)
                 {
                     TEMPLATESELECTOR *ts1 = tpn->sp->templateSelector->next, *tss1;
                     TEMPLATESELECTOR *ts2 = tps->sp->templateSelector->next, *tss2;
                     if (ts1->isTemplate != ts2->isTemplate || strcmp(ts1->sym->decoratedName, ts2->sym->decoratedName))
-                        return FALSE;
+                        return false;
                     tss1 = ts1->next;
                     tss2 = ts2->next;
                     while (tss1 && tss2)
                     {
                         if (strcmp(tss1->name, tss2->name))
-                            return FALSE;
+                            return false;
                         tss1 = tss1->next;
                         tss2 = tss2->next;
                     }
                     if (tss1 || tss2)
-                        return FALSE;
+                        return false;
                     if (ts1->isTemplate)
                     {
                         if (!exactMatchOnTemplateParams(ts1->templateParams, ts2->templateParams))
-                            return FALSE;
+                            return false;
                     }
-                    return TRUE;
+                    return true;
                     return templateselectorcompare(tpn->sp->templateSelector, tps->sp->templateSelector);  // unreachable
                 }
             }
@@ -532,17 +532,17 @@ BOOLEAN matchOverload(TYPE* tnew, TYPE* told, BOOLEAN argsOnly)
             {
                 TYPE* tps = basetype(told)->btp;
                 TYPE* tpn = basetype(tnew)->btp;
-                if (!templatecomparetypes(tpn, tps, TRUE) && !sameTemplate(tpn, tps))
-                    return FALSE;
+                if (!templatecomparetypes(tpn, tps, true) && !sameTemplate(tpn, tps))
+                    return false;
             }
-            return TRUE;
+            return true;
         }
         else
         {
-            return TRUE;
+            return true;
         }
     }
-    return FALSE;
+    return false;
 }
 SYMBOL* searchOverloads(SYMBOL* sp, HASHTABLE* table)
 {
@@ -552,7 +552,7 @@ SYMBOL* searchOverloads(SYMBOL* sp, HASHTABLE* table)
         while (p)
         {
             SYMBOL* spp = (SYMBOL*)p->p;
-            if (matchOverload(sp->tp, spp->tp, FALSE))
+            if (matchOverload(sp->tp, spp->tp, false))
             {
                 if (!spp->templateParams)
                     return spp;
@@ -635,7 +635,7 @@ void insert(SYMBOL* in, HASHTABLE* table)
         if (table != defsyms && table != kwhash && table != ccHash)
             if (!in->parserSet)
             {
-                in->parserSet = TRUE;
+                in->parserSet = true;
                 ccSetSymbol(in);
             }
 #endif

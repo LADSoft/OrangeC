@@ -3,8 +3,6 @@
 #include <math.h>
 #include <float.h>
 //#define USE_LONGLONG
-#define TRUE 1
-#define FALSE 0
 #include "floating.h"
 void diag(const char* s, ...);
 #if defined(TEST) || defined(LIBFLOAT)
@@ -1648,7 +1646,7 @@ void FPFTruncate(FPFC* value, int bits, int maxexp, int minexp)
             else
             {
                 int i, v;
-                int rounding = FALSE;
+                int rounding = false;
                 /*if (bits % 16)*/ {
                     int mask = 0x8000, mask2 = 0x8000;
                     for (i = 1; i <= bits % 16; i++)
@@ -1658,7 +1656,7 @@ void FPFTruncate(FPFC* value, int bits, int maxexp, int minexp)
                         mask |= 0x8000;
                     }
                     if (value->mantissa[bits / 16] & mask2)
-                        rounding = TRUE;
+                        rounding = true;
                     value->mantissa[bits / 16] &= mask;
                     v = mask2;
                 }

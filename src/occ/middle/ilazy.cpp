@@ -54,7 +54,7 @@
 extern FILE* icdFile;
 extern COMPILER_PARAMS cparams;
 extern ARCH_ASM* chosenAssembler;
-extern BOOLEAN setjmp_used;
+extern bool setjmp_used;
 
 extern int walkPostorder, walkPreorder;
 
@@ -99,7 +99,7 @@ static void copymap(BITINT* dest, BITINT* source)
 {
     memcpy(dest, source, ((termCount + BITINTBITS - 1) / BITINTBITS) * sizeof(BITINT));
 }
-static BOOLEAN samemap(BITINT* dest, BITINT* source)
+static bool samemap(BITINT* dest, BITINT* source)
 {
     BITINT* olddest = dest;
     BITINT* oldsrc = source;
@@ -109,9 +109,9 @@ static BOOLEAN samemap(BITINT* dest, BITINT* source)
         if (*dest++ != *source++)
         {
             copymap(olddest, oldsrc);
-            return FALSE;
+            return false;
         }
-    return TRUE;
+    return true;
 }
 static void complementmap(BITINT* dest)
 {
@@ -120,31 +120,31 @@ static void complementmap(BITINT* dest)
     for (i = 0; i < n; i++)
         *dest++ ^= (BITINT)-1;
 }
-static void setmap(BITINT* dest, BOOLEAN val)
+static void setmap(BITINT* dest, bool val)
 {
     int i;
     int v = val ? 0xff : 0;
     int n = (termCount + BITINTBITS - 1) / BITINTBITS * sizeof(BITINT);
     memset(dest, v, n);
 }
-static BOOLEAN AnySet(BITINT* map)
+static bool AnySet(BITINT* map)
 {
     int n = termCount / BITINTBITS;
     int i;
     for (i = 0; i < n; i++)
         if (map[i])
         {
-            return TRUE;
+            return true;
         }
     if (i >= n)
         for (i = termCount & -BITINTBITS; i < termCount; i++)
         {
             if (isset(tempBytes, i))
             {
-                return TRUE;
+                return true;
             }
         }
-    return FALSE;
+    return false;
 }
 static void EnterGlobal(QUAD* head)
 {
@@ -157,13 +157,13 @@ static void EnterGlobal(QUAD* head)
     head->RO = aallocbit(termCount);
     head->uses = aallocbit(termCount);
     head->transparent = aallocbit(termCount);
-    setmap(head->transparent, TRUE);
+    setmap(head->transparent, true);
 }
 static void GatherGlobals(void)
 {
     int i;
     EnterGlobal(blockArray[0]->head);
-    setmap(blockArray[0]->head->transparent, FALSE);
+    setmap(blockArray[0]->head->transparent, false);
     EnterGlobal(blockArray[exitBlock]->tail);
     for (i = 0; i < blockCount; i++)
         if (blockArray[i])
@@ -205,7 +205,7 @@ void SetunMoveableTerms(void)
     // if they don't have floating point regs then don't move expressions involving
     // floating point
     unMoveableTerms = aallocbit(termCount);
-    setmap(unMoveableTerms, TRUE);
+    setmap(unMoveableTerms, true);
     for (i = 0; i < blockCount; i++)
     {
         BLOCK* b = blockArray[i];
@@ -235,18 +235,18 @@ static void CalculateUses(void)
     int i, j;
     BLOCK* b;
     QUAD *head, *tail;
-    setmap(tempBytes, TRUE);
+    setmap(tempBytes, true);
     tail = intermed_tail;
     while (!tail->OCP)
         tail = tail->back;
     while (tail)
     {
-        BOOLEAN first = TRUE;
+        bool first = true;
         head = tail;
-        setmap(head->uses, FALSE);
+        setmap(head->uses, false);
         while (head && (first || !head->OCP))
         {
-            first = FALSE;
+            first = false;
             if (!head->ignoreMe)
             {
                 if (head->temps & TEMP_ANS)
@@ -294,11 +294,11 @@ static void CalculateTransparent(void)
         tail = tail->back;
     while (tail)
     {
-        setmap(tail->transparent, TRUE);
+        setmap(tail->transparent, true);
         if (tail->dc.opcode == i_gosub)
         {
             QUAD* next = tail->fwd;
-            setmap(tempBytes3, FALSE);
+            setmap(tempBytes3, false);
             AliasGosub(tail, tempBytes3, tail->transparent, n /** sizeof(BITINT)*/);
             while (next && !next->OCP)
             {
@@ -321,7 +321,7 @@ static void CalculateTransparent(void)
         }
         else if (tail->dc.opcode == i_assnblock)
         {
-            setmap(tempBytes, FALSE);
+            setmap(tempBytes, false);
             AliasStruct(tempBytes, tail->ans, tail->dc.left, tail->dc.right);
             complementmap(tempBytes);
             for (i = 0; i < termCount; i++)
@@ -347,8 +347,8 @@ static void CalculateTransparent(void)
                         if (!tempInfo[n]->uses)
                         {
                             tempInfo[n]->uses = aallocbit(termCount);
-                            AliasUses(tempInfo[n]->uses, head->dc.left, TRUE);
-                            AliasUses(tempInfo[n]->uses, head->dc.right, TRUE);
+                            AliasUses(tempInfo[n]->uses, head->dc.left, true);
+                            AliasUses(tempInfo[n]->uses, head->dc.right, true);
                         }
                     }
                 }
@@ -371,8 +371,8 @@ static void CalculateTransparent(void)
         {
             if (tail->ans && tail->dc.opcode != i_label)
             {
-                setmap(tempBytes, FALSE);
-                AliasUses(tempBytes, tail->ans, TRUE);
+                setmap(tempBytes, false);
+                AliasUses(tempBytes, tail->ans, true);
                 for (i = 0; i < termCount; i++)
                 {
                     if (isset(tempBytes, i))
@@ -424,10 +424,10 @@ static QUAD* Last(QUAD* tail)
 static void CalculateDSafe(void)
 {
     int i;
-    BOOLEAN changed;
+    bool changed;
     do
     {
-        changed = FALSE;
+        changed = false;
         for (i = 0; i < blocks; i++)
         {
             BLOCK* b = reverseOrder[i];
@@ -454,7 +454,7 @@ static void CalculateDSafe(void)
                         ormap(tempBytes, tail->uses);
                         changed |= !samemap(tail->dsafe, tempBytes);
                     }
-                    while (TRUE)
+                    while (true)
                     {
                         QUAD* prev = previous(tail);
                         if (prev)
@@ -480,11 +480,11 @@ static void CalculateDSafe(void)
 static void CalculateEarliest(void)
 {
     int i;
-    BOOLEAN changed;
-    setmap(blockArray[0]->head->earliest, TRUE);
+    bool changed;
+    setmap(blockArray[0]->head->earliest, true);
     do
     {
-        changed = FALSE;
+        changed = false;
         for (i = 0; i < blocks; i++)
         {
             BLOCK* b = forwardOrder[i];
@@ -496,7 +496,7 @@ static void CalculateEarliest(void)
                     BLOCKLIST* pbl = head->block->pred;
                     if (pbl)
                     {
-                        setmap(tempBytes3, TRUE);
+                        setmap(tempBytes3, true);
                         while (pbl)
                         {
                             QUAD* tail = Last(pbl->block->tail);
@@ -516,7 +516,7 @@ static void CalculateEarliest(void)
                         }
                         changed |= !samemap(head->earliest, tempBytes3);
                     }
-                    while (TRUE)
+                    while (true)
                     {
                         QUAD* next = successor(head);
                         if (next)
@@ -545,10 +545,10 @@ static void CalculateEarliest(void)
 static void CalculateDelay(void)
 {
     int i;
-    BOOLEAN changed;
+    bool changed;
     do
     {
-        changed = FALSE;
+        changed = false;
         for (i = 0; i < blocks; i++)
         {
             BLOCK* b = forwardOrder[i];
@@ -562,7 +562,7 @@ static void CalculateDelay(void)
                     andmap(tempBytes3, head->earliest);
                     if (pbl)
                     {
-                        setmap(tempBytes, FALSE);
+                        setmap(tempBytes, false);
                         while (pbl)
                         {
                             QUAD* tail = Last(pbl->block->tail);
@@ -580,7 +580,7 @@ static void CalculateDelay(void)
                         ormap(tempBytes3, tempBytes);
                     }
                     changed |= !samemap(head->delay, tempBytes3);
-                    while (TRUE)
+                    while (true)
                     {
                         QUAD* next = successor(head);
                         if (next)
@@ -620,7 +620,7 @@ static void CalculateLatest(void)
                 BLOCKLIST* pbl = tail->block->succ;
                 if (pbl)
                 {
-                    setmap(tail->latest, TRUE);
+                    setmap(tail->latest, true);
                     while (pbl)
                     {
                         QUAD* first = First(pbl->block->head);
@@ -634,11 +634,11 @@ static void CalculateLatest(void)
                 }
                 else
                 {
-                    setmap(tail->latest, FALSE);
+                    setmap(tail->latest, false);
                 }
                 ormap(tail->latest, tail->uses);
                 andmap(tail->latest, tail->delay);
-                while (TRUE)
+                while (true)
                 {
                     QUAD* prev = previous(tail);
                     if (prev)
@@ -663,12 +663,12 @@ static void CalculateLatest(void)
 static void CalculateIsolated(void)
 {
     int i;
-    BOOLEAN changed;
+    bool changed;
     for (i = 0; i < blocks; i++)
-        setmap(reverseOrder[i]->head->isolated, TRUE);
+        setmap(reverseOrder[i]->head->isolated, true);
     do
     {
-        changed = FALSE;
+        changed = false;
         for (i = 0; i < blocks; i++)
         {
             BLOCK* b = reverseOrder[i];
@@ -680,7 +680,7 @@ static void CalculateIsolated(void)
                     BLOCKLIST* pbl = tail->block->succ;
                     if (pbl)
                     {
-                        setmap(tempBytes, TRUE);
+                        setmap(tempBytes, true);
                         while (pbl)
                         {
                             QUAD* first = First(pbl->block->head);
@@ -698,7 +698,7 @@ static void CalculateIsolated(void)
                         }
                         changed |= !samemap(tail->isolated, tempBytes);
                     }
-                    while (TRUE)
+                    while (true)
                     {
                         QUAD* prev = previous(tail);
                         if (prev)
@@ -730,7 +730,7 @@ static void GatherTerms(void)
         tail = tail->back;
     for (i = 0; i < tempCount; i++)
     {
-        tempInfo[i]->termClear = TRUE;
+        tempInfo[i]->termClear = true;
     }
     while (tail)
     {
@@ -752,8 +752,8 @@ static void GatherTerms(void)
                         }
                         if (tempInfo[l]->termClear)
                         {
-                            setmap(tempInfo[l]->terms, TRUE);
-                            tempInfo[l]->termClear = FALSE;
+                            setmap(tempInfo[l]->terms, true);
+                            tempInfo[l]->termClear = false;
                         }
                         if (tempInfo[n]->terms)
                         {
@@ -770,8 +770,8 @@ static void GatherTerms(void)
                         }
                         if (tempInfo[l]->termClear)
                         {
-                            setmap(tempInfo[l]->terms, TRUE);
-                            tempInfo[l]->termClear = FALSE;
+                            setmap(tempInfo[l]->terms, true);
+                            tempInfo[l]->termClear = false;
                         }
                         if (tempInfo[n]->terms)
                         {
@@ -829,7 +829,7 @@ static void HandleOCP(QUAD* after, int tn)
         QUAD* tail = after;
         QUAD* ins = (QUAD *)Alloc(sizeof(QUAD));
         QUAD* bans;
-        BOOLEAN a = FALSE, l = FALSE;
+        bool a = false, l = false;
         if (after->dc.opcode != i_block && after->dc.opcode != i_label)
         {
             QUAD *beforea, *beforel = NULL;
@@ -867,7 +867,7 @@ static void HandleOCP(QUAD* after, int tn)
         ins->OCP = NULL;
         ins->RO = NULL;
 
-        ins->OCPInserted = TRUE;
+        ins->OCPInserted = true;
         ins->fwd = after->fwd;
         ins->back = after;
         ins->back->fwd = ins;
@@ -879,7 +879,7 @@ static void HandleOCP(QUAD* after, int tn)
         bans->ans = tempInfo[tn]->copy;
         bans->dc.left = ins->ans;
         bans->dc.opcode = i_assn;
-        bans->OCPInserted = TRUE;
+        bans->OCPInserted = true;
         bans->back = ins;
         bans->fwd = ins->fwd;
         bans->back->fwd = bans;
@@ -890,7 +890,7 @@ static void HandleOCP(QUAD* after, int tn)
             ins->block->tail = bans;
     }
 }
-static IMODE* GetROVar(IMODE* oldvar, IMODE* newvar, BOOLEAN mov)
+static IMODE* GetROVar(IMODE* oldvar, IMODE* newvar, bool mov)
 {
     if (oldvar->mode == i_ind)
     {
@@ -968,7 +968,7 @@ static void HandleRO(QUAD* after, int tn)
                     }
                     if ((after->temps & TEMP_RIGHT) && after->dc.right->offset->v.sp->value.i == tn)
                     {
-                        after->dc.right = GetROVar(after->dc.right, tempInfo[after->dc.right->offset->v.sp->value.i]->copy, FALSE);
+                        after->dc.right = GetROVar(after->dc.right, tempInfo[after->dc.right->offset->v.sp->value.i]->copy, false);
                     }
                 }
             }
@@ -1109,7 +1109,7 @@ static void PadBlocks(void)
         }
     }
 }
-static int fgc(enum e_fgtype type, BLOCK* parent, BLOCK* b) { return TRUE; }
+static int fgc(enum e_fgtype type, BLOCK* parent, BLOCK* b) { return true; }
 void SetGlobalTerms(void)
 {
     int i, j;
@@ -1135,7 +1135,7 @@ void GlobalOptimization(void)
     blocks = 0;
     for (i = 0; i < blockCount; i++)
         if (blockArray[i])
-            blockArray[i]->visiteddfst = FALSE;
+            blockArray[i]->visiteddfst = false;
     forwardOrder[blocks++] = blockArray[0];
     for (i = 0; i < blocks; i++)
     {
@@ -1145,7 +1145,7 @@ void GlobalOptimization(void)
         {
             if (!bl->block->visiteddfst)
             {
-                bl->block->visiteddfst = TRUE;
+                bl->block->visiteddfst = true;
                 forwardOrder[blocks++] = bl->block;
             }
             bl = bl->next;
@@ -1155,7 +1155,7 @@ void GlobalOptimization(void)
     blocks = 0;
     for (i = 0; i < blockCount; i++)
         if (blockArray[i])
-            blockArray[i]->visiteddfst = FALSE;
+            blockArray[i]->visiteddfst = false;
     reverseOrder[blocks++] = blockArray[exitBlock];
     for (i = 0; i < blocks; i++)
     {
@@ -1165,7 +1165,7 @@ void GlobalOptimization(void)
         {
             if (!bl->block->visiteddfst)
             {
-                bl->block->visiteddfst = TRUE;
+                bl->block->visiteddfst = true;
                 reverseOrder[blocks++] = bl->block;
             }
             bl = bl->next;

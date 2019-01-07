@@ -57,7 +57,7 @@ extern "C" int winsystem(const char*);
 #endif
 int strcasecmp_internal(const char* left, const char* right);
 
-static BOOLEAN InsertOption(char* name)
+static bool InsertOption(char* name)
 {
     char** p;
     switch (name[0])
@@ -72,7 +72,7 @@ static BOOLEAN InsertOption(char* name)
             p = &link_params;
             break;
         default:
-            return FALSE;
+            return false;
     }
     int len = 0;
     if (*p)
@@ -81,9 +81,9 @@ static BOOLEAN InsertOption(char* name)
     (*p)[len] = 0;
     strcat(*p, " ");
     strcat(*p, name + 1);
-    return TRUE;
+    return true;
 }
-static void InsertFile(LIST** r, char* name, char* ext, BOOLEAN primary)
+static void InsertFile(LIST** r, char* name, char* ext, bool primary)
 {
     LIST* lst;
     char buf[256], *newbuffer;
@@ -124,14 +124,14 @@ static void InsertFile(LIST** r, char* name, char* ext, BOOLEAN primary)
 
 /*-------------------------------------------------------------------------*/
 
-int InsertExternalFile(char* name, BOOLEAN primary)
+int InsertExternalFile(char* name, bool primary)
 {
     char buf[260], *p;
     if (name[0] == '$')
     {
         if (!InsertOption(name + 1))
             fatal("invalid parameter: /p%s", name + 1);
-        return TRUE;
+        return true;
     }
     if (HasExt(name, ".asm") || HasExt(name, ".nas") || HasExt(name, ".s"))
     {
@@ -222,7 +222,7 @@ int RunExternalFiles(char* rootPath)
     //    p = strrchr(outName, '.');
     //    if (p && p[1] != '\\')
     //        *p = 0;
-    BOOLEAN first = FALSE;
+    bool first = false;
     while (asmlist)
     {
         if (cparams.prm_compileonly && outputFileName[0] && !first)
@@ -231,7 +231,7 @@ int RunExternalFiles(char* rootPath)
         else
             sprintf(spname, "\"%soasm.exe\" %s %s \"%s\"", root, asm_params ? asm_params : "", !showBanner ? "-!" : "",
                     asmlist->data);
-        first = TRUE;
+        first = true;
         if (verbosity)
             printf("%s\n", spname);
         rv = system(spname);
@@ -251,7 +251,7 @@ int RunExternalFiles(char* rootPath)
         else
             sprintf(spname, "\"%sorc.exe\" -r %s %s %s \"%s\"", root, rc_params ? rc_params : "", !showBanner ? "-!" : "", args,
                     rclist->data);
-        first = TRUE;
+        first = true;
         if (verbosity)
             printf("%s\n", spname);
         rv = system(spname);

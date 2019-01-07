@@ -61,10 +61,10 @@ typedef struct _rtti
     };
     int size;  // total size of type
     int flags;
-    char name[1];  // enumerated name, followed by a NULL.
+    char name[1];  // enumerated name, followed by a nullptr.
     // if describing an array, following this will be an RTTIARRAY
     // if describing a struct, following this will be list of RTTISTRUCT structures
-    //  end of structure is a NULL DWORD;
+    //  end of structure is a nullptr DWORD;
 } RTTI;
 
 // xcept block header
@@ -74,7 +74,7 @@ typedef struct _rtti
 typedef struct
 {
 
-    int flags;              // 0 = no specification 1= noexcept(FALSE), 2 = noexcept(TRUE);
+    int flags;              // 0 = no specification 1= noexcept(false), 2 = noexcept(true);
     RTTI thrownClasses[1];  // list of thrown classes, followed by a zero
 } THROWREC;
 typedef struct

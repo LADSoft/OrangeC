@@ -83,7 +83,7 @@ void DumpInvariants(void)
     }
 }
 #endif
-BOOLEAN variantThisLoop(BLOCK* b, int tnum)
+bool variantThisLoop(BLOCK* b, int tnum)
 {
     if (tempInfo[tnum]->instructionDefines)
     {
@@ -91,9 +91,9 @@ BOOLEAN variantThisLoop(BLOCK* b, int tnum)
         LOOP* variant = tempInfo[tnum]->variantLoop;
         return variant == thisLp || isAncestor(thisLp, variant);
     }
-    return FALSE;
+    return false;
 }
-static BOOLEAN usedThisLoop(BLOCK* b, int tnum)
+static bool usedThisLoop(BLOCK* b, int tnum)
 {
     INSTRUCTIONLIST* l = tempInfo[tnum]->instructionUses;
     LOOP* parent = b->loopParent;
@@ -101,16 +101,16 @@ static BOOLEAN usedThisLoop(BLOCK* b, int tnum)
     {
         LOOP* thisLp = l->ins->block->loopParent;
         if (parent == thisLp || isAncestor(parent, thisLp))
-            return TRUE;
+            return true;
         l = l->next;
     }
-    return FALSE;
+    return false;
 }
-static BOOLEAN inductionThisLoop(BLOCK* b, int tnum) { return tempInfo[tnum]->inductionLoop && variantThisLoop(b, tnum); }
-BOOLEAN matchesop(enum i_ops one, enum i_ops two)
+static bool inductionThisLoop(BLOCK* b, int tnum) { return tempInfo[tnum]->inductionLoop && variantThisLoop(b, tnum); }
+bool matchesop(enum i_ops one, enum i_ops two)
 {
     if (one == two)
-        return TRUE;
+        return true;
     switch (one)
     {
         case i_neg:
@@ -123,7 +123,7 @@ BOOLEAN matchesop(enum i_ops one, enum i_ops two)
         case i_lsl:
             return two == i_mul || two == i_lsl;
         default:
-            return FALSE;
+            return false;
     }
 }
 static RESHAPE_LIST* InsertExpression(IMODE* im, RESHAPE_EXPRESSION* expr, QUAD* ins, int flags)
@@ -150,7 +150,7 @@ static RESHAPE_LIST* InsertExpression(IMODE* im, RESHAPE_EXPRESSION* expr, QUAD*
     *test = list;
     return list;
 }
-static BOOLEAN GatherExpression(int tx, RESHAPE_EXPRESSION* expr, int flags)
+static bool GatherExpression(int tx, RESHAPE_EXPRESSION* expr, int flags)
 {
     QUAD* ins = tempInfo[tx]->instructionDefines;
     if (ins && matchesop(ins->dc.opcode, expr->op))
@@ -161,7 +161,7 @@ static BOOLEAN GatherExpression(int tx, RESHAPE_EXPRESSION* expr, int flags)
              * maintaining the order of successive neg and not instructions
              */
             if (expr->list && expr->list->flags & (RF_NEG | RF_NOT))
-                return FALSE;
+                return false;
             if ((ins->temps & TEMP_LEFT) && (ins->dc.left->mode != i_ind))
             {
                 if (ins->dc.left->size < ISZ_FLOAT)
@@ -173,7 +173,7 @@ static BOOLEAN GatherExpression(int tx, RESHAPE_EXPRESSION* expr, int flags)
                         flags ^= RF_NOT;
                     if (inductionThisLoop(ins->block, tnum) || !GatherExpression(tnum, expr, flags))
                         InsertExpression(ins->dc.left, expr, ins, flags);
-                    return TRUE;
+                    return true;
                 }
             }
         }
@@ -193,7 +193,7 @@ static BOOLEAN GatherExpression(int tx, RESHAPE_EXPRESSION* expr, int flags)
                         InsertExpression(ins->dc.left, expr, ins, flags1);
                     if (inductionThisLoop(ins->block, tnumr) || !GatherExpression(tnumr, expr, flags))
                         InsertExpression(ins->dc.right, expr, ins, flags);
-                    return TRUE;
+                    return true;
                 }
             }
         }
@@ -211,7 +211,7 @@ static BOOLEAN GatherExpression(int tx, RESHAPE_EXPRESSION* expr, int flags)
                 InsertExpression(ins->dc.right, expr, ins, flags);
                 if (inductionThisLoop(ins->block, tnum) || !GatherExpression(tnum, expr, flags1))
                     InsertExpression(ins->dc.left, expr, ins, flags1);
-                return TRUE;
+                return true;
             }
         }
         else if ((ins->temps & TEMP_RIGHT) && ins->dc.right->mode == i_direct && ins->dc.left->mode == i_immed)
@@ -227,11 +227,11 @@ static BOOLEAN GatherExpression(int tx, RESHAPE_EXPRESSION* expr, int flags)
                 if (inductionThisLoop(ins->block, tnum) || !GatherExpression(tnum, expr, flags))
                     InsertExpression(ins->dc.right, expr, ins, flags);
                 InsertExpression(ins->dc.left, expr, ins, flags1);
-                return TRUE;
+                return true;
             }
         }
     }
-    return FALSE;
+    return false;
 }
 static void CreateExpressionLists(void)
 {
@@ -254,12 +254,12 @@ static void CreateExpressionLists(void)
                 }
                 else
                 {
-                    tempInfo[i]->expressionRoot = FALSE;
+                    tempInfo[i]->expressionRoot = false;
                 }
             }
             else
             {
-                tempInfo[i]->expressionRoot = FALSE;
+                tempInfo[i]->expressionRoot = false;
             }
         }
     }
@@ -304,7 +304,7 @@ static void DistributeMultiplies(RESHAPE_EXPRESSION* re, RESHAPE_LIST* rl, int t
     {
         RESHAPE_LIST** temp1;
         replace->distrib = cloneReshape(re->list);
-        replace->distributed = TRUE;
+        replace->distributed = true;
         temp1 = &tempInfo[tnum]->expression.list;
         while (*temp1)
         {
@@ -317,11 +317,11 @@ static void DistributeMultiplies(RESHAPE_EXPRESSION* re, RESHAPE_LIST* rl, int t
         }
     }
     else
-        rl->distributed = TRUE;
+        rl->distributed = true;
 }
 static void ApplyDistribution(void)
 {
-    BOOLEAN done = FALSE;
+    bool done = false;
     while (!done)
     {
         int i;
@@ -366,11 +366,11 @@ static void ApplyDistribution(void)
         }
         if (next)
         {
-            done = FALSE;
+            done = false;
             DistributeMultiplies(next, rl, match);
         }
         else
-            done = TRUE;
+            done = true;
     }
 }
 void ReplaceHashReshape(QUAD* rv, UBYTE* key, int size, DAGLIST** table)
@@ -607,7 +607,7 @@ static void RewriteAdd(BLOCK* b, int tnum)
         if (!blockArray[b->loopParent->entry->idom])
             return;
         ia = blockArray[b->loopParent->entry->idom]->tail;
-        ia = beforeJmp(ia, FALSE);
+        ia = beforeJmp(ia, false);
     }
     while (gather &&
            (!b || gather->im->mode == i_immed ||
@@ -615,7 +615,7 @@ static void RewriteAdd(BLOCK* b, int tnum)
     {
         if (!gather->genned)
         {
-            gather->genned = TRUE;
+            gather->genned = true;
             if (!left && (tempInfo[tnum]->expression.op == i_add || tempInfo[tnum]->expression.op == i_sub))
             {
                 if (gather->flags & RF_NEG)
@@ -695,7 +695,7 @@ static IMODE* RewriteDistributed(BLOCK* b, int size, IMODE* im, QUAD* ia, RESHAP
         if (!gather->genned)
         {
             IMODE* left = InsertMulInstruction(b, size, ia, flags, im, gather->flags, gather->im);
-            gather->genned = TRUE;
+            gather->genned = true;
             if (!total)
             {
                 total = left;
@@ -735,7 +735,7 @@ static void RewriteMul(BLOCK* b, int tnum)
             if (!blockArray[b->loopParent->entry->idom])
                 return;
             ia = blockArray[b->loopParent->entry->idom]->tail;
-            ia = beforeJmp(ia, FALSE);
+            ia = beforeJmp(ia, false);
         }
         // should be a branch of some sort at ia....
         while (current &&
@@ -744,7 +744,7 @@ static void RewriteMul(BLOCK* b, int tnum)
         {
             if (!current->genned && !current->distrib)
             {
-                current->genned = TRUE;
+                current->genned = true;
                 if (!left)
                 {
                     left = current->im;
@@ -777,7 +777,7 @@ static void RewriteMul(BLOCK* b, int tnum)
                     {
                         tempInfo[tnum]->expression.lastName =
                             InsertMulInstruction(b, size, ia, 0, im, gather->flags, tempInfo[tnum]->expression.lastName);
-                        gather->genned = TRUE;
+                        gather->genned = true;
                     }
                     else
                         tempInfo[tnum]->expression.lastName = im;

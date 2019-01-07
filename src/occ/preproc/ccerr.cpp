@@ -96,7 +96,7 @@ int diagcount;
 void errorinit(void)
 {
     total_errors = diagcount = 0;
-    currentpreprocFile = NULL;
+    currentpreprocFile = nullptr;
 }
 
 static void printerr(int err, char* file, int line, ...)

@@ -52,7 +52,7 @@ extern int prm_optlive;
 extern int blockCount, exitBlock;
 extern int total_errors;
 extern TEMP_INFO** tempInfo;
-extern BOOLEAN functionHasAssembly;
+extern bool functionHasAssembly;
 extern TYPE stddouble;
 extern EXPRESSION* objectArray_exp;
 #ifdef DUMP_GCSE_INFO
@@ -185,7 +185,7 @@ IMODE* set_symbol(char* name, int isproc)
         GENREF(sp);
         sp->tp = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
         sp->tp->type = isproc ? bt_func : bt_int;
-        sp->safefunc = TRUE;
+        sp->safefunc = true;
         insert(sp, globalNameSpace->syms);
         InsertExtern(sp);
         DecGlobalFlag();
@@ -221,7 +221,7 @@ IMODE* call_library(char* lib_name, int size)
     gen_icode(i_gosub, 0, result, 0);
     gen_icode(i_parmadj, 0, make_parmadj(size), make_parmadj(size));
     result = tempreg(ISZ_UINT, 0);
-    result->retval = TRUE;
+    result->retval = true;
     return result;
 }
 static void AddProfilerData(SYMBOL* funcsp)
@@ -370,7 +370,7 @@ void genxswitch(STATEMENT* stmt, SYMBOL* funcsp)
     breaklab = oldbreak;
 }
 
-void genselect(STATEMENT* stmt, SYMBOL* funcsp, BOOLEAN jmptrue)
+void genselect(STATEMENT* stmt, SYMBOL* funcsp, bool jmptrue)
 {
     if (stmt->altlabel + codeLabelOffset)
     {
@@ -410,8 +410,8 @@ static void gen_catch(SYMBOL* funcsp, STATEMENT* stmt, int startLab, int transfe
     int oldtryStart = tryStart;
     int oldtryEnd = tryEnd;
     gen_label(startLab);
-    currentBlock->alwayslive = TRUE;
-    intermed_tail->alwayslive = TRUE;
+    currentBlock->alwayslive = true;
+    intermed_tail->alwayslive = true;
     catchLevel++;
     genstmt(lower, funcsp);
     catchLevel--;
@@ -458,7 +458,7 @@ static STATEMENT* gen___try(SYMBOL* funcsp, STATEMENT* stmt)
                 return stmt;
         }
         gen_icode(i_seh, NULL, left, NULL);
-        intermed_tail->alwayslive = TRUE;
+        intermed_tail->alwayslive = true;
         intermed_tail->sehMode = mode | 0x80;
         intermed_tail->dc.v.label = label;
         genstmt(stmt->lower, funcsp);
@@ -507,7 +507,7 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, IMODE*
                 DumpIncDec(funcsp);
                 sp->offset = chosenAssembler->arch->retblocksize;
                 sp->name = "__retblock";
-                sp->allocate = FALSE;
+                sp->allocate = false;
                 if ((funcsp->linkage == lk_pascal) && basetype(funcsp->tp)->syms->table[0] &&
                     ((SYMBOL*)basetype(funcsp->tp)->syms->table[0])->tp->type != bt_void)
                     sp->offset = funcsp->paramsize;
@@ -561,7 +561,7 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, IMODE*
         {
             ap1 = tempreg(ap->size, 0);
             if (!inlinesym_count)
-                ap1->retval = TRUE;
+                ap1->retval = true;
             else
                 returnImode = ap1;
         }
@@ -737,10 +737,10 @@ IMODE* genstmt(STATEMENT* stmt, SYMBOL* funcsp)
                 gen_line(stmt->lineData);
                 break;
             case st_select:
-                genselect(stmt, funcsp, TRUE);
+                genselect(stmt, funcsp, true);
                 break;
             case st_notselect:
-                genselect(stmt, funcsp, FALSE);
+                genselect(stmt, funcsp, false);
                 break;
             case st_switch:
                 genxswitch(stmt, funcsp);
@@ -791,7 +791,7 @@ static void StoreInBucket(IMODE* mem, IMODE* addr)
         if (lst->mem == mem)
         {
             if (lst->addr != addr)
-                lst->mem->offset->v.sp->noCoalesceImmed = TRUE;
+                lst->mem->offset->v.sp->noCoalesceImmed = true;
             return;
         }
         lst = lst->next;
@@ -864,7 +864,7 @@ void optimize(SYMBOL* funcsp)
             ConstantFlow(); /* propagate constants */
             RemoveInfiniteThunks();
             //			RemoveCriticalThunks();
-            doms_only(FALSE);
+            doms_only(false);
         }
         //		if (optflags & OPT_RESHAPE)
         //			Reshape();		/* loop expression reshaping */
@@ -883,7 +883,7 @@ void optimize(SYMBOL* funcsp)
             AliasPass1();
         }
         // printf("ssa out\n");
-        TranslateFromSSA(FALSE);
+        TranslateFromSSA(false);
         removeDead(blockArray[0]);
         //		RemoveCriticalThunks();
         if ((optflags & OPT_GLOBAL) && !(chosenAssembler->arch->denyopts & DO_NOGLOBAL))
@@ -922,7 +922,7 @@ void optimize(SYMBOL* funcsp)
      */
     definesInfo();
     liveVariables();
-    doms_only(TRUE);
+    doms_only(true);
     // printf("to ssa\n");
     TranslateToSSA();
     CalculateInduction();
@@ -934,7 +934,7 @@ void optimize(SYMBOL* funcsp)
     // printf("from ssa\n");
     TranslateFromSSA(!(chosenAssembler->arch->denyopts & DO_NOREGALLOC));
     // printf("peep\n");
-    peep_icode(FALSE); /* peephole optimizations at the ICODE level */
+    peep_icode(false); /* peephole optimizations at the ICODE level */
     RemoveCriticalThunks();
     removeDead(blockArray[0]); /* remove dead blocks */
 
@@ -949,7 +949,7 @@ void optimize(SYMBOL* funcsp)
         CalculateBackendLives();
     }
     sFree();
-    peep_icode(TRUE); /* we do branche opts last to not interfere with other opts */
+    peep_icode(true); /* we do branche opts last to not interfere with other opts */
                       // printf("optimzation done\n");
 }
 /*-------------------------------------------------------------------------*/
@@ -1005,7 +1005,7 @@ static void InsertParameterThunks(SYMBOL* funcsp, BLOCK* b)
     intermed_tail->fwd = old;
     intermed_tail = oldit;
 }
-void genfunc(SYMBOL* funcsp, BOOLEAN doOptimize)
+void genfunc(SYMBOL* funcsp, bool doOptimize)
 /*
  *      generate a function body and dump the icode
  */
@@ -1064,7 +1064,7 @@ void genfunc(SYMBOL* funcsp, BOOLEAN doOptimize)
     if (funcsp->linkage == lk_virtual || tmpl)
     {
         funcsp->linkage = lk_virtual;
-        gen_virtual(funcsp, FALSE);
+        gen_virtual(funcsp, false);
     }
     else
     {
@@ -1088,7 +1088,7 @@ void genfunc(SYMBOL* funcsp, BOOLEAN doOptimize)
         if (basetype(funcsp->tp)->syms->table[0] && ((SYMBOL*)basetype(funcsp->tp)->syms->table[0]->p)->thisPtr)
         {
             EXPRESSION* exp = varNode(en_auto, ((SYMBOL*)basetype(funcsp->tp)->syms->table[0]->p));
-            exp->v.sp->tp->used = TRUE;
+            exp->v.sp->tp->used = true;
             gen_varstart(exp);
         }
     }

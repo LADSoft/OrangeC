@@ -55,7 +55,7 @@ static int oldSkip[1000];
 static int skipCount;
 static LINEINCLUDES* lastFile;
 static sqlite3_int64 main_id;
-static BOOLEAN skipThisFile;
+static bool skipThisFile;
 static LIST* symList;
 static LINEINCLUDES* mainFile;
 int equalnode(EXPRESSION* node1, EXPRESSION* node2)
@@ -145,7 +145,7 @@ char* GetSymName(SYMBOL* sp, SYMBOL* parent)
     }
     return buf;
 }
-static int WriteStructMembers(SYMBOL* sym, SYMBOL* parent, sqlite3_int64 struct_id, sqlite3_int64 file_id, int order, BOOLEAN base,
+static int WriteStructMembers(SYMBOL* sym, SYMBOL* parent, sqlite3_int64 struct_id, sqlite3_int64 file_id, int order, bool base,
                               enum e_ac access)
 {
     if (basetype(sym->tp)->syms)
@@ -156,7 +156,7 @@ static int WriteStructMembers(SYMBOL* sym, SYMBOL* parent, sqlite3_int64 struct_
             BASECLASS* bases = sym->baseClasses;
             while (bases)
             {
-                order = WriteStructMembers(bases->cls, parent, struct_id, file_id, order, TRUE, (e_ac) imin(bases->cls->access, access));
+                order = WriteStructMembers(bases->cls, parent, struct_id, file_id, order, true, (e_ac) imin(bases->cls->access, access));
                 bases = bases->next;
             }
         }
@@ -261,7 +261,7 @@ static void DumpStructs(void)
             if (ccWriteFileName(sym->origdeclfile, &file_id))
             {
                 int order = 1;
-                WriteStructMembers(sym, sym, struct_id, file_id, order, FALSE, sym->access);
+                WriteStructMembers(sym, sym, struct_id, file_id, order, false, sym->access);
             }
         }
         item = item->next;
@@ -526,7 +526,7 @@ void ccSetSymbol(SYMBOL* sp)
         }
     }
 }
-void ccNewFile(char* fileName, BOOLEAN main)
+void ccNewFile(char* fileName, bool main)
 {
     LINEINCLUDES* l;
     char *s = fullqualify(fileName), *q = s;

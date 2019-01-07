@@ -1,5 +1,6 @@
 #include <string.h>
 #include <ctype.h>
+
 #ifndef GCCLINUX
 #    include <windows.h>
 #endif

@@ -162,10 +162,10 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
     }
     else
     {
-        BOOLEAN nonpointer = FALSE;
+        bool nonpointer = false;
         while (lvalue(exp))
         {
-            nonpointer = TRUE;
+            nonpointer = true;
             exp = exp->left;
         }
         switch (exp->type)
@@ -411,7 +411,7 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
                     strcpy(buf, exp->v.func->sp->name);
                     buf += strlen(buf);
                     *buf++ = '$';
-                    buf = mangleType(buf, exp->v.func->sp->tp, TRUE);
+                    buf = mangleType(buf, exp->v.func->sp->tp, true);
                 }
                 break;
             case en_pc:
@@ -424,7 +424,7 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
                     strcpy(buf, exp->v.sp->name);
                     buf += strlen(buf);
                     *buf++ = '$';
-                    buf = mangleType(buf, exp->v.sp->tp, TRUE);
+                    buf = mangleType(buf, exp->v.sp->tp, true);
                 }
                 else
                 {
@@ -455,12 +455,12 @@ static char* mangleExpression(char* buf, EXPRESSION* exp)
 }
 static char* mangleTemplate(char* buf, SYMBOL* sym, TEMPLATEPARAMLIST* params)
 {
-    BOOLEAN bySpecial = FALSE;
+    bool bySpecial = false;
     if (params && params->p->type == kw_new &&
         ((sym->instantiated && !sym->templateLevel) || (params && params->p->bySpecialization.types)))
     {
         params = params->p->bySpecialization.types;
-        bySpecial = TRUE;
+        bySpecial = true;
     }
     if ((sym->isConstructor || sym->isDestructor) && sym->templateLevel == sym->parentClass->templateLevel)
     {
@@ -486,7 +486,7 @@ static char* mangleTemplate(char* buf, SYMBOL* sym, TEMPLATEPARAMLIST* params)
                             TEMPLATEPARAMLIST* pack = params->p->byPack.pack;
                             while (pack)
                             {
-                                buf = mangleType(buf, pack->p->byClass.val, TRUE);
+                                buf = mangleType(buf, pack->p->byClass.val, true);
                                 pack = pack->next;
                             }
                         }
@@ -498,17 +498,17 @@ static char* mangleTemplate(char* buf, SYMBOL* sym, TEMPLATEPARAMLIST* params)
                     }
                     else if (bySpecial)
                     {
-                        buf = mangleType(buf, params->p->byClass.dflt, TRUE);
+                        buf = mangleType(buf, params->p->byClass.dflt, true);
                     }
                     else if (sym->instantiated && params->p->byClass.val)
                     {
-                        buf = mangleType(buf, params->p->byClass.val, TRUE);
+                        buf = mangleType(buf, params->p->byClass.val, true);
                     }
                     else
                     {
                         if (params->p->byClass.dflt)
                         {
-                            buf = mangleType(buf, params->p->byClass.dflt, TRUE);
+                            buf = mangleType(buf, params->p->byClass.dflt, true);
                         }
                         else
                         {
@@ -548,7 +548,7 @@ static char* mangleTemplate(char* buf, SYMBOL* sym, TEMPLATEPARAMLIST* params)
                     }
                     else
                     {
-                        buf = mangleType(buf, params->p->byNonType.tp, TRUE);
+                        buf = mangleType(buf, params->p->byNonType.tp, true);
                         if (bySpecial || sym->instantiated)
                         {
                             EXPRESSION* exp = bySpecial ? params->p->byNonType.dflt : params->p->byNonType.val;
@@ -615,7 +615,7 @@ static char* getName(char* in, SYMBOL* sp)
         in++;
     return in;
 }
-char* mangleType(char* in, TYPE* tp, BOOLEAN first)
+char* mangleType(char* in, TYPE* tp, bool first)
 {
     char nm[4096];
     int i;
@@ -674,7 +674,7 @@ char* mangleType(char* in, TYPE* tp, BOOLEAN first)
                     {
                         SYMBOL* sp = (SYMBOL*)hr->p;
                         if (!sp->thisPtr)
-                            in = mangleType(in, sp->tp, TRUE);
+                            in = mangleType(in, sp->tp, true);
                         hr = hr->next;
                     }
                     *in++ = '$';
@@ -691,7 +691,7 @@ char* mangleType(char* in, TYPE* tp, BOOLEAN first)
                         {
                             SYMBOL* sp = (SYMBOL*)hr->p;
                             if (!sp->thisPtr)
-                                in = mangleType(in, sp->tp, TRUE);
+                                in = mangleType(in, sp->tp, true);
                             hr = hr->next;
                         }
                         *in++ = '$';
@@ -967,9 +967,9 @@ void SetLinkerNames(SYMBOL* sym, enum e_lk linkage)
                 {
                     int tmplCount = 0;
                     *p++ = 'o';
-                    p = mangleType(p, basetype(sym->tp)->btp, TRUE);  // cast operators get their cast type in the name
+                    p = mangleType(p, basetype(sym->tp)->btp, true);  // cast operators get their cast type in the name
                     *p++ = '$';
-                    p = mangleType(p, sym->tp, TRUE);  // add the $qv
+                    p = mangleType(p, sym->tp, true);  // add the $qv
                     while (p > errbuf && (*--p != '$' || tmplCount))
                         if (*p == '~')
                             tmplCount++;
@@ -979,7 +979,7 @@ void SetLinkerNames(SYMBOL* sym, enum e_lk linkage)
                 }
                 else
                 {
-                    p = mangleType(p, sym->tp, TRUE);  // otherwise functions get their parameter list in the name
+                    p = mangleType(p, sym->tp, true);  // otherwise functions get their parameter list in the name
                                                        //                    if (!sym->templateLevel)
                     {
                         int tmplCount = 0;

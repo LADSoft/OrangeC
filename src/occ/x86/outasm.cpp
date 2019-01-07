@@ -65,7 +65,7 @@ void oa_ini(void)
     oa_gentype = nogen;
     oa_currentSeg = noseg;
     oa_outcol = 0;
-    newlabel = FALSE;
+    newlabel = false;
     muldivlink = 0;
 }
 
@@ -102,15 +102,15 @@ void putop(enum e_op op, AMODE* aps, AMODE* apd, int nooptx)
 {
     if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
     {
-        skipsize = FALSE;
-        addsize = FALSE;
+        skipsize = false;
+        addsize = false;
         switch (op)
         {
             case op_lea:
-                skipsize = TRUE;
+                skipsize = true;
                 break;
             case op_push:
-                addsize = TRUE;
+                addsize = true;
                 if (!aps->length)
                     aps->length = ISZ_UINT;
                 if (aps->mode == am_immed && isintconst(aps->offset) && aps->offset->v.i >= CHAR_MIN &&
@@ -138,7 +138,7 @@ void putop(enum e_op op, AMODE* aps, AMODE* apd, int nooptx)
                 }
                 else
                 {
-                    addsize = TRUE;
+                    addsize = true;
                     if (!aps->length)
                         aps->length = ISZ_UINT;
                 }
@@ -189,7 +189,7 @@ void putop(enum e_op op, AMODE* aps, AMODE* apd, int nooptx)
 
 /*-------------------------------------------------------------------------*/
 
-void oa_putconst(int op, int sz, EXPRESSION* offset, BOOLEAN doSign)
+void oa_putconst(int op, int sz, EXPRESSION* offset, bool doSign)
 /*
  *      put a constant to the outputFile file.
  */
@@ -298,16 +298,16 @@ void oa_putconst(int op, int sz, EXPRESSION* offset, BOOLEAN doSign)
         case en_structadd:
         case en_arrayadd:
             oa_putconst(0, ISZ_ADDR, offset->left, doSign);
-            oa_putconst(0, ISZ_ADDR, offset->right, TRUE);
+            oa_putconst(0, ISZ_ADDR, offset->right, true);
             break;
         case en_sub:
             oa_putconst(0, ISZ_ADDR, offset->left, doSign);
             bePrintf("-");
-            oa_putconst(0, ISZ_ADDR, offset->right, FALSE);
+            oa_putconst(0, ISZ_ADDR, offset->right, false);
             break;
         case en_uminus:
             bePrintf("-");
-            oa_putconst(0, ISZ_ADDR, offset->left, FALSE);
+            oa_putconst(0, ISZ_ADDR, offset->left, false);
             break;
         default:
             diag("illegal constant node.");
@@ -326,7 +326,7 @@ void oa_putlen(int l)
         l = -l;
     switch (l)
     {
-        case ISZ_BOOLEAN:
+        case ISZ_bool:
         case ISZ_UCHAR:
         case ISZ_USHORT:
         case ISZ_WCHAR:
@@ -361,7 +361,7 @@ void putsizedreg(char* string, int reg, int size)
         size = -size;
     if (size == ISZ_UINT || size == ISZ_ULONG || size == ISZ_ADDR || size == ISZ_U32)
         bePrintf(string, longregs[reg]);
-    else if (size == ISZ_BOOLEAN || size == ISZ_UCHAR)
+    else if (size == ISZ_bool || size == ISZ_UCHAR)
     {
         bePrintf(string, byteregs[reg]);
     }
@@ -409,7 +409,7 @@ void pointersize(int size)
         case ISZ_WCHAR:
             bePrintf("word ");
             break;
-        case ISZ_BOOLEAN:
+        case ISZ_bool:
         case ISZ_UCHAR:
             bePrintf("byte ");
             break;
@@ -529,18 +529,18 @@ void oa_putamode(int op, int szalt, AMODE* ap)
             }
             else if ((prm_assembler == pa_nasm) && addsize)
                 pointersize(ap->length);
-            oa_putconst(op, op == op_mov ? szalt : ap->length, ap->offset, FALSE);
+            oa_putconst(op, op == op_mov ? szalt : ap->length, ap->offset, false);
             break;
         case am_direct:
             pointersize(ap->length);
             if (!(prm_assembler == pa_nasm || prm_assembler == pa_fasm))
-                putseg(ap->seg, TRUE);
+                putseg(ap->seg, true);
             beputc('[');
             oldnasm = prm_assembler;
             if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
-                putseg(ap->seg, TRUE);
+                putseg(ap->seg, true);
             prm_assembler = pa_nasm;
-            oa_putconst(0, ap->length, ap->offset, FALSE);
+            oa_putconst(0, ap->length, ap->offset, false);
             beputc(']');
             prm_assembler = oldnasm;
             break;
@@ -562,14 +562,14 @@ void oa_putamode(int op, int szalt, AMODE* ap)
         case am_indisp:
             pointersize(ap->length);
             if (!(prm_assembler == pa_nasm || prm_assembler == pa_fasm))
-                putseg(ap->seg, TRUE);
+                putseg(ap->seg, true);
             beputc('[');
             if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
-                putseg(ap->seg, TRUE);
+                putseg(ap->seg, true);
             putsizedreg("%s", ap->preg, ISZ_ADDR);
             if (ap->offset)
             {
-                oa_putconst(0, ap->length, ap->offset, TRUE);
+                oa_putconst(0, ap->length, ap->offset, true);
             }
             beputc(']');
             break;
@@ -581,10 +581,10 @@ void oa_putamode(int op, int szalt, AMODE* ap)
                 scale <<= 1;
             pointersize(ap->length);
             if (!(prm_assembler == pa_nasm || prm_assembler == pa_fasm))
-                putseg(ap->seg, TRUE);
+                putseg(ap->seg, true);
             beputc('[');
             if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
-                putseg(ap->seg, TRUE);
+                putseg(ap->seg, true);
             if (ap->preg != -1)
                 putsizedreg("%s+", ap->preg, ISZ_ADDR);
             putsizedreg("%s", ap->sreg, ISZ_ADDR);
@@ -592,7 +592,7 @@ void oa_putamode(int op, int szalt, AMODE* ap)
                 bePrintf("*%d", scale);
             if (ap->offset)
             {
-                oa_putconst(0, ap->length, ap->offset, TRUE);
+                oa_putconst(0, ap->length, ap->offset, true);
             }
             beputc(']');
         }
@@ -662,7 +662,7 @@ void oa_put_code(OCODE* cd)
                 bePrintf("\tnear");
             }
         }
-        nosize = TRUE;
+        nosize = true;
     }
     else if (op == op_jmp && aps->mode == am_immed && aps->offset->type == en_labcon)
     {
@@ -671,7 +671,7 @@ void oa_put_code(OCODE* cd)
             if (((Instruction*)cd->ins)->GetData()[0] == 0xeb)
             {
                 bePrintf("\tshort");
-                nosize = TRUE;
+                nosize = true;
             }
         }
     }
@@ -699,9 +699,9 @@ void oa_put_code(OCODE* cd)
             separator = ',';
         }
         if (op == op_dd)
-            nosize = TRUE;
+            nosize = true;
         oa_putamode(op, aps->length, aps);
-        nosize = FALSE;
+        nosize = false;
         if (apd != 0)
         {
             beputc(separator);
@@ -729,7 +729,7 @@ void oa_gen_strlab(SYMBOL* sp)
     {
         if (oa_currentSeg == dataseg || oa_currentSeg == bssxseg)
         {
-            newlabel = TRUE;
+            newlabel = true;
             bePrintf("\n%s", buf);
             oa_outcol = strlen(buf) + 1;
         }
@@ -751,7 +751,7 @@ void oa_put_label(int lab)
         oa_nl();
         if (oa_currentSeg == dataseg || oa_currentSeg == bssxseg)
         {
-            newlabel = TRUE;
+            newlabel = true;
             bePrintf("\nL_%ld", lab);
             oa_outcol = 8;
         }
@@ -856,7 +856,7 @@ void oa_genstring(LCHAR* str, int len)
  * Generate a string literal
  */
 {
-    BOOLEAN instring = FALSE;
+    bool instring = false;
     if (cparams.prm_asmfile)
     {
         int nlen = len;
@@ -868,7 +868,7 @@ void oa_genstring(LCHAR* str, int len)
                     oa_gentype = nogen;
                     oa_nl();
                     bePrintf("\tdb\t\"");
-                    instring = TRUE;
+                    instring = true;
                 }
                 bePrintf("%c", *str++);
             }
@@ -877,7 +877,7 @@ void oa_genstring(LCHAR* str, int len)
                 if (instring)
                 {
                     bePrintf("\"\n");
-                    instring = FALSE;
+                    instring = false;
                 }
                 oa_genint(chargen, *str++);
             }
@@ -996,7 +996,7 @@ void oa_genref(SYMBOL* sp, int offset)
             if (!newlabel)
                 oa_nl();
             else
-                newlabel = FALSE;
+                newlabel = false;
             bePrintf("\tdd\t%s\n", buf1);
             oa_gentype = longgen;
         }
@@ -1027,7 +1027,7 @@ void oa_genstorage(int nbytes)
         if (!newlabel)
             oa_nl();
         else
-            newlabel = FALSE;
+            newlabel = false;
         if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
             bePrintf("\tresb\t0%xh\n", nbytes);
         else
@@ -1051,7 +1051,7 @@ void oa_gen_labref(int n)
         if (!newlabel)
             oa_nl();
         else
-            newlabel = FALSE;
+            newlabel = false;
         bePrintf("\tdd\tL_%d\n", n);
         oa_gentype = longgen;
     }
@@ -1068,7 +1068,7 @@ void oa_gen_labdifref(int n1, int n2)
         if (!newlabel)
             oa_nl();
         else
-            newlabel = FALSE;
+            newlabel = false;
         bePrintf("\tdd\tL_%d-L_%d\n", n1, n2);
         oa_gentype = longgen;
     }
@@ -1424,14 +1424,14 @@ long queue_floatval(FPFC* number, int size)
 
 void dump_muldivval(void)
 {
-    int tag = FALSE;
+    int tag = false;
     xconstseg();
     if (cparams.prm_asmfile)
     {
         bePrintf("\n");
         if (muldivlink)
         {
-            tag = TRUE;
+            tag = true;
         }
         while (muldivlink)
         {

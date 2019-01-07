@@ -167,10 +167,10 @@ BE_IMODEDATA* beArgType(IMODE* in)
             rv->mode = bee_unknown;
             break;
         case i_ind:
-            rv->ind = TRUE;
+            rv->ind = true;
         case i_immed:
             if (in->mode == i_immed)
-                rv->immed = TRUE;
+                rv->immed = true;
         case i_direct:
             if (in->retval)
             {
@@ -268,7 +268,7 @@ int sizeFromISZ(int isz)
         case ISZ_UCHAR:
         case -ISZ_UCHAR:
             return p->a_char;
-        case ISZ_BOOLEAN:
+        case ISZ_bool:
             return p->a_bool;
         case ISZ_USHORT:
         case -ISZ_USHORT:
@@ -477,7 +477,7 @@ int getBaseAlign(enum e_bt type)
     if (type == bt_auto)
         type = bt_struct;
     tp.type = type; /* other fields don't matter, we never call this for structured types*/
-    tp.array = tp.vla = FALSE;
+    tp.array = tp.vla = false;
     tp.rootType = &tp;
     return basesize(chosenAssembler->arch->type_align, &tp);
 }
@@ -524,14 +524,14 @@ int init_backend(int* argc, char** argv)
     char assembler[100], debugger[100];
     int i, rv;
     assembler[0] = debugger[0] = 0;
-    cparams.prm_asmfile = cparams.prm_compileonly = FALSE;
+    cparams.prm_asmfile = cparams.prm_compileonly = false;
     for (i = 0; i < *argc; i++)
         if (!strncmp(argv[i], "/S", 2) || !strncmp(argv[i], "-S", 2))
         {
             char *p = argv[i] + 2, *q = assembler;
-            cparams.prm_asmfile = TRUE;
+            cparams.prm_asmfile = true;
             if (argv[i][1] == 'S')
-                cparams.prm_compileonly = TRUE;
+                cparams.prm_compileonly = true;
             while (*p && !isspace(*p) && *p != ';')
                 *q++ = *p++;
             *q = 0;
@@ -567,7 +567,7 @@ int init_backend(int* argc, char** argv)
         chosenAssembler = assemblerInterface;
     }
     if (!chosenAssembler->objext)
-        cparams.prm_asmfile = TRUE;
+        cparams.prm_asmfile = true;
     if (debugger[0])
     {
         ARCH_DEBUG* d = chosenAssembler->debug;
@@ -595,7 +595,7 @@ int init_backend(int* argc, char** argv)
     {
         stdpointer.size = getSize(bt_pointer);
         stdnullpointer.size = getSize(bt_pointer);
-        stdnullpointer.nullptrType = TRUE;
+        stdnullpointer.nullptrType = true;
         stdfloatimaginary.size = stdfloat.size = getSize(bt_float);
         stddouble.size = stddoubleimaginary.size = getSize(bt_double);
         stdlongdouble.size = stdlongdoubleimaginary.size = getSize(bt_long_double);
@@ -616,7 +616,7 @@ int init_backend(int* argc, char** argv)
         stdcharptr.size = getSize(bt_pointer);
         std__func__.size = getSize(bt_pointer);
         std__func__nc.size = getSize(bt_pointer);
-        std__func__nc.array = TRUE;
+        std__func__nc.array = true;
         stdbool.size = getSize(bt_bool);
         stdwidechar.size = getSize(bt_wchar_t);
         stdwcharptr.size = getSize(bt_pointer);

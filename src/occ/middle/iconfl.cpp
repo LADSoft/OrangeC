@@ -89,16 +89,16 @@ void JoinConflictLists(int T0, int T1)
     JoinOneList(T0, T1);
     JoinOneList(T1, T0);
 }
-BOOLEAN isConflicting(int T0, int T1)
+bool isConflicting(int T0, int T1)
 {
     int bucket;
     T0 = findPartition(T0);
     T1 = findPartition(T1);
     if (T0 == T1)
-        return FALSE;
+        return false;
     return !!isset(tempInfo[T0]->conflicts, T1);
 }
-void CalculateConflictGraph(BRIGGS_SET* nodes, BOOLEAN optimize)
+void CalculateConflictGraph(BRIGGS_SET* nodes, bool optimize)
 {
     int i, j;
     BRIGGS_SET* live = briggsAllocc(tempCount);

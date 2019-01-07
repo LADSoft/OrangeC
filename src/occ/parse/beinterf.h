@@ -36,43 +36,43 @@ typedef struct
 {
     int prm_maxerr;     /* number of errors at which the compiler stops*/
     int prm_stackalign; /* stack alignment */
-    BOOLEAN prm_optimize_for_speed;
-    BOOLEAN prm_optimize_for_size;
-    BOOLEAN prm_optimize_float_access;
-    BOOLEAN prm_quiet;          /* no warnings/errors on console */
-    BOOLEAN prm_warning;        /* display warnings */
-    BOOLEAN prm_extwarning;     /* display extended warnings */
-    BOOLEAN prm_diag;           /* display diagnostics/ memory usage */
-    BOOLEAN prm_ansi;           /* use ansi restrictions */
-    BOOLEAN prm_cmangle;        /* add underscore to names */
-    BOOLEAN prm_c99;            /* C99 mode */
-    BOOLEAN prm_c1x;            /* C1x mode */
-    BOOLEAN prm_cplusplus;      /* C++ mode */
-    BOOLEAN prm_xcept;          /* generate RTTI in C++ mode */
-    BOOLEAN prm_icdfile;        /* dump intermediate code peep list to file */
-    BOOLEAN prm_asmfile;        /* assembly language output */
-    BOOLEAN prm_compileonly;    /* don't run postprocess routines */
-    BOOLEAN prm_debug;          /* generate debug info */
-    BOOLEAN prm_listfile;       /* generate list file */
-    BOOLEAN prm_cppfile;        /* generate preprocessor file */
-    BOOLEAN prm_errfile;        /* generate error file */
-    BOOLEAN prm_browse;         /* generate browse information */
-    BOOLEAN prm_trigraph;       /* parse trigraphs */
-    BOOLEAN prm_oldfor;         /* old C++ for scoping */
-    BOOLEAN prm_stackcheck;     /* generate stack check code */
-    BOOLEAN prm_allowinline;    /* enable inlining of functions */
-    BOOLEAN prm_profiler;       /* generate profiler insets */
-    BOOLEAN prm_mergestrings;   /* merge strings and other constants */
-    BOOLEAN prm_revbits;        /* use reverse of the default bit ordering */
-    BOOLEAN prm_lines;          /* put line info into assembly files */
-    BOOLEAN prm_bss;            /* Use a BSS */
-    BOOLEAN prm_intrinsic;      /* look for intrinsics */
-    BOOLEAN prm_smartframes;    /* omit frame pointer initialization as possible */
-    BOOLEAN prm_farkeyword;     /* honor the 'far' and 'near' keywords */
-    BOOLEAN prm_linkreg;        /* use a frame pointer */
-    BOOLEAN prm_charisunsigned; /* char type is unsigned */
-    BOOLEAN prm_assemble;       /* do assembler mode */
-    BOOLEAN prm_makestubs;      /* generate make stubs */
+    bool prm_optimize_for_speed;
+    bool prm_optimize_for_size;
+    bool prm_optimize_float_access;
+    bool prm_quiet;          /* no warnings/errors on console */
+    bool prm_warning;        /* display warnings */
+    bool prm_extwarning;     /* display extended warnings */
+    bool prm_diag;           /* display diagnostics/ memory usage */
+    bool prm_ansi;           /* use ansi restrictions */
+    bool prm_cmangle;        /* add underscore to names */
+    bool prm_c99;            /* C99 mode */
+    bool prm_c1x;            /* C1x mode */
+    bool prm_cplusplus;      /* C++ mode */
+    bool prm_xcept;          /* generate RTTI in C++ mode */
+    bool prm_icdfile;        /* dump intermediate code peep list to file */
+    bool prm_asmfile;        /* assembly language output */
+    bool prm_compileonly;    /* don't run postprocess routines */
+    bool prm_debug;          /* generate debug info */
+    bool prm_listfile;       /* generate list file */
+    bool prm_cppfile;        /* generate preprocessor file */
+    bool prm_errfile;        /* generate error file */
+    bool prm_browse;         /* generate browse information */
+    bool prm_trigraph;       /* parse trigraphs */
+    bool prm_oldfor;         /* old C++ for scoping */
+    bool prm_stackcheck;     /* generate stack check code */
+    bool prm_allowinline;    /* enable inlining of functions */
+    bool prm_profiler;       /* generate profiler insets */
+    bool prm_mergestrings;   /* merge strings and other constants */
+    bool prm_revbits;        /* use reverse of the default bit ordering */
+    bool prm_lines;          /* put line info into assembly files */
+    bool prm_bss;            /* Use a BSS */
+    bool prm_intrinsic;      /* look for intrinsics */
+    bool prm_smartframes;    /* omit frame pointer initialization as possible */
+    bool prm_farkeyword;     /* honor the 'far' and 'near' keywords */
+    bool prm_linkreg;        /* use a frame pointer */
+    bool prm_charisunsigned; /* char type is unsigned */
+    bool prm_assemble;       /* do assembler mode */
+    bool prm_makestubs;      /* generate make stubs */
 } COMPILER_PARAMS;
 
 /* Sizing and alignment info uses this structure */
@@ -212,7 +212,7 @@ typedef struct
     char hasFloatRegs; /* true if has floating point registers */
 #define AFM_SIGNEDZERO 1
     char floatmode;                   /* floating point modes, not honored currently */
-#define ABM_USESIZE 0                 /* BOOLEAN is determined by sizing above */
+#define ABM_USESIZE 0                 /* bool is determined by sizing above */
 #define ABM_GLOBALBITS 1              /* global bools become global bits */
 #define ABM_LOCALBITS 2               /* all bools outside a struct definition become global bits */
     char boolmode;                    /* boolean mode */
@@ -410,8 +410,8 @@ typedef struct
 
 typedef struct
 {
-    BOOLEAN allowExtensions;              /* True if allowing language extensions */
-    BOOLEAN (*managed)(SYMBOL* sp);       /* return TRUE if the function is a managed function, FALSE otherwise */
+    bool allowExtensions;              /* True if allowing language extensions */
+    bool (*managed)(SYMBOL* sp);       /* return true if the function is a managed function, false otherwise */
     TYPE* (*find_boxed_type)(TYPE* tp);   /* msil - get a boxed version of type*/
     TYPE* (*find_unboxed_type)(TYPE* tp); /* msil - get an unboxed version of type*/
     void (*create_property)(SYMBOL* property, SYMBOL* getter, SYMBOL* setter);  // create a property instance
@@ -438,12 +438,12 @@ typedef struct _arch_asm
     char* bltins;               /* pointer to extra builtin data */
     int (*init)(COMPILER_PARAMS* params, struct _arch_asm* data, ARCH_DEBUG* debug); /* return 1 to proceed */
     int (*main_preprocess)();                                                        /* preprocess function, or NULL */
-    void (*main_postprocess)(BOOLEAN hasErrors);                                     /* postprocess function, or NULL */
+    void (*main_postprocess)(bool hasErrors);                                     /* postprocess function, or NULL */
     int (*compiler_postprocess)(char*);                                              /* postprocess function, or NULL */
     int (*rundown)(void);                                                            /* compiler rundown */
     void (*insert_output_file)(char* name); /* insert the output (executable name) into the backend */
     int (*insert_noncompile_file)(
-        char* name, BOOLEAN primary); /* insert a non-compilable file in the backend list, e.g. for post processing, or NULL */
+        char* name, bool primary); /* insert a non-compilable file in the backend list, e.g. for post processing, or NULL */
     int (*parse_param)(char mode, char* string);    /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
     int (*parse_codegen)(char mode, char* string);  /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
     void (*doPragma)(char* kw, char* tag);          /* parse a pragma directive, or null */
@@ -516,8 +516,8 @@ typedef struct
 #define beGetIcon(x) ((x)->offset->v.i)
 
 #define beGetLabel nextLabel++
-#define beSetProcSymbol(x) set_symbol(x, TRUE)
-#define beSetDataSymbol(x) set_symbol(x, FALSE)
+#define beSetProcSymbol(x) set_symbol(x, true)
+#define beSetDataSymbol(x) set_symbol(x, false)
 #define beGetCurrentFunc theCurrentFunc
 #define beLocalAlloc(x) Alloc(x)
 #define beCompilerVersion version

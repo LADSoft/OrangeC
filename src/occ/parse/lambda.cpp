@@ -149,7 +149,7 @@ static TYPE* lambda_type(TYPE* tp, enum e_cm mode)
     }
     return tp;
 }
-SYMBOL* lambda_capture(SYMBOL* sym, enum e_cm mode, BOOLEAN isExplicit)
+SYMBOL* lambda_capture(SYMBOL* sym, enum e_cm mode, bool isExplicit)
 {
     if (lambdas)
     {
@@ -159,7 +159,7 @@ SYMBOL* lambda_capture(SYMBOL* sym, enum e_cm mode, BOOLEAN isExplicit)
             {
                 if (lambdas->captureThis)
                 {
-                    BOOLEAN errorflg = FALSE;
+                    bool errorflg = false;
                     LAMBDA* check = lambdas;
                     // have to try to replicate the symbol into the current context
                     while (check && !error)
@@ -170,19 +170,19 @@ SYMBOL* lambda_capture(SYMBOL* sym, enum e_cm mode, BOOLEAN isExplicit)
                             {
                                 if (lambdas->prev)
                                 {
-                                    errorflg = TRUE;
+                                    errorflg = true;
                                     errorstr(ERR_EXPLICIT_CAPTURE_BLOCKED, "this");
                                 }
                             }
                             else
                             {
-                                errorflg = TRUE;
+                                errorflg = true;
                                 errorstr(ERR_IMPLICIT_CAPTURE_BLOCKED, "this");
                             }
                         }
                         else if (check->captureMode == cmValue && isExplicit)
                         {
-                            errorflg = TRUE;
+                            errorflg = true;
                             errorstr(ERR_EXPLICIT_CAPTURE_BLOCKED, "this");
                         }
                         check = check->next;
@@ -192,7 +192,7 @@ SYMBOL* lambda_capture(SYMBOL* sym, enum e_cm mode, BOOLEAN isExplicit)
                         check = lambdas;
                         while (check)
                         {
-                            check->captureThis = TRUE;
+                            check->captureThis = true;
                             check = check->next;
                         }
                     }
@@ -394,7 +394,7 @@ static SYMBOL* createPtrToCaller(SYMBOL* self)
     basetype(args)->btp = basetype(lambdas->func->tp)->btp;
     func->parentClass = lambdas->cls;
     func->linkage = lk_cdecl;
-    func->isInline = TRUE;
+    func->isInline = true;
     func->storage_class = sc_static;
     func->access = ac_private;
 
@@ -432,7 +432,7 @@ static SYMBOL* createPtrToCaller(SYMBOL* self)
         if (isstructured(sym->tp) && !isref(sym->tp))
         {
             SYMBOL* sym2 = anonymousVar(sc_auto, sym->tp)->v.sp;
-            sym2->stackblock = TRUE;
+            sym2->stackblock = true;
             (*argptr)->exp = varNode(en_auto, sym2); // DAL MODIFIED
         }
         else
@@ -444,7 +444,7 @@ static SYMBOL* createPtrToCaller(SYMBOL* self)
         argptr = &(*argptr)->next;
         hr = hr->next;
     }
-    params->ascall = TRUE;
+    params->ascall = true;
     params->sp = lambdas->func;
     params->fcall = varNode(en_pc, lambdas->func);
     params->functp = func->tp;
@@ -490,7 +490,7 @@ static SYMBOL* createPtrToCaller(SYMBOL* self)
         includes->handle = NULL;
         includes->lptr = (unsigned char *)buf;
         lex1 = getsym();
-        getDeferredData(lex1, func, TRUE);
+        getDeferredData(lex1, func, true);
         includes->handle = handle;
         includes->lptr = p;
         includes->line = line;
@@ -523,9 +523,9 @@ static void createConverter(SYMBOL* self)
     func->tp->syms = CreateHashTable(1);
     func->parentClass = lambdas->cls;
     func->linkage = lk_virtual;
-    func->isInline = TRUE;
+    func->isInline = true;
     func->storage_class = sc_member;
-    func->castoperator = TRUE;
+    func->castoperator = true;
     func->tp->syms = CreateHashTable(1);
     hr->p = (SYMBOL *)sym;
     func->tp->syms->table[0] = hr;
@@ -587,8 +587,8 @@ static void createConverter(SYMBOL* self)
             }
             hr = hr->next;
         }
-        f->ascall = FALSE;
-        f->asaddress = TRUE;
+        f->ascall = false;
+        f->asaddress = true;
         f->sp = caller;
         f->fcall = varNode(en_pc, f->sp);
         f->functp = f->sp->tp;
@@ -602,7 +602,7 @@ static void createConverter(SYMBOL* self)
         includes->handle = NULL;
         includes->lptr = (unsigned char *)buf;
         lex1 = getsym();
-        getDeferredData(lex1, func, TRUE);
+        getDeferredData(lex1, func, true);
         includes->handle = handle;
         includes->lptr = p;
         includes->line = line;
@@ -615,17 +615,17 @@ static void createConverter(SYMBOL* self)
     }
     UpdateRootTypes(func->tp);
 }
-static BOOLEAN lambda_get_template_state(SYMBOL* func)
+static bool lambda_get_template_state(SYMBOL* func)
 {
     HASHREC* hr = basetype(func->tp)->syms->table[0];
     while (hr)
     {
         SYMBOL* sp = (SYMBOL*)hr->p;
         if (isautotype(sp->tp))
-            return TRUE;
+            return true;
         hr = hr->next;
     }
-    return FALSE;
+    return false;
 }
 static void finishClass(void)
 {
@@ -679,14 +679,14 @@ static void finishClass(void)
         UpdateRootTypes(ths->tp);
     }
 }
-static EXPRESSION* createLambda(BOOLEAN noinline)
+static EXPRESSION* createLambda(bool noinline)
 {
     EXPRESSION *rv = NULL, **cur = &rv;
     HASHREC* hr;
     EXPRESSION *clsThs, *parentThs;
     SYMBOL* cls = makeID(lambdas->enclosingFunc ? sc_auto : sc_localstatic, lambdas->cls->tp, NULL, AnonymousName());
     SetLinkerNames(cls, lk_cdecl);
-    cls->allocate = TRUE;
+    cls->allocate = true;
     if (lambdas->enclosingFunc)
     {
         insert(cls, localNameSpace->syms);
@@ -703,8 +703,8 @@ static EXPRESSION* createLambda(BOOLEAN noinline)
     {
         INITIALIZER* init = NULL;
         EXPRESSION* exp = clsThs;
-        callDestructor(cls, NULL, &exp, NULL, TRUE, FALSE, FALSE);
-        initInsert(&init, cls->tp, exp, 0, TRUE);
+        callDestructor(cls, NULL, &exp, NULL, true, false, false);
+        initInsert(&init, cls->tp, exp, 0, true);
         if (cls->storage_class != sc_auto)
         {
             insertDynamicDestructor(cls, init);
@@ -758,7 +758,7 @@ static EXPRESSION* createLambda(BOOLEAN noinline)
                     TYPE* ctp = capture->tp;
                     if (isstructured(ctp))
                     {
-                        if (!callConstructorParam(&ctp, &en1, sp->tp, sp->init->exp, TRUE, FALSE, TRUE, FALSE))
+                        if (!callConstructorParam(&ctp, &en1, sp->tp, sp->init->exp, true, false, true, false))
                             errorsym(ERR_NO_APPROPRIATE_CONSTRUCTOR, lsp->sym);
                         en = en1;
                     }
@@ -809,7 +809,7 @@ static EXPRESSION* createLambda(BOOLEAN noinline)
                     }
                     if (isstructured(ctp))
                     {
-                        if (!callConstructorParam(&ctp, &en1, ctp, en, TRUE, FALSE, TRUE, FALSE))
+                        if (!callConstructorParam(&ctp, &en1, ctp, en, true, false, true, false))
                             errorsym(ERR_NO_APPROPRIATE_CONSTRUCTOR, lsp->sym);
                         en = en1;
                     }
@@ -845,7 +845,7 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
     TYPE* ltp;
     STRUCTSYM ssl;
     if (funcsp)
-        funcsp->noinline = TRUE;
+        funcsp->noinline = true;
     IncGlobalFlag();
     self = (LAMBDA *) Alloc(sizeof(LAMBDA));
     ltp = (TYPE *)Alloc(sizeof(TYPE));
@@ -859,12 +859,12 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
     self->oldTags = localNameSpace->tags;
     self->index = lambdaIndex;
     self->captureMode = cmNone;
-    self->isMutable = FALSE;
-    self->captureThis = FALSE;
+    self->isMutable = false;
+    self->captureThis = false;
     self->cls = makeID(sc_type, ltp, NULL, LambdaName());
     ltp->sp = self->cls;
     SetLinkerNames(self->cls, lk_cdecl);
-    self->cls->islambda = TRUE;
+    self->cls->islambda = true;
     self->cls->structAlign = getAlign(sc_global, &stdpointer);
     self->func = makeID(sc_member, ltp, NULL, overloadNameTab[CI_FUNC]);
     self->func->parentClass = self->cls;
@@ -935,8 +935,8 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
                         {
                             error(ERR_CAPTURE_ITEM_LISTED_MULTIPLE_TIMES);
                         }
-                        self->captureThis = TRUE;
-                        lambda_capture(NULL, cmThis, TRUE);
+                        self->captureThis = true;
+                        lambda_capture(NULL, cmThis, true);
                     }
                     continue;
                 }
@@ -976,8 +976,8 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
                         else
                         {
                             SYMBOL* sp = makeID(sc_auto, tp, NULL, idlex->value.s.a);
-                            initInsert(&sp->init, tp, exp, 0, TRUE);
-                            lambda_capture(sp, cmExplicitValue, TRUE);
+                            initInsert(&sp->init, tp, exp, 0, true);
+                            lambda_capture(sp, cmExplicitValue, true);
                             if (localMode == cmRef)
                             {
                                 error(ERR_INVALID_LAMBDA_CAPTURE_MODE);
@@ -1014,14 +1014,14 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
                                     hr = hr->next;
                                 while (hr && n)
                                 {
-                                    lambda_capture((SYMBOL*)hr->p, localMode, TRUE);
+                                    lambda_capture((SYMBOL*)hr->p, localMode, true);
                                     hr = hr->next;
                                     n--;
                                 }
                             }
                             else
                             {
-                                lambda_capture(sp, localMode, TRUE);
+                                lambda_capture(sp, localMode, true);
                             }
                         }
                         else
@@ -1051,7 +1051,7 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
     {
         TYPE* tpx = &stdvoid;
         HASHREC* hr;
-        lex = getFunctionParams(lex, NULL, &self->func, &tpx, FALSE, sc_auto);
+        lex = getFunctionParams(lex, NULL, &self->func, &tpx, false, sc_auto);
         if (!self->func->tp->syms)
         {
             errorstr(ERR_MISSING_TYPE_FOR_PARAMETER, "undefined");
@@ -1085,15 +1085,15 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
                 }
                 hr = hr->next;
             }
-            self->isMutable = TRUE;
+            self->isMutable = true;
 
             lex = getsym();
         }
-        ParseAttributeSpecifiers(&lex, funcsp, TRUE);
+        ParseAttributeSpecifiers(&lex, funcsp, true);
         if (MATCHKW(lex, pointsto))
         {
             lex = getsym();
-            lex = get_type_id(lex, &self->functp, funcsp, sc_cast, FALSE, TRUE);
+            lex = get_type_id(lex, &self->functp, funcsp, sc_cast, false, true);
             if (!self->functp)
             {
                 error(ERR_TYPE_NAME_EXPECTED);
@@ -1112,7 +1112,7 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
         tp1->sp = self->func;
         self->func->tp = tp1;
         spi = makeID(sc_parameter, tp1, NULL, AnonymousName());
-        spi->anonymous = TRUE;
+        spi->anonymous = true;
         spi->tp = (TYPE *)Alloc(sizeof(TYPE));
         spi->tp->type = bt_void;
         spi->tp->rootType = spi->tp;
@@ -1127,7 +1127,7 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
     lambdas->func->tp->btp = self->functp;
     lambdas->func->tp->rootType = lambdas->func->tp;
     lambdas->func->linkage = lk_virtual;
-    lambdas->func->isInline = TRUE;
+    lambdas->func->isInline = true;
     lambdas->templateFunctions = lambda_get_template_state(lambdas->func);
     ssl.str = self->cls;
     ssl.tmpl = NULL;
@@ -1136,7 +1136,7 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
     lambda_insert(ths, lambdas);
     if (MATCHKW(lex, begin))
     {
-        lex = getDeferredData(lex, self->func, TRUE);
+        lex = getDeferredData(lex, self->func, true);
         if (!lambdas->templateFunctions)
         {
             LEXEME* lex1 = SetAlternateLex(self->func->deferredCompile);
@@ -1145,7 +1145,7 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
             lex1 = self->func->deferredCompile;
             while (lex1)
             {
-                lex1->registered = FALSE;
+                lex1->registered = false;
                 lex1 = lex1->next;
             }
             SetAlternateLex(NULL);

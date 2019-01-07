@@ -40,9 +40,9 @@
 
 #define GENREF(sym)                         \
     {                                       \
-        sym->genreffed = TRUE;              \
+        sym->genreffed = true;              \
         if (sym->mainsym)                   \
-            sym->mainsym->genreffed = TRUE; \
+            sym->mainsym->genreffed = true; \
     }
 
 #define STD_PRAGMA_FENV 1
@@ -785,14 +785,14 @@ typedef struct _vtabEntry
     SYMBOL* cls;
     unsigned dataOffset;
     unsigned vtabOffset;
-    BOOLEAN isvirtual;
-    BOOLEAN isdead;
+    bool isvirtual;
+    bool isdead;
 } VTABENTRY;
 typedef struct _vbaseEntry
 {
     struct _vbaseEntry* next;
     SYMBOL* cls;
-    BOOLEAN alloc;
+    bool alloc;
     unsigned pointerOffset;
     unsigned structOffset;
 } VBASEENTRY;

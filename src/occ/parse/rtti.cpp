@@ -171,7 +171,7 @@ static char* RTTIGetName(char* buf, TYPE* tp)
     mangledNamesCount = 0;
     strcpy(buf, "@$xt@");
     buf += strlen(buf);
-    buf = mangleType(buf, tp, TRUE);
+    buf = mangleType(buf, tp, true);
     return buf;
 }
 static void RTTIDumpHeader(SYMBOL* xtSym, TYPE* tp, int flags)
@@ -198,7 +198,7 @@ static void RTTIDumpHeader(SYMBOL* xtSym, TYPE* tp, int flags)
             if (!sp->inlineFunc.stmt && !sp->deferredCompile)
             {
                 EXPRESSION* exp = intNode(en_c_i, 0);
-                callDestructor(basetype(tp)->sp, NULL, &exp, NULL, TRUE, FALSE, TRUE);
+                callDestructor(basetype(tp)->sp, NULL, &exp, NULL, true, false, true);
                 if (exp && exp->left)
                     sp = exp->left->v.func->sp;
             }
@@ -211,7 +211,7 @@ static void RTTIDumpHeader(SYMBOL* xtSym, TYPE* tp, int flags)
     }
 
     cseg();
-    gen_virtual(xtSym, FALSE);
+    gen_virtual(xtSym, false);
     if (sp)
     {
         genref(sp, 0);
@@ -227,7 +227,7 @@ static void RTTIDumpHeader(SYMBOL* xtSym, TYPE* tp, int flags)
         genbyte(*p);
     genbyte(0);
 }
-static void DumpEnclosedStructs(TYPE* tp, BOOLEAN genXT)
+static void DumpEnclosedStructs(TYPE* tp, bool genXT)
 {
     SYMBOL* sym = basetype(tp)->sp;
     HASHREC* hr;
@@ -329,9 +329,9 @@ static void DumpEnclosedStructs(TYPE* tp, BOOLEAN genXT)
 }
 static void RTTIDumpStruct(SYMBOL* xtSym, TYPE* tp)
 {
-    DumpEnclosedStructs(tp, TRUE);
+    DumpEnclosedStructs(tp, true);
     RTTIDumpHeader(xtSym, tp, XD_CL_PRIMARY);
-    DumpEnclosedStructs(tp, FALSE);
+    DumpEnclosedStructs(tp, false);
     genint(0);
     gen_endvirtual(xtSym);
 }
@@ -373,13 +373,13 @@ SYMBOL* RTTIDumpType(TYPE* tp)
             if (isstructured(tp))
                 xtSym->linkage2 = basetype(tp)->sp->linkage2;
             xtSym->decoratedName = xtSym->errname = xtSym->name;
-            xtSym->xtEntry = TRUE;
+            xtSym->xtEntry = true;
             insert(xtSym, rttiSyms);
             if (isstructured(tp) && basetype(tp)->sp->dontinstantiate)
             {
                 InsertExtern(xtSym);
                 GENREF(xtSym);
-                xtSym->dontinstantiate = TRUE;
+                xtSym->dontinstantiate = true;
             }
             else
             {
@@ -417,7 +417,7 @@ SYMBOL* RTTIDumpType(TYPE* tp)
                 xtSym2 = search(name, rttiSyms);
                 if (xtSym2 && xtSym2->dontinstantiate)
                 {
-                    xtSym2->dontinstantiate = FALSE;
+                    xtSym2->dontinstantiate = false;
                     RTTIDumpStruct(xtSym2, tp);
                 }
             }
@@ -668,7 +668,7 @@ static void XCStmt(STATEMENT* block, XCLIST*** listPtr)
             case st___fault:
                 **listPtr = (XCLIST *)Alloc(sizeof(XCLIST));
                 (**listPtr)->stmt = block;
-                (**listPtr)->byStmt = TRUE;
+                (**listPtr)->byStmt = true;
                 (*listPtr) = &(**listPtr)->next;
             case st_try:
             case st___try:
@@ -712,7 +712,7 @@ static void XCStmt(STATEMENT* block, XCLIST*** listPtr)
 }
 static SYMBOL* DumpXCSpecifiers(SYMBOL* funcsp)
 {
-    SYMBOL* xcSym = FALSE;
+    SYMBOL* xcSym = nullptr;
     if (funcsp->xcMode != xc_unspecified)
     {
         char name[4096];
@@ -748,7 +748,7 @@ static SYMBOL* DumpXCSpecifiers(SYMBOL* funcsp)
         xcSym->linkage = lk_virtual;
         xcSym->decoratedName = xcSym->errname = xcSym->name;
         cseg();
-        gen_virtual(xcSym, FALSE);
+        gen_virtual(xcSym, false);
         switch (funcsp->xcMode)
         {
             case xc_none:
@@ -774,7 +774,7 @@ static SYMBOL* DumpXCSpecifiers(SYMBOL* funcsp)
     }
     return xcSym;
 }
-static BOOLEAN allocatedXC(EXPRESSION* exp)
+static bool allocatedXC(EXPRESSION* exp)
 {
     switch (exp->type)
     {
@@ -783,7 +783,7 @@ static BOOLEAN allocatedXC(EXPRESSION* exp)
         case en_auto:
             return exp->v.sp->allocate;
         default:
-            return FALSE;
+            return false;
     }
 }
 static int evalofs(EXPRESSION* exp, SYMBOL *funcsp)
@@ -805,7 +805,7 @@ static int evalofs(EXPRESSION* exp, SYMBOL *funcsp)
             return 0;
     }
 }
-static BOOLEAN throughThis(EXPRESSION* exp)
+static bool throughThis(EXPRESSION* exp)
 {
     switch (exp->type)
     {
@@ -814,7 +814,7 @@ static BOOLEAN throughThis(EXPRESSION* exp)
         case en_l_p:
             return (exp->left->type == en_auto && exp->left->v.sp->thisPtr);
         default:
-            return FALSE;
+            return false;
     }
 }
 void XTDumpTab(SYMBOL* funcsp)
@@ -841,7 +841,7 @@ void XTDumpTab(SYMBOL* funcsp)
             p = p->next;
         }
         throwSym = DumpXCSpecifiers(funcsp);
-        gen_virtual(funcsp->xc->xclab, FALSE);
+        gen_virtual(funcsp->xc->xclab, false);
         if (throwSym)
         {
             genref(throwSym, 0);
@@ -886,7 +886,7 @@ void XTDumpTab(SYMBOL* funcsp)
                         q = q->next;
                     }
                     if (q)
-                        q->used = TRUE;
+                        q->used = true;
                     genint(XD_CL_PRIMARY | (throughThis(p->exp) ? XD_THIS : 0));
                     genref(p->xtSym, 0);
                     genint(evalofs(p->exp->v.t.thisptr, funcsp));
@@ -902,7 +902,7 @@ void XTDumpTab(SYMBOL* funcsp)
         {
             if (!p->byStmt && p->xtSym && p->exp->dest && !p->used)
             {
-                p->used = TRUE;
+                p->used = true;
                 genint(XD_CL_PRIMARY | (throughThis(p->exp) ? XD_THIS : 0));
                 genref(p->xtSym, 0);
                 genint(evalofs(p->exp->v.t.thisptr, funcsp));

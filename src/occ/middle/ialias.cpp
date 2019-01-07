@@ -62,7 +62,7 @@ extern unsigned short *termMap, *termMapUp;
 
 int cachedTempCount;
 BITINT* uivBytes;
-static BOOLEAN changed;
+static bool changed;
 static ALIASLIST* parmList;
 static int processCount;
 BITINT* processBits;
@@ -213,8 +213,8 @@ static ALIASNAME* LookupMem(IMODE* im)
     p = &mem[hash];
     while (*p)
     {
-        if (((*p)->byUIV == FALSE && (*p)->v.name == im) ||
-            ((*p)->byUIV == TRUE && (*p)->v.uiv->im == im && (*p)->v.uiv->offset == NULL))
+        if (((*p)->byUIV == false && (*p)->v.name == im) ||
+            ((*p)->byUIV == true && (*p)->v.uiv->im == im && (*p)->v.uiv->offset == NULL))
         {
             return *p;
         }
@@ -228,7 +228,7 @@ static ALIASNAME* LookupMem(IMODE* im)
         case en_global:
             (*p)->v.uiv = (UIV *)aAlloc(sizeof(UIV));
             (*p)->v.uiv->im = im;
-            (*p)->byUIV = TRUE;
+            (*p)->byUIV = true;
             break;
         default:
             break;
@@ -268,7 +268,7 @@ static void AliasUnion(ALIASLIST** dest, ALIASLIST* src)
             ALIASLIST* al = (ALIASLIST *)aAlloc(sizeof(ALIASLIST));
             al->address = src->address;
             *q = al;
-            changed = TRUE;
+            changed = true;
         }
         src = src->next;
     }
@@ -291,7 +291,7 @@ static void AliasUnionParm(ALIASLIST** dest, ALIASLIST* src)
             ALIASLIST* al = (ALIASLIST *)aAlloc(sizeof(ALIASLIST));
             al->address = src->address;
             *q = al;
-            changed = TRUE;
+            changed = true;
         }
         src = src->next;
     }
@@ -316,7 +316,7 @@ static ALIASNAME* LookupAliasName(ALIASNAME* name, int offset)
     (*uivs)->name = name;
     (*uivs)->offset = offset;
     result = (ALIASNAME *)aAlloc(sizeof(ALIASNAME));
-    result->byUIV = TRUE;
+    result->byUIV = true;
     result->v.uiv = (UIV *)aAlloc(sizeof(UIV));
     if (name->byUIV)
     {
@@ -509,15 +509,15 @@ static void Createaddresses(void)
         head = head->fwd;
     }
 }
-static BOOLEAN IntersectsUIV(ALIASLIST* list)
+static bool IntersectsUIV(ALIASLIST* list)
 {
     while (list)
     {
         if (list->address->name->byUIV)
-            return TRUE;
+            return true;
         list = list->next;
     }
-    return FALSE;
+    return false;
 }
 static void HandlePhi(QUAD* head)
 {
@@ -525,7 +525,7 @@ static void HandlePhi(QUAD* head)
     {
         struct _phiblock* pb = head->dc.v.phi->temps;
         ALIASLIST* l = NULL;
-        BOOLEAN xchanged = changed;
+        bool xchanged = changed;
         while (pb)
         {
             AliasUnion(&l, tempInfo[pb->Tn]->pointsto);
@@ -575,7 +575,7 @@ static void HandleAssn(QUAD* head)
         // temp, ind
         ALIASLIST* result = NULL;
         ALIASLIST* addr = tempInfo[head->dc.left->offset->v.sp->value.i]->pointsto;
-        BOOLEAN xchanged = changed;
+        bool xchanged = changed;
         while (addr)
         {
             if (addr->address->name->byUIV)
@@ -633,7 +633,7 @@ static void HandleAssn(QUAD* head)
                 !isintconst(head->dc.left->offset))
             {
                 // temp, immed
-                BOOLEAN xchanged = changed;
+                bool xchanged = changed;
                 ALIASNAME* an = LookupMem(head->dc.left);
                 ALIASADDRESS* aa = LookupAddress(an, 0);
                 ALIASLIST* al = (ALIASLIST*)(ALIASLIST *)aAlloc(sizeof(ALIASLIST));
@@ -653,7 +653,7 @@ static void HandleAssn(QUAD* head)
                 ALIASNAME* an = LookupMem(head->dc.left);
                 ALIASADDRESS* aa;
                 ALIASLIST* addr;
-                BOOLEAN xchanged = changed;
+                bool xchanged = changed;
                 an = LookupAliasName(an, 0);
                 aa = LookupAddress(an, 0);
                 AliasUnion(&tempInfo[head->ans->offset->v.sp->value.i]->pointsto, aa->pointsto);
@@ -802,7 +802,7 @@ static void Infer(IMODE* ans, IMODE* reg, ALIASLIST* pointsto)
         int l = InferStride(reg);
         if (l)
         {
-            BOOLEAN xchanged = changed;
+            bool xchanged = changed;
             while (pointsto)
             {
                 ALIASADDRESS* addr = LookupAddress(pointsto->address->name, pointsto->address->offset + c);
@@ -830,7 +830,7 @@ static void HandleAdd(QUAD* head)
                     // C + R
                     ALIASLIST* scan = tempInfo[head->dc.right->offset->v.sp->value.i]->pointsto;
                     ALIASLIST* result = NULL;
-                    BOOLEAN xchanged = changed;
+                    bool xchanged = changed;
                     while (scan)
                     {
                         ALIASADDRESS* addr = LookupAddress(scan->address->name, scan->address->offset + head->dc.left->offset->v.i);
@@ -888,7 +888,7 @@ static void HandleAdd(QUAD* head)
                     int c = head->dc.opcode == i_add ? head->dc.right->offset->v.i : -head->dc.right->offset->v.i;
                     ALIASLIST* scan = tempInfo[head->dc.left->offset->v.sp->value.i]->pointsto;
                     ALIASLIST* result = NULL;
-                    BOOLEAN xchanged = changed;
+                    bool xchanged = changed;
                     while (scan)
                     {
                         ALIASADDRESS* addr = LookupAddress(scan->address->name, scan->address->offset + c);
@@ -1075,11 +1075,11 @@ static void AliasesOneBlock(BLOCK* b)
 }
 static void GatherAliases(LOOP* lp)
 {
-    BOOLEAN xchanged = changed;
+    bool xchanged = changed;
     do
     {
         LIST* lt = lp->contains;
-        changed = FALSE;
+        changed = false;
         while (lt)
         {
             lp = (LOOP*)lt->data;
@@ -1090,7 +1090,7 @@ static void GatherAliases(LOOP* lp)
             lt = lt->next;
         }
         if (changed)
-            xchanged = TRUE;
+            xchanged = true;
     } while (changed);
     changed = xchanged;
 }
@@ -1102,7 +1102,7 @@ static void ormap(BITINT* dest, BITINT* src)
     {
         if (~*dest & *src)
         {
-            changed = TRUE;
+            changed = true;
             *dest |= *src;
         }
         dest++, src++;
@@ -1223,7 +1223,7 @@ void AliasGosub(QUAD* tail, BITINT* parms, BITINT* bits, int n)
             }
             else
             {
-                AliasUses(parms, tail->dc.left, TRUE);
+                AliasUses(parms, tail->dc.left, true);
             }
         }
         tail = tail->back;
@@ -1234,7 +1234,7 @@ void AliasGosub(QUAD* tail, BITINT* parms, BITINT* bits, int n)
         bits++, parms++;
     }
 }
-void AliasUses(BITINT* bits, IMODE* im, BOOLEAN rhs)
+void AliasUses(BITINT* bits, IMODE* im, bool rhs)
 {
     if (im)
     {
@@ -1294,7 +1294,7 @@ void AliasUses(BITINT* bits, IMODE* im, BOOLEAN rhs)
 }
 static void ScanUIVs(void)
 {
-    BOOLEAN done = FALSE;
+    bool done = false;
     ALIASLIST* al = parmList;
     int i;
     ResetProcessed();
@@ -1402,7 +1402,7 @@ static void GatherInds(BITINT* p, int n, ALIASLIST* al)
             {
                 if (~*r & *s)
                 {
-                    changed = TRUE;
+                    changed = true;
                     *r |= *s;
                 }
                 r++, s++;
@@ -1417,7 +1417,7 @@ static void ScanMem(void)
     int n = (termCount + BITINTBITS - 1) / BITINTBITS;
     do
     {
-        changed = FALSE;
+        changed = false;
         ResetProcessed();
         for (i = 0; i < DAGSIZE; i++)
         {
@@ -1440,7 +1440,7 @@ void AliasPass1(void)
     Createaddresses();
     do
     {
-        changed = FALSE;
+        changed = false;
         GatherAliases(loopArray[loopCount - 1]);
     } while (changed);
 }

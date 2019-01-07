@@ -104,7 +104,7 @@ static void setFloatZero(QUAD* d)
     if (d->temps & TEMP_ANS)
         tempInfo[d->ans->offset->v.sp->value.i]->preSSATemp = -1;
 }
-static void ReassignCompare(QUAD* d, int yes, BOOLEAN reflow)
+static void ReassignCompare(QUAD* d, int yes, bool reflow)
 {
     if (d->block->dead)
     {
@@ -341,7 +341,7 @@ QUAD* ReCast(int size, QUAD* in, QUAD* newMode)
     return in;
 }
 /*-------------------------------------------------------------------------*/
-void ConstantFold(QUAD* d, BOOLEAN reflow)
+void ConstantFold(QUAD* d, bool reflow)
 {
     int index; /*, shift; */
     int shift;
@@ -370,7 +370,7 @@ void ConstantFold(QUAD* d, BOOLEAN reflow)
                     break;
                 case ical:
                 case icla:
-                    ReassignCompare(d, TRUE, reflow);
+                    ReassignCompare(d, true, reflow);
                     break;
                 case icaa:
                     ReassignCompare(d, !equalnode(left, right), reflow);
@@ -398,7 +398,7 @@ void ConstantFold(QUAD* d, BOOLEAN reflow)
                     break;
                 case ical:
                 case icla:
-                    ReassignCompare(d, FALSE, reflow);
+                    ReassignCompare(d, false, reflow);
                     break;
                 case icaa:
                     ReassignCompare(d, equalnode(left, right), reflow);
@@ -601,16 +601,16 @@ void ConstantFold(QUAD* d, BOOLEAN reflow)
                     break;
                 case iclr:
                     temp = refloat(left);
-                    AddSubFPF(FALSE, &temp, &right->v.f, &temp);
+                    AddSubFPF(false, &temp, &right->v.f, &temp);
                     ReassignFloat(d, temp);
                     break;
                 case icrl:
                     temp = refloat(right);
-                    AddSubFPF(FALSE, &left->v.f, &temp, &temp);
+                    AddSubFPF(false, &left->v.f, &temp, &temp);
                     ReassignFloat(d, temp);
                     break;
                 case icrr:
-                    AddSubFPF(FALSE, &left->v.f, &right->v.f, &temp);
+                    AddSubFPF(false, &left->v.f, &right->v.f, &temp);
                     ReassignFloat(d, temp);
                     break;
                 case icln:
@@ -654,16 +654,16 @@ void ConstantFold(QUAD* d, BOOLEAN reflow)
                     break;
                 case iclr:
                     temp = refloat(left);
-                    AddSubFPF(TRUE, &temp, &right->v.f, &temp);
+                    AddSubFPF(true, &temp, &right->v.f, &temp);
                     ReassignFloat(d, temp);
                     break;
                 case icrl:
                     temp = refloat(right);
-                    AddSubFPF(TRUE, &left->v.f, &temp, &temp);
+                    AddSubFPF(true, &left->v.f, &temp, &temp);
                     ReassignFloat(d, temp);
                     break;
                 case icrr:
-                    AddSubFPF(TRUE, &left->v.f, &right->v.f, &temp);
+                    AddSubFPF(true, &left->v.f, &right->v.f, &temp);
                     ReassignFloat(d, temp);
                     break;
                 case icln:
@@ -739,7 +739,7 @@ void ConstantFold(QUAD* d, BOOLEAN reflow)
                     }
                     else if ((shift = pwrof2((unsigned LLONG_TYPE)right->v.i)) != -1)
                     {
-                        ReassignMulDiv(d, i_lsr, shift, FALSE);
+                        ReassignMulDiv(d, i_lsr, shift, false);
                     }
                     break;
                 case icnr:
@@ -763,7 +763,7 @@ void ConstantFold(QUAD* d, BOOLEAN reflow)
                 case icnl:
                     if ((shift = calmask((unsigned LLONG_TYPE)right->v.i)) != -1)
                     {
-                        ReassignMulDiv(d, i_and, shift, FALSE);
+                        ReassignMulDiv(d, i_and, shift, false);
                     }
                     break;
                 default:
@@ -821,7 +821,7 @@ void ConstantFold(QUAD* d, BOOLEAN reflow)
                     }
                     else if ((shift = pwrof2(right->v.i)) != -1)
                     {
-                        ReassignMulDiv(d, i_lsr, shift, FALSE);
+                        ReassignMulDiv(d, i_lsr, shift, false);
                     }
                     break;
                 case icnr:
@@ -851,7 +851,7 @@ void ConstantFold(QUAD* d, BOOLEAN reflow)
                 case icnl:
                     if ((shift = calmask(right->v.i)) != -1)
                     {
-                        ReassignMulDiv(d, i_and, shift, FALSE);
+                        ReassignMulDiv(d, i_and, shift, false);
                     }
                     break;
                 default:
@@ -892,7 +892,7 @@ void ConstantFold(QUAD* d, BOOLEAN reflow)
                     }
                     else if ((shift = pwrof2((unsigned LLONG_TYPE)left->v.i)) != -1)
                     {
-                        ReassignMulDiv(d, i_lsl, shift, TRUE);
+                        ReassignMulDiv(d, i_lsl, shift, true);
                     }
 
                     break;
@@ -917,7 +917,7 @@ void ConstantFold(QUAD* d, BOOLEAN reflow)
                     }
                     else if ((shift = pwrof2((unsigned LLONG_TYPE)right->v.i)) != -1)
                     {
-                        ReassignMulDiv(d, i_lsl, shift, FALSE);
+                        ReassignMulDiv(d, i_lsl, shift, false);
                     }
                     break;
                 case icnr:
@@ -964,7 +964,7 @@ void ConstantFold(QUAD* d, BOOLEAN reflow)
                     }
                     else if ((shift = pwrof2(left->v.i)) != -1)
                     {
-                        ReassignMulDiv(d, i_lsl, shift, TRUE);
+                        ReassignMulDiv(d, i_lsl, shift, true);
                     }
 
                     break;
@@ -989,7 +989,7 @@ void ConstantFold(QUAD* d, BOOLEAN reflow)
                     }
                     else if ((shift = pwrof2(right->v.i)) != -1)
                     {
-                        ReassignMulDiv(d, i_lsl, shift, FALSE);
+                        ReassignMulDiv(d, i_lsl, shift, false);
                     }
                     break;
                 case icnr:
@@ -1217,10 +1217,10 @@ void ConstantFold(QUAD* d, BOOLEAN reflow)
             break;
     }
 }
-static BOOLEAN eval(QUAD* q)
+static bool eval(QUAD* q)
 {
     int tnum;
-    int rv = FALSE;
+    int rv = false;
     IMODE* val;
     enum vop set;
     if (q->dc.opcode == i_phi)
@@ -1230,13 +1230,13 @@ static BOOLEAN eval(QUAD* q)
     else
     {
         if (q->ans->mode != i_direct || q->ans->retval)
-            return FALSE;
+            return false;
         tnum = q->ans->offset->v.sp->value.i;
     }
     set = tempInfo[tnum]->value.type;
     val = tempInfo[tnum]->value.imode;
     if (set == vo_bottom)
-        return FALSE;
+        return false;
 
     switch (q->dc.opcode)
     {
@@ -1365,7 +1365,7 @@ static BOOLEAN eval(QUAD* q)
                 set = vo_bottom;
             if (set != vo_bottom)
             {
-                ConstantFold(&qn, FALSE);
+                ConstantFold(&qn, false);
                 if (qn.dc.opcode == i_assn)
                 {
                     set = vo_constant;
@@ -1384,14 +1384,14 @@ static BOOLEAN eval(QUAD* q)
             {
                 /* evaluated to a different constant */
                 tempInfo[tnum]->value.type = vo_bottom;
-                rv = TRUE;
+                rv = true;
             }
         }
         else
         {
             tempInfo[tnum]->value.type = set;
             tempInfo[tnum]->value.imode = val;
-            rv = TRUE;
+            rv = true;
         }
     }
     return rv;
@@ -1437,14 +1437,14 @@ static void pushBlock(BLOCK* block, BLOCK* source)
             blockWorkHead = blockWorkTail = l1;
     }
 }
-static BOOLEAN evalBranch(QUAD* I, BLOCK* b)
+static bool evalBranch(QUAD* I, BLOCK* b)
 {
-    BOOLEAN found = FALSE;
+    bool found = false;
     if (I->dc.left && I->dc.right)
     {
         QUAD qn;
         BLOCKLIST* bl = b->succ;
-        found = TRUE;
+        found = true;
         switch (I->dc.opcode)
         {
             int mode;
@@ -1486,7 +1486,7 @@ static BOOLEAN evalBranch(QUAD* I, BLOCK* b)
                 }
                 else if (qn.dc.right->mode != i_immed || !isintconst(qn.dc.right->offset))
                     break;
-                ConstantFold(&qn, FALSE);
+                ConstantFold(&qn, false);
                 if (qn.dc.opcode == i_nop)
                 {
                     bl = b->succ;
@@ -1512,7 +1512,7 @@ static BOOLEAN evalBranch(QUAD* I, BLOCK* b)
                         while (I->dc.opcode != i_swbranch && I != b->tail)
                             I = I->fwd;
                         if (I == b->tail)
-                            return FALSE;
+                            return false;
                         while (I && ff && I->dc.left->offset->v.i != tempInfo[t]->value.imode->offset->v.i)
                         {
                             I = I->fwd;
@@ -1527,13 +1527,13 @@ static BOOLEAN evalBranch(QUAD* I, BLOCK* b)
                             /* the default path */
                             pushBlock(b->succ->block, b);
                         }
-                        return TRUE;
+                        return true;
                     }
                 }
                 bl = NULL;
                 break;
             default:
-                found = FALSE;
+                found = false;
                 break;
         }
         if (found)
@@ -1555,7 +1555,7 @@ static BOOLEAN evalBranch(QUAD* I, BLOCK* b)
     }
     return found;
 }
-static BOOLEAN emulInstruction(QUAD* head, BLOCK* b)
+static bool emulInstruction(QUAD* head, BLOCK* b)
 {
     if (((head->temps & TEMP_ANS) || head->dc.opcode == i_phi) && head->dc.opcode != i_coswitch)
     {
@@ -1598,7 +1598,7 @@ static BOOLEAN emulInstruction(QUAD* head, BLOCK* b)
                 uses = uses->next;
             }
         }
-        return FALSE;
+        return false;
     }
     else
         return evalBranch(head, b);
@@ -1606,7 +1606,7 @@ static BOOLEAN emulInstruction(QUAD* head, BLOCK* b)
 static void emulBlock(BLOCK* b)
 {
     QUAD* head = b->head->fwd;
-    BOOLEAN br = FALSE;
+    bool br = false;
     while (head && (head->ignoreMe || head->dc.opcode == i_label))
         head = head->fwd;
     while (head->dc.opcode == i_phi)  // possible null pointer deref
@@ -1668,7 +1668,7 @@ static void iterateConstants(void)
                         uses->ins->dc.left = tempInfo[i]->value.imode;
                         uses->ins->temps &= ~TEMP_LEFT;
                         iterateMark(t);
-                        ConstantFold(uses->ins, TRUE);
+                        ConstantFold(uses->ins, true);
                     }
                 }
                 if ((uses->ins->temps & TEMP_RIGHT) && uses->ins->dc.left->mode == i_direct)
@@ -1679,7 +1679,7 @@ static void iterateConstants(void)
                         uses->ins->dc.right = tempInfo[i]->value.imode;
                         uses->ins->temps &= ~TEMP_RIGHT;
                         iterateMark(t);
-                        ConstantFold(uses->ins, TRUE);
+                        ConstantFold(uses->ins, true);
                     }
                 }
                 uses = uses->next;
@@ -1755,7 +1755,7 @@ static void removeForward(BLOCK* start)
                         tail->temps &= ~TEMP_RIGHT;
                     }
                 }
-                ConstantFold(tail, TRUE);
+                ConstantFold(tail, true);
                 if (tail->dc.opcode == i_nop)
                 {
                     RemoveInstruction(tail);

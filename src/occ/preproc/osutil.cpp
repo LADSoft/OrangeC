@@ -63,8 +63,8 @@ char version[256];
 char copyright[256];
 LIST* clist = 0;
 
-static int showBanner = TRUE, showVersion;
-static BOOLEAN has_output_file;
+static int showBanner = true, showVersion;
+static bool has_output_file;
 static LIST *deflist = 0, *undeflist = 0;
 static jmp_buf ctrlcreturn;
 static char** set_searchpath = &prm_searchpath;
@@ -124,7 +124,7 @@ int strcasecmp_internal(const char* left, const char* right)
     while (*left && *right)
     {
         if (toupper(*left) != toupper(*right))
-            return TRUE;
+            return true;
         left++, right++;
     }
     return *left != *right;
@@ -288,7 +288,7 @@ FILE* SrchPth2(char* name, char* path, char* attrib)
 
 /*-------------------------------------------------------------------------*/
 
-FILE* SrchPth(char* name, char* path, char* attrib, BOOLEAN sys)
+FILE* SrchPth(char* name, char* path, char* attrib, bool sys)
 {
     FILE* rv = SrchPth2(name, path, attrib);
     char buf[265], *p;
@@ -307,7 +307,7 @@ FILE* SrchPth(char* name, char* path, char* attrib, BOOLEAN sys)
 }
 
 extern CMDLIST* ArgList;
-/*int parseParam(int BOOLEAN, char *string); */
+/*int parseParam(int bool, char *string); */
 
 static int use_case; /* Gets set for case sensitivity */
 
@@ -341,7 +341,7 @@ static int cmatch(char t1, char t2)
  *  the arguments, then dispatches to the action routine if so.
  */
 /* Callbacks of the form
- *   void BOOLEANcallback( char selectchar, int value)
+ *   void boolcallback( char selectchar, int value)
  *   void switchcallback( char selectchar, int value)  ;; value always true
  *   void stringcallback( char selectchar, char *string)
  */
@@ -362,17 +362,17 @@ static int scan_args(char* string, int index, char* arg)
             case ARG_SWITCH:
                 if (cmatch(string[index], ArgList[i].id))
                 {
-                    (*ArgList[i].routine)(string[index], (char*)TRUE);
+                    (*ArgList[i].routine)(string[index], (char*)true);
                     return (ARG_NEXTCHAR);
                 }
                 break;
             case ARG_BOOL:
                 if (cmatch(string[index], ArgList[i].id))
                 {
-                    if (string[0] == ARG_SEPTRUE || string[0] == '/')
-                        (*ArgList[i].routine)(string[index], (char*)TRUE);
+                    if (string[0] == ARG_SEPtrue || string[0] == '/')
+                        (*ArgList[i].routine)(string[index], (char*)true);
                     else
-                        (*ArgList[i].routine)(string[index], (char*)FALSE);
+                        (*ArgList[i].routine)(string[index], (char*)false);
                     return (ARG_NEXTCHAR);
                 }
                 break;
@@ -401,22 +401,22 @@ static int scan_args(char* string, int index, char* arg)
  * Main parse routine.  Scans for '-', then scan for arguments and
  * delete from the argv[] array if so.
  */
-BOOLEAN parse_args(int* argc, char* argv[], BOOLEAN case_sensitive)
+bool parse_args(int* argc, char* argv[], bool case_sensitive)
 {
 
     int pos = 0;
-    BOOLEAN retval = TRUE;
+    bool retval = true;
     use_case = case_sensitive;
 
     while (++pos < *argc)
     {
-        if ((argv[pos][0] == ARG_SEPSWITCH) || (argv[pos][0] == ARG_SEPFALSE) || (argv[pos][0] == ARG_SEPTRUE))
+        if ((argv[pos][0] == ARG_SEPSWITCH) || (argv[pos][0] == ARG_SEPfalse) || (argv[pos][0] == ARG_SEPtrue))
         {
             if (argv[pos][1] == '!' || !strcmp(argv[pos], "--nologo"))
             {
                 // skip the silence arg
             }
-            else if (argv[pos][0] == ARG_SEPFALSE && !argv[pos][1])
+            else if (argv[pos][0] == ARG_SEPfalse && !argv[pos][1])
             {
                 continue;
             }
@@ -424,7 +424,7 @@ BOOLEAN parse_args(int* argc, char* argv[], BOOLEAN case_sensitive)
             {
                 int argmode;
                 int index = 1;
-                BOOLEAN done = FALSE;
+                bool done = false;
                 do
                 {
                     /* Scan the present arg */
@@ -438,7 +438,7 @@ BOOLEAN parse_args(int* argc, char* argv[], BOOLEAN case_sensitive)
                         case ARG_NEXTCHAR:
                             /* If it was a char, go to the next one */
                             if (!argv[pos][++index])
-                                done = TRUE;
+                                done = true;
                             break;
                         case ARG_NEXTNOCAT:
                             /* Otherwise if it was a nocat, remove the extra arg */
@@ -446,29 +446,29 @@ BOOLEAN parse_args(int* argc, char* argv[], BOOLEAN case_sensitive)
                             /* Fall through to NEXTARG */
                         case ARG_NEXTARG:
                             /* Just a next arg, go do it */
-                            done = TRUE;
+                            done = true;
                             break;
                         case ARG_NOMATCH:
                             /* No such arg, spit an error  */
 #ifndef CPREPROCESSOR
 #    ifdef XXXXX
-                            switch (parseParam(argv[pos][index] != ARG_SEPFALSE, &argv[pos][index + 1]))
+                            switch (parseParam(argv[pos][index] != ARG_SEPfalse, &argv[pos][index + 1]))
                             {
                                 case 0:
 #    endif
 #endif
                                     fprintf(stderr, "Invalid Arg: %s\n", argv[pos]);
-                                    retval = FALSE;
-                                    done = TRUE;
+                                    retval = false;
+                                    done = true;
 #ifndef CPREPROCESSORXX
 #    ifdef XXXXX
                                     break;
                                 case 1:
                                     if (!argv[pos][++index])
-                                        done = TRUE;
+                                        done = true;
                                     break;
                                 case 2:
-                                    done = TRUE;
+                                    done = true;
                                     break;
                             }
 #    endif
@@ -477,8 +477,8 @@ BOOLEAN parse_args(int* argc, char* argv[], BOOLEAN case_sensitive)
                         case ARG_NOARG:
                             /* Missing the arg for a CONCAT type, spit the error */
                             fprintf(stderr, "Missing string for Arg %s\n", argv[pos]);
-                            done = TRUE;
-                            retval = FALSE;
+                            done = true;
+                            retval = false;
                             break;
                     };
 
@@ -503,12 +503,12 @@ void err_setup(char select, char* string)
     (void)select;
     if (*string == '+')
     {
-        cparams.prm_extwarning = TRUE;
+        cparams.prm_extwarning = true;
         string++;
     }
     else if (*string == '-')
     {
-        cparams.prm_warning = FALSE;
+        cparams.prm_warning = false;
         string++;
     }
     n = atoi(string);
@@ -571,7 +571,7 @@ void output_setup(char select, char* string)
 {
     (void)select;
     strcpy(outfile, string);
-    has_output_file = TRUE;
+    has_output_file = true;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -597,7 +597,7 @@ void setglbdefs(void)
             s++;
         if (*s == '=')
             *s++ = 0;
-        glbdefine(n, s, FALSE);
+        glbdefine(n, s, false);
         l = l->next;
     }
     l = undeflist;
@@ -614,21 +614,21 @@ void setglbdefs(void)
     }
     sscanf(STRING_VERSION, "%d.%d", &major, &minor);
     sprintf(buf, "%d", major * 100 + minor);
-    glbdefine("__ORANGEC__", buf, TRUE);
-    glbdefine("__WIN32", "", FALSE);
+    glbdefine("__ORANGEC__", buf, true);
+    glbdefine("__WIN32", "", false);
     if (cparams.prm_cplusplus)
     {
-        glbdefine("__cplusplus", "201103", TRUE);
+        glbdefine("__cplusplus", "201103", true);
         if (cparams.prm_xcept)
-            glbdefine("__RTTI__", "1", TRUE);
+            glbdefine("__RTTI__", "1", true);
     }
-    glbdefine("__STDC__", "1", TRUE);
+    glbdefine("__STDC__", "1", true);
     if (cparams.prm_c99)
     {
 #ifndef CPREPROCESSOR
-        glbdefine("__STDC_HOSTED__", chosenAssembler->hosted, TRUE);  // hosted compiler, not embedded
+        glbdefine("__STDC_HOSTED__", chosenAssembler->hosted, true);  // hosted compiler, not embedded
 #endif
-        glbdefine("__STDC_VERSION__", "199901L", TRUE);
+        glbdefine("__STDC_VERSION__", "199901L", true);
     }
     /*   glbdefine("__STDC_IEC_599__","1");*/
     /*   glbdefine("__STDC_IEC_599_COMPLEX__","1");*/
@@ -651,7 +651,7 @@ void setglbdefs(void)
 
 /*-------------------------------------------------------------------------*/
 
-void InsertAnyFile(char* filename, char* path, int drive, BOOLEAN primary)
+void InsertAnyFile(char* filename, char* path, int drive, bool primary)
 /*
  * Insert a file name onto the list of files to process
  */
@@ -785,9 +785,9 @@ int parse_arbitrary(char* string)
         *string = 0;
         string++;
     }
-    rv = parse_args(&argc, argv, TRUE);
+    rv = parse_args(&argc, argv, true);
     for (i = 1; i < argc; i++)
-        InsertAnyFile(argv[i], 0, -1, TRUE);
+        InsertAnyFile(argv[i], 0, -1, true);
     return rv;
 }
 
@@ -957,11 +957,11 @@ void ccinit(int argc, char* argv[])
         if (argv[i][0] == '-' || argv[i][0] == '/')
             if (argv[i][1] == '!' || !strcmp(argv[i], "--nologo"))
             {
-                showBanner = FALSE;
+                showBanner = false;
             }
             else if (argv[i][1] == 'V' && argv[i][2] == 0 || !strcmp(argv[i], "--version"))
             {
-                showVersion = TRUE;
+                showVersion = true;
             }
 
     if (showBanner || showVersion)
@@ -1008,7 +1008,7 @@ void ccinit(int argc, char* argv[])
         }
     }
     parseconfigfile(buffer);
-    if (!parse_args(&argc, argv, TRUE) || (!clist && argc == 1))
+    if (!parse_args(&argc, argv, true) || (!clist && argc == 1))
         usage(argv[0]);
 
     /* tack the environment includes in */
@@ -1021,7 +1021,7 @@ void ccinit(int argc, char* argv[])
             if (argv[i][0] == '@')
                 parsefile(0, argv[i] + 1);
             else
-                InsertAnyFile(argv[i], 0, -1, TRUE);
+                InsertAnyFile(argv[i], 0, -1, true);
     }
 
     if ((clist && clist->next) && has_output_file)
@@ -1033,7 +1033,7 @@ void ccinit(int argc, char* argv[])
         if (chosenAssembler->insert_noncompile_file)
             chosenAssembler->insert_noncompile_file(outfile);
 #endif
-        has_output_file = FALSE;
+        has_output_file = false;
     }
     /* Set up a ctrl-C handler so we can exit the prog */
     signal(SIGINT, ctrlchandler);

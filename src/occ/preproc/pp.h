@@ -28,8 +28,7 @@
 
 typedef LLONG_TYPE PPINT;
 typedef ULLONG_TYPE PPUINT;
-#define TRUE 1
-#define FALSE 0
+
 
 /* ## sequences */
 #define REPLACED_TOKENIZING ((unsigned char)-80)
@@ -56,7 +55,7 @@ typedef struct ifstruct
 {
     struct ifstruct* next; /* next */
     short iflevel;
-    BOOLEAN elsetaken;
+    bool elsetaken;
     int line;
 } IFSTRUCT;
 
@@ -72,12 +71,12 @@ typedef struct _includes_
     int ifskip;
     int skiplevel;
     long filesize;
-    BOOLEAN elsetaken;
+    bool elsetaken;
     char* data;
     unsigned char* lptr;
     int pos;
     int sysflags;
-    BOOLEAN sys_inc;
+    bool sys_inc;
     IFSTRUCT* ifs;
     unsigned char* ibufPtr;
     int inputlen;

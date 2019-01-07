@@ -103,15 +103,15 @@ static void keep(IMODE* l)
         QUAD* i = tempInfo[l->offset->v.sp->value.i]->instructionDefines;
         if (i->invarInserted)
         {
-            i->invarKeep = TRUE;
+            i->invarKeep = true;
             keep(i->dc.left);
             keep(i->dc.right);
         }
     }
 }
-static BOOLEAN IsAncestor(BLOCK* b1, BLOCK* b2)
+static bool IsAncestor(BLOCK* b1, BLOCK* b2)
 {
-    BOOLEAN rv = FALSE;
+    bool rv = false;
     if (b1)
     {
         LOOP* lb1 = b1->loopParent;
@@ -119,7 +119,7 @@ static BOOLEAN IsAncestor(BLOCK* b1, BLOCK* b2)
         while (temp && !rv)
         {
             if (temp == lb1)
-                rv = TRUE;
+                rv = true;
             temp = temp->parent;
         }
     }
@@ -127,7 +127,7 @@ static BOOLEAN IsAncestor(BLOCK* b1, BLOCK* b2)
 }
 static void MoveTo(BLOCK* dest, BLOCK* src, QUAD* head)
 {
-    QUAD* insert = beforeJmp(dest->tail, TRUE);
+    QUAD* insert = beforeJmp(dest->tail, true);
     QUAD* head2 = (QUAD *)Alloc(sizeof(QUAD));
     *head2 = *head;
     EnterRef(head, head2);
@@ -140,12 +140,12 @@ static void MoveTo(BLOCK* dest, BLOCK* src, QUAD* head)
     tempInfo[head->ans->offset->v.sp->value.i]->blockDefines = dest;
     tempInfo[head->ans->offset->v.sp->value.i]->instructionDefines = head;
     head->block = dest;
-    head->invarInserted = TRUE;
+    head->invarInserted = true;
     if (head->dc.opcode != i_assn || head->dc.left->mode == i_immed)
     {
         keep(head->dc.left);
         keep(head->dc.right);
-        head->invarKeep = TRUE;
+        head->invarKeep = true;
     }
 }
 static void MoveExpression(BLOCK* b, QUAD* head, BLOCK* pbl, BLOCK* pbr)
@@ -172,19 +172,19 @@ static void MoveExpression(BLOCK* b, QUAD* head, BLOCK* pbl, BLOCK* pbr)
         }
     }
 }
-static BOOLEAN isPhiUsing(LOOP* considering, int temp)
+static bool isPhiUsing(LOOP* considering, int temp)
 {
-    BOOLEAN rv = FALSE;
+    bool rv = false;
     if (temp != -1 && considering)
     {
         rv = isset(considering->invariantPhiList, temp);
     }
     return rv;
 }
-static BOOLEAN InvariantPhiUsing(QUAD* head)
+static bool InvariantPhiUsing(QUAD* head)
 {
     int ans = head->ans->offset->v.sp->value.i;
-    BOOLEAN rv = FALSE;
+    bool rv = false;
     int left = -1, right = -1;
     LOOP* considering = head->block->loopParent;
     if (tempInfo[ans]->preSSATemp >= 0)
@@ -243,20 +243,20 @@ void ScanForInvariants(BLOCK* b)
                 tempInfo[head->ans->offset->v.sp->value.i]->blockDefines = b;
                 if (!tempInfo[head->ans->offset->v.sp->value.i]->inductionLoop && (head->temps & (TEMP_LEFT | TEMP_RIGHT)))
                 {
-                    BOOLEAN canMove = TRUE;
+                    bool canMove = true;
                     BLOCK *pbl = NULL, *pbr = NULL;
                     if ((head->temps & TEMP_LEFT) && head->dc.left->mode == i_direct)
                     {
                         pbl = tempInfo[head->dc.left->offset->v.sp->value.i]->blockDefines;
                     }
                     else if (head->dc.left->mode != i_immed)
-                        canMove = FALSE;
+                        canMove = false;
                     if ((head->temps & TEMP_RIGHT) && head->dc.right->mode == i_direct)
                     {
                         pbr = tempInfo[head->dc.right->offset->v.sp->value.i]->blockDefines;
                     }
                     else if (head->dc.right && head->dc.right->mode != i_immed)
-                        canMove = FALSE;
+                        canMove = false;
                     if (canMove)
                         canMove = InvariantPhiUsing(head);
                     if (canMove)

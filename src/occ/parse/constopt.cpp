@@ -36,7 +36,7 @@
 extern int stdpragmas;
 extern ARCH_ASM* chosenAssembler;
 extern TYPE stdvoid;
-extern BOOLEAN initializingGlobalVar;
+extern bool initializingGlobalVar;
 extern int total_errors;
 extern STRUCTSYM* structSyms;
 extern int templateNestingCount;
@@ -57,7 +57,7 @@ void constoptinit(void)
 static int optimizerfloatconst(EXPRESSION* en)
 {
     if ((en->pragmas & STD_PRAGMA_FENV) && !initializingGlobalVar)
-        return FALSE;
+        return false;
 
     return isfloatconst(en) || isimaginaryconst(en) || iscomplexconst(en);
 }
@@ -67,7 +67,7 @@ static int optimizerfloatconst(EXPRESSION* en)
 static int isoptconst(EXPRESSION* en)
 {
     if (!en)
-        return FALSE;
+        return false;
     return isintconst(en) || optimizerfloatconst(en);
 }
 
@@ -111,9 +111,9 @@ static int isunsignedexpr(EXPRESSION* ep1)
         case en_c_ul:
         case en_c_ui:
         case en_c_ull:
-            return TRUE;
+            return true;
         default:
-            return FALSE;
+            return false;
     }
 }
 
@@ -155,7 +155,7 @@ static e_node maxcomplextype(EXPRESSION* ep1, EXPRESSION* ep2)
         return en_c_dc;
     return en_c_fc;
 }
-static BOOLEAN hasFloats(EXPRESSION* node)
+static bool hasFloats(EXPRESSION* node)
 /*
  * Go through a node and see if it will be promoted to type FLOAT
  */
@@ -399,7 +399,7 @@ ULLONG_TYPE CastToInt(int size, LLONG_TYPE value)
         case ISZ_U32:
             bits = getSize(bt_char32_t) * 8;
             break;
-        case ISZ_BOOLEAN:
+        case ISZ_bool:
             bits = 1;
             break;
         case -ISZ_UCHAR:
@@ -511,7 +511,7 @@ FPFC refloat(EXPRESSION* node)
             rv = CastToFloat(ISZ_LDOUBLE, IntToFloat(&temp, ISZ_WCHAR, node->v.i));
             break;
         case en_c_bool:
-            rv = CastToFloat(ISZ_LDOUBLE, IntToFloat(&temp, ISZ_BOOLEAN, node->v.i));
+            rv = CastToFloat(ISZ_LDOUBLE, IntToFloat(&temp, ISZ_bool, node->v.i));
             break;
         case en_c_ull:
             rv = CastToFloat(ISZ_LDOUBLE, IntToFloat(&temp, ISZ_ULONGLONG, node->v.i));
@@ -591,7 +591,7 @@ ULLONG_TYPE reint(EXPRESSION* node)
             rv = CastToInt(ISZ_U32, node->v.i);
             break;
         case en_c_bool:
-            rv = CastToInt(ISZ_BOOLEAN, node->v.i);
+            rv = CastToInt(ISZ_bool, node->v.i);
             break;
         case en_c_ull:
             rv = CastToInt(ISZ_ULONGLONG, node->v.i);
@@ -1410,7 +1410,7 @@ int opt0(EXPRESSION** node)
 {
     EXPRESSION* ep;
     LLONG_TYPE val;
-    int rv = FALSE;
+    int rv = false;
     int mode;
     FPFC dval;
     e_node negtype = en_uminus;
@@ -1418,7 +1418,7 @@ int opt0(EXPRESSION** node)
     ep = *node;
 
     if (ep == 0)
-        return FALSE;
+        return false;
     switch (ep->type)
     {
         case en_l_sp:
@@ -1495,7 +1495,7 @@ int opt0(EXPRESSION** node)
             rv |= opt0(&(ep->left));
             if (isintconst(ep->left))
             {
-                rv = TRUE;
+                rv = true;
                 ep->type = ep->left->type;
                 ep->v.i = ~ep->left->v.i;
                 ep->v.i = reint(ep);
@@ -1508,19 +1508,19 @@ int opt0(EXPRESSION** node)
             if (isintconst(ep->left))
             {
                 *node = intNode(ep->left->type, -ep->left->v.i);
-                rv = TRUE;
+                rv = true;
             }
             else if (isfloatconst(ep->left))
             {
                 *node = intNode(ep->left->type, 0);
                 (*node)->v.f = ep->left->v.f;
                 (*node)->v.f.sign ^= 1;
-                rv = TRUE;
+                rv = true;
             }
             else if (ep->left->type == en_c_d || ep->left->type == en_c_f || ep->left->type == en_c_ld ||
                      ep->left->type == en_c_di || ep->left->type == en_c_fi || ep->left->type == en_c_ldi)
             {
-                rv = TRUE;
+                rv = true;
                 ep->type = ep->left->type;
                 ep->v.f = ep->left->v.f;
                 ep->v.f.sign ^= 1;
@@ -1528,7 +1528,7 @@ int opt0(EXPRESSION** node)
             }
             else if (ep->left->type == en_c_dc || ep->left->type == en_c_fc || ep->left->type == en_c_ldc)
             {
-                rv = TRUE;
+                rv = true;
                 ep->type = ep->left->type;
                 ep->v.c.r = ep->left->v.c.r;
                 ep->v.c.r.sign ^= 1;
@@ -1553,7 +1553,7 @@ int opt0(EXPRESSION** node)
                 case 3:
                 case 4:
                 default:
-                    rv = TRUE;
+                    rv = true;
                     dooper(node, mode);
                     break;
                 case 5:
@@ -1565,13 +1565,13 @@ int opt0(EXPRESSION** node)
                                 *node = exprNode(en_uminus, ep->right, 0);
                             else
                                 *node = ep->right;
-                            rv = TRUE;
+                            rv = true;
                         }
                     }
                     else
                     {
                         dooper(node, mode);
-                        rv = TRUE;
+                        rv = true;
                     }
                     break;
                 case 6:
@@ -1585,7 +1585,7 @@ int opt0(EXPRESSION** node)
                     }
                     else
                         dooper(node, mode);
-                    rv = TRUE;
+                    rv = true;
                     break;
                 case 7:
                     if (ep->right->v.i == 0)
@@ -1593,13 +1593,13 @@ int opt0(EXPRESSION** node)
                         if (ep->left->type != en_auto)
                         {
                             *node = ep->left;
-                            rv = TRUE;
+                            rv = true;
                         }
                     }
                     else
                     {
                         dooper(node, mode);
-                        rv = TRUE;
+                        rv = true;
                     }
                     break;
                 case 8:
@@ -1609,7 +1609,7 @@ int opt0(EXPRESSION** node)
                     }
                     else
                         dooper(node, mode);
-                    rv = TRUE;
+                    rv = true;
                     break;
                 case 22:
                     if (ep->right->v.c.r.type == IFPF_IS_ZERO && ep->right->v.c.i.type == IFPF_IS_ZERO)
@@ -1618,7 +1618,7 @@ int opt0(EXPRESSION** node)
                     }
                     else
                         dooper(node, mode);
-                    rv = TRUE;
+                    rv = true;
                     break;
             }
             return rv;
@@ -1647,7 +1647,7 @@ int opt0(EXPRESSION** node)
                 case 19:
                 case 20:
                     dooper(node, mode);
-                    rv = TRUE;
+                    rv = true;
                     break;
                 case 5:
                     if (!hasFloats(ep->right))
@@ -1671,7 +1671,7 @@ int opt0(EXPRESSION** node)
                                 ep->left = ep->right;
                                 ep->right = x;
                                 ep->right->v.i = i;
-                                rv = TRUE;
+                                rv = true;
                                 switch (ep->type)
                                 {
                                     case en_mul:
@@ -1691,7 +1691,7 @@ int opt0(EXPRESSION** node)
                         }
                     }
                     dooper(node, mode);
-                    rv = TRUE;
+                    rv = true;
                     break;
                 case 6:
                     dval = ep->left->v.f;
@@ -1709,7 +1709,7 @@ int opt0(EXPRESSION** node)
                         *node = exprNode(negtype, ep->right, 0);
                     else
                         dooper(node, mode);
-                    rv = TRUE;
+                    rv = true;
                     break;
                 case 7:
                     if (!hasFloats(ep->left))
@@ -1734,7 +1734,7 @@ int opt0(EXPRESSION** node)
                             if (i != -1)
                             {
                                 ep->right->v.i = i;
-                                rv = TRUE;
+                                rv = true;
                                 switch (ep->type)
                                 {
                                     case en_mul:
@@ -1754,7 +1754,7 @@ int opt0(EXPRESSION** node)
                         }
                     }
                     dooper(node, mode);
-                    rv = TRUE;
+                    rv = true;
                     break;
                 case 8:
                     dval = ep->right->v.f;
@@ -1768,7 +1768,7 @@ int opt0(EXPRESSION** node)
                     }
                     else
                         dooper(node, mode);
-                    rv = TRUE;
+                    rv = true;
                     break;
                 case 22:
                     dval = ep->right->v.c.r;
@@ -1799,7 +1799,7 @@ int opt0(EXPRESSION** node)
                 case 4:
                 case 20:
                     dooper(node, mode);
-                    rv = TRUE;
+                    rv = true;
                     break;
                 case 5:
                     if (ep->left->v.i == 0)
@@ -1809,11 +1809,11 @@ int opt0(EXPRESSION** node)
                     }
                     else
                         dooper(node, mode);
-                    rv = TRUE;
+                    rv = true;
                     break;
                 case 6:
                     dooper(node, mode);
-                    rv = TRUE;
+                    rv = true;
                     break;
                 case 7:
                     if (!hasFloats(ep->left))
@@ -1825,7 +1825,7 @@ int opt0(EXPRESSION** node)
                             *node = exprNode(negtype, ep->left, 0);
                     }
                     dooper(node, mode);
-                    rv = TRUE;
+                    rv = true;
                     break;
                 case 8:
                     dval = ep->right->v.f;
@@ -1835,7 +1835,7 @@ int opt0(EXPRESSION** node)
                         *node = exprNode(negtype, ep->left, 0);
                     else
                         dooper(node, mode);
-                    rv = TRUE;
+                    rv = true;
                     break;
                 case 22:
                     dval = ep->right->v.c.r;
@@ -1852,7 +1852,7 @@ int opt0(EXPRESSION** node)
                     }
                     else
                         dooper(node, mode);
-                    rv = TRUE;
+                    rv = true;
                     break;
             }
             break;
@@ -1874,7 +1874,7 @@ int opt0(EXPRESSION** node)
                 case 6:
                 case 8:
                     dooper(node, mode);
-                    rv = TRUE;
+                    rv = true;
                     break;
             }
             break;
@@ -1888,7 +1888,7 @@ int opt0(EXPRESSION** node)
                     break;
                 case 1:
                     dooper(node, mode);
-                    rv = TRUE;
+                    rv = true;
                     break;
                 case 5:
                     if (ep->left->v.i == 0)
@@ -1898,7 +1898,7 @@ int opt0(EXPRESSION** node)
                     }
                     else
                         dooper(node, mode);
-                    rv = TRUE;
+                    rv = true;
                     break;
                 case 7:
                     if (ep->right->v.i == 0)
@@ -1908,7 +1908,7 @@ int opt0(EXPRESSION** node)
                     }
                     else
                         dooper(node, mode);
-                    rv = TRUE;
+                    rv = true;
                     break;
             }
             break;
@@ -1923,7 +1923,7 @@ int opt0(EXPRESSION** node)
                     break;
                 case 1:
                     dooper(node, mode);
-                    rv = TRUE;
+                    rv = true;
                     break;
                 case 5:
                     if (ep->left->v.i == 0)
@@ -1932,7 +1932,7 @@ int opt0(EXPRESSION** node)
                     }
                     else
                         dooper(node, mode);
-                    rv = TRUE;
+                    rv = true;
                     break;
                 case 7:
                     if (ep->right->v.i == 0)
@@ -1941,7 +1941,7 @@ int opt0(EXPRESSION** node)
                     }
                     else
                         dooper(node, mode);
-                    rv = TRUE;
+                    rv = true;
                     break;
             }
             break;
@@ -1954,7 +1954,7 @@ int opt0(EXPRESSION** node)
                 if (isintconst(ep->right->left))
                 {
                     ep->right = ep->right->left;
-                    rv = TRUE;
+                    rv = true;
                 }
             rv |= opt0(&(ep->right));
             mode = getmode(ep->left, ep->right);
@@ -1964,7 +1964,7 @@ int opt0(EXPRESSION** node)
                     break;
                 case 1:
                     dooper(node, mode);
-                    rv = TRUE;
+                    rv = true;
                     break;
                 case 5:
                     if (ep->left->v.i == 0)
@@ -1974,7 +1974,7 @@ int opt0(EXPRESSION** node)
                     }
                     else
                         dooper(node, mode);
-                    rv = TRUE;
+                    rv = true;
                     break;
                 case 7:
                     if (ep->right->v.i == 0)
@@ -1983,7 +1983,7 @@ int opt0(EXPRESSION** node)
                     }
                     else
                         dooper(node, mode);
-                    rv = TRUE;
+                    rv = true;
                     break;
             }
             break;
@@ -1993,7 +1993,7 @@ int opt0(EXPRESSION** node)
             {
                 if (!ep->left->v.i)
                 {
-                    rv = TRUE;
+                    rv = true;
                     *node = intNode(en_c_i, 0);
                     break;
                 }
@@ -2015,7 +2015,7 @@ int opt0(EXPRESSION** node)
                         rv |= opt0(&(ep->right));
                         if (isintconst(ep->right))
                         {
-                            rv = TRUE;
+                            rv = true;
                             *node = intNode(en_c_i, !!ep->right->v.i);
                         }
                         else
@@ -2028,7 +2028,7 @@ int opt0(EXPRESSION** node)
                                 case en_auto:
                                     /* assumes nothing can be relocated to address 0 */
                                     *node = intNode(en_c_i, 1);
-                                    rv = TRUE;
+                                    rv = true;
                                     break;
                                 default:
                                     break;
@@ -2045,7 +2045,7 @@ int opt0(EXPRESSION** node)
             {
                 if (ep->left->v.i)
                 {
-                    rv = TRUE;
+                    rv = true;
                     *node = intNode(en_c_i, 1);
                     break;
                 }
@@ -2064,7 +2064,7 @@ int opt0(EXPRESSION** node)
                     case en_auto:
                         /* assumes nothing can be relocated to address 0 */
                         *node = intNode(en_c_i, 1);
-                        rv = TRUE;
+                        rv = true;
                         break;
                     default:
                     {
@@ -2074,12 +2074,12 @@ int opt0(EXPRESSION** node)
                         {
                             if (ep->right->v.i)
                             {
-                                rv = TRUE;
+                                rv = true;
                                 *node = intNode(en_c_i, 1);
                             }
                             else if (isintconst(ep->left) && !ep->left->v.i)
                             {
-                                rv = TRUE;
+                                rv = true;
                                 *node = intNode(en_c_i, 0);
                             }
                         }
@@ -2093,7 +2093,7 @@ int opt0(EXPRESSION** node)
                                 case en_auto:
                                     /* assumes nothing can be relocated to address 0 */
                                     *node = intNode(en_c_i, 1);
-                                    rv = TRUE;
+                                    rv = true;
                                     break;
                                 default:
                                     break;
@@ -2106,12 +2106,12 @@ int opt0(EXPRESSION** node)
             if (isintconst(ep->left))
             {
                 *node = intNode(en_c_i, (!ep->left->v.i));
-                rv = TRUE;
+                rv = true;
             }
             else if (isfloatconst(ep->left))
             {
                 *node = intNode(en_c_i, ep->left->v.f.type == IFPF_IS_ZERO);
-                rv = TRUE;
+                rv = true;
             }
             break;
         case en_eq:
@@ -2122,12 +2122,12 @@ int opt0(EXPRESSION** node)
             {
                 case 1:
                     *node = intNode(en_c_i, (ep->left->v.i == ep->right->v.i));
-                    rv = TRUE;
+                    rv = true;
 
                     break;
                 case 4:
                     *node = intNode(en_c_i, FPFEQ(&ep->left->v.f, &ep->right->v.f));
-                    rv = TRUE;
+                    rv = true;
                     break;
                 default:
                     break;
@@ -2141,11 +2141,11 @@ int opt0(EXPRESSION** node)
             {
                 case 1:
                     *node = intNode(en_c_i, (ep->left->v.i != ep->right->v.i));
-                    rv = TRUE;
+                    rv = true;
                     break;
                 case 4:
                     *node = intNode(en_c_i, !FPFEQ(&ep->left->v.f, &ep->right->v.f));
-                    rv = TRUE;
+                    rv = true;
                     break;
                 default:
                     break;
@@ -2159,11 +2159,11 @@ int opt0(EXPRESSION** node)
             {
                 case 1:
                     *node = intNode(en_c_i, (ep->left->v.i < ep->right->v.i));
-                    rv = TRUE;
+                    rv = true;
                     break;
                 case 4:
                     *node = intNode(en_c_i, !FPFGTE(&ep->left->v.f, &ep->right->v.f));
-                    rv = TRUE;
+                    rv = true;
                     break;
                 default:
                     break;
@@ -2177,11 +2177,11 @@ int opt0(EXPRESSION** node)
             {
                 case 1:
                     *node = intNode(en_c_i, (ep->left->v.i <= ep->right->v.i));
-                    rv = TRUE;
+                    rv = true;
                     break;
                 case 4:
                     *node = intNode(en_c_i, !FPFGT(&ep->left->v.f, &ep->right->v.f));
-                    rv = TRUE;
+                    rv = true;
                     break;
                 default:
                     break;
@@ -2195,7 +2195,7 @@ int opt0(EXPRESSION** node)
             {
                 case 1:
                     *node = intNode(en_c_i, ((ULLONG_TYPE)ep->left->v.i > (ULLONG_TYPE)ep->right->v.i));
-                    rv = TRUE;
+                    rv = true;
                     break;
                 default:
                     break;
@@ -2209,7 +2209,7 @@ int opt0(EXPRESSION** node)
             {
                 case 1:
                     *node = intNode(en_c_i, ((ULLONG_TYPE)ep->left->v.i >= (ULLONG_TYPE)ep->right->v.i));
-                    rv = TRUE;
+                    rv = true;
                     break;
                 default:
                     break;
@@ -2223,7 +2223,7 @@ int opt0(EXPRESSION** node)
             {
                 case 1:
                     *node = intNode(en_c_i, ((ULLONG_TYPE)ep->left->v.i < (ULLONG_TYPE)ep->right->v.i));
-                    rv = TRUE;
+                    rv = true;
                     break;
                 default:
                     break;
@@ -2237,7 +2237,7 @@ int opt0(EXPRESSION** node)
             {
                 case 1:
                     *node = intNode(en_c_i, ((ULLONG_TYPE)ep->left->v.i <= (ULLONG_TYPE)ep->right->v.i));
-                    rv = TRUE;
+                    rv = true;
                     break;
                 default:
                     break;
@@ -2251,11 +2251,11 @@ int opt0(EXPRESSION** node)
             {
                 case 1:
                     *node = intNode(en_c_i, (ep->left->v.i > ep->right->v.i));
-                    rv = TRUE;
+                    rv = true;
                     break;
                 case 4:
                     *node = intNode(en_c_i, FPFGT(&ep->left->v.f, &ep->right->v.f));
-                    rv = TRUE;
+                    rv = true;
                     break;
                 default:
                     break;
@@ -2269,11 +2269,11 @@ int opt0(EXPRESSION** node)
             {
                 case 1:
                     *node = intNode(en_c_i, (ep->left->v.i >= ep->right->v.i));
-                    rv = TRUE;
+                    rv = true;
                     break;
                 case 4:
                     *node = intNode(en_c_i, !FPFGTE(&ep->left->v.f, &ep->right->v.f));
-                    rv = TRUE;
+                    rv = true;
                     break;
                 default:
                     break;
@@ -2361,12 +2361,12 @@ int opt0(EXPRESSION** node)
                 if (tsl->next->isTemplate)
                 {
                     TEMPLATEPARAMLIST* current = tsl->next->templateParams;
-                    sp = GetClassTemplate(ts, current, TRUE);
+                    sp = GetClassTemplate(ts, current, true);
                 }
                 if (sp && sp->tp->type == bt_templateselector)
                 {
                     TYPE* tp = sp->tp;
-                    tp = SynthesizeType(tp, NULL, FALSE);
+                    tp = SynthesizeType(tp, NULL, false);
                     if (tp && isstructured(tp))
                         sp = basetype(tp)->sp;
                 }
@@ -2382,7 +2382,7 @@ int opt0(EXPRESSION** node)
                         sp = search(find->name, spo->tp->syms);
                         if (!sp)
                         {
-                            sp = classdata(find->name, spo, NULL, FALSE, FALSE);
+                            sp = classdata(find->name, spo, NULL, false, false);
                             if (sp == (SYMBOL*)-1)
                                 sp = NULL;
                         }
@@ -2394,11 +2394,11 @@ int opt0(EXPRESSION** node)
                         {
                             optimize_for_constants(&sp->init->exp);
                             *node = sp->init->exp;
-                            return TRUE;
+                            return true;
                         }
                     }
                 }
-                return FALSE;
+                return false;
             }
             break;
         case en_templateparam:
@@ -2451,7 +2451,7 @@ int fold_const(EXPRESSION* node)
  *      the calling routines.
  */
 {
-    int rv = FALSE;
+    int rv = false;
     if (node == 0)
         return 0;
     switch (node->type)
@@ -2480,7 +2480,7 @@ int fold_const(EXPRESSION* node)
                             node->type = type;
                             node->left->type = en_add;
                             enswap(&node->left->right, &node->right);
-                            rv = TRUE;
+                            rv = true;
                         }
                         else if (isoptconst(node->left->right))
                         {
@@ -2493,7 +2493,7 @@ int fold_const(EXPRESSION* node)
                             node->type = type;
                             node->left->type = en_add;
                             enswap(&node->left->left, &node->right);
-                            rv = TRUE;
+                            rv = true;
                         }
                         break;
                     case en_sub:
@@ -2507,7 +2507,7 @@ int fold_const(EXPRESSION* node)
                             node->type = en_sub;
                             node->left->type = type;
                             enswap(&node->left->right, &node->right);
-                            rv = TRUE;
+                            rv = true;
                         }
                         else if (isoptconst(node->left->right))
                         {
@@ -2519,7 +2519,7 @@ int fold_const(EXPRESSION* node)
                             node->type = type;
                             node->left->type = en_sub;
                             enswap(&node->left->left, &node->right);
-                            rv = TRUE;
+                            rv = true;
                         }
                         break;
                     default:
@@ -2543,7 +2543,7 @@ int fold_const(EXPRESSION* node)
                             node->type = type;
                             node->right->type = en_add;
                             enswap(&node->right->right, &node->left);
-                            rv = TRUE;
+                            rv = true;
                         }
                         else if (isoptconst(node->right->right))
                         {
@@ -2555,7 +2555,7 @@ int fold_const(EXPRESSION* node)
                             node->type = type;
                             node->right->type = en_add;
                             enswap(&node->right->left, &node->left);
-                            rv = TRUE;
+                            rv = true;
                         }
                         break;
                     case en_sub:
@@ -2565,7 +2565,7 @@ int fold_const(EXPRESSION* node)
                             node->right->type = en_add;
                             enswap(&node->left, &node->right);
                             enswap(&node->left->right, &node->right);
-                            rv = TRUE;
+                            rv = true;
                         }
                         else if (isoptconst(node->right->right))
                         {
@@ -2577,7 +2577,7 @@ int fold_const(EXPRESSION* node)
                             node->type = type;
                             node->right->type = en_sub;
                             enswap(&node->right->left, &node->left);
-                            rv = TRUE;
+                            rv = true;
                         }
                         break;
                     default:
@@ -2600,7 +2600,7 @@ int fold_const(EXPRESSION* node)
                             node->type = en_add;
                             node->left->type = en_sub;
                             enswap(&node->left->right, &node->right);
-                            rv = TRUE;
+                            rv = true;
                         }
                         else if (isoptconst(node->left->right))
                         {
@@ -2608,14 +2608,14 @@ int fold_const(EXPRESSION* node)
                             node->left->type = en_sub;
                             enswap(&node->left->left, &node->left->right);
                             enswap(&node->left->right, &node->right);
-                            rv = TRUE;
+                            rv = true;
                         }
                         break;
                     case en_sub:
                         if (isoptconst(node->left->left))
                         {
                             enswap(&node->left->right, &node->right);
-                            rv = TRUE;
+                            rv = true;
                         }
                         else if (isoptconst(node->left->right))
                         {
@@ -2623,7 +2623,7 @@ int fold_const(EXPRESSION* node)
                             enswap(&node->right->left, &node->left);
                             node->type = en_add;
                             node->right->left = exprNode(en_uminus, node->right->left, 0);
-                            rv = TRUE;
+                            rv = true;
                         }
                         break;
                     default:
@@ -2644,7 +2644,7 @@ int fold_const(EXPRESSION* node)
                             enswap(&node->left, &node->right);
                             enswap(&node->left->right, &node->right);
                             enswap(&node->left->left, &node->left->right);
-                            rv = TRUE;
+                            rv = true;
                         }
                         else if (isoptconst(node->right->right))
                         {
@@ -2652,14 +2652,14 @@ int fold_const(EXPRESSION* node)
                             node->right->type = en_sub;
                             enswap(&node->left, &node->right);
                             enswap(&node->left->left, &node->right);
-                            rv = TRUE;
+                            rv = true;
                         }
                         break;
                     case en_sub:
                         if (isoptconst(node->right->left))
                         {
                             enswap(&node->right->right, &node->left);
-                            rv = TRUE;
+                            rv = true;
                         }
                         else if (isoptconst(node->right->right))
                         {
@@ -2667,7 +2667,7 @@ int fold_const(EXPRESSION* node)
                             enswap(&node->left, &node->right);
                             enswap(&node->left->left, &node->right);
                             node->left->right = exprNode(en_uminus, node->left->right, 0);
-                            rv = TRUE;
+                            rv = true;
                         }
                         break;
                     default:
@@ -2690,14 +2690,14 @@ int fold_const(EXPRESSION* node)
                             node->type = en_mul;
                             node->left->type = en_mul;
                             enswap(&node->left->right, &node->right);
-                            rv = TRUE;
+                            rv = true;
                         }
                         else if (isoptconst(node->left->right))
                         {
                             node->type = en_mul;
                             node->left->type = en_mul;
                             enswap(&node->left->left, &node->right);
-                            rv = TRUE;
+                            rv = true;
                         }
                         break;
                     default:
@@ -2715,14 +2715,14 @@ int fold_const(EXPRESSION* node)
                             node->type = en_mul;
                             node->right->type = en_mul;
                             enswap(&node->right->right, &node->left);
-                            rv = TRUE;
+                            rv = true;
                         }
                         else if (isoptconst(node->right->right))
                         {
                             node->type = en_mul;
                             node->right->type = en_mul;
                             enswap(&node->right->left, &node->left);
-                            rv = TRUE;
+                            rv = true;
                         }
                         break;
                     default:
@@ -2740,12 +2740,12 @@ int fold_const(EXPRESSION* node)
                 if (isoptconst(node->left->left))
                 {
                     enswap(&node->left->right, &node->right);
-                    rv = TRUE;
+                    rv = true;
                 }
                 else if (isoptconst(node->left->right))
                 {
                     enswap(&node->left->left, &node->right);
-                    rv = TRUE;
+                    rv = true;
                 }
             }
             else if (node->right->type == node->type && isoptconst(node->left))
@@ -2753,12 +2753,12 @@ int fold_const(EXPRESSION* node)
                 if (isoptconst(node->right->left))
                 {
                     enswap(&node->right->right, &node->left);
-                    rv = TRUE;
+                    rv = true;
                 }
                 else if (isoptconst(node->right->right))
                 {
                     enswap(&node->right->left, &node->left);
-                    rv = TRUE;
+                    rv = true;
                 }
             }
             break;
@@ -2931,11 +2931,11 @@ int fold_const(EXPRESSION* node)
                                     functionnesting[functionnestingcount++] = st->select;
                                     // optimize_for_constants(&st->select);
                                     functionnestingcount--;
-                                    if (IsConstantExpression(st->select, FALSE, FALSE))
+                                    if (IsConstantExpression(st->select, false, false))
                                     {
                                         *node = *st->select;
-                                        node->noexprerr = TRUE;
-                                        rv = TRUE;
+                                        node->noexprerr = true;
+                                        rv = true;
                                     }
                                 }
                             }
@@ -2952,7 +2952,7 @@ int fold_const(EXPRESSION* node)
                 node->type = en_c_i;
                 node->left = NULL;
                 node->v.i = 1;
-                rv = TRUE;
+                rv = true;
             }
             break;
         case en_stmt:
@@ -2973,11 +2973,11 @@ int fold_const(EXPRESSION* node)
                     {
                         EXPRESSION* exp = st->select;
                         optimize_for_constants(&st->select);
-                        if (IsConstantExpression(st->select, TRUE, FALSE))
+                        if (IsConstantExpression(st->select, true, false))
                         {
                             *node = *st->select;
-                            node->noexprerr = TRUE;
-                            rv = TRUE;
+                            node->noexprerr = true;
+                            rv = true;
                         }
                     }
                 }
@@ -2995,14 +2995,14 @@ int fold_const(EXPRESSION* node)
  */
 int typedconsts(EXPRESSION* node1)
 {
-    int rv = FALSE;
+    int rv = false;
     if (!node1)
         return rv;
     switch (node1->type)
     {
         case en_nullptr:
             node1->type = en_c_ui;  // change the nullptr to an int
-            rv = TRUE;
+            rv = true;
             break;
         case en_const:
             /* special trap to replace sc_constants */
@@ -3014,7 +3014,7 @@ int typedconsts(EXPRESSION* node1)
             //            node1->v.i = node1->v.sp->value.i;
             optimize_for_constants(&node1->v.sp->init->exp);
             *node1 = *node1->v.sp->init->exp;
-            rv = TRUE;
+            rv = true;
             break;
         default:
             break;
@@ -3138,7 +3138,7 @@ int typedconsts(EXPRESSION* node1)
                 {
                     optimize_for_constants(&node1->v.sp->init->exp);
                     *node1 = *node1->left->v.sp->init->exp;
-                    rv = TRUE;
+                    rv = true;
                 }
             }
             else
@@ -3151,14 +3151,14 @@ int typedconsts(EXPRESSION* node1)
             if (isconstaddress(node1->left) || isintconst(node1->left))
             {
                 *node1 = *node1->left;
-                rv = TRUE;
+                rv = true;
             }
             break;
         case en_x_ull:
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
-                rv = TRUE;
+                rv = true;
                 node1->v.i = CastToInt(ISZ_ULONGLONG, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
                 node1->type = en_c_ull;
@@ -3168,7 +3168,7 @@ int typedconsts(EXPRESSION* node1)
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
-                rv = TRUE;
+                rv = true;
                 node1->v.i = CastToInt(-ISZ_ULONGLONG, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
                 node1->type = en_c_ll;
@@ -3179,14 +3179,14 @@ int typedconsts(EXPRESSION* node1)
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
-                rv = TRUE;
+                rv = true;
                 if (isfloatconst(node1->left) || isimaginaryconst(node1->left))
                     node1->v.i = node1->left->v.f.type != IFPF_IS_ZERO;
                 else if (iscomplexconst(node1->left))
                     node1->v.i = node1->left->v.c.r.type != IFPF_IS_ZERO || node1->left->v.c.i.type != IFPF_IS_ZERO;
                 else
                 {
-                    node1->v.i = CastToInt(ISZ_BOOLEAN, !!reint(node1->left));
+                    node1->v.i = CastToInt(ISZ_bool, !!reint(node1->left));
                     node1->unionoffset = node1->left->unionoffset;
                 }
                 node1->type = en_c_bool;
@@ -3196,7 +3196,7 @@ int typedconsts(EXPRESSION* node1)
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
-                rv = TRUE;
+                rv = true;
                 node1->v.i = CastToInt(-ISZ_UCHAR, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
                 node1->type = en_c_c;
@@ -3206,7 +3206,7 @@ int typedconsts(EXPRESSION* node1)
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
-                rv = TRUE;
+                rv = true;
                 node1->v.i = CastToInt(ISZ_U16, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
                 node1->type = en_c_u16;
@@ -3216,7 +3216,7 @@ int typedconsts(EXPRESSION* node1)
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
-                rv = TRUE;
+                rv = true;
                 node1->v.i = CastToInt(ISZ_U32, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
                 node1->type = en_c_u32;
@@ -3226,7 +3226,7 @@ int typedconsts(EXPRESSION* node1)
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
-                rv = TRUE;
+                rv = true;
                 node1->v.i = CastToInt(-ISZ_WCHAR, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
                 node1->type = en_c_wc;
@@ -3236,7 +3236,7 @@ int typedconsts(EXPRESSION* node1)
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
-                rv = TRUE;
+                rv = true;
                 node1->v.i = CastToInt(ISZ_UCHAR, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
                 node1->type = en_c_uc;
@@ -3246,7 +3246,7 @@ int typedconsts(EXPRESSION* node1)
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
-                rv = TRUE;
+                rv = true;
                 node1->v.i = CastToInt(-ISZ_USHORT, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
                 node1->type = en_c_i;
@@ -3256,7 +3256,7 @@ int typedconsts(EXPRESSION* node1)
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
-                rv = TRUE;
+                rv = true;
                 node1->v.i = CastToInt(ISZ_USHORT, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
                 node1->type = en_c_ui;
@@ -3267,7 +3267,7 @@ int typedconsts(EXPRESSION* node1)
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
-                rv = TRUE;
+                rv = true;
                 node1->v.i = CastToInt(-ISZ_UINT, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
                 node1->type = en_c_i;
@@ -3278,7 +3278,7 @@ int typedconsts(EXPRESSION* node1)
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
-                rv = TRUE;
+                rv = true;
                 node1->v.i = CastToInt(ISZ_UINT, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
                 node1->type = en_c_ul;
@@ -3288,7 +3288,7 @@ int typedconsts(EXPRESSION* node1)
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
-                rv = TRUE;
+                rv = true;
                 node1->v.i = CastToInt(-ISZ_ULONG, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
                 node1->type = en_c_i;
@@ -3298,7 +3298,7 @@ int typedconsts(EXPRESSION* node1)
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
-                rv = TRUE;
+                rv = true;
                 node1->v.i = CastToInt(ISZ_ULONG, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
                 node1->type = en_c_ul;
@@ -3310,7 +3310,7 @@ int typedconsts(EXPRESSION* node1)
             if (node1->left && isoptconst(node1->left))
             {
                 FPFC temp = refloat(node1->left);
-                rv = TRUE;
+                rv = true;
                 node1->v.f = CastToFloat(ISZ_FLOAT, &temp);
                 node1->type = en_c_f;
             }
@@ -3320,7 +3320,7 @@ int typedconsts(EXPRESSION* node1)
             if (node1->left && isoptconst(node1->left))
             {
                 FPFC temp = refloat(node1->left);
-                rv = TRUE;
+                rv = true;
                 node1->v.f = CastToFloat(ISZ_IFLOAT, &temp);
                 node1->type = en_c_fi;
             }
@@ -3330,7 +3330,7 @@ int typedconsts(EXPRESSION* node1)
             if (node1->left && isoptconst(node1->left))
             {
                 FPFC temp = refloat(node1->left);
-                rv = TRUE;
+                rv = true;
                 node1->v.f = CastToFloat(ISZ_DOUBLE, &temp);
                 node1->type = en_c_d;
             }
@@ -3340,7 +3340,7 @@ int typedconsts(EXPRESSION* node1)
             if (node1->left && isoptconst(node1->left))
             {
                 FPFC temp = refloat(node1->left);
-                rv = TRUE;
+                rv = true;
                 node1->v.f = CastToFloat(ISZ_IDOUBLE, &temp);
                 node1->type = en_c_di;
             }
@@ -3350,7 +3350,7 @@ int typedconsts(EXPRESSION* node1)
             if (node1->left && isoptconst(node1->left))
             {
                 FPFC temp = refloat(node1->left);
-                rv = TRUE;
+                rv = true;
                 node1->v.f = CastToFloat(ISZ_LDOUBLE, &temp);
                 node1->type = en_c_ld;
             }
@@ -3360,7 +3360,7 @@ int typedconsts(EXPRESSION* node1)
             if (node1->left && isoptconst(node1->left))
             {
                 FPFC temp = refloat(node1->left);
-                rv = TRUE;
+                rv = true;
                 node1->v.f = CastToFloat(ISZ_ILDOUBLE, &temp);
                 node1->type = en_c_ldi;
             }
@@ -3369,7 +3369,7 @@ int typedconsts(EXPRESSION* node1)
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
-                rv = TRUE;
+                rv = true;
                 if (isintconst(node1->left) || isfloatconst(node1->left))
                 {
                     FPFC temp = refloat(node1->left);
@@ -3395,7 +3395,7 @@ int typedconsts(EXPRESSION* node1)
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
-                rv = TRUE;
+                rv = true;
                 if (isintconst(node1->left) || isfloatconst(node1->left))
                 {
                     FPFC temp = refloat(node1->left);
@@ -3421,7 +3421,7 @@ int typedconsts(EXPRESSION* node1)
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
-                rv = TRUE;
+                rv = true;
                 if (isintconst(node1->left) || isfloatconst(node1->left))
                 {
                     FPFC temp = refloat(node1->left);
@@ -3590,7 +3590,7 @@ static void rebalance(EXPRESSION* ep)
 }
 void optimize_for_constants(EXPRESSION** expr)
 {
-    int rv = TRUE, count = 8;
+    int rv = true, count = 8;
     EXPRESSION* oldasidehead = asidehead;
     EXPRESSION** oldasidetail = asidetail;
 
@@ -3607,7 +3607,7 @@ void optimize_for_constants(EXPRESSION** expr)
     asidetail = oldasidetail;
     rebalance(*expr);
 }
-LEXEME* optimized_expression(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** expr, BOOLEAN commaallowed)
+LEXEME* optimized_expression(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** expr, bool commaallowed)
 {
 
     if (commaallowed)

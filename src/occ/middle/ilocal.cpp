@@ -39,9 +39,9 @@ extern BITINT bittab[BITINTBITS];
 extern BLOCK** blockArray;
 extern QUAD* intermed_head;
 extern int tempCount;
-extern BOOLEAN setjmp_used;
+extern bool setjmp_used;
 extern int exitBlock;
-extern BOOLEAN functionHasAssembly;
+extern bool functionHasAssembly;
 extern LIST* temporarySymbols;
 extern QUAD* intermed_tail;
 
@@ -96,7 +96,7 @@ static void CalculateFastcall(SYMBOL* funcsp)
         }
     }
 }
-static void renameOneSym(SYMBOL* sp, BOOLEAN structret)
+static void renameOneSym(SYMBOL* sp, int structret)
 {
     TYPE* tp;
     /* needed for pointer aliasing */
@@ -124,7 +124,7 @@ static void renameOneSym(SYMBOL* sp, BOOLEAN structret)
             sp->imvalue = im;
         }
         else
-            sp->imvalue = tempreg(sizeFromType(sp->tp), FALSE);
+            sp->imvalue = tempreg(sizeFromType(sp->tp), false);
 
         if (sp->storage_class != sc_auto && sp->storage_class != sc_register)
         {
@@ -136,7 +136,7 @@ static void renameOneSym(SYMBOL* sp, BOOLEAN structret)
         tp = tp->btp;
     tp = basetype(tp);
 
-    BOOLEAN fastcallCandidate =
+    bool fastcallCandidate =
         sp->storage_class == sc_parameter && fastcallAlias &&
         (sp->offset - fastcallAlias * chosenAssembler->arch->parmwidth < chosenAssembler->arch->retblocksize);
 
@@ -162,12 +162,12 @@ static void renameOneSym(SYMBOL* sp, BOOLEAN structret)
             ep->v.sp->tp = sp->tp;
             ep->right = (EXPRESSION*)sp;
             /* marking both the orignal var and the new temp as pushed to temp*/
-            sp->pushedtotemp = TRUE;
-            ep->v.sp->pushedtotemp = TRUE;
+            sp->pushedtotemp = true;
+            ep->v.sp->pushedtotemp = true;
         }
-        sp->allocate = FALSE;
+        sp->allocate = false;
 
-        BOOLEAN dofastcall = FALSE;
+        bool dofastcall = false;
 
         if (sp->storage_class == sc_parameter)
         {
@@ -180,7 +180,7 @@ static void renameOneSym(SYMBOL* sp, BOOLEAN structret)
                     (!structret || sp->offset != chosenAssembler->arch->retblocksize))
                 {
                     parmName = tempreg(sp->imvalue->size, 0);
-                    dofastcall = TRUE;
+                    dofastcall = true;
                 }
                 else
                 {
@@ -227,7 +227,7 @@ static void renameOneSym(SYMBOL* sp, BOOLEAN structret)
             gen_icode(i_assn, sp->imvalue, parmName, 0);
             if (dofastcall)
             {
-                intermed_tail->alwayslive = TRUE;
+                intermed_tail->alwayslive = true;
                 intermed_tail->fastcall =
                     -(sp->offset - chosenAssembler->arch->retblocksize) / chosenAssembler->arch->parmwidth - 1 + structret;
             }
@@ -245,14 +245,14 @@ static void renameOneSym(SYMBOL* sp, BOOLEAN structret)
 static void renameToTemps(SYMBOL* funcsp)
 {
     LIST* lst;
-    BOOLEAN doRename = TRUE;
+    bool doRename = true;
     HASHTABLE* temp = funcsp->inlineFunc.syms;
     CalculateFastcall(funcsp);
     doRename &= (cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size) && !functionHasAssembly;
     /* if there is a setjmp in the function, no variable gets moved into a reg */
     doRename &= !(setjmp_used);
     temp = funcsp->inlineFunc.syms;
-    BOOLEAN structret = !!isstructured(basetype(funcsp->tp)->btp);
+    bool structret = !!isstructured(basetype(funcsp->tp)->btp);
     while (temp)
     {
         HASHREC* hr = temp->table[0];
@@ -292,12 +292,12 @@ static int AllocTempOpt(int size1)
     {
         int n = tempCount;
         tempCount = nextTemp;
-        rv = tempreg(size1, FALSE);
+        rv = tempreg(size1, false);
         tempCount = n;
     }
     else
     {
-        rv = tempreg(size1, FALSE);
+        rv = tempreg(size1, false);
     }
     t = rv->offset->v.sp->value.i;
     if (t >= tempSize)
@@ -319,7 +319,7 @@ static int AllocTempOpt(int size1)
     nextTemp = t;
     tempInfo[t]->partition = t;
     tempInfo[t]->color = -1;
-    tempInfo[t]->inUse = TRUE;
+    tempInfo[t]->inUse = true;
     return t;
 }
 IMODE* InitTempOpt(int size1, int size2)
@@ -334,11 +334,11 @@ IMODE* InitTempOpt(int size1, int size2)
         size2 = chosenAssembler->arch->compatibleIntSize;
     if (size2 == ISZ_ADDR)
     {
-        tempInfo[t]->usedAsAddress = TRUE;
+        tempInfo[t]->usedAsAddress = true;
         size2 = chosenAssembler->arch->compatibleAddrSize;
     }
     if (size2 >= ISZ_FLOAT)
-        tempInfo[t]->usedAsFloat = TRUE;
+        tempInfo[t]->usedAsFloat = true;
     tempInfo[t]->size = size2;
     return tempInfo[t]->enode->v.sp->imvalue;
 }
@@ -355,7 +355,7 @@ static void InitTempInfo(void)
         tempInfo[i] = (TEMP_INFO *) oAlloc(sizeof(TEMP_INFO));
         tempInfo[i]->partition = i;
         tempInfo[i]->color = -1;
-        tempInfo[i]->inUse = TRUE;
+        tempInfo[i]->inUse = true;
     }
     while (head)
     {
@@ -377,11 +377,11 @@ static void InitTempInfo(void)
                         tempInfo[tnum]->size = chosenAssembler->arch->compatibleIntSize;
                     if (tempInfo[tnum]->size == ISZ_ADDR)
                     {
-                        tempInfo[tnum]->usedAsAddress = TRUE;
+                        tempInfo[tnum]->usedAsAddress = true;
                         tempInfo[tnum]->size = chosenAssembler->arch->compatibleAddrSize;
                     }
                     if (tempInfo[tnum]->size >= ISZ_FLOAT)
-                        tempInfo[tnum]->usedAsFloat = TRUE;
+                        tempInfo[tnum]->usedAsFloat = true;
                 }
             }
             if (head->dc.left && (head->dc.left->mode == i_ind || head->dc.left->mode == i_direct))
@@ -399,11 +399,11 @@ static void InitTempInfo(void)
                         tempInfo[tnum]->size = chosenAssembler->arch->compatibleIntSize;
                     if (tempInfo[tnum]->size == ISZ_ADDR)
                     {
-                        tempInfo[tnum]->usedAsAddress = TRUE;
+                        tempInfo[tnum]->usedAsAddress = true;
                         tempInfo[tnum]->size = chosenAssembler->arch->compatibleAddrSize;
                     }
                     if (tempInfo[tnum]->size >= ISZ_FLOAT)
-                        tempInfo[tnum]->usedAsFloat = TRUE;
+                        tempInfo[tnum]->usedAsFloat = true;
                 }
             }
             if (head->dc.right && (head->dc.right->mode == i_ind || head->dc.right->mode == i_direct))
@@ -421,11 +421,11 @@ static void InitTempInfo(void)
                         tempInfo[tnum]->size = chosenAssembler->arch->compatibleIntSize;
                     if (tempInfo[tnum]->size == ISZ_ADDR)
                     {
-                        tempInfo[tnum]->usedAsAddress = TRUE;
+                        tempInfo[tnum]->usedAsAddress = true;
                         tempInfo[tnum]->size = chosenAssembler->arch->compatibleAddrSize;
                     }
                     if (tempInfo[tnum]->size >= ISZ_FLOAT)
-                        tempInfo[tnum]->usedAsFloat = TRUE;
+                        tempInfo[tnum]->usedAsFloat = true;
                 }
             }
         }

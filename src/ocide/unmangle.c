@@ -210,7 +210,7 @@ char* unmangleExpression(char* dest, char* name)
         switch (*name++)
         {
             case 'n':
-                strcpy(dest, "nullptr");
+                strcpy(dest, "NULL");
                 break;
             case 'p':
                 dest = unmangleExpression(dest, name);

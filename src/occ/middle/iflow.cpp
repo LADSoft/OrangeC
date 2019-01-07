@@ -348,7 +348,7 @@ static void removeDeadBlocks(BRIGGS_SET* brs, BLOCK* back, BLOCK* b)
 {
     if (b->temp)
         return;
-    b->temp = TRUE;
+    b->temp = true;
     if (!briggsTest(brs, b->blocknum) && b->blocknum != exitBlock)
     {
         BLOCKLIST* bl2 = b->succ;
@@ -393,8 +393,8 @@ static void removeDeadBlocks(BRIGGS_SET* brs, BLOCK* back, BLOCK* b)
         b->tail->fwd->back = b->head;
         b->tail = b->head;
         b->succ = b->pred = NULL;
-        b->dead = TRUE;
-        b->critical = FALSE;
+        b->dead = true;
+        b->critical = false;
         blockArray[b->blocknum] = NULL;
     }
     else
@@ -435,7 +435,7 @@ static void removeMark(BRIGGS_SET* bls, BLOCK* b)
     BLOCKLIST* bl;
     if (b->blocknum == exitBlock || b->temp)
         return;
-    b->temp = TRUE;
+    b->temp = true;
     briggsSet(bls, b->blocknum);
     bl = b->succ;
     while (bl)
@@ -455,7 +455,7 @@ void reflowConditional(BLOCK* src, BLOCK* dst)
     src->succ = &temp;
     for (i = 0; i < blockCount; i++)
         if (blockArray[i])
-            blockArray[i]->temp = FALSE;
+            blockArray[i]->temp = false;
     removeMark(bls, blockArray[0]);
     for (i = 1; i < blockCount; i++)
         if (blockArray[i] && blockArray[i]->alwayslive)
@@ -463,7 +463,7 @@ void reflowConditional(BLOCK* src, BLOCK* dst)
     src->succ = bl1;
     for (i = 0; i < blockCount; i++)
         if (blockArray[i])
-            blockArray[i]->temp = FALSE;
+            blockArray[i]->temp = false;
     bl = bl1;
     while (bl)
     {
@@ -518,7 +518,7 @@ static int RemoveCriticalEdges(enum e_fgtype type, BLOCK* parent, BLOCK* in)
 
                     QUAD *quad, *quad2;
 
-                    m->block->critical = TRUE;
+                    m->block->critical = true;
 
                     /* note : the following does NOT insert jmps for the
                      * newly added block
@@ -562,7 +562,7 @@ static int RemoveCriticalEdges(enum e_fgtype type, BLOCK* parent, BLOCK* in)
             }
         }
     }
-    return TRUE;
+    return true;
 }
 /* Lengauer-tarjan method for computing the dominator tree */
 /* this implementation based on a paper by Martin Richards */
@@ -590,7 +590,7 @@ static int domNumber(enum e_fgtype t, BLOCK* parent, BLOCK* b)
     {
         b->dfstOrder = ++domCount;
     }
-    return TRUE;
+    return true;
 }
 static int domInit(enum e_fgtype t, BLOCK* parent, BLOCK* b)
 {
@@ -607,7 +607,7 @@ static int domInit(enum e_fgtype t, BLOCK* parent, BLOCK* b)
         t->ancestor = 0;
         t->best = b->dfstOrder;
     }
-    return TRUE;
+    return true;
 }
 #define domLink(v, w) (vectorData[w]->ancestor = (v))
 
@@ -648,14 +648,14 @@ static void PostDominators(void)
 {
     int w, i;
     domCount = 0;
-    WalkFlowgraph(blockArray[exitBlock], domNumber, FALSE);
+    WalkFlowgraph(blockArray[exitBlock], domNumber, false);
     vectorData = (_tarjan **)tAlloc(sizeof(struct _tarjan*) * (domCount + 1));
     for (i = 0; i <= domCount; i++)
     {
         vectorData[i] = (_tarjan *) tAlloc(sizeof(struct _tarjan));
         vectorData[i]->bucket = briggsAlloct(domCount + 1);
     }
-    WalkFlowgraph(blockArray[exitBlock], domInit, FALSE);
+    WalkFlowgraph(blockArray[exitBlock], domInit, false);
 
     for (w = domCount; w >= 2; w--)
     {
@@ -701,14 +701,14 @@ static void Dominators(void)
     for (i = 0; i < blockCount; i++)
         if (blockArray[i])
             blockArray[i]->dfstOrder = 0;
-    WalkFlowgraph(blockArray[0], domNumber, TRUE);
+    WalkFlowgraph(blockArray[0], domNumber, true);
     vectorData = (_tarjan **)tAlloc(sizeof(struct _tarjan*) * (domCount + 1));
     for (i = 0; i <= domCount; i++)
     {
         vectorData[i] = (_tarjan *)tAlloc(sizeof(struct _tarjan));
         vectorData[i]->bucket = briggsAlloct(domCount + 1);
     }
-    WalkFlowgraph(blockArray[0], domInit, TRUE);
+    WalkFlowgraph(blockArray[0], domInit, true);
 
     for (w = domCount; w >= 2; w--)
     {
@@ -761,16 +761,16 @@ static void Dominators(void)
     }
     tFree();
 }
-BOOLEAN dominatedby(BLOCK* src, BLOCK* ancestor)
+bool dominatedby(BLOCK* src, BLOCK* ancestor)
 {
     int idom = src->idom;
     while (idom > 0)
     {
         if (idom == ancestor->blocknum)
-            return TRUE;
+            return true;
         idom = blockArray[idom]->idom;
     }
-    return FALSE;
+    return false;
 }
 /* we are also calculating the reverse postorder here
  * it will be needed later for the loop handling
@@ -828,12 +828,12 @@ static int gatherEdges(enum e_fgtype type, BLOCK* parent, BLOCK* in)
         edge->next = edgeHash[bucket];
         edgeHash[bucket] = edge;
     }
-    return TRUE;
+    return true;
 }
 static void CalculateEdges(BLOCK* b)
 {
     memset(edgeHash, 0, EDGE_HASH_SIZE * sizeof(EDGE*));
-    WalkFlowgraph(b, gatherEdges, TRUE);
+    WalkFlowgraph(b, gatherEdges, true);
 }
 enum e_fgtype getEdgeType(int first, int second)
 {
@@ -860,7 +860,7 @@ static void removeDeadBlock(BLOCK* b)
         }
         if (b->critical)
         {
-            b->critical = FALSE;
+            b->critical = false;
             blockArray[b->blocknum] = 0;
         }
         if (b->head != b->tail && b->head->fwd != b->tail)
@@ -983,8 +983,8 @@ static void SwapBranchSense(QUAD* jmp)
 void UnlinkCritical(BLOCK* s)
 {
     BLOCKLIST* bl;
-    s->critical = FALSE;
-    s->dead = TRUE;
+    s->critical = false;
+    s->dead = true;
     blockArray[s->blocknum] = NULL;
     bl = s->pred->block->succ;
     while (bl)
@@ -1015,7 +1015,7 @@ void RemoveCriticalThunks(void)
         BLOCK* b = blockArray[i];
         if (b && i != exitBlock && !b->critical && !b->dead)
         {
-            QUAD* bjmp = beforeJmp(b->tail, FALSE);
+            QUAD* bjmp = beforeJmp(b->tail, false);
             if (bjmp->dc.opcode == i_coswitch)
             {
 
@@ -1026,7 +1026,7 @@ void RemoveCriticalThunks(void)
                     BLOCK* s = sl->block;
                     if (s->critical)
                     {
-                        s->critical = FALSE;
+                        s->critical = false;
                         if (s->head->fwd != s->tail)
                         {
                             int lbl = nextLabel++;
@@ -1049,13 +1049,13 @@ void RemoveCriticalThunks(void)
                 BLOCK* n = b->succ->next->block;
                 if (s->critical)
                 {
-                    s->critical = FALSE;
+                    s->critical = false;
                     if (s->head->fwd != s->tail)
                     {
                         MoveBlockTo(s);
                         if (n->critical)
                         {
-                            n->critical = FALSE;
+                            n->critical = false;
                             if (n->head->fwd != n->tail)
                             {
                                 int lbl = nextLabel++;
@@ -1075,7 +1075,7 @@ void RemoveCriticalThunks(void)
                         UnlinkCritical(s);
                         if (n->critical)
                         {
-                            n->critical = FALSE;
+                            n->critical = false;
                             if (n->head->fwd != n->tail)
                             {
                                 int lbl = nextLabel++;
@@ -1093,7 +1093,7 @@ void RemoveCriticalThunks(void)
                 }
                 else if (n->critical)
                 {
-                    n->critical = FALSE;
+                    n->critical = false;
                     if (n->head->fwd != n->tail)
                     {
                         int lbl = nextLabel++;
@@ -1111,7 +1111,7 @@ void RemoveCriticalThunks(void)
             else if (b->succ->block->critical)
             {
                 BLOCK* s = b->succ->block;
-                s->critical = FALSE;
+                s->critical = false;
                 if (b->succ->next)
                     diag("RemoveCritical - invalid flow");
                 if (s->head->fwd != s->tail)
@@ -1141,7 +1141,7 @@ void unlinkBlock(BLOCK* succ, BLOCK* pred)
         removeDeadBlock(succ);
     }
 }
-void doms_only(BOOLEAN always)
+void doms_only(bool always)
 {
     int dfsCount = 0;
     int i;
@@ -1152,7 +1152,7 @@ void doms_only(BOOLEAN always)
         criticalThunks = NULL;
         criticalThunkPtr = &criticalThunks;
     }
-    WalkFlowgraph(blockArray[0], RemoveCriticalEdges, TRUE);
+    WalkFlowgraph(blockArray[0], RemoveCriticalEdges, true);
     if (blockCount != n)
     {
         QUAD* head = intermed_head;
@@ -1230,7 +1230,7 @@ void flows_and_doms(void)
     RemoveDuplicateGotos();
     basicFlowInfo();
     gather_flowgraph();
-    doms_only(TRUE);
+    doms_only(true);
     if (icdFile)
     {
         fprintf(icdFile, "; Flowgraph dump");

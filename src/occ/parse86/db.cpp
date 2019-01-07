@@ -29,9 +29,6 @@
 #include <string.h>
 #include "db.h"
 
-#define TRUE 1
-#define FALSE 0
-
 #define STRINGVERSION "121"
 
 #define DBVersion atoi(STRINGVERSION)
@@ -225,7 +222,7 @@ static int ccallback(void *, int, char **, char **) { return 0; }
 static int create_exec(char* str)
 {
     char* zErrMsg = 0;
-    int rv = FALSE;
+    int rv = false;
     int rc = sqlite3_exec(dbPointer, str, ccallback, 0, &zErrMsg);
     if (rc != SQLITE_OK)
     {
@@ -234,7 +231,7 @@ static int create_exec(char* str)
     }
     else
     {
-        rv = TRUE;
+        rv = true;
     }
     return rv;
 }
@@ -245,14 +242,14 @@ static int verscallback(void* NotUsed, int argc, char** argv, char** azColName)
     if (argc == 1)
     {
         if (atoi(argv[0]) >= DBVersion)
-            version_ok = TRUE;
+            version_ok = true;
     }
     return 0;
 }
 static int checkDb(void)
 {
     char* zErrMsg = 0;
-    int rv = FALSE;
+    int rv = false;
     int rc = sqlite3_exec(dbPointer, "SELECT value FROM ccPropertyBag WHERE property = \"ccVersion\"", verscallback, 0, &zErrMsg);
     if (rc != SQLITE_OK)
     {
@@ -267,16 +264,16 @@ static int checkDb(void)
 }
 static int createTables(void)
 {
-    int rv = TRUE;
+    int rv = true;
     if (!create_exec(tables))
     {
-        rv = FALSE;
+        rv = false;
     }
     return rv;
 }
 int ccDBOpen(char* name)
 {
-    int rv = FALSE;
+    int rv = false;
     if (sqlite3_open_v2(name, &dbPointer, SQLITE_OPEN_READWRITE, NULL) == SQLITE_OK && checkDb())
     {
 #ifdef TEST
@@ -290,7 +287,7 @@ int ccDBOpen(char* name)
             fprintf(stderr, "SQL error: %s\n", zErrMsg);
             sqlite3_free(zErrMsg);
         }
-        rv = TRUE;
+        rv = true;
     }
     else
     {
@@ -319,30 +316,30 @@ int ccDBOpen(char* name)
 }
 int ccBegin(void)
 {
-    int rv = TRUE;
+    int rv = true;
     if (!create_exec("BEGIN"))
     {
-        rv = FALSE;
+        rv = false;
     }
     return rv;
 }
 int ccEnd(void)
 {
-    int rv = TRUE;
+    int rv = true;
     if (!create_exec("COMMIT"))
     {
-        rv = FALSE;
+        rv = false;
     }
     return rv;
 }
 int ccDBDeleteForFile(sqlite3_int64 id)
 {
-    int rv = TRUE;
+    int rv = true;
     char buf[1000];
     sprintf(buf, deletion, (int)id, (int)id, (int)id, (int)id, (int)id, (int)id, (int)id, (int)id, (int)id);
     if (!create_exec(buf))
     {
-        rv = FALSE;
+        rv = false;
     }
     return rv;
 }
@@ -357,16 +354,16 @@ void ccLoadIdsFromNameTable(char* tabname, HASHTABLE* table)
     rc = sqlite3_prepare_v2(dbPointer, qbuf, strlen(qbuf) + 1, &handle, NULL);
     if (rc == SQLITE_OK)
     {
-        BOOLEAN done = FALSE;
+        bool done = false;
         while (!done)
         {
             switch (rc = sqlite3_step(handle))
             {
                 case SQLITE_BUSY:
-                    done = TRUE;
+                    done = true;
                     break;
                 case SQLITE_DONE:
-                    done = TRUE;
+                    done = true;
                     break;
                 case SQLITE_ROW:
                     v = (SYMID*)Alloc(sizeof(SYMID));
@@ -376,7 +373,7 @@ void ccLoadIdsFromNameTable(char* tabname, HASHTABLE* table)
                     rc = SQLITE_OK;
                     break;
                 default:
-                    done = TRUE;
+                    done = true;
                     break;
             }
         }
@@ -404,7 +401,7 @@ static int ccSelectIdFromNameTable(sqlite3_stmt** shndl, char* name, char* tabna
     }
     if (rc == SQLITE_OK)
     {
-        int done = FALSE;
+        int done = false;
         rc = SQLITE_DONE;
         sqlite3_reset(*shndl);
         sqlite3_bind_text(*shndl, 1, name, strlen(name), SQLITE_STATIC);
@@ -413,10 +410,10 @@ static int ccSelectIdFromNameTable(sqlite3_stmt** shndl, char* name, char* tabna
             switch(rc = sqlite3_step(*shndl))
             {
                 case SQLITE_BUSY:
-                    done = TRUE;
+                    done = true;
                     break;
                 case SQLITE_DONE:
-                    done = TRUE;
+                    done = true;
                     break;
                 case SQLITE_ROW:
                     v = (SYMID *)Alloc(sizeof(SYMID));
@@ -425,10 +422,10 @@ static int ccSelectIdFromNameTable(sqlite3_stmt** shndl, char* name, char* tabna
                     v->id = *id;
                     AddName((SYMBOL *)v, table);
                     rc = SQLITE_OK;
-                    done = TRUE;
+                    done = true;
                     break;
                 default:
-                    done = TRUE;
+                    done = true;
                     break;
             }
         }
@@ -454,7 +451,7 @@ static int ccWriteNameInTable(sqlite3_stmt** whndl, sqlite3_stmt** shndl, char* 
         }
         if (rc == SQLITE_OK)
         {
-            int done = FALSE;
+            int done = false;
             sqlite3_reset(*whndl);
             sqlite3_bind_text(*whndl, 1, name, strlen(name), SQLITE_STATIC);
             while (!done)
@@ -462,14 +459,14 @@ static int ccWriteNameInTable(sqlite3_stmt** whndl, sqlite3_stmt** shndl, char* 
                 switch (rc = sqlite3_step(*whndl))
                 {
                     case SQLITE_BUSY:
-                        done = TRUE;
+                        done = true;
                         break;
                     case SQLITE_DONE:
                         rc = SQLITE_OK;
-                        done = TRUE;
+                        done = true;
                         break;
                     default:
-                        done = TRUE;
+                        done = true;
                         break;
                 }
             }
@@ -497,7 +494,7 @@ static int ccWriteMap(sqlite_int64 smpl_id, sqlite_int64 cplx_id, sqlite_int64 m
     sprintf(id, "%d,%d", (int)smpl_id, (int)cplx_id);
     if (!LookupName(id, map))
     {
-        int done = FALSE;
+        int done = false;
         SYMID* v = (SYMID*)Alloc(sizeof(SYMID));
         v->name = litlate(id);
         AddName((SYMBOL*)v, map);
@@ -511,14 +508,14 @@ static int ccWriteMap(sqlite_int64 smpl_id, sqlite_int64 cplx_id, sqlite_int64 m
             switch (rc = sqlite3_step(handle))
             {
                 case SQLITE_BUSY:
-                    done = TRUE;
+                    done = true;
                     break;
                 case SQLITE_DONE:
-                    done = TRUE;
+                    done = true;
                     rc = SQLITE_OK;
                     break;
                 default:
-                    done = TRUE;
+                    done = true;
                     break;
             }
         }
@@ -610,7 +607,7 @@ int ccWriteFileName(char* name, sqlite_int64* id)
     if (q)
     {
         *id = ((SYMID*)((*q)->p))->id;
-        return TRUE;
+        return true;
     }
     name = litlate(buf);
     return ccWriteNameInTable(&whndlf, &shndlf, name, "FileNames", id, listf) == SQLITE_OK;
@@ -629,7 +626,7 @@ int ccWriteFileTime(char* name, int time, sqlite3_int64* id)
         }
         if (rc == SQLITE_OK)
         {
-            int done = FALSE;
+            int done = false;
             sqlite3_reset(handle);
             sqlite3_bind_int(handle, 1, time);
             sqlite3_bind_int64(handle, 2, *id);
@@ -638,14 +635,14 @@ int ccWriteFileTime(char* name, int time, sqlite3_int64* id)
                 switch (rc = sqlite3_step(handle))
                 {
                     case SQLITE_BUSY:
-                        done = TRUE;
+                        done = true;
                         break;
                     case SQLITE_DONE:
                         rc = SQLITE_OK;
-                        done = TRUE;
+                        done = true;
                         break;
                     default:
-                        done = TRUE;
+                        done = true;
                         break;
                 }
             }
@@ -676,7 +673,7 @@ int ccWriteLineNumbers(char* symname, char* nameoftype, char* filename, int indi
         }
         if (rc == SQLITE_OK)
         {
-            int done = FALSE;
+            int done = false;
 
             sqlite3_reset(handle);
             sqlite3_bind_int64(handle, 1, sym_id);
@@ -694,14 +691,14 @@ int ccWriteLineNumbers(char* symname, char* nameoftype, char* filename, int indi
                 switch (rc = sqlite3_step(handle))
                 {
                     case SQLITE_BUSY:
-                        done = TRUE;
+                        done = true;
                         break;
                     case SQLITE_DONE:
                         rc = SQLITE_OK;
-                        done = TRUE;
+                        done = true;
                         break;
                     default:
-                        done = TRUE;
+                        done = true;
                         break;
                 }
             }
@@ -730,7 +727,7 @@ int ccWriteGlobalArg(sqlite_int64 line_id, sqlite_int64 main_id, char* symname, 
         }
         if (rc == SQLITE_OK)
         {
-            int done = FALSE;
+            int done = false;
             sqlite3_reset(handle);
             sqlite3_bind_int64(handle, 1, line_id);
             sqlite3_bind_int64(handle, 2, main_id);
@@ -742,14 +739,14 @@ int ccWriteGlobalArg(sqlite_int64 line_id, sqlite_int64 main_id, char* symname, 
                 switch (rc = sqlite3_step(handle))
                 {
                     case SQLITE_BUSY:
-                        done = TRUE;
+                        done = true;
                         break;
                     case SQLITE_DONE:
                         rc = SQLITE_OK;
-                        done = TRUE;
+                        done = true;
                         break;
                     default:
-                        done = TRUE;
+                        done = true;
                         break;
                 }
             }
@@ -775,7 +772,7 @@ int ccWriteStructField(sqlite3_int64 name_id, char* symname, char* nameoftype, i
         }
         if (rc == SQLITE_OK)
         {
-            int done = FALSE;
+            int done = false;
             sqlite3_reset(handle);
             sqlite3_bind_int64(handle, 1, name_id);
             sqlite3_bind_int64(handle, 2, sym_id);
@@ -791,14 +788,14 @@ int ccWriteStructField(sqlite3_int64 name_id, char* symname, char* nameoftype, i
                 switch (rc = sqlite3_step(handle))
                 {
                     case SQLITE_BUSY:
-                        done = TRUE;
+                        done = true;
                         break;
                     case SQLITE_DONE:
                         rc = SQLITE_OK;
-                        done = TRUE;
+                        done = true;
                         break;
                     default:
-                        done = TRUE;
+                        done = true;
                         break;
                 }
             }
@@ -827,7 +824,7 @@ int ccWriteMethodArg(sqlite_int64 struct_id, char* nameoftype, int* order, sqlit
         }
         if (rc == SQLITE_OK)
         {
-            int done = FALSE;
+            int done = false;
             sqlite3_reset(handle);
             sqlite3_bind_int64(handle, 1, struct_id);
             sqlite3_bind_int64(handle, 2, type_id);
@@ -837,14 +834,14 @@ int ccWriteMethodArg(sqlite_int64 struct_id, char* nameoftype, int* order, sqlit
                 switch (rc = sqlite3_step(handle))
                 {
                     case SQLITE_BUSY:
-                        done = TRUE;
+                        done = true;
                         break;
                     case SQLITE_DONE:
                         rc = SQLITE_OK;
-                        done = TRUE;
+                        done = true;
                         break;
                     default:
-                        done = TRUE;
+                        done = true;
                         break;
                 }
             }
@@ -865,7 +862,7 @@ int ccWriteLineData(sqlite_int64 file_id, sqlite_int64 main_id, char* data, int 
     }
     if (rc == SQLITE_OK)
     {
-        int done = FALSE;
+        int done = false;
         sqlite3_reset(handle);
         sqlite3_bind_int64(handle, 1, file_id);
         sqlite3_bind_int64(handle, 2, main_id);
@@ -876,14 +873,14 @@ int ccWriteLineData(sqlite_int64 file_id, sqlite_int64 main_id, char* data, int 
             switch (rc = sqlite3_step(handle))
             {
                 case SQLITE_BUSY:
-                    done = TRUE;
+                    done = true;
                     break;
                 case SQLITE_DONE:
                     rc = SQLITE_OK;
-                    done = TRUE;
+                    done = true;
                     break;
                 default:
-                    done = TRUE;
+                    done = true;
                     break;
             }
         }
@@ -907,7 +904,7 @@ int ccWriteSymbolType(char* symname, sqlite3_int64 file_id, char* declFile, int 
         }
         if (rc == SQLITE_OK)
         {
-            int done = FALSE;
+            int done = false;
 
             sqlite3_reset(handle);
             sqlite3_bind_int64(handle, 1, file_id);
@@ -921,14 +918,14 @@ int ccWriteSymbolType(char* symname, sqlite3_int64 file_id, char* declFile, int 
                 switch (rc = sqlite3_step(handle))
                 {
                     case SQLITE_BUSY:
-                        done = TRUE;
+                        done = true;
                         break;
                     case SQLITE_DONE:
                         rc = SQLITE_OK;
-                        done = TRUE;
+                        done = true;
                         break;
                     default:
-                        done = TRUE;
+                        done = true;
                         break;
                 }
             }
@@ -953,7 +950,7 @@ int ccWriteNameSpaceEntry(char* symname, sqlite_int64 file_id, char* filename, i
         }
         if (rc == SQLITE_OK)
         {
-            int done = FALSE;
+            int done = false;
 
             sqlite3_reset(handle);
             sqlite3_bind_int64(handle, 1, file_id);
@@ -966,14 +963,14 @@ int ccWriteNameSpaceEntry(char* symname, sqlite_int64 file_id, char* filename, i
                 switch (rc = sqlite3_step(handle))
                 {
                     case SQLITE_BUSY:
-                        done = TRUE;
+                        done = true;
                         break;
                     case SQLITE_DONE:
                         rc = SQLITE_OK;
-                        done = TRUE;
+                        done = true;
                         break;
                     default:
-                        done = TRUE;
+                        done = true;
                         break;
                 }
             }
@@ -999,7 +996,7 @@ int ccWriteUsingRecord(char* symname, char* parentname, char* filename, int star
         }
         if (rc == SQLITE_OK)
         {
-            int done = FALSE;
+            int done = false;
 
             sqlite3_reset(handle);
             sqlite3_bind_int64(handle, 1, file_id);
@@ -1012,14 +1009,14 @@ int ccWriteUsingRecord(char* symname, char* parentname, char* filename, int star
                 switch (rc = sqlite3_step(handle))
                 {
                     case SQLITE_BUSY:
-                        done = TRUE;
+                        done = true;
                         break;
                     case SQLITE_DONE:
                         rc = SQLITE_OK;
-                        done = TRUE;
+                        done = true;
                         break;
                     default:
-                        done = TRUE;
+                        done = true;
                         break;
                 }
             }
@@ -1031,7 +1028,7 @@ int ccWriteUsingRecord(char* symname, char* parentname, char* filename, int star
 static int writeTempRecords(void)
 {
     sqlite3_int64 a, file, struc;
-    int rv = TRUE;
+    int rv = true;
     int order;
     printf("%d\n", ccBegin());
     rv &= ccWriteName("n1", &a);

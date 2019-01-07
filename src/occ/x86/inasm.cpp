@@ -133,7 +133,7 @@ void inasmini(void)
         s = (ASM_HASH_ENTRY*)Alloc(sizeof(ASM_HASH_ENTRY));
         s->data = r;
         s->name = r->name;
-        s->instruction = FALSE;
+        s->instruction = false;
         insert((SYMBOL*)s, asmHash);
         r++;
     }
@@ -147,7 +147,7 @@ void inasmini(void)
             s->data = (ASMNAME*)Alloc(sizeof(ASMNAME));
             ((ASMNAME*)s->data)->name = v;
             ((ASMNAME*)s->data)->atype = i;
-            s->instruction = TRUE;
+            s->instruction = true;
             insert((SYMBOL*)s, asmHash);
         }
         i++;
@@ -160,7 +160,7 @@ void inasmini(void)
             s = (ASM_HASH_ENTRY*)Alloc(sizeof(ASM_HASH_ENTRY));
             s->data = o;
             s->name = o->name;
-            s->instruction = TRUE;
+            s->instruction = true;
             insert((SYMBOL*)s, asmHash);
             o++;
         }
@@ -209,7 +209,7 @@ static AMODE* inasm_const(void)
     AMODE* rv = NULL;
     TYPE* tp = NULL;
     EXPRESSION* exp = NULL;
-    lex = optimized_expression(lex, beGetCurrentFunc, NULL, &tp, &exp, FALSE);
+    lex = optimized_expression(lex, beGetCurrentFunc, NULL, &tp, &exp, false);
     if (!tp)
     {
         error(ERR_EXPRESSION_SYNTAX);
@@ -251,7 +251,7 @@ static EXPRESSION* inasm_ident(void)
             sp->declline = sp->origdeclline = lex->line;
             sp->realdeclline = lex->realline;
             sp->declfilenum = lex->filenum;
-            sp->used = TRUE;
+            sp->used = true;
             sp->tp = (TYPE*)(TYPE *)beLocalAlloc(sizeof(TYPE));
             sp->tp->type = bt_unsigned;
             sp->tp->bits = sp->tp->startbit = -1;
@@ -263,22 +263,22 @@ static EXPRESSION* inasm_ident(void)
         {
             /* If we get here the symbol was already in the table
              */
-            sp->used = TRUE;
+            sp->used = true;
             switch (sp->storage_class)
             {
                 case sc_absolute:
-                    sp->genreffed = TRUE;
+                    sp->genreffed = true;
                     node = varNode(en_absolute, sp);
                     break;
                 case sc_overloads:
                     node = varNode(en_pc, (SYMBOL*)sp->tp->syms->table[0]->p);
-                    ((SYMBOL*)(sp->tp->syms->table[0]->p))->genreffed = TRUE;
+                    ((SYMBOL*)(sp->tp->syms->table[0]->p))->genreffed = true;
                     break;
                 case sc_localstatic:
                 case sc_global:
                 case sc_external:
                 case sc_static:
-                    sp->genreffed = TRUE;
+                    sp->genreffed = true;
                     node = varNode(en_global, sp);
                     break;
                 case sc_const:
@@ -291,10 +291,10 @@ static EXPRESSION* inasm_ident(void)
                     break;
                 case sc_auto:
                 case sc_register:
-                    sp->allocate = TRUE;
+                    sp->allocate = true;
                 case sc_parameter:
                     node = varNode(en_auto, sp);
-                    sp->inasm = TRUE;
+                    sp->inasm = true;
                     break;
                 default:
                     errorstr(ERR_INVALID_STORAGE_CLASS, "");
@@ -506,7 +506,7 @@ static int inasm_structsize(void)
             case bt_signed_char:
                 return ISZ_UCHAR;
             case bt_bool:
-                return ISZ_BOOLEAN;
+                return ISZ_bool;
             case bt_short:
             case bt_unsigned_short:
             case bt_char16_t:
@@ -544,12 +544,12 @@ static int inasm_structsize(void)
 static AMODE* inasm_mem(void)
 {
     int reg1 = -1, reg2 = -1, scale = 0, seg = 0;
-    BOOLEAN subtract = FALSE;
+    bool subtract = false;
     EXPRESSION* node = 0;
     AMODE* rv;
-    int gotident = FALSE; /*, autonode = FALSE;*/
+    int gotident = false; /*, autonode = false;*/
     inasm_getsym();
-    while (TRUE)
+    while (true)
     {
         int rg = -1;
         if (regimage)
@@ -652,17 +652,17 @@ static AMODE* inasm_mem(void)
                         return 0;
                     }
                     node = inasm_ident();
-                    gotident = TRUE;
+                    gotident = true;
                     inasm_structsize();
                     switch (inasm_enterauto(node, &reg1, &reg2))
                     {
                         case 0:
                             return 0;
                         case 1:
-                            /*autonode = TRUE;*/
+                            /*autonode = true;*/
                             break;
                         case 2:
-                            /*autonode = FALSE;*/
+                            /*autonode = false;*/
                             break;
                     }
                     break;
@@ -679,9 +679,9 @@ static AMODE* inasm_mem(void)
             return 0;
         }
         if (MATCHKW(lex, minus))
-            subtract = TRUE;
+            subtract = true;
         else
-            subtract = FALSE;
+            subtract = false;
         inasm_getsym();
     }
     if ((reg2 == 4 || reg2 == 5) && scale > 1)
@@ -727,7 +727,7 @@ static AMODE* inasm_amode(int nosegreg)
 {
     AMODE* rv = (AMODE*)beLocalAlloc(sizeof(AMODE));
     int sz = 0, seg = 0;
-    BOOLEAN done = FALSE;
+    bool done = false;
     lastsym = 0;
     inasm_txsym();
     if (lex)
@@ -769,7 +769,7 @@ static AMODE* inasm_amode(int nosegreg)
     }
     while (!done)
     {
-        done = TRUE;
+        done = true;
         if (lex)
         {
             switch (lex->type)
@@ -812,7 +812,7 @@ static AMODE* inasm_amode(int nosegreg)
                         if (MATCHKW(lex, colon))
                         {
                             inasm_getsym();
-                            done = FALSE;
+                            done = false;
                             continue;
                         }
                         rv->mode = am_seg;
@@ -993,7 +993,7 @@ static int getData(STATEMENT* snp)
         TYPE* tp;
         EXPRESSION* expr;
         lex = getsym();
-        lex = optimized_expression(lex, NULL, NULL, &tp, &expr, FALSE);
+        lex = optimized_expression(lex, NULL, NULL, &tp, &expr, false);
         if (tp && (isintconst(expr) || isfloatconst(expr)))
         {
             switch (size)
@@ -1047,7 +1047,7 @@ static int getData(STATEMENT* snp)
     } while (lex && MATCHKW(lex, comma));
     return 1;
 }
-BOOLEAN ateol(void)
+bool ateol(void)
 {
     unsigned char* p = includes->lptr;
     while (*p)
@@ -1116,7 +1116,7 @@ LEXEME* inasm_statement(LEXEME* inlex, BLOCKDATA* parent)
                 inasm_getsym();
                 op = op_int;
                 rv = (OCODE*)beLocalAlloc(sizeof(OCODE));
-                rv->oper1 = inasm_amode(TRUE);
+                rv->oper1 = inasm_amode(true);
                 goto join;
             }
             node = inasm_label();
@@ -1182,7 +1182,7 @@ LEXEME* inasm_statement(LEXEME* inlex, BLOCKDATA* parent)
             // else if (!rv->oper2->length && insdata->amode != OPE_BOUND && insdata->amode != OPE_LOADSEG)
             // rv->oper2->length = rv->oper1->length;
         }
-        rv->noopt = TRUE;
+        rv->noopt = true;
         rv->opcode = op;
         rv->fwd = rv->back = 0;
         AssembleInstruction(rv);
@@ -1199,13 +1199,13 @@ void* inlineAsmStmt(void* param)
     {
         AMODE* ap = rv->oper1;
         if (ap && ap->offset)
-            ap->offset = inlineexpr(ap->offset, FALSE);
+            ap->offset = inlineexpr(ap->offset, nullptr);
         ap = rv->oper2;
         if (ap && ap->offset)
-            ap->offset = inlineexpr(ap->offset, FALSE);
+            ap->offset = inlineexpr(ap->offset, nullptr);
         ap = rv->oper3;
         if (ap && ap->offset)
-            ap->offset = inlineexpr(ap->offset, FALSE);
+            ap->offset = inlineexpr(ap->offset, nullptr);
     }
     return rv;
 }

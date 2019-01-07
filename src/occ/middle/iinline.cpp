@@ -55,9 +55,9 @@ void iinlineInit(void)
     inlinesym_count = 0;
     inline_nesting = 0;
 }
-static BOOLEAN hasRelativeThis(EXPRESSION* thisPtr)
+static bool hasRelativeThis(EXPRESSION* thisPtr)
 {
-    BOOLEAN rv = FALSE;
+    bool rv = false;
     if (thisPtr->left)
     {
         rv = hasRelativeThis(thisPtr->left);
@@ -69,7 +69,7 @@ static BOOLEAN hasRelativeThis(EXPRESSION* thisPtr)
     if (!rv)
     {
         if (thisPtr->type == en_auto && thisPtr->v.sp->thisPtr)
-            rv = TRUE;
+            rv = true;
     }
     return rv;
 }
@@ -110,8 +110,8 @@ static void inlineBindThis(SYMBOL* funcsp, HASHREC* hr, EXPRESSION* thisptr)
                               ? thisptr
                               : inlineGetThisPtr(thisptr);
                 sym = makeID(sc_auto, sym->tp, NULL, AnonymousName());
-                sym->allocate = TRUE;
-                sym->inAllocTable = TRUE;
+                sym->allocate = true;
+                sym->inAllocTable = true;
                 lst->data = sym;
                 lst->next = temporarySymbols;
                 temporarySymbols = lst;
@@ -165,8 +165,8 @@ static void inlineBindArgs(SYMBOL* funcsp, HASHREC* hr, INITLIST* args)
                 EXPRESSION* dest;
                 SYMBOL* sym2 = makeID(sc_auto, sym->tp, NULL, AnonymousName());
                 LIST* lst = (LIST *)Alloc(sizeof(LIST));
-                sym2->allocate = TRUE;
-                sym2->inAllocTable = TRUE;
+                sym2->allocate = true;
+                sym2->inAllocTable = true;
                 lst->data = sym2;
                 lst->next = temporarySymbols;
                 temporarySymbols = lst;
@@ -227,8 +227,8 @@ static void inlineResetTable(HASHREC* table)
         sym->imind = NULL;
         sym->imaddress = NULL;
         sym->imstore = NULL;
-        sym->allocate = FALSE;
-        sym->inAllocTable = FALSE;
+        sym->allocate = false;
+        sym->inAllocTable = false;
         table = table->next;
     }
 }
@@ -267,7 +267,7 @@ static void inlineCopySyms(HASHTABLE* src)
                     lst->data = sym;
                     lst->next = temporarySymbols;
                     temporarySymbols = lst;
-                    sym->inAllocTable = TRUE;
+                    sym->inAllocTable = true;
                 }
             }
             hr = hr->next;
@@ -275,7 +275,7 @@ static void inlineCopySyms(HASHTABLE* src)
         src = src->next;
     }
 }
-static BOOLEAN inlineTooComplex(FUNCTIONCALL* f) { return f->sp->endLine - f->sp->startLine > 15 / (inline_nesting * 2 + 1); }
+static bool inlineTooComplex(FUNCTIONCALL* f) { return f->sp->endLine - f->sp->startLine > 15 / (inline_nesting * 2 + 1); }
 IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
 /*
  *      generate a function call node and return the address mode
@@ -297,77 +297,77 @@ IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
         return NULL;
     if (cparams.prm_debug)
     {
-        f->sp->dumpInlineToFile = TRUE;
+        f->sp->dumpInlineToFile = true;
         return NULL;
     }
     /* measure of complexity */
     if (inlineTooComplex(f))
     {
-        f->sp->dumpInlineToFile = TRUE;
+        f->sp->dumpInlineToFile = true;
         return NULL;
     }
     if (f->fcall->type != en_pc)
     {
-        f->sp->dumpInlineToFile = TRUE;
+        f->sp->dumpInlineToFile = true;
         return NULL;
     }
     if (f->sp->storage_class == sc_virtual)
     {
-        f->sp->dumpInlineToFile = TRUE;
+        f->sp->dumpInlineToFile = true;
         return NULL;
     }
     if (f->sp == theCurrentFunc)
     {
-        f->sp->dumpInlineToFile = TRUE;
+        f->sp->dumpInlineToFile = true;
         return NULL;
     }
     if (f->sp->allocaUsed)
     {
-        f->sp->dumpInlineToFile = TRUE;
+        f->sp->dumpInlineToFile = true;
         return NULL;
     }
     if (f->sp->templateLevel && f->sp->templateParams && !f->sp->instantiated)  // specialized)
     {
-        f->sp->dumpInlineToFile = TRUE;
+        f->sp->dumpInlineToFile = true;
         return NULL;
     }
     if (!f->sp->inlineFunc.syms)
     {
-        f->sp->dumpInlineToFile = TRUE;
+        f->sp->dumpInlineToFile = true;
         return NULL;
     }
     if (!f->sp->inlineFunc.stmt)
     {
-        f->sp->dumpInlineToFile = TRUE;
+        f->sp->dumpInlineToFile = true;
         return NULL;
     }
     if (inlinesym_count >= MAX_INLINE_NESTING)
     {
-        f->sp->dumpInlineToFile = TRUE;
+        f->sp->dumpInlineToFile = true;
         return NULL;
     }
     if (f->thisptr)
     {
         if (f->thisptr->type == en_auto && f->thisptr->v.sp->stackblock)
         {
-            f->sp->dumpInlineToFile = TRUE;
+            f->sp->dumpInlineToFile = true;
             return NULL;
         }
     }
     if (f->returnEXP)
     {
-        f->sp->dumpInlineToFile = TRUE;
+        f->sp->dumpInlineToFile = true;
         return NULL;
     }
     // if it has a structured return value or structured arguments we don't try to inline it
     if (isstructured(basetype(f->sp->tp)->btp))
     {
-        f->sp->dumpInlineToFile = TRUE;
+        f->sp->dumpInlineToFile = true;
         return NULL;
     }
     if (basetype(basetype(f->sp->tp)->btp)->type == bt_memberptr) // DAL FIXED
     {
-        f->sp->dumpInlineToFile = TRUE;
+        f->sp->dumpInlineToFile = true;
         return NULL;
     }
     hr = basetype(f->sp->tp)->syms->table[0];
@@ -375,7 +375,7 @@ IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
     {
         if (isstructured(((SYMBOL*)hr->p)->tp) || basetype(((SYMBOL*)hr->p)->tp)->type == bt_memberptr)
         {
-            f->sp->dumpInlineToFile = TRUE;
+            f->sp->dumpInlineToFile = true;
             return NULL;
         }
         hr = hr->next;
@@ -383,7 +383,7 @@ IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
     for (i = 0; i < inlinesym_count; i++)
         if (f->sp == inlinesym_list[i])
         {
-            f->sp->dumpInlineToFile = TRUE;
+            f->sp->dumpInlineToFile = true;
             return NULL;
         }
     inline_nesting++;

@@ -42,7 +42,7 @@ void DisableTrivialWarnings();
 void errorinit(void);
 void errskim(LEXEME **lex, enum e_kw *skimlist);
 void skip(LEXEME **lex, enum e_kw kw);
-BOOLEAN needkw(LEXEME **lex, enum e_kw kw);
+bool needkw(LEXEME **lex, enum e_kw kw);
 void pperror(int err, int data);
 void pperrorstr(int err, char *str);
 void preverror(int err, char *name, char *origfile, int origline);
@@ -70,18 +70,18 @@ void printToListFile(char *fmt, ...);
 void ErrorsToListFile(void);
 void AddErrorToList(char *tag, char *str);
 void checkUnlabeledReferences(BLOCKDATA *parent);
-void checkGotoPastVLA(STATEMENT *stmt, BOOLEAN first);
+void checkGotoPastVLA(STATEMENT *stmt, bool first);
 void checkUnused(HASHTABLE *syms);
 void findUnusedStatics(NAMESPACEVALUES *syms);
-void assignmentUsages(EXPRESSION *node, BOOLEAN first);
+void assignmentUsages(EXPRESSION *node, bool first);
 void checkDefaultArguments(SYMBOL *spi);
 
                               /* Ccmain.c */
 
-void BOOLEAN_setup(char select, char *string);
+void bool_setup(char select, char *string);
 void codegen_setup(char select, char *string);
 void optimize_setup(char select, char *string);
-void compile(BOOLEAN global);
+void compile(bool global);
 int main(int argc, char *argv[]);
 
                              /* Constopt.c */
@@ -103,7 +103,7 @@ int fold_const(EXPRESSION *node);
 int typedconsts(EXPRESSION *node1);
 void optimize_for_constants(EXPRESSION **expr);
 LEXEME *optimized_expression(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, 
-	EXPRESSION **expr, BOOLEAN commaallowed);
+	EXPRESSION **expr, bool commaallowed);
 
                                /* CRC.C */
 
@@ -118,33 +118,33 @@ int CountPacks(TEMPLATEPARAMLIST* packs);
 void calculateVirtualBaseOffsets(SYMBOL* sp);
 
 
-SYMBOL* finishSearch(char* name, SYMBOL* encloser, NAMESPACEVALUES* ns, BOOLEAN tagsOnly, BOOLEAN throughClass,
-                     BOOLEAN namespaceOnly);
+SYMBOL* finishSearch(char* name, SYMBOL* encloser, NAMESPACEVALUES* ns, bool tagsOnly, bool throughClass,
+                     bool namespaceOnly);
 
-BOOLEAN intcmp(TYPE *t1, TYPE *t2);
+bool intcmp(TYPE *t1, TYPE *t2);
 EXPRESSION *GetSymRef(EXPRESSION *n);
 EXPRESSION *copy_expression(EXPRESSION *exp);
-BOOLEAN equalTemplateIntNode(EXPRESSION *exp1, EXPRESSION *exp2);
-BOOLEAN matchTemplateSpecializationToParams(TEMPLATEPARAMLIST* param, TEMPLATEPARAMLIST* special, SYMBOL* sp);
+bool equalTemplateIntNode(EXPRESSION *exp1, EXPRESSION *exp2);
+bool matchTemplateSpecializationToParams(TEMPLATEPARAMLIST* param, TEMPLATEPARAMLIST* special, SYMBOL* sp);
 
-BOOLEAN templatecomparetypes(TYPE *tp1, TYPE *tp2, BOOLEAN exact);
-BOOLEAN templatecompareexpressions(EXPRESSION *exp1, EXPRESSION *exp2);
-BOOLEAN templateselectorcompare(TEMPLATESELECTOR *ts1, TEMPLATESELECTOR *ts2);
+bool templatecomparetypes(TYPE *tp1, TYPE *tp2, bool exact);
+bool templatecompareexpressions(EXPRESSION *exp1, EXPRESSION *exp2);
+bool templateselectorcompare(TEMPLATESELECTOR *ts1, TEMPLATESELECTOR *ts2);
 TEMPLATEPARAMLIST *TemplateLookupSpecializationParam(char *name);
-BOOLEAN hasVTab(SYMBOL *sp);
-BOOLEAN sameTemplatePointedTo(TYPE *tnew, TYPE *told);
-BOOLEAN sameTemplate(TYPE *P, TYPE *A);
+bool hasVTab(SYMBOL *sp);
+bool sameTemplatePointedTo(TYPE *tnew, TYPE *told);
+bool sameTemplate(TYPE *P, TYPE *A);
 void ParseBuiltins(void);
 LEXEME* tagsearch(LEXEME* lex, char* name, SYMBOL** rsp, HASHTABLE** table, SYMBOL** strSym_out, NAMESPACEVALUES** nsv_out,
                          enum e_sc storage_class);
-BOOLEAN ParseAttributeSpecifiers(LEXEME **lex, SYMBOL *funcsp, BOOLEAN always);
+bool ParseAttributeSpecifiers(LEXEME **lex, SYMBOL *funcsp, bool always);
 void declare_init(void);
 void addStructureDeclaration(STRUCTSYM *decl);
 void addTemplateDeclaration(STRUCTSYM *decl);
 void dropStructureDeclaration(void);
 SYMBOL *getStructureDeclaration(void);
 void FinishStruct(SYMBOL *sp, SYMBOL *funcsp);
-LEXEME *innerDeclStruct(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, BOOLEAN isTemplate, enum e_ac defaultAccess, BOOLEAN isfinal, BOOLEAN *defd);
+LEXEME *innerDeclStruct(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, bool isTemplate, enum e_ac defaultAccess, bool isfinal, bool *defd);
 void checkPackedType(SYMBOL *sp);
 void checkPackedExpression(EXPRESSION *sp);
 void checkUnpackedExpression(EXPRESSION *sp);
@@ -153,44 +153,44 @@ INITLIST **expandPackedInitList(INITLIST **lptr, SYMBOL *funcsp, LEXEME *start, 
 MEMBERINITIALIZERS *expandPackedBaseClasses(SYMBOL *cls, SYMBOL *funcsp, MEMBERINITIALIZERS **init, BASECLASS *bc, VBASEENTRY *vbase);
 void expandPackedMemberInitializers(SYMBOL *cls, SYMBOL *funcsp, TEMPLATEPARAMLIST *templatePack, MEMBERINITIALIZERS **p, LEXEME *start, INITLIST *list);
 LEXEME *parse_declspec(LEXEME *lex, enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3);
-void checkOperatorArgs(SYMBOL *sp, BOOLEAN asFriend);
-SYMBOL *getCopyCons(SYMBOL *base, BOOLEAN move);
-void ConsDestDeclarationErrors(SYMBOL *sp, BOOLEAN notype);
+void checkOperatorArgs(SYMBOL *sp, bool asFriend);
+SYMBOL *getCopyCons(SYMBOL *base, bool move);
+void ConsDestDeclarationErrors(SYMBOL *sp, bool notype);
 MEMBERINITIALIZERS *GetMemberInitializers(LEXEME **lex, SYMBOL *funcsp, SYMBOL *sp);
 void ParseMemberInitializers(SYMBOL *cls, SYMBOL *cons);
 SYMBOL *insertFunc(SYMBOL *sp, SYMBOL *ovl);
 void lambda_init(void);
-BOOLEAN matchesCopy(SYMBOL *sp, BOOLEAN move);
+bool matchesCopy(SYMBOL *sp, bool move);
 void createConstructorsForLambda(SYMBOL *sp);
 void createConstructor(SYMBOL *sp, SYMBOL *consfunc);
 void createDefaultConstructors(SYMBOL *sp);
-void destructBlock(EXPRESSION **exp, HASHREC *hr, BOOLEAN mainDestruct);
-EXPRESSION *thunkConstructorHead(BLOCKDATA *b, SYMBOL *sym, SYMBOL *cons, HASHTABLE *syms, BOOLEAN parseInitializers, BOOLEAN doCopy);
+void destructBlock(EXPRESSION **exp, HASHREC *hr, bool mainDestruct);
+EXPRESSION *thunkConstructorHead(BLOCKDATA *b, SYMBOL *sym, SYMBOL *cons, HASHTABLE *syms, bool parseInitializers, bool doCopy);
 void thunkDestructorTail(BLOCKDATA *b, SYMBOL *sp, SYMBOL *dest, HASHTABLE *syms);
 void createAssignment(SYMBOL *sym, SYMBOL *asnfunc);
 void makeArrayConsDest(TYPE **tp, EXPRESSION **exp, SYMBOL *cons, SYMBOL *dest, EXPRESSION *count);
-void callDestructor(SYMBOL *sp, SYMBOL *against, EXPRESSION **exp, EXPRESSION *arrayElms, BOOLEAN top, 
-                    BOOLEAN pointer, BOOLEAN skipAccess);
-BOOLEAN callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params, 
-                    BOOLEAN checkcopy, EXPRESSION *arrayElms, BOOLEAN top, 
-                    BOOLEAN maybeConversion, BOOLEAN implicit, BOOLEAN pointer,
-                    BOOLEAN usesInitList);
-BOOLEAN callConstructorParam(TYPE** tp, EXPRESSION** exp, TYPE *paramTP, EXPRESSION *paramExp, BOOLEAN top,
-    BOOLEAN maybeConversion, BOOLEAN implicit, BOOLEAN pointer);
+void callDestructor(SYMBOL *sp, SYMBOL *against, EXPRESSION **exp, EXPRESSION *arrayElms, bool top, 
+                    bool pointer, bool skipAccess);
+bool callConstructor(TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *params, 
+                    bool checkcopy, EXPRESSION *arrayElms, bool top, 
+                    bool maybeConversion, bool implicit, bool pointer,
+                    bool usesInitList);
+bool callConstructorParam(TYPE** tp, EXPRESSION** exp, TYPE *paramTP, EXPRESSION *paramExp, bool top,
+    bool maybeConversion, bool implicit, bool pointer);
 void PromoteConstructorArgs(SYMBOL *cons1, FUNCTIONCALL *params);
 
 LEXEME *getDeclType(LEXEME *lex, SYMBOL *funcsp, TYPE **tn);
-LEXEME *insertNamespace(LEXEME *lex, enum e_lk linkage, enum e_sc storage_class, BOOLEAN *linked);
-LEXEME *insertUsing(LEXEME *lex, SYMBOL **sp, enum e_ac access, enum e_sc storage_class, BOOLEAN inTemplate, BOOLEAN hasAttribs);
+LEXEME *insertNamespace(LEXEME *lex, enum e_lk linkage, enum e_sc storage_class, bool *linked);
+LEXEME *insertUsing(LEXEME *lex, SYMBOL **sp, enum e_ac access, enum e_sc storage_class, bool inTemplate, bool hasAttribs);
 LEXEME *handleStaticAssert(LEXEME *lex);
 void InsertExtern(SYMBOL *sp);
 void InsertGlobal(SYMBOL *sp);
 char *AnonymousName(void);
 SYMBOL *makeID(enum e_sc storage_class, TYPE *tp, SYMBOL *spi, char *name);
 SYMBOL *makeUniqueID(enum e_sc storage_class, TYPE *tp, SYMBOL *spi, char *name);
-void InsertSymbol(SYMBOL *sp, enum e_sc storage_class, enum e_lk linkage, BOOLEAN ignoreDups);
-LEXEME *getDeferredData(LEXEME *lex, SYMBOL *sym, BOOLEAN braces);
-LEXEME *get_type_id(LEXEME *lex, TYPE **tp, SYMBOL *funcsp, enum e_sc storage_class, BOOLEAN beforeOnly, BOOLEAN toErr);
+void InsertSymbol(SYMBOL *sp, enum e_sc storage_class, enum e_lk linkage, bool ignoreDups);
+LEXEME *getDeferredData(LEXEME *lex, SYMBOL *sym, bool braces);
+LEXEME *get_type_id(LEXEME *lex, TYPE **tp, SYMBOL *funcsp, enum e_sc storage_class, bool beforeOnly, bool toErr);
 int classRefCount(SYMBOL *base, SYMBOL *derived);
 void CheckCalledException(SYMBOL *cst, EXPRESSION *exp);
 void calculateVTabEntries(SYMBOL *sp, SYMBOL *base, VTABENTRY **pos, int offset);
@@ -200,128 +200,128 @@ void deferredCompile(void);
 void deferredInitializeStructFunctions(SYMBOL *cur);
 void deferredInitializeStructMembers(SYMBOL *cur);
 TYPE * PerformDeferredInitialization (TYPE *tp, SYMBOL *funcsp);
-void warnCPPWarnings(SYMBOL *sym, BOOLEAN localClassWarnings);
-BOOLEAN usesVTab(SYMBOL *sym);
+void warnCPPWarnings(SYMBOL *sym, bool localClassWarnings);
+bool usesVTab(SYMBOL *sym);
 LEXEME *baseClasses(LEXEME *lex, SYMBOL *funcsp, SYMBOL *declsym, enum e_ac defaultAccess);
 void resolveAnonymousUnions(SYMBOL *sp);
 SYMBOL * calculateStructAbstractness(SYMBOL *top, SYMBOL *sp);
-LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp, BOOLEAN inTemplate, enum e_sc storage_class);
-LEXEME *getQualifiers(LEXEME *lex, TYPE **tp, enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3, BOOLEAN *asFriend);
-LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym, BOOLEAN isTemplate, enum e_sc storage_class, 
+LEXEME *getFunctionParams(LEXEME *lex, SYMBOL *funcsp, SYMBOL **spin, TYPE **tp, bool inTemplate, enum e_sc storage_class);
+LEXEME *getQualifiers(LEXEME *lex, TYPE **tp, enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3, bool *asFriend);
+LEXEME *getBasicType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **strSym, bool isTemplate, enum e_sc storage_class, 
 					enum e_lk *linkage_in, enum e_lk *linkage2_in, enum e_lk *linkage3, 
-                    enum e_ac access, BOOLEAN *notype, BOOLEAN *defd, int *consdest, 
-                    BOOLEAN *templateArg, BOOLEAN isTypedef, BOOLEAN templateErr);
+                    enum e_ac access, bool *notype, bool *defd, int *consdest, 
+                    bool *templateArg, bool isTypedef, bool templateErr);
 LEXEME *getBeforeType(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, SYMBOL **spi, SYMBOL **strSym,
-                      NAMESPACEVALUES **nsv, BOOLEAN isTemplate, enum e_sc storage_class,
-							 enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3, BOOLEAN asFriend,
-                        int consdest, BOOLEAN beforeOnly, BOOLEAN funcptr);
+                      NAMESPACEVALUES **nsv, bool isTemplate, enum e_sc storage_class,
+							 enum e_lk *linkage, enum e_lk *linkage2, enum e_lk *linkage3, bool asFriend,
+                        int consdest, bool beforeOnly, bool funcptr);
 void sizeQualifiers(TYPE *tp);
 void SetParams(SYMBOL *cons);
 void unvisitUsingDirectives(NAMESPACEVALUES *v);
 void injectThisPtr(SYMBOL *sp, HASHTABLE *syms);
 void TemplateValidateSpecialization(TEMPLATEPARAMLIST *arg);
-TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, BOOLEAN alt);
+TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bool alt);
 TYPE *TemplateLookupTypeFromDeclType(TYPE *tp);
 void propagateTemplateDefinition(SYMBOL *sym);
 int PushTemplateNamespace(SYMBOL *sym);
 void PopTemplateNamespace(int count);
-BOOLEAN typeHasTemplateArg(TYPE *t);
+bool typeHasTemplateArg(TYPE *t);
 void templateInit(void);
 void TemplateGetDeferred(SYMBOL *sym);
 TEMPLATEPARAMLIST *TemplateGetParams(SYMBOL *sym);
 void TemplateRegisterDeferred(LEXEME *lex);
-BOOLEAN exactMatchOnTemplateArgs(TEMPLATEPARAMLIST *old, TEMPLATEPARAMLIST *sym);
-BOOLEAN exactMatchOnTemplateParams(TEMPLATEPARAMLIST *old, TEMPLATEPARAMLIST *sym);
-BOOLEAN TemplateInstantiationMatch(SYMBOL *orig, SYMBOL *sym);
+bool exactMatchOnTemplateArgs(TEMPLATEPARAMLIST *old, TEMPLATEPARAMLIST *sym);
+bool exactMatchOnTemplateParams(TEMPLATEPARAMLIST *old, TEMPLATEPARAMLIST *sym);
+bool TemplateInstantiationMatch(SYMBOL *orig, SYMBOL *sym);
 SYMBOL *FindSpecialization(SYMBOL *sym, TEMPLATEPARAMLIST *templateParams);
 SYMBOL *LookupSpecialization(SYMBOL *sym, TEMPLATEPARAMLIST *templateParams);
 SYMBOL *LookupFunctionSpecialization(SYMBOL *overloads, SYMBOL *sp);
-TEMPLATEPARAMLIST * TemplateMatching(LEXEME *lex, TEMPLATEPARAMLIST *old, TEMPLATEPARAMLIST *sym, SYMBOL *sp, BOOLEAN definition);
+TEMPLATEPARAMLIST * TemplateMatching(LEXEME *lex, TEMPLATEPARAMLIST *old, TEMPLATEPARAMLIST *sym, SYMBOL *sp, bool definition);
 LEXEME *GetTemplateArguments(LEXEME *lex, SYMBOL *funcsp, SYMBOL *templ, TEMPLATEPARAMLIST **lst);
-BOOLEAN TemplateIntroduceArgs(TEMPLATEPARAMLIST *sym, TEMPLATEPARAMLIST *args);
-TYPE *SynthesizeType(TYPE *tp,TEMPLATEPARAMLIST *enclosing,  BOOLEAN alt);
+bool TemplateIntroduceArgs(TEMPLATEPARAMLIST *sym, TEMPLATEPARAMLIST *args);
+TYPE *SynthesizeType(TYPE *tp,TEMPLATEPARAMLIST *enclosing,  bool alt);
 SYMBOL *SynthesizeResult(SYMBOL *sym, TEMPLATEPARAMLIST *params);
 SYMBOL *TemplateSynthesizeFunction(SYMBOL *sym);
 SYMBOL *TemplateDeduceArgsFromType(SYMBOL *sym, TYPE *tp);
 void NormalizePacked(TYPE *tpo);
 SYMBOL *TemplateDeduceArgsFromArgs(SYMBOL *sym, FUNCTIONCALL *args);
 SYMBOL *TemplateDeduceWithoutArgs(SYMBOL *sym);
-void TemplatePartialOrdering(SYMBOL **table, int count, FUNCTIONCALL *funcparams, TYPE *atype, BOOLEAN byClass, BOOLEAN save);
-SYMBOL *TemplateClassInstantiateInternal(SYMBOL *sym, TEMPLATEPARAMLIST *args, BOOLEAN isExtern);
-SYMBOL *TemplateClassInstantiate(SYMBOL *sym, TEMPLATEPARAMLIST *args, BOOLEAN isExtern, enum e_sc storage_class);
-void TemplateDataInstantiate(SYMBOL *sym, BOOLEAN warning, BOOLEAN isExtern);
+void TemplatePartialOrdering(SYMBOL **table, int count, FUNCTIONCALL *funcparams, TYPE *atype, bool byClass, bool save);
+SYMBOL *TemplateClassInstantiateInternal(SYMBOL *sym, TEMPLATEPARAMLIST *args, bool isExtern);
+SYMBOL *TemplateClassInstantiate(SYMBOL *sym, TEMPLATEPARAMLIST *args, bool isExtern, enum e_sc storage_class);
+void TemplateDataInstantiate(SYMBOL *sym, bool warning, bool isExtern);
 void SetTemplateNamespace(SYMBOL *sym);
 void HandleDeferredFunctionInstantiate(void);
-SYMBOL *TemplateFunctionInstantiate(SYMBOL *sym, BOOLEAN warning, BOOLEAN isExtern);
-BOOLEAN allTemplateArgsSpecified(SYMBOL *sym, TEMPLATEPARAMLIST *args);
-SYMBOL *GetClassTemplate(SYMBOL *sp, TEMPLATEPARAMLIST *args, BOOLEAN noErr);
+SYMBOL *TemplateFunctionInstantiate(SYMBOL *sym, bool warning, bool isExtern);
+bool allTemplateArgsSpecified(SYMBOL *sym, TEMPLATEPARAMLIST *args);
+SYMBOL *GetClassTemplate(SYMBOL *sp, TEMPLATEPARAMLIST *args, bool noErr);
 SYMBOL *GetVariableTemplate(SYMBOL *sp, TEMPLATEPARAMLIST *args);
 SYMBOL *GetTypedefSpecialization(SYMBOL *sp, TEMPLATEPARAMLIST *args);
-void DoInstantiateTemplateFunction(TYPE *tp, SYMBOL **sp, NAMESPACEVALUES *nsv, SYMBOL *strSym, TEMPLATEPARAMLIST *templateParams, BOOLEAN isExtern);
+void DoInstantiateTemplateFunction(TYPE *tp, SYMBOL **sp, NAMESPACEVALUES *nsv, SYMBOL *strSym, TEMPLATEPARAMLIST *templateParams, bool isExtern);
 void DoDefaultSpecialization(SYMBOL *sp2);
 TEMPLATEPARAMLIST *getCurrentSpecialization(SYMBOL *sp);
-BOOLEAN TemplateFullySpecialized(SYMBOL *sp);
-LEXEME *TemplateDeclaration(LEXEME *lex, SYMBOL *funcsp, enum e_ac access, enum e_sc storage_class, BOOLEAN isextern);
-BOOLEAN isConstexprConstructor(SYMBOL *sym);
-BOOLEAN MatchesConstFunction(SYMBOL *sp);
+bool TemplateFullySpecialized(SYMBOL *sp);
+LEXEME *TemplateDeclaration(LEXEME *lex, SYMBOL *funcsp, enum e_ac access, enum e_sc storage_class, bool isextern);
+bool isConstexprConstructor(SYMBOL *sym);
+bool MatchesConstFunction(SYMBOL *sp);
 LEXEME *declare(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, enum e_sc storage_class, enum e_lk defaultLinkage,
-					   BLOCKDATA *parent, BOOLEAN needsemi, int asExpression, BOOLEAN isTemplate, enum e_ac access );
+					   BLOCKDATA *parent, bool needsemi, int asExpression, bool isTemplate, enum e_ac access );
 
                                /* Expr.c */
 
 void expr_init(void);
 void libcxx_init(void);
-BOOLEAN parseBuiltInTypelistFunc(LEXEME **lex, SYMBOL *funcsp, SYMBOL *sym, TYPE **tp, EXPRESSION **exp);
+bool parseBuiltInTypelistFunc(LEXEME **lex, SYMBOL *funcsp, SYMBOL *sym, TYPE **tp, EXPRESSION **exp);
 void thunkForImportTable(EXPRESSION **exp);
 void checkscope(TYPE *tp1, TYPE *tp2);
 void checkauto(TYPE *tp, int err);
-void qualifyForFunc(SYMBOL *sym, TYPE **tp, BOOLEAN isMutable);
+void qualifyForFunc(SYMBOL *sym, TYPE **tp, bool isMutable);
 void getThisType(SYMBOL *sym, TYPE **tp);
-SYMBOL *lambda_capture(SYMBOL *sym, enum e_cm mode, BOOLEAN isExplicit);
+SYMBOL *lambda_capture(SYMBOL *sym, enum e_cm mode, bool isExplicit);
 LEXEME *expression_lambda(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, int flags);
-EXPRESSION *getMemberBase(SYMBOL *memberSym, SYMBOL *strSym, SYMBOL *funcsp, BOOLEAN toError);
+EXPRESSION *getMemberBase(SYMBOL *memberSym, SYMBOL *strSym, SYMBOL *funcsp, bool toError);
 EXPRESSION *getMemberNode(SYMBOL *memberSym, SYMBOL *strSym, TYPE **tp, SYMBOL *funcsp);
 EXPRESSION *getMemberPtr(SYMBOL *memberSym, SYMBOL *strSym, TYPE **tp, SYMBOL *funcsp);
 EXPRESSION *substitute_params_for_function(FUNCTIONCALL *funcparams, HASHTABLE *syms);
 EXPRESSION *substitute_params_for_constexpr(EXPRESSION *exp, FUNCTIONCALL *funcparams, HASHTABLE *syms);
 LEXEME *expression_func_type_cast(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, int flags);
-BOOLEAN doDynamicCast(TYPE **newType, TYPE *oldTYPE, EXPRESSION **exp, SYMBOL *funcsp);
-BOOLEAN doStaticCast(TYPE **newType, TYPE *oldTYPE, EXPRESSION **exp, SYMBOL *funcsp, BOOLEAN checkconst);
-BOOLEAN doConstCast(TYPE **newType, TYPE *oldTYPE, EXPRESSION **exp, SYMBOL *funcsp);
-BOOLEAN doReinterpretCast(TYPE **newType, TYPE *oldTYPE, EXPRESSION **exp, SYMBOL *funcsp, BOOLEAN checkconst);
-BOOLEAN castToPointer(TYPE **tp, EXPRESSION **exp, enum e_kw kw, TYPE *other);
-BOOLEAN castToArithmeticInternal(BOOLEAN integer, TYPE **tp, EXPRESSION **exp, enum e_kw kw, TYPE *other, BOOLEAN implicit);
-void castToArithmetic(BOOLEAN integer, TYPE **tp, EXPRESSION **exp, enum e_kw kw, TYPE *other, BOOLEAN implicit);
-BOOLEAN cppCast(TYPE *src, TYPE **dest, EXPRESSION **exp);
-LEXEME *GetCastInfo(LEXEME *lex, SYMBOL *funcsp, TYPE **newType, TYPE **oldType, EXPRESSION **oldExp, BOOLEAN packed);
+bool doDynamicCast(TYPE **newType, TYPE *oldTYPE, EXPRESSION **exp, SYMBOL *funcsp);
+bool doStaticCast(TYPE **newType, TYPE *oldTYPE, EXPRESSION **exp, SYMBOL *funcsp, bool checkconst);
+bool doConstCast(TYPE **newType, TYPE *oldTYPE, EXPRESSION **exp, SYMBOL *funcsp);
+bool doReinterpretCast(TYPE **newType, TYPE *oldTYPE, EXPRESSION **exp, SYMBOL *funcsp, bool checkconst);
+bool castToPointer(TYPE **tp, EXPRESSION **exp, enum e_kw kw, TYPE *other);
+bool castToArithmeticInternal(bool integer, TYPE **tp, EXPRESSION **exp, enum e_kw kw, TYPE *other, bool implicit);
+void castToArithmetic(bool integer, TYPE **tp, EXPRESSION **exp, enum e_kw kw, TYPE *other, bool implicit);
+bool cppCast(TYPE *src, TYPE **dest, EXPRESSION **exp);
+LEXEME *GetCastInfo(LEXEME *lex, SYMBOL *funcsp, TYPE **newType, TYPE **oldType, EXPRESSION **oldExp, bool packed);
 LEXEME *expression_typeid(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, int flags);
-BOOLEAN insertOperatorParams(SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *funcParams, int flags);
-BOOLEAN insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp, 
+bool insertOperatorParams(SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, FUNCTIONCALL *funcParams, int flags);
+bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL *funcsp, 
                         TYPE **tp, EXPRESSION **exp, TYPE *tp1, EXPRESSION *exp1, INITLIST *args, int flags);
-LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOLEAN global, int flags);
-LEXEME *expression_delete(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, BOOLEAN global, int flags);
+LEXEME *expression_new(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, bool global, int flags);
+LEXEME *expression_delete(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, bool global, int flags);
 LEXEME *expression_noexcept(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp);
 void ResolveTemplateVariable(TYPE **ttype, EXPRESSION **texpr, TYPE *atype, TYPE *rtype);
-LEXEME *expression_cast(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, int flags);
+LEXEME *expression_cast(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, bool *ismutable, int flags);
 EXPRESSION *exprNode(enum e_node type, EXPRESSION *left, EXPRESSION *right);
 EXPRESSION *varNode(enum e_node type, SYMBOL *sp);
 EXPRESSION *intNode(enum e_node type, LLONG_TYPE val);
 EXPRESSION *typeNode(TYPE *tp);
-BOOLEAN doBox(TYPE **tp, EXPRESSION **exp, TYPE *boxed, TYPE *unboxed);
-BOOLEAN doUnbox(TYPE **tp, EXPRESSION **exp, TYPE *boxed, TYPE *unboxed);
+bool doBox(TYPE **tp, EXPRESSION **exp, TYPE *boxed, TYPE *unboxed);
+bool doUnbox(TYPE **tp, EXPRESSION **exp, TYPE *boxed, TYPE *unboxed);
 EXPRESSION *baseClassOffset(SYMBOL *base, SYMBOL *derived, EXPRESSION *en);
 LEXEME *getInitList(LEXEME *lex, SYMBOL *funcsp, INITLIST **owner);
-LEXEME *getArgs(LEXEME *lex, SYMBOL *funcsp, FUNCTIONCALL *funcparams, enum e_kw finish, BOOLEAN allowPack, int flags);
-LEXEME *getMemberInitializers(LEXEME *lex, SYMBOL *funcsp, FUNCTIONCALL *funcparams, enum e_kw finish, BOOLEAN allowPack);
+LEXEME *getArgs(LEXEME *lex, SYMBOL *funcsp, FUNCTIONCALL *funcparams, enum e_kw finish, bool allowPack, int flags);
+LEXEME *getMemberInitializers(LEXEME *lex, SYMBOL *funcsp, FUNCTIONCALL *funcparams, enum e_kw finish, bool allowPack);
 EXPRESSION *DerivedToBase(TYPE *tpn, TYPE *tpo, EXPRESSION *exp, int flags);
 void CreateInitializerList(TYPE *initializerListTemplate, TYPE *initializerListType, 
-                           INITLIST **lptr, BOOLEAN operands, BOOLEAN asref);
-void AdjustParams(SYMBOL *func, HASHREC *hr, INITLIST **lptr, BOOLEAN operands, BOOLEAN implicit);
+                           INITLIST **lptr, bool operands, bool asref);
+void AdjustParams(SYMBOL *func, HASHREC *hr, INITLIST **lptr, bool operands, bool implicit);
 LEXEME *expression_arguments(LEXEME *lex, SYMBOL *funcsp, TYPE **tp, EXPRESSION **exp, int flags);
-LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, int flags);
-LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, int flags);
-LEXEME *expression_comma(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, int flags);
-LEXEME *expression_no_comma(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, BOOLEAN *ismutable, int flags);
+LEXEME *expression_unary(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, bool *ismutable, int flags);
+LEXEME *expression_assign(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, bool *ismutable, int flags);
+LEXEME *expression_comma(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, bool *ismutable, int flags);
+LEXEME *expression_no_comma(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, bool *ismutable, int flags);
 LEXEME *expression_no_check(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, int flags);
 LEXEME *expression(LEXEME *lex, SYMBOL *funcsp, TYPE *atp, TYPE **tp, EXPRESSION **exp, int flags);
 
@@ -385,54 +385,54 @@ void FPFTruncate(FPFC *value, int bits, int maxexp, int minexp);
                                /* Help.c */
 void helpinit();
 void deprecateMessage(SYMBOL *sp);
-BOOLEAN ismember(SYMBOL *sym);
-BOOLEAN istype(SYMBOL *sym);
-BOOLEAN ismemberdata(SYMBOL *sp);
-BOOLEAN startOfType(LEXEME *lex, BOOLEAN assumeType);
+bool ismember(SYMBOL *sym);
+bool istype(SYMBOL *sym);
+bool ismemberdata(SYMBOL *sp);
+bool startOfType(LEXEME *lex, bool assumeType);
 void UpdateRootTypes(TYPE *tp);
-BOOLEAN isDerivedFromTemplate(TYPE *tp);
-BOOLEAN isautotype(TYPE *tp);
-BOOLEAN isunsigned(TYPE *tp);
-BOOLEAN isint(TYPE *tp);
-BOOLEAN isfloat(TYPE *tp);
-BOOLEAN iscomplex(TYPE *tp);
-BOOLEAN isimaginary(TYPE *tp);
-BOOLEAN isarithmetic(TYPE *tp);
-BOOLEAN ismsil(TYPE *tp);
-BOOLEAN isconstraw(const TYPE *tp, BOOLEAN useTemplate);
-BOOLEAN isconst(const TYPE *tp);
-BOOLEAN isvolatile(const TYPE *tp);
-BOOLEAN islrqual(TYPE *tp);
-BOOLEAN isrrqual(TYPE *tp);
-BOOLEAN isrestrict(TYPE *tp);
-BOOLEAN isatomic(TYPE *tp);
-BOOLEAN isvoid(TYPE *tp);
-BOOLEAN isvoidptr(TYPE *tp);
-BOOLEAN isarray(TYPE *tp);
-BOOLEAN isunion(TYPE *tp);
+bool isDerivedFromTemplate(TYPE *tp);
+bool isautotype(TYPE *tp);
+bool isunsigned(TYPE *tp);
+bool isint(TYPE *tp);
+bool isfloat(TYPE *tp);
+bool iscomplex(TYPE *tp);
+bool isimaginary(TYPE *tp);
+bool isarithmetic(TYPE *tp);
+bool ismsil(TYPE *tp);
+bool isconstraw(const TYPE *tp, bool useTemplate);
+bool isconst(const TYPE *tp);
+bool isvolatile(const TYPE *tp);
+bool islrqual(TYPE *tp);
+bool isrrqual(TYPE *tp);
+bool isrestrict(TYPE *tp);
+bool isatomic(TYPE *tp);
+bool isvoid(TYPE *tp);
+bool isvoidptr(TYPE *tp);
+bool isarray(TYPE *tp);
+bool isunion(TYPE *tp);
 void DeduceAuto(TYPE **pat, TYPE *nt);
 SYMBOL *getFunctionSP(TYPE **tp);
 LEXEME *concatStringsInternal(LEXEME *lex, STRING **str, int *elems);
 LEXEME *concatStrings(LEXEME *lex, EXPRESSION **exp, enum e_lexType *tp, int *elems);
-BOOLEAN isintconst(EXPRESSION *exp);
-BOOLEAN isfloatconst(EXPRESSION *exp);
-BOOLEAN isimaginaryconst(EXPRESSION *exp);
-BOOLEAN iscomplexconst(EXPRESSION *exp);
+bool isintconst(EXPRESSION *exp);
+bool isfloatconst(EXPRESSION *exp);
+bool isimaginaryconst(EXPRESSION *exp);
+bool iscomplexconst(EXPRESSION *exp);
 EXPRESSION *anonymousVar(enum e_sc storage_class, TYPE *tp);
 void deref(TYPE *tp, EXPRESSION **exp);
 int sizeFromType(TYPE *tp);
 void cast(TYPE *tp, EXPRESSION **exp);
-BOOLEAN castvalue(EXPRESSION *exp);
-BOOLEAN lvalue(EXPRESSION *exp);
-BOOLEAN xvalue(EXPRESSION *exp);
-EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIALIZER *init, EXPRESSION *thisptr, BOOLEAN isdest);
-BOOLEAN assignDiscardsConst(TYPE *dest, TYPE *source);
-BOOLEAN isconstzero(TYPE *tp, EXPRESSION *exp);
-BOOLEAN fittedConst(TYPE *tp, EXPRESSION *exp);
-BOOLEAN isarithmeticconst(EXPRESSION *exp);
-BOOLEAN isconstaddress(EXPRESSION *exp);
+bool castvalue(EXPRESSION *exp);
+bool lvalue(EXPRESSION *exp);
+bool xvalue(EXPRESSION *exp);
+EXPRESSION *convertInitToExpression(TYPE *tp, SYMBOL *sp, SYMBOL *funcsp, INITIALIZER *init, EXPRESSION *thisptr, bool isdest);
+bool assignDiscardsConst(TYPE *dest, TYPE *source);
+bool isconstzero(TYPE *tp, EXPRESSION *exp);
+bool fittedConst(TYPE *tp, EXPRESSION *exp);
+bool isarithmeticconst(EXPRESSION *exp);
+bool isconstaddress(EXPRESSION *exp);
 SYMBOL *clonesym(SYMBOL *sym);
-TYPE *destSize(TYPE *tp1, TYPE *tp2, EXPRESSION **exp1, EXPRESSION **exp2, BOOLEAN minimizeInt, TYPE *atp);
+TYPE *destSize(TYPE *tp1, TYPE *tp2, EXPRESSION **exp1, EXPRESSION **exp2, bool minimizeInt, TYPE *atp);
 EXPRESSION *RemoveAutoIncDec(EXPRESSION *exp);
 LLONG_TYPE imax(LLONG_TYPE x, LLONG_TYPE y);
 LLONG_TYPE imin(LLONG_TYPE x, LLONG_TYPE y);
@@ -446,7 +446,7 @@ void AliasPass1(void);
 void AliasPass2(void);
 void AliasStruct(BITINT *bits, IMODE *ans, IMODE *left, IMODE *right);
 void AliasGosub(QUAD *ins, BITINT *parms, BITINT *bits, int n);
-void AliasUses(BITINT *bit, IMODE *im, BOOLEAN rhs);
+void AliasUses(BITINT *bit, IMODE *im, bool rhs);
 
                               /* Iblock.c */
 
@@ -460,10 +460,10 @@ int ToQuadConst(IMODE **im);
 void dag_rundown(void);
 BLOCKLIST *newBlock(void);
 void addblock(int val);
-BOOLEAN usesAddress(IMODE *im);
+bool usesAddress(IMODE *im);
 void gen_label(int labno);
 void flush_dag(void);
-QUAD * gen_icode_with_conflict(enum i_ops op, IMODE *res, IMODE *left, IMODE *right, BOOLEAN conflicting);
+QUAD * gen_icode_with_conflict(enum i_ops op, IMODE *res, IMODE *left, IMODE *right, bool conflicting);
 QUAD * gen_icode(enum i_ops op, IMODE *res, IMODE *left, IMODE *right);
 void gen_iiconst(IMODE *res, LLONG_TYPE val);
 void gen_ifconst(IMODE *res, FPFC val);
@@ -492,12 +492,12 @@ void resetConflict(void);
 int findPartition(int T0);
 void insertConflict(int i, int j);
 void JoinConflictLists(int T0, int T1);
-BOOLEAN isConflicting(int T0, int T1);
-void CalculateConflictGraph(BRIGGS_SET *globals, BOOLEAN optimize);
+bool isConflicting(int T0, int T1);
+void CalculateConflictGraph(BRIGGS_SET *globals, bool optimize);
 
                               /* Iconst.c */
 
-void ConstantFold(QUAD *d, BOOLEAN reflow);
+void ConstantFold(QUAD *d, bool reflow);
 void ConstantFlow(void);
 
                                /* Iexpr.c */
@@ -553,9 +553,9 @@ enum e_fgtype getEdgeType(int first, int second);
 void unlinkBlock(BLOCK *succ, BLOCK *pred);
 void UnlinkCritical(BLOCK *s);
 void reflowConditional(BLOCK *src, BLOCK *dst);
-void doms_only(BOOLEAN always);
+void doms_only(bool always);
 void flows_and_doms(void);
-BOOLEAN dominatedby(BLOCK *src, BLOCK *ancestor);
+bool dominatedby(BLOCK *src, BLOCK *ancestor);
 void WalkFlowgraph(BLOCK *b, 
 				   int (*func)(enum e_fgtype type, BLOCK *parent, BLOCK *b), int fwd);
 
@@ -583,7 +583,7 @@ void GlobalOptimization(void);
 								/* ilimit.c */
 
 void limitInit(void);
-QUAD *beforeJmp(QUAD *I, BOOLEAN before);
+QUAD *beforeJmp(QUAD *I, bool before);
 void LimitRegisterPressure(void);
 
                                /* Ilive.c */
@@ -602,7 +602,7 @@ void removeDead(BLOCK *b);
 
 void CancelInfinite(int orgBlockCount);
 void BuildLoopTree(void);
-BOOLEAN isAncestor(LOOP *l1, LOOP *l2);
+bool isAncestor(LOOP *l1, LOOP *l2);
 void RemoveInfiniteThunks(void);
 void CalculateInduction(void);
 
@@ -611,31 +611,31 @@ void CalculateInduction(void);
 void init_init(void);
 void dumpStartups(void);
 void dumpCPPStaticsAndTLS();
-void insertStartup(BOOLEAN startupFlag, char *name, int prio);
+void insertStartup(bool startupFlag, char *name, int prio);
 char *lookupAlias(char *name);
 void insertAlias(char *name, char *alias);
 void insertDynamicInitializer(SYMBOL *sp, INITIALIZER *init);
 void insertDynamicDestructor(SYMBOL *sp, INITIALIZER *init);
-int dumpMemberPtr(SYMBOL *sp, TYPE *membertp, BOOLEAN make_label);
+int dumpMemberPtr(SYMBOL *sp, TYPE *membertp, bool make_label);
 void dumpTemplateInitializers(void);
 int dumpInit(SYMBOL *sp, INITIALIZER *init);
 void dumpInitGroup(SYMBOL *sp, TYPE *tp);
 void dumpInitializers(void);
 void dumpVTab(SYMBOL *sym);
 void insertInitSym(SYMBOL *sp);
-BOOLEAN IsConstWithArr(TYPE *tp);
+bool IsConstWithArr(TYPE *tp);
 enum e_node referenceTypeError(TYPE *tp, EXPRESSION *exp);
 EXPRESSION *createTemporary(TYPE *tp, EXPRESSION *val);
 EXPRESSION *msilCreateTemporary(TYPE *tp, EXPRESSION *val);
 INITIALIZER *initInsert(INITIALIZER **pos, TYPE *tp, EXPRESSION *exp, 
-                               int offset, BOOLEAN noassign);
+                               int offset, bool noassign);
 LEXEME *initType(LEXEME *lex, SYMBOL *funcsp, int offset, enum e_sc sc, 
-				 INITIALIZER **init, INITIALIZER **dest, TYPE *itype, SYMBOL *sp, BOOLEAN arrayMember, int flags);
-BOOLEAN IsConstantExpression(EXPRESSION *node, BOOLEAN allowParams, BOOLEAN allowFunc);
+				 INITIALIZER **init, INITIALIZER **dest, TYPE *itype, SYMBOL *sp, bool arrayMember, int flags);
+bool IsConstantExpression(EXPRESSION *node, bool allowParams, bool allowFunc);
 EXPRESSION *getThisNode(SYMBOL *sp);
 void RecalculateVariableTemplateInitializers(INITIALIZER **in, INITIALIZER ***out, TYPE *tp, int ioffset);
-LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_class_in, BOOLEAN uninitconst, int flags);
-LEXEME *initialize_property(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_class_in, BOOLEAN asExpression, int flags);
+LEXEME *initialize(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_class_in, bool uninitconst, int flags);
+LEXEME *initialize_property(LEXEME *lex, SYMBOL *funcsp, SYMBOL *sp, enum e_sc storage_class_in, bool asExpression, int flags);
 
                               /* Inline.c */
 
@@ -647,12 +647,12 @@ void InsertInlineData(SYMBOL *sp);
 SYMBOL *getvc1Thunk(int offset);
 SYMBOL *inlineSearch(SYMBOL *name);
 void inlineinsert(SYMBOL *sp);
-EXPRESSION *inlineexpr(EXPRESSION *node, BOOLEAN *fromlval);
+EXPRESSION *inlineexpr(EXPRESSION *node, bool *fromlval);
 STATEMENT *inlinestmt(STATEMENT *block);
 STATEMENT *inlinefuncargs(FUNCTIONCALL *params);
 void inlinereblock(SYMBOL *sp);
 EXPRESSION *doinline(FUNCTIONCALL *params, SYMBOL *funcsp);
-BOOLEAN IsEmptyFunction(FUNCTIONCALL *params, SYMBOL *funcsp);
+bool IsEmptyFunction(FUNCTIONCALL *params, SYMBOL *funcsp);
 
                              /* Ioptutil.c */
 
@@ -690,7 +690,7 @@ void genfloat(FPFC *val);
 void gendouble(FPFC *val);
 void genlongdouble(FPFC *val);
 void genUBYTE(long val);
-void genBOOLEAN(int val);
+void genbool(int val);
 void genbit(SYMBOL *sp, int val);
 void genshort(long val);
 void genwchar_t(long val);
@@ -738,7 +738,7 @@ void putexterns(void);
 
 void peepini(void);
 void weed_goto(void);
-void peep_icode(BOOLEAN branches);
+void peep_icode(bool branches);
 
 								/*irc.c */
 
@@ -752,10 +752,10 @@ void AllocateRegisters(QUAD *head);
 
 							   /* Ireshape */
 
-BOOLEAN variantThisLoop(BLOCK *b, int tnum);
+bool variantThisLoop(BLOCK *b, int tnum);
 void ReplaceHashReshape(QUAD *rv, UBYTE *key, int size, DAGLIST **table);
 void InsertReshapeInstruction(QUAD *before, QUAD *ins);
-BOOLEAN matchesop(enum i_ops one, enum i_ops two);
+bool matchesop(enum i_ops one, enum i_ops two);
 void Reshape(void);
 
 							   /* Irewrite */
@@ -770,7 +770,7 @@ void SSAInit(void);
 void AddToWipeList(DAGLIST *head);
 void TranslateToSSA(void);
 void RemoveCriticalThunks(void);
-void TranslateFromSSA(BOOLEAN all);
+void TranslateFromSSA(bool all);
 
                                /* Istmt.c */
 
@@ -798,7 +798,7 @@ IMODE *genstmt(STATEMENT *stmt, SYMBOL *funcsp);
 SYMBOL *gen_mp_virtual_thunk(SYMBOL *vsp);
 SYMBOL *gen_vsn_virtual_thunk(SYMBOL *func, int ofs);
 void optimize(SYMBOL *funcsp);
-void genfunc(SYMBOL *funcsp, BOOLEAN  optimize);
+void genfunc(SYMBOL *funcsp, bool  optimize);
 void genASM(STATEMENT *st);
 
 							  /* istren.c */
@@ -831,9 +831,9 @@ void list_table(HASHTABLE *t, int j);
 
 void mangleInit();
 char *mangleNameSpaces(char *in, SYMBOL *sp);
-char *mangleType (char *in, TYPE *tp, BOOLEAN first);
+char *mangleType (char *in, TYPE *tp, bool first);
 void SetLinkerNames(SYMBOL *sym, enum e_lk linkage);
-char *unmang1(char *buf, char *name, char *last, BOOLEAN tof);
+char *unmang1(char *buf, char *name, char *last, bool tof);
 char *unmang_intrins(char *buf, char *name, char *last);
 char *unmangle(char *name, char *source);
 
@@ -875,8 +875,8 @@ void EXEPath(char *buffer, char *filename);
 int HasExt(char *buffer, char *ext);
 FILE *SrchPth3(char *string, char *searchpath, char *mode);
 FILE *SrchPth2(char *name, char *path, char *attrib);
-FILE *SrchPth(char *name, char *path, char *attrib, BOOLEAN sys);
-BOOLEAN parse_args(int *argc, char *argv[], BOOLEAN case_sensitive);
+FILE *SrchPth(char *name, char *path, char *attrib, bool sys);
+bool parse_args(int *argc, char *argv[], bool case_sensitive);
 void err_setup(char select, char *string);
 void incl_setup(char select, char *string);
 void sysincl_setup(char select, char *string);
@@ -884,7 +884,7 @@ void def_setup(char select, char *string);
 void undef_setup(char select, char *string);
 void output_setup(char select, char *string);
 void setglbdefs(void);
-void InsertAnyFile(char *filename, char *path, int drive, BOOLEAN primary);
+void InsertAnyFile(char *filename, char *path, int drive, bool primary);
 void setfile(char *buf, char *orgbuf, char *ext);
 void outputfile(char *buf, char *orgbuf, char *ext);
 void scan_env(char *output, char *string);
@@ -917,7 +917,7 @@ PPINT ppexpr(void);
                               /* Ppmain.c */
 
 char *getUsageText(void);
-void BOOLEAN_setup(char select, char *string);
+void bool_setup(char select, char *string);
 int main(int argc, char *argv[]);
 
                               /* Preproc.c */
@@ -925,11 +925,11 @@ int main(int argc, char *argv[]);
 void preprocini(char *name, FILE *fil);
 int defid(char *name, unsigned char **p);
 void skipspace(void);
-BOOLEAN expectid(char *buf);
-BOOLEAN expectstring(char *buf, unsigned char **in, BOOLEAN angle);
-LLONG_TYPE expectnum(BOOLEAN *uns);
+bool expectid(char *buf);
+bool expectstring(char *buf, unsigned char **in, bool angle);
+LLONG_TYPE expectnum(bool *uns);
 int getstring(unsigned char *s, int len, FILE *file);
-BOOLEAN GetLine(void);
+bool GetLine(void);
 void preprocess(void);
 void doerror(void);
 void dowarning(void);
@@ -940,13 +940,13 @@ void doline(void);
 INCLUDES *GetIncludeData(void);
 void FreeInclData(INCLUDES *data);
 void doinclude(void);
-void glbdefine(char *name, char *value, BOOLEAN permanent);
+void glbdefine(char *name, char *value, bool permanent);
 void glbUndefine(char *name);
 int undef2(char *name);
 void dodefine(void);
 void doundef(void);
 void nodefines(void);
-BOOLEAN indefine(DEFSTRUCT *sp);
+bool indefine(DEFSTRUCT *sp);
 void enterdefine(DEFSTRUCT *sp);
 void exitdefine(void);
 int definsert(unsigned char *macro, unsigned char *end, unsigned char *begin, unsigned char *text, unsigned char *expandedtext, int len, int replen);
@@ -964,7 +964,7 @@ int defcheck(unsigned char *line);
 void pushif(void);
 void popif(void);
 void ansieol(void);
-void doifdef(BOOLEAN flag);
+void doifdef(bool flag);
 void doif(void);
 void doelif(void);
 void doelse(void);
@@ -982,7 +982,7 @@ LEXEME *statement_SEH(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent);
 
                                /* Stmt.c */
 
-void statement_ini(BOOLEAN global);
+void statement_ini(bool global);
 void InsertLineData(int lineno, int fileindex, char *fname, char *line);
 void FlushLineData(char *file, int lineno);
 STATEMENT *currentLineData(BLOCKDATA *parent, LEXEME *lex, int offset);
@@ -990,56 +990,56 @@ STATEMENT *stmtNode(LEXEME *lex, BLOCKDATA *parent, enum e_stmt stype);
 int insertLabel(BLOCKDATA *parent);
 LEXEME *statement_asm(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent);
 void assignParam(SYMBOL *funcsp, int *base, SYMBOL *param);
-BOOLEAN resolveToDeclaration(LEXEME *lex);
+bool resolveToDeclaration(LEXEME *lex);
 LEXEME *statement(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent, 
-                           BOOLEAN viacontrol);
+                           bool viacontrol);
 LEXEME *compound(LEXEME *lex, SYMBOL *funcsp, BLOCKDATA *parent,   
-                        BOOLEAN first);
+                        bool first);
 LEXEME *body (LEXEME *lex, SYMBOL *funcsp);
 
                               /* Symtab.c */
 
 void syminit(void);
-BOOLEAN singlebase(SYMBOL *base, SYMBOL *of);
+bool singlebase(SYMBOL *base, SYMBOL *of);
 HASHTABLE *CreateHashTable(int size);
 HASHREC *AddName(SYMBOL *item, HASHTABLE *table);
 void AllocateLocalContext(BLOCKDATA *parent, SYMBOL *sp, int label);
 void FreeLocalContext(BLOCKDATA *parent, SYMBOL *sp, int label);
 HASHREC **GetHashLink(HASHTABLE *t, char *string);
 HASHREC **LookupName(char *name, HASHTABLE *table);
-SYMBOL *classdata(char *name, SYMBOL *cls, SYMBOL *last, BOOLEAN isvirtual, BOOLEAN tagsOnly);
+SYMBOL *classdata(char *name, SYMBOL *cls, SYMBOL *last, bool isvirtual, bool tagsOnly);
 SYMBOL *search(char *name, HASHTABLE *table);
-BOOLEAN matchOverload(TYPE *tnew, TYPE *told, BOOLEAN argsOnly);
+bool matchOverload(TYPE *tnew, TYPE *told, bool argsOnly);
 SYMBOL *searchOverloads(SYMBOL *sym, HASHTABLE *table);
 SYMBOL *gsearch(char *name);
 SYMBOL *tsearch(char *name);
 TEMPLATEPARAMLIST *getTemplateStruct(char *name);
-LIST *tablesearchone(char *name, NAMESPACEVALUES *ns, BOOLEAN tagsOnly);
-LIST *tablesearchinline(char *name, NAMESPACEVALUES *ns, BOOLEAN tagsOnly);
-SYMBOL *namespacesearch(char *name, NAMESPACEVALUES *ns, BOOLEAN qualified, BOOLEAN tagsOnly);
+LIST *tablesearchone(char *name, NAMESPACEVALUES *ns, bool tagsOnly);
+LIST *tablesearchinline(char *name, NAMESPACEVALUES *ns, bool tagsOnly);
+SYMBOL *namespacesearch(char *name, NAMESPACEVALUES *ns, bool qualified, bool tagsOnly);
 SYMBOL *templatesearch(char *name, TEMPLATEPARAMLIST *arg);
-SYMBOL *classsearch(char *name, BOOLEAN tagsOnly, BOOLEAN toErr);
-LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns, BOOLEAN *throughPath, BOOLEAN tagsOnly, enum e_sc storage_class, BOOLEAN isType);
-LEXEME *nestedSearch(LEXEME *lex, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES **nsv, BOOLEAN *destructor, 
-                     BOOLEAN *isTemplate, BOOLEAN tagsOnly, enum e_sc storage_class, BOOLEAN errIfNotFound, BOOLEAN isType);
+SYMBOL *classsearch(char *name, bool tagsOnly, bool toErr);
+LEXEME *nestedPath(LEXEME *lex, SYMBOL **sym, NAMESPACEVALUES **ns, bool *throughPath, bool tagsOnly, enum e_sc storage_class, bool isType);
+LEXEME *nestedSearch(LEXEME *lex, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES **nsv, bool *destructor, 
+                     bool *isTemplate, bool tagsOnly, enum e_sc storage_class, bool errIfNotFound, bool isType);
 LEXEME *getIdName(LEXEME *lex, SYMBOL *funcsp, char *buf, int *ov, TYPE **castType);
-LEXEME *id_expression(LEXEME *lex, SYMBOL *funcsp, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES **nsv, BOOLEAN *isTemplate, BOOLEAN tagsOnly, BOOLEAN membersOnly, char *name);
-BOOLEAN isAccessible(SYMBOL *derived, SYMBOL *current, SYMBOL *member, SYMBOL *funcsp, enum e_ac minAccess, BOOLEAN asAddress);
-BOOLEAN isExpressionAccessible(SYMBOL *derived, SYMBOL *sym, SYMBOL *funcsp, EXPRESSION *exp, BOOLEAN asAddress);
-BOOLEAN checkDeclarationAccessible(TYPE *tp, SYMBOL *funcsp);
+LEXEME *id_expression(LEXEME *lex, SYMBOL *funcsp, SYMBOL **sym, SYMBOL **strSym, NAMESPACEVALUES **nsv, bool *isTemplate, bool tagsOnly, bool membersOnly, char *name);
+bool isAccessible(SYMBOL *derived, SYMBOL *current, SYMBOL *member, SYMBOL *funcsp, enum e_ac minAccess, bool asAddress);
+bool isExpressionAccessible(SYMBOL *derived, SYMBOL *sym, SYMBOL *funcsp, EXPRESSION *exp, bool asAddress);
+bool checkDeclarationAccessible(TYPE *tp, SYMBOL *funcsp);
 SYMBOL *LookupSym(char *name);
 SYMBOL *lookupSpecificCast(SYMBOL *sp, TYPE *tp);
 SYMBOL *lookupNonspecificCast(SYMBOL *sp, TYPE *tp);
-SYMBOL *lookupIntCast(SYMBOL *sp, TYPE *tp, BOOLEAN implicit);
-SYMBOL *lookupArithmeticCast(SYMBOL *sp, TYPE *tp, BOOLEAN implicit);
+SYMBOL *lookupIntCast(SYMBOL *sp, TYPE *tp, bool implicit);
+SYMBOL *lookupArithmeticCast(SYMBOL *sp, TYPE *tp, bool implicit);
 SYMBOL *lookupPointerCast(SYMBOL *sp, TYPE *tp);
 void getSingleConversion(TYPE *tpp, TYPE *tpa, EXPRESSION *expa, int *n, enum e_cvsrn *seq, 
-                                SYMBOL *candidate, SYMBOL **userFunc, BOOLEAN allowUser);
+                                SYMBOL *candidate, SYMBOL **userFunc, bool allowUser);
 SYMBOL *GetOverloadedTemplate(SYMBOL *sp, FUNCTIONCALL *args);
 SYMBOL *detemplate(SYMBOL *sym, FUNCTIONCALL *args, TYPE *atp);
 SYMBOL *GetOverloadedFunction(TYPE **tp, EXPRESSION **exp, SYMBOL *sp, 
-                              FUNCTIONCALL *args, TYPE *atp, BOOLEAN toErr, 
-                              BOOLEAN maybeConversion, BOOLEAN toInstantiate, int flags);
+                              FUNCTIONCALL *args, TYPE *atp, bool toErr, 
+                              bool maybeConversion, bool toInstantiate, int flags);
 SYMBOL *MatchOverloadedFunction(TYPE *tp, TYPE **mtp, SYMBOL *sp, EXPRESSION **exp, int flags);
 void baseinsert(SYMBOL *in, HASHTABLE *table);
 void insert(SYMBOL *in, HASHTABLE *table);
@@ -1048,9 +1048,9 @@ void insertOverload(SYMBOL *in, HASHTABLE *table);
 
                                /* Types.c */
 
-BOOLEAN checktypeassign(TYPE *typ1, TYPE *typ2);
-BOOLEAN comparetypes(TYPE *typ1, TYPE *typ2, int exact);
-BOOLEAN matchingCharTypes(TYPE *typ1, TYPE *typ2);
+bool checktypeassign(TYPE *typ1, TYPE *typ2);
+bool comparetypes(TYPE *typ1, TYPE *typ2, int exact);
+bool matchingCharTypes(TYPE *typ1, TYPE *typ2);
 void typenumptr(char *buf, TYPE *tp);
 TYPE *typenum(char *buf, TYPE *tp);
 void typeToString(char *buf, TYPE *typ);

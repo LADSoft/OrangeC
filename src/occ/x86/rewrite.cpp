@@ -29,7 +29,7 @@ extern int tempCount;
 extern TEMP_INFO** tempInfo;
 extern BLOCKLIST** blockArray;
 extern int prm_useesp;
-extern BOOLEAN hasXCInfo;
+extern bool hasXCInfo;
 
 extern int prm_lscrtdll;
 
@@ -70,7 +70,7 @@ void insert_nullparmadj(QUAD* head, int v)
 static void rvColor(IMODE* ip)
 {
     int n = ip->offset->v.sp->value.i;
-    tempInfo[n]->precolored = TRUE;
+    tempInfo[n]->precolored = true;
     if (ip->size >= ISZ_CFLOAT)
     {
         tempInfo[n]->color = ip->size == ISZ_CFLOAT ? 40 : 56;
@@ -85,12 +85,12 @@ static void rvColor(IMODE* ip)
     }
     else if (ip->size == ISZ_USHORT || ip->size == -ISZ_USHORT || ip->size == ISZ_U16)
         tempInfo[n]->color = R_AX;
-    else if (ip->size == ISZ_UCHAR || ip->size == -ISZ_UCHAR || ip->size == ISZ_BOOLEAN)
+    else if (ip->size == ISZ_UCHAR || ip->size == -ISZ_UCHAR || ip->size == ISZ_bool)
         tempInfo[n]->color = R_AL;
     else
         tempInfo[n]->color = R_EAX;
     tempInfo[n]->enode->v.sp->regmode = 2;
-    tempInfo[n]->precolored = TRUE;
+    tempInfo[n]->precolored = true;
 }
 void precolor(QUAD* head) /* precolor an instruction */
 {
@@ -102,7 +102,7 @@ void precolor(QUAD* head) /* precolor an instruction */
             // callee
             ta = head->dc.left->offset->v.sp->value.i;
             head->precolored |= TEMP_LEFT;
-            tempInfo[ta]->precolored = TRUE;
+            tempInfo[ta]->precolored = true;
             tempInfo[ta]->enode->v.sp->regmode = 2;
             tempInfo[ta]->color = chosenAssembler->arch->fastcallRegs[(head->fastcall > 0 ? head->fastcall : -head->fastcall) - 1];
         }
@@ -126,7 +126,7 @@ void precolor(QUAD* head) /* precolor an instruction */
 
                 //            ta = head->ans->offset->v.sp->value.i;
                 //            head->precolored |= TEMP_ANS;
-                tempInfo[ta]->precolored = TRUE;
+                tempInfo[ta]->precolored = true;
                 tempInfo[ta]->enode->v.sp->regmode = 2;
                 tempInfo[ta]->color =
                     chosenAssembler->arch->fastcallRegs[(head->fastcall > 0 ? head->fastcall : -head->fastcall) - 1];
@@ -140,7 +140,7 @@ void precolor(QUAD* head) /* precolor an instruction */
             int ta = head->ans->offset->v.sp->value.i;
             if (tempInfo[ta]->size < ISZ_FLOAT)
             {
-                tempInfo[ta]->precolored = TRUE;
+                tempInfo[ta]->precolored = true;
                 tempInfo[ta]->enode->v.sp->regmode = 2;
                 tempInfo[ta]->color = R_EAX;
                 head->precolored |= TEMP_ANS;
@@ -151,7 +151,7 @@ void precolor(QUAD* head) /* precolor an instruction */
             int tl = head->dc.left->offset->v.sp->value.i;
             if (tempInfo[tl]->size < ISZ_FLOAT)
             {
-                tempInfo[tl]->precolored = TRUE;
+                tempInfo[tl]->precolored = true;
                 tempInfo[tl]->enode->v.sp->regmode = 2;
                 tempInfo[tl]->color = R_EAXEDX;
                 head->precolored |= TEMP_LEFT;
@@ -165,7 +165,7 @@ void precolor(QUAD* head) /* precolor an instruction */
             int ta = head->ans->offset->v.sp->value.i;
             if (tempInfo[ta]->size < ISZ_FLOAT)
             {
-                tempInfo[ta]->precolored = TRUE;
+                tempInfo[ta]->precolored = true;
                 tempInfo[ta]->enode->v.sp->regmode = 2;
                 tempInfo[ta]->color = R_EDX;
                 head->precolored |= TEMP_ANS;
@@ -176,7 +176,7 @@ void precolor(QUAD* head) /* precolor an instruction */
             int tl = head->dc.left->offset->v.sp->value.i;
             if (tempInfo[tl]->size < ISZ_FLOAT)
             {
-                tempInfo[tl]->precolored = TRUE;
+                tempInfo[tl]->precolored = true;
                 tempInfo[tl]->enode->v.sp->regmode = 2;
                 tempInfo[tl]->color = R_EAXEDX;
                 head->precolored |= TEMP_LEFT;
@@ -190,7 +190,7 @@ void precolor(QUAD* head) /* precolor an instruction */
             int ta = head->ans->offset->v.sp->value.i;
             if (tempInfo[ta]->size < ISZ_FLOAT)
             {
-                tempInfo[ta]->precolored = TRUE;
+                tempInfo[ta]->precolored = true;
                 tempInfo[ta]->enode->v.sp->regmode = 2;
                 tempInfo[ta]->color = R_EDX;
                 head->precolored |= TEMP_ANS;
@@ -201,7 +201,7 @@ void precolor(QUAD* head) /* precolor an instruction */
             int tl = head->dc.left->offset->v.sp->value.i;
             if (tempInfo[tl]->size < ISZ_FLOAT)
             {
-                tempInfo[tl]->precolored = TRUE;
+                tempInfo[tl]->precolored = true;
                 tempInfo[tl]->enode->v.sp->regmode = 2;
                 tempInfo[tl]->color = R_EAX;
                 head->precolored |= TEMP_LEFT;
@@ -213,11 +213,11 @@ void precolor(QUAD* head) /* precolor an instruction */
         if (head->temps & TEMP_RIGHT)
         {
             int tr = head->dc.right->offset->v.sp->value.i;
-            tempInfo[tr]->precolored = TRUE;
+            tempInfo[tr]->precolored = true;
             head->precolored |= TEMP_RIGHT;
             switch (tempInfo[tr]->size)
             {
-                case ISZ_BOOLEAN:
+                case ISZ_bool:
                 case ISZ_UCHAR:
                 case -ISZ_UCHAR:
                     tempInfo[tr]->color = R_CL;
@@ -245,10 +245,10 @@ void precolor(QUAD* head) /* precolor an instruction */
     if (head->dc.right && head->dc.right->retval)
         rvColor(head->dc.right);
 }
-static BOOLEAN hasbp(EXPRESSION* expr)
+static bool hasbp(EXPRESSION* expr)
 {
     if (!expr)
-        return FALSE;
+        return false;
     if (expr->type == en_add || expr->type == en_structadd)
         return (hasbp(expr->left) || hasbp(expr->right));
     return expr->type == en_auto;
@@ -507,16 +507,16 @@ void ProcessInd(EXPRESSION** ofs1, EXPRESSION** ofs2, EXPRESSION** ofs3, int* sc
     } while ((ofs4 != *ofs1 || ofs5 != *ofs2));
 }
 // relies on constant offsets being calculated the same way every time
-static BOOLEAN MatchesConst(EXPRESSION* one, EXPRESSION* two)
+static bool MatchesConst(EXPRESSION* one, EXPRESSION* two)
 {
     if (one == two)
-        return TRUE;
+        return true;
     if (!one || !two)
-        return FALSE;
+        return false;
     if (one->type != two->type)
-        return FALSE;
+        return false;
     if (!MatchesConst(one->left, two->left) || !MatchesConst(one->right, two->right))
-        return FALSE;
+        return false;
     if (isintconst(one))
         return one->v.i == two->v.i;
     switch (one->type)
@@ -528,42 +528,42 @@ static BOOLEAN MatchesConst(EXPRESSION* one, EXPRESSION* two)
         case en_threadlocal:
             return one->v.sp == two->v.sp;
         default:
-            return FALSE;
+            return false;
     }
 }
-static BOOLEAN MatchesMem(IMODE* one, IMODE* two)
+static bool MatchesMem(IMODE* one, IMODE* two)
 {
     if (one == two)
-        return TRUE;
+        return true;
     if (one->mode == i_ind && two->mode == i_ind)
     {
         if ((one->offset && !two->offset) || (one->offset2 && !two->offset2) || (one->offset3 && !two->offset3))
-            return FALSE;
+            return false;
         if ((!one->offset && two->offset) || (!one->offset2 && two->offset2) || (!one->offset3 && two->offset3))
-            return FALSE;
+            return false;
         if (one->offset)
             if (one->offset->v.sp->value.i != two->offset->v.sp->value.i)
-                return FALSE;
+                return false;
         if (one->offset2)
         {
             if (one->offset2->v.sp->value.i != two->offset2->v.sp->value.i)
-                return FALSE;
+                return false;
             if (one->scale != two->scale)
-                return FALSE;
+                return false;
         }
         if (one->offset3)
             if (!MatchesConst(one->offset3, two->offset3))
-                return FALSE;
-        return TRUE;
+                return false;
+        return true;
     }
-    return FALSE;
+    return false;
 }
-static BOOLEAN twomem(IMODE* left, IMODE* right)
+static bool twomem(IMODE* left, IMODE* right)
 {
     if (left->mode == i_ind || (left->mode == i_direct && left->offset->type != en_tempref))
         if (right->mode == i_ind || (right->mode == i_direct && right->offset->type != en_tempref))
-            return TRUE;
-    return FALSE;
+            return true;
+    return false;
 }
 static void HandleAssn(QUAD* ins, BRIGGS_SET* globalVars)
 {
@@ -956,9 +956,9 @@ static int floatsize(IMODE *im)
 int examine_icode(QUAD* head)
 {
     BLOCK* b = NULL;
-    BOOLEAN changed = FALSE;
+    bool changed = false;
     QUAD* hold = head;
-    uses_substack = FALSE;
+    uses_substack = false;
     while (head)
     {
         if (head->dc.opcode == i_sdiv || head->dc.opcode == i_udiv || head->dc.opcode == i_smod || head->dc.opcode == i_umod)
@@ -1025,7 +1025,7 @@ int examine_icode(QUAD* head)
                 hl->startbit = tl->startbit;
                 tl->bits = tl->startbit = 0;
                 InsertInstruction(head->back, q);
-                changed = TRUE;
+                changed = true;
             }
             if (head->dc.left && head->dc.left->mode == i_ind && head->dc.left->offset->type != en_tempref)
             {
@@ -1057,7 +1057,7 @@ int examine_icode(QUAD* head)
                     hl->startbit = tl->startbit;
                     tl->bits = tl->startbit = 0;
                     InsertInstruction(head->back, q);
-                    changed = TRUE;
+                    changed = true;
                 }
             }
             if (head->dc.right && head->dc.right->mode == i_ind && head->dc.right->offset->type != en_tempref)
@@ -1084,7 +1084,7 @@ int examine_icode(QUAD* head)
                     hl->startbit = tl->startbit;
                     tl->bits = tl->startbit = 0;
                     InsertInstruction(head->back, q);
-                    changed = TRUE;
+                    changed = true;
                 }
             }
             if (head->dc.left && head->dc.left->bits && head->dc.right)
@@ -1104,7 +1104,7 @@ int examine_icode(QUAD* head)
                     head->dc.left = temp;
                     head->temps |= TEMP_LEFT;
                     InsertInstruction(head->back, q);
-                    changed = TRUE;
+                    changed = true;
                 }
             }
             if (head->dc.right && head->dc.right->bits && head->dc.left)
@@ -1124,7 +1124,7 @@ int examine_icode(QUAD* head)
                     head->dc.right = temp;
                     head->temps |= TEMP_RIGHT;
                     InsertInstruction(head->back, q);
-                    changed = TRUE;
+                    changed = true;
                 }
             }
             /* must be last because it changes head */
@@ -1143,7 +1143,7 @@ int examine_icode(QUAD* head)
                     head->dc.right = NULL;
                     head->temps = (head->temps & TEMP_ANS) | TEMP_LEFT;
                     InsertInstruction(head->back, q);
-                    changed = TRUE;
+                    changed = true;
                 }
             }
         }
@@ -1167,7 +1167,7 @@ int examine_icode(QUAD* head)
                     head->dc.left = temp;
                     head->temps |= TEMP_LEFT;
                     InsertInstruction(head->back, q);
-                    changed = TRUE;
+                    changed = true;
                 }
                 else if (head->dc.left->mode == i_immed && head->dc.left->offset->type == en_auto)
                 {
@@ -1182,7 +1182,7 @@ int examine_icode(QUAD* head)
                     head->dc.left = temp;
                     head->temps |= TEMP_LEFT;
                     InsertInstruction(head->back, q);
-                    changed = TRUE;
+                    changed = true;
                 }
                 /*
                 else if (head->dc.left->mode == i_ind)
@@ -1198,7 +1198,7 @@ int examine_icode(QUAD* head)
                     head->dc.left = temp;
                     head->temps |= TEMP_LEFT;
                     InsertInstruction(head->back, q);
-                    changed = TRUE;
+                    changed = true;
                 }
                 */
                 break;
@@ -1219,7 +1219,7 @@ int examine_icode(QUAD* head)
                     head->dc.left = temp;
                     head->temps |= TEMP_LEFT;
                     InsertInstruction(head->back, q);
-                    changed = TRUE;
+                    changed = true;
                 }
                 break;
             case i_assn:
@@ -1227,10 +1227,10 @@ int examine_icode(QUAD* head)
                  * ftol or ftoll as necessary
                  */
             {
-                BOOLEAN i1 = head->dc.left->size >= ISZ_IFLOAT;
-                BOOLEAN i2 = head->ans->size >= ISZ_IFLOAT;
-                BOOLEAN i3 = head->dc.left->size < ISZ_CFLOAT;
-                BOOLEAN i4 = head->ans->size < ISZ_CFLOAT;
+                bool i1 = head->dc.left->size >= ISZ_IFLOAT;
+                bool i2 = head->ans->size >= ISZ_IFLOAT;
+                bool i3 = head->dc.left->size < ISZ_CFLOAT;
+                bool i4 = head->ans->size < ISZ_CFLOAT;
                 if (i1 && i3 && !i2 || i2 && i4 && !i1)
                 {
     
@@ -1238,7 +1238,7 @@ int examine_icode(QUAD* head)
                     {
                         QUAD *q = (QUAD *)Alloc(sizeof(QUAD));
                         q->dc.opcode = i_assn;
-                        q->dc.left = set_symbol("__fzero", FALSE);
+                        q->dc.left = set_symbol("__fzero", false);
                         q->dc.left->mode = i_direct;
                         q->dc.left->size = ISZ_ADDR;
                         q->ans = InitTempOpt(ISZ_ADDR, ISZ_ADDR);
@@ -1255,7 +1255,7 @@ int examine_icode(QUAD* head)
                     }
                     else
                     {
-                        head->dc.left = set_symbol("__fzero", FALSE);
+                        head->dc.left = set_symbol("__fzero", false);
                         head->temps &= ~TEMP_LEFT;
                     }
                 }
@@ -1264,7 +1264,7 @@ int examine_icode(QUAD* head)
                     QUAD* q = (QUAD*)(QUAD *)beLocalAlloc(sizeof(QUAD));
                     IMODE *ret;
                     ret = AllocateTemp(head->ans->size);
-                    ret->retval = TRUE;
+                    ret->retval = true;
                     q->dc.opcode = i_parm;
                     q->dc.left = head->dc.left;
                     if (head->dc.left->size == ISZ_FLOAT || head->dc.left->size == ISZ_IFLOAT || head->dc.left->size == ISZ_CFLOAT)
@@ -1280,9 +1280,9 @@ int examine_icode(QUAD* head)
                     q = (QUAD*)(QUAD *)beLocalAlloc(sizeof(QUAD));
                     q->dc.opcode = i_gosub;
                     if (head->ans->size == ISZ_ULONGLONG)
-                        q->dc.left = set_symbol("__ftoull", TRUE);
+                        q->dc.left = set_symbol("__ftoull", true);
                     else
-                        q->dc.left = set_symbol("__ftoll", TRUE);
+                        q->dc.left = set_symbol("__ftoll", true);
                     InsertInstruction(head->back, q);
                     insert_nullparmadj(head->back, sizeFromISZ(ISZ_DOUBLE));
                     if (head->ans->mode == i_ind && (head->temps & TEMP_LEFT))
@@ -1298,9 +1298,9 @@ int examine_icode(QUAD* head)
                     head->temps &= ~(TEMP_LEFT | TEMP_RIGHT);
                     if (head == b->tail)
                         b->tail = head->fwd;
-                    changed = TRUE;
+                    changed = true;
                 }
-                else if (head->dc.left->size >= ISZ_FLOAT && (head->ans->size <= ISZ_ULONG && head->ans->size != ISZ_BOOLEAN))
+                else if (head->dc.left->size >= ISZ_FLOAT && (head->ans->size <= ISZ_ULONG && head->ans->size != ISZ_bool))
                 {
                     QUAD* q = (QUAD*)(QUAD *)beLocalAlloc(sizeof(QUAD));
                     IMODE *ret;
@@ -1337,7 +1337,7 @@ int examine_icode(QUAD* head)
                         break;
                     }
                     ret = AllocateTemp(head->ans->size);
-                    ret->retval = TRUE;
+                    ret->retval = true;
                     q->dc.opcode = i_parm;
                     q->dc.left = make_immed(ISZ_UINT, n);
                     insert_parm(head->back, q);
@@ -1356,7 +1356,7 @@ int examine_icode(QUAD* head)
 
                     q = (QUAD*)(QUAD *)beLocalAlloc(sizeof(QUAD));
                     q->dc.opcode = i_gosub;
-                    q->dc.left = set_symbol("__ftoi", TRUE);
+                    q->dc.left = set_symbol("__ftoi", true);
                     InsertInstruction(head->back, q);
                     insert_nullparmadj(head->back, sizeFromISZ(ISZ_DOUBLE) + sizeFromISZ(ISZ_UINT));
                     if (head->ans->mode == i_ind && (head->temps & TEMP_LEFT))
@@ -1372,7 +1372,7 @@ int examine_icode(QUAD* head)
                     head->temps &= ~(TEMP_LEFT | TEMP_RIGHT);
                     if (head == b->tail)
                         b->tail = head->fwd;
-                    changed = TRUE;
+                    changed = true;
                 }
                 else if (head->ans->size >= ISZ_FLOAT && (head->dc.left->size == ISZ_UINT || head->dc.left->size == ISZ_ULONG ||
                     head->dc.left->size == ISZ_ULONGLONG || head->dc.left->size == -ISZ_ULONGLONG))
@@ -1380,19 +1380,19 @@ int examine_icode(QUAD* head)
                     QUAD* q = (QUAD*)(QUAD *)beLocalAlloc(sizeof(QUAD));
                     IMODE *ret;
                     ret = AllocateTemp(ISZ_DOUBLE);
-                    ret->retval = TRUE;
-                    ret->altretval = TRUE;
+                    ret->retval = true;
+                    ret->altretval = true;
                     q->dc.opcode = i_parm;
                     q->dc.left = head->dc.left;
                     insert_parm(head->back, q);
                     q = (QUAD*)(QUAD *)beLocalAlloc(sizeof(QUAD));
                     q->dc.opcode = i_gosub;
                     if (head->dc.left->size == ISZ_ULONGLONG)
-                        q->dc.left = set_symbol("__ulltof", TRUE);
+                        q->dc.left = set_symbol("__ulltof", true);
                     else if (head->dc.left->size == -ISZ_ULONGLONG)
-                        q->dc.left = set_symbol("__lltof", TRUE);
+                        q->dc.left = set_symbol("__lltof", true);
                     else
-                        q->dc.left = set_symbol("__ultof", TRUE);
+                        q->dc.left = set_symbol("__ultof", true);
                     InsertInstruction(head->back, q);
                     insert_nullparmadj(head->back, sizeFromISZ(head->dc.left->size));
                     if (head->ans->mode == i_ind && (head->temps & TEMP_LEFT))
@@ -1408,7 +1408,7 @@ int examine_icode(QUAD* head)
                     head->temps &= ~(TEMP_LEFT | TEMP_RIGHT);
                     if (head == b->tail)
                         b->tail = head->fwd;
-                    changed = TRUE;
+                    changed = true;
 
                 }
                 else
@@ -1432,7 +1432,7 @@ int examine_icode(QUAD* head)
                             head->dc.left = temp;
                             head->temps |= TEMP_LEFT;
                             InsertInstruction(head->back, q);
-                            changed = TRUE;
+                            changed = true;
                         }
                         if (head->ans->offset->type != en_tempref || head->ans->mode == i_ind)
                         {
@@ -1448,7 +1448,7 @@ int examine_icode(QUAD* head)
                             head->ans = temp;
                             head->temps |= TEMP_ANS;
                             InsertInstruction(head, q);
-                            changed = TRUE;
+                            changed = true;
                         }
                     }
                     else if (!head->dc.left->retval &&
@@ -1469,14 +1469,14 @@ int examine_icode(QUAD* head)
                             head->ans = temp;
                             head->temps |= TEMP_ANS;
                             InsertInstruction(head, q);
-                            changed = TRUE;
+                            changed = true;
                         }
                     }
                 }
             }
                 break;
             case i_substack:
-                uses_substack = TRUE;
+                uses_substack = true;
                 /* replace a substack node with a call to the function which performs the
                  * function.  This is a windows thing specifically, because if the stack
                  * based allocation is > 4096 bytes we will cause a GPF.  The function basically
@@ -1489,13 +1489,13 @@ int examine_icode(QUAD* head)
                    QUAD *q = (QUAD *)beLocalAlloc(sizeof(QUAD));
                     IMODE *ret ;
                    ret = AllocateTemp(head->ans->size);
-                   ret->retval = TRUE;
+                   ret->retval = true;
                    q->dc.opcode = i_parm;
                    q->dc.left = head->dc.left;
                    insert_parm(head->back, q);
                    q = (QUAD *)beLocalAlloc(sizeof(QUAD));
                    q->dc.opcode = i_gosub;
-                   q->dc.left = set_symbol( "___substackp", TRUE);
+                   q->dc.left = set_symbol( "___substackp", true);
                    InsertInstruction(head->back, q);
                    insert_nullparmadj(head->back, 4);
                    if (head->ans->mode == i_ind && (head->temps & TEMP_LEFT))
@@ -1512,7 +1512,7 @@ int examine_icode(QUAD* head)
                    head->temps &= ~(TEMP_LEFT | TEMP_RIGHT);
                    if (head == b->tail)
                        b->tail = head->fwd;
-                   changed = TRUE;
+                   changed = true;
                }
                */
                 break;
@@ -1535,7 +1535,7 @@ int examine_icode(QUAD* head)
                         InsertInstruction(head, q);
                         if (head == b->tail)
                             b->tail = head->fwd;
-                        changed = TRUE;
+                        changed = true;
                     }
                 }
                 break;
@@ -1566,7 +1566,7 @@ int examine_icode(QUAD* head)
                        head->dc.left = temp;
                        head->temps |= TEMP_LEFT;
                        InsertInstruction(head->back, q);
-                       changed = TRUE;
+                       changed = true;
                }
                */
                 /* fall through */
@@ -1596,7 +1596,7 @@ int examine_icode(QUAD* head)
                         head->dc.left = temp;
                         head->temps |= TEMP_LEFT;
                         InsertInstruction(head->back, q);
-                        changed = TRUE;
+                        changed = true;
                     }
                     if (head->dc.right->mode == i_immed &&
                         (head->dc.left->mode == i_immed || head->dc.right->offset->type == en_auto))
@@ -1612,7 +1612,7 @@ int examine_icode(QUAD* head)
                         head->dc.right = temp;
                         head->temps |= TEMP_RIGHT;
                         InsertInstruction(head->back, q);
-                        changed = TRUE;
+                        changed = true;
                     }
                     if (head->dc.left->mode != i_immed && head->dc.right->mode != i_immed &&
                         (head->dc.left->mode != i_direct || head->dc.left->offset->type != en_tempref) &&
@@ -1629,7 +1629,7 @@ int examine_icode(QUAD* head)
                         head->dc.right = temp;
                         head->temps |= TEMP_RIGHT;
                         InsertInstruction(head->back, q);
-                        changed = TRUE;
+                        changed = true;
                     }
                 }
                 break;
@@ -1647,7 +1647,7 @@ int examine_icode(QUAD* head)
                     head->dc.left = temp;
                     head->temps |= TEMP_LEFT;
                     InsertInstruction(head->back, q);
-                    changed = TRUE;
+                    changed = true;
                 }
                 if (head->dc.right->mode == i_immed && (head->dc.right->offset->type == en_auto))
                 {
@@ -1662,7 +1662,7 @@ int examine_icode(QUAD* head)
                     head->dc.right = temp;
                     head->temps |= TEMP_RIGHT;
                     InsertInstruction(head->back, q);
-                    changed = TRUE;
+                    changed = true;
                 }
                 if (head->dc.right->mode == i_ind)
                 {
@@ -1681,7 +1681,7 @@ int examine_icode(QUAD* head)
                         InsertInstruction(head->back, q);
                         if (head == b->tail)
                             b->tail = head->fwd;
-                        changed = TRUE;
+                        changed = true;
                     }
                 }
             case i_and:
@@ -1710,7 +1710,7 @@ int examine_icode(QUAD* head)
                         InsertInstruction(head, q);
                         if (head == b->tail)
                             b->tail = head->fwd;
-                        changed = TRUE;
+                        changed = true;
                     }
                 }
                 if (head->ans->size == ISZ_ULONGLONG || head->ans->size == -ISZ_ULONGLONG)
@@ -1730,7 +1730,7 @@ int examine_icode(QUAD* head)
                         InsertInstruction(head->back, q);
                         if (head == b->tail)
                             b->tail = head->fwd;
-                        changed = TRUE;
+                        changed = true;
                     }
                     else if (head->dc.right->mode == i_ind)
                     {
@@ -1741,7 +1741,7 @@ int examine_icode(QUAD* head)
                         head->dc.right = temp;
                         head->temps = (head->temps & TEMP_ANS) | ((flags & TEMP_RIGHT) ? TEMP_LEFT : 0) |
                                       ((flags & TEMP_LEFT) ? TEMP_RIGHT : 0);
-                        changed = TRUE;
+                        changed = true;
                     }
                 }
                 else if ((head->temps & (TEMP_ANS | TEMP_LEFT | TEMP_RIGHT)) == (TEMP_ANS | TEMP_LEFT | TEMP_RIGHT))
@@ -1830,7 +1830,7 @@ int examine_icode(QUAD* head)
                         IMODE* temp;
                         IMODE* ret;
                         ret = AllocateTemp(ISZ_ULONGLONG);
-                        ret->retval = TRUE;
+                        ret->retval = true;
                         if (head->dc.right->size >= ISZ_ULONGLONG || head->dc.right->size == -ISZ_ULONGLONG)
                         {
                             temp = AllocateTemp(ISZ_ULONG);
@@ -1855,13 +1855,13 @@ int examine_icode(QUAD* head)
                         switch (head->dc.opcode)
                         {
                             case i_lsl:
-                                q->dc.left = set_symbol("__LXSHL", TRUE);
+                                q->dc.left = set_symbol("__LXSHL", true);
                                 break;
                             case i_lsr:
-                                q->dc.left = set_symbol("__LXSHR", TRUE);
+                                q->dc.left = set_symbol("__LXSHR", true);
                                 break;
                             case i_asr:
-                                q->dc.left = set_symbol("__LXSAR", TRUE);
+                                q->dc.left = set_symbol("__LXSAR", true);
                                 break;
                             default:
                                 break;
@@ -1883,7 +1883,7 @@ int examine_icode(QUAD* head)
                         }
                         if (head == b->tail)
                             b->tail = head->fwd;
-                        changed = TRUE;
+                        changed = true;
                     }
                     else if (head->ans->offset->type != en_tempref || head->ans->mode == i_ind)
                     {
@@ -1897,7 +1897,7 @@ int examine_icode(QUAD* head)
                         head->ans = temp;
                         head->temps |= TEMP_ANS;
                         InsertInstruction(head, q);
-                        changed = TRUE;
+                        changed = true;
                     }
                 }
                 else
@@ -1915,7 +1915,7 @@ int examine_icode(QUAD* head)
                         head->dc.left = temp;
                         head->temps |= TEMP_LEFT;
                         InsertInstruction(head->back, q);
-                        changed = TRUE;
+                        changed = true;
                     }
                     if (head->dc.right->mode != i_immed && (head->dc.right->mode != i_direct || !(head->temps & TEMP_RIGHT)))
                     {
@@ -1930,7 +1930,7 @@ int examine_icode(QUAD* head)
                         head->dc.right = temp;
                         head->temps |= TEMP_RIGHT;
                         InsertInstruction(head->back, q);
-                        changed = TRUE;
+                        changed = true;
                     }
                     goto binary_join;
                 }
@@ -1976,12 +1976,12 @@ int examine_icode(QUAD* head)
                     int limited = head->cxlimited;
                     IMODE* ret;
                     ret = AllocateTemp(ISZ_CDOUBLE);
-                    ret->retval = TRUE;
+                    ret->retval = true;
                     if (head->ans->size == ISZ_CFLOAT)
                     {
                         q = (QUAD *)beLocalAlloc(sizeof(QUAD));
                         q->dc.opcode = i_assn;
-                        q->alwayslive = TRUE;
+                        q->alwayslive = true;
                         q->ans = InitTempOpt(ISZ_CLDOUBLE, ISZ_CLDOUBLE);
                         q->dc.left = head->dc.right;
                         head->dc.right = q->ans;
@@ -1996,7 +1996,7 @@ int examine_icode(QUAD* head)
                     {
                         q = (QUAD *)beLocalAlloc(sizeof(QUAD));
                         q->dc.opcode = i_assn;
-                        q->alwayslive = TRUE;
+                        q->alwayslive = true;
                         q->ans = InitTempOpt(ISZ_CLDOUBLE, ISZ_CLDOUBLE);
                         q->dc.left = head->dc.left;
                         head->dc.left= q->ans;
@@ -2014,16 +2014,16 @@ int examine_icode(QUAD* head)
                     {
                         case i_mul:
                             if (limited)
-                                q->dc.left = set_symbol("__CPLXMULLIM", TRUE);
+                                q->dc.left = set_symbol("__CPLXMULLIM", true);
                             else
-                                q->dc.left = set_symbol("__CPLXMUL", TRUE);
+                                q->dc.left = set_symbol("__CPLXMUL", true);
                             break;
                         case i_sdiv:
                         case i_udiv:
                             if (limited)
-                                q->dc.left = set_symbol("__CPLXDIVLIM", TRUE);
+                                q->dc.left = set_symbol("__CPLXDIVLIM", true);
                             else
-                                q->dc.left = set_symbol("__CPLXDIV", TRUE);
+                                q->dc.left = set_symbol("__CPLXDIV", true);
                             break;
                         default:
                             break;
@@ -2054,7 +2054,7 @@ int examine_icode(QUAD* head)
                     }
                     if (head == b->tail)
                         b->tail = head->fwd;
-                    changed = TRUE;
+                    changed = true;
                 }
                 /* for long long argument, we need to call a helper function */
                 else if (head->ans->size == ISZ_ULONGLONG || head->ans->size == -ISZ_ULONGLONG)
@@ -2062,7 +2062,7 @@ int examine_icode(QUAD* head)
                     QUAD* q;
                     IMODE* ret;
                     ret = AllocateTemp(head->ans->size);
-                    ret->retval = TRUE;
+                    ret->retval = true;
                     q = (QUAD*)(QUAD *)beLocalAlloc(sizeof(QUAD));
                     q->dc.opcode = i_parm;
                     q->dc.left = head->dc.right;
@@ -2076,19 +2076,19 @@ int examine_icode(QUAD* head)
                     switch (head->dc.opcode)
                     {
                         case i_mul:
-                            q->dc.left = set_symbol("__LXMUL", TRUE);
+                            q->dc.left = set_symbol("__LXMUL", true);
                             break;
                         case i_sdiv:
-                            q->dc.left = set_symbol("__LXDIVS", TRUE);
+                            q->dc.left = set_symbol("__LXDIVS", true);
                             break;
                         case i_udiv:
-                            q->dc.left = set_symbol("__LXDIVU", TRUE);
+                            q->dc.left = set_symbol("__LXDIVU", true);
                             break;
                         case i_smod:
-                            q->dc.left = set_symbol("__LXMODS", TRUE);
+                            q->dc.left = set_symbol("__LXMODS", true);
                             break;
                         case i_umod:
-                            q->dc.left = set_symbol("__LXMODU", TRUE);
+                            q->dc.left = set_symbol("__LXMODU", true);
                             break;
                         default:
                             break;
@@ -2110,7 +2110,7 @@ int examine_icode(QUAD* head)
                     }
                     if (head == b->tail)
                         b->tail = head->fwd;
-                    changed = TRUE;
+                    changed = true;
                 }
                 else if (!(head->temps & TEMP_ANS) && (head->dc.opcode != i_mul || !(head->temps & TEMP_LEFT)))
                 {
@@ -2126,7 +2126,7 @@ int examine_icode(QUAD* head)
                     InsertInstruction(head, q);
                     if (head == b->tail)
                         b->tail = head->fwd;
-                    changed = TRUE;
+                    changed = true;
                 }
                 // this is primarily to optimize away the multiply by I needed to get an imaginary number
                 // the multiplication isn't fixed in the front end because the resulting conversion would be caught in this function and replaced with zero...
@@ -2147,7 +2147,7 @@ int examine_icode(QUAD* head)
     }
     if (prm_useesp)
     {
-        extern void SetUsesESP(BOOLEAN yes);
+        extern void SetUsesESP(bool yes);
         SetUsesESP(!uses_substack && !hasXCInfo);
     }
     int floatretsize = 0;

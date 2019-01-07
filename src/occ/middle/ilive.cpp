@@ -47,8 +47,8 @@ BRIGGS_SET* globalVars;
 static BRIGGS_SET* visited;
 static BRIGGS_SET* worklist;
 static BRIGGS_SET* livelist;
-static BOOLEAN hasPhi;
-QUAD* beforeJmp(QUAD* I, BOOLEAN before)
+static bool hasPhi;
+QUAD* beforeJmp(QUAD* I, bool before)
 {
     QUAD* start = I;
     while (I->dc.opcode != i_block)
@@ -104,7 +104,7 @@ static void liveSetup(void)
                 {
                     PHIDATA* pd = tail->dc.v.phi;
                     struct _phiblock* pb = pd->temps;
-                    hasPhi = TRUE;
+                    hasPhi = true;
                     briggsReset(exposed, pd->T0);
                     clearbit(blk->liveGen, pd->T0);
                     setbit(blk->liveKills, pd->T0);
@@ -181,7 +181,7 @@ static void liveSetup(void)
     for (i = 0; i < globalVars->top; i++)
     {
         int t = globalVars->data[i], j;
-        tempInfo[t]->liveAcrossBlock = TRUE;
+        tempInfo[t]->liveAcrossBlock = true;
     }
 }
 static void liveOut()
@@ -216,7 +216,7 @@ static void liveOut()
     tail = 0;
     while (head != tail)
     {
-        BOOLEAN changed = FALSE;
+        bool changed = false;
         unsigned n = workList[tail];
         BLOCK* b = blockArray[n];
         BLOCKLIST* bl = b->succ;
@@ -249,7 +249,7 @@ static void liveOut()
             else if (c != live[j])
             {
                 live[j] = c;
-                changed = TRUE;
+                changed = true;
             }
         }
         if (changed)
@@ -421,18 +421,18 @@ static void markLiveInstruction(BRIGGS_SET* live, QUAD* ins)
         case i_functailend:
         case i_swbranch:
         case i_skipcompare:
-            ins->live = TRUE;
+            ins->live = true;
             break;
         case i_parm:
         case i_gosub:
         case i_label:
         case i_goto:
-            ins->live = TRUE;
+            ins->live = true;
             break;
         case i_assnblock:
         case i_clrblock:
         case i_parmblock:
-            ins->live = TRUE;
+            ins->live = true;
             break;
         case i_jne:
         case i_je:
@@ -445,13 +445,13 @@ static void markLiveInstruction(BRIGGS_SET* live, QUAD* ins)
         case i_jle:
         case i_jge:
         case i_coswitch:
-            ins->live = TRUE;
+            ins->live = true;
             break;
         case i_phi:
             if (briggsTest(live, ins->dc.v.phi->T0))
             {
                 struct _phiblock* pb = ins->dc.v.phi->temps;
-                ins->live = TRUE;
+                ins->live = true;
                 while (pb)
                 {
                     briggsSet(live, pb->Tn);
@@ -462,9 +462,9 @@ static void markLiveInstruction(BRIGGS_SET* live, QUAD* ins)
         default:
             if (!(ins->temps & TEMP_ANS) || ins->ans->mode == i_ind ||
                 (chosenAssembler->arch->denyopts & DO_NODEADPUSHTOTEMP) && ins->ans->offset->v.sp->pushedtotemp)
-                ins->live = TRUE;
+                ins->live = true;
             else if ((ins->temps & TEMP_ANS) && briggsTest(live, ins->ans->offset->v.sp->value.i))
-                ins->live = TRUE;
+                ins->live = true;
 
             break;
     }
@@ -513,7 +513,7 @@ void removeDead(BLOCK* b)
     int j, k;
     QUAD* tail;
     BLOCKLIST* bl;
-    BOOLEAN done = FALSE;
+    bool done = false;
     if (b == blockArray[0])
     {
         int i;
@@ -528,10 +528,10 @@ void removeDead(BLOCK* b)
                     tail->live = tail->alwayslive;
                     tail = tail->fwd;
                 }
-                blockArray[i]->visiteddfst = FALSE;
+                blockArray[i]->visiteddfst = false;
             }
     }
-    b->visiteddfst = TRUE;
+    b->visiteddfst = true;
     briggsClear(live);
     p = b->liveOut;
     for (j = 0; j < (tempCount + BITINTBITS - 1) / BITINTBITS; j++, p++)
@@ -557,7 +557,7 @@ void removeDead(BLOCK* b)
     if (b == blockArray[0])
     {
         QUAD* head = intermed_head;
-        BOOLEAN changed = FALSE;
+        bool changed = false;
         int i;
         /*
         for (i=0; i < blockCount; i++)
@@ -579,7 +579,7 @@ void removeDead(BLOCK* b)
                     {
                         if (head->dc.opcode != i_block && !head->ignoreMe && head->dc.opcode != i_label)
                         {
-                            changed = TRUE;
+                            changed = true;
                             RemoveInstruction(head);
                             if (head->dc.opcode == i_coswitch || (head->dc.opcode >= i_jne && head->dc.opcode <= i_jge))
                             {
@@ -608,7 +608,7 @@ void liveVariables(void)
 {
     int i;
     sFree();
-    hasPhi = FALSE;
+    hasPhi = false;
     globalVars = briggsAllocs(tempCount);
     worklist = briggsAllocs(blockCount);
     livelist = briggsAllocs(blockCount);
@@ -625,7 +625,7 @@ void liveVariables(void)
     }
     for (i = 0; i < tempCount; i++)
     {
-        tempInfo[i]->liveAcrossBlock = FALSE;
+        tempInfo[i]->liveAcrossBlock = false;
     }
     liveSetup();
     if (hasPhi)

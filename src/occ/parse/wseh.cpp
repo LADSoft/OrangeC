@@ -96,7 +96,7 @@ static LEXEME* SEH_catch(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     BLOCKDATA* catchstmt = (BLOCKDATA *)Alloc(sizeof(BLOCKDATA));
     SYMBOL* sym = NULL;
     lex = getsym();
-    ParseAttributeSpecifiers(&lex, funcsp, TRUE);
+    ParseAttributeSpecifiers(&lex, funcsp, true);
     catchstmt->breaklabel = -1;
     catchstmt->next = NULL;       // so can't break or continue out of the block
     catchstmt->defaultlabel = -1; /* no default */
@@ -106,7 +106,7 @@ static LEXEME* SEH_catch(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     if (MATCHKW(lex, openpa))
     {
         needkw(&lex, openpa);
-        lex = declare(lex, funcsp, &tp, sc_auto, lk_none, catchstmt, FALSE, TRUE, FALSE, ac_public);
+        lex = declare(lex, funcsp, &tp, sc_auto, lk_none, catchstmt, false, true, false, ac_public);
         needkw(&lex, closepa);
         sym = localNameSpace->syms->table[0]->p;
     }
@@ -116,11 +116,11 @@ static LEXEME* SEH_catch(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     }
     if (MATCHKW(lex, begin))
     {
-        lex = compound(lex, funcsp, catchstmt, FALSE);
-        parent->nosemi = TRUE;
+        lex = compound(lex, funcsp, catchstmt, false);
+        parent->nosemi = true;
         parent->needlabel &= catchstmt->needlabel;
         if (parent->next)
-            parent->next->nosemi = TRUE;
+            parent->next->nosemi = true;
     }
     else
     {
@@ -139,7 +139,7 @@ static LEXEME* SEH_finally(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     STATEMENT* st;
     BLOCKDATA* catchstmt = (BLOCKDATA *)Alloc(sizeof(BLOCKDATA));
     lex = getsym();
-    ParseAttributeSpecifiers(&lex, funcsp, TRUE);
+    ParseAttributeSpecifiers(&lex, funcsp, true);
     catchstmt->breaklabel = -1;
     catchstmt->next = NULL;       // so can't break or continue out of the block
     catchstmt->defaultlabel = -1; /* no default */
@@ -148,11 +148,11 @@ static LEXEME* SEH_finally(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     AllocateLocalContext(catchstmt, funcsp, codeLabel++);
     if (MATCHKW(lex, begin))
     {
-        lex = compound(lex, funcsp, catchstmt, FALSE);
-        parent->nosemi = TRUE;
+        lex = compound(lex, funcsp, catchstmt, false);
+        parent->nosemi = true;
         parent->needlabel &= catchstmt->needlabel;
         if (parent->next)
-            parent->next->nosemi = TRUE;
+            parent->next->nosemi = true;
     }
     else
     {
@@ -169,7 +169,7 @@ static LEXEME* SEH_fault(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     STATEMENT* st;
     BLOCKDATA* catchstmt = (BLOCKDATA *)Alloc(sizeof(BLOCKDATA));
     lex = getsym();
-    ParseAttributeSpecifiers(&lex, funcsp, TRUE);
+    ParseAttributeSpecifiers(&lex, funcsp, true);
     catchstmt->breaklabel = -1;
     catchstmt->next = NULL;       // so can't break or continue out of the block
     catchstmt->defaultlabel = -1; /* no default */
@@ -178,11 +178,11 @@ static LEXEME* SEH_fault(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     AllocateLocalContext(catchstmt, funcsp, codeLabel++);
     if (MATCHKW(lex, begin))
     {
-        lex = compound(lex, funcsp, catchstmt, FALSE);
-        parent->nosemi = TRUE;
+        lex = compound(lex, funcsp, catchstmt, false);
+        parent->nosemi = true;
         parent->needlabel &= catchstmt->needlabel;
         if (parent->next)
-            parent->next->nosemi = TRUE;
+            parent->next->nosemi = true;
     }
     else
     {
@@ -210,17 +210,17 @@ static LEXEME* SEH_try(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     }
     else
     {
-        BOOLEAN foundFinally = FALSE, foundFault = FALSE;
+        bool foundFinally = false, foundFault = false;
         AllocateLocalContext(trystmt, funcsp, codeLabel++);
-        lex = compound(lex, funcsp, trystmt, FALSE);
+        lex = compound(lex, funcsp, trystmt, false);
         FreeLocalContext(trystmt, funcsp, codeLabel++);
         parent->needlabel = trystmt->needlabel;
         st = stmtNode(lex, parent, st___try);
         st->blockTail = trystmt->blockTail;
         st->lower = trystmt->head;
-        parent->nosemi = TRUE;
+        parent->nosemi = true;
         if (parent->next)
-            parent->next->nosemi = TRUE;
+            parent->next->nosemi = true;
         if (!MATCHKW(lex, kw___catch) && !MATCHKW(lex, kw___finally) && !MATCHKW(lex, kw___fault))
         {
             error(ERR_EXPECTED_SEH_HANDLER);
@@ -231,12 +231,12 @@ static LEXEME* SEH_try(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                 if (foundFinally)
                     error(ERR_FINALLY_FAULT_APPEAR_ONLY_ONCE);
                 else
-                    foundFinally = TRUE;
+                    foundFinally = true;
             else if (MATCHKW(lex, kw___fault))
                 if (foundFault)
                     error(ERR_FINALLY_FAULT_APPEAR_ONLY_ONCE);
                 else
-                    foundFault = TRUE;
+                    foundFault = true;
             lex = statement_SEH(lex, funcsp, parent);
         }
         ReorderSEHRecords(tail, parent);

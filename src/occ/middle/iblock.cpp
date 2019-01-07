@@ -52,7 +52,7 @@ QUAD *intermed_head, *intermed_tail;
 int blockCount;
 DAGLIST* ins_hash[DAGSIZE];
 DAGLIST* name_hash[DAGSIZE];
-short wasgoto = FALSE;
+short wasgoto = false;
 
 BLOCK* currentBlock;
 
@@ -126,21 +126,21 @@ int equalimode(IMODE* ap1, IMODE* ap2)
  */
 {
     if (!ap1 || !ap2)
-        return FALSE;
+        return false;
     if (ap1->mode && ap1->mode != ap2->mode)
-        return FALSE;
+        return false;
     if (ap1->retval || ap2->retval)
-        return FALSE;
+        return false;
     /*   if (ap1->size && ap1->size != ap2->size)*/
-    /*      return FALSE;*/
+    /*      return false;*/
     switch (ap1->mode)
     {
 
         case i_none:
-            return FALSE;
+            return false;
         default:
             if (ap1->offset->isvolatile || ap2->offset->isvolatile)
-                return FALSE;
+                return false;
             return equalnode(ap1->offset, ap2->offset);
     }
 }
@@ -215,7 +215,7 @@ static void add_intermed(QUAD* newQuad)
         case i_dbgblockend:
         case i_varstart:
         case i_func:
-            newQuad->ignoreMe = TRUE;
+            newQuad->ignoreMe = true;
             break;
         default:
             break;
@@ -320,7 +320,7 @@ int ToQuadConst(IMODE** im)
             rv->ans = tempreg(ISZ_UINT, 0);
             add_intermed(rv);
             ReplaceHash(rv, (UBYTE*)rv, DAGCOMPARE, ins_hash);
-            wasgoto = FALSE;
+            wasgoto = false;
         }
         *im = (IMODE*)rv;
         return 1; /* it is now not a livein node any more*/
@@ -328,7 +328,7 @@ int ToQuadConst(IMODE** im)
     return 0;
 }
 #endif
-BOOLEAN usesAddress(IMODE* im)
+bool usesAddress(IMODE* im)
 {
     if (im->offset)
     {
@@ -339,12 +339,12 @@ BOOLEAN usesAddress(IMODE* im)
             case en_absolute:
             case en_global:
             case en_threadlocal:
-                return TRUE;
+                return true;
             default:
-                return FALSE;
+                return false;
         }
     }
-    return FALSE;
+    return false;
 }
 /*
  * this is the primary local CSE subroutine
@@ -600,7 +600,7 @@ void gen_label(int labno)
     flush_dag();
     if (!wasgoto)
         addblock(i_label);
-    wasgoto = FALSE;
+    wasgoto = false;
     newQuad = (QUAD*)(QUAD *)Alloc(sizeof(QUAD));
     newQuad->dc.opcode = i_label;
     newQuad->dc.v.label = labno;
@@ -608,7 +608,7 @@ void gen_label(int labno)
 }
 /*-------------------------------------------------------------------------*/
 
-QUAD* gen_icode_with_conflict(enum i_ops op, IMODE* res, IMODE* left, IMODE* right, BOOLEAN conflicting)
+QUAD* gen_icode_with_conflict(enum i_ops op, IMODE* res, IMODE* left, IMODE* right, bool conflicting)
 /*
  *      generate a code sequence into the peep list.
  */
@@ -648,12 +648,12 @@ QUAD* gen_icode_with_conflict(enum i_ops op, IMODE* res, IMODE* left, IMODE* rig
         default:
             break;
     }
-    wasgoto = FALSE;
+    wasgoto = false;
     return newQuad;
 }
 QUAD* gen_icode(enum i_ops op, IMODE* res, IMODE* left, IMODE* right)
 {
-    return gen_icode_with_conflict(op, res, left, right, FALSE);
+    return gen_icode_with_conflict(op, res, left, right, false);
 }
 
 /*-------------------------------------------------------------------------*/
@@ -670,7 +670,7 @@ void gen_iiconst(IMODE* res, LLONG_TYPE val)
     newQuad->ans = res;
     newQuad->dc.left = left;
     add_dag(newQuad);
-    wasgoto = FALSE;
+    wasgoto = false;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -686,7 +686,7 @@ void gen_ifconst(IMODE* res, FPFC val)
     newQuad->dc.v.f = val;
     newQuad->ans = res;
     add_dag(newQuad);
-    wasgoto = FALSE;
+    wasgoto = false;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -704,7 +704,7 @@ void gen_igoto(enum i_ops op, long label)
     newQuad->dc.v.label = label;
     add_intermed(newQuad);
     addblock(i_goto);
-    wasgoto = TRUE;
+    wasgoto = true;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -718,7 +718,7 @@ void gen_data(int val)
     newQuad->dc.left = newQuad->dc.right = newQuad->ans = 0;
     newQuad->dc.v.label = val;
     add_intermed(newQuad);
-    wasgoto = FALSE;
+    wasgoto = false;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -741,7 +741,7 @@ void gen_icgoto(enum i_ops op, long label, IMODE* left, IMODE* right)
     add_dag(newQuad);
     flush_dag();
     addblock(op);
-    wasgoto = TRUE;
+    wasgoto = true;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -762,7 +762,7 @@ QUAD* gen_igosub(enum i_ops op, IMODE* left)
     add_dag(newQuad);
     flush_dag();
     /*     addblock(op); */
-    wasgoto = TRUE;
+    wasgoto = true;
     return intermed_tail;
 }
 
@@ -782,7 +782,7 @@ void gen_icode2(enum i_ops op, IMODE* res, IMODE* left, IMODE* right, int label)
     newQuad->ans = res;
     newQuad->dc.v.label = label;
     add_intermed(newQuad);
-    wasgoto = FALSE;
+    wasgoto = false;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -840,7 +840,7 @@ void gen_nodag(enum i_ops op, IMODE* res, IMODE* left, IMODE* right)
     newQuad->dc.right = right;
     newQuad->ans = res;
     add_intermed(newQuad);
-    wasgoto = FALSE;
+    wasgoto = false;
 }
 void RemoveFromUses(QUAD* ins, int tnum)
 {

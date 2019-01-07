@@ -41,7 +41,7 @@ extern int exitBlock;
 extern BITINT bittab[BITINTBITS];
 extern QUAD* intermed_head;
 extern SYMBOL* theCurrentFunc;
-extern BOOLEAN functionHasAssembly;
+extern bool functionHasAssembly;
 extern ARCH_ASM* chosenAssembler;
 
 static BITINT* occursInAbnormal;
@@ -142,7 +142,7 @@ static void kill_brtonext(BLOCK* b, QUAD* head)
 {
     QUAD* temp;
     (void)b;
-    while (TRUE)
+    while (true)
     {
         switch (head->dc.opcode)
         {
@@ -190,7 +190,7 @@ static void kill_dupgoto(BLOCK* b, QUAD* head)
 }
 void weed_goto(void)
 {
-    BOOLEAN killing = FALSE;
+    bool killing = false;
     QUAD* head = intermed_head;
     BLOCK* b = head->block;
     while (head)
@@ -198,7 +198,7 @@ void weed_goto(void)
         QUAD* next = head->fwd;
         if (head->block != b)
         {
-            killing = FALSE;
+            killing = false;
             b = head->block;
         }
         if (killing)
@@ -208,7 +208,7 @@ void weed_goto(void)
                 RemoveInstruction(head);
         }
         else if (head->dc.opcode == i_goto)
-            killing = TRUE;
+            killing = true;
         head = next;
     }
 }
@@ -237,7 +237,7 @@ void kill_labeledgoto(BLOCK* b, QUAD* head)
     while (*bt)
     {
         QUAD* tail = (*bt)->block->tail;
-        tail = beforeJmp(tail, FALSE);
+        tail = beforeJmp(tail, false);
         switch (tail->dc.opcode)
         {
             case i_goto:
@@ -410,20 +410,20 @@ static int peep_assn(BLOCK* b, QUAD* head)
 }
 /*-------------------------------------------------------------------------*/
 
-static BOOLEAN peep(BLOCK* b, BOOLEAN branches)
+static bool peep(BLOCK* b, bool branches)
 /*
  * ICODE peep main routine
  */
 {
     QUAD* head = b->head;
     BLOCKLIST* bl;
-    BOOLEAN changed = FALSE;
+    bool changed = false;
     if (b->visiteddfst)
         return changed;
-    b->visiteddfst = TRUE;
+    b->visiteddfst = true;
     while (head != b->tail->fwd)
     {
-        int rv = FALSE;
+        int rv = false;
         switch (head->dc.opcode)
         {
             case i_goto:
@@ -495,20 +495,20 @@ static void scan_abnormal(void)
         }
     }
 }
-void peep_icode(BOOLEAN branches)
+void peep_icode(bool branches)
 {
     int i;
-    BOOLEAN changed;
+    bool changed;
     golist = (QUAD **)oAlloc(sizeof(QUAD*) * (nextLabel - firstLabel));
     scan_gotos(intermed_head);
     scan_abnormal();
     for (i = 0; i < blockCount; i++)
         if (blockArray[i])
-            blockArray[i]->visiteddfst = FALSE;
+            blockArray[i]->visiteddfst = false;
 
     do
     {
-        changed = FALSE;
+        changed = false;
         for (i = 0; i < blockCount; i++)
             if (blockArray[i])
                 changed |= peep(blockArray[i], branches);

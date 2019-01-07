@@ -64,19 +64,19 @@ void deprecateMessage(SYMBOL* sp)
     errorstr(ERR_WARNING, buf);
 }
 // well this is really only nonstatic data members...
-BOOLEAN ismember(SYMBOL* sym)
+bool ismember(SYMBOL* sym)
 {
     switch (sym->storage_class)
     {
         case sc_member:
         case sc_mutable:
         case sc_virtual:
-            return TRUE;
+            return true;
         default:
-            return FALSE;
+            return false;
     }
 }
-BOOLEAN istype(SYMBOL* sym)
+bool istype(SYMBOL* sym)
 {
     if (sym->storage_class == sc_templateparam)
     {
@@ -84,12 +84,12 @@ BOOLEAN istype(SYMBOL* sym)
     }
     return sym->tp->type != bt_templateselector && sym->storage_class == sc_type || sym->storage_class == sc_typedef;
 }
-BOOLEAN ismemberdata(SYMBOL* sp) { return !isfunction(sp->tp) && ismember(sp); }
-BOOLEAN startOfType(LEXEME* lex, BOOLEAN assumeType)
+bool ismemberdata(SYMBOL* sp) { return !isfunction(sp->tp) && ismember(sp); }
+bool startOfType(LEXEME* lex, bool assumeType)
 {
     LINEDATA *oldHead = linesHead, *oldTail = linesTail;
     if (!lex)
-        return FALSE;
+        return false;
 
     if (lex->type == l_id)
     {
@@ -97,7 +97,7 @@ BOOLEAN startOfType(LEXEME* lex, BOOLEAN assumeType)
         if (tparam)
         {
             LEXEME* placeHolder = lex;
-            BOOLEAN member;
+            bool member;
             lex = getsym();
             member = MATCHKW(lex, classsel);
             if (member)
@@ -116,11 +116,11 @@ BOOLEAN startOfType(LEXEME* lex, BOOLEAN assumeType)
     }
     if (lex->type == l_id || MATCHKW(lex, classsel) || MATCHKW(lex, kw_decltype))
     {
-        BOOLEAN isdecltype = MATCHKW(lex, kw_decltype);
+        bool isdecltype = MATCHKW(lex, kw_decltype);
         SYMBOL *sp, *strSym = NULL;
         LEXEME* placeholder = lex;
-        BOOLEAN dest = FALSE;
-        nestedSearch(lex, &sp, &strSym, NULL, &dest, NULL, FALSE, sc_global, FALSE, FALSE);
+        bool dest = false;
+        nestedSearch(lex, &sp, &strSym, NULL, &dest, NULL, false, sc_global, false, false);
         if (cparams.prm_cplusplus || chosenAssembler->msil)
             prevsym(placeholder);
         linesHead = oldHead;
@@ -179,7 +179,7 @@ void UpdateRootTypes(TYPE* tp)
         }
     }
 }
-BOOLEAN isDerivedFromTemplate(TYPE* tp)
+bool isDerivedFromTemplate(TYPE* tp)
 {
     while (tp)
     {
@@ -188,15 +188,15 @@ BOOLEAN isDerivedFromTemplate(TYPE* tp)
             case bt_pointer:
             case bt_func:
             case bt_ifunc:
-                return FALSE;
+                return false;
             case bt_derivedfromtemplate:
-                return TRUE;
+                return true;
         }
         tp = tp->btp;
     }
-    return FALSE;
+    return false;
 }
-BOOLEAN isautotype(TYPE* tp)
+bool isautotype(TYPE* tp)
 {
     if (isref(tp))
         tp = basetype(tp)->btp;
@@ -204,7 +204,7 @@ BOOLEAN isautotype(TYPE* tp)
         tp = basetype(tp)->btp;
     return basetype(tp)->type == bt_auto;
 }
-BOOLEAN isunsigned(TYPE* tp)
+bool isunsigned(TYPE* tp)
 {
     tp = basetype(tp);
     if (tp)
@@ -218,14 +218,14 @@ BOOLEAN isunsigned(TYPE* tp)
             case bt_unsigned_long:
             case bt_unsigned_long_long:
             case bt_wchar_t:
-                return TRUE;
+                return true;
             default:
-                return FALSE;
+                return false;
         }
     }
-    return FALSE;
+    return false;
 }
-BOOLEAN isint(TYPE* tp)
+bool isint(TYPE* tp)
 {
     tp = basetype(tp);
     if (tp)
@@ -249,21 +249,21 @@ BOOLEAN isint(TYPE* tp)
             case bt_wchar_t:
             case bt_inative:
             case bt_unative:
-                return TRUE;
+                return true;
             case bt_templateparam:
                 if (tp->templateParam->p->type == kw_int)
                     return isint(tp->templateParam->p->byNonType.tp);
-                return FALSE;
+                return false;
             default:
                 if (tp->type == bt_enum && !cparams.prm_cplusplus)
-                    return TRUE;
+                    return true;
 
-                return FALSE;
+                return false;
         }
     }
-    return FALSE;
+    return false;
 }
-BOOLEAN isfloat(TYPE* tp)
+bool isfloat(TYPE* tp)
 {
     tp = basetype(tp);
     if (tp)
@@ -273,14 +273,14 @@ BOOLEAN isfloat(TYPE* tp)
             case bt_float:
             case bt_double:
             case bt_long_double:
-                return TRUE;
+                return true;
             default:
-                return FALSE;
+                return false;
         }
     }
-    return FALSE;
+    return false;
 }
-BOOLEAN iscomplex(TYPE* tp)
+bool iscomplex(TYPE* tp)
 {
     tp = basetype(tp);
     if (tp)
@@ -290,14 +290,14 @@ BOOLEAN iscomplex(TYPE* tp)
             case bt_float_complex:
             case bt_double_complex:
             case bt_long_double_complex:
-                return TRUE;
+                return true;
             default:
-                return FALSE;
+                return false;
         }
     }
-    return FALSE;
+    return false;
 }
-BOOLEAN isimaginary(TYPE* tp)
+bool isimaginary(TYPE* tp)
 {
     tp = basetype(tp);
     if (tp)
@@ -307,35 +307,35 @@ BOOLEAN isimaginary(TYPE* tp)
             case bt_float_imaginary:
             case bt_double_imaginary:
             case bt_long_double_imaginary:
-                return TRUE;
+                return true;
             default:
-                return FALSE;
+                return false;
         }
     }
-    return FALSE;
+    return false;
 }
-BOOLEAN isarithmetic(TYPE* tp)
+bool isarithmetic(TYPE* tp)
 {
     tp = basetype(tp);
     return isint(tp) || isfloat(tp) || iscomplex(tp) || isimaginary(tp);
 }
-BOOLEAN ismsil(TYPE* tp)
+bool ismsil(TYPE* tp)
 {
     tp = basetype(tp);
     return tp->type == bt___string || tp->type == bt___object;
 }
-BOOLEAN isconstraw(const TYPE* tp, BOOLEAN useTemplate)
+bool isconstraw(const TYPE* tp, bool useTemplate)
 {
-    BOOLEAN done = FALSE;
-    BOOLEAN rv = FALSE;
+    bool done = false;
+    bool rv = false;
     while (!done && tp)
     {
         if (useTemplate)
         {
             if (tp->templateConst)
             {
-                rv = TRUE;
-                done = TRUE;
+                rv = true;
+                done = true;
             }
         }
         switch (tp->type)
@@ -355,18 +355,18 @@ BOOLEAN isconstraw(const TYPE* tp, BOOLEAN useTemplate)
                 tp = tp->btp;
                 break;
             case bt_const:
-                rv = TRUE;
-                done = TRUE;
+                rv = true;
+                done = true;
                 break;
             default:
-                done = TRUE;
+                done = true;
                 break;
         }
     }
     return rv;
 }
-BOOLEAN isconst(const TYPE* tp) { return isconstraw(tp, FALSE); }
-BOOLEAN isvolatile(const TYPE* tp)
+bool isconst(const TYPE* tp) { return isconstraw(tp, false); }
+bool isvolatile(const TYPE* tp)
 {
     while (tp)
     {
@@ -387,14 +387,14 @@ BOOLEAN isvolatile(const TYPE* tp)
                 tp = tp->btp;
                 break;
             case bt_volatile:
-                return TRUE;
+                return true;
             default:
-                return FALSE;
+                return false;
         }
     }
-    return FALSE;
+    return false;
 }
-BOOLEAN islrqual(TYPE* tp)
+bool islrqual(TYPE* tp)
 {
     while (tp)
     {
@@ -415,14 +415,14 @@ BOOLEAN islrqual(TYPE* tp)
                 tp = tp->btp;
                 break;
             case bt_lrqual:
-                return TRUE;
+                return true;
             default:
-                return FALSE;
+                return false;
         }
     }
-    return FALSE;
+    return false;
 }
-BOOLEAN isrrqual(TYPE* tp)
+bool isrrqual(TYPE* tp)
 {
     while (tp)
     {
@@ -443,14 +443,14 @@ BOOLEAN isrrqual(TYPE* tp)
                 tp = tp->btp;
                 break;
             case bt_rrqual:
-                return TRUE;
+                return true;
             default:
-                return FALSE;
+                return false;
         }
     }
-    return FALSE;
+    return false;
 }
-BOOLEAN isrestrict(TYPE* tp)
+bool isrestrict(TYPE* tp)
 {
     while (tp)
     {
@@ -471,14 +471,14 @@ BOOLEAN isrestrict(TYPE* tp)
                 tp = tp->btp;
                 break;
             case bt_restrict:
-                return TRUE;
+                return true;
             default:
-                return FALSE;
+                return false;
         }
     }
-    return FALSE;
+    return false;
 }
-BOOLEAN isatomic(TYPE* tp)
+bool isatomic(TYPE* tp)
 {
     while (tp)
     {
@@ -499,70 +499,70 @@ BOOLEAN isatomic(TYPE* tp)
                 tp = tp->btp;
                 break;
             case bt_atomic:
-                return TRUE;
+                return true;
             default:
-                return FALSE;
+                return false;
         }
     }
-    return FALSE;
+    return false;
 }
-BOOLEAN isvoid(TYPE* tp)
+bool isvoid(TYPE* tp)
 {
     tp = basetype(tp);
     if (tp)
         return tp->type == bt_void;
-    return FALSE;
+    return false;
 }
-BOOLEAN isvoidptr(TYPE* tp)
+bool isvoidptr(TYPE* tp)
 {
     tp = basetype(tp);
     return ispointer(tp) && isvoid(tp->btp);
 }
-BOOLEAN isarray(TYPE* tp)
+bool isarray(TYPE* tp)
 {
     tp = basetype(tp);
     if (tp)
         return ispointer(tp) && basetype(tp)->array;
-    return FALSE;
+    return false;
 }
-BOOLEAN isunion(TYPE* tp)
+bool isunion(TYPE* tp)
 {
     tp = basetype(tp);
     if (tp)
         return tp->type == bt_union;
-    return FALSE;
+    return false;
 }
 void DeduceAuto(TYPE** pat, TYPE* nt)
 {
     TYPE* in = nt;
     if (isautotype(*pat))
     {
-        BOOLEAN pointerOrRef = FALSE;
-        BOOLEAN err = FALSE;
+        bool pointerOrRef = false;
+        bool err = false;
         if (isref(*pat))
         {
             if (isref(nt))
             {
                 nt = basetype(nt)->btp;
             }
-            pointerOrRef = TRUE;
+            pointerOrRef = true;
             pat = &basetype(*pat)->btp;
         }
         while (!err && ispointer(*pat) && ispointer(nt))
         {
             if (!ispointer(nt))
             {
-                err = TRUE;
+                err = true;
             }
             else
             {
-                pointerOrRef = TRUE;
+                pointerOrRef = true;
                 pat = &basetype(*pat)->btp;
                 nt = basetype(nt)->btp;
             }
         }
         if (basetype(*pat)->type != bt_auto)
-            err = TRUE;
+            err = true;
         nt = basetype(nt);
         if (err)
         {
@@ -602,7 +602,7 @@ void DeduceAuto(TYPE** pat, TYPE* nt)
 SYMBOL* getFunctionSP(TYPE** tp)
 {
     TYPE* btp = basetype(*tp);
-    BOOLEAN pointer = ispointer(btp);
+    bool pointer = ispointer(btp);
     if (pointer)
     {
         btp = basetype(btp)->btp;
@@ -683,7 +683,7 @@ LEXEME* concatStrings(LEXEME* lex, EXPRESSION** expr, enum e_lexType* tp, int* e
     *tp = data->strtype;
     return lex;
 }
-BOOLEAN isintconst(EXPRESSION* exp)
+bool isintconst(EXPRESSION* exp)
 {
     switch (exp->type)
     {
@@ -703,45 +703,45 @@ BOOLEAN isintconst(EXPRESSION* exp)
         case en_c_bit:
         case en_c_bool:
         case en_const:
-            return TRUE;
+            return true;
         default:
-            return FALSE;
+            return false;
     }
 }
-BOOLEAN isfloatconst(EXPRESSION* exp)
+bool isfloatconst(EXPRESSION* exp)
 {
     switch (exp->type)
     {
         case en_c_f:
         case en_c_d:
         case en_c_ld:
-            return TRUE;
+            return true;
         default:
-            return FALSE;
+            return false;
     }
 }
-BOOLEAN isimaginaryconst(EXPRESSION* exp)
+bool isimaginaryconst(EXPRESSION* exp)
 {
     switch (exp->type)
     {
         case en_c_fi:
         case en_c_di:
         case en_c_ldi:
-            return TRUE;
+            return true;
         default:
-            return FALSE;
+            return false;
     }
 }
-BOOLEAN iscomplexconst(EXPRESSION* exp)
+bool iscomplexconst(EXPRESSION* exp)
 {
     switch (exp->type)
     {
         case en_c_fc:
         case en_c_dc:
         case en_c_ldc:
-            return TRUE;
+            return true;
         default:
-            return FALSE;
+            return false;
     }
 }
 EXPRESSION* anonymousVar(enum e_sc storage_class, TYPE* tp)
@@ -753,17 +753,17 @@ EXPRESSION* anonymousVar(enum e_sc storage_class, TYPE* tp)
         tp = basetype(tp)->sp->tp;
     rv->storage_class = storage_class;
     rv->tp = tp;
-    rv->anonymous = TRUE;
+    rv->anonymous = true;
     rv->allocate = !anonymousNotAlloc;
-    rv->assigned = TRUE;
-    rv->used = TRUE;
+    rv->assigned = true;
+    rv->used = true;
     if (theCurrentFunc)
         rv->value.i = theCurrentFunc->value.i;
     my_sprintf(buf, "$anontemp%d", anonct++);
     rv->name = litlate(buf);
     tp->size = basetype(tp)->size;
     if (theCurrentFunc && localNameSpace->syms && !inDefaultParam && !anonymousNotAlloc)
-        InsertSymbol(rv, storage_class, lk_none, FALSE);
+        InsertSymbol(rv, storage_class, lk_none, false);
     SetLinkerNames(rv, lk_none);
     return varNode(storage_class == sc_auto || storage_class == sc_parameter ? en_auto : en_global, rv);
 }
@@ -907,7 +907,7 @@ int sizeFromType(TYPE* tp)
             rv = ISZ_UINT;
             break;
         case bt_bool:
-            rv = ISZ_BOOLEAN;
+            rv = ISZ_bool;
             break;
         case bt_char:
             if (cparams.prm_charisunsigned)
@@ -1133,7 +1133,7 @@ void cast(TYPE* tp, EXPRESSION** exp)
     }
     *exp = exprNode(en, *exp, NULL);
 }
-BOOLEAN castvalue(EXPRESSION* exp)
+bool castvalue(EXPRESSION* exp)
 {
     switch (exp->type)
     {
@@ -1166,17 +1166,17 @@ BOOLEAN castvalue(EXPRESSION* exp)
         case en_x_p:
         case en_x_string:
         case en_x_object:
-            return TRUE;
+            return true;
         default:
-            return FALSE;
+            return false;
     }
 }
-BOOLEAN xvalue(EXPRESSION* exp)
+bool xvalue(EXPRESSION* exp)
 {
     // fixme...
-    return FALSE;
+    return false;
 }
-BOOLEAN lvalue(EXPRESSION* exp)
+bool lvalue(EXPRESSION* exp)
 {
     if (!cparams.prm_ansi)
         while (castvalue(exp))
@@ -1213,28 +1213,28 @@ BOOLEAN lvalue(EXPRESSION* exp)
         case en_l_p:
         case en_l_string:
         case en_l_object:
-            return TRUE;
+            return true;
         case en_l_ref:
-            return TRUE;
+            return true;
         default:
-            return FALSE;
+            return false;
     }
 }
-EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sp, SYMBOL* funcsp, INITIALIZER* init, EXPRESSION* thisptr, BOOLEAN isdest)
+EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sp, SYMBOL* funcsp, INITIALIZER* init, EXPRESSION* thisptr, bool isdest)
 {
-    BOOLEAN local = FALSE;
+    bool local = false;
     EXPRESSION *rv = NULL, **pos = &rv;
     EXPRESSION *exp = NULL, **expp;
     EXPRESSION *expsym, *base;
-    BOOLEAN noClear = FALSE;
+    bool noClear = false;
     if (sp)
-        sp->destructed = FALSE;
+        sp->destructed = false;
     if (isstructured(tp) || isarray(tp))
     {
         INITIALIZER** i2 = &init;
         while (*i2)
             i2 = &(*i2)->next;
-        initInsert(i2, NULL, NULL, tp->size, FALSE);
+        initInsert(i2, NULL, NULL, tp->size, false);
     }
     if (!sp)
     {
@@ -1260,7 +1260,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sp, SYMBOL* funcsp, INITIA
             case sc_auto:
             case sc_register:
             case sc_parameter:
-                local = TRUE;
+                local = true;
                 expsym = varNode(en_auto, sp);
                 break;
             case sc_localstatic:
@@ -1270,7 +1270,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sp, SYMBOL* funcsp, INITIA
                 }
                 else
                 {
-                    local = TRUE;
+                    local = true;
                     expsym = varNode(en_global, sp);
                 }
                 break;
@@ -1282,7 +1282,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sp, SYMBOL* funcsp, INITIA
                 }
                 else
                 {
-                    local = TRUE;
+                    local = true;
                     expsym = varNode(en_global, sp);
                 }
                 break;
@@ -1304,7 +1304,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sp, SYMBOL* funcsp, INITIA
                 break;
             case sc_external:
                 /*			expsym = varNode(en_global, sp);
-                            local = TRUE;
+                            local = true;
                             break;
                 */
             case sc_constant:
@@ -1321,7 +1321,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sp, SYMBOL* funcsp, INITIA
         exp->v.tp = sp->tp;
         // plop in a newarr call
         *pos = exprNode(en_assign, expsym, exp);
-        noClear = TRUE;
+        noClear = true;
     }
     while (init)
     {
@@ -1365,22 +1365,22 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sp, SYMBOL* funcsp, INITIA
                         exp2 = exp2->left;
                     if (exp2->type == en_func && exp2->v.func->returnSP)
                     {
-                        exp2->v.func->returnSP->allocate = FALSE;
+                        exp2->v.func->returnSP->allocate = false;
                         exp2->v.func->returnEXP = expsym;
                         exp = exp2;
-                        noClear = TRUE;
+                        noClear = true;
                     }
                     else if (exp2->type == en_thisref && exp2->left->v.func->returnSP)
                     {
-                        exp2->left->v.func->returnSP->allocate = FALSE;
+                        exp2->left->v.func->returnSP->allocate = false;
                         exp2->left->v.func->returnEXP = expsym;
                         exp = exp2;
-                        noClear = TRUE;
+                        noClear = true;
                     }
                     else if ((cparams.prm_cplusplus) && !basetype(init->basetp)->sp->trivialCons)
                     {
                         TYPE* ctype = init->basetp;
-                        callConstructorParam(&ctype, &expsym, ctype, exp2, TRUE, FALSE, FALSE, FALSE);
+                        callConstructorParam(&ctype, &expsym, ctype, exp2, true, false, false, false);
                         exp = expsym;
                     }
                     else
@@ -1388,7 +1388,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sp, SYMBOL* funcsp, INITIA
                         exp = exprNode(en_blockassign, expsym, exp2);
                         exp->size = init->basetp->size;
                         exp->altdata = (long)(init->basetp);
-                        noClear = TRUE;
+                        noClear = true;
                     }
                 }
                 else
@@ -1458,7 +1458,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sp, SYMBOL* funcsp, INITIA
                             if (cparams.prm_cplusplus && isstructured(init->basetp) && !init->basetp->sp->trivialCons)
                             {
                                 TYPE* ctype = init->basetp;
-                                callConstructorParam(&ctype, &expsym, ctype, exp, TRUE, FALSE, FALSE, FALSE);
+                                callConstructorParam(&ctype, &expsym, ctype, exp, true, false, false, false);
                                 exp = expsym;
                             }
                             else
@@ -1479,7 +1479,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sp, SYMBOL* funcsp, INITIA
                     exp2 = exp2->left;
                 if (exp2->type == en_func && exp2->v.func->returnSP)
                 {
-                    exp2->v.func->returnSP->allocate = FALSE;
+                    exp2->v.func->returnSP->allocate = false;
                     exp2->v.func->returnEXP = expsym;
                     exp = exp2;
                 }
@@ -1487,7 +1487,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sp, SYMBOL* funcsp, INITIA
                 {
                     if (exp2->type == en_memberptr)
                     {
-                        int lab = dumpMemberPtr(exp2->v.sp, init->basetp, TRUE);
+                        int lab = dumpMemberPtr(exp2->v.sp, init->basetp, true);
                         exp2 = intNode(en_labcon, lab);
                     }
                     exp = exprNode(en_blockassign, expsym, exp2);
@@ -1620,23 +1620,23 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sp, SYMBOL* funcsp, INITIA
 
     return rv;
 }
-BOOLEAN assignDiscardsConst(TYPE* dest, TYPE* source)
+bool assignDiscardsConst(TYPE* dest, TYPE* source)
 {
     source = basetype(source);
     dest = basetype(dest);
     if (!ispointer(source) || !ispointer(dest))
-        return FALSE;
-    while (TRUE)
+        return false;
+    while (true)
     {
-        BOOLEAN destc = FALSE;
-        BOOLEAN sourcc = FALSE;
-        BOOLEAN done = FALSE;
+        bool destc = false;
+        bool sourcc = false;
+        bool done = false;
         while (!done)
         {
             switch (dest->type)
             {
                 case bt_const:
-                    destc = TRUE;
+                    destc = true;
                 case bt_va_list:
                 case bt_objectArray:
                 case bt_restrict:
@@ -1649,17 +1649,17 @@ BOOLEAN assignDiscardsConst(TYPE* dest, TYPE* source)
                     dest = dest->btp;
                     break;
                 default:
-                    done = TRUE;
+                    done = true;
                     break;
             }
         }
-        done = FALSE;
+        done = false;
         while (!done)
         {
             switch (source->type)
             {
                 case bt_const:
-                    sourcc = TRUE;
+                    sourcc = true;
                 case bt_va_list:
                 case bt_objectArray:
                 case bt_restrict:
@@ -1671,28 +1671,28 @@ BOOLEAN assignDiscardsConst(TYPE* dest, TYPE* source)
                     source = source->btp;
                     break;
                 default:
-                    done = TRUE;
+                    done = true;
                     break;
             }
         }
         if (sourcc && !destc)
-            return TRUE;
+            return true;
         if (source->type != bt_pointer || dest->type != bt_pointer)
-            return FALSE;
+            return false;
         dest = dest->btp;
         source = source->btp;
     }
 }
-BOOLEAN isconstzero(TYPE* tp, EXPRESSION* exp)
+bool isconstzero(TYPE* tp, EXPRESSION* exp)
 {
     (void)tp;
     return (isintconst(exp) && exp->v.i == 0);
 }
-BOOLEAN fittedConst(TYPE* tp, EXPRESSION* exp)
+bool fittedConst(TYPE* tp, EXPRESSION* exp)
 {
     int n;
     if (!isint(tp) || !isintconst(exp))
-        return FALSE;
+        return false;
     n = getSize(basetype(tp)->type);
     switch (n)
     {
@@ -1700,35 +1700,35 @@ BOOLEAN fittedConst(TYPE* tp, EXPRESSION* exp)
             if (isunsigned(tp))
             {
                 if (exp->v.i < 0 || exp->v.i > 255)
-                    return FALSE;
+                    return false;
             }
             else
             {
                 if (exp->v.i < -128 || exp->v.i > 127)
-                    return FALSE;
+                    return false;
             }
             break;
         case 16:
             if (isunsigned(tp))
             {
                 if (exp->v.i < 0 || exp->v.i > 65535)
-                    return FALSE;
+                    return false;
             }
             else
             {
                 if (exp->v.i < -32768 || exp->v.i > 32767)
-                    return FALSE;
+                    return false;
             }
             break;
         default:
-            return TRUE;
+            return true;
     }
 }
-BOOLEAN isarithmeticconst(EXPRESSION* exp)
+bool isarithmeticconst(EXPRESSION* exp)
 {
     return isintconst(exp) || isfloatconst(exp) || isimaginaryconst(exp) || iscomplexconst(exp);
 }
-BOOLEAN isconstaddress(EXPRESSION* exp)
+bool isconstaddress(EXPRESSION* exp)
 {
     switch (exp->type)
     {
@@ -1739,12 +1739,12 @@ BOOLEAN isconstaddress(EXPRESSION* exp)
         case en_global:
         case en_pc:
         case en_labcon:
-            return TRUE;
+            return true;
         case en_func:
             return !exp->v.func->ascall;
         case en_threadlocal:
         default:
-            return FALSE;
+            return false;
     }
 }
 SYMBOL* clonesym(SYMBOL* sym)
@@ -1790,7 +1790,7 @@ inline e_bt btmax(e_bt left, e_bt right)
 {
     return left > right ? left : right;
 }
-TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, BOOLEAN minimizeInt, TYPE* atp)
+TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool minimizeInt, TYPE* atp)
 /*
  * compare two types and determine if they are compatible for purposes
  * of the current operation.  Return an appropriate type.  Also checks for
@@ -2011,10 +2011,10 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, BOOLE
         {
             return tp2;
             /*
-                        if (comparetypes(tp1, tp2, FALSE))
+                        if (comparetypes(tp1, tp2, false))
                             return tp1;
                         if (cparams.prm_cplusplus) {
-                            cppcast(tp2, tp1, exp1, FALSE, ERR_CPPMISMATCH);
+                            cppcast(tp2, tp1, exp1, false, ERR_CPPMISMATCH);
                         } else
 
                             error(ERR_ILL_STRUCTURE_OPERATION);
@@ -2025,10 +2025,10 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, BOOLE
         {
             return tp1;
             /*
-                        if (comparetypes(tp1, tp2, FALSE))
+                        if (comparetypes(tp1, tp2, false))
                             return tp2;
                         if (cparams.prm_cplusplus) {
-                            cppcast(tp1, tp2, exp1, FALSE, ERR_CPPMISMATCH);
+                            cppcast(tp1, tp2, exp1, false, ERR_CPPMISMATCH);
                         } else
 
                             error(ERR_ILL_STRUCTURE_OPERATION);
@@ -2045,7 +2045,7 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, BOOLE
         if (ispointer(tp1))
             if (ispointer(tp2))
             {
-                /*				if (tp1->type != tp2->type || !comparetypes(tp1->btp, tp2->btp, TRUE))
+                /*				if (tp1->type != tp2->type || !comparetypes(tp1->btp, tp2->btp, true))
                                     generror(ERR_SUSPICIOUS, 0, 0);
                 */
                 return tp1;

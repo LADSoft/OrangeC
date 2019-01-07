@@ -96,12 +96,12 @@ typedef struct _imode_
     char ptrsize;                 /* ptr indirection size, either ISZ_ADDR or ISZ_FARPTR */
     char startbit, bits;          /* bit width  for i_Bf*/
     char seg;                     /* seg reg  for segmented architectures */
-    unsigned char vol : 1;        /* TRUE if is a node for a volatile var */
-    unsigned char restricted : 1; /* TRUE if pointer type is set to restricted */
-    unsigned char retval : 1;     /* TRUE if this is the value returned by a function */
-    unsigned char altretval : 1;  /* TRUE if an alternate return value should be used (e.g. SSE instead of FP)*/
+    unsigned char vol : 1;        /* true if is a node for a volatile var */
+    unsigned char restricted : 1; /* true if pointer type is set to restricted */
+    unsigned char retval : 1;     /* true if this is the value returned by a function */
+    unsigned char altretval : 1;  /* true if an alternate return value should be used (e.g. SSE instead of FP)*/
     unsigned char fieldname : 1;  /* vararg is an en_structelem field name */
-    unsigned char msilObject : 1; /* TRUE if this is an MSIL object that shouldn't be loaded by address */
+    unsigned char msilObject : 1; /* true if this is an MSIL object that shouldn't be loaded by address */
 } IMODE;
 
 /*-------------------------------------------------------------------------*/

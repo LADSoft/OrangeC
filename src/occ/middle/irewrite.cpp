@@ -34,7 +34,7 @@ extern QUAD* intermed_head;
 void Prealloc(int pass)
 {
     int i;
-    BOOLEAN done = FALSE;
+    bool done = false;
     BRIGGS_SET* eobGlobals;
     liveVariables();
     globalVars = briggsAlloc(tempCount * 2 < 100 ? 100 : tempCount * 2);

@@ -39,9 +39,9 @@ static SYMBOL* CreateSetterPrototype(SYMBOL* sp)
     SYMBOL *rv, *value;
     char name[512];
     sprintf(name, "set_%s", sp->name);
-    rv = makeID(sp->storage_class, NULL, NULL, litlate(name));
-    value = makeID(sc_parameter, sp->tp, NULL, "value");
-    value->used = TRUE;  // to avoid unused variable errors
+    rv = makeID(sp->storage_class, nullptr, nullptr, litlate(name));
+    value = makeID(sc_parameter, sp->tp, nullptr, "value");
+    value->used = true;  // to avoid unused variable errors
     rv->access = ac_public;
     rv->tp = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
     rv->tp->sp = rv;
@@ -58,8 +58,8 @@ static SYMBOL* CreateGetterPrototype(SYMBOL* sp)
     SYMBOL *rv, *nullparam;
     char name[512];
     sprintf(name, "get_%s", sp->name);
-    rv = makeID(sp->storage_class, NULL, NULL, litlate(name));
-    nullparam = makeID(sc_parameter, &stdvoid, NULL, "__void");
+    rv = makeID(sp->storage_class, nullptr, nullptr, litlate(name));
+    nullparam = makeID(sc_parameter, &stdvoid, nullptr, "__void");
     rv->access = ac_public;
     rv->tp = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
     rv->tp->sp = rv;
@@ -75,7 +75,7 @@ static void insertfunc(SYMBOL* in, HASHTABLE* syms)
 {
 
     HASHREC** hr = LookupName(in->name, syms);
-    SYMBOL* funcs = NULL;
+    SYMBOL* funcs = nullptr;
     if (hr)
         funcs = (SYMBOL*)((*hr)->p);
     if (!funcs)
@@ -106,7 +106,7 @@ static SYMBOL* CreateBackingVariable(SYMBOL* sp)
     char name[512];
     SYMBOL* rv;
     sprintf(name, "__backing_%s", sp->name);
-    rv = makeID(sc_static, sp->tp, NULL, litlate(name));
+    rv = makeID(sc_static, sp->tp, nullptr, litlate(name));
     rv->label = nextLabel++;
     SetLinkerNames(rv, lk_cdecl);
     return rv;
@@ -122,9 +122,9 @@ static SYMBOL* CreateBackingSetter(SYMBOL* sp, SYMBOL* backing)
     memset(&b, 0, sizeof(b));
     deref(sp->tp, &left);
     deref(sp->tp, &right);
-    st = stmtNode(NULL, &b, st_expr);
+    st = stmtNode(nullptr, &b, st_expr);
     st->select = exprNode(en_assign, left, right);
-    p->inlineFunc.stmt = stmtNode(NULL, NULL, st_block);
+    p->inlineFunc.stmt = stmtNode(nullptr, nullptr, st_block);
     p->inlineFunc.stmt->lower = b.head;
     p->inlineFunc.syms = p->tp->syms;
     return p;
@@ -136,15 +136,15 @@ static SYMBOL* CreateBackingGetter(SYMBOL* sp, SYMBOL* backing)
     BLOCKDATA b;
     p->tp->type = bt_ifunc;
     memset(&b, 0, sizeof(b));
-    st = stmtNode(NULL, &b, st_return);
+    st = stmtNode(nullptr, &b, st_return);
     st->select = varNode(en_global, backing);
     deref(sp->tp, &st->select);
-    p->inlineFunc.stmt = stmtNode(NULL, NULL, st_block);
+    p->inlineFunc.stmt = stmtNode(nullptr, nullptr, st_block);
     p->inlineFunc.stmt->lower = b.head;
     p->inlineFunc.syms = p->tp->syms;
     return p;
 }
-LEXEME* initialize_property(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_sc storage_class_in, BOOLEAN asExpression, int flags)
+LEXEME* initialize_property(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_sc storage_class_in, bool asExpression, int flags)
 {
     if (isstructured(sp->tp))
         error(ERR_ONLY_SIMPLE_PROPERTIES_SUPPORTED);
@@ -154,18 +154,18 @@ LEXEME* initialize_property(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_sc s
     {
         if (MATCHKW(lex, begin))
         {
-            SYMBOL *get = NULL, *set = NULL;
+            SYMBOL *get = nullptr, *set = nullptr;
             SYMBOL* prototype;
             lex = getsym();
             while (ISID(lex))
             {
-                BOOLEAN err = FALSE;
+                bool err = false;
                 if (!strcmp(lex->value.s.a, "get"))
                 {
                     if (get)
                     {
                         errorsym(ERR_GETTER_ALREADY_EXISTS, sp);
-                        err = TRUE;
+                        err = true;
                     }
                     else
                     {
@@ -177,7 +177,7 @@ LEXEME* initialize_property(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_sc s
                     if (set)
                     {
                         errorsym(ERR_SETTER_ALREADY_EXISTS, sp);
-                        err = TRUE;
+                        err = true;
                     }
                     else
                     {
@@ -187,7 +187,7 @@ LEXEME* initialize_property(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_sc s
                 else
                 {
                     error(ERR_ONLY_SIMPLE_PROPERTIES_SUPPORTED);
-                    err = TRUE;
+                    err = true;
                 }
                 lex = getsym();
                 if (err)
@@ -208,7 +208,7 @@ LEXEME* initialize_property(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_sc s
             if (!get)
                 errorsym(ERR_MUST_DECLARE_PROPERTY_GETTER, sp);
             if (set)
-                sp->has_property_setter = TRUE;
+                sp->has_property_setter = true;
             chosenAssembler->msil->create_property(sp, get, set);
             needkw(&lex, end);
         }
@@ -229,7 +229,7 @@ LEXEME* initialize_property(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_sc s
                 int oldretlab = retlab;
                 startlab = nextLabel++;
                 retlab = nextLabel++;
-                genfunc(getter, TRUE);
+                genfunc(getter, true);
                 retlab = oldretlab;
                 startlab = oldstartlab;
             }
@@ -239,13 +239,13 @@ LEXEME* initialize_property(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_sc s
                 int oldretlab = retlab;
                 startlab = nextLabel++;
                 retlab = nextLabel++;
-                genfunc(setter, TRUE);
+                genfunc(setter, true);
                 retlab = oldretlab;
                 startlab = oldstartlab;
             }
             insertInitSym(backing);
             chosenAssembler->msil->create_property(sp, getter, setter);
-            sp->has_property_setter = TRUE;
+            sp->has_property_setter = true;
         }
     }
     return lex;

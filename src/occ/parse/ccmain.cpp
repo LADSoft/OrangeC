@@ -52,7 +52,7 @@ extern "C" {
 
 #ifdef PARSER_ONLY
 void ccDumpSymbols(void);
-void ccNewFile(char* fileName, BOOLEAN main);
+void ccNewFile(char* fileName, bool main);
 void ccCloseFile(FILE* handle);
 int ccDBOpen(char* name);
 #endif
@@ -76,41 +76,41 @@ static int stoponerr = 0;
 COMPILER_PARAMS cparams = {
     25,    /* int  prm_maxerr;*/
     0,     /* prm_stackalign */
-    TRUE,  /* optimize_for_speed */
-    FALSE, /* optimize_for_size */
-    FALSE, /* optimize_for_float_access */
-    FALSE, /* char prm_quieterrors;*/
-    TRUE,  /* char prm_warning;*/
-    FALSE, /* char prm_extwarning;*/
-    FALSE, /* char prm_diag;*/
-    FALSE, /* char prm_ansi;*/
-    TRUE,  /* char prm_cmangle;*/
-    TRUE,  /* char prm_c99;*/
-    TRUE,  /* char prm_c1x;*/
-    FALSE, /* char prm_cplusplus;*/
-    TRUE,  /* char prm_xcept;*/
-    FALSE, /* char prm_icdfile;*/
-    TRUE,  /* char prm_asmfile;*/
-    FALSE, /* char prm_compileonly;*/
-    FALSE, /* char prm_debug;*/
-    FALSE, /* char prm_listfile;*/
-    FALSE, /* char prm_cppfile;*/
-    FALSE, /* char prm_errfile;*/
-    FALSE, /* char prm_browse;*/
-    FALSE, /* char prm_trigraph;*/
-    FALSE, /* char prm_oldfor;*/
-    FALSE, /* char prm_stackcheck;*/
-    TRUE,  /* char prm_allowinline;*/
-    FALSE, /* char prm_profiler;*/
-    TRUE,  /* char prm_mergstrings;*/
-    FALSE, /* char prm_revbits;*/
-    TRUE,  /* char prm_lines;*/
-    TRUE,  /* char prm_bss;*/
-    FALSE, /* char prm_intrinsic;*/
-    FALSE, /* char prm_smartframes;*/
-    FALSE, /* char prm_farkeyword;*/
-    FALSE, /* char prm_linkreg;*/
-    FALSE, /* char prm_charisunsigned;*/
+    true,  /* optimize_for_speed */
+    false, /* optimize_for_size */
+    false, /* optimize_for_float_access */
+    false, /* char prm_quieterrors;*/
+    true,  /* char prm_warning;*/
+    false, /* char prm_extwarning;*/
+    false, /* char prm_diag;*/
+    false, /* char prm_ansi;*/
+    true,  /* char prm_cmangle;*/
+    true,  /* char prm_c99;*/
+    true,  /* char prm_c1x;*/
+    false, /* char prm_cplusplus;*/
+    true,  /* char prm_xcept;*/
+    false, /* char prm_icdfile;*/
+    true,  /* char prm_asmfile;*/
+    false, /* char prm_compileonly;*/
+    false, /* char prm_debug;*/
+    false, /* char prm_listfile;*/
+    false, /* char prm_cppfile;*/
+    false, /* char prm_errfile;*/
+    false, /* char prm_browse;*/
+    false, /* char prm_trigraph;*/
+    false, /* char prm_oldfor;*/
+    false, /* char prm_stackcheck;*/
+    true,  /* char prm_allowinline;*/
+    false, /* char prm_profiler;*/
+    true,  /* char prm_mergstrings;*/
+    false, /* char prm_revbits;*/
+    true,  /* char prm_lines;*/
+    true,  /* char prm_bss;*/
+    false, /* char prm_intrinsic;*/
+    false, /* char prm_smartframes;*/
+    false, /* char prm_farkeyword;*/
+    false, /* char prm_linkreg;*/
+    false, /* char prm_charisunsigned;*/
 };
 
 void bool_setup(char select, char* string);
@@ -167,7 +167,7 @@ void library_setup(char select, char* string)
     (void)select;
     if (string[0] == 0)
     {
-        cparams.prm_listfile = TRUE;
+        cparams.prm_listfile = true;
     }
     else
     {
@@ -175,7 +175,7 @@ void library_setup(char select, char* string)
         strcpy(buf, string);
         StripExt(buf);
         AddExt(buf, ".l");
-        InsertAnyFile(buf, 0, -1, FALSE);
+        InsertAnyFile(buf, 0, -1, false);
     }
 }
 void bool_setup(char select, char* string)
@@ -183,7 +183,7 @@ void bool_setup(char select, char* string)
  * activation routine (callback) for boolean command line arguments
  */
 {
-    BOOLEAN v = (BOOLEAN)string;
+    bool v = (bool)string;
     if (select == '1')
         cparams.prm_c99 = cparams.prm_c1x = v;
     if (select == '9')
@@ -211,8 +211,8 @@ void bool_setup(char select, char* string)
         cparams.prm_icdfile = v;
     if (select == '#')
     {
-        cparams.prm_assemble = TRUE;
-        cparams.prm_asmfile = FALSE;
+        cparams.prm_assemble = true;
+        cparams.prm_asmfile = false;
     }
     if (select == 'v')
     {
@@ -227,7 +227,7 @@ void bool_setup(char select, char* string)
         if (chosenAssembler->objext)
         {
             cparams.prm_compileonly = v;
-            cparams.prm_asmfile = FALSE;
+            cparams.prm_asmfile = false;
         }
     }
     if (select == 'X')
@@ -245,30 +245,30 @@ void optimize_setup(char select, char* string)
     (void)select;
     if (!*string || (*string == '+' && string[1] == '\0'))
     {
-        cparams.prm_optimize_for_speed = TRUE;
-        cparams.prm_optimize_for_size = FALSE;
-        cparams.prm_debug = FALSE;
+        cparams.prm_optimize_for_speed = true;
+        cparams.prm_optimize_for_size = false;
+        cparams.prm_debug = false;
     }
     else if (*string == '-' && string[1] == '\0')
-        cparams.prm_optimize_for_speed = cparams.prm_optimize_for_size = cparams.prm_optimize_float_access = FALSE;
+        cparams.prm_optimize_for_speed = cparams.prm_optimize_for_size = cparams.prm_optimize_float_access = false;
     else
     {
-        cparams.prm_debug = FALSE;
+        cparams.prm_debug = false;
         if (*string == '0')
         {
             cparams.prm_optimize_for_speed = cparams.prm_optimize_for_size = 0;
         }
         else if (*string == 'f')
-            cparams.prm_optimize_float_access = TRUE;
+            cparams.prm_optimize_float_access = true;
         else if (*string == '2')
         {
-            cparams.prm_optimize_for_speed = TRUE;
-            cparams.prm_optimize_for_size = FALSE;
+            cparams.prm_optimize_for_speed = true;
+            cparams.prm_optimize_for_size = false;
         }
         else if (*string == '1')
         {
-            cparams.prm_optimize_for_speed = FALSE;
-            cparams.prm_optimize_for_size = TRUE;
+            cparams.prm_optimize_for_speed = false;
+            cparams.prm_optimize_for_size = true;
         }
     }
 }
@@ -279,14 +279,14 @@ void codegen_setup(char select, char* string)
  * activation for code-gen type command line arguments
  */
 {
-    char v = TRUE;
+    char v = true;
     (void)select;
     while (*string)
     {
         switch (*string)
         {
             /*               case 'f':*/
-            /*                  cparams.prm_smartframes = BOOLEAN ;*/
+            /*                  cparams.prm_smartframes = bool ;*/
             /*                  break ;*/
             case 'u':
                 cparams.prm_charisunsigned = v;
@@ -324,10 +324,10 @@ void codegen_setup(char select, char* string)
                 cparams.prm_allowinline = v;
                 break;
             case '-':
-                v = FALSE;
+                v = false;
                 break;
             case '+':
-                v = TRUE;
+                v = true;
                 break;
             default:
                 if (chosenAssembler->parse_codegen)
@@ -404,10 +404,10 @@ void MakeStubs(void)
     }
     printf("\n");
 }
-void compile(BOOLEAN global)
+void compile(bool global)
 {
     LEXEME* lex = NULL;
-    SetGlobalFlag(TRUE);
+    SetGlobalFlag(true);
     helpinit();
     mangleInit();
     errorinit();
@@ -472,7 +472,7 @@ void compile(BOOLEAN global)
         lex = getsym();
         if (lex)
         {
-            while ((lex = declare(lex, NULL, NULL, sc_global, lk_none, NULL, TRUE, FALSE, FALSE, ac_public)) != NULL)
+            while ((lex = declare(lex, NULL, NULL, sc_global, lk_none, NULL, true, false, false, ac_public)) != NULL)
                 ;
         }
     }
@@ -526,8 +526,8 @@ int main(int argc, char* argv[])
 {
     char buffer[256];
     char* p;
-    BOOLEAN multipleFiles = FALSE;
-    BOOLEAN openOutput = TRUE;
+    bool multipleFiles = false;
+    bool openOutput = true;
     int rv;
 
     srand(time(0));
@@ -554,7 +554,7 @@ int main(int argc, char* argv[])
 
     /* loop through and preprocess all the files on the file list */
     if (clist && clist->next)
-        multipleFiles = TRUE;
+        multipleFiles = true;
 #ifdef PARSER_ONLY
     strcpy(buffer, (char *)clist->data);
     strcpy(realOutFile, outfile);
@@ -569,7 +569,7 @@ int main(int argc, char* argv[])
         openOutput = chosenAssembler->main_preprocess();
     while (clist)
     {
-        cparams.prm_cplusplus = FALSE;
+        cparams.prm_cplusplus = false;
         strcpy(buffer, (char *)clist->data);
 #ifndef PARSER_ONLY
         if (buffer[0] == '-')
@@ -589,43 +589,43 @@ int main(int argc, char* argv[])
         StripExt(oldOutFile);
         AddExt(oldOutFile, ".tmp");
 #else
-        ccNewFile(buffer, TRUE);
+        ccNewFile(buffer, true);
 #endif
         AddExt(buffer, ".C");
         p = strrchr(buffer, '.');
         if (*(p - 1) != '.')
         {
             if (p[1] == 'h' || p[1] == 'H')  // compile H files as C++ for the IDE
-                cparams.prm_cplusplus = TRUE;
+                cparams.prm_cplusplus = true;
             if (p[1] == 'c' || p[1] == 'C')
                 if (p[2] == 'p' || p[2] == 'P')
                 {
                     if (p[3] == 'p' || p[3] == 'P')
-                        cparams.prm_cplusplus = TRUE;
+                        cparams.prm_cplusplus = true;
                 }
                 else
                 {
                     if (p[2] == 'x' || p[2] == 'X')
                     {
                         if (p[3] == 'x' || p[3] == 'X')
-                            cparams.prm_cplusplus = TRUE;
+                            cparams.prm_cplusplus = true;
                     }
                 }
             else if ((p[2] == 'c' || p[2] == 'C') && !p[3])
             {
-                cparams.prm_cplusplus = TRUE;
+                cparams.prm_cplusplus = true;
             }
             else
             {
                 if (p[2] == '+')
                 {
                     if (p[3] == '+')
-                        cparams.prm_cplusplus = TRUE;
+                        cparams.prm_cplusplus = true;
                 }
             }
         }
         if (cparams.prm_cplusplus)
-            cparams.prm_c99 = cparams.prm_c1x = FALSE;
+            cparams.prm_c99 = cparams.prm_c1x = false;
         if (cparams.prm_cplusplus && chosenAssembler->msil)
             fatal("MSIL compiler does not compile C++ files at this time");
         if (*(char*)clist->data == '-')

@@ -111,7 +111,7 @@ LEXEME *inasm_statement(LEXEME *inlex, BLOCKDATA *parent);
 void *inlineAsmStmt(void *);
                               /* Invoke.c */
 
-int InsertExternalFile(char *name, BOOLEAN primary);
+int InsertExternalFile(char *name, bool primary);
 void InsertOutputFileName(char *name);
 int RunExternalFiles(char *);
 
@@ -161,7 +161,7 @@ void oa_ini(void);
 void oa_nl(void);
 void outop(char *name);
 void putop(enum e_op op, AMODE *aps, AMODE *apd, int nooptx);
-void oa_putconst(int op, int sz, EXPRESSION *offset, BOOLEAN doSign);
+void oa_putconst(int op, int sz, EXPRESSION *offset, bool doSign);
 void oa_putlen(int l);
 void putsizedreg(char *string, int reg, int size);
 void pointersize(int size);

@@ -62,7 +62,7 @@ static MEMBLK* galloc(MEMBLK** arena, int size)
 {
     MEMBLK* selected;
     int allocsize = size <= MINALLOC ? MINALLOC : (size + (MINALLOC - 1)) & -MINALLOC;
-    selected = NULL;
+    selected = nullptr;
     if (allocsize == MINALLOC)
     {
         if (freestdmem)

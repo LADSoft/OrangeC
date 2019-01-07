@@ -49,7 +49,7 @@ ppDefine::ppDefine(bool UseExtensions, ppInclude* Include, bool C89, bool Asmpp)
 {
     char* sde = getenv("SOURCE_DATE_EPOCH");
     if (sde)
-        source_date_epoch = (time_t)strtoul(sde, NULL, 10);
+        source_date_epoch = (time_t)strtoul(sde, nullptr, 10);
     SetDefaults();
     InitHash();
     expr.SetDefine(this);

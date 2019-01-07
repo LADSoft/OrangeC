@@ -36,7 +36,7 @@ extern "C" char* getcwd(char*, int);
 #ifdef PARSER_ONLY
 size_t ccReadFile(void* __ptr, size_t __size, size_t __n, FILE* __stream);
 void ccSetFileLine(char* filename, int lineno);
-void ccNewFile(char* fileName, BOOLEAN main);
+void ccNewFile(char* fileName, bool main);
 #endif
 #ifndef CPREPROCESSOR
 extern ARCH_ASM* chosenAssembler;
@@ -123,7 +123,7 @@ void preprocini(char* name, FILE* fil)
     INCLUDES* p = (INCLUDES *)globalAlloc(sizeof(INCLUDES));
     p->fname = litlate(name);
     p->handle = fil;
-    p->first = TRUE;
+    p->first = true;
     p->realline = -1;
     p->line = -1;
     includes = p;
@@ -168,17 +168,17 @@ void skipspace(void)
     while (isspace((unsigned char)*includes->lptr) || *includes->lptr == MACRO_PLACEHOLDER)
         includes->lptr++;
 }
-BOOLEAN expectid(char* buf)
+bool expectid(char* buf)
 {
     if (isstartchar((unsigned char)*includes->lptr))
     {
         defid(buf, &includes->lptr);
-        return TRUE;
+        return true;
     }
     pperror(ERR_IDENTIFIER_EXPECTED, 0);
-    return FALSE;
+    return false;
 }
-BOOLEAN expectstring(char* buf, unsigned char** in, BOOLEAN angle)
+bool expectstring(char* buf, unsigned char** in, bool angle)
 {
     skipspace();
     if (**in == '"' || (angle && **in == '<'))
@@ -192,21 +192,21 @@ BOOLEAN expectstring(char* buf, unsigned char** in, BOOLEAN angle)
         if (**in)
         {
             (*in)++;
-            return TRUE;
+            return true;
         }
     }
     pperror(ERR_NEEDSTRING, 0);
-    return FALSE;
+    return false;
 }
-PPINT expectnum(BOOLEAN* uns)
+PPINT expectnum(bool* uns)
 {
-    BOOLEAN minus = FALSE;
+    bool minus = false;
     while (isspace(*includes->lptr))
         includes->lptr++;
     if (*includes->lptr == '-')
     {
         includes->lptr++;
-        minus = TRUE;
+        minus = true;
     }
 #ifdef USE_LONGLONG
     LLONG_TYPE rv = strtoull((char*)includes->lptr, (char**)&includes->lptr, 0);
@@ -217,14 +217,14 @@ PPINT expectnum(BOOLEAN* uns)
         rv = -rv;
     if (uns)
     {
-        *uns = FALSE;
+        *uns = false;
         if (tolower(includes->lptr[-1]) == 'u')
-            *uns = TRUE;
+            *uns = true;
     }
     while (*includes->lptr == 'l' || *includes->lptr == 'L' || *includes->lptr == 'u' || *includes->lptr == 'U')
     {
         if (uns && tolower(*includes->lptr) == 'u')
-            *uns = TRUE;
+            *uns = true;
         includes->lptr++;
     }
     return rv;
@@ -413,7 +413,7 @@ int getstring(unsigned char* s, int len, FILE* file)
         includes->inputlen = 0;
         return s == olds;
     }
-    while (TRUE)
+    while (true)
     {
         while (includes->inputlen--)
         {
@@ -459,7 +459,7 @@ int getstring(unsigned char* s, int len, FILE* file)
         }
         if (includes->first)
         {
-            includes->first = FALSE;
+            includes->first = false;
             if (includes->inputlen >= 3 && includes->ibufPtr[0] == 0xef && includes->ibufPtr[1] == 0xbb &&
                 includes->ibufPtr[2] == 0xbf)
             {
@@ -470,19 +470,19 @@ int getstring(unsigned char* s, int len, FILE* file)
     }
 }
 void ccCloseFile(FILE*);
-BOOLEAN GetLine(void)
+bool GetLine(void)
 /*
  * Read in a line, preprocess it, and dump it to the list and preproc files
  * Also strip comments and alter trigraphs
  */
 {
-    BOOLEAN rv, prepping;
-    BOOLEAN prepped = FALSE;
+    bool rv, prepping;
+    bool prepped = false;
     int rvc, lastTop;
     do
     {
-        rv = FALSE;
-        prepping = FALSE;
+        rv = false;
+        prepping = false;
         rvc = 0;
 #ifndef CPREPROCESSOR
         ErrorsToListFile();
@@ -508,8 +508,8 @@ BOOLEAN GetLine(void)
 #endif
             {
 #ifndef CPREPROCESSOR
-                once = FALSE;
-                rv = TRUE;
+                once = false;
+                rv = true;
 #endif
                 break;
             }
@@ -548,7 +548,7 @@ BOOLEAN GetLine(void)
         includes->inputline[rvc] = 0;
         rvc = strlen((char*)includes->inputline);
         if (rvc && !prepped)
-            rv = FALSE;
+            rv = false;
         if (rv)
         {
             if (includes->ifs)
@@ -578,7 +578,7 @@ BOOLEAN GetLine(void)
                 if (chosenAssembler && chosenAssembler->enter_includename)
                     chosenAssembler->enter_includename(includes->fname, includes->fileindex);
 #endif
-                prepping = TRUE;
+                prepping = true;
                 continue;
             }
 #ifndef CPREPROCESSOR
@@ -602,7 +602,7 @@ BOOLEAN GetLine(void)
             if (!commentlevel)
             {
                 preprocess();
-                prepping = TRUE;
+                prepping = true;
             }
         }
         else if (lastTop)
@@ -619,7 +619,7 @@ BOOLEAN GetLine(void)
         {
             if (includes->inputline[rvc - 1] == '\n')
                 includes->inputline[rvc - 1] = ' ';
-            prepped = TRUE;
+            prepped = true;
             goto add;
         }
     }
@@ -651,9 +651,9 @@ void preprocess(void)
     else if (strcmp(name, "else") == 0)
         doelse();
     else if (strcmp(name, "ifdef") == 0)
-        doifdef(TRUE);
+        doifdef(true);
     else if (strcmp(name, "ifndef") == 0)
-        doifdef(FALSE);
+        doifdef(false);
     else if (strcmp(name, "if") == 0)
     {
         doif();
@@ -712,7 +712,7 @@ unsigned char* getauxname(unsigned char* ptr, char** bufp)
     char buf[512], *bp = buf;
     while (isspace((unsigned char)*ptr))
         ptr++;
-    if (!expectstring(bp, &ptr, TRUE))
+    if (!expectstring(bp, &ptr, true))
         return 0;
     IncGlobalFlag();
     *bufp = litlate(buf);
@@ -754,7 +754,7 @@ void pragonce(void)
     {
         if (oncePos->crc == onceCRC(includes->handle))
         {
-            once = TRUE;
+            once = true;
             return;
         }
     }
@@ -849,7 +849,7 @@ static void pragerror(int error)
 void dopragma(void)
 {
     char buf[40], *p = buf;
-    BOOLEAN sflag;
+    bool sflag;
     int val;
     char name[SYMBOL_NAME_LEN];
 
@@ -913,9 +913,9 @@ void dopragma(void)
         return;
     }
     else if (!strcmp(name, "startup"))
-        sflag = TRUE;
+        sflag = true;
     else if (!strcmp(name, "rundown"))
-        sflag = FALSE;
+        sflag = false;
     else if (!strncmp(name, "library", 7))
     {
         {
@@ -1132,7 +1132,7 @@ void doline(void)
     skipspace();
     if (*includes->lptr)
     {
-        expectstring(buf, &includes->lptr, TRUE);
+        expectstring(buf, &includes->lptr, true);
         includes->linename = litlate(buf);
     }
 }
@@ -1166,20 +1166,20 @@ void doinclude(void)
  */
 {
     INCLUDES* inc;
-    BOOLEAN nonSys = FALSE;
+    bool nonSys = false;
     char name[260], name_orig[260], *p, *q;
     if (includes->ifskip)
         return;
     inc = GetIncludeData();
-    inc->sys_inc = FALSE;
-    inc->first = TRUE;
+    inc->sys_inc = false;
+    inc->first = true;
     if (*includes->lptr != '"' && *includes->lptr != '<')
     {
         ppdefcheck(includes->lptr);
     }
     if (*includes->lptr == '<')
-        inc->sys_inc = TRUE;
-    if (!expectstring(name, &includes->lptr, TRUE))
+        inc->sys_inc = true;
+    if (!expectstring(name, &includes->lptr, true))
     {
         pperror(ERR_INCL_FILE_NAME, 0);
         return;
@@ -1195,7 +1195,7 @@ void doinclude(void)
     *q = 0;
     strcpy(name_orig, name);
     if (inc->sys_inc)
-        inc->handle = SrchPth(name, sys_searchpath, "r", TRUE);
+        inc->handle = SrchPth(name, sys_searchpath, "r", true);
     if (inc->handle == NULL && includes)
     {
         char buf[260], *p, *q;
@@ -1207,23 +1207,23 @@ void doinclude(void)
         if (p)
         {
             *p = 0;
-            inc->handle = SrchPth(name, buf, "r", FALSE);
+            inc->handle = SrchPth(name, buf, "r", false);
         }
     }
     if (inc->handle == NULL)
     {
-        inc->handle = SrchPth(name, ".", "r", FALSE);
+        inc->handle = SrchPth(name, ".", "r", false);
         if (inc->handle)
-            nonSys = TRUE;
+            nonSys = true;
     }
     if (inc->handle == NULL)
     {
-        inc->handle = SrchPth(name, prm_searchpath, "r", FALSE);
+        inc->handle = SrchPth(name, prm_searchpath, "r", false);
         if (inc->handle)
-            nonSys = TRUE;
+            nonSys = true;
     }
     if (!inc->sys_inc && inc->handle == NULL)
-        inc->handle = SrchPth(name, sys_searchpath, "r", TRUE);
+        inc->handle = SrchPth(name, sys_searchpath, "r", true);
 
     IncGlobalFlag();
     inc->fname = litlate(name);
@@ -1280,7 +1280,7 @@ void doinclude(void)
         browse_startfile(inc->fname, i);
 #endif
 #ifdef PARSER_ONLY
-        ccNewFile(inc->fname, FALSE);
+        ccNewFile(inc->fname, false);
 #endif
         DecGlobalFlag();
         inc->next = includes;
@@ -1290,7 +1290,7 @@ void doinclude(void)
 
 /*-------------------------------------------------------------------------*/
 
-void glbdefine(char* name, char* value, BOOLEAN permanent)
+void glbdefine(char* name, char* value, bool permanent)
 {
     DEFSTRUCT* def;
     if ((DEFSTRUCT*)search(name, defsyms) != 0)
@@ -1318,8 +1318,8 @@ void glbUndefine(char* name)
         insert((SYMBOL*)hr, defsyms);
         DecGlobalFlag();
     }
-    hr->undefined = TRUE;
-    hr->permanent = TRUE;
+    hr->undefined = true;
+    hr->permanent = true;
 }
 int undef2(char* name)
 {
@@ -1373,14 +1373,14 @@ void dodefine(void)
     def->file = includes->fname;
     if (*includes->lptr == '(')
     {
-        BOOLEAN gotcomma = FALSE, nullargs = TRUE;
+        bool gotcomma = false, nullargs = true;
         includes->lptr++;
         skipspace();
         while (isstartchar((unsigned char)*includes->lptr))
         {
             int j;
-            gotcomma = FALSE;
-            nullargs = FALSE;
+            gotcomma = false;
+            nullargs = false;
             expectid(name);
             args[count++] = litlate(name);
             if (count >= MAX_MACRO_ARGS)
@@ -1394,7 +1394,7 @@ void dodefine(void)
             skipspace();
             if (*includes->lptr != ',')
                 break;
-            gotcomma = TRUE;
+            gotcomma = true;
             includes->lptr++;
             skipspace();
         }
@@ -1403,8 +1403,8 @@ void dodefine(void)
             if (includes->lptr[0] == '.' && includes->lptr[1] == '.' && includes->lptr[2] == '.')
             {
                 includes->lptr += 3;
-                def->varargs = TRUE;
-                gotcomma = FALSE;
+                def->varargs = true;
+                gotcomma = false;
                 skipspace();
             }
         }
@@ -1450,16 +1450,16 @@ void dodefine(void)
     def->string = ps;
     if (hr)
     {
-        BOOLEAN same = TRUE;
+        bool same = true;
         if (def->argcount != hr->argcount)
-            same = FALSE;
+            same = false;
         else
         {
             int i;
             char *p, *q;
             for (i = 0; i < def->argcount - 1 && same; i++)
                 if (strcmp(def->args[i], hr->args[i]) == 0)
-                    same = FALSE;
+                    same = false;
             p = def->string;
             q = hr->string;
             while (*p && *q)
@@ -1492,7 +1492,7 @@ void dodefine(void)
                 while (isspace((unsigned char)*q))
                     q++;
             if (*p || *q)
-                same = FALSE;
+                same = false;
         }
         if (!same)
         {
@@ -1539,7 +1539,7 @@ int definsert(unsigned char* macro, unsigned char* end, unsigned char* begin, un
     static unsigned char NULLTOKEN[] = {TOKENIZING_PLACEHOLDER, 0};
     int p, r;
     int val;
-    int stringizing = FALSE;
+    int stringizing = false;
     q = end;
     while (*q >= 0 && isspace((unsigned char)*q))
         q++;  //*q unsigned >= 0 always
@@ -1564,7 +1564,7 @@ int definsert(unsigned char* macro, unsigned char* end, unsigned char* begin, un
         }
         else if (*q == '#')
         {
-            stringizing = TRUE;
+            stringizing = true;
         }
         else
         {
@@ -1691,7 +1691,7 @@ int defreplaceargs(unsigned char* macro, int count, unsigned char** oldargs, uns
                 {
                     if ((rv = definsert(macro, p, q, varargs, varargs, MACRO_REPLACE_SIZE - (q - macro), p - q)) <
                         -MACRO_REPLACE_SIZE)
-                        return (FALSE);
+                        return (false);
                     else
                     {
                         p = q + rv - 1;
@@ -1700,7 +1700,7 @@ int defreplaceargs(unsigned char* macro, int count, unsigned char** oldargs, uns
                 else
                 {
                     if ((rv = definsert(macro, p, q, (UBYTE*)"", (UBYTE *)"", MACRO_REPLACE_SIZE - (q - macro), p - q)) < -MACRO_REPLACE_SIZE)
-                        return (FALSE);
+                        return (false);
                     else
                     {
                         p = q + rv - 1;
@@ -1714,7 +1714,7 @@ int defreplaceargs(unsigned char* macro, int count, unsigned char** oldargs, uns
                     {
                         if ((rv = definsert(macro, p, q, newargs[i], expandedargs[i], MACRO_REPLACE_SIZE - (q - macro), p - q)) <
                             -MACRO_REPLACE_SIZE)
-                            return (FALSE);
+                            return (false);
                         else
                         {
                             p = q + rv - 1;
@@ -1726,7 +1726,7 @@ int defreplaceargs(unsigned char* macro, int count, unsigned char** oldargs, uns
         if (*p)
             p++;
     }
-    return (TRUE);
+    return (true);
 }
 void deftokenizing(unsigned char* macro)
 {
@@ -1888,7 +1888,7 @@ void SetupAlreadyReplaced(unsigned char* macro)
 {
     unsigned char *nn = getMacroBuffer(), *src = nn;
     char name[256];
-    int instr = FALSE;
+    int instr = false;
     strcpy((char*)nn, (char*)macro);
     while (*src)
     {
@@ -1941,14 +1941,14 @@ int ppNumber(unsigned char* start, unsigned char* pos)
         // if we didn't get back where we started we have a number
         return pos < x && (pos[0] != '0' || (pos[1] != 'x' && pos[1] != 'X'));
     }
-    return FALSE;
+    return false;
 }
 int replacesegment(unsigned char* start, unsigned char* end, int* inbuffer, int totallen, unsigned char** pptr)
 {
     unsigned char *args[MAX_MACRO_ARGS], *expandedargs[MAX_MACRO_ARGS];
     unsigned char *macro = getMacroBuffer(), varargs[4096];
     char name[256];
-    BOOLEAN waiting = FALSE;
+    char waiting = 0;
     int rv;
     int size;
     unsigned char *p, *q;
@@ -2102,12 +2102,12 @@ int replacesegment(unsigned char* start, unsigned char* end, int* inbuffer, int 
                 {
                     strcpy((char*)macro, sp->string);
                 }
-                sp->preprocessing = TRUE;
+                sp->preprocessing = true;
                 SetupAlreadyReplaced(macro);
                 size = strlen((char*)macro);
                 if ((rv1 = definsert(start, p, q, macro, macro, totallen - *inbuffer, p - q)) < -MACRO_REPLACE_SIZE)
                 {
-                    sp->preprocessing = FALSE;
+                    sp->preprocessing = false;
                     freeMacroBuffer(macro);
                     return rv1;
                 }
@@ -2117,7 +2117,7 @@ int replacesegment(unsigned char* start, unsigned char* end, int* inbuffer, int 
                 p += insize;
                 insize = 0;
                 rv = replacesegment(q, p, &insize, totallen, &p);
-                sp->preprocessing = FALSE;
+                sp->preprocessing = false;
                 if (rv < -MACRO_REPLACE_SIZE)
                 {
                     freeMacroBuffer(macro);
@@ -2190,14 +2190,14 @@ static void repdefines(unsigned char* lptr)
     {
         if (!strncmp((char*)lptr, defkw, 7))
         {
-            BOOLEAN needend = FALSE;
+            bool needend = false;
             lptr += 7;
             while (isspace(*lptr))
                 lptr++;
             if (*lptr == '(')
             {
                 lptr++;
-                needend = TRUE;
+                needend = true;
             }
             while (isspace(*lptr))
                 lptr++;
@@ -2235,7 +2235,7 @@ void pushif(void)
     p->next = includes->ifs;
     p->iflevel = includes->ifskip;
     p->elsetaken = includes->elsetaken;
-    includes->elsetaken = FALSE;
+    includes->elsetaken = false;
     includes->ifs = p;
 }
 
@@ -2277,7 +2277,7 @@ void ansieol(void)
 
 /*-------------------------------------------------------------------------*/
 
-void doifdef(BOOLEAN flag)
+void doifdef(bool flag)
 /* Handle IFDEF */
 {
     DEFSTRUCT* hr;
@@ -2297,7 +2297,7 @@ void doifdef(BOOLEAN flag)
     pushif();
     includes->ifs->line = includes->line;
     if ((hr && ((!hr->undefined && !flag) || (hr->undefined && flag))) || (!hr && flag))
-        includes->ifskip = TRUE;
+        includes->ifskip = true;
     ansieol();
 }
 
@@ -2316,9 +2316,9 @@ void doif(void)
     pushif();
     includes->ifs->line = includes->line;
     if (!ppexpr())
-        includes->ifskip = TRUE;
+        includes->ifskip = true;
     else
-        includes->elsetaken = TRUE;
+        includes->elsetaken = true;
     ansieol();
 }
 
@@ -2343,15 +2343,15 @@ void doelif(void)
             int oldifskip = includes->ifskip;
             includes->ifskip = !includes->ifskip || is || includes->elsetaken;
             if (!oldifskip || !includes->ifskip)
-                includes->elsetaken = TRUE;
+                includes->elsetaken = true;
         }
         else
             pperror(ERR_PPELIF_NO_IF, 0);
     }
     else
     {
-        includes->ifskip = TRUE;
-        includes->elsetaken = TRUE;
+        includes->ifskip = true;
+        includes->elsetaken = true;
     }
     if (includes->ifs)
         includes->ifs->line = includes->line;

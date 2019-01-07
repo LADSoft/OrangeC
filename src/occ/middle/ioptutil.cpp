@@ -182,7 +182,7 @@ BITARRAY* callocbit(int size)
     rv->count = size;
     return rv;
 }
-BOOLEAN isset(BITARRAY* arr, int bit)
+bool isset(BITARRAY* arr, int bit)
 {
     if (bit >= arr->count)
         diag("isset: overflow");

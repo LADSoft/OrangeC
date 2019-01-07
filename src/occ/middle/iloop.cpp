@@ -86,7 +86,7 @@ static void findInfinite(BLOCK* b)
     if (!b->visiteddfst)
     {
         BLOCKLIST* l = b->pred;
-        b->visiteddfst = TRUE;
+        b->visiteddfst = true;
         while (l)
         {
             findInfinite(l->block);
@@ -101,7 +101,7 @@ static void makeNonInfinite(BLOCK* b)
     QUAD *quad, *quad2;
 
     blockArray[bi->block->blocknum] = bi->block;
-    bi->block->unuseThunk = TRUE;
+    bi->block->unuseThunk = true;
 
     bi->block->succ = (BLOCKLIST *)oAlloc(sizeof(BLOCKLIST));
     bi->block->succ->block = blockArray[exitBlock];
@@ -145,12 +145,12 @@ void CancelInfinite(int orgBlockCount)
 {
     int i;
     (void)orgBlockCount;
-    while (TRUE)
+    while (true)
     {
         for (i = 0; i < blockCount; i++)
         {
             if (blockArray[i])
-                blockArray[i]->visiteddfst = FALSE;
+                blockArray[i]->visiteddfst = false;
         }
         findInfinite(blockArray[exitBlock]);
         for (i = exitBlock; i >= 0; i--)
@@ -341,7 +341,7 @@ static void Loop(BLOCK* b)
     if (b->visiteddfst)
         return;
     bl = b->succ;
-    b->visiteddfst = TRUE;
+    b->visiteddfst = true;
     while (bl)
     {
         Loop(bl->block);
@@ -435,7 +435,7 @@ void BuildLoopTree(void)
     BLOCK* b;
     int i;
     QUAD* tail;
-    BOOLEAN skip = FALSE;
+    bool skip = false;
     /* this is padded, but, in a really really complex program it could get to be too small
      */
     loopArray = (LOOP **)oAlloc(sizeof(LOOP*) * blockCount * 4);
@@ -445,7 +445,7 @@ void BuildLoopTree(void)
     {
         if (blockArray[i])
         {
-            blockArray[i]->visiteddfst = FALSE;
+            blockArray[i]->visiteddfst = false;
             blockArray[i]->loopParent = NULL;
             blockArray[i]->loopName = (LOOP *)oAlloc(sizeof(LOOP));
             blockArray[i]->loopName->type = LT_BLOCK;
@@ -500,17 +500,17 @@ void BuildLoopTree(void)
     if (loopCount >= blockCount * 4)
         fatal("internal error");
 }
-BOOLEAN isAncestor(LOOP* l1, LOOP* l2)
+bool isAncestor(LOOP* l1, LOOP* l2)
 {
     if (l1 == l2)
-        return FALSE;
+        return false;
     while (l2)
     {
         if (l1 == l2)
-            return TRUE;
+            return true;
         l2 = l2->parent;
     }
-    return FALSE;
+    return false;
 }
 static LOOP* nearestAncestor(LOOP* l1, LOOP* l2)
 {
@@ -527,18 +527,18 @@ static LOOP* nearestAncestor(LOOP* l1, LOOP* l2)
     return l1;
 }
 /* if loop we are interested in encloses loop variable is modified in */
-static BOOLEAN isInvariant(int tnum, LOOP* l)
+static bool isInvariant(int tnum, LOOP* l)
 {
     LOOP* varl = tempInfo[tnum]->variantLoop;
     while (varl)
     {
         if (varl == l)
         {
-            return FALSE;
+            return false;
         }
         varl = varl->parent;
     }
-    return TRUE;
+    return true;
 }
 static void CalculateLoopInvariants(BLOCK* b)
 {
@@ -666,7 +666,7 @@ static void CalculateInductionCandidates(LOOP* l)
      * into a lower loop
      */
     for (i = 0; i < tempCount; i++)
-        tempInfo[i]->onstack = FALSE;
+        tempInfo[i]->onstack = false;
 
     for (i = 0; i < l->blocks->top; i++)
     {
@@ -692,7 +692,7 @@ static void CalculateInductionCandidates(LOOP* l)
                                         int tnum = head->ans->offset->v.sp->value.i;
                                         briggsSet(candidates, tnum);
                                         inductionCandidateStack[inductionCandidateStackTop++] = tnum;
-                                        tempInfo[tnum]->onstack = TRUE;
+                                        tempInfo[tnum]->onstack = true;
                                     }
                                 }
                         }
@@ -708,7 +708,7 @@ static void CalculateInductionCandidates(LOOP* l)
                                     int tnum = head->ans->offset->v.sp->value.i;
                                     briggsSet(candidates, tnum);
                                     inductionCandidateStack[inductionCandidateStackTop++] = tnum;
-                                    tempInfo[tnum]->onstack = TRUE;
+                                    tempInfo[tnum]->onstack = true;
                                 }
                             }
                         }
@@ -721,7 +721,7 @@ static void CalculateInductionCandidates(LOOP* l)
                         {
                             briggsSet(candidates, tnum);
                             inductionCandidateStack[inductionCandidateStackTop++] = tnum;
-                            tempInfo[tnum]->onstack = TRUE;
+                            tempInfo[tnum]->onstack = true;
                         }
                     }
                     break;
@@ -747,7 +747,7 @@ static void CalculateInductionCandidates(LOOP* l)
                                     {
                                         if (tnum == l->ins->ans->offset->v.sp->value.i)
                                         {
-                                            tempInfo[tnum]->expressionRoot = TRUE;
+                                            tempInfo[tnum]->expressionRoot = true;
                                         }
                                     }
                                     if (l->ins->temps & TEMP_LEFT)
@@ -755,10 +755,10 @@ static void CalculateInductionCandidates(LOOP* l)
                                         if (tnum == l->ins->dc.left->offset->v.sp->value.i)
                                         {
                                             if (l->ins->dc.left->mode == i_ind)
-                                                tempInfo[tnum]->expressionRoot = TRUE;
+                                                tempInfo[tnum]->expressionRoot = true;
                                             else if (head->dc.opcode != i_not && head->dc.opcode != i_neg)
                                                 if (!matchesop(head->dc.opcode, l->ins->dc.opcode))
-                                                    tempInfo[tnum]->expressionRoot = TRUE;
+                                                    tempInfo[tnum]->expressionRoot = true;
                                         }
                                     }
                                     if (l->ins->temps & TEMP_RIGHT)
@@ -766,10 +766,10 @@ static void CalculateInductionCandidates(LOOP* l)
                                         if (tnum == l->ins->dc.right->offset->v.sp->value.i)
                                         {
                                             if (l->ins->dc.right->mode == i_ind)
-                                                tempInfo[tnum]->expressionRoot = TRUE;
+                                                tempInfo[tnum]->expressionRoot = true;
                                             else if (head->dc.opcode != i_not && head->dc.opcode != i_neg)
                                                 if (!matchesop(head->dc.opcode, l->ins->dc.opcode))
-                                                    tempInfo[tnum]->expressionRoot = TRUE;
+                                                    tempInfo[tnum]->expressionRoot = true;
                                         }
                                     }
                                     l = l->next;
@@ -787,7 +787,7 @@ static void CalculateInductionCandidates(LOOP* l)
     while (inductionCandidateStackTop)
     {
         int tnum = inductionCandidateStack[--inductionCandidateStackTop];
-        tempInfo[tnum]->onstack = FALSE;
+        tempInfo[tnum]->onstack = false;
         PruneInductionCandidate(tnum, l);
         if (!briggsTest(candidates, tnum))
         {
@@ -821,8 +821,8 @@ LIST* strongRegiondfs(int tnum)
     LIST* rv = NULL;
     t->temp = t->dfstOrder = max_dfs++;
     strongStack[strongStackTop++] = tnum;
-    t->visiteddfst = TRUE;
-    t->onstack = TRUE;
+    t->visiteddfst = true;
+    t->onstack = true;
     while (u)
     {
         int ux = -1;
@@ -878,7 +878,7 @@ LIST* strongRegiondfs(int tnum)
         do
         {
             vp = strongStack[--strongStackTop];
-            tempInfo[vp]->onstack = FALSE;
+            tempInfo[vp]->onstack = false;
             temp = (LIST *)oAlloc(sizeof(LIST));
             temp->data = (void*)vp;
             temp->next = region;
@@ -908,7 +908,7 @@ static LIST* strongRegions(LOOP* lp, LIST** anchors)
     for (i = 0; i < tempCount; i++)
     {
         tempInfo[i]->dfstOrder = 0;
-        tempInfo[i]->visiteddfst = FALSE;
+        tempInfo[i]->visiteddfst = false;
         tempInfo[i]->temp = INT_MAX;
     }
     head = lp->entry->head->fwd;

@@ -26,7 +26,7 @@
 #include "compiler.h"
 #include "sys/stat.h"
 //#include "dir.h"
-#ifdef GCCLINUX
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #else
 #include <io.h>

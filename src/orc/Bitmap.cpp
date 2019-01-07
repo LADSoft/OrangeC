@@ -27,7 +27,7 @@
 #include "RCFile.h"
 #include "ResourceData.h"
 #include "ResFile.h"
-#ifndef GCCLINUX
+#ifndef HAVE_UNISTD_H
 #    include <windows.h>
 #endif
 #include <stdexcept>
@@ -56,7 +56,7 @@ void Bitmap::ReadRC(RCFile& rcFile)
     resInfo.ReadRC(rcFile, false);
     ResourceData* rd = new ResourceData;
     rd->ReadRC(rcFile);
-#ifndef GCCLINUX
+#ifndef HAVE_UNISTD_H
     if (rd->GetLen() <= sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER))
     {
         delete rd;

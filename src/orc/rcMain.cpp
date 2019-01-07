@@ -31,7 +31,7 @@
 #include "CmdFiles.h"
 #include "PreProcessor.h"
 
-#ifndef GCCLINUX
+#ifndef HAVE_UNISTD_H
 #    include <windows.h>
 #endif
 
@@ -66,7 +66,7 @@ int main(int argc, char* argv[])
 int rcMain::Run(int argc, char* argv[])
 {
     int rv = 0;
-#ifndef GCCLINUX
+#ifndef HAVE_UNISTD_H
     int language = LANG_ENGLISH + (SUBLANG_ENGLISH_US << 10);
 #else
     int language = 0;

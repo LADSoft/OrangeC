@@ -29,7 +29,7 @@
 #include <string.h>
 #include "compiler.h"
 #include "browse.h"
-#ifndef GCCLINUX
+#ifndef HAVE_UNISTD_H
 #    include <direct.h>
 #else
 #    include <unistd.h>

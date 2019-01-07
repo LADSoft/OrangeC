@@ -276,7 +276,7 @@ void MakeMain::LoadJobArgs()
 }
 void MakeMain::LoadEnvironment()
 {
-#ifdef GCCLINUX
+#ifdef HAVE_UNISTD_H
     char** env = 0;
 #else
     char** env = environ;

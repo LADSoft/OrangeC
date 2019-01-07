@@ -29,7 +29,7 @@
 #include "be.h"
 #include "winmode.h"
 
-#ifdef GCCLINUX
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 

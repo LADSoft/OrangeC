@@ -38,7 +38,7 @@
 #include <fstream>
 #include <cstdio>
 #include <cstring>
-#ifdef GCCLINUX
+#ifdef HAVE_UNISTD_H
 #    include <unistd.h>
 #else
 #    include <io.h>

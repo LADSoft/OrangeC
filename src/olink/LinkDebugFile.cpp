@@ -41,7 +41,7 @@
 #include <set>
 #include <cctype>
 #include <iostream>
-#ifdef GCCLINUX
+#ifdef HAVE_UNISTD_H
 #    include <unistd.h>
 #endif
 #define STRINGVERSION "120"

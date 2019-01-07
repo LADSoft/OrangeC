@@ -33,7 +33,7 @@ extern char szInstallPath[1024];
 static char selPath[MAX_PATH];
 static char tempPath[MAX_PATH];
 
-#ifdef GCCLINUX
+#ifdef HAVE_UNISTD_H
 
 const IID IID_IShellLinkA = {0};
 const IID IID_IShellFolder = {0};

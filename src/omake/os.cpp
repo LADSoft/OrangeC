@@ -26,7 +26,7 @@
 // does it'll be done
 #define _CRT_SECURE_NO_WARNINGS
 
-#ifdef GCCLINUX
+#ifdef HAVE_UNISTD_H
 #    include <unistd.h>
 #else
 #    include <windows.h>

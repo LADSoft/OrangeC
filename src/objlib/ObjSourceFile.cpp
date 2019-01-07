@@ -24,7 +24,7 @@
  */
 
 #include "ObjSourceFile.h"
-#ifndef GCCLINUX
+#ifndef HAVE_UNISTD_H
 #    include <io.h>
 #    include <fcntl.h>
 #endif
@@ -32,7 +32,7 @@
 #include <sys/stat.h>
 void ObjSourceFile::RetrieveFileTime(const ObjString name)
 {
-#ifndef GCCLINUX
+#ifndef HAVE_UNISTD_H
     //    struct stat xxstat;
     //    stat(const_cast<char *>(name.c_str()), &xxstat);
     //	struct tm *tmx = localtime(&xxstat.st_mtime);

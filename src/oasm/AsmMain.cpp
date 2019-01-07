@@ -32,7 +32,7 @@
 #include "Listing.h"
 #include "UTF8.h"
 #include <stdlib.h>
-#ifdef GCCLINUX
+#ifdef HAVE_UNISTD_H
 #    include <unistd.h>
 #else
 #    include <io.h>

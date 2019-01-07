@@ -23,7 +23,7 @@
  *
  */
 
-#ifndef GCCLINUX
+#ifndef HAVE_UNISTD_H
 #    include <io.h>
 #endif
 
@@ -53,13 +53,13 @@ bool CmdFiles::Add(char** array, bool recurseDirs)
 bool CmdFiles::RecurseDirs(const std::string& path, const std::string& name, bool recurseDirs)
 {
     bool rv = false;
-#ifndef GCCLINUX
+#ifndef HAVE_UNISTD_H
     struct _finddata_t find;
 #endif
     std::string q = path + "*.*";
     size_t handle;
     // borland does not define the char * as const...
-#ifndef GCCLINUX
+#ifndef HAVE_UNISTD_H
     if ((handle = _findfirst(const_cast<char*>(q.c_str()), &find)) != -1)
     {
         do
@@ -81,7 +81,7 @@ bool CmdFiles::RecurseDirs(const std::string& path, const std::string& name, boo
 bool CmdFiles::Add(const std::string& name, bool recurseDirs)
 {
     bool rv = false;
-#ifndef GCCLINUX
+#ifndef HAVE_UNISTD_H
     struct _finddata_t find;
 #endif
     std::string path, lname;
@@ -111,7 +111,7 @@ bool CmdFiles::Add(const std::string& name, bool recurseDirs)
     }
     size_t handle;
     // borland does not define the char * as const...
-#ifndef GCCLINUX
+#ifndef HAVE_UNISTD_H
     if ((handle = _findfirst(const_cast<char*>(name.c_str()), &find)) != -1)
     {
         do

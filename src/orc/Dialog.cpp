@@ -27,7 +27,7 @@
 #include "RCFile.h"
 #include "ResFile.h"
 #include "ResourceData.h"
-#ifndef GCCLINUX
+#ifndef HAVE_UNISTD_H
 #    include <windows.h>
 #endif
 #include <stdexcept>
@@ -109,7 +109,7 @@ bool Control::ValidType(RCFile& rcFile)
 }
 void Control::ReadStandard(RCFile& rcFile, int clss, int addStyle, int extended, int hasText)
 {
-#ifndef GCCLINUX
+#ifndef HAVE_UNISTD_H
     addStyle |= WS_CHILD | WS_VISIBLE;
 #endif
     cls.SetId(clss);
@@ -145,7 +145,7 @@ void Control::ReadStandard(RCFile& rcFile, int clss, int addStyle, int extended,
         helpIndex = rcFile.GetNumber();
         rcFile.SkipComma();
     }
-#ifndef GCCLINUX
+#ifndef HAVE_UNISTD_H
     if (cls == Scrollbar)
     {
         if (style & SBS_VERT)
@@ -222,7 +222,7 @@ void Control::ReadGeneric(RCFile& rcFile, bool extended)
     rcFile.SkipComma();
     GetClass(rcFile);
     rcFile.SkipComma();
-#ifndef GCCLINUX
+#ifndef HAVE_UNISTD_H
     style = rcFile.GetNumber() | WS_CHILD | WS_VISIBLE;
 #else
     style = rcFile.GetNumber();
@@ -249,7 +249,7 @@ void Control::ReadGeneric(RCFile& rcFile, bool extended)
 
 void Control::ReadRC(RCFile& rcFile, bool extended)
 {
-#ifndef GCCLINUX
+#ifndef HAVE_UNISTD_H
     switch (rcFile.GetTokenId())
     {
         case Lexer::AUTO3STATE:
@@ -348,7 +348,7 @@ void Dialog::WriteRes(ResFile& resFile)
 
     resFile.WriteString(caption);
 
-#ifndef GCCLINUX
+#ifndef HAVE_UNISTD_H
     if (style & DS_SETFONT)
     {
         resFile.WriteWord(pointSize);
@@ -469,7 +469,7 @@ void Dialog::ReadSettings(RCFile& rcFile)
             rcFile.NeedEol();
         }
     }
-#ifndef GCCLINUX
+#ifndef HAVE_UNISTD_H
     if (hascaption)
         style |= WS_CAPTION;
     if (!hasstyle)

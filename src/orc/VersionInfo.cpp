@@ -26,7 +26,7 @@
 #include "VersionInfo.h"
 #include "ResFile.h"
 #include "RCFile.h"
-#ifndef GCCLINUX
+#ifndef HAVE_UNISTD_H
 #    include <windows.h>
 #endif
 #include <stdexcept>
@@ -168,7 +168,7 @@ void VersionInfo::WriteRes(ResFile& resFile)
     resFile.Align();
     if (fixed)
     {
-#ifndef GCCLINUX
+#ifndef HAVE_UNISTD_H
         resFile.WriteDWord(VS_FFI_SIGNATURE);
         resFile.WriteDWord(VS_FFI_STRUCVERSION);
 #else

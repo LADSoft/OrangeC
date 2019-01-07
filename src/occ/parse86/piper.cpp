@@ -1,4 +1,4 @@
-#ifndef GCCLINUX
+#ifndef HAVE_UNISTD_H
 #    include <windows.h>
 #else
 #    include <stdlib.h>
@@ -15,7 +15,7 @@ struct data
     int level;
     int length;
 };
-#ifndef GCCLINUX
+#ifndef HAVE_UNISTD_H
 
 static void WaitForPipeData(HANDLE hPipe, int size)
 {
@@ -40,7 +40,7 @@ static struct data* readFileFromPipe(char* filname)
 {
     char pipe[260];
     struct data* rv = NULL;
-#ifndef GCCLINUX
+#ifndef HAVE_UNISTD_H
     HANDLE handle;
     sprintf(pipe, "\\\\.\\pipe\\%s", pipeName);
     handle = CreateFile(pipe, GENERIC_READ | GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);

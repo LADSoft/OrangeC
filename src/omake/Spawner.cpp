@@ -34,7 +34,7 @@
 #include "Utils.h"
 #include <algorithm>
 #include <chrono>
-#ifdef GCCLINUX
+#ifdef HAVE_UNISTD_H
 #else
 #include <windows.h>
 #undef WriteConsole
@@ -47,14 +47,14 @@ long Spawner::runningProcesses;
 unsigned WINFUNC Spawner::Thread(void* cls)
 {
     Spawner* ths = (Spawner*)cls;
-#ifdef GCCLINUX
+#ifdef HAVE_UNISTD_H
 
     ++runningProcesses;
 #else
     InterlockedIncrement(&runningProcesses);
 #endif
     ths->RetVal(ths->InternalRun());
-#ifdef GCCLINUX
+#ifdef HAVE_UNISTD_H
     --runningProcesses;
 #else
     InterlockedDecrement(&runningProcesses);

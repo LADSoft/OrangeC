@@ -62,6 +62,7 @@ bool Include::Parse(const std::string& name, bool ignoreOk, bool MakeFiles)
     if (name == "-")
     {
         rv = true;
+        std::string inputFile;
         while (!std::cin.eof())
         {
             char buf[2048];
@@ -69,12 +70,13 @@ bool Include::Parse(const std::string& name, bool ignoreOk, bool MakeFiles)
             std::cin.getline(buf, sizeof(buf));
             if (buf[0])
             {
-                Parser p(std::string(buf), name, 1);
-                if (MakeFiles)
-                    p.SetIgnoreFirstGoal();
-                rv = p.Parse();
+                inputFile += buf;
             }
         }
+        Parser p(inputFile, name, 1);
+        if (MakeFiles)
+            p.SetIgnoreFirstGoal();
+        rv = p.Parse();
     }
     else
     {

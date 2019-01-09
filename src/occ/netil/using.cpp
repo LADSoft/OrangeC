@@ -1,7 +1,6 @@
-#include "compiler.h"
+#include "be.h"
 #include "DotNetPELib.h"
 #include <string>
-
 using namespace DotNetPELib;
 
 extern PELib *peLib;

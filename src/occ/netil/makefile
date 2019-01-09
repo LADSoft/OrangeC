@@ -21,6 +21,7 @@
 #     contact information:
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
+include ../../pathext2.mak
 
 NAME=occil
 MAIN_FILE=ccmain.cpp
@@ -114,8 +115,17 @@ vpath %.cs $(SRCPATH);dll
 vpath %.cpp $(SRCPATH);dll
 compiler: netlib redirect netlink lsmsilcrtl.dll occmsil testsqlite.exe
 
+ifndef _TREEROOT
+_TREEROOT := $(CURDIR)$(PATHEXT2)..$(PATHEXT2)..$(PATHEXT2)treetop.mak
+_TREETARGET := $(CURDIR)
+export _TREEROOT
+export _TREETARGET
+
 redirect:
-	@$(MAKE) /T
+	@$(MAKE) -f$(_TREEROOT)
+format:
+	@$(MAKE) -f $(_TREEROOT) format
+endif
 
 occmsil: occmsil.c
 	-del occmsil.dll

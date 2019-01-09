@@ -21,12 +21,22 @@
 #     contact information:
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
+include ../../../pathext2.mak
 
 NAME=netlib
 INCLUDES=..\..\..\util;..\..\..\exefmt
 CPP_DEPENDENCIES=$(wildcard *.cpp)
 C_DEPENDENCIES=$(wildcard *.c)
+ifndef _TREEROOT
+_TREEROOT := $(CURDIR)$(PATHEXT2)..$(PATHEXT2)..$(PATHEXT2)..$(PATHEXT2)treetop.mak
+_TREETARGET := $(CURDIR)
+export _TREEROOT
+export _TREETARGET
+
 redirect:
-	@$(MAKE) /T
+	@$(MAKE) -f$(_TREEROOT)
+format:
+	@$(MAKE) -f $(_TREEROOT) format
+endif
 
 DISTRIBUTE:

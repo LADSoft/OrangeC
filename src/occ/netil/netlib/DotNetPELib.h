@@ -159,7 +159,7 @@ namespace DotNetPELib
         enum ErrorList
         {
             ///** More params are being aded after a vararg param has been added
-            VarargParamsAlreadyDeclared,
+        	    VarargParamsAlreadyDeclared,
             ///** If calculations show that the stack would underflow somewhere in the method
             StackUnderflow,
             ///** A label can be reached but the paths don't agree on how many

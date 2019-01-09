@@ -1815,7 +1815,7 @@ static void compactSwitchHeader(LLONG_TYPE bottom)
         case ISZ_UCHAR:
             do_movzx(ISZ_UINT, ISZ_UCHAR, switch_apl, switch_apl);
             break;
-        case ISZ_bool:
+        case ISZ_BOOLEAN:
             gen_codes(op_and, ISZ_UINT, switch_apl, aimmed(1));
             break;
         case -ISZ_UCHAR:
@@ -2414,7 +2414,7 @@ void asm_parm(QUAD* q) /* push a parameter*/
                         i &= 0xff;
                         i |= i & 0x80 ? 0xffffff00U : 0;
                         break;
-                    case ISZ_bool:
+                    case ISZ_BOOLEAN:
                         i &= 1;
                         break;
                 }
@@ -2490,7 +2490,7 @@ void asm_parm(QUAD* q) /* push a parameter*/
                         case ISZ_UCHAR:
                             do_movzx(ISZ_UINT, ISZ_UCHAR, pal, pal);
                             break;
-                        case ISZ_bool:
+                        case ISZ_BOOLEAN:
                             gen_codes(op_and, ISZ_UINT, pal, aimmed(1));
                             break;
                         case -ISZ_UCHAR:
@@ -3694,7 +3694,7 @@ void asm_assn(QUAD* q) /* assignment */
         if (q->dc.left->size == ISZ_ADDR)
             if (q->ans->size == ISZ_ULONGLONG || q->ans->size == -ISZ_ULONGLONG)
                 goto addrupjn;
-        if (q->ans->size == ISZ_bool)
+        if (q->ans->size == ISZ_BOOLEAN)
 
         {
             int ulbl = beGetLabel;
@@ -3727,8 +3727,37 @@ void asm_assn(QUAD* q) /* assignment */
             }
             else if (q->dc.left->size == ISZ_ULONGLONG || q->dc.left->size == -ISZ_ULONGLONG)
             {
-                gen_codes(op_mov, ISZ_UINT, apa, apl);
-                gen_codes(op_or, ISZ_UINT, apa, apl1);
+                if (apl->mode == am_dreg)
+                {
+                    if (apl->preg == apa->preg)
+                    {
+                        gen_codes(op_or, ISZ_UINT, apa, apl1);
+                    }
+                    else if (apl1->preg == apa->preg)
+                    {
+                        gen_codes(op_or, ISZ_UINT, apa, apl);
+                    }
+                    else
+                    {
+                        gen_codes(op_mov, ISZ_UINT, apa, apl);
+                        gen_codes(op_or, ISZ_UINT, apa, apl1);
+                    }
+                }
+                else if (apl->mode == am_indispscale && (apl->preg == apa->preg || apl->sreg == apa->preg) ||
+                        apl->mode == am_indisp && apl->preg == apa->preg)
+                {
+                    gen_codes(op_push, ISZ_UINT, apl1, NULL);
+                    pushlevel += 4;
+                    gen_codes(op_mov, ISZ_UINT, apa, apl);
+                    gen_codes(op_or, ISZ_UINT, apa, make_stack(0));
+                    gen_codes(op_pop, ISZ_UINT, apa, NULL);
+                    pushlevel -= 4;
+                }
+                else
+                {
+                    gen_codes(op_mov, ISZ_UINT, apa, apl);
+                    gen_codes(op_or, ISZ_UINT, apa, apl1);
+                }
             }
             else
             {
@@ -3881,7 +3910,7 @@ void asm_assn(QUAD* q) /* assignment */
                         pushlevel += 4;
                         switch (q->dc.left->size)
                         {
-                            case ISZ_bool:
+                            case ISZ_BOOLEAN:
                                 gen_codes(op_mov, ISZ_UINT, ap, apl);
                                 gen_codes(op_and, ISZ_UINT, ap, aimmed(1));
                                 break;
@@ -3936,7 +3965,7 @@ void asm_assn(QUAD* q) /* assignment */
             {
                 switch (q->dc.left->size)
                 {
-                    case ISZ_bool:
+                    case ISZ_BOOLEAN:
                         if (ap->preg <= EBX)
                         {
                             gen_codes(op_mov, ISZ_UCHAR, ap, apl);

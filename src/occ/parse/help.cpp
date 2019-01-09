@@ -907,7 +907,7 @@ int sizeFromType(TYPE* tp)
             rv = ISZ_UINT;
             break;
         case bt_bool:
-            rv = ISZ_bool;
+            rv = ISZ_BOOLEAN;
             break;
         case bt_char:
             if (cparams.prm_charisunsigned)

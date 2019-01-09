@@ -1972,7 +1972,7 @@ static unsigned lscost(int size)
         case ISZ_UCHAR:
         case -ISZ_UCHAR:
             return p->a_char;
-        case ISZ_bool:
+        case ISZ_BOOLEAN:
             return p->a_bool;
         case ISZ_USHORT:
         case -ISZ_USHORT:

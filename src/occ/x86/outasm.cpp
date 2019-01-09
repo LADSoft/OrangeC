@@ -326,7 +326,7 @@ void oa_putlen(int l)
         l = -l;
     switch (l)
     {
-        case ISZ_bool:
+        case ISZ_BOOLEAN:
         case ISZ_UCHAR:
         case ISZ_USHORT:
         case ISZ_WCHAR:
@@ -361,7 +361,7 @@ void putsizedreg(char* string, int reg, int size)
         size = -size;
     if (size == ISZ_UINT || size == ISZ_ULONG || size == ISZ_ADDR || size == ISZ_U32)
         bePrintf(string, longregs[reg]);
-    else if (size == ISZ_bool || size == ISZ_UCHAR)
+    else if (size == ISZ_BOOLEAN || size == ISZ_UCHAR)
     {
         bePrintf(string, byteregs[reg]);
     }
@@ -409,7 +409,7 @@ void pointersize(int size)
         case ISZ_WCHAR:
             bePrintf("word ");
             break;
-        case ISZ_bool:
+        case ISZ_BOOLEAN:
         case ISZ_UCHAR:
             bePrintf("byte ");
             break;

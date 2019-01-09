@@ -1412,7 +1412,7 @@ void putlen(int l)
         case ISZ_NONE:
             oprintf(icdFile, ".N");
             break;
-        case ISZ_bool:
+        case ISZ_BOOLEAN:
             oprintf(icdFile, ".BOOL");
             break;
         case ISZ_STRING:

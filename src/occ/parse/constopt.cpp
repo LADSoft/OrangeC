@@ -399,7 +399,7 @@ ULLONG_TYPE CastToInt(int size, LLONG_TYPE value)
         case ISZ_U32:
             bits = getSize(bt_char32_t) * 8;
             break;
-        case ISZ_bool:
+        case ISZ_BOOLEAN:
             bits = 1;
             break;
         case -ISZ_UCHAR:
@@ -511,7 +511,7 @@ FPFC refloat(EXPRESSION* node)
             rv = CastToFloat(ISZ_LDOUBLE, IntToFloat(&temp, ISZ_WCHAR, node->v.i));
             break;
         case en_c_bool:
-            rv = CastToFloat(ISZ_LDOUBLE, IntToFloat(&temp, ISZ_bool, node->v.i));
+            rv = CastToFloat(ISZ_LDOUBLE, IntToFloat(&temp, ISZ_BOOLEAN, node->v.i));
             break;
         case en_c_ull:
             rv = CastToFloat(ISZ_LDOUBLE, IntToFloat(&temp, ISZ_ULONGLONG, node->v.i));
@@ -591,7 +591,7 @@ ULLONG_TYPE reint(EXPRESSION* node)
             rv = CastToInt(ISZ_U32, node->v.i);
             break;
         case en_c_bool:
-            rv = CastToInt(ISZ_bool, node->v.i);
+            rv = CastToInt(ISZ_BOOLEAN, node->v.i);
             break;
         case en_c_ull:
             rv = CastToInt(ISZ_ULONGLONG, node->v.i);
@@ -3186,7 +3186,7 @@ int typedconsts(EXPRESSION* node1)
                     node1->v.i = node1->left->v.c.r.type != IFPF_IS_ZERO || node1->left->v.c.i.type != IFPF_IS_ZERO;
                 else
                 {
-                    node1->v.i = CastToInt(ISZ_bool, !!reint(node1->left));
+                    node1->v.i = CastToInt(ISZ_BOOLEAN, !!reint(node1->left));
                     node1->unionoffset = node1->left->unionoffset;
                 }
                 node1->type = en_c_bool;

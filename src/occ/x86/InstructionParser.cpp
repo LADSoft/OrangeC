@@ -330,7 +330,7 @@ void InstructionParser::SetRegToken(int reg, int sz)
     switch (sz)
     {
         case ISZ_UCHAR:
-        case ISZ_bool:
+        case ISZ_BOOLEAN:
             check = byte;
             break;
         case ISZ_USHORT:
@@ -417,7 +417,7 @@ void InstructionParser::SetSize(int sz)
         switch (sz)
         {
             case ISZ_UCHAR:
-            case ISZ_bool:
+            case ISZ_BOOLEAN:
                 inputTokens.push_back(&Tokenbyte);
                 break;
             case ISZ_WCHAR:

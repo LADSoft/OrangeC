@@ -33,7 +33,7 @@
 /* the int types can be negative, which means 'signed' vs 'unsigned' */
 #define ISZ_NONE 0
 #define ISZ_BIT 1
-#define ISZ_bool 2
+#define ISZ_BOOLEAN 2
 #define ISZ_UCHAR 3
 #define ISZ_USHORT 4
 #define ISZ_WCHAR 5

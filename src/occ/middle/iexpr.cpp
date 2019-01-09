@@ -695,7 +695,7 @@ IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
             siz1 = ISZ_ADDR;
             break;
         case en_l_bool:
-            siz1 = ISZ_bool;
+            siz1 = ISZ_BOOLEAN;
             break;
         case en_l_uc:
             siz1 = ISZ_UCHAR;
@@ -2975,7 +2975,7 @@ IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
             siz1 = ISZ_U32;
             goto castjoin;
         case en_x_bool:
-            siz1 = ISZ_bool;
+            siz1 = ISZ_BOOLEAN;
             goto castjoin;
         case en_x_bit:
             siz1 = ISZ_BIT;
@@ -3740,7 +3740,7 @@ int natural_size(EXPRESSION* node)
         case en_x_ldc:
             return ISZ_CLDOUBLE;
         case en_c_bool:
-            return ISZ_bool;
+            return ISZ_BOOLEAN;
         case en_c_ull:
         case en_l_ull:
         case en_x_ull:
@@ -3780,7 +3780,7 @@ int natural_size(EXPRESSION* node)
             return ISZ_SEG;
         case en_l_bool:
         case en_x_bool:
-            return ISZ_bool;
+            return ISZ_BOOLEAN;
         case en_l_bit:
         case en_x_bit:
             return ISZ_BIT;

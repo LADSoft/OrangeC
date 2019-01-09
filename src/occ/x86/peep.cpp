@@ -792,7 +792,7 @@ void peep_cmp(OCODE* ip)
                     {
                         case ISZ_UCHAR:
                         case -ISZ_UCHAR:
-                        case ISZ_bool:
+                        case ISZ_BOOLEAN:
                             m = 255;
                             break;
                         case ISZ_USHORT:

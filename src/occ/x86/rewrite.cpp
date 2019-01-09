@@ -85,7 +85,7 @@ static void rvColor(IMODE* ip)
     }
     else if (ip->size == ISZ_USHORT || ip->size == -ISZ_USHORT || ip->size == ISZ_U16)
         tempInfo[n]->color = R_AX;
-    else if (ip->size == ISZ_UCHAR || ip->size == -ISZ_UCHAR || ip->size == ISZ_bool)
+    else if (ip->size == ISZ_UCHAR || ip->size == -ISZ_UCHAR || ip->size == ISZ_BOOLEAN)
         tempInfo[n]->color = R_AL;
     else
         tempInfo[n]->color = R_EAX;
@@ -217,7 +217,7 @@ void precolor(QUAD* head) /* precolor an instruction */
             head->precolored |= TEMP_RIGHT;
             switch (tempInfo[tr]->size)
             {
-                case ISZ_bool:
+                case ISZ_BOOLEAN:
                 case ISZ_UCHAR:
                 case -ISZ_UCHAR:
                     tempInfo[tr]->color = R_CL;
@@ -1300,7 +1300,7 @@ int examine_icode(QUAD* head)
                         b->tail = head->fwd;
                     changed = true;
                 }
-                else if (head->dc.left->size >= ISZ_FLOAT && (head->ans->size <= ISZ_ULONG && head->ans->size != ISZ_bool))
+                else if (head->dc.left->size >= ISZ_FLOAT && (head->ans->size <= ISZ_ULONG && head->ans->size != ISZ_BOOLEAN))
                 {
                     QUAD* q = (QUAD*)(QUAD *)beLocalAlloc(sizeof(QUAD));
                     IMODE *ret;

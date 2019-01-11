@@ -365,6 +365,7 @@ typedef struct _arch_gen
     CGFUNC asm_dc;            /* unused */
     CGFUNC asm_assnblock;     /* copy block of memory*/
     CGFUNC asm_clrblock;      /* clear block of memory */
+    CGFUNC asm_cmpblock;      /* branch if two blocks of memory aren't equal */
     CGFUNC asm_jc;            /* branch if a U< b */
     CGFUNC asm_ja;            /* branch if a U> b */
     CGFUNC asm_je;            /* branch if a == b */

@@ -1450,6 +1450,7 @@ void dump_muldivval(void)
                 {
                     case ISZ_FLOAT:
                     case ISZ_IFLOAT:
+                    case ISZ_CFLOAT:
                         FPFToFloat(data, &muldivlink->floatvalue);
                         len = 4;
                         break;
@@ -1457,6 +1458,8 @@ void dump_muldivval(void)
                     case ISZ_IDOUBLE:
                     case ISZ_LDOUBLE:
                     case ISZ_ILDOUBLE:
+                    case ISZ_CDOUBLE:
+                    case ISZ_CLDOUBLE:
                         FPFToDouble(data, &muldivlink->floatvalue);
                         len = 8;
                         break;

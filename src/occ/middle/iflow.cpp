@@ -239,6 +239,7 @@ static void gather_flowgraph(void)
                 case i_jbe:
                 case i_jge:
                 case i_jnc:
+                case i_cmpblock:
                     temp = findlab(tail->dc.v.label);
                     if (temp)
                     {
@@ -1043,7 +1044,7 @@ void RemoveCriticalThunks(void)
                     sl = sl->next;
                 }
             }
-            else if (bjmp->dc.opcode >= i_jne && bjmp->dc.opcode <= i_jge)
+            else if (bjmp->dc.opcode >= i_jne && bjmp->dc.opcode <= i_jge || bjmp->dc.opcode == i_cmpblock)
             {
                 BLOCK* s = b->succ->block;
                 BLOCK* n = b->succ->next->block;

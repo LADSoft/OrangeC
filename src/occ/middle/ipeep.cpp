@@ -124,6 +124,7 @@ static void scan_gotos(QUAD* head)
             case i_swbranch:
             case i_coswitch:
             case i_goto:
+            case i_cmpblock:
                 golist[head->dc.v.label - firstLabel] = head;
                 break;
             default:
@@ -156,6 +157,7 @@ static void kill_brtonext(BLOCK* b, QUAD* head)
             case i_jg:
             case i_jle:
             case i_jl:
+            case i_cmpblock:
                 if (chosenAssembler->msil)
                     return;
             case i_goto:
@@ -257,6 +259,7 @@ void kill_labeledgoto(BLOCK* b, QUAD* head)
             case i_jg:
             case i_jle:
             case i_jl:
+            case i_cmpblock:
                 if (tail->dc.v.label == oldlabel)
                 {
                     tail->dc.v.label = newhead->dc.v.label;

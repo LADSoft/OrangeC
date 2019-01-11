@@ -64,6 +64,7 @@ void asm_swbranch(QUAD *q)           ;
 void asm_dc(QUAD *q)                 ;
 void asm_assnblock(QUAD *q)          ;
 void asm_clrblock(QUAD *q)           ;
+void asm_cmpblock(QUAD *q)           ;
 void asm_jc(QUAD *q)                 ;
 void asm_ja(QUAD *q)                 ;
 void asm_je(QUAD *q)                 ;

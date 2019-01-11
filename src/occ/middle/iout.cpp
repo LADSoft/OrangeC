@@ -567,6 +567,18 @@ static void iop_clrblock(QUAD* q)
     putamode(q, q->dc.right);
     oprintf(icdFile, ")");
 }
+static void iop_cmpblock(QUAD *q)
+{
+    if (chosenAssembler->gen->asm_cmpblock)
+        chosenAssembler->gen->asm_cmpblock(q);
+    if (!icdFile)
+        return;
+    oputc('\t', icdFile);
+    oprintf(icdFile, " BLKCOMPARE:L_%d:PC, ", q->dc.v.label);
+    putamode(q, q->dc.left);
+    oprintf(icdFile, " != ");
+    putamode(q, q->dc.right);
+}
 static void iop_initblk(QUAD* q)
 {
     if (chosenAssembler->gen->asm_clrblock)
@@ -1212,6 +1224,7 @@ static void (*oplst[])(QUAD* q) = {
     iop_swbranch,
     iop_assnblock,
     iop_clrblock,
+    iop_cmpblock,
     iop_parmadj,
     iop_parmblock,
     iop_parm,

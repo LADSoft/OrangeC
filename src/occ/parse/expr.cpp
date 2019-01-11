@@ -4363,8 +4363,6 @@ static LEXEME* expression_atomic_func(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EX
                         else
                         {
                             d->tp = *tp = basetype(tpf)->btp;
-                            if (isstructured(*tp))
-                                error(ERR_ILL_STRUCTURE_OPERATION);
                         }
                     }
                     if (needkw(&lex, comma))
@@ -4390,8 +4388,6 @@ static LEXEME* expression_atomic_func(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EX
                         else
                         {
                             d->tp = *tp = basetype(tpf)->btp;
-                            if (isstructured(*tp))
-                                error(ERR_ILL_STRUCTURE_OPERATION);
                         }
                     }
                     if (needkw(&lex, comma))
@@ -4430,8 +4426,6 @@ static LEXEME* expression_atomic_func(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EX
                         else
                         {
                             d->tp = *tp = basetype(tpf)->btp;
-                            if (isstructured(*tp))
-                                error(ERR_ILL_STRUCTURE_OPERATION);
                         }
                     }
                     if (needkw(&lex, comma))
@@ -4446,6 +4440,8 @@ static LEXEME* expression_atomic_func(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EX
                             case asor:
                             case asand:
                             case asxor:
+                                if (isstructured(*tp))
+                                    error(ERR_ILL_STRUCTURE_OPERATION);
                             case assign:
                                 d->third = intNode(en_c_i, KW(lex));
                                 break;
@@ -4489,8 +4485,6 @@ static LEXEME* expression_atomic_func(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EX
                         else
                         {
                             d->tp = *tp = basetype(tpf)->btp;
-                            if (isstructured(*tp))
-                                error(ERR_ILL_STRUCTURE_OPERATION);
                         }
                     }
                     if (needkw(&lex, comma))
@@ -4514,6 +4508,8 @@ static LEXEME* expression_atomic_func(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EX
                         {
                             error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
                         }
+                        if (!isstructured(*tp))
+                            cast(*tp, &d->value);
                     }
                     else
                     {
@@ -5629,13 +5625,20 @@ static LEXEME* expression_postfix(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE**
                         }
                         if (basetype(*tp)->type == bt_bool)
                         {
-                            /* autoinc of a bool sets it true.  autodec not allowed
+                            /* autoinc of a bool sets it true.  autodec not allowed in C++
                              * these aren't spelled out in the C99 standard, we are
-                             * following the C++ standard here
+                             * doing the normal thing here...
                              */
                             if (kw == autodec)
-                                error(ERR_CANNOT_USE_bool_HERE);
-                            *exp = exprNode(en_assign, *exp, intNode(en_c_bool, 1));
+			    {
+                                if (cparams.prm_cplusplus)
+                                    error(ERR_CANNOT_USE_bool_HERE);
+                                *exp = exprNode(en_assign, *exp, intNode(en_c_bool, 0));
+                            }
+                            else
+                            {
+                                *exp = exprNode(en_assign, *exp, intNode(en_c_bool, 1));
+                            }
                         }
                         else
                         {
@@ -5850,9 +5853,7 @@ LEXEME* expression_unary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPR
                 else
                 {
                     castToArithmetic(false, tp, exp, kw, NULL, true);
-                    if (kw == autodec && basetype(*tp)->type == bt_bool)
-                        error(ERR_CANNOT_USE_bool_HERE);
-                    else if (isstructured(*tp))
+                    if (isstructured(*tp))
                         error(ERR_ILL_STRUCTURE_OPERATION);
                     else if (iscomplex(*tp))
                         error(ERR_ILL_USE_OF_COMPLEX);
@@ -5898,6 +5899,13 @@ LEXEME* expression_unary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPR
                         else if (kw == autoinc && basetype(*tp)->type == bt_bool)
                         {
                             *exp = exprNode(en_assign, *exp, intNode(en_c_i, 1));  // set to true as per C++
+                        }
+                        else if (kw == autodec && basetype(*tp)->type == bt_bool)
+                        {
+                            if (cparams.prm_cplusplus)
+                                error(ERR_CANNOT_USE_bool_HERE);
+
+                            *exp = exprNode(en_assign, *exp, intNode(en_c_i, 0)); // c++ doesn't allow it, set it to true for C.
                         }
                         else
                         {
@@ -7935,7 +7943,7 @@ LEXEME* expression_assign(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
                 *exp = exprNode(en_blockassign, *exp, exp1);
                 (*exp)->size = (*tp)->size;
                 (*exp)->altdata = (long)(*tp);
-                if (isatomic(*tp) || isatomic(tp1))
+                if (isatomic(*tp))
                     (*exp)->size -= ATOMIC_FLAG_SPACE;
             }
             *exp = exprNode(en_not_lvalue, *exp, NULL);

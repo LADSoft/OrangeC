@@ -1666,6 +1666,9 @@ void oa_peep(void)
         {
             switch (ip->opcode)
             {
+                case op_lock:
+                    ip = ip->fwd; // skip next instruction
+                    break;
                 case op_mul:
                 case op_imul:
                     peep_mul(ip);

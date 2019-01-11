@@ -2955,15 +2955,6 @@ exit:
     }
     if (quals)
     {
-        if (isatomic(quals) && needsAtomicLockFromType(tn))
-        {
-            int n = getAlign(sc_global, &stdchar32tptr);
-            n = n - tn->size % n;
-            if (n != 4)
-            {
-                tn->size += n;
-            }
-        }
         tl = &quals;
         while (*tl)
         {
@@ -2985,6 +2976,26 @@ exit:
     else
         *tp = tn;
     UpdateRootTypes(*tp);
+    if (isatomic(*tp))
+    {
+        
+        if (needsAtomicLockFromType(*tp))
+        {
+            int sz = basetype(*tp)->size;
+            int n = getAlign(sc_global, &stdchar32tptr);
+            n = n - (*tp)->size % n;
+            if (n != 4)
+            {
+                sz += n;
+            }
+            sz += ATOMIC_FLAG_SPACE;
+            (*tp)->size = sz;
+        }
+        else
+        {
+            (*tp) -> size = basetype(*tp)->size;
+        }
+    }
     sizeQualifiers(*tp);
     return lex;
 }
@@ -4994,20 +5005,23 @@ static void allocateVLA(LEXEME* lex, SYMBOL* sp, SYMBOL* funcsp, BLOCKDATA* bloc
 }
 void sizeQualifiers(TYPE* tp)
 {
-    while (true)
+    if (tp->type != bt_atomic)
     {
-        TYPE* tp1 = basetype(tp);
-        while (tp1 != tp)
+        while (true)
         {
-            tp->size = tp1->size;
-            tp = tp->btp;
+            TYPE* tp1 = basetype(tp);
+            while (tp1 != tp)
+            {
+                tp->size = tp1->size;
+                tp = tp->btp;
+            }
+            if (ispointer(tp))
+            {
+                tp = tp->btp;
+            }
+            else
+                break;
         }
-        if (ispointer(tp))
-        {
-            tp = tp->btp;
-        }
-        else
-            break;
     }
 }
 static bool sameQuals(TYPE* tp1, TYPE* tp2)

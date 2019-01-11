@@ -1678,6 +1678,10 @@ void bingen(int lower, int avg, int higher)
     decrement_stack();
     decrement_stack();
 }
+void asm_cmpblock(QUAD *q)
+{
+    assert(0); // atomic support not implemented
+}
  void asm_jc(QUAD *q)                 /* branch if a U< b */
 {
     gen_branch(Instruction::i_blt_un, q->dc.v.label, TRUE);

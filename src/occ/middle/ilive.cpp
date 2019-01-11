@@ -73,6 +73,7 @@ QUAD* beforeJmp(QUAD* I, bool before)
             case i_jge:
             case i_coswitch:
             case i_goto:
+            case i_cmpblock:
                 I = I->back;
                 if (before)
                     return I;
@@ -432,6 +433,7 @@ static void markLiveInstruction(BRIGGS_SET* live, QUAD* ins)
         case i_assnblock:
         case i_clrblock:
         case i_parmblock:
+        case i_cmpblock:
             ins->live = true;
             break;
         case i_jne:
@@ -581,7 +583,7 @@ void removeDead(BLOCK* b)
                         {
                             changed = true;
                             RemoveInstruction(head);
-                            if (head->dc.opcode == i_coswitch || (head->dc.opcode >= i_jne && head->dc.opcode <= i_jge))
+                            if (head->dc.opcode == i_coswitch || (head->dc.opcode >= i_jne && head->dc.opcode <= i_jge)|| head->dc.opcode == i_cmpblock)
                             {
                                 BLOCKLIST* bl = head->block->succ->next;
                                 head->block->succ->next = NULL;

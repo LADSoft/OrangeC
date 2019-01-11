@@ -991,6 +991,10 @@ void dumpInitGroup(SYMBOL* sp, TYPE* tp)
     }
     else
         genstorage(basetype(tp)->size);
+    if (isatomic(tp) && needsAtomicLockFromType(tp))
+    {
+        genstorage(ATOMIC_FLAG_SPACE);
+    }
 #endif
 }
 static void dumpStaticInitializers(void)

@@ -50,7 +50,7 @@ enum i_ops
         i_lsl, i_lsr, i_asr, i_neg, i_not, i_and, i_or, i_eor,
         i_setne, i_sete, i_setc, i_seta, i_setnc, i_setbe, i_setl, i_setg, i_setle, i_setge,
         i_asmcond, i_jne, i_je, i_jc, i_ja, i_jnc, i_jbe, i_jl, i_jg, i_jle, i_jge,  
-        i_assn, i_genword, i_coswitch, i_swbranch, i_assnblock, i_clrblock, i_parmadj, i_parmblock, i_parm,
+        i_assn, i_genword, i_coswitch, i_swbranch, i_assnblock, i_clrblock, i_cmpblock, i_parmadj, i_parmblock, i_parm,
         i_array, i_arrayindex, i_arraylsh, i_struct, i_cppini, i_block, i_blockend, 
         i_dbgblock, i_dbgblockend, i_varstart, i_func, i_livein, i_icon, i_fcon, i_imcon, i_cxcon, 
         i_atomic_flag_test_and_set, i_atomic_flag_clear,

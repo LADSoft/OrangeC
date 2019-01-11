@@ -1458,6 +1458,7 @@ static bool evalBranch(QUAD* I, BLOCK* b)
             case i_jg:
             case i_jle:
             case i_jge:
+            case i_cmpblock:
                 bl = NULL;
                 qn = *I;
                 if ((qn.temps & TEMP_LEFT) && qn.dc.left->mode == i_direct)
@@ -1737,6 +1738,7 @@ static void removeForward(BLOCK* start)
             case i_jg:
             case i_jle:
             case i_jge:
+            case i_cmpblock:
                 if ((tail->temps & TEMP_LEFT) && tail->dc.left->mode == i_direct)
                 {
                     int t = tail->dc.left->offset->v.sp->value.i;

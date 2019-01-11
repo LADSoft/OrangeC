@@ -46,6 +46,7 @@
 typedef enum memory_order
 {
     memory_order_relaxed = 1,
+    memory_order_consume,
     memory_order_acquire,
     memory_order_release,
     memory_order_acq_rel,
@@ -63,10 +64,17 @@ typedef enum memory_order
 #define ATOMIC_LLONG_LOCK_FREE 1
 #define ATOMIC_POINTER_LOCK_FREE 1
 
+typedef struct atomic_flag
+{
+    unsigned char __f__;
+} atomic_flag;
+
 #define atomic_is_lock_free(A) \
     _Generic(A, \
+    struct atomic_flag: 1, \
     bool: ATOMIC_BOOL_LOCK_FREE, \
     char: ATOMIC_CHAR_LOCK_FREE,  \ 
+    signed char: ATOMIC_CHAR_LOCK_FREE,  \ 
     unsigned char: ATOMIC_CHAR_LOCK_FREE,   \
     short: ATOMIC_SHORT_LOCK_FREE,   \
     unsigned short: ATOMIC_SHORT_LOCK_FREE,   \
@@ -74,11 +82,13 @@ typedef enum memory_order
     unsigned int: ATOMIC_INT_LOCK_FREE,   \
     long: ATOMIC_LONG_LOCK_FREE,   \
     unsigned long: ATOMIC_LONG_LOCK_FREE,   \
-    long long: ATOMIC_LONG_LONG_LOCK_FREE,   \
-    unsigned long long: ATOMIC_LONG_LONG_LOCK_FREE,   \
-    char16_t: ATOMIC_CHAR16_T_LOCK_FREE,\
-    char32_t: ATOMIC_CHAR32_T_LOCK_FREE,\
+    long long: ATOMIC_LLONG_LOCK_FREE,   \
+    unsigned long long: ATOMIC_LLONG_LOCK_FREE,   \
+    __char16_t: ATOMIC_CHAR16_T_LOCK_FREE,\
+    __char32_t: ATOMIC_CHAR32_T_LOCK_FREE,\
+    struct atomic_flag *: 1, \ 
     char *: ATOMIC_POINTER_LOCK_FREE, \
+    signed char *: ATOMIC_POINTER_LOCK_FREE, \
     unsigned char *: ATOMIC_POINTER_LOCK_FREE,   \
     short *: ATOMIC_POINTER_LOCK_FREE,   \
     unsigned short *: ATOMIC_POINTER_LOCK_FREE,   \
@@ -88,8 +98,8 @@ typedef enum memory_order
     unsigned long *: ATOMIC_POINTER_LOCK_FREE,   \
     long long *: ATOMIC_POINTER_LOCK_FREE,   \
     unsigned long long *: ATOMIC_POINTER_LOCK_FREE,   \
-    char16_t *: ATOMIC_POINTER_LOCK_FREE,\
-    char32_t *: ATOMIC_POINTER_LOCK_FREE,\
+    __char16_t *: ATOMIC_POINTER_LOCK_FREE,\
+    __char32_t *: ATOMIC_POINTER_LOCK_FREE,\
     default: 0)
 
 #define ATOMIC_FLAG_INIT \
@@ -98,10 +108,21 @@ typedef enum memory_order
     }
 #define ATOMIC_VAR_INIT(x) __atomic_var_init(x)
 
-typedef struct atomic_flag
-{
-    unsigned char __f__;
-} atomic_flag;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+void _RTL_FUNC atomic_thread_fence(int);
+void _RTL_FUNC atomic_signal_fence(int);
+unsigned char _RTL_FUNC atomic_flag_test_and_set(atomic_flag*);
+unsigned char _RTL_FUNC atomic_flag_test_and_set_explicit(atomic_flag*, int);
+void _RTL_FUNC atomic_flag_clear(atomic_flag*);
+void _RTL_FUNC atomic_flag_clear_explicit(atomic_flag*, int);
+
+#ifdef __cplusplus
+}
+#endif
 
 #define atomic_flag_test_and_set_explicit(object, order) __atomic_flag_test_set(object, order)
 #define atomic_flag_test_and_set(object) __atomic_flag_test_set(object, memory_order_seq_cst)

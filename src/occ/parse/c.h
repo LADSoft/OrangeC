@@ -1105,6 +1105,7 @@ typedef struct _string
 enum e_mo
 {
     mo_relaxed = 1,
+    mo_consume,
     mo_acquire,
     mo_release,
     mo_acq_rel,

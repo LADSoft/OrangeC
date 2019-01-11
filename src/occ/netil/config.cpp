@@ -541,6 +541,7 @@ ARCH_GEN outputfunctions = {
     asm_dc,                 /* unused */
     asm_assnblock,          /* copy block of memory*/
     asm_clrblock,           /* clear block of memory */
+    asm_cmpblock;           /* branch if two blocks of memory aren't equal */
     asm_jc,                 /* branch if a U< b */
     asm_ja,                 /* branch if a U> b */
     asm_je,                 /* branch if a == b */

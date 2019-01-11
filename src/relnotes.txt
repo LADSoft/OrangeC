@@ -28,6 +28,7 @@ version 6.0.40:
     occ: make operator << instantiation for ostream work with enums
     occ: fix stdatomic.h header
     occ: fix atomic code generation
+    occ: fix code generation for converting long long to bool
     oasm: speed up assembly of large files
     oasm: negative floating point numbers were being represented as positive in the output
     dlpe/oimplib: handle -y switch 

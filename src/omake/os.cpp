@@ -56,9 +56,10 @@ std::deque<int> OS::jobCounts;
 bool OS::isSHEXE;
 int OS::jobsLeft;
 
-static std::string QuoteCommand(std::string command)
+std::string OS::QuoteCommand(std::string exe, std::string command)
 {
     std::string rv;
+    bool sh = exe.find("sh.exe") != std::string::npos;
     if (command.empty() == false && command.find_first_of(" \t\n\v\"") == command.npos)
     {
         rv = command;
@@ -81,6 +82,12 @@ static std::string QuoteCommand(std::string command)
                 // escape all the backslashes
                 rv.append(slashcount * 2, L'\\');
                 break;
+            }
+            else if (*it == L'"' && sh)
+            {
+                // escape all the backslashes and add a \"
+                rv.append(slashcount * 2 + 1, L'\\');
+                rv.push_back('"');
             }
             else
             {
@@ -232,7 +239,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
     {
         cmd += " /c ";
     }
-    cmd += QuoteCommand(command1);
+    cmd += QuoteCommand(cmd, command1);
     STARTUPINFO startup = {};
     PROCESS_INFORMATION pi;
     HANDLE pipeRead, pipeWrite, pipeWriteDuplicate;

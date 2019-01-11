@@ -61,6 +61,7 @@ class OS
 {
   public:
     static void Init();
+    static std::string QuoteCommand(std::string exe, std::string command);
     static void SetSHEXE(bool flag) { isSHEXE = flag; }
     static void PushJobCount(int jobs);
     static void PopJobCount();

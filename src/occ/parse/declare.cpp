@@ -2978,23 +2978,16 @@ exit:
     UpdateRootTypes(*tp);
     if (isatomic(*tp))
     {
-        
-        if (needsAtomicLockFromType(*tp))
+
+        int sz = basetype(*tp)->size;
+        int n = getAlign(sc_global, &stdchar32tptr);
+        n = n - (*tp)->size % n;
+        if (n != 4)
         {
-            int sz = basetype(*tp)->size;
-            int n = getAlign(sc_global, &stdchar32tptr);
-            n = n - (*tp)->size % n;
-            if (n != 4)
-            {
-                sz += n;
-            }
-            sz += ATOMIC_FLAG_SPACE;
-            (*tp)->size = sz;
+            sz += n;
         }
-        else
-        {
-            (*tp) -> size = basetype(*tp)->size;
-        }
+        sz += ATOMIC_FLAG_SPACE;
+        (*tp)->size = sz;
     }
     sizeQualifiers(*tp);
     return lex;

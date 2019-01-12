@@ -1251,7 +1251,7 @@ void peep_and(OCODE* ip)
             else if (ip2->opcode == op_and && ip->oper2->mode == am_immed && ip2->oper2->mode == am_immed &&
                      isintconst(ip->oper2->offset) && isintconst(ip2->oper2->offset))
             {
-                ip2->oper2->offset->v.i &= ip->oper2->offset->v.i;
+		ip2->oper2 = aimmed(ip2->oper2->offset->v.i & ip->oper2->offset->v.i);
                 remove_peep_entry(ip);
                 return;
             }

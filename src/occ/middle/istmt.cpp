@@ -531,15 +531,15 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, IMODE*
             if (ap != ap3)
             {
                 IMODE* barrier;
-                if (stmt->select->isatomic)
-                {
-                    barrier = doatomicFence(funcsp, NULL, stmt->select, NULL);
-                }
+//                if (stmt->select->isatomic)
+//                {
+//                    barrier = doatomicFence(funcsp, NULL, stmt->select, NULL);
+//                }
                 gen_icode(i_assn, ap, ap3, NULL);
-                if (stmt->select->isatomic)
-                {
-                    doatomicFence(funcsp, NULL, stmt->select, barrier);
-                }
+//                if (stmt->select->isatomic)
+//                {
+//                    doatomicFence(funcsp, NULL, stmt->select, barrier);
+//                }
             }
             if (abs(size) < ISZ_UINT)
                 size = -ISZ_UINT;

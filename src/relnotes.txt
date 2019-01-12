@@ -29,6 +29,9 @@ version 6.0.40:
     occ: fix stdatomic.h header
     occ: fix atomic code generation
     occ: fix code generation for converting long long to bool
+    occ: fix static initialization of long double variables
+    occ: unsigned values promoted to int should be considered as 'signed' for purposes of division
+    occ: assignment combined with a math op did not convert the result back to bool if that is the variable type
     oasm: speed up assembly of large files
     oasm: negative floating point numbers were being represented as positive in the output
     dlpe/oimplib: handle -y switch 

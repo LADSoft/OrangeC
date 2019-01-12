@@ -547,6 +547,7 @@ FPFC refloat(EXPRESSION* node)
             break;
 
         default:
+            rv = { 0 };
             break;
     }
     return rv;
@@ -608,6 +609,16 @@ ULLONG_TYPE reint(EXPRESSION* node)
 
         case en_c_ld:
             rv = CastToInt(-ISZ_ULONGLONG, FPFToLongLong(&node->v.f));
+            break;
+        case en_c_fc:
+            rv = CastToInt(-ISZ_ULONGLONG, FPFToLongLong(&node->v.c.r));
+            break;
+        case en_c_dc:
+            rv = CastToInt(-ISZ_ULONGLONG, FPFToLongLong(&node->v.c.r));
+            break;
+
+        case en_c_ldc:
+            rv = CastToInt(-ISZ_ULONGLONG, FPFToLongLong(&node->v.c.r));
             break;
         case en_c_fi:
         case en_c_di:

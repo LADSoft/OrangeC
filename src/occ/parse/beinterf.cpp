@@ -328,6 +328,7 @@ int needsAtomicLockFromType(TYPE* tp)
         case bt_void:
             return 0;
         case bt_char:
+        case bt_signed_char:
         case bt_unsigned_char:
             return p->a_char;
         case bt_bool:
@@ -383,7 +384,7 @@ int needsAtomicLockFromType(TYPE* tp)
     }
 }
 static int basesize(ARCH_SIZING* p, TYPE* tp)
-{
+{   
     tp = basetype(tp);
     switch (tp->type)
     {

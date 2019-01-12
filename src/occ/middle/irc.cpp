@@ -399,7 +399,7 @@ void AllocateStackSpace(SYMBOL* funcsp)
                     {
                         int val, align = sp->structAlign ? sp->structAlign : getAlign(sc_auto, basetype(sp->tp));
                         lc_maxauto += basetype(sp->tp)->size;
-                        if (isatomic(sp->tp) && needsAtomicLockFromType(sp->tp))
+                        if (isatomic(sp->tp))
                         {
                             lc_maxauto += ATOMIC_FLAG_SPACE;
                         }

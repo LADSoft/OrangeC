@@ -794,6 +794,7 @@ void oa_genfloat(enum e_gt type, FPFC* val)
                     bePrintf("\tdd\t%s\n", buf);
                 break;
             case doublegen:
+            case longdoublegen:
                 if (!strcmp(buf, "inf") || !strcmp(buf, "nan") || !strcmp(buf, "-inf") || !strcmp(buf, "-nan"))
                 {
                     UBYTE dta[8];
@@ -810,23 +811,6 @@ void oa_genfloat(enum e_gt type, FPFC* val)
                 else
                     bePrintf("\tdq\t%s\n", buf);
                 break;
-            case longdoublegen:
-                if (!strcmp(buf, "inf") || !strcmp(buf, "nan") || !strcmp(buf, "-inf") || !strcmp(buf, "-nan"))
-                {
-                    UBYTE dta[10];
-                    int i;
-                    FPFToLongDouble(dta, val);
-                    bePrintf("\tdb\t");
-                    for (i = 0; i < 10; i++)
-                    {
-                        bePrintf("0%02XH", dta[i]);
-                        if (i != 9)
-                            bePrintf(", ");
-                    }
-                }
-                else
-                    bePrintf("\tdt\t%s\n", buf);
-                break;
             default:
                 diag("floatgen - invalid type");
                 break;
@@ -839,10 +823,8 @@ void oa_genfloat(enum e_gt type, FPFC* val)
                 outcode_genfloat(val);
                 break;
             case doublegen:
-                outcode_gendouble(val);
-                break;
             case longdoublegen:
-                outcode_genlongdouble(val);
+                outcode_gendouble(val);
                 break;
             default:
                 diag("floatgen - invalid type");

@@ -250,7 +250,7 @@ static int dumpBits(INITIALIZER** init)
             diag("dumpBits: unknown bit size");
             break;
     }
-    if (isatomic((*init)->basetp) && needsAtomicLockFromType((*init)->basetp))
+    if (isatomic((*init)->basetp))
         genstorage(ATOMIC_FLAG_SPACE);
     return base->size;
 #else
@@ -991,7 +991,7 @@ void dumpInitGroup(SYMBOL* sp, TYPE* tp)
     }
     else
         genstorage(basetype(tp)->size);
-    if (isatomic(tp) && needsAtomicLockFromType(tp))
+    if (isatomic(tp))
     {
         genstorage(ATOMIC_FLAG_SPACE);
     }
@@ -4101,6 +4101,17 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_sc storage_cl
             if (sp->storage_class != sc_static && !cparams.prm_cplusplus && !funcsp)
                 insertInitSym(sp);
             sp->storage_class = sc_constant;
+        }
+    }
+    if (isatomic(sp->tp) && (sp->storage_class == sc_auto))
+    {
+        if (sp->init == NULL)
+        {
+            // sets the atomic_flag portion of a locked type to zero
+            sp->init = (INITIALIZER *)Alloc(sizeof(INITIALIZER));
+            sp->init->offset = sp->tp->size - ATOMIC_FLAG_SPACE;
+            sp->init->basetp = &stdint;
+            sp->init->exp = intNode(en_c_i, 0);
         }
     }
     if (isref(sp->tp) && sp->storage_class != sc_typedef)

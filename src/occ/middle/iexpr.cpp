@@ -2771,6 +2771,8 @@ IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
             av = gen_expr(funcsp, node->v.ad->address, 0, ISZ_ADDR);
             if (isstructured(node->v.ad->tp))
             {
+                left = gen_expr(funcsp, node->v.ad->memoryOrder1, 0, ISZ_UINT);
+                gen_icode(i_atomic_fence, NULL, left, NULL);
                 EXPRESSION *exp = anonymousVar(sc_auto, node->v.ad->tp);
                 rv = (IMODE*)Alloc(sizeof(IMODE));
                 rv->mode = i_immed;
@@ -2794,6 +2796,8 @@ IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
         case ao_store:
             if (isstructured(node->v.ad->tp))
             {
+                left = gen_expr(funcsp, node->v.ad->memoryOrder1, 0, ISZ_UINT);
+                gen_icode(i_atomic_fence, NULL, left, NULL);
                 right = gen_expr(funcsp, node->v.ad->value, F_STORE, ISZ_ADDR);
                 av = gen_expr(funcsp, node->v.ad->address, 0, ISZ_ADDR);
                 barrier = gen_atomic_barrier(funcsp, node->v.ad, av, 0);
@@ -2817,6 +2821,8 @@ IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
         case ao_modify:
             if (isstructured(node->v.ad->tp))
             {
+                left = gen_expr(funcsp, node->v.ad->memoryOrder1, 0, ISZ_UINT);
+                gen_icode(i_atomic_fence, NULL, left, NULL);
                 // presumed xchg
                 av = gen_expr(funcsp, node->v.ad->address, 0, ISZ_ADDR);
                 right = gen_expr(funcsp, node->v.ad->value, F_STORE, sz);
@@ -2885,6 +2891,8 @@ IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
             }
             break;
         case ao_cmpswp:
+            left = gen_expr(funcsp, node->v.ad->memoryOrder1, 0, ISZ_UINT);
+            gen_icode(i_atomic_fence, NULL, left, NULL);
             if (isstructured(node->v.ad->tp))
             {
 
@@ -2893,7 +2901,7 @@ IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
                 barrier = gen_atomic_barrier(funcsp, node->v.ad, av, 0);
                 rv = tempreg(ISZ_UINT, 0);
                 gen_icode(i_assn, rv, make_immed(ISZ_UINT, 0), NULL);
-                int labno = nextLabel++;
+                int labno = nextLabel++, labno2 = nextLabel++;
                 gen_icgoto(i_cmpblock, labno, right, av);
                 QUAD *q = intermed_tail;
                 while (q->dc.opcode != i_cmpblock) q = q->back;
@@ -2901,11 +2909,17 @@ IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
                 left = gen_expr(funcsp, node->v.ad->value, F_VOL, sz);
                 gen_icode(i_assnblock, make_immed(ISZ_UINT, node->v.ad->tp->btp->size), av, left);
                 gen_icode(i_assn, rv, make_immed(ISZ_UINT, 1), NULL);
+                gen_igoto(i_goto, labno2);
                 gen_label(labno);
+                gen_icode(i_assnblock, make_immed(ISZ_UINT, node->v.ad->tp->btp->size), right, av);
+                gen_icode(i_assn, rv, make_immed(ISZ_UINT, 0), NULL);
+                gen_label(labno2);
                 gen_atomic_barrier(funcsp, node->v.ad, av, barrier);
             }
             else
             {
+                left = gen_expr(funcsp, node->v.ad->memoryOrder1, 0, ISZ_UINT);
+                gen_icode(i_atomic_fence, NULL, left, NULL);
                 sz = sizeFromType(node->v.ad->tp);
                 av = gen_expr(funcsp, node->v.ad->address, 0, ISZ_ADDR);
                 left = indnode(av, sz);
@@ -2919,12 +2933,15 @@ IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
                     IMODE *asnfrom = rv;
                     rv = tempreg(ISZ_UINT, 0);
                     gen_icode(i_assn, temp, left, NULL);
-                    int lbno = nextLabel++;
+                    int lbno = nextLabel++, lbno2 = nextLabel++;;
                     gen_icode(i_sete, rv, temp, right);
                     gen_icgoto(i_je, lbno, rv, make_immed(ISZ_UINT, 0));
                     gen_icode(i_assn, temp, asnfrom, NULL);
                     gen_icode(i_assn, left, temp, NULL);
+                    gen_igoto(i_goto, lbno2);
                     gen_label(lbno);
+                    gen_icode(i_assn, right, temp, NULL);
+                    gen_label(lbno2);
                 }
                 else
                 {
@@ -2937,6 +2954,8 @@ IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
                 }
                 gen_atomic_barrier(funcsp, node->v.ad, av, barrier);
             }
+            left = gen_expr(funcsp, node->v.ad->memoryOrder2, 0, ISZ_UINT);
+            gen_icode(i_atomic_fence, NULL, left, NULL);
             break;
     }
     return rv;
@@ -4012,15 +4031,15 @@ void gen_compare(EXPRESSION* node, SYMBOL* funcsp, i_ops btype, int label)
     ap1 = LookupLoadTemp(NULL, ap3);
     if (ap1 != ap3)
     {
-        if (node->left->isatomic)
-        {
-            barrier = doatomicFence(funcsp, NULL, node->left, NULL);
-        }
+//        if (node->left->isatomic)
+//        {
+//            barrier = doatomicFence(funcsp, NULL, node->left, NULL);
+//        }
         gen_icode(i_assn, ap1, ap3, NULL);
-        if (node->left->isatomic)
-        {
-            doatomicFence(funcsp, NULL, node->left, barrier);
-        }
+//        if (node->left->isatomic)
+//        {
+//            doatomicFence(funcsp, NULL, node->left, barrier);
+//        }
     }
     if (incdecList)
     {

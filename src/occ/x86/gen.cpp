@@ -3615,8 +3615,8 @@ void asm_assn(QUAD* q) /* assignment */
                     gen_code_sse(op_movss, op_movsd, q->ans->size, ap, apa);
                     gen_code_sse(op_movss, op_movsd, q->ans->size, ap1, apa1);
                     ap1->length = ap->length = q->ans->size - ISZ_CFLOAT + ISZ_FLOAT;
+                    gen_codef(op_fld, apl, NULL);
                     gen_codef(op_fld, ap, NULL);
-                    gen_codef(op_fld, ap1, NULL);
                 }
                 else
                 {
@@ -4682,20 +4682,22 @@ void asm_cmpblock(QUAD *q)
         gen_code(op_cld, 0, 0);
         gen_code(op_rep, 0, 0);
         gen_code(op_cmpsd, 0, 0);
+        int labno1 = beGetLabel;
         if (n & 2)
         {
-            gen_code(op_jne, make_label(labno), NULL);
+            gen_code(op_jne, make_label(labno1), NULL);
             gen_code(op_cmpsw, 0, 0);
         }
         if (n & 1)
         {
-            gen_code(op_jne, make_label(labno), NULL);
+            gen_code(op_jne, make_label(labno1), NULL);
             gen_code(op_cmpsb, 0, 0);
         }
-        gen_code(op_jne, make_label(labno), NULL);
+        oa_gen_label(labno1);
         gen_codes(op_pop, ISZ_UINT, cx, 0);
         gen_codes(op_pop, ISZ_UINT, si, 0);
         gen_codes(op_pop, ISZ_UINT, di, 0);
+        gen_code(op_jne, make_label(labno), NULL);
         pushlevel -= 12;
     }
 }
@@ -5022,10 +5024,6 @@ void asm_atomic(QUAD* q)
     if (needsync < 0)
         needsync = 0;
     // direct store has bit 7 set...
-    // well  aquire and release fences on the x86 are superfluous,
-    // (although clearly the mutual fence isn't)
-//    if (needsync == mo_acquire || needsync == mo_acq_rel)
-//        gen_code(op_lfence, NULL, NULL);
     switch (q->dc.opcode)
     {
         bool pushed;
@@ -5056,12 +5054,13 @@ void asm_atomic(QUAD* q)
                     reg = EAX;
                 else if (!(apll->liveRegs &(1 << ECX)))
                     reg = ECX;
-                else if (!(apll->liveRegs &(1 << ECX)))
+                else if (!(apll->liveRegs &(1 << EDX)))
                     reg = EDX;
                 else {
                     pushed = true;
                     reg = (apll->preg & 3) ^ 1;
                     gen_code(op_push, makedreg(reg), 0);
+                    pushlevel += 4;
                 }
                 oa_gen_label(lbl1);
                 // I thought about just spinning here but it would have to spin for the rest of its time slice so might as well yield...
@@ -5073,6 +5072,11 @@ void asm_atomic(QUAD* q)
                 callLibrary("___atomic_yield", 0);
                 gen_code(op_jmp, make_label(lbl1), 0);
                 oa_gen_label(lbl2);
+                if (pushed)
+                {
+                    gen_code(op_pop, makedreg(reg), 0);
+                    pushlevel -= 4;
+                }
             }
             else
             {
@@ -5299,6 +5303,4 @@ void asm_atomic(QUAD* q)
         default:
             break;
     }
-//    if (needsync == mo_release || needsync == mo_acq_rel)
-//        gen_code(op_sfence, NULL, NULL);
 }

@@ -894,7 +894,7 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
             {
                 (*exp)->isatomic = true;
                 if (needsAtomicLockFromType(*tp))
-                    (*exp)->lockOffset = (*tp)->size - ATOMIC_FLAG_SPACE;
+                    (*exp)->lockOffset = basetype(*tp)->size;
             }
             if (strSym && funcparams)
                 funcparams->novtab = true;
@@ -5484,7 +5484,7 @@ static LEXEME* expression_deref(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSI
                     {
                         (*exp)->isatomic = true;
                         if (needsAtomicLockFromType(btp3))
-                            (*exp)->lockOffset = btp3->size - ATOMIC_FLAG_SPACE;
+                            (*exp)->lockOffset = basetype(btp3)->size;
                     }
                 }
             }
@@ -6302,20 +6302,6 @@ static LEXEME* expression_times(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** t
                 error(ERR_ILL_POINTER_OPERATION);
             else
             {
-                switch (kw)
-                {
-                case star:
-                    type = en_mul;
-                    break;
-                case divide:
-                    type = isunsigned(*tp) ? en_udiv : en_div;
-                    break;
-                case mod:
-                    type = isunsigned(*tp) ? en_umod : en_mod;
-                    break;
-                default:
-                    break;
-                }
                 int m1 = -1, m2 = -1;
                 if (isimaginary(*tp) && isimaginary(tp1))
                 {
@@ -6389,6 +6375,20 @@ static LEXEME* expression_times(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** t
                         *tp = destSize(*tp, tp1, exp, &exp1, false, NULL);
 
                     }
+                }
+                switch (kw)
+                {
+                case star:
+                    type = en_mul;
+                    break;
+                case divide:
+                    type = isunsigned(*tp) ? en_udiv : en_div;
+                    break;
+                case mod:
+                    type = isunsigned(*tp) ? en_umod : en_mod;
+                    break;
+                default:
+                    break;
                 }
                 *exp = exprNode(type, *exp, exp1);
 
@@ -6642,6 +6642,11 @@ static LEXEME* expression_shift(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** t
                 error(ERR_ILL_USE_OF_COMPLEX);
             else
             {
+                if (basetype(*tp)->type < bt_int)
+                {
+                    *tp = &stdint;
+                    cast(*tp, exp);
+                }
                 if (kw == rightshift)
                     if (isunsigned(*tp))
                         type = en_ursh;
@@ -6649,11 +6654,6 @@ static LEXEME* expression_shift(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** t
                         type = en_rsh;
                 else
                     type = en_lsh;
-                if (basetype(*tp)->type < bt_int)
-                {
-                    *tp = &stdint;
-                    cast(*tp, exp);
-                }
                 *exp = exprNode(type, *exp, exprNode(en_shiftby, exp1, 0));
             }
         }
@@ -7847,11 +7847,11 @@ LEXEME* expression_assign(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
                 break;
             case asdivide:
                 tp2 = destSize(*tp, tp1, NULL, NULL, false, NULL);
-                op = isunsigned(*tp) ? en_udiv : en_div;
+                op = isunsigned(*tp) && basetype(*tp)->type > bt_int ? en_udiv : en_div;
                 break;
             case asmod:
                 tp2 = destSize(*tp, tp1, NULL, NULL, false, NULL);
-                op = isunsigned(*tp) ? en_umod : en_mod;
+                op = isunsigned(*tp) && basetype(*tp)->type > bt_int ? en_umod : en_mod;
                 break;
             case assign:
                 op = en_assign;
@@ -7869,7 +7869,7 @@ LEXEME* expression_assign(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
                 break;
             case asrightshift:
                 tp2 = destSize(*tp, tp1, NULL, NULL, false, NULL);
-                op = isunsigned(*tp) ? en_ursh : en_rsh;
+                op = isunsigned(*tp) && basetype(*tp)->type > bt_int ? en_ursh : en_rsh;
                 break;
             default:
                 break;
@@ -7977,7 +7977,7 @@ LEXEME* expression_assign(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
                 // we want to optimize the as* operations for the backend
                 // but can't do the optimization for divisions
                 // otherwise it is fine for the processor we are on
-                if (kw == asmod || kw == asdivide)
+                if (kw == asmod || kw == asdivide || basetype(*tp)->type == bt_bool)
                 {
                     int n = natural_size(*exp);
                     destSize(*tp, tp1, exp, &exp1, false, NULL);

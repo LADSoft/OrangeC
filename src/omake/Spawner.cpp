@@ -313,7 +313,41 @@ std::string Spawner::QualifyFiles(const std::string& cmd)
     std::string working = cmd;
     while (!working.empty())
     {
-        std::string cur = Eval::ExtractFirst(working, " ");
+        int s = working.find_first_not_of(" \t\n");
+        if (s != std::string::npos)
+            working = working.substr(s);
+        else
+            break;
+        s= working.find_first_of(" \t\n");
+        if (s == std::string::npos)
+            s = working.size();
+        int p = working.find_first_of("'");
+        int q = working.find_first_of("\"");
+        if (p == std::string::npos)
+            p = q;
+        else if (q != std::string::npos)
+            p = p < q ? p : q;
+        if (p != std::string::npos)
+            s = s < p ? s : p;
+        std::string cur;
+        if (s == std::string::npos)
+        {
+            cur = working;
+            working = "";
+        }
+
+        else {
+            if (working[s] == '"' || working[s] == '\'')
+            {
+                s = working.find_first_of(working[s], s+1);
+                if (s = std::string::npos)
+                    s = working.size();
+                else
+                    s = s + 1;
+            }
+            cur = working.substr(0, s);
+            working = working.substr(s);
+        }
         cur = Maker::GetFullName(cur);
         if (!rv.empty())
             rv += " ";

@@ -80,10 +80,6 @@ _tgammaf:
     sub dl,dl
     jmp short tgamma
 _tgammal:
-    lea	ecx,[esp+4]
-    fld	tword[ecx]
-    mov dl,2
-    jmp short tgamma
 _tgamma:
     lea	ecx,[esp+4]
     fld	qword[ecx]

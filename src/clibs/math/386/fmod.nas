@@ -44,12 +44,6 @@ _fmodf:
     sub dl,dl
     jmp short fmod
 _fmodl:
-    lea	ecx,[esp+4]
-    lea	edx,[esp+16]
-    fld	tword[ecx]
-    fld	tword[edx]
-    mov dl,2
-    jmp short fmod
 _fmod:
     lea	ecx,[esp+4]
     lea	edx,[esp+12]

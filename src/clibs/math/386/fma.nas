@@ -42,11 +42,6 @@ _fmaf:
     sub dl,dl
     jmp fma
 _fmal:
-    fld tword [esp+28]
-    fld	tword [esp+4]
-    fld	tword [esp+16]
-    mov dl,2
-    jmp fma
 _fma:
     fld qword [esp+20]
     fld	qword [esp+4]

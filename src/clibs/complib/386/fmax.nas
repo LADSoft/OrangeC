@@ -43,14 +43,8 @@ _fmaxf:
     fld	dword [edx]
     sub dl,dl
     jmp short ffmax
-_fmaxl:
-    lea	ecx,[esp+4]
-    fld	tword [ecx]
-    lea	edx,[esp+16]
-    fld	tword [edx]
-    mov dl,2
-    jmp short ffmax
 _fmax:
+_fmaxl:
     lea	ecx,[esp+4]
     fld	qword [ecx]
     lea	edx,[esp+12]

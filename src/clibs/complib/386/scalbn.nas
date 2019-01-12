@@ -49,16 +49,10 @@ _scalblnf:
     fld     dword [edx]
     sub dl,dl
     jmp short scalbn
-_scalbnl:
-_scalblnl:
-    lea     ecx,[esp+16]
-    fild    dword [ecx]
-    lea     edx,[esp+4]
-    fld     tword [edx]
-    mov dl,2
-    jmp short scalbn
 _scalbn:
 _scalbln:
+_scalbnl:
+_scalblnl:
     lea     ecx,[esp+12]
     fild    dword [ecx]
     lea     edx,[esp+4]

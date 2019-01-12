@@ -44,12 +44,6 @@ _remainderf:
     sub dl,dl
     jmp short remainder
 _remainderl:
-    lea	ecx,[esp+4]
-    lea	edx,[esp+16]
-    fld	tword[ecx]
-    fld	tword[edx]
-    mov dl,2
-    jmp short remainder
 _remainder:
     lea	ecx,[esp+4]
     lea	edx,[esp+12]

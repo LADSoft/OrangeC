@@ -41,9 +41,6 @@ _lrintf:
     sub dl,dl
     jmp short lrint
 _lrintl:
-    fld	tword[esp+4]
-    mov dl,2
-    jmp short lrint
 _lrint:
     fld	qword[esp+4]
     mov dl,1

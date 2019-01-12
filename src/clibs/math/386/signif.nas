@@ -43,10 +43,6 @@ _significandf:
     sub dl,dl
     jmp short significand
 _significandl:
-    lea	ecx,[esp+4]
-    fld	tword[ecx]
-    mov dl,2
-    jmp short significand
 _significand:
     lea	ecx,[esp+4]
     fld	qword[ecx]

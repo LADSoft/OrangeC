@@ -47,17 +47,9 @@ _copysignf:
     or word [ecx +2],ax
     fld	dword[ecx]
     ret
-_copysignl:
-    lea	ecx,[esp+4]
-    lea	edx,[esp+16]
-    and word [ecx +8],07fffh
-    mov ax,[edx+8]
-    and ax,8000h
-    or word [ecx +8],ax
-    fld	tword[ecx]
-    ret
 _copysign:
 __copysign:
+_copysignl:
     lea	ecx,[esp+4]
     lea	edx,[esp+12]
     and word [ecx +6],07fffh

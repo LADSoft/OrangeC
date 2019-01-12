@@ -37,16 +37,12 @@
 [global _crealf]
 [global _cimagf]
 SECTION code CLASS=CODE USE32
-_creall:
-    fld tword   [esp + 4]
-    ret
-_cimagl:
-    fld tword [esp + 4 + 10]
-    ret
 _creal:
+_creall:
     fld qword   [esp + 4]
     ret
 _cimag:
+_cimagl:
     fld qword [esp + 4 + 8]
     ret
 _crealf:

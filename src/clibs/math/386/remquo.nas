@@ -49,15 +49,6 @@ _remquof:
     sub dl,dl
     jmp short remquo
 _remquol:
-    push ebp
-	mov ebp,esp
-    lea	ecx,[ebp+8]
-    lea	edx,[ebp+20]
-    fld	tword[edx]
-    fld	tword[ecx]
-    mov ecx,[ebp+32]
-    mov dl,2
-    jmp short remquo
 _remquo:
     push ebp
 	mov ebp,esp

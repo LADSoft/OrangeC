@@ -57,10 +57,6 @@ _erff:
     sub dl,dl
     jmp short erf
 _erfl:
-    lea	ecx,[esp+4]
-    fld	tword[ecx]
-    mov dl,2
-    jmp short erf
 _erf:
     lea	ecx,[esp+4]
     fld	qword[ecx]
@@ -88,10 +84,6 @@ _erfcf:
     sub dl,dl
     jmp short erfc
 _erfcl:
-    lea	ecx,[esp+4]
-    fld	tword[ecx]
-    mov dl,2
-    jmp short erfc
 _erfc:
     lea	ecx,[esp+4]
     fld	qword[ecx]

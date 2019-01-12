@@ -44,12 +44,6 @@ _fminf:
     sub dl,dl
     jmp short ffmin
 _fminl:
-    lea	ecx,[esp+4]
-    fld	tword [ecx]
-    lea	edx,[esp+16]
-    fld	tword [edx]
-    mov dl,2
-    jmp short ffmin
 _fmin:
     lea	ecx,[esp+4]
     fld	qword [ecx]

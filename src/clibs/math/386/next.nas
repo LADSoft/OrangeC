@@ -69,14 +69,6 @@ _nextafterf:
     add esp,16
     ret
 _nextafterl:
-    fld	tword [esp+4]
-    fld	tword [esp+16]
-    sub esp,24
-    fstp tword[esp+12]
-    fstp tword[esp]
-    call _nexttowardl
-    add esp,24
-    ret
 _nextafter:
     fld	qword [esp+4]
     fld	qword [esp+12]
@@ -134,52 +126,6 @@ mfrsmall:
     fchs
     jmp wrapmath
 _nexttowardl:
-    lea eax,[nm]
-    call clearmath
-    mov dl,2
-    fld tword [esp+4]
-    fld tword [esp+16]
-    fcomp st1
-    fstsw ax
-    sahf
-    je wrapmath
-    jc ldown
-    ftst
-    fstsw ax
-    sahf
-    je lrsmall
-    fld st0
-    fxtract
-    popone
-    fld tword [small_l]
-    fscale
-    fxch
-    popone
-    faddp st1
-    jmp wrapmath
-lrsmall:
-    popone
-    fld tword [really_small_l]
-    jmp wrapmath
-ldown:
-    ftst
-    fstsw ax
-    sahf
-    je mlrsmall
-    fld st0
-    fxtract
-    popone
-    fld tword [small_l]
-    fscale
-    fxch
-    popone
-    fsubp st1
-    jmp wrapmath
-mlrsmall:
-    popone
-    fld tword [really_small_l]
-    fchs
-    jmp wrapmath
 _nexttoward:
     lea eax,[nm]
     call clearmath

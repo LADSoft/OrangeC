@@ -41,9 +41,6 @@ _nearbyintf:
     sub dl,dl
     jmp short nearbyint
 _nearbyintl:
-    fld	tword[esp+4]
-    mov dl,2
-    jmp short nearbyint
 _nearbyint:
     fld	qword[esp+4]
     mov dl,1

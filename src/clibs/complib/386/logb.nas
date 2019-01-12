@@ -43,10 +43,6 @@ _logbf:
     sub dl,dl
     jmp short logb
 _logbl:
-    lea	ecx,[esp+4]
-    fld	tword[ecx]
-    mov dl,2
-    jmp short logb
 _logb:
     lea	ecx,[esp+4]
     fld	qword[ecx]

@@ -44,12 +44,6 @@ _fdimf:
     sub dl,dl
     jmp short ffdim
 _fdiml:
-    lea	edx,[esp+16]
-    fld	tword [edx]
-    lea	ecx,[esp+4]
-    fld	tword [ecx]
-    mov dl,2
-    jmp short ffdim
 _fdim:
     lea	edx,[esp+12]
     fld	qword [edx]

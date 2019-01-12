@@ -39,13 +39,11 @@
 %define FP_ZERO 4
 
 SECTION code CLASS=CODE USE32
-___fpclassifyl:
-    fld tword [esp + 4]
-    jmp short fpclassify
 ___fpclassifyf:
     fld dword [esp + 4]
     jmp short fpclassify
 ___fpclassify:
+___fpclassifyl:
     fld qword [esp + 4]
 fpclassify:
     fxam

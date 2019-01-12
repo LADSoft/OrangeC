@@ -45,12 +45,6 @@ _modff:
     sub dl,dl
     jmp short modf
 _modfl:
-    push ebp
-	mov ebp,esp
-    fld	tword[ebp+8]
-    mov	ecx,[ebp+20]
-    mov dl,2
-    jmp short modf
 _modf:
     push ebp
 	mov ebp,esp

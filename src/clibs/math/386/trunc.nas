@@ -40,9 +40,6 @@ _truncf:
     sub dl,dl
     jmp short trunc
 _truncl:
-    fld	tword[esp+4]
-    mov dl,2
-    jmp short trunc
 _trunc:
     fld	qword[esp+4]
     mov dl,1

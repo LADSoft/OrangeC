@@ -1731,6 +1731,10 @@ IMODE* gen_assign(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
             gen_icode(i_assn, ap1, ap4, NULL);
         */
     }
+    if (node->left->isatomic)
+    {
+        gen_icode(i_atomic_fence, NULL, make_immed(ISZ_UINT, mo_seq_cst | 0x80), NULL);
+    }
     if (!(flags & F_NOVALUE) && (chosenAssembler->arch->preferopts & OPT_REVERSESTORE) && ap1->mode == i_ind)
     {
         ap1 = gen_expr(funcsp, RemoveAutoIncDec(node->left), (flags & ~F_NOVALUE), natural_size(node->left));
@@ -2716,11 +2720,11 @@ IMODE* gen_atomic_barrier(SYMBOL* funcsp, ATOMICDATA* ad, IMODE* addr, IMODE* ba
     {
         if (barrier)
         {
-            left = make_immed(ISZ_UINT, -ad->memoryOrder1->v.i- (ad->atomicOp == ao_store? 0x80 : 0));
+            left = make_immed(ISZ_UINT, -ad->memoryOrder1->v.i);
         }
         else
         {
-            left = make_immed(ISZ_UINT, ad->memoryOrder1->v.i+ (ad->atomicOp == ao_store ? 0x80 : 0));
+            left = make_immed(ISZ_UINT, ad->memoryOrder1->v.i);
         }
         gen_icode(i_atomic_fence, NULL, left, NULL);
         return (IMODE*)-1;
@@ -2800,9 +2804,9 @@ IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
                 gen_icode(i_atomic_fence, NULL, left, NULL);
                 right = gen_expr(funcsp, node->v.ad->value, F_STORE, ISZ_ADDR);
                 av = gen_expr(funcsp, node->v.ad->address, 0, ISZ_ADDR);
-                barrier = gen_atomic_barrier(funcsp, node->v.ad, av, 0);
                 gen_icode(i_assnblock, make_immed(ISZ_UINT, node->v.ad->tp->btp->size), av, right);
                 rv = right;
+                barrier = gen_atomic_barrier(funcsp, node->v.ad, av, 0);
                 gen_atomic_barrier(funcsp, node->v.ad, av, barrier);
 
             }
@@ -2812,8 +2816,8 @@ IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
                 right = gen_expr(funcsp, node->v.ad->value, 0, sz);
                 av = gen_expr(funcsp, node->v.ad->address, 0, ISZ_ADDR);
                 left = indnode(av, sz);
-                barrier = gen_atomic_barrier(funcsp, node->v.ad, av, 0);
                 gen_icode(i_assn, left, right, NULL);
+                barrier = gen_atomic_barrier(funcsp, node->v.ad, av, 0);
                 gen_atomic_barrier(funcsp, node->v.ad, av, barrier);
                 rv = right;
             }
@@ -2960,6 +2964,7 @@ IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
     }
     return rv;
 }
+/*
 IMODE* doatomicFence(SYMBOL* funcsp, EXPRESSION* parent, EXPRESSION* node, IMODE* barrier)
 {
     static LIST* lst;
@@ -3017,6 +3022,7 @@ IMODE* doatomicFence(SYMBOL* funcsp, EXPRESSION* parent, EXPRESSION* node, IMODE
     }
     return barrier;
 }
+*/
 /*-------------------------------------------------------------------------*/
 
 IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
@@ -3044,8 +3050,8 @@ IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
     }
     while (node->type == en_not_lvalue || node->type == en_lvalue)
         node = node->left;
-    lbarrier = doatomicFence(funcsp, node, node->left, 0);
-    rbarrier = doatomicFence(funcsp, NULL, node->right, 0);
+//    lbarrier = doatomicFence(funcsp, node, node->left, 0);
+//    rbarrier = doatomicFence(funcsp, NULL, node->right, 0);
     if (flags & F_NOVALUE)
     {
         if (chosenAssembler->msil)
@@ -3708,8 +3714,8 @@ IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
         }
         DumpIncDec(funcsp);
     }
-    doatomicFence(funcsp, NULL, node->right, rbarrier);
-    doatomicFence(funcsp, NULL, node->left, lbarrier);
+//    doatomicFence(funcsp, NULL, node->right, rbarrier);
+//    doatomicFence(funcsp, NULL, node->left, lbarrier);
     return rv;
 }
 
@@ -4014,15 +4020,15 @@ void gen_compare(EXPRESSION* node, SYMBOL* funcsp, i_ops btype, int label)
     ap2 = LookupLoadTemp(NULL, ap3);
     if (ap2 != ap3)
     {
-        if (node->right->isatomic)
-        {
-            barrier = doatomicFence(funcsp, NULL, node->right, NULL);
-        }
+//        if (node->right->isatomic)
+//        {
+//            barrier = doatomicFence(funcsp, NULL, node->right, NULL);
+//        }
         gen_icode(i_assn, ap2, ap3, NULL);
-        if (node->right->isatomic)
-        {
-            doatomicFence(funcsp, NULL, node->right, barrier);
-        }
+//        if (node->right->isatomic)
+//        {
+//            doatomicFence(funcsp, NULL, node->right, barrier);
+//        }
     }
     if (chosenAssembler->arch->preferopts & OPT_REVERSESTORE)
         ap3 = gen_expr(funcsp, node->right, F_COMPARE, size);

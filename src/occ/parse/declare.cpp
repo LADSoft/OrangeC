@@ -2979,14 +2979,18 @@ exit:
     if (isatomic(*tp))
     {
 
+
         int sz = basetype(*tp)->size;
-        int n = getAlign(sc_global, &stdchar32tptr);
-        n = n - (*tp)->size % n;
-        if (n != 4)
+        if (needsAtomicLockFromType(*tp))
         {
-            sz += n;
+            int n = getAlign(sc_global, &stdchar32tptr);
+            n = n - (*tp)->size % n;
+            if (n != 4)
+            {
+                sz += n;
+            }
+            sz += ATOMIC_FLAG_SPACE;
         }
-        sz += ATOMIC_FLAG_SPACE;
         (*tp)->size = sz;
     }
     sizeQualifiers(*tp);

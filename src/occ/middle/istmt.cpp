@@ -333,15 +333,15 @@ void genxswitch(STATEMENT* stmt, SYMBOL* funcsp)
     if (ap != ap3)
     {
         IMODE* barrier;
-        if (stmt->select->isatomic)
-        {
-            barrier = doatomicFence(funcsp, NULL, stmt->select, NULL);
-        }
+//        if (stmt->select->isatomic)
+//        {
+//            barrier = doatomicFence(funcsp, NULL, stmt->select, NULL);
+//        }
         gen_icode(i_assn, ap, ap3, NULL);
-        if (stmt->select->isatomic)
-        {
-            doatomicFence(funcsp, NULL, stmt->select, barrier);
-        }
+//        if (stmt->select->isatomic)
+//        {
+//            doatomicFence(funcsp, NULL, stmt->select, barrier);
+//        }
     }
     if (chosenAssembler->arch->preferopts & OPT_EXPANDSWITCH)
     {

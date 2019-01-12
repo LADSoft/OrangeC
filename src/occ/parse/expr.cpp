@@ -4322,6 +4322,8 @@ static LEXEME* expression_atomic_func(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EX
                         d->memoryOrder1 = intNode(en_c_i, mo_seq_cst);
                     }
                     d->atomicOp = ao_flag_set_test;
+                    if (!d->memoryOrder2)
+                        d->memoryOrder2 = d->memoryOrder1;
                     break;
                 case kw_atomic_flag_clear:
                     lex = expression_assign(lex, funcsp, NULL, &tpf, &d->flg, NULL, flags);
@@ -4344,10 +4346,15 @@ static LEXEME* expression_atomic_func(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EX
                         d->memoryOrder1 = intNode(en_c_i, mo_seq_cst);
                     }
                     d->atomicOp = ao_flag_clear;
+                    if (!d->memoryOrder2)
+                        d->memoryOrder2 = d->memoryOrder1;
                     *tp = &stdvoid;
                     break;
                 case kw_atomic_fence:
                     lex = expression_assign(lex, funcsp, NULL, &tpf, &d->memoryOrder1, NULL, flags);
+                    if (!d->memoryOrder2)
+                        d->memoryOrder2 = d->memoryOrder1;
+                    d->memoryOrder1 = exprNode(en_add, d->memoryOrder1, intNode(en_c_i, 0x80));
                     d->atomicOp = ao_fence;
                     *tp = &stdvoid;
                     break;
@@ -4375,6 +4382,8 @@ static LEXEME* expression_atomic_func(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EX
                         d->memoryOrder1 = intNode(en_c_i, mo_seq_cst);
                     }
                     d->atomicOp = ao_load;
+                    if (!d->memoryOrder2)
+                        d->memoryOrder2 = d->memoryOrder1;
                     break;
                 case kw_atomic_store:
                     lex = expression_assign(lex, funcsp, NULL, &tpf, &d->address, NULL, flags);
@@ -4413,6 +4422,9 @@ static LEXEME* expression_atomic_func(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EX
                         d->memoryOrder1 = intNode(en_c_i, mo_seq_cst);
                     }
                     d->atomicOp = ao_store;
+                    if (!d->memoryOrder2)
+                        d->memoryOrder2 = d->memoryOrder1;
+                    d->memoryOrder1 = exprNode(en_add, d->memoryOrder1, intNode(en_c_i, 0x80));
                     break;
                 case kw_atomic_modify:
                     lex = expression_assign(lex, funcsp, NULL, &tpf, &d->address, NULL, flags);
@@ -4472,6 +4484,8 @@ static LEXEME* expression_atomic_func(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EX
                         d->memoryOrder1 = intNode(en_c_i, mo_seq_cst);
                     }
                     d->atomicOp = ao_modify;
+                    if (!d->memoryOrder2)
+                        d->memoryOrder2 = d->memoryOrder1;
                     break;
                 case kw_atomic_cmpswp:
                     lex = expression_assign(lex, funcsp, NULL, &tpf, &d->address, NULL, flags);
@@ -4535,6 +4549,8 @@ static LEXEME* expression_atomic_func(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EX
                         d->memoryOrder2 = intNode(en_c_i, mo_seq_cst);
                     }
                     d->atomicOp = ao_cmpswp;
+                    if (!d->memoryOrder2)
+                        d->memoryOrder2 = d->memoryOrder1;
                     *tp = &stdint;
                     break;
                 default:
@@ -4545,8 +4561,7 @@ static LEXEME* expression_atomic_func(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EX
                 error(ERR_NEED_INTEGER_TYPE);
                 d->memoryOrder1 = *exp = intNode(en_c_i, mo_relaxed);
             }
-            if (!d->memoryOrder2)
-                d->memoryOrder2 = d->memoryOrder1;
+            optimize_for_constants(&d->memoryOrder1);
             if (!needkw(&lex, closepa))
             {
                 errskim(&lex, skim_closepa);

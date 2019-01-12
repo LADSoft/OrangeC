@@ -129,7 +129,7 @@ void _RTL_FUNC atomic_flag_clear_explicit(atomic_flag*, int);
 #define atomic_flag_clear_explicit(object, order) __atomic_flag_clear(object, order)
 #define atomic_flag_clear(object) __atomic_flag_clear(object, memory_order_seq_cst)
 
-#define atomic_thread_fence(order) __atomic_fence(order+ 0x80)
+#define atomic_thread_fence(order) __atomic_fence(order)
 #define atomic_signal_fence(order) __atomic_fence(order)
 
 #define __ATOMIC_TYPE__(__x__, __y__) typedef _Atomic(__x__) __y__;
@@ -181,21 +181,21 @@ __ATOMIC_TYPE__(uintmax_t, atomic_uintmax_t);
 
 #define atomic_load_explicit(__a__, __x__) __atomic_load(__a__, __x__)
 
-#define atomic_store(__a__, __m__) __atomic_store(__a__, __m__, memory_order_seq_cst | 0x80)
+#define atomic_store(__a__, __m__) __atomic_store(__a__, __m__, memory_order_seq_cst)
 
-#define atomic_store_explicit(__a__, __m__, __x__) __atomic_store(__a__, __m__, __x__ | 0x80)
+#define atomic_store_explicit(__a__, __m__, __x__) __atomic_store(__a__, __m__, __x__)
 
 #define atomic_exchange(__a__, __m__) __atomic_modify(__a__, =, __m__, memory_order_seq_cst)
 
 #define atomic_exchange_explicit(__a__, __m__, __x__) __atomic_modify(__a__, =, __m__, __x__)
 
-#define atomic_compare_exchange_strong(__a__, __e__, __m__) __atomic_cmpswp(__a__, __e__, __m__, memory_order_seq_cst | 0x80, memory_order_seq_cst)
+#define atomic_compare_exchange_strong(__a__, __e__, __m__) __atomic_cmpswp(__a__, __e__, __m__, memory_order_seq_cst, memory_order_seq_cst)
 
-#define atomic_compare_exchange_strong_explicit(__a__, __e__, __m__, __x__, __y__) __atomic_cmpswp(__a__, __e__, __m__, __x__ | 0x80, __y__)
+#define atomic_compare_exchange_strong_explicit(__a__, __e__, __m__, __x__, __y__) __atomic_cmpswp(__a__, __e__, __m__, __x__, __y__)
 
-#define atomic_compare_exchange_weak(__a__, __e__, __m__) __atomic_cmpswp(__a__, __e__, __m__, memory_order_seq_cst | 0x80, memory_order_seq_cst)
+#define atomic_compare_exchange_weak(__a__, __e__, __m__) __atomic_cmpswp(__a__, __e__, __m__, memory_order_seq_cst, memory_order_seq_cst)
 
-#define atomic_compare_exchange_weak_explicit(__a__, __e__, __m__, __x__, __y__) __atomic_cmpswp(__a__, __e__, __m__, __x__ | 0x80, __y__)
+#define atomic_compare_exchange_weak_explicit(__a__, __e__, __m__, __x__, __y__) __atomic_cmpswp(__a__, __e__, __m__, __x__, __y__)
 
 #define atomic_fetch_add_explicit(__a__, __m__, __x__) __atomic_modify(__a__, +=, __m__, __x__)
 

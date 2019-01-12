@@ -250,7 +250,7 @@ static int dumpBits(INITIALIZER** init)
             diag("dumpBits: unknown bit size");
             break;
     }
-    if (isatomic((*init)->basetp))
+    if (isatomic((*init)->basetp) && needsAtomicLockFromType((*init)->basetp))
         genstorage(ATOMIC_FLAG_SPACE);
     return base->size;
 #else
@@ -991,7 +991,7 @@ void dumpInitGroup(SYMBOL* sp, TYPE* tp)
     }
     else
         genstorage(basetype(tp)->size);
-    if (isatomic(tp))
+    if (isatomic(tp) && needsAtomicLockFromType(tp))
     {
         genstorage(ATOMIC_FLAG_SPACE);
     }
@@ -4105,7 +4105,7 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_sc storage_cl
     }
     if (isatomic(sp->tp) && (sp->storage_class == sc_auto))
     {
-        if (sp->init == NULL)
+        if (sp->init == NULL && needsAtomicLockFromType(sp->tp))
         {
             // sets the atomic_flag portion of a locked type to zero
             sp->init = (INITIALIZER *)Alloc(sizeof(INITIALIZER));

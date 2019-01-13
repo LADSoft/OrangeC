@@ -1122,7 +1122,7 @@ std::string Eval::suffix(const std::string& names)
     {
         std::string p = ExtractFirst(working, " ");
         size_t n = p.find_last_of('.');
-        if (n != std::string::npos && (n == p.size() - 1 || p[n + 1] != '\\' && p[n + 1] != '/'))
+        if (n != std::string::npos && (n == p.size() - 1 || (p[n + 1] != '\\' && p[n + 1] != '/')))
         {
             if (!rv.empty())
                 rv += " ";
@@ -1144,7 +1144,7 @@ std::string Eval::basename(const std::string& names)
         size_t n = p.find_last_of('.');
         if (!rv.empty())
             rv += " ";
-        if (n != std::string::npos && (n == p.size() - 1 || p[n + 1] != '\\' && p[n + 1] != '/'))
+        if (n != std::string::npos && (n == p.size() - 1 || (p[n + 1] != '\\' && p[n + 1] != '/')))
         {
             rv += p.substr(0, n);
         }

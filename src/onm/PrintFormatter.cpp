@@ -53,10 +53,12 @@ void PrintFormatter::Print(SymbolTable& symbols)
     }
     int rad = 16;
     if (!radix.empty())
+    {
         if (radix[0] == 'd')
             rad = 10;
         else if (radix[0] == 'o')
             rad = 8;
+    }
     double aa = maxOffs / rad / rad / rad / rad;
     maxOffs = 4;
     while (aa >= rad)

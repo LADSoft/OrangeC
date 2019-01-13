@@ -340,7 +340,7 @@ std::string Spawner::QualifyFiles(const std::string& cmd)
             if (working[s] == '"' || working[s] == '\'')
             {
                 s = working.find_first_of(working[s], s+1);
-                if (s = std::string::npos)
+                if (s == std::string::npos)
                     s = working.size();
                 else
                     s = s + 1;

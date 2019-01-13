@@ -65,16 +65,16 @@ class Utils
     static char* ShortName(const char* v);
 
     static unsigned PartialCRC32(unsigned crc, unsigned char* data, size_t len);
-    static unsigned CRC32(unsigned char* data, size_t len) { PartialCRC32(0, data, len); };
+    static unsigned CRC32(unsigned char* data, size_t len) { return PartialCRC32(0, data, len); };
     template <size_t len>
     static unsigned CRC32(unsigned char (&data)[len])
     {
-        CRC32(data, len);
+        return CRC32(data, len);
     }
     template <size_t len>
     static unsigned PartialCRC32(unsigned crc, unsigned char* data)
     {
-        PartialCRC32(crc, data, len);
+        return PartialCRC32(crc, data, len);
     }
     static unsigned crctab[256];
 };

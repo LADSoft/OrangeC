@@ -75,7 +75,7 @@ void Utils::banner(const char* progName)
     // handle /V switch
     for (int i = 1; i < __argc && __argv[i]; i++)
         if (__argv[i] && (__argv[i][0] == '/' || __argv[i][0] == '-'))
-            if (__argv[i][1] == 'V' && __argv[i][2] == 0 || !strcmp(__argv[i], "--version"))
+            if ((__argv[i][1] == 'V' && __argv[i][2] == 0) || !strcmp(__argv[i], "--version"))
             {
                 fprintf(stderr, "\nCompile date: " __DATE__ " time: " __TIME__ "\n");
                 exit(0);

@@ -825,7 +825,7 @@ bool Parser::ParseDefine(const std::string& line, bool dooverride)
     }
     size_t n = ls.find_first_not_of(' ');
     ls = ls.substr(n);
-    while (!ls.empty() && ls[ls.size() - 1] == '=' || isspace(ls[ls.size() - 1]))
+    while ((!ls.empty() && ls[ls.size() - 1] == '=') || isspace(ls[ls.size() - 1]))
         ls = ls.substr(0, ls.size() - 1);
     Variable* v = VariableContainer::Instance()->Lookup(ls);
     if (v)

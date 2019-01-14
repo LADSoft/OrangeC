@@ -1906,7 +1906,7 @@ static LEXEME* initialize_reference_type(LEXEME* lex, SYMBOL* funcsp, int offset
                         exp1 = createTemporary(itype1, NULL);
                     exp = exprNode(en_blockassign, exp1, exp);
                     exp->size = getSize(bt_memberptr);
-                    exp->altdata = (long)(&stdpointer);
+                    exp->altdata =(void*)(&stdpointer);
                     exp = exprNode(en_void, exp, exp1);
                 }
             }

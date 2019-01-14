@@ -2342,7 +2342,7 @@ void asm_label(QUAD* q) /* put a label in the code stream */
 {
     OCODE* out = (OCODE*)beLocalAlloc(sizeof(OCODE));
     out->opcode = (e_opcode)op_label;
-    out->oper1 = (AMODE*)q->dc.v.label;
+    out->oper1 = make_label(q->dc.v.label);
     add_peep(out);
 }
 void asm_goto(QUAD* q) /* unconditional branch */

@@ -48,7 +48,7 @@ extern DAGLIST* ins_hash[DAGSIZE];
 extern TEMP_INFO** tempInfo;
 extern int tempCount;
 
-static void ScanVarStrength(INSTRUCTIONLIST* l, IMODE* multiplier, int tnum, int match, LIST* vars)
+static void ScanVarStrength(INSTRUCTIONLIST* l, IMODE* multiplier, int tnum, int match, ILIST* vars)
 {
     while (l)
     {
@@ -163,19 +163,19 @@ static void ScanVarStrength(INSTRUCTIONLIST* l, IMODE* multiplier, int tnum, int
             }
             if (!s)
             {
-                LIST* v = vars;
+                ILIST* v = vars;
                 while (v)
                 {
                     USES_STRENGTH* s1 = (USES_STRENGTH *)tAlloc(sizeof(USES_STRENGTH));
                     IMODE* rv = InitTempOpt((ans)->size, (ans)->size);
                     int n = rv->offset->v.sp->value.i;
-                    s1->next = tempInfo[(int)v->data]->sl;
-                    tempInfo[(int)v->data]->sl = s1;
+                    s1->next = tempInfo[v->data]->sl;
+                    tempInfo[v->data]->sl = s1;
                     s1->multiplier = multiplier;
                     s1->strengthName = n;
                     tempInfo[n]->enode->v.sp->pushedtotemp = true;
-                    tempInfo[n]->inductionLoop = tempInfo[(int)v->data]->inductionLoop;
-                    tempInfo[n]->oldInductionVar = (int)v->data;
+                    tempInfo[n]->inductionLoop = tempInfo[v->data]->inductionLoop;
+                    tempInfo[n]->oldInductionVar = v->data;
                     v = v->next;
                 }
                 s = tempInfo[tnum]->sl;
@@ -197,14 +197,14 @@ static void ScanStrength(void)
             INDUCTION_LIST* sets = lt->inductionSets;
             while (sets)
             {
-                LIST* vars = sets->vars;
+                ILIST* vars = sets->vars;
                 int n;
                 for (n = 0; vars; vars = vars->next, n++)
                     ;
                 vars = sets->vars;
                 while (vars)
                 {
-                    ScanVarStrength(tempInfo[(int)vars->data]->instructionUses, NULL, (int)vars->data, (int)vars->data, sets->vars);
+                    ScanVarStrength(tempInfo[vars->data]->instructionUses, NULL, vars->data, vars->data, sets->vars);
                     vars = vars->next;
                 }
                 sets = sets->next;

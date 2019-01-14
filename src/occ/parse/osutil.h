@@ -59,6 +59,12 @@ typedef struct _list_
     void* data;
 } LIST;
 
+typedef struct _ilist_
+{
+    struct _ilist_ *next;
+    int data;
+} ILIST;
+
 typedef struct _memblk_
 {
     struct _memblk_* next;

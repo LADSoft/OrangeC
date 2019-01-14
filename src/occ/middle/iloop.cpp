@@ -874,15 +874,17 @@ LIST* strongRegiondfs(int tnum)
     if (t->temp == t->dfstOrder)
     {
         int vp;
-        LIST *region = NULL, *temp;
+        ILIST *region = NULL;
+        LIST *temp;
+        ILIST *temp1;
         do
         {
             vp = strongStack[--strongStackTop];
             tempInfo[vp]->onstack = false;
-            temp = (LIST *)oAlloc(sizeof(LIST));
-            temp->data = (void*)vp;
-            temp->next = region;
-            region = temp;
+            temp1 = (ILIST *)oAlloc(sizeof(ILIST));
+            temp1->data = vp;
+            temp1->next = region;
+            region = temp1;
         } while (vp != tnum);
         temp = (LIST *)oAlloc(sizeof(LIST));
         temp->data = region;
@@ -896,7 +898,7 @@ LIST* strongRegiondfs(int tnum)
  * each secondary layer is the induction set for the region
  * first element of list is the anchors
  */
-static LIST* strongRegions(LOOP* lp, LIST** anchors)
+static LIST* strongRegions(LOOP* lp, ILIST** anchors)
 {
     int i;
     QUAD* head;
@@ -925,10 +927,10 @@ static LIST* strongRegions(LOOP* lp, LIST** anchors)
                 l1->next = rv;
                 rv = l1;
             }
-            l1 = (LIST *)oAlloc(sizeof(LIST));
-            l1->data = (void*)pd->T0;
-            l1->next = *anchors;
-            *anchors = l1;
+            ILIST *l2 = (ILIST *)oAlloc(sizeof(ILIST));
+            l2->data = pd->T0;
+            l2->next = *anchors;
+            *anchors = l2;
         }
         head = head->fwd;
     }
@@ -948,7 +950,7 @@ void CalculateInduction(void)
         if (lp && lp->type == LT_SINGLE)
         {
             LIST* strongTemps;
-            LIST* anchors = NULL;
+            ILIST* anchors = NULL;
             CalculateInductionCandidates(lp);
             strongTemps = strongRegions(lp, &anchors);
             if (strongTemps && anchors)
@@ -956,10 +958,10 @@ void CalculateInduction(void)
                 LIST* regions = strongTemps;
                 while (regions)
                 {
-                    LIST* r = (LIST*)regions->data;
+                    ILIST* r = (ILIST*)regions->data;
                     if (r->next)
                     {
-                        LIST* t = anchors;
+                        ILIST* t = anchors;
                         while (t)
                         {
                             while (r)
@@ -975,11 +977,11 @@ void CalculateInduction(void)
                         if (t || r)
                         {
                             INDUCTION_LIST* temp = (INDUCTION_LIST *)oAlloc(sizeof(INDUCTION_LIST));
-                            LIST* q;
-                            temp->vars = (LIST *)regions->data;
+                            ILIST* q;
+                            temp->vars = (ILIST *)regions->data;
                             temp->next = lp->inductionSets;
                             lp->inductionSets = temp;
-                            q = (LIST *)regions->data;
+                            q = (ILIST *)regions->data;
                             while (q)
                             {
                                 /* the dominator walk will visit inner loops first,

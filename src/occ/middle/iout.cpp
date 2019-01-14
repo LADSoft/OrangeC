@@ -2412,7 +2412,7 @@ EXPRESSION* stringlit(STRING* s)
                     rv = intNode(en_labcon, lp->label);
                     rv->string = s;
                     rv->size = s->size;
-                    rv->altdata = s->strtype;
+                    rv->altdata = (int)s->strtype;
                     lp->refCount++;
                     return rv;
                 }
@@ -2426,7 +2426,7 @@ EXPRESSION* stringlit(STRING* s)
     rv = intNode(en_labcon, s->label);
     rv->string = s;
     rv->size = s->size;
-    rv->altdata = s->strtype;
+    rv->altdata = (int)s->strtype;
     s->refCount++;
     return rv;
 }

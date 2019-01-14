@@ -290,12 +290,12 @@ static void renameToPhi(BLOCK* b)
         if (head->dc.opcode == i_phi)
         {
             PHIDATA* pd = head->dc.v.phi;
-            LIST* list;
+            ILIST* list;
             IMODE* rv = InitTempOpt(tempInfo[pd->T0]->enode->v.sp->imvalue->size, tempInfo[pd->T0]->size);
             int n = rv->offset->v.sp->value.i;
-            list = (LIST *)oAlloc(sizeof(LIST));
+            list = (ILIST *)oAlloc(sizeof(ILIST));
             list->next = tempInfo[pd->T0]->renameStack;
-            list->data = (void*)n;
+            list->data = n;
             tempInfo[pd->T0]->renameStack = list;
             tempInfo[n]->instructionDefines = head;
             tempInfo[n]->blockDefines = b;
@@ -354,15 +354,15 @@ static void renameToPhi(BLOCK* b)
                 /* now we have a tempreg for the answer, if necessary
                  * rename it
                  */
-                LIST* list;
+                ILIST* list;
                 IMODE* rv = InitTempOpt(tempInfo[tnum]->enode->v.sp->imvalue->size, tempInfo[tnum]->size);
                 //						tempInfo[n]->enode->right = tempInfo[tnum]->enode->right;
                 int n = rv->offset->v.sp->value.i;
                 rv->vol = head->ans->vol;
                 rv->restricted = head->ans->restricted;
-                list = (LIST *)oAlloc(sizeof(LIST));
+                list = (ILIST *)oAlloc(sizeof(ILIST));
                 list->next = tempInfo[tnum]->renameStack;
-                list->data = (void*)n;
+                list->data = n;
                 tempInfo[tnum]->renameStack = list;
                 tempInfo[n]->instructionDefines = head;
                 tempInfo[n]->blockDefines = b;
@@ -404,11 +404,11 @@ static void renameToPhi(BLOCK* b)
             {
                 if (b == pb->block)
                 {
-                    LIST* t = tempInfo[pb->Tn]->renameStack;
+                    ILIST* t = tempInfo[pb->Tn]->renameStack;
                     if (t)
                     {
                         RemoveFromUses(q, pb->Tn);
-                        pb->Tn = (unsigned)t->data;
+                        pb->Tn = t->data;
                         InsertUses(q, pb->Tn);
                         //						tempInfo[pb->Tn]->preSSATemp = -1;
                     }
@@ -494,7 +494,7 @@ static void renameToPhi(BLOCK* b)
             TEMP_INFO* t = tempInfo[pd->T0];
             if (t->renameStack)
             {
-                pd->T0 = (unsigned)t->renameStack->data;
+                pd->T0 = t->renameStack->data;
                 t->renameStack = t->renameStack->next;
             }
             else
@@ -884,7 +884,7 @@ static void BuildAuxGraph(BLOCK* b, int which, BRIGGS_SET* nodes)
             Tip = findPartition(pb->Tn);
             if (T0p != Tip)
             {
-                LIST* l;
+                ILIST* l;
                 if (!briggsTest(nodes, T0p))
                 {
                     briggsSet(nodes, T0p);
@@ -897,13 +897,13 @@ static void BuildAuxGraph(BLOCK* b, int which, BRIGGS_SET* nodes)
                     tempInfo[Tip]->elimPredecessors = NULL;
                     tempInfo[Tip]->elimSuccessors = NULL;
                 }
-                l = (LIST *)oAlloc(sizeof(LIST));
-                l->data = (void*)T0p;
+                l = (ILIST *)oAlloc(sizeof(ILIST));
+                l->data = T0p;
                 l->next = tempInfo[Tip]->elimPredecessors;
                 tempInfo[Tip]->elimPredecessors = l;
 
-                l = (LIST *)oAlloc(sizeof(LIST));
-                l->data = (void*)Tip;
+                l = (ILIST *)oAlloc(sizeof(ILIST));
+                l->data = Tip;
                 l->next = tempInfo[T0p]->elimSuccessors;
                 tempInfo[T0p]->elimSuccessors = l;
             }
@@ -914,9 +914,9 @@ static void BuildAuxGraph(BLOCK* b, int which, BRIGGS_SET* nodes)
             head = head->fwd;
     }
 }
-static void ElimForward(BRIGGS_SET* visited, LIST** stack, int T)
+static void ElimForward(BRIGGS_SET* visited, ILIST** stack, int T)
 {
-    LIST* l = tempInfo[T]->elimSuccessors;
+    ILIST* l = tempInfo[T]->elimSuccessors;
     briggsSet(visited, T);
     while (l)
     {
@@ -927,17 +927,17 @@ static void ElimForward(BRIGGS_SET* visited, LIST** stack, int T)
         }
         l = l->next;
     }
-    l = (LIST *)oAlloc(sizeof(LIST));
-    l->data = (void*)T;
+    l = (ILIST *)oAlloc(sizeof(ILIST));
+    l->data = T;
     l->next = *stack;
     *stack = l;
 }
 static bool unvisitedPredecessor(BRIGGS_SET* visited, int T)
 {
-    LIST* l = tempInfo[T]->elimPredecessors;
+    ILIST* l = tempInfo[T]->elimPredecessors;
     while (l)
     {
-        if (!briggsTest(visited, (int)l->data))
+        if (!briggsTest(visited, l->data))
             return true;
         l = l->next;
     }
@@ -945,12 +945,12 @@ static bool unvisitedPredecessor(BRIGGS_SET* visited, int T)
 }
 static void ElimBackward(BRIGGS_SET* visited, BLOCK* pred, int T, bool all)
 {
-    LIST* l;
+    ILIST* l;
     briggsSet(visited, T);
     l = tempInfo[T]->elimPredecessors;
     while (l)
     {
-        int p = (int)l->data;
+        int p = l->data;
         if (!briggsTest(visited, p))
         {
             ElimBackward(visited, pred, p, all);
@@ -967,7 +967,7 @@ static void CreateCopy(BRIGGS_SET* visited, BLOCK* pred, int T, bool all)
     //	live = (void *)1;
     if (unvisitedPredecessor(visited, T))
     {
-        LIST* l;
+        ILIST* l;
         IMODE* rv = InitTempOpt(tempInfo[T]->enode->v.sp->imvalue->size, tempInfo[T]->size);
         int u = rv->offset->v.sp->value.i;
         tempInfo[u]->enode->v.sp->pushedtotemp = tempInfo[T]->enode->v.sp->pushedtotemp;
@@ -977,7 +977,7 @@ static void CreateCopy(BRIGGS_SET* visited, BLOCK* pred, int T, bool all)
         l = tempInfo[T]->elimPredecessors;
         while (l)
         {
-            int p = (int)l->data;
+            int p = l->data;
             if (!briggsTest(visited, p))
             {
                 ElimBackward(visited, pred, p, all);
@@ -990,7 +990,7 @@ static void CreateCopy(BRIGGS_SET* visited, BLOCK* pred, int T, bool all)
     {
         while (tempInfo[T]->elimSuccessors)
         {
-            int u = (int)tempInfo[T]->elimSuccessors->data;
+            int u = tempInfo[T]->elimSuccessors->data;
             briggsSet(visited, T);
             tempInfo[T]->elimSuccessors = tempInfo[T]->elimSuccessors->next;
             copyInstruction(pred, T, u, all);
@@ -1003,7 +1003,7 @@ static void EliminatePredecessors(BRIGGS_SET* nodes, BLOCK* pred, BLOCK* b, int 
     if (nodes->top)
     {
         BRIGGS_SET* visited = briggsAlloc(tempCount * 2);
-        LIST* stack = NULL;
+        ILIST* stack = NULL;
         int i;
         for (i = 0; i < nodes->top; i++)
         {
@@ -1015,7 +1015,7 @@ static void EliminatePredecessors(BRIGGS_SET* nodes, BLOCK* pred, BLOCK* b, int 
         briggsClear(visited);
         while (stack)
         {
-            int n = (int)stack->data;
+            int n = stack->data;
             if (!briggsTest(visited, n))
             {
                 CreateCopy(visited, pred, n, all);

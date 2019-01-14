@@ -190,7 +190,7 @@ void Eval::StripLeadingSpaces(std::string& value)
     if (n != 0)
         value.replace(0, n, "");
 }
-int Eval::MacroSpan(const std::string line, int pos)
+size_t Eval::MacroSpan(const std::string line, int pos)
 {
     std::list<char> stack;
     int pos1 = pos;
@@ -721,7 +721,7 @@ size_t Eval::MatchesPattern(const std::string& name, const std::string& pattern,
 int Eval::FindBalancedComma(const std::string& right)
 {
     int nest = 0;
-    int n;
+    size_t n;
     for (n = 0; n < right.size(); ++n)
     {
         if (right[n] == '(')

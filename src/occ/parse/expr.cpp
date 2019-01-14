@@ -7925,7 +7925,7 @@ LEXEME* expression_assign(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
                 exp1 = intNode(en_labcon, lbl);
                 *exp = exprNode(en_blockassign, *exp, exp1);
                 (*exp)->size = (*tp)->size;
-                (*exp)->altdata = (long)(*tp);
+                (*exp)->altdata = (void *)(*tp);
             }
             else if (isconstzero(tp1, exp1) || exp1->type == en_nullptr)
             {
@@ -7942,7 +7942,7 @@ LEXEME* expression_assign(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
             {
                 *exp = exprNode(en_blockassign, *exp, exp1);
                 (*exp)->size = (*tp)->size;
-                (*exp)->altdata = (long)(*tp);
+                (*exp)->altdata = (void *)(*tp);
             }
         }
         else if (isstructured(*tp))
@@ -7962,7 +7962,7 @@ LEXEME* expression_assign(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
             {
                 *exp = exprNode(en_blockassign, *exp, exp1);
                 (*exp)->size = (*tp)->size;
-                (*exp)->altdata = (long)(*tp);
+                (*exp)->altdata = (void *)(*tp);
                 if (isatomic(*tp))
                     (*exp)->size -= ATOMIC_FLAG_SPACE;
             }

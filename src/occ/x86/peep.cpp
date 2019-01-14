@@ -342,7 +342,7 @@ void oa_gen_label(int labno)
     OCODE* newitem;
     newitem = (OCODE*)beLocalAlloc(sizeof(OCODE));
     newitem->opcode = (e_opcode)op_label;
-    newitem->oper1 = (AMODE*)labno;
+    newitem->oper1 = make_label(labno);
     add_peep(newitem);
 }
 
@@ -366,7 +366,7 @@ void flush_peep(SYMBOL* funcsp, QUAD* list)
             switch ((e_op)peep_head->opcode)
             {
                 case op_label:
-                    oa_put_label((int)peep_head->oper1);
+                    oa_put_label(peep_head->oper1->offset->v.i);
                     break;
                 case op_funclabel:
                     oa_gen_strlab((SYMBOL*)peep_head->oper1);

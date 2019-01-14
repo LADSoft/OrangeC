@@ -4973,7 +4973,7 @@ static void allocateVLA(LEXEME* lex, SYMBOL* sp, SYMBOL* funcsp, BLOCKDATA* bloc
         rptr = &(*rptr)->right;
         result->left = exprNode(en_blockassign, varNode(en_auto, dest), varNode(en_auto, src));
         result->left->size = dest->tp->size = src->tp->size;
-        result->altdata = (long)src->tp;
+        result->altdata = (void *)src->tp;
     }
     else
     {

@@ -1390,7 +1390,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sp, SYMBOL* funcsp, INITIA
                     {
                         exp = exprNode(en_blockassign, expsym, exp2);
                         exp->size = init->basetp->size;
-                        exp->altdata = (long)(init->basetp);
+                        exp->altdata = (void*)(init->basetp);
                         noClear = true;
                     }
                 }
@@ -1468,7 +1468,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sp, SYMBOL* funcsp, INITIA
                             {
                                 exp = exprNode(en_blockassign, expsym, exp);
                                 exp->size = init->basetp->size;
-                                exp->altdata = (long)(init->basetp);
+                                exp->altdata = (void*)(init->basetp);
                             }
                         }
                     }
@@ -1495,7 +1495,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sp, SYMBOL* funcsp, INITIA
                     }
                     exp = exprNode(en_blockassign, expsym, exp2);
                     exp->size = init->basetp->size;
-                    exp->altdata = (long)(init->basetp);
+                    exp->altdata = (void*)(init->basetp);
                 }
             }
             else

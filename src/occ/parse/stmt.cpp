@@ -1980,7 +1980,7 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                     {
                         returnexp = exprNode(en_blockassign, en, returnexp);
                         returnexp->size = basetype(tp)->size;
-                        returnexp->altdata = (long)(basetype(tp));
+                        returnexp->altdata =(void*)(basetype(tp));
                     }
                     returntype = tp;
                 }

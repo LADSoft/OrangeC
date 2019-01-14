@@ -303,7 +303,7 @@ typedef struct expr
     enum e_node type;
     int pragmas;
     long size; /* For block moves */
-    long altdata;
+    void* altdata;
     union
     {
         LLONG_TYPE i;

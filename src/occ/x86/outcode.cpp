@@ -1062,7 +1062,7 @@ void InsertBlock(int start)
 
 void AddFixup(Instruction* newIns, OCODE* ins, const std::list<Numeric*>& operands)
 {
-    if (ins->opcode == op_dd)
+    if ((e_op)ins->opcode == op_dd)
     {
         int resolved = 1;
         int n = resolveoffset(ins->oper1->offset, &resolved);
@@ -1145,7 +1145,7 @@ void outcode_AssembleIns(OCODE* ins)
         switch ((e_op)ins->opcode)
         {
             case op_label:
-                InsertLabel((int)ins->oper1);
+                InsertLabel(ins->oper1->offset->v.i);
                 return;
             case op_line:
                 if (cparams.prm_debug)

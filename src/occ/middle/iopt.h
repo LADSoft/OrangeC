@@ -159,7 +159,7 @@ typedef struct usesStrength
 typedef struct inductionList
 {
     struct inductionList* next;
-    LIST* vars;
+    ILIST* vars;
 } INDUCTION_LIST;
 
 enum e_lptype
@@ -273,7 +273,7 @@ typedef struct _normlist
 } NORMLIST;
 typedef struct
 {
-    LIST* renameStack;
+    ILIST* renameStack;
     LIST* bdefines;
     LIST* idefines;
     LIST* iuses;
@@ -288,8 +288,8 @@ typedef struct
     QUAD* spillTag;
     IMODE* newname;
     IMODE* newnameind;
-    LIST* elimPredecessors;
-    LIST* elimSuccessors;
+    ILIST* elimPredecessors;
+    ILIST* elimSuccessors;
     //	int limitUseCount;
     LIMIT_USES* limitUses;
     LIST* quietRegions;

@@ -1552,7 +1552,7 @@ static void genConsData(BLOCKDATA* b, SYMBOL* cls, MEMBERINITIALIZERS* mi, SYMBO
             EXPRESSION* exp = exprNode(en_blockassign, thisptr, otherptr);
             STATEMENT* st = stmtNode(NULL, b, st_expr);
             exp->size = member->tp->size;
-            exp->altdata = (long)member->tp;
+            exp->altdata = (void*)member->tp;
             optimize_for_constants(&exp);
             st->select = exp;
         }
@@ -2442,7 +2442,7 @@ static void genAsnData(BLOCKDATA* b, SYMBOL* cls, SYMBOL* member, int offset, EX
     {
         left = exprNode(en_blockassign, left, right);
         left->size = member->tp->size;
-        left->altdata = (long)member->tp;
+        left->altdata = (void*)member->tp;
     }
     else
     {

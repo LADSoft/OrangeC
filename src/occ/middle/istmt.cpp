@@ -161,7 +161,7 @@ void gen_genword(STATEMENT* stmt, SYMBOL* funcsp)
  */
 {
     (void)funcsp;
-    gen_icode(i_genword, 0, make_immed(ISZ_UINT, (int)stmt->select), 0);
+    gen_icode(i_genword, 0, make_immed(ISZ_UINT, (int)stmt->select->v.i), 0);
 }
 
 /*-------------------------------------------------------------------------*/
@@ -802,7 +802,7 @@ static void StoreInBucket(IMODE* mem, IMODE* addr)
     lst->next = buckets[bucket];
     buckets[bucket] = lst;
 }
-static IMODE* GetBucket(IMODE* mem)
+static IMODE* GetBucket(IMODE *mem)
 {
     DATA* lst;
     int bucket = (int)mem;

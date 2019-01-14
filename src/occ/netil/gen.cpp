@@ -175,7 +175,7 @@ Operand *make_constant(int sz, EXPRESSION *exp)
     {
         char lbl[256];
         sprintf(lbl, "L_%d_%x", exp->v.i, uniqueId);
-        Value *field = GetStringFieldData(exp->v.i, exp->altdata);
+        Value *field = GetStringFieldData(exp->v.i, ((EXPRESSION *)exp->altdata)->v.i);
         operand = peLib->AllocateOperand(field);
     }
     else if (exp->type == en_auto)

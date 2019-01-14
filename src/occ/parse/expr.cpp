@@ -7889,7 +7889,7 @@ LEXEME* expression_assign(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
                 break;
             case asrightshift:
                 tp2 = destSize(*tp, tp1, NULL, NULL, false, NULL);
-                op = isunsigned(*tp) && basetype(*tp)->type > bt_int ? en_ursh : en_rsh;
+                op = isunsigned(*tp) ? en_ursh : en_rsh;
                 break;
             default:
                 break;

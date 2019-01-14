@@ -310,7 +310,7 @@ typedef struct expr
         FPFC f;
         _COMPLEX_S c;
         struct sym* sp; /* sym will be defined later */
-        char* name;     /* name during base class processing */
+        const char* name;     /* name during base class processing */
         struct functioncall* func;
         struct _atomicData* ad;
         struct stmt* stmt;
@@ -353,7 +353,7 @@ typedef struct _msilarray
 
 typedef struct
 {
-    char* name;  // must be first as it will go in a hashtable
+    const char* name;  // must be first as it will go in a hashtable
     EXPRESSION* exp;
     struct sym* sym;
 } CONSTEXPRSYM;
@@ -375,8 +375,8 @@ union u_val
     _COMPLEX_S c;
     union
     {
-        char* a; /* string val */
-        LCHAR* w;
+        const char* a; /* string val */
+        const LCHAR* w;
     } s;
     struct _defstruct* defs; /* macro definition */
 };
@@ -422,8 +422,8 @@ typedef struct typ
 typedef struct _linedata
 {
     struct _linedata *next, *stmtNext;
-    char* line;
-    char* file;
+    const char* line;
+    const char* file;
     int lineno;
     int fileindex;
 } LINEDATA;
@@ -539,10 +539,10 @@ struct xcept
 /* symbols */
 typedef struct sym
 {
-    char* name;
-    char* decoratedName;                      /* symbol name with decorations, as used in output format */
-    char* errname;                            /* name to be used in errors */
-    char *declfile, *origdeclfile;            /* file symbol was declared in */
+    const char* name;
+    const char* decoratedName;                      /* symbol name with decorations, as used in output format */
+    const char* errname;                            /* name to be used in errors */
+    const char *declfile, *origdeclfile;            /* file symbol was declared in */
     int declline, origdeclline, realdeclline; /* line number symbol was declared at */
     short declcharpos;                        /* character position symbol was declared at */
     short declfilenum;                        /* the file number */
@@ -666,7 +666,7 @@ typedef struct sym
     unsigned has_property_setter : 1;                     // a property has a setter
     unsigned nonConstVariableUsed : 1;                    // a non-const variable was used or assigned to in this function's body
     unsigned importThunk : 1;                             // an import thunk
-    char* deprecationText;                                // C++ declaration was deprecated
+    const char* deprecationText;                          // C++ declaration was deprecated
     int __func__label;                                    /* label number for the __func__ keyword */
     int ipointerindx;                                     /* pointer index for pointer opts */
     int labelCount;                                       /* number of code labels within a function body */
@@ -743,7 +743,7 @@ typedef struct __lambda
 
 typedef struct __lambdasp
 {
-    char* name;
+    const char* name;
     SYMBOL* sym;
     SYMBOL* parent;
     LAMBDA* enclosing;
@@ -752,7 +752,7 @@ typedef struct __lambdasp
 typedef struct _memberInitializers
 {
     struct _memberInitializers* next;
-    char* name;
+    const char* name;
     SYMBOL* sp;
     SYMBOL* basesym;
     INITIALIZER* init;
@@ -872,7 +872,7 @@ typedef struct _templateSelector
     union
     {
         SYMBOL* sym;
-        char* name;
+        const char* name;
     };
     TEMPLATEPARAMLIST* templateParams;
     int isTemplate : 1;
@@ -992,7 +992,7 @@ enum _tokenTypes
 
 typedef struct kwblk
 {
-    char* name;
+    const char* name;
     int len;
     enum e_kw key;
     unsigned matchFlags;

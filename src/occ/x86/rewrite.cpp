@@ -1231,7 +1231,7 @@ int examine_icode(QUAD* head)
                 bool i2 = head->ans->size >= ISZ_IFLOAT;
                 bool i3 = head->dc.left->size < ISZ_CFLOAT;
                 bool i4 = head->ans->size < ISZ_CFLOAT;
-                if (i1 && i3 && !i2 || i2 && i4 && !i1)
+                if ((i1 && i3 && !i2) || (i2 && i4 && !i1))
                 {
     
                     if (prm_lscrtdll)
@@ -1434,7 +1434,7 @@ int examine_icode(QUAD* head)
                     if (szl != sza)
                     {
                         if (head->dc.left->mode != i_immed &&
-                            (head->dc.left->offset->type != en_tempref || head->dc.left->mode == i_ind || szl >= ISZ_FLOAT && sza < ISZ_FLOAT))
+                            (head->dc.left->offset->type != en_tempref || head->dc.left->mode == i_ind || (szl >= ISZ_FLOAT && sza < ISZ_FLOAT)))
                         {
                             IMODE* temp;
                             QUAD* q;

@@ -344,7 +344,7 @@ void dbgClearBreakpointsForModule(DLL_INFO* dllinfo)
         for (t = (*p)->addresses; t && *t != 0; ++t)
         {
             if (*t >= dllinfo->base &&
-                (dllinfo->next && *t < dllinfo->next->base || !dllinfo->next && dllinfo->base > activeProcess->base) &&
+                ((dllinfo->next && *t < dllinfo->next->base) || (!dllinfo->next && dllinfo->base > activeProcess->base)) &&
                 (dllinfo->base > activeProcess->base || *t < activeProcess->base))
             {
                 BREAKPOINT* q = *p;
@@ -466,7 +466,7 @@ void SetBP(DEBUG_EVENT* dbe)
     if (hwndASM)
         InvalidateRect(hwndASM, 0, 0);
 }
-LRESULT FunctionBPProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK FunctionBPProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
     static char buf[256];
     HWND editwnd;
@@ -510,7 +510,7 @@ LRESULT FunctionBPProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
     }
     return 0;
 }
-LRESULT FunctionBPSelectProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK FunctionBPSelectProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
     FUNCTIONLIST* list;
     LV_COLUMN lvC;

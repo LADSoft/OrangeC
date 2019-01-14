@@ -26,7 +26,7 @@
 #include <windows.h>
 #include <commctrl.h>
 #include <stdio.h>
-
+#include <richedit.h>
 #include "header.h"
 #include "pefile.h"
 static struct pe_header_struct PEHead;

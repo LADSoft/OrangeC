@@ -27,6 +27,7 @@
 #include "Errors.h"
 #include <ctype.h>
 #include <fstream>
+#include <cassert>
 #include <stdio.h>
 #include "Instruction.h"
 #include "Fixup.h"
@@ -529,6 +530,9 @@ void InstructionParser::SetOperandTokens(amode* operand)
         case am_immed:
             SetSize(operand->length);
             SetExpressionToken(operand->offset);
+            break;
+        default:
+            assert(0);
             break;
     }
 }

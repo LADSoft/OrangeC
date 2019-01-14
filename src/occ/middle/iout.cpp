@@ -146,7 +146,7 @@ static void iop_label(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void putsingle(QUAD* q, IMODE* ap, char* string)
+static void putsingle(QUAD* q, IMODE* ap, const char* string)
 {
     if (!icdFile)
         return;
@@ -240,7 +240,7 @@ static void iop_rett(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void putbin(QUAD* q, char* str)
+static void putbin(QUAD* q, const char* str)
 {
     if (!icdFile)
         return;
@@ -383,7 +383,7 @@ static void iop_eor(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void putunary(QUAD* q, char* str)
+static void putunary(QUAD* q, const char* str)
 {
     if (!icdFile)
         return;
@@ -396,7 +396,7 @@ static void putunary(QUAD* q, char* str)
 
 /*-------------------------------------------------------------------------*/
 
-static void putasunary(QUAD* q, char* str)
+static void putasunary(QUAD* q, const char* str)
 {
     if (!icdFile)
         return;
@@ -598,7 +598,7 @@ static void iop_cpblk(QUAD* q)
 static void iop_asmcond(QUAD* q) { oprintf(icdFile, "\tASMCOND\tL_%d:PC", q->dc.v.label); }
 /*-------------------------------------------------------------------------*/
 
-static void putjmp(QUAD* q, char* str)
+static void putjmp(QUAD* q, const char* str)
 {
     if (!icdFile)
         return;
@@ -612,7 +612,7 @@ static void putjmp(QUAD* q, char* str)
 
 /*-------------------------------------------------------------------------*/
 
-static void putset(QUAD* q, char* str)
+static void putset(QUAD* q, const char* str)
 {
     if (!icdFile)
         return;
@@ -1272,7 +1272,7 @@ static void (*oplst[])(QUAD* q) = {
 /*-------------------------------------------------------------------------*/
 void beDecorateSymName(char* buf, SYMBOL* sp)
 {
-    char* q;
+    const char* q;
     q = lookupAlias(sp->name);
     if (q)
         strcpy(buf, q);
@@ -2122,7 +2122,7 @@ int genstring(STRING* str)
                         genuint32(*p++);
                         break;
                     default:
-                        if (*p >= 0x20 && *p < 0x7f || *p == ' ')
+                        if ((*p >= 0x20 && *p < 0x7f) || *p == ' ')
                         {
                             if (!instring)
                             {
@@ -2756,11 +2756,11 @@ void putexterns(void)
         {
             SYMBOL* sp = (SYMBOL *)externList->data;
             if (!sp->ispure &&
-                (sp->dontinstantiate && sp->genreffed ||
-                 !sp->inlineFunc.stmt && !sp->init &&
-                     (isfunction(sp->tp) || !isfunction(sp->tp) && sp->storage_class != sc_global &&
+                ((sp->dontinstantiate && sp->genreffed) ||
+                 (!sp->inlineFunc.stmt && !sp->init &&
+                     (isfunction(sp->tp) || ((!isfunction(sp->tp) && sp->storage_class != sc_global &&
                                                 sp->storage_class != sc_static && sp->storage_class != sc_localstatic) &&
-                     (sp->parentClass && sp->genreffed || sp->genreffed && sp->storage_class == sc_external)) &
+                     ((sp->parentClass && sp->genreffed) || (sp->genreffed && sp->storage_class == sc_external)))))) &&
                     !sp->noextern)
             {
                 notyet = put_exfunc(sp, notyet);

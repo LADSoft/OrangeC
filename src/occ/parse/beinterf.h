@@ -119,7 +119,7 @@ typedef struct
 
 typedef struct _regdesc
 {
-    char* name;
+    const char* name;
     unsigned pushMask;
     int reg1live;
     int reg2live;
@@ -189,7 +189,7 @@ typedef struct
     UBYTE* regOrder;            /* register allocation order */
     ARCH_PEEP* peephole_defs;   /* defines peephole information */
     int fastcallRegCount;       /* Max number of regs considered for fastcall */
-    char* fastcallRegs;         /* register list for regs used in fastcall */
+    const char* fastcallRegs;         /* register list for regs used in fastcall */
     int preferopts;             /* preferred optimizations */
     int denyopts;               /* optimizations we don't want */
 #define DO_NOGLOBAL 1
@@ -237,7 +237,7 @@ typedef struct
 /* debugger characteristics */
 typedef struct _arch_dbg
 {
-    char* name;                        /* name of debug format */
+    const char* name;                        /* name of debug format */
     void* userdata;                    /* backend specific data, compiler ignores */
     int* blocknum;                     /* pointer to variable which holds block number, or zero for no blocking */
     void (*init)(void);                /* per file initialization */
@@ -253,8 +253,8 @@ typedef struct _arch_dbg
 /* things to #define before compiling */
 typedef struct _arch_defines
 {
-    char* define;   /* symbol to define */
-    char* value;    /* value */
+    const char* define;   /* symbol to define */
+    const char* value;    /* value */
     char respect;   /* set to true to make it define it, false to ignore it */
     char permanent; /* set to true if the symbol cannot be undefined */
 } ARCH_DEFINES;
@@ -403,7 +403,7 @@ typedef struct
 } ASMNAME;
 typedef struct
 {
-    char* name;
+    const char* name;
     short regtype;
     char regnum;
     char size;
@@ -419,15 +419,15 @@ typedef struct
 } ARCH_MSIL;
 typedef struct _arch_asm
 {
-    char* name;                 /* assembler name */
+    const char* name;                 /* assembler name */
     void* userdata;             /* backend data (compiler ignores) */
-    char* hosted;               /* __STDC__HOSTED__ value "0" = embedded, "1" = hosted */
-    char* asmext;               /* extension for assembly files */
-    char* objext;               /* extension for object files, NULL = has no object mode */
-    char* envname;              /* name of an environment variable to parse, or 0 */
-    char* progname;             /* name of the program, for usage */
-    char* cfgname;              /* name of a config file if you want to use one, or NULL (sans extension) */
-    char* usage_text;           /* pointer to usage text */
+    const char* hosted;               /* __STDC__HOSTED__ value "0" = embedded, "1" = hosted */
+    const char* asmext;               /* extension for assembly files */
+    const char* objext;               /* extension for object files, NULL = has no object mode */
+    const char* envname;              /* name of an environment variable to parse, or 0 */
+    const char* progname;             /* name of the program, for usage */
+    const char* cfgname;              /* name of a config file if you want to use one, or NULL (sans extension) */
+    const char* usage_text;           /* pointer to usage text */
     CMDLIST* Args;              /* argument handling */
     int ArgCount;               /* number of arguments */
     KEYWORD* keywords;          /* specific keywords, e.g. allow a 'bit' keyword and so forth */
@@ -436,7 +436,7 @@ typedef struct _arch_asm
     ARCH_CHARACTERISTICS* arch; /* architecture characteristics */
     ARCH_GEN* gen;              /* pointer to backend function linkages */
     ARCH_MSIL* msil;            /* pointer to MSIL-specific data and functions */
-    char* bltins;               /* pointer to extra builtin data */
+    const char* bltins;               /* pointer to extra builtin data */
     int (*init)(COMPILER_PARAMS* params, struct _arch_asm* data, ARCH_DEBUG* debug); /* return 1 to proceed */
     int (*main_preprocess)();                                                        /* preprocess function, or NULL */
     void (*main_postprocess)(bool hasErrors);                                     /* postprocess function, or NULL */
@@ -497,7 +497,7 @@ typedef struct
         } f;
         struct
         {
-            char* name;
+            const char* name;
             SYMBOL* sp;
             int localOffset;
             int symOffset;

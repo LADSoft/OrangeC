@@ -27,6 +27,7 @@
 #include <commctrl.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <richedit.h>
 #include "operands.h"
 #include "header.h"
 #include "utype.h"

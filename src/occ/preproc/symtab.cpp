@@ -36,7 +36,7 @@ HASHTABLE* CreateHashTable(int size)
     return rv;
 }
 /* SYMBOL tab hash function */
-HASHREC** GetHashLink(HASHTABLE* t, char* string)
+HASHREC** GetHashLink(HASHTABLE* t, const char* string)
 {
     unsigned i;
     if (t->size == 1)
@@ -77,7 +77,7 @@ HASHREC* AddName(SYMBOL* item, HASHTABLE* table)
 /*
  * Find something in the hash table
  */
-HASHREC** LookupName(char* name, HASHTABLE* table)
+HASHREC** LookupName(const char* name, HASHTABLE* table)
 {
     HASHREC** p = GetHashLink(table, name);
 
@@ -89,7 +89,7 @@ HASHREC** LookupName(char* name, HASHTABLE* table)
     }
     return (0);
 }
-SYMBOL* search(char* name, HASHTABLE* table)
+SYMBOL* search(const char* name, HASHTABLE* table)
 {
     while (table)
     {

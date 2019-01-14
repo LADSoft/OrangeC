@@ -139,7 +139,7 @@ void CharacterToken::Parse(std::string& line)
 }
 int CharacterToken::QuotedChar(int bytes, const char** source)
 {
-    register int i = *(*source)++, j;
+    int i = *(*source)++, j;
     if (**source == '\n')
         return INT_MIN;
     if (i != '\\')

@@ -27,8 +27,8 @@
 extern ARCH_ASM* chosenAssembler;
 extern NAMESPACEVALUES *globalNameSpace, *localNameSpace;
 extern INCLUDES* includes;
-extern char* overloadNameTab[];
-extern char* overloadXlateTab[];
+extern const char* overloadNameTab[];
+extern const char* overloadXlateTab[];
 extern enum e_kw skim_end[];
 extern enum e_kw skim_closepa[];
 extern enum e_kw skim_semi_declare[];
@@ -53,7 +53,7 @@ extern bool functionCanThrow;
 extern LINEDATA *linesHead, *linesTail;
 extern bool inTemplateType;
 extern STRUCTSYM* structSyms;
-extern char* deprecationText;
+extern const char* deprecationText;
 extern TYPE stdany;
 extern int noSpecializationError;
 extern SYMBOL *theCurrentFunc;
@@ -259,7 +259,7 @@ static bool vfMatch(SYMBOL* sym, SYMBOL* oldFunc, SYMBOL* newFunc)
         TYPE *tp1 = basetype(oldFunc->tp)->btp, *tp2 = basetype(newFunc->tp)->btp;
         if (!comparetypes(tp1, tp2, true) && !sameTemplate(tp1, tp2) &&
             (!isstructured(tp1) || !isstructured(tp2) ||
-             basetype(tp1)->sp->templateLevel && basetype(tp2)->sp->parentTemplate != basetype(tp1)->sp->parentTemplate))
+             (basetype(tp1)->sp->templateLevel && basetype(tp2)->sp->parentTemplate != basetype(tp1)->sp->parentTemplate)))
         {
             if (!templateNestingCount)
             {
@@ -436,7 +436,7 @@ static void checkXT(SYMBOL* sym1, SYMBOL* sym2, bool func)
     {
         if (sym2->xcMode != xc_unspecified && sym2->xcMode != xc_all)
         {
-            if (sym1->xcMode == xc_dynamic && sym1->xc->xcDynamic || sym1->xcMode == xc_unspecified || sym1->xcMode == xc_all)
+            if ((sym1->xcMode == xc_dynamic && sym1->xc->xcDynamic) || sym1->xcMode == xc_unspecified || sym1->xcMode == xc_all)
             {
                 currentErrorLine = 0;
                 if (func)
@@ -462,7 +462,7 @@ static void checkExceptionSpecification(SYMBOL* sp)
                 if (sym1->storage_class == sc_virtual)
                 {
                     BASECLASS* bc = sp->baseClasses;
-                    char* f1 = strrchr(sym1->decoratedName, '@');
+                    const char* f1 = strrchr(sym1->decoratedName, '@');
                     while (bc && f1)
                     {
                         SYMBOL* sym2 = search(sym->name, basetype(bc->cls->tp)->syms);
@@ -472,7 +472,7 @@ static void checkExceptionSpecification(SYMBOL* sp)
                             while (hr3)
                             {
                                 SYMBOL* sym3 = (SYMBOL*)hr3->p;
-                                char* f2 = strrchr(sym3->decoratedName, '@');
+                                const char* f2 = strrchr(sym3->decoratedName, '@');
                                 if (f2 && !strcmp(f1, f2))
                                 {
                                     checkXT(sym1, sym3, false);
@@ -492,7 +492,7 @@ static void checkExceptionSpecification(SYMBOL* sp)
 void CheckCalledException(SYMBOL* cst, EXPRESSION* exp)
 {
     (void)exp;
-    if (cst->xcMode != xc_none && (cst->xcMode != xc_dynamic || cst->xc && cst->xc->xcDynamic))
+    if (cst->xcMode != xc_none && (cst->xcMode != xc_dynamic || (cst->xc && cst->xc->xcDynamic)))
         functionCanThrow = true;
 }
 void calculateVTabEntries(SYMBOL* sp, SYMBOL* base, VTABENTRY** pos, int offset)
@@ -1852,7 +1852,7 @@ INITLIST** expandPackedInitList(INITLIST** lptr, SYMBOL* funcsp, LEXEME* start, 
     packIndex = oldPack;
     return lptr;
 }
-static int GetBaseClassList(char* name, SYMBOL* cls, BASECLASS* bc, BASECLASS** result)
+static int GetBaseClassList(const char* name, SYMBOL* cls, BASECLASS* bc, BASECLASS** result)
 {
     (void)cls;
     int n = 0;
@@ -1881,7 +1881,7 @@ static int GetBaseClassList(char* name, SYMBOL* cls, BASECLASS* bc, BASECLASS** 
             for (i = n - 1; i >= 0 && parent; i--, parent = parent->parentClass ? parent->parentClass : parent->parentNameSpace)
                 if (strcmp(parent->name, clslst[i]))
                     break;
-            if (i < 0 || i == 0 && parent == NULL && clslst[0][0] == '\0')
+            if (i < 0 || (i == 0 && parent == NULL && clslst[0][0] == '\0'))
             {
                 result[ccount++] = bc;
             }
@@ -1890,7 +1890,7 @@ static int GetBaseClassList(char* name, SYMBOL* cls, BASECLASS* bc, BASECLASS** 
     }
     return ccount;
 }
-static int GetVBaseClassList(char* name, SYMBOL* cls, VBASEENTRY* vbase, VBASEENTRY** result)
+static int GetVBaseClassList(const char* name, SYMBOL* cls, VBASEENTRY* vbase, VBASEENTRY** result)
 {
     (void)cls;
     int n = 0;
@@ -1917,7 +1917,7 @@ static int GetVBaseClassList(char* name, SYMBOL* cls, VBASEENTRY* vbase, VBASEEN
         for (i = n - 1; i >= 0 && parent; i--, parent = parent->parentClass ? parent->parentClass : parent->parentNameSpace)
             if (strcmp(parent->name, clslst[i]))
                 break;
-        if (i < 0 || i == 0 && parent == NULL && clslst[0][0] == '\0')
+        if (i < 0 || (i == 0 && parent == NULL && clslst[0][0] == '\0'))
         {
             result[vcount++] = vbase;
         }
@@ -1940,7 +1940,7 @@ MEMBERINITIALIZERS* expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, MEMBERI
         // already evaluated to not having a base class
         init = &(*init)->next;
     }
-    else if (basecount && !baseEntries[0]->cls->templateLevel || vbasecount && !vbaseEntries[0]->cls->templateLevel)
+    else if ((basecount && !baseEntries[0]->cls->templateLevel) || (vbasecount && !vbaseEntries[0]->cls->templateLevel))
     {
         init = &(*init)->next;
         errorsym(ERR_NOT_A_TEMPLATE, linit->sp);
@@ -2236,6 +2236,8 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                                     break;
                                 case andx:
                                     sp->operatorId = and_unary;
+                                    break;
+                                default:
                                     break;
                             }
                         }
@@ -3060,7 +3062,7 @@ bool ParseAttributeSpecifiers(LEXEME** lex, SYMBOL* funcsp, bool always)
     ParseOut__attribute__(lex, funcsp);
     if (cparams.prm_cplusplus || cparams.prm_c1x)
     {
-        while (MATCHKW(*lex, kw_alignas) || cparams.prm_cplusplus && MATCHKW(*lex, openbr))
+        while (MATCHKW(*lex, kw_alignas) || (cparams.prm_cplusplus && MATCHKW(*lex, openbr)))
         {
             if (MATCHKW(*lex, kw_alignas))
             {

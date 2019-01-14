@@ -90,11 +90,11 @@ typedef struct _includes_
 /* #define tracking */
 typedef struct _defstruct
 {
-    char* name;
-    char* string;
+    const char* name;
+    const char* string;
     int argcount;
     int line;
-    char* file;
+    const char* file;
     char** args;
     int varargs : 1;
     int permanent : 1;

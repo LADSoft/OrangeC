@@ -29,68 +29,68 @@
 #include <cstdio>
 #include <cstring>
 
-static char* unmangle(char* val, char* name);
+static const char* unmangle(char* val, const char* name);
 
 ObjString ObjSymbol::GetDisplayName()
 {
     char val[2048];
-    return unmangle(val, (char*)name.c_str());
+    return unmangle(val, (const char*)name.c_str());
 }
 
 static char anonymousNameSpaceName[512] = "{anonymous}";
-char* tn_void = "void";
-char* tn_bool = "bool";
-char* tn_char = "char";
-char* tn_int = "int";
-char* tn_long = "long";
-char* tn_longlong = "long long";
-char* tn_short = "short ";
-char* tn_unsigned = "unsigned ";
-char* tn_signed = "signed ";
-char* tn_ellipse = "...";
-char* tn_float = "float";
-char* tn_double = "double";
-char* tn_longdouble = "long double";
-char* tn_volatile = " volatile ";
-char* tn_const = " const ";
-char* tn_class = "class ";
-char* tn_struct = "struct ";
-char* tn_union = "union ";
-char* tn_floatcomplex = "float complex";
-char* tn_doublecomplex = "double complex";
-char* tn_longdoublecomplex = "long double complex";
-char* tn_floatimaginary = "float imaginary";
-char* tn_doubleimaginary = "double imaginary";
-char* tn_longdoubleimaginary = "long double imaginary";
-char* tn_wchar_t = "wchar_t";
-char* tn_char16_t = "char16_t";
-char* tn_char32_t = "char32_t";
+const char* tn_void = "void";
+const char* tn_bool = "bool";
+const char* tn_char = "char";
+const char* tn_int = "int";
+const char* tn_long = "long";
+const char* tn_longlong = "long long";
+const char* tn_short = "short ";
+const char* tn_unsigned = "unsigned ";
+const char* tn_signed = "signed ";
+const char* tn_ellipse = "...";
+const char* tn_float = "float";
+const char* tn_double = "double";
+const char* tn_longdouble = "long double";
+const char* tn_volatile = " volatile ";
+const char* tn_const = " const ";
+const char* tn_class = "class ";
+const char* tn_struct = "struct ";
+const char* tn_union = "union ";
+const char* tn_floatcomplex = "float complex";
+const char* tn_doublecomplex = "double complex";
+const char* tn_longdoublecomplex = "long double complex";
+const char* tn_floatimaginary = "float imaginary";
+const char* tn_doubleimaginary = "double imaginary";
+const char* tn_longdoubleimaginary = "long double imaginary";
+const char* tn_wchar_t = "wchar_t";
+const char* tn_char16_t = "char16_t";
+const char* tn_char32_t = "char32_t";
 
-char* cpp_funcname_tab[] = {
+const char* cpp_funcname_tab[] = {
     "$bctr",   "$bdtr",    "$bcast",  "$bnew",  "$bdel",   "$badd", "$bsub", "$bmul",   "$bdiv",   "$bshl",   "$bshr",   "$bmod",
     "$bequ",   "$bneq",    "$blt",    "$bleq",  "$bgt",    "$bgeq", "$basn", "$basadd", "$bassub", "$basmul", "$basdiv", "$basmod",
     "$basshl", "$bsasshr", "$basand", "$basor", "$basxor", "$binc", "$bdec", "$barray", "$bcall",  "$bstar",  "$barrow", "$bcomma",
     "$blor",   "$bland",   "$bnot",   "$bor",   "$band",   "$bxor", "$bcpl", "$bnwa",   "$bdla",   "$blit"
 
 };
-char* xlate_tab[] = {
+const char* xlate_tab[] = {
     0,    0,     0,    "new", "delete", "+",  "-",  "*",  "/",   "<<",  ">>", "%",     "==",       "!=",    "<",  "<=",
     ">",  ">=",  "=",  "+=",  "-=",     "*=", "/=", "%=", "<<=", ">>=", "&=", "|=",    "^=",       "++",    "--", "[]",
     "()", "->*", "->", ",",   "||",     "&&", "!",  "|",  "&",   "^",   "~",  "new[]", "delete[]", "\"\" ",
 };
 #define IT_THRESHOLD 3
 #define IT_OV_THRESHOLD 5
-#define IT_SIZE (sizeof(cpp_funcname_tab) / sizeof(char*))
+#define IT_SIZE (sizeof(cpp_funcname_tab) / sizeof(const char*))
 
-static char* unmangcpptype(char* buf, char* name, char* last);
-char* unmang1(char* buf, char* name, char* last, bool tof);
-static char* unmangTemplate(char* buf, char* name, char* last);
+static const char* unmangcpptype(char* buf, const char* name, const char* last);
+const char* unmang1(char* buf, const char* name, const char* last, bool tof);
+static const char* unmangTemplate(char* buf, const char* name, const char* last);
 
 #define MAX_MANGLE_NAME_COUNT 36
 static int manglenamecount = -1;
 static char manglenames[MAX_MANGLE_NAME_COUNT][512];
 
-char* unmang_intrins(char* buf, char* name, char* last)
+const char* unmang_intrins(char* buf, const char* name, const char* last)
 {
     char cur[4096], *p = cur, *q;
     int i;
@@ -122,7 +122,8 @@ char* unmang_intrins(char* buf, char* name, char* last)
                     // fallthrough
                 case 0:  // new
                 {
-                    char *p = last, *q = buf;
+                    const char *p = last;
+                    char *q = buf;
                     while (*p && *p != ':')
                         *q++ = *p++;
                     *q = 0;
@@ -140,7 +141,7 @@ char* unmang_intrins(char* buf, char* name, char* last)
 }
 
 /* Argument unmangling for C++ */
-static char* unmangptr(char* buf, char* name, char* last)
+static const char* unmangptr(char* buf, const char* name, const char* last)
 {
     int cvol = 0;
     int cconst = 0;
@@ -203,7 +204,7 @@ static char* unmangptr(char* buf, char* name, char* last)
     }
     return name;
 }
-char* unmangleExpression(char* dest, char* name)
+char* unmangleExpression(char* dest, const char* name)
 {
     if (isdigit(*name) || *name == '_')
     {
@@ -520,9 +521,9 @@ char* unmangleExpression(char* dest, char* name)
         }
     }
     *dest = 0;
-    return name;
+    return dest;
 }
-static char* unmangTemplate(char* buf, char* name, char* last)
+static const char* unmangTemplate(char* buf, const char* name, const char* last)
 {
     if (*name == '#')
     {
@@ -594,7 +595,7 @@ static char* unmangTemplate(char* buf, char* name, char* last)
     return name;
 }
 /* Argument unmangling for C++ */
-char* unmang1(char* buf, char* name, char* last, bool tof)
+const char* unmang1(char* buf, const char* name, const char* last, bool tof)
 {
     int v;
     int cvol = 0, cconst = 0, clrqual = 0, crrqual = 0;
@@ -624,7 +625,7 @@ char* unmang1(char* buf, char* name, char* last, bool tof)
 start:
     if (isdigit(*name))
     {
-        char* s = buf;
+        const char* s = buf;
         v = *name++ - '0';
         while (isdigit(*name))
             v = v * 10 + *name++ - '0';
@@ -634,7 +635,7 @@ start:
             return unmang1(buf, name, last, tof);  // out of sequence, recover
         while (v > 0)
         {
-            char* newname;
+            const char* newname;
             if (name[0] == '#')
             {
                 newname = unmangTemplate(buf, name, last);
@@ -1029,7 +1030,7 @@ start:
     return name;
 }
 
-static char* unmangcpptype(char* buf, char* name, char* last)
+static const char* unmangcpptype(char* buf, const char* name, const char* last)
 {
     int i;
     *buf++ = '<';
@@ -1054,7 +1055,7 @@ static char* unmangcpptype(char* buf, char* name, char* last)
 }
 
 /* Name unmangling in general */
-char* unmangle(char* val, char* name)
+const char* unmangle(char* val, const char* name)
 {
     char* buf = val;
     char* last = buf;

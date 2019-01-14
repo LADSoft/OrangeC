@@ -102,7 +102,7 @@ static void FindPrev(HWND hwnd)
     {
         *(short*)buffer = 512;
         buffer[SendMessage(hwnd, EM_GETLINE, lineno, (LPARAM)buffer)] = 0;
-        if (found = Findbump(hwnd, buffer))
+        if ((found = Findbump(hwnd, buffer)))
             break;
     }
     if (found)
@@ -129,7 +129,7 @@ static void FindNext(HWND hwnd)
     {
         *(short*)buffer = 512;
         buffer[SendMessage(hwnd, EM_GETLINE, lineno, (LPARAM)buffer)] = 0;
-        if (found = Findbump(hwnd, buffer))
+        if ((found = Findbump(hwnd, buffer)))
             break;
     }
     if (found)

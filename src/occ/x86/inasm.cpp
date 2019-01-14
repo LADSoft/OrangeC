@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "be.h"
+#include "Instruction.h"
 
 extern INCLUDES* includes;
 extern int codeLabel;
@@ -59,7 +60,7 @@ static enum e_opcode op;
 #define ERR_UNKNOWN_OP 10
 #define ERR_BAD_OPERAND_COMBO 11
 #define ERR_INVALID_USE_OF_INSTRUCTION 12
-static char* errors[] = {"Lable expected",
+static const char* errors[] = {"Lable expected",
                          "Illegal address mode",
                          "Address mode expected",
                          "Invalid opcode",
@@ -81,7 +82,7 @@ ASMNAME directiveLst[] = {{"db", op_reserved, ISZ_UCHAR, 0},
                           {"dt", op_reserved, ISZ_LDOUBLE, 0},
                           {"label", op_label, 0, 0},
                           {0}};
-extern ASMREG reglst[] = {{"cs", am_seg, 1, ISZ_USHORT},     {"ds", am_seg, 2, ISZ_USHORT},
+ASMREG reglst[] = {{"cs", am_seg, 1, ISZ_USHORT},     {"ds", am_seg, 2, ISZ_USHORT},
                               {"es", am_seg, 3, ISZ_USHORT},     {"fs", am_seg, 4, ISZ_USHORT},
                               {"gs", am_seg, 5, ISZ_USHORT},     {"ss", am_seg, 6, ISZ_USHORT},
                               {"al", am_dreg, 0, ISZ_UCHAR},     {"cl", am_dreg, 1, ISZ_UCHAR},
@@ -1173,12 +1174,14 @@ LEXEME* inasm_statement(LEXEME* inlex, BLOCKDATA* parent)
         if (rv->oper1 && rv->oper2)
         {
             if (!rv->oper1->length)
+            {
                 if (!rv->oper2->length)
                 {
                     inasm_err(ERR_INVALID_SIZE);
                 }
                 else
                     rv->oper1->length = rv->oper2->length;
+            }
             // else if (!rv->oper2->length && insdata->amode != OPE_BOUND && insdata->amode != OPE_LOADSEG)
             // rv->oper2->length = rv->oper1->length;
         }
@@ -1195,7 +1198,7 @@ void* inlineAsmStmt(void* param)
 {
     OCODE* rv = (OCODE*)beLocalAlloc(sizeof(OCODE));
     memcpy(rv, param, sizeof(*rv));
-    if (rv->opcode != op_label && rv->opcode != op_line)
+    if ((e_op)rv->opcode != op_label && (e_op)rv->opcode != op_line)
     {
         AMODE* ap = rv->oper1;
         if (ap && ap->offset)

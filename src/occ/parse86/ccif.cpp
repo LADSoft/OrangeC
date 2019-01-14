@@ -111,7 +111,7 @@ int equalnode(EXPRESSION* node1, EXPRESSION* node2)
             return FPFEQ(&node1->v.c.r, &node2->v.c.r) && FPFEQ(&node1->v.c.i, &node2->v.c.i);
     }
 }
-char* GetSymName(SYMBOL* sp, SYMBOL* parent)
+const char* GetSymName(SYMBOL* sp, SYMBOL* parent)
 {
     static char buf[4096];
     if (sp->thisPtr)
@@ -130,7 +130,8 @@ char* GetSymName(SYMBOL* sp, SYMBOL* parent)
     {
         if (sp != parent && !isfunction(sp->tp))
         {
-            char buf1[2048], *p = strchr(sp->decoratedName + 1, '@');
+            char buf1[2048];
+            const char* p = strchr(sp->decoratedName + 1, '@');
             if (!p)
                 p = sp->name;
 
@@ -269,8 +270,8 @@ static void DumpStructs(void)
 }
 static void DumpSymbolType(SYMBOL* sym)
 {
-    int type = ST_UNKNOWN;
-    char* name = GetSymName(sym, sym);
+    int type;
+    const char* name = GetSymName(sym, sym);
     if (strstr(name, "++"))
         name = " ";
     if (sym->tp && isfunction(sym->tp))
@@ -309,6 +310,9 @@ static void DumpSymbolType(SYMBOL* sym)
             case sc_label:
                 type = ST_LABEL;
                 break;
+            default:
+                type = ST_UNKNOWN;
+                break;
         }
     /*
     if (isconst(sym->tp))
@@ -321,7 +325,7 @@ static void DumpSymbolType(SYMBOL* sym)
 static void DumpSymbol(SYMBOL* sym);
 static void DumpNamespace(SYMBOL* sym)
 {
-    char* symName = GetSymName(sym, sym);
+    const char* symName = GetSymName(sym, sym);
     struct _ccNamespaceData* ns = sym->ccNamespaceData;
     while (ns)
     {
@@ -338,7 +342,7 @@ static void DumpSymbol(SYMBOL* sym)
         SYMBOL* declsym;
         char type_name[100000];
         int indirectCount = 0;
-        char* name = GetSymName(sym, sym);
+        const char* name = GetSymName(sym, sym);
         TYPE* tp = sym->tp;
         sqlite3_int64 id, struct_id = 0;
         if (strstr(name, "++"))
@@ -400,7 +404,7 @@ static void DumpSymbol(SYMBOL* sym)
                 while (hr && ((SYMBOL*)hr->p)->storage_class == sc_parameter)
                 {
                     SYMBOL* st = (SYMBOL*)hr->p;
-                    char* argName = GetSymName(st, st);
+                    const char* argName = GetSymName(st, st);
                     if (strstr(argName, "++"))
                         argName = " ";
                     type_name[0] = 0;
@@ -448,7 +452,7 @@ static void DumpLines(void)
             {
                 x->lineTop = 0;
                 x->dataSize = 1;
-                x->data = "";  // is a null
+                x->data = (char *)"";  // is a null
             }
             ccWriteLineData(x->fileId, main_id, x->data, x->dataSize, x->lineTop);
             hr = hr->next;

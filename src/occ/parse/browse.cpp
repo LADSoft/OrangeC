@@ -104,7 +104,7 @@ void browse_startfunc(SYMBOL* func, int lineno)
 {
     char name[4096];
     BROWSEINFO* bri;
-    if (!cparams.prm_browse || !chosenDebugger || !addBrowseRecord)
+    if (!cparams.prm_browse || !chosenDebugger)
         return;
     bri = (BROWSEINFO*)Alloc(sizeof(BROWSEINFO));
     bri->type = BRS_STARTFUNC;
@@ -123,7 +123,7 @@ void browse_endfunc(SYMBOL* func, int lineno)
 {
     char name[4096];
     BROWSEINFO* bri;
-    if (!cparams.prm_browse || !chosenDebugger || !addBrowseRecord)
+    if (!cparams.prm_browse || !chosenDebugger)
         return;
     bri = (BROWSEINFO*)Alloc(sizeof(BROWSEINFO));
     bri->type = BRS_ENDFUNC;
@@ -143,7 +143,7 @@ void browse_startfile(char* name, int index)
     char exname[260];
     BROWSEFILE *bf, *bff, **bffp;
     BROWSEINFO* bri;
-    if ((!cparams.prm_browse && !cparams.prm_debug) || !chosenDebugger || !chosenDebugger->browsefile || !addBrowseRecord)
+    if ((!cparams.prm_browse && !cparams.prm_debug) || !chosenDebugger || !chosenDebugger->browsefile )
         return;
     currentFile = index;
 
@@ -181,7 +181,7 @@ void browse_variable(SYMBOL* var)
 {
     char name[4096];
     BROWSEINFO* bri;
-    if (!cparams.prm_browse || !chosenDebugger || !addBrowseRecord)
+    if (!cparams.prm_browse || !chosenDebugger)
         return;
     if (var->thisPtr)
         return;
@@ -218,7 +218,7 @@ void browse_usage(SYMBOL* var, int file)
 {
     char name[4096];
     BROWSEINFO* bri;
-    if (!cparams.prm_browse || !chosenDebugger || !addBrowseRecord || funcNesting > 1)
+    if (!cparams.prm_browse || !chosenDebugger  || funcNesting > 1)
         return;
     if (var->thisPtr)
         return;
@@ -245,7 +245,7 @@ void browse_usage(SYMBOL* var, int file)
 void browse_define(char* name, int lineno, int charindex)
 {
     BROWSEINFO* bri;
-    if (!cparams.prm_browse || !chosenDebugger || !addBrowseRecord)
+    if (!cparams.prm_browse || !chosenDebugger)
         return;
     bri = (BROWSEINFO*)Alloc(sizeof(BROWSEINFO));
     bri->type = BRS_DEFINE;
@@ -262,7 +262,7 @@ void browse_define(char* name, int lineno, int charindex)
 void browse_blockstart(int lineno)
 {
     BROWSEINFO* bri;
-    if (!cparams.prm_browse || !chosenDebugger || !addBrowseRecord)
+    if (!cparams.prm_browse || !chosenDebugger)
         return;
     bri = (BROWSEINFO*)Alloc(sizeof(BROWSEINFO));
     bri->type = BRS_BLOCKSTART;
@@ -279,7 +279,7 @@ void browse_blockstart(int lineno)
 void browse_blockend(int lineno)
 {
     BROWSEINFO* bri;
-    if (!cparams.prm_browse || !chosenDebugger || !addBrowseRecord)
+    if (!cparams.prm_browse || !chosenDebugger)
         return;
     bri = (BROWSEINFO*)Alloc(sizeof(BROWSEINFO));
     bri->type = BRS_BLOCKEND;

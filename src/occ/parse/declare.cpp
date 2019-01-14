@@ -46,7 +46,7 @@ extern char anonymousNameSpaceName[512];
 extern LIST* nameSpaceList;
 extern TYPE stdvoid;
 extern TYPE stdchar32tptr;
-extern char* overloadNameTab[];
+extern const char* overloadNameTab[];
 extern LEXCONTEXT* context;
 extern LAMBDA* lambdas;
 extern int inTemplateBody;
@@ -76,7 +76,7 @@ int noSpecializationError;
 LIST* deferred;
 int structLevel;
 LIST* openStructs;
-char* deprecationText;
+const char* deprecationText;
 
 static int unnamed_tag_id, unnamed_id;
 static char* importFile;
@@ -122,31 +122,31 @@ void InsertExtern(SYMBOL* sp)
     externals = l1;
 }
 
-static char* NewTagName(void)
+static const char* NewTagName(void)
 {
     char buf[256];
     my_sprintf(buf, "Unnamed++%d", unnamed_tag_id++);
     return litlate(buf);
 }
-static char* NewUnnamedID(void)
+static const char* NewUnnamedID(void)
 {
     char buf[256];
     my_sprintf(buf, "Unnamed++Identifier %d", unnamed_id++);
     return litlate(buf);
 }
-char* AnonymousName(void)
+const char* AnonymousName(void)
 {
     char buf[256];
     my_sprintf(buf, "Anonymous++Identifier %d", unnamed_id++);
     return litlate(buf);
 }
-char* AnonymousTypeName(void)
+const char* AnonymousTypeName(void)
 {
     char buf[512];
     my_sprintf(buf, "__anontype_%u_%d", CRC32((unsigned char*)includes->fname, strlen(includes->fname)), includes->anonymousid++);
     return litlate(buf);
 }
-SYMBOL* makeID(enum e_sc storage_class, TYPE* tp, SYMBOL* spi, char* name)
+SYMBOL* makeID(enum e_sc storage_class, TYPE* tp, SYMBOL* spi, const char* name)
 {
     SYMBOL* sp = (SYMBOL *)Alloc(sizeof(SYMBOL));
     LEXEME* lex = context->cur ? context->cur->prev : context->last;
@@ -166,7 +166,7 @@ SYMBOL* makeID(enum e_sc storage_class, TYPE* tp, SYMBOL* spi, char* name)
     }
     return sp;
 }
-SYMBOL* makeUniqueID(enum e_sc storage_class, TYPE* tp, SYMBOL* spi, char* name)
+SYMBOL* makeUniqueID(enum e_sc storage_class, TYPE* tp, SYMBOL* spi, const char* name)
 {
     char buf[512];
     my_sprintf(buf, "%s_%u", name, CRC32((unsigned char*)includes->fname, strlen(includes->fname)));
@@ -220,7 +220,7 @@ void InsertSymbol(SYMBOL* sp, enum e_sc storage_class, enum e_lk linkage, bool a
     {
         if (isfunction(sp->tp) && !istype(sp))
         {
-            char* name = sp->castoperator ? overloadNameTab[CI_CAST] : sp->name;
+            const char* name = sp->castoperator ? overloadNameTab[CI_CAST] : sp->name;
             HASHREC** hr = LookupName(name, table);
             SYMBOL* funcs = NULL;
             if (hr)
@@ -371,7 +371,7 @@ LEXEME* tagsearch(LEXEME* lex, char* name, SYMBOL** rsp, HASHTABLE** table, SYMB
     *strSym_out = strSym;
     return lex;
 }
-static void checkIncompleteArray(TYPE* tp, char* errorfile, int errorline)
+static void checkIncompleteArray(TYPE* tp, const char* errorfile, int errorline)
 {
     HASHREC* hr;
     tp = basetype(tp);
@@ -455,8 +455,8 @@ SYMBOL* calculateStructAbstractness(SYMBOL* top, SYMBOL* sp)
                         while (hrq)
                         {
                             SYMBOL* pq1 = (SYMBOL*)hrq->p;
-                            char* p1 = strrchr(pq1->decoratedName, '@');
-                            char* p2 = strrchr(pi->decoratedName, '@');
+                            const char* p1 = strrchr(pq1->decoratedName, '@');
+                            const char* p2 = strrchr(pi->decoratedName, '@');
                             if (p1 && p2 && !strcmp(p1, p2))
                             {
                                 if (!pq1->ispure)
@@ -1110,7 +1110,7 @@ static LEXEME* declstruct(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, bool inTemplat
 {
     bool isfinal = false;
     HASHTABLE* table;
-    char* tagname;
+    const char* tagname;
     char newName[4096];
     enum e_bt type = bt_none;
     SYMBOL* sp;
@@ -1131,6 +1131,7 @@ static LEXEME* declstruct(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, bool inTemplat
             defaultAccess = ac_private;
             type = bt_class;
             break;
+        default:
         case kw_struct:
             defaultAccess = ac_public;
             type = bt_struct;
@@ -1512,7 +1513,7 @@ static LEXEME* declenum(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, enum e_sc storag
                         bool* defd)
 {
     HASHTABLE* table;
-    char* tagname;
+    const char* tagname;
     char newName[4096];
     int charindex;
     bool noname = false;
@@ -1809,6 +1810,8 @@ static LEXEME* getStorageClass(LEXEME* lex, SYMBOL* funcsp, enum e_sc* storage_c
                     *storage_class = sc_typedef;
                 lex = getsym();
                 break;
+            default:
+		break;
         }
         if (found)
             error(ERR_TOO_MANY_STORAGE_CLASS_SPECIFIERS);
@@ -1863,6 +1866,8 @@ static LEXEME* getPointerQualifiers(LEXEME* lex, TYPE** tp, bool allowstatic)
                 break;
             case kw___va_list__:
                 tpn->type = bt_va_list;
+                break;
+            default:
                 break;
         }
         tpl = *tp;
@@ -2082,6 +2087,8 @@ static bool isPointer(LEXEME* lex)
             case land:
             case star:
                 return true;
+            default:
+                return false;
         }
     return false;
 }
@@ -2501,6 +2508,8 @@ LEXEME* getBasicType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** strSym_out
                     skip(&lex, closepa);
                 }
                 break;
+            default:
+                break;
         }
         foundsomething = true;
         lex = getsym();
@@ -2539,7 +2548,7 @@ founddecltype:
             bool inTemplate = false;  // hides function parameter
             lex = nestedSearch(lex, &sp, &strSym, &nsv, &destructor, &inTemplate, false, storage_class, false, true);
             if (sp && (istype(sp) || (sp->storage_class == sc_type && inTemplate) ||
-                       sp->storage_class == sc_typedef && sp->templateLevel))
+                       (sp->storage_class == sc_typedef && sp->templateLevel)))
             {
                 if (sp->deprecationText)
                     deprecateMessage(sp);
@@ -2772,11 +2781,13 @@ founddecltype:
                             {
                                 if (!noSpecializationError && !instantiatingTemplate &&
                                     (!sp->mainsym || (sp->mainsym != strSym && sp->mainsym != ssp)))
+                                {
                                     if (instantiatingMemberFuncClass &&
                                         instantiatingMemberFuncClass->parentClass == sp->parentClass)
                                         sp = instantiatingMemberFuncClass;
                                     else
                                         errorsym(ERR_NEED_SPECIALIZATION_PARAMETERS, sp);
+                                }
                             }
                             tn = NULL;
                             if (sp)
@@ -2800,9 +2811,10 @@ founddecltype:
                             //                        ac_public, false))
                             //                           errorsym(ERR_CANNOT_ACCESS, sp);
                         }
+                        // DAL
                         if (cparams.prm_cplusplus && sp && MATCHKW(lex, openpa) &&
-                            (strSym && ((strSym->mainsym && strSym->mainsym == sp->mainsym) || strSym == sp->mainsym ||
-                                        sameTemplate(strSym->tp, sp->tp)) ||
+                            ((strSym && ((strSym->mainsym && strSym->mainsym == sp->mainsym) || strSym == sp->mainsym ||
+                                        sameTemplate(strSym->tp, sp->tp))) ||
                              (!strSym && (storage_class == sc_member || storage_class == sc_mutable) && ssp && ssp == sp->mainsym)))
                         {
                             if (destructor)
@@ -3842,7 +3854,7 @@ LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp,
         skip(&lex, closepa);
     }
     else if (cparams.prm_cplusplus ||
-             chosenAssembler->msil && chosenAssembler->msil->allowExtensions && !MATCHKW(lex, closepa) && *spin)
+             (chosenAssembler->msil && chosenAssembler->msil->allowExtensions && !MATCHKW(lex, closepa) && *spin))
     {
         // () is a function
         if (MATCHKW(lex, closepa))
@@ -4003,6 +4015,8 @@ LEXEME* getExceptionSpecifiers(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_s
             {
                 sp->xcMode = xc_none;
             }
+            break;
+        default:
             break;
     }
 
@@ -4534,7 +4548,7 @@ LEXEME* getBeforeType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMB
                 lex = getsym();
                 /* in a parameter, open paren followed by a type is an  unnamed function */
                 if (storage_class == sc_parameter &&
-                    (MATCHKW(lex, closepa) || startOfType(lex, false) && (!ISKW(lex) || !(lex->kw->tokenTypes & TT_LINKAGE))))
+                    (MATCHKW(lex, closepa) || (startOfType(lex, false) && (!ISKW(lex) || !(lex->kw->tokenTypes & TT_LINKAGE)))))
                 {
                     TYPE* tp1;
                     if (!*spi)
@@ -4560,7 +4574,7 @@ LEXEME* getBeforeType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMB
                 {
                     // constructor or destructor name
                     STRUCTSYM s;
-                    char* name;
+                    const char* name;
                     if (consdest == CT_DEST)
                     {
                         *tp = &stdvoid;
@@ -4726,8 +4740,8 @@ LEXEME* getBeforeType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMB
                     break;
                 }
                 // using the C++ reference operator as the ref keyword...
-                if (cparams.prm_cplusplus || chosenAssembler->msil && chosenAssembler->msil->allowExtensions &&
-                                                 storage_class == sc_parameter && KW(lex) == andx)
+                if (cparams.prm_cplusplus || (chosenAssembler->msil && chosenAssembler->msil->allowExtensions &&
+                                                 storage_class == sc_parameter && KW(lex) == andx))
                 {
                     TYPE* tp2;
                     ptype = (TYPE *)Alloc(sizeof(TYPE));
@@ -5189,7 +5203,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
     ADDRESS address = 0;
     TYPE* tp = NULL;
     bool hasAttributes;
-    char* oldDeprecationText = deprecationText;
+    const char* oldDeprecationText = deprecationText;
     int oldalignas_value = alignas_value;
 
     alignas_value = 0;
@@ -5373,6 +5387,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                     if (isfunction(tp1))
                         sizeQualifiers(basetype(tp1)->btp);
                     if (strSym)
+                    {
                         if (!strcmp(strSym->name, sp->name))
                         {
                             sp->name = overloadNameTab[CI_CONSTRUCTOR];
@@ -5382,7 +5397,8 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                         {
                             consdest = CT_DEST;
                         }
-                    if (tprv && (!notype || consdest || isTemplatedCast || sp && sp->castoperator))
+                    }
+                    if (tprv && (!notype || consdest || isTemplatedCast || (sp && sp->castoperator)))
                         *tprv = tp1;
                     // if defining something outside its scope set the symbol tables
                     // to the original scope it lives in
@@ -5543,7 +5559,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                         SYMBOL* ssp = NULL;
                         SYMBOL* spi;
                         bool checkReturn = true;
-                        if (isstructured(tp1) && storage_class != sc_typedef || !templateNestingCount && !structLevel)
+                        if ((isstructured(tp1) && storage_class != sc_typedef) || (!templateNestingCount && !structLevel))
                             tp1 = PerformDeferredInitialization(tp1, funcsp);
                         ssp = getStructureDeclaration();
                         if (!asFriend &&
@@ -6175,7 +6191,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                                 if (!asFriend || !templateNestingCount || inTemplate)
                                 {
                                     if (sp->storage_class == sc_external ||
-                                        asFriend && !MATCHKW(lex, begin) && !MATCHKW(lex, colon))
+                                        (asFriend && !MATCHKW(lex, begin) && !MATCHKW(lex, colon)))
                                     {
                                         InsertSymbol(sp, sc_external, linkage, false);
                                         if (!sp->templateLevel || asFriend)
@@ -6421,7 +6437,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                                     SetGlobalFlag(old);
                                 }
                                 else if (storage_class_in == sc_member || storage_class_in == sc_mutable ||
-                                         templateNestingCount == 1 || asFriend && templateNestingCount == 2)
+                                         templateNestingCount == 1 || (asFriend && templateNestingCount == 2))
                                 {
                                     STATEMENT* startStmt = currentLineData(NULL, lex, 0);
                                     if (startStmt)
@@ -6542,6 +6558,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                             {
                                 if ((MATCHKW(lex, assign) || MATCHKW(lex, begin)) && storage_class_in == sc_member &&
                                     (sp->storage_class == sc_static || sp->storage_class == sc_external))
+                                {
                                     if (isconst(sp->tp) || sp->constexpression)
                                     {
                                         if (isint(sp->tp))
@@ -6551,6 +6568,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                                     {
                                         errorsym(ERR_CANNOT_INITIALIZE_STATIC_MEMBER_IN_CLASS, sp);
                                     }
+                                }
                                 lex = getDeferredData(lex, sp, false);
                             }
                             else
@@ -6578,9 +6596,9 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                                         InsertInlineData(sp);
                                     }
                                     else if ((!sp->parentClass ||
-                                              sp->parentClass->templateParams &&
+                                              (sp->parentClass->templateParams &&
                                                   allTemplateArgsSpecified(sp->parentClass,
-                                                                           sp->parentClass->templateParams->next)) &&
+                                                                           sp->parentClass->templateParams->next))) &&
                                              (!sp->templateParams || allTemplateArgsSpecified(sp, sp->templateParams->next)))
                                     {
                                         SetLinkerNames(sp, lk_cdecl);
@@ -6603,7 +6621,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                                         if (!init)
                                             doit = false;
                                     }
-                                    if (doit && (sp->init || isarray(sp->tp) && sp->tp->msil))
+                                    if (doit && (sp->init || (isarray(sp->tp) && sp->tp->msil)))
                                     {
                                         STATEMENT* st;
                                         currentLineData(block, hold, 0);

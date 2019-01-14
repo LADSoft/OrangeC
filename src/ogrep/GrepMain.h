@@ -56,7 +56,7 @@ class GrepMain
     static CmdSwitchBool displayHeaderFileName;
 
     static const char* usageText;
-    static char* helpText;
+    static const char* helpText;
 
     static void usage(const char* prog_name, const char* text, int retcode);
 };

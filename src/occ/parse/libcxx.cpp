@@ -1,4 +1,4 @@
-/* Software License Agreement
+﻿/* Software License Agreement
  *
  *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
  *
@@ -25,7 +25,7 @@
 
 #include "compiler.h"
 
-extern char* overloadNameTab[];
+extern const char* overloadNameTab[];
 extern TYPE stdint;
 
 static HASHTABLE* intrinsicHash;
@@ -50,7 +50,7 @@ static bool is_trivially_copyable(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYP
 static bool is_union(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
 static struct _ihash
 {
-    char* name;
+    const char* name;
     INTRINS_FUNC* func;
 
 } defaults[] = {
@@ -354,10 +354,12 @@ static bool trivialDefaultConstructor(TYPE* tp)
                 HASHREC* hr1 = basetype(sym->tp)->syms->table[0];
 
                 if (!hr1->next || !hr1->next->next || ((SYMBOL*)hr1->next->next->p)->tp->type == bt_void)
+                {
                     if (!sym->defaulted)
                         return false;
                     else
                         break;
+                }
                 hr = hr->next;
             }
         }

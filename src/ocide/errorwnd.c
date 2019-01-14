@@ -66,7 +66,7 @@ static void CopyText(HWND hwnd)
     for (i = 0; i < n && i < errcount; i++)
     {
         char buf[1000];
-        if (errlist[i]->isWarning && (btns & ERR_WARNINGS) || !errlist[i]->isWarning && (btns & ERR_ERRORS))
+        if ((errlist[i]->isWarning && (btns & ERR_WARNINGS)) || (!errlist[i]->isWarning && (btns & ERR_ERRORS)))
         {
             sprintf(buf, "%d\t%s\t%s\t%d\t%s\n", i + 1, errlist[i]->isWarning ? "Warn " : "Error", errlist[i]->file,
                     errlist[i]->lineno, errlist[i]->error);
@@ -79,7 +79,7 @@ static void CopyText(HWND hwnd)
         for (i = 0; i < n && i < errcount; i++)
         {
             char buf[1000];
-            if (errlist[i]->isWarning && (btns & ERR_WARNINGS) || !errlist[i]->isWarning && (btns & ERR_ERRORS))
+            if ((errlist[i]->isWarning && (btns & ERR_WARNINGS)) || (!errlist[i]->isWarning && (btns & ERR_ERRORS)))
             {
                 sprintf(buf, "%d\t%s\t%s\t%d\t%s\n", i + 1, errlist[i]->isWarning ? "Warn " : "Error", errlist[i]->file,
                         errlist[i]->lineno, errlist[i]->error);
@@ -268,8 +268,8 @@ LRESULT CALLBACK ErrorProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lPara
                 memset(&item, 0, sizeof(item));
                 for (i = 0; i < errcount; i++)
                 {
-                    if (errlist[i]->isWarning && (errorButtons & ERR_WARNINGS) ||
-                        !errlist[i]->isWarning && (errorButtons & ERR_ERRORS))
+                    if ((errlist[i]->isWarning && (errorButtons & ERR_WARNINGS)) ||
+                        (!errlist[i]->isWarning && (errorButtons & ERR_ERRORS)))
                     {
                         item.iItem = k++;
                         item.iSubItem = 0;

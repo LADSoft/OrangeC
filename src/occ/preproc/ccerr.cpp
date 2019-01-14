@@ -42,7 +42,7 @@ SYMBOL* theCurrentFunc;
 
 static LIST* listErrors;
 int currentpreprocLine;
-static char* currentpreprocFile;
+static const char* currentpreprocFile;
 
 static struct
 {
@@ -99,11 +99,11 @@ void errorinit(void)
     currentpreprocFile = nullptr;
 }
 
-static void printerr(int err, char* file, int line, ...)
+static void printerr(int err, const char* file, int line, ...)
 {
     char buf[256];
     char infunc[256];
-    char* listerr;
+    const char* listerr;
     char nameb[265], *name = nameb;
 
     if (!file)
@@ -156,8 +156,8 @@ static void printerr(int err, char* file, int line, ...)
         printf(" %s(%d):  %s%s\n", name, line, buf, infunc);
 }
 void pperror(int err, int data) { printerr(err, preprocFile, preprocLine, data); }
-void pperrorstr(int err, char* str) { printerr(err, preprocFile, preprocLine, str); }
-void preverror(int err, char* name, char* origfile, int origline)
+void pperrorstr(int err, const char* str) { printerr(err, preprocFile, preprocLine, str); }
+void preverror(int err, const char* name, const char* origfile, int origline)
 {
     printerr(err, preprocFile, preprocLine, name);
     if (origfile && origline)

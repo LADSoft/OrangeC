@@ -991,7 +991,7 @@ e_lexType getNumber(unsigned char** ptr, unsigned char** end, unsigned char* suf
         radix = 16;
         (*ptr)++;
     }
-    while (cparams.prm_cplusplus && **ptr == '\'' || radix36(**ptr) < radix || (cparams.prm_assemble && radix36(**ptr) < 16))
+    while ((cparams.prm_cplusplus && **ptr == '\'') || radix36(**ptr) < radix || (cparams.prm_assemble && radix36(**ptr) < 16))
     {
         if (**ptr != '\'')
             *p++ = **ptr;

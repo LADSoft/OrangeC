@@ -36,11 +36,11 @@ extern FILE* listFile;
 extern char* registers[];
 
 /* Unnamed structure tags */
-char* tn_unnamed = "<no name> ";
+const char* tn_unnamed = "<no name> ";
 
 void list_table(HASHTABLE* t, int j);
 
-static char* unmangledname(char* str)
+static const char* unmangledname(const char* str)
 {
     static char name[1024];
     unmangle(name, str);

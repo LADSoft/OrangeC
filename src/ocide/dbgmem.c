@@ -503,18 +503,18 @@ LRESULT CALLBACK MemInternalProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
         case WM_ERASEBKGND:
             return 1;
         case WM_PAINT:
-            ptr = (HWND)GetWindowLong(hwnd, 0);
+            ptr = (MEMDATA* )GetWindowLong(hwnd, 0);
             MemDoPaint(hwnd, ptr, ptr->focussed);  // focussed
             return 0;
         case WM_SETFOCUS:
-            ptr = (HWND)GetWindowLong(hwnd, 0);
+            ptr = (MEMDATA* )GetWindowLong(hwnd, 0);
             //         SendMessage(hwndFrame,WM_REDRAWTOOLBAR,0,0) ;
             SendMessage(GetParent(hwnd), WM_ACTIVATEME, 0, 0);
             ptr->focussed = TRUE;
             InvalidateRect(hwnd, 0, 1);
             break;
         case WM_KILLFOCUS:
-            ptr = (HWND)GetWindowLong(hwnd, 0);
+            ptr = (MEMDATA* )GetWindowLong(hwnd, 0);
             ptr->focussed = FALSE;
             ptr->modifying = FALSE;
             SetCursMode(ptr);
@@ -533,7 +533,7 @@ LRESULT CALLBACK MemInternalProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
         }
             return 0;
         case WM_COMMAND:
-            ptr = (HWND)GetWindowLong(hwnd, 0);
+            ptr = (MEMDATA* )GetWindowLong(hwnd, 0);
             switch (wParam)
             {
                 case IDM_BYTE:
@@ -566,7 +566,7 @@ LRESULT CALLBACK MemInternalProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
             InvalidateRect(hwnd, 0, 1);
             break;
         case WM_LBUTTONDOWN:
-            ptr = (HWND)GetWindowLong(hwnd, 0);
+            ptr = (MEMDATA* )GetWindowLong(hwnd, 0);
             GetClientRect(hwnd, &r);
             lines = (r.bottom - r.top) / 16;
             chars = (r.right / 8 - 10) / 4;
@@ -584,7 +584,7 @@ LRESULT CALLBACK MemInternalProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
             SetFocus(hwnd);
             break;
         case WM_KEYDOWN:
-            ptr = (HWND)GetWindowLong(hwnd, 0);
+            ptr = (MEMDATA* )GetWindowLong(hwnd, 0);
             GetClientRect(hwnd, &r);
             lines = (r.bottom - r.top) / 16;
             chars = (r.right / 8 - 10) / 4;
@@ -704,7 +704,7 @@ LRESULT CALLBACK MemInternalProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
             }
             break;
         case WM_CHAR:
-            ptr = (HWND)GetWindowLong(hwnd, 0);
+            ptr = (MEMDATA* )GetWindowLong(hwnd, 0);
             if (isxdigit(wParam))
             {
                 ptr->modifying = TRUE;
@@ -715,7 +715,7 @@ LRESULT CALLBACK MemInternalProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM
             }
             break;
         case WM_VSCROLL:
-            ptr = (HWND)GetWindowLong(hwnd, 0);
+            ptr = (MEMDATA* )GetWindowLong(hwnd, 0);
             GetClientRect(hwnd, &r);
             lines = (r.bottom - r.top) / 16;
             chars = (r.right / 8 - 10) / 4;

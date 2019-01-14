@@ -133,6 +133,6 @@ class Lexer
     bool parsingDirective;
     static KeywordHash hash;
     static bool hashInitted;
-    static char* preData;
+    static const char* preData;
 };
 #endif  // Lexer_h

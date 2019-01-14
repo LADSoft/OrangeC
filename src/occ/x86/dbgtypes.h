@@ -41,7 +41,7 @@ class dbgtypes
   protected:
     ObjType* Lookup(TYPE* tp);
     ObjType* BasicType(TYPE* tp);
-    ObjType* TypeName(ObjType* val, char* nm);
+    ObjType* TypeName(ObjType* val, const char* nm);
     void StructFields(ObjType::eType sel, ObjType* val, int sz, SYMBOL* parent, HASHREC* hr);
     void EnumFields(ObjType* val, ObjType* base, int sz, HASHREC* hr);
     ObjType* Function(TYPE* tp);

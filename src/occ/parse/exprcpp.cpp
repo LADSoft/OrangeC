@@ -55,8 +55,8 @@ extern TYPE std__func__;
 extern TYPE stdchar16tptr;
 extern TYPE stdchar32tptr;
 extern bool setjmp_used;
-extern char* overloadNameTab[];
-extern char* overloadXlateTab[];
+extern const char* overloadNameTab[];
+extern const char* overloadXlateTab[];
 extern NAMESPACEVALUES *globalNameSpace, *localNameSpace;
 extern SYMBOL* enumSyms;
 extern LAMBDA* lambdas;
@@ -745,7 +745,7 @@ LEXEME* expression_func_type_cast(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRES
                     }
                     if (throwaway)
                     {
-                        if (isvoid(throwaway) && !isvoid(*tp) || ismsil(*tp))
+                        if ((isvoid(throwaway) && !isvoid(*tp)) || ismsil(*tp))
                         {
                             error(ERR_NOT_AN_ALLOWED_TYPE);
                         }
@@ -1278,7 +1278,7 @@ bool insertOperatorParams(SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, FUNCTIONC
 {
     SYMBOL *s2 = NULL, *s3;
     HASHREC **hrd, *hrs;
-    char* name = overloadNameTab[openpa - kw_new + CI_NEW];
+    const char* name = overloadNameTab[openpa - kw_new + CI_NEW];
     TYPE* tpx;
     if (!isstructured(*tp) && basetype(*tp)->type != bt_enum)
         return false;
@@ -1351,7 +1351,7 @@ bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, 
     SYMBOL *s1 = NULL, *s2 = NULL, *s3, *s4 = NULL, *s5 = NULL;
     HASHREC **hrd, *hrs;
     FUNCTIONCALL* funcparams;
-    char* name = overloadNameTab[kw - kw_new + CI_NEW];
+    const char* name = overloadNameTab[kw - kw_new + CI_NEW];
     TYPE* tpin = *tp;
     TYPE* tpx;
     STRUCTSYM l;
@@ -1590,7 +1590,7 @@ LEXEME* expression_new(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp,
 {
     FUNCTIONCALL* placement = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
     FUNCTIONCALL* initializers = NULL;
-    char* name = overloadNameTab[CI_NEW];
+    const char* name = overloadNameTab[CI_NEW];
     TYPE* tpf = NULL;
     EXPRESSION *arrSize = NULL, *exp1;
     SYMBOL* s1 = NULL;
@@ -1902,7 +1902,7 @@ LEXEME* expression_delete(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** e
     INITLIST* one = NULL;
     EXPRESSION *exp1 = NULL, *exp2;
     TYPE* tpf;
-    char* name = overloadNameTab[CI_DELETE];
+    const char* name = overloadNameTab[CI_DELETE];
     EXPRESSION* in;
     EXPRESSION *var, *asn;
     lex = getsym();

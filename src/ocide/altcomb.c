@@ -27,8 +27,8 @@
 #include <windows.h>
 #include <commctrl.h>
 #include <stdio.h>
-#include "header.h"
 #include <richedit.h>
+#include "header.h"
 
 extern HINSTANCE hInstance;
 extern HWND hwndTbFind;

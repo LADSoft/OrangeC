@@ -52,7 +52,7 @@
 
 static int version_ok;
 
-char* BRCWriter::tables = {
+const char* BRCWriter::tables = {
     "PRAGMA journal_mode=MEMORY; PRAGMA temp_store = MEMORY; "
     "BEGIN; "
     "CREATE TABLE brPropertyBag ("
@@ -106,7 +106,7 @@ char* BRCWriter::tables = {
     " VALUES (\"brVersion\", " STRINGVERSION
     ");"
     "COMMIT; "};
-char* BRCWriter::deletion = {
+const char* BRCWriter::deletion = {
     "BEGIN;"
     "DELETE FROM Names;"
     "DELETE FROM FileNames;"
@@ -135,7 +135,7 @@ bool BRCWriter::End(void)
     return rv;
 }
 int BRCWriter::NullCallback(void* NotUsed, int argc, char** argv, char** azColName) { return 0; }
-int BRCWriter::SQLiteExec(char* str)
+int BRCWriter::SQLiteExec(const char* str)
 {
     char* zErrMsg = 0;
     int rv = false;
@@ -229,7 +229,7 @@ int BRCWriter::DBOpen(char* name)
 }
 bool BRCWriter::Insert(sqlite3_int64 simpleId, sqlite3_int64 complexId)
 {
-    static char* query = "INSERT INTO CPPNameMapping (simpleId, complexId) VALUES (?, ?)";
+    static const char* query = "INSERT INTO CPPNameMapping (simpleId, complexId) VALUES (?, ?)";
     int rc = SQLITE_OK;
     static sqlite3_stmt* handle;
     if (!handle)
@@ -263,7 +263,7 @@ bool BRCWriter::Insert(sqlite3_int64 simpleId, sqlite3_int64 complexId)
 }
 bool BRCWriter::Insert(std::string fileName, int index)
 {
-    static char* query = "INSERT INTO FileNames (name) VALUES (?)";
+    static const char* query = "INSERT INTO FileNames (name) VALUES (?)";
     int rc = SQLITE_OK;
     static sqlite3_stmt* handle;
     if (!handle)
@@ -300,7 +300,7 @@ bool BRCWriter::Insert(std::string fileName, int index)
 }
 bool BRCWriter::Insert(std::string symName, int type, sqlite3_int64* id)
 {
-    static char* query = "INSERT INTO Names (name, type) VALUES (?,?)";
+    static const char* query = "INSERT INTO Names (name, type) VALUES (?,?)";
     int rc = SQLITE_OK;
     static sqlite3_stmt* handle;
     if (!handle)
@@ -338,7 +338,7 @@ bool BRCWriter::Insert(std::string symName, int type, sqlite3_int64* id)
 }
 bool BRCWriter::Insert(sqlite3_int64 fileId, int start, int end, sqlite3_int64 nameIndex)
 {
-    static char* query =
+    static const char* query =
         "INSERT INTO JumpTable (symbolId, fileId, startLine, endLine)"
         " VALUES (?,?,?,?)";
     int rc = SQLITE_OK;
@@ -376,10 +376,10 @@ bool BRCWriter::Insert(sqlite3_int64 fileId, int start, int end, sqlite3_int64 n
 }
 bool BRCWriter::Insert(sqlite3_int64 symIndex, BrowseData* b, bool usages)
 {
-    static char* query =
+    static const char* query =
         "INSERT INTO LineNumbers (type, qual, symbolId, fileId, startLine, charPos, hint)"
         " VALUES (?,?,?,?,?,?,?)";
-    static char* query1 =
+    static const char* query1 =
         "INSERT INTO Usages (type, qual, symbolId, fileId, startLine, charPos, hint)"
         " VALUES (?,?,?,?,?,?,?)";
     int rc = SQLITE_OK;

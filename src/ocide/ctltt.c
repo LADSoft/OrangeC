@@ -26,6 +26,7 @@
 #include <windows.h>
 #include <commctrl.h>
 #include <stdio.h>
+#include <richedit.h>
 #include "idewinconst.h"
 #include "header.h"
 

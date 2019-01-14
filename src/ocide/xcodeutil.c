@@ -28,10 +28,10 @@
 #include <windows.h>
 #include <commctrl.h>
 #include <stdio.h>
+#include <richedit.h>
 #include "header.h"
 #include <stdlib.h>
 #include <ctype.h>
-#include <richedit.h>
 #include <limits.h>
 
 extern LOGFONT systemDialogFont;
@@ -183,7 +183,7 @@ CCSTRUCTDATA* GetStructType(char** name, int lineno, char* file, CCSTRUCTDATA* s
                     return structData;
                 }
                 // for now only support (*name)s, none of the extra C++ stuff you can do...
-                if (!isalpha(*(*name)) && !(*name) != '_')
+                if (!isalpha(*(*name)) && (*name) != '_')
                 {
                     ccFreeStructData(structData);
                     return NULL;

@@ -389,7 +389,7 @@ void CreateProjectDependenciesList(void)
             temp->visited = FALSE;
             temp = temp->next;
         }
-        while (temp = ExtractLeaf())
+        while ((temp = ExtractLeaf()))
         {
             list = list->projectBuildList = temp;
         }

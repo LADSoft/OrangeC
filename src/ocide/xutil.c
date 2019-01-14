@@ -28,8 +28,8 @@
 #include <windows.h>
 #include <commctrl.h>
 #include <stdio.h>
-#include "header.h"
 #include <richedit.h>
+#include "header.h"
 #include <limits.h>
 #include "c_types.h"
 #include <stdlib.h>
@@ -167,6 +167,7 @@ int CPPScanForward(EDITDATA* p, int pos, BOOL asExpression)
         else
             return rv;
     }
+    return rv;
 }
 int CPPScanBackward(EDITDATA* p, int pos, BOOL asExpression)
 {

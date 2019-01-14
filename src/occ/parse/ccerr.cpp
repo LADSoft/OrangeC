@@ -58,7 +58,7 @@ int currentErrorLine;
 SYMBOL* theCurrentFunc;
 
 static LIST* listErrors;
-static char* currentErrorFile;
+static const char* currentErrorFile;
 static LIST* warningStack;
 
 enum e_kw skim_end[] = {end, kw_none};
@@ -770,13 +770,13 @@ static bool ignoreErrtemplateNestingCount(int err)
     }
     return false;
 }
-bool printerrinternal(int err, char* file, int line, va_list args)
+bool printerrinternal(int err, const char* file, int line, va_list args)
 {
     char buf[2048];
     char infunc[2048];
-    char* listerr;
+    const char* listerr;
     char nameb[265], *name = nameb;
-    if (cparams.prm_makestubs || inDeduceArgs || templateNestingCount && ignoreErrtemplateNestingCount(err))
+    if (cparams.prm_makestubs || inDeduceArgs || (templateNestingCount && ignoreErrtemplateNestingCount(err)))
         return false;
     if (!file)
     {
@@ -885,7 +885,7 @@ bool printerrinternal(int err, char* file, int line, va_list args)
 #endif
     return true;
 }
-int printerr(int err, char* file, int line, ...)
+int printerr(int err, const char* file, int line, ...)
 {
     bool canprint = false;
     va_list arg;
@@ -899,23 +899,23 @@ int printerr(int err, char* file, int line, ...)
     return canprint;
 }
 void pperror(int err, int data) { printerr(err, preprocFile, preprocLine, data); }
-void pperrorstr(int err, char* str) { printerr(err, preprocFile, preprocLine, str); }
-void preverror(int err, char* name, char* origfile, int origline)
+void pperrorstr(int err, const char* str) { printerr(err, preprocFile, preprocLine, str); }
+void preverror(int err, const char* name, const char* origFile, int origLine)
 {
     if (printerr(err, preprocFile, preprocLine, name))
-        if (origfile && origline)
-            printerr(ERR_PREVIOUS, origfile, origline, name);
+        if (origFile && origLine)
+            printerr(ERR_PREVIOUS, origFile, origLine, name);
 }
 #ifndef CPREPROCESSOR
-void preverrorsym(int err, SYMBOL* sp, char* origfile, int origline)
+void preverrorsym(int err, SYMBOL* sp, const char* origFile, int origLine)
 {
     char buf[2048];
     unmangle(buf, sp->errname);
-    if (origfile && origline)
-        preverror(err, buf, origfile, origline);
+    if (origFile && origLine)
+        preverror(err, buf, origFile, origLine);
 }
 #endif
-void errorat(int err, char* name, char* file, int line) { printerr(err, file, line, name); }
+void errorat(int err, const char* name, const char* file, int line) { printerr(err, file, line, name); }
 void errorcurrent(int err) { printerr(err, includes->fname, includes->line); }
 void getns(char* buf, SYMBOL* nssym)
 {
@@ -940,11 +940,11 @@ void getcls(char* buf, SYMBOL* clssym)
     }
     strcat(buf, clssym->name);
 }
-void errorqualified(int err, SYMBOL* strSym, NAMESPACEVALUES* nsv, char* name)
+void errorqualified(int err, SYMBOL* strSym, NAMESPACEVALUES* nsv, const char* name)
 {
     char buf[4096];
     char unopped[2048];
-    char* last = "typename";
+    const char* last = "typename";
     char lastb[2048];
     memset(buf, 0, sizeof(buf));
     if (strSym)
@@ -987,7 +987,7 @@ void errorqualified(int err, SYMBOL* strSym, NAMESPACEVALUES* nsv, char* name)
         strcat(buf, " because the type is not defined");
     printerr(err, preprocFile, preprocLine, buf);
 }
-void errorNotMember(SYMBOL* strSym, NAMESPACEVALUES* nsv, char* name)
+void errorNotMember(SYMBOL* strSym, NAMESPACEVALUES* nsv, const char* name)
 {
     errorqualified(ERR_NAME_IS_NOT_A_MEMBER_OF_NAME, strSym, nsv, name);
 }
@@ -1017,7 +1017,7 @@ void errorsym2(int err, SYMBOL* sym1, SYMBOL* sym2)
     unmangle(two, sym2->errname);
     printerr(err, preprocFile, preprocLine, one, two);
 }
-void errorstrsym(int err, char* name, SYMBOL* sym2)
+void errorstrsym(int err, const char* name, SYMBOL* sym2)
 {
     char two[2048];
     unmangle(two, sym2->errname);
@@ -1122,6 +1122,8 @@ static void setbalance(LEXEME* lex, BALANCE** bal)
                 *bal = newbalance(lex, *bal);
             (*bal)->count++;
             break;
+        default:
+            break;
     }
 }
 
@@ -1164,7 +1166,7 @@ bool needkw(LEXEME** lex, enum e_kw kw)
         return false;
     }
 }
-void specerror(int err, char* name, char* file, int line) { printerr(err, file, line, name); }
+void specerror(int err, const char* name, const char* file, int line) { printerr(err, file, line, name); }
 void diag(const char* fmt, ...)
 {
     if (cparams.prm_diag)
@@ -1181,7 +1183,7 @@ void diag(const char* fmt, ...)
     }
     diagcount++;
 }
-void printToListFile(char* fmt, ...)
+void printToListFile(const char* fmt, ...)
 {
     if (cparams.prm_listfile)
     {
@@ -1205,17 +1207,17 @@ void ErrorsToListFile(void)
     else
         listErrors = 0;
 }
-void AddErrorToList(char* tag, char* str)
+void AddErrorToList(const char* tag, const char* str)
 {
     if (cparams.prm_listfile)
     {
         char buf[512];
-        char* p;
+        const char* p;
         LIST* l;
         my_sprintf(buf, "******** %s: %s", tag, str);
         p = litlate(buf);
         l = (LIST *)Alloc(sizeof(LIST));
-        l->data = p;
+        l->data = (void *)p;
         l->next = listErrors;
         listErrors = l;
     }
@@ -1378,7 +1380,7 @@ typedef struct vlaShim
     int line;
     int checkme : 1;
     int mark : 1;
-    char* file;
+    const char* file;
 } VLASHIM;
 static VLASHIM* mkshim(_vlaTypes type, int level, int label, STATEMENT* stmt, VLASHIM* last, VLASHIM* parent, int blocknum,
                        int blockindex)

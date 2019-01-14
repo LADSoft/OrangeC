@@ -27,6 +27,7 @@
 #include <commctrl.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <richedit.h>
 #include "helpid.h"
 #include "header.h"
 

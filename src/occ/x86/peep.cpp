@@ -45,7 +45,7 @@ extern int funcstackheight;
 
 #define live(mask, reg) (mask & (1 << reg))
 
-extern OCODE *peep_head = 0, *peep_tail = 0, *peep_insert = 0;
+OCODE *peep_head = 0, *peep_tail = 0, *peep_insert = 0;
 void insert_peep_entry(OCODE* after, enum e_opcode opcode, int size, AMODE* ap1, AMODE* ap2);
 
 void o_peepini(void) { peep_head = peep_tail = 0; }
@@ -363,7 +363,7 @@ void flush_peep(SYMBOL* funcsp, QUAD* list)
     {
         while (peep_head != 0)
         {
-            switch (peep_head->opcode)
+            switch ((e_op)peep_head->opcode)
             {
                 case op_label:
                     oa_put_label((int)peep_head->oper1);
@@ -495,8 +495,8 @@ OCODE* peep_test(OCODE* ip)
             cause a
         * stop in the search. The Line directives and the void opcodes are ignored.
         */
-        for (ip2 = ip->back; ip2 && (ip2->opcode == op_line || ip2->opcode == op_void || ip2->opcode == op_blockstart ||
-                                     ip2->opcode == op_blockend || ip2->opcode == op_varstart);
+        for (ip2 = ip->back; ip2 && ((e_op)ip2->opcode == op_line || (e_op)ip2->opcode == op_void || (e_op)ip2->opcode == op_blockstart ||
+                                     (e_op)ip2->opcode == op_blockend || (e_op)ip2->opcode == op_varstart);
              ip2 = ip2->back)
             ;
         if (!ip2)
@@ -988,7 +988,7 @@ void peep_mov(OCODE* ip)
             }
         }
     }
-    while (ip1 && ip1->opcode == op_line)
+    while (ip1 && (e_op)ip1->opcode == op_line)
         ip1 = ip1->back;
 
     if (!ip1)
@@ -1389,7 +1389,7 @@ void peep_mul(OCODE* ip)
 }
 /*-------------------------------------------------------------------------*/
 
-int novalue(OCODE* ip) { return ip->fwd->opcode == op_void; }
+int novalue(OCODE* ip) { return (e_op)ip->fwd->opcode == op_void; }
 
 /*-------------------------------------------------------------------------*/
 

@@ -53,8 +53,8 @@ static int version_ok;
 // speed things up for individual tables, but when you are writing as database the
 // disk writes are the limiting factor.  Nonetheless I remain with the virtual table
 // approach because the codelooks much prettier...
-char* LinkDebugFile::pragmas = {"PRAGMA journal_mode=MEMORY; PRAGMA temp_store=MEMORY;"};
-char* LinkDebugFile::tables = {
+const char* LinkDebugFile::pragmas = {"PRAGMA journal_mode=MEMORY; PRAGMA temp_store=MEMORY;"};
+const char* LinkDebugFile::tables = {
     "BEGIN; "
     "CREATE TABLE dbPropertyBag ("
     " property VARCHAR(100)"
@@ -159,7 +159,7 @@ char* LinkDebugFile::tables = {
     " VALUES (\"dbVersion\", " STRINGVERSION
     ");"
     "COMMIT; "};
-char* LinkDebugFile::indexes = {
+const char* LinkDebugFile::indexes = {
     "BEGIN; "
     "CREATE INDEX LNIndex ON LineNumbers(fileid,line);"
     "CREATE INDEX TNIndex1 ON TypeNames(symbolId);"
@@ -174,7 +174,7 @@ char* LinkDebugFile::indexes = {
 LinkDebugFile::~LinkDebugFile() {}
 bool LinkDebugFile::Begin(void) { return SQLiteExec("BEGIN"); }
 bool LinkDebugFile::End(void) { return SQLiteExec("END"); }
-bool LinkDebugFile::SQLiteExec(char* str)
+bool LinkDebugFile::SQLiteExec(const char* str)
 {
     char* zErrMsg = 0;
     int rc = sqlite3_exec(dbPointer, str, 0, 0, &zErrMsg);

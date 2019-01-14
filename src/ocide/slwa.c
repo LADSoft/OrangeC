@@ -1206,7 +1206,7 @@ PROJECTITEM* RestoreWorkArea(char* name)
     }
     root = xmlReadFile(in);
     fclose(in);
-    if (!root || !IsNode(root, "CC386WORKAREA") && !IsNode(root, "OCCWORKAREA"))
+    if (!root || (!IsNode(root, "CC386WORKAREA") && !IsNode(root, "OCCWORKAREA")))
     {
         ExtendedMessageBox("Load Error", 0, "WorkArea is invalid file format");
         if (root)

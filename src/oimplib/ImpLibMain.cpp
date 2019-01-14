@@ -282,7 +282,7 @@ ObjFile* ImpLibMain::DllFileToObjFile(DLLExportReader& dll)
     std::string name = dll.GetName();
     int npos = name.find_last_of('\\');
     if (npos == std::string::npos)
-        npos = name.find_last_of('//');
+        npos = name.find_last_of('/');
     if (npos != std::string::npos)
         name.erase(0, npos + 1);
     ObjectData* od = new ObjectData;

@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <setjmp.h>
 #include <time.h>
+#include <richedit.h>
 #include "header.h"
 
 //#define TEST

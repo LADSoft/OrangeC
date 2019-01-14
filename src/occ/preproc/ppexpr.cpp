@@ -33,7 +33,7 @@ static PPINT iecommaop(bool* uns);
 
 int getsch(int bytes, unsigned char** source) /* return an in-quote character */
 {
-    register int i = *(*source)++, j;
+    int i = *(*source)++, j;
     if (**source == '\n')
         return INT_MIN;
     if (i != '\\')

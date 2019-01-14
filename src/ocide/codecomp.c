@@ -27,6 +27,7 @@
 #include <commctrl.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <richedit.h>
 #include "header.h"
 #include <sys/stat.h>
 #include <process.h>

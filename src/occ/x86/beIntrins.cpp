@@ -31,7 +31,7 @@
 typedef bool (*BUILTIN)();
 typedef struct builtins
 {
-    char* name;
+    const char* name;
     BUILTIN func;
 } BUILTINS;
 #define PROTO(PROT, NAME, FUNC) bool FUNC();
@@ -40,7 +40,7 @@ typedef struct builtins
 static BUILTINS builtins[] = {
 #include "beIntrinsicProtos.h"
 };
-extern char BackendIntrinsicPrototypes[] =
+char BackendIntrinsicPrototypes[] =
 #include "beIntrinsicProtos.h"
     ;
 
@@ -190,7 +190,7 @@ bool handleCLZ()
 //
 bool BackendIntrinsic(QUAD* q)
 {
-    char* name = q->dc.left->offset->v.sp->name;
+    const char* name = q->dc.left->offset->v.sp->name;
     for (int i = 0; i < ((sizeof(builtins) / sizeof(builtins[0])) - 1); i++)
     {
         if (!strcmp(name, builtins[i].name))

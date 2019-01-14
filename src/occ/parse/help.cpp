@@ -82,7 +82,7 @@ bool istype(SYMBOL* sym)
     {
         return sym->tp->templateParam->p->type == kw_typename || sym->tp->templateParam->p->type == kw_template;
     }
-    return sym->tp->type != bt_templateselector && sym->storage_class == sc_type || sym->storage_class == sc_typedef;
+    return (sym->tp->type != bt_templateselector && sym->storage_class == sc_type) || sym->storage_class == sc_typedef;
 }
 bool ismemberdata(SYMBOL* sp) { return !isfunction(sp->tp) && ismember(sp); }
 bool startOfType(LEXEME* lex, bool assumeType)
@@ -191,6 +191,8 @@ bool isDerivedFromTemplate(TYPE* tp)
                 return false;
             case bt_derivedfromtemplate:
                 return true;
+            default:
+                break;
         }
         tp = tp->btp;
     }
@@ -1530,7 +1532,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sp, SYMBOL* funcsp, INITIA
                     exps = exprNode(en_add, exps, intNode(en_c_i, init->fieldoffs));
                     exps = exprNode(en_structadd, exps, varNode(en_structelem, init->fieldsp));
                 }
-                else if (init->offset || init->next && init->next->basetp && (chosenAssembler->arch->denyopts & DO_UNIQUEIND))
+                else if (init->offset || (init->next && init->next->basetp && (chosenAssembler->arch->denyopts & DO_UNIQUEIND)))
                     exps = exprNode(en_add, exps, intNode(en_c_i, init->offset));
                 if (exps->type != en_msil_array_access)
                     deref(init->basetp, &exps);
@@ -1593,7 +1595,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sp, SYMBOL* funcsp, INITIA
     }
     // plop in a clear block if necessary
     if (sp && !noClear && !isdest &&
-        (isarray(tp) || isstructured(tp) && (!cparams.prm_cplusplus && !chosenAssembler->msil || basetype(tp)->sp->trivialCons)))
+        (isarray(tp) || (isstructured(tp) && ((!cparams.prm_cplusplus && !chosenAssembler->msil) || basetype(tp)->sp->trivialCons))))
     {
         EXPRESSION* fexp = base;
         EXPRESSION* exp;
@@ -1724,6 +1726,7 @@ bool fittedConst(TYPE* tp, EXPRESSION* exp)
         default:
             return true;
     }
+    return false;
 }
 bool isarithmeticconst(EXPRESSION* exp)
 {

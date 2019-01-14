@@ -45,7 +45,7 @@ class BRCWriter
     bool End(void);
     static int NullCallback(void* NotUsed, int argc, char** argv, char** azColName);
     static int VersionCallback(void* NotUsed, int argc, char** argv, char** azColName);
-    int SQLiteExec(char* str);
+    int SQLiteExec(const char* str);
     int CheckDb(void);
     int CreateTables(void);
     int DBOpen(char* name);
@@ -75,7 +75,7 @@ class BRCWriter
     sqlite3* dbPointer;
     std::map<int, sqlite3_int64> fileMap;
 
-    static char* tables;
-    static char* deletion;
+    static const char* tables;
+    static const char* deletion;
 };
 #endif

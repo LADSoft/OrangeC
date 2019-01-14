@@ -54,14 +54,14 @@ void oputc(int ch, FILE* file)
 void beputc(int ch) { fputc(ch, outputFile); }
 
 /*-------------------------------------------------------------------------*/
-void owrite(char* buf, size_t size, int n, FILE* fil)
+void owrite(const char* buf, size_t size, int n, FILE* fil)
 {
     if (fil)
         fwrite(buf, size, n, fil);
 }
-void beWrite(char* buf, size_t size) { fwrite(buf, 1, size, outputFile); }
+void beWrite(const char* buf, size_t size) { fwrite(buf, 1, size, outputFile); }
 /*-------------------------------------------------------------------------*/
-void oprintf(FILE* file, char* format, ...)
+void oprintf(FILE* file, const char* format, ...)
 {
     if (file)
     {
@@ -71,7 +71,7 @@ void oprintf(FILE* file, char* format, ...)
         va_end(arg);
     }
 }
-void bePrintf(char* format, ...)
+void bePrintf(const char* format, ...)
 {
     va_list arg;
     va_start(arg, format);

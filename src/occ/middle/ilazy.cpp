@@ -190,7 +190,7 @@ static void GatherGlobals(void)
                     // statements associated with parameter pushes...  and the jxx are like variable assignments that affect
                     // the uses set but are transparent to everything...
                     else if (head->dc.opcode == i_gosub || head->dc.opcode == i_parm || head->dc.opcode == i_goto ||
-                             (head->dc.opcode >= i_jne && head->dc.opcode <= i_jge || head->dc.opcode == i_cmpblock))
+                             ((head->dc.opcode >= i_jne && head->dc.opcode <= i_jge) || head->dc.opcode == i_cmpblock))
                     {
                         EnterGlobal(head);
                     }

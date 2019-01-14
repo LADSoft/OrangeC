@@ -327,7 +327,7 @@ static void InsertSubTree(HTREEITEM parent, HTREEITEM after, VARINFO* var, int i
         var->watchindex = index;
         var->watchhead.col1Text = &var->screenname[0];
         var->watchhead.col2Text = &var->value[0];
-        if (var->pointer && !var->subtype && (!var->lref && !var->rref || var->type > eReservedTop))
+        if (var->pointer && !var->subtype && ((!var->lref && !var->rref) || var->type > eReservedTop))
         {
             var->hTreeHolder = InsertItem(var->hTreeItem, TVI_LAST, var, ptr);
             TreeView_Expand(ptr->hwndWatchTree, var->hTreeItem, TVE_COLLAPSE);

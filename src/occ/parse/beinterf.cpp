@@ -512,8 +512,8 @@ int getAlign(int sc, TYPE* tp)
         align = tp->sp->structAlign;
     return align;
 }
-char* getUsageText(void) { return chosenAssembler->usage_text; }
-char* lookupRegName(int regnum)
+const char* getUsageText(void) { return chosenAssembler->usage_text; }
+const char* lookupRegName(int regnum)
 {
     if (regnum < chosenAssembler->arch->registerCount)
         return chosenAssembler->arch->regNames[regnum].name;

@@ -796,7 +796,7 @@ IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
     }
     /* deref for add nodes */
     if (chosenAssembler->msil &&
-        (node->left->type == en_bits || node->left->type == en_structadd && node->left->right->type == en_structelem))
+        (node->left->type == en_bits || (node->left->type == en_structadd && node->left->right->type == en_structelem)))
     {
         // prepare for the MSIL ldfld instruction
         IMODE *aa1, *aa2;
@@ -2095,7 +2095,7 @@ static int gen_parm(INITLIST* a, SYMBOL* funcsp)
             return rv;
         }
     }
-    if (!cparams.prm_cplusplus && isstructured(a->tp) || chosenAssembler->msil && isarray(a->tp) && basetype(a->tp)->msil)
+    if ((!cparams.prm_cplusplus && isstructured(a->tp)) || (chosenAssembler->msil && isarray(a->tp) && basetype(a->tp)->msil))
     {
         if (a->exp->type != en_stackblock && chosenAssembler->msil)
         {
@@ -2314,10 +2314,10 @@ static int MarkFastcall(SYMBOL* sym, TYPE* functp, bool thisptr)
                     SYMBOL* sp = (SYMBOL*)hr->p;
                     TYPE* tp = basetype(sp->tp);
                     if (thisptr ||
-                        (tp->type < bt_float || (tp->type == bt_pointer && basetype(basetype(tp)->btp)->type != bt_func) ||
+                        ((tp->type < bt_float || (tp->type == bt_pointer && basetype(basetype(tp)->btp)->type != bt_func) ||
                          isref(tp)) &&
                             sp->offset - (chosenAssembler->arch->fastcallRegCount + structret) * chosenAssembler->arch->parmwidth <
-                                chosenAssembler->arch->retblocksize)
+                                chosenAssembler->arch->retblocksize))
                     {
                         IMODE* temp = tempreg(tail->dc.left->size, 0);
                         QUAD* q = (QUAD*)(QUAD *)Alloc(sizeof(QUAD));

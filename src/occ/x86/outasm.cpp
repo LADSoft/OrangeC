@@ -50,9 +50,9 @@ extern int prm_assembler;
 
 static int uses_float;
 
-extern MULDIV* muldivlink = 0;
+MULDIV* muldivlink = 0;
 static enum e_gt oa_gentype = nogen;        /* Current DC type */
-extern enum e_sg oa_currentSeg = noseg; /* Current seg */
+enum e_sg oa_currentSeg = noseg; /* Current seg */
 static int oa_outcol = 0;                   /* Curront col (roughly) */
 int newlabel;
 int needpointer;
@@ -98,7 +98,7 @@ void outop(const char* name)
 
 /*-------------------------------------------------------------------------*/
 
-void putop(enum e_op op, AMODE* aps, AMODE* apd, int nooptx)
+void putop(enum e_opcode op, AMODE* aps, AMODE* apd, int nooptx)
 {
     if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
     {
@@ -151,7 +151,7 @@ void putop(enum e_op op, AMODE* aps, AMODE* apd, int nooptx)
             outop(opcodeTable[op_wait]);
             return;
         }
-        if (op == op_dd)
+        if ((e_op)op == op_dd)
         {
             outop("dd");
             return;
@@ -352,11 +352,11 @@ void oa_putlen(int l)
 
 /*-------------------------------------------------------------------------*/
 
-void putsizedreg(char* string, int reg, int size)
+void putsizedreg(const char* string, int reg, int size)
 {
-    static char* byteregs[] = {"al", "cl", "dl", "bl", "ah", "ch", "dh", "bh"};
-    static char* wordregs[] = {"ax", "cx", "dx", "bx", "sp", "bp", "si", "di"};
-    static char* longregs[] = {"eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi"};
+    static const char* byteregs[] = {"al", "cl", "dl", "bl", "ah", "ch", "dh", "bh"};
+    static const char* wordregs[] = {"ax", "cx", "dx", "bx", "sp", "bp", "si", "di"};
+    static const char* longregs[] = {"eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi"};
     if (size < 0)
         size = -size;
     if (size == ISZ_UINT || size == ISZ_ULONG || size == ISZ_ADDR || size == ISZ_U32)
@@ -647,7 +647,7 @@ void oa_put_code(OCODE* cd)
     if (apd)
         len2 = apd->length;
     needpointer = (len != len2) || ((!aps || aps->mode != am_dreg) && (!apd || apd->mode != am_dreg));
-    putop((e_op)op, aps, apd, cd->noopt);
+    putop((e_opcode)op, aps, apd, cd->noopt);
     if ((prm_assembler == pa_nasm || prm_assembler == pa_fasm) &&
         (op >= op_ja && op <= op_jz && op != op_jecxz && (op != op_jmp || aps->mode == am_immed)))
     {

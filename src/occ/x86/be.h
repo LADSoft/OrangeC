@@ -24,11 +24,11 @@
  */
 
 #include "compiler.h"
-#ifdef __cplusplus
 #    include "InstructionParser.h"
 #    include "x64Instructions.h"
-#endif
 #define live(mask, reg) (mask & (1 << reg))
+
+#define REG_MAX 64
 
 /*
  *      code generation structures and constants
@@ -292,8 +292,6 @@ enum asmTypes
     pa_masm,
     pa_tasm
 };
-
-#define REG_MAX 32
 
 #define R_EAX 0
 #define R_ECX 1

@@ -35,15 +35,15 @@
 
 #define STRINGIZE(x) #x
 
-void ccLoadIdsFromNameTable(char* tabname, HASHTABLE* table);
+void ccLoadIdsFromNameTable(const char* tabname, HASHTABLE* table);
 
 typedef struct _symid
 {
-    char* name;
+    const char* name;
     sqlite3_int64 id;
 } SYMID;
 static int version_ok;
-char* tables = {
+const char* tables = {
     "BEGIN; "
     "CREATE TABLE ccPropertyBag ("
     " property VARCHAR(100)"
@@ -166,7 +166,7 @@ char* tables = {
     " VALUES (\"ccVersion\", " STRINGVERSION
     ");"
     "COMMIT; "};
-static char* deletion = {
+static const char* deletion = {
     "DELETE FROM SymbolTypes WHERE mainId = %d;"
     "DELETE FROM MethodArgs WHERE mainId = %d;"
     "DELETE FROM GlobalArgs WHERE mainId = %d;"
@@ -219,7 +219,7 @@ static void unregister(void)
     }
 }
 static int ccallback(void *, int, char **, char **) { return 0; }
-static int create_exec(char* str)
+static int create_exec(const char* str)
 {
     char* zErrMsg = 0;
     int rv = false;
@@ -271,7 +271,7 @@ static int createTables(void)
     }
     return rv;
 }
-int ccDBOpen(char* name)
+int ccDBOpen(const char* name)
 {
     int rv = false;
     if (sqlite3_open_v2(name, &dbPointer, SQLITE_OPEN_READWRITE, NULL) == SQLITE_OK && checkDb())
@@ -343,9 +343,9 @@ int ccDBDeleteForFile(sqlite3_int64 id)
     }
     return rv;
 }
-void ccLoadIdsFromNameTable(char* tabname, HASHTABLE* table)
+void ccLoadIdsFromNameTable(const char* tabname, HASHTABLE* table)
 {
-    static char* query = "SELECT name, id FROM %s";
+    static const char* query = "SELECT name, id FROM %s";
     int rc = SQLITE_OK;
     char qbuf[256];
     SYMID* v;
@@ -367,7 +367,7 @@ void ccLoadIdsFromNameTable(char* tabname, HASHTABLE* table)
                     break;
                 case SQLITE_ROW:
                     v = (SYMID*)Alloc(sizeof(SYMID));
-                    v->name = litlate((char*)sqlite3_column_text(handle, 0));
+                    v->name = litlate((const char*)sqlite3_column_text(handle, 0));
                     v->id = sqlite3_column_int64(handle, 1);
                     AddName((SYMBOL*)v, table);
                     rc = SQLITE_OK;
@@ -380,11 +380,11 @@ void ccLoadIdsFromNameTable(char* tabname, HASHTABLE* table)
         sqlite3_finalize(handle);
     }
 }
-static int ccSelectIdFromNameTable(sqlite3_stmt** shndl, char* name, char* tabname, sqlite3_int64* id, HASHTABLE* table)
+static int ccSelectIdFromNameTable(sqlite3_stmt** shndl, const char* name, const char* tabname, sqlite3_int64* id, HASHTABLE* table)
 {
     (void)shndl;
     (void)tabname;
-    static char* query = "SELECT id FROM %s WHERE name = ?";
+    static const char* query = "SELECT id FROM %s WHERE name = ?";
     int rc = SQLITE_OK;
     HASHREC** p = LookupName(name, table);
     if (p)
@@ -434,10 +434,10 @@ static int ccSelectIdFromNameTable(sqlite3_stmt** shndl, char* name, char* tabna
     */
     return SQLITE_ERROR;
 }
-static int ccWriteNameInTable(sqlite3_stmt** whndl, sqlite3_stmt** shndl, char* name, char* tabname, sqlite3_int64* id,
+static int ccWriteNameInTable(sqlite3_stmt** whndl, sqlite3_stmt** shndl, const char* name, const char* tabname, sqlite3_int64* id,
                               HASHTABLE* table)
 {
-    static char* query = "INSERT INTO %s (name) VALUES (?)";
+    static const char* query = "INSERT INTO %s (name) VALUES (?)";
     int rc;
     rc = ccSelectIdFromNameTable(shndl, name, tabname, id, table);
     if (rc != SQLITE_OK)
@@ -486,7 +486,7 @@ static int ccWriteMap(sqlite_int64 smpl_id, sqlite_int64 cplx_id, sqlite_int64 m
 {
     char id[256];
 
-    static char* query = "INSERT INTO CPPNameMapping (simpleId, complexId, mainid) VALUES (?, ?, ?)";
+    static const char* query = "INSERT INTO CPPNameMapping (simpleId, complexId, mainid) VALUES (?, ?, ?)";
     int rc = SQLITE_OK;
     static sqlite3_stmt *handle, *handle1;
     if (!handle)
@@ -522,7 +522,7 @@ static int ccWriteMap(sqlite_int64 smpl_id, sqlite_int64 cplx_id, sqlite_int64 m
     }
     return rc;
 }
-int PushCPPNameMapping(char* name, sqlite_int64 cplx_id, sqlite_int64 main_id)
+int PushCPPNameMapping(const char* name, sqlite_int64 cplx_id, sqlite_int64 main_id)
 {
     int rc = SQLITE_OK;
     if (strchr(name, '@'))
@@ -579,7 +579,7 @@ int PushCPPNameMapping(char* name, sqlite_int64 cplx_id, sqlite_int64 main_id)
     }
     return rc;
 }
-int ccWriteName(char* name, sqlite_int64* id, sqlite_int64 main_id)
+int ccWriteName(const char* name, sqlite_int64* id, sqlite_int64 main_id)
 {
     int rc = ccWriteNameInTable(&whndln, &shndln, name, "Names", id, listn) == SQLITE_OK;
     if (rc)
@@ -588,15 +588,15 @@ int ccWriteName(char* name, sqlite_int64* id, sqlite_int64 main_id)
     }
     return rc;
 }
-int ccWriteMemberName(char* name, sqlite_int64* id)
+int ccWriteMemberName(const char* name, sqlite_int64* id)
 {
     return ccWriteNameInTable(&whndlm, &shndlm, name, "MemberNames", id, listm) == SQLITE_OK;
 }
-int ccWriteStructName(char* name, sqlite_int64* id)
+int ccWriteStructName(const char* name, sqlite_int64* id)
 {
     return ccWriteNameInTable(&whndls, &shndls, name, "StructNames", id, lists) == SQLITE_OK;
 }
-int ccWriteFileName(char* name, sqlite_int64* id)
+int ccWriteFileName(const char* name, sqlite_int64* id)
 {
     char buf[260], *p = buf;
     HASHREC** q;
@@ -612,10 +612,10 @@ int ccWriteFileName(char* name, sqlite_int64* id)
     name = litlate(buf);
     return ccWriteNameInTable(&whndlf, &shndlf, name, "FileNames", id, listf) == SQLITE_OK;
 }
-int ccWriteFileTime(char* name, int time, sqlite3_int64* id)
+int ccWriteFileTime(const char* name, int time, sqlite3_int64* id)
 {
     int rc = SQLITE_OK;
-    static char* query = "UPDATE FileNames SET fileDate = ? WHERE id = ?";
+    static const char* query = "UPDATE FileNames SET fileDate = ? WHERE id = ?";
     int rv = ccWriteFileName(name, id);
     if (rv)
     {
@@ -654,14 +654,14 @@ int ccWriteFileTime(char* name, int time, sqlite3_int64* id)
     }
     return rc == SQLITE_OK;
 }
-int ccWriteLineNumbers(char* symname, char* nameoftype, char* filename, int indirectCount, sqlite_int64 struct_id,
+int ccWriteLineNumbers(const char* symname, const char* nameoftype, const char* filename, int indirectCount, sqlite_int64 struct_id,
                        sqlite_int64 main_id, int start, int end, int altend, int flags, sqlite_int64* id)
 {
     int rc = SQLITE_ERROR;
     sqlite3_int64 sym_id, type_id, file_id;
     if (ccWriteName(symname, &sym_id, main_id) && ccWriteName(nameoftype, &type_id, main_id) && ccWriteFileName(filename, &file_id))
     {
-        static char* query =
+        static const char* query =
             "INSERT INTO LineNumbers (symbolId, typeId, fileId, indirectCount, structId, mainId, startLine, endLine, altendline, "
             "flags)"
             " VALUES (?,?,?,?,?,?,?,?,?,?)";
@@ -710,13 +710,13 @@ int ccWriteLineNumbers(char* symname, char* nameoftype, char* filename, int indi
     }
     return rc == SQLITE_OK;
 }
-int ccWriteGlobalArg(sqlite_int64 line_id, sqlite_int64 main_id, char* symname, char* nameoftype, int* order)
+int ccWriteGlobalArg(sqlite_int64 line_id, sqlite_int64 main_id, const char* symname, const char* nameoftype, int* order)
 {
     int rc = SQLITE_ERROR;
     sqlite3_int64 type_id, symbol_id;
     if (ccWriteName(symname, &symbol_id, main_id) && ccWriteName(nameoftype, &type_id, main_id))
     {
-        static char* query =
+        static const char* query =
             "INSERT INTO GlobalArgs (lineId, mainid, symbolId, typeId, fieldOrder)"
             " VALUES (?,?,?,?,?)";
         static sqlite3_stmt* handle;
@@ -754,14 +754,14 @@ int ccWriteGlobalArg(sqlite_int64 line_id, sqlite_int64 main_id, char* symname, 
     }
     return rc == SQLITE_OK;
 }
-int ccWriteStructField(sqlite3_int64 name_id, char* symname, char* nameoftype, int indirectCount, sqlite3_int64 struct_id,
+int ccWriteStructField(sqlite3_int64 name_id, const char* symname, const char* nameoftype, int indirectCount, sqlite3_int64 struct_id,
                        sqlite3_int64 file_id, sqlite_int64 main_id, int flags, int* order, sqlite_int64* id)
 {
     int rc = SQLITE_ERROR;
     sqlite3_int64 sym_id, type_id;
     if (ccWriteMemberName(symname, &sym_id) && ccWriteName(nameoftype, &type_id, main_id))
     {
-        static char* query =
+        static const char* query =
             "INSERT INTO StructFields (nameId, symbolId, typeId, indirectCount, structId, fileId, mainId, flags, fieldOrder)"
             " VALUES (?,?,?,?,?,?,?,?,?)";
         static sqlite3_stmt* handle;
@@ -807,13 +807,13 @@ int ccWriteStructField(sqlite3_int64 name_id, char* symname, char* nameoftype, i
     }
     return rc == SQLITE_OK;
 }
-int ccWriteMethodArg(sqlite_int64 struct_id, char* nameoftype, int* order, sqlite3_int64 main_id)
+int ccWriteMethodArg(sqlite_int64 struct_id, const char* nameoftype, int* order, sqlite3_int64 main_id)
 {
     int rc = SQLITE_ERROR;
     sqlite3_int64 type_id;
     if (ccWriteName(nameoftype, &type_id, main_id))
     {
-        static char* query =
+        static const char* query =
             "INSERT INTO MethodArgs (structId, typeId, fieldOrder)"
             " VALUES (?,?,?)";
         static sqlite3_stmt* handle;
@@ -849,9 +849,9 @@ int ccWriteMethodArg(sqlite_int64 struct_id, char* nameoftype, int* order, sqlit
     }
     return rc == SQLITE_OK;
 }
-int ccWriteLineData(sqlite_int64 file_id, sqlite_int64 main_id, char* data, int len, int lines)
+int ccWriteLineData(sqlite_int64 file_id, sqlite_int64 main_id, const char* data, int len, int lines)
 {
-    static char* query =
+    static const char* query =
         "INSERT INTO LineData (fileId, mainId, lines, data)"
         " VALUES (?,?,?,?)";
     static sqlite3_stmt* handle;
@@ -887,13 +887,13 @@ int ccWriteLineData(sqlite_int64 file_id, sqlite_int64 main_id, char* data, int 
     }
     return rc == SQLITE_OK;
 }
-int ccWriteSymbolType(char* symname, sqlite3_int64 file_id, char* declFile, int startLine, int endLine, int type)
+int ccWriteSymbolType(const char* symname, sqlite3_int64 file_id, const char* declFile, int startLine, int endLine, int type)
 {
     int rc = SQLITE_ERROR;
     sqlite3_int64 sym_id, localFileId;
     if (ccWriteName(symname, &sym_id, file_id) && ccWriteFileName(declFile, &localFileId))
     {
-        static char* query =
+        static const char* query =
             "INSERT INTO SymbolTypes (mainid, fileid, symbolid, startline, endline, type)"
             " VALUES (?,?,?,?,?,?)";
         static sqlite3_stmt* handle;
@@ -933,13 +933,13 @@ int ccWriteSymbolType(char* symname, sqlite3_int64 file_id, char* declFile, int 
     }
     return rc == SQLITE_OK;
 }
-int ccWriteNameSpaceEntry(char* symname, sqlite_int64 file_id, char* filename, int startline, int endline)
+int ccWriteNameSpaceEntry(const char* symname, sqlite_int64 file_id, const char* filename, int startline, int endline)
 {
     int rc = SQLITE_ERROR;
     sqlite3_int64 sym_id, localFileId;
     if (ccWriteName(symname, &sym_id, file_id) && ccWriteFileName(filename, &localFileId))
     {
-        static char* query =
+        static const char* query =
             "INSERT INTO NameSpaceData (mainid, fileid, symbolid, startline, endline)"
             " VALUES (?,?,?,?,?)";
         static sqlite3_stmt* handle;
@@ -978,14 +978,14 @@ int ccWriteNameSpaceEntry(char* symname, sqlite_int64 file_id, char* filename, i
     }
     return rc == SQLITE_OK;
 }
-int ccWriteUsingRecord(char* symname, char* parentname, char* filename, int startline, sqlite_int64 file_id)
+int ccWriteUsingRecord(const char* symname, const char* parentname, const char* filename, int startline, sqlite_int64 file_id)
 {
     sqlite3_int64 sym_id, parent_id = -1, localFileId;
     int rc = SQLITE_ERROR;
     if (ccWriteName(symname, &sym_id, file_id) && (!parentname[0] || ccWriteName(parentname, &parent_id, file_id)) &&
         ccWriteFileName(filename, &localFileId))
     {
-        static char* query =
+        static const char* query =
             "INSERT INTO UsingData (mainid, fileid, symbolid, parentid, startline)"
             " VALUES (?,?,?,?,?)";
         static sqlite3_stmt* handle;

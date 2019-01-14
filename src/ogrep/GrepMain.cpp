@@ -54,7 +54,7 @@ CmdSwitchBool GrepMain::displayFileNames(SwitchParser, '#');
 CmdSwitchBool GrepMain::displayHeaderFileName(SwitchParser, '#');
 
 const char* GrepMain::usageText = "[-rxlcnvidzwo?] searchstring file[s]\n";
-char* GrepMain::helpText =
+const char* GrepMain::helpText =
     "[options] searchstring file[s]"
     "\n"
     "   -c             Show Match Count only        -d  Recurse Subdirectories\n"
@@ -250,7 +250,7 @@ int GrepMain::Run(int argc, char** argv)
     // handle /V switch
     for (int i = 1; i < argc; i++)
         if (argv[i] && (argv[i][0] == '/' || argv[i][0] == '-'))
-            if (argv[i][1] == 'V' && argv[i][2] == 0 || !strcmp(argv[i], "--version"))
+            if ((argv[i][1] == 'V' && argv[i][2] == 0) || !strcmp(argv[i], "--version"))
             {
                 Utils::banner(argv[0]);
                 exit(0);

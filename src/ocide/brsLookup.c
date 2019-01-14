@@ -308,7 +308,7 @@ static BOOL FindLine(sqlite3* db, char* file, int line, char* name, char* return
                     file = (char*)sqlite3_column_text(handle, 0);
                     newStartLine = sqlite3_column_int(handle, 1);
                     newQual = sqlite3_column_int(handle, 2);
-                    if ((newQual & 2) && toDeclaration || !(newQual & 2) && !toDeclaration)
+                    if (((newQual & 2) && toDeclaration) || (!(newQual & 2) && !toDeclaration))
                     {
                         strcpy(returnedFileName, file);
                         *startLine = newStartLine;
@@ -348,7 +348,7 @@ static BOOL FindLine(sqlite3* db, char* file, int line, char* name, char* return
                             file = (char*)sqlite3_column_text(handle, 0);
                             newStartLine = sqlite3_column_int(handle, 1);
                             newQual = sqlite3_column_int(handle, 2);
-                            if ((newQual & 2) && toDeclaration || !(newQual & 2) && !toDeclaration)
+                            if (((newQual & 2) && toDeclaration) || (!(newQual & 2) && !toDeclaration))
                             {
                                 strcpy(returnedFileName, file);
                                 *startLine = newStartLine;
@@ -530,7 +530,7 @@ static BROWSELIST* GetBrowseList(sqlite3* db, char* name, char* filename, int cu
     {
         int id;
         name[0] = '_';
-        if (id = LookupSymbolBrowse(db, name))
+        if ((id = LookupSymbolBrowse(db, name)))
         {
             BROWSELIST* next = calloc(sizeof(BROWSELIST), 1);
             next->next = rv;
@@ -538,7 +538,7 @@ static BROWSELIST* GetBrowseList(sqlite3* db, char* name, char* filename, int cu
             strcpy(next->name, name + 1);
             next->id = id;
         }
-        else if (id = LookupSymbolBrowse(db, name + 1))  // might be a #define
+        else if ((id = LookupSymbolBrowse(db, name + 1)))  // might be a #define
         {
             BROWSELIST* next = calloc(sizeof(BROWSELIST), 1);
             next->next = rv;
@@ -565,7 +565,7 @@ static BROWSELIST* GetBrowseList(sqlite3* db, char* name, char* filename, int cu
     }
     return rv;
 }
-static LRESULT BrowseInfoSelectProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
+static LRESULT CALLBACK BrowseInfoSelectProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
     BROWSELIST* list;
     LV_COLUMN lvC;
@@ -683,7 +683,7 @@ static BROWSELIST* LookupSymmetricBrowse(sqlite3* db, char* name, char* filname,
         {
             if (scan->type & currentType)
             {
-                if (toDeclaration && !(scan->qual & 2) || !toDeclaration && (scan->qual & 2))
+                if ((toDeclaration && !(scan->qual & 2)) || (!toDeclaration && (scan->qual & 2)))
                 {
                     if (current)
                         break;
@@ -699,7 +699,7 @@ static BROWSELIST* LookupSymmetricBrowse(sqlite3* db, char* name, char* filname,
             {
                 if ((scan->type & currentType) && scan->id == current->id)
                 {
-                    if (toDeclaration && (scan->qual & 2) || !toDeclaration && !(scan->qual & 2))
+                    if ((toDeclaration && (scan->qual & 2)) || (!toDeclaration && !(scan->qual & 2)))
                     {
                         rv = calloc(1, sizeof(BROWSELINELIST));
                         strcpy(rv->file, scan->file);
@@ -729,7 +729,7 @@ BROWSELIST* LookupBrowseStruct(sqlite3* db, char* name, char* filename, int curl
     char hold;
     char* b = name + strlen(name);
     CCSTRUCTDATA* structData;
-    while (b > name && isalnum(b[-1]) || b[-1] == '_')
+    while ((b > name && isalnum(b[-1])) || b[-1] == '_')
         b--;
     if (isdigit(b[0]))
         return NULL;
@@ -761,7 +761,7 @@ BROWSELIST* LookupBrowseStruct(sqlite3* db, char* name, char* filename, int curl
             if (found)
             {
                 int id;
-                if (id = LookupSymbolBrowse(db, structData->data[i].fieldName))
+                if ((id = LookupSymbolBrowse(db, structData->data[i].fieldName)))
                 {
                     BROWSELIST* next = calloc(sizeof(BROWSELIST), 1);
                     next->next = rv;

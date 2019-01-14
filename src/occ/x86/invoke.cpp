@@ -42,10 +42,10 @@ extern int showBanner;
 extern int verbosity;
 extern char* prm_libpath;
 
-char* winflags[] = {
+const char* winflags[] = {
     "/T:CON32 ", "/T:GUI32 ", "/T:DLL32 ", "/T:PM ", "/T:DOS32 ", "/T:BIN ", "/T:CON32;sdpmist32.bin ", "/T:CON32;shdld32.bin ",
 };
-char* winc0[] = {"c0xpe.o", "c0pe.o", "c0dpe.o", "c0pm.o", "c0wat.o", "", "c0xpe.o", "c0hx.o",
+const char* winc0[] = {"c0xpe.o", "c0pe.o", "c0dpe.o", "c0pm.o", "c0wat.o", "", "c0xpe.o", "c0hx.o",
                  "c0xls.o", "c0ls.o", "c0dls.o", "c0om.o", "c0wat.o", "", "c0xpe.o", "c0hx.o"};
 
 LIST *objlist, *asmlist, *liblist, *reslist, *rclist;
@@ -83,7 +83,7 @@ static bool InsertOption(char* name)
     strcat(*p, name + 1);
     return true;
 }
-static void InsertFile(LIST** r, char* name, char* ext, bool primary)
+static void InsertFile(LIST** r, const char* name, const char* ext, bool primary)
 {
     LIST* lst;
     char buf[256], *newbuffer;
@@ -187,7 +187,8 @@ void InsertOutputFileName(char* name) { strcpy(outputFileName, name); }
 int RunExternalFiles(char* rootPath)
 {
     char root[260];
-    char args[1024], *c0;
+    char args[1024];
+    const char *c0;
     char spname[2048];
     char outName[260], *p;
     int rv;

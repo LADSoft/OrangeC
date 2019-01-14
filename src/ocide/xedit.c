@@ -28,8 +28,8 @@
 #include <windows.h>
 #include <commctrl.h>
 #include <stdio.h>
-#include "header.h"
 #include <richedit.h>
+#include "header.h"
 #include <limits.h>
 #include "c_types.h"
 #include <stdlib.h>
@@ -890,10 +890,12 @@ void insertcr(HWND hwnd, EDITDATA* p, BOOL tabs)
             if (p->cd->text[n].ch == ')')
                 nesting++;
             else if (p->cd->text[n].ch == '(')
+            {
                 if (nesting)
                     nesting--;
                 else
                     parenpos = n;
+            }
             if (!isspace(p->cd->text[n].ch) && !noend)
             {
                 if (p->cd->text[n].ch == '}')
@@ -1163,9 +1165,9 @@ void RemoveNextWord(HWND hwnd, EDITDATA* p)
             end++;
         }
     }
-    else if (end < p->cd->textlen && isalpha(p->cd->text[end].ch) || p->cd->text[end].ch == '_')
+    else if ((end < p->cd->textlen && isalpha(p->cd->text[end].ch)) || p->cd->text[end].ch == '_')
     {
-        while (end < p->cd->textlen && isalnum(p->cd->text[end].ch) || p->cd->text[end].ch == '_')
+        while ((end < p->cd->textlen && isalnum(p->cd->text[end].ch)) || p->cd->text[end].ch == '_')
         {
             end++;
         }

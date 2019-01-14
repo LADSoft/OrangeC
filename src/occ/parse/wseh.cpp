@@ -228,15 +228,19 @@ static LEXEME* SEH_try(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
         while (MATCHKW(lex, kw___catch) || MATCHKW(lex, kw___finally) || MATCHKW(lex, kw___fault))
         {
             if (MATCHKW(lex, kw___finally))
+            {
                 if (foundFinally)
                     error(ERR_FINALLY_FAULT_APPEAR_ONLY_ONCE);
                 else
                     foundFinally = true;
+            }
             else if (MATCHKW(lex, kw___fault))
+            {
                 if (foundFault)
                     error(ERR_FINALLY_FAULT_APPEAR_ONLY_ONCE);
                 else
                     foundFault = true;
+            }
             lex = statement_SEH(lex, funcsp, parent);
         }
         ReorderSEHRecords(tail, parent);
@@ -257,6 +261,8 @@ LEXEME* statement_SEH(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
             return SEH_finally(lex, funcsp, parent);
         case kw___fault:
             return SEH_fault(lex, funcsp, parent);
+        default:
+            break;
     }
     return lex;
 }

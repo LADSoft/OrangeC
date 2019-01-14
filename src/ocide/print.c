@@ -25,6 +25,7 @@
 
 #include <windows.h>
 #include <commctrl.h>
+#include <richedit.h>
 #include <stdio.h>
 #include <time.h>
 #include "header.h"

@@ -26,6 +26,7 @@
 #include <windows.h>
 #include <commctrl.h>
 #include <stdio.h>
+#include <richedit.h>
 #include "htmlhelp.h"
 #include "header.h"
 #define _MT
@@ -233,6 +234,7 @@ int MSDNHelp(char* string)
             SpecifiedHelp(string);
             break;
     }
+    return 1;
 }
 int ConfigMSDNHelp(void)
 {

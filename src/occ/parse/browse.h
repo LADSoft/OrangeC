@@ -42,14 +42,14 @@
 typedef struct browseFile
 {
     struct browseFile* next;
-    char* name;
+    const char* name;
     int filenum;
 } BROWSEFILE;
 typedef struct browseInfo
 {
     struct browseInfo* next;
     int type;
-    char* name;
+    const char* name;
     int filenum;
     int lineno;
     int charpos;

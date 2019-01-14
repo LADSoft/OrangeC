@@ -274,7 +274,7 @@ extern ARCH_GEN outputfunctions;
 
 enum e_lk get_dll_linkage() { return prm_lscrtdll ? lk_import : lk_none; }
 
-static void WinmodeSetup(char select, char* string);
+static void WinmodeSetup(const char select, const char* string);
 static void chkdos(void)
 {
     char* a = getenv("ORANGECDOS");
@@ -334,7 +334,7 @@ static int initmasm(COMPILER_PARAMS* parms, ARCH_ASM* data, ARCH_DEBUG* debug)
     chkdos();
     return 1;
 }
-static void WinmodeSetup(char select, char* string)
+static void WinmodeSetup(const char select, const char* string)
 {
     (void)select;
     switch (string[0])

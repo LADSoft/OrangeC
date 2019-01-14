@@ -206,7 +206,7 @@ void RuleContainer::Clear()
         delete rule;
     implicitRules.clear();
 }
-bool RuleContainer::OnList(const std::string& goal, char* what)
+bool RuleContainer::OnList(const std::string& goal, const char* what)
 {
     bool rv = false;
     RuleList* rl = Lookup(what);
@@ -220,7 +220,7 @@ bool RuleContainer::OnList(const std::string& goal, char* what)
     }
     return rv;
 }
-bool RuleContainer::NoList(char* what)
+bool RuleContainer::NoList(const char* what)
 {
     bool rv = false;
     RuleList* rl = Lookup(what);

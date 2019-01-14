@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include <commctrl.h>
 #include <stdarg.h>
+#include <richedit.h>
 
 #include "header.h"
 #include "progress.h"

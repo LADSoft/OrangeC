@@ -6,7 +6,7 @@
 #endif
 #include <stdio.h>
 
-void fatal(char*, ...);
+void fatal(const char*, ...);
 char pipeName[260];
 
 struct data
@@ -36,7 +36,7 @@ static void WaitForPipeData(HANDLE hPipe, int size)
     fatal("Broken pipe");
 }
 #endif
-static struct data* readFileFromPipe(char* filname)
+static struct data* readFileFromPipe(const char* filname)
 {
     char pipe[260];
     struct data* rv = NULL;
@@ -110,7 +110,7 @@ size_t ccReadFile(void* __ptr, size_t __size, size_t __n, FILE* __stream)
     }
 }
 
-FILE* ccOpenFile(char* filname, FILE* fil, char* mode)
+FILE* ccOpenFile(const char* filname, FILE* fil, const char* mode)
 {
     if (pipeName[0])
     {

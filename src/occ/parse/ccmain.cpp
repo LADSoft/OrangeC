@@ -52,7 +52,7 @@ extern "C" {
 void ccDumpSymbols(void);
 void ccNewFile(char* fileName, bool main);
 void ccCloseFile(FILE* handle);
-int ccDBOpen(char* name);
+int ccDBOpen(const char* name);
 #endif
 
 int verbosity = 0;

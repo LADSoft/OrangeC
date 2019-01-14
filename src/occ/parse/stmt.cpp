@@ -41,7 +41,7 @@ extern enum e_kw skim_closepa[];
 extern enum e_kw skim_semi[];
 extern SYMBOL* theCurrentFunc;
 extern TYPE stdpointer;
-extern char* overloadNameTab[];
+extern const char* overloadNameTab[];
 extern LEXCONTEXT* context;
 extern TYPE stdXC;
 extern TYPE std__string, stdbool;
@@ -82,7 +82,7 @@ void statement_ini(bool global)
     caseDestructBlock = NULL;
     matchReturnTypes = false;
 }
-void InsertLineData(int lineno, int fileindex, char* fname, char* line)
+void InsertLineData(int lineno, int fileindex, const char* fname, char* line)
 {
     LINEDATA* ld;
     IncGlobalFlag();
@@ -97,7 +97,7 @@ void InsertLineData(int lineno, int fileindex, char* fname, char* line)
         linesHead = linesTail = ld;
     DecGlobalFlag();
 }
-void FlushLineData(char* file, int lineno)
+void FlushLineData(const char* file, int lineno)
 {
     while (linesHead)
     {
@@ -201,7 +201,7 @@ static LEXEME* selection_expression(LEXEME* lex, BLOCKDATA* parent, EXPRESSION**
             error(ERR_NO_DECLARATION_HERE);
         }
         /* fixme need type */
-        lex = autodeclare(lex, funcsp, &tp, exp, parent, kw != kw_for | (kw == kw_rangefor ? _F_NOCHECKAUTO : 0));
+        lex = autodeclare(lex, funcsp, &tp, exp, parent, (kw != kw_for) | (kw == kw_rangefor ? _F_NOCHECKAUTO : 0));
         if (tp->type == bt_memberptr)
         {
             *exp = exprNode(en_mp_as_bool, *exp, NULL);
@@ -1906,9 +1906,9 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                         oldlref = basetype(tp1)->lref;
                         basetype(tp1)->rref =
                             exp1->type == en_func || exp1->type == en_thisref ||
-                            exp1->type == en_auto &&
+                            (exp1->type == en_auto &&
                                 exp1->v.sp->storage_class !=
-                                    sc_parameter;  // || lvalue(exp1) && (exp1->type != en_l_ref || exp1->left->type != en_auto ||
+                                    sc_parameter);  // || lvalue(exp1) && (exp1->type != en_l_ref || exp1->left->type != en_auto ||
                                                    // exp1->left->v.sp->storage_class != sc_parameter);
                         basetype(tp1)->lref = !basetype(tp1)->rref;
                         maybeConversion = false;
@@ -1927,6 +1927,8 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                 case en_auto:
                                 case en_threadlocal:
                                     exp1->v.sp->dest = NULL;
+                                    break;
+                                default:
                                     break;
                             }
                         }
@@ -2126,7 +2128,7 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
             {
                 if (!isref(basetype(funcsp->tp)->btp) &&
                     (isarithmetic(basetype(funcsp->tp)->btp) ||
-                     ispointer(basetype(funcsp->tp)->btp) && !isarray(basetype(funcsp->tp)->btp)))
+                     (ispointer(basetype(funcsp->tp)->btp) && !isarray(basetype(funcsp->tp)->btp))))
                     cast(returntype, &st->select);
                 if (ispointer(returntype))
                 {
@@ -2710,6 +2712,8 @@ bool resolveToDeclaration(LEXEME* lex)
             case kw_class:
             case kw_decltype:
                 return true;
+            default:
+                break;
         }
     lex = getsym();
     if (MATCHKW(lex, begin))
@@ -2796,11 +2800,12 @@ LEXEME* statement(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool viacontro
         error(ERR_UNREACHABLE_CODE);
 
     if (!MATCHKW(lex, begin))
+    {
         if (MATCHKW(lex, kw_throw))
             parent->needlabel = true;
         else
             parent->needlabel = false;
-
+    }
     parent->nosemi = false;
     switch (KW(lex))
     {
@@ -2897,9 +2902,9 @@ LEXEME* statement(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool viacontro
             lex = statement_SEH(lex, funcsp, parent);
             break;
         default:
-            if ((startOfType(lex, false) &&
-                 (!cparams.prm_cplusplus && (!chosenAssembler->msil || !chosenAssembler->msil->allowExtensions) ||
-                  resolveToDeclaration(lex))) ||
+            if (((startOfType(lex, false) &&
+                 ((!cparams.prm_cplusplus && (!chosenAssembler->msil || !chosenAssembler->msil->allowExtensions))||
+                  resolveToDeclaration(lex)))) ||
                 MATCHKW(lex, kw_namespace) || MATCHKW(lex, kw_using) || MATCHKW(lex, kw_decltype) || MATCHKW(lex, kw_static_assert))
             {
                 if (!cparams.prm_c99 && !cparams.prm_cplusplus)
@@ -2911,7 +2916,7 @@ LEXEME* statement(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool viacontro
                     AllocateLocalContext(parent, funcsp, codeLabel++);
                 }
                 while (
-                    (startOfType(lex, false) && (!cparams.prm_cplusplus && !chosenAssembler->msil || resolveToDeclaration(lex))) ||
+                    ((startOfType(lex, false) && ((!cparams.prm_cplusplus && !chosenAssembler->msil) || resolveToDeclaration(lex)))) ||
                     MATCHKW(lex, kw_namespace) || MATCHKW(lex, kw_using) || MATCHKW(lex, kw_decltype) ||
                     MATCHKW(lex, kw_static_assert))
                 {
@@ -2954,7 +2959,7 @@ LEXEME* statement(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool viacontro
 }
 static bool thunkmainret(SYMBOL* funcsp, BLOCKDATA* parent, bool always)
 {
-    if (always || !strcmp(funcsp->name, "main") && !funcsp->parentClass && !funcsp->parentNameSpace)
+    if (always || (!strcmp(funcsp->name, "main") && !funcsp->parentClass && !funcsp->parentNameSpace))
     {
         STATEMENT* s = stmtNode(NULL, parent, st_return);
         s->select = intNode(en_c_i, 0);
@@ -3517,10 +3522,12 @@ LEXEME* body(LEXEME* lex, SYMBOL* funcsp)
     if (isautotype(basetype(funcsp->tp)->btp) && !templateNestingCount)
         basetype(funcsp->tp)->btp = &stdvoid;  // return value for auto function without return statements
     if (cparams.prm_cplusplus)
+    {
         if (!funcsp->constexpression)
             funcsp->nonConstVariableUsed = true;
         else
             funcsp->nonConstVariableUsed |= !MatchesConstFunction(funcsp);
+    }
     funcsp->labelCount = codeLabel - INT_MIN;
     n1 = codeLabel;
     if (!funcsp->templateLevel || funcsp->instantiated || funcsp->instantiated2)

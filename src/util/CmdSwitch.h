@@ -156,7 +156,7 @@ class CmdSwitchCombineString : public CmdSwitchString
 class CmdSwitchCombo : public CmdSwitchString
 {
   public:
-    CmdSwitchCombo(CmdSwitchParser& parser, char SwitchChar, char* Valid) :
+    CmdSwitchCombo(CmdSwitchParser& parser, char SwitchChar, const char* Valid) :
         CmdSwitchString(parser, SwitchChar),
         valid(Valid),
         selected(false)

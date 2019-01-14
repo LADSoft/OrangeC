@@ -28,14 +28,14 @@
 
 extern COMPILER_PARAMS cparams;
 extern NAMESPACEVALUES* localNameSpace;
-extern char* overloadNameTab[];
+extern const char* overloadNameTab[];
 extern TYPE stdpointer, stdvoid;
 extern int mangledNamesCount;
 
 HASHTABLE* rttiSyms;
 
 // in enum e_bt order
-static char* typeNames[] = {"bit",
+static const char* typeNames[] = {"bit",
                             "bool",
                             "signed char",
                             "char",
@@ -139,8 +139,8 @@ static char* RTTIGetDisplayName(char* buf, TYPE* tp)
         buf = RTTIGetDisplayName(buf, tp->btp);
         *buf++ = '(';
         *buf++ = '*';
-        *buf++ = ') ';
-        *buf++ = '( ';
+        *buf++ = ')';
+        *buf++ = '(';
         while (hr)
         {
             buf = RTTIGetDisplayName(buf, ((SYMBOL*)hr->p)->tp);
@@ -151,7 +151,7 @@ static char* RTTIGetDisplayName(char* buf, TYPE* tp)
             }
             hr = hr->next;
         }
-        *buf++ = ') ';
+        *buf++ = ')';
         *buf = 0;
     }
     else

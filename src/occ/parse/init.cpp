@@ -52,7 +52,7 @@ extern int templateNestingCount;
 extern int codeLabel;
 extern INCLUDES* includes;
 extern int cppprio;
-extern char* overloadNameTab[];
+extern const char* overloadNameTab[];
 
 typedef struct _startups_
 {
@@ -158,7 +158,7 @@ void insertStartup(bool startupFlag, char* name, int prio)
         rundownList = startup;
     }
 }
-char* lookupAlias(char* name)
+const char* lookupAlias(const char* name)
 {
     ALIAS* x = (ALIAS*)search(name, aliasHash);
     if (x)
@@ -932,7 +932,7 @@ void dumpInitGroup(SYMBOL* sp, TYPE* tp)
 {
 #ifndef PARSER_ONLY
 
-    if (sp->init || isarray(sp->tp) && sp->tp->msil)
+    if (sp->init || (isarray(sp->tp) && sp->tp->msil))
     {
         if (chosenAssembler->msil)
         {
@@ -1021,7 +1021,7 @@ static void dumpStaticInitializers(void)
             int al;
             while (isarray(stp))
                 stp = basetype(stp)->btp;
-            if (IsConstWithArr(sp->tp) && !isvolatile(sp->tp) || sp->storage_class == sc_constant)
+            if ((IsConstWithArr(sp->tp) && !isvolatile(sp->tp)) || sp->storage_class == sc_constant)
             {
                 xconstseg();
                 sizep = &sconst;
@@ -1480,7 +1480,7 @@ static LEXEME* initialize_pointer_type(LEXEME* lex, SYMBOL* funcsp, int offset, 
                 if (sp2)
                 {
                     sp2->genreffed = true;
-                    if ((*exp2)->type == en_pc || (*exp2)->type == en_func && !(*exp2)->v.func->ascall)
+                    if ((*exp2)->type == en_pc || ((*exp2)->type == en_func && !(*exp2)->v.func->ascall))
                         thunkForImportTable(exp2);
                 }
             }
@@ -1501,6 +1501,7 @@ static LEXEME* initialize_pointer_type(LEXEME* lex, SYMBOL* funcsp, int offset, 
             else if (isfunction(tp) || tp->type == bt_aggregate)
             {
                 if (!isfuncptr(itype) || !comparetypes(basetype(itype)->btp, tp, true))
+                {
                     if (cparams.prm_cplusplus)
                     {
                         if (!isvoidptr(itype) && !tp->nullptrType)
@@ -1509,6 +1510,7 @@ static LEXEME* initialize_pointer_type(LEXEME* lex, SYMBOL* funcsp, int offset, 
                     }
                     else if (!isvoidptr(tp) && !isvoidptr(itype))
                         error(ERR_SUSPICIOUS_POINTER_CONVERSION);
+                }
             }
             else if (!comparetypes(itype, tp, true))
             {
@@ -1598,8 +1600,8 @@ static LEXEME* initialize_memberptr(LEXEME* lex, SYMBOL* funcsp, int offset, enu
             }
             else if (exp->type == en_memberptr)
             {
-                if (exp->v.sp->parentClass != basetype(itype)->sp && exp->v.sp->parentClass != basetype(itype)->sp->mainsym &&
-                        !sameTemplate(itype, exp->v.sp->parentClass->tp) ||
+                if ((exp->v.sp->parentClass != basetype(itype)->sp && exp->v.sp->parentClass != basetype(itype)->sp->mainsym &&
+                        !sameTemplate(itype, exp->v.sp->parentClass->tp)) ||
                     !comparetypes(basetype(itype)->btp, basetype(exp->v.sp->tp), true))
 
                     errortype(ERR_CANNOT_CONVERT_TYPE, tp, itype);
@@ -1849,7 +1851,7 @@ static LEXEME* initialize_reference_type(LEXEME* lex, SYMBOL* funcsp, int offset
             }
             else
             {
-                if (basetype(tp)->nullptrType || isint(tp) && isconstzero(tp, exp))
+                if (basetype(tp)->nullptrType || (isint(tp) && isconstzero(tp, exp)))
                 {
                     int lbl = dumpMemberPtr(NULL, itype1, true);
                     exp = intNode(en_labcon, lbl);
@@ -1999,7 +2001,7 @@ static void unwrap_desc(AGGREGATE_DESCRIPTOR** descin, AGGREGATE_DESCRIPTOR** ca
 {
     if (!cparams.prm_cplusplus)
         dest = NULL;
-    while (*descin && (!(*descin)->stopgap || dest && (*descin)->hr))
+    while (*descin && (!(*descin)->stopgap || (dest && (*descin)->hr)))
     {
         // this won't work with the declarator syntax in C++20
         if (cparams.prm_cplusplus && dest)
@@ -2528,7 +2530,7 @@ static LEXEME* initialize___object(LEXEME* lex, SYMBOL* funcsp, int offset, TYPE
     {
         error(ERR_EXPRESSION_SYNTAX);
     }
-    else if (isarithmetic(tp) || ispointer(tp) && (!isarray(tp) || !tp->msil))
+    else if (isarithmetic(tp) || (ispointer(tp) && (!isarray(tp) || !tp->msil)))
     {
         cast(tp, &expr);
     }
@@ -2639,7 +2641,7 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
         assn = true;
         lex = getsym();
     }
-    if ((cparams.prm_cplusplus || chosenAssembler->msil && !assn) && isstructured(itype) &&
+    if ((cparams.prm_cplusplus || (chosenAssembler->msil && !assn)) && isstructured(itype) &&
         (!basetype(itype)->sp->trivialCons || arrayMember))
     {
         if (base->storage_class != sc_member || MATCHKW(lex, openpa) || assn || MATCHKW(lex, begin))
@@ -3519,7 +3521,9 @@ bool IsConstantExpression(EXPRESSION* node, bool allowParams, bool allowFunc)
                     case en_absolute:
                     case en_threadlocal:
                         return node->left->v.sp->constexpression ||
-                               node->left->v.sp->init && IsConstantExpression(node->left->v.sp->init->exp, allowParams, allowFunc);
+                               (node->left->v.sp->init && IsConstantExpression(node->left->v.sp->init->exp, allowParams, allowFunc));
+                    default:
+                        break;
                 }
             break;
         case en_uminus:
@@ -3896,7 +3900,7 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_sc storage_cl
             }
         }
     }
-    else if ((cparams.prm_cplusplus || chosenAssembler->msil && isstructured(sp->tp) && !basetype(sp->tp)->sp->trivialCons) &&
+    else if ((cparams.prm_cplusplus || (chosenAssembler->msil && isstructured(sp->tp) && !basetype(sp->tp)->sp->trivialCons)) &&
              sp->storage_class != sc_typedef && sp->storage_class != sc_external && !asExpression)
     {
         TYPE* t =
@@ -4127,7 +4131,7 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_sc storage_cl
         if (instantiatingTemplate)
         {
             if (!sp->parentClass ||
-                sp->parentClass && allTemplateArgsSpecified(sp->parentClass, sp->parentClass->templateParams->next))
+                (sp->parentClass && allTemplateArgsSpecified(sp->parentClass, sp->parentClass->templateParams->next)))
             {
                 sp->linkage = lk_virtual;
                 InsertInlineData(sp);

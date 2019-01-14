@@ -194,7 +194,7 @@ void CmdSwitchFile::Dispatch(char* data)
     int max = 10;
     argc = 1;
     argv = new char*[max];
-    argv[0] = "";
+    argv[0] = (char *)"";
     while (*data)
     {
         data = GetStr(data);

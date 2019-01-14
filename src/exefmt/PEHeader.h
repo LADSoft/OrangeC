@@ -106,15 +106,15 @@
 
 struct PEHeader
 {
-    int signature;
-    short cpu_type;
-    short num_objects;
+    unsigned signature;
+    unsigned short cpu_type;
+    unsigned short num_objects;
     int time;
     int symbol_ptr;
     int num_symbols;
-    short nt_hdr_size;
-    short flags;
-    short magic;
+    unsigned short nt_hdr_size;
+    unsigned short flags;
+    unsigned short magic;
     unsigned char linker_minor_version;
     unsigned char linker_major_version;
     int code_size;

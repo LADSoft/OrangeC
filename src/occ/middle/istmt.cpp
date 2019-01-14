@@ -166,7 +166,7 @@ void gen_genword(STATEMENT* stmt, SYMBOL* funcsp)
 
 /*-------------------------------------------------------------------------*/
 
-IMODE* set_symbol(char* name, int isproc)
+IMODE* set_symbol(const char* name, int isproc)
 /*
  *      generate a call to a library routine.
  */
@@ -211,7 +211,7 @@ IMODE* set_symbol(char* name, int isproc)
 
 /*-------------------------------------------------------------------------*/
 
-IMODE* call_library(char* lib_name, int size)
+IMODE* call_library(const char* lib_name, int size)
 /*
  *      generate a call to a library routine.
  */
@@ -485,7 +485,7 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, IMODE*
     {
         // the return type should NOT be an array at this point unless it is a managed one...
         if (basetype(funcsp->tp)->btp &&
-            (isstructured(basetype(funcsp->tp)->btp) || isarray(basetype(funcsp->tp)->btp) && chosenAssembler->msil ||
+            (isstructured(basetype(funcsp->tp)->btp) || (isarray(basetype(funcsp->tp)->btp) && chosenAssembler->msil) ||
              basetype(basetype(funcsp->tp)->btp)->type == bt_memberptr))
         {
             if (chosenAssembler->msil)

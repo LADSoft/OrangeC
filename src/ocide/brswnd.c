@@ -225,7 +225,7 @@ static void CreateUsageList(void)
         {
             int id;
             mangled[0] = '_';
-            if (id = LookupSymbolBrowse(db, mangled))
+            if ((id = LookupSymbolBrowse(db, mangled)))
             {
                 BROWSELIST* next = calloc(sizeof(BROWSELIST), 1);
                 next->next = rv;

@@ -115,6 +115,8 @@ bool dbgtypes::typecompare::operator()(const TYPE* left, const TYPE* right) cons
                         if (operator()(left->btp, right->btp))
                             return true;
                         break;
+                    default:
+                        break;
                 }
             }
         }
@@ -188,7 +190,7 @@ ObjType* dbgtypes::BasicType(TYPE* tp)
         return factory.MakeType((ObjType::eType)n);
     return nullptr;
 }
-ObjType* dbgtypes::TypeName(ObjType* val, char* nm)
+ObjType* dbgtypes::TypeName(ObjType* val, const char* nm)
 {
     if (nm[0] == '_')
         nm++;

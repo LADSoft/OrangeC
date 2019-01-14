@@ -260,7 +260,7 @@ static ARCH_CHARACTERISTICS architecture = {
 extern ARCH_GEN outputfunctions;
 ARCH_GEN outputfunctions;
 
-static void WinmodeSetup(char select, char* string)
+static void WinmodeSetup(char select, const char* string)
 {
     (void)select;
     switch (string[0])

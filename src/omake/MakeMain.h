@@ -83,8 +83,8 @@ class MakeMain
     static CmdSwitchInt jobs;
     static CmdSwitchCombineString jobOutputMode;
     static const char* usageText;
-    static char* builtinVars;
-    static char* builtinRules;
+    static const char* builtinVars;
+    static const char* builtinRules;
 
     char** argvx;
     int argcx;

@@ -300,7 +300,7 @@ int dlPmMain::Run(int argc, char** argv)
     {
         Section* s = sections[0];
         out.write(stubData, stubSize);
-        char* sig = "LSPM";
+        const char* sig = "LSPM";
         unsigned len = 20;  // size of header
         // write header
         out.write(sig, strlen(sig));

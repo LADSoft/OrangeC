@@ -31,6 +31,7 @@
 #include <commctrl.h>
 #include <stdio.h>
 #include <float.h>
+#include <richedit.h>
 #include "header.h"
 /*
  * Pull the next path off the path search list

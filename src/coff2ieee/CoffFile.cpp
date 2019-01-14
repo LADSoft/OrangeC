@@ -82,7 +82,7 @@ bool CoffFile::Load()
                                     int relocCount = sections[i].NumberOfRelocations;
                                     if (sections[i].Characteristics & IMAGE_SCN_LNK_NRELOC_OVFL)
                                     {
-                                        if (sections[i].NumberOfRelocations != 0xffff)
+                                        if (sections[i].NumberOfRelocations != (short)0xffff)
                                         {
                                             std::cout << "Warning: Reloc overflow not handled properly" << std::endl;
                                         }
@@ -320,7 +320,7 @@ ObjFile* CoffFile::ConvertToObject(std::string outputName, ObjFactory& factory)
         if (symbols[i].StorageClass == IMAGE_SYM_CLASS_EXTERNAL && symbols[i].SectionNumber <= header.NumberOfSections)
         {
             if (symbols[i].SectionNumber <= 0 ||
-                sectionSymbols[i] && (((CoffSectionAux*)&sectionSymbols[symbols[i].SectionNumber - 1][1])->Selection <= 1))
+                (sectionSymbols[i] && (((CoffSectionAux*)&sectionSymbols[symbols[i].SectionNumber - 1][1])->Selection <= 1)))
             {
                 char* sname = symbols[i].Name;
                 std::string symbolName;

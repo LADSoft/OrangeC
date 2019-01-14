@@ -1230,7 +1230,7 @@ static int Combine(int u, int v)
         for (j = 0; j < instructionByteCount; j++)
         {
             int z;
-            if (z = bits(nm)[j])
+            if ((z = bits(nm)[j]))
             {
                 int k;
                 int m = j * BITINTBITS;
@@ -1266,7 +1266,7 @@ static int Combine(int u, int v)
     }
     losingHiDegreeNode = tempInfo[u]->squeeze >= tempInfo[u]->regCount && tempInfo[v]->squeeze >= tempInfo[v]->regCount;
     for (i = 0; i < max; i++)
-        if (z = tempInfo[v]->conflicts[i] & ~coalescedNodes[i])
+        if ((z = tempInfo[v]->conflicts[i] & ~coalescedNodes[i]))
             for (t = i * BITINTBITS; t < i * BITINTBITS + BITINTBITS; t++, z >>= 1)
                 if (z & 1)
                 {

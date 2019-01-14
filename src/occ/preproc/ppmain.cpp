@@ -73,7 +73,7 @@ COMPILER_PARAMS cparams = {
     false, /* char prm_charisunsigned;*/
 };
 
-char* getUsageText(void)
+const char* getUsageText(void)
 {
     return "[options] files\n"
            "\n"

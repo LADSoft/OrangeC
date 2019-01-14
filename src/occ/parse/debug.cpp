@@ -27,7 +27,7 @@
 void displayLexeme(LEXEME* lex)
 {
     char buf[256];
-    LCHAR* w;
+    const LCHAR* w;
     switch (lex->type)
     {
         case l_i:

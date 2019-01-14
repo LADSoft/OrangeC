@@ -23,7 +23,6 @@
  *
  */
 
-#define REG_MAX 64
 #define R_EAX 0
 #define R_ECX 1
 #define R_EDX 2

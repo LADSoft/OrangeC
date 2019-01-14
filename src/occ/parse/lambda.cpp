@@ -56,7 +56,7 @@ private:
 struct aa *aa::___self;
 */
 extern NAMESPACEVALUES *globalNameSpace, *localNameSpace;
-extern char* overloadNameTab[];
+extern const char* overloadNameTab[];
 extern TYPE stdpointer, stdvoid, stdauto, stdint;
 extern int nextLabel;
 extern char infile[];
@@ -162,7 +162,7 @@ SYMBOL* lambda_capture(SYMBOL* sym, enum e_cm mode, bool isExplicit)
                     bool errorflg = false;
                     LAMBDA* check = lambdas;
                     // have to try to replicate the symbol into the current context
-                    while (check && !error)
+                    while (check && !errorflg)
                     {
                         if (check->captureMode == cmNone)
                         {

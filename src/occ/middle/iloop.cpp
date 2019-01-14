@@ -47,7 +47,7 @@ LOOP** loopArray;
 
 static BRIGGS_SET* loopItems;
 
-static char* lptype(LOOP* lp)
+static const char* lptype(LOOP* lp)
 {
     if (lp->type == LT_ROOT)
         return "root";

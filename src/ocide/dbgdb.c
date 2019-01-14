@@ -27,6 +27,7 @@
 #include <commctrl.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <richedit.h>
 
 #include "header.h"
 #include "sqlite3.h"

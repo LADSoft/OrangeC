@@ -26,6 +26,7 @@
 #define STRICT
 #include <windows.h>
 #include <commctrl.h>
+#include <richedit.h>
 #include <stdio.h>
 #include <float.h>
 #include <stdlib.h>
@@ -410,7 +411,7 @@ int GetHelpID(void)
     return helpID;
 }
 
-static DWORD LoadFirstWorkArea(void* v)
+static void LoadFirstWorkArea(void* v)
 {
     int argc = __argc;
     char** argv = __argv;
@@ -1913,7 +1914,7 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, 
     // handle /V switch
     for (i = 1; i < __argc; i++)
         if (__argv[i] && (__argv[i][0] == '/' || __argv[i][0] == '-'))
-            if (__argv[i][1] == 'V' && __argv[i][2] == 0 || !strcmp(__argv[i], "--version"))
+            if ((__argv[i][1] == 'V' && __argv[i][2] == 0) || !strcmp(__argv[i], "--version"))
             {
                 doSplash();
                 Sleep(4000);

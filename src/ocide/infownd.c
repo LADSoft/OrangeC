@@ -295,7 +295,7 @@ static void Prev(HWND hwnd)
     {
         *(short*)buffer = 512;
         buffer[SendMessage(hwnd, EM_GETLINE, lineno, (LPARAM)buffer)] = 0;
-        if (found = bump(hwnd, buffer))
+        if ((found = bump(hwnd, buffer)))
             break;
     }
     if (found)
@@ -322,7 +322,7 @@ static void Next(HWND hwnd)
     {
         *(short*)buffer = 512;
         buffer[SendMessage(hwnd, EM_GETLINE, lineno, (LPARAM)buffer)] = 0;
-        if (found = bump(hwnd, buffer))
+        if ((found = bump(hwnd, buffer)))
             break;
     }
     if (found)

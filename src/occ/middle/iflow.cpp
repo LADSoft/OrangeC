@@ -1044,7 +1044,7 @@ void RemoveCriticalThunks(void)
                     sl = sl->next;
                 }
             }
-            else if (bjmp->dc.opcode >= i_jne && bjmp->dc.opcode <= i_jge || bjmp->dc.opcode == i_cmpblock)
+            else if ((bjmp->dc.opcode >= i_jne && bjmp->dc.opcode <= i_jge) || bjmp->dc.opcode == i_cmpblock)
             {
                 BLOCK* s = b->succ->block;
                 BLOCK* n = b->succ->next->block;

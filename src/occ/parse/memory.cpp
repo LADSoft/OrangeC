@@ -171,16 +171,16 @@ void IncGlobalFlag(void) { globalFlag++; }
 void DecGlobalFlag(void) { globalFlag--; }
 void SetGlobalFlag(int flag) { globalFlag = flag; }
 int GetGlobalFlag(void) { return globalFlag; }
-char* litlate(char* name)
+char* litlate(const char* name)
 {
     int l;
     char* rv = (char*)Alloc((l = strlen(name)) + 1);
     memcpy(rv, name, l);
     return rv;
 }
-LCHAR* wlitlate(LCHAR* name)
+LCHAR* wlitlate(const LCHAR* name)
 {
-    LCHAR* p = name;
+    const LCHAR* p = name;
     int count = 0;
     LCHAR* rv;
     while (*p)

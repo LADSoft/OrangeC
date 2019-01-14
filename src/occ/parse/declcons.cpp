@@ -30,7 +30,7 @@ extern bool hasXCInfo;
 extern int templateNestingCount;
 extern SYMBOL* theCurrentFunc;
 extern int codeLabel;
-extern char* overloadNameTab[];
+extern const char* overloadNameTab[];
 extern NAMESPACEVALUES *globalNameSpace, *localNameSpace;
 extern TYPE stdpointer, stdint;
 extern int total_errors;
@@ -372,7 +372,7 @@ static bool hasConstFunc(SYMBOL* sp, int type, bool move)
                     {
                         if (basetype(basetype(arg->tp)->btp)->sp == sp || sameTemplate(basetype(basetype(arg->tp)->btp), sp->tp))
                         {
-                            if (basetype(arg->tp)->type == bt_lref && !move || basetype(arg->tp)->type == bt_rref && move)
+                            if ((basetype(arg->tp)->type == bt_lref && !move) || (basetype(arg->tp)->type == bt_rref && move))
                             {
                                 return isconst(basetype(arg->tp)->btp);
                             }
@@ -1850,7 +1850,7 @@ static EXPRESSION* unshim(EXPRESSION* exp, EXPRESSION* ths)
     }
     return nw;
 }
-SYMBOL* findClassName(char* name, SYMBOL* cls, BASECLASS* bc, VBASEENTRY* vbase, int* offset)
+SYMBOL* findClassName(const char* name, SYMBOL* cls, BASECLASS* bc, VBASEENTRY* vbase, int* offset)
 {
     int n = 0;
     char str[1024];
@@ -1879,7 +1879,7 @@ SYMBOL* findClassName(char* name, SYMBOL* cls, BASECLASS* bc, VBASEENTRY* vbase,
             for (i = n - 1; i >= 0 && parent; i--, parent = parent->parentClass ? parent->parentClass : parent->parentNameSpace)
                 if (strcmp(parent->name, clslst[i]))
                     break;
-            if (i < 0 || i == 0 && parent == NULL && clslst[0][0] == '\0')
+            if (i < 0 || (i == 0 && parent == NULL && clslst[0][0] == '\0'))
             {
                 ccount++;
                 sp = bc->cls;
@@ -1897,7 +1897,7 @@ SYMBOL* findClassName(char* name, SYMBOL* cls, BASECLASS* bc, VBASEENTRY* vbase,
         for (i = n - 1; i >= 0 && parent; i--, parent = parent->parentClass ? parent->parentClass : parent->parentNameSpace)
             if (strcmp(parent->name, clslst[i]))
                 break;
-        if (i < 0 || i == 0 && parent == NULL && clslst[0][0] == '\0')
+        if (i < 0 || (i == 0 && parent == NULL && clslst[0][0] == '\0'))
         {
             vcount++;
             sp = vbase->cls;

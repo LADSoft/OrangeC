@@ -60,7 +60,7 @@ extern TYPE stdchar16tptr;
 extern TYPE stdchar32tptr;
 extern TYPE stdobject;
 extern bool setjmp_used;
-extern char* overloadNameTab[];
+extern const char* overloadNameTab[];
 extern NAMESPACEVALUES* localNameSpace;
 extern LAMBDA* lambdas;
 extern int instantiatingTemplate;
@@ -415,7 +415,7 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
     LEXEME* placeholder = lex;
     if (ismutable)
         *ismutable = false;
-    if (cparams.prm_cplusplus || chosenAssembler->msil && chosenAssembler->msil->allowExtensions)
+    if (cparams.prm_cplusplus || (chosenAssembler->msil && chosenAssembler->msil->allowExtensions))
     {
         lex = id_expression(lex, funcsp, &sp, &strSym, &nsv, NULL, false, false, idname);
     }
@@ -872,7 +872,7 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                     if (!isstructured(*tp) && basetype(*tp)->type != bt_memberptr && !isfunction(*tp) &&
                         sp->storage_class != sc_constant && sp->storage_class != sc_enumconstant && sp->tp->type != bt_void)
                     {
-                        if (!(*tp)->array || (*tp)->vla || !(*tp)->msil && sp->storage_class == sc_parameter)
+                        if (!(*tp)->array || (*tp)->vla || (!(*tp)->msil && sp->storage_class == sc_parameter))
                             if ((*tp)->vla)
                                 deref(&stdpointer, exp);
                             else
@@ -1024,7 +1024,7 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                 SetLinkerNames(sp, lk_c);
                 if (!nsv &&
                     (!strSym || !templateNestingCount ||
-                     !strSym->templateLevel && strSym->tp->type != bt_templateselector && strSym->tp->type != bt_templatedecltype))
+                     (!strSym->templateLevel && strSym->tp->type != bt_templateselector && strSym->tp->type != bt_templatedecltype)))
                 {
                     // no error if there are packed templates and we aren't parsing them
                     bool found = false;
@@ -1077,13 +1077,13 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
 {
     TYPE *typein = *tp, *typein2 = isarray(typein) ? typein : NULL;
     bool points = false;
-    char* tokenName = ".";
+    const char* tokenName = ".";
     if (ISKW(lex))
         tokenName = lex->kw->name;
     (void)funcsp;
     // find structured version of arithmetic types for msil member matching
     if (chosenAssembler->msil && chosenAssembler->msil->allowExtensions &&
-        (isarithmetic(*tp) || (*tp)->type == bt___string || isarray(*tp) && basetype(*tp)->msil) &&
+        (isarithmetic(*tp) || (*tp)->type == bt___string || (isarray(*tp) && basetype(*tp)->msil)) &&
         chosenAssembler->msil->find_boxed_type)
     {
         // auto-boxing for msil
@@ -1908,9 +1908,9 @@ void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp)
                                 if (!ispointer(list->tp) && (!isarithmeticconst(list->exp) || !isconstzero(decl->tp, list->exp)))
                                 {
                                     if (!isfunction(list->tp) ||
-                                        !isvoidptr(decl->tp) &&
+                                        (!isvoidptr(decl->tp) &&
                                             (!isfuncptr(decl->tp) ||
-                                             cparams.prm_cplusplus && !comparetypes(basetype(decl->tp)->btp, list->tp, true)))
+                                             (cparams.prm_cplusplus && !comparetypes(basetype(decl->tp)->btp, list->tp, true)))))
                                         errorarg(ERR_TYPE_MISMATCH_IN_ARGUMENT, argnum, decl, params->sp);
                                 }
                                 else if (!comparetypes(decl->tp, list->tp, true))
@@ -1989,7 +1989,7 @@ void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp)
                 }
                 if (dest && list && list->tp && basetype(dest)->type != bt_memberptr && !comparetypes(dest, list->tp, true))
                 {
-                    if (!chosenAssembler->msil || !isstructured(dest) && (!isarray(dest) || !basetype(dest)->msil))
+                    if (!chosenAssembler->msil || (!isstructured(dest) && (!isarray(dest) || !basetype(dest)->msil)))
                         cast(basetype(dest), &list->exp);
                     list->tp = dest;
                 }
@@ -2524,7 +2524,7 @@ void AdjustParams(SYMBOL* func, HASHREC* hr, INITLIST** lptr, bool operands, boo
     if (hr && ((SYMBOL*)hr->p)->thisPtr)
         hr = hr->next;
     while (hr && (*lptr || ((SYMBOL*)hr->p)->init != NULL ||
-                  ((SYMBOL*)hr->p)->deferredCompile != NULL && (!templateNestingCount || instantiatingTemplate)))
+                  (((SYMBOL*)hr->p)->deferredCompile != NULL && (!templateNestingCount || instantiatingTemplate))))
     {
         SYMBOL* sym = (SYMBOL*)hr->p;
         INITLIST* p;
@@ -4593,7 +4593,7 @@ static LEXEME* expression___typeid(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
         }
         else
         {
-            int id = 100000;
+            int id;
             TYPE* tp1 = *tp;
             if (isref(tp1))
                 *tp = basetype(tp1)->btp; // DAL fixed
@@ -4657,6 +4657,9 @@ static LEXEME* expression___typeid(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRE
                     break;
                 case bt_long_double_complex:
                     id = 22;
+                    break;
+                default:
+                    id = 100000;
                     break;
             }
             *exp = intNode(en_c_i, id);
@@ -4780,7 +4783,7 @@ static LEXEME* expression_primary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE**
                     if (!funcsp->__func__label)
                     {
                         LCHAR buf[256], *q = buf;
-                        char* p = funcsp->name;
+                        const char* p = funcsp->name;
                         STRING* string;
                         IncGlobalFlag();
                         string = (STRING*)Alloc(sizeof(STRING));
@@ -5960,6 +5963,8 @@ LEXEME* expression_unary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPR
                     return expression_new(lex, funcsp, tp, exp, true, flags);
                 case kw_delete:
                     return expression_delete(lex, funcsp, tp, exp, true, flags);
+                default:
+                    break;
             }
             lex = prevsym(placeholder);
         }
@@ -6087,7 +6092,7 @@ LEXEME* expression_cast(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRE
                     else
                     {
                         lex = expression_cast(lex, funcsp, NULL, &throwaway, exp, ismutable, flags);
-                        if ((*exp)->type == en_pc || (*exp)->type == en_func && !(*exp)->v.func->ascall)
+                        if ((*exp)->type == en_pc || ((*exp)->type == en_func && !(*exp)->v.func->ascall))
                             thunkForImportTable(exp);
                         //                if ((*exp)->type == en_func)
                         //                    *exp = (*exp)->v.func->fcall;
@@ -6106,7 +6111,7 @@ LEXEME* expression_cast(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRE
                                     if (!isstructured(throwaway) && (!isarray(throwaway) || !basetype(throwaway)->msil))
                                         *exp = exprNode(en_x_object, *exp, NULL);
                             }
-                            else if (isvoid(throwaway) && !isvoid(*tp) || ismsil(*tp))
+                            else if ((isvoid(throwaway) && !isvoid(*tp)) || ismsil(*tp))
                             {
                                 error(ERR_NOT_AN_ALLOWED_TYPE);
                             }
@@ -6333,7 +6338,7 @@ static LEXEME* expression_times(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** t
                         break;
                     case 1:
                         *tp = &stddouble;
-                        tp1 - &stddoubleimaginary;
+                        tp1 = &stddoubleimaginary;
                         break;
                     case 2:
                         *tp = &stdlongdouble;
@@ -6450,7 +6455,7 @@ static LEXEME* expression_add(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
             LookupSingleAggregate(tp1, &exp1);
             if (chosenAssembler->msil && chosenAssembler->msil->allowExtensions && kw == plus &&
                 (basetype(*tp)->type == bt___string || basetype(tp1)->type == bt___string ||
-                 atp && basetype(atp)->type == bt___string))
+                 (atp && basetype(atp)->type == bt___string)))
             {
                 msil = true;
                 if ((*exp)->type == en_labcon && (*exp)->string)
@@ -6686,7 +6691,7 @@ static LEXEME* expression_inequality(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYP
     {
         enum e_kw kw = KW(lex);
         enum e_node type;
-        char* opname;
+        const char* opname;
         TYPE* tp1 = NULL;
         EXPRESSION* exp1 = NULL;
         switch (kw)
@@ -6748,9 +6753,9 @@ static LEXEME* expression_inequality(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYP
                     if (funcsp)
                         funcsp->genreffed = true;
                 }
-                if ((*exp)->type == en_pc || (*exp)->type == en_func && !(*exp)->v.func->ascall)
+                if ((*exp)->type == en_pc || ((*exp)->type == en_func && !(*exp)->v.func->ascall))
                     thunkForImportTable(exp);
-                if (exp1->type == en_pc || exp1->type == en_func && !exp1->v.func->ascall)
+                if (exp1->type == en_pc || (exp1->type == en_func && !exp1->v.func->ascall))
                     thunkForImportTable(&exp1);
                 if (isstructured(*tp) || isstructured(tp1))
                     error(ERR_ILL_STRUCTURE_OPERATION);
@@ -6877,9 +6882,9 @@ static LEXEME* expression_equality(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE*
                 if (funcsp)
                     funcsp->genreffed = true;
             }
-            if ((*exp)->type == en_pc || (*exp)->type == en_func && !(*exp)->v.func->ascall)
+            if ((*exp)->type == en_pc || ((*exp)->type == en_func && !(*exp)->v.func->ascall))
                 thunkForImportTable(exp);
-            if (exp1->type == en_pc || exp1->type == en_func && !exp1->v.func->ascall)
+            if (exp1->type == en_pc || (exp1->type == en_func && !exp1->v.func->ascall))
                 thunkForImportTable(&exp1);
             if (isstructured(*tp) || isstructured(tp1))
             {
@@ -6998,7 +7003,7 @@ static LEXEME* expression_equality(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE*
 }
 void GetLogicalDestructors(EXPRESSION* top, EXPRESSION* cur)
 {
-    if (!cur || cur->type == land || cur->type == lor || cur->type == hook)
+    if (!cur || cur->type == en_land || cur->type == en_lor || cur->type == en_cond)
         return;
     if (cur->type == en_func)
     {
@@ -7535,7 +7540,7 @@ LEXEME* expression_assign(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
             if (funcsp)
             {
                 tp1 = funcsp->tp;
-                if (exp1->type == en_pc || exp1->type == en_func && !exp1->v.func->ascall)
+                if (exp1->type == en_pc || (exp1->type == en_func && !exp1->v.func->ascall))
                 {
                     thunkForImportTable(&exp1);
                 }
@@ -7546,7 +7551,7 @@ LEXEME* expression_assign(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
                     errortype(ERR_CANNOT_CONVERT_TYPE, tp1, *tp);
             }
         }
-        if (exp1->type == en_pc || exp1->type == en_func && !exp1->v.func->ascall)
+        if (exp1->type == en_pc || (exp1->type == en_func && !exp1->v.func->ascall))
         {
             if (chosenAssembler->msil)
             {
@@ -7597,7 +7602,7 @@ LEXEME* expression_assign(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
                     if ((*tp)->type == bt___string)
                     {
                         if (exp1->type == en_labcon && exp1->string)
-                            exp1->type == en_c_string;
+                            exp1->type = en_c_string;
                         else if (!ismsil(tp1))
                             exp1 = exprNode(en_x_object, exp1, NULL);
                     }
@@ -7673,7 +7678,7 @@ LEXEME* expression_assign(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
                     if (basetype(*tp)->type == bt___string)
                     {
                         if (exp1->type == en_labcon && exp1->string)
-                            exp1->type == en_c_string;
+                            exp1->type = en_c_string;
                     }
                     else if (basetype(*tp)->type == bt___object)
                     {
@@ -7908,7 +7913,7 @@ LEXEME* expression_assign(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
         }
         else if (basetype(*tp)->type == bt_memberptr)
         {
-            if ((*exp)->type == en_not_lvalue || (*exp)->type == en_func && !(*exp)->v.func->ascall || (*exp)->type == en_void ||
+            if ((*exp)->type == en_not_lvalue || ((*exp)->type == en_func && !(*exp)->v.func->ascall) || (*exp)->type == en_void ||
                 (*exp)->type == en_memberptr)
             {
                 if (basetype(*tp)->type != bt_templateparam)
@@ -7969,8 +7974,8 @@ LEXEME* expression_assign(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
             {
                 if ((*exp)->type != en_msil_array_access && exp1->type != en_msil_array_access)
                 {
-                    if (isarithmetic(*tp) || isarithmetic(tp1) || ispointer(*tp) && (!isarray(*tp) || !basetype(*tp)->msil) ||
-                        ispointer(tp1) && (!isarray(tp1) || !basetype(tp1)->msil))
+                    if (isarithmetic(*tp) || isarithmetic(tp1) || ((ispointer(*tp) && (!isarray(*tp) || !basetype(*tp)->msil)) ||
+                        (ispointer(tp1) && (!isarray(tp1) || !basetype(tp1)->msil))))
                     {
                         int n = natural_size(*exp);
                         if (natural_size(exp1) != n)
@@ -8022,7 +8027,7 @@ LEXEME* expression_assign(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
             }
         }
     }
-    if ((*exp)->type == en_pc || (*exp)->type == en_func && !(*exp)->v.func->ascall)
+    if ((*exp)->type == en_pc || ((*exp)->type == en_func && !(*exp)->v.func->ascall))
         thunkForImportTable(exp);
     return lex;
 }

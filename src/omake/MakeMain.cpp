@@ -91,8 +91,8 @@ const char* MakeMain::usageText =
     "/!    No logo\n"
     "--version show version info\n"
     "\nTime: " __TIME__ "  Date: " __DATE__;
-char* MakeMain::builtinVars = "";
-char* MakeMain::builtinRules = "";
+const char* MakeMain::builtinVars = "";
+const char* MakeMain::builtinRules = "";
 
 int main(int argc, char** argv)
 {
@@ -105,7 +105,7 @@ void MakeMain::Dispatch(const char* data)
     int max = 10;
     argcx = 1;
     argvx = new char*[max + 1];
-    argvx[0] = "";
+    argvx[0] = (char *)"";
     while (*data)
     {
         data = GetStr(data);

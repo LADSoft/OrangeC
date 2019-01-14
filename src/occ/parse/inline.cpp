@@ -112,7 +112,7 @@ void dumpInlines(void)
                 SYMBOL* sym = (SYMBOL*)funcList->data;
                 if (((sym->isInline && sym->dumpInlineToFile) || sym->genreffed))
                 {
-                    if (sym->parentClass && sym->parentClass->dontinstantiate && !sym->templateLevel || sym->linkage2 == lk_import)
+                    if ((sym->parentClass && sym->parentClass->dontinstantiate && !sym->templateLevel) || sym->linkage2 == lk_import)
                     {
                         sym->dontinstantiate = true;
                         InsertExtern(sym);
@@ -809,10 +809,12 @@ static EXPRESSION* scanReturn(STATEMENT* block, TYPE* rettp)
             case st_return:
                 rv = block->select;
                 if (!isstructured(rettp))
+                {
                     if (isref(rettp))
                         deref(&stdpointer, &rv);
                     else
                         cast(rettp, &rv);
+                }
                 block->type = st_expr;
                 block->select = rv;
                 return rv;

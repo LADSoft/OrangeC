@@ -1065,7 +1065,7 @@ void ppDefine::replaceDefined(std::string& line)
     while (n != std::string::npos)
     {
         size_t m = n + 7;
-        char* val = "";
+        const char* val = "";
         while (m < line.size() && isspace(line[m]))
             m++;
         bool open = false;

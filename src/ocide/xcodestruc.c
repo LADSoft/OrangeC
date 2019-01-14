@@ -28,6 +28,7 @@
 #include <windows.h>
 #include <commctrl.h>
 #include <stdio.h>
+#include <richedit.h>
 #include "header.h"
 #include <stdlib.h>
 #include <ctype.h>

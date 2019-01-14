@@ -88,5 +88,5 @@ typedef struct _hashtable_
 
 } HASHTABLE;
 
-   extern char* getUsageText(void);
+   extern const char* getUsageText(void);
 #endif

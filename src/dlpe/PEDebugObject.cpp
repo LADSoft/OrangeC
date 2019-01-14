@@ -65,7 +65,7 @@ void PEDebugObject::SetDebugInfo(ObjString fileName, ObjInt base)
     {
         sqlite3_busy_timeout(dbPointer, 400);
         char* zErrMsg = 0;
-        static char* cmd =
+        static const char* cmd =
             "INSERT INTO dbPropertyBag (property, value)"
             " VALUES (\"ImageBase\", %d);";
         char realCmd[256];

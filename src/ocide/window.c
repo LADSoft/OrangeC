@@ -29,6 +29,7 @@
 #include <limits.h>
 #include <stdio.h>
 #include <float.h>
+#include <richedit.h>
 #include "helpid.h"
 #include "header.h"
 //#include <dir.h>

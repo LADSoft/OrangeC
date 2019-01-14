@@ -28,15 +28,15 @@
 extern ARCH_ASM* chosenAssembler;
 extern INCLUDES* includes;
 extern SYMBOL* theCurrentFunc;
-extern char* cpp_funcname_tab[];
+extern const char* cpp_funcname_tab[];
 
-char* overloadNameTab[] = {"$bctr",  "$bdtr",   "$bcast",  "$bnew",   "$bdel",   "$badd",   "$bsub",   "$bmul",    "$bdiv",
+const char* overloadNameTab[] = {"$bctr",  "$bdtr",   "$bcast",  "$bnew",   "$bdel",   "$badd",   "$bsub",   "$bmul",    "$bdiv",
                            "$bshl",  "$bshr",   "$bmod",   "$bequ",   "$bneq",   "$blt",    "$bleq",   "$bgt",     "$bgeq",
                            "$basn",  "$basadd", "$bassub", "$basmul", "$basdiv", "$basmod", "$basshl", "$bsasshr", "$basand",
                            "$basor", "$basxor", "$binc",   "$bdec",   "$barray", "$bcall",  "$bstar",  "$barrow",  "$bcomma",
                            "$blor",  "$bland",  "$bnot",   "$bor",    "$band",   "$bxor",   "$bcpl",   "$bnwa",    "$bdla",
                            "$blit",  "$badd",   "$bsub",   "$bmul",   "$band"};
-char* msiloverloadNameTab[] = {".ctor",
+const char* msiloverloadNameTab[] = {".ctor",
                                ".dtor",
                                ".bcast",
                                ".new",
@@ -86,7 +86,7 @@ char* msiloverloadNameTab[] = {".ctor",
                                "op_UnaryMinus",
                                "op_PointerDereference",
                                "op_AddressOf"};
-char* overloadXlateTab[] = {
+const char* overloadXlateTab[] = {
     0,    0,   0,    "new", "delete", "+",  "-",  "*",   "/",   "<<",    ">>",       "%",    "==", "!=", "<",  "<=", ">",
     ">=", "=", "+=", "-=",  "*=",     "/=", "%=", "<<=", ">>=", "&=",    "|=",       "^=",   "++", "--", "[]", "()", "->*",
     "->", ",", "||", "&&",  "!",      "|",  "&",  "^",   "~",   "new[]", "delete[]", "\"\"", "+",  "-",  "*",  "&"};
@@ -100,7 +100,7 @@ static char mangledNames[MAX_MANGLE_NAME_COUNT][256];
 int mangledNamesCount;
 
 static int declTypeIndex;
-static char* lookupName(char* in, char* name);
+static char* lookupName(char* in, const char* name);
 static int uniqueID;
 
 void mangleInit()
@@ -570,7 +570,7 @@ static char* mangleTemplate(char* buf, SYMBOL* sym, TEMPLATEPARAMLIST* params)
     }
     return buf;
 }
-static char* lookupName(char* in, char* name)
+static char* lookupName(char* in, const char* name)
 {
     int i;
     for (i = 0; i < mangledNamesCount; i++)

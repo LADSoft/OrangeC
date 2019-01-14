@@ -197,12 +197,13 @@ bool Once::OnceItem::operator<(const OnceItem& right) const
     if (filesize < right.filesize)
         return true;
     else if (filesize == right.filesize)
+    {
         if (filetime < right.filetime)
             return true;
         else if (filetime == right.filetime)
             if (crc < right.crc)
                 return true;
-
+    }
     return false;
 }
 void Once::OnceItem::SetParams(const std::string& fileName)

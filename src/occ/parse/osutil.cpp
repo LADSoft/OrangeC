@@ -78,7 +78,7 @@ static bool has_output_file;
 static LIST *deflist = 0, *undeflist = 0;
 static char** set_searchpath = &prm_searchpath;
 static char** set_libpath = &prm_libpath;
-void fatal(char* fmt, ...)
+void fatal(const char* fmt, ...)
 {
     va_list argptr;
 
@@ -90,7 +90,7 @@ void fatal(char* fmt, ...)
     Cleanup();
     exit(1);
 }
-void banner(char* fmt, ...)
+void banner(const char* fmt, ...)
 {
     va_list argptr;
 
@@ -143,7 +143,7 @@ int strcasecmp_internal(const char* left, const char* right)
 /*
  * If no extension, add the one specified
  */
-void AddExt(char* buffer, char* ext)
+void AddExt(char* buffer, const char* ext)
 {
     char* pos = strrchr(buffer, '.');
     if (!pos || (*(pos - 1) == '.') || (*(pos + 1) == '\\'))
@@ -175,7 +175,7 @@ void EXEPath(char* buffer, char* filename)
 
 /*-------------------------------------------------------------------------*/
 
-int HasExt(char* buffer, char* ext)
+int HasExt(char* buffer, const char* ext)
 {
     int l = strlen(buffer), l1 = strlen(ext);
     if (l1 < l)
@@ -187,9 +187,9 @@ int HasExt(char* buffer, char* ext)
 /*
  * Pull the next path off the path search list
  */
-static char* parsepath(char* path, char* buffer)
+static const char* parsepath(const char* path, char* buffer)
 {
-    char* pos = path;
+    const char* pos = path;
 
     /* Quit if hit a ';' */
     while (*pos)
@@ -214,10 +214,10 @@ static char* parsepath(char* path, char* buffer)
  * Search local directory and all directories in the search path
  *  until it is found or run out of directories
  */
-FILE* SrchPth3(char* string, char* searchpath, char* mode)
+FILE* SrchPth3(char* string, const char* searchpath, const char* mode)
 {
     FILE* in;
-    char* newpath = searchpath;
+    const char* newpath = searchpath;
 
     /* If no path specified we search along the search path */
     if (string[0] != '\\' && string[1] != ':')
@@ -262,8 +262,8 @@ FILE* SrchPth3(char* string, char* searchpath, char* mode)
  * so first we search for the full filename, if that fails for the ~1 version, and if that
  * fails for the truncated 8.3 version
  */
-FILE* ccOpenFile(char* string, FILE* fil, char* mode);
-FILE* SrchPth2(char* name, char* path, char* attrib)
+FILE* ccOpenFile(const char* string, FILE* fil, const char* mode);
+FILE* SrchPth2(char* name, const char* path, const char* attrib)
 {
     FILE* rv = SrchPth3(name, path, attrib);
 #ifdef PARSER_ONLY
@@ -303,7 +303,7 @@ FILE* SrchPth2(char* name, char* path, char* attrib)
 
 /*-------------------------------------------------------------------------*/
 
-FILE* SrchPth(char* name, char* path, char* attrib, bool sys)
+FILE* SrchPth(char* name, const char* path, const char* attrib, bool sys)
 {
     FILE* rv = SrchPth2(name, path, attrib);
     char buf[265], *p;
@@ -864,13 +864,13 @@ void InsertAnyFile(char* filename, char* path, int drive, bool primary)
 /*-------------------------------------------------------------------------*/
 
 void dumperrs(FILE* file);
-void setfile(char* buf, char* orgbuf, char* ext)
+void setfile(char* buf, const char* orgbuf, const char* ext)
 /*
  * Get rid of a file path an add an extension to the file name
  */
 {
-    char* p = strrchr(orgbuf, '\\');
-    char* p1 = strrchr(orgbuf, '/');
+    const char* p = strrchr(orgbuf, '\\');
+    const char* p1 = strrchr(orgbuf, '/');
     if (p1 > p)
         p = p1;
     else if (!p)
@@ -886,12 +886,12 @@ void setfile(char* buf, char* orgbuf, char* ext)
 
 /*-------------------------------------------------------------------------*/
 
-void outputfile(char* buf, char* orgbuf, char* ext)
+void outputfile(char* buf, const char* orgbuf, const char* ext)
 {
 
     if (buf[strlen(buf) - 1] == '\\')
     {
-        char* p = strrchr(orgbuf, '\\');
+        const char* p = strrchr(orgbuf, '\\');
         if (p)
             p++;
         else
@@ -1046,7 +1046,7 @@ void addinclude(void)
 
 /*-------------------------------------------------------------------------*/
 
-int parseenv(char* name)
+int parseenv(const char* name)
 /*
  * Parse the environment argument string
  */
@@ -1149,14 +1149,16 @@ void ccinit(int argc, char* argv[])
     outfile[0] = 0;
     for (i = 1; i < argc; i++)
         if (argv[i][0] == '-' || argv[i][0] == '/')
+        {
             if (argv[i][1] == '!' || !strcmp(argv[i], "--nologo"))
             {
                 showBanner = false;
             }
-            else if (argv[i][1] == 'V' && argv[i][2] == 0 || !strcmp(argv[i], "--version"))
+            else if ((argv[i][1] == 'V' && argv[i][2] == 0) || !strcmp(argv[i], "--version"))
             {
                 showVersion = true;
             }
+        }
 
     if (showBanner || showVersion)
     {

@@ -161,7 +161,7 @@ void output_obj_file(void);
 void oa_ini(void);
 void oa_nl(void);
 void outop(char *name);
-void putop(enum e_op op, AMODE *aps, AMODE *apd, int nooptx);
+void putop(enum e_opcode op, AMODE *aps, AMODE *apd, int nooptx);
 void oa_putconst(int op, int sz, EXPRESSION *offset, bool doSign);
 void oa_putlen(int l);
 void putsizedreg(char *string, int reg, int size);

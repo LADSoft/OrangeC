@@ -167,14 +167,14 @@ void FreeLocalContext(BLOCKDATA* block, SYMBOL* sp, int label)
 }
 #endif
 /* SYMBOL tab hash function */
-static int GetHashValue(char* string)
+static int GetHashValue(const char* string)
 {
     unsigned i;
     for (i = 0; *string; string++)
         i = ((i << 7) + (i << 1) + i) ^ *string;
     return i;
 }
-HASHREC** GetHashLink(HASHTABLE* t, char* string)
+HASHREC** GetHashLink(HASHTABLE* t, const char* string)
 {
     unsigned i;
     if (t->size == 1)
@@ -249,7 +249,7 @@ HASHREC* AddOverloadName(SYMBOL* item, HASHTABLE* table)
 /*
  * Find something in the hash table
  */
-HASHREC** LookupName(char* name, HASHTABLE* table)
+HASHREC** LookupName(const char* name, HASHTABLE* table)
 {
     if (table->fast)
     {
@@ -267,7 +267,7 @@ HASHREC** LookupName(char* name, HASHTABLE* table)
     }
     return (0);
 }
-SYMBOL* search(char* name, HASHTABLE* table)
+SYMBOL* search(const char* name, HASHTABLE* table)
 {
     while (table)
     {
@@ -434,7 +434,7 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
                             return false;
                     tpn = basetype(tpn);
                     tps = basetype(tps);
-                    if (comparetypes(tpn, tps, true) || tpn->type == bt_templateparam && tps->type == bt_templateparam)
+                    if (comparetypes(tpn, tps, true) || (tpn->type == bt_templateparam && tps->type == bt_templateparam))
                     {
                         return true;
                     }
@@ -491,7 +491,7 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
                                 sp = fsp;
                                 find = find->next;
                             }
-                            if (find || !sp || !comparetypes(sp->tp, tps, true) && !sameTemplate(sp->tp, tps))
+                            if (find || !sp || (!comparetypes(sp->tp, tps, true) && !sameTemplate(sp->tp, tps)))
                                 return false;
                         }
                         return true;
@@ -586,14 +586,14 @@ SYMBOL* searchOverloads(SYMBOL* sp, HASHTABLE* table)
     }
     return (0);
 }
-SYMBOL* gsearch(char* name)
+SYMBOL* gsearch(const char* name)
 {
     SYMBOL* sp = search(name, localNameSpace->syms);
     if (sp)
         return sp;
     return search(name, globalNameSpace->syms);
 }
-SYMBOL* tsearch(char* name)
+SYMBOL* tsearch(const char* name)
 {
     SYMBOL* sp = search(name, localNameSpace->tags);
     if (sp)

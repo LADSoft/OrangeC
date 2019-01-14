@@ -73,7 +73,7 @@ LIST* includedFiles;
 InstructionParser* instructionParser;
 Section* currentSection;
 
-static char* segnames[] = {0,         "code",     "data",     "bss",        "string",     "const",
+static const char* segnames[] = {0,         "code",     "data",     "bss",        "string",     "const",
                            "tls",     "cstartup", "crundown", "tlsstartup", "tlsrundown", "codefix",
                            "datafix", "lines",    "types",    "symbols",    "browse"};
 
@@ -99,7 +99,7 @@ static int segFlags[] = {0,
                          ObjSection::rom};
 static int virtualSegFlags = ObjSection::max | ObjSection::virt;
 
-extern int segAligns[MAX_SEGS] = {};
+int segAligns[MAX_SEGS] = {};
 
 static int virtualSegmentNumber;
 static int lastIncludeNum;
@@ -143,7 +143,7 @@ static BROWSEFILE* browseFiles;
 static std::map<int, ObjSourceFile*> sourceFiles;
 
 extern void adjustUsesESP();
-extern int dbgblocknum = 0;
+int dbgblocknum = 0;
 
 static int sectofs;
 
@@ -1095,7 +1095,7 @@ void AddFixup(Instruction* newIns, OCODE* ins, const std::list<Numeric*>& operan
     }
 }
 
-void outcode_diag(OCODE* ins, char* str)
+void outcode_diag(OCODE* ins, const char* str)
 {
     std::string instruction = instructionParser->FormatInstruction(ins);
     std::string name("Error compiling assembly instruction \"" + instruction + "\": " + str);
@@ -1142,7 +1142,7 @@ void outcode_AssembleIns(OCODE* ins)
     }
     else
     {
-        switch (ins->opcode)
+        switch ((e_op)ins->opcode)
         {
             case op_label:
                 InsertLabel((int)ins->oper1);

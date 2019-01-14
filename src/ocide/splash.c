@@ -36,6 +36,7 @@
 #define STRICT
 #include <windows.h>
 #include <process.h>
+#include <richedit.h>
 #include "splash.h"
 #include <commctrl.h>
 #include <stdio.h>

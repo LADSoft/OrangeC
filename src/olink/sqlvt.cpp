@@ -27,7 +27,7 @@ sqlite3_module SQL3ReadOnlyVirtualTable::Module = {
     0,                                /* xFindMethod */
     0,                                /* xRename */
 };
-int SQL3VirtualTable::Exec(char* str)
+int SQL3VirtualTable::Exec(const char* str)
 {
     char* zErrMsg = 0;
     int rc = sqlite3_exec(db, str, 0, 0, &zErrMsg);
@@ -41,7 +41,7 @@ int SQL3VirtualTable::Exec(char* str)
     }
     return rc;
 }
-int SQL3VirtualTable::InsertIntoFrom(char* str)
+int SQL3VirtualTable::InsertIntoFrom(const char* str)
 {
     char* zSql;
     zSql = sqlite3_mprintf("BEGIN; INSERT INTO %Q SELECT * FROM TEMP.%Q; COMMIT;", str, GetName());
@@ -197,7 +197,7 @@ IntegerColumnsVirtualTable::IntegerColumnsVirtualTable(std::vector<sqlite3_int64
     name = buf;
     strcpy(buf, "CREATE TABLE x(");
     int ch = ',';
-    char* prikey = "";
+    const char* prikey = "";
     if (primary)
         prikey = " PRIMARY KEY";
     for (int i = 0; i < columns; i++)

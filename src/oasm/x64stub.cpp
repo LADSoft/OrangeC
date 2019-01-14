@@ -33,7 +33,7 @@
 #include "AsmLexer.h"
 #include <fstream>
 #include <iostream>
-char* Lexer::preData =
+const char* Lexer::preData =
     "%define __SECT__\n"
     "%imacro	data1	0+ .native\n"
     "	[db %1]\n"

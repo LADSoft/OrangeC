@@ -28,6 +28,7 @@
 #include <windows.h>
 #include <commctrl.h>
 #include <stdio.h>
+#include <richedit.h>
 #include "header.h"
 #include <stdlib.h>
 #include <ctype.h>
@@ -417,7 +418,7 @@ void showFunction(HWND hwnd, EDITDATA* p, int ch)
 
     if (pos <= 0 || PropGetInt(NULL, "CODE_COMPLETION") == 0)
         return;
-    if (ch == '(' || ch == ',' && !IsWindowVisible(hwndShowFunc))
+    if (ch == '(' || (ch == ',' && !IsWindowVisible(hwndShowFunc)))
     {
         char name[512], *p1;
         int pos;
@@ -444,7 +445,7 @@ void showFunction(HWND hwnd, EDITDATA* p, int ch)
             }
             if (nesting)
                 return;
-            if (!pos || !isalnum(p->cd->text[pos - 1].ch) && p->cd->text[pos - 1].ch != '_')
+            if (!pos || (!isalnum(p->cd->text[pos - 1].ch) && p->cd->text[pos - 1].ch != '_'))
                 return;
             range.cpMin = pos;
             range.cpMax = pos;
@@ -565,7 +566,7 @@ void showFunction(HWND hwnd, EDITDATA* p, int ch)
                     }
                     if (last != (*scan)->fullname &&
                         (strncmp((*scan)->fullname, funcbase, last - (*scan)->fullname) ||
-                         funcbase[last - (*scan)->fullname] != '@' && funcbase[last - (*scan)->fullname] != 0))
+                         (funcbase[last - (*scan)->fullname] != '@' && funcbase[last - (*scan)->fullname] != 0)))
                     {
                         BOOL found = FALSE;
                         char* p = nsbase;

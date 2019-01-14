@@ -52,7 +52,7 @@ class LinkDebugFile
   protected:
     bool Begin(void);
     bool End(void);
-    bool SQLiteExec(char* str);
+    bool SQLiteExec(const char* str);
     bool CreateTables(void);
     bool CreateIndexes(void);
     bool DBOpen(char* name);
@@ -92,8 +92,8 @@ class LinkDebugFile
     std::vector<ObjString*> nameList;
     std::map<ObjSection*, ObjSection*> ParentSections;
     std::deque<CPPMapping> CPPMappingList;
-    static char* tables;
-    static char* pragmas;
-    static char* indexes;
+    static const char* tables;
+    static const char* pragmas;
+    static const char* indexes;
 };
 #endif

@@ -26,6 +26,7 @@
 #define STRICT
 #include <windows.h>
 #include <commctrl.h>
+#include <richedit.h>
 #include <stdio.h>
 #include <float.h>
 #include "helpid.h"

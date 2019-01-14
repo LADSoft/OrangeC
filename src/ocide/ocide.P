@@ -94,7 +94,9 @@ HWND CreateBreakWindow(void);
 
                               /* Browse.c */
 
+void BrowseBack(void);
 sqlite3 *BrowseOpenDBByHWND(HWND hwnd, PROJECTITEM **returnProj);
+void DBClose(sqlite3* db);
 int LookupSymbolBrowse(sqlite3 *db, char *name);
 BROWSELIST *LookupCPPNamesBrowse(sqlite3 *db, char *name, BROWSELIST *in);
 void InsertBrowse(char *filname, int curline);
@@ -111,6 +113,7 @@ void BuildRulesCustomize(void);
 
                              /* Codecomp.c */
 
+int ccGetColorizeData(char* file, COLORIZE_HASH_ENTRY* entries[]);
 void ReloadLineData(char *name);
 void DoParse(char *name);
 void deleteFileData(char *name);
@@ -604,6 +607,7 @@ VARINFO *EvalExpr(DEBUG_INFO **dbg, SCOPE *sc,
 
                               /* Idehelp.c */
 
+int ConfigMSDNHelp(void);
 int InitHelp(void);
 void RundownHelp(void);
 int WebHelp(char *string);
@@ -612,6 +616,7 @@ int RTLHelp(char *string);
 int LanguageHelp(char *string);
 void ContextHelp(int id);
 void GenericHelp(char *str, int id);
+int MSDNHelp(char* string);
 
                               /* Idemenu.c */
 
@@ -1191,6 +1196,7 @@ SETTING *LoadPropItems(struct xmlNode *node, int version, BOOL debug);
 SETTING *LoadAssignmentItems(struct xmlNode *node, int version);
 SETTING *LoadCommandItems(struct xmlNode *node, int version);
 SETTING *LoadDependsItems(struct xmlNode *node, int version);
+BOOL iscleanable(char* id);
 void FreeCombo(SETTINGCOMBO *c);
 void FreeRule(SETTING *rule);
 void LoadChildren(struct xmlNode *node, int version, SETTING *rvp, BOOL debug);
@@ -1283,7 +1289,7 @@ void MakeToolBar(HWND hwnd);
 
                                 /* unmangle.c */
 
-char *unmangle(char *val, char *name);
+char *unmangle(char *val, const char *name);
 
                                 /* Uz.c */
 
@@ -1310,6 +1316,7 @@ int parse_args(int *argc, char *argv[], int case_sensitive);
 
                               /* Window.c */
 
+void GetFrameWindowRect(RECT* r);
 void SelectDebugWindows(BOOL dbgMode);
 void Select(int flag);
 void RegisterAllWindows(void);
@@ -1325,6 +1332,7 @@ void ResizeLayout(RECT *rect);
 void ResizeDockWindow(HWND hwnd, int ox, int oy, int x, int y);
 void DockEndDrag(HWND hwnd, int ox, int oy, int x, int y);
 BOOL DockDrag(HWND hwnd, int ox, int oy, int x, int y);
+void DockRemoveWindow(HWND hwnd);
 HWND CreateInternalWindow(int DID, char *clsName, char *title);
 void CreateDocks(void);
 
@@ -1457,6 +1465,10 @@ int doredo(HWND hwnd, EDITDATA *p);
 
                                /* Xutil.c */
 
+BOOL GetWordSpan(EDITDATA* ptr, CHARRANGE* range);
+int CPPScanForward(EDITDATA* p, int pos, BOOL asExpression);
+int CPPScanBackward(EDITDATA* p, int pos, BOOL asExpression);
+void GetCPPWordSpan(EDITDATA* ptr, CHARRANGE* range, BOOL asExpression);
 int GetWordFromPos(HWND hwnd, char *outputbuf, int fullcpp, int charpos, int *linenum, int
     *startoffs, int *endoffs);
 void DoHelp(HWND edwin, int speced);                              
@@ -1467,3 +1479,11 @@ void ReleaseFullScreen(HWND hwnd, EDITDATA *p);
 void SendUpdate(HWND hwnd);
 int KeyboardToAscii(int vk, int scan, BOOL fullstate);
 
+void xdrawline(HWND hwnd, EDITDATA* p, int chpos);
+void CancelParenMatch(HWND hwnd, EDITDATA* p);
+int FindParenMatchBackward(HWND hwnd, EDITDATA* p, int dec);
+int FindParenMatchForward(HWND hwnd, EDITDATA* p, int dec);
+void FindParenMatch(HWND hwnd, EDITDATA* p);
+void FindBraceMatchForward(HWND hwnd, EDITDATA* p);
+void FindBraceMatchBackward(HWND hwnd, EDITDATA* p);
+void FindBraceMatch(HWND hwnd, EDITDATA* p, int ch);

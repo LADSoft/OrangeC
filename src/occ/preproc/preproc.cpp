@@ -100,7 +100,7 @@ static int once;
 
 struct inmac
 {
-    char* s;
+    const char* s;
     void (*func)(char*);
 } ingrownmacros[INGROWNMACROS] = {{"__FILE__", filemac},
                                   {
@@ -878,7 +878,7 @@ void dopragma(void)
             return;
         skipspace();
         defid(name, &includes->lptr);
-        if (!strncmp(name, "ON", 2) != 0)
+        if (strncmp(name, "ON", 2) == 0)
             on = 1;
         else if (strncmp(name, "OFF", 3) != 0)
             return;
@@ -1290,7 +1290,7 @@ void doinclude(void)
 
 /*-------------------------------------------------------------------------*/
 
-void glbdefine(char* name, char* value, bool permanent)
+void glbdefine(const char* name, const char* value, bool permanent)
 {
     DEFSTRUCT* def;
     if ((DEFSTRUCT*)search(name, defsyms) != 0)
@@ -1305,7 +1305,7 @@ void glbdefine(char* name, char* value, bool permanent)
     insert((SYMBOL*)def, defsyms);
     DecGlobalFlag();
 }
-void glbUndefine(char* name)
+void glbUndefine(const char* name)
 {
     DEFSTRUCT* hr;
     hr = (DEFSTRUCT*)search(name, defsyms);
@@ -1321,7 +1321,7 @@ void glbUndefine(char* name)
     hr->undefined = true;
     hr->permanent = true;
 }
-int undef2(char* name)
+int undef2(const char* name)
 {
     {
         HASHREC** p = LookupName(name, defsyms);
@@ -1346,7 +1346,7 @@ void dodefine(void)
     char name[SYMBOL_NAME_LEN];
     DEFSTRUCT* hr;
     DEFSTRUCT* def;
-    char* args[128];
+    const char* args[128];
     int count = 0;
     char* ps;
     int p, i, j;
@@ -1456,7 +1456,7 @@ void dodefine(void)
         else
         {
             int i;
-            char *p, *q;
+            const char *p, *q;
             for (i = 0; i < def->argcount - 1 && same; i++)
                 if (strcmp(def->args[i], hr->args[i]) == 0)
                     same = false;

@@ -6662,11 +6662,6 @@ static LEXEME* expression_shift(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** t
                 error(ERR_ILL_USE_OF_COMPLEX);
             else
             {
-                if (basetype(*tp)->type < bt_int)
-                {
-                    *tp = &stdint;
-                    cast(*tp, exp);
-                }
                 if (kw == rightshift)
                     if (isunsigned(*tp))
                         type = en_ursh;
@@ -6674,6 +6669,11 @@ static LEXEME* expression_shift(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** t
                         type = en_rsh;
                 else
                     type = en_lsh;
+                if (basetype(*tp)->type < bt_int)
+                {
+                    *tp = &stdint;
+                    cast(*tp, exp);
+                }
                 *exp = exprNode(type, *exp, exprNode(en_shiftby, exp1, 0));
             }
         }

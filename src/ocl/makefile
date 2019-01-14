@@ -1,6 +1,6 @@
 include ../pathext2.mak
 NAME=ocl
-MAIN_FILE=CL386.c
+MAIN_FILE=cl386.c
 INCLUDES=
 C_DEPENDENCIES=$(wildcard *.c) winsystem.c
 LIB_DEPENDENCIES=

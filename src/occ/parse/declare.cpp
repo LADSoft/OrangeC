@@ -1870,6 +1870,7 @@ static LEXEME* getPointerQualifiers(LEXEME* lex, TYPE** tp, bool allowstatic)
             default:
                 break;
         }
+/*
         tpl = *tp;
         while (tpl && tpl->type != bt_pointer)
         {
@@ -1877,6 +1878,7 @@ static LEXEME* getPointerQualifiers(LEXEME* lex, TYPE** tp, bool allowstatic)
                 errorstr(ERR_DUPLICATE_TYPE_QUALIFIER, lex->kw->name);
             tpl = tpl->btp;
         }
+*/
         tpn->btp = *tp;
         if (*tp)
             tpn->rootType = (*tp)->rootType;

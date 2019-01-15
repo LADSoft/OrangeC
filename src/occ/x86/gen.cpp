@@ -63,6 +63,7 @@ static int switchTreePos;
 extern int regmap[REG_MAX][2];
 
 bool BackendIntrinsic(QUAD* q);
+
 //-------------------------------------------------------------------------
 
 AMODE* make_muldivval(AMODE* ap)

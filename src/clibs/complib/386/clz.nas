@@ -33,18 +33,8 @@
 SECTION code CLASS=CODE USE32
 ___builtin_clz:
 ___builtin_clzl:
-    mov ecx,[esp+4]
-    sub eax,eax
-join:
-    jecxz full
-lp:
-    shl ecx,1
-    jc  done
-    inc eax
-    jmp lp
-full:
-    add eax,32
-done:
+    bsr eax, [esp + 4]
+    xor eax, 01Fh
     ret
 
 ___builtin_clzll:

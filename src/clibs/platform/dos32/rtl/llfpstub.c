@@ -137,6 +137,16 @@ static void llfpini(void)
     asm mov [sel],cs
     work = 0x4567;
 
+    // enable SSE2
+    asm mov eax,cr0
+    asm and eax, 0xfffffffb // clear CR0.EM
+    asm or eax, 2 // set CR0.MP
+    asm mov cr0,eax
+    asm mov eax,cr4
+    asm or eax, 512 // set OSFXSR
+    asm or eax, 1024 // set OSXMMXCPT
+    asm mov cr4,eax
+    //
   asm fninit
   asm fnstsw [work]
   dpmi_get_real_interrupt((UWORD *)&oldint75[1],(UWORD *)&oldint75[0],0x75); 

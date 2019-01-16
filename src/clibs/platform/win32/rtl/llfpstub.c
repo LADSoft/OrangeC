@@ -30,6 +30,9 @@
 
 int _fltused;
 
+// this next assumes nothing in the startup code uses SSE on DOS
+#pragma startup SSEInit 31
+
 static fenv_t dfltenv;
 
 fenv_t _RTL_DATA* const __fe_default_env = &dfltenv;
@@ -74,4 +77,22 @@ void __stdcall __llfpinit(void)
     _fpreset();
     asm fnstenv[dfltenv];
     _fpreset();
+}
+
+static void SSEInit(void)
+{
+    // setup for SSE2
+    char *p = getenv("HDPMI");
+    if (p)
+    {
+        asm mov eax,cr0
+        asm and eax, 0xfffffffb // clear CR0.EM
+        asm or eax, 2 // set CR0.MP
+        asm mov cr0,eax
+        asm mov eax,cr4
+        asm or eax, 512 // set OSFXSR
+        asm or eax, 1024 // set OSXMMXCPT
+        asm mov cr4,eax
+    }
+
 }

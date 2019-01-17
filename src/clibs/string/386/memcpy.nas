@@ -32,7 +32,7 @@ SECTION code CLASS=CODE USE32
 _memcpy:
     push edi
     push esi
-    mov exx, [esp + 20]	; cnt
+    mov ecx, [esp + 20]	; cnt
     mov eax, [esp + 12]	; dest
     mov esi, [esp + 16]	; src
     

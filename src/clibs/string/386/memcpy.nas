@@ -30,13 +30,63 @@
 SECTION code CLASS=CODE USE32
 
 _memcpy:
-	push ebp
-	mov ebp, esp
-    push ebx
-    mov ecx,[ebp+ 16]
-    jecxz	x2
-    mov	edx,[ebp+8]
-    mov	ebx,[ebp+12]
+    push edi
+    push esi
+    mov exx, [esp + 20]	; cnt
+    mov eax, [esp + 12]	; dest
+    mov esi, [esp + 16]	; src
+    
+    cmp ecx, 4
+    jnb aligned
+    
+    test ecx, ecx
+    jne doSmall
+    
+return:
+    pop esi
+    pop edi
+    ret
+    
+    lea esi, [esi + 0]	; Align by 16 bytes (correct when changing code or just replace this with the appropriate align directive)
+    
+aligned:
+    mov edx, [esi]
+    lea edi, [eax + 4]
+    and edi, -4
+    mov [eax], edx
+    mov edx, [esi + ecx - 4]
+    mov [eax + ecx - 4], edx
+    mov edx, eax
+    sub edx, edi
+    add ecx, edx
+    sub esi, edx
+    shr ecx, 2
+    rep movsd
+    
+    pop esi
+    pop edi
+    ret
+    
+doSmall:
+    movzx edx, byte [esi]
+    test cl, 2
+    mov [eax], dl
+    jz return
+    
+    movzx edx, word [esi + ecx - 2]
+    mov [eax + ecx - 2], dx
+    jmp return
+
+    nop
+    nop
+    nop
+    nop 
+    nop
+    nop
+    nop
+    nop	; 8 nops to align by 16 (correct when changing code or just use appropriate align directive
+
+
 memcpy_x:	; from MEMMOVE
     dec	edx
 lp1:

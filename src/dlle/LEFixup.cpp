@@ -120,7 +120,7 @@ void LEFixup::Setup()
             ObjInt addr = it->first - base;
             while (addr < size + 4096 && sect == it->second.origSection)
             {
-                unsigned char bf[8];
+                unsigned char bf[16];
                 int bfs = 0;
                 bf[bfs++] = LX_FM_OFFSET32;
                 ObjInt n = it->second.target;

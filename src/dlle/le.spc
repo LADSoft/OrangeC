@@ -3,6 +3,7 @@ partition {
 	_CODESTART = $;
 	CODEBASE = $;
     region {} code [ align = 2];
+    region {} text [ align = 2];
     region {} vsc* [ align = 2];
 	region {} const [ align = 8, roundsize = 4];
     _TLSINITSTART = $;

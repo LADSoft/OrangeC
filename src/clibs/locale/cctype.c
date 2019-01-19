@@ -102,7 +102,6 @@ void *__locale_data[LC_LAST+1] = {
 	0
 } ;
 
-#pragma startup __ctype_init 231 /* must be initted after __locale_reinit */
 void __ctype_init(void)
 {
     _pctype = (unsigned short *)(((unsigned char *)__locale_data[LC_CTYPE]) + offsetof(CTYPE_DATA, ctypetab));

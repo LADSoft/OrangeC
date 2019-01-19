@@ -43,7 +43,7 @@ count	dw	0
 stab	times	128 [db 0]
 
 
-    .CODE
+    segment code USE32
 search:
     mov	word [count],0
     call	WadeSpace

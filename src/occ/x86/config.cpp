@@ -41,6 +41,7 @@ int prm_targettype = DOS32A;
 #else
 int prm_targettype = CONSOLE;
 #endif
+bool compile_under_dos = false;
 int prm_bepeep = true;
 int prm_crtdll = false;
 int prm_lscrtdll = false;
@@ -281,6 +282,7 @@ static void chkdos(void)
     {
         WinmodeSetup(0, "a");  // DOS32A
         prm_useesp = false;
+        compile_under_dos = true;
     }
     else
     {

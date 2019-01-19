@@ -32,6 +32,8 @@
 #include <unistd.h>
 #endif
 
+extern bool compile_under_dos;
+
 extern COMPILER_PARAMS cparams;
 extern int prm_targettype;
 extern int prm_crtdll;
@@ -296,7 +298,8 @@ int RunExternalFiles(char* rootPath)
                 c0 = "c0pmd.o";
             else if (prm_targettype == DOS32A)
                 c0 = "c0watd.o";
-            strcat(args, " /v");
+            if (!compile_under_dos) // this because I don't want to vet sqlite3 under DOS at this time.
+                strcat(args, " /v");
         }
         fprintf(fil, "  %s", c0);
         while (objlist)
@@ -330,7 +333,7 @@ int RunExternalFiles(char* rootPath)
             reslist = reslist->next;
         }
         fclose(fil);
-        sprintf(spname, "\"%solink.exe\" %s %s /c+ %s %s @%s", root, link_params ? link_params : "", !showBanner ? "-!" : "", args,
+        sprintf(spname, "\"%solink.exe\" %s %s %s /c+ %s %s @%s", root, link_params ? link_params : "", prm_targettype == WHXDOS ? "-DOBJECTALIGN=65536" : "", !showBanner ? "-!" : "", args,
                 verbosityString, tempFile);
         if (verbosity)
         {
@@ -356,7 +359,7 @@ int RunExternalFiles(char* rootPath)
             return rv;
         if (prm_targettype == WHXDOS)
         {
-            sprintf(spname, "\"%spatchpe\" %s", root, outputFileName);
+            sprintf(spname, "\"%spatchpe.exe\" %s", root, outputFileName);
             if (verbosity)
                 printf("%s\n", spname);
             rv = system(spname);

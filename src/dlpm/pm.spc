@@ -4,6 +4,7 @@ partition {
 	CODEBASE = $;
 	region {} hdr [ size = RESERVE0];
     region {} code [ align = 2, roundsize = 8];
+    region {} text [ align = 2, roundsize = 8];
     region {} vsc* [ align = 2, roundsize = 8];
 	region {} const [ align = 8, roundsize = 4];
     _TLSINITSTART = $;

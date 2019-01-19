@@ -729,8 +729,8 @@ void AsmFile::NeedSection()
 {
     if (sections.size() == 0 && !inAbsolute)
     {
-        Section* section = new Section("__text__", 1);
-        sections["__text__"] = section;
+        Section* section = new Section("text", 1);
+        sections["text"] = section;
         numericSections.push_back(section);
         currentSection = section;
         AsmExpr::SetSection(currentSection);

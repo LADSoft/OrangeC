@@ -31,28 +31,22 @@ bool DictCompare::caseSensitive;
 
 ObjInt DictCompare::casecmp(const char* str1, const char* str2, int n) const
 {
-    while (*str1 && *str2 && n)
+    int v;
+    if (caseSensitive)
+        v = _strnicmp(str1, str2, n);
+    else
+        v = strncmp(str1, str2, n);
+    if (v == 0)
     {
-        int u1 = *str1;
-        int u2 = *str2;
-        if (!caseSensitive)
-        {
-            u1 = toupper(u1);
-            u2 = toupper(u2);
-        }
-        if (u1 != u2)
-            break;
-        str1++, str2++, n--;
+        int l = str1[n], r = str2[n];
+        if (l < r)
+            return -1;
+        else if (l > r)
+            return 1;
+        else
+            return 0; // n is the length of one of the strings, so, this is the nulls...
     }
-    if (n == 0)
-    {
-        if (!*str2)
-            return 0;
-        return -1;
-    }
-    else if (!*str2)
-        return 1;
-    return *str1 < *str2 ? -1 : 1;
+    return v;
 }
 ObjInt LibDictionary::Lookup(FILE* stream, ObjInt dictionaryOffset, ObjInt dictionarySize, const ObjString& name)
 {

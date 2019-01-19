@@ -311,7 +311,7 @@ asmError InstructionParser::GetInstruction(OCODE* ins, Instruction*& newIns, std
 }
 void InstructionParser::SetRegToken(int reg, int sz)
 {
-    static InputToken* segs[] = {&Tokencs, &Tokends, &Tokenes, &Tokenfs, &Tokengs, &Tokenss};
+    static InputToken* segs[] = {&Tokencs, &Tokencs, &Tokends, &Tokenes, &Tokenfs, &Tokengs, &Tokenss};
     static InputToken* dword[] = {&Tokeneax, &Tokenecx, &Tokenedx, &Tokenebx, &Tokenesp, &Tokenebp, &Tokenesi, &Tokenedi};
     static InputToken* word[] = {&Tokenax, &Tokencx, &Tokendx, &Tokenbx, &Tokensp, &Tokenbp, &Tokensi, &Tokendi};
     static InputToken* byte[] = {&Tokenal, &Tokencl, &Tokendl, &Tokenbl, &Tokenah, &Tokench, &Tokendh, &Tokenbh};
@@ -448,13 +448,14 @@ void InstructionParser::SetSize(int sz)
 }
 void InstructionParser::SetBracketSequence(bool open, int sz, int seg)
 {
+    static InputToken* segs[] = {&Tokencs, &Tokencs, &Tokends, &Tokenes, &Tokenfs, &Tokengs, &Tokenss};
     if (open)
     {
         SetSize(sz);
         inputTokens.push_back(&Tokenopenbr);
         if (seg)
         {
-            inputTokens.push_back(seg == e_fs ? &Tokenfs : &Tokengs);
+            inputTokens.push_back(segs[seg]);
             inputTokens.push_back(&Tokencolon);
         }
     }
@@ -483,7 +484,7 @@ void InstructionParser::SetOperandTokens(amode* operand)
             SetRegToken(operand->preg, 202);
             break;
         case am_seg:
-            SetRegToken(operand->preg, 100);
+            SetRegToken(operand->seg, 100);
             break;
         case am_mmreg:
             SetRegToken(operand->preg, 300);

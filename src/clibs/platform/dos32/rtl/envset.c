@@ -50,7 +50,7 @@ static void envset(void)
 {
     int count = __ll_getenv(0,0),i;
     if (count) {
-        _environ  = malloc(sizeof(char *)*(count+1));
+        _environ  = malloc(sizeof(char *)*(count+2));
       for (i=1; i<=count; i++) {
             char buf[1024];
             __ll_getenv(buf,i);

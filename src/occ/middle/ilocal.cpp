@@ -250,6 +250,7 @@ static void renameToTemps(SYMBOL* funcsp)
     doRename &= (cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size) && !functionHasAssembly;
     /* if there is a setjmp in the function, no variable gets moved into a reg */
     doRename &= !(setjmp_used);
+    doRename &= !(funcsp->xc);
     temp = funcsp->inlineFunc.syms;
     bool structret = !!isstructured(basetype(funcsp->tp)->btp);
     while (temp)

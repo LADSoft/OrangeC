@@ -116,21 +116,21 @@ peflags	dd	reflags
     dd	0
 flm	EQU $
     db	11
-    dd	"NVOV"
+    db	"NVOV"
     db	10
-    dd	"UPDN"
+    db	"UPDN"
     db	9
-    dd	"DIEI"
+    db	"DIEI"
     db	7
-    dd	"PLMI"
+    db	"PLMI"
     db	6
-    dd	"NZZR"
+    db	"NZZR"
     db	4
-    dd	"NAAC"
+    db	"NAAC"
     db	2
-    dd	"POPE"
+    db	"POPE"
     db	0
-    dd	"NCCY"
+    db	"NCCY"
     db	-1
     db	0
 ;

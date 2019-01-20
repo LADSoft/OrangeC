@@ -91,6 +91,7 @@ class Instruction
     }
     virtual ~Instruction();
 
+    void RepRemoveCancellations(AsmExprNode *exp, bool commit, int &count, Section *sect[], bool sign[], bool plus);
     void* GetAltData() { return altdata; }
     Label* GetLabel() { return label; }
     bool IsLabel() { return type == LABEL; }

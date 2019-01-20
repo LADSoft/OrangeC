@@ -35,8 +35,8 @@
 #include "InstructionParser.h"
 #include "AsmExpr.h"
 #include "ObjTypes.h"
+#include "Section.h"
 class Token;
-class Section;
 class Label;
 class PreProcessor;
 class ObjSection;
@@ -103,6 +103,16 @@ class AsmFile
     ObjSection* GetSectionByName(std::string& name);
     Section* GetCurrentSection() { return currentSection; }
 
+    static Section *GetLabelSection(std::string &label)
+    {
+        for (auto s : numericSections)
+        {
+            auto it = s->Lookup(label);
+            if (it != s->GetLabels().end())
+                return s;
+        }
+        return nullptr;
+    }
   protected:
     void NeedSection();
     void DoPreProcess(int id);
@@ -139,8 +149,8 @@ class AsmFile
     Lexer lexer;
     AsmExpr asmexpr;
     InstructionParser* parser;
-    std::map<ObjString, Section*> sections;
-    std::vector<Section*> numericSections;
+    static std::map<ObjString, Section*> sections;
+    static std::vector<Section*> numericSections;
     std::map<ObjString, Label*> labels;
     std::map<ObjString, std::string> exports;
     std::map<ObjString, Import*> imports;

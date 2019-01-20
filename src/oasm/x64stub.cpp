@@ -148,6 +148,54 @@ const char* Lexer::preData =
     "__SECT__\n"
     "%endmacro\n";
 
+void Instruction::RepRemoveCancellations(AsmExprNode *exp, bool commit, int &count, Section *sect[], bool sign[], bool plus)
+{
+    if (exp->GetType() == AsmExprNode::LABEL)
+    {
+        AsmExprNode* num = AsmExpr::GetEqu(exp->label);
+        if (!num)
+        {
+            auto s = AsmFile::GetLabelSection(exp->label);
+            if (s)
+            {
+                if (commit)
+                {
+                    exp->SetType(AsmExprNode::IVAL);
+                    exp->ival = s->Lookup(exp->label)->second;
+                }
+                else
+                {
+                    sect[count] = s;
+                    sign[count++] = plus;
+                }
+            }
+        }
+        else
+            RepRemoveCancellations(num, commit, count, sect, sign, plus);
+    }
+    else if (exp->GetType() == AsmExprNode::BASED)
+    {
+        if (!commit)
+        {
+            sect[count] = exp->GetSection();
+            sign[count++] = plus;
+        }
+        else
+        {
+            exp->SetType(AsmExprNode::IVAL);
+        }
+    }
+    if (exp->GetLeft())
+    {
+        RepRemoveCancellations(exp->GetLeft(), commit, count, sect, sign, plus);
+    }
+    if (exp->GetRight())
+    {
+        RepRemoveCancellations(exp->GetRight(), commit, count, sect, sign, exp->GetType() == AsmExprNode::SUB ? !plus : plus);
+    }
+
+}
+
 void Instruction::Optimize(Section* sect, int pc, bool last)
 {
     if (data && size >= 3 && data[0] == 0x0f && data[1] == 0x0f && (data[2] == 0x9a || data[2] == 0xea))
@@ -195,9 +243,19 @@ void Instruction::Optimize(Section* sect, int pc, bool last)
     {
         for (auto fixup : fixups)
         {
+            Section *sect[10];
+            bool sign[10];
+            int count = 0;
+            bool canceled = false;
             AsmExprNode* expr = fixup->GetExpr();
+            RepRemoveCancellations(expr, false, count, sect, sign, true);
+            if (count == 2 && sect[0] == sect[1] && sign[0] == !sign[1])
+            {
+                canceled = true;
+                RepRemoveCancellations(expr, true, count, sect, sign, true);
+            }
             expr = AsmExpr::Eval(expr, pc);
-            if (fixup->GetExpr()->IsAbsolute() || (fixup->IsRel() && expr->GetType() == AsmExprNode::IVAL))
+            if (fixup->GetExpr()->IsAbsolute() || canceled || (fixup->IsRel() && expr->GetType() == AsmExprNode::IVAL))
             {
                 int n = fixup->GetSize() * 8;
                 int p = fixup->GetInsOffs();

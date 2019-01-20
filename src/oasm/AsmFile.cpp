@@ -41,6 +41,9 @@
 #include <iostream>
 #include <climits>
 
+std::map<ObjString, Section*> AsmFile::sections;
+std::vector<Section*> AsmFile::numericSections;
+
 AsmFile::~AsmFile()
 {
     for (int i = 0; i < numericSections.size(); i++)

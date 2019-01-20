@@ -2828,7 +2828,7 @@ IMODE* gen_atomic(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
                 gen_icode(i_atomic_fence, NULL, left, NULL);
                 // presumed xchg
                 av = gen_expr(funcsp, node->v.ad->address, 0, ISZ_ADDR);
-                right = gen_expr(funcsp, node->v.ad->value, F_STORE, sz);
+                right = gen_expr(funcsp, node->v.ad->value, F_STORE, ISZ_ADDR);
                 barrier = gen_atomic_barrier(funcsp, node->v.ad, av, 0);
                 EXPRESSION *exp = anonymousVar(sc_auto, node->v.ad->tp);
                 rv = (IMODE*)Alloc(sizeof(IMODE));

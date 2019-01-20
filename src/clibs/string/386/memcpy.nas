@@ -29,6 +29,7 @@
 [global memcpy_x]
 SECTION code CLASS=CODE USE32
 
+    align 16
 _memcpy:
     push edi
     push esi
@@ -47,8 +48,7 @@ return:
     pop edi
     ret
     
-    lea esi, [esi + 0]	; Align by 16 bytes (correct when changing code or just replace this with the appropriate align directive)
-    
+    align 16    
 aligned:
     mov edx, [esi]
     lea edi, [eax + 4]
@@ -77,15 +77,7 @@ doSmall:
     mov [eax + ecx - 2], dx
     jmp return
 
-    nop
-    nop
-    nop
-    nop 
-    nop
-    nop
-    nop
-    nop	; 8 nops to align by 16 (correct when changing code or just use appropriate align directive
-
+    align 16
 
 memcpy_x:	; from MEMMOVE
     dec	edx

@@ -27,7 +27,7 @@
 
 #include "ObjTypes.h"
 #include <cstdio>
-#include <map>
+#include <unordered_map>
 
 class ObjFile;
 class LibFiles;
@@ -36,13 +36,26 @@ struct DictCompare
 {
     ObjInt casecmp(const char* str1, const char* str2, int n) const;
 
-    bool operator()(ObjString left, ObjString right) const { return casecmp(left.c_str(), right.c_str(), left.size()) < 0; }
+    bool operator()(const ObjString& left, const ObjString& right) const { return casecmp(left.c_str(), right.c_str(), left.size()) == 0; }
     static bool caseSensitive;
+};
+struct DictHash
+{
+    unsigned long operator() (const ObjString& str) const
+    {
+        long aa = 0;
+	for (auto v : str)
+        {
+		aa = (aa << 8) + (aa << 2) + aa;
+                aa += DictCompare::caseSensitive ? v : toupper(v);
+        }
+        return aa;
+    }
 };
 class LibDictionary
 {
   public:
-    typedef std::map<ObjString, ObjInt, DictCompare> Dictionary;
+    typedef std::unordered_map<ObjString, ObjInt, DictHash, DictCompare> Dictionary;
     LibDictionary(bool CaseSensitive = true) : caseSensitive(CaseSensitive) { DictCompare::caseSensitive = CaseSensitive; }
     ~LibDictionary() {}
     ObjInt Lookup(FILE* stream, ObjInt dictOffset, ObjInt dictPages, const ObjString& str);

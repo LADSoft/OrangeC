@@ -43,10 +43,11 @@ int CmdSwitchBool::Parse(const char* data)
 }
 int CmdSwitchInt::Parse(const char* data)
 {
+    int cnt = 0;
     char number[256];
-    if (data[0] != ':')
-        return 0;
-    strncpy(number, data + 1, 255);
+    if (data[0] == ':')
+        data++, cnt++;
+    strncpy(number, data, 255);
     number[255] = 0;
 
     char* p = number;
@@ -57,7 +58,7 @@ int CmdSwitchInt::Parse(const char* data)
     value = Utils::StringToNumber(number);
     if (value < lowLimit || value > hiLimit)
         return -1;
-    return p - number + 1;
+    return p - number + cnt;
 }
 int CmdSwitchHex::Parse(const char* data)
 {

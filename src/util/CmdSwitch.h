@@ -86,7 +86,7 @@ class CmdSwitchInt : public CmdSwitchBase
 
     virtual int Parse(const char* data);
     int GetValue() const { return value; }
-
+    void SetValue(int val) { value = val; }
   private:
     int value;
     int lowLimit;

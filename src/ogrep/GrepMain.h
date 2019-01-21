@@ -32,8 +32,8 @@ class GrepMain
   public:
     int Run(int argc, char** argv);
     void SetModes();
-    void DisplayMatch(const std::string& fileName, int& matchCount, int lineno, const char* text);
-    void FindLine(const std::string fileName, int& matchCount, int& matchLine, char** matchPos, char* curpos, bool matched);
+    void DisplayMatch(const std::string& fileName, int& matchCount, int lineno, const char *startpos, const char* text);
+    void FindLine(const std::string fileName, int& matchCount, int& matchLine, char** matchPos, char *startpos, char* curpos, bool matched);
     int OneFile(RegExpContext& regexp, const std::string fileName, std::istream& file, int& openCount);
 
   private:
@@ -50,6 +50,10 @@ class GrepMain
     static CmdSwitchBool displayNonMatching;
     static CmdSwitchBool verboseMode;
     static CmdSwitchBool showHelp;
+    static CmdSwitchInt  showAfter;
+    static CmdSwitchInt  showBefore;
+    static CmdSwitchInt  showBoth;
+    static CmdSwitchInt  maxMatches;
     // not actual parameters
     static CmdSwitchBool displayFileNames;
     static CmdSwitchBool displayHeaderFileName;

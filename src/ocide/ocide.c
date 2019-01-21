@@ -446,7 +446,8 @@ static void LoadFirstWorkArea(void* v)
             char *ext = NULL;
             int munged = FALSE;
             StringToProfile("FILEDIR", (char*)getcwd(cwd, 256));
-            if (argc == 2) ext = strrchr(argv[1], '.') + 1;
+            if (argc == 2) ext = strrchr(argv[1], '.');
+            if (ext) ext++;
             if (ext && !stricmp(ext, "cwa"))
             {
                 LoadWorkArea(argv[1], TRUE);

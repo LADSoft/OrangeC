@@ -194,6 +194,7 @@ void ModifyAutoExec(char *path, char *installPath)
 	fprintf(fil, "path %s\\bin;%s\\lib;%%PATH%%\n", installPath, installPath);
     fprintf(fil, "set HDPMI=32\n");
     fprintf(fil, "set DPMILDR=8\n");
+    fprintf(fil, "hxldr32\n");
 	fprintf(fil,"REM\n");
 	fprintf(fil, "REM End of LADSoft Orange C installation\n");
 	fprintf(fil,"REM\n");
@@ -233,10 +234,12 @@ void MakeLSetEnv(char *path, char *installPath)
     fprintf(fil, "set DPMILDR=8\n");
 	fprintf(fil, "set PATHBAK=%%PATH%%\n");
 	fprintf(fil, "path %s\\BIN;%s\\LIB;%%PATH%%\n", installPath, installPath);
+    fprintf(fil, "hxldr32\n");
 	fprintf(fil, "goto end\n");
 	fprintf(fil, ":unset\n");
 
 	fprintf(fil, "if \"%%ORANGEC%%\"==\"\" goto end\n");
+    fprintf(fil, "hxldr32 /u\n");
 	fprintf(fil, "path %%PATHBAK%%\n");
 	fprintf(fil, "set ORANGEC=\n");
 	fprintf(fil, "set ORANGECDOS=\n");

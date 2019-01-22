@@ -66,7 +66,7 @@ CPP_DEPENDENCIES= \
     types.cpp \
     unmangle.cpp \
     wseh.cpp
-LIB_DEPENDENCIES=sqlite3 Util
+LIB_DEPENDENCIES=sqlite3 util
 #determine if we can ignore the banner for a batch compile
 #use long long type
 LL = USE_LONGLONG

@@ -267,7 +267,7 @@ ObjFile* CoffFile::ConvertToObject(std::string outputName, ObjFactory& factory)
     // Create the sections;
     for (int i = 0; i < header.NumberOfSections; i++)
     {
-        if (!(sections[i].Characteristics & (IMAGE_SCN_LNK_REMOVE | IMAGE_SCN_LNK_INFO)) && strnicmp(sections[i].Name, ".debug", 6))
+        if (!(sections[i].Characteristics & (IMAGE_SCN_LNK_REMOVE | IMAGE_SCN_LNK_INFO)) && Utils::iequal(sections[i].Name, ".debug", 6))
         {
             std::string sectname = GetSectionName(i);
             ObjSection* sect = factory.MakeSection(sectname);

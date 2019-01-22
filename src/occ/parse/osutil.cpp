@@ -28,7 +28,7 @@
 #include <stdarg.h>
 #include <ctype.h>
 #include <stdlib.h>
-
+#include "../../util/Utils.h"
 #ifdef MSIL
 #    include "../version.h"
 #else
@@ -129,16 +129,6 @@ void usage(char* prog_name)
 
     exit(1);
 }
-int strcasecmp_internal(const char* left, const char* right)
-{
-    while (*left && *right)
-    {
-        if (toupper(*left) != toupper(*right))
-            return true;
-        left++, right++;
-    }
-    return *left != *right;
-}
 /*
  * If no extension, add the one specified
  */
@@ -179,7 +169,7 @@ int HasExt(char* buffer, const char* ext)
     int l = strlen(buffer), l1 = strlen(ext);
     if (l1 < l)
     {
-        return !strcasecmp_internal(buffer + l - l1, ext);
+        return Utils::iequal(buffer + l - l1, ext);
     }
     return 0;
 }
@@ -310,7 +300,7 @@ FILE* SrchPth(char* name, const char* path, const char* attrib, bool sys)
         return rv;
     strcpy(buf, name);
     p = strrchr(buf, '.');
-    if (p && !strcasecmp_internal(p, ".h"))
+    if (p && Utils::iequal(p, ".h"))
     {
         *p = 0;
         rv = SrchPth2(buf, path, attrib);

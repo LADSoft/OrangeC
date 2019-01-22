@@ -203,3 +203,22 @@ std::string Utils::NumberToStringHex(int num)
 }
 int Utils::StringToNumber(std::string str) { return std::stoi(str); }
 int Utils::StringToNumberHex(std::string str) { return std::stoi(str, 0, 16); }
+
+bool Utils::iequal(const std::string& a, const std::string& b, int sz)
+{
+    if (sz >= 0)
+    {
+        if (a.size() < sz || b.size() < sz)
+            return false; 
+    }
+    else
+    {
+        sz = a.size();
+        if (sz != b.size())
+            return false;
+    }   
+    for (size_t i = 0; i < sz; ++i)
+         if (tolower(a[i]) != tolower(b[i]))
+             return false;
+    return true;
+}

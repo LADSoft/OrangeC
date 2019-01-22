@@ -28,6 +28,8 @@
 #include "compiler.h"
 #include "math.h"
 #include <limits.h>
+#include "../../util/Utils.h"
+
 #define KWHASHSIZE 253
 
 #ifndef LONGLONG_MAX
@@ -1094,30 +1096,30 @@ e_lexType getNumber(unsigned char** ptr, unsigned char** end, unsigned char* suf
     if (!floatradix && !hasdot)
     {
         lastst = l_i;
-        if (!stricmp((char*)suffix, "L"))
+        if (Utils::iequal((char*)suffix, "L"))
         {
             lastst = l_l;
             suffix[0] = 0;
         }
-        else if (!stricmp((char*)suffix, "U"))
+        else if (Utils::iequal((char*)suffix, "U"))
         {
             lastst = l_ui;
             suffix[0] = 0;
         }
-        else if (!stricmp((char*)suffix, "UL") || !stricmp((char*)suffix, "LU"))
+        else if (Utils::iequal((char*)suffix, "UL") || Utils::iequal((char*)suffix, "LU"))
         {
             lastst = l_ul;
             suffix[0] = 0;
         }
-        else if (((cparams.prm_c99 || cparams.prm_cplusplus) && !stricmp((char*)suffix, "LL")) ||
-                 (!cparams.prm_ansi && !stricmp((char*)suffix, "i64")))
+        else if (((cparams.prm_c99 || cparams.prm_cplusplus) && Utils::iequal((char*)suffix, "LL")) ||
+                 (!cparams.prm_ansi && Utils::iequal((char*)suffix, "i64")))
         {
             lastst = l_ll;
             suffix[0] = 0;
         }
         else if (((cparams.prm_c99 || cparams.prm_cplusplus) &&
-                  (!stricmp((char*)suffix, "ULL") || !stricmp((char*)suffix, "LLU"))) ||
-                 (!cparams.prm_ansi && !stricmp((char*)suffix, "ui64")))
+                  (Utils::iequal((char*)suffix, "ULL") || Utils::iequal((char*)suffix, "LLU"))) ||
+                 (!cparams.prm_ansi && Utils::iequal((char*)suffix, "ui64")))
         {
             lastst = l_ull;
             suffix[0] = 0;
@@ -1171,14 +1173,14 @@ e_lexType getNumber(unsigned char** ptr, unsigned char** end, unsigned char* suf
         {
             FPFMultiplyPowTen(rval, *ival);
         }
-        if (!stricmp((char*)suffix, "F"))
+        if (Utils::iequal((char*)suffix, "F"))
         {
             float f;
             lastst = l_f;
             CastToFloat(ISZ_FLOAT, rval);
             suffix[0] = 0;
         }
-        else if (!stricmp((char*)suffix, "L"))
+        else if (Utils::iequal((char*)suffix, "L"))
         {
             lastst = l_ld;
             CastToFloat(ISZ_LDOUBLE, rval);

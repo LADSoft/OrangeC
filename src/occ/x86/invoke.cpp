@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include "be.h"
 #include "winmode.h"
+#include "Utils.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -56,7 +57,6 @@ static char *asm_params, *rc_params, *link_params;
 #    define system(x) winsystem(x)
 extern "C" int winsystem(const char*);
 #endif
-int strcasecmp_internal(const char* left, const char* right);
 
 static bool InsertOption(char* name)
 {
@@ -104,7 +104,7 @@ static void InsertFile(LIST** r, const char* name, const char* ext, bool primary
     lst = *r;
     while (lst)
     {
-        if (!strcasecmp_internal((char *)lst->data, buf))
+        if (Utils::iequal((char *)lst->data, buf))
             return;
         lst = lst->next;
     }

@@ -34,9 +34,9 @@ class LibFiles;
 
 struct DictCompare
 {
-    ObjInt casecmp(const char* str1, const char* str2, int n) const;
+    ObjInt casecmp(const std::string& str1, const std::string& str2, int n) const;
 
-    bool operator()(const ObjString& left, const ObjString& right) const { return casecmp(left.c_str(), right.c_str(), left.size()) == 0; }
+    bool operator()(const ObjString& left, const ObjString& right) const { return casecmp(left, right, left.size()) == 0; }
     static bool caseSensitive;
 };
 struct DictHash

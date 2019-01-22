@@ -62,6 +62,7 @@ class Utils
     static int StringToNumber(std::string str);
     static int StringToNumberHex(std::string str);
     static char* ShortName(const char* v);
+    static bool iequal(const std::string& left, const std::string& right, int sz=-1);
 
     static unsigned PartialCRC32(unsigned crc, unsigned char* data, size_t len);
     static unsigned CRC32(unsigned char* data, size_t len) { return PartialCRC32(0, data, len); };

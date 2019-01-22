@@ -66,7 +66,7 @@ CPP_DEPENDENCIES= \
     types.cpp \
     unmangle.cpp \
     wseh.cpp
-LIB_DEPENDENCIES=sqlite3
+LIB_DEPENDENCIES=sqlite3 Util
 #determine if we can ignore the banner for a batch compile
 #use long long type
 LL = USE_LONGLONG
@@ -76,11 +76,11 @@ BACKEND_INCLUDE_PATH=.
 
 ifeq "$(COMPILER)" "gcc-linux"
 SOURCE = ..$(PATHEXT2)parse:..$(PATHEXT2)preproc:..$(PATHEXT2)middle
-INCLUDES=..$(PATHEXT2)parse ..$(PATHEXT2)preproc ..$(PATHEXT2)middle
+INCLUDES=..$(PATHEXT2)parse ..$(PATHEXT2)preproc ..$(PATHEXT2)middle ..$(PATHEXT2)..$(PATHEXT2)Util
 SRCPATH:=$(BACKEND_INCLUDE_PATH):$(SOURCE):..
 else
 SOURCE = ..$(PATHEXT2)parse;..$(PATHEXT2)preproc;..$(PATHEXT2)middle
-INCLUDES=..$(PATHEXT2)parse ..$(PATHEXT2)preproc ..$(PATHEXT2)middle
+INCLUDES=..$(PATHEXT2)parse ..$(PATHEXT2)preproc ..$(PATHEXT2)middle ..$(PATHEXT2)..$(PATHEXT2)Util
 SRCPATH:=$(BACKEND_INCLUDE_PATH);$(SOURCE);..
 endif
 BACKEND_FILES = config.cpp

@@ -24,18 +24,19 @@
 
 #include "LibDictionary.h"
 #include "ObjFile.h"
+#include "Utils.h"
 #include <cctype>
 #include <iostream>
 
 bool DictCompare::caseSensitive;
 
-ObjInt DictCompare::casecmp(const char* str1, const char* str2, int n) const
+ObjInt DictCompare::casecmp(const std::string& str1, const std::string& str2, int n) const
 {
     int v;
     if (caseSensitive)
-        v = _strnicmp(str1, str2, n);
+        v = !Utils::iequal(str1, str2, n);
     else
-        v = strncmp(str1, str2, n);
+        v = strncmp(str1.c_str(), str2.c_str(), n);
     if (v == 0)
     {
         int l = str1[n], r = str2[n];

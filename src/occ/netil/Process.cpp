@@ -30,6 +30,7 @@
 #include "Be.h"
 #include "winmode.h"
 #include "DotNetpeLib.h"
+#include "Utils.h"
 
 #define STARTUP_TYPE_STARTUP 1
 #define STARTUP_TYPE_RUNDOWN 2
@@ -159,7 +160,7 @@ static std::map<std::string, MethodSignature *> arrayMethods;
 
 void parse_pragma(char *kw, char *tag)
 {
-	if (!stricmp(kw,"netlib"))
+	if (Utils::iequal(kw,"netlib"))
 	{
 		while (isspace(*tag)) tag++;
 		if (*tag)

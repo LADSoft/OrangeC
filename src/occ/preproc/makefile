@@ -25,9 +25,9 @@ include ../../pathext2.mak
 
 NAME=ocpp
 MAIN_FILE=ppmain.cpp
-INCLUDES=. ..$(PATHEXT2)parse ..$(PATHEXT2)middle
+INCLUDES=. ..$(PATHEXT2)parse ..$(PATHEXT2)middle ..$(PATHEXT2)..$(PATHEXT2)Util
 CPP_DEPENDENCIES=$(wildcard *.cpp)
-#LIB_DEPENDENCIES=util.lib objlib.lib
+LIB_DEPENDENCIES=Util
 DEFINES=CPREPROCESSOR USE_LONGLONG
 H_FILES=$(wildcard *.h)
 

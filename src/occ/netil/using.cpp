@@ -1,6 +1,8 @@
 #include "be.h"
 #include "DotNetPELib.h"
 #include <string>
+#include "Utils.h"
+
 using namespace DotNetPELib;
 
 extern PELib *peLib;
@@ -23,7 +25,7 @@ BOOLEAN _using_(char *file)
     char name[260], *p;
     strcpy(name, file);
     p = strrchr(name, '.');
-    if (p && !_stricmp(p, ".dll"))
+    if (p && Utils::iequal(p, ".dll"))
         *p = 0;
     if (!peLib->LoadAssembly(name))
         return true;

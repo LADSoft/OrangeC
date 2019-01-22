@@ -114,7 +114,7 @@ void dlPeMain::ParseOutResourceFiles(int* argc, char** argv)
         int npos = std::string(argv[i]).find_last_of(".");
         if (npos != std::string::npos)
         {
-            if (!stricmp(argv[i] + npos, ".res"))
+            if (Utils::iequal(argv[i] + npos, ".res"))
             {
                 resources.AddFile(argv[i]);
                 memcpy(argv + i, argv + i + 1, sizeof(argv[0]) * *argc - i - 1);
@@ -131,7 +131,7 @@ bool dlPeMain::ParseOutDefFile(int* argc, char** argv)
         int npos = std::string(argv[i]).find_last_of(".");
         if (npos != std::string::npos)
         {
-            if (!stricmp(argv[i] + npos, ".def"))
+            if (Utils::iequal(argv[i] + npos, ".def"))
             {
                 defFile = argv[i];
                 memcpy(argv + i, argv + i + 1, sizeof(argv[0]) * *argc - i - 1);

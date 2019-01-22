@@ -63,7 +63,7 @@ static int* _xceptblkptr;
         if (f)
             return;
     }
-    char buf[1024];
+    char buf[2048];
     sprintf(buf, "\n%s:(%s)\n", text, _argv[0]);
     sprintf(buf + strlen(buf), "CS:EIP %04X:%08X  SS:ESP %04X:%08X\n", p->SegCs, p->Eip, p->SegSs, p->Esp);
     sprintf(buf + strlen(buf), "EAX: %08X  EBX: %08X  ECX: %08X  EDX: %08X  flags: %08X\n", p->Eax, p->Ebx, p->Ecx, p->Edx,
@@ -71,6 +71,12 @@ static int* _xceptblkptr;
     sprintf(buf + strlen(buf), "EBP: %08X  ESI: %08X  EDI: %08X\n", p->Ebp, p->Esi, p->Edi);
     sprintf(buf + strlen(buf), " DS:     %04X   ES:     %04X   FS:     %04X   GS:     %04X\n", p->SegDs, p->SegEs, p->SegFs,
             p->SegGs);
+    if (p->Eip < 0x80000000)
+    {
+        sprintf(buf + strlen(buf), "\n\nCS:EIP  ");
+        for (int i=0; i < 16; i++)
+            sprintf(buf + strlen(buf), "%02X ", ((unsigned char *)p->Eip)[i]);
+    }
     if (!_win32)
     {
         fprintf(stderr, buf);

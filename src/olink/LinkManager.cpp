@@ -491,7 +491,11 @@ LinkLibrary* LinkManager::OpenLibrary(const ObjString& name)
     {
         if (rv->IsOpen())
         {
-            rv->Load();
+            if (!rv->Load())
+            {
+                delete rv;
+                rv = nullptr;
+            }
         }
         else
         {
@@ -512,7 +516,7 @@ void LinkManager::LoadLibraries()
         }
         else
         {
-            LinkError("Library '" + (**it) + "' does not exist");
+            LinkError("Library '" + (**it) + "' does not exist or is not a library");
         }
     }
 }

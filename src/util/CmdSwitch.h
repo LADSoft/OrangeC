@@ -49,7 +49,7 @@ class CmdSwitchBase
     char GetSwitchChar() const { return switchChar; }
     void SetExists() { exists = true; }
     bool GetExists() const { return exists; }
-
+    virtual void SetArgNum(int an) { }
   private:
     bool exists;
     char switchChar;
@@ -200,10 +200,11 @@ class CmdSwitchDefine : public CmdSwitchBase
     {
         std::string name;
         std::string value;
+        int argnum;
     };
     int GetCount() const { return defines.size(); }
     define* GetValue(int index);
-
+    virtual void SetArgNum(int an) override { if (defines.size()) defines.back()->argnum = an; }
   private:
     std::vector<define*> defines;
 };

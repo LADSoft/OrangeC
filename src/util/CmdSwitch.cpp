@@ -62,9 +62,10 @@ int CmdSwitchInt::Parse(const char* data)
 }
 int CmdSwitchHex::Parse(const char* data)
 {
+    int cnt = 0;
     char number[256];
-    if (data[0] != ':')
-        return 0;
+    if (data[0] == ':')
+        data++, cnt++;
     strncpy(number, data + 1, 255);
     number[255] = 0;
 
@@ -76,7 +77,7 @@ int CmdSwitchHex::Parse(const char* data)
     value = Utils::StringToNumberHex(number);
     if (value < lowLimit || value > hiLimit)
         return -1;
-    return p - number + 1;
+    return p - number + cnt;
 }
 int CmdSwitchString::Parse(const char* data)
 {
@@ -144,8 +145,6 @@ int CmdSwitchDefine::Parse(const char* data)
         return -1;
     }
     define* newDefine = new define;
-    //	if (!newDefine) // new return not nullptr or exception!
-    //        return -1;
     newDefine->name = name;
     if (*data == '=')
     {
@@ -157,6 +156,10 @@ int CmdSwitchDefine::Parse(const char* data)
         }
         *p = 0;
         newDefine->value = name;
+    }
+    else
+    {
+        newDefine->value = "1";
     }
     defines.push_back(newDefine);
     return rv;
@@ -264,7 +267,7 @@ char* CmdSwitchFile::GetStr(char* data)
 }
 bool CmdSwitchParser::Parse(int* argc, char* argv[])
 {
-    for (int i = 0; *argv;)
+    for (int i = 0, count = 0; *argv;)
     {
         // special casing '-' alone in an argv
         if (argv[0][0] == '@')  // meant to be a file loader
@@ -295,6 +298,7 @@ bool CmdSwitchParser::Parse(int* argc, char* argv[])
                         return false;
                     data++;
                     int n = (*it)->Parse(data);
+                    (*it)->SetArgNum(count++);
                     while (n == INT_MAX && argv[1])
                     {
                         // use next arg as the value

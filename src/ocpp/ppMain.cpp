@@ -35,7 +35,7 @@ CmdSwitchBool ppMain::disableExtensions(SwitchParser, 'A', false);
 CmdSwitchBool ppMain::c99Mode(SwitchParser, '9', true);
 CmdSwitchBool ppMain::trigraphs(SwitchParser, 'T', false);
 CmdSwitchDefine ppMain::defines(SwitchParser, 'D');
-CmdSwitchString ppMain::undefines(SwitchParser, 'U', ';');
+CmdSwitchDefine ppMain::undefines(SwitchParser, 'U');
 CmdSwitchString ppMain::includePath(SwitchParser, 'I', ';');
 CmdSwitchString ppMain::errorMax(SwitchParser, 'E');
 CmdSwitchFile ppMain::File(SwitchParser, '@');
@@ -99,34 +99,45 @@ int ppMain::Run(int argc, char* argv[])
     {
         PreProcessor pp(*(*it), srchPth, sysSrchPth, false, trigraphs.GetValue(), assembly.GetValue() ? '%' : '#', false,
                         !c99Mode.GetValue(), !disableExtensions.GetValue());
-        int n = defines.GetCount();
-        for (int i = 0; i < n; i++)
-        {
-            CmdSwitchDefine::define* v = defines.GetValue(i);
-            pp.Define(v->name, v->value, false);
-        }
         if (c99Mode.GetValue())
         {
             std::string ver = "199901L";
             pp.Define("__STDC_VERSION__", ver, true);
         }
-        std::string working = undefines.GetValue();
-        while (!working.empty())
+        int n = defines.GetCount();
+        int nu = undefines.GetCount();
+        for (int i = 0, j = 0; i < n || j < nu;)
         {
-            size_t n = working.find_first_of(';');
-            if (n == std::string::npos)
+            if (i < n && j < nu)
             {
-                pp.Undefine(working);
-                working = "";
+                CmdSwitchDefine::define* v = defines.GetValue(i);
+                CmdSwitchDefine::define* uv = undefines.GetValue(j);
+                if (v->argnum < uv->argnum)
+                {
+                    pp.Define(v->name, v->value, false);
+                    i++;
+                }
+                else
+                {
+                    pp.Undefine(uv->name);
+                    j++;
+                }
+            }
+            else if (i < n)
+            {
+                CmdSwitchDefine::define* v = defines.GetValue(i);
+                pp.Define(v->name, v->value, false);
+                i++;
             }
             else
             {
-                std::string temp = working.substr(0, n);
-                pp.Undefine(temp);
-                working = working.substr(n + 1);
+                CmdSwitchDefine::define* v = undefines.GetValue(i);
+                pp.Undefine(v->name);
+                j++;
             }
         }
-        working = errorMax.GetValue();
+
+        std::string working = errorMax.GetValue();
         if (!working.empty())
         {
             if (working[0] == '+')

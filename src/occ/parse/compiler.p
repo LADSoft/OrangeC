@@ -940,7 +940,7 @@ void doline(void);
 INCLUDES* GetIncludeData(void);
 void FreeInclData(INCLUDES* data);
 void doinclude(void);
-void glbdefine(const char* name, const char* value, bool permanent);
+void glbdefine(const char* name, const char* value);
 void glbUndefine(const char* name);
 int undef2(const char* name);
 void dodefine(void);

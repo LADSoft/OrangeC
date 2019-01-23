@@ -116,7 +116,7 @@ class PreProcessor
     {
         define.Define(name, value, nullptr, false, false, false, caseInsensitive);
     }
-    void Undefine(std::string& name) { define.Undefine(name, true); }
+    void Undefine(std::string& name) { define.Undefine(name); }
     void IncludeFile(const std::string& name) { include.IncludeFile(name); }
     int GetCtxId() { return ctx.GetTopId(); }
     int GetMacroId() { return macro.GetMacroId(); }

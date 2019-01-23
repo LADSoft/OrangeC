@@ -1289,16 +1289,19 @@ void doinclude(void)
 
 /*-------------------------------------------------------------------------*/
 
-void glbdefine(const char* name, const char* value, bool permanent)
+void glbdefine(const char* name, const char* value)
 {
+    char buf[32768];
+    strcpy(buf, value);
+    ppdefcheck((unsigned char *)buf);
     DEFSTRUCT* def;
     if ((DEFSTRUCT*)search(name, defsyms) != 0)
         return;
     IncGlobalFlag();
     def = (DEFSTRUCT*)Alloc(sizeof(DEFSTRUCT));
     def->name = litlate(name);
-    def->string = litlate(value);
-    def->permanent = permanent;
+    def->string = litlate(buf);
+    def->permanent = false;
     def->line = 1;
     def->file = "COMMAND LINE";
     insert((SYMBOL*)def, defsyms);
@@ -1306,19 +1309,9 @@ void glbdefine(const char* name, const char* value, bool permanent)
 }
 void glbUndefine(const char* name)
 {
-    DEFSTRUCT* hr;
-    hr = (DEFSTRUCT*)search(name, defsyms);
-    if (hr == NULL)
-    {
-        IncGlobalFlag();
-        hr = (DEFSTRUCT*)Alloc(sizeof(DEFSTRUCT));
-        hr->name = litlate(name);
-        hr->string = "";
-        insert((SYMBOL*)hr, defsyms);
-        DecGlobalFlag();
-    }
-    hr->undefined = true;
-    hr->permanent = true;
+    HASHREC **hr = LookupName(name, defsyms);
+    if (*hr)
+        (*hr) = (*hr)->next;
 }
 int undef2(const char* name)
 {

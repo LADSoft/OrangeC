@@ -96,14 +96,6 @@ ppDefine::Definition* ppDefine::Define(const std::string& name, std::string& val
     }
     Symbol* definesym = symtab.Lookup(name);
     Definition* old = static_cast<Definition*>(definesym);
-    if (old)
-    {
-        if (old->IsUndefined())  // undefined forever?
-        {
-            delete args;
-            return nullptr;
-        }
-    }
     size_t n = value.find_first_not_of(" \t\v\n");
     if (n)
         value.erase(0, n);
@@ -194,21 +186,13 @@ ppDefine::Definition* ppDefine::Define(const std::string& name, std::string& val
     symtab.Add(d);
     return d;
 }
-void ppDefine::Undefine(const std::string& name, bool forever)
+void ppDefine::Undefine(const std::string& name)
 {
     Symbol* define = symtab.Lookup(name);
 
     if (define)
     {
-        if (forever)
-        {
-            Definition* d = static_cast<Definition*>(define);
-            d->Undefine();
-        }
-        else
-        {
-            symtab.Remove(define);
-        }
+        symtab.Remove(define);
     }
 }
 void ppDefine::DoAssign(std::string& line, bool caseInsensitive)
@@ -346,7 +330,7 @@ void ppDefine::DoUndefine(std::string& line)
     }
     else
     {
-        Undefine(t->GetId(), false);
+        Undefine(t->GetId());
     }
 }
 void ppDefine::SetDefaults()
@@ -747,7 +731,7 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr)
 #ifndef NOCPLUSPLUS
                 (name != "R" || line[p] != '"') &&
 #endif
-                d != nullptr && !d->IsUndefined() && (!q || line[q - 1] != REPLACED_ALREADY) && !ppNumber(line, q, p - 1))
+                d != nullptr && (!q || line[q - 1] != REPLACED_ALREADY) && !ppNumber(line, q, p - 1))
             {
                 std::string macro;
                 if (d->GetArgList() != nullptr)

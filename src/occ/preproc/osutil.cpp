@@ -30,7 +30,8 @@
 #include <stdlib.h>
 #include "../../util/Utils.h"
 #include "../../version.h"
-
+#include <string>
+#include <deque>
 #if defined(WIN32) || defined(MICROSOFT)
 extern "C"
 {
@@ -63,9 +64,14 @@ char version[256];
 char copyright[256];
 LIST* clist = 0;
 
+struct DefValue {
+    std::string name;
+    bool undef;
+};
+std::deque<DefValue> defines;
+
 static int showBanner = true, showVersion;
 static bool has_output_file;
-static LIST *deflist = 0, *undeflist = 0;
 static jmp_buf ctrlcreturn;
 static char** set_searchpath = &prm_searchpath;
 
@@ -532,27 +538,15 @@ void incl_setup(char select, char* string)
 
 void def_setup(char select, char* string)
 /*
- * activation for command line #defines
- */
+* activation for command line #defines
+*/
 {
-    char* s = (char *)malloc(strlen(string) + 1);
-    LIST* l = (LIST *)malloc(sizeof(LIST));
-    (void)select;
-    strcpy(s, string);
-    l->next = deflist;
-    deflist = l;
-    l->data = s;
+    defines.push_back(DefValue{ string, 0 });
 }
 
 void undef_setup(char select, char* string)
 {
-    char* s = (char *)malloc(strlen(string) + 1);
-    LIST* l = (LIST *)malloc(sizeof(LIST));
-    (void)select;
-    strcpy(s, string);
-    l->next = undeflist;
-    undeflist = l;
-    l->data = s;
+    defines.push_back(DefValue{ string, 1 });
 }
 
 /*-------------------------------------------------------------------------*/
@@ -576,49 +570,25 @@ void setglbdefs(void)
 #ifndef CPREPROCESSOR
     ARCH_DEFINES* a = chosenAssembler->defines;
 #endif
-    LIST* l = deflist;
     char buf[256];
     int major, minor;
-    while (l)
-    {
-        char* s = (char *)l->data;
-        char* n = s;
-        while (*s && *s != '=')
-            s++;
-        if (*s == '=')
-            *s++ = 0;
-        glbdefine(n, s, false);
-        l = l->next;
-    }
-    l = undeflist;
-    while (l)
-    {
-        char* s = (char *)l->data;
-        char* n = s;
-        while (*s && *s != '=')
-            s++;
-        if (*s == '=')
-            *s = 0;
-        glbUndefine(n);
-        l = l->next;
-    }
     sscanf(STRING_VERSION, "%d.%d", &major, &minor);
     sprintf(buf, "%d", major * 100 + minor);
-    glbdefine("__ORANGEC__", buf, true);
-    glbdefine("__WIN32", "", false);
+    glbdefine("__ORANGEC__", buf);
+    glbdefine("__WIN32", "");
     if (cparams.prm_cplusplus)
     {
-        glbdefine("__cplusplus", "201103", true);
+        glbdefine("__cplusplus", "201103");
         if (cparams.prm_xcept)
-            glbdefine("__RTTI__", "1", true);
+            glbdefine("__RTTI__", "1");
     }
-    glbdefine("__STDC__", "1", true);
+    glbdefine("__STDC__", "1");
     if (cparams.prm_c99)
     {
 #ifndef CPREPROCESSOR
-        glbdefine("__STDC_HOSTED__", chosenAssembler->hosted, true);  // hosted compiler, not embedded
+        glbdefine("__STDC_HOSTED__", chosenAssembler->hosted);  // hosted compiler, not embedded
 #endif
-        glbdefine("__STDC_VERSION__", "199901L", true);
+        glbdefine("__STDC_VERSION__", "199901L");
     }
     /*   glbdefine("__STDC_IEC_599__","1");*/
     /*   glbdefine("__STDC_IEC_599_COMPLEX__","1");*/
@@ -631,12 +601,32 @@ void setglbdefs(void)
         {
             if (a->respect)
             {
-                glbdefine(a->define, a->value, a->permanent);
+                glbdefine(a->define, a->value);
             }
             a++;
         }
     }
 #endif
+    for (auto d : defines)
+    {
+        size_t n = d.name.find_first_of("=");
+        std::string name, val;
+        if (n != std::string::npos)
+        {
+            name = d.name.substr(0, n);
+            if (n != d.name.size() - 1)
+                val = d.name.substr(n + 1);
+        }
+        else
+        {
+            name = d.name;
+            val = "1";
+        }
+        if (d.undef)
+            glbUndefine(name.c_str());
+        else
+            glbdefine(name.c_str(), val.c_str());
+    }
 }
 
 /*-------------------------------------------------------------------------*/

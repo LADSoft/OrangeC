@@ -39,7 +39,7 @@ class ppMain
     static CmdSwitchBool c99Mode;
     static CmdSwitchBool trigraphs;
     static CmdSwitchDefine defines;
-    static CmdSwitchString undefines;
+    static CmdSwitchDefine undefines;
     static CmdSwitchString includePath;
     static CmdSwitchString errorMax;
     static CmdSwitchFile File;

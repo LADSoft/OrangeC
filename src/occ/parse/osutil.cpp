@@ -28,6 +28,8 @@
 #include <stdarg.h>
 #include <ctype.h>
 #include <stdlib.h>
+#include <string>
+#include <deque>
 #include "../../util/Utils.h"
 #ifdef MSIL
 #    include "../version.h"
@@ -73,8 +75,14 @@ LIST* clist = 0;
 int showBanner = true;
 int showVersion = false;
 
+
+struct DefValue {
+    std::string name;
+    bool undef;
+};
+std::deque<DefValue> defines;
+
 static bool has_output_file;
-static LIST *deflist = 0, *undeflist = 0;
 static char** set_searchpath = &prm_searchpath;
 static char** set_libpath = &prm_libpath;
 void fatal(const char* fmt, ...)
@@ -637,24 +645,12 @@ void def_setup(char select, char* string)
  * activation for command line #defines
  */
 {
-    char* s = (char *)malloc(strlen(string) + 1);
-    LIST* l = (LIST *)malloc(sizeof(LIST));
-    (void)select;
-    strcpy(s, string);
-    l->next = deflist;
-    deflist = l;
-    l->data = s;
+    defines.push_back(DefValue{ string, 0 });
 }
 
 void undef_setup(char select, char* string)
 {
-    char* s = (char *)malloc(strlen(string) + 1);
-    LIST* l = (LIST *)malloc(sizeof(LIST));
-    (void)select;
-    strcpy(s, string);
-    l->next = undeflist;
-    undeflist = l;
-    l->data = s;
+    defines.push_back(DefValue{ string, 1 });
 }
 
 /*-------------------------------------------------------------------------*/
@@ -675,82 +671,44 @@ void setglbdefs(void)
  * doing
  */
 {
+   char buf[256];
+    int major, temp, minor, build;
 #ifndef CPREPROCESSOR
     ARCH_DEFINES* a = chosenAssembler->defines;
 #endif
-    LIST* l = deflist;
-    char buf[256];
-    int major, temp, minor, build;
-    while (l)
-    {
-        char* s = (char *)l->data;
-        char* n = s;
-        while (*s && *s != '=')
-            s++;
-        if (*s == '=')
-            *s++ = 0;
-        if (*s)
-        {
-            char* q = (char *)calloc(1, strlen(s) + 3);
-            q[0] = MACRO_PLACEHOLDER;
-            strcpy(q + 1, s);
-            q[strlen(s) + 1] = MACRO_PLACEHOLDER;
-            glbdefine(n, q, false);
-            free(q);
-        }
-        else
-        {
-            glbdefine(n, s, false);
-        }
-        if (*s)
-            s[-1] = '=';
-        l = l->next;
-    }
-    l = undeflist;
-    while (l)
-    {
-        char* s = (char *)l->data;
-        char* n = s;
-        while (*s && *s != '=')
-            s++;
-        if (*s == '=')
-            *s = 0;
-        glbUndefine(n);
-        l = l->next;
-    }
     sscanf(STRING_VERSION, "%d.%d.%d.%d", &major, &temp, &minor, &build);
     my_sprintf(buf, "%d", major * 100 + minor);
-    glbdefine("__ORANGEC__", buf, true);
+    glbdefine("__ORANGEC__", buf);
     my_sprintf(buf, "%d", major);
-    glbdefine("__ORANGEC_MAJOR__", buf, true);
+    glbdefine("__ORANGEC_MAJOR__", buf);
     my_sprintf(buf, "%d", minor);
-    glbdefine("__ORANGEC_MINOR__", buf, true);
+    glbdefine("__ORANGEC_MINOR__", buf);
     my_sprintf(buf, "%d", build);
-    glbdefine("__ORANGEC_PATCHLEVEL__", buf, true);
+    glbdefine("__ORANGEC_PATCHLEVEL__", buf);
     sprintf(buf, "\"%s\"", STRING_VERSION);
-    glbdefine("__VERSION__", buf, true);
-    glbdefine("__CHAR_BIT__", "8", true);
+    glbdefine("__VERSION__", buf);
+    glbdefine("__CHAR_BIT__", "8");
     if (cparams.prm_cplusplus)
     {
-        glbdefine("__cplusplus", "201402", true);
+        glbdefine("__cplusplus", "201402");
         if (cparams.prm_xcept)
-            glbdefine("__RTTI__", "1", true);
+            glbdefine("__RTTI__", "1");
     }
-    glbdefine("__STDC__", "1", true);
+    glbdefine("__STDC__", "1");
 
     if (cparams.prm_c99 || cparams.prm_c1x)
     {
 #ifndef CPREPROCESSOR
-        glbdefine("__STDC_HOSTED__", chosenAssembler->hosted, true);  // hosted compiler, not embedded
+        glbdefine("__STDC_HOSTED__", chosenAssembler->hosted);  // hosted compiler, not embedded
 #endif
     }
     if (cparams.prm_c1x)
     {
-        glbdefine("__STDC_VERSION__", "201112L", true);
+        glbdefine("__STDC_VERSION__", "201112L");
     }
     else if (cparams.prm_c99)
     {
-        glbdefine("__STDC_VERSION__", "199901L", true);
+        glbdefine("__STDC_VERSION__", "199901L");
     }
     /*   glbdefine("__STDC_IEC_599__","1");*/
     /*   glbdefine("__STDC_IEC_599_COMPLEX__","1");*/
@@ -763,12 +721,32 @@ void setglbdefs(void)
         {
             if (a->respect)
             {
-                glbdefine(a->define, a->value, a->permanent);
+                glbdefine(a->define, a->value);
             }
             a++;
         }
     }
 #endif
+    for (auto d : defines)
+    {
+        size_t n = d.name.find_first_of("=");
+        std::string name, val;
+        if (n != std::string::npos)
+        {
+            name = d.name.substr(0, n);
+            if (n != d.name.size()-1)
+                val = d.name.substr(n + 1);
+        }
+        else
+        {
+            name = d.name;
+            val = "1";
+        }
+        if (d.undef)
+            glbUndefine(name.c_str());
+        else
+            glbdefine(name.c_str(), val.c_str());
+    }
 }
 
 /*-------------------------------------------------------------------------*/

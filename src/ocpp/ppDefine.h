@@ -51,7 +51,6 @@ class ppDefine
             Symbol(Name),
             value(Value),
             argList(List),
-            undefined(false),
             permanent(Permanent),
             varargs(false),
             caseInsensitive(false),
@@ -79,8 +78,6 @@ class ppDefine
         }
         DefinitionArgList* GetArgList() const { return argList; }
         std::string& GetValue() { return value; }
-        bool IsUndefined() { return undefined; }
-        bool Undefine() { return undefined; }
         bool IsCaseInsensitive() { return caseInsensitive; }
         void SetCaseInsensitive(bool flag) { caseInsensitive = flag; }
 
@@ -107,7 +104,7 @@ class ppDefine
     bool Check(int token, std::string& line);
     Definition* Define(const std::string& name, std::string& value, DefinitionArgList* args, bool permanent, bool varargs,
                        bool errors, bool caseInsensitive);
-    void Undefine(const std::string& name, bool forever);
+    void Undefine(const std::string& name);
     Definition* Lookup(const std::string& name);
     int Process(std::string& line);
     void replaceDefined(std::string& line);

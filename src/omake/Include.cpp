@@ -182,7 +182,7 @@ bool Include::AddFileList(const std::string& name, bool ignoreOk, bool MakeFile)
     }
     return rv;
 }
-bool Include::MakeMakefiles(bool Silent, OutputType outputType)
+bool Include::MakeMakefiles(bool Silent, OutputType outputType, bool& didSomething)
 {
     Maker maker(Silent, false, false, false, outputType);
     for (auto goal : *this)
@@ -194,6 +194,6 @@ bool Include::MakeMakefiles(bool Silent, OutputType outputType)
     {
         maker.SetIgnoreFailed(file);
     }
-    maker.CreateDependencyTree();
+    didSomething = !maker.CreateDependencyTree();
     return maker.RunCommands();
 }

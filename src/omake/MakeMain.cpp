@@ -86,12 +86,14 @@ const char* MakeMain::usageText =
     "/p    Print database          /q    Query\n"
     "/r    Ignore builtin rules    /s    Don't print commands\n"
     "/t    Touch                   /u    Debug warnings\n"
-    "/w    Print directory         --eval=STRING evaluate a statement\n"
+    "/w    Print make status       --eval=STRING evaluate a statement\n"
     "/!    No logo\n"
     "--version show version info\n"
     "\nTime: " __TIME__ "  Date: " __DATE__;
 const char* MakeMain::builtinVars = "";
 const char* MakeMain::builtinRules = "";
+
+int MakeMain::makeLevel;
 
 int main(int argc, char** argv)
 {
@@ -466,16 +468,8 @@ int MakeMain::Run(int argc, char** argv)
             return 2;
         }
     }
-    if (printDir.GetValue())
-    {
-        std::cout << OS::GetWorkingDir() << std::endl;
-    }
-#ifdef OPENWATCOM
-    else
-    {
-        std::cout << std::endl;
-    }
-#endif
+
+
     if (cancelKeep.GetValue())
     {
         cancelKeep.SetValue(false);
@@ -527,16 +521,22 @@ int MakeMain::Run(int argc, char** argv)
             std::string temp = Utils::NumberToString(restarts);
             SetVariable("MAKE_RESTARTS", temp, Variable::o_command_line, false);
         }
+        bool firstMakeLevel = makeLevel == 0;
         v = VariableContainer::Instance()->Lookup("MAKE_LEVEL");
         if (!v)
         {
             SetVariable("MAKE_LEVEL", "0", Variable::o_environ, true);
+            makeLevel = 1;
         }
         else
         {
             int n = Utils::StringToNumber(v->GetValue());
             v->SetValue(Utils::NumberToString(n + 1));
+            makeLevel = n + 2;
         }
+        if (firstMakeLevel)
+            MakeMessage("Entering %s", OS::GetWorkingDir().c_str());
+
         SetVariable(".FEATURES", "second-expansion order-only target-specific", Variable::o_environ, false);
         SetVariable(".DEFAULT_GOAL", "", Variable::o_environ, false);
         SetVariable(".INCLUDE_DIRS", includes.GetValue(), Variable::o_command_line, false);
@@ -565,7 +565,12 @@ int MakeMain::Run(int argc, char** argv)
         Include::Instance()->AddFileList(files, false, false);
         SetupImplicit();
         RuleContainer::Instance()->SecondaryEval();
-        done = !Include::Instance()->MakeMakefiles(silent.GetValue(), outputType);
+        bool didSomething = false;
+        done = !Include::Instance()->MakeMakefiles(silent.GetValue(), outputType, didSomething);
+        if (!didSomething)
+        {
+            MakeMessage("Nothing to be done for '%s'", goals.size() ? goals.c_str() : "all");
+        }
         if (!done)
             restarts++;
     }
@@ -650,20 +655,13 @@ int MakeMain::Run(int argc, char** argv)
             rv = 2;
         }
     }
+
+    MakeMessage("Leaving %s", OS::GetWorkingDir().c_str());
+
     if (!dir.GetValue().empty())
     {
         OS::SetWorkingDir(cwd);
     }
-    if (printDir.GetValue())
-    {
-        std::cout << OS::GetWorkingDir() << std::endl;
-    }
-#ifdef OPENWATCOM
-    else
-    {
-        std::cout << std::endl;
-    }
-#endif
     Spawner::WaitForDone();
     return rv;
 }

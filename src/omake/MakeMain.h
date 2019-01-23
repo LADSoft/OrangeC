@@ -35,6 +35,17 @@ class MakeMain
     MakeMain() : restarts(0), outputType(o_none) {}
     int Run(int argc, char** argv);
 
+  template <class ...Args>
+  static void MakeMessage(const std::string& format, Args... args)
+  {
+      if (printDir.GetValue())
+      {
+          fprintf(stderr, "[omake(%d): ", makeLevel);
+          fprintf(stderr, format.c_str(), args...);
+          fprintf(stderr,"]\n");
+      }
+  }
+
   protected:
     void Dispatch(const char* data);
     const char* GetStr(const char* data);
@@ -84,6 +95,8 @@ class MakeMain
     static const char* usageText;
     static const char* builtinVars;
     static const char* builtinRules;
+
+    static int makeLevel;
 
     char** argvx;
     int argcx;

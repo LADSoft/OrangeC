@@ -38,7 +38,7 @@ class Include
     void Clear();
 
     bool AddFileList(const std::string& name, bool ignoreOk = false, bool MakeFile = false);
-    bool MakeMakefiles(bool Silent, OutputType outputType);
+    bool MakeMakefiles(bool Silent, OutputType outputType, bool& didSomething);
 
     typedef std::list<std::string>::iterator iterator;
     iterator begin() { return files.begin(); }

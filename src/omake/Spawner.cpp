@@ -25,6 +25,7 @@
 #include "Spawner.h"
 #include "Eval.h"
 #include "Maker.h"
+#include "MakeMain.h"
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -174,7 +175,13 @@ int Spawner::InternalRun()
             int rv1 = Run(cmd, curIgnore, curSilent, curDontRun, make);
             make = false;
             if (!rv)
+            {
+                if (rv1)
+                {
+                    MakeMain::MakeMessage("Commands returned %d in '%s(%d)'%s", rv1, ruleList->GetTarget().c_str(), commands->GetLine(), curIgnore ? " (Ignored)" : "");
+                }
                 rv = rv1;
+            }
         }
         if (outputType == o_line)
             OS::ToConsole(output);
@@ -184,7 +191,12 @@ int Spawner::InternalRun()
             break;
     }
     if (oneShell)
+    {
         rv = Run(longstr, ignoreErrors, silent, dontRun, false);
+        if (rv)
+           MakeMain::MakeMessage("Commands returned %d in '%s(%d)'%s", rv, ruleList->GetTarget().c_str(), commands->GetLine(), ignoreErrors ? " (Ignored)" : "");
+
+    }
     OS::ToConsole(output);
     for (auto f : tempFiles)
         OS::RemoveFile(f);
@@ -192,7 +204,7 @@ int Spawner::InternalRun()
 }
 int Spawner::Run(const std::string& cmdin, bool ignoreErrors, bool silent, bool dontrun, bool make)
 {
-
+    int rv = 0;
     std::string cmd = cmdin;
     Variable* v = VariableContainer::Instance()->Lookup("SHELL");
     if (v)

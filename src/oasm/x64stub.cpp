@@ -112,6 +112,9 @@ const char* Lexer::preData =
     "%imacro	align 0+ .nolist\n"
     "	[align %1]\n"
     "%endmacro\n"
+    "%imacro	.align 0+ .nolist\n"
+    "	[align %1]\n"
+    "%endmacro\n"
     "%imacro	import 0+ .nolist\n"
     "	[import %1]\n"
     "%endmacro\n"
@@ -147,7 +150,6 @@ const char* Lexer::preData =
     "%pop\n"
     "__SECT__\n"
     "%endmacro\n";
-
 void Instruction::RepRemoveCancellations(AsmExprNode *exp, bool commit, int &count, Section *sect[], bool sign[], bool plus)
 {
     if (exp->GetType() == AsmExprNode::LABEL)

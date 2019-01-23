@@ -539,8 +539,12 @@ void AsmFile::AlignDirective()
     else
     {
         NeedSection();
-        Instruction* ins = new Instruction(GetValue());
+        int v;
+        Instruction* ins = new Instruction(v = GetValue());
         currentSection->InsertInstruction(ins);
+        int n = currentSection->GetAlign();
+        if (v > n)
+            currentSection->SetAlign(v);
     }
 }
 void AsmFile::TimesDirective()

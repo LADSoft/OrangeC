@@ -255,13 +255,14 @@ Depends* Maker::Dependencies(const std::string& goal, const std::string& preferr
     }
     if (rv && !rebuildAll)
     {
-        if (goalTime > dependsTime && !RuleContainer::Instance()->OnList(goal, ".PHONY"))
+        if (goalTime >= dependsTime && !RuleContainer::Instance()->OnList(goal, ".PHONY"))
         {
             if (!rv->size())
             {
                 delete rv;
                 rv = nullptr;
             }
+
             else
             {
                 bool check = true;
@@ -275,6 +276,7 @@ Depends* Maker::Dependencies(const std::string& goal, const std::string& preferr
                     rv = nullptr;
                 }
             }
+
         }
     }
     if (rv)

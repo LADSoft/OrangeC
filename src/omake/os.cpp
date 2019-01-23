@@ -109,6 +109,11 @@ bool Time::operator>(const Time& last)
             return true;
     return false;
 }
+bool Time::operator>=(const Time& last)
+{
+    return (this->seconds == last.seconds && this->ms == last.ms && (this->seconds != 0 || this->ms != 0)) || *this > last;
+}
+
 void OS::Init()
 {
 #ifdef _WIN32

@@ -40,6 +40,7 @@ class Time
     unsigned seconds;
     unsigned ms;
     bool operator>(const Time& last);
+    bool operator>=(const Time& last);
     bool operator!() { return seconds == 0 && ms == 0; }
     void Clear()
     {

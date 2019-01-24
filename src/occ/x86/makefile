@@ -114,7 +114,7 @@ DEFINES=$(i386) $(LL) $(MSDOS) x64
 
 ifeq "$(COMPILER)" "gcc-linux"
 SOURCE = ..$(PATHEXT2)parse:..$(PATHEXT2)preproc:..$(PATHEXT2)middle
-INCLUDES=..$(PATHEXT2)parse ..$(PATHEXT2)preproc ..$(PATHEXT2)middle ..$(PATHEXT2)..$(PATHEXT2)ocpp ..$(PATHEXT2)..$(PATHEXT2)oasm ..$(PATHEXT2)..$(PATHEXT2)Util ..$(PATHEXT2)..$(PATHEXT2)objlib
+INCLUDES=..$(PATHEXT2)parse ..$(PATHEXT2)preproc ..$(PATHEXT2)middle ..$(PATHEXT2)..$(PATHEXT2)ocpp ..$(PATHEXT2)..$(PATHEXT2)oasm ..$(PATHEXT2)..$(PATHEXT2)util ..$(PATHEXT2)..$(PATHEXT2)objlib
 SRCPATH=.$(PATHEXT2):$(SOURCE):..:..$(PATHEXT2)..$(PATHEXT2)Util:..$(PATHEXT2)
 else
 SOURCE = ..$(PATHEXT2)parse$(PATHEXT2);..$(PATHEXT2)preproc$(PATHEXT2);..$(PATHEXT2)middle$(PATHEXT2)

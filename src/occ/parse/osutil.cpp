@@ -77,6 +77,11 @@ int showVersion = false;
 
 
 struct DefValue {
+    DefValue(const std::string& nm, bool val) :
+        name(nm),
+        undef(val)
+    {
+    }
     std::string name;
     bool undef;
 };

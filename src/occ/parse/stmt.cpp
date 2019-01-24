@@ -3099,8 +3099,15 @@ LEXEME* compound(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
     {
         if (!blockstmt->hassemi && !blockstmt->nosemi)
             errorint(ERR_NEEDY, ';');
-        blockstmt->lastcaseordefault = false;
-        lex = statement(lex, funcsp, blockstmt, false);
+        if (MATCHKW(lex, semicolon))
+        {
+            lex = getsym(); // helps in error processing to not do default statement processing here...
+        }
+        else
+        {
+            blockstmt->lastcaseordefault = false;
+            lex = statement(lex, funcsp, blockstmt, false);
+        }
     }
     if (first)
     {

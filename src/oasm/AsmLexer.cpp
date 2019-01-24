@@ -89,6 +89,7 @@ void Lexer::InitHash()
         hash["EXPORT"] = EXPORT;
         hash["EXTERN"] = EXTERN;
         hash["EQU"] = EQU;
+        hash["GALIGN"] = GALIGN;
         hash["GLOBAL"] = PUBLIC;
         hash["GROUP"] = GROUP;
         hash["IMPORT"] = IMPORT;

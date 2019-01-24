@@ -494,6 +494,9 @@ void AsmFile::Directive()
         case Lexer::ALIGN:
             AlignDirective();
             break;
+        case Lexer::GALIGN:
+            GnuAlignDirective();
+            break;
         case Lexer::INCBIN:
             NoAbsolute();
             IncbinDirective();
@@ -539,12 +542,55 @@ void AsmFile::AlignDirective()
     else
     {
         NeedSection();
-        int v;
-        Instruction* ins = new Instruction(v = GetValue());
+        int v = GetValue();
+        if ((v &(v-1)) != 0)
+            throw new std::runtime_error("Alignment must be power of two");
+        Instruction* ins = new Instruction(v);
         currentSection->InsertInstruction(ins);
         int n = currentSection->GetAlign();
         if (v > n)
             currentSection->SetAlign(v);
+    }
+}
+void AsmFile::GnuAlignDirective()
+{
+    NextToken();
+    if (!IsNumber())
+        throw new std::runtime_error("Alignment expected");
+    if (inAbsolute)
+    {
+        int v = 1 << GetValue();
+        int n = (absoluteValue % v);
+        if (n)
+            absoluteValue += n - v;
+    }
+    else
+    {
+        NeedSection();
+        int v = 1 << GetValue();
+        Instruction* ins = new Instruction(v);
+        currentSection->InsertInstruction(ins);
+        int n = currentSection->GetAlign();
+        if (v > n)
+            currentSection->SetAlign(v);
+        if (GetKeyword() == Lexer::comma)
+        {
+            NextToken();
+            if (GetKeyword() != Lexer::comma)
+            {
+                if (!IsNumber())
+                    throw new std::runtime_error("Fill value expected");
+                ins->SetFill(GetValue());
+            }
+            if (GetKeyword() == Lexer::comma)
+            {
+                NextToken();
+                if (!IsNumber())
+                    throw new std::runtime_error("Max value expected");
+                // discarding for now, this is the maximum number of bytes to fill when doing the align
+                GetValue();
+            }
+        }
     }
 }
 void AsmFile::TimesDirective()

@@ -125,6 +125,7 @@ class AsmFile
     void EquDirective();
     void Directive();
     void AlignDirective();
+    void GnuAlignDirective();
     void PublicDirective();
     void ExternDirective();
     void ImportDirective();

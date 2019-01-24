@@ -76,6 +76,7 @@ class Lexer
         EXPORT,
         EXTERN,
         EQU,
+        GALIGN,
         GROUP,
         IMPORT,
         INCBIN,

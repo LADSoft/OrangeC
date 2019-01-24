@@ -91,7 +91,7 @@ int Instruction::GetNext(Fixup& fixup, unsigned char* buf)
         int sz = GetSize();
         if (sz == 0 || pos != 0)
             return 0;
-        memset(buf, 0, sz);
+        memset(buf, fill, sz);
         pos += sz;
         return sz;
     }

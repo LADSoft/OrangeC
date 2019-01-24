@@ -113,7 +113,7 @@ const char* Lexer::preData =
     "	[align %1]\n"
     "%endmacro\n"
     "%imacro	.align 0+ .nolist\n"
-    "	[align %1]\n"
+    "	[galign %1]\n"
     "%endmacro\n"
     "%imacro	import 0+ .nolist\n"
     "	[import %1]\n"

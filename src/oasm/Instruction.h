@@ -46,7 +46,7 @@ class Instruction
         RESERVE,
         ALT
     };
-    Instruction(Label* lbl) : data(nullptr), label(lbl), type(LABEL), altdata(nullptr), pos(0), fpos(0), size(0), offs(0), repeat(1)
+    Instruction(Label* lbl) : data(nullptr), label(lbl), type(LABEL), altdata(nullptr), pos(0), fpos(0), size(0), offs(0), repeat(1), fill(0)
     {
     }
     Instruction(void* Data, int Size, bool isData = false) :
@@ -57,7 +57,8 @@ class Instruction
         repeat(1),
         size(Size),
         offs(0),
-        lost(false)
+        lost(false),
+        fill(0)
     {
         data = LoadData(!isData, (unsigned char*)Data, Size);
     }
@@ -66,6 +67,7 @@ class Instruction
         type(ALIGN),
         label(nullptr),
         altdata(nullptr),
+        fill(0),
         pos(0),
         fpos(0),
         size(aln),
@@ -77,6 +79,7 @@ class Instruction
         type(RESERVE),
         label(nullptr),
         altdata(nullptr),
+        fill(0),
         pos(0),
         fpos(0),
         size(Size),
@@ -86,20 +89,22 @@ class Instruction
         data = new unsigned char[size];
         memset(data, 0, size);
     }
-    Instruction(void* data) : data(nullptr), type(ALT), label(nullptr), altdata(data), pos(0), fpos(0), size(0), offs(0), repeat(1)
+    Instruction(void* data) : data(nullptr), type(ALT), label(nullptr), altdata(data), pos(0), fpos(0), size(0), offs(0), repeat(1), fill(0)
     {
     }
     virtual ~Instruction();
 
     void RepRemoveCancellations(AsmExprNode *exp, bool commit, int &count, Section *sect[], bool sign[], bool plus);
-    void* GetAltData() { return altdata; }
-    Label* GetLabel() { return label; }
+    void* GetAltData() const { return altdata; }
+    Label* GetLabel() const { return label; }
     bool IsLabel() { return type == LABEL; }
-    int GetType() { return type; }
+    int GetType() const { return type; }
     void Optimize(Section* sect, int pc, bool doErrors);
     void SetOffset(int Offs) { offs = Offs; }
-    int GetOffset() { return offs; }
-    int GetSize()
+    int GetOffset() const { return offs; }
+    void SetFill(int fv) { fill = fv; }
+    int GetFill() const { return fill; }
+    int const GetSize()
     {
         if (type == ALIGN)
         {
@@ -112,13 +117,14 @@ class Instruction
             return size * repeat;
         return size;
     }
-    unsigned char* GetData() { return data; }
-    int GetRepeat() { return repeat; }
+    unsigned char fill;
+    unsigned char* GetData() const { return data; }
+    int GetRepeat() const { return repeat; }
     int GetNext(Fixup& fixup, unsigned char* buf);
     void Rewind() { pos = fpos = 0; }
     static bool ParseSectionAttrib(AsmFile* file);
     void Add(Fixup* fixup) { fixups.push_back(fixup); }
-    unsigned char* GetBytes() { return data; }
+    unsigned char* GetBytes() const { return data; }
     FixupContainer* GetFixups() { return &fixups; }
     static void SetBigEndian(bool be) { bigEndian = be; }
     unsigned char* LoadData(bool isCode, unsigned char* data, size_t size);

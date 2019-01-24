@@ -1,5 +1,15 @@
 -Release notes:
 
+version 6.0.41:
+
+    occ: show data at CS:EIP in exception dumps
+    occ: fix so that an empty statement at the end of a function didn't confuse the 'function needs return value' warning
+    occ: fix the /D and /U command line switches to work more in line with the standard usage
+    omake: don't rebuild things that have exactly the same time stamp as their dependencies
+    omake: improve diagnostics
+    olink: identify invalid libraries
+    oasm: add .align assembler directive like gas version
+    rtl: allow nl_types.h to be included in c language files
 version 6.0.40: 1/21/2019
     fix various problems with the MSDOS build and install
     occ: fix stack frame in the presence of try/catch processing: don't optimize out the EBP references and don't cache variables in regs

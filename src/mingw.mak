@@ -104,7 +104,7 @@ LDEPS2 := $(addsuffix .a, $(LDEPS2))
 LMAIN := $(addprefix $(_OUTPUTDIR)\,$(MAIN_DEPENDENCIES) $(RES_deps))
 LMAIN := $(subst \,/,$(LMAIN))
 
-$(NAME).exe: $(MAIN_DEPENDENCIES) $(LDEPS2) $(RES_deps)
+$(NAME).exe: $(MAIN_DEPENDENCIES) $(LDEPS2) $(_LIBDIR)\$(LIB_PREFIX)$(NAME)$(LIB_EXT) $(RES_deps)
 	$(CC) $(LFLAGS) -o $(NAME).exe @&&|
 $(LMAIN) $(LDEPS) $(COMPLIB) $(DEF_DEPENDENCIES)
 |

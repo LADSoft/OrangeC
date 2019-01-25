@@ -39,6 +39,7 @@
 #include <ctime>
 #include <string>
 #include "Variable.h"
+#include "MakeMain.h"
 #include "Eval.h"
 #include "os.h"
 #include <algorithm>
@@ -55,6 +56,8 @@ static CRITICAL_SECTION consoleSync;
 std::deque<int> OS::jobCounts;
 bool OS::isSHEXE;
 int OS::jobsLeft;
+std::string OS::jobName = "\t";
+std::string OS::jobFile;
 
 std::string OS::QuoteCommand(std::string exe, std::string command)
 {
@@ -176,8 +179,13 @@ bool OS::TakeJob()
     return false;
 }
 void OS::GiveJob() { sema.Post(); }
+std::string OS::JobName()
+{
+    return jobName;
+}
 void OS::JobInit()
 {
+    bool first = false;
     std::string name;
     Variable* v = VariableContainer::Instance()->Lookup(".OMAKESEM");
     if (v)
@@ -192,12 +200,31 @@ void OS::JobInit()
         name = t.str();
         v = new Variable(".OMAKESEM", name, Variable::f_recursive, Variable::o_environ);
         *VariableContainer::Instance() += v;
+        first = true;
     }
     v->SetExport(true);
     name = std::string("OMAKE") + name;
     sema = Semaphore(name, jobsLeft);
+
+    if (MakeMain::printDir.GetValue())
+    {
+        HANDLE sem = CreateSemaphore(nullptr, 1, 100000, (name + "count").c_str());
+        LONG count = 1;
+        if (sem != NULL)
+        {
+            ReleaseSemaphore(sem, 1, &count);
+        }
+        char buf[256];
+        sprintf(buf, "%d> ", count);
+        jobName= buf;
+    }
 }
-void OS::JobRundown() { sema.~Semaphore(); }
+void OS::JobRundown() 
+{ 
+    sema.~Semaphore();
+    if (jobFile.size())
+        RemoveFile(jobFile);
+}
 void OS::Take()
 {
 #ifdef _WIN32

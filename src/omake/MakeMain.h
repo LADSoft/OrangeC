@@ -46,23 +46,6 @@ class MakeMain
       }
   }
 
-  protected:
-    void Dispatch(const char* data);
-    const char* GetStr(const char* data);
-    void SetVariable(const std::string& name, const std::string& value, Variable::Origin origin, bool toExport);
-    void SetMakeFlags();
-    void SetInternalVars();
-    void SetupImplicit();
-    void LoadJobArgs();
-    void LoadEnvironment();
-    void LoadCmdDefines();
-    void ShowRule(RuleList* ruleList);
-    void ShowDatabase();
-    void SetTreePath(std::string& files);
-
-  private:
-    int restarts;
-    OutputType outputType;
     static CmdSwitchParser switchParser;
     static CmdSwitchCombineString specifiedFiles;
     static CmdSwitchBool displayOnly;
@@ -95,6 +78,25 @@ class MakeMain
     static const char* usageText;
     static const char* builtinVars;
     static const char* builtinRules;
+
+  protected:
+    void Dispatch(const char* data);
+    const char* GetStr(const char* data);
+    void SetVariable(const std::string& name, const std::string& value, Variable::Origin origin, bool toExport);
+    void SetMakeFlags();
+    void SetInternalVars();
+    void SetupImplicit();
+    void LoadJobArgs();
+    void LoadEnvironment();
+    void LoadCmdDefines();
+    void ShowRule(RuleList* ruleList);
+    void ShowDatabase();
+    void SetTreePath(std::string& files);
+
+
+  private:
+    int restarts;
+    OutputType outputType;
 
     static int makeLevel;
 

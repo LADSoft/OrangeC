@@ -240,7 +240,9 @@ int Spawner::Run(const std::string& cmdin, bool ignoreErrors, bool silent, bool 
             if (!make1)
                 OS::TakeJob();
             if (!silent)
-                OS::WriteConsole(std::string("\t") + command + "\n");
+            {
+                OS::WriteConsole(OS::JobName() + command + "\n");
+            }
             int rv1;
             if (!dontrun)
             {

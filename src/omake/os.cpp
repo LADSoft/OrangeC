@@ -206,7 +206,7 @@ void OS::JobInit()
     name = std::string("OMAKE") + name;
     sema = Semaphore(name, jobsLeft);
 
-    if (MakeMain::printDir.GetValue())
+    if (MakeMain::printDir.GetValue() && jobName == "\t")
     {
         HANDLE sem = CreateSemaphore(nullptr, 1, 100000, (name + "count").c_str());
         LONG count = 1;

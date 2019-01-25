@@ -96,23 +96,24 @@ void PEImportObject::Setup(ObjInt& endVa, ObjInt& endPhys)
             importCount++;
         }
     }
-    data = new unsigned char[(modules.size() + 1) * sizeof(Dir) + ((nameSize + 3) & ~3) +
-                             (importCount + dllCount) * sizeof(Entry) * 2 + ((impNameSize + 3) & ~3)];
-    Dir* dirPos = (Dir*)data;
-    char* namePos = (char*)data + sizeof(Dir) * (modules.size() + 1);
+    data = std::make_unique<unsigned char[]>((modules.size() + 1) * sizeof(Dir) + ((nameSize + 3) & ~3) +
+                             (importCount + dllCount) * sizeof(Entry) * 2 + ((impNameSize + 3) & ~3));
+    unsigned char *pdata = data.get();
+    Dir* dirPos = (Dir*)pdata;
+    char* namePos = (char*)pdata + sizeof(Dir) * (modules.size() + 1);
     Entry* lookupPos = (Entry*)((char*)namePos + ((nameSize + 3) & ~3));
     char* hintPos = ((char*)lookupPos) + (importCount + dllCount) * sizeof(Entry);
     Entry* addressPos = (Entry*)(hintPos + ((impNameSize + 3) & ~3));
-    size = initSize = (unsigned)(((unsigned char*)addressPos) - data + (importCount + dllCount) * sizeof(Entry));
-    memset(data, 0, size);  // note this does clean out some areas we deliberately are not initializing
+    size = initSize = (unsigned)(((unsigned char*)addressPos) - pdata + (importCount + dllCount) * sizeof(Entry));
+    memset(pdata, 0, size);  // note this does clean out some areas we deliberately are not initializing
 
     for (auto module : modules)
     {
         dirPos->time = 0;
         dirPos->version = 0;
-        dirPos->dllName = (unsigned char*)namePos - data + virtual_addr;
-        dirPos->thunkPos = ((unsigned char*)lookupPos) - data + virtual_addr;
-        dirPos->thunkPos2 = ((unsigned char*)addressPos) - data + virtual_addr;
+        dirPos->dllName = (unsigned char*)namePos - pdata + virtual_addr;
+        dirPos->thunkPos = ((unsigned char*)lookupPos) - pdata + virtual_addr;
+        dirPos->thunkPos2 = ((unsigned char*)addressPos) - pdata + virtual_addr;
         dirPos++;
         strcpy(namePos, module.first.c_str());
         int n = module.first.size() + 1;
@@ -124,8 +125,8 @@ void PEImportObject::Setup(ObjInt& endVa, ObjInt& endPhys)
             const std::string& str = module.second->externalNames[i];
             if (!str.empty())
             {
-                lookupPos->ord_or_rva = (unsigned char*)hintPos - data + virtual_addr;
-                addressPos->ord_or_rva = (unsigned char*)hintPos - data + virtual_addr;
+                lookupPos->ord_or_rva = (unsigned char*)hintPos - pdata + virtual_addr;
+                addressPos->ord_or_rva = (unsigned char*)hintPos - pdata + virtual_addr;
                 *(short*)hintPos = 0;
                 hintPos += 2;
                 strcpy(hintPos, str.c_str());
@@ -139,7 +140,7 @@ void PEImportObject::Setup(ObjInt& endVa, ObjInt& endPhys)
                 lookupPos->ord_or_rva = addressPos->ord_or_rva = module.second->ordinals[i] | IMPORT_BY_ORDINAL;
             }
             ObjSymbol* sym = externs[module.second->publicNames[i]];
-            sym->SetOffset(new ObjExpression(((unsigned char*)lookupPos) - data + virtual_addr + imageBase));
+            sym->SetOffset(new ObjExpression(((unsigned char*)lookupPos) - pdata + virtual_addr + imageBase));
 
             lookupPos++;
             addressPos++;

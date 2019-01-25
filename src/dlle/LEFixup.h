@@ -29,6 +29,7 @@
 #include <fstream>
 #include <deque>
 #include <map>
+#include <memory>
 
 class ObjFile;
 class ObjSection;
@@ -47,13 +48,6 @@ class LEFixup
         lx(Lx)
     {
         LoadFixups(file);
-    }
-    virtual ~LEFixup()
-    {
-        if (fixupTable)
-            delete[] fixupTable;
-        if (indexTable)
-            delete[] indexTable;
     }
 
     void Setup();
@@ -77,8 +71,8 @@ class LEFixup
     std::map<ObjInt, Target> fixups;
     std::deque<LEObject*>& objects;
     unsigned pages;
-    unsigned char* fixupTable;
-    unsigned char* indexTable;
+    std::unique_ptr<unsigned char[]> fixupTable;
+    std::unique_ptr<unsigned char[]> indexTable;
     unsigned fixupSize;
     unsigned indexTableSize;
     bool lx;

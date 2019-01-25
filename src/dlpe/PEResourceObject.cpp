@@ -51,66 +51,67 @@ void PEResourceObject::Setup(ObjInt& endVa, ObjInt& endPhys)
     int dataCount = 0;
     unsigned dataSize = 0;
     unsigned nameSize = 0;  // size is in characters not bytes
-    for (auto type : resources.numberedTypes)
+    for (auto& type : resources.numberedTypes)
     {
         dirCount++;
         entryCount++;
-        for (auto number : type.second.numberedIds)
+        for (auto& number : *type.second->numberedIds)
         {
             dirCount++;
             entryCount += 2;
-            if (number.second.data)
+            if (number.second->data.get())
             {
                 dataCount++;
-                dataSize += (number.second.length + 3) & ~3;
+                dataSize += (number.second->length + 3) & ~3;
             }
         }
-        for (auto name : type.second.namedIds)
+        for (auto& name : *type.second->namedIds)
         {
             dirCount++;
             entryCount += 2;
             nameSize += name.first.size() + 2;
-            if (name.second.data)
+            if (name.second->data.get())
             {
                 dataCount++;
-                dataSize += (name.second.length + 3) & ~3;
+                dataSize += (name.second->length + 3) & ~3;
             }
         }
     }
-    for (auto type : resources.namedTypes)
+    for (auto& type : resources.namedTypes)
     {
         dirCount++;
         entryCount++;
         nameSize += type.first.size() + 2;
-        for (auto number : type.second.numberedIds)
+        for (auto& number : *type.second->numberedIds)
         {
             dirCount++;
             entryCount += 2;
-            if (number.second.data)
+            if (number.second->data.get())
             {
                 dataCount++;
-                dataSize += (number.second.length + 3) & ~3;
+                dataSize += (number.second->length + 3) & ~3;
             }
         }
-        for (auto name : type.second.namedIds)
+        for (auto& name : *type.second->namedIds)
         {
             dirCount++;
             entryCount += 2;
             nameSize += name.first.size() + 2;
-            if (name.second.data)
+            if (name.second->data.get())
             {
                 dataCount++;
-                dataSize += (name.second.length + 3) & ~3;
+                dataSize += (name.second->length + 3) & ~3;
             }
         }
     }
 
     nameSize = (nameSize + 1) & -2;
     initSize = size = dirCount * sizeof(Dir) + entryCount * sizeof(Entry) + dataCount * sizeof(DataEntry) + nameSize * 2 + dataSize;
-    data = new unsigned char[initSize];
-    memset(data, 0, initSize);
-    Dir* dir = (Dir*)data;
-    unsigned short* name = (unsigned short*)(((char*)data) + dirCount * sizeof(Dir) + entryCount * sizeof(Entry));
+    data = std::make_unique<unsigned char[]>(initSize);
+    unsigned char* pdata = data.get();
+    memset(pdata, 0, initSize);
+    Dir* dir = (Dir*)pdata;
+    unsigned short* name = (unsigned short*)(((char*)pdata) + dirCount * sizeof(Dir) + entryCount * sizeof(Entry));
     DataEntry* dataEntries = (DataEntry*)(((char*)name) + nameSize * 2);
     unsigned char* dataPos = (unsigned char*)(dataEntries + dataCount);
     dir->time = time(0);
@@ -119,10 +120,10 @@ void PEResourceObject::Setup(ObjInt& endVa, ObjInt& endPhys)
     Entry* types = (Entry*)(dir + 1);
     dir = (Dir*)(types + dir->name_entry + dir->ident_entry);
     int i = 0;
-    for (auto type : resources.namedTypes)
+    for (auto& type : resources.namedTypes)
     {
-        types[i].subdir_or_data = SUBDIR | (((unsigned char*)dir) - data);
-        types[i++].rva_or_id = RVA | ((unsigned char*)name - data);
+        types[i].subdir_or_data = SUBDIR | (((unsigned char*)dir) - pdata);
+        types[i++].rva_or_id = RVA | ((unsigned char*)name - pdata);
         const wchar_t* p = type.first.c_str();
         *name++ = type.first.size();
         while (*p)
@@ -131,15 +132,15 @@ void PEResourceObject::Setup(ObjInt& endVa, ObjInt& endPhys)
         }
         *name++ = *p++;
         dir->time = time(0);
-        dir->name_entry = type.second.namedIds.size();
-        dir->ident_entry = type.second.numberedIds.size();
+        dir->name_entry = type.second->namedIds->size();
+        dir->ident_entry = type.second->numberedIds->size();
         Entry* ids = (Entry*)(dir + 1);
         dir = (Dir*)(ids + dir->name_entry + dir->ident_entry);
         int j = 0;
-        for (auto nameId : type.second.namedIds)
+        for (auto& nameId : *type.second->namedIds)
         {
-            ids[j].subdir_or_data = SUBDIR | ((unsigned char*)dir - data);
-            ids[j++].rva_or_id = RVA | ((unsigned char*)name - data);
+            ids[j].subdir_or_data = SUBDIR | ((unsigned char*)dir - pdata);
+            ids[j++].rva_or_id = RVA | ((unsigned char*)name - pdata);
             const wchar_t* p = nameId.first.c_str();
             *name++ = nameId.first.size();
             while (*p)
@@ -152,48 +153,48 @@ void PEResourceObject::Setup(ObjInt& endVa, ObjInt& endPhys)
             dir->ident_entry = 1;
             Entry* subtypes = (Entry*)(dir + 1);
             dir = (Dir*)(subtypes + 1);
-            subtypes->subdir_or_data = (unsigned char*)dataEntries - data;
+            subtypes->subdir_or_data = (unsigned char*)dataEntries - pdata;
             subtypes->rva_or_id = 0;
-            dataEntries->rva = (unsigned)(dataPos - data) + virtual_addr;
-            dataEntries->size = nameId.second.length;
-            dataEntries->codepage = nameId.second.language;
+            dataEntries->rva = (unsigned)(dataPos - pdata) + virtual_addr;
+            dataEntries->size = nameId.second->length;
+            dataEntries->codepage = nameId.second->language;
             dataEntries++;
-            memcpy(dataPos, nameId.second.data, nameId.second.length);
-            dataPos += (nameId.second.length + 3) & ~3;
+            memcpy(dataPos, nameId.second->data.get(), nameId.second->length);
+            dataPos += (nameId.second->length + 3) & ~3;
         }
-        for (auto number : type.second.numberedIds)
+        for (auto& number : *type.second->numberedIds)
         {
-            ids[j].subdir_or_data = SUBDIR | ((unsigned char*)dir - data);
+            ids[j].subdir_or_data = SUBDIR | ((unsigned char*)dir - pdata);
             ids[j++].rva_or_id = number.first;
             dir->time = time(0);
             dir->name_entry = 0;
             dir->ident_entry = 1;
             Entry* subtypes = (Entry*)(dir + 1);
             dir = (Dir*)(subtypes + 1);
-            subtypes->subdir_or_data = (unsigned char*)dataEntries - data;
+            subtypes->subdir_or_data = (unsigned char*)dataEntries - pdata;
             subtypes->rva_or_id = 0;
-            dataEntries->rva = (unsigned)(dataPos - data) + virtual_addr;
-            dataEntries->size = number.second.length;
-            dataEntries->codepage = number.second.language;
+            dataEntries->rva = (unsigned)(dataPos - pdata) + virtual_addr;
+            dataEntries->size = number.second->length;
+            dataEntries->codepage = number.second->language;
             dataEntries++;
-            memcpy(dataPos, number.second.data, number.second.length);
-            dataPos += (number.second.length + 3) & ~3;
+            memcpy(dataPos, number.second->data.get(), number.second->length);
+            dataPos += (number.second->length + 3) & ~3;
         }
     }
-    for (auto type : resources.numberedTypes)
+    for (auto& type : resources.numberedTypes)
     {
-        types[i].subdir_or_data = SUBDIR | (((unsigned char*)dir) - data);
+        types[i].subdir_or_data = SUBDIR | (((unsigned char*)dir) - pdata);
         types[i++].rva_or_id = type.first;
         dir->time = time(0);
-        dir->name_entry = type.second.namedIds.size();
-        dir->ident_entry = type.second.numberedIds.size();
+        dir->name_entry = type.second->namedIds->size();
+        dir->ident_entry = type.second->numberedIds->size();
         Entry* ids = (Entry*)(dir + 1);
         dir = (Dir*)(ids + dir->name_entry + dir->ident_entry);
         int j = 0;
-        for (auto namedId : type.second.namedIds)
+        for (auto& namedId : *type.second->namedIds)
         {
-            ids[j].subdir_or_data = SUBDIR | ((unsigned char*)dir - data);
-            ids[j++].rva_or_id = RVA | ((unsigned char*)name - data);
+            ids[j].subdir_or_data = SUBDIR | ((unsigned char*)dir - pdata);
+            ids[j++].rva_or_id = RVA | ((unsigned char*)name - pdata);
             const wchar_t* p = namedId.first.c_str();
             *name++ = namedId.first.size();
             while (*p)
@@ -206,32 +207,32 @@ void PEResourceObject::Setup(ObjInt& endVa, ObjInt& endPhys)
             dir->ident_entry = 1;
             Entry* subtypes = (Entry*)(dir + 1);
             dir = (Dir*)(subtypes + 1);
-            subtypes->subdir_or_data = (unsigned char*)dataEntries - data;
+            subtypes->subdir_or_data = (unsigned char*)dataEntries - pdata;
             subtypes->rva_or_id = 0;
-            dataEntries->rva = (unsigned)(dataPos - data) + virtual_addr;
-            dataEntries->size = namedId.second.length;
-            dataEntries->codepage = namedId.second.language;
+            dataEntries->rva = (unsigned)(dataPos - pdata) + virtual_addr;
+            dataEntries->size = namedId.second->length;
+            dataEntries->codepage = namedId.second->language;
             dataEntries++;
-            memcpy(dataPos, namedId.second.data, namedId.second.length);
-            dataPos += (namedId.second.length + 3) & ~3;
+            memcpy(dataPos, namedId.second->data.get(), namedId.second->length);
+            dataPos += (namedId.second->length + 3) & ~3;
         }
-        for (auto number : type.second.numberedIds)
+        for (auto& number : *type.second->numberedIds)
         {
-            ids[j].subdir_or_data = SUBDIR | ((unsigned char*)dir - data);
+            ids[j].subdir_or_data = SUBDIR | ((unsigned char*)dir - pdata);
             ids[j++].rva_or_id = number.first;
             dir->time = time(0);
             dir->name_entry = 0;
             dir->ident_entry = 1;
             Entry* subtypes = (Entry*)(dir + 1);
             dir = (Dir*)(subtypes + 1);
-            subtypes->subdir_or_data = (unsigned char*)dataEntries - data;
+            subtypes->subdir_or_data = (unsigned char*)dataEntries - pdata;
             subtypes->rva_or_id = 0;
-            dataEntries->rva = (unsigned)(dataPos - data) + virtual_addr;
-            dataEntries->size = number.second.length;
-            dataEntries->codepage = number.second.language;
+            dataEntries->rva = (unsigned)(dataPos - pdata) + virtual_addr;
+            dataEntries->size = number.second->length;
+            dataEntries->codepage = number.second->language;
             dataEntries++;
-            memcpy(dataPos, number.second.data, number.second.length);
-            dataPos += (number.second.length + 3) & ~3;
+            memcpy(dataPos, number.second->data.get(), number.second->length);
+            dataPos += (number.second->length + 3) & ~3;
         }
     }
 

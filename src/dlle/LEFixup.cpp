@@ -108,7 +108,7 @@ void LEFixup::Setup()
     auto it = fixups.begin();
     for (page = 0; page < pages; page++)
     {
-        ((unsigned*)indexTable)[page] = foffs;
+        ((unsigned*)indexTable.get())[page] = foffs;
         if (it != fixups.end())
         {
             if (sect != it->second.origSection)
@@ -141,7 +141,7 @@ void LEFixup::Setup()
                     *(unsigned*)(bf + bfs) = n;
                     bfs += sizeof(unsigned);
                 }
-                memcpy(fixupTable + foffs, bf, bfs);
+                memcpy(fixupTable.get() + foffs, bf, bfs);
                 foffs += bfs;
                 // if the address straddles a page boundary, it has to show up in both pages
                 if (addr + 3 >= size + 4096)
@@ -160,7 +160,7 @@ void LEFixup::Setup()
                     int s = ObjectAlign(4096, objects[sect]->GetSize()) / 4096;
                     while (s != is)
                     {
-                        ((unsigned*)indexTable)[++page] = foffs;
+                        ((unsigned*)indexTable.get())[++page] = foffs;
                         is++;
                     }
                 }
@@ -168,13 +168,13 @@ void LEFixup::Setup()
             size += 4096;
         }
     }
-    ((unsigned*)indexTable)[page] = foffs;
+    ((unsigned*)indexTable.get())[page] = foffs;
 }
 unsigned LEFixup::CreateSections()
 {
     fixupSize = 0;
     indexTableSize = (pages + 1) * sizeof(unsigned);
-    indexTable = new unsigned char[indexTableSize];
+    indexTable = std::make_unique<unsigned char[]>(indexTableSize);
     for (auto fixup : fixups)
     {
         int size;
@@ -187,11 +187,11 @@ unsigned LEFixup::CreateSections()
         if ((fixup.first & ~4095) != ((fixup.first + 3) & ~4095))
             fixupSize += size;
     }
-    fixupTable = new unsigned char[fixupSize];
+    fixupTable = std::make_unique<unsigned char[]>(fixupSize);
     return 0;
 }
 void LEFixup::Write(std::fstream& stream)
 {
-    stream.write((char*)indexTable, indexTableSize);
-    stream.write((char*)fixupTable, fixupSize);
+    stream.write((char*)indexTable.get(), indexTableSize);
+    stream.write((char*)fixupTable.get(), fixupSize);
 }

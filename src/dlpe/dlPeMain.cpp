@@ -100,13 +100,6 @@ int main(int argc, char** argv)
     dlPeMain downloader;
     return downloader.Run(argc, argv);
 }
-dlPeMain::~dlPeMain()
-{
-    for (auto obj : objects)
-        delete obj;
-    delete stubData;
-    delete factory;
-}
 void dlPeMain::ParseOutResourceFiles(int* argc, char** argv)
 {
     for (int i = 0; i < *argc; i++)
@@ -244,12 +237,12 @@ bool dlPeMain::LoadImports(ObjFile* file)
 bool dlPeMain::ReadSections(const std::string& path)
 {
     ObjIeeeIndexManager iml;
-    factory = new ObjFactory(&iml);
+    factory = std::make_unique<ObjFactory>(&iml);
     ObjIeee ieee("");
     FILE* in = fopen(path.c_str(), "rb");
     if (!in)
         Utils::fatal("Cannot open input file");
-    file = ieee.Read(in, ObjIeee::eAll, factory);
+    file = ieee.Read(in, ObjIeee::eAll, factory.get());
     fclose(in);
     if (!ieee.GetAbsolute())
     {
@@ -270,19 +263,21 @@ bool dlPeMain::ReadSections(const std::string& path)
             PEObject::SetFile(file);
             for (auto it = file->SectionBegin(); it != file->SectionEnd(); ++it)
             {
-                PEDataObject* p = new PEDataObject(file, *it);
-                objects.push_back(p);
-                (*it)->ResolveSymbols(factory);
+                objects.push_back(std::make_unique<PEDataObject>(file, *it));
+                (*it)->ResolveSymbols(factory.get());
             }
             if (file->ImportBegin() != file->ImportEnd())
-                objects.push_back(new PEImportObject(objects));
+                objects.push_back(std::make_unique<PEImportObject>(objects));
             if (file->ExportBegin() != file->ExportEnd())
-                objects.push_back(exportObject = new PEExportObject(outputName, FlatExports.GetValue()));
-            objects.push_back(new PEFixupObject());
+            {
+                objects.push_back(std::make_unique<PEExportObject>(outputName, FlatExports.GetValue()));
+                exportObject = static_cast<PEExportObject*>(objects.back().get());
+            }
+            objects.push_back(std::make_unique<PEFixupObject>());
             if (!resources.empty())
-                objects.push_back(new PEResourceObject(resources));
+                objects.push_back(std::make_unique<PEResourceObject>(resources));
             if (!DebugFile.GetValue().empty())
-                objects.push_back(new PEDebugObject(DebugFile.GetValue(), imageBase));
+                objects.push_back(std::make_unique<PEDebugObject>(DebugFile.GetValue(), imageBase));
             return true;
         }
         else
@@ -366,7 +361,7 @@ void dlPeMain::InitHeader(unsigned headerSize, ObjInt endVa)
     header.entry_point = startAddress - imageBase;
 
     header.image_size = endVa;
-    for (auto obj : objects)
+    for (auto& obj : objects)
     {
         if (obj->GetName() == ".text")
         {
@@ -453,8 +448,8 @@ bool dlPeMain::LoadStub(const std::string& exeName)
         }
         if (stubSwitch.GetValue().empty())
         {
-            stubData = new char[defaultStubSize];
-            memcpy(stubData, defaultStubData, defaultStubSize);
+            stubData = std::make_unique<char[]>(defaultStubSize);
+            memcpy(stubData.get(), defaultStubData, defaultStubSize);
             stubSize = defaultStubSize;
         }
         else
@@ -476,8 +471,8 @@ bool dlPeMain::LoadStub(const std::string& exeName)
         int preHeader = 0x40;
         int totalHeader = (preHeader + relocSize + 15) & ~15;
         stubSize = (totalHeader + bodySize + 15) & ~15;
-        stubData = new char[stubSize];
-        memset(stubData, 0, stubSize);
+        stubData = std::make_unique<char[]>(stubSize);
+        memset(stubData.get(), 0, stubSize);
         int newSize = bodySize + totalHeader;
         if (newSize & 511)
             newSize += 512;
@@ -485,15 +480,15 @@ bool dlPeMain::LoadStub(const std::string& exeName)
         mzHead.image_length_DIV_512 = newSize / 512;
         mzHead.offset_to_relocation_table = 0x40;
         mzHead.n_header_paragraphs = totalHeader / 16;
-        memcpy(stubData, &mzHead, sizeof(mzHead));
-        *(unsigned*)(stubData + 0x3c) = stubSize;
+        memcpy(stubData.get(), &mzHead, sizeof(mzHead));
+        *(unsigned*)(stubData.get() + 0x3c) = stubSize;
         if (relocSize)
         {
             file->seekg(oldReloc, std::ios::beg);
-            file->read(stubData + 0x40, relocSize);
+            file->read(stubData.get() + 0x40, relocSize);
         }
         file->seekg(oldHeader, std::ios::beg);
-        file->read(stubData + totalHeader, bodySize);
+        file->read(stubData.get() + totalHeader, bodySize);
         if (!file->eof() && file->fail())
         {
             delete file;
@@ -505,7 +500,7 @@ bool dlPeMain::LoadStub(const std::string& exeName)
 }
 void dlPeMain::WriteStub(std::fstream& out)
 {
-    out.write((char*)stubData, stubSize);
+    out.write((char*)stubData.get(), stubSize);
     out.flush();
 }
 void dlPeMain::PadHeader(std::fstream& out)
@@ -568,11 +563,11 @@ int dlPeMain::Run(int argc, char** argv)
     ObjInt endVa = objects[0]->GetAddr();
     if (endVa < endPhys)
         Utils::fatal("ObjectAlign too small");
-    for (auto obj : objects)
+    for (auto& obj : objects)
     {
         obj->Setup(endVa, endPhys);
     }
-    for (auto obj : objects)
+    for (auto& obj : objects)
     {
         obj->Fill();
     }
@@ -582,13 +577,13 @@ int dlPeMain::Run(int argc, char** argv)
     {
         WriteStub(out);
         out.write((char*)&header, sizeof(header));
-        for (auto obj : objects)
+        for (auto& obj : objects)
         {
             obj->WriteHeader(out);
         }
         PadHeader(out);
         out.flush();
-        for (auto obj : objects)
+        for (auto& obj : objects)
         {
             obj->Write(out);
             out.flush();

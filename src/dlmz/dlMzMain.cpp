@@ -57,7 +57,7 @@ int main(int argc, char** argv)
     dlMzMain downloader;
     return downloader.Run(argc, argv);
 }
-dlMzMain::~dlMzMain() { delete data; }
+
 bool dlMzMain::GetMode()
 {
     mode = UNKNOWN;
@@ -98,9 +98,9 @@ bool dlMzMain::ReadSections(const std::string& path)
     if (file != nullptr)
     {
         if (mode == TINY)
-            data = new Tiny();
+            data = std::make_unique<Tiny>();
         else
-            data = new Real();
+            data = std::make_unique<Real>();
         return data->ReadSections(file, ieee.GetStartAddress());
     }
     return false;

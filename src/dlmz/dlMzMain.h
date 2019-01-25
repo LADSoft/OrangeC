@@ -28,6 +28,7 @@
 #include <string>
 #include <vector>
 #include "CmdSwitch.h"
+#include <memory>
 
 class ObjFile;
 class OutFile;
@@ -36,7 +37,7 @@ class dlMzMain
 {
   public:
     dlMzMain() {}
-    ~dlMzMain();
+    ~dlMzMain() {}
 
     int Run(int argc, char** argv);
 
@@ -56,6 +57,6 @@ class dlMzMain
     static CmdSwitchString DebugFile;
     static const char* usageText;
     ObjFile* file;
-    OutFile* data;
+    std::unique_ptr<OutFile> data;
 };
 #endif

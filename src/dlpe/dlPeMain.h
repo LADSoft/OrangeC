@@ -32,6 +32,7 @@
 #include "PEHeader.h"
 #include <string>
 #include <vector>
+#include <memory>
 
 class ObjFile;
 class ObjFactory;
@@ -42,7 +43,7 @@ class dlPeMain
 {
   public:
     dlPeMain() : mode(CONSOLE), exportObject(nullptr) {}
-    ~dlPeMain();
+    ~dlPeMain() { }
 
     int Run(int argc, char** argv);
     enum Mode
@@ -87,15 +88,15 @@ class dlPeMain
     ObjInt stackSize;
     ObjFile* file;
     std::string outputName;
-    std::deque<PEObject*> objects;
+    std::deque<std::unique_ptr<PEObject>> objects;
     ResourceContainer resources;
     std::string defFile;
     enum Mode mode;
     int stubSize;
-    char* stubData;
+    std::unique_ptr<char[]> stubData;
     PEHeader header;
     ObjInt startAddress;
-    ObjFactory* factory;
+    std::unique_ptr<ObjFactory> factory;
     PEExportObject* exportObject;
     static unsigned char defaultStubData[];
     static int defaultStubSize;

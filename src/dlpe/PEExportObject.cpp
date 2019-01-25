@@ -101,22 +101,23 @@ void PEExportObject::Setup(ObjInt& endVa, ObjInt& endPhys)
         maxOrd = count + minOrd - 1;
     }
     initSize = (size += 4 * count);
-    data = new unsigned char[initSize];
-    memset(data, 0, initSize);
-    Header* header = (Header*)data;
+    data = std::make_unique<unsigned char[]>(initSize);
+    unsigned char* pdata = data.get();
+    memset(pdata, 0, initSize);
+    Header* header = (Header*)pdata;
 
     header->time = time(0);
     header->ord_base = minOrd;
     header->n_eat_entries = count;
     header->n_name_ptrs = names.size();
-    unsigned* rvaTable = (unsigned*)(data + sizeof(Header));
+    unsigned* rvaTable = (unsigned*)(pdata + sizeof(Header));
     unsigned* nameTable = (unsigned*)(((unsigned char*)rvaTable) + 4 * count);
     unsigned short* ordinalTable = (unsigned short*)(((unsigned char*)nameTable) + 4 * names.size());
     unsigned char* stringTable = (unsigned char*)(((unsigned char*)ordinalTable) + 2 * names.size());
 
-    header->address_rva = virtual_addr + ((unsigned char*)rvaTable) - data;
-    header->name_rva = virtual_addr + ((unsigned char*)nameTable) - data;
-    header->ordinal_rva = virtual_addr + ((unsigned char*)ordinalTable) - data;
+    header->address_rva = virtual_addr + ((unsigned char*)rvaTable) - pdata;
+    header->name_rva = virtual_addr + ((unsigned char*)nameTable) - pdata;
+    header->ordinal_rva = virtual_addr + ((unsigned char*)ordinalTable) - pdata;
 
     /* process numbered exports */
     for (auto it = file->ExportBegin(); it != file->ExportEnd(); ++it)
@@ -154,7 +155,7 @@ void PEExportObject::Setup(ObjInt& endVa, ObjInt& endPhys)
     // process named exports
     for (auto name : names)
     {
-        *nameTable++ = (unsigned)((unsigned char*)stringTable - data + virtual_addr);
+        *nameTable++ = (unsigned)((unsigned char*)stringTable - pdata + virtual_addr);
         *ordinalTable++ = name->GetOrdinal() - minOrd;
         if (flat && name->GetName()[0] == '_')
         {
@@ -172,7 +173,7 @@ void PEExportObject::Setup(ObjInt& endVa, ObjInt& endPhys)
     // throw in the DLL name
     if (!name.empty())
     {
-        header->exe_name_rva = (unsigned)((unsigned char*)stringTable - data + virtual_addr);
+        header->exe_name_rva = (unsigned)((unsigned char*)stringTable - pdata + virtual_addr);
         for (int i = 0; i < name.size(); i++)
             *stringTable++ = toupper(name[i]);
         *stringTable++ = 0;

@@ -28,12 +28,12 @@
 #include <string>
 #include <map>
 #include <deque>
-
+#include <memory>
 class ResourceContainer
 {
   public:
     ResourceContainer() {}
-    ~ResourceContainer();
+    ~ResourceContainer() {}
     void AddFile(std::string name) { names.push_back(name); }
     bool LoadFiles();
 
@@ -42,20 +42,33 @@ class ResourceContainer
 #define SIGNAT 0x494e4753  //'SG' + ('NI' << 16)
     struct ResourceData
     {
+        ResourceData(unsigned Sig, unsigned char *pdata, int Length, int Language) :
+            sig(Sig),
+            length(Length),
+            language(Language),
+            data(std::make_unique<unsigned char[]>(Length))
+        {
+            memcpy(data.get(), pdata, Length);
+        }
         unsigned sig;
-        unsigned char* data;
+        std::unique_ptr<unsigned char[]> data;
         int length;
         int language;
     };
-    typedef std::map<std::wstring, ResourceData> NamedIds;
-    typedef std::map<int, ResourceData> NumberedIds;
+    typedef std::map<std::wstring, std::unique_ptr<ResourceData>> NamedIds;
+    typedef std::map<int, std::unique_ptr<ResourceData>> NumberedIds;
     struct Ids
     {
-        NamedIds namedIds;
-        NumberedIds numberedIds;
+        Ids() :
+            namedIds(std::make_unique<NamedIds>()),
+            numberedIds(std::make_unique<NumberedIds>())
+        {
+        }
+        std::unique_ptr<NamedIds> namedIds;
+        std::unique_ptr<NumberedIds> numberedIds;
     };
-    typedef std::map<std::wstring, Ids> NamedTypes;
-    typedef std::map<int, Ids> NumberedTypes;
+    typedef std::map<std::wstring, std::unique_ptr<Ids>> NamedTypes;
+    typedef std::map<int, std::unique_ptr<Ids>> NumberedTypes;
     NamedTypes namedTypes;
     NumberedTypes numberedTypes;
 

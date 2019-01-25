@@ -27,17 +27,14 @@
 
 #include <deque>
 #include <fstream>
+#include <memory>
 
 class LEObject;
 class ObjectPage
 {
   public:
     ObjectPage(std::deque<LEObject*> Objects) : objects(Objects), data(nullptr) {}
-    virtual ~ObjectPage()
-    {
-        if (data)
-            delete[] data;
-    }
+    virtual ~ObjectPage() { }
     virtual void Setup() = 0;
     void Write(std::fstream& stream);
     unsigned GetSize() { return size; }
@@ -46,7 +43,7 @@ class ObjectPage
     virtual unsigned CountPages() = 0;
 
     unsigned pages;
-    unsigned char* data;
+    std::unique_ptr<unsigned char[]> data;
     unsigned size;
     std::deque<LEObject*> objects;
 };

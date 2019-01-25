@@ -66,7 +66,6 @@ int main(int argc, char** argv)
     dlLeMain downloader;
     return downloader.Run(argc, argv);
 }
-dlLeMain::~dlLeMain() {}
 bool dlLeMain::GetMode()
 {
     mode = UNKNOWN;
@@ -269,8 +268,8 @@ bool dlLeMain::LoadStub(const std::string& exeName)
         int preHeader = 0x40;
         int totalHeader = (preHeader + relocSize + 15) & ~15;
         stubSize = (totalHeader + bodySize + 15) & ~15;
-        stubData = new char[stubSize];
-        memset(stubData, 0, stubSize);
+        stubData = std::make_unique<char[]>(stubSize);
+        memset(stubData.get(), 0, stubSize);
         int newSize = bodySize + totalHeader;
         if (newSize & 511)
             newSize += 512;
@@ -278,15 +277,15 @@ bool dlLeMain::LoadStub(const std::string& exeName)
         mzHead.image_length_DIV_512 = newSize / 512;
         mzHead.offset_to_relocation_table = 0x40;
         mzHead.n_header_paragraphs = totalHeader / 16;
-        memcpy(stubData, &mzHead, sizeof(mzHead));
-        *(unsigned*)(stubData + 0x3c) = stubSize;
+        memcpy(stubData.get(), &mzHead, sizeof(mzHead));
+        *(unsigned*)(stubData.get() + 0x3c) = stubSize;
         if (relocSize)
         {
             file->seekg(oldReloc, std::ios::beg);
-            file->read(stubData + 0x40, relocSize);
+            file->read(stubData.get() + 0x40, relocSize);
         }
         file->seekg(oldHeader, std::ios::beg);
-        file->read(stubData + totalHeader, bodySize);
+        file->read(stubData.get() + totalHeader, bodySize);
         if (!file->eof() && file->fail())
         {
             delete file;
@@ -296,7 +295,7 @@ bool dlLeMain::LoadStub(const std::string& exeName)
     }
     return true;
 }
-void dlLeMain::WriteStub(std::fstream& out) { out.write((char*)stubData, stubSize); }
+void dlLeMain::WriteStub(std::fstream& out) { out.write((char*)stubData.get(), stubSize); }
 int dlLeMain::Run(int argc, char** argv)
 {
     Utils::banner(argv[0]);

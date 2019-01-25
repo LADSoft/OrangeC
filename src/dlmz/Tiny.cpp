@@ -27,6 +27,7 @@
 #include "ObjExpression.h"
 #include "OutputFormats.h"
 #include "Utils.h"
+
 bool Tiny::ReadSections(ObjFile* file, ObjExpression* start)
 {
     startOffs = start->Eval(0);
@@ -42,7 +43,8 @@ bool Tiny::ReadSections(ObjFile* file, ObjExpression* start)
     }
     if (count != 1 || size < 0x100)
         return false;
-    data = new unsigned char[size];
+    data = std::make_unique<unsigned char[]>(size);
+    unsigned char* pdata = data.get();
     ObjMemoryManager& m = sect->GetMemoryManager();
     int ofs = 0;
     for (auto it = m.MemoryBegin(); it != m.MemoryEnd(); ++it)
@@ -61,45 +63,45 @@ bool Tiny::ReadSections(ObjFile* file, ObjExpression* start)
                 int bigEndian = file->GetBigEndian();
                 if (msize == 1)
                 {
-                    data[ofs] = n & 0xff;
+                    pdata[ofs] = n & 0xff;
                 }
                 else if (msize == 2)
                 {
                     if (bigEndian)
                     {
-                        data[ofs] = n >> 8;
-                        data[ofs + 1] = n & 0xff;
+                        pdata[ofs] = n >> 8;
+                        pdata[ofs + 1] = n & 0xff;
                     }
                     else
                     {
-                        data[ofs] = n & 0xff;
-                        data[ofs + 1] = n >> 8;
+                        pdata[ofs] = n & 0xff;
+                        pdata[ofs + 1] = n >> 8;
                     }
                 }
                 else  // msize == 4
                 {
                     if (bigEndian)
                     {
-                        data[ofs + 0] = n >> 24;
-                        data[ofs + 1] = n >> 16;
-                        data[ofs + 2] = n >> 8;
-                        data[ofs + 3] = n & 0xff;
+                        pdata[ofs + 0] = n >> 24;
+                        pdata[ofs + 1] = n >> 16;
+                        pdata[ofs + 2] = n >> 8;
+                        pdata[ofs + 3] = n & 0xff;
                     }
                     else
                     {
-                        data[ofs] = n & 0xff;
-                        data[ofs + 1] = n >> 8;
-                        data[ofs + 2] = n >> 16;
-                        data[ofs + 3] = n >> 24;
+                        pdata[ofs] = n & 0xff;
+                        pdata[ofs + 1] = n >> 8;
+                        pdata[ofs + 2] = n >> 16;
+                        pdata[ofs + 3] = n >> 24;
                     }
                 }
             }
             else
             {
                 if ((*it)->IsEnumerated())
-                    memset(data + ofs, (*it)->GetFill(), msize);
+                    memset(pdata + ofs, (*it)->GetFill(), msize);
                 else
-                    memcpy(data + ofs, mdata, msize);
+                    memcpy(pdata + ofs, mdata, msize);
             }
             ofs += msize;
         }
@@ -108,6 +110,6 @@ bool Tiny::ReadSections(ObjFile* file, ObjExpression* start)
 }
 bool Tiny::Write(std::fstream& stream)
 {
-    stream.write((char*)data + 0x100, size - 0x100);
+    stream.write((char*)data.get() + 0x100, size - 0x100);
     return true;
 }

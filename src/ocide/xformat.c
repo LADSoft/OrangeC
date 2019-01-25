@@ -240,7 +240,7 @@ void InsertEndTabs(HWND hwnd, EDITDATA* p, int newend)
         }
         while (n--)
             insertchar(hwnd, p, ' ');
-        p->selstartcharpos = ++p->selendcharpos;  // skip past '}'
+        p->selstartcharpos = p->selendcharpos; // position to '}'
         insertautoundo(hwnd, p, UNDO_AUTOCHAINBEGIN);
     }
     p->cd->inserting = oldinsert;

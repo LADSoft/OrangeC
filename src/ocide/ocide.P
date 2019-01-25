@@ -1414,7 +1414,7 @@ void backtab(HWND hwnd, EDITDATA *p);
 void removechar(HWND hwnd, EDITDATA *p, int utype);
 void upline(HWND hwnd, EDITDATA *p, int lines);
 int lineParsed(EDITDATA *p, int line);
-int getfragment(EDITDATA *p, int pos, int autoDecoration, int colorizing, char *buf, COLORREF *fcolor, COLORREF *bcolor,
+int getfragment(EDITDATA *p, int pos, int autoDecoration, int colorizing, char *buf, int bufsz, COLORREF *fcolor, COLORREF *bcolor,
     HFONT *font, int *col, int line);
 void EditPaint(HWND hwnd, EDITDATA *p);
 void endofline(HWND hwnd, EDITDATA *p);

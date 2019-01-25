@@ -94,9 +94,10 @@ int lineParsed(EDITDATA* p, int line)
     }
     return TRUE;
 }
-int getfragment(EDITDATA* p, int pos, int autoDecoration, int colorizing, char* buf, COLORREF* fcolor, COLORREF* bcolor,
+int getfragment(EDITDATA* p, int pos, int autoDecoration, int colorizing, char* buf, int bufsz, COLORREF* fcolor, COLORREF* bcolor,
                 HFONT* font, int* col, int line)
 {
+    int initial = pos;
     int count = 0;
     int found = FALSE;
     int attribs = 0;
@@ -121,7 +122,7 @@ int getfragment(EDITDATA* p, int pos, int autoDecoration, int colorizing, char* 
     selecting = pos >= start && pos < end;
     while (TRUE)
     {
-        if (pos >= p->cd->textlen || p->cd->text[pos].ch == '\n')
+        if (pos - initial >= bufsz - 10 || pos >= p->cd->textlen || p->cd->text[pos].ch == '\n')
             break;
         if (p->cd->text[pos].ch == '\f')
         {
@@ -366,9 +367,9 @@ void EditPaint(HWND hwnd, EDITDATA* p)
                 COLORREF fcolor, bcolor;
                 HFONT font;
                 int n, j, z = 0;
-                int dx[500];
+                int dx[sizeof(buf)];
                 int ofs = 0;
-                pos = getfragment(p, pos, autoDecoration, colorizing, buf, &fcolor, &bcolor, &font, &leftcol, baseline + i);
+                pos = getfragment(p, pos, autoDecoration, colorizing, buf, sizeof(buf), &fcolor, &bcolor, &font, &leftcol, baseline + i);
                 if (buf[0] == '\f')
                 {
                     strcpy(buf, "+--------- Page Break ---------+");

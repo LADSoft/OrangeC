@@ -45,6 +45,9 @@
 #include <algorithm>
 #include <iostream>
 #include <sstream>
+#include <random>
+#include <array>
+#include <functional>
 //#include <mutex>
 #include "semaphores.h"
 //#define DEBUG
@@ -194,10 +197,19 @@ void OS::JobInit()
     }
     else
     {
-        std::ostringstream t;
-        srand((unsigned)time(nullptr));
-        t << rand() << rand();
-        name = t.str();
+        std::array<unsigned char, 10> rnd;
+
+        std::uniform_int_distribution<int> distribution('0', '9');
+        // note that there will be minor problems if the implementation of random_device
+        // uses a prng with constant seed for the random_device implementation.
+        // that shouldn't be a problem on OS we are interested in.
+        std::random_device dev;
+        std::mt19937 engine(dev());
+        auto generator = std::bind(distribution, engine);
+
+        std::generate(rnd.begin(), rnd.end(), generator);
+        for (auto v : rnd)
+             name += v;
         v = new Variable(".OMAKESEM", name, Variable::f_recursive, Variable::o_environ);
         *VariableContainer::Instance() += v;
         first = true;

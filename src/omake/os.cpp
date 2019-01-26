@@ -32,10 +32,14 @@
 #    include <windows.h>
 #    include <process.h>
 #    include <direct.h>
-#    include <fcntl.h>
 #    include <io.h>
+#    include <share.h>
+#    include <fcntl.h>
 #endif
 #include <sys/locking.h>
+#ifndef SH_DENYNO
+#define SH_DENYNO _SH_DENYNO
+#endif
 
 #undef WriteConsole
 #define __MT__  // BCC55 support
@@ -268,11 +272,11 @@ void OS::JobInit()
         int fil = -1;
         if (first)
         {
-            fil = sopen(tempfile, O_CREAT , _SH_DENYNO );
+            fil = open(tempfile, SH_DENYNO | O_CREAT);
         }
         else
         {
-            fil = sopen(tempfile, O_RDWR, _SH_DENYNO );
+            fil = open(tempfile, SH_DENYNO | O_RDWR );
         }
         if (fil >= 0)
         {
@@ -285,7 +289,6 @@ void OS::JobInit()
             write(fil, (char *)&count, 4);
             lseek(fil, 0, SEEK_SET);
             locking(fil, LK_UNLCK, 4);
-            close(fil);
             char buf[256];
             sprintf(buf, "%d> ", count);
             jobName= buf;

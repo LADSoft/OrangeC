@@ -46,7 +46,7 @@
 #include "libp.h"
 #include <fcntl.h>
 
-int _fmode = O_TEXT;
+int _fmode = O_BINARY;
 int __uihandles[HANDLE_MAX], __uimodes[HANDLE_MAX],__uiflags[HANDLE_MAX] ;
 char __uinames[HANDLE_MAX][256], __uidrives[HANDLE_MAX] ;
 struct flock *__uilocks[HANDLE_MAX];

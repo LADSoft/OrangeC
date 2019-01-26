@@ -1070,7 +1070,7 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                             st->select = eBegin;
                             if (ispointer(iteratorType))
                             {
-                                DeduceAuto(&declSP->tp, iteratorType);
+                                DeduceAuto(&declSP->tp, basetype(iteratorType)->btp);
                                 UpdateRootTypes(declSP->tp);
                                 if (!comparetypes(declSP->tp, basetype(iteratorType)->btp, true))
                                 {

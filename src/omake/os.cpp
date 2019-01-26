@@ -32,7 +32,11 @@
 #    include <windows.h>
 #    include <process.h>
 #    include <direct.h>
+#    include <fcntl.h>
+#    include <io.h>
 #endif
+#include <sys/locking.h>
+
 #undef WriteConsole
 #define __MT__  // BCC55 support
 #include <cstdio>
@@ -220,15 +224,72 @@ void OS::JobInit()
 
     if (MakeMain::printDir.GetValue() && jobName == "\t")
     {
-        HANDLE sem = CreateSemaphore(nullptr, 1, 100000, (name + "count").c_str());
-        LONG count = 1;
-        if (sem != NULL)
+        char tempfile[260];
+        tempnam(tempfile, "hi");
+        if (tempfile[1] == ':')
         {
-            ReleaseSemaphore(sem, 1, &count);
+            char *p = strrchr(tempfile, '\\');
+            if (!p)
+                tempfile[0] = 0;
+            else
+                p[1] = 0;
         }
-        char buf[256];
-        sprintf(buf, "%d> ", count);
-        jobName= buf;
+        else
+        {
+            char *p = getenv("TMP");
+            if (p && p[0])
+            {
+                char q(0);
+                strcpy(tempfile, p);
+                p = tempfile;
+                while (*p)
+                {
+                    if (!q && (*p == '/' || *p == '\\'))
+                       q = *p;
+                    p++;
+                }
+                if (p[-1] != q)
+                {
+                    *p++ = q;
+                    *p = 0;
+                }
+            }
+            else 
+                tempfile[0] = 0;
+        }
+        if (tempfile[0] == 0)
+#ifdef HAVE_UNISTD_H
+            strcpy(tempfile, "./");
+#else
+            strcpy(tempfile, ".\\");
+#endif
+        strcat(tempfile, (name + ".flg").c_str());
+
+        int fil = -1;
+        if (first)
+        {
+            fil = sopen(tempfile, O_CREAT , _SH_DENYNO );
+        }
+        else
+        {
+            fil = sopen(tempfile, O_RDWR, _SH_DENYNO );
+        }
+        if (fil >= 0)
+        {
+            int count = 0;
+            locking(fil, LK_LOCK, 4);
+            if (!first)
+                read(fil, (char *)&count, 4);
+            count++;
+            lseek(fil, 0, SEEK_SET);
+            write(fil, (char *)&count, 4);
+            lseek(fil, 0, SEEK_SET);
+            locking(fil, LK_UNLCK, 4);
+            close(fil);
+            char buf[256];
+            sprintf(buf, "%d> ", count);
+            jobName= buf;
+        }
     }
 }
 void OS::JobRundown() 

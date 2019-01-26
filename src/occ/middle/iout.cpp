@@ -929,36 +929,33 @@ static void iop_icon(QUAD* q)
 
 static void iop_fcon(QUAD* q)
 {
-    char buf[256];
     if (chosenAssembler->gen->asm_assn)
         chosenAssembler->gen->asm_assn(q);
     if (!icdFile)
         return;
     oputc('\t', icdFile);
     putamode(q, q->ans);
-    oprintf(icdFile, " C= #%s", FPFToString(buf, &q->dc.v.f));
+    oprintf(icdFile, " C= #%s", ((std::string)q->dc.v.f).c_str());
 }
 static void iop_imcon(QUAD* q)
 {
-    char buf[256];
     if (chosenAssembler->gen->asm_assn)
         chosenAssembler->gen->asm_assn(q);
     if (!icdFile)
         return;
     oputc('\t', icdFile);
     putamode(q, q->ans);
-    oprintf(icdFile, " C= #%s", FPFToString(buf, &q->dc.v.f));
+    oprintf(icdFile, " C= #%s", ((std::string)q->dc.v.f).c_str());
 }
 static void iop_cxcon(QUAD* q)
 {
-    char buf[256], buf1[256];
     if (chosenAssembler->gen->asm_assn)
         chosenAssembler->gen->asm_assn(q);
     if (!icdFile)
         return;
     oputc('\t', icdFile);
     putamode(q, q->ans);
-    oprintf(icdFile, " C= #%s + %s * I", FPFToString(buf, &q->dc.v.c.r), FPFToString(buf1, &q->dc.v.c.i));
+    oprintf(icdFile, " C= #%s + %s * I", ((std::string)q->dc.v.c.r).c_str(), ((std::string)q->dc.v.c.i).c_str());
 }
 static void iop_prologue(QUAD* q)
 {
@@ -1288,13 +1285,12 @@ void putconst(EXPRESSION* offset, int color)
  *      put a constant to the icdFile file.
  */
 {
-    char buf[100], buf1[100];
     switch (offset->type)
     {
         case en_c_fc:
         case en_c_dc:
         case en_c_ldc:
-            oprintf(icdFile, "%s + %s * I", FPFToString(buf, &offset->v.c.r), FPFToString(buf1, &offset->v.c.i));
+            oprintf(icdFile, "%s + %s * I", ((std::string)offset->v.c.r).c_str(), ((std::string)offset->v.c.i).c_str());
             break;
         case en_c_i:
         case en_c_l:
@@ -1319,7 +1315,7 @@ void putconst(EXPRESSION* offset, int color)
         case en_c_fi:
         case en_c_di:
         case en_c_ldi:
-            oprintf(icdFile, "%s", FPFToString(buf, &offset->v.f));
+            oprintf(icdFile, "%s", ((std::string)offset->v.f).c_str());
             break;
         case en_tempref:
             if (offset->v.sp)
@@ -1775,12 +1771,12 @@ void put_staticlabel(long label) { put_label(label); }
 
 /*-------------------------------------------------------------------------*/
 
-void genfloat(FPFC* val)
+void genfloat(FPF* val)
 /*
  * Output a float value
  */
 {
-    char buf[100];
+
     CastToFloat(ISZ_FLOAT, val);
     if (chosenAssembler->gen->gen_float)
         chosenAssembler->gen->gen_float(floatgen, val);
@@ -1788,13 +1784,13 @@ void genfloat(FPFC* val)
         return;
     if (gentype == floatgen && outcol < 60)
     {
-        oprintf(icdFile, ",%s", FPFToString(buf, val));
+        oprintf(icdFile, ",%s", ((std::string)*val).c_str());
         outcol += 8;
     }
     else
     {
         nl();
-        oprintf(icdFile, "\tDC.S\t%s", FPFToString(buf, val));
+        oprintf(icdFile, "\tDC.S\t%s", ((std::string)*val).c_str());
         gentype = floatgen;
         outcol = 19;
     }
@@ -1802,12 +1798,11 @@ void genfloat(FPFC* val)
 
 /*-------------------------------------------------------------------------*/
 
-void gendouble(FPFC* val)
+void gendouble(FPF* val)
 /*
  * Output a double value
  */
 {
-    char buf[100];
     CastToFloat(ISZ_DOUBLE, val);
     if (chosenAssembler->gen->gen_float)
         chosenAssembler->gen->gen_float(doublegen, val);
@@ -1815,13 +1810,13 @@ void gendouble(FPFC* val)
         return;
     if (gentype == doublegen && outcol < 60)
     {
-        oprintf(icdFile, ",%s", FPFToString(buf, val));
+        oprintf(icdFile, ",%s", ((std::string)*val).c_str());
         outcol += 8;
     }
     else
     {
         nl();
-        oprintf(icdFile, "\tDC.D\t%s", FPFToString(buf, val));
+        oprintf(icdFile, "\tDC.D\t%s", ((std::string)*val).c_str());
         gentype = doublegen;
         outcol = 19;
     }
@@ -1829,12 +1824,11 @@ void gendouble(FPFC* val)
 
 /*-------------------------------------------------------------------------*/
 
-void genlongdouble(FPFC* val)
+void genlongdouble(FPF* val)
 /*
  * Output a double value
  */
 {
-    char buf[100];
     CastToFloat(ISZ_LDOUBLE, val);
     if (chosenAssembler->gen->gen_float)
         chosenAssembler->gen->gen_float(longdoublegen, val);
@@ -1842,13 +1836,13 @@ void genlongdouble(FPFC* val)
         return;
     if (gentype == longdoublegen && outcol < 60)
     {
-        oprintf(icdFile, ",%s", FPFToString(buf, val));
+        oprintf(icdFile, ",%s", ((std::string)*val).c_str());
         outcol += 8;
     }
     else
     {
         nl();
-        oprintf(icdFile, "\tDC.X\t%s", FPFToString(buf, val));
+        oprintf(icdFile, "\tDC.X\t%s", ((std::string)*val).c_str());
         gentype = longdoublegen;
         outcol = 19;
     }

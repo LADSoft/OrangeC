@@ -440,7 +440,7 @@ IMODE* make_immed(int size, LLONG_TYPE i)
 
 /*-------------------------------------------------------------------------*/
 
-IMODE* make_fimmed(int size, FPFC f)
+IMODE* make_fimmed(int size, FPF f)
 /*
  *      make a node to reference an immediate value i.
  */
@@ -3191,7 +3191,7 @@ IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
                 {
                     if (siz1 >= ISZ_FLOAT)
                     {
-                        FPFC f;
+                        FPF f;
                         IntToFloat(&f, natural_size(node->left), ap1->offset->v.i);
                         ap1 = make_fimmed(siz1, f);
                     }
@@ -3200,7 +3200,7 @@ IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
                 {
                     if (siz1 < ISZ_FLOAT)
                     {
-                        ap1 = make_immed(siz1, FPFToLongLong(&ap1->offset->v.f));
+                        ap1 = make_immed(siz1, (LLONG_TYPE)(ap1->offset->v.f));
                     }
                 }
             }
@@ -3354,8 +3354,8 @@ IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
         case en_nullptr:
             if (size >= ISZ_FLOAT)
             {
-                FPFC f;
-                LongLongToFPF(&f, node->v.i);
+                FPF f;
+                f = (LLONG_TYPE)node->v.i;
                 ap1 = make_fimmed(size, f);
             }
             else
@@ -3391,7 +3391,7 @@ IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
             }
             else
             {
-                LLONG_TYPE a = FPFToLongLong(&node->v.f);
+                LLONG_TYPE a = (LLONG_TYPE) node->v.f;
                 ap1 = make_immed(size, a);
             }
             ap1->offset->type = node->type;

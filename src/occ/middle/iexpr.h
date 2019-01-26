@@ -131,19 +131,21 @@ struct _basic_dag
     enum i_ops opcode; /* opcode */
     IMODE* left;       /* ans = left opcode right */
     IMODE* right;
-    union ival
+    struct ival
     {
-        /* values for constant nodes */
-        LLONG_TYPE i;
-        FPFC f;
+        union {
+            /* values for constant nodes */
+            LLONG_TYPE i;
+            void* data; /* generic data, won't be filled in until after LCSE */
+            PHIDATA* phi;
+            long label;  // branches
+        };
+        FPF f;
         struct
         {
-            FPFC r;
-            FPFC i;
+            FPF r;
+            FPF i;
         } c;
-        void* data; /* generic data, won't be filled in until after LCSE */
-        PHIDATA* phi;
-        long label;  // branches
     } v;
 };
 

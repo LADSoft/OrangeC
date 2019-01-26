@@ -208,7 +208,6 @@
     <ClCompile Include="parse\declcpp.cpp" />
     <ClCompile Include="parse\expr.cpp" />
     <ClCompile Include="parse\exprcpp.cpp" />
-    <ClCompile Include="parse\float.cpp" />
     <ClCompile Include="parse\help.cpp" />
     <ClCompile Include="parse\init.cpp" />
     <ClCompile Include="parse\inline.cpp" />
@@ -263,7 +262,6 @@
     <ClInclude Include="parse\c.h" />
     <ClInclude Include="parse\ccerr.h" />
     <ClInclude Include="parse\compiler.h" />
-    <ClInclude Include="parse\floating.h" />
     <ClInclude Include="parse\osutil.h" />
     <ClInclude Include="parse\rtti.h" />
     <ClInclude Include="parse\winmode.h" />

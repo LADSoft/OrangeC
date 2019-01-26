@@ -101,7 +101,7 @@ AMODE* makesegreg(int seg)
     ap->length = ISZ_SEG;
     return ap;
 }
-AMODE* makefloat(FPFC* f, int size)
+AMODE* makefloat(FPF* f, int size)
 {
     AMODE* ap = make_label(queue_floatval(f, size));
     ap->mode = am_direct;
@@ -122,7 +122,7 @@ void make_floatconst(AMODE* ap)
     int size = ap->length;
     if (isintconst(ap->offset))
     {
-        LongLongToFPF(&ap->offset->v.f, ap->offset->v.i);
+        ap->offset->v.f = (LLONG_TYPE)ap->offset->v.i;
         ap->offset->type = en_c_d;
         size = ISZ_DOUBLE;
     }

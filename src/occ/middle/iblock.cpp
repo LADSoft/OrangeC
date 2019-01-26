@@ -107,11 +107,11 @@ int equalnode(EXPRESSION* node1, EXPRESSION* node2)
         case en_c_di:
         case en_c_fi:
         case en_c_ldi:
-            return FPFEQ(&node1->v.f, &node2->v.f);
+            return (node1->v.f == node2->v.f);
         case en_c_dc:
         case en_c_fc:
         case en_c_ldc:
-            return FPFEQ(&node1->v.c.r, &node2->v.c.r) && FPFEQ(&node1->v.c.i, &node2->v.c.i);
+            return (node1->v.c.r == node2->v.c.r) && (node1->v.c.i == node2->v.c.i);
         case en_tempref:
             return node1->v.sp == node2->v.sp;
     }
@@ -674,7 +674,7 @@ void gen_iiconst(IMODE* res, LLONG_TYPE val)
 
 /*-------------------------------------------------------------------------*/
 
-void gen_ifconst(IMODE* res, FPFC val)
+void gen_ifconst(IMODE* res, FPF val)
 /*
  *      generate an integer constant sequence into the peep list.
  */

@@ -111,6 +111,7 @@ class FPF
     void SetNaN();
     bool ValueIsOne() const;
     bool ValueIsZero() const;
+    bool ValueIsNegative() const { return sign; }
     bool operator==(const FPF& right);
     bool operator!=(const FPF& right) { return !operator==(right); }
     bool operator>(FPF& right);

@@ -88,9 +88,9 @@ int main(int argc, char* argv[]);
 
 void constoptinit(void);
 ULLONG_TYPE CastToInt(int size, LLONG_TYPE value);
-FPFC CastToFloat(int size, FPFC* value);
-FPFC* IntToFloat(FPFC* temp, int size, LLONG_TYPE value);
-FPFC refloat(EXPRESSION* node);
+FPF CastToFloat(int size, FPF* value);
+FPF* IntToFloat(FPF* temp, int size, LLONG_TYPE value);
+FPF refloat(EXPRESSION* node);
 LLONG_TYPE MaxOut(enum e_bt size, LLONG_TYPE value);
 ULLONG_TYPE reint(EXPRESSION* node);
 void dooper(EXPRESSION* *node, int mode);
@@ -325,63 +325,6 @@ LEXEME* expression_no_comma(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE* *tp, E
 LEXEME* expression_no_check(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE* *tp, EXPRESSION* *exp, int flags);
 LEXEME* expression(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE* *tp, EXPRESSION* *exp, int flags);
 
-                               /* Float.c */
-
-void SetFPFZero(FPFC* dest,
-                        uchar sign);
-void SetFPFInfinity(FPFC* dest,
-                        uchar sign);
-void SetFPFNaN(FPFC* dest);
-int ValueIsOne(FPFC* value);
-int FPFEQ(FPFC* left, FPFC* right);
-int FPFGT(FPFC* left, FPFC* right);
-int FPFGTE(FPFC* left, FPFC* right);
-int IsMantissaZero(uf16* mant);
-int IsMantissaOne(uf16* mant);
-void Add16Bits(uf16* carry,
-                uf16* a,
-                uf16 b,
-                uf16 c);
-void Sub16Bits(uf16* borrow,
-                uf16* a,
-                uf16 b,
-                uf16 c);
-void ShiftMantLeft1(uf16* carry,
-                        uf16* mantissa);
-void ShiftMantRight1(uf16* carry,
-                        uf16* mantissa);
-void StickyShiftRightMant(FPFC* ptr,
-                        int amount);
-void normalize(FPFC* ptr);
-void denormalize(FPFC* ptr,
-                int minimum_exponent);
-void RoundFPF(FPFC* ptr);
-void choose_nan(FPFC* x,
-                FPFC* y,
-                FPFC* z,
-                int intel_flag);
-void AddSubFPF(uchar operation,
-                FPFC* x,
-                FPFC* y,
-                FPFC* z);
-void MultiplyFPF(FPFC* x,
-                        FPFC* y,
-                        FPFC* z);
-void DivideFPF(FPFC* x, 
-                        FPFC* y, 
-                        FPFC* z);
-void LongLongToFPF(FPFC* dest, LLONG_TYPE myllong);
-void UnsignedLongLongToFPF(FPFC* dest, LLONG_TYPE myllong);
-int FPFTensExponent(FPFC* value);
-void FPFMultiplyPowTen(FPFC* value, int power);
-char*  FPFToString(char* dest,
-                FPFC* src);
-LLONG_TYPE FPFToLongLong(FPFC* src);
-int FPFToFloat(unsigned char* dest, FPFC* src);
-int FPFToDouble(unsigned char* dest, FPFC* src);
-int FPFToLongDouble(unsigned char* dest, FPFC* src);
-void FPFTruncate(FPFC* value, int bits, int maxexp, int minexp);
-
                                /* Help.c */
 void helpinit();
 void deprecateMessage(SYMBOL* sp);
@@ -466,7 +409,7 @@ void flush_dag(void);
 QUAD*  gen_icode_with_conflict(enum i_ops op, IMODE* res, IMODE* left, IMODE* right, bool conflicting);
 QUAD*  gen_icode(enum i_ops op, IMODE* res, IMODE* left, IMODE* right);
 void gen_iiconst(IMODE* res, LLONG_TYPE val);
-void gen_ifconst(IMODE* res, FPFC val);
+void gen_ifconst(IMODE* res, FPF val);
 void gen_igoto(enum i_ops op, long label);
 void gen_data(int val);
 void gen_icgoto(enum i_ops op, long label, IMODE* left, IMODE* right);
@@ -512,7 +455,7 @@ void DumpIncDec(SYMBOL* funcsp);
 IMODE* make_imaddress(EXPRESSION* node, int size);
 IMODE* make_bf(EXPRESSION* node, IMODE* ap, int size);
 IMODE* make_immed(int size, LLONG_TYPE i);
-IMODE* make_fimmed(int size,FPFC f);
+IMODE* make_fimmed(int size,FPF f);
 IMODE* make_parmadj(long i);
 IMODE* make_ioffset(EXPRESSION* node);
 IMODE* genasn(EXPRESSION* node, SYMBOL* funcsp, int size);
@@ -686,9 +629,9 @@ void gen_importThunk(SYMBOL* func);
 void gen_vc1(SYMBOL* func);
 void put_label(int lab);
 void put_staticlabel(long label);
-void genfloat(FPFC* val);
-void gendouble(FPFC* val);
-void genlongdouble(FPFC* val);
+void genfloat(FPF* val);
+void gendouble(FPF* val);
+void genlongdouble(FPF* val);
 void genUBYTE(long val);
 void genbool(int val);
 void genbit(SYMBOL* sp, int val);

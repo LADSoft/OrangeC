@@ -144,8 +144,8 @@ enum ovcl
 
 typedef struct
 {
-    FPFC r;
-    FPFC i;
+    FPF r;
+    FPF i;
 } _COMPLEX_S;
 
 // clang-format off
@@ -303,27 +303,29 @@ typedef struct expr
     int pragmas;
     long size; /* For block moves */
     void* altdata;
-    union
+    struct
     {
-        LLONG_TYPE i;
-        FPFC f;
-        _COMPLEX_S c;
-        struct sym* sp; /* sym will be defined later */
-        const char* name;     /* name during base class processing */
-        struct functioncall* func;
-        struct _atomicData* ad;
-        struct stmt* stmt;
-        struct _imode_* imode;
-        struct _templateSelector* templateSelector;
-        struct _templateParamList* templateParam;
-        struct _msilarray* msilArray;
-        HASHTABLE* syms;
-        struct typ* tp;
-        struct
-        {
-            struct expr* thisptr;
+        union {
+            LLONG_TYPE i;
+            struct sym* sp; /* sym will be defined later */
+            const char* name;     /* name during base class processing */
+            struct functioncall* func;
+            struct _atomicData* ad;
+            struct stmt* stmt;
+            struct _imode_* imode;
+            struct _templateSelector* templateSelector;
+            struct _templateParamList* templateParam;
+            struct _msilarray* msilArray;
+            HASHTABLE* syms;
             struct typ* tp;
-        } t;
+            struct
+            {
+                struct expr* thisptr;
+                struct typ* tp;
+            } t;
+        };
+        FPF f;
+        _COMPLEX_S c;
     } v;
     struct _string* string;
     LIST* destructors;  // for &&  and ||
@@ -366,18 +368,20 @@ typedef struct casedata
     int line;
 } CASEDATA;
 
-union u_val
+struct u_val
 {
-    LLONG_TYPE i;  /* int val */
-    ULLONG_TYPE u; /* nsigned val */
-    FPFC f;        /* float val */
+    union {
+        LLONG_TYPE i;  /* int val */
+        ULLONG_TYPE u; /* nsigned val */
+        union
+        {
+            const char* a; /* string val */
+            const LCHAR* w;
+        } s;
+        struct _defstruct* defs; /* macro definition */
+    };
+    FPF f;        /* float val */
     _COMPLEX_S c;
-    union
-    {
-        const char* a; /* string val */
-        const LCHAR* w;
-    } s;
-    struct _defstruct* defs; /* macro definition */
 };
 typedef struct typ
 {
@@ -693,7 +697,7 @@ typedef struct sym
     struct _memberInitializers* memberInitializers; /* initializers for constructor */
     STATEMENT* gotoTable;                           /* pointer to hashtable associated with goto or label */
     /* these fields depend on storage_class */
-    union u_val value;
+    struct u_val value;
     struct _baseClass* baseClasses;
     struct _vbaseEntry* vbaseEntries;
     struct _vtabEntry* vtabEntries;
@@ -1044,7 +1048,7 @@ typedef struct lexeme
     // clang-format off
     enum e_lexType type;
     // clang-format on
-    union u_val value;
+    struct u_val value;
     char* litaslit;
     char* suffix;
     char* file;

@@ -25,9 +25,9 @@ include ../../pathext2.mak
 
 NAME=ocpp
 MAIN_FILE=ppmain.cpp
-INCLUDES=. ..$(PATHEXT2)parse ..$(PATHEXT2)middle ..$(PATHEXT2)..$(PATHEXT2)Util
+INCLUDES=. ..$(PATHEXT2)parse ..$(PATHEXT2)middle ..$(PATHEXT2)..$(PATHEXT2)Util ..$(PATHEXT2)..$(PATHEXT2)ocpp
 CPP_DEPENDENCIES=$(wildcard *.cpp)
-LIB_DEPENDENCIES=util
+LIB_DEPENDENCIES=util ocpp
 DEFINES=CPREPROCESSOR USE_LONGLONG
 H_FILES=$(wildcard *.h)
 
@@ -38,7 +38,7 @@ export _TREEROOT
 export _TREETARGET
 
 redirect:
-	@$(MAKE) -f$(_TREEROOT)
+	@$(MAKE) -f$(_TREEROOT) localfiles
 format:
 	@$(MAKE) -f $(_TREEROOT) format
 endif

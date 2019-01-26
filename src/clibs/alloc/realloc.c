@@ -42,8 +42,15 @@
 #include <wchar.h>
 #include "libp.h"
 
+char ___realloc_stub = 0;
+
 void* _RTL_FUNC realloc(void* buf, size_t size)
 {
+    if (size == 0)
+    {
+        free(buf);
+        return &___realloc_stub;
+    }
     int oldsize, newsize = size;
     char* ptr;
     newsize += 7; /* must be the same as in malloc for comparison purposes */

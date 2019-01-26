@@ -44,11 +44,13 @@
 #include "libp.h"
 
 extern FREELIST* __mallocchains[MEMCHAINS];
+extern char ___realloc_stub;
+
 
 void _RTL_FUNC free(void* buf)
 {
     FREELIST *p, **c;
-    if (!buf)
+    if (!buf || buf == ___realloc_stub)
         return;
     p = buf;
 

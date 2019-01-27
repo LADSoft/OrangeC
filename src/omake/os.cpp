@@ -29,8 +29,6 @@
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
 #    define _SH_DENYNO 0
-#    define _LK_LOCK F_LOCK
-#    define _LK_UNLCK F_ULOCK
 #else
 #    include <windows.h>
 #    include <process.h>
@@ -39,7 +37,9 @@
 #    include <share.h>
 #    include <fcntl.h>
 #    include <sys/locking.h>
-#    define locking _locking
+#    define lockf _locking
+#    define F_LOCK _LK_LOCK
+#    define F_ULOCK _LK_UNLCK
 #endif
 #include <string.h>
 #undef WriteConsole
@@ -277,19 +277,19 @@ void OS::JobInit()
         }
         else
         {
-            fil = open(tempfile, SH_DENYNO | O_RDWR );
+            fil = open(tempfile, _SH_DENYNO | O_RDWR );
         }
         if (fil >= 0)
         {
             int count = 0;
-            locking(fil, LK_LOCK, 4);
+            lockf(fil, F_LOCK, 4);
             if (!first)
                 read(fil, (char *)&count, 4);
             count++;
             lseek(fil, 0, SEEK_SET);
             write(fil, (char *)&count, 4);
             lseek(fil, 0, SEEK_SET);
-            locking(fil, LK_UNLCK, 4);
+            lockf(fil, F_ULOCK, 4);
             char buf[256];
             sprintf(buf, "%d> ", count);
             jobName= buf;

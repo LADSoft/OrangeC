@@ -301,7 +301,6 @@ void insertDynamicDestructor(SYMBOL* sp, INITIALIZER* init)
             di->next = dynamicDestructors;
             dynamicDestructors = di;
         }
-        //	genstorage(sp->tp->size);
     }
 }
 static void dumpDynamicInitializers(void)
@@ -2192,7 +2191,7 @@ static void increment_desc(AGGREGATE_DESCRIPTOR** desc, AGGREGATE_DESCRIPTOR** c
             int offset = (*desc)->reloffset + (*desc)->offset;
             if (isunion((*desc)->tp))
                 (*desc)->hr = NULL;
-            else
+            else if (!basetype((*desc)->tp)->sp->hasUserCons)
                 while (true)
                 {
                     (*desc)->hr = (*desc)->hr->next;
@@ -2504,7 +2503,7 @@ static TYPE* nexttp(AGGREGATE_DESCRIPTOR* desc)
     TYPE* rv;
     if (isstructured(desc->tp))
     {
-        if (!cparams.prm_cplusplus || basetype(desc->tp)->sp->trivialCons)
+        if (!cparams.prm_cplusplus || !basetype(desc->tp)->sp->hasUserCons)
         {
             HASHREC* hr = desc->hr;
             if (!hr)
@@ -2641,7 +2640,7 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
         lex = getsym();
     }
     if ((cparams.prm_cplusplus || (chosenAssembler->msil && !assn)) && isstructured(itype) &&
-        (!basetype(itype)->sp->trivialCons || arrayMember))
+        (basetype(itype)->sp->hasUserCons || !basetype(itype)->sp->trivialCons && !MATCHKW(lex, begin) || arrayMember))
     {
         if (base->storage_class != sc_member || MATCHKW(lex, openpa) || assn || MATCHKW(lex, begin))
         {
@@ -2739,6 +2738,16 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
                 // conversion constructor params
                 lex = getArgs(lex, funcsp, funcparams, MATCHKW(lex, openpa) ? closepa : end, true, 0);
             }
+            else if (flags & _F_NESTEDINIT)
+            {
+                // shortcut for conversion from single expression
+                EXPRESSION* exp1 = NULL;
+                TYPE* tp1 = NULL;
+                lex = init_expression(lex, funcsp, NULL, &tp1, &exp1, false);
+                funcparams->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
+                funcparams->arguments->tp = tp1;
+                funcparams->arguments->exp = exp1;
+            }
             else
             {
                 // default constructor without param list
@@ -2747,7 +2756,8 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
             {
                 callConstructor(&ctype, &exp, funcparams, false, NULL, true, maybeConversion, false, false,
                                 isList ? _F_INITLIST : 0);
-                PromoteConstructorArgs(funcparams->sp, funcparams);
+                if (funcparams->sp) // may be an error
+                    PromoteConstructorArgs(funcparams->sp, funcparams);
             }
             initInsert(&it, itype, exp, offset, true);
             if (sc != sc_auto && sc != sc_localstatic && sc != sc_parameter && sc != sc_member && sc != sc_mutable && !arrayMember)
@@ -2911,7 +2921,7 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
             tp2 = nexttp(desc);
 
             while (tp2 && (tp2->type == bt_aggregate || isarray(tp2) ||
-                           (isstructured(tp2) && (!cparams.prm_cplusplus || basetype(tp2)->sp->trivialCons))))
+                           (isstructured(tp2) && (!cparams.prm_cplusplus || !basetype(tp2)->sp->hasUserCons))))
             {
                 if (tp2->type == bt_aggregate)
                 {
@@ -2952,8 +2962,8 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
             {
                 SYMBOL* fieldsp;
                 lex = initType(lex, funcsp, desc->offset + desc->reloffset, sc, next, dest, nexttp(desc), base, isarray(itype),
-                               flags);
-                if (desc->hr)
+                               flags | _F_NESTEDINIT);
+                if (desc->hr && *next)
                 {
                     fieldsp = ((SYMBOL*)desc->hr->p);
                     if (ismember(fieldsp))
@@ -2973,6 +2983,28 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
                     lex = getsym();
                 while (MATCHKW(lex, end))
                 {
+                    if (desc->hr && cparams.prm_cplusplus && !basetype(itype)->sp->trivialCons)
+                    {
+                        while (desc->hr)
+                        {
+                            if (isstructured(desc->hr->p->tp) && !basetype(desc->hr->p->tp)->sp->trivialCons)
+                            {
+                                SYMBOL* fieldsp;
+                                lex = initType(lex, funcsp, desc->offset + desc->reloffset, sc, next, dest, nexttp(desc), base, isarray(itype),
+                                    flags);
+                                if (desc->hr && *next)
+                                {
+                                    fieldsp = ((SYMBOL*)desc->hr->p);
+                                    if (ismember(fieldsp))
+                                    {
+                                        (*next)->fieldsp = fieldsp;
+                                        (*next)->fieldoffs = desc->offset;
+                                    }
+                                }
+                            }
+                            increment_desc(&desc, &cache);
+                        }
+                    }
                     gotcomma = false;
                     lex = getsym();
                     unwrap_desc(&desc, &cache, next);

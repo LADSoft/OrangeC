@@ -1201,11 +1201,13 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                     case 8:  // convert to a multiply
                     {
+                        /*
                         FPF temp1;
                         temp1 = (ULLONG_TYPE)1;
                         temp1 = temp1 / ep2->v.f;
                         ep2->v.f = temp1;
                         ep->type = en_mul;
+                        */
                     }
                     break;
                     case 9:

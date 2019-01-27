@@ -27,6 +27,13 @@
 
 #include <string>
 #include <cstring>
+#include <limits.h>
+#ifndef M_LN2
+#    define M_LN2 0.693147180559945309417
+#endif
+#ifndef M_LN10
+#    define M_LN10 2.30258509299404568402
+#endif
 
 #define INTERNAL_FPF_PRECISION ((80 / 8) / sizeof(u16))
 /*
@@ -38,8 +45,8 @@
 #define uchar unsigned char
 #define ulong unsigned long
 
-#define MAX_EXP 33000
-#define MIN_EXP -33000
+#define MAX_EXP SHRT_MAX
+#define MIN_EXP SHRT_MIN
 
 #define IFPF_IS_ZERO 0
 #define IFPF_IS_SUBNORMAL 1
@@ -194,6 +201,7 @@ class FPF
     void FromUnsignedLongLong(unsigned long long right);
     long long ToLongLong() const;
     void ToString(std::string& dest) const;
+    void Init();
 
   private:
     int exp; /* Signed exponent...no bias */
@@ -201,6 +209,8 @@ class FPF
     u8 type; /* Indicates, NORMAL, SUBNORMAL, etc. */
     u8 sign; /* Mantissa sign */
     static bool bigEndian;
+    static FPF tensTab[10];
+    static bool initted;
 };
 
 #endif

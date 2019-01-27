@@ -46,7 +46,7 @@
 #include "libp.h"
 #include <fcntl.h>
 
-int _fmode = O_TEXT;
+int _fmode = O_BINARY;
 int __uihandles[HANDLE_MAX], __uimodes[HANDLE_MAX],__uiflags[HANDLE_MAX] ;
 char __uinames[HANDLE_MAX][256], __uidrives[HANDLE_MAX] ;
 struct flock *__uilocks[HANDLE_MAX];
@@ -59,7 +59,7 @@ static void uio_init(void)
    int i ;
    __ll_uioinit() ; /* sets first three handles */
    for (i=0; i < 3; i++) {
-      __uimodes[i] = _fmode ;
+      __uimodes[i] = O_TEXT;
    }
    for (i=3; i < HANDLE_MAX; i++)
       __uihandles[i] = -1 ;

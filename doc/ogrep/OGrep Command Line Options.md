@@ -56,9 +56,39 @@
 * **-o** (Unix format) list the file name and line number to the left of each matching line, instead of showing the file names separately.
 * **-v** lines nonmatching lines instead of matching lines
 * **-z** list the file names matched, line numbers, and matched lines
-   
+
+
+### Context display options
+
+ When displaying the text associated with a match, OGrep can display a fixed number of lines before and/or after the matched line.   There are 3 command line switches associated with this.
+
+>     OGrep -A4 "while" *.c
+
+ shows 4 lines after each matching line, here the 4 can be replaced by any integer.
+
+>     OGrep -B3 "while" *.c
+
+ shows 3 lines after each matching line.   Again the 3 can be replaced by any integer.
+
+>     OGrep -B3 -A4 "while" *.c
+
+ shows 3 lines before and 4 lines after the matching line.
+
+>     OGrep -C5 "while" *.c
+
+ combines the other two switches, showing 5 lines before the matching line and 5 lines after.
+
+
+### Stopping after a fixed number of matches
+
+>     OGrep -m4 "while" *.c
+
+stops after 4 matches.   Again the 4 can be replaced by any integer.
+
+
 ### Alternative display options
 
  The **/V** switch shows version information, and the compile date
 
  The **/!** switch is 'nologo'
+ 

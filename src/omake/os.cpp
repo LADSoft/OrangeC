@@ -28,11 +28,20 @@
 
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
+#    define _SH_DENYNO 0
 #else
 #    include <windows.h>
 #    include <process.h>
 #    include <direct.h>
+#    include <io.h>
+#    include <share.h>
+#    include <fcntl.h>
+#    include <sys/locking.h>
+#    define lockf _locking
+#    define F_LOCK _LK_LOCK
+#    define F_ULOCK _LK_UNLCK
 #endif
+#include <string.h>
 #undef WriteConsole
 #define __MT__  // BCC55 support
 #include <cstdio>
@@ -45,6 +54,9 @@
 #include <algorithm>
 #include <iostream>
 #include <sstream>
+#include <random>
+#include <array>
+#include <functional>
 //#include <mutex>
 #include "semaphores.h"
 //#define DEBUG
@@ -194,10 +206,19 @@ void OS::JobInit()
     }
     else
     {
-        std::ostringstream t;
-        srand((unsigned)time(nullptr));
-        t << rand() << rand();
-        name = t.str();
+        std::array<unsigned char, 10> rnd;
+
+        std::uniform_int_distribution<int> distribution('0', '9');
+        // note that there will be minor problems if the implementation of random_device
+        // uses a prng with constant seed for the random_device implementation.
+        // that shouldn't be a problem on OS we are interested in.
+        std::random_device dev;
+        std::mt19937 engine(dev());
+        auto generator = std::bind(distribution, engine);
+
+        std::generate(rnd.begin(), rnd.end(), generator);
+        for (auto v : rnd)
+             name += v;
         v = new Variable(".OMAKESEM", name, Variable::f_recursive, Variable::o_environ);
         *VariableContainer::Instance() += v;
         first = true;
@@ -208,15 +229,71 @@ void OS::JobInit()
 
     if (MakeMain::printDir.GetValue() && jobName == "\t")
     {
-        HANDLE sem = CreateSemaphore(nullptr, 1, 100000, (name + "count").c_str());
-        LONG count = 1;
-        if (sem != NULL)
+        char tempfile[260];
+        tempnam(tempfile, "hi");
+        if (tempfile[1] == ':')
         {
-            ReleaseSemaphore(sem, 1, &count);
+            char *p = strrchr(tempfile, '\\');
+            if (!p)
+                tempfile[0] = 0;
+            else
+                p[1] = 0;
         }
-        char buf[256];
-        sprintf(buf, "%d> ", count);
-        jobName= buf;
+        else
+        {
+            char *p = getenv("TMP");
+            if (p && p[0])
+            {
+                char q(0);
+                strcpy(tempfile, p);
+                p = tempfile;
+                while (*p)
+                {
+                    if (!q && (*p == '/' || *p == '\\'))
+                       q = *p;
+                    p++;
+                }
+                if (p[-1] != q)
+                {
+                    *p++ = q;
+                    *p = 0;
+                }
+            }
+            else 
+                tempfile[0] = 0;
+        }
+        if (tempfile[0] == 0)
+#ifdef HAVE_UNISTD_H
+            strcpy(tempfile, "./");
+#else
+            strcpy(tempfile, ".\\");
+#endif
+        strcat(tempfile, (name + ".flg").c_str());
+
+        int fil = -1;
+        if (first)
+        {
+            fil = open(tempfile, _SH_DENYNO | O_CREAT);
+        }
+        else
+        {
+            fil = open(tempfile, _SH_DENYNO | O_RDWR );
+        }
+        if (fil >= 0)
+        {
+            int count = 0;
+            lockf(fil, F_LOCK, 4);
+            if (!first)
+                read(fil, (char *)&count, 4);
+            count++;
+            lseek(fil, 0, SEEK_SET);
+            write(fil, (char *)&count, 4);
+            lseek(fil, 0, SEEK_SET);
+            lockf(fil, F_ULOCK, 4);
+            char buf[256];
+            sprintf(buf, "%d> ", count);
+            jobName= buf;
+        }
     }
 }
 void OS::JobRundown() 

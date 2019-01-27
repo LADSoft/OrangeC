@@ -1594,7 +1594,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sp, SYMBOL* funcsp, INITIA
     }
     // plop in a clear block if necessary
     if (sp && !noClear && !isdest &&
-        (isarray(tp) || (isstructured(tp) && ((!cparams.prm_cplusplus && !chosenAssembler->msil) || basetype(tp)->sp->trivialCons))))
+        (isarray(tp) || (isstructured(tp) && ((!cparams.prm_cplusplus && !chosenAssembler->msil) || !basetype(tp)->sp->hasUserCons))))
     {
         EXPRESSION* fexp = base;
         EXPRESSION* exp;

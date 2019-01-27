@@ -65,11 +65,6 @@ char copyright[256];
 LIST* clist = 0;
 
 struct DefValue {
-    DefValue(const std::string& nm, bool val) :
-        name(nm),
-        undef(val)
-    {
-    }
     std::string name;
     bool undef;
 };

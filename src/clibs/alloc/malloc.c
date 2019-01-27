@@ -49,6 +49,7 @@ BLKHEAD* _allocbloc;
 BLKHEAD* _newfree;
 
 #pragma rundown memdelete 2
+extern char ___realloc_stub;
 
 static void memdelete(void)
 {
@@ -99,7 +100,7 @@ void* _RTL_FUNC malloc(size_t size)
     register FREELIST* p;
     register int siz1;
     if (!size)
-        return NULL;
+        return &___realloc_stub;
     size += 7; /* must be the same as in realloc for comparison purposes */
     size &= MALLOC_MASK;
 

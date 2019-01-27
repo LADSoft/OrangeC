@@ -59,7 +59,7 @@ static void uio_init(void)
    int i ;
    __ll_uioinit() ; /* sets first three handles */
    for (i=0; i < 3; i++) {
-      __uimodes[i] = _fmode ;
+      __uimodes[i] = O_TEXT;
    }
    for (i=3; i < HANDLE_MAX; i++)
       __uihandles[i] = -1 ;

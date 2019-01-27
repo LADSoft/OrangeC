@@ -35,8 +35,9 @@
 #    include <io.h>
 #    include <share.h>
 #    include <fcntl.h>
+#    include <sys/locking.h>
+#    define locking _locking
 #endif
-#include <sys/locking.h>
 #ifndef SH_DENYNO
 #define SH_DENYNO _SH_DENYNO
 #endif

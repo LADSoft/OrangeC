@@ -28,6 +28,9 @@
 
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
+#    define _SH_DENYNO 0
+#    define _LK_LOCK F_LOCK
+#    define _LK_UNLCK F_ULOCK
 #else
 #    include <windows.h>
 #    include <process.h>
@@ -38,10 +41,7 @@
 #    include <sys/locking.h>
 #    define locking _locking
 #endif
-#ifndef SH_DENYNO
-#define SH_DENYNO _SH_DENYNO
-#endif
-
+#include <string.h>
 #undef WriteConsole
 #define __MT__  // BCC55 support
 #include <cstdio>
@@ -273,7 +273,7 @@ void OS::JobInit()
         int fil = -1;
         if (first)
         {
-            fil = open(tempfile, SH_DENYNO | O_CREAT);
+            fil = open(tempfile, _SH_DENYNO | O_CREAT);
         }
         else
         {

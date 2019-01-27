@@ -2983,7 +2983,7 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
                     lex = getsym();
                 while (MATCHKW(lex, end))
                 {
-                    if (desc->hr && cparams.prm_cplusplus && !basetype(itype)->sp->trivialCons)
+                    if (desc->hr && cparams.prm_cplusplus && isstructured(itype) && !basetype(itype)->sp->trivialCons)
                     {
                         while (desc->hr)
                         {

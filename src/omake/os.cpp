@@ -28,6 +28,7 @@
 
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
+#    include <sys/locking.h>
 #else
 #    include <windows.h>
 #    include <process.h>
@@ -35,8 +36,9 @@
 #    include <io.h>
 #    include <share.h>
 #    include <fcntl.h>
+#    include <sys/locking.h>
+#    define locking _locking
 #endif
-#include <sys/locking.h>
 #ifndef SH_DENYNO
 #define SH_DENYNO _SH_DENYNO
 #endif

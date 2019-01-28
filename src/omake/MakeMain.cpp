@@ -1,26 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the
- *     Orange C "Target Code" exception.
- *
+ *     (at your option) any later version.
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #define _CRT_SECURE_NO_WARNINGS
@@ -87,12 +86,14 @@ const char* MakeMain::usageText =
     "/p    Print database          /q    Query\n"
     "/r    Ignore builtin rules    /s    Don't print commands\n"
     "/t    Touch                   /u    Debug warnings\n"
-    "/w    Print directory         --eval=STRING evaluate a statement\n"
+    "/w    Print make status       --eval=STRING evaluate a statement\n"
     "/!    No logo\n"
     "--version show version info\n"
     "\nTime: " __TIME__ "  Date: " __DATE__;
-char* MakeMain::builtinVars = "";
-char* MakeMain::builtinRules = "";
+const char* MakeMain::builtinVars = "";
+const char* MakeMain::builtinRules = "";
+
+int MakeMain::makeLevel;
 
 int main(int argc, char** argv)
 {
@@ -105,7 +106,7 @@ void MakeMain::Dispatch(const char* data)
     int max = 10;
     argcx = 1;
     argvx = new char*[max + 1];
-    argvx[0] = "";
+    argvx[0] = (char *)"";
     while (*data)
     {
         data = GetStr(data);
@@ -276,7 +277,7 @@ void MakeMain::LoadJobArgs()
 }
 void MakeMain::LoadEnvironment()
 {
-#ifdef GCCLINUX
+#ifdef HAVE_UNISTD_H
     char** env = 0;
 #else
     char** env = environ;
@@ -467,16 +468,8 @@ int MakeMain::Run(int argc, char** argv)
             return 2;
         }
     }
-    if (printDir.GetValue())
-    {
-        std::cout << OS::GetWorkingDir() << std::endl;
-    }
-#ifdef OPENWATCOM
-    else
-    {
-        std::cout << std::endl;
-    }
-#endif
+
+
     if (cancelKeep.GetValue())
     {
         cancelKeep.SetValue(false);
@@ -528,16 +521,22 @@ int MakeMain::Run(int argc, char** argv)
             std::string temp = Utils::NumberToString(restarts);
             SetVariable("MAKE_RESTARTS", temp, Variable::o_command_line, false);
         }
+        bool firstMakeLevel = makeLevel == 0;
         v = VariableContainer::Instance()->Lookup("MAKE_LEVEL");
         if (!v)
         {
             SetVariable("MAKE_LEVEL", "0", Variable::o_environ, true);
+            makeLevel = 1;
         }
         else
         {
             int n = Utils::StringToNumber(v->GetValue());
             v->SetValue(Utils::NumberToString(n + 1));
+            makeLevel = n + 2;
         }
+        if (firstMakeLevel)
+            MakeMessage("Entering %s", OS::GetWorkingDir().c_str());
+
         SetVariable(".FEATURES", "second-expansion order-only target-specific", Variable::o_environ, false);
         SetVariable(".DEFAULT_GOAL", "", Variable::o_environ, false);
         SetVariable(".INCLUDE_DIRS", includes.GetValue(), Variable::o_command_line, false);
@@ -566,7 +565,12 @@ int MakeMain::Run(int argc, char** argv)
         Include::Instance()->AddFileList(files, false, false);
         SetupImplicit();
         RuleContainer::Instance()->SecondaryEval();
-        done = !Include::Instance()->MakeMakefiles(silent.GetValue(), outputType);
+        bool didSomething = false;
+        done = !Include::Instance()->MakeMakefiles(silent.GetValue(), outputType, didSomething);
+        if (!didSomething)
+        {
+            MakeMessage("Nothing to be done for '%s'", goals.size() ? goals.c_str() : "all");
+        }
         if (!done)
             restarts++;
     }
@@ -651,20 +655,13 @@ int MakeMain::Run(int argc, char** argv)
             rv = 2;
         }
     }
+
+    MakeMessage("Leaving %s", OS::GetWorkingDir().c_str());
+
     if (!dir.GetValue().empty())
     {
         OS::SetWorkingDir(cwd);
     }
-    if (printDir.GetValue())
-    {
-        std::cout << OS::GetWorkingDir() << std::endl;
-    }
-#ifdef OPENWATCOM
-    else
-    {
-        std::cout << std::endl;
-    }
-#endif
     Spawner::WaitForDone();
     return rv;
 }

@@ -156,6 +156,7 @@ extern "C"
 #    endif
 
 #endif
+#ifdef __cplusplus
 namespace __STD_NS__
 {
 using ::asprintf_l;
@@ -203,3 +204,4 @@ using ::wcsrtombs_l;
 using ::wcsxfrm_l;
 using ::wctob_l;
 }  // namespace __STD_NS__
+#endif

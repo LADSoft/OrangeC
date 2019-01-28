@@ -127,7 +127,7 @@ typedef enum CV_type_e
     CV_SPECIAL = 0x00,   /* special type size values*/
     CV_SIGNED = 0x01,    /* signed integral size values*/
     CV_UNSIGNED = 0x02,  /* unsigned integral size values*/
-    CV_BOOLEAN = 0x03,   /* Boolean size values*/
+    CV_bool = 0x03,   /* Boolean size values*/
     CV_REAL = 0x04,      /* real number size values*/
     CV_COMPLEX = 0x05,   /* complex number size values*/
     CV_SPECIAL2 = 0x06,  /* second set of special types*/
@@ -158,7 +158,7 @@ typedef enum CV_special2_e
     CV_S2_PASCHAR = 0x01 /* Pascal CHAR*/
 } CV_special2_e;
 
-/*      subtype enumeration values for CV_SIGNED, CV_UNSIGNED and CV_BOOLEAN*/
+/*      subtype enumeration values for CV_SIGNED, CV_UNSIGNED and CV_bool*/
 
 typedef enum CV_integral_e
 {
@@ -1074,9 +1074,9 @@ typedef enum CV_int_e
                         unsigned char ptrmode : 3;
                         /* ordinal specifying pointer mode (ptrmode_t)*/
                         unsigned char isflat32 : 1;    /* true if 0:32 pointer*/
-                        unsigned char isvolatile : 1;  /* TRUE if volatile pointer*/
-                        unsigned char isconst : 1;     /* TRUE if const pointer*/
-                        unsigned char isunaligned : 1; /* TRUE if unaligned pointer*/
+                        unsigned char isvolatile : 1;  /* true if volatile pointer*/
+                        unsigned char isconst : 1;     /* true if const pointer*/
+                        unsigned char isunaligned : 1; /* true if unaligned pointer*/
                         unsigned char unused : 4;
                     } attr;
 #if (defined(__cplusplus) || defined(_MSC_VER))

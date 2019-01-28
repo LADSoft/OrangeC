@@ -1,26 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the
- *     Orange C "Target Code" exception.
- *
+ *     (at your option) any later version.
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 // assumes tabs aren't going to get reset yet
@@ -28,8 +27,8 @@
 #include <windows.h>
 #include <commctrl.h>
 #include <stdio.h>
-#include "header.h"
 #include <richedit.h>
+#include "header.h"
 #include <limits.h>
 #include "c_types.h"
 #include <stdlib.h>
@@ -95,9 +94,10 @@ int lineParsed(EDITDATA* p, int line)
     }
     return TRUE;
 }
-int getfragment(EDITDATA* p, int pos, int autoDecoration, int colorizing, char* buf, COLORREF* fcolor, COLORREF* bcolor,
+int getfragment(EDITDATA* p, int pos, int autoDecoration, int colorizing, char* buf, int bufsz, COLORREF* fcolor, COLORREF* bcolor,
                 HFONT* font, int* col, int line)
 {
+    int initial = pos;
     int count = 0;
     int found = FALSE;
     int attribs = 0;
@@ -122,7 +122,7 @@ int getfragment(EDITDATA* p, int pos, int autoDecoration, int colorizing, char* 
     selecting = pos >= start && pos < end;
     while (TRUE)
     {
-        if (pos >= p->cd->textlen || p->cd->text[pos].ch == '\n')
+        if (pos - initial >= bufsz - 10 || pos >= p->cd->textlen || p->cd->text[pos].ch == '\n')
             break;
         if (p->cd->text[pos].ch == '\f')
         {
@@ -367,9 +367,9 @@ void EditPaint(HWND hwnd, EDITDATA* p)
                 COLORREF fcolor, bcolor;
                 HFONT font;
                 int n, j, z = 0;
-                int dx[500];
+                int dx[sizeof(buf)];
                 int ofs = 0;
-                pos = getfragment(p, pos, autoDecoration, colorizing, buf, &fcolor, &bcolor, &font, &leftcol, baseline + i);
+                pos = getfragment(p, pos, autoDecoration, colorizing, buf, sizeof(buf), &fcolor, &bcolor, &font, &leftcol, baseline + i);
                 if (buf[0] == '\f')
                 {
                     strcpy(buf, "+--------- Page Break ---------+");

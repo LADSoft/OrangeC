@@ -25,7 +25,7 @@ class SQL3VirtualTable
 
     int Start(sqlite3* db);
     int Stop();
-    int InsertIntoFrom(char* tableName);
+    int InsertIntoFrom(const char* tableName);
 
     virtual void* Open() = 0;
     virtual int Close(void* cursor) = 0;
@@ -50,7 +50,7 @@ class SQL3VirtualTable
     static int thunkRowid(sqlite3_vtab_cursor* cur, sqlite_int64* pRowid);
 
   protected:
-    int Exec(char* str);
+    int Exec(const char* str);
     int iCreate(int argc, const char* const* argv, sqlite3_vtab** ppVtab, char** pzErr);
     int iDestroy(sql3_vt_vtab* vt);
     int iBestIndex(sqlite3_index_info* pIdxInfo);

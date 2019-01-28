@@ -1,26 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the
- *     Orange C "Target Code" exception.
- *
+ *     (at your option) any later version.
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 /*
@@ -76,7 +75,7 @@ BITARRAY* tallocbit(int size);
 BITARRAY* sallocbit(int size);
 BITARRAY* aallocbit(int size);
 BITARRAY* callocbit(int size);
-BOOLEAN isset(BITARRAY* arr, int bit);
+bool isset(BITARRAY* arr, int bit);
 void setbit(BITARRAY* arr, int bit);
 void clearbit(BITARRAY* arr, int bit);
 void bitarrayClear(BITARRAY* arr, int count);
@@ -111,14 +110,16 @@ typedef struct
     int top;
 } BRIGGS_SET;
 
+enum vop
+{
+    vo_top,
+    vo_bottom,
+    vo_constant
+} ;
+
 typedef struct _value_of
 {
-    enum vop
-    {
-        vo_top,
-        vo_bottom,
-        vo_constant
-    } type;
+    enum vop type;
     IMODE* imode;
 } VALUEOF;
 typedef struct _ins_list
@@ -157,19 +158,20 @@ typedef struct usesStrength
 typedef struct inductionList
 {
     struct inductionList* next;
-    LIST* vars;
+    ILIST* vars;
 } INDUCTION_LIST;
 
+enum e_lptype
+{
+    LT_SINGLE,
+    LT_MULTI,
+    LT_ROOT,
+    LT_BLOCK
+};
 typedef struct _loop
 {
     struct _loop* next;
-    enum e_lptype
-    {
-        LT_SINGLE,
-        LT_MULTI,
-        LT_ROOT,
-        LT_BLOCK
-    } type;
+    enum e_lptype type;
     int loopnum;
     struct _block* entry; /* will be the block for blocks */
     struct _loop* parent;
@@ -213,14 +215,16 @@ typedef struct
     IMODE* lastName;
 } RESHAPE_EXPRESSION;
 
+struct UIVOffset
+{
+    struct UIVOffset* next;
+    int offset;
+};
+
 typedef struct _uiv
 {
     IMODE* im;
-    struct UIVOffset
-    {
-        struct UIVOffset* next;
-        int offset;
-    } * offset;
+    struct UIVOffset *offset;
     struct _uiv* alias;
     struct _uiv* base;
 } UIV;
@@ -268,7 +272,7 @@ typedef struct _normlist
 } NORMLIST;
 typedef struct
 {
-    LIST* renameStack;
+    ILIST* renameStack;
     LIST* bdefines;
     LIST* idefines;
     LIST* iuses;
@@ -283,8 +287,8 @@ typedef struct
     QUAD* spillTag;
     IMODE* newname;
     IMODE* newnameind;
-    LIST* elimPredecessors;
-    LIST* elimSuccessors;
+    ILIST* elimPredecessors;
+    ILIST* elimSuccessors;
     //	int limitUseCount;
     LIMIT_USES* limitUses;
     LIST* quietRegions;
@@ -306,7 +310,7 @@ typedef struct
     NORMLIST* currentNormal;
     int strengthRename;
     struct _regclass* regClass;
-    BOOLEAN ptUIV;
+    bool ptUIV;
     enum
     {
         P_UNKNOWN,
@@ -360,48 +364,50 @@ typedef struct _exceedPressure
     int prio;
 } EXCEED_PRESSURE;
 
+struct _block
+{
+    short blocknum;
+    /*        short dfstnum; */
+    int critical : 1;
+    int dead : 1;
+    int unuseThunk : 1;
+    int stopdfst : 1;
+    int visiteddfst : 1;
+    int onstack : 1;
+    int globalChanged : 1;
+    int alwayslive : 1;
+    short callcount;
+    short preWalk;
+    short postWalk;
+    int temp;
+    int idom;
+    int pdom;
+    int dfstOrder;
+    int reversePostOrder;
+    int spillCost;
+    int nesting;
+    struct _blocklist* dominates;
+    struct _blocklist* dominanceFrontier;
+    struct _blocklist *pred, *succ;
+    struct _blocklist* loopGenerators;
+    LOOP* loopParent;
+    LOOP* inclusiveLoopParent;
+    LOOP* loopName;
+
+    /*		struct _blocklist *defines; */
+    BITINT* liveGen;
+    BITINT* liveKills;
+    BITINT* liveIn;
+    BITINT* liveOut;
+    QUAD *head, *tail;
+    struct _blocklist* edgereached;
+    LIST* occurs;
+} ;
+
 typedef struct _blocklist
 {
     struct _blocklist* next;
-    struct _block
-    {
-        short blocknum;
-        /*        short dfstnum; */
-        int critical : 1;
-        int dead : 1;
-        int unuseThunk : 1;
-        int stopdfst : 1;
-        int visiteddfst : 1;
-        int onstack : 1;
-        int globalChanged : 1;
-        int alwayslive : 1;
-        short callcount;
-        short preWalk;
-        short postWalk;
-        int temp;
-        int idom;
-        int pdom;
-        int dfstOrder;
-        int reversePostOrder;
-        int spillCost;
-        int nesting;
-        struct _blocklist* dominates;
-        struct _blocklist* dominanceFrontier;
-        struct _blocklist *pred, *succ;
-        struct _blocklist* loopGenerators;
-        LOOP* loopParent;
-        LOOP* inclusiveLoopParent;
-        LOOP* loopName;
-
-        /*		struct _blocklist *defines; */
-        BITINT* liveGen;
-        BITINT* liveKills;
-        BITINT* liveIn;
-        BITINT* liveOut;
-        QUAD *head, *tail;
-        struct _blocklist* edgereached;
-        LIST* occurs;
-    } * block;
+    struct _block *block;
 } BLOCKLIST;
 
 enum e_fgtype

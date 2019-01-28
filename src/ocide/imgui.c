@@ -3,6 +3,7 @@
 #include <commctrl.h>
 #include <stdio.h>
 #include <float.h>
+#include <richedit.h>
 //#include <dir.h>
 #include <sys\stat.h>
 #include "header.h"

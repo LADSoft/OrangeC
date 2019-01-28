@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -26,6 +26,7 @@
 #define STRICT
 #include <windows.h>
 #include <commctrl.h>
+#include <richedit.h>
 #include <stdio.h>
 #include <float.h>
 #include <stdlib.h>
@@ -410,7 +411,7 @@ int GetHelpID(void)
     return helpID;
 }
 
-static DWORD LoadFirstWorkArea(void* v)
+static void LoadFirstWorkArea(void* v)
 {
     int argc = __argc;
     char** argv = __argv;
@@ -442,9 +443,12 @@ static DWORD LoadFirstWorkArea(void* v)
         {
             int i;
             char cwd[256];
+            char *ext = NULL;
             int munged = FALSE;
             StringToProfile("FILEDIR", (char*)getcwd(cwd, 256));
-            if (argc == 2 &&strstr(argv[1], ".cwa"))
+            if (argc == 2) ext = strrchr(argv[1], '.');
+            if (ext) ext++;
+            if (ext && !stricmp(ext, "cwa"))
             {
                 LoadWorkArea(argv[1], TRUE);
             }
@@ -1911,7 +1915,7 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, 
     // handle /V switch
     for (i = 1; i < __argc; i++)
         if (__argv[i] && (__argv[i][0] == '/' || __argv[i][0] == '-'))
-            if (__argv[i][1] == 'V' && __argv[i][2] == 0 || !strcmp(__argv[i], "--version"))
+            if ((__argv[i][1] == 'V' && __argv[i][2] == 0) || !strcmp(__argv[i], "--version"))
             {
                 doSplash();
                 Sleep(4000);

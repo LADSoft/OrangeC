@@ -30,7 +30,10 @@
 ;ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 %macro Msg 1+
 	call	Message
+%rep %0
 	db	%1
+%rotate 1
+%endrep
 	db	0
 %endmacro
 

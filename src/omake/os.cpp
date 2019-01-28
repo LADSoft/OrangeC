@@ -1,49 +1,62 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the
- *     Orange C "Target Code" exception.
- *
+ *     (at your option) any later version.
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
+
 // This file contains a lot of comments that use mutexes, this is because OrangeC currently does not have C++ mutexes but once it
 // does it'll be done
 #define _CRT_SECURE_NO_WARNINGS
 
-#ifdef GCCLINUX
+#ifdef HAVE_UNISTD_H
 #    include <unistd.h>
+#    define _SH_DENYNO 0
 #else
 #    include <windows.h>
 #    include <process.h>
 #    include <direct.h>
+#    include <io.h>
+#    include <share.h>
+#    include <fcntl.h>
+#    include <sys/locking.h>
+#    define lockf _locking
+#    define F_LOCK _LK_LOCK
+#    define F_ULOCK _LK_UNLCK
 #endif
+#include <string.h>
 #undef WriteConsole
 #define __MT__  // BCC55 support
 #include <cstdio>
 #include <ctime>
 #include <string>
 #include "Variable.h"
+#include "MakeMain.h"
 #include "Eval.h"
 #include "os.h"
 #include <algorithm>
 #include <iostream>
 #include <sstream>
+#include <random>
+#include <array>
+#include <functional>
 //#include <mutex>
 #include "semaphores.h"
 //#define DEBUG
@@ -55,10 +68,13 @@ static CRITICAL_SECTION consoleSync;
 std::deque<int> OS::jobCounts;
 bool OS::isSHEXE;
 int OS::jobsLeft;
+std::string OS::jobName = "\t";
+std::string OS::jobFile;
 
-static std::string QuoteCommand(std::string command)
+std::string OS::QuoteCommand(std::string exe, std::string command)
 {
     std::string rv;
+    bool sh = exe.find("sh.exe") != std::string::npos;
     if (command.empty() == false && command.find_first_of(" \t\n\v\"") == command.npos)
     {
         rv = command;
@@ -82,6 +98,12 @@ static std::string QuoteCommand(std::string command)
                 rv.append(slashcount * 2, L'\\');
                 break;
             }
+            else if (*it == L'"' && sh)
+            {
+                // escape all the backslashes and add a \"
+                rv.append(slashcount * 2 + 1, L'\\');
+                rv.push_back('"');
+            }
             else
             {
                 // no escape
@@ -102,6 +124,11 @@ bool Time::operator>(const Time& last)
             return true;
     return false;
 }
+bool Time::operator>=(const Time& last)
+{
+    return (this->seconds == last.seconds && this->ms == last.ms && (this->seconds != 0 || this->ms != 0)) || *this > last;
+}
+
 void OS::Init()
 {
 #ifdef _WIN32
@@ -164,8 +191,13 @@ bool OS::TakeJob()
     return false;
 }
 void OS::GiveJob() { sema.Post(); }
+std::string OS::JobName()
+{
+    return jobName;
+}
 void OS::JobInit()
 {
+    bool first = false;
     std::string name;
     Variable* v = VariableContainer::Instance()->Lookup(".OMAKESEM");
     if (v)
@@ -174,18 +206,102 @@ void OS::JobInit()
     }
     else
     {
-        std::ostringstream t;
-        srand((unsigned)time(nullptr));
-        t << rand() << rand();
-        name = t.str();
+        std::array<unsigned char, 10> rnd;
+
+        std::uniform_int_distribution<int> distribution('0', '9');
+        // note that there will be minor problems if the implementation of random_device
+        // uses a prng with constant seed for the random_device implementation.
+        // that shouldn't be a problem on OS we are interested in.
+        std::random_device dev;
+        std::mt19937 engine(dev());
+        auto generator = std::bind(distribution, engine);
+
+        std::generate(rnd.begin(), rnd.end(), generator);
+        for (auto v : rnd)
+             name += v;
         v = new Variable(".OMAKESEM", name, Variable::f_recursive, Variable::o_environ);
         *VariableContainer::Instance() += v;
+        first = true;
     }
     v->SetExport(true);
     name = std::string("OMAKE") + name;
     sema = Semaphore(name, jobsLeft);
+
+    if (MakeMain::printDir.GetValue() && jobName == "\t")
+    {
+        char tempfile[260];
+        tempnam(tempfile, "hi");
+        if (tempfile[1] == ':')
+        {
+            char *p = strrchr(tempfile, '\\');
+            if (!p)
+                tempfile[0] = 0;
+            else
+                p[1] = 0;
+        }
+        else
+        {
+            char *p = getenv("TMP");
+            if (p && p[0])
+            {
+                char q(0);
+                strcpy(tempfile, p);
+                p = tempfile;
+                while (*p)
+                {
+                    if (!q && (*p == '/' || *p == '\\'))
+                       q = *p;
+                    p++;
+                }
+                if (p[-1] != q)
+                {
+                    *p++ = q;
+                    *p = 0;
+                }
+            }
+            else 
+                tempfile[0] = 0;
+        }
+        if (tempfile[0] == 0)
+#ifdef HAVE_UNISTD_H
+            strcpy(tempfile, "./");
+#else
+            strcpy(tempfile, ".\\");
+#endif
+        strcat(tempfile, (name + ".flg").c_str());
+
+        int fil = -1;
+        if (first)
+        {
+            fil = open(tempfile, _SH_DENYNO | O_CREAT);
+        }
+        else
+        {
+            fil = open(tempfile, _SH_DENYNO | O_RDWR );
+        }
+        if (fil >= 0)
+        {
+            int count = 0;
+            lockf(fil, F_LOCK, 4);
+            if (!first)
+                read(fil, (char *)&count, 4);
+            count++;
+            lseek(fil, 0, SEEK_SET);
+            write(fil, (char *)&count, 4);
+            lseek(fil, 0, SEEK_SET);
+            lockf(fil, F_ULOCK, 4);
+            char buf[256];
+            sprintf(buf, "%d> ", count);
+            jobName= buf;
+        }
+    }
 }
-void OS::JobRundown() { sema.~Semaphore(); }
+void OS::JobRundown() 
+{ 
+    sema.~Semaphore();
+    if (jobFile.size())
+        RemoveFile(jobFile);
+}
 void OS::Take()
 {
 #ifdef _WIN32
@@ -232,7 +348,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
     {
         cmd += " /c ";
     }
-    cmd += QuoteCommand(command1);
+    cmd += QuoteCommand(cmd, command1);
     STARTUPINFO startup = {};
     PROCESS_INFORMATION pi;
     HANDLE pipeRead, pipeWrite, pipeWriteDuplicate;
@@ -301,7 +417,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
         if (output)
         {
             DWORD avail = 0;
-            PeekNamedPipe(pipeRead, NULL, 0, NULL, &avail, NULL);
+            PeekNamedPipe(pipeRead, nullptr, 0, nullptr, &avail, nullptr);
             if (avail > 0)
             {
                 char* buffer = new char[avail + 1];
@@ -328,7 +444,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
             if (output)
             {
                 DWORD avail = 0;
-                PeekNamedPipe(pipeRead, NULL, 0, NULL, &avail, NULL);
+                PeekNamedPipe(pipeRead, nullptr, 0, nullptr, &avail, nullptr);
                 if (avail > 0)
                 {
                     char* buffer = new char[avail + 1];
@@ -396,7 +512,7 @@ std::string OS::SpawnWithRedirect(const std::string command)
     {
         WaitForSingleObject(pi.hProcess, INFINITE);
         DWORD avail = 0;
-        PeekNamedPipe(pipeRead, NULL, 0, NULL, &avail, NULL);
+        PeekNamedPipe(pipeRead, nullptr, 0, nullptr, &avail, nullptr);
         if (avail > 0)
         {
             char* buffer = new char[avail + 1];
@@ -542,7 +658,7 @@ std::string OS::NormalizeFileName(const std::string file)
 void OS::CreateThread(void* func, void* data)
 {
 #ifdef _WIN32
-    CloseHandle((HANDLE)_beginthreadex(nullptr, 0, (unsigned(CALLBACK*)(void*))func, data, 0, NULL));
+    CloseHandle((HANDLE)_beginthreadex(nullptr, 0, (unsigned(CALLBACK*)(void*))func, data, 0, nullptr));
 #endif
 }
 void OS::Yield()

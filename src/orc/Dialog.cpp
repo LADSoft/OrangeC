@@ -1,33 +1,32 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the
- *     Orange C "Target Code" exception.
- *
+ *     (at your option) any later version.
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #include "Dialog.h"
 #include "RCFile.h"
 #include "ResFile.h"
 #include "ResourceData.h"
-#ifndef GCCLINUX
+#ifndef HAVE_UNISTD_H
 #    include <windows.h>
 #endif
 #include <stdexcept>
@@ -109,7 +108,7 @@ bool Control::ValidType(RCFile& rcFile)
 }
 void Control::ReadStandard(RCFile& rcFile, int clss, int addStyle, int extended, int hasText)
 {
-#ifndef GCCLINUX
+#ifndef HAVE_UNISTD_H
     addStyle |= WS_CHILD | WS_VISIBLE;
 #endif
     cls.SetId(clss);
@@ -145,7 +144,7 @@ void Control::ReadStandard(RCFile& rcFile, int clss, int addStyle, int extended,
         helpIndex = rcFile.GetNumber();
         rcFile.SkipComma();
     }
-#ifndef GCCLINUX
+#ifndef HAVE_UNISTD_H
     if (cls == Scrollbar)
     {
         if (style & SBS_VERT)
@@ -222,7 +221,7 @@ void Control::ReadGeneric(RCFile& rcFile, bool extended)
     rcFile.SkipComma();
     GetClass(rcFile);
     rcFile.SkipComma();
-#ifndef GCCLINUX
+#ifndef HAVE_UNISTD_H
     style = rcFile.GetNumber() | WS_CHILD | WS_VISIBLE;
 #else
     style = rcFile.GetNumber();
@@ -249,7 +248,7 @@ void Control::ReadGeneric(RCFile& rcFile, bool extended)
 
 void Control::ReadRC(RCFile& rcFile, bool extended)
 {
-#ifndef GCCLINUX
+#ifndef HAVE_UNISTD_H
     switch (rcFile.GetTokenId())
     {
         case Lexer::AUTO3STATE:
@@ -348,7 +347,7 @@ void Dialog::WriteRes(ResFile& resFile)
 
     resFile.WriteString(caption);
 
-#ifndef GCCLINUX
+#ifndef HAVE_UNISTD_H
     if (style & DS_SETFONT)
     {
         resFile.WriteWord(pointSize);
@@ -469,7 +468,7 @@ void Dialog::ReadSettings(RCFile& rcFile)
             rcFile.NeedEol();
         }
     }
-#ifndef GCCLINUX
+#ifndef HAVE_UNISTD_H
     if (hascaption)
         style |= WS_CAPTION;
     if (!hasstyle)

@@ -1,14 +1,13 @@
 # Software License Agreement
 # 
-#     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
+#     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
 # 
 #     This file is part of the Orange C Compiler package.
 # 
 #     The Orange C Compiler package is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU General Public License as published by
 #     the Free Software Foundation, either version 3 of the License, or
-#     (at your option) any later version, with the addition of the 
-#     Orange C "Target Code" exception.
+#     (at your option) any later version.
 # 
 #     The Orange C Compiler package is distributed in the hope that it will be useful,
 #     but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -22,73 +21,80 @@
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
 
+include ../../pathext2.mak
+
 NAME=occil
-MAIN_FILE=ccmain.c
+MAIN_FILE=ccmain.cpp
 INCLUDES=..\parse ..\preproc ..\middle netlib\ ..\..\util 
-C_DEPENDENCIES= \
+
+C_DEPENDENCIES =\
+    winsystem.c
+
+CPP_DEPENDENCIES= \
     $(BACKEND_FILES) \
-    ccmain.c \
-    crc.c \
-    beinterf.c \
-    browse.c \
-    ccerr.c \
-    constopt.c \
-    cppbltin.c \
-    cpplookup.c \
-    debug.c \
-    declare.c \
-    declcons.c \
-    declcpp.c \
-    expr.c \
-    exprcpp.c \
-    float.c \
-    help.c \
-    ialias.c \
-    iblock.c \
-    iconfl.c \
-    iconst.c \
-    iexpr.c \
-    iflow.c \
-    iinline.c \
-    iinvar.c \
-    ilazy.c \
-    ilive.c \
-    ilocal.c \
-    iloop.c \
-    init.c \
-    inline.c \
-    invoke.c \
-    ioptutil.c \
-    iout.c \
-    ipeep.c \
-    irc.c \
-    ireshape.c \
-    irewrite.c \
-    issa.c \
-    istmt.c \
-    istren.c \
-    lambda.c \
-    lex.c \
-    libcxx.c \
-    list.c \
-    mangle.c \
-    memory.c \
-    osutil.c \
-    output.c \
-    preproc.c \
-    process.c \
-    property.c \
-    ppexpr.c \
-    rtti.c \
-    stmt.c \
-    symtab.c \
-    template.c \
-    types.c \
-    unmangle.c\
-    winsystem.c \
-    wseh.c
-CPP_DEPENDENCIES=\
-    using.cpp gen.cpp process.cpp import.cpp
+    ccmain.cpp \
+    crc.cpp \
+    beinterf.cpp \
+    browse.cpp \
+    ccerr.cpp \
+    constopt.cpp \
+    cppbltin.cpp \
+    cpplookup.cpp \
+    debug.cpp \
+    declare.cpp \
+    declcons.cpp \
+    declcpp.cpp \
+    expr.cpp \
+    exprcpp.cpp \
+    float.cpp \
+    help.cpp \
+    ialias.cpp \
+    iblock.cpp \
+    iconfl.cpp \
+    iconst.cpp \
+    iexpr.cpp \
+    iflow.cpp \
+    iinline.cpp \
+    iinvar.cpp \
+    ilazy.cpp \
+    ilive.cpp \
+    ilocal.cpp \
+    iloop.cpp \
+    init.cpp \
+    inline.cpp \
+    invoke.cpp \
+    ioptutil.cpp \
+    iout.cpp \
+    ipeep.cpp \
+    irc.cpp \
+    ireshape.cpp \
+    irewrite.cpp \
+    issa.cpp \
+    istmt.cpp \
+    istren.cpp \
+    lambda.cpp \
+    lex.cpp \
+    libcxx.cpp \
+    list.cpp \
+    mangle.cpp \
+    memory.cpp \
+    osutil.cpp \
+    output.cpp \
+    preproc.cpp \
+    process.cpp \
+    property.cpp \
+    ppexpr.cpp \
+    rtti.cpp \
+    stmt.cpp \
+    symtab.cpp \
+    template.cpp \
+    types.cpp \
+    unmangle.cpp \
+    wseh.cpp \
+    using.cpp \
+    gen.cpp \
+    process.cpp \
+    import.cpp
 LIB_DEPENDENCIES=util netlib
 
 #determine if we can ignore the banner for a batch compile
@@ -100,17 +106,26 @@ DEFINES=$(i386) $(LL) $(MSDOS) $(WIN32)
 SOURCE = ..\parse;..\preproc;..\middle
 
 SRCPATH=$(BACKEND_INCLUDE_PATH);$(SOURCE);..;..\..\util
-BACKEND_FILES = config.c
+BACKEND_FILES = config.cpp
 
 BACKEND_INCLUDE_PATH=.
 
 vpath %.c $(SRCPATH);dll
 vpath %.cs $(SRCPATH);dll
-
+vpath %.cpp $(SRCPATH);dll
 compiler: netlib redirect netlink lsmsilcrtl.dll occmsil testsqlite.exe
 
+ifndef _TREEROOT
+_TREEROOT := $(CURDIR)$(PATHEXT2)..$(PATHEXT2)..$(PATHEXT2)treetop.mak
+_TREETARGET := $(CURDIR)
+export _TREEROOT
+export _TREETARGET
+
 redirect:
-	@$(MAKE) /T
+	@$(MAKE) -f$(_TREEROOT)
+format:
+	@$(MAKE) -f $(_TREEROOT) format
+endif
 
 occmsil: occmsil.c
 	-del occmsil.dll

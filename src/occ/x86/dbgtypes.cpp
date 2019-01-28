@@ -1,26 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the
- *     Orange C "Target Code" exception.
- *
+ *     (at your option) any later version.
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #include <stdio.h>
@@ -34,8 +33,8 @@
 #include "ObjType.h"
 #include "ObjFile.h"
 
-extern "C" TYPE stdvoid;
-extern "C" TYPE stdint;
+extern TYPE stdvoid;
+extern TYPE stdint;
 #define DEBUG_VERSION 4.0
 
 bool dbgtypes::typecompare::operator()(const TYPE* left, const TYPE* right) const
@@ -115,6 +114,8 @@ bool dbgtypes::typecompare::operator()(const TYPE* left, const TYPE* right) cons
                         if (operator()(left->btp, right->btp))
                             return true;
                         break;
+                    default:
+                        break;
                 }
             }
         }
@@ -127,7 +128,7 @@ ObjType* dbgtypes::Put(TYPE* tp)
     auto val = Lookup(tp);
     if (val)
         return val;
-    if (tp->type == bt_any)
+    if (tp->type == bt_any || tp->type == bt_aggregate)
     {
         val = factory.MakeType((ObjType::eType)42);
     }
@@ -188,7 +189,7 @@ ObjType* dbgtypes::BasicType(TYPE* tp)
         return factory.MakeType((ObjType::eType)n);
     return nullptr;
 }
-ObjType* dbgtypes::TypeName(ObjType* val, char* nm)
+ObjType* dbgtypes::TypeName(ObjType* val, const char* nm)
 {
     if (nm[0] == '_')
         nm++;

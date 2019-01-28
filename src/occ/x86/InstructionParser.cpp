@@ -1,32 +1,32 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the
- *     Orange C "Target Code" exception.
- *
+ *     (at your option) any later version.
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #include "InstructionParser.h"
 #include "Errors.h"
 #include <ctype.h>
 #include <fstream>
+#include <cassert>
 #include <stdio.h>
 #include "Instruction.h"
 #include "Fixup.h"
@@ -34,7 +34,7 @@
 #include <iostream>
 #include "Token.h"
 #include "be.h"
-extern "C" TYPE stdint;
+extern TYPE stdint;
 extern bool assembling;
 
 static const unsigned mask[32] = {
@@ -311,7 +311,7 @@ asmError InstructionParser::GetInstruction(OCODE* ins, Instruction*& newIns, std
 }
 void InstructionParser::SetRegToken(int reg, int sz)
 {
-    static InputToken* segs[] = {&Tokencs, &Tokends, &Tokenes, &Tokenfs, &Tokengs, &Tokenss};
+    static InputToken* segs[] = {&Tokencs, &Tokencs, &Tokends, &Tokenes, &Tokenfs, &Tokengs, &Tokenss};
     static InputToken* dword[] = {&Tokeneax, &Tokenecx, &Tokenedx, &Tokenebx, &Tokenesp, &Tokenebp, &Tokenesi, &Tokenedi};
     static InputToken* word[] = {&Tokenax, &Tokencx, &Tokendx, &Tokenbx, &Tokensp, &Tokenbp, &Tokensi, &Tokendi};
     static InputToken* byte[] = {&Tokenal, &Tokencl, &Tokendl, &Tokenbl, &Tokenah, &Tokench, &Tokendh, &Tokenbh};
@@ -448,13 +448,14 @@ void InstructionParser::SetSize(int sz)
 }
 void InstructionParser::SetBracketSequence(bool open, int sz, int seg)
 {
+    static InputToken* segs[] = {&Tokencs, &Tokencs, &Tokends, &Tokenes, &Tokenfs, &Tokengs, &Tokenss};
     if (open)
     {
         SetSize(sz);
         inputTokens.push_back(&Tokenopenbr);
         if (seg)
         {
-            inputTokens.push_back(seg == e_fs ? &Tokenfs : &Tokengs);
+            inputTokens.push_back(segs[seg]);
             inputTokens.push_back(&Tokencolon);
         }
     }
@@ -483,7 +484,7 @@ void InstructionParser::SetOperandTokens(amode* operand)
             SetRegToken(operand->preg, 202);
             break;
         case am_seg:
-            SetRegToken(operand->preg, 100);
+            SetRegToken(operand->seg, 100);
             break;
         case am_mmreg:
             SetRegToken(operand->preg, 300);
@@ -529,6 +530,9 @@ void InstructionParser::SetOperandTokens(amode* operand)
         case am_immed:
             SetSize(operand->length);
             SetExpressionToken(operand->offset);
+            break;
+        default:
+            assert(0);
             break;
     }
 }

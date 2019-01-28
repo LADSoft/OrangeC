@@ -1,26 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the
- *     Orange C "Target Code" exception.
- *
+ *     (at your option) any later version.
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #include "ppMain.h"
@@ -36,7 +35,7 @@ CmdSwitchBool ppMain::disableExtensions(SwitchParser, 'A', false);
 CmdSwitchBool ppMain::c99Mode(SwitchParser, '9', true);
 CmdSwitchBool ppMain::trigraphs(SwitchParser, 'T', false);
 CmdSwitchDefine ppMain::defines(SwitchParser, 'D');
-CmdSwitchString ppMain::undefines(SwitchParser, 'U', ';');
+CmdSwitchDefine ppMain::undefines(SwitchParser, 'U');
 CmdSwitchString ppMain::includePath(SwitchParser, 'I', ';');
 CmdSwitchString ppMain::errorMax(SwitchParser, 'E');
 CmdSwitchFile ppMain::File(SwitchParser, '@');
@@ -100,34 +99,45 @@ int ppMain::Run(int argc, char* argv[])
     {
         PreProcessor pp(*(*it), srchPth, sysSrchPth, false, trigraphs.GetValue(), assembly.GetValue() ? '%' : '#', false,
                         !c99Mode.GetValue(), !disableExtensions.GetValue());
-        int n = defines.GetCount();
-        for (int i = 0; i < n; i++)
-        {
-            CmdSwitchDefine::define* v = defines.GetValue(i);
-            pp.Define(v->name, v->value, false);
-        }
         if (c99Mode.GetValue())
         {
             std::string ver = "199901L";
             pp.Define("__STDC_VERSION__", ver, true);
         }
-        std::string working = undefines.GetValue();
-        while (!working.empty())
+        int n = defines.GetCount();
+        int nu = undefines.GetCount();
+        for (int i = 0, j = 0; i < n || j < nu;)
         {
-            size_t n = working.find_first_of(';');
-            if (n == std::string::npos)
+            if (i < n && j < nu)
             {
-                pp.Undefine(working);
-                working = "";
+                CmdSwitchDefine::define* v = defines.GetValue(i);
+                CmdSwitchDefine::define* uv = undefines.GetValue(j);
+                if (v->argnum < uv->argnum)
+                {
+                    pp.Define(v->name, v->value, false);
+                    i++;
+                }
+                else
+                {
+                    pp.Undefine(uv->name);
+                    j++;
+                }
+            }
+            else if (i < n)
+            {
+                CmdSwitchDefine::define* v = defines.GetValue(i);
+                pp.Define(v->name, v->value, false);
+                i++;
             }
             else
             {
-                std::string temp = working.substr(0, n);
-                pp.Undefine(temp);
-                working = working.substr(n + 1);
+                CmdSwitchDefine::define* v = undefines.GetValue(i);
+                pp.Undefine(v->name);
+                j++;
             }
         }
-        working = errorMax.GetValue();
+
+        std::string working = errorMax.GetValue();
         if (!working.empty())
         {
             if (working[0] == '+')

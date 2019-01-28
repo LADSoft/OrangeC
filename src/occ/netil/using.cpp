@@ -1,12 +1,13 @@
-#include "compiler.h"
+#include "be.h"
 #include "DotNetPELib.h"
 #include <string>
+#include "Utils.h"
 
 using namespace DotNetPELib;
 
-extern "C" PELib *peLib;
-extern "C" char *pinvoke_dll;
-extern "C" BOOLEAN managed_library;
+extern PELib *peLib;
+extern char *pinvoke_dll;
+extern BOOLEAN managed_library;
 
 struct data
 {
@@ -16,15 +17,15 @@ struct data
 #define HASHLEN 2048
 static LIST *_global_using_list;
 static char *DIR_SEP = "\\";
-extern "C" void _using_init()
+void _using_init()
 {
 }
-extern "C" BOOLEAN _using_(char *file)
+BOOLEAN _using_(char *file)
 {
     char name[260], *p;
     strcpy(name, file);
     p = strrchr(name, '.');
-    if (p && !_stricmp(p, ".dll"))
+    if (p && Utils::iequal(p, ".dll"))
         *p = 0;
     if (!peLib->LoadAssembly(name))
         return true;
@@ -48,7 +49,7 @@ std::string _dll_name(char *name)
     return peLib->FindUnmanagedName(name);
 }
 // usually from the command line
-extern "C" void _add_global_using(char *str)
+void _add_global_using(char *str)
 {
     while (*str)
     {
@@ -66,7 +67,7 @@ extern "C" void _add_global_using(char *str)
         (*find) = lst;
     }
 }
-extern "C" void _apply_global_using(void)
+void _apply_global_using(void)
 {
     if (!managed_library)
     {
@@ -85,7 +86,7 @@ extern "C" void _apply_global_using(void)
         lst = lst->next;
     }
 }
-extern "C" BOOLEAN msil_managed(SYMBOL *sp)
+BOOLEAN msil_managed(SYMBOL *sp)
 {
     if (sp->linkage2 == lk_msil_rtl)
         return TRUE;

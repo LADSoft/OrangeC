@@ -1,31 +1,31 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the
- *     Orange C "Target Code" exception.
- *
+ *     (at your option) any later version.
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #include "Spawner.h"
 #include "Eval.h"
 #include "Maker.h"
+#include "MakeMain.h"
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -34,17 +34,31 @@
 #include "Utils.h"
 #include <algorithm>
 #include <chrono>
-
+#ifdef HAVE_UNISTD_H
+#else
+#include <windows.h>
+#undef WriteConsole
+#undef Yield
+#endif
 const char Spawner::escapeStart = '\x1';
 const char Spawner::escapeEnd = '\x2';
-int Spawner::runningProcesses;
+long Spawner::runningProcesses;
 
 unsigned WINFUNC Spawner::Thread(void* cls)
 {
     Spawner* ths = (Spawner*)cls;
+#ifdef HAVE_UNISTD_H
+
     ++runningProcesses;
+#else
+    InterlockedIncrement(&runningProcesses);
+#endif
     ths->RetVal(ths->InternalRun());
+#ifdef HAVE_UNISTD_H
     --runningProcesses;
+#else
+    InterlockedDecrement(&runningProcesses);
+#endif
     ths->done = true;
     return 0;
 }
@@ -161,7 +175,13 @@ int Spawner::InternalRun()
             int rv1 = Run(cmd, curIgnore, curSilent, curDontRun, make);
             make = false;
             if (!rv)
+            {
+                if (rv1)
+                {
+                    MakeMain::MakeMessage("Commands returned %d in '%s(%d)'%s", rv1, ruleList->GetTarget().c_str(), commands->GetLine(), curIgnore ? " (Ignored)" : "");
+                }
                 rv = rv1;
+            }
         }
         if (outputType == o_line)
             OS::ToConsole(output);
@@ -171,7 +191,12 @@ int Spawner::InternalRun()
             break;
     }
     if (oneShell)
+    {
         rv = Run(longstr, ignoreErrors, silent, dontRun, false);
+        if (rv)
+           MakeMain::MakeMessage("Commands returned %d in '%s(%d)'%s", rv, ruleList->GetTarget().c_str(), commands->GetLine(), ignoreErrors ? " (Ignored)" : "");
+
+    }
     OS::ToConsole(output);
     for (auto f : tempFiles)
         OS::RemoveFile(f);
@@ -179,7 +204,7 @@ int Spawner::InternalRun()
 }
 int Spawner::Run(const std::string& cmdin, bool ignoreErrors, bool silent, bool dontrun, bool make)
 {
-
+    int rv = 0;
     std::string cmd = cmdin;
     Variable* v = VariableContainer::Instance()->Lookup("SHELL");
     if (v)
@@ -215,7 +240,9 @@ int Spawner::Run(const std::string& cmdin, bool ignoreErrors, bool silent, bool 
             if (!make1)
                 OS::TakeJob();
             if (!silent)
-                OS::WriteConsole(std::string("\t") + command + "\n");
+            {
+                OS::WriteConsole(OS::JobName() + command + "\n");
+            }
             int rv1;
             if (!dontrun)
             {
@@ -299,7 +326,41 @@ std::string Spawner::QualifyFiles(const std::string& cmd)
     std::string working = cmd;
     while (!working.empty())
     {
-        std::string cur = Eval::ExtractFirst(working, " ");
+        int s = working.find_first_not_of(" \t\n");
+        if (s != std::string::npos)
+            working = working.substr(s);
+        else
+            break;
+        s= working.find_first_of(" \t\n");
+        if (s == std::string::npos)
+            s = working.size();
+        int p = working.find_first_of("'");
+        int q = working.find_first_of("\"");
+        if (p == std::string::npos)
+            p = q;
+        else if (q != std::string::npos)
+            p = p < q ? p : q;
+        if (p != std::string::npos)
+            s = s < p ? s : p;
+        std::string cur;
+        if (s == std::string::npos)
+        {
+            cur = working;
+            working = "";
+        }
+
+        else {
+            if (working[s] == '"' || working[s] == '\'')
+            {
+                s = working.find_first_of(working[s], s+1);
+                if (s == std::string::npos)
+                    s = working.size();
+                else
+                    s = s + 1;
+            }
+            cur = working.substr(0, s);
+            working = working.substr(s);
+        }
         cur = Maker::GetFullName(cur);
         if (!rv.empty())
             rv += " ";

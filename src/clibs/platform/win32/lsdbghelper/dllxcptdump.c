@@ -484,7 +484,7 @@ __declspec(dllexport) void CALLBACK StackTrace(char* text, char* prog, PCONTEXT 
     sqlite3* db = NULL;
     unsigned currentBase = 0;
     DWORD linkbase = 0;
-    char buf[10000];
+    char buf[50000];
     sprintf(buf, "\n%s:(%s)\n", text, prog);
     sprintf(buf + strlen(buf), "CS:EIP %04X:%08X  SS:ESP %04X:%08X\n", regs->SegCs, regs->Eip, regs->SegSs, regs->Esp);
     sprintf(buf + strlen(buf), "EAX: %08X  EBX: %08X  ECX: %08X  EDX: %08X  flags: %08X\n", regs->Eax, regs->Ebx, regs->Ecx,
@@ -492,6 +492,14 @@ __declspec(dllexport) void CALLBACK StackTrace(char* text, char* prog, PCONTEXT 
     sprintf(buf + strlen(buf), "EBP: %08X  ESI: %08X  EDI: %08X\n", regs->Ebp, regs->Esi, regs->Edi);
     sprintf(buf + strlen(buf), " DS:     %04X   ES:     %04X   FS:     %04X   GS:     %04X\n", regs->SegDs, regs->SegEs,
             regs->SegFs, regs->SegGs);
+
+    if (regs->Eip < 0x80000000)
+    {
+        sprintf(buf + strlen(buf), "\n\nCS:EIP  ");
+        for (int i=0; i < 16; i++)
+            sprintf(buf + strlen(buf), "%02X ", ((unsigned char *)regs->Eip)[i]);
+    }
+    sprintf(buf + strlen(buf), "\n");
 
     char dbname[MAX_PATH];
     DWORD* sp = regs->Ebp;

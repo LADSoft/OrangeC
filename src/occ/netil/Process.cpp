@@ -1,14 +1,13 @@
 /* Software License Agreement
  * 
- *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
  * 
  *     This file is part of the Orange C Compiler package.
  * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
- *     Orange C "Target Code" exception.
+ *     (at your option) any later version.
  * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -31,6 +30,7 @@
 #include "Be.h"
 #include "winmode.h"
 #include "DotNetpeLib.h"
+#include "Utils.h"
 
 #define STARTUP_TYPE_STARTUP 1
 #define STARTUP_TYPE_RUNDOWN 2
@@ -45,8 +45,6 @@ using namespace DotNetPELib;
 
 extern void Import();
 BoxedType *boxedType(int isz);
-
-extern "C" {
 
     extern SYMBOL *theCurrentFunc;
     extern COMPILER_PARAMS cparams;
@@ -88,8 +86,6 @@ extern "C" {
         "void *__OCCMSIL_GetProcThunkToUnmanaged(void *proc); "
         "void *__va_start__(); "
         "void *__va_arg__(void *, ...); ";
-
-}
 std::string _dll_name(char *name);
 int uniqueId;
 static SYMBOL retblocksym;
@@ -157,17 +153,14 @@ std::multimap<std::string, MethodSignature *> pInvokeReferences;
 
 std::map<std::string, Value *> startups, rundowns, tlsstartups, tlsrundowns;
 
-extern "C"
-{
     std::vector<Local *> localList;
-}
 static std::map<std::string, Type *> typeList;
 static std::map<SYMBOL *, Value *, byField> fieldList;
 static std::map<std::string, MethodSignature *> arrayMethods;
 
-extern "C" void parse_pragma(char *kw, char *tag)
+void parse_pragma(char *kw, char *tag)
 {
-	if (!stricmp(kw,"netlib"))
+	if (Utils::iequal(kw,"netlib"))
 	{
 		while (isspace(*tag)) tag++;
 		if (*tag)
@@ -1188,7 +1181,7 @@ void LoadParams(SYMBOL *sp)
         hr = hr->next;
     }
 }
-extern "C" void compile_start(char *name)
+void compile_start(char *name)
 {
     _using_init();
     Import();
@@ -1216,7 +1209,7 @@ void LoadFuncs(void)
             ((SYMBOL *)sp->tp->syms->table[0]->p)->genreffed = TRUE;
     }
 }
-extern "C" void flush_peep(SYMBOL *funcsp, QUAD *list)
+void flush_peep(SYMBOL *funcsp, QUAD *list)
 {
     LoadFuncs();
     if (!(cparams.prm_compileonly && !cparams.prm_asmfile))
@@ -1532,7 +1525,7 @@ static void AddRTLThunks()
                 mainSym->Signature()->AddParam(param);
             }
         }
-        oa_enterseg();
+        oa_enterseg((e_sg)0);
         for (auto ri = startups.begin(); ri != startups.end(); ++ri)
         {
             LIST *lst = (LIST *)peLib->AllocateBytes(sizeof(LIST));
@@ -1667,7 +1660,7 @@ void ReplaceName(std::map<std::string, Value *> &list, Value *v, char *name)
     n->Signature()->SetName(name);
     list[name] = v;
 }
-extern "C" void oa_gensrref(SYMBOL *sp, int val, int type)
+void oa_gensrref(SYMBOL *sp, int val, int type)
 {
     static int count = 1;
     Value *v = globalMethods[sp];
@@ -1700,7 +1693,7 @@ extern "C" void oa_gensrref(SYMBOL *sp, int val, int type)
         diag("oa_startup: function not found");
     }
 }
-extern "C" BOOLEAN oa_main_preprocess(void)
+int oa_main_preprocess(void)
 {
 
     PELib::CorFlags corFlags = PELib::bits32;
@@ -1921,7 +1914,7 @@ private:
     bool scanning;
     std::map<std::string, int> pinvokeCounters;
 };
-extern "C" void oa_main_postprocess(BOOLEAN errors)
+void oa_main_postprocess(BOOLEAN errors)
 {
     if (cparams.prm_compileonly && !cparams.prm_asmfile)
     {
@@ -1959,7 +1952,7 @@ extern "C" void oa_main_postprocess(BOOLEAN errors)
         }
     }
 }
-extern "C" void oa_end_generation(void)
+void oa_end_generation(void)
 {
     if (cparams.prm_compileonly && !cparams.prm_asmfile)
     {
@@ -2053,7 +2046,7 @@ extern "C" void oa_end_generation(void)
         }
     }
 }
-extern "C" void oa_put_extern(SYMBOL *sp, int code)
+void oa_put_extern(SYMBOL *sp, int code)
 {
     if (isfunction(sp->tp))
     {
@@ -2069,12 +2062,12 @@ extern "C" void oa_put_extern(SYMBOL *sp, int code)
         CacheExtern(sp);
     }
 }
-extern "C" void oa_gen_strlab(SYMBOL *sp)
+void oa_gen_strlab(SYMBOL *sp)
 /*
  *      generate a named label.
  */
 {
-    oa_enterseg();
+    oa_enterseg((e_sg)0);
     if (sp->storage_class != sc_localstatic && sp->storage_class != sc_constant && sp->storage_class != sc_static)
     {
         CacheGlobal(sp);
@@ -2097,14 +2090,14 @@ Type * GetStringType(int type)
     std::string name;
     switch (type)
     {
-    case lexeme::l_ustr:
-    case lexeme::l_astr:
+    case l_ustr:
+    case l_astr:
         name = "int8[]";
         break;
-    case lexeme::l_Ustr:
+    case l_Ustr:
         name = "int32[]";
         break;
-    case lexeme::l_wstr:
+    case l_wstr:
         name = "int16[]";
         break;
     }
@@ -2141,7 +2134,7 @@ Value *GetStringFieldData(int lab, int type)
 }
 void oa_put_string_label(int lab, int type)
 {
-    oa_enterseg();
+    oa_enterseg((e_sg)0);
 
     Field *field = static_cast<FieldName *>(GetStringFieldData(lab, type))->GetField();
 
@@ -2182,7 +2175,7 @@ void oa_genstring(LCHAR *str, int len)
     }
 }
 
-void oa_enterseg()
+void oa_enterseg(e_sg segnum)
 {
     if (initializingField && dataPos)
     {

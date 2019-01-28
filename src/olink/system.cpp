@@ -1,6 +1,6 @@
 #include <string.h>
 #include <ctype.h>
-#ifdef GCCLINUX
+#ifdef HAVE_UNISTD_H
 #    include <stdlib.h>
 #else
 #    include <windows.h>
@@ -13,7 +13,7 @@ namespace std
 // when it is used...
 int winsystem(const char* cmd)
 {
-#ifdef GCCLINUX
+#ifdef HAVE_UNISTD_H
     return system(cmd);
 #else
     STARTUPINFO stStartInfo;

@@ -1,6 +1,3 @@
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /* Protogen Version 2.1.1.17Friday October 28, 2005  17:44:50 */
 
@@ -67,6 +64,7 @@ void asm_swbranch(QUAD *q)           ;
 void asm_dc(QUAD *q)                 ;
 void asm_assnblock(QUAD *q)          ;
 void asm_clrblock(QUAD *q)           ;
+void asm_cmpblock(QUAD *q)           ;
 void asm_jc(QUAD *q)                 ;
 void asm_ja(QUAD *q)                 ;
 void asm_je(QUAD *q)                 ;
@@ -116,7 +114,7 @@ int islabeled(EXPRESSION *n);
 void oa_gen_strlab(SYMBOL *sp);
 void oa_put_label(int lab);
 void oa_put_string_label(int lab, int type);
-void oa_genfloat(enum e_gt type, FPF *val);
+void oa_genfloat(enum e_gt type, FPFC *val);
 void oa_genstring(LCHAR *str, int len);
 void oa_genint(enum e_gt type, LLONG_TYPE val);
 void oa_genaddress(ULLONG_TYPE val);
@@ -128,7 +126,7 @@ void oa_genstorage(int nbytes);
 void oa_gen_labref(int n);
 void oa_gen_labdifref(int n1, int n2);
 void oa_exitseg();
-void oa_enterseg();
+void oa_enterseg(e_sg seg);
 void oa_gen_virtual(SYMBOL *sp, int data);
 void oa_gen_endvirtual(SYMBOL *sp);
 void oa_gen_vtt(VTABENTRY *entry, SYMBOL *func);
@@ -136,7 +134,7 @@ void oa_gen_vc1(SYMBOL *func);
 void oa_gen_importThunk(SYMBOL *func);
 void oa_align(int size);
 long queue_muldivval(long number);
-long queue_floatval(FPF *number, int size);
+long queue_floatval(FPFC *number, int size);
 void dump_muldivval(void);
 void dump_browsedata(BROWSEINFO *bri);
 void dump_browsefile(BROWSEFILE *brf);
@@ -161,7 +159,7 @@ void _add_global_using(char *str);
 void _apply_global_using(void);
 BOOLEAN msil_managed(SYMBOL *sp);
 void msil_create_property(SYMBOL *property, SYMBOL *getter, SYMBOL *setter);
-BOOLEAN oa_main_preprocess(void);
+int oa_main_preprocess(void);
 void oa_main_postprocess(BOOLEAN errors);
 void GetOutputFileName(char *name, char *temp, BOOLEAN obj);
 void NextOutputFileName();
@@ -172,6 +170,3 @@ SYMBOL * clonesp(SYMBOL *sp, BOOLEAN shallow);
 void oa_load_funcs(void);
 TYPE * LookupGlobalArrayType(char *name);
 INITLIST *cloneInitListTypes(INITLIST *in);
-#ifdef __cplusplus
-}
-#endif

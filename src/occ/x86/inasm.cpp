@@ -1,26 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the
- *     Orange C "Target Code" exception.
- *
+ *     (at your option) any later version.
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 /*
@@ -29,13 +28,15 @@
 #include <stdio.h>
 #include <string.h>
 #include "be.h"
+#include "Instruction.h"
 
-extern "C" INCLUDES* includes;
-extern "C" int codeLabel;
-extern "C" int prm_assembler;
-extern "C" HASHTABLE* labelSyms;
-extern "C" int usingEsp;
+extern INCLUDES* includes;
+extern int codeLabel;
+extern int prm_assembler;
+extern HASHTABLE* labelSyms;
+extern int usingEsp;
 extern InstructionParser* instructionParser;
+extern SYMBOL *theCurrentFunc;
 
 bool assembling;
 static ASMREG* regimage;
@@ -58,7 +59,7 @@ static enum e_opcode op;
 #define ERR_UNKNOWN_OP 10
 #define ERR_BAD_OPERAND_COMBO 11
 #define ERR_INVALID_USE_OF_INSTRUCTION 12
-static char* errors[] = {"Lable expected",
+static const char* errors[] = {"Lable expected",
                          "Illegal address mode",
                          "Address mode expected",
                          "Invalid opcode",
@@ -80,7 +81,7 @@ ASMNAME directiveLst[] = {{"db", op_reserved, ISZ_UCHAR, 0},
                           {"dt", op_reserved, ISZ_LDOUBLE, 0},
                           {"label", op_label, 0, 0},
                           {0}};
-extern "C" ASMREG reglst[] = {{"cs", am_seg, 1, ISZ_USHORT},     {"ds", am_seg, 2, ISZ_USHORT},
+ASMREG reglst[] = {{"cs", am_seg, 1, ISZ_USHORT},     {"ds", am_seg, 2, ISZ_USHORT},
                               {"es", am_seg, 3, ISZ_USHORT},     {"fs", am_seg, 4, ISZ_USHORT},
                               {"gs", am_seg, 5, ISZ_USHORT},     {"ss", am_seg, 6, ISZ_USHORT},
                               {"al", am_dreg, 0, ISZ_UCHAR},     {"cl", am_dreg, 1, ISZ_UCHAR},
@@ -132,7 +133,7 @@ void inasmini(void)
         s = (ASM_HASH_ENTRY*)Alloc(sizeof(ASM_HASH_ENTRY));
         s->data = r;
         s->name = r->name;
-        s->instruction = FALSE;
+        s->instruction = false;
         insert((SYMBOL*)s, asmHash);
         r++;
     }
@@ -146,7 +147,7 @@ void inasmini(void)
             s->data = (ASMNAME*)Alloc(sizeof(ASMNAME));
             ((ASMNAME*)s->data)->name = v;
             ((ASMNAME*)s->data)->atype = i;
-            s->instruction = TRUE;
+            s->instruction = true;
             insert((SYMBOL*)s, asmHash);
         }
         i++;
@@ -159,7 +160,7 @@ void inasmini(void)
             s = (ASM_HASH_ENTRY*)Alloc(sizeof(ASM_HASH_ENTRY));
             s->data = o;
             s->name = o->name;
-            s->instruction = TRUE;
+            s->instruction = true;
             insert((SYMBOL*)s, asmHash);
             o++;
         }
@@ -208,7 +209,7 @@ static AMODE* inasm_const(void)
     AMODE* rv = NULL;
     TYPE* tp = NULL;
     EXPRESSION* exp = NULL;
-    lex = optimized_expression(lex, beGetCurrentFunc, NULL, &tp, &exp, FALSE);
+    lex = optimized_expression(lex, beGetCurrentFunc, NULL, &tp, &exp, false);
     if (!tp)
     {
         error(ERR_EXPRESSION_SYNTAX);
@@ -250,8 +251,8 @@ static EXPRESSION* inasm_ident(void)
             sp->declline = sp->origdeclline = lex->line;
             sp->realdeclline = lex->realline;
             sp->declfilenum = lex->filenum;
-            sp->used = TRUE;
-            sp->tp = (TYPE*)beLocalAlloc(sizeof(TYPE));
+            sp->used = true;
+            sp->tp = (TYPE*)(TYPE *)beLocalAlloc(sizeof(TYPE));
             sp->tp->type = bt_unsigned;
             sp->tp->bits = sp->tp->startbit = -1;
             sp->offset = codeLabel++;
@@ -262,22 +263,22 @@ static EXPRESSION* inasm_ident(void)
         {
             /* If we get here the symbol was already in the table
              */
-            sp->used = TRUE;
+            sp->used = true;
             switch (sp->storage_class)
             {
                 case sc_absolute:
-                    sp->genreffed = TRUE;
+                    sp->genreffed = true;
                     node = varNode(en_absolute, sp);
                     break;
                 case sc_overloads:
                     node = varNode(en_pc, (SYMBOL*)sp->tp->syms->table[0]->p);
-                    ((SYMBOL*)(sp->tp->syms->table[0]->p))->genreffed = TRUE;
+                    ((SYMBOL*)(sp->tp->syms->table[0]->p))->genreffed = true;
                     break;
                 case sc_localstatic:
                 case sc_global:
                 case sc_external:
                 case sc_static:
-                    sp->genreffed = TRUE;
+                    sp->genreffed = true;
                     node = varNode(en_global, sp);
                     break;
                 case sc_const:
@@ -290,10 +291,10 @@ static EXPRESSION* inasm_ident(void)
                     break;
                 case sc_auto:
                 case sc_register:
-                    sp->allocate = TRUE;
+                    sp->allocate = true;
                 case sc_parameter:
                     node = varNode(en_auto, sp);
-                    sp->inasm = TRUE;
+                    sp->inasm = true;
                     break;
                 default:
                     errorstr(ERR_INVALID_STORAGE_CLASS, "");
@@ -327,7 +328,7 @@ static EXPRESSION* inasm_label(void)
         sp->declline = sp->origdeclline = lex->line;
         sp->realdeclline = lex->realline;
         sp->declfilenum = lex->filenum;
-        sp->tp = (TYPE*)beLocalAlloc(sizeof(TYPE));
+        sp->tp = (TYPE*)(TYPE *)beLocalAlloc(sizeof(TYPE));
         sp->tp->type = bt_unsigned;
         sp->tp->bits = sp->tp->startbit = -1;
         sp->offset = codeLabel++;
@@ -543,12 +544,12 @@ static int inasm_structsize(void)
 static AMODE* inasm_mem(void)
 {
     int reg1 = -1, reg2 = -1, scale = 0, seg = 0;
-    BOOLEAN subtract = FALSE;
+    bool subtract = false;
     EXPRESSION* node = 0;
     AMODE* rv;
-    int gotident = FALSE; /*, autonode = FALSE;*/
+    int gotident = false; /*, autonode = false;*/
     inasm_getsym();
-    while (TRUE)
+    while (true)
     {
         int rg = -1;
         if (regimage)
@@ -651,17 +652,17 @@ static AMODE* inasm_mem(void)
                         return 0;
                     }
                     node = inasm_ident();
-                    gotident = TRUE;
+                    gotident = true;
                     inasm_structsize();
                     switch (inasm_enterauto(node, &reg1, &reg2))
                     {
                         case 0:
                             return 0;
                         case 1:
-                            /*autonode = TRUE;*/
+                            /*autonode = true;*/
                             break;
                         case 2:
-                            /*autonode = FALSE;*/
+                            /*autonode = false;*/
                             break;
                     }
                     break;
@@ -678,9 +679,9 @@ static AMODE* inasm_mem(void)
             return 0;
         }
         if (MATCHKW(lex, minus))
-            subtract = TRUE;
+            subtract = true;
         else
-            subtract = FALSE;
+            subtract = false;
         inasm_getsym();
     }
     if ((reg2 == 4 || reg2 == 5) && scale > 1)
@@ -726,7 +727,7 @@ static AMODE* inasm_amode(int nosegreg)
 {
     AMODE* rv = (AMODE*)beLocalAlloc(sizeof(AMODE));
     int sz = 0, seg = 0;
-    BOOLEAN done = FALSE;
+    bool done = false;
     lastsym = 0;
     inasm_txsym();
     if (lex)
@@ -768,7 +769,7 @@ static AMODE* inasm_amode(int nosegreg)
     }
     while (!done)
     {
-        done = TRUE;
+        done = true;
         if (lex)
         {
             switch (lex->type)
@@ -811,7 +812,7 @@ static AMODE* inasm_amode(int nosegreg)
                         if (MATCHKW(lex, colon))
                         {
                             inasm_getsym();
-                            done = FALSE;
+                            done = false;
                             continue;
                         }
                         rv->mode = am_seg;
@@ -992,7 +993,7 @@ static int getData(STATEMENT* snp)
         TYPE* tp;
         EXPRESSION* expr;
         lex = getsym();
-        lex = optimized_expression(lex, NULL, NULL, &tp, &expr, FALSE);
+        lex = optimized_expression(lex, NULL, NULL, &tp, &expr, false);
         if (tp && (isintconst(expr) || isfloatconst(expr)))
         {
             switch (size)
@@ -1046,7 +1047,7 @@ static int getData(STATEMENT* snp)
     } while (lex && MATCHKW(lex, comma));
     return 1;
 }
-BOOLEAN ateol(void)
+bool ateol(void)
 {
     unsigned char* p = includes->lptr;
     while (*p)
@@ -1115,7 +1116,7 @@ LEXEME* inasm_statement(LEXEME* inlex, BLOCKDATA* parent)
                 inasm_getsym();
                 op = op_int;
                 rv = (OCODE*)beLocalAlloc(sizeof(OCODE));
-                rv->oper1 = inasm_amode(TRUE);
+                rv->oper1 = inasm_amode(true);
                 goto join;
             }
             node = inasm_label();
@@ -1172,16 +1173,18 @@ LEXEME* inasm_statement(LEXEME* inlex, BLOCKDATA* parent)
         if (rv->oper1 && rv->oper2)
         {
             if (!rv->oper1->length)
+            {
                 if (!rv->oper2->length)
                 {
                     inasm_err(ERR_INVALID_SIZE);
                 }
                 else
                     rv->oper1->length = rv->oper2->length;
+            }
             // else if (!rv->oper2->length && insdata->amode != OPE_BOUND && insdata->amode != OPE_LOADSEG)
             // rv->oper2->length = rv->oper1->length;
         }
-        rv->noopt = TRUE;
+        rv->noopt = true;
         rv->opcode = op;
         rv->fwd = rv->back = 0;
         AssembleInstruction(rv);
@@ -1194,17 +1197,17 @@ void* inlineAsmStmt(void* param)
 {
     OCODE* rv = (OCODE*)beLocalAlloc(sizeof(OCODE));
     memcpy(rv, param, sizeof(*rv));
-    if (rv->opcode != op_label && rv->opcode != op_line)
+    if ((e_op)rv->opcode != op_label && (e_op)rv->opcode != op_line)
     {
         AMODE* ap = rv->oper1;
         if (ap && ap->offset)
-            ap->offset = inlineexpr(ap->offset, FALSE);
+            ap->offset = inlineexpr(ap->offset, nullptr);
         ap = rv->oper2;
         if (ap && ap->offset)
-            ap->offset = inlineexpr(ap->offset, FALSE);
+            ap->offset = inlineexpr(ap->offset, nullptr);
         ap = rv->oper3;
         if (ap && ap->offset)
-            ap->offset = inlineexpr(ap->offset, FALSE);
+            ap->offset = inlineexpr(ap->offset, nullptr);
     }
     return rv;
 }

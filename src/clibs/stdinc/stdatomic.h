@@ -1,26 +1,37 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the
- *     Orange C "Target Code" exception.
- *
+ *     (at your option) any later version.
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
+ *     As a special exception, if other files instantiate templates or
+ *     use macros or inline functions from this file, or you compile
+ *     this file and link it with other works to produce a work based
+ *     on this file, this file does not by itself cause the resulting
+ *     work to be covered by the GNU General Public License. However
+ *     the source code for this file must still be made available in
+ *     accordance with section (3) of the GNU General Public License.
+ *     
+ *     This exception does not invalidate any other reasons why a work
+ *     based on this file might be covered by the GNU General Public
+ *     License.
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #ifndef __STDATOMIC_H
@@ -46,6 +57,7 @@
 typedef enum memory_order
 {
     memory_order_relaxed = 1,
+    memory_order_consume,
     memory_order_acquire,
     memory_order_release,
     memory_order_acq_rel,
@@ -60,13 +72,20 @@ typedef enum memory_order
 #define ATOMIC_SHORT_LOCK_FREE 1
 #define ATOMIC_INT_LOCK_FREE 1
 #define ATOMIC_LONG_LOCK_FREE 1
-#define ATOMIC_LLONG_LOCK_FREE 0
+#define ATOMIC_LLONG_LOCK_FREE 1
 #define ATOMIC_POINTER_LOCK_FREE 1
+
+typedef struct atomic_flag
+{
+    unsigned char __f__;
+} atomic_flag;
 
 #define atomic_is_lock_free(A) \
     _Generic(A, \
+    struct atomic_flag: 1, \
     bool: ATOMIC_BOOL_LOCK_FREE, \
     char: ATOMIC_CHAR_LOCK_FREE,  \ 
+    signed char: ATOMIC_CHAR_LOCK_FREE,  \ 
     unsigned char: ATOMIC_CHAR_LOCK_FREE,   \
     short: ATOMIC_SHORT_LOCK_FREE,   \
     unsigned short: ATOMIC_SHORT_LOCK_FREE,   \
@@ -74,11 +93,13 @@ typedef enum memory_order
     unsigned int: ATOMIC_INT_LOCK_FREE,   \
     long: ATOMIC_LONG_LOCK_FREE,   \
     unsigned long: ATOMIC_LONG_LOCK_FREE,   \
-    long long: ATOMIC_LONG_LONG_LOCK_FREE,   \
-    unsigned long long: ATOMIC_LONG_LONG_LOCK_FREE,   \
-    char16_t: ATOMIC_CHAR16_T_LOCK_FREE,\
-    char32_t: ATOMIC_CHAR32_T_LOCK_FREE,\
+    long long: ATOMIC_LLONG_LOCK_FREE,   \
+    unsigned long long: ATOMIC_LLONG_LOCK_FREE,   \
+    __char16_t: ATOMIC_CHAR16_T_LOCK_FREE,\
+    __char32_t: ATOMIC_CHAR32_T_LOCK_FREE,\
+    struct atomic_flag *: 1, \ 
     char *: ATOMIC_POINTER_LOCK_FREE, \
+    signed char *: ATOMIC_POINTER_LOCK_FREE, \
     unsigned char *: ATOMIC_POINTER_LOCK_FREE,   \
     short *: ATOMIC_POINTER_LOCK_FREE,   \
     unsigned short *: ATOMIC_POINTER_LOCK_FREE,   \
@@ -88,8 +109,8 @@ typedef enum memory_order
     unsigned long *: ATOMIC_POINTER_LOCK_FREE,   \
     long long *: ATOMIC_POINTER_LOCK_FREE,   \
     unsigned long long *: ATOMIC_POINTER_LOCK_FREE,   \
-    char16_t *: ATOMIC_POINTER_LOCK_FREE,\
-    char32_t *: ATOMIC_POINTER_LOCK_FREE,\
+    __char16_t *: ATOMIC_POINTER_LOCK_FREE,\
+    __char32_t *: ATOMIC_POINTER_LOCK_FREE,\
     default: 0)
 
 #define ATOMIC_FLAG_INIT \
@@ -98,10 +119,21 @@ typedef enum memory_order
     }
 #define ATOMIC_VAR_INIT(x) __atomic_var_init(x)
 
-typedef struct atomic_flag
-{
-    unsigned __f__;
-} atomic_flag;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+void _RTL_FUNC atomic_thread_fence(int);
+void _RTL_FUNC atomic_signal_fence(int);
+unsigned char _RTL_FUNC atomic_flag_test_and_set(atomic_flag*);
+unsigned char _RTL_FUNC atomic_flag_test_and_set_explicit(atomic_flag*, int);
+void _RTL_FUNC atomic_flag_clear(atomic_flag*);
+void _RTL_FUNC atomic_flag_clear_explicit(atomic_flag*, int);
+
+#ifdef __cplusplus
+}
+#endif
 
 #define atomic_flag_test_and_set_explicit(object, order) __atomic_flag_test_set(object, order)
 #define atomic_flag_test_and_set(object) __atomic_flag_test_set(object, memory_order_seq_cst)
@@ -164,13 +196,17 @@ __ATOMIC_TYPE__(uintmax_t, atomic_uintmax_t);
 
 #define atomic_store_explicit(__a__, __m__, __x__) __atomic_store(__a__, __m__, __x__)
 
-#define atomic_swap(__a__, __m__) __atomic_modify(__a__, =, __m__, memory_order_seq_cst)
+#define atomic_exchange(__a__, __m__) __atomic_modify(__a__, =, __m__, memory_order_seq_cst)
 
-#define atomic_swap_explicit(__a__, __m__, __x__) __atomic_modify(__a__, =, __m__, __x__)
+#define atomic_exchange_explicit(__a__, __m__, __x__) __atomic_modify(__a__, =, __m__, __x__)
 
-#define atomic_compare_swap(__a__, __e__, __m__) __atomic_cmpswp(__a__, __e__, __m__, memory_order_seq_cst, memory_order_seq_cst)
+#define atomic_compare_exchange_strong(__a__, __e__, __m__) __atomic_cmpswp(__a__, __e__, __m__, memory_order_seq_cst, memory_order_seq_cst)
 
-#define atomic_compare_swap_explicit(__a__, __e__, __m__, __x__, __y__) __atomic_cmpswp(__a__, __e__, __m__, __x__, __y__)
+#define atomic_compare_exchange_strong_explicit(__a__, __e__, __m__, __x__, __y__) __atomic_cmpswp(__a__, __e__, __m__, __x__, __y__)
+
+#define atomic_compare_exchange_weak(__a__, __e__, __m__) __atomic_cmpswp(__a__, __e__, __m__, memory_order_seq_cst, memory_order_seq_cst)
+
+#define atomic_compare_exchange_weak_explicit(__a__, __e__, __m__, __x__, __y__) __atomic_cmpswp(__a__, __e__, __m__, __x__, __y__)
 
 #define atomic_fetch_add_explicit(__a__, __m__, __x__) __atomic_modify(__a__, +=, __m__, __x__)
 

@@ -1,14 +1,13 @@
 # Software License Agreement
 # 
-#     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
+#     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
 # 
 #     This file is part of the Orange C Compiler package.
 # 
 #     The Orange C Compiler package is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU General Public License as published by
 #     the Free Software Foundation, either version 3 of the License, or
-#     (at your option) any later version, with the addition of the 
-#     Orange C "Target Code" exception.
+#     (at your option) any later version.
 # 
 #     The Orange C Compiler package is distributed in the hope that it will be useful,
 #     but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -22,9 +21,6 @@
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
 
-
-# the gcc-linux compile probably won't actually run, it is primarily to support the compile needed by coverity
-#
 ifeq "$(COMPILER)" "gcc-linux"
 
 COMPILER_PATH := 
@@ -46,7 +42,7 @@ LLIB_DEPENDENCIES = $(notdir $(filter-out $(EXCLUDE) $(MAIN_DEPENDENCIES), $(CPP
 
 CC=gcc
 CCPP=g++
-CCFLAGS = -c -D__MSVCRT__ -U__STRICT_ANSI__ -DGCCLINUX -DSQLITE_OS_UNIX -D_unlink=unlink -Dstricmp=strcasecmp -Dstrnicmp=strncasecmp
+CCFLAGS = -c -D__MSVCRT__ -U__STRICT_ANSI__ -DHAVE_UNISTD_H=1 -DSQLITE_OS_UNIX -D_unlink=unlink -Dstricmp=strcasecmp -Dstrnicmp=strncasecmp -D_strnicmp=strncasecmp
 
 CPPFLAGS = -std=c++11
 LINK=ld

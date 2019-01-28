@@ -1,14 +1,13 @@
 /* Software License Agreement
  * 
- *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
  * 
  *     This file is part of the Orange C Compiler package.
  * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
- *     Orange C "Target Code" exception.
+ *     (at your option) any later version.
  * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -33,8 +32,6 @@
 
 using namespace DotNetPELib;
 
-extern "C" {
-
 	extern int nextLabel;
 	extern SYMBOL *theCurrentFunc;
 	extern PELib *peLib;
@@ -55,7 +52,7 @@ extern "C" {
 	extern std::vector<Local *> localList;
 	extern DataContainer *mainContainer;
     extern TYPE stdint;
-}
+
 #define MAX_ALIGNS 50
 MethodSignature *FindPInvokeWithVarargs(std::string name, std::list<Param *>::iterator begin, std::list<Param *>::iterator end, size_t size);
 extern std::multimap<std::string, MethodSignature *> pInvokeReferences;
@@ -177,7 +174,7 @@ Operand *make_constant(int sz, EXPRESSION *exp)
     {
         char lbl[256];
         sprintf(lbl, "L_%d_%x", exp->v.i, uniqueId);
-        Value *field = GetStringFieldData(exp->v.i, exp->altdata);
+        Value *field = GetStringFieldData(exp->v.i, ((EXPRESSION *)exp->altdata)->v.i);
         operand = peLib->AllocateOperand(field);
     }
     else if (exp->type == en_auto)
@@ -899,7 +896,7 @@ void gen_branch(Instruction::iop op, int label, BOOLEAN decrement)
     }
 }
 
-extern "C" void asm_expressiontag(QUAD *q)
+ void asm_expressiontag(QUAD *q)
 {
     if (!q->dc.v.label)
     {
@@ -923,7 +920,7 @@ extern "C" void asm_expressiontag(QUAD *q)
         }
     }
 }
-extern "C" void asm_tag(QUAD *q)
+ void asm_tag(QUAD *q)
 {
     if (q->beforeGosub)
     {
@@ -949,7 +946,7 @@ extern "C" void asm_tag(QUAD *q)
         }
     }
 }
-extern "C" void asm_line(QUAD *q)               /* line number information and text */
+ void asm_line(QUAD *q)               /* line number information and text */
 {
     char buf[10000];
     LINEDATA *ld = (LINEDATA *)q->dc.left;
@@ -957,29 +954,29 @@ extern "C" void asm_line(QUAD *q)               /* line number information and t
     Instruction *i = peLib->AllocateInstruction(Instruction::i_comment, buf);
     currentMethod->AddInstruction(i);
 }
-extern "C" void asm_blockstart(QUAD *q)               /* line number information and text */
+ void asm_blockstart(QUAD *q)               /* line number information and text */
 {
 }
-extern "C" void asm_blockend(QUAD *q)               /* line number information and text */
+ void asm_blockend(QUAD *q)               /* line number information and text */
 {
 }
-extern "C" void asm_varstart(QUAD *q)               /* line number information and text */
+ void asm_varstart(QUAD *q)               /* line number information and text */
 {
 }
-extern "C" void asm_func(QUAD *q)               /* line number information and text */
+ void asm_func(QUAD *q)               /* line number information and text */
 {
 }
-extern "C" void asm_passthrough(QUAD *q)        /* reserved */
+ void asm_passthrough(QUAD *q)        /* reserved */
 {
 }
-extern "C" void asm_datapassthrough(QUAD *q)        /* reserved */
+ void asm_datapassthrough(QUAD *q)        /* reserved */
 {
 }
-extern "C" void asm_label(QUAD *q)              /* put a label in the code stream */
+ void asm_label(QUAD *q)              /* put a label in the code stream */
 {
     oa_gen_label(q->dc.v.label);
 }
-extern "C" void asm_goto(QUAD *q)               /* unconditional branch */
+ void asm_goto(QUAD *q)               /* unconditional branch */
 {
     if (q->dc.opcode == i_goto)
         gen_branch(Instruction::i_br, q->dc.v.label, FALSE);
@@ -1031,7 +1028,7 @@ void unbox(int val)
         gen_code(Instruction::i_unbox, op1);
 }
 // this implementation won't handle varag functions nested in other varargs...
-extern "C" void asm_parm(QUAD *q)               /* push a parameter*/
+ void asm_parm(QUAD *q)               /* push a parameter*/
 {
     if (q->vararg)
     {
@@ -1064,7 +1061,7 @@ extern "C" void asm_parm(QUAD *q)               /* push a parameter*/
         }
     }
 }
-extern "C" void asm_parmblock(QUAD *q)          /* push a block of memory */
+ void asm_parmblock(QUAD *q)          /* push a block of memory */
 {
     if (q->vararg)
     {
@@ -1089,7 +1086,7 @@ extern "C" void asm_parmblock(QUAD *q)          /* push a block of memory */
         gen_code(Instruction::i_ldobj, peLib->AllocateOperand(peLib->AllocateValue("", tp)));
     }
 }
-extern "C" void asm_parmadj(QUAD *q)            /* adjust stack after function call */
+ void asm_parmadj(QUAD *q)            /* adjust stack after function call */
 {
     int i;
     int n = beGetIcon(q->dc.left) - beGetIcon(q->dc.right);
@@ -1145,7 +1142,7 @@ static BOOLEAN bltin_gosub(QUAD *q)
 	}
     return FALSE;
 }
-extern "C" void asm_gosub(QUAD *q)              /* normal gosub to an immediate label or through a var */
+ void asm_gosub(QUAD *q)              /* normal gosub to an immediate label or through a var */
 {
     if (q->dc.left->mode == i_immed)
     {
@@ -1185,26 +1182,26 @@ extern "C" void asm_gosub(QUAD *q)              /* normal gosub to an immediate 
         decrement_stack();
     }
 }
-extern "C" void asm_fargosub(QUAD *q)           /* far version of gosub */
+ void asm_fargosub(QUAD *q)           /* far version of gosub */
 {
 }
-extern "C" void asm_trap(QUAD *q)               /* 'trap' instruction - the arg will be an immediate # */
+ void asm_trap(QUAD *q)               /* 'trap' instruction - the arg will be an immediate # */
 {
 }
-extern "C" void asm_int(QUAD *q)                /* 'int' instruction(QUAD *q) calls a labeled function which is an interrupt */
+ void asm_int(QUAD *q)                /* 'int' instruction(QUAD *q) calls a labeled function which is an interrupt */
 {
 }
 /* left will be a constant holding the number of bytes to pop
  * e.g. the parameters will be popped in stdcall or pascal type functions
  */
-extern "C" void asm_ret(QUAD *q)                /* return from subroutine */
+ void asm_ret(QUAD *q)                /* return from subroutine */
 {
     gen_code(Instruction::i_ret, NULL);    
 }
 /* left will be a constant holding the number of bytes to pop
  * e.g. the parameters will be popped in stdcall or pascal type functions
  */
-extern "C" void asm_fret(QUAD *q)                /* far return from subroutine */
+ void asm_fret(QUAD *q)                /* far return from subroutine */
 {
 }
 /*
@@ -1212,10 +1209,10 @@ extern "C" void asm_fret(QUAD *q)                /* far return from subroutine *
  * for processors that char, the 'left' member will have an integer
  * value that is TRUE for an iret or false or a fault ret
  */
-extern "C" void asm_rett(QUAD *q)               /* return from trap or int */
+ void asm_rett(QUAD *q)               /* return from trap or int */
 {
 }
-extern "C" void asm_add(QUAD *q)                /* evaluate an addition */
+ void asm_add(QUAD *q)                /* evaluate an addition */
 {
     if (q->dc.right->offset && q->dc.right->offset->type == en_structelem)
     {
@@ -1253,32 +1250,32 @@ extern "C" void asm_add(QUAD *q)                /* evaluate an addition */
         gen_code(Instruction::i_add, NULL);
     }
 }
-extern "C" void asm_sub(QUAD *q)                /* evaluate a subtraction */
+ void asm_sub(QUAD *q)                /* evaluate a subtraction */
 {
     decrement_stack();
     gen_code(Instruction::i_sub, NULL);
 }
-extern "C" void asm_udiv(QUAD *q)               /* unsigned division */
+ void asm_udiv(QUAD *q)               /* unsigned division */
 {
     decrement_stack();
     gen_code(Instruction::i_div_un, NULL);
 }
-extern "C" void asm_umod(QUAD *q)               /* unsigned modulous */
+ void asm_umod(QUAD *q)               /* unsigned modulous */
 {
     decrement_stack();
     gen_code(Instruction::i_rem_un, NULL);
 }
-extern "C" void asm_sdiv(QUAD *q)               /* signed division */
+ void asm_sdiv(QUAD *q)               /* signed division */
 {
     decrement_stack();
     gen_code(Instruction::i_div, NULL);
 }
-extern "C" void asm_smod(QUAD *q)               /* signed modulous */
+ void asm_smod(QUAD *q)               /* signed modulous */
 {
     decrement_stack();
     gen_code(Instruction::i_rem, NULL);
 }
-extern "C" void asm_muluh(QUAD *q)
+ void asm_muluh(QUAD *q)
 {
     EXPRESSION *en = intNode(en_c_i, 32);
     Operand *ap = make_constant(ISZ_UINT, en);
@@ -1287,7 +1284,7 @@ extern "C" void asm_muluh(QUAD *q)
     gen_code(Instruction::i_shr_un, NULL);
     decrement_stack();
 }
-extern "C" void asm_mulsh(QUAD *q)
+ void asm_mulsh(QUAD *q)
 {
     EXPRESSION *en = intNode(en_c_i, 32);
     Operand *ap = make_constant(ISZ_UINT, en);
@@ -1296,50 +1293,50 @@ extern "C" void asm_mulsh(QUAD *q)
     gen_code(Instruction::i_shr, NULL);
     decrement_stack();
 }
-extern "C" void asm_mul(QUAD *q)               /* signed multiply */
+ void asm_mul(QUAD *q)               /* signed multiply */
 {
     decrement_stack();
     gen_code(Instruction::i_mul, NULL);
 }
-extern "C" void asm_lsr(QUAD *q)                /* unsigned shift right */
+ void asm_lsr(QUAD *q)                /* unsigned shift right */
 {
     decrement_stack();
     gen_code(Instruction::i_shr_un, NULL);
 }
-extern "C" void asm_lsl(QUAD *q)                /* signed shift left */
+ void asm_lsl(QUAD *q)                /* signed shift left */
 {
     decrement_stack();
     gen_code(Instruction::i_shl, NULL);
 }
-extern "C" void asm_asr(QUAD *q)                /* signed shift right */
+ void asm_asr(QUAD *q)                /* signed shift right */
 {
     decrement_stack();
     gen_code(Instruction::i_shr, NULL);
 }
-extern "C" void asm_neg(QUAD *q)                /* negation */
+ void asm_neg(QUAD *q)                /* negation */
 {
     gen_code(Instruction::i_neg, NULL);
 }
-extern "C" void asm_not(QUAD *q)                /* complement */
+ void asm_not(QUAD *q)                /* complement */
 {
     gen_code(Instruction::i_not, NULL);
 }
-extern "C" void asm_and(QUAD *q)                /* binary and */
+ void asm_and(QUAD *q)                /* binary and */
 {
     decrement_stack();
     gen_code(Instruction::i_and, NULL);
 }
-extern "C" void asm_or(QUAD *q)                 /* binary or */
+ void asm_or(QUAD *q)                 /* binary or */
 {
     decrement_stack();
     gen_code(Instruction::i_or, NULL);
 }
-extern "C" void asm_eor(QUAD *q)                /* binary exclusive or */
+ void asm_eor(QUAD *q)                /* binary exclusive or */
 {
     decrement_stack();
     gen_code(Instruction::i_xor, NULL);
 }
-extern "C" void asm_setne(QUAD *q)              /* evaluate a = b != c */
+ void asm_setne(QUAD *q)              /* evaluate a = b != c */
 {
     gen_code(Instruction::i_ceq, NULL);
     gen_code(Instruction::i_ldc_i4_1, NULL);
@@ -1348,22 +1345,22 @@ extern "C" void asm_setne(QUAD *q)              /* evaluate a = b != c */
     decrement_stack();
     decrement_stack();
 }
-extern "C" void asm_sete(QUAD *q)               /* evaluate a = b == c */
+ void asm_sete(QUAD *q)               /* evaluate a = b == c */
 {
     gen_code(Instruction::i_ceq, NULL);
     decrement_stack();
 }
-extern "C" void asm_setc(QUAD *q)               /* evaluate a = b U< c */
+ void asm_setc(QUAD *q)               /* evaluate a = b U< c */
 {
     gen_code(Instruction::i_clt_un, NULL);
     decrement_stack();
 }
-extern "C" void asm_seta(QUAD *q)               /* evaluate a = b U> c */
+ void asm_seta(QUAD *q)               /* evaluate a = b U> c */
 {
     gen_code(Instruction::i_cgt_un, NULL);
     decrement_stack();
 }
-extern "C" void asm_setnc(QUAD *q)              /* evaluate a = b U>= c */
+ void asm_setnc(QUAD *q)              /* evaluate a = b U>= c */
 {
     gen_code(Instruction::i_clt_un, NULL);
     gen_code(Instruction::i_ldc_i4_1, NULL);
@@ -1372,7 +1369,7 @@ extern "C" void asm_setnc(QUAD *q)              /* evaluate a = b U>= c */
     decrement_stack();
     decrement_stack();
 }
-extern "C" void asm_setbe(QUAD *q)              /* evaluate a = b U<= c */
+ void asm_setbe(QUAD *q)              /* evaluate a = b U<= c */
 {
     gen_code(Instruction::i_cgt_un, NULL);
     gen_code(Instruction::i_ldc_i4_1, NULL);
@@ -1381,17 +1378,17 @@ extern "C" void asm_setbe(QUAD *q)              /* evaluate a = b U<= c */
     decrement_stack();
     decrement_stack();
 }
-extern "C" void asm_setl(QUAD *q)               /* evaluate a = b S< c */
+ void asm_setl(QUAD *q)               /* evaluate a = b S< c */
 {
     gen_code(Instruction::i_clt, NULL);
     decrement_stack();
 }
-extern "C" void asm_setg(QUAD *q)               /* evaluate a = b s> c */
+ void asm_setg(QUAD *q)               /* evaluate a = b s> c */
 {
     gen_code(Instruction::i_cgt, NULL);
     decrement_stack();
 }
-extern "C" void asm_setle(QUAD *q)              /* evaluate a = b S<= c */
+ void asm_setle(QUAD *q)              /* evaluate a = b S<= c */
 {
     gen_code(Instruction::i_cgt, NULL);
     gen_code(Instruction::i_ldc_i4_1, NULL);
@@ -1400,7 +1397,7 @@ extern "C" void asm_setle(QUAD *q)              /* evaluate a = b S<= c */
     decrement_stack();
     decrement_stack();
 }
-extern "C" void asm_setge(QUAD *q)              /* evaluate a = b S>= c */
+ void asm_setge(QUAD *q)              /* evaluate a = b S>= c */
 {
     gen_code(Instruction::i_clt, NULL);
     gen_code(Instruction::i_ldc_i4_1, NULL);
@@ -1409,7 +1406,7 @@ extern "C" void asm_setge(QUAD *q)              /* evaluate a = b S>= c */
     decrement_stack();
     decrement_stack();
 }
-extern "C" void asm_assn(QUAD *q)               /* assignment */
+ void asm_assn(QUAD *q)               /* assignment */
 {
     Operand *ap;
 
@@ -1502,7 +1499,7 @@ extern "C" void asm_assn(QUAD *q)               /* assignment */
                 case en_global:
                 case en_auto:
                 case en_pc:
-                case en_label:
+                case en_labcon: // DAL fix
                     q->ans->mode = (enum i_adr)q->oldmode;
                     break;
                 default:
@@ -1531,7 +1528,7 @@ extern "C" void asm_assn(QUAD *q)               /* assignment */
     if (q->hook)
         hookCount++;
 }
-extern "C" void asm_genword(QUAD *q)            /* put a byte or word into the code stream */
+ void asm_genword(QUAD *q)            /* put a byte or word into the code stream */
 {
 }
 void compactgen(Instruction *i, int lab)
@@ -1573,7 +1570,7 @@ void bingen(int lower, int avg, int higher)
     }
 }
 
-extern "C" void asm_coswitch(QUAD *q)           /* switch characteristics */
+ void asm_coswitch(QUAD *q)           /* switch characteristics */
 {
     Instruction::iop op;
      switch_deflab = q->dc.v.label;
@@ -1606,7 +1603,7 @@ extern "C" void asm_coswitch(QUAD *q)           /* switch characteristics */
         memset(switchTreeBranchLabels, 0, sizeof(int) * switch_case_max);
     }
 }
-extern "C" void asm_swbranch(QUAD *q)           /* case characteristics */
+ void asm_swbranch(QUAD *q)           /* case characteristics */
 {
     static Instruction *swins;
     ULLONG_TYPE swcase = q->dc.left->offset->v.i;
@@ -1673,17 +1670,17 @@ extern "C" void asm_swbranch(QUAD *q)           /* case characteristics */
     }
     
 }
-extern "C" void asm_dc(QUAD *q)                 /* unused */
+ void asm_dc(QUAD *q)                 /* unused */
 {
 }
-extern "C" void asm_assnblock(QUAD *q)          /* copy block of memory*/
+ void asm_assnblock(QUAD *q)          /* copy block of memory*/
 {
     gen_code(Instruction::i_cpblk, 0);
     decrement_stack();
     decrement_stack();
     decrement_stack();
 }
-extern "C" void asm_clrblock(QUAD *q)           /* clear block of memory */
+ void asm_clrblock(QUAD *q)           /* clear block of memory */
 {
     // the 'value' field is loaded by examine_icode...
     gen_code(Instruction::i_initblk, 0);
@@ -1691,16 +1688,20 @@ extern "C" void asm_clrblock(QUAD *q)           /* clear block of memory */
     decrement_stack();
     decrement_stack();
 }
-extern "C" void asm_jc(QUAD *q)                 /* branch if a U< b */
+void asm_cmpblock(QUAD *q)
+{
+    assert(0); // atomic support not implemented
+}
+ void asm_jc(QUAD *q)                 /* branch if a U< b */
 {
     gen_branch(Instruction::i_blt_un, q->dc.v.label, TRUE);
 }
-extern "C" void asm_ja(QUAD *q)                 /* branch if a U> b */
+ void asm_ja(QUAD *q)                 /* branch if a U> b */
 {
     gen_branch(Instruction::i_bgt_un, q->dc.v.label, TRUE);
     
 }
-extern "C" void asm_je(QUAD *q)                 /* branch if a == b */
+ void asm_je(QUAD *q)                 /* branch if a == b */
 {
     if (q->dc.right->mode == i_immed && isconstzero(&stdint, q->dc.right->offset))
         gen_branch(Instruction::i_brfalse, q->dc.v.label, TRUE);
@@ -1708,17 +1709,17 @@ extern "C" void asm_je(QUAD *q)                 /* branch if a == b */
         gen_branch(Instruction::i_beq, q->dc.v.label, TRUE);
     
 }
-extern "C" void asm_jnc(QUAD *q)                /* branch if a U>= b */
+ void asm_jnc(QUAD *q)                /* branch if a U>= b */
 {
     gen_branch(Instruction::i_bge_un, q->dc.v.label, TRUE);
     
 }
-extern "C" void asm_jbe(QUAD *q)                /* branch if a U<= b */
+ void asm_jbe(QUAD *q)                /* branch if a U<= b */
 {
     gen_branch(Instruction::i_ble_un, q->dc.v.label, TRUE);
     
 }
-extern "C" void asm_jne(QUAD *q)                /* branch if a != b */
+ void asm_jne(QUAD *q)                /* branch if a != b */
 {
     if (q->dc.right->mode == i_immed && isconstzero(&stdint, q->dc.right->offset))
         gen_branch(Instruction::i_brtrue, q->dc.v.label, TRUE);
@@ -1726,27 +1727,27 @@ extern "C" void asm_jne(QUAD *q)                /* branch if a != b */
         gen_branch(Instruction::i_bne_un, q->dc.v.label, TRUE);
     
 }
-extern "C" void asm_jl(QUAD *q)                 /* branch if a S< b */
+ void asm_jl(QUAD *q)                 /* branch if a S< b */
 {
     gen_branch(Instruction::i_blt, q->dc.v.label, TRUE);
 
 }
-extern "C" void asm_jg(QUAD *q)                 /* branch if a S> b */
+ void asm_jg(QUAD *q)                 /* branch if a S> b */
 {
     gen_branch(Instruction::i_bgt, q->dc.v.label, TRUE);
 
 }
-extern "C" void asm_jle(QUAD *q)                /* branch if a S<= b */
+ void asm_jle(QUAD *q)                /* branch if a S<= b */
 {
     gen_branch(Instruction::i_ble, q->dc.v.label, TRUE);
     
 }
-extern "C" void asm_jge(QUAD *q)                /* branch if a S>= b */
+ void asm_jge(QUAD *q)                /* branch if a S>= b */
 {
     gen_branch(Instruction::i_bge, q->dc.v.label, TRUE);
     
 }
-extern "C" void asm_cppini(QUAD *q)             /* cplusplus initialization (historic)*/
+ void asm_cppini(QUAD *q)             /* cplusplus initialization (historic)*/
 {
     (void)q;    
 }
@@ -1757,7 +1758,7 @@ extern "C" void asm_cppini(QUAD *q)             /* cplusplus initialization (his
  *
  * right has the number of bytes to allocate on the stack
  */
-extern "C" void asm_prologue(QUAD *q)           /* function prologue */
+ void asm_prologue(QUAD *q)           /* function prologue */
 {
     stackpos = 0;
     returnCount = 0;
@@ -1770,7 +1771,7 @@ extern "C" void asm_prologue(QUAD *q)           /* function prologue */
 /*
  * function epilogue, left holds the mask of which registers were pushed
  */
-extern "C" void asm_epilogue(QUAD *q)           /* function epilogue */
+ void asm_epilogue(QUAD *q)           /* function epilogue */
 {
     if (basetype(theCurrentFunc->tp)->btp->type != bt_void)
         stackpos--;
@@ -1783,33 +1784,33 @@ extern "C" void asm_epilogue(QUAD *q)           /* function epilogue */
 /*
  * in an interrupt handler, push the current context
  */
-extern "C" void asm_pushcontext(QUAD *q)        /* push register context */
+ void asm_pushcontext(QUAD *q)        /* push register context */
 {
 }
 /*
  * in an interrupt handler, pop the current context
  */
-extern "C" void asm_popcontext(QUAD *q)         /* pop register context */
+ void asm_popcontext(QUAD *q)         /* pop register context */
 {
 }
 /*
  * loads a context, e.g. for the loadds qualifier
  */
-extern "C" void asm_loadcontext(QUAD *q)        /* load register context (e.g. at interrupt level ) */
+ void asm_loadcontext(QUAD *q)        /* load register context (e.g. at interrupt level ) */
 {
     
 }
 /*
  * unloads a context, e.g. for the loadds qualifier
  */
-extern "C" void asm_unloadcontext(QUAD *q)        /* load register context (e.g. at interrupt level ) */
+ void asm_unloadcontext(QUAD *q)        /* load register context (e.g. at interrupt level ) */
 {
     
 }
-extern "C" void asm_tryblock(QUAD *q)			 /* try/catch */
+ void asm_tryblock(QUAD *q)			 /* try/catch */
 {
 }
-extern "C" void asm_seh(QUAD *q)                /* windows seh */
+ void asm_seh(QUAD *q)                /* windows seh */
 {
     BOOLEAN begin = !!(q->sehMode & 0x80);
     Instruction::iseh mode;
@@ -1893,19 +1894,19 @@ extern "C" void asm_seh(QUAD *q)                /* windows seh */
 
     }
 }
-extern "C" void asm_stackalloc(QUAD *q)         /* allocate stack space - positive value = allocate(QUAD *q) negative value deallocate */
+ void asm_stackalloc(QUAD *q)         /* allocate stack space - positive value = allocate(QUAD *q) negative value deallocate */
 {
 }
-extern "C" void asm_loadstack(QUAD *q)			/* load the stack pointer from a var */
+ void asm_loadstack(QUAD *q)			/* load the stack pointer from a var */
 {
 }
-extern "C" void asm_savestack(QUAD *q)			/* save the stack pointer to a var */
+ void asm_savestack(QUAD *q)			/* save the stack pointer to a var */
 {
 }
-extern "C" void asm_functail(QUAD *q, int begin, int size)	/* functail start or end */
+ void asm_functail(QUAD *q, int begin, int size)	/* functail start or end */
 {
 }
-extern "C" void asm_atomic(QUAD *q)
+ void asm_atomic(QUAD *q)
 {
 }
 QUAD * leftInsertionPos(QUAD *head, IMODE *im)

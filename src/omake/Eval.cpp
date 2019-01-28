@@ -1,26 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the
- *     Orange C "Target Code" exception.
- *
+ *     (at your option) any later version.
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #include "Eval.h"
@@ -190,7 +189,7 @@ void Eval::StripLeadingSpaces(std::string& value)
     if (n != 0)
         value.replace(0, n, "");
 }
-int Eval::MacroSpan(const std::string line, int pos)
+size_t Eval::MacroSpan(const std::string line, int pos)
 {
     std::list<char> stack;
     int pos1 = pos;
@@ -721,7 +720,7 @@ size_t Eval::MatchesPattern(const std::string& name, const std::string& pattern,
 int Eval::FindBalancedComma(const std::string& right)
 {
     int nest = 0;
-    int n;
+    size_t n;
     for (n = 0; n < right.size(); ++n)
     {
         if (right[n] == '(')
@@ -1122,7 +1121,7 @@ std::string Eval::suffix(const std::string& names)
     {
         std::string p = ExtractFirst(working, " ");
         size_t n = p.find_last_of('.');
-        if (n != std::string::npos && (n == p.size() - 1 || p[n + 1] != '\\' && p[n + 1] != '/'))
+        if (n != std::string::npos && (n == p.size() - 1 || (p[n + 1] != '\\' && p[n + 1] != '/')))
         {
             if (!rv.empty())
                 rv += " ";
@@ -1144,7 +1143,7 @@ std::string Eval::basename(const std::string& names)
         size_t n = p.find_last_of('.');
         if (!rv.empty())
             rv += " ";
-        if (n != std::string::npos && (n == p.size() - 1 || p[n + 1] != '\\' && p[n + 1] != '/'))
+        if (n != std::string::npos && (n == p.size() - 1 || (p[n + 1] != '\\' && p[n + 1] != '/')))
         {
             rv += p.substr(0, n);
         }

@@ -1,6 +1,7 @@
 #include <string.h>
 #include <ctype.h>
-#ifndef GCCLINUX
+
+#ifndef HAVE_UNISTD_H
 #    include <windows.h>
 #endif
 #include <stdlib.h>
@@ -9,7 +10,7 @@
 // when it is used...
 int winsystem(char* cmd)
 {
-#ifdef GCCLINUX
+#ifdef HAVE_UNISTD_H
     return system(cmd);
 #else
     STARTUPINFO stStartInfo;

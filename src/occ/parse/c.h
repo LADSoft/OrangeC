@@ -1,26 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the
- *     Orange C "Target Code" exception.
- *
+ *     (at your option) any later version.
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 /*      compiler header file    */
@@ -40,9 +39,9 @@
 
 #define GENREF(sym)                         \
     {                                       \
-        sym->genreffed = TRUE;              \
+        sym->genreffed = true;              \
         if (sym->mainsym)                   \
-            sym->mainsym->genreffed = TRUE; \
+            sym->mainsym->genreffed = true; \
     }
 
 #define STD_PRAGMA_FENV 1
@@ -291,7 +290,8 @@ enum e_cvsrn
 #define _F_INITLIST 64
 #define _F_TEMPLATEARGEXPANSION 128
 #define _F_TYPETEST 256
-
+#define _F_NESTEDINIT 512
+#define _F_ASSIGNINIT 1024
 #define _F_NOVIRTUALBASE 1
 #define _F_VALIDPOINTER 2
 
@@ -303,14 +303,14 @@ typedef struct expr
     enum e_node type;
     int pragmas;
     long size; /* For block moves */
-    long altdata;
+    void* altdata;
     union
     {
         LLONG_TYPE i;
         FPFC f;
         _COMPLEX_S c;
         struct sym* sp; /* sym will be defined later */
-        char* name;     /* name during base class processing */
+        const char* name;     /* name during base class processing */
         struct functioncall* func;
         struct _atomicData* ad;
         struct stmt* stmt;
@@ -353,7 +353,7 @@ typedef struct _msilarray
 
 typedef struct
 {
-    char* name;  // must be first as it will go in a hashtable
+    const char* name;  // must be first as it will go in a hashtable
     EXPRESSION* exp;
     struct sym* sym;
 } CONSTEXPRSYM;
@@ -375,8 +375,8 @@ union u_val
     _COMPLEX_S c;
     union
     {
-        char* a; /* string val */
-        LCHAR* w;
+        const char* a; /* string val */
+        const LCHAR* w;
     } s;
     struct _defstruct* defs; /* macro definition */
 };
@@ -422,8 +422,8 @@ typedef struct typ
 typedef struct _linedata
 {
     struct _linedata *next, *stmtNext;
-    char* line;
-    char* file;
+    const char* line;
+    const char* file;
     int lineno;
     int fileindex;
 } LINEDATA;
@@ -521,13 +521,28 @@ struct _ccNamespaceData
 // clang-format off
 enum e_cm { cmNone, cmValue, cmRef, cmThis, cmExplicitValue };
 // clang-format on
+
+// order is important for this next, a comparison is done based on this ordering
+// clang-format off
+enum e_xc { xc_unspecified, xc_all, xc_dynamic, xc_none };
+// clang-format on
+struct xcept
+{
+    LIST* xcDynamic;           // list of types, the exception specification when dynamic
+    int xcInitLab, xcDestLab;  // for auto vars
+    struct sym* xctab;
+    struct sym* xclab;
+    EXPRESSION* xcInitializeFunc;
+    EXPRESSION* xcRundownFunc;
+};
+
 /* symbols */
 typedef struct sym
 {
-    char* name;
-    char* decoratedName;                      /* symbol name with decorations, as used in output format */
-    char* errname;                            /* name to be used in errors */
-    char *declfile, *origdeclfile;            /* file symbol was declared in */
+    const char* name;
+    const char* decoratedName;                      /* symbol name with decorations, as used in output format */
+    const char* errname;                            /* name to be used in errors */
+    const char *declfile, *origdeclfile;            /* file symbol was declared in */
     int declline, origdeclline, realdeclline; /* line number symbol was declared at */
     short declcharpos;                        /* character position symbol was declared at */
     short declfilenum;                        /* the file number */
@@ -651,7 +666,7 @@ typedef struct sym
     unsigned has_property_setter : 1;                     // a property has a setter
     unsigned nonConstVariableUsed : 1;                    // a non-const variable was used or assigned to in this function's body
     unsigned importThunk : 1;                             // an import thunk
-    char* deprecationText;                                // C++ declaration was deprecated
+    const char* deprecationText;                          // C++ declaration was deprecated
     int __func__label;                                    /* label number for the __func__ keyword */
     int ipointerindx;                                     /* pointer index for pointer opts */
     int labelCount;                                       /* number of code labels within a function body */
@@ -698,17 +713,9 @@ typedef struct sym
     struct init *init, *lastInit, *dest;
     // order is important for this next, a comparison is done based on this ordering
     // clang-format off
-    enum e_xc { xc_unspecified, xc_all, xc_dynamic, xc_none } xcMode;
+    enum e_xc xcMode;
     // clang-format on
-    struct xcept
-    {
-        LIST* xcDynamic;           // list of types, the exception specification when dynamic
-        int xcInitLab, xcDestLab;  // for auto vars
-        struct sym* xctab;
-        struct sym* xclab;
-        EXPRESSION* xcInitializeFunc;
-        EXPRESSION* xcRundownFunc;
-    } * xc;
+    struct xcept *xc;
     LIST* friends;
     /* Type declarations */
     struct typ* tp;
@@ -736,7 +743,7 @@ typedef struct __lambda
 
 typedef struct __lambdasp
 {
-    char* name;
+    const char* name;
     SYMBOL* sym;
     SYMBOL* parent;
     LAMBDA* enclosing;
@@ -745,7 +752,7 @@ typedef struct __lambdasp
 typedef struct _memberInitializers
 {
     struct _memberInitializers* next;
-    char* name;
+    const char* name;
     SYMBOL* sp;
     SYMBOL* basesym;
     INITIALIZER* init;
@@ -778,14 +785,14 @@ typedef struct _vtabEntry
     SYMBOL* cls;
     unsigned dataOffset;
     unsigned vtabOffset;
-    BOOLEAN isvirtual;
-    BOOLEAN isdead;
+    bool isvirtual;
+    bool isdead;
 } VTABENTRY;
 typedef struct _vbaseEntry
 {
     struct _vbaseEntry* next;
     SYMBOL* cls;
-    BOOLEAN alloc;
+    bool alloc;
     unsigned pointerOffset;
     unsigned structOffset;
 } VBASEENTRY;
@@ -865,7 +872,7 @@ typedef struct _templateSelector
     union
     {
         SYMBOL* sym;
-        char* name;
+        const char* name;
     };
     TEMPLATEPARAMLIST* templateParams;
     int isTemplate : 1;
@@ -935,58 +942,61 @@ struct balance
     short count;
 };
 
+// clang-format off
+enum _matchFlags
+{
+    KW_NONE = 0, KW_CPLUSPLUS = 1, KW_INLINEASM = 2, KW_NONANSI = 4, KW_C99 = 8,
+    KW_C1X = 16, KW_ASSEMBLER = 32, KW_MSIL = 64,
+    KW_386 = 128, KW_68K = 256, KW_ALL = 0x40000000
+};
+// clang-format on
+// clang-format off
+
+enum _tokenTypes
+{
+    TT_BASE = 1,
+    TT_BOOL = 2,
+    TT_INT = 4,
+    TT_FLOAT = 8,
+    TT_COMPLEX = 16,
+    TT_TYPEQUAL = 32,
+    TT_POINTERQUAL = 64,
+    TT_UNARY = 128,
+    TT_BINARY = 0x100,
+    TT_OPERATOR = 0x200,
+    TT_ASSIGN = 0x400,
+    TT_RELATION = 0x800,
+    TT_EQUALITY = 0x1000,
+    TT_INEQUALITY = 0x2000,
+    TT_POINTER = 0x4000,
+    TT_STORAGE_CLASS = 0x8000,
+    TT_CONTROL = 0x10000,
+    TT_BLOCK = 0x20000,
+    TT_PRIMARY = 0x40000,
+    TT_SELECTOR = 0x80000,
+    TT_VAR = 0x100000,
+    TT_BASETYPE = 0x200000,
+    TT_INCREMENT = 0x400000,
+    TT_SWITCH = 0x800000,
+    TT_ENUM = 0x1000000,
+    TT_STRUCT = 0x2000000,
+    TT_TYPENAME = 0x4000000,
+    TT_TYPEDEF = 0x8000000,
+    TT_VOID = 0x10000000,
+    TT_CLASS = 0x20000000,
+    TT_LINKAGE = 0x40000000,
+    TT_DECLARE = 0x80000000UL,
+    TT_UNKNOWN = 0
+};
+// clang-format on
+
 typedef struct kwblk
 {
-    char* name;
+    const char* name;
     int len;
     enum e_kw key;
-    // clang-format off
-    enum
-    {
-        KW_NONE = 0, KW_CPLUSPLUS = 1, KW_INLINEASM = 2, KW_NONANSI = 4, KW_C99 = 8, 
-        KW_C1X = 16, KW_ASSEMBLER = 32, KW_MSIL = 64,
-        KW_386 = 128, KW_68K= 256, KW_ALL = 0x40000000
-    } matchFlags;
-    // clang-format on
-
-    // clang-format off
-    enum
-    {
-        TT_BASE = 1,
-        TT_BOOL = 2,
-        TT_INT = 4,
-        TT_FLOAT = 8,
-        TT_COMPLEX = 16,
-        TT_TYPEQUAL = 32,
-        TT_POINTERQUAL = 64,
-        TT_UNARY = 128,
-        TT_BINARY = 0x100,
-        TT_OPERATOR = 0x200,
-        TT_ASSIGN = 0x400,
-        TT_RELATION = 0x800,
-        TT_EQUALITY = 0x1000,
-        TT_INEQUALITY = 0x2000,
-        TT_POINTER = 0x4000,
-        TT_STORAGE_CLASS = 0x8000,
-        TT_CONTROL = 0x10000,
-        TT_BLOCK = 0x20000,
-        TT_PRIMARY = 0x40000,
-        TT_SELECTOR = 0x80000,
-        TT_VAR = 0x100000,
-        TT_BASETYPE = 0x200000,
-        TT_INCREMENT = 0x400000,
-        TT_SWITCH = 0x800000,
-        TT_ENUM = 0x1000000,
-        TT_STRUCT = 0x2000000,
-        TT_TYPENAME = 0x4000000,
-        TT_TYPEDEF = 0x8000000,
-        TT_VOID = 0x10000000,
-        TT_CLASS = 0x20000000,
-        TT_LINKAGE = 0x40000000,
-        TT_DECLARE = 0x80000000,
-        TT_UNKNOWN = 0
-    } tokenTypes;
-    // clang-format on
+    unsigned matchFlags;
+    unsigned tokenTypes;
     /*    ASMNAME *data; */
 } KEYWORD;
 
@@ -1095,6 +1105,7 @@ typedef struct _string
 enum e_mo
 {
     mo_relaxed = 1,
+    mo_consume,
     mo_acquire,
     mo_release,
     mo_acq_rel,

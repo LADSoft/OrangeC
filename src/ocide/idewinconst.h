@@ -1,20 +1,13 @@
-#ifdef __IDE_RC_INVOKED
-#    define __NEXT_CONTROL_ID 2
-#    define __NEXT_MENU_ID 10003
-#    define __NEXT_RESOURCE_ID 10
-#    define __NEXT_STRING_ID 1000
-#endif
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the
- *     Orange C "Target Code" exception.
+ *     (at your option) any later version.
  *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of

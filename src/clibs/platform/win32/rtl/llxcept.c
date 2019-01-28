@@ -1,26 +1,37 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the
- *     Orange C "Target Code" exception.
- *
+ *     (at your option) any later version.
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
+ *     As a special exception, if other files instantiate templates or
+ *     use macros or inline functions from this file, or you compile
+ *     this file and link it with other works to produce a work based
+ *     on this file, this file does not by itself cause the resulting
+ *     work to be covered by the GNU General Public License. However
+ *     the source code for this file must still be made available in
+ *     accordance with section (3) of the GNU General Public License.
+ *     
+ *     This exception does not invalidate any other reasons why a work
+ *     based on this file might be covered by the GNU General Public
+ *     License.
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #include <windows.h>
@@ -52,7 +63,7 @@ static int* _xceptblkptr;
         if (f)
             return;
     }
-    char buf[1024];
+    char buf[2048];
     sprintf(buf, "\n%s:(%s)\n", text, _argv[0]);
     sprintf(buf + strlen(buf), "CS:EIP %04X:%08X  SS:ESP %04X:%08X\n", p->SegCs, p->Eip, p->SegSs, p->Esp);
     sprintf(buf + strlen(buf), "EAX: %08X  EBX: %08X  ECX: %08X  EDX: %08X  flags: %08X\n", p->Eax, p->Ebx, p->Ecx, p->Edx,
@@ -60,6 +71,12 @@ static int* _xceptblkptr;
     sprintf(buf + strlen(buf), "EBP: %08X  ESI: %08X  EDI: %08X\n", p->Ebp, p->Esi, p->Edi);
     sprintf(buf + strlen(buf), " DS:     %04X   ES:     %04X   FS:     %04X   GS:     %04X\n", p->SegDs, p->SegEs, p->SegFs,
             p->SegGs);
+    if (p->Eip < 0x80000000)
+    {
+        sprintf(buf + strlen(buf), "\n\nCS:EIP  ");
+        for (int i=0; i < 16; i++)
+            sprintf(buf + strlen(buf), "%02X ", ((unsigned char *)p->Eip)[i]);
+    }
     if (!_win32)
     {
         fprintf(stderr, buf);

@@ -1,26 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the
- *     Orange C "Target Code" exception.
- *
+ *     (at your option) any later version.
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
- *         email: TouchStone222@runbox.com <David Lindauer>_
- *
+ *         email: TouchStone222@runbox.com <David Lindauer>
+ * 
  */
 
 #include "GrepMain.h"
@@ -31,7 +30,7 @@
 #include <iomanip>
 #include <iostream>
 #include <algorithm>
-#ifdef GCCLINUX
+#ifdef HAVE_UNISTD_H
 #    include <unistd.h>
 #else
 #    include <io.h>
@@ -52,17 +51,23 @@ CmdSwitchBool GrepMain::showHelp(SwitchParser, '?');
 // not actual parameters
 CmdSwitchBool GrepMain::displayFileNames(SwitchParser, '#');
 CmdSwitchBool GrepMain::displayHeaderFileName(SwitchParser, '#');
+CmdSwitchInt  GrepMain::showAfter(SwitchParser, 'A', 0, 0, INT_MAX);
+CmdSwitchInt  GrepMain::showBefore(SwitchParser, 'B', 0, 0, INT_MAX);
+CmdSwitchInt  GrepMain::showBoth(SwitchParser, 'C', 0, 0, INT_MAX);
+CmdSwitchInt  GrepMain::maxMatches(SwitchParser, 'm', INT_MAX, 0, INT_MAX);
 
-const char* GrepMain::usageText = "[-rxlcnvidzwo?] searchstring file[s]\n";
-char* GrepMain::helpText =
+const char* GrepMain::usageText = "[-rxlcnvidzwomABC?] searchstring file[s]\n";
+const char* GrepMain::helpText =
     "[options] searchstring file[s]"
     "\n"
-    "   -c             Show Match Count only        -d  Recurse Subdirectories\n"
-    "   -i             Case Insensitive             -l  Show File Names only\n"
-    "   -n             Show Line Numbers            -o  UNIX Output Format\n"
-    "   -r-            No Regular Expressions       -v  Non Matching Lines\n"
-    "   -w             Complete Words Only          -z  Verbose\n"
-    "   -V, --version  Show version and date        -?  This help\n"
+    "   -c             Show Match Count only      -d   Recurse Subdirectories\n"
+    "   -i             Case Insensitive           -l   Show File Names only\n"
+    "   -n             Show Line Numbers          -o   UNIX Output Format\n"
+    "   -r-            No Regular Expressions     -v   Non Matching Lines\n"
+    "   -w             Complete Words Only        -z   Verbose\n"
+    "   -A:#           Show Lines After           -B:# Show Lines Before\n"
+    "   -C:#           Show Lines Both            -m:# Set Max Matches\n"
+    "   -V, --version  Show version and date      -?   This help\n"
     "\n"
     "Regular expressions special characters:\n"
     "   .  Match any character   \\  Quote next character\n"
@@ -119,7 +124,7 @@ void GrepMain::SetModes(void)
         displayHeaderFileName.SetValue(true);
     }
 }
-void GrepMain::DisplayMatch(const std::string& fileName, int& matchCount, int lineno, const char* text)
+void GrepMain::DisplayMatch(const std::string& fileName, int& matchCount, int lineno, const char *startpos, const char* text)
 {
     if (matchCount == 0 && displayHeaderFileName.GetValue())
     {
@@ -135,24 +140,47 @@ void GrepMain::DisplayMatch(const std::string& fileName, int& matchCount, int li
         const char* q = strchr(p, '\n');
         if (!q)
             q = p + strlen(p);
-        char buf[5000];
-        strncpy(buf, p, q - p);
-        buf[q - p] = 0;
-        if (displayFileNames.GetValue())
+        if (showBefore.GetValue() || showAfter.GetValue())
+            std::cout << "--" << std::endl;
+        for (int i = 0; i < showBefore.GetValue()+1 && p > startpos;)
         {
-            int n = fileName.size();
-            n = ((n + 8) / 8) * 8;
-            std::cout << std::setfill(' ') << std::setw(n) << std::left << fileName;
+            if (p[-1] == '\n')
+                i++, lineno--;
+            p--;
         }
-        if (displayLineNumbers.GetValue())
+        for (int i = 0; i < showAfter.GetValue() && *q; i++)
+
         {
-            std::cout << std::setfill(' ') << std::setw(8) << std::left << lineno;
+            const char *s = strchr(q + 1, '\n');
+            if (!s)
+                s = q + strlen(q);
+            q = s;
         }
-        std::cout << buf << std::endl;
+        while (p != q)
+        {
+            const char *s = strchr(p+1, '\n');
+            if (!s)
+                s = p + strlen(p);
+            if (displayFileNames.GetValue())
+            {
+                int n = fileName.size();
+                n = ((n + 8) / 8) * 8;
+                std::cout << std::setfill(' ') << std::setw(n) << std::left << fileName;
+            }
+            if (displayLineNumbers.GetValue())
+            {
+                std::cout << std::setfill(' ') << std::setw(8) << std::left << lineno++;
+            }
+            std::string buf(p+1, s - p-1);
+            std::cout << buf;
+
+            p = s;
+            std::cout << std::endl;
+        }
     }
     matchCount++;
 }
-void GrepMain::FindLine(const std::string fileName, int& matchCount, int& matchLine, char** matchPos, char* curpos, bool matched)
+void GrepMain::FindLine(const std::string fileName, int& matchCount, int& matchLine, char** matchPos, char *startpos, char* curpos, bool matched)
 {
     char* p = *matchPos;
     do
@@ -164,7 +192,7 @@ void GrepMain::FindLine(const std::string fileName, int& matchCount, int& matchL
         {
             if (displayNonMatching.GetValue())
             {
-                DisplayMatch(fileName, matchCount, matchLine, p);
+                DisplayMatch(fileName, matchCount, matchLine, startpos, p);
             }
             if (*p)
             {
@@ -175,7 +203,7 @@ void GrepMain::FindLine(const std::string fileName, int& matchCount, int& matchL
     } while (p < curpos);
     if (matched && !displayNonMatching.GetValue())
     {
-        DisplayMatch(fileName, matchCount, matchLine, curpos);
+        DisplayMatch(fileName, matchCount, matchLine, startpos, curpos);
     }
     if (*p)
     {
@@ -199,22 +227,23 @@ int GrepMain::OneFile(RegExpContext& regexp, const std::string fileName, std::is
     if (!fil.fail())
     {
         char* buf = const_cast<char*>(bufs.c_str());
+        char *start = buf;
         char* str = buf + 1;
         char* matchPos = buf + 1;
         int matchLine = 1;
         bool matched = true;
-        while (matched)
+        while (matched && matchCount < maxMatches.GetValue())
         {
             char* p = nullptr;
             matched = regexp.Match(str - buf, length, buf);
             if (matched)
             {
-                FindLine(fileName, matchCount, matchLine, &matchPos, buf + regexp.GetStart(), true);
+                FindLine(fileName, matchCount, matchLine, &matchPos, start, buf + regexp.GetStart(), true);
                 p = strchr((char*)buf + regexp.GetEnd(), '\n');
             }
             else
             {
-                FindLine(fileName, matchCount, matchLine, &matchPos, str + strlen(str), false);
+                FindLine(fileName, matchCount, matchLine, &matchPos, start, str + strlen(str), false);
             }
             if (!p)
                 p = str + strlen(str);
@@ -250,7 +279,7 @@ int GrepMain::Run(int argc, char** argv)
     // handle /V switch
     for (int i = 1; i < argc; i++)
         if (argv[i] && (argv[i][0] == '/' || argv[i][0] == '-'))
-            if (argv[i][1] == 'V' && argv[i][2] == 0 || !strcmp(argv[i], "--version"))
+            if ((argv[i][1] == 'V' && argv[i][2] == 0) || !strcmp(argv[i], "--version"))
             {
                 Utils::banner(argv[0]);
                 exit(0);
@@ -258,6 +287,11 @@ int GrepMain::Run(int argc, char** argv)
     if (!SwitchParser.Parse(&argc, argv))
     {
         usage(argv[0], usageText, 2);
+    }
+    if (showBoth.GetExists())
+    {
+        showAfter.SetValue(showBoth.GetValue());
+        showBefore.SetValue(showBoth.GetValue());
     }
     if (showHelp.GetValue() || (argc >= 2 && !strcmp(argv[1], "?")))
     {

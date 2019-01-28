@@ -1,26 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the
- *     Orange C "Target Code" exception.
- *
+ *     (at your option) any later version.
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #include <stdio.h>
@@ -32,13 +31,13 @@
 
 #define IEEE
 
-extern "C" ARCH_ASM* chosenAssembler;
-extern "C" int prm_nodos;
-extern "C" int prm_flat;
-extern "C" int fastcallAlias;
-extern "C" SYMBOL* theCurrentFunc;
-extern "C" int segAligns[];
-extern "C" BOOLEAN usingEsp;
+extern ARCH_ASM* chosenAssembler;
+extern int prm_nodos;
+extern int prm_flat;
+extern int fastcallAlias;
+extern SYMBOL* theCurrentFunc;
+extern int segAligns[];
+extern int usingEsp;
 int skipsize = 0;
 int addsize = 0;
 
@@ -46,13 +45,13 @@ int addsize = 0;
 
 char segregs[] = "csdsesfsgsss";
 
-extern "C" int prm_assembler;
+extern int prm_assembler;
 
 static int uses_float;
 
-extern "C" MULDIV* muldivlink = 0;
+MULDIV* muldivlink = 0;
 static enum e_gt oa_gentype = nogen;        /* Current DC type */
-extern "C" enum e_sg oa_currentSeg = noseg; /* Current seg */
+enum e_sg oa_currentSeg = noseg; /* Current seg */
 static int oa_outcol = 0;                   /* Curront col (roughly) */
 int newlabel;
 int needpointer;
@@ -65,7 +64,7 @@ void oa_ini(void)
     oa_gentype = nogen;
     oa_currentSeg = noseg;
     oa_outcol = 0;
-    newlabel = FALSE;
+    newlabel = false;
     muldivlink = 0;
 }
 
@@ -98,19 +97,19 @@ void outop(const char* name)
 
 /*-------------------------------------------------------------------------*/
 
-void putop(enum e_op op, AMODE* aps, AMODE* apd, int nooptx)
+void putop(enum e_opcode op, AMODE* aps, AMODE* apd, int nooptx)
 {
     if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
     {
-        skipsize = FALSE;
-        addsize = FALSE;
+        skipsize = false;
+        addsize = false;
         switch (op)
         {
             case op_lea:
-                skipsize = TRUE;
+                skipsize = true;
                 break;
             case op_push:
-                addsize = TRUE;
+                addsize = true;
                 if (!aps->length)
                     aps->length = ISZ_UINT;
                 if (aps->mode == am_immed && isintconst(aps->offset) && aps->offset->v.i >= CHAR_MIN &&
@@ -138,7 +137,7 @@ void putop(enum e_op op, AMODE* aps, AMODE* apd, int nooptx)
                 }
                 else
                 {
-                    addsize = TRUE;
+                    addsize = true;
                     if (!aps->length)
                         aps->length = ISZ_UINT;
                 }
@@ -151,7 +150,7 @@ void putop(enum e_op op, AMODE* aps, AMODE* apd, int nooptx)
             outop(opcodeTable[op_wait]);
             return;
         }
-        if (op == op_dd)
+        if ((e_op)op == op_dd)
         {
             outop("dd");
             return;
@@ -189,7 +188,7 @@ void putop(enum e_op op, AMODE* aps, AMODE* apd, int nooptx)
 
 /*-------------------------------------------------------------------------*/
 
-void oa_putconst(int op, int sz, EXPRESSION* offset, BOOLEAN doSign)
+void oa_putconst(int op, int sz, EXPRESSION* offset, bool doSign)
 /*
  *      put a constant to the outputFile file.
  */
@@ -298,16 +297,16 @@ void oa_putconst(int op, int sz, EXPRESSION* offset, BOOLEAN doSign)
         case en_structadd:
         case en_arrayadd:
             oa_putconst(0, ISZ_ADDR, offset->left, doSign);
-            oa_putconst(0, ISZ_ADDR, offset->right, TRUE);
+            oa_putconst(0, ISZ_ADDR, offset->right, true);
             break;
         case en_sub:
             oa_putconst(0, ISZ_ADDR, offset->left, doSign);
             bePrintf("-");
-            oa_putconst(0, ISZ_ADDR, offset->right, FALSE);
+            oa_putconst(0, ISZ_ADDR, offset->right, false);
             break;
         case en_uminus:
             bePrintf("-");
-            oa_putconst(0, ISZ_ADDR, offset->left, FALSE);
+            oa_putconst(0, ISZ_ADDR, offset->left, false);
             break;
         default:
             diag("illegal constant node.");
@@ -352,11 +351,11 @@ void oa_putlen(int l)
 
 /*-------------------------------------------------------------------------*/
 
-void putsizedreg(char* string, int reg, int size)
+void putsizedreg(const char* string, int reg, int size)
 {
-    static char* byteregs[] = {"al", "cl", "dl", "bl", "ah", "ch", "dh", "bh"};
-    static char* wordregs[] = {"ax", "cx", "dx", "bx", "sp", "bp", "si", "di"};
-    static char* longregs[] = {"eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi"};
+    static const char* byteregs[] = {"al", "cl", "dl", "bl", "ah", "ch", "dh", "bh"};
+    static const char* wordregs[] = {"ax", "cx", "dx", "bx", "sp", "bp", "si", "di"};
+    static const char* longregs[] = {"eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi"};
     if (size < 0)
         size = -size;
     if (size == ISZ_UINT || size == ISZ_ULONG || size == ISZ_ADDR || size == ISZ_U32)
@@ -529,18 +528,18 @@ void oa_putamode(int op, int szalt, AMODE* ap)
             }
             else if ((prm_assembler == pa_nasm) && addsize)
                 pointersize(ap->length);
-            oa_putconst(op, op == op_mov ? szalt : ap->length, ap->offset, FALSE);
+            oa_putconst(op, op == op_mov ? szalt : ap->length, ap->offset, false);
             break;
         case am_direct:
             pointersize(ap->length);
             if (!(prm_assembler == pa_nasm || prm_assembler == pa_fasm))
-                putseg(ap->seg, TRUE);
+                putseg(ap->seg, true);
             beputc('[');
             oldnasm = prm_assembler;
             if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
-                putseg(ap->seg, TRUE);
+                putseg(ap->seg, true);
             prm_assembler = pa_nasm;
-            oa_putconst(0, ap->length, ap->offset, FALSE);
+            oa_putconst(0, ap->length, ap->offset, false);
             beputc(']');
             prm_assembler = oldnasm;
             break;
@@ -562,14 +561,14 @@ void oa_putamode(int op, int szalt, AMODE* ap)
         case am_indisp:
             pointersize(ap->length);
             if (!(prm_assembler == pa_nasm || prm_assembler == pa_fasm))
-                putseg(ap->seg, TRUE);
+                putseg(ap->seg, true);
             beputc('[');
             if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
-                putseg(ap->seg, TRUE);
+                putseg(ap->seg, true);
             putsizedreg("%s", ap->preg, ISZ_ADDR);
             if (ap->offset)
             {
-                oa_putconst(0, ap->length, ap->offset, TRUE);
+                oa_putconst(0, ap->length, ap->offset, true);
             }
             beputc(']');
             break;
@@ -581,10 +580,10 @@ void oa_putamode(int op, int szalt, AMODE* ap)
                 scale <<= 1;
             pointersize(ap->length);
             if (!(prm_assembler == pa_nasm || prm_assembler == pa_fasm))
-                putseg(ap->seg, TRUE);
+                putseg(ap->seg, true);
             beputc('[');
             if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
-                putseg(ap->seg, TRUE);
+                putseg(ap->seg, true);
             if (ap->preg != -1)
                 putsizedreg("%s+", ap->preg, ISZ_ADDR);
             putsizedreg("%s", ap->sreg, ISZ_ADDR);
@@ -592,7 +591,7 @@ void oa_putamode(int op, int szalt, AMODE* ap)
                 bePrintf("*%d", scale);
             if (ap->offset)
             {
-                oa_putconst(0, ap->length, ap->offset, TRUE);
+                oa_putconst(0, ap->length, ap->offset, true);
             }
             beputc(']');
         }
@@ -647,7 +646,7 @@ void oa_put_code(OCODE* cd)
     if (apd)
         len2 = apd->length;
     needpointer = (len != len2) || ((!aps || aps->mode != am_dreg) && (!apd || apd->mode != am_dreg));
-    putop((e_op)op, aps, apd, cd->noopt);
+    putop((e_opcode)op, aps, apd, cd->noopt);
     if ((prm_assembler == pa_nasm || prm_assembler == pa_fasm) &&
         (op >= op_ja && op <= op_jz && op != op_jecxz && (op != op_jmp || aps->mode == am_immed)))
     {
@@ -662,7 +661,7 @@ void oa_put_code(OCODE* cd)
                 bePrintf("\tnear");
             }
         }
-        nosize = TRUE;
+        nosize = true;
     }
     else if (op == op_jmp && aps->mode == am_immed && aps->offset->type == en_labcon)
     {
@@ -671,7 +670,7 @@ void oa_put_code(OCODE* cd)
             if (((Instruction*)cd->ins)->GetData()[0] == 0xeb)
             {
                 bePrintf("\tshort");
-                nosize = TRUE;
+                nosize = true;
             }
         }
     }
@@ -699,9 +698,9 @@ void oa_put_code(OCODE* cd)
             separator = ',';
         }
         if (op == op_dd)
-            nosize = TRUE;
+            nosize = true;
         oa_putamode(op, aps->length, aps);
-        nosize = FALSE;
+        nosize = false;
         if (apd != 0)
         {
             beputc(separator);
@@ -729,7 +728,7 @@ void oa_gen_strlab(SYMBOL* sp)
     {
         if (oa_currentSeg == dataseg || oa_currentSeg == bssxseg)
         {
-            newlabel = TRUE;
+            newlabel = true;
             bePrintf("\n%s", buf);
             oa_outcol = strlen(buf) + 1;
         }
@@ -751,7 +750,7 @@ void oa_put_label(int lab)
         oa_nl();
         if (oa_currentSeg == dataseg || oa_currentSeg == bssxseg)
         {
-            newlabel = TRUE;
+            newlabel = true;
             bePrintf("\nL_%ld", lab);
             oa_outcol = 8;
         }
@@ -794,6 +793,7 @@ void oa_genfloat(enum e_gt type, FPFC* val)
                     bePrintf("\tdd\t%s\n", buf);
                 break;
             case doublegen:
+            case longdoublegen:
                 if (!strcmp(buf, "inf") || !strcmp(buf, "nan") || !strcmp(buf, "-inf") || !strcmp(buf, "-nan"))
                 {
                     UBYTE dta[8];
@@ -810,23 +810,6 @@ void oa_genfloat(enum e_gt type, FPFC* val)
                 else
                     bePrintf("\tdq\t%s\n", buf);
                 break;
-            case longdoublegen:
-                if (!strcmp(buf, "inf") || !strcmp(buf, "nan") || !strcmp(buf, "-inf") || !strcmp(buf, "-nan"))
-                {
-                    UBYTE dta[10];
-                    int i;
-                    FPFToLongDouble(dta, val);
-                    bePrintf("\tdb\t");
-                    for (i = 0; i < 10; i++)
-                    {
-                        bePrintf("0%02XH", dta[i]);
-                        if (i != 9)
-                            bePrintf(", ");
-                    }
-                }
-                else
-                    bePrintf("\tdt\t%s\n", buf);
-                break;
             default:
                 diag("floatgen - invalid type");
                 break;
@@ -839,10 +822,8 @@ void oa_genfloat(enum e_gt type, FPFC* val)
                 outcode_genfloat(val);
                 break;
             case doublegen:
-                outcode_gendouble(val);
-                break;
             case longdoublegen:
-                outcode_genlongdouble(val);
+                outcode_gendouble(val);
                 break;
             default:
                 diag("floatgen - invalid type");
@@ -856,7 +837,7 @@ void oa_genstring(LCHAR* str, int len)
  * Generate a string literal
  */
 {
-    BOOLEAN instring = FALSE;
+    bool instring = false;
     if (cparams.prm_asmfile)
     {
         int nlen = len;
@@ -868,7 +849,7 @@ void oa_genstring(LCHAR* str, int len)
                     oa_gentype = nogen;
                     oa_nl();
                     bePrintf("\tdb\t\"");
-                    instring = TRUE;
+                    instring = true;
                 }
                 bePrintf("%c", *str++);
             }
@@ -877,7 +858,7 @@ void oa_genstring(LCHAR* str, int len)
                 if (instring)
                 {
                     bePrintf("\"\n");
-                    instring = FALSE;
+                    instring = false;
                 }
                 oa_genint(chargen, *str++);
             }
@@ -996,7 +977,7 @@ void oa_genref(SYMBOL* sp, int offset)
             if (!newlabel)
                 oa_nl();
             else
-                newlabel = FALSE;
+                newlabel = false;
             bePrintf("\tdd\t%s\n", buf1);
             oa_gentype = longgen;
         }
@@ -1027,7 +1008,7 @@ void oa_genstorage(int nbytes)
         if (!newlabel)
             oa_nl();
         else
-            newlabel = FALSE;
+            newlabel = false;
         if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
             bePrintf("\tresb\t0%xh\n", nbytes);
         else
@@ -1051,7 +1032,7 @@ void oa_gen_labref(int n)
         if (!newlabel)
             oa_nl();
         else
-            newlabel = FALSE;
+            newlabel = false;
         bePrintf("\tdd\tL_%d\n", n);
         oa_gentype = longgen;
     }
@@ -1068,7 +1049,7 @@ void oa_gen_labdifref(int n1, int n2)
         if (!newlabel)
             oa_nl();
         else
-            newlabel = FALSE;
+            newlabel = false;
         bePrintf("\tdd\tL_%d-L_%d\n", n1, n2);
         oa_gentype = longgen;
     }
@@ -1424,14 +1405,14 @@ long queue_floatval(FPFC* number, int size)
 
 void dump_muldivval(void)
 {
-    int tag = FALSE;
+    int tag = false;
     xconstseg();
     if (cparams.prm_asmfile)
     {
         bePrintf("\n");
         if (muldivlink)
         {
-            tag = TRUE;
+            tag = true;
         }
         while (muldivlink)
         {
@@ -1450,6 +1431,7 @@ void dump_muldivval(void)
                 {
                     case ISZ_FLOAT:
                     case ISZ_IFLOAT:
+                    case ISZ_CFLOAT:
                         FPFToFloat(data, &muldivlink->floatvalue);
                         len = 4;
                         break;
@@ -1457,6 +1439,8 @@ void dump_muldivval(void)
                     case ISZ_IDOUBLE:
                     case ISZ_LDOUBLE:
                     case ISZ_ILDOUBLE:
+                    case ISZ_CDOUBLE:
+                    case ISZ_CLDOUBLE:
                         FPFToDouble(data, &muldivlink->floatvalue);
                         len = 8;
                         break;

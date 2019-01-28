@@ -1,14 +1,13 @@
 /* Software License Agreement
  * 
- *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
  * 
  *     This file is part of the Orange C Compiler package.
  * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the 
- *     Orange C "Target Code" exception.
+ *     (at your option) any later version.
  * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -106,15 +105,15 @@
 
 struct PEHeader
 {
-    int signature;
-    short cpu_type;
-    short num_objects;
+    unsigned signature;
+    unsigned short cpu_type;
+    unsigned short num_objects;
     int time;
     int symbol_ptr;
     int num_symbols;
-    short nt_hdr_size;
-    short flags;
-    short magic;
+    unsigned short nt_hdr_size;
+    unsigned short flags;
+    unsigned short magic;
     unsigned char linker_minor_version;
     unsigned char linker_major_version;
     int code_size;

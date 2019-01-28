@@ -1,26 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the
- *     Orange C "Target Code" exception.
- *
+ *     (at your option) any later version.
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #define _CRT_SECURE_NO_WARNINGS
@@ -49,7 +48,7 @@ ppDefine::ppDefine(bool UseExtensions, ppInclude* Include, bool C89, bool Asmpp)
 {
     char* sde = getenv("SOURCE_DATE_EPOCH");
     if (sde)
-        source_date_epoch = (time_t)strtoul(sde, NULL, 10);
+        source_date_epoch = (time_t)strtoul(sde, nullptr, 10);
     SetDefaults();
     InitHash();
     expr.SetDefine(this);
@@ -97,14 +96,6 @@ ppDefine::Definition* ppDefine::Define(const std::string& name, std::string& val
     }
     Symbol* definesym = symtab.Lookup(name);
     Definition* old = static_cast<Definition*>(definesym);
-    if (old)
-    {
-        if (old->IsUndefined())  // undefined forever?
-        {
-            delete args;
-            return nullptr;
-        }
-    }
     size_t n = value.find_first_not_of(" \t\v\n");
     if (n)
         value.erase(0, n);
@@ -195,21 +186,13 @@ ppDefine::Definition* ppDefine::Define(const std::string& name, std::string& val
     symtab.Add(d);
     return d;
 }
-void ppDefine::Undefine(const std::string& name, bool forever)
+void ppDefine::Undefine(const std::string& name)
 {
     Symbol* define = symtab.Lookup(name);
 
     if (define)
     {
-        if (forever)
-        {
-            Definition* d = static_cast<Definition*>(define);
-            d->Undefine();
-        }
-        else
-        {
-            symtab.Remove(define);
-        }
+        symtab.Remove(define);
     }
 }
 void ppDefine::DoAssign(std::string& line, bool caseInsensitive)
@@ -347,7 +330,7 @@ void ppDefine::DoUndefine(std::string& line)
     }
     else
     {
-        Undefine(t->GetId(), false);
+        Undefine(t->GetId());
     }
 }
 void ppDefine::SetDefaults()
@@ -748,7 +731,7 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr)
 #ifndef NOCPLUSPLUS
                 (name != "R" || line[p] != '"') &&
 #endif
-                d != nullptr && !d->IsUndefined() && (!q || line[q - 1] != REPLACED_ALREADY) && !ppNumber(line, q, p - 1))
+                d != nullptr && (!q || line[q - 1] != REPLACED_ALREADY) && !ppNumber(line, q, p - 1))
             {
                 std::string macro;
                 if (d->GetArgList() != nullptr)
@@ -1065,7 +1048,7 @@ void ppDefine::replaceDefined(std::string& line)
     while (n != std::string::npos)
     {
         size_t m = n + 7;
-        char* val = "";
+        const char* val = "";
         while (m < line.size() && isspace(line[m]))
             m++;
         bool open = false;

@@ -1,9 +1,6 @@
-#ifdef __cplusplus
-extern "C" {
-#endif
 /* Protogen Version 2.1.1.17Friday October 28, 2005  17:44:50 */
 
-enum e_lk get_dll_linkage();                /* get dll linkage corresponding to command line switches */
+enum e_lk get_dll_linkage(SYMBOL *);                /* get dll linkage corresponding to command line switches */
 
                               /* Dbgfmt.c */
 
@@ -75,6 +72,7 @@ void asm_swbranch(QUAD *q)           ;
 void asm_dc(QUAD *q)                 ;
 void asm_assnblock(QUAD *q)          ;
 void asm_clrblock(QUAD *q)           ;
+void asm_cmpblock(QUAD *q)           ;
 void asm_jc(QUAD *q)                 ;
 void asm_ja(QUAD *q)                 ;
 void asm_je(QUAD *q)                 ;
@@ -114,7 +112,7 @@ LEXEME *inasm_statement(LEXEME *inlex, BLOCKDATA *parent);
 void *inlineAsmStmt(void *);
                               /* Invoke.c */
 
-int InsertExternalFile(char *name, BOOLEAN primary);
+int InsertExternalFile(char *name, bool primary);
 void InsertOutputFileName(char *name);
 int RunExternalFiles(char *);
 
@@ -163,8 +161,8 @@ void output_obj_file(void);
 void oa_ini(void);
 void oa_nl(void);
 void outop(char *name);
-void putop(enum e_op op, AMODE *aps, AMODE *apd, int nooptx);
-void oa_putconst(int op, int sz, EXPRESSION *offset, BOOLEAN doSign);
+void putop(enum e_opcode op, AMODE *aps, AMODE *apd, int nooptx);
+void oa_putconst(int op, int sz, EXPRESSION *offset, bool doSign);
 void oa_putlen(int l);
 void putsizedreg(char *string, int reg, int size);
 void pointersize(int size);
@@ -369,7 +367,3 @@ void peep_call(OCODE *ip);
 void peep_pop(OCODE *ip);
 void remove_peep_entry(OCODE *ip);
 void oa_peep(void);
-
-#ifdef __cplusplus
-}
-#endif

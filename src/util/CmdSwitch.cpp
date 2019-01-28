@@ -1,26 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the
- *     Orange C "Target Code" exception.
- *
+ *     (at your option) any later version.
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #define _CRT_SECURE_NO_WARNINGS
@@ -44,10 +43,11 @@ int CmdSwitchBool::Parse(const char* data)
 }
 int CmdSwitchInt::Parse(const char* data)
 {
+    int cnt = 0;
     char number[256];
-    if (data[0] != ':')
-        return 0;
-    strncpy(number, data + 1, 255);
+    if (data[0] == ':')
+        data++, cnt++;
+    strncpy(number, data, 255);
     number[255] = 0;
 
     char* p = number;
@@ -58,13 +58,14 @@ int CmdSwitchInt::Parse(const char* data)
     value = Utils::StringToNumber(number);
     if (value < lowLimit || value > hiLimit)
         return -1;
-    return p - number + 1;
+    return p - number + cnt;
 }
 int CmdSwitchHex::Parse(const char* data)
 {
+    int cnt = 0;
     char number[256];
-    if (data[0] != ':')
-        return 0;
+    if (data[0] == ':')
+        data++, cnt++;
     strncpy(number, data + 1, 255);
     number[255] = 0;
 
@@ -76,7 +77,7 @@ int CmdSwitchHex::Parse(const char* data)
     value = Utils::StringToNumberHex(number);
     if (value < lowLimit || value > hiLimit)
         return -1;
-    return p - number + 1;
+    return p - number + cnt;
 }
 int CmdSwitchString::Parse(const char* data)
 {
@@ -144,8 +145,6 @@ int CmdSwitchDefine::Parse(const char* data)
         return -1;
     }
     define* newDefine = new define;
-    //	if (!newDefine) // new return not nullptr or exception!
-    //        return -1;
     newDefine->name = name;
     if (*data == '=')
     {
@@ -157,6 +156,10 @@ int CmdSwitchDefine::Parse(const char* data)
         }
         *p = 0;
         newDefine->value = name;
+    }
+    else
+    {
+        newDefine->value = "1";
     }
     defines.push_back(newDefine);
     return rv;
@@ -194,7 +197,7 @@ void CmdSwitchFile::Dispatch(char* data)
     int max = 10;
     argc = 1;
     argv = new char*[max];
-    argv[0] = "";
+    argv[0] = (char *)"";
     while (*data)
     {
         data = GetStr(data);
@@ -264,7 +267,7 @@ char* CmdSwitchFile::GetStr(char* data)
 }
 bool CmdSwitchParser::Parse(int* argc, char* argv[])
 {
-    for (int i = 0; *argv;)
+    for (int i = 0, count = 0; *argv;)
     {
         // special casing '-' alone in an argv
         if (argv[0][0] == '@')  // meant to be a file loader
@@ -295,6 +298,7 @@ bool CmdSwitchParser::Parse(int* argc, char* argv[])
                         return false;
                     data++;
                     int n = (*it)->Parse(data);
+                    (*it)->SetArgNum(count++);
                     while (n == INT_MAX && argv[1])
                     {
                         // use next arg as the value

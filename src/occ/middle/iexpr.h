@@ -1,26 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the
- *     Orange C "Target Code" exception.
- *
+ *     (at your option) any later version.
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 /*
@@ -47,14 +46,14 @@ enum i_ops
         i_label, i_asmgoto, i_goto, i_directbranch, 
         i_gosub, i_fargosub, i_trap, i_int, i_ret,
         i_fret, i_rett, i_add, i_sub, i_udiv, i_umod, i_sdiv, i_smod, i_muluh, i_mulsh, i_mul,
-        i_lsl, i_lsr, i_asr, i_neg, i_not, i_and, i_or, i_eor, 
+        i_lsl, i_lsr, i_asr, i_neg, i_not, i_and, i_or, i_eor,
         i_setne, i_sete, i_setc, i_seta, i_setnc, i_setbe, i_setl, i_setg, i_setle, i_setge,
         i_asmcond, i_jne, i_je, i_jc, i_ja, i_jnc, i_jbe, i_jl, i_jg, i_jle, i_jge,  
-        i_assn, i_genword, i_coswitch, i_swbranch, i_assnblock, i_clrblock, i_parmadj, i_parmblock, i_parm,
+        i_assn, i_genword, i_coswitch, i_swbranch, i_assnblock, i_clrblock, i_cmpblock, i_parmadj, i_parmblock, i_parm,
         i_array, i_arrayindex, i_arraylsh, i_struct, i_cppini, i_block, i_blockend, 
         i_dbgblock, i_dbgblockend, i_varstart, i_func, i_livein, i_icon, i_fcon, i_imcon, i_cxcon, 
         i_atomic_flag_test_and_set, i_atomic_flag_clear,
-        i_atomic_fence, i_atomic_flag_fence, i_cmpswp,
+        i_atomic_fence, i_atomic_flag_fence, i_cmpswp, i_xchg,
         i_prologue, i_epilogue, i_pushcontext, i_popcontext, i_loadcontext, i_unloadcontext,
         i_tryblock, i_substack, i_parmstack, i_loadstack, i_savestack, i_functailstart, i_functailend,
         i_gcsestub, i_expressiontag, i_tag, i_seh,
@@ -84,23 +83,24 @@ typedef struct _imode_
     struct expr* offset;  /* offset */
     struct expr* offset2; /* a second temp reg */
     struct expr* offset3; /* an address */
-    struct exprlist
-    {
-        struct exprlist* next;
-        struct expr* offset;
-    } * vararg;
+    struct expr *vararg;
+//    struct exprlist
+//    {
+//        struct exprlist* next;
+//        struct expr* offset;
+//    } * vararg;
     int scale; /* scale factor on the second temp reg */
     char useindx;
     char size;                    /* size */
     char ptrsize;                 /* ptr indirection size, either ISZ_ADDR or ISZ_FARPTR */
     char startbit, bits;          /* bit width  for i_Bf*/
     char seg;                     /* seg reg  for segmented architectures */
-    unsigned char vol : 1;        /* TRUE if is a node for a volatile var */
-    unsigned char restricted : 1; /* TRUE if pointer type is set to restricted */
-    unsigned char retval : 1;     /* TRUE if this is the value returned by a function */
-    unsigned char altretval : 1;  /* TRUE if an alternate return value should be used (e.g. SSE instead of FP)*/
+    unsigned char vol : 1;        /* true if is a node for a volatile var */
+    unsigned char restricted : 1; /* true if pointer type is set to restricted */
+    unsigned char retval : 1;     /* true if this is the value returned by a function */
+    unsigned char altretval : 1;  /* true if an alternate return value should be used (e.g. SSE instead of FP)*/
     unsigned char fieldname : 1;  /* vararg is an en_structelem field name */
-    unsigned char msilObject : 1; /* TRUE if this is an MSIL object that shouldn't be loaded by address */
+    unsigned char msilObject : 1; /* true if this is an MSIL object that shouldn't be loaded by address */
 } IMODE;
 
 /*-------------------------------------------------------------------------*/
@@ -108,45 +108,48 @@ typedef struct _imode_
 #define IM_LIVELEFT 1
 #define IM_LIVERIGHT 2
 #define IM_LIVEANS 4
+struct _phiblock
+{
+    struct _phiblock* next;
+    int Tn;
+    struct _block* block;
+};
+
 typedef struct _phidata
 {
     int nblocks;
     int T0;
-    struct _phiblock
-    {
-        struct _phiblock* next;
-        int Tn;
-        struct _block* block;
-    } * temps;
+    struct _phiblock *temps;
 } PHIDATA;
 
 /*
  * icode node
  * this is also used for dag nodes
  */
+struct _basic_dag
+{
+    enum i_ops opcode; /* opcode */
+    IMODE* left;       /* ans = left opcode right */
+    IMODE* right;
+    union ival
+    {
+        /* values for constant nodes */
+        LLONG_TYPE i;
+        FPFC f;
+        struct
+        {
+            FPFC r;
+            FPFC i;
+        } c;
+        void* data; /* generic data, won't be filled in until after LCSE */
+        PHIDATA* phi;
+        long label;  // branches
+    } v;
+};
 
 typedef struct quad
 {
-    struct _basic_dag
-    {
-        enum i_ops opcode; /* opcode */
-        IMODE* left;       /* ans = left opcode right */
-        IMODE* right;
-        union ival
-        {
-            /* values for constant nodes */
-            LLONG_TYPE i;
-            FPFC f;
-            struct
-            {
-                FPFC r;
-                FPFC i;
-            } c;
-            void* data; /* generic data, won't be filled in until after LCSE */
-            PHIDATA* phi;
-            long label;  // branches
-        } v;
-    } dc;
+    struct _basic_dag dc;
     IMODE* ans;
     ULLONG_TYPE liveRegs;
     struct quad *fwd, *back;
@@ -196,6 +199,7 @@ typedef struct quad
     int beforeGosub : 1;
     int nullvararg : 1;
     int blockassign : 1;
+    int atomic : 1; /* atomic instruction */
     char fastcall; /* index for fastcall-related arg, positive for call sites and negative as callee */
     char oldmode;
     char novalue;
@@ -231,16 +235,17 @@ enum e_icmode {
     ical,icla,icaa
 };
 // clang-format on
+struct caseptrs
+{
+    int label;
+    LLONG_TYPE id;
+};
 struct cases
 {
     LLONG_TYPE bottom;
     LLONG_TYPE top;
     int count;
-    struct caseptrs
-    {
-        int label;
-        LLONG_TYPE id;
-    } * ptrs;
+    struct caseptrs *ptrs;
 };
 // clang-format off
 enum e_gt

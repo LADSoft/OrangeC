@@ -1,26 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the
- *     Orange C "Target Code" exception.
- *
+ *     (at your option) any later version.
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #include <stdio.h>
@@ -32,20 +31,20 @@
  * the compiler actually generated risc-like instruction sequences
  * and some of the things in this module re-cisc it :)
  */
-extern "C" COMPILER_PARAMS cparams;
-extern "C" int regmap[REG_MAX][2];
+extern COMPILER_PARAMS cparams;
+extern int regmap[REG_MAX][2];
 
-extern "C" int prm_assembler;
-extern "C" int prm_asmfile;
-extern "C" int prm_bepeep;
-extern "C" int prm_useesp;
-extern "C" int usingEsp;
-extern "C" int pushlevel;
-extern "C" int funcstackheight;
+extern int prm_assembler;
+extern int prm_asmfile;
+extern int prm_bepeep;
+extern int prm_useesp;
+extern int usingEsp;
+extern int pushlevel;
+extern int funcstackheight;
 
 #define live(mask, reg) (mask & (1 << reg))
 
-extern "C" OCODE *peep_head = 0, *peep_tail = 0, *peep_insert = 0;
+OCODE *peep_head = 0, *peep_tail = 0, *peep_insert = 0;
 void insert_peep_entry(OCODE* after, enum e_opcode opcode, int size, AMODE* ap1, AMODE* ap2);
 
 void o_peepini(void) { peep_head = peep_tail = 0; }
@@ -229,7 +228,7 @@ OCODE* gen_codes(int op, int len, AMODE* ap1, AMODE* ap2)
 void gen_coden(int op, int len, AMODE* ap1, AMODE* ap2)
 {
     OCODE* newitem = gen_codes(op, len, ap1, ap2);
-    newitem->noopt = TRUE;
+    newitem->noopt = true;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -342,7 +341,7 @@ void oa_gen_label(int labno)
     OCODE* newitem;
     newitem = (OCODE*)beLocalAlloc(sizeof(OCODE));
     newitem->opcode = (e_opcode)op_label;
-    newitem->oper1 = (AMODE*)labno;
+    newitem->oper1 = make_label(labno);
     add_peep(newitem);
 }
 
@@ -363,10 +362,10 @@ void flush_peep(SYMBOL* funcsp, QUAD* list)
     {
         while (peep_head != 0)
         {
-            switch (peep_head->opcode)
+            switch ((e_op)peep_head->opcode)
             {
                 case op_label:
-                    oa_put_label((int)peep_head->oper1);
+                    oa_put_label(peep_head->oper1->offset->v.i);
                     break;
                 case op_funclabel:
                     oa_gen_strlab((SYMBOL*)peep_head->oper1);
@@ -495,8 +494,8 @@ OCODE* peep_test(OCODE* ip)
             cause a
         * stop in the search. The Line directives and the void opcodes are ignored.
         */
-        for (ip2 = ip->back; ip2 && (ip2->opcode == op_line || ip2->opcode == op_void || ip2->opcode == op_blockstart ||
-                                     ip2->opcode == op_blockend || ip2->opcode == op_varstart);
+        for (ip2 = ip->back; ip2 && ((e_op)ip2->opcode == op_line || (e_op)ip2->opcode == op_void || (e_op)ip2->opcode == op_blockstart ||
+                                     (e_op)ip2->opcode == op_blockend || (e_op)ip2->opcode == op_varstart);
              ip2 = ip2->back)
             ;
         if (!ip2)
@@ -988,7 +987,7 @@ void peep_mov(OCODE* ip)
             }
         }
     }
-    while (ip1 && ip1->opcode == op_line)
+    while (ip1 && (e_op)ip1->opcode == op_line)
         ip1 = ip1->back;
 
     if (!ip1)
@@ -1086,7 +1085,7 @@ void peep_movzx2(OCODE* ip)
                     ip->back = c1;
                     ip->opcode = op_mov;
                     ip->oper1->length = ip->oper2->length;
-                    ip->noopt = TRUE;
+                    ip->noopt = true;
                 }
             }
             else
@@ -1111,7 +1110,7 @@ void peep_movzx2(OCODE* ip)
                     ip->back = c1;
                     ip->opcode = op_mov;
                     ip->oper1->length = ip->oper2->length;
-                    ip->noopt = TRUE;
+                    ip->noopt = true;
                 }
             }
         }
@@ -1132,7 +1131,7 @@ void peep_movzx2(OCODE* ip)
                     ip->back = c1;
                     ip->opcode = op_mov;
                     ip->oper1->length = ip->oper2->length;
-                    ip->noopt = TRUE;
+                    ip->noopt = true;
                 }
                 else
                 {
@@ -1149,7 +1148,7 @@ void peep_movzx2(OCODE* ip)
                     ip->fwd = c1;
                     ip->opcode = op_mov;
                     ip->oper1->length = ip->oper2->length;
-                    ip->noopt = TRUE;
+                    ip->noopt = true;
                 }
             }
         }
@@ -1251,7 +1250,7 @@ void peep_and(OCODE* ip)
             else if (ip2->opcode == op_and && ip->oper2->mode == am_immed && ip2->oper2->mode == am_immed &&
                      isintconst(ip->oper2->offset) && isintconst(ip2->oper2->offset))
             {
-                ip2->oper2->offset->v.i &= ip->oper2->offset->v.i;
+		ip2->oper2 = aimmed(ip2->oper2->offset->v.i & ip->oper2->offset->v.i);
                 remove_peep_entry(ip);
                 return;
             }
@@ -1389,14 +1388,14 @@ void peep_mul(OCODE* ip)
 }
 /*-------------------------------------------------------------------------*/
 
-int novalue(OCODE* ip) { return ip->fwd->opcode == op_void; }
+int novalue(OCODE* ip) { return (e_op)ip->fwd->opcode == op_void; }
 
 /*-------------------------------------------------------------------------*/
 
 int equal_address(AMODE* ap1, AMODE* ap2)
 {
     if (ap1->mode != ap2->mode)
-        return (FALSE);
+        return (false);
     if (ap1->length != ap2->length && ap1->length != -ap2->length)
     {
         int n1 = ap1->length < 0 ? -ap1->length : ap1->length;
@@ -1406,53 +1405,53 @@ int equal_address(AMODE* ap1, AMODE* ap2)
         if (n2 == ISZ_ULONG || n2 == ISZ_ADDR || n2 == ISZ_UINT || n2 == ISZ_U32)
             n2 = ISZ_UINT;
         if (n1 != n2)
-            return FALSE;
+            return false;
     }
     switch (ap1->mode)
     {
         case am_axdx:
-            return TRUE;
+            return true;
         case am_immed:
             return equalnode(ap1->offset, ap2->offset);
         case am_indispscale:
             if (ap1->scale != ap2->scale || ap1->sreg != ap2->sreg)
-                return (FALSE);
+                return (false);
             if (ap1->sreg != ap2->sreg)
-                return FALSE;
+                return false;
         case am_indisp:
             if (ap1->offset)
                 if (ap2->offset)
                 {
                     if (!equalnode(ap1->offset, ap2->offset))
-                        return FALSE;
+                        return false;
                 }
                 else
-                    return (FALSE);
+                    return (false);
             else if (ap2->offset)
-                return (FALSE);
+                return (false);
         case am_dreg:
             if (ap1->preg != ap2->preg)
-                return (FALSE);
-            return TRUE;
+                return (false);
+            return true;
         case am_freg:
             if (ap1->preg != ap2->preg)
-                return (FALSE);
-            return TRUE;
+                return (false);
+            return true;
         case am_xmmreg:
             if (ap1->preg != ap2->preg)
-                return (FALSE);
-            return TRUE;
+                return (false);
+            return true;
         case am_mmreg:
             if (ap1->preg != ap2->preg)
-                return (FALSE);
-            return TRUE;
+                return (false);
+            return true;
 
         case am_direct:
             return equalnode(ap1->offset, ap2->offset);
         default:
             break;
     }
-    return (FALSE);
+    return (false);
 }
 
 /*
@@ -1666,6 +1665,9 @@ void oa_peep(void)
         {
             switch (ip->opcode)
             {
+                case op_lock:
+                    ip = ip->fwd; // skip next instruction
+                    break;
                 case op_mul:
                 case op_imul:
                     peep_mul(ip);

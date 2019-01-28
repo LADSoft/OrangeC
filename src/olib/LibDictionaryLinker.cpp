@@ -1,59 +1,53 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the
- *     Orange C "Target Code" exception.
- *
+ *     (at your option) any later version.
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #include "LibDictionary.h"
 #include "ObjFile.h"
+#include "Utils.h"
 #include <cctype>
 #include <iostream>
 
 bool DictCompare::caseSensitive;
 
-ObjInt DictCompare::casecmp(const char* str1, const char* str2, int n) const
+ObjInt DictCompare::casecmp(const std::string& str1, const std::string& str2, int n) const
 {
-    while (*str1 && *str2 && n)
+    int v;
+    if (caseSensitive)
+        v = !Utils::iequal(str1, str2, n);
+    else
+        v = strncmp(str1.c_str(), str2.c_str(), n);
+    if (v == 0)
     {
-        int u1 = *str1;
-        int u2 = *str2;
-        if (!caseSensitive)
-        {
-            u1 = toupper(u1);
-            u2 = toupper(u2);
-        }
-        if (u1 != u2)
-            break;
-        str1++, str2++, n--;
+        int l = str1[n], r = str2[n];
+        if (l < r)
+            return -1;
+        else if (l > r)
+            return 1;
+        else
+            return 0; // n is the length of one of the strings, so, this is the nulls...
     }
-    if (n == 0)
-    {
-        if (!*str2)
-            return 0;
-        return -1;
-    }
-    else if (!*str2)
-        return 1;
-    return *str1 < *str2 ? -1 : 1;
+    return v;
 }
 ObjInt LibDictionary::Lookup(FILE* stream, ObjInt dictionaryOffset, ObjInt dictionarySize, const ObjString& name)
 {

@@ -10,3 +10,5 @@ orc.exe
 oimplib.exe
 obrc.exe
 occpr.exe
+.vs
+.vs\*.*

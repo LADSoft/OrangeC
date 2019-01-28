@@ -1,5 +1,69 @@
 Release notes:
 
+version 6.0.40: 1/21/2019
+* fix various problems with the MSDOS build and install
+* occ: fix stack frame in the presence of try/catch processing: don't optimize out the EBP references and don't cache variables in regs
+* occ: add __offsetof and use in library
+* occ: add __typeid and fix tgmath.h
+* occ: fix alignas and alignof, propagate section alignment through to linker
+* occ: when putting a qualifier in front of the friend keyword, the friend keyword got ignored
+* occ: fix problem with hook; when one side is a structure the other side might need a constructor call to coerce to the same type
+* occ: print return code of linker when calling --y
+* occ: faster evaluation when constexpr functions are used
+* occ: rewrite backend to use assembler core
+* occ: convert floating point calculations to use SSE2 instead of the FPU
+* occ: fix bug in assembly output when virtual function patches are applied to an overridden virtual table
+* occ: allow implicit use of captured this in lambda expressions
+* occ: fix problem with constructor initializers: direct initialization of a structure member resulted in bad code
+* occ: handle return of reference values properly, by generating an error if generating the return value requires a temporary
+* occ: c++: allow function name to be used in arithmetic expressions, warn when this is being done
+* occ: consider strings as const pointers for purposes of function argument matching
+* occ: when a member name matched a structure at global scope, various problems would occur
+* occ: assignment of constant data to a structure crashed the generated program (C++ mode only)
+* occ: when a structure is copy-constructed into a function argument, a throw in the function resulted in undefined behavior
+* occ: fix some problems with lambda functions being force fit into std::function
+* occ: fix unary operators - would apply the conversion AFTER any cast to the destination size instead of before
+* occ: fix various problems with complex and imaginary number handling
+* occ: in assembly file, represent floating point numbers as a byte sequence instead of as a decimal value
+* occ: in C++ code, allow conversion from a pointer to enum to a pointer to void in argument matching
+* occ: make operator << instantiation for ostream work with enums
+* occ: fix stdatomic.h header
+* occ: fix atomic code generation
+* occ: fix code generation for converting long long to bool
+* occ: fix static initialization of long double variables
+* occ: unsigned values promoted to int should be considered as 'signed' for purposes of division
+* occ: assignment combined with a math op did not convert the result back to bool if that is the variable type
+* occ: allow multiple use of 'const', 'volatile' keywords
+* oasm: speed up assembly of large files
+* oasm: negative floating point numbers were being represented as positive in the output
+* dlpe/oimplib: handle -y switch 
+* orc: fix crash when compiled with package, when processing invalid input file
+* ocpp: (c++ version) allow # without a directive
+* ocpp: (c++ version) default to C99
+* ocpp: (c++ version) add #warning
+* ocpp: (c++ version) add __has_include and #pragma once
+* ocpp: (c++ version) reorganize sources for better interoperability with other packages
+* ogrep: add gnu-style context and stop after command line switches
+* ocide: fix function prototype popup when compiled with package, does not go away 
+* ocide: when stopping on step into function, don't stop until stack frame is set up
+* ocide: when parsing RC file can't redefine keywords with preprocessing...
+* ocide: when processing strings in RC files, limit '\x##' to two hex digits
+* ocide: add orangec\bin to the path when running/debugging executables
+* ocide: empty status bar after scanning for dependencies
+* ocide: fix bad DOCKS entry in user prefs file leads to hang
+* ocide: when starting the debugger with no windows open, the disassembly window would open instead of the source file window
+* ocide: make it work when compiled against LSCRTL.DLL
+* ocide: fix crash when loading files from the command line that don't have an extension
+* olink, olib: speed up dictionary caching
+* rtl: fix recently broken strncpy to work properly again
+* rtl: fix tgmath.h
+* rtl: fix chrono::system_clock::now();
+* rtl: rewrite qsort to make it non-recursive
+* rtl: fix sprintf() and friends to print floating point numbers correctly
+* rtl: replace 80x87 math functions with cephes library
+* rtl: fix startup routines to pass correct version of hInstance to WinMain and DLLMain when compiled against LSCRTL.DLL
+* rtl: add bsd finite() functions
+
 version 6.0.39: 11/15/2018
 * rtl: add msvcrt.l and crtdll.l back into the project
 * rtl: improve stack trace for certain edge cases

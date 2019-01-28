@@ -1,14 +1,13 @@
 # Software License Agreement
 # 
-#     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
+#     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
 # 
 #     This file is part of the Orange C Compiler package.
 # 
 #     The Orange C Compiler package is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU General Public License as published by
 #     the Free Software Foundation, either version 3 of the License, or
-#     (at your option) any later version, with the addition of the 
-#     Orange C "Target Code" exception.
+#     (at your option) any later version.
 # 
 #     The Orange C Compiler package is distributed in the hope that it will be useful,
 #     but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -21,52 +20,53 @@
 #     contact information:
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
+
 include ../../pathext2.mak
 
 NAME=occpr
-MAIN_FILE=ccmain.c
-C_DEPENDENCIES= \
+MAIN_FILE=ccmain.cpp
+CPP_DEPENDENCIES= \
     $(BACKEND_FILES) \
-    ccmain.c \
-    ccif.c \
-    crc32.c \
-    db.c \
-    piper.c \
-    beinterf.c \
-    browse.c \
-    ccerr.c \
-    constopt.c \
-    cppbltin.c \
-    cpplookup.c \
-    debug.c \
-    declare.c \
-    declcons.c \
-    declcpp.c \
-    expr.c \
-    exprcpp.c \
-    float.c \
-    help.c \
-    init.c \
-    inline.c \
-    lambda.c \
-    lex.c \
-    libcxx.c \
-    list.c \
-    mangle.c \
-    memory.c \
-    osutil.c \
-    output.c \
-    preproc.c \
-    property.c \
-    ppexpr.c \
-    rtti.c \
-    stmt.c \
-    symtab.c \
-    template.c \
-    types.c \
-    unmangle.c \
-    wseh.c
-LIB_DEPENDENCIES=sqlite3
+    ccmain.cpp \
+    ccif.cpp \
+    crc32.cpp \
+    db.cpp \
+    piper.cpp \
+    beinterf.cpp \
+    browse.cpp \
+    ccerr.cpp \
+    constopt.cpp \
+    cppbltin.cpp \
+    cpplookup.cpp \
+    debug.cpp \
+    declare.cpp \
+    declcons.cpp \
+    declcpp.cpp \
+    expr.cpp \
+    exprcpp.cpp \
+    float.cpp \
+    help.cpp \
+    init.cpp \
+    inline.cpp \
+    lambda.cpp \
+    lex.cpp \
+    libcxx.cpp \
+    list.cpp \
+    mangle.cpp \
+    memory.cpp \
+    osutil.cpp \
+    output.cpp \
+    preproc.cpp \
+    property.cpp \
+    ppexpr.cpp \
+    rtti.cpp \
+    stmt.cpp \
+    symtab.cpp \
+    template.cpp \
+    types.cpp \
+    unmangle.cpp \
+    wseh.cpp
+LIB_DEPENDENCIES=sqlite3 util
 #determine if we can ignore the banner for a batch compile
 #use long long type
 LL = USE_LONGLONG
@@ -76,17 +76,18 @@ BACKEND_INCLUDE_PATH=.
 
 ifeq "$(COMPILER)" "gcc-linux"
 SOURCE = ..$(PATHEXT2)parse:..$(PATHEXT2)preproc:..$(PATHEXT2)middle
-INCLUDES=..$(PATHEXT2)parse ..$(PATHEXT2)preproc ..$(PATHEXT2)middle
+INCLUDES=..$(PATHEXT2)parse ..$(PATHEXT2)preproc ..$(PATHEXT2)middle ..$(PATHEXT2)..$(PATHEXT2)Util
 SRCPATH:=$(BACKEND_INCLUDE_PATH):$(SOURCE):..
 else
 SOURCE = ..$(PATHEXT2)parse;..$(PATHEXT2)preproc;..$(PATHEXT2)middle
-INCLUDES=..$(PATHEXT2)parse ..$(PATHEXT2)preproc ..$(PATHEXT2)middle
+INCLUDES=..$(PATHEXT2)parse ..$(PATHEXT2)preproc ..$(PATHEXT2)middle ..$(PATHEXT2)..$(PATHEXT2)Util
 SRCPATH:=$(BACKEND_INCLUDE_PATH);$(SOURCE);..
 endif
-BACKEND_FILES = config.c
+BACKEND_FILES = config.cpp
 
 
 vpath %.c $(SRCPATH)
+vpath %.cpp $(SRCPATH)
 
 ifndef _TREEROOT
 _TREEROOT := $(CURDIR)$(PATHEXT2)..$(PATHEXT2)..$(PATHEXT2)treetop.mak

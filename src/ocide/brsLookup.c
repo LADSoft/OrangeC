@@ -1,26 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the
- *     Orange C "Target Code" exception.
- *
+ *     (at your option) any later version.
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #include <windows.h>
@@ -308,7 +307,7 @@ static BOOL FindLine(sqlite3* db, char* file, int line, char* name, char* return
                     file = (char*)sqlite3_column_text(handle, 0);
                     newStartLine = sqlite3_column_int(handle, 1);
                     newQual = sqlite3_column_int(handle, 2);
-                    if ((newQual & 2) && toDeclaration || !(newQual & 2) && !toDeclaration)
+                    if (((newQual & 2) && toDeclaration) || (!(newQual & 2) && !toDeclaration))
                     {
                         strcpy(returnedFileName, file);
                         *startLine = newStartLine;
@@ -348,7 +347,7 @@ static BOOL FindLine(sqlite3* db, char* file, int line, char* name, char* return
                             file = (char*)sqlite3_column_text(handle, 0);
                             newStartLine = sqlite3_column_int(handle, 1);
                             newQual = sqlite3_column_int(handle, 2);
-                            if ((newQual & 2) && toDeclaration || !(newQual & 2) && !toDeclaration)
+                            if (((newQual & 2) && toDeclaration) || (!(newQual & 2) && !toDeclaration))
                             {
                                 strcpy(returnedFileName, file);
                                 *startLine = newStartLine;
@@ -530,7 +529,7 @@ static BROWSELIST* GetBrowseList(sqlite3* db, char* name, char* filename, int cu
     {
         int id;
         name[0] = '_';
-        if (id = LookupSymbolBrowse(db, name))
+        if ((id = LookupSymbolBrowse(db, name)))
         {
             BROWSELIST* next = calloc(sizeof(BROWSELIST), 1);
             next->next = rv;
@@ -538,7 +537,7 @@ static BROWSELIST* GetBrowseList(sqlite3* db, char* name, char* filename, int cu
             strcpy(next->name, name + 1);
             next->id = id;
         }
-        else if (id = LookupSymbolBrowse(db, name + 1))  // might be a #define
+        else if ((id = LookupSymbolBrowse(db, name + 1)))  // might be a #define
         {
             BROWSELIST* next = calloc(sizeof(BROWSELIST), 1);
             next->next = rv;
@@ -565,7 +564,7 @@ static BROWSELIST* GetBrowseList(sqlite3* db, char* name, char* filename, int cu
     }
     return rv;
 }
-static LRESULT BrowseInfoSelectProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
+static LRESULT CALLBACK BrowseInfoSelectProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
     BROWSELIST* list;
     LV_COLUMN lvC;
@@ -683,7 +682,7 @@ static BROWSELIST* LookupSymmetricBrowse(sqlite3* db, char* name, char* filname,
         {
             if (scan->type & currentType)
             {
-                if (toDeclaration && !(scan->qual & 2) || !toDeclaration && (scan->qual & 2))
+                if ((toDeclaration && !(scan->qual & 2)) || (!toDeclaration && (scan->qual & 2)))
                 {
                     if (current)
                         break;
@@ -699,7 +698,7 @@ static BROWSELIST* LookupSymmetricBrowse(sqlite3* db, char* name, char* filname,
             {
                 if ((scan->type & currentType) && scan->id == current->id)
                 {
-                    if (toDeclaration && (scan->qual & 2) || !toDeclaration && !(scan->qual & 2))
+                    if ((toDeclaration && (scan->qual & 2)) || (!toDeclaration && !(scan->qual & 2)))
                     {
                         rv = calloc(1, sizeof(BROWSELINELIST));
                         strcpy(rv->file, scan->file);
@@ -729,7 +728,7 @@ BROWSELIST* LookupBrowseStruct(sqlite3* db, char* name, char* filename, int curl
     char hold;
     char* b = name + strlen(name);
     CCSTRUCTDATA* structData;
-    while (b > name && isalnum(b[-1]) || b[-1] == '_')
+    while ((b > name && isalnum(b[-1])) || b[-1] == '_')
         b--;
     if (isdigit(b[0]))
         return NULL;
@@ -761,7 +760,7 @@ BROWSELIST* LookupBrowseStruct(sqlite3* db, char* name, char* filename, int curl
             if (found)
             {
                 int id;
-                if (id = LookupSymbolBrowse(db, structData->data[i].fieldName))
+                if ((id = LookupSymbolBrowse(db, structData->data[i].fieldName)))
                 {
                     BROWSELIST* next = calloc(sizeof(BROWSELIST), 1);
                     next->next = rv;

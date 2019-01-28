@@ -1,14 +1,13 @@
 # Software License Agreement
 # 
-#     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
+#     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
 # 
 #     This file is part of the Orange C Compiler package.
 # 
 #     The Orange C Compiler package is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU General Public License as published by
 #     the Free Software Foundation, either version 3 of the License, or
-#     (at your option) any later version, with the addition of the 
-#     Orange C "Target Code" exception.
+#     (at your option) any later version.
 # 
 #     The Orange C Compiler package is distributed in the hope that it will be useful,
 #     but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -45,7 +44,7 @@ LLIB_DEPENDENCIES := $(notdir $(filter-out $(addsuffix .obj,$(EXCLUDE)) $(MAIN_D
 
 CC="$(CLANG_PATH)\bin\clang-cl"
 PCC="$(CLANG_PATH)\bin\clang++"
-CCFLAGS = /O2 /EHs /c /nologo -m32 /std:c++11 -Wno-deprecated-declarations
+CCFLAGS = /O2 /EHs /c /nologo -m32 -Wno-deprecated-declarations
 
 LINK=link.exe
 LFLAGS=/LTCG:incremental /nologo /NXCOMPAT /DYNAMICBASE /MACHINE:x86 /OPT:REF /SAFESEH  /OPT:ICF /TLBID:1
@@ -103,7 +102,7 @@ $(_LIBDIR)\$(NAME)$(LIB_EXT): $(LLIB_DEPENDENCIES)
 	$(LIBEXE) $(LIBFLAGS) /OUT:$(_LIBDIR)\$(NAME)$(LIB_EXT) $(addprefix $(_OUTPUTDIR)\,$(LLIB_DEPENDENCIES)) 
 
 
-$(NAME).exe: $(MAIN_DEPENDENCIES) $(LIB_DEPENDENCIES) $(NAME)$(LIB_EXT) $(RES_deps)
+$(NAME).exe: $(MAIN_DEPENDENCIES) $(LIB_DEPENDENCIES) $(NAME)$(LIB_EXT) $(_LIBDIR)\$(NAME)$(LIB_EXT) $(RES_deps)
 	$(LINK) $(TYPE) $(LFLAGS) $(COMPLIB) /LIBPATH:"$(UCRTPATH)" /LIBPATH:"$(VCINSTALLDIR)\lib" /OUT:$@ $(_LIBDIR)\$(NAME)$(LIB_EXT) $(LIB_DEPENDENCIES) $(addprefix /DEF:,$(DEF_DEPENDENCIES)) $(addprefix $(_OUTPUTDIR)\,$(RES_deps)) $(addprefix $(_OUTPUTDIR)\,$(MAIN_DEPENDENCIES))
 
 

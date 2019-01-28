@@ -1,26 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the
- *     Orange C "Target Code" exception.
- *
+ *     (at your option) any later version.
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #include "AsmFile.h"
@@ -41,6 +40,9 @@
 #include <fstream>
 #include <iostream>
 #include <climits>
+
+std::map<ObjString, Section*> AsmFile::sections;
+std::vector<Section*> AsmFile::numericSections;
 
 AsmFile::~AsmFile()
 {
@@ -492,6 +494,9 @@ void AsmFile::Directive()
         case Lexer::ALIGN:
             AlignDirective();
             break;
+        case Lexer::GALIGN:
+            GnuAlignDirective();
+            break;
         case Lexer::INCBIN:
             NoAbsolute();
             IncbinDirective();
@@ -537,8 +542,55 @@ void AsmFile::AlignDirective()
     else
     {
         NeedSection();
-        Instruction* ins = new Instruction(GetValue());
+        int v = GetValue();
+        if ((v &(v-1)) != 0)
+            throw new std::runtime_error("Alignment must be power of two");
+        Instruction* ins = new Instruction(v);
         currentSection->InsertInstruction(ins);
+        int n = currentSection->GetAlign();
+        if (v > n)
+            currentSection->SetAlign(v);
+    }
+}
+void AsmFile::GnuAlignDirective()
+{
+    NextToken();
+    if (!IsNumber())
+        throw new std::runtime_error("Alignment expected");
+    if (inAbsolute)
+    {
+        int v = 1 << GetValue();
+        int n = (absoluteValue % v);
+        if (n)
+            absoluteValue += n - v;
+    }
+    else
+    {
+        NeedSection();
+        int v = 1 << GetValue();
+        Instruction* ins = new Instruction(v);
+        currentSection->InsertInstruction(ins);
+        int n = currentSection->GetAlign();
+        if (v > n)
+            currentSection->SetAlign(v);
+        if (GetKeyword() == Lexer::comma)
+        {
+            NextToken();
+            if (GetKeyword() != Lexer::comma)
+            {
+                if (!IsNumber())
+                    throw new std::runtime_error("Fill value expected");
+                ins->SetFill(GetValue());
+            }
+            if (GetKeyword() == Lexer::comma)
+            {
+                NextToken();
+                if (!IsNumber())
+                    throw new std::runtime_error("Max value expected");
+                // discarding for now, this is the maximum number of bytes to fill when doing the align
+                GetValue();
+            }
+        }
     }
 }
 void AsmFile::TimesDirective()
@@ -730,8 +782,8 @@ void AsmFile::NeedSection()
 {
     if (sections.size() == 0 && !inAbsolute)
     {
-        Section* section = new Section("__text__", 1);
-        sections["__text__"] = section;
+        Section* section = new Section("text", 1);
+        sections["text"] = section;
         numericSections.push_back(section);
         currentSection = section;
         AsmExpr::SetSection(currentSection);

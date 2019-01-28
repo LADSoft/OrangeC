@@ -1,26 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the
- *     Orange C "Target Code" exception.
- *
+ *     (at your option) any later version.
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 // assumes tabs aren't going to get reset yet
@@ -28,8 +27,8 @@
 #include <windows.h>
 #include <commctrl.h>
 #include <stdio.h>
-#include "header.h"
 #include <richedit.h>
+#include "header.h"
 #include <limits.h>
 #include "c_types.h"
 #include <stdlib.h>
@@ -148,7 +147,7 @@ void Colorize(INTERNAL_CHAR* buf, int start, int len, int color, int italic)
  **********************************************************************/
 int keysym(char x)
 {
-    return x >= '0' && x <= '9' || x >= 'A' && x <= 'Z' || x >= 'a' && x <= 'z' || x <= 0xff && x >= 0xc0 || x == '_';
+    return (x >= '0' && x <= '9') || (x >= 'A' && x <= 'Z') || (x >= 'a' && x <= 'z') || (x <= 0xff && x >= 0xc0) || x == '_';
 }
 
 /**********************************************************************
@@ -431,7 +430,7 @@ static void SearchKeywords(COLORIZE_HASH_ENTRY* entries[], INTERNAL_CHAR* buf, i
                             if (hexflg || binflg)
                                 ch = buf[start + ++i].ch;
                             while (ch == '.' || (!binflg && ch >= '0' && ch <= '9') || (binflg && (ch == '0' || ch == '1')) ||
-                                   (hexflg && (ch >= '0' && ch <= '9' || ch >= 'a' && ch <= 'f' || ch >= 'A' && ch <= 'F' ||
+                                   (hexflg && ((ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F') ||
                                                ch == 'p' || ch == 'P')) ||
                                    (!hexflg && (ch == 'e' || ch == 'E')))
                             {
@@ -863,7 +862,7 @@ static BOOL IsFreeControl(INTERNAL_CHAR* p)
 }
 static BOOL IsBoundControl(INTERNAL_CHAR* p)
 {
-    DWORD len;
+    int len;
     if (p->ch == 'w' && p[1].ch == 'h' && !pcmp(p, "while", FALSE, &len, TRUE, FALSE))
         return TRUE;
     if (p->ch == 'f' && p[1].ch == 'o' && !pcmp(p, "for", FALSE, &len, TRUE, FALSE))
@@ -1053,7 +1052,7 @@ void SyntaxCheck(HWND hWnd, EDITDATA* p)
                                 semiState = IN_MATCH;
                             else if (IsOperator(ptr))
                                 semiState = FOUND_OPERATOR;
-                            else if (ptr->ch == ';' || ptr->ch == ',' && !matchCount || ptr->ch == ':' || ptr->ch == '}' ||
+                            else if (ptr->ch == ';' || (ptr->ch == ',' && !matchCount) || ptr->ch == ':' || ptr->ch == '}' ||
                                      ptr->ch == '{')
                                 semiState = EXPECT_NONEXPRESSION_OR_BRACE_OR_CONTROL;
                             else
@@ -1078,7 +1077,7 @@ void SyntaxCheck(HWND hWnd, EDITDATA* p)
                                 semiState = IN_MATCH;
                             else if (IsOperator(ptr))
                                 semiState = FOUND_OPERATOR;
-                            else if (ptr->ch == ';' || ptr->ch == ',' && !matchCount || ptr->ch == ':' || ptr->ch == '}' ||
+                            else if (ptr->ch == ';' || (ptr->ch == ',' && !matchCount) || ptr->ch == ':' || ptr->ch == '}' ||
                                      ptr->ch == '{')
                                 semiState = EXPECT_NONEXPRESSION_OR_BRACE_OR_CONTROL;
                             else if (!isspace(ptr->ch))
@@ -1094,7 +1093,7 @@ void SyntaxCheck(HWND hWnd, EDITDATA* p)
                                 semiState = IN_MATCH;
                             else if (IsOperator(ptr))
                                 semiState = FOUND_OPERATOR;
-                            else if (ptr->ch == ';' || ptr->ch == ',' && !matchCount || ptr->ch == ':' || ptr->ch == '}' ||
+                            else if (ptr->ch == ';' || (ptr->ch == ',' && !matchCount) || ptr->ch == ':' || ptr->ch == '}' ||
                                      ptr->ch == '{')
                                 semiState = EXPECT_NONEXPRESSION_OR_BRACE_OR_CONTROL;
                             break;
@@ -1113,7 +1112,7 @@ void SyntaxCheck(HWND hWnd, EDITDATA* p)
                                 semiState = FOUND_ID_END;
                             else if (IsOperator(ptr))
                                 semiState = FOUND_OPERATOR;
-                            else if (ptr->ch == ';' || ptr->ch == ',' && !matchCount || ptr->ch == ':' || ptr->ch == '}' ||
+                            else if (ptr->ch == ';' || (ptr->ch == ',' && !matchCount) || ptr->ch == ':' || ptr->ch == '}' ||
                                      ptr->ch == '{')
                                 semiState = EXPECT_NONEXPRESSION_OR_BRACE_OR_CONTROL;
                             else if (!isspace(ptr->ch))
@@ -1122,7 +1121,7 @@ void SyntaxCheck(HWND hWnd, EDITDATA* p)
                         case FOUND_FREE_CONTROL:
                             if (!isalpha(ptr->ch))
                             {
-                                if (ptr->ch == ';' || ptr->ch == ',' && !matchCount || ptr->ch == ':' || ptr->ch == '}')
+                                if (ptr->ch == ';' || (ptr->ch == ',' && !matchCount) || ptr->ch == ':' || ptr->ch == '}')
                                     semiState = EXPECT_NONEXPRESSION_OR_BRACE_OR_CONTROL;
                                 else if (isspace(ptr->ch))
                                     semiState = FOUND_FREE_CONTROL_END;
@@ -1132,10 +1131,12 @@ void SyntaxCheck(HWND hWnd, EDITDATA* p)
                             break;
                         case FOUND_FREE_CONTROL_END:
                             if (!isspace(ptr->ch))
-                                if (ptr->ch == ';' || ptr->ch == ',' && !matchCount || ptr->ch == ':' || ptr->ch == '}')
+                            {
+                                if (ptr->ch == ';' || (ptr->ch == ',' && !matchCount) || ptr->ch == ':' || ptr->ch == '}')
                                     semiState = EXPECT_NONEXPRESSION_OR_BRACE_OR_CONTROL;
                                 else
                                     semiState = NEED_SEMI;
+                            }
                             break;
                         case FOUND_BOUND_CONTROL:
                             if (!isalpha(ptr->ch))
@@ -1306,9 +1307,9 @@ void SyntaxCheck(HWND hWnd, EDITDATA* p)
                         case NEED_SEMI:
                             break;
                     }
-                if (ptr->ch == '{' || ptr->ch == '}' || ptr->ch == ',' && !matchCount || ptr->ch == ';' && !inFor)
+                if (ptr->ch == '{' || ptr->ch == '}' || (ptr->ch == ',' && !matchCount) || (ptr->ch == ';' && !inFor))
                 {
-                    if (ptr->ch == '{' && functionMatch || semiState != NEED_SEMI)
+                    if ((ptr->ch == '{' && functionMatch) || semiState != NEED_SEMI)
                         semiState = EXPECT_NONEXPRESSION_OR_BRACE_OR_CONTROL;
                     if (matchCount && !erred)
                     {

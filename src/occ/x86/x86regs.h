@@ -1,29 +1,27 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the
- *     Orange C "Target Code" exception.
- *
+ *     (at your option) any later version.
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
-#define REG_MAX 64
 #define R_EAX 0
 #define R_ECX 1
 #define R_EDX 2
@@ -119,7 +117,7 @@ static ARCH_REGDESC regNames[] = {
 };
 
 static unsigned short unpushedDoubleDoubleRegsArray[] = { 56,57,58,59,60,61,62,63 };
-static ARCH_REGCLASS unpushedDoubleDoubleRegs = { NULL, 0, unpushedDoubleDoubleRegsArray };
+static ARCH_REGCLASS unpushedDoubleDoubleRegs = { nullptr, 0, unpushedDoubleDoubleRegsArray };
 static unsigned short unpushedDoubleFloatRegsArray[] = { 40,41,42,43,44,45,46,47 };
 static ARCH_REGCLASS unpushedDoubleFloatRegs = { &unpushedDoubleDoubleRegs, 8, unpushedDoubleFloatRegsArray };
 static unsigned short unpushedFDoubleRegsArray[] = { 48, 49, 50, 51, 52, 53, 54, 55};
@@ -129,7 +127,7 @@ static ARCH_REGCLASS unpushedFloatRegs = { &unpushedFDoubleRegs, 8, unpushedFloa
 
 
 static unsigned short pushedDoubleDoubleRegsArray[] = { 0 };
-static ARCH_REGCLASS pushedDoubleDoubleRegs = { NULL, 0, pushedDoubleDoubleRegsArray };
+static ARCH_REGCLASS pushedDoubleDoubleRegs = { nullptr, 0, pushedDoubleDoubleRegsArray };
 static unsigned short pushedDoubleFloatRegsArray[] = { 0 };
 static ARCH_REGCLASS pushedDoubleFloatRegs = { &pushedDoubleDoubleRegs, 0, pushedDoubleFloatRegsArray };
 static unsigned short pushedFDoubleRegsArray[] = { 0 };
@@ -154,7 +152,7 @@ static ARCH_REGCLASS pushedByteRegs = {&pushedWordRegs, 2, pushedByteRegsArray};
 static unsigned short unpushedByteRegsArray[] = {16, 17, 18, 20, 21, 22};
 static ARCH_REGCLASS unpushedByteRegs = {&unpushedWordRegs, 6, unpushedByteRegsArray};
 static unsigned short allByteRegsArray[] = {16, 17, 18, 19, 20, 21, 22, 23};
-static ARCH_REGCLASS allByteRegs = {NULL, 8, allByteRegsArray};
+static ARCH_REGCLASS allByteRegs = {nullptr, 8, allByteRegsArray};
 static unsigned short allWordRegsArray[] = {24, 25, 26, 27, 30, 31, 29};
 static ARCH_REGCLASS allWordRegs = {&allByteRegs, 6, allWordRegsArray};
 static unsigned short allDwordRegsArray[] = {0, 1, 2, 3, 6, 7, 5};
@@ -169,8 +167,8 @@ static unsigned short allDoubleFloatRegsArray[] = { 40,41,42,43,44,45,46,47 };
 static ARCH_REGCLASS allDoubleFloatRegs = { &allFDoubleRegs, 8, allDoubleFloatRegsArray };
 static unsigned short allDoubleDoubleRegsArray[] = { 56,57,58,59,60,61,62,63 };
 static ARCH_REGCLASS allDoubleDoubleRegs = { &allDoubleFloatRegs, 8, allDoubleDoubleRegsArray };
-static ARCH_REGCLASS* regClasses[27][2] = {{NULL, NULL},
-                                           {NULL, NULL},
+static ARCH_REGCLASS* regClasses[27][2] = {{nullptr, nullptr},
+                                           {nullptr, nullptr},
                                            {&allByteRegs, &pushedByteRegs},
                                            {&allByteRegs, &pushedByteRegs},
                                            {&allWordRegs, &pushedWordRegs},
@@ -182,11 +180,11 @@ static ARCH_REGCLASS* regClasses[27][2] = {{NULL, NULL},
                                            {&allDwordRegs, &pushedDwordRegs},
                                            {&allDoubleRegs, &pushedDoubleRegs},
                                            {&allDwordRegs, &pushedDwordRegs},
-                                           {NULL, NULL},
-                                           {NULL, NULL},
-                                           {NULL, NULL},
-                                           {NULL, NULL},
-                                           {NULL, NULL},
+                                           {nullptr, nullptr},
+                                           {nullptr, nullptr},
+                                           {nullptr, nullptr},
+                                           {nullptr, nullptr},
+                                           {nullptr, nullptr},
                                             { &allFloatRegs, &pushedFloatRegs },
                                             { &allFDoubleRegs, &pushedFDoubleRegs },
                                             { &allFDoubleRegs, &pushedFDoubleRegs },
@@ -197,8 +195,8 @@ static ARCH_REGCLASS* regClasses[27][2] = {{NULL, NULL},
                                             { &allDoubleDoubleRegs, &pushedDoubleDoubleRegs },
                                             { &allDoubleDoubleRegs, &pushedDoubleDoubleRegs },
 };
-static ARCH_REGVERTEX pushedVertex = {&pushedByteRegs, NULL, NULL};
-static ARCH_REGVERTEX unpushedVertex = {&unpushedByteRegs, NULL, NULL};
+static ARCH_REGVERTEX pushedVertex = {&pushedByteRegs, nullptr, nullptr};
+static ARCH_REGVERTEX unpushedVertex = {&unpushedByteRegs, nullptr, nullptr};
 static ARCH_REGVERTEX regRoot = {&allDoubleDoubleRegs, &pushedVertex, &unpushedVertex};
 
 static ARCH_SIZING regCosts = {

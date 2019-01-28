@@ -1,26 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the
- *     Orange C "Target Code" exception.
- *
+ *     (at your option) any later version.
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #ifndef OSUTIL_H
@@ -36,8 +35,8 @@
 
 /* Valid arg separators */
 #define ARG_SEPSWITCH '/'
-#define ARG_SEPFALSE '-'
-#define ARG_SEPTRUE '+'
+#define ARG_SEPfalse '-'
+#define ARG_SEPtrue '+'
 
 /* Return values for dispatch routine */
 #define ARG_NEXTCHAR 1
@@ -59,6 +58,12 @@ typedef struct _list_
     void* data;
 } LIST;
 
+typedef struct _ilist_
+{
+    struct _ilist_ *next;
+    int data;
+} ILIST;
+
 typedef struct _memblk_
 {
     struct _memblk_* next;
@@ -74,10 +79,7 @@ typedef struct _memblk_
 typedef struct _hashrec_
 {
     struct _hashrec_* next; /* next to next element in list */
-    struct _hrintern_
-    {
-        char* name;
-    } * p;
+    struct sym *p;
 } HASHREC;
 
 typedef struct _hashtable_
@@ -91,12 +93,5 @@ typedef struct _hashtable_
 
 } HASHTABLE;
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-    extern char* getUsageText(void);
-#ifdef __cplusplus
-}
-#endif
+   extern const char* getUsageText(void);
 #endif

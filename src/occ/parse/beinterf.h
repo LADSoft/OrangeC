@@ -1,26 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the
- *     Orange C "Target Code" exception.
- *
+ *     (at your option) any later version.
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #include "browse.h"
@@ -36,43 +35,43 @@ typedef struct
 {
     int prm_maxerr;     /* number of errors at which the compiler stops*/
     int prm_stackalign; /* stack alignment */
-    BOOLEAN prm_optimize_for_speed;
-    BOOLEAN prm_optimize_for_size;
-    BOOLEAN prm_optimize_float_access;
-    BOOLEAN prm_quiet;          /* no warnings/errors on console */
-    BOOLEAN prm_warning;        /* display warnings */
-    BOOLEAN prm_extwarning;     /* display extended warnings */
-    BOOLEAN prm_diag;           /* display diagnostics/ memory usage */
-    BOOLEAN prm_ansi;           /* use ansi restrictions */
-    BOOLEAN prm_cmangle;        /* add underscore to names */
-    BOOLEAN prm_c99;            /* C99 mode */
-    BOOLEAN prm_c1x;            /* C1x mode */
-    BOOLEAN prm_cplusplus;      /* C++ mode */
-    BOOLEAN prm_xcept;          /* generate RTTI in C++ mode */
-    BOOLEAN prm_icdfile;        /* dump intermediate code peep list to file */
-    BOOLEAN prm_asmfile;        /* assembly language output */
-    BOOLEAN prm_compileonly;    /* don't run postprocess routines */
-    BOOLEAN prm_debug;          /* generate debug info */
-    BOOLEAN prm_listfile;       /* generate list file */
-    BOOLEAN prm_cppfile;        /* generate preprocessor file */
-    BOOLEAN prm_errfile;        /* generate error file */
-    BOOLEAN prm_browse;         /* generate browse information */
-    BOOLEAN prm_trigraph;       /* parse trigraphs */
-    BOOLEAN prm_oldfor;         /* old C++ for scoping */
-    BOOLEAN prm_stackcheck;     /* generate stack check code */
-    BOOLEAN prm_allowinline;    /* enable inlining of functions */
-    BOOLEAN prm_profiler;       /* generate profiler insets */
-    BOOLEAN prm_mergestrings;   /* merge strings and other constants */
-    BOOLEAN prm_revbits;        /* use reverse of the default bit ordering */
-    BOOLEAN prm_lines;          /* put line info into assembly files */
-    BOOLEAN prm_bss;            /* Use a BSS */
-    BOOLEAN prm_intrinsic;      /* look for intrinsics */
-    BOOLEAN prm_smartframes;    /* omit frame pointer initialization as possible */
-    BOOLEAN prm_farkeyword;     /* honor the 'far' and 'near' keywords */
-    BOOLEAN prm_linkreg;        /* use a frame pointer */
-    BOOLEAN prm_charisunsigned; /* char type is unsigned */
-    BOOLEAN prm_assemble;       /* do assembler mode */
-    BOOLEAN prm_makestubs;      /* generate make stubs */
+    bool prm_optimize_for_speed;
+    bool prm_optimize_for_size;
+    bool prm_optimize_float_access;
+    bool prm_quiet;          /* no warnings/errors on console */
+    bool prm_warning;        /* display warnings */
+    bool prm_extwarning;     /* display extended warnings */
+    bool prm_diag;           /* display diagnostics/ memory usage */
+    bool prm_ansi;           /* use ansi restrictions */
+    bool prm_cmangle;        /* add underscore to names */
+    bool prm_c99;            /* C99 mode */
+    bool prm_c1x;            /* C1x mode */
+    bool prm_cplusplus;      /* C++ mode */
+    bool prm_xcept;          /* generate RTTI in C++ mode */
+    bool prm_icdfile;        /* dump intermediate code peep list to file */
+    bool prm_asmfile;        /* assembly language output */
+    bool prm_compileonly;    /* don't run postprocess routines */
+    bool prm_debug;          /* generate debug info */
+    bool prm_listfile;       /* generate list file */
+    bool prm_cppfile;        /* generate preprocessor file */
+    bool prm_errfile;        /* generate error file */
+    bool prm_browse;         /* generate browse information */
+    bool prm_trigraph;       /* parse trigraphs */
+    bool prm_oldfor;         /* old C++ for scoping */
+    bool prm_stackcheck;     /* generate stack check code */
+    bool prm_allowinline;    /* enable inlining of functions */
+    bool prm_profiler;       /* generate profiler insets */
+    bool prm_mergestrings;   /* merge strings and other constants */
+    bool prm_revbits;        /* use reverse of the default bit ordering */
+    bool prm_lines;          /* put line info into assembly files */
+    bool prm_bss;            /* Use a BSS */
+    bool prm_intrinsic;      /* look for intrinsics */
+    bool prm_smartframes;    /* omit frame pointer initialization as possible */
+    bool prm_farkeyword;     /* honor the 'far' and 'near' keywords */
+    bool prm_linkreg;        /* use a frame pointer */
+    bool prm_charisunsigned; /* char type is unsigned */
+    bool prm_assemble;       /* do assembler mode */
+    bool prm_makestubs;      /* generate make stubs */
 } COMPILER_PARAMS;
 
 /* Sizing and alignment info uses this structure */
@@ -119,7 +118,7 @@ typedef struct
 
 typedef struct _regdesc
 {
-    char* name;
+    const char* name;
     unsigned pushMask;
     int reg1live;
     int reg2live;
@@ -189,7 +188,7 @@ typedef struct
     UBYTE* regOrder;            /* register allocation order */
     ARCH_PEEP* peephole_defs;   /* defines peephole information */
     int fastcallRegCount;       /* Max number of regs considered for fastcall */
-    char* fastcallRegs;         /* register list for regs used in fastcall */
+    const char* fastcallRegs;         /* register list for regs used in fastcall */
     int preferopts;             /* preferred optimizations */
     int denyopts;               /* optimizations we don't want */
 #define DO_NOGLOBAL 1
@@ -212,7 +211,7 @@ typedef struct
     char hasFloatRegs; /* true if has floating point registers */
 #define AFM_SIGNEDZERO 1
     char floatmode;                   /* floating point modes, not honored currently */
-#define ABM_USESIZE 0                 /* BOOLEAN is determined by sizing above */
+#define ABM_USESIZE 0                 /* bool is determined by sizing above */
 #define ABM_GLOBALBITS 1              /* global bools become global bits */
 #define ABM_LOCALBITS 2               /* all bools outside a struct definition become global bits */
     char boolmode;                    /* boolean mode */
@@ -237,7 +236,7 @@ typedef struct
 /* debugger characteristics */
 typedef struct _arch_dbg
 {
-    char* name;                        /* name of debug format */
+    const char* name;                        /* name of debug format */
     void* userdata;                    /* backend specific data, compiler ignores */
     int* blocknum;                     /* pointer to variable which holds block number, or zero for no blocking */
     void (*init)(void);                /* per file initialization */
@@ -253,8 +252,8 @@ typedef struct _arch_dbg
 /* things to #define before compiling */
 typedef struct _arch_defines
 {
-    char* define;   /* symbol to define */
-    char* value;    /* value */
+    const char* define;   /* symbol to define */
+    const char* value;    /* value */
     char respect;   /* set to true to make it define it, false to ignore it */
     char permanent; /* set to true if the symbol cannot be undefined */
 } ARCH_DEFINES;
@@ -365,6 +364,7 @@ typedef struct _arch_gen
     CGFUNC asm_dc;            /* unused */
     CGFUNC asm_assnblock;     /* copy block of memory*/
     CGFUNC asm_clrblock;      /* clear block of memory */
+    CGFUNC asm_cmpblock;      /* branch if two blocks of memory aren't equal */
     CGFUNC asm_jc;            /* branch if a U< b */
     CGFUNC asm_ja;            /* branch if a U> b */
     CGFUNC asm_je;            /* branch if a == b */
@@ -402,7 +402,7 @@ typedef struct
 } ASMNAME;
 typedef struct
 {
-    char* name;
+    const char* name;
     short regtype;
     char regnum;
     char size;
@@ -410,23 +410,23 @@ typedef struct
 
 typedef struct
 {
-    BOOLEAN allowExtensions;              /* True if allowing language extensions */
-    BOOLEAN (*managed)(SYMBOL* sp);       /* return TRUE if the function is a managed function, FALSE otherwise */
+    bool allowExtensions;              /* True if allowing language extensions */
+    bool (*managed)(SYMBOL* sp);       /* return true if the function is a managed function, false otherwise */
     TYPE* (*find_boxed_type)(TYPE* tp);   /* msil - get a boxed version of type*/
     TYPE* (*find_unboxed_type)(TYPE* tp); /* msil - get an unboxed version of type*/
     void (*create_property)(SYMBOL* property, SYMBOL* getter, SYMBOL* setter);  // create a property instance
 } ARCH_MSIL;
 typedef struct _arch_asm
 {
-    char* name;                 /* assembler name */
+    const char* name;                 /* assembler name */
     void* userdata;             /* backend data (compiler ignores) */
-    char* hosted;               /* __STDC__HOSTED__ value "0" = embedded, "1" = hosted */
-    char* asmext;               /* extension for assembly files */
-    char* objext;               /* extension for object files, NULL = has no object mode */
-    char* envname;              /* name of an environment variable to parse, or 0 */
-    char* progname;             /* name of the program, for usage */
-    char* cfgname;              /* name of a config file if you want to use one, or NULL (sans extension) */
-    char* usage_text;           /* pointer to usage text */
+    const char* hosted;               /* __STDC__HOSTED__ value "0" = embedded, "1" = hosted */
+    const char* asmext;               /* extension for assembly files */
+    const char* objext;               /* extension for object files, NULL = has no object mode */
+    const char* envname;              /* name of an environment variable to parse, or 0 */
+    const char* progname;             /* name of the program, for usage */
+    const char* cfgname;              /* name of a config file if you want to use one, or NULL (sans extension) */
+    const char* usage_text;           /* pointer to usage text */
     CMDLIST* Args;              /* argument handling */
     int ArgCount;               /* number of arguments */
     KEYWORD* keywords;          /* specific keywords, e.g. allow a 'bit' keyword and so forth */
@@ -435,15 +435,15 @@ typedef struct _arch_asm
     ARCH_CHARACTERISTICS* arch; /* architecture characteristics */
     ARCH_GEN* gen;              /* pointer to backend function linkages */
     ARCH_MSIL* msil;            /* pointer to MSIL-specific data and functions */
-    char* bltins;               /* pointer to extra builtin data */
+    const char* bltins;               /* pointer to extra builtin data */
     int (*init)(COMPILER_PARAMS* params, struct _arch_asm* data, ARCH_DEBUG* debug); /* return 1 to proceed */
     int (*main_preprocess)();                                                        /* preprocess function, or NULL */
-    void (*main_postprocess)(BOOLEAN hasErrors);                                     /* postprocess function, or NULL */
+    void (*main_postprocess)(bool hasErrors);                                     /* postprocess function, or NULL */
     int (*compiler_postprocess)(char*);                                              /* postprocess function, or NULL */
     int (*rundown)(void);                                                            /* compiler rundown */
     void (*insert_output_file)(char* name); /* insert the output (executable name) into the backend */
     int (*insert_noncompile_file)(
-        char* name, BOOLEAN primary); /* insert a non-compilable file in the backend list, e.g. for post processing, or NULL */
+        char* name, bool primary); /* insert a non-compilable file in the backend list, e.g. for post processing, or NULL */
     int (*parse_param)(char mode, char* string);    /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
     int (*parse_codegen)(char mode, char* string);  /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
     void (*doPragma)(char* kw, char* tag);          /* parse a pragma directive, or null */
@@ -496,7 +496,7 @@ typedef struct
         } f;
         struct
         {
-            char* name;
+            const char* name;
             SYMBOL* sp;
             int localOffset;
             int symOffset;
@@ -516,8 +516,8 @@ typedef struct
 #define beGetIcon(x) ((x)->offset->v.i)
 
 #define beGetLabel nextLabel++
-#define beSetProcSymbol(x) set_symbol(x, TRUE)
-#define beSetDataSymbol(x) set_symbol(x, FALSE)
+#define beSetProcSymbol(x) set_symbol(x, true)
+#define beSetDataSymbol(x) set_symbol(x, false)
 #define beGetCurrentFunc theCurrentFunc
 #define beLocalAlloc(x) Alloc(x)
 #define beCompilerVersion version
@@ -526,10 +526,6 @@ typedef struct
 #define beGetCurrentInstruction currentQuad
 #define beGlobalAlloc(x) globalAlloc(x)
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
     extern COMPILER_PARAMS cparams;
     extern int nextLabel;
     extern SYMBOL* theCurrentFunc;
@@ -544,6 +540,3 @@ extern "C"
     BE_IMODEDATA* beArgType(IMODE* in);
     void beDecorateSymName(char* buf, SYMBOL* sp);
     int beVariableLive(IMODE* m);
-#ifdef __cplusplus
-}
-#endif

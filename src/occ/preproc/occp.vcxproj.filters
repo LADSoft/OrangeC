@@ -18,25 +18,25 @@
     <None Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ccerr.c">
+    <ClCompile Include="ccerr.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="memory.c">
+    <ClCompile Include="memory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="osutil.c">
+    <ClCompile Include="osutil.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ppexpr.c">
+    <ClCompile Include="ppexpr.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ppmain.c">
+    <ClCompile Include="ppmain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PREPROC.c">
+    <ClCompile Include="PREPROC.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="symtab.c">
+    <ClCompile Include="symtab.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

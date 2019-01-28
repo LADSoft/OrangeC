@@ -1,26 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version, with the addition of the
- *     Orange C "Target Code" exception.
- *
+ *     (at your option) any later version.
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #include <stdio.h>
@@ -57,23 +56,23 @@ void operator delete(void * p) throw()
 #endif
 #define FULLVERSION
 
-extern "C" char realOutFile[260];
-extern "C" ARCH_ASM* chosenAssembler;
-extern "C" MULDIV* muldivlink;
-extern "C" ASMNAME oplst[];
-extern "C" enum e_sg oa_currentSeg;
-extern "C" DBGBLOCK* DbgBlocks[];
-extern "C" SYMBOL* theCurrentFunc;
-extern "C" int fastcallAlias;
-extern "C" FILE *outputFile, *browseFile;
-extern "C" char infile[];
-extern "C" BOOLEAN usingEsp;
+extern char realOutFile[260];
+extern ARCH_ASM* chosenAssembler;
+extern MULDIV* muldivlink;
+extern ASMNAME oplst[];
+extern enum e_sg oa_currentSeg;
+extern DBGBLOCK* DbgBlocks[];
+extern SYMBOL* theCurrentFunc;
+extern int fastcallAlias;
+extern FILE *outputFile, *browseFile;
+extern char infile[];
+extern int usingEsp;
 extern AMODE* singleLabel, *doubleLabel, *zerolabel;
 LIST* includedFiles;
 InstructionParser* instructionParser;
 Section* currentSection;
 
-static char* segnames[] = {0,         "code",     "data",     "bss",        "string",     "const",
+static const char* segnames[] = {0,         "code",     "data",     "bss",        "string",     "const",
                            "tls",     "cstartup", "crundown", "tlsstartup", "tlsrundown", "codefix",
                            "datafix", "lines",    "types",    "symbols",    "browse"};
 
@@ -99,7 +98,7 @@ static int segFlags[] = {0,
                          ObjSection::rom};
 static int virtualSegFlags = ObjSection::max | ObjSection::virt;
 
-extern "C" int segAligns[MAX_SEGS] = {};
+int segAligns[MAX_SEGS] = {};
 
 static int virtualSegmentNumber;
 static int lastIncludeNum;
@@ -142,8 +141,8 @@ static std::deque<BROWSEINFO*> browseInfo;
 static BROWSEFILE* browseFiles;
 static std::map<int, ObjSourceFile*> sourceFiles;
 
-extern "C" void adjustUsesESP();
-extern "C" int dbgblocknum = 0;
+extern void adjustUsesESP();
+int dbgblocknum = 0;
 
 static int sectofs;
 
@@ -551,7 +550,7 @@ void output_obj_file(void)
 
 void compile_start(char* name)
 {
-    LIST* newItem = (LIST*)beGlobalAlloc(sizeof(LIST));
+    LIST* newItem = (LIST*)(LIST *)beGlobalAlloc(sizeof(LIST));
     newItem->data = beGlobalAlloc(strlen(name) + 1);
     strcpy((char*)newItem->data, name);
 
@@ -564,7 +563,7 @@ void include_start(char* name, int num)
 {
     if (num > lastIncludeNum)
     {
-        LIST* newItem = (LIST*)beGlobalAlloc(sizeof(LIST));
+        LIST* newItem = (LIST*)(LIST *)beGlobalAlloc(sizeof(LIST));
         newItem->data = beGlobalAlloc(strlen(name) + 1);
         strcpy((char*)newItem->data, name);
 
@@ -1062,7 +1061,7 @@ void InsertBlock(int start)
 
 void AddFixup(Instruction* newIns, OCODE* ins, const std::list<Numeric*>& operands)
 {
-    if (ins->opcode == op_dd)
+    if ((e_op)ins->opcode == op_dd)
     {
         int resolved = 1;
         int n = resolveoffset(ins->oper1->offset, &resolved);
@@ -1095,7 +1094,7 @@ void AddFixup(Instruction* newIns, OCODE* ins, const std::list<Numeric*>& operan
     }
 }
 
-void outcode_diag(OCODE* ins, char* str)
+void outcode_diag(OCODE* ins, const char* str)
 {
     std::string instruction = instructionParser->FormatInstruction(ins);
     std::string name("Error compiling assembly instruction \"" + instruction + "\": " + str);
@@ -1142,10 +1141,10 @@ void outcode_AssembleIns(OCODE* ins)
     }
     else
     {
-        switch (ins->opcode)
+        switch ((e_op)ins->opcode)
         {
             case op_label:
-                InsertLabel((int)ins->oper1);
+                InsertLabel(ins->oper1->offset->v.i);
                 return;
             case op_line:
                 if (cparams.prm_debug)

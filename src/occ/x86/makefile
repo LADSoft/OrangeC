@@ -1,14 +1,13 @@
 # Software License Agreement
 # 
-#     Copyright(C) 1994-2018 David Lindauer, (LADSoft)
+#     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
 # 
 #     This file is part of the Orange C Compiler package.
 # 
 #     The Orange C Compiler package is free software: you can redistribute it and/or modify
 #     it under the terms of the GNU General Public License as published by
 #     the Free Software Foundation, either version 3 of the License, or
-#     (at your option) any later version, with the addition of the 
-#     Orange C "Target Code" exception.
+#     (at your option) any later version.
 # 
 #     The Orange C Compiler package is distributed in the hope that it will be useful,
 #     but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -25,71 +24,71 @@
 include ../../pathext2.mak
 
 NAME=occ
-MAIN_FILE=ccmain.c
+MAIN_FILE=ccmain.cpp
 C_DEPENDENCIES= \
-    ccmain.c \
-    config.c \
-    crc32.c \
-    beinterf.c \
-    browse.c \
-    ccerr.c \
-    constopt.c \
-    cppbltin.c \
-    cpplookup.c \
-    debug.c \
-    declare.c \
-    declcons.c \
-    declcpp.c \
-    expr.c \
-    exprcpp.c \
-    float.c \
-    help.c \
-    ialias.c \
-    iblock.c \
-    iconfl.c \
-    iconst.c \
-    iexpr.c \
-    iflow.c \
-    iinline.c \
-    iinvar.c \
-    ilazy.c \
-    ilive.c \
-    ilocal.c \
-    iloop.c \
-    init.c \
-    inline.c \
-    invoke.c \
-    ioptutil.c \
-    iout.c \
-    ipeep.c \
-    irc.c \
-    ireshape.c \
-    irewrite.c \
-    issa.c \
-    istmt.c \
-    istren.c \
-    lambda.c \
-    lex.c \
-    libcxx.c \
-    list.c \
-    mangle.c \
-    memory.c \
-    osutil.c \
-    output.c \
-    preproc.c \
-    property.c \
-    ppexpr.c \
-    rewrite.c \
-    rtti.c \
-    stmt.c \
-    symtab.c \
-    template.c \
-    types.c \
-    unmangle.c \
-    winsystem.c \
-    wseh.c
+    winsystem.c
 
-CPP_DEPENDENCIES = \
+CPP_DEPENDENCIES= \
+    ccmain.cpp \
+    config.cpp \
+    crc32.cpp \
+    beinterf.cpp \
+    browse.cpp \
+    ccerr.cpp \
+    constopt.cpp \
+    cppbltin.cpp \
+    cpplookup.cpp \
+    debug.cpp \
+    declare.cpp \
+    declcons.cpp \
+    declcpp.cpp \
+    expr.cpp \
+    exprcpp.cpp \
+    float.cpp \
+    help.cpp \
+    ialias.cpp \
+    iblock.cpp \
+    iconfl.cpp \
+    iconst.cpp \
+    iexpr.cpp \
+    iflow.cpp \
+    iinline.cpp \
+    iinvar.cpp \
+    ilazy.cpp \
+    ilive.cpp \
+    ilocal.cpp \
+    iloop.cpp \
+    init.cpp \
+    inline.cpp \
+    invoke.cpp \
+    ioptutil.cpp \
+    iout.cpp \
+    ipeep.cpp \
+    irc.cpp \
+    ireshape.cpp \
+    irewrite.cpp \
+    issa.cpp \
+    istmt.cpp \
+    istren.cpp \
+    lambda.cpp \
+    lex.cpp \
+    libcxx.cpp \
+    list.cpp \
+    mangle.cpp \
+    memory.cpp \
+    osutil.cpp \
+    output.cpp \
+    preproc.cpp \
+    property.cpp \
+    ppexpr.cpp \
+    rewrite.cpp \
+    rtti.cpp \
+    stmt.cpp \
+    symtab.cpp \
+    template.cpp \
+    types.cpp \
+    unmangle.cpp \
+    wseh.cpp \
     beIntrins.cpp \
     dbgtypes.cpp \
     gen.cpp \
@@ -119,8 +118,8 @@ INCLUDES=..$(PATHEXT2)parse ..$(PATHEXT2)preproc ..$(PATHEXT2)middle ..$(PATHEXT
 SRCPATH=.$(PATHEXT2):$(SOURCE):..:..$(PATHEXT2)..$(PATHEXT2)util:..$(PATHEXT2)
 else
 SOURCE = ..$(PATHEXT2)parse$(PATHEXT2);..$(PATHEXT2)preproc$(PATHEXT2);..$(PATHEXT2)middle$(PATHEXT2)
-INCLUDES=..$(PATHEXT2)parse ..$(PATHEXT2)preproc ..$(PATHEXT2)middle ..$(PATHEXT2)..$(PATHEXT2)ocpp ..$(PATHEXT2)..$(PATHEXT2)oasm ..$(PATHEXT2)..$(PATHEXT2)util ..$(PATHEXT2)..$(PATHEXT2)objlib
-SRCPATH=.$(PATHEXT2);$(SOURCE);..;..$(PATHEXT2)..$(PATHEXT2)util$(PATHEXT2);..$(PATHEXT2)
+INCLUDES=..$(PATHEXT2)parse ..$(PATHEXT2)preproc ..$(PATHEXT2)middle ..$(PATHEXT2)..$(PATHEXT2)ocpp ..$(PATHEXT2)..$(PATHEXT2)oasm ..$(PATHEXT2)..$(PATHEXT2)Util ..$(PATHEXT2)..$(PATHEXT2)objlib
+SRCPATH=.$(PATHEXT2);$(SOURCE);..;..$(PATHEXT2)..$(PATHEXT2)Util$(PATHEXT2);..$(PATHEXT2)
 ifeq "$(ISOMAKE)" ""
 SRCPATH:=$(subst $(PATHEXT2),/,$(SRCPATH))
 endif

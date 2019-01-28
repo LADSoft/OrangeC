@@ -174,7 +174,7 @@ void callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION* *exp, EXPRESSION* a
 bool callConstructor(TYPE* *tp, EXPRESSION* *exp, FUNCTIONCALL* params, 
                     bool checkcopy, EXPRESSION* arrayElms, bool top, 
                     bool maybeConversion, bool implicit, bool pointer,
-                    bool usesInitList);
+                    bool usesInitList, bool useAssign);
 bool callConstructorParam(TYPE** tp, EXPRESSION** exp, TYPE* paramTP, EXPRESSION* paramExp, bool top,
     bool maybeConversion, bool implicit, bool pointer);
 void PromoteConstructorArgs(SYMBOL* cons1, FUNCTIONCALL* params);

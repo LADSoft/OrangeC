@@ -266,7 +266,11 @@ cleanstart:
 $(CLEANS): %.clean :
 	$(MAKE) clean -f $(_TREEROOT) -C$*
 
-clean: cleanstart $(CLEANS)
+cleanlib:
+	$(MAKE) /Cclibs clean
+
+clean: cleanstart cleanlib $(CLEANS)
+
 distribute: $(DISTS1)
 	$(MAKE) DISTRIBUTE
 else
@@ -275,6 +279,7 @@ cleanDISTRIBUTE:
 
 $(CLEANS): %.clean :
 	$(MAKE) clean -f $(_TREEROOT) -C$*
+
 clean: del rmdir $(CLEANS)
 	del *.xcf *.xcppf *.xhf
 

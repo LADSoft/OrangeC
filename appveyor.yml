@@ -44,13 +44,16 @@ build_script:
         - mingw32-make fullbuild --eval="COMPILER=$(BUILD_PROFILE)" -j 4
         - c:\orangec\bin\occ /V
         - copy omake\omake.exe \orangec\temp
-        - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC /DVIAASSEMBLY=%VIAASSEMBLY% /DLSCRTL=%LSCRTL% /DWITHDEBUG=%WITHDEBUG% -B fullbuild -j:4
+        - c:\orangec\temp\omake -DCOMPILER=OCC clean -j:4
+        - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC /DVIAASSEMBLY=%VIAASSEMBLY% /DLSCRTL=%LSCRTL% /DWITHDEBUG=%WITHDEBUG% fullbuild -j:4
         - c:\orangec\bin\occ /V
         - copy omake\omake.exe \orangec\temp
-        - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC /DVIAASSEMBLY=%VIAASSEMBLY% /DLSCRTL=%LSCRTL% /DWITHDEBUG=%WITHDEBUG% -B fullbuild -j:4
+        - c:\orangec\temp\omake -DCOMPILER=OCC clean -j:4
+        - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC /DVIAASSEMBLY=%VIAASSEMBLY% /DLSCRTL=%LSCRTL% /DWITHDEBUG=%WITHDEBUG% fullbuild -j:4
         - c:\orangec\bin\occ /V
         - copy omake\omake.exe \orangec\temp
-        - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC /DVIAASSEMBLY=%VIAASSEMBLY% /DLSCRTL=%LSCRTL% /DWITHDEBUG=%WITHDEBUG% -B fullbuild -j:4
+        - c:\orangec\temp\omake -DCOMPILER=OCC clean -j:4
+        - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC /DVIAASSEMBLY=%VIAASSEMBLY% /DLSCRTL=%LSCRTL% /DWITHDEBUG=%WITHDEBUG% fullbuild -j:4
         - path=%ORIGPATH%
         - cd ..\tests
         - omake -B

@@ -338,6 +338,7 @@ void InsertInline(SYMBOL* sp)
 }
 void InsertInlineData(SYMBOL* sp)
 {
+
     LIST* temp = (LIST *)Alloc(sizeof(LIST));
     temp->data = sp;
     if (inlineDataHead)

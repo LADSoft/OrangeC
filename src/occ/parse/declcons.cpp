@@ -1675,13 +1675,13 @@ static void genConstructorCall(BLOCKDATA* b, SYMBOL* cls, MEMBERINITIALIZERS* mi
                     args = &(*args)->next;
                     init = init->next;
                 }
-                if (!callConstructor(&ctype, &exp, funcparams, false, NULL, top, false, false, false, false))
+                if (!callConstructor(&ctype, &exp, funcparams, false, NULL, top, false, false, false, false, false))
                     errorsym(ERR_NO_DEFAULT_CONSTRUCTOR, member);
                 PromoteConstructorArgs(funcparams->sp, funcparams);
             }
             else
             {
-                if (!callConstructor(&ctype, &exp, NULL, false, NULL, top, false, false, false, false))
+                if (!callConstructor(&ctype, &exp, NULL, false, NULL, top, false, false, false, false, false))
                     errorsym(ERR_NO_DEFAULT_CONSTRUCTOR, member);
             }
             matchesCopy(parentCons, false);
@@ -2855,7 +2855,7 @@ void callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* a
     }
 }
 bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool checkcopy, EXPRESSION* arrayElms, bool top,
-                        bool maybeConversion, bool implicit, bool pointer, bool usesInitList)
+                        bool maybeConversion, bool implicit, bool pointer, bool usesInitList, bool isAssign)
 {
     (void)checkcopy;
     TYPE* stp = *tp;
@@ -2870,7 +2870,11 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
     PerformDeferredInitialization(stp, NULL);
     sp = basetype(*tp)->sp;
     against = top ? sp : sp->parentClass;
-    cons = search(overloadNameTab[CI_CONSTRUCTOR], basetype(sp->tp)->syms);
+    
+    if (isAssign)
+        cons = search(overloadNameTab[assign - kw_new + CI_NEW], basetype(sp->tp)->syms);
+    else
+        cons = search(overloadNameTab[CI_CONSTRUCTOR], basetype(sp->tp)->syms);
 
     if (!params)
     {
@@ -3072,7 +3076,7 @@ bool callConstructorParam(TYPE** tp, EXPRESSION** exp, TYPE* paramTP, EXPRESSION
         params->arguments->tp = paramTP;
         params->arguments->exp = paramExp;
     }
-    return callConstructor(tp, exp, params, false, NULL, top, maybeConversion, implicit, pointer, false);
+    return callConstructor(tp, exp, params, false, NULL, top, maybeConversion, implicit, pointer, false, false);
 }
 
 void PromoteConstructorArgs(SYMBOL* cons1, FUNCTIONCALL* params)

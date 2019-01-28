@@ -2453,7 +2453,7 @@ void CreateInitializerList(TYPE* initializerListTemplate, TYPE* initializerListT
                     arg->next = NULL;
                 }
 
-                callConstructor(&ctype, &cdest, params, false, NULL, true, false, false, false, _F_INITLIST);
+                callConstructor(&ctype, &cdest, params, false, NULL, true, false, false, false, _F_INITLIST, false);
                 node = cdest;
             }
             else
@@ -7390,6 +7390,23 @@ LEXEME* expression_throw(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** ex
     }
     return lex;
 }
+static void ReplaceThisAssign(EXPRESSION **init, SYMBOL *sp, EXPRESSION *exp)
+{
+    if (*init)
+    {
+        if ((*init)->type == en_global)
+        {
+            if ((*init)->v.sp == sp)
+                *init = exp;
+            
+        }
+        else
+        {
+            ReplaceThisAssign(&(*init)->left, sp, exp);
+            ReplaceThisAssign(&(*init)->right, sp, exp);
+        }
+    }
+}
 LEXEME* expression_assign(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, bool* ismutable, int flags)
 {
     bool done = false;
@@ -7452,8 +7469,14 @@ LEXEME* expression_assign(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
                         tp1 = *tp;
                         spinit = anonymousVar(sc_localstatic, tp1)->v.sp;
                         insert(spinit, localNameSpace->syms);
-                        lex = initType(lex, funcsp, 0, sc_auto, &init, NULL, tp1, spinit, false, flags);
-                        exp1 = convertInitToExpression(tp1, NULL, funcsp, init, exp1, false);
+                        lex = initType(lex, funcsp, 0, sc_auto, &init, NULL, tp1, spinit, false, flags | _F_ASSIGNINIT);
+                        if (init && init->exp->type == en_thisref)
+                        {
+                            ReplaceThisAssign(&init->exp->left->v.func->thisptr, spinit, *exp);
+                            spinit->allocate = false;
+                        }
+                        *exp = convertInitToExpression(tp1, NULL, funcsp, init, exp1, false);
+                        return lex;
                     }
                     else
                     {

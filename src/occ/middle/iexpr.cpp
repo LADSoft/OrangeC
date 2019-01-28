@@ -2419,7 +2419,7 @@ IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         int v = sizeFromISZ(ISZ_ADDR);
         if (v % chosenAssembler->arch->stackalign)
             v = v + chosenAssembler->arch->stackalign - v % chosenAssembler->arch->stackalign;
-        if (isstructured(basetype(f->functp)->btp) || basetype(basetype(f->functp)->btp)->type == bt_memberptr)
+        if (isfunction(f->functp) && (isstructured(basetype(f->functp)->btp) || basetype(basetype(f->functp)->btp)->type == bt_memberptr))
         {
             if (f->returnEXP)
                 n += v;
@@ -2505,7 +2505,7 @@ IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         fastcallSize = MarkFastcall(f->sp, f->functp, !!f->thisptr);
         if (!(chosenAssembler->arch->preferopts & OPT_REVERSEPARAM))
         {
-            if (isstructured(basetype(f->functp)->btp) || basetype(basetype(f->functp)->btp)->type == bt_memberptr)
+            if (isfunction(f->functp) && (isstructured(basetype(f->functp)->btp) || basetype(basetype(f->functp)->btp)->type == bt_memberptr))
             {
                 if (f->returnEXP && !managed)
                     push_param(f->returnEXP, funcsp, false, nullptr, 0);
@@ -2571,7 +2571,7 @@ IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         else
             gosub->novalue = sizeFromType(basetype(f->functp)->btp);
     }
-    else if (isstructured(basetype(f->functp)->btp))
+    else if (isfunction(f->functp) && isstructured(basetype(f->functp)->btp))
     {
         if ((flags & F_NOVALUE) && !managed)
             gosub->novalue = -2;
@@ -2612,7 +2612,7 @@ IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
     }
 
     push_nesting -= adjust;
-    if (f->returnEXP && managed && isstructured(basetype(f->functp)->btp))
+    if (f->returnEXP && managed && isfunction(f->functp) && isstructured(basetype(f->functp)->btp))
     {
         if (!(flags & F_INRETURN))
         {
@@ -2641,7 +2641,7 @@ IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
             ap = NULL;
         }
     }
-    else if (!(flags & F_NOVALUE) && isarray(basetype(f->functp)->btp))
+    else if (!(flags & F_NOVALUE) && isfunction(f->functp) && isarray(basetype(f->functp)->btp))
     {
         IMODE* ap1;
         int siz1;
@@ -2662,7 +2662,7 @@ IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         gen_icode(i_assn, ap1, ap, 0);
         ap = ap1;
     }
-    else if (!(flags & F_NOVALUE) && !isvoid(basetype(f->functp)->btp))
+    else if (!(flags & F_NOVALUE) && isfunction(f->functp) && !isvoid(basetype(f->functp)->btp))
     {
         /* structures handled by callee... */
         if (!isstructured(basetype(f->functp)->btp) && basetype(f->functp)->btp->type != bt_memberptr)

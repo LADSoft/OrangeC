@@ -792,10 +792,14 @@ int dumpInit(SYMBOL* sp, INITIALIZER* init)
                     if (ep1)
                     {
                         if (ep1->type == en_pc)
+                        {
                             genpcref(ep1->v.sp, offs);
-                        else
+                        }
+                        else if (ep1->type == en_global)
+                        {
                             genref(ep1->v.sp, offs);
-                        break;
+                            break;
+                        }
                     }
                 }
                 /* fall through */

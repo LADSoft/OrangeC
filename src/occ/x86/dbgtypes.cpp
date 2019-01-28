@@ -128,7 +128,7 @@ ObjType* dbgtypes::Put(TYPE* tp)
     auto val = Lookup(tp);
     if (val)
         return val;
-    if (tp->type == bt_any)
+    if (tp->type == bt_any || tp->type == bt_aggregate)
     {
         val = factory.MakeType((ObjType::eType)42);
     }

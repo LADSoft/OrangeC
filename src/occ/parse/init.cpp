@@ -2754,8 +2754,16 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
             }
             if (!constructed)
             {
-                callConstructor(&ctype, &exp, funcparams, false, NULL, true, maybeConversion, false, false,
-                                isList ? _F_INITLIST : 0);
+                bool toContinue = true;
+                if (flags & _F_ASSIGNINIT)
+                {
+                    toContinue = !callConstructor(&ctype, &exp, funcparams, false, NULL, false, maybeConversion, false, false,
+                        isList ? _F_INITLIST : 0, true);
+
+                }
+                if (toContinue)
+                    callConstructor(&ctype, &exp, funcparams, false, NULL, true, maybeConversion, false, false,
+                                isList ? _F_INITLIST : 0, false);
                 if (funcparams->sp) // may be an error
                     PromoteConstructorArgs(funcparams->sp, funcparams);
             }
@@ -2856,7 +2864,7 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
                     }
                     funcparams->thistp = ttp;
                     exp1 = baseexp;
-                    callConstructor(&tp1, &exp1, funcparams, false, NULL, true, false, false, false, 0);
+                    callConstructor(&tp1, &exp1, funcparams, false, NULL, true, false, false, false, 0, false);
                     PromoteConstructorArgs(funcparams->sp, funcparams);
                     initInsert(&it, itype, exp1, offset, true);
                 }
@@ -3092,7 +3100,7 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
                         tn->rootType = tn;
                         tn->esize = sz;
                     }
-                    callConstructor(&ctype, &exp, NULL, true, sz, true, false, false, false, false);
+                    callConstructor(&ctype, &exp, NULL, true, sz, true, false, false, false, false, false);
                     initInsert(push, tn, exp, last, true);
                     push = &(*push)->next;
                     last += n * s;
@@ -3998,7 +4006,7 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_sc storage_cl
                 EXPRESSION* sz = n > 1 ? intNode(en_c_i, n) : NULL;
                 EXPRESSION* baseexp = getThisNode(sp);
                 EXPRESSION* exp = baseexp;
-                callConstructor(&ctype, &exp, NULL, true, sz, true, false, false, false, false);
+                callConstructor(&ctype, &exp, NULL, true, sz, true, false, false, false, false, false);
                 initInsert(&it, z, exp, 0, true);
                 if (storage_class_in != sc_auto && storage_class_in != sc_localstatic && storage_class_in != sc_parameter &&
                     storage_class_in != sc_member && storage_class_in != sc_mutable)

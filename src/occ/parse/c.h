@@ -291,7 +291,7 @@ enum e_cvsrn
 #define _F_TEMPLATEARGEXPANSION 128
 #define _F_TYPETEST 256
 #define _F_NESTEDINIT 512
-
+#define _F_ASSIGNINIT 1024
 #define _F_NOVIRTUALBASE 1
 #define _F_VALIDPOINTER 2
 

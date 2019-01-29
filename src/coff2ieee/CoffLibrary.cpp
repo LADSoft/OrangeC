@@ -31,17 +31,10 @@
 
 CoffLibrary::~CoffLibrary()
 {
-    for (auto m : modules)
-    {
-        Module* md = m.second;
-        delete md;
-    }
-    if (inputFile)
-        delete inputFile;
 }
 bool CoffLibrary::Load()
 {
-    inputFile = new std::fstream(name, std::ios::in | std::ios::binary);
+    inputFile = std::make_unique<std::fstream>(name, std::ios::in | std::ios::binary);
     if (inputFile && inputFile->is_open())
     {
         inputFile->seekg(
@@ -50,15 +43,14 @@ bool CoffLibrary::Load()
     }
     else
     {
-        delete inputFile;
-        inputFile = nullptr;
+        inputFile.release();
     }
     return inputFile != nullptr;
 }
 bool CoffLibrary::Convert() { return ScanIntegrity() && ConvertNormalMods() && ConvertImportMods(); }
 bool CoffLibrary::Write(std::string fileName)
 {
-    for (auto m : modules)
+    for (auto& m : modules)
     {
         if (!m.second->ignore && !m.second->import)
         {
@@ -94,13 +86,13 @@ bool CoffLibrary::LoadNames()
                 auto it = modules.find(t);
                 if (it == modules.end())
                 {
-                    m = new Module;
-                    m->fileOffset = t;
-                    modules[t] = m;
+                    modules[t] = std::make_unique<Module>();
+                    modules[t]->fileOffset = t;
+                    m = modules[t].get();
                 }
                 else
                 {
-                    m = it->second;
+                    m = it->second.get();
                 }
                 if (!strncmp(strings, "__imp", 5))
                     strings += 5;
@@ -115,7 +107,7 @@ bool CoffLibrary::LoadNames()
 }
 bool CoffLibrary::LoadHeaders()
 {
-    for (auto m : modules)
+    for (auto& m : modules)
     {
         inputFile->seekg(m.first);
         inputFile->read((char*)&m.second->header, sizeof(m.second->header));
@@ -133,7 +125,7 @@ bool CoffLibrary::LoadHeaders()
 }
 bool CoffLibrary::ScanIntegrity()
 {
-    for (auto module : modules)
+    for (auto& module : modules)
     {
         inputFile->seekg(module.first + sizeof(CoffLinkerMemberHeader));
         ObjByte buf[8];
@@ -162,14 +154,14 @@ bool CoffLibrary::ScanIntegrity()
 }
 bool CoffLibrary::ConvertNormalMods()
 {
-    for (auto m : modules)
+    for (auto& m : modules)
     {
         if (!m.second->import && !m.second->ignore)
         {
             if (m.second->aliases.begin()->find("_IMPORT_DESCRIPTOR") == std::string::npos &&
                 m.second->aliases.begin()->find("_nullptr_THUNK_DATA") == std::string::npos)
             {
-                CoffFile object(inputFile, m.first + sizeof(CoffLinkerMemberHeader));
+                CoffFile object(inputFile.get(), m.first + sizeof(CoffLinkerMemberHeader));
                 inputFile->seekg(m.first + sizeof(CoffLinkerMemberHeader));
                 if (object.Load())
                 {
@@ -203,7 +195,7 @@ bool CoffLibrary::ConvertNormalMods()
 bool CoffLibrary::ConvertImportMods()
 {
     bool foundImports = false;
-    for (auto m : modules)
+    for (auto& m : modules)
     {
         if (m.second->import && !m.second->ignore)
         {
@@ -245,7 +237,7 @@ bool CoffLibrary::ConvertImportMods()
     if (foundImports)
     {
         ObjFile* file = new ObjFile("__imports__.o");
-        for (auto m : modules)
+        for (auto& m : modules)
         {
             if (m.second->import && !m.second->ignore)
             {

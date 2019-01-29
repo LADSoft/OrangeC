@@ -267,7 +267,7 @@ $(CLEANS): %.clean :
 	$(MAKE) clean -f $(_TREEROOT) -C$*
 
 cleanlib:
-	$(MAKE) /Cclibs clean
+	$(MAKE) -C clibs clean
 
 clean: cleanstart cleanlib $(CLEANS)
 

@@ -232,7 +232,16 @@ void dumpInlines(void)
                         gen_virtual(sym, true);
                         if (sym->init)
                         {
-                            dumpInitGroup(sym, sym->tp);
+                            if (isstructured(sym->tp) || isarray(sym->tp))
+                            {
+                                dumpInitGroup(sym, sym->tp);
+                            }
+                            else
+                            {
+                                int s = dumpInit(sym, sym->init);
+                                if (s < sym->tp->size)
+                                    genstorage(sym->tp->size - s);
+                            }
                         }
                         else
                         {
@@ -257,7 +266,16 @@ void dumpInlines(void)
                             gen_virtual(sym, true);
                             if (sym->init)
                             {
-                                dumpInitGroup(sym, sym->tp);
+                                if (isstructured(sym->tp) || isarray(sym->tp))
+                                {
+                                    dumpInitGroup(sym, sym->tp);
+                                }
+                                else
+                                {
+                                    int s = dumpInit(sym, sym->init);
+                                    if (s < sym->tp->size)
+                                        genstorage(sym->tp->size - s);
+                                }
                             }
                             else
                                 genstorage(basetype(sym->tp)->size);

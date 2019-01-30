@@ -2929,7 +2929,7 @@ int fold_const(EXPRESSION* node)
                     if (st->type == st_block && !st->next)
                     {
                         st = st->lower;
-                        while (st->type == st_line || st->type == st_dbgblock)
+                        while (st->type == st_line || st->type == st_dbgblock || st->type == st_label)
                             st = st->next;
                         if (st->type == st_expr || st->type == st_return)
                         {

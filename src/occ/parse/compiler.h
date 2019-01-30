@@ -61,7 +61,7 @@ typedef unsigned char UBYTE;
 #include <string.h>
 #include <float.h>
 #include "ccerr.h"
-#include "floating.h"
+#include "Floating.h"
 #include "osutil.h"
 #include "pp.h"
 #include "iexpr.h"

@@ -149,7 +149,6 @@
   <ItemGroup>
     <ClCompile Include="..\util\winsystem.c" />
     <ClCompile Include="afile.c" />
-    <ClCompile Include="CCDL.CC" />
     <ClCompile Include="cl386.c" />
     <ClCompile Include="fname.c" />
     <ClCompile Include="gener.c" />

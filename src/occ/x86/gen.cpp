@@ -4489,6 +4489,7 @@ void asm_clrblock(QUAD* q) /* clear block of memory */
         gen_codes(op_push, ISZ_UINT, cx, 0);
         gen_codes(op_push, ISZ_UINT, ax, 0);
         pushlevel += 12;
+        gen_codes(op, ISZ_UINT, di, apl);
         gen_codes(op_xor, ISZ_UINT, ax, ax);
         if (n == INT_MAX)
         {
@@ -4499,7 +4500,6 @@ void asm_clrblock(QUAD* q) /* clear block of memory */
         {
             gen_codes(op_mov, ISZ_UINT, cx, aimmed(n / 4));
         }
-        gen_codes(op, ISZ_UINT, di, apl);
         gen_code(op_cld, 0, 0);
         gen_code(op_rep, 0, 0);
         gen_code(op_stosd, 0, 0);

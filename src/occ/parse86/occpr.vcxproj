@@ -86,7 +86,7 @@
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;WIN32;BORLAND;_CRT_SECURE_NO_WARNINGS;PARSER_ONLY;USE_LONGLONG;MICROSOFT;%(PreprocessorDefinitions); SQLITE_THREADSAFE=0</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\parse;..\preproc;..\middle;..\..\sqlite3</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\parse;..\preproc;..\middle;..\..\sqlite3;..\..\ocpp</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -122,7 +122,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;WIN32;BORLAND;PARSER_ONLY;USE_LONGLONG;MICROSOFT;%(PreprocessorDefinitions); SQLITE_THREADSAFE=0</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\parse;..\preproc;..\middle;..\..\sqlite3</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\parse;..\preproc;..\middle;..\..\sqlite3;..\..\ocpp</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -170,7 +170,6 @@
     <ClCompile Include="..\parse\declcpp.cpp" />
     <ClCompile Include="..\parse\expr.cpp" />
     <ClCompile Include="..\parse\exprcpp.cpp" />
-    <ClCompile Include="..\parse\float.cpp" />
     <ClCompile Include="..\parse\help.cpp" />
     <ClCompile Include="..\parse\init.cpp" />
     <ClCompile Include="..\parse\INLINE.cpp" />
@@ -201,7 +200,6 @@
     <ClInclude Include="..\parse\BROWSE.h" />
     <ClInclude Include="..\parse\ccerr.h" />
     <ClInclude Include="..\parse\compiler.h" />
-    <ClInclude Include="..\parse\floating.h" />
     <ClInclude Include="..\parse\osutil.h" />
     <ClInclude Include="..\parse\PEHeader.h" />
     <ClInclude Include="..\parse\regs.h" />
@@ -212,6 +210,9 @@
     <ClInclude Include="parser.h" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\ocpp\ocpp.vcxproj">
+      <Project>{15b031ac-a404-4064-be4e-cd5705b6293c}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\util\util.vcxproj">
       <Project>{72430015-06c0-42a2-b9ec-d0e5e2eae83d}</Project>
     </ProjectReference>

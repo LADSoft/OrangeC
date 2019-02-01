@@ -488,7 +488,12 @@ extern DWORD
 		    VOID
 		    );
 
-extern VOID
+extern DWORD
+ PASCAL WINBASEAPI GetProcessId(
+		    HANDLE
+		    );
+
+ extern VOID
  PASCAL WINBASEAPI ExitProcess(
 	    UINT uExitCode
 	    );
@@ -5304,6 +5309,7 @@ extern int  PASCAL WINBASEAPI WideCharToMultiByte(UINT CodePage,DWORD dwFlags,LP
 						int cchWideChar, LPSTR lpMultiByteStr,int cbMultiByte,
 						LPCSTR lpDefaultChar, LPBOOL lpUsedDefaultChar);
 
+HANDLE PASCAL CreateToolhelp32Snapshot(DWORD dwFlags, DWORD th32ProcessID);
 
 /* ansi compatibility for win 3.1 */
 #define AnsiToOem CharToOemA

@@ -53,9 +53,6 @@
     <ClCompile Include="parse\exprcpp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="parse\float.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="parse\help.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -269,9 +266,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="parse\compiler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="parse\floating.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="parse\osutil.h">

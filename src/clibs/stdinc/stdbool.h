@@ -37,6 +37,10 @@
 #ifndef __STDBOOL_H
 #define __STDBOOL_H
 
+#ifndef __DEFS_H__
+#include <_defs.h>
+#endif
+
 #define __bool_true_false_are_defined 1
 
 #ifndef __cplusplus

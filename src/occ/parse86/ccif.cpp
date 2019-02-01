@@ -103,11 +103,11 @@ int equalnode(EXPRESSION* node1, EXPRESSION* node2)
         case en_c_di:
         case en_c_fi:
         case en_c_ldi:
-            return FPFEQ(&node1->v.f, &node2->v.f);
+            return (node1->v.f == node2->v.f);
         case en_c_dc:
         case en_c_fc:
         case en_c_ldc:
-            return FPFEQ(&node1->v.c.r, &node2->v.c.r) && FPFEQ(&node1->v.c.i, &node2->v.c.i);
+            return (node1->v.c.r == node2->v.c.r) && (node1->v.c.i == node2->v.c.i);
     }
 }
 const char* GetSymName(SYMBOL* sp, SYMBOL* parent)

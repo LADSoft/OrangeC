@@ -5,11 +5,20 @@ version 6.0.41:
     occ: show data at CS:EIP in exception dumps
     occ: fix so that an empty statement at the end of a function didn't confuse the 'function needs return value' warning
     occ: fix the /D and /U command line switches to work more in line with the standard usage
+    occ: fix problems with std::array, for-range doesn't compile
+    occ: fix problems with std::array, initializer runs out of memory
+    occ: fix problems with bracket-initializing a non-trivial structure that doesn't have user constructors.
     omake: don't rebuild things that have exactly the same time stamp as their dependencies
-    omake: improve diagnostics
+    omake: improve diagnostics: extend /w switch to show more information
+    ocide: when typing a '}', move cursor to BEFORE the newly typed character
+    ocide: fix bug, long lines cause buffer overrun
     olink: identify invalid libraries
     oasm: add .align assembler directive like gas version
     rtl: allow nl_types.h to be included in c language files
+    rtl: stdint:  handle __STDC_LIMIT_MACROS and __STDC_CONSTANT_MACROS correctly
+    rtl: return a pointer to nothing when realloc is specified with a size of zero
+    rtl: add wait() and waitpid()
+    clean up make files: completes build in local directory and overwrites EXE file if it already exists
 version 6.0.40: 1/21/2019
     fix various problems with the MSDOS build and install
     occ: fix stack frame in the presence of try/catch processing: don't optimize out the EBP references and don't cache variables in regs

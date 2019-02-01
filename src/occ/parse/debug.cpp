@@ -25,7 +25,6 @@
 #include "compiler.h"
 void displayLexeme(LEXEME* lex)
 {
-    char buf[256];
     const LCHAR* w;
     switch (lex->type)
     {
@@ -48,16 +47,13 @@ void displayLexeme(LEXEME* lex)
             printf("unsigned long long constant: " LLONG_FORMAT_SPECIFIER "\n", lex->value.i);
             break;
         case l_f:
-            FPFToString(buf, &lex->value.f);
-            printf("float constant: %s\n", buf);
+            printf("float constant: %s\n", ((std::string)lex->value.f).c_str());
             break;
         case l_d:
-            FPFToString(buf, &lex->value.f);
-            printf("double constant: %s\n", buf);
+            printf("double constant: %s\n", ((std::string)lex->value.f).c_str());
             break;
         case l_ld:
-            FPFToString(buf, &lex->value.f);
-            printf("long double constant: %s\n", buf);
+            printf("long double constant: %s\n", ((std::string)lex->value.f).c_str());
             break;
         case l_astr:
             printf("ascii string: ");

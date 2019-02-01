@@ -34,33 +34,50 @@
  * 
  */
 
-#ifndef __SYS_TIME_H
-#define __SYS_TIME_H
+/*  timeb.h
+
+    Struct and function declarations for ftime().
+
+*/
+
+#if !defined(__WAIT_H)
+#define __WAIT_H
 
 #ifndef __DEFS_H__
 #include <_defs.h>
 #endif
 
-#ifndef _TIMEVAL_DEFINED
-#define _TIMEVAL_DEFINED
-struct timeval {
-  long tv_sec;     /* seconds */
-  long tv_usec;    /* microseconds */
-};
-
-struct timezone {
-  int tz_minuteswest; /* minutes west of Greenwich */
-  int tz_dsttime;     /* type of dst correction */
-};
-#endif /* _TIMEVAL_DEFINED */
+#ifndef __TYPES_H
+#include <sys/types.h>
+#endif
 
 #ifdef __cplusplus
+namespace __STD_NS__ {
 extern "C" {
 #endif
 
-int _RTL_FUNC _IMPORT gettimeofday (struct timeval * tv, struct timezone * tz);
+#define WNOHANG 1
+#define WUNTRACED 2
+
+#define WEXITSTATUS(x) (x & 0xff)
+#define WIFEXITED(x) (x >= 0)
+#define WIFSIGNALED(x) (0)
+#define WIFSTOPPED(x) (0)
+#define WSTOPSIG(x) (0)
+#define WIFCONTINUED(x) (0)
+
+pid_t _RTL_FUNC wait(int *);
+pid_t _RTL_FUNC waitpid(pid_t, int *, int);
 
 #ifdef __cplusplus
-}
+} ;
+} ;
 #endif
+
+#pragma pack()
+#endif  /* __WAIT_H */
+#if defined(__cplusplus) && !defined(__USING_CNAMES__) && !defined(__WAIT_H_USING_LIST)
+using __STD_NS_QUALIFIER wait; 
+using __STD_NS_QUALIFIER waitpid;
 #endif
+

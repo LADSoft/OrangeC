@@ -44,7 +44,6 @@ CPP_DEPENDENCIES= \
     declcpp.cpp \
     expr.cpp \
     exprcpp.cpp \
-    float.cpp \
     help.cpp \
     init.cpp \
     inline.cpp \
@@ -66,7 +65,7 @@ CPP_DEPENDENCIES= \
     types.cpp \
     unmangle.cpp \
     wseh.cpp
-LIB_DEPENDENCIES=sqlite3 util
+LIB_DEPENDENCIES=sqlite3 util ocpplib
 #determine if we can ignore the banner for a batch compile
 #use long long type
 LL = USE_LONGLONG
@@ -76,11 +75,11 @@ BACKEND_INCLUDE_PATH=.
 
 ifeq "$(COMPILER)" "gcc-linux"
 SOURCE = ..$(PATHEXT2)parse:..$(PATHEXT2)preproc:..$(PATHEXT2)middle
-INCLUDES=..$(PATHEXT2)parse ..$(PATHEXT2)preproc ..$(PATHEXT2)middle ..$(PATHEXT2)..$(PATHEXT2)Util
+INCLUDES=..$(PATHEXT2)parse ..$(PATHEXT2)preproc ..$(PATHEXT2)middle ..$(PATHEXT2)..$(PATHEXT2)Util ..$(PATHEXT2)..$(PATHEXT2)ocpp
 SRCPATH:=$(BACKEND_INCLUDE_PATH):$(SOURCE):..
 else
 SOURCE = ..$(PATHEXT2)parse;..$(PATHEXT2)preproc;..$(PATHEXT2)middle
-INCLUDES=..$(PATHEXT2)parse ..$(PATHEXT2)preproc ..$(PATHEXT2)middle ..$(PATHEXT2)..$(PATHEXT2)Util
+INCLUDES=..$(PATHEXT2)parse ..$(PATHEXT2)preproc ..$(PATHEXT2)middle ..$(PATHEXT2)..$(PATHEXT2)Util ..$(PATHEXT2)..$(PATHEXT2)ocpp
 SRCPATH:=$(BACKEND_INCLUDE_PATH);$(SOURCE);..
 endif
 BACKEND_FILES = config.cpp
@@ -96,7 +95,7 @@ export _TREEROOT
 export _TREETARGET
 
 redirect:
-	@$(MAKE) /f$(_TREEROOT)
+	@$(MAKE) /f$(_TREEROOT) localfiles
 format:
 	@$(MAKE) /f$(_TREEROOT) format
 endif

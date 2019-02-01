@@ -17,6 +17,7 @@ version 6.0.41:
     rtl: allow nl_types.h to be included in c language files
     rtl: stdint:  handle __STDC_LIMIT_MACROS and __STDC_CONSTANT_MACROS correctly
     rtl: return a pointer to nothing when realloc is specified with a size of zero
+    rtl: add wait() and waitpid()
     clean up make files: completes build in local directory and overwrites EXE file if it already exists
 version 6.0.40: 1/21/2019
     fix various problems with the MSDOS build and install

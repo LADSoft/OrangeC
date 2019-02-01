@@ -277,7 +277,8 @@ static pid_t waithandler (pid_t pid, int *status, int options)
     Load();
     if (getpid() == pid)
     {
-        *status = -1;
+        if (status)
+            *status = -1;
         goto fin;
     }
     if (pid >0 || pid < - 10)
@@ -298,7 +299,8 @@ static pid_t waithandler (pid_t pid, int *status, int options)
                 process = OpenProcess (SYNCHRONIZE, FALSE, pid);
                 if (!process)
                 {
-                    *status = -2;
+                    if (status)
+                        *status = -2;
                     goto fin;
                 }
             }
@@ -306,19 +308,22 @@ static pid_t waithandler (pid_t pid, int *status, int options)
         switch (WaitForSingleObject(process, (options & WNOHANG) ? 0 : INFINITE))
         {
             case WAIT_TIMEOUT:
-                *status = -1;
+                if (status)
+                    *status = -1;
                 ret = 0;
                 break;
             default:
             case WAIT_FAILED:
-                *status = -1;
+                if (status)
+                    *status = -1;
                 break;
             case WAIT_OBJECT_0:
             {
                     DWORD val=-1;
                     GetExitCodeProcess(process, &val);
                     ret = pid;
-                    *status = val;
+                    if (status)
+                        *status = val;
             }
             break;
         }
@@ -333,11 +338,13 @@ static pid_t waithandler (pid_t pid, int *status, int options)
         switch ((n = WaitForMultipleObjects(count, handle_list, FALSE, (options & WNOHANG) ? 0 : INFINITE)))
         {
             case WAIT_TIMEOUT:
-                *status = -1;
+                if (status)
+                    *status = -1;
                 ret = 0;
                 break;
             case WAIT_FAILED:
-                *status = -1;
+                if (status)
+                    *status = -1;
                 break;
             default:
                 if (n >= WAIT_OBJECT_0 && n < WAIT_OBJECT_0 + count)
@@ -345,12 +352,14 @@ static pid_t waithandler (pid_t pid, int *status, int options)
                     DWORD val=-1;
                     GetExitCodeProcess(handle_list[n - WAIT_OBJECT_0], &val);
                     ret = pid_list[n - WAIT_OBJECT_0];
-                    *status = val;
+                    if (status)
+                        *status = val;
                     RemovePid(ret);
                 }
                 else
                 {
-                    *status = -1;
+                    if (status)
+                        *status = -1;
                 }
                 break;
         }

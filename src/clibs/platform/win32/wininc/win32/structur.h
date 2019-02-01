@@ -4310,6 +4310,41 @@ typedef struct {
   DWORD dwTimeout;
 } FLASHWINFO,*PFLASHWINFO;
 
+
+typedef struct tagPROCESSENTRY32W
+{
+    DWORD   dwSize;
+    DWORD   cntUsage;
+    DWORD   th32ProcessID;          // this process
+    ULONG_PTR th32DefaultHeapID;
+    DWORD   th32ModuleID;           // associated exe
+    DWORD   cntThreads;
+    DWORD   th32ParentProcessID;    // this process's parent process
+    LONG    pcPriClassBase;         // Base priority of process's threads
+    DWORD   dwFlags;
+    WCHAR   szExeFile[MAX_PATH];    // Path
+} PROCESSENTRY32W;
+typedef PROCESSENTRY32W *  PPROCESSENTRY32W;
+typedef PROCESSENTRY32W *  LPPROCESSENTRY32W;
+
+typedef struct tagPROCESSENTRY32
+{
+    DWORD   dwSize;
+    DWORD   cntUsage;
+    DWORD   th32ProcessID;          // this process
+    ULONG_PTR th32DefaultHeapID;
+    DWORD   th32ModuleID;           // associated exe
+    DWORD   cntThreads;
+    DWORD   th32ParentProcessID;    // this process's parent process
+    LONG    pcPriClassBase;         // Base priority of process's threads
+    DWORD   dwFlags;
+    CHAR    szExeFile[MAX_PATH];    // Path
+} PROCESSENTRY32;
+typedef PROCESSENTRY32 *  PPROCESSENTRY32;
+typedef PROCESSENTRY32 *  LPPROCESSENTRY32;
+
+
+
 #pragma pack()
 
 #endif  /* RC_INVOKED */

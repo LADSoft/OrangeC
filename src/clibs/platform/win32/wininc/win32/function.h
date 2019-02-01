@@ -435,6 +435,12 @@
 #define GetCPInfoEx  GetCPInfoExW
 #define GetFileAttributesEx  GetFileAttributesExW
 
+#define Process32First Process32FirstW
+#define Process32Next Process32NextW
+#define PROCESSENTRY32 PROCESSENTRY32W
+#define PPROCESSENTRY32 PPROCESSENTRY32W
+#define LPPROCESSENTRY32 LPPROCESSENTRY32W
+
 /* ASCII */
 #else
 

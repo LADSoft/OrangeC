@@ -236,36 +236,9 @@ static BOOLEAN GetChildren(pid_t pid, pid_t **pids, HANDLE** list, size_t *count
     return rv;
 }
 
-extern "C" int _RTL_FUNC getpid(void)
-{
-	return GetCurrentProcessId();
-}
-
 typedef LONG WINAPI QueryFunc(HANDLE ProcessHandle, ULONG ProcessInformationClass,
        PVOID ProcessInformation, ULONG ProcessInformationLength, PULONG ReturnLength);
 
-extern "C" int _RTL_FUNC getppid(void)
-{
-    HANDLE h = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-    PROCESSENTRY32 pe = { 0 };
-    pe.dwSize = sizeof(PROCESSENTRY32);
-
-    int pid = GetCurrentProcessId();
-    pid_t retval = -1;
-
-    if( Process32First(h, &pe)) {
-        do {
-            if (pe.th32ProcessID == pid) {
-               retval = pe.th32ParentProcessID;
-               break;
-            }
-        } while( Process32Next(h, &pe));
-    }
-
-    CloseHandle(h);
-
-    return retval;
-}
 
 static pid_t waithandler (pid_t pid, int *status, int options)
 {
@@ -275,7 +248,7 @@ static pid_t waithandler (pid_t pid, int *status, int options)
     HANDLE *handle_list;
     pid_t *pid_list;
     Load();
-    if (getpid() == pid)
+    if (GetCurrentProcessId() == pid)
     {
         if (status)
             *status = -1;

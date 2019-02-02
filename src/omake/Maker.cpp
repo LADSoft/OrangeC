@@ -581,7 +581,7 @@ int Maker::RunCommands(bool keepGoing)
     int count;
     Runner runner(silent, displayOnly, ignoreResults, touch, outputType, keepResponseFiles, firstGoal, filePaths);
 
-    for (auto& it = depends.begin(); it != depends.end(); ++it)
+    for (auto it = depends.begin(); it != depends.end(); ++it)
     {
         runner.CancelOne((*it).get());
     }

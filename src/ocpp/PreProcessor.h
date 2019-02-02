@@ -91,7 +91,6 @@ class PreProcessor
     PreProcessor(const std::string& FileName, const std::string& SrchPth, const std::string& SysSrchPth, bool fullName,
                  bool Trigraph, char PPStart, bool isunsignedchar, bool C89, bool extensions) :
         ppStart(PPStart),
-        preData(nullptr),
         lineno(0),
         include(fullName, Trigraph, extensions, isunsignedchar, C89, SrchPth, SysSrchPth, PPStart == '%'),
         define(extensions, &include, C89, PPStart == '%'),

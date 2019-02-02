@@ -26,6 +26,7 @@
 #define UTIL_H
 
 #include <string>
+#include <stdlib.h>
 
 class Utils
 {

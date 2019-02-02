@@ -447,7 +447,7 @@ void RegExpContext::Parse(const char* exp, bool regular, bool CaseSensitive, boo
                             else
                             {
                                 int n1, n2;
-                                n1 = n2 = atoi(exp);
+                                n1 = n2 = std::atoi(exp);
                                 while (isdigit(*exp))
                                     exp++;
                                 if (*exp == ',')
@@ -457,7 +457,7 @@ void RegExpContext::Parse(const char* exp, bool regular, bool CaseSensitive, boo
                                         invalid = true;
                                     else
                                     {
-                                        n2 = atoi(exp);
+                                        n2 = std::atoi(exp);
                                         while (isdigit(*exp))
                                             exp++;
                                     }

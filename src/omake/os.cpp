@@ -33,13 +33,16 @@
 #    include <windows.h>
 #    include <process.h>
 #    include <direct.h>
-#    include <io.h>
+ #    include <io.h>
 #    include <share.h>
 #    include <fcntl.h>
 #    include <sys/locking.h>
 #    define lockf _locking
 #    define F_LOCK _LK_LOCK
 #    define F_ULOCK _LK_UNLCK
+#    ifndef _SH_DENYNO
+#        define _SH_DENYNO 0
+#    endif
 #endif
 #include <string.h>
 #undef WriteConsole
@@ -282,14 +285,22 @@ void OS::JobInit()
         if (fil >= 0)
         {
             int count = 0;
+#ifdef BCC32c
+            lock(fil, 0, 4);
+#else
             lockf(fil, F_LOCK, 4);
+#endif
             if (!first)
                 read(fil, (char *)&count, 4);
             count++;
             lseek(fil, 0, SEEK_SET);
             write(fil, (char *)&count, 4);
             lseek(fil, 0, SEEK_SET);
+#ifdef BCC32c
+            unlock(fil, 0, 4);
+#else
             lockf(fil, F_ULOCK, 4);
+#endif
             char buf[256];
             sprintf(buf, "%d> ", count);
             jobName= buf;
@@ -654,7 +665,12 @@ std::string OS::NormalizeFileName(const std::string file)
 void OS::CreateThread(void* func, void* data)
 {
 #ifdef _WIN32
+#ifdef BCC32c
+    DWORD tid;
+    CloseHandle(::CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)func, data, 0, &tid));
+#else
     CloseHandle((HANDLE)_beginthreadex(nullptr, 0, (unsigned(CALLBACK*)(void*))func, data, 0, nullptr));
+#endif
 #endif
 }
 void OS::Yield()

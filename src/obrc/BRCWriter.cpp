@@ -37,7 +37,7 @@
 
 #define STRINGVERSION "120"
 
-#define DBVersion atoi(STRINGVERSION)
+#define DBVersion std::atoi(STRINGVERSION)
 
 #define JT_NONE 0
 #define JT_FUNC 1
@@ -154,7 +154,7 @@ int BRCWriter::VersionCallback(void* NotUsed, int argc, char** argv, char** azCo
 {
     if (argc == 1)
     {
-        if (atoi(argv[0]) >= DBVersion)
+        if (std::atoi(argv[0]) >= DBVersion)
             version_ok = true;
     }
     return 0;

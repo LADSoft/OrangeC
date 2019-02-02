@@ -40,13 +40,12 @@ Aliases* Aliases::instance;
 Startups* Startups::instance;
 Once* Once::instance;
 
-void ppPragma::InitHash()
-{
-    hash["("] = openpa;
-    hash[")"] = closepa;
-    hash[","] = comma;
-    hash["="] = eq;
-}
+KeywordHash ppPragma::hash = {
+    { "(", openpa},
+    { ")", closepa},
+    { ",", comma},
+    { "=", eq},
+};
 bool ppPragma::Check(int token, const std::string& args)
 {
     if (token == PRAGMA)

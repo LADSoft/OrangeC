@@ -28,8 +28,66 @@
 
 #include <stdexcept>
 
-KeywordHash Lexer::hash;
-bool Lexer::hashInitted;
+KeywordHash Lexer::hash = {
+    { "(", openpa},
+    { ")", closepa},
+    { "+", plus},
+    { "-", minus},
+    { "!", lnot},
+    { "~", bcompl},
+    { "*", star},
+    { "/", divide},
+    { "%", mod},
+    { "<<", leftshift},
+    { ">>", rightshift},
+    { ">", gt},
+    { "<", lt},
+    { ">=", geq},
+    { "<=", leq},
+    { "==", eq},
+    { "!=", ne},
+    { "=", assn},
+    { "|", bor},
+    { "&", band},
+    { "^", bxor},
+    { "||", lor},
+    { "&&", land},
+    { "?", hook},
+    { ":", colon},
+    { ",", comma},
+    { "[", openbr},
+    { "]", closebr},
+    { "ABSOLUTE", ABSOLUTE},
+    { "ALIGN", ALIGN},
+    { "BITS", BITS},
+    { "CLASS", CLASS},
+    { "DB", DB},
+    { "DD", DD},
+    { "DQ", DQ},
+    { "DT", DT},
+    { "DW", DW},
+    { "EXPORT", EXPORT},
+    { "EXTERN", EXTERN},
+    { "EQU", EQU},
+    { "GALIGN", GALIGN},
+    { "GLOBAL", PUBLIC},
+    { "GROUP", GROUP},
+    { "IMPORT", IMPORT},
+    { "INCBIN", INCBIN},
+    { "RESB", RESB},
+    { "RESD", RESD},
+    { "RESQ", RESQ},
+    { "REST", REST},
+    { "RESW", RESW},
+    { "SECTION", SECTION},
+    { "STACK", STACK},
+    { "TIMES", TIMES},
+    { "USE16", USE16},
+    { "USE32", USE32},
+    { "USE64", USE64},
+    { "VIRTUAL", VIRTUAL},
+
+};
 
 Lexer::Lexer(PreProcessor& PP) :
     asmFile(nullptr),
@@ -42,72 +100,7 @@ Lexer::Lexer(PreProcessor& PP) :
     parsingDirective(false)
 {
     pp.SetPreData(preData);
-    InitHash();
     InitTokenizer();
-}
-void Lexer::InitHash()
-{
-    if (!hashInitted)
-    {
-        hash["("] = openpa;
-        hash[")"] = closepa;
-        hash["+"] = plus;
-        hash["-"] = minus;
-        hash["!"] = lnot;
-        hash["~"] = bcompl;
-        hash["*"] = star;
-        hash["/"] = divide;
-        hash["%"] = mod;
-        hash["<<"] = leftshift;
-        hash[">>"] = rightshift;
-        hash[">"] = gt;
-        hash["<"] = lt;
-        hash[">="] = geq;
-        hash["<="] = leq;
-        hash["=="] = eq;
-        hash["!="] = ne;
-        hash["="] = assn;
-        hash["|"] = bor;
-        hash["&"] = band;
-        hash["^"] = bxor;
-        hash["||"] = lor;
-        hash["&&"] = land;
-        hash["?"] = hook;
-        hash[":"] = colon;
-        hash[","] = comma;
-        hash["["] = openbr;
-        hash["]"] = closebr;
-        hash["ABSOLUTE"] = ABSOLUTE;
-        hash["ALIGN"] = ALIGN;
-        hash["BITS"] = BITS;
-        hash["CLASS"] = CLASS;
-        hash["DB"] = DB;
-        hash["DD"] = DD;
-        hash["DQ"] = DQ;
-        hash["DT"] = DT;
-        hash["DW"] = DW;
-        hash["EXPORT"] = EXPORT;
-        hash["EXTERN"] = EXTERN;
-        hash["EQU"] = EQU;
-        hash["GALIGN"] = GALIGN;
-        hash["GLOBAL"] = PUBLIC;
-        hash["GROUP"] = GROUP;
-        hash["IMPORT"] = IMPORT;
-        hash["INCBIN"] = INCBIN;
-        hash["RESB"] = RESB;
-        hash["RESD"] = RESD;
-        hash["RESQ"] = RESQ;
-        hash["REST"] = REST;
-        hash["RESW"] = RESW;
-        hash["SECTION"] = SECTION;
-        hash["STACK"] = STACK;
-        hash["TIMES"] = TIMES;
-        hash["USE16"] = USE16;
-        hash["USE32"] = USE32;
-        hash["USE64"] = USE64;
-        hash["VIRTUAL"] = VIRTUAL;
-        hashInitted = true;
-    }
 }
 void Lexer::InitTokenizer()
 {

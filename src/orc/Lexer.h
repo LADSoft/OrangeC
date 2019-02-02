@@ -140,7 +140,6 @@ class Lexer
     };
     Lexer(PreProcessor& PP) : pp(PP), atEol(false), atEof(false), tokenizer(nullptr), token(nullptr)
     {
-        InitHash();
         InitTokenizer();
         NextToken();
     }
@@ -158,7 +157,6 @@ class Lexer
     bool AtEof() { return atEof; }
 
   protected:
-    void InitHash();
     void InitTokenizer();
 
   private:
@@ -168,6 +166,5 @@ class Lexer
     Tokenizer* tokenizer;
     const Token* token;
     static KeywordHash hash;
-    static bool hashInitted;
 };
 #endif  // Lexer_h

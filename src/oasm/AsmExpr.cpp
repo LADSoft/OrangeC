@@ -33,12 +33,6 @@
 #include <limits.h>
 #include <stdexcept>
 
-KeywordHash AsmExpr::hash;
-bool AsmExpr::initted;
-std::string AsmExpr::currentLabel;
-Section* AsmExpr::section;
-std::map<std::string, AsmExprNode*> AsmExpr::equs;
-
 enum
 {
     dollars = 300,
@@ -48,46 +42,48 @@ enum
     SEG,
     WRT
 };
+
+KeywordHash AsmExpr::hash = {
+    { "(", openpa},
+    { ")", closepa},
+    { "+", ::plus},
+    { "-", ::minus},
+    { "!", lnot},
+    { "~", bcompl},
+    { "*", star},
+    { "/", divide},
+    { "/-", sdivide},
+    { "%", mod},
+    { "%-", smod},
+    { "<<", leftshift},
+    { ">>", rightshift},
+    { ">", gt},
+    { "<", lt},
+    { ">=", geq},
+    { "<=", leq},
+    { "==", eq},
+    { "!=", ne},
+    { "|", bor},
+    { "&", band},
+    { "^", bxor},
+    { "||", lor},
+    { "&&", land},
+    { "$", dollars},
+    { "$$", dollarsdollars},
+    { "seg", SEG},
+    { "wrt", WRT},
+
+};
+
+std::string AsmExpr::currentLabel;
+Section* AsmExpr::section;
+std::map<std::string, AsmExprNode*> AsmExpr::equs;
+
 void AsmExpr::ReInit()
 {
     currentLabel = "";
     section = nullptr;
     equs.clear();
-}
-void AsmExpr::InitHash()
-{
-    if (!initted)
-    {
-        initted = true;
-        hash["("] = openpa;
-        hash[")"] = closepa;
-        hash["+"] = ::plus;
-        hash["-"] = ::minus;
-        hash["!"] = lnot;
-        hash["~"] = bcompl;
-        hash["*"] = star;
-        hash["/"] = divide;
-        hash["/-"] = sdivide;
-        hash["%"] = mod;
-        hash["%-"] = smod;
-        hash["<<"] = leftshift;
-        hash[">>"] = rightshift;
-        hash[">"] = gt;
-        hash["<"] = lt;
-        hash[">="] = geq;
-        hash["<="] = leq;
-        hash["=="] = eq;
-        hash["!="] = ne;
-        hash["|"] = bor;
-        hash["&"] = band;
-        hash["^"] = bxor;
-        hash["||"] = lor;
-        hash["&&"] = land;
-        hash["$"] = dollars;
-        hash["$$"] = dollarsdollars;
-        hash["seg"] = SEG;
-        hash["wrt"] = WRT;
-    }
 }
 AsmExprNode* AsmExpr::Build(std::string& line)
 {

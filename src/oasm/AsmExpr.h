@@ -118,7 +118,7 @@ class AsmExpr
 {
   public:
     AsmExpr() : define(nullptr) {}
-    AsmExpr(ppDefine* Define) : define(Define) { InitHash(); }
+    AsmExpr(ppDefine* Define) : define(Define) { }
     ~AsmExpr() {}
     AsmExprNode* Build(std::string& line);
     static void ReInit();
@@ -157,12 +157,10 @@ class AsmExpr
     AsmExprNode* logicalor();
 
   private:
-    static void InitHash();
     ppDefine* define;
     std::unique_ptr<Tokenizer> tokenizer;
     const Token* token;
     static KeywordHash hash;
-    static bool initted;
     static std::string currentLabel;
     static Section* section;
     static std::map<std::string, AsmExprNode*> equs;

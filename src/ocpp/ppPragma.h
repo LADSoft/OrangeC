@@ -288,10 +288,8 @@ class ppPragma
   public:
     ppPragma(ppInclude* Include)
     {
-        InitHash();
         Once::Instance()->SetInclude(Include);
     }
-    void InitHash();
     bool Check(int token, const std::string& args);
     void ParsePragma(const std::string& args);
     void Mark()
@@ -321,6 +319,6 @@ class ppPragma
     void HandleOnce(Tokenizer& tk);
 
   private:
-    KeywordHash hash;
+    static KeywordHash hash;
 };
 #endif

@@ -126,7 +126,6 @@ class ppDefine
         REPLACED_ALREADY = 4,
         MACRO_PLACEHOLDER = 5
     };
-    void InitHash();
     std::string defid(const std::string& macro, int& i, int& j);
     void DoDefine(std::string& line, bool caseInsensitive);
     void DoAssign(std::string& line, bool caseInsensitive);
@@ -153,7 +152,7 @@ class ppDefine
     std::string dateiso;
     std::string time;
     std::set<std::string> defineList;
-    KeywordHash defTokens;
+    static KeywordHash defTokens;
     bool c89;
     ppExpr expr;
     ppCtx* ctx;

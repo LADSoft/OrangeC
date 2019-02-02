@@ -49,8 +49,7 @@ bool LibFiles::ReadNames(FILE* stream, int count)
             *p++ = c;
         } while (c != 0);
         ObjString name = buf;
-        FileDescriptor* d = new FileDescriptor(name);
-        files.push_back(d);
+        files.push_back(std::make_unique<FileDescriptor>(name));
     }
     return true;
 }
@@ -68,7 +67,7 @@ ObjFile* LibFiles::LoadModule(FILE* stream, ObjInt FileIndex, ObjFactory* factor
 {
     if (FileIndex >= files.size())
         return nullptr;
-    const FileDescriptor* a = files[FileIndex];
+    auto& a = files[FileIndex];
     if (!a->offset)
         return nullptr;
     fseek(stream, a->offset, SEEK_SET);

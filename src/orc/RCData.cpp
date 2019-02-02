@@ -81,11 +81,10 @@ void RCData::ReadRC(RCFile& rcFile)
                 {
                     // this is being done for portability
                     int n = t->GetString().size();
-                    wchar_t* p = new wchar_t[n];
+                    std::unique_ptr<wchar_t[]> p = std::make_unique<wchar_t[]>(n);
                     for (int i = 0; i < n; i++)
                         p[i] = t->GetString()[i];
-                    data.push_back(std::make_unique<ResourceData>((unsigned char*)p, n * sizeof(wchar_t)));
-                    delete[] p;
+                    data.push_back(std::make_unique<ResourceData>((unsigned char*)p.get(), n * sizeof(wchar_t)));
                     concatwide = true;
                 }
                 else

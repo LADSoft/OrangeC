@@ -100,7 +100,7 @@ class MakeMain
 
     static int makeLevel;
 
-    char** argvx;
+    std::unique_ptr<char*[]> argvx;
     int argcx;
     std::string cwd;
 };

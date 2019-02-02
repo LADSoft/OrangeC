@@ -82,7 +82,7 @@ class dlLeMain
     LEHeader header;
     static unsigned fileVersion;
     ObjFactory* factory;
-    ObjFile* file;
+    std::unique_ptr<ObjFile> file;
     ObjInt startAddress;
 };
 #endif

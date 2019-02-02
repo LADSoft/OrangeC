@@ -83,7 +83,7 @@ void GroupCursor::WriteRes(ResFile& resFile)
 void GroupCursor::ReadRC(RCFile& rcFile)
 {
     resInfo.ReadRC(rcFile, false);
-    ResourceData* rd = new ResourceData;
+    std::unique_ptr<ResourceData> rd = std::make_unique<ResourceData>();
     rd->ReadRC(rcFile);
     rcFile.NeedEol();
     rd->GetWord();
@@ -97,8 +97,7 @@ void GroupCursor::ReadRC(RCFile& rcFile)
         Cursor* c = new Cursor(resInfo);
         rcFile.GetResFile().Add(c);
         cursors.push_back(c);
-        c->ReadBin(rd);
+        c->ReadBin(rd.get());
     }
     resInfo.SetFlags(resInfo.GetFlags() | ResourceInfo::Pure);
-    delete rd;
 }

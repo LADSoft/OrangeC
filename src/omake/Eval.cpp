@@ -1372,8 +1372,8 @@ std::string Eval::foreach (const std::string& arglist)
         list = l.Evaluate();
         if (list.find_first_not_of(' ') != std::string::npos)
         {
-            Variable* v = new Variable(var, list, Variable::f_simple, Variable::o_file);
-            foreachVars.push_front(v);
+            std::unique_ptr<Variable> v = std::make_unique<Variable>(var, list, Variable::f_simple, Variable::o_file);
+            foreachVars.push_front(v.get());
             while (!list.empty())
             {
                 std::string value = ExtractFirst(list, " ");
@@ -1384,7 +1384,6 @@ std::string Eval::foreach (const std::string& arglist)
                 rv += t.Evaluate();
             }
             foreachVars.pop_front();
-            delete v;
         }
     }
     return rv;

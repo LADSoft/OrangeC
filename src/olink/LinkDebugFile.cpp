@@ -40,6 +40,7 @@
 #include <set>
 #include <cctype>
 #include <iostream>
+#include <algorithm>
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
 #endif
@@ -220,28 +221,20 @@ bool LinkDebugFile::DBOpen(char* name)
 bool LinkDebugFile::WriteFileNames()
 {
     std::vector<sqlite3_int64> v;
-    std::vector<ObjString*> n;
+    std::vector<ObjString> n;
     for (auto it = file->SourceFileBegin(); it != file->SourceFileEnd(); ++it)
     {
         ObjString name = (*it)->GetName();
         int index = (*it)->GetIndex();
-        char lcname[260];
-        int i;
-        for (i = 0; i < name.size(); ++i)
-            lcname[i] = tolower(name[i]);
-        lcname[i] = 0;
+
+        std::transform(name.begin(), name.end(), name.begin(), tolower);
         v.push_back(index);
-        n.push_back(new ObjString(lcname));
+        n.push_back(name);
     }
     LinkerColumnsWithNameVirtualTable fns(v, n, 2, true);
     fns.Start(dbPointer);
     fns.InsertIntoFrom("filenames");
     fns.Stop();
-    for (int i = 0; i < v.size(); i++)
-    {
-        ObjString* s = n[i];
-        delete s;
-    }
     v.clear();
     return true;
 }
@@ -351,7 +344,7 @@ int LinkDebugFile::GetSQLNameId(ObjString name)
     {
         return it->second;
     }
-    nameList.push_back(new ObjString(name));
+    nameList.push_back(name);
     int n = names[name] = nameList.size();
     PushCPPName(name, n);
     return n;
@@ -367,11 +360,6 @@ bool LinkDebugFile::WriteNamesTable()
     fns.Start(dbPointer);
     fns.InsertIntoFrom("names");
     fns.Stop();
-    for (int i = 0; i < nameList.size(); i++)
-    {
-        ObjString* s = nameList[i];
-        delete s;
-    }
     nameList.clear();
     v.clear();
     for (auto map : CPPMappingList)
@@ -390,7 +378,7 @@ bool LinkDebugFile::WriteVariableTypes()
 {
     ObjString empty = "";
     std::vector<sqlite3_int64> v;
-    std::vector<ObjString*> n;
+    std::vector<ObjString> n;
     for (auto it = file->TypeBegin(); it != file->TypeEnd(); ++it)
     {
         ObjType* type = *it;
@@ -409,7 +397,7 @@ bool LinkDebugFile::WriteVariableTypes()
                 v.push_back(0);
                 v.push_back(0);
                 v.push_back(0);
-                n.push_back(&empty);
+                n.push_back("");
                 break;
             case ObjType::eFunction:
             {
@@ -424,7 +412,7 @@ bool LinkDebugFile::WriteVariableTypes()
                 v.push_back(0);
                 v.push_back(0);
                 v.push_back(0);
-                n.push_back(&empty);
+                n.push_back("");
             }
             break;
             case ObjType::eBitField:
@@ -438,7 +426,7 @@ bool LinkDebugFile::WriteVariableTypes()
                 v.push_back(0);
                 v.push_back(type->GetStartBit());
                 v.push_back(type->GetBitCount());
-                n.push_back(&empty);
+                n.push_back("");
                 break;
             case ObjType::eStruct:
             case ObjType::eUnion:
@@ -454,7 +442,7 @@ bool LinkDebugFile::WriteVariableTypes()
                 v.push_back(0);
                 v.push_back(0);
                 v.push_back(0);
-                n.push_back(&empty);
+                n.push_back("");
             }
             break;
             case ObjType::eArray:
@@ -469,7 +457,7 @@ bool LinkDebugFile::WriteVariableTypes()
                 v.push_back(type->GetTop());
                 v.push_back(0);
                 v.push_back(0);
-                n.push_back(&empty);
+                n.push_back("");
                 break;
             case ObjType::eTypeDef:
                 v.push_back(type->GetIndex());
@@ -482,7 +470,7 @@ bool LinkDebugFile::WriteVariableTypes()
                 v.push_back(0);
                 v.push_back(0);
                 v.push_back(0);
-                n.push_back(new ObjString(type->GetName()));
+                n.push_back(type->GetName());
                 break;
             default:
                 break;
@@ -492,12 +480,6 @@ bool LinkDebugFile::WriteVariableTypes()
     types.Start(dbPointer);
     types.InsertIntoFrom("types");
     types.Stop();
-    for (int i = 0; i < n.size(); i++)
-    {
-        ObjString* s = n[i];
-        if (s != &empty)
-            delete s;
-    }
     v.clear();
     for (auto it = file->TypeBegin(); it != file->TypeEnd(); ++it)
     {
@@ -709,8 +691,8 @@ class context
 bool LinkDebugFile::WriteAutosTable()
 {
     std::vector<sqlite3_int64> v;
-    std::deque<context*> contexts;
-    context* currentContext = nullptr;
+    std::deque<std::unique_ptr<context>> contexts;
+    std::unique_ptr<context> currentContext;
     int funcId = 0;
     for (auto it = file->SectionBegin(); it != file->SectionEnd(); ++it)
     {
@@ -768,8 +750,8 @@ bool LinkDebugFile::WriteAutosTable()
                             // fallthrough
                         case ObjDebugTag::eBlockStart:
 
-                            contexts.push_back(currentContext);
-                            currentContext = new context;
+                            contexts.push_back(std::move(currentContext));
+                            currentContext = std::make_unique<context>();
                             currentContext->startLine = currentContext->currentLine = currentLine;
                             break;
                         case ObjDebugTag::eVirtualFunctionEnd:
@@ -792,8 +774,7 @@ bool LinkDebugFile::WriteAutosTable()
                                 v.push_back(startLine);
                                 v.push_back(end);
                             }
-                            delete currentContext;
-                            currentContext = contexts.back();
+                            currentContext.reset(contexts.back().release());
                             contexts.pop_back();
                             break;
                         }

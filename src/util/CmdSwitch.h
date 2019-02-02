@@ -229,7 +229,7 @@ class CmdSwitchFile : public CmdSwitchString
 
     virtual int Parse(const char* data);
     int GetCount() const { return argc; }
-    char** const GetValue() { return argv; }
+    char** const GetValue() { return argv.get(); }
 
   protected:
     void Dispatch(char* data);
@@ -237,7 +237,7 @@ class CmdSwitchFile : public CmdSwitchString
 
   private:
     int argc;
-    char** argv;
+    std::unique_ptr<char*[]> argv;
     CmdSwitchParser* Parser;
 };
 class CmdSwitchParser

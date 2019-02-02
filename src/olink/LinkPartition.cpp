@@ -142,8 +142,8 @@ bool LinkPartition::ParseAssignment(LinkTokenizer& spec)
 }
 bool LinkPartition::CreateSeparateRegions(LinkManager* manager, CmdFiles& files, LinkTokenizer& spec)
 {
-    LinkOverlay* newOverlay = new LinkOverlay(this);
-    LinkRegion* newRegion = new LinkRegion(newOverlay);
+    std::unique_ptr<LinkOverlay> newOverlay = std::make_unique<LinkOverlay>(this);
+    std::unique_ptr<LinkRegion> newRegion = std::make_unique<LinkRegion>(newOverlay.get());
     if (!newRegion->ParseRegionSpec(manager, files, spec))
         return false;
     if (!spec.MustMatch(LinkTokenizer::eSemi))
@@ -190,8 +190,6 @@ bool LinkPartition::CreateSeparateRegions(LinkManager* manager, CmdFiles& files,
             region->AddNormalData(sect.file, sect.section);
         }
     }
-    delete newRegion;
-    delete newOverlay;
     return true;
 }
 bool LinkPartition::ParseOverlays(LinkManager* manager, CmdFiles& files, LinkTokenizer& spec)

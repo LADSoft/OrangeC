@@ -216,10 +216,9 @@ int GrepMain::OneFile(RegExpContext& regexp, const std::string fileName, std::is
 {
     openCount++;
     // couldn't do this as a straight definition as MSVC decided to treat it as a func
-    std::string* str = new std::string(std::istreambuf_iterator<char>(fil), std::istreambuf_iterator<char>());
+    std::unique_ptr<std::string> str = std::make_unique<std::string>(std::istreambuf_iterator<char>(fil), std::istreambuf_iterator<char>());
     str->erase(std::remove(str->begin(), str->end(), '\r'), str->end());
     std::string bufs = " " + *str;
-    delete str;
     bufs[0] = 0;
     int matchCount = 0;
     int lineno = 0;

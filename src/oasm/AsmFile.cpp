@@ -408,26 +408,24 @@ void AsmFile::EquDirective()
         throw new std::runtime_error("Label needed");
     int lineno = preProcessor.GetMainLineNo();
     NextToken();
-    AsmExprNode* num = GetNumber();
+    std::unique_ptr<AsmExprNode> num(GetNumber());
     int n = 0;
     if (inAbsolute)
         n = absoluteValue;
     else if (currentSection)
         n = currentSection->GetPC();
-    num = AsmExpr::ConvertToBased(num, n);
+    num.reset(AsmExpr::ConvertToBased(num.get(), n));
     if (num->IsAbsolute())
     {
-        AsmExprNode* num1 = AsmExpr::Eval(num, n);
-        delete num;
-        num = num1;
+        num.reset(AsmExpr::Eval(num.get(), n));
     }
-    thisLabel->SetOffset(num);
+    thisLabel->SetOffset(num.get());
     thisLabel->SetSect(-1);
     if (lineno >= 0)
         listing.Add(thisLabel, lineno, preProcessor.InMacro());
     if (!inAbsolute)
         currentSection->pop_back();
-    AsmExpr::SetEqu(thisLabel->GetName(), num);
+    AsmExpr::SetEqu(thisLabel->GetName(), num.release());
 }
 void AsmFile::Directive()
 {
@@ -658,11 +656,10 @@ void AsmFile::IncbinDirective()
     else if (len - start < size)
         throw new std::runtime_error("Not enough data.");
     in.seekg(start, std::ios::beg);
-    unsigned char* data = new unsigned char[size];
-    in.read((char*)data, size);
-    Instruction* ins = new Instruction(data, size);
+    std::unique_ptr<unsigned char[]> data = std::make_unique<unsigned char[]>(size);
+    in.read((char*)data.get(), size);
+    Instruction* ins = new Instruction(data.get(), size);
     currentSection->InsertInstruction(ins);
-    delete[] data;
 }
 void AsmFile::PublicDirective()
 {
@@ -938,7 +935,7 @@ bool AsmFile::IsNumber()
 }
 unsigned AsmFile::GetValue()
 {
-    AsmExprNode* num = GetNumber();
+    std::unique_ptr<AsmExprNode> num(GetNumber());
     if (!inAbsolute && !num->IsAbsolute())
         throw new std::runtime_error("Constant value expected");
     int n = 0;
@@ -946,13 +943,10 @@ unsigned AsmFile::GetValue()
         n = absoluteValue;
     else if (currentSection)
         n = currentSection->GetPC();
-    AsmExprNode* num1 = AsmExpr::Eval(num, n);
+    std::unique_ptr<AsmExprNode> num1(AsmExpr::Eval(num.get(), n));
     if (num1->GetType() != AsmExprNode::IVAL)
         throw new std::runtime_error("Integer constant expected");
-    int rv = num1->ival;
-    delete num;
-    delete num1;
-    return rv;
+    return num1->ival;
 }
 AsmExprNode* AsmFile::GetNumber()
 {

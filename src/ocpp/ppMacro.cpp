@@ -93,14 +93,14 @@ bool ppMacro::HandleRep(std::string& line)
     define.Process(line);
     PPINT n = expr.Eval(line);
     int level = 1;
-    MacroData* p = nullptr;
+    std::unique_ptr<MacroData> p;
     if (n < 0 || n > INT_MAX)
     {
         Errors::Error("Invalid range in %rep expression");
     }
     else if (n > 0)
     {
-        p = new MacroData;
+        p = std::make_unique<MacroData>();
         p->repsLeft = (int)n;
         p->offset = 0;
         p->id = -1;
@@ -133,18 +133,9 @@ bool ppMacro::HandleRep(std::string& line)
         }
     }
     include.SetInProc("");
-    if (level != 0)
+    if (level == 0 && p)
     {
-        delete p;
-    }
-    else
-    {
-        if (p)
-        {
-            include.Mark();
-            std::unique_ptr<MacroData> m(p);
-            stack.push_back(std::move(m));
-        }
+        stack.push_back(std::move(p));
     }
     return true;
 }

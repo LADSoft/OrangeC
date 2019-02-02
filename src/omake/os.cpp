@@ -378,9 +378,9 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
         n += env.name.size() + env.value.size() + 2;
     }
     n++;
-    char* env = new char[n];
-    memset(env, 0, sizeof(char) * n);  // !!!
-    char* p = env;
+    std::unique_ptr<char[]> env = std::make_unique<char[]>(n);
+    char* p = env.get();
+    memset(p, 0, sizeof(char) * n);  // !!!
     for (auto env : environment)
     {
         memcpy(p, env.name.c_str(), env.name.size());
@@ -411,7 +411,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
     }
 
     // try as an app first
-    if (asapp && CreateProcess(nullptr, (char*)command1.c_str(), nullptr, nullptr, true, 0, env, nullptr, &startup, &pi))
+    if (asapp && CreateProcess(nullptr, (char*)command1.c_str(), nullptr, nullptr, true, 0, env.get(), nullptr, &startup, &pi))
     {
         WaitForSingleObject(pi.hProcess, INFINITE);
         if (output)
@@ -420,13 +420,12 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
             PeekNamedPipe(pipeRead, nullptr, 0, nullptr, &avail, nullptr);
             if (avail > 0)
             {
-                char* buffer = new char[avail + 1];
+                std::unique_ptr<char[]> buffer = std::make_unique<char[]>(avail + 1);
                 DWORD readlen = 0;
 
-                ReadFile(pipeRead, buffer, avail, &readlen, nullptr);
+                ReadFile(pipeRead, buffer.get(), avail, &readlen, nullptr);
                 buffer[readlen] = 0;
-                *output = buffer;
-                delete[] buffer;
+                *output = buffer.get();
             }
         }
         DWORD x;
@@ -438,7 +437,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
     else
     {
         // not found, try running a shell to handle it...
-        if (CreateProcess(nullptr, (char*)cmd.c_str(), nullptr, nullptr, true, 0, env, nullptr, &startup, &pi))
+        if (CreateProcess(nullptr, (char*)cmd.c_str(), nullptr, nullptr, true, 0, env.get(), nullptr, &startup, &pi))
         {
             WaitForSingleObject(pi.hProcess, INFINITE);
             if (output)
@@ -447,13 +446,12 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
                 PeekNamedPipe(pipeRead, nullptr, 0, nullptr, &avail, nullptr);
                 if (avail > 0)
                 {
-                    char* buffer = new char[avail + 1];
+                    std::unique_ptr<char[]> buffer = std::make_unique<char[]>(avail + 1);
                     DWORD readlen = 0;
 
-                    ReadFile(pipeRead, buffer, avail, &readlen, nullptr);
+                    ReadFile(pipeRead, buffer.get(), avail, &readlen, nullptr);
                     buffer[readlen] = 0;
-                    *output = buffer;
-                    delete[] buffer;
+                    *output = buffer.get();
                 }
             }
             DWORD x;
@@ -472,7 +470,6 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
         CloseHandle(pipeRead);
         CloseHandle(pipeWriteDuplicate);
     }
-    delete[] env;
 #    ifdef DEBUG
     std::cout << rv << ":" << cmd << std::endl;
 #    endif
@@ -515,12 +512,11 @@ std::string OS::SpawnWithRedirect(const std::string command)
         PeekNamedPipe(pipeRead, nullptr, 0, nullptr, &avail, nullptr);
         if (avail > 0)
         {
-            char* buffer = new char[avail + 1];
+            std::unique_ptr<char[]> buffer = std::make_unique<char[]>(avail + 1);
             DWORD readlen = 0;
-            ReadFile(pipeRead, buffer, avail, &readlen, nullptr);
+            ReadFile(pipeRead, buffer.get(), avail, &readlen, nullptr);
             buffer[readlen] = 0;
-            rv = buffer;
-            delete[] buffer;
+            rv = buffer.get();
         }
         CloseHandle(pi.hProcess);
         CloseHandle(pi.hThread);

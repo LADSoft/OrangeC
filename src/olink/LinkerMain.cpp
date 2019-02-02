@@ -160,11 +160,10 @@ std::string LinkerMain::SpecFileContents(const std::string& specFile)
             fil.seekg(0, std::ios::end);
             size_t n = fil.tellg();
             fil.seekg(0);
-            char* data = new char[n + 1];
-            fil.read(data, n);
+            std::unique_ptr<char[]> data = std::make_unique<char[]>(n + 1);
+            fil.read(data.get(), n);
             data[fil.gcount()] = '\0';
-            rv = data;
-            delete[] data;
+            rv = data.get();
         }
         else
         {

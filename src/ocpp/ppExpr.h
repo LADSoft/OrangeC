@@ -92,7 +92,7 @@ class ppExpr
     static void InitHash();
     bool unsignedchar;
     ppDefine* define;
-    Tokenizer* tokenizer;
+    std::unique_ptr<Tokenizer> tokenizer;
     const Token* token;
     static KeywordHash hash;
     static bool initted;

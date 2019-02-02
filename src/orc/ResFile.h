@@ -35,7 +35,7 @@
 class ResFile
 {
   public:
-    ResFile() : stream(nullptr) {}
+    ResFile() {}
     virtual ~ResFile();
     void Mark();
     void MarkHeader();
@@ -49,8 +49,8 @@ class ResFile
     bool Write(const std::string& name);
     void Reset();
     void Add(Resource* th);
-    size_t GetPos() const { return stream->tellp(); }
-    void SetPos(size_t n) { stream->seekp(n); }
+    size_t GetPos() { return stream.tellp(); }
+    void SetPos(size_t n) { stream.seekp(n); }
 
   private:
     std::deque<std::unique_ptr<Resource>> resources;
@@ -67,6 +67,6 @@ class ResFile
     int hdrSize;
     int size;
     int base;
-    std::fstream* stream;
+    std::fstream stream;
 };
 #endif

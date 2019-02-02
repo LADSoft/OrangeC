@@ -83,16 +83,14 @@ bool dlMzMain::ReadSections(const std::string& path)
     FILE* in = fopen(path.c_str(), "rb");
     if (!in)
         Utils::fatal("Cannot open input file");
-    file = ieee.Read(in, ObjIeee::eAll, &factory);
+    file.reset(ieee.Read(in, ObjIeee::eAll, &factory));
     fclose(in);
     if (!ieee.GetAbsolute())
     {
-        delete file;
         Utils::fatal("Input file is in relative format");
     }
     if (ieee.GetStartAddress() == nullptr)
     {
-        delete file;
         Utils::fatal("No start address specified");
     }
     if (file != nullptr)
@@ -101,7 +99,7 @@ bool dlMzMain::ReadSections(const std::string& path)
             data = std::make_unique<Tiny>();
         else
             data = std::make_unique<Real>();
-        return data->ReadSections(file, ieee.GetStartAddress());
+        return data->ReadSections(file.get(), ieee.GetStartAddress());
     }
     return false;
 }

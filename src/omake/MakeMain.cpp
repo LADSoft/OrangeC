@@ -105,7 +105,7 @@ void MakeMain::Dispatch(const char* data)
 {
     int max = 10;
     argcx = 1;
-    argvx = new char*[max + 1];
+    argvx = std::make_unique<char*[]>(max + 1);
     argvx[0] = (char *)"";
     while (*data)
     {
@@ -113,15 +113,14 @@ void MakeMain::Dispatch(const char* data)
         if (argcx == max)
         {
             max += 10;
-            char** p = new char*[max + 1];
-            memcpy(p, argvx, argcx * sizeof(char*));
-            delete[] argvx;
-            argvx = p;
+            std::unique_ptr<char*[]> p(argvx.release());
+            argvx = std::make_unique<char*[]>(max + 1);
+            memcpy(argvx.get(), p.get(), argcx * sizeof(char*));
         }
     }
     argvx[argcx] = 0;
-    switchParser.Parse(&argcx, argvx);
-    delete[] argvx;
+    switchParser.Parse(&argcx, argvx.get());
+    argvx.release();
 }
 const char* MakeMain::GetStr(const char* data)
 {

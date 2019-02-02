@@ -31,31 +31,17 @@
 
 void ObjMemory::SetData(ObjByte* Data, ObjInt Size)
 {
-    if (data)
-        delete[] data;
-    data = new ObjByte[Size];
-    if (data != nullptr)
-    {
-        memcpy(data, Data, Size);
-        size = Size;
-    }
-    else
-    {
-        size = 0;
-    }
-    if (fixup)
-    {
-        delete fixup;
-        fixup = nullptr;
-    }
+    data = std::make_unique<ObjByte[]>(Size);
+    memcpy(data.get(), Data, Size);
+    size = Size;
+    fixup = nullptr;
 }
 void ObjMemory::SetData(ObjExpression* Data, ObjInt Size)
 {
-    fixup = Data;
+    fixup.reset(Data);
     size = Size;
     if (data)
     {
-        delete data;
         data = nullptr;
     }
 }

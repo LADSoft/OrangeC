@@ -191,7 +191,7 @@ void BRCLoader::EndBlock(int line)
 {
     if (!blocks.empty())
     {
-        BlockData* b = blocks.back();
+        std::unique_ptr<BlockData> b(blocks.back());
         blocks.pop_back();
 
         b->end = line;
@@ -199,7 +199,6 @@ void BRCLoader::EndBlock(int line)
         {
             InsertSymData(sym.first, sym.second);
         }
-        delete b;
     }
 }
 void BRCLoader::ParseData(ObjFile& f)

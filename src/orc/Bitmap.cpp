@@ -52,12 +52,11 @@ void Bitmap::ReadRC(RCFile& rcFile)
 {
     resInfo.SetFlags((resInfo.GetFlags() & ~ResourceInfo::Discardable) | ResourceInfo::Pure);
     resInfo.ReadRC(rcFile, false);
-    ResourceData* rd = new ResourceData;
+    std::unique_ptr<ResourceData> rd = std::make_unique<ResourceData>();
     rd->ReadRC(rcFile);
 #ifndef HAVE_UNISTD_H
     if (rd->GetLen() <= sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER))
     {
-        delete rd;
         throw new std::runtime_error("invalid bitmap file");
     }
     else
@@ -68,7 +67,6 @@ void Bitmap::ReadRC(RCFile& rcFile)
             f->bfOffBits < sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) || f->bfOffBits >= rd->GetLen() ||
             p->biSize != sizeof(BITMAPINFOHEADER))
         {
-            delete rd;
             throw new std::runtime_error("invalid bitmap file");
         }
         // borland sets the size explicitly for RGB images that don't have a size
@@ -80,7 +78,6 @@ void Bitmap::ReadRC(RCFile& rcFile)
             p->biSizeImage = n;
         }
         data = std::make_unique<ResourceData>((unsigned char*)p, rd->GetLen() - sizeof(BITMAPFILEHEADER));
-        delete rd;
     }
 #endif
     rcFile.NeedEol();

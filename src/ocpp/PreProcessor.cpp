@@ -88,28 +88,20 @@ void PreProcessor::InitHash()
 }
 bool PreProcessor::GetPreLine(std::string& line)
 {
-    if (preData)
+    if (!preData.empty())
     {
-        if (!preData->empty())
+        int npos = preData.find_first_of("\n");
+        if (npos == std::string::npos)
         {
-            int npos = preData->find_first_of("\n");
-            if (npos == std::string::npos)
-            {
-                line = *preData;
-                preData->erase(0, preData->size());
-            }
-            else
-            {
-                line = preData->substr(0, npos);
-                preData->erase(0, npos + 1);
-            }
-            return true;
+            line = preData;
+            preData = "";
         }
         else
         {
-            delete preData;
-            preData = nullptr;
+            line = preData.substr(0, npos);
+            preData.erase(0, npos + 1);
         }
+        return true;
     }
     if (ppStart == '%' && macro.GetLine(line, lineno))
     {

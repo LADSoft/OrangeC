@@ -319,12 +319,13 @@ Resource* RCFile::GetRes()
                 rv = new MessageTable(id, info);
                 break;
             case Lexer::STRINGTABLE:
-                rv = new StringTable(info);
-                rv->ReadRC(*this);
-                delete rv;
+            {
+                std::unique_ptr<StringTable> temp = std::make_unique<StringTable>(info);
+                temp->ReadRC(*this);
                 rv = nullptr;
                 done = false;
-                break;
+            }
+            break;
             case Lexer::LANGUAGE:
             {
                 language = GetNumber();

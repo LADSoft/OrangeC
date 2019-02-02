@@ -159,7 +159,7 @@ class AsmExpr
   private:
     static void InitHash();
     ppDefine* define;
-    Tokenizer* tokenizer;
+    std::unique_ptr<Tokenizer> tokenizer;
     const Token* token;
     static KeywordHash hash;
     static bool initted;

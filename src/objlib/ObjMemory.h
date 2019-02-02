@@ -38,7 +38,7 @@ class ObjFactory;
 class ObjMemory : public ObjWrapper
 {
   public:
-    ObjMemory(ObjByte* Data, ObjInt Size) : fixup(nullptr), data(nullptr), fill(0), enumerated(false), debugTags(nullptr)
+    ObjMemory(ObjByte* Data, ObjInt Size) : fixup(nullptr), fill(0), enumerated(false), debugTags(nullptr)
     {
         SetData(Data, Size);
     }
@@ -65,9 +65,9 @@ class ObjMemory : public ObjWrapper
     ObjInt GetSize() { return size; }
     ObjByte GetFill() { return fill; }
     bool IsEnumerated() { return enumerated; }
-    ObjByte* GetData() { return data; }
-    ObjExpression* GetFixup() { return fixup; }
-    void SetFixup(ObjExpression* f) { fixup = f; }
+    ObjByte* GetData() { return data.get(); }
+    ObjExpression* GetFixup() { return fixup.get(); }
+    void SetFixup(ObjExpression* f) { fixup.reset(f); }
     void SetData(ObjByte* Data, ObjInt Size);
     void SetData(ObjExpression* Data, ObjInt Size);
     bool HasDebugTags() { return debugTags != nullptr; }
@@ -95,9 +95,9 @@ class ObjMemory : public ObjWrapper
 
   private:
     ObjInt size;
-    ObjByte* data;
+    std::unique_ptr<ObjByte[]> data;
     ObjByte fill;
-    ObjExpression* fixup;
+    std::unique_ptr<ObjExpression> fixup;
     bool enumerated;
     std::unique_ptr<DebugTagContainer> debugTags;
 };

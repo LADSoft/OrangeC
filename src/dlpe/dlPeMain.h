@@ -86,7 +86,7 @@ class dlPeMain
     ObjInt heapSize;
     ObjInt stackCommit;
     ObjInt stackSize;
-    ObjFile* file;
+    std::unique_ptr<ObjFile> file;
     std::string outputName;
     std::deque<std::unique_ptr<PEObject>> objects;
     ResourceContainer resources;

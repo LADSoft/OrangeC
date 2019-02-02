@@ -168,16 +168,6 @@ char xmlAttrib::ReadTextChar(std::fstream& stream)
     }
     return 0;
 }
-void xmlNode::InsertAttrib(xmlAttrib* attrib) 
-{ 
-    std::unique_ptr<xmlAttrib> temp(attrib);
-    attribs.push_back(std::move(temp)); 
-}
-void xmlNode::InsertChild(xmlNode* child) 
-{ 
-    std::unique_ptr<xmlNode> temp(child);
-    children.push_back(std::move(temp)); 
-}
 
 xmlNode::~xmlNode() {}
 bool xmlNode::Read(std::fstream& stream, char v)
@@ -233,12 +223,11 @@ bool xmlNode::Read(std::fstream& stream, char v)
         if (isalpha(t) || t == '_')
         {
             stream.putback(t);
-            xmlAttrib* attrib = new xmlAttrib();
+            auto attrib = std::make_unique<xmlAttrib>();
             // if (!attrib)
             //    return false;
             if (!attrib->Read(stream))
             {
-                delete attrib;
                 return false;
             }
             InsertAttrib(attrib);
@@ -339,12 +328,11 @@ bool xmlNode::Read(std::fstream& stream, char v)
                 }
                 else
                 {
-                    xmlNode* node = new xmlNode();
+                    auto node = std::make_unique<xmlNode>();
                     // if (!node)
                     //    return false;
                     if (!node->Read(stream, t))
                     {
-                        delete node;
                         return false;
                     }
                     InsertChild(node);

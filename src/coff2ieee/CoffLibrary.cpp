@@ -72,11 +72,11 @@ bool CoffLibrary::LoadNames()
     {
         firstHeader.EndOfHeader[0] = 0;
         int size = atoi(firstHeader.Size);
-        ObjByte* firstMemberData = new ObjByte[size];
-        inputFile->read((char*)firstMemberData, size);
+        std::unique_ptr<ObjByte[]> firstMemberData = std::make_unique<ObjByte[]>(size);
+        inputFile->read((char*)firstMemberData.get(), size);
         if (!inputFile->fail())
         {
-            CoffLinkerSectionOneHeader* hdr = (CoffLinkerSectionOneHeader*)firstMemberData;
+            CoffLinkerSectionOneHeader* hdr = (CoffLinkerSectionOneHeader*)firstMemberData.get();
             int n = swap(hdr->NumberOfSymbols);
             char* strings = (char*)&hdr->OffsetArray[n];
             for (int i = 0; i < n; i++, strings += strlen(strings) + 1)
@@ -99,7 +99,6 @@ bool CoffLibrary::LoadNames()
                 m->aliases.insert(strings);
             }
         }
-        delete[] firstMemberData;
         return !inputFile->fail();
     }
     std::cout << "Invalid first linker member" << std::endl;

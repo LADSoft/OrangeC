@@ -175,13 +175,12 @@ int CmdSwitchFile::Parse(const char* data)
         in.seekg(0, std::ios::end);
         size_t size = in.tellg();
         in.seekg(0, std::ios::beg);
-        char* data1 = new char[size + 1];
-        memset(data1, 0, size + 1);
-        in.read(data1, size);
+        std::unique_ptr<char[]> data1 = std::make_unique<char[]>(size + 1);
+        memset(data1.get(), 0, size + 1);
+        in.read(data1.get(), size);
         data1[size] = 0;
         in.close();
-        Dispatch(data1);
-        delete[] data1;
+        Dispatch(data1.get());
         return n;
     }
     return -1;
@@ -190,7 +189,7 @@ void CmdSwitchFile::Dispatch(char* data)
 {
     int max = 10;
     argc = 1;
-    argv = new char*[max];
+    argv = std::make_unique<char*[]>(max);
     argv[0] = (char *)"";
     while (*data)
     {
@@ -198,14 +197,13 @@ void CmdSwitchFile::Dispatch(char* data)
         if (argc == max)
         {
             max += 10;
-            char** p = new char*[max + 1];
-            memcpy(p, argv, argc * sizeof(char*));
-            delete[] argv;
-            argv = p;
+            std::unique_ptr<char*[]>p = std::move(argv);
+            argv = std::make_unique<char*[]>(max);
+            memcpy(argv.get(), p.get(), argc * sizeof(char*));
         }
     }
     argv[argc] = 0;
-    Parser->Parse(&argc, argv);
+    Parser->Parse(&argc, argv.get());
 }
 char* CmdSwitchFile::GetStr(char* data)
 {

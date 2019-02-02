@@ -56,7 +56,7 @@ class dlMzMain
     static CmdSwitchString modeSwitch;
     static CmdSwitchString DebugFile;
     static const char* usageText;
-    ObjFile* file;
+    std::unique_ptr<ObjFile> file;
     std::unique_ptr<OutFile> data;
 };
 #endif

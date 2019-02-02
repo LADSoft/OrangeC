@@ -163,6 +163,7 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\olib\FileDescriptor.cpp" />
     <ClCompile Include="..\olib\LibDictionaryLibrarian.cpp" />
     <ClCompile Include="..\olib\LibDictionaryLinker.cpp" />
     <ClCompile Include="..\olib\LibFilesLibrarian.cpp" />

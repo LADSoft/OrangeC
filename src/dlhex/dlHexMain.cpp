@@ -187,18 +187,17 @@ bool dlHexMain::ReadSections(const std::string& path)
     FILE* in = fopen(path.c_str(), "rb");
     if (!in)
         Utils::fatal("Cannot open input file");
-    ObjFile* file = ieee.Read(in, ObjIeee::eAll, &factory);
+    std::unique_ptr<ObjFile> file(ieee.Read(in, ObjIeee::eAll, &factory));
     fclose(in);
     if (!ieee.GetAbsolute())
     {
-        delete file;
         Utils::fatal("Input file is in relative format");
     }
     if (file != nullptr)
     {
         std::vector<std::string> names;
-        GetSectionNames(names, file);
-        GetInputSections(names, file, &factory);
+        GetSectionNames(names, file.get());
+        GetInputSections(names, file.get(), &factory);
         return true;
     }
     return false;

@@ -266,11 +266,7 @@ ObjFile* ObjIeeeAscii::HandleRead(eParseType ParseType)
     bool done = false;
     ioBufferLen = 0;
     ioBufferPos = 0;
-    ioBuffer = new char[BUFFERSIZE];
-    if (!ioBuffer)
-    {
-        return nullptr;
-    }
+    ioBuffer = std::make_unique<char[]>(BUFFERSIZE);
     ResetCS();
     file = nullptr;
     currentTags = std::make_unique<ObjMemory::DebugTagContainer>();
@@ -296,15 +292,11 @@ ObjFile* ObjIeeeAscii::HandleRead(eParseType ParseType)
         }
         catch (BadCS& e)
         {
-            if (ioBuffer)
-                delete[] ioBuffer;
             ioBuffer = nullptr;
             return nullptr;
         }
         catch (SyntaxError& e)
         {
-            if (ioBuffer)
-                delete[] ioBuffer;
             ioBuffer = nullptr;
             return nullptr;
         }
@@ -343,8 +335,6 @@ ObjFile* ObjIeeeAscii::HandleRead(eParseType ParseType)
     files.clear();
     factory->GetIndexManager()->LoadIndexes(file);
     currentTags.release();
-    if (ioBuffer)
-        delete[] ioBuffer;
     ioBuffer = nullptr;
     return file;
 }

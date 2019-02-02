@@ -242,28 +242,26 @@ bool dlPeMain::ReadSections(const std::string& path)
     FILE* in = fopen(path.c_str(), "rb");
     if (!in)
         Utils::fatal("Cannot open input file");
-    file = ieee.Read(in, ObjIeee::eAll, factory.get());
+    file.reset(ieee.Read(in, ObjIeee::eAll, factory.get()));
     fclose(in);
     if (!ieee.GetAbsolute())
     {
-        delete file;
         Utils::fatal("Input file is in relative format");
     }
     if (ieee.GetStartAddress() == nullptr)
     {
-        delete file;
         Utils::fatal("No start address specified");
     }
     startAddress = ieee.GetStartAddress()->Eval(0);
     if (file != nullptr)
     {
         ReadValues();
-        if (LoadImports(file))
+        if (LoadImports(file.get()))
         {
-            PEObject::SetFile(file);
+            PEObject::SetFile(file.get());
             for (auto it = file->SectionBegin(); it != file->SectionEnd(); ++it)
             {
-                objects.push_back(std::make_unique<PEDataObject>(file, *it));
+                objects.push_back(std::make_unique<PEDataObject>(file.get(), *it));
                 (*it)->ResolveSymbols(factory.get());
             }
             if (file->ImportBegin() != file->ImportEnd())
@@ -282,7 +280,6 @@ bool dlPeMain::ReadSections(const std::string& path)
         }
         else
         {
-            delete file;
             Utils::fatal("Input file internal error in import list");
         }
     }
@@ -407,45 +404,30 @@ bool dlPeMain::LoadStub(const std::string& exeName)
     if (val.empty())
         val = "dfstb32.exe";
     // look in current directory
-    std::fstream* file = new std::fstream(val, std::ios::in | std::ios::binary);
-    if (!file || !file->is_open())
+    std::fstream file(val, std::ios::in | std::ios::binary);
+    if ( !file.is_open())
     {
-        if (file)
-        {
-            delete file;
-            file = nullptr;
-        }
         // look in lib directory if not there
         int npos = exeName.find_last_of(CmdFiles::DIR_SEP);
         if (npos != std::string::npos)
         {
             std::string val1 = exeName.substr(0, npos + 1) + "..\\lib\\" + val;
-            file = new std::fstream(val1, std::ios::in | std::ios::binary);
+            file.open(val1, std::ios::in | std::ios::binary);
         }
         // look in bin directory if not there
-        if (!file || !file->is_open())
+        if (!file.is_open())
         {
-            if (file)
-            {
-                delete file;
-                file = nullptr;
-            }
             // look in lib directory if not there
             int npos = exeName.find_last_of(CmdFiles::DIR_SEP);
             if (npos != std::string::npos)
             {
                 std::string val1 = exeName.substr(0, npos + 1) + "..\\bin\\" + val;
-                file = new std::fstream(val1, std::ios::in | std::ios::binary);
+                file.open(val1, std::ios::in | std::ios::binary);
             }
         }
     }
-    if (!file || !file->is_open())
+    if (!file.is_open())
     {
-        if (file)
-        {
-            delete file;
-            file = nullptr;
-        }
         if (stubSwitch.GetValue().empty())
         {
             stubData = std::make_unique<char[]>(defaultStubSize);
@@ -460,7 +442,7 @@ bool dlPeMain::LoadStub(const std::string& exeName)
     else
     {
         MZHeader mzHead;
-        file->read((char*)&mzHead, sizeof(mzHead));
+        file.read((char*)&mzHead, sizeof(mzHead));
         int bodySize = mzHead.image_length_MOD_512 + mzHead.image_length_DIV_512 * 512;
         int oldReloc = mzHead.offset_to_relocation_table;
         int oldHeader = mzHead.n_header_paragraphs * 16;
@@ -484,17 +466,15 @@ bool dlPeMain::LoadStub(const std::string& exeName)
         *(unsigned*)(stubData.get() + 0x3c) = stubSize;
         if (relocSize)
         {
-            file->seekg(oldReloc, std::ios::beg);
-            file->read(stubData.get() + 0x40, relocSize);
+            file.seekg(oldReloc, std::ios::beg);
+            file.read(stubData.get() + 0x40, relocSize);
         }
-        file->seekg(oldHeader, std::ios::beg);
-        file->read(stubData.get() + totalHeader, bodySize);
-        if (!file->eof() && file->fail())
+        file.seekg(oldHeader, std::ios::beg);
+        file.read(stubData.get() + totalHeader, bodySize);
+        if (!file.eof() && file.fail())
         {
-            delete file;
             return false;
         }
-        delete file;
     }
     return true;
 }

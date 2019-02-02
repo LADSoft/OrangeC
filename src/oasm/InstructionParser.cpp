@@ -140,22 +140,14 @@ Instruction* InstructionParser::Parse(const std::string args, int PC)
     std::string errName = Errors::GetFileName();
     line = args;
     std::string op;
-    for (auto val : CleanupValues)
-    {
-        delete[] val;
-    }
-    for (auto val : operands)
-    {
-        delete val;
-    }
-    for (int i = 0; i < inputTokens.size(); ++i)
-    {
-        InputToken* t = inputTokens[i];
-        delete t;
-    }
     inputTokens.clear();
-    // can't use clear in openwatcom, it is buggy
 
+    for (auto i : inputTokens)
+        delete i;
+    for (auto c : CleanupValues)
+        delete c;
+    for (auto o : operands)
+        delete o;
     CleanupValues.clear();
     operands.clear();
     prefixes.clear();
@@ -234,7 +226,7 @@ Instruction* InstructionParser::Parse(const std::string args, int PC)
                         throw new std::runtime_error("Extra characters at end of line");
                     s = new Instruction(buf, (bits.GetBits() + 7) / 8);
                     //			std::cout << bits.GetBits() << std::endl;
-                    for (auto operand : operands)
+                    for (auto& operand : operands)
                     {
                         if (operand->used && operand->size)
                         {
@@ -312,20 +304,18 @@ AsmExprNode* InstructionParser::ExtractReg(AsmExprNode** val)
             if ((*val)->GetLeft()->GetType() == AsmExprNode::REG)
             {
                 rv = (*val)->GetLeft();
-                AsmExprNode* todel = (*val);
+                std::unique_ptr<AsmExprNode> todel(*val);
                 *val = (*val)->GetRight();
                 todel->SetLeft(nullptr);
                 todel->SetRight(nullptr);
-                delete todel;
             }
             else if ((*val)->GetRight()->GetType() == AsmExprNode::REG)
             {
                 rv = (*val)->GetRight();
-                AsmExprNode* todel = (*val);
+                std::unique_ptr<AsmExprNode> todel(*val);
                 *val = (*val)->GetLeft();
                 todel->SetLeft(nullptr);
                 todel->SetRight(nullptr);
-                delete todel;
             }
             else
             {
@@ -395,20 +385,18 @@ AsmExprNode* InstructionParser::ExtractTimes(AsmExprNode** val)
             if (MatchesTimes((*val)->GetLeft()))
             {
                 rv = (*val)->GetLeft();
-                AsmExprNode* todel = (*val);
+                std::unique_ptr<AsmExprNode> todel(*val);
                 *val = (*val)->GetRight();
                 todel->SetLeft(nullptr);
                 todel->SetRight(nullptr);
-                delete todel;
             }
             else if (MatchesTimes((*val)->GetRight()))
             {
                 rv = (*val)->GetRight();
-                AsmExprNode* todel = (*val);
+                std::unique_ptr<AsmExprNode> todel(*val);
                 *val = (*val)->GetLeft();
                 todel->SetLeft(nullptr);
                 todel->SetRight(nullptr);
-                delete todel;
             }
             else
             {
@@ -486,21 +474,21 @@ void InstructionParser::ParseNumeric(int PC)
         InputToken* next;
         if (it != tokenTable.end())
         {
-            next = new InputToken;
+            inputTokens.push_back(new InputToken);
+            next = inputTokens.back();
             next->type = InputToken::TOKEN;
             next->val = val;
             val->SetType(AsmExprNode::IVAL);
             val->ival = it->second;
-            inputTokens.push_back(next);
         }
         else
         {
             if (val->IsAbsolute())
                 val = AsmExpr::Eval(val, PC);
-            next = new InputToken;
+            inputTokens.push_back(new InputToken);
+            next = inputTokens.back();
             next->type = InputToken::NUMBER;
             next->val = val;
-            inputTokens.push_back(next);
         }
     }
     else
@@ -511,24 +499,24 @@ void InstructionParser::ParseNumeric(int PC)
         if (cur)
         {
             found = true;
-            next = new InputToken;
+            inputTokens.push_back(new InputToken);
+            next = inputTokens.back();
             next->type = InputToken::REGISTER;
             next->val = cur;
             cur->SetType(AsmExprNode::IVAL);
-            inputTokens.push_back(next);
             if (plus != -1)
             {
                 while (val && (cur = ExtractReg(&val)))
                 {
-                    next = new InputToken;
+                    inputTokens.push_back(new InputToken);
+                    next = inputTokens.back();
                     next->type = InputToken::TOKEN;
                     next->val = new AsmExprNode(plus);
-                    inputTokens.push_back(next);
-                    next = new InputToken;
+                    inputTokens.push_back(new InputToken);
+                    next = inputTokens.back();
                     next->type = InputToken::REGISTER;
                     next->val = cur;
                     cur->SetType(AsmExprNode::IVAL);
-                    inputTokens.push_back(next);
                 }
             }
         }
@@ -538,10 +526,10 @@ void InstructionParser::ParseNumeric(int PC)
             {
                 if (found)
                 {
-                    next = new InputToken;
+                    inputTokens.push_back(new InputToken);
+                    next = inputTokens.back();
                     next->type = InputToken::TOKEN;
                     next->val = new AsmExprNode(plus);
-                    inputTokens.push_back(next);
                 }
                 found = true;
                 AsmExprNode* reg;
@@ -556,19 +544,19 @@ void InstructionParser::ParseNumeric(int PC)
                     reg = cur->GetRight();
                     mul = cur->GetLeft();
                 }
-                next = new InputToken;
+                inputTokens.push_back(new InputToken);
+                next = inputTokens.back();
                 next->type = InputToken::REGISTER;
                 next->val = reg;
                 reg->SetType(AsmExprNode::IVAL);
-                inputTokens.push_back(next);
-                next = new InputToken;
+                inputTokens.push_back(new InputToken);
+                next = inputTokens.back();
                 next->type = InputToken::TOKEN;
                 next->val = new AsmExprNode(times);
-                inputTokens.push_back(next);
-                next = new InputToken;
+                inputTokens.push_back(new InputToken);
+                next = inputTokens.back();
                 next->type = InputToken::NUMBER;
                 next->val = mul;
-                inputTokens.push_back(next);
             }
         }
         if (val)
@@ -577,15 +565,15 @@ void InstructionParser::ParseNumeric(int PC)
                 val = AsmExpr::Eval(val, PC);
             if (found)
             {
-                next = new InputToken;
+                inputTokens.push_back(new InputToken);
+                next = inputTokens.back();
                 next->type = InputToken::TOKEN;
                 next->val = new AsmExprNode(plus);
-                inputTokens.push_back(next);
             }
-            next = new InputToken;
+            inputTokens.push_back(new InputToken);
+            next = inputTokens.back();
             next->type = InputToken::NUMBER;
             next->val = val;
-            inputTokens.push_back(next);
         }
     }
 }
@@ -600,10 +588,10 @@ bool InstructionParser::Tokenize(int PC)
             case -1:
                 return false;
             default:
-                next = new InputToken;
+                inputTokens.push_back(new InputToken);
+                next = inputTokens.back();
                 next->type = InputToken::TOKEN;
                 next->val = new AsmExprNode(id);
-                inputTokens.push_back(next);
                 break;
             case TK_NUMERIC:
                 ParseNumeric(PC);

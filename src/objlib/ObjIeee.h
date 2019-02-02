@@ -428,7 +428,7 @@ class ObjIeeeAscii : public ObjIOBase
     void bufferup(const char* data, int len);
     void flush()
     {
-        fwrite(ioBuffer, ioBufferLen, 1, sfile);
+        fwrite(ioBuffer.get(), ioBufferLen, 1, sfile);
         ioBufferLen = 0;
         fflush(sfile);
     }
@@ -504,7 +504,7 @@ class ObjIeeeAscii : public ObjIOBase
     FileMap files;
     ObjSection* currentDataSection;
     std::unique_ptr<ObjMemory::DebugTagContainer> currentTags;
-    char* ioBuffer;
+    std::unique_ptr<char[]> ioBuffer;
     size_t ioBufferLen;
     size_t ioBufferPos;
     int lineno;

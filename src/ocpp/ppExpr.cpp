@@ -64,7 +64,7 @@ void ppExpr::InitHash()
 }
 PPINT ppExpr::Eval(std::string& line)
 {
-    tokenizer = new Tokenizer(line, &hash);
+    tokenizer = std::make_unique<Tokenizer>(line, &hash);
     token = tokenizer->Next();
     if (!token)
         return 0;
@@ -73,7 +73,7 @@ PPINT ppExpr::Eval(std::string& line)
         line = token->GetChars() + tokenizer->GetString();
     else
         line = "";
-    delete tokenizer;
+    tokenizer.release();
     return rv;
 }
 

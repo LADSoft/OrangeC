@@ -27,6 +27,7 @@
 #include "ObjTypes.h"
 #include <deque>
 #include <cstdio>
+#include <memory>
 class ObjFile;
 class ObjFactory;
 class LibFiles
@@ -34,12 +35,12 @@ class LibFiles
   public:
     struct FileDescriptor
     {
-        FileDescriptor(const ObjString& Name) : offset(0), name(Name), data(nullptr) {}
-        FileDescriptor(const FileDescriptor& old) : name(old.name), offset(old.offset), data(nullptr) {}
-        ~FileDescriptor() {}
+        FileDescriptor(const ObjString& Name);
+        FileDescriptor(const FileDescriptor& old);
+        ~FileDescriptor();
         ObjString name;
         ObjInt offset;
-        ObjFile* data;
+        std::unique_ptr<ObjFile> data;
     };
     LibFiles(bool CaseSensitive = true) { caseSensitive = CaseSensitive; }
     virtual ~LibFiles() {}
@@ -61,7 +62,7 @@ class LibFiles
 
     ObjFile* LoadModule(FILE* stream, ObjInt FileIndex, ObjFactory* factory);
 
-    typedef std::deque<FileDescriptor*>::iterator FileIterator;
+    typedef std::deque<std::unique_ptr<FileDescriptor>>::iterator FileIterator;
     FileIterator FileBegin() { return files.begin(); }
     FileIterator FileEnd() { return files.end(); }
 
@@ -71,7 +72,7 @@ class LibFiles
     void Align(FILE* stream, ObjInt align);
 
   private:
-    std::deque<FileDescriptor*> files;
+    std::deque<std::unique_ptr<FileDescriptor>> files;
     std::deque<ObjFile*> objectFiles;
     bool caseSensitive;
 };

@@ -122,7 +122,7 @@ class PreProcessor
     int GetMacroId() { return macro.GetMacroId(); }
     void Assign(std::string& name, int value, bool caseInsensitive) { define.Assign(name, value, caseInsensitive); }
     bool InMacro() { return macro.InMacro(); }
-    void SetPreData(const char* data) { preData = new std::string(data); }
+    void SetPreData(const char* data) { preData = data; }
     bool GetPreLine(std::string& line);
     std::string StripDigraphs(std::string line);
     std::string StripTrigraphs(std::string line);
@@ -138,7 +138,7 @@ class PreProcessor
     ppPragma pragma;
     KeywordHash hash;
     int lineno;
-    std::string* preData;
+    std::string preData;
 };
 
 #endif

@@ -90,14 +90,14 @@ void DefFile::Add(Import* i)
 
 bool DefFile::Read()
 {
-    stream = new std::fstream(fileName, std::ios::in);
-    if (!stream->fail())
+    stream.open(fileName, std::ios::in);
+    if (stream.is_open())
     {
         try
         {
             lineno = 0;
             NextToken();
-            while (!stream->eof())
+            while (!stream.eof())
             {
                 if (token->IsEnd())
                 {
@@ -152,7 +152,7 @@ bool DefFile::Read()
             std::cout << fileName << "(" << lineno << "): " << e->what() << std::endl;
             delete e;
         }
-        delete stream;
+        stream.close();
     }
     else
     {
@@ -162,8 +162,8 @@ bool DefFile::Read()
 }
 bool DefFile::Write()
 {
-    stream = new std::fstream(fileName, std::ios::out);
-    // if (!stream->fail())
+    stream.open(fileName, std::ios::out);
+    if (stream.is_open())
     {
         WriteName();
         WriteLibrary();
@@ -175,22 +175,22 @@ bool DefFile::Write()
         WriteCode();
         WriteData();
         WriteSections();
-        delete stream;
+        stream.close();
     }
     return true;
 }
 void DefFile::NextToken()
 {
-    if (!stream->eof())
+    if (!stream.eof())
     {
         if (!token || token->IsEnd())
         {
             char buf[2048];
             lineno++;
-            stream->getline(buf, sizeof(buf));
-            if (!stream->eof())
+            stream.getline(buf, sizeof(buf));
+            if (!stream.eof())
             {
-                if (stream->fail())
+                if (stream.fail())
                     throw new std::runtime_error("I/O error");
                 char* npos = strchr(buf, ';');
                 if (npos)
@@ -256,7 +256,7 @@ void DefFile::ReadExports()
     NextToken();
     if (token->IsEnd())
     {
-        while (token->IsEnd() && !stream->eof())
+        while (token->IsEnd() && !stream.eof())
             NextToken();
         while (token->IsIdentifier())
         {
@@ -337,7 +337,7 @@ void DefFile::ReadExports()
             exports.push_back(std::move(oneExport));
             if (!token->IsEnd())
                 break;
-            while (token->IsEnd() && !stream->eof())
+            while (token->IsEnd() && !stream.eof())
                 NextToken();
         }
     }
@@ -347,7 +347,7 @@ void DefFile::ReadImports()
     NextToken();
     if (token->IsEnd())
     {
-        while (token->IsEnd() && !stream->eof())
+        while (token->IsEnd() && !stream.eof())
             NextToken();
         while (token->IsIdentifier())
         {
@@ -383,7 +383,7 @@ void DefFile::ReadImports()
             imports.push_back(std::move(oneImport));
             if (!token->IsEnd())
                 break;
-            while (token->IsEnd() && !stream->eof())
+            while (token->IsEnd() && !stream.eof())
                 NextToken();
         }
     }
@@ -482,24 +482,24 @@ void DefFile::WriteName()
 {
     if (!name.empty())
     {
-        *stream << "NAME " << name;
+        stream << "NAME " << name;
         if (imageBase != -1)
         {
-            *stream << ", " << imageBase;
+            stream << ", " << imageBase;
         }
-        *stream << std::endl;
+        stream << std::endl;
     }
 }
 void DefFile::WriteLibrary()
 {
     if (!library.empty())
     {
-        *stream << "LIBRARY " << library;
+        stream << "LIBRARY " << library;
         if (imageBase != -1)
         {
-            *stream << ", " << imageBase;
+            stream << ", " << imageBase;
         }
-        *stream << std::endl;
+        stream << std::endl;
     }
 }
 void DefFile::WriteExports()
@@ -509,24 +509,24 @@ void DefFile::WriteExports()
     {
         if (first)
         {
-            *stream << "EXPORTS" << std::endl;
+            stream << "EXPORTS" << std::endl;
             first = false;
         }
         if (cdll && !exp->byOrd)
-            *stream << "\t_" << exp->id;
-        *stream << "\t" << exp->id;
+            stream << "\t_" << exp->id;
+        stream << "\t" << exp->id;
         if ((!exp->entry.empty() && exp->entry != exp->id) || !exp->module.empty())
         {
-            *stream << "=" << exp->entry;
+            stream << "=" << exp->entry;
             if (!exp->module.empty())
-                *stream << "." << exp->module;
+                stream << "." << exp->module;
         }
         if ((!cdll || exp->byOrd) && exp->ord != -1)
-            *stream << " @" << exp->ord;
+            stream << " @" << exp->ord;
         if (exp->byOrd)
-            *stream << " "
+            stream << " "
                     << "NONAME";
-        *stream << std::endl;
+        stream << std::endl;
     }
 }
 void DefFile::WriteImports()
@@ -536,57 +536,57 @@ void DefFile::WriteImports()
     {
         if (first)
         {
-            *stream << "IMPORTS" << std::endl;
+            stream << "IMPORTS" << std::endl;
             first = false;
         }
         if (!import->module.empty())
         {
             if (import->entry == import->id)
             {
-                *stream << "\t" << import->module << "." << import->id;
+                stream << "\t" << import->module << "." << import->id;
             }
             else
             {
-                *stream << "\t" << import->id << "=" << import->module << "." << import->entry;
+                stream << "\t" << import->id << "=" << import->module << "." << import->entry;
             }
         }
         else
         {
-            *stream << "\t" << import->id;
+            stream << "\t" << import->id;
         }
-        *stream << std::endl;
+        stream << std::endl;
     }
 }
 void DefFile::WriteDescription()
 {
     if (!description.empty())
-        *stream << description << std::endl;
+        stream << description << std::endl;
 }
 void DefFile::WriteStacksize()
 {
     if (stackSize != -1)
     {
-        *stream << "STACKSIZE " << stackSize << std::endl;
+        stream << "STACKSIZE " << stackSize << std::endl;
     }
 }
 void DefFile::WriteHeapsize()
 {
     if (heapSize != -1)
     {
-        *stream << "HEAPSIZE " << heapSize << std::endl;
+        stream << "HEAPSIZE " << heapSize << std::endl;
     }
 }
 void DefFile::WriteSectionBits(unsigned value)
 {
     if (value & WINF_READABLE)
-        *stream << "READ ";
+        stream << "READ ";
     if (value & WINF_WRITEABLE)
-        *stream << "WRITE ";
+        stream << "WRITE ";
     if (value & WINF_EXECUTE)
-        *stream << "EXECUTE ";
+        stream << "EXECUTE ";
     if (value & WINF_SHARED)
-        *stream << "SHARED ";
-    *stream << std::endl;
+        stream << "SHARED ";
+    stream << std::endl;
 }
 void DefFile::WriteCode()
 {
@@ -594,7 +594,7 @@ void DefFile::WriteCode()
     {
         if (section.first == "CODE")
         {
-            *stream << "CODE " << section.second << std::endl;
+            stream << "CODE " << section.second << std::endl;
             WriteSectionBits(section.second);
             break;
         }
@@ -606,7 +606,7 @@ void DefFile::WriteData()
     {
         if (section.first == "DATA")
         {
-            *stream << "DATA ";
+            stream << "DATA ";
             WriteSectionBits(section.second);
             break;
         }
@@ -624,7 +624,7 @@ void DefFile::WriteSections()
                 std::cout << "SECTIONS" << std::endl;
                 first = false;
             }
-            *stream << "\t" << section.first << " ";
+            stream << "\t" << section.first << " ";
             WriteSectionBits(section.second);
             break;
         }

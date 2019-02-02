@@ -142,9 +142,8 @@ bool LinkExpression::EnterSymbol(LinkExpressionSymbol* Symbol, bool removeOld)
     }
     else if (removeOld)
     {
-        LinkExpressionSymbol* v = *it;
+        delete (*it);
         symbols.erase(it);
-        delete v;
         symbols.insert(Symbol);
         return true;
     }

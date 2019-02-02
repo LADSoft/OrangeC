@@ -27,6 +27,7 @@
 #include "Utils.h"
 #include <cctype>
 #include <iostream>
+#include <memory>
 
 bool DictCompare::caseSensitive;
 
@@ -56,12 +57,12 @@ ObjInt LibDictionary::Lookup(FILE* stream, ObjInt dictionaryOffset, ObjInt dicti
         fseek(stream, 0, SEEK_END);
         int end = ftell(stream);
         int size = end - dictionaryOffset;
-        ObjByte* buf = new ObjByte[size];
+        std::unique_ptr<ObjByte[]> buf = std::make_unique<ObjByte[]>(size);
+        ObjByte* q = buf.get();
         fseek(stream, dictionaryOffset, SEEK_SET);
-        fread(buf, size, 1, stream);
-        ObjByte* q = buf;
+        fread(q, size, 1, stream);
         char sig[4] = {'1', '0', 0, 0}, sig1[4];
-        if (!memcmp(sig, buf, 4))
+        if (!memcmp(sig, q, 4))
         {
             int len;
             q += 4;
@@ -80,7 +81,6 @@ ObjInt LibDictionary::Lookup(FILE* stream, ObjInt dictionaryOffset, ObjInt dicti
         {
             std::cout << "Old format library detected, please rebuild libraries" << std::endl;
         }
-        delete[] buf;
     }
     auto it = dictionary.find(name);
     if (it != dictionary.end())

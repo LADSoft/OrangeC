@@ -37,7 +37,7 @@
 #include "LinkLibrary.h"
 #include "LinkDebugFile.h"
 #include "Utils.h"
-
+#include <memory>
 #include <fstream>
 #include <cstdio>
 #include <climits>
@@ -202,9 +202,8 @@ void LinkManager::MergePublics(ObjFile* file, bool toerr)
             if (it != externals.end())
             {
                 (*it)->SetUsed(true);
-                LinkSymbolData* p = *it;
+                delete (*it);
                 externals.erase(it);
-                delete p;
             }
         }
     }
@@ -312,9 +311,8 @@ void LinkManager::MergePublics(ObjFile* file, bool toerr)
         {
             (*it)->SetUsed(true);
             (*it1)->SetUsed(true);
-            LinkSymbolData* p = *it;
+            delete (*it);
             externals.erase(it++);
-            delete p;
         }
         else
         {
@@ -372,9 +370,8 @@ bool LinkManager::ScanVirtuals()
                 LoadSectionExternals((*it1)->GetFile(), (ObjSection*)(*it1)->GetAuxData());
             }
             (*it)->SetUsed(true);
-            LinkSymbolData* p = *it;
+            delete (*it);
             externals.erase(it++);
-            delete p;
             rv = true;
         }
         else
@@ -634,9 +631,9 @@ bool LinkManager::ParseAssignment(LinkTokenizer& spec)
 }
 bool LinkManager::CreateSeparateRegions(LinkManager* manager, CmdFiles& files, LinkTokenizer& spec)
 {
-    LinkPartition* newPartition = new LinkPartition(this);
-    LinkOverlay* newOverlay = new LinkOverlay(newPartition);
-    LinkRegion* newRegion = new LinkRegion(newOverlay);
+    std::unique_ptr<LinkPartition> newPartition = std::make_unique<LinkPartition>(this);
+    std::unique_ptr<LinkOverlay> newOverlay = std::make_unique<LinkOverlay>(newPartition.get());
+    std::unique_ptr<LinkRegion> newRegion = std::make_unique<LinkRegion>(newOverlay.get());
     if (!newRegion->ParseRegionSpec(manager, files, spec))
         return false;
     if (!spec.MustMatch(LinkTokenizer::eSemi))
@@ -692,9 +689,6 @@ bool LinkManager::CreateSeparateRegions(LinkManager* manager, CmdFiles& files, L
             region->AddNormalData(sect.file, sect.section);
         }
     }
-    delete newRegion;
-    delete newOverlay;
-    delete newPartition;
     return true;
 }
 bool LinkManager::ParsePartitions()

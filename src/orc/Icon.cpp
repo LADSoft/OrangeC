@@ -94,7 +94,7 @@ void GroupIcon::WriteRes(ResFile& resFile)
 void GroupIcon::ReadRC(RCFile& rcFile)
 {
     resInfo.ReadRC(rcFile, false);
-    ResourceData* rd = new ResourceData;
+    std::unique_ptr<ResourceData> rd = std::make_unique<ResourceData>();
     rd->ReadRC(rcFile);
     rcFile.NeedEol();
     rd->GetWord();
@@ -108,8 +108,7 @@ void GroupIcon::ReadRC(RCFile& rcFile)
         Icon* ico = new Icon(resInfo);
         rcFile.GetResFile().Add(ico);
         icons.push_back(ico);
-        ico->ReadBin(rd);
+        ico->ReadBin(rd.get());
     }
     resInfo.SetFlags(resInfo.GetFlags() | ResourceInfo::Pure);
-    delete rd;
 }

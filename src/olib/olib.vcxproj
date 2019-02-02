@@ -161,6 +161,7 @@
     <ClInclude Include="LibManager.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="FileDescriptor.cpp" />
     <ClCompile Include="LibDictionaryLibrarian.cpp" />
     <ClCompile Include="LibDictionaryLinker.cpp" />
     <ClCompile Include="LibFilesLibrarian.cpp" />

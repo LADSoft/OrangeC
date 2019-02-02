@@ -68,8 +68,8 @@ class xmlNode
     bool Read(std::fstream& stream, char v = 0);
     bool Write(std::fstream& tream, int indent = 0);
 
-    void InsertAttrib(xmlAttrib* attrib);
-    void InsertChild(xmlNode* child);
+    void InsertAttrib(std::unique_ptr<xmlAttrib>& attrib) { attribs.push_back(std::move(attrib)); }
+    void InsertChild(std::unique_ptr<xmlNode>& child) { children.push_back(std::move(child)); }
     void RemoveAttrib(const xmlAttrib* attrib);
     void RemoveChild(const xmlNode* child);
     bool operator==(const char* Name) const { return elementType == Name; }

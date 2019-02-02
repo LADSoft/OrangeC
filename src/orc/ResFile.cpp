@@ -37,31 +37,31 @@ ResFile::~ResFile() {}
 void ResFile::Mark()
 {
     Align();
-    base = stream->tellp();
+    base = stream.tellp();
 }
-void ResFile::MarkHeader() { hdrSize = (size_t)stream->tellp() - base; }
+void ResFile::MarkHeader() { hdrSize = (size_t)stream.tellp() - base; }
 void ResFile::Release()
 {
-    size_t pos = stream->tellp();
-    stream->seekp(base);
+    size_t pos = stream.tellp();
+    stream.seekp(base);
     WriteDWord(pos - base - hdrSize);
     WriteDWord(hdrSize);
-    stream->seekp(pos);
+    stream.seekp(pos);
 }
 void ResFile::Align()
 {
-    size_t pos = stream->tellp();
+    size_t pos = stream.tellp();
     if (pos % 4)
     {
         int size = 4 - pos % 4;
         int n = 0;
-        stream->write((char*)&n, size);
+        stream.write((char*)&n, size);
     }
 }
 void ResFile::WriteByte(int byte)
 {
     char c = (char)byte;
-    stream->write(&c, 1);
+    stream.write(&c, 1);
 }
 
 void ResFile::WriteWord(int word)
@@ -77,7 +77,7 @@ void ResFile::WriteDWord(int dword)
     WriteByte(dword >> 16);
     WriteByte(dword >> 24);
 }
-void ResFile::WriteData(const unsigned char* data, int len) { stream->write((char*)data, len); }
+void ResFile::WriteData(const unsigned char* data, int len) { stream.write((char*)data, len); }
 void ResFile::WriteString(const std::wstring& str)
 {
     int n = str.size();
@@ -108,8 +108,8 @@ void ResFile::WriteString(const std::wstring& str)
 
 bool ResFile::Write(const std::string& name)
 {
-    stream = new std::fstream(name, std::ios::out | std::ios::binary);
-    // if (!stream->fail())
+    stream.open(name, std::ios::out | std::ios::binary);
+    if (stream.is_open())
     {
         for (auto& res : resources)
         {
@@ -122,10 +122,8 @@ bool ResFile::Write(const std::string& name)
         // the alignment rules for end of file seem strange
         // we are just going to align on a dword boundary like gnu rc does
         Align();
-        stream->close();
-        bool rv = !stream->fail();
-        delete stream;
-        stream = nullptr;
+        stream.close();
+        bool rv = !stream.fail();
         return rv;
     }
     return false;

@@ -142,7 +142,7 @@ class DefFile
     unsigned heapSize;
     Tokenizer tokenizer;
     const Token* token;
-    std::fstream* stream;
+    std::fstream stream;
     int lineno;
     bool cdll;
     std::map<std::string, unsigned> sectionMap;

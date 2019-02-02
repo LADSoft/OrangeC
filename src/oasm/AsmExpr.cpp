@@ -91,7 +91,7 @@ void AsmExpr::InitHash()
 }
 AsmExprNode* AsmExpr::Build(std::string& line)
 {
-    tokenizer = new Tokenizer(line, &hash);
+    tokenizer = std::make_unique<Tokenizer>(line, &hash);
     token = tokenizer->Next();
     if (!token)
         return 0;
@@ -100,7 +100,8 @@ AsmExprNode* AsmExpr::Build(std::string& line)
         line = token->GetChars() + tokenizer->GetString();
     else
         line = "";
-    delete tokenizer;
+
+    tokenizer.release();
     return rv;
 }
 AsmExprNode* AsmExpr::ConvertToBased(AsmExprNode* n, int pc)
@@ -128,11 +129,11 @@ AsmExprNode* AsmExpr::Eval(AsmExprNode* n, int pc)
 {
     AsmExprNode* rv = nullptr;
     FPF fv;
-    AsmExprNode *xleft = 0, *xright = 0;
+    std::unique_ptr<AsmExprNode> xleft, xright;
     if (n->GetLeft())
-        xleft = Eval(n->GetLeft(), pc);
+        xleft.reset(Eval(n->GetLeft(), pc));
     if (n->GetRight())
-        xright = Eval(n->GetRight(), pc);
+        xright.reset(Eval(n->GetRight(), pc));
     switch (n->GetType())
     {
         case AsmExprNode::IVAL:
@@ -422,8 +423,7 @@ AsmExprNode* AsmExpr::Eval(AsmExprNode* n, int pc)
             else if (xleft->GetType() == AsmExprNode::FVAL)
             {
                 xleft->fval.Negate();
-                rv = xleft;
-                xleft = nullptr;
+                rv = xleft.release();
             }
             else
             {
@@ -533,15 +533,8 @@ AsmExprNode* AsmExpr::Eval(AsmExprNode* n, int pc)
     }
     if (rv->GetLeft())
     {
-        rv->SetLeft(xleft);
-        rv->SetRight(xright);
-    }
-    else
-    {
-        if (xleft)
-            delete xleft;
-        if (xright)
-            delete xright;
+        rv->SetLeft(xleft.release());
+        rv->SetRight(xright.release());
     }
     return rv;
 }

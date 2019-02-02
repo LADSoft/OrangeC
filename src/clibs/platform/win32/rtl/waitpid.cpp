@@ -39,11 +39,10 @@
 #include <process.h>
 #include <stdio.h>
 #include <assert.h>
-#include <threads.h>
 #include <sys/wait.h>
 #include <map>
 static HANDLE hjob;
-static thrd_t thrd;
+static HANDLE end;
 static bool done;
 
 CRITICAL_SECTION critical;
@@ -146,7 +145,7 @@ typedef struct _JOBOBJECT_BASIC_PROCESS_ID_LIST {
 } JOBOBJECT_BASIC_PROCESS_ID_LIST, *PJOBOBJECT_BASIC_PROCESS_ID_LIST;
 
 
-std::map<DWORD, HANDLE> pidList;
+static std::map<DWORD, HANDLE> pidList;
 #pragma startup init 224
 #pragma rundown rundown 32
 static void InsertPid(DWORD pid)
@@ -191,7 +190,7 @@ static void Load(void)
     }
 }
 
-static int refresh(void *)
+static int CALLBACK refresh(void *)
 {
     InitializeCriticalSection(&critical);
     hjob = CreateJobObject(NULL, NULL);
@@ -203,17 +202,20 @@ static int refresh(void *)
     }
     CloseHandle(hjob);
     DeleteCriticalSection(&critical);
+    SetEvent(end);
     return 0;
 }
 static void init()
 {
-	thrd_create(&thrd, (thrd_start_t)refresh, 0);
+ 	end = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+        DWORD id;
+        CloseHandle(CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)refresh, nullptr, 0, &id));
 }
 static void rundown()
 {
     done = true;
-    int res;
-    thrd_join(thrd, &res);
+    WaitForSingleObject(end, 5000);
+    CloseHandle(end);
 }
 
 static BOOLEAN GetChildren(pid_t pid, pid_t **pids, HANDLE** list, size_t *count)

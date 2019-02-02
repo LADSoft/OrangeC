@@ -134,7 +134,7 @@ bool MenuItem::ReadRCInternal(RCFile& rcFile, bool ex)
                 if (rcFile.IsKeyword())
                 {
                     if (rcFile.GetTokenId() != Lexer::SEPARATOR)
-                        throw new std::runtime_error("Invalid menu type");
+                        throw std::runtime_error("Invalid menu type");
                 }
                 else if (rcFile.IsString())
                 {

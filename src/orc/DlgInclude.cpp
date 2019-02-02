@@ -45,7 +45,7 @@ void DlgInclude::ReadRC(RCFile& rcFile)
     resInfo.SetFlags(resInfo.GetFlags() | ResourceInfo::Pure);
     resInfo.ReadRC(rcFile, false);
     if (!rcFile.IsString())
-        throw new std::runtime_error("Expected quoted string");
+        throw std::runtime_error("Expected quoted string");
     std::wstring wname = rcFile.GetString();
     std::string name = rcFile.CvtString(wname);
     data = std::make_unique<ResourceData>((unsigned char*)name.c_str(), name.size() + 1);

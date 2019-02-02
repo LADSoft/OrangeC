@@ -66,6 +66,6 @@ void ResourceData::ReadRC(RCFile& rcFile)
             in.read((char*)data.get(), len);
         }
         else
-            throw new std::runtime_error(std::string("Could not open file '") + name + "'");
+            throw std::runtime_error(std::string("Could not open file '") + name + "'");
     }
 }

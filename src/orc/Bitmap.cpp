@@ -57,7 +57,7 @@ void Bitmap::ReadRC(RCFile& rcFile)
 #ifndef HAVE_UNISTD_H
     if (rd->GetLen() <= sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER))
     {
-        throw new std::runtime_error("invalid bitmap file");
+        throw std::runtime_error("invalid bitmap file");
     }
     else
     {
@@ -67,7 +67,7 @@ void Bitmap::ReadRC(RCFile& rcFile)
             f->bfOffBits < sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) || f->bfOffBits >= rd->GetLen() ||
             p->biSize != sizeof(BITMAPINFOHEADER))
         {
-            throw new std::runtime_error("invalid bitmap file");
+            throw std::runtime_error("invalid bitmap file");
         }
         // borland sets the size explicitly for RGB images that don't have a size
         // even though windows docs explicitly say it is not required.

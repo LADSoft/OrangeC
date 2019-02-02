@@ -38,7 +38,7 @@ int Expression::primary()
             if (lexer.GetToken()->GetKeyword() == Lexer::closepa)
                 lexer.NextToken();
             else
-                throw new std::runtime_error("Expected ')'");
+                throw std::runtime_error("Expected ')'");
         }
     }
     else if (lexer.GetToken()->IsNumeric())
@@ -53,7 +53,7 @@ int Expression::primary()
     }
     else
     {
-        throw new std::runtime_error("Constant value expected");
+        throw std::runtime_error("Constant value expected");
     }
     return rv;
 }
@@ -91,7 +91,7 @@ int Expression::unary()
             return primary();
         }
     }
-    throw new std::runtime_error("Syntax error in constant expression");
+    throw std::runtime_error("Syntax error in constant expression");
 }
 int Expression::multiply()
 {
@@ -111,7 +111,7 @@ int Expression::multiply()
                 case Lexer::divide:
                     if (val2 == 0)
                     {
-                        throw new std::runtime_error("Divide by zero in preprocessor constant");
+                        throw std::runtime_error("Divide by zero in preprocessor constant");
                     }
                     else
                     {
@@ -121,7 +121,7 @@ int Expression::multiply()
                 case Lexer::mod:
                     if (val2 == 0)
                     {
-                        throw new std::runtime_error("Divide by zero in preprocessor constant");
+                        throw std::runtime_error("Divide by zero in preprocessor constant");
                     }
                     else
                     {
@@ -332,7 +332,7 @@ int Expression::conditional()
                 }
                 else
                 {
-                    throw new std::runtime_error("Conditional needs ':'");
+                    throw std::runtime_error("Conditional needs ':'");
                 }
             }
         }

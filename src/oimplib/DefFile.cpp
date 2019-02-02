@@ -105,7 +105,7 @@ bool DefFile::Read()
                 }
                 else if (!token->IsKeyword())
                 {
-                    throw new std::runtime_error("Invalid directive");
+                    throw std::runtime_error("Invalid directive");
                 }
                 else
                 {
@@ -142,15 +142,14 @@ bool DefFile::Read()
                             ReadSections();
                             break;
                         default:
-                            throw new std::runtime_error("Invalid directive");
+                            throw std::runtime_error("Invalid directive");
                     }
                 }
             }
         }
-        catch (std::runtime_error* e)
+        catch (std::runtime_error e)
         {
-            std::cout << fileName << "(" << lineno << "): " << e->what() << std::endl;
-            delete e;
+            std::cout << fileName << "(" << lineno << "): " << e.what() << std::endl;
         }
         stream.close();
     }
@@ -191,7 +190,7 @@ void DefFile::NextToken()
             if (!stream.eof())
             {
                 if (stream.fail())
-                    throw new std::runtime_error("I/O error");
+                    throw std::runtime_error("I/O error");
                 char* npos = strchr(buf, ';');
                 if (npos)
                     *npos = 0;
@@ -210,7 +209,7 @@ void DefFile::ReadName()
 
     int npos1 = line.find_first_not_of(SPACES);
     if (npos1 == std::string::npos)
-        throw new std::runtime_error("Invalid NAME specifiers");
+        throw std::runtime_error("Invalid NAME specifiers");
     int npos2 = line.find_first_of(COMMA SPACES, npos1);
     if (npos2 == std::string::npos)
     {
@@ -235,7 +234,7 @@ void DefFile::ReadLibrary()
 
     int npos1 = line.find_first_not_of(SPACES);
     if (npos1 == std::string::npos)
-        throw new std::runtime_error("Invalid NAME specifiers");
+        throw std::runtime_error("Invalid NAME specifiers");
     int npos2 = line.find_first_of(COMMA SPACES, npos1);
     if (npos2 == std::string::npos)
     {
@@ -267,7 +266,7 @@ void DefFile::ReadExports()
             {
                 NextToken();
                 if (!token->IsIdentifier())
-                    throw new std::runtime_error("Expected entry specifier");
+                    throw std::runtime_error("Expected entry specifier");
                 oneExport->entry = token->GetId();
                 NextToken();
                 if (token->GetKeyword() == edt_dot)
@@ -311,7 +310,7 @@ void DefFile::ReadExports()
                 }
                 else
                 {
-                    throw new std::runtime_error("Expected ordinal value");
+                    throw std::runtime_error("Expected ordinal value");
                 }
                 NextToken();
             }
@@ -359,7 +358,7 @@ void DefFile::ReadImports()
                 oneImport->module = oneImport->id;
                 NextToken();
                 if (!token->IsIdentifier())
-                    throw new std::runtime_error("Expected id specifier");
+                    throw std::runtime_error("Expected id specifier");
                 oneImport->id = oneImport->entry = token->GetId();
             }
             else if (token->GetKeyword() == edt_equals)
@@ -373,11 +372,11 @@ void DefFile::ReadImports()
                 }
                 else
                 {
-                    throw new std::runtime_error("Expected id specifier");
+                    throw std::runtime_error("Expected id specifier");
                 }
                 NextToken();
                 if (!token->IsIdentifier())
-                    throw new std::runtime_error("Expected id specifier");
+                    throw std::runtime_error("Expected id specifier");
                 oneImport->id = token->GetId();
             }
             imports.push_back(std::move(oneImport));
@@ -392,7 +391,7 @@ void DefFile::ReadDescription()
 {
     description = tokenizer.GetString();
     if (description.empty())
-        throw new std::runtime_error("Expected Description");
+        throw std::runtime_error("Expected Description");
     tokenizer.Reset("");
     token = nullptr;
     NextToken();
@@ -401,7 +400,7 @@ void DefFile::ReadStacksize()
 {
     NextToken();
     if (!token->IsNumeric())
-        throw new std::runtime_error("Expected stack size");
+        throw std::runtime_error("Expected stack size");
     stackSize = token->GetInteger();
     NextToken();
 }
@@ -409,7 +408,7 @@ void DefFile::ReadHeapsize()
 {
     NextToken();
     if (!token->IsNumeric())
-        throw new std::runtime_error("Expected heap size");
+        throw std::runtime_error("Expected heap size");
     heapSize = token->GetInteger();
     NextToken();
 }

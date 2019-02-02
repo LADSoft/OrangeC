@@ -130,7 +130,7 @@ void VarVerInfo::ReadRC(RCFile& rcFile)
 
         std::wstring key = rcFile.GetString();
         if (rcFile.GetToken()->GetKeyword() != Lexer::comma)
-            throw new std::runtime_error("Comma expected");
+            throw std::runtime_error("Comma expected");
         Info v(key);
         while (rcFile.GetToken()->GetKeyword() == Lexer::comma)
         {
@@ -275,11 +275,11 @@ void VersionInfo::ReadRC(RCFile& rcFile)
             case Lexer::BEGIN:
                 done = true;
                 if (!count)
-                    throw new std::runtime_error("Version info expected");
+                    throw std::runtime_error("Version info expected");
                 fixed = true;
                 break;
             default:
-                throw new std::runtime_error("Begin Expected");
+                throw std::runtime_error("Begin Expected");
                 break;
         }
     }
@@ -294,7 +294,7 @@ void VersionInfo::ReadRC(RCFile& rcFile)
             rcFile.NeedEol();
             rcFile.NeedBegin();
             if (rcFile.GetTokenId() != Lexer::BLOCK)
-                throw new std::runtime_error("Block expected");
+                throw std::runtime_error("Block expected");
             std::wstring language = rcFile.GetString();
             varInfo.push_back(std::make_unique<StringVerInfo>(language));
             rcFile.NeedEol();
@@ -310,7 +310,7 @@ void VersionInfo::ReadRC(RCFile& rcFile)
             rcFile.NeedEnd();
         }
         else
-            throw new std::runtime_error("Invalid version info type");
+            throw std::runtime_error("Invalid version info type");
     }
     rcFile.NeedEnd();
 }

@@ -53,7 +53,7 @@ void Font::ReadRC(RCFile& rcFile)
         if *n != 0x200 && n != 0x300 || s != rd->GetLen() || s < 0x180)
         {
             delete rd;
-            throw new std::runtime_error("Invalid font file");
+            throw std::runtime_error("Invalid font file");
         }
     */
 }

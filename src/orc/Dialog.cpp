@@ -209,7 +209,7 @@ void Control::GetClass(RCFile& rcFile)
                 cls.SetId(Scrollbar);
                 break;
             default:
-                throw new std::runtime_error("Unknown dialog control class");
+                throw std::runtime_error("Unknown dialog control class");
         }
 }
 void Control::ReadGeneric(RCFile& rcFile, bool extended)
@@ -443,19 +443,19 @@ void Dialog::ReadSettings(RCFile& rcFile)
             case Lexer::HELP:
                 rcFile.NextToken();
                 if (!extended)
-                    throw new std::runtime_error("Need DialogEx");
+                    throw std::runtime_error("Need DialogEx");
                 helpIndex = rcFile.GetNumber();
                 break;
             case Lexer::WEIGHT:
                 rcFile.NextToken();
                 if (!extended)
-                    throw new std::runtime_error("Need DialogEx");
+                    throw std::runtime_error("Need DialogEx");
                 weight = rcFile.GetNumber();
                 break;
             case Lexer::ITALIC:
                 rcFile.NextToken();
                 if (!extended)
-                    throw new std::runtime_error("Need DialogEx");
+                    throw std::runtime_error("Need DialogEx");
                 italics = rcFile.GetNumber();
                 break;
             default:

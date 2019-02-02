@@ -321,7 +321,7 @@ bool Eval::AutomaticVar(const std::string& name, std::string& rv)
                 ++it;
             if (it != ruleList->end())
             {
-                if (!rule || *it != rule)
+                if (!rule || (*it).get() != rule)
                 {
                     extra = (*it)->GetPrerequisites();
                     rv = ExtractFirst(extra, " ");
@@ -332,9 +332,9 @@ bool Eval::AutomaticVar(const std::string& name, std::string& rv)
         }
         else if (name[0] == '^')  // all prereq or prereq of rules that have appeared
         {
-            for (auto item : *ruleList)
+            for (auto& item : *ruleList)
             {
-                if (item == rule)
+                if (item.get() == rule)
                     break;
                 extra = item->GetPrerequisites();
                 while (!extra.empty())
@@ -353,9 +353,9 @@ bool Eval::AutomaticVar(const std::string& name, std::string& rv)
         }
         else if (name[0] == '+')  // same with repetition
         {
-            for (auto item : *ruleList)
+            for (auto& item : *ruleList)
             {
-                if (item == rule)
+                if (item.get() == rule)
                     break;
                 extra = item->GetPrerequisites();
                 while (!extra.empty())
@@ -414,9 +414,9 @@ bool Eval::AutomaticVar(const std::string& name, std::string& rv)
         else if (name[0] == '|')  // or names of order-only prerequisites
         {
             std::set<std::string> set;
-            for (auto item : *ruleList)
+            for (auto& item : *ruleList)
             {
-                if (item == rule)
+                if (item.get() == rule)
                     break;
                 extra = item->GetOrderPrerequisites();
                 while (!extra.empty())
@@ -493,7 +493,7 @@ std::string Eval::ExpandMacro(const std::string& name)
         return rv;
     if (name == ".VARIABLES")
     {
-        for (auto var : *VariableContainer::Instance())
+        for (auto& var : *VariableContainer::Instance())
         {
             if (!rv.empty())
                 rv += " ";
@@ -1223,7 +1223,7 @@ std::string Eval::wildcardinternal(std::string& names)
     {
         if (!rv.empty())
             rv += " ";
-        rv += *(*it);
+        rv += (*it);
     }
     return rv;
 }

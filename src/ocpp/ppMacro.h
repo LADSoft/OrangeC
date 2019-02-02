@@ -101,7 +101,7 @@ class ppMacro
     ppExpr expr;
     PreProcessor* pp;
 
-    std::vector<MacroData*> stack;
+    std::vector<std::unique_ptr<MacroData>> stack;
     std::map<std::string, MacroData*> macros;
     int nextMacro;
 };

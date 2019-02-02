@@ -123,14 +123,8 @@ int CmdSwitchOutput::Parse(const char* data)
     }
     return rv;
 }
-CmdSwitchDefine::~CmdSwitchDefine()
-{
-    for (auto define : defines)
-    {
-        delete define;
-    }
-    defines.clear();
-}
+
+CmdSwitchDefine::~CmdSwitchDefine() {}
 int CmdSwitchDefine::Parse(const char* data)
 {
     int rv = strlen(data);
@@ -144,7 +138,7 @@ int CmdSwitchDefine::Parse(const char* data)
     {
         return -1;
     }
-    define* newDefine = new define;
+    std::unique_ptr<define> newDefine = std::make_unique<define>();
     newDefine->name = name;
     if (*data == '=')
     {
@@ -161,13 +155,13 @@ int CmdSwitchDefine::Parse(const char* data)
     {
         newDefine->value = "1";
     }
-    defines.push_back(newDefine);
+    defines.push_back(std::move(newDefine));
     return rv;
 }
 CmdSwitchDefine::define* CmdSwitchDefine::GetValue(int index)
 {
     if (defines.size() > (size_t)index)
-        return defines[index];
+        return defines[index].get();
     return nullptr;
 }
 int CmdSwitchFile::Parse(const char* data)

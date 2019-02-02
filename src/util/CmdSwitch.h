@@ -31,6 +31,7 @@
 #include <vector>
 #include <fstream>
 #include <iostream>
+#include <memory>
 class CmdSwitchParser;
 
 class CmdSwitchBase
@@ -193,7 +194,13 @@ class CmdSwitchDefine : public CmdSwitchBase
 {
   public:
     CmdSwitchDefine(CmdSwitchParser& parser, char SwitchChar) : CmdSwitchBase(parser, SwitchChar) {}
-    CmdSwitchDefine(const CmdSwitchDefine& orig) : CmdSwitchBase(orig) { defines = orig.defines; }
+    CmdSwitchDefine(const CmdSwitchDefine& orig) : CmdSwitchBase(orig) 
+    {
+        for (auto &d : orig.defines)
+        {
+            defines.push_back(std::make_unique<define>(*d.get()));
+        }
+    }
     virtual ~CmdSwitchDefine();
     virtual int Parse(const char* data);
     struct define
@@ -206,7 +213,7 @@ class CmdSwitchDefine : public CmdSwitchBase
     define* GetValue(int index);
     virtual void SetArgNum(int an) override { if (defines.size()) defines.back()->argnum = an; }
   private:
-    std::vector<define*> defines;
+    std::vector<std::unique_ptr<define>> defines;
 };
 class CmdSwitchFile : public CmdSwitchString
 {

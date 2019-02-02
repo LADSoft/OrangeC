@@ -27,19 +27,17 @@
 #include "ResFile.h"
 #include "ResourceData.h"
 #include <cstring>
-RCData::~RCData()
-{
-    for (auto it = begin(); it != end(); ++it)
-    {
-        ResourceData* r = (*it);
-        delete r;
-    }
-    data.clear();
+RCData::~RCData() {}
+void RCData::Add(ResourceData* rdata) 
+{ 
+    std::unique_ptr<ResourceData> temp(rdata);
+    data.push_back(std::move(temp)); 
 }
+
 void RCData::WriteRes(ResFile& resFile)
 {
     Resource::WriteRes(resFile);
-    for (auto res : *this)
+    for (auto& res : *this)
     {
         res->WriteRes(resFile);
     }
@@ -53,9 +51,8 @@ void RCData::ReadRC(RCFile& rcFile)
     const Token* t = rcFile.GetToken();
     if (t->GetKeyword() != Lexer::BEGIN)
     {
-        ResourceData* rd = new ResourceData;
-        rd->ReadRC(rcFile);
-        data.push_back(rd);
+        data.push_back(std::make_unique<ResourceData>());
+        data.back()->ReadRC(rcFile);
     }
     else
     {
@@ -70,13 +67,12 @@ void RCData::ReadRC(RCFile& rcFile)
                 int n = t->GetInteger();
                 if (t->GetNumericType() == Token::t_int || t->GetNumericType() == Token::t_unsignedint)
                 {
-                    ResourceData* rd = new ResourceData((unsigned char*)&n, 2);
-                    data.push_back(rd);
+                    data.push_back(std::make_unique<ResourceData>((unsigned char*)&n, 2));
                 }
                 else
                 {
                     ResourceData* rd = new ResourceData((unsigned char*)&n, 4);
-                    data.push_back(rd);
+                    data.push_back(std::make_unique<ResourceData>((unsigned char*)&n, 4));
                 }
             }
             else if (t->IsString())
@@ -88,16 +84,14 @@ void RCData::ReadRC(RCFile& rcFile)
                     wchar_t* p = new wchar_t[n];
                     for (int i = 0; i < n; i++)
                         p[i] = t->GetString()[i];
-                    ResourceData* rd = new ResourceData((unsigned char*)p, n * sizeof(wchar_t));
-                    data.push_back(rd);
+                    data.push_back(std::make_unique<ResourceData>((unsigned char*)p, n * sizeof(wchar_t)));
                     delete[] p;
                     concatwide = true;
                 }
                 else
                 {
                     std::string name = rcFile.CvtString(t->GetString());
-                    ResourceData* rd = new ResourceData((unsigned char*)name.c_str(), t->GetString().size());
-                    data.push_back(rd);
+                    data.push_back(std::make_unique<ResourceData>((unsigned char*)name.c_str(), t->GetString().size()));
                 }
             }
             else

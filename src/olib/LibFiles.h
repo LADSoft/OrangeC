@@ -36,9 +36,7 @@ class LibFiles
     {
         FileDescriptor(const ObjString& Name) : offset(0), name(Name), data(nullptr) {}
         FileDescriptor(const FileDescriptor& old) : name(old.name), offset(old.offset), data(nullptr) {}
-        ~FileDescriptor()
-        {  /* if (data) delete data; */
-        }  // data will go away when the factory goes awsy
+        ~FileDescriptor() {}
         ObjString name;
         ObjInt offset;
         ObjFile* data;

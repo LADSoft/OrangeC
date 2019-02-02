@@ -32,16 +32,14 @@
 #include "ObjFile.h"
 #include "ObjSection.h"
 
-LinkOverlaySpecifier::~LinkOverlaySpecifier()
-{
-    delete overlay;
-    delete symbol;
+LinkOverlaySpecifier::~LinkOverlaySpecifier() {}
+LinkPartition::~LinkPartition() { }
+void LinkPartition::Add(LinkOverlaySpecifier* ov) 
+{ 
+    std::unique_ptr<LinkOverlaySpecifier> temp(ov);
+    overlays.push_back(std::move(temp)); 
 }
-LinkPartition::~LinkPartition()
-{
-    for (auto overlay : overlays)
-        delete overlay;
-}
+
 bool LinkPartition::ParseName(LinkTokenizer& spec)
 {
     if (!spec.Matches(LinkTokenizer::eSymbol))
@@ -138,7 +136,7 @@ bool LinkPartition::ParseAssignment(LinkTokenizer& spec)
     }
     else
     {
-        overlays.push_back(new LinkOverlaySpecifier(esym));
+        overlays.push_back(std::make_unique<LinkOverlaySpecifier>(esym));
     }
     return spec.MustMatch(LinkTokenizer::eSemi);
 }
@@ -156,7 +154,7 @@ bool LinkPartition::CreateSeparateRegions(LinkManager* manager, CmdFiles& files,
         {
             LinkOverlay* overlay = new LinkOverlay(this);
             overlay->SetName(std::string(sect.file->GetName()) + "_" + sect.section->GetName());
-            overlays.push_back(new LinkOverlaySpecifier(overlay));
+            overlays.push_back(std::make_unique<LinkOverlaySpecifier>(overlay));
             LinkRegion* region = new LinkRegion(overlay);
             overlay->Add(new LinkRegionSpecifier(region));
             region->SetName(newRegion->GetName());
@@ -170,7 +168,7 @@ bool LinkPartition::CreateSeparateRegions(LinkManager* manager, CmdFiles& files,
         {
             LinkOverlay* overlay = new LinkOverlay(this);
             overlay->SetName(std::string(sect.file->GetName()) + "_" + sect.section->GetName());
-            overlays.push_back(new LinkOverlaySpecifier(overlay));
+            overlays.push_back(std::make_unique<LinkOverlaySpecifier>(overlay));
             LinkRegion* region = new LinkRegion(overlay);
             overlay->Add(new LinkRegionSpecifier(region));
             region->SetName(newRegion->GetName());
@@ -184,7 +182,7 @@ bool LinkPartition::CreateSeparateRegions(LinkManager* manager, CmdFiles& files,
         {
             LinkOverlay* overlay = new LinkOverlay(this);
             overlay->SetName(std::string(sect.file->GetName()) + "_" + sect.section->GetName());
-            overlays.push_back(new LinkOverlaySpecifier(overlay));
+            overlays.push_back(std::make_unique<LinkOverlaySpecifier>(overlay));
             LinkRegion* region = new LinkRegion(overlay);
             overlay->Add(new LinkRegionSpecifier(region));
             region->SetName(newRegion->GetName());
@@ -223,7 +221,7 @@ bool LinkPartition::ParseOverlays(LinkManager* manager, CmdFiles& files, LinkTok
         else
         {
             LinkOverlay* newOverlay = new LinkOverlay(this);
-            overlays.push_back(new LinkOverlaySpecifier(newOverlay));
+            overlays.push_back(std::make_unique<LinkOverlaySpecifier>(newOverlay));
             if (!newOverlay->ParseOverlaySpec(manager, files, spec))
                 return false;
             if (!spec.MustMatch(LinkTokenizer::eSemi))
@@ -250,13 +248,10 @@ ObjInt LinkPartition::PlacePartition(LinkManager* manager, ObjInt bottom, bool c
     }
     bottom = attribs.GetAddress();
     ObjInt size = 0;
-    for (auto overlay : overlays)
+    for (auto& overlay : overlays)
     {
         if (overlay->GetSymbol())
         {
-            //			if (completeLink)
-            //				overlay->GetSymbol()->SetValue(new LinkExpression(overlay->GetSymbol()->GetValue()->Eval(bottom +
-            // size))); 			else
             overlay->GetSymbol()->SetValue(overlay->GetSymbol()->GetValue()->Eval(overlayNum ? overlayNum - 1 : 0, bottom, size));
         }
         else

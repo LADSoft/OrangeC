@@ -34,7 +34,7 @@
 #define BITMAP_SIG 0x4d42  // BM
 static const int SKIP = 14;
 
-Bitmap::~Bitmap() { delete data; }
+Bitmap::~Bitmap() { }
 
 void Bitmap::WriteRes(ResFile& resFile)
 {
@@ -45,9 +45,8 @@ void Bitmap::WriteRes(ResFile& resFile)
 }
 void Bitmap::SetData(ResourceData* rdata)
 {
-
-    delete data;
-    data = rdata;
+    std::unique_ptr<ResourceData> temp(rdata);
+    data = std::move(temp);
 }
 void Bitmap::ReadRC(RCFile& rcFile)
 {
@@ -80,7 +79,7 @@ void Bitmap::ReadRC(RCFile& rcFile)
             int n = ((((p->biWidth * p->biBitCount) + 31) & ~31) >> 3) * p->biHeight;
             p->biSizeImage = n;
         }
-        data = new ResourceData((unsigned char*)p, rd->GetLen() - sizeof(BITMAPFILEHEADER));
+        data = std::make_unique<ResourceData>((unsigned char*)p, rd->GetLen() - sizeof(BITMAPFILEHEADER));
         delete rd;
     }
 #endif

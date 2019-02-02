@@ -24,9 +24,4 @@
 
 #include "Depends.h"
 
-Depends::~Depends()
-{
-    for (auto goal : subgoals)
-        delete goal;
-    subgoals.clear();
-}
+Depends::~Depends() {}

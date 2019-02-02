@@ -56,10 +56,10 @@ class BRCWriter
     bool Insert(sqlite3_int64 symIndex, BrowseData* b, bool usages = false);
 
     bool WriteFileList();
-    void InsertMappingSym(std::string name, SymData* orig, std::map<std::string, SymData*>& syms,
-                          std::map<std::string, SymData*>& newSyms);
-    void PushCPPNames(std::string name, SymData* orig, std::map<std::string, SymData*>& syms,
-                      std::map<std::string, SymData*>& newSyms);
+    void InsertMappingSym(std::string name, SymData* orig, Symbols& syms,
+                          Symbols& newSyms);
+    void PushCPPNames(std::string name, SymData* orig, Symbols& syms,
+                      Symbols& newSyms);
     bool WriteDictionary(Symbols& syms);
     bool WriteMapping(Symbols& syms);
     bool WriteLineData(Symbols& syms);

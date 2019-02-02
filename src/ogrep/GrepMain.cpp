@@ -327,9 +327,9 @@ int GrepMain::Run(int argc, char** argv)
     else
         for (auto it = files.FileNameBegin(); it != files.FileNameEnd(); ++it)
         {
-            std::fstream fil(*(*it), std::ios::in | std::ios::binary);
+            std::fstream fil((*it), std::ios::in | std::ios::binary);
             if (fil.is_open())
-                matchCount += OneFile(regexp, *(*it), fil, openCount);
+                matchCount += OneFile(regexp, (*it), fil, openCount);
         }
     if (openCount == 0)
     {

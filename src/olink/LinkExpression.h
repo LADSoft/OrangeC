@@ -26,6 +26,7 @@
 #define LINKEXPRESSION_H
 #include "ObjTypes.h"
 #include <set>
+#include <memory>
 
 class ObjSection;
 
@@ -36,12 +37,12 @@ class LinkExpressionSymbol
     LinkExpressionSymbol(const ObjString& Name, LinkExpression* Value) : name(Name), value(Value) {}
     ~LinkExpressionSymbol();
     ObjString& GetName() { return name; }
-    LinkExpression* GetValue() { return value; }
-    void SetValue(LinkExpression* v) { value = v; }
+    LinkExpression* GetValue() { return value.get(); }
+    void SetValue(LinkExpression* v) { value.reset(v); }
 
   private:
     ObjString name;
-    LinkExpression* value;
+    std::unique_ptr<LinkExpression> value;
 };
 struct leltcompare
 {
@@ -70,15 +71,10 @@ class LinkExpression
     }
     LinkExpression(const LinkExpression& exp);
     LinkExpression(ObjSection* Unresolved) : op(eUnresolvedSection), unresolvedSection(Unresolved) {}
-    ~LinkExpression()
-    {
-        delete left;
-        delete right;
-    }
     eOperator GetOperator() { return op; }
     ObjSection* GetUnresolvedSection() { return unresolvedSection; }
-    LinkExpression* GetLeft() { return left; }
-    LinkExpression* GetRight() { return right; }
+    LinkExpression* GetLeft() { return left.get(); }
+    LinkExpression* GetRight() { return right.get(); }
     ObjString& GetSymbol() { return symbolName; }
     ObjInt& GetValue() { return value; }
     int GetSection() { return sect; }
@@ -93,8 +89,8 @@ class LinkExpression
   private:
     LinkExpression* LookupSymbol(ObjString& symbol);
     eOperator op;
-    LinkExpression* left;
-    LinkExpression* right;
+    std::unique_ptr<LinkExpression> left;
+    std::unique_ptr<LinkExpression> right;
     ObjString symbolName;
     ObjInt value;
     ObjInt sect;

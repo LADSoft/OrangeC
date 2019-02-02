@@ -26,7 +26,7 @@
 #include "LinkManager.h"
 #include "ObjSection.h"
 #include <exception>
-LinkExpressionSymbol::~LinkExpressionSymbol() { delete value; }
+LinkExpressionSymbol::~LinkExpressionSymbol() { }
 
 std::set<LinkExpressionSymbol*, leltcompare> LinkExpression::symbols;
 LinkExpression::LinkExpression(const LinkExpression& exp)
@@ -36,23 +36,22 @@ LinkExpression::LinkExpression(const LinkExpression& exp)
     symbolName = exp.symbolName;
     sect = exp.sect;
     if (exp.left)
-        left = new LinkExpression(*exp.left);
+        left = std::make_unique<LinkExpression>(*exp.left);
     else
         left = nullptr;
     if (exp.right)
-        right = new LinkExpression(*exp.right);
+        right = std::make_unique<LinkExpression>(*exp.right);
     else
         right = nullptr;
 }
 LinkExpression::LinkExpression(int section, ObjInt base, ObjInt offs) :
     op(eAdd),
-    left(nullptr),
-    right(new LinkExpression(offs)),
+    left(std::make_unique<LinkExpression>()),
+    right(std::make_unique<LinkExpression>(offs)),
     symbolName(""),
     value(0),
     sect(0)
 {
-    left = new LinkExpression;
     left->op = eSection;
     left->value = base;
     left->sect = section;
@@ -60,9 +59,9 @@ LinkExpression::LinkExpression(int section, ObjInt base, ObjInt offs) :
 LinkExpression* LinkExpression::Eval(int section, int base, ObjInt offset)
 {
     if (left)
-        left = left->Eval(section, base, offset);
+        left.reset(left->Eval(section, base, offset));
     if (right)
-        right = right->Eval(section, base, offset);
+        right.reset(right->Eval(section, base, offset));
     LinkExpression* rv = this;
     switch (op)
     {

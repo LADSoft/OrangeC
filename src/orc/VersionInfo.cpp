@@ -141,13 +141,11 @@ void VarVerInfo::ReadRC(RCFile& rcFile)
     }
     rcFile.NeedEol();
 }
-VersionInfo::~VersionInfo()
-{
-    for (auto var : varInfo)
-    {
-        delete var;
-    }
-    varInfo.clear();
+VersionInfo::~VersionInfo() {}
+void VersionInfo::Add(InternalVerInfo* v) 
+{ 
+    std::unique_ptr<InternalVerInfo> temp(v);
+    varInfo.push_back(std::move(temp)); 
 }
 void VersionInfo::WriteRes(ResFile& resFile)
 {
@@ -186,7 +184,7 @@ void VersionInfo::WriteRes(ResFile& resFile)
         resFile.WriteDWord(fileDateMS);
         resFile.WriteDWord(fileDateLS);
     }
-    for (auto res : *this)
+    for (auto& res : *this)
     {
         res->WriteRes(resFile);
     }
@@ -298,19 +296,17 @@ void VersionInfo::ReadRC(RCFile& rcFile)
             if (rcFile.GetTokenId() != Lexer::BLOCK)
                 throw new std::runtime_error("Block expected");
             std::wstring language = rcFile.GetString();
-            StringVerInfo* v = new StringVerInfo(language);
-            varInfo.push_back(v);
+            varInfo.push_back(std::make_unique<StringVerInfo>(language));
             rcFile.NeedEol();
-            v->ReadRC(rcFile);
+            varInfo.back()->ReadRC(rcFile);
             rcFile.NeedEnd();
         }
         else if (type == L"VarFileInfo")
         {
             rcFile.NeedEol();
             rcFile.NeedBegin();
-            VarVerInfo* v = new VarVerInfo();
-            v->ReadRC(rcFile);
-            varInfo.push_back(v);
+            varInfo.push_back(std::make_unique<VarVerInfo>());
+            varInfo.back()->ReadRC(rcFile);
             rcFile.NeedEnd();
         }
         else

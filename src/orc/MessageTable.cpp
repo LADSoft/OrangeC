@@ -27,12 +27,10 @@
 #include "ResFile.h"
 #include "ResourceData.h"
 
-MessageTable::~MessageTable() { delete data; }
+MessageTable::~MessageTable() {}
 void MessageTable::SetData(ResourceData* rdata)
 {
-
-    delete data;
-    data = rdata;
+    data.reset(rdata);
 }
 void MessageTable::WriteRes(ResFile& resFile)
 {
@@ -45,8 +43,7 @@ void MessageTable::ReadRC(RCFile& rcFile)
 {
     resInfo.SetFlags(resInfo.GetFlags() | ResourceInfo::Pure);
     resInfo.ReadRC(rcFile, false);
-    ResourceData* rd = new ResourceData;
-    rd->ReadRC(rcFile);
-    data = rd;
+    data = std::make_unique<ResourceData>();
+    data->ReadRC(rcFile);
     rcFile.NeedEol();
 }

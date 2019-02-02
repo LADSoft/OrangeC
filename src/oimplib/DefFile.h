@@ -31,6 +31,7 @@
 #include <fstream>
 #include <map>
 #include <deque>
+#include <memory>
 
 enum
 {
@@ -94,12 +95,12 @@ class DefFile
         std::string module;
         std::string entry;
     };
-    void Add(Export* e) { exports.push_back(e); }
-    void Add(Import* i) { imports.push_back(i); }
-    typedef std::deque<Export*>::iterator ExportIterator;
+    void Add(Export* e);
+    void Add(Import* i);
+    typedef std::deque<std::unique_ptr<Export>>::iterator ExportIterator;
     ExportIterator ExportBegin() { return exports.begin(); }
     ExportIterator ExportEnd() { return exports.end(); }
-    typedef std::deque<Import*>::iterator ImportIterator;
+    typedef std::deque<std::unique_ptr<Import>>::iterator ImportIterator;
     ImportIterator ImportBegin() { return imports.begin(); }
     ImportIterator ImportEnd() { return imports.end(); }
 
@@ -145,8 +146,8 @@ class DefFile
     int lineno;
     bool cdll;
     std::map<std::string, unsigned> sectionMap;
-    std::deque<Export*> exports;
-    std::deque<Import*> imports;
+    std::deque<std::unique_ptr<Export>> exports;
+    std::deque<std::unique_ptr<Import>> imports;
     static bool initted;
     static KeywordHash keywords;
 };

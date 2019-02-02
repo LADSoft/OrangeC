@@ -48,7 +48,7 @@ void Icon::ReadBin(ResourceData* rd)
     //    if (!pt.y)
     //        pt.y = (bytes - 0x30) / ((pt.x / 8) *2);
 
-    data = new ResourceData(rd->GetData() + offset, bytes);
+    data = std::make_unique<ResourceData>(rd->GetData() + offset, bytes);
     if (rd->PastEnd() || offset + bytes > rd->GetLen())
         throw new std::runtime_error("Icon file too short");
     // borland resets the size in the bitmapinfo header, but apparently sets it wrong...

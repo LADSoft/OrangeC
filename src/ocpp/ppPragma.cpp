@@ -171,15 +171,7 @@ void ppPragma::HandleSR(Tokenizer& tk, bool startup)
         }
     }
 }
-Startups::~Startups()
-{
-    for (auto it = begin(); it != end(); ++it)
-    {
-        Properties* x = it->second;
-        delete x;
-    }
-    list.clear();
-}
+Startups::~Startups() {}
 
 bool Once::AddToList()
 {

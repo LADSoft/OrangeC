@@ -38,7 +38,7 @@ class ObjFile;
 
 class LinkOverlay
 {
-    typedef std::vector<LinkRegionSpecifier*> RegionContainer;
+    typedef std::vector<std::unique_ptr<LinkRegionSpecifier>> RegionContainer;
 
   public:
     LinkOverlay(LinkPartition* Parent) : parent(Parent) {}
@@ -57,7 +57,8 @@ class LinkOverlay
     RegionIterator RegionBegin() { return regions.begin(); }
     RegionIterator RegionEnd() { return regions.end(); }
 
-    void Add(LinkRegionSpecifier* region) { regions.push_back(region); }
+    void Add(LinkRegionSpecifier* region);
+
     bool ParseOverlaySpec(LinkManager* manager, CmdFiles& files, LinkTokenizer& spec);
 
     ObjInt PlaceOverlay(LinkManager* manager, LinkAttribs& partitionAttribs, bool completeLink, int overlayNum);
@@ -75,14 +76,14 @@ class LinkOverlay
 class LinkRegionSpecifier
 {
   public:
-    LinkRegionSpecifier(LinkRegion* Region) : region(Region), symbol(nullptr) {}
-    LinkRegionSpecifier(LinkExpressionSymbol* Symbol) : region(nullptr), symbol(Symbol) {}
+    LinkRegionSpecifier(LinkRegion* Region) : region(Region) {}
+    LinkRegionSpecifier(LinkExpressionSymbol* Symbol) : symbol(Symbol) {}
     ~LinkRegionSpecifier();
-    LinkRegion* GetRegion() { return region; }
-    LinkExpressionSymbol* GetSymbol() { return symbol; }
+    LinkRegion* GetRegion() { return region.get(); }
+    LinkExpressionSymbol* GetSymbol() { return symbol.get(); }
 
   private:
-    LinkRegion* region;
-    LinkExpressionSymbol* symbol;
+    std::unique_ptr<LinkRegion> region;
+    std::unique_ptr<LinkExpressionSymbol> symbol;
 };
 #endif

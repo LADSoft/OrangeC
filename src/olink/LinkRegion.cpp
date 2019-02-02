@@ -38,15 +38,7 @@
 //#include <dir.h>
 #include <cctype>
 
-LinkRegion::~LinkRegion()
-{
-    for (auto sect : nowData)
-        delete sect;
-    for (auto sect : normalData)
-        delete sect;
-    for (auto sect : postponeData)
-        delete sect;
-}
+LinkRegion::~LinkRegion() {}
 ObjString LinkRegion::QualifiedRegionName()
 {
     ObjString partName(GetParent()->GetParent()->GetName());
@@ -201,7 +193,7 @@ bool LinkRegion::HoldsFile(const ObjString& fileName)
 {
     for (auto name : sourceFiles)
     {
-        if (*name == fileName)
+        if (name == fileName)
             return true;
     }
     return false;
@@ -214,23 +206,21 @@ bool LinkRegion::Matches(const ObjString& name, const ObjString& spec)
 void LinkRegion::AddSourceFile(CmdFiles& filelist, const ObjString& spec)
 {
     for (auto it = filelist.FileNameBegin(); it != filelist.FileNameEnd(); ++it)
-        if (Matches(**it, spec))
+        if (Matches(*it, spec))
             sourceFiles.push_back(*it);
 }
 void LinkRegion::AddData(SectionData& data, LookasideBuf& lookaside, ObjFile* file, ObjSection* section)
 {
     NamedSection* ns = nullptr;
-    NamedSection aa;
-    aa.name = section->GetName();
+    NamedSection aa(section->GetName());
     auto it = lookaside.find(&aa);
     if (it != lookaside.end())
         ns = *it;
     if (ns == nullptr)
     {
-        ns = new NamedSection;
         ns->name = section->GetName();
-        data.push_back(ns);
-        lookaside.insert(ns);
+        data.push_back(std::make_unique<NamedSection>(section->GetName()));
+        lookaside.insert(data.back().get());
     }
     ns->sections.push_back(OneSection(file, section));
 }
@@ -276,7 +266,7 @@ void LinkRegion::AddSection(LinkManager* manager)
         else
             for (auto srcFile : sourceFiles)
             {
-                if (*srcFile == file->GetInputName())
+                if (srcFile == file->GetInputName())
                 {
                     AddFile(file);
                     break;
@@ -299,7 +289,7 @@ void LinkRegion::CheckAttributes()
         bool notEqual = false;
         bool used = false;
         ObjInt maxAlign = -1;
-        for (auto data : nowData)
+        for (auto& data : nowData)
         {
             for (auto item : data->sections)
             {
@@ -329,7 +319,7 @@ void LinkRegion::CheckAttributes()
                     anySeparate = true;
             }
         }
-        for (auto data : normalData)
+        for (auto& data : normalData)
         {
             for (auto item : data->sections)
             {
@@ -359,7 +349,7 @@ void LinkRegion::CheckAttributes()
                     anySeparate = true;
             }
         }
-        for (auto data : postponeData)
+        for (auto& data : postponeData)
         {
             for (auto item : data->sections)
             {
@@ -475,7 +465,7 @@ ObjInt LinkRegion::ArrangeSections(LinkManager* manager)
     attribs.SetAddress(new LinkExpression(address));
     if (common)
     {
-        for (auto data : nowData)
+        for (auto& data : nowData)
         {
             for (auto item : data->sections)
             {
@@ -485,7 +475,7 @@ ObjInt LinkRegion::ArrangeSections(LinkManager* manager)
                     sect->SetVirtualOffset(attribs.GetVirtualOffset());
             }
         }
-        for (auto data : normalData)
+        for (auto& data : normalData)
         {
             for (auto item : data->sections)
             {
@@ -495,7 +485,7 @@ ObjInt LinkRegion::ArrangeSections(LinkManager* manager)
                     sect->SetVirtualOffset(attribs.GetVirtualOffset());
             }
         }
-        for (auto data : postponeData)
+        for (auto& data : postponeData)
         {
             for (auto item : data->sections)
             {
@@ -512,32 +502,32 @@ ObjInt LinkRegion::ArrangeSections(LinkManager* manager)
         // it is an error if an overlayed section appears in multiple categories
         // and for non-virtual sections it won't be flagged.   For virtual sections
         // the implicit public will be redeclared and cause an error...
-        for (auto data : nowData)
+        for (auto& data : nowData)
         {
             address += align - 1;
             address /= align;
             address *= align;
-            address += ArrangeOverlayed(manager, data, address);
+            address += ArrangeOverlayed(manager, data.get(), address);
         }
-        for (auto data : normalData)
+        for (auto& data : normalData)
         {
             address += align - 1;
             address /= align;
             address *= align;
-            address += ArrangeOverlayed(manager, data, address);
+            address += ArrangeOverlayed(manager, data.get(), address);
         }
-        for (auto data : postponeData)
+        for (auto& data : postponeData)
         {
             address += align - 1;
             address /= align;
             address *= align;
-            address += ArrangeOverlayed(manager, data, address);
+            address += ArrangeOverlayed(manager, data.get(), address);
         }
         size = address - oldAddress;
     }
     else
     {
-        for (auto data : nowData)
+        for (auto& data : nowData)
         {
             for (auto item : data->sections)
             {
@@ -551,7 +541,7 @@ ObjInt LinkRegion::ArrangeSections(LinkManager* manager)
                 address += sect->GetAbsSize();
             }
         }
-        for (auto data : normalData)
+        for (auto& data : normalData)
         {
             for (auto item : data->sections)
             {
@@ -565,7 +555,7 @@ ObjInt LinkRegion::ArrangeSections(LinkManager* manager)
                 address += sect->GetAbsSize();
             }
         }
-        for (auto data : postponeData)
+        for (auto& data : postponeData)
         {
             for (auto item : data->sections)
             {

@@ -24,13 +24,27 @@
 
 #include "SymbolTable.h"
 
-SymbolTable::~SymbolTable()
+SymbolTable::~SymbolTable() {}
+void SymbolTable::Add(Symbol* symbol)
 {
-    while (!symList.empty())
+    hashTable[symbol->GetName()] = symbol;
+    std::unique_ptr<Symbol> temp(symbol);
+    symList.push_back(std::move(temp));
+}
+void SymbolTable::Remove(Symbol* symbol)
+{
+    auto it = hashTable.find(symbol->GetName());
+    if (it != hashTable.end())
     {
-        Symbol* t = symList.front();
-        symList.pop_front();
-        delete t;
+        hashTable.erase(it);
+        for (auto it = symList.begin(); it != symList.end(); ++it)
+        {
+            if ((*it).get() == symbol)
+            {
+                symList.erase(it);
+                break;
+            }
+        }
+        delete symbol;
     }
-    hashTable.clear();
 }

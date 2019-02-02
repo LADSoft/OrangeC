@@ -27,6 +27,7 @@
 
 #include "Resource.h"
 #include <deque>
+#include <memory>
 
 class RCFile;
 class ResFile;
@@ -40,14 +41,14 @@ class RCData : public Resource
     virtual void WriteRes(ResFile& resFile);
     virtual void ReadRC(RCFile& rcFile);
 
-    void Add(ResourceData* rdata) { data.push_back(rdata); }
+    void Add(ResourceData* rdata);
 
-    typedef std::deque<ResourceData*>::iterator iterator;
+    typedef std::deque<std::unique_ptr<ResourceData>>::iterator iterator;
     iterator begin() { return data.begin(); }
     iterator end() { return data.end(); }
 
   private:
-    std::deque<ResourceData*> data;
+    std::deque<std::unique_ptr<ResourceData>> data;
 };
 
 #endif

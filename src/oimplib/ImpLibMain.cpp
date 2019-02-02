@@ -64,12 +64,8 @@ const char* ImpLibMain::usageText =
     "\n"
     "Time: " __TIME__ "  Date: " __DATE__;
 
-ImpLibMain::~ImpLibMain()
-{
-    for (auto obj : objectData)
-        delete obj;
-    objectData.clear();
-}
+ImpLibMain::~ImpLibMain() {}
+
 void ImpLibMain::AddFile(LibManager& librarian, const char* arg)
 {
     const char* p = arg;
@@ -246,7 +242,7 @@ int ImpLibMain::HandleDefFile(const std::string& outputFile, int argc, char** ar
         else
             npos++;
         defFile.SetLibraryName(inputFile.substr(npos));
-        for (auto item : dllFile)
+        for (auto& item : dllFile)
         {
             DefFile::Export* exp = new DefFile::Export;
             exp->id = item->name;
@@ -286,7 +282,7 @@ ObjFile* ImpLibMain::DllFileToObjFile(DLLExportReader& dll)
         name.erase(0, npos + 1);
     ObjectData* od = new ObjectData;
     ObjFile* obj = new ObjFile(name);
-    for (auto exp : dll)
+    for (auto& exp : dll)
     {
         ObjImportSymbol* p = od->factory.MakeImportSymbol(
             (CDLLSwitch.GetValue() && exp->name.find("@") == std::string::npos ? "_" : "") + exp->name);
@@ -347,11 +343,11 @@ int ImpLibMain::HandleLibrary(const std::string& outputFile, int argc, char** ar
         AddFile(librarian, File.GetValue()[i]);
     for (auto it = addFiles.FileNameBegin(); it != addFiles.FileNameEnd(); ++it)
     {
-        librarian.AddFile(*(*it));
+        librarian.AddFile((*it));
     }
     for (auto it = replaceFiles.FileNameBegin(); it != replaceFiles.FileNameEnd(); ++it)
     {
-        librarian.ReplaceFile(*(*it));
+        librarian.ReplaceFile((*it));
     }
     if (modified)
         switch (librarian.SaveLibrary())

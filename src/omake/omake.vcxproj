@@ -168,6 +168,7 @@
     <ClCompile Include="Variable.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Depends.h" />
     <ClInclude Include="Eval.h" />
     <ClInclude Include="Include.h" />
     <ClInclude Include="MakeMain.h" />

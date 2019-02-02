@@ -27,6 +27,7 @@
 #include <vector>
 #include <cstdlib>
 #include "ObjTypes.h"
+#include <memory>
 
 class ObjExpression;
 class ObjSection;
@@ -59,7 +60,7 @@ class ObjMemory : public ObjWrapper
         debugTags(nullptr)
     {
     }
-    virtual ~ObjMemory() { delete debugTags; };
+    virtual ~ObjMemory() { };
 
     ObjInt GetSize() { return size; }
     ObjByte GetFill() { return fill; }
@@ -77,19 +78,18 @@ class ObjMemory : public ObjWrapper
 
     DebugTagIterator DebugTagBegin() { return debugTags->begin(); }
     DebugTagIterator DebugTagEnd() { return debugTags->end(); }
-    void SetDebugTags(DebugTagContainer* d)
+    void SetDebugTags(std::unique_ptr<DebugTagContainer> d)
     {
         if (debugTags)
         {
-            for (int i = 0; i < d->size(); i++)
+            for (auto v : *d)
             {
-                debugTags->push_back((*d)[i]);
+                debugTags->push_back(v);
             }
-            delete d;
         }
         else
         {
-            debugTags = d;
+            debugTags = std::move(d);
         }
     }
 
@@ -99,7 +99,7 @@ class ObjMemory : public ObjWrapper
     ObjByte fill;
     ObjExpression* fixup;
     bool enumerated;
-    DebugTagContainer* debugTags;
+    std::unique_ptr<DebugTagContainer> debugTags;
 };
 
 class ObjMemoryManager : public ObjWrapper
@@ -117,10 +117,10 @@ class ObjMemoryManager : public ObjWrapper
         size += Memory->GetSize();
         memory.push_back(Memory);
     }
-    void Add(ObjMemory::DebugTagContainer* Tags)
+    void Add(std::unique_ptr<ObjMemory::DebugTagContainer> Tags)
     {
         if (memory.size())
-            memory[memory.size() - 1]->SetDebugTags(Tags);
+            memory[memory.size() - 1]->SetDebugTags(std::move(Tags));
     }
     void ResolveSymbols(ObjFactory* Factory, ObjSection* Section);
     typedef MemoryContainer::iterator MemoryIterator;

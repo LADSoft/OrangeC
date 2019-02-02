@@ -28,17 +28,7 @@
 #include "UTF8.h"
 #include <cctype>
 
-ppCond::~ppCond()
-{
-
-    delete current;
-    while (!skipList.empty())
-    {
-        current = skipList.front();
-        skipList.pop_front();
-        delete current;
-    }
-}
+ppCond::~ppCond() {}
 bool ppCond::Check(int token, const std::string& line, int lineno)
 {
     std::string line1 = line;
@@ -151,10 +141,10 @@ bool ppCond::Check(int token, const std::string& line, int lineno)
 }
 void ppCond::HandleIf(bool val, const std::string& line, int lineno)
 {
-    skip* old = current;
+    skip* old = current.get();
     if (current)
-        skipList.push_front(current);
-    current = new skip;
+        skipList.push_front(std::move(current));
+    current = std::make_unique<skip>();
     current->line = lineno;
     if (old && old->skipping)
     {
@@ -177,7 +167,7 @@ void ppCond::HandleElif(bool val, const std::string& line)
     {
         skip* old = nullptr;
         if (!skipList.empty())
-            old = skipList.front();
+            old = skipList.front().get();
         if ((!old || !old->skipping) && current->takeElse && val)
         {
             current->skipping = false;
@@ -235,10 +225,9 @@ void ppCond::HandleEndIf(std::string& line)
     }
     else
     {
-        delete current;
         if (!skipList.empty())
         {
-            current = skipList.front();
+            current = std::move(skipList.front());
             skipList.pop_front();
         }
         else

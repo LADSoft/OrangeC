@@ -30,6 +30,7 @@
 #include <fstream>
 #include <set>
 #include "Resource.h"
+#include <memory>
 
 class ResFile
 {
@@ -52,17 +53,17 @@ class ResFile
     void SetPos(size_t n) { stream->seekp(n); }
 
   private:
-    std::deque<Resource*> resources;
+    std::deque<std::unique_ptr<Resource>> resources;
     struct lt
     {
         // in this LT operation, the resource ids are guaranteed to be numeric.
         // we are doing this to force a sort of the string tables when we read
         // them back out
-        bool operator()(Resource* left, Resource* right) { return left->GetId().GetId() < right->GetId().GetId(); }
+        bool operator() (const std::unique_ptr<Resource>& left, const std::unique_ptr<Resource>& right) const { return left->GetId().GetId() < right->GetId().GetId(); }
     };
     // strings are kept in a separate list because they have to be at the end
     // of the file and sorted
-    std::set<Resource*, lt> strings;
+    std::set<std::unique_ptr<Resource>, lt> strings;
     int hdrSize;
     int size;
     int base;

@@ -337,7 +337,7 @@ void MakeMain::SetupImplicit()
 }
 void MakeMain::ShowRule(RuleList* ruleList)
 {
-    for (auto rule : *ruleList)
+    for (auto& rule : *ruleList)
     {
         std::cout << ruleList->GetTarget() << (ruleList->GetDoubleColon() ? "::" : ":") << std::endl;
         std::cout << "\tPrerequisites:" << std::endl;
@@ -365,7 +365,7 @@ void MakeMain::ShowRule(RuleList* ruleList)
 void MakeMain::ShowDatabase()
 {
     std::cout << "Variables:" << std::endl;
-    for (auto var : *VariableContainer::Instance())
+    for (auto& var : *VariableContainer::Instance())
     {
         std::cout << std::setw(25) << std::setfill(' ') << std::right << (*var.first);
         if (var.second->GetFlavor() == Variable::f_recursive)
@@ -375,15 +375,15 @@ void MakeMain::ShowDatabase()
         std::cout << var.second->GetValue() << std::endl;
     }
     std::cout << std::endl << "Explicit rules:" << std::endl;
-    for (auto rule : *RuleContainer::Instance())
+    for (auto& rule : *RuleContainer::Instance())
     {
-        ShowRule(rule.second);
+        ShowRule(rule.second.get());
     }
     std::cout << std::endl << "Implicit rules:" << std::endl;
     for (auto it = RuleContainer::Instance()->ImplicitBegin();
          it != RuleContainer::Instance()->ImplicitEnd(); ++it)
     {
-        ShowRule(*it);
+        ShowRule((*it).get());
     }
 }
 void MakeMain::SetTreePath(std::string& files)
@@ -578,7 +578,7 @@ int MakeMain::Run(int argc, char** argv)
     RuleList* rl = nullptr;
     if ((rl = RuleContainer::Instance()->Lookup(".MAKEFLAGS")) || (rl = RuleContainer::Instance()->Lookup(".MFLAGS")))
     {
-        for (auto rule : *rl)
+        for (auto& rule : *rl)
         {
             std::string v = rule->GetPrerequisites();
             Eval r(v, false);
@@ -623,7 +623,7 @@ int MakeMain::Run(int argc, char** argv)
             auto r = RuleContainer::Instance()->Lookup(".MAIN");
             if (r)
             {
-                for (auto r1 : *r)
+                for (auto& r1 : *r)
                 {
                     auto p = r1->GetPrerequisites();
                     while (!p.empty())

@@ -34,9 +34,9 @@
 
 void Runner::DeleteOne(Depends* depend)
 {
-    for (auto d : *depend)
+    for (auto& d : *depend)
     {
-        DeleteOne(d);
+        DeleteOne(d.get());
     }
     if (depend->ShouldDelete())
         OS::RemoveFile(depend->GetGoal());
@@ -50,10 +50,10 @@ int Runner::RunOne(Depends* depend, EnvironmentStrings& env, bool keepGoing)
     {
         bool stop = false;
         bool cantbuild = false;
-        for (auto d : *depend)
+        for (auto& d : *depend)
         {
             int rv1;
-            if ((rv1 = RunOne(d, env, keepGoing)))
+            if ((rv1 = RunOne(d.get(), env, keepGoing)))
             {
                 if (rv <= 0 && rv1 != 0)
                     rv = rv1;
@@ -161,9 +161,9 @@ int Runner::RunOne(Depends* depend, EnvironmentStrings& env, bool keepGoing)
 }
 void Runner::CancelOne(Depends* depend)
 {
-    for (auto d : *depend)
+    for (auto& d : *depend)
     {
-        CancelOne(d);
+        CancelOne(d.get());
     }
     std::string path = filePaths[depend->GetGoal()];
     if (!path.empty())

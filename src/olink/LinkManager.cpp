@@ -46,12 +46,24 @@ int LinkManager::errors;
 int LinkManager::warnings;
 
 void HookError(int aa) {}
+
+LinkManager::LinkManager(ObjString Specification, bool CaseSensitive, const ObjString OutputFile, bool CompleteLink,
+    bool DebugPassThrough, ObjString DebugFile) :
+    specification(Specification),
+    outputFile(OutputFile),
+    specName(Specification),
+    factory(nullptr),
+    indexManager(nullptr),
+    completeLink(CompleteLink),
+    ioBase(nullptr),
+    caseSensitive(CaseSensitive),
+    debugPassThrough(DebugPassThrough),
+    debugFile(DebugFile)
+{
+}
+
 LinkManager::~LinkManager()
 {
-    for (auto d : dictionaries)
-        delete d;
-    for (auto p : partitions)
-        delete p;
     for (auto s : publics)
         delete s;
     for (auto s : externals)
@@ -394,7 +406,7 @@ void LinkManager::LoadFiles()
     int mau = 1;
     for (auto it = objectFiles.FileNameBegin(); it != objectFiles.FileNameEnd(); ++it)
     {
-        ObjString name = *(*it);
+        ObjString name = (*it);
         FILE* infile = fopen(name.c_str(), "rb");
         if (!infile)
         {
@@ -416,7 +428,7 @@ void LinkManager::LoadFiles()
                     else
                         hold = "";
                 }
-                name = Utils::FullPath(next, *(*it));
+                name = Utils::FullPath(next, (*it));
                 infile = fopen(name.c_str(), "rb");
                 if (infile)
                     hold = "";
@@ -427,7 +439,7 @@ void LinkManager::LoadFiles()
             ObjFile* file = ioBase->Read(infile, ObjIOBase::eAll, factory);
             if (!file)
             {
-                LinkError("Invalid object file " + ioBase->GetErrorQualifier() + " in " + **it);
+                LinkError("Invalid object file " + ioBase->GetErrorQualifier() + " in " + *it);
             }
             else
             {
@@ -449,16 +461,12 @@ void LinkManager::LoadFiles()
     ioBase->SetBitsPerMAU(bpmau);
     ioBase->SetMAUS(mau);
 }
-LinkLibrary* LinkManager::OpenLibrary(const ObjString& name)
+std::unique_ptr<LinkLibrary> LinkManager::OpenLibrary(const ObjString& name)
 {
-    LinkLibrary* rv = new LinkLibrary(name, caseSensitive);
+    std::unique_ptr<LinkLibrary> rv = std::make_unique<LinkLibrary>(name, caseSensitive);
     if (!rv || !rv->IsOpen())
     {
-        if (rv)
-        {
-            delete rv;
-            rv = nullptr;
-        }
+        rv.release();
         std::string hold = libPath;
         std::string next;
         while (!hold.empty())
@@ -485,7 +493,7 @@ LinkLibrary* LinkManager::OpenLibrary(const ObjString& name)
                 fclose(infile);
             }
         }
-        rv = new LinkLibrary(Utils::FullPath(next, name), caseSensitive);
+        rv = std::make_unique<LinkLibrary>(Utils::FullPath(next, name), caseSensitive);
     }
     if (rv)
     {
@@ -493,30 +501,28 @@ LinkLibrary* LinkManager::OpenLibrary(const ObjString& name)
         {
             if (!rv->Load())
             {
-                delete rv;
-                rv = nullptr;
+                rv.release();
             }
         }
         else
         {
-            delete rv;
-            rv = nullptr;
+            rv.release();
         }
     }
-    return rv;
+    return std::move(rv);
 }
 void LinkManager::LoadLibraries()
 {
     for (auto it = libFiles.FileNameBegin(); it != libFiles.FileNameEnd(); ++it)
     {
-        LinkLibrary* newLibrary = OpenLibrary((**it));
+        std::unique_ptr<LinkLibrary> newLibrary = std::move(OpenLibrary((*it)));
         if (newLibrary)
         {
-            dictionaries.insert(newLibrary);
+            dictionaries.insert(std::move(newLibrary));
         }
         else
         {
-            LinkError("Library '" + (**it) + "' does not exist or is not a library");
+            LinkError("Library '" + (*it) + "' does not exist or is not a library");
         }
     }
 }
@@ -583,9 +589,9 @@ void LinkManager::ScanLibraries()
         if (extit == externals.end())
             break;
         LinkSymbolData* current = *extit;
-        for (auto d : dictionaries)
+        for (auto& d : dictionaries)
         {
-            found = ResolveLibrary(d, (*extit)->GetSymbol()->GetName());
+            found = ResolveLibrary(d.get(), (*extit)->GetSymbol()->GetName());
             if (found)
                 break;
         }
@@ -604,8 +610,6 @@ void LinkManager::ScanLibraries()
 }
 void LinkManager::CloseLibraries()
 {
-    for (auto d : dictionaries)
-        delete d;
     dictionaries.clear();
 }
 bool LinkManager::ParseAssignment(LinkTokenizer& spec)
@@ -617,16 +621,14 @@ bool LinkManager::ParseAssignment(LinkTokenizer& spec)
         return false;
     if (!spec.GetExpression(&value, true))
         return false;
-    LinkExpressionSymbol* esym = new LinkExpressionSymbol(symName, value);
-    if (!LinkExpression::EnterSymbol(esym))
+    std::unique_ptr<LinkExpressionSymbol> esym = std::make_unique<LinkExpressionSymbol>(symName, value);
+    if (!LinkExpression::EnterSymbol(esym.get()))
     {
-        delete esym;
         LinkManager::LinkError("Symbol " + symName + " redefined");
     }
     else
     {
-        LinkPartitionSpecifier* lps = new LinkPartitionSpecifier(esym);
-        partitions.push_back(lps);
+        partitions.push_back(std::make_unique<LinkPartitionSpecifier>(esym.release()));
     }
     return spec.MustMatch(LinkTokenizer::eSemi);
 }
@@ -645,7 +647,7 @@ bool LinkManager::CreateSeparateRegions(LinkManager* manager, CmdFiles& files, L
         {
             LinkPartition* partition = new LinkPartition(this);
             partition->SetName("replicate");
-            partitions.push_back(new LinkPartitionSpecifier(partition));
+            partitions.push_back(std::make_unique<LinkPartitionSpecifier>(partition));
             LinkOverlay* overlay = new LinkOverlay(partition);
             overlay->SetName(std::string(sect.file->GetName()) + "_" + sect.section->GetName());
             partition->Add(new LinkOverlaySpecifier(overlay));
@@ -662,7 +664,7 @@ bool LinkManager::CreateSeparateRegions(LinkManager* manager, CmdFiles& files, L
         {
             LinkPartition* partition = new LinkPartition(this);
             partition->SetName("replicate");
-            partitions.push_back(new LinkPartitionSpecifier(partition));
+            partitions.push_back(std::make_unique<LinkPartitionSpecifier>(partition));
             LinkOverlay* overlay = new LinkOverlay(partition);
             overlay->SetName(std::string(sect.file->GetName()) + "_" + sect.section->GetName());
             partition->Add(new LinkOverlaySpecifier(overlay));
@@ -679,7 +681,7 @@ bool LinkManager::CreateSeparateRegions(LinkManager* manager, CmdFiles& files, L
         {
             LinkPartition* partition = new LinkPartition(this);
             partition->SetName("replicate");
-            partitions.push_back(new LinkPartitionSpecifier(partition));
+            partitions.push_back(std::make_unique<LinkPartitionSpecifier>(partition));
             LinkOverlay* overlay = new LinkOverlay(partition);
             overlay->SetName(std::string(sect.file->GetName()) + "_" + sect.section->GetName());
             partition->Add(new LinkOverlaySpecifier(overlay));
@@ -722,7 +724,7 @@ bool LinkManager::ParsePartitions()
         else
         {
             LinkPartition* newPartition = new LinkPartition(this);
-            partitions.push_back(new LinkPartitionSpecifier(newPartition));
+            partitions.push_back(std::make_unique<LinkPartitionSpecifier>(newPartition));
             if (!newPartition->ParsePartitionSpec(this, objectFiles, specification))
                 return false;
             if (!specification.MustMatch(LinkTokenizer::eSemi))
@@ -743,7 +745,7 @@ void LinkManager::CreatePartitions()
             if (itr == createdRegions.end())
             {
                 LinkPartition* partition = new LinkPartition(this);
-                partitions.push_back(new LinkPartitionSpecifier(partition));
+                partitions.push_back(std::make_unique<LinkPartitionSpecifier>(partition));
                 LinkOverlay* overlay = new LinkOverlay(partition);
                 LinkOverlaySpecifier* ospec = new LinkOverlaySpecifier(overlay);
                 partition->Add(ospec);
@@ -769,7 +771,7 @@ void LinkManager::PlaceSections()
     {
         int bottom = 0;
         int overlayNum = 0;
-        for (auto partition : partitions)
+        for (auto& partition : partitions)
         {
             if (partition->GetSymbol())
             {

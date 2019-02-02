@@ -32,11 +32,7 @@ ppMacro::ppMacro(ppInclude& Include, ppDefine& Define) : include(Include), expr(
 {
     expr.SetParams(&define);
 }
-ppMacro::~ppMacro()
-{
-    while (!stack.empty())
-        HandleExitRep();
-}
+ppMacro::~ppMacro() { }
 bool ppMacro::Check(int token, std::string& line)
 {
     bool rv = false;
@@ -71,7 +67,7 @@ bool ppMacro::GetLine(std::string& line, int& lineno)
 {
     while (!stack.empty())
     {
-        MacroData* p = stack.back();
+        MacroData* p = stack.back().get();
         if (p->offset >= p->lines.size())
         {
             p->offset = 0;
@@ -146,14 +142,15 @@ bool ppMacro::HandleRep(std::string& line)
         if (p)
         {
             include.Mark();
-            stack.push_back(p);
+            std::unique_ptr<MacroData> m(p);
+            stack.push_back(std::move(m));
         }
     }
     return true;
 }
 bool ppMacro::HandleExitRep()
 {
-    MacroData* p = stack.back();
+    MacroData* p = stack.back().release();
     stack.pop_back();
     if (p->id < 0)
         delete p;
@@ -449,13 +446,14 @@ bool ppMacro::Invoke(std::string name, std::string line)
     p->id = nextMacro++;
     p->repsLeft = 1;
     include.Mark();
-    stack.push_back(p);
+    std::unique_ptr<MacroData> temp(p);
+    stack.push_back(std::move(temp));
     return true;
 }
 MacroData* ppMacro::GetTopMacro()
 {
     for (int i = stack.size() - 1; i >= 0; i--)
         if (stack[i]->id != -1)
-            return stack[i];
+            return stack[i].get();
     return nullptr;
 }

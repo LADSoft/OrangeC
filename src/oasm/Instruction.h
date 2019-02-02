@@ -29,11 +29,12 @@
 #include "AsmExpr.h"
 #include <vector>
 #include <string>
+#include <memory>
 
 class Fixup;
 class AsmFile;
 
-typedef std::vector<Fixup*> FixupContainer;
+typedef std::vector<std::unique_ptr<Fixup>> FixupContainer;
 class Instruction
 {
   public:
@@ -46,52 +47,11 @@ class Instruction
         RESERVE,
         ALT
     };
-    Instruction(Label* lbl) : data(nullptr), label(lbl), type(LABEL), altdata(nullptr), pos(0), fpos(0), size(0), offs(0), repeat(1), fill(0)
-    {
-    }
-    Instruction(void* Data, int Size, bool isData = false) :
-        type(isData ? DATA : CODE),
-        label(nullptr),
-        pos(0),
-        fpos(0),
-        repeat(1),
-        size(Size),
-        offs(0),
-        lost(false),
-        fill(0)
-    {
-        data = LoadData(!isData, (unsigned char*)Data, Size);
-    }
-    Instruction(int aln) :
-        data(nullptr),
-        type(ALIGN),
-        label(nullptr),
-        altdata(nullptr),
-        fill(0),
-        pos(0),
-        fpos(0),
-        size(aln),
-        offs(0),
-        repeat(1)
-    {
-    }
-    Instruction(int Repeat, int Size) :
-        type(RESERVE),
-        label(nullptr),
-        altdata(nullptr),
-        fill(0),
-        pos(0),
-        fpos(0),
-        size(Size),
-        repeat(Repeat),
-        offs(0)
-    {
-        data = new unsigned char[size];
-        memset(data, 0, size);
-    }
-    Instruction(void* data) : data(nullptr), type(ALT), label(nullptr), altdata(data), pos(0), fpos(0), size(0), offs(0), repeat(1), fill(0)
-    {
-    }
+    Instruction(Label* lbl);
+    Instruction(void* data, int Size, bool isData = false);
+    Instruction(int aln);
+    Instruction(int Repeat, int Size);
+    Instruction(void* data);
     virtual ~Instruction();
 
     void RepRemoveCancellations(AsmExprNode *exp, bool commit, int &count, Section *sect[], bool sign[], bool plus);
@@ -118,21 +78,20 @@ class Instruction
         return size;
     }
     unsigned char fill;
-    unsigned char* GetData() const { return data; }
     int GetRepeat() const { return repeat; }
     int GetNext(Fixup& fixup, unsigned char* buf);
     void Rewind() { pos = fpos = 0; }
     static bool ParseSectionAttrib(AsmFile* file);
-    void Add(Fixup* fixup) { fixups.push_back(fixup); }
-    unsigned char* GetBytes() const { return data; }
-    FixupContainer* GetFixups() { return &fixups; }
+    void Add(Fixup* fixup);
+    unsigned char* GetBytes() const { return data.get(); }
+    FixupContainer* GetFixups();
     static void SetBigEndian(bool be) { bigEndian = be; }
-    unsigned char* LoadData(bool isCode, unsigned char* data, size_t size);
+    std::unique_ptr<unsigned char[]> LoadData(bool isCode, unsigned char* data, size_t size);
     bool Lost() const { return lost; }
 
   private:
     enum iType type;
-    unsigned char* data;
+    std::unique_ptr<unsigned char[]> data;
     Label* label;
     int size;
     int offs;

@@ -26,7 +26,7 @@
 #define LinkNameLogic_h
 
 #include <string>
-
+#include <memory>
 class LinkNameLogic
 {
   public:
@@ -46,18 +46,17 @@ class LinkNameLogic
             eAnd,
             eName
         } mode;
-        ParseItem *left, *right;
+        std::unique_ptr<ParseItem> left, right;
         std::string token;
         bool Matches(const std::string& name);
-        void Unlink();
     };
     void ParseOut(std::string spec);
-    ParseItem* ParseOutOr(std::string& spec);
-    ParseItem* ParseOutAnd(std::string& spec);
-    ParseItem* ParseOutNot(std::string& spec);
-    ParseItem* ParseOutPrimary(std::string& spec);
+    std::unique_ptr<ParseItem> ParseOutOr(std::string& spec);
+    std::unique_ptr<ParseItem> ParseOutAnd(std::string& spec);
+    std::unique_ptr<ParseItem> ParseOutNot(std::string& spec);
+    std::unique_ptr<ParseItem> ParseOutPrimary(std::string& spec);
 
   private:
-    ParseItem* top;
+    std::unique_ptr<ParseItem> top;
 };
 #endif

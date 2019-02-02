@@ -38,11 +38,6 @@
 
 Section::~Section()
 {
-    for (int i = 0; i < instructions.size(); i++)
-    {
-        Instruction* s = instructions[i];
-        delete s;
-    }
 }
 void Section::Parse(AsmFile* fil)
 {
@@ -149,6 +144,14 @@ void Section::Optimize()
     }
 }
 void Section::Resolve() { Optimize(); }
+void Section::InsertInstruction(Instruction* ins)
+{
+    std::unique_ptr<Instruction> temp;
+    temp.reset(ins);
+    instructions.push_back(std::move(temp));
+    ins->SetOffset(pc);
+    pc += ins->GetSize();
+}
 ObjSection* Section::CreateObject(ObjFactory& factory)
 {
     objectSection = factory.MakeSection(name);
@@ -338,7 +341,7 @@ bool Section::MakeData(ObjFactory& factory, std::function<Label*(std::string&)> 
                     ObjMemory* mem = factory.MakeData(buf, 0);
                     sect->Add(mem);
                     while (instructionPos < instructions.size() && instructions[instructionPos]->GetType() == Instruction::ALT)
-                        HandleAlt(factory, this, instructions[instructionPos++]);
+                        HandleAlt(factory, this, instructions[instructionPos++].get());
                 }
                 else
                 {

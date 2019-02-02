@@ -27,13 +27,11 @@
 #include "ResFile.h"
 #include "ResourceData.h"
 
-GenericResource::~GenericResource() { delete data; }
+GenericResource::~GenericResource() {}
 
 void GenericResource::SetData(ResourceData* rdata)
 {
-
-    delete data;
-    data = rdata;
+    data.reset(rdata);
 }
 void GenericResource::WriteRes(ResFile& resFile)
 {
@@ -46,8 +44,7 @@ void GenericResource::ReadRC(RCFile& rcFile)
 {
     resInfo.SetFlags((resInfo.GetFlags() & ~ResourceInfo::Discardable) | ResourceInfo::Pure);
     resInfo.ReadRC(rcFile, false);
-    ResourceData* rd = new ResourceData;
-    rd->ReadRC(rcFile);
-    data = rd;
+    data = std::make_unique<ResourceData>();
+    data->ReadRC(rcFile);
     rcFile.NeedEol();
 }

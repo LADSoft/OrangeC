@@ -40,27 +40,13 @@
 #include <fstream>
 #include <iostream>
 #include <climits>
+#include <algorithm>
 
-std::map<ObjString, Section*> AsmFile::sections;
+std::map<ObjString, std::unique_ptr<Section>> AsmFile::sections;
 std::vector<Section*> AsmFile::numericSections;
 
 AsmFile::~AsmFile()
 {
-    for (int i = 0; i < numericSections.size(); i++)
-    {
-        Section* s = numericSections[i];
-        delete s;
-    }
-    for (int i = 0; i < numericLabels.size(); i++)
-    {
-        Label* l = numericLabels[i];
-        delete l;
-    }
-    for (auto import : imports)
-    {
-        Import* i = import.second;
-        delete i;
-    }
 }
 bool AsmFile::Read()
 {
@@ -166,7 +152,7 @@ void AsmFile::DoLabel(std::string& name, int lineno)
             {
                 throw new std::runtime_error("Multiple start addresses specified");
             }
-            label = new Label(name, labels.size(), currentSection->GetSect());
+//            label = new Label(name, labels.size(), currentSection->GetSect());
             startupSection = currentSection;
         }
         else
@@ -188,7 +174,8 @@ void AsmFile::DoLabel(std::string& name, int lineno)
     {
         if (inAbsolute)
         {
-            label = new Label(realName, labels.size(), 0);
+            labels[realName] = std::make_unique<Label>(realName, labels.size(), 0);
+            label = labels[realName].get();
             label->SetOffset(absoluteValue);
             AsmExpr::SetEqu(realName, new AsmExprNode(absoluteValue));
             if (lineno >= 0)
@@ -196,7 +183,8 @@ void AsmFile::DoLabel(std::string& name, int lineno)
         }
         else
         {
-            label = new Label(realName, labels.size(), currentSection->GetSect() - 1);
+            labels[realName] = std::make_unique<Label>(realName, labels.size(), currentSection->GetSect() - 1);
+            label = labels[realName].get();
         }
         if (name[0] != '.')
         {
@@ -204,7 +192,6 @@ void AsmFile::DoLabel(std::string& name, int lineno)
             AsmExpr::SetCurrentLabel(label->GetName());
         }
         thisLabel = label;
-        labels[realName] = label;
         numericLabels.push_back(label);
         if (!inAbsolute)
             currentSection->InsertLabel(label);
@@ -620,7 +607,7 @@ void AsmFile::TimesDirective()
         else if (parser->MatchesOpcode(GetToken()->GetChars()))
         {
             Instruction* ins = parser->Parse(lexer.GetRestOfLine(), currentSection->GetPC());
-            for (auto f : *ins->GetFixups())
+            for (auto& f : *ins->GetFixups())
             {
                 f->SetExpr(AsmExpr::Eval(f->GetExpr(), currentSection->GetPC()));
             }
@@ -699,8 +686,7 @@ void AsmFile::ExternDirective()
         std::string name = GetId();
         if (caseInsensitive)
         {
-            for (int i = 0; i < name.size(); i++)
-                name[i] = toupper(name[i]);
+            std::transform(name.begin(), name.end(), name.begin(), ::toupper);
         }
         externs.insert(name);
         if (labels[name] != nullptr && !labels[name]->IsExtern())
@@ -709,9 +695,9 @@ void AsmFile::ExternDirective()
         }
         else
         {
-            Label* label = new Label(name, labels.size(), sections.size() - 1);
+            labels[name] = std::make_unique<Label>(name, labels.size(), sections.size() - 1);
+            Label* label = labels[name].get();
             label->SetExtern(true);
-            labels[name] = label;
             numericLabels.push_back(label);
         }
     } while (GetKeyword() == Lexer::comma);
@@ -726,10 +712,10 @@ void AsmFile::ImportDirective()
         external = GetId();
     else
         external = internal;
-    Import* imp = new Import;
+    imports[internal] = std::make_unique<Import>();
+    Import* imp = imports[internal].get();
     imp->dll = dll;
     imp->extname = external;
-    imports[internal] = imp;
 }
 void AsmFile::ExportDirective()
 {
@@ -748,15 +734,15 @@ void AsmFile::SectionDirective()
     std::string name = GetId();
     if (sections[name] == nullptr)
     {
-        Section* section = new Section(name, sections.size());
-        sections[name] = section;
+        sections[name] = std::make_unique<Section>(name, sections.size());
+        Section* section = sections[name].get();;
         numericSections.push_back(section);
         section->Parse(this);
         currentSection = section;
     }
     else
     {
-        currentSection = sections[name];
+        currentSection = sections[name].get();
     }
     AsmExpr::SetSection(currentSection);
     parser->Setup(currentSection);
@@ -782,8 +768,8 @@ void AsmFile::NeedSection()
 {
     if (sections.size() == 0 && !inAbsolute)
     {
-        Section* section = new Section("text", 1);
-        sections["text"] = section;
+        sections["text"] = std::make_unique<Section>("text", 1);
+        Section* section = sections["text"].get();
         numericSections.push_back(section);
         currentSection = section;
         AsmExpr::SetSection(currentSection);
@@ -904,7 +890,7 @@ ObjFile* AsmFile::MakeFile(ObjFactory& factory, std::string& name)
             p->SetExternalName(exp.second);
             fi->Add(p);
         }
-        for (auto import : imports)
+        for (auto& import : imports)
         {
             ObjImportSymbol* p = factory.MakeImportSymbol(import.first);
             p->SetExternalName(import.second->extname);

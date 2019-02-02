@@ -440,30 +440,29 @@ bool BRCWriter::WriteFileList()
     return true;
 }
 
-void BRCWriter::InsertMappingSym(std::string name, SymData* orig, std::map<std::string, SymData*>& syms,
-                                 std::map<std::string, SymData*>& newSyms)
+void BRCWriter::InsertMappingSym(std::string name, SymData* orig, Symbols& syms,
+                                 Symbols& newSyms)
 {
     SymData* sym = nullptr;
     auto it = syms.find(name);
     if (it != syms.end())
     {
-        sym = it->second;
+        sym = it->second.get();
     }
     else
     {
         it = newSyms.find(name);
         if (it != newSyms.end())
-            sym = it->second;
+            sym = it->second.get();
     }
     if (!sym)
     {
-        sym = new SymData(name);
-        newSyms[name] = sym;
+        newSyms[name] = std::make_unique<SymData>(name);
     }
     sym->mapping.push_back(orig);
 }
-void BRCWriter::PushCPPNames(std::string name, SymData* orig, std::map<std::string, SymData*>& syms,
-                             std::map<std::string, SymData*>& newSyms)
+void BRCWriter::PushCPPNames(std::string name, SymData* orig, Symbols& syms,
+                             Symbols& newSyms)
 {
     if (name.find("@") != std::string::npos)
     {
@@ -507,22 +506,22 @@ void BRCWriter::PushCPPNames(std::string name, SymData* orig, std::map<std::stri
 }
 bool BRCWriter::WriteDictionary(Symbols& syms)
 {
-    std::map<std::string, SymData*> newSyms;
-    for (auto sym : syms)
+    Symbols newSyms;
+    for (auto& sym : syms)
     {
-        PushCPPNames(sym.first, sym.second, syms, newSyms);
+        PushCPPNames(sym.first, sym.second.get(), syms, newSyms);
     }
-    for (auto sym : newSyms)
+    for (auto& sym : newSyms)
     {
-        syms[sym.first] = sym.second;
+        syms[sym.first] = std::move(sym.second);
     }
     newSyms.clear();
     Begin();
-    for (auto sym1 : syms)
+    for (auto& sym1 : syms)
     {
-        SymData* sym = sym1.second;
+        SymData* sym = sym1.second.get();
         int type = sym->mapping.size() ? JT_MAPPING : 0;
-        for (auto l : sym->data)
+        for (auto& l : sym->data)
         {
             if (!l->blockLevel && l->qual != ObjBrowseInfo::eExternal)
             {
@@ -563,9 +562,9 @@ bool BRCWriter::WriteDictionary(Symbols& syms)
 bool BRCWriter::WriteMapping(Symbols& syms)
 {
     Begin();
-    for (auto sym : syms)
+    for (auto& sym : syms)
     {
-        SymData* s = sym.second;
+        SymData* s = sym.second.get();
         for (auto map : s->mapping)
             Insert(s->index, map->index);
     }
@@ -575,13 +574,13 @@ bool BRCWriter::WriteMapping(Symbols& syms)
 bool BRCWriter::WriteLineData(Symbols& syms)
 {
     Begin();
-    for (auto sym : syms)
+    for (auto& sym : syms)
     {
-        SymData* s = sym.second;
-        for (auto bd : s->data)
+        SymData* s = sym.second.get();
+        for (auto& bd : s->data)
         {
             if (bd->qual != ObjBrowseInfo::eExternal || !s->globalCount)
-                if (!Insert(s->index, bd))
+                if (!Insert(s->index, bd.get()))
                     return false;
         }
     }
@@ -591,13 +590,13 @@ bool BRCWriter::WriteLineData(Symbols& syms)
 bool BRCWriter::WriteUsageData(Symbols& syms)
 {
     Begin();
-    for (auto sym : syms)
+    for (auto& sym : syms)
     {
-        SymData* s = sym.second;
-        for (auto bd : s->usages)
+        SymData* s = sym.second.get();
+        for (auto& bd : s->usages)
         {
             if (bd->qual != ObjBrowseInfo::eExternal || !s->globalCount)
-                if (!Insert(s->index, bd, true))
+                if (!Insert(s->index, bd.get(), true))
                     return false;
         }
     }
@@ -607,23 +606,23 @@ bool BRCWriter::WriteUsageData(Symbols& syms)
 bool BRCWriter::WriteJumpTable(Symbols& syms)
 {
     Begin();
-    for (auto sym : syms)
+    for (auto& sym : syms)
     {
-        SymData* s = sym.second;
+        SymData* s = sym.second.get();
         if (!s->data.empty())
         {
             BrowseData *gl = nullptr, *ex = nullptr;
-            for (auto b : s->data)
+            for (auto& b : s->data)
             {
                 if (b->type == ObjBrowseInfo::eFuncStart)
                 {
                     if (b->qual == ObjBrowseInfo::eExternal)
                     {
-                        ex = b;
+                        ex = b.get();
                     }
                     else
                     {
-                        gl = b;
+                        gl = b.get();
                     }
                 }
             }

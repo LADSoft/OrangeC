@@ -127,7 +127,7 @@ void BRCDictionary::CreateDictionary(void)
     int symbolCount = 0;
     if (data)
         Clear();
-    for (auto sym : symbols)
+    for (auto& sym : symbols)
     {
         int n = sym.first.length() + 1;
         if (n & 1)
@@ -153,14 +153,12 @@ void BRCDictionary::CreateDictionary(void)
                 blockCount = primes[i];
                 break;
             }
-        if (data)
-            delete[] data;
-        data = new DICTPAGE[blockCount];
-        memset(data, 0, blockCount * sizeof(DICTPAGE));
+        data = std::make_unique<DICTPAGE[]>(blockCount);
+        memset(data.get(), 0, blockCount * sizeof(DICTPAGE));
         int i = 0;
-        for (auto sym : symbols)
+        for (auto& sym : symbols)
         {
-            if (!InsertInDictionary(sym.second))
+            if (!InsertInDictionary(sym.second.get()))
             {
                 running = true;
                 break;
@@ -192,7 +190,7 @@ bool BRCDictionary::InsertInDictionary(SymData* sym)
                 {
                     int type = 0;
                     int offs = sym->fileOffs;
-                    for (auto l : sym->data)
+                    for (auto& l : sym->data)
                     {
                         if (!l->blockLevel && l->qual != ObjBrowseInfo::eExternal)
                         {
@@ -261,5 +259,5 @@ bool BRCDictionary::InsertInDictionary(SymData* sym)
 void BRCDictionary::Write(std::fstream& stream)
 {
     if (blockCount)
-        stream.write((char*)data, blockCount * LIB_PAGE_SIZE);
+        stream.write((char*)data.get(), blockCount * LIB_PAGE_SIZE);
 }

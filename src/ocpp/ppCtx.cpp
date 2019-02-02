@@ -25,11 +25,7 @@
 #include "PreProcessor.h"
 #include "ppCtx.h"
 
-ppCtx::~ppCtx()
-{
-    while (!stack.empty())
-        pop();
-}
+ppCtx::~ppCtx() {}
 bool ppCtx::Check(int token, std::string& line)
 {
     bool rv = false;
@@ -58,19 +54,17 @@ std::string ppCtx::GetId(std::string& line)
 bool ppCtx::push(std::string& line)
 {
     define.Process(line);
-    CtxData* p = new CtxData;
+    stack.push_front(std::make_unique<CtxData>());
+    CtxData* p = stack.front().get();
     p->id = nextId++;
     p->name = GetId(line);
-    stack.push_front(p);
     return true;
 }
 bool ppCtx::pop()
 {
     if (!stack.empty())
     {
-        CtxData* p = stack.front();
         stack.pop_front();
-        delete p;
     }
     else
     {
@@ -83,7 +77,7 @@ bool ppCtx::repl(std::string& line)
     if (!stack.empty())
     {
         define.Process(line);
-        CtxData* p = stack.front();
+        CtxData* p = stack.front().get();
         p->name = GetId(line);
     }
     else

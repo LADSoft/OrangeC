@@ -28,6 +28,7 @@
 #include <string>
 #include <fstream>
 #include <deque>
+#include <memory>
 
 struct DLLExport
 {
@@ -45,7 +46,7 @@ class DLLExportReader
     int Read();
 
     std::string GetName() { return name; }
-    typedef std::deque<DLLExport*>::iterator iterator;
+    typedef std::deque<std::unique_ptr<DLLExport>>::iterator iterator;
     iterator begin() { return exports.begin(); }
     iterator end() { return exports.end(); }
 
@@ -54,6 +55,6 @@ class DLLExportReader
 
   private:
     std::string name;
-    std::deque<DLLExport*> exports;
+    std::deque<std::unique_ptr<DLLExport>> exports;
 };
 #endif

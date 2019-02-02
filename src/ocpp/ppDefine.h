@@ -29,6 +29,7 @@
 #include <vector>
 #include <set>
 #include <ctime>
+#include <memory>
 #include "Utils.h"
 #include "SymbolTable.h"
 #include "Token.h"
@@ -57,7 +58,7 @@ class ppDefine
             preprocessing(false)
         {
         }
-        virtual ~Definition() { delete argList; }
+        virtual ~Definition() { }
         bool IsPreprocessing() const { return preprocessing; }
         void SetPreprocessing(bool flag) { preprocessing = flag; }
         bool HasVarArgs() const { return varargs; }
@@ -73,10 +74,10 @@ class ppDefine
             if (!argList)
                 return nullptr;
             else if (count < argList->size())
-                return &argList[count];
+                return &argList.get()[count];
             return nullptr;
         }
-        DefinitionArgList* GetArgList() const { return argList; }
+        DefinitionArgList* GetArgList() const { return argList.get(); }
         std::string& GetValue() { return value; }
         bool IsCaseInsensitive() { return caseInsensitive; }
         void SetCaseInsensitive(bool flag) { caseInsensitive = flag; }
@@ -89,7 +90,7 @@ class ppDefine
         bool varargs;
         bool preprocessing;
         std::string value;
-        DefinitionArgList* argList;
+        std::unique_ptr<DefinitionArgList> argList;
     };
 
   public:

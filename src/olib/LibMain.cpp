@@ -177,11 +177,11 @@ int LibMain::Run(int argc, char** argv)
         AddFile(librarian, File.GetValue()[i]);
     for (auto it = addFiles.FileNameBegin(); it != addFiles.FileNameEnd(); ++it)
     {
-        librarian.AddFile(*(*it));
+        librarian.AddFile((*it));
     }
     for (auto it = replaceFiles.FileNameBegin(); it != replaceFiles.FileNameEnd(); ++it)
     {
-        librarian.ReplaceFile(*(*it));
+        librarian.ReplaceFile((*it));
     }
     if (modified)
         switch (librarian.SaveLibrary())

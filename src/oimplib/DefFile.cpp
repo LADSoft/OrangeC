@@ -47,21 +47,7 @@ static bool IsSymbolChar(const char* data)
            UTF8::IsAlnum(data);
 }
 static bool IsSymbolChar(const char* data, bool start) { return start ? IsSymbolStartChar(data) : IsSymbolChar(data); }
-DefFile::~DefFile()
-{
-    while (!exports.empty())
-    {
-        Export* one = exports.front();
-        exports.pop_front();
-        delete one;
-    }
-    while (!imports.empty())
-    {
-        Import* one = imports.front();
-        imports.pop_front();
-        delete one;
-    }
-}
+DefFile::~DefFile() { }
 void DefFile::Init()
 {
     if (!initted)
@@ -90,6 +76,18 @@ void DefFile::Init()
         Tokenizer::IsSymbolChar = IsSymbolChar;
     }
 }
+
+void DefFile::Add(Export* e) 
+{ 
+    std::unique_ptr<Export> temp(e);
+    exports.push_back(std::move(temp)); 
+}
+void DefFile::Add(Import* i) 
+{ 
+    std::unique_ptr<Import> temp(i);
+    imports.push_back(std::move(temp));
+}
+
 bool DefFile::Read()
 {
     stream = new std::fstream(fileName, std::ios::in);
@@ -262,7 +260,7 @@ void DefFile::ReadExports()
             NextToken();
         while (token->IsIdentifier())
         {
-            Export* oneExport = new Export;
+            std::unique_ptr<Export> oneExport = std::make_unique<Export>();
             oneExport->id = token->GetId();
             NextToken();
             if (token->GetKeyword() == edt_equals)
@@ -336,7 +334,7 @@ void DefFile::ReadExports()
                         break;
                 }
             }
-            exports.push_back(oneExport);
+            exports.push_back(std::move(oneExport));
             if (!token->IsEnd())
                 break;
             while (token->IsEnd() && !stream->eof())
@@ -353,7 +351,7 @@ void DefFile::ReadImports()
             NextToken();
         while (token->IsIdentifier())
         {
-            Import* oneImport = new Import;
+            std::unique_ptr<Import> oneImport = std::make_unique<Import>();
             oneImport->id = token->GetId();
             NextToken();
             if (token->GetKeyword() == edt_dot)
@@ -382,7 +380,7 @@ void DefFile::ReadImports()
                     throw new std::runtime_error("Expected id specifier");
                 oneImport->id = token->GetId();
             }
-            imports.push_back(oneImport);
+            imports.push_back(std::move(oneImport));
             if (!token->IsEnd())
                 break;
             while (token->IsEnd() && !stream->eof())
@@ -507,7 +505,7 @@ void DefFile::WriteLibrary()
 void DefFile::WriteExports()
 {
     bool first = true;
-    for (auto exp : exports)
+    for (auto& exp : exports)
     {
         if (first)
         {
@@ -534,7 +532,7 @@ void DefFile::WriteExports()
 void DefFile::WriteImports()
 {
     bool first = true;
-    for (auto import : imports)
+    for (auto& import : imports)
     {
         if (first)
         {

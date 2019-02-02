@@ -27,12 +27,13 @@
 
 #include "Resource.h"
 #include <deque>
+#include <memory>
 
 class RCFile;
 class ResFile;
 
 class MenuItem;
-typedef std::deque<MenuItem*> MenuItemList;
+typedef std::deque<std::unique_ptr<MenuItem>> MenuItemList;
 
 class MenuItem
 {
@@ -66,7 +67,7 @@ class MenuItem
     void SetHelpIndex(int HelpIndex) { helpIndex = HelpIndex; }
     int GetHelpIndex() const { return helpIndex; }
 
-    void Add(MenuItem* item) { popup.push_back(item); }
+    void Add(MenuItem* item);
     typedef MenuItemList::iterator iterator;
     iterator begin() { return popup.begin(); }
     iterator end() { return popup.end(); }
@@ -95,7 +96,7 @@ class Menu : public Resource
     int GetHelpIndex() const { return helpIndex; }
     void SetExtended(bool flag) { extended = flag; }
     bool GetExtended() const { return extended; }
-    void Add(MenuItem* item) { menuItems.push_back(item); }
+    void Add(MenuItem* item);
     typedef MenuItemList::iterator iterator;
     iterator begin() { return menuItems.begin(); }
     iterator end() { return menuItems.end(); }

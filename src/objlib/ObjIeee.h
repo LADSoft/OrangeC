@@ -503,7 +503,7 @@ class ObjIeeeAscii : public ObjIOBase
     SectionMap sections;
     FileMap files;
     ObjSection* currentDataSection;
-    ObjMemory::DebugTagContainer* currentTags;
+    std::unique_ptr<ObjMemory::DebugTagContainer> currentTags;
     char* ioBuffer;
     size_t ioBufferLen;
     size_t ioBufferPos;

@@ -26,6 +26,7 @@
 #define AsmExpr_h
 
 #include <string>
+#include <memory>
 
 #include "Token.h"
 class ppDefine;
@@ -77,34 +78,28 @@ class AsmExprNode
         sect(nullptr)
     {
     }
-    AsmExprNode(PPINT Ival, bool reg = false) : type(reg ? REG : IVAL), ival(Ival), left(nullptr), right(nullptr), sect(nullptr) {}
-    AsmExprNode(const FPF& Fval) : type(FVAL), ival(0), fval(Fval), left(nullptr), right(nullptr), sect(nullptr) {}
-    AsmExprNode(std::string lbl) : type(LABEL), ival(0), left(nullptr), right(nullptr), label(lbl), sect(nullptr) {}
-    AsmExprNode(Section* Sect, int offs) : type(BASED), ival(offs), left(nullptr), right(nullptr), sect(Sect) {}
-    AsmExprNode(const AsmExprNode& old)
+    AsmExprNode(PPINT Ival, bool reg = false) : type(reg ? REG : IVAL), ival(Ival), sect(nullptr) {}
+    AsmExprNode(const FPF& Fval) : type(FVAL), ival(0), fval(Fval), sect(nullptr) {}
+    AsmExprNode(std::string lbl) : type(LABEL), ival(0), label(lbl), sect(nullptr) {}
+    AsmExprNode(Section* Sect, int offs) : type(BASED), ival(offs), sect(Sect) {}
+    AsmExprNode(AsmExprNode& old)
     {
         fval = old.fval;
         ival = old.ival;
         label = old.label;
         type = old.type;
-        left = old.left;
-        right = old.right;
+        left = std::move(old.left);
+        right = std::move(old.right);
         sect = old.sect;
     }
-    ~AsmExprNode()
-    {
-        if (left)
-            delete left;
-        if (right)
-            delete right;
-    }
+    ~AsmExprNode(){ }
     FPF fval;
     PPINT ival;
     std::string label;
-    AsmExprNode* GetLeft() { return left; }
-    void SetLeft(AsmExprNode* n) { left = n; }
-    AsmExprNode* GetRight() { return right; }
-    void SetRight(AsmExprNode* n) { right = n; }
+    AsmExprNode* GetLeft() { return left.get(); }
+    void SetLeft(AsmExprNode* n) { left.reset(n); }
+    AsmExprNode* GetRight() { return right.get(); }
+    void SetRight(AsmExprNode* n) { right.reset(n); }
     Section* GetSection() { return sect; }
     Type GetType() { return type; }
     void SetType(Type tType) { type = tType; }
@@ -115,8 +110,8 @@ class AsmExprNode
 
   private:
     Type type;
-    AsmExprNode* left;
-    AsmExprNode* right;
+    std::unique_ptr<AsmExprNode> left;
+    std::unique_ptr<AsmExprNode> right;
     Section* sect;
 };
 class AsmExpr

@@ -33,17 +33,7 @@
 #endif
 #include <fstream>
 
-ResFile::~ResFile()
-{
-    for (auto res : resources)
-    {
-        delete res;
-    }
-    for (auto res : strings)
-    {
-        delete res;
-    }
-}
+ResFile::~ResFile() {}
 void ResFile::Mark()
 {
     Align();
@@ -121,11 +111,11 @@ bool ResFile::Write(const std::string& name)
     stream = new std::fstream(name, std::ios::out | std::ios::binary);
     // if (!stream->fail())
     {
-        for (auto res : resources)
+        for (auto& res : resources)
         {
             res->WriteRes(*this);
         }
-        for (auto res : strings)
+        for (auto& res : strings)
         {
             res->WriteRes(*this);
         }
@@ -149,8 +139,9 @@ void ResFile::Reset()
 }
 void ResFile::Add(Resource* th)
 {
+    std::unique_ptr<Resource> temp(th);
     if (th->GetType() == Resource::eString)
-        strings.insert(th);
+        strings.insert(std::move(temp));
     else
-        resources.push_back(th);
+        resources.push_back(std::move(temp));
 }

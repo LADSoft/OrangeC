@@ -142,8 +142,6 @@ Instruction* InstructionParser::Parse(const std::string args, int PC)
     std::string op;
     inputTokens.clear();
 
-    for (auto i : inputTokens)
-        delete i;
     for (auto c : CleanupValues)
         delete c;
     for (auto o : operands)

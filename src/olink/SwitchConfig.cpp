@@ -96,6 +96,7 @@ bool ConfigData::VisitNode(xmlNode& node, xmlNode* child, void* userData)
     if (*child == "Define")
     {
         defines.push_back(std::make_unique<CmdSwitchDefine::define>());
+        currentDefine = defines.back().get();
         child->Visit(*this);
     }
     else if (*child == "Extension")

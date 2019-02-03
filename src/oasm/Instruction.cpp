@@ -68,7 +68,7 @@ Instruction::Instruction(int Repeat, int Size) :
     size(Size),
     repeat(Repeat),
     offs(0),
-    data(std::make_unique<unsigned char[]>(size))
+    data(std::make_unique<unsigned char[]>(Size))
 {
     memset(data.get(), 0, size);
 }

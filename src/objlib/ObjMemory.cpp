@@ -29,6 +29,8 @@
 #include "ObjDebugTag.h"
 #include "ObjFactory.h"
 
+
+ObjMemory::~ObjMemory() {}
 void ObjMemory::SetData(ObjByte* Data, ObjInt Size)
 {
     data = std::make_unique<ObjByte[]>(Size);
@@ -38,7 +40,7 @@ void ObjMemory::SetData(ObjByte* Data, ObjInt Size)
 }
 void ObjMemory::SetData(ObjExpression* Data, ObjInt Size)
 {
-    fixup.reset(Data);
+    fixup = Data;
     size = Size;
     if (data)
     {

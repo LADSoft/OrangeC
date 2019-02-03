@@ -218,8 +218,9 @@ void LinkRegion::AddData(SectionData& data, LookasideBuf& lookaside, ObjFile* fi
         ns = *it;
     if (ns == nullptr)
     {
+        data.push_back(std::make_unique<NamedSection>(section->GetName())); 
+        ns = data.back().get();
         ns->name = section->GetName();
-        data.push_back(std::make_unique<NamedSection>(section->GetName()));
         lookaside.insert(data.back().get());
     }
     ns->sections.push_back(OneSection(file, section));

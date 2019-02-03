@@ -130,8 +130,7 @@ void AsmFile::DoLabel(std::string& name, int lineno)
     Label* label;
     if (caseInsensitive)
     {
-        for (int i = 0; i < name.size(); i++)
-            name[i] = toupper(name[i]);
+        std::transform(name.begin(), name.end(), name.begin(), toupper);
     }
     std::string realName = name;
     bool nl = false;
@@ -163,7 +162,7 @@ void AsmFile::DoLabel(std::string& name, int lineno)
             }
         }
     }
-    if (labels[realName] != nullptr)
+    if (labels.find(realName) != labels.end())
     {
         if (realName != "..start")
         {
@@ -172,6 +171,8 @@ void AsmFile::DoLabel(std::string& name, int lineno)
     }
     else
     {
+        if (labels.find(realName) != labels.end())
+            printf("hi");
         if (inAbsolute)
         {
             labels[realName] = std::make_unique<Label>(realName, labels.size(), 0);
@@ -686,13 +687,16 @@ void AsmFile::ExternDirective()
             std::transform(name.begin(), name.end(), name.begin(), ::toupper);
         }
         externs.insert(name);
-        if (labels[name] != nullptr && !labels[name]->IsExtern())
+        if (labels.find(name) != labels.end() && !labels[name]->IsExtern())
         {
             throw new std::runtime_error(std::string("Label '") + name + "' already exists.");
         }
         else
         {
-            labels[name] = std::make_unique<Label>(name, labels.size(), sections.size() - 1);
+            if (labels.find(name) == labels.end())
+            {
+                labels[name] = std::make_unique<Label>(name, labels.size(), sections.size() - 1);
+            }
             Label* label = labels[name].get();
             label->SetExtern(true);
             numericLabels.push_back(label);

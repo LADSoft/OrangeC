@@ -36,18 +36,18 @@ LinkExpression::LinkExpression(const LinkExpression& exp)
     symbolName = exp.symbolName;
     sect = exp.sect;
     if (exp.left)
-        left = std::make_unique<LinkExpression>(*exp.left);
+        left = new LinkExpression(*exp.left);
     else
         left = nullptr;
     if (exp.right)
-        right = std::make_unique<LinkExpression>(*exp.right);
+        right = new LinkExpression(*exp.right);
     else
         right = nullptr;
 }
 LinkExpression::LinkExpression(int section, ObjInt base, ObjInt offs) :
     op(eAdd),
-    left(std::make_unique<LinkExpression>()),
-    right(std::make_unique<LinkExpression>(offs)),
+    left(new LinkExpression()),
+    right(new LinkExpression(offs)),
     symbolName(""),
     value(0),
     sect(0)
@@ -59,9 +59,9 @@ LinkExpression::LinkExpression(int section, ObjInt base, ObjInt offs) :
 LinkExpression* LinkExpression::Eval(int section, int base, ObjInt offset)
 {
     if (left)
-        left.reset(left->Eval(section, base, offset));
+        left = left->Eval(section, base, offset);
     if (right)
-        right.reset(right->Eval(section, base, offset));
+        right = right->Eval(section, base, offset);
     LinkExpression* rv = this;
     switch (op)
     {

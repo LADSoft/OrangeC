@@ -52,12 +52,12 @@ class ObjExpression : public ObjWrapper
     };
     // clang-format on
     ObjExpression(ObjInt Left) : op(eValue), value(Left), left(nullptr), right(nullptr) {}
-    ObjExpression(ObjExpression* Left) : op(eExpression), left(Left), right(nullptr) {}
+    ObjExpression(ObjExpression* Left) : op(eExpression), left(Left), right(nullptr), value(0) {}
     ObjExpression(ObjSymbol* Left) : op(eSymbol), symbol(Left), left(nullptr), right(nullptr) {}
     ObjExpression(ObjSection* Left) : op(eSection), section(Left), left(nullptr), right(nullptr) {}
     ObjExpression(eOperator Type) : op(Type), value(0), left(nullptr), right(nullptr) {}
-    ObjExpression(eOperator Type, ObjExpression* Left) : op(Type), left(Left), right(nullptr) {}
-    ObjExpression(eOperator Type, ObjExpression* Left, ObjExpression* Right) : op(Type), left(Left), right(Right) {}
+    ObjExpression(eOperator Type, ObjExpression* Left) : op(Type), left(Left), right(nullptr), value(0) {}
+    ObjExpression(eOperator Type, ObjExpression* Left, ObjExpression* Right) : op(Type), left(Left), right(Right), value(0) {}
     virtual ~ObjExpression() {}
 
     eOperator GetOperator() { return op; }

@@ -1220,7 +1220,7 @@ void outcode_gen(OCODE* peeplist)
         dummySection.Resolve();
         for (auto& d : dummySection.GetInstructions())
         {
-            currentSection->InsertInstruction(d.get());
+            currentSection->InsertInstruction(d.release());
         }
         dummySection.ClearInstructions();
     }

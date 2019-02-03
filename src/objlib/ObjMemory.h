@@ -60,14 +60,14 @@ class ObjMemory : public ObjWrapper
         debugTags(nullptr)
     {
     }
-    virtual ~ObjMemory() { };
+    virtual ~ObjMemory();
 
     ObjInt GetSize() { return size; }
     ObjByte GetFill() { return fill; }
     bool IsEnumerated() { return enumerated; }
     ObjByte* GetData() { return data.get(); }
-    ObjExpression* GetFixup() { return fixup.get(); }
-    void SetFixup(ObjExpression* f) { fixup.reset(f); }
+    ObjExpression* GetFixup() { return fixup; }
+    void SetFixup(ObjExpression* f) { fixup = f; }
     void SetData(ObjByte* Data, ObjInt Size);
     void SetData(ObjExpression* Data, ObjInt Size);
     bool HasDebugTags() { return debugTags != nullptr; }
@@ -97,7 +97,7 @@ class ObjMemory : public ObjWrapper
     ObjInt size;
     std::unique_ptr<ObjByte[]> data;
     ObjByte fill;
-    std::unique_ptr<ObjExpression> fixup;
+    ObjExpression* fixup;
     bool enumerated;
     std::unique_ptr<DebugTagContainer> debugTags;
 };

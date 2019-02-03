@@ -91,7 +91,6 @@ class Instruction
 
   private:
     enum iType type;
-    std::unique_ptr<unsigned char[]> data;
     Label* label;
     int size;
     int offs;
@@ -102,6 +101,7 @@ class Instruction
     bool lost;
 
     FixupContainer fixups;
+    std::unique_ptr<unsigned char[]> data;
     static bool bigEndian;
 };
 #endif

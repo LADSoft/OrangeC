@@ -528,10 +528,7 @@ void IdentifierToken::Parse(std::string& line)
         KeywordHash::const_iterator it;
         if (caseInsensitive)
         {
-            p = buf;
-            while (*p)
-                *p = toupper(*p), p++;
-            std::string id1 = buf;
+	    std::string id1 = UTF8::ToUpper(buf);
             it = keywordTable->find(id1);
         }
         else

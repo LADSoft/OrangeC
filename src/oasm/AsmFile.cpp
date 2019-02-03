@@ -130,7 +130,7 @@ void AsmFile::DoLabel(std::string& name, int lineno)
     Label* label;
     if (caseInsensitive)
     {
-        std::transform(name.begin(), name.end(), name.begin(), toupper);
+        name = UTF8::ToUpper(name);
     }
     std::string realName = name;
     bool nl = false;
@@ -670,8 +670,7 @@ void AsmFile::PublicDirective()
         std::string name = GetId();
         if (caseInsensitive)
         {
-            for (int i = 0; i < name.size(); i++)
-                name[i] = toupper(name[i]);
+            name = UTF8::ToUpper(name);
         }
         globals.insert(name);
     } while (GetKeyword() == Lexer::comma);
@@ -684,7 +683,7 @@ void AsmFile::ExternDirective()
         std::string name = GetId();
         if (caseInsensitive)
         {
-            std::transform(name.begin(), name.end(), name.begin(), ::toupper);
+            name = UTF8::ToUpper(name);
         }
         externs.insert(name);
         if (labels.find(name) != labels.end() && !labels[name]->IsExtern())

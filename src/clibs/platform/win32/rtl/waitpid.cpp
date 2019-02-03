@@ -43,7 +43,6 @@
 #include <map>
 static HANDLE hjob;
 static HANDLE end;
-static bool done;
 
 CRITICAL_SECTION critical;
 typedef enum _JOBOBJECTINFOCLASS {
@@ -195,11 +194,12 @@ static int CALLBACK refresh(void *)
     InitializeCriticalSection(&critical);
     hjob = CreateJobObject(NULL, NULL);
     AssignProcessToJobObject(hjob, OpenProcess(PROCESS_ALL_ACCESS, FALSE, GetCurrentProcessId()));
-    while (!done)
+    while (WaitForSingleObject(end, 500) == WAIT_TIMEOUT)
     {
 	Load();
         Sleep(500);
     }
+    CloseHandle(end);
     CloseHandle(hjob);
     DeleteCriticalSection(&critical);
     SetEvent(end);
@@ -213,9 +213,7 @@ static void init()
 }
 static void rundown()
 {
-    done = true;
-    WaitForSingleObject(end, 5000);
-    CloseHandle(end);
+    SetEvent(end);
 }
 
 static BOOLEAN GetChildren(pid_t pid, pid_t **pids, HANDLE** list, size_t *count)

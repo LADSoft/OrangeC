@@ -1,5 +1,6 @@
 #include "UTF8.h"
-#include "ctype.h"
+#include <ctype.h>
+#include <string.h>
 int UTF8::Decode(const char* str)
 {
     if ((*str & 0x80) == 0)

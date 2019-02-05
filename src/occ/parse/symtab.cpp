@@ -469,17 +469,7 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
                                 }
                                 else if (!strcmp(tpn->sp->templateSelector->next->name,tps->sp->templateSelector->next->name))
                                 {
-                                    ts1 = ts1->next;
-                                    ts2 = ts2->next;
-                                    while (ts1 && ts2)
-                                    {
-                                        if (strcmp(ts1->name, ts2->name))
-                                            return false;
-                                        ts1 = ts1->next;
-                                        ts2 = ts2->next;
-                                    }
-                                    if (ts1 || ts2)
-                                        return false;
+                                    return false;
                                 }
                             }
                         }

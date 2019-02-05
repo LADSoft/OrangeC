@@ -38,11 +38,11 @@
 #include <math.h>
 #include <time.h>
 #include <locale.h>
-#include <wchar.h>
-#include "_locale.h"
-#include "libp.h"
-#include "_lfloat.h"
+#include <_locale.h>
+#include <limits.h>
+#include <stdio.h>
 #include "malloc.h"
+#define LLONG_TYPE long long
 
 extern int _e_min_exp_digit;  /* min exp digits for %e (stdc is 2, MS is 3) */
 
@@ -402,9 +402,9 @@ doinf:
                 else
                     wcscpy(fbp,L"INF");
             } else {
-                int bcdIndex = 0, ftype;
+                int bcdIndex = 0, isZero;
                 unsigned char bcdBuf[100];
- 			    ftype = fextractdouble(&fmant,&fexp,&fsign, bcdBuf);
+ 			    isZero = fextractdouble(&fmant,&fexp,&fsign, bcdBuf);
 				/* sign */
 				if (issigned || spaced || fsign < 0)
 					if (fsign < 0)
@@ -500,7 +500,7 @@ doinf:
                         int digits = prec;
 						*fbp++ = fnd(bcdBuf,bcdIndex++) + '0';
                         if (isg && *(fbp - 1) != '0') digits--;
-						if (ftype != IFPF_IS_ZERO)
+						if (!isZero)
 							while (!isg && *(fbp-1) == '0')
 							{
 								fexp--;

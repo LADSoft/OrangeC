@@ -59,8 +59,8 @@ extern "C" {
 #define WNOHANG 1
 #define WUNTRACED 2
 
-#define WEXITSTATUS(x) (x & 0xff)
-#define WIFEXITED(x) (x >= 0)
+#define WEXITSTATUS(x) ((x) & 0xff)
+#define WIFEXITED(x) ((x) >=0 && (x) <= 0xff)
 #define WIFSIGNALED(x) (0)
 #define WIFSTOPPED(x) (0)
 #define WSTOPSIG(x) (0)

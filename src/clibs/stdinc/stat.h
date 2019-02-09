@@ -106,7 +106,6 @@ typedef unsigned short wchar_t;
 #define S_ISVTX 	0001000
 
 #ifdef __cplusplus
-namespace __STD_NS__ {
 extern "C" {
 #endif
 
@@ -179,17 +178,8 @@ int  _RTL_FUNC _IMPORT  stat(const char *__path, struct stat  *__statbuf);
 
 #ifdef __cplusplus
 } ;
-} ;
 #endif
 
 #pragma pack()
 
 #endif  /* __STAT_H */
-#if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__STAT_H_USING_LIST)
-#define __STAT_H_USING_LIST
-using __STD_NS_QUALIFIER stat ;
-using __STD_NS_QUALIFIER _stat ;
-using __STD_NS_QUALIFIER fstat ;
-using __STD_NS_QUALIFIER _fstat ;
-using __STD_NS_QUALIFIER _wstat ;
-#endif

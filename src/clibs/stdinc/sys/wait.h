@@ -52,15 +52,14 @@
 #endif
 
 #ifdef __cplusplus
-namespace __STD_NS__ {
 extern "C" {
 #endif
 
 #define WNOHANG 1
 #define WUNTRACED 2
 
-#define WEXITSTATUS(x) (x & 0xff)
-#define WIFEXITED(x) (x >= 0)
+#define WEXITSTATUS(x) ((x) & 0xff)
+#define WIFEXITED(x) ((x) >=0 && (x) <= 0xff)
 #define WIFSIGNALED(x) (0)
 #define WIFSTOPPED(x) (0)
 #define WSTOPSIG(x) (0)
@@ -70,7 +69,6 @@ pid_t _RTL_FUNC wait(int *);
 pid_t _RTL_FUNC waitpid(pid_t, int *, int);
 
 #ifdef __cplusplus
-} ;
 } ;
 #endif
 

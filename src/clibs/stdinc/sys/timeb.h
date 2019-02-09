@@ -50,7 +50,6 @@
 #endif
 
 #ifdef __cplusplus
-namespace __STD_NS__ {
 extern "C" {
 #endif
 
@@ -72,14 +71,6 @@ void _RTL_FUNC _IMPORT _ftime(struct _timeb *);
 void _RTL_FUNC _IMPORT ftime(struct timeb *);
 #ifdef __cplusplus
 } ;
-} ;
 #endif
 
-#pragma pack()
-#endif  /* __TIMEB_H */
-#if defined(__cplusplus) && !defined(__USING_CNAMES__) && !defined(__TIMEB_H_USING_LIST)
-using __STD_NS_QUALIFIER timeb; 
-using __STD_NS_QUALIFIER ftime;
-using __STD_NS_QUALIFIER _timeb; 
-using __STD_NS_QUALIFIER _ftime;
-#endif
+#endif //__TIMEB_H

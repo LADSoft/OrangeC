@@ -566,6 +566,7 @@ static struct
     {"Conversion of character string to 'char *' deprecated", WARNING},
     {"Function call needs argument list", WARNING},
     {"Return value would require a temporary variable", ERROR},
+    {"Declaration of '%s' conflicts with previous declaration", ERROR},
 #endif
 };
 

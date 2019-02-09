@@ -43,7 +43,7 @@
 #include <float.h>
 #include "_locale.h"
 #include "libp.h"
-#include "_lfloat.h"
+#include <limits.h>
 #include "malloc.h"
 #include <stdlib.h>
 

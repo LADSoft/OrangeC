@@ -840,14 +840,14 @@
 
 #endif /* UNICODE and ASCII defines */
 
-#include <win32/CommonFu.h>
+#include <win32/commonfu.h>
 
 #ifndef UNICODE_ONLY
-#include <win32/UnicodeF.h>
+#include <win32/unicodef.h>
 #endif /* !UNICODE_ONLY */
 
 #ifndef ANSI_ONLY
-#include <win32/ASCIIFun.h>
+#include <win32/asciifun.h>
 #endif /* !ANSI_ONLY */
 
 #endif /* _GNU_H_WINDOWS32_FUNCTIONS */

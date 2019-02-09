@@ -50,7 +50,6 @@
 #endif
 
 #ifdef __cplusplus
-namespace __STD_NS__ {
 extern "C" {
 #endif
 
@@ -225,7 +224,6 @@ _vectorType setvect(int _num, _vectorType _vect) ;
 
 
 #ifdef _cplusplus
-} ;
 };
 #endif
 
@@ -248,29 +246,3 @@ _vectorType setvect(int _num, _vectorType _vect) ;
 #pragma pack()
 
 #endif /* __i86_H */
-#if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__I86_H_USING_LIST)
-#define __I86_H_USING_LIST
-    using __STD_NS_QUALIFIER _vectorType;
-    using __STD_NS_QUALIFIER __disable;
-    using __STD_NS_QUALIFIER __enable;
-    using __STD_NS_QUALIFIER _delay;
-    using __STD_NS_QUALIFIER _int386;
-    using __STD_NS_QUALIFIER _intr;
-    using __STD_NS_QUALIFIER _nosound;
-    using __STD_NS_QUALIFIER _sound;
-    using __STD_NS_QUALIFIER _segread;
-    using __STD_NS_QUALIFIER setvect;
-    using __STD_NS_QUALIFIER REGS;
-    using __STD_NS_QUALIFIER SREGS;
-    using __STD_NS_QUALIFIER REGPACK;
-    using __STD_NS_QUALIFIER INTPACK;
-    using __STD_NS_QUALIFIER INTR_CF	;	/* carry */
-    using __STD_NS_QUALIFIER INTR_PF	;	/* parity */
-    using __STD_NS_QUALIFIER INTR_AF	;	/* auxiliary carry */
-    using __STD_NS_QUALIFIER INTR_ZF	;	/* zero */
-    using __STD_NS_QUALIFIER INTR_SF	;	/* sign */
-    using __STD_NS_QUALIFIER INTR_TF	;	/* trace */
-    using __STD_NS_QUALIFIER INTR_IF	;	/* interrupt */
-    using __STD_NS_QUALIFIER INTR_DF	;	/* direction */
-    using __STD_NS_QUALIFIER INTR_OF	;	/* overflow */
-#endif

@@ -49,25 +49,25 @@
 #include <stdlib.h>
 
 /* Base definitions */
-#include <win32/Base.h>
+#include <win32/base.h>
 
 /* WIN32 messages */
-#include <win32/Messages.h>
+#include <win32/messages.h>
 
 #endif /* RC_INVOKED */
 
 /* WIN32 definitions */
-#include <win32/Defines.h>
+#include <win32/defines.h>
 
 #ifndef RC_INVOKED
 /* WIN32 structures */
-#include <win32/Structur.h>
+#include <win32/structur.h>
 
 /* WIN32 functions */
-#include <win32/Function.h>
+#include <win32/function.h>
 
 /* WIN32 error codes */
-#include <win32/Errors.h>
+#include <win32/errors.h>
 
 /* How do we get the VM page size on NT? */
 #ifndef vm_page_size

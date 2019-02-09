@@ -2510,6 +2510,8 @@ static TYPE* nexttp(AGGREGATE_DESCRIPTOR* desc)
         if (!cparams.prm_cplusplus || !basetype(desc->tp)->sp->hasUserCons)
         {
             HASHREC* hr = desc->hr;
+            while (hr && (istype(hr->p) || hr->p->tp->type == bt_aggregate))
+                desc->hr = hr = hr->next;
             if (!hr)
                 return NULL;
             rv = ((SYMBOL*)hr->p)->tp;
@@ -2627,6 +2629,7 @@ EXPRESSION* getThisNode(SYMBOL* sp)
 static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* base, int offset, enum e_sc sc, TYPE* itype,
                                          INITIALIZER** init, INITIALIZER** dest, bool arrayMember, int flags)
 {
+
     INITIALIZER *data = NULL, **next = &data;
     AGGREGATE_DESCRIPTOR *desc = NULL, *cache = NULL;
     bool c99 = false;

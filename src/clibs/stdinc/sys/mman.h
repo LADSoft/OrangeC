@@ -105,7 +105,6 @@
 #define	POSIX_MADV_DONTNEED	4	/* [MC1] dont need these pages */
 
 #ifdef __cplusplus
-namespace __STD_NS__ {
 extern "C"
 {
 #endif
@@ -135,22 +134,7 @@ int	_RTL_FUNC _IMPORT posix_madvise(void *, size_t, int);
 
 #ifdef __cplusplus
 }
-}
 #endif
 
 #endif /* !_SYS_MMAN_H_ */
 
-#if defined( __cplusplus) && !defined(__USING_CNAME__) && !defined(__MMAN_H_USING_LIST)
-#define __MMAN_H_USING_LIST
-using __STD_NS_QUALIFIER mlockall;
-using __STD_NS_QUALIFIER munlockall;
-using __STD_NS_QUALIFIER mlock;
-using __STD_NS_QUALIFIER mmap;
-using __STD_NS_QUALIFIER mprotect;
-using __STD_NS_QUALIFIER msync;
-using __STD_NS_QUALIFIER munlock;
-using __STD_NS_QUALIFIER munmap;
-using __STD_NS_QUALIFIER shm_open;
-using __STD_NS_QUALIFIER shm_unlink;
-using __STD_NS_QUALIFIER posix_madvise;
-#endif

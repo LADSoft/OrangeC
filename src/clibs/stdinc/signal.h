@@ -88,14 +88,14 @@ extern "C"
 #define SA_RESTART 64
 
 
-#define SI_USER
-#define SI_KERNEL
-#define SI_QUEUE
-#define SI_TIMER
-#define SI_MESGQ
-#define SI_ASYNCIO
-#define SI_SIGIO
-#define SI_TKILL
+#define SI_USER 0 
+#define SI_KERNEL 1
+#define SI_QUEUE 2
+#define SI_TIMER 3
+#define SI_MESGQ 4
+#define SI_ASYNCIO 5
+#define SI_SIGIO 6
+#define SI_TKILL 7
 
 #define ILL_ILLOPC 0
 #define ILL_ILLOPN 1

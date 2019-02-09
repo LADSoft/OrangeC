@@ -102,7 +102,7 @@ bool dlLeMain::ReadSections(const std::string& path, const std::string& exeName)
     FILE* in = fopen(path.c_str(), "rb");
     if (!in)
         Utils::fatal("Cannot open input file");
-    file.reset(ieee.Read(in, ObjIeee::eAll, factory));
+    file = ieee.Read(in, ObjIeee::eAll, factory);
     fclose(in);
     if (!ieee.GetAbsolute())
     {
@@ -115,7 +115,7 @@ bool dlLeMain::ReadSections(const std::string& path, const std::string& exeName)
     startAddress = ieee.GetStartAddress()->Eval(0);
     if (file != nullptr)
     {
-        LEObject::SetFile(file.get());
+        LEObject::SetFile(file);
         ReadValues();
         for (auto it = file->SectionBegin(); it != file->SectionEnd(); ++it)
         {

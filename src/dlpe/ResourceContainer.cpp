@@ -30,6 +30,23 @@
 
 unsigned char ResourceContainer::resourceHeader[32] = {0, 0, 0, 0, 0x20, 0, 0, 0, 0xff, 0xff, 0, 0, 0xff, 0xff, 0, 0,
                                                        0, 0, 0, 0, 0,    0, 0, 0, 0,    0,    0, 0, 0,    0,    0, 0};
+ResourceContainer::~ResourceContainer()
+{
+    for (auto type : numberedTypes)
+    {
+        for (auto nt : type.second.numberedIds)
+            delete[] nt.second.data;
+        for (auto nt : type.second.namedIds)
+            delete[] nt.second.data;
+    }
+    for (auto type : namedTypes)
+    {
+        for (auto nt : type.second.numberedIds)
+            delete[] nt.second.data;
+        for (auto nt : type.second.namedIds)
+            delete[] nt.second.data;
+    }
+}
 bool ResourceContainer::LoadFiles()
 {
     bool rv = true;
@@ -100,56 +117,59 @@ bool ResourceContainer::LoadFile(const std::string& name)
         // past end of header?
         if (i * 2 + 8 > hdr[1])
             return false;
-        unsigned char* pdata = new unsigned char[hdr[0]];
-        in.read((char*)pdata, hdr[0]);
+        unsigned char* data = new unsigned char[hdr[0]];
+        in.read((char*)data, hdr[0]);
         if (in.fail())
         {
-            delete[] pdata;
+            delete[] data;
             return false;
         }
         int n = in.tellg();
-        // align after pdata
+        // align after data
         if (n & 3)
         {
             n += 4 - (n & 3);
             in.seekg(n);
         }
-        InsertResource(typeId, type, nameId, name, pdata, hdr[0], lang);
+        InsertResource(typeId, type, nameId, name, data, hdr[0], lang);
     }
     return true;
 }
-void ResourceContainer::InsertResource(int typeId, std::wstring type, int nameId, std::wstring name, unsigned char* pdata,
+void ResourceContainer::InsertResource(int typeId, std::wstring type, int nameId, std::wstring name, unsigned char* data,
                                        size_t len, int language)
 {
-    bool d = false;
+    ResourceData d, n;
+    n.sig = SIGNAT;
+    n.data = data;
+    n.length = len;
+    n.language = language;
     if (type.empty())
     {
         if (name.empty())
         {
-            d = numberedTypes[typeId]->numberedIds->operator[](nameId)->sig == SIGNAT;
-            numberedTypes[typeId]->numberedIds->operator[](nameId) = std::make_unique<ResourceData>( SIGNAT, pdata, len, language);
+            d = numberedTypes[typeId].numberedIds[nameId];
+            numberedTypes[typeId].numberedIds[nameId] = n;
         }
         else
         {
-            d = numberedTypes[typeId]->namedIds->operator[](name)->sig == SIGNAT;
-            numberedTypes[typeId]->namedIds->operator[](name) = std::make_unique<ResourceData>(SIGNAT, pdata, len, language);
+            d = numberedTypes[typeId].namedIds[name];
+            numberedTypes[typeId].namedIds[name] = n;
         }
     }
     else
     {
         if (name.empty())
         {
-            d = namedTypes[type]->numberedIds->operator[](nameId)->sig == SIGNAT;
-            namedTypes[type]->numberedIds->operator[](nameId) = std::make_unique<ResourceData>(SIGNAT, pdata, len, language);;
+            d = namedTypes[type].numberedIds[nameId];
+            namedTypes[type].numberedIds[nameId] = n;
         }
         else
         {
-            d = namedTypes[type]->namedIds->operator[](name)->sig == SIGNAT;
-            namedTypes[type]->namedIds->operator[](name) = std::make_unique<ResourceData>(SIGNAT, pdata, len, language);;
+            d = namedTypes[type].namedIds[name];
+            namedTypes[type].namedIds[name] = n;
         }
     }
-    delete[]pdata;
-    if (d)
+    if (d.sig == SIGNAT)
     {
         Utils::fatal("Cannot resolve multiple resources with same ID");
     }

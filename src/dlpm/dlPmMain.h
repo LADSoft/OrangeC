@@ -66,7 +66,7 @@ class dlPmMain
     static CmdSwitchString DebugFile;
     static const char* usageText;
     ObjInt startAddress;
-    std::unique_ptr<ObjFile> file;
+    ObjFile* file;
     std::vector<std::unique_ptr<Section>> sections;
 };
 #endif

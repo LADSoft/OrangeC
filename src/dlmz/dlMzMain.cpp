@@ -83,7 +83,7 @@ bool dlMzMain::ReadSections(const std::string& path)
     FILE* in = fopen(path.c_str(), "rb");
     if (!in)
         Utils::fatal("Cannot open input file");
-    file.reset(ieee.Read(in, ObjIeee::eAll, &factory));
+    file = ieee.Read(in, ObjIeee::eAll, &factory);
     fclose(in);
     if (!ieee.GetAbsolute())
     {
@@ -99,7 +99,7 @@ bool dlMzMain::ReadSections(const std::string& path)
             data = std::make_unique<Tiny>();
         else
             data = std::make_unique<Real>();
-        return data->ReadSections(file.get(), ieee.GetStartAddress());
+        return data->ReadSections(file, ieee.GetStartAddress());
     }
     return false;
 }

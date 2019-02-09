@@ -242,7 +242,7 @@ bool dlPeMain::ReadSections(const std::string& path)
     FILE* in = fopen(path.c_str(), "rb");
     if (!in)
         Utils::fatal("Cannot open input file");
-    file.reset(ieee.Read(in, ObjIeee::eAll, factory.get()));
+    file = ieee.Read(in, ObjIeee::eAll, factory.get());
     fclose(in);
     if (!ieee.GetAbsolute())
     {
@@ -256,12 +256,12 @@ bool dlPeMain::ReadSections(const std::string& path)
     if (file != nullptr)
     {
         ReadValues();
-        if (LoadImports(file.get()))
+        if (LoadImports(file))
         {
-            PEObject::SetFile(file.get());
+            PEObject::SetFile(file);
             for (auto it = file->SectionBegin(); it != file->SectionEnd(); ++it)
             {
-                objects.push_back(std::make_unique<PEDataObject>(file.get(), *it));
+                objects.push_back(std::make_unique<PEDataObject>(file, *it));
                 (*it)->ResolveSymbols(factory.get());
             }
             if (file->ImportBegin() != file->ImportEnd())

@@ -140,7 +140,7 @@ bool dlPmMain::ReadSections(const std::string& path)
     FILE* in = fopen(path.c_str(), "rb");
     if (!in)
         Utils::fatal("Cannot open input file");
-    file.reset(ieee.Read(in, ObjIeee::eAll, &factory));
+    file = ieee.Read(in, ObjIeee::eAll, &factory);
     fclose(in);
     if (!ieee.GetAbsolute())
     {
@@ -153,10 +153,10 @@ bool dlPmMain::ReadSections(const std::string& path)
     startAddress = ieee.GetStartAddress()->Eval(0);
     if (file != nullptr)
     {
-        LoadVars(file.get());
+        LoadVars(file);
         std::vector<std::string> names;
-        GetSectionNames(names, file.get());
-        GetInputSections(names, file.get(), &factory);
+        GetSectionNames(names, file);
+        GetInputSections(names, file, &factory);
         return true;
     }
     return false;

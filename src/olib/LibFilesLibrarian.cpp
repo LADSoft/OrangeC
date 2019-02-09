@@ -41,7 +41,7 @@ void LibFiles::Add(ObjFile& obj)
             return;
         }
     files.push_back(std::make_unique<FileDescriptor>(obj.GetName()));
-    files.back()->data.reset(&obj);
+    files.back()->data = &obj;
 }
 void LibFiles::Add(const ObjString& Name)
 {
@@ -127,7 +127,7 @@ void LibFiles::Replace(ObjFile& obj)
             {
                 (*it)->data = nullptr;
             }
-            (*it)->data.reset(&obj);
+            (*it)->data = &obj;
             (*it)->name = Name;
             (*it)->offset = 0;
             return;
@@ -213,7 +213,7 @@ bool LibFiles::ReadFiles(FILE* stream, ObjFactory* factory)
                 if ((*itn)->offset)
                 {
                     fseek(stream, (*itn)->offset, SEEK_SET);
-                    (*itn)->data.reset(ReadData(stream, (*itn)->name, factory));
+                    (*itn)->data = ReadData(stream, (*itn)->name, factory);
                     if (!(*itn)->data)
                     {
                         std::cout << "Error: Syntax error in module '" << (*itn)->name << "'" << std::endl;
@@ -228,7 +228,7 @@ bool LibFiles::ReadFiles(FILE* stream, ObjFactory* factory)
                     FILE* istr = fopen((*itn)->name.c_str(), "rb");
                     if (istr != nullptr)
                     {
-                        (*itn)->data.reset(ReadData(istr, (*itn)->name, factory));
+                        (*itn)->data = ReadData(istr, (*itn)->name, factory);
                         fclose(istr);
                         if (!(*itn)->data)
                         {
@@ -260,6 +260,6 @@ void LibFiles::WriteFiles(FILE* stream, ObjInt align)
     {
         Align(stream, align);
         (*it)->offset = ftell(stream);
-        WriteData(stream, (*it)->data.get(), (*it)->name);
+        WriteData(stream, (*it)->data, (*it)->name);
     }
 }

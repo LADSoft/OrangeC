@@ -60,8 +60,8 @@ class ResourceContainer
     struct Ids
     {
         Ids() :
-            namedIds(std::make_unique<NamedIds>()),
-            numberedIds(std::make_unique<NumberedIds>())
+            namedIds(),
+            numberedIds()
         {
         }
         std::unique_ptr<NamedIds> namedIds;

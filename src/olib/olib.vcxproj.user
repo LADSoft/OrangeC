@@ -1,8 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LocalDebuggerCommandArguments>\orangec\src\clibs\object\startup\lscrtl.l +- .\c0lsstartup.o \orangec\src\clibs\object\clib\srproc.o \orangec\src\clibs\object\windows\dllmain.o</LocalDebuggerCommandArguments>
-    <LocalDebuggerWorkingDirectory>\orangec\src\clibs\platform\win32\pels</LocalDebuggerWorkingDirectory>
+    <LocalDebuggerCommandArguments>lscrtl.l + C:\OrangeC\src\clibs\object\dll\shlguid.o + C:\OrangeC\src\clibs\object\dll\xmluuid.o</LocalDebuggerCommandArguments>
+    <LocalDebuggerWorkingDirectory>\orangec\src\clibs</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
 </Project>

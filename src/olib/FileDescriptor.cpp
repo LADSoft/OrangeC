@@ -24,6 +24,6 @@
 #include "LibFiles.h"
 #include "ObjFile.h"
 
-LibFiles::FileDescriptor::FileDescriptor(const ObjString& Name) : offset(0), name(Name) {}
-LibFiles::FileDescriptor::FileDescriptor(const FileDescriptor& old) : name(old.name), offset(old.offset) {}
+LibFiles::FileDescriptor::FileDescriptor(const ObjString& Name) : offset(0), name(Name), data(nullptr) {}
+LibFiles::FileDescriptor::FileDescriptor(const FileDescriptor& old) : name(old.name), offset(old.offset), data(nullptr) {}
 LibFiles::FileDescriptor::~FileDescriptor() {}

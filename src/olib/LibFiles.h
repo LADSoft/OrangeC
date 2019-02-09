@@ -40,7 +40,7 @@ class LibFiles
         ~FileDescriptor();
         ObjString name;
         ObjInt offset;
-        std::unique_ptr<ObjFile> data;
+        ObjFile* data;
     };
     LibFiles(bool CaseSensitive = true) { caseSensitive = CaseSensitive; }
     virtual ~LibFiles() {}

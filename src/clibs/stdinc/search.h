@@ -42,7 +42,6 @@
 #endif
 
 #ifdef __cplusplus
-namespace __STD_NS__ {
 extern "C" {
 #endif
 void *      _RTL_FUNC _IMPORT bsearch(const void * __key, const void * __base,
@@ -64,17 +63,6 @@ void * _RTL_FUNC _IMPORT _lsearch(const void *, void  *, unsigned int *, unsigne
                           
 #ifdef __cplusplus
 }
-}
 #endif
 
 #endif  /* __SEARCH_H */
-
-#if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__SEARCH_H_USING_LIST)
-#define __SEARCH_H_USING_LIST
-using __STD_NS_QUALIFIER bsearch;
-using __STD_NS_QUALIFIER lfind;
-using __STD_NS_QUALIFIER lsearch;
-using __STD_NS_QUALIFIER _lfind;
-using __STD_NS_QUALIFIER _lsearch;
-using __STD_NS_QUALIFIER qsort;
-#endif /* __USING_CNAME__ */

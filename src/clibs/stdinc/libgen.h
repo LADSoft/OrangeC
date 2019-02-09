@@ -42,7 +42,6 @@
 #endif
 
 #ifdef __cplusplus
-namespace __STD_NS__ {
 extern "C" {
 #endif
 
@@ -57,10 +56,8 @@ char  *regcmp(const char *, ...);
 char  *regex(const char *, const char *, ...);
 */
 
+#ifdef __cplusplus
+};
+#endif
 
 #endif  /* __LIBGEN_H */
-#if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__LIGBEGN_H_USING_LIST)
-#define __LIBGEN_H_USING_LIST
-    using __STD_NS_QUALIFIER basename;
-    using __STD_NS_QUALIFIER dirname;
-#endif

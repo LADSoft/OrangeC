@@ -60,7 +60,6 @@
 #define _A_ARCH     0x20        /* Archive */
 
 #ifdef __cplusplus
-namespace __STD_NS__ {
 extern "C" {
 #endif
 
@@ -114,31 +113,9 @@ int _RTL_FUNC _IMPORT _rmdir(const char *);
 
 #ifdef __cplusplus
 } ;
-} ;
 #endif
 
 #pragma pack()
 
 #endif  /* __DIR_H */
 
-#if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__DIR_H_USING_LIST)
-#define __DIR_H_USING_LIST
-    using __STD_NS_QUALIFIER chdir;
-    using __STD_NS_QUALIFIER _chdir;
-    using __STD_NS_QUALIFIER findfirst;
-    using __STD_NS_QUALIFIER findnext;
-    using __STD_NS_QUALIFIER fnmerge;
-    using __STD_NS_QUALIFIER fnsplit;
-    using __STD_NS_QUALIFIER getcurdir;
-    using __STD_NS_QUALIFIER getcwd;
-    using __STD_NS_QUALIFIER _getcwd;
-    using __STD_NS_QUALIFIER getdisk;
-    using __STD_NS_QUALIFIER mkdir;
-    using __STD_NS_QUALIFIER _mkdir;
-    using __STD_NS_QUALIFIER mktemp;
-    using __STD_NS_QUALIFIER rmdir;
-    using __STD_NS_QUALIFIER _rmdir;
-    using __STD_NS_QUALIFIER searchpath;
-    using __STD_NS_QUALIFIER setdisk;
-    using __STD_NS_QUALIFIER ffblk;
-#endif

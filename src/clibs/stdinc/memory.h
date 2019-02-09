@@ -48,8 +48,6 @@
 #    endif
 
 #    ifdef __cplusplus
-namespace __STD_NS__
-{
 extern "C"
 {
 #    endif
@@ -68,17 +66,6 @@ extern "C"
 
 #    ifdef __cplusplus
 };
-};
 #    endif
 
 #endif /* __MEM_H */
-#if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__MEMORY_H_USING_LIST)
-#    define __MEMORY_H_USING_LIST
-using __STD_NS_QUALIFIER memccpy;
-using __STD_NS_QUALIFIER memcmp;
-using __STD_NS_QUALIFIER memcpy;
-using __STD_NS_QUALIFIER memicmp;
-using __STD_NS_QUALIFIER memmove;
-using __STD_NS_QUALIFIER memset;
-using __STD_NS_QUALIFIER memchr;
-#endif

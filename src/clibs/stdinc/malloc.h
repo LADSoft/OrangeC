@@ -57,7 +57,6 @@
 #define _BADVALUE       -3
 
 #ifdef __cplusplus
-namespace __STD_NS__ {
 extern "C" {
 #endif
 
@@ -80,19 +79,6 @@ void        _RTL_FUNC _IMPORT farfree(void _FAR *__block) ;
 
 #ifdef __cplusplus
 } ;
-} ;
 #endif
 
 #endif  /* __MALLOC_H */
-#if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__MALLOC_H_USING_LIST)
-#define __MALLOC_H_USING_LIST
-    using __STD_NS_QUALIFIER calloc ;
-    using __STD_NS_QUALIFIER free ;
-    using __STD_NS_QUALIFIER malloc ;
-    using __STD_NS_QUALIFIER realloc ;
-#ifdef __CC386__
-    using __STD_NS_QUALIFIER farmalloc ;
-    using __STD_NS_QUALIFIER farfree ;
-#endif
-
-#endif

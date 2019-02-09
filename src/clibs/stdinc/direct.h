@@ -43,7 +43,6 @@
 
 
 #ifdef __cplusplus
-namespace __STD_NS__ {
 extern "C" {
 #endif
 struct _diskfree_t
@@ -72,25 +71,7 @@ int _RTL_FUNC _IMPORT _rmdir(const char *);
 
 
 #ifdef __cplusplus
-} ;
 };
 #endif
 
-#endif /* __DIRECT_H */
-#if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__DIRECT_H_USING_LIST)
-#define __DIRECT_H_USING_LIST
-    using __STD_NS_QUALIFIER _chdrive;
-    using __STD_NS_QUALIFIER _getdcwd;
-    using __STD_NS_QUALIFIER _getdrive;
-    using __STD_NS_QUALIFIER _getdrives;
-    using __STD_NS_QUALIFIER _getdiskfree;
-    using __STD_NS_QUALIFIER chdir;
-    using __STD_NS_QUALIFIER _chdir;
-    using __STD_NS_QUALIFIER getcwd;
-    using __STD_NS_QUALIFIER _getcwd;
-    using __STD_NS_QUALIFIER mkdir;
-    using __STD_NS_QUALIFIER _mkdir;
-    using __STD_NS_QUALIFIER rmdir;
-    using __STD_NS_QUALIFIER _rmdir;
-    
-#endif
+#endif //__DIRECT_H

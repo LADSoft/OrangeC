@@ -32,7 +32,7 @@
 #include <cstdlib>
 #include <cstring>
 
-CmdSwitchBase::CmdSwitchBase(CmdSwitchParser& parser, char SwitchChar) : exists(false), switchChar(SwitchChar) { parser += this; }
+CmdSwitchBase::CmdSwitchBase(CmdSwitchParser& parser, char SwitchChar, std::string LongName) : exists(false), switchChar(SwitchChar), longName(LongName) { parser += this; }
 int CmdSwitchBool::Parse(const char* data)
 {
     if (data[0] != '-')
@@ -43,6 +43,8 @@ int CmdSwitchBool::Parse(const char* data)
 }
 int CmdSwitchInt::Parse(const char* data)
 {
+    if (!*data)
+        return INT_MAX;
     int cnt = 0;
     char number[256];
     if (data[0] == ':')
@@ -62,6 +64,8 @@ int CmdSwitchInt::Parse(const char* data)
 }
 int CmdSwitchHex::Parse(const char* data)
 {
+    if (!*data)
+        return INT_MAX;
     int cnt = 0;
     char number[256];
     if (data[0] == ':')
@@ -265,6 +269,44 @@ char* CmdSwitchFile::GetStr(char* data)
     argv[argc++] = x;
     return data;
 }
+CmdSwitchBase* CmdSwitchParser::Find(const char *name, bool useLongName)
+{
+
+    if (useLongName)
+    {
+        std::string bigmatch = "";
+        int max = strlen(name);
+        for (int i = max; i >= 1; i--)
+        {
+            for (auto s : switches)
+            {
+                if (!strncmp(name, s->GetLongName().c_str(), i))
+                {
+                    if (i == max && s->GetLongName().size() == max)
+                        return s;
+                    else if (!bigmatch.size())
+                        bigmatch = s->GetLongName();
+                }
+            }
+        }
+        std::cerr << "Unknown switch '--" << name << "'" << std::endl;
+        if (bigmatch.size())
+        {
+            std::cerr << "   Did you mean '--" << bigmatch << "'?" << std::endl;
+
+        }
+    }
+    else
+    {
+        for (auto s : switches)
+        {
+            if (s->GetSwitchChar() == name[0])
+                return s;
+        }
+        std::cerr << "Unknown switch '-" << name[0] << "'" << std::endl;
+    }
+    return nullptr;
+}
 bool CmdSwitchParser::Parse(int* argc, char* argv[])
 {
     for (int i = 0, count = 0; *argv;)
@@ -272,51 +314,64 @@ bool CmdSwitchParser::Parse(int* argc, char* argv[])
         // special casing '-' alone in an argv
         if (argv[0][0] == '@')  // meant to be a file loader
         {
-            CmdSwitchBase temp('@');
-            auto it = switches.find(&temp);
-            if (it == switches.end())
+            auto b = Find(&argv[0][0], false);
+            if (!b)
                 return false;
-            (*it)->Parse(&argv[0][1]);
+            b->Parse(&argv[0][1]);
             memmove(argv, argv + 1, (*argc + 1 - i) * sizeof(char*));
             (*argc)--;
         }
-        else if ((argv[0][0] == '-' || argv[0][0] == '/') && argv[0][1])
+        else if ((argv[0][0] == '-' || argv[0][0] == '/') && argv[0][1] && (argv[0][1] != '-' || argv[0][2]))
         {
-            if (argv[0][1] == '!' || !strcmp(argv[0], "--nologo"))
+            const char *data = &argv[0][0];
+            bool longName = data[1] == '-';
+            data += 1 + longName;
+            bool shifted = false;
+            while (data[0] && !shifted)
             {
-                // skip the banner nondisplay arg
-            }
-            else
-            {
-                const char* data = &argv[0][1];
-                const char* end = data + strlen(data);
-                while (data < end)
+                CmdSwitchBase *b;
+                if (longName)
                 {
-                    CmdSwitchBase temp(*data);
-                    auto it = switches.find(&temp);
-                    if (it == switches.end())
-                        return false;
-                    data++;
-                    int n = (*it)->Parse(data);
-                    (*it)->SetArgNum(count++);
-                    while (n == INT_MAX && argv[1])
-                    {
-                        // use next arg as the value
-                        memmove(argv, argv + 1, (*argc - i) * sizeof(char*));
-                        (*argc)--;
-                        data = &argv[0][0];
-                        end = data + strlen(data);
-                        n = (*it)->Parse(data);
-                    }
-                    if (n < 0)
-                        return false;
-                    int t = strlen(data);
-                    if (t < n)
-                        return false;
-                    (*it)->SetExists();
-                    data += n;
+                    b = Find(data, true);
+                    data += strlen(data);
                 }
+                else
+                {
+                    b = Find(data++, false);
+                }
+                if (!b)
+                    return false;
+                int n = b->Parse(data);
+                b->SetArgNum(count++);
+                b->SetExists();
+                while (n == INT_MAX)
+                {
+                    if (!argv[1])
+                    {
+                        if (longName)
+                        {
+                            std::cerr << "switch '--" << b->GetLongName();
+                        }
+                        else
+                        {
+                            std::cerr << "switch '-" << b->GetSwitchChar();
+                        }
+                        std::cerr << "' requires argument" << std::endl;
+                        return false;
+                    }
+                    shifted = true;
+                    // use next arg as the value
+                    memmove(argv, argv + 1, (*argc - i) * sizeof(char*));
+                    (*argc)--;
+                    data = &argv[0][0];
+                    n = b->Parse(data);
+                }
+                if (n < 0)
+                    return false;
+
+                data += n;
             }
+            // use next arg as the value
             memmove(argv, argv + 1, (*argc - i) * sizeof(char*));
             (*argc)--;
         }

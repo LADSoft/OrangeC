@@ -37,29 +37,27 @@ class CmdSwitchBase
 {
   public:
     CmdSwitchBase() : switchChar(-1), exists(false) {}
-    CmdSwitchBase(CmdSwitchParser& parser, char SwitchChar);
-    CmdSwitchBase(char SwitchChar) : switchChar(SwitchChar), exists(false) {}
-    CmdSwitchBase(const CmdSwitchBase& orig)
-    {
-        switchChar = orig.switchChar;
-        exists = orig.exists;
-    }
+    CmdSwitchBase(CmdSwitchParser& parser, char SwitchChar, std::string longName);
+    CmdSwitchBase(char SwitchChar, std::string LongName) : switchChar(SwitchChar), exists(false), longName(LongName) {}
+    CmdSwitchBase(const CmdSwitchBase& orig) = default;
     virtual int Parse(const char* data) { return 0; }
 
     char GetSwitchChar() const { return switchChar; }
+    const std::string& GetLongName() const { return longName; }
     void SetExists() { exists = true; }
     bool GetExists() const { return exists; }
     virtual void SetArgNum(int an) { }
   private:
     bool exists;
     char switchChar;
+    std::string longName;
 };
 
 class CmdSwitchBool : public CmdSwitchBase
 {
   public:
-    CmdSwitchBool(CmdSwitchParser& parser, char SwitchChar, bool State = false) : CmdSwitchBase(parser, SwitchChar), value(State) {}
-    CmdSwitchBool(const CmdSwitchBool& orig) : CmdSwitchBase(orig) { value = orig.value; }
+    CmdSwitchBool(CmdSwitchParser& parser, char SwitchChar, bool State = false, std::string LongName = "") : CmdSwitchBase(parser, SwitchChar, LongName), value(State) {}
+    CmdSwitchBool(const CmdSwitchBool& orig) = default;
     virtual int Parse(const char* data);
     bool GetValue() const { return value; }
     void SetValue(bool flag) { value = flag; }
@@ -70,19 +68,14 @@ class CmdSwitchBool : public CmdSwitchBase
 class CmdSwitchInt : public CmdSwitchBase
 {
   public:
-    CmdSwitchInt(CmdSwitchParser& parser, char SwitchChar, int Value = 0, int LowLimit = 0, int HiLimit = INT_MAX) :
-        CmdSwitchBase(parser, SwitchChar),
+    CmdSwitchInt(CmdSwitchParser& parser, char SwitchChar, int Value = 0, int LowLimit = 0, int HiLimit = INT_MAX, std::string LongName = "") :
+        CmdSwitchBase(parser, SwitchChar, LongName),
         value(Value),
         lowLimit(LowLimit),
         hiLimit(HiLimit)
     {
     }
-    CmdSwitchInt(const CmdSwitchInt& orig) : CmdSwitchBase(orig)
-    {
-        value = orig.value;
-        lowLimit = orig.lowLimit;
-        hiLimit = orig.hiLimit;
-    }
+    CmdSwitchInt(const CmdSwitchInt& orig) = default;
 
     virtual int Parse(const char* data);
     int GetValue() const { return value; }
@@ -95,19 +88,14 @@ class CmdSwitchInt : public CmdSwitchBase
 class CmdSwitchHex : public CmdSwitchBase
 {
   public:
-    CmdSwitchHex(CmdSwitchParser& parser, char SwitchChar, int Value = 0, int LowLimit = 0, int HiLimit = INT_MAX) :
-        CmdSwitchBase(parser, SwitchChar),
+    CmdSwitchHex(CmdSwitchParser& parser, char SwitchChar, int Value = 0, int LowLimit = 0, int HiLimit = INT_MAX, std::string LongName = "") :
+        CmdSwitchBase(parser, SwitchChar, LongName),
         value(Value),
         lowLimit(LowLimit),
         hiLimit(HiLimit)
     {
     }
-    CmdSwitchHex(const CmdSwitchHex& orig) : CmdSwitchBase(orig)
-    {
-        value = orig.value;
-        lowLimit = orig.lowLimit;
-        hiLimit = orig.hiLimit;
-    }
+    CmdSwitchHex(const CmdSwitchHex& orig) = default;
 
     virtual int Parse(const char* data);
     int GetValue() const { return value; }
@@ -120,13 +108,13 @@ class CmdSwitchHex : public CmdSwitchBase
 class CmdSwitchString : public CmdSwitchBase
 {
   public:
-    CmdSwitchString(CmdSwitchParser& parser, char SwitchChar, char Concat = '\0') :
-        CmdSwitchBase(parser, SwitchChar),
+    CmdSwitchString(CmdSwitchParser& parser, char SwitchChar, char Concat = '\0', std::string LongName = "") :
+        CmdSwitchBase(parser, SwitchChar, LongName),
         value(""),
         concat(Concat)
     {
     }
-    CmdSwitchString(const CmdSwitchString& orig) : CmdSwitchBase(orig), concat(0) { value = orig.value; }
+    CmdSwitchString(const CmdSwitchString& orig) = default;
     CmdSwitchString() : value(""), concat(0) {}
     virtual int Parse(const char* data);
     const std::string& GetValue() const { return value; }
@@ -145,8 +133,8 @@ class CmdSwitchString : public CmdSwitchBase
 class CmdSwitchCombineString : public CmdSwitchString
 {
   public:
-    CmdSwitchCombineString(CmdSwitchParser& parser, char SwitchChar, char Concat = '\0') :
-        CmdSwitchString(parser, SwitchChar, Concat)
+    CmdSwitchCombineString(CmdSwitchParser& parser, char SwitchChar, char Concat = '\0', std::string LongName = "") :
+        CmdSwitchString(parser, SwitchChar, Concat, LongName)
     {
     }
     CmdSwitchCombineString() {}
@@ -155,17 +143,13 @@ class CmdSwitchCombineString : public CmdSwitchString
 class CmdSwitchCombo : public CmdSwitchString
 {
   public:
-    CmdSwitchCombo(CmdSwitchParser& parser, char SwitchChar, const char* Valid) :
-        CmdSwitchString(parser, SwitchChar),
+    CmdSwitchCombo(CmdSwitchParser& parser, char SwitchChar, const char* Valid, std::string LongName = "") :
+        CmdSwitchString(parser, SwitchChar, '\0', LongName),
         valid(Valid),
         selected(false)
     {
     }
-    CmdSwitchCombo(const CmdSwitchCombo& orig) : CmdSwitchString(orig)
-    {
-        valid = orig.valid;
-        selected = orig.selected;
-    }
+    CmdSwitchCombo(const CmdSwitchCombo& orig) = default;
     CmdSwitchCombo() : valid(""), selected(false) {}
     virtual int Parse(const char* data);
     bool GetValue() { return selected; }
@@ -178,12 +162,12 @@ class CmdSwitchCombo : public CmdSwitchString
 class CmdSwitchOutput : public CmdSwitchCombineString
 {
   public:
-    CmdSwitchOutput(CmdSwitchParser& parser, char SwitchChar, const char* Extension, bool concat = false) :
-        CmdSwitchCombineString(parser, SwitchChar, concat),
+    CmdSwitchOutput(CmdSwitchParser& parser, char SwitchChar, const char* Extension, bool concat = false, std::string LongName = "") :
+        CmdSwitchCombineString(parser, SwitchChar, concat, LongName),
         extension(Extension)
     {
     }
-    CmdSwitchOutput(const CmdSwitchOutput& orig) : CmdSwitchCombineString(orig) { extension = orig.extension; }
+    CmdSwitchOutput(const CmdSwitchOutput& orig) = default;
     virtual int Parse(const char* data);
 
   private:
@@ -192,8 +176,8 @@ class CmdSwitchOutput : public CmdSwitchCombineString
 class CmdSwitchDefine : public CmdSwitchBase
 {
   public:
-    CmdSwitchDefine(CmdSwitchParser& parser, char SwitchChar) : CmdSwitchBase(parser, SwitchChar) {}
-    CmdSwitchDefine(const CmdSwitchDefine& orig) : CmdSwitchBase(orig) { defines = orig.defines; }
+    CmdSwitchDefine(CmdSwitchParser& parser, char SwitchChar, std::string LongName = "") : CmdSwitchBase(parser, SwitchChar, LongName) {}
+    CmdSwitchDefine(const CmdSwitchDefine& orig) = default;
     virtual ~CmdSwitchDefine();
     virtual int Parse(const char* data);
     struct define
@@ -211,15 +195,16 @@ class CmdSwitchDefine : public CmdSwitchBase
 class CmdSwitchFile : public CmdSwitchString
 {
   public:
-    CmdSwitchFile(CmdSwitchParser& parser, char SwitchChar) :
-        CmdSwitchString(parser, SwitchChar),
+      CmdSwitchFile(CmdSwitchParser& parser, char SwitchChar, std::string LongName = "") :
+          CmdSwitchString(parser, SwitchChar, '\0', LongName),
         Parser(&parser),
         argc(0),
         argv(nullptr)
     {
     }
-    CmdSwitchFile(CmdSwitchParser& parser) : CmdSwitchString(), Parser(&parser), argc(0), argv(nullptr) {}
+    CmdSwitchFile(CmdSwitchParser &parser) : CmdSwitchString(), Parser(&parser), argc(0), argv(nullptr) { }
 
+    
     virtual int Parse(const char* data);
     int GetCount() const { return argc; }
     char** const GetValue() { return argv; }
@@ -236,7 +221,7 @@ class CmdSwitchFile : public CmdSwitchString
 class CmdSwitchParser
 {
   public:
-    CmdSwitchParser() {}
+    CmdSwitchParser() : nologo(*this, '!', false, "nologo") {}
     ~CmdSwitchParser() {}
 
     bool Parse(int* argc, char** argv);
@@ -247,14 +232,10 @@ class CmdSwitchParser
         return *this;
     }
 
+    CmdSwitchBase *Find(const char *sw, bool useLongName);
+
   private:
-    struct plt
-    {
-        bool operator()(const CmdSwitchBase* left, const CmdSwitchBase* right) const
-        {
-            return left->GetSwitchChar() < right->GetSwitchChar();
-        }
-    };
-    std::set<CmdSwitchBase*, plt> switches;
+    std::set<CmdSwitchBase*> switches;
+    CmdSwitchBool nologo;
 };
 #endif

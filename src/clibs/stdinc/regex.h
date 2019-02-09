@@ -48,7 +48,6 @@
 #endif
 
 #ifdef __cplusplus
-namespace __STD_NS__ {
 extern "C" {
 #endif
 
@@ -95,20 +94,9 @@ void   _RTL_FUNC regfree(regex_t *);
 
 #ifdef __cplusplus
 } ;
-};
 #endif
 
 
 #pragma pack()
 
 #endif  /* __REGEX_H */
-#if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__REGEX_H_USING_LIST)
-#define __REGEX_H_USING_LIST
-    using __STD_NS_QUALIFIER regcomp;
-    using __STD_NS_QUALIFIER regexec;
-    using __STD_NS_QUALIFIER regerror;
-    using __STD_NS_QUALIFIER regfree;
-    using __STD_NS_QUALIFIER regex_t;
-    using __STD_NS_QUALIFIER regoff_t;
-    using __STD_NS_QUALIFIER regmatch_t;
-#endif

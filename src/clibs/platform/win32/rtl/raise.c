@@ -46,6 +46,7 @@
 #include <dos.h>
 #include <windows.h>
 #include "libp.h"
+#include <stdbool.h>
 extern void __ll_sigsegv(int) ;
 extern PCONTEXT xxctxt;
 extern void regdump(char *text, PCONTEXT p);
@@ -96,16 +97,16 @@ static void sigabort(int aa)
 {
    _abort() ;
 }
-const sighandler_t __defsigtab[NSIG] = {
-    SIG_ERR, SIG_ERR,  sigint,  SIG_ERR,   
-    sigill, SIG_ERR,  SIG_ERR, SIG_ERR, 
-    sigfp, SIG_ERR,  SIG_ERR, __ll_sigsegv, 
-    SIG_ERR, SIG_ERR, SIG_ERR, sigterm, 
-    SIG_IGN, SIG_IGN,SIG_ERR, SIG_ERR, 
-    SIG_IGN, sigint, sigabort
+struct sigaction __defsigtab[NSIG] = {
+    { SIG_ERR }, { SIG_ERR },  { sigint },  { SIG_ERR },   
+    { sigill }, { SIG_ERR },  { SIG_ERR }, { SIG_ERR }, 
+    { sigfp }, { SIG_ERR },  { SIG_ERR }, { __ll_sigsegv }, 
+    { SIG_ERR }, { SIG_ERR }, { SIG_ERR }, { sigterm }, 
+    { SIG_IGN }, { SIG_IGN },{ SIG_ERR }, { SIG_ERR }, 
+    { SIG_IGN }, { sigint }, { sigabort }
 };
 
-sighandler_t __sigtab[NSIG];
+struct sigaction __sigtab[NSIG];
 static char insignal[NSIG];
 
 #pragma startup siginit 227
@@ -114,26 +115,65 @@ static void siginit(void)
 {
 	int i;
 	for (i=0; i < NSIG; i++)
-		__sigtab[i] = __defsigtab[i];
+        {
+            __defsigtab[i].sa_flags |= SA_RESETHAND;
+            __sigtab[i] = __defsigtab[i];
+        }
 }
-int _RTL_FUNC raise(int sig)
+static int raiseinternal(int sig, int source, int code, void* address)
 {
-	sighandler_t temp;
-   if (sig >= NSIG || sig < 1) {
+	struct sigaction temp;
+        if (sig >= NSIG || sig < 1) {
 		errno = EINVAL;
-      return 1;
+                return 1;
 	}
-    temp = __sigtab[sig];
-	if (temp == SIG_ERR)
+        temp = __sigtab[sig];
+        if (!(temp.sa_flags & SA_SIGINFO))
+	{
+             if (temp.sa_handler == SIG_ERR)
 		return 1;
-	if (temp == SIG_IGN)
-      return 0;
-	while (insignal[sig])
+	     if (temp.sa_handler == SIG_IGN)
+                return 0;
+        }
+        bool cont = true;
+        while (cont)
+        {
+             cont = false;
+             if (!(temp.sa_flags & SA_NODEFER))
+                if (insignal[sig])
+                   cont = true;
+             if (temp.sa_mask)
+                 for (int i=1; i < NSIG; i++)
+                    if (insignal[i] && ((1 << i) & temp.sa_mask))
+                        cont = true;
+             if (cont)
 		sleep(1);
-	__sigtab[sig] = __defsigtab[sig];
+        }
 	insignal[sig]++;
-	(*temp)(sig);
+        if (temp.sa_flags & SA_RESETHAND)
+             __sigtab[sig] = __defsigtab[sig];
+        if (!(temp.sa_flags & SA_SIGINFO))
+	{
+	    (*temp.sa_handler)(sig);
+        }
+        else
+        {
+            siginfo_t info = { 0 };
+            info.si_signo = sig;
+            info.si_code = code;
+            info.si_addr = address;
+            (*temp.sa_sigaction)(sig, &info, NULL);
+        }
 	insignal[sig]--;
 	__ll_cancelsleep();
 	return 0;
+}
+// library internal func
+int __raise(int sig, int code, void *addr)
+{
+    return raiseinternal(sig, SI_KERNEL, code, addr);
+}
+int _RTL_FUNC raise(int sig)
+{
+    return raiseinternal(sig, SI_USER, -1, NULL);
 }

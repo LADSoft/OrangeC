@@ -52,7 +52,6 @@
 #endif
 
 #ifdef __cplusplus
-namespace __STD_NS__ {
 extern "C" {
 #endif
 
@@ -70,7 +69,6 @@ pid_t _RTL_FUNC wait(int *);
 pid_t _RTL_FUNC waitpid(pid_t, int *, int);
 
 #ifdef __cplusplus
-} ;
 } ;
 #endif
 

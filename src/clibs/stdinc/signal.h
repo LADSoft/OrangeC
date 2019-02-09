@@ -41,6 +41,13 @@
 #    include <stddef.h>
 #endif
 
+#ifndef __TYPES_H
+#    include <sys/types.h>
+#endif
+
+#ifndef __TIME_H
+#    include <time.h>
+#endif
 #ifdef __cplusplus
 extern "C"
 {
@@ -59,6 +66,7 @@ extern "C"
 #define SIGILL 4 /* Illegal instruction  */
 #define SIGINT 2
 #define SIGSEGV 11 /* Memory access violation */
+#define SIGBUS 12  /* data alignment error */
 #define SIGTERM 15
 #define SIGUSR1 16  /* User-defined signal 1 */
 #define SIGUSR2 17  /* User-defined signal 2 */
@@ -69,6 +77,121 @@ extern "C"
     sighandler_t _RTL_FUNC _IMPORT signal(int __sig, sighandler_t __func);
 
 #define NSIG 23 /* highest defined signal no. + 1 */
+
+
+#define SA_SIGINFO 1
+#define SA_NOCLDSTOP 2
+#define SA_NOCLDWAIT 4
+#define SA_NODEFER 8
+#define SA_ONSTACK 16
+#define SA_RESETHAND 32
+#define SA_RESTART 64
+
+
+#define SI_USER
+#define SI_KERNEL
+#define SI_QUEUE
+#define SI_TIMER
+#define SI_MESGQ
+#define SI_ASYNCIO
+#define SI_SIGIO
+#define SI_TKILL
+
+#define ILL_ILLOPC 0
+#define ILL_ILLOPN 1
+#define ILL_ILLADR 2
+#define ILL_ILLTRP 3
+#define ILL_PRVOPC 4
+#define ILL_PRVREG 5
+#define ILL_COPROC 6
+#define ILL_BADSTK 7
+#define FPE_INTDIV 0
+#define FPE_INTOVF 1
+#define FPE_FLTDIV 2
+#define FPE_FLTOVF 3
+#define FPE_FLTUND 4
+#define FPE_FLTRES 5
+#define FPE_FLTINV 6
+#define FPE_FLTSUB 7
+#define SEGV_MAPERR 0
+#define SEGV_ACCERR 1
+#define BUS_ADRALN 0 
+#define BUS_ADRERR 1
+#define BUS_OBJERR 2
+#define BUS_MCEERR_AR 3
+#define BUS_MCEERR_AO 4
+#define TRAP_BRKPT 0
+#define TRAP_TRACE 1
+#define TRAP_BRANCH 2
+#define TRAP_HWBKPT 3
+#define CLD_EXITED 0
+#define CLD_KILLED 1
+#define CLD_DUMPED 2
+#define CLD_TRAPPED 3
+#define CLD_STOPPED 4
+#define CLD_CONTINUED 5
+#define POLL_IN 0
+#define POLL_OUT 1
+#define POLL_MSG 2
+#define POLL_ERR 3
+#define POLL_PRI 4
+#define POLL_HUP 5
+
+
+typedef unsigned sigval_t;
+typedef unsigned sigset_t; // there are a max of 23 signals in this implementation
+
+typedef struct _siginfo_t {
+    int      si_signo;    /* Signal number */
+    int      si_errno;    /* An errno value */
+    int      si_code;     /* Signal code */
+    union
+    {
+        struct {
+            pid_t    si_pid;      /* Sending process ID */
+            uid_t    si_uid;      /* Real user ID of sending process */
+            int      si_int;      /* POSIX.1b signal */
+            void    *si_ptr;      /* POSIX.1b signal */
+            int      si_status;   /* Exit value or signal */
+            clock_t  si_utime;    /* User time consumed */
+            clock_t  si_stime;    /* System time consumed */
+        };
+        sigval_t si_value;    /* Signal value */
+        struct {
+            int      si_overrun;  /* Timer overrun count; POSIX.1b timers */
+            int      si_timerid;  /* Timer ID; POSIX.1b timers */
+        };
+
+        struct { 
+            void    *si_addr;     /* Memory location which caused fault */
+            int      si_trapno;   /* Trap number that caused
+                                     hardware-generated signal
+                                     (unused on most architectures) */
+            short    si_addr_lsb; /* Least significant bit of address
+                                     (since kernel 2.6.32) */
+        };
+        struct {
+            long     si_band;     /* Band event (was int in
+                                     glibc 2.3.2 and earlier) */
+            int      si_fd;       /* File descriptor */
+        };
+    };
+} siginfo_t;
+
+struct sigaction {
+    union
+    {
+        sighandler_t sa_handler;
+        void     (*sa_sigaction)(int, siginfo_t *, void *);
+    };
+    sigset_t   sa_mask;
+    int        sa_flags;
+    void     (*sa_restorer)(void);
+};
+
+
+int _RTL_FUNC sigaction(int signum, const struct sigaction *act,
+              struct sigaction *oldact);
 
 #ifdef __cplusplus
 };

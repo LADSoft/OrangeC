@@ -28,7 +28,29 @@
 #include <fstream>
 #include <climits>
 
+FPF FPF::tensTab[10];
+bool FPF::initted;
+
 bool FPF::bigEndian = false;
+
+void FPF::Init()
+{
+    if (!initted)
+    {
+        initted = true;
+        int i;
+        tensTab[0].mantissa[0] = 0xa000;
+        for (i = 1; i < INTERNAL_FPF_PRECISION; i++)
+            tensTab[0].mantissa[i] = 0;
+        tensTab[0].exp = 4;
+        tensTab[0].type = IFPF_IS_NORMAL;
+        for (i = 1; i < 10; i++)
+        {
+            tensTab[i] = tensTab[0] * tensTab[i-1];
+        }
+    }
+}
+
 
 void FPF::SetZero(int sign)
 {
@@ -59,8 +81,8 @@ bool FPF::ValueIsOne() const
         return false;
     if (exp != 1)
         return false;
-    if (sign)
-        return false;
+//    if (sign)
+//        return false;
     return IsMantissaOne();
 }
 bool FPF::ValueIsZero() const { return (type == IFPF_IS_ZERO); }
@@ -81,6 +103,8 @@ bool FPF::operator==(const FPF& right)
 bool FPF::operator>(FPF& right)
 {
     if (type == IFPF_IS_NAN || right.type == IFPF_IS_NAN)
+        return false;
+    if (type == IFPF_IS_ZERO && right.type == IFPF_IS_ZERO)
         return false;
     if (sign && !right.sign)
         return false;
@@ -130,13 +154,13 @@ void FPF::Add16Bits(u16* carry, u16* a, u16 b, u16 c)
 {
 
     u32 accum = b + c + *carry;
-    *carry = accum >> 16;
+    *carry = (accum >> 16) & 1;
     *a = (u16)accum;
 }
 void FPF::Sub16Bits(u16* borrow, u16* a, u16 b, u16 c)
 {
     u32 accum = (u32)b - (u32)c - (u32)*borrow;
-    *borrow = accum >> 31;
+    *borrow = (accum >> 16) & 1;
     *a = (u16)accum;
 }
 
@@ -191,6 +215,9 @@ void FPF::StickyShiftRightMant(int amount)
 
 void FPF::Normalize()
 {
+    if (type == IFPF_IS_ZERO || type == IFPF_IS_INFINITY || type == IFPF_IS_NAN)
+        return;
+
     while ((mantissa[0] & 0x8000) == 0)
     {
         u16 carry = 0;
@@ -231,7 +258,8 @@ void FPF::Round()
         Denormalize(MIN_EXP);
         if (type != IFPF_IS_ZERO)
         {
-            mantissa[INTERNAL_FPF_PRECISION - 1] &= 0xfff8;
+            if (IsMantissaZero())
+                SetZero(sign);
             if (exp > MAX_EXP)
             {
                 SetInfinity(sign);
@@ -274,7 +302,10 @@ FPF& FPF::AddSub(int mode, FPF& dest, const FPF& x, const FPF& y)
     {
         case ZERO_ZERO:
             dest = x;
-            dest.sign = x.sign ^ y.sign ^ (mode == '-');
+            if (x.sign ^ y.sign ^ (mode == '-'))
+            {
+                dest.sign = 0; /* positive */
+            }
             break;
         case NAN_ZERO:
         case NAN_SUBNORMAL:
@@ -397,6 +428,7 @@ FPF& FPF::AddSub(int mode, FPF& dest, const FPF& x, const FPF& y)
 FPF& FPF::Multiply(FPF& dest, const FPF& x, const FPF& y)
 {
     FPF temp, locy, locx;
+
     /*
     ** As in the preceding function, this large switch
     ** statement selects among the many combinations
@@ -495,7 +527,7 @@ FPF& FPF::Multiply(FPF& dest, const FPF& x, const FPF& y)
 
 FPF& FPF::Divide(FPF& dest, const FPF& x, const FPF& y)
 {
-    FPF temp, locx, locy;
+    FPF temp, locx;
 
     switch ((x.type * IFPF_TYPE_COUNT) + y.type)
     {
@@ -551,7 +583,6 @@ FPF& FPF::Divide(FPF& dest, const FPF& x, const FPF& y)
         case SUBNORMAL_NORMAL:
         case NORMAL_NORMAL:
             locx = x;
-            locy = y;
             if (x.IsMantissaZero())
             {
                 if (y.IsMantissaZero())
@@ -579,19 +610,20 @@ FPF& FPF::Divide(FPF& dest, const FPF& x, const FPF& y)
                 if (carry == 0)
                     for (int j = 0; j < INTERNAL_FPF_PRECISION; j++)
                     {
-                        if (locy.mantissa[j] > temp.mantissa[j])
+                        if (y.mantissa[j] > temp.mantissa[j])
                         {
                             carry = 0;
                             do_sub = false;
+                            break;
                         }
-                        if (locy.mantissa[j] < temp.mantissa[j])
+                        if (y.mantissa[j] < temp.mantissa[j])
                             break;
                     }
                 if (do_sub)
                 {
                     carry = 0;
                     for (int i = (INTERNAL_FPF_PRECISION - 1); i >= 0; i--)
-                        Sub16Bits(&carry, &temp.mantissa[i], temp.mantissa[i], locy.mantissa[i]);
+                        Sub16Bits(&carry, &temp.mantissa[i], temp.mantissa[i], y.mantissa[i]);
                     carry = 1;
                 }
                 dest.ShiftMantLeft1(&carry);
@@ -682,13 +714,14 @@ void FPF::FromUnsignedLongLong(unsigned long long myllong)
 /* converts the exponent to base ten, doing truncation rounding
  * we are using real floating point here but not depending on the format
  */
-#define LB2_10 3.32192802429199217000
+#define LB2_10 (M_LN10 / M_LN2)
 int FPF::TensExponent() const { return (int)((float)exp / LB2_10); }
 /* multiply by a power of ten */
 void FPF::MultiplyPowTen(int power)
 {
     FPF temp, mul;
     int i;
+    Init();
     temp.sign = 0;
     switch (type)
     {
@@ -697,39 +730,59 @@ void FPF::MultiplyPowTen(int power)
         case IFPF_IS_INFINITY:
             break;
         default:
-            exp += power;
             if (power < 0)
             { /* constant 0.2 */
-                for (i = 0; i < INTERNAL_FPF_PRECISION; i++)
-                    temp.mantissa[i] = 0xCCCC;
-                power = -power;
-                temp.exp = -2;
-                temp.type = IFPF_IS_NORMAL;
+                if (power < -20)
+                {
+                    exp += power;
+                    for (i = 0; i < INTERNAL_FPF_PRECISION; i++)
+                        temp.mantissa[i] = 0xCCCC;
+                    power = -power;
+                    temp.exp = -2;
+                    temp.type = IFPF_IS_NORMAL;
+                }
+                else
+                {
+                    power = -power;
+                    if (power > 10)
+                    {
+                        temp = *this / tensTab[9];
+                        *this = temp;
+                        power -= 10;
+                    }
+                    temp = *this / tensTab[power - 1];
+                    *this = temp;
+                    return;
+               }
             }
             else if (power > 0)
+
             { /* constant 5 */
+                exp += power;
                 temp.mantissa[0] = 0xa000;
                 temp.exp = 3;
                 temp.type = IFPF_IS_NORMAL;
             }
             else
-                break;  // 10^0 = 1;
+            {
+                return; //10 ^ 0 = 1, nop;
+            }
             mul = temp;
             while (power)
             {
                 FPF internal;
                 if (power & 1)
                 {
-                    Multiply(internal, *this, mul);
+                    internal = *this * mul;
                     *this = internal;
                 }
-                Multiply(internal, mul, mul);
+                internal = mul * mul;
                 mul = internal;
                 power >>= 1;
             }
+            Round();
             break;
     }
-    Round();
 }
 void FPF::ToString(std::string& dest) const
 {
@@ -781,7 +834,10 @@ void FPF::ToString(std::string& dest) const
                 temp.ShiftMantRight1(&carry);
             }
         }
-        for (int i = 0; i < 18; i++)
+        int c = 0;
+        if (dest.size() >= 3 && dest[dest.size()-2] == '0')
+            c  = 1;
+        for (int i = 0; i < 24-c; i++)
         {
             u16 carry = 0;
             u16 val = 0;
@@ -807,12 +863,34 @@ void FPF::ToString(std::string& dest) const
             val += carry;
             dest.insert(dest.size(), 1, val + '0');
         }
+        if (dest[dest.size()-1] > '4')
+        {
+            int n = dest.size() - 2;
+            while (n >= 0)
+            {
+                if (dest[n] < '0')
+                {
+                    n--;
+                    continue;
+                }
+                dest[n]++;
+                if (dest[n] != '9' + 1)
+                    break;
+                dest[n--] = '0';
+            }
+        }
+
         if (power)
         {
             if (power < 0)
+            {
+                power = - power;
                 dest += "E-";
+            }
             else
+            {
                 dest += "E+";
+            }
 
             dest += Utils::NumberToString(power);
         }
@@ -895,7 +973,7 @@ void FPF::ToFloat(uchar dest[]) const
             val = 0x7fc00000;
         else
         {
-            if (exp == -126)
+            if (exp <= -126)
             {
                 val = ((mantissa[0]) << 7) + (mantissa[1] >> 9);
             }
@@ -905,7 +983,15 @@ void FPF::ToFloat(uchar dest[]) const
             }
             if (exp > 129 || exp < -126)
             {
-                std::cout << "FPFToFloat: invalid exponent" << std::endl;
+                if (exp < -126 && exp >= -149)
+                {
+                    int n = -(exp + 126);
+                    u32 r = !!(val & (1 << (n - 1)));
+                    val >>= n;
+                    val += r;
+                }
+                else
+                    printf("FPFToFloat: invalid exponent");
             }
             else
                 val |= (exp + 126) << 23;
@@ -941,7 +1027,7 @@ void FPF::ToDouble(uchar dest[]) const
             val[0] = 0x7ff80000, val[1] = 0;
         else
         {
-            if (exp == -1022)
+            if (exp <= -1022)
             {
                 val[0] = ((mantissa[0]) << 4) + (mantissa[1] >> 12);
                 val[1] = (mantissa[1] << 20) + (mantissa[2] << 4) + (mantissa[3] >> 12);
@@ -953,7 +1039,34 @@ void FPF::ToDouble(uchar dest[]) const
             }
             if (exp > 1025 || exp < -1022)
             {
-                std::cout << "FPFToDouble: invalid exponent" << std::endl;
+                if (exp < -1022 && exp >= -1074)
+                {
+                    int n = -(exp + 1022);
+                    u32 c = val[0], r, t;
+                    if (n < 32)
+                    {
+                        r = !!(val[1] & (1 << (n - 1)));
+                        val[0] >>= n;
+                        val[1] >>= n;
+                        val[1] |= (c & ~(1 << n)) << (32 - n);
+                    }
+                    else
+                    {
+                        if (n == 32)
+                            r = !!(val[1] & (1 << 31));
+                        else
+                            r = !!(c & (1 << (n - 33)));
+                        val[0] = 0;
+                        val[1] = c >> (n - 32);
+                    }
+                    t = val[1];
+                    t += r;
+                    if (t < val[1])
+                        val[0]++;
+                    val[1] = t;
+                }
+                else
+                    printf("FPFToDouble: invalid exponent");
             }
             else
                 val[0] |= (exp + 1022) << 20;
@@ -1003,10 +1116,46 @@ void FPF::ToLongDouble(uchar dest[]) const
         else
         {
             val[0] = 0;
-            val[1] = 0x80000000 | ((mantissa[0] << 16) + mantissa[1]);
+            val[1] = (mantissa[0] << 16) + mantissa[1];
             val[2] = (mantissa[2] << 16) + mantissa[3];
             if (exp > 16385 || exp < -16382)
-                std::cout << "FPFToLongDouble: invalid exponent" << std::endl;
+                if (exp < -16382 && exp >= -16446)
+                {
+                    int n = -(exp + 16381);
+                    u32 c = val[1], r, t;
+                    if (n < 32)
+                    {
+                        r = !!(val[2] & (1 << (n - 1)));
+                        val[1] >>= n;
+                        val[2] >>= n;
+                        val[2] |= (c & ~(1 << n)) << (32 - n);
+                    }
+                    else if (n < 64)
+                    {
+                        if (n == 32)
+                            r = !!(val[2] & (1 << 31));
+                        else
+                            r = !!(c & (1 << (n - 33)));
+                        val[1] = 0;
+                        val[2] = c >> (n - 32);
+                    }
+                    else
+                    {
+                        if (n == 64)
+                            r = !!(c & (1 << 31));
+                        else
+                            r = 0;
+                        val[1] = 0;
+                        val[2] = 0;
+                    }
+                    t = val[2];
+                    t += r;
+                    if (t < val[2])
+                        val[1]++;
+                    val[2] = t;
+                }
+                else
+                    printf("FPFToLongDouble: invalid exponent");
             else
                 val[0] = exp + 16382;
         }
@@ -1061,44 +1210,25 @@ void FPF::Truncate(int bits, int maxexp, int minexp)
                     SetZero(0);
                 else
                 {
-                    while (exp < minexp)
-                    {
-                        u16 carry = 0;
-                        ShiftMantRight1(&carry);
-                        exp++;
-                    }
-                    if (IsMantissaZero())
-                        SetZero(0);
-                    else
-                        type = IFPF_IS_SUBNORMAL;
+                    type = IFPF_IS_SUBNORMAL;
                 }
             }
             else
             {
                 int i, v;
                 bool rounding = false;
-                if (bits % 16)
+                int mask = 0x8000, mask2 = 0x8000;
+                for (i = 1; i < bits % 16; i++)
                 {
-                    int mask = 0x8000, mask2 = 0x8000;
-                    for (i = 1; i < bits % 16; i++)
-                    {
-                        mask >>= 1;
-                        mask2 >>= 1;
-                        mask |= 0x8000;
-                    }
-                    if (mantissa[bits / 16] & ~mask)
-                        rounding = true;
-                    mantissa[bits / 16] &= mask;
-                    v = mask2;
+                    mask >>= 1;
+                    mask2 >>= 1;
+                    mask |= 0x8000;
                 }
-                else
-                    v = 1;
-                for (i = (bits + 15) / 16; i < INTERNAL_FPF_PRECISION; i++)
-                {
-                    if (mantissa[i])
-                        rounding = true;
-                    mantissa[i] = 0;
-                }
+                if (mantissa[bits / 16] & mask2)
+                    rounding = true;
+                mantissa[bits / 16] &= mask;
+                v = mask2;
+
                 if (rounding)
                 {
                     int n;

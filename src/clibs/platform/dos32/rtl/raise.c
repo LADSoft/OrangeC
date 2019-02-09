@@ -83,16 +83,16 @@ static void sigabort(int aa)
 {
    _abort() ;
 }
-const sighandler_t __defsigtab[NSIG] = {
-    SIG_ERR, SIG_ERR,  sigint,  SIG_ERR,   
-    sigill, SIG_ERR,  SIG_ERR, SIG_ERR, 
-    sigfp, SIG_ERR,  SIG_ERR, __ll_sigsegv, 
-    SIG_ERR, SIG_ERR, SIG_ERR, sigterm, 
-    SIG_IGN, SIG_IGN,SIG_ERR, SIG_ERR, 
-    SIG_IGN, sigint, sigabort
+const struct sigaction __defsigtab[NSIG] = {
+    { SIG_ERR }, { SIG_ERR },  { sigint },  { SIG_ERR },   
+    { sigill }, { SIG_ERR },  { SIG_ERR }, { SIG_ERR }, 
+    { sigfp }, { SIG_ERR },  { SIG_ERR }, { __ll_sigsegv }, 
+    { SIG_ERR }, { SIG_ERR }, { SIG_ERR }, { sigterm }, 
+    { SIG_IGN }, { SIG_IGN },{ SIG_ERR }, { SIG_ERR }, 
+    { SIG_IGN }, { sigint }, { sigabort }
 };
 
-sighandler_t __sigtab[NSIG];
+struct sigaction __sigtab[NSIG];
 static char insignal[NSIG];
 
 #pragma startup siginit 227
@@ -105,12 +105,13 @@ static void siginit(void)
 }
 int _RTL_FUNC raise(int sig)
 {
+    // the dos version doesn't support sigaction().
     sighandler_t temp;
    if (sig >= NSIG || sig < 1) {
         errno = EINVAL;
       return 1;
     }
-    temp = __sigtab[sig];
+    temp = __sigtab[sig].sa_handler;
     if (temp == SIG_ERR)
         return 1;
     if (temp == SIG_IGN)

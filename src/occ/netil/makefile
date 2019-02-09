@@ -46,7 +46,6 @@ CPP_DEPENDENCIES= \
     declcpp.cpp \
     expr.cpp \
     exprcpp.cpp \
-    float.cpp \
     help.cpp \
     ialias.cpp \
     iblock.cpp \

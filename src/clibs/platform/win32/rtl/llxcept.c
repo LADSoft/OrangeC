@@ -43,6 +43,7 @@
 #include <wchar.h>
 #include <locale.h>
 #include <libp.h>
+int __raise(int signum, int code, void *addr);
 extern int _win32;
 extern char** _argv;
 extern DWORD __unaligned_stacktop;
@@ -96,6 +97,8 @@ LONG ___xceptionhandle(PEXCEPTION_RECORD p, void* record, PCONTEXT context, void
 {
 
     int signum = -1, rv = 1;
+    int code = -1;
+    void *addr = 0;
     if (p->ExceptionFlags == 2)  // unwinding
         return 1;
         // if we get a C++ exception here, it is a 'loose' throw that needs an abort...
@@ -106,28 +109,63 @@ LONG ___xceptionhandle(PEXCEPTION_RECORD p, void* record, PCONTEXT context, void
     switch (p->ExceptionCode)
     {
         case EXCEPTION_ACCESS_VIOLATION:
+            signum = SIGSEGV;
+            code = SEGV_ACCERR;
+            addr = (void *)context->Eip;
+            break;
         case EXCEPTION_DATATYPE_MISALIGNMENT:
+            signum = SIGBUS;
+            code = BUS_ADRALN;
+            addr = (void *)context->Eip;
+            break;
         case EXCEPTION_ARRAY_BOUNDS_EXCEEDED:
         case EXCEPTION_GUARD_PAGE:
             signum = SIGSEGV;
+            code = SEGV_MAPERR; 
+            addr = (void *)context->Eip;
             break;
             //		case EXCEPTION_INVALID_INSTRUCTION:
         case EXCEPTION_PRIV_INSTRUCTION:
             signum = SIGILL;
+            code = ILL_PRVOPC;
             break;
         case EXCEPTION_SINGLE_STEP:
             return EXCEPTION_CONTINUE_EXECUTION;
         case EXCEPTION_FLT_DENORMAL_OPERAND:
+            signum = SIGFPE;
+            code = FPE_FLTSUB;
+            break;
         case EXCEPTION_FLT_DIVIDE_BY_ZERO:
+            signum = SIGFPE;
+            code = FPE_FLTDIV;
+            break;
         case EXCEPTION_FLT_INEXACT_RESULT:
+            signum = SIGFPE;
+            code = FPE_FLTRES;
+            break;
         case EXCEPTION_FLT_INVALID_OPERATION:
+            signum = SIGFPE;
+            code = FPE_FLTINV;
+            break;
         case EXCEPTION_FLT_OVERFLOW:
+            signum = SIGFPE;
+            code = FPE_FLTOVF;
+            break;
         case EXCEPTION_FLT_STACK_CHECK:
+            signum = SIGFPE;
+            code = -1;
+            break;
         case EXCEPTION_FLT_UNDERFLOW:
+            signum = SIGFPE;
+            code = FPE_FLTUND;
+            break;
         case EXCEPTION_INT_DIVIDE_BY_ZERO:
             signum = SIGFPE;
+            code = FPE_INTDIV;
             break;
         case EXCEPTION_INT_OVERFLOW:
+            signum = SIGFPE;
+            code = FPE_INTOVF;
             break;
         case EXCEPTION_NONCONTINUABLE_EXCEPTION:
         case EXCEPTION_INVALID_DISPOSITION:
@@ -137,7 +175,7 @@ LONG ___xceptionhandle(PEXCEPTION_RECORD p, void* record, PCONTEXT context, void
     }
     xxctxt = context;
     if (signum != -1)
-        if (!raise(signum))
+        if (!__raise(signum, code, addr))
             return 0;  // continue execution
 
     return 1;  // continue search

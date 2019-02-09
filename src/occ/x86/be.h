@@ -260,7 +260,7 @@ typedef struct muldiv
 {
     struct muldiv* next;
     long value;
-    FPFC floatvalue;
+    FPF floatvalue;
     int size;
     int label;
 } MULDIV;

@@ -873,43 +873,43 @@ static LLONG_TYPE getbase(int b, char** ptr)
     return i;
 }
 
-static void getfloatingbase(int b, FPFC* rval, char** ptr)
+static void getfloatingbase(int b, FPF* rval, char** ptr)
 {
     int j;
-    FPFC temp, temp1;
-    SetFPFZero(rval, 0);
+    FPF temp, temp1;
+    rval->SetZero(0);
     while ((j = radix36(**ptr)) < b)
     {
         (*ptr)++;
-        UnsignedLongLongToFPF(&temp, j);
+        temp = (ULLONG_TYPE) j;
         if (b == 10)
-            FPFMultiplyPowTen(rval, 1);
+            rval->MultiplyPowTen(1);
         else
-            rval->exp += 4 * 1;
-        AddSubFPF(0, rval, &temp, &temp1);
+            rval->SetExp(rval->GetExp() + 4 * 1);
+        temp1 = *rval + temp;
         *rval = temp1;
     }
 }
 /*
  *      getfrac - get fraction part of a floating number.
  */
-static int getfrac(int radix, char** ptr, FPFC* rval)
+static int getfrac(int radix, char** ptr, FPF* rval)
 {
     ULLONG_TYPE i = 0;
     int j, k = 0;
-    FPFC temp, temp1;
+    FPF temp, temp1;
     int digits = 0;
     while ((j = radix36(**ptr)) < radix)
     {
         i = radix * i + j;
         if (++k == sizeof(i) * 16 / CHAR_BIT)  // number of digits that can fit in an int
         {
-            UnsignedLongLongToFPF(&temp, i);
+            temp = (ULLONG_TYPE) i;
             if (radix == 10)
-                FPFMultiplyPowTen(rval, k);
+                rval->MultiplyPowTen(k);
             else
-                rval->exp += 4 * k;
-            AddSubFPF(0, rval, &temp, &temp1);
+                rval->SetExp(rval->GetExp() + 4 * k);
+            temp1 = *rval + temp;
             *rval = temp1;
             digits += k;
             k = 0;
@@ -917,12 +917,12 @@ static int getfrac(int radix, char** ptr, FPFC* rval)
         }
         (*ptr)++;
     }
-    UnsignedLongLongToFPF(&temp, i);
+    temp = (ULLONG_TYPE) i;
     if (radix == 10)
-        FPFMultiplyPowTen(rval, k);
+        rval->MultiplyPowTen(k);
     else
-        rval->exp += 4 * k;
-    AddSubFPF(0, rval, &temp, &temp1);
+        rval->SetExp(rval->GetExp() + 4 * k);
+    temp1 = *rval + temp;
     *rval = temp1;
     digits += k;
     return radix == 10 ? -digits : -digits * 4;
@@ -957,7 +957,7 @@ static int getexp(char** ptr)
  *      getnum handles all of the numeric input. it accepts
  *      decimal, octal, hexidecimal, and floating point numbers.
  */
-e_lexType getNumber(unsigned char** ptr, unsigned char** end, unsigned char* suffix, FPFC* rval, LLONG_TYPE* ival)
+e_lexType getNumber(unsigned char** ptr, unsigned char** end, unsigned char* suffix, FPF* rval, LLONG_TYPE* ival)
 {
     char buf[200], *p = buf;
     int radix = 10;
@@ -1167,11 +1167,11 @@ e_lexType getNumber(unsigned char** ptr, unsigned char** end, unsigned char* suf
         *ival += frac;
         if (floatradix == 2)
         {
-            rval->exp += *ival;
+            rval->SetExp(rval->GetExp() + *ival);
         }
         else
         {
-            FPFMultiplyPowTen(rval, *ival);
+            rval->MultiplyPowTen(*ival);
         }
         if (Utils::iequal((char*)suffix, "F"))
         {
@@ -1289,7 +1289,7 @@ LEXEME* getsym(void)
     KEYWORD* kw;
     enum e_lexType tp;
     bool contin;
-    FPFC rval;
+    FPF rval;
     LLONG_TYPE ival;
     static unsigned char buf[16384];
     static int pos = 0;

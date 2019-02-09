@@ -57,8 +57,7 @@
 #define CMPLXL(x, y) ((long double complex)((long double)(x) + _Imaginary_I * (long double)(y)))
 
 #ifdef __cplusplus
-namespace __STD_NS__
-{
+
 extern "C"
 {
 #endif
@@ -153,74 +152,6 @@ extern "C"
 
 #ifdef __cplusplus
 };
-};
 #endif
 #endif /* __COMPLEX_H */
 
-#if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__COMPLEX_H_USING_LIST)
-#define __COMPLEX_H_USING_LIST
-
-using __STD_NS_QUALIFIER cacosf;
-using __STD_NS_QUALIFIER cacos;
-using __STD_NS_QUALIFIER cacosl;
-using __STD_NS_QUALIFIER casinf;
-using __STD_NS_QUALIFIER casin;
-using __STD_NS_QUALIFIER casinl;
-using __STD_NS_QUALIFIER catanf;
-using __STD_NS_QUALIFIER catan;
-using __STD_NS_QUALIFIER catanl;
-using __STD_NS_QUALIFIER ccosf;
-using __STD_NS_QUALIFIER ccos;
-using __STD_NS_QUALIFIER ccosl;
-using __STD_NS_QUALIFIER csinf;
-using __STD_NS_QUALIFIER csin;
-using __STD_NS_QUALIFIER csinl;
-using __STD_NS_QUALIFIER ctanf;
-using __STD_NS_QUALIFIER ctan;
-using __STD_NS_QUALIFIER ctanl;
-using __STD_NS_QUALIFIER cacoshf;
-using __STD_NS_QUALIFIER cacosh;
-using __STD_NS_QUALIFIER cacoshl;
-using __STD_NS_QUALIFIER casinhf;
-using __STD_NS_QUALIFIER casinh;
-using __STD_NS_QUALIFIER casinhl;
-using __STD_NS_QUALIFIER catanhf;
-using __STD_NS_QUALIFIER catanh;
-using __STD_NS_QUALIFIER catanhl;
-using __STD_NS_QUALIFIER ccoshf;
-using __STD_NS_QUALIFIER ccosh;
-using __STD_NS_QUALIFIER ccoshl;
-using __STD_NS_QUALIFIER csinhf;
-using __STD_NS_QUALIFIER csinh;
-using __STD_NS_QUALIFIER csinhl;
-using __STD_NS_QUALIFIER ctanhf;
-using __STD_NS_QUALIFIER ctanh;
-using __STD_NS_QUALIFIER ctanhl;
-using __STD_NS_QUALIFIER cexpf;
-using __STD_NS_QUALIFIER cexp;
-using __STD_NS_QUALIFIER cexpl;
-using __STD_NS_QUALIFIER clogf;
-using __STD_NS_QUALIFIER clog;
-using __STD_NS_QUALIFIER clogl;
-using __STD_NS_QUALIFIER cabsf;
-using __STD_NS_QUALIFIER cabs;
-using __STD_NS_QUALIFIER cabsl;
-using __STD_NS_QUALIFIER csqrtf;
-using __STD_NS_QUALIFIER csqrt;
-using __STD_NS_QUALIFIER csqrtl;
-using __STD_NS_QUALIFIER cargf;
-using __STD_NS_QUALIFIER carg;
-using __STD_NS_QUALIFIER cargl;
-using __STD_NS_QUALIFIER cimagf;
-using __STD_NS_QUALIFIER cimag;
-using __STD_NS_QUALIFIER cimagl;
-using __STD_NS_QUALIFIER conjf;
-using __STD_NS_QUALIFIER conj;
-using __STD_NS_QUALIFIER conjl;
-using __STD_NS_QUALIFIER cprojf;
-using __STD_NS_QUALIFIER cproj;
-using __STD_NS_QUALIFIER cprojl;
-using __STD_NS_QUALIFIER crealf;
-using __STD_NS_QUALIFIER creal;
-using __STD_NS_QUALIFIER creall;
-#endif

@@ -47,7 +47,6 @@
 #include "_locale.h"
 #include "libp.h"
 #include <limits.h>
-//#include "_lfloat.h"
 
 long double __tensexp(int n)
 {

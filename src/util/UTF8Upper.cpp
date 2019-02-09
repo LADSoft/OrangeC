@@ -130,9 +130,10 @@ int UTF8::upper[][2] = {
 
 int UTF8::ToUpper(int val)
 {
+    if (val < 0x7f)
+        return ::toupper(val);
     int top = sizeof(upper) / sizeof(upper[0]);
     int bottom = -1;
-    //    int v;
     while (top - bottom > 1)
     {
         int mid = (top + bottom) / 2;

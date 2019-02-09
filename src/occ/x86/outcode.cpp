@@ -743,12 +743,12 @@ void outcode_dump_muldivval(void)
         }
         else if (v->size == ISZ_FLOAT || v->size == ISZ_IFLOAT || v->size == ISZ_CFLOAT)
         {
-            FPFToFloat(buf, &v->floatvalue);
+            v->floatvalue.ToFloat(buf);
             emit(buf, 4);
         }
         else
         {
-            FPFToDouble(buf, &v->floatvalue);
+            v->floatvalue.ToDouble(buf);
             emit(buf, 8);
         }
         v = v->next;
@@ -798,28 +798,28 @@ void outcode_genstorage(int len) { emit(len); }
 
 /*-------------------------------------------------------------------------*/
 
-void outcode_genfloat(FPFC* val)
+void outcode_genfloat(FPF* val)
 {
     UBYTE buf[4];
-    FPFToFloat(buf, val);
+    val->ToFloat(buf);
     emit(buf, 4);
 }
 
 /*-------------------------------------------------------------------------*/
 
-void outcode_gendouble(FPFC* val)
+void outcode_gendouble(FPF* val)
 {
     UBYTE buf[8];
-    FPFToDouble(buf, val);
+    val->ToDouble(buf);
     emit(buf, 8);
 }
 
 /*-------------------------------------------------------------------------*/
 
-void outcode_genlongdouble(FPFC* val)
+void outcode_genlongdouble(FPF* val)
 {
     UBYTE buf[10];
-    FPFToLongDouble(buf, val);
+    val->ToLongDouble(buf);
     emit(buf, 10);
 }
 

@@ -2576,6 +2576,11 @@ extern WINBOOL PASCAL WINBASEAPI GetFileAttributesExW(
     LPVOID lpFileInformation
     );
 
+BOOL PASCAL WINBASEAPI Process32FirstW(HANDLE hSnapshot, LPPROCESSENTRY32W lppe);
+
+BOOL PASCAL WINBASEAPI Process32NextW(HANDLE hSnapshot, LPPROCESSENTRY32W lppe);
+
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

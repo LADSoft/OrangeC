@@ -1,9 +1,8 @@
 #include "UTF8.h"
-#include "ctype.h"
+#include <ctype.h>
+#include <string.h>
 int UTF8::Decode(const char* str)
 {
-    return *str;
-    /*
     if ((*str & 0x80) == 0)
     {
         return *str;
@@ -40,13 +39,9 @@ int UTF8::Decode(const char* str)
     {
         return 0;
     }
-    */
 }
 int UTF8::Encode(char* dest, int val)
 {
-    dest[0] = static_cast<char>(val);
-    return 1;
-    /*
     if (val < 0x80)
     {
         dest[0] = val;
@@ -73,13 +68,9 @@ int UTF8::Encode(char* dest, int val)
         dest[3] = (val & 0x3f) | 0x80;
         return 4;
     }
-    */
 }
 int UTF8::CharSpan(const char* str)
 {
-    (void)str;
-    return 1;
-    /*
     if ((*str & 0x80) == 0)
     {
         return 1;
@@ -100,7 +91,6 @@ int UTF8::CharSpan(const char* str)
     {
         return 1;
     }
-    */
 }
 int UTF8::Span(const char* str)
 {
@@ -117,7 +107,6 @@ int UTF8::Span(const char* str)
     }
     return rv;
 }
-#include <fstream>
 std::string UTF8::ToUpper(const std::string& val)
 {
     std::string rv;
@@ -125,15 +114,12 @@ std::string UTF8::ToUpper(const std::string& val)
     char buf[10];
     for (int i = 0; i < val.size();)
     {
-        /*
-            if ((str[i] & 0x80) == 0)
-            {
-            (*/
-        buf[0] = ToUpper(str[i]);
-        buf[1] = 0;
-        rv += buf;
-        i++;
-        /*
+        if ((str[i] & 0x80) == 0)
+        {
+            buf[0] = ToUpper(str[i]);
+            buf[1] = 0;
+            rv += buf;
+            i++;
         }
         else
         {
@@ -152,7 +138,6 @@ std::string UTF8::ToUpper(const std::string& val)
             rv += buf;
             i += spn;
         }
-        */
     }
     return rv;
 }

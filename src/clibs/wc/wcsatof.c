@@ -47,7 +47,7 @@
 #include <ctype.h>
 #include "_locale.h"
 #include "libp.h"
-#include "_lfloat.h"
+#include <limits.h>
 
 static unsigned floating_infinity = 0x7f800000;
 static unsigned floating_nan = 0x7fc00000;

@@ -195,7 +195,6 @@ void oa_putconst(int op, int sz, EXPRESSION* offset, bool doSign)
 {
     char buf[4096];
     SYMBOL* sp;
-    char buf1[100];
     int toffs;
     switch (offset->type)
     {
@@ -264,9 +263,7 @@ void oa_putconst(int op, int sz, EXPRESSION* offset, bool doSign)
         case en_c_ldc:
             if (doSign)
                 beputc('+');
-            FPFToString(buf, &offset->v.c.r);
-            FPFToString(buf1, &offset->v.c.i);
-            bePrintf("%s,%s", buf, buf1);
+            bePrintf("%s,%s", ((std::string)offset->v.c.r).c_str(), ((std::string)offset->v.c.i).c_str());
             break;
         case en_c_f:
         case en_c_d:
@@ -276,8 +273,7 @@ void oa_putconst(int op, int sz, EXPRESSION* offset, bool doSign)
         case en_c_ldi:
             if (doSign)
                 beputc('+');
-            FPFToString(buf, &offset->v.f);
-            bePrintf("%s", buf);
+            bePrintf("%s", ((std::string)offset->v.f).c_str());
             break;
         case en_labcon:
             if (doSign)
@@ -764,15 +760,15 @@ void oa_put_string_label(int lab, int type) { oa_put_label(lab); }
 
 /*-------------------------------------------------------------------------*/
 
-void oa_genfloat(enum e_gt type, FPFC* val)
+void oa_genfloat(enum e_gt type, FPF* val)
 /*
  * Output a float value
  */
 {
     if (cparams.prm_asmfile)
     {
-        char buf[256];
-        FPFToString(buf, val);
+       char buf[256];
+        strcpy(buf, ((std::string)*val).c_str());
         switch (type)
         {
             case floatgen:
@@ -780,7 +776,7 @@ void oa_genfloat(enum e_gt type, FPFC* val)
                 {
                     UBYTE dta[4];
                     int i;
-                    FPFToFloat(dta, val);
+                    val->ToFloat(dta);
                     bePrintf("\tdb\t");
                     for (i = 0; i < 4; i++)
                     {
@@ -798,7 +794,7 @@ void oa_genfloat(enum e_gt type, FPFC* val)
                 {
                     UBYTE dta[8];
                     int i;
-                    FPFToDouble(dta, val);
+                    val->ToDouble(dta);
                     bePrintf("\tdb\t");
                     for (i = 0; i < 8; i++)
                     {
@@ -1379,7 +1375,7 @@ long queue_large_const(unsigned constant[], int count)
 }
 /*-------------------------------------------------------------------------*/
 
-long queue_floatval(FPFC* number, int size)
+long queue_floatval(FPF* number, int size)
 {
     MULDIV *p = muldivlink, **q = &muldivlink;
     if (cparams.prm_mergestrings)
@@ -1432,7 +1428,7 @@ void dump_muldivval(void)
                     case ISZ_FLOAT:
                     case ISZ_IFLOAT:
                     case ISZ_CFLOAT:
-                        FPFToFloat(data, &muldivlink->floatvalue);
+                        muldivlink->floatvalue.ToFloat(data);
                         len = 4;
                         break;
                     case ISZ_DOUBLE:
@@ -1441,7 +1437,7 @@ void dump_muldivval(void)
                     case ISZ_ILDOUBLE:
                     case ISZ_CDOUBLE:
                     case ISZ_CLDOUBLE:
-                        FPFToDouble(data, &muldivlink->floatvalue);
+                        muldivlink->floatvalue.ToDouble(data);
                         len = 8;
                         break;
                 }

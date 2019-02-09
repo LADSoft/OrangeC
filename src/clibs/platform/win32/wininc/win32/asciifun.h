@@ -2552,6 +2552,10 @@ extern WINBOOL  PASCAL WINBASEAPI PlaySoundA(LPCSTR pszSound, HMODULE hmod, DWOR
 
 extern WINBOOL  PASCAL WINBASEAPI GetCPInfoExA(UINT CodePage,DWORD dwFlags, LPCPINFOEX lpCPInfoEx);
 
+BOOL PASCAL WINBASEAPI Process32First(HANDLE hSnapshot, LPPROCESSENTRY32 lppe);
+
+BOOL PASCAL WINBASEAPI Process32Next(HANDLE hSnapshot, LPPROCESSENTRY32 lppe);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

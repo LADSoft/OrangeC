@@ -79,7 +79,7 @@ static void ReassignInt(QUAD* d, LLONG_TYPE val)
         d->dc.left->size = d->ans->size;
     }
 }
-static void ReassignFloat(QUAD* d, FPFC val)
+static void ReassignFloat(QUAD* d, FPF val)
 {
     IMODE* ip = make_fimmed(ISZ_LDOUBLE, val);
     d->dc.left = ip;
@@ -92,9 +92,9 @@ static void ReassignFloat(QUAD* d, FPFC val)
 static void setFloatZero(QUAD* d)
 {
     IMODE* ip;
-    FPFC val;
+    FPF val;
     memset(&val, 0, sizeof(val));
-    val.type = IFPF_IS_ZERO;
+    val.SetZero(0);
     ip = make_fimmed(ISZ_LDOUBLE, val);
     d->dc.left = ip;
     d->dc.right = 0;
@@ -298,7 +298,7 @@ QUAD* ReCast(int size, QUAD* in, QUAD* newMode)
             if (in->dc.opcode == i_icon)
                 i = CastToInt(size, in->dc.v.i);
             else
-                i = CastToInt(size, FPFToLongLong(&in->dc.v.f));
+                i = CastToInt(size, (LLONG_TYPE)(in->dc.v.f));
             if (!newMode)
             {
                 in->dc.v.i = i;
@@ -315,7 +315,7 @@ QUAD* ReCast(int size, QUAD* in, QUAD* newMode)
         }
         else if (size >= ISZ_FLOAT)
         {
-            FPFC f, temp;
+            FPF f, temp;
             if (in->dc.opcode == i_icon)
                 f = CastToFloat(size, IntToFloat(&temp, ISZ_ULONGLONG, in->dc.v.i));
             else
@@ -344,7 +344,7 @@ void ConstantFold(QUAD* d, bool reflow)
 {
     int index; /*, shift; */
     int shift;
-    FPFC temp;
+    FPF temp;
     EXPRESSION *left = 0, *right = 0;
     switch (d->dc.opcode)
     {
@@ -357,15 +357,15 @@ void ConstantFold(QUAD* d, bool reflow)
                     ReassignCompare(d, left->v.i != right->v.i, reflow);
                     break;
                 case iclr:
-                    LongLongToFPF(&temp, left->v.i);
-                    ReassignCompare(d, !FPFEQ(&temp, &right->v.f), reflow);
+                    temp = (LLONG_TYPE) left->v.i;
+                    ReassignCompare(d, (temp !=right->v.f), reflow);
                     break;
                 case icrl:
-                    LongLongToFPF(&temp, right->v.i);
-                    ReassignCompare(d, !FPFEQ(&left->v.f, &temp), reflow);
+                    temp = (LLONG_TYPE) right->v.i;
+                    ReassignCompare(d, (left->v.f !=temp), reflow);
                     break;
                 case icrr:
-                    ReassignCompare(d, !FPFEQ(&left->v.f, &right->v.f), reflow);
+                    ReassignCompare(d, (left->v.f !=right->v.f), reflow);
                     break;
                 case ical:
                 case icla:
@@ -385,15 +385,15 @@ void ConstantFold(QUAD* d, bool reflow)
                     ReassignCompare(d, left->v.i == right->v.i, reflow);
                     break;
                 case iclr:
-                    LongLongToFPF(&temp, left->v.i);
-                    ReassignCompare(d, FPFEQ(&temp, &right->v.f), reflow);
+                    temp = (LLONG_TYPE) left->v.i;
+                    ReassignCompare(d, (temp ==  right->v.f), reflow);
                     break;
                 case icrl:
-                    LongLongToFPF(&temp, right->v.i);
-                    ReassignCompare(d, FPFEQ(&left->v.f, &temp), reflow);
+                    temp = (LLONG_TYPE) right->v.i;
+                    ReassignCompare(d, (left->v.f ==temp), reflow);
                     break;
                 case icrr:
-                    ReassignCompare(d, FPFEQ(&left->v.f, &right->v.f), reflow);
+                    ReassignCompare(d, (left->v.f ==right->v.f), reflow);
                     break;
                 case ical:
                 case icla:
@@ -416,12 +416,12 @@ void ConstantFold(QUAD* d, bool reflow)
                         ReassignCompare(d, (unsigned LLONG_TYPE)left->v.i < (unsigned LLONG_TYPE)right->v.i, reflow);
                     break;
                 case iclr:
-                    if (right->v.f.type == IFPF_IS_ZERO)
+                    if (right->v.f.ValueIsZero())
                         ReassignCompare(d, 0, reflow);
                     else
                     {
-                        UnsignedLongLongToFPF(&temp, left->v.i);
-                        ReassignCompare(d, !FPFGTE(&temp, &right->v.f), reflow);
+                        temp = (ULLONG_TYPE ) left->v.i;
+                        ReassignCompare(d, (temp < right->v.f), reflow);
                     }
                     break;
                 case icrl:
@@ -429,15 +429,15 @@ void ConstantFold(QUAD* d, bool reflow)
                         ReassignCompare(d, 0, reflow);
                     else
                     {
-                        UnsignedLongLongToFPF(&temp, right->v.i);
-                        ReassignCompare(d, !FPFGTE(&left->v.f, &temp), reflow);
+                        temp = (ULLONG_TYPE) right->v.i;
+                        ReassignCompare(d, (left->v.f < temp), reflow);
                     }
                     break;
                 case icrr:
-                    if (right->v.f.type == IFPF_IS_ZERO)
+                    if (right->v.f.ValueIsZero())
                         ReassignCompare(d, 0, reflow);
                     else
-                        ReassignCompare(d, !FPFGTE(&left->v.f, &right->v.f), reflow);
+                        ReassignCompare(d, (left->v.f < right->v.f), reflow);
                     break;
             }
             break;
@@ -450,15 +450,15 @@ void ConstantFold(QUAD* d, bool reflow)
                     ReassignCompare(d, (unsigned LLONG_TYPE)left->v.i <= (unsigned LLONG_TYPE)right->v.i, reflow);
                     break;
                 case iclr:
-                    UnsignedLongLongToFPF(&temp, left->v.i);
-                    ReassignCompare(d, !FPFGT(&temp, &right->v.f), reflow);
+                    temp = (ULLONG_TYPE ) left->v.i;
+                    ReassignCompare(d, (temp <= right->v.f), reflow);
                     break;
                 case icrl:
-                    UnsignedLongLongToFPF(&temp, right->v.i);
-                    ReassignCompare(d, !FPFGT(&left->v.f, &temp), reflow);
+                    temp = (ULLONG_TYPE) right->v.i;
+                    ReassignCompare(d, (left->v.f <= temp), reflow);
                     break;
                 case icrr:
-                    ReassignCompare(d, !FPFGT(&left->v.f, &right->v.f), reflow);
+                    ReassignCompare(d, (left->v.f <= right->v.f), reflow);
                     break;
             }
             break;
@@ -471,15 +471,15 @@ void ConstantFold(QUAD* d, bool reflow)
                     ReassignCompare(d, (unsigned LLONG_TYPE)left->v.i > (unsigned LLONG_TYPE)right->v.i, reflow);
                     break;
                 case iclr:
-                    UnsignedLongLongToFPF(&temp, left->v.i);
-                    ReassignCompare(d, FPFGT(&temp, &right->v.f), reflow);
+                    temp = (ULLONG_TYPE) left->v.i;
+                    ReassignCompare(d, (temp > right->v.f), reflow);
                     break;
                 case icrl:
-                    UnsignedLongLongToFPF(&temp, right->v.i);
-                    ReassignCompare(d, FPFGT(&left->v.f, &temp), reflow);
+                    temp = (ULLONG_TYPE) right->v.i;
+                    ReassignCompare(d, (left->v.f > temp), reflow);
                     break;
                 case icrr:
-                    ReassignCompare(d, FPFGT(&left->v.f, &right->v.f), reflow);
+                    ReassignCompare(d, (left->v.f > right->v.f), reflow);
                     break;
             }
             break;
@@ -492,15 +492,15 @@ void ConstantFold(QUAD* d, bool reflow)
                     ReassignCompare(d, (unsigned LLONG_TYPE)left->v.i >= (unsigned LLONG_TYPE)right->v.i, reflow);
                     break;
                 case iclr:
-                    UnsignedLongLongToFPF(&temp, left->v.i);
-                    ReassignCompare(d, FPFGTE(&temp, &right->v.f), reflow);
+                    temp = (ULLONG_TYPE) left->v.i;
+                    ReassignCompare(d, (temp >= right->v.f), reflow);
                     break;
                 case icrl:
-                    UnsignedLongLongToFPF(&temp, right->v.i);
-                    ReassignCompare(d, FPFGTE(&left->v.f, &temp), reflow);
+                    temp = (ULLONG_TYPE) right->v.i;
+                    ReassignCompare(d, (left->v.f >= temp), reflow);
                     break;
                 case icrr:
-                    ReassignCompare(d, FPFGTE(&left->v.f, &right->v.f), reflow);
+                    ReassignCompare(d, (left->v.f >= right->v.f), reflow);
                     break;
             }
             break;
@@ -513,15 +513,15 @@ void ConstantFold(QUAD* d, bool reflow)
                     ReassignCompare(d, left->v.i < right->v.i, reflow);
                     break;
                 case iclr:
-                    LongLongToFPF(&temp, left->v.i);
-                    ReassignCompare(d, !FPFGTE(&temp, &right->v.f), reflow);
+                    temp = (LLONG_TYPE) left->v.i;
+                    ReassignCompare(d, (temp < right->v.f), reflow);
                     break;
                 case icrl:
-                    LongLongToFPF(&temp, right->v.i);
-                    ReassignCompare(d, !FPFGTE(&left->v.f, &temp), reflow);
+                    temp = (LLONG_TYPE) right->v.i;
+                    ReassignCompare(d, (left->v.f < temp), reflow);
                     break;
                 case icrr:
-                    ReassignCompare(d, !FPFGTE(&left->v.f, &right->v.f), reflow);
+                    ReassignCompare(d, (left->v.f < right->v.f), reflow);
                     break;
             }
             break;
@@ -534,15 +534,15 @@ void ConstantFold(QUAD* d, bool reflow)
                     ReassignCompare(d, left->v.i <= right->v.i, reflow);
                     break;
                 case iclr:
-                    LongLongToFPF(&temp, left->v.i);
-                    ReassignCompare(d, !FPFGT(&temp, &right->v.f), reflow);
+                    temp = (LLONG_TYPE) left->v.i;
+                    ReassignCompare(d, (temp <= right->v.f), reflow);
                     break;
                 case icrl:
-                    LongLongToFPF(&temp, right->v.i);
-                    ReassignCompare(d, !FPFGT(&left->v.f, &temp), reflow);
+                    temp = (LLONG_TYPE) right->v.i;
+                    ReassignCompare(d, (left->v.f <= temp), reflow);
                     break;
                 case icrr:
-                    ReassignCompare(d, !FPFGT(&left->v.f, &right->v.f), reflow);
+                    ReassignCompare(d, (left->v.f <= right->v.f), reflow);
                     break;
             }
             break;
@@ -555,15 +555,15 @@ void ConstantFold(QUAD* d, bool reflow)
                     ReassignCompare(d, left->v.i > right->v.i, reflow);
                     break;
                 case iclr:
-                    LongLongToFPF(&temp, left->v.i);
-                    ReassignCompare(d, FPFGT(&temp, &right->v.f), reflow);
+                    temp = (LLONG_TYPE) left->v.i;
+                    ReassignCompare(d, (temp > right->v.f), reflow);
                     break;
                 case icrl:
-                    LongLongToFPF(&temp, right->v.i);
-                    ReassignCompare(d, FPFGT(&left->v.f, &temp), reflow);
+                    temp = (LLONG_TYPE) right->v.i;
+                    ReassignCompare(d, (left->v.f > temp), reflow);
                     break;
                 case icrr:
-                    ReassignCompare(d, FPFGT(&left->v.f, &right->v.f), reflow);
+                    ReassignCompare(d, (left->v.f > right->v.f), reflow);
                     break;
             }
             break;
@@ -576,15 +576,15 @@ void ConstantFold(QUAD* d, bool reflow)
                     ReassignCompare(d, left->v.i >= right->v.i, reflow);
                     break;
                 case iclr:
-                    LongLongToFPF(&temp, left->v.i);
-                    ReassignCompare(d, FPFGTE(&temp, &right->v.f), reflow);
+                    temp = (LLONG_TYPE) left->v.i;
+                    ReassignCompare(d, (temp >= right->v.f), reflow);
                     break;
                 case icrl:
-                    LongLongToFPF(&temp, right->v.i);
-                    ReassignCompare(d, FPFGTE(&left->v.f, &temp), reflow);
+                    temp = (LLONG_TYPE) right->v.i;
+                    ReassignCompare(d, (left->v.f >= temp), reflow);
                     break;
                 case icrr:
-                    ReassignCompare(d, FPFGTE(&left->v.f, &right->v.f), reflow);
+                    ReassignCompare(d, (left->v.f >= right->v.f), reflow);
                     break;
             }
             break;
@@ -600,16 +600,16 @@ void ConstantFold(QUAD* d, bool reflow)
                     break;
                 case iclr:
                     temp = refloat(left);
-                    AddSubFPF(false, &temp, &right->v.f, &temp);
+                    temp = temp + right->v.f;
                     ReassignFloat(d, temp);
                     break;
                 case icrl:
                     temp = refloat(right);
-                    AddSubFPF(false, &left->v.f, &temp, &temp);
+                    temp = left->v.f + temp;
                     ReassignFloat(d, temp);
                     break;
                 case icrr:
-                    AddSubFPF(false, &left->v.f, &right->v.f, &temp);
+                    temp = left->v.f + right->v.f;
                     ReassignFloat(d, temp);
                     break;
                 case icln:
@@ -619,7 +619,7 @@ void ConstantFold(QUAD* d, bool reflow)
                     }
                     break;
                 case icrn:
-                    if (left->v.f.type == IFPF_IS_ZERO)
+                    if (left->v.f.ValueIsZero())
                     {
                         ASNFromRight(d);
                     }
@@ -631,7 +631,7 @@ void ConstantFold(QUAD* d, bool reflow)
                     }
                     break;
                 case icnr:
-                    if (right->v.f.type == IFPF_IS_ZERO)
+                    if (right->v.f.ValueIsZero())
                     {
                         ASNFromLeft(d);
                     }
@@ -653,16 +653,16 @@ void ConstantFold(QUAD* d, bool reflow)
                     break;
                 case iclr:
                     temp = refloat(left);
-                    AddSubFPF(true, &temp, &right->v.f, &temp);
+                    temp = temp - right->v.f;
                     ReassignFloat(d, temp);
                     break;
                 case icrl:
                     temp = refloat(right);
-                    AddSubFPF(true, &left->v.f, &temp, &temp);
+                    temp = left->v.f - temp;
                     ReassignFloat(d, temp);
                     break;
                 case icrr:
-                    AddSubFPF(true, &left->v.f, &right->v.f, &temp);
+                    temp = left->v.f - right->v.f;
                     ReassignFloat(d, temp);
                     break;
                 case icln:
@@ -672,7 +672,7 @@ void ConstantFold(QUAD* d, bool reflow)
                     }
                     break;
                 case icrn:
-                    if (left->v.f.type == IFPF_IS_ZERO)
+                    if (left->v.f.ValueIsZero())
                     {
                     }
                     break;
@@ -682,7 +682,7 @@ void ConstantFold(QUAD* d, bool reflow)
                     }
                     break;
                 case icnr:
-                    if (right->v.f.type == IFPF_IS_ZERO)
+                    if (right->v.f.ValueIsZero())
                     {
                     }
                     break;
@@ -697,10 +697,10 @@ void ConstantFold(QUAD* d, bool reflow)
                         ReassignInt(d, (unsigned LLONG_TYPE)left->v.i / (unsigned LLONG_TYPE)right->v.i);
                     break;
                 case iclr:
-                    if (right->v.f.type != IFPF_IS_ZERO)
+                    if (!right->v.f.ValueIsZero())
                     {
                         temp = refloat(left);
-                        DivideFPF(&temp, &right->v.f, &temp);
+                        temp = temp / right->v.f;
                         ReassignFloat(d, temp);
                     }
                     break;
@@ -708,14 +708,14 @@ void ConstantFold(QUAD* d, bool reflow)
                     if ((unsigned LLONG_TYPE)right->v.i != 0)
                     {
                         temp = refloat(right);
-                        DivideFPF(&left->v.f, &temp, &temp);
+                        temp = left->v.f / temp;
                         ReassignFloat(d, temp);
                     }
                     break;
                 case icrr:
-                    if (right->v.f.type != IFPF_IS_ZERO)
+                    if (!right->v.f.ValueIsZero())
                     {
-                        DivideFPF(&left->v.f, &right->v.f, &temp);
+                        temp = left->v.f / right->v.f;
                         ReassignFloat(d, temp);
                     }
                     break;
@@ -726,7 +726,7 @@ void ConstantFold(QUAD* d, bool reflow)
                     }
                     break;
                 case icrn:
-                    if (left->v.f.type == IFPF_IS_ZERO)
+                    if (left->v.f.ValueIsZero())
                     {
                         setFloatZero(d);
                     }
@@ -742,7 +742,7 @@ void ConstantFold(QUAD* d, bool reflow)
                     }
                     break;
                 case icnr:
-                    if (ValueIsOne(&right->v.f))
+                    if (right->v.f.ValueIsOne())
                     {
                         ASNFromLeft(d);
                     }
@@ -779,10 +779,10 @@ void ConstantFold(QUAD* d, bool reflow)
                         ReassignInt(d, left->v.i / right->v.i);
                     break;
                 case iclr:
-                    if (right->v.f.type != IFPF_IS_ZERO)
+                    if (!right->v.f.ValueIsZero())
                     {
                         temp = refloat(left);
-                        DivideFPF(&temp, &right->v.f, &temp);
+                        temp = temp /right->v.f;
                         ReassignFloat(d, temp);
                     }
                     break;
@@ -790,14 +790,14 @@ void ConstantFold(QUAD* d, bool reflow)
                     if (right->v.i != 0)
                     {
                         temp = refloat(right);
-                        DivideFPF(&left->v.f, &temp, &temp);
+                        temp = left->v.f / temp;
                         ReassignFloat(d, temp);
                     }
                     break;
                 case icrr:
-                    if (right->v.f.type != IFPF_IS_ZERO)
+                    if (!right->v.f.ValueIsZero())
                     {
-                        DivideFPF(&left->v.f, &right->v.f, &temp);
+                        temp = left->v.f / right->v.f;
                         ReassignFloat(d, temp);
                     }
                     break;
@@ -808,7 +808,7 @@ void ConstantFold(QUAD* d, bool reflow)
                     }
                     break;
                 case icrn:
-                    if (left->v.f.type == IFPF_IS_ZERO)
+                    if (left->v.f.ValueIsZero())
                     {
                         setFloatZero(d);
                     }
@@ -824,7 +824,7 @@ void ConstantFold(QUAD* d, bool reflow)
                     }
                     break;
                 case icnr:
-                    if (ValueIsOne(&right->v.f))
+                    if (right->v.f.ValueIsOne())
                     {
                         ASNFromLeft(d);
                     }
@@ -868,16 +868,16 @@ void ConstantFold(QUAD* d, bool reflow)
                     break;
                 case iclr:
                     temp = refloat(left);
-                    MultiplyFPF(&temp, &right->v.f, &temp);
+                    temp = temp * right->v.f;
                     ReassignFloat(d, temp);
                     break;
                 case icrl:
                     temp = refloat(right);
-                    MultiplyFPF(&left->v.f, &temp, &temp);
+                    temp = left->v.f * temp;
                     ReassignFloat(d, temp);
                     break;
                 case icrr:
-                    MultiplyFPF(&left->v.f, &right->v.f, &temp);
+                    temp = left->v.f * right->v.f;
                     ReassignFloat(d, temp);
                     break;
                 case icln:
@@ -896,11 +896,11 @@ void ConstantFold(QUAD* d, bool reflow)
 
                     break;
                 case icrn:
-                    if (left->v.f.type == IFPF_IS_ZERO)
+                    if (left->v.f.ValueIsZero())
                     {
                         setFloatZero(d);
                     }
-                    else if (ValueIsOne(&left->v.f))
+                    else if (left->v.f.ValueIsOne())
                     {
                         ASNFromRight(d);
                     }
@@ -920,11 +920,11 @@ void ConstantFold(QUAD* d, bool reflow)
                     }
                     break;
                 case icnr:
-                    if (right->v.f.type == IFPF_IS_ZERO)
+                    if (right->v.f.ValueIsZero())
                     {
                         setFloatZero(d);
                     }
-                    else if (ValueIsOne(&right->v.f))
+                    else if (right->v.f.ValueIsOne())
                     {
                         ASNFromLeft(d);
                     }
@@ -940,16 +940,16 @@ void ConstantFold(QUAD* d, bool reflow)
                     break;
                 case iclr:
                     temp = refloat(left);
-                    MultiplyFPF(&temp, &right->v.f, &temp);
+                    temp = temp * right->v.f;
                     ReassignFloat(d, temp);
                     break;
                 case icrl:
                     temp = refloat(right);
-                    MultiplyFPF(&left->v.f, &temp, &temp);
+                    temp = left->v.f *  temp;
                     ReassignFloat(d, temp);
                     break;
                 case icrr:
-                    MultiplyFPF(&left->v.f, &right->v.f, &temp);
+                    temp  = left->v.f * right->v.f;
                     ReassignFloat(d, temp);
                     break;
                 case icln:
@@ -968,11 +968,11 @@ void ConstantFold(QUAD* d, bool reflow)
 
                     break;
                 case icrn:
-                    if (left->v.f.type == IFPF_IS_ZERO)
+                    if (left->v.f.ValueIsZero())
                     {
                         setFloatZero(d);
                     }
-                    else if (ValueIsOne(&left->v.f))
+                    else if (left->v.f.ValueIsOne())
                     {
                         ASNFromRight(d);
                     }
@@ -992,11 +992,11 @@ void ConstantFold(QUAD* d, bool reflow)
                     }
                     break;
                 case icnr:
-                    if (right->v.f.type == IFPF_IS_ZERO)
+                    if (right->v.f.ValueIsZero())
                     {
                         setFloatZero(d);
                     }
-                    else if (ValueIsOne(&right->v.f))
+                    else if (right->v.f.ValueIsOne())
                     {
                         ASNFromLeft(d);
                     }
@@ -1196,7 +1196,7 @@ void ConstantFold(QUAD* d, bool reflow)
                     ReassignInt(d, -left->v.i);
                     break;
                 case icrn:
-                    left->v.f.sign ^= 1;
+                    left->v.f.Negate();
                     ReassignFloat(d, left->v.f);
                     break;
             }
@@ -1237,9 +1237,9 @@ static bool eval(QUAD* q)
     if (set == vo_bottom)
         return false;
 
+    QUAD qn;
     switch (q->dc.opcode)
     {
-        QUAD qn;
         case i_assn:
             if (q->dc.left->mode == i_immed)
             {

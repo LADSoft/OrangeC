@@ -61,7 +61,6 @@
 #define WAIT_GRANDCHILD 1
 
 #ifdef __cplusplus
-namespace __STD_NS__ {
 extern "C" {
 #endif
 void       _RTL_FUNC _IMPORT abort(void);
@@ -130,54 +129,6 @@ int _RTL_FUNC _IMPORT __threadid(void);
    
 #ifdef __cplusplus
 };
-};
 #endif
 
 #endif /* __PROCESS_H */
-#if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__PROCESS_H_USING_LIST)
-#define __PROCESS_H_USING_LIST
-	using __STD_NS_QUALIFIER abort;
-	using __STD_NS_QUALIFIER _cexit;
-	using __STD_NS_QUALIFIER _c_exit;
-	using __STD_NS_QUALIFIER exit;
-	using __STD_NS_QUALIFIER _exit;
-	using __STD_NS_QUALIFIER cwait;
-	using __STD_NS_QUALIFIER execl;
-	using __STD_NS_QUALIFIER execle;
-	using __STD_NS_QUALIFIER execlp;
-	using __STD_NS_QUALIFIER execlpe;
-	using __STD_NS_QUALIFIER execv;
-	using __STD_NS_QUALIFIER execve;
-	using __STD_NS_QUALIFIER execvp;
-	using __STD_NS_QUALIFIER execvpe;
-	using __STD_NS_QUALIFIER spawnl;
-	using __STD_NS_QUALIFIER spawnle;
-	using __STD_NS_QUALIFIER spawnlp;
-	using __STD_NS_QUALIFIER spawnlpe;
-	using __STD_NS_QUALIFIER spawnv;
-	using __STD_NS_QUALIFIER spawnve;
-	using __STD_NS_QUALIFIER spawnvp;
-	using __STD_NS_QUALIFIER spawnvpe;
-	using __STD_NS_QUALIFIER _cwait;
-	using __STD_NS_QUALIFIER _execl;
-	using __STD_NS_QUALIFIER _execle;
-	using __STD_NS_QUALIFIER _execlp;
-	using __STD_NS_QUALIFIER _execlpe;
-	using __STD_NS_QUALIFIER _execv;
-	using __STD_NS_QUALIFIER _execve;
-	using __STD_NS_QUALIFIER _execvp;
-	using __STD_NS_QUALIFIER _execvpe;
-	using __STD_NS_QUALIFIER _spawnl;
-	using __STD_NS_QUALIFIER _spawnle;
-	using __STD_NS_QUALIFIER _spawnlp;
-	using __STD_NS_QUALIFIER _spawnlpe;
-	using __STD_NS_QUALIFIER _spawnv;
-	using __STD_NS_QUALIFIER _spawnve;
-	using __STD_NS_QUALIFIER _spawnvp;
-	using __STD_NS_QUALIFIER _spawnvpe;
-	using __STD_NS_QUALIFIER _beginthread;
-	using __STD_NS_QUALIFIER _beginthreadex;
-	using __STD_NS_QUALIFIER _endthread;
-	using __STD_NS_QUALIFIER _endthreadex;
-    using __STD_NS_QUALIFIER uintptr_t;
-#endif

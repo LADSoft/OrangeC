@@ -44,7 +44,6 @@ CPP_DEPENDENCIES= \
     declcpp.cpp \
     expr.cpp \
     exprcpp.cpp \
-    float.cpp \
     help.cpp \
     ialias.cpp \
     iblock.cpp \
@@ -135,7 +134,7 @@ export _TREEROOT
 export _TREETARGET
 
 redirect:
-	@$(MAKE) -f$(_TREEROOT)
+	@$(MAKE) -f$(_TREEROOT) localfiles
 format:
 	@$(MAKE) -f $(_TREEROOT) format
 endif

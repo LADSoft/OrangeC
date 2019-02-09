@@ -430,7 +430,7 @@ ULLONG_TYPE CastToInt(int size, LLONG_TYPE value)
             value |= ~mod_mask(bits);
     return value;
 }
-FPFC CastToFloat(int size, FPFC* value)
+FPF CastToFloat(int size, FPF* value)
 {
     switch (size)
     {
@@ -439,7 +439,7 @@ FPFC CastToFloat(int size, FPFC* value)
             if (chosenAssembler->arch->flt_float)
             {
                 ARCH_FLOAT* flt = chosenAssembler->arch->flt_float;
-                FPFTruncate(value, flt->mantissa_bits, flt->exp_max, flt->exp_min);
+                value->Truncate(flt->mantissa_bits, flt->exp_max, flt->exp_min);
             }
             else
                 diag("CastToFloat: architecture characteristics for 'float' not set");
@@ -449,7 +449,7 @@ FPFC CastToFloat(int size, FPFC* value)
             if (chosenAssembler->arch->flt_dbl)
             {
                 ARCH_FLOAT* flt = chosenAssembler->arch->flt_dbl;
-                FPFTruncate(value, flt->mantissa_bits, flt->exp_max, flt->exp_min);
+                value->Truncate(flt->mantissa_bits, flt->exp_max, flt->exp_min);
             }
             else
                 diag("CastToFloat: architecture characteristics for 'double' not set");
@@ -459,7 +459,7 @@ FPFC CastToFloat(int size, FPFC* value)
             if (chosenAssembler->arch->flt_ldbl)
             {
                 ARCH_FLOAT* flt = chosenAssembler->arch->flt_ldbl;
-                FPFTruncate(value, flt->mantissa_bits, flt->exp_max, flt->exp_min);
+                value->Truncate(flt->mantissa_bits, flt->exp_max, flt->exp_min);
             }
             else
                 diag("CastToFloat: architecture characteristics for 'long double' not set");
@@ -467,19 +467,19 @@ FPFC CastToFloat(int size, FPFC* value)
     }
     return *value;
 }
-FPFC* IntToFloat(FPFC* temp, int size, LLONG_TYPE value)
+FPF* IntToFloat(FPF* temp, int size, LLONG_TYPE value)
 {
     LLONG_TYPE t = CastToInt(size, value);
     if (size < 0)
-        LongLongToFPF(temp, t);
+        *temp = (LLONG_TYPE)t;
     else
-        UnsignedLongLongToFPF(temp, t);
+        *temp = (ULLONG_TYPE)t;
     return temp;
 }
-FPFC refloat(EXPRESSION* node)
+FPF refloat(EXPRESSION* node)
 {
-    FPFC rv;
-    FPFC temp;
+    FPF rv;
+    FPF temp;
     switch (node->type)
     {
         case en_c_i:
@@ -600,24 +600,24 @@ ULLONG_TYPE reint(EXPRESSION* node)
             rv = CastToInt(-ISZ_ULONGLONG, node->v.i);
             break;
         case en_c_f:
-            rv = CastToInt(-ISZ_ULONGLONG, FPFToLongLong(&node->v.f));
+            rv = CastToInt(-ISZ_ULONGLONG, (LLONG_TYPE) node->v.f);
             break;
         case en_c_d:
-            rv = CastToInt(-ISZ_ULONGLONG, FPFToLongLong(&node->v.f));
+            rv = CastToInt(-ISZ_ULONGLONG, (LLONG_TYPE) node->v.f);
             break;
 
         case en_c_ld:
-            rv = CastToInt(-ISZ_ULONGLONG, FPFToLongLong(&node->v.f));
+            rv = CastToInt(-ISZ_ULONGLONG, (LLONG_TYPE) node->v.f);
             break;
         case en_c_fc:
-            rv = CastToInt(-ISZ_ULONGLONG, FPFToLongLong(&node->v.c.r));
+            rv = CastToInt(-ISZ_ULONGLONG, (LLONG_TYPE) node->v.c.r);
             break;
         case en_c_dc:
-            rv = CastToInt(-ISZ_ULONGLONG, FPFToLongLong(&node->v.c.r));
+            rv = CastToInt(-ISZ_ULONGLONG, (LLONG_TYPE) node->v.c.r);
             break;
 
         case en_c_ldc:
-            rv = CastToInt(-ISZ_ULONGLONG, FPFToLongLong(&node->v.c.r));
+            rv = CastToInt(-ISZ_ULONGLONG, (LLONG_TYPE) node->v.c.r);
             break;
         case en_c_fi:
         case en_c_di:
@@ -640,7 +640,7 @@ void dooper(EXPRESSION** node, int mode)
  */
 {
     EXPRESSION *ep, *ep1, *ep2;
-    FPFC temp;
+    FPF temp;
     ep = *node;
     ep1 = ep->left;
     ep2 = ep->right;
@@ -649,9 +649,9 @@ void dooper(EXPRESSION** node, int mode)
         if (hasFloats(ep2))
         {
             if (isunsignedexpr(ep1))
-                UnsignedLongLongToFPF(&ep1->v.f, ep1->v.i);
+                ep1->v.f = (ULLONG_TYPE)ep1->v.i;
             else
-                LongLongToFPF(&ep1->v.f, ep1->v.i);
+                ep1->v.f = (LLONG_TYPE)ep1->v.i;
             ep1->type = en_c_d;
             refloat(ep1);
         }
@@ -662,9 +662,9 @@ void dooper(EXPRESSION** node, int mode)
         if (hasFloats(ep1))
         {
             if (isunsignedexpr(ep2))
-                UnsignedLongLongToFPF(&ep2->v.f, ep2->v.i);
+                ep2->v.f = (ULLONG_TYPE)ep2->v.i;
             else
-                LongLongToFPF(&ep2->v.f, ep2->v.i);
+               ep2->v.f = (LLONG_TYPE)ep2->v.i;
             ep2->type = en_c_d;
             refloat(ep2);
         }
@@ -697,24 +697,24 @@ void dooper(EXPRESSION** node, int mode)
                     case 2:
                         ep->type = maxfloattype(ep1, ep2);
                         if (isunsignedexpr(ep1))
-                            UnsignedLongLongToFPF(&temp, ep1->v.i);
+                            temp = (ULLONG_TYPE) ep1->v.i;
                         else
-                            LongLongToFPF(&temp, ep1->v.i);
-                        AddSubFPF(0, &temp, &ep2->v.f, &ep->v.f);
+                            temp = (LLONG_TYPE) ep1->v.i;
+                        ep->v.f = temp + ep2->v.f;
                         refloat(ep);
                         break;
                     case 3:
                         ep->type = maxfloattype(ep1, ep2);
                         if (isunsignedexpr(ep2))
-                            UnsignedLongLongToFPF(&temp, ep2->v.i);
+                            temp = (ULLONG_TYPE) ep2->v.i;
                         else
-                            LongLongToFPF(&temp, ep2->v.i);
-                        AddSubFPF(0, &ep1->v.f, &temp, &ep->v.f);
+                            temp = (LLONG_TYPE) ep2->v.i;
+                        ep->v.f = ep1->v.f + temp;
                         refloat(ep);
                         break;
                     case 4:
                         ep->type = maxfloattype(ep1, ep2);
-                        AddSubFPF(0, &ep1->v.f, &ep2->v.f, &ep->v.f);
+                        ep->v.f = ep1->v.f + ep2->v.f;
                         refloat(ep);
                         break;
                     case 9:
@@ -737,7 +737,7 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                     case 11:
                         ep->type = maximaginarytype(ep1, ep2);
-                        AddSubFPF(0, &ep1->v.f, &ep2->v.f, &ep->v.f);
+                        ep->v.f = ep1->v.f + ep2->v.f;
                         refloat(ep);
                         break;
                     case 14:
@@ -745,7 +745,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        LongLongToFPF(&ep->v.c.r, ep2->v.i);
+                        ep->v.c.r = (LLONG_TYPE) ep2->v.i;
                         ep->v.c.i = ep1->v.f;
                         refloat(ep);
                         break;
@@ -754,7 +754,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        LongLongToFPF(&ep->v.c.r, ep1->v.i);
+                        ep->v.c.r = (LLONG_TYPE) ep1->v.i;
                         ep->v.c.i = ep2->v.f;
                         refloat(ep);
                         break;
@@ -764,7 +764,7 @@ void dooper(EXPRESSION** node, int mode)
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
                         ep->v.c.r = ep2->v.c.r;
-                        AddSubFPF(0, &ep1->v.f, &ep2->v.c.i, &ep->v.c.i);
+                        ep->v.c.i = ep1->v.f + ep2->v.c.i;
                         refloat(ep);
                         break;
                     case 17:
@@ -773,7 +773,7 @@ void dooper(EXPRESSION** node, int mode)
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
                         ep->v.c.r = ep1->v.c.r;
-                        AddSubFPF(0, &ep2->v.f, &ep1->v.c.i, &ep->v.c.i);
+                        ep->v.c.i = ep2->v.f + ep1->v.c.i;
                         refloat(ep);
                         break;
                     case 18:
@@ -781,7 +781,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        AddSubFPF(0, &ep1->v.f, &ep2->v.c.r, &ep->v.c.r);
+                        ep->v.c.r = ep1->v.f + ep2->v.c.r;
                         ep->v.c.i = ep2->v.c.i;
                         refloat(ep);
                         break;
@@ -790,7 +790,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        AddSubFPF(0, &ep2->v.f, &ep1->v.c.r, &ep->v.c.r);
+                        ep->v.c.r = ep2->v.f + ep1->v.c.r;
                         ep->v.c.i = ep1->v.c.i;
                         refloat(ep);
                         break;
@@ -799,8 +799,8 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        AddSubFPF(0, &ep1->v.c.r, &ep2->v.c.r, &ep->v.c.r);
-                        AddSubFPF(0, &ep1->v.c.i, &ep2->v.c.i, &ep->v.c.i);
+                        ep->v.c.r = ep1->v.c.r + ep2->v.c.r;
+                        ep->v.c.i = ep1->v.c.i+ ep2->v.c.i;
                         refloat(ep);
                         break;
                     case 23:
@@ -809,10 +809,10 @@ void dooper(EXPRESSION** node, int mode)
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
                         if (isunsignedexpr(ep2))
-                            UnsignedLongLongToFPF(&temp, ep2->v.i);
+                            temp = (ULLONG_TYPE) ep2->v.i;
                         else
-                            LongLongToFPF(&temp, ep2->v.i);
-                        AddSubFPF(0, &ep1->v.c.r, &temp, &ep->v.c.r);
+                            temp = (LLONG_TYPE) ep2->v.i;
+                        ep->v.c.r = ep1->v.c.r + temp;
                         ep->v.c.i = ep1->v.c.i;
                         refloat(ep);
                         break;
@@ -822,10 +822,10 @@ void dooper(EXPRESSION** node, int mode)
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
                         if (isunsignedexpr(ep1))
-                            UnsignedLongLongToFPF(&temp, ep1->v.i);
+                            temp = (ULLONG_TYPE) ep1->v.i;
                         else
-                            LongLongToFPF(&temp, ep1->v.i);
-                        AddSubFPF(0, &ep2->v.c.r, &temp, &ep->v.c.r);
+                            temp = (LLONG_TYPE) ep1->v.i;
+                        ep->v.c.r = ep2->v.c.r +  temp;
                         ep->v.c.i = ep2->v.c.i;
                         refloat(ep);
                         break;
@@ -844,28 +844,28 @@ void dooper(EXPRESSION** node, int mode)
                     case 2:
                         ep->type = maxfloattype(ep1, ep2);
                         if (isunsignedexpr(ep1))
-                            UnsignedLongLongToFPF(&temp, ep1->v.i);
+                            temp = (ULLONG_TYPE) ep1->v.i;
                         else
-                            LongLongToFPF(&temp, ep1->v.i);
-                        AddSubFPF(1, &temp, &ep2->v.f, &ep->v.f);
+                            temp = (LLONG_TYPE) ep1->v.i;
+                        ep->v.f = temp - ep2->v.f;
                         refloat(ep);
                         break;
                     case 3:
                         ep->type = maxfloattype(ep1, ep2);
                         if (isunsignedexpr(ep2))
-                            UnsignedLongLongToFPF(&temp, ep2->v.i);
+                            temp = (ULLONG_TYPE) ep2->v.i;
                         else
-                            LongLongToFPF(&temp, ep2->v.i);
-                        AddSubFPF(1, &ep1->v.f, &temp, &ep->v.f);
+                            temp = (LLONG_TYPE) ep2->v.i;
+                        ep->v.f = ep1->v.f -temp;
                         refloat(ep);
                         break;
                     case 4:
                         ep->type = maxfloattype(ep1, ep2);
                         if (isunsignedexpr(ep1))
-                            UnsignedLongLongToFPF(&temp, ep1->v.i);
+                            temp = (ULLONG_TYPE) ep1->v.i;
                         else
-                            LongLongToFPF(&temp, ep1->v.i);
-                        AddSubFPF(1, &ep1->v.f, &ep2->v.f, &ep->v.f);
+                            temp = (LLONG_TYPE) ep1->v.i;
+                        ep->v.f = ep1->v.f -ep2->v.f;
                         refloat(ep);
                         break;
                     case 9:
@@ -875,7 +875,7 @@ void dooper(EXPRESSION** node, int mode)
                                            : 0;
                         ep->v.c.r = ep1->v.f;
                         ep->v.c.i = ep2->v.f;
-                        ep->v.c.i.sign ^= 1;
+                        ep->v.c.i.Negate();
                         refloat(ep);
                         break;
                     case 10:
@@ -884,13 +884,13 @@ void dooper(EXPRESSION** node, int mode)
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
                         ep->v.c.r = ep2->v.f;
-                        ep->v.c.r.sign ^= 1;
+                        ep->v.c.r.Negate();
                         ep->v.c.i = ep1->v.f;
                         refloat(ep);
                         break;
                     case 11:
                         ep->type = maximaginarytype(ep1, ep2);
-                        AddSubFPF(1, &ep1->v.f, &ep2->v.f, &ep->v.f);
+                        ep->v.f = ep1->v.f -ep2->v.f;
                         refloat(ep);
                         break;
                     case 14:
@@ -899,9 +899,9 @@ void dooper(EXPRESSION** node, int mode)
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
                         if (isunsignedexpr(ep2))
-                            UnsignedLongLongToFPF(&ep->v.c.r, ep2->v.i);
+                            ep->v.c.r = (ULLONG_TYPE) ep2->v.i;
                         else
-                            LongLongToFPF(&ep->v.c.r, ep2->v.i);
+                            ep->v.c.r = (LLONG_TYPE) ep2->v.i;
                         ep->v.c.i = ep1->v.f;
                         refloat(ep);
                         break;
@@ -911,11 +911,11 @@ void dooper(EXPRESSION** node, int mode)
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
                         if (isunsignedexpr(ep1))
-                            UnsignedLongLongToFPF(&ep->v.c.r, ep1->v.i);
+                            ep->v.c.r = (ULLONG_TYPE) ep1->v.i;
                         else
-                            LongLongToFPF(&ep->v.c.r, ep1->v.i);
+                            ep->v.c.r = (LLONG_TYPE) ep1->v.i;
                         ep->v.c.i = ep2->v.f;
-                        ep->v.c.i.sign ^= 1;
+                        ep->v.c.i.Negate();
                         refloat(ep);
                         break;
                     case 16:
@@ -924,8 +924,8 @@ void dooper(EXPRESSION** node, int mode)
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
                         ep->v.c.r = ep2->v.c.r;
-                        ep->v.c.r.sign ^= 1;
-                        AddSubFPF(1, &ep1->v.f, &ep2->v.c.i, &ep->v.c.i);
+                        ep->v.c.r.Negate();
+                        ep->v.c.i = ep1->v.f -ep2->v.c.i;
                         refloat(ep);
                         break;
                     case 17:
@@ -934,7 +934,7 @@ void dooper(EXPRESSION** node, int mode)
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
                         ep->v.c.r = ep1->v.c.r;
-                        AddSubFPF(1, &ep1->v.c.i, &ep2->v.f, &ep->v.c.i);
+                        ep->v.c.i = ep1->v.c.i - ep2->v.f;
                         refloat(ep);
                         break;
                     case 18:
@@ -942,9 +942,9 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        AddSubFPF(1, &ep1->v.f, &ep2->v.c.r, &ep->v.c.r);
+                        ep->v.c.r = ep1->v.f -ep2->v.c.r;
                         ep->v.c.i = ep2->v.c.i;
-                        ep->v.c.i.sign ^= 1;
+                        ep->v.c.i.Negate();
                         refloat(ep);
                         break;
                     case 19:
@@ -952,7 +952,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        AddSubFPF(1, &ep1->v.c.r, &ep2->v.f, &ep->v.c.r);
+                        ep->v.c.r = ep1->v.c.r - ep2->v.f;
                         ep->v.c.i = ep1->v.c.i;
                         refloat(ep);
                         break;
@@ -961,8 +961,8 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        AddSubFPF(1, &ep1->v.c.r, &ep2->v.c.r, &ep->v.c.r);
-                        AddSubFPF(1, &ep1->v.c.i, &ep2->v.c.i, &ep->v.c.i);
+                        ep->v.c.r = ep1->v.c.r - ep2->v.c.r;
+                        ep->v.c.i = ep1->v.c.i - ep2->v.c.i;
                         refloat(ep);
                         break;
                     case 23:
@@ -971,10 +971,10 @@ void dooper(EXPRESSION** node, int mode)
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
                         if (isunsignedexpr(ep2))
-                            UnsignedLongLongToFPF(&temp, ep2->v.i);
+                            temp = (ULLONG_TYPE) ep2->v.i;
                         else
-                            LongLongToFPF(&temp, ep2->v.i);
-                        AddSubFPF(1, &ep1->v.c.r, &temp, &ep->v.c.r);
+                            temp = (LLONG_TYPE) ep2->v.i;
+                        ep->v.c.r = ep1->v.c.r - temp;
                         ep->v.c.i = ep1->v.c.i;
                         refloat(ep);
                         break;
@@ -984,12 +984,12 @@ void dooper(EXPRESSION** node, int mode)
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
                         if (isunsignedexpr(ep1))
-                            UnsignedLongLongToFPF(&temp, ep1->v.i);
+                            temp = (ULLONG_TYPE) ep1->v.i;
                         else
-                            LongLongToFPF(&temp, ep1->v.i);
-                        AddSubFPF(1, &temp, &ep2->v.c.r, &ep->v.c.r);
+                            temp = (LLONG_TYPE) ep1->v.i;
+                        ep->v.c.r = temp - ep2->v.c.r;
                         ep->v.c.i = ep2->v.c.i;
-                        ep->v.c.i.sign ^= 1;
+                        ep->v.c.i.Negate();
                         refloat(ep);
                         break;
                     default:
@@ -1009,58 +1009,58 @@ void dooper(EXPRESSION** node, int mode)
                     case 2:
                         ep->type = maxfloattype(ep1, ep2);
                         if (isunsignedexpr(ep1))
-                            UnsignedLongLongToFPF(&temp, ep1->v.i);
+                            temp = (ULLONG_TYPE) ep1->v.i;
                         else
-                            LongLongToFPF(&temp, ep1->v.i);
-                        MultiplyFPF(&temp, &ep2->v.f, &ep->v.f);
+                            temp = (LLONG_TYPE) ep1->v.i;
+                        ep->v.f = temp * ep2->v.f;
                         refloat(ep);
                         break;
                     case 3:
                         ep->type = maxfloattype(ep1, ep2);
                         if (isunsignedexpr(ep2))
-                            UnsignedLongLongToFPF(&temp, ep2->v.i);
+                            temp = (ULLONG_TYPE) ep2->v.i;
                         else
-                            LongLongToFPF(&temp, ep2->v.i);
-                        MultiplyFPF(&ep1->v.f, &temp, &ep->v.f);
+                            temp = (LLONG_TYPE) ep2->v.i;
+                        ep->v.f = ep1->v.f * temp;
                         refloat(ep);
                         break;
                     case 4:
                         ep->type = maxfloattype(ep1, ep2);
-                        MultiplyFPF(&ep1->v.f, &ep2->v.f, &ep->v.f);
+                        ep->v.f = ep1->v.f * ep2->v.f;
                         refloat(ep);
                         break;
                     case 9:
                         ep->type = maximaginarytype(ep1, ep2);
-                        MultiplyFPF(&ep1->v.f, &ep2->v.f, &ep->v.f);
+                        ep->v.f = ep1->v.f * ep2->v.f;
                         refloat(ep);
                         break;
                     case 10:
                         ep->type = maximaginarytype(ep1, ep2);
-                        MultiplyFPF(&ep1->v.f, &ep2->v.f, &ep->v.f);
+                        ep->v.f = ep1->v.f * ep2->v.f;
                         refloat(ep);
                         break;
                     case 11:
                         ep->type = maxfloattype(ep1, ep2);
-                        MultiplyFPF(&ep1->v.f, &ep2->v.f, &ep->v.f);
-                        ep->v.f.sign ^= 1;
+                        ep->v.f = ep1->v.f * ep2->v.f;
+                        ep->v.f.Negate();
                         refloat(ep);
                         break;
                     case 14:
                         ep->type = maximaginarytype(ep1, ep2);
                         if (isunsignedexpr(ep2))
-                            UnsignedLongLongToFPF(&temp, ep2->v.i);
+                            temp = (ULLONG_TYPE) ep2->v.i;
                         else
-                            LongLongToFPF(&temp, ep2->v.i);
-                        MultiplyFPF(&ep1->v.f, &temp, &ep->v.f);
+                            temp = (LLONG_TYPE) ep2->v.i;
+                        ep->v.f = ep1->v.f * temp;
                         refloat(ep);
                         break;
                     case 15:
                         ep->type = maximaginarytype(ep1, ep2);
                         if (isunsignedexpr(ep1))
-                            UnsignedLongLongToFPF(&temp, ep1->v.i);
+                            temp = (ULLONG_TYPE) ep1->v.i;
                         else
-                            LongLongToFPF(&temp, ep1->v.i);
-                        MultiplyFPF(&temp, &ep2->v.f, &ep->v.f);
+                            temp = (LLONG_TYPE) ep1->v.i;
+                        ep->v.f = temp * ep2->v.f;
                         refloat(ep);
                         break;
                     case 16:
@@ -1068,9 +1068,9 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        MultiplyFPF(&ep1->v.f, &ep2->v.c.i, &ep->v.c.r);
-                        ep->v.c.r.sign ^= 1;
-                        MultiplyFPF(&ep1->v.f, &ep2->v.c.r, &ep->v.c.i);
+                        ep->v.c.r = ep1->v.f * ep2->v.c.i;
+                        ep->v.c.r.Negate();
+                        ep->v.c.i = ep1->v.f * ep2->v.c.r;
                         refloat(ep);
                         break;
                     case 17:
@@ -1078,9 +1078,9 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        MultiplyFPF(&ep2->v.f, &ep1->v.c.i, &ep->v.c.r);
-                        ep->v.c.r.sign ^= 1;
-                        MultiplyFPF(&ep2->v.f, &ep1->v.c.r, &ep->v.c.i);
+                        ep->v.c.r = ep2->v.f * ep1->v.c.i;
+                        ep->v.c.r.Negate();
+                        ep->v.c.i = ep2->v.f * ep1->v.c.r;
                         refloat(ep);
                         break;
                     case 18:
@@ -1088,8 +1088,8 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        MultiplyFPF(&ep1->v.f, &ep2->v.c.r, &ep->v.c.r);
-                        MultiplyFPF(&ep1->v.f, &ep2->v.c.i, &ep->v.c.i);
+                        ep->v.c.r = ep1->v.f * ep2->v.c.r;
+                        ep->v.c.i = ep1->v.f * ep2->v.c.i;
                         refloat(ep);
                         break;
                     case 19:
@@ -1097,48 +1097,48 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        MultiplyFPF(&ep2->v.f, &ep1->v.c.r, &ep->v.c.r);
-                        MultiplyFPF(&ep2->v.f, &ep1->v.c.i, &ep->v.c.i);
+                        ep->v.c.r = ep2->v.f * ep1->v.c.r;
+                        ep->v.c.i = ep2->v.f * ep1->v.c.i;
                         refloat(ep);
                         break;
                     case 20:
-                        if (ep1->v.c.r.type == IFPF_IS_ZERO)
+                        if (ep1->v.c.r.ValueIsZero())
                         {
                             ep->type = maxcomplextype(ep1, ep2);
                             ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                                ? STD_PRAGMA_CXLIMITED
                                                : 0;
-                            MultiplyFPF(&ep2->v.c.r, &ep1->v.c.i, &ep->v.c.i);
-                            MultiplyFPF(&ep2->v.c.i, &ep1->v.c.i, &ep->v.c.r);
-                            ep->v.c.r.sign ^= 1;
+                            ep->v.c.i = ep2->v.c.r * ep1->v.c.i;
+                            ep->v.c.r = ep2->v.c.i * ep1->v.c.i;
+                            ep->v.c.r.Negate();
                         }
-                        else if (ep1->v.c.i.type == IFPF_IS_ZERO)
+                        else if (ep1->v.c.i.ValueIsZero())
                         {
                             ep->type = maxcomplextype(ep1, ep2);
                             ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                                ? STD_PRAGMA_CXLIMITED
                                                : 0;
-                            MultiplyFPF(&ep2->v.c.r, &ep1->v.c.r, &ep->v.c.r);
-                            MultiplyFPF(&ep2->v.c.i, &ep1->v.c.r, &ep->v.c.i);
+                            ep->v.c.r = ep2->v.c.r * ep1->v.c.r;
+                            ep->v.c.i = ep2->v.c.i * ep1->v.c.r;
                         }
-                        else if (ep2->v.c.r.type == IFPF_IS_ZERO)
+                        else if (ep2->v.c.r.ValueIsZero())
                         {
                             ep->type = maxcomplextype(ep1, ep2);
                             ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                                ? STD_PRAGMA_CXLIMITED
                                                : 0;
-                            MultiplyFPF(&ep1->v.c.r, &ep2->v.c.i, &ep->v.c.i);
-                            MultiplyFPF(&ep1->v.c.i, &ep2->v.c.i, &ep->v.c.r);
-                            ep->v.c.r.sign ^= 1;
+                            ep->v.c.i = ep1->v.c.r * ep2->v.c.i;
+                            ep->v.c.r = ep1->v.c.i * ep2->v.c.i;
+                            ep->v.c.r.Negate();
                         }
-                        else if (ep2->v.c.i.type == IFPF_IS_ZERO)
+                        else if (ep2->v.c.i.ValueIsZero())
                         {
                             ep->type = maxcomplextype(ep1, ep2);
                             ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                                ? STD_PRAGMA_CXLIMITED
                                                : 0;
-                            MultiplyFPF(&ep1->v.c.r, &ep2->v.c.r, &ep->v.c.r);
-                            MultiplyFPF(&ep1->v.c.i, &ep2->v.c.r, &ep->v.c.i);
+                            ep->v.c.r = ep1->v.c.r * ep2->v.c.r;
+                            ep->v.c.i = ep1->v.c.i * ep2->v.c.r;
                         }
                         refloat(ep);
                         break;
@@ -1148,11 +1148,11 @@ void dooper(EXPRESSION** node, int mode)
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
                         if (isunsignedexpr(ep1))
-                            UnsignedLongLongToFPF(&temp, ep1->v.i);
+                            temp = (ULLONG_TYPE) ep1->v.i;
                         else
-                            LongLongToFPF(&temp, ep1->v.i);
-                        MultiplyFPF(&temp, &ep2->v.c.r, &ep->v.c.r);
-                        MultiplyFPF(&temp, &ep2->v.c.i, &ep->v.c.i);
+                            temp = (LLONG_TYPE) ep1->v.i;
+                        ep->v.c.r = temp * ep2->v.c.r;
+                        ep->v.c.i = temp * ep2->v.c.i;
                         refloat(ep);
                         break;
                     default:
@@ -1179,68 +1179,70 @@ void dooper(EXPRESSION** node, int mode)
                     case 2:
                         ep->type = maxfloattype(ep1, ep2);
                         if (isunsignedexpr(ep1))
-                            UnsignedLongLongToFPF(&temp, ep1->v.i);
+                            temp = (ULLONG_TYPE) ep1->v.i;
                         else
-                            LongLongToFPF(&temp, ep1->v.i);
-                        DivideFPF(&temp, &ep2->v.f, &ep->v.f);
+                            temp = (LLONG_TYPE) ep1->v.i;
+                        ep->v.f = temp / ep2->v.f;
                         refloat(ep);
                         break;
                     case 3:
                         ep->type = maxfloattype(ep1, ep2);
                         if (isunsignedexpr(ep2))
-                            UnsignedLongLongToFPF(&temp, ep2->v.i);
+                            temp = (ULLONG_TYPE) ep2->v.i;
                         else
-                            LongLongToFPF(&temp, ep2->v.i);
-                        DivideFPF(&ep1->v.f, &temp, &ep->v.f);
+                            temp = (LLONG_TYPE) ep2->v.i;
+                        ep->v.f = ep1->v.f / temp;
                         refloat(ep);
                         break;
                     case 4:
                         ep->type = maxfloattype(ep1, ep2);
-                        DivideFPF(&ep1->v.f, &ep2->v.f, &ep->v.f);
+                        ep->v.f = ep1->v.f / ep2->v.f;
                         refloat(ep);
                         break;
                     case 8:  // convert to a multiply
                     {
-                        FPFC temp1;
-                        UnsignedLongLongToFPF(&temp1, 1);
-                        DivideFPF(&temp1, &ep2->v.f, &temp1);
+                        /*
+                        FPF temp1;
+                        temp1 = (ULLONG_TYPE)1;
+                        temp1 = temp1 / ep2->v.f;
                         ep2->v.f = temp1;
                         ep->type = en_mul;
+                        */
                     }
                     break;
                     case 9:
                         ep->type = maximaginarytype(ep1, ep2);
-                        DivideFPF(&ep1->v.f, &ep2->v.f, &ep->v.f);
-                        ep->v.f.sign ^= 1;
+                        ep->v.f = ep1->v.f / ep2->v.f;
+                        ep->v.f.Negate();
                         refloat(ep);
                         break;
                     case 10:
                         ep->type = maximaginarytype(ep1, ep2);
-                        DivideFPF(&ep1->v.f, &ep2->v.f, &ep->v.f);
+                        ep->v.f = ep1->v.f / ep2->v.f;
                         refloat(ep);
                         break;
                     case 11:
                         ep->type = maximaginarytype(ep1, ep2);
-                        DivideFPF(&ep1->v.f, &ep2->v.f, &ep->v.f);
+                        ep->v.f = ep1->v.f / ep2->v.f;
                         refloat(ep);
                         break;
                     case 14:
                         ep->type = maximaginarytype(ep1, ep2);
                         if (isunsignedexpr(ep2))
-                            UnsignedLongLongToFPF(&temp, ep2->v.i);
+                            temp = (ULLONG_TYPE) ep2->v.i;
                         else
-                            LongLongToFPF(&temp, ep2->v.i);
-                        DivideFPF(&ep1->v.f, &temp, &ep->v.f);
+                            temp = (LLONG_TYPE) ep2->v.i;
+                        ep->v.f = ep1->v.f / temp;
                         refloat(ep);
                         break;
                     case 15:
                         ep->type = maximaginarytype(ep1, ep2);
                         if (isunsignedexpr(ep1))
-                            UnsignedLongLongToFPF(&temp, ep1->v.i);
+                            temp = (ULLONG_TYPE) ep1->v.i;
                         else
-                            LongLongToFPF(&temp, ep1->v.i);
-                        DivideFPF(&temp, &ep2->v.f, &ep->v.f);
-                        ep->v.f.sign ^= 1;
+                            temp = (LLONG_TYPE) ep1->v.i;
+                        ep->v.f = temp / ep2->v.f;
+                        ep->v.f.Negate();
                         refloat(ep);
                         break;
                     case 17:
@@ -1248,9 +1250,9 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        DivideFPF(&ep1->v.c.i, &ep2->v.f, &ep->v.c.r);
-                        DivideFPF(&ep1->v.c.r, &ep2->v.f, &ep->v.c.i);
-                        ep->v.c.i.sign ^= 1;
+                        ep->v.c.r = ep1->v.c.i / ep2->v.f;
+                        ep->v.c.i = ep1->v.c.r / ep2->v.f;
+                        ep->v.c.i.Negate();
                         refloat(ep);
                         break;
                     case 19:
@@ -1258,29 +1260,29 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        DivideFPF(&ep1->v.c.i, &ep2->v.f, &ep->v.c.r);
-                        DivideFPF(&ep1->v.c.r, &ep2->v.f, &ep->v.c.i);
+                        ep->v.c.r = ep1->v.c.i / ep2->v.f;
+                        ep->v.c.i = ep1->v.c.r / ep2->v.f;
                         refloat(ep);
                         break;
                     case 20:
-                        if (ep2->v.c.r.type == IFPF_IS_ZERO)
+                        if (ep2->v.c.r.ValueIsZero())
                         {
                             ep->type = maxcomplextype(ep1, ep2);
                             ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                                ? STD_PRAGMA_CXLIMITED
                                                : 0;
-                            DivideFPF(&ep1->v.c.r, &ep2->v.c.i, &ep->v.c.i);
-                            DivideFPF(&ep1->v.c.i, &ep2->v.c.i, &ep->v.c.r);
-                            ep->v.c.i.sign ^= 1;
+                            ep->v.c.i = ep1->v.c.r / ep2->v.c.i;
+                            ep->v.c.r = ep1->v.c.i / ep2->v.c.i;
+                            ep->v.c.i.Negate();
                         }
-                        else if (ep2->v.c.i.type == IFPF_IS_ZERO)
+                        else if (ep2->v.c.i.ValueIsZero())
                         {
                             ep->type = maxcomplextype(ep1, ep2);
                             ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                                ? STD_PRAGMA_CXLIMITED
                                                : 0;
-                            DivideFPF(&ep1->v.c.r, &ep2->v.c.r, &ep->v.c.r);
-                            DivideFPF(&ep1->v.c.i, &ep2->v.c.r, &ep->v.c.i);
+                            ep->v.c.r = ep1->v.c.r / ep2->v.c.r;
+                            ep->v.c.i = ep1->v.c.i / ep2->v.c.r;
                         }
                         refloat(ep);
                         break;
@@ -1290,11 +1292,11 @@ void dooper(EXPRESSION** node, int mode)
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
                         if (isunsignedexpr(ep2))
-                            UnsignedLongLongToFPF(&temp, ep2->v.i);
+                            temp = (ULLONG_TYPE) ep2->v.i;
                         else
-                            LongLongToFPF(&temp, ep2->v.i);
-                        DivideFPF(&ep1->v.c.r, &temp, &ep->v.c.r);
-                        DivideFPF(&ep1->v.c.i, &temp, &ep->v.c.i);
+                            temp = (LLONG_TYPE) ep2->v.i;
+                        ep->v.c.r = ep1->v.c.r /temp;
+                        ep->v.c.i = ep1->v.c.i /temp;
                         refloat(ep);
                         break;
                     default:
@@ -1422,7 +1424,7 @@ int opt0(EXPRESSION** node)
     LLONG_TYPE val;
     int rv = false;
     int mode;
-    FPFC dval;
+    FPF dval;
     e_node negtype = en_uminus;
 
     ep = *node;
@@ -1524,7 +1526,7 @@ int opt0(EXPRESSION** node)
             {
                 *node = intNode(ep->left->type, 0);
                 (*node)->v.f = ep->left->v.f;
-                (*node)->v.f.sign ^= 1;
+                (*node)->v.f.Negate();
                 rv = true;
             }
             else if (ep->left->type == en_c_d || ep->left->type == en_c_f || ep->left->type == en_c_ld ||
@@ -1533,7 +1535,7 @@ int opt0(EXPRESSION** node)
                 rv = true;
                 ep->type = ep->left->type;
                 ep->v.f = ep->left->v.f;
-                ep->v.f.sign ^= 1;
+                ep->v.f.Negate();
                 *node = ep;
             }
             else if (ep->left->type == en_c_dc || ep->left->type == en_c_fc || ep->left->type == en_c_ldc)
@@ -1541,9 +1543,9 @@ int opt0(EXPRESSION** node)
                 rv = true;
                 ep->type = ep->left->type;
                 ep->v.c.r = ep->left->v.c.r;
-                ep->v.c.r.sign ^= 1;
+                ep->v.c.r.Negate();
                 ep->v.c.i = ep->left->v.c.i;
-                ep->v.c.i.sign ^= 1;
+                ep->v.c.i.Negate();
                 *node = ep;
             }
             return rv;
@@ -1585,11 +1587,11 @@ int opt0(EXPRESSION** node)
                     }
                     break;
                 case 6:
-                    if (ep->left->v.f.type == IFPF_IS_ZERO)
+                    if (ep->left->v.f.ValueIsZero())
                     {
                         if (ep->type == en_sub)
                         {
-                            ep->right->v.f.sign ^= 1;
+                            ep->right->v.f.Negate();
                         }
                         *node = ep->right;
                     }
@@ -1613,7 +1615,7 @@ int opt0(EXPRESSION** node)
                     }
                     break;
                 case 8:
-                    if (ep->right->v.f.type == IFPF_IS_ZERO)
+                    if (ep->right->v.f.ValueIsZero())
                     {
                         *node = ep->left;
                     }
@@ -1622,7 +1624,7 @@ int opt0(EXPRESSION** node)
                     rv = true;
                     break;
                 case 22:
-                    if (ep->right->v.c.r.type == IFPF_IS_ZERO && ep->right->v.c.i.type == IFPF_IS_ZERO)
+                    if (ep->right->v.c.r.ValueIsZero() && ep->right->v.c.i.ValueIsZero())
                     {
                         *node = ep->left;
                     }
@@ -1706,16 +1708,16 @@ int opt0(EXPRESSION** node)
                 case 6:
                     dval = ep->left->v.f;
 #ifdef XXXXX
-                    if (dval.type == IFPF_IS_ZERO)
+                    if (dval.ValueIsZero())
                     {
                         addaside(ep->right);
                         *node = ep->left;
                     }
                     else
 #endif
-                        if (!dval.sign && ValueIsOne(&dval))
+                    if (!dval.ValueIsNegative() && dval.ValueIsOne())
                         *node = ep->right;
-                    else if (dval.sign && ValueIsOne(&dval))
+                    else if (dval.ValueIsNegative() && dval.ValueIsOne())
                         *node = exprNode(negtype, ep->right, 0);
                     else
                         dooper(node, mode);
@@ -1768,11 +1770,11 @@ int opt0(EXPRESSION** node)
                     break;
                 case 8:
                     dval = ep->right->v.f;
-                    if (!dval.sign && ValueIsOne(&dval))
+                    if (!dval.ValueIsNegative() && dval.ValueIsOne())
                     {
                         *node = ep->left;
                     }
-                    else if (dval.sign && ValueIsOne(&dval))
+                    else if (dval.ValueIsNegative() && dval.ValueIsOne())
                     {
                         *node = exprNode(negtype, ep->left, 0);
                     }
@@ -1782,11 +1784,11 @@ int opt0(EXPRESSION** node)
                     break;
                 case 22:
                     dval = ep->right->v.c.r;
-                    if (ep->right->v.c.i.type == IFPF_IS_ZERO)
+                    if (ep->right->v.c.i.ValueIsZero())
                     {
-                        if (!dval.sign && ValueIsOne(&dval))
+                        if (!dval.ValueIsNegative() && dval.ValueIsOne())
                             *node = ep->left;
-                        else if (dval.sign && ValueIsOne(&dval))
+                        else if (dval.ValueIsNegative() && dval.ValueIsOne())
                         {
                             *node = exprNode(negtype, ep->left, 0);
                         }
@@ -1839,9 +1841,9 @@ int opt0(EXPRESSION** node)
                     break;
                 case 8:
                     dval = ep->right->v.f;
-                    if (!dval.sign && ValueIsOne(&dval))
+                    if (!dval.ValueIsNegative() && dval.ValueIsOne())
                         *node = ep->left;
-                    if (dval.sign && ValueIsOne(&dval))
+                    if (dval.ValueIsNegative() && dval.ValueIsOne())
                         *node = exprNode(negtype, ep->left, 0);
                     else
                         dooper(node, mode);
@@ -1849,11 +1851,11 @@ int opt0(EXPRESSION** node)
                     break;
                 case 22:
                     dval = ep->right->v.c.r;
-                    if (ep->right->v.c.i.type == IFPF_IS_ZERO)
+                    if (ep->right->v.c.i.ValueIsZero())
                     {
-                        if (!dval.sign && ValueIsOne(&dval))
+                        if (!dval.ValueIsNegative() && dval.ValueIsOne())
                             *node = ep->left;
-                        else if (dval.sign && ValueIsOne(&dval))
+                        else if (dval.ValueIsNegative() && dval.ValueIsOne())
                         {
                             *node = exprNode(negtype, ep->left, 0);
                         }
@@ -2120,7 +2122,7 @@ int opt0(EXPRESSION** node)
             }
             else if (isfloatconst(ep->left))
             {
-                *node = intNode(en_c_i, ep->left->v.f.type == IFPF_IS_ZERO);
+                *node = intNode(en_c_i, ep->left->v.f.ValueIsZero());
                 rv = true;
             }
             break;
@@ -2136,7 +2138,7 @@ int opt0(EXPRESSION** node)
 
                     break;
                 case 4:
-                    *node = intNode(en_c_i, FPFEQ(&ep->left->v.f, &ep->right->v.f));
+                    *node = intNode(en_c_i, (ep->left->v.f == ep->right->v.f));
                     rv = true;
                     break;
                 default:
@@ -2154,7 +2156,7 @@ int opt0(EXPRESSION** node)
                     rv = true;
                     break;
                 case 4:
-                    *node = intNode(en_c_i, !FPFEQ(&ep->left->v.f, &ep->right->v.f));
+                    *node = intNode(en_c_i, (ep->left->v.f != ep->right->v.f));
                     rv = true;
                     break;
                 default:
@@ -2172,7 +2174,7 @@ int opt0(EXPRESSION** node)
                     rv = true;
                     break;
                 case 4:
-                    *node = intNode(en_c_i, !FPFGTE(&ep->left->v.f, &ep->right->v.f));
+                    *node = intNode(en_c_i, (&ep->left->v.f < &ep->right->v.f));
                     rv = true;
                     break;
                 default:
@@ -2190,7 +2192,7 @@ int opt0(EXPRESSION** node)
                     rv = true;
                     break;
                 case 4:
-                    *node = intNode(en_c_i, !FPFGT(&ep->left->v.f, &ep->right->v.f));
+                    *node = intNode(en_c_i, (&ep->left->v.f <= &ep->right->v.f));
                     rv = true;
                     break;
                 default:
@@ -2264,7 +2266,7 @@ int opt0(EXPRESSION** node)
                     rv = true;
                     break;
                 case 4:
-                    *node = intNode(en_c_i, FPFGT(&ep->left->v.f, &ep->right->v.f));
+                    *node = intNode(en_c_i, (&ep->left->v.f > &ep->right->v.f));
                     rv = true;
                     break;
                 default:
@@ -2282,7 +2284,7 @@ int opt0(EXPRESSION** node)
                     rv = true;
                     break;
                 case 4:
-                    *node = intNode(en_c_i, !FPFGTE(&ep->left->v.f, &ep->right->v.f));
+                    *node = intNode(en_c_i, (&ep->left->v.f > &ep->right->v.f));
                     rv = true;
                     break;
                 default:
@@ -2296,7 +2298,7 @@ int opt0(EXPRESSION** node)
             {
                 if (isfloatconst(ep->left))
                 {
-                    if (ep->left->v.f.type != IFPF_IS_ZERO)
+                    if (!ep->left->v.f.ValueIsZero())
                         *node = ep->right->left;
                     else
                         *node = ep->right->right;
@@ -3191,9 +3193,9 @@ int typedconsts(EXPRESSION* node1)
             {
                 rv = true;
                 if (isfloatconst(node1->left) || isimaginaryconst(node1->left))
-                    node1->v.i = node1->left->v.f.type != IFPF_IS_ZERO;
+                    node1->v.i = !node1->left->v.f.ValueIsZero();
                 else if (iscomplexconst(node1->left))
-                    node1->v.i = node1->left->v.c.r.type != IFPF_IS_ZERO || node1->left->v.c.i.type != IFPF_IS_ZERO;
+                    node1->v.i = !node1->left->v.c.r.ValueIsZero() || !node1->left->v.c.i.ValueIsZero();
                 else
                 {
                     node1->v.i = CastToInt(ISZ_BOOLEAN, !!reint(node1->left));
@@ -3319,7 +3321,7 @@ int typedconsts(EXPRESSION* node1)
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
-                FPFC temp = refloat(node1->left);
+                FPF temp = refloat(node1->left);
                 rv = true;
                 node1->v.f = CastToFloat(ISZ_FLOAT, &temp);
                 node1->type = en_c_f;
@@ -3329,7 +3331,7 @@ int typedconsts(EXPRESSION* node1)
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
-                FPFC temp = refloat(node1->left);
+                FPF temp = refloat(node1->left);
                 rv = true;
                 node1->v.f = CastToFloat(ISZ_IFLOAT, &temp);
                 node1->type = en_c_fi;
@@ -3339,7 +3341,7 @@ int typedconsts(EXPRESSION* node1)
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
-                FPFC temp = refloat(node1->left);
+                FPF temp = refloat(node1->left);
                 rv = true;
                 node1->v.f = CastToFloat(ISZ_DOUBLE, &temp);
                 node1->type = en_c_d;
@@ -3349,7 +3351,7 @@ int typedconsts(EXPRESSION* node1)
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
-                FPFC temp = refloat(node1->left);
+                FPF temp = refloat(node1->left);
                 rv = true;
                 node1->v.f = CastToFloat(ISZ_IDOUBLE, &temp);
                 node1->type = en_c_di;
@@ -3359,7 +3361,7 @@ int typedconsts(EXPRESSION* node1)
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
-                FPFC temp = refloat(node1->left);
+                FPF temp = refloat(node1->left);
                 rv = true;
                 node1->v.f = CastToFloat(ISZ_LDOUBLE, &temp);
                 node1->type = en_c_ld;
@@ -3369,7 +3371,7 @@ int typedconsts(EXPRESSION* node1)
             rv |= typedconsts(node1->left);
             if (node1->left && isoptconst(node1->left))
             {
-                FPFC temp = refloat(node1->left);
+                FPF temp = refloat(node1->left);
                 rv = true;
                 node1->v.f = CastToFloat(ISZ_ILDOUBLE, &temp);
                 node1->type = en_c_ldi;
@@ -3382,17 +3384,17 @@ int typedconsts(EXPRESSION* node1)
                 rv = true;
                 if (isintconst(node1->left) || isfloatconst(node1->left))
                 {
-                    FPFC temp = refloat(node1->left);
+                    FPF temp = refloat(node1->left);
                     node1->v.c.r = CastToFloat(ISZ_ILDOUBLE, &temp);
-                    SetFPFZero(&node1->v.c.i, 0);
+                    node1->v.c.i.SetZero(0);
                 }
                 else if (isimaginaryconst(node1->left))
                 {
-                    FPFC temp;
+                    FPF temp;
                     node1->left->type = en_c_ld;
                     temp = refloat(node1->left);
                     node1->v.c.i = CastToFloat(ISZ_ILDOUBLE, &temp);
-                    SetFPFZero(&node1->v.c.r, 0);
+                    node1->v.c.r.SetZero(0);
                 }
                 else
                 {
@@ -3408,17 +3410,17 @@ int typedconsts(EXPRESSION* node1)
                 rv = true;
                 if (isintconst(node1->left) || isfloatconst(node1->left))
                 {
-                    FPFC temp = refloat(node1->left);
+                    FPF temp = refloat(node1->left);
                     node1->v.c.r = CastToFloat(ISZ_ILDOUBLE, &temp);
-                    SetFPFZero(&node1->v.c.i, 0);
+                    node1->v.c.i.SetZero(0);
                 }
                 else if (isimaginaryconst(node1->left))
                 {
-                    FPFC temp;
+                    FPF temp;
                     node1->left->type = en_c_ld;
                     temp = refloat(node1->left);
                     node1->v.c.i = CastToFloat(ISZ_ILDOUBLE, &temp);
-                    SetFPFZero(&node1->v.c.r, 0);
+                    node1->v.c.r.SetZero(0);
                 }
                 else
                 {
@@ -3434,17 +3436,17 @@ int typedconsts(EXPRESSION* node1)
                 rv = true;
                 if (isintconst(node1->left) || isfloatconst(node1->left))
                 {
-                    FPFC temp = refloat(node1->left);
+                    FPF temp = refloat(node1->left);
                     node1->v.c.r = CastToFloat(ISZ_ILDOUBLE, &temp);
-                    SetFPFZero(&node1->v.c.i, 0);
+                    node1->v.c.i.SetZero(0);
                 }
                 else if (isimaginaryconst(node1->left))
                 {
-                    FPFC temp;
+                    FPF temp;
                     node1->left->type = en_c_ld;
                     temp = refloat(node1->left);
                     node1->v.c.i = CastToFloat(ISZ_ILDOUBLE, &temp);
-                    SetFPFZero(&node1->v.c.r, 0);
+                    node1->v.c.r.SetZero(0);
                 }
                 else
                 {

@@ -34,33 +34,30 @@
  * 
  */
 
-#ifndef __SYS_TIME_H
-#define __SYS_TIME_H
+#ifndef __LIBGEN_H
+#define __LIBGEN_H
 
-#ifndef __DEFS_H__
-#include <_defs.h>
+#ifndef __STDDEF_H
+#include <stddef.h>
 #endif
-
-#ifndef _TIMEVAL_DEFINED
-#define _TIMEVAL_DEFINED
-struct timeval {
-  long tv_sec;     /* seconds */
-  long tv_usec;    /* microseconds */
-};
-
-struct timezone {
-  int tz_minuteswest; /* minutes west of Greenwich */
-  int tz_dsttime;     /* type of dst correction */
-};
-#endif /* _TIMEVAL_DEFINED */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int _RTL_FUNC _IMPORT gettimeofday (struct timeval * tv, struct timezone * tz);
+char  *_RTL_FUNC basename(char *);
+char  *_RTL_FUNC dirname(char *);
+
+
+/*
+extern char* __loc1;
+
+char  *regcmp(const char *, ...);
+char  *regex(const char *, const char *, ...);
+*/
 
 #ifdef __cplusplus
-}
+};
 #endif
-#endif
+
+#endif  /* __LIBGEN_H */

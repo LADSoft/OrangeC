@@ -43,22 +43,45 @@
 #include <locale.h>
 #include <signal.h>
 #include "libp.h"
-extern sighandler_t __sigtab[NSIG];
-extern const sighandler_t __defsigtab[NSIG];
+extern struct sigaction __sigtab[NSIG];
+extern const struct sigaction __defsigtab[NSIG];
 
 sighandler_t _RTL_FUNC signal(int signum, sighandler_t func)
 {
     sighandler_t temp;
-   if (signum >= NSIG || signum < 1) {
+   if (signum >= NSIG || signum < 1 || (__sigtab[signum].sa_flags & SA_SIGINFO)) {
         errno = EINVAL;
         return SIG_ERR;
     }
-    temp = __sigtab[signum];
+    temp = __sigtab[signum].sa_handler;
+    __sigtab[signum] = __defsigtab[signum];
     if (func == SIG_DFL) 
         __sigtab[signum] = __defsigtab[signum];
     else    /* SIG_IGN && SIG_ERR gets used as-is, 
                    otherwise func is a valid func */
-        __sigtab[signum] = func;
+        __sigtab[signum].sa_handler = func;
    __ll_signal(signum,func) ;
     return temp;
+}
+
+
+int _RTL_FUNC sigaction(int signum, const struct sigaction *act,
+              struct sigaction *oldact)
+{
+    if (signum >= NSIG || signum < 1) {
+        errno = EINVAL;
+        return -1;
+    }
+    if (oldact)
+        *oldact = __sigtab[signum];
+    if (act)
+    {
+        __sigtab[signum] = *act;
+        if (!(__sigtab[signum].sa_flags & SA_SIGINFO) && __sigtab[signum].sa_handler == SIG_DFL)
+        {
+            __sigtab[signum].sa_handler = __defsigtab[signum].sa_handler; 
+        }
+        __ll_signal(signum, __sigtab[signum].sa_handler) ;
+    }
+    return 0;
 }

@@ -5189,6 +5189,17 @@ static bool differentTemplateNames(TEMPLATEPARAMLIST* a, TEMPLATEPARAMLIST* b)
     }
     return false;
 }
+static bool sameNameSpace(SYMBOL *left, SYMBOL *right)
+{
+    if (left == right)
+        return true;
+    if (left && right)
+    {
+        if (left->nameSpaceValues == right->nameSpaceValues)
+            return true;
+    }
+    return false;
+}
 LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_class, enum e_lk defaultLinkage, BLOCKDATA* block,
                 bool needsemi, int asExpression, bool inTemplate, enum e_ac access)
 {
@@ -5796,6 +5807,9 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                             if (isfunction(sp->tp))
                             {
                                 sym = searchOverloads(sp, spi->tp->syms);
+                                if (sp->linkage == lk_c || sym && sym->linkage == lk_c)
+                                    if (!sym || !sameNameSpace(sp->parentNameSpace, sym->parentNameSpace))
+                                        preverrorsym(ERR_CONFLICTS_WITH, sp, spi->declfile, spi->declline);
                                 if (sym && sym->templateParams && (!sp->templateParams || sp->templateParams->next) &&
                                     !exactMatchOnTemplateParams(sym->templateParams, sp->templateParams))
                                     sym = NULL;

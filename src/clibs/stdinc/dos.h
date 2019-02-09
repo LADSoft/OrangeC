@@ -69,7 +69,6 @@
 #define _HARDERR_FAIL   3   /* fail the operation */
 
 #ifdef __cplusplus
-namespace __STD_NS__ {
 extern "C" {
 #endif
 
@@ -208,7 +207,6 @@ extern char **	  _RTL_DATA _environ ;
 
 #ifdef __cplusplus
 };
-};
 #endif
 
 #define MK_FP(__s,__o) ((void _far *)(((void _seg *)(__s)) + ((void _near *)(__o))))
@@ -224,58 +222,3 @@ extern char **	  _RTL_DATA _environ ;
 
 #endif /* __DOS_H */
 
-#if defined(__cplusplus) && !defined(__USING_CNAME__) && !defined(__DOS_H_USING_LIST)
-#define __DOS_H_USING_LIST
-    using __STD_NS_QUALIFIER _dos_getdiskfree;
-    using __STD_NS_QUALIFIER _dos_getdrive;
-    using __STD_NS_QUALIFIER _dos_setdrive;
-    using __STD_NS_QUALIFIER _dos_getdate;
-    using __STD_NS_QUALIFIER _dos_getfileattr;
-    using __STD_NS_QUALIFIER _dos_getftime;
-    using __STD_NS_QUALIFIER _dos_getpwd;
-    using __STD_NS_QUALIFIER _dos_gettime;
-    using __STD_NS_QUALIFIER _dos_setdate;
-    using __STD_NS_QUALIFIER _dos_setfileattr;
-    using __STD_NS_QUALIFIER _dos_setpwd;
-    using __STD_NS_QUALIFIER _dos_settime;
-    using __STD_NS_QUALIFIER _dos_findfirst;
-    using __STD_NS_QUALIFIER _dos_findnext;
-    using __STD_NS_QUALIFIER _dos_open;
-    using __STD_NS_QUALIFIER _dos_close;
-    using __STD_NS_QUALIFIER _dos_setftime;
-    using __STD_NS_QUALIFIER _dos_creat;
-    using __STD_NS_QUALIFIER _dos_creatnew;
-    using __STD_NS_QUALIFIER disable;
-    using __STD_NS_QUALIFIER enable;
-    using __STD_NS_QUALIFIER _disable;
-    using __STD_NS_QUALIFIER _enable;
-    using __STD_NS_QUALIFIER getdfree;
-    using __STD_NS_QUALIFIER _getdrive;
-    using __STD_NS_QUALIFIER dostounix;
-    using __STD_NS_QUALIFIER unixtodos;
-    using __STD_NS_QUALIFIER unlink;
-    using __STD_NS_QUALIFIER _dos_read;
-    using __STD_NS_QUALIFIER _dos_write;
-    using __STD_NS_QUALIFIER getdate;
-    using __STD_NS_QUALIFIER gettime;
-    using __STD_NS_QUALIFIER setdate;
-    using __STD_NS_QUALIFIER settime;
-    using __STD_NS_QUALIFIER bdos;
-    using __STD_NS_QUALIFIER sleep;
-    using __STD_NS_QUALIFIER dfree;
-    using __STD_NS_QUALIFIER diskfree_t;
-    using __STD_NS_QUALIFIER time;
-    using __STD_NS_QUALIFIER date;
-    using __STD_NS_QUALIFIER dostime_t;
-    using __STD_NS_QUALIFIER dosdate_t;
-    using __STD_NS_QUALIFIER find_t;
-    using __STD_NS_QUALIFIER _osmajor;
-    using __STD_NS_QUALIFIER _osminor;
-    using __STD_NS_QUALIFIER _argc;
-    using __STD_NS_QUALIFIER __argc;
-    using __STD_NS_QUALIFIER _argv;
-    using __STD_NS_QUALIFIER __argv;
-    using __STD_NS_QUALIFIER _harderr;
-    using __STD_NS_QUALIFIER _hardretn;
-    using __STD_NS_QUALIFIER _hardresume;
-#endif

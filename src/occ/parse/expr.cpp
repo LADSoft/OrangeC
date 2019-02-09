@@ -4743,7 +4743,7 @@ static LEXEME* expression_primary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE**
                 case kw___I:
                     *exp = intNode(en_c_i, 0);
                     (*exp)->type = en_c_fi;
-                    LongLongToFPF(&(*exp)->v.f, 1);
+                    (*exp)->v.f = (LLONG_TYPE)1;
                     *tp = &stdfloatimaginary;
                     (*exp)->pragmas = stdpragmas;
                     lex = getsym();
@@ -4877,14 +4877,14 @@ static LEXEME* expression_primary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE**
                 case kw__NAN:
                     *exp = intNode(en_c_i, 0);
                     (*exp)->type = en_c_f;
-                    (*exp)->v.f.type = IFPF_IS_NAN;
+                    (*exp)->v.f.SetNaN();
                     lex = getsym();
                     *tp = &stdfloat;
                     break;
                 case kw__INF:
                     *exp = intNode(en_c_i, 0);
                     (*exp)->type = en_c_f;
-                    (*exp)->v.f.type = IFPF_IS_INFINITY;
+                    (*exp)->v.f.SetInfinity(0);
                     lex = getsym();
                     *tp = &stdfloat;
                     break;

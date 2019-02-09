@@ -191,7 +191,7 @@ static int dumpBits(INITIALIZER** init)
         }
         if (isfloatconst((*init)->exp))
         {
-            i = FPFToLongLong(&(*init)->exp->v.f);
+            i = (LLONG_TYPE)((*init)->exp->v.f);
         }
         else if (isintconst((*init)->exp))
         {
@@ -203,7 +203,7 @@ static int dumpBits(INITIALIZER** init)
         }
         else if (iscomplexconst((*init)->exp))
         {
-            i = FPFToLongLong(&(*init)->exp->v.c.r);
+            i = (LLONG_TYPE)((*init)->exp->v.c.r);
         }
         else
             diag("dump-bits: non-constant");
@@ -657,7 +657,7 @@ int dumpInit(SYMBOL* sp, INITIALIZER* init)
     TYPE* tp = basetype(init->basetp);
     int rv;
     LLONG_TYPE i;
-    FPFC f, im;
+    FPF f, im;
     if (tp->type == bt_templateparam)
         tp = tp->templateParam->p->byClass.val;
     if (isstructured(tp))
@@ -671,26 +671,26 @@ int dumpInit(SYMBOL* sp, INITIALIZER* init)
     if (isfloatconst(init->exp))
     {
         f = init->exp->v.f;
-        i = FPFToLongLong(&f);
-        SetFPFZero(&im, 0);
+        i = (LLONG_TYPE)f;
+        im.SetZero(0);
     }
     else if (isintconst(init->exp))
     {
         i = init->exp->v.i;
-        LongLongToFPF(&f, i);
-        SetFPFZero(&im, 0);
+        f = (LLONG_TYPE)i;
+        im.SetZero(0);
     }
     else if (isimaginaryconst(init->exp))
     {
         i = 0;
-        SetFPFZero(&f, 0);
+        f.SetZero(0);
         im = init->exp->v.f;
     }
     else if (iscomplexconst(init->exp))
     {
         f = init->exp->v.c.r;
         im = init->exp->v.c.i;
-        i = FPFToLongLong(&f);
+        i = (LLONG_TYPE)(f);
     }
     else if (sp->linkage3 == lk_threadlocal)
     {
@@ -2510,6 +2510,8 @@ static TYPE* nexttp(AGGREGATE_DESCRIPTOR* desc)
         if (!cparams.prm_cplusplus || !basetype(desc->tp)->sp->hasUserCons)
         {
             HASHREC* hr = desc->hr;
+            while (hr && (istype(hr->p) || hr->p->tp->type == bt_aggregate))
+                desc->hr = hr = hr->next;
             if (!hr)
                 return NULL;
             rv = ((SYMBOL*)hr->p)->tp;
@@ -2627,6 +2629,7 @@ EXPRESSION* getThisNode(SYMBOL* sp)
 static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* base, int offset, enum e_sc sc, TYPE* itype,
                                          INITIALIZER** init, INITIALIZER** dest, bool arrayMember, int flags)
 {
+
     INITIALIZER *data = NULL, **next = &data;
     AGGREGATE_DESCRIPTOR *desc = NULL, *cache = NULL;
     bool c99 = false;

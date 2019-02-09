@@ -31,6 +31,7 @@
 #include <cctype>
 #include <iostream>
 #include <cstring>
+#include "UTF8.h"
 
 void LibDictionary::CreateDictionary(LibFiles& files)
 {
@@ -79,10 +80,10 @@ void LibDictionary::InsertInDictionary(const char* name, int index)
     int n = l + 1;
     strncpy(buf, name, 2048);
     buf[2047] = 0;
+    std::string id = buf;
     if (!caseSensitive)
-        for (int i = 0; i <= l; i++)
-            buf[i] = toupper(buf[i]);
-    dictionary[buf] = index;
+        id = UTF8::ToUpper(id);
+    dictionary[id] = index;
 }
 void LibDictionary::Write(FILE* stream)
 {

@@ -1,2 +1,2 @@
 #include <windows.h>
-#include <Win32/Sockets.h>
+#include <win32/sockets.h>

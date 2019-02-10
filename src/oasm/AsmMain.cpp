@@ -38,24 +38,33 @@
 #endif
 
 CmdSwitchParser AsmMain::SwitchParser;
-CmdSwitchBool AsmMain::CaseInsensitive(SwitchParser, 'i');
-CmdSwitchCombo AsmMain::CreateListFile(SwitchParser, 'l', "m");
+CmdSwitchBool AsmMain::CaseInsensitive(SwitchParser, 'i', false, "case-insensitive");
+CmdSwitchCombo AsmMain::CreateListFile(SwitchParser, 'l', "m", "list");
 CmdSwitchFile AsmMain::File(SwitchParser, '@');
-CmdSwitchBool AsmMain::PreprocessOnly(SwitchParser, 'e');
-CmdSwitchOutput AsmMain::OutputFile(SwitchParser, 'o', ".o");
+CmdSwitchBool AsmMain::PreprocessOnly(SwitchParser, 'e', false, "preprocess-only");
+CmdSwitchOutput AsmMain::OutputFile(SwitchParser, 'o', ".o", "output-file");
 CmdSwitchDefine AsmMain::Defines(SwitchParser, 'D');
-CmdSwitchCombineString AsmMain::includePath(SwitchParser, 'I', ';');
-CmdSwitchBool AsmMain::BinaryOutput(SwitchParser, 'b');
-
+CmdSwitchCombineString AsmMain::includePath(SwitchParser, 'I', ';', "include-path");
+CmdSwitchBool AsmMain::BinaryOutput(SwitchParser, 'b', false, "binary");
+CmdSwitchBool AsmMain::Intel(SwitchParser, '\0', false, "intel");
+CmdSwitchBool AsmMain::GAS(SwitchParser, '\0', false, "gas");
+CmdSwitchInt AsmMain::ProcessorMode(SwitchParser, 's', 16,0,100,"processor-mode");
 const char* AsmMain::usageText =
     "[options] file"
     "\n"
-    "  @filename  use response file\n"
-    "  /b     binary output             /e              Preprocess only\n"
-    "  /i     Case Insensitive Labels   /l[m]           Listing file [macro expansions]\n"
-    "  /oxxx  Set output file name      /Dxxx           Define something\n"
-    "  /Ixxx  Set include file path     /V, --version   Show version and date\n"
-    "  /!,--nologo No logo\n"
+    "  @filename                          use response file\n"
+    "  /b, --binary                       Use binary output\n"
+    "  /e, --preprocess-only              Preprocess only\n"
+    "  /i, --case-insensitive             Case Insensitive Labels\n"   
+    "  /l[m], --listing                   Listing file [macro expansions]\n"
+    "  /oxxx, --output-file               Set output file name\n"
+    "  /s:xxx, --processor-mode           Set processor mode (16,32,64)\n"
+    "  /Dxxx                              Define something\n"
+    "  /Ixxx, --include-path              Set include file path\n"
+    "  /V, --version                      Show version and date\n"
+    "  /!, --nologo                       Don't show logo\n"
+    "  --intel                            Use intel syntax\n"
+    "  --gas                              Use extended AT&T syntax\n"
     "\n"
     "Time: " __TIME__ "  Date: " __DATE__;
 
@@ -155,6 +164,8 @@ int AsmMain::Run(int argc, char* argv[])
         files.Add(File.GetValue() + 1);
     if (files.GetSize() > 1 && OutputFile.GetValue().size())
         Utils::fatal("Cannot specify output file for multiple input files");
+    if (!InstructionParser::SetProcessorMode(ProcessorMode.GetValue()))
+        Utils::fatal("Invalid processor mode");
     std::string sysSrchPth;
     std::string srchPth;
     if (includePath.GetValue().size())

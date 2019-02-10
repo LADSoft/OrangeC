@@ -141,7 +141,15 @@ class InstructionParser
     virtual bool ParseDirective(AsmFile* fil, Section* sect) = 0;
     virtual bool IsBigEndian() = 0;
     bool SetNumber(int tokenPos, int oldVal, int newVal);
-
+    static bool SetProcessorMode(int mode) 
+    {
+        if (mode == 16 || mode == 32 || mode == 64)
+        {
+	    processorMode = mode; 
+            return true;
+        }
+        return false;
+    }
   protected:
     void RenameRegisters(AsmExprNode* val);
     AsmExprNode* ExtractReg(AsmExprNode** val);
@@ -181,7 +189,7 @@ class InstructionParser
     std::vector<InputToken*> inputTokens;
     BitStream bits;
     AsmExpr asmexpr;
-
+    static int processorMode;
     // c compiler support
 
   public:

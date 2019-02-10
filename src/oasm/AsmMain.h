@@ -50,6 +50,9 @@ class AsmMain
     static CmdSwitchDefine Defines;
     static CmdSwitchCombineString includePath;
     static CmdSwitchBool BinaryOutput;
+    static CmdSwitchBool Intel;
+    static CmdSwitchBool GAS;
+    static CmdSwitchInt ProcessorMode;
 
     static const char* usageText;
 };

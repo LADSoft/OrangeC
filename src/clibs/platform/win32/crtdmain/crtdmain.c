@@ -48,6 +48,7 @@ extern int _import* _errno();
 extern int _import* __doserrno();
 extern int _import _daylight_dll;
 extern int _import _timezone_dll;
+#undef _tzname
 extern char* _import _tzname;
 
 static int* _xceptblkptr;
@@ -165,5 +166,5 @@ void __threadinit(void) {}
 int* _RTL_FUNC __GetErrno(void) { return _errno(); }
 int* _RTL_FUNC __GetDosErrno(void) { return __doserrno(); }
 int* _RTL_FUNC __getDaylight(void) { return &_daylight_dll; }
-int* _RTL_FUNC __getTimezone(void) { return &_timezone_dll; }
+long* _RTL_FUNC __getTimezone(void) { return &_timezone_dll; }
 char** _RTL_FUNC __getTzName(void) { return &_tzname; }

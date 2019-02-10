@@ -189,9 +189,63 @@ struct sigaction {
     void     (*sa_restorer)(void);
 };
 
+#define SIGEV_NONE 0
+#define SIGEV_SIGNAL 1
+#define SIGEV_THREAD 2
 
+struct sigevent {
+    int segev_notify;
+    int segev_signo;
+    union sigval
+    {
+        int sival_int;
+        void *sival_ptr;
+    } sigev_value;
+    void (*sigev_notify_function)(union sigval);
+    pthread_attr_t *sigev_notify_attributes;
+};
+
+typedef struct {
+    void *ss_Sp;
+    size_t ss_size;
+    int ss_flags;
+} stack_t;
+typedef struct{
+    void *unused;
+} mcontext_t;
+typedef struct _ucontext_t
+{
+    struct _ucontext_t *uc_link;
+    sigset_t uc_sigmask;
+    stack_t uc_stack;
+    mcontext_t uc_mcontext;
+} uncontext_t;
+
+int _RTL_FUNC kill(pid_t, int);
+/*
+void   psiginfo(const siginfo_t *, const char *);
+void   psignal(int, const char *);
+int    pthread_kill(pthread_t, int);
+int    pthread_sigmask(int, const sigset_t *restrict,
+           sigset_t *restrict);
+*/
 int _RTL_FUNC sigaction(int signum, const struct sigaction *act,
               struct sigaction *oldact);
+int _RTL_FUNC sigaddset(sigset_t *, int);
+int _RTL_FUNC sigdelset(sigset_t *, int);
+int _RTL_FUNC sigemptyset(sigset_t *);
+int _RTL_FUNC sigfillset(sigset_t *);
+int _RTL_FUNC sigismember(const sigset_t *, int);
+/*
+int    sigpending(sigset_t *);
+int    sigprocmask(int, const sigset_t *restrict, sigset_t *restrict);
+int    sigqueue(pid_t, int, union sigval);
+int    sigsuspend(const sigset_t *);
+int    sigtimedwait(const sigset_t *restrict, siginfo_t *restrict,
+           const struct timespec *restrict);
+int    sigwait(const sigset_t *restrict, int *restrict);
+int    sigwaitinfo(const sigset_t *restrict, siginfo_t *restrict);
+*/
 
 #ifdef __cplusplus
 };

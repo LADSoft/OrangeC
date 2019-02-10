@@ -85,3 +85,29 @@ int _RTL_FUNC sigaction(int signum, const struct sigaction *act,
     }
     return 0;
 }
+
+int _RTL_FUNC sigaddset(sigset_t *set, int v)
+{
+        *set |= 1 << v; 
+	return 0;
+}
+int _RTL_FUNC sigdelset(sigset_t *set, int v)
+{
+	*set &= ~(1 << v);
+	return 0;
+}
+int _RTL_FUNC sigemptyset(sigset_t *set)
+{
+	*set = 0;
+	return 0;
+}
+int _RTL_FUNC sigfillset(sigset_t *set)
+{
+	*set |= (1 << SIGINT) | (1 << SIGUSR1) | (1 << SIGUSR2) | (1 << SIGUSR3);
+	*set |= (1 << SIGBREAK);
+	return 0;
+}
+int _RTL_FUNC sigismember(const sigset_t *set, int v)
+{
+	return !!(*set & (1 << v));
+}

@@ -47,8 +47,7 @@ CmdSwitchBool MakeMain::touch(switchParser, 't');
 CmdSwitchBool MakeMain::query(switchParser, 'q');
 CmdSwitchBool MakeMain::keepGoing(switchParser, 'k');
 CmdSwitchBool MakeMain::ignoreErrors(switchParser, 'i');
-CmdSwitchDefine MakeMain::defines(switchParser, 'D');
-CmdSwitchDefine MakeMain::evals(switchParser, '-');
+CmdSwitchDefine MakeMain::defines(switchParser, 'D', "eval");
 CmdSwitchBool MakeMain::rebuild(switchParser, 'B');
 CmdSwitchCombineString MakeMain::newFiles(switchParser, 'W', ' ');
 CmdSwitchCombineString MakeMain::oldFiles(switchParser, 'o', ' ');
@@ -304,17 +303,7 @@ void MakeMain::LoadCmdDefines()
     for (int i = 0; i < defines.GetCount(); i++)
     {
         const CmdSwitchDefine::define* def = defines.GetValue(i);
-        SetVariable(def->name, def->value, Variable::o_command_line, false);
-    }
-    for (int i = 0; i < evals.GetCount(); i++)
-    {
-        const CmdSwitchDefine::define* def = evals.GetValue(i);
-        if (std::string(def->name) != "eval")
-        {
-            Eval::error(std::string("Invalid switch --") + def->name);
-            exit(1);
-        }
-        Parser p(def->value, "<eval>", 1, false, Variable::o_default);
+        Parser p(def->name + "=" + def->value, "<eval>", 1, false, Variable::o_default);
         p.SetAutoExport();
         p.Parse();
     }

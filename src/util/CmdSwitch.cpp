@@ -137,8 +137,13 @@ CmdSwitchDefine::~CmdSwitchDefine()
 }
 int CmdSwitchDefine::Parse(const char* data)
 {
+    if (!data[0])
+        return INT_MAX;
+    int str=0;
     int rv = strlen(data);
     char name[10000], *p = name;
+    if (data[0] == '"')
+        str = *data++;
     if (!isalpha(*data) && *data != '_')
         return -1;
     while (*data && (isalnum(*data) || *data == '_'))
@@ -154,11 +159,13 @@ int CmdSwitchDefine::Parse(const char* data)
     {
         data++;
         p = name;
-        while (*data)
+        while (*data && *data != str)
         {
             *p++ = *data++;
         }
         *p = 0;
+        if (*data)
+            data++;
         newDefine->value = name;
     }
     else
@@ -276,6 +283,9 @@ CmdSwitchBase* CmdSwitchParser::Find(const char *name, bool useLongName)
     {
         std::string bigmatch = "";
         int max = strlen(name);
+        const char *s = strchr(name,'=');
+        if (s && s - name < max)
+            max = s - name;
         for (int i = max; i >= 1; i--)
         {
             for (auto s : switches)
@@ -333,7 +343,11 @@ bool CmdSwitchParser::Parse(int* argc, char* argv[])
                 if (longName)
                 {
                     b = Find(data, true);
-                    data += strlen(data);
+                    const char *p = strchr(data, '=');
+                    if (p)
+                        data = p+1;
+                    else
+                        data += strlen(data);
                 }
                 else
                 {

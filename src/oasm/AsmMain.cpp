@@ -21,7 +21,7 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  * 
  */
-
+//https://www.ibm.com/developerworks/library/l-gas-nasm/index.html
 #include "AsmMain.h"
 #include "AsmFile.h"
 

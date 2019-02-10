@@ -47,6 +47,8 @@ std::vector<Section*> AsmFile::numericSections;
 
 AsmFile::~AsmFile()
 {
+    sections.clear();
+    numericSections.clear();
 }
 bool AsmFile::Read()
 {
@@ -415,7 +417,7 @@ void AsmFile::EquDirective()
         n = absoluteValue;
     else if (currentSection)
         n = currentSection->GetPC();
-    num.reset(AsmExpr::ConvertToBased(num.get(), n));
+    num.reset(AsmExpr::ConvertToBased(num.release(), n));
     if (num->IsAbsolute())
     {
         num.reset(AsmExpr::Eval(num.get(), n));

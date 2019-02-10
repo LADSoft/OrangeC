@@ -135,6 +135,7 @@ bool ppMacro::HandleRep(std::string& line)
     include.SetInProc("");
     if (level == 0 && p)
     {
+        include.Mark();
         stack.push_back(std::move(p));
     }
     return true;

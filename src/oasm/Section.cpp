@@ -36,6 +36,8 @@
 #include <fstream>
 #include <iostream>
 
+bool Section::dontShowError;
+
 Section::~Section()
 {
 }
@@ -354,7 +356,8 @@ bool Section::MakeData(ObjFactory& factory, std::function<Label*(std::string&)> 
                     catch (std::runtime_error* e)
                     {
                         Errors::IncrementCount();
-                        std::cout << "Error " << f.GetFileName().c_str() << "(" << f.GetErrorLine() << "):" << e->what()
+                        if (!dontShowError) 
+                            std::cout << "Error " << f.GetFileName().c_str() << "(" << f.GetErrorLine() << "):" << e->what()
                                   << std::endl;
                         delete e;
                         t = nullptr;

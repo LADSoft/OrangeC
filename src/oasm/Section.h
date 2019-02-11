@@ -77,6 +77,7 @@ class Section
     int GetPC() { return pc; }
     bool HasInstructions() const { return instructions.size() != 0; }
 
+    static void NoShowError() { dontShowError = true; }
   protected:
     ObjExpression* ConvertExpression(AsmExprNode* node, std::function<Label*(std::string&)> Lookup,
                                      std::function<ObjSection*(std::string&)> SectLookup, ObjFactory& factory);
@@ -84,6 +85,7 @@ class Section
     void Optimize();
 
   private:
+    static bool dontShowError;
     std::string name;
     int sect;
     int align;

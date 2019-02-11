@@ -347,6 +347,7 @@ int x64Parser::DoMath(char op, int left, int right)
 }
 void x64Parser::Setup(Section* sect)
 {
+    Section::NoShowError();
     if (sect->beValues[0] == 0)
         sect->beValues[0] = 32;  // 32 bit mode is the default
     Setprocessorbits(sect->beValues[0]);

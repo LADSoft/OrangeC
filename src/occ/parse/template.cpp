@@ -5519,6 +5519,25 @@ void TemplatePartialOrdering(SYMBOL** table, int count, FUNCTIONCALL* funcparams
             restoreParams(table, count);
     }
 }
+static bool comparePointerTypes(TYPE *tpo, TYPE *tps)
+{
+    while (tpo && tps)
+    {
+        tpo = basetype(tpo);
+        tps = basetype(tps);
+        if (tpo->type == bt_templateparam)
+            tpo = tpo->templateParam->p->byClass.dflt;
+        if (tps->type == bt_templateparam)
+            tps = tps->templateParam->p->byClass.dflt;
+        if (!tpo || !tps || tpo->type == bt_templateparam || tps->type == bt_templateparam)
+            return false;
+        if (tpo->type != tps->type)
+            return false;
+        tpo = tpo->btp;
+        tps = tps->btp;
+    }
+    return tpo == tps;
+}
 static bool TemplateInstantiationMatchInternal(TEMPLATEPARAMLIST* porig, TEMPLATEPARAMLIST* psym)
 {
     if (porig && psym)
@@ -5595,6 +5614,8 @@ static bool TemplateInstantiationMatchInternal(TEMPLATEPARAMLIST* porig, TEMPLAT
                             return false;
                         if ((!templatecomparetypes(torig, tsym, true) || !templatecomparetypes(tsym, torig, true)) &&
                             !sameTemplate(torig, tsym))
+                            return false;
+                        if (!comparePointerTypes(torig, tsym))
                             return false;
                         if (isref(torig))
                             torig = basetype(torig)->btp;
@@ -7225,6 +7246,12 @@ static TEMPLATEPARAMLIST* ResolveTemplateSelectors(TEMPLATEPARAMLIST* args)
                 if (tp->type == bt_templateselector)
                     break;
             }
+            if (locate->p->type == kw_int && tp)
+            {
+                EXPRESSION *exp = locate->p->byNonType.dflt;
+                if (exp->type == en_templateselector)
+                    break;
+            }
             locate = locate->next;
         }
     }
@@ -7239,6 +7266,7 @@ static TEMPLATEPARAMLIST* ResolveTemplateSelectors(TEMPLATEPARAMLIST* args)
                 locate = locate->p->byPack.pack;
             if (locate)
             {
+                TEMPLATESELECTOR *tso = nullptr;
                 TYPE* tp = locate->p->byClass.dflt;
                 *last = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
                 if (locate->p->type == kw_typename && tp)
@@ -7247,42 +7275,53 @@ static TEMPLATEPARAMLIST* ResolveTemplateSelectors(TEMPLATEPARAMLIST* args)
                         tp = basetype(tp)->btp;
                     tp = basetype(tp);
                     if (tp->type == bt_templateselector)
+                        tso = tp->sp->templateSelector;
+                }
+                else if (locate->p->type == kw_int && tp)
+                {
+                    EXPRESSION *exp = locate->p->byNonType.dflt;
+                    if (exp->type == en_templateselector)
+                        tso = exp->v.templateSelector;
+                }
+                if (tso)
+                {
+                    SYMBOL* ts = tso->next->sym;
+                    SYMBOL* sp;
+                    TEMPLATESELECTOR* find = tso->next->next;
+                    if (tso->next->isTemplate)
                     {
-                        SYMBOL* ts = tp->sp->templateSelector->next->sym;
-                        SYMBOL* sp;
-                        TEMPLATESELECTOR* find = tp->sp->templateSelector->next->next;
-                        if (tp->sp->templateSelector->next->isTemplate)
+                        TEMPLATEPARAMLIST* current = tso->next->templateParams;
+                        sp = GetClassTemplate(ts, current, false);
+                        tp = NULL;
+                    }
+                    else if (basetype(ts->tp)->templateParam->p->type == kw_typename)
+                    {
+                        tp = basetype(ts->tp)->templateParam->p->byClass.val;
+                        if (!tp)
+                            return nullptr;
+                        sp = tp->sp;
+                    }
+                    if (sp)
+                    {
+                        sp = basetype(PerformDeferredInitialization(sp->tp, NULL))->sp;
+                        while (find && sp)
                         {
-                            TEMPLATEPARAMLIST* current = tp->sp->templateSelector->next->templateParams;
-                            sp = GetClassTemplate(ts, current, false);
-                            tp = NULL;
-                        }
-                        else if (basetype(ts->tp)->templateParam->p->type == kw_typename)
-                        {
-                            tp = basetype(ts->tp)->templateParam->p->byClass.val;
-                            if (!tp)
-                                return nullptr;
-                            sp = tp->sp;
-                        }
-                        if (sp)
-                        {
-                            sp = basetype(PerformDeferredInitialization(sp->tp, NULL))->sp;
-                            while (find && sp)
-                            {
-                                SYMBOL* spo = sp;
-                                if (!isstructured(spo->tp))
-                                    break;
+                            SYMBOL* spo = sp;
+                            if (!isstructured(spo->tp))
+                                break;
 
-                                sp = search(find->name, spo->tp->syms);
-                                if (!sp)
-                                {
-                                    sp = classdata(find->name, spo, NULL, false, false);
-                                    if (sp == (SYMBOL*)-1)
-                                        sp = NULL;
-                                }
-                                find = find->next;
+                            sp = search(find->name, spo->tp->syms);
+                            if (!sp)
+                            {
+                                sp = classdata(find->name, spo, NULL, false, false);
+                                if (sp == (SYMBOL*)-1)
+                                    sp = NULL;
                             }
-                            if (!find && sp && istype(sp))
+                            find = find->next;
+                        }
+                        if (!find && sp)
+                        {
+                            if (locate->p->type == kw_typename && istype(sp))
                             {
                                 TYPE** tx;
                                 (*last)->p = (TEMPLATEPARAM*)(TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
@@ -7299,6 +7338,12 @@ static TEMPLATEPARAMLIST* ResolveTemplateSelectors(TEMPLATEPARAMLIST* args)
                                 }
                                 *tx = sp->tp;
                             }
+                            else if (locate->p->type == kw_int && !istype(sp))
+                            {
+                                (*last)->p = (TEMPLATEPARAM*)(TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
+                                *(*last)->p = *locate->p;
+                                (*last)->p->byNonType.dflt = sp->init->exp;
+                            }
                             else
                             {
                                 (*last)->p = locate->p;
@@ -7307,6 +7352,7 @@ static TEMPLATEPARAMLIST* ResolveTemplateSelectors(TEMPLATEPARAMLIST* args)
                         else
                         {
                             (*last)->p = locate->p;
+
                         }
                     }
                     else

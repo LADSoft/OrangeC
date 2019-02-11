@@ -848,8 +848,8 @@ static void baseFinishDeclareStruct(SYMBOL* funcsp)
                 SYMBOL* x = syms[j];
                 memmove(&syms[i + 1], &syms[i], sizeof(SYMBOL*) * (j - i));
                 syms[i] = x;
-                if (j != i + 1)
-                    j = i;
+//                if (j != i + 1)
+//                    j = i;
             }
     for (i = 0; i < n; i++)
     {

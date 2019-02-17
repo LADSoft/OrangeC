@@ -2309,7 +2309,8 @@ void SynthesizeQuals(TYPE*** last, TYPE** qual, TYPE*** lastQual)
         {
             **last = (TYPE *)Alloc(sizeof(TYPE));
             ***last = *v;
-            (**last)->size = sz;
+            if (!isref(**last))
+                (**last)->size = sz;
             *last = &(**last)->btp;
             v = v->btp;
         }
@@ -2472,7 +2473,7 @@ static TYPE* SynthesizeStructure(TYPE* tp_in, TEMPLATEPARAMLIST* enclosing)
                 TYPE *tp1 = NULL, **tpp = &tp1;
                 int sz = sp->tp->size;
                 if (isref(tp_in))
-                    sz = tp->size;
+                    sz = tp_in->size;
                 if (isconst(tp_in))
                 {
                     *tpp = (TYPE *)Alloc(sizeof(TYPE));
@@ -3112,8 +3113,16 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                 }
                 return &stdany;
             }
-            case bt_lref:
             case bt_rref:
+                if (qual == nullptr && tp->btp->type == bt_templateparam && tp->btp->templateParam->p->byClass.val && tp->btp->templateParam->p->byClass.val->type == bt_lref)
+                {
+                    TYPE *tp1 = tp->btp->templateParam->p->byClass.val;
+                    tp->btp->templateParam->p->byClass.val = basetype(tp1)->btp;
+                    tp = tp1;
+
+                }
+                // fall through
+            case bt_lref:
                 *last = (TYPE *)Alloc(sizeof(TYPE));
                 **last = *tp;
                 last = &(*last)->btp;
@@ -4588,17 +4597,24 @@ static bool TemplateDeduceFromArg(TYPE* orig, TYPE* sym, EXPRESSION* exp, bool b
         if (isref(A))
             A = basetype(A)->btp;
     }
+
     if (basetype(orig)->type == bt_rref)
     {
-        if (lvalue(exp))
+        if (!isconst(orig) && !isvolatile(orig) && P->type == bt_templateparam)
         {
-            TYPE* x = (TYPE *)Alloc(sizeof(TYPE));
-            if (isref(A))
-                A = basetype(A)->btp;
-            x->type = bt_lref;
-            x->size = getSize(bt_pointer);
-            x->btp = A;
-            x->rootType = x;
+            if (lvalue(exp) || basetype(sym)->type != bt_rref && !basetype(sym)->rref)
+            {
+                // special case: if the deduced type for an rref is an lref it is a forwarding instance
+                TYPE* x = (TYPE *)Alloc(sizeof(TYPE));
+                if (isref(A))
+                    A = basetype(A)->btp;
+                x->type = bt_lref;
+                x->size = getSize(bt_pointer);
+                x->btp = A;
+                x->rootType = x;
+                P->templateParam->p->byClass.val = x;
+                return true;
+            }
         }
     }
     if (Deduce(P, A, true, byClass, allowSelectors))
@@ -5054,7 +5070,23 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
                         *p = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
                         (*p)->p = (TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
                         (*p)->p->type = kw_typename;
-                        (*p)->p->byClass.val = symArgs->tp;
+                        if (sp->tp->type == bt_rref && !symArgs->tp->rref && basetype(symArgs->tp)->type != bt_rref) // unqualifed rref, candidate for forwarding
+                        {
+
+                            TYPE *x = (TYPE *)Alloc(sizeof(TYPE));
+                            x->type = bt_lref;
+                            x->size = getSize(bt_pointer);
+                            TYPE *t = symArgs->tp;
+                            if (isref(t))
+                                t = basetype(t)->btp;
+                            x->btp = t;
+                            x->rootType = x;
+                            (*p)->p->byClass.val = x;
+                        }
+                        else
+                        {
+                            (*p)->p->byClass.val = symArgs->tp;
+                        }
                         p = &(*p)->next;
                         symArgs = symArgs->next;
                     }
@@ -5097,6 +5129,7 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
         }
         // set up default values for non-deduced and non-initialized args
         params = nparams->next;
+
         if (TemplateParseDefaultArgs(sym, params, params, params) &&
             ValidateArgsSpecified(sym->templateParams->next, sym, arguments))
         {

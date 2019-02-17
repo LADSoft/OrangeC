@@ -971,6 +971,7 @@ bool isAccessible(SYMBOL* derived, SYMBOL* current, SYMBOL* member, SYMBOL* func
 bool isExpressionAccessible(SYMBOL* derived, SYMBOL* sym, SYMBOL* funcsp, EXPRESSION* exp, bool asAddress);
 bool checkDeclarationAccessible(TYPE* tp, SYMBOL* funcsp);
 SYMBOL* LookupSym(char* name);
+SYMBOL *lookupGenericConversion(SYMBOL *sp, TYPE *tp);
 SYMBOL* lookupSpecificCast(SYMBOL* sp, TYPE* tp);
 SYMBOL* lookupNonspecificCast(SYMBOL* sp, TYPE* tp);
 SYMBOL* lookupIntCast(SYMBOL* sp, TYPE* tp, bool implicit);

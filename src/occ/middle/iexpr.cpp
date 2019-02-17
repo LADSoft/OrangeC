@@ -110,6 +110,10 @@ void iexpr_func_init(void)
 }
 void DumpIncDec(SYMBOL* funcsp)
 {
+    SYMBOL *oldBase = baseThisPtr;
+    int count = inlinesym_count;
+    baseThisPtr = nullptr;
+    inlinesym_count = 0;
     LIST* l = incdecList;
     incdecList = NULL;
     incdecListLast = incdecList;
@@ -118,6 +122,8 @@ void DumpIncDec(SYMBOL* funcsp)
         gen_void((EXPRESSION*)l->data, funcsp);
         l = l->next;
     }
+    inlinesym_count = count;
+    oldBase = baseThisPtr;
 }
 void DumpLogicalDestructors(EXPRESSION* node, SYMBOL* funcsp)
 {

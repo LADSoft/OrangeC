@@ -689,10 +689,21 @@ static bool is_convertible_to(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** 
                 from = basetype(from)->btp;
             while (isref(to))
                 to = basetype(to)->btp;
+            while (ispointer(from) && ispointer(to))
+            {
+                from = basetype(from)->btp;
+                to = basetype(to)->btp;
+            }
+            if (to->type == bt_templateparam)
+                to = to->templateParam->p->byClass.val;
+            if (from->type == bt_templateparam)
+                from = from->templateParam->p->byClass.val;
             rv = comparetypes(to, from, false);
             if (!rv && isstructured(from) && isstructured(to))
             {
                 if (classRefCount(basetype(to)->sp, basetype(from)->sp) == 1)
+                    rv = true;
+                else if (lookupGenericConversion(basetype(from)->sp, basetype(to)))
                     rv = true;
             }
             if (!rv && isstructured(from))

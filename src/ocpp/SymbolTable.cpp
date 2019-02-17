@@ -45,6 +45,5 @@ void SymbolTable::Remove(Symbol* symbol)
                 break;
             }
         }
-        delete symbol;
     }
 }

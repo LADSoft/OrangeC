@@ -173,8 +173,6 @@ void AsmFile::DoLabel(std::string& name, int lineno)
     }
     else
     {
-        if (labels.find(realName) != labels.end())
-            printf("hi");
         if (inAbsolute)
         {
             labels[realName] = std::make_unique<Label>(realName, labels.size(), 0);
@@ -186,9 +184,12 @@ void AsmFile::DoLabel(std::string& name, int lineno)
         }
         else
         {
-            labels[realName] = std::make_unique<Label>(realName, labels.size(), currentSection->GetSect() - 1);
+             labels[realName] = std::make_unique<Label>(realName, labels.size(), currentSection->GetSect() - 1);
+
+printf("$%x:%s:%s\n", label, realName.c_str(), name.c_str());
             label = labels[realName].get();
         }
+printf("%x:%s\n", label, realName.c_str());
         if (name[0] != '.')
         {
             currentLabel = label;

@@ -1529,6 +1529,11 @@ static LIST* searchNS(SYMBOL* sp, SYMBOL* nssp, LIST* in)
     }
     return in;
 }
+SYMBOL *lookupGenericConversion(SYMBOL *sp, TYPE *tp)
+{
+    return getUserConversion(F_CONVERSION | F_WITHCONS, tp, sp->tp, NULL, NULL, NULL, NULL, NULL, false);
+
+}
 SYMBOL* lookupSpecificCast(SYMBOL* sp, TYPE* tp)
 {
     return getUserConversion(F_CONVERSION | F_STRUCTURE, tp, sp->tp, NULL, NULL, NULL, NULL, NULL, false);
@@ -2406,7 +2411,7 @@ static SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* ex
                                  SYMBOL** userFunc, bool honorExplicit)
 {
     static int infunc = 0;
-    if (infunc < 1)
+    if (infunc < 3)
     {
         LIST* gather = NULL;
         TYPE* tppp;
@@ -2625,7 +2630,7 @@ static SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* ex
                             HASHREC* args = basetype(candidate->tp)->syms->table[0];
                             if (args)
                             {
-                                if (candidate_in->isConstructor && candidate_in->parentClass == candidate->parentClass)
+                                if (candidate_in && candidate_in->isConstructor && candidate_in->parentClass == candidate->parentClass)
                                 {
                                     seq3[n2++] = CV_NONE;
                                 }
@@ -3018,7 +3023,7 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_
     lref = (basetype(tpa)->type == bt_lref || isstructured(tpa) && (!expa || expa->type != en_not_lvalue) ||
             expa && (lvalue(expa) || isarithmeticconst(expa))) &&
                (!expa || expa->type != en_func && expa->type != en_thisref) && !tpa->rref ||
-           tpa->lref;
+           tpa->lref;*
     rref = (basetype(tpa)->type == bt_rref || (isstructured(tpa) && expa && expa->type == en_not_lvalue) ||
             expa && !lvalue(expa) && !ismem(expa)) &&
                !lref && !tpa->lref ||
@@ -3095,7 +3100,7 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_
             seq[(*n)++] = CV_QUALS;
         if (lref && !rref && tpp->type == bt_rref)
             seq[(*n)++] = CV_LVALUETORVALUE;
-        if (tpp->type == bt_rref && lref && !isfunction(tpa) && !isfuncptr(tpa) && !isarithmeticconst(expa))
+        if (tpp->type == bt_rref && lref && !isfunction(tpa) && !isfuncptr(tpa) && (expa && !isarithmeticconst(expa)))
         {
             // lvalue to rvalue ref not allowed unless the lvalue is nonvolatile and const
             if (!isDerivedFromTemplate(tppx))

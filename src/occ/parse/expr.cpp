@@ -2788,7 +2788,7 @@ void AdjustParams(SYMBOL* func, HASHREC* hr, INITLIST** lptr, bool operands, boo
                         TYPE* tpx = p->tp;
                         if (isref(tpx))
                             tpx = basetype(tpx)->btp;
-                        if ((!isconst(basetype(sym->tp)->btp) && isconst(tpx)) ||
+                        if ((!isconst(basetype(sym->tp)->btp) && !isconst(sym->tp) && isconst(tpx)) ||
                             (!comparetypes(sym->tp, tpx, true) && !sameTemplate(sym->tp, tpx) &&
                              !classRefCount(basetype(basetype(sym->tp)->btp)->sp, basetype(tpx)->sp)))
                         {
@@ -3223,6 +3223,7 @@ LEXEME* expression_arguments(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION*
             funcparams->functp = ss->tp;
         }
     }
+
     if ((!templateNestingCount || instantiatingTemplate) && funcparams->sp && funcparams->sp->name[0] == '_' &&
         parseBuiltInTypelistFunc(&lex, funcsp, funcparams->sp, tp, exp))
         return lex;
@@ -7066,8 +7067,16 @@ static LEXEME* binop(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSI
         {
             continue;
         }
-        castToArithmetic(kw != land && kw != lor, tp, exp, kw, tp1, kw != land && kw != lor);
-        castToArithmetic(kw != land && kw != lor, &tp1, &exp1, (enum e_kw) - 1, *tp, kw != land && kw != lor);
+        if (kw == land || kw == lor)
+        {
+            castToArithmetic(kw != land && kw != lor, tp, exp, kw, &stdbool, kw != land && kw != lor);
+            castToArithmetic(kw != land && kw != lor, &tp1, &exp1, (enum e_kw) - 1, &stdbool, kw != land && kw != lor);
+        }
+        else
+        {
+            castToArithmetic(kw != land && kw != lor, tp, exp, kw, tp1, kw != land && kw != lor);
+            castToArithmetic(kw != land && kw != lor, &tp1, &exp1, (enum e_kw) - 1, *tp, kw != land && kw != lor);
+        }
         LookupSingleAggregate(*tp, exp);
         LookupSingleAggregate(tp1, &exp1);
 

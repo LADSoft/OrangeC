@@ -637,7 +637,7 @@ SYMBOL* getCopyCons(SYMBOL* base, bool move)
             if (hrArgs && (!sym1 || sym1->init))
             {
                 TYPE* tp = basetype(sym->tp);
-                if (tp->type == bt_lref)
+                if (tp->type == (move ? bt_rref : bt_lref))
                 {
                     tp = basetype(tp->btp);
                     if (isstructured(tp))
@@ -684,7 +684,7 @@ static SYMBOL* GetCopyAssign(SYMBOL* base, bool move)
             if (hrArgs && (!sym1 || sym1->init))
             {
                 TYPE* tp = basetype(sym->tp);
-                if (tp->type == bt_lref)
+                if (tp->type == (move ? bt_rref : bt_lref))
                 {
                     tp = basetype(tp->btp);
                     if (isstructured(tp))
@@ -1610,12 +1610,19 @@ static void genConstructorCall(BLOCKDATA* b, SYMBOL* cls, MEMBERINITIALIZERS* mi
             {
                 tp->type = bt_const;
                 tp->size = basetype(member->tp)->size;
-                tp->btp = member->tp;
-                tp->rootType = member->tp->rootType;
+//                tp->btp = member->tp;
+                tp->btp = (TYPE *)Alloc(sizeof(TYPE));
+                *tp->btp = *member->tp;
+//                tp->rootType = member->tp->rootType;
+                UpdateRootTypes(tp);
+                tp->btp->lref = true;
             }
             else
             {
-                tp = member->tp;
+                tp = (TYPE *) Alloc(sizeof(TYPE));
+                *tp = *member->tp;
+                tp->lref = true;
+//                tp = member->tp;
             }
             //			member->tp->lref = true;
             if (!callConstructorParam(&ctype, &exp, tp, other, top, false, false, false))
@@ -1632,12 +1639,19 @@ static void genConstructorCall(BLOCKDATA* b, SYMBOL* cls, MEMBERINITIALIZERS* mi
             {
                 tp->type = bt_const;
                 tp->size = basetype(member->tp)->size;
-                tp->btp = member->tp;
-                tp->rootType = member->tp->rootType;
+//                tp->btp = member->tp;
+                tp->btp = (TYPE *)Alloc(sizeof(TYPE));
+                *tp->btp = *member->tp;
+//                tp->rootType = member->tp->rootType;
+                UpdateRootTypes(tp);
+                tp->btp->rref = true;
             }
             else
             {
-                tp = member->tp;
+                tp = (TYPE *)Alloc(sizeof(TYPE));
+                *tp = *member->tp;
+                tp->rref = true;
+//                tp = member->tp;
             }
             //			member->tp->rref = true;
             if (!callConstructorParam(&ctype, &exp, tp, other, top, false, false, false))

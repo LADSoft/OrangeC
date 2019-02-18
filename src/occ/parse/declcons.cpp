@@ -1616,12 +1616,14 @@ static void genConstructorCall(BLOCKDATA* b, SYMBOL* cls, MEMBERINITIALIZERS* mi
 //                tp->rootType = member->tp->rootType;
                 UpdateRootTypes(tp);
                 tp->btp->lref = true;
+                tp->btp->rref = false;
             }
             else
             {
                 tp = (TYPE *) Alloc(sizeof(TYPE));
                 *tp = *member->tp;
                 tp->lref = true;
+                tp->rref = false;
 //                tp = member->tp;
             }
             //			member->tp->lref = true;
@@ -1645,12 +1647,14 @@ static void genConstructorCall(BLOCKDATA* b, SYMBOL* cls, MEMBERINITIALIZERS* mi
 //                tp->rootType = member->tp->rootType;
                 UpdateRootTypes(tp);
                 tp->btp->rref = true;
+                tp->btp->lref = false;
             }
             else
             {
                 tp = (TYPE *)Alloc(sizeof(TYPE));
                 *tp = *member->tp;
                 tp->rref = true;
+                tp->lref = false;
 //                tp = member->tp;
             }
             //			member->tp->rref = true;
@@ -2915,8 +2919,7 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
     }
     params->thisptr = *exp;
     params->thistp = (TYPE *)Alloc(sizeof(TYPE));
-    params->thistp->type = bt_pointer;
-    params->thistp->btp = sp->tp;
+    params->thistp->type = bt_pointer;params->thistp->btp = sp->tp;
     params->thistp->rootType = params->thistp;
     params->thistp->size = getSize(bt_pointer);
     params->ascall = true;

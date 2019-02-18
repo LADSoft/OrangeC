@@ -3144,9 +3144,7 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                 tp = tp->btp;
                 break;
             case bt_memberptr:
-                SynthesizeQuals(&last, &qual, &lastQual);
-
-                *last = (TYPE *)Alloc(sizeof(TYPE));
+                *last = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
                 **last = *tp;
                 {
                     TYPE* tp1 = tp->sp->tp;
@@ -3158,9 +3156,11 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                         (*last)->sp = tp1->sp;
                     }
                 }
-                last = &(*last)->btp;
-                tp = tp->btp;
-                break;
+                (*last)->btp = SynthesizeType(tp->btp, enclosing, alt);
+                SynthesizeQuals(&last, &qual, &lastQual);
+                UpdateRootTypes(rv);
+                return rv;
+
             case bt_ifunc:
             case bt_func:
             {
@@ -3219,10 +3219,13 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                                     }
                                     if (qual1)
                                     {
-                                        *btp = NULL;
-                                        last1 = &clone->tp;
-                                        SynthesizeQuals(&last1, &qual1, &lastQual1);
-                                        *btp = next;
+                                        if (btp != &qual1->btp || qual1->type != bt_rref || basetype(clone->tp)->type != bt_lref) // unadorrned rref = forwarding
+                                        { 
+                                            *btp = NULL;
+                                            last1 = &clone->tp;
+                                            SynthesizeQuals(&last1, &qual1, &lastQual1);
+                                            *btp = next;
+                                        }
                                     }
                                     tp1 = (TYPE *)Alloc(sizeof(TYPE));
                                     tp1->type = bt_derivedfromtemplate;

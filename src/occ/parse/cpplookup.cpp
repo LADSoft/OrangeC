@@ -3103,7 +3103,7 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_
         if (tpp->type == bt_rref && lref && !isfunction(tpa) && !isfuncptr(tpa) && (expa && !isarithmeticconst(expa)))
         {
             // lvalue to rvalue ref not allowed unless the lvalue is nonvolatile and const
-            if (!isDerivedFromTemplate(tppx))
+            if (!isDerivedFromTemplate(tppx) && (!isconst(tpax) || isvolatile(tpax)))
             {
                 seq[(*n)++] = CV_NONE;
             }

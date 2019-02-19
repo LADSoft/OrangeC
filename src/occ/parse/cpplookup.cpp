@@ -68,6 +68,8 @@ static bool getFuncConversions(SYMBOL* sp, FUNCTIONCALL* f, TYPE* atp, SYMBOL* p
                                   SYMBOL** userFunc, bool usesInitList);
 static void WeedTemplates(SYMBOL** table, int count, FUNCTIONCALL* args, TYPE* atp);
 
+int inGetUserConversion = 0;
+
 LIST* tablesearchone(const char* name, NAMESPACEVALUES* ns, bool tagsOnly)
 {
     SYMBOL* rv = NULL;
@@ -1531,8 +1533,10 @@ static LIST* searchNS(SYMBOL* sp, SYMBOL* nssp, LIST* in)
 }
 SYMBOL *lookupGenericConversion(SYMBOL *sp, TYPE *tp)
 {
-    return getUserConversion(F_CONVERSION | F_WITHCONS, tp, sp->tp, NULL, NULL, NULL, NULL, NULL, false);
-
+    inGetUserConversion -= 3;
+    SYMBOL *rv = getUserConversion(F_CONVERSION | F_WITHCONS, tp, sp->tp, NULL, NULL, NULL, NULL, NULL, false);
+    inGetUserConversion += 3;
+    return rv;
 }
 SYMBOL* lookupSpecificCast(SYMBOL* sp, TYPE* tp)
 {
@@ -2410,8 +2414,7 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_
 static SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_cvsrn* seq, SYMBOL* candidate_in,
                                  SYMBOL** userFunc, bool honorExplicit)
 {
-    static int infunc = 0;
-    if (infunc < 3)
+    if (inGetUserConversion < 1)
     {
         LIST* gather = NULL;
         TYPE* tppp;
@@ -2420,7 +2423,7 @@ static SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* ex
         tppp = tpp;
         if (isref(tppp))
             tppp = basetype(tppp)->btp;
-        infunc++;
+        inGetUserConversion++;
         if (flags & F_WITHCONS)
         {
             if (isstructured(tppp))
@@ -2722,7 +2725,7 @@ static SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* ex
                         if (userFunc)
                             *userFunc = found1;
                     }
-                    infunc--;
+                    inGetUserConversion--;
                     if (flags & F_CONVERSION)
                     {
                         GENREF(found1);
@@ -2742,7 +2745,7 @@ static SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* ex
                 }
             }
         }
-        infunc--;
+        inGetUserConversion--;
     }
     if (seq)
         seq[(*n)++] = CV_NONE;

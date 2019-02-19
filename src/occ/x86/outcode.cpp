@@ -42,7 +42,6 @@
 #include <map>
 #include <set>
 #include <deque>
-
 #if 0
 #    include <new>
 void * operator new(std::size_t n) throw(std::bad_alloc)

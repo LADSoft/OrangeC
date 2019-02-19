@@ -73,6 +73,7 @@ extern int anonymousNotAlloc;
 extern int expandingParams;
 extern bool functionCanThrow;
 extern SYMBOL *theCurrentFunc;
+extern int inGetUserConversion;
 int packIndex;
 
 int argument_nesting;
@@ -93,6 +94,7 @@ void expr_init(void)
 {
     packIndex = -1;
     importThunks = NULL;
+    inGetUserConversion = 0;
 }
 void thunkForImportTable(EXPRESSION** exp)
 {

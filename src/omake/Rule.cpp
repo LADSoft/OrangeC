@@ -191,7 +191,6 @@ void RuleContainer::operator-=(RuleList* list)
         auto it = namedRules.find(&list->GetTarget());
         if (it != namedRules.end())
         {
-            delete list;
             namedRules.erase(it);
         }
     }

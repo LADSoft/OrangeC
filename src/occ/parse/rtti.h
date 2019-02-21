@@ -122,6 +122,9 @@ typedef struct _xctab
                through nested tries */
 } XCTAB;
 
+static const int XCTAB_SIZE = 15 * 4;
+static const int XCTAB_INDEX_OFS = 5 * 4;
+static const int XCTAB_INSTANCE_OFS = 8 * 4;
 // FS:[4] - 4
 typedef struct _cppdata
 {

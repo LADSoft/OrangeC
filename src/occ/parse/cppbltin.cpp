@@ -70,7 +70,7 @@ static unsigned char *cppbuiltin = (unsigned char *)"void * operator new(unsigne
     "long double __rtllinkage __builtin_nansl(const char *x);"
     "}"
     ;
-TYPE stdXC = {bt_struct, sizeof(XCTAB)};
+TYPE stdXC = {bt_struct, XCTAB_SIZE};
 void ParseBuiltins(void)
 {
     LEXEME* lex;

@@ -648,7 +648,7 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                     case sc_catchvar:
                         makeXCTab(funcsp);
                         *exp = varNode(en_auto, funcsp->xc->xctab);
-                        *exp = exprNode(en_add, *exp, intNode(en_c_i, (LLONG_TYPE) & (((struct _xctab*)0)->instance)));
+                        *exp = exprNode(en_add, *exp, intNode(en_c_i, XCTAB_INSTANCE_OFS));
                         deref(&stdpointer, exp);
                         break;
                     case sc_enumconstant:

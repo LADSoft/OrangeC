@@ -35,10 +35,7 @@ int UTF8::Decode(const char* str)
             return rv;
         }
     }
-    else
-    {
-        return 0;
-    }
+    return 0;
 }
 int UTF8::Encode(char* dest, int val)
 {

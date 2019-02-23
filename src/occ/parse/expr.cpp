@@ -2790,7 +2790,8 @@ void AdjustParams(SYMBOL* func, HASHREC* hr, INITLIST** lptr, bool operands, boo
                         TYPE* tpx = p->tp;
                         if (isref(tpx))
                             tpx = basetype(tpx)->btp;
-                        if ((!isconst(basetype(sym->tp)->btp) && !isconst(sym->tp) && isconst(tpx)) ||
+                        if ((!isconst(basetype(sym->tp)->btp) && !isconst(sym->tp) && 
+                            (sym->tp->type != bt_rref || (!func->templateLevel && (!func->parentClass || !func->parentClass->templateLevel)/*forward*/)) && isconst(tpx)) ||
                             (!comparetypes(sym->tp, tpx, true) && !sameTemplate(sym->tp, tpx) &&
                              !classRefCount(basetype(basetype(sym->tp)->btp)->sp, basetype(tpx)->sp)))
                         {
@@ -3229,6 +3230,7 @@ LEXEME* expression_arguments(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION*
     if ((!templateNestingCount || instantiatingTemplate) && funcparams->sp && funcparams->sp->name[0] == '_' &&
         parseBuiltInTypelistFunc(&lex, funcsp, funcparams->sp, tp, exp))
         return lex;
+
     if (lex)
     {
         lex = getArgs(lex, funcsp, funcparams, closepa, true, flags);

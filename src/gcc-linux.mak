@@ -40,8 +40,8 @@ endif
 LLIB_DEPENDENCIES = $(notdir $(filter-out $(EXCLUDE) $(MAIN_DEPENDENCIES), $(CPP_deps) $(C_deps) $(ASM_deps) $(TASM_deps)))
 
 
-CC=gcc
-CCPP=g++
+#CC=gcc
+#CXX=g++
 CCFLAGS = -c -D__MSVCRT__ -U__STRICT_ANSI__ -DHAVE_UNISTD_H=1 -DSQLITE_OS_UNIX -D_unlink=unlink -Dstricmp=strcasecmp -Dstrnicmp=strncasecmp -D_strnicmp=strncasecmp
 
 CPPFLAGS = -std=c++14
@@ -81,7 +81,7 @@ vpath %.a $(_LIBDIR)
 vpath %.res $(_OUTPUTDIR)
 
 $(_OUTPUTDIR)/%.o: %.cpp
-	$(CCPP) -std=c++14 $(CCFLAGS) -o $@ $^
+	$(CXX) -std=c++14 $(CCFLAGS) -o $@ $^
 
 $(_OUTPUTDIR)/%.o: %.c
 	$(CC) -std=c99 $(CCFLAGS) -o $@ $^

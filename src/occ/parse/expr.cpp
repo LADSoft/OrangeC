@@ -2767,10 +2767,13 @@ void AdjustParams(SYMBOL* func, HASHREC* hr, INITLIST** lptr, bool operands, boo
                         esp = consexp->v.sp;
                         esp->stackblock = true;
                         consexp = varNode(en_auto, esp);
-                        paramexp = temp->v.func->returnEXP ? temp->v.func->returnEXP : temp->v.func->thisptr;
+                        paramexp = temp->v.func->returnEXP ? temp->v.func->returnEXP : p->exp;
                         paramexp = DerivedToBase(sym->tp, tpx, paramexp, _F_VALIDPOINTER);
                         callConstructorParam(&ctype, &consexp, sym->tp, paramexp, true, true, implicit, false);
-                        p->exp = exprNode(en_void, p->exp, consexp);
+                        if (paramexp != p->exp)
+                            p->exp = exprNode(en_void, p->exp, consexp);
+                        else
+                            p->exp = consexp;
                     }
                     else
                     {

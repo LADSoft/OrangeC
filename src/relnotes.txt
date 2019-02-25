@@ -1,4 +1,4 @@
--Release notes:
+Release notes:
 
 version 6.0.41:
 
@@ -15,6 +15,7 @@ version 6.0.41:
     occ: auto increment/decrement in args to inlined functions may not be handled properly if the target is a structure member
     occ: packed reference variables got the size of the non-reference version of the variable.
     occ: support forwarding references
+    occ: fix vagary where an argument which was the result of a function call used the wrong value for the result in rare circumstances
     omake: don't rebuild things that have exactly the same time stamp as their dependencies
     omake: improve diagnostics: extend /w switch to show more information
     ocide: when typing a '}', move cursor to BEFORE the newly typed character

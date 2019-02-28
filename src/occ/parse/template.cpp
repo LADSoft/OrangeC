@@ -80,6 +80,7 @@ extern int argument_nesting;
 extern LINEDATA *linesHead, *linesTail;
 extern int noSpecializationError;
 extern int funcLevel;
+extern enum e_kw skim_templateend[];
 
 int dontRegisterTemplate;
 int instantiatingTemplate;
@@ -908,6 +909,7 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
 {
     TEMPLATEPARAMLIST* orig = NULL;
     bool first = true;
+    TYPE* tp = NULL;
     if (templ)
         orig = templ->templateParams
                    ? (templ->templateParams->p->bySpecialization.types ? templ->templateParams->p->bySpecialization.types
@@ -920,7 +922,7 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
     {
         do
         {
-            TYPE* tp = NULL;
+            tp = NULL;
             if ((orig && orig->p->type != kw_int) || (!orig && startOfType(lex, true) && !constructedInt(lex, funcsp)))
             {
                 LEXEME* start = lex;
@@ -1408,9 +1410,21 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
         } while (true);
     }
     if (MATCHKW(lex, rightshift))
+    {
         lex = getGTSym(lex);
+    }
     else
-        needkw(&lex, gt);
+    {
+        if (tp && tp->type == bt_any && tp->sp)
+        {
+            errorsym(ERR_EXPECTED_END_OF_TEMPLATE_ARGUMENTS_NEAR_UNDEFINED_TYPE, tp->sp);
+            errskim(&lex, skim_templateend);
+        }
+        else
+        {
+            needkw(&lex, gt);
+        }
+    }
     inTemplateArgs--;
     return lex;
 }

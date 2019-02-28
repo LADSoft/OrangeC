@@ -2902,6 +2902,11 @@ founddecltype:
                     tn->type = bt_any;
                     tn->rootType = tn;
                     tn->size = getSize(bt_int);
+                    if (lex->type == l_id)
+                    {
+                        SYMBOL *sp = makeID(sc_global, tn, NULL, litlate(lex->value.s.a));
+                        tn->sp = sp;
+                    }
                     lex = getsym();
                     foundsomething = true;
                 }

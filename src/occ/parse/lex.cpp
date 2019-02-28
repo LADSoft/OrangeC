@@ -165,7 +165,7 @@ KEYWORD keywords[] = {
     {"_Imaginary", 10, kw__Imaginary, 0, TT_BASETYPE | TT_COMPLEX},
     {"_NAN", 4, kw__NAN, 0, TT_VAR},
     {"_Noreturn", 9, kw_noreturn, KW_C1X, TT_LINKAGE},
-    {"_Pragma", 7, kw__Pragma, KW_C99, TT_UNARY | TT_OPERATOR},
+    {"_Pragma", 7, kw__Pragma, KW_C99 | KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR},
     {"_SS", 3, kw_AD, KW_NONANSI | KW_386, TT_VAR},
     {"_Static_assert", 14, kw_static_assert, KW_C1X, 0},
     {"_Thread_local", 13, kw_thread_local, KW_C1X, TT_LINKAGE},
@@ -1413,8 +1413,16 @@ LEXEME* getsym(void)
             }
             else if ((kw = searchkw(&includes->lptr)) != NULL)
             {
-                lex->type = l_kw;
-                lex->kw = kw;
+                if (kw->key == kw__Pragma)
+                {
+                    Compile_Pragma();
+                    contin = true;
+                }
+                else
+                {
+                    lex->type = l_kw;
+                    lex->kw = kw;
+                }
             }
             else if (getId(&includes->lptr, buf + pos) != INT_MIN)
             {

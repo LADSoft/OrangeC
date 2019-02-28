@@ -877,7 +877,7 @@ void preprocess(void);
 void doerror(void);
 void dowarning(void);
 unsigned char* getauxname(unsigned char* ptr, char* *bufp);
-void dopragma(void);
+void dopragma(bool fromPragma);
 void Compile_Pragma(void);
 void doline(void);
 INCLUDES* GetIncludeData(void);

@@ -16,6 +16,8 @@ version 6.0.41:
     occ: packed reference variables got the size of the non-reference version of the variable.
     occ: support forwarding references
     occ: fix vagary where an argument which was the result of a function call used the wrong value for the result in rare circumstances
+    occ: allow declaring an enumeration with an empty list of elements
+    occ: fix _Pragma to work and allow it in C++ mode
     omake: don't rebuild things that have exactly the same time stamp as their dependencies
     omake: improve diagnostics: extend /w switch to show more information
     ocide: when typing a '}', move cursor to BEFORE the newly typed character

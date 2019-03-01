@@ -333,8 +333,31 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUES** ns, bool* throug
                         }
                         else if (params->p->type == kw_template)
                         {
-                            templateParamAsTemplate = params;
-                            sp = params->p->byTemplate.val;
+                            if (params->p->byTemplate.val)
+                            {
+                                templateParamAsTemplate = params;
+                                sp = params->p->byTemplate.val;
+                            }
+                            else
+                            {
+                                if (MATCHKW(lex, lt))
+                                {
+                                    lex = GetTemplateArguments(lex, NULL, sp, &current);
+                                }
+                                if (!MATCHKW(lex, classsel))
+                                    break;
+                                lex = getsym();
+                                finalPos = lex;
+                                *last = (TEMPLATESELECTOR*)(TEMPLATESELECTOR *)Alloc(sizeof(TEMPLATESELECTOR));
+                                (*last)->sym = sp;
+                                last = &(*last)->next;
+                                *last = (TEMPLATESELECTOR*)(TEMPLATESELECTOR *)Alloc(sizeof(TEMPLATESELECTOR));
+                                (*last)->sym = sp;
+                                (*last)->templateParams = current;
+                                (*last)->isTemplate = true;
+                                last = &(*last)->next;
+
+                            }
                         }
                         else
                             break;
@@ -413,19 +436,48 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUES** ns, bool* throug
                     finalPos = lex;
                 }
             }
-            if (sp && basetype(sp->tp)->type == bt_enum)
+            if (!templateSelector)
             {
-                if (!MATCHKW(lex, classsel))
+                if (sp && basetype(sp->tp)->type == bt_enum)
+                {
+                    if (!MATCHKW(lex, classsel))
+                        break;
+                    lex = getsym();
+                    finalPos = lex;
+                    strSym = sp;
+                    qualified = true;
                     break;
-                lex = getsym();
-                finalPos = lex;
-                strSym = sp;
-                qualified = true;
-                break;
-            }
-            else if (sp)
-            {
-                if (sp->templateLevel && (!sp->instantiated || MATCHKW(lex, lt)))
+                }
+                else if (sp)
+                {
+                    if (sp->templateLevel && (!sp->instantiated || MATCHKW(lex, lt)))
+                    {
+                        hasTemplateArgs = true;
+                        if (MATCHKW(lex, lt))
+                        {
+                            lex = GetTemplateArguments(lex, NULL, sp, &current);
+                        }
+                        else if (MATCHKW(lex, classsel))
+                        {
+                            currentsp = sp;
+                            if (!istypedef && !noSpecializationError)  // && !instantiatingTemplate)
+                                errorsym(ERR_NEED_SPECIALIZATION_PARAMETERS, sp);
+                        }
+                        if (!MATCHKW(lex, classsel))
+                            break;
+                    }
+                    else
+                    {
+                        if (!MATCHKW(lex, classsel))
+                            break;
+                        if (hasTemplate &&
+                            (basetype(sp->tp)->type != bt_templateparam || basetype(sp->tp)->templateParam->p->type != kw_template))
+                        {
+                            errorsym(ERR_NOT_A_TEMPLATE, sp);
+                        }
+                    }
+                }
+                else if (templateParamAsTemplate)
                 {
                     hasTemplateArgs = true;
                     if (MATCHKW(lex, lt))
@@ -441,81 +493,59 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUES** ns, bool* throug
                     if (!MATCHKW(lex, classsel))
                         break;
                 }
-                else
-                {
-                    if (!MATCHKW(lex, classsel))
-                        break;
-                    if (hasTemplate &&
-                        (basetype(sp->tp)->type != bt_templateparam || basetype(sp->tp)->templateParam->p->type != kw_template))
-                    {
-                        errorsym(ERR_NOT_A_TEMPLATE, sp);
-                    }
-                }
-            }
-            else if (templateParamAsTemplate)
-            {
-                hasTemplateArgs = true;
-                if (MATCHKW(lex, lt))
-                {
-                    lex = GetTemplateArguments(lex, NULL, sp, &current);
-                }
-                else if (MATCHKW(lex, classsel))
-                {
-                    currentsp = sp;
-                    if (!istypedef && !noSpecializationError)  // && !instantiatingTemplate)
-                        errorsym(ERR_NEED_SPECIALIZATION_PARAMETERS, sp);
-                }
-                if (!MATCHKW(lex, classsel))
+                else if (!MATCHKW(lex, classsel))
                     break;
-            }
-            else if (!MATCHKW(lex, classsel))
-                break;
-            if (templateParamAsTemplate)
-            {
-                matchTemplateSpecializationToParams(
-                    current, templateParamAsTemplate->p->byTemplate.args,
-                    templateParamAsTemplate->argsym);  // this function is apparently undefined in this file
-            }
-            if (hasTemplateArgs)
-            {
-                if (currentsp)
+                if (templateParamAsTemplate)
                 {
-                    sp = currentsp;
-                    if (inTemplateType)
+                    matchTemplateSpecializationToParams(
+                        current, templateParamAsTemplate->p->byTemplate.args,
+                        templateParamAsTemplate->argsym);  // this function is apparently undefined in this file
+                }
+                if (hasTemplateArgs)
+                {
+                    if (currentsp)
+                    {
+                        sp = currentsp;
+                        if (inTemplateType)
+                        {
+                            deferred = true;
+                        }
+                    }
+                    else if (inTemplateType)  // || sp && sp->tp->type == bt_templateselector)
                     {
                         deferred = true;
                     }
-                }
-                else if (inTemplateType)  // || sp && sp->tp->type == bt_templateselector)
-                {
-                    deferred = true;
-                }
-                else
-                {
-                    if (isType)
+                    else
                     {
-                        TEMPLATEPARAMLIST* p = current;
-                        while (p)
+                        if (isType)
                         {
-                            if (!p->p->byClass.dflt)
-                                break;
-
-                            p = p->next;
-                        }
-                        if (p)
-                            deferred = true;
-                    }
-                    if (!deferred && sp)
-                    {
-                        if (basetype(sp->tp)->type == bt_templateselector)
-                        {
-                            if (sp->mainsym && sp->mainsym->storage_class == sc_typedef && sp->mainsym->templateLevel)
+                            TEMPLATEPARAMLIST* p = current;
+                            while (p)
                             {
-                                SYMBOL* sp1 = GetTypedefSpecialization(sp->mainsym, current);
-                                if (sp1 && sp1->instantiated)
+                                if (!p->p->byClass.dflt)
+                                    break;
+
+                                p = p->next;
+                            }
+                            if (p)
+                                deferred = true;
+                        }
+                        if (!deferred && sp)
+                        {
+                            if (basetype(sp->tp)->type == bt_templateselector)
+                            {
+                                if (sp->mainsym && sp->mainsym->storage_class == sc_typedef && sp->mainsym->templateLevel)
                                 {
-                                    sp = sp1;
-                                    qualified = false;
+                                    SYMBOL* sp1 = GetTypedefSpecialization(sp->mainsym, current);
+                                    if (sp1 && sp1->instantiated)
+                                    {
+                                        sp = sp1;
+                                        qualified = false;
+                                    }
+                                    else
+                                    {
+                                        deferred = true;
+                                    }
                                 }
                                 else
                                 {
@@ -524,108 +554,104 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUES** ns, bool* throug
                             }
                             else
                             {
-                                deferred = true;
-                            }
-                        }
-                        else
-                        {
-                            TEMPLATEPARAMLIST* p = current;
-                            while (p)
-                            {
-                                if (p->p->usedAsUnpacked)
-                                    break;
+                                TEMPLATEPARAMLIST* p = current;
+                                while (p)
+                                {
+                                    if (p->p->usedAsUnpacked)
+                                        break;
 
-                                p = p->next;
-                            }
-                            if (p)
-                                deferred = true;
-                            if (!deferred)
-                            {
-                                SYMBOL* sp1 = sp;
-                                if (sp->storage_class == sc_typedef)
-                                {
-                                    sp = GetTypedefSpecialization(sp, current);
-                                    if (isstructured(sp->tp))
-                                        sp = basetype(sp->tp)->sp;
+                                    p = p->next;
                                 }
-                                else
-                                    sp = GetClassTemplate(sp, current, false);
-                                if (!sp)
+                                if (p)
+                                    deferred = true;
+                                if (!deferred)
                                 {
-                                    if (templateNestingCount)
+                                    SYMBOL* sp1 = sp;
+                                    if (sp->storage_class == sc_typedef)
                                     {
-                                        sp = sp1;
+                                        sp = GetTypedefSpecialization(sp, current);
+                                        if (isstructured(sp->tp))
+                                            sp = basetype(sp->tp)->sp;
+                                    }
+                                    else
+                                        sp = GetClassTemplate(sp, current, false);
+                                    if (!sp)
+                                    {
+                                        if (templateNestingCount)
+                                        {
+                                            sp = sp1;
+                                        }
                                     }
                                 }
                             }
                         }
                     }
                 }
-            }
-            if (sp && !deferred)
-                sp->tp = PerformDeferredInitialization(sp->tp, NULL);
-            lex = getsym();
-            finalPos = lex;
-            if (deferred)
-            {
-                if (sp && sp->tp->type == bt_templateselector)
+                if (sp && !deferred)
+                    sp->tp = PerformDeferredInitialization(sp->tp, NULL);
+                lex = getsym();
+                finalPos = lex;
+                if (deferred)
                 {
-                    TEMPLATESELECTOR* s = basetype(sp->tp)->sp->templateSelector;
-                    while (s)
+                    if (sp && sp->tp->type == bt_templateselector)
+                    {
+                        TEMPLATESELECTOR* s = basetype(sp->tp)->sp->templateSelector;
+                        while (s)
+                        {
+                            *last = (TEMPLATESELECTOR*)(TEMPLATESELECTOR *)Alloc(sizeof(TEMPLATESELECTOR));
+                            **last = *s;
+                            last = &(*last)->next;
+                            s = s->next;
+                        }
+                        templateSelector->next->templateParams = current;
+                        templateSelector->next->isTemplate = true;
+                    }
+                    else
                     {
                         *last = (TEMPLATESELECTOR*)(TEMPLATESELECTOR *)Alloc(sizeof(TEMPLATESELECTOR));
-                        **last = *s;
+                        (*last)->sym = strSym;
                         last = &(*last)->next;
-                        s = s->next;
+                        *last = (TEMPLATESELECTOR*)(TEMPLATESELECTOR *)Alloc(sizeof(TEMPLATESELECTOR));
+                        (*last)->sym = sp;
+                        (*last)->templateParams = current;
+                        (*last)->isTemplate = true;
+                        last = &(*last)->next;
                     }
-                    templateSelector->next->templateParams = current;
-                    templateSelector->next->isTemplate = true;
+                }
+                else if (sp && isstructured(sp->tp))
+                {
+                    strSym = sp;
+                    if (!qualified)
+                        nssym = NULL;
+                }
+                else if (sp && (sp->storage_class == sc_namespace || sp->storage_class == sc_namespacealias))
+                {
+                    nssym = sp->nameSpaceValues;
+                }
+                else if (sp && (basetype(sp->tp)->type == bt_templateparam || basetype(sp->tp)->type == bt_templateselector))
+                {
+                    *last = (TEMPLATESELECTOR *)Alloc(sizeof(TEMPLATESELECTOR));
+                    (*last)->sym = strSym;
+                    last = &(*last)->next;
+                    *last = (TEMPLATESELECTOR *)Alloc(sizeof(TEMPLATESELECTOR));
+                    (*last)->sym = sp;
+                    last = &(*last)->next;
                 }
                 else
                 {
-                    *last = (TEMPLATESELECTOR*)(TEMPLATESELECTOR *)Alloc(sizeof(TEMPLATESELECTOR));
-                    (*last)->sym = strSym;
-                    last = &(*last)->next;
-                    *last = (TEMPLATESELECTOR*)(TEMPLATESELECTOR *)Alloc(sizeof(TEMPLATESELECTOR));
-                    (*last)->sym = sp;
-                    (*last)->templateParams = current;
-                    (*last)->isTemplate = true;
-                    last = &(*last)->next;
-                }
-            }
-            else if (sp && isstructured(sp->tp))
-            {
-                strSym = sp;
-                if (!qualified)
-                    nssym = NULL;
-            }
-            else if (sp && (sp->storage_class == sc_namespace || sp->storage_class == sc_namespacealias))
-            {
-                nssym = sp->nameSpaceValues;
-            }
-            else if (sp && (basetype(sp->tp)->type == bt_templateparam || basetype(sp->tp)->type == bt_templateselector))
-            {
-                *last = (TEMPLATESELECTOR *)Alloc(sizeof(TEMPLATESELECTOR));
-                (*last)->sym = strSym;
-                last = &(*last)->next;
-                *last = (TEMPLATESELECTOR *)Alloc(sizeof(TEMPLATESELECTOR));
-                (*last)->sym = sp;
-                last = &(*last)->next;
-            }
-            else
-            {
-                if (!templateNestingCount || !sp)
-                {
-                    if (dependentType)
-                        if (isstructured(dependentType))
-                            errorstringtype(ERR_DEPENDENT_TYPE_DOES_NOT_EXIST_IN_TYPE, buf, basetype(dependentType));
+                    if (!templateNestingCount || !sp)
+                    {
+                        if (dependentType)
+                            if (isstructured(dependentType))
+                                errorstringtype(ERR_DEPENDENT_TYPE_DOES_NOT_EXIST_IN_TYPE, buf, basetype(dependentType));
+                            else
+                                errortype(ERR_DEPENDENT_TYPE_NOT_A_CLASS_OR_STRUCT, dependentType, NULL);
                         else
-                            errortype(ERR_DEPENDENT_TYPE_NOT_A_CLASS_OR_STRUCT, dependentType, NULL);
-                    else
-                        errorstr(ERR_QUALIFIER_NOT_A_CLASS_OR_NAMESPACE, buf);
+                            errorstr(ERR_QUALIFIER_NOT_A_CLASS_OR_NAMESPACE, buf);
+                    }
+                    lex = prevsym(placeholder);
+                    break;
                 }
-                lex = prevsym(placeholder);
-                break;
             }
         }
         first = false;

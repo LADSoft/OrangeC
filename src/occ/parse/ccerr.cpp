@@ -568,6 +568,7 @@ static struct
     {"Return value would require a temporary variable", ERROR},
     {"Declaration of '%s' conflicts with previous declaration", ERROR},
     {"Expected end of template arguments near undefined type '%s'", ERROR },
+    {"Expected type.   Did you mean to use 'typename'?", ERROR },
 #endif
 };
 

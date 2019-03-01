@@ -3671,6 +3671,9 @@ IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
         case en_stmt:
             rv = gen_stmt_from_expr(funcsp, node, flags);
             break;
+        case en_templateparam:
+            rv = gen_expr(funcsp, node->v.sp->tp->templateParam->p->byNonType.val, 0, ISZ_UINT);
+            break;
         case en_const:
             /* should never get here unless the constant optimizer is turned off */
             ap1 = gen_expr(funcsp, node->v.sp->init->exp, 0, 0);

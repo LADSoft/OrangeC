@@ -81,6 +81,7 @@ extern LINEDATA *linesHead, *linesTail;
 extern int noSpecializationError;
 extern int funcLevel;
 extern enum e_kw skim_templateend[];
+extern enum e_kw skim_end[];
 
 int dontRegisterTemplate;
 int instantiatingTemplate;
@@ -909,12 +910,13 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
 {
     TEMPLATEPARAMLIST* orig = NULL;
     bool first = true;
-    TYPE* tp = NULL;
+    TYPE* tp = nullptr;
+    EXPRESSION *exp = nullptr;
     if (templ)
         orig = templ->templateParams
                    ? (templ->templateParams->p->bySpecialization.types ? templ->templateParams->p->bySpecialization.types
                                                                        : templ->templateParams->next)
-                   : NULL;
+                   : nullptr;
     // entered with lex set to the opening <
     inTemplateArgs++;
     lex = getsym();
@@ -923,7 +925,7 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
         do
         {
             tp = NULL;
-            if ((orig && orig->p->type != kw_int) || (!orig && startOfType(lex, true) && !constructedInt(lex, funcsp)))
+            if (MATCHKW(lex, kw_typename) || (orig && orig->p->type != kw_int) || (!orig && startOfType(lex, true) && !constructedInt(lex, funcsp)))
             {
                 LEXEME* start = lex;
                 noSpecializationError++;
@@ -932,7 +934,21 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
                 if (!tp)
                     tp = &stdint;
                 else if (tp && !templateNestingCount)
-                    tp = PerformDeferredInitialization(tp, NULL);
+                    tp = PerformDeferredInitialization(tp, nullptr);
+                if (MATCHKW(lex, begin)) // initializer list?
+                {
+                    LEXEME *oldlex = lex;
+                    lex = expression_func_type_cast(lex, funcsp, &tp, &exp, _F_NOEVAL);
+                    if (lex == oldlex)
+                    {
+                        lex = getsym();
+                        errskim(&lex, skim_end);
+                        needkw(&lex, end);
+                    }
+                    goto initlistjoin;
+                    // makes it an expression
+
+                }
                 if (MATCHKW(lex, ellipse))
                 {
                     lex = getsym();
@@ -1103,10 +1119,8 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
             }
             else
             {
-                EXPRESSION* exp;
-                TYPE* tp;
-                exp = NULL;
-                tp = NULL;
+                exp = nullptr;
+                tp = nullptr;
                 if (inTemplateSpecialization)
                 {
                     if (lex->type == l_id)
@@ -1259,8 +1273,17 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
                             error(ERR_EXPRESSION_SYNTAX);
                         }
                     }
+                    if (MATCHKW(lex, begin))
+                    {
+                        error(ERR_EXPECTED_TYPE_NEED_TYPENAME);
+                        lex = getsym();
+                        errskim(&lex, skim_end);
+                        if (lex)
+                            needkw(&lex, end);
+                    }
                     if (!skip)
                     {
+initlistjoin:
                         if (MATCHKW(lex, ellipse))
                         {
                             // lose p
@@ -7142,14 +7165,7 @@ static bool checkArgSpecified(TEMPLATEPARAMLIST* args)
             break;
         case kw_template:
         {
-            TEMPLATEPARAMLIST* tpl = args->p->byTemplate.args;
-            while (tpl)
-            {
-                if (!allTemplateArgsSpecified(NULL, tpl))
-                    return false;
-                tpl = tpl->next;
-            }
-            break;
+            return true;
         }
         case kw_typename:
         {

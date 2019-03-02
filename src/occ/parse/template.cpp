@@ -1378,7 +1378,7 @@ initlistjoin:
                                 }
                                 else
                                 {
-                                    (*lst)->p->byPack.pack->p->type = kw_int;
+                                    (*lst)->p->type = kw_int;
                                     (*lst)->p->byNonType.dflt = exp;
                                     (*lst)->p->byNonType.val = NULL;
                                 }

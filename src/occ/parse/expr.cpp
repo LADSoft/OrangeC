@@ -914,6 +914,11 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
             (*exp)->v.templateSelector = strSym->tp->sp->templateSelector;
             *tp = &stdany;
             lex = getsym();
+            if (MATCHKW(lex, lt))
+            {
+                TEMPLATEPARAMLIST* current = nullptr;
+                lex = GetTemplateArguments(lex, funcsp, nullptr, &current);
+            }
             return lex;
         }
         IncGlobalFlag();

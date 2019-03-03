@@ -375,7 +375,7 @@ struct u_val
 {
     union {
         LLONG_TYPE i;  /* int val */
-        ULLONG_TYPE u; /* nsigned val */
+        ULLONG_TYPE u; /* unsigned val */
         union
         {
             const char* a; /* string val */

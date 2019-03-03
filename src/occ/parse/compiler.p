@@ -762,7 +762,7 @@ LEXEME* getsym(void);
 LEXEME* prevsym(LEXEME* lex);
 LEXEME* backupsym(void);
 LEXEME* SetAlternateLex(LEXEME* lexList);
-
+bool CompareLex(LEXEME *left, LEXEME *right);
                                /* List.c */
 
 void put_sc(int scl);

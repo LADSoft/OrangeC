@@ -3258,7 +3258,7 @@ static void matchFunctionDeclaration(LEXEME* lex, SYMBOL* sp, SYMBOL* spo, bool 
             }
         }
     }
-    else if (spo->xcMode != sp->xcMode)
+    else if (!templateNestingCount && spo->xcMode != sp->xcMode)
     {
         if (spo->xcMode == xc_none && sp->xcMode == xc_dynamic)
         {

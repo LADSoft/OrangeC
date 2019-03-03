@@ -31,6 +31,7 @@ extern TYPE stdint;
 static HASHTABLE* intrinsicHash;
 
 typedef bool INTRINS_FUNC(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
+static bool is_abstract(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
 static bool is_base_of(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
 static bool is_class(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
 static bool is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
@@ -54,6 +55,7 @@ static struct _ihash
     INTRINS_FUNC* func;
 
 } defaults[] = {
+    {"__is_abstract", is_abstract},
     {"__is_base_of", is_base_of},
     {"__is_class", is_class},
     {"__is_constructible", is_constructible},
@@ -469,6 +471,23 @@ static bool nothrowConstructible(TYPE* tp)
         }
     }
     return true;
+}
+static bool is_abstract(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
+{
+    INITLIST* lst;
+    bool rv = false;
+    FUNCTIONCALL funcparams;
+    memset(&funcparams, 0, sizeof(funcparams));
+    funcparams.sp = sym;
+    *lex = getTypeList(*lex, funcsp, &funcparams.arguments);
+    if (funcparams.arguments && !funcparams.arguments->next)
+    {
+        rv = isstructured(funcparams.arguments->tp) && basetype(funcparams.arguments->tp)->sp->isabstract;
+    }
+    *exp = intNode(en_c_i, rv);
+    *tp = &stdint;
+    return true;
+
 }
 static bool is_base_of(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {

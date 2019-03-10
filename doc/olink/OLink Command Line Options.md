@@ -8,7 +8,7 @@
  
  For example:
  
->     OAsm one.o two.o three.o
+>     OLink one.o two.o three.o
  
  links several object files and makes an output file called **one.rel**.  By default **OLink** takes the name of the first file on the command line, and replaces it with the extension **.rel**, to decide on an output file name.
  

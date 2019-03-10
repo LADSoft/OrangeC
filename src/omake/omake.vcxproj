@@ -22,7 +22,7 @@
     <ProjectGuid>{4F215715-01C8-4629-AD34-6861BE2AA5E5}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>omake</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

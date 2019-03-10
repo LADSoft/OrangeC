@@ -22,7 +22,7 @@
     <ProjectGuid>{D790D315-E03E-4400-BAB1-C22BAFBC9A60}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>oimplib</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

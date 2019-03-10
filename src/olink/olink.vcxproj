@@ -22,7 +22,7 @@
     <ProjectGuid>{5E7EB317-3A07-4564-B18F-A279174828E4}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>olink</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

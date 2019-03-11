@@ -8,6 +8,10 @@ install:
     - set ORIGPATH=%PATH%
     - set ORANGEC=c:\ORANGEC
 
+branches:
+   only:
+     - master
+
 environment:
   matrix:
     - type: MINGW64

@@ -66,6 +66,7 @@
 static Semaphore sema;
 #ifdef _WIN32
 static CRITICAL_SECTION consoleSync;
+static CRITICAL_SECTION evalSync;
 #endif
 // static std::recursive_mutex consoleMut;
 std::deque<int> OS::jobCounts;
@@ -136,6 +137,7 @@ void OS::Init()
 {
 #ifdef _WIN32
     InitializeCriticalSection(&consoleSync);
+    InitializeCriticalSection(&evalSync);
 #endif
 }
 
@@ -323,6 +325,18 @@ void OS::Give()
 {
 #ifdef _WIN32
     LeaveCriticalSection(&consoleSync);
+#endif
+}
+void OS::EvalTake()
+{
+#ifdef _WIN32
+    EnterCriticalSection(&evalSync);
+#endif
+}
+void OS::EvalGive()
+{
+#ifdef _WIN32
+    LeaveCriticalSection(&evalSync);
 #endif
 }
 int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::string* output)

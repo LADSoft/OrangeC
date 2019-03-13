@@ -99,8 +99,10 @@ void Eval::Clear()
     VPath = "";
     GPath = "";
     internalWarnings = false;
+    OS::EvalTake();
     ruleStack.clear();
     foreachVars.clear();
+    OS::EvalGive();
     macroset.clear();
     errcount = 0;
 }
@@ -277,6 +279,7 @@ std::string Eval::ParseMacroLine(const std::string& in)
 Variable* Eval::LookupVariable(const std::string& name)
 {
     Variable* v = nullptr;
+    OS::EvalTake();
     for (auto it = foreachVars.begin(); it != foreachVars.end() && v == nullptr; ++it)
     {
         if ((*it)->GetName() == name)
@@ -294,6 +297,7 @@ Variable* Eval::LookupVariable(const std::string& name)
     {
         v = VariableContainer::Instance()->Lookup(name);
     }
+    OS::EvalGive();
     return v;
 }
 bool Eval::AutomaticVar(const std::string& name, std::string& rv)

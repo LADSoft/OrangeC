@@ -36,7 +36,7 @@ extern int usingEsp;
 extern int prm_lscrtdll;
 
 #define MAX_ALIGNS 50
-int pushlevel = 0 ;
+int pushlevel = 0;
 int funcstackheight = 0;
 
 AMODE* singleLabel, *doubleLabel, *zerolabel;

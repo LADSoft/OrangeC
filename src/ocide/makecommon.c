@@ -589,7 +589,7 @@ void CreateBuiltinProjectMacros(PROJECTITEM* pj, BOOL rel)
     else
         p = buf;
     AddMakeSymbol("OUTPUTNAME", p, TRUE, FALSE);
-    p = Lookup("OUTPUTFILE", pj, NULL);
+    p = Lookup("OUTPUTEXE", pj, NULL);
     if (p)
     {
         q = strrchr(p, '\\');

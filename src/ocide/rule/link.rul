@@ -2,7 +2,7 @@
     <PROPGROUP VERSION="10" CLASS="EXTENEDED" SELECT="LINK" NAME="Linker Settings" ORDER="21">
     	<COMMAND>
   			<ITEM NAME="Command Line" ID="__COMMAND_LINE" TYPE="TEXT">
-   				"$$(LSINSTALLBIN)\olink.exe" -c -! "-o$(OUTPUTFILE)" $$(LFLAGS) $$(LSTARTUP) "%.o" "%.l" $$(LLIBS) "%.res" $(__MODDEF)
+   				"$$(LSINSTALLBIN)\olink.exe" -c -! "-o$(OUTPUTEXE)" $$(LFLAGS) $$(LSTARTUP) "%.o" "%.l" $$(LLIBS) "%.res" $(__MODDEF)
    			</ITEM>
             <ITEM NAME="Make Banner" ID="__MAKEBANNER" TYPE="TEXT">Linking</ITEM>
             <ASSIGNMENTS>

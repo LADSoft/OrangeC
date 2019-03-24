@@ -84,7 +84,7 @@ void SetOutputNames(PROJECTITEM* pj, BOOL first)
         if (pj->type == PJ_FILE || pj->type == PJ_PROJ)
         {
             char* p;
-            p = Lookup("OUTPUTFILE", pj, NULL);
+            p = Lookup(pj->type == PJ_PROJ ? "OUTPUTEXE" : "OUTPUTFILE", pj, NULL);
             if (p)
             {
                 strcpy(pj->outputName, p);
@@ -163,7 +163,7 @@ static void GetFileTimes(PROJECTITEM* pj, BOOL clean, BOOL first)
         {
             if (pj->outputExt[0])
             {
-                char* p = Lookup("OUTPUTFILE", pj, NULL);
+                char* p = Lookup(pj->type == PJ_PROJ ? "OUTPUTEXE" : "OUTPUTFILE", pj, NULL);
                 if (p)
                 {
                     if (clean || pj->clean)
@@ -286,7 +286,7 @@ static BOOL DependsChanged(PROJECTITEM* pj)
     }
     if (pj->outputExt[0])
     {
-        char* out = Lookup("OUTPUTFILE", pj, NULL);
+        char* out = Lookup(pj->type == PJ_PROJ ? "OUTPUTEXE" : "OUTPUTFILE", pj, NULL);
         char* dep = Lookup("__DEPENDENCIES", pj, NULL);
         rv = CharDepsChanged(proj->realName, out, dep);
         free(out);
@@ -323,7 +323,7 @@ static int GenCommand(PROJECTITEM* pj, BOOL always)
             free(cmd);
             if (rv)
             {
-                char* p = Lookup("OUTPUTFILE", pj, NULL);
+                char* p = Lookup("OUTPUTEXE", pj, NULL);
                 if (p)
                     FileTime(&pj->outputTime, p);
                 return 1;

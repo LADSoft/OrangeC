@@ -1576,7 +1576,7 @@ static void genConsData(BLOCKDATA* b, SYMBOL* cls, MEMBERINITIALIZERS* mi, SYMBO
     }
 }
 static void genConstructorCall(BLOCKDATA* b, SYMBOL* cls, MEMBERINITIALIZERS* mi, SYMBOL* member, int memberOffs, bool top,
-                               EXPRESSION* thisptr, EXPRESSION* otherptr, SYMBOL* parentCons, bool baseClass, bool doCopy)
+                               EXPRESSION* thisptr, EXPRESSION* otherptr, SYMBOL* parentCons, bool baseClass, bool doCopy, bool useDefault)
 {
     STATEMENT* st = NULL;
     if (cls != member && member->init)
@@ -1602,65 +1602,81 @@ static void genConstructorCall(BLOCKDATA* b, SYMBOL* cls, MEMBERINITIALIZERS* mi
         EXPRESSION* exp = exprNode(en_add, thisptr, intNode(en_c_i, memberOffs));
         if (doCopy && matchesCopy(parentCons, false))
         {
-            TYPE* tp = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
-            EXPRESSION* other = exprNode(en_add, otherptr, intNode(en_c_i, memberOffs));
-            if (basetype(parentCons->tp)->type == bt_rref)
-                other = exprNode(en_not_lvalue, other, NULL);
-            if (isconst(((SYMBOL*)basetype(parentCons->tp)->syms->table[0]->next->p)->tp->btp))
+            if (useDefault)
             {
-                tp->type = bt_const;
-                tp->size = basetype(member->tp)->size;
-//                tp->btp = member->tp;
-                tp->btp = (TYPE *)Alloc(sizeof(TYPE));
-                *tp->btp = *member->tp;
-//                tp->rootType = member->tp->rootType;
-                UpdateRootTypes(tp);
-                tp->btp->lref = true;
-                tp->btp->rref = false;
+                if (!callConstructor(&ctype, &exp, NULL, false, NULL, top, false, false, false, false, false))
+                    errorsym(ERR_NO_DEFAULT_CONSTRUCTOR, member);
             }
             else
             {
-                tp = (TYPE *) Alloc(sizeof(TYPE));
-                *tp = *member->tp;
-                tp->lref = true;
-                tp->rref = false;
-//                tp = member->tp;
+                TYPE* tp = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
+                EXPRESSION* other = exprNode(en_add, otherptr, intNode(en_c_i, memberOffs));
+                if (basetype(parentCons->tp)->type == bt_rref)
+                    other = exprNode(en_not_lvalue, other, NULL);
+                if (isconst(((SYMBOL*)basetype(parentCons->tp)->syms->table[0]->next->p)->tp->btp))
+                {
+                    tp->type = bt_const;
+                    tp->size = basetype(member->tp)->size;
+    //                tp->btp = member->tp;
+                    tp->btp = (TYPE *)Alloc(sizeof(TYPE));
+                    *tp->btp = *member->tp;
+    //                tp->rootType = member->tp->rootType;
+                    UpdateRootTypes(tp);
+                    tp->btp->lref = true;
+                    tp->btp->rref = false;
+                }
+                else
+                {
+                    tp = (TYPE *) Alloc(sizeof(TYPE));
+                    *tp = *member->tp;
+                    tp->lref = true;
+                    tp->rref = false;
+    //                tp = member->tp;
+                }
+                //			member->tp->lref = true;
+                if (!callConstructorParam(&ctype, &exp, tp, other, top, false, false, false))
+                    errorsym(ERR_NO_APPROPRIATE_CONSTRUCTOR, member);
+                //			member->tp->lref = false;
             }
-            //			member->tp->lref = true;
-            if (!callConstructorParam(&ctype, &exp, tp, other, top, false, false, false))
-                errorsym(ERR_NO_APPROPRIATE_CONSTRUCTOR, member);
-            //			member->tp->lref = false;
         }
         else if (doCopy && matchesCopy(parentCons, true))
         {
-            TYPE* tp = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
-            EXPRESSION* other = exprNode(en_add, otherptr, intNode(en_c_i, memberOffs));
-            if (basetype(parentCons->tp)->type == bt_rref)
-                other = exprNode(en_not_lvalue, other, NULL);
-            if (isconst(((SYMBOL*)basetype(parentCons->tp)->syms->table[0]->next->p)->tp->btp))
+            if (useDefault)
             {
-                tp->type = bt_const;
-                tp->size = basetype(member->tp)->size;
-//                tp->btp = member->tp;
-                tp->btp = (TYPE *)Alloc(sizeof(TYPE));
-                *tp->btp = *member->tp;
-//                tp->rootType = member->tp->rootType;
-                UpdateRootTypes(tp);
-                tp->btp->rref = true;
-                tp->btp->lref = false;
+                if (!callConstructor(&ctype, &exp, NULL, false, NULL, top, false, false, false, false, false))
+                    errorsym(ERR_NO_DEFAULT_CONSTRUCTOR, member);
             }
             else
             {
-                tp = (TYPE *)Alloc(sizeof(TYPE));
-                *tp = *member->tp;
-                tp->rref = true;
-                tp->lref = false;
-//                tp = member->tp;
+                TYPE* tp = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
+                EXPRESSION* other = exprNode(en_add, otherptr, intNode(en_c_i, memberOffs));
+                if (basetype(parentCons->tp)->type == bt_rref)
+                    other = exprNode(en_not_lvalue, other, NULL);
+                if (isconst(((SYMBOL*)basetype(parentCons->tp)->syms->table[0]->next->p)->tp->btp))
+                {
+                    tp->type = bt_const;
+                    tp->size = basetype(member->tp)->size;
+    //                tp->btp = member->tp;
+                    tp->btp = (TYPE *)Alloc(sizeof(TYPE));
+                    *tp->btp = *member->tp;
+    //                tp->rootType = member->tp->rootType;
+                    UpdateRootTypes(tp);
+                    tp->btp->rref = true;
+                    tp->btp->lref = false;
+                }
+                else
+                {
+                    tp = (TYPE *)Alloc(sizeof(TYPE));
+                    *tp = *member->tp;
+                    tp->rref = true;
+                    tp->lref = false;
+    //                tp = member->tp;
+                }
+                //			member->tp->rref = true;
+                if (!callConstructorParam(&ctype, &exp, tp, other, top, false, false, false))
+                    errorsym(ERR_NO_APPROPRIATE_CONSTRUCTOR, member);
+                //			member->tp->rref = false;
             }
-            //			member->tp->rref = true;
-            if (!callConstructorParam(&ctype, &exp, tp, other, top, false, false, false))
-                errorsym(ERR_NO_APPROPRIATE_CONSTRUCTOR, member);
-            //			member->tp->rref = false;
         }
         else
         {
@@ -1785,7 +1801,7 @@ static void doVirtualBases(BLOCKDATA* b, SYMBOL* sp, MEMBERINITIALIZERS* mi, VBA
     {
         doVirtualBases(b, sp, mi, vbe->next, thisptr, otherptr, parentCons, doCopy);
         if (vbe->alloc)
-            genConstructorCall(b, sp, mi, vbe->cls, vbe->structOffset, false, thisptr, otherptr, parentCons, true, doCopy);
+            genConstructorCall(b, sp, mi, vbe->cls, vbe->structOffset, false, thisptr, otherptr, parentCons, true, doCopy, false);
     }
 }
 static EXPRESSION* unshim(EXPRESSION* exp, EXPRESSION* ths);
@@ -2324,7 +2340,7 @@ EXPRESSION* thunkConstructorHead(BLOCKDATA* b, SYMBOL* sym, SYMBOL* cons, HASHTA
         allocInitializers(sym, cons, thisptr);
     if (cons->memberInitializers && cons->memberInitializers->delegating)
     {
-        genConstructorCall(b, sym, cons->memberInitializers, sym, 0, false, thisptr, otherptr, cons, true, doCopy);
+        genConstructorCall(b, sym, cons->memberInitializers, sym, 0, false, thisptr, otherptr, cons, true, doCopy, !cons->defaulted);
     }
     else
     {
@@ -2342,7 +2358,7 @@ EXPRESSION* thunkConstructorHead(BLOCKDATA* b, SYMBOL* sym, SYMBOL* cons, HASHTA
                         if (isstructured(sp->tp))
                         {
                             genConstructorCall(b, basetype(sp->tp)->sp, cons->memberInitializers, sp, sp->offset, true, thisptr,
-                                               otherptr, cons, false, doCopy);
+                                               otherptr, cons, false, doCopy, !cons->defaulted);
                         }
                         else
                         {
@@ -2385,7 +2401,7 @@ EXPRESSION* thunkConstructorHead(BLOCKDATA* b, SYMBOL* sym, SYMBOL* cons, HASHTA
             {
                 if (!bc->isvirtual)
                     genConstructorCall(b, sym, cons->memberInitializers, bc->cls, bc->offset, false, thisptr, otherptr, cons, true,
-                                       doCopy || !cons->memberInitializers);
+                                       doCopy || !cons->memberInitializers, !cons->defaulted);
                 bc = bc->next;
             }
             if (hasVTab(sym))
@@ -2399,7 +2415,7 @@ EXPRESSION* thunkConstructorHead(BLOCKDATA* b, SYMBOL* sym, SYMBOL* cons, HASHTA
                     if (isstructured(sp->tp))
                     {
                         genConstructorCall(b, basetype(sp->tp)->sp, cons->memberInitializers, sp, sp->offset, true, thisptr,
-                                           otherptr, cons, false, doCopy);
+                                           otherptr, cons, false, doCopy, !cons->defaulted);
                     }
                     else
                     {

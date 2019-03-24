@@ -811,15 +811,7 @@ bool LinkManager::ExternalErrors()
     int n = 0;
     for (auto ext : externals)
     {
-        bool found = false;
-        for (auto sym : imports)
-        {
-            if (sym->GetSymbol()->GetName() == ext->GetSymbol()->GetName())
-            {
-                found = true;
-                break;
-            }
-        }
+        bool found = imports.find(ext) != imports.end();
         if (!found)
         {
             LinkError("Undefined External " + ext->GetSymbol()->GetDisplayName() + " in module " + ext->GetFile()->GetName());

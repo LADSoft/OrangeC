@@ -68,7 +68,10 @@ size_t _RTL_FUNC fread(void *restrict buf, size_t size, size_t count,
         stream->level = 0;
     }
     if (stream->flags & _F_EOF)
-        return 0;
+       if (isatty(fileno(stream)))
+           stream->flags &= ~(_F_XEOF | _F_EOF);
+       else
+           return 0;
     if (num == 0)
         return 0 ;
     if (stream->flags & _F_UNGETC) {

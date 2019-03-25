@@ -2325,6 +2325,8 @@ static int MarkFastcall(SYMBOL* sym, TYPE* functp, bool thisptr)
                         q->ans = temp;
                         tail->dc.left = temp;
                         tail->fastcall = ++i;
+                        if (tail->dc.left->size == ISZ_ULONGLONG || tail->dc.left->size == -ISZ_ULONGLONG)
+                            ++i;// long long is presently meant to be the one and only arg...
                         q->back = tail->back;
                         q->fwd = tail;
                         q->back->fwd = q;

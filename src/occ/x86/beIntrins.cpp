@@ -182,6 +182,28 @@ bool handleCLZ()
     gen_code(op_xor, makedreg(EAX), aimmed(31));
     return true;
 }
+bool handleBSWAP16()
+{
+    gen_code(op_mov, makedreg(EAX), makedreg(ECX));
+    AMODE* al = makedregSZ(EAX, ISZ_UCHAR);
+    AMODE* ah = makedregSZ(EAX+4, ISZ_UCHAR);
+    gen_code(op_xchg, al, ah);
+    return true;
+}
+bool handleBSWAP32()
+{
+    gen_code(op_mov, makedreg(EAX), makedreg(ECX));
+    gen_code(op_bswap, makedreg(EAX), NULL); // slow, but...
+    return true;
+}
+bool handleBSWAP64()
+{
+    gen_code(op_mov, makedreg(EAX), makedreg(EDX));
+    gen_code(op_mov, makedreg(EDX), makedreg(ECX));
+    gen_code(op_bswap, makedreg(EAX), NULL);
+    gen_code(op_bswap, makedreg(EDX), NULL);
+    return true;
+}
 // for __fastcall, first arg is in ECX, second arg is in EDX and third arg is in EAX
 // more args will be pushed on the stack, but if you do that you have to leave them there so they can get cleaned up properly.
 //
@@ -190,7 +212,8 @@ bool handleCLZ()
 bool BackendIntrinsic(QUAD* q)
 {
     const char* name = q->dc.left->offset->v.sp->name;
-    for (int i = 0; i < ((sizeof(builtins) / sizeof(builtins[0])) - 1); i++)
+
+    for (int i = 0; i < (sizeof(builtins) / sizeof(builtins[0])); i++)
     {
         if (!strcmp(name, builtins[i].name))
         {

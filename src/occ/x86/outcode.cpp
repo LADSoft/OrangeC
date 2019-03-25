@@ -461,7 +461,8 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
         {
             ObjImportSymbol* p = factory.MakeImportSymbol(import->decoratedName);
             p->SetExternalName(import->decoratedName);
-            p->SetDllName(import->importfile);
+            if (import->importfile)
+                p->SetDllName(import->importfile);
             fi->Add(p);
         }
         for (int i = 0; i < MAX_SEGS; ++i)

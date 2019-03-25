@@ -206,6 +206,7 @@ class LinkManager
     SymbolData externals;
     SymbolData imports;
     SymbolData exports;
+    std::set<std::string> importNames;
     FileData fileData;
     CmdFiles objectFiles;
     CmdFiles libFiles;

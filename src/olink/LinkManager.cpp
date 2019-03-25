@@ -209,11 +209,15 @@ void LinkManager::MergePublics(ObjFile* file, bool toerr)
     }
     for (auto it = file->ImportBegin(); it != file->ImportEnd(); ++it)
     {
-        LinkSymbolData test(file, *it);
-        if (imports.find(&test) == imports.end())
-        {
-            LinkSymbolData* newSymbol = new LinkSymbolData(file, *it);
-            imports.insert(newSymbol);
+        importNames.insert((*it)->GetName());
+        if (static_cast<ObjImportSymbol *>(*it)->GetDllName().size())
+        { 
+            LinkSymbolData test(file, *it);
+            if (imports.find(&test) == imports.end())
+            {
+                LinkSymbolData* newSymbol = new LinkSymbolData(file, *it);
+                imports.insert(newSymbol);
+            }   
         }
     }
     for (auto it = file->ExportBegin(); it != file->ExportEnd(); ++it)
@@ -814,8 +818,16 @@ bool LinkManager::ExternalErrors()
         bool found = imports.find(ext) != imports.end();
         if (!found)
         {
-            LinkError("Undefined External " + ext->GetSymbol()->GetDisplayName() + " in module " + ext->GetFile()->GetName());
+            LinkError("Undefined External '" + ext->GetSymbol()->GetDisplayName() + "' in module " + ext->GetFile()->GetName());
             rv = true;
+        }
+    }
+    for (auto pub : publics)
+    {
+        bool found = importNames.find(pub->GetSymbol()->GetName()) != importNames.end();
+        if (found)
+        {
+            LinkError("Public '" + pub->GetSymbol()->GetDisplayName() + "' was also declared as an imported function");
         }
     }
     return rv;

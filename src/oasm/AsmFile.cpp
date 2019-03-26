@@ -706,7 +706,9 @@ void AsmFile::ImportDirective()
 {
     NextToken();
     std::string internal = GetId();
-    std::string dll = GetId();
+    std::string dll;
+    if (GetKeyword() != Lexer::closebr)
+        dll = GetId();
     std::string external;
     if (GetKeyword() != Lexer::closebr)
         external = GetId();

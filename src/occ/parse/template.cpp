@@ -4645,7 +4645,7 @@ static bool TemplateDeduceFromArg(TYPE* orig, TYPE* sym, EXPRESSION* exp, bool b
     {
         if (!isconst(orig) && !isvolatile(orig) && P->type == bt_templateparam)
         {
-            if (lvalue(exp) || basetype(sym)->type != bt_rref && !basetype(sym)->rref)
+            if (lvalue(exp) || (basetype(sym)->type != bt_rref && !basetype(sym)->rref))
             {
                 // special case: if the deduced type for an rref is an lref it is a forwarding instance
                 TYPE* x = (TYPE*)Alloc(sizeof(TYPE));

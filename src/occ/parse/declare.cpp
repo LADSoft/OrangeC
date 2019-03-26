@@ -5815,7 +5815,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                             if (isfunction(sp->tp))
                             {
                                 sym = searchOverloads(sp, spi->tp->syms);
-                                if (sp->linkage == lk_c || sym && sym->linkage == lk_c)
+                                if (sp->linkage == lk_c || (sym && sym->linkage == lk_c))
                                     if (!sym || !sameNameSpace(sp->parentNameSpace, sym->parentNameSpace))
                                         preverrorsym(ERR_CONFLICTS_WITH, sp, spi->declfile, spi->declline);
                                 if (sym && sym->templateParams && (!sp->templateParams || sp->templateParams->next) &&

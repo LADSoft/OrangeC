@@ -2647,7 +2647,7 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
         lex = getsym();
     }
     if ((cparams.prm_cplusplus || (chosenAssembler->msil && !assn)) && isstructured(itype) &&
-        (basetype(itype)->sp->hasUserCons || !basetype(itype)->sp->trivialCons && !MATCHKW(lex, begin) || arrayMember))
+        (basetype(itype)->sp->hasUserCons || (!basetype(itype)->sp->trivialCons && !MATCHKW(lex, begin)) || arrayMember))
     {
         if (base->storage_class != sc_member || MATCHKW(lex, openpa) || assn || MATCHKW(lex, begin))
         {

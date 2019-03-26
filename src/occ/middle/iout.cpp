@@ -2696,7 +2696,7 @@ int put_exfunc(SYMBOL* sp, int notyet)
     if (chosenAssembler->gen->extern_define)
         chosenAssembler->gen->extern_define(sp, sp->tp->type == bt_func || sp->tp->type == bt_ifunc);
     if (sp->linkage2 == lk_import && chosenAssembler->gen->import_define)
-        chosenAssembler->gen->import_define(sp, sp->importfile ? sp->importfile : "");
+        chosenAssembler->gen->import_define(sp, sp->importfile ? sp->importfile : (char *)"");
     DecGlobalFlag();
     if (!icdFile)
         return notyet;
@@ -2749,7 +2749,7 @@ void putexterns(void)
         {
             SYMBOL* sp = (SYMBOL *)externList->data;
            if (!sp->ispure &&
-                (sp->dontinstantiate && sp->genreffed ||
+                ((sp->dontinstantiate && sp->genreffed) ||
                  (!sp->inlineFunc.stmt && !sp->init &&
                      (isfunction(sp->tp) || (!isfunction(sp->tp) && sp->storage_class != sc_global &&
                                                 sp->storage_class != sc_static && sp->storage_class != sc_localstatic)) &&

@@ -30,24 +30,64 @@
 
 bool Instruction::bigEndian;
 
+Instruction::Instruction(Label* lbl) : label(lbl), type(LABEL), altdata(nullptr), pos(0), fpos(0), size(0), offs(0), repeat(1), fill(0)
+{
+}
+Instruction::Instruction(void* dataIn, int Size, bool isData) :
+    type(isData ? DATA : CODE),
+    label(nullptr),
+    pos(0),
+    fpos(0),
+    repeat(1),
+    size(Size),
+    offs(0),
+    lost(false),
+    fill(0),
+    data(LoadData(!isData, (unsigned char*)dataIn, Size))
+{
+}
+Instruction::Instruction(int aln) :
+    type(ALIGN),
+    label(nullptr),
+    altdata(nullptr),
+    fill(0),
+    pos(0),
+    fpos(0),
+    size(aln),
+    offs(0),
+    repeat(1)
+{
+}
+Instruction::Instruction(int Repeat, int Size) :
+    type(RESERVE),
+    label(nullptr),
+    altdata(nullptr),
+    fill(0),
+    pos(0),
+    fpos(0),
+    size(Size),
+    repeat(Repeat),
+    offs(0),
+    data(std::make_unique<unsigned char[]>(Size))
+{
+    memset(data.get(), 0, size);
+}
+Instruction::Instruction(void* data) : type(ALT), label(nullptr), altdata(data), pos(0), fpos(0), size(0), offs(0), repeat(1), fill(0)
+{
+}
+
 Instruction::~Instruction()
 {
-    if (data)
-        delete data;
-    for (int i = 0; i < fixups.size(); i++)
-    {
-        Fixup* f = fixups[i];
-        delete f;
-    }
 }
-unsigned char* Instruction::LoadData(bool isCode, unsigned char* data, size_t size)
+std::unique_ptr<unsigned char[]> Instruction::LoadData(bool isCode, unsigned char* data, size_t size)
 {
 #ifdef x64
     bool found = !isCode;
 #else
     bool found = true;
 #endif
-    unsigned char *d = new unsigned char[size], *rv = d;
+    std::unique_ptr<unsigned char[]> rv = std::make_unique<unsigned char[]>(size);
+    unsigned char *d = rv.get();
     for (unsigned char* s = data; size; size--)
     {
         if (found || (*s & 0xf0) != 0x40)  // null REX prefix
@@ -71,6 +111,13 @@ unsigned char* Instruction::LoadData(bool isCode, unsigned char* data, size_t si
         std::cerr << "Diag: missing REX prefix" << std::endl;
     return rv;
 }
+void Instruction::Add(Fixup* fixup)
+{
+    // taking ownership now...
+    std::unique_ptr<Fixup> temp;
+    temp.reset(fixup);
+    fixups.push_back(std::move(temp));
+}
 
 int Instruction::GetNext(Fixup& fixup, unsigned char* buf)
 {
@@ -81,7 +128,7 @@ int Instruction::GetNext(Fixup& fixup, unsigned char* buf)
         if (xrepeat == 0)
             return 0;
         int sz = size;
-        memcpy(buf, data, sz);
+        memcpy(buf, data.get(), sz);
         pos += sz;
         xrepeat--;
         return sz;
@@ -124,9 +171,10 @@ int Instruction::GetNext(Fixup& fixup, unsigned char* buf)
         int rv = top - pos;
         for (int i = pos; i < top; i++)
         {
-            *buf++ = data[i];
+            *buf++ = data.get()[i];
         }
         pos = top;
         return rv;
     }
 }
+FixupContainer* Instruction::GetFixups() { return &fixups; }

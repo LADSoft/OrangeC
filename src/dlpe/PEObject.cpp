@@ -59,7 +59,7 @@ void PEObject::WriteHeader(std::fstream& stream)
 }
 void PEObject::Write(std::fstream& stream)
 {
-    stream.write((char*)data, initSize);
+    stream.write((char*)data.get(), initSize);
     int n = ObjectAlign(fileAlign, initSize) - initSize;
     char buf[512];
     memset(buf, 0, sizeof(buf));

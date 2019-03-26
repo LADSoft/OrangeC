@@ -29,25 +29,22 @@
 #include <list>
 #include <map>
 #include "Spawner.h"
+#include <memory>
 
 class CommandContainer
 {
   public:
     static CommandContainer* Instance();
-    ~CommandContainer() { Clear(); }
+    ~CommandContainer() { }
 
-    CommandContainer& operator+=(Command* p)
-    {
-        commands.push_back(p);
-        return *this;
-    }
+    CommandContainer& operator+=(Command* p);
     void Clear();
 
   protected:
     CommandContainer() {}
 
   private:
-    std::list<Command*> commands;
+    std::list<std::unique_ptr<Command>> commands;
 
     static CommandContainer* instance;
 };
@@ -115,14 +112,14 @@ class RuleList
     bool IsImplicit() const { return target.find_first_of('%') != std::string::npos; }
     bool HasCommands();
     void SetRelated(const std::string& related) { relatedPatternRules = related; }
-    typedef std::list<Rule*>::iterator iterator;
+    typedef std::list<std::unique_ptr<Rule>>::iterator iterator;
     iterator begin() { return rules.begin(); }
     iterator end() { return rules.end(); }
     struct rllt
     {
         bool operator()(const std::string* one, const std::string* two) const { return *one < *two; }
     };
-    typedef std::map<const std::string*, Variable*, rllt>::iterator VariableIterator;
+    typedef std::map<const std::string*, std::unique_ptr<Variable>, rllt>::iterator VariableIterator;
     const VariableIterator VariableBegin() { return specificVariables.begin(); }
     const VariableIterator VariableEnd() { return specificVariables.end(); }
     void SecondaryEval();
@@ -136,8 +133,8 @@ class RuleList
     std::string targetPatternStem;
     std::string target;
     std::string relatedPatternRules;
-    std::list<Rule*> rules;
-    std::map<const std::string*, Variable*, rllt> specificVariables;
+    std::list<std::unique_ptr<Rule>> rules;
+    std::map<const std::string*, std::unique_ptr<Variable>, rllt> specificVariables;
     std::string newerPrerequisites;
     Spawner* spawner;
     bool doubleColon;
@@ -149,7 +146,7 @@ class RuleContainer
 {
   public:
     static RuleContainer* Instance();
-    ~RuleContainer() { Clear(); }
+    ~RuleContainer() { }
     RuleList* Lookup(const std::string& name);
     void operator+=(RuleList*);
     void operator-=(RuleList*);
@@ -157,12 +154,12 @@ class RuleContainer
     {
         bool operator()(const std::string* one, const std::string* two) const { return *one < *two; }
     };
-    typedef std::map<const std::string*, RuleList*, rllt>::iterator iterator;
+    typedef std::map<const std::string*, std::unique_ptr<RuleList>, rllt>::iterator iterator;
     const iterator begin() { return namedRules.begin(); }
     const iterator end() { return namedRules.end(); }
 
     iterator find(const std::string* str) { return namedRules.find(str); }
-    typedef std::list<RuleList*>::iterator ImplicitIterator;
+    typedef std::list<std::unique_ptr<RuleList>>::iterator ImplicitIterator;
     const ImplicitIterator ImplicitBegin() { return implicitRules.begin(); }
     const ImplicitIterator ImplicitEnd() { return implicitRules.end(); }
     void Clear();
@@ -175,8 +172,8 @@ class RuleContainer
     RuleContainer() {}
 
   private:
-    std::map<const std::string*, RuleList*, rllt> namedRules;
-    std::list<RuleList*> implicitRules;
+    std::map<const std::string*, std::unique_ptr<RuleList>, rllt> namedRules;
+    std::list<std::unique_ptr<RuleList>> implicitRules;
     static RuleContainer* instance;
 };
 #endif

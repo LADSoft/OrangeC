@@ -31,13 +31,14 @@
 #include <map>
 #include <deque>
 #include <set>
+#include <memory>
 
 class ObjFile;
 class ObjBrowseInfo;
 
 class SymData;
 
-typedef std::map<std::string, SymData*> Symbols;
+typedef std::map<std::string, std::unique_ptr<SymData>> Symbols;
 
 class BrowseData
 {
@@ -54,21 +55,12 @@ class BrowseData
     int charPos;
 };
 
-typedef std::deque<BrowseData*> BrowseDataset;
+typedef std::deque<std::unique_ptr<BrowseData>> BrowseDataset;
 
 class SymData
 {
   public:
-    SymData(std::string& Name) :
-        name(Name),
-        externalCount(0),
-        func(nullptr),
-        globalCount(0),
-        argCount(0),
-        localCount(0),
-        fileOffs(0)
-    {
-    }
+    SymData(std::string& Name);
     ~SymData();
     std::string name;
     BrowseDataset data;
@@ -81,7 +73,7 @@ class SymData
     int localCount;
     long long index;
     unsigned fileOffs;
-    void insert(BrowseData* xx) { data.push_back(xx); }
+    void insert(std::unique_ptr<BrowseData> xx) { data.push_back(std::move(xx)); }
 };
 class BlockData
 {

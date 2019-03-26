@@ -73,6 +73,7 @@ extern int anonymousNotAlloc;
 extern int expandingParams;
 extern bool functionCanThrow;
 extern SYMBOL *theCurrentFunc;
+extern int inGetUserConversion;
 int packIndex;
 
 int argument_nesting;
@@ -93,6 +94,7 @@ void expr_init(void)
 {
     packIndex = -1;
     importThunks = NULL;
+    inGetUserConversion = 0;
 }
 void thunkForImportTable(EXPRESSION** exp)
 {
@@ -646,7 +648,7 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                     case sc_catchvar:
                         makeXCTab(funcsp);
                         *exp = varNode(en_auto, funcsp->xc->xctab);
-                        *exp = exprNode(en_add, *exp, intNode(en_c_i, (LLONG_TYPE) & (((struct _xctab*)0)->instance)));
+                        *exp = exprNode(en_add, *exp, intNode(en_c_i, XCTAB_INSTANCE_OFS));
                         deref(&stdpointer, exp);
                         break;
                     case sc_enumconstant:
@@ -912,6 +914,11 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
             (*exp)->v.templateSelector = strSym->tp->sp->templateSelector;
             *tp = &stdany;
             lex = getsym();
+            if (MATCHKW(lex, lt))
+            {
+                TEMPLATEPARAMLIST* current = nullptr;
+                lex = GetTemplateArguments(lex, funcsp, nullptr, &current);
+            }
             return lex;
         }
         IncGlobalFlag();
@@ -2765,10 +2772,13 @@ void AdjustParams(SYMBOL* func, HASHREC* hr, INITLIST** lptr, bool operands, boo
                         esp = consexp->v.sp;
                         esp->stackblock = true;
                         consexp = varNode(en_auto, esp);
-                        paramexp = temp->v.func->returnEXP ? temp->v.func->returnEXP : temp->v.func->thisptr;
+                        paramexp = temp->v.func->returnEXP ? temp->v.func->returnEXP : p->exp;
                         paramexp = DerivedToBase(sym->tp, tpx, paramexp, _F_VALIDPOINTER);
                         callConstructorParam(&ctype, &consexp, sym->tp, paramexp, true, true, implicit, false);
-                        p->exp = exprNode(en_void, p->exp, consexp);
+                        if (paramexp != p->exp)
+                            p->exp = exprNode(en_void, p->exp, consexp);
+                        else
+                            p->exp = consexp;
                     }
                     else
                     {
@@ -2788,7 +2798,8 @@ void AdjustParams(SYMBOL* func, HASHREC* hr, INITLIST** lptr, bool operands, boo
                         TYPE* tpx = p->tp;
                         if (isref(tpx))
                             tpx = basetype(tpx)->btp;
-                        if ((!isconst(basetype(sym->tp)->btp) && isconst(tpx)) ||
+                        if ((!isconst(basetype(sym->tp)->btp) && !isconst(sym->tp) && 
+                            (sym->tp->type != bt_rref || (!func->templateLevel && (!func->parentClass || !func->parentClass->templateLevel)/*forward*/)) && isconst(tpx)) ||
                             (!comparetypes(sym->tp, tpx, true) && !sameTemplate(sym->tp, tpx) &&
                              !classRefCount(basetype(basetype(sym->tp)->btp)->sp, basetype(tpx)->sp)))
                         {
@@ -3223,9 +3234,11 @@ LEXEME* expression_arguments(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION*
             funcparams->functp = ss->tp;
         }
     }
+
     if ((!templateNestingCount || instantiatingTemplate) && funcparams->sp && funcparams->sp->name[0] == '_' &&
         parseBuiltInTypelistFunc(&lex, funcsp, funcparams->sp, tp, exp))
         return lex;
+
     if (lex)
     {
         lex = getArgs(lex, funcsp, funcparams, closepa, true, flags);
@@ -7066,8 +7079,16 @@ static LEXEME* binop(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSI
         {
             continue;
         }
-        castToArithmetic(kw != land && kw != lor, tp, exp, kw, tp1, kw != land && kw != lor);
-        castToArithmetic(kw != land && kw != lor, &tp1, &exp1, (enum e_kw) - 1, *tp, kw != land && kw != lor);
+        if (kw == land || kw == lor)
+        {
+            castToArithmetic(kw != land && kw != lor, tp, exp, kw, &stdbool, kw != land && kw != lor);
+            castToArithmetic(kw != land && kw != lor, &tp1, &exp1, (enum e_kw) - 1, &stdbool, kw != land && kw != lor);
+        }
+        else
+        {
+            castToArithmetic(kw != land && kw != lor, tp, exp, kw, tp1, kw != land && kw != lor);
+            castToArithmetic(kw != land && kw != lor, &tp1, &exp1, (enum e_kw) - 1, *tp, kw != land && kw != lor);
+        }
         LookupSingleAggregate(*tp, exp);
         LookupSingleAggregate(tp1, &exp1);
 

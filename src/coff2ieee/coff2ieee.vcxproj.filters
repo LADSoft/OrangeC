@@ -39,6 +39,9 @@
     <ClCompile Include="..\olib\LibDictionaryLinker.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\olib\FileDescriptor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Coff2ieeeMain.h">

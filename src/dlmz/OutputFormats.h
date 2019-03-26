@@ -28,19 +28,20 @@
 #include <fstream>
 #include <deque>
 #include <map>
+#include <memory>
 #include "MZHeader.h"
 class ObjFile;
 class ObjExpression;
 class OutFile
 {
   public:
-    OutFile() : data(0), size(0), startSeg(0), startOffs(0), stackSeg(0), stackOffs(0) {}
-    virtual ~OutFile() { delete data; }
+    OutFile() : size(0), startSeg(0), startOffs(0), stackSeg(0), stackOffs(0) {}
+    virtual ~OutFile() { }
     virtual bool ReadSections(ObjFile* file, ObjExpression* start) = 0;
     virtual bool Write(std::fstream& stream) = 0;
 
   protected:
-    unsigned char* data;
+    std::unique_ptr<unsigned char[]> data;
     int size;
     int startSeg, startOffs;
     int stackSeg, stackOffs;

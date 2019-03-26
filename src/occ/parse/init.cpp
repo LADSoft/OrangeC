@@ -3303,6 +3303,13 @@ LEXEME* initType(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_sc sc, INITIALI
         TEMPLATESELECTOR* find = tp->sp->templateSelector->next->next;
         if (tp->sp->templateSelector->next->isTemplate)
         {
+            if (ts->tp->type == bt_templateparam && ts->tp->templateParam->p->byTemplate.val == nullptr)
+            {
+                lex = getsym();
+                errskim(&lex, skim_end);
+                needkw(&lex, end);
+                return lex;
+            }
             TEMPLATEPARAMLIST* current = tp->sp->templateSelector->next->templateParams;
             sp = GetClassTemplate(ts, current, false);
             tp = NULL;

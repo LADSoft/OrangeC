@@ -103,7 +103,10 @@ void precolor(QUAD* head) /* precolor an instruction */
             head->precolored |= TEMP_LEFT;
             tempInfo[ta]->precolored = true;
             tempInfo[ta]->enode->v.sp->regmode = 2;
-            tempInfo[ta]->color = chosenAssembler->arch->fastcallRegs[(head->fastcall > 0 ? head->fastcall : -head->fastcall) - 1];
+            if (tempInfo[ta]->size == ISZ_ULONGLONG || tempInfo[ta]->size == -ISZ_ULONGLONG)
+                tempInfo[ta]->color = 10; // ASSUME ECX::EDX
+            else
+                tempInfo[ta]->color = chosenAssembler->arch->fastcallRegs[(head->fastcall > 0 ? head->fastcall : -head->fastcall) - 1];
         }
         else
         {
@@ -127,8 +130,11 @@ void precolor(QUAD* head) /* precolor an instruction */
                 //            head->precolored |= TEMP_ANS;
                 tempInfo[ta]->precolored = true;
                 tempInfo[ta]->enode->v.sp->regmode = 2;
-                tempInfo[ta]->color =
-                    chosenAssembler->arch->fastcallRegs[(head->fastcall > 0 ? head->fastcall : -head->fastcall) - 1];
+                if (tempInfo[ta]->size == ISZ_ULONGLONG || tempInfo[ta]->size == -ISZ_ULONGLONG)
+                    tempInfo[ta]->color = 10; // ASSUME ECX::EDX
+                else
+                    tempInfo[ta]->color =
+                        chosenAssembler->arch->fastcallRegs[(head->fastcall > 0 ? head->fastcall : -head->fastcall) - 1];
             }
         }
     }

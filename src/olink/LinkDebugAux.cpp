@@ -5,7 +5,7 @@
 int LinkerColumnsWithNameVirtualTable::id;
 
 LinkerColumnsWithNameVirtualTable::LinkerColumnsWithNameVirtualTable(std::vector<sqlite3_int64>& Data,
-                                                                     std::vector<ObjString*>& Names, int Columns, bool primary) :
+                                                                     std::vector<ObjString>& Names, int Columns, bool primary) :
     data(Data),
     names(Names),
     columns(Columns),
@@ -63,7 +63,7 @@ int LinkerColumnsWithNameVirtualTable::Column(void* cursor, sqlite3_context* ctx
         if (i < columns - 1)
             sqlite3_result_int64(ctx, data[pCur->i * (columns - 1) + i]);
         else
-            sqlite3_result_text(ctx, (char*)names[pCur->i]->c_str(), names[pCur->i]->size(), SQLITE_STATIC);
+            sqlite3_result_text(ctx, (char*)names[pCur->i].c_str(), names[pCur->i].size(), SQLITE_STATIC);
     }
     return SQLITE_OK;
 }

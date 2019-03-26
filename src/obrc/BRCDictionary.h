@@ -29,6 +29,7 @@
 #include "BRCLoader.h"
 #include <fstream>
 #include <map>
+#include <memory>
 
 class ObjFile;
 class LibFiles;
@@ -53,19 +54,15 @@ class BRCDictionary
             ObjByte names[LIB_PAGE_SIZE - LIB_BUCKETS - 1]; /* followed by names section */
         } f;
     };
-    BRCDictionary(Symbols& p) : symbols(p), blockCount(0), data(nullptr) {}
-    ~BRCDictionary() { delete[] data; }
+    BRCDictionary(Symbols& p) : symbols(p), blockCount(0) {}
+    ~BRCDictionary() { }
     ObjInt Lookup(std::fstream& stream, ObjInt dictOffset, ObjInt dictPages, const ObjString& str);
     void Write(std::fstream& stream);
     void CreateDictionary(void);
     void Clear()
     {
         dictionary.clear();
-        if (data)
-        {
-            delete[] data;
-            data = nullptr;
-        }
+        data.release();
         blockCount = 0;
     }
     ObjInt GetBlockCount() const { return blockCount; }
@@ -82,7 +79,7 @@ class BRCDictionary
     Symbols& symbols;
     Dictionary dictionary;
     int blockCount;
-    DICTPAGE* data;
+    std::unique_ptr<DICTPAGE[]> data;
     int block_d, bucket_d, block_x, bucket_x;
     int oblock_x;
     int obucket_x;

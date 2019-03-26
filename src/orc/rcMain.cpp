@@ -118,7 +118,7 @@ int rcMain::Run(int argc, char* argv[])
     }
     for (auto it = files.FileNameBegin(); it != files.FileNameEnd(); ++it)
     {
-        std::string inName = Utils::QualifiedFile((*it)->c_str(), ".rc");
+        std::string inName = Utils::QualifiedFile((*it).c_str(), ".rc");
         PreProcessor pp(inName, srchPth, sysSrchPth, false, false, '#', false, true, true);
         int n = Defines.GetCount();
         for (int i = 0; i < n; i++)
@@ -132,7 +132,7 @@ int rcMain::Run(int argc, char* argv[])
         if (!OutputFile.GetValue().empty())
             outName = OutputFile.GetValue();
         else
-            outName = Utils::QualifiedFile((*it)->c_str(), ".res");
+            outName = Utils::QualifiedFile((*it).c_str(), ".res");
         ResFile resFile;
         RCFile rcFile(pp, resFile, srchPth, language);
         if (rcFile.Read())

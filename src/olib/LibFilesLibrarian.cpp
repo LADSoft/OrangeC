@@ -40,9 +40,8 @@ void LibFiles::Add(ObjFile& obj)
                       << std::endl;
             return;
         }
-    FileDescriptor* newFile = new FileDescriptor(obj.GetName());
-    newFile->data = &obj;
-    files.push_back(newFile);
+    files.push_back(std::make_unique<FileDescriptor>(obj.GetName()));
+    files.back()->data = &obj;
 }
 void LibFiles::Add(const ObjString& Name)
 {
@@ -59,8 +58,7 @@ void LibFiles::Add(const ObjString& Name)
             std::cout << "Warning: module '" << Name << "' already exists in library, it won't be added" << std::endl;
             return;
         }
-    FileDescriptor* newFile = new FileDescriptor(Name);
-    files.push_back(newFile);
+    files.push_back(std::make_unique<FileDescriptor>(Name));
 }
 void LibFiles::Remove(const ObjString& Name)
 {
@@ -72,8 +70,6 @@ void LibFiles::Remove(const ObjString& Name)
     {
         if ((*it)->name == internalName)
         {
-            FileDescriptor* t = *it;
-            delete t;
             files.erase(it);
             return;
         }
@@ -129,7 +125,6 @@ void LibFiles::Replace(ObjFile& obj)
         {
             if ((*it)->data)
             {
-                delete (*it)->data;
                 (*it)->data = nullptr;
             }
             (*it)->data = &obj;
@@ -152,7 +147,6 @@ void LibFiles::Replace(const ObjString& Name)
         {
             if ((*it)->data)
             {
-                delete (*it)->data;
                 (*it)->data = nullptr;
             }
             (*it)->name = Name;
@@ -223,8 +217,6 @@ bool LibFiles::ReadFiles(FILE* stream, ObjFactory* factory)
                     if (!(*itn)->data)
                     {
                         std::cout << "Error: Syntax error in module '" << (*itn)->name << "'" << std::endl;
-                        FileDescriptor* t = *itn;
-                        delete t;
                         files.erase(itn);
                         done = false;
                         rv = false;
@@ -241,8 +233,6 @@ bool LibFiles::ReadFiles(FILE* stream, ObjFactory* factory)
                         if (!(*itn)->data)
                         {
                             std::cout << "Error: Syntax error in module '" << (*itn)->name << "'" << std::endl;
-                            FileDescriptor* t = *itn;
-                            delete t;
                             files.erase(itn);
                             done = false;
                             rv = false;
@@ -252,8 +242,6 @@ bool LibFiles::ReadFiles(FILE* stream, ObjFactory* factory)
                     else
                     {
                         std::cout << "Error: Module '" << (*itn)->name << "' does not exist" << std::endl;
-                        FileDescriptor* t = *itn;
-                        delete t;
                         files.erase(itn);
                         done = false;
                         rv = false;

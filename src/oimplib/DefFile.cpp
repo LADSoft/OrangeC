@@ -47,21 +47,7 @@ static bool IsSymbolChar(const char* data)
            UTF8::IsAlnum(data);
 }
 static bool IsSymbolChar(const char* data, bool start) { return start ? IsSymbolStartChar(data) : IsSymbolChar(data); }
-DefFile::~DefFile()
-{
-    while (!exports.empty())
-    {
-        Export* one = exports.front();
-        exports.pop_front();
-        delete one;
-    }
-    while (!imports.empty())
-    {
-        Import* one = imports.front();
-        imports.pop_front();
-        delete one;
-    }
-}
+DefFile::~DefFile() { }
 void DefFile::Init()
 {
     if (!initted)
@@ -90,16 +76,28 @@ void DefFile::Init()
         Tokenizer::IsSymbolChar = IsSymbolChar;
     }
 }
+
+void DefFile::Add(Export* e) 
+{ 
+    std::unique_ptr<Export> temp(e);
+    exports.push_back(std::move(temp)); 
+}
+void DefFile::Add(Import* i) 
+{ 
+    std::unique_ptr<Import> temp(i);
+    imports.push_back(std::move(temp));
+}
+
 bool DefFile::Read()
 {
-    stream = new std::fstream(fileName, std::ios::in);
-    if (!stream->fail())
+    stream.open(fileName, std::ios::in);
+    if (stream.is_open())
     {
         try
         {
             lineno = 0;
             NextToken();
-            while (!stream->eof())
+            while (!stream.eof())
             {
                 if (token->IsEnd())
                 {
@@ -107,7 +105,7 @@ bool DefFile::Read()
                 }
                 else if (!token->IsKeyword())
                 {
-                    throw new std::runtime_error("Invalid directive");
+                    throw std::runtime_error("Invalid directive");
                 }
                 else
                 {
@@ -144,17 +142,16 @@ bool DefFile::Read()
                             ReadSections();
                             break;
                         default:
-                            throw new std::runtime_error("Invalid directive");
+                            throw std::runtime_error("Invalid directive");
                     }
                 }
             }
         }
-        catch (std::runtime_error* e)
+        catch (std::runtime_error e)
         {
-            std::cout << fileName << "(" << lineno << "): " << e->what() << std::endl;
-            delete e;
+            std::cout << fileName << "(" << lineno << "): " << e.what() << std::endl;
         }
-        delete stream;
+        stream.close();
     }
     else
     {
@@ -164,8 +161,8 @@ bool DefFile::Read()
 }
 bool DefFile::Write()
 {
-    stream = new std::fstream(fileName, std::ios::out);
-    // if (!stream->fail())
+    stream.open(fileName, std::ios::out);
+    if (stream.is_open())
     {
         WriteName();
         WriteLibrary();
@@ -177,23 +174,23 @@ bool DefFile::Write()
         WriteCode();
         WriteData();
         WriteSections();
-        delete stream;
+        stream.close();
     }
     return true;
 }
 void DefFile::NextToken()
 {
-    if (!stream->eof())
+    if (!stream.eof())
     {
         if (!token || token->IsEnd())
         {
             char buf[2048];
             lineno++;
-            stream->getline(buf, sizeof(buf));
-            if (!stream->eof())
+            stream.getline(buf, sizeof(buf));
+            if (!stream.eof())
             {
-                if (stream->fail())
-                    throw new std::runtime_error("I/O error");
+                if (stream.fail())
+                    throw std::runtime_error("I/O error");
                 char* npos = strchr(buf, ';');
                 if (npos)
                     *npos = 0;
@@ -212,7 +209,7 @@ void DefFile::ReadName()
 
     int npos1 = line.find_first_not_of(SPACES);
     if (npos1 == std::string::npos)
-        throw new std::runtime_error("Invalid NAME specifiers");
+        throw std::runtime_error("Invalid NAME specifiers");
     int npos2 = line.find_first_of(COMMA SPACES, npos1);
     if (npos2 == std::string::npos)
     {
@@ -237,7 +234,7 @@ void DefFile::ReadLibrary()
 
     int npos1 = line.find_first_not_of(SPACES);
     if (npos1 == std::string::npos)
-        throw new std::runtime_error("Invalid NAME specifiers");
+        throw std::runtime_error("Invalid NAME specifiers");
     int npos2 = line.find_first_of(COMMA SPACES, npos1);
     if (npos2 == std::string::npos)
     {
@@ -258,18 +255,18 @@ void DefFile::ReadExports()
     NextToken();
     if (token->IsEnd())
     {
-        while (token->IsEnd() && !stream->eof())
+        while (token->IsEnd() && !stream.eof())
             NextToken();
         while (token->IsIdentifier())
         {
-            Export* oneExport = new Export;
+            std::unique_ptr<Export> oneExport = std::make_unique<Export>();
             oneExport->id = token->GetId();
             NextToken();
             if (token->GetKeyword() == edt_equals)
             {
                 NextToken();
                 if (!token->IsIdentifier())
-                    throw new std::runtime_error("Expected entry specifier");
+                    throw std::runtime_error("Expected entry specifier");
                 oneExport->entry = token->GetId();
                 NextToken();
                 if (token->GetKeyword() == edt_dot)
@@ -313,7 +310,7 @@ void DefFile::ReadExports()
                 }
                 else
                 {
-                    throw new std::runtime_error("Expected ordinal value");
+                    throw std::runtime_error("Expected ordinal value");
                 }
                 NextToken();
             }
@@ -336,10 +333,10 @@ void DefFile::ReadExports()
                         break;
                 }
             }
-            exports.push_back(oneExport);
+            exports.push_back(std::move(oneExport));
             if (!token->IsEnd())
                 break;
-            while (token->IsEnd() && !stream->eof())
+            while (token->IsEnd() && !stream.eof())
                 NextToken();
         }
     }
@@ -349,11 +346,11 @@ void DefFile::ReadImports()
     NextToken();
     if (token->IsEnd())
     {
-        while (token->IsEnd() && !stream->eof())
+        while (token->IsEnd() && !stream.eof())
             NextToken();
         while (token->IsIdentifier())
         {
-            Import* oneImport = new Import;
+            std::unique_ptr<Import> oneImport = std::make_unique<Import>();
             oneImport->id = token->GetId();
             NextToken();
             if (token->GetKeyword() == edt_dot)
@@ -361,7 +358,7 @@ void DefFile::ReadImports()
                 oneImport->module = oneImport->id;
                 NextToken();
                 if (!token->IsIdentifier())
-                    throw new std::runtime_error("Expected id specifier");
+                    throw std::runtime_error("Expected id specifier");
                 oneImport->id = oneImport->entry = token->GetId();
             }
             else if (token->GetKeyword() == edt_equals)
@@ -375,17 +372,17 @@ void DefFile::ReadImports()
                 }
                 else
                 {
-                    throw new std::runtime_error("Expected id specifier");
+                    throw std::runtime_error("Expected id specifier");
                 }
                 NextToken();
                 if (!token->IsIdentifier())
-                    throw new std::runtime_error("Expected id specifier");
+                    throw std::runtime_error("Expected id specifier");
                 oneImport->id = token->GetId();
             }
-            imports.push_back(oneImport);
+            imports.push_back(std::move(oneImport));
             if (!token->IsEnd())
                 break;
-            while (token->IsEnd() && !stream->eof())
+            while (token->IsEnd() && !stream.eof())
                 NextToken();
         }
     }
@@ -394,7 +391,7 @@ void DefFile::ReadDescription()
 {
     description = tokenizer.GetString();
     if (description.empty())
-        throw new std::runtime_error("Expected Description");
+        throw std::runtime_error("Expected Description");
     tokenizer.Reset("");
     token = nullptr;
     NextToken();
@@ -403,7 +400,7 @@ void DefFile::ReadStacksize()
 {
     NextToken();
     if (!token->IsNumeric())
-        throw new std::runtime_error("Expected stack size");
+        throw std::runtime_error("Expected stack size");
     stackSize = token->GetInteger();
     NextToken();
 }
@@ -411,7 +408,7 @@ void DefFile::ReadHeapsize()
 {
     NextToken();
     if (!token->IsNumeric())
-        throw new std::runtime_error("Expected heap size");
+        throw std::runtime_error("Expected heap size");
     heapSize = token->GetInteger();
     NextToken();
 }
@@ -484,111 +481,111 @@ void DefFile::WriteName()
 {
     if (!name.empty())
     {
-        *stream << "NAME " << name;
+        stream << "NAME " << name;
         if (imageBase != -1)
         {
-            *stream << ", " << imageBase;
+            stream << ", " << imageBase;
         }
-        *stream << std::endl;
+        stream << std::endl;
     }
 }
 void DefFile::WriteLibrary()
 {
     if (!library.empty())
     {
-        *stream << "LIBRARY " << library;
+        stream << "LIBRARY " << library;
         if (imageBase != -1)
         {
-            *stream << ", " << imageBase;
+            stream << ", " << imageBase;
         }
-        *stream << std::endl;
+        stream << std::endl;
     }
 }
 void DefFile::WriteExports()
 {
     bool first = true;
-    for (auto exp : exports)
+    for (auto& exp : exports)
     {
         if (first)
         {
-            *stream << "EXPORTS" << std::endl;
+            stream << "EXPORTS" << std::endl;
             first = false;
         }
         if (cdll && !exp->byOrd)
-            *stream << "\t_" << exp->id;
-        *stream << "\t" << exp->id;
+            stream << "\t_" << exp->id;
+        stream << "\t" << exp->id;
         if ((!exp->entry.empty() && exp->entry != exp->id) || !exp->module.empty())
         {
-            *stream << "=" << exp->entry;
+            stream << "=" << exp->entry;
             if (!exp->module.empty())
-                *stream << "." << exp->module;
+                stream << "." << exp->module;
         }
         if ((!cdll || exp->byOrd) && exp->ord != -1)
-            *stream << " @" << exp->ord;
+            stream << " @" << exp->ord;
         if (exp->byOrd)
-            *stream << " "
+            stream << " "
                     << "NONAME";
-        *stream << std::endl;
+        stream << std::endl;
     }
 }
 void DefFile::WriteImports()
 {
     bool first = true;
-    for (auto import : imports)
+    for (auto& import : imports)
     {
         if (first)
         {
-            *stream << "IMPORTS" << std::endl;
+            stream << "IMPORTS" << std::endl;
             first = false;
         }
         if (!import->module.empty())
         {
             if (import->entry == import->id)
             {
-                *stream << "\t" << import->module << "." << import->id;
+                stream << "\t" << import->module << "." << import->id;
             }
             else
             {
-                *stream << "\t" << import->id << "=" << import->module << "." << import->entry;
+                stream << "\t" << import->id << "=" << import->module << "." << import->entry;
             }
         }
         else
         {
-            *stream << "\t" << import->id;
+            stream << "\t" << import->id;
         }
-        *stream << std::endl;
+        stream << std::endl;
     }
 }
 void DefFile::WriteDescription()
 {
     if (!description.empty())
-        *stream << description << std::endl;
+        stream << description << std::endl;
 }
 void DefFile::WriteStacksize()
 {
     if (stackSize != -1)
     {
-        *stream << "STACKSIZE " << stackSize << std::endl;
+        stream << "STACKSIZE " << stackSize << std::endl;
     }
 }
 void DefFile::WriteHeapsize()
 {
     if (heapSize != -1)
     {
-        *stream << "HEAPSIZE " << heapSize << std::endl;
+        stream << "HEAPSIZE " << heapSize << std::endl;
     }
 }
 void DefFile::WriteSectionBits(unsigned value)
 {
     if (value & WINF_READABLE)
-        *stream << "READ ";
+        stream << "READ ";
     if (value & WINF_WRITEABLE)
-        *stream << "WRITE ";
+        stream << "WRITE ";
     if (value & WINF_EXECUTE)
-        *stream << "EXECUTE ";
+        stream << "EXECUTE ";
     if (value & WINF_SHARED)
-        *stream << "SHARED ";
-    *stream << std::endl;
+        stream << "SHARED ";
+    stream << std::endl;
 }
 void DefFile::WriteCode()
 {
@@ -596,7 +593,7 @@ void DefFile::WriteCode()
     {
         if (section.first == "CODE")
         {
-            *stream << "CODE " << section.second << std::endl;
+            stream << "CODE " << section.second << std::endl;
             WriteSectionBits(section.second);
             break;
         }
@@ -608,7 +605,7 @@ void DefFile::WriteData()
     {
         if (section.first == "DATA")
         {
-            *stream << "DATA ";
+            stream << "DATA ";
             WriteSectionBits(section.second);
             break;
         }
@@ -626,7 +623,7 @@ void DefFile::WriteSections()
                 std::cout << "SECTIONS" << std::endl;
                 first = false;
             }
-            *stream << "\t" << section.first << " ";
+            stream << "\t" << section.first << " ";
             WriteSectionBits(section.second);
             break;
         }

@@ -113,7 +113,7 @@ std::wstring RCFile::GetString()
     }
     else
     {
-        throw new std::runtime_error("String expected");
+        throw std::runtime_error("String expected");
     }
     return rv;
 }
@@ -134,14 +134,14 @@ std::wstring RCFile::GetId()
     }
     else
     {
-        throw new std::runtime_error("identifier expected");
+        throw std::runtime_error("identifier expected");
     }
     return rv;
 }
 void RCFile::NeedEol()
 {
     if (!AtEol())
-        throw new std::runtime_error("End of line expected");
+        throw std::runtime_error("End of line expected");
 }
 void RCFile::SkipComma()
 {
@@ -152,14 +152,14 @@ void RCFile::NeedBegin()
 {
     if (!IsKeyword() || (GetToken()->GetKeyword() != Lexer::openbr && GetToken()->GetKeyword() != Lexer::BEGIN))
     {
-        throw new std::runtime_error("Begin expected");
+        throw std::runtime_error("Begin expected");
     }
     NextToken();
 }
 void RCFile::NeedEnd()
 {
     if (!IsKeyword() || (GetToken()->GetKeyword() != Lexer::closebr && GetToken()->GetKeyword() != Lexer::END))
-        throw new std::runtime_error("End expected");
+        throw std::runtime_error("End expected");
     NextToken();
 }
 std::string RCFile::GetFileName()
@@ -176,7 +176,7 @@ std::string RCFile::GetFileName()
         std::string line = lexer.GetRestOfLine();
         size_t s = line.find_first_not_of(" \t\v");
         if (s == std::string::npos)
-            throw new std::runtime_error("Expected valid file name");
+            throw std::runtime_error("Expected valid file name");
         size_t e = line.find_first_of(" \t\v", s);
         if (e == std::string::npos)
             e = line.size();
@@ -226,7 +226,7 @@ Resource* RCFile::GetRes()
                     }
                     else
                     {
-                        throw new std::runtime_error("Expected resource type");
+                        throw std::runtime_error("Expected resource type");
                     }
                     if (type != -2)
                         NextToken();
@@ -238,7 +238,7 @@ Resource* RCFile::GetRes()
             }
             else
             {
-                throw new std::runtime_error("Expected resource identifier");
+                throw std::runtime_error("Expected resource identifier");
             }
         }
         else
@@ -261,7 +261,7 @@ Resource* RCFile::GetRes()
             }
             else
             {
-                throw new std::runtime_error("Expected resource type");
+                throw std::runtime_error("Expected resource type");
             }
             if (type != -2)
                 NextToken();
@@ -319,12 +319,13 @@ Resource* RCFile::GetRes()
                 rv = new MessageTable(id, info);
                 break;
             case Lexer::STRINGTABLE:
-                rv = new StringTable(info);
-                rv->ReadRC(*this);
-                delete rv;
+            {
+                std::unique_ptr<StringTable> temp = std::make_unique<StringTable>(info);
+                temp->ReadRC(*this);
                 rv = nullptr;
                 done = false;
-                break;
+            }
+            break;
             case Lexer::LANGUAGE:
             {
                 language = GetNumber();
@@ -341,7 +342,7 @@ Resource* RCFile::GetRes()
             }
             break;
             default:
-                throw new std::runtime_error("Invalid resource type");
+                throw std::runtime_error("Invalid resource type");
                 break;
         }
         if (rv)
@@ -360,10 +361,9 @@ bool RCFile::Read()
         while (!lexer.AtEof() && (res = GetRes()))
             resFile.Add(res);
     }
-    catch (std::runtime_error* e)
+    catch (std::runtime_error& e)
     {
-        Errors::Error(e->what());
-        delete e;
+        Errors::Error(e.what());
         return false;
     }
     return true;

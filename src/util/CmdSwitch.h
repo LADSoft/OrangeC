@@ -31,6 +31,7 @@
 #include <vector>
 #include <fstream>
 #include <iostream>
+#include <memory>
 class CmdSwitchParser;
 
 class CmdSwitchBase
@@ -60,7 +61,7 @@ class CmdSwitchBool : public CmdSwitchBase
   public:
     CmdSwitchBool(CmdSwitchParser& parser, char SwitchChar, bool State = false) : CmdSwitchBase(parser, SwitchChar), value(State) {}
     CmdSwitchBool(const CmdSwitchBool& orig) : CmdSwitchBase(orig) { value = orig.value; }
-    virtual int Parse(const char* data);
+    virtual int Parse(const char* data) override;
     bool GetValue() const { return value; }
     void SetValue(bool flag) { value = flag; }
 
@@ -84,7 +85,7 @@ class CmdSwitchInt : public CmdSwitchBase
         hiLimit = orig.hiLimit;
     }
 
-    virtual int Parse(const char* data);
+    virtual int Parse(const char* data) override;
     int GetValue() const { return value; }
     void SetValue(int val) { value = val; }
   private:
@@ -109,7 +110,7 @@ class CmdSwitchHex : public CmdSwitchBase
         hiLimit = orig.hiLimit;
     }
 
-    virtual int Parse(const char* data);
+    virtual int Parse(const char* data) override;
     int GetValue() const { return value; }
 
   private:
@@ -128,7 +129,7 @@ class CmdSwitchString : public CmdSwitchBase
     }
     CmdSwitchString(const CmdSwitchString& orig) : CmdSwitchBase(orig), concat(0) { value = orig.value; }
     CmdSwitchString() : value(""), concat(0) {}
-    virtual int Parse(const char* data);
+    virtual int Parse(const char* data) override;
     const std::string& GetValue() const { return value; }
     std::string operator+=(const char* c)
     {
@@ -150,7 +151,7 @@ class CmdSwitchCombineString : public CmdSwitchString
     {
     }
     CmdSwitchCombineString() {}
-    virtual int Parse(const char* data);
+    virtual int Parse(const char* data) override;
 };
 class CmdSwitchCombo : public CmdSwitchString
 {
@@ -167,7 +168,7 @@ class CmdSwitchCombo : public CmdSwitchString
         selected = orig.selected;
     }
     CmdSwitchCombo() : valid(""), selected(false) {}
-    virtual int Parse(const char* data);
+    virtual int Parse(const char* data) override;
     bool GetValue() { return selected; }
     bool GetValue(char selector) { return value.find_first_of(selector) != std::string::npos; }
 
@@ -184,7 +185,7 @@ class CmdSwitchOutput : public CmdSwitchCombineString
     {
     }
     CmdSwitchOutput(const CmdSwitchOutput& orig) : CmdSwitchCombineString(orig) { extension = orig.extension; }
-    virtual int Parse(const char* data);
+    virtual int Parse(const char* data) override;
 
   private:
     const char* extension;
@@ -193,9 +194,15 @@ class CmdSwitchDefine : public CmdSwitchBase
 {
   public:
     CmdSwitchDefine(CmdSwitchParser& parser, char SwitchChar) : CmdSwitchBase(parser, SwitchChar) {}
-    CmdSwitchDefine(const CmdSwitchDefine& orig) : CmdSwitchBase(orig) { defines = orig.defines; }
+    CmdSwitchDefine(const CmdSwitchDefine& orig) : CmdSwitchBase(orig) 
+    {
+        for (auto &d : orig.defines)
+        {
+            defines.push_back(std::make_unique<define>(*d.get()));
+        }
+    }
     virtual ~CmdSwitchDefine();
-    virtual int Parse(const char* data);
+    virtual int Parse(const char* data) override;
     struct define
     {
         std::string name;
@@ -206,7 +213,7 @@ class CmdSwitchDefine : public CmdSwitchBase
     define* GetValue(int index);
     virtual void SetArgNum(int an) override { if (defines.size()) defines.back()->argnum = an; }
   private:
-    std::vector<define*> defines;
+    std::vector<std::unique_ptr<define>> defines;
 };
 class CmdSwitchFile : public CmdSwitchString
 {
@@ -220,9 +227,9 @@ class CmdSwitchFile : public CmdSwitchString
     }
     CmdSwitchFile(CmdSwitchParser& parser) : CmdSwitchString(), Parser(&parser), argc(0), argv(nullptr) {}
 
-    virtual int Parse(const char* data);
+    virtual int Parse(const char* data) override;
     int GetCount() const { return argc; }
-    char** const GetValue() { return argv; }
+    char** const GetValue() { return argv.get(); }
 
   protected:
     void Dispatch(char* data);
@@ -230,7 +237,7 @@ class CmdSwitchFile : public CmdSwitchString
 
   private:
     int argc;
-    char** argv;
+    std::unique_ptr<char*[]> argv;
     CmdSwitchParser* Parser;
 };
 class CmdSwitchParser

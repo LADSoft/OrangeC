@@ -2695,8 +2695,8 @@ int put_exfunc(SYMBOL* sp, int notyet)
     IncGlobalFlag();
     if (chosenAssembler->gen->extern_define)
         chosenAssembler->gen->extern_define(sp, sp->tp->type == bt_func || sp->tp->type == bt_ifunc);
-    if (sp->linkage2 == lk_import && chosenAssembler->gen->import_define && sp->importfile)
-        chosenAssembler->gen->import_define(sp, sp->importfile);
+    if (sp->linkage2 == lk_import && chosenAssembler->gen->import_define)
+        chosenAssembler->gen->import_define(sp, sp->importfile ? sp->importfile : "");
     DecGlobalFlag();
     if (!icdFile)
         return notyet;

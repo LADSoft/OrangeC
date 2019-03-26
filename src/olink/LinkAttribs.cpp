@@ -24,40 +24,56 @@
 
 #include "LinkAttribs.h"
 #include "LinkExpression.h"
+void LinkAttribs::SetAddress(LinkExpression* Address)
+{
+    std::unique_ptr<LinkExpression> temp(Address);
+    address = std::move(temp);
+}
+void LinkAttribs::SetAlign(LinkExpression* Align)
+{
+    std::unique_ptr<LinkExpression> temp(Align);
+    align = std::move(temp);
+}
+void LinkAttribs::SetMaxSize(LinkExpression* Size)
+{
+    std::unique_ptr<LinkExpression> temp(Size);
+    maxSize = std::move(temp);
+}
+void LinkAttribs::SetSize(LinkExpression* Size)
+{
+    std::unique_ptr<LinkExpression> temp(Size);
+    size = std::move(temp);
+}
+void LinkAttribs::SetRoundSize(LinkExpression* RoundSize)
+{
+    std::unique_ptr<LinkExpression> temp(RoundSize);
+    roundSize = std::move(temp);
+}
+void LinkAttribs::SetVirtualOffset(LinkExpression* VirtualOffset)
+{
+    std::unique_ptr<LinkExpression> temp(VirtualOffset);
+    virtualOffset = std::move(temp);
+}
+void LinkAttribs::SetFill(LinkExpression* Fill)
+{
+    std::unique_ptr<LinkExpression> temp(Fill);
+    fill = std::move(temp);
+}
+
 LinkAttribs& LinkAttribs::operator=(const LinkAttribs& Attribs)
 {
     if (Attribs.address)
-        address = new LinkExpression(*Attribs.address);
-    else
-        address = nullptr;
+        address = std::make_unique<LinkExpression>(*Attribs.address);
     if (Attribs.align)
-        align = new LinkExpression(*Attribs.align);
-    else
-        align = nullptr;
+        align = std::make_unique<LinkExpression>(*Attribs.align);
     if (Attribs.maxSize)
-        maxSize = new LinkExpression(*Attribs.maxSize);
-    else
-        maxSize = nullptr;
+        maxSize = std::make_unique<LinkExpression>(*Attribs.maxSize);
     if (Attribs.roundSize)
-        roundSize = new LinkExpression(*Attribs.roundSize);
-    else
-        roundSize = nullptr;
+        roundSize = std::make_unique<LinkExpression>(*Attribs.roundSize);
     if (Attribs.virtualOffset)
-        virtualOffset = new LinkExpression(*Attribs.virtualOffset);
-    else
-        virtualOffset = nullptr;
+        virtualOffset = std::make_unique<LinkExpression>(*Attribs.virtualOffset);
     if (Attribs.fill)
-        fill = new LinkExpression(*Attribs.fill);
-    else
-        fill = nullptr;
+        fill = std::make_unique<LinkExpression>(*Attribs.fill);
     return *this;
 }
-LinkAttribs::~LinkAttribs()
-{
-    delete address;
-    delete align;
-    delete maxSize;
-    delete roundSize;
-    delete virtualOffset;
-    delete fill;
-}
+LinkAttribs::~LinkAttribs() {}

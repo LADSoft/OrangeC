@@ -51,12 +51,7 @@ int main(int argc, char** argv)
     dlPmMain downloader;
     return downloader.Run(argc, argv);
 }
-dlPmMain::~dlPmMain()
-{
-    for (int i = 0; i < sections.size(); i++)
-        delete sections[i];
-    delete[] stubData;
-}
+dlPmMain::~dlPmMain() {}
 void dlPmMain::GetSectionNames(std::vector<std::string>& names, ObjFile* file)
 {
     for (auto it = file->SectionBegin(); it != file->SectionEnd(); ++it)
@@ -72,9 +67,9 @@ void dlPmMain::GetInputSections(const std::vector<std::string>& names, ObjFile* 
         ObjSection* s = file->FindSection(name);
         ObjInt size = s->GetSize()->Eval(0);
         ObjInt addr = s->GetOffset()->Eval(0);
-        Section* p = new Section(addr, size);
-        p->data = new char[size];
-        sections.push_back(p);
+        sections.push_back(std::make_unique<Section>(addr, size));
+        sections.back()->data = std::make_unique<char[]>(size);
+        Section *p = sections.back().get();
         s->ResolveSymbols(factory);
         ObjMemoryManager& m = s->GetMemoryManager();
         int ofs = 0;
@@ -128,9 +123,9 @@ void dlPmMain::GetInputSections(const std::vector<std::string>& names, ObjFile* 
                 else
                 {
                     if ((*it)->IsEnumerated())
-                        memset(p->data + ofs, (*it)->GetFill(), msize);
+                        memset(p->data.get() + ofs, (*it)->GetFill(), msize);
                     else
-                        memcpy(p->data + ofs, mdata, msize);
+                        memcpy(p->data.get() + ofs, mdata, msize);
                 }
                 ofs += msize;
             }
@@ -149,12 +144,10 @@ bool dlPmMain::ReadSections(const std::string& path)
     fclose(in);
     if (!ieee.GetAbsolute())
     {
-        delete file;
         Utils::fatal("Input file is in relative format");
     }
     if (ieee.GetStartAddress() == nullptr)
     {
-        delete file;
         Utils::fatal("No start address specified");
     }
     startAddress = ieee.GetStartAddress()->Eval(0);
@@ -243,8 +236,9 @@ bool dlPmMain::LoadStub(const std::string& exeName)
         int preHeader = 0x40;
         int totalHeader = (preHeader + relocSize + 15) & ~15;
         stubSize = (totalHeader + bodySize + 15) & ~15;
-        stubData = new char[stubSize];
-        memset(stubData, 0, stubSize);
+        stubData = std::make_unique<char[]>(stubSize);
+        char *pstubData = stubData.get();
+        memset(pstubData, 0, stubSize);
         int newSize = bodySize + totalHeader;
         if (newSize & 511)
             newSize += 512;
@@ -252,15 +246,15 @@ bool dlPmMain::LoadStub(const std::string& exeName)
         mzHead.image_length_DIV_512 = newSize / 512;
         mzHead.offset_to_relocation_table = 0x40;
         mzHead.n_header_paragraphs = totalHeader / 16;
-        memcpy(stubData, &mzHead, sizeof(mzHead));
-        *(unsigned*)(stubData + 0x3c) = stubSize;
+        memcpy(pstubData, &mzHead, sizeof(mzHead));
+        *(unsigned*)(pstubData + 0x3c) = stubSize;
         if (relocSize)
         {
             file->seekg(oldReloc, std::ios::beg);
-            file->read(stubData + 0x40, relocSize);
+            file->read(pstubData + 0x40, relocSize);
         }
         file->seekg(oldHeader, std::ios::beg);
-        file->read(stubData + totalHeader, bodySize);
+        file->read(pstubData + totalHeader, bodySize);
         if (!file->eof() && file->fail())
         {
             delete file;
@@ -297,8 +291,8 @@ int dlPmMain::Run(int argc, char** argv)
     std::fstream out(outputName, std::ios::out | std::ios::binary);
     if (!out.fail())
     {
-        Section* s = sections[0];
-        out.write(stubData, stubSize);
+        Section* s = sections[0].get();
+        out.write(stubData.get(), stubSize);
         const char* sig = "LSPM";
         unsigned len = 20;  // size of header
         // write header
@@ -308,7 +302,7 @@ int dlPmMain::Run(int argc, char** argv)
         out.write((char*)&s->size, sizeof(s->size));
         out.write((char*)&startAddress, sizeof(startAddress));
         // end of header
-        out.write((char*)s->data, s->size);
+        out.write((char*)s->data.get(), s->size);
         out.close();
         return !!out.fail();
     }

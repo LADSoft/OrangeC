@@ -76,29 +76,9 @@ class SymbolTable
         else
             return nullptr;
     }
-    void Add(Symbol* symbol)
-    {
-        hashTable[symbol->GetName()] = symbol;
-        symList.push_back(symbol);
-    }
-    void Remove(Symbol* symbol)
-    {
-        auto it = hashTable.find(symbol->GetName());
-        if (it != hashTable.end())
-        {
-            hashTable.erase(it);
-            for (auto it = symList.begin(); it != symList.end(); ++it)
-            {
-                if (*it == symbol)
-                {
-                    symList.erase(it);
-                    break;
-                }
-            }
-            delete symbol;
-        }
-    }
-    typedef std::deque<Symbol*>::iterator iterator;
+    void Add(Symbol* symbol);
+    void Remove(Symbol* symbol);
+    typedef std::deque<std::unique_ptr<Symbol>>::iterator iterator;
     iterator begin() { return symList.begin(); }
     iterator end() { return symList.end(); }
 
@@ -110,6 +90,6 @@ class SymbolTable
 
   private:
     std::map<std::string, Symbol*> hashTable;
-    std::deque<Symbol*> symList;
+    std::deque<std::unique_ptr<Symbol>> symList;
 };
 #endif

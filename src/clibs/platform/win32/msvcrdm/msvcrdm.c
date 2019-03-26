@@ -46,6 +46,9 @@ extern void _import _assert(const char*, const char*, int);
 extern char _import _iob;
 extern int _import* _errno();
 extern int _import* __doserrno();
+#undef _daylight;
+#undef _timezone;
+#undef _tzname
 extern int _import _daylight;
 extern int _import _timezone;
 extern char* _import _tzname;
@@ -161,5 +164,5 @@ void __threadinit(void) {}
 int* _RTL_FUNC __GetErrno(void) { return _errno(); }
 int* _RTL_FUNC __GetDosErrno(void) { return __doserrno(); }
 int* _RTL_FUNC __getDaylight(void) { return &_daylight; }
-int* _RTL_FUNC __getTimezone(void) { return &_timezone; }
+long* _RTL_FUNC __getTimezone(void) { return &_timezone; }
 char** _RTL_FUNC __getTzName(void) { return &_tzname; }

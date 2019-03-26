@@ -30,7 +30,7 @@ class Instruction;
 
 #include <fstream>
 #include <deque>
-
+#include <memory>
 static const int AddressWidth = 4;
 static const int Bytes = 8;
 
@@ -48,8 +48,8 @@ class Listing
   public:
     Listing();
     ~Listing();
-    void Add(Instruction* ins, int lineno, bool inMacro) { list.push_back(new ListedLine(ins, lineno)); }
-    void Add(Label* lbl, int lineno, bool inMacro) { list.push_back(new ListedLine(lbl, lineno)); }
+    void Add(Instruction* ins, int lineno, bool inMacro) { list.push_back(std::make_unique<ListedLine>(ins, lineno)); }
+    void Add(Label* lbl, int lineno, bool inMacro) { list.push_back(std::make_unique<ListedLine>(lbl, lineno)); }
     bool Write(std::string& listingName, std::string& inName, bool listMacros);
     void SetBigEndian(bool flag) { bigEndian = flag; }
 
@@ -57,7 +57,7 @@ class Listing
     void ListLine(std::fstream& out, std::string& line, ListedLine* cur, bool macro);
 
   private:
-    std::deque<ListedLine*> list;
+    std::deque<std::unique_ptr<ListedLine>> list;
     std::string blanks;
     std::string zeros;
     bool bigEndian;

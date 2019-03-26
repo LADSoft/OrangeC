@@ -47,7 +47,8 @@ class InputFile
         inComment(false),
         commentLine(0),
         endedWithoutEOL(false),
-        file(nullptr)
+        file(nullptr),
+        utf8BOM(false)
     {
     }
     virtual ~InputFile()
@@ -62,6 +63,7 @@ class InputFile
             file = stdin;
         else
             file = fopen(name.c_str(), "r");
+        CheckUTF8BOM();
         return file != nullptr;
     }
     int GetLineNo() { return lineno; }
@@ -79,12 +81,15 @@ class InputFile
     std::string GetErrorName(bool full, std::string& name);
     virtual int StripComment(char* line) { return strlen(line); }
     bool ReadLine(char* line);
+    void CheckUTF8BOM();
 
   protected:
     bool inComment;
     int commentLine;
     int lineno;
     int errlineno;
+    bool utf8BOM; // just cache whether it exists, we don't actually use it at this point though.
+                  // input files are assumed to be UTF8 anyway...
 
   private:
     FILE* file;

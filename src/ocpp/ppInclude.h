@@ -106,8 +106,8 @@ class ppInclude
 
   private:
     static bool system;
-    std::list<ppFile*> files;
-    ppFile* current;
+    std::list<std::unique_ptr<ppFile>> files;
+    std::unique_ptr<ppFile> current;
     ppDefine* define;
     bool unsignedchar;
     bool c89;

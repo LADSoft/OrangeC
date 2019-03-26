@@ -114,7 +114,10 @@ int _RTL_FUNC fgetc(FILE *stream)
     }
     stream->extended->orient = __or_narrow;
     if (stream->flags & _F_EOF)
-        return EOF;
+       if (isatty(fileno(stream)))
+           stream->flags &= ~(_F_XEOF | _F_EOF);
+       else
+           return EOF;
     stream->flags &= ~_F_VBUF;
     if (!(stream->flags & _F_READ)) {
         stream->flags |= _F_ERR;
@@ -133,8 +136,6 @@ int _RTL_FUNC fgetc(FILE *stream)
         stream->flags |= _F_IN;
         stream->level = 0;
     }
-    if (stream->flags & _F_EOF)
-        return EOF;
     if (stream->flags & _F_UNGETC) {
         rv = stream->hold;
         stream->hold = 0;

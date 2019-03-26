@@ -91,3 +91,15 @@ bool InputFile::ReadLine(char* line)
     }
     return false;
 }
+void InputFile::CheckUTF8BOM()
+{
+    static unsigned char BOM[] = { 0xef, 0xbb, 0xbf };
+    unsigned char buf[3];
+    if (3 == fread(buf, 1, 3, file))
+    {
+       utf8BOM = !memcmp(BOM, buf, 3);
+       if (utf8BOM)
+           return;
+    }
+    fseek(file, 0, SEEK_SET);
+}

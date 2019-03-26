@@ -34,22 +34,22 @@
 #include <iostream>
 const char* Lexer::preData =
     "%define __SECT__\n"
-    "%imacro	data1	0+ .native\n"
+    "%imacro	pdata1	0+ .native\n"
     "	[db %1]\n"
     "%endmacro\n"
     "%imacro	.word	0+ .native\n"
     "	[dw %1]\n"
     "%endmacro\n"
-    "%imacro	data2	0+ .native\n"
+    "%imacro	pdata2	0+ .native\n"
     "	[dw %1]\n"
     "%endmacro\n"
-    "%imacro	data4	0+ .native\n"
+    "%imacro	pdata4	0+ .native\n"
     "	[dd %1]\n"
     "%endmacro\n"
     "%imacro	.long	0+ .native\n"
     "	[dd %1]\n"
     "%endmacro\n"
-    "%imacro	data8	0+ .native\n"
+    "%imacro	pdata8	0+ .native\n"
     "	[dq %1]\n"
     "%endmacro\n"
     "%imacro	.byte	0+ .native\n"
@@ -101,8 +101,8 @@ const char* Lexer::preData =
     "%define __SECT__ [section code]\n"
     "__SECT__\n"
     "%endmacro\n"
-    "%imacro	.data 0 .nolist\n"
-    "%define __SECT__ [section data]\n"
+    "%imacro	.pdata 0 .nolist\n"
+    "%define __SECT__ [section pdata]\n"
     "__SECT__\n"
     "%endmacro\n"
     "%imacro	.bss 0 .nolist\n"
@@ -150,50 +150,52 @@ const char* Lexer::preData =
 
 void Instruction::Optimize(Section* sect, int pc, bool last)
 {
-    if (data && size >= 3 && data[0] == 0x0f && data[1] == 0x0f && (data[2] == 0x9a || data[2] == 0xea))
+
+    unsigned char *pdata = data.get();
+    if (pdata && size >= 3 && pdata[0] == 0x0f && pdata[1] == 0x0f && (pdata[2] == 0x9a || pdata[2] == 0xea))
     {
         if (fixups.size() != 1)
         {
             std::cout << "Far branch cannot be resolved" << std::endl;
-            memcpy(data, data + 2, size - 2);
+            memcpy(pdata, pdata + 2, size - 2);
             size -= 2;
         }
         else
         {
-            Fixup* f = fixups[0];
+            Fixup* f = fixups[0].get();
             AsmExprNode* expr = AsmExpr::Eval(f->GetExpr(), pc);
             if (expr->IsAbsolute())
             {
-                memcpy(data, data + 1, size - 1);
+                memcpy(pdata, pdata + 1, size - 1);
                 size -= 3;
                 f->SetInsOffs(f->GetInsOffs() - 1);
-                data[0] = 0x0e;  // push cs
-                int n = data[f->GetInsOffs() - 1];
+                pdata[0] = 0x0e;  // push cs
+                int n = pdata[f->GetInsOffs() - 1];
                 if (n == 0xea)  // far jmp
                     n = 0xe9;   // jmp
                 else
                     n = 0xe8;  // call
-                data[f->GetInsOffs() - 1] = n;
+                pdata[f->GetInsOffs() - 1] = n;
                 f->SetRel(true);
                 f->SetRelOffs(f->GetSize());
                 f->SetAdjustable(true);
             }
             else
             {
-                memcpy(data, data + 2, size - 2);
+                memcpy(pdata, pdata + 2, size - 2);
                 size -= 2;
                 f->SetInsOffs(f->GetInsOffs() - 2);
                 AsmExprNode* n = new AsmExprNode(AsmExprNode::DIV, f->GetExpr(), new AsmExprNode(16));
-                f = new Fixup(n, 2, false);
+                fixups.push_back(std::make_unique<Fixup>(n, 2, false));
+                f = fixups.back().get();
                 f->SetInsOffs(size - 2);
-                fixups.push_back(f);
             }
             delete expr;
         }
     }
     if (type == CODE || type == DATA || type == RESERVE)
     {
-        for (auto fixup : fixups)
+        for (auto& fixup : fixups)
         {
             AsmExprNode* expr = fixup->GetExpr();
             expr = AsmExpr::Eval(expr, pc);
@@ -216,22 +218,22 @@ void Instruction::Optimize(Section* sect, int pc, bool last)
                         {
                             if (type == CODE)
                             {
-                                if (p >= 1 && data[p - 1] == 0xe9)
+                                if (p >= 1 && pdata[p - 1] == 0xe9)
                                 {
                                     if (o <= 127 && o >= -128 - ((n / 8) - 1))
                                     {
-                                        data[p - 1] = 0xeb;
+                                        pdata[p - 1] = 0xeb;
                                         size -= fixup->GetSize() - 1;
                                         fixup->SetSize(1);
                                         fixup->SetRelOffs(1);
                                         n = 8;
                                     }
                                 }
-                                else if (p >= 2 && ((data[p - 1] & 0xf0) == 0x80) && data[p - 2] == 0x0f)
+                                else if (p >= 2 && ((pdata[p - 1] & 0xf0) == 0x80) && pdata[p - 2] == 0x0f)
                                 {
                                     if (o <= 127 && o >= -128 - (n / 8))
                                     {
-                                        data[p - 2] = data[p - 1] - 0x80 + 0x70;
+                                        pdata[p - 2] = pdata[p - 1] - 0x80 + 0x70;
                                         size -= fixup->GetSize();
                                         fixup->SetInsOffs(p = fixup->GetInsOffs() - 1);
                                         fixup->SetSize(1);
@@ -283,12 +285,12 @@ void Instruction::Optimize(Section* sect, int pc, bool last)
                     {
                         // never get here on an x86
                         for (int i = n - 8; i >= 0; i -= 8)
-                            data[p + i / 8] = o >> i;
+                            pdata[p + i / 8] = o >> i;
                     }
                     else
                     {
                         for (int i = 0; i < n; i += 8)
-                            data[p + i / 8] = o >> i;
+                            pdata[p + i / 8] = o >> i;
                     }
                 }
                 else if (expr->GetType() == AsmExprNode::IVAL || expr->GetType() == AsmExprNode::FVAL)
@@ -302,13 +304,13 @@ void Instruction::Optimize(Section* sect, int pc, bool last)
                     switch (n)
                     {
                         case 32:
-                            o.ToFloat(data + p);
+                            o.ToFloat(pdata + p);
                             break;
                         case 64:
-                            o.ToDouble(data + p);
+                            o.ToDouble(pdata + p);
                             break;
                         case 80:
-                            o.ToLongDouble(data + p);
+                            o.ToLongDouble(pdata + p);
                             break;
                     }
                 }
@@ -345,6 +347,7 @@ int x64Parser::DoMath(char op, int left, int right)
 }
 void x64Parser::Setup(Section* sect)
 {
+    Section::NoShowError();
     if (sect->beValues[0] == 0)
         sect->beValues[0] = 32;  // 32 bit mode is the default
     Setprocessorbits(sect->beValues[0]);

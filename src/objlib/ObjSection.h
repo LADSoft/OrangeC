@@ -87,7 +87,7 @@ class ObjSection : public ObjWrapper
     bool GetUsed() const { return used; }
     void SetIndex(ObjInt Index) { index = Index; }
     void Add(ObjMemory* Memory) { memoryManager.Add(Memory); }
-    void Add(ObjMemory::DebugTagContainer* Tags) { memoryManager.Add(Tags); }
+    void Add(std::unique_ptr<ObjMemory::DebugTagContainer> Tags) { memoryManager.Add(std::move(Tags)); }
     void SetBase(ObjInt Base) { memoryManager.SetBase(Base); }
     ObjInt GetBase() { return memoryManager.GetBase(); }
     ObjInt GetAbsSize() { return memoryManager.GetSize(); }

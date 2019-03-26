@@ -648,7 +648,7 @@ void oa_put_code(OCODE* cd)
     {
         if (cd->ins)
         {
-            if ((((Instruction*)cd->ins)->GetData()[0] & 0xf0) == 0x70 || ((Instruction*)cd->ins)->GetData()[0] == 0xeb)
+            if ((((Instruction*)cd->ins)->GetBytes()[0] & 0xf0) == 0x70 || ((Instruction*)cd->ins)->GetBytes()[0] == 0xeb)
             {
                 bePrintf("\tshort");
             }
@@ -663,7 +663,7 @@ void oa_put_code(OCODE* cd)
     {
         if (cd->ins)
         {
-            if (((Instruction*)cd->ins)->GetData()[0] == 0xeb)
+            if (((Instruction*)cd->ins)->GetBytes()[0] == 0xeb)
             {
                 bePrintf("\tshort");
                 nosize = true;

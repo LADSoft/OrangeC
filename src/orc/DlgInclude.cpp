@@ -28,11 +28,10 @@
 #include "ResourceData.h"
 #include <stdexcept>
 
-DlgInclude::~DlgInclude() { delete data; }
+DlgInclude::~DlgInclude() {}
 void DlgInclude::SetData(ResourceData* rdata)
 {
-    delete data;
-    data = rdata;
+    data.reset(rdata);
 }
 void DlgInclude::WriteRes(ResFile& resFile)
 {
@@ -46,8 +45,8 @@ void DlgInclude::ReadRC(RCFile& rcFile)
     resInfo.SetFlags(resInfo.GetFlags() | ResourceInfo::Pure);
     resInfo.ReadRC(rcFile, false);
     if (!rcFile.IsString())
-        throw new std::runtime_error("Expected quoted string");
+        throw std::runtime_error("Expected quoted string");
     std::wstring wname = rcFile.GetString();
     std::string name = rcFile.CvtString(wname);
-    data = new ResourceData((unsigned char*)name.c_str(), name.size() + 1);
+    data = std::make_unique<ResourceData>((unsigned char*)name.c_str(), name.size() + 1);
 }

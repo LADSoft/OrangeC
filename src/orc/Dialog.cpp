@@ -30,14 +30,13 @@
 #    include <windows.h>
 #endif
 #include <stdexcept>
-Control::~Control()
+Control::~Control() {}
+void Control::Add(ResourceData* rd) 
 {
-    for (auto it = begin(); it != end(); ++it)
-    {
-        ResourceData* d = *it;
-        delete d;
-    }
+    std::unique_ptr<ResourceData> temp(rd);
+    data.push_back(std::move(temp)); 
 }
+
 void Control::WriteRes(ResFile& resFile, bool ex, bool last)
 {
     (void)last;
@@ -62,7 +61,7 @@ void Control::WriteRes(ResFile& resFile, bool ex, bool last)
     cls.WriteRes(resFile);
     text.WriteRes(resFile);
     int len = 0;
-    for (auto res : *this)
+    for (auto& res : *this)
     {
         len += res->GetLen();
     }
@@ -70,7 +69,7 @@ void Control::WriteRes(ResFile& resFile, bool ex, bool last)
     if (len)
     {
         resFile.Align();
-        for (auto res : *this)
+        for (auto& res : *this)
         {
             if (res->GetLen())
             {
@@ -210,7 +209,7 @@ void Control::GetClass(RCFile& rcFile)
                 cls.SetId(Scrollbar);
                 break;
             default:
-                throw new std::runtime_error("Unknown dialog control class");
+                throw std::runtime_error("Unknown dialog control class");
         }
 }
 void Control::ReadGeneric(RCFile& rcFile, bool extended)
@@ -314,14 +313,14 @@ void Control::ReadRC(RCFile& rcFile, bool extended)
 #endif
     rcFile.NeedEol();
 }
-Dialog::~Dialog()
+Dialog::~Dialog() {}
+
+void Dialog::Add(Control* Ctrl) 
 {
-    for (auto it = begin(); it != end(); ++it)
-    {
-        Control* c = *it;
-        delete c;
-    }
+    std::unique_ptr<Control> temp(Ctrl);
+    controls.push_back(std::move(temp)); 
 }
+
 void Dialog::WriteRes(ResFile& resFile)
 {
     Resource::WriteRes(resFile);
@@ -361,7 +360,7 @@ void Dialog::WriteRes(ResFile& resFile)
     }
 #endif
     int count = controls.size();
-    for (auto res : *this)
+    for (auto& res : *this)
     {
         resFile.Align();
         res->WriteRes(resFile, extended, !--count);
@@ -444,19 +443,19 @@ void Dialog::ReadSettings(RCFile& rcFile)
             case Lexer::HELP:
                 rcFile.NextToken();
                 if (!extended)
-                    throw new std::runtime_error("Need DialogEx");
+                    throw std::runtime_error("Need DialogEx");
                 helpIndex = rcFile.GetNumber();
                 break;
             case Lexer::WEIGHT:
                 rcFile.NextToken();
                 if (!extended)
-                    throw new std::runtime_error("Need DialogEx");
+                    throw std::runtime_error("Need DialogEx");
                 weight = rcFile.GetNumber();
                 break;
             case Lexer::ITALIC:
                 rcFile.NextToken();
                 if (!extended)
-                    throw new std::runtime_error("Need DialogEx");
+                    throw std::runtime_error("Need DialogEx");
                 italics = rcFile.GetNumber();
                 break;
             default:
@@ -498,9 +497,8 @@ void Dialog::ReadRC(RCFile& rcFile)
     rcFile.NeedBegin();
     while (Control::ValidType(rcFile))
     {
-        Control* c = new Control;
-        controls.push_back(c);
-        c->ReadRC(rcFile, extended);
+        controls.push_back(std::make_unique<Control>());
+        controls.back()->ReadRC(rcFile, extended);
     }
     rcFile.NeedEnd();
 }

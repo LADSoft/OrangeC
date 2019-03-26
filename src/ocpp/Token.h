@@ -27,6 +27,7 @@
 
 #include <string>
 #include <map>
+#include <memory>
 #include "Floating.h"
 
 typedef std::map<std::string, int> KeywordHash;
@@ -216,11 +217,10 @@ class Tokenizer
         caseInsensitive(false)
     {
     }
-    virtual ~Tokenizer() { delete currentToken; }
+    virtual ~Tokenizer() { }
     void Reset(const std::string& Line)
     {
         line = Line;
-        delete currentToken;
         currentToken = nullptr;
     }
     const Token* Next();
@@ -240,7 +240,7 @@ class Tokenizer
   private:
     KeywordHash* keywordTable;
     std::string line;
-    Token* currentToken;
+    std::unique_ptr<Token> currentToken;
     bool caseInsensitive;
 };
 

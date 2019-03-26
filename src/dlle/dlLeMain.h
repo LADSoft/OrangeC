@@ -31,6 +31,7 @@
 #include "ObjTypes.h"
 #include "CmdSwitch.h"
 #include "LEHeader.h"
+#include <memory>
 class ObjFile;
 class ObjFactory;
 class LEObject;
@@ -42,7 +43,7 @@ class dlLeMain
 {
   public:
     dlLeMain() : mode(eLe), rnt(nullptr) {}
-    ~dlLeMain();
+    ~dlLeMain() { }
 
     int Run(int argc, char** argv);
     enum Mode
@@ -77,7 +78,7 @@ class dlLeMain
     ResidentNameTable* rnt;
     enum Mode mode;
     int stubSize;
-    char* stubData;
+    std::unique_ptr<char[]> stubData;
     LEHeader header;
     static unsigned fileVersion;
     ObjFactory* factory;

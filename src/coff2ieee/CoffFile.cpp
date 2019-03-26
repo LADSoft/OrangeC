@@ -32,22 +32,11 @@
 
 CoffFile::~CoffFile()
 {
-    if (!name.empty() && inputFile)
-        delete inputFile;
-
-    delete[] sections;
-    delete[] symbols;
-    delete[] strings;
-    for (int i = 0; i < relocs.size(); i++)
-    {
-        CoffReloc* reloc = relocs[i];
-        delete[] reloc;
-    }
 }
 bool CoffFile::Load()
 {
     if (!name.empty())
-        inputFile = new std::fstream(name, std::ios::binary | std::ios::in);
+        inputFile = std::make_unique<std::fstream>(name, std::ios::binary | std::ios::in);
     if (inputFile && inputFile->is_open())
     {
         inputFile->read((char*)&header, sizeof(header));
@@ -55,20 +44,20 @@ bool CoffFile::Load()
         {
             if (header.Machine == IMAGE_FILE_MACHINE_I386)
             {
-                sections = new CoffSection[header.NumberOfSections + 1];
-                inputFile->read((char*)sections, header.NumberOfSections * sizeof(CoffSection));
+                sections = std::make_unique<CoffSection[]>(header.NumberOfSections + 1);
+                inputFile->read((char*)sections.get(), header.NumberOfSections * sizeof(CoffSection));
                 if (!inputFile->fail() && !inputFile->eof())
                 {
                     inputFile->seekg(header.PointerToSymbolTable + libOffset);
-                    symbols = new CoffSymbol[header.NumberOfSymbols + 2];
-                    inputFile->read((char*)symbols, header.NumberOfSymbols * sizeof(CoffSymbol));
+                    symbols = std::make_unique<CoffSymbol[]>(header.NumberOfSymbols + 2);
+                    inputFile->read((char*)symbols.get(), header.NumberOfSymbols * sizeof(CoffSymbol));
                     if (!inputFile->fail() && !inputFile->eof())
                     {
                         unsigned size;
                         inputFile->read((char*)&size, sizeof(size));
-                        strings = new char[size];
-                        memcpy(strings, &size, sizeof(size));
-                        inputFile->read(strings + sizeof(size), size - sizeof(size));
+                        strings = std::make_unique<char[]>(size);
+                        memcpy(strings.get(), &size, sizeof(size));
+                        inputFile->read(strings.get() + sizeof(size), size - sizeof(size));
                         if (!inputFile->fail())
                         {
                             int i;
@@ -91,8 +80,8 @@ bool CoffFile::Load()
                                         relocCount = temp.VirtualAddress + 1;
                                     }
 
-                                    thisReloc = new CoffReloc[relocCount];
-                                    relocs.push_back(thisReloc);
+                                    relocs.push_back(std::make_unique<CoffReloc[]>(relocCount));
+                                    thisReloc = relocs.back().get();
                                     inputFile->seekg(sections[i].PointerToRelocations + libOffset);
                                     inputFile->read((char*)thisReloc, relocCount * sizeof(CoffReloc));
                                     if (inputFile->fail())
@@ -131,7 +120,7 @@ bool CoffFile::ScanSymbols()
                     n = 8;
                 if (!strncmp(symbols[i].Name, sections[symbols[i].SectionNumber - 1].Name, n))
                 {
-                    sectionSymbols[symbols[i].SectionNumber - 1] = (symbols + i);
+                    sectionSymbols[symbols[i].SectionNumber - 1] = (symbols.get() + i);
                 }
             }
         }
@@ -156,19 +145,19 @@ std::string CoffFile::GetSectionName(int sect)
     {
         std::string name;
         CoffSymbol* sym = sectionSymbols[sect] + sectionSymbols[sect]->NumberOfAuxSymbols + 1;
-        while (sym < symbols + header.NumberOfSymbols)
+        while (sym < symbols.get() + header.NumberOfSymbols)
         {
             if (sym->SectionNumber == sect + 1)
                 break;
             sym += sym->NumberOfAuxSymbols + 1;
         }
-        if (sym > symbols + header.NumberOfSymbols)
+        if (sym > symbols.get() + header.NumberOfSymbols)
         {
             Utils::fatal("Comdat symbol name not found, exiting");
         }
         if (*(unsigned*)sym->Name == 0)
         {
-            name = strings + *(unsigned*)(sym->Name + 4);
+            name = strings.get() + *(unsigned*)(sym->Name + 4);
         }
         else
         {
@@ -296,7 +285,7 @@ ObjFile* CoffFile::ConvertToObject(std::string outputName, ObjFactory& factory)
             std::string symbolName;
             if (*(unsigned*)sname == 0)
             {
-                symbolName = strings + *(unsigned*)(sname + 4);
+                symbolName = strings.get() + *(unsigned*)(sname + 4);
             }
             else
             {
@@ -325,7 +314,7 @@ ObjFile* CoffFile::ConvertToObject(std::string outputName, ObjFactory& factory)
                 std::string symbolName;
                 if (*(unsigned*)sname == 0)
                 {
-                    symbolName = strings + *(unsigned*)(sname + 4);
+                    symbolName = strings.get() + *(unsigned*)(sname + 4);
                     if (symbolName == "_WinMain@16")
                         symbolName = "WinMain";
                 }
@@ -370,7 +359,7 @@ ObjFile* CoffFile::ConvertToObject(std::string outputName, ObjFactory& factory)
             {
                 inputFile->seekg(sections[i].PointerToRawData + libOffset);
                 int relocCount = sections[i].NumberOfRelocations;
-                CoffReloc* relocPointer = relocs[i];
+                CoffReloc* relocPointer = relocs[i].get();
                 if (relocCount == 0xffff && (sections[i].Characteristics & IMAGE_SCN_LNK_NRELOC_OVFL))
                 {
                     relocCount = relocPointer[0].VirtualAddress;

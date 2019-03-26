@@ -241,6 +241,8 @@ bool matchingCharTypes(TYPE* typ1, TYPE* typ2)
                 return true;
         }
     }
+    else if (typ1->type == bt_unsigned_short || typ1->type == bt_wchar_t)
+        return typ2->type == bt_unsigned_short || typ2->type == bt_wchar_t; 
     return false;
 }
 static char* putpointer(char* p, TYPE* tp)

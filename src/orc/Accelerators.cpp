@@ -41,7 +41,7 @@ void Accelerators::Key::ReadRC(RCFile& rcFile)
         if (str[0] == '^')
         {
             if (str.size() != 2)
-                throw new std::runtime_error("Invalid key sequence");
+                throw std::runtime_error("Invalid key sequence");
             if (str[1] == '^')
                 key = '^';
             else
@@ -50,7 +50,7 @@ void Accelerators::Key::ReadRC(RCFile& rcFile)
         else
         {
             if (str.size() != 1)
-                throw new std::runtime_error("Invalid key sequence");
+                throw std::runtime_error("Invalid key sequence");
             key = str[0];
         }
     }

@@ -9,7 +9,7 @@ class LinkerColumnsWithNameVirtualTable : public SQL3ReadOnlyVirtualTable
     };
 
   public:
-    LinkerColumnsWithNameVirtualTable(std::vector<sqlite3_int64>& Data, std::vector<ObjString*>& Names, int Columns,
+    LinkerColumnsWithNameVirtualTable(std::vector<sqlite3_int64>& Data, std::vector<ObjString>& Names, int Columns,
                                       bool primary = false);
     virtual ~LinkerColumnsWithNameVirtualTable() {}
     virtual void* Open();
@@ -25,7 +25,7 @@ class LinkerColumnsWithNameVirtualTable : public SQL3ReadOnlyVirtualTable
   private:
     std::string name, declarator;
     std::vector<sqlite3_int64>& data;
-    std::vector<ObjString*>& names;
+    std::vector<ObjString>& names;
     int columns;
     int rows;
     static int id;

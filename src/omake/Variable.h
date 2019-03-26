@@ -28,6 +28,7 @@
 #include <string>
 #include <map>
 #include <list>
+#include <memory>
 
 class Variable
 {
@@ -82,7 +83,7 @@ class VariableContainer
 {
   public:
     static VariableContainer* Instance();
-    ~VariableContainer() { Clear(); }
+    ~VariableContainer() { }
     Variable* Lookup(const std::string& name);
     void operator+(Variable* variable);
     void operator+=(Variable* variable) { operator+(variable); }
@@ -92,11 +93,11 @@ class VariableContainer
     {
         bool operator()(const std::string* one, const std::string* two) const { return *one < *two; }
     };
-    typedef std::map<const std::string*, Variable*, vlt>::iterator iterator;
+    typedef std::map<const std::string*, std::unique_ptr<Variable>, vlt>::iterator iterator;
     const iterator begin() { return variables.begin(); }
     const iterator end() { return variables.end(); }
 
-    typedef std::list<Variable*>::iterator PatternIterator;
+    typedef std::list<std::unique_ptr<Variable>>::iterator PatternIterator;
     const PatternIterator PatternBegin() { return patternVariables.begin(); }
     const PatternIterator PatternEnd() { return patternVariables.end(); }
 
@@ -104,8 +105,8 @@ class VariableContainer
     VariableContainer() {}
 
   private:
-    std::map<const std::string*, Variable*, vlt> variables;
-    std::list<Variable*> patternVariables;
+    std::map<const std::string*, std::unique_ptr<Variable>, vlt> variables;
+    std::list<std::unique_ptr<Variable>> patternVariables;
     static VariableContainer* instance;
 };
 

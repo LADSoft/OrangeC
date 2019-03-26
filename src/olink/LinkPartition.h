@@ -39,7 +39,7 @@ class ObjFile;
 
 class LinkPartition
 {
-    typedef std::vector<LinkOverlaySpecifier*> OverlayContainer;
+    typedef std::vector<std::unique_ptr<LinkOverlaySpecifier>> OverlayContainer;
 
   public:
     LinkPartition(LinkManager* Parent) : name(""), parent(Parent) {}
@@ -58,7 +58,7 @@ class LinkPartition
     bool CreateSeparateRegions(LinkManager* manager, CmdFiles& files, LinkTokenizer& spec);
     bool ParsePartitionSpec(LinkManager* manager, CmdFiles& files, LinkTokenizer& spec);
 
-    void Add(LinkOverlaySpecifier* ov) { overlays.push_back(ov); }
+    void Add(LinkOverlaySpecifier* ov);
     ObjInt PlacePartition(LinkManager* manager, ObjInt bottom, bool completeLink, int& overlayNum);
 
   private:
@@ -75,31 +75,27 @@ class LinkPartition
 class LinkPartitionSpecifier
 {
   public:
-    LinkPartitionSpecifier(LinkPartition* Partition) : partition(Partition), symbol(nullptr) {}
-    LinkPartitionSpecifier(LinkExpressionSymbol* Symbol) : partition(nullptr), symbol(Symbol) {}
-    ~LinkPartitionSpecifier()
-    {
-        delete partition;
-        delete symbol;
-    }
-    LinkPartition* GetPartition() { return partition; }
-    LinkExpressionSymbol* GetSymbol() { return symbol; }
+    LinkPartitionSpecifier(LinkPartition* Partition) : partition(Partition) {}
+    LinkPartitionSpecifier(LinkExpressionSymbol* Symbol) : symbol(Symbol) {}
+    ~LinkPartitionSpecifier() { }
+    LinkPartition* GetPartition() { return partition.get(); }
+    LinkExpressionSymbol* GetSymbol() { return symbol.get();; }
 
   private:
-    LinkPartition* partition;
-    LinkExpressionSymbol* symbol;
+    std::unique_ptr<LinkPartition> partition;
+    std::unique_ptr<LinkExpressionSymbol> symbol;
 };
 class LinkOverlaySpecifier
 {
   public:
-    LinkOverlaySpecifier(LinkOverlay* Overlay) : overlay(Overlay), symbol(nullptr) {}
-    LinkOverlaySpecifier(LinkExpressionSymbol* Symbol) : overlay(nullptr), symbol(Symbol) {}
+    LinkOverlaySpecifier(LinkOverlay* Overlay) : overlay(Overlay) {}
+    LinkOverlaySpecifier(LinkExpressionSymbol* Symbol) : symbol(Symbol) {}
     ~LinkOverlaySpecifier();
-    LinkOverlay* GetOverlay() { return overlay; }
-    LinkExpressionSymbol* GetSymbol() { return symbol; }
+    LinkOverlay* GetOverlay() { return overlay.get(); }
+    LinkExpressionSymbol* GetSymbol() { return symbol.get(); }
 
   private:
-    LinkOverlay* overlay;
-    LinkExpressionSymbol* symbol;
+    std::unique_ptr<LinkOverlay> overlay;
+    std::unique_ptr<LinkExpressionSymbol> symbol;
 };
 #endif

@@ -97,7 +97,7 @@ int ppMain::Run(int argc, char* argv[])
     Tokenizer::SetC99(c99Mode.GetValue());
     for (auto it = files.FileNameBegin(); it != files.FileNameEnd(); ++it)
     {
-        PreProcessor pp(*(*it), srchPth, sysSrchPth, false, trigraphs.GetValue(), assembly.GetValue() ? '%' : '#', false,
+        PreProcessor pp((*it), srchPth, sysSrchPth, false, trigraphs.GetValue(), assembly.GetValue() ? '%' : '#', false,
                         !c99Mode.GetValue(), !disableExtensions.GetValue());
         if (c99Mode.GetValue())
         {
@@ -154,7 +154,7 @@ int ppMain::Run(int argc, char* argv[])
         if (!outputPath.GetValue().empty())
             working = outputPath.GetValue();
         else if (getenv("OCC_LEGACY_OPTIONS"))
-            working = Utils::QualifiedFile((*it)->c_str(), ".i");
+            working = Utils::QualifiedFile((*it).c_str(), ".i");
 
         std::ostream* outstream = nullptr;
         if (!working.empty())

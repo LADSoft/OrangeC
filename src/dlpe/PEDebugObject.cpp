@@ -44,14 +44,15 @@ void PEDebugObject::Setup(ObjInt& endVa, ObjInt& endPhys)
     }
     raw_addr = endPhys;
     size = initSize = fileName.size() + 2 + 32;
-    data = new unsigned char[512];
-    memset(data, 0, 512);
-    data[0] = 'L';
-    data[1] = 'S';
-    data[2] = '1';
-    data[3] = '4';
-    data[32] = fileName.size();
-    strcpy((char*)data + 33, fileName.c_str());
+    data = std::make_unique<unsigned char[]>(512);
+    unsigned char* pdata = data.get();
+    memset(pdata, 0, 512);
+    pdata[0] = 'L';
+    pdata[1] = 'S';
+    pdata[2] = '1';
+    pdata[3] = '4';
+    pdata[32] = fileName.size();
+    strcpy((char*)pdata + 33, fileName.c_str());
 
     endVa = ObjectAlign(objectAlign, endVa + size);
     endPhys = ObjectAlign(fileAlign, endPhys + initSize);

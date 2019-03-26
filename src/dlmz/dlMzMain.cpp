@@ -57,7 +57,7 @@ int main(int argc, char** argv)
     dlMzMain downloader;
     return downloader.Run(argc, argv);
 }
-dlMzMain::~dlMzMain() { delete data; }
+
 bool dlMzMain::GetMode()
 {
     mode = UNKNOWN;
@@ -87,20 +87,18 @@ bool dlMzMain::ReadSections(const std::string& path)
     fclose(in);
     if (!ieee.GetAbsolute())
     {
-        delete file;
         Utils::fatal("Input file is in relative format");
     }
     if (ieee.GetStartAddress() == nullptr)
     {
-        delete file;
         Utils::fatal("No start address specified");
     }
     if (file != nullptr)
     {
         if (mode == TINY)
-            data = new Tiny();
+            data = std::make_unique<Tiny>();
         else
-            data = new Real();
+            data = std::make_unique<Real>();
         return data->ReadSections(file, ieee.GetStartAddress());
     }
     return false;

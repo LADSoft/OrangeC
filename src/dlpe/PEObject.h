@@ -34,6 +34,8 @@
 #include <fstream>
 #include <deque>
 #include "ObjSection.h"
+#include <memory>
+
 class ObjFile;
 
 class ResourceContainer;
@@ -47,12 +49,8 @@ class PEObject
     {
         HeaderSize = 40
     };
-    PEObject(std::string Name) : data(nullptr), name(Name), size(0), initSize(0), virtual_addr(0), raw_addr(0), flags(0) {}
-    virtual ~PEObject()
-    {
-        if (data)
-            delete[] data;
-    }
+    PEObject(std::string Name) : name(Name), size(0), initSize(0), virtual_addr(0), raw_addr(0), flags(0) {}
+    virtual ~PEObject() {}
     virtual void Setup(ObjInt& endVa, ObjInt& endPhys) = 0;
     virtual void Fill() {}
     const std::string& GetName() { return name; }
@@ -79,7 +77,7 @@ class PEObject
     unsigned virtual_addr;
     unsigned raw_addr;
     unsigned flags;
-    unsigned char* data;
+    std::unique_ptr<unsigned char[]> data;
     static unsigned objectAlign;
     static unsigned fileAlign;
     static unsigned imageBase;
@@ -112,7 +110,7 @@ class PEDataObject : public PEObject
 class PEImportObject : public PEObject
 {
   public:
-    PEImportObject(std::deque<PEObject*>& Objects) : PEObject(".idata"), objects(Objects)
+    PEImportObject(std::deque<std::unique_ptr<PEObject>>& Objects) : PEObject(".idata"), objects(Objects)
     {
         SetFlags(WINF_INITDATA | WINF_READABLE | WINF_WRITEABLE | WINF_NEG_FLAGS);
     }
@@ -143,7 +141,7 @@ class PEImportObject : public PEObject
         std::deque<std::string> publicNames;
         std::deque<int> ordinals;
     };
-    std::deque<PEObject*>& objects;
+    std::deque<std::unique_ptr<PEObject>>& objects;
 };
 class PEExportObject : public PEObject
 {

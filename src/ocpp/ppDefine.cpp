@@ -36,6 +36,13 @@
 #include <cstdlib>
 
 static const int ellipses = 100;
+KeywordHash ppDefine::defTokens = {
+    { "(", openpa},
+    { ")", closepa},
+    { ",", comma},
+    { "...", ellipses},
+
+};
 
 ppDefine::ppDefine(bool UseExtensions, ppInclude* Include, bool C89, bool Asmpp) :
     expr(false),
@@ -50,7 +57,6 @@ ppDefine::ppDefine(bool UseExtensions, ppInclude* Include, bool C89, bool Asmpp)
     if (sde)
         source_date_epoch = (time_t)strtoul(sde, nullptr, 10);
     SetDefaults();
-    InitHash();
     expr.SetDefine(this);
 }
 bool ppDefine::Check(int token, std::string& line)
@@ -78,13 +84,6 @@ bool ppDefine::Check(int token, std::string& line)
             break;
     }
     return rv;
-}
-void ppDefine::InitHash()
-{
-    defTokens["("] = openpa;
-    defTokens[")"] = closepa;
-    defTokens[","] = comma;
-    defTokens["..."] = ellipses;
 }
 #include <iostream>
 ppDefine::Definition* ppDefine::Define(const std::string& name, std::string& value, DefinitionArgList* args, bool permanent,

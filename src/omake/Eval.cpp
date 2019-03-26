@@ -99,8 +99,10 @@ void Eval::Clear()
     VPath = "";
     GPath = "";
     internalWarnings = false;
+    OS::EvalTake();
     ruleStack.clear();
     foreachVars.clear();
+    OS::EvalGive();
     macroset.clear();
     errcount = 0;
 }
@@ -277,6 +279,7 @@ std::string Eval::ParseMacroLine(const std::string& in)
 Variable* Eval::LookupVariable(const std::string& name)
 {
     Variable* v = nullptr;
+    OS::EvalTake();
     for (auto it = foreachVars.begin(); it != foreachVars.end() && v == nullptr; ++it)
     {
         if ((*it)->GetName() == name)
@@ -294,6 +297,7 @@ Variable* Eval::LookupVariable(const std::string& name)
     {
         v = VariableContainer::Instance()->Lookup(name);
     }
+    OS::EvalGive();
     return v;
 }
 bool Eval::AutomaticVar(const std::string& name, std::string& rv)
@@ -321,7 +325,7 @@ bool Eval::AutomaticVar(const std::string& name, std::string& rv)
                 ++it;
             if (it != ruleList->end())
             {
-                if (!rule || *it != rule)
+                if (!rule || (*it).get() != rule)
                 {
                     extra = (*it)->GetPrerequisites();
                     rv = ExtractFirst(extra, " ");
@@ -332,9 +336,9 @@ bool Eval::AutomaticVar(const std::string& name, std::string& rv)
         }
         else if (name[0] == '^')  // all prereq or prereq of rules that have appeared
         {
-            for (auto item : *ruleList)
+            for (auto& item : *ruleList)
             {
-                if (item == rule)
+                if (item.get() == rule)
                     break;
                 extra = item->GetPrerequisites();
                 while (!extra.empty())
@@ -353,9 +357,9 @@ bool Eval::AutomaticVar(const std::string& name, std::string& rv)
         }
         else if (name[0] == '+')  // same with repetition
         {
-            for (auto item : *ruleList)
+            for (auto& item : *ruleList)
             {
-                if (item == rule)
+                if (item.get() == rule)
                     break;
                 extra = item->GetPrerequisites();
                 while (!extra.empty())
@@ -414,9 +418,9 @@ bool Eval::AutomaticVar(const std::string& name, std::string& rv)
         else if (name[0] == '|')  // or names of order-only prerequisites
         {
             std::set<std::string> set;
-            for (auto item : *ruleList)
+            for (auto& item : *ruleList)
             {
-                if (item == rule)
+                if (item.get() == rule)
                     break;
                 extra = item->GetOrderPrerequisites();
                 while (!extra.empty())
@@ -493,7 +497,7 @@ std::string Eval::ExpandMacro(const std::string& name)
         return rv;
     if (name == ".VARIABLES")
     {
-        for (auto var : *VariableContainer::Instance())
+        for (auto& var : *VariableContainer::Instance())
         {
             if (!rv.empty())
                 rv += " ";
@@ -1223,7 +1227,7 @@ std::string Eval::wildcardinternal(std::string& names)
     {
         if (!rv.empty())
             rv += " ";
-        rv += *(*it);
+        rv += (*it);
     }
     return rv;
 }
@@ -1372,8 +1376,8 @@ std::string Eval::foreach (const std::string& arglist)
         list = l.Evaluate();
         if (list.find_first_not_of(' ') != std::string::npos)
         {
-            Variable* v = new Variable(var, list, Variable::f_simple, Variable::o_file);
-            foreachVars.push_front(v);
+            std::unique_ptr<Variable> v = std::make_unique<Variable>(var, list, Variable::f_simple, Variable::o_file);
+            foreachVars.push_front(v.get());
             while (!list.empty())
             {
                 std::string value = ExtractFirst(list, " ");
@@ -1384,7 +1388,6 @@ std::string Eval::foreach (const std::string& arglist)
                 rv += t.Evaluate();
             }
             foreachVars.pop_front();
-            delete v;
         }
     }
     return rv;

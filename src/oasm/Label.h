@@ -40,24 +40,16 @@ class Label
         sect(Sect),
         publc(false),
         extrn(false),
-        node(nullptr),
         sym(nullptr),
         objSection(nullptr)
     {
     }
-    ~Label()
-    {
-        if (node)
-            delete node;
-    }
     int GetLabel() { return label; }
     std::string& GetName() { return name; }
-    AsmExprNode* GetOffset() { return node; }
+    AsmExprNode* GetOffset() { return node.get(); }
     void SetOffset(AsmExprNode* Offset)
     {
-        if (node)
-            delete node;
-        node = Offset;
+        node.reset(Offset);
     }
     void SetOffset(int offs) { SetOffset(new AsmExprNode(offs)); }
     int GetSect() { return sect; }
@@ -73,7 +65,7 @@ class Label
 
   private:
     std::string name;
-    AsmExprNode* node;
+    std::unique_ptr<AsmExprNode> node;
     int sect;
     int label;
     bool publc;

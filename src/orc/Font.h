@@ -27,6 +27,7 @@
 
 #include "Resource.h"
 #include <deque>
+#include <memory>
 
 // gnu rc defines a fontdir resource as well
 // but borland doesn't.
@@ -43,11 +44,11 @@ class Font : public Resource
     virtual void WriteRes(ResFile& resFile);
     virtual void ReadRC(RCFile& rcFile);
     void SetData(ResourceData* rdata);
-    ResourceData* GetData() const { return data; }
+    ResourceData* GetData() const { return data.get(); }
     static void Reset() { nextFontIndex = 0; }
 
   private:
-    ResourceData* data;
+    std::unique_ptr<ResourceData> data;
     static int nextFontIndex;
 };
 #endif

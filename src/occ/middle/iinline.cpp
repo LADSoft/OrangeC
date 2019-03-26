@@ -275,6 +275,19 @@ static void inlineCopySyms(HASHTABLE* src)
     }
 }
 static bool inlineTooComplex(FUNCTIONCALL* f) { return f->sp->endLine - f->sp->startLine > 15 / (inline_nesting * 2 + 1); }
+static bool hasaincdec(EXPRESSION *exp)
+{
+    if (exp)
+    { 
+        if (exp->type == en_autoinc || exp->type == en_autodec)
+            return true;
+        if (hasaincdec(exp->left))
+            return true;
+        if (hasaincdec(exp->right))
+            return true;
+    }
+    return false;
+}
 IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
 /*
  *      generate a function call node and return the address mode
@@ -385,6 +398,17 @@ IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
             f->sp->dumpInlineToFile = true;
             return NULL;
         }
+    // this is here because cmdswitch uses a unique_ptr and autoincrement of a structure member together, and the resulting code gen fails
+    INITLIST *fargs = f->arguments;
+    while (fargs)
+    {
+        if (hasaincdec(fargs->exp))
+        { 
+            f->sp->dumpInlineToFile = true;
+            return NULL;
+        }
+        fargs = fargs->next;
+    }
     inline_nesting++;
     codeLabelOffset = nextLabel - INT_MIN;
     nextLabel += f->sp->labelCount + 10;

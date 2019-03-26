@@ -28,6 +28,7 @@
 #include "Resource.h"
 #include <deque>
 #include <string>
+#include <memory>
 
 class RCFile;
 class ResFile;
@@ -126,8 +127,8 @@ class VersionInfo : public Resource
 
     void SetFixed(bool flag) { fixed = flag; }
     bool GetFixed() const { return fixed; }
-    void Add(InternalVerInfo* v) { varInfo.push_back(v); }
-    typedef std::deque<InternalVerInfo*>::iterator iterator;
+    void Add(InternalVerInfo* v);
+    typedef std::deque<std::unique_ptr<InternalVerInfo>>::iterator iterator;
     iterator begin() { return varInfo.begin(); }
     iterator end() { return varInfo.end(); }
     void SetFileVersion(unsigned high, unsigned low) { fileVersionMS = high, fileVersionLS = low; }
@@ -163,6 +164,6 @@ class VersionInfo : public Resource
     unsigned fileSubType;
     unsigned fileDateMS;
     unsigned fileDateLS;
-    std::deque<InternalVerInfo*> varInfo;
+    std::deque<std::unique_ptr<InternalVerInfo>> varInfo;
 };
 #endif

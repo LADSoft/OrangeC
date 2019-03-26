@@ -202,6 +202,7 @@ static int CALLBACK refresh(void *)
     CloseHandle(end);
     CloseHandle(hjob);
     DeleteCriticalSection(&critical);
+    SetEvent(end);
     return 0;
 }
 static void init()

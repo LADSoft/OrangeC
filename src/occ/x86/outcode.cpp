@@ -42,7 +42,6 @@
 #include <map>
 #include <set>
 #include <deque>
-
 #if 0
 #    include <new>
 void * operator new(std::size_t n) throw(std::bad_alloc)
@@ -295,21 +294,21 @@ void HandleDebugInfo(ObjFactory& factory, Section* sect, Instruction* ins)
     ATTRIBDATA* d = (ATTRIBDATA*)ins->GetAltData();
     if (d)
     {
-        ObjMemory::DebugTagContainer* dc = new ObjMemory::DebugTagContainer;
+        std::unique_ptr<ObjMemory::DebugTagContainer> dc = std::make_unique<ObjMemory::DebugTagContainer>();
         switch (d->type)
         {
             case e_ad_blockdata:
             {
                 ObjDebugTag* tag = factory.MakeDebugTag(d->start);
                 dc->push_back(tag);
-                objSection->GetMemoryManager().Add(dc);
+                objSection->GetMemoryManager().Add(std::move(dc));
             }
             break;
             case e_ad_funcdata:
             {
                 ObjDebugTag* tag = factory.MakeDebugTag(objGlobals[d->v.sp], d->start);
                 dc->push_back(tag);
-                objSection->GetMemoryManager().Add(dc);
+                objSection->GetMemoryManager().Add(std::move(dc));
             }
             break;
             case e_ad_vfuncdata:
@@ -322,7 +321,7 @@ void HandleDebugInfo(ObjFactory& factory, Section* sect, Instruction* ins)
                     n -= sectofs;
                 ObjDebugTag* tag = factory.MakeDebugTag(objSectionsByNumber[n], d->start);
                 dc->push_back(tag);
-                objSection->GetMemoryManager().Add(dc);
+                objSection->GetMemoryManager().Add(std::move(dc));
             }
             break;
             case e_ad_linedata:
@@ -330,7 +329,7 @@ void HandleDebugInfo(ObjFactory& factory, Section* sect, Instruction* ins)
                 ObjLineNo* line = factory.MakeLineNo(sourceFiles[d->v.ld->fileindex], d->v.ld->lineno);
                 ObjDebugTag* tag = factory.MakeDebugTag(line);
                 dc->push_back(tag);
-                objSection->GetMemoryManager().Add(dc);
+                objSection->GetMemoryManager().Add(std::move(dc));
             }
             break;
             case e_ad_vardata:
@@ -339,7 +338,7 @@ void HandleDebugInfo(ObjFactory& factory, Section* sect, Instruction* ins)
                     ObjSymbol* autosp = autovector[autos[d->v.sp]];
                     ObjDebugTag* tag = factory.MakeDebugTag(autosp);
                     dc->push_back(tag);
-                    objSection->GetMemoryManager().Add(dc);
+                    objSection->GetMemoryManager().Add(std::move(dc));
                 }
                 break;
         }
@@ -462,7 +461,8 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
         {
             ObjImportSymbol* p = factory.MakeImportSymbol(import->decoratedName);
             p->SetExternalName(import->decoratedName);
-            p->SetDllName(import->importfile);
+            if (import->importfile)
+                p->SetDllName(import->importfile);
             fi->Add(p);
         }
         for (int i = 0; i < MAX_SEGS; ++i)
@@ -1067,7 +1067,7 @@ void AddFixup(Instruction* newIns, OCODE* ins, const std::list<Numeric*>& operan
         int n = resolveoffset(ins->oper1->offset, &resolved);
         if (!resolved)
         {
-            memcpy(newIns->GetData(), &n, 4);
+            memcpy(newIns->GetBytes(), &n, 4);
             AsmExprNode* expr = MakeFixup(ins->oper1->offset);
             Fixup* f = new Fixup(expr, 4, false);
             newIns->Add(f);
@@ -1218,9 +1218,9 @@ void outcode_gen(OCODE* peeplist)
         // time in Resolve()...
         //
         dummySection.Resolve();
-        for (auto d : dummySection.GetInstructions())
+        for (auto& d : dummySection.GetInstructions())
         {
-            currentSection->InsertInstruction(d);
+            currentSection->InsertInstruction(d.release());
         }
         dummySection.ClearInstructions();
     }

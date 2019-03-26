@@ -63,7 +63,7 @@ class ppCtx
     bool repl(std::string& line);
 
   private:
-    std::deque<CtxData*> stack;
+    std::deque<std::unique_ptr<CtxData>> stack;
     ppDefine& define;
     int nextId;
 };

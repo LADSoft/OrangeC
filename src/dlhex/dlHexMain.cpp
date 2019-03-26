@@ -63,11 +63,6 @@ int main(int argc, char** argv)
     dlHexMain downloader;
     return downloader.Run(argc, argv);
 }
-dlHexMain::~dlHexMain()
-{
-    for (int i = 0; i < sections.size(); i++)
-        delete sections[i];
-}
 void dlHexMain::GetSectionNames(std::vector<std::string>& names, ObjFile* file)
 {
     if (sectionsSwitch.GetValue().size())
@@ -118,9 +113,9 @@ void dlHexMain::GetInputSections(const std::vector<std::string>& names, ObjFile*
         ObjSection* s = file->FindSection(name);
         ObjInt size = s->GetSize()->Eval(0);
         ObjInt addr = s->GetOffset()->Eval(0);
-        Section* p = new Section(addr, size);
-        p->data = new char[size];
-        sections.push_back(p);
+        Section p (addr, size);
+        p.data = std::make_unique<char[]>(size);
+        char *data = p.data.get();
         s->ResolveSymbols(factory);
         ObjMemoryManager& m = s->GetMemoryManager();
         int ofs = 0;
@@ -138,49 +133,50 @@ void dlHexMain::GetInputSections(const std::vector<std::string>& names, ObjFile*
                     int bigEndian = file->GetBigEndian();
                     if (msize == 1)
                     {
-                        p->data[ofs] = n & 0xff;
+                        data[ofs] = n & 0xff;
                     }
                     else if (msize == 2)
                     {
                         if (bigEndian)
                         {
-                            p->data[ofs] = n >> 8;
-                            p->data[ofs + 1] = n & 0xff;
+                            data[ofs] = n >> 8;
+                            data[ofs + 1] = n & 0xff;
                         }
                         else
                         {
-                            p->data[ofs] = n & 0xff;
-                            p->data[ofs + 1] = n >> 8;
+                            data[ofs] = n & 0xff;
+                            data[ofs + 1] = n >> 8;
                         }
                     }
                     else  // msize == 4
                     {
                         if (bigEndian)
                         {
-                            p->data[ofs + 0] = n >> 24;
-                            p->data[ofs + 1] = n >> 16;
-                            p->data[ofs + 2] = n >> 8;
-                            p->data[ofs + 3] = n & 0xff;
+                            data[ofs + 0] = n >> 24;
+                            data[ofs + 1] = n >> 16;
+                            data[ofs + 2] = n >> 8;
+                            data[ofs + 3] = n & 0xff;
                         }
                         else
                         {
-                            p->data[ofs] = n & 0xff;
-                            p->data[ofs + 1] = n >> 8;
-                            p->data[ofs + 2] = n >> 16;
-                            p->data[ofs + 3] = n >> 24;
+                            data[ofs] = n & 0xff;
+                            data[ofs + 1] = n >> 8;
+                            data[ofs + 2] = n >> 16;
+                            data[ofs + 3] = n >> 24;
                         }
                     }
                 }
                 else
                 {
                     if ((*it)->IsEnumerated())
-                        memset(p->data + ofs, (*it)->GetFill(), msize);
+                        memset(data + ofs, (*it)->GetFill(), msize);
                     else
-                        memcpy(p->data + ofs, mdata, msize);
+                        memcpy(data + ofs, mdata, msize);
                 }
                 ofs += msize;
             }
         }
+        sections.push_back(std::make_unique<Section>(std::move(p)));
     }
 }
 bool dlHexMain::ReadSections(const std::string& path)
@@ -195,7 +191,6 @@ bool dlHexMain::ReadSections(const std::string& path)
     fclose(in);
     if (!ieee.GetAbsolute())
     {
-        delete file;
         Utils::fatal("Input file is in relative format");
     }
     if (file != nullptr)
@@ -314,10 +309,10 @@ int dlHexMain::Run(int argc, char** argv)
         o->WriteHeader(out);
         for (int i = 0; i < sections.size(); i++)
         {
-            Section* s = sections[i];
+            Section* s = sections[i].get();
             if (padSwitch.GetValue() >= 0 && s->address > addr)
                 o->Pad(out, addr, s->address - addr, padSwitch.GetValue());
-            o->Write(out, s->data, s->size, s->address);
+            o->Write(out, s->data.get(), s->size, s->address);
             addr = s->address + s->size;
         }
         o->WriteTrailer(out);

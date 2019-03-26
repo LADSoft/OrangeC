@@ -30,24 +30,23 @@
 void ResourceData::WriteRes(ResFile& resFile)
 {
     if (data)
-        resFile.WriteData(data, len);
+        resFile.WriteData(data.get(), len);
 }
 void ResourceData::ReadRC(RCFile& rcFile)
 {
     if (rcFile.IsKeyword())
     {
         int maxLen = 1024;
-        data = new unsigned char[maxLen];
+        data = std::make_unique<unsigned char[]>(maxLen);
         rcFile.NeedBegin();
         while (rcFile.IsNumber())
         {
             if (len == maxLen)
             {
                 maxLen += 1024;
-                unsigned char* hold = data;
-                data = new unsigned char[maxLen];
-                memcpy(data, hold, maxLen - 1024);
-                delete[] hold;
+                unsigned char* hold = new unsigned char[maxLen];
+                memcpy(hold, data.get(), maxLen - 1024);
+                data.reset(hold);
             }
             data[len++] = rcFile.GetNumber() & 0xff;
             rcFile.SkipComma();
@@ -63,10 +62,10 @@ void ResourceData::ReadRC(RCFile& rcFile)
             in.seekg(0, std::ios::end);
             len = in.tellg();
             in.seekg(0, std::ios::beg);
-            data = new unsigned char[len];
-            in.read((char*)data, len);
+            data = std::make_unique<unsigned char[]>(len);
+            in.read((char*)data.get(), len);
         }
         else
-            throw new std::runtime_error(std::string("Could not open file '") + name + "'");
+            throw std::runtime_error(std::string("Could not open file '") + name + "'");
     }
 }

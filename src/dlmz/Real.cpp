@@ -28,6 +28,7 @@
 #include "OutputFormats.h"
 #include "Utils.h"
 #include <iostream>
+
 bool Real::ReadSections(ObjFile* file, ObjExpression* start)
 {
     size = 0;
@@ -48,7 +49,8 @@ bool Real::ReadSections(ObjFile* file, ObjExpression* start)
                 size = n;
         }
     }
-    data = new unsigned char[size];
+    data = std::make_unique<unsigned char[]>(size);
+    unsigned char* pdata = data.get();
     int ofs = 0;
     for (auto it = file->SectionBegin(); it != file->SectionEnd(); ++it)
     {
@@ -72,7 +74,7 @@ bool Real::ReadSections(ObjFile* file, ObjExpression* start)
                             Utils::fatal("Fixup offset negative");
                         if (msize == 1)
                         {
-                            data[ofs] = n & 0xff;
+                            pdata[ofs] = n & 0xff;
                         }
                         else if (msize == 2)
                         {
@@ -80,39 +82,39 @@ bool Real::ReadSections(ObjFile* file, ObjExpression* start)
                                 Utils::fatal("16-bit offset outside of segment");
                             if (bigEndian)
                             {
-                                data[ofs] = n >> 8;
-                                data[ofs + 1] = n & 0xff;
+                                pdata[ofs] = n >> 8;
+                                pdata[ofs + 1] = n & 0xff;
                             }
                             else
                             {
-                                data[ofs] = n & 0xff;
-                                data[ofs + 1] = n >> 8;
+                                pdata[ofs] = n & 0xff;
+                                pdata[ofs + 1] = n >> 8;
                             }
                         }
                         else  // msize == 4
                         {
                             if (bigEndian)
                             {
-                                data[ofs + 0] = n >> 24;
-                                data[ofs + 1] = n >> 16;
-                                data[ofs + 2] = n >> 8;
-                                data[ofs + 3] = n & 0xff;
+                                pdata[ofs + 0] = n >> 24;
+                                pdata[ofs + 1] = n >> 16;
+                                pdata[ofs + 2] = n >> 8;
+                                pdata[ofs + 3] = n & 0xff;
                             }
                             else
                             {
-                                data[ofs] = n & 0xff;
-                                data[ofs + 1] = n >> 8;
-                                data[ofs + 2] = n >> 16;
-                                data[ofs + 3] = n >> 24;
+                                pdata[ofs] = n & 0xff;
+                                pdata[ofs + 1] = n >> 8;
+                                pdata[ofs + 2] = n >> 16;
+                                pdata[ofs + 3] = n >> 24;
                             }
                         }
                     }
                     else
                     {
                         if ((*it)->IsEnumerated())
-                            memset(data + ofs, (*it)->GetFill(), msize);
+                            memset(pdata + ofs, (*it)->GetFill(), msize);
                         else
-                            memcpy(data + ofs, mdata, msize);
+                            memcpy(pdata + ofs, mdata, msize);
                     }
                     ofs += msize;
                 }
@@ -128,7 +130,7 @@ bool Real::Write(std::fstream& stream)
         std::cout << "Warning: No stack segment" << std::endl;
     }
     WriteHeader(stream);
-    stream.write((char*)data, size);
+    stream.write((char*)data.get(), size);
     return true;
 }
 void Real::WriteHeader(std::fstream& stream)

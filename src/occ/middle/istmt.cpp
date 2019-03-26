@@ -1046,7 +1046,7 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     {
         EXPRESSION* exp;
         xcexp = varNode(en_auto, funcsp->xc->xctab);
-        xcexp = exprNode(en_add, xcexp, intNode(en_c_i, (LLONG_TYPE) & (((struct _xctab*)0)->funcIndex)));
+        xcexp = exprNode(en_add, xcexp, intNode(en_c_i, XCTAB_INDEX_OFS));
         deref(&stdpointer, &xcexp);
         exp = intNode(en_c_i, 0);
         xcexp = exprNode(en_assign, xcexp, exp);

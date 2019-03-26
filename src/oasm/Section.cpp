@@ -36,13 +36,10 @@
 #include <fstream>
 #include <iostream>
 
+bool Section::dontShowError;
+
 Section::~Section()
 {
-    for (int i = 0; i < instructions.size(); i++)
-    {
-        Instruction* s = instructions[i];
-        delete s;
-    }
 }
 void Section::Parse(AsmFile* fil)
 {
@@ -149,6 +146,14 @@ void Section::Optimize()
     }
 }
 void Section::Resolve() { Optimize(); }
+void Section::InsertInstruction(Instruction* ins)
+{
+    std::unique_ptr<Instruction> temp;
+    temp.reset(ins);
+    instructions.push_back(std::move(temp));
+    ins->SetOffset(pc);
+    pc += ins->GetSize();
+}
 ObjSection* Section::CreateObject(ObjFactory& factory)
 {
     objectSection = factory.MakeSection(name);
@@ -338,7 +343,7 @@ bool Section::MakeData(ObjFactory& factory, std::function<Label*(std::string&)> 
                     ObjMemory* mem = factory.MakeData(buf, 0);
                     sect->Add(mem);
                     while (instructionPos < instructions.size() && instructions[instructionPos]->GetType() == Instruction::ALT)
-                        HandleAlt(factory, this, instructions[instructionPos++]);
+                        HandleAlt(factory, this, instructions[instructionPos++].get());
                 }
                 else
                 {
@@ -351,7 +356,8 @@ bool Section::MakeData(ObjFactory& factory, std::function<Label*(std::string&)> 
                     catch (std::runtime_error* e)
                     {
                         Errors::IncrementCount();
-                        std::cout << "Error " << f.GetFileName().c_str() << "(" << f.GetErrorLine() << "):" << e->what()
+                        if (!dontShowError) 
+                            std::cout << "Error " << f.GetFileName().c_str() << "(" << f.GetErrorLine() << "):" << e->what()
                                   << std::endl;
                         delete e;
                         t = nullptr;

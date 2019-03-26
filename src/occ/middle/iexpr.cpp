@@ -2325,6 +2325,8 @@ static int MarkFastcall(SYMBOL* sym, TYPE* functp, bool thisptr)
                         q->ans = temp;
                         tail->dc.left = temp;
                         tail->fastcall = ++i;
+                        if (tail->dc.left->size == ISZ_ULONGLONG || tail->dc.left->size == -ISZ_ULONGLONG)
+                            ++i;// long long is presently meant to be the one and only arg...
                         q->back = tail->back;
                         q->fwd = tail;
                         q->back->fwd = q;
@@ -3670,6 +3672,9 @@ IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
             break;
         case en_stmt:
             rv = gen_stmt_from_expr(funcsp, node, flags);
+            break;
+        case en_templateparam:
+            rv = gen_expr(funcsp, node->v.sp->tp->templateParam->p->byNonType.val, 0, ISZ_UINT);
             break;
         case en_const:
             /* should never get here unless the constant optimizer is turned off */

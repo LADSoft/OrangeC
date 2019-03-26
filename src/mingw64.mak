@@ -41,7 +41,7 @@ LLIB_DEPENDENCIES = $(notdir $(filter-out $(EXCLUDE) $(MAIN_DEPENDENCIES), $(CPP
 
 CC=x86_64-w64-mingw32-gcc
 CCFLAGS = -c -D__MSVCRT__ -U__STRICT_ANSI__
-CPPFLAGS = -std=c++11 -fpermissive
+CPPFLAGS = -std=c++14 -fpermissive
 LINK=ld
 LFLAGS=-L$(_LIBDIR)
 

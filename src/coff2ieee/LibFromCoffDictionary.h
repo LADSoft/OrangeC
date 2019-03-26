@@ -25,9 +25,11 @@
 #ifndef LIBDICTIONARY_H
 #define LIBDICTIONARY_H
 
+
 #include "ObjTypes.h"
 #include <cstdio>
 #include <map>
+#include <memory>
 
 class ObjFile;
 class Module;
@@ -47,7 +49,7 @@ class LibDictionary
     ~LibDictionary() {}
     ObjInt Lookup(FILE* stream, ObjInt dictOffset, ObjInt dictPages, const ObjString& str);
     void Write(FILE* stream);
-    void CreateDictionary(std::map<int, Module*>& files);
+    void CreateDictionary(std::map<int, std::unique_ptr<Module>>& files);
     void Clear() { dictionary.clear(); }
 
     void InsertInDictionary(const char* name, int index);

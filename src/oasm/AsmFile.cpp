@@ -40,27 +40,15 @@
 #include <fstream>
 #include <iostream>
 #include <climits>
+#include <algorithm>
 
-std::map<ObjString, Section*> AsmFile::sections;
+std::map<ObjString, std::unique_ptr<Section>> AsmFile::sections;
 std::vector<Section*> AsmFile::numericSections;
 
 AsmFile::~AsmFile()
 {
-    for (int i = 0; i < numericSections.size(); i++)
-    {
-        Section* s = numericSections[i];
-        delete s;
-    }
-    for (int i = 0; i < numericLabels.size(); i++)
-    {
-        Label* l = numericLabels[i];
-        delete l;
-    }
-    for (auto import : imports)
-    {
-        Import* i = import.second;
-        delete i;
-    }
+    sections.clear();
+    numericSections.clear();
 }
 bool AsmFile::Read()
 {
@@ -165,7 +153,7 @@ void AsmFile::DoLabel(std::string& name, int lineno)
             {
                 throw new std::runtime_error("Multiple start addresses specified");
             }
-            label = new Label(name, labels.size(), currentSection->GetSect());
+//            label = new Label(name, labels.size(), currentSection->GetSect());
             startupSection = currentSection;
         }
         else
@@ -176,7 +164,7 @@ void AsmFile::DoLabel(std::string& name, int lineno)
             }
         }
     }
-    if (labels[realName] != nullptr)
+    if (labels.find(realName) != labels.end())
     {
         if (realName != "..start")
         {
@@ -187,7 +175,8 @@ void AsmFile::DoLabel(std::string& name, int lineno)
     {
         if (inAbsolute)
         {
-            label = new Label(realName, labels.size(), 0);
+            labels[realName] = std::make_unique<Label>(realName, labels.size(), 0);
+            label = labels[realName].get();
             label->SetOffset(absoluteValue);
             AsmExpr::SetEqu(realName, new AsmExprNode(absoluteValue));
             if (lineno >= 0)
@@ -195,7 +184,8 @@ void AsmFile::DoLabel(std::string& name, int lineno)
         }
         else
         {
-            label = new Label(realName, labels.size(), currentSection->GetSect() - 1);
+            labels[realName] = std::make_unique<Label>(realName, labels.size(), currentSection->GetSect() - 1);
+            label = labels[realName].get();
         }
         if (name[0] != '.')
         {
@@ -203,7 +193,6 @@ void AsmFile::DoLabel(std::string& name, int lineno)
             AsmExpr::SetCurrentLabel(label->GetName());
         }
         thisLabel = label;
-        labels[realName] = label;
         numericLabels.push_back(label);
         if (!inAbsolute)
             currentSection->InsertLabel(label);
@@ -420,26 +409,24 @@ void AsmFile::EquDirective()
         throw new std::runtime_error("Label needed");
     int lineno = preProcessor.GetMainLineNo();
     NextToken();
-    AsmExprNode* num = GetNumber();
+    std::unique_ptr<AsmExprNode> num(GetNumber());
     int n = 0;
     if (inAbsolute)
         n = absoluteValue;
     else if (currentSection)
         n = currentSection->GetPC();
-    num = AsmExpr::ConvertToBased(num, n);
+    num.reset(AsmExpr::ConvertToBased(num.release(), n));
     if (num->IsAbsolute())
     {
-        AsmExprNode* num1 = AsmExpr::Eval(num, n);
-        delete num;
-        num = num1;
+        num.reset(AsmExpr::Eval(num.get(), n));
     }
-    thisLabel->SetOffset(num);
+    thisLabel->SetOffset(num.get());
     thisLabel->SetSect(-1);
     if (lineno >= 0)
         listing.Add(thisLabel, lineno, preProcessor.InMacro());
     if (!inAbsolute)
         currentSection->pop_back();
-    AsmExpr::SetEqu(thisLabel->GetName(), num);
+    AsmExpr::SetEqu(thisLabel->GetName(), num.release());
 }
 void AsmFile::Directive()
 {
@@ -619,7 +606,7 @@ void AsmFile::TimesDirective()
         else if (parser->MatchesOpcode(GetToken()->GetChars()))
         {
             Instruction* ins = parser->Parse(lexer.GetRestOfLine(), currentSection->GetPC());
-            for (auto f : *ins->GetFixups())
+            for (auto& f : *ins->GetFixups())
             {
                 f->SetExpr(AsmExpr::Eval(f->GetExpr(), currentSection->GetPC()));
             }
@@ -670,11 +657,10 @@ void AsmFile::IncbinDirective()
     else if (len - start < size)
         throw new std::runtime_error("Not enough data.");
     in.seekg(start, std::ios::beg);
-    unsigned char* data = new unsigned char[size];
-    in.read((char*)data, size);
-    Instruction* ins = new Instruction(data, size);
+    std::unique_ptr<unsigned char[]> data = std::make_unique<unsigned char[]>(size);
+    in.read((char*)data.get(), size);
+    Instruction* ins = new Instruction(data.get(), size);
     currentSection->InsertInstruction(ins);
-    delete[] data;
 }
 void AsmFile::PublicDirective()
 {
@@ -700,15 +686,18 @@ void AsmFile::ExternDirective()
             name = UTF8::ToUpper(name);
         }
         externs.insert(name);
-        if (labels[name] != nullptr && !labels[name]->IsExtern())
+        if (labels.find(name) != labels.end() && !labels[name]->IsExtern())
         {
             throw new std::runtime_error(std::string("Label '") + name + "' already exists.");
         }
         else
         {
-            Label* label = new Label(name, labels.size(), sections.size() - 1);
+            if (labels.find(name) == labels.end())
+            {
+                labels[name] = std::make_unique<Label>(name, labels.size(), sections.size() - 1);
+            }
+            Label* label = labels[name].get();
             label->SetExtern(true);
-            labels[name] = label;
             numericLabels.push_back(label);
         }
     } while (GetKeyword() == Lexer::comma);
@@ -723,10 +712,10 @@ void AsmFile::ImportDirective()
         external = GetId();
     else
         external = internal;
-    Import* imp = new Import;
+    imports[internal] = std::make_unique<Import>();
+    Import* imp = imports[internal].get();
     imp->dll = dll;
     imp->extname = external;
-    imports[internal] = imp;
 }
 void AsmFile::ExportDirective()
 {
@@ -745,15 +734,15 @@ void AsmFile::SectionDirective()
     std::string name = GetId();
     if (sections[name] == nullptr)
     {
-        Section* section = new Section(name, sections.size());
-        sections[name] = section;
+        sections[name] = std::make_unique<Section>(name, sections.size());
+        Section* section = sections[name].get();;
         numericSections.push_back(section);
         section->Parse(this);
         currentSection = section;
     }
     else
     {
-        currentSection = sections[name];
+        currentSection = sections[name].get();
     }
     AsmExpr::SetSection(currentSection);
     parser->Setup(currentSection);
@@ -779,8 +768,8 @@ void AsmFile::NeedSection()
 {
     if (sections.size() == 0 && !inAbsolute)
     {
-        Section* section = new Section("text", 1);
-        sections["text"] = section;
+        sections["text"] = std::make_unique<Section>("text", 1);
+        Section* section = sections["text"].get();
         numericSections.push_back(section);
         currentSection = section;
         AsmExpr::SetSection(currentSection);
@@ -901,7 +890,7 @@ ObjFile* AsmFile::MakeFile(ObjFactory& factory, std::string& name)
             p->SetExternalName(exp.second);
             fi->Add(p);
         }
-        for (auto import : imports)
+        for (auto& import : imports)
         {
             ObjImportSymbol* p = factory.MakeImportSymbol(import.first);
             p->SetExternalName(import.second->extname);
@@ -949,7 +938,7 @@ bool AsmFile::IsNumber()
 }
 unsigned AsmFile::GetValue()
 {
-    AsmExprNode* num = GetNumber();
+    std::unique_ptr<AsmExprNode> num(GetNumber());
     if (!inAbsolute && !num->IsAbsolute())
         throw new std::runtime_error("Constant value expected");
     int n = 0;
@@ -957,13 +946,10 @@ unsigned AsmFile::GetValue()
         n = absoluteValue;
     else if (currentSection)
         n = currentSection->GetPC();
-    AsmExprNode* num1 = AsmExpr::Eval(num, n);
+    std::unique_ptr<AsmExprNode> num1(AsmExpr::Eval(num.get(), n));
     if (num1->GetType() != AsmExprNode::IVAL)
         throw new std::runtime_error("Integer constant expected");
-    int rv = num1->ival;
-    delete num;
-    delete num1;
-    return rv;
+    return num1->ival;
 }
 AsmExprNode* AsmFile::GetNumber()
 {

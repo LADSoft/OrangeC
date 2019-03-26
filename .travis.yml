@@ -1,5 +1,18 @@
-os:
-  - linux
+matrix:
+  include:
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-7
+
+branches:
+   only:
+     - master
+     - coverity_scan
+
 env:
   global:
    # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
@@ -7,6 +20,8 @@ env:
    - secure: "L5Z1gufQ8H8TEoTpmyYU+jfhawo8LfuWf0sVJNaN/k3A4ZmgPvx2Op32NLoN+QPHGCe6pcN6P09z1ch5pOdXhlFaSrivHvbzuFSYix1GJWCyr5WTnzeFioFQ1BxVmL01idIuoNUgj0vP0ALO42Jz4buL/rlKqFocdNhJowzFW4i+pgayqrKS0QI/1W3GC9oAVUz5jltZD1bDB5quSfSI9GXarWa3crlQ938nnpUozSQYzi6pnHxRVwSHDjWAasWgoADJ4CyFJtYrUeg0N5zwHTLh/gTuCY/FT4/NuevN2UL+i5ITPyeqdHJxfVAsUT2OeA1DD7PLn2qUpygzy0CX0vK0nZTwai6lpUIXWzwjL/e5wlRtmtILmY5nNiAom98oBzE/EbJeGYyX1yfQUTr+lqy7yXkLhSWCMwPwSe+V7TP3Wnn/2kuT6qDAHmDw1UPtjQhXoYnkStZUuJ/AJsP8P7/WsxmNKNPMmESy9V+f3dYZEYxyGgoVVnL+GpAxkLM++qY0fgmWVpGE+GQRaaorVJPbVFFUSgoxDWMXYCm7Ln0UQyeo+n4lpp9GsXpQPUvVtKJHzU/NWJh6yzHPu7XPtmA2NOW1nvNDHpLX4OppV7YvY3PGkTGr1QVn61H/Rxu0PI4WZgZS12Y24Wg5wq3Tjf/U3m+fIK4+XyQznOrmIx8="
 
 before_install:
+  - export CC=gcc-7 
+  - export CXX=g++-7
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then echo -n | openssl s_client -connect https://scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca- ; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then chmod u+x ./travis-configure ; fi
   - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then choco install innosetup          ; fi

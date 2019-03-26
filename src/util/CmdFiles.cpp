@@ -33,13 +33,7 @@ using namespace std;  // borland puts the io stuff in the std namespace...
 const char* CmdFiles::DIR_SEP = "\\";
 const char* CmdFiles::PATH_SEP = ";";
 
-CmdFiles::~CmdFiles()
-{
-    for (auto name : names)
-    {
-        delete name;
-    }
-}
+CmdFiles::~CmdFiles() {}
 bool CmdFiles::Add(char** array, bool recurseDirs)
 {
     while (*array)
@@ -118,7 +112,7 @@ bool CmdFiles::Add(const std::string& name, bool recurseDirs)
             if (!(find.attrib & _A_SUBDIR) && /*!(find.attrib & _A_VOLID) && */
                 !(find.attrib & _A_HIDDEN))
             {
-                std::string* file = new std::string(path + std::string(find.name));
+                std::string file(path + std::string(find.name));
                 names.push_back(file);
                 rv = true;
             }
@@ -134,8 +128,7 @@ bool CmdFiles::Add(const std::string& name, bool recurseDirs)
     {
         if (name.find_first_of('*') == std::string::npos && name.find_first_of('?') == std::string::npos)
         {
-            std::string* newName = new std::string(name);
-            names.push_back(newName);
+            names.push_back(name);
         }
     }
     return rv;

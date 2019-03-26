@@ -66,7 +66,6 @@ int main(int argc, char** argv)
     dlLeMain downloader;
     return downloader.Run(argc, argv);
 }
-dlLeMain::~dlLeMain() {}
 bool dlLeMain::GetMode()
 {
     mode = UNKNOWN;
@@ -107,12 +106,10 @@ bool dlLeMain::ReadSections(const std::string& path, const std::string& exeName)
     fclose(in);
     if (!ieee.GetAbsolute())
     {
-        delete file;
         Utils::fatal("Input file is in relative format");
     }
     if (ieee.GetStartAddress() == nullptr)
     {
-        delete file;
         Utils::fatal("No start address specified");
     }
     startAddress = ieee.GetStartAddress()->Eval(0);
@@ -230,35 +227,25 @@ bool dlLeMain::LoadStub(const std::string& exeName)
     if (val.empty())
         val = "dos32a.exe";
     // look in current directory
-    std::fstream* file = new std::fstream(val, std::ios::in | std::ios::binary);
-    if (file == nullptr || !file->is_open())
+    std::fstream file(std::fstream(val, std::ios::in | std::ios::binary));
+    if (!file.is_open())
     {
-        if (file)
-        {
-            delete file;
-            file = nullptr;
-        }
         // look in exe directory if not there
         int npos = exeName.find_last_of(CmdFiles::DIR_SEP);
         if (npos != std::string::npos)
         {
             val = exeName.substr(0, npos + 1) + "..\\lib\\" + val;
-            file = new std::fstream(val, std::ios::in | std::ios::binary);
+            file.open(val, std::ios::in | std::ios::binary);
         }
     }
-    if (file == nullptr || !file->is_open())
+    if (!file.is_open())
     {
-        if (file)
-        {
-            delete file;
-            file = nullptr;
-        }
         return false;
     }
     else
     {
         MZHeader mzHead;
-        file->read((char*)&mzHead, sizeof(mzHead));
+        file.read((char*)&mzHead, sizeof(mzHead));
         int bodySize = mzHead.image_length_MOD_512 + mzHead.image_length_DIV_512 * 512;
         int oldReloc = mzHead.offset_to_relocation_table;
         int oldHeader = mzHead.n_header_paragraphs * 16;
@@ -269,8 +256,8 @@ bool dlLeMain::LoadStub(const std::string& exeName)
         int preHeader = 0x40;
         int totalHeader = (preHeader + relocSize + 15) & ~15;
         stubSize = (totalHeader + bodySize + 15) & ~15;
-        stubData = new char[stubSize];
-        memset(stubData, 0, stubSize);
+        stubData = std::make_unique<char[]>(stubSize);
+        memset(stubData.get(), 0, stubSize);
         int newSize = bodySize + totalHeader;
         if (newSize & 511)
             newSize += 512;
@@ -278,25 +265,23 @@ bool dlLeMain::LoadStub(const std::string& exeName)
         mzHead.image_length_DIV_512 = newSize / 512;
         mzHead.offset_to_relocation_table = 0x40;
         mzHead.n_header_paragraphs = totalHeader / 16;
-        memcpy(stubData, &mzHead, sizeof(mzHead));
-        *(unsigned*)(stubData + 0x3c) = stubSize;
+        memcpy(stubData.get(), &mzHead, sizeof(mzHead));
+        *(unsigned*)(stubData.get() + 0x3c) = stubSize;
         if (relocSize)
         {
-            file->seekg(oldReloc, std::ios::beg);
-            file->read(stubData + 0x40, relocSize);
+            file.seekg(oldReloc, std::ios::beg);
+            file.read(stubData.get() + 0x40, relocSize);
         }
-        file->seekg(oldHeader, std::ios::beg);
-        file->read(stubData + totalHeader, bodySize);
-        if (!file->eof() && file->fail())
+        file.seekg(oldHeader, std::ios::beg);
+        file.read(stubData.get() + totalHeader, bodySize);
+        if (!file.eof() && file.fail())
         {
-            delete file;
             return false;
         }
-        delete file;
     }
     return true;
 }
-void dlLeMain::WriteStub(std::fstream& out) { out.write((char*)stubData, stubSize); }
+void dlLeMain::WriteStub(std::fstream& out) { out.write((char*)stubData.get(), stubSize); }
 int dlLeMain::Run(int argc, char** argv)
 {
     Utils::banner(argv[0]);

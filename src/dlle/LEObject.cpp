@@ -44,9 +44,10 @@ void LEObject::Setup(unsigned& offs)
 {
     pageOffs = offs + 1;
     offs += ObjectAlign(4096, initSize) / 4096;
-    data = new unsigned char[initSize];
+    data = std::make_unique<unsigned char[]>(initSize);
     ObjMemoryManager& m = sect->GetMemoryManager();
     int ofs = 0;
+    unsigned char* pdata = data.get();
     for (auto it = m.MemoryBegin(); it != m.MemoryEnd() && ofs < initSize; ++it)
     {
         int msize = (*it)->GetSize();
@@ -61,45 +62,45 @@ void LEObject::Setup(unsigned& offs)
                 int bigEndian = file->GetBigEndian();
                 if (msize == 1)
                 {
-                    data[ofs] = n & 0xff;
+                    pdata[ofs] = n & 0xff;
                 }
                 else if (msize == 2)
                 {
                     if (bigEndian)
                     {
-                        data[ofs] = n >> 8;
-                        data[ofs + 1] = n & 0xff;
+                        pdata[ofs] = n >> 8;
+                        pdata[ofs + 1] = n & 0xff;
                     }
                     else
                     {
-                        data[ofs] = n & 0xff;
-                        data[ofs + 1] = n >> 8;
+                        pdata[ofs] = n & 0xff;
+                        pdata[ofs + 1] = n >> 8;
                     }
                 }
                 else  // msize == 4
                 {
                     if (bigEndian)
                     {
-                        data[ofs + 0] = n >> 24;
-                        data[ofs + 1] = n >> 16;
-                        data[ofs + 2] = n >> 8;
-                        data[ofs + 3] = n & 0xff;
+                        pdata[ofs + 0] = n >> 24;
+                        pdata[ofs + 1] = n >> 16;
+                        pdata[ofs + 2] = n >> 8;
+                        pdata[ofs + 3] = n & 0xff;
                     }
                     else
                     {
-                        data[ofs] = n & 0xff;
-                        data[ofs + 1] = n >> 8;
-                        data[ofs + 2] = n >> 16;
-                        data[ofs + 3] = n >> 24;
+                        pdata[ofs] = n & 0xff;
+                        pdata[ofs + 1] = n >> 8;
+                        pdata[ofs + 2] = n >> 16;
+                        pdata[ofs + 3] = n >> 24;
                     }
                 }
             }
             else
             {
                 if ((*it)->IsEnumerated())
-                    memset(data + ofs, (*it)->GetFill(), msize);
+                    memset(pdata + ofs, (*it)->GetFill(), msize);
                 else
-                    memcpy(data + ofs, mdata, msize);
+                    memcpy(pdata + ofs, mdata, msize);
             }
             ofs += msize;
         }
@@ -149,7 +150,7 @@ void LEObject::WriteHeader(std::fstream& stream)
 }
 void LEObject::Write(std::fstream& stream)
 {
-    stream.write((char*)data, initSize);
+    stream.write((char*)data.get(), initSize);
     int n = ObjectAlign(4096, initSize) - initSize;
     char buf[512];
     memset(buf, 0, sizeof(buf));

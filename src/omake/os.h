@@ -72,6 +72,8 @@ class OS
     static void GiveJob();
     static void Take();
     static void Give();
+    static void EvalTake();
+    static void EvalGive();
     static void WriteConsole(std::string string);
     static void ToConsole(std::deque<std::string>& strings);
     static void AddConsole(std::deque<std::string>& strings, std::string string);

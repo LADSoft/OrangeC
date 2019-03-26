@@ -33,9 +33,9 @@ LinkRegionFileSpecContainer::LinkRegionFileSpecContainer(const ObjString& Spec)
     while (data[start])
     {
         if (data[start] == '*')
-            specs.push_back(new LinkRegionFileSpec(LinkRegionFileSpec::eStar)), start++;
+            specs.push_back(std::make_unique<LinkRegionFileSpec>(LinkRegionFileSpec::eStar)), start++;
         else if (data[start] == '?')
-            specs.push_back(new LinkRegionFileSpec(LinkRegionFileSpec::eQuestionMark)), start++;
+            specs.push_back(std::make_unique<LinkRegionFileSpec>(LinkRegionFileSpec::eQuestionMark)), start++;
         else
         {
             end = start;
@@ -43,20 +43,16 @@ LinkRegionFileSpecContainer::LinkRegionFileSpecContainer(const ObjString& Spec)
             {
                 end++;
             }
-            specs.push_back(new LinkRegionFileSpec(LinkRegionFileSpec::eSpan, Spec.substr(start, end)));
+            specs.push_back(std::make_unique<LinkRegionFileSpec>(LinkRegionFileSpec::eSpan, Spec.substr(start, end)));
             start = end;
         }
     }
 }
-LinkRegionFileSpecContainer::~LinkRegionFileSpecContainer()
-{
-    for (auto spec : specs)
-        delete spec;
-}
+LinkRegionFileSpecContainer::~LinkRegionFileSpecContainer() {}
 bool LinkRegionFileSpecContainer::Matches(const ObjString& Spec)
 {
     ObjString working = Spec;
-    for (auto spec : specs)
+    for (auto& spec : specs)
         for (auto it = specs.begin(); it != specs.end(); ++it)
         {
             switch ((*it)->GetType())

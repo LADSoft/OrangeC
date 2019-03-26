@@ -266,14 +266,10 @@ ObjFile* ObjIeeeAscii::HandleRead(eParseType ParseType)
     bool done = false;
     ioBufferLen = 0;
     ioBufferPos = 0;
-    ioBuffer = new char[BUFFERSIZE];
-    if (!ioBuffer)
-    {
-        return nullptr;
-    }
+    ioBuffer = std::make_unique<char[]>(BUFFERSIZE);
     ResetCS();
     file = nullptr;
-    currentTags = new ObjMemory::DebugTagContainer;
+    currentTags = std::make_unique<ObjMemory::DebugTagContainer>();
     publics.clear();
     locals.clear();
     autos.clear();
@@ -296,15 +292,11 @@ ObjFile* ObjIeeeAscii::HandleRead(eParseType ParseType)
         }
         catch (BadCS& e)
         {
-            if (ioBuffer)
-                delete[] ioBuffer;
             ioBuffer = nullptr;
             return nullptr;
         }
         catch (SyntaxError& e)
         {
-            if (ioBuffer)
-                delete[] ioBuffer;
             ioBuffer = nullptr;
             return nullptr;
         }
@@ -342,9 +334,7 @@ ObjFile* ObjIeeeAscii::HandleRead(eParseType ParseType)
     sections.clear();
     files.clear();
     factory->GetIndexManager()->LoadIndexes(file);
-    delete currentTags;
-    if (ioBuffer)
-        delete[] ioBuffer;
+    currentTags.release();
     ioBuffer = nullptr;
     return file;
 }
@@ -1212,8 +1202,8 @@ bool ObjIeeeAscii::SectionDataHeader(const char* buffer, eParseType ParseType)
 
     if (currentTags && currentDataSection)
     {
-        currentDataSection->Add(currentTags);
-        currentTags = new ObjMemory::DebugTagContainer;
+        currentDataSection->Add(std::move(currentTags));
+        currentTags = std::make_unique<ObjMemory::DebugTagContainer>();
     }
     currentDataSection = sect;
     return false;
@@ -1241,8 +1231,8 @@ bool ObjIeeeAscii::Data(const char* buffer, eParseType ParseType)
     }
     CheckTerm(buffer + pos);
     ObjMemory* mem = factory->MakeData(data, i);
-    mem->SetDebugTags(currentTags);
-    currentTags = new ObjMemory::DebugTagContainer;
+    mem->SetDebugTags(std::move(currentTags));
+    currentTags = std::make_unique<ObjMemory::DebugTagContainer>();
     currentDataSection->Add(mem);
     return false;
 }
@@ -1261,8 +1251,8 @@ bool ObjIeeeAscii::EnumeratedData(const char* buffer, eParseType ParseType)
         ThrowSyntax(buffer, ParseType);
     CheckTerm(buffer + pos);
     ObjMemory* mem = factory->MakeData(size, fill);
-    mem->SetDebugTags(currentTags);
-    currentTags = new ObjMemory::DebugTagContainer;
+    mem->SetDebugTags(std::move(currentTags));
+    currentTags = std::make_unique<ObjMemory::DebugTagContainer>();
     currentDataSection->Add(mem);
     return false;
 }
@@ -1284,8 +1274,8 @@ bool ObjIeeeAscii::Fixup(const char* buffer, eParseType ParseType)
     int size = exp->GetRight()->GetValue();
     ObjExpression* left = exp->GetLeft();
     ObjMemory* mem = factory->MakeFixup(left, size);
-    mem->SetDebugTags(currentTags);
-    currentTags = new ObjMemory::DebugTagContainer;
+    mem->SetDebugTags(std::move(currentTags));
+    currentTags = std::make_unique<ObjMemory::DebugTagContainer>();
     currentDataSection->Add(mem);
     return false;
 }

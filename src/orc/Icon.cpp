@@ -48,9 +48,9 @@ void Icon::ReadBin(ResourceData* rd)
     //    if (!pt.y)
     //        pt.y = (bytes - 0x30) / ((pt.x / 8) *2);
 
-    data = new ResourceData(rd->GetData() + offset, bytes);
+    data = std::make_unique<ResourceData>(rd->GetData() + offset, bytes);
     if (rd->PastEnd() || offset + bytes > rd->GetLen())
-        throw new std::runtime_error("Icon file too short");
+        throw std::runtime_error("Icon file too short");
     // borland resets the size in the bitmapinfo header, but apparently sets it wrong...
 }
 void Icon::WriteRes(ResFile& resFile)
@@ -94,13 +94,13 @@ void GroupIcon::WriteRes(ResFile& resFile)
 void GroupIcon::ReadRC(RCFile& rcFile)
 {
     resInfo.ReadRC(rcFile, false);
-    ResourceData* rd = new ResourceData;
+    std::unique_ptr<ResourceData> rd = std::make_unique<ResourceData>();
     rd->ReadRC(rcFile);
     rcFile.NeedEol();
     rd->GetWord();
     if (rd->GetWord() != 1)
     {
-        throw new std::runtime_error("file does not contain icon data");
+        throw std::runtime_error("file does not contain icon data");
     }
     int count = rd->GetWord();
     for (int i = 0; i < count; i++)
@@ -108,8 +108,7 @@ void GroupIcon::ReadRC(RCFile& rcFile)
         Icon* ico = new Icon(resInfo);
         rcFile.GetResFile().Add(ico);
         icons.push_back(ico);
-        ico->ReadBin(rd);
+        ico->ReadBin(rd.get());
     }
     resInfo.SetFlags(resInfo.GetFlags() | ResourceInfo::Pure);
-    delete rd;
 }

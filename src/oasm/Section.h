@@ -54,26 +54,18 @@ class Section
     void Resolve();
     void SetAlign(int aln) { align = aln; }
     int GetAlign() { return align; }
-    void InsertInstruction(Instruction* ins)
-    {
-        instructions.push_back(ins);
-        ins->SetOffset(pc);
-        pc += ins->GetSize();
-    }
+    void InsertInstruction(Instruction* ins);
     Instruction* InsertLabel(Label* label)
     {
-        Instruction* l = new Instruction(label);
-        instructions.push_back(l);
+        instructions.push_back(std::make_unique<Instruction>(label));
         labels[label->GetName()] = pc;
-        return l;
+        return instructions.back().get();
     }
     void pop_back()
     {
-        Instruction* v = instructions.back();
-        delete v;
         instructions.pop_back();
     }
-    std::vector<Instruction*>& GetInstructions() { return instructions; }
+    std::vector<std::unique_ptr<Instruction>>& GetInstructions() { return instructions; }
     void ClearInstructions() { instructions.clear(); }
     int GetSect() { return sect; }
     ObjSection* GetObjectSection() { return objectSection; }
@@ -85,6 +77,7 @@ class Section
     int GetPC() { return pc; }
     bool HasInstructions() const { return instructions.size() != 0; }
 
+    static void NoShowError() { dontShowError = true; }
   protected:
     ObjExpression* ConvertExpression(AsmExprNode* node, std::function<Label*(std::string&)> Lookup,
                                      std::function<ObjSection*(std::string&)> SectLookup, ObjFactory& factory);
@@ -92,11 +85,12 @@ class Section
     void Optimize();
 
   private:
+    static bool dontShowError;
     std::string name;
     int sect;
     int align;
     bool isVirtual;
-    std::vector<Instruction*> instructions;
+    std::vector<std::unique_ptr<Instruction>> instructions;
     int instructionPos;
     ObjSection* objectSection;
     int pc;

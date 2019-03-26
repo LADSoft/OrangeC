@@ -18,17 +18,29 @@ version 6.0.41:
     occ: fix vagary where an argument which was the result of a function call used the wrong value for the result in rare circumstances
     occ: allow declaring an enumeration with an empty list of elements
     occ: fix _Pragma to work and allow it in C++ mode
+    occ: fix a couple of problems compiling templates
+    occ: if a copy/move constructor is not defaulted, don't call base class copy constructors (call the default constructor)
+    occ: allow wchar_t and unsigned short to be treated as identical for purposes of the suspicious pointer warning
+    occ: add builtin byteswap functions
+    occ: automatically detect DLL outputs and select "/Wd" command line switch, by parsing the contents of the '/oxxxx' switch
     omake: don't rebuild things that have exactly the same time stamp as their dependencies
     omake: improve diagnostics: extend /w switch to show more information
+    omake: fix multithreading problem/crash
     ocide: when typing a '}', move cursor to BEFORE the newly typed character
     ocide: fix bug, long lines cause buffer overrun
+    ocide: clean up relative paths in project files
+    ocide: allow the output exe file setting to be changed
     olink: identify invalid libraries
+    olink: create an error if a public symbol was also imported
     oasm: add .align assembler directive like gas version
     rtl: revert a usage of std::forward in <memory> to use the original code (orangec supports it as written now)
     rtl: allow nl_types.h to be included in c language files
     rtl: stdint:  handle __STDC_LIMIT_MACROS and __STDC_CONSTANT_MACROS correctly
     rtl: return a pointer to nothing when realloc is specified with a size of zero
     rtl: add wait() and waitpid()
+    rtl: reading from a tty will immediately clear any EOF flag associated with the TTY
+    rtl: add getexecname() function (solaris)
+    rtl: add realpath() and friends
     clean up make files: completes build in local directory and overwrites EXE file if it already exists
 version 6.0.40: 1/21/2019
     fix various problems with the MSDOS build and install

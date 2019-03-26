@@ -26,6 +26,7 @@
 #define Bitmap_h
 
 #include "Resource.h"
+#include <memory>
 
 class RCFile;
 class ResFile;
@@ -39,9 +40,9 @@ class Bitmap : public Resource
     virtual void WriteRes(ResFile& resFile);
     virtual void ReadRC(RCFile& rcFile);
     void SetData(ResourceData* rdata);
-    ResourceData* GetData() const { return data; }
+    ResourceData* GetData() const { return data.get(); }
 
   private:
-    ResourceData* data;
+    std::unique_ptr<ResourceData> data;
 };
 #endif

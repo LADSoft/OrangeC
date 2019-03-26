@@ -57,7 +57,7 @@ Maker::Maker(bool Silent, bool DisplayOnly, bool IgnoreResults, bool Touch, Outp
     std::transform(shtest.begin(), shtest.end(), shtest.begin(), ::toupper);
     OS::SetSHEXE(shtest.find("SH.EXE") != std::string::npos);
 }
-Maker::~Maker() { Clear(); }
+Maker::~Maker() { }
 void Maker::SetFirstGoal(const std::string& name)
 {
     if (firstGoal.empty())
@@ -111,13 +111,11 @@ bool Maker::CreateDependencyTree()
         dependsNesting = 0;
         if (goal != ".MAKEFLAGS" && goal != ".MFLAGS")
         {
-            Depends* t = Dependencies(goal, "", tv1, true, "", -1);
+            auto t = Dependencies(goal, "", tv1, true, "", -1);
             if (t)
             {
-                depends.push_back(t);
+                depends.push_back(std::move(t));
             }
-            else if (t)
-                delete t;
         }
     }
     v = VariableContainer::Instance()->Lookup(".INTERMEDIATE");
@@ -127,7 +125,7 @@ bool Maker::CreateDependencyTree()
     }
     return !missingTarget;
 }
-Depends* Maker::Dependencies(const std::string& goal, const std::string& preferredPath, Time& timeval, bool err, std::string file,
+std::unique_ptr<Depends>  Maker::Dependencies(const std::string& goal, const std::string& preferredPath, Time& timeval, bool err, std::string file,
                              int line)
 {
     if (++dependsNesting > 200)
@@ -137,7 +135,7 @@ Depends* Maker::Dependencies(const std::string& goal, const std::string& preferr
     }
     Time goalTime;
     Time dependsTime;
-    Depends* rv = Depends::Lookup(goal);
+    std::unique_ptr<Depends> rv(Depends::Lookup(goal));
     bool intermediate = RuleContainer::Instance()->OnList(goal, ".INTERMEDIATE");
     bool secondary = RuleContainer::Instance()->OnList(goal, ".SECONDARY");
     bool precious = RuleContainer::Instance()->OnList(goal, ".PRECIOUS");
@@ -162,10 +160,10 @@ Depends* Maker::Dependencies(const std::string& goal, const std::string& preferr
             }
             std::string foundPath = GetFileTime(goal, preferredPath, goalTime);
             bool exists = !!goalTime;
-            rv = new Depends(goal, xx, intermediate && !precious && !secondary);
+            rv = std::make_unique<Depends>(goal, xx, intermediate && !precious && !secondary);
             Rule* executionRule = nullptr;
             std::string newerPrereqs;
-            for (auto rule : *ruleList)
+            for (auto& rule : *ruleList)
             {
                 std::string working = rule->GetPrerequisites();
                 bool remakeThis = false;
@@ -173,7 +171,7 @@ Depends* Maker::Dependencies(const std::string& goal, const std::string& preferr
                 {
                     Time current;
                     std::string thisOne = Eval::ExtractFirst(working, " ");
-                    Depends* dp = Dependencies(thisOne, foundPath, current, err && !rule->IsDontCare(), rule->File(), rule->Line());
+                    auto dp = Dependencies(thisOne, foundPath, current, err && !rule->IsDontCare(), rule->File(), rule->Line());
                     if (current > dependsTime)
                     {
                         dependsTime = current;
@@ -200,7 +198,7 @@ Depends* Maker::Dependencies(const std::string& goal, const std::string& preferr
                     bool exists = !!goalTime;
                     if (!exists)
                     {
-                        Depends* dp =
+                        auto dp =
                             Dependencies(thisOne, preferredPath, current, err && !rule->IsDontCare(), rule->File(), rule->Line());
                         if (dp)
                         {
@@ -215,7 +213,7 @@ Depends* Maker::Dependencies(const std::string& goal, const std::string& preferr
                         if (executionRule)
                             Eval::warning("Conflicting command lists for goal '" + goal + "'", rule->File(), rule->Line());
                         else
-                            executionRule = rule;
+                            executionRule = rule.get();
                     }
             }
             if (executionRule)
@@ -259,7 +257,6 @@ Depends* Maker::Dependencies(const std::string& goal, const std::string& preferr
         {
             if (!rv->size())
             {
-                delete rv;
                 rv = nullptr;
             }
 
@@ -272,7 +269,6 @@ Depends* Maker::Dependencies(const std::string& goal, const std::string& preferr
                 }
                 if (check)
                 {
-                    delete rv;
                     rv = nullptr;
                 }
             }
@@ -401,7 +397,7 @@ void Maker::EnterSpecificRule(RuleList* l, const std::string& stem, const std::s
     std::string orderPrereq;
     std::string prereq;
     Command* commands = nullptr;
-    for (auto rule : *l)
+    for (auto& rule : *l)
     {
         if (!commands)
             commands = rule->GetCommands();
@@ -472,7 +468,7 @@ bool Maker::SearchImplicitRules(const std::string& goal, const std::string& pref
             n = Eval::MatchesPattern(goal, (*it)->GetTarget(), start);
             if (n == goal.size())
             {
-                matchedRules.push_back(*it);
+                matchedRules.push_back((*it).get());
                 if ((*it)->GetTarget() != "%")
                     nonMatchAnything = true;
             }
@@ -483,7 +479,7 @@ bool Maker::SearchImplicitRules(const std::string& goal, const std::string& pref
             n = Eval::MatchesPattern(name, (*it)->GetTarget(), start);
             if (n == name.size())
             {
-                matchedRules.push_back(*it);
+                matchedRules.push_back((*it).get());
                 if ((*it)->GetTarget() != "%")
                     nonMatchAnything = true;
             }
@@ -543,7 +539,7 @@ void Maker::EnterSuffixTerminals()
     RuleList* rl = RuleContainer::Instance()->Lookup(".SUFFIXES");
     if (rl)
     {
-        for (auto rule : *rl)
+        for (auto& rule : *rl)
         {
             std::string value = rule->GetPrerequisites();
             while (!value.empty())
@@ -566,7 +562,7 @@ void Maker::GetEnvironment(EnvironmentStrings& env)
     RuleList* rl = RuleContainer::Instance()->Lookup(".EXPORT_ALL_VARIABLES");
     if (rl)
         exportAll = true;
-    for (auto var : *VariableContainer::Instance())
+    for (auto& var : *VariableContainer::Instance())
     {
         if (exportAll || var.second->GetExport())
         {
@@ -587,7 +583,7 @@ int Maker::RunCommands(bool keepGoing)
 
     for (auto it = depends.begin(); it != depends.end(); ++it)
     {
-        runner.CancelOne(*it);
+        runner.CancelOne((*it).get());
     }
 
     int rv;
@@ -597,7 +593,7 @@ int Maker::RunCommands(bool keepGoing)
         rv = 0;
         for (auto it = depends.begin(); (rv <= 0 || keepGoing) && it != depends.end(); ++it)
         {
-            int rv1 = runner.RunOne(*it, env, keepGoing);
+            int rv1 = runner.RunOne((*it).get(), env, keepGoing);
             if (rv <= 0 && rv1 != 0)
                 rv = rv1;
             if (rv > 0)
@@ -606,9 +602,9 @@ int Maker::RunCommands(bool keepGoing)
         OS::Yield();
     } while (rv < 0);
     OS::JobRundown();
-    for (auto d : depends)
+    for (auto& d : depends)
     {
-        runner.DeleteOne(d);
+        runner.DeleteOne(d.get());
     }
     if (RuleContainer::Instance()->Lookup(".NOTPARALLEL") || RuleContainer::Instance()->Lookup(".NO_PARALLEL"))
         OS::PopJobCount();
@@ -620,8 +616,7 @@ int Maker::RunCommands(bool keepGoing)
 void Maker::Clear()
 {
     goals.clear();
-    for (auto d : depends)
-        delete d;
+    depends.clear();
     depends.clear();
     filePaths.clear();
 }

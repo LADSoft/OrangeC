@@ -130,7 +130,7 @@ int Coff2ieeeMain::Run(int argc, char** argv)
             ObjFile* file = object.ConvertToObject(outputName, factory);
             if (file)
             {
-                ObjIeee il = outputName;
+                ObjIeee il(outputName);
                 il.SetTranslatorName("Coff2ieee");
                 il.SetDebugInfoFlag(false);
                 FILE* c = fopen(outputName.c_str(), "w");

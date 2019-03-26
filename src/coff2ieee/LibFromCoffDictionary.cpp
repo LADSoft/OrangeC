@@ -33,13 +33,13 @@
 #include <cstring>
 #include "CoffLibrary.h"
 
-void LibDictionary::CreateDictionary(std::map<int, Module*>& Modules)
+void LibDictionary::CreateDictionary(std::map<int, std::unique_ptr<Module>>& Modules)
 {
     int files = 0;
     int total = 0;
     int symbols = 0;
     Clear();
-    for (auto m : Modules)
+    for (auto& m : Modules)
     {
         if (!m.second->ignore)
         {
@@ -57,7 +57,7 @@ void LibDictionary::CreateDictionary(std::map<int, Module*>& Modules)
     }
     int dictpages2, dictpages1;
     int i = 0;
-    for (auto m : Modules)
+    for (auto& m : Modules)
     {
         if (!m.second->ignore)
         {

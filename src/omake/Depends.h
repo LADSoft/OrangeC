@@ -30,7 +30,7 @@
 #include <list>
 #include <set>
 #include "Rule.h"
-
+#include <memory>
 class Depends
 {
   public:
@@ -46,7 +46,7 @@ class Depends
     }
     ~Depends();
 
-    void operator+=(Depends* depend) { subgoals.push_back(depend); }
+    void operator+=(std::unique_ptr<Depends>& depend) { subgoals.push_back(std::move(depend)); }
     Time& GetTime() { return time; }
     static Depends* Lookup(const std::string& val)
     {
@@ -69,7 +69,7 @@ class Depends
     void SetSecondary(bool flag) { isSecondary = flag; }
     bool IsSecondary() { return isSecondary; }
     std::string GetGoal() const { return goal; }
-    typedef std::list<Depends*>::iterator iterator;
+    typedef std::list<std::unique_ptr<Depends>>::iterator iterator;
     const iterator begin() { return subgoals.begin(); }
     const iterator end() { return subgoals.end(); }
     void Precious() { toDelete = false; }
@@ -86,7 +86,7 @@ class Depends
     bool toDelete;
     bool ordered;
     bool isSecondary;
-    std::list<Depends*> subgoals;
+    std::list<std::unique_ptr<Depends>> subgoals;
     static std::map<std::string, Depends*> all;
 };
 #endif

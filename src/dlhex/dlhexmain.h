@@ -30,21 +30,19 @@
 #include "CmdSwitch.h"
 #include "ObjFile.h"
 #include "ObjFactory.h"
-
+#include <memory>
 class dlHexMain
 {
     struct Section
     {
-        Section(ObjInt Address = 0, ObjInt Size = 0) : address(Address), size(Size), data(nullptr) {}
-        ~Section() { delete data; }
+        Section(ObjInt Address = 0, ObjInt Size = 0) : address(Address), size(Size) {}
         ObjInt address;
         ObjInt size;
-        char* data;
+        std::unique_ptr<char[]> data;
     };
 
   public:
     dlHexMain() : outputMode(eBinary), extraMode(0) {}
-    ~dlHexMain();
 
     int Run(int argc, char** argv);
     void GetSectionNames(std::vector<std::string>& names, ObjFile* file);
@@ -62,7 +60,7 @@ class dlHexMain
     static CmdSwitchString DebugFile;
     static const char* usageText;
 
-    std::vector<Section*> sections;
+    std::vector<std::unique_ptr<Section>> sections;
     enum OutputMode
     {
         eBinary,

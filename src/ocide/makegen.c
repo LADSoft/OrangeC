@@ -238,7 +238,7 @@ static int GenProjDepends(FILE* out, PROJECTITEM* pj, PROJECTITEM* fi, int pos)
             {
                 if (fi->outputExt[0])
                 {
-                    char* outFile = Lookup("OUTPUTFILE", fi, NULL);
+                    char* outFile = Lookup("OUTPUTEXE", fi, NULL);
                     char* rp;
                     if (pos > 60)
                     {
@@ -271,7 +271,7 @@ static void GenFileDepends(FILE* out, PROJECTITEM* pj)
             {
                 int i;
                 PROJECTITEM* proj = pj;
-                char* outFile = Lookup("OUTPUTFILE", pj, NULL);
+                char* outFile = Lookup("OUTPUTEXE", pj, NULL);
                 char* deps = Lookup("__DEPENDENCIES", pj, NULL);
                 PROJECTITEMLIST* depends = pj->depends;
                 char buf[MAX_PATH];
@@ -479,7 +479,7 @@ static void GenAllRule(FILE* out, PROJECTITEM* pj, BOOL first)
             char* rp;
             char* outFile;
             AddSymbolTable(pj, TRUE);
-            outFile = Lookup("OUTPUTFILE", pj, NULL);
+            outFile = Lookup("OUTPUTEXE", pj, NULL);
             rp = nodotslash(relpathmake(outFile, pj->realName));
             if (pj->mmcustomCmd->value[0])
             {

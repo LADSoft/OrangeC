@@ -29,15 +29,12 @@
 #include "LinkExpression.h"
 #include "CmdFiles.h"
 
-LinkRegionSpecifier::~LinkRegionSpecifier()
-{
-    delete region;
-    delete symbol;
-}
-LinkOverlay::~LinkOverlay()
-{
-    for (auto region : regions)
-        delete region;
+LinkRegionSpecifier::~LinkRegionSpecifier() { }
+LinkOverlay::~LinkOverlay() {}
+void LinkOverlay::Add(LinkRegionSpecifier* region) 
+{ 
+    std::unique_ptr<LinkRegionSpecifier> temp(region);
+    regions.push_back(std::move(temp)); 
 }
 bool LinkOverlay::ParseAssignment(LinkTokenizer& spec)
 {
@@ -56,8 +53,7 @@ bool LinkOverlay::ParseAssignment(LinkTokenizer& spec)
     }
     else
     {
-        LinkRegionSpecifier* lrs = new LinkRegionSpecifier(esym);
-        regions.push_back(lrs);
+        regions.push_back(std::make_unique<LinkRegionSpecifier>(esym));
     }
     return spec.MustMatch(LinkTokenizer::eSemi);
 }
@@ -159,7 +155,7 @@ bool LinkOverlay::ParseOverlaySpec(LinkManager* manager, CmdFiles& files, LinkTo
         else
         {
             LinkRegion* newRegion = new LinkRegion(this);
-            regions.push_back(new LinkRegionSpecifier(newRegion));
+            regions.push_back(std::make_unique<LinkRegionSpecifier>(newRegion));
             if (!newRegion->ParseRegionSpec(manager, files, spec))
                 return false;
             if (!spec.MustMatch(LinkTokenizer::eSemi))
@@ -177,7 +173,7 @@ ObjInt LinkOverlay::PlaceOverlay(LinkManager* manager, LinkAttribs& partitionAtt
     ObjInt size = 0;
     ObjInt base = partitionAttribs.GetAddress();
     ObjInt alignRegion0 = 1;
-    for (auto region : regions)
+    for (auto& region : regions)
     {
         if (!region->GetSymbol())
         {
@@ -200,7 +196,7 @@ ObjInt LinkOverlay::PlaceOverlay(LinkManager* manager, LinkAttribs& partitionAtt
     if (!attribs.GetHasFill())
         if (partitionAttribs.GetHasFill())
             attribs.SetFill(new LinkExpression(partitionAttribs.GetFill()));
-    for (auto region : regions)
+    for (auto& region : regions)
     {
         if (region->GetSymbol())
         {

@@ -32,7 +32,7 @@
 #include <stdlib.h>
 #include <climits>
 #include "AsmExpr.h"
-
+#include <memory>
 class Instruction;
 class Section;
 class AsmFile;

@@ -34,6 +34,7 @@
 #include <iostream>
 #include <cstring>
 #include <map>
+#include <memory>
 
 class LibManager;
 class LinkPartition;
@@ -104,25 +105,13 @@ struct linkltcompare
 };
 class LinkManager
 {
-    typedef std::vector<LinkPartitionSpecifier*> PartitionData;
+    typedef std::vector<std::unique_ptr<LinkPartitionSpecifier>> PartitionData;
     typedef std::set<LinkSymbolData*, linkltcompare> SymbolData;
     typedef std::vector<ObjFile*> FileData;
 
   public:
     LinkManager(ObjString Specification, bool CaseSensitive, const ObjString OutputFile = "", bool CompleteLink = false,
-                bool DebugPassThrough = false, ObjString DebugFile = "") :
-        specification(Specification),
-        outputFile(OutputFile),
-        specName(Specification),
-        factory(nullptr),
-        indexManager(nullptr),
-        completeLink(CompleteLink),
-        ioBase(nullptr),
-        caseSensitive(CaseSensitive),
-        debugPassThrough(DebugPassThrough),
-        debugFile(DebugFile)
-    {
-    }
+        bool DebugPassThrough = false, ObjString DebugFile = "");
 
     ~LinkManager();
 
@@ -194,7 +183,7 @@ class LinkManager
     void MergePublics(ObjFile* file, bool toerr);
     bool ScanVirtuals();
     void LoadFiles();
-    LinkLibrary* OpenLibrary(const ObjString& name);
+    std::unique_ptr<LinkLibrary> OpenLibrary(const ObjString& name);
     void LoadLibraries();
     bool LoadLibrarySymbol(LinkLibrary* lib, std::string& name);
     bool ResolveLibrary(LinkLibrary* lib, std::string& name);
@@ -217,10 +206,11 @@ class LinkManager
     SymbolData externals;
     SymbolData imports;
     SymbolData exports;
+    std::set<std::string> importNames;
     FileData fileData;
     CmdFiles objectFiles;
     CmdFiles libFiles;
-    std::set<LinkLibrary*> dictionaries;
+    std::set<std::unique_ptr<LinkLibrary>> dictionaries;
     std::vector<ObjSection*> virtualSections;
     std::map<ObjSection*, ObjSection*> parentSections;
     ObjIOBase* ioBase;

@@ -27,6 +27,7 @@
 
 #include <string>
 #include <deque>
+#include <memory>
 
 #include "ppExpr.h"
 class ppDefine;
@@ -36,7 +37,6 @@ class ppCond
 {
   public:
     ppCond(bool isunsignedchar, bool C89, bool Extensions, bool AsmPP) :
-        current(nullptr),
         define(nullptr),
         c89(C89),
         expr(isunsignedchar),
@@ -53,7 +53,7 @@ class ppCond
     bool Check(int token, const std::string& line, int lineno);
     void CheckErrors();
     bool Skipping() { return current && current->skipping; }
-    void Mark() { marks.push_front(skipList.size() + current != nullptr); }
+    void Mark() { marks.push_front(skipList.size() + current.get() != nullptr); }
     void Drop() { marks.pop_front(); }
     void Release()
     {
@@ -94,9 +94,9 @@ class ppCond
         int line;
     };
 
-    std::deque<skip*> skipList;
+    std::deque<std::unique_ptr<skip>> skipList;
     std::deque<int> marks;
-    skip* current;
+    std::unique_ptr<skip> current;
 
     ppDefine* define;
     ppExpr expr;

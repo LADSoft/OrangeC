@@ -848,8 +848,8 @@ static void baseFinishDeclareStruct(SYMBOL* funcsp)
                 SYMBOL* x = syms[j];
                 memmove(&syms[i + 1], &syms[i], sizeof(SYMBOL*) * (j - i));
                 syms[i] = x;
-                if (j != i + 1)
-                    j = i;
+//                if (j != i + 1)
+//                    j = i;
             }
     for (i = 0; i < n; i++)
     {
@@ -1355,142 +1355,145 @@ static LEXEME* enumbody(LEXEME* lex, SYMBOL* funcsp, SYMBOL* spi, enum e_sc stor
         preverrorsym(ERR_ENUM_CONSTANTS_DEFINED, spi, spi->declfile, spi->declline);
     }
     spi->tp->syms = CreateHashTable(1); /* holds a list of all the enum values, e.g. for debug info */
-    while (lex)
+    if (!MATCHKW(lex, end))
     {
-        if (ISID(lex))
+        while (lex)
         {
-            SYMBOL* sp;
-            TYPE* tp;
-            if (cparams.prm_cplusplus)
+            if (ISID(lex))
             {
-                tp = (TYPE *)Alloc(sizeof(TYPE));
-                if (fixedType)
-                    *tp = *fixedType;
-                else
-                    *tp = *unfixedType;
-                tp->scoped = scoped;  // scoped the constants type as well for error checking
-                tp->btp = spi->tp;    // the integer type gets a base type which is the enumeration for error checking
-                tp->rootType = tp;
-                tp->enumConst = true;
-                tp->sp = spi;
-            }
-            else
-            {
-                tp = (TYPE *)Alloc(sizeof(TYPE));
-                tp->type = bt_int;
-                tp->size = getSize(bt_int);
-                tp->rootType = tp;
-            }
-            sp = makeID(sc_enumconstant, tp, 0, litlate(lex->value.s.a));
-            sp->name = sp->errname = sp->decoratedName = litlate(lex->value.s.a);
-            sp->declcharpos = lex->charindex;
-            sp->declline = sp->origdeclline = lex->line;
-            sp->realdeclline = lex->realline;
-            sp->declfile = sp->origdeclfile = lex->file;
-            sp->declfilenum = lex->filenum;
-            sp->parentClass = spi->parentClass;
-            sp->access = access;
-            browse_variable(sp);
-            if (cparams.prm_cplusplus)
-            {
-                if (!sp->tp->scoped)  // dump it into the parent table unless it is a C++ scoped enum
-                    InsertSymbol(sp, storage_class, lk_c, false);
-            }
-            else  // in C dump it into the globals
-            {
-                if (funcsp)
-                    insert(sp, localNameSpace->syms);
-                else
-                    insert(sp, globalNameSpace->syms);
-            }
-            insert(sp, spi->tp->syms);
-            lex = getsym();
-            if (MATCHKW(lex, assign))
-            {
-                TYPE* tp = NULL;
-                EXPRESSION* exp = NULL;
-                lex = getsym();
-                lex = optimized_expression(lex, funcsp, NULL, &tp, &exp, false);
-                if (tp && isintconst(exp))  // type is redefined to NULL here, is this intentional?
+                SYMBOL* sp;
+                TYPE* tp;
+                if (cparams.prm_cplusplus)
                 {
-                    if (cparams.prm_cplusplus)
+                    tp = (TYPE *)Alloc(sizeof(TYPE));
+                    if (fixedType)
+                        *tp = *fixedType;
+                    else
+                        *tp = *unfixedType;
+                    tp->scoped = scoped;  // scoped the constants type as well for error checking
+                    tp->btp = spi->tp;    // the integer type gets a base type which is the enumeration for error checking
+                    tp->rootType = tp;
+                    tp->enumConst = true;
+                    tp->sp = spi;
+                }
+                else
+                {
+                    tp = (TYPE *)Alloc(sizeof(TYPE));
+                    tp->type = bt_int;
+                    tp->size = getSize(bt_int);
+                    tp->rootType = tp;
+                }
+                sp = makeID(sc_enumconstant, tp, 0, litlate(lex->value.s.a));
+                sp->name = sp->errname = sp->decoratedName = litlate(lex->value.s.a);
+                sp->declcharpos = lex->charindex;
+                sp->declline = sp->origdeclline = lex->line;
+                sp->realdeclline = lex->realline;
+                sp->declfile = sp->origdeclfile = lex->file;
+                sp->declfilenum = lex->filenum;
+                sp->parentClass = spi->parentClass;
+                sp->access = access;
+                browse_variable(sp);
+                if (cparams.prm_cplusplus)
+                {
+                    if (!sp->tp->scoped)  // dump it into the parent table unless it is a C++ scoped enum
+                        InsertSymbol(sp, storage_class, lk_c, false);
+                }
+                else  // in C dump it into the globals
+                {
+                    if (funcsp)
+                        insert(sp, localNameSpace->syms);
+                    else
+                        insert(sp, globalNameSpace->syms);
+                }
+                insert(sp, spi->tp->syms);
+                lex = getsym();
+                if (MATCHKW(lex, assign))
+                {
+                    TYPE* tp = NULL;
+                    EXPRESSION* exp = NULL;
+                    lex = getsym();
+                    lex = optimized_expression(lex, funcsp, NULL, &tp, &exp, false);
+                    if (tp && isintconst(exp))  // type is redefined to NULL here, is this intentional?
                     {
-                        if (!fixedType)
+                        if (cparams.prm_cplusplus)
                         {
-                            if (tp->type != bt_bool)
+                            if (!fixedType)
                             {
-                                if (!comparetypes(tp, unfixedType, true))
-                                    fixed = false;
-                                unfixedType = tp;
-                                sp->tp->type = tp->type;
-                                sp->tp->size = tp->size;
-                                //                                *sp->tp = *tp;
+                                if (tp->type != bt_bool)
+                                {
+                                    if (!comparetypes(tp, unfixedType, true))
+                                        fixed = false;
+                                    unfixedType = tp;
+                                    sp->tp->type = tp->type;
+                                    sp->tp->size = tp->size;
+                                    //                                *sp->tp = *tp;
+                                }
+                            }
+                            else
+                            {
+                                if (tp->type != fixedType->type)
+                                {
+                                    LLONG_TYPE v = 1;
+                                    LLONG_TYPE n = ~((v << (fixedType->size * 8 - 1)) - 1);
+                                    if ((exp->v.i & n) != 0 && (exp->v.i & n) != n)
+                                        error(ERR_ENUMERATION_OUT_OF_RANGE_OF_BASE_TYPE);
+                                    cast(fixedType, &exp);
+                                    optimize_for_constants(&exp);
+                                }
                             }
                         }
-                        else
+                        enumval = exp->v.i;
+                    }
+                    else
+                    {
+                        if (!templateNestingCount)
+                            error(ERR_CONSTANT_VALUE_EXPECTED);
+                        errskim(&lex, skim_end);
+                    }
+                }
+                sp->value.i = enumval++;
+                if (cparams.prm_cplusplus && spi->tp->btp)
+                {
+                    if (fixedType)
+                    {
+                        LLONG_TYPE v = 1;
+                        LLONG_TYPE n = ~((v << (fixedType->size * 8 - 1)) - 1);
+                        if ((sp->value.i & n) != 0 && (sp->value.i & n) != n)
+                            error(ERR_ENUMERATION_OUT_OF_RANGE_OF_BASE_TYPE);
+                    }
+                    else
+                    {
+                        LLONG_TYPE v = 1;
+                        LLONG_TYPE n = ~((v << (spi->tp->size * 8)) - 1);
+                        if ((sp->value.i & n) != 0 && (sp->value.i & n) != n)
                         {
-                            if (tp->type != fixedType->type)
-                            {
-                                LLONG_TYPE v = 1;
-                                LLONG_TYPE n = ~((v << (fixedType->size * 8 - 1)) - 1);
-                                if ((exp->v.i & n) != 0 && (exp->v.i & n) != n)
-                                    error(ERR_ENUMERATION_OUT_OF_RANGE_OF_BASE_TYPE);
-                                cast(fixedType, &exp);
-                                optimize_for_constants(&exp);
-                            }
+                            spi->tp->btp->type = bt_long_long;
+                            spi->tp->size = spi->tp->btp->size = getSize(bt_long_long);
+                            unfixedType = spi->tp->btp;
                         }
                     }
-                    enumval = exp->v.i;
                 }
-                else
-                {
-                    if (!templateNestingCount)
-                        error(ERR_CONSTANT_VALUE_EXPECTED);
-                    errskim(&lex, skim_end);
-                }
-            }
-            sp->value.i = enumval++;
-            if (cparams.prm_cplusplus && spi->tp->btp)
-            {
-                if (fixedType)
-                {
-                    LLONG_TYPE v = 1;
-                    LLONG_TYPE n = ~((v << (fixedType->size * 8 - 1)) - 1);
-                    if ((sp->value.i & n) != 0 && (sp->value.i & n) != n)
-                        error(ERR_ENUMERATION_OUT_OF_RANGE_OF_BASE_TYPE);
-                }
-                else
-                {
-                    LLONG_TYPE v = 1;
-                    LLONG_TYPE n = ~((v << (spi->tp->size * 8)) - 1);
-                    if ((sp->value.i & n) != 0 && (sp->value.i & n) != n)
-                    {
-                        spi->tp->btp->type = bt_long_long;
-                        spi->tp->size = spi->tp->btp->size = getSize(bt_long_long);
-                        unfixedType = spi->tp->btp;
-                    }
-                }
-            }
-            if (!MATCHKW(lex, comma))
-                break;
-            else
-            {
-                lex = getsym();
-                if (KW(lex) == end)
-                {
-                    if (cparams.prm_ansi && !cparams.prm_c99 && !cparams.prm_cplusplus)
-                    {
-                        error(ERR_ANSI_ENUM_NO_COMMA);
-                    }
+                if (!MATCHKW(lex, comma))
                     break;
+                else
+                {
+                    lex = getsym();
+                    if (KW(lex) == end)
+                    {
+                        if (cparams.prm_ansi && !cparams.prm_c99 && !cparams.prm_cplusplus)
+                        {
+                            error(ERR_ANSI_ENUM_NO_COMMA);
+                        }
+                        break;
+                    }
                 }
             }
-        }
-        else
-        {
-            error(ERR_IDENTIFIER_EXPECTED);
-            errskim(&lex, skim_end);
-            break;
+            else
+            {
+                error(ERR_IDENTIFIER_EXPECTED);
+                errskim(&lex, skim_end);
+                break;
+            }
         }
     }
     if (!lex)
@@ -2899,6 +2902,11 @@ founddecltype:
                     tn->type = bt_any;
                     tn->rootType = tn;
                     tn->size = getSize(bt_int);
+                    if (lex->type == l_id)
+                    {
+                        SYMBOL *sp = makeID(sc_global, tn, NULL, litlate(lex->value.s.a));
+                        tn->sp = sp;
+                    }
                     lex = getsym();
                     foundsomething = true;
                 }
@@ -3250,7 +3258,7 @@ static void matchFunctionDeclaration(LEXEME* lex, SYMBOL* sp, SYMBOL* spo, bool 
             }
         }
     }
-    else if (spo->xcMode != sp->xcMode)
+    else if (!templateNestingCount && spo->xcMode != sp->xcMode)
     {
         if (spo->xcMode == xc_none && sp->xcMode == xc_dynamic)
         {

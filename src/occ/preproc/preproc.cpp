@@ -668,7 +668,7 @@ void preprocess(void)
     else if (strcmp(name, "warning") == 0)
         (dowarning());
     else if (strcmp(name, "pragma") == 0)
-        (dopragma());
+        (dopragma(false));
     else if (strcmp(name, "line") == 0)
         doline();
     else
@@ -845,7 +845,7 @@ static void pragerror(int error)
 
 /*-------------------------------------------------------------------------*/
 
-void dopragma(void)
+void dopragma(bool fromPragma)
 {
     char buf[40], *p = buf;
     bool sflag;
@@ -854,7 +854,8 @@ void dopragma(void)
 
     if (includes->ifskip)
         return;
-    lineToCpp();
+    if (!fromPragma)
+        lineToCpp();
     if (!expectid(name))
         return;
     if (!strncmp(name, "PRIORITYCPP", 11))
@@ -1085,7 +1086,7 @@ void Compile_Pragma(void)
         includes->lptr++;
     if (*includes->lptr == '"')
     {
-        unsigned char* p = includes->lptr;
+        unsigned char* p = includes->lptr+1;
         while (*p)
         {
             if (*p == '\\' && (*(p + 1) == '"' || *(p + 1) == '\\'))
@@ -1094,6 +1095,9 @@ void Compile_Pragma(void)
                 break;
             *q++ = *p++;
         }
+        includes->lptr = p;
+        if (*p)
+            includes->lptr++;
         *q = 0;
     }
     else
@@ -1109,7 +1113,7 @@ void Compile_Pragma(void)
     last = includes->lptr;
     includes->lptr = buf;
     skipspace();
-    dopragma();
+    dopragma(true);
     skipspace();
     includes->lptr = last;
     freeMacroBuffer(buf);

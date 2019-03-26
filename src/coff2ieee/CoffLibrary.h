@@ -39,6 +39,7 @@
 #    include <vector>
 #    include <set>
 #    include <map>
+#    include <memory>
 
 struct Module
 {
@@ -74,8 +75,8 @@ class CoffLibrary
     void Align(FILE* ostr, ObjInt align = LibManager::ALIGN);
 
   private:
-    std::fstream* inputFile;
-    std::map<int, Module*> modules;
+    std::unique_ptr<std::fstream> inputFile;
+    std::map<int, std::unique_ptr<Module>> modules;
     std::string name;
     LibManager::LibHeader header;
     LibDictionary dictionary;

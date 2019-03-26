@@ -63,7 +63,7 @@ enum kw
 class ppExpr
 {
   public:
-    ppExpr(bool isunsignedchar) : define(nullptr), unsignedchar(isunsignedchar) { InitHash(); }
+    ppExpr(bool isunsignedchar) : define(nullptr), unsignedchar(isunsignedchar) { }
     ~ppExpr() {}
 
     void SetParams(ppDefine* Define) { define = Define; }
@@ -89,12 +89,10 @@ class ppExpr
     PPINT comma_(std::string& line);
 
   private:
-    static void InitHash();
     bool unsignedchar;
     ppDefine* define;
-    Tokenizer* tokenizer;
+    std::unique_ptr<Tokenizer> tokenizer;
     const Token* token;
     static KeywordHash hash;
-    static bool initted;
 };
 #endif

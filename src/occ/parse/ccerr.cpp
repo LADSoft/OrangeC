@@ -67,7 +67,7 @@ enum e_kw skim_semi_declare[] = {semicolon, kw_none};
 enum e_kw skim_closebr[] = {closebr, semicolon, end, kw_none};
 enum e_kw skim_comma[] = {comma, closepa, closebr, semicolon, end, kw_none};
 enum e_kw skim_colon[] = {colon, kw_case, kw_default, semicolon, end, kw_none};
-
+enum e_kw skim_templateend[] = {gt, semicolon, end, kw_none};
 static struct
 {
     const char* name;
@@ -567,6 +567,8 @@ static struct
     {"Function call needs argument list", WARNING},
     {"Return value would require a temporary variable", ERROR},
     {"Declaration of '%s' conflicts with previous declaration", ERROR},
+    {"Expected end of template arguments near undefined type '%s'", ERROR },
+    {"Expected type.   Did you mean to use 'typename'?", ERROR },
 #endif
 };
 

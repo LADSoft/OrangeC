@@ -40,12 +40,6 @@ Listing::Listing() : bigEndian(false)
 }
 Listing::~Listing()
 {
-    while (list.size())
-    {
-        ListedLine* p = list.front();
-        list.pop_front();
-        delete p;
-    }
 }
 void Listing::ListLine(std::fstream& out, std::string& line, ListedLine* cur, bool macro)
 {
@@ -211,7 +205,7 @@ bool Listing::Write(std::string& listingName, std::string& inName, bool listMacr
     ListedLine* cur = nullptr;
     if (list.size())
     {
-        cur = list.front();
+        cur = list.front().release();
         list.pop_front();
     }
     while (!in.eof())
@@ -234,7 +228,7 @@ bool Listing::Write(std::string& listingName, std::string& inName, bool listMacr
             ListLine(out, bufs, cur, false);
             if (list.size())
             {
-                cur = list.front();
+                cur = list.front().release();
                 list.pop_front();
             }
             else
@@ -256,7 +250,7 @@ bool Listing::Write(std::string& listingName, std::string& inName, bool listMacr
                 ListLine(out, lines[cur->lineno - 1], cur, true);
             if (list.size())
             {
-                cur = list.front();
+                cur = list.front().release();
                 list.pop_front();
             }
             else

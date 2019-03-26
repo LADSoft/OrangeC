@@ -762,7 +762,7 @@ LEXEME* getsym(void);
 LEXEME* prevsym(LEXEME* lex);
 LEXEME* backupsym(void);
 LEXEME* SetAlternateLex(LEXEME* lexList);
-
+bool CompareLex(LEXEME *left, LEXEME *right);
                                /* List.c */
 
 void put_sc(int scl);
@@ -877,7 +877,7 @@ void preprocess(void);
 void doerror(void);
 void dowarning(void);
 unsigned char* getauxname(unsigned char* ptr, char* *bufp);
-void dopragma(void);
+void dopragma(bool fromPragma);
 void Compile_Pragma(void);
 void doline(void);
 INCLUDES* GetIncludeData(void);
@@ -971,6 +971,7 @@ bool isAccessible(SYMBOL* derived, SYMBOL* current, SYMBOL* member, SYMBOL* func
 bool isExpressionAccessible(SYMBOL* derived, SYMBOL* sym, SYMBOL* funcsp, EXPRESSION* exp, bool asAddress);
 bool checkDeclarationAccessible(TYPE* tp, SYMBOL* funcsp);
 SYMBOL* LookupSym(char* name);
+SYMBOL *lookupGenericConversion(SYMBOL *sp, TYPE *tp);
 SYMBOL* lookupSpecificCast(SYMBOL* sp, TYPE* tp);
 SYMBOL* lookupNonspecificCast(SYMBOL* sp, TYPE* tp);
 SYMBOL* lookupIntCast(SYMBOL* sp, TYPE* tp, bool implicit);

@@ -33,13 +33,16 @@
 #    include <windows.h>
 #    include <process.h>
 #    include <direct.h>
-#    include <io.h>
+ #    include <io.h>
 #    include <share.h>
 #    include <fcntl.h>
 #    include <sys/locking.h>
 #    define lockf _locking
 #    define F_LOCK _LK_LOCK
 #    define F_ULOCK _LK_UNLCK
+#    ifndef _SH_DENYNO
+#        define _SH_DENYNO 0
+#    endif
 #endif
 #include <string.h>
 #undef WriteConsole
@@ -63,6 +66,7 @@
 static Semaphore sema;
 #ifdef _WIN32
 static CRITICAL_SECTION consoleSync;
+static CRITICAL_SECTION evalSync;
 #endif
 // static std::recursive_mutex consoleMut;
 std::deque<int> OS::jobCounts;
@@ -133,6 +137,7 @@ void OS::Init()
 {
 #ifdef _WIN32
     InitializeCriticalSection(&consoleSync);
+    InitializeCriticalSection(&evalSync);
 #endif
 }
 
@@ -282,14 +287,22 @@ void OS::JobInit()
         if (fil >= 0)
         {
             int count = 0;
+#ifdef BCC32c
+            lock(fil, 0, 4);
+#else
             lockf(fil, F_LOCK, 4);
+#endif
             if (!first)
                 read(fil, (char *)&count, 4);
             count++;
             lseek(fil, 0, SEEK_SET);
             write(fil, (char *)&count, 4);
             lseek(fil, 0, SEEK_SET);
+#ifdef BCC32c
+            unlock(fil, 0, 4);
+#else
             lockf(fil, F_ULOCK, 4);
+#endif
             char buf[256];
             sprintf(buf, "%d> ", count);
             jobName= buf;
@@ -312,6 +325,18 @@ void OS::Give()
 {
 #ifdef _WIN32
     LeaveCriticalSection(&consoleSync);
+#endif
+}
+void OS::EvalTake()
+{
+#ifdef _WIN32
+    EnterCriticalSection(&evalSync);
+#endif
+}
+void OS::EvalGive()
+{
+#ifdef _WIN32
+    LeaveCriticalSection(&evalSync);
 #endif
 }
 int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::string* output)
@@ -378,9 +403,9 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
         n += env.name.size() + env.value.size() + 2;
     }
     n++;
-    char* env = new char[n];
-    memset(env, 0, sizeof(char) * n);  // !!!
-    char* p = env;
+    std::unique_ptr<char[]> env = std::make_unique<char[]>(n);
+    char* p = env.get();
+    memset(p, 0, sizeof(char) * n);  // !!!
     for (auto env : environment)
     {
         memcpy(p, env.name.c_str(), env.name.size());
@@ -411,7 +436,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
     }
 
     // try as an app first
-    if (asapp && CreateProcess(nullptr, (char*)command1.c_str(), nullptr, nullptr, true, 0, env, nullptr, &startup, &pi))
+    if (asapp && CreateProcess(nullptr, (char*)command1.c_str(), nullptr, nullptr, true, 0, env.get(), nullptr, &startup, &pi))
     {
         WaitForSingleObject(pi.hProcess, INFINITE);
         if (output)
@@ -420,13 +445,12 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
             PeekNamedPipe(pipeRead, nullptr, 0, nullptr, &avail, nullptr);
             if (avail > 0)
             {
-                char* buffer = new char[avail + 1];
+                std::unique_ptr<char[]> buffer = std::make_unique<char[]>(avail + 1);
                 DWORD readlen = 0;
 
-                ReadFile(pipeRead, buffer, avail, &readlen, nullptr);
+                ReadFile(pipeRead, buffer.get(), avail, &readlen, nullptr);
                 buffer[readlen] = 0;
-                *output = buffer;
-                delete[] buffer;
+                *output = buffer.get();
             }
         }
         DWORD x;
@@ -438,7 +462,7 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
     else
     {
         // not found, try running a shell to handle it...
-        if (CreateProcess(nullptr, (char*)cmd.c_str(), nullptr, nullptr, true, 0, env, nullptr, &startup, &pi))
+        if (CreateProcess(nullptr, (char*)cmd.c_str(), nullptr, nullptr, true, 0, env.get(), nullptr, &startup, &pi))
         {
             WaitForSingleObject(pi.hProcess, INFINITE);
             if (output)
@@ -447,13 +471,12 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
                 PeekNamedPipe(pipeRead, nullptr, 0, nullptr, &avail, nullptr);
                 if (avail > 0)
                 {
-                    char* buffer = new char[avail + 1];
+                    std::unique_ptr<char[]> buffer = std::make_unique<char[]>(avail + 1);
                     DWORD readlen = 0;
 
-                    ReadFile(pipeRead, buffer, avail, &readlen, nullptr);
+                    ReadFile(pipeRead, buffer.get(), avail, &readlen, nullptr);
                     buffer[readlen] = 0;
-                    *output = buffer;
-                    delete[] buffer;
+                    *output = buffer.get();
                 }
             }
             DWORD x;
@@ -472,7 +495,6 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
         CloseHandle(pipeRead);
         CloseHandle(pipeWriteDuplicate);
     }
-    delete[] env;
 #    ifdef DEBUG
     std::cout << rv << ":" << cmd << std::endl;
 #    endif
@@ -515,12 +537,11 @@ std::string OS::SpawnWithRedirect(const std::string command)
         PeekNamedPipe(pipeRead, nullptr, 0, nullptr, &avail, nullptr);
         if (avail > 0)
         {
-            char* buffer = new char[avail + 1];
+            std::unique_ptr<char[]> buffer = std::make_unique<char[]>(avail + 1);
             DWORD readlen = 0;
-            ReadFile(pipeRead, buffer, avail, &readlen, nullptr);
+            ReadFile(pipeRead, buffer.get(), avail, &readlen, nullptr);
             buffer[readlen] = 0;
-            rv = buffer;
-            delete[] buffer;
+            rv = buffer.get();
         }
         CloseHandle(pi.hProcess);
         CloseHandle(pi.hThread);
@@ -658,7 +679,12 @@ std::string OS::NormalizeFileName(const std::string file)
 void OS::CreateThread(void* func, void* data)
 {
 #ifdef _WIN32
+#ifdef BCC32c
+    DWORD tid;
+    CloseHandle(::CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)func, data, 0, &tid));
+#else
     CloseHandle((HANDLE)_beginthreadex(nullptr, 0, (unsigned(CALLBACK*)(void*))func, data, 0, nullptr));
+#endif
 #endif
 }
 void OS::Yield()

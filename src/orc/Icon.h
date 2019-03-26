@@ -28,7 +28,7 @@
 #include "Resource.h"
 #include "ResourceData.h"
 #include <deque>
-
+#include <memory>
 class RCFile;
 class ResFile;
 class ResourceData;
@@ -47,7 +47,7 @@ class Icon : public Resource
     Icon(const ResourceInfo& info, const ResourceId& id) : Resource(eIcon, id, info), colors(0), planes(0), bits(0), data(nullptr)
     {
     }
-    virtual ~Icon() { delete data; }
+    virtual ~Icon() { }
     void ReadBin(ResourceData* rd);
     virtual void WriteRes(ResFile& resFile);
     virtual void ReadRC(RCFile& rcFile) {}
@@ -69,14 +69,13 @@ class Icon : public Resource
     unsigned GetBits() const { return bits; }
     void SetData(ResourceData* rdata)
     {
-        delete data;
-        data = rdata;
+        data.reset(rdata);
     }
-    ResourceData* GetData() const { return data; }
+    ResourceData* GetData() const { return data.get(); }
     static void Reset() { nextIconIndex = 0; }
 
   protected:
-    ResourceData* data;
+    std::unique_ptr<ResourceData> data;
 
   private:
     Point size;

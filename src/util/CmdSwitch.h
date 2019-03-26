@@ -31,6 +31,7 @@
 #include <vector>
 #include <fstream>
 #include <iostream>
+#include <memory>
 class CmdSwitchParser;
 
 class CmdSwitchBase
@@ -58,7 +59,7 @@ class CmdSwitchBool : public CmdSwitchBase
   public:
     CmdSwitchBool(CmdSwitchParser& parser, char SwitchChar, bool State = false, std::string LongName = "") : CmdSwitchBase(parser, SwitchChar, LongName), value(State) {}
     CmdSwitchBool(const CmdSwitchBool& orig) = default;
-    virtual int Parse(const char* data);
+    virtual int Parse(const char* data) override;
     bool GetValue() const { return value; }
     void SetValue(bool flag) { value = flag; }
 
@@ -77,7 +78,7 @@ class CmdSwitchInt : public CmdSwitchBase
     }
     CmdSwitchInt(const CmdSwitchInt& orig) = default;
 
-    virtual int Parse(const char* data);
+    virtual int Parse(const char* data) override;
     int GetValue() const { return value; }
     void SetValue(int val) { value = val; }
   private:
@@ -97,7 +98,7 @@ class CmdSwitchHex : public CmdSwitchBase
     }
     CmdSwitchHex(const CmdSwitchHex& orig) = default;
 
-    virtual int Parse(const char* data);
+    virtual int Parse(const char* data) override;
     int GetValue() const { return value; }
 
   private:
@@ -116,7 +117,7 @@ class CmdSwitchString : public CmdSwitchBase
     }
     CmdSwitchString(const CmdSwitchString& orig) = default;
     CmdSwitchString() : value(""), concat(0) {}
-    virtual int Parse(const char* data);
+    virtual int Parse(const char* data) override;
     const std::string& GetValue() const { return value; }
     std::string operator+=(const char* c)
     {
@@ -138,7 +139,7 @@ class CmdSwitchCombineString : public CmdSwitchString
     {
     }
     CmdSwitchCombineString() {}
-    virtual int Parse(const char* data);
+    virtual int Parse(const char* data) override;
 };
 class CmdSwitchCombo : public CmdSwitchString
 {
@@ -151,7 +152,7 @@ class CmdSwitchCombo : public CmdSwitchString
     }
     CmdSwitchCombo(const CmdSwitchCombo& orig) = default;
     CmdSwitchCombo() : valid(""), selected(false) {}
-    virtual int Parse(const char* data);
+    virtual int Parse(const char* data) override;
     bool GetValue() { return selected; }
     bool GetValue(char selector) { return value.find_first_of(selector) != std::string::npos; }
 
@@ -168,7 +169,7 @@ class CmdSwitchOutput : public CmdSwitchCombineString
     {
     }
     CmdSwitchOutput(const CmdSwitchOutput& orig) = default;
-    virtual int Parse(const char* data);
+    virtual int Parse(const char* data) override;
 
   private:
     const char* extension;
@@ -179,7 +180,7 @@ class CmdSwitchDefine : public CmdSwitchBase
     CmdSwitchDefine(CmdSwitchParser& parser, char SwitchChar, std::string LongName = "") : CmdSwitchBase(parser, SwitchChar, LongName) {}
     CmdSwitchDefine(const CmdSwitchDefine& orig) = default;
     virtual ~CmdSwitchDefine();
-    virtual int Parse(const char* data);
+    virtual int Parse(const char* data) override;
     struct define
     {
         std::string name;
@@ -190,7 +191,7 @@ class CmdSwitchDefine : public CmdSwitchBase
     define* GetValue(int index);
     virtual void SetArgNum(int an) override { if (defines.size()) defines.back()->argnum = an; }
   private:
-    std::vector<define*> defines;
+    std::vector<std::unique_ptr<define>> defines;
 };
 class CmdSwitchFile : public CmdSwitchString
 {
@@ -204,10 +205,10 @@ class CmdSwitchFile : public CmdSwitchString
     }
     CmdSwitchFile(CmdSwitchParser &parser) : CmdSwitchString(), Parser(&parser), argc(0), argv(nullptr) { }
 
-    
-    virtual int Parse(const char* data);
+    virtual int Parse(const char* data) override;
+
     int GetCount() const { return argc; }
-    char** const GetValue() { return argv; }
+    char** const GetValue() { return argv.get(); }
 
   protected:
     void Dispatch(char* data);
@@ -215,7 +216,7 @@ class CmdSwitchFile : public CmdSwitchString
 
   private:
     int argc;
-    char** argv;
+    std::unique_ptr<char*[]> argv;
     CmdSwitchParser* Parser;
 };
 class CmdSwitchParser

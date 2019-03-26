@@ -38,10 +38,16 @@ CommandContainer* CommandContainer::Instance()
         instance = new CommandContainer;
     return instance;
 }
+
+CommandContainer& CommandContainer::operator+=(Command* p)
+{
+    std::unique_ptr<Command> temp(p);
+    commands.push_back(std::move(temp));
+    return *this;
+}
+
 void CommandContainer::Clear()
 {
-    for (auto cmd : commands)
-        delete cmd;
     commands.clear();
 }
 
@@ -82,21 +88,12 @@ RuleList::RuleList(const std::string& Target) :
     spawner(nullptr)
 {
 }
-RuleList::~RuleList()
-{
-    relatedPatternRules = "";
-    for (auto rule : rules)
-        delete rule;
-    rules.clear();
-    for (auto var : specificVariables)
-        delete var.second;
-    specificVariables.clear();
-}
+RuleList::~RuleList() {}
 Variable* RuleList::Lookup(const std::string& name)
 {
     auto it = specificVariables.find(&name);
     if (it != specificVariables.end())
-        return it->second;
+        return it->second.get();
     else
         return nullptr;
 }
@@ -108,7 +105,7 @@ bool RuleList::Touch(const Time& time)
 }
 bool RuleList::HasCommands()
 {
-    for (auto rule : *this)
+    for (auto& rule : *this)
     {
         if (rule->HasCommands())
             return true;
@@ -119,14 +116,23 @@ bool RuleList::Add(Rule* rule, bool Double)
 {
     if (!rules.empty() && Double != doubleColon)
         return false;
-    rules.push_back(rule);
+    std::unique_ptr<Rule> temp(rule);
+    rules.push_back(std::move(temp));
     return true;
 }
-void RuleList::InsertFirst(Rule* rule) { rules.push_front(rule); }
-void RuleList::operator+=(Variable* variable) { specificVariables[&variable->GetName()] = variable; }
+void RuleList::InsertFirst(Rule* rule) 
+{ 
+    std::unique_ptr<Rule> temp(rule);
+    rules.push_front(std::move(temp));
+}
+void RuleList::operator+=(Variable* variable) 
+{ 
+    std::unique_ptr<Variable> temp(variable);
+    specificVariables[&variable->GetName()] = std::move(temp);
+}
 void RuleList::SecondaryEval()
 {
-    for (auto rule : rules)
+    for (auto& rule : rules)
         rule->SecondaryEval(this);
 }
 bool RuleList::IsUpToDate()
@@ -158,19 +164,20 @@ RuleList* RuleContainer::Lookup(const std::string& name)
 {
     auto it = namedRules.find(&name);
     if (it != namedRules.end())
-        return it->second;
+        return it->second.get();
     else
         return nullptr;
 }
 void RuleContainer::operator+=(RuleList* list)
 {
+    std::unique_ptr<RuleList> temp(list);
     if (Eval::FindPercent(list->GetTarget()) != std::string::npos)
     {
-        implicitRules.push_back(list);
+        implicitRules.push_back(std::move(temp));
     }
     else
     {
-        namedRules[&list->GetName()] = list;
+        namedRules[&list->GetName()] = std::move(temp);
     }
 }
 void RuleContainer::operator-=(RuleList* list)
@@ -184,25 +191,20 @@ void RuleContainer::operator-=(RuleList* list)
         auto it = namedRules.find(&list->GetTarget());
         if (it != namedRules.end())
         {
-            delete list;
             namedRules.erase(it);
         }
     }
 }
 void RuleContainer::SecondaryEval()
 {
-    for (auto rule : namedRules)
+    for (auto& rule : namedRules)
         rule.second->SecondaryEval();
-    for (auto rule : implicitRules)
+    for (auto& rule : implicitRules)
         rule->SecondaryEval();
 }
 void RuleContainer::Clear()
 {
-    for (auto rule : namedRules)
-        delete rule.second;
     namedRules.clear();
-    for (auto rule : implicitRules)
-        delete rule;
     implicitRules.clear();
 }
 bool RuleContainer::OnList(const std::string& goal, const char* what)

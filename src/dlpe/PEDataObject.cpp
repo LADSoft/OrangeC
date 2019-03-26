@@ -45,7 +45,7 @@ void PEDataObject::Setup(ObjInt& endVa, ObjInt& endPhys)
     raw_addr = endPhys;
     endVa = ObjectAlign(objectAlign, endVa + size);
     endPhys = ObjectAlign(fileAlign, endPhys + initSize);
-    data = new unsigned char[initSize + importCount * 6];
+    data = std::make_unique<unsigned char[]>(initSize + importCount * 6);
 }
 bool PEDataObject::hasPC(ObjExpression* exp)
 {
@@ -119,6 +119,7 @@ ObjInt PEDataObject::EvalFixup(ObjExpression* fixup, ObjInt base)
 }
 void PEDataObject::Fill()
 {
+    unsigned char* pdata = data.get();
     ObjMemoryManager& m = sect->GetMemoryManager();
     int ofs = 0;
     bool hasVA = name == ".text";
@@ -141,45 +142,45 @@ void PEDataObject::Fill()
                 int bigEndian = file->GetBigEndian();
                 if (msize == 1)
                 {
-                    data[ofs] = n & 0xff;
+                    pdata[ofs] = n & 0xff;
                 }
                 else if (msize == 2)
                 {
                     if (bigEndian)
                     {
-                        data[ofs] = n >> 8;
-                        data[ofs + 1] = n & 0xff;
+                        pdata[ofs] = n >> 8;
+                        pdata[ofs + 1] = n & 0xff;
                     }
                     else
                     {
-                        data[ofs] = n & 0xff;
-                        data[ofs + 1] = n >> 8;
+                        pdata[ofs] = n & 0xff;
+                        pdata[ofs + 1] = n >> 8;
                     }
                 }
                 else  // msize == 4
                 {
                     if (bigEndian)
                     {
-                        data[ofs + 0] = n >> 24;
-                        data[ofs + 1] = n >> 16;
-                        data[ofs + 2] = n >> 8;
-                        data[ofs + 3] = n & 0xff;
+                        pdata[ofs + 0] = n >> 24;
+                        pdata[ofs + 1] = n >> 16;
+                        pdata[ofs + 2] = n >> 8;
+                        pdata[ofs + 3] = n & 0xff;
                     }
                     else
                     {
-                        data[ofs] = n & 0xff;
-                        data[ofs + 1] = n >> 8;
-                        data[ofs + 2] = n >> 16;
-                        data[ofs + 3] = n >> 24;
+                        pdata[ofs] = n & 0xff;
+                        pdata[ofs + 1] = n >> 8;
+                        pdata[ofs + 2] = n >> 16;
+                        pdata[ofs + 3] = n >> 24;
                     }
                 }
             }
             else
             {
                 if ((*it)->IsEnumerated())
-                    memset(data + ofs, (*it)->GetFill(), msize);
+                    memset(pdata + ofs, (*it)->GetFill(), msize);
                 else
-                    memcpy(data + ofs, mdata, msize);
+                    memcpy(pdata + ofs, mdata, msize);
             }
             ofs += msize;
         }
@@ -207,10 +208,11 @@ ObjInt PEDataObject::SetThunk(int index, unsigned va)
 {
     if (name == ".text")
     {
+        unsigned char* pdata = data.get();
         unsigned offs = importThunkVA - virtual_addr - imageBase + index * 6;
-        data[offs] = 0xff;
-        data[offs + 1] = 0x25;
-        *(unsigned*)(data + offs + 2) = va;
+        pdata[offs] = 0xff;
+        pdata[offs + 1] = 0x25;
+        *(unsigned*)(pdata + offs + 2) = va;
         return offs + virtual_addr + imageBase;
     }
     return -1;

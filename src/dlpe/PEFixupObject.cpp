@@ -52,8 +52,8 @@ void PEFixupObject::Setup(ObjInt& endVa, ObjInt& endPhys)
         block.rva = 0;
         block.size = 12;
         block.data[0] = block.data[1] = 0;
-        data = new unsigned char[block.size];
-        memcpy(data, &block, block.size);
+        data = std::make_unique<unsigned char[]>(block.size);
+        memcpy(data.get(), &block, block.size);
         size = initSize = block.size;
     }
     else
@@ -74,11 +74,11 @@ void PEFixupObject::Setup(ObjInt& endVa, ObjInt& endPhys)
         if (initSize & 2)
             initSize += 2;
         size = initSize;
-        data = new unsigned char[initSize];
-        memset(data, 0, initSize);
+        data = std::make_unique<unsigned char[]>(initSize);
+        memset(data.get(), 0, initSize);
         // we relied on the set implementation to sort the fixups...
         int curSize = 0;
-        Block* block = (Block*)data;
+        Block* block = reinterpret_cast<Block*>(data.get());
         for (auto it = fixups.begin(); it != fixups.end();)
         {
             ObjInt base = (*it) & ~(4096 - 1);

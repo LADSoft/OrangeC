@@ -90,7 +90,7 @@ const ObjString& LinkerMain::GetOutputFile(CmdFiles& files)
     else if (files.GetSize())
     {
         auto it = files.FileNameBegin();
-        outputFile = Utils::QualifiedFile((*it)->c_str(), ".rel");
+        outputFile = Utils::QualifiedFile((*it).c_str(), ".rel");
     }
     else
     {
@@ -109,7 +109,7 @@ const ObjString& LinkerMain::GetMapFile(CmdFiles& files)
     else if (files.GetSize())
     {
         auto it = files.FileNameBegin();
-        mapFile = Utils::QualifiedFile((*it)->c_str(), ".map");
+        mapFile = Utils::QualifiedFile((*it).c_str(), ".map");
     }
     else
     {
@@ -138,7 +138,7 @@ void LinkerMain::AddFile(LinkManager& linker, std::string& name)
 void LinkerMain::AddFiles(LinkManager& linker, CmdFiles& files)
 {
     for (auto it = files.FileNameBegin(); it != files.FileNameEnd(); ++it)
-        AddFile(linker, (*(*it)));
+        AddFile(linker, (*it));
 }
 void LinkerMain::SetDefines(LinkManager& linker)
 {
@@ -160,11 +160,10 @@ std::string LinkerMain::SpecFileContents(const std::string& specFile)
             fil.seekg(0, std::ios::end);
             size_t n = fil.tellg();
             fil.seekg(0);
-            char* data = new char[n + 1];
-            fil.read(data, n);
+            std::unique_ptr<char[]> data = std::make_unique<char[]>(n + 1);
+            fil.read(data.get(), n);
             data[fil.gcount()] = '\0';
-            rv = data;
-            delete[] data;
+            rv = data.get();
         }
         else
         {

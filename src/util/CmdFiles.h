@@ -30,7 +30,7 @@
 
 class CmdFiles
 {
-    typedef std::vector<std::string*> FileName;
+    typedef std::vector<std::string> FileName;
 
   public:
     CmdFiles() {}

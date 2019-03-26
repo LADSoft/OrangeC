@@ -35,11 +35,11 @@ class dlPmMain
 {
     struct Section
     {
-        Section(ObjInt Address = 0, ObjInt Size = 0) : address(Address), size(Size), data(nullptr) {}
-        ~Section() { delete data; }
+        Section(ObjInt Address = 0, ObjInt Size = 0) : address(Address), size(Size) {}
+        ~Section() { }
         ObjInt address;
         ObjInt size;
-        char* data;
+        std::unique_ptr<char[]> data;
     };
 
   public:
@@ -56,7 +56,7 @@ class dlPmMain
     std::string GetOutputName(char* infile) const;
     bool LoadStub(const std::string& name);
     int stubSize;
-    char* stubData;
+    std::unique_ptr<char[]> stubData;
     int memSize;
     int initSize;
     int uninitBase;
@@ -67,6 +67,6 @@ class dlPmMain
     static const char* usageText;
     ObjInt startAddress;
     ObjFile* file;
-    std::vector<Section*> sections;
+    std::vector<std::unique_ptr<Section>> sections;
 };
 #endif

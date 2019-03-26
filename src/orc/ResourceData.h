@@ -28,7 +28,7 @@
 #include <cstdlib>
 #include <string>
 #include <cstring>
-
+#include <memory>
 class RCFile;
 class ResFile;
 
@@ -37,16 +37,15 @@ class ResourceData
   public:
     ResourceData() : len(0), data(nullptr), pos(0) {}
     ResourceData(const unsigned char* rdata, size_t len) : len(0), data(nullptr), pos(0) { SetData(rdata, len); }
-    ~ResourceData() { delete data; }
+    ~ResourceData() {}
 
     size_t GetLen() const { return len; }
-    const unsigned char* GetData() const { return data; }
+    const unsigned char* GetData() const { return data.get(); }
     void SetData(const unsigned char* rdata, size_t rlen)
     {
-        delete data;
         len = rlen;
-        data = new unsigned char[len];
-        memcpy(data, rdata, len);
+        data = std::make_unique<unsigned char[]>(len);
+        memcpy(data.get(), rdata, len);
     }
     unsigned GetByte() { return data[pos++]; }
     unsigned GetWord()
@@ -68,7 +67,7 @@ class ResourceData
 
   private:
     int len;
-    unsigned char* data;
+    std::unique_ptr<unsigned char[]> data;
     int pos;
 };
 

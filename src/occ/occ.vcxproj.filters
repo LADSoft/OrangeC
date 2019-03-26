@@ -271,9 +271,6 @@
     <ClInclude Include="parse\osutil.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="parse\WINMODE.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="middle\IEXPR.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -330,6 +327,9 @@
     </ClInclude>
     <ClInclude Include="..\oasm\InstructionParser.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="parse\winmode.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

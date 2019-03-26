@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 /*
@@ -165,7 +165,7 @@ KEYWORD keywords[] = {
     {"_Imaginary", 10, kw__Imaginary, 0, TT_BASETYPE | TT_COMPLEX},
     {"_NAN", 4, kw__NAN, 0, TT_VAR},
     {"_Noreturn", 9, kw_noreturn, KW_C1X, TT_LINKAGE},
-    {"_Pragma", 7, kw__Pragma, KW_C99, TT_UNARY | TT_OPERATOR},
+    {"_Pragma", 7, kw__Pragma, KW_C99 | KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR},
     {"_SS", 3, kw_AD, KW_NONANSI | KW_386, TT_VAR},
     {"_Static_assert", 14, kw_static_assert, KW_C1X, 0},
     {"_Thread_local", 13, kw_thread_local, KW_C1X, TT_LINKAGE},
@@ -357,9 +357,9 @@ void lexini(void)
 #endif
     llminus1 = 0;
     llminus1--;
-    context = (LEXCONTEXT *)Alloc(sizeof(LEXCONTEXT));
+    context = (LEXCONTEXT*)Alloc(sizeof(LEXCONTEXT));
     nextFree = 0;
-    pool = (LEXEME *)Alloc(sizeof(LEXEME) * MAX_LOOKBACK);
+    pool = (LEXEME*)Alloc(sizeof(LEXEME) * MAX_LOOKBACK);
 }
 
 /*-------------------------------------------------------------------------*/
@@ -664,7 +664,7 @@ SLCHAR* getString(unsigned char** source, enum e_lexType* tp)
                         int i;
                         *source = p;
                         IncGlobalFlag();
-                        rv = (SLCHAR *)Alloc(sizeof(SLCHAR));
+                        rv = (SLCHAR*)Alloc(sizeof(SLCHAR));
                         rv->str = (LCHAR*)Alloc(1);
                         rv->str[0] = 0;
                         rv->count = 1;
@@ -832,7 +832,7 @@ SLCHAR* getString(unsigned char** source, enum e_lexType* tp)
         SLCHAR* rv;
         int i;
         IncGlobalFlag();
-        rv = (SLCHAR *)Alloc(sizeof(SLCHAR));
+        rv = (SLCHAR*)Alloc(sizeof(SLCHAR));
         rv->str = (LCHAR*)Alloc(count * sizeof(LCHAR));
         for (i = 0; i < count; i++)
             rv->str[i] = data[i];
@@ -881,7 +881,7 @@ static void getfloatingbase(int b, FPF* rval, char** ptr)
     while ((j = radix36(**ptr)) < b)
     {
         (*ptr)++;
-        temp = (ULLONG_TYPE) j;
+        temp = (ULLONG_TYPE)j;
         if (b == 10)
             rval->MultiplyPowTen(1);
         else
@@ -904,7 +904,7 @@ static int getfrac(int radix, char** ptr, FPF* rval)
         i = radix * i + j;
         if (++k == sizeof(i) * 16 / CHAR_BIT)  // number of digits that can fit in an int
         {
-            temp = (ULLONG_TYPE) i;
+            temp = (ULLONG_TYPE)i;
             if (radix == 10)
                 rval->MultiplyPowTen(k);
             else
@@ -917,7 +917,7 @@ static int getfrac(int radix, char** ptr, FPF* rval)
         }
         (*ptr)++;
     }
-    temp = (ULLONG_TYPE) i;
+    temp = (ULLONG_TYPE)i;
     if (radix == 10)
         rval->MultiplyPowTen(k);
     else
@@ -966,7 +966,7 @@ e_lexType getNumber(unsigned char** ptr, unsigned char** end, unsigned char* suf
     bool hasdot = false;
     enum e_lexType lastst;
     if (!isdigit((unsigned char)**ptr) && **ptr != '.')
-        return (e_lexType) INT_MIN;
+        return (e_lexType)INT_MIN;
     if (**ptr == '.' && !isdigit((unsigned char)*(*ptr + 1)))
         return (e_lexType)INT_MIN;
     if (**ptr == '0')
@@ -1276,7 +1276,7 @@ LEXEME* getGTSym(LEXEME* in)
     static LEXEME lex;
     char pgreater[2] = {'>', 0}, *ppgreater = pgreater;
     KEYWORD* kw;
-    kw = searchkw((UBYTE **)&ppgreater);
+    kw = searchkw((UBYTE**)&ppgreater);
     lex = *in;
     lex.type = l_kw;
     lex.kw = kw;
@@ -1413,8 +1413,16 @@ LEXEME* getsym(void)
             }
             else if ((kw = searchkw(&includes->lptr)) != NULL)
             {
-                lex->type = l_kw;
-                lex->kw = kw;
+                if (kw->key == kw__Pragma)
+                {
+                    Compile_Pragma();
+                    contin = true;
+                }
+                else
+                {
+                    lex->type = l_kw;
+                    lex->kw = kw;
+                }
             }
             else if (getId(&includes->lptr, buf + pos) != INT_MIN)
             {
@@ -1474,7 +1482,7 @@ LEXEME* SetAlternateLex(LEXEME* lexList)
 {
     if (lexList)
     {
-        LEXCONTEXT* newContext = (LEXCONTEXT *)Alloc(sizeof(LEXCONTEXT));
+        LEXCONTEXT* newContext = (LEXCONTEXT*)Alloc(sizeof(LEXCONTEXT));
         newContext->next = context;
         context = newContext;
         context->cur = lexList->next;
@@ -1487,4 +1495,66 @@ LEXEME* SetAlternateLex(LEXEME* lexList)
         context = context->next;
         return NULL;
     }
+}
+bool CompareLex(LEXEME* left, LEXEME* right)
+{
+    while (left && right)
+    {
+        if (left->type != right->type)
+            break;
+        switch (left->type)
+        {
+            case l_i:
+            case l_ui:
+            case l_l:
+            case l_ul:
+            case l_ll:
+            case l_ull:
+                if (left->value.i != right->value.i)
+                    return false;
+                break;
+            case l_f:
+            case l_d:
+            case l_ld:
+                if (left->value.f != right->value.f)
+                    return false;
+                break;
+            case l_I:
+                break;
+            case l_kw:
+                if (left->kw != right->kw)
+                    return false;
+                break;
+            case l_id:
+            case l_astr:
+            case l_u8str:
+            case l_msilstr:
+                if (strcmp(left->value.s.a, right->value.s.a))
+                    return false;
+                break;
+            case l_wstr:
+            case l_ustr:
+            case l_Ustr:
+                int i;
+                for (i = 0; left->value.s.w[i] && right->value.s.w[i]; i++)
+                    if (left->value.s.w[i] != right->value.s.w[i])
+                        break;
+                if (left->value.s.w[i] || right->value.s.w[i])
+                    return false;
+                break;
+
+            case l_achr:
+            case l_wchr:
+            case l_uchr:
+            case l_Uchr:
+                if (left->value.i != right->value.i)
+                    return false;
+            case l_qualifiedname:
+            default:
+                return false;
+        }
+        left = left->next;
+        right = right->next;
+    }
+    return !left && !right;
 }

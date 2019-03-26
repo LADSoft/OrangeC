@@ -28,14 +28,13 @@
 #include <fstream>
 #include <stdexcept>
 
-MenuItem::~MenuItem()
+MenuItem::~MenuItem(){}
+void MenuItem::Add(MenuItem* item) 
 {
-    for (auto it = begin(); it != end(); ++it)
-    {
-        MenuItem* item = *it;
-        delete item;
-    }
+    std::unique_ptr<MenuItem> temp(item);
+    popup.push_back(std::move(temp)); 
 }
+
 void MenuItem::WriteRes(ResFile& resFile, bool ex, bool last)
 {
     if (!ex)
@@ -54,7 +53,7 @@ void MenuItem::WriteRes(ResFile& resFile, bool ex, bool last)
         if (fl & Popup)
         {
             int count = popup.size();
-            for (auto res : *this)
+            for (auto& res : *this)
                 res->WriteRes(resFile, ex, !--count);
         }
     }
@@ -76,7 +75,7 @@ void MenuItem::WriteRes(ResFile& resFile, bool ex, bool last)
             resFile.Align();
             resFile.WriteDWord(helpIndex);
             int count = popup.size();
-            for (auto res : *this)
+            for (auto& res : *this)
                 res->WriteRes(resFile, ex, !--count);
         }
     }
@@ -135,7 +134,7 @@ bool MenuItem::ReadRCInternal(RCFile& rcFile, bool ex)
                 if (rcFile.IsKeyword())
                 {
                     if (rcFile.GetTokenId() != Lexer::SEPARATOR)
-                        throw new std::runtime_error("Invalid menu type");
+                        throw std::runtime_error("Invalid menu type");
                 }
                 else if (rcFile.IsString())
                 {
@@ -220,21 +219,17 @@ void MenuItem::ReadRC(RCFile& rcFile, MenuItemList& list, bool ex)
     while (!done)
     {
 
-        MenuItem* item = new MenuItem;
-        if (!(done = item->ReadRCInternal(rcFile, ex)))
-            list.push_back(item);
-        else
-            delete item;
+        list.push_back(std::make_unique<MenuItem>());
+        if ((done = list.back()->ReadRCInternal(rcFile, ex)))
+            list.pop_back();
     }
     rcFile.NeedEnd();
 }
-Menu::~Menu()
+Menu::~Menu() {}
+void Menu::Add(MenuItem* item) 
 {
-    for (auto it = begin(); it != end(); ++it)
-    {
-        MenuItem* item = *it;
-        delete item;
-    }
+    std::unique_ptr<MenuItem> temp(item);
+    menuItems.push_back(std::move(temp)); 
 }
 void Menu::WriteRes(ResFile& resFile)
 {
@@ -251,7 +246,7 @@ void Menu::WriteRes(ResFile& resFile)
         resFile.WriteDWord(helpIndex);
     }
     int count = menuItems.size();
-    for (auto res : *this)
+    for (auto& res : *this)
         res->WriteRes(resFile, extended, !--count);
     resFile.Release();
 }

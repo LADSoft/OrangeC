@@ -27,6 +27,7 @@
 
 #include "ObjTypes.h"
 #include "LinkExpression.h"
+#include <memory>
 
 class LinkAttribs
 {
@@ -49,89 +50,61 @@ class LinkAttribs
             return address->Eval(0);
         return 0;
     }
-    void SetAddress(LinkExpression* Address)
-    {
-        delete address;
-        address = Address;
-    }
+    void SetAddress(LinkExpression* Address);
     ObjInt GetAlign()
     {
         if (align)
             return align->Eval(0);
         return 1;
     }
-    void SetAlign(LinkExpression* Align)
-    {
-        delete align;
-        align = Align;
-    }
+    void SetAlign(LinkExpression* Align);
     ObjInt GetMaxSize()
     {
         if (maxSize)
             return maxSize->Eval(0);
         return 0;
     }
-    void SetMaxSize(LinkExpression* Size)
-    {
-        delete maxSize;
-        maxSize = Size;
-    }
+    void SetMaxSize(LinkExpression* Size);
     ObjInt GetSize()
     {
         if (size)
             return size->Eval(0);
         return 0;
     }
-    void SetSize(LinkExpression* Size)
-    {
-        delete size;
-        size = Size;
-    }
+    void SetSize(LinkExpression* Size);
     ObjInt GetRoundSize()
     {
         if (roundSize)
             return roundSize->Eval(0);
         return 0;
     }
-    void SetRoundSize(LinkExpression* RoundSize)
-    {
-        delete roundSize;
-        roundSize = RoundSize;
-    }
+    void SetRoundSize(LinkExpression* RoundSize);
     ObjInt GetVirtualOffset()
     {
         if (virtualOffset)
             return virtualOffset->Eval(0);
         return 0;
     }
-    void SetVirtualOffset(LinkExpression* VirtualOffset)
-    {
-        delete virtualOffset;
-        virtualOffset = VirtualOffset;
-    }
+    void SetVirtualOffset(LinkExpression* VirtualOffset);
     ObjInt GetFill()
     {
         if (fill)
             return fill->Eval(0);
         return 0;
     }
-    void SetFill(LinkExpression* Fill)
-    {
-        delete fill;
-        fill = Fill;
-    }
+    void SetFill(LinkExpression* Fill);
     bool GetAddressSpecified() { return address != nullptr; }
     bool GetVirtualOffsetSpecified() { return virtualOffset != nullptr; }
     bool GetHasFill() { return fill != nullptr; }
 
   private:
-    LinkExpression* address;
-    LinkExpression* align;
-    LinkExpression* maxSize;
-    LinkExpression* roundSize;
-    LinkExpression* virtualOffset;
-    LinkExpression* size;
-    LinkExpression* fill;
+    std::unique_ptr<LinkExpression> address;
+    std::unique_ptr<LinkExpression> align;
+    std::unique_ptr<LinkExpression> maxSize;
+    std::unique_ptr<LinkExpression> roundSize;
+    std::unique_ptr<LinkExpression> virtualOffset;
+    std::unique_ptr<LinkExpression> size;
+    std::unique_ptr<LinkExpression> fill;
 };
 
 #endif

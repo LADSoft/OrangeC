@@ -27,16 +27,13 @@
 
 #include <string>
 #include <fstream>
+#include <memory>
 
 class ResidentNameTable
 {
   public:
-    ResidentNameTable(const std::string& FileName) : fileName(FileName), data(nullptr) {}
-    virtual ~ResidentNameTable()
-    {
-        if (data)
-            delete[] data;
-    }
+    ResidentNameTable(const std::string& FileName) : fileName(FileName) {}
+    virtual ~ResidentNameTable() { }
     unsigned GetEntrySize() { return entryOffset; }
     unsigned GetSize() { return size; }
     void Setup();
@@ -44,7 +41,7 @@ class ResidentNameTable
 
   private:
     std::string fileName;
-    char* data;
+    std::unique_ptr<char[]> data;
     int entryOffset;
     int size;
 };

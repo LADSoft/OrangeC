@@ -170,15 +170,15 @@ bool Include::AddFileList(const std::string& name, bool ignoreOk, bool MakeFile)
         Variable* v = VariableContainer::Instance()->Lookup("MAKEFILE_LIST");
         if (!v)
         {
-            v = new Variable(std::string("MAKEFILE_LIST"), *(*it), Variable::f_simple, Variable::o_file);
+            v = new Variable(std::string("MAKEFILE_LIST"), (*it), Variable::f_simple, Variable::o_file);
             *VariableContainer::Instance() += v;
         }
         else
         {
-            v->SetValue(v->GetValue() + " " + *(*it));
+            v->SetValue(v->GetValue() + " " + (*it));
         }
-        files.push_back(*(*it));
-        rv &= Parse(*(*it), ignoreOk | MakeFile, MakeFile);
+        files.push_back((*it));
+        rv &= Parse((*it), ignoreOk | MakeFile, MakeFile);
     }
     return rv;
 }

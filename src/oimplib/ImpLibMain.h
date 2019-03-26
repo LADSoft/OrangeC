@@ -62,7 +62,7 @@ class ImpLibMain
         ObjIeeeIndexManager iml;
         ObjFactory factory;
     };
-    std::deque<ObjectData*> objectData;
+    std::deque<std::unique_ptr<ObjectData>> objectData;
     Mode mode;
     bool modified;
     bool changed;

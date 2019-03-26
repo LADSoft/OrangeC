@@ -180,8 +180,27 @@ int InsertExternalFile(char* name, bool primary)
 }
 
 /*-------------------------------------------------------------------------*/
+void WinmodeSetup(const char select, const char *str);
 
-void InsertOutputFileName(char* name) { strcpy(outputFileName, name); }
+void InsertOutputFileName(char* name) 
+{ 
+    char ext[256];
+    strcpy(outputFileName, name); 
+
+    char *p = strrchr(outputFileName, '.');
+    if (p)
+    {
+       strcpy(ext, p);
+       p = ext;
+       while (*p)
+       {
+          *p = tolower(*p);
+          p++;
+       }
+       if (!strcmp(ext, ".dll"))
+           WinmodeSetup('W',"d");
+    }
+}
 
 /*-------------------------------------------------------------------------*/
 

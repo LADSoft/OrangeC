@@ -55,6 +55,7 @@ class LinkRegion
     typedef std::vector<OneSection>::iterator OneSectionIterator;
     struct NamedSection
     {
+        NamedSection(std::string Name) : name(Name) { }
         std::string name;
         std::vector<OneSection> sections;
     };
@@ -65,8 +66,8 @@ class LinkRegion
             return strcmp(left->name.c_str(), right->name.c_str()) < 0;
         }
     };
-    typedef std::vector<ObjString*> SourceFile;
-    typedef std::vector<NamedSection*> SectionData;
+    typedef std::vector<ObjString> SourceFile;
+    typedef std::vector<std::unique_ptr<NamedSection>> SectionData;
     LinkRegion(LinkOverlay* Parent) : name(""), common(false), maxSize(-1), parent(Parent), overlayed(false) {}
     ~LinkRegion();
 

@@ -32,7 +32,7 @@
 #    include <fstream>
 #    include <string>
 #    include <vector>
-
+#    include <memory>
 class CoffFile
 {
   public:
@@ -62,18 +62,18 @@ class CoffFile
   private:
     CoffHeader header;
 
-    CoffSection* sections;
+    std::unique_ptr<CoffSection[]> sections;
 
     std::vector<CoffSymbol*> sectionSymbols;
-    std::vector<CoffReloc*> relocs;
+    std::vector<std::unique_ptr<CoffReloc[]>> relocs;
 
-    CoffSymbol* symbols;
+    std::unique_ptr<CoffSymbol[]> symbols;
 
-    char* strings;
+    std::unique_ptr<char[]> strings;
 
     std::string name;
 
-    std::fstream* inputFile;
+    std::unique_ptr<std::fstream> inputFile;
     unsigned libOffset;
 };
 #endif

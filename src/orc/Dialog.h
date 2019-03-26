@@ -26,6 +26,7 @@
 #define Dialog_h
 
 #include "Resource.h"
+#include <memory>
 
 class RCFile;
 class ResFile;
@@ -63,8 +64,8 @@ class Control
     Point GetPos() const { return pos; }
     void SetSize(const Point& Size) { size = Size; }
     Point GetSize() const { return size; }
-    void Add(ResourceData* rd) { data.push_back(rd); }
-    typedef std::deque<ResourceData*>::iterator iterator;
+    void Add(ResourceData* rd);
+    typedef std::deque<std::unique_ptr<ResourceData>>::iterator iterator;
     iterator begin() { return data.begin(); }
     iterator end() { return data.end(); }
     static bool ValidType(RCFile& rcFile);
@@ -83,7 +84,7 @@ class Control
     ResourceId text;
     Point pos;
     Point size;
-    std::deque<ResourceData*> data;
+    std::deque<std::unique_ptr<ResourceData>> data;
 };
 
 class Dialog : public Resource
@@ -124,8 +125,8 @@ class Dialog : public Resource
     void SetFont(const std::wstring& Font) { font = Font; }
     std::wstring GetFont() const { return font; }
 
-    void Add(Control* Ctrl) { controls.push_back(Ctrl); }
-    typedef std::deque<Control*>::iterator iterator;
+    void Add(Control* Ctrl);
+    typedef std::deque<std::unique_ptr<Control>>::iterator iterator;
     iterator begin() { return controls.begin(); }
     iterator end() { return controls.end(); }
 
@@ -142,7 +143,7 @@ class Dialog : public Resource
     ResourceId menu;
     std::wstring caption;
     std::wstring font;
-    std::deque<Control*> controls;
+    std::deque<std::unique_ptr<Control>> controls;
     // extended dialog
     bool extended;
     int weight;

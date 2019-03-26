@@ -26,6 +26,7 @@
 #define MessageTable_h
 
 #include "Resource.h"
+#include <memory>
 
 class RCFile;
 class ResFile;
@@ -40,9 +41,9 @@ class MessageTable : public Resource
     virtual void ReadRC(RCFile& rcFile);
 
     void SetData(ResourceData* rdata);
-    ResourceData* GetData() const { return data; }
+    ResourceData* GetData() const { return data.get(); }
 
   private:
-    ResourceData* data;
+    std::unique_ptr<ResourceData> data;
 };
 #endif

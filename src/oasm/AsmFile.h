@@ -77,7 +77,7 @@ class AsmFile
 
     Label* Lookup(std::string& name)
     {
-        Label* rv = labels[name];
+        Label* rv = labels[name].get();
         return rv;
     }
     bool Read();
@@ -150,11 +150,11 @@ class AsmFile
     Lexer lexer;
     AsmExpr asmexpr;
     InstructionParser* parser;
-    static std::map<ObjString, Section*> sections;
+    static std::map<ObjString, std::unique_ptr<Section>> sections;
     static std::vector<Section*> numericSections;
-    std::map<ObjString, Label*> labels;
+    std::map<ObjString, std::unique_ptr<Label>> labels;
     std::map<ObjString, std::string> exports;
-    std::map<ObjString, Import*> imports;
+    std::map<ObjString, std::unique_ptr<Import>> imports;
     std::vector<Label*> numericLabels;
     std::vector<ObjSection*> objSections;
     std::set<std::string> globals;

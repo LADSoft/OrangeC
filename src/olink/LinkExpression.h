@@ -26,6 +26,7 @@
 #define LINKEXPRESSION_H
 #include "ObjTypes.h"
 #include <set>
+#include <memory>
 
 class ObjSection;
 
@@ -69,12 +70,7 @@ class LinkExpression
     {
     }
     LinkExpression(const LinkExpression& exp);
-    LinkExpression(ObjSection* Unresolved) : op(eUnresolvedSection), unresolvedSection(Unresolved) {}
-    ~LinkExpression()
-    {
-        delete left;
-        delete right;
-    }
+    LinkExpression(ObjSection* Unresolved) : op(eUnresolvedSection), unresolvedSection(Unresolved), left(nullptr), right(nullptr),value(0)  {}
     eOperator GetOperator() { return op; }
     ObjSection* GetUnresolvedSection() { return unresolvedSection; }
     LinkExpression* GetLeft() { return left; }

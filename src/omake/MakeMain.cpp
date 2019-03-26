@@ -104,7 +104,7 @@ void MakeMain::Dispatch(const char* data)
 {
     int max = 10;
     argcx = 1;
-    argvx = new char*[max + 1];
+    argvx = std::make_unique<char*[]>(max + 1);
     argvx[0] = (char *)"";
     while (*data)
     {
@@ -112,15 +112,14 @@ void MakeMain::Dispatch(const char* data)
         if (argcx == max)
         {
             max += 10;
-            char** p = new char*[max + 1];
-            memcpy(p, argvx, argcx * sizeof(char*));
-            delete[] argvx;
-            argvx = p;
+            std::unique_ptr<char*[]> p(argvx.release());
+            argvx = std::make_unique<char*[]>(max + 1);
+            memcpy(argvx.get(), p.get(), argcx * sizeof(char*));
         }
     }
     argvx[argcx] = 0;
-    switchParser.Parse(&argcx, argvx);
-    delete[] argvx;
+    switchParser.Parse(&argcx, argvx.get());
+    argvx.release();
 }
 const char* MakeMain::GetStr(const char* data)
 {
@@ -326,7 +325,7 @@ void MakeMain::SetupImplicit()
 }
 void MakeMain::ShowRule(RuleList* ruleList)
 {
-    for (auto rule : *ruleList)
+    for (auto& rule : *ruleList)
     {
         std::cout << ruleList->GetTarget() << (ruleList->GetDoubleColon() ? "::" : ":") << std::endl;
         std::cout << "\tPrerequisites:" << std::endl;
@@ -354,7 +353,7 @@ void MakeMain::ShowRule(RuleList* ruleList)
 void MakeMain::ShowDatabase()
 {
     std::cout << "Variables:" << std::endl;
-    for (auto var : *VariableContainer::Instance())
+    for (auto& var : *VariableContainer::Instance())
     {
         std::cout << std::setw(25) << std::setfill(' ') << std::right << (*var.first);
         if (var.second->GetFlavor() == Variable::f_recursive)
@@ -364,15 +363,15 @@ void MakeMain::ShowDatabase()
         std::cout << var.second->GetValue() << std::endl;
     }
     std::cout << std::endl << "Explicit rules:" << std::endl;
-    for (auto rule : *RuleContainer::Instance())
+    for (auto& rule : *RuleContainer::Instance())
     {
-        ShowRule(rule.second);
+        ShowRule(rule.second.get());
     }
     std::cout << std::endl << "Implicit rules:" << std::endl;
     for (auto it = RuleContainer::Instance()->ImplicitBegin();
          it != RuleContainer::Instance()->ImplicitEnd(); ++it)
     {
-        ShowRule(*it);
+        ShowRule((*it).get());
     }
 }
 void MakeMain::SetTreePath(std::string& files)
@@ -567,7 +566,7 @@ int MakeMain::Run(int argc, char** argv)
     RuleList* rl = nullptr;
     if ((rl = RuleContainer::Instance()->Lookup(".MAKEFLAGS")) || (rl = RuleContainer::Instance()->Lookup(".MFLAGS")))
     {
-        for (auto rule : *rl)
+        for (auto& rule : *rl)
         {
             std::string v = rule->GetPrerequisites();
             Eval r(v, false);
@@ -612,7 +611,7 @@ int MakeMain::Run(int argc, char** argv)
             auto r = RuleContainer::Instance()->Lookup(".MAIN");
             if (r)
             {
-                for (auto r1 : *r)
+                for (auto& r1 : *r)
                 {
                     auto p = r1->GetPrerequisites();
                     while (!p.empty())

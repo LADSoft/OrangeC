@@ -44,14 +44,14 @@ unsigned LXObjectPage::CountPages()
     }
     return n;
 }
-void ObjectPage::Write(std::fstream& stream) { stream.write((char*)data, size); }
+void ObjectPage::Write(std::fstream& stream) { stream.write((char*)data.get(), size); }
 void LEObjectPage::Setup()
 {
     pages = CountPages();
     size = pages * sizeof(PageData);
-    data = new unsigned char[size];
-    memset(data, 0, size);
-    PageData* p = (PageData*)data;
+    data = std::make_unique<unsigned char[]>(size);
+    memset(data.get(), 0, size);
+    PageData* p = (PageData*)data.get();
     for (int i = 1; i <= pages; i++)
     {
         p->flags = LE_OPF_ENUMERATED;
@@ -65,9 +65,9 @@ void LXObjectPage::Setup()
 {
     pages = CountPages();
     size = pages * sizeof(PageData);
-    data = new unsigned char[size];
+    data = std::make_unique<unsigned char[]>(size);
 
-    PageData* p = (PageData*)data;
+    PageData* p = (PageData*)data.get();
     int k = 1;
     for (auto obj : objects)
     {

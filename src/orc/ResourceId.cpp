@@ -48,13 +48,13 @@ void ResourceId::ReadRC(RCFile& rcFile, bool quoted)
     else if (quoted)
     {
         if (!rcFile.IsString())
-            throw new std::runtime_error("Invalid resource id");
+            throw std::runtime_error("Invalid resource id");
         name = rcFile.GetString();
     }
     else
     {
         if (!rcFile.IsIdentifier())
-            throw new std::runtime_error("Invalid resource id");
+            throw std::runtime_error("Invalid resource id");
         name = rcFile.GetId();
     }
 }

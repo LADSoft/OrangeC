@@ -27,44 +27,36 @@
 #include "Errors.h"
 #include "ppInclude.h"
 
-KeywordHash ppExpr::hash;
-bool ppExpr::initted;
-
-void ppExpr::InitHash()
-{
-    if (!initted)
-    {
-        initted = true;
-        hash["("] = openpa;
-        hash[")"] = closepa;
-        hash["+"] = plus;
-        hash["-"] = minus;
-        hash["!"] = lnot;
-        hash["~"] = bcompl;
-        hash["*"] = star;
-        hash["/"] = divide;
-        hash["%"] = mod;
-        hash["<<"] = leftshift;
-        hash[">>"] = rightshift;
-        hash[">"] = gt;
-        hash["<"] = lt;
-        hash[">="] = geq;
-        hash["<="] = leq;
-        hash["=="] = eq;
-        hash["!="] = ne;
-        hash["|"] = bor;
-        hash["&"] = band;
-        hash["^"] = bxor;
-        hash["||"] = lor;
-        hash["&&"] = land;
-        hash["?"] = hook;
-        hash[":"] = colon;
-        hash[","] = comma;
-    }
-}
+KeywordHash ppExpr::hash = {
+        { "(", openpa},
+        { ")", closepa},
+        { "+", plus},
+        { "-", minus},
+        { "!", lnot},
+        { "~", bcompl},
+        { "*", star},
+        { "/", divide},
+        { "%", mod},
+        { "<<", leftshift},
+        { ">>", rightshift},
+        { ">", gt},
+        { "<", lt},
+        { ">=", geq},
+        { "<=", leq},
+        { "==", eq},
+        { "!=", ne},
+        { "|", bor},
+        { "&", band},
+        { "^", bxor},
+        { "||", lor},
+        { "&&", land},
+        { "?", hook},
+        { ":", colon},
+        { ",", comma},
+};
 PPINT ppExpr::Eval(std::string& line)
 {
-    tokenizer = new Tokenizer(line, &hash);
+    tokenizer = std::make_unique<Tokenizer>(line, &hash);
     token = tokenizer->Next();
     if (!token)
         return 0;
@@ -73,7 +65,7 @@ PPINT ppExpr::Eval(std::string& line)
         line = token->GetChars() + tokenizer->GetString();
     else
         line = "";
-    delete tokenizer;
+    tokenizer.release();
     return rv;
 }
 

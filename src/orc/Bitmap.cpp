@@ -34,7 +34,7 @@
 #define BITMAP_SIG 0x4d42  // BM
 static const int SKIP = 14;
 
-Bitmap::~Bitmap() { delete data; }
+Bitmap::~Bitmap() { }
 
 void Bitmap::WriteRes(ResFile& resFile)
 {
@@ -45,21 +45,19 @@ void Bitmap::WriteRes(ResFile& resFile)
 }
 void Bitmap::SetData(ResourceData* rdata)
 {
-
-    delete data;
-    data = rdata;
+    std::unique_ptr<ResourceData> temp(rdata);
+    data = std::move(temp);
 }
 void Bitmap::ReadRC(RCFile& rcFile)
 {
     resInfo.SetFlags((resInfo.GetFlags() & ~ResourceInfo::Discardable) | ResourceInfo::Pure);
     resInfo.ReadRC(rcFile, false);
-    ResourceData* rd = new ResourceData;
+    std::unique_ptr<ResourceData> rd = std::make_unique<ResourceData>();
     rd->ReadRC(rcFile);
 #ifndef HAVE_UNISTD_H
     if (rd->GetLen() <= sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER))
     {
-        delete rd;
-        throw new std::runtime_error("invalid bitmap file");
+        throw std::runtime_error("invalid bitmap file");
     }
     else
     {
@@ -69,8 +67,7 @@ void Bitmap::ReadRC(RCFile& rcFile)
             f->bfOffBits < sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) || f->bfOffBits >= rd->GetLen() ||
             p->biSize != sizeof(BITMAPINFOHEADER))
         {
-            delete rd;
-            throw new std::runtime_error("invalid bitmap file");
+            throw std::runtime_error("invalid bitmap file");
         }
         // borland sets the size explicitly for RGB images that don't have a size
         // even though windows docs explicitly say it is not required.
@@ -80,8 +77,7 @@ void Bitmap::ReadRC(RCFile& rcFile)
             int n = ((((p->biWidth * p->biBitCount) + 31) & ~31) >> 3) * p->biHeight;
             p->biSizeImage = n;
         }
-        data = new ResourceData((unsigned char*)p, rd->GetLen() - sizeof(BITMAPFILEHEADER));
-        delete rd;
+        data = std::make_unique<ResourceData>((unsigned char*)p, rd->GetLen() - sizeof(BITMAPFILEHEADER));
     }
 #endif
     rcFile.NeedEol();

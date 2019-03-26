@@ -55,19 +55,8 @@ bool LinkNameLogic::ParseItem::Matches(const std::string& name)
         }
     }
 }
-void LinkNameLogic::ParseItem::Unlink()
-{
-    if (left)
-        left->Unlink();
-    if (right)
-        right->Unlink();
-    delete this;
-}
-LinkNameLogic::~LinkNameLogic()
-{
-    if (top)
-        top->Unlink();
-}
+LinkNameLogic::~LinkNameLogic() {}
+
 bool LinkNameLogic::Matches(const std::string& name)
 {
     if (top)
@@ -81,9 +70,9 @@ void LinkNameLogic::ParseOut(std::string spec)
     if (!top)
         std::cout << "Warning: region specifier '" << spec << "' is invalid" << std::endl;
 }
-LinkNameLogic::ParseItem* LinkNameLogic::ParseOutOr(std::string& spec)
+std::unique_ptr<LinkNameLogic::ParseItem> LinkNameLogic::ParseOutOr(std::string& spec)
 {
-    ParseItem* rv = ParseOutAnd(spec);
+    auto rv = ParseOutAnd(spec);
     int n = spec.find_first_not_of("\r\n\t\v \f");
     if (n != std::string::npos)
     {
@@ -92,12 +81,12 @@ LinkNameLogic::ParseItem* LinkNameLogic::ParseOutOr(std::string& spec)
     while (rv && !spec.empty() && spec[0] == '|')
     {
         spec.erase(0, 1);
-        ParseItem* right = ParseOutAnd(spec);
-        ParseItem* v = new ParseItem;
+        auto right = ParseOutAnd(spec);
+        auto v = std::make_unique<ParseItem>();
         v->mode = ParseItem::eOr;
-        v->left = rv;
-        v->right = right;
-        rv = v;
+        v->left = std::move(rv);
+        v->right = std::move(right);
+        rv = std::move(v);
         n = spec.find_first_not_of("\r\n\t\v \f");
         if (n != std::string::npos)
         {
@@ -106,9 +95,9 @@ LinkNameLogic::ParseItem* LinkNameLogic::ParseOutOr(std::string& spec)
     }
     return rv;
 }
-LinkNameLogic::ParseItem* LinkNameLogic::ParseOutAnd(std::string& spec)
+std::unique_ptr<LinkNameLogic::ParseItem> LinkNameLogic::ParseOutAnd(std::string& spec)
 {
-    ParseItem* rv = ParseOutNot(spec);
+    auto rv = ParseOutNot(spec);
     int n = spec.find_first_not_of("\r\n\t\v \f");
     if (n != std::string::npos)
     {
@@ -117,12 +106,12 @@ LinkNameLogic::ParseItem* LinkNameLogic::ParseOutAnd(std::string& spec)
     while (rv && !spec.empty() && spec[0] == '&')
     {
         spec.erase(0, 1);
-        ParseItem* right = ParseOutAnd(spec);
-        ParseItem* v = new ParseItem;
+        auto right = ParseOutAnd(spec);
+        auto v = std::make_unique<ParseItem>();
         v->mode = ParseItem::eAnd;
-        v->left = rv;
-        v->right = right;
-        rv = v;
+        v->left = std::move(rv);
+        v->right = std::move(right);
+        rv = std::move(v);
         int n = spec.find_first_not_of("\r\n\t\v \f");
         if (n != std::string::npos)
         {
@@ -132,7 +121,7 @@ LinkNameLogic::ParseItem* LinkNameLogic::ParseOutAnd(std::string& spec)
     return rv;
 }
 
-LinkNameLogic::ParseItem* LinkNameLogic::ParseOutNot(std::string& spec)
+std::unique_ptr<LinkNameLogic::ParseItem> LinkNameLogic::ParseOutNot(std::string& spec)
 {
     bool invert = false;
     int n = spec.find_first_not_of("\r\n\t\v \f");
@@ -150,17 +139,17 @@ LinkNameLogic::ParseItem* LinkNameLogic::ParseOutNot(std::string& spec)
             spec.erase(0, n);
         }
     }
-    ParseItem* rv = ParseOutPrimary(spec);
+    auto rv = ParseOutPrimary(spec);
     if (rv && invert)
     {
-        ParseItem* v = new ParseItem;
+        auto v = std::make_unique<ParseItem>();
         v->mode = ParseItem::eNot;
-        v->left = rv;
-        rv = v;
+        v->left = std::move(rv);
+        rv = std::move(v);
     }
     return rv;
 }
-LinkNameLogic::ParseItem* LinkNameLogic::ParseOutPrimary(std::string& spec)
+std::unique_ptr<LinkNameLogic::ParseItem> LinkNameLogic::ParseOutPrimary(std::string& spec)
 {
     int n = spec.find_first_not_of("\r\n\t\v \f");
     if (n != std::string::npos)
@@ -170,7 +159,7 @@ LinkNameLogic::ParseItem* LinkNameLogic::ParseOutPrimary(std::string& spec)
     if (spec[0] == '(')
     {
         spec.erase(0, 1);
-        ParseItem* rv = ParseOutOr(spec);
+        auto rv = ParseOutOr(spec);
         n = spec.find_first_not_of("\r\n\t\v \f");
         if (n != std::string::npos)
         {
@@ -191,7 +180,7 @@ LinkNameLogic::ParseItem* LinkNameLogic::ParseOutPrimary(std::string& spec)
     }
     *q = 0;
     spec.erase(0, n);
-    ParseItem* rv = new ParseItem;
+    auto rv = std::make_unique<ParseItem>();
     rv->mode = ParseItem::eName;
     rv->token = buf;
     return rv;

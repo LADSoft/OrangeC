@@ -185,6 +185,10 @@ std::string InstructionParser::FormatInstruction(ocode* ins)
 
 asmError InstructionParser::GetInstruction(OCODE* ins, Instruction*& newIns, std::list<Numeric*>& operands)
 {
+    for (auto v : CleanupValues)
+        delete v;
+    for (auto v : operands)
+        delete v;
     inputTokens.clear();
     // can't use clear in openwatcom, it is buggy
 

@@ -28,6 +28,7 @@
 #include <string>
 #include <set>
 #include "ObjTypes.h"
+#include <memory>
 class ObjSection;
 class ObjFile;
 class ObjExpression;
@@ -41,12 +42,8 @@ class LEObject
         HeaderSize = 6 * 4
     };
 
-    LEObject(ObjSection* Sect) : data(nullptr), sect(Sect) { InitFlags(); }
-    virtual ~LEObject()
-    {
-        if (data)
-            delete data;
-    }
+    LEObject(ObjSection* Sect) : sect(Sect) { InitFlags(); }
+    virtual ~LEObject() { }
     void Setup(unsigned& offs);
     void InitFlags();
     unsigned GetSize() { return size; }
@@ -69,7 +66,7 @@ class LEObject
     unsigned initSize;
     unsigned base_addr;
     unsigned flags;
-    unsigned char* data;
+    std::unique_ptr<unsigned char[]> data;
     std::string name;
     static ObjFile* file;
 

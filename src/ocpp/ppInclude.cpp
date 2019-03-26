@@ -35,11 +35,8 @@
 bool ppInclude::system;
 std::string ppInclude::srchPath, ppInclude::sysSrchPath;
 
-ppInclude::~ppInclude()
-{
-    while (current)
-        popFile();
-}
+ppInclude::~ppInclude() { }
+
 bool ppInclude::Check(int token, const std::string& args)
 {
     if (!current || !current->Check(token, args, current->GetErrorLine()))
@@ -106,10 +103,10 @@ void ppInclude::pushFile(const std::string& name, const std::string& errname)
         in.close();
         if (current)
         {
-            files.push_front(current);
+            files.push_front(std::move(current));
             current = nullptr;
         }
-        current = new ppFile(fullname, trigraphs, extendedComment, name, define, *ctx, unsignedchar, c89, asmpp);
+        current = std::make_unique<ppFile>(fullname, trigraphs, extendedComment, name, define, *ctx, unsignedchar, c89, asmpp);
         // if (current)
         if (!current->Open())
         {
@@ -120,15 +117,14 @@ void ppInclude::pushFile(const std::string& name, const std::string& errname)
 }
 bool ppInclude::popFile()
 {
-    if (current)
-    {
-        delete current;
-        current = nullptr;
-    }
     if (!files.empty())
     {
-        current = files.front();
+        current = std::move(files.front());
         files.pop_front();
+    }
+    else
+    {
+        current = nullptr;
     }
     forcedEOF = false;
     return true;

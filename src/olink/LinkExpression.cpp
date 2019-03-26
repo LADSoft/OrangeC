@@ -26,7 +26,7 @@
 #include "LinkManager.h"
 #include "ObjSection.h"
 #include <exception>
-LinkExpressionSymbol::~LinkExpressionSymbol() { delete value; }
+LinkExpressionSymbol::~LinkExpressionSymbol() { }
 
 std::set<LinkExpressionSymbol*, leltcompare> LinkExpression::symbols;
 LinkExpression::LinkExpression(const LinkExpression& exp)
@@ -46,13 +46,12 @@ LinkExpression::LinkExpression(const LinkExpression& exp)
 }
 LinkExpression::LinkExpression(int section, ObjInt base, ObjInt offs) :
     op(eAdd),
-    left(nullptr),
+    left(new LinkExpression()),
     right(new LinkExpression(offs)),
     symbolName(""),
     value(0),
     sect(0)
 {
-    left = new LinkExpression;
     left->op = eSection;
     left->value = base;
     left->sect = section;
@@ -143,9 +142,8 @@ bool LinkExpression::EnterSymbol(LinkExpressionSymbol* Symbol, bool removeOld)
     }
     else if (removeOld)
     {
-        LinkExpressionSymbol* v = *it;
+        delete (*it);
         symbols.erase(it);
-        delete v;
         symbols.insert(Symbol);
         return true;
     }

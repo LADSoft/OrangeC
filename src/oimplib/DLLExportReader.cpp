@@ -26,14 +26,7 @@
 #include "PEHeader.h"
 #include "MZHeader.h"
 
-DLLExportReader::~DLLExportReader()
-{
-    for (auto it = begin(); it != end(); ++it)
-    {
-        DLLExport* p = *it;
-        delete p;
-    }
-}
+DLLExportReader::~DLLExportReader() { }
 
 bool DLLExportReader::doExports(std::fstream& in, int phys, int rva)
 {
@@ -66,7 +59,7 @@ bool DLLExportReader::doExports(std::fstream& in, int phys, int rva)
             }
             in.seekg(eh.ordinal_rva - rva + phys + i * 2);
             in.read((char*)&ord, sizeof(ord));
-            exports.push_back(new DLLExport(buf, ord, byOrd));
+            exports.push_back(std::make_unique<DLLExport>(buf, ord, byOrd));
         }
     }
     return !in.fail();

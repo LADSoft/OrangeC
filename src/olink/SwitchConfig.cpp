@@ -36,12 +36,7 @@
 extern "C" int winsystem(const char*);
 #endif
 
-ConfigData::~ConfigData()
-{
-    for (auto define : defines)
-        delete define;
-    defines.clear();
-}
+ConfigData::~ConfigData() {}
 bool ConfigData::VisitAttrib(xmlNode& node, xmlAttrib* attrib, void* userData)
 {
     if (node == "Switch")
@@ -64,15 +59,15 @@ bool ConfigData::VisitAttrib(xmlNode& node, xmlAttrib* attrib, void* userData)
         }
         else if (*attrib == "Rel")
         {
-            relFile = atoi(attrib->GetValue().c_str());
+            relFile = std::atoi(attrib->GetValue().c_str());
         }
         else if (*attrib == "MapMode")
         {
-            mapMode = atoi(attrib->GetValue().c_str());
+            mapMode = std::atoi(attrib->GetValue().c_str());
         }
         else if (*attrib == "DebugPassThrough")
         {
-            debugPassThrough = atoi(attrib->GetValue().c_str());
+            debugPassThrough = std::atoi(attrib->GetValue().c_str());
         }
     }
     else if (node == "Define")
@@ -100,12 +95,9 @@ bool ConfigData::VisitNode(xmlNode& node, xmlNode* child, void* userData)
     // buggy, defines can have defines as children :)
     if (*child == "Define")
     {
-        currentDefine = new CmdSwitchDefine::define;
-        // if (currentDefine)
-        {
-            defines.push_back(currentDefine);
-            child->Visit(*this);
-        }
+        defines.push_back(std::make_unique<CmdSwitchDefine::define>());
+        currentDefine = defines.back().get();
+        child->Visit(*this);
     }
     else if (*child == "Extension")
     {
@@ -122,15 +114,10 @@ void ConfigData::AddDefine(LinkManager& linker, const std::string& name, const s
 }
 void ConfigData::SetDefines(LinkManager& linker)
 {
-    for (auto define : defines)
+    for (auto& define : defines)
         AddDefine(linker, define->name, define->value);
 }
-SwitchConfig::~SwitchConfig()
-{
-    for (auto data : configData)
-        delete data;
-    configData.clear();
-}
+SwitchConfig::~SwitchConfig() {}
 int SwitchConfig::Parse(const char* data)
 {
     CmdSwitchString::Parse(data);
@@ -149,7 +136,7 @@ int SwitchConfig::Parse(const char* data)
     *q = 0;
     std::string flags = name;
     bool found = false;
-    for (auto data : configData)
+    for (auto& data : configData)
     {
         if (data->name == swname)
         {
@@ -186,7 +173,7 @@ bool SwitchConfig::Validate()
 {
     std::string name;
     std::string spec;
-    for (auto data : configData)
+    for (auto& data : configData)
     {
         if (data->selected)
         {
@@ -210,7 +197,7 @@ bool SwitchConfig::Validate()
 }
 std::string SwitchConfig::GetSpecFile()
 {
-    for (auto data : configData)
+    for (auto& data : configData)
     {
         if (data->selected)
         {
@@ -222,7 +209,7 @@ std::string SwitchConfig::GetSpecFile()
 bool SwitchConfig::GetRelFile()
 {
     bool rel = false;
-    for (auto data : configData)
+    for (auto& data : configData)
     {
         if (data->selected)
         {
@@ -238,7 +225,7 @@ bool SwitchConfig::GetRelFile()
 bool SwitchConfig::GetDebugPassThrough()
 {
     bool passThrough = false;
-    for (auto data : configData)
+    for (auto& data : configData)
     {
         if (data->selected)
         {
@@ -254,7 +241,7 @@ bool SwitchConfig::GetDebugPassThrough()
 int SwitchConfig::GetMapMode()
 {
     int mode = 0;
-    for (auto data : configData)
+    for (auto& data : configData)
     {
         if (data->selected)
         {
@@ -265,7 +252,7 @@ int SwitchConfig::GetMapMode()
 }
 void SwitchConfig::SetDefines(LinkManager& linker)
 {
-    for (auto data : configData)
+    for (auto& data : configData)
     {
         if (data->selected)
         {
@@ -282,7 +269,7 @@ bool SwitchConfig::InterceptFile(const std::string& file)
         // by convention the extensions in the APP file are lower case
         for (int i = 0; i < ext.size(); i++)
             ext[i] = tolower(ext[i]);
-        for (auto data : configData)
+        for (auto& data : configData)
         {
             if (data->selected)
             {
@@ -303,7 +290,7 @@ int SwitchConfig::RunApp(const std::string& path, const std::string& file, const
 {
     std::string flags;
     std::string name;
-    for (auto data : configData)
+    for (auto& data : configData)
     {
         if (data->selected)
         {
@@ -334,11 +321,7 @@ bool SwitchConfig::VisitNode(xmlNode& node, xmlNode* child, void* userData)
     {
         if (*child == "Switch")
         {
-            ConfigData* config = new ConfigData(child);
-            // if (config)
-            {
-                configData.push_back(config);
-            }
+            configData.push_back(std::make_unique<ConfigData>(child));
         }
     }
     return true;

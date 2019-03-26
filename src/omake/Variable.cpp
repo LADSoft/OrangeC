@@ -72,7 +72,7 @@ Variable* VariableContainer::Lookup(const std::string& name)
         {
             if ((*it)->GetName() == name)
             {
-                rv = *it;
+                rv = (*it).get();
                 break;
             }
         }
@@ -82,31 +82,25 @@ Variable* VariableContainer::Lookup(const std::string& name)
         auto it = variables.find(&name);
         if (it != variables.end())
         {
-            rv = it->second;
+            rv = it->second.get();
         }
     }
     return rv;
 }
 void VariableContainer::operator+(Variable* variable)
 {
+    std::unique_ptr<Variable> temp(variable);
     if (variable->GetName().find_first_of('%') != std::string::npos)
     {
-        patternVariables.push_back(variable);
+        patternVariables.push_back(std::move(temp));
     }
     else
     {
-        variables[&variable->GetName()] = variable;
+        variables[&variable->GetName()] = std::move(temp);
     }
 }
 void VariableContainer::Clear()
 {
-    for (auto it = PatternBegin(); it != PatternEnd(); ++it)
-    {
-        Variable* p = (*it);
-        delete p;
-    }
     patternVariables.clear();
-    for (auto var : *this)
-        delete var.second;
     variables.clear();
 }

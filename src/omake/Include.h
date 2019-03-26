@@ -34,7 +34,7 @@ class Include
 {
   public:
     static Include* Instance();
-    ~Include() { Clear(); }
+    ~Include() { }
     void Clear();
 
     bool AddFileList(const std::string& name, bool ignoreOk = false, bool MakeFile = false);

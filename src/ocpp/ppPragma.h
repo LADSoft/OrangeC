@@ -224,8 +224,8 @@ class Startups
     }
     ~Startups();
 
-    void Add(std::string& item, int Priority, bool startup) { list[item] = new Properties(Priority, startup); }
-    typedef std::map<std::string, Properties*>::iterator StartupIterator;
+    void Add(std::string& item, int Priority, bool startup) { list[item] = std::make_unique<Properties>(Priority, startup); }
+    typedef std::map<std::string, std::unique_ptr<Properties>>::iterator StartupIterator;
     StartupIterator begin() { return list.begin(); }
     StartupIterator end() { return list.end(); }
     std::string GetName(StartupIterator it) { return it->first; }
@@ -237,7 +237,7 @@ class Startups
 
   private:
     static Startups* instance;
-    std::map<std::string, Properties*> list;
+    std::map<std::string, std::unique_ptr<Properties>> list;
 };
 class Once
 {
@@ -288,10 +288,8 @@ class ppPragma
   public:
     ppPragma(ppInclude* Include)
     {
-        InitHash();
         Once::Instance()->SetInclude(Include);
     }
-    void InitHash();
     bool Check(int token, const std::string& args);
     void ParsePragma(const std::string& args);
     void Mark()
@@ -321,6 +319,6 @@ class ppPragma
     void HandleOnce(Tokenizer& tk);
 
   private:
-    KeywordHash hash;
+    static KeywordHash hash;
 };
 #endif

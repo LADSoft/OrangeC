@@ -68,5 +68,7 @@ typedef short uid_t;
 typedef short gid_t;
 typedef long off_t;
 typedef long pid_t;
+typedef long pthread_t;
+typedef long pthread_attr_t;
 
 #endif /* __TYPES_H */

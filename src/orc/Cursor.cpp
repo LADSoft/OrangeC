@@ -57,10 +57,10 @@ bool Cursor::ReadBin(ResourceData* rd)
         pt.y = (bytes - 0x30) / ((pt.x / 8) * 2);
     SetSize(pt);
 
-    data = new ResourceData(rd->GetData() + offset, bytes);
+    data = std::make_unique<ResourceData>(rd->GetData() + offset, bytes);
 
     if (rd->PastEnd() || offset + bytes > rd->GetLen())
-        throw new std::runtime_error("Cursor file too short");
+        throw std::runtime_error("Cursor file too short");
     return true;
 }
 void GroupCursor::WriteRes(ResFile& resFile)
@@ -83,13 +83,13 @@ void GroupCursor::WriteRes(ResFile& resFile)
 void GroupCursor::ReadRC(RCFile& rcFile)
 {
     resInfo.ReadRC(rcFile, false);
-    ResourceData* rd = new ResourceData;
+    std::unique_ptr<ResourceData> rd = std::make_unique<ResourceData>();
     rd->ReadRC(rcFile);
     rcFile.NeedEol();
     rd->GetWord();
     if (rd->GetWord() != 2)
     {
-        throw new std::runtime_error("file does not contain cursor data");
+        throw std::runtime_error("file does not contain cursor data");
     }
     int count = rd->GetWord();
     for (int i = 0; i < count; i++)
@@ -97,8 +97,7 @@ void GroupCursor::ReadRC(RCFile& rcFile)
         Cursor* c = new Cursor(resInfo);
         rcFile.GetResFile().Add(c);
         cursors.push_back(c);
-        c->ReadBin(rd);
+        c->ReadBin(rd.get());
     }
     resInfo.SetFlags(resInfo.GetFlags() | ResourceInfo::Pure);
-    delete rd;
 }

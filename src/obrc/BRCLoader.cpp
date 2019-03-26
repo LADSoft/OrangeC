@@ -33,31 +33,34 @@
 #include <cstdio>
 #include <iostream>
 
-SymData::~SymData()
+SymData::SymData(std::string& Name) :
+    name(Name),
+    externalCount(0),
+    func(nullptr),
+    globalCount(0),
+    argCount(0),
+    localCount(0),
+    fileOffs(0)
 {
-    for (auto l : data)
-        delete l;
 }
+
+SymData::~SymData() {}
 BlockData::~BlockData() {}
-BRCLoader::~BRCLoader()
-{
-    for (auto sym : syms)
-        delete sym.second;
-}
+BRCLoader::~BRCLoader() {}
 void BRCLoader::InsertSymData(std::string s, BrowseData* ldata, bool func)
 {
     SymData* sym;
     auto it = syms.find(s);
     if (it != syms.end())
     {
-        sym = it->second;
+        sym = it->second.get();
     }
     else
     {
-        sym = new SymData(s);
-        syms[s] = sym;
+        syms[s] = std::make_unique<SymData>(s);
+        sym = syms[s].get();
     }
-    for (auto compare : sym->data)
+    for (auto& compare : sym->data)
     {
         if (ldata->type == compare->type)
             if (ldata->startLine == compare->startLine)
@@ -71,7 +74,9 @@ void BRCLoader::InsertSymData(std::string s, BrowseData* ldata, bool func)
                             return;
                         }
     }
-    sym->insert(ldata);
+    std::unique_ptr<BrowseData> temp;
+    temp.reset(ldata);
+    sym->insert(std::move(temp));
     if (func)
         sym->func = ldata;
 }
@@ -120,7 +125,8 @@ ObjInt BRCLoader::InsertVariable(ObjBrowseInfo& p, bool func)
 void BRCLoader::InsertDefine(ObjBrowseInfo& p) { InsertVariable(p); }
 void BRCLoader::Usages(ObjBrowseInfo& p)
 {
-    BrowseData* ldata = new BrowseData;
+    std::unique_ptr<BrowseData> ptr = std::make_unique<BrowseData>();
+    BrowseData* ldata = ptr.get();
     std::string hint;
     std::string name = p.GetData();
     ldata->type = p.GetType();
@@ -134,14 +140,14 @@ void BRCLoader::Usages(ObjBrowseInfo& p)
     auto it = syms.find(name);
     if (it != syms.end())
     {
-        sym = it->second;
+        sym = it->second.get();
     }
     else
     {
-        sym = new SymData(name);
-        syms[name] = sym;
+        syms[name] = std::make_unique<SymData>(name);
+        sym = syms[name].get();
     }
-    sym->usages.push_back(ldata);
+    sym->usages.push_back(std::move(ptr));
 }
 
 //-------------------------------------------------------------------------
@@ -159,7 +165,7 @@ void BRCLoader::EndFunc(ObjBrowseInfo& p)
 {
     std::string name = p.GetData();
     int line = p.GetLine()->GetLineNumber();
-    SymData* sym = syms[name];
+    SymData* sym = syms[name].get();
     if (!sym)
         Utils::fatal("EndFunc::Cannot find symbol");
     //    (*sym->data.begin())->funcEndLine = line;
@@ -185,7 +191,7 @@ void BRCLoader::EndBlock(int line)
 {
     if (!blocks.empty())
     {
-        BlockData* b = blocks.back();
+        std::unique_ptr<BlockData> b(blocks.back());
         blocks.pop_back();
 
         b->end = line;
@@ -193,7 +199,6 @@ void BRCLoader::EndBlock(int line)
         {
             InsertSymData(sym.first, sym.second);
         }
-        delete b;
     }
 }
 void BRCLoader::ParseData(ObjFile& f)
@@ -263,7 +268,7 @@ bool BRCLoader::load()
     bool rv = true;
     for (auto it = files.FileNameBegin(); it != files.FileNameEnd(); ++it)
     {
-        std::string name = **it;
+        std::string name = *it;
         ObjIeeeIndexManager im1;
         ObjFactory fact1(&im1);
         FILE* b = fopen(name.c_str(), "rb");

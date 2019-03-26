@@ -88,7 +88,7 @@ class LinkDebugFile
     std::map<ObjString, int> names;
     std::map<std::string, int> sectionMap;
     std::map<int, int> publicMap, localMap, autoMap, typeMap;
-    std::vector<ObjString*> nameList;
+    std::vector<ObjString> nameList;
     std::map<ObjSection*, ObjSection*> ParentSections;
     std::deque<CPPMapping> CPPMappingList;
     static const char* tables;

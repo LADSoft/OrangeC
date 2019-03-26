@@ -32,9 +32,9 @@ void ResidentNameTable::Setup()
         fileName = fileName.substr(npos + 1);
     entryOffset = fileName.size() + 2;
     size = entryOffset + 1;
-    data = new char[size];
-    data[0] = fileName.size();
-    memcpy(data + 1, fileName.c_str(), fileName.size() + 1);
-    data[entryOffset] = 0;
+    data =std::make_unique<char[]>(size);
+    data.get()[0] = fileName.size();
+    memcpy(data.get() + 1, fileName.c_str(), fileName.size() + 1);
+    data.get()[entryOffset] = 0;
 }
-void ResidentNameTable::Write(std::fstream& stream) { stream.write((char*)data, size); }
+void ResidentNameTable::Write(std::fstream& stream) { stream.write((char*)data.get(), size); }

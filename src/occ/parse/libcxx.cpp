@@ -31,6 +31,7 @@ extern TYPE stdint;
 static HASHTABLE* intrinsicHash;
 
 typedef bool INTRINS_FUNC(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
+static bool is_abstract(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
 static bool is_base_of(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
 static bool is_class(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
 static bool is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
@@ -54,6 +55,7 @@ static struct _ihash
     INTRINS_FUNC* func;
 
 } defaults[] = {
+    {"__is_abstract", is_abstract},
     {"__is_base_of", is_base_of},
     {"__is_class", is_class},
     {"__is_constructible", is_constructible},
@@ -470,6 +472,23 @@ static bool nothrowConstructible(TYPE* tp)
     }
     return true;
 }
+static bool is_abstract(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
+{
+    INITLIST* lst;
+    bool rv = false;
+    FUNCTIONCALL funcparams;
+    memset(&funcparams, 0, sizeof(funcparams));
+    funcparams.sp = sym;
+    *lex = getTypeList(*lex, funcsp, &funcparams.arguments);
+    if (funcparams.arguments && !funcparams.arguments->next)
+    {
+        rv = isstructured(funcparams.arguments->tp) && basetype(funcparams.arguments->tp)->sp->isabstract;
+    }
+    *exp = intNode(en_c_i, rv);
+    *tp = &stdint;
+    return true;
+
+}
 static bool is_base_of(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
     INITLIST* lst;
@@ -689,10 +708,21 @@ static bool is_convertible_to(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** 
                 from = basetype(from)->btp;
             while (isref(to))
                 to = basetype(to)->btp;
+            while (ispointer(from) && ispointer(to))
+            {
+                from = basetype(from)->btp;
+                to = basetype(to)->btp;
+            }
+            if (to->type == bt_templateparam)
+                to = to->templateParam->p->byClass.val;
+            if (from->type == bt_templateparam)
+                from = from->templateParam->p->byClass.val;
             rv = comparetypes(to, from, false);
             if (!rv && isstructured(from) && isstructured(to))
             {
                 if (classRefCount(basetype(to)->sp, basetype(from)->sp) == 1)
+                    rv = true;
+                else if (lookupGenericConversion(basetype(from)->sp, basetype(to)))
                     rv = true;
             }
             if (!rv && isstructured(from))

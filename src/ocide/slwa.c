@@ -167,31 +167,27 @@ char* relpath(char* name, char* path)
     {
         p++, q++;
     }
-    while (q != path && q[-1] != '\\')
-        p--, q--;
-    if (!(*p | *q))
-        return r;
-    else if (*(p - 1) == '\\' && *(p - 2) == ':')
-        return name;
-    else
+
+    if (*p == '\\')
+         p++;
+    if (*q == '\\')
+         q++;
+
+    int count = *q != 0;
+    char *t = q;
+    while (*t)
+        if (*t++ == '\\')
+           count++;
+    projname[0] = 0;
+    while(count--)
+	strcat(projname, "..\\");
+    if (*p)
     {
-        int count = *q != 0;
-        if (*q != '\\')
-            while (p > localname && *p != '\\')
-                p--;
-        while (*q && (q = strchr(q + 1, '\\')))
-            count++;
-        projname[0] = 0;
-        while (count--)
-            strcat(projname, "..\\");
-        if (*p)
-        {
-            strcat(projname, p + 1);
-            strcat(projname, "\\");
-        }
-        strcat(projname, r);
-        return projname;
+	strcat(projname, p);
+	strcat(projname, "\\");
     }
+    strcat(projname, r);
+    return projname;
 }
 char* relpath2(char* name, char* path)
 {
@@ -1222,7 +1218,7 @@ PROJECTITEM* RestoreWorkArea(char* name)
     ClearProfileNames();
     wa->type = PJ_WS;
     strcpy(wa->realName, name);
-    p = relpath2(name, wa->realName);
+    p = relpath(name, wa->realName);
     if (strrchr(p, '\\'))
         p = strrchr(p, '\\') + 1;
     strcpy(wa->displayName, p);

@@ -106,23 +106,21 @@ LONG ___xceptionhandle(PEXCEPTION_RECORD p, void* record, PCONTEXT context, void
     if (p->ExceptionCode == OUR_CPP_EXC_CODE)
         __call_terminate();
 #endif
+    addr = (void *)context->Eip;
     switch (p->ExceptionCode)
     {
         case EXCEPTION_ACCESS_VIOLATION:
             signum = SIGSEGV;
             code = SEGV_ACCERR;
-            addr = (void *)context->Eip;
             break;
         case EXCEPTION_DATATYPE_MISALIGNMENT:
             signum = SIGBUS;
             code = BUS_ADRALN;
-            addr = (void *)context->Eip;
             break;
         case EXCEPTION_ARRAY_BOUNDS_EXCEEDED:
         case EXCEPTION_GUARD_PAGE:
             signum = SIGSEGV;
             code = SEGV_MAPERR; 
-            addr = (void *)context->Eip;
             break;
             //		case EXCEPTION_INVALID_INSTRUCTION:
         case EXCEPTION_PRIV_INSTRUCTION:

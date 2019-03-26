@@ -27,6 +27,7 @@
 
 #include "ObjTypes.h"
 #include <vector>
+#include <memory>
 
 class LinkRegionFileSpec
 {
@@ -55,6 +56,6 @@ class LinkRegionFileSpecContainer
     bool Matches(const ObjString& Spec);
 
   private:
-    std::vector<LinkRegionFileSpec*> specs;
+    std::vector<std::unique_ptr<LinkRegionFileSpec>> specs;
 };
 #endif

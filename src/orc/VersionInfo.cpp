@@ -130,7 +130,7 @@ void VarVerInfo::ReadRC(RCFile& rcFile)
 
         std::wstring key = rcFile.GetString();
         if (rcFile.GetToken()->GetKeyword() != Lexer::comma)
-            throw new std::runtime_error("Comma expected");
+            throw std::runtime_error("Comma expected");
         Info v(key);
         while (rcFile.GetToken()->GetKeyword() == Lexer::comma)
         {
@@ -141,13 +141,11 @@ void VarVerInfo::ReadRC(RCFile& rcFile)
     }
     rcFile.NeedEol();
 }
-VersionInfo::~VersionInfo()
-{
-    for (auto var : varInfo)
-    {
-        delete var;
-    }
-    varInfo.clear();
+VersionInfo::~VersionInfo() {}
+void VersionInfo::Add(InternalVerInfo* v) 
+{ 
+    std::unique_ptr<InternalVerInfo> temp(v);
+    varInfo.push_back(std::move(temp)); 
 }
 void VersionInfo::WriteRes(ResFile& resFile)
 {
@@ -186,7 +184,7 @@ void VersionInfo::WriteRes(ResFile& resFile)
         resFile.WriteDWord(fileDateMS);
         resFile.WriteDWord(fileDateLS);
     }
-    for (auto res : *this)
+    for (auto& res : *this)
     {
         res->WriteRes(resFile);
     }
@@ -277,11 +275,11 @@ void VersionInfo::ReadRC(RCFile& rcFile)
             case Lexer::BEGIN:
                 done = true;
                 if (!count)
-                    throw new std::runtime_error("Version info expected");
+                    throw std::runtime_error("Version info expected");
                 fixed = true;
                 break;
             default:
-                throw new std::runtime_error("Begin Expected");
+                throw std::runtime_error("Begin Expected");
                 break;
         }
     }
@@ -296,25 +294,23 @@ void VersionInfo::ReadRC(RCFile& rcFile)
             rcFile.NeedEol();
             rcFile.NeedBegin();
             if (rcFile.GetTokenId() != Lexer::BLOCK)
-                throw new std::runtime_error("Block expected");
+                throw std::runtime_error("Block expected");
             std::wstring language = rcFile.GetString();
-            StringVerInfo* v = new StringVerInfo(language);
-            varInfo.push_back(v);
+            varInfo.push_back(std::make_unique<StringVerInfo>(language));
             rcFile.NeedEol();
-            v->ReadRC(rcFile);
+            varInfo.back()->ReadRC(rcFile);
             rcFile.NeedEnd();
         }
         else if (type == L"VarFileInfo")
         {
             rcFile.NeedEol();
             rcFile.NeedBegin();
-            VarVerInfo* v = new VarVerInfo();
-            v->ReadRC(rcFile);
-            varInfo.push_back(v);
+            varInfo.push_back(std::make_unique<VarVerInfo>());
+            varInfo.back()->ReadRC(rcFile);
             rcFile.NeedEnd();
         }
         else
-            throw new std::runtime_error("Invalid version info type");
+            throw std::runtime_error("Invalid version info type");
     }
     rcFile.NeedEnd();
 }

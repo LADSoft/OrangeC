@@ -542,6 +542,22 @@ void DeduceAuto(TYPE** pat, TYPE* nt)
         bool err = false;
         if (isref(*pat))
         {
+            if ((*pat)->type == bt_rref)
+            {
+                // forwarding?  unadorned rref!
+                if (!nt->rref && basetype(nt)->type != bt_rref)
+                {
+                    *pat = (TYPE *)Alloc(sizeof(TYPE));
+                    (*pat)->type = bt_lref;
+                    (*pat)->size = getSize(bt_pointer);
+                    (*pat)->rootType = (*pat);
+                    TYPE *t = basetype(nt);
+                    if (isref(t))
+                        t = t->btp;
+                    (*pat)->btp = t;
+                    return;
+                }
+            }
             if (isref(nt))
             {
                 nt = basetype(nt)->btp;

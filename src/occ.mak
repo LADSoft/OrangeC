@@ -75,7 +75,7 @@ DEFINES := $(subst @, ,$(DEFINES))
 LIB_DEPENDENCIES := $(foreach file, $(addsuffix .l,$(LIB_DEPENDENCIES)), $(file))
 
 ifeq "$(TARGET)" "GUI"
-ifneq "$(LSCRTL)" "YES"
+ifeq "$(LSCRTL)" ""
 STARTUP=C0pe.o
 TYPE=/T:GUI32
 COMPLIB=clwin$(LIB_EXT) climp$(LIB_EXT)
@@ -86,7 +86,7 @@ COMPLIB=lscrtl$(LIB_EXT) climp$(LIB_EXT)
 CCFLAGS:=$(CCFLAGS) /Wgl
 endif
 else
-ifneq "$(LSCRTL)" "YES"
+ifeq "$(LSCRTL)" ""
 STARTUP=C0Xpe.o
 TYPE=/T:CON32
 COMPLIB=clwin$(LIB_EXT) climp$(LIB_EXT)

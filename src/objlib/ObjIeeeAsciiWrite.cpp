@@ -45,7 +45,7 @@ void ObjIeeeAscii::bufferup(const char* data, int len)
     }
     else
     {
-        memcpy(ioBuffer + ioBufferLen, data, len);
+        memcpy(ioBuffer.get() + ioBufferLen, data, len);
         ioBufferLen += len;
     }
 }
@@ -568,9 +568,7 @@ void ObjIeeeAscii::GatherCS(const char* Cstr)
 bool ObjIeeeAscii::HandleWrite()
 {
     ioBufferLen = 0;
-    ioBuffer = new char[BUFFERSIZE];
-    if (!ioBuffer)
-        return false;
+    ioBuffer = std::make_unique<char[]>(BUFFERSIZE);
     ResetCS();
     WriteHeader();
     RenderCS();
@@ -599,7 +597,6 @@ bool ObjIeeeAscii::HandleWrite()
     ResetCS();
     WriteTrailer();
     flush();
-    delete[] ioBuffer;
     ioBuffer = nullptr;
     return true;
 }
@@ -700,15 +697,12 @@ void ObjIeeeAscii::WriteSections()
 }
 bool ObjIeeeAscii::BinaryWrite()
 {
-    ioBuffer = new char[BUFFERSIZE];
-    if (!ioBuffer)
-        return false;
+    ioBuffer = std::make_unique<char[]>(BUFFERSIZE);
     for (auto it = file->SectionBegin(); it != file->SectionEnd(); ++it)
     {
         RenderMemoryBinary(&(*it)->GetMemoryManager());
     }
     flush();
-    delete[] ioBuffer;
     ioBuffer = nullptr;
     return true;
 }

@@ -29,12 +29,10 @@
 #include <stdexcept>
 
 Font::Font(const ResourceId& Id, const ResourceInfo& info) : Resource(eFont, Id, info), data(nullptr) {}
-Font::~Font() { delete data; }
+Font::~Font() {}
 void Font::SetData(ResourceData* rdata)
 {
-
-    delete data;
-    data = rdata;
+    data.reset(rdata);
 }
 void Font::WriteRes(ResFile& resFile)
 {
@@ -47,16 +45,15 @@ void Font::ReadRC(RCFile& rcFile)
 {
     resInfo.SetFlags(resInfo.GetFlags() | ResourceInfo::Pure);
     resInfo.ReadRC(rcFile, false);
-    ResourceData* rd = new ResourceData;
-    rd->ReadRC(rcFile);
+    data = std::make_unique<ResourceData>();
+    data->ReadRC(rcFile);
     rcFile.NeedEol();
     // check version and size
     /*
         if *n != 0x200 && n != 0x300 || s != rd->GetLen() || s < 0x180)
         {
             delete rd;
-            throw new std::runtime_error("Invalid font file");
+            throw std::runtime_error("Invalid font file");
         }
     */
-    data = rd;
 }

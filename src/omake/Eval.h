@@ -30,7 +30,7 @@
 #include <vector>
 #include <list>
 #include <set>
-
+#include "os.h"
 class RuleList;
 class Rule;
 class Variable;
@@ -46,8 +46,18 @@ class Eval
     static void AddVPath(const std::string& pattern, const std::string& dirs) { vpaths[pattern] = dirs; }
     static void RemoveVPath(const std::string& pattern);
     static void RemoveAllVPaths() { vpaths.clear(); }
-    static void PushruleStack(RuleList* ruleList) { ruleStack.push_front(ruleList); }
-    static void PopruleStack() { ruleStack.pop_front(); }
+    static void PushruleStack(RuleList* ruleList) 
+    { 
+        OS::EvalTake();
+        ruleStack.push_front(ruleList);
+        OS::EvalGive();
+    }
+    static void PopruleStack() 
+    { 
+        OS::EvalTake();
+        ruleStack.pop_front();
+        OS::EvalGive();
+    }
     static void SetWarnings(bool flag) { internalWarnings = flag; }
     static bool GetWarnings() { return internalWarnings; }
     static void SetFile(const std::string& File) { file = File; }

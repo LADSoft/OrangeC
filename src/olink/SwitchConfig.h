@@ -53,7 +53,7 @@ class ConfigData : public xmlVisitor
     std::string appFlags;
     std::string specFile;
     std::deque<std::string> extensions;
-    std::vector<CmdSwitchDefine::define*> defines;
+    std::vector<std::unique_ptr<CmdSwitchDefine::define>> defines;
     CmdSwitchDefine::define* currentDefine;
     bool selected;
     bool relFile;
@@ -84,7 +84,7 @@ class SwitchConfig : public xmlVisitor, public CmdSwitchString
     virtual bool VisitNode(xmlNode& node, xmlNode* child, void* userData);
 
   private:
-    std::vector<ConfigData*> configData;
+    std::vector<std::unique_ptr<ConfigData>> configData;
     std::deque<std::string> files;
 };
 #endif

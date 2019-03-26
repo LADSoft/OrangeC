@@ -33,12 +33,6 @@
 #include <limits.h>
 #include <stdexcept>
 
-KeywordHash AsmExpr::hash;
-bool AsmExpr::initted;
-std::string AsmExpr::currentLabel;
-Section* AsmExpr::section;
-std::map<std::string, AsmExprNode*> AsmExpr::equs;
-
 enum
 {
     dollars = 300,
@@ -48,50 +42,52 @@ enum
     SEG,
     WRT
 };
+
+KeywordHash AsmExpr::hash = {
+    { "(", openpa},
+    { ")", closepa},
+    { "+", ::plus},
+    { "-", ::minus},
+    { "!", lnot},
+    { "~", bcompl},
+    { "*", star},
+    { "/", divide},
+    { "/-", sdivide},
+    { "%", mod},
+    { "%-", smod},
+    { "<<", leftshift},
+    { ">>", rightshift},
+    { ">", gt},
+    { "<", lt},
+    { ">=", geq},
+    { "<=", leq},
+    { "==", eq},
+    { "!=", ne},
+    { "|", bor},
+    { "&", band},
+    { "^", bxor},
+    { "||", lor},
+    { "&&", land},
+    { "$", dollars},
+    { "$$", dollarsdollars},
+    { "seg", SEG},
+    { "wrt", WRT},
+
+};
+
+std::string AsmExpr::currentLabel;
+Section* AsmExpr::section;
+std::map<std::string, AsmExprNode*> AsmExpr::equs;
+
 void AsmExpr::ReInit()
 {
     currentLabel = "";
     section = nullptr;
     equs.clear();
 }
-void AsmExpr::InitHash()
-{
-    if (!initted)
-    {
-        initted = true;
-        hash["("] = openpa;
-        hash[")"] = closepa;
-        hash["+"] = ::plus;
-        hash["-"] = ::minus;
-        hash["!"] = lnot;
-        hash["~"] = bcompl;
-        hash["*"] = star;
-        hash["/"] = divide;
-        hash["/-"] = sdivide;
-        hash["%"] = mod;
-        hash["%-"] = smod;
-        hash["<<"] = leftshift;
-        hash[">>"] = rightshift;
-        hash[">"] = gt;
-        hash["<"] = lt;
-        hash[">="] = geq;
-        hash["<="] = leq;
-        hash["=="] = eq;
-        hash["!="] = ne;
-        hash["|"] = bor;
-        hash["&"] = band;
-        hash["^"] = bxor;
-        hash["||"] = lor;
-        hash["&&"] = land;
-        hash["$"] = dollars;
-        hash["$$"] = dollarsdollars;
-        hash["seg"] = SEG;
-        hash["wrt"] = WRT;
-    }
-}
 AsmExprNode* AsmExpr::Build(std::string& line)
 {
-    tokenizer = new Tokenizer(line, &hash);
+    tokenizer = std::make_unique<Tokenizer>(line, &hash);
     token = tokenizer->Next();
     if (!token)
         return 0;
@@ -100,7 +96,8 @@ AsmExprNode* AsmExpr::Build(std::string& line)
         line = token->GetChars() + tokenizer->GetString();
     else
         line = "";
-    delete tokenizer;
+
+    tokenizer.release();
     return rv;
 }
 AsmExprNode* AsmExpr::ConvertToBased(AsmExprNode* n, int pc)
@@ -128,11 +125,11 @@ AsmExprNode* AsmExpr::Eval(AsmExprNode* n, int pc)
 {
     AsmExprNode* rv = nullptr;
     FPF fv;
-    AsmExprNode *xleft = 0, *xright = 0;
+    std::unique_ptr<AsmExprNode> xleft, xright;
     if (n->GetLeft())
-        xleft = Eval(n->GetLeft(), pc);
+        xleft.reset(Eval(n->GetLeft(), pc));
     if (n->GetRight())
-        xright = Eval(n->GetRight(), pc);
+        xright.reset(Eval(n->GetRight(), pc));
     switch (n->GetType())
     {
         case AsmExprNode::IVAL:
@@ -422,8 +419,7 @@ AsmExprNode* AsmExpr::Eval(AsmExprNode* n, int pc)
             else if (xleft->GetType() == AsmExprNode::FVAL)
             {
                 xleft->fval.Negate();
-                rv = xleft;
-                xleft = nullptr;
+                rv = xleft.release();
             }
             else
             {
@@ -533,15 +529,8 @@ AsmExprNode* AsmExpr::Eval(AsmExprNode* n, int pc)
     }
     if (rv->GetLeft())
     {
-        rv->SetLeft(xleft);
-        rv->SetRight(xright);
-    }
-    else
-    {
-        if (xleft)
-            delete xleft;
-        if (xright)
-            delete xright;
+        rv->SetLeft(xleft.release());
+        rv->SetRight(xright.release());
     }
     return rv;
 }

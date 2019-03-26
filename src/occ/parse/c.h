@@ -292,6 +292,8 @@ enum e_cvsrn
 #define _F_TYPETEST 256
 #define _F_NESTEDINIT 512
 #define _F_ASSIGNINIT 1024
+#define _F_NOEVAL 2048
+
 #define _F_NOVIRTUALBASE 1
 #define _F_VALIDPOINTER 2
 
@@ -373,7 +375,7 @@ struct u_val
 {
     union {
         LLONG_TYPE i;  /* int val */
-        ULLONG_TYPE u; /* nsigned val */
+        ULLONG_TYPE u; /* unsigned val */
         union
         {
             const char* a; /* string val */

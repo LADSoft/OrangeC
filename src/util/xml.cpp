@@ -169,19 +169,7 @@ char xmlAttrib::ReadTextChar(std::fstream& stream)
     return 0;
 }
 
-xmlNode::~xmlNode()
-{
-    for (auto attrib : attribs)
-    {
-        delete attrib;
-    }
-    attribs.clear();
-    for (auto child : children)
-    {
-        delete child;
-    }
-    children.clear();
-}
+xmlNode::~xmlNode() {}
 bool xmlNode::Read(std::fstream& stream, char v)
 {
     char t;
@@ -235,12 +223,11 @@ bool xmlNode::Read(std::fstream& stream, char v)
         if (isalpha(t) || t == '_')
         {
             stream.putback(t);
-            xmlAttrib* attrib = new xmlAttrib();
+            auto attrib = std::make_unique<xmlAttrib>();
             // if (!attrib)
             //    return false;
             if (!attrib->Read(stream))
             {
-                delete attrib;
                 return false;
             }
             InsertAttrib(attrib);
@@ -341,12 +328,11 @@ bool xmlNode::Read(std::fstream& stream, char v)
                 }
                 else
                 {
-                    xmlNode* node = new xmlNode();
+                    auto node = std::make_unique<xmlNode>();
                     // if (!node)
                     //    return false;
                     if (!node->Read(stream, t))
                     {
-                        delete node;
                         return false;
                     }
                     InsertChild(node);
@@ -410,13 +396,13 @@ bool xmlNode::Write(std::fstream& stream, int indent)
     stream << '<' << elementType;
     if (!attribs.empty())
     {
-        for (auto attrib : attribs)
+        for (auto& attrib : attribs)
             attrib->Write(stream);
     }
     if (!children.empty() || !text.empty())
     {
         stream << '>' << std::endl;
-        for (auto child : children)
+        for (auto& child : children)
             child->Write(stream, indent + 1);
         if (!text.empty())
         {
@@ -457,9 +443,8 @@ void xmlNode::RemoveAttrib(const xmlAttrib* attrib)
 {
     for (auto it = attribs.begin(); it != attribs.end(); ++it)
     {
-        if (*it == attrib)
+        if ((*it).get() == attrib)
         {
-            delete *it;
             attribs.erase(it);
         }
     }
@@ -468,23 +453,22 @@ void xmlNode::RemoveChild(const xmlNode* child)
 {
     for (auto it = children.begin(); it != children.end(); ++it)
     {
-        if (*it == child)
+        if ((*it).get() == child)
         {
-            delete *it;
             children.erase(it);
         }
     }
 }
 bool xmlNode::Visit(xmlVisitor& v, void* userData)
 {
-    for (auto attrib : attribs)
+    for (auto& attrib : attribs)
     {
-        if (!v.VisitAttrib(*this, attrib, userData))
+        if (!v.VisitAttrib(*this, attrib.get(), userData))
             break;
     }
-    for (auto child : children)
+    for (auto& child : children)
     {
-        if (!v.VisitNode(*this, child, userData))
+        if (!v.VisitNode(*this, child.get(), userData))
             return false;
     }
     return true;

@@ -8,6 +8,10 @@ install:
     - set ORIGPATH=%PATH%
     - set ORANGEC=c:\ORANGEC
 
+branches:
+   only:
+     - master
+
 environment:
   matrix:
     - type: MINGW64
@@ -41,7 +45,7 @@ build_script:
         - mkdir \orangec\temp
         - cd orangec\src
         - copy omake.exe \orangec\temp
-        - mingw32-make fullbuild --eval="COMPILER=$(BUILD_PROFILE)" -j 4
+        - c:\orangec\temp\omake -DCOMPILER=$(BUILD_PROFILE) fullbuild -j:4
         - c:\orangec\bin\occ /V
         - copy omake\omake.exe \orangec\temp
         - c:\orangec\temp\omake -DCOMPILER=OCC clean -j:4

@@ -2507,9 +2507,9 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
                     break;
                 case kw_delete:
                 case kw_dela:
-                    if (hr && (!hr->next || !hr->next->next))
+                    if (hr)
                     {
-                        // one arg, must be a pointer
+                        // one or more args, first must be a pointer
                         TYPE* tp = ((SYMBOL*)hr->p)->tp;
                         if (!ispointer(tp))
                             errorsym(ERR_OPERATOR_LITERAL_INVALID_PARAMETER_LIST, sp);

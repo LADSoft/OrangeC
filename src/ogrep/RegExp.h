@@ -30,7 +30,7 @@ typedef unsigned char UBYTE;
 #include <deque>
 #include <cctype>
 #include <cstring>
-
+#include <memory>
 class RegExpContext;
 
 class RegExpMatch
@@ -174,7 +174,7 @@ class RegExpContext
         matchStackTop = 0;
         Parse(exp, regular, caseSensitive, matchesWord);
     }
-    ~RegExpContext() { Clear(); }
+    ~RegExpContext() { }
     bool Match(int start, int len, const char* Beginning);
 
     bool IsValid() const { return !invalid; }
@@ -189,7 +189,7 @@ class RegExpContext
     void Clear();
 
   private:
-    std::deque<RegExpMatch*> matches;
+    std::deque<std::unique_ptr<RegExpMatch>> matches;
     const char* beginning;
     int m_so;
     int m_eo;

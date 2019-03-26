@@ -119,7 +119,6 @@ class Lexer
 
   protected:
     void CheckAssign(std::string& line, PreProcessor& pp);
-    void InitHash();
     void InitTokenizer();
 
   private:
@@ -132,7 +131,6 @@ class Lexer
     const Token* token;
     bool parsingDirective;
     static KeywordHash hash;
-    static bool hashInitted;
     static const char* preData;
 };
 #endif  // Lexer_h

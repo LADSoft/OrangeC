@@ -72,7 +72,10 @@ char *_RTL_FUNC fgets(char *restrict buf, int num, FILE *restrict stream)
         stream->level = 0;
     }
     if (stream->flags & _F_EOF)
-        return 0;
+       if (isatty(fileno(stream)))
+           stream->flags &= ~(_F_XEOF | _F_EOF);
+       else
+           return 0;
     if (num == 0)
         return 0 ;
     if (stream->flags & _F_UNGETC) {

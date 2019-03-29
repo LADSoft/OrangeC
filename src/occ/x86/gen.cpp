@@ -313,7 +313,7 @@ AMODE* make_offset(EXPRESSION* node)
 AMODE* make_stack(int number)
 {
     AMODE* ap = (AMODE*)beLocalAlloc(sizeof(AMODE));
-    EXPRESSION* ep = (EXPRESSION*)(EXPRESSION *)beLocalAlloc(sizeof(EXPRESSION));
+    EXPRESSION* ep = (EXPRESSION *)beLocalAlloc(sizeof(EXPRESSION));
     ep->type = en_c_i;
     ep->v.i = -number;
     ap->mode = am_indisp;

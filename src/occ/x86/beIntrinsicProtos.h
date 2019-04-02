@@ -9,6 +9,7 @@ PROTO("unsigned int __fastcall _rotl(unsigned int val, int shift);", _rotl, hand
 PROTO("unsigned int __fastcall _rotr(unsigned int val, int shift);", _rotr, handleROTR)
 PROTO("unsigned char __fastcall _rotl8(unsigned char value, int shift);", _rotl8, handleROTL8)
 PROTO("unsigned short __fastcall _rotl16(unsigned short value, int shift);", _rotl16, handleROTL16)
+PROTO("unsigned __int64 __fastcall _rotl64(unsigned __int64 value, int shift);", _rotl64, handleROTL64)
 PROTO("unsigned char __fastcall _rotr8(unsigned char value, int shift);", _rotr8, handleROTR8)
 PROTO("unsigned short __fastcall _rotr16(unsigned short value, int shift);", _rotr16, handleROTR16)
 PROTO("unsigned __int64 __fastcall _rotr64(unsigned __int64 value, int shift);", _rotr64, handleROTR64)

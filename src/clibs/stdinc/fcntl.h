@@ -154,8 +154,8 @@ extern "C"
     };
     int _RTL_FUNC _IMPORT _pipe(int* phandles, unsigned int psize, int textmode);
     int _RTL_FUNC _IMPORT fcntl(int, int, ...);
-    int _RTL_FUNC _IMPORT creat(const char* __path, int __amode);
-    int _RTL_FUNC _IMPORT open(const char* __path, int __access, ... /*unsigned mode*/);
+    int _RTL_FUNC _IMPORT creat(const char *ZSTR  __path, int __amode);
+    int _RTL_FUNC _IMPORT open(const char *ZSTR  __path, int __access, ... /*unsigned mode*/);
     int _RTL_FUNC _IMPORT posix_fadvise(int, off_t, off_t, int);
     int _RTL_FUNC _IMPORT posix_fallocate(int, off_t, off_t);
 

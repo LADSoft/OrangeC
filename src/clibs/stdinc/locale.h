@@ -98,8 +98,8 @@ struct lconv {
    char int_n_sign_posn; /* CHAR_MAX */
 } ;
 
-char *          _RTL_FUNC _IMPORT setlocale( int __category, const char *__locale );
-char *          _RTL_FUNC _IMPORT _lsetlocale( int __category, const char *__locale );
+char *          _RTL_FUNC _IMPORT setlocale( int __category, const char *ZSTR __locale );
+char *          _RTL_FUNC _IMPORT _lsetlocale( int __category, const char *ZSTR __locale );
 struct lconv *  _RTL_FUNC _IMPORT localeconv( void );
 struct lconv *  _RTL_FUNC _IMPORT _llocaleconv( void );
 

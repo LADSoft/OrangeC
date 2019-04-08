@@ -467,9 +467,9 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
                                             return false;
                                     }
                                 }
-                                else if (!strcmp(tpn->sp->templateSelector->next->name,tps->sp->templateSelector->next->name))
+                                else if (!strcmp(tpn->sp->templateSelector->next->sym->name,tps->sp->templateSelector->next->sym->name))
                                 {
-                                    if (tpn->sp->templateSelector->next->name[0])
+                                    if (tpn->sp->templateSelector->next->next->name[0])
                                         return false;
                                 }
                             }

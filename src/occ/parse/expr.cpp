@@ -106,7 +106,7 @@ void thunkForImportTable(EXPRESSION** exp)
     else
         sp = (*exp)->v.func->sp;
     // order is important here as we might get into this function with an already sanitized symbol
-    if (sp && sp->linkage2 == lk_import && isfunction(sp->tp) && ((*exp)->type == en_pc || !(*exp)->v.func->ascall))
+    if (sp && sp->attribs.inheritable.linkage2 == lk_import && isfunction(sp->tp) && ((*exp)->type == en_pc || !(*exp)->v.func->ascall))
     {
         LIST* search = importThunks;
         while (search)
@@ -240,12 +240,12 @@ void ValidateMSILFuncPtr(TYPE* dest, TYPE* src, EXPRESSION** exp)
     if (isfunction(dest))
     {
         // function arg or assignment to function constant
-        managedDest = basetype(dest)->sp->linkage2 != lk_unmanaged && chosenAssembler->msil->managed(basetype(dest)->sp);
+        managedDest = basetype(dest)->sp->attribs.inheritable.linkage2 != lk_unmanaged && chosenAssembler->msil->managed(basetype(dest)->sp);
     }
     else if (isfuncptr(dest))
     {
         // function var
-        managedDest = basetype(basetype(dest)->btp)->sp->linkage2 != lk_unmanaged &&
+        managedDest = basetype(basetype(dest)->btp)->sp->attribs.inheritable.linkage2 != lk_unmanaged &&
                       chosenAssembler->msil->managed(basetype(basetype(dest)->btp)->sp);
     }
     else
@@ -432,7 +432,7 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
         browse_usage(sp, lex->filenum);
         *tp = sp->tp;
         lex = getsym();
-        if (sp->deprecationText)
+        if (sp->attribs.uninheritable.deprecationText)
         {
             deprecateMessage(sp);
         }
@@ -767,14 +767,14 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                         {
                             *exp = varNode(en_global, sp);
                         }
-                        sp->used = true;
+                        sp->attribs.inheritable.used = true;
                         break;
                     case sc_absolute:
                         funcsp->nonConstVariableUsed = true;
                         *exp = varNode(en_absolute, sp);
                         break;
                     case sc_static:
-                        sp->used = true;
+                        sp->attribs.inheritable.used = true;
                     case sc_global:
                     case sc_external:
                         tagNonConst(funcsp, sp->tp);
@@ -800,7 +800,7 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                             *exp = varNode(en_threadlocal, sp);
                         else
                             *exp = varNode(en_global, sp);
-                        if (sp->linkage2 == lk_import)
+                        if (sp->attribs.inheritable.linkage2 == lk_import)
                         {
                             //                        *exp = exprNode(en_add, *exp, intNode(en_c_i, 2));
                             //                        deref(&stdpointer, exp);
@@ -928,7 +928,7 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
             name = litlate("__unknown");
         sp = (SYMBOL *)Alloc(sizeof(SYMBOL));
         sp->name = name;
-        sp->used = true;
+        sp->attribs.inheritable.used = true;
         sp->declfile = sp->origdeclfile = lex->file;
         sp->declline = sp->origdeclline = lex->line;
         sp->realdeclline = lex->realline;
@@ -1370,14 +1370,14 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
                 TYPE* tpb;
                 TYPE* basetp = *tp;
                 TYPE* typ2 = typein;
-                if (sp2->deprecationText)
+                if (sp2->attribs.uninheritable.deprecationText)
                     deprecateMessage(sp2);
                 browse_usage(sp2, lex->filenum);
                 if (ispointer(typ2))
                     typ2 = basetype(typ2)->btp;
                 (*exp)->isatomic = false;
                 lex = getsym();
-                sp2->used = true;
+                sp2->attribs.inheritable.used = true;
                 *tp = sp2->tp;
                 tpb = basetype(*tp);
                 if (sp2->storage_class == sc_overloads)
@@ -1843,6 +1843,25 @@ void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp)
                         tooshort = true;
                     else
                     {
+                        if (decl->attribs.inheritable.zstring)
+                        {
+                            EXPRESSION *exp = list->exp;
+                            if (lvalue(exp))
+                                exp = exp->left;
+                            switch (exp->type)
+                            {
+                                case en_global:
+                                case en_auto:
+                                case en_absolute:
+                                case en_pc:
+                                case en_threadlocal:
+                                    if (exp->v.sp->attribs.inheritable.nonstring)
+                                    {
+                                        error(ERR_NULL_TERMINATED_STRING_REQUIRED);
+                                    }
+                                    break;
+                            }
+                        }
                         if (isref(decl->tp))
                         {
                             TYPE* tpb = basetype(basetype(decl->tp)->btp);
@@ -5319,7 +5338,7 @@ static LEXEME* expression_ampersand(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE
             error(ERR_CANNOT_TAKE_ADDRESS_OF_BIT_FIELD);
         else if (btp->msil)
             error(ERR_MANAGED_OBJECT_NO_ADDRESS);
-        else if (symRef && symRef->v.sp->linkage2 == lk_property)
+        else if (symRef && symRef->v.sp->attribs.inheritable.linkage2 == lk_property)
             errorsym(ERR_CANNOT_TAKE_ADDRESS_OF_PROPERTY, symRef->v.sp);
         else if (inreg(*exp, true))
             error(ERR_CANNOT_TAKE_ADDRESS_OF_REGISTER);
@@ -7612,7 +7631,7 @@ LEXEME* expression_assign(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
                  basetype(*tp)->type != bt_memberptr && basetype(*tp)->type != bt_templateparam && !lvalue(*exp) &&
                  (*exp)->type != en_msil_array_access)
             error(ERR_LVALUE);
-        else if (symRef && symRef->v.sp->linkage2 == lk_property && !symRef->v.sp->has_property_setter)
+        else if (symRef && symRef->v.sp->attribs.inheritable.linkage2 == lk_property && !symRef->v.sp->has_property_setter)
             errorsym(ERR_CANNOT_MODIFY_PROPERTY_WITHOUT_SETTER, symRef->v.sp);
         else
             switch (kw)

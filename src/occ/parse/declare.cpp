@@ -61,9 +61,9 @@ extern SYMBOL* instantiatingMemberFuncClass;
 extern bool parsingSpecializationDeclaration;
 extern int anonymousNotAlloc;
 extern LINEDATA *linesHead, *linesTail;
-extern int alignas_value;
 extern int funcLevel;
 extern SYMBOL *theCurrentFunc;
+extern attributes basisAttribs;
 
 int inDefaultParam;
 LIST *externals, *globalCache;
@@ -75,7 +75,6 @@ int noSpecializationError;
 LIST* deferred;
 int structLevel;
 LIST* openStructs;
-const char* deprecationText;
 
 static int unnamed_tag_id, unnamed_id;
 static char* importFile;
@@ -509,7 +508,7 @@ void calculateStructOffsets(SYMBOL* sp)
     while (bases)
     {
         SYMBOL* sym = bases->cls;
-        int align = sym->structAlign;
+        int align = sym->attribs.inheritable.structAlign;
         totalAlign = imax(totalAlign, align);
         if (align > 1)
         {
@@ -536,16 +535,24 @@ void calculateStructOffsets(SYMBOL* sp)
             int align;
             int offset;
 
-            if (isstructured(tp))
+            if (p->attribs.inheritable.packed)
             {
-                align = tp->sp->structAlign;
+                align = 0;
             }
             else
             {
-                if (p->structAlign)
-                    align = p->structAlign;
+                if (isstructured(tp))
+                    align = tp->sp->attribs.inheritable.structAlign;
+                else if (!p->attribs.inheritable.alignedAttribute && p->attribs.inheritable.structAlign)
+                    align = p->attribs.inheritable.structAlign;
                 else
                     align = getAlign(sc_member, tp);
+                if (p->attribs.inheritable.alignedAttribute)
+                    align = imax(align, p->attribs.inheritable.structAlign);
+            }
+            if (p->attribs.inheritable.warnAlign && p->attribs.inheritable.warnAlign > align)
+            {
+                errorsym(ERR_MINIMUM_ALIGN_NOT_ACHIEVED, p);
             }
             totalAlign = imax(totalAlign, align);
             p->parent = sp;
@@ -646,7 +653,7 @@ void calculateStructOffsets(SYMBOL* sp)
         }
     }
     sp->tp->size = size;
-    sp->structAlign = totalAlign == -1 ? 1 : totalAlign;
+    sp->attribs.inheritable.structAlign = totalAlign == -1 ? 1 : totalAlign;
     //    if (cparams.prm_cplusplus)
     {
         // align the size of the structure to make the structure alignable when used as an array element
@@ -947,10 +954,10 @@ static LEXEME* structbody(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_ac cur
             InsertInline(sp);
             my_sprintf(buf, "%s@_$vt", sp->decoratedName);
             sp->vtabsp = makeID(sc_static, &stdvoid, NULL, litlate(buf));
-            sp->vtabsp->linkage2 = sp->linkage2;
-            if (sp->vtabsp->linkage2 == lk_import)
+            sp->vtabsp->attribs.inheritable.linkage2 = sp->attribs.inheritable.linkage2;
+            if (sp->vtabsp->attribs.inheritable.linkage2 == lk_import)
                 sp->vtabsp->dontinstantiate = true;
-            else if (sp->vtabsp->linkage2 == lk_export)
+            else if (sp->vtabsp->attribs.inheritable.linkage2 == lk_export)
                 GENREF(sp->vtabsp);
             InsertInline(sp);
             sp->vtabsp->linkage = lk_virtual;
@@ -1017,8 +1024,8 @@ LEXEME* innerDeclStruct(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, bool inTemplate
 
     if (/*templateNestingCount &&*/ nameSpaceList)
         SetTemplateNamespace(sp);
-    if (sp->structAlign == 0)
-        sp->structAlign = 1;
+    if (sp->attribs.inheritable.structAlign == 0)
+        sp->attribs.inheritable.structAlign = 1;
     structLevel++;
     sp->declaring = true;
     if (hasBody)
@@ -1142,6 +1149,8 @@ static LEXEME* declstruct(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, bool inTemplat
     }
     lex = getsym();
     uuid = ParseUUID(&lex);
+    auto oldAttribs = basisAttribs;
+    basisAttribs = { 0 };
     ParseAttributeSpecifiers(&lex, funcsp, true);
     if (MATCHKW(lex, kw__declspec))
     {
@@ -1216,6 +1225,7 @@ static LEXEME* declstruct(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, bool inTemplat
         sp->tp->type = type;
         sp->tp->rootType = sp->tp;
         sp->tp->sp = sp;
+        sp->tp = AttributeFinish(sp, sp->tp);
         sp->declcharpos = charindex;
         sp->declline = sp->origdeclline = declline;
         sp->realdeclline = realdeclline;
@@ -1231,7 +1241,7 @@ static LEXEME* declstruct(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, bool inTemplat
         sp->anonymous = charindex == -1;
         sp->access = access;
         sp->uuid = uuid;
-        sp->linkage2 = linkage2;
+        sp->attribs.inheritable.linkage2 = linkage2;
         SetLinkerNames(sp, lk_cdecl);
         if (inTemplate && templateNestingCount)
         {
@@ -1272,7 +1282,7 @@ static LEXEME* declstruct(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, bool inTemplat
                 inTemplateSpecialization--;
                 sp = LookupSpecialization(sp, templateParams);
                 if (linkage2 != lk_none)
-                    sp->linkage2 = linkage2;
+                    sp->attribs.inheritable.linkage2 = linkage2;
                 sp->templateParams =
                     TemplateMatching(lex, origParams, templateParams, sp, MATCHKW(lex, begin) || MATCHKW(lex, colon));
             }
@@ -1337,6 +1347,7 @@ static LEXEME* declstruct(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, bool inTemplat
         lex = innerDeclStruct(lex, funcsp, sp, inTemplate, defaultAccess, isfinal, defd);
         *tp = sp->tp;
     }
+    basisAttribs = oldAttribs;
     return lex;
 }
 static LEXEME* enumbody(LEXEME* lex, SYMBOL* funcsp, SYMBOL* spi, enum e_sc storage_class, enum e_ac access, TYPE* fixedType,
@@ -1530,6 +1541,8 @@ static LEXEME* declenum(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, enum e_sc storag
     enum e_lk linkage1 = lk_none, linkage2 = lk_none, linkage3 = lk_none;
     *defd = false;
     lex = getsym();
+    auto oldAttribs = basisAttribs;
+    basisAttribs = { 0 };
     ParseAttributeSpecifiers(&lex, funcsp, true);
     if (cparams.prm_cplusplus && (MATCHKW(lex, kw_class) || MATCHKW(lex, kw_struct)))
     {
@@ -1593,7 +1606,6 @@ static LEXEME* declenum(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, enum e_sc storag
         sp->tp = (TYPE *)Alloc(sizeof(TYPE));
         sp->tp->type = bt_enum;
         sp->tp->rootType = sp->tp;
-        sp->linkage2 = linkage2;
         if (fixedType)
         {
             sp->tp->fixed = true;
@@ -1608,6 +1620,7 @@ static LEXEME* declenum(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, enum e_sc storag
         }
         sp->tp->scoped = scoped;
         sp->tp->size = sp->tp->btp->size;
+        sp->tp = AttributeFinish(sp, sp->tp);
         sp->declcharpos = charindex;
         sp->declline = sp->origdeclline = declline;
         sp->realdeclline = realdeclline;
@@ -1648,6 +1661,7 @@ static LEXEME* declenum(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, enum e_sc storag
     }
     sp->tp->sp = sp;
     *tp = sp->tp;
+    basisAttribs = oldAttribs;
     return lex;
 }
 static LEXEME* getStorageClass(LEXEME* lex, SYMBOL* funcsp, enum e_sc* storage_class, enum e_lk* linkage, ADDRESS* address,
@@ -2554,7 +2568,7 @@ founddecltype:
             if (sp && (istype(sp) || (sp->storage_class == sc_type && inTemplate) ||
                        (sp->storage_class == sc_typedef && sp->templateLevel)))
             {
-                if (sp->deprecationText)
+                if (sp->attribs.uninheritable.deprecationText)
                     deprecateMessage(sp);
                 lex = getsym();
                 if (sp->storage_class == sc_typedef && sp->templateLevel)
@@ -3388,6 +3402,9 @@ LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp,
     tp1->sp = sp;
     sp->tp = *tp = tp1;
     localNameSpace->syms = tp1->syms = CreateHashTable(1);
+    attributes oldAttribs = basisAttribs;
+
+    basisAttribs = { 0 };
     ParseAttributeSpecifiers(&lex, funcsp, true);
     if (inTemplate && templateNestingCount == 1)
         noSpecializationError++;
@@ -3472,6 +3489,7 @@ LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp,
                     spi->anonymous = true;
                     SetLinkerNames(spi, lk_none);
                 }
+                tp1 = AttributeFinish(spi, tp1);
                 tp2 = tp1;
                 while (ispointer(tp2) || isref(tp2))
                     tp2 = basetype(tp2)->btp;
@@ -3486,7 +3504,7 @@ LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp,
                 }
                 spi->tp = tp1;
                 spi->linkage = linkage;
-                spi->linkage2 = linkage2;
+                spi->attribs.inheritable.linkage2 = linkage2;
                 if (spi->packed)
                 {
                     checkPackedType(spi);
@@ -3653,6 +3671,7 @@ LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp,
             if (MATCHKW(lex, comma))
                 lex = getsym();
             pastfirst = true;
+            basisAttribs = { 0 };
             ParseAttributeSpecifiers(&lex, funcsp, true);
         }
         if (!needkw(&lex, closepa))
@@ -3763,7 +3782,7 @@ LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp,
                         SYMBOL* spo;
                         TYPE* tpb;
                         spi->linkage = linkage;
-                        spi->linkage2 = linkage2;
+                        spi->attribs.inheritable.linkage2 = linkage2;
                         SetLinkerNames(spi, lk_none);
                         if (tpx && isfunction(tpx))
                         {
@@ -3924,6 +3943,8 @@ LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp,
     }
     localNameSpace->syms = locals;
     DecGlobalFlag();
+    basisAttribs = oldAttribs;
+    ParseAttributeSpecifiers(&lex, funcsp, true);
     if (voiderror)
         error(ERR_VOID_ONLY_PARAMETER);
     if (inTemplate && templateNestingCount == 1)
@@ -5156,7 +5177,7 @@ void injectThisPtr(SYMBOL* sp, HASHTABLE* syms)
         ths = makeID(sc_parameter, type, NULL, "__$$this");
         ths->parent = sp;
         ths->thisPtr = true;
-        ths->used = true;
+        ths->attribs.inheritable.used = true;
         SetLinkerNames(ths, lk_cdecl);
         //    if ((*hr) && ((SYMBOL *)(*hr)->p)->tp->type == bt_void)
         //    {
@@ -5223,10 +5244,9 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
     ADDRESS address = 0;
     TYPE* tp = NULL;
     bool hasAttributes;
-    const char* oldDeprecationText = deprecationText;
-    int oldalignas_value = alignas_value;
+    attributes oldAttribs = basisAttribs;
 
-    alignas_value = 0;
+    basisAttribs = { 0 };
     hasAttributes = ParseAttributeSpecifiers(&lex, funcsp, true);
 
     if (!MATCHKW(lex, semicolon))
@@ -5402,7 +5422,9 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                     lex = getBeforeType(lex, funcsp, &tp1, &sp, &strSym, &nsv, inTemplate, storage_class, &linkage, &linkage2,
                                         &linkage3, asFriend, consdest, false, false);
                     if (sp)
-                        sp->structAlign = alignas_value;
+                    {
+                        tp1 = AttributeFinish(sp, tp1);
+                    }
                     inTemplateType = false;
                     if (isfunction(tp1))
                         sizeQualifiers(basetype(tp1)->btp);
@@ -5674,15 +5696,21 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                             sp->tp = tp1;
                         if (!sp->instantiated)
                             sp->linkage = linkage;
-                        if (ssp && ssp->linkage2 != lk_none)
+                        if (ssp && ssp->attribs.inheritable.linkage2 != lk_none)
                         {
                             if (linkage2 != lk_none && !asFriend)
                                 errorsym(ERR_DECLSPEC_MEMBER_OF_DECLSPEC_CLASS_NOT_ALLOWED, sp);
                             else if (!ssp->templateLevel || !inTemplate)
-                                sp->linkage2 = ssp->linkage2;
+                                sp->attribs.inheritable.linkage2 = ssp->attribs.inheritable.linkage2;
                         }
                         else
-                            sp->linkage2 = linkage2;
+                        {
+                            if (sp->attribs.inheritable.linkage2 == lk_none)
+                                sp->attribs.inheritable.linkage2 = linkage2;
+                            else if (linkage2 != lk_none)
+                                error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
+
+                        }
                         sp->linkage3 = linkage3;
                         if (linkage2 == lk_import)
                         {
@@ -5737,7 +5765,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                             if (isfunction(tp1) || (ispointer(tp1) && basetype(tp1)->array))
                                 error(ERR_ATOMIC_NO_FUNCTION_OR_ARRAY);
                         }
-                        if (sp->linkage2 == lk_property && isfunction(tp1))
+                        if (sp->attribs.inheritable.linkage2 == lk_property && isfunction(tp1))
                             error(ERR_PROPERTY_QUALIFIER_NOT_ALLOWED_ON_FUNCTIONS);
                         if (storage_class != sc_typedef && isstructured(tp1) && basetype(tp1)->sp->isabstract)
                             errorabstract(ERR_CANNOT_CREATE_INSTANCE_ABSTRACT, basetype(tp1)->sp);
@@ -6296,7 +6324,6 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                     }
                     if (sp)
                     {
-                        sp->deprecationText = deprecationText;
                         if (!strcmp(sp->name, overloadNameTab[CI_DESTRUCTOR]))
                         {
                             if (!isfunction(tp1))
@@ -6376,7 +6403,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                         if (linkage != lk_cdecl)
                             sp->linkage = linkage;
                         if (linkage2 != lk_none)
-                            sp->linkage2 = linkage2;
+                            sp->attribs.inheritable.linkage2 = linkage2;
                         if (linkage2 == lk_import)
                         {
                             sp->importfile = importFile;
@@ -6721,7 +6748,5 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
         errskim(&lex, skim_semi_declare);
         skip(&lex, semicolon);
     }
-    deprecationText = oldDeprecationText;
-    alignas_value = oldalignas_value;
     return lex;
 }

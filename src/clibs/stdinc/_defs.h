@@ -87,6 +87,8 @@
 #        define _FAR
 #    endif
 
+#    define ZSTR __attribute__((zstring))
+
 #    ifdef __cplusplus
 #        define __NOTHROW throw()
 #        define __STD_NS__ std

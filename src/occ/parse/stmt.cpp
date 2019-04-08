@@ -274,7 +274,7 @@ void makeXCTab(SYMBOL* funcsp)
         sp = makeID(sc_auto, &stdXC, NULL, "$$xctab");
         sp->decoratedName = sp->errname = sp->name;
         sp->allocate = true;
-        sp->used = sp->assigned = true;
+        sp->attribs.inheritable.used = sp->assigned = true;
         insert(sp, localNameSpace->syms);
         funcsp->xc->xctab = sp;
     }
@@ -691,7 +691,7 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                     }
                     declSP->dest = NULL;
                     declExp = varNode(en_auto, declSP);
-                    declSP->assigned = declSP->used = true;
+                    declSP->assigned = declSP->attribs.inheritable.used = true;
                 }
                 lex = getsym();
                 if (MATCHKW(lex, begin))
@@ -1975,7 +1975,7 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                     {
                         returnexp = intNode(en_labcon, dumpMemberPtr(returnexp->v.sp, tp, true));
                     }
-                    if (!chosenAssembler->msil || funcsp->linkage2 == lk_unmanaged || !chosenAssembler->msil->managed(funcsp))
+                    if (!chosenAssembler->msil || funcsp->attribs.inheritable.linkage2 == lk_unmanaged || !chosenAssembler->msil->managed(funcsp))
                     {
                         returnexp = exprNode(en_blockassign, en, returnexp);
                         returnexp->size = basetype(tp)->size;
@@ -2987,7 +2987,7 @@ static void insertXCInfo(SYMBOL* funcsp)
     sp->linkage = lk_virtual;
     sp->decoratedName = sp->errname = sp->name;
     sp->allocate = true;
-    sp->used = sp->assigned = true;
+    sp->attribs.inheritable.used = sp->assigned = true;
     funcsp->xc->xcInitLab = codeLabel++;
     funcsp->xc->xcDestLab = codeLabel++;
     funcsp->xc->xclab = sp;
@@ -3324,7 +3324,7 @@ static void assignParameterSizes(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* block)
             // handle structured return values
             if (chosenAssembler->arch->denyopts & DO_NOPARMADJSIZE)
             {
-                if (funcsp->linkage2 == lk_unmanaged || !chosenAssembler->msil || !chosenAssembler->msil->managed(funcsp))
+                if (funcsp->attribs.inheritable.linkage2 == lk_unmanaged || !chosenAssembler->msil || !chosenAssembler->msil->managed(funcsp))
                     base++;
             }
             else
@@ -3435,7 +3435,7 @@ static void handleInlines(SYMBOL* funcsp)
     if (!funcsp->isInline)
         return;
     if (cparams.prm_c99)
-        funcsp->used = true;
+        funcsp->attribs.inheritable.used = true;
     /* this unqualified the current function if it has structured
      * args or return value, or if it has nested declarations
      */
@@ -3542,7 +3542,7 @@ LEXEME* body(LEXEME* lex, SYMBOL* funcsp)
         funcsp->inlineFunc.stmt->lower = block->head;
         funcsp->inlineFunc.stmt->blockTail = block->blockTail;
         funcsp->declaring = false;
-        if (funcsp->isInline && (functionHasAssembly || funcsp->linkage2 == lk_export))
+        if (funcsp->isInline && (functionHasAssembly || funcsp->attribs.inheritable.linkage2 == lk_export))
             funcsp->isInline = funcsp->dumpInlineToFile = funcsp->promotedToInline = false;
         if (!cparams.prm_allowinline)
             funcsp->isInline = funcsp->dumpInlineToFile = funcsp->promotedToInline = false;
@@ -3561,7 +3561,7 @@ LEXEME* body(LEXEME* lex, SYMBOL* funcsp)
         if (funcsp->linkage == lk_virtual || funcsp->isInline)
         {
             if (funcsp->isInline)
-                funcsp->linkage2 = lk_none;
+                funcsp->attribs.inheritable.linkage2 = lk_none;
             InsertInline(funcsp);
             if (!cparams.prm_cplusplus && funcsp->storage_class != sc_static)
                 GENREF(funcsp);

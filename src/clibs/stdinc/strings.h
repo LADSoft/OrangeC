@@ -59,13 +59,13 @@ void         _RTL_INTRINS _IMPORT bzero(void *, size_t);
 
 int          _RTL_INTRINS _IMPORT ffs(int);
 
-char         _RTL_INTRINS _IMPORT *index(const char *, int);
+char         _RTL_INTRINS _IMPORT *index(const char *ZSTR , int);
 
-char         _RTL_INTRINS _IMPORT *rindex(const char *, int);
+char         _RTL_INTRINS _IMPORT *rindex(const char *ZSTR , int);
 
-int          _RTL_INTRINS _IMPORT strcasecmp(const char *, const char *);
+int          _RTL_INTRINS _IMPORT strcasecmp(const char *ZSTR , const char *ZSTR );
 
-int          _RTL_INTRINS _IMPORT strncasecmp(const char *, const char *, size_t);
+int          _RTL_INTRINS _IMPORT strncasecmp(const char *ZSTR , const char *ZSTR , size_t);
 
 /*
 #define 	bzero(s,n) memset(s,0,n)

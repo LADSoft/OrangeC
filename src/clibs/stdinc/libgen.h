@@ -45,15 +45,15 @@
 extern "C" {
 #endif
 
-char  *_RTL_FUNC basename(char *);
-char  *_RTL_FUNC dirname(char *);
+char  *_RTL_FUNC basename(char *ZSTR );
+char  *_RTL_FUNC dirname(char *ZSTR );
 
 
 /*
-extern char* __loc1;
+extern char *ZSTR  __loc1;
 
-char  *regcmp(const char *, ...);
-char  *regex(const char *, const char *, ...);
+char  *regcmp(const char *ZSTR , ...);
+char  *regex(const char *ZSTR , const char *ZSTR , ...);
 */
 
 #ifdef __cplusplus

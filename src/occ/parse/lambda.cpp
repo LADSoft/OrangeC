@@ -103,8 +103,8 @@ static void lambda_insert(SYMBOL* sym, LAMBDA* lambdas)
     int align = getAlign(sc_member, sym->tp);
     if (align && lambdas->cls->tp->size % align)
         lambdas->cls->tp->size += align - lambdas->cls->tp->size % align;
-    if (align > lambdas->cls->structAlign)
-        lambdas->cls->structAlign = align;
+    if (align > lambdas->cls->attribs.inheritable.structAlign)
+        lambdas->cls->attribs.inheritable.structAlign = align;
     sym->parentClass = lambdas->cls;
     sym->offset = lambdas->cls->tp->size;
     insert(sym, lambdas->cls->tp->syms);
@@ -864,7 +864,7 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
     ltp->sp = self->cls;
     SetLinkerNames(self->cls, lk_cdecl);
     self->cls->islambda = true;
-    self->cls->structAlign = getAlign(sc_global, &stdpointer);
+    self->cls->attribs.inheritable.structAlign = getAlign(sc_global, &stdpointer);
     self->func = makeID(sc_member, ltp, NULL, overloadNameTab[CI_FUNC]);
     self->func->parentClass = self->cls;
     self->functp = &stdauto;

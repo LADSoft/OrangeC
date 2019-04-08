@@ -8628,19 +8628,19 @@ void propagateTemplateDefinition(SYMBOL* sym)
 }
 static void MarkDllLinkage(SYMBOL* sp, enum e_lk linkage)
 {
-    if (linkage != lk_none && sp->linkage2 != linkage)
+    if (linkage != lk_none && sp->attribs.inheritable.linkage2 != linkage)
     {
-        if (sp->linkage2 != lk_none)
+        if (sp->attribs.inheritable.linkage2 != lk_none)
         {
             errorsym(ERR_ATTEMPING_TO_REDEFINE_DLL_LINKAGE, sp);
         }
         else
         {
-            sp->linkage2 = linkage;
+            sp->attribs.inheritable.linkage2 = linkage;
             if (sp->vtabsp)
             {
-                sp->vtabsp->linkage2 = linkage;
-                if (sp->vtabsp->linkage2 == lk_import)
+                sp->vtabsp->attribs.inheritable.linkage2 = linkage;
+                if (sp->vtabsp->attribs.inheritable.linkage2 == lk_import)
                     sp->vtabsp->dontinstantiate = true;
             }
             if (sp->tp->syms)
@@ -8656,7 +8656,7 @@ static void MarkDllLinkage(SYMBOL* sp, enum e_lk linkage)
                         {
                             if (!((SYMBOL*)hr2->p)->templateParams)
                             {
-                                ((SYMBOL*)hr2->p)->linkage2 = linkage;
+                                ((SYMBOL*)hr2->p)->attribs.inheritable.linkage2 = linkage;
                                 ((SYMBOL*)hr2->p)->isInline = false;
                             }
                             hr2 = hr2->next;
@@ -8664,7 +8664,7 @@ static void MarkDllLinkage(SYMBOL* sp, enum e_lk linkage)
                     }
                     else if (!ismember(sym) && !istype(sym))
                     {
-                        sym->linkage2 = linkage;
+                        sym->attribs.inheritable.linkage2 = linkage;
                     }
                     hr = hr->next;
                 }
@@ -8852,8 +8852,8 @@ LEXEME* TemplateDeclaration(LEXEME* lex, SYMBOL* funcsp, enum e_ac access, enum 
                 TEMPLATEPARAMLIST* templateParams = TemplateGetParams(sym->parentClass);
                 DoInstantiateTemplateFunction(tp, &sp, nsv, strSym, templateParams, isExtern);
                 sym = sp;
-                if (sym->linkage2 == lk_none)
-                    sym->linkage2 = linkage2;
+                if (sym->attribs.inheritable.linkage2 == lk_none)
+                    sym->attribs.inheritable.linkage2 = linkage2;
                 if (!comparetypes(basetype(sp->tp)->btp, basetype(tp)->btp, true))
                 {
                     errorsym(ERR_TYPE_MISMATCH_IN_REDECLARATION, sp);

@@ -99,17 +99,17 @@ extern "C"
     time_t _RTL_FUNC _IMPORT time(time_t* __timer);
     time_t _RTL_FUNC _IMPORT mktime(struct tm* __timeptr);
     clock_t _RTL_FUNC _IMPORT clock(void);
-    size_t _RTL_FUNC _IMPORT strftime(char* restrict __s, size_t __maxsize, const char* restrict __fmt,
+    size_t _RTL_FUNC _IMPORT strftime(char *ZSTR restrict __s, size_t __maxsize, const char *ZSTR restrict __fmt,
                                       const struct tm* restrict __t);
-    size_t _RTL_FUNC _IMPORT _lstrftime(char* __s, size_t __maxsize, const char* __fmt, const struct tm* __t);
+    size_t _RTL_FUNC _IMPORT _lstrftime(char *ZSTR  __s, size_t __maxsize, const char *ZSTR __fmt, const struct tm* __t);
 
     int* _RTL_FUNC _IMPORT __getDaylight(void);
     long* _RTL_FUNC _IMPORT __getTimezone(void);
     char** _RTL_FUNC _IMPORT __getTzName(void);
     int _RTL_FUNC _IMPORT stime(time_t* __tp);
     void _RTL_FUNC _IMPORT tzset(void);
-    char* _RTL_FUNC _IMPORT _strdate(char* __datestr);
-    char* _RTL_FUNC _IMPORT _strtime(char* __timestr);
+    char* _RTL_FUNC _IMPORT _strdate(char *ZSTR __datestr);
+    char* _RTL_FUNC _IMPORT _strtime(char *ZSTR __timestr);
 
     unsigned _RTL_FUNC _IMPORT _getsystime(struct tm*);
     unsigned _RTL_FUNC _IMPORT _setsystime(struct tm*, unsigned);

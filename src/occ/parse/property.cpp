@@ -40,7 +40,7 @@ static SYMBOL* CreateSetterPrototype(SYMBOL* sp)
     sprintf(name, "set_%s", sp->name);
     rv = makeID(sp->storage_class, nullptr, nullptr, litlate(name));
     value = makeID(sc_parameter, sp->tp, nullptr, "value");
-    value->used = true;  // to avoid unused variable errors
+    value->attribs.inheritable.used = true;  // to avoid unused variable errors
     rv->access = ac_public;
     rv->tp = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
     rv->tp->sp = rv;

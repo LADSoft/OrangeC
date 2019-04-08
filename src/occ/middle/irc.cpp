@@ -396,7 +396,7 @@ void AllocateStackSpace(SYMBOL* funcsp)
                     if (!sp->regmode && (sp->storage_class == sc_auto || sp->storage_class == sc_register) && sp->allocate &&
                         !sp->anonymous)
                     {
-                        int val, align = sp->structAlign ? sp->structAlign : getAlign(sc_auto, basetype(sp->tp));
+                        int val, align = sp->attribs.inheritable.structAlign ? sp->attribs.inheritable.structAlign : getAlign(sc_auto, basetype(sp->tp));
                         lc_maxauto += basetype(sp->tp)->size;
                         if (isatomic(sp->tp) && needsAtomicLockFromType(sp->tp))
                         {
@@ -421,7 +421,7 @@ void AllocateStackSpace(SYMBOL* funcsp)
             SYMBOL* sp = (SYMBOL*)(*temps)->data;
             if (sp->storage_class != sc_static && (sp->storage_class == sc_constant || sp->value.i == i) && !sp->stackblock)
             {
-                int val, align = sp->structAlign ? sp->structAlign : getAlign(sc_auto, basetype(sp->tp));
+                int val, align = sp->attribs.inheritable.structAlign ? sp->attribs.inheritable.structAlign : getAlign(sc_auto, basetype(sp->tp));
                 lc_maxauto += basetype(sp->tp)->size;
                 val = lc_maxauto % align;
                 if (val != 0)

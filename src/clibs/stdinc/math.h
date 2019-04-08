@@ -133,14 +133,14 @@ extern "C"
     struct _exception
     {
         int type;
-        char* name;
+        char *  name;
         double arg1, arg2, retval;
     };
 
     struct _exceptionl
     {
         int type;
-        char* name;
+        char *  name;
         long double arg1, arg2, retval;
     };
 
@@ -155,9 +155,9 @@ extern "C"
     int _RTL_FUNC _IMPORTMM __fpclassifyl(long double __x);
 
 #if __STDC_VERSION__ >= 199901L || defined(__cplusplus)
-    float _RTL_FUNC _IMPORTMM nanf(const char* tagp);
-    double _RTL_FUNC _IMPORTMM nan(const char* tagp);
-    long double _RTL_FUNC _IMPORTMM nanl(const char* tagp);
+    float _RTL_FUNC _IMPORTMM nanf(const char *ZSTR  tagp);
+    double _RTL_FUNC _IMPORTMM nan(const char *ZSTR  tagp);
+    long double _RTL_FUNC _IMPORTMM nanl(const char *ZSTR  tagp);
 
     int _RTL_FUNC _IMPORTMM signbitf(float __x);
     int _RTL_FUNC _IMPORTMM signbit(double __x);
@@ -397,10 +397,10 @@ extern "C"
 #    endif
 #endif
 
-    double _RTL_FUNC _IMPORT atof(const char* __s);
+    double _RTL_FUNC _IMPORT atof(const char *ZSTR  __s);
     int _matherrl(struct _exceptionl* __e);
 
-    long double _RTL_FUNC _IMPORT _atold(const char* __s);
+    long double _RTL_FUNC _IMPORT _atold(const char *ZSTR  __s);
 #ifdef __cplusplus
 };
 #endif

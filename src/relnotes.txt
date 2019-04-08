@@ -23,6 +23,7 @@ version 6.0.41:
     occ: allow wchar_t and unsigned short to be treated as identical for purposes of the suspicious pointer warning
     occ: add builtin byteswap functions
     occ: automatically detect DLL outputs and select "/Wd" command line switch, by parsing the contents of the '/oxxxx' switch
+    occ: add various GCC __attributes__
     omake: don't rebuild things that have exactly the same time stamp as their dependencies
     omake: improve diagnostics: extend /w switch to show more information
     omake: fix multithreading problem/crash

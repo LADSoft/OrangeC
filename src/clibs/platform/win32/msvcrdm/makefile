@@ -44,7 +44,7 @@ all: $(DEPENDENCIES) msvcrt.l
 
 .PHONY: .\c0.o
 .\c0.o: ..\pe\c0.c
-	$(CC) /c $(CFLAGS) $(STDINCLUDE) -Wcl -o$@ $^
+	$(CC) /c $(CFLAGS) $(STDINCLUDE) -Wcm -o$@ $^
 
 msvcrt.l: .\msvcrdm.o .\c0.o
 	-del $@

@@ -335,10 +335,10 @@ intmax_t _RTL_FUNC _IMPORT imaxabs(intmax_t __val);
 
 imaxdiv_t _RTL_FUNC _IMPORT imaxdiv(intmax_t __numer, intmax_t __denom);
 
-intmax_t _RTL_FUNC _IMPORT strtoimax(const char * restrict __nptr, 
-                              char ** restrict __endptr, int __base);
-uintmax_t _RTL_FUNC _IMPORT strtoumax(const char * restrict __nptr, 
-                               char ** restrict __endptr, int __base);
+intmax_t _RTL_FUNC _IMPORT strtoimax(const char *ZSTR  restrict __nptr, 
+                              char *ZSTR * restrict __endptr, int __base);
+uintmax_t _RTL_FUNC _IMPORT strtoumax(const char *ZSTR  restrict __nptr, 
+                               char *ZSTR * restrict __endptr, int __base);
 
 intmax_t _RTL_FUNC _IMPORT wcstoimax(const wchar_t * restrict __nptr,
                    wchar_t ** restrict __endptr, int __base);

@@ -112,7 +112,7 @@ void dumpStartups(void)
             {
                 s = search(startupList->name, s->tp->syms);
                 gensrref(s, startupList->prio, STARTUP_TYPE_STARTUP);
-                s->used = true;
+                s->attribs.inheritable.used = true;
             }
             startupList = startupList->next;
         }
@@ -129,7 +129,7 @@ void dumpStartups(void)
             {
                 s = search(rundownList->name, s->tp->syms);
                 gensrref(s, rundownList->prio, STARTUP_TYPE_RUNDOWN);
-                s->used = true;
+                s->attribs.inheritable.used = true;
             }
             rundownList = rundownList->next;
         }
@@ -662,7 +662,7 @@ int dumpInit(SYMBOL* sp, INITIALIZER* init)
         tp = tp->templateParam->p->byClass.val;
     if (isstructured(tp))
     {
-        rv = tp->size + tp->sp->structAlign;
+        rv = tp->size + tp->sp->attribs.inheritable.structAlign;
     }
     else
     {
@@ -1047,8 +1047,8 @@ static void dumpStaticInitializers(void)
                 sizep = &bss;
                 alignp = &abss;
             }
-            if (sp->structAlign)
-                al = sp->structAlign;
+            if (sp->attribs.inheritable.structAlign)
+                al = sp->attribs.inheritable.structAlign;
             else
                 al = getAlign(sc_global, basetype(tp));
 
@@ -2647,7 +2647,7 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
         lex = getsym();
     }
     if ((cparams.prm_cplusplus || (chosenAssembler->msil && !assn)) && isstructured(itype) &&
-        (basetype(itype)->sp->hasUserCons || !basetype(itype)->sp->trivialCons && !MATCHKW(lex, begin) || arrayMember))
+        (basetype(itype)->sp->hasUserCons || (!basetype(itype)->sp->trivialCons && !MATCHKW(lex, begin)) || arrayMember))
     {
         if (base->storage_class != sc_member || MATCHKW(lex, openpa) || assn || MATCHKW(lex, begin))
         {
@@ -3803,7 +3803,7 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_sc storage_cl
     IncGlobalFlag();
     // MSIL property
 #ifndef PARSER_ONLY
-    if (sp->linkage2 == lk_property)
+    if (sp->attribs.inheritable.linkage2 == lk_property)
         return initialize_property(lex, funcsp, sp, storage_class_in, asExpression, flags);
 #endif
     switch (sp->storage_class)
@@ -3815,7 +3815,7 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_sc storage_cl
         case sc_external:
             initializingGlobalVar = true;
             sp->assigned = true;
-            sp->used = true;
+            sp->attribs.inheritable.used = true;
             break;
         case sc_static:
         case sc_localstatic:

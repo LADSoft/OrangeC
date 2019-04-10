@@ -1544,11 +1544,13 @@ void oa_globaldef(SYMBOL* sp)
 {
     if (cparams.prm_asmfile)
     {
+        char buf[5000];
+        beDecorateSymName(buf, sp);
         oa_nl();
         if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
-            bePrintf("[global\t%s]\n", sp->decoratedName);
+            bePrintf("[global\t%s]\n", buf);
         else
-            bePrintf("\tpublic\t%s\n", sp->decoratedName);
+            bePrintf("\tpublic\t%s\n", buf);
     }
     else
         omf_globaldef(sp);
@@ -1575,16 +1577,18 @@ void oa_put_extern(SYMBOL* sp, int code)
     if (cparams.prm_asmfile)
     {
         oa_nl();
+        char buf[5000];
+        beDecorateSymName(buf, sp);
         if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
         {
-            bePrintf("[extern\t%s]\n", sp->decoratedName);
+            bePrintf("[extern\t%s]\n", buf);
         }
         else
         {
             if (code)
-                bePrintf("\textrn\t%s:proc\n", sp->decoratedName);
+                bePrintf("\textrn\t%s:proc\n", buf);
             else
-                bePrintf("\textrn\t%s:byte\n", sp->decoratedName);
+                bePrintf("\textrn\t%s:byte\n", buf);
         }
     }
     else
@@ -1596,7 +1600,9 @@ void oa_put_impfunc(SYMBOL* sp, char* file)
 {
     if (cparams.prm_asmfile)
     {
-        bePrintf("\timport %s %s\n", sp->decoratedName, file);
+        char buf[5000];
+        beDecorateSymName(buf, sp);
+        bePrintf("\timport %s %s\n", buf, file);
     }
     else
     {

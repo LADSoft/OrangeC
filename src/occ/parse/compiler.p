@@ -137,6 +137,7 @@ bool sameTemplate(TYPE* P, TYPE* A);
 void ParseBuiltins(void);
 LEXEME* tagsearch(LEXEME* lex, char* name, SYMBOL** rsp, HASHTABLE** table, SYMBOL** strSym_out, NAMESPACEVALUES** nsv_out,
                          enum e_sc storage_class);
+TYPE* AttributeFinish(SYMBOL* sp, TYPE* tp);
 bool ParseAttributeSpecifiers(LEXEME* *lex, SYMBOL* funcsp, bool always);
 void declare_init(void);
 void addStructureDeclaration(STRUCTSYM* decl);

@@ -445,7 +445,7 @@ bool castToPointer(TYPE** tp, EXPRESSION** exp, enum e_kw kw, TYPE* other)
                 {
                     SYMBOL* retsp = makeID(sc_auto, other, NULL, AnonymousName());
                     retsp->allocate = true;
-                    retsp->used = retsp->assigned = true;
+                    retsp->attribs.inheritable.used = retsp->assigned = true;
                     SetLinkerNames(retsp, lk_cdecl);
                     insert(retsp, localNameSpace->syms);
                     params->returnSP = retsp;
@@ -1689,9 +1689,9 @@ LEXEME* expression_new(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp,
             error(ERR_NEW_NO_ALLOCATE_REFERENCE);
         if (arrSize && isstructured(*tp))
         {
-            int al = n % basetype(*tp)->sp->structAlign;
+            int al = n % basetype(*tp)->sp->attribs.inheritable.structAlign;
             if (al != 0)
-                n += basetype(*tp)->sp->structAlign - al;
+                n += basetype(*tp)->sp->attribs.inheritable.structAlign - al;
         }
         sz = intNode(en_c_i, n);
         if (arrSize)

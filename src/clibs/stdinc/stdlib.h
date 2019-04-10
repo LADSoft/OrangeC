@@ -101,12 +101,12 @@ extern "C"
 
     int _RTL_FUNC _IMPORT atexit(void (*__func)(void));
     int _RTL_FUNC _IMPORT at_quick_exit(void (*__func)(void));
-    double _RTL_FUNC _IMPORT atof(const char* __s);
-    int _RTL_FUNC _IMPORT atoi(const char* __s);
-    long _RTL_FUNC _IMPORT atol(const char* __s);
-    __int64 _RTL_FUNC _IMPORT _atoi64(const char* __s);
+    double _RTL_FUNC _IMPORT atof(const char *ZSTR  __s);
+    int _RTL_FUNC _IMPORT atoi(const char *ZSTR  __s);
+    long _RTL_FUNC _IMPORT atol(const char *ZSTR  __s);
+    __int64 _RTL_FUNC _IMPORT _atoi64(const char *ZSTR  __s);
 #if __STDC_VERSION__ >= 199901L || defined(__cplusplus)
-    long long _RTL_FUNC _IMPORT atoll(const char* __s);
+    long long _RTL_FUNC _IMPORT atoll(const char *ZSTR  __s);
 #endif
 
     void* _RTL_FUNC _IMPORT bsearch(const void* __key, const void* __base, size_t __nelem, size_t __width,
@@ -121,7 +121,7 @@ extern "C"
     void _RTL_FUNC _IMPORT exit(int __status);
     void _RTL_FUNC _IMPORT _Exit(int __status);
     void _RTL_FUNC _IMPORT _MSIL_RTL free(void* __block);
-    char* _RTL_FUNC _IMPORT getenv(const char* __name);
+    char *ZSTR  _RTL_FUNC _IMPORT getenv(const char *ZSTR  __name);
     void* _RTL_FUNC _IMPORT lfind(const void* __key, const void* __base, size_t* __num, size_t __width,
                                   int (*fcmp)(const void*, const void*));
     void* _RTL_FUNC _IMPORT lsearch(const void* __key, void* __base, size_t* __num, size_t __width,
@@ -132,36 +132,36 @@ extern "C"
                                      int (*fcmp)(const void*, const void*));
     void* _RTL_FUNC _IMPORT aligned_alloc(size_t __align, size_t __size);
     void* _RTL_FUNC _IMPORT _MSIL_RTL malloc(size_t __size);
-    int _RTL_FUNC _IMPORT mblen(const char* __s, size_t __n);
-    size_t _RTL_FUNC _IMPORT mbstowcs(wchar_t* restrict __pwcs, const char* restrict __s, size_t __n);
-    int _RTL_FUNC _IMPORT mbtowc(wchar_t* restrict __pwc, const char* restrict __s, size_t __n);
+    int _RTL_FUNC _IMPORT mblen(const char *ZSTR  __s, size_t __n);
+    size_t _RTL_FUNC _IMPORT mbstowcs(wchar_t* restrict __pwcs, const char *ZSTR  restrict __s, size_t __n);
+    int _RTL_FUNC _IMPORT mbtowc(wchar_t* restrict __pwc, const char *ZSTR  restrict __s, size_t __n);
     void _RTL_FUNC _IMPORT qsort(void* __base, size_t __nelem, size_t __width, int (*__fcmp)(const void*, const void*));
     int _RTL_FUNC _IMPORT rand(void);
     int _RTL_FUNC _IMPORT rand_s(unsigned int* __rand_value);
     void* _RTL_FUNC _IMPORT _MSIL_RTL realloc(void* __block, size_t __size);
     void _RTL_FUNC _IMPORT srand(unsigned __seed);
-    char* _RTL_FUNC _IMPORT strdup(const char* string);
-    char* _RTL_FUNC _IMPORT _strdup(const char* string);
-    double _RTL_FUNC _IMPORT strtod(const char* restrict __s, char** restrict __endptr);
+    char *ZSTR  _RTL_FUNC _IMPORT strdup(const char *ZSTR  string);
+    char *ZSTR  _RTL_FUNC _IMPORT _strdup(const char *ZSTR  string);
+    double _RTL_FUNC _IMPORT strtod(const char *ZSTR  restrict __s, char *ZSTR * restrict __endptr);
 #if __STDC_VERSION__ >= 199901L || defined(__cplusplus)
-    float _RTL_FUNC _IMPORT strtof(const char* restrict __s, char** restrict __endptr);
+    float _RTL_FUNC _IMPORT strtof(const char *ZSTR  restrict __s, char *ZSTR * restrict __endptr);
 #endif
-    long _RTL_FUNC _IMPORT strtol(const char* __s, char** restrict __endptr, int __radix);
+    long _RTL_FUNC _IMPORT strtol(const char *ZSTR  __s, char *ZSTR * restrict __endptr, int __radix);
 #if __STDC_VERSION__ >= 199901L || defined(__cplusplus)
-    long long _RTL_FUNC _IMPORT strtoll(const char* restrict __s, char** restrict __endptr, int __radix);
+    long long _RTL_FUNC _IMPORT strtoll(const char *ZSTR  restrict __s, char *ZSTR * restrict __endptr, int __radix);
 #endif
-    long double _RTL_FUNC _IMPORT _strtold(const char* restrict __s, char** restrict __endptr);
+    long double _RTL_FUNC _IMPORT _strtold(const char *ZSTR  restrict __s, char *ZSTR * restrict __endptr);
 #if __STDC_VERSION__ >= 199901L || defined(__cplusplus)
-    long double _RTL_FUNC _IMPORT strtold(const char* restrict __s, char** restrict __endptr);
+    long double _RTL_FUNC _IMPORT strtold(const char *ZSTR  restrict __s, char *ZSTR * restrict __endptr);
 #endif
-    unsigned long _RTL_FUNC _IMPORT strtoul(const char* __s, char** __endptr, int __radix);
+    unsigned long _RTL_FUNC _IMPORT strtoul(const char *ZSTR  __s, char *ZSTR * __endptr, int __radix);
 #if __STDC_VERSION__ >= 199901L || defined(__cplusplus)
-    long long _RTL_FUNC _IMPORT strtoull(const char* restrict __s, char** restrict __endptr, int __radix);
+    long long _RTL_FUNC _IMPORT strtoull(const char *ZSTR  restrict __s, char *ZSTR * restrict __endptr, int __radix);
 #endif
-    int _RTL_FUNC _IMPORT system(const char* __command);
-    size_t _RTL_FUNC _IMPORT wcstombs(char* restrict __s, const wchar_t* restrict __pwcs, size_t __n);
-    int _RTL_FUNC _IMPORT wctomb(char* restrict __s, wchar_t __wc);
-    int _RTL_FUNC _IMPORT wctombflush(char* __s);
+    int _RTL_FUNC _IMPORT system(const char *ZSTR  __command);
+    size_t _RTL_FUNC _IMPORT wcstombs(char *ZSTR  restrict __s, const wchar_t* restrict __pwcs, size_t __n);
+    int _RTL_FUNC _IMPORT wctomb(char *ZSTR  restrict __s, wchar_t __wc);
+    int _RTL_FUNC _IMPORT wctombflush(char *ZSTR  __s);
 
 #ifndef STDC
 #    define environ _environ
@@ -202,47 +202,47 @@ extern unsigned char _RTL_DATA _osminor;
 #endif
 #define _MAX_PATH2 (_MAX_PATH + 4)
 
-    long double _RTL_FUNC _IMPORT _atold(const char* __s);
+    long double _RTL_FUNC _IMPORT _atold(const char *ZSTR  __s);
     void _RTL_FUNC _IMPORT _exit(int __status);
-    char* _RTL_FUNC _IMPORT _fullpath(char*, const char*, size_t);
-    char* _RTL_FUNC _IMPORTMM itoa(int __value, char* __stringValue, int __radix);
-    char* _RTL_FUNC _IMPORTMM _itoa(int __value, char* __stringValue, int __radix);
-    char* _RTL_FUNC _IMPORTMM _i64toa(__int64 __value, char* __stringValue, int __radix);
-    char* _RTL_FUNC _IMPORTMM ltoa(long __value, char* __stringValue, int __radix);
-    char* _RTL_FUNC _IMPORTMM _ltoa(long __value, char* __stringValue, int __radix);
+    char *ZSTR  _RTL_FUNC _IMPORT _fullpath(char *ZSTR , const char *ZSTR , size_t);
+    char *ZSTR  _RTL_FUNC _IMPORTMM itoa(int __value, char *ZSTR  __stringValue, int __radix);
+    char *ZSTR  _RTL_FUNC _IMPORTMM _itoa(int __value, char *ZSTR  __stringValue, int __radix);
+    char *ZSTR  _RTL_FUNC _IMPORTMM _i64toa(__int64 __value, char *ZSTR  __stringValue, int __radix);
+    char *ZSTR  _RTL_FUNC _IMPORTMM ltoa(long __value, char *ZSTR  __stringValue, int __radix);
+    char *ZSTR  _RTL_FUNC _IMPORTMM _ltoa(long __value, char *ZSTR  __stringValue, int __radix);
 #if __STDC_VERSION__ >= 199901L || defined(__cplusplus)
-    char* _RTL_FUNC _IMPORT lltoa(long long __value, char* __stringValue, int __radix);
-    char* _RTL_FUNC _IMPORT _lltoa(long long __value, char* __stringValue, int __radix);
+    char *ZSTR  _RTL_FUNC _IMPORT lltoa(long long __value, char *ZSTR  __stringValue, int __radix);
+    char *ZSTR  _RTL_FUNC _IMPORT _lltoa(long long __value, char *ZSTR  __stringValue, int __radix);
 #endif
-    void _RTL_FUNC _IMPORT _makepath(char* __path, const char* __drive, const char* __dir, const char* __name, const char* __ext);
-    int _RTL_FUNC _IMPORT putenv(const char* __name);
-    int _RTL_FUNC _IMPORT _putenv(const char* __name);
-    int _RTL_FUNC _IMPORT _putenv_s(const char* __name, const char* value);
-    int _RTL_FUNC _IMPORT setenv(const char* name, const char* value, int overwrite);
-    int _RTL_FUNC _IMPORT unsetenv(const char* name);
+    void _RTL_FUNC _IMPORT _makepath(char *ZSTR  __path, const char *ZSTR  __drive, const char *ZSTR  __dir, const char *ZSTR  __name, const char *ZSTR  __ext);
+    int _RTL_FUNC _IMPORT putenv(const char *ZSTR  __name);
+    int _RTL_FUNC _IMPORT _putenv(const char *ZSTR  __name);
+    int _RTL_FUNC _IMPORT _putenv_s(const char *ZSTR  __name, const char *ZSTR  value);
+    int _RTL_FUNC _IMPORT setenv(const char *ZSTR  name, const char *ZSTR  value, int overwrite);
+    int _RTL_FUNC _IMPORT unsetenv(const char *ZSTR  name);
 
-    void _RTL_FUNC _IMPORT _searchenv(const char* __file, const char* __varname, char* __pathname);
-    void _RTL_FUNC _IMPORT _searchstr(const char* __file, const char* __ipath, char* __pathname);
-    void _RTL_FUNC _IMPORT _splitpath(const char* __path, char* __drive, char* __dir, char* __name, char* __ext);
-    void _RTL_FUNC _IMPORT _splitpath2(const char* __path, char* __outpath, char** __drive, char** __dir, char** __name,
-                                       char** __ext);
-    void _RTL_FUNC _IMPORT swab(char* __from, char* __to, int __nbytes);
-    void _RTL_FUNC _IMPORT _swab(char*, char*, int);
-    char* _RTL_FUNC _IMPORT ultoa(unsigned long __value, char* __stringValue, int __radix);
-    char* _RTL_FUNC _IMPORT _ultoa(unsigned long __value, char* __stringValue, int __radix);
-    char* _RTL_FUNC _IMPORT _ui64toa(unsigned __int64 __value, char* __stringValue, int __radix);
-    char* _RTL_FUNC _IMPORT utoa(unsigned __value, char* __stringValue, int __radix);
-    char* _RTL_FUNC _IMPORT _utoa(unsigned __value, char* __stringValue, int __radix);
+    void _RTL_FUNC _IMPORT _searchenv(const char *ZSTR  __file, const char *ZSTR  __varname, char *ZSTR  __pathname);
+    void _RTL_FUNC _IMPORT _searchstr(const char *ZSTR  __file, const char *ZSTR  __ipath, char *ZSTR  __pathname);
+    void _RTL_FUNC _IMPORT _splitpath(const char *ZSTR  __path, char *ZSTR  __drive, char *ZSTR  __dir, char *ZSTR  __name, char *ZSTR  __ext);
+    void _RTL_FUNC _IMPORT _splitpath2(const char *ZSTR  __path, char *ZSTR  __outpath, char *ZSTR * __drive, char *ZSTR * __dir, char *ZSTR * __name,
+                                       char *ZSTR * __ext);
+    void _RTL_FUNC _IMPORT swab(char *ZSTR  __from, char *ZSTR  __to, int __nbytes);
+    void _RTL_FUNC _IMPORT _swab(char *ZSTR , char *ZSTR , int);
+    char *ZSTR  _RTL_FUNC _IMPORT ultoa(unsigned long __value, char *ZSTR  __stringValue, int __radix);
+    char *ZSTR  _RTL_FUNC _IMPORT _ultoa(unsigned long __value, char *ZSTR  __stringValue, int __radix);
+    char *ZSTR  _RTL_FUNC _IMPORT _ui64toa(unsigned __int64 __value, char *ZSTR  __stringValue, int __radix);
+    char *ZSTR  _RTL_FUNC _IMPORT utoa(unsigned __value, char *ZSTR  __stringValue, int __radix);
+    char *ZSTR  _RTL_FUNC _IMPORT _utoa(unsigned __value, char *ZSTR  __stringValue, int __radix);
 #if __STDC_VERSION__ >= 199901L || defined(__cplusplus)
-    char* _RTL_FUNC _IMPORT ulltoa(unsigned __int64 __value, char* __stringValue, int __radix);
-    char* _RTL_FUNC _IMPORT _ulltoa(unsigned __int64 __value, char* __stringValue, int __radix);
+    char *ZSTR  _RTL_FUNC _IMPORT ulltoa(unsigned __int64 __value, char *ZSTR  __stringValue, int __radix);
+    char *ZSTR  _RTL_FUNC _IMPORT _ulltoa(unsigned __int64 __value, char *ZSTR  __stringValue, int __radix);
 #endif
-    char* _RTL_FUNC _IMPORT _ecvt(double, int, int*, int*);
-    char* _RTL_FUNC _IMPORT _fcvt(double, int, int*, int*);
-    char* _RTL_FUNC _IMPORT _gcvt(double, int, char*);
-    char* _RTL_FUNC _IMPORT ecvt(double, int, int*, int*);
-    char* _RTL_FUNC _IMPORT fcvt(double, int, int*, int*);
-    char* _RTL_FUNC _IMPORT gcvt(double, int, char*);
+    char *ZSTR  _RTL_FUNC _IMPORT _ecvt(double, int, int*, int*);
+    char *ZSTR  _RTL_FUNC _IMPORT _fcvt(double, int, int*, int*);
+    char *ZSTR  _RTL_FUNC _IMPORT _gcvt(double, int, char *ZSTR );
+    char *ZSTR  _RTL_FUNC _IMPORT ecvt(double, int, int*, int*);
+    char *ZSTR  _RTL_FUNC _IMPORT fcvt(double, int, int*, int*);
+    char *ZSTR  _RTL_FUNC _IMPORT gcvt(double, int, char *ZSTR );
 
     typedef int(__cdecl* _onexit_t)(void);
 #define onexit_t _onexit_t
@@ -260,9 +260,9 @@ extern unsigned char _RTL_DATA _osminor;
     unsigned long _RTL_FUNC _IMPORT _lrotl(unsigned long, int);
     unsigned long _RTL_FUNC _IMPORT _lrotr(unsigned long, int);
 
-    const char * _RTL_FUNC getexecname (void);
-    const char * _RTL_FUNC realpath (const char *path, char *resolved_path);
-    const char * _RTL_FUNC canonicalize_file_name (const char *path);
+    const char *ZSTR  _RTL_FUNC getexecname (void);
+    const char *ZSTR  _RTL_FUNC realpath (const char *ZSTR path, char *ZSTR resolved_path);
+    const char *ZSTR  _RTL_FUNC canonicalize_file_name (const char *ZSTR path);
 
 #if defined(__MSIL__)
     int* _RTL_FUNC _IMPORT _errno(void);
@@ -301,7 +301,7 @@ extern int _RTL_DATA __argc;
 extern char _RTL_DATA** __argv;
 #endif
 
-    void _RTL_FUNC _IMPORT perror(const char* __s);
+    void _RTL_FUNC _IMPORT perror(const char *ZSTR  __s);
 
 #if defined(__cplusplus)
 

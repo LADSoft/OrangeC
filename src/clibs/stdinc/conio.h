@@ -143,17 +143,17 @@ void         _RTL_FUNC _IMPORT textmode( int __newmode );
 void         _RTL_FUNC _IMPORT window( int __left, int __top, int __right, int __bottom);
 
 void         _RTL_FUNC _IMPORT _setcursortype( int __cur_t );
-char *       _RTL_FUNC _IMPORT cgets( char *__str );
-int          _RTL_FUNC _IMPORT cprintf( const char *__format, ... );
-int          _RTL_FUNC _IMPORT cputs( const char *__str );
-int          _RTL_FUNC _IMPORT cscanf( const char *__format, ... );
-char *       _RTL_FUNC _IMPORT getpass( const char *__prompt );
+char *ZSTR        _RTL_FUNC _IMPORT cgets( char *ZSTR __str );
+int          _RTL_FUNC _IMPORT cprintf( const char *ZSTR __format, ... );
+int          _RTL_FUNC _IMPORT cputs( const char *ZSTR __str );
+int          _RTL_FUNC _IMPORT cscanf( const char *ZSTR __format, ... );
+char *ZSTR        _RTL_FUNC _IMPORT getpass( const char *ZSTR __prompt );
 int          _RTL_FUNC _IMPORT ungetch( int __ch );
 
-char * 		 _RTL_FUNC _IMPORT _cgets(char *);
-int			 _RTL_FUNC _IMPORT _cprintf(const char *, ...);
-int			 _RTL_FUNC _IMPORT _cputs(const char *);
-int			 _RTL_FUNC _IMPORT _cscanf(const char *, ...);
+char *ZSTR  		 _RTL_FUNC _IMPORT _cgets(char *ZSTR );
+int			 _RTL_FUNC _IMPORT _cprintf(const char *ZSTR , ...);
+int			 _RTL_FUNC _IMPORT _cputs(const char *ZSTR );
+int			 _RTL_FUNC _IMPORT _cscanf(const char *ZSTR , ...);
 int			 _RTL_FUNC _IMPORT _getch(void);
 int			 _RTL_FUNC _IMPORT _getche(void);
 int 		 _RTL_FUNC _IMPORT _inp(unsigned short);

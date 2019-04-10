@@ -2399,7 +2399,7 @@ IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
                 return ap;
         }
     }
-    if (chosenAssembler->msil && (f->sp->linkage2 != lk_unmanaged && chosenAssembler->msil->managed(f->sp)))
+    if (chosenAssembler->msil && (f->sp->attribs.inheritable.linkage2 != lk_unmanaged && chosenAssembler->msil->managed(f->sp)))
         managed = true;
     if (f->returnEXP && managed && isstructured(basetype(f->functp)->btp))
     {
@@ -2536,7 +2536,7 @@ IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         ap = ap3 = gen_expr(funcsp, f->fcall, 0, ISZ_UINT);
         if (ap->mode == i_immed && ap->offset->type == en_pc)
         {
-            if (f->sp && f->sp->linkage2 == lk_import && (!chosenAssembler->msil))
+            if (f->sp && f->sp->attribs.inheritable.linkage2 == lk_import && (!chosenAssembler->msil))
             {
                 IMODE* ap1 = (IMODE*)(IMODE *)Alloc(sizeof(IMODE));
                 *ap1 = *ap;
@@ -2545,7 +2545,7 @@ IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
                 ap->mode = i_direct;
             }
         }
-        else if (f->sp && f->sp->linkage2 == lk_import && f->sp->storage_class != sc_virtual)
+        else if (f->sp && f->sp->attribs.inheritable.linkage2 == lk_import && f->sp->storage_class != sc_virtual)
         {
             IMODE* ap1 = ap;
             gen_icode(i_assn, ap = tempreg(ISZ_ADDR, 0), ap1, 0);

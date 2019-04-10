@@ -4451,7 +4451,7 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
             if (found1)
             {
                 SYMBOL *xx = found1;
-                if (found1->deprecationText)
+                if (found1->attribs.uninheritable.deprecationText)
                     deprecateMessage(found1);
                 if (!(flags & _F_SIZEOF))
                 {

@@ -142,25 +142,25 @@ unsigned   _RTL_FUNC _IMPORT _dos_getdiskfree(unsigned __drive,
 int        _RTL_FUNC _IMPORT _dos_getdrive(int *__drive) ;
 int        _RTL_FUNC _IMPORT _dos_setdrive(int __drive, int *__ndrives);
 void       _RTL_FUNC _IMPORT _dos_getdate(struct dosdate_t *__datep);
-unsigned   _RTL_FUNC _IMPORT _dos_getfileattr(const char *__filename,
+unsigned   _RTL_FUNC _IMPORT _dos_getfileattr(const char *ZSTR __filename,
                                                 unsigned *__attrib);
 
 unsigned   _RTL_FUNC _IMPORT _dos_getftime(int __fd, unsigned *__date, unsigned *__time);
-int        _RTL_FUNC _IMPORT _dos_getpwd(char *__buf, int __drive) ;
+int        _RTL_FUNC _IMPORT _dos_getpwd(char *ZSTR __buf, int __drive) ;
 void       _RTL_FUNC _IMPORT _dos_gettime(struct dostime_t *__timep);
 unsigned   _RTL_FUNC _IMPORT _dos_setdate(struct dosdate_t *__datep);
-unsigned   _RTL_FUNC _IMPORT _dos_setfileattr(const char *__filename,
+unsigned   _RTL_FUNC _IMPORT _dos_setfileattr(const char *ZSTR __filename,
                                                 unsigned __attrib);
-int        _RTL_FUNC _IMPORT _dos_setpwd(char *__buf) ;
+int        _RTL_FUNC _IMPORT _dos_setpwd(char *ZSTR __buf) ;
 unsigned   _RTL_FUNC _IMPORT _dos_settime(struct dostime_t *__timep);
-int        _RTL_FUNC _IMPORT _dos_findfirst(char *__stringValue, int __attr, struct find_t *__buf) ;
+int        _RTL_FUNC _IMPORT _dos_findfirst(char *ZSTR __stringValue, int __attr, struct find_t *__buf) ;
 int        _RTL_FUNC _IMPORT _dos_findnext(struct find_t *__buf) ;
-unsigned   _RTL_FUNC _IMPORT _dos_open(char *__name,unsigned __mode, int *__fd);
+unsigned   _RTL_FUNC _IMPORT _dos_open(char *ZSTR __name,unsigned __mode, int *__fd);
 unsigned   _RTL_FUNC _IMPORT _dos_close(int __fd);
 unsigned   _RTL_FUNC _IMPORT _dos_setftime(int __fd, unsigned __date, unsigned __time);
-unsigned   _RTL_FUNC _IMPORT _dos_creat(const char *__pathP, unsigned __attr,
+unsigned   _RTL_FUNC _IMPORT _dos_creat(const char *ZSTR __pathP, unsigned __attr,
                                           int *__fd);
-unsigned   _RTL_FUNC _IMPORT _dos_creatnew(const char *__pathP, unsigned __attr,
+unsigned   _RTL_FUNC _IMPORT _dos_creatnew(const char *ZSTR __pathP, unsigned __attr,
                                              int *__fd);
 void       _RTL_FUNC _IMPORT disable(void);
 void       _RTL_FUNC _IMPORT enable(void);
@@ -172,7 +172,7 @@ int        _RTL_FUNC _IMPORT _getdrive(void);
 long       _RTL_FUNC _IMPORT dostounix(struct date *__d, struct time *__t);
 void       _RTL_FUNC _IMPORT unixtodos(long __time, struct date *__d,
                                          struct time *__t);
-int        _RTL_FUNC _IMPORT unlink(const char *__path);
+int        _RTL_FUNC _IMPORT unlink(const char *ZSTR __path);
 unsigned   _RTL_FUNC _IMPORT _dos_read(int __fd, void *__buf, unsigned __len,
                                          unsigned *__nread);
 unsigned   _RTL_FUNC _IMPORT _dos_write(int __fd, const void *__buf, unsigned __len,
@@ -202,8 +202,8 @@ void     _RTL_FUNC _IMPORT  _hardretn(int __retn);
 #define geninterrupt(i) _genbyte(0xCD); _genbyte(i)      /* Interrupt instruction */
 
 extern int        _RTL_DATA _argc, _RTL_DATA __argc ;
-extern char **    _RTL_DATA _argv,** _RTL_DATA __argv ;
-extern char **	  _RTL_DATA _environ ;
+extern char *ZSTR *    _RTL_DATA _argv,** _RTL_DATA __argv ;
+extern char *ZSTR *	  _RTL_DATA _environ ;
 
 #ifdef __cplusplus
 };

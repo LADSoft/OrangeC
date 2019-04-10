@@ -542,6 +542,26 @@ struct xcept
     EXPRESSION* xcRundownFunc;
 };
 
+typedef struct attributes
+{
+    struct {
+        int structAlign;                                      /* alignment of structures/ unions */
+        int warnAlign;                                        /* if nz, warn if not aligned */
+        unsigned vectorSize;                                  /* total size of a vectored attribute */
+        enum e_lk linkage2;                                   /* export, import, msil */
+        struct sym *cleanup;                                  /* cleanup function */
+        bool packed;                                          /* True if to reset alignment to 1 */
+        bool alignedAttribute;                                /* True if alignment came from gcc aligned attribute */
+        unsigned used : 1;                                    /* value has been fetched */
+        unsigned nonstring : 1;                               /* value is not a zero terminated string */
+        unsigned zstring : 1;                                 // (argument) was tagged as a zero terminated string 
+    } inheritable;
+    struct {
+        const char* deprecationText;                          // C++ declaration was deprecated   
+        const char* alias;                                    // link-time alias
+        struct sym *copyFrom;                                 // symbol to copy attributes from
+    } uninheritable;
+};
 /* symbols */
 typedef struct sym
 {
@@ -562,7 +582,6 @@ typedef struct sym
     LINEDATA* linedata;
     enum e_sc storage_class; /* storage class */
     enum e_lk linkage;       /* cdecl, pascal, stdcall, inline */
-    enum e_lk linkage2;      /* export, import */
     enum e_lk linkage3;      /* noreturn */
     enum e_ac access;        /* c++ access rights for members */
     int operatorId;          /* operator id, CI + kw for an operator function */
@@ -604,7 +623,6 @@ typedef struct sym
     unsigned inasm : 1;                 /* a way to force the local optimizer to leave autos on the stack */
     unsigned assigned : 1;              /* value has been assigned */
     unsigned altered : 1;
-    unsigned used : 1;        /* value has been fetched */
     unsigned genreffed : 1;   /* reffed in codegen */
     unsigned noextern : 1;    /* no external reference needed, it was inlined */
     unsigned gentemplate : 1; /* template instantiation or reference generated */
@@ -672,7 +690,6 @@ typedef struct sym
     unsigned has_property_setter : 1;                     // a property has a setter
     unsigned nonConstVariableUsed : 1;                    // a non-const variable was used or assigned to in this function's body
     unsigned importThunk : 1;                             // an import thunk
-    const char* deprecationText;                          // C++ declaration was deprecated
     int __func__label;                                    /* label number for the __func__ keyword */
     int ipointerindx;                                     /* pointer index for pointer opts */
     int labelCount;                                       /* number of code labels within a function body */
@@ -683,7 +700,6 @@ typedef struct sym
     int uniqueID;                                         /* unique index for local statics */
     int startLine, endLine;                               /* line numbers spanning the function */
     short paramsize;                                      /* Size of parameter list for stdcall functions */
-    short structAlign;                                    /* alignment of structures/ unions */
     short accessibleTemplateArgument;                     /* something used as a template argument was validated for
                                                            * accessibility before instantiating the template */
     short retblockparamadjust;                            /* Adjustment for retblock parameters */
@@ -723,6 +739,7 @@ typedef struct sym
     // clang-format on
     struct xcept *xc;
     LIST* friends;
+    attributes attribs;
     /* Type declarations */
     struct typ* tp;
 } SYMBOL;

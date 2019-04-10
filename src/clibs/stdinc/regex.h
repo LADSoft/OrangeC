@@ -87,9 +87,9 @@ typedef struct _regmatch {
     regoff_t    rm_eo;
 } regmatch_t;
 
-int    _RTL_FUNC regcomp(regex_t *, const char *, int);
-int    _RTL_FUNC regexec(regex_t *, const char *, size_t, regmatch_t[], int);
-size_t _RTL_FUNC regerror(int, const regex_t *, char *, size_t);
+int    _RTL_FUNC regcomp(regex_t *, const char *ZSTR , int);
+int    _RTL_FUNC regexec(regex_t *, const char *ZSTR , size_t, regmatch_t[], int);
+size_t _RTL_FUNC regerror(int, const regex_t *, char *ZSTR , size_t);
 void   _RTL_FUNC regfree(regex_t *);
 
 #ifdef __cplusplus

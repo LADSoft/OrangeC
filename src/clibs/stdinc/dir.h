@@ -106,10 +106,10 @@ int         _RTL_FUNC _IMPORT    rmdir( const char  *__path );
 char  *     _RTL_FUNC _IMPORT    searchpath( const char  *__file );
 int         _RTL_FUNC _IMPORT    setdisk( int __drive );
 
-int _RTL_FUNC _IMPORT _chdir(const char *);
-char * _RTL_FUNC _IMPORT _getcwd(char *, int);
-int _RTL_FUNC _IMPORT _mkdir(const char *);
-int _RTL_FUNC _IMPORT _rmdir(const char *);
+int _RTL_FUNC _IMPORT _chdir(const char *ZSTR );
+char *ZSTR  _RTL_FUNC _IMPORT _getcwd(char *ZSTR , int);
+int _RTL_FUNC _IMPORT _mkdir(const char *ZSTR );
+int _RTL_FUNC _IMPORT _rmdir(const char *ZSTR );
 
 #ifdef __cplusplus
 } ;

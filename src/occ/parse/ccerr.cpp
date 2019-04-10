@@ -563,12 +563,18 @@ static struct
     {"Ignoring __attribute__ specifier", WARNING},
     {"Ignoring __declspec specifier", WARNING},
     {"Invalid alignment value", ERROR},
-    {"Conversion of character string to 'char *' deprecated", WARNING},
+     {"Conversion of character string to 'char *' deprecated", WARNING},
     {"Function call needs argument list", WARNING},
     {"Return value would require a temporary variable", ERROR},
     {"Declaration of '%s' conflicts with previous declaration", ERROR},
     {"Expected end of template arguments near undefined type '%s'", ERROR },
     {"Expected type.   Did you mean to use 'typename'?", ERROR },
+    {"Minimum alignment for '%s' not achieved", WARNING},
+    { "Invalid size used with attribute((vector()))", ERROR },
+    { "Need an arithmetic type with attribute((vector()))", ERROR },
+    { "Type mismatch with attribute((copy()))", ERROR },
+    { "Invalid cleanup function", ERROR},
+    { "Null terminated string required", ERROR}
 #endif
 };
 
@@ -1726,7 +1732,7 @@ void checkUnused(HASHTABLE* syms)
             SYMBOL* sp = (SYMBOL*)hr->p;
             if (sp->storage_class == sc_overloads)
                 sp = (SYMBOL*)sp->tp->syms->table[0]->p;
-            if (!sp->used && !sp->anonymous)
+            if (!sp->attribs.inheritable.used && !sp->anonymous)
             {
                 if (sp->assigned || sp->altered)
                 {
@@ -1781,7 +1787,7 @@ void findUnusedStatics(NAMESPACEVALUES* nameSpace)
                     else
                     {
                         currentErrorLine = 0;
-                        if (sp->storage_class == sc_static && !sp->used)
+                        if (sp->storage_class == sc_static && !sp->attribs.inheritable.used)
                             errorsym(ERR_UNUSED_STATIC, sp);
                         currentErrorLine = 0;
                         if (sp->storage_class == sc_global || sp->storage_class == sc_static || sp->storage_class == sc_localstatic)
@@ -1799,12 +1805,12 @@ void findUnusedStatics(NAMESPACEVALUES* nameSpace)
 static void usageErrorCheck(SYMBOL* sp)
 {
     if ((sp->storage_class == sc_auto || sp->storage_class == sc_register || sp->storage_class == sc_localstatic) &&
-        !sp->assigned && !sp->used && !sp->altered)
+        !sp->assigned && !sp->attribs.inheritable.used && !sp->altered)
     {
         if (!structLevel || !sp->deferredCompile)
             errorsym(ERR_USED_WITHOUT_ASSIGNMENT, sp);
     }
-    sp->used = true;
+    sp->attribs.inheritable.used = true;
 }
 static SYMBOL* getAssignSP(EXPRESSION* exp)
 {
@@ -1841,7 +1847,7 @@ static void assignmentAssign(EXPRESSION* left, bool assign)
                 if (assign)
                     sp->assigned = true;
                 sp->altered = true;
-                //				sp->used = false;
+                //				sp->attribs.inheritable.used = false;
             }
         }
     }
@@ -1854,7 +1860,7 @@ void assignmentUsages(EXPRESSION* node, bool first)
     switch (node->type)
     {
         case en_auto:
-            node->v.sp->used = true;
+            node->v.sp->attribs.inheritable.used = true;
             break;
         case en_const:
         case en_msil_array_access:

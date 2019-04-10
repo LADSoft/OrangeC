@@ -60,72 +60,72 @@ extern "C"
 
     int _RTL_INTRINS _IMPORT ffs(int);
 
-    // char         _RTL_INTRINS _IMPORT *index(const char *, int);
+    // char         _RTL_INTRINS _IMPORT *index(const char *ZSTR , int);
 
-    // char         _RTL_INTRINS _IMPORT *rindex(const char *, int);
+    // char         _RTL_INTRINS _IMPORT *rindex(const char *ZSTR , int);
 
-    int _RTL_INTRINS _IMPORT strcasecmp(const char*, const char*);
+    int _RTL_INTRINS _IMPORT strcasecmp(const char *ZSTR , const char *ZSTR );
 
-    int _RTL_INTRINS _IMPORT strncasecmp(const char*, const char*, size_t);
+    int _RTL_INTRINS _IMPORT strncasecmp(const char *ZSTR , const char *ZSTR , size_t);
 
     int _RTL_INTRINS _IMPORT memcmp(const void* __s1, const void* __s2, size_t __n);
     void* _RTL_INTRINS _IMPORT memcpy(void* restrict __dest, const void* restrict __src, size_t __n);
     void* _RTL_INTRINS _IMPORT memmove(void* __dest, const void* __src, size_t __n);
     void* _RTL_INTRINS _IMPORT memset(void* __s, int __c, size_t __n);
-    char* _RTL_INTRINS _IMPORT strcat(char* restrict __dest, const char* restrict __src);
-    size_t _RTL_FUNC _IMPORT strlcat(char* dst, const char* src, size_t n);
-    int _RTL_INTRINS _IMPORT strcmp(const char* __s1, const char* __s2);
-    char* _RTL_INTRINS _IMPORT strcpy(char* restrict __dest, const char* restrict __src);
-    size_t _RTL_INTRINS _IMPORT strlcpy(char* dst, const char* src, size_t n);
-    char* _RTL_INTRINS _IMPORT stpcpy(char* restrict __dest, const char* restrict __src);
-    size_t _RTL_FUNC _IMPORT strcspn(const char* __s1, const char* __s2);
-    char* _RTL_FUNC _IMPORT strdup(const char* __src);
-    char* _RTL_FUNC _IMPORT strerror(int __errnum);
-    size_t _RTL_INTRINS _IMPORT strlen(const char* __s);
-    char* _RTL_INTRINS _IMPORT strncat(char* restrict __dest, const char* restrict __src, size_t __maxlen);
-    int _RTL_INTRINS _IMPORT strncmp(const char* __s1, const char* __s2, size_t __maxlen);
-    char* _RTL_INTRINS _IMPORT strncpy(char* restrict __dest, const char* restrict __src, size_t __maxlen);
-    char* _RTL_INTRINS _IMPORT stpncpy(char* restrict __dest, const char* restrict __src, size_t __maxlen);
-    size_t _RTL_FUNC _IMPORT strspn(const char* __s1, const char* __s2);
-    char* _RTL_FUNC _IMPORT strtok(char* restrict __s1, const char* restrict __s2);
-    char* _RTL_FUNC _IMPORT _strerror(const char* __s);
+    char *_RTL_INTRINS _IMPORT strcat(char *ZSTR  restrict __dest, const char *ZSTR  restrict __src);
+    size_t _RTL_FUNC _IMPORT strlcat(char *ZSTR  dst, const char *ZSTR  src, size_t n);
+    int _RTL_INTRINS _IMPORT strcmp(const char *ZSTR  __s1, const char *ZSTR  __s2);
+    char *_RTL_INTRINS _IMPORT strcpy(char *ZSTR  restrict __dest, const char *ZSTR  restrict __src);
+    size_t _RTL_INTRINS _IMPORT strlcpy(char *ZSTR  dst, const char *ZSTR  src, size_t n);
+    char *_RTL_INTRINS _IMPORT stpcpy(char *ZSTR  restrict __dest, const char *ZSTR  restrict __src);
+    size_t _RTL_FUNC _IMPORT strcspn(const char *ZSTR  __s1, const char *ZSTR  __s2);
+    char *_RTL_FUNC _IMPORT strdup(const char *ZSTR  __src);
+    char *_RTL_FUNC _IMPORT strerror(int __errnum);
+    size_t _RTL_INTRINS _IMPORT strlen(const char *ZSTR  __s);
+    char *_RTL_INTRINS _IMPORT strncat(char *ZSTR  restrict __dest, const char *ZSTR  restrict __src, size_t __maxlen);
+    int _RTL_INTRINS _IMPORT strncmp(const char *ZSTR  __s1, const char *ZSTR  __s2, size_t __maxlen);
+    char *_RTL_INTRINS _IMPORT strncpy(char *ZSTR  restrict __dest, const char *ZSTR  restrict __src, size_t __maxlen);
+    char *_RTL_INTRINS _IMPORT stpncpy(char *ZSTR  restrict __dest, const char *ZSTR  restrict __src, size_t __maxlen);
+    size_t _RTL_FUNC _IMPORT strspn(const char *ZSTR  __s1, const char *ZSTR  __s2);
+    char *_RTL_FUNC _IMPORT strtok(char *ZSTR  restrict __s1, const char *ZSTR  restrict __s2);
+    char *_RTL_FUNC _IMPORT _strerror(const char *ZSTR  __s);
 
     void* _RTL_INTRINS _IMPORT memchr(const void* __s, int __c, size_t __n);
-    char* _RTL_INTRINS _IMPORT strchr(const char* __s, int __c);
-    char* _RTL_INTRINS _IMPORT strrchr(const char* __s, int __c);
-    char* _RTL_FUNC _IMPORT strpbrk(const char* __s1, const char* __s2);
-    char* _RTL_FUNC _IMPORT strstr(const char* __s1, const char* __s2);
+    char *_RTL_INTRINS _IMPORT strchr(const char *ZSTR  __s, int __c);
+    char *_RTL_INTRINS _IMPORT strrchr(const char *ZSTR  __s, int __c);
+    char *_RTL_FUNC _IMPORT strpbrk(const char *ZSTR  __s1, const char *ZSTR  __s2);
+    char *_RTL_FUNC _IMPORT strstr(const char *ZSTR  __s1, const char *ZSTR  __s2);
 
-    int _RTL_FUNC _IMPORT _lstrcoll(const char* __s1, const char* __s2);
-    size_t _RTL_FUNC _IMPORT _lstrxfrm(char* restrict __s1, const char* restrict __s2, size_t __n);
-    int _RTL_FUNC _IMPORT strcoll(const char* __s1, const char* __s2);
-    size_t _RTL_FUNC _IMPORT strxfrm(char* restrict __s1, const char* restrict __s2, size_t __n);
+    int _RTL_FUNC _IMPORT _lstrcoll(const char *ZSTR  __s1, const char *ZSTR  __s2);
+    size_t _RTL_FUNC _IMPORT _lstrxfrm(char *ZSTR  restrict __s1, const char *ZSTR  restrict __s2, size_t __n);
+    int _RTL_FUNC _IMPORT strcoll(const char *ZSTR  __s1, const char *ZSTR  __s2);
+    size_t _RTL_FUNC _IMPORT strxfrm(char *ZSTR  restrict __s1, const char *ZSTR  restrict __s2, size_t __n);
 
     int _RTL_FUNC _IMPORT memicmp(const void*, const void*, size_t);
     void* _RTL_FUNC _IMPORT memccpy(void*, const void*, int, size_t);
-    char* _RTL_FUNC _IMPORT strset(char*, int);
-    char* _RTL_FUNC _IMPORT strnset(char*, int, size_t);
-    char* _RTL_FUNC _IMPORT strrev(char*);
-    char* _RTL_FUNC _IMPORT strupr(char* __s);
-    char* _RTL_FUNC _IMPORT strlwr(char* __s);
-    int _RTL_FUNC _IMPORT strnicmp(const char* __s1, const char* __s2, size_t __n);
-    int _RTL_FUNC _IMPORT stricmp(const char* __s1, const char* __s2);
-    int _RTL_FUNC _IMPORT strncmpi(const char* __s1, const char* __s2, size_t __n);
-    int _RTL_FUNC _IMPORT strcmpi(const char* __s1, const char* __s2);
+    char *_RTL_FUNC _IMPORT strset(char *ZSTR , int);
+    char *_RTL_FUNC _IMPORT strnset(char *ZSTR , int, size_t);
+    char *_RTL_FUNC _IMPORT strrev(char *ZSTR );
+    char *_RTL_FUNC _IMPORT strupr(char *ZSTR  __s);
+    char *_RTL_FUNC _IMPORT strlwr(char *ZSTR  __s);
+    int _RTL_FUNC _IMPORT strnicmp(const char *ZSTR  __s1, const char *ZSTR  __s2, size_t __n);
+    int _RTL_FUNC _IMPORT stricmp(const char *ZSTR  __s1, const char *ZSTR  __s2);
+    int _RTL_FUNC _IMPORT strncmpi(const char *ZSTR  __s1, const char *ZSTR  __s2, size_t __n);
+    int _RTL_FUNC _IMPORT strcmpi(const char *ZSTR  __s1, const char *ZSTR  __s2);
 
     int _RTL_FUNC _IMPORT _memicmp(const void*, const void*, unsigned int);
     void* _RTL_FUNC _IMPORT _memccpy(void*, const void*, int, unsigned int);
-    char* _RTL_FUNC _IMPORT _strset(char*, int);
-    char* _RTL_FUNC _IMPORT _strnset(char*, int, size_t);
-    char* _RTL_FUNC _IMPORT _strrev(char*);
+    char *_RTL_FUNC _IMPORT _strset(char *ZSTR , int);
+    char *_RTL_FUNC _IMPORT _strnset(char *ZSTR , int, size_t);
+    char *_RTL_FUNC _IMPORT _strrev(char *ZSTR );
 
-    char* _RTL_FUNC _IMPORT _strdup(const char* string);
-    int _RTL_FUNC _IMPORT _stricmp(const char*, const char*);
-    int _RTL_FUNC _IMPORT _strcmpi(const char*, const char*);
-    int _RTL_FUNC _IMPORT _strnicmp(const char*, const char*, size_t);
-    int _RTL_FUNC _IMPORT _strncmpi(const char*, const char*, size_t);
-    char* _RTL_FUNC _IMPORT _strlwr(char*);
-    char* _RTL_FUNC _IMPORT _strupr(char*);
+    char *_RTL_FUNC _IMPORT _strdup(const char *ZSTR  string);
+    int _RTL_FUNC _IMPORT _stricmp(const char *ZSTR , const char *ZSTR );
+    int _RTL_FUNC _IMPORT _strcmpi(const char *ZSTR , const char *ZSTR );
+    int _RTL_FUNC _IMPORT _strnicmp(const char *ZSTR , const char *ZSTR , size_t);
+    int _RTL_FUNC _IMPORT _strncmpi(const char *ZSTR , const char *ZSTR , size_t);
+    char *_RTL_FUNC _IMPORT _strlwr(char *ZSTR );
+    char *_RTL_FUNC _IMPORT _strupr(char *ZSTR );
 
 #if defined(__USELOCALES__)
 #    define strupr _lstrupr

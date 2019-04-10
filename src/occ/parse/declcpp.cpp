@@ -23,6 +23,7 @@
  */
 
 #include "compiler.h"
+#include <map>
 extern ARCH_ASM* chosenAssembler;
 extern NAMESPACEVALUES *globalNameSpace, *localNameSpace;
 extern INCLUDES* includes;
@@ -52,14 +53,15 @@ extern bool functionCanThrow;
 extern LINEDATA *linesHead, *linesTail;
 extern bool inTemplateType;
 extern STRUCTSYM* structSyms;
-extern const char* deprecationText;
 extern TYPE stdany;
 extern int noSpecializationError;
 extern SYMBOL *theCurrentFunc;
 
+
+attributes basisAttribs;
+
 LIST* nameSpaceList;
 char anonymousNameSpaceName[512];
-int alignas_value;
 
 static LIST* deferred;
 
@@ -132,7 +134,7 @@ static int dumpVTabEntries(int count, THUNK* thunks, SYMBOL* sym, VTABENTRY* ent
                     my_sprintf(buf + strlen(buf), "_$%c%d", count % 26 + 'A', count / 26);
 
                     thunks[count].entry = entry;
-                    if (vf->func->linkage2 == lk_import)
+                    if (vf->func->attribs.inheritable.linkage2 == lk_import)
                     {
                         EXPRESSION* exp = varNode(en_pc, vf->func);
                         thunkForImportTable(&exp);
@@ -153,7 +155,7 @@ static int dumpVTabEntries(int count, THUNK* thunks, SYMBOL* sym, VTABENTRY* ent
                 }
                 else
                 {
-                    if (vf->func->linkage2 == lk_import)
+                    if (vf->func->attribs.inheritable.linkage2 == lk_import)
                     {
                         EXPRESSION* exp = varNode(en_pc, vf->func);
                         thunkForImportTable(&exp);
@@ -712,7 +714,7 @@ void calculateVirtualBaseOffsets(SYMBOL* sp)
             int align;
             BASECLASS* base;
             align = getBaseAlign(bt_pointer);
-            sp->structAlign = imax(sp->structAlign, align);
+            sp->attribs.inheritable.structAlign = imax(sp->attribs.inheritable.structAlign, align);
             if (align != 1)
             {
                 int al = sp->tp->size % align;
@@ -745,9 +747,9 @@ void calculateVirtualBaseOffsets(SYMBOL* sp)
         if (vbase->alloc)
         {
             int n;
-            int align = vbase->cls->structAlign;
+            int align = vbase->cls->attribs.inheritable.structAlign;
             VBASEENTRY* cur;
-            sp->structAlign = imax(sp->structAlign, align);
+            sp->attribs.inheritable.structAlign = imax(sp->attribs.inheritable.structAlign, align);
             if (align != 1)
             {
                 int al = sp->tp->size % align;
@@ -3041,6 +3043,86 @@ static void balancedAttributeParameter(LEXEME** lex)
         needkw(lex, endp);
     }
 }
+TYPE* AttributeFinish(SYMBOL *sp, TYPE* tp)
+{
+    sp->attribs = basisAttribs;
+    // should come first to overwrite all other attributes
+    if (sp->attribs.uninheritable.copyFrom)
+    {
+        if (isfunction(sp->tp) == isfunction(sp->attribs.uninheritable.copyFrom->tp) &&
+            istype(sp) == istype(sp->attribs.uninheritable.copyFrom))
+        {
+            sp->attribs.inheritable = sp->attribs.uninheritable.copyFrom->attribs.inheritable;
+        }
+        else
+        {
+            error(ERR_INVALID_ATTRIBUTE_COPY);
+        }
+
+    }
+    if (sp->attribs.inheritable.vectorSize)
+    {
+        if (isarithmetic(tp))
+        {
+            int n = sp->attribs.inheritable.vectorSize % tp->size;
+            int m = sp->attribs.inheritable.vectorSize / tp->size;
+            if (n || m > 0x10000 || (m & (m - 1)) != 0)
+                error(ERR_INVALID_VECTOR_SIZE);
+            TYPE *tp1 = (TYPE *)Alloc(sizeof(TYPE));
+            tp1->type = bt_pointer;
+            tp1->size = sp->attribs.inheritable.vectorSize;
+            tp1->array = true;
+            tp1->btp = tp;
+            tp = tp1;
+        }
+        else
+        {
+            error(ERR_INVALID_VECTOR_TYPE);
+        }
+    }
+    if (sp->attribs.inheritable.cleanup && sp->storage_class == sc_auto)
+    {
+        FUNCTIONCALL *fc = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
+        fc->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
+        fc->arguments->tp = &stdpointer;
+        fc->arguments->exp = varNode(en_auto, sp);
+        fc->ascall = true;
+        fc->functp = sp->attribs.inheritable.cleanup->tp;
+        fc->fcall = varNode(en_pc, sp->attribs.inheritable.cleanup);
+        fc->sp = sp->attribs.inheritable.cleanup;
+        EXPRESSION *expl = exprNode(en_func, nullptr, nullptr);
+        expl->v.func = fc;
+        initInsert(&sp->dest, sp->tp, expl, 0, true);
+    }
+    return tp;
+}
+static std::map<std::string, int> attribNames =
+{
+    { "alias", 1}, // 1 arg, alias name
+    { "aligned", 2 }, // arg is alignment; for members only increase unless also packed, otherwise can increase or decrease
+    { "warn_if_not_aligned", 3 }, // arg is the desired minimum alignment
+    { "alloc_size", 4 }, // implement by ignoring one or two args
+    { "cleanup", 5 }, // arg is afunc: similar to a destructor.   Also gets called during exception processing
+//                    { "common", 6 }, // no args, decide whether to support
+//                    { "nocommon", 7 }, // no args, decide whether to support
+                    { "copy", 8 }, // one arg, varible/func/type, the two variable kinds must match don't copy alias visibility or weak
+                    { "deprecated", 9 }, // zero or one arg, match C++
+                    { "nonstring", 10 }, // has no null terminator
+                    { "packed", 11 }, // ignore auto-align on this field
+//                    { "section", 12 }, // one argument, the section name
+//                    { "tls_model", 13 }, // one arg, the model.   Probably shouldn't support
+                    { "unused", 14 }, // warning control
+                    { "used", 15 }, // warning control
+                    { "vector_size", 16 }, // one arg, which must be a power of two multiple of the base size.  implement as fixed-size array
+//                    { "visibility", 17 }, // one arg, 'default' ,'hidden', 'internal', 'protected.   don't support for now as requires linker changes.
+//                    { "weak", 18 }, // not supporting
+                    { "dllimport", 19 },
+                    { "dllexport", 20 },
+                    //                    { "selectany", 21 },  // requires linker support
+                    //                    { "shared", 22 },
+                { "zstring", 23 } // non-gcc, added to support nonstring
+
+};
 void ParseOut__attribute__(LEXEME** lex, SYMBOL* funcsp)
 {
     if (MATCHKW(*lex, kw__attribute))
@@ -3048,9 +3130,213 @@ void ParseOut__attribute__(LEXEME** lex, SYMBOL* funcsp)
         *lex = getsym();
         if (needkw(lex, openpa))
         {
-            errskim(lex, skim_closepa);
-            skip(lex, closepa);
-            error(ERR_IGNORING__ATTRIBUTE);
+            if (needkw(lex, openpa))
+            {
+                if (ISID(*lex))
+                {
+                    std::string name = (*lex)->value.s.a;
+                    *lex = getsym();
+                    switch (attribNames[name])
+                    {
+                    case 1: // alias
+                        if (MATCHKW(*lex, openpa))
+                        {
+                            *lex = getsym();
+                            if ((*lex)->type == l_astr)
+                            {
+                                char buf[1024];
+                                int i;
+                                SLCHAR* xx = (SLCHAR*)(*lex)->value.s.w;
+                                for (i = 0; i < 1024 && i < xx->count; i++)
+                                    buf[i] = (char)xx->str[i];
+                                buf[i] = 0;
+                                basisAttribs.uninheritable.alias = litlate(buf);
+                                *lex = getsym();
+                            }
+                            needkw(lex, closepa);
+                        }
+                        break;
+                    case 2: // aligned
+                        if (needkw(lex, openpa))
+                        {
+                            TYPE* tp = NULL;
+                            EXPRESSION* exp = NULL;
+
+                            *lex = optimized_expression(*lex, funcsp, NULL, &tp, &exp, false);
+                            if (!tp || !isint(tp))
+                                error(ERR_NEED_INTEGER_TYPE);
+                            else if (!isintconst(exp))
+                                error(ERR_CONSTANT_VALUE_EXPECTED);
+                            basisAttribs.inheritable.structAlign = exp->v.i;
+                            basisAttribs.inheritable.alignedAttribute = true;
+                            needkw(lex, closepa);
+
+                            if (basisAttribs.inheritable.structAlign > 0x10000 || (basisAttribs.inheritable.structAlign & (basisAttribs.inheritable.structAlign - 1)) != 0)
+                                error(ERR_INVALID_ALIGNMENT);
+                        }
+                        break;
+                    case 3: // warn_if_not_aligned
+                        if (needkw(lex, openpa))
+                        {
+                            TYPE* tp = NULL;
+                            EXPRESSION* exp = NULL;
+
+                            *lex = optimized_expression(*lex, funcsp, NULL, &tp, &exp, false);
+                            if (!tp || !isint(tp))
+                                error(ERR_NEED_INTEGER_TYPE);
+                            else if (!isintconst(exp))
+                                error(ERR_CONSTANT_VALUE_EXPECTED);
+                            basisAttribs.inheritable.warnAlign = exp->v.i;
+                            needkw(lex, closepa);
+
+                            if (basisAttribs.inheritable.warnAlign > 0x10000 || (basisAttribs.inheritable.warnAlign & (basisAttribs.inheritable.warnAlign - 1)) != 0)
+                                error(ERR_INVALID_ALIGNMENT);
+                        }
+                        break;
+                    case 4: // alloc_size // doesn't restrict to numbers but maybe should?
+                        if (needkw(lex, openpa))
+                        {
+                            errskim(lex, skim_comma);
+                            if (MATCHKW(*lex, comma))
+                            {
+                                *lex = getsym();
+                                errskim(lex, skim_closepa);
+                            }
+                            needkw(lex, closepa);
+                        }
+                        break;
+                    case 5:// cleanup - needs work, should be in the C++ exception table for the function...
+                        if (MATCHKW(*lex, openpa))
+                        {
+                            *lex = getsym();
+                            if (ISID(*lex))
+                            {
+                                SYMBOL *sp = gsearch((*lex)->value.s.a);
+                                if (sp)
+                                {
+                                    if (sp->tp->type == bt_aggregate)
+                                        if (basetype(sp->tp)->syms->table[0] && !basetype(sp->tp)->syms->table[0]->next)
+                                            sp = basetype(sp->tp)->syms->table[0]->p;
+                                    if (isfunction(sp->tp) && isvoid(basetype(sp->tp)->btp))
+                                    {
+                                        auto arg = basetype(sp->tp)->syms->table[0];
+                                        if (!arg || arg == (void *)-1 || isvoid(arg->p->tp) || isvoidptr(arg->p->tp) && !arg->next)
+                                            basisAttribs.inheritable.cleanup = sp;
+                                        else
+                                            error(ERR_INVALID_ATTRIBUTE_CLEANUP);
+                                    }
+                                    else
+                                    {
+                                        error(ERR_INVALID_ATTRIBUTE_CLEANUP);
+                                    }
+                                }
+                                else
+                                {
+                                    errorstr(ERR_UNDEFINED_IDENTIFIER, (*lex)->value.s.a);
+                                }
+                                *lex = getsym();
+                            }
+                            else
+                            {
+                                error(ERR_IDENTIFIER_EXPECTED);
+                            }
+                            needkw(lex, closepa);
+                        }
+                        break;
+                    case 8: // copy
+                        if (MATCHKW(*lex, openpa))
+                        {
+                            *lex = getsym();
+                            if (ISID(*lex))
+                            {
+                                SYMBOL *sp = gsearch((*lex)->value.s.a);
+                                if (sp)
+                                {
+                                    basisAttribs.uninheritable.copyFrom= sp;
+                                }
+                                else
+                                {
+                                    errorstr(ERR_UNDEFINED_IDENTIFIER, (*lex)->value.s.a);
+                                }
+                                *lex = getsym();
+                            }
+                            else
+                            {
+                                error(ERR_IDENTIFIER_EXPECTED);
+                            }
+                            needkw(lex, closepa);
+                        }
+                        break;
+                    case 9: // deprecated
+                        basisAttribs.uninheritable.deprecationText = (const char *)-1;
+                        if (MATCHKW(*lex, openpa))
+                        {
+                            *lex = getsym();
+                            if ((*lex)->type == l_astr)
+                            {
+                                char buf[1024];
+                                int i;
+                                SLCHAR* xx = (SLCHAR*)(*lex)->value.s.w;
+                                for (i = 0; i < 1024 && i < xx->count; i++)
+                                    buf[i] = (char)xx->str[i];
+                                buf[i] = 0;
+                                basisAttribs.uninheritable.deprecationText = litlate(buf);
+                                *lex = getsym();
+                            }
+                            needkw(lex, closepa);
+                        }
+                        break;
+                    case 10: // nonstring
+                        basisAttribs.inheritable.nonstring = true;
+                        break;
+                    case 11: // packed
+                        basisAttribs.inheritable.packed = true;
+                        break;
+                    case 14:// unused
+                        basisAttribs.inheritable.used = true;
+                        break;
+                    case 15: // used - this forces emission of static variables.  Since we always emit it is a noop
+                        break;
+                    case 16: // vector_size
+                        if (needkw(lex, openpa))
+                        {
+                            TYPE* tp = NULL;
+                            EXPRESSION* exp = NULL;
+
+                            *lex = optimized_expression(*lex, funcsp, NULL, &tp, &exp, false);
+                            if (!tp || !isint(tp))
+                                error(ERR_NEED_INTEGER_TYPE);
+                            else if (!isintconst(exp))
+                                error(ERR_CONSTANT_VALUE_EXPECTED);
+                            basisAttribs.inheritable.vectorSize = exp->v.i;
+                            needkw(lex, closepa);
+
+                        }
+                        break;
+                    case 19: // dllimport
+                        if (basisAttribs.inheritable.linkage2 != lk_none)
+                            error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
+                        basisAttribs.inheritable.linkage2 = lk_import;
+                        break;
+                    case 20: // dllexport
+                        if (basisAttribs.inheritable.linkage2 != lk_none)
+                            error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
+                        basisAttribs.inheritable.linkage2 = lk_export;
+                        break;
+                    case 23: // zstring
+                        basisAttribs.inheritable.zstring = true;
+                        break;
+                    }
+                }
+                needkw(lex, closepa);
+                needkw(lex, closepa);
+            }
+            else
+            {
+                errskim(lex, skim_closepa);
+                skip(lex, closepa);
+                error(ERR_IGNORING__ATTRIBUTE);
+            }
         }
     }
 }
@@ -3058,14 +3344,16 @@ bool ParseAttributeSpecifiers(LEXEME** lex, SYMBOL* funcsp, bool always)
 {
     (void)always;
     bool rv = false;
-    ParseOut__attribute__(lex, funcsp);
     if (cparams.prm_cplusplus || cparams.prm_c1x)
     {
-        while (MATCHKW(*lex, kw_alignas) || (cparams.prm_cplusplus && MATCHKW(*lex, openbr)))
+        while (MATCHKW(*lex, kw_alignas) || MATCHKW(*lex, kw__attribute) || (cparams.prm_cplusplus && MATCHKW(*lex, openbr)))
         {
-            if (MATCHKW(*lex, kw_alignas))
+            if (MATCHKW(*lex, kw__attribute))
             {
-                // we are parsing alignas but not doing anything with it at this time...
+                ParseOut__attribute__(lex, funcsp);
+            }
+            else if (MATCHKW(*lex, kw_alignas))
+            {
                 rv = true;
                 *lex = getsym();
                 if (needkw(lex, openpa))
@@ -3131,8 +3419,8 @@ bool ParseAttributeSpecifiers(LEXEME** lex, SYMBOL* funcsp, bool always)
                         align = exp->v.i;
                     }
                     needkw(lex, closepa);
-                    alignas_value = align;
-                    if (alignas_value > 0x10000 || (alignas_value & (alignas_value - 1)) != 0)
+                    basisAttribs.inheritable.structAlign = align;
+                    if (basisAttribs.inheritable.structAlign > 0x10000 || (basisAttribs.inheritable.structAlign & (basisAttribs.inheritable.structAlign - 1)) != 0)
                         error(ERR_INVALID_ALIGNMENT);
                 }
             }
@@ -3163,7 +3451,7 @@ bool ParseAttributeSpecifiers(LEXEME** lex, SYMBOL* funcsp, bool always)
                                 else
                                 {
                                     if (!strcmp((*lex)->value.s.a, "deprecated"))
-                                        deprecationText = (char*)-1;
+                                        basisAttribs.uninheritable.deprecationText = (char*)-1;
                                     *lex = getsym();
                                     if (MATCHKW(*lex, classsel))
                                     {
@@ -3179,7 +3467,7 @@ bool ParseAttributeSpecifiers(LEXEME** lex, SYMBOL* funcsp, bool always)
                                 if (special)
                                     error(ERR_NO_ATTRIBUTE_ARGUMENT_CLAUSE_HERE);
                                 *lex = getsym();
-                                if (deprecationText)
+                                if (basisAttribs.uninheritable.deprecationText)
                                 {
                                     if ((*lex)->type == l_astr)
                                     {
@@ -3189,7 +3477,7 @@ bool ParseAttributeSpecifiers(LEXEME** lex, SYMBOL* funcsp, bool always)
                                         for (i = 0; i < 1024 && i < xx->count; i++)
                                             buf[i] = (char)xx->str[i];
                                         buf[i] = 0;
-                                        deprecationText = litlate(buf);
+                                        basisAttribs.uninheritable.deprecationText = litlate(buf);
                                         *lex = getsym();
                                     }
                                 }
@@ -3225,7 +3513,10 @@ bool ParseAttributeSpecifiers(LEXEME** lex, SYMBOL* funcsp, bool always)
             }
         }
     }
-    ParseOut__attribute__(lex, funcsp);
+    else
+    {
+        ParseOut__attribute__(lex, funcsp);
+    }
     return rv;
 }
 // these tests fall flat because they don't test the specific constructor

@@ -50,7 +50,8 @@ void LibDictionary::CreateDictionary(LibFiles& files)
             }
             for (auto pi = fd->data->ImportBegin(); pi != fd->data->ImportEnd(); ++pi)
             {
-                InsertInDictionary((*pi)->GetName().c_str(), i);
+                if (static_cast<ObjImportSymbol *>(*pi)->GetDllName().size())
+                    InsertInDictionary((*pi)->GetName().c_str(), i);
             }
             // support for virtual sections
             for (auto si = fd->data->SectionBegin(); si != fd->data->SectionEnd(); ++si)

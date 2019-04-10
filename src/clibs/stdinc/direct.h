@@ -54,20 +54,20 @@ struct _diskfree_t
 };
 
 int     _RTL_FUNC _IMPORT _chdrive(int __drive);
-char *  _RTL_FUNC _IMPORT _getdcwd(int __drive, char *__buf, int __len);
+char *ZSTR   _RTL_FUNC _IMPORT _getdcwd(int __drive, char *ZSTR __buf, int __len);
 unsigned _RTL_FUNC _IMPORT _getdiskfree(unsigned, struct _diskfree_t *);
 int     _RTL_FUNC _IMPORT _getdrive(void);
 unsigned long _RTL_FUNC _IMPORT _getdrives(void);
 
-int _RTL_FUNC _IMPORT chdir(const char *);
-char * _RTL_FUNC _IMPORT getcwd(char *, int);
-int _RTL_FUNC _IMPORT mkdir(const char *);
-int _RTL_FUNC _IMPORT rmdir(const char *);
+int _RTL_FUNC _IMPORT chdir(const char *ZSTR );
+char *ZSTR  _RTL_FUNC _IMPORT getcwd(char *ZSTR , int);
+int _RTL_FUNC _IMPORT mkdir(const char *ZSTR );
+int _RTL_FUNC _IMPORT rmdir(const char *ZSTR );
 
-int _RTL_FUNC _IMPORT _chdir(const char *);
-char * _RTL_FUNC _IMPORT _getcwd(char *, int);
-int _RTL_FUNC _IMPORT _mkdir(const char *);
-int _RTL_FUNC _IMPORT _rmdir(const char *);
+int _RTL_FUNC _IMPORT _chdir(const char *ZSTR );
+char *ZSTR  _RTL_FUNC _IMPORT _getcwd(char *ZSTR , int);
+int _RTL_FUNC _IMPORT _mkdir(const char *ZSTR );
+int _RTL_FUNC _IMPORT _rmdir(const char *ZSTR );
 
 
 #ifdef __cplusplus

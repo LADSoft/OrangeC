@@ -58,8 +58,8 @@ void deprecateMessage(SYMBOL* sp)
 {
     char buf[1024];
     my_sprintf(buf, "%s deprecated", sp->name);
-    if (sp->deprecationText && sp->deprecationText != (char*)-1)
-        my_sprintf(buf + strlen(buf), "; %s", sp->deprecationText);
+    if (sp->attribs.uninheritable.deprecationText && sp->attribs.uninheritable.deprecationText != (char*)-1)
+        my_sprintf(buf + strlen(buf), "; %s", sp->attribs.uninheritable.deprecationText);
     errorstr(ERR_WARNING, buf);
 }
 // well this is really only nonstatic data members...
@@ -773,7 +773,7 @@ EXPRESSION* anonymousVar(enum e_sc storage_class, TYPE* tp)
     rv->anonymous = true;
     rv->allocate = !anonymousNotAlloc;
     rv->assigned = true;
-    rv->used = true;
+    rv->attribs.inheritable.used = true;
     if (theCurrentFunc)
         rv->value.i = theCurrentFunc->value.i;
     my_sprintf(buf, "$anontemp%d", anonct++);
@@ -1224,8 +1224,8 @@ bool lvalue(EXPRESSION* exp)
         case en_l_ld:
         case en_l_fc:
         case en_l_dc:
-        case en_l_ldc:
-        case en_l_fi:
+        case en_l_ldc:        case en_l_fi:
+
         case en_l_di:
         case en_l_ldi:
         case en_l_p:

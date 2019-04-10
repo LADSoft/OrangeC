@@ -211,10 +211,7 @@ void omf_globaldef(SYMBOL* sp) { globals.insert(sp); }
 void omf_put_extern(SYMBOL* sp, int code)
 {
     externs.insert(sp);
-    char buf[4096];
-    buf[0] = 0;
-    beDecorateSymName(buf, sp);
-    std::string name = buf;
+    std::string name = sp->decoratedName;
     Label* l = new Label(name, lblExterns.size(), 0);
     l->SetExtern(true);
     lblExterns[l->GetName()] = l;
@@ -351,6 +348,7 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
     ObjFile* fi = factory.MakeFile(name);
     if (fi)
     {
+        char buf[4096];
         dbgtypes types(factory, fi);
         if (cparams.prm_debug)
             DumpFileList(factory, fi);
@@ -395,7 +393,6 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
         if (objSectionsByNumber.size())
         {
             SYMBOL s = {};
-
             for (auto l : strlabs)
             {
                 std::string name = l->GetName();
@@ -404,10 +401,11 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
                 if (g != globals.end())
                 {
                     ObjSymbol* s1;
+                    beDecorateSymName(buf, *g);
                     if ((*g)->storage_class == sc_localstatic || (*g)->storage_class == sc_static)
-                        s1 = factory.MakeLocalSymbol(l->GetName());
+                        s1 = factory.MakeLocalSymbol(buf);
                     else
-                        s1 = factory.MakePublicSymbol(l->GetName());
+                        s1 = factory.MakePublicSymbol(buf);
                     ObjExpression* left = factory.MakeExpression(objSectionsByNumber[GETSECT(l, sectofs)]);
                     ObjExpression* right = factory.MakeExpression(l->GetOffset()->ival);
                     ObjExpression* sum = factory.MakeExpression(ObjExpression::eAdd, left, right);
@@ -422,7 +420,8 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
             }
             for (auto e : externs)
             {
-                ObjSymbol* s1 = factory.MakeExternalSymbol(e->decoratedName);
+                beDecorateSymName(buf, e);
+                ObjSymbol* s1 = factory.MakeExternalSymbol(buf);
                 fi->Add(s1);
                 objExterns[e] = s1;
                 auto it = lblExterns.find(e->decoratedName);
@@ -431,7 +430,8 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
             }
             for (auto e : autotab)
             {
-                ObjSymbol* s1 = factory.MakeAutoSymbol(e->decoratedName);
+                beDecorateSymName(buf, e);
+                ObjSymbol* s1 = factory.MakeAutoSymbol(buf);
                 if (cparams.prm_debug)
                     s1->SetBaseType(types.Put(e->tp));
                 s1->SetOffset(new ObjExpression(e->offset));
@@ -453,13 +453,15 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
 
         for (auto exp : expfuncs)
         {
-            ObjExportSymbol* p = factory.MakeExportSymbol(exp->decoratedName);
+            beDecorateSymName(buf, exp);
+            ObjExportSymbol* p = factory.MakeExportSymbol(buf);
             p->SetExternalName(exp->decoratedName);
             fi->Add(p);
         }
         for (auto import : impfuncs)
         {
-            ObjImportSymbol* p = factory.MakeImportSymbol(import->decoratedName);
+            beDecorateSymName(buf, import);
+            ObjImportSymbol* p = factory.MakeImportSymbol(buf);
             p->SetExternalName(import->decoratedName);
             if (import->importfile)
                 p->SetDllName(import->importfile);
@@ -618,10 +620,7 @@ static Label* GetLabel(int lbl)
 }
 void outcode_gen_strlab(SYMBOL* sp)
 {
-    char buf[4096];
-    buf[0] = 0;
-    beDecorateSymName(buf, sp);
-    std::string name = buf;
+    std::string name = sp->decoratedName;
     Label* l = new Label(name, strlabs.size(), currentSection->GetSect());
     strlabs.push_back(l);
     lblpubs[name] = l;
@@ -675,10 +674,7 @@ void emit(int size)
 
 Fixup* gen_symbol_fixup(SYMBOL* pub, int offset, bool PC)
 {
-    char buf[4096];
-    buf[0] = 0;
-    beDecorateSymName(buf, pub);
-    AsmExprNode* expr = new AsmExprNode(buf);
+    AsmExprNode* expr = new AsmExprNode(pub->decoratedName);
     if (offset)
     {
         AsmExprNode* expr1 = new AsmExprNode(offset);
@@ -701,13 +697,8 @@ Fixup* gen_label_fixup(int lab, int offset, bool PC)
 }
 Fixup* gen_threadlocal_fixup(SYMBOL* tls, SYMBOL* base, int offset)
 {
-    char buf[4096];
-    buf[0] = 0;
-    beDecorateSymName(buf, base);
-    AsmExprNode* expr = new AsmExprNode(buf);
-    buf[0] = 0;
-    beDecorateSymName(buf, tls);
-    AsmExprNode* expr1 = new AsmExprNode(buf);
+    AsmExprNode* expr = new AsmExprNode(base->decoratedName);
+    AsmExprNode* expr1 = new AsmExprNode(tls->decoratedName);
     expr = new AsmExprNode(AsmExprNode::SUB, expr1, expr);
     if (offset)
     {

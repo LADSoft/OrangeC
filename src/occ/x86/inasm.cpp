@@ -251,7 +251,7 @@ static EXPRESSION* inasm_ident(void)
             sp->declline = sp->origdeclline = lex->line;
             sp->realdeclline = lex->realline;
             sp->declfilenum = lex->filenum;
-            sp->used = true;
+            sp->attribs.inheritable.used = true;
             sp->tp = (TYPE*)(TYPE *)beLocalAlloc(sizeof(TYPE));
             sp->tp->type = bt_unsigned;
             sp->tp->bits = sp->tp->startbit = -1;
@@ -263,7 +263,7 @@ static EXPRESSION* inasm_ident(void)
         {
             /* If we get here the symbol was already in the table
              */
-            sp->used = true;
+            sp->attribs.inheritable.used = true;
             switch (sp->storage_class)
             {
                 case sc_absolute:

@@ -1269,12 +1269,19 @@ static void (*oplst[])(QUAD* q) = {
 void beDecorateSymName(char* buf, SYMBOL* sp)
 {
     const char* q;
-    q = lookupAlias(sp->name);
-    if (q)
-        strcpy(buf, q);
+    if (sp->attribs.uninheritable.alias)
+    {
+        strcpy(buf, sp->attribs.uninheritable.alias);
+    }
     else
     {
-        strcpy(buf, sp->decoratedName);
+        q = lookupAlias(sp->name);
+        if (q)
+            strcpy(buf, q);
+        else
+        {
+            strcpy(buf, sp->decoratedName);
+        }
     }
 }
 
@@ -2596,7 +2603,7 @@ void gen_virtual(SYMBOL* sp, int data)
     {
         if (chosenAssembler->gen->gen_virtual)
             chosenAssembler->gen->gen_virtual(sp, data);
-        if (sp->linkage2 == lk_export)
+        if (sp->attribs.inheritable.linkage2 == lk_export)
             put_expfunc(sp);
         if (!icdFile)
             return;
@@ -2671,7 +2678,7 @@ void localstaticdef(SYMBOL* sp)
 }
 void globaldef(SYMBOL* sp)
 {
-    if (sp->linkage2 == lk_export && sp->linkage != lk_virtual)
+    if (sp->attribs.inheritable.linkage2 == lk_export && sp->linkage != lk_virtual)
         put_expfunc(sp);
     IncGlobalFlag();
     if (chosenAssembler->gen->global_define)
@@ -2695,8 +2702,8 @@ int put_exfunc(SYMBOL* sp, int notyet)
     IncGlobalFlag();
     if (chosenAssembler->gen->extern_define)
         chosenAssembler->gen->extern_define(sp, sp->tp->type == bt_func || sp->tp->type == bt_ifunc);
-    if (sp->linkage2 == lk_import && chosenAssembler->gen->import_define)
-        chosenAssembler->gen->import_define(sp, sp->importfile ? sp->importfile : "");
+    if (sp->attribs.inheritable.linkage2 == lk_import && chosenAssembler->gen->import_define)
+        chosenAssembler->gen->import_define(sp, sp->importfile ? sp->importfile : (char *)"");
     DecGlobalFlag();
     if (!icdFile)
         return notyet;
@@ -2708,7 +2715,7 @@ int put_exfunc(SYMBOL* sp, int notyet)
     {
         oprintf(icdFile, "\tEXTRN\t%s:DATA\n", sp->decoratedName);
     }
-    if (sp->linkage2 == lk_import)
+    if (sp->attribs.inheritable.linkage2 == lk_import)
         oprintf(icdFile, "\timport %s %s\n", sp->decoratedName, sp->importfile ? sp->importfile : "");
     return notyet;
 }
@@ -2749,7 +2756,7 @@ void putexterns(void)
         {
             SYMBOL* sp = (SYMBOL *)externList->data;
            if (!sp->ispure &&
-                (sp->dontinstantiate && sp->genreffed ||
+                ((sp->dontinstantiate && sp->genreffed) ||
                  (!sp->inlineFunc.stmt && !sp->init &&
                      (isfunction(sp->tp) || (!isfunction(sp->tp) && sp->storage_class != sc_global &&
                                                 sp->storage_class != sc_static && sp->storage_class != sc_localstatic)) &&

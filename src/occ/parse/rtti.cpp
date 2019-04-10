@@ -370,7 +370,7 @@ SYMBOL* RTTIDumpType(TYPE* tp)
             xtSym = makeID(sc_global, tp, NULL, litlate(name));
             xtSym->linkage = lk_virtual;
             if (isstructured(tp))
-                xtSym->linkage2 = basetype(tp)->sp->linkage2;
+                xtSym->attribs.inheritable.linkage2 = basetype(tp)->sp->attribs.inheritable.linkage2;
             xtSym->decoratedName = xtSym->errname = xtSym->name;
             xtSym->xtEntry = true;
             insert(xtSym, rttiSyms);

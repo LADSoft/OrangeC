@@ -111,7 +111,7 @@ void dumpInlines(void)
                 SYMBOL* sym = (SYMBOL*)funcList->data;
                 if (((sym->isInline && sym->dumpInlineToFile) || sym->genreffed))
                 {
-                    if ((sym->parentClass && sym->parentClass->dontinstantiate && !sym->templateLevel) || sym->linkage2 == lk_import)
+                    if ((sym->parentClass && sym->parentClass->dontinstantiate && !sym->templateLevel) || sym->attribs.inheritable.linkage2 == lk_import)
                     {
                         sym->dontinstantiate = true;
                         InsertExtern(sym);
@@ -177,7 +177,7 @@ void dumpInlines(void)
         while (dataList)
         {
             SYMBOL* sym = (SYMBOL*)dataList->data;
-            if (sym->linkage2 != lk_import)
+            if (sym->attribs.inheritable.linkage2 != lk_import)
             {
                 if (sym->parentClass && sym->parentClass->parentTemplate)
                 {

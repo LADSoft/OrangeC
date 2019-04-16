@@ -29,12 +29,15 @@
 #include <unordered_map>
 #include <string>
 #include "be.h"
+#include "char_hasher.hpp"
 
 typedef bool (*BUILTIN)();
 #define PROTO(PROT, NAME, FUNC) bool FUNC();
 #include "beIntrinsicProtos.h"
 #define PROTO(PROT, NAME, FUNC) {#NAME, FUNC},
-static std::unordered_map<std::string, BUILTIN> builtins = {
+// We use const char* here because the sym struct uses const char*, we use a custom hasher so that it actually hashes the value that const char* contains instead of the pointer itsself
+// Why don't we just cast to std::string you might ask? The slowdown from doing so is NOTICABLY large. So doing it this way is better.
+static std::unordered_map<const char*, BUILTIN, myhash<const char*>> builtins = {
 #include "beIntrinsicProtos.h"
 };
 char BackendIntrinsicPrototypes[] =
@@ -201,11 +204,17 @@ $LN4@rotr:
 
         The only diff is between shrd and shld
         */
-    gen_code(op_mov, edx, make_stack(0));
+    // Rotate it around for the parameters so that we match above, I'm too lazy to make this effecient atm ~ chugga_fan
+    gen_code(op_mov, eax, edx);
+    gen_code(op_mov, edx, ecx);
+    gen_code(op_mov, ecx, eax);
+    gen_code(op_xor, eax, eax);
+
+    gen_code(op_mov, edx, ecx);
     gen_code(op_push, ebx, nullptr);
     gen_code(op_mov, ebx, ecx);
     gen_code(op_push, esi, nullptr);
-    gen_code(op_mov, esi, make_stack(4));
+    gen_code(op_mov, esi, edx);
     ebx->length = ISZ_UCHAR;
     gen_code(op_test, ebx, aimmed(32));
     int lab = beGetLabel;

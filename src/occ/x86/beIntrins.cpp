@@ -35,8 +35,9 @@ typedef bool (*BUILTIN)();
 #define PROTO(PROT, NAME, FUNC) bool FUNC();
 #include "beIntrinsicProtos.h"
 #define PROTO(PROT, NAME, FUNC) {#NAME, FUNC},
-// We use const char* here because the sym struct uses const char*, we use a custom hasher so that it actually hashes the value that const char* contains instead of the pointer itsself
-// Why don't we just cast to std::string you might ask? The slowdown from doing so is NOTICABLY large. So doing it this way is better.
+// We use const char* here because the sym struct uses const char*, we use a custom hasher so that it actually hashes the value that
+// const char* contains instead of the pointer itself Why don't we just cast to std::string you might ask? The slowdown from doing
+// so is NOTICABLY large. So doing it this way is better.
 static std::unordered_map<const char*, BUILTIN, myhash<const char*>> builtins = {
 #include "beIntrinsicProtos.h"
 };

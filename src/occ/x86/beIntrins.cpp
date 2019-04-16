@@ -21,7 +21,7 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
  */
-
+#define __STDC_CONSTANT_MACROS
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

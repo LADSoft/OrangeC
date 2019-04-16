@@ -1,6 +1,8 @@
+#define __STDC_CONSTANT_MACROS
 #include <cstdint>
 #include <string>
-
+#include <climits>
+#include <cstring>
 // Shamelessly stolen from https://stackoverflow.com/a/34597785 to help prevent the "cast to std::string" speed problem
 // https://stackoverflow.com/users/1392132/5gon12eder here's the user 5gon12eder who posted this solution.
 constexpr std::size_t hash_bytes(const void* data, std::size_t size) noexcept;

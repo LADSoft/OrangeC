@@ -320,7 +320,6 @@ void list_var(SYMBOL* sp, int i)
 /* won't do child namespaces */
 void list_table(HASHTABLE* t, int j)
 {
-    SYMBOL* sp;
     int i;
     if (!cparams.prm_listfile)
         return;

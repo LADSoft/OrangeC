@@ -809,7 +809,7 @@ char* litlate(const char* name);
 LCHAR* wlitlate(const LCHAR* name);
 
                               /* Osutil.c */
-
+[[noreturn]]
 void fatal(const char* fmt, ...);
 void banner(const char* fmt, ...);
 void usage(char* prog_name);

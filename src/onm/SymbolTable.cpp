@@ -166,7 +166,7 @@ void SymbolTable::Load(CmdFiles& files)
             }
             else
             {
-                for (int i = 0; i < librarian.Files().size(); ++i)
+                for (size_t i = 0; i < librarian.Files().size(); ++i)
                 {
                     ObjIeeeIndexManager im1;
                     ObjFactory factory(&im1);

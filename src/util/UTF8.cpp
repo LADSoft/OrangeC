@@ -107,25 +107,24 @@ int UTF8::Span(const char* str)
 std::string UTF8::ToUpper(const std::string& val)
 {
     std::string rv;
-    const char* str = val.c_str();
     char buf[10];
-    for (int i = 0; i < val.size();)
+    for (size_t i = 0; i < val.size();)
     {
-        if ((str[i] & 0x80) == 0)
+        if ((val[i] & 0x80) == 0)
         {
-            buf[0] = ToUpper(str[i]);
+            buf[0] = ToUpper(val[i]);
             buf[1] = 0;
             rv += buf;
             i++;
         }
         else
         {
-            int spn = CharSpan(str+i);
-            int v = Decode(str + i);
+            int spn = CharSpan(val.c_str()+i);
+            int v = Decode(val.c_str() + i);
             int q = ToUpper(v);
             if (q == v)
             {
-                memcpy(buf, str + i, spn);
+                memcpy(buf, val.c_str() + i, spn);
                 buf[spn] = 0;
             }
             else

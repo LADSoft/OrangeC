@@ -104,7 +104,7 @@ void ObjIeeeAscii::RenderStructure(ObjType* Type)
     ObjString lastIndex;
     while (!fields.empty())
     {
-        int bottom;
+        size_t bottom;
         ObjString index;
         ObjString baseType;
         ObjField* current = fields.front();
@@ -127,7 +127,7 @@ void ObjIeeeAscii::RenderStructure(ObjType* Type)
             baseType = ObjUtil::ToHex(ObjType::eField);
             RenderString("ATT" + index + ",T" + baseType);
         }
-        for (unsigned j = 0; j < bottom; j++)
+        for (size_t j = 0; j < bottom; j++)
         {
             ObjField* currentField = fields[bottom - j - 1];
             RenderString(",T" + GetTypeIndex(currentField->GetBase()) + ",");
@@ -137,7 +137,7 @@ void ObjIeeeAscii::RenderStructure(ObjType* Type)
         RenderString(lastIndex + ".");
         endl();
         lastIndex = ",T" + index;
-        for (unsigned j = 0; j < bottom; j++)
+        for (size_t j = 0; j < bottom; j++)
             fields.pop_front();
     }
 }

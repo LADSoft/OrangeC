@@ -80,7 +80,7 @@ class LinkExpression
     int GetSection() { return sect; }
     static bool EnterSymbol(LinkExpressionSymbol* Symbol, bool removeOld = false);
     static LinkExpressionSymbol* FindSymbol(const std::string& name);
-    typedef std::set<LinkExpressionSymbol*, leltcompare>::iterator iterator;
+    using iterator = std::set<LinkExpressionSymbol*, leltcompare>::iterator;
     static iterator begin() { return symbols.begin(); }
     static iterator end() { return symbols.end(); }
     ObjInt Eval(ObjInt pc);

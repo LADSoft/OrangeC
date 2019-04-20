@@ -292,10 +292,10 @@ void LinkDebugFile::PushCPPName(ObjString name, int n)
 {
     if (name.find("@") != std::string::npos)
     {
-        int first = 0;
-        int last = name.size();
-        int nested = 0;
-        for (int i = 0; i < name.size(); i++)
+        size_t first = 0;
+        size_t last = name.size();
+        size_t nested = 0;
+        for (size_t i = 0; i < name.size(); i++)
         {
             if (name[i] == '@')
             {
@@ -352,7 +352,7 @@ int LinkDebugFile::GetSQLNameId(ObjString name)
 bool LinkDebugFile::WriteNamesTable()
 {
     std::vector<sqlite3_int64> v;
-    for (int i = 0; i < nameList.size(); i++)
+    for (size_t i = 0; i < nameList.size(); i++)
     {
         v.push_back(i + 1);
     }

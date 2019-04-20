@@ -71,14 +71,14 @@ class InputFile
     std::string GetErrorFile() { return errname; }
     void CheckErrors();
     virtual bool GetLine(std::string& line);
-    void SetErrlineInfo(std::string& name, int line)
+    void SetErrlineInfo(const std::string& name, int line)
     {
         errname = name;
         lineno = line;
     }
 
   protected:
-    std::string GetErrorName(bool full, std::string& name);
+    std::string GetErrorName(bool full, const std::string& name);
     virtual int StripComment(char* line) { return strlen(line); }
     bool ReadLine(char* line);
     void CheckUTF8BOM();

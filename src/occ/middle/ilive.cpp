@@ -96,7 +96,6 @@ static void liveSetup(void)
         if (blk && blk->head)
         {
             QUAD* tail = blk->tail;
-            int j;
             briggsClear(exposed);
             do
             {
@@ -180,7 +179,7 @@ static void liveSetup(void)
     }
     for (i = 0; i < globalVars->top; i++)
     {
-        int t = globalVars->data[i], j;
+        int t = globalVars->data[i];
         tempInfo[t]->liveAcrossBlock = true;
     }
 }
@@ -511,16 +510,14 @@ void removeDead(BLOCK* b)
 {
     static BRIGGS_SET* live;
     BITINT* p;
-    int j, k;
     QUAD* tail;
     BLOCKLIST* bl;
     bool done = false;
     if (b == blockArray[0])
     {
-        int i;
         liveVariables();
         live = briggsAlloc(tempCount);
-        for (i = 0; i < blockCount; i++)
+        for (int i = 0; i < blockCount; i++)
             if (blockArray[i])
             {
                 QUAD* tail = blockArray[i]->head;
@@ -535,9 +532,9 @@ void removeDead(BLOCK* b)
     b->visiteddfst = true;
     briggsClear(live);
     p = b->liveOut;
-    for (j = 0; j < (tempCount + BITINTBITS - 1) / BITINTBITS; j++, p++)
+    for (int j = 0; j < (tempCount + BITINTBITS - 1) / BITINTBITS; j++, p++)
         if (*p)
-            for (k = 0; k < BITINTBITS; k++)
+            for (int k = 0; k < BITINTBITS; k++)
                 if (*p & (1 << k))
                 {
                     briggsSet(live, j * BITINTBITS + k);
@@ -559,7 +556,6 @@ void removeDead(BLOCK* b)
     {
         QUAD* head = intermed_head;
         bool changed = false;
-        int i;
         /*
         for (i=0; i < blockCount; i++)
         {
@@ -568,7 +564,7 @@ void removeDead(BLOCK* b)
                     removeDead(blockArray[i]);
         }
         */
-        for (i = 0; i < blockCount; i++)
+        for (int i = 0; i < blockCount; i++)
         {
             BLOCK* b1 = blockArray[i];
             if (b1)
@@ -607,14 +603,13 @@ void removeDead(BLOCK* b)
 }
 void liveVariables(void)
 {
-    int i;
     sFree();
     hasPhi = false;
     globalVars = briggsAllocs(tempCount);
     worklist = briggsAllocs(blockCount);
     livelist = briggsAllocs(blockCount);
     visited = briggsAllocs(blockCount);
-    for (i = 0; i < blockCount; i++)
+    for (int i = 0; i < blockCount; i++)
     {
         if (blockArray[i])
         {
@@ -624,7 +619,7 @@ void liveVariables(void)
             blockArray[i]->liveOut = sallocbit(tempCount);
         }
     }
-    for (i = 0; i < tempCount; i++)
+    for (int i = 0; i < tempCount; i++)
     {
         tempInfo[i]->liveAcrossBlock = false;
     }

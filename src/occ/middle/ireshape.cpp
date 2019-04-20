@@ -202,7 +202,6 @@ static bool GatherExpression(int tx, RESHAPE_EXPRESSION* expr, int flags)
             {
                 int tnum = ins->dc.left->offset->v.sp->value.i;
                 int flags1 = flags;
-                RESHAPE_LIST* re;
                 if (ins->dc.opcode == i_sub)
                     flags ^= RF_NEG;
 
@@ -219,7 +218,6 @@ static bool GatherExpression(int tx, RESHAPE_EXPRESSION* expr, int flags)
             {
                 int tnum = ins->dc.right->offset->v.sp->value.i;
                 int flags1 = flags;
-                RESHAPE_LIST* re;
                 if (ins->dc.opcode == i_sub)
                     flags ^= RF_NEG;
                 flags |= (ins->dc.opcode == i_lsl ? RF_SHIFT : 0);
@@ -544,7 +542,7 @@ static IMODE* InsertMulInstruction(BLOCK* b, int size, QUAD* insertBefore, int f
     {
         if (iml->mode == i_immed && isintconst(iml->offset))
         {
-            iml->offset->v.i = (1 << iml->offset->v.i);
+            iml->offset->v.i = (1ULL << iml->offset->v.i);
         }
         else
         {
@@ -686,7 +684,6 @@ static IMODE* RewriteDistributed(BLOCK* b, int size, IMODE* im, QUAD* ia, RESHAP
 {
     IMODE* total = distrib->lastDistribName;
     RESHAPE_LIST* gather = distrib;
-    int flagsr;
     while (gather &&
            (!b || gather->im->mode == i_immed ||
             (!variantThisLoop(b, gather->im->offset->v.sp->value.i) && usedThisLoop(b, gather->im->offset->v.sp->value.i))))

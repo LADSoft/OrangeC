@@ -43,7 +43,7 @@ void IntelOutputObject::putrecord(std::fstream& stream, unsigned char* data, int
 }
 void IntelOutputObject::putulba(std::fstream& stream, int address)
 {
-    int cs = 0, i;
+    int cs = 0;
     int len;
     int offset;
     int type;

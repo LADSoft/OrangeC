@@ -120,7 +120,7 @@ static void ScanVarStrength(INSTRUCTIONLIST* l, IMODE* multiplier, int tnum, int
                             {
                                 if (!multiplier)
                                 {
-                                    multiplier = make_immed(head->dc.right->size, 1 << head->dc.right->offset->v.i);
+                                    multiplier = make_immed(head->dc.right->size, 1ULL << head->dc.right->offset->v.i);
                                     tr = head->ans->offset->v.sp->value.i;
                                     ans = head->ans;
                                     ScanVarStrength(tempInfo[tr]->instructionUses, multiplier, tnum, tr, vars);
@@ -129,7 +129,7 @@ static void ScanVarStrength(INSTRUCTIONLIST* l, IMODE* multiplier, int tnum, int
                                 else if (multiplier->mode == i_immed)
                                 {
                                     multiplier =
-                                        make_immed(multiplier->size, (1 << head->dc.right->offset->v.i) * multiplier->offset->v.i);
+                                        make_immed(multiplier->size, (1ULL << head->dc.right->offset->v.i) * multiplier->offset->v.i);
                                     tr = head->ans->offset->v.sp->value.i;
                                     ans = head->ans;
                                     ScanVarStrength(tempInfo[tr]->instructionUses, multiplier, tnum, tr, vars);
@@ -380,7 +380,6 @@ static void DoCompare(QUAD* head, IMODE** temp, IMODE** cnst)
         USES_STRENGTH* sl;
         int n = working->offset->v.sp->value.i;
 
-        int il;
         //		if (tempInfo[n]->oldInductionVar >= 0)
         //			n = tempInfo[n]->oldInductionVar;
         sl = tempInfo[n]->sl;

@@ -239,7 +239,7 @@ void ppCond::HandleEndIf(std::string& line)
 void ppCond::HandleDef(std::string& line, bool Else, bool negate, int lineno)
 {
     Tokenizer tk(line, nullptr);
-    const Token* t = tk.Next();
+    std::shared_ptr<Token> t = tk.Next();
     if (!t->IsIdentifier())
     {
         Errors::Error("Identifier expected");
@@ -341,7 +341,7 @@ void ppCond::HandleId(std::string& line, bool Else, bool negate, int lineno)
 {
     define->Process(line);
     Tokenizer tk(line, nullptr);
-    const Token* t = tk.Next();
+    std::shared_ptr<Token> t = tk.Next();
     bool v = t->IsIdentifier();
     if (negate)
         v = !v;
@@ -354,7 +354,7 @@ void ppCond::HandleNum(std::string& line, bool Else, bool negate, int lineno)
 {
     define->Process(line);
     Tokenizer tk(line, nullptr);
-    const Token* t = tk.Next();
+    std::shared_ptr<Token> t = tk.Next();
     bool v = t->IsNumeric();
     if (negate)
         v = !v;
@@ -367,7 +367,7 @@ void ppCond::HandleStr(std::string& line, bool Else, bool negate, int lineno)
 {
     define->Process(line);
     Tokenizer tk(line, nullptr);
-    const Token* t = tk.Next();
+    std::shared_ptr<Token> t = tk.Next();
     bool v = t->IsString();
     if (negate)
         v = !v;
@@ -380,7 +380,7 @@ void ppCond::HandleCtx(std::string& line, bool Else, bool negate, int lineno)
 {
     define->Process(line);
     Tokenizer tk(line, nullptr);
-    const Token* t = tk.Next();
+    std::shared_ptr<Token> t = tk.Next();
     bool v = false;
     if (t->IsIdentifier())
     {

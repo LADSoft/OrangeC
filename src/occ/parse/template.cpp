@@ -5535,7 +5535,9 @@ void TemplatePartialOrdering(SYMBOL** table, int count, FUNCTIONCALL* funcparams
                             {
                                 params->p->byNonType.temp = (EXPRESSION *)exprchk->data;
                                 exprchk = exprchk->next;
-                                
+                                
+
+
 
 
 
@@ -5834,7 +5836,9 @@ static void TemplateTransferClassDeferred(SYMBOL* newCls, SYMBOL* tmpl)
                                             tpo = tpo->next;
                                             tpn = tpn->next;
                                         }
-                                        
+                                        
+
+
 
 
 
@@ -8018,7 +8022,6 @@ static TEMPLATEPARAMLIST* SpecifyPackedInt(TEMPLATEPARAMLIST* arg, TEMPLATEPARAM
     return arg;
 }
 static bool SpecifyAllTemplateArgs_unused(SYMBOL* sym, TEMPLATEPARAMLIST* args, TEMPLATEPARAMLIST* orig)
-
 {
     TEMPLATEPARAMLIST* spl = sym->templateParams->next;
     while (args)

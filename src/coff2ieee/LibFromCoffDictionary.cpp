@@ -55,7 +55,6 @@ void LibDictionary::CreateDictionary(std::map<int, std::unique_ptr<Module>>& Mod
                 files++;
         }
     }
-    int dictpages2, dictpages1;
     int i = 0;
     for (auto& m : Modules)
     {

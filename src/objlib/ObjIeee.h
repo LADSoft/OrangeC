@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #ifndef OBJIEEE_H
@@ -223,28 +223,28 @@ class ObjIeeeBinary : public ObjIOBase
     void RenderBrowseInfo(ObjBrowseInfo* Memory);
     void RenderExpression(ObjByte* buf, ObjExpression* Expression);
     void PutSymbol(SymbolMap& map, int index, ObjSymbol* sym);
-    ObjSymbol* GetSymbol(SymbolMap& map, int index)
+    ObjSymbol* GetSymbol(SymbolMap& map, size_t index)
     {
         if (index >= map.size())
             return 0;
         return map[index];
     }
     void PutType(int index, ObjType* type);
-    ObjType* GetType(int index)
+    ObjType* GetType(size_t index)
     {
         if (index >= types.size())
             return 0;
         return types[index];
     }
     void PutSection(int index, ObjSection* sect);
-    ObjSection* GetSection(int index)
+    ObjSection* GetSection(size_t index)
     {
         if (index >= sections.size())
             return 0;
         return sections[index];
     }
     void PutFile(int index, ObjSourceFile* file);
-    ObjSourceFile* GetFile(int index)
+    ObjSourceFile* GetFile(size_t index)
     {
         if (index >= files.size())
             return 0;
@@ -399,6 +399,7 @@ class ObjIeeeAscii : public ObjIOBase
     bool ModuleEnd(const char* buffer, eParseType ParseType);
     bool ModuleAttributes(const char* buffer, eParseType ParseType);
     bool ModuleDate(const char* buffer, eParseType ParseType);
+    [[noreturn]]
     bool ThrowSyntax(const char* buffer, eParseType ParseType)
     {
         (void)buffer;
@@ -460,29 +461,29 @@ class ObjIeeeAscii : public ObjIOBase
     void RenderMemoryBinary(ObjMemoryManager* Memory);
     void RenderBrowseInfo(ObjBrowseInfo* Memory);
     void RenderExpression(ObjExpression* Expression);
-    void PutSymbol(SymbolMap& map, int index, ObjSymbol* sym);
-    ObjSymbol* GetSymbol(SymbolMap& map, int index)
+    void PutSymbol(SymbolMap& map, size_t index, ObjSymbol* sym);
+    ObjSymbol* GetSymbol(SymbolMap& map, size_t index)
     {
         if (index >= map.size())
             return 0;
         return map[index];
     }
-    void PutType(int index, ObjType* type);
-    ObjType* GetType(int index)
+    void PutType(size_t index, ObjType* type);
+    ObjType* GetType(size_t index)
     {
         if (index >= types.size())
             return 0;
         return types[index];
     }
-    void PutSection(int index, ObjSection* sect);
-    ObjSection* GetSection(int index)
+    void PutSection(size_t index, ObjSection* sect);
+    ObjSection* GetSection(size_t index)
     {
         if (index >= sections.size())
             return 0;
         return sections[index];
     }
-    void PutFile(int index, ObjSourceFile* file);
-    ObjSourceFile* GetFile(int index)
+    void PutFile(size_t index, ObjSourceFile* file);
+    ObjSourceFile* GetFile(size_t index)
     {
         if (index >= files.size())
             return 0;

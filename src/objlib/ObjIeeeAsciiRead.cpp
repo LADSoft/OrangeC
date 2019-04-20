@@ -290,39 +290,39 @@ ObjFile* ObjIeeeAscii::HandleRead(eParseType ParseType)
         {
             done = Parse(inBuf, ParseType);
         }
-        catch (BadCS& e)
+        catch (const BadCS&)
         {
             ioBuffer = nullptr;
             return nullptr;
         }
-        catch (SyntaxError& e)
+        catch (const SyntaxError&)
         {
             ioBuffer = nullptr;
             return nullptr;
         }
     }
-    for (int i = 0; i < publics.size(); i++)
+    for (size_t i = 0; i < publics.size(); i++)
         if (publics[i])
             file->Add(publics[i]);
-    for (int i = 0; i < locals.size(); i++)
+    for (size_t i = 0; i < locals.size(); i++)
         if (locals[i])
             file->Add(locals[i]);
-    for (int i = 0; i < autos.size(); i++)
+    for (size_t i = 0; i < autos.size(); i++)
         if (autos[i])
             file->Add(autos[i]);
-    for (int i = 0; i < regs.size(); i++)
+    for (size_t i = 0; i < regs.size(); i++)
         if (regs[i])
             file->Add(regs[i]);
-    for (int i = 0; i < externals.size(); i++)
+    for (size_t i = 0; i < externals.size(); i++)
         if (externals[i])
             file->Add(externals[i]);
-    for (int i = 1024; i < types.size(); i++)
+    for (size_t i = 1024; i < types.size(); i++)
         if (types[i])
             file->Add(types[i]);
-    for (int i = 0; i < sections.size(); i++)
+    for (size_t i = 0; i < sections.size(); i++)
         if (sections[i])
             file->Add(sections[i]);
-    for (int i = 0; i < files.size(); i++)
+    for (size_t i = 0; i < files.size(); i++)
         if (files[i])
             file->Add(files[i]);
     publics.clear();
@@ -884,7 +884,7 @@ bool ObjIeeeAscii::Comment(const char* buffer, eParseType ParseType)
             }
             if (!GetCaseSensitiveFlag())
             {
-                for (int i = 0; i < name.size(); i++)
+                for (size_t i = 0; i < name.size(); i++)
                     name[i] = toupper(name[i]);
             }
             ObjExportSymbol* sym = factory->MakeExportSymbol(name);
@@ -1355,46 +1355,46 @@ bool ObjIeeeAscii::CheckSum(const char* buffer, eParseType ParseType)
 
     return false;
 }
-void ObjIeeeAscii::PutSymbol(SymbolMap& map, int index, ObjSymbol* sym)
+void ObjIeeeAscii::PutSymbol(SymbolMap& map, size_t index, ObjSymbol* sym)
 {
     if (map.size() <= index)
     {
-        int old = map.size();
+        size_t old = map.size();
         map.resize(index > 100 ? index * 2 : 200);
-        for (int i = old; i < map.size(); i++)
+        for (size_t i = old; i < map.size(); i++)
             map[i] = nullptr;
     }
     map[index] = sym;
 }
-void ObjIeeeAscii::PutType(int index, ObjType* type)
+void ObjIeeeAscii::PutType(size_t index, ObjType* type)
 {
     if (types.size() <= index)
     {
-        int old = types.size();
+        size_t old = types.size();
         types.resize(index > 100 ? index * 2 : 200);
-        for (int i = old; i < types.size(); i++)
+        for (size_t i = old; i < types.size(); i++)
             types[i] = nullptr;
     }
     types[index] = type;
 }
-void ObjIeeeAscii::PutSection(int index, ObjSection* sect)
+void ObjIeeeAscii::PutSection(size_t index, ObjSection* sect)
 {
     if (sections.size() <= index)
     {
-        int old = sections.size();
+        size_t old = sections.size();
         sections.resize(index > 100 ? index * 2 : 200);
-        for (int i = old; i < sections.size(); i++)
+        for (size_t i = old; i < sections.size(); i++)
             sections[i] = nullptr;
     }
     sections[index] = sect;
 }
-void ObjIeeeAscii::PutFile(int index, ObjSourceFile* file)
+void ObjIeeeAscii::PutFile(size_t index, ObjSourceFile* file)
 {
     if (files.size() <= index)
     {
-        int old = files.size();
+        size_t old = files.size();
         files.resize(index > 100 ? index * 2 : 200);
-        for (int i = old; i < files.size(); i++)
+        for (size_t i = old; i < files.size(); i++)
             files[i] = nullptr;
     }
     files[index] = file;

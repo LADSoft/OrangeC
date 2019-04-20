@@ -85,7 +85,7 @@ class AsmFile
     ObjFile* MakeFile(ObjFactory& factory, std::string& name);
     ObjSection* MakeSection(ObjFactory& factory, Section* sect);
     void MakeData(ObjFactory& factory, ObjSection* sect, Section* s);
-    const Token* GetToken() { return lexer.GetToken(); }
+    std::shared_ptr<Token> GetToken() { return lexer.GetToken(); }
     bool IsKeyword();
     int GetKeyword();
     unsigned GetTokenId();

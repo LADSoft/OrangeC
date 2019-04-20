@@ -85,6 +85,7 @@ std::deque<DefValue> defines;
 static bool has_output_file;
 static char** set_searchpath = &prm_searchpath;
 static char** set_libpath = &prm_libpath;
+[[noreturn]]
 void fatal(const char* fmt, ...)
 {
     va_list argptr;
@@ -1106,8 +1107,6 @@ void internalError(int a)
 void ccinit(int argc, char* argv[])
 {
     char buffer[260];
-    char* p;
-    int rv;
     int i;
 
     strcpy(copyright, COPYRIGHT);

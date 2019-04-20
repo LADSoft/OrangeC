@@ -203,7 +203,7 @@ Instruction* InstructionParser::Parse(const std::string args, int PC)
             bits.Reset();
             if (!Tokenize(PC))
             {
-                throw new std::runtime_error("Unknown token sequence");
+                throw std::runtime_error("Unknown token sequence");
             }
             eol = false;
             auto rv = DispatchOpcode(it->second);
@@ -221,7 +221,7 @@ Instruction* InstructionParser::Parse(const std::string args, int PC)
                     std::cout << std::endl;
 #endif
                     if (!eol)
-                        throw new std::runtime_error("Extra characters at end of line");
+                        throw std::runtime_error("Extra characters at end of line");
                     s = new Instruction(buf, (bits.GetBits() + 7) / 8);
                     //			std::cout << bits.GetBits() << std::endl;
                     for (auto& operand : operands)
@@ -247,22 +247,22 @@ Instruction* InstructionParser::Parse(const std::string args, int PC)
                 }
                 break;
                 case AERR_SYNTAX:
-                    throw new std::runtime_error("Syntax error while parsing instruction");
+                    throw std::runtime_error("Syntax error while parsing instruction");
                 case AERR_OPERAND:
-                    throw new std::runtime_error("Unknown operand");
+                    throw std::runtime_error("Unknown operand");
                 case AERR_BADCOMBINATIONOFOPERANDS:
-                    throw new std::runtime_error("Bad combination of operands");
+                    throw std::runtime_error("Bad combination of operands");
                 case AERR_UNKNOWNOPCODE:
-                    throw new std::runtime_error("Unrecognized opcode");
+                    throw std::runtime_error("Unrecognized opcode");
                 case AERR_INVALIDINSTRUCTIONUSE:
-                    throw new std::runtime_error("Invalid use of instruction");
+                    throw std::runtime_error("Invalid use of instruction");
                 default:
-                    throw new std::runtime_error("unknown error");
+                    throw std::runtime_error("unknown error");
             }
             return s;
         }
     }
-    throw new std::runtime_error("Unrecognized opcode");
+    throw std::runtime_error("Unrecognized opcode");
 }
 void InstructionParser::RenameRegisters(AsmExprNode* val)
 {
@@ -634,9 +634,9 @@ void InstructionParser::NextToken(int PC)
                     accum += line[i] << ((i - 1) * 8);
             }
             if (i == line.size())
-                throw new std::runtime_error("Expected end quote");
+                throw std::runtime_error("Expected end quote");
             if (i == 1)
-                throw new std::runtime_error("Quoted string is empty");
+                throw std::runtime_error("Quoted string is empty");
             line.erase(0, i + 1);
             id = TK_NUMERIC;
             val = new AsmExprNode(accum);

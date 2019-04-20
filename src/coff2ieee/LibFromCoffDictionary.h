@@ -32,7 +32,7 @@
 #include <memory>
 
 class ObjFile;
-class Module;
+struct Module;
 
 struct DictCompare
 {

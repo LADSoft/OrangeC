@@ -175,7 +175,7 @@ static bool isStandardLayout(TYPE* tp, SYMBOL** result)
     {
         int n;
         int access = -1;
-        SYMBOL *found = NULL, *first;
+        SYMBOL *found = NULL;
         HASHREC* hr;
         n = FindBaseClassWithData(tp->sp, &found);
         if (n > 1)
@@ -474,7 +474,6 @@ static bool nothrowConstructible(TYPE* tp)
 }
 static bool is_abstract(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
-    INITLIST* lst;
     bool rv = false;
     FUNCTIONCALL funcparams;
     memset(&funcparams, 0, sizeof(funcparams));
@@ -514,7 +513,6 @@ static bool is_base_of(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXP
 }
 static bool is_class(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
-    INITLIST* lst;
     bool rv = false;
     FUNCTIONCALL funcparams;
     memset(&funcparams, 0, sizeof(funcparams));
@@ -777,7 +775,6 @@ static bool is_empty(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRE
 }
 static bool is_enum(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
-    INITLIST* lst;
     bool rv = false;
     FUNCTIONCALL funcparams;
     memset(&funcparams, 0, sizeof(funcparams));
@@ -793,7 +790,6 @@ static bool is_enum(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRES
 }
 static bool is_final(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
-    INITLIST* lst;
     bool rv = false;
     FUNCTIONCALL funcparams;
     memset(&funcparams, 0, sizeof(funcparams));
@@ -810,7 +806,6 @@ static bool is_final(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRE
 }
 static bool is_literal(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
-    INITLIST* lst;
     bool rv = false;
     FUNCTIONCALL funcparams;
     memset(&funcparams, 0, sizeof(funcparams));
@@ -1011,7 +1006,6 @@ static bool is_trivially_copyable(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYP
 }
 static bool is_union(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
-    INITLIST* lst;
     bool rv = false;
     FUNCTIONCALL funcparams;
     memset(&funcparams, 0, sizeof(funcparams));

@@ -50,7 +50,7 @@ bool InputFile::GetLine(std::string& line)
     line = std::string(buf);
     return true;
 }
-std::string InputFile::GetErrorName(bool full, std::string& name)
+std::string InputFile::GetErrorName(bool full, const std::string& name)
 {
     if (full)
     {

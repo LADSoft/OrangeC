@@ -58,7 +58,6 @@ int findPartition(int T0)
 void insertConflict(int i, int j)
 {
     TEMP_INFO *ti, *tj;
-    int bucket;
     i = findPartition(i);
     j = findPartition(j);
     if (i == j)
@@ -90,7 +89,6 @@ void JoinConflictLists(int T0, int T1)
 }
 bool isConflicting(int T0, int T1)
 {
-    int bucket;
     T0 = findPartition(T0);
     T1 = findPartition(T1);
     if (T0 == T1)
@@ -99,10 +97,9 @@ bool isConflicting(int T0, int T1)
 }
 void CalculateConflictGraph(BRIGGS_SET* nodes, bool optimize)
 {
-    int i, j;
     BRIGGS_SET* live = briggsAllocc(tempCount);
     resetConflict();
-    for (i = 0; i < blockCount; i++)
+    for (int i = 0; i < blockCount; i++)
     {
 
         if (blockArray[i])
@@ -110,11 +107,10 @@ void CalculateConflictGraph(BRIGGS_SET* nodes, bool optimize)
             BITINT* p = blockArray[i]->liveOut;
             QUAD* tail = blockArray[i]->tail;
             QUAD* head = blockArray[i]->head;
-            int j, k;
             briggsClear(live);
-            for (j = 0; j < (tempCount + BITINTBITS - 1) / BITINTBITS; j++, p++)
+            for (int j = 0; j < (tempCount + BITINTBITS - 1) / BITINTBITS; j++, p++)
                 if (*p)
-                    for (k = 0; k < BITINTBITS; k++)
+                    for (int k = 0; k < BITINTBITS; k++)
                         if (*p & (1 << k))
                         {
                             if (!nodes || briggsTest(nodes, j * BITINTBITS + k))
@@ -130,7 +126,7 @@ void CalculateConflictGraph(BRIGGS_SET* nodes, bool optimize)
                     struct _phiblock* pb = pd->temps;
                     if (!nodes || briggsTest(nodes, pd->T0))
                     {
-                        for (j = 0; j < live->top; j++)
+                        for (int j = 0; j < live->top; j++)
                         {
                             insertConflict(live->data[j], pd->T0);
                         }
@@ -233,7 +229,7 @@ void CalculateConflictGraph(BRIGGS_SET* nodes, bool optimize)
                                         insertConflict(tnum, tail->dc.right->offset2->v.sp->value.i);
                                 }
                             }
-                            for (j = 0; j < live->top; j++)
+                            for (int j = 0; j < live->top; j++)
                             {
                                 if (live->data[j] != k)
                                     insertConflict(live->data[j], tnum);

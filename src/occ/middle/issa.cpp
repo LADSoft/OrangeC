@@ -99,7 +99,6 @@ static void insertPhiOp(BLOCK* b, int tnum)
     PHIDATA* phi = (PHIDATA *) oAlloc(sizeof(PHIDATA));
     BLOCKLIST* pred = b->pred;
     struct _phiblock** pbhold;
-    LIST* list;
     phi->T0 = tnum;
     q->dc.opcode = i_phi;
     q->dc.v.phi = phi;
@@ -119,7 +118,6 @@ static void insertPhiOp(BLOCK* b, int tnum)
     while (pred)
     {
         struct _phiblock* pb = (_phiblock *)oAlloc(sizeof(struct _phiblock));
-        LIST* list;
         phi->nblocks++;
         *pbhold = pb;
         pbhold = &(*pbhold)->next;
@@ -281,8 +279,7 @@ static void renameToPhi(BLOCK* b)
     /* go through the code in the block in forward order */
     while (!done)
     {
-        IMODE *im, *found;
-        QUAD* q;
+        IMODE *im;
         /* these always come first, which satisfies renaming the T0s
          * before doing further processing of the block
          */
@@ -459,7 +456,6 @@ static void renameToPhi(BLOCK* b)
                     {
                         TEMP_INFO* t = tempInfo[(int)tempInfo[tnum]->renameStack->data];
                         IMODE* im;
-                        LIST* l;
                         tempInfo[tnum]->renameStack = tempInfo[tnum]->renameStack->next;
                         if (tail->dead)
                         {
@@ -727,7 +723,6 @@ static void CoalesceTemps(LOOP* l, bool all)
 }
 static void partition(bool all)
 {
-    int i;
     BRIGGS_SET* copied = briggsAlloc(tempCount * 2);
     findCopies(copied, all);
     // each temp was partitioned to itself when we allocated the temp

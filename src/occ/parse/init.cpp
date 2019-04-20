@@ -521,7 +521,7 @@ int dumpMemberPtr(SYMBOL* sp, TYPE* membertp, bool make_label)
 {
     int lbl = 0;
 #ifndef PARSER_ONLY
-    int vbase = 0, ofs;
+    int vbase = 0;
     EXPRESSION expx, *exp = &expx;
     if (make_label)
     {
@@ -1816,7 +1816,6 @@ static LEXEME* initialize_reference_type(LEXEME* lex, SYMBOL* funcsp, int offset
     EXPRESSION* exp;
     bool needend = false;
     TYPE* tpi = itype;
-    STRUCTSYM s;
     (void)sc;
     if (MATCHKW(lex, begin))
     {
@@ -2016,7 +2015,6 @@ static void unwrap_desc(AGGREGATE_DESCRIPTOR** descin, AGGREGATE_DESCRIPTOR** ca
                 {
                     if (list->basetp && list->exp)
                     {
-                        SYMBOL* fieldsp;
                         initInsert(dest, list->basetp, list->exp, list->offset + (*descin)->offset + (*descin)->reloffset, false);
                         if (ismember(sym))
                         {
@@ -2421,7 +2419,6 @@ static LEXEME* read_strings(LEXEME* lex, INITIALIZER** next, AGGREGATE_DESCRIPTO
     TYPE* btp = basetype(tp->btp);
     int max = tp->size / btp->size;
     int j;
-    EXPRESSION* expr;
     STRING* string = NULL;
     int index = 0;
     int i;
@@ -2657,7 +2654,6 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
             TYPE* ctype = itype;
             INITIALIZER* it = NULL;
             bool maybeConversion = true;
-            bool isconversion;
             bool isList = MATCHKW(lex, begin);
             bool constructed = false;
             exp = baseexp;
@@ -3083,7 +3079,7 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
             INITIALIZER* test = *init;
             INITIALIZER* testd = *dest;
             INITIALIZER *first = NULL, **push = &first;
-            int last = 0, i;
+            int last = 0;
             for (; test || last < itype->size;)
             {
                 if ((test && last < test->offset) || (!test && last < itype->size))
@@ -3180,7 +3176,6 @@ static LEXEME* initialize_bit(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_sc
 static LEXEME* initialize_auto(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_sc sc, TYPE* itype, INITIALIZER** init,
                                INITIALIZER** dest, SYMBOL* sp)
 {
-    TYPE* tp;
     EXPRESSION* exp;
     bool needend = false;
     if (MATCHKW(lex, begin))
@@ -3253,7 +3248,7 @@ static LEXEME* initialize_auto(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_s
         if (cparams.prm_cplusplus && isstructured(sp->tp))
         {
 
-            INITIALIZER *dest = NULL, *it;
+            INITIALIZER *dest = NULL;
             EXPRESSION* expl = getThisNode(sp);
             initInsert(init, sp->tp, exp, offset, false);
             if (sp->storage_class != sc_auto && sp->storage_class != sc_parameter && sp->storage_class != sc_member &&

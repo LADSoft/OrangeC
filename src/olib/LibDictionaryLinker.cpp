@@ -61,7 +61,7 @@ ObjInt LibDictionary::Lookup(FILE* stream, ObjInt dictionaryOffset, ObjInt dicti
         ObjByte* q = buf.get();
         fseek(stream, dictionaryOffset, SEEK_SET);
         fread(q, size, 1, stream);
-        char sig[4] = {'1', '0', 0, 0}, sig1[4];
+        char sig[4] = {'1', '0', 0, 0};
         if (!memcmp(sig, q, 4))
         {
             int len;

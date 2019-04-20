@@ -5022,7 +5022,6 @@ void asm_functail(QUAD* q, int begin, int size) /* functail start or end */
 }
 void asm_atomic(QUAD* q)
 {
-    bool pushed;
     int needsync = q->dc.opcode != i_xchg ? q->dc.left->offset->v.i : 0; 
     if (needsync < 0)
         needsync = 0;

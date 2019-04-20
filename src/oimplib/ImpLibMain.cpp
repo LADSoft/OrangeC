@@ -113,7 +113,7 @@ void ImpLibMain::AddFile(LibManager& librarian, const char* arg)
                     if (n != std::string::npos && (n == 0 || inputFile[n - 1] != '.'))
                     {
                         std::string ext = inputFile.substr(n);
-                        for (int i = 0; i < ext.size(); ++i)
+                        for (size_t i = 0; i < ext.size(); ++i)
                         {
                             ext[i] = tolower(ext[i]);
                         }
@@ -200,7 +200,7 @@ std::string ImpLibMain::GetInputFile(int argc, char** argv, bool& def)
     else
     {
         std::string ext = name.substr(npos);
-        for (int i = 0; i < ext.size(); i++)
+        for (size_t i = 0; i < ext.size(); i++)
             ext[i] = toupper(ext[i]);
         if (ext == ".DEF")
             def = true;
@@ -398,7 +398,7 @@ int ImpLibMain::Run(int argc, char** argv)
     else if (n != std::string::npos)
     {
         std::string ext = outputFile.substr(n);
-        for (int i = 0; i < ext.size(); ++i)
+        for (size_t i = 0; i < ext.size(); ++i)
         {
             ext[i] = tolower(ext[i]);
         }

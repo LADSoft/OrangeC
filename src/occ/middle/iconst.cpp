@@ -113,7 +113,7 @@ static void ReassignCompare(QUAD* d, int yes, bool reflow)
     }
     if (d->dc.opcode >= i_jne)
     {
-        BLOCKLIST *b, *n;
+        BLOCKLIST *b;
         if (yes)
         {
             d->dc.opcode = i_goto;
@@ -1446,7 +1446,6 @@ static bool evalBranch(QUAD* I, BLOCK* b)
         found = true;
         switch (I->dc.opcode)
         {
-            int mode;
             case i_jc:
             case i_ja:
             case i_jnc:
@@ -1725,7 +1724,6 @@ static void removeForward(BLOCK* start)
     {
         switch (tail->dc.opcode)
         {
-            BLOCKLIST** erasel;
             int con;
             case i_jc:
             case i_ja:

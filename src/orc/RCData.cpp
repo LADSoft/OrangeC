@@ -48,7 +48,7 @@ void RCData::ReadRC(RCFile& rcFile)
     resInfo.SetFlags((resInfo.GetFlags() & ~ResourceInfo::Discardable) | ResourceInfo::Pure);
     resInfo.ReadRC(rcFile, false);
 
-    const Token* t = rcFile.GetToken();
+    std::shared_ptr<Token> t = rcFile.GetToken();
     if (t->GetKeyword() != Lexer::BEGIN)
     {
         data.push_back(std::make_unique<ResourceData>());

@@ -88,7 +88,7 @@ void Listing::ListLine(std::fstream& out, std::string& line, ListedLine* cur, bo
                 outputLine += ss + ": ";
             }
             FixupContainer* fixups = cur->ins->GetFixups();
-            int z = 0;
+            size_t z = 0;
             bool first = true;
             int top = size;
             if (fixups->size() > z)

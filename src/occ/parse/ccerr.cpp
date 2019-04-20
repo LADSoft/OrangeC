@@ -1629,8 +1629,6 @@ static void validateGotos(VLASHIM* shim, VLASHIM* root)
 {
     while (shim)
     {
-        VLASHIM* selected;
-        LIST* prev;
         switch (shim->type)
         {
             case v_blockstart:

@@ -48,7 +48,7 @@ class RCFile
     virtual ~RCFile() {}
 
     void NextToken() { lexer.NextToken(); }
-    const Token* GetToken() { return lexer.GetToken(); }
+    std::shared_ptr<Token> GetToken() { return lexer.GetToken(); }
     bool IsKeyword();
     unsigned GetTokenId();
     bool IsNumber();

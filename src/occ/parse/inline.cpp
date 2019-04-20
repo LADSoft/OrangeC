@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "compiler.h"
@@ -71,9 +71,9 @@ static void inInsert(SYMBOL* sp)
 {
     // assumes the symbol isn't already there...
     HASHREC** hr = GetHashLink(didInlines, sp->decoratedName);
-    HASHREC* added = (HASHREC *)Alloc(sizeof(HASHREC));
+    HASHREC* added = (HASHREC*)Alloc(sizeof(HASHREC));
     sp->mainsym = NULL;
-    added->p = (struct sym *)sp;
+    added->p = (struct sym*)sp;
     added->next = *hr;
     *hr = added;
 }
@@ -111,7 +111,8 @@ void dumpInlines(void)
                 SYMBOL* sym = (SYMBOL*)funcList->data;
                 if (((sym->isInline && sym->dumpInlineToFile) || sym->genreffed))
                 {
-                    if ((sym->parentClass && sym->parentClass->dontinstantiate && !sym->templateLevel) || sym->attribs.inheritable.linkage2 == lk_import)
+                    if ((sym->parentClass && sym->parentClass->dontinstantiate && !sym->templateLevel) ||
+                        sym->attribs.inheritable.linkage2 == lk_import)
                     {
                         sym->dontinstantiate = true;
                         InsertExtern(sym);
@@ -186,7 +187,7 @@ void dumpInlines(void)
                     LIST* instants = parentTemplate->instantiations;
                     while (instants)
                     {
-                        if (TemplateInstantiationMatch((SYMBOL *)instants->data, sym->parentClass))
+                        if (TemplateInstantiationMatch((SYMBOL*)instants->data, sym->parentClass))
                         {
                             parentTemplate = (SYMBOL*)instants->data;
                             break;
@@ -325,7 +326,7 @@ SYMBOL* getvc1Thunk(int offset)
     rv = search(name, vc1Thunks);
     if (!rv)
     {
-        rv = (SYMBOL *)Alloc(sizeof(SYMBOL));
+        rv = (SYMBOL*)Alloc(sizeof(SYMBOL));
         rv->name = rv->errname = rv->decoratedName = litlate(name);
         rv->storage_class = sc_static;
         rv->linkage = lk_virtual;
@@ -337,7 +338,7 @@ SYMBOL* getvc1Thunk(int offset)
 }
 void InsertInline(SYMBOL* sp)
 {
-    LIST* temp = (LIST *)Alloc(sizeof(LIST));
+    LIST* temp = (LIST*)Alloc(sizeof(LIST));
     temp->data = sp;
     if (isfunction(sp->tp))
     {
@@ -357,7 +358,7 @@ void InsertInline(SYMBOL* sp)
 void InsertInlineData(SYMBOL* sp)
 {
 
-    LIST* temp = (LIST *)Alloc(sizeof(LIST));
+    LIST* temp = (LIST*)Alloc(sizeof(LIST));
     temp->data = sp;
     if (inlineDataHead)
         inlineDataTail = inlineDataTail->next = temp;
@@ -373,13 +374,13 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
      * Used because we have to munge the block_nesting field (value.i) of each
      * sp in an inline function to force allocation of the variables
      */
-    EXPRESSION *temp, *temp1;
+    EXPRESSION *temp;
     FUNCTIONCALL* fp;
     int i;
     (void)fromlval;
     if (node == 0)
         return 0;
-    temp = (EXPRESSION*)(EXPRESSION *)Alloc(sizeof(EXPRESSION));
+    temp = (EXPRESSION*)(EXPRESSION*)Alloc(sizeof(EXPRESSION));
     memcpy(temp, node, sizeof(EXPRESSION));
     switch (temp->type)
     {
@@ -635,13 +636,13 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
             {
                 INITLIST* args = fp->arguments;
                 INITLIST** p;
-                temp->v.func = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
+                temp->v.func = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
                 *temp->v.func = *fp;
                 p = &temp->v.func->arguments;
                 *p = NULL;
                 while (args)
                 {
-                    *p = (INITLIST *)Alloc(sizeof(INITLIST));
+                    *p = (INITLIST*)Alloc(sizeof(INITLIST));
                     **p = *args;
                     (*p)->exp = inlineexpr((*p)->exp, nullptr);
                     args = args->next;
@@ -669,7 +670,7 @@ STATEMENT* inlinestmt(STATEMENT* block)
     STATEMENT *out = NULL, **outptr = &out;
     while (block != NULL)
     {
-        *outptr = (STATEMENT*)(STATEMENT *)Alloc(sizeof(STATEMENT));
+        *outptr = (STATEMENT*)(STATEMENT*)Alloc(sizeof(STATEMENT));
         memcpy(*outptr, block, sizeof(STATEMENT));
         (*outptr)->next = NULL;
         switch (block->type)
@@ -708,7 +709,7 @@ STATEMENT* inlinestmt(STATEMENT* block)
             case st_passthrough:
                 if (block->lower)
                     if (chosenAssembler->inlineAsmStmt)
-                        block->lower = (STATEMENT *)(*chosenAssembler->inlineAsmStmt)(block->lower);
+                        block->lower = (STATEMENT*)(*chosenAssembler->inlineAsmStmt)(block->lower);
                 break;
             case st_nop:
                 break;
@@ -1086,7 +1087,7 @@ static void setExp(SYMBOL* sx, EXPRESSION* exp, STATEMENT*** stp)
         deref(sx->tp, &tnode);
         sx->inlineFunc.stmt = (STATEMENT*)tnode;
         tnode = exprNode(en_assign, tnode, exp);
-        **stp = (STATEMENT *)Alloc(sizeof(STATEMENT));
+        **stp = (STATEMENT*)Alloc(sizeof(STATEMENT));
         (**stp)->type = st_expr;
         (**stp)->select = tnode;
         *stp = &(**stp)->next;
@@ -1192,7 +1193,7 @@ EXPRESSION* doinline(FUNCTIONCALL* params, SYMBOL* funcsp)
     if (stmt1)
     {
         // this will kill the ret val but we don't care since we've modified params
-        stmt = (STATEMENT *)Alloc(sizeof(STATEMENT));
+        stmt = (STATEMENT*)Alloc(sizeof(STATEMENT));
         stmt->type = st_block;
         stmt->lower = stmt1;
     }
@@ -1283,17 +1284,16 @@ static bool IsEmptyBlocks(STATEMENT* block)
 }
 bool IsEmptyFunction(FUNCTIONCALL* params, SYMBOL* funcsp)
 {
-    STATEMENT* st;
     if (!isfunction(params->functp))
         return false;
     if (!params->sp->inlineFunc.stmt)
         return false;
-    st = params->sp->inlineFunc.stmt;
+    STATEMENT* st = params->sp->inlineFunc.stmt;
     while (st && st->type == st_expr)
     {
         st = st->next;
     }
     if (!st)
         return true;
-    return true || IsEmptyBlocks(st);
+    return true || IsEmptyBlocks(st);  // always returns true?
 }

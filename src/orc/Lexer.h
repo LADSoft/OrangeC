@@ -146,7 +146,7 @@ class Lexer
     ~Lexer() {}
 
     std::string GetRestOfLine();
-    const Token* GetToken() { return token; }
+    std::shared_ptr<Token> GetToken() { return token; }
     void NextToken();
     void Reset(const std::string& line)
     {
@@ -164,7 +164,7 @@ class Lexer
     bool atEol;
     bool atEof;
     Tokenizer* tokenizer;
-    const Token* token;
+    std::shared_ptr<Token> token;
     static KeywordHash hash;
 };
 #endif  // Lexer_h

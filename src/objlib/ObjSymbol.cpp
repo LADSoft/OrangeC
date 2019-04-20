@@ -21,7 +21,7 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  * 
  */
-
+#define _CRT_SECURE_NO_WARNINGS
 #include "ObjExpression.h"
 #include "ObjSymbol.h"
 #include <cctype>
@@ -91,7 +91,7 @@ static char manglenames[MAX_MANGLE_NAME_COUNT][512];
 
 const char* unmang_intrins(char* buf, const char* name, const char* last)
 {
-    char cur[4096], *p = cur, *q;
+    char cur[4096], *p = cur;
     int i;
     *p++ = *name++;  // past the '$'
     while (*name != '@' && *name != '$' && *name)
@@ -621,7 +621,6 @@ const char* unmang1(char* buf, const char* name, const char* last, bool tof)
             strcat(buf, tn_volatile);
     }
 
-start:
     if (isdigit(*name))
     {
         const char* s = buf;
@@ -1031,7 +1030,6 @@ start:
 
 static const char* unmangcpptype(char* buf, const char* name, const char* last)
 {
-    int i;
     *buf++ = '<';
     while (*name && *name != '$' && *name != '@' && *name != '#')
     {

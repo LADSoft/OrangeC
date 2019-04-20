@@ -179,7 +179,6 @@ void debug_outputtypedef(SYMBOL* sp) { typedefs.push_back(sp); }
 
 void outcode_file_init(void)
 {
-    int i;
     instructionParser = InstructionParser::GetInstance();
     adjustUsesESP();
     lastIncludeNum = 0;
@@ -201,7 +200,6 @@ void outcode_file_init(void)
 
 void outcode_func_init(void)
 {
-    int i;
 #define NOP 0x90
 }
 

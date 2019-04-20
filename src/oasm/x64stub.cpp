@@ -441,7 +441,7 @@ bool x64Parser::ParseDirective(AsmFile* fil, Section* sect)
         fil->NextToken();
         if (fil->IsNumber())
         {
-            int n = static_cast<const NumericToken*>(fil->GetToken())->GetInteger();
+            int n = std::static_pointer_cast<NumericToken>(fil->GetToken())->GetInteger();
             if (n == 16 || n == 32 || n == 64)
             {
                 sect->beValues[0] = n;

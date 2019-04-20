@@ -26,13 +26,13 @@ class Semaphore
     bool null = true;
 
   public:
-    Semaphore() : null(true) {}
+    Semaphore() : null(true), handle(), named(false) {}
     Semaphore(int value) : named(false)
     {
-        semaphore_type sem;
 #ifdef _WIN32
         handle = CreateSemaphore(nullptr, value, value, nullptr);
 #elif defined(__linux__)
+        semaphore_type sem;
         sem_init(&sem, 0, value);
         handle = &sem;
 #endif

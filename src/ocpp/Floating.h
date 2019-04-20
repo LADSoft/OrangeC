@@ -146,22 +146,22 @@ class FPF
         type = right.type;
         return *this;
     }
-    FPF& operator=(long long right)
+    FPF& operator=(const long long& right)
     {
         FromLongLong(right);
         return *this;
     }
-    FPF& operator=(unsigned long long right)
+    FPF& operator=(const unsigned long long& right)
     {
         FromUnsignedLongLong(right);
         return *this;
     }
-    FPF& operator=(int right)
+    FPF& operator=(const int& right)
     {
         FromLongLong(right);
         return *this;
     }
-    FPF& operator=(unsigned right)
+    FPF& operator=(const unsigned& right)
     {
         FromUnsignedLongLong(right);
         return *this;
@@ -204,10 +204,10 @@ class FPF
     void Init();
 
   private:
-    int exp; /* Signed exponent...no bias */
-    u16 mantissa[INTERNAL_FPF_PRECISION];
-    u8 type; /* Indicates, NORMAL, SUBNORMAL, etc. */
-    u8 sign; /* Mantissa sign */
+    int exp = 0; /* Signed exponent...no bias */
+    u16 mantissa[INTERNAL_FPF_PRECISION] = {0};
+    u8 type = 0; /* Indicates, NORMAL, SUBNORMAL, etc. */
+    u8 sign = 0; /* Mantissa sign */
     static bool bigEndian;
     static FPF tensTab[10];
     static bool initted;

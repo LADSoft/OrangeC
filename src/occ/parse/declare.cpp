@@ -1840,7 +1840,6 @@ static LEXEME* getPointerQualifiers(LEXEME* lex, TYPE** tp, bool allowstatic)
     while (KWTYPE(lex, TT_TYPEQUAL) || (allowstatic && MATCHKW(lex, kw_static)))
     {
         TYPE* tpn;
-        TYPE* tpl;
         if (MATCHKW(lex, kw__intrinsic))
         {
             lex = getsym();
@@ -2118,7 +2117,6 @@ LEXEME* getBasicType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** strSym_out
     TYPE* tn = NULL;
     TYPE* quals = NULL;
     TYPE** tl;
-    bool extended;
     bool iscomplex = false;
     bool imaginary = false;
     bool flagerror = false;

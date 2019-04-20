@@ -2474,7 +2474,7 @@ static LEXEME* asm_declare(LEXEME* lex)
             }
             lex = getsym();
         }
-    } while (lex && MATCHKW(lex, comma));
+    } while (MATCHKW(lex, comma));
     return lex;
 }
 LEXEME* statement_catch(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, int label, int startlab, int endlab)
@@ -2605,7 +2605,7 @@ LEXEME* statement_asm(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
         else
         {
             currentLineData(parent, lex, 0);
-            while (cparams.prm_assemble && lex && MATCHKW(lex, semicolon))
+            while (cparams.prm_assemble && MATCHKW(lex, semicolon))
                 lex = SkipToNextLine();
             if (lex)
             {

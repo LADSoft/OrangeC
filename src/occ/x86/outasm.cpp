@@ -195,7 +195,6 @@ void oa_putconst(int op, int sz, EXPRESSION* offset, bool doSign)
 {
     char buf[4096];
     SYMBOL* sp;
-    int toffs;
     switch (offset->type)
     {
         int m;
@@ -1419,7 +1418,6 @@ void dump_muldivval(void)
                 bePrintf("\tdd\t0%xh\n", muldivlink->value);
             else
             {
-                char buf[256];
                 UBYTE data[12];
                 int len = 0;
                 int i;

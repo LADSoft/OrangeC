@@ -33,7 +33,7 @@
 
 void LibFiles::Add(ObjFile& obj)
 {
-    for (int i = 0; i < files.size(); i++)
+    for (size_t i = 0; i < files.size(); i++)
         if (files[i]->name == obj.GetName())
         {
             std::cout << "Warning: module '" << files[i]->name << "' already exists in library, it won't be added"
@@ -52,7 +52,7 @@ void LibFiles::Add(const ObjString& Name)
     std::string internalName = Name;
     if (npos != std::string::npos)
         internalName = Name.substr(npos + 1);
-    for (int i = 0; i < files.size(); i++)
+    for (size_t i = 0; i < files.size(); i++)
         if (files[i]->name == internalName)
         {
             std::cout << "Warning: module '" << Name << "' already exists in library, it won't be added" << std::endl;

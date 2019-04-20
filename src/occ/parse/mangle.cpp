@@ -595,7 +595,6 @@ static char* getName(char* in, SYMBOL* sp)
     }
     else
     {
-        int i;
         char buf[4096], *p;
         p = mangleClasses(buf, sp->parentClass);
         if (p != buf)
@@ -617,7 +616,6 @@ static char* getName(char* in, SYMBOL* sp)
 char* mangleType(char* in, TYPE* tp, bool first)
 {
     char nm[4096];
-    int i;
     HASHREC* hr;
     if (!tp)
     {
@@ -950,7 +948,7 @@ void SetLinkerNames(SYMBOL* sym, enum e_lk linkage)
             p = mangleNameSpaces(p, lastParent->parentNameSpace);
             p = mangleClasses(p, sym->parentClass);
             *p++ = '@';
-            if (sym->templateLevel && sym->templateParams && sym->templateParams)
+            if (sym->templateLevel && sym->templateParams)
             {
                 p = mangleTemplate(p, sym, sym->templateParams);
             }

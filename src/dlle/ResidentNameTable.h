@@ -32,7 +32,7 @@
 class ResidentNameTable
 {
   public:
-    ResidentNameTable(const std::string& FileName) : fileName(FileName) {}
+    ResidentNameTable(const std::string& FileName) : fileName(FileName), size(0), data(""), entryOffset(0) {}
     virtual ~ResidentNameTable() { }
     unsigned GetEntrySize() { return entryOffset; }
     unsigned GetSize() { return size; }
@@ -41,7 +41,7 @@ class ResidentNameTable
 
   private:
     std::string fileName;
-    std::unique_ptr<char[]> data;
+    std::string data;
     int entryOffset;
     int size;
 };

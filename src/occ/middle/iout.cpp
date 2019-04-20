@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 /*
@@ -566,7 +566,7 @@ static void iop_clrblock(QUAD* q)
     putamode(q, q->dc.right);
     oprintf(icdFile, ")");
 }
-static void iop_cmpblock(QUAD *q)
+static void iop_cmpblock(QUAD* q)
 {
     if (chosenAssembler->gen->asm_cmpblock)
         chosenAssembler->gen->asm_cmpblock(q);
@@ -880,14 +880,12 @@ static void iop_blockend(QUAD* q)
     oprintf(icdFile, "\tBLOCK END");
     if (q->dc.v.data)
     {
-        int i, j;
-        BITINT* p;
         oprintf(icdFile, "\n;\tLive: ");
-        p = (BITINT *)q->dc.v.data;
+        BITINT* p = (BITINT*)q->dc.v.data;
 
-        for (i = 0; i < (tempCount + BITINTBITS - 1) / BITINTBITS; i++, p++)
+        for (int i = 0; i < (tempCount + BITINTBITS - 1) / BITINTBITS; i++, p++)
             if (*p)
-                for (j = 0; j < BITINTBITS; j++)
+                for (int j = 0; j < BITINTBITS; j++)
                     if ((*p) & (1 << j))
                         oprintf(icdFile, "TEMP%d, ", i * BITINTBITS + j);
     }
@@ -1143,7 +1141,7 @@ static void iop_cmpswp(QUAD* q)
     oputc(',', icdFile);
     putamode(q, q->dc.right);
 }
-static void iop_xchg(QUAD *q)
+static void iop_xchg(QUAD* q)
 {
     if (chosenAssembler->gen->asm_atomic)
         chosenAssembler->gen->asm_atomic(q);
@@ -1268,14 +1266,13 @@ static void (*oplst[])(QUAD* q) = {
 /*-------------------------------------------------------------------------*/
 void beDecorateSymName(char* buf, SYMBOL* sp)
 {
-    const char* q;
     if (sp->attribs.uninheritable.alias)
     {
         strcpy(buf, sp->attribs.uninheritable.alias);
     }
     else
     {
-        q = lookupAlias(sp->name);
+        const char* q = lookupAlias(sp->name);
         if (q)
             strcpy(buf, q);
         else
@@ -1360,13 +1357,11 @@ void putconst(EXPRESSION* offset, int color)
         case en_c_string:
             if (offset->string)
             {
-                int i;
                 oputc('"', icdFile);
-                for (i = 0; i < offset->string->size; i++)
+                for (int i = 0; i < offset->string->size; i++)
                 {
                     SLCHAR* s = offset->string->pointers[i];
-                    int j;
-                    for (j = 0; j < s->count; j++)
+                    for (int j = 0; j < s->count; j++)
                         oputc(s->str[j], icdFile);
                 }
                 oputc('"', icdFile);
@@ -1600,7 +1595,6 @@ void put_code(QUAD* q)
  *      output a generic instruction.
  */
 {
-    int i;
     if (q->block && q->block->head == q)
     {
         oprintf(icdFile, "block %d\n", q->block->blocknum);
@@ -2345,7 +2339,7 @@ void gen_labdifref(int n1, int n2)
     if (chosenAssembler->gen->gen_labdifref)
         chosenAssembler->gen->gen_labdifref(n1, n2);
     if (!icdFile)
-        return;
+        return;  // Is this intentional?
     {
         if (gentype == longgen && outcol < 58)
         {
@@ -2703,7 +2697,7 @@ int put_exfunc(SYMBOL* sp, int notyet)
     if (chosenAssembler->gen->extern_define)
         chosenAssembler->gen->extern_define(sp, sp->tp->type == bt_func || sp->tp->type == bt_ifunc);
     if (sp->attribs.inheritable.linkage2 == lk_import && chosenAssembler->gen->import_define)
-        chosenAssembler->gen->import_define(sp, sp->importfile ? sp->importfile : (char *)"");
+        chosenAssembler->gen->import_define(sp, sp->importfile ? sp->importfile : (char*)"");
     DecGlobalFlag();
     if (!icdFile)
         return notyet;
@@ -2739,8 +2733,6 @@ void putexterns(void)
  * Output the fixup tables and the global/external list
  */
 {
-    SYMBOL* sp;
-    int i;
     {
         int notyet = true;
         LIST* externList = externals;
@@ -2748,20 +2740,20 @@ void putexterns(void)
         exitseg();
         while (globalCache)
         {
-            SYMBOL* sp = (SYMBOL *)globalCache->data;
+            SYMBOL* sp = (SYMBOL*)globalCache->data;
             globaldef(sp);
             globalCache = globalCache->next;
         }
         while (externList)
         {
-            SYMBOL* sp = (SYMBOL *)externList->data;
-           if (!sp->ispure &&
+            SYMBOL* sp = (SYMBOL*)externList->data;
+            if (!sp->ispure &&
                 ((sp->dontinstantiate && sp->genreffed) ||
                  (!sp->inlineFunc.stmt && !sp->init &&
-                     (isfunction(sp->tp) || (!isfunction(sp->tp) && sp->storage_class != sc_global &&
-                                                sp->storage_class != sc_static && sp->storage_class != sc_localstatic)) &&
-                     ((sp->parentClass && sp->genreffed) || (sp->genreffed && sp->storage_class == sc_external)))) &&
-                    !sp->noextern)
+                  (isfunction(sp->tp) || (!isfunction(sp->tp) && sp->storage_class != sc_global && sp->storage_class != sc_static &&
+                                          sp->storage_class != sc_localstatic)) &&
+                  ((sp->parentClass && sp->genreffed) || (sp->genreffed && sp->storage_class == sc_external)))) &&
+                !sp->noextern)
             {
                 notyet = put_exfunc(sp, notyet);
                 sp->genreffed = false;
@@ -2775,7 +2767,7 @@ void putexterns(void)
         while (libincludes)
         {
             if (chosenAssembler->gen->output_includelib)
-                chosenAssembler->gen->output_includelib((char *)libincludes->data);
+                chosenAssembler->gen->output_includelib((char*)libincludes->data);
 
             oprintf(icdFile, "\tINCLUDELIB\t%s\n", libincludes->data);
             libincludes = libincludes->next;

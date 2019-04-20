@@ -176,7 +176,6 @@ IMODE* set_symbol(const char* name, int isproc)
     sp = gsearch(name);
     if (sp == 0)
     {
-        LIST* l1;
         IncGlobalFlag();
         sp = (SYMBOL*)(SYMBOL *)Alloc(sizeof(SYMBOL));
         sp->storage_class = sc_external;
@@ -331,7 +330,6 @@ void genxswitch(STATEMENT* stmt, SYMBOL* funcsp)
     ap = LookupLoadTemp(NULL, ap3);
     if (ap != ap3)
     {
-        IMODE* barrier;
 //        if (stmt->select->isatomic)
 //        {
 //            barrier = doatomicFence(funcsp, NULL, stmt->select, NULL);
@@ -529,7 +527,6 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, IMODE*
             ap = LookupLoadTemp(NULL, ap3);
             if (ap != ap3)
             {
-                IMODE* barrier;
 //                if (stmt->select->isatomic)
 //                {
 //                    barrier = doatomicFence(funcsp, NULL, stmt->select, NULL);
@@ -576,7 +573,7 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, IMODE*
         {
             retsize = funcsp->paramsize;
         }
-        if (1 || !inlinesym_count || (!noepilogue && funcsp->retcount > 1))
+        if (!inlinesym_count || (!noepilogue && funcsp->retcount > 1))// originally was always true, removing as a test
         {
             gen_label(retlab);
         }

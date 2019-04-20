@@ -188,7 +188,7 @@ bool PreProcessor::GetLine(std::string& line)
                         if (trigraphs)
                             line = StripDigraphs(line);
                         Tokenizer tk(line.substr(n + 1), &hash);
-                        const Token* t = tk.Next();
+                        std::shared_ptr<Token> t = tk.Next();
                         if (t->IsKeyword())
                         {
                             if (t->GetKeyword() == ASSIGN || t->GetKeyword() == IASSIGN)

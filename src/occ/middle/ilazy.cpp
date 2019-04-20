@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <stdio.h>
@@ -121,7 +121,6 @@ static void complementmap(BITINT* dest)
 }
 static void setmap(BITINT* dest, bool val)
 {
-    int i;
     int v = val ? 0xff : 0;
     int n = (termCount + BITINTBITS - 1) / BITINTBITS * sizeof(BITINT);
     memset(dest, v, n);
@@ -231,8 +230,6 @@ void SetunMoveableTerms(void)
 }
 static void CalculateUses(void)
 {
-    int i, j;
-    BLOCK* b;
     QUAD *head, *tail;
     setmap(tempBytes, true);
     tail = intermed_tail;
@@ -286,7 +283,6 @@ static void CalculateUses(void)
 static void CalculateTransparent(void)
 {
     int n = (termCount + BITINTBITS - 1) / BITINTBITS;
-    int i, j, k;
     QUAD *head, *tail;
     tail = intermed_tail;
     while (!tail->OCP)
@@ -312,7 +308,7 @@ static void CalculateTransparent(void)
                 next = next->fwd;
             }
             complementmap(tempBytes3);
-            for (i = 0; i < termCount; i++)
+            for (int i = 0; i < termCount; i++)
                 if (!isset(tempBytes3, i) && tempInfo[termMapUp[i]]->terms)
                 {
                     andmap(tail->transparent, tempInfo[termMapUp[i]]->terms);
@@ -323,7 +319,7 @@ static void CalculateTransparent(void)
             setmap(tempBytes, false);
             AliasStruct(tempBytes, tail->ans, tail->dc.left, tail->dc.right);
             complementmap(tempBytes);
-            for (i = 0; i < termCount; i++)
+            for (int i = 0; i < termCount; i++)
             {
                 if (!isset(tempBytes, i))
                 {
@@ -372,7 +368,7 @@ static void CalculateTransparent(void)
             {
                 setmap(tempBytes, false);
                 AliasUses(tempBytes, tail->ans, true);
-                for (i = 0; i < termCount; i++)
+                for (int i = 0; i < termCount; i++)
                 {
                     if (isset(tempBytes, i))
                     {
@@ -826,7 +822,7 @@ static void HandleOCP(QUAD* after, int tn)
     {
         QUAD* p = (QUAD*)(tempInfo[tn]->idefines->data);
         QUAD* tail = after;
-        QUAD* ins = (QUAD *)Alloc(sizeof(QUAD));
+        QUAD* ins = (QUAD*)Alloc(sizeof(QUAD));
         QUAD* bans;
         bool a = false, l = false;
         if (after->dc.opcode != i_block && after->dc.opcode != i_label)
@@ -874,7 +870,7 @@ static void HandleOCP(QUAD* after, int tn)
         ins->block = after->block;
         if (after == after->block->tail)
             after->block->tail = ins;
-        bans = (QUAD *)Alloc(sizeof(QUAD));
+        bans = (QUAD*)Alloc(sizeof(QUAD));
         bans->ans = tempInfo[tn]->copy;
         bans->dc.left = ins->ans;
         bans->dc.opcode = i_assn;
@@ -906,8 +902,8 @@ static IMODE* GetROVar(IMODE* oldvar, IMODE* newvar, bool mov)
         }
         if (!iml)
         {
-            IMODELIST* iml2 = (IMODELIST *)Alloc(sizeof(IMODELIST));
-            im = (IMODE *)Alloc(sizeof(IMODE));
+            IMODELIST* iml2 = (IMODELIST*)Alloc(sizeof(IMODELIST));
+            im = (IMODE*)Alloc(sizeof(IMODE));
             *im = *newvar;
             im->mode = i_ind;
             im->size = oldvar->size;
@@ -977,15 +973,13 @@ static void HandleRO(QUAD* after, int tn)
 }
 static void MoveExpressions(void)
 {
-    int i, j;
-    for (i = 0; i < termCount; i++)
+    for (int i = 0; i < termCount; i++)
     {
         if (isset(ocpTerms, i))
         {
-            int j;
             int size = tempInfo[termMapUp[i]]->enode->v.sp->imvalue->size;
             tempInfo[termMapUp[i]]->copy = InitTempOpt(size, size);
-            for (j = 0; j < blocks; j++)
+            for (int j = 0; j < blocks; j++)
             {
 
                 QUAD* head = forwardOrder[j]->head;
@@ -1003,12 +997,11 @@ static void MoveExpressions(void)
             }
         }
     }
-    for (i = 0; i < termCount; i++)
+    for (int i = 0; i < termCount; i++)
     {
         if (isset(ocpTerms, i))
         {
-            int j;
-            for (j = 0; j < blocks; j++)
+            for (int j = 0; j < blocks; j++)
             {
 
                 QUAD* head = forwardOrder[j]->head;
@@ -1028,15 +1021,14 @@ static void MoveExpressions(void)
 void RearrangePrecolors(void)
 {
     QUAD* head = intermed_head;
-    int i;
-    for (i = 0; i < tempCount; i++)
+    for (int i = 0; i < tempCount; i++)
         tempInfo[i]->temp = -1;
     while (head)
     {
         if ((head->precolored & TEMP_ANS) && !head->ans->retval)
         {
-            QUAD* newIns = (QUAD *)Alloc(sizeof(QUAD));
-            i = head->ans->offset->v.sp->value.i;
+            QUAD* newIns = (QUAD*)Alloc(sizeof(QUAD));
+            long long i = head->ans->offset->v.sp->value.i;
             if (tempInfo[i]->temp < 0)
             {
                 IMODE* newImode = InitTempOpt(head->ans->size, head->ans->size);
@@ -1054,8 +1046,8 @@ void RearrangePrecolors(void)
         }
         if ((head->precolored & TEMP_LEFT) && !head->dc.left->retval)
         {
-            QUAD* newIns = (QUAD *)Alloc(sizeof(QUAD));
-            i = head->dc.left->offset->v.sp->value.i;
+            QUAD* newIns = (QUAD*)Alloc(sizeof(QUAD));
+            long long i = head->dc.left->offset->v.sp->value.i;
             if (tempInfo[i]->temp < 0)
             {
                 IMODE* newImode = InitTempOpt(head->dc.left->size, head->dc.left->size);
@@ -1073,8 +1065,8 @@ void RearrangePrecolors(void)
         }
         if ((head->precolored & TEMP_RIGHT) && !head->dc.right->retval)
         {
-            QUAD* newIns = (QUAD *)Alloc(sizeof(QUAD));
-            i = head->dc.right->offset->v.sp->value.i;
+            QUAD* newIns = (QUAD*)Alloc(sizeof(QUAD));
+            long long i = head->dc.right->offset->v.sp->value.i;
             if (tempInfo[i]->temp < 0)
             {
                 IMODE* newImode = InitTempOpt(head->dc.right->size, head->dc.right->size);
@@ -1096,13 +1088,12 @@ void RearrangePrecolors(void)
 }
 static void PadBlocks(void)
 {
-    int i;
-    for (i = 0; i < blockCount; i++)
+    for (int i = 0; i < blockCount; i++)
     {
         BLOCK* b = blockArray[i];
         if (b && b->head == b->tail)
         {
-            QUAD* ins = (QUAD *)Alloc(sizeof(QUAD));
+            QUAD* ins = (QUAD*)Alloc(sizeof(QUAD));
             ins->dc.opcode = i_blockend;
             InsertInstruction(b->head, ins);
         }
@@ -1111,14 +1102,13 @@ static void PadBlocks(void)
 static int fgc(enum e_fgtype type, BLOCK* parent, BLOCK* b) { return true; }
 void SetGlobalTerms(void)
 {
-    int i, j;
     termCount = 0;
-    for (i = 0; i < tempCount; i++)
+    for (int i = 0; i < tempCount; i++)
         if (tempInfo[i]->inUse)
             termCount++;
-    termMap = (unsigned short *) Alloc(sizeof(unsigned short) * tempCount);
-    termMapUp = (unsigned short *)Alloc(sizeof(unsigned short) * termCount);
-    for (i = 0, j = 0; i < tempCount; i++)
+    termMap = (unsigned short*)Alloc(sizeof(unsigned short) * tempCount);
+    termMapUp = (unsigned short*)Alloc(sizeof(unsigned short) * termCount);
+    for (int i = 0, j = 0; i < tempCount; i++)
         if (tempInfo[i]->inUse)
         {
             termMap[i] = j;
@@ -1128,15 +1118,14 @@ void SetGlobalTerms(void)
 }
 void GlobalOptimization(void)
 {
-    int i;
     PadBlocks();
     forwardOrder = (BLOCK**)oAlloc(sizeof(BLOCK*) * blockCount);
     blocks = 0;
-    for (i = 0; i < blockCount; i++)
+    for (int i = 0; i < blockCount; i++)
         if (blockArray[i])
             blockArray[i]->visiteddfst = false;
     forwardOrder[blocks++] = blockArray[0];
-    for (i = 0; i < blocks; i++)
+    for (int i = 0; i < blocks; i++)
     {
         BLOCK* b = forwardOrder[i];
         BLOCKLIST* bl = b->succ;
@@ -1152,11 +1141,11 @@ void GlobalOptimization(void)
     }
     reverseOrder = (BLOCK**)oAlloc(sizeof(BLOCK*) * blockCount);
     blocks = 0;
-    for (i = 0; i < blockCount; i++)
+    for (int i = 0; i < blockCount; i++)
         if (blockArray[i])
             blockArray[i]->visiteddfst = false;
     reverseOrder[blocks++] = blockArray[exitBlock];
-    for (i = 0; i < blocks; i++)
+    for (int i = 0; i < blocks; i++)
     {
         BLOCK* b = reverseOrder[i];
         BLOCKLIST* bl = b->pred;

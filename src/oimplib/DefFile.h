@@ -141,7 +141,7 @@ class DefFile
     unsigned stackSize;
     unsigned heapSize;
     Tokenizer tokenizer;
-    const Token* token;
+    std::shared_ptr<Token> token;
     std::fstream stream;
     int lineno;
     bool cdll;

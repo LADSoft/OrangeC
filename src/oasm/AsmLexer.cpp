@@ -118,7 +118,7 @@ std::string Lexer::GetRestOfLine()
 }
 void Lexer::CheckAssign(std::string& line, PreProcessor& pp)
 {
-    int npos = line.find_first_not_of(" \t\r\n\v");
+    size_t npos = line.find_first_not_of(" \t\r\n\v");
     if (npos != std::string::npos)
     {
         if (line[npos] == '%')
@@ -178,10 +178,9 @@ void Lexer::CheckAssign(std::string& line, PreProcessor& pp)
                             {
                                 value = asmFile->GetValue();
                             }
-                            catch (std::runtime_error* e)
+                            catch (const std::runtime_error& e)
                             {
-                                Errors::Error(e->what());
-                                delete e;
+                                Errors::Error(e.what());
                             }
                             parsingDirective = false;
                             pp.Assign(name, value, caseInsensitive);

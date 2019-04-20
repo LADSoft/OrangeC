@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "Token.h"
@@ -235,7 +235,7 @@ long long NumericToken::GetInteger() const
     }
     return intValue;
 }
-const FPF* NumericToken::GetFloat() const
+FPF NumericToken::GetFloat()
 {
     if (!parsedAsFloat)
         switch (type)
@@ -243,13 +243,13 @@ const FPF* NumericToken::GetFloat() const
             case t_int:
             case t_longint:
             case t_longlongint:
-                const_cast<FPF&>(floatValue) = (long long)intValue;
-                break;
+                floatValue = intValue;
+
             default:
-                const_cast<FPF&>(floatValue) = (unsigned long long)intValue;
+                floatValue = (unsigned long long)intValue;
                 break;
         }
-    return &floatValue;
+    return floatValue;
 }
 bool NumericToken::Start(const std::string& line) { return isdigit(line[0]) || (line[0] == '.' && isdigit(line[1])); }
 int NumericToken::Radix36(char c)
@@ -584,16 +584,13 @@ bool KeywordToken::Start(const std::string& line) { return ispunct(line[0]) != 0
 void KeywordToken::Parse(std::string& line)
 {
     char buf[256], *p = buf;
-    int i;
-    for (i = 0; i < line.size(); i++)
-        if (ispunct(line[i]))
-            *p++ = line[i];
-        else
-            break;
+    size_t i;
+    for (i = 0; i < line.size() && ispunct(line[i]); i++)
+        *p++ = line[i];
     *p = 0;
     if (keywordTable)
     {
-        for (int j = i; j > 0; j--)
+        for (size_t j = i; j > 0; j--)
         {
             buf[j] = 0;
             auto it = keywordTable->find(std::string(buf));
@@ -611,12 +608,12 @@ bool IdentifierToken::Start(const std::string& line) { return Tokenizer::IsSymbo
 void IdentifierToken::Parse(std::string& line)
 {
     char buf[256], *p = buf;
-    int i, n;
+    size_t i, n;
     for (i = 0;
          (p == buf || p - buf - 1 < sizeof(buf)) && p - buf < line.size() && Tokenizer::IsSymbolChar(line.c_str() + i, false);)
     {
         n = UTF8::CharSpan(line.c_str() + i);
-        for (int j = 0; j < n && i < line.size(); j++)
+        for (size_t j = 0; j < n && i < line.size(); j++)
             *p++ = line[i++];
     }
     *p = 0;
@@ -648,23 +645,23 @@ void ErrorToken::Parse(std::string& line)
     SetChars(line.substr(0, 1));
     line.erase(0, 1);
 }
-const Token* Tokenizer::Next()
+std::shared_ptr<Token> Tokenizer::Next()
 {
     size_t n = line.find_first_not_of("\t \v");
     line.erase(0, n);
     if (line.empty())
-        currentToken = std::make_unique<EndToken>();
+        currentToken = std::make_shared<EndToken>();
     else if (NumericToken::Start(line))
-        currentToken = std::make_unique<NumericToken>(line);
+        currentToken = std::make_shared<NumericToken>(line);
     else if (CharacterToken::Start(line))
-        currentToken = std::make_unique<CharacterToken>(line);
+        currentToken = std::make_shared<CharacterToken>(line);
     else if (StringToken::Start(line))
-        currentToken = std::make_unique<StringToken>(line);
+        currentToken = std::make_shared<StringToken>(line);
     else if (IdentifierToken::Start(line))
-        currentToken = std::make_unique<IdentifierToken>(line, keywordTable, caseInsensitive);
+        currentToken = std::make_shared<IdentifierToken>(line, keywordTable, caseInsensitive);
     else if (keywordTable && KeywordToken::Start(line))
-        currentToken = std::make_unique<KeywordToken>(line, keywordTable);
+        currentToken = std::make_shared<KeywordToken>(line, keywordTable);
     else
-        currentToken = std::make_unique<ErrorToken>(line);
-    return currentToken.get();
+        currentToken = std::make_shared<ErrorToken>(line);
+    return currentToken;
 }

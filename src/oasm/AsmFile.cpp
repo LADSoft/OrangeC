@@ -89,10 +89,9 @@ bool AsmFile::Read()
                 DoLabel(name, lineno);
             }
         }
-        catch (std::runtime_error* e)
+        catch (const std::runtime_error& e)
         {
-            Errors::Error(e->what());
-            delete e;
+            Errors::Error(e.what());
             rv = false;
             if (inInstruction)
                 NextToken();
@@ -141,7 +140,7 @@ void AsmFile::DoLabel(std::string& name, int lineno)
         if (name[0] == '.' && name[1] == '.' && name[2] == '@')
         {
             if (name.size() == 3)
-                throw new std::runtime_error("Malformed non-local label");
+                throw std::runtime_error("Malformed non-local label");
             nl = true;
         }
     }
@@ -151,7 +150,7 @@ void AsmFile::DoLabel(std::string& name, int lineno)
         {
             if (startupSection)
             {
-                throw new std::runtime_error("Multiple start addresses specified");
+                throw std::runtime_error("Multiple start addresses specified");
             }
 //            label = new Label(name, labels.size(), currentSection->GetSect());
             startupSection = currentSection;
@@ -168,7 +167,7 @@ void AsmFile::DoLabel(std::string& name, int lineno)
     {
         if (realName != "..start")
         {
-            throw new std::runtime_error(std::string("Label '") + name + "' already exists.");
+            throw std::runtime_error(std::string("Label '") + name + "' already exists.");
         }
     }
     else
@@ -382,7 +381,7 @@ void AsmFile::ReserveDirective(int n)
     int lineno = preProcessor.GetMainLineNo();
     int num = GetValue();
     if (num <= 0)
-        throw new std::runtime_error("Invalid reserve size");
+        throw std::runtime_error("Invalid reserve size");
     Instruction* ins = new Instruction(num, n);
     if (lineno >= 0)
         listing.Add(ins, lineno, preProcessor.InMacro());
@@ -406,7 +405,7 @@ void AsmFile::ReserveDirective(int n)
 void AsmFile::EquDirective()
 {
     if (!thisLabel)
-        throw new std::runtime_error("Label needed");
+        throw std::runtime_error("Label needed");
     int lineno = preProcessor.GetMainLineNo();
     NextToken();
     std::unique_ptr<AsmExprNode> num(GetNumber());
@@ -502,7 +501,7 @@ void AsmFile::Directive()
         default:
             NeedSection();
             if (!GetParser()->ParseDirective(this, currentSection))
-                throw new std::runtime_error("Expected directive");
+                throw std::runtime_error("Expected directive");
     }
     if (GetKeyword() == Lexer::closebr)
     {
@@ -510,14 +509,14 @@ void AsmFile::Directive()
     }
     else
     {
-        throw new std::runtime_error("Expected ']'");
+        throw std::runtime_error("Expected ']'");
     }
 }
 void AsmFile::AlignDirective()
 {
     NextToken();
     if (!IsNumber())
-        throw new std::runtime_error("Alignment expected");
+        throw std::runtime_error("Alignment expected");
     if (inAbsolute)
     {
         int v = GetValue();
@@ -530,7 +529,7 @@ void AsmFile::AlignDirective()
         NeedSection();
         int v = GetValue();
         if ((v &(v-1)) != 0)
-            throw new std::runtime_error("Alignment must be power of two");
+            throw std::runtime_error("Alignment must be power of two");
         Instruction* ins = new Instruction(v);
         currentSection->InsertInstruction(ins);
         int n = currentSection->GetAlign();
@@ -542,7 +541,7 @@ void AsmFile::GnuAlignDirective()
 {
     NextToken();
     if (!IsNumber())
-        throw new std::runtime_error("Alignment expected");
+        throw std::runtime_error("Alignment expected");
     if (inAbsolute)
     {
         int v = 1 << GetValue();
@@ -565,14 +564,14 @@ void AsmFile::GnuAlignDirective()
             if (GetKeyword() != Lexer::comma)
             {
                 if (!IsNumber())
-                    throw new std::runtime_error("Fill value expected");
+                    throw std::runtime_error("Fill value expected");
                 ins->SetFill(GetValue());
             }
             if (GetKeyword() == Lexer::comma)
             {
                 NextToken();
                 if (!IsNumber())
-                    throw new std::runtime_error("Max value expected");
+                    throw std::runtime_error("Max value expected");
                 // discarding for now, this is the maximum number of bytes to fill when doing the align
                 GetValue();
             }
@@ -587,12 +586,12 @@ void AsmFile::TimesDirective()
     std::string line = lexer.GetRestOfLine();
     int npos = line.find_last_of("]");
     if (npos == std::string::npos)
-        throw new std::runtime_error("Expected ']'");
+        throw std::runtime_error("Expected ']'");
     if (npos != line.size() - 1)
     {
         int npos1 = line.find_first_not_of(" \t\v\n\r", npos + 1);
         if (npos1 != std::string::npos)
-            throw new std::runtime_error("Extra characters on end of line");
+            throw std::runtime_error("Extra characters on end of line");
     }
     line = line.substr(0, npos);
     lexer.StopAtEol(true);
@@ -613,7 +612,7 @@ void AsmFile::TimesDirective()
             currentSection->InsertInstruction(ins);
         }
         else
-            throw new std::runtime_error("Unknown instruction");
+            throw std::runtime_error("Unknown instruction");
     }
     lexer.StopAtEol(false);
     NextToken();
@@ -625,10 +624,10 @@ void AsmFile::IncbinDirective()
     NextToken();
     NeedSection();
     if (!IsString())
-        throw new std::runtime_error("File name expected");
+        throw std::runtime_error("File name expected");
     std::wstring wname = GetString();
     std::string name;
-    for (int i = 0; i < wname.size(); i++)
+    for (size_t i = 0; i < wname.size(); i++)
     {
         char buf[2];
         buf[0] = wname[i];
@@ -645,17 +644,17 @@ void AsmFile::IncbinDirective()
             size = GetValue();
         }
     }
-    std::fstream in(name.c_str(), std::ios::in | std::ios::binary);
+    std::fstream in(name, std::ios::in | std::ios::binary);
     if (!in.is_open())
-        throw new std::runtime_error(std::string("File '") + name + "' not found.");
+        throw std::runtime_error(std::string("File '") + name + "' not found.");
     in.seekg(0, std::ios::end);
     int len = in.tellg();
     if (start > len)
-        throw new std::runtime_error("Data not found.");
+        throw std::runtime_error("Data not found.");
     if (size == INT_MAX)
         size = len - start;
     else if (len - start < size)
-        throw new std::runtime_error("Not enough data.");
+        throw std::runtime_error("Not enough data.");
     in.seekg(start, std::ios::beg);
     std::unique_ptr<unsigned char[]> data = std::make_unique<unsigned char[]>(size);
     in.read((char*)data.get(), size);
@@ -688,7 +687,7 @@ void AsmFile::ExternDirective()
         externs.insert(name);
         if (labels.find(name) != labels.end() && !labels[name]->IsExtern())
         {
-            throw new std::runtime_error(std::string("Label '") + name + "' already exists.");
+            throw std::runtime_error(std::string("Label '") + name + "' already exists.");
         }
         else
         {
@@ -763,7 +762,7 @@ void AsmFile::NoAbsolute()
 {
     if (inAbsolute)
     {
-        throw new std::runtime_error("Code generation in absolute section not allowed");
+        throw std::runtime_error("Code generation in absolute section not allowed");
     }
 }
 void AsmFile::NeedSection()
@@ -838,7 +837,7 @@ ObjFile* AsmFile::MakeFile(ObjFactory& factory, std::string& name)
         fi->SetFileTime(*std::localtime(&x));
         ObjSourceFile* sf = factory.MakeSourceFile(ObjString(name.c_str()));
         fi->Add(sf);
-        for (int i = 0; i < numericSections.size(); ++i)
+        for (size_t i = 0; i < numericSections.size(); ++i)
         {
             numericSections[i]->Resolve();
             ObjSection* s = numericSections[i]->CreateObject(factory);
@@ -855,7 +854,7 @@ ObjFile* AsmFile::MakeFile(ObjFactory& factory, std::string& name)
 
         if (objSections.size())
         {
-            for (int i = 0; i < numericLabels.size(); ++i)
+            for (size_t i = 0; i < numericLabels.size(); ++i)
             {
                 Label* l = numericLabels[i];
                 if (l->GetSect() != 0xffffffff)
@@ -899,7 +898,7 @@ ObjFile* AsmFile::MakeFile(ObjFactory& factory, std::string& name)
             p->SetDllName(import.second->dll);
             fi->Add(p);
         }
-        for (int i = 0; i < numericSections.size(); i++)
+        for (size_t i = 0; i < numericSections.size(); i++)
         {
             if (!numericSections[i]->MakeData(factory, [this](std::string& aa) { return Lookup(aa); },
                                               [this](std::string& aa) { return GetSectionByName(aa); },
@@ -942,7 +941,7 @@ unsigned AsmFile::GetValue()
 {
     std::unique_ptr<AsmExprNode> num(GetNumber());
     if (!inAbsolute && !num->IsAbsolute())
-        throw new std::runtime_error("Constant value expected");
+        throw std::runtime_error("Constant value expected");
     int n = 0;
     if (inAbsolute)
         n = absoluteValue;
@@ -950,7 +949,7 @@ unsigned AsmFile::GetValue()
         n = currentSection->GetPC();
     std::unique_ptr<AsmExprNode> num1(AsmExpr::Eval(num.get(), n));
     if (num1->GetType() != AsmExprNode::IVAL)
-        throw new std::runtime_error("Integer constant expected");
+        throw std::runtime_error("Integer constant expected");
     return num1->ival;
 }
 AsmExprNode* AsmFile::GetNumber()
@@ -976,7 +975,7 @@ std::wstring AsmFile::GetString()
     }
     else
     {
-        throw new std::runtime_error("String expected");
+        throw std::runtime_error("String expected");
     }
     return rv;
 }
@@ -999,14 +998,14 @@ std::string AsmFile::GetId()
     else
     {
         NextToken();
-        throw new std::runtime_error("identifier expected");
+        throw std::runtime_error("identifier expected");
     }
     return rv;
 }
 void AsmFile::NeedEol()
 {
     if (!lexer.AtEol())
-        throw new std::runtime_error("End of line expected");
+        throw std::runtime_error("End of line expected");
 }
 ObjSection* AsmFile::GetSectionByName(std::string& name)
 {

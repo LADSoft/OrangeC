@@ -105,7 +105,7 @@ int CmdSwitchCombineString::Parse(const char* data)
 int CmdSwitchCombo::Parse(const char* data)
 {
     int rv = CmdSwitchString::Parse(data);
-    for (int i = 0; i < value.size(); i++)
+    for (size_t i = 0; i < value.size(); i++)
         if (valid.find_first_of(value[i]) == std::string::npos)
             return -1;
     selected = true;
@@ -225,7 +225,7 @@ char* CmdSwitchFile::GetStr(char* data)
         char* q = strchr(p + 1, '%');
         if (q)
         {
-            int len = q + 1 - p;
+            size_t len = q + 1 - p;
             char* name = new char[len - 1];
             memcpy(name, p + 1, len - 2);
             name[len - 2] = 0;
@@ -233,7 +233,7 @@ char* CmdSwitchFile::GetStr(char* data)
             delete[] name;
             if (env)
             {
-                int len2 = strlen(env);
+                size_t len2 = strlen(env);
                 if (len > len2)
                 {
                     strcpy(p + len2, p + len);

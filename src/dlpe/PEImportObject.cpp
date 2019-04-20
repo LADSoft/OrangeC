@@ -61,7 +61,7 @@ void PEImportObject::Setup(ObjInt& endVa, ObjInt& endPhys)
         ObjImportSymbol* s = (ObjImportSymbol*)(*it);
         // uppercase the module name for NT... 98 doesn't need it but can accept it
         name = s->GetDllName();
-        for (int i = 0; i < name.size(); i++)
+        for (size_t i = 0; i < name.size(); i++)
             name[i] = toupper(name[i]);
         s->SetDllName(name);
         if (externs.find((*it)->GetName()) != externs.end())
@@ -120,7 +120,7 @@ void PEImportObject::Setup(ObjInt& endVa, ObjInt& endPhys)
         if (n & 1)
             n++;
         namePos += n;
-        for (int i = 0; i < module.second->externalNames.size(); i++)
+        for (size_t i = 0; i < module.second->externalNames.size(); i++)
         {
             const std::string& str = module.second->externalNames[i];
             if (!str.empty())

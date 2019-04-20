@@ -58,7 +58,7 @@ bool ppPragma::Check(int token, const std::string& args)
 void ppPragma::ParsePragma(const std::string& args)
 {
     Tokenizer tk(args, &hash);
-    const Token* id = tk.Next();
+    std::shared_ptr<Token> id = tk.Next();
     if (id->IsIdentifier())
     {
         std::string str = id->GetId();
@@ -88,11 +88,11 @@ void ppPragma::ParsePragma(const std::string& args)
 }
 void ppPragma::HandleSTDC(Tokenizer& tk)
 {
-    const Token* token = tk.Next();
+    std::shared_ptr<Token> token = tk.Next();
     if (token && token->IsIdentifier())
     {
         std::string name = token->GetId();
-        const Token* tokenCmd = tk.Next();
+        std::shared_ptr<Token> tokenCmd = tk.Next();
         if (tokenCmd && tokenCmd->IsIdentifier())
         {
             const char* val = tokenCmd->GetId().c_str();
@@ -122,7 +122,7 @@ void ppPragma::HandleSTDC(Tokenizer& tk)
 }
 void ppPragma::HandlePack(Tokenizer& tk)
 {
-    const Token* tok = tk.Next();
+    std::shared_ptr<Token> tok = tk.Next();
     if (tok && tok->GetKeyword() == openpa)
     {
         tok = tk.Next();
@@ -159,11 +159,11 @@ void ppPragma::HandleWarning(Tokenizer& tk)
 }
 void ppPragma::HandleSR(Tokenizer& tk, bool startup)
 {
-    const Token* name = tk.Next();
+    std::shared_ptr<Token> name = tk.Next();
     if (name && name->IsIdentifier())
     {
         std::string id = name->GetId();
-        const Token* prio = tk.Next();
+        std::shared_ptr<Token> prio = tk.Next();
         if (prio && prio->IsNumeric() && !prio->IsFloating())
         {
             Startups::Instance()->Add(id, prio->GetInteger(), startup);
@@ -249,11 +249,11 @@ void ppPragma::HandleLibrary(Tokenizer& tk)
 }
 void ppPragma::HandleAlias(Tokenizer& tk)
 {
-    const Token* name = tk.Next();
+    std::shared_ptr<Token> name = tk.Next();
     if (name && name->IsIdentifier())
     {
         std::string id = name->GetId();
-        const Token* alias = tk.Next();
+        std::shared_ptr<Token> alias = tk.Next();
         if (alias && alias->GetKeyword() == eq)
         {
             alias = tk.Next();

@@ -198,7 +198,7 @@ void ppDefine::DoAssign(std::string& line, bool caseInsensitive)
 {
     bool failed = false;
     Tokenizer tk(line, &defTokens);
-    const Token* next = tk.Next();
+    std::shared_ptr<Token> next = tk.Next();
     std::string name;
     if (!next->IsIdentifier())
     {
@@ -246,7 +246,7 @@ void ppDefine::DoDefine(std::string& line, bool caseInsensitive)
         }
     }
     Tokenizer tk(line, &defTokens);
-    const Token* next = tk.Next();
+    std::shared_ptr<Token> next = tk.Next();
     bool failed = false;
     bool hasEllipses = false;
     DefinitionArgList* da = nullptr;
@@ -322,7 +322,7 @@ void ppDefine::DoDefine(std::string& line, bool caseInsensitive)
 void ppDefine::DoUndefine(std::string& line)
 {
     Tokenizer tk(line, nullptr);
-    const Token* t = tk.Next();
+    std::shared_ptr<Token> t = tk.Next();
     if (!t->IsIdentifier())
     {
         Errors::Error("Expected symbol to undefine");
@@ -513,8 +513,6 @@ int ppDefine::InsertReplacementString(std::string& macro, int end, int begin, st
     int q;
     static char nullptrTOKEN[] = {TOKENIZING_PLACEHOLDER, 0};
     static char STRINGIZERTOKEN[] = {STRINGIZING_PLACEHOLDER, 0};
-    int p, r;
-    int val;
     int stringizing = false;
     q = end;
     while (q < macro.size() - 1 && isspace(macro[q]))
@@ -690,7 +688,6 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr)
     int waiting = 0;
     int orig_end = end;
     int rv;
-    int size;
     int p;
     int insize, rv1;
     for (p = begin; p < end; p++)

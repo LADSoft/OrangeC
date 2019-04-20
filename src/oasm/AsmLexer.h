@@ -101,7 +101,7 @@ class Lexer
 
     void SetAsmFile(AsmFile* th) { asmFile = th; }
     std::string GetRestOfLine();
-    const Token* GetToken() { return token; }
+    std::shared_ptr<Token> GetToken() { return token; }
     void NextToken();
     void Reset(const std::string& line)
     {
@@ -128,7 +128,7 @@ class Lexer
     bool atEof;
     bool stopAtEol;
     Tokenizer* tokenizer;
-    const Token* token;
+    std::shared_ptr<Token> token;
     bool parsingDirective;
     static KeywordHash hash;
     static const char* preData;

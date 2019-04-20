@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "PreProcessor.h"
@@ -32,7 +32,7 @@ ppMacro::ppMacro(ppInclude& Include, ppDefine& Define) : include(Include), expr(
 {
     expr.SetParams(&define);
 }
-ppMacro::~ppMacro() { }
+ppMacro::~ppMacro() {}
 bool ppMacro::Check(int token, std::string& line)
 {
     bool rv = false;
@@ -67,7 +67,7 @@ bool ppMacro::GetLine(std::string& line, int& lineno)
 {
     while (!stack.empty())
     {
-        MacroData* p = stack.back().get();
+        std::shared_ptr<MacroData> p = stack.back();
         if (p->offset >= p->lines.size())
         {
             p->offset = 0;
@@ -93,14 +93,14 @@ bool ppMacro::HandleRep(std::string& line)
     define.Process(line);
     PPINT n = expr.Eval(line);
     int level = 1;
-    std::unique_ptr<MacroData> p;
+    std::shared_ptr<MacroData> p;
     if (n < 0 || n > INT_MAX)
     {
         Errors::Error("Invalid range in %rep expression");
     }
     else if (n > 0)
     {
-        p = std::make_unique<MacroData>();
+        p = std::make_shared<MacroData>();
         p->repsLeft = (int)n;
         p->offset = 0;
         p->id = -1;
@@ -136,16 +136,16 @@ bool ppMacro::HandleRep(std::string& line)
     if (level == 0 && p)
     {
         include.Mark();
-        stack.push_back(std::move(p));
+        stack.push_back(p);
     }
     return true;
 }
 bool ppMacro::HandleExitRep()
 {
-    MacroData* p = stack.back().release();
+    std::shared_ptr<MacroData> p = stack.back();
     stack.pop_back();
     if (p->id < 0)
-        delete p;
+        p.~shared_ptr();
     return true;
 }
 bool ppMacro::HandleEndRep()
@@ -222,7 +222,7 @@ bool ppMacro::HandleMacro(std::string& line, bool caseInsensitive)
     int start, end;
     bool plussign;
     Tokenizer tk(line, ppExpr::GetHash());
-    const Token* next = tk.Next();
+    std::shared_ptr<Token> next = tk.Next();
     MacroData* p = nullptr;
     bool bailed = false;
     if (next->IsIdentifier())
@@ -357,12 +357,12 @@ void ppMacro::reverse(std::vector<std::string>& x, int offs, int len)
 {
     for (int i = 0; i < len / 2; i++)
     {
-        std::swap(x[offs+i], x[offs+len-i-1]);
+        std::swap(x[offs + i], x[offs + len - i - 1]);
     }
 }
 bool ppMacro::HandleRotate(std::string& line)
 {
-    MacroData* p = GetTopMacro();
+    std::shared_ptr<MacroData> p = GetTopMacro();
     if (!p)
     {
         Errors::Error("%rotate outside of macro invocation");
@@ -438,14 +438,13 @@ bool ppMacro::Invoke(std::string name, std::string line)
     p->id = nextMacro++;
     p->repsLeft = 1;
     include.Mark();
-    std::unique_ptr<MacroData> temp(p);
-    stack.push_back(std::move(temp));
+    stack.push_back(std::shared_ptr<MacroData>(p));
     return true;
 }
-MacroData* ppMacro::GetTopMacro()
+std::shared_ptr<MacroData> ppMacro::GetTopMacro()
 {
     for (int i = stack.size() - 1; i >= 0; i--)
         if (stack[i]->id != -1)
-            return stack[i].get();
+            return stack[i];
     return nullptr;
 }

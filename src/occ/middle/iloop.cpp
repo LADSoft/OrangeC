@@ -216,7 +216,7 @@ static LOOP* LoopAncestor(BLOCK* b)
 static void FindBody(BLOCKLIST* gen, BLOCK* head, enum e_lptype type)
 {
     LIST *queue = NULL, **qx;
-    LOOP *lp, **lpp;
+    LOOP *lp;
     int i;
     if (!gen)
         return;
@@ -656,7 +656,6 @@ static void PruneInductionCandidate(int tnum, LOOP* l)
  */
 static void CalculateInductionCandidates(LOOP* l)
 {
-    LIST *blocks, *p;
     int i;
     briggsClear(candidates);
     inductionCandidateStackTop = 0;

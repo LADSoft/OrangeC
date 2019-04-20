@@ -69,7 +69,7 @@ class ppDefine
                 return 0;
             return argList->size();
         }
-        DefinitionArgList* GetArg(int count)
+        DefinitionArgList* GetArg(size_t count)
         {
             if (!argList)
                 return nullptr;

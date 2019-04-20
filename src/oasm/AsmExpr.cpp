@@ -97,7 +97,6 @@ AsmExprNode* AsmExpr::Build(std::string& line)
     else
         line = "";
 
-    tokenizer.release();
     return rv;
 }
 AsmExprNode* AsmExpr::ConvertToBased(AsmExprNode* n, int pc)
@@ -618,7 +617,7 @@ AsmExprNode* AsmExpr::primary()
             if (token->GetKeyword() == closepa)
                 token = tokenizer->Next();
             else
-                throw new std::runtime_error("Expected ')'");
+                throw std::runtime_error("Expected ')'");
         }
     }
     else if (token->IsIdentifier())
@@ -635,7 +634,7 @@ AsmExprNode* AsmExpr::primary()
     {
         if (token->IsFloating())
         {
-            rv = new AsmExprNode(*(token->GetFloat()));
+            rv = new AsmExprNode(token->GetFloat());
         }
         else
         {
@@ -650,9 +649,9 @@ AsmExprNode* AsmExpr::primary()
     }
     else if (token->IsString())
     {
-        int num = 0;
+        size_t num = 0;
         std::wstring aa = token->GetString();
-        for (int i = 0; i < 4 && i < aa.size(); i++)
+        for (size_t i = 0; i < 4 && i < aa.size(); i++)
         {
             num += aa[i] << (i * 8);
         }
@@ -661,7 +660,7 @@ AsmExprNode* AsmExpr::primary()
     }
     else
     {
-        throw new std::runtime_error("Constant value expected");
+        throw std::runtime_error("Constant value expected");
         rv = new AsmExprNode(0);
     }
     return rv;
@@ -702,7 +701,7 @@ AsmExprNode* AsmExpr::unary()
             return primary();
         }
     }
-    throw new std::runtime_error("Syntax error in constant expression");
+    throw std::runtime_error("Syntax error in constant expression");
     return 0;
 }
 AsmExprNode* AsmExpr::multiply()

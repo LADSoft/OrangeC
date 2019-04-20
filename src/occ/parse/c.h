@@ -542,7 +542,7 @@ struct xcept
     EXPRESSION* xcRundownFunc;
 };
 
-typedef struct attributes
+struct attributes
 {
     struct {
         int structAlign;                                      /* alignment of structures/ unions */

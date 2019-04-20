@@ -137,7 +137,7 @@ long long NumericToken::GetInteger() const
     }
     return intValue;
 }
-const FPF* NumericToken::GetFloat() const
+FPF NumericToken::GetFloat()
 {
     if (!parsedAsFloat)
         switch (type)
@@ -145,13 +145,13 @@ const FPF* NumericToken::GetFloat() const
             case t_int:
             case t_longint:
             case t_longlongint:
-                const_cast<FPF&>(floatValue) = intValue;
+                floatValue = intValue;
                 break;
             default:
-                const_cast<FPF&>(floatValue) = (unsigned)intValue;
+                floatValue = (unsigned)intValue;
                 break;
         }
-    return &floatValue;
+    return floatValue;
 }
 bool NumericToken::Start(const std::string& line) { return isdigit(line[0]); }
 int NumericToken::Radix36(char c)
@@ -545,23 +545,23 @@ void ErrorToken::Parse(std::string& line)
     SetChars(line.substr(0, 1));
     line.erase(0, 1);
 }
-const Token* Tokenizer::Next()
+std::shared_ptr<Token> Tokenizer::Next()
 {
     size_t n = line.find_first_not_of("\t \v");
     line.erase(0, n);
     if (line.size() == 0)
-        currentToken = std::make_unique<EndToken>();
+        currentToken = std::make_shared<EndToken>();
     else if (NumericToken::Start(line))
-        currentToken = std::make_unique<NumericToken>(line);
+        currentToken = std::make_shared<NumericToken>(line);
     else if (CharacterToken::Start(line))
-        currentToken = std::make_unique<CharacterToken>(line);
+        currentToken = std::make_shared<CharacterToken>(line);
     else if (StringToken::Start(line))
-        currentToken = std::make_unique<StringToken>(line);
+        currentToken = std::make_shared<StringToken>(line);
     else if (IdentifierToken::Start(line))
-        currentToken = std::make_unique<IdentifierToken>(line, keywordTable, caseInsensitive);
+        currentToken = std::make_shared<IdentifierToken>(line, keywordTable, caseInsensitive);
     else if (keywordTable && KeywordToken::Start(line))
-        currentToken = std::make_unique<KeywordToken>(line, keywordTable);
+        currentToken = std::make_shared<KeywordToken>(line, keywordTable);
     else
-        currentToken = std::make_unique<ErrorToken>(line);
-    return currentToken.get();
+        currentToken = std::make_shared<ErrorToken>(line);
+    return currentToken;
 }

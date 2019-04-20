@@ -58,7 +58,7 @@ void LibDictionary::CreateDictionary(LibFiles& files)
             {
                 if ((*si)->GetQuals() & ObjSection::virt)
                 {
-                    int j;
+                    size_t j;
                     std::string name = (*si)->GetName();
                     for (j = 0; j < name.size(); j++)
                         if (name[j] == '@')

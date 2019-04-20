@@ -661,7 +661,6 @@ SLCHAR* getString(unsigned char** source, enum e_lexType* tp)
                     if (st[0] == '"')
                     {
                         SLCHAR* rv;
-                        int i;
                         *source = p;
                         IncGlobalFlag();
                         rv = (SLCHAR*)Alloc(sizeof(SLCHAR));
@@ -1175,7 +1174,6 @@ e_lexType getNumber(unsigned char** ptr, unsigned char** end, unsigned char* suf
         }
         if (Utils::iequal((char*)suffix, "F"))
         {
-            float f;
             lastst = l_f;
             CastToFloat(ISZ_FLOAT, rval);
             suffix[0] = 0;
@@ -1198,7 +1196,6 @@ e_lexType getNumber(unsigned char** ptr, unsigned char** end, unsigned char* suf
         }
         else
         {
-            double d;
             lastst = l_d;
             CastToFloat(ISZ_DOUBLE, rval);
         }

@@ -124,11 +124,10 @@ static void PrintName(ALIASNAME* name, int offs)
 }
 static void PrintTemps(BITINT* modifiedBy)
 {
-    int i;
     if (modifiedBy)
     {
         oprintf(icdFile, "[");
-        for (i = 1; i < termCount; i++)
+        for (unsigned int i = 1; i < termCount; i++)
             if (isset(modifiedBy, i))
                 oprintf(icdFile, "T%d ", termMapUp[i]);
         oprintf(icdFile, "]");
@@ -337,7 +336,6 @@ static ALIASNAME* GetAliasName(ALIASNAME* name, int offset)
 {
     int str[(sizeof(ALIASNAME*) + sizeof(int)) / sizeof(int)];
     int hash;
-    ALIASNAME* result;
     struct UIVHash** uivs;
     str[0] = offset;
     *((ALIASNAME**)(str + 1)) = name;
@@ -423,9 +421,7 @@ static ALIASADDRESS* GetAddress(ALIASNAME* name, int offset)
 {
     int str[(sizeof(ALIASNAME*) + sizeof(int)) / sizeof(int)];
     int hash;
-    ALIASADDRESS *addr, **search;
-    IMODE* im;
-    LIST* li;
+    ALIASADDRESS **search;
     str[0] = offset;
     *((ALIASNAME**)(str + 1)) = name;
     hash = dhash((UBYTE*)str, sizeof(str));
@@ -459,7 +455,6 @@ static void CreateMem(IMODE* im)
         }
         else
         {
-            ALIASADDRESS* aa;
             p = LookupMem(im);
             p = LookupAliasName(p, 0);
         }
@@ -601,7 +596,6 @@ static void HandleAssn(QUAD* head)
             if (head->temps & TEMP_LEFT)
             {
                 // mem, temp
-                ALIASLIST* al;
                 ALIASNAME* an = LookupMem(head->ans);
                 ALIASADDRESS* aa;
                 an = LookupAliasName(an, 0);
@@ -651,7 +645,6 @@ static void HandleAssn(QUAD* head)
                 ALIASLIST* result = NULL;
                 ALIASNAME* an = LookupMem(head->dc.left);
                 ALIASADDRESS* aa;
-                ALIASLIST* addr;
                 bool xchanged = changed;
                 an = LookupAliasName(an, 0);
                 aa = LookupAddress(an, 0);
@@ -1134,7 +1127,6 @@ static void scanDepends(BITINT* bits, ALIASLIST* alin)
     while (al)
     {
         ALIASADDRESS* aa2 = (ALIASADDRESS*)al->address;
-        IMODE* im;
         while (aa2->merge)
             aa2 = aa2->merge;
         if (!isset(processBits, aa2->processIndex))
@@ -1412,13 +1404,12 @@ static void GatherInds(BITINT* p, int n, ALIASLIST* al)
 }
 static void ScanMem(void)
 {
-    int i, k;
     int n = (termCount + BITINTBITS - 1) / BITINTBITS;
     do
     {
         changed = false;
         ResetProcessed();
-        for (i = 0; i < DAGSIZE; i++)
+        for (int i = 0; i < DAGSIZE; i++)
         {
             ALIASADDRESS* aa = addresses[i];
             while (aa)

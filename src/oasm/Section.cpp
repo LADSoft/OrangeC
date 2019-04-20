@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "ObjFactory.h"
@@ -38,9 +38,7 @@
 
 bool Section::dontShowError;
 
-Section::~Section()
-{
-}
+Section::~Section() {}
 void Section::Parse(AsmFile* fil)
 {
     while (!fil->AtEof() && fil->GetKeyword() != Lexer::closebr)
@@ -49,17 +47,17 @@ void Section::Parse(AsmFile* fil)
         {
             fil->NextToken();
             if (fil->GetKeyword() != Lexer::assn)
-                throw new std::runtime_error("Expected '='");
+                throw std::runtime_error("Expected '='");
             fil->NextToken();
             if (!fil->IsNumber())
-                throw new std::runtime_error("Expected alignment value");
+                throw std::runtime_error("Expected alignment value");
             align = fil->GetValue();
         }
         else if (fil->GetKeyword() == Lexer::CLASS)
         {
             fil->NextToken();
             if (fil->GetKeyword() != Lexer::assn)
-                throw new std::runtime_error("Expected '='");
+                throw std::runtime_error("Expected '='");
             fil->NextToken();
             fil->GetId();
         }
@@ -67,7 +65,7 @@ void Section::Parse(AsmFile* fil)
         {
             Section* old = fil->GetCurrentSection();
             if (!old)
-                throw new std::runtime_error("Virtual section must be enclosed in other section");
+                throw std::runtime_error("Virtual section must be enclosed in other section");
             align = old->align;
             memcpy(beValues, old->beValues, sizeof(beValues));
             isVirtual = true;
@@ -78,7 +76,7 @@ void Section::Parse(AsmFile* fil)
             fil->NextToken();
         }
         else if (!fil->GetParser()->ParseSection(fil, this))
-            throw new std::runtime_error("Invalid section qualifier");
+            throw std::runtime_error("Invalid section qualifier");
     }
 }
 void Section::Optimize()
@@ -103,7 +101,7 @@ void Section::Optimize()
     {
         done = true;
         pc = 0;
-        for (int i = 0; i < instructions.size(); i++)
+        for (size_t i = 0; i < instructions.size(); i++)
         {
             if (instructions[i]->IsLabel())
             {
@@ -129,7 +127,7 @@ void Section::Optimize()
         }
     }
     pc = 0;
-    for (int i = 0; i < instructions.size(); i++)
+    for (size_t i = 0; i < instructions.size(); i++)
     {
         if (instructions[i]->IsLabel())
         {
@@ -148,11 +146,10 @@ void Section::Optimize()
 void Section::Resolve() { Optimize(); }
 void Section::InsertInstruction(Instruction* ins)
 {
-    std::unique_ptr<Instruction> temp;
-    temp.reset(ins);
-    instructions.push_back(std::move(temp));
     ins->SetOffset(pc);
     pc += ins->GetSize();
+    std::unique_ptr<Instruction> temp(ins);
+    instructions.push_back(std::move(temp));
 }
 ObjSection* Section::CreateObject(ObjFactory& factory)
 {
@@ -175,7 +172,7 @@ ObjExpression* Section::ConvertExpression(AsmExprNode* node, std::function<Label
         case AsmExprNode::IVAL:
             return factory.MakeExpression(node->ival);
         case AsmExprNode::FVAL:
-            throw new std::runtime_error("Floating point in relocatable expression not allowed");
+            throw std::runtime_error("Floating point in relocatable expression not allowed");
         case AsmExprNode::PC:
             return factory.MakeExpression(ObjExpression::ePC);
         case AsmExprNode::SECTBASE:
@@ -227,7 +224,7 @@ ObjExpression* Section::ConvertExpression(AsmExprNode* node, std::function<Label
                         std::string name = node->label;
                         if (name.substr(0, 3) == "..@" && isdigit(name[3]))
                         {
-                            int i;
+                            size_t i;
                             for (i = 4; i < name.size() && isdigit(name[i]); i++)
                                 ;
                             if (name[i] == '.')
@@ -239,7 +236,7 @@ ObjExpression* Section::ConvertExpression(AsmExprNode* node, std::function<Label
                                 name = std::string("%$") + name.substr(i + 1);
                             }
                         }
-                        throw new std::runtime_error(std::string("Label '") + name + "' does not exist.");
+                        throw std::runtime_error(std::string("Label '") + name + "' does not exist.");
                     }
                 }
             }
@@ -274,7 +271,7 @@ ObjExpression* Section::ConvertExpression(AsmExprNode* node, std::function<Label
         case AsmExprNode::LAND:
         case AsmExprNode::LOR:
         case AsmExprNode::REG:
-            throw new std::runtime_error("Operator not allowed in address expression");
+            throw std::runtime_error("Operator not allowed in address expression");
     }
     return nullptr;
 }
@@ -353,13 +350,11 @@ bool Section::MakeData(ObjFactory& factory, std::function<Label*(std::string&)> 
                         t = ConvertExpression(f.GetExpr(), Lookup, SectLookup, factory);
                         SwapSectionIntoPlace(t);
                     }
-                    catch (std::runtime_error* e)
+                    catch (const std::runtime_error& e)
                     {
                         Errors::IncrementCount();
-                        if (!dontShowError) 
-                            std::cout << "Error " << f.GetFileName().c_str() << "(" << f.GetErrorLine() << "):" << e->what()
-                                  << std::endl;
-                        delete e;
+                        if (!dontShowError)
+                            std::cout << "Error " << f.GetFileName() << "(" << f.GetErrorLine() << "):" << e.what() << std::endl;
                         t = nullptr;
                         rv = false;
                     }

@@ -60,7 +60,7 @@ class Token
     virtual std::wstring GetRawString() const { return L""; }
     virtual long long GetInteger() const { return 0; }
     virtual Type GetNumericType() const { return t_int; }
-    virtual const FPF* GetFloat() const { return 0; }
+    virtual FPF GetFloat() const { return FPF(); }
     virtual int GetKeyword() const { return -1; }
     virtual const std::string& GetId() const
     {
@@ -94,7 +94,6 @@ class StringToken : public Token
 
   private:
     bool wide;
-    bool doParse;
     std::wstring str;
     std::wstring raw;
 };
@@ -124,7 +123,7 @@ class NumericToken : public Token
     virtual bool IsNumeric() const { return true; }
     virtual bool IsFloating() const { return parsedAsFloat; }
     virtual long long GetInteger() const;
-    virtual const FPF* GetFloat() const;
+    virtual FPF GetFloat();
     virtual Type GetNumericType() const { return type; }
     static bool Start(const std::string& line);
     static void SetAnsi(bool flag) { ansi = flag; }
@@ -184,7 +183,6 @@ class IdentifierToken : public Token
 
   private:
     int keyValue;
-    bool parseKeyword;
     KeywordHash* keywordTable;
     std::string id;
     bool caseInsensitive;
@@ -198,7 +196,7 @@ class EndToken : public Token
 class ErrorToken : public Token
 {
   public:
-    ErrorToken(std::string& line) { Parse(line); }
+    ErrorToken(std::string& line) : ch(0) { Parse(line); }
     virtual bool IsError() const { return true; }
 
   protected:
@@ -223,7 +221,7 @@ class Tokenizer
         line = Line;
         currentToken = nullptr;
     }
-    const Token* Next();
+    std::shared_ptr<Token> Next();
     std::string GetString() { return line; }
     void SetString(const std::string& Line) { line = Line; }
     static void SetUnsigned(bool flag) { CharacterToken::SetUnsigned(flag); }
@@ -240,7 +238,7 @@ class Tokenizer
   private:
     KeywordHash* keywordTable;
     std::string line;
-    std::unique_ptr<Token> currentToken;
+    std::shared_ptr<Token> currentToken;
     bool caseInsensitive;
 };
 

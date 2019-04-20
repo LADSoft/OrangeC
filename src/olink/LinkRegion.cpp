@@ -430,7 +430,7 @@ ObjInt LinkRegion::ArrangeOverlayed(LinkManager* manager, NamedSection* data, Ob
     // make a public for virtual sections (C++)
     if (curSection->GetQuals() & ObjSection::virt)
     {
-        int i;
+        size_t i;
         for (i = 0; i < curSection->GetName().size(); i++)
         {
             if (curSection->GetName()[i] == '@' || curSection->GetName()[i] == '_')

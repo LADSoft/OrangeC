@@ -238,7 +238,6 @@ static void add_intermed(QUAD* newQuad)
 }
 IMODE* liveout2(QUAD* q)
 {
-    IMODE* rv;
     if (!q)
         return NULL;
     return q->ans;
@@ -935,7 +934,6 @@ void RemoveInstruction(QUAD* ins)
 }
 void InsertInstruction(QUAD* before, QUAD* ins)
 {
-    INSTRUCTIONLIST* l;
     ins->block = before->block;
     if (before->fwd && before->fwd->dc.opcode == i_skipcompare)
         if (before->fwd->dc.v.label)

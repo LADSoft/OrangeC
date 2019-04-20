@@ -41,9 +41,9 @@ ObjFile* PEObject::file;
 void PEObject::WriteHeader(std::fstream& stream)
 {
     unsigned zero = 0;
-    for (int i = 0; i < name.size() && i < 8; i++)
+    for (size_t i = 0; i < name.size() && i < 8; i++)
         stream.write(&name[i], 1);
-    for (int i = name.size(); i < 8; i++)
+    for (size_t i = name.size(); i < 8; i++)
         stream.write((char*)&zero, 1);
     unsigned msize = ObjectAlign(objectAlign, size);
     stream.write((char*)&msize, 4);

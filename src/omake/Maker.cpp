@@ -578,7 +578,6 @@ int Maker::RunCommands(bool keepGoing)
     bool stop = false;
     EnvironmentStrings env;
     GetEnvironment(env);
-    int count;
     Runner runner(silent, displayOnly, ignoreResults, touch, outputType, keepResponseFiles, firstGoal, filePaths);
 
     for (auto it = depends.begin(); it != depends.end(); ++it)

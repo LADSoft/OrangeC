@@ -40,7 +40,7 @@ bool ppCtx::Check(int token, std::string& line)
 std::string ppCtx::GetId(std::string& line)
 {
     Tokenizer tk(line, nullptr);
-    const Token* t = tk.Next();
+    std::shared_ptr<Token> t = tk.Next();
     if (t->IsIdentifier())
     {
         return t->GetId();

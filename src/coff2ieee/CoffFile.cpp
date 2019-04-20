@@ -365,7 +365,7 @@ ObjFile* CoffFile::ConvertToObject(std::string outputName, ObjFactory& factory)
                     relocCount = relocPointer[0].VirtualAddress;
                     relocPointer++;
                 }
-                unsigned offset = 0;
+                int offset = 0;
                 inputFile->clear();
                 while (offset < sections[i].SizeOfRawData)
                 {

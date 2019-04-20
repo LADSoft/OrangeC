@@ -157,7 +157,7 @@ void Control::GetClass(RCFile& rcFile)
     {
         std::wstring str = rcFile.GetString();
         std::wstring str1 = str;
-        for (int i = 0; i < str1.size(); i++)
+        for (size_t i = 0; i < str1.size(); i++)
             str1[i] = tolower(str1[i]);
         if (str1 == L"button")
             cls.SetId(Button);

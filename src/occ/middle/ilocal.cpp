@@ -280,7 +280,6 @@ static void renameToTemps(SYMBOL* funcsp)
 static int AllocTempOpt(int size1)
 {
     int t;
-    int i;
     IMODE* rv;
     while (nextTemp < tempCount)
     {

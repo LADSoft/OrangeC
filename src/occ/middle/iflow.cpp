@@ -72,7 +72,6 @@ void dump_flowgraph(void)
     {
         BLOCK* b = blockArray[i];
         BLOCKLIST* list1 = b->pred;
-        int i;
         fprintf(icdFile, "\n; %d: ", b->blocknum + 1);
         while (list1)
         {
@@ -800,7 +799,6 @@ static void DominanceFrontier(BLOCK* b, int* count)
     while (c)
     {
         BLOCKLIST* bl = c->block->dominanceFrontier;
-        int i;
         while (bl)
         {
             if (!dominatedby(bl->block, b))
@@ -901,7 +899,6 @@ static void MoveBlockTo(BLOCK* b)
 {
     BLOCK* prev = b->pred->block;
     BLOCK* succ = b->succ->block;
-    QUAD* head;
     QUAD* tail = prev->tail;
     QUAD* jmp = (QUAD *)Alloc(sizeof(QUAD));
     QUAD* insert = b->tail;
@@ -1211,8 +1208,6 @@ void doms_only(bool always)
 /* main routine for creating flowgraph and dominator info */
 void flows_and_doms(void)
 {
-    BLOCKLIST* bl;
-    int i;
     if (exitBlock == 0)
     {
         exitBlock = blockCount - 1;

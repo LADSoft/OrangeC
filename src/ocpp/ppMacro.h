@@ -102,7 +102,7 @@ class ppMacro
     PreProcessor* pp;
 
     std::vector<std::shared_ptr<MacroData>> stack;
-    std::map<std::string, MacroData*> macros;
+    std::map<std::string, std::shared_ptr<MacroData>> macros;
     int nextMacro;
 };
 

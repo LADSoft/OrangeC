@@ -81,7 +81,7 @@ class LinkMap
     void ShowRegionLine(std::fstream& stream, LinkRegion* region, ObjInt offs, int group);
     void ShowFileLine(std::fstream& stream, LinkRegion::OneSection* data, ObjInt offs);
     void ShowSymbol(std::fstream& stream, const MapSymbolData& symbol);
-    void ShowAttribs(std::fstream& stream, LinkAttribs& attribs, ObjInt offs, int group);
+    void ShowAttribs(std::fstream& stream, LinkAttribs attribs, ObjInt offs, int group);
     eMapType type;
     eMapMode mode;
     ObjString name;

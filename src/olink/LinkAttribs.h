@@ -42,8 +42,7 @@ class LinkAttribs
         fill(nullptr)
     {
     }
-    ~LinkAttribs();
-    LinkAttribs& operator=(const LinkAttribs& Attribs);
+    ~LinkAttribs() = default;
     ObjInt GetAddress()
     {
         if (address)
@@ -98,13 +97,13 @@ class LinkAttribs
     bool GetHasFill() { return fill != nullptr; }
 
   private:
-    std::unique_ptr<LinkExpression> address;
-    std::unique_ptr<LinkExpression> align;
-    std::unique_ptr<LinkExpression> maxSize;
-    std::unique_ptr<LinkExpression> roundSize;
-    std::unique_ptr<LinkExpression> virtualOffset;
-    std::unique_ptr<LinkExpression> size;
-    std::unique_ptr<LinkExpression> fill;
+    std::shared_ptr<LinkExpression> address;
+    std::shared_ptr<LinkExpression> align;
+    std::shared_ptr<LinkExpression> maxSize;
+    std::shared_ptr<LinkExpression> roundSize;
+    std::shared_ptr<LinkExpression> virtualOffset;
+    std::shared_ptr<LinkExpression> size;
+    std::shared_ptr<LinkExpression> fill;
 };
 
 #endif

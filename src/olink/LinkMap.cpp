@@ -70,7 +70,7 @@ ObjInt LinkMap::PublicBase(ObjExpression* exp, int& group)
     find->GetSection()->SetOffset(new ObjExpression(0));  // this wrecks the link but is done last so it is ok
     return overlays[group - 1]->GetAttribs().GetAddress();
 }
-void LinkMap::ShowAttribs(std::fstream& stream, LinkAttribs& attribs, ObjInt offs, int group)
+void LinkMap::ShowAttribs(std::fstream& stream, LinkAttribs attribs, ObjInt offs, int group)
 {
     if (group > 0)
     {
@@ -110,7 +110,7 @@ void LinkMap::ShowRegionLine(std::fstream& stream, LinkRegion* region, ObjInt of
 {
     if (region)
     {
-        LinkAttribs& attribs = region->GetAttribs();
+        LinkAttribs attribs = region->GetAttribs();
         stream << "    Region: " << region->GetName();
         ShowAttribs(stream, attribs, offs, group);
     }

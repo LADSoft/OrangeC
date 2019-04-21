@@ -78,8 +78,8 @@ class LinkRegion
     LinkOverlay* GetParent() { return parent; }
     void SetParent(LinkOverlay* Parent) { parent = Parent; }
 
-    void SetAttribs(const LinkAttribs& Attribs) { attribs = Attribs; }
-    LinkAttribs& GetAttribs() { return attribs; }
+    void SetAttribs(LinkAttribs Attribs) { attribs = Attribs; }
+    LinkAttribs GetAttribs() { return attribs; }
 
     typedef SourceFile::iterator SourceFileIterator;
 

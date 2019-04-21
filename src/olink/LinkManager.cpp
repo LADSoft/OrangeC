@@ -782,7 +782,7 @@ void LinkManager::PlaceSections()
             }
         }
     }
-    catch (std::bad_exception v)
+    catch (const std::bad_exception& v)
     {
         LinkError("Cannot Evaluate items in SPC file");
         return;

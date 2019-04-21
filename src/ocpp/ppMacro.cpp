@@ -63,6 +63,7 @@ bool ppMacro::Check(int token, std::string& line)
     }
     return rv;
 }
+volatile int value = 0;
 bool ppMacro::GetLine(std::string& line, int& lineno)
 {
     while (!stack.empty())
@@ -75,6 +76,7 @@ bool ppMacro::GetLine(std::string& line, int& lineno)
             {
                 include.Drop();
                 HandleExitRep();
+                value = p.use_count();
                 continue;
             }
         }
@@ -142,10 +144,9 @@ bool ppMacro::HandleRep(std::string& line)
 }
 bool ppMacro::HandleExitRep()
 {
-    std::shared_ptr<MacroData> p = stack.back();
+    std::shared_ptr<MacroData> data = stack.back();
     stack.pop_back();
-    if (p->id < 0)
-        p.~shared_ptr();
+    value = data.use_count();
     return true;
 }
 bool ppMacro::HandleEndRep()
@@ -223,7 +224,7 @@ bool ppMacro::HandleMacro(std::string& line, bool caseInsensitive)
     bool plussign;
     Tokenizer tk(line, ppExpr::GetHash());
     std::shared_ptr<Token> next = tk.Next();
-    MacroData* p = nullptr;
+    std::shared_ptr<MacroData> p = nullptr;
     bool bailed = false;
     if (next->IsIdentifier())
     {
@@ -299,7 +300,7 @@ bool ppMacro::HandleMacro(std::string& line, bool caseInsensitive)
     }
     if (!bailed)
     {
-        p = new MacroData;
+        p = std::make_shared<MacroData>();
         p->repsLeft = 0;
         p->offset = 0;
         p->id = 0;  // macro
@@ -407,7 +408,7 @@ bool ppMacro::Invoke(std::string name, std::string line)
         else
             name = name1;
     }
-    MacroData* p = it->second;
+    std::shared_ptr<MacroData> p = it->second;
     if (p->repsLeft != 0)
     {
         return false;

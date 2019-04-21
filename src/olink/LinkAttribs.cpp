@@ -59,21 +59,3 @@ void LinkAttribs::SetFill(LinkExpression* Fill)
     std::unique_ptr<LinkExpression> temp(Fill);
     fill = std::move(temp);
 }
-
-LinkAttribs& LinkAttribs::operator=(const LinkAttribs& Attribs)
-{
-    if (Attribs.address)
-        address = std::make_unique<LinkExpression>(*Attribs.address);
-    if (Attribs.align)
-        align = std::make_unique<LinkExpression>(*Attribs.align);
-    if (Attribs.maxSize)
-        maxSize = std::make_unique<LinkExpression>(*Attribs.maxSize);
-    if (Attribs.roundSize)
-        roundSize = std::make_unique<LinkExpression>(*Attribs.roundSize);
-    if (Attribs.virtualOffset)
-        virtualOffset = std::make_unique<LinkExpression>(*Attribs.virtualOffset);
-    if (Attribs.fill)
-        fill = std::make_unique<LinkExpression>(*Attribs.fill);
-    return *this;
-}
-LinkAttribs::~LinkAttribs() {}

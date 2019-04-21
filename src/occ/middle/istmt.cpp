@@ -573,7 +573,7 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, IMODE*
         {
             retsize = funcsp->paramsize;
         }
-        if (!inlinesym_count || (!noepilogue && funcsp->retcount > 1))// originally was always true, removing as a test
+        if (1 || !inlinesym_count || (!noepilogue && funcsp->retcount > 1))// originally was always true, removing as a test
         {
             gen_label(retlab);
         }

@@ -578,7 +578,7 @@ int SqueezeChange(int temp, int t, int delta)
         if (delta >= 0)
             delta = std::max(0, std::min(delta, tempInfo[temp]->regClass->saturationBound[v->index] - alpha));
         else
-            delta = std::max(0, std::min(delta, delta - (tempInfo[temp]->regClass->saturationBound[v->index] - alpha)));
+            delta = std::min(0, std::max(delta, delta - (tempInfo[temp]->regClass->saturationBound[v->index] - alpha)));
 
         v = v->parent;
     } while (delta && v);

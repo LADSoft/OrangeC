@@ -967,7 +967,7 @@ enum e_opcode inasm_op(void)
     }
     op = insdata->atype;
     inasm_getsym();
-    floating = op >= op_f2xm1 && op <= op_fyl2xp1;
+    floating = op >= op_f2xm1 & op <= op_fyl2xp1;
     return (e_opcode)op;
 }
 

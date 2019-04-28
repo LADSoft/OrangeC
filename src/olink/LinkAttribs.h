@@ -42,7 +42,6 @@ class LinkAttribs
         fill(nullptr)
     {
     }
-    ~LinkAttribs() = default;
     ObjInt GetAddress()
     {
         if (address)

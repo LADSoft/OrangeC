@@ -26,36 +26,36 @@
 #include "LinkExpression.h"
 void LinkAttribs::SetAddress(LinkExpression* Address)
 {
-    std::unique_ptr<LinkExpression> temp(Address);
-    address = std::move(temp);
+    std::shared_ptr<LinkExpression> temp(Address);
+    address = temp;
 }
 void LinkAttribs::SetAlign(LinkExpression* Align)
 {
-    std::unique_ptr<LinkExpression> temp(Align);
-    align = std::move(temp);
+    std::shared_ptr<LinkExpression> temp(Align);
+    align = temp;
 }
 void LinkAttribs::SetMaxSize(LinkExpression* Size)
 {
-    std::unique_ptr<LinkExpression> temp(Size);
-    maxSize = std::move(temp);
+    std::shared_ptr<LinkExpression> temp(Size);
+    maxSize = temp;
 }
 void LinkAttribs::SetSize(LinkExpression* Size)
 {
-    std::unique_ptr<LinkExpression> temp(Size);
-    size = std::move(temp);
+    std::shared_ptr<LinkExpression> temp(Size);
+    size = temp;
 }
 void LinkAttribs::SetRoundSize(LinkExpression* RoundSize)
 {
-    std::unique_ptr<LinkExpression> temp(RoundSize);
-    roundSize = std::move(temp);
+    std::shared_ptr<LinkExpression> temp(RoundSize);
+    roundSize = temp;
 }
 void LinkAttribs::SetVirtualOffset(LinkExpression* VirtualOffset)
 {
-    std::unique_ptr<LinkExpression> temp(VirtualOffset);
-    virtualOffset = std::move(temp);
+    std::shared_ptr<LinkExpression> temp(VirtualOffset);
+    virtualOffset = temp;
 }
 void LinkAttribs::SetFill(LinkExpression* Fill)
 {
-    std::unique_ptr<LinkExpression> temp(Fill);
-    fill = std::move(temp);
+    std::shared_ptr<LinkExpression> temp(Fill);
+    fill = temp;
 }

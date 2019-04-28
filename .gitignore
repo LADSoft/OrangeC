@@ -113,3 +113,6 @@ src/.vs
 *.tst
 *.err
 *.out
+.vscode/
+src/*/Debug/
+src/*/Release

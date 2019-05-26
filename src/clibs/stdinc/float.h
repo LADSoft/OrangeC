@@ -137,6 +137,10 @@
 #define FLT_TRUE_MIN 0x1P-150
 #define LDBL_TRUE_MIN 0x1P-1075L
 
+// This is so that LIBCXX doesn't get to complain at all when you include <limits>
+// We don't support long doubles, but we can at least let it compile anyways
+#define __LDBL_DENORM_MIN__ LDBL_TRUE_MIN
+
 #ifdef __cplusplus
 extern "C"
 {

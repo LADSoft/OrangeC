@@ -110,7 +110,7 @@ IMODE* tempreg(int size, int mode)
  */
 {
     IMODE* ap;
-    ap = (IMODE*)(IMODE *)Alloc(sizeof(IMODE));
+    ap = (IMODE*)Alloc(sizeof(IMODE));
     ap->offset = tempenode();
     ap->offset->v.sp->tp = (TYPE *)Alloc(sizeof(TYPE));
     ap->offset->v.sp->tp->type = bt_int;
@@ -135,7 +135,7 @@ IMODE* imake_label(int label)
  */
 
 {
-    IMODE* ap = (IMODE*)(IMODE *)Alloc(sizeof(IMODE));
+    IMODE* ap = (IMODE*)Alloc(sizeof(IMODE));
     ap->mode = i_immed;
     ap->offset = exprNode(en_labcon, NULL, NULL);
     ap->offset->v.i = label;
@@ -177,11 +177,11 @@ IMODE* set_symbol(const char* name, int isproc)
     if (sp == 0)
     {
         IncGlobalFlag();
-        sp = (SYMBOL*)(SYMBOL *)Alloc(sizeof(SYMBOL));
+        sp = (SYMBOL*)Alloc(sizeof(SYMBOL));
         sp->storage_class = sc_external;
         sp->name = sp->errname = sp->decoratedName = litlate(name);
         GENREF(sp);
-        sp->tp = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
+        sp->tp = (TYPE*)Alloc(sizeof(TYPE));
         sp->tp->type = isproc ? bt_func : bt_int;
         sp->safefunc = true;
         insert(sp, globalNameSpace->syms);
@@ -193,7 +193,7 @@ IMODE* set_symbol(const char* name, int isproc)
         if (sp->storage_class == sc_overloads)
             sp = (SYMBOL*)(sp->tp->syms->table[0]->p);
     }
-    result = (IMODE*)(IMODE *)Alloc(sizeof(IMODE));
+    result = (IMODE*)Alloc(sizeof(IMODE));
     result->offset = varNode(en_global, sp);
     result->mode = i_direct;
     if (isproc)
@@ -436,10 +436,10 @@ static STATEMENT* gen___try(SYMBOL* funcsp, STATEMENT* stmt)
                 mode = 2;
                 if (stmt->sym)
                 {
-                    left = (IMODE*)(IMODE *)Alloc(sizeof(IMODE));
+                    left = (IMODE*)Alloc(sizeof(IMODE));
                     left->mode = i_direct;
                     left->size = ISZ_OBJECT;
-                    left->offset = (EXPRESSION*)(EXPRESSION *)Alloc(sizeof(EXPRESSION));
+                    left->offset = (EXPRESSION*)Alloc(sizeof(EXPRESSION));
                     left->offset->type = en_auto;
                     left->offset->v.sp = stmt->sym;
                 }
@@ -635,7 +635,7 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, IMODE*
 
 void gen_varstart(void* exp)
 {
-    IMODE* ap = (IMODE*)(IMODE *)Alloc(sizeof(IMODE));
+    IMODE* ap = (IMODE*)Alloc(sizeof(IMODE));
     ap->mode = i_immed;
     ap->offset = (expr *)exp;
     ap->size = ISZ_ADDR;
@@ -643,7 +643,7 @@ void gen_varstart(void* exp)
 }
 void gen_func(void* exp, int start)
 {
-    IMODE* ap = (IMODE*)(IMODE *)Alloc(sizeof(IMODE));
+    IMODE* ap = (IMODE*)Alloc(sizeof(IMODE));
     ap->mode = i_immed;
     ap->offset = (expr *)exp;
     ap->size = ISZ_ADDR;
@@ -977,7 +977,7 @@ static void InsertParameterThunks(SYMBOL* funcsp, BLOCK* b)
         }
         if (funcsp->oldstyle && sp->tp->type == bt_float)
         {
-            IMODE* right = (IMODE*)(IMODE *)Alloc(sizeof(IMODE));
+            IMODE* right = (IMODE*)Alloc(sizeof(IMODE));
             *right = *sp->imvalue;
             right->size = ISZ_DOUBLE;
             if (!chosenAssembler->arch->hasFloatRegs)

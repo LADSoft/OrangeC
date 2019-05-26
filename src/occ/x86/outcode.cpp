@@ -42,17 +42,6 @@
 #include <map>
 #include <set>
 #include <deque>
-#if 0
-#    include <new>
-void * operator new(std::size_t n) throw(std::bad_alloc)
-{
-    return (void *)Alloc(n);
-}
-void operator delete(void * p) throw()
-{
-    // noop
-}
-#endif
 #define FULLVERSION
 
 extern char realOutFile[260];
@@ -550,7 +539,7 @@ void output_obj_file(void)
 
 void compile_start(char* name)
 {
-    LIST* newItem = (LIST*)(LIST *)beGlobalAlloc(sizeof(LIST));
+    LIST* newItem = (LIST*)beGlobalAlloc(sizeof(LIST));
     newItem->data = beGlobalAlloc(strlen(name) + 1);
     strcpy((char*)newItem->data, name);
 
@@ -563,7 +552,7 @@ void include_start(char* name, int num)
 {
     if (num > lastIncludeNum)
     {
-        LIST* newItem = (LIST*)(LIST *)beGlobalAlloc(sizeof(LIST));
+        LIST* newItem = (LIST*)beGlobalAlloc(sizeof(LIST));
         newItem->data = beGlobalAlloc(strlen(name) + 1);
         strcpy((char*)newItem->data, name);
 

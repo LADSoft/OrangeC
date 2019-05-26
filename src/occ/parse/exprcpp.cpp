@@ -1310,7 +1310,7 @@ bool insertOperatorParams(SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, FUNCTIONC
         return false;
     }
     // finally make a shell to put all this in and add shims for any builtins we want to try
-    tpx = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
+    tpx = (TYPE*)Alloc(sizeof(TYPE));
     tpx->type = bt_aggregate;
     tpx->rootType = tpx;
     s3 = makeID(sc_overloads, tpx, NULL, name);
@@ -1427,7 +1427,7 @@ bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, 
         return false;
     }
     // finally make a shell to put all this in and add shims for any builtins we want to try
-    tpx = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
+    tpx = (TYPE*)Alloc(sizeof(TYPE));
     tpx->type = bt_aggregate;
     tpx->rootType = tpx;
     s3 = makeID(sc_overloads, tpx, NULL, name);
@@ -2300,8 +2300,8 @@ void ResolveTemplateVariable(TYPE** ttype, EXPRESSION** texpr, TYPE* rtype, TYPE
                     type = atype;
             else
                 type = rtype;
-            params = (TEMPLATEPARAMLIST*)(TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
-            params->p = (TEMPLATEPARAM*)(TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
+            params = (TEMPLATEPARAMLIST*)Alloc(sizeof(TEMPLATEPARAMLIST));
+            params->p = (TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
 
             params->p->type = kw_typename;
             params->p->byClass.dflt = type;

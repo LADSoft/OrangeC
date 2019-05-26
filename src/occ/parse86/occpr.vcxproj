@@ -164,7 +164,6 @@
     <ClCompile Include="..\parse\constopt.cpp" />
     <ClCompile Include="..\parse\cppbltin.cpp" />
     <ClCompile Include="..\parse\cpplookup.cpp" />
-    <ClCompile Include="..\parse\crc32.cpp" />
     <ClCompile Include="..\parse\debug.cpp" />
     <ClCompile Include="..\parse\declare.cpp" />
     <ClCompile Include="..\parse\declcons.cpp" />
@@ -209,6 +208,7 @@
     <ClInclude Include="..\preproc\pp.h" />
     <ClInclude Include="db.h" />
     <ClInclude Include="parser.h" />
+    <ClInclude Include="..\parse\crc32.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\ocpp\ocpp.vcxproj">

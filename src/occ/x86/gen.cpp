@@ -81,7 +81,7 @@ AMODE* make_label(int lab)
 {
     EXPRESSION* lnode;
     AMODE* ap;
-    lnode = (EXPRESSION*)(EXPRESSION *)beLocalAlloc(sizeof(EXPRESSION));
+    lnode = (EXPRESSION*)(EXPRESSION*)beLocalAlloc(sizeof(EXPRESSION));
     lnode->type = en_labcon;
     lnode->v.i = lab;
     ap = (AMODE*)beLocalAlloc(sizeof(AMODE));
@@ -231,7 +231,7 @@ AMODE* aimmed(ULLONG_TYPE i)
     AMODE* ap;
     EXPRESSION* ep;
     i &= 0xffffffffU;
-    ep = (EXPRESSION*)(EXPRESSION *)beLocalAlloc(sizeof(EXPRESSION));
+    ep = (EXPRESSION*)beLocalAlloc(sizeof(EXPRESSION));
     ep->type = en_c_i;
     ep->v.i = i;
     ap = (AMODE*)beLocalAlloc(sizeof(AMODE));
@@ -313,7 +313,7 @@ AMODE* make_offset(EXPRESSION* node)
 AMODE* make_stack(int number)
 {
     AMODE* ap = (AMODE*)beLocalAlloc(sizeof(AMODE));
-    EXPRESSION* ep = (EXPRESSION*)(EXPRESSION *)beLocalAlloc(sizeof(EXPRESSION));
+    EXPRESSION* ep = (EXPRESSION*)beLocalAlloc(sizeof(EXPRESSION));
     ep->type = en_c_i;
     ep->v.i = -number;
     ap->mode = am_indisp;
@@ -550,23 +550,34 @@ AMODE *floatzero(AMODE *ap)
 }
 
 bool sameTemp(QUAD* head);
+// implement clamp here so that below makes sense
+template<class T>
+constexpr const T& clamp( const T& v, const T& lo, const T& hi )
+{
+    return v < lo ? lo : hi < v ? hi : v;
+}
+template<class T>
+constexpr const T& clamp_hi(const T& v, const T& lo)
+{
+    return clamp(v, lo, v);
+}
 int beRegFromTempInd(QUAD* q, IMODE* im, int which)
 {
     if (which)
     {
-        return (q->scaleColor < 0) ? 0 : q->scaleColor;
+        return clamp_hi(q->scaleColor, 0);
     }
     if (im == q->ans)
     {
-        return (q->ansColor < 0) ? 0 : q->ansColor;
+        return clamp_hi(q->ansColor, 0);
     }
     else if (im == q->dc.left)
     {
-        return (q->leftColor < 0) ? 0 : q->leftColor;
+        return clamp_hi(q->leftColor, 0);
     }
     else
     {
-        return (q->rightColor < 0) ? 0 : q->rightColor;
+        return clamp_hi(q->rightColor, 0);
     }
 }
 int beRegFromTemp(QUAD* q, IMODE* im) { return beRegFromTempInd(q, im, 0); }
@@ -1829,7 +1840,7 @@ static void compactSwitchHeader(LLONG_TYPE bottom)
     }
 
     peep_tail->noopt = true;
-    lnode = (EXPRESSION*)(EXPRESSION *)beLocalAlloc(sizeof(EXPRESSION));
+    lnode = (EXPRESSION*)(EXPRESSION*)beLocalAlloc(sizeof(EXPRESSION));
     lnode->type = en_labcon;
     lnode->v.i = tablab;
     if (bottom)

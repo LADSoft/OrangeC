@@ -53,7 +53,6 @@ static struct _ihash
 {
     const char* name;
     INTRINS_FUNC* func;
-
 } defaults[] = {
     {"__is_abstract", is_abstract},
     {"__is_base_of", is_base_of},
@@ -76,9 +75,8 @@ static struct _ihash
 };
 void libcxx_init(void)
 {
-    int i;
     intrinsicHash = CreateHashTable(32);
-    for (i = 0; i < sizeof(defaults) / sizeof(defaults[0]); i++)
+    for (int i = 0; i < sizeof(defaults) / sizeof(defaults[0]); i++)
         AddName((SYMBOL*)&defaults[i], intrinsicHash);
 }
 bool parseBuiltInTypelistFunc(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
@@ -475,8 +473,7 @@ static bool nothrowConstructible(TYPE* tp)
 static bool is_abstract(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
     bool rv = false;
-    FUNCTIONCALL funcparams;
-    memset(&funcparams, 0, sizeof(funcparams));
+    FUNCTIONCALL funcparams{};
     funcparams.sp = sym;
     *lex = getTypeList(*lex, funcsp, &funcparams.arguments);
     if (funcparams.arguments && !funcparams.arguments->next)
@@ -492,8 +489,7 @@ static bool is_base_of(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXP
 {
     INITLIST* lst;
     bool rv = false;
-    FUNCTIONCALL funcparams;
-    memset(&funcparams, 0, sizeof(funcparams));
+    FUNCTIONCALL funcparams{};
     funcparams.sp = sym;
     *lex = getTypeList(*lex, funcsp, &funcparams.arguments);
     lst = funcparams.arguments;
@@ -514,8 +510,7 @@ static bool is_base_of(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXP
 static bool is_class(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
     bool rv = false;
-    FUNCTIONCALL funcparams;
-    memset(&funcparams, 0, sizeof(funcparams));
+    FUNCTIONCALL funcparams{};
     funcparams.sp = sym;
     *lex = getTypeList(*lex, funcsp, &funcparams.arguments);
     if (funcparams.arguments && !funcparams.arguments->next)
@@ -530,8 +525,7 @@ static bool is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** t
 {
     INITLIST* lst;
     bool rv = false;
-    FUNCTIONCALL funcparams;
-    memset(&funcparams, 0, sizeof(funcparams));
+    FUNCTIONCALL funcparams{};
     funcparams.sp = sym;
     *lex = getTypeList(*lex, funcsp, &funcparams.arguments);
     lst = funcparams.arguments;
@@ -598,7 +592,7 @@ static bool is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** t
                         hr = basetype(basetype(tp2)->btp)->syms->table[0];
                         while (hr)
                         {
-                            *arg = (INITLIST*)(INITLIST *)Alloc(sizeof(INITLIST));
+                            *arg = (INITLIST*)Alloc(sizeof(INITLIST));
                             (*arg)->tp = ((SYMBOL*)hr->p)->tp;
                             (*arg)->exp = intNode(en_c_i, 0);
                             arg = &(*arg)->next;
@@ -677,8 +671,7 @@ static bool is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** t
 static bool is_convertible_to(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
     bool rv = true;
-    FUNCTIONCALL funcparams;
-    memset(&funcparams, 0, sizeof(funcparams));
+    FUNCTIONCALL funcparams{};
     funcparams.sp = sym;
     *lex = getTypeList(*lex, funcsp, &funcparams.arguments);
     if (funcparams.arguments && funcparams.arguments->next && !funcparams.arguments->next->next)
@@ -754,8 +747,7 @@ static bool is_empty(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRE
 {
     INITLIST* lst;
     bool rv = false;
-    FUNCTIONCALL funcparams;
-    memset(&funcparams, 0, sizeof(funcparams));
+    FUNCTIONCALL funcparams{};
     funcparams.sp = sym;
     *lex = getTypeList(*lex, funcsp, &funcparams.arguments);
     lst = funcparams.arguments;
@@ -776,8 +768,7 @@ static bool is_empty(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRE
 static bool is_enum(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
     bool rv = false;
-    FUNCTIONCALL funcparams;
-    memset(&funcparams, 0, sizeof(funcparams));
+    FUNCTIONCALL funcparams{};
     funcparams.sp = sym;
     *lex = getTypeList(*lex, funcsp, &funcparams.arguments);
     if (funcparams.arguments && !funcparams.arguments->next)
@@ -791,8 +782,7 @@ static bool is_enum(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRES
 static bool is_final(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
     bool rv = false;
-    FUNCTIONCALL funcparams;
-    memset(&funcparams, 0, sizeof(funcparams));
+    FUNCTIONCALL funcparams{};
     funcparams.sp = sym;
     *lex = getTypeList(*lex, funcsp, &funcparams.arguments);
     if (funcparams.arguments && !funcparams.arguments->next)
@@ -807,8 +797,8 @@ static bool is_final(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRE
 static bool is_literal(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
     bool rv = false;
-    FUNCTIONCALL funcparams;
-    memset(&funcparams, 0, sizeof(funcparams));
+    FUNCTIONCALL funcparams{};
+
     funcparams.sp = sym;
     *lex = getTypeList(*lex, funcsp, &funcparams.arguments);
     if (funcparams.arguments && !funcparams.arguments->next)
@@ -824,8 +814,7 @@ static bool is_nothrow_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, 
 {
     INITLIST* lst;
     bool rv = false;
-    FUNCTIONCALL funcparams;
-    memset(&funcparams, 0, sizeof(funcparams));
+    FUNCTIONCALL funcparams{};
     funcparams.sp = sym;
     *lex = getTypeList(*lex, funcsp, &funcparams.arguments);
     lst = funcparams.arguments;
@@ -850,8 +839,7 @@ static bool is_pod(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESS
 {
     INITLIST* lst;
     bool rv = false;
-    FUNCTIONCALL funcparams;
-    memset(&funcparams, 0, sizeof(funcparams));
+    FUNCTIONCALL funcparams{};
     funcparams.sp = sym;
     *lex = getTypeList(*lex, funcsp, &funcparams.arguments);
     lst = funcparams.arguments;
@@ -872,8 +860,7 @@ static bool is_polymorphic(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp,
 {
     INITLIST* lst;
     bool rv = false;
-    FUNCTIONCALL funcparams;
-    memset(&funcparams, 0, sizeof(funcparams));
+    FUNCTIONCALL funcparams{};
     funcparams.sp = sym;
     *lex = getTypeList(*lex, funcsp, &funcparams.arguments);
     lst = funcparams.arguments;
@@ -896,8 +883,8 @@ static bool is_standard_layout(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE**
 {
     INITLIST* lst;
     bool rv = false;
-    FUNCTIONCALL funcparams;
-    memset(&funcparams, 0, sizeof(funcparams));
+    FUNCTIONCALL funcparams{};
+
     funcparams.sp = sym;
     *lex = getTypeList(*lex, funcsp, &funcparams.arguments);
     lst = funcparams.arguments;
@@ -918,8 +905,7 @@ static bool is_trivial(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXP
 {
     INITLIST* lst;
     bool rv = false;
-    FUNCTIONCALL funcparams;
-    memset(&funcparams, 0, sizeof(funcparams));
+    FUNCTIONCALL funcparams{};
     funcparams.sp = sym;
     *lex = getTypeList(*lex, funcsp, &funcparams.arguments);
     lst = funcparams.arguments;
@@ -940,8 +926,7 @@ static bool is_trivially_assignable(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, T
 {
     INITLIST* lst;
     bool rv = false;
-    FUNCTIONCALL funcparams;
-    memset(&funcparams, 0, sizeof(funcparams));
+    FUNCTIONCALL funcparams{};
     funcparams.sp = sym;
     *lex = getTypeList(*lex, funcsp, &funcparams.arguments);
     lst = funcparams.arguments;
@@ -963,8 +948,7 @@ static bool is_trivially_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym
 {
     INITLIST* lst;
     bool rv = false;
-    FUNCTIONCALL funcparams;
-    memset(&funcparams, 0, sizeof(funcparams));
+    FUNCTIONCALL funcparams{};
     funcparams.sp = sym;
     *lex = getTypeList(*lex, funcsp, &funcparams.arguments);
     lst = funcparams.arguments;
@@ -985,8 +969,7 @@ static bool is_trivially_copyable(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYP
 {
     INITLIST* lst;
     bool rv = false;
-    FUNCTIONCALL funcparams;
-    memset(&funcparams, 0, sizeof(funcparams));
+    FUNCTIONCALL funcparams{};
     funcparams.sp = sym;
     *lex = getTypeList(*lex, funcsp, &funcparams.arguments);
     lst = funcparams.arguments;
@@ -1007,8 +990,7 @@ static bool is_trivially_copyable(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYP
 static bool is_union(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
     bool rv = false;
-    FUNCTIONCALL funcparams;
-    memset(&funcparams, 0, sizeof(funcparams));
+    FUNCTIONCALL funcparams{};
     funcparams.sp = sym;
     *lex = getTypeList(*lex, funcsp, &funcparams.arguments);
     if (funcparams.arguments && !funcparams.arguments->next)

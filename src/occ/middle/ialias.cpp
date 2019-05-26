@@ -445,7 +445,7 @@ static void CreateMem(IMODE* im)
             {
                 // make one in the case of global addresses that aren't used
                 // directly
-                IMODE* ap2 = (IMODE*)(IMODE *)Alloc(sizeof(IMODE));
+                IMODE* ap2 = (IMODE*)Alloc(sizeof(IMODE));
                 ap2->offset = im->offset;
                 ap2->mode = i_direct;
                 ap2->size = ISZ_ADDR;
@@ -629,7 +629,7 @@ static void HandleAssn(QUAD* head)
                 bool xchanged = changed;
                 ALIASNAME* an = LookupMem(head->dc.left);
                 ALIASADDRESS* aa = LookupAddress(an, 0);
-                ALIASLIST* al = (ALIASLIST*)(ALIASLIST *)aAlloc(sizeof(ALIASLIST));
+                ALIASLIST* al = (ALIASLIST*)aAlloc(sizeof(ALIASLIST));
                 al->address = aa;
                 tempInfo[head->ans->offset->v.sp->value.i]->pointsto = NULL;
                 AliasUnion(&tempInfo[head->ans->offset->v.sp->value.i]->pointsto, al);

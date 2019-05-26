@@ -128,7 +128,7 @@ void thunkForImportTable(EXPRESSION** exp)
             newThunk->mainsym = sp;  // mainsym is the symbol this was derived from
             newThunk->linkage = lk_virtual;
             newThunk->importThunk = true;
-            search = (LIST*)(LIST *)Alloc(sizeof(LIST));
+            search = (LIST*)Alloc(sizeof(LIST));
             search->next = importThunks;
             search->data = newThunk;
             importThunks = search;
@@ -278,7 +278,7 @@ void ValidateMSILFuncPtr(TYPE* dest, TYPE* src, EXPRESSION** exp)
             {
                 int n = 0;
                 HASHREC* hr;
-                FUNCTIONCALL* functionCall = (FUNCTIONCALL*)(FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
+                FUNCTIONCALL* functionCall = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
                 TYPE* tp1 = src;
                 if (ispointer(tp1))
                     tp1 = basetype(tp1)->btp;
@@ -296,10 +296,10 @@ void ValidateMSILFuncPtr(TYPE* dest, TYPE* src, EXPRESSION** exp)
                 functionCall->sp = sp;
                 functionCall->functp = sp->tp;
                 functionCall->fcall = varNode(en_pc, sp);
-                functionCall->arguments = (INITLIST*)(INITLIST *)Alloc(sizeof(INITLIST));
+                functionCall->arguments = (INITLIST*)Alloc(sizeof(INITLIST));
                 functionCall->arguments->tp = &stdpointer;
                 functionCall->arguments->exp = *exp;
-                functionCall->arguments->next = (INITLIST*)(INITLIST *)Alloc(sizeof(INITLIST));
+                functionCall->arguments->next = (INITLIST*)Alloc(sizeof(INITLIST));
                 functionCall->arguments->next->tp = &stdpointer;
                 functionCall->arguments->next->exp = GetManagedFuncData(tp1);
                 functionCall->ascall = true;
@@ -316,12 +316,12 @@ void ValidateMSILFuncPtr(TYPE* dest, TYPE* src, EXPRESSION** exp)
             sp = gsearch("__OCCMSIL_GetProcThunkToUnmanaged");
             if (sp)
             {
-                FUNCTIONCALL* functionCall = (FUNCTIONCALL*)(FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
+                FUNCTIONCALL* functionCall = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
                 sp = (SYMBOL*)basetype(sp->tp)->syms->table[0]->p;
                 functionCall->sp = sp;
                 functionCall->functp = sp->tp;
                 functionCall->fcall = varNode(en_pc, sp);
-                functionCall->arguments = (INITLIST*)(INITLIST *)Alloc(sizeof(INITLIST));
+                functionCall->arguments = (INITLIST*)Alloc(sizeof(INITLIST));
                 functionCall->arguments->tp = &stdpointer;
                 functionCall->arguments->exp = *exp;
                 functionCall->ascall = true;
@@ -1116,8 +1116,7 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
             if (isstructured(*tp))
             {
                 TYPE* x = basetype(*tp);
-                int i;
-                for (i = 0; i < n; i++)
+                for (int i = 0; i < n; i++)
                     if (nesting[i] == x)
                     {
                         break;
@@ -1990,7 +1989,7 @@ void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp)
                 else if (list->tp->vla)
                 {
                     // cast to a regular pointer if there is no declared param
-                    TYPE* tpx = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
+                    TYPE* tpx = (TYPE*)Alloc(sizeof(TYPE));
                     tpx->type = bt_pointer;
                     tpx->size = getSize(bt_pointer);
                     tpx->btp = list->tp;
@@ -4290,8 +4289,7 @@ static LEXEME* expression_atomic_func(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EX
                 lex = expression_assign(lex, funcsp, NULL, &tp1, &exp1, NULL, flags);
                 if (*tp && tp1)
                 {
-                    ATOMICDATA* d;
-                    d = (ATOMICDATA*)Alloc(sizeof(ATOMICDATA));
+                    ATOMICDATA* d = (ATOMICDATA*)Alloc(sizeof(ATOMICDATA));
                     if (!ispointer(tp1))
                     {
                         error(ERR_DEREF);
@@ -4328,8 +4326,7 @@ static LEXEME* expression_atomic_func(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EX
         else
         {
             TYPE *tpf = NULL, *tpf1;
-            ATOMICDATA* d;
-            d = (ATOMICDATA*)Alloc(sizeof(ATOMICDATA));
+            ATOMICDATA* d = (ATOMICDATA*)Alloc(sizeof(ATOMICDATA));
             switch (kw)
             {
                 case kw_atomic_flag_test_set:
@@ -7051,7 +7048,7 @@ void GetLogicalDestructors(EXPRESSION* top, EXPRESSION* cur)
             {
                 LIST* listitem;
                 sp->destructed = true;
-                listitem = (LIST*)(LIST *)Alloc(sizeof(LIST));
+                listitem = (LIST*)Alloc(sizeof(LIST));
                 listitem->data = sp->dest->exp;
                 listitem->next = top->destructors;
                 top->destructors = listitem;

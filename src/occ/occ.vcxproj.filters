@@ -239,9 +239,6 @@
     <ClCompile Include="..\oasm\AsmLexer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="parse\crc32.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="x86\x64Parser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -253,6 +250,9 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="parse\crc32.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="parse\beinterf.h">
       <Filter>Header Files</Filter>
     </ClInclude>

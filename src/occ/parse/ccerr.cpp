@@ -1396,7 +1396,7 @@ static VLASHIM* mkshim(_vlaTypes type, int level, int label, STATEMENT* stmt, VL
     VLASHIM* rv = (VLASHIM *)Alloc(sizeof(VLASHIM));
     if (last && last->type != v_return && last->type != v_goto)
     {
-        rv->backs = (LIST*)(LIST *)Alloc(sizeof(LIST));
+        rv->backs = (LIST*)Alloc(sizeof(LIST));
         rv->backs->data = last;
     }
     rv->type = type;
@@ -1554,7 +1554,7 @@ static void fillPrevious(VLASHIM* shim, VLASHIM** labels, int minLabel)
                 selected = labels[shim->label - minLabel];
                 if (selected)
                 {
-                    prev = (LIST*)(LIST *)Alloc(sizeof(LIST));
+                    prev = (LIST*)Alloc(sizeof(LIST));
                     prev->data = shim;
                     prev->next = selected->backs;
                     selected->backs = prev;

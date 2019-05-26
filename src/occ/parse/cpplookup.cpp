@@ -348,10 +348,10 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUES** ns, bool* throug
                                     break;
                                 lex = getsym();
                                 finalPos = lex;
-                                *last = (TEMPLATESELECTOR*)(TEMPLATESELECTOR *)Alloc(sizeof(TEMPLATESELECTOR));
+                                *last = (TEMPLATESELECTOR*)Alloc(sizeof(TEMPLATESELECTOR));
                                 (*last)->sym = sp;
                                 last = &(*last)->next;
-                                *last = (TEMPLATESELECTOR*)(TEMPLATESELECTOR *)Alloc(sizeof(TEMPLATESELECTOR));
+                                *last = (TEMPLATESELECTOR*)Alloc(sizeof(TEMPLATESELECTOR));
                                 (*last)->sym = sp;
                                 (*last)->templateParams = current;
                                 (*last)->isTemplate = true;
@@ -406,10 +406,10 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUES** ns, bool* throug
                 dropStructureDeclaration();
                 if (!sp && templateNestingCount)
                 {
-                    *last = (TEMPLATESELECTOR*)(TEMPLATESELECTOR *)Alloc(sizeof(TEMPLATESELECTOR));
+                    *last = (TEMPLATESELECTOR*)Alloc(sizeof(TEMPLATESELECTOR));
                     (*last)->sym = NULL;
                     last = &(*last)->next;
-                    *last = (TEMPLATESELECTOR*)(TEMPLATESELECTOR *)Alloc(sizeof(TEMPLATESELECTOR));
+                    *last = (TEMPLATESELECTOR*)Alloc(sizeof(TEMPLATESELECTOR));
                     (*last)->sym = strSym;
                     (*last)->templateParams = current;
                     (*last)->isTemplate = true;
@@ -598,7 +598,7 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUES** ns, bool* throug
                         TEMPLATESELECTOR* s = basetype(sp->tp)->sp->templateSelector;
                         while (s)
                         {
-                            *last = (TEMPLATESELECTOR*)(TEMPLATESELECTOR *)Alloc(sizeof(TEMPLATESELECTOR));
+                            *last = (TEMPLATESELECTOR*)Alloc(sizeof(TEMPLATESELECTOR));
                             **last = *s;
                             last = &(*last)->next;
                             s = s->next;
@@ -608,10 +608,10 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUES** ns, bool* throug
                     }
                     else
                     {
-                        *last = (TEMPLATESELECTOR*)(TEMPLATESELECTOR *)Alloc(sizeof(TEMPLATESELECTOR));
+                        *last = (TEMPLATESELECTOR*)Alloc(sizeof(TEMPLATESELECTOR));
                         (*last)->sym = strSym;
                         last = &(*last)->next;
-                        *last = (TEMPLATESELECTOR*)(TEMPLATESELECTOR *)Alloc(sizeof(TEMPLATESELECTOR));
+                        *last = (TEMPLATESELECTOR*)Alloc(sizeof(TEMPLATESELECTOR));
                         (*last)->sym = sp;
                         (*last)->templateParams = current;
                         (*last)->isTemplate = true;

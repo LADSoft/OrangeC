@@ -32,6 +32,8 @@
 extern "C" char* getcwd(char*, int);
 #endif
 
+#include <crc32.hpp>
+
 #ifdef PARSER_ONLY
 size_t ccReadFile(void* __ptr, size_t __size, size_t __n, FILE* __stream);
 void ccSetFileLine(char* filename, int lineno);
@@ -102,14 +104,8 @@ struct inmac
     const char* s;
     void (*func)(char*);
 } ingrownmacros[INGROWNMACROS] = {{"__FILE__", filemac},
-                                  {
-                                      "__DATE__",
-                                      datemac,
-                                  },
-                                  {
-                                      "__DATEISO__",
-                                      dateisomac,
-                                  },
+                                  {"__DATE__",datemac},
+                                  {"__DATEISO__",dateisomac},
                                   {"__TIME__", timemac},
                                   {"__LINE__", linemac},
                                   {"__COUNTER__", countermac}};
@@ -722,7 +718,6 @@ unsigned char* getauxname(unsigned char* ptr, char** bufp)
 unsigned onceCRC(FILE* handle)
 {
     unsigned crc = 0;
-    unsigned PartialCRC32(unsigned crc, unsigned char* data, size_t len);
 #    ifdef PARSER_ONLY
     crc = PartialCRC32(crc, (unsigned char *)includes->handle, includes->filesize);
 #    else
@@ -933,7 +928,7 @@ void dopragma(bool fromPragma)
                 return;
             IncGlobalFlag();
             f = litlate(buf);
-            l = (LIST*)(LIST *)Alloc(sizeof(LIST));
+            l = (LIST*)Alloc(sizeof(LIST));
             l->data = f;
             l->next = libincludes;
             libincludes = l;
@@ -1232,7 +1227,7 @@ void doinclude(void)
     inc->fname = litlate(name);
     if (nonSys)
     {
-        LIST* fil = (LIST*)(LIST *)Alloc(sizeof(LIST));
+        LIST* fil = (LIST*)Alloc(sizeof(LIST));
         fil->data = inc->fname;
         fil->next = nonSysIncludeFiles;
         nonSysIncludeFiles = fil;
@@ -2226,8 +2221,7 @@ static void repdefines(unsigned char* lptr)
 void pushif(void)
 /* Push an if context */
 {
-    IFSTRUCT* p;
-    p = (IFSTRUCT*)globalAlloc(sizeof(IFSTRUCT));
+    IFSTRUCT* p = (IFSTRUCT*)globalAlloc(sizeof(IFSTRUCT));
     p->next = includes->ifs;
     p->iflevel = includes->ifskip;
     p->elsetaken = includes->elsetaken;

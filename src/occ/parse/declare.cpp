@@ -23,6 +23,7 @@
  */
 
 #include "compiler.h"
+#include "crc32.hpp"
 #include <wchar.h>
 /* locally declared func gloabal memory
  when redeclaring sym, make sure it gets in the global func list
@@ -225,7 +226,7 @@ void InsertSymbol(SYMBOL* sp, enum e_sc storage_class, enum e_lk linkage, bool a
                 funcs = (SYMBOL*)(*hr)->p;
             if (!funcs)
             {
-                TYPE* tp = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
+                TYPE* tp = (TYPE*)Alloc(sizeof(TYPE));
                 tp->type = bt_aggregate;
                 tp->rootType = tp;
                 funcs = makeID(sc_overloads, tp, 0, name);
@@ -2651,20 +2652,20 @@ founddecltype:
                                     {
                                         TEMPLATEPARAMLIST *told, **tnew;
                                         sp1 = clonesym(sp);
-                                        sp1->tp = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
+                                        sp1->tp = (TYPE*)Alloc(sizeof(TYPE));
                                         *sp1->tp = *sp->tp;
                                         sp1->tp->rootType = sp1->tp;
                                         sp1->tp->sp = sp1;
-                                        sp1->tp->templateParam = (TEMPLATEPARAMLIST*)(TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
+                                        sp1->tp->templateParam = (TEMPLATEPARAMLIST*)Alloc(sizeof(TEMPLATEPARAMLIST));
                                         sp1->tp->templateParam->next = sp->tp->templateParam->next;
-                                        sp1->tp->templateParam->p = (TEMPLATEPARAM*)(TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
+                                        sp1->tp->templateParam->p = (TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
                                         *sp1->tp->templateParam->p = *sp->tp->templateParam->p;
                                         tnew = &sp1->tp->templateParam->p->byTemplate.args;
                                         told = *tnew;
                                         sp1->tp->templateParam->p->byTemplate.orig = sp->tp->templateParam;
                                         while (told && lst)
                                         {
-                                            *tnew = (TEMPLATEPARAMLIST*)(TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
+                                            *tnew = (TEMPLATEPARAMLIST*)Alloc(sizeof(TEMPLATEPARAMLIST));
                                             if (told->p->type == kw_new)
                                             {
                                                 (*tnew)->p = told->p;
@@ -3082,7 +3083,7 @@ static LEXEME* getArrayType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, enum e_sc st
                 error(ERR_QUAL_LAST_ARRAY_ELEMENT);
             lex = getArrayType(lex, funcsp, tp, storage_class, vla, quals, false, msil);
         }
-        tpp = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
+        tpp = (TYPE*)Alloc(sizeof(TYPE));
         tpp->type = bt_pointer;
         tpp->btp = *tp;
         tpp->btp->msil = msil;  // tag the base type as managed, e.g. so we can't take address of it
@@ -3849,7 +3850,7 @@ LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp,
                 {
                     if (cparams.prm_c99)
                         errorsym(ERR_MISSING_TYPE_FOR_PARAMETER, spi);
-                    spi->tp = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
+                    spi->tp = (TYPE*)Alloc(sizeof(TYPE));
                     spi->tp->type = bt_int;
                     spi->tp->size = getSize(bt_int);
                     spi->tp->rootType = spi->tp;
@@ -4926,13 +4927,13 @@ static EXPRESSION* llallocateVLA(SYMBOL* sp, EXPRESSION* ep1, EXPRESSION* ep2)
         }
         if (al && fr)
         {
-            FUNCTIONCALL* epx = (FUNCTIONCALL*)(FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
-            FUNCTIONCALL* ld = (FUNCTIONCALL*)(FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
+            FUNCTIONCALL* epx = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
+            FUNCTIONCALL* ld = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
             epx->ascall = true;
             epx->fcall = varNode(en_pc, al);
             epx->sp = al;
             epx->functp = al->tp;
-            epx->arguments = (INITLIST*)(INITLIST *)Alloc(sizeof(INITLIST));
+            epx->arguments = (INITLIST*)Alloc(sizeof(INITLIST));
             epx->arguments->tp = &stdint;
             epx->arguments->exp = ep2;
             ep2 = intNode(en_func, 0);
@@ -4942,7 +4943,7 @@ static EXPRESSION* llallocateVLA(SYMBOL* sp, EXPRESSION* ep1, EXPRESSION* ep2)
             ld->fcall = varNode(en_pc, fr);
             ld->sp = fr;
             ld->functp = fr->tp;
-            ld->arguments = (INITLIST*)(INITLIST *)Alloc(sizeof(INITLIST));
+            ld->arguments = (INITLIST*)Alloc(sizeof(INITLIST));
             ld->arguments->tp = &stdpointer;
             ld->arguments->exp = ep1;
             unloader = intNode(en_func, 0);
@@ -5965,7 +5966,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                             SYMBOL* special = FindSpecialization(spi, sp->templateParams);
                             if (!special)
                             {
-                                LIST* member = (LIST*)(LIST *)Alloc(sizeof(LIST));
+                                LIST* member = (LIST*)Alloc(sizeof(LIST));
                                 member->data = sp;
                                 member->next = spi->specializations;
                                 spi->specializations = member;

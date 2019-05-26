@@ -183,13 +183,13 @@ static void renameOneSym(SYMBOL* sp, int structret)
                 }
                 else
                 {
-                    parmName = (IMODE*)(IMODE *)Alloc(sizeof(IMODE));
+                    parmName = (IMODE*)Alloc(sizeof(IMODE));
                     *parmName = *sp->imvalue;
                 }
             }
             else
             {
-                parmName = (IMODE*)(IMODE *)Alloc(sizeof(IMODE));
+                parmName = (IMODE*)Alloc(sizeof(IMODE));
                 *parmName = *sp->imvalue;
             }
         }

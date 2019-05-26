@@ -78,8 +78,8 @@ bool dbgtypes::typecompare::operator()(const TYPE* left, const TYPE* right) cons
                             }
                             else if (left->syms && right->syms && left->syms->table && right->syms->table)
                             {
-                                const HASHREC* hr1 = left->syms->table[0];
-                                const HASHREC* hr2 = right->syms->table[0];
+                                HASHREC* hr1 = left->syms->table[0];
+                                HASHREC* hr2 = right->syms->table[0];
                                 while (hr1 && hr2)
                                 {
                                     SYMBOL* sym1 = (SYMBOL*)hr1->p;

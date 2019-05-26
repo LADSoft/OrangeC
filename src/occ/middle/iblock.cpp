@@ -260,7 +260,7 @@ IMODE* liveout2(QUAD* q)
 QUAD* liveout(QUAD* node)
 {
     QUAD* outnode;
-    outnode = (QUAD*)(QUAD *)Alloc(sizeof(QUAD));
+    outnode = (QUAD*)Alloc(sizeof(QUAD));
     outnode->dc.opcode = node->dc.opcode;
     outnode->ans = node->ans;
     outnode->dc.v = node->dc.v;
@@ -482,7 +482,7 @@ static QUAD* add_dag(QUAD* newQuad)
     }
     else
     {
-        outnode = (QUAD*)(QUAD *)Alloc(sizeof(QUAD));
+        outnode = (QUAD*)Alloc(sizeof(QUAD));
         outnode->dc.opcode = i_assn;
         outnode->ans = newQuad->ans;
         outnode->dc.left = node->ans;
@@ -572,7 +572,7 @@ void addblock(int val)
     }
 
     /* block statement gets included */
-    q = (QUAD*)(QUAD *)Alloc(sizeof(QUAD));
+    q = (QUAD*)Alloc(sizeof(QUAD));
     q->dc.opcode = i_block;
     q->ans = q->dc.right = 0;
     q->dc.v.label = blockCount;
@@ -599,7 +599,7 @@ void gen_label(int labno)
     if (!wasgoto)
         addblock(i_label);
     wasgoto = false;
-    newQuad = (QUAD*)(QUAD *)Alloc(sizeof(QUAD));
+    newQuad = (QUAD*)Alloc(sizeof(QUAD));
     newQuad->dc.opcode = i_label;
     newQuad->dc.v.label = labno;
     add_intermed(newQuad);
@@ -630,7 +630,7 @@ QUAD* gen_icode_with_conflict(enum i_ops op, IMODE* res, IMODE* left, IMODE* rig
         default:
             break;
     }
-    newQuad = (QUAD*)(QUAD *)Alloc(sizeof(QUAD));
+    newQuad = (QUAD*)Alloc(sizeof(QUAD));
     newQuad->genConflict = conflicting;
     newQuad->dc.opcode = op;
     newQuad->dc.left = left;
@@ -663,7 +663,7 @@ void gen_iiconst(IMODE* res, LLONG_TYPE val)
 {
     QUAD* newQuad;
     IMODE* left = make_immed(ISZ_UINT, val);
-    newQuad = (QUAD*)(QUAD *)Alloc(sizeof(QUAD));
+    newQuad = (QUAD*)Alloc(sizeof(QUAD));
     newQuad->dc.opcode = i_assn;
     newQuad->ans = res;
     newQuad->dc.left = left;
@@ -679,7 +679,7 @@ void gen_ifconst(IMODE* res, FPF val)
  */
 {
     QUAD* newQuad;
-    newQuad = (QUAD*)(QUAD *)Alloc(sizeof(QUAD));
+    newQuad = (QUAD*)Alloc(sizeof(QUAD));
     newQuad->dc.opcode = i_fcon;
     newQuad->dc.v.f = val;
     newQuad->ans = res;
@@ -696,7 +696,7 @@ void gen_igoto(enum i_ops op, long label)
 {
     QUAD* newQuad;
     flush_dag();
-    newQuad = (QUAD*)(QUAD *)Alloc(sizeof(QUAD));
+    newQuad = (QUAD*)Alloc(sizeof(QUAD));
     newQuad->dc.opcode = op;
     newQuad->dc.left = newQuad->dc.right = newQuad->ans = 0;
     newQuad->dc.v.label = label;
@@ -711,7 +711,7 @@ void gen_data(int val)
 {
     QUAD* newQuad;
     flush_dag();
-    newQuad = (QUAD*)(QUAD *)Alloc(sizeof(QUAD));
+    newQuad = (QUAD*)Alloc(sizeof(QUAD));
     newQuad->dc.opcode = i_genword;
     newQuad->dc.left = newQuad->dc.right = newQuad->ans = 0;
     newQuad->dc.v.label = val;
@@ -730,7 +730,7 @@ void gen_icgoto(enum i_ops op, long label, IMODE* left, IMODE* right)
     if (right && right->mode == i_immed /*&& right->size == ISZ_NONE*/)
         right->size = left->size;
 
-    newQuad = (QUAD*)(QUAD *)Alloc(sizeof(QUAD));
+    newQuad = (QUAD*)Alloc(sizeof(QUAD));
     newQuad->dc.opcode = op;
     newQuad->dc.left = left;
     newQuad->dc.right = right;
@@ -751,7 +751,7 @@ QUAD* gen_igosub(enum i_ops op, IMODE* left)
 {
     QUAD* newQuad;
 
-    newQuad = (QUAD*)(QUAD *)Alloc(sizeof(QUAD));
+    newQuad = (QUAD*)Alloc(sizeof(QUAD));
     newQuad->dc.opcode = op;
     newQuad->dc.left = left;
     newQuad->dc.right = 0;
@@ -773,7 +773,7 @@ void gen_icode2(enum i_ops op, IMODE* res, IMODE* left, IMODE* right, int label)
  */
 {
     QUAD* newQuad;
-    newQuad = (QUAD*)(QUAD *)Alloc(sizeof(QUAD));
+    newQuad = (QUAD*)Alloc(sizeof(QUAD));
     newQuad->dc.opcode = op;
     newQuad->dc.left = left;
     newQuad->dc.right = right;
@@ -793,7 +793,7 @@ void gen_line(LINEDATA* data)
     QUAD* newQuad;
     if (data == 0)
         return;
-    newQuad = (QUAD*)(QUAD *)Alloc(sizeof(QUAD));
+    newQuad = (QUAD*)Alloc(sizeof(QUAD));
     newQuad->dc.opcode = i_line;
     newQuad->dc.left = (IMODE*)data; /* text */
     add_intermed(newQuad);
@@ -807,7 +807,7 @@ void gen_asm(STATEMENT* stmt)
  */
 {
     QUAD* newQuad;
-    newQuad = (QUAD*)(QUAD *)Alloc(sizeof(QUAD));
+    newQuad = (QUAD*)Alloc(sizeof(QUAD));
     newQuad->dc.opcode = i_passthrough;
     newQuad->dc.left = (IMODE*)stmt->select; /* actually is defined by the INASM module*/
     if (chosenAssembler->gen->adjust_codelab)
@@ -818,7 +818,7 @@ void gen_asm(STATEMENT* stmt)
 void gen_asmdata(STATEMENT* stmt)
 {
     QUAD* newQuad;
-    newQuad = (QUAD*)(QUAD *)Alloc(sizeof(QUAD));
+    newQuad = (QUAD*)Alloc(sizeof(QUAD));
     newQuad->dc.opcode = i_datapassthrough;
     newQuad->dc.left = (IMODE*)stmt->select; /* actually is defined by the INASM module*/
     flush_dag();
@@ -832,7 +832,7 @@ void gen_nodag(enum i_ops op, IMODE* res, IMODE* left, IMODE* right)
  */
 {
     QUAD* newQuad;
-    newQuad = (QUAD*)(QUAD *)Alloc(sizeof(QUAD));
+    newQuad = (QUAD*)Alloc(sizeof(QUAD));
     newQuad->dc.opcode = op;
     newQuad->dc.left = left;
     newQuad->dc.right = right;

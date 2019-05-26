@@ -1,5 +1,5 @@
 #include <stdlib.h>
-unsigned crctab[256] = {
+constexpr unsigned crctab[256] = {
     0xd202ef8d, 0xa505df1b, 0x3c0c8ea1, 0x4b0bbe37, 0xd56f2b94, 0xa2681b02, 0x3b614ab8, 0x4c667a2e, 0xdcd967bf, 0xabde5729,
     0x32d70693, 0x45d03605, 0xdbb4a3a6, 0xacb39330, 0x35bac28a, 0x42bdf21c, 0xcfb5ffe9, 0xb8b2cf7f, 0x21bb9ec5, 0x56bcae53,
     0xc8d83bf0, 0xbfdf0b66, 0x26d65adc, 0x51d16a4a, 0xc16e77db, 0xb669474d, 0x2f6016f7, 0x58672661, 0xc603b3c2, 0xb1048354,
@@ -28,11 +28,15 @@ unsigned crctab[256] = {
     0x8f6af48f, 0xf86dc419, 0x660951ba, 0x110e612c, 0x88073096, 0xff000000,
 };
 
-unsigned PartialCRC32(unsigned crc, unsigned char* data, size_t len)
+constexpr unsigned PartialCRC32(unsigned crc, unsigned char* data, size_t len)
 {
-    size_t i;
-    for (i = 0; i < len; ++i)
+    for (size_t i = 0; i < len; ++i)
         crc = crctab[(unsigned char)crc ^ data[i]] ^ crc >> 8;
     return crc;
 }
-unsigned CRC32(unsigned char* data, size_t len) { return PartialCRC32(0, data, len); }
+constexpr unsigned CRC32(unsigned char* data, size_t len) { return PartialCRC32(0, data, len); }
+template <size_t length>
+constexpr unsigned CRC32(unsigned char data[length])
+{
+    return CRC32(data, length);
+}

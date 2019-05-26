@@ -590,7 +590,7 @@ void DeduceAuto(TYPE** pat, TYPE* nt)
             if ((*pat)->decltypeauto)
                 if ((*pat)->decltypeautoextended)
                 {
-                    *pat = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
+                    *pat = (TYPE*)Alloc(sizeof(TYPE));
                     (*pat)->type = bt_lref;
                     (*pat)->size = getSize(bt_pointer);
                     (*pat)->btp = nt;
@@ -765,7 +765,7 @@ EXPRESSION* anonymousVar(enum e_sc storage_class, TYPE* tp)
 {
     static int anonct = 1;
     char buf[256];
-    SYMBOL* rv = (SYMBOL*)(SYMBOL *)Alloc(sizeof(SYMBOL));
+    SYMBOL* rv = (SYMBOL*)Alloc(sizeof(SYMBOL));
     if (tp->size == 0 && isstructured(tp))
         tp = basetype(tp)->sp->tp;
     rv->storage_class = storage_class;
@@ -1768,7 +1768,7 @@ bool isconstaddress(EXPRESSION* exp)
 }
 SYMBOL* clonesym(SYMBOL* sym)
 {
-    SYMBOL* rv = (SYMBOL*)(SYMBOL *)Alloc(sizeof(SYMBOL));
+    SYMBOL* rv = (SYMBOL*)Alloc(sizeof(SYMBOL));
     *rv = *sym;
     return rv;
 }

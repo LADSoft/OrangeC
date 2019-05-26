@@ -79,6 +79,8 @@ int showVersion = false;
 struct DefValue {
     std::string name;
     bool undef;
+    DefValue() = default;
+    DefValue(char* val, bool bval) : undef(bval), name(val) {}
 };
 std::deque<DefValue> defines;
 
@@ -646,12 +648,12 @@ void def_setup(char select, char* string)
  * activation for command line #defines
  */
 {
-    defines.push_back(DefValue{ string, 0 });
+    defines.emplace_back(string, false);
 }
 
 void undef_setup(char select, char* string)
 {
-    defines.push_back(DefValue{ string, 1 });
+    defines.emplace_back(string, true);
 }
 
 /*-------------------------------------------------------------------------*/
@@ -728,7 +730,7 @@ void setglbdefs(void)
         }
     }
 #endif
-    for (auto d : defines)
+    for (auto& d : defines)
     {
         size_t n = d.name.find_first_of("=");
         std::string name, val;

@@ -1986,8 +1986,7 @@ static void free_desc(AGGREGATE_DESCRIPTOR** descin, AGGREGATE_DESCRIPTOR** cach
     if (*descin)
     {
         AGGREGATE_DESCRIPTOR* temp = *descin;
-        int max;
-        max = (*descin)->reloffset + (*descin)->offset;
+        int max = (*descin)->reloffset + (*descin)->offset;
         if (max > (*descin)->max)
             (*descin)->max = max;
         max = (*descin)->max;
@@ -2181,8 +2180,7 @@ static bool atend(AGGREGATE_DESCRIPTOR* desc)
 {
     if (isstructured(desc->tp))
         return !desc->hr;
-    else
-        return desc->tp->size && desc->reloffset >= desc->tp->size;
+    return desc->tp->size && desc->reloffset >= desc->tp->size;
 }
 static void increment_desc(AGGREGATE_DESCRIPTOR** desc, AGGREGATE_DESCRIPTOR** cache)
 {
@@ -2215,17 +2213,20 @@ static void increment_desc(AGGREGATE_DESCRIPTOR** desc, AGGREGATE_DESCRIPTOR** c
                             break;
                         }
                     }
-                    if (((SYMBOL*)((*desc)->hr->p))->storage_class != sc_overloads)
                     {
-                        if (((SYMBOL*)((*desc)->hr->p))->tp->hasbits)
+                        SYMBOL* sym_temp = (SYMBOL*)((*desc)->hr->p);
+                    if (sym_temp->storage_class != sc_overloads)
+                    {
+                        if (sym_temp->tp->hasbits)
                         {
-                            if (!((SYMBOL*)((*desc)->hr->p))->anonymous)
+                            if (!(sym_temp)->anonymous)
                                 break;
                         }
-                        else if (((SYMBOL*)((*desc)->hr->p))->offset + (*desc)->offset != offset)
+                        else if (sym_temp->offset + (*desc)->offset != offset)
                         {
                             break;
                         }
+                    }
                     }
                 }
             if ((*desc)->hr)
@@ -2835,7 +2836,7 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
             if (cparams.prm_cplusplus && isstructured(itype) && MATCHKW(lex, openpa))
             {
                 // conversion constructor params
-                FUNCTIONCALL* funcparams = (FUNCTIONCALL*)(FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
+                FUNCTIONCALL* funcparams = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
                 INITIALIZER* it = NULL;
                 lex = getArgs(lex, funcsp, funcparams, closepa, true, 0);
                 if (funcparams->arguments && funcparams->arguments->next)
@@ -3747,7 +3748,7 @@ void RecalculateVariableTemplateInitializers(INITIALIZER** in, INITIALIZER*** ou
         }
         if ((*in)->basetp == 0)
         {
-            **out = (INITIALIZER*)(INITIALIZER *)Alloc(sizeof(INITIALIZER));
+            **out = (INITIALIZER*)Alloc(sizeof(INITIALIZER));
             ***out = **in;
             (**out)->offset = tp->size;
             *out = &(**out)->next;
@@ -3773,7 +3774,7 @@ void RecalculateVariableTemplateInitializers(INITIALIZER** in, INITIALIZER*** ou
         }
         if ((*in)->basetp == 0)
         {
-            **out = (INITIALIZER*)(INITIALIZER *)Alloc(sizeof(INITIALIZER));
+            **out = (INITIALIZER*)Alloc(sizeof(INITIALIZER));
             ***out = **in;
             (**out)->offset = tp->size;
             *out = &(**out)->next;
@@ -3781,7 +3782,7 @@ void RecalculateVariableTemplateInitializers(INITIALIZER** in, INITIALIZER*** ou
     }
     else
     {
-        **out = (INITIALIZER*)(INITIALIZER *)Alloc(sizeof(INITIALIZER));
+        **out = (INITIALIZER*)Alloc(sizeof(INITIALIZER));
         ***out = **in;
         *in = (*in)->next;
         (**out)->basetp = tp;
@@ -4097,7 +4098,7 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_sc storage_cl
         }
         else if (!isfunction(tp))
         {
-            TYPE* t = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
+            TYPE* t = (TYPE*)Alloc(sizeof(TYPE));
             t->btp = tp;
             t->type = bt_const;
             t->size = tp->size;

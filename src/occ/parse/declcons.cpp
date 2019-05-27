@@ -1711,6 +1711,9 @@ static void genConstructorCall(BLOCKDATA* b, SYMBOL* cls, MEMBERINITIALIZERS* mi
                 }
                 if (!callConstructor(&ctype, &exp, funcparams, false, NULL, top, false, false, false, false, false))
                     errorsym(ERR_NO_DEFAULT_CONSTRUCTOR, member);
+				// previously, callConstructor can return false here, meaning that funcparams->sp is null
+				// This used to create a nullptr dereference in PromoteConstructorArgs
+				// Why this is only being found NOW is somewhat dumb, but it is.
                 PromoteConstructorArgs(funcparams->sp, funcparams);
             }
             else
@@ -3114,6 +3117,10 @@ bool callConstructorParam(TYPE** tp, EXPRESSION** exp, TYPE* paramTP, EXPRESSION
 
 void PromoteConstructorArgs(SYMBOL* cons1, FUNCTIONCALL* params)
 {
+	if (!cons1)
+	{
+		return;
+	}
     HASHREC* hr = basetype(cons1->tp)->syms->table[0];
     if (((SYMBOL*)hr->p)->thisPtr)
         hr = hr->next;

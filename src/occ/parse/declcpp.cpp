@@ -1,29 +1,30 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "compiler.h"
 #include <map>
+#include <stack>
 extern ARCH_ASM* chosenAssembler;
 extern NAMESPACEVALUES *globalNameSpace, *localNameSpace;
 extern INCLUDES* includes;
@@ -55,8 +56,7 @@ extern bool inTemplateType;
 extern STRUCTSYM* structSyms;
 extern TYPE stdany;
 extern int noSpecializationError;
-extern SYMBOL *theCurrentFunc;
-
+extern SYMBOL* theCurrentFunc;
 
 attributes basisAttribs;
 
@@ -107,7 +107,7 @@ static int dumpVTabEntries(int count, THUNK* thunks, SYMBOL* sym, VTABENTRY* ent
                         }
                         else if (sym->tp->type != bt_void)
                         {
-                            *args = (INITLIST *)Alloc(sizeof(INITLIST));
+                            *args = (INITLIST*)Alloc(sizeof(INITLIST));
                             (*args)->tp = sym->tp;
                             (*args)->exp = exp;
                             args = &(*args)->next;
@@ -361,7 +361,7 @@ static void copyVTabEntries(VTABENTRY* lst, VTABENTRY** pos, int offset, bool is
         vfc = &vt->virtuals;
         while (vf)
         {
-            *vfc = (VIRTUALFUNC *) Alloc(sizeof(VIRTUALFUNC));
+            *vfc = (VIRTUALFUNC*)Alloc(sizeof(VIRTUALFUNC));
             (*vfc)->func = vf->func;
             vfc = &(*vfc)->next;
             vf = vf->next;
@@ -528,7 +528,7 @@ void calculateVTabEntries(SYMBOL* sp, SYMBOL* base, VTABENTRY** pos, int offset)
             vfc = &vt->virtuals;
             while (vf)
             {
-                *vfc = (VIRTUALFUNC *)Alloc(sizeof(VIRTUALFUNC));
+                *vfc = (VIRTUALFUNC*)Alloc(sizeof(VIRTUALFUNC));
                 (*vfc)->func = vf->func;
                 vfc = &(*vfc)->next;
                 vf = vf->next;
@@ -1128,7 +1128,7 @@ BASECLASS* innerBaseClass(SYMBOL* declsym, SYMBOL* bcsym, bool isvirtual, enum e
         error(ERR_UNION_CANNOT_BE_BASE_CLASS);
     if (bcsym->isfinal)
         errorsym(ERR_FINAL_BASE_CLASS, bcsym);
-    bc = (BASECLASS *)Alloc(sizeof(BASECLASS));
+    bc = (BASECLASS*)Alloc(sizeof(BASECLASS));
     bc->accessLevel = currentAccess;
     bc->isvirtual = isvirtual;
     bc->cls = bcsym;
@@ -1217,7 +1217,7 @@ LEXEME* baseClasses(LEXEME* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac defa
                 if (MATCHKW(lex, lt))
                 {
                     inTemplateSpecialization++;
-                    TEMPLATEPARAMLIST *nullLst;
+                    TEMPLATEPARAMLIST* nullLst;
                     lex = GetTemplateArguments(lex, funcsp, bcsym, &nullLst);
                     inTemplateSpecialization--;
                 }
@@ -1291,8 +1291,8 @@ LEXEME* baseClasses(LEXEME* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac defa
                                     src = lst;
                                     while (src && dest)
                                     {
-                                        *workingListPtr = (TEMPLATEPARAMLIST*)(TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
-                                        (*workingListPtr)->p = (TEMPLATEPARAM*)(TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
+                                        *workingListPtr = (TEMPLATEPARAMLIST*)(TEMPLATEPARAMLIST*)Alloc(sizeof(TEMPLATEPARAMLIST));
+                                        (*workingListPtr)->p = (TEMPLATEPARAM*)(TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
                                         if (src->p->packed)
                                         {
                                             TEMPLATEPARAMLIST* p = src->p->byPack.pack;
@@ -1662,9 +1662,16 @@ void checkPackedType(SYMBOL* sp)
 }
 bool hasPackedExpression(EXPRESSION* exp, bool useAuto)
 {
+    // This will stackoverflow, this is BAD if it does
+    // Pretty much just requires that in some way exp->left->left->left... is VERY, VERY LARGE
     if (!exp)
         return false;
-    if (hasPackedExpression(exp->left, useAuto))
+    EXPRESSION* expl = exp;
+    while (expl && expl->left)
+    {
+        expl = expl->left;
+    }
+    if (hasPackedExpression(expl->left, useAuto))
         return true;
     if (hasPackedExpression(exp->right, useAuto))
         return true;
@@ -1727,7 +1734,7 @@ void GatherPackedVars(int* count, SYMBOL** arg, EXPRESSION* packedExp)
                 if (tpl->p->packed)
                 {
                     SYMBOL* sym = clonesym(spx);
-                    sym->tp = (TYPE *)Alloc(sizeof(TYPE));
+                    sym->tp = (TYPE*)Alloc(sizeof(TYPE));
                     sym->tp->type = bt_templateparam;
                     sym->tp->templateParam = tpl;
                     arg[(*count)++] = sym;
@@ -1801,7 +1808,7 @@ INITLIST** expandPackedInitList(INITLIST** lptr, SYMBOL* funcsp, LEXEME* start, 
                 while (hr)
                 {
                     SYMBOL* sym = (SYMBOL*)hr->p;
-                    INITLIST* p = (INITLIST *)Alloc(sizeof(INITLIST));
+                    INITLIST* p = (INITLIST*)Alloc(sizeof(INITLIST));
                     p->tp = sym->tp;
                     p->exp = varNode(en_auto, sym);
                     if (isref(p->tp))
@@ -1835,7 +1842,7 @@ INITLIST** expandPackedInitList(INITLIST** lptr, SYMBOL* funcsp, LEXEME* start, 
             if (n > 1 || !packedExp->v.func->arguments || packedExp->v.func->arguments->tp->type != bt_void)
                 for (i = 0; i < n; i++)
                 {
-                    INITLIST* p = (INITLIST *)Alloc(sizeof(INITLIST));
+                    INITLIST* p = (INITLIST*)Alloc(sizeof(INITLIST));
                     LEXEME* lex = SetAlternateLex(start);
                     packIndex = i;
                     expression_assign(lex, funcsp, NULL, &p->tp, &p->exp, NULL, _F_PACKABLE);
@@ -2022,7 +2029,7 @@ MEMBERINITIALIZERS* expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, MEMBERI
                         getMemberInitializers(lex, funcsp, &shim, MATCHKW(lex, openpa) ? closepa : end, false);
                         while (shim.arguments)
                         {
-                            *xinit = (INITIALIZER*)(INITIALIZER *)Alloc(sizeof(INITIALIZER));
+                            *xinit = (INITIALIZER*)(INITIALIZER*)Alloc(sizeof(INITIALIZER));
                             (*xinit)->basetp = shim.arguments->tp;
                             (*xinit)->exp = shim.arguments->exp;
                             xinit = &(*xinit)->next;
@@ -2081,7 +2088,7 @@ void expandPackedMemberInitializers(SYMBOL* cls, SYMBOL* funcsp, TEMPLATEPARAMLI
         for (i = 0; i < n; i++)
         {
             LEXEME* lex = SetAlternateLex(start);
-            MEMBERINITIALIZERS* mi = (MEMBERINITIALIZERS *)Alloc(sizeof(MEMBERINITIALIZERS));
+            MEMBERINITIALIZERS* mi = (MEMBERINITIALIZERS*)Alloc(sizeof(MEMBERINITIALIZERS));
             TYPE* tp = templatePack->p->byClass.val;
             BASECLASS* bc = cls->baseClasses;
             int offset = 0;
@@ -2138,7 +2145,7 @@ void expandPackedMemberInitializers(SYMBOL* cls, SYMBOL* funcsp, TEMPLATEPARAMLI
                     SetAlternateLex(NULL);
                     while (shim.arguments)
                     {
-                        *xinit = (INITIALIZER*)(INITIALIZER *)Alloc(sizeof(INITIALIZER));
+                        *xinit = (INITIALIZER*)(INITIALIZER*)Alloc(sizeof(INITIALIZER));
                         (*xinit)->basetp = shim.arguments->tp;
                         (*xinit)->exp = shim.arguments->exp;
                         xinit = &(*xinit)->next;
@@ -2540,8 +2547,8 @@ LEXEME* handleStaticAssert(LEXEME* lex)
     if (getStructureDeclaration())
     {
         SYMBOL* sym = getStructureDeclaration();
-        LIST* staticAssert = (LIST *)Alloc(sizeof(LIST));
-        LEXEME **cur = (LEXEME **)&staticAssert->data, *last = NULL;
+        LIST* staticAssert = (LIST*)Alloc(sizeof(LIST));
+        LEXEME **cur = (LEXEME**)&staticAssert->data, *last = NULL;
         int paren = 0;
         int brack = 0;
         staticAssert->next = sym->staticAsserts;
@@ -2568,7 +2575,7 @@ LEXEME* handleStaticAssert(LEXEME* lex)
             {
                 brack--;
             }
-            *cur = (LEXEME *)Alloc(sizeof(LEXEME));
+            *cur = (LEXEME*)Alloc(sizeof(LEXEME));
             if (lex->type == l_id)
                 lex->value.s.a = litlate(lex->value.s.a);
             **cur = *lex;
@@ -2594,7 +2601,7 @@ LEXEME* handleStaticAssert(LEXEME* lex)
         TYPE* tp;
         EXPRESSION *expr = NULL, *expr2 = NULL;
         lex = expression_no_comma(lex, NULL, NULL, &tp, &expr, NULL, 0);
-        expr2 = (EXPRESSION *)Alloc(sizeof(EXPRESSION));
+        expr2 = (EXPRESSION*)Alloc(sizeof(EXPRESSION));
         expr2->type = en_x_bool;
         expr2->left = expr;
         optimize_for_constants(&expr2);
@@ -2688,12 +2695,12 @@ LEXEME* insertNamespace(LEXEME* lex, enum e_lk linkage, enum e_sc storage_class,
                                 return lex;
                             }
                         }
-                        tp = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
+                        tp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
                         tp->type = bt_void;
                         sp = makeID(sc_namespacealias, tp, NULL, litlate(buf));
                         if (nameSpaceList)
                         {
-                            sp->parentNameSpace = (SYMBOL *)nameSpaceList->data;
+                            sp->parentNameSpace = (SYMBOL*)nameSpaceList->data;
                         }
                         SetLinkerNames(sp, lk_none);
                         if (storage_class == sc_auto)
@@ -2706,7 +2713,7 @@ LEXEME* insertNamespace(LEXEME* lex, enum e_lk linkage, enum e_sc storage_class,
                             insert(sp, globalNameSpace->syms);
                             insert(sp, globalNameSpace->tags);
                         }
-                        sp->nameSpaceValues = (NAMESPACEVALUES *)Alloc(sizeof(NAMESPACEVALUES));
+                        sp->nameSpaceValues = (NAMESPACEVALUES*)Alloc(sizeof(NAMESPACEVALUES));
                         *sp->nameSpaceValues = *src->nameSpaceValues;
                         sp->nameSpaceValues->name = sp;  // this is to rename it with the alias e.g. for errors
                     }
@@ -2741,7 +2748,7 @@ LEXEME* insertNamespace(LEXEME* lex, enum e_lk linkage, enum e_sc storage_class,
             else
                 p++;
 
-            my_sprintf(anonymousNameSpaceName, "__%s__%d", p, CRC32((unsigned char *)infile, strlen(infile)));
+            my_sprintf(anonymousNameSpaceName, "__%s__%d", p, CRC32((unsigned char*)infile, strlen(infile)));
             while ((p = strchr(anonymousNameSpaceName, '.')) != 0)
                 *p = '_';
         }
@@ -2754,10 +2761,10 @@ LEXEME* insertNamespace(LEXEME* lex, enum e_lk linkage, enum e_sc storage_class,
     hr = LookupName(buf, globalNameSpace->syms);
     if (!hr)
     {
-        TYPE* tp = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
+        TYPE* tp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
         tp->type = bt_void;
         sp = makeID(sc_namespace, tp, NULL, litlate(buf));
-        sp->nameSpaceValues = (NAMESPACEVALUES *)Alloc(sizeof(NAMESPACEVALUES));
+        sp->nameSpaceValues = (NAMESPACEVALUES*)Alloc(sizeof(NAMESPACEVALUES));
         sp->nameSpaceValues->syms = CreateHashTable(GLOBALHASHSIZE);
         sp->nameSpaceValues->tags = CreateHashTable(GLOBALHASHSIZE);
         sp->nameSpaceValues->origname = sp;
@@ -2766,7 +2773,7 @@ LEXEME* insertNamespace(LEXEME* lex, enum e_lk linkage, enum e_sc storage_class,
         sp->linkage = linkage;
         if (nameSpaceList)
         {
-            sp->parentNameSpace = (SYMBOL *)nameSpaceList->data;
+            sp->parentNameSpace = (SYMBOL*)nameSpaceList->data;
         }
         SetLinkerNames(sp, lk_none);
         insert(sp, globalNameSpace->syms);
@@ -2774,7 +2781,7 @@ LEXEME* insertNamespace(LEXEME* lex, enum e_lk linkage, enum e_sc storage_class,
         if (anon || linkage == lk_inline)
         {
             // plop in a using directive for the anonymous namespace we are declaring
-            list = (LIST *)Alloc(sizeof(LIST));
+            list = (LIST*)Alloc(sizeof(LIST));
             list->data = sp;
             if (linkage == lk_inline)
             {
@@ -2802,7 +2809,7 @@ LEXEME* insertNamespace(LEXEME* lex, enum e_lk linkage, enum e_sc storage_class,
     }
     sp->value.i++;
 
-    list = (LIST *)Alloc(sizeof(LIST));
+    list = (LIST*)Alloc(sizeof(LIST));
     list->next = nameSpaceList;
     list->data = sp;
     nameSpaceList = list;
@@ -2818,7 +2825,7 @@ void unvisitUsingDirectives(NAMESPACEVALUES* v)
     LIST* t = v->usingDirectives;
     while (t)
     {
-        SYMBOL* sym = (SYMBOL *)t->data;
+        SYMBOL* sym = (SYMBOL*)t->data;
         //        if (sym->visited)
         {
             sym->visited = false;
@@ -2829,7 +2836,7 @@ void unvisitUsingDirectives(NAMESPACEVALUES* v)
     t = v->inlineDirectives;
     while (t)
     {
-        SYMBOL* sym = (SYMBOL *)t->data;
+        SYMBOL* sym = (SYMBOL*)t->data;
         //        if (sym->visited)
         {
             sym->visited = false;
@@ -2857,8 +2864,7 @@ static void InsertTag(SYMBOL* sp, enum e_sc storage_class, bool allowDups)
     if (!allowDups || !sp1 || (sp != sp1 && sp->mainsym && sp->mainsym != sp1->mainsym))
         insert(sp, table);
 }
-LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc storage_class, bool inTemplate,
-                    bool hasAttributes)
+LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc storage_class, bool inTemplate, bool hasAttributes)
 {
     SYMBOL* sp;
     if (MATCHKW(lex, kw_namespace))
@@ -2887,7 +2893,7 @@ LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc st
                     }
                     if (!t)
                     {
-                        LIST* l = (LIST *)Alloc(sizeof(LIST));
+                        LIST* l = (LIST*)Alloc(sizeof(LIST));
                         l->data = sp;
                         if (storage_class == sc_auto)
                         {
@@ -2901,7 +2907,7 @@ LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc st
                         }
 #ifdef PARSER_ONLY
                         if (lex)
-                            ccInsertUsing(sp, nameSpaceList ? (SYMBOL *)nameSpaceList->data : NULL, lex->file, lex->line);
+                            ccInsertUsing(sp, nameSpaceList ? (SYMBOL*)nameSpaceList->data : NULL, lex->file, lex->line);
 #endif
                     }
                 }
@@ -2941,7 +2947,7 @@ LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc st
                 sp = makeID(sc_typedef, tp, NULL, litlate(idsym->value.s.a));
                 if (inTemplate)
                 {
-                    TYPE* tp1 = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
+                    TYPE* tp1 = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
                     tp1->type = bt_typedef;
                     tp1->btp = tp;
                     tp1->sp = sp;
@@ -3043,7 +3049,7 @@ static void balancedAttributeParameter(LEXEME** lex)
         needkw(lex, endp);
     }
 }
-TYPE* AttributeFinish(SYMBOL *sp, TYPE* tp)
+TYPE* AttributeFinish(SYMBOL* sp, TYPE* tp)
 {
     sp->attribs = basisAttribs;
     // should come first to overwrite all other attributes
@@ -3058,7 +3064,6 @@ TYPE* AttributeFinish(SYMBOL *sp, TYPE* tp)
         {
             error(ERR_INVALID_ATTRIBUTE_COPY);
         }
-
     }
     if (sp->attribs.inheritable.vectorSize)
     {
@@ -3068,7 +3073,7 @@ TYPE* AttributeFinish(SYMBOL *sp, TYPE* tp)
             int m = sp->attribs.inheritable.vectorSize / tp->size;
             if (n || m > 0x10000 || (m & (m - 1)) != 0)
                 error(ERR_INVALID_VECTOR_SIZE);
-            TYPE *tp1 = (TYPE *)Alloc(sizeof(TYPE));
+            TYPE* tp1 = (TYPE*)Alloc(sizeof(TYPE));
             tp1->type = bt_pointer;
             tp1->size = sp->attribs.inheritable.vectorSize;
             tp1->array = true;
@@ -3082,45 +3087,44 @@ TYPE* AttributeFinish(SYMBOL *sp, TYPE* tp)
     }
     if (sp->attribs.inheritable.cleanup && sp->storage_class == sc_auto)
     {
-        FUNCTIONCALL *fc = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
-        fc->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
+        FUNCTIONCALL* fc = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
+        fc->arguments = (INITLIST*)Alloc(sizeof(INITLIST));
         fc->arguments->tp = &stdpointer;
         fc->arguments->exp = varNode(en_auto, sp);
         fc->ascall = true;
         fc->functp = sp->attribs.inheritable.cleanup->tp;
         fc->fcall = varNode(en_pc, sp->attribs.inheritable.cleanup);
         fc->sp = sp->attribs.inheritable.cleanup;
-        EXPRESSION *expl = exprNode(en_func, nullptr, nullptr);
+        EXPRESSION* expl = exprNode(en_func, nullptr, nullptr);
         expl->v.func = fc;
         initInsert(&sp->dest, sp->tp, expl, 0, true);
     }
     return tp;
 }
-static std::map<std::string, int> attribNames =
-{
-    { "alias", 1}, // 1 arg, alias name
-    { "aligned", 2 }, // arg is alignment; for members only increase unless also packed, otherwise can increase or decrease
-    { "warn_if_not_aligned", 3 }, // arg is the desired minimum alignment
-    { "alloc_size", 4 }, // implement by ignoring one or two args
-    { "cleanup", 5 }, // arg is afunc: similar to a destructor.   Also gets called during exception processing
-//                    { "common", 6 }, // no args, decide whether to support
-//                    { "nocommon", 7 }, // no args, decide whether to support
-                    { "copy", 8 }, // one arg, varible/func/type, the two variable kinds must match don't copy alias visibility or weak
-                    { "deprecated", 9 }, // zero or one arg, match C++
-                    { "nonstring", 10 }, // has no null terminator
-                    { "packed", 11 }, // ignore auto-align on this field
-//                    { "section", 12 }, // one argument, the section name
-//                    { "tls_model", 13 }, // one arg, the model.   Probably shouldn't support
-                    { "unused", 14 }, // warning control
-                    { "used", 15 }, // warning control
-                    { "vector_size", 16 }, // one arg, which must be a power of two multiple of the base size.  implement as fixed-size array
-//                    { "visibility", 17 }, // one arg, 'default' ,'hidden', 'internal', 'protected.   don't support for now as requires linker changes.
-//                    { "weak", 18 }, // not supporting
-                    { "dllimport", 19 },
-                    { "dllexport", 20 },
-                    //                    { "selectany", 21 },  // requires linker support
-                    //                    { "shared", 22 },
-                { "zstring", 23 } // non-gcc, added to support nonstring
+static std::map<std::string, int> attribNames = {
+    {"alias", 1},    // 1 arg, alias name
+    {"aligned", 2},  // arg is alignment; for members only increase unless also packed, otherwise can increase or decrease
+    {"warn_if_not_aligned", 3},  // arg is the desired minimum alignment
+    {"alloc_size", 4},           // implement by ignoring one or two args
+    {"cleanup", 5},              // arg is afunc: similar to a destructor.   Also gets called during exception processing
+                                 //                    { "common", 6 }, // no args, decide whether to support
+                                 //                    { "nocommon", 7 }, // no args, decide whether to support
+    {"copy", 8},          // one arg, varible/func/type, the two variable kinds must match don't copy alias visibility or weak
+    {"deprecated", 9},    // zero or one arg, match C++
+    {"nonstring", 10},    // has no null terminator
+    {"packed", 11},       // ignore auto-align on this field
+                          //                    { "section", 12 }, // one argument, the section name
+                          //                    { "tls_model", 13 }, // one arg, the model.   Probably shouldn't support
+    {"unused", 14},       // warning control
+    {"used", 15},         // warning control
+    {"vector_size", 16},  // one arg, which must be a power of two multiple of the base size.  implement as fixed-size array
+    //                    { "visibility", 17 }, // one arg, 'default' ,'hidden', 'internal', 'protected.   don't support for now as
+    //                    requires linker changes. { "weak", 18 }, // not supporting
+    {"dllimport", 19},
+    {"dllexport", 20},
+    //                    { "selectany", 21 },  // requires linker support
+    //                    { "shared", 22 },
+    {"zstring", 23}  // non-gcc, added to support nonstring
 
 };
 void ParseOut__attribute__(LEXEME** lex, SYMBOL* funcsp)
@@ -3138,194 +3142,196 @@ void ParseOut__attribute__(LEXEME** lex, SYMBOL* funcsp)
                     *lex = getsym();
                     switch (attribNames[name])
                     {
-                    case 1: // alias
-                        if (MATCHKW(*lex, openpa))
-                        {
-                            *lex = getsym();
-                            if ((*lex)->type == l_astr)
-                            {
-                                char buf[1024];
-                                int i;
-                                SLCHAR* xx = (SLCHAR*)(*lex)->value.s.w;
-                                for (i = 0; i < 1024 && i < xx->count; i++)
-                                    buf[i] = (char)xx->str[i];
-                                buf[i] = 0;
-                                basisAttribs.uninheritable.alias = litlate(buf);
-                                *lex = getsym();
-                            }
-                            needkw(lex, closepa);
-                        }
-                        break;
-                    case 2: // aligned
-                        if (needkw(lex, openpa))
-                        {
-                            TYPE* tp = NULL;
-                            EXPRESSION* exp = NULL;
-
-                            *lex = optimized_expression(*lex, funcsp, NULL, &tp, &exp, false);
-                            if (!tp || !isint(tp))
-                                error(ERR_NEED_INTEGER_TYPE);
-                            else if (!isintconst(exp))
-                                error(ERR_CONSTANT_VALUE_EXPECTED);
-                            basisAttribs.inheritable.structAlign = exp->v.i;
-                            basisAttribs.inheritable.alignedAttribute = true;
-                            needkw(lex, closepa);
-
-                            if (basisAttribs.inheritable.structAlign > 0x10000 || (basisAttribs.inheritable.structAlign & (basisAttribs.inheritable.structAlign - 1)) != 0)
-                                error(ERR_INVALID_ALIGNMENT);
-                        }
-                        break;
-                    case 3: // warn_if_not_aligned
-                        if (needkw(lex, openpa))
-                        {
-                            TYPE* tp = NULL;
-                            EXPRESSION* exp = NULL;
-
-                            *lex = optimized_expression(*lex, funcsp, NULL, &tp, &exp, false);
-                            if (!tp || !isint(tp))
-                                error(ERR_NEED_INTEGER_TYPE);
-                            else if (!isintconst(exp))
-                                error(ERR_CONSTANT_VALUE_EXPECTED);
-                            basisAttribs.inheritable.warnAlign = exp->v.i;
-                            needkw(lex, closepa);
-
-                            if (basisAttribs.inheritable.warnAlign > 0x10000 || (basisAttribs.inheritable.warnAlign & (basisAttribs.inheritable.warnAlign - 1)) != 0)
-                                error(ERR_INVALID_ALIGNMENT);
-                        }
-                        break;
-                    case 4: // alloc_size // doesn't restrict to numbers but maybe should?
-                        if (needkw(lex, openpa))
-                        {
-                            errskim(lex, skim_comma);
-                            if (MATCHKW(*lex, comma))
+                        case 1:  // alias
+                            if (MATCHKW(*lex, openpa))
                             {
                                 *lex = getsym();
-                                errskim(lex, skim_closepa);
-                            }
-                            needkw(lex, closepa);
-                        }
-                        break;
-                    case 5:// cleanup - needs work, should be in the C++ exception table for the function...
-                        if (MATCHKW(*lex, openpa))
-                        {
-                            *lex = getsym();
-                            if (ISID(*lex))
-                            {
-                                SYMBOL *sp = gsearch((*lex)->value.s.a);
-                                if (sp)
+                                if ((*lex)->type == l_astr)
                                 {
-                                    if (sp->tp->type == bt_aggregate)
-                                        if (basetype(sp->tp)->syms->table[0] && !basetype(sp->tp)->syms->table[0]->next)
-                                            sp = basetype(sp->tp)->syms->table[0]->p;
-                                    if (isfunction(sp->tp) && isvoid(basetype(sp->tp)->btp))
+                                    char buf[1024];
+                                    int i;
+                                    SLCHAR* xx = (SLCHAR*)(*lex)->value.s.w;
+                                    for (i = 0; i < 1024 && i < xx->count; i++)
+                                        buf[i] = (char)xx->str[i];
+                                    buf[i] = 0;
+                                    basisAttribs.uninheritable.alias = litlate(buf);
+                                    *lex = getsym();
+                                }
+                                needkw(lex, closepa);
+                            }
+                            break;
+                        case 2:  // aligned
+                            if (needkw(lex, openpa))
+                            {
+                                TYPE* tp = NULL;
+                                EXPRESSION* exp = NULL;
+
+                                *lex = optimized_expression(*lex, funcsp, NULL, &tp, &exp, false);
+                                if (!tp || !isint(tp))
+                                    error(ERR_NEED_INTEGER_TYPE);
+                                else if (!isintconst(exp))
+                                    error(ERR_CONSTANT_VALUE_EXPECTED);
+                                basisAttribs.inheritable.structAlign = exp->v.i;
+                                basisAttribs.inheritable.alignedAttribute = true;
+                                needkw(lex, closepa);
+
+                                if (basisAttribs.inheritable.structAlign > 0x10000 ||
+                                    (basisAttribs.inheritable.structAlign & (basisAttribs.inheritable.structAlign - 1)) != 0)
+                                    error(ERR_INVALID_ALIGNMENT);
+                            }
+                            break;
+                        case 3:  // warn_if_not_aligned
+                            if (needkw(lex, openpa))
+                            {
+                                TYPE* tp = NULL;
+                                EXPRESSION* exp = NULL;
+
+                                *lex = optimized_expression(*lex, funcsp, NULL, &tp, &exp, false);
+                                if (!tp || !isint(tp))
+                                    error(ERR_NEED_INTEGER_TYPE);
+                                else if (!isintconst(exp))
+                                    error(ERR_CONSTANT_VALUE_EXPECTED);
+                                basisAttribs.inheritable.warnAlign = exp->v.i;
+                                needkw(lex, closepa);
+
+                                if (basisAttribs.inheritable.warnAlign > 0x10000 ||
+                                    (basisAttribs.inheritable.warnAlign & (basisAttribs.inheritable.warnAlign - 1)) != 0)
+                                    error(ERR_INVALID_ALIGNMENT);
+                            }
+                            break;
+                        case 4:  // alloc_size // doesn't restrict to numbers but maybe should?
+                            if (needkw(lex, openpa))
+                            {
+                                errskim(lex, skim_comma);
+                                if (MATCHKW(*lex, comma))
+                                {
+                                    *lex = getsym();
+                                    errskim(lex, skim_closepa);
+                                }
+                                needkw(lex, closepa);
+                            }
+                            break;
+                        case 5:  // cleanup - needs work, should be in the C++ exception table for the function...
+                            if (MATCHKW(*lex, openpa))
+                            {
+                                *lex = getsym();
+                                if (ISID(*lex))
+                                {
+                                    SYMBOL* sp = gsearch((*lex)->value.s.a);
+                                    if (sp)
                                     {
-                                        auto arg = basetype(sp->tp)->syms->table[0];
-                                        if (!arg || arg == (void *)-1 || isvoid(arg->p->tp) || isvoidptr(arg->p->tp) && !arg->next)
-                                            basisAttribs.inheritable.cleanup = sp;
+                                        if (sp->tp->type == bt_aggregate)
+                                            if (basetype(sp->tp)->syms->table[0] && !basetype(sp->tp)->syms->table[0]->next)
+                                                sp = basetype(sp->tp)->syms->table[0]->p;
+                                        if (isfunction(sp->tp) && isvoid(basetype(sp->tp)->btp))
+                                        {
+                                            auto arg = basetype(sp->tp)->syms->table[0];
+                                            if (!arg || arg == (void*)-1 || isvoid(arg->p->tp) ||
+                                                isvoidptr(arg->p->tp) && !arg->next)
+                                                basisAttribs.inheritable.cleanup = sp;
+                                            else
+                                                error(ERR_INVALID_ATTRIBUTE_CLEANUP);
+                                        }
                                         else
+                                        {
                                             error(ERR_INVALID_ATTRIBUTE_CLEANUP);
+                                        }
                                     }
                                     else
                                     {
-                                        error(ERR_INVALID_ATTRIBUTE_CLEANUP);
+                                        errorstr(ERR_UNDEFINED_IDENTIFIER, (*lex)->value.s.a);
                                     }
+                                    *lex = getsym();
                                 }
                                 else
                                 {
-                                    errorstr(ERR_UNDEFINED_IDENTIFIER, (*lex)->value.s.a);
+                                    error(ERR_IDENTIFIER_EXPECTED);
                                 }
+                                needkw(lex, closepa);
+                            }
+                            break;
+                        case 8:  // copy
+                            if (MATCHKW(*lex, openpa))
+                            {
                                 *lex = getsym();
-                            }
-                            else
-                            {
-                                error(ERR_IDENTIFIER_EXPECTED);
-                            }
-                            needkw(lex, closepa);
-                        }
-                        break;
-                    case 8: // copy
-                        if (MATCHKW(*lex, openpa))
-                        {
-                            *lex = getsym();
-                            if (ISID(*lex))
-                            {
-                                SYMBOL *sp = gsearch((*lex)->value.s.a);
-                                if (sp)
+                                if (ISID(*lex))
                                 {
-                                    basisAttribs.uninheritable.copyFrom= sp;
+                                    SYMBOL* sp = gsearch((*lex)->value.s.a);
+                                    if (sp)
+                                    {
+                                        basisAttribs.uninheritable.copyFrom = sp;
+                                    }
+                                    else
+                                    {
+                                        errorstr(ERR_UNDEFINED_IDENTIFIER, (*lex)->value.s.a);
+                                    }
+                                    *lex = getsym();
                                 }
                                 else
                                 {
-                                    errorstr(ERR_UNDEFINED_IDENTIFIER, (*lex)->value.s.a);
+                                    error(ERR_IDENTIFIER_EXPECTED);
                                 }
-                                *lex = getsym();
+                                needkw(lex, closepa);
                             }
-                            else
+                            break;
+                        case 9:  // deprecated
+                            basisAttribs.uninheritable.deprecationText = (const char*)-1;
+                            if (MATCHKW(*lex, openpa))
                             {
-                                error(ERR_IDENTIFIER_EXPECTED);
-                            }
-                            needkw(lex, closepa);
-                        }
-                        break;
-                    case 9: // deprecated
-                        basisAttribs.uninheritable.deprecationText = (const char *)-1;
-                        if (MATCHKW(*lex, openpa))
-                        {
-                            *lex = getsym();
-                            if ((*lex)->type == l_astr)
-                            {
-                                char buf[1024];
-                                int i;
-                                SLCHAR* xx = (SLCHAR*)(*lex)->value.s.w;
-                                for (i = 0; i < 1024 && i < xx->count; i++)
-                                    buf[i] = (char)xx->str[i];
-                                buf[i] = 0;
-                                basisAttribs.uninheritable.deprecationText = litlate(buf);
                                 *lex = getsym();
+                                if ((*lex)->type == l_astr)
+                                {
+                                    char buf[1024];
+                                    int i;
+                                    SLCHAR* xx = (SLCHAR*)(*lex)->value.s.w;
+                                    for (i = 0; i < 1024 && i < xx->count; i++)
+                                        buf[i] = (char)xx->str[i];
+                                    buf[i] = 0;
+                                    basisAttribs.uninheritable.deprecationText = litlate(buf);
+                                    *lex = getsym();
+                                }
+                                needkw(lex, closepa);
                             }
-                            needkw(lex, closepa);
-                        }
-                        break;
-                    case 10: // nonstring
-                        basisAttribs.inheritable.nonstring = true;
-                        break;
-                    case 11: // packed
-                        basisAttribs.inheritable.packed = true;
-                        break;
-                    case 14:// unused
-                        basisAttribs.inheritable.used = true;
-                        break;
-                    case 15: // used - this forces emission of static variables.  Since we always emit it is a noop
-                        break;
-                    case 16: // vector_size
-                        if (needkw(lex, openpa))
-                        {
-                            TYPE* tp = NULL;
-                            EXPRESSION* exp = NULL;
+                            break;
+                        case 10:  // nonstring
+                            basisAttribs.inheritable.nonstring = true;
+                            break;
+                        case 11:  // packed
+                            basisAttribs.inheritable.packed = true;
+                            break;
+                        case 14:  // unused
+                            basisAttribs.inheritable.used = true;
+                            break;
+                        case 15:  // used - this forces emission of static variables.  Since we always emit it is a noop
+                            break;
+                        case 16:  // vector_size
+                            if (needkw(lex, openpa))
+                            {
+                                TYPE* tp = NULL;
+                                EXPRESSION* exp = NULL;
 
-                            *lex = optimized_expression(*lex, funcsp, NULL, &tp, &exp, false);
-                            if (!tp || !isint(tp))
-                                error(ERR_NEED_INTEGER_TYPE);
-                            else if (!isintconst(exp))
-                                error(ERR_CONSTANT_VALUE_EXPECTED);
-                            basisAttribs.inheritable.vectorSize = exp->v.i;
-                            needkw(lex, closepa);
-
-                        }
-                        break;
-                    case 19: // dllimport
-                        if (basisAttribs.inheritable.linkage2 != lk_none)
-                            error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
-                        basisAttribs.inheritable.linkage2 = lk_import;
-                        break;
-                    case 20: // dllexport
-                        if (basisAttribs.inheritable.linkage2 != lk_none)
-                            error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
-                        basisAttribs.inheritable.linkage2 = lk_export;
-                        break;
-                    case 23: // zstring
-                        basisAttribs.inheritable.zstring = true;
-                        break;
+                                *lex = optimized_expression(*lex, funcsp, NULL, &tp, &exp, false);
+                                if (!tp || !isint(tp))
+                                    error(ERR_NEED_INTEGER_TYPE);
+                                else if (!isintconst(exp))
+                                    error(ERR_CONSTANT_VALUE_EXPECTED);
+                                basisAttribs.inheritable.vectorSize = exp->v.i;
+                                needkw(lex, closepa);
+                            }
+                            break;
+                        case 19:  // dllimport
+                            if (basisAttribs.inheritable.linkage2 != lk_none)
+                                error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
+                            basisAttribs.inheritable.linkage2 = lk_import;
+                            break;
+                        case 20:  // dllexport
+                            if (basisAttribs.inheritable.linkage2 != lk_none)
+                                error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
+                            basisAttribs.inheritable.linkage2 = lk_export;
+                            break;
+                        case 23:  // zstring
+                            basisAttribs.inheritable.zstring = true;
+                            break;
                     }
                 }
                 needkw(lex, closepa);
@@ -3420,7 +3426,8 @@ bool ParseAttributeSpecifiers(LEXEME** lex, SYMBOL* funcsp, bool always)
                     }
                     needkw(lex, closepa);
                     basisAttribs.inheritable.structAlign = align;
-                    if (basisAttribs.inheritable.structAlign > 0x10000 || (basisAttribs.inheritable.structAlign & (basisAttribs.inheritable.structAlign - 1)) != 0)
+                    if (basisAttribs.inheritable.structAlign > 0x10000 ||
+                        (basisAttribs.inheritable.structAlign & (basisAttribs.inheritable.structAlign - 1)) != 0)
                         error(ERR_INVALID_ALIGNMENT);
                 }
             }
@@ -3664,7 +3671,7 @@ LEXEME* getDeclType(LEXEME* lex, SYMBOL* funcsp, TYPE** tn)
         }
         if (extended)
             needkw(&lex, closepa);
-        (*tn) = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
+        (*tn) = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
         (*tn)->type = bt_auto;
         (*tn)->decltypeauto = true;
         (*tn)->decltypeautoextended = extended;
@@ -3680,7 +3687,7 @@ LEXEME* getDeclType(LEXEME* lex, SYMBOL* funcsp, TYPE** tn)
             exp->v.func->sp = (SYMBOL*)hr->p;
             if (hasAmpersand)
             {
-                (*tn) = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
+                (*tn) = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
                 if (ismember(exp->v.func->sp))
                 {
                     (*tn)->type = bt_memberptr;
@@ -3704,7 +3711,7 @@ LEXEME* getDeclType(LEXEME* lex, SYMBOL* funcsp, TYPE** tn)
             optimize_for_constants(&exp);
             if (templateNestingCount && !instantiatingTemplate)
             {
-                TYPE* tp2 = (TYPE *)Alloc(sizeof(TYPE));
+                TYPE* tp2 = (TYPE*)Alloc(sizeof(TYPE));
                 tp2->type = bt_templatedecltype;
                 tp2->rootType = tp2;
                 tp2->templateDeclType = exp;
@@ -3722,7 +3729,7 @@ LEXEME* getDeclType(LEXEME* lex, SYMBOL* funcsp, TYPE** tn)
         {
             if (!lambdas && xvalue(exp))
             {
-                TYPE* tp2 = (TYPE *)Alloc(sizeof(TYPE));
+                TYPE* tp2 = (TYPE*)Alloc(sizeof(TYPE));
                 if (isref((*tn)))
                     (*tn) = basetype((*tn))->btp;
                 tp2->type = bt_rref;
@@ -3733,7 +3740,7 @@ LEXEME* getDeclType(LEXEME* lex, SYMBOL* funcsp, TYPE** tn)
             }
             else if (lvalue(exp))
             {
-                TYPE* tp2 = (TYPE *)Alloc(sizeof(TYPE));
+                TYPE* tp2 = (TYPE*)Alloc(sizeof(TYPE));
                 if (isref((*tn)))
                     (*tn) = basetype((*tn))->btp;
                 if (lambdas && !lambdas->isMutable)
@@ -3743,7 +3750,7 @@ LEXEME* getDeclType(LEXEME* lex, SYMBOL* funcsp, TYPE** tn)
                     tp2->btp = (*tn);
                     tp2->rootType = (*tn)->rootType;
                     (*tn) = tp2;
-                    tp2 = (TYPE *)Alloc(sizeof(TYPE));
+                    tp2 = (TYPE*)Alloc(sizeof(TYPE));
                 }
                 tp2->type = bt_lref;
                 tp2->size = getSize(bt_pointer);

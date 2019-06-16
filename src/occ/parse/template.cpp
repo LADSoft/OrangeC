@@ -140,6 +140,7 @@ EXPRESSION* GetSymRef(EXPRESSION* n)
                 rv = GetSymRef(n->left);
             if (!rv && n->right)
                 rv = GetSymRef(n->right);
+            return rv;
     }
     return rv;
 }

@@ -1660,44 +1660,67 @@ void checkPackedType(SYMBOL* sp)
         error(ERR_PACK_SPECIFIER_MUST_BE_USED_IN_PARAMETER);
     }
 }
+std::stack<EXPRESSION*> iterateToPostOrder(EXPRESSION* exp)
+{
+    std::stack<EXPRESSION*> st1;
+    st1.push(exp);
+    std::stack<EXPRESSION*> st2;
+    while (!st1.empty())
+    {
+        EXPRESSION* curr = st1.top();
+        st1.pop();
+        st2.push(curr);
+        if (curr->left)
+        {
+            st1.push(curr->left);
+        }
+        if (curr->right)
+        {
+            st1.push(curr->right);
+        }
+    }
+    return st2;
+}
 bool hasPackedExpression(EXPRESSION* exp, bool useAuto)
 {
-    // This will stackoverflow, this is BAD if it does
-    // Pretty much just requires that in some way exp->left->left->left... is VERY, VERY LARGE
-    if (!exp)
-        return false;
-    EXPRESSION* expl = exp;
-    while (expl && expl->left)
+    std::stack<EXPRESSION*> st = iterateToPostOrder(exp);
+    while (!st.empty())
     {
-        expl = expl->left;
-    }
-    if (hasPackedExpression(expl->left, useAuto))
-        return true;
-    if (hasPackedExpression(exp->right, useAuto))
-        return true;
-    if (useAuto && exp->type == en_auto)
-        return exp->v.sp->packed;
-    if (exp->type == en_func)
-    {
-        if (useAuto)
+        EXPRESSION* exp1 = st.top();
+        st.pop();
+        if (useAuto && exp1->type == en_auto)
         {
-            TEMPLATEPARAMLIST* tpl = exp->v.func->templateParams;
-            while (tpl)
+            if (exp1->v.sp->packed)
             {
-                if (tpl->p->packed)
-                    return true;
-                tpl = tpl->next;
+                return true;
+            }
+            else
+            {
+                continue;
             }
         }
-        INITLIST* il = exp->v.func->arguments;
-        while (il)
+        if (exp1->type == en_func)
         {
-            if (hasPackedExpression(il->exp, useAuto))
+            if (useAuto)
+            {
+                TEMPLATEPARAMLIST* tpl = exp1->v.func->templateParams;
+                while (tpl)
+                {
+                    if (tpl->p->packed)
+                        return true;
+                    tpl = tpl->next;
+                }
+            }
+            INITLIST* il = exp1->v.func->arguments;
+            while (il)
+            {
+                if (hasPackedExpression(il->exp, useAuto))
+                    return true;
+                il = il->next;
+            }
+            if (exp1->v.func->thisptr && hasPackedExpression(exp1->v.func->thisptr, useAuto))
                 return true;
-            il = il->next;
         }
-        if (exp->v.func->thisptr && hasPackedExpression(exp->v.func->thisptr, useAuto))
-            return true;
     }
     return false;
 }
@@ -3118,8 +3141,8 @@ static std::map<std::string, int> attribNames = {
     {"unused", 14},       // warning control
     {"used", 15},         // warning control
     {"vector_size", 16},  // one arg, which must be a power of two multiple of the base size.  implement as fixed-size array
-    //                    { "visibility", 17 }, // one arg, 'default' ,'hidden', 'internal', 'protected.   don't support for now as
-    //                    requires linker changes. { "weak", 18 }, // not supporting
+    //                    { "visibility", 17 }, // one arg, 'default' ,'hidden', 'internal', 'protected.   don't support for now
+    //                    as requires linker changes. { "weak", 18 }, // not supporting
     {"dllimport", 19},
     {"dllexport", 20},
     //                    { "selectany", 21 },  // requires linker support

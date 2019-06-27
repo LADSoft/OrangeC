@@ -123,24 +123,36 @@ void templateInit(void)
 EXPRESSION* GetSymRef(EXPRESSION* n)
 {
     EXPRESSION* rv = NULL;
-
-    switch (n->type)
+    std::stack<EXPRESSION*> st;
+    st.push(n);
+    while (!st.empty())
     {
-        case en_labcon:
-        case en_global:
-        case en_auto:
-        case en_absolute:
-        case en_pc:
-        case en_threadlocal:
-            return n;
-        case en_tempref:
-            return NULL;
-        default:
-            if (n->left)
-                rv = GetSymRef(n->left);
-            if (!rv && n->right)
-                rv = GetSymRef(n->right);
-            return rv;
+        EXPRESSION* exp = st.top();
+        st.pop();
+        switch (exp->type)
+        {
+            case en_labcon:
+            case en_global:
+            case en_auto:
+            case en_absolute:
+            case en_pc:
+            case en_threadlocal:
+                return exp;
+            case en_tempref:
+                if (st.empty())
+                    return NULL;
+                continue;
+            default:
+                if (exp->right)
+                {
+                    st.push(exp->right);
+                }
+                if (exp->left)
+                {
+                    st.push(exp->left);
+                }
+                break;
+        }
     }
     return rv;
 }
@@ -2374,6 +2386,7 @@ static EXPRESSION* copy_expression_data(EXPRESSION* exp)
 {
     EXPRESSION* n = (EXPRESSION*)Alloc(sizeof(EXPRESSION));
     *n = *exp;
+    // Easiest way to do a deep copy without including the rest of the tree
     n->left = nullptr;
     n->right = nullptr;
     return n;

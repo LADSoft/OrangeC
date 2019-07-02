@@ -879,6 +879,7 @@ char* mangleType(char* in, TYPE* tp, bool first)
 void SetLinkerNames(SYMBOL* sym, enum e_lk linkage)
 {
     char errbuf[8192], *p = errbuf;
+	memset(errbuf, 0, 8192);
     SYMBOL* lastParent;
     mangledNamesCount = 0;
     if (linkage == lk_none || linkage == lk_cdecl)

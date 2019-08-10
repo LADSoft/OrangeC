@@ -48,7 +48,7 @@ char BackendIntrinsicPrototypes[] =
 void promoteToBoolean(AMODE* addr)
 {
     addr->length = ISZ_UCHAR;
-    gen_code(op_setne, addr, NULL);
+    gen_code(op_setne, addr, nullptr);
 }
 bool handleBSR()
 {
@@ -193,15 +193,15 @@ bool handleBSWAP16()
 bool handleBSWAP32()
 {
     gen_code(op_mov, makedreg(EAX), makedreg(ECX));
-    gen_code(op_bswap, makedreg(EAX), NULL); // slow, but...
+    gen_code(op_bswap, makedreg(EAX), nullptr); // slow, but...
     return true;
 }
 bool handleBSWAP64()
 {
     gen_code(op_mov, makedreg(EAX), makedreg(EDX));
     gen_code(op_mov, makedreg(EDX), makedreg(ECX));
-    gen_code(op_bswap, makedreg(EAX), NULL);
-    gen_code(op_bswap, makedreg(EDX), NULL);
+    gen_code(op_bswap, makedreg(EAX), nullptr);
+    gen_code(op_bswap, makedreg(EDX), nullptr);
     return true;
 }
 // for __fastcall, first arg is in ECX, second arg is in EDX and third arg is in EAX

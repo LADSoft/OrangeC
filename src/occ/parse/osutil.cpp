@@ -58,7 +58,7 @@ extern int total_errors;
 #ifndef CPREPROCESSOR
 extern ARCH_ASM* chosenAssembler;
 extern int diagcount;
-extern NAMESPACEVALUES* globalNameSpace;
+extern NAMESPACEVALUELIST* globalNameSpace;
 extern char infile[];
 
 #endif
@@ -116,9 +116,9 @@ void usage(char* prog_name)
     char* extension;
 
     short_name = strrchr(prog_name, '\\');
-    if (short_name == NULL)
+    if (short_name == nullptr)
         short_name = strrchr(prog_name, '/');
-    if (short_name == NULL)
+    if (short_name == nullptr)
         short_name = strrchr(prog_name, ':');
     if (short_name)
         short_name++;
@@ -126,7 +126,7 @@ void usage(char* prog_name)
         short_name = prog_name;
 
     extension = strrchr(short_name, '.');
-    if (extension != NULL)
+    if (extension != nullptr)
         *extension = '\0';
     fprintf(stderr, "Usage: %s %s", short_name, getUsageText());
 #ifndef CPREPROCESSOR
@@ -233,7 +233,7 @@ FILE* SrchPth3(char* string, const char* searchpath, const char* mode)
 
             /* Check this path */
             in = fopen(buffer, mode);
-            if (in != NULL)
+            if (in != nullptr)
             {
                 strcpy(string, buffer);
                 return (in);
@@ -243,12 +243,12 @@ FILE* SrchPth3(char* string, const char* searchpath, const char* mode)
     else
     {
         in = fopen((char*)string, mode);
-        if (in != NULL)
+        if (in != nullptr)
         {
             return (in);
         }
     }
-    return (NULL);
+    return (nullptr);
 }
 /* this ditty takes care of the fact that on DOS
  * (and on dos shells under NT/XP)
@@ -1070,9 +1070,9 @@ void dumperrs(FILE* file)
     if (cparams.prm_listfile)
     {
         fprintf(listFile, "******** Global Symbols ********\n");
-        list_table(globalNameSpace->syms, 0);
+        list_table(globalNameSpace->valueData->syms, 0);
         fprintf(listFile, "******** Global Tags ********\n");
-        list_table(globalNameSpace->tags, 0);
+        list_table(globalNameSpace->valueData->tags, 0);
     }
     if (diagcount && !total_errors)
         fprintf(file, "%d Diagnostics\n", diagcount);
@@ -1141,7 +1141,7 @@ void ccinit(int argc, char* argv[])
         exit(0);
     }
 #if defined(WIN32) || defined(MICROSOFT)
-    GetModuleFileNameA(NULL, buffer, sizeof(buffer));
+    GetModuleFileNameA(nullptr, buffer, sizeof(buffer));
 #else
     strcpy(buffer, argv[0]);
 #endif

@@ -546,7 +546,7 @@ FPF refloat(EXPRESSION* node)
             break;
 
         default:
-            rv = { 0 };
+            rv = 0;
             break;
     }
     return rv;
@@ -2367,45 +2367,45 @@ int opt0(EXPRESSION** node)
             if (!templateNestingCount)
             {
                 TEMPLATESELECTOR* tsl = (*node)->v.templateSelector;
-                SYMBOL* ts = tsl->next->sym;
-                SYMBOL* sp = ts;
+                SYMBOL* ts = tsl->next->sp;
+                SYMBOL* sym = ts;
                 TEMPLATESELECTOR* find = tsl->next->next;
                 if (tsl->next->isTemplate)
                 {
                     TEMPLATEPARAMLIST* current = tsl->next->templateParams;
-                    sp = GetClassTemplate(ts, current, true);
+                    sym = GetClassTemplate(ts, current, true);
                 }
-                if (sp && sp->tp->type == bt_templateselector)
+                if (sym && sym->tp->type == bt_templateselector)
                 {
-                    TYPE* tp = sp->tp;
-                    tp = SynthesizeType(tp, NULL, false);
+                    TYPE* tp = sym->tp;
+                    tp = SynthesizeType(tp, nullptr, false);
                     if (tp && isstructured(tp))
-                        sp = basetype(tp)->sp;
+                        sym = basetype(tp)->sp;
                 }
-                if (sp)
+                if (sym)
                 {
-                    sp = basetype(PerformDeferredInitialization(sp->tp, NULL))->sp;
-                    while (find && sp)
+                    sym = basetype(PerformDeferredInitialization(sym->tp, nullptr))->sp;
+                    while (find && sym)
                     {
-                        SYMBOL* spo = sp;
+                        SYMBOL* spo = sym;
                         if (!isstructured(spo->tp))
                             break;
 
-                        sp = search(find->name, spo->tp->syms);
-                        if (!sp)
+                        sym = search(find->name, spo->tp->syms);
+                        if (!sym)
                         {
-                            sp = classdata(find->name, spo, NULL, false, false);
-                            if (sp == (SYMBOL*)-1)
-                                sp = NULL;
+                            sym = classdata(find->name, spo, nullptr, false, false);
+                            if (sym == (SYMBOL*)-1)
+                                sym = nullptr;
                         }
                         find = find->next;
                     }
-                    if (!find && sp)
+                    if (!find && sym)
                     {
-                        if (sp->storage_class == sc_constant)
+                        if (sym->storage_class == sc_constant)
                         {
-                            optimize_for_constants(&sp->init->exp);
-                            *node = sp->init->exp;
+                            optimize_for_constants(&sym->init->exp);
+                            *node = sym->init->exp;
                             return true;
                         }
                     }
@@ -2417,7 +2417,7 @@ int opt0(EXPRESSION** node)
             if (!templateNestingCount && (*node)->v.sp->tp->templateParam->p->type == kw_int)
             {
                 SYMBOL* sym = (*node)->v.sp;
-                TEMPLATEPARAMLIST* found = NULL;
+                TEMPLATEPARAMLIST* found = nullptr;
                 STRUCTSYM* search = structSyms;
                 while (search && !found)
                 {
@@ -2962,7 +2962,7 @@ int fold_const(EXPRESSION* node)
             if (node->left->type == en_memberptr)
             {
                 node->type = en_c_i;
-                node->left = NULL;
+                node->left = nullptr;
                 node->v.i = 1;
                 rv = true;
             }
@@ -3625,7 +3625,7 @@ LEXEME* optimized_expression(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, 
     if (commaallowed)
         lex = expression(lex, funcsp, atp, tp, expr, 0);
     else
-        lex = expression_no_comma(lex, funcsp, atp, tp, expr, NULL, 0);
+        lex = expression_no_comma(lex, funcsp, atp, tp, expr, nullptr, 0);
     if (*tp)
     {
         optimize_for_constants(expr);

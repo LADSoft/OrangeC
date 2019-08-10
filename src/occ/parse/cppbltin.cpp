@@ -76,14 +76,14 @@ void ParseBuiltins(void)
     LEXEME* lex;
     FILE* handle = includes->handle;
     unsigned char* p = includes->lptr;
-    includes->handle = NULL;
+    includes->handle = nullptr;
     if (cparams.prm_cplusplus)
     {
         includes->lptr = cppbuiltin;
         lex = getsym();
         if (lex)
         {
-            while ((lex = declare(lex, NULL, NULL, sc_global, lk_none, NULL, true, false, false, ac_public)) != NULL)
+            while ((lex = declare(lex, nullptr, nullptr, sc_global, lk_none, nullptr, true, false, false, ac_public)) != nullptr)
                 ;
         }
     }
@@ -93,7 +93,7 @@ void ParseBuiltins(void)
         lex = getsym();
         if (lex)
         {
-            while ((lex = declare(lex, NULL, NULL, sc_global, lk_none, NULL, true, false, false, ac_public)) != NULL)
+            while ((lex = declare(lex, nullptr, nullptr, sc_global, lk_none, nullptr, true, false, false, ac_public)) != nullptr)
                 ;
         }
     }
@@ -103,7 +103,7 @@ void ParseBuiltins(void)
     if (cparams.prm_cplusplus)
     {
         stdXC.syms = CreateHashTable(1);
-        stdXC.sp = makeID(sc_type, &stdXC, NULL, "$$XCTYPE");
+        stdXC.sp = makeID(sc_type, &stdXC, nullptr, "$$XCTYPE");
         stdXC.alignment = getAlign(sc_auto, &stdint);
     }
 }

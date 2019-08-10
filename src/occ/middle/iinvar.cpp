@@ -243,7 +243,7 @@ void ScanForInvariants(BLOCK* b)
                 if (!tempInfo[head->ans->offset->v.sp->value.i]->inductionLoop && (head->temps & (TEMP_LEFT | TEMP_RIGHT)))
                 {
                     bool canMove = true;
-                    BLOCK *pbl = NULL, *pbr = NULL;
+                    BLOCK *pbl = nullptr, *pbr = nullptr;
                     if ((head->temps & TEMP_LEFT) && head->dc.left->mode == i_direct)
                     {
                         pbl = tempInfo[head->dc.left->offset->v.sp->value.i]->blockDefines;
@@ -308,12 +308,12 @@ void ScanForInvariants(BLOCK* b)
 void MoveLoopInvariants(void)
 {
     int i;
-    refs = NULL;
+    refs = nullptr;
     for (i = 0; i < blockCount; i++)
         if (blockArray[i])
             blockArray[i]->preWalk = 0;
     for (i = 0; i < tempCount; i++)
-        tempInfo[i]->blockDefines = NULL;
+        tempInfo[i]->blockDefines = nullptr;
     current = 1;
     ScanForInvariants(blockArray[0]);
     WeedRefs();

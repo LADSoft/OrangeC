@@ -143,7 +143,7 @@ static void basicFlowInfo(void)
     labels = (BLOCK**)oAlloc(sizeof(BLOCK*) * (high - low));
     firstLabel = low;
     head = intermed_head;
-    block = NULL;
+    block = nullptr;
     while (head)
     {
         if (head->dc.opcode == i_block)
@@ -321,7 +321,7 @@ void WalkFlowgraph(BLOCK* b, int (*func)(enum e_fgtype type, BLOCK* parent, BLOC
         if (blockArray[i])
             blockArray[i]->preWalk = blockArray[i]->postWalk = 0;
 
-    if (func(F_TREE, NULL, b))
+    if (func(F_TREE, nullptr, b))
         FGWalker(func, b, fwd);
 }
 // have to do this to make the rtti happy in the face of infinite blocks
@@ -392,10 +392,10 @@ static void removeDeadBlocks(BRIGGS_SET* brs, BLOCK* back, BLOCK* b)
         b->head->fwd = b->tail->fwd;
         b->tail->fwd->back = b->head;
         b->tail = b->head;
-        b->succ = b->pred = NULL;
+        b->succ = b->pred = nullptr;
         b->dead = true;
         b->critical = false;
-        blockArray[b->blocknum] = NULL;
+        blockArray[b->blocknum] = nullptr;
     }
     else
     {
@@ -451,7 +451,7 @@ void reflowConditional(BLOCK* src, BLOCK* dst)
     BRIGGS_SET* bls = briggsAlloc(blockCount);
     int i;
     temp.block = dst;
-    temp.next = NULL;
+    temp.next = nullptr;
     src->succ = &temp;
     for (i = 0; i < blockCount; i++)
         if (blockArray[i])
@@ -485,14 +485,14 @@ void reflowConditional(BLOCK* src, BLOCK* dst)
             bl = bl->next;
         }
         dst = crit->succ->block;
-        crit->succ = crit->pred = NULL;
-        blockArray[crit->blocknum] = NULL;
+        crit->succ = crit->pred = nullptr;
+        blockArray[crit->blocknum] = nullptr;
     }
     // it may have died in the above code..
     if (!src->dead)
     {
         src->succ->block = dst;
-        src->succ->next = NULL;
+        src->succ->next = nullptr;
     }
 }
 /* not even thinking about assert() or longjmp() */
@@ -595,7 +595,7 @@ static int domNumber(enum e_fgtype t, BLOCK* parent, BLOCK* b)
 static int domInit(enum e_fgtype t, BLOCK* parent, BLOCK* b)
 {
 
-    if (t == F_TREE && parent != NULL)
+    if (t == F_TREE && parent != nullptr)
     {
         struct _tarjan* t = vectorData[b->dfstOrder];
         t->blocknum = b->blocknum;
@@ -850,7 +850,7 @@ enum e_fgtype getEdgeType(int first, int second)
 /* SSA doesn't work well when there are dead paths */
 static void removeDeadBlock(BLOCK* b)
 {
-    if (b->pred == NULL && !b->alwayslive)
+    if (b->pred == nullptr && !b->alwayslive)
     {
         BLOCKLIST* bl = b->succ;
         while (bl)
@@ -941,7 +941,7 @@ static void SwapBranchSense(QUAD* jmp)
     BLOCKLIST* f = b->succ;
     BLOCKLIST* s = f->next;
     s->next = f;
-    f->next = NULL;
+    f->next = nullptr;
     b->succ = s;
     switch (jmp->dc.opcode)
     {
@@ -985,7 +985,7 @@ void UnlinkCritical(BLOCK* s)
     BLOCKLIST* bl;
     s->critical = false;
     s->dead = true;
-    blockArray[s->blocknum] = NULL;
+    blockArray[s->blocknum] = nullptr;
     bl = s->pred->block->succ;
     while (bl)
     {
@@ -1149,7 +1149,7 @@ void doms_only(bool always)
     (void)always;
     if (always)
     {
-        criticalThunks = NULL;
+        criticalThunks = nullptr;
         criticalThunkPtr = &criticalThunks;
     }
     WalkFlowgraph(blockArray[0], RemoveCriticalEdges, true);
@@ -1181,7 +1181,7 @@ void doms_only(bool always)
     }
     CancelInfinite(blockCount);
 
-    blockArray[0]->dominates = NULL;
+    blockArray[0]->dominates = nullptr;
     for (i = 1; i < blockCount; i++)
     {
         if (blockArray[i])
@@ -1190,7 +1190,7 @@ void doms_only(bool always)
             if (blockArray[i])
             {
                 blockArray[i]->idom = 0;
-                blockArray[i]->dominates = NULL;
+                blockArray[i]->dominates = nullptr;
             }
         }
     }
@@ -1200,8 +1200,8 @@ void doms_only(bool always)
     {
         if (blockArray[i])
         {
-            blockArray[i]->visiteddfst = blockArray[i]->pred != NULL;
-            blockArray[i]->dominanceFrontier = NULL;
+            blockArray[i]->visiteddfst = blockArray[i]->pred != nullptr;
+            blockArray[i]->dominanceFrontier = nullptr;
         }
     }
     DominanceFrontier(blockArray[0], &dfsCount);
@@ -1223,7 +1223,7 @@ void flows_and_doms(void)
         int i;
         for (i = 0; i < blockCount; i++)
         {
-            blockArray[i]->succ = blockArray[i]->pred = NULL;
+            blockArray[i]->succ = blockArray[i]->pred = nullptr;
         }
     }
 

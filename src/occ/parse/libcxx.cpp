@@ -83,7 +83,7 @@ void libcxx_init(void)
 }
 bool parseBuiltInTypelistFunc(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
-    HASHREC** hr = LookupName(sym->name, intrinsicHash);
+    SYMLIST** hr = LookupName(sym->name, intrinsicHash);
     if (hr)
     {
         struct _ihash* p = (struct _ihash*)(*hr)->p;
@@ -93,10 +93,10 @@ bool parseBuiltInTypelistFunc(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** 
 }
 static LEXEME* getTypeList(LEXEME* lex, SYMBOL* funcsp, INITLIST** lptr)
 {
-    *lptr = NULL;
+    *lptr = nullptr;
     do
     {
-        TYPE* tp = NULL;
+        TYPE* tp = nullptr;
         lex = getsym(); /* past ( or , */
         lex = get_type_id(lex, &tp, funcsp, sc_cast, false, true);
         if (!tp)
@@ -147,7 +147,7 @@ static LEXEME* getTypeList(LEXEME* lex, SYMBOL* funcsp, INITLIST** lptr)
 }
 static int FindBaseClassWithData(SYMBOL* sym, SYMBOL** result)
 {
-    HASHREC* hr;
+    SYMLIST* hr;
     int n = 0;
     BASECLASS* bc = sym->baseClasses;
     while (bc)
@@ -158,8 +158,8 @@ static int FindBaseClassWithData(SYMBOL* sym, SYMBOL** result)
     hr = basetype(sym->tp)->syms->table[0];
     while (hr)
     {
-        SYMBOL* sp = (SYMBOL*)hr->p;
-        if (sp->storage_class == sc_mutable || sp->storage_class == sc_member)
+        SYMBOL* sym = hr->p;
+        if (sym->storage_class == sc_mutable || sym->storage_class == sc_member)
         {
             if (result)
                 *result = sym;
@@ -175,30 +175,30 @@ static bool isStandardLayout(TYPE* tp, SYMBOL** result)
     {
         int n;
         int access = -1;
-        SYMBOL *found = NULL, *first;
-        HASHREC* hr;
+        SYMBOL*found = nullptr, *first;
+        SYMLIST* hr;
         n = FindBaseClassWithData(tp->sp, &found);
         if (n > 1)
             return false;
         if (n)
         {
-            SYMBOL* first = NULL;
+            SYMBOL* first = nullptr;
             hr = basetype(found->tp)->syms->table[0];
             while (hr)
             {
-                SYMBOL* sp = (SYMBOL*)hr->p;
+                SYMBOL* sym = hr->p;
                 if (!first)
-                    first = sp;
-                if (sp->storage_class == sc_member || sp->storage_class == sc_mutable)
+                    first = sym;
+                if (sym->storage_class == sc_member || sym->storage_class == sc_mutable)
                 {
-                    if (isstructured(sp->tp) && !isStandardLayout(sp->tp, NULL))
+                    if (isstructured(sym->tp) && !isStandardLayout(sym->tp, nullptr))
                         return false;
                     if (access != -1)
                     {
-                        if (access != sp->access)
+                        if (access != sym->access)
                             return false;
                     }
-                    access = sp->access;
+                    access = sym->access;
                 }
                 hr = hr->next;
             }
@@ -230,13 +230,13 @@ static bool isStandardLayout(TYPE* tp, SYMBOL** result)
 }
 static bool trivialFunc(SYMBOL* func, bool move)
 {
-    HASHREC* hr = basetype(func->tp)->syms->table[0];
+    SYMLIST* hr = basetype(func->tp)->syms->table[0];
     while (hr)
     {
-        SYMBOL* sp = (SYMBOL*)hr->p;
-        if (matchesCopy(sp, move))
+        SYMBOL* sym = hr->p;
+        if (matchesCopy(sym, move))
         {
-            return sp->defaulted;
+            return sym->defaulted;
         }
         hr = hr->next;
     }
@@ -246,7 +246,7 @@ static bool trivialCopyConstructible(TYPE* tp)
 {
     if (isstructured(tp))
     {
-        HASHREC* hr;
+        SYMLIST* hr;
         SYMBOL* ovl;
         BASECLASS* bc;
         ovl = search(overloadNameTab[CI_CONSTRUCTOR], basetype(tp)->syms);
@@ -265,7 +265,7 @@ static bool trivialCopyConstructible(TYPE* tp)
         hr = basetype(tp)->syms->table[0];
         while (hr)
         {
-            SYMBOL* sym = (SYMBOL*)hr->p;
+            SYMBOL* sym = hr->p;
             if (sym->storage_class == sc_mutable || sym->storage_class == sc_member)
                 if (!trivialCopyConstructible(sym->tp))
                     return false;
@@ -278,7 +278,7 @@ static bool trivialCopyAssignable(TYPE* tp)
 {
     if (isstructured(tp))
     {
-        HASHREC* hr;
+        SYMLIST* hr;
         SYMBOL* ovl;
         BASECLASS* bc;
         ovl = search(overloadNameTab[assign - kw_new + CI_NEW], basetype(tp)->syms);
@@ -297,7 +297,7 @@ static bool trivialCopyAssignable(TYPE* tp)
         hr = basetype(tp)->syms->table[0];
         while (hr)
         {
-            SYMBOL* sym = (SYMBOL*)hr->p;
+            SYMBOL* sym = hr->p;
             if (sym->storage_class == sc_mutable || sym->storage_class == sc_member)
                 if (!trivialCopyAssignable(sym->tp))
                     return false;
@@ -310,7 +310,7 @@ static bool trivialDestructor(TYPE* tp)
 {
     if (isstructured(tp))
     {
-        HASHREC* hr;
+        SYMLIST* hr;
         SYMBOL* ovl;
         BASECLASS* bc;
         ovl = search(overloadNameTab[CI_DESTRUCTOR], basetype(tp)->syms);
@@ -330,7 +330,7 @@ static bool trivialDestructor(TYPE* tp)
         hr = basetype(tp)->syms->table[0];
         while (hr)
         {
-            SYMBOL* sym = (SYMBOL*)hr->p;
+            SYMBOL* sym = hr->p;
             if (sym->storage_class == sc_mutable || sym->storage_class == sc_member)
                 if (!trivialDestructor(sym->tp))
                     return false;
@@ -343,19 +343,19 @@ static bool trivialDefaultConstructor(TYPE* tp)
 {
     if (isstructured(tp))
     {
-        HASHREC* hr;
+        SYMLIST* hr;
         SYMBOL* ovl;
         BASECLASS* bc;
         ovl = search(overloadNameTab[CI_CONSTRUCTOR], basetype(tp)->syms);
         if (ovl)
         {
-            HASHREC* hr = ovl->tp->syms->table[0];
+            SYMLIST* hr = ovl->tp->syms->table[0];
             while (hr)
             {
-                SYMBOL* sym = (SYMBOL*)hr->p;
-                HASHREC* hr1 = basetype(sym->tp)->syms->table[0];
+                SYMBOL* sym = hr->p;
+                SYMLIST* hr1 = basetype(sym->tp)->syms->table[0];
 
-                if (!hr1->next || !hr1->next->next || ((SYMBOL*)hr1->next->next->p)->tp->type == bt_void)
+                if (!hr1->next || !hr1->next->next || (hr1->next->next->p)->tp->type == bt_void)
                 {
                     if (!sym->defaulted)
                         return false;
@@ -375,7 +375,7 @@ static bool trivialDefaultConstructor(TYPE* tp)
         hr = basetype(tp)->syms->table[0];
         while (hr)
         {
-            SYMBOL* sym = (SYMBOL*)hr->p;
+            SYMBOL* sym = hr->p;
             if (sym->storage_class == sc_mutable || sym->storage_class == sc_member)
                 if (!trivialDefaultConstructor(sym->tp))
                     return false;
@@ -427,15 +427,15 @@ static bool trivialStructureWithBases(TYPE* tp)
 }
 static bool isPOD(TYPE* tp)
 {
-    SYMBOL* found = NULL;
+    SYMBOL* found = nullptr;
     if (isStandardLayout(tp,& found) && trivialStructureWithBases(tp)) // DAL fixed
     {
         if (found)
         {
-            HASHREC* hr = basetype(found->tp)->syms->table[0]; // DAL fixed
+            SYMLIST* hr = basetype(found->tp)->syms->table[0]; // DAL fixed
             while (hr)
             {
-                SYMBOL* sym = (SYMBOL*)hr->p;
+                SYMBOL* sym = hr->p;
                 if (isstructured(sym->tp) && !trivialStructureWithBases(sym->tp))
                     return false;
                 hr = hr->next;
@@ -454,16 +454,16 @@ static bool nothrowConstructible(TYPE* tp)
         ovl = search(overloadNameTab[CI_CONSTRUCTOR], basetype(tp)->syms);
         if (ovl)
         {
-            HASHREC* hr = ovl->tp->syms->table[0];
+            SYMLIST* hr = ovl->tp->syms->table[0];
             hr = basetype(ovl->tp)->syms->table[0];
             while (hr)
             {
-                SYMBOL* sp = (SYMBOL*)hr->p;
-                HASHREC* hr1 = basetype(sp->tp)->syms->table[0];
-                if (matchesCopy(sp, false) || matchesCopy(sp, true) || !hr1->next || !hr1->next->next ||
-                    ((SYMBOL*)hr1->next->next->p)->tp->type == bt_void)
+                SYMBOL* sym = hr->p;
+                SYMLIST* hr1 = basetype(sym->tp)->syms->table[0];
+                if (matchesCopy(sym, false) || matchesCopy(sym, true) || !hr1->next || !hr1->next->next ||
+                    (hr1->next->next->p)->tp->type == bt_void)
                 {
-                    if (sp->xcMode != xc_none)
+                    if (sym->xcMode != xc_none)
                         return false;
                 }
                 hr = hr->next;
@@ -500,7 +500,7 @@ static bool is_base_of(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXP
     lst = funcparams.arguments;
     while (lst)
     {
-        lst->tp = PerformDeferredInitialization(lst->tp, NULL);
+        lst->tp = PerformDeferredInitialization(lst->tp, nullptr);
         lst = lst->next;
     }
     if (funcparams.arguments && funcparams.arguments->next && !funcparams.arguments->next->next)
@@ -539,7 +539,7 @@ static bool is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** t
     lst = funcparams.arguments;
     while (lst)
     {
-        lst->tp = PerformDeferredInitialization(lst->tp, NULL);
+        lst->tp = PerformDeferredInitialization(lst->tp, nullptr);
         lst = lst->next;
     }
     if (funcparams.arguments)
@@ -584,8 +584,8 @@ static bool is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** t
                     else if (isstructured(funcparams.arguments->next->tp))
                     {
                         // look for operator () with args from tp2
-                        HASHREC* hr;
-                        EXPRESSION* cexp = NULL;
+                        SYMLIST* hr;
+                        EXPRESSION* cexp = nullptr;
                         INITLIST** arg = &funcparams.arguments;
                         SYMBOL* bcall = search(overloadNameTab[CI_FUNC], basetype(funcparams.arguments->next->tp)->syms);
                         funcparams.thisptr = intNode(en_c_i, 0);
@@ -595,19 +595,19 @@ static bool is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** t
                         funcparams.thistp->rootType = funcparams.thistp;
                         funcparams.thistp->size = getSize(bt_pointer);
                         funcparams.ascall = true;
-                        funcparams.arguments = NULL;
-                        funcparams.sp = NULL;
+                        funcparams.arguments = nullptr;
+                        funcparams.sp = nullptr;
                         hr = basetype(basetype(tp2)->btp)->syms->table[0];
                         while (hr)
                         {
                             *arg = (INITLIST*)(INITLIST *)Alloc(sizeof(INITLIST));
-                            (*arg)->tp = ((SYMBOL*)hr->p)->tp;
+                            (*arg)->tp = hr->p->tp;
                             (*arg)->exp = intNode(en_c_i, 0);
                             arg = &(*arg)->next;
                             hr = hr->next;
                         }
-                        rv = GetOverloadedFunction(tp, &funcparams.fcall, bcall, &funcparams, NULL, false, false, false,
-                                                   _F_SIZEOF) != NULL;
+                        rv = GetOverloadedFunction(tp, &funcparams.fcall, bcall, &funcparams, nullptr, false, false, false,
+                                                   _F_SIZEOF) != nullptr;
                     }
                     else
                     {
@@ -638,7 +638,7 @@ static bool is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** t
                     int i = 0;
                     char holdl[100], holdr[100];
                     INITLIST* temp;
-                    EXPRESSION* cexp = NULL;
+                    EXPRESSION* cexp = nullptr;
                     SYMBOL* cons = search(overloadNameTab[CI_CONSTRUCTOR], basetype(tp2)->syms);
                     funcparams.thisptr = intNode(en_c_i, 0);
                     funcparams.thistp = (TYPE *)Alloc(sizeof(TYPE));
@@ -659,8 +659,8 @@ static bool is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** t
                         }
                         temp = temp->next;
                     }
-                    rv = GetOverloadedFunction(tp, &funcparams.fcall, cons, &funcparams, NULL, false, false, false, _F_SIZEOF) !=
-                         NULL;
+                    rv = GetOverloadedFunction(tp, &funcparams.fcall, cons, &funcparams, nullptr, false, false, false, _F_SIZEOF) !=
+                         nullptr;
                     temp = funcparams.arguments;
                     while (temp)
                     {
@@ -727,13 +727,14 @@ static bool is_convertible_to(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** 
             }
             if (!rv && isstructured(from))
             {
-                SYMBOL* sp = search("$bcall", basetype(from)->syms);
-                if (sp)
+                CI_CONSTRUCTOR;
+                SYMBOL* sym = search(overloadNameTab[CI_CAST], basetype(from)->syms);
+                if (sym)
                 {
-                    HASHREC* hr = sp->tp->syms->table[0];
+                    SYMLIST* hr = sym->tp->syms->table[0];
                     while (hr)
                     {
-                        if (comparetypes(basetype(((SYMBOL*)hr->p)->tp)->btp, to, false))
+                        if (comparetypes(basetype(hr->p->tp)->btp, to, false))
                         {
                             rv = true;
                             break;
@@ -763,7 +764,7 @@ static bool is_empty(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRE
     lst = funcparams.arguments;
     while (lst)
     {
-        lst->tp = PerformDeferredInitialization(lst->tp, NULL);
+        lst->tp = PerformDeferredInitialization(lst->tp, nullptr);
         lst = lst->next;
     }
     if (funcparams.arguments && !funcparams.arguments->next)
@@ -836,7 +837,7 @@ static bool is_nothrow_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, 
     lst = funcparams.arguments;
     while (lst)
     {
-        lst->tp = PerformDeferredInitialization(lst->tp, NULL);
+        lst->tp = PerformDeferredInitialization(lst->tp, nullptr);
         lst = lst->next;
     }
     if (funcparams.arguments && !funcparams.arguments->next)
@@ -844,8 +845,15 @@ static bool is_nothrow_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, 
         TYPE* tp = funcparams.arguments->tp;
         if (isref(tp))
             tp = basetype(tp)->btp;
-        if (isstructured(tp) && !basetype(tp)->sp->trivialCons)
-            rv = nothrowConstructible(funcparams.arguments->tp);
+        if (isstructured(tp))
+        {
+            if (!basetype(tp)->sp->trivialCons)
+                rv = nothrowConstructible(funcparams.arguments->tp);
+        }
+        else
+        {
+            rv = true;
+        }
     }
     *exp = intNode(en_c_i, rv);
     *tp = &stdint;
@@ -862,7 +870,7 @@ static bool is_pod(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESS
     lst = funcparams.arguments;
     while (lst)
     {
-        lst->tp = PerformDeferredInitialization(lst->tp, NULL);
+        lst->tp = PerformDeferredInitialization(lst->tp, nullptr);
         lst = lst->next;
     }
     if (funcparams.arguments && !funcparams.arguments->next)
@@ -884,7 +892,7 @@ static bool is_polymorphic(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp,
     lst = funcparams.arguments;
     while (lst)
     {
-        lst->tp = PerformDeferredInitialization(lst->tp, NULL);
+        lst->tp = PerformDeferredInitialization(lst->tp, nullptr);
         lst = lst->next;
     }
     if (funcparams.arguments && !funcparams.arguments->next)
@@ -908,12 +916,12 @@ static bool is_standard_layout(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE**
     lst = funcparams.arguments;
     while (lst)
     {
-        lst->tp = PerformDeferredInitialization(lst->tp, NULL);
+        lst->tp = PerformDeferredInitialization(lst->tp, nullptr);
         lst = lst->next;
     }
     if (funcparams.arguments && !funcparams.arguments->next)
     {
-        rv = !!isStandardLayout(funcparams.arguments->tp, NULL);
+        rv = !!isStandardLayout(funcparams.arguments->tp, nullptr);
     }
     *exp = intNode(en_c_i, rv);
     *tp = &stdint;
@@ -930,7 +938,7 @@ static bool is_trivial(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXP
     lst = funcparams.arguments;
     while (lst)
     {
-        lst->tp = PerformDeferredInitialization(lst->tp, NULL);
+        lst->tp = PerformDeferredInitialization(lst->tp, nullptr);
         lst = lst->next;
     }
     if (funcparams.arguments && !funcparams.arguments->next)
@@ -952,7 +960,7 @@ static bool is_trivially_assignable(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, T
     lst = funcparams.arguments;
     while (lst)
     {
-        lst->tp = PerformDeferredInitialization(lst->tp, NULL);
+        lst->tp = PerformDeferredInitialization(lst->tp, nullptr);
         lst = lst->next;
     }
     if (funcparams.arguments && !funcparams.arguments->next)
@@ -975,7 +983,7 @@ static bool is_trivially_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym
     lst = funcparams.arguments;
     while (lst)
     {
-        lst->tp = PerformDeferredInitialization(lst->tp, NULL);
+        lst->tp = PerformDeferredInitialization(lst->tp, nullptr);
         lst = lst->next;
     }
     if (funcparams.arguments && !funcparams.arguments->next)
@@ -997,7 +1005,7 @@ static bool is_trivially_copyable(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYP
     lst = funcparams.arguments;
     while (lst)
     {
-        lst->tp = PerformDeferredInitialization(lst->tp, NULL);
+        lst->tp = PerformDeferredInitialization(lst->tp, nullptr);
         lst = lst->next;
     }
     if (funcparams.arguments && !funcparams.arguments->next)

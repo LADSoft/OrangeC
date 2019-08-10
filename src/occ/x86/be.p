@@ -1,12 +1,12 @@
 /* Protogen Version 2.1.1.17Friday October 28, 2005  17:44:50 */
 
-enum e_lk get_dll_linkage(SYMBOL *);                /* get dll linkage corresponding to command line switches */
+enum e_lk get_dll_linkage(SYMBOL*sym);                /* get dll linkage corresponding to command line switches */
 
                               /* Dbgfmt.c */
 
 void dbginit(void);
 void debug_outline(char *file, int lineno);           /* output a line number */
-void debug_outputtypedef(SYMBOL *sp) ; /* dump the typedef HASHTABLE */
+void debug_outputtypedef(SYMBOL*sym) ; /* dump the typedef HASHTABLE */
 
                                 /* Gen.c */
 
@@ -122,10 +122,10 @@ void omfInit(void);
 int put_ident(char *buf, int ident);
 void omf_dump_browsedata(BROWSEINFO *bri);
 void omf_dump_browsefile(BROWSEFILE *brf);
-void omf_globaldef(SYMBOL *sp);
-void omf_put_extern(SYMBOL *sp, int code);
-void omf_put_impfunc(SYMBOL *sp, char *file);
-void omf_put_expfunc(SYMBOL *sp);
+void omf_globaldef(SYMBOL*sym);
+void omf_put_extern(SYMBOL*sym, int code);
+void omf_put_impfunc(SYMBOL*sym, char *file);
+void omf_put_expfunc(SYMBOL*sym);
 void omf_put_includelib(char *name);
 void omfFileName(void);
 void omfTranslatorName(void);
@@ -137,15 +137,15 @@ void omfSegs(void);
 void omfComDefs(void);
 void omfGroups(void);
 void FlushExtBuf(void);
-void omfputext(SYMBOL *sp);
+void omfputext(SYMBOL*sym);
 void omfExtDefs(void);
-void omfputimport(SYMBOL *sp);
+void omfputimport(SYMBOL*sym);
 void omfImports(void);
-int omfgetseg(SYMBOL *sp);
-void omfputpub(SYMBOL *sp);
+int omfgetseg(SYMBOL*sym);
+void omfputpub(SYMBOL*sym);
 void omfpubdumphash(HASHTABLE *syms);
 void omfPublics(void);
-void omfputexport(SYMBOL *sp);
+void omfputexport(SYMBOL*sym);
 void omfExports(void);
 void omfPassSeperator(void);
 void omfComDefData(void);
@@ -170,27 +170,27 @@ void putseg(int seg, int usecolon);
 int islabeled(EXPRESSION *n);
 void oa_putamode(int op, int szalt, AMODE *ap);
 void oa_put_code(OCODE *cd);
-void oa_gen_strlab(SYMBOL *sp);
+void oa_gen_strlab(SYMBOL*sym);
 void oa_put_label(int lab);
 void oa_put_string_label(int lab, int type);
 void oa_genfloat(enum e_gt type, FPF *val);
 void oa_genstring(LCHAR *str, int len);
 void oa_genint(enum e_gt type, LLONG_TYPE val);
 void oa_genaddress(ULLONG_TYPE val);
-void oa_gensrref(SYMBOL *sp, int val, int type);
-void oa_genref(SYMBOL *sp, int offset);
+void oa_gensrref(SYMBOL*sym, int val, int type);
+void oa_genref(SYMBOL*sym, int offset);
 void oa_genlabref(int label, int offset);
-void oa_genpcref(SYMBOL *sp, int offset);
+void oa_genpcref(SYMBOL*sym, int offset);
 void oa_genstorage(int nbytes);
 void oa_gen_labref(int n);
 void oa_gen_labdifref(int n1, int n2);
 void oa_exitseg(enum e_sg seg);
 void oa_enterseg(enum e_sg seg);
-void oa_gen_virtual(SYMBOL *sp, int data);
-void oa_gen_endvirtual(SYMBOL *sp);
-void oa_gen_vtt(VTABENTRY *entry, SYMBOL *func);
-void oa_gen_vc1(SYMBOL *func);
-void oa_gen_importThunk(SYMBOL *func);
+void oa_gen_virtual(SYMBOL*sym, int data);
+void oa_gen_endvirtual(SYMBOL*sym);
+void oa_gen_vtt(VTABENTRY *entry, SYMBOL*func);
+void oa_gen_vc1(SYMBOL*func);
+void oa_gen_importThunk(SYMBOL*func);
 void oa_align(int size);
 void oa_setalign(int code, int data, int bss, int constant);
 long queue_large_const(unsigned constant[], int count);
@@ -202,13 +202,13 @@ void dump_browsefile(BROWSEFILE *brf);
 void oa_header(char *filename, char *compiler_version);
 void oa_trailer(void);
 void oa_adjust_codelab(void *select, int offset);
-void oa_globaldef(SYMBOL *sp);
-void oa_localdef(SYMBOL *sp);
-void oa_localstaticdef(SYMBOL *sp);
+void oa_globaldef(SYMBOL*sym);
+void oa_localdef(SYMBOL*sym);
+void oa_localstaticdef(SYMBOL*sym);
 void oa_output_alias(char *name, char *alias);
-void oa_put_extern(SYMBOL *sp, int code);
-void oa_put_impfunc(SYMBOL *sp, char *file);
-void oa_put_expfunc(SYMBOL *sp);
+void oa_put_extern(SYMBOL*sym, int code);
+void oa_put_impfunc(SYMBOL*sym, char *file);
+void oa_put_expfunc(SYMBOL*sym);
 void oa_output_includelib(char *name);
 void oa_end_generation(void);
 
@@ -225,13 +225,13 @@ void outcode_enterseg(int seg);
 void InsertLine(int address, LINEDATA *linedata);
 void emit(int seg, void *data, int len);
 void write_to_seg(int seg, int offset, void *value, int len);
-void gen_symbol_fixup(enum mode xmode, int seg, int address, SYMBOL *pub);
+void gen_symbol_fixup(enum mode xmode, int seg, int address, SYMBOL*pub);
 void outcode_dump_muldivval(void);
-void outcode_gen_strlab(SYMBOL *sp);
-void outcode_genref(SYMBOL *sp, int offset);
+void outcode_gen_strlab(SYMBOL*sym);
+void outcode_genref(SYMBOL*sym, int offset);
 void outcode_gen_labref(int n);
 void outcode_gen_labdifref(int n1, int n2);
-void outcode_gensrref(SYMBOL *sp, int val);
+void outcode_gensrref(SYMBOL*sym, int val);
 void outcode_genstorage(int len);
 void outcode_genfloat(FPF *val);
 void outcode_gendouble(FPF *val);
@@ -243,8 +243,8 @@ void outcode_genlong(int val);
 void outcode_genlonglong(LLONG_TYPE val);
 void outcode_align(int size);
 void outcode_put_label(int lab);
-void outcode_start_virtual_seg(SYMBOL *sp, int data);
-void outcode_end_virtual_seg(SYMBOL *sp);
+void outcode_start_virtual_seg(SYMBOL*sym, int data);
+void outcode_end_virtual_seg(SYMBOL*sym);
 EXPRESSION *GetSymRef(EXPRESSION *n);
 int resolveoffset(EXPRESSION *n, int *resolved);
 int asmrm(int reg, OCODE *ins, AMODE *data, UBYTE **p);
@@ -336,12 +336,12 @@ void gen_codefs(int op, int len, AMODE *ap1, AMODE *ap2);
 void gen_codef(int op, AMODE *ap1, AMODE *ap2);
 void gen_codes2(int op, int len, AMODE *ap1, AMODE *ap2);
 void gen_code2(int op, int len1, int len2, AMODE *ap1, AMODE *ap2);
-void gen_codelab(SYMBOL *lab);
+void gen_codelab(SYMBOL*lab);
 void gen_branch(int op, int label);
 void gen_comment(char *txt);
 void add_peep(OCODE *newop);
 void oa_gen_label(int labno);
-void flush_peep(SYMBOL *funcsp, QUAD *list);
+void flush_peep(SYMBOL*funcsp, QUAD *list);
 void peep_add(OCODE *ip);
 void peep_sub(OCODE *ip);
 int makeshl(EXPRESSION *node, int scale, int *rv);

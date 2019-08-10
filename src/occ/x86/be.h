@@ -279,7 +279,7 @@ typedef struct _dbgblock
     struct _dbgblock* next;
     struct _dbgblock* parent;
     struct _dbgblock* child;
-    HASHREC* syms;
+    SYMLIST* syms;
     int startlab;
     int endlab;
 } DBGBLOCK;

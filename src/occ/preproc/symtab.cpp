@@ -30,12 +30,12 @@ void syminit(void) {}
 HASHTABLE* CreateHashTable(int size)
 {
     HASHTABLE* rv = (HASHTABLE *) Alloc(sizeof(HASHTABLE));
-    rv->table = (HASHREC **)Alloc(sizeof(HASHREC*) * size);
+    rv->table = (SYMLIST **)Alloc(sizeof(SYMLIST*) * size);
     rv->size = size;
     return rv;
 }
 /* SYMBOL tab hash function */
-HASHREC** GetHashLink(HASHTABLE* t, const char* string)
+SYMLIST** GetHashLink(HASHTABLE* t, const char* string)
 {
     unsigned i;
     if (t->size == 1)
@@ -45,14 +45,14 @@ HASHREC** GetHashLink(HASHTABLE* t, const char* string)
     return &t->table[i % t->size];
 }
 /* Add a hash item to the table */
-HASHREC* AddName(SYMBOL* item, HASHTABLE* table)
+SYMLIST* AddName(SYMBOL* item, HASHTABLE* table)
 {
-    HASHREC** p = GetHashLink(table, item->name);
-    HASHREC* newRec;
+    SYMLIST** p = GetHashLink(table, item->name);
+    SYMLIST* newRec;
 
     if (*p)
     {
-        HASHREC *q = *p, *r = *p;
+        SYMLIST *q = *p, *r = *p;
         while (q)
         {
             r = q;
@@ -60,13 +60,13 @@ HASHREC* AddName(SYMBOL* item, HASHTABLE* table)
                 return (r);
             q = q->next;
         }
-        newRec = (HASHREC *)Alloc(sizeof(HASHREC));
+        newRec = (SYMLIST *)Alloc(sizeof(SYMLIST));
         r->next = newRec;
         newRec->p = (sym *)item;
     }
     else
     {
-        newRec = (HASHREC *)Alloc(sizeof(HASHREC));
+        newRec = (SYMLIST *)Alloc(sizeof(SYMLIST));
         *p = newRec;
         newRec->p = (sym *)item;
     }
@@ -76,15 +76,15 @@ HASHREC* AddName(SYMBOL* item, HASHTABLE* table)
 /*
  * Find something in the hash table
  */
-HASHREC** LookupName(const char* name, HASHTABLE* table)
+SYMLIST** LookupName(const char* name, HASHTABLE* table)
 {
-    HASHREC** p = GetHashLink(table, name);
+    SYMLIST** p = GetHashLink(table, name);
 
     while (*p)
     {
         if (!strcmp((*p)->p->name, name))
             return p;
-        p = (HASHREC**)*p;
+        p = (SYMLIST**)*p;
     }
     return (0);
 }
@@ -92,7 +92,7 @@ SYMBOL* search(const char* name, HASHTABLE* table)
 {
     while (table)
     {
-        HASHREC** p = LookupName(name, table);
+        SYMLIST** p = LookupName(name, table);
         if (p)
             return (SYMBOL*)(*p)->p;
         table = table->next;

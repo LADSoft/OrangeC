@@ -288,7 +288,7 @@ void ProcessOneInd(EXPRESSION* match, EXPRESSION** ofs1, EXPRESSION** ofs2, EXPR
                     {
                         if (*ofs1 && ins->ans->offset->v.sp->value.i == (*ofs1)->v.sp->value.i)
                         {
-                            EXPRESSION *offset1, *offset2 = *ofs2, *offset3 = NULL;
+                            EXPRESSION *offset1, *offset2 = *ofs2, *offset3 = nullptr;
                             if (ins->temps & TEMP_LEFT)
                             {
                                 offset1 = ins->dc.left->offset;
@@ -317,7 +317,7 @@ void ProcessOneInd(EXPRESSION* match, EXPRESSION** ofs1, EXPRESSION** ofs2, EXPR
                             }
                             else if (ins->dc.left->mode == i_immed && ins->dc.right->mode == i_immed)
                             {
-                                offset1 = NULL;
+                                offset1 = nullptr;
                                 offset3 = exprNode(en_add, ins->dc.left->offset, ins->dc.right->offset);
                             }
                             else
@@ -336,7 +336,7 @@ void ProcessOneInd(EXPRESSION* match, EXPRESSION** ofs1, EXPRESSION** ofs2, EXPR
                         }
                         else if (*ofs2 && ins->ans->offset->v.sp->value.i == (*ofs2)->v.sp->value.i)
                         {
-                            EXPRESSION *offset1 = *ofs1, *offset2, *offset3 = NULL;
+                            EXPRESSION *offset1 = *ofs1, *offset2, *offset3 = nullptr;
                             if (ins->temps & TEMP_LEFT)
                             {
                                 offset2 = ins->dc.left->offset;
@@ -367,7 +367,7 @@ void ProcessOneInd(EXPRESSION* match, EXPRESSION** ofs1, EXPRESSION** ofs2, EXPR
                             {
                                 if (*scale && (ins->dc.left->size == ISZ_ADDR || ins->dc.right->size == ISZ_ADDR))
                                     break;
-                                offset2 = NULL;
+                                offset2 = nullptr;
                                 offset3 = exprNode(en_add, ins->dc.left->offset, ins->dc.right->offset);
                             }
                             else
@@ -477,12 +477,12 @@ void ProcessOneInd(EXPRESSION* match, EXPRESSION** ofs1, EXPRESSION** ofs2, EXPR
                     {
                         EXPRESSION* xofs = ins->dc.left->offset;
                         if (*ofs1 && (*ofs1)->v.sp->value.i == ins->ans->offset->v.sp->value.i)
-                            *ofs1 = NULL;
+                            *ofs1 = nullptr;
                         else if (*ofs2 && (*ofs2)->v.sp->value.i == ins->ans->offset->v.sp->value.i)
                         {
                             if (*scale)
                                 xofs = intNode(xofs->type, mult(xofs, 1 << *scale, 0));
-                            *ofs2 = NULL;
+                            *ofs2 = nullptr;
                             scale = 0;
                         }
                         if (*ofs3)
@@ -712,7 +712,7 @@ static void HandleAssn(QUAD* ins, BRIGGS_SET* globalVars)
 }
 int preRegAlloc(QUAD* ins, BRIGGS_SET* globalVars, BRIGGS_SET* eobGlobals, int pass)
 {
-    IMODE* ind = NULL;
+    IMODE* ind = nullptr;
     if (pass == 1)
     {
         switch (ins->dc.opcode)
@@ -770,7 +770,7 @@ int preRegAlloc(QUAD* ins, BRIGGS_SET* globalVars, BRIGGS_SET* eobGlobals, int p
         }
         if (ins->ans && ins->ans->mode == i_ind)
         {
-            EXPRESSION *offset1 = ins->ans->offset, *offset2 = NULL, *offset3 = NULL;
+            EXPRESSION *offset1 = ins->ans->offset, *offset2 = nullptr, *offset3 = nullptr;
             int scale = 0;
             ProcessInd(&offset1, &offset2, &offset3, &scale);
             if (offset2 || offset3)
@@ -802,7 +802,7 @@ int preRegAlloc(QUAD* ins, BRIGGS_SET* globalVars, BRIGGS_SET* eobGlobals, int p
         }
         if (ins->dc.left && ins->dc.left->mode == i_ind)
         {
-            EXPRESSION *offset1 = ins->dc.left->offset, *offset2 = NULL, *offset3 = NULL;
+            EXPRESSION *offset1 = ins->dc.left->offset, *offset2 = nullptr, *offset3 = nullptr;
             int scale = 0;
             ProcessInd(&offset1, &offset2, &offset3, &scale);
             if (offset2 || offset3)
@@ -834,7 +834,7 @@ int preRegAlloc(QUAD* ins, BRIGGS_SET* globalVars, BRIGGS_SET* eobGlobals, int p
         }
         if (ins->dc.right && ins->dc.right->mode == i_ind)
         {
-            EXPRESSION *offset1 = ins->dc.right->offset, *offset2 = NULL, *offset3 = NULL;
+            EXPRESSION *offset1 = ins->dc.right->offset, *offset2 = nullptr, *offset3 = nullptr;
             int scale = 0;
             ProcessInd(&offset1, &offset2, &offset3, &scale);
             if (offset2 || offset3)
@@ -960,7 +960,7 @@ static int floatsize(IMODE *im)
 
 int examine_icode(QUAD* head)
 {
-    BLOCK* b = NULL;
+    BLOCK* b = nullptr;
     bool changed = false;
     QUAD* hold = head;
     uses_substack = false;
@@ -1145,7 +1145,7 @@ int examine_icode(QUAD* head)
                     q->ans = temp;
                     head->dc.opcode = i_assn;
                     head->dc.left = temp;
-                    head->dc.right = NULL;
+                    head->dc.right = nullptr;
                     head->temps = (head->temps & TEMP_ANS) | TEMP_LEFT;
                     InsertInstruction(head->back, q);
                     changed = true;
@@ -1775,7 +1775,7 @@ int examine_icode(QUAD* head)
                         if (head->dc.left != head->dc.right)
                         {
                             QUAD* q = head->back;
-                            QUAD *first = NULL, *second = NULL;
+                            QUAD *first = nullptr, *second = nullptr;
                             int flags = 0;
                             while (q && q->dc.opcode != i_block)
                             {
@@ -1890,7 +1890,7 @@ int examine_icode(QUAD* head)
                         InsertInstruction(head->back, q);
                         insert_nullparmadj(head->back, 12);
                         head->dc.left = ret;
-                        head->dc.right = NULL;
+                        head->dc.right = nullptr;
                         head->dc.opcode = i_assn;
                         head->temps &= ~(TEMP_LEFT | TEMP_RIGHT);
                         if (head->ans->mode == i_ind && (head->temps & TEMP_LEFT))
@@ -2062,7 +2062,7 @@ int examine_icode(QUAD* head)
                     }
 
                     head->dc.left = ret;
-                    head->dc.right = NULL;
+                    head->dc.right = nullptr;
                     head->dc.opcode = i_assn;
                     head->temps &= ~(TEMP_LEFT | TEMP_RIGHT);
                     if (head->ans->mode == i_ind && (head->temps & TEMP_LEFT))
@@ -2118,7 +2118,7 @@ int examine_icode(QUAD* head)
                     InsertInstruction(head->back, q);
                     insert_nullparmadj(head->back, 16);
                     head->dc.left = ret;
-                    head->dc.right = NULL;
+                    head->dc.right = nullptr;
                     head->dc.opcode = i_assn;
                     head->temps &= ~(TEMP_LEFT | TEMP_RIGHT);
                     if (head->ans->mode == i_ind && (head->temps & TEMP_LEFT))
@@ -2155,7 +2155,7 @@ int examine_icode(QUAD* head)
                 else if (head->dc.right->mode == i_immed && (isfloatconst(head->dc.right->offset) || isimaginaryconst(head->dc.right->offset)) && head->dc.right->offset->v.f.ValueIsOne())
                 {
                     head->temps &= ~TEMP_RIGHT;
-                    head->dc.right = NULL;
+                    head->dc.right = nullptr;
                     head->dc.opcode = i_assn;
                     break;
                 }
@@ -2183,7 +2183,7 @@ int examine_icode(QUAD* head)
         }
         head = head->fwd;
     }
-    TYPE *fltret = NULL;
+    TYPE *fltret = nullptr;
     switch (floatretsize)
     {
     case ISZ_FLOAT:
@@ -2208,7 +2208,7 @@ int examine_icode(QUAD* head)
     }
     else
     {
-        fltexp = NULL;
+        fltexp = nullptr;
     }
     return changed;
 }

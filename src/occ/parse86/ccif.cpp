@@ -150,7 +150,7 @@ static int WriteStructMembers(SYMBOL* sym, SYMBOL* parent, sqlite3_int64 struct_
 {
     if (basetype(sym->tp)->syms)
     {
-        HASHREC* hr = basetype(sym->tp)->syms->table[0];
+        SYMLIST* hr = basetype(sym->tp)->syms->table[0];
         if (!isfunction(sym->tp))
         {
             BASECLASS* bases = sym->baseClasses;
@@ -399,7 +399,7 @@ static void DumpSymbol(SYMBOL* sym)
             if (isfunction(sym->tp) && sym->tp->syms)
             {
                 int order = 1;
-                HASHREC* hr = sym->tp->syms->table[0];
+                SYMLIST* hr = sym->tp->syms->table[0];
                 while (hr && ((SYMBOL*)hr->p)->storage_class == sc_parameter)
                 {
                     SYMBOL* st = (SYMBOL*)hr->p;
@@ -430,7 +430,7 @@ static void DumpSymbols(void)
     }
     for (i = 0; i < GLOBALHASHSIZE; i++)
     {
-        HASHREC* hr = defsyms->table[i];
+        SYMLIST* hr = defsyms->table[i];
         while (hr)
         {
             ccWriteSymbolType(((SYMBOL*)hr->p)->name, main_id, (char *)"$$$", 1, 0, ST_DEFINE);
@@ -443,7 +443,7 @@ static void DumpLines(void)
     int i;
     for (i = 0; i < ccHash->size; i++)
     {
-        HASHREC* hr = ccHash->table[i];
+        SYMLIST* hr = ccHash->table[i];
         while (hr)
         {
             LINEINCLUDES* x = (LINEINCLUDES*)hr->p;
@@ -478,7 +478,7 @@ static void DumpFiles(void)
     time_t n = time(0);
     for (i = 0; i < ccHash->size; i++)
     {
-        HASHREC* hr = ccHash->table[i];
+        SYMLIST* hr = ccHash->table[i];
         while (hr)
         {
             LINEINCLUDES* l = (LINEINCLUDES*)hr->p;

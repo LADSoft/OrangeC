@@ -199,7 +199,7 @@ void RemoveInfiniteThunks(void)
                     l = &(*l)->next;
                 }
             }
-            blockArray[i] = NULL;
+            blockArray[i] = nullptr;
         }
     }
 }
@@ -209,13 +209,13 @@ static LOOP* LoopAncestor(BLOCK* b)
     LOOP* head = b->loopParent;
     if (!head)
         return b->loopName;
-    while (head->parent != NULL)
+    while (head->parent != nullptr)
         head = head->parent;
     return head;
 }
 static void FindBody(BLOCKLIST* gen, BLOCK* head, enum e_lptype type)
 {
-    LIST *queue = NULL, **qx;
+    LIST *queue = nullptr, **qx;
     LOOP *lp, **lpp;
     int i;
     if (!gen)
@@ -265,7 +265,7 @@ static void FindBody(BLOCKLIST* gen, BLOCK* head, enum e_lptype type)
     lp->type = type;
     lp->loopnum = loopCount++;
     lp->entry = head;
-    lp->parent = NULL;
+    lp->parent = nullptr;
     head->loopParent = lp;
     qx = &lp->contains;
     *qx = (LIST *)oAlloc(sizeof(LIST));
@@ -302,7 +302,7 @@ static BLOCK* findCommonDominator(BLOCK* one, BLOCK* two)
 }
 static void FindLoop(BLOCK* b)
 {
-    BLOCKLIST* loop = NULL;
+    BLOCKLIST* loop = nullptr;
     BLOCKLIST* bl;
     BLOCK* Z = b;
     bl = b->pred;
@@ -445,12 +445,12 @@ void BuildLoopTree(void)
         if (blockArray[i])
         {
             blockArray[i]->visiteddfst = false;
-            blockArray[i]->loopParent = NULL;
+            blockArray[i]->loopParent = nullptr;
             blockArray[i]->loopName = (LOOP *)oAlloc(sizeof(LOOP));
             blockArray[i]->loopName->type = LT_BLOCK;
             blockArray[i]->loopName->entry = blockArray[i];
             blockArray[i]->loopName->loopnum = loopCount;
-            blockArray[i]->loopGenerators = NULL;
+            blockArray[i]->loopGenerators = nullptr;
             loopArray[loopCount++] = blockArray[i]->loopName;
         }
         //		else
@@ -817,7 +817,7 @@ LIST* strongRegiondfs(int tnum)
 {
     TEMP_INFO* t = tempInfo[tnum];
     INSTRUCTIONLIST* u = t->instructionUses;
-    LIST* rv = NULL;
+    LIST* rv = nullptr;
     t->temp = t->dfstOrder = max_dfs++;
     strongStack[strongStackTop++] = tnum;
     t->visiteddfst = true;
@@ -873,7 +873,7 @@ LIST* strongRegiondfs(int tnum)
     if (t->temp == t->dfstOrder)
     {
         int vp;
-        ILIST *region = NULL;
+        ILIST *region = nullptr;
         LIST *temp;
         ILIST *temp1;
         do
@@ -901,8 +901,8 @@ static LIST* strongRegions(LOOP* lp, ILIST** anchors)
 {
     int i;
     QUAD* head;
-    LIST* rv = NULL;
-    *anchors = NULL;
+    LIST* rv = nullptr;
+    *anchors = nullptr;
     strongStack = (unsigned short *)oAlloc(sizeof(unsigned short) * tempCount);
     max_dfs = 0;
     strongStackTop = 0;
@@ -949,7 +949,7 @@ void CalculateInduction(void)
         if (lp && lp->type == LT_SINGLE)
         {
             LIST* strongTemps;
-            ILIST* anchors = NULL;
+            ILIST* anchors = nullptr;
             CalculateInductionCandidates(lp);
             strongTemps = strongRegions(lp, &anchors);
             if (strongTemps && anchors)

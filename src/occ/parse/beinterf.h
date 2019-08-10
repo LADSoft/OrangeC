@@ -4,6 +4,7 @@
  * 
  *     This file is part of the Orange C Compiler package.
  * 
+ 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
@@ -308,7 +309,7 @@ typedef struct _arch_gen
     void (*extern_define)(SYMBOL* sp, int code);                 /* put an external definition */
     void (*import_define)(SYMBOL* sp, char* file);               /* put an import definition */
     void (*export_define)(SYMBOL* sp);                           /* put an export definition */
-    void (*output_alias)(char* sp, char* alias);                 /* put an alias */
+    void (*output_alias)(char* sym, char* alias);                 /* put an alias */
     void (*output_includelib)(char* name);                       /* put an included library name */
     IMODE* (*handleIntrins)(EXPRESSION* node, int novalue);      /* backend handle intrinsic */
     CGFUNC asm_exprtag;                                          /* expression tag */
@@ -422,28 +423,28 @@ typedef struct _arch_asm
     void* userdata;             /* backend data (compiler ignores) */
     const char* hosted;               /* __STDC__HOSTED__ value "0" = embedded, "1" = hosted */
     const char* asmext;               /* extension for assembly files */
-    const char* objext;               /* extension for object files, NULL = has no object mode */
+    const char* objext;               /* extension for object files, nullptr = has no object mode */
     const char* envname;              /* name of an environment variable to parse, or 0 */
     const char* progname;             /* name of the program, for usage */
-    const char* cfgname;              /* name of a config file if you want to use one, or NULL (sans extension) */
+    const char* cfgname;              /* name of a config file if you want to use one, or nullptr (sans extension) */
     const char* usage_text;           /* pointer to usage text */
     CMDLIST* Args;              /* argument handling */
     int ArgCount;               /* number of arguments */
     KEYWORD* keywords;          /* specific keywords, e.g. allow a 'bit' keyword and so forth */
     ARCH_DEFINES* defines;      /* defines list to create at compile time, or null */
-    ARCH_DEBUG* debug;          /* debug structure, or NULL */
+    ARCH_DEBUG* debug;          /* debug structure, or nullptr */
     ARCH_CHARACTERISTICS* arch; /* architecture characteristics */
     ARCH_GEN* gen;              /* pointer to backend function linkages */
     ARCH_MSIL* msil;            /* pointer to MSIL-specific data and functions */
     const char* bltins;               /* pointer to extra builtin data */
     int (*init)(COMPILER_PARAMS* params, struct _arch_asm* data, ARCH_DEBUG* debug); /* return 1 to proceed */
-    int (*main_preprocess)();                                                        /* preprocess function, or NULL */
-    void (*main_postprocess)(bool hasErrors);                                     /* postprocess function, or NULL */
-    int (*compiler_postprocess)(char*);                                              /* postprocess function, or NULL */
+    int (*main_preprocess)();                                                        /* preprocess function, or nullptr */
+    void (*main_postprocess)(bool hasErrors);                                     /* postprocess function, or nullptr */
+    int (*compiler_postprocess)(char*);                                              /* postprocess function, or nullptr */
     int (*rundown)(void);                                                            /* compiler rundown */
     void (*insert_output_file)(char* name); /* insert the output (executable name) into the backend */
     int (*insert_noncompile_file)(
-        char* name, bool primary); /* insert a non-compilable file in the backend list, e.g. for post processing, or NULL */
+        char* name, bool primary); /* insert a non-compilable file in the backend list, e.g. for post processing, or nullptr */
     int (*parse_param)(char mode, char* string);    /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
     int (*parse_codegen)(char mode, char* string);  /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
     void (*doPragma)(char* kw, char* tag);          /* parse a pragma directive, or null */
@@ -451,7 +452,7 @@ typedef struct _arch_asm
     void (*enter_includename)(char* name, int num); /* switch to or from an include file */
     void (*output_obj_file)(void);                  /* write the object file (for native object formats) */
     void (*outcode_init)(void);                     /* initialize the object file */
-    void (*inlineAsmInit)(void);                    /* initialize inline assembler, per file, or NULL */
+    void (*inlineAsmInit)(void);                    /* initialize inline assembler, per file, or nullptr */
     LEXEME* (*inlineAsm)(LEXEME*, BLOCKDATA*);      /* parse an assembly statement */
     void* (*inlineAsmStmt)(void* stmt);             /* inlined asm stmt */
     void (*intrinsicInit)(void);                    /* initialize intrinsic mechanism, compiler startup */

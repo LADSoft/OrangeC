@@ -76,14 +76,14 @@ void outcodeini(void)
     outcol = 0;
     virtual_mode = 0;
     newlabel = false;
-    strtab = NULL;
+    strtab = nullptr;
 }
-static void iop_nop(QUAD* q)
+/*static*/ void iop_nop(QUAD* q)
 {
     (void)q;
     oprintf(icdFile, "\tNOP");
 }
-static void iop_phi(QUAD* q)
+/*static*/ void iop_phi(QUAD* q)
 {
     PHIDATA* phi = q->dc.v.phi;
     struct _phiblock* pb = phi->temps;
@@ -102,7 +102,7 @@ static void iop_phi(QUAD* q)
 /*
  * ICODE op display handlers
  */
-static void iop_line(QUAD* q)
+/*static*/ void iop_line(QUAD* q)
 {
     if (chosenAssembler->gen->asm_line)
         chosenAssembler->gen->asm_line(q);
@@ -119,22 +119,22 @@ static void iop_line(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_passthrough(QUAD* q)
+/*static*/ void iop_passthrough(QUAD* q)
 {
     if (chosenAssembler->gen->asm_passthrough)
         chosenAssembler->gen->asm_passthrough(q);
     oprintf(icdFile, "%s\n", (char*)q->dc.left);
 }
-static void iop_datapassthrough(QUAD* q)
+/*static*/ void iop_datapassthrough(QUAD* q)
 {
     if (chosenAssembler->gen->asm_datapassthrough)
         chosenAssembler->gen->asm_datapassthrough(q);
     oprintf(icdFile, "ASM DATA\n");
 }
-static void iop_skipcompare(QUAD* q) { oprintf(icdFile, "\tskipcompare %d\n", q->dc.v.label); }
+/*static*/ void iop_skipcompare(QUAD* q) { oprintf(icdFile, "\tskipcompare %d\n", q->dc.v.label); }
 /*-------------------------------------------------------------------------*/
 
-static void iop_label(QUAD* q)
+/*static*/ void iop_label(QUAD* q)
 {
     if (chosenAssembler->gen->asm_label)
         chosenAssembler->gen->asm_label(q);
@@ -145,7 +145,7 @@ static void iop_label(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void putsingle(QUAD* q, IMODE* ap, const char* string)
+/*static*/ void putsingle(QUAD* q, IMODE* ap, const char* string)
 {
     if (!icdFile)
         return;
@@ -159,16 +159,16 @@ static void putsingle(QUAD* q, IMODE* ap, const char* string)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_asmgoto(QUAD* q) { oprintf(icdFile, "\tASMGOTO\tL_%d:PC", q->dc.v.label); }
+/*static*/ void iop_asmgoto(QUAD* q) { oprintf(icdFile, "\tASMGOTO\tL_%d:PC", q->dc.v.label); }
 /*-------------------------------------------------------------------------*/
 
-static void iop_goto(QUAD* q)
+/*static*/ void iop_goto(QUAD* q)
 {
     if (chosenAssembler->gen->asm_goto)
         chosenAssembler->gen->asm_goto(q);
     oprintf(icdFile, "\tGOTO\tL_%d:PC", q->dc.v.label);
 }
-static void iop_directbranch(QUAD* q)
+/*static*/ void iop_directbranch(QUAD* q)
 {
     if (chosenAssembler->gen->asm_goto)
         chosenAssembler->gen->asm_goto(q);
@@ -177,14 +177,14 @@ static void iop_directbranch(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_gosub(QUAD* q)
+/*static*/ void iop_gosub(QUAD* q)
 {
     if (chosenAssembler->gen->asm_gosub)
         chosenAssembler->gen->asm_gosub(q);
     putsingle(q, q->dc.left, "GOSUB");
 }
 
-static void iop_fargosub(QUAD* q)
+/*static*/ void iop_fargosub(QUAD* q)
 {
     if (chosenAssembler->gen->asm_fargosub)
         chosenAssembler->gen->asm_fargosub(q);
@@ -192,7 +192,7 @@ static void iop_fargosub(QUAD* q)
 }
 /*-------------------------------------------------------------------------*/
 
-static void iop_trap(QUAD* q)
+/*static*/ void iop_trap(QUAD* q)
 {
     if (chosenAssembler->gen->asm_trap)
         chosenAssembler->gen->asm_trap(q);
@@ -201,7 +201,7 @@ static void iop_trap(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_int(QUAD* q)
+/*static*/ void iop_int(QUAD* q)
 {
     if (chosenAssembler->gen->asm_int)
         chosenAssembler->gen->asm_int(q);
@@ -210,7 +210,7 @@ static void iop_int(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_ret(QUAD* q)
+/*static*/ void iop_ret(QUAD* q)
 {
     if (chosenAssembler->gen->asm_ret)
         chosenAssembler->gen->asm_ret(q);
@@ -220,7 +220,7 @@ static void iop_ret(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_fret(QUAD* q)
+/*static*/ void iop_fret(QUAD* q)
 {
     if (chosenAssembler->gen->asm_fret)
         chosenAssembler->gen->asm_fret(q);
@@ -230,7 +230,7 @@ static void iop_fret(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_rett(QUAD* q)
+/*static*/ void iop_rett(QUAD* q)
 {
     if (chosenAssembler->gen->asm_rett)
         chosenAssembler->gen->asm_rett(q);
@@ -239,7 +239,7 @@ static void iop_rett(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void putbin(QUAD* q, const char* str)
+/*static*/ void putbin(QUAD* q, const char* str)
 {
     if (!icdFile)
         return;
@@ -253,7 +253,7 @@ static void putbin(QUAD* q, const char* str)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_add(QUAD* q)
+/*static*/ void iop_add(QUAD* q)
 {
     if (chosenAssembler->gen->asm_add)
         chosenAssembler->gen->asm_add(q);
@@ -262,7 +262,7 @@ static void iop_add(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_sub(QUAD* q)
+/*static*/ void iop_sub(QUAD* q)
 {
     if (chosenAssembler->gen->asm_sub)
         chosenAssembler->gen->asm_sub(q);
@@ -271,7 +271,7 @@ static void iop_sub(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_udiv(QUAD* q)
+/*static*/ void iop_udiv(QUAD* q)
 {
     if (chosenAssembler->gen->asm_udiv)
         chosenAssembler->gen->asm_udiv(q);
@@ -280,7 +280,7 @@ static void iop_udiv(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_umod(QUAD* q)
+/*static*/ void iop_umod(QUAD* q)
 {
     if (chosenAssembler->gen->asm_umod)
         chosenAssembler->gen->asm_umod(q);
@@ -289,7 +289,7 @@ static void iop_umod(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_sdiv(QUAD* q)
+/*static*/ void iop_sdiv(QUAD* q)
 {
     if (chosenAssembler->gen->asm_sdiv)
         chosenAssembler->gen->asm_sdiv(q);
@@ -298,7 +298,7 @@ static void iop_sdiv(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_smod(QUAD* q)
+/*static*/ void iop_smod(QUAD* q)
 {
     if (chosenAssembler->gen->asm_smod)
         chosenAssembler->gen->asm_smod(q);
@@ -306,20 +306,20 @@ static void iop_smod(QUAD* q)
 }
 
 /*-------------------------------------------------------------------------*/
-static void iop_muluh(QUAD* q)
+/*static*/ void iop_muluh(QUAD* q)
 {
     if (chosenAssembler->gen->asm_muluh)
         chosenAssembler->gen->asm_muluh(q);
     putbin(q, "U*H");
 }
-static void iop_mulsh(QUAD* q)
+/*static*/ void iop_mulsh(QUAD* q)
 {
     if (chosenAssembler->gen->asm_mulsh)
         chosenAssembler->gen->asm_mulsh(q);
     putbin(q, "S*H");
 }
 
-static void iop_mul(QUAD* q)
+/*static*/ void iop_mul(QUAD* q)
 {
     if (chosenAssembler->gen->asm_mul)
         chosenAssembler->gen->asm_mul(q);
@@ -328,7 +328,7 @@ static void iop_mul(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_lsl(QUAD* q)
+/*static*/ void iop_lsl(QUAD* q)
 {
     if (chosenAssembler->gen->asm_lsl)
         chosenAssembler->gen->asm_lsl(q);
@@ -337,7 +337,7 @@ static void iop_lsl(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_lsr(QUAD* q)
+/*static*/ void iop_lsr(QUAD* q)
 {
     if (chosenAssembler->gen->asm_lsr)
         chosenAssembler->gen->asm_lsr(q);
@@ -346,7 +346,7 @@ static void iop_lsr(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_asr(QUAD* q)
+/*static*/ void iop_asr(QUAD* q)
 {
     if (chosenAssembler->gen->asm_asr)
         chosenAssembler->gen->asm_asr(q);
@@ -355,7 +355,7 @@ static void iop_asr(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_and(QUAD* q)
+/*static*/ void iop_and(QUAD* q)
 {
     if (chosenAssembler->gen->asm_and)
         chosenAssembler->gen->asm_and(q);
@@ -364,7 +364,7 @@ static void iop_and(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_or(QUAD* q)
+/*static*/ void iop_or(QUAD* q)
 {
     if (chosenAssembler->gen->asm_or)
         chosenAssembler->gen->asm_or(q);
@@ -373,7 +373,7 @@ static void iop_or(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_eor(QUAD* q)
+/*static*/ void iop_eor(QUAD* q)
 {
     if (chosenAssembler->gen->asm_eor)
         chosenAssembler->gen->asm_eor(q);
@@ -382,7 +382,7 @@ static void iop_eor(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void putunary(QUAD* q, const char* str)
+/*static*/ void putunary(QUAD* q, const char* str)
 {
     if (!icdFile)
         return;
@@ -395,7 +395,7 @@ static void putunary(QUAD* q, const char* str)
 
 /*-------------------------------------------------------------------------*/
 
-static void putasunary(QUAD* q, const char* str)
+/*static*/ void putasunary(QUAD* q, const char* str)
 {
     if (!icdFile)
         return;
@@ -408,7 +408,7 @@ static void putasunary(QUAD* q, const char* str)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_neg(QUAD* q)
+/*static*/ void iop_neg(QUAD* q)
 {
     if (chosenAssembler->gen->asm_neg)
         chosenAssembler->gen->asm_neg(q);
@@ -417,7 +417,7 @@ static void iop_neg(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_not(QUAD* q)
+/*static*/ void iop_not(QUAD* q)
 {
     if (chosenAssembler->gen->asm_not)
         chosenAssembler->gen->asm_not(q);
@@ -426,7 +426,7 @@ static void iop_not(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_assn(QUAD* q)
+/*static*/ void iop_assn(QUAD* q)
 {
     if (chosenAssembler->gen->asm_assn)
         chosenAssembler->gen->asm_assn(q);
@@ -435,7 +435,7 @@ static void iop_assn(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_genword(QUAD* q)
+/*static*/ void iop_genword(QUAD* q)
 {
     if (chosenAssembler->gen->asm_genword)
         chosenAssembler->gen->asm_genword(q);
@@ -444,7 +444,7 @@ static void iop_genword(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_coswitch(QUAD* q)
+/*static*/ void iop_coswitch(QUAD* q)
 {
     if (chosenAssembler->gen->asm_coswitch)
         chosenAssembler->gen->asm_coswitch(q);
@@ -459,7 +459,7 @@ static void iop_coswitch(QUAD* q)
     oputc(',', icdFile);
     oprintf(icdFile, "L_%d:PC)", q->dc.v.label);
 }
-static void iop_swbranch(QUAD* q)
+/*static*/ void iop_swbranch(QUAD* q)
 {
     if (chosenAssembler->gen->asm_swbranch)
         chosenAssembler->gen->asm_swbranch(q);
@@ -473,7 +473,7 @@ static void iop_swbranch(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_array(QUAD* q)
+/*static*/ void iop_array(QUAD* q)
 {
     if (chosenAssembler->gen->asm_add)
         chosenAssembler->gen->asm_add(q);
@@ -490,7 +490,7 @@ static void iop_array(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_arrayindex(QUAD* q)
+/*static*/ void iop_arrayindex(QUAD* q)
 {
     if (chosenAssembler->gen->asm_mul)
         chosenAssembler->gen->asm_mul(q);
@@ -506,7 +506,7 @@ static void iop_arrayindex(QUAD* q)
 }
 /*-------------------------------------------------------------------------*/
 
-static void iop_arraylsh(QUAD* q)
+/*static*/ void iop_arraylsh(QUAD* q)
 {
     if (chosenAssembler->gen->asm_mul)
         chosenAssembler->gen->asm_mul(q);
@@ -520,7 +520,7 @@ static void iop_arraylsh(QUAD* q)
     oputc(',', icdFile);
     putamode(q, q->dc.right);
 }
-static void iop_struct(QUAD* q)
+/*static*/ void iop_struct(QUAD* q)
 {
     if (chosenAssembler->gen->asm_add)
         chosenAssembler->gen->asm_add(q);
@@ -536,7 +536,7 @@ static void iop_struct(QUAD* q)
 }
 /*-------------------------------------------------------------------------*/
 
-static void iop_assnblock(QUAD* q)
+/*static*/ void iop_assnblock(QUAD* q)
 {
     if (chosenAssembler->gen->asm_assnblock)
         chosenAssembler->gen->asm_assnblock(q);
@@ -553,7 +553,7 @@ static void iop_assnblock(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_clrblock(QUAD* q)
+/*static*/ void iop_clrblock(QUAD* q)
 {
     if (chosenAssembler->gen->asm_clrblock)
         chosenAssembler->gen->asm_clrblock(q);
@@ -566,7 +566,7 @@ static void iop_clrblock(QUAD* q)
     putamode(q, q->dc.right);
     oprintf(icdFile, ")");
 }
-static void iop_cmpblock(QUAD *q)
+/*static*/ void iop_cmpblock(QUAD *q)
 {
     if (chosenAssembler->gen->asm_cmpblock)
         chosenAssembler->gen->asm_cmpblock(q);
@@ -578,14 +578,14 @@ static void iop_cmpblock(QUAD *q)
     oprintf(icdFile, " != ");
     putamode(q, q->dc.right);
 }
-static void iop_initblk(QUAD* q)
+/*static*/ void iop_initblk(QUAD* q)
 {
     if (chosenAssembler->gen->asm_clrblock)
         chosenAssembler->gen->asm_clrblock(q);
     oputc('\t', icdFile);
     oprintf(icdFile, "initblk");
 }
-static void iop_cpblk(QUAD* q)
+/*static*/ void iop_cpblk(QUAD* q)
 {
     if (chosenAssembler->gen->asm_assnblock)
         chosenAssembler->gen->asm_assnblock(q);
@@ -594,10 +594,10 @@ static void iop_cpblk(QUAD* q)
 }
 /*-------------------------------------------------------------------------*/
 
-static void iop_asmcond(QUAD* q) { oprintf(icdFile, "\tASMCOND\tL_%d:PC", q->dc.v.label); }
+/*static*/ void iop_asmcond(QUAD* q) { oprintf(icdFile, "\tASMCOND\tL_%d:PC", q->dc.v.label); }
 /*-------------------------------------------------------------------------*/
 
-static void putjmp(QUAD* q, const char* str)
+/*static*/ void putjmp(QUAD* q, const char* str)
 {
     if (!icdFile)
         return;
@@ -611,7 +611,7 @@ static void putjmp(QUAD* q, const char* str)
 
 /*-------------------------------------------------------------------------*/
 
-static void putset(QUAD* q, const char* str)
+/*static*/ void putset(QUAD* q, const char* str)
 {
     if (!icdFile)
         return;
@@ -625,7 +625,7 @@ static void putset(QUAD* q, const char* str)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_jc(QUAD* q)
+/*static*/ void iop_jc(QUAD* q)
 {
     if (chosenAssembler->gen->asm_jc)
         chosenAssembler->gen->asm_jc(q);
@@ -634,7 +634,7 @@ static void iop_jc(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_ja(QUAD* q)
+/*static*/ void iop_ja(QUAD* q)
 {
     if (chosenAssembler->gen->asm_ja)
         chosenAssembler->gen->asm_ja(q);
@@ -643,7 +643,7 @@ static void iop_ja(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_je(QUAD* q)
+/*static*/ void iop_je(QUAD* q)
 {
     if (chosenAssembler->gen->asm_je)
         chosenAssembler->gen->asm_je(q);
@@ -652,7 +652,7 @@ static void iop_je(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_jnc(QUAD* q)
+/*static*/ void iop_jnc(QUAD* q)
 {
     if (chosenAssembler->gen->asm_jnc)
         chosenAssembler->gen->asm_jnc(q);
@@ -661,7 +661,7 @@ static void iop_jnc(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_jbe(QUAD* q)
+/*static*/ void iop_jbe(QUAD* q)
 {
     if (chosenAssembler->gen->asm_jbe)
         chosenAssembler->gen->asm_jbe(q);
@@ -670,7 +670,7 @@ static void iop_jbe(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_jne(QUAD* q)
+/*static*/ void iop_jne(QUAD* q)
 {
     if (chosenAssembler->gen->asm_jne)
         chosenAssembler->gen->asm_jne(q);
@@ -679,7 +679,7 @@ static void iop_jne(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_jl(QUAD* q)
+/*static*/ void iop_jl(QUAD* q)
 {
     if (chosenAssembler->gen->asm_jl)
         chosenAssembler->gen->asm_jl(q);
@@ -688,7 +688,7 @@ static void iop_jl(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_jg(QUAD* q)
+/*static*/ void iop_jg(QUAD* q)
 {
     if (chosenAssembler->gen->asm_jg)
         chosenAssembler->gen->asm_jg(q);
@@ -697,7 +697,7 @@ static void iop_jg(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_jle(QUAD* q)
+/*static*/ void iop_jle(QUAD* q)
 {
     if (chosenAssembler->gen->asm_jle)
         chosenAssembler->gen->asm_jle(q);
@@ -706,7 +706,7 @@ static void iop_jle(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_jge(QUAD* q)
+/*static*/ void iop_jge(QUAD* q)
 {
     if (chosenAssembler->gen->asm_jge)
         chosenAssembler->gen->asm_jge(q);
@@ -715,7 +715,7 @@ static void iop_jge(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_setc(QUAD* q)
+/*static*/ void iop_setc(QUAD* q)
 {
     if (chosenAssembler->gen->asm_setc)
         chosenAssembler->gen->asm_setc(q);
@@ -724,7 +724,7 @@ static void iop_setc(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_seta(QUAD* q)
+/*static*/ void iop_seta(QUAD* q)
 {
     if (chosenAssembler->gen->asm_seta)
         chosenAssembler->gen->asm_seta(q);
@@ -733,7 +733,7 @@ static void iop_seta(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_sete(QUAD* q)
+/*static*/ void iop_sete(QUAD* q)
 {
     if (chosenAssembler->gen->asm_sete)
         chosenAssembler->gen->asm_sete(q);
@@ -742,7 +742,7 @@ static void iop_sete(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_setnc(QUAD* q)
+/*static*/ void iop_setnc(QUAD* q)
 {
     if (chosenAssembler->gen->asm_setnc)
         chosenAssembler->gen->asm_setnc(q);
@@ -751,7 +751,7 @@ static void iop_setnc(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_setbe(QUAD* q)
+/*static*/ void iop_setbe(QUAD* q)
 {
     if (chosenAssembler->gen->asm_setbe)
         chosenAssembler->gen->asm_setbe(q);
@@ -760,7 +760,7 @@ static void iop_setbe(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_setne(QUAD* q)
+/*static*/ void iop_setne(QUAD* q)
 {
     if (chosenAssembler->gen->asm_setne)
         chosenAssembler->gen->asm_setne(q);
@@ -769,7 +769,7 @@ static void iop_setne(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_setl(QUAD* q)
+/*static*/ void iop_setl(QUAD* q)
 {
     if (chosenAssembler->gen->asm_setl)
         chosenAssembler->gen->asm_setl(q);
@@ -778,7 +778,7 @@ static void iop_setl(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_setg(QUAD* q)
+/*static*/ void iop_setg(QUAD* q)
 {
     if (chosenAssembler->gen->asm_setg)
         chosenAssembler->gen->asm_setg(q);
@@ -787,7 +787,7 @@ static void iop_setg(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_setle(QUAD* q)
+/*static*/ void iop_setle(QUAD* q)
 {
     if (chosenAssembler->gen->asm_setle)
         chosenAssembler->gen->asm_setle(q);
@@ -796,7 +796,7 @@ static void iop_setle(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_setge(QUAD* q)
+/*static*/ void iop_setge(QUAD* q)
 {
     if (chosenAssembler->gen->asm_setge)
         chosenAssembler->gen->asm_setge(q);
@@ -805,7 +805,7 @@ static void iop_setge(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_parm(QUAD* q)
+/*static*/ void iop_parm(QUAD* q)
 {
     // for fastcall, the moves generated before the push are sufficient.
     if (q->fastcall)
@@ -820,7 +820,7 @@ static void iop_parm(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_parmadj(QUAD* q)
+/*static*/ void iop_parmadj(QUAD* q)
 {
     if (chosenAssembler->gen->asm_parmadj)
         chosenAssembler->gen->asm_parmadj(q);
@@ -832,7 +832,7 @@ static void iop_parmadj(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_parmblock(QUAD* q)
+/*static*/ void iop_parmblock(QUAD* q)
 {
     if (chosenAssembler->gen->asm_parmblock)
         chosenAssembler->gen->asm_parmblock(q);
@@ -846,7 +846,7 @@ static void iop_parmblock(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_cppini(QUAD* q)
+/*static*/ void iop_cppini(QUAD* q)
 {
     if (chosenAssembler->gen->asm_cppini)
         chosenAssembler->gen->asm_cppini(q);
@@ -856,7 +856,7 @@ static void iop_cppini(QUAD* q)
 }
 
 /*-------------------------------------------------------------------------*/
-static void iop_dbgblock(QUAD* q)
+/*static*/ void iop_dbgblock(QUAD* q)
 {
     if (chosenAssembler->gen->asm_blockstart)
         chosenAssembler->gen->asm_blockstart(q);
@@ -865,17 +865,17 @@ static void iop_dbgblock(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_dbgblockend(QUAD* q)
+/*static*/ void iop_dbgblockend(QUAD* q)
 {
     if (chosenAssembler->gen->asm_blockend)
         chosenAssembler->gen->asm_blockend(q);
     oprintf(icdFile, "\tDBG BLOCK END");
 }
-static void iop_block(QUAD* q) { oprintf(icdFile, "\tBLOCK %d", q->dc.v.label + 1); }
+/*static*/ void iop_block(QUAD* q) { oprintf(icdFile, "\tBLOCK %d", q->dc.v.label + 1); }
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_blockend(QUAD* q)
+/*static*/ void iop_blockend(QUAD* q)
 {
     oprintf(icdFile, "\tBLOCK END");
     if (q->dc.v.data)
@@ -893,20 +893,20 @@ static void iop_blockend(QUAD* q)
     }
 }
 
-static void iop_varstart(QUAD* q)
+/*static*/ void iop_varstart(QUAD* q)
 {
     if (chosenAssembler->gen->asm_varstart)
         chosenAssembler->gen->asm_varstart(q);
     oprintf(icdFile, "\tVAR START\t%s", q->dc.left->offset->v.sp->name);
 }
-static void iop_func(QUAD* q)
+/*static*/ void iop_func(QUAD* q)
 {
     if (chosenAssembler->gen->asm_func)
         chosenAssembler->gen->asm_func(q);
 }
 /*-------------------------------------------------------------------------*/
 
-static void iop_livein(QUAD* q)
+/*static*/ void iop_livein(QUAD* q)
 {
     (void)q;
     diag("op_livein: propogated live-in node");
@@ -914,7 +914,7 @@ static void iop_livein(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_icon(QUAD* q)
+/*static*/ void iop_icon(QUAD* q)
 {
     if (chosenAssembler->gen->asm_assn)
         chosenAssembler->gen->asm_assn(q);
@@ -927,7 +927,7 @@ static void iop_icon(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_fcon(QUAD* q)
+/*static*/ void iop_fcon(QUAD* q)
 {
     if (chosenAssembler->gen->asm_assn)
         chosenAssembler->gen->asm_assn(q);
@@ -937,7 +937,7 @@ static void iop_fcon(QUAD* q)
     putamode(q, q->ans);
     oprintf(icdFile, " C= #%s", ((std::string)q->dc.v.f).c_str());
 }
-static void iop_imcon(QUAD* q)
+/*static*/ void iop_imcon(QUAD* q)
 {
     if (chosenAssembler->gen->asm_assn)
         chosenAssembler->gen->asm_assn(q);
@@ -947,7 +947,7 @@ static void iop_imcon(QUAD* q)
     putamode(q, q->ans);
     oprintf(icdFile, " C= #%s", ((std::string)q->dc.v.f).c_str());
 }
-static void iop_cxcon(QUAD* q)
+/*static*/ void iop_cxcon(QUAD* q)
 {
     if (chosenAssembler->gen->asm_assn)
         chosenAssembler->gen->asm_assn(q);
@@ -957,7 +957,7 @@ static void iop_cxcon(QUAD* q)
     putamode(q, q->ans);
     oprintf(icdFile, " C= #%s + %s * I", ((std::string)q->dc.v.c.r).c_str(), ((std::string)q->dc.v.c.i).c_str());
 }
-static void iop_prologue(QUAD* q)
+/*static*/ void iop_prologue(QUAD* q)
 {
     if (chosenAssembler->gen->asm_prologue)
         chosenAssembler->gen->asm_prologue(q);
@@ -967,7 +967,7 @@ static void iop_prologue(QUAD* q)
     oputc(',', icdFile);
     putamode(q, q->dc.right);
 }
-static void iop_epilogue(QUAD* q)
+/*static*/ void iop_epilogue(QUAD* q)
 {
     if (chosenAssembler->gen->asm_epilogue)
         chosenAssembler->gen->asm_epilogue(q);
@@ -975,31 +975,31 @@ static void iop_epilogue(QUAD* q)
     oputc('\t', icdFile);
     putamode(q, q->dc.left);
 }
-static void iop_pushcontext(QUAD* q)
+/*static*/ void iop_pushcontext(QUAD* q)
 {
     if (chosenAssembler->gen->asm_pushcontext)
         chosenAssembler->gen->asm_pushcontext(q);
     oprintf(icdFile, "\tPUSHCONTEXT", q->dc.v.label);
 }
-static void iop_popcontext(QUAD* q)
+/*static*/ void iop_popcontext(QUAD* q)
 {
     if (chosenAssembler->gen->asm_popcontext)
         chosenAssembler->gen->asm_popcontext(q);
     oprintf(icdFile, "\tPOPCONTEXT", q->dc.v.label);
 }
-static void iop_loadcontext(QUAD* q)
+/*static*/ void iop_loadcontext(QUAD* q)
 {
     if (chosenAssembler->gen->asm_loadcontext)
         chosenAssembler->gen->asm_loadcontext(q);
     oprintf(icdFile, "\tLOADCONTEXT", q->dc.v.label);
 }
-static void iop_unloadcontext(QUAD* q)
+/*static*/ void iop_unloadcontext(QUAD* q)
 {
     if (chosenAssembler->gen->asm_unloadcontext)
         chosenAssembler->gen->asm_unloadcontext(q);
     oprintf(icdFile, "\tUNLOADCONTEXT", q->dc.v.label);
 }
-static void iop_tryblock(QUAD* q)
+/*static*/ void iop_tryblock(QUAD* q)
 {
     (void)q;
 #ifdef XXXXX
@@ -1025,13 +1025,13 @@ static void iop_tryblock(QUAD* q)
     }
 #endif
 }
-static void iop_substack(QUAD* q)
+/*static*/ void iop_substack(QUAD* q)
 {
     if (chosenAssembler->gen->asm_stackalloc)
         chosenAssembler->gen->asm_stackalloc(q);
     putasunary(q, "STACKALLOC");
 }
-static void iop_loadstack(QUAD* q)
+/*static*/ void iop_loadstack(QUAD* q)
 {
     if (chosenAssembler->gen->asm_loadstack)
         chosenAssembler->gen->asm_loadstack(q);
@@ -1039,7 +1039,7 @@ static void iop_loadstack(QUAD* q)
     oputc('\t', icdFile);
     putamode(q, q->dc.left);
 }
-static void iop_savestack(QUAD* q)
+/*static*/ void iop_savestack(QUAD* q)
 {
     if (chosenAssembler->gen->asm_savestack)
         chosenAssembler->gen->asm_savestack(q);
@@ -1047,7 +1047,7 @@ static void iop_savestack(QUAD* q)
     oputc('\t', icdFile);
     putamode(q, q->dc.left);
 }
-static void iop_functailstart(QUAD* q)
+/*static*/ void iop_functailstart(QUAD* q)
 {
     if (theCurrentFunc->tp->btp->type != bt_void && chosenAssembler->gen->asm_functail)
     {
@@ -1058,7 +1058,7 @@ static void iop_functailstart(QUAD* q)
     }
     oprintf(icdFile, "\tTAILBEGIN");
 }
-static void iop_functailend(QUAD* q)
+/*static*/ void iop_functailend(QUAD* q)
 {
     if (theCurrentFunc->tp->btp->type != bt_void && chosenAssembler->gen->asm_functail)
     {
@@ -1069,26 +1069,26 @@ static void iop_functailend(QUAD* q)
     }
     oprintf(icdFile, "\tTAILEND");
 }
-static void iop_gcsestub(QUAD* q) { oprintf(icdFile, "\tGCSE"); }
-static void iop_expressiontag(QUAD* q)
+/*static*/ void iop_gcsestub(QUAD* q) { oprintf(icdFile, "\tGCSE"); }
+/*static*/ void iop_expressiontag(QUAD* q)
 {
     if (chosenAssembler->gen->asm_exprtag)
         chosenAssembler->gen->asm_exprtag(q);
     oprintf(icdFile, "\tEXPR TAG\t%d", q->dc.v.label);
 }
-static void iop_tag(QUAD* q)
+/*static*/ void iop_tag(QUAD* q)
 {
     if (chosenAssembler->gen->asm_tag)
         chosenAssembler->gen->asm_tag(q);
     oprintf(icdFile, "\tTAG");
 }
-static void iop_seh(QUAD* q)
+/*static*/ void iop_seh(QUAD* q)
 {
     if (chosenAssembler->gen->asm_seh)
         chosenAssembler->gen->asm_seh(q);
     oprintf(icdFile, "\tSEH %d", q->sehMode);
 }
-static void iop_atomic_fence(QUAD* q)
+/*static*/ void iop_atomic_fence(QUAD* q)
 {
     if (chosenAssembler->gen->asm_atomic)
         chosenAssembler->gen->asm_atomic(q);
@@ -1096,7 +1096,7 @@ static void iop_atomic_fence(QUAD* q)
     oputc(' ', icdFile);
     putamode(q, q->dc.left);
 }
-static void iop_atomic_flag_fence(QUAD* q)
+/*static*/ void iop_atomic_flag_fence(QUAD* q)
 {
     if (chosenAssembler->gen->asm_atomic)
         chosenAssembler->gen->asm_atomic(q);
@@ -1112,7 +1112,7 @@ static void iop_atomic_flag_fence(QUAD* q)
     oputc(',', icdFile);
     putamode(q, q->dc.right);
 }
-static void iop_atomic_flag_test_and_set(QUAD* q)
+/*static*/ void iop_atomic_flag_test_and_set(QUAD* q)
 {
     if (chosenAssembler->gen->asm_atomic)
         chosenAssembler->gen->asm_atomic(q);
@@ -1124,7 +1124,7 @@ static void iop_atomic_flag_test_and_set(QUAD* q)
     oputc(',', icdFile);
     putamode(q, q->dc.right);
 }
-static void iop_atomic_flag_clear(QUAD* q)
+/*static*/ void iop_atomic_flag_clear(QUAD* q)
 {
     if (chosenAssembler->gen->asm_atomic)
         chosenAssembler->gen->asm_atomic(q);
@@ -1132,7 +1132,7 @@ static void iop_atomic_flag_clear(QUAD* q)
     oputc(' ', icdFile);
     putamode(q, q->dc.left);
 }
-static void iop_cmpswp(QUAD* q)
+/*static*/ void iop_cmpswp(QUAD* q)
 {
     if (chosenAssembler->gen->asm_atomic)
         chosenAssembler->gen->asm_atomic(q);
@@ -1143,7 +1143,7 @@ static void iop_cmpswp(QUAD* q)
     oputc(',', icdFile);
     putamode(q, q->dc.right);
 }
-static void iop_xchg(QUAD *q)
+/*static*/ void iop_xchg(QUAD *q)
 {
     if (chosenAssembler->gen->asm_atomic)
         chosenAssembler->gen->asm_atomic(q);
@@ -1157,7 +1157,7 @@ static void iop_xchg(QUAD *q)
 /* List of opcodes
  * This list MUST be in the same order as the op_ enums
  */
-static void (*oplst[])(QUAD* q) = {
+/*static*/ void (*oplst[])(QUAD* q) = {
     /* NOPROTO */
     iop_nop,
     iop_phi,
@@ -1266,21 +1266,21 @@ static void (*oplst[])(QUAD* q) = {
     iop_initblk,
     iop_cpblk};
 /*-------------------------------------------------------------------------*/
-void beDecorateSymName(char* buf, SYMBOL* sp)
+void beDecorateSymName(char* buf, SYMBOL* sym)
 {
     const char* q;
-    if (sp->attribs.uninheritable.alias)
+    if (sym->attribs.uninheritable.alias)
     {
-        strcpy(buf, sp->attribs.uninheritable.alias);
+        strcpy(buf, sym->attribs.uninheritable.alias);
     }
     else
     {
-        q = lookupAlias(sp->name);
+        q = lookupAlias(sym->name);
         if (q)
             strcpy(buf, q);
         else
         {
-            strcpy(buf, sp->decoratedName);
+            strcpy(buf, sym->decoratedName);
         }
     }
 }
@@ -1327,16 +1327,16 @@ void putconst(EXPRESSION* offset, int color)
         case en_tempref:
             if (offset->v.sp)
             {
-                SYMBOL* sp = (SYMBOL*)offset->v.sp;
+                SYMBOL* sym = (SYMBOL*)offset->v.sp;
                 if (offset->right)
-                    oprintf(icdFile, "T%d[%s]", (int)(sp->value.i), ((SYMBOL*)offset->right)->name);
+                    oprintf(icdFile, "T%d[%s]", (int)(sym->value.i), ((SYMBOL*)offset->right)->name);
                 else
-                    oprintf(icdFile, "T%d", (int)sp->value.i);
-                if (sp->regmode)
+                    oprintf(icdFile, "T%d", (int)sym->value.i);
+                if (sym->regmode)
                     oprintf(icdFile, "(%s)", lookupRegName(color));
-                else if (offset->right && sp->offset)
+                else if (offset->right && sym->offset)
                     oprintf(icdFile, "(%d)",
-                            sp->offset); /* - chosenAssembler->arch->retblocksize)/chosenAssembler->arch->parmwidth);*/
+                            sym->offset); /* - chosenAssembler->arch->retblocksize)/chosenAssembler->arch->parmwidth);*/
             }
             else
             {
@@ -1728,19 +1728,19 @@ void gen_vc1(SYMBOL* func)
 }
 /*-------------------------------------------------------------------------*/
 
-void gen_strlab(SYMBOL* sp)
+void gen_strlab(SYMBOL* sym)
 /*
  *      generate a named label.
  */
 {
     if (chosenAssembler->gen->gen_strlab)
-        chosenAssembler->gen->gen_strlab(sp);
+        chosenAssembler->gen->gen_strlab(sym);
     if (!icdFile)
         return;
 
     newlabel = true;
     gentype = nogen;
-    oprintf(icdFile, "%s:\n", sp->decoratedName);
+    oprintf(icdFile, "%s:\n", sym->decoratedName);
 }
 
 /*-------------------------------------------------------------------------*/
@@ -1899,14 +1899,14 @@ void genbool(int val)
     }
 }
 /* val not really used and will always be zero*/
-void genbit(SYMBOL* sp, int val)
+void genbit(SYMBOL* sym, int val)
 {
     if (chosenAssembler->gen->gen_bit)
-        chosenAssembler->gen->gen_bit(sp, val);
+        chosenAssembler->gen->gen_bit(sym, val);
     if (!icdFile)
         return;
     nl();
-    oprintf(icdFile, "%s\tBIT\t$%X", sp->decoratedName, val & 0x00ff);
+    oprintf(icdFile, "%s\tBIT\t$%X", sym->decoratedName, val & 0x00ff);
     gentype = nogen;
 }
 /*-------------------------------------------------------------------------*/
@@ -2197,31 +2197,31 @@ void genaddress(ULLONG_TYPE address)
 
 /*-------------------------------------------------------------------------*/
 
-void gensrref(SYMBOL* sp, int val, int type)
+void gensrref(SYMBOL* sym, int val, int type)
 /*
  * Output a startup/rundown reference
  */
 {
     if (chosenAssembler->gen->gen_srref)
-        chosenAssembler->gen->gen_srref(sp, val, type);
+        chosenAssembler->gen->gen_srref(sym, val, type);
     if (!icdFile)
         return;
     if (gentype == srrefgen && outcol < 56)
     {
-        oprintf(icdFile, ",%s,%d", sp->decoratedName, val);
-        outcol += strlen(sp->decoratedName) + 1;
+        oprintf(icdFile, ",%s,%d", sym->decoratedName, val);
+        outcol += strlen(sym->decoratedName) + 1;
     }
     else
     {
         nl();
-        oprintf(icdFile, "\tDC.A\t%s,%d", sp->decoratedName, val);
+        oprintf(icdFile, "\tDC.A\t%s,%d", sym->decoratedName, val);
         gentype = srrefgen;
         outcol = 25;
     }
 }
 
 /*-------------------------------------------------------------------------*/
-void genref(SYMBOL* sp, int offset)
+void genref(SYMBOL* sym, int offset)
 /*
  * Output a reference to the data area (also gens fixups )
  */
@@ -2229,7 +2229,7 @@ void genref(SYMBOL* sp, int offset)
     char sign;
     char buf[2048];
     if (chosenAssembler->gen->gen_ref)
-        chosenAssembler->gen->gen_ref(sp, offset);
+        chosenAssembler->gen->gen_ref(sym, offset);
     if (!icdFile)
         return;
     if (offset < 0)
@@ -2239,18 +2239,18 @@ void genref(SYMBOL* sp, int offset)
     }
     else
         sign = '+';
-    sprintf(buf, "%s%c%d", sp->decoratedName, sign, offset);
+    sprintf(buf, "%s%c%d", sym->decoratedName, sign, offset);
     {
-        if (gentype == longgen && outcol < 55 - strlen(sp->decoratedName))
+        if (gentype == longgen && outcol < 55 - strlen(sym->decoratedName))
         {
             oprintf(icdFile, ",%s", buf);
-            outcol += (11 + strlen(sp->decoratedName));
+            outcol += (11 + strlen(sym->decoratedName));
         }
         else
         {
             nl();
             oprintf(icdFile, "\tDC.A\t%s", buf);
-            outcol = 26 + strlen(sp->decoratedName);
+            outcol = 26 + strlen(sym->decoratedName);
             gentype = longgen;
         }
     }
@@ -2258,7 +2258,7 @@ void genref(SYMBOL* sp, int offset)
 
 /*-------------------------------------------------------------------------*/
 
-void genpcref(SYMBOL* sp, int offset)
+void genpcref(SYMBOL* sym, int offset)
 /*
  * Output a reference to the code area (also gens fixups )
  */
@@ -2266,7 +2266,7 @@ void genpcref(SYMBOL* sp, int offset)
     char sign;
     char buf[40];
     if (chosenAssembler->gen->gen_pcref)
-        chosenAssembler->gen->gen_pcref(sp, offset);
+        chosenAssembler->gen->gen_pcref(sym, offset);
     if (!icdFile)
         return;
     if (offset < 0)
@@ -2276,18 +2276,18 @@ void genpcref(SYMBOL* sp, int offset)
     }
     else
         sign = '+';
-    sprintf(buf, "%s%c%d", sp->decoratedName, sign, offset);
+    sprintf(buf, "%s%c%d", sym->decoratedName, sign, offset);
     {
-        if (gentype == longgen && outcol < 55 - strlen(sp->decoratedName))
+        if (gentype == longgen && outcol < 55 - strlen(sym->decoratedName))
         {
             oprintf(icdFile, ",%s", buf);
-            outcol += (11 + strlen(sp->decoratedName));
+            outcol += (11 + strlen(sym->decoratedName));
         }
         else
         {
             nl();
             oprintf(icdFile, "\tDC.A\t%s", buf);
-            outcol = 26 + strlen(sp->decoratedName);
+            outcol = 26 + strlen(sym->decoratedName);
             gentype = longgen;
         }
     }
@@ -2470,13 +2470,13 @@ void nl(void)
 
 /*-------------------------------------------------------------------------*/
 
-static void exitseg(void)
+/*static*/ void exitseg(void)
 {
     if (curseg != noseg && chosenAssembler->gen->exitseg)
         chosenAssembler->gen->exitseg((e_sg)curseg);
     curseg = noseg;
 }
-static void enterseg(enum e_sg seg)
+/*static*/ void enterseg(enum e_sg seg)
 {
     exitseg();
     if (chosenAssembler->gen->enterseg)
@@ -2598,35 +2598,35 @@ void tlsrundownseg(void)
         oprintf(icdFile, "\tSECTION\tcpptlsrundown\n");
     }
 }
-void gen_virtual(SYMBOL* sp, int data)
+void gen_virtual(SYMBOL* sym, int data)
 {
     {
         if (chosenAssembler->gen->gen_virtual)
-            chosenAssembler->gen->gen_virtual(sp, data);
-        if (sp->attribs.inheritable.linkage2 == lk_export)
-            put_expfunc(sp);
+            chosenAssembler->gen->gen_virtual(sym, data);
+        if (sym->attribs.inheritable.linkage2 == lk_export)
+            put_expfunc(sym);
         if (!icdFile)
             return;
         virtual_mode = data;
         curseg = virtseg;
 
         nl();
-        oprintf(icdFile, "@%s\tVIRTUAL\n", sp->decoratedName);
-        oprintf(icdFile, "%s:\n", sp->decoratedName);
+        oprintf(icdFile, "@%s\tVIRTUAL\n", sym->decoratedName);
+        oprintf(icdFile, "%s:\n", sym->decoratedName);
     }
 }
 
 /*-------------------------------------------------------------------------*/
 
-void gen_endvirtual(SYMBOL* sp)
+void gen_endvirtual(SYMBOL* sym)
 {
     {
         if (chosenAssembler->gen->gen_endvirtual)
-            chosenAssembler->gen->gen_endvirtual(sp);
+            chosenAssembler->gen->gen_endvirtual(sym);
         if (!icdFile)
             return;
         nl();
-        oprintf(icdFile, "@%s\tENDVIRTUAL\n", sp->decoratedName);
+        oprintf(icdFile, "@%s\tENDVIRTUAL\n", sym->decoratedName);
         if (virtual_mode)
             dseg();
         else
@@ -2662,37 +2662,37 @@ void asm_trailer(void)
     }
 }
 /*-------------------------------------------------------------------------*/
-void localdef(SYMBOL* sp)
+void localdef(SYMBOL* sym)
 {
     IncGlobalFlag();
     if (chosenAssembler->gen->local_define)
-        chosenAssembler->gen->local_define(sp);
+        chosenAssembler->gen->local_define(sym);
     DecGlobalFlag();
 }
-void localstaticdef(SYMBOL* sp)
+void localstaticdef(SYMBOL* sym)
 {
     IncGlobalFlag();
     if (chosenAssembler->gen->local_static_define)
-        chosenAssembler->gen->local_static_define(sp);
+        chosenAssembler->gen->local_static_define(sym);
     DecGlobalFlag();
 }
-void globaldef(SYMBOL* sp)
+void globaldef(SYMBOL* sym)
 {
-    if (sp->attribs.inheritable.linkage2 == lk_export && sp->linkage != lk_virtual)
-        put_expfunc(sp);
+    if (sym->attribs.inheritable.linkage2 == lk_export && sym->linkage != lk_virtual)
+        put_expfunc(sym);
     IncGlobalFlag();
     if (chosenAssembler->gen->global_define)
-        chosenAssembler->gen->global_define(sp);
+        chosenAssembler->gen->global_define(sym);
     DecGlobalFlag();
     if (!icdFile)
         return;
-    oprintf(icdFile, "\n\tPUBLIC\t%s\n", sp->decoratedName);
+    oprintf(icdFile, "\n\tPUBLIC\t%s\n", sym->decoratedName);
 }
 
 /*-------------------------------------------------------------------------*/
 /*-------------------------------------------------------------------------*/
 
-int put_exfunc(SYMBOL* sp, int notyet)
+int put_exfunc(SYMBOL* sym, int notyet)
 {
     if (notyet)
     {
@@ -2701,36 +2701,36 @@ int put_exfunc(SYMBOL* sp, int notyet)
     }
     IncGlobalFlag();
     if (chosenAssembler->gen->extern_define)
-        chosenAssembler->gen->extern_define(sp, sp->tp->type == bt_func || sp->tp->type == bt_ifunc);
-    if (sp->attribs.inheritable.linkage2 == lk_import && chosenAssembler->gen->import_define)
-        chosenAssembler->gen->import_define(sp, sp->importfile ? sp->importfile : (char *)"");
+        chosenAssembler->gen->extern_define(sym, sym->tp->type == bt_func || sym->tp->type == bt_ifunc);
+    if (sym->attribs.inheritable.linkage2 == lk_import && chosenAssembler->gen->import_define)
+        chosenAssembler->gen->import_define(sym, sym->importfile ? sym->importfile : (char *)"");
     DecGlobalFlag();
     if (!icdFile)
         return notyet;
-    if (isfunction(sp->tp))
+    if (isfunction(sym->tp))
     {
-        oprintf(icdFile, "\tEXTRN\t%s:PROC\n", sp->decoratedName);
+        oprintf(icdFile, "\tEXTRN\t%s:PROC\n", sym->decoratedName);
     }
     else
     {
-        oprintf(icdFile, "\tEXTRN\t%s:DATA\n", sp->decoratedName);
+        oprintf(icdFile, "\tEXTRN\t%s:DATA\n", sym->decoratedName);
     }
-    if (sp->attribs.inheritable.linkage2 == lk_import)
-        oprintf(icdFile, "\timport %s %s\n", sp->decoratedName, sp->importfile ? sp->importfile : "");
+    if (sym->attribs.inheritable.linkage2 == lk_import)
+        oprintf(icdFile, "\timport %s %s\n", sym->decoratedName, sym->importfile ? sym->importfile : "");
     return notyet;
 }
 
 /*-------------------------------------------------------------------------*/
 
-void put_expfunc(SYMBOL* sp)
+void put_expfunc(SYMBOL* sym)
 {
     IncGlobalFlag();
     if (chosenAssembler->gen->export_define)
-        chosenAssembler->gen->export_define(sp);
+        chosenAssembler->gen->export_define(sym);
     DecGlobalFlag();
     if (!icdFile)
         return;
-    oprintf(icdFile, "\n\texport %s\n", sp->decoratedName);
+    oprintf(icdFile, "\n\texport %s\n", sym->decoratedName);
 }
 /*-------------------------------------------------------------------------*/
 
@@ -2739,7 +2739,6 @@ void putexterns(void)
  * Output the fixup tables and the global/external list
  */
 {
-    SYMBOL* sp;
     int i;
     {
         int notyet = true;
@@ -2748,25 +2747,25 @@ void putexterns(void)
         exitseg();
         while (globalCache)
         {
-            SYMBOL* sp = (SYMBOL *)globalCache->data;
-            globaldef(sp);
+            SYMBOL* sym = (SYMBOL*)globalCache->data;
+            globaldef(sym);
             globalCache = globalCache->next;
         }
         while (externList)
         {
-            SYMBOL* sp = (SYMBOL *)externList->data;
-           if (!sp->ispure &&
-                ((sp->dontinstantiate && sp->genreffed) ||
-                 (!sp->inlineFunc.stmt && !sp->init &&
-                     (isfunction(sp->tp) || (!isfunction(sp->tp) && sp->storage_class != sc_global &&
-                                                sp->storage_class != sc_static && sp->storage_class != sc_localstatic)) &&
-                     ((sp->parentClass && sp->genreffed) || (sp->genreffed && sp->storage_class == sc_external)))) &&
-                    !sp->noextern)
+            SYMBOL* sym = (SYMBOL*)externList->data;
+            if (!sym->ispure &&
+                ((sym->dontinstantiate && sym->genreffed) ||
+                 (!sym->inlineFunc.stmt && !sym->init &&
+                     (isfunction(sym->tp) || (!isfunction(sym->tp) && sym->storage_class != sc_global &&
+                                                sym->storage_class != sc_static && sym->storage_class != sc_localstatic)) &&
+                     ((sym->parentClass && sym->genreffed) || (sym->genreffed && sym->storage_class == sc_external)))) &&
+                    !sym->noextern)
             {
-                notyet = put_exfunc(sp, notyet);
-                sp->genreffed = false;
-                /*            if (sp->mainsym->exportable && !(sp->value.classdata.cppflags & PF_INLINE))
-                                notyet = put_expfunc(sp, notyet);
+                notyet = put_exfunc(sym, notyet);
+                sym->genreffed = false;
+                /*            if (sym->mainsym->exportable && !(sym->value.classdata.cppflags & PF_INLINE))
+                                notyet = put_expfunc(sym, notyet);
                 */
             }
             externList = externList->next;

@@ -1364,7 +1364,7 @@ void peep_sar(OCODE* ip)
                             {
                                 remove_peep_entry(ip);
                                 ip1->opcode = op_cdq;
-                                ip1->oper1 = ip1->oper2 = NULL;
+                                ip1->oper1 = ip1->oper2 = nullptr;
                             }
                         }
                     }
@@ -1629,14 +1629,14 @@ void insert_peep_entry(OCODE* after, enum e_opcode opcode, int size, AMODE* ap1,
 }
 /*
  *  This function removes the specified peep list entry from the
- * peep list. It insures ther is no NULL pointer to cause exceptions.
+ * peep list. It insures ther is no nullptr pointer to cause exceptions.
  */
 void remove_peep_entry(OCODE* ip)
 {
     if (ip == peep_head)
     {
         peep_head = ip->fwd;
-        peep_head->back = NULL;
+        peep_head->back = nullptr;
     }
     else
     {

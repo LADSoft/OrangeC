@@ -26,7 +26,7 @@
 
 extern ARCH_ASM* chosenAssembler;
 extern enum e_kw skim_end[];
-extern NAMESPACEVALUES *globalNameSpace, *localNameSpace;
+extern NAMESPACEVALUELIST *globalNameSpace, *localNameSpace;
 extern TYPE stdvoid;
 extern int total_errors;
 extern int startlab;
@@ -36,7 +36,7 @@ extern int codeLabel;
 
 static void ReorderSEHRecords(STATEMENT** xtry, BLOCKDATA* parent)
 {
-    STATEMENT *xfinally = NULL, *xfault = NULL, **pass = xtry;
+    STATEMENT *xfinally = nullptr, *xfault = nullptr, **pass = xtry;
     while (*pass)
     {
         if ((*pass)->type == st___finally)
@@ -56,10 +56,10 @@ static void ReorderSEHRecords(STATEMENT** xtry, BLOCKDATA* parent)
     }
     if (xfault)
     {
-        xfault->next = NULL;
+        xfault->next = nullptr;
         if ((*xtry)->next)
         {
-            STATEMENT* st = stmtNode(NULL, NULL, st___try);
+            STATEMENT* st = stmtNode(nullptr, nullptr, st___try);
             st->lower = *xtry;
             st->next = xfault;
             *xtry = st;
@@ -71,10 +71,10 @@ static void ReorderSEHRecords(STATEMENT** xtry, BLOCKDATA* parent)
     }
     if (xfinally)
     {
-        xfinally->next = NULL;
+        xfinally->next = nullptr;
         if ((*xtry)->next)
         {
-            STATEMENT* st = stmtNode(NULL, NULL, st___try);
+            STATEMENT* st = stmtNode(nullptr, nullptr, st___try);
             st->lower = *xtry;
             st->next = xfinally;
             *xtry = st;
@@ -91,27 +91,27 @@ static void ReorderSEHRecords(STATEMENT** xtry, BLOCKDATA* parent)
 static LEXEME* SEH_catch(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
 {
     STATEMENT* st;
-    TYPE* tp = NULL;
+    TYPE* tp = nullptr;
     BLOCKDATA* catchstmt = (BLOCKDATA *)Alloc(sizeof(BLOCKDATA));
-    SYMBOL* sym = NULL;
+    SYMBOL* sym = nullptr;
     lex = getsym();
     ParseAttributeSpecifiers(&lex, funcsp, true);
     catchstmt->breaklabel = -1;
-    catchstmt->next = NULL;       // so can't break or continue out of the block
+    catchstmt->next = nullptr;       // so can't break or continue out of the block
     catchstmt->defaultlabel = -1; /* no default */
     catchstmt->type = kw_catch;
-    catchstmt->table = localNameSpace->syms;
+    catchstmt->table = localNameSpace->valueData->syms;
     AllocateLocalContext(catchstmt, funcsp, codeLabel++);
     if (MATCHKW(lex, openpa))
     {
         needkw(&lex, openpa);
         lex = declare(lex, funcsp, &tp, sc_auto, lk_none, catchstmt, false, true, false, ac_public);
         needkw(&lex, closepa);
-        sym = localNameSpace->syms->table[0]->p;
+        sym = localNameSpace->valueData->syms->table[0]->p;
     }
     else
     {
-        tp = NULL;
+        tp = nullptr;
     }
     if (MATCHKW(lex, begin))
     {
@@ -130,7 +130,7 @@ static LEXEME* SEH_catch(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     st->blockTail = catchstmt->blockTail;
     st->lower = catchstmt->head;
     st->tp = tp;
-    st->sym = sym;
+    st->sp = sym;
     return lex;
 }
 static LEXEME* SEH_finally(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
@@ -140,10 +140,10 @@ static LEXEME* SEH_finally(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     lex = getsym();
     ParseAttributeSpecifiers(&lex, funcsp, true);
     catchstmt->breaklabel = -1;
-    catchstmt->next = NULL;       // so can't break or continue out of the block
+    catchstmt->next = nullptr;       // so can't break or continue out of the block
     catchstmt->defaultlabel = -1; /* no default */
     catchstmt->type = kw_catch;
-    catchstmt->table = localNameSpace->syms;
+    catchstmt->table = localNameSpace->valueData->syms;
     AllocateLocalContext(catchstmt, funcsp, codeLabel++);
     if (MATCHKW(lex, begin))
     {
@@ -170,10 +170,10 @@ static LEXEME* SEH_fault(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     lex = getsym();
     ParseAttributeSpecifiers(&lex, funcsp, true);
     catchstmt->breaklabel = -1;
-    catchstmt->next = NULL;       // so can't break or continue out of the block
+    catchstmt->next = nullptr;       // so can't break or continue out of the block
     catchstmt->defaultlabel = -1; /* no default */
     catchstmt->type = kw_catch;
-    catchstmt->table = localNameSpace->syms;
+    catchstmt->table = localNameSpace->valueData->syms;
     AllocateLocalContext(catchstmt, funcsp, codeLabel++);
     if (MATCHKW(lex, begin))
     {
@@ -198,10 +198,10 @@ static LEXEME* SEH_try(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     STATEMENT *st, **tail = parent->head ? &parent->tail->next : &parent->head;
     BLOCKDATA* trystmt = (BLOCKDATA *)Alloc(sizeof(BLOCKDATA));
     trystmt->breaklabel = -1;
-    trystmt->next = NULL;       // so we can't break or continue out of the block
+    trystmt->next = nullptr;       // so we can't break or continue out of the block
     trystmt->defaultlabel = -1; /* no default */
     trystmt->type = kw_try;
-    trystmt->table = localNameSpace->syms;
+    trystmt->table = localNameSpace->valueData->syms;
     lex = getsym();
     if (!MATCHKW(lex, begin))
     {

@@ -385,7 +385,7 @@ static int ccSelectIdFromNameTable(sqlite3_stmt** shndl, const char* name, const
     (void)tabname;
     static const char* query = "SELECT id FROM %s WHERE name = ?";
     int rc = SQLITE_OK;
-    HASHREC** p = LookupName(name, table);
+    SYMLIST** p = LookupName(name, table);
     if (p)
     {
         *id = ((SYMID*)((*p)->p))->id;
@@ -598,7 +598,7 @@ int ccWriteStructName(const char* name, sqlite_int64* id)
 int ccWriteFileName(const char* name, sqlite_int64* id)
 {
     char buf[260], *p = buf;
-    HASHREC** q;
+    SYMLIST** q;
     while (*name)
         *p++ = tolower(*name++);
     *p = 0;

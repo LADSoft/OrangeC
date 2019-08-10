@@ -37,13 +37,6 @@
 #define issymchar(x) (((x) >= 0) && (isalnum(x) || (x) == '_'))
 #define isstartchar(x) (((x) >= 0) && (isalpha(x) || (x) == '_'))
 
-#define GENREF(sym)                         \
-    {                                       \
-        sym->genreffed = true;              \
-        if (sym->mainsym)                   \
-            sym->mainsym->genreffed = true; \
-    }
-
 #define STD_PRAGMA_FENV 1
 #define STD_PRAGMA_FCONTRACT 2
 #define STD_PRAGMA_CXLIMITED 4
@@ -262,6 +255,7 @@ enum e_cvsrn
     CV_QUALS,
     CV_INTEGRALPROMOTION,
     CV_FLOATINGPROMOTION,
+    CV_INTEGRALCONVERSIONWEAK,
     CV_INTEGRALCONVERSION,
     CV_FLOATINGCONVERSION,
     CV_FLOATINGINTEGRALCONVERSION,
@@ -316,8 +310,6 @@ typedef struct expr
             struct _atomicData* ad;
             struct stmt* stmt;
             struct _imode_* imode;
-            struct _templateSelector* templateSelector;
-            struct _templateParamList* templateParam;
             struct _msilarray* msilArray;
             HASHTABLE* syms;
             struct typ* tp;
@@ -327,6 +319,8 @@ typedef struct expr
                 struct typ* tp;
             } t;
         };
+        struct _templateParamList* templateParam;
+        struct _templateSelector* templateSelector;
         FPF f;
         _COMPLEX_S c;
     } v;
@@ -359,7 +353,7 @@ typedef struct
 {
     const char* name;  // must be first as it will go in a hashtable
     EXPRESSION* exp;
-    struct sym* sym;
+    struct sym* sp;
 } CONSTEXPRSYM;
 
 typedef struct casedata
@@ -449,7 +443,7 @@ typedef struct stmt
         CASEDATA* cases;
         struct blockdata* parent;
     };
-    struct sym* sym;
+    struct sym* sp;
     int blocknum;
     int charpos;
     int line;
@@ -504,16 +498,21 @@ typedef struct ifunc
     HASHTABLE* tags;
 } INLINEFUNC;
 
-typedef struct __nsv
+typedef struct
 {
-    struct __nsv* next;
     HASHTABLE* syms;
     HASHTABLE* tags;
     LIST* usingDirectives;
     LIST* inlineDirectives;
     struct sym* origname;
     struct sym* name;
-} NAMESPACEVALUES;
+
+} NAMESPACEVALUEDATA;
+typedef struct __nsv
+{
+    struct __nsv* next;
+    NAMESPACEVALUEDATA *valueData;
+} NAMESPACEVALUELIST;
 
 #ifdef PARSER_ONLY
 struct _ccNamespaceData
@@ -542,7 +541,7 @@ struct xcept
     EXPRESSION* xcRundownFunc;
 };
 
-typedef struct attributes
+struct attributes
 {
     struct {
         int structAlign;                                      /* alignment of structures/ unions */
@@ -575,10 +574,10 @@ typedef struct sym
     int sizeNoVirtual;                        /* size without virtual classes and thunks */
     struct sym* parent;
     struct sym* parentClass;
-    struct sym* parentNameSpace;
+    struct sym* parentNameSpace;  
+    NAMESPACEVALUELIST* nameSpaceValues; /* for a namespace SP */
     struct sym* vtabsp;
     EXPRESSION* localInitGuard;
-    NAMESPACEVALUES* nameSpaceValues; /* for a namespace SP */
     LINEDATA* linedata;
     enum e_sc storage_class; /* storage class */
     enum e_lk linkage;       /* cdecl, pascal, stdcall, inline */
@@ -690,6 +689,7 @@ typedef struct sym
     unsigned has_property_setter : 1;                     // a property has a setter
     unsigned nonConstVariableUsed : 1;                    // a non-const variable was used or assigned to in this function's body
     unsigned importThunk : 1;                             // an import thunk
+    unsigned postExpansion : 1;                           // true if this templateselector is post expanded, e.g. replicate the template selector with each packed arg
     int __func__label;                                    /* label number for the __func__ keyword */
     int ipointerindx;                                     /* pointer index for pointer opts */
     int labelCount;                                       /* number of code labels within a function body */
@@ -722,12 +722,13 @@ typedef struct sym
     struct _vtabEntry* vtabEntries;
     struct lexeme* deferredTemplateHeader;
     struct lexeme* deferredCompile;
+    struct lexeme* deferredNoexcept;
     struct _templateParamList* templateParams;
     LIST* templateNameSpace;
     LIST* staticAsserts;
     short templateLevel;
-    LIST* specializations;
-    LIST* instantiations;
+    struct _symlist_* specializations;
+    struct _symlist_* instantiations;
     void* msil;                                  // MSIL data
     struct _templateSelector* templateSelector;  // first element is the last valid sym found, second element is the template
                                                  // parameter sym following elements are the list of pointers to names
@@ -753,7 +754,7 @@ typedef struct __lambda
     SYMBOL* func;
     SYMBOL* lthis;
     TYPE* functp;
-    HASHREC* funcargs;
+    SYMLIST* funcargs;
     SYMBOL* enclosingFunc;
     HASHTABLE* oldSyms;
     HASHTABLE* oldTags;
@@ -767,7 +768,7 @@ typedef struct __lambda
 typedef struct __lambdasp
 {
     const char* name;
-    SYMBOL* sym;
+    SYMBOL* sp;
     SYMBOL* parent;
     LAMBDA* enclosing;
 } LAMBDASP;
@@ -834,6 +835,7 @@ typedef struct _templateParam
     int initialized : 1;
     int lref : 1;
     int rref : 1;
+    int resolved : 1; // packed template has already been resolved.
     SYMBOL* packsym;
     void* hold; /* value held during partial template ordering */
     union
@@ -894,7 +896,7 @@ typedef struct _templateSelector
     struct _templateSelector* next;
     union
     {
-        SYMBOL* sym;
+        SYMBOL* sp;
         const char* name;
     };
     TEMPLATEPARAMLIST* templateParams;
@@ -1095,7 +1097,7 @@ struct templateListData
     TEMPLATEPARAMLIST **ptail, **plast;
     LEXEME *head, *tail;
     LEXEME *bodyHead, *bodyTail;
-    SYMBOL* sym;
+    SYMBOL* sp;
 };
 
 typedef struct _string
@@ -1159,3 +1161,10 @@ typedef struct _atomicData
 } ATOMICDATA;
 
 #define ATOMIC_FLAG_SPACE getSize(bt_int)
+
+inline void GENREF(SYMBOL *sym)
+{
+    sym->genreffed = true;
+    if (sym->mainsym)
+        sym->mainsym->genreffed = true;
+}

@@ -585,7 +585,7 @@ void removeDead(BLOCK* b)
                             if (head->dc.opcode == i_coswitch || (head->dc.opcode >= i_jne && head->dc.opcode <= i_jge)|| head->dc.opcode == i_cmpblock)
                             {
                                 BLOCKLIST* bl = head->block->succ->next;
-                                head->block->succ->next = NULL;
+                                head->block->succ->next = nullptr;
                                 while (bl)
                                 {
                                     if (bl->block->critical)

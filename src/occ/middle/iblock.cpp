@@ -225,7 +225,7 @@ static void add_intermed(QUAD* newQuad)
         newQuad->fwd = 0;
         newQuad->back = 0;
         if (newQuad->dc.opcode != i_block)
-            currentBlock = NULL;
+            currentBlock = nullptr;
     }
     else
     {
@@ -240,7 +240,7 @@ IMODE* liveout2(QUAD* q)
 {
     IMODE* rv;
     if (!q)
-        return NULL;
+        return nullptr;
     return q->ans;
 #ifdef XXXXX
     if (q->dc.opcode == i_assn)
@@ -895,7 +895,7 @@ void RemoveInstruction(QUAD* ins)
     {
         PHIDATA* pd = ins->dc.v.phi;
         struct _phiblock* pb = pd->temps;
-        tempInfo[pd->T0]->instructionDefines = NULL;
+        tempInfo[pd->T0]->instructionDefines = nullptr;
         while (pb)
         {
             RemoveFromUses(ins, pb->Tn);
@@ -908,7 +908,7 @@ void RemoveInstruction(QUAD* ins)
         {
             int tnum = ins->ans->offset->v.sp->value.i;
             if (ins->ans->mode == i_direct)
-                tempInfo[tnum]->instructionDefines = NULL;
+                tempInfo[tnum]->instructionDefines = nullptr;
             else
             {
                 if (ins->ans->offset)

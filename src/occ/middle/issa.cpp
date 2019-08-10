@@ -59,7 +59,7 @@ static LIST* savedDag;
 
 IMODE *trueName, *falseName;
 
-void SSAInit(void) { savedDag = NULL; }
+void SSAInit(void) { savedDag = nullptr; }
 /*
  * this is an internal calculation needed to locate where to put PHI nodes
  */
@@ -173,7 +173,7 @@ static void insertPhiNodes(void)
  */
 static IMODE* renameTemp(BLOCK* b, QUAD* head, IMODE* adr)
 {
-    IMODE* im = NULL;
+    IMODE* im = nullptr;
     int tnum = adr->offset->v.sp->value.i;
     (void)b;
     (void)head;
@@ -230,7 +230,7 @@ static void RemoveName(int i)
         if (list->key && !memcmp(key, list->key, sizeof(void*)))
         {
             memset(list->key, 0, sizeof(void*));
-            list->rv = NULL;
+            list->rv = nullptr;
         }
         list = list->next;
     }
@@ -516,11 +516,11 @@ void TranslateToSSA(void)
         tempInfo[i]->preSSATemp = -1;
         tempInfo[i]->postSSATemp = -1;
         tempInfo[i]->partition = i;
-        tempInfo[i]->instructionDefines = NULL;
-        tempInfo[i]->instructionUses = NULL;
-        tempInfo[i]->renameStack = NULL;
-        tempInfo[i]->elimPredecessors = NULL;
-        tempInfo[i]->elimSuccessors = NULL;
+        tempInfo[i]->instructionDefines = nullptr;
+        tempInfo[i]->instructionUses = nullptr;
+        tempInfo[i]->renameStack = nullptr;
+        tempInfo[i]->elimPredecessors = nullptr;
+        tempInfo[i]->elimSuccessors = nullptr;
     }
     trueName = (IMODE *)Alloc(sizeof(IMODE));
     trueName->mode = i_immed;
@@ -743,7 +743,7 @@ static void partition(bool all)
 }
 static void returnToNormal(IMODE** adr, bool all)
 {
-    IMODE* im = NULL;
+    IMODE* im = nullptr;
     if ((*adr)->offset)
     {
         int tnum = (*adr)->offset->v.sp->value.i, T0p;
@@ -887,14 +887,14 @@ static void BuildAuxGraph(BLOCK* b, int which, BRIGGS_SET* nodes)
                 if (!briggsTest(nodes, T0p))
                 {
                     briggsSet(nodes, T0p);
-                    tempInfo[T0p]->elimPredecessors = NULL;
-                    tempInfo[T0p]->elimSuccessors = NULL;
+                    tempInfo[T0p]->elimPredecessors = nullptr;
+                    tempInfo[T0p]->elimSuccessors = nullptr;
                 }
                 if (!briggsTest(nodes, Tip))
                 {
                     briggsSet(nodes, Tip);
-                    tempInfo[Tip]->elimPredecessors = NULL;
-                    tempInfo[Tip]->elimSuccessors = NULL;
+                    tempInfo[Tip]->elimPredecessors = nullptr;
+                    tempInfo[Tip]->elimSuccessors = nullptr;
                 }
                 l = (ILIST *)oAlloc(sizeof(ILIST));
                 l->data = T0p;
@@ -1002,7 +1002,7 @@ static void EliminatePredecessors(BRIGGS_SET* nodes, BLOCK* pred, BLOCK* b, int 
     if (nodes->top)
     {
         BRIGGS_SET* visited = briggsAlloc(tempCount * 2);
-        ILIST* stack = NULL;
+        ILIST* stack = nullptr;
         int i;
         for (i = 0; i < nodes->top; i++)
         {

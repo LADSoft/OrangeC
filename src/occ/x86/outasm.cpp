@@ -194,7 +194,7 @@ void oa_putconst(int op, int sz, EXPRESSION* offset, bool doSign)
  */
 {
     char buf[4096];
-    SYMBOL* sp;
+    SYMBOL* sym;
     int toffs;
     switch (offset->type)
     {
@@ -285,8 +285,8 @@ void oa_putconst(int op, int sz, EXPRESSION* offset, bool doSign)
         case en_threadlocal:
             if (doSign)
                 beputc('+');
-            sp = offset->v.sp;
-            beDecorateSymName(buf, sp);
+            sym = offset->v.sp;
+            beDecorateSymName(buf, sym);
             bePrintf("%s", buf);
             break;
         case en_add:
@@ -350,7 +350,7 @@ void oa_putlen(int l)
 void putsizedreg(const char* string, int reg, int size)
 {
     static const char* byteregs[] = {"al", "cl", "dl", "bl", "ah", "ch", "dh", "bh"};
-    static const char* wordregs[] = {"ax", "cx", "dx", "bx", "sp", "bp", "si", "di"};
+    static const char* wordregs[] = {"ax", "cx", "dx", "bx", "sym", "bp", "si", "di"};
     static const char* longregs[] = {"eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi"};
     if (size < 0)
         size = -size;
@@ -713,13 +713,13 @@ void oa_put_code(OCODE* cd)
 
 /*-------------------------------------------------------------------------*/
 
-void oa_gen_strlab(SYMBOL* sp)
+void oa_gen_strlab(SYMBOL* sym)
 /*
  *      generate a named label.
  */
 {
     char buf[4096];
-    beDecorateSymName(buf, sp);
+    beDecorateSymName(buf, sym);
     if (cparams.prm_asmfile)
     {
         if (oa_currentSeg == dataseg || oa_currentSeg == bssxseg)
@@ -731,7 +731,7 @@ void oa_gen_strlab(SYMBOL* sp)
         else
             bePrintf("%s:\n", buf);
     }
-    outcode_gen_strlab(sp);
+    outcode_gen_strlab(sym);
 }
 
 /*-------------------------------------------------------------------------*/
@@ -933,24 +933,24 @@ void oa_genint(enum e_gt type, LLONG_TYPE val)
 void oa_genaddress(ULLONG_TYPE val) { oa_genint(longgen, val); }
 /*-------------------------------------------------------------------------*/
 
-void oa_gensrref(SYMBOL* sp, int val, int type)
+void oa_gensrref(SYMBOL* sym, int val, int type)
 {
     char buf[4096];
     if (cparams.prm_asmfile)
     {
-        beDecorateSymName(buf, sp);
+        beDecorateSymName(buf, sym);
         oa_nl();
         bePrintf("\tdb\t0,%d\n", val);
         bePrintf("\tdd\t%s\n", buf);
         oa_gentype = srrefgen;
     }
     else
-        outcode_gensrref(sp, val);
+        outcode_gensrref(sym, val);
 }
 
 /*-------------------------------------------------------------------------*/
 
-void oa_genref(SYMBOL* sp, int offset)
+void oa_genref(SYMBOL* sym, int offset)
 /*
  * Output a reference to the data area (also gens fixups )
  */
@@ -966,7 +966,7 @@ void oa_genref(SYMBOL* sp, int offset)
         }
         else
             sign = '+';
-        beDecorateSymName(buf, sp);
+        beDecorateSymName(buf, sym);
         sprintf(buf1, "%s%c%d", buf, sign, offset);
         if (cparams.prm_asmfile)
         {
@@ -979,17 +979,17 @@ void oa_genref(SYMBOL* sp, int offset)
         }
     }
     else
-        outcode_genref(sp, offset);
+        outcode_genref(sym, offset);
 }
 
 /*-------------------------------------------------------------------------*/
 
-void oa_genpcref(SYMBOL* sp, int offset)
+void oa_genpcref(SYMBOL* sym, int offset)
 /*
  * Output a reference to the code area (also gens fixups )
  */
 {
-    oa_genref(sp, offset);
+    oa_genref(sym, offset);
 }
 
 /*-------------------------------------------------------------------------*/
@@ -1245,7 +1245,7 @@ void oa_enterseg(enum e_sg seg)
 
 /*-------------------------------------------------------------------------*/
 
-void oa_gen_virtual(SYMBOL* sp, int data)
+void oa_gen_virtual(SYMBOL* sym, int data)
 {
     virtual_mode = data;
     oa_currentSeg = virtseg;
@@ -1256,33 +1256,33 @@ void oa_gen_virtual(SYMBOL* sp, int data)
         {
             oa_currentSeg = noseg;
 #ifdef IEEE
-            if (sp->decoratedName[0] == '@')
+            if (sym->decoratedName[0] == '@')
                 if (virtual_mode)
-                    bePrintf("\tsection vsd%s virtual\n", sp->decoratedName);
+                    bePrintf("\tsection vsd%s virtual\n", sym->decoratedName);
                 else
-                    bePrintf("\tsection vsc%s virtual\n", sp->decoratedName);
+                    bePrintf("\tsection vsc%s virtual\n", sym->decoratedName);
             else if (virtual_mode)
-                bePrintf("\tsection vsd@%s virtual\n", sp->decoratedName);
+                bePrintf("\tsection vsd@%s virtual\n", sym->decoratedName);
             else
-                bePrintf("\tsection vsc@%s virtual\n", sp->decoratedName);
+                bePrintf("\tsection vsc@%s virtual\n", sym->decoratedName);
 #else
-            bePrintf("\tSECTION @%s VIRTUAL\n", sp->decoratedName);
+            bePrintf("\tSECTION @%s VIRTUAL\n", sym->decoratedName);
 #endif
         }
         else
-            bePrintf("@%s\tsegment virtual\n", sp->decoratedName);
-        bePrintf("%s:\n", sp->decoratedName);
+            bePrintf("@%s\tsegment virtual\n", sym->decoratedName);
+        bePrintf("%s:\n", sym->decoratedName);
     }
-    outcode_start_virtual_seg(sp, data);
+    outcode_start_virtual_seg(sym, data);
 }
-void oa_gen_endvirtual(SYMBOL* sp)
+void oa_gen_endvirtual(SYMBOL* sym)
 {
     if (cparams.prm_asmfile)
     {
         oa_nl();
         if (!(prm_assembler == pa_nasm || prm_assembler == pa_fasm))
         {
-            bePrintf("@%s\tends\n", sp->decoratedName);
+            bePrintf("@%s\tends\n", sym->decoratedName);
         }
         else if (virtual_mode)
             oa_enterseg(dataseg);
@@ -1295,7 +1295,7 @@ void oa_gen_endvirtual(SYMBOL* sp)
             oa_enterseg(dataseg);
         else
             oa_enterseg(codeseg);
-        outcode_end_virtual_seg(sp);
+        outcode_end_virtual_seg(sym);
     }
 }
 /*
@@ -1526,26 +1526,26 @@ void oa_trailer(void)
     oa_header(asmfile, compilerversion);
 }
 /*-------------------------------------------------------------------------*/
-void oa_localdef(SYMBOL* sp)
+void oa_localdef(SYMBOL* sym)
 {
     if (!cparams.prm_asmfile)
     {
-        omf_globaldef(sp);
+        omf_globaldef(sym);
     }
 }
-void oa_localstaticdef(SYMBOL* sp)
+void oa_localstaticdef(SYMBOL* sym)
 {
     if (!cparams.prm_asmfile)
     {
-        omf_globaldef(sp);
+        omf_globaldef(sym);
     }
 }
-void oa_globaldef(SYMBOL* sp)
+void oa_globaldef(SYMBOL* sym)
 {
     if (cparams.prm_asmfile)
     {
         char buf[5000];
-        beDecorateSymName(buf, sp);
+        beDecorateSymName(buf, sym);
         oa_nl();
         if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
             bePrintf("[global\t%s]\n", buf);
@@ -1553,7 +1553,7 @@ void oa_globaldef(SYMBOL* sp)
             bePrintf("\tpublic\t%s\n", buf);
     }
     else
-        omf_globaldef(sp);
+        omf_globaldef(sym);
 }
 
 /*-------------------------------------------------------------------------*/
@@ -1572,13 +1572,13 @@ void oa_output_alias(char* name, char* alias)
 
 /*-------------------------------------------------------------------------*/
 
-void oa_put_extern(SYMBOL* sp, int code)
+void oa_put_extern(SYMBOL* sym, int code)
 {
     if (cparams.prm_asmfile)
     {
         oa_nl();
         char buf[5000];
-        beDecorateSymName(buf, sp);
+        beDecorateSymName(buf, sym);
         if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
         {
             bePrintf("[extern\t%s]\n", buf);
@@ -1592,39 +1592,39 @@ void oa_put_extern(SYMBOL* sp, int code)
         }
     }
     else
-        omf_put_extern(sp, code);
+        omf_put_extern(sym, code);
 }
 /*-------------------------------------------------------------------------*/
 
-void oa_put_impfunc(SYMBOL* sp, char* file)
+void oa_put_impfunc(SYMBOL* sym, char* file)
 {
     if (cparams.prm_asmfile)
     {
         char buf[5000];
-        beDecorateSymName(buf, sp);
+        beDecorateSymName(buf, sym);
         bePrintf("\timport %s %s\n", buf, file);
     }
     else
     {
-        omf_put_impfunc(sp, file);
+        omf_put_impfunc(sym, file);
     }
 }
 
 /*-------------------------------------------------------------------------*/
 
-void oa_put_expfunc(SYMBOL* sp)
+void oa_put_expfunc(SYMBOL* sym)
 {
     char buf[4096];
     if (cparams.prm_asmfile)
     {
-        beDecorateSymName(buf, sp);
+        beDecorateSymName(buf, sym);
         if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
             bePrintf("\texport %s\n", buf);
         else
             bePrintf("\tpublicdll %s\n", buf);
     }
     else
-        omf_put_expfunc(sp);
+        omf_put_expfunc(sym);
 }
 
 void oa_output_includelib(char* name)

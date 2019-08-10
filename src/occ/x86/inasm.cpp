@@ -36,7 +36,7 @@ extern int prm_assembler;
 extern HASHTABLE* labelSyms;
 extern int usingEsp;
 extern InstructionParser* instructionParser;
-extern SYMBOL *theCurrentFunc;
+extern SYMBOL*theCurrentFunc;
 
 bool assembling;
 static ASMREG* regimage;
@@ -90,7 +90,7 @@ ASMREG reglst[] = {{"cs", am_seg, 1, ISZ_USHORT},     {"ds", am_seg, 2, ISZ_USHO
                               {"dh", am_dreg, 6, ISZ_UCHAR},     {"bh", am_dreg, 7, ISZ_UCHAR},
                               {"ax", am_dreg, 0, ISZ_USHORT},    {"cx", am_dreg, 1, ISZ_USHORT},
                               {"dx", am_dreg, 2, ISZ_USHORT},    {"bx", am_dreg, 3, ISZ_USHORT},
-                              {"sp", am_dreg, 4, ISZ_USHORT},    {"bp", am_dreg, 5, ISZ_USHORT},
+                              {"sym", am_dreg, 4, ISZ_USHORT},    {"bp", am_dreg, 5, ISZ_USHORT},
                               {"si", am_dreg, 6, ISZ_USHORT},    {"di", am_dreg, 7, ISZ_USHORT},
                               {"eax", am_dreg, 0, ISZ_UINT},     {"ecx", am_dreg, 1, ISZ_UINT},
                               {"edx", am_dreg, 2, ISZ_UINT},     {"ebx", am_dreg, 3, ISZ_UINT},
@@ -206,10 +206,10 @@ static void inasm_needkw(LEXEME** lex, int Keyword)
 }
 static AMODE* inasm_const(void)
 {
-    AMODE* rv = NULL;
-    TYPE* tp = NULL;
-    EXPRESSION* exp = NULL;
-    lex = optimized_expression(lex, beGetCurrentFunc, NULL, &tp, &exp, false);
+    AMODE* rv = nullptr;
+    TYPE* tp = nullptr;
+    EXPRESSION* exp = nullptr;
+    lex = optimized_expression(lex, beGetCurrentFunc, nullptr, &tp, &exp, false);
     if (!tp)
     {
         error(ERR_EXPRESSION_SYNTAX);
@@ -236,72 +236,72 @@ static EXPRESSION* inasm_ident(void)
         error(ERR_IDENTIFIER_EXPECTED);
     else
     {
-        SYMBOL* sp;
+        SYMBOL* sym;
         char nm[256];
         strcpy(nm, lex->value.s.a);
         inasm_getsym();
         /* No such identifier */
         /* label, put it in the symbol table */
-        if ((sp = search(nm, labelSyms)) == 0 && (sp = gsearch(nm)) == 0)
+        if ((sym = search(nm, labelSyms)) == 0 && (sym = gsearch(nm)) == 0)
         {
-            sp = (SYMBOL*)Alloc(sizeof(SYMBOL));
-            sp->storage_class = sc_ulabel;
-            sp->name = litlate(nm);
-            sp->declfile = sp->origdeclfile = lex->file;
-            sp->declline = sp->origdeclline = lex->line;
-            sp->realdeclline = lex->realline;
-            sp->declfilenum = lex->filenum;
-            sp->attribs.inheritable.used = true;
-            sp->tp = (TYPE*)(TYPE *)beLocalAlloc(sizeof(TYPE));
-            sp->tp->type = bt_unsigned;
-            sp->tp->bits = sp->tp->startbit = -1;
-            sp->offset = codeLabel++;
-            insert(sp, labelSyms);
-            node = intNode(en_labcon, sp->offset);
+            sym = (SYMBOL*)Alloc(sizeof(SYMBOL));
+            sym->storage_class = sc_ulabel;
+            sym->name = litlate(nm);
+            sym->declfile = sym->origdeclfile = lex->file;
+            sym->declline = sym->origdeclline = lex->line;
+            sym->realdeclline = lex->realline;
+            sym->declfilenum = lex->filenum;
+            sym->attribs.inheritable.used = true;
+            sym->tp = (TYPE*)(TYPE *)beLocalAlloc(sizeof(TYPE));
+            sym->tp->type = bt_unsigned;
+            sym->tp->bits = sym->tp->startbit = -1;
+            sym->offset = codeLabel++;
+            insert(sym, labelSyms);
+            node = intNode(en_labcon, sym->offset);
         }
         else
         {
             /* If we get here the symbol was already in the table
              */
-            sp->attribs.inheritable.used = true;
-            switch (sp->storage_class)
+            sym->attribs.inheritable.used = true;
+            switch (sym->storage_class)
             {
                 case sc_absolute:
-                    sp->genreffed = true;
-                    node = varNode(en_absolute, sp);
+                    GENREF(sym);
+                    node = varNode(en_absolute, sym);
                     break;
                 case sc_overloads:
-                    node = varNode(en_pc, (SYMBOL*)sp->tp->syms->table[0]->p);
-                    ((SYMBOL*)(sp->tp->syms->table[0]->p))->genreffed = true;
+                    node = varNode(en_pc, (SYMBOL*)sym->tp->syms->table[0]->p);
+                    GENREF(((SYMBOL*)(sym->tp->syms->table[0]->p)));
                     break;
                 case sc_localstatic:
                 case sc_global:
                 case sc_external:
                 case sc_static:
-                    sp->genreffed = true;
-                    node = varNode(en_global, sp);
+                    sym->genreffed = true;
+                    node = varNode(en_global, sym);
                     break;
                 case sc_const:
                     /* constants and enums */
-                    node = intNode(en_c_i, sp->value.i);
+                    node = intNode(en_c_i, sym->value.i);
                     break;
                 case sc_label:
                 case sc_ulabel:
-                    node = intNode(en_labcon, sp->offset);
+                    node = intNode(en_labcon, sym->offset);
                     break;
                 case sc_auto:
                 case sc_register:
-                    sp->allocate = true;
+                    sym->allocate = true;
                 case sc_parameter:
-                    node = varNode(en_auto, sp);
-                    sp->inasm = true;
+                    node = varNode(en_auto, sym);
+                    sym->inasm = true;
                     break;
                 default:
                     errorstr(ERR_INVALID_STORAGE_CLASS, "");
                     break;
             }
         }
-        lastsym = sp;
+        lastsym = sym;
     }
     return node;
 }
@@ -311,51 +311,51 @@ static EXPRESSION* inasm_ident(void)
 static EXPRESSION* inasm_label(void)
 {
     EXPRESSION* node;
-    SYMBOL* sp;
+    SYMBOL* sym;
     if (!ISID(lex))
     {
         lex = getsym();
-        return NULL;
+        return nullptr;
     }
     /* No such identifier */
     /* label, put it in the symbol table */
-    if ((sp = search(lex->value.s.a, labelSyms)) == 0)
+    if ((sym = search(lex->value.s.a, labelSyms)) == 0)
     {
-        sp = (SYMBOL*)Alloc(sizeof(SYMBOL));
-        sp->storage_class = sc_label;
-        sp->name = litlate(lex->value.s.a);
-        sp->declfile = sp->origdeclfile = lex->file;
-        sp->declline = sp->origdeclline = lex->line;
-        sp->realdeclline = lex->realline;
-        sp->declfilenum = lex->filenum;
-        sp->tp = (TYPE*)(TYPE *)beLocalAlloc(sizeof(TYPE));
-        sp->tp->type = bt_unsigned;
-        sp->tp->bits = sp->tp->startbit = -1;
-        sp->offset = codeLabel++;
-        SetLinkerNames(sp, lk_none);
-        insert(sp, labelSyms);
+        sym = (SYMBOL*)Alloc(sizeof(SYMBOL));
+        sym->storage_class = sc_label;
+        sym->name = litlate(lex->value.s.a);
+        sym->declfile = sym->origdeclfile = lex->file;
+        sym->declline = sym->origdeclline = lex->line;
+        sym->realdeclline = lex->realline;
+        sym->declfilenum = lex->filenum;
+        sym->tp = (TYPE*)(TYPE *)beLocalAlloc(sizeof(TYPE));
+        sym->tp->type = bt_unsigned;
+        sym->tp->bits = sym->tp->startbit = -1;
+        sym->offset = codeLabel++;
+        SetLinkerNames(sym, lk_none);
+        insert(sym, labelSyms);
     }
     else
     {
-        if (sp->storage_class == sc_label)
+        if (sym->storage_class == sc_label)
         {
-            errorsym(ERR_DUPLICATE_LABEL, sp);
+            errorsym(ERR_DUPLICATE_LABEL, sym);
             inasm_getsym();
             return 0;
         }
-        if (sp->storage_class != sc_ulabel)
+        if (sym->storage_class != sc_ulabel)
         {
             inasm_err(ERR_LABEL_EXPECTED);
             return 0;
         }
-        sp->storage_class = sc_label;
+        sym->storage_class = sc_label;
     }
     inasm_getsym();
     if (lex->type == l_asminst)
     {
         if (insdata->atype == op_reserved)
         {
-            node = intNode(en_labcon, sp->offset);
+            node = intNode(en_labcon, sym->offset);
             return node;
         }
         else if (insdata->atype != op_label)
@@ -370,7 +370,7 @@ static EXPRESSION* inasm_label(void)
         return 0;
     }
     inasm_getsym();
-    node = intNode(en_labcon, sp->offset);
+    node = intNode(en_labcon, sym->offset);
     return node;
 }
 
@@ -912,7 +912,7 @@ static AMODE* inasm_immed(void)
                 break;
         }
 
-    return NULL;
+    return nullptr;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -952,7 +952,7 @@ AMODE* getimmed(void)
             default:
                 break;
         }
-    return NULL;
+    return nullptr;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -993,7 +993,7 @@ static int getData(STATEMENT* snp)
         TYPE* tp;
         EXPRESSION* expr;
         lex = getsym();
-        lex = optimized_expression(lex, NULL, NULL, &tp, &expr, false);
+        lex = optimized_expression(lex, nullptr, nullptr, &tp, &expr, false);
         if (tp && (isintconst(expr) || isfloatconst(expr)))
         {
             switch (size)

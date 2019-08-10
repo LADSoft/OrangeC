@@ -35,14 +35,14 @@ class dbgtypes
   public:
     dbgtypes(ObjFactory& Factory, ObjFile* FI) : factory(Factory), fi(FI) {}
     ObjType* Put(TYPE* tp);
-    void OutputTypedef(SYMBOL* sp);
+    void OutputTypedef(SYMBOL* sym);
 
   protected:
     ObjType* Lookup(TYPE* tp);
     ObjType* BasicType(TYPE* tp);
     ObjType* TypeName(ObjType* val, const char* nm);
-    void StructFields(ObjType::eType sel, ObjType* val, int sz, SYMBOL* parent, HASHREC* hr);
-    void EnumFields(ObjType* val, ObjType* base, int sz, HASHREC* hr);
+    void StructFields(ObjType::eType sel, ObjType* val, int sz, SYMBOL* parent, SYMLIST* hr);
+    void EnumFields(ObjType* val, ObjType* base, int sz, SYMLIST* hr);
     ObjType* Function(TYPE* tp);
     ObjType* ExtendedType(TYPE* tp);
 

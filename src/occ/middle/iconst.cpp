@@ -75,6 +75,9 @@ static void ReassignInt(QUAD* d, LLONG_TYPE val)
     d->temps &= ~(TEMP_LEFT | TEMP_RIGHT);
     if (d->temps & TEMP_ANS)
     {
+        IMODE *im = (IMODE *)Alloc(sizeof(IMODE));
+        *im = *d->dc.left;
+        d->dc.left = im;
         tempInfo[d->ans->offset->v.sp->value.i]->preSSATemp = -1;
         d->dc.left->size = d->ans->size;
     }
@@ -108,7 +111,7 @@ static void ReassignCompare(QUAD* d, int yes, bool reflow)
     if (d->block->dead)
     {
         d->temps = 0;
-        d->dc.left = d->dc.right = NULL;
+        d->dc.left = d->dc.right = nullptr;
         return;
     }
     if (d->dc.opcode >= i_jne)
@@ -125,7 +128,7 @@ static void ReassignCompare(QUAD* d, int yes, bool reflow)
             b = d->block->succ;
         }
         d->temps = 0;
-        d->dc.left = d->dc.right = NULL;
+        d->dc.left = d->dc.right = nullptr;
         if (reflow)
             reflowConditional(d->block, b->block);
 #ifdef XXXXX
@@ -139,7 +142,7 @@ static void ReassignCompare(QUAD* d, int yes, bool reflow)
             }
             l1 = &(*l1)->next;
         }
-        b->next = NULL;
+        b->next = nullptr;
         d->block->succ = b;
 #endif
     }
@@ -169,7 +172,7 @@ static int xgetmode(QUAD* d, EXPRESSION** left, EXPRESSION** right)
     if (d->dc.right)
         *right = d->dc.right->offset;
     else
-        *right = NULL;
+        *right = nullptr;
     if (*left)
     {
         if (*right)
@@ -1429,7 +1432,7 @@ static void pushBlock(BLOCK* block, BLOCK* source)
             l1 = (BLOCKLIST *)tAlloc(sizeof(BLOCKLIST));
         }
         l1->block = block;
-        l1->next = NULL;
+        l1->next = nullptr;
         if (blockWorkHead)
             blockWorkTail = blockWorkTail->next = l1;
         else
@@ -1458,7 +1461,7 @@ static bool evalBranch(QUAD* I, BLOCK* b)
             case i_jle:
             case i_jge:
             case i_cmpblock:
-                bl = NULL;
+                bl = nullptr;
                 qn = *I;
                 if ((qn.temps & TEMP_LEFT) && qn.dc.left->mode == i_direct)
                 {
@@ -1530,7 +1533,7 @@ static bool evalBranch(QUAD* I, BLOCK* b)
                         return true;
                     }
                 }
-                bl = NULL;
+                bl = nullptr;
                 break;
             default:
                 found = false;
@@ -1589,7 +1592,7 @@ static bool emulInstruction(QUAD* head, BLOCK* b)
                         l1 = (INSTRUCTIONLIST *)tAlloc(sizeof(INSTRUCTIONLIST));
                     }
                     l1->ins = uses->ins;
-                    l1->next = NULL;
+                    l1->next = nullptr;
                     if (insWorkHead)
                         insWorkTail = insWorkTail->next = l1;
                     else
@@ -1684,7 +1687,7 @@ static void iterateConstants(void)
                 }
                 uses = uses->next;
             }
-            //			tempInfo[i]->instructionUses = NULL;
+            //			tempInfo[i]->instructionUses = nullptr;
             //			if (defines == tempInfo[i]->blockDefines->tail)
             //			{
             //				tempInfo[i]->blockDefines->tail = defines->back;
@@ -1782,7 +1785,7 @@ static void removeForward(BLOCK* start)
                 else
                     break;
                 {
-                    BLOCK* b = NULL;
+                    BLOCK* b = nullptr;
                     BLOCKLIST** succ = &tail->block->succ->next;
                     if (*succ)
                     {
@@ -1815,7 +1818,7 @@ static void removeForward(BLOCK* start)
                                     }
                                     bl1 = bl1->next;
                                 }
-                                (*succ)->block->pred = NULL;
+                                (*succ)->block->pred = nullptr;
                                 (*succ) = (*succ)->next;
                             }
                             find = find->fwd;
@@ -1828,7 +1831,7 @@ static void removeForward(BLOCK* start)
                                                * clear out the garbage...
                                                */
 
-                    tail->ans = tail->dc.left = tail->dc.right = NULL;
+                    tail->ans = tail->dc.left = tail->dc.right = nullptr;
                     tail->temps = 0;
                 }
                 return;
@@ -1836,7 +1839,7 @@ static void removeForward(BLOCK* start)
                 break;
         }
         if (tail == start->head)
-            tail = NULL;
+            tail = nullptr;
         else
             tail = tail->back;
     }
@@ -1859,7 +1862,7 @@ static void removeBlock(BLOCK* block)
                 break;
         }
         if (head == block->tail)
-            head = NULL;
+            head = nullptr;
         else
             head = head->fwd;
     }
@@ -1871,8 +1874,8 @@ void ConstantFlow(void)
     int i;
     QUAD* head;
     visited = briggsAlloc(blockCount);
-    insWorkHead = insWorkTail = NULL;
-    listHolder = NULL;
+    insWorkHead = insWorkTail = nullptr;
+    listHolder = nullptr;
     blockWorkHead = blockWorkTail = (BLOCKLIST *)tAlloc(sizeof(BLOCKLIST));
 
     /* value defaults to top */

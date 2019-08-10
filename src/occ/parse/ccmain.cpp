@@ -26,7 +26,7 @@
 #include <setjmp.h>
 extern ARCH_DEBUG* chosenDebugger;
 extern ARCH_ASM* chosenAssembler;
-extern NAMESPACEVALUES* globalNameSpace;
+extern NAMESPACEVALUELIST* globalNameSpace;
 extern LIST* clist;
 extern char outfile[];
 extern FILE* outputFile;
@@ -357,25 +357,25 @@ void stackalign_setup(char select, char* string)
         fatal("Invalid stack alignment parameter ");
     cparams.prm_stackalign = n;
 }
-static void debug_dumptypedefs(NAMESPACEVALUES* nameSpace)
+static void debug_dumptypedefs(NAMESPACEVALUELIST* nameSpace)
 {
     int i;
-    HASHTABLE* syms = nameSpace->syms;
+    HASHTABLE* syms = nameSpace->valueData->syms;
     for (i = 0; i < syms->size; i++)
     {
-        HASHREC* h = syms->table[i];
+        SYMLIST* h = syms->table[i];
         if (h != 0)
         {
             while (h)
             {
 
-                SYMBOL* sp = (SYMBOL*)h->p;
-                if (sp->storage_class == sc_namespace)
+                SYMBOL* sym = (SYMBOL*)h->p;
+                if (sym->storage_class == sc_namespace)
                 {
-                    debug_dumptypedefs(sp->nameSpaceValues);
+                    debug_dumptypedefs(sym->nameSpaceValues);
                 }
-                else if (istype(sp))
-                    chosenDebugger->outputtypedef(sp);
+                else if (istype(sym))
+                    chosenDebugger->outputtypedef(sym);
                 h = h->next;
             }
         }
@@ -390,7 +390,7 @@ void MakeStubs(void)
     preprocini(infile, inputFile);
     lexini();
     setglbdefs();
-    while (getsym() != NULL)
+    while (getsym() != nullptr)
         ;
     printf("%s:\\\n", infile);
     list = nonSysIncludeFiles;
@@ -403,7 +403,7 @@ void MakeStubs(void)
 }
 void compile(bool global)
 {
-    LEXEME* lex = NULL;
+    LEXEME* lex = nullptr;
     SetGlobalFlag(true);
     helpinit();
     mangleInit();
@@ -454,7 +454,7 @@ void compile(bool global)
             BLOCKDATA block;
             memset(&block, 0, sizeof(block));
             block.type = begin;
-            while ((lex = statement_asm(lex, NULL, &block)) != NULL)
+            while ((lex = statement_asm(lex, nullptr, &block)) != nullptr)
                 ;
 #ifndef PARSER_ONLY
             genASM(block.head);
@@ -469,7 +469,7 @@ void compile(bool global)
         lex = getsym();
         if (lex)
         {
-            while ((lex = declare(lex, NULL, NULL, sc_global, lk_none, NULL, true, false, false, ac_public)) != NULL)
+            while ((lex = declare(lex, nullptr, nullptr, sc_global, lk_none, nullptr, true, false, false, ac_public)) != nullptr)
                 ;
         }
     }
@@ -765,7 +765,7 @@ int main(int argc, char* argv[])
 #endif
         if (outputFile && openOutput)
             fclose(outputFile);
-        outputFile = NULL;
+        outputFile = nullptr;
         if (cppFile)
             fclose(cppFile);
         if (listFile)

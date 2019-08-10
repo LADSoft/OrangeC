@@ -685,7 +685,7 @@ std::map<enum e_tk, const char *> tokenNames = {
 	{ tk_r11d, "r11d" },
 	{ tk_r11, "r11" },
 	{ tk_spl, "spl" },
-	{ tk_sp, "sp" },
+	{ tk_sp, "sym" },
 	{ tk_esp, "esp" },
 	{ tk_rsp, "rsp" },
 	{ tk_r12b, "r12b" },

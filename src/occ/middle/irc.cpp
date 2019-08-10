@@ -278,7 +278,7 @@ void regInit(void)
     int i, j;
     classCount = vertexCount = 0;
     InitRegAliases(chosenAssembler->arch->regNames);
-    InitTree(NULL, chosenAssembler->arch->regRoot);
+    InitTree(nullptr, chosenAssembler->arch->regRoot);
     vertexes = (ARCH_REGVERTEX**)calloc(sizeof(ARCH_REGVERTEX*), vertexCount);
     classes = (ARCH_REGCLASS**)calloc(sizeof(ARCH_REGCLASS*), classCount);
     LoadVertexes(chosenAssembler->arch->regRoot);
@@ -288,17 +288,17 @@ void regInit(void)
 }
 
 void alloc_init(void) { spillcount = maxAllocationSpills = 0; }
-void cacheTempSymbol(SYMBOL* sp)
+void cacheTempSymbol(SYMBOL* sym)
 {
-    if (sp->anonymous && sp->storage_class != sc_parameter)
+    if (sym->anonymous && sym->storage_class != sc_parameter)
     {
-        if (sp->allocate && !sp->inAllocTable)
+        if (sym->allocate && !sym->inAllocTable)
         {
             LIST* lst = (LIST *)Alloc(sizeof(LIST));
-            lst->data = sp;
+            lst->data = sym;
             lst->next = temporarySymbols;
             temporarySymbols = lst;
-            sp->inAllocTable = true;
+            sym->inAllocTable = true;
         }
     }
 }
@@ -387,25 +387,25 @@ void AllocateStackSpace(SYMBOL* funcsp)
         {
             if (syms->blockLevel == i)
             {
-                HASHREC* hr = syms->table[0];
+                SYMLIST* hr = syms->table[0];
                 lc_maxauto = oldauto;
                 while (hr)
                 {
 
-                    SYMBOL* sp = (SYMBOL*)hr->p;
-                    if (!sp->regmode && (sp->storage_class == sc_auto || sp->storage_class == sc_register) && sp->allocate &&
-                        !sp->anonymous)
+                    SYMBOL* sym = hr->p;
+                    if (!sym->regmode && (sym->storage_class == sc_auto || sym->storage_class == sc_register) && sym->allocate &&
+                        !sym->anonymous)
                     {
-                        int val, align = sp->attribs.inheritable.structAlign ? sp->attribs.inheritable.structAlign : getAlign(sc_auto, basetype(sp->tp));
-                        lc_maxauto += basetype(sp->tp)->size;
-                        if (isatomic(sp->tp) && needsAtomicLockFromType(sp->tp))
+                        int val, align = sym->attribs.inheritable.structAlign ? sym->attribs.inheritable.structAlign : getAlign(sc_auto, basetype(sym->tp));
+                        lc_maxauto += basetype(sym->tp)->size;
+                        if (isatomic(sym->tp) && needsAtomicLockFromType(sym->tp))
                         {
                             lc_maxauto += ATOMIC_FLAG_SPACE;
                         }
                         val = lc_maxauto % align;
                         if (val != 0)
                             lc_maxauto += align - val;
-                        sp->offset = -lc_maxauto;
+                        sym->offset = -lc_maxauto;
                         if (lc_maxauto > max)
                             max = lc_maxauto;
                     }
@@ -418,20 +418,20 @@ void AllocateStackSpace(SYMBOL* funcsp)
         temps = &temporarySymbols;
         while (*temps)
         {
-            SYMBOL* sp = (SYMBOL*)(*temps)->data;
-            if (sp->storage_class != sc_static && (sp->storage_class == sc_constant || sp->value.i == i) && !sp->stackblock)
+            SYMBOL* sym = (SYMBOL*)(*temps)->data;
+            if (sym->storage_class != sc_static && (sym->storage_class == sc_constant || sym->value.i == i) && !sym->stackblock)
             {
-                int val, align = sp->attribs.inheritable.structAlign ? sp->attribs.inheritable.structAlign : getAlign(sc_auto, basetype(sp->tp));
-                lc_maxauto += basetype(sp->tp)->size;
+                int val, align = sym->attribs.inheritable.structAlign ? sym->attribs.inheritable.structAlign : getAlign(sc_auto, basetype(sym->tp));
+                lc_maxauto += basetype(sym->tp)->size;
                 val = lc_maxauto % align;
                 if (val != 0)
                     lc_maxauto += align - val;
-                sp->offset = -lc_maxauto;
+                sym->offset = -lc_maxauto;
                 if (lc_maxauto > max)
                     max = lc_maxauto;
                 oldauto = max;
                 *temps = (*temps)->next;
-                sp->inAllocTable = false;  // needed because due to inlining a temp may be used across multiple function bodies
+                sym->inAllocTable = false;  // needed because due to inlining a temp may be used across multiple function bodies
             }
             else
             {
@@ -441,10 +441,10 @@ void AllocateStackSpace(SYMBOL* funcsp)
         temps = &temporarySymbols;
         while (*temps)
         {
-            SYMBOL* sp = (SYMBOL*)(*temps)->data;
-            if (sp->stackblock)
+            SYMBOL* sym = (SYMBOL*)(*temps)->data;
+            if (sym->stackblock)
             {
-                sp->offset -= max;
+                sym->offset -= max;
                 *temps = (*temps)->next;
             }
             else
@@ -501,10 +501,10 @@ static EXPRESSION* spillVar(enum e_sc storage_class, TYPE* tp)
 {
     extern int unnamed_id;
     EXPRESSION* rv = anonymousVar(storage_class, tp);
-    SYMBOL* sp = rv->v.sp;
+    SYMBOL* sym = rv->v.sp;
     deref(tp, &rv);
-    sp->spillVar = true;
-    sp->anonymous = false;
+    sym->spillVar = true;
+    sym->anonymous = false;
     return rv;
 }
 static void GetSpillVar(int i)
@@ -918,12 +918,12 @@ static void Build(BLOCK* b)
     QUAD* head;
     BLOCKLIST* bl;
     int i;
-    if (b == NULL)
+    if (b == nullptr)
     {
         for (i = 0; i < tempCount; i++)
         {
             TEMP_INFO* t = tempInfo[i];
-            t->workingMoves = NULL;
+            t->workingMoves = nullptr;
             t->spillCost = 0;
             t->temp = 0;
         }
@@ -1062,7 +1062,7 @@ static BITARRAY* NodeMoves(int n, int index)
         }
         return rv;
     }
-    return NULL;
+    return nullptr;
 }
 static bool MoveRelated(int n, int index)
 {
@@ -1788,7 +1788,7 @@ static void SpillCoalesce(BRIGGS_SET* C, BRIGGS_SET* S)
         int cost;
         LIST* uses;
     } MOVE;
-    MOVE *moves = NULL, **mt;
+    MOVE *moves = nullptr, **mt;
     int i;
     for (i = 0; i < S->top; i++)
     {
@@ -1875,7 +1875,7 @@ static void SpillCoalesce(BRIGGS_SET* C, BRIGGS_SET* S)
     while (moves)
     {
         unsigned cost = 0;
-        MOVE **mv = NULL, *ml;
+        MOVE **mv = nullptr, *ml;
         mt = &moves;
         while (*mt)
         {
@@ -2090,7 +2090,7 @@ static void SpillPropagateAndCoalesce(void)
     BRIGGS_SET* np = briggsAlloct(tempCount);
     BRIGGS_SET* L = briggsAlloct(tempCount);
     int i;
-    spillList = NULL;
+    spillList = nullptr;
     spillProcessed = briggsAlloct(tempCount);
     for (i = 0; i < spilledNodes->top; i++)
         briggsSet(P, spilledNodes->data[i]);
@@ -2167,7 +2167,7 @@ static void KeepCoalescedNodes(void)
         QUAD* next = head->fwd;
         if (head->index != -1 && isset(coalescedMoves, head->index))
         {
-            instructionList[head->index] = NULL;
+            instructionList[head->index] = nullptr;
             if (head == head->block->tail)
                 head->block->tail = head->back;
             head->fwd->back = head->back;
@@ -2292,7 +2292,7 @@ void retemp(void)
             cur++;
         }
     for (i = cur; i < tempCount; i++)
-        tempInfo[i] = NULL;
+        tempInfo[i] = nullptr;
     tempCount = cur;
     head = intermed_head;
     while (head)
@@ -2372,7 +2372,7 @@ void AllocateRegisters(QUAD* head)
                 if (tempInfo[i]->enode)
                     tempInfo[i]->enode->v.sp->regmode = 0;
             }
-            tempInfo[i]->workingMoves = NULL;
+            tempInfo[i]->workingMoves = nullptr;
             tempInfo[i]->partition = i;
         }
         CountInstructions(first);
@@ -2393,9 +2393,9 @@ void AllocateRegisters(QUAD* head)
         InitClasses();
         definesInfo();
         usesInfo();
-        CalculateConflictGraph(NULL, true);
+        CalculateConflictGraph(nullptr, true);
         SqueezeInit();
-        Build(NULL);
+        Build(nullptr);
         MkWorklist();
         for (i = 0; i < tempCount; i++)
         {

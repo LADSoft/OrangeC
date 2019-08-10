@@ -84,15 +84,15 @@ void AliasInit(void)
     int i;
     for (i = 0; i < tempCount; i++)
     {
-        tempInfo[i]->pointsto = NULL;
-        tempInfo[i]->modifiedBy = NULL;
+        tempInfo[i]->pointsto = nullptr;
+        tempInfo[i]->modifiedBy = nullptr;
     }
     memset(addresses, 0, sizeof(addresses));
     memset(names, 0, sizeof(names));
     memset(mem, 0, sizeof(mem));
     memset(addrNames, 0, sizeof(addrNames));
-    parmList = NULL;
-    uivBytes = NULL;
+    parmList = nullptr;
+    uivBytes = nullptr;
     cachedTempCount = tempCount;
 }
 void AliasRundown(void) { aFree(); }
@@ -113,12 +113,12 @@ static void PrintName(ALIASNAME* name, int offs)
     }
     else if (name->byUIV)
     {
-        putamode(NULL, name->v.uiv->im);
+        putamode(nullptr, name->v.uiv->im);
         PrintOffs(name->v.uiv->offset);
     }
     else
     {
-        putamode(NULL, name->v.name);
+        putamode(nullptr, name->v.name);
     }
     oprintf(icdFile, ",%d)", offs);
 }
@@ -213,7 +213,7 @@ static ALIASNAME* LookupMem(IMODE* im)
     while (*p)
     {
         if (((*p)->byUIV == false && (*p)->v.name == im) ||
-            ((*p)->byUIV == true && (*p)->v.uiv->im == im && (*p)->v.uiv->offset == NULL))
+            ((*p)->byUIV == true && (*p)->v.uiv->im == im && (*p)->v.uiv->offset == nullptr))
         {
             return *p;
         }
@@ -320,7 +320,7 @@ static ALIASNAME* LookupAliasName(ALIASNAME* name, int offset)
     if (name->byUIV)
     {
         *result->v.uiv = *name->v.uiv;
-        result->v.uiv->alias = NULL;
+        result->v.uiv->alias = nullptr;
     }
     else
     {
@@ -349,7 +349,7 @@ static ALIASNAME* GetAliasName(ALIASNAME* name, int offset)
             return (*uivs)->result;
         uivs = &(*uivs)->next;
     }
-    return NULL;
+    return nullptr;
 }
 static ALIASADDRESS* LookupAddress(ALIASNAME* name, int offset)
 {
@@ -436,7 +436,7 @@ static ALIASADDRESS* GetAddress(ALIASNAME* name, int offset)
             return (*search);
         search = &(*search)->next;
     }
-    return NULL;
+    return nullptr;
 }
 static void CreateMem(IMODE* im)
 {
@@ -523,7 +523,7 @@ static void HandlePhi(QUAD* head)
     if (tempInfo[head->dc.v.phi->T0]->enode->v.sp->imvalue->size == ISZ_ADDR)
     {
         struct _phiblock* pb = head->dc.v.phi->temps;
-        ALIASLIST* l = NULL;
+        ALIASLIST* l = nullptr;
         bool xchanged = changed;
         while (pb)
         {
@@ -572,7 +572,7 @@ static void HandleAssn(QUAD* head)
     else if (head->dc.left->mode == i_ind && (head->temps & TEMP_ANS))
     {
         // temp, ind
-        ALIASLIST* result = NULL;
+        ALIASLIST* result = nullptr;
         ALIASLIST* addr = tempInfo[head->dc.left->offset->v.sp->value.i]->pointsto;
         bool xchanged = changed;
         while (addr)
@@ -637,7 +637,7 @@ static void HandleAssn(QUAD* head)
                 ALIASADDRESS* aa = LookupAddress(an, 0);
                 ALIASLIST* al = (ALIASLIST*)(ALIASLIST *)aAlloc(sizeof(ALIASLIST));
                 al->address = aa;
-                tempInfo[head->ans->offset->v.sp->value.i]->pointsto = NULL;
+                tempInfo[head->ans->offset->v.sp->value.i]->pointsto = nullptr;
                 AliasUnion(&tempInfo[head->ans->offset->v.sp->value.i]->pointsto, al);
                 changed = xchanged;
             }
@@ -648,7 +648,7 @@ static void HandleAssn(QUAD* head)
             else if (!(head->temps & TEMP_LEFT) && head->dc.left->mode == i_direct)
             {
                 // temp, mem
-                ALIASLIST* result = NULL;
+                ALIASLIST* result = nullptr;
                 ALIASNAME* an = LookupMem(head->dc.left);
                 ALIASADDRESS* aa;
                 ALIASLIST* addr;
@@ -796,7 +796,7 @@ static void Infer(IMODE* ans, IMODE* reg, ALIASLIST* pointsto)
 {
     if (pointsto)
     {
-        ALIASLIST* result = NULL;
+        ALIASLIST* result = nullptr;
         int c = InferOffset(reg);
         int l = InferStride(reg);
         if (l)
@@ -828,7 +828,7 @@ static void HandleAdd(QUAD* head)
                 {
                     // C + R
                     ALIASLIST* scan = tempInfo[head->dc.right->offset->v.sp->value.i]->pointsto;
-                    ALIASLIST* result = NULL;
+                    ALIASLIST* result = nullptr;
                     bool xchanged = changed;
                     while (scan)
                     {
@@ -886,7 +886,7 @@ static void HandleAdd(QUAD* head)
                     // R+C
                     int c = head->dc.opcode == i_add ? head->dc.right->offset->v.i : -head->dc.right->offset->v.i;
                     ALIASLIST* scan = tempInfo[head->dc.left->offset->v.sp->value.i]->pointsto;
-                    ALIASLIST* result = NULL;
+                    ALIASLIST* result = nullptr;
                     bool xchanged = changed;
                     while (scan)
                     {
@@ -936,7 +936,7 @@ static void HandleAdd(QUAD* head)
 }
 static void HandleAssnBlock(QUAD* head)
 {
-    ALIASNAME* dest = NULL;
+    ALIASNAME* dest = nullptr;
     if ((head->temps & TEMP_LEFT) && head->dc.left->mode == i_direct)
     {
         // we don't support writing to arbitrary memory, e.g. a pointer returned from a function call
@@ -993,7 +993,7 @@ static void HandleParm(QUAD* head)
     if (head->dc.left->size == ISZ_ADDR)
     {
         // temp, mem
-        ALIASLIST *result = NULL, **base = NULL, *addr;
+        ALIASLIST *result = nullptr, **base = nullptr, *addr;
         if (head->temps & TEMP_LEFT)
         {
             base = &tempInfo[head->dc.left->offset->v.sp->value.i]->pointsto;
@@ -1341,7 +1341,7 @@ static void MakeAliasLists(void)
         if (n >= 0 && tempInfo[i]->pointsto)
         {
             tempInfo[n]->pointsto = tempInfo[i]->pointsto;
-            tempInfo[i]->pointsto = NULL;
+            tempInfo[i]->pointsto = nullptr;
         }
         tempInfo[i]->modifiedBy = aallocbit(termCount);
     }

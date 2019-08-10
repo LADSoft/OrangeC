@@ -54,7 +54,7 @@ private:
 };
 struct aa *aa::___self;
 */
-extern NAMESPACEVALUES *globalNameSpace, *localNameSpace;
+extern NAMESPACEVALUELIST *globalNameSpace, *localNameSpace;
 extern const char* overloadNameTab[];
 extern TYPE stdpointer, stdvoid, stdauto, stdint;
 extern int nextLabel;
@@ -220,7 +220,7 @@ SYMBOL* lambda_capture(SYMBOL* sym, enum e_cm mode, bool isExplicit)
                         LAMBDASP* lsp = (LAMBDASP*)search(sym->name, current->captured);
                         if (lsp)
                         {
-                            sym2 = lsp->sym;
+                            sym2 = lsp->sp;
                             break;
                         }
                         current = current->next;
@@ -280,7 +280,7 @@ SYMBOL* lambda_capture(SYMBOL* sym, enum e_cm mode, bool isExplicit)
                         if (mode != cmExplicitValue)
                             sym->init = NULL;
                         lambda_insert(sym, current);
-                        ins->sym = sym;
+                        ins->sp = sym;
                         ins->enclosing = current;
                         baseinsert((SYMBOL*)ins, current->captured);
                         current = current->prev;
@@ -296,7 +296,7 @@ static TYPE* cloneFuncType(SYMBOL* funcin)
 {
     TYPE* tp_in = funcin->tp;
     TYPE** tp;
-    HASHREC **dest, *src;
+    SYMLIST **dest, *src;
     SYMBOL* func = clonesym(funcin);
     tp = &func->tp;
     while (tp_in)
@@ -312,8 +312,8 @@ static TYPE* cloneFuncType(SYMBOL* funcin)
     src = basetype(funcin->tp)->syms->table[0];
     while (src)
     {
-        *dest = (HASHREC *)Alloc(sizeof(HASHREC));
-        (*dest)->p = (struct sym *)clonesym((SYMBOL*)src->p);
+        *dest = (SYMLIST *)Alloc(sizeof(SYMLIST));
+        (*dest)->p = (SYMBOL *)clonesym((SYMBOL*)src->p);
         dest = &(*dest)->next;
         src = src->next;
     }
@@ -322,7 +322,7 @@ static TYPE* cloneFuncType(SYMBOL* funcin)
 static void cloneTemplateParams(SYMBOL* func)
 {
     TEMPLATEPARAMLIST** tplp = &func->templateParams;
-    HASHREC* hr = basetype(func->tp)->syms->table[0];
+    SYMLIST* hr = basetype(func->tp)->syms->table[0];
     int index = 0;
     (*tplp) = (TEMPLATEPARAMLIST*)(TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
     (*tplp)->p = (TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
@@ -351,7 +351,7 @@ static void cloneTemplateParams(SYMBOL* func)
 static void convertCallToTemplate(SYMBOL* func)
 {
     TEMPLATEPARAMLIST** tplholder;
-    HASHREC* hr;
+    SYMLIST* hr;
     func->templateParams = (TEMPLATEPARAMLIST*)(TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
     func->templateParams->p = (TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
     func->templateParams->p->type = kw_new;
@@ -383,7 +383,7 @@ static void convertCallToTemplate(SYMBOL* func)
 static SYMBOL* createPtrToCaller(SYMBOL* self)
 {
     INITLIST** argptr;
-    HASHREC* hr;
+    SYMLIST* hr;
     FUNCTIONCALL* params = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
     TYPE* args = cloneFuncType(lambdas->func);
     SYMBOL* func = makeID(sc_static, args, NULL, "___ptrcall");
@@ -408,18 +408,6 @@ static SYMBOL* createPtrToCaller(SYMBOL* self)
 
     argptr = &params->arguments;
     hr = args->syms->table[0];
-    /*
-    if (isstructured(basetype(lambdas->func->tp)->btp))
-    {
-        TYPE *tp= basetype(lambdas->func->tp)->btp;
-        if (isref(tp))
-            tp = basetype(tp)->btp;
-        tp = basetype(tp);
-        params->returnSP = tp->sp;
-        params->returnEXP = varNode(en_auto, ((SYMBOL *)hr->p));
-        hr = hr->next;
-    }
-    */
     while (hr)
     {
         SYMBOL* sym = (SYMBOL*)hr->p;
@@ -465,7 +453,7 @@ static SYMBOL* createPtrToCaller(SYMBOL* self)
         int line = includes->line;
         char buf[1000];
         int l = 0;
-        HASHREC* hr = basetype(lambdas->func->tp)->syms->table[0];
+        SYMLIST* hr = basetype(lambdas->func->tp)->syms->table[0];
         if (isautotype(lambdas->functp))
             basetype(func->tp)->btp = &stdauto;  // convert return type back to auto
         cloneTemplateParams(func);
@@ -489,7 +477,7 @@ static SYMBOL* createPtrToCaller(SYMBOL* self)
         includes->handle = NULL;
         includes->lptr = (unsigned char *)buf;
         lex1 = getsym();
-        getDeferredData(lex1, func, true);
+        getDeferredData(lex1, &func->deferredCompile, true);
         includes->handle = handle;
         includes->lptr = p;
         includes->line = line;
@@ -511,7 +499,7 @@ static void createConverter(SYMBOL* self)
     STATEMENT* st;
     EXPRESSION* exp;
     SYMBOL* sym = makeID(sc_parameter, &stdvoid, NULL, AnonymousName());
-    HASHREC* hr = (HASHREC *)Alloc(sizeof(HASHREC));
+    SYMLIST* hr = (SYMLIST *)Alloc(sizeof(SYMLIST));
     func->tp->type = bt_func;
     func->tp->btp = (TYPE *)Alloc(sizeof(TYPE));
     func->tp->btp->type = bt_pointer;
@@ -560,7 +548,7 @@ static void createConverter(SYMBOL* self)
         TEMPLATEPARAMLIST *tpl, **tplp, **tplp2;
         FUNCTIONCALL* f = (FUNCTIONCALL*)(FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
         INITLIST** args = &f->arguments;
-        HASHREC* hr;
+        SYMLIST* hr;
         func->templateParams = caller->templateParams;
         func->templateLevel = templateNestingCount;
         func->parentTemplate = func;
@@ -601,7 +589,7 @@ static void createConverter(SYMBOL* self)
         includes->handle = NULL;
         includes->lptr = (unsigned char *)buf;
         lex1 = getsym();
-        getDeferredData(lex1, func, true);
+        getDeferredData(lex1, &func->deferredCompile, true);
         includes->handle = handle;
         includes->lptr = p;
         includes->line = line;
@@ -616,7 +604,7 @@ static void createConverter(SYMBOL* self)
 }
 static bool lambda_get_template_state(SYMBOL* func)
 {
-    HASHREC* hr = basetype(func->tp)->syms->table[0];
+    SYMLIST* hr = basetype(func->tp)->syms->table[0];
     while (hr)
     {
         SYMBOL* sp = (SYMBOL*)hr->p;
@@ -630,7 +618,7 @@ static void finishClass(void)
 {
     TYPE* tps = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
     SYMBOL* self = makeID(sc_static, tps, NULL, "___self");
-    HASHREC* lst;
+    SYMLIST* lst;
     tps->type = bt_pointer;
     tps->size = getSize(bt_pointer);
     tps->btp = lambdas->cls->tp;
@@ -681,19 +669,19 @@ static void finishClass(void)
 static EXPRESSION* createLambda(bool noinline)
 {
     EXPRESSION *rv = NULL, **cur = &rv;
-    HASHREC* hr;
+    SYMLIST* hr;
     EXPRESSION *clsThs, *parentThs;
     SYMBOL* cls = makeID(lambdas->enclosingFunc ? sc_auto : sc_localstatic, lambdas->cls->tp, NULL, AnonymousName());
     SetLinkerNames(cls, lk_cdecl);
     cls->allocate = true;
     if (lambdas->enclosingFunc)
     {
-        insert(cls, localNameSpace->syms);
+        insert(cls, localNameSpace->valueData->syms);
         clsThs = varNode(en_auto, cls);  // this ptr
     }
     else
     {
-        insert(cls, globalNameSpace->syms);  // well if we could put this as an auto in the init func that would be good but there
+        insert(cls, globalNameSpace->valueData->syms);  // well if we could put this as an auto in the init func that would be good but there
                                              // is no way to do that here...
         clsThs = varNode(en_global, cls);    // this ptr
         cls->label = nextLabel++;
@@ -758,7 +746,7 @@ static EXPRESSION* createLambda(bool noinline)
                     if (isstructured(ctp))
                     {
                         if (!callConstructorParam(&ctp, &en1, sp->tp, sp->init->exp, true, false, true, false))
-                            errorsym(ERR_NO_APPROPRIATE_CONSTRUCTOR, lsp->sym);
+                            errorsym(ERR_NO_APPROPRIATE_CONSTRUCTOR, lsp->sp);
                         en = en1;
                     }
                     else
@@ -809,7 +797,7 @@ static EXPRESSION* createLambda(bool noinline)
                     if (isstructured(ctp))
                     {
                         if (!callConstructorParam(&ctp, &en1, ctp, en, true, false, true, false))
-                            errorsym(ERR_NO_APPROPRIATE_CONSTRUCTOR, lsp->sym);
+                            errorsym(ERR_NO_APPROPRIATE_CONSTRUCTOR, lsp->sp);
                         en = en1;
                     }
                     else
@@ -840,7 +828,7 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
 
     LAMBDA* self;
     SYMBOL *vpl, *ths;
-    HASHREC* hrl;
+    SYMLIST* hrl;
     TYPE* ltp;
     STRUCTSYM ssl;
     if (funcsp)
@@ -854,8 +842,8 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
     ltp->size = 0;
     ltp->rootType = ltp;
     self->captured = CreateHashTable(1);
-    self->oldSyms = localNameSpace->syms;
-    self->oldTags = localNameSpace->tags;
+    self->oldSyms = localNameSpace->valueData->syms;
+    self->oldTags = localNameSpace->valueData->tags;
     self->index = lambdaIndex;
     self->captureMode = cmNone;
     self->isMutable = false;
@@ -874,8 +862,8 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
     self->next = lambdas;
     lambdas = self;
 
-    localNameSpace->syms = CreateHashTable(1);
-    localNameSpace->tags = CreateHashTable(1);
+    localNameSpace->valueData->syms = CreateHashTable(1);
+    localNameSpace->valueData->tags = CreateHashTable(1);
     if (lambdas->next)
     {
         self->lthis = lambdas->next->lthis;
@@ -985,7 +973,7 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
                     }
                     else
                     {
-                        sp = search(idlex->value.s.a, localNameSpace->syms);
+                        sp = search(idlex->value.s.a, localNameSpace->valueData->syms);
                         current = lambdas;
                         while (current && !sp)
                         {
@@ -1005,7 +993,7 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
                             {
                                 int n;
                                 TEMPLATEPARAMLIST* templateParam = sp->tp->templateParam->p->byPack.pack;
-                                HASHREC* hr;
+                                SYMLIST* hr;
                                 for (n = 0; templateParam; templateParam = templateParam->next, n++)
                                     ;
                                 hr = funcsp->tp->syms->table[0];
@@ -1049,7 +1037,7 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
     if (MATCHKW(lex, openpa))
     {
         TYPE* tpx = &stdvoid;
-        HASHREC* hr;
+        SYMLIST* hr;
         lex = getFunctionParams(lex, NULL, &self->func, &tpx, false, sc_auto);
         if (!self->func->tp->syms)
         {
@@ -1074,13 +1062,13 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
         }
         if (MATCHKW(lex, kw_mutable))
         {
-            HASHREC* hr = self->captured->table[0];
+            SYMLIST* hr = self->captured->table[0];
             while (hr)
             {
                 LAMBDASP* lsp = (LAMBDASP*)hr->p;
-                if (lsp->sym->lambdaMode == cmValue)
+                if (lsp->sp->lambdaMode == cmValue)
                 {
-                    lsp->sym->tp = basetype(lsp->sym->tp);
+                    lsp->sp->tp = basetype(lsp->sp->tp);
                 }
                 hr = hr->next;
             }
@@ -1115,9 +1103,9 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
         spi->tp = (TYPE *)Alloc(sizeof(TYPE));
         spi->tp->type = bt_void;
         spi->tp->rootType = spi->tp;
-        insert(spi, localNameSpace->syms);
+        insert(spi, localNameSpace->valueData->syms);
         SetLinkerNames(spi, lk_cpp);
-        self->func->tp->syms = localNameSpace->syms;
+        self->func->tp->syms = localNameSpace->valueData->syms;
         self->funcargs = self->func->tp->syms->table[0];
         self->func->tp->syms->table[0] = NULL;
     }
@@ -1135,7 +1123,7 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
     lambda_insert(ths, lambdas);
     if (MATCHKW(lex, begin))
     {
-        lex = getDeferredData(lex, self->func, true);
+        lex = getDeferredData(lex, &self->func->deferredCompile, true);
         if (!lambdas->templateFunctions)
         {
             LEXEME* lex1 = SetAlternateLex(self->func->deferredCompile);
@@ -1155,8 +1143,8 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
         error(ERR_LAMBDA_FUNCTION_BODY_EXPECTED);
     }
     dropStructureDeclaration();
-    localNameSpace->syms = self->oldSyms;
-    localNameSpace->tags = self->oldTags;
+    localNameSpace->valueData->syms = self->oldSyms;
+    localNameSpace->valueData->tags = self->oldTags;
     finishClass();
     *exp = createLambda(0);
     *tp = lambdas->cls->tp;

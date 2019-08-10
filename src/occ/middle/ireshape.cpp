@@ -265,12 +265,12 @@ static void CreateExpressionLists(void)
 }
 static RESHAPE_LIST* cloneReshape(RESHAPE_LIST* in)
 {
-    RESHAPE_LIST *rv = NULL, **p = &rv;
+    RESHAPE_LIST *rv = nullptr, **p = &rv;
     while (in)
     {
         *p = (RESHAPE_LIST *)tAlloc(sizeof(RESHAPE_LIST));
         **p = *in;
-        (*p)->next = NULL;
+        (*p)->next = nullptr;
         in = in->next;
         p = &(*p)->next;
     }
@@ -278,7 +278,7 @@ static RESHAPE_LIST* cloneReshape(RESHAPE_LIST* in)
 }
 static void DistributeMultiplies(RESHAPE_EXPRESSION* re, RESHAPE_LIST* rl, int tnum)
 {
-    RESHAPE_LIST *temp = tempInfo[tnum]->expression.list, *replace = NULL;
+    RESHAPE_LIST *temp = tempInfo[tnum]->expression.list, *replace = nullptr;
     int n = INT_MAX;
     while (temp)
     {
@@ -324,7 +324,7 @@ static void ApplyDistribution(void)
     while (!done)
     {
         int i;
-        RESHAPE_EXPRESSION* next = NULL;
+        RESHAPE_EXPRESSION* next = nullptr;
         RESHAPE_LIST* rl;
         int n = 0;
         int match = 0;
@@ -403,16 +403,16 @@ static void replaceIM(IMODE** iml, IMODE* im)
         }
         if (!imlx)
         {
-            SYMBOL* sp = im->offset->v.sp;
+            SYMBOL* sym = im->offset->v.sp;
             IMODE* imind;
             IMODELIST* imindl;
-            if (sp && sp->storage_class != sc_auto && sp->storage_class != sc_register)
+            if (sym && sym->storage_class != sc_auto && sym->storage_class != sc_register)
             {
                 IncGlobalFlag();
             }
             imind = (IMODE *)Alloc(sizeof(IMODE));
             imindl = (IMODELIST *)Alloc(sizeof(IMODELIST));
-            if (sp && sp->storage_class != sc_auto && sp->storage_class != sc_register)
+            if (sym && sym->storage_class != sc_auto && sym->storage_class != sc_register)
             {
                 DecGlobalFlag();
             }
@@ -480,7 +480,7 @@ static void CopyExpressionTree(enum i_ops op, BLOCK* b, QUAD* insertBefore, IMOD
 }
 static IMODE* InsertAddInstruction(BLOCK* b, int size, QUAD* insertBefore, int flagsl, IMODE* iml, int flagsr, IMODE* imr)
 {
-    QUAD *ins, *insn = NULL, *insn2 = NULL;
+    QUAD *ins, *insn = nullptr, *insn2 = nullptr;
     IMODE* imrv;
     if (b)
         CopyExpressionTree(i_add, b, insertBefore, &iml, &imr);
@@ -527,7 +527,7 @@ static IMODE* InsertAddInstruction(BLOCK* b, int size, QUAD* insertBefore, int f
 }
 static IMODE* InsertMulInstruction(BLOCK* b, int size, QUAD* insertBefore, int flagsl, IMODE* iml, int flagsr, IMODE* imr)
 {
-    QUAD *ins, *insn = NULL;
+    QUAD *ins, *insn = nullptr;
     IMODE* imrv;
     if (b)
         CopyExpressionTree(i_mul, b, insertBefore, &iml, &imr);
@@ -591,11 +591,11 @@ void unmarkPreSSA(QUAD* ins)
 static void RewriteAdd(BLOCK* b, int tnum)
 {
     RESHAPE_LIST* gather = tempInfo[tnum]->expression.list;
-    IMODE *left = tempInfo[tnum]->expression.lastName, *right = NULL;
+    IMODE *left = tempInfo[tnum]->expression.lastName, *right = nullptr;
     int size = tempInfo[tnum]->instructionDefines->ans->size;
     QUAD* ia;
     int flagsl = 0, flagsr;
-    if (b == NULL)
+    if (b == nullptr)
     {
         ia = tempInfo[tnum]->instructionDefines;
         if (!ia)
@@ -709,7 +709,7 @@ static IMODE* RewriteDistributed(BLOCK* b, int size, IMODE* im, QUAD* ia, RESHAP
     if (gather)
     {
         distrib->lastDistribName = total;
-        return NULL;
+        return nullptr;
     }
     return total;
 }
@@ -718,12 +718,12 @@ static void RewriteMul(BLOCK* b, int tnum)
     RESHAPE_LIST* gather = tempInfo[tnum]->expression.list;
     if (gather)
     {
-        IMODE *left = tempInfo[tnum]->expression.lastName, *right = NULL;
+        IMODE *left = tempInfo[tnum]->expression.lastName, *right = nullptr;
         int flagsl = 0, flagsr;
         int size = tempInfo[tnum]->instructionDefines->ans->size;
         QUAD* ia;
         RESHAPE_LIST* current = gather;
-        if (b == NULL)
+        if (b == nullptr)
         {
             ia = tempInfo[tnum]->instructionDefines;
             if (!ia)
@@ -866,11 +866,11 @@ void RewriteInnerExpressions(void)
                 case i_or:
                 case i_eor:
                 case i_and:
-                    RewriteAdd(NULL, i);
+                    RewriteAdd(nullptr, i);
                     break;
                 case i_mul:
                 case i_lsl:
-                    RewriteMul(NULL, i);
+                    RewriteMul(nullptr, i);
                     break;
                 default:
                     diag("RewriteExpressions: invalid expression type");

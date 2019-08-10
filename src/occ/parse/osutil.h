@@ -76,11 +76,11 @@ typedef struct _memblk_
 #define GLOBALHASHSIZE 8192 /*9973 */
 #define LOCALHASHSIZE 29
 
-typedef struct _hashrec_
+typedef struct _symlist_
 {
-    struct _hashrec_* next; /* next to next element in list */
+    struct _symlist_* next; /* next to next element in list */
     struct sym *p;
-} HASHREC;
+} SYMLIST;
 
 typedef struct _hashtable_
 {
@@ -89,7 +89,7 @@ typedef struct _hashtable_
     int size;
     int blockLevel;
     int blocknum; /* debugger block number */
-    HASHREC** table;
+    SYMLIST** table;
 
 } HASHTABLE;
 

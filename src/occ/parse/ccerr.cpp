@@ -42,7 +42,7 @@ extern char infile[256];
 extern FILE* listFile;
 extern FILE* errFile;
 extern HASHTABLE* labelSyms;
-extern NAMESPACEVALUES* globalNameSpace;
+extern NAMESPACEVALUELIST* globalNameSpace;
 extern INCLUDES* includes;
 #endif
 
@@ -681,8 +681,8 @@ int diagcount;
 void errorinit(void)
 {
     total_errors = diagcount = 0;
-    currentErrorFile = NULL;
-    warningStack = NULL;
+    currentErrorFile = nullptr;
+    warningStack = nullptr;
 }
 
 static char kwtosym(enum e_kw kw)
@@ -774,6 +774,13 @@ static bool ignoreErrtemplateNestingCount(int err)
         case ERR_NO_OVERLOAD_MATCH_FOUND:
         case ERR_POINTER_TYPE_EXPECTED:
         case ERR_NEED_TYPEINFO_H:
+        case ERR_EXPRESSION_HAS_NO_EFFECT:
+        case ERR_FUNCTION_SHOULD_RETURN_VALUE:
+        case ERR_AMBIGUITY_BETWEEN:
+        case ERR_NO_DEFAULT_CONSTRUCTOR:
+        case ERR_NO_APPROPRIATE_CONSTRUCTOR:
+        case ERR_ILL_STRUCTURE_ASSIGNMENT:
+        case ERR_ILL_STRUCTURE_OPERATION:
             return true;
     }
     return false;
@@ -902,7 +909,7 @@ int printerr(int err, const char* file, int line, ...)
     va_end(arg);
     if (instantiatingTemplate && canprint)
     {
-        printerrinternal(ERR_TEMPLATE_INSTANTIATION_STARTED_IN, includes->fname, includes->line, NULL);
+        printerrinternal(ERR_TEMPLATE_INSTANTIATION_STARTED_IN, includes->fname, includes->line, nullptr);
     }
     return canprint;
 }
@@ -948,7 +955,7 @@ void getcls(char* buf, SYMBOL* clssym)
     }
     strcat(buf, clssym->name);
 }
-void errorqualified(int err, SYMBOL* strSym, NAMESPACEVALUES* nsv, const char* name)
+void errorqualified(int err, SYMBOL* strSym, NAMESPACEVALUELIST* nsv, const char* name)
 {
     char buf[4096];
     char unopped[2048];
@@ -988,14 +995,14 @@ void errorqualified(int err, SYMBOL* strSym, NAMESPACEVALUES* nsv, const char* n
     }
     else if (nsv)
     {
-        getns(buf, nsv->name);
+        getns(buf, nsv->valueData->name);
     }
     strcat(buf, "'");
     if (strSym && !strSym->tp->syms)
         strcat(buf, " because the type is not defined");
     printerr(err, preprocFile, preprocLine, buf);
 }
-void errorNotMember(SYMBOL* strSym, NAMESPACEVALUES* nsv, const char* name)
+void errorNotMember(SYMBOL* strSym, NAMESPACEVALUELIST* nsv, const char* name)
 {
     errorqualified(ERR_NAME_IS_NOT_A_MEMBER_OF_NAME, strSym, nsv, name);
 }
@@ -1177,19 +1184,22 @@ bool needkw(LEXEME** lex, enum e_kw kw)
 void specerror(int err, const char* name, const char* file, int line) { printerr(err, file, line, name); }
 void diag(const char* fmt, ...)
 {
-    if (cparams.prm_diag)
+    if (!templateNestingCount)
     {
-        va_list argptr;
+        if (cparams.prm_diag)
+        {
+            va_list argptr;
 
-        va_start(argptr, fmt);
-        printf("Diagnostic: ");
-        vprintf(fmt, argptr);
-        if (theCurrentFunc)
-            printf(":%s", theCurrentFunc->decoratedName);
-        printf("\n");
-        va_end(argptr);
+            va_start(argptr, fmt);
+            printf("Diagnostic: ");
+            vprintf(fmt, argptr);
+            if (theCurrentFunc)
+                printf(":%s", theCurrentFunc->decoratedName);
+            printf("\n");
+            va_end(argptr);
+        }
+        diagcount++;
     }
-    diagcount++;
 }
 void printToListFile(const char* fmt, ...)
 {
@@ -1416,7 +1426,7 @@ static VLASHIM* getVLAList(STATEMENT* stmt, VLASHIM* last, VLASHIM* parent, VLAS
 {
     int curBlockNum = (*blocknum)++;
     int curBlockIndex = 0;
-    VLASHIM *rv = NULL, **cur = &rv, *nextParent = NULL;
+    VLASHIM *rv = nullptr, **cur = &rv, *nextParent = nullptr;
     while (stmt)
     {
         switch (stmt->type)
@@ -1695,7 +1705,7 @@ void checkGotoPastVLA(STATEMENT* stmt, bool first)
 
         int blockNum = 0;
         bool branched = false;
-        VLASHIM* list = getVLAList(stmt, NULL, NULL, labels, min, &blockNum, 0, &branched);
+        VLASHIM* list = getVLAList(stmt, nullptr, nullptr, labels, min, &blockNum, 0, &branched);
         fillPrevious(list, labels, min);
         validateGotos(list, list);
     }
@@ -1705,16 +1715,16 @@ void checkUnlabeledReferences(BLOCKDATA* block)
     int i;
     for (i = 0; i < labelSyms->size; i++)
     {
-        HASHREC* hr = labelSyms->table[i];
+        SYMLIST* hr = labelSyms->table[i];
         while (hr)
         {
-            SYMBOL* sp = (SYMBOL*)hr->p;
+            SYMBOL* sp = hr->p;
             if (sp->storage_class == sc_ulabel)
             {
                 STATEMENT* st;
                 specerror(ERR_UNDEFINED_LABEL, sp->name, sp->declfile, sp->declline);
                 sp->storage_class = sc_label;
-                st = stmtNode(NULL, block, st_label);
+                st = stmtNode(nullptr, block, st_label);
                 st->label = sp->offset;
             }
             hr = hr->next;
@@ -1726,10 +1736,10 @@ void checkUnused(HASHTABLE* syms)
     int i;
     for (i = 0; i < syms->size; i++)
     {
-        HASHREC* hr = syms->table[i];
+        SYMLIST* hr = syms->table[i];
         while (hr)
         {
-            SYMBOL* sp = (SYMBOL*)hr->p;
+            SYMBOL* sp = hr->p;
             if (sp->storage_class == sc_overloads)
                 sp = (SYMBOL*)sp->tp->syms->table[0]->p;
             if (!sp->attribs.inheritable.used && !sp->anonymous)
@@ -1751,15 +1761,15 @@ void checkUnused(HASHTABLE* syms)
         }
     }
 }
-void findUnusedStatics(NAMESPACEVALUES* nameSpace)
+void findUnusedStatics(NAMESPACEVALUELIST* nameSpace)
 {
     int i;
-    for (i = 0; i < nameSpace->syms->size; i++)
+    for (i = 0; i < nameSpace->valueData->syms->size; i++)
     {
-        HASHREC* hr = nameSpace->syms->table[i];
+        SYMLIST* hr = nameSpace->valueData->syms->table[i];
         while (hr)
         {
-            SYMBOL* sp = (SYMBOL*)hr->p;
+            SYMBOL* sp = hr->p;
             if (sp)
             {
                 if (sp->storage_class == sc_namespace)
@@ -1770,7 +1780,7 @@ void findUnusedStatics(NAMESPACEVALUES* nameSpace)
                 {
                     if (sp->storage_class == sc_overloads)
                     {
-                        HASHREC* hr1 = sp->tp->syms->table[0];
+                        SYMLIST* hr1 = sp->tp->syms->table[0];
                         while (hr1)
                         {
                             SYMBOL* sp1 = (SYMBOL*)hr1->p;
@@ -1827,7 +1837,7 @@ static SYMBOL* getAssignSP(EXPRESSION* exp)
                 return sp;
             return getAssignSP(exp->right);
         default:
-            return NULL;
+            return nullptr;
     }
 }
 static void assignmentAssign(EXPRESSION* left, bool assign)

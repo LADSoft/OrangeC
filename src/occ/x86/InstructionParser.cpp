@@ -154,7 +154,7 @@ std::string InstructionParser::FormatInstruction(ocode* ins)
                 {
                     rv += t->val->GetLeft()->label + "+";
                     char buf[256];
-                    sprintf(buf, "%d", t->val->GetRight()->ival);
+                    sprintf(buf, "%d", (int)t->val->GetRight()->ival);
                     rv += buf;
                 }
                 else if (t->val->GetType() == AsmExprNode::LABEL)
@@ -164,7 +164,7 @@ std::string InstructionParser::FormatInstruction(ocode* ins)
                 else
                 {
                     char buf[256];
-                    sprintf(buf, "%d", t->val->ival);
+                    sprintf(buf, "%d", (int)t->val->ival);
                     rv += buf;
                 }
                 break;

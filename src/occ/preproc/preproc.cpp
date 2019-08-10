@@ -61,7 +61,7 @@ FILELIST *incfiles = 0, *lastinc;
 LIST* libincludes = 0;
 void ppdefcheck(unsigned char* line);
 
-MACROLIST* macroBuffers = NULL;
+MACROLIST* macroBuffers = nullptr;
 
 int cppprio;
 int packdata[MAX_PACK_DATA] = {1};
@@ -126,13 +126,13 @@ void preprocini(char* name, FILE* fil)
     p->realline = -1;
     p->line = -1;
     includes = p;
-    inclData = NULL;
-    incfiles = NULL;
-    libincludes = NULL;
-    nonSysIncludeFiles = NULL;
+    inclData = nullptr;
+    incfiles = nullptr;
+    libincludes = nullptr;
+    nonSysIncludeFiles = nullptr;
     stdpragmas = STD_PRAGMA_FCONTRACT;
     defsyms = CreateHashTable(GLOBALHASHSIZE);
-    macroBuffers = NULL;
+    macroBuffers = nullptr;
     counter = 0;
 #ifndef CPREPROCESSOR
     once = 0;
@@ -143,7 +143,7 @@ void preprocini(char* name, FILE* fil)
 #endif
     char* sde = getenv("SOURCE_DATE_EPOCH");
     if (sde)
-        source_date_epoch = (time_t)strtoul(sde, NULL, 10);
+        source_date_epoch = (time_t)strtoul(sde, nullptr, 10);
 }
 int defid(char* name, unsigned char** p)
 /*
@@ -784,7 +784,7 @@ static void pragerror(int error)
         {
             do
             {
-                void (*func)(int) = NULL;
+                void (*func)(int) = nullptr;
                 s++;
                 char name[256];
                 name[0] = 0;
@@ -909,7 +909,7 @@ void dopragma(bool fromPragma)
     else if (!strcmp(name, "ignore_global_init"))
     {
         skipspace();
-        ignore_global_init = expectnum(NULL);
+        ignore_global_init = expectnum(nullptr);
         return;
     }
     else if (!strcmp(name, "startup"))
@@ -979,7 +979,7 @@ void dopragma(bool fromPragma)
             {
                 if (packlevel < sizeof(packdata) - 1)
                 {
-                    packdata[++packlevel] = expectnum(NULL);
+                    packdata[++packlevel] = expectnum(nullptr);
                     if (packdata[packlevel] < 1)
                         packdata[packlevel] = 1;
                     skipspace();
@@ -1041,7 +1041,7 @@ void dopragma(bool fromPragma)
 
     if (isdigit(*includes->lptr))
     {
-        val = expectnum(NULL);
+        val = expectnum(nullptr);
     }
     else
         val = 64;
@@ -1131,7 +1131,7 @@ void doline(void)
         return;
     ppdefcheck(includes->lptr);
     skipspace();
-    includes->line = expectnum(NULL) - 1;
+    includes->line = expectnum(nullptr) - 1;
     skipspace();
     if (*includes->lptr)
     {
@@ -1199,7 +1199,7 @@ void doinclude(void)
     strcpy(name_orig, name);
     if (inc->sys_inc)
         inc->handle = SrchPth(name, sys_searchpath, "r", true);
-    if (inc->handle == NULL && includes)
+    if (inc->handle == nullptr && includes)
     {
         char buf[260], *p, *q;
         strcpy(buf, (char*)includes->fname);
@@ -1213,19 +1213,19 @@ void doinclude(void)
             inc->handle = SrchPth(name, buf, "r", false);
         }
     }
-    if (inc->handle == NULL)
+    if (inc->handle == nullptr)
     {
         inc->handle = SrchPth(name, ".", "r", false);
         if (inc->handle)
             nonSys = true;
     }
-    if (inc->handle == NULL)
+    if (inc->handle == nullptr)
     {
         inc->handle = SrchPth(name, prm_searchpath, "r", false);
         if (inc->handle)
             nonSys = true;
     }
-    if (!inc->sys_inc && inc->handle == NULL)
+    if (!inc->sys_inc && inc->handle == nullptr)
         inc->handle = SrchPth(name, sys_searchpath, "r", true);
 
     IncGlobalFlag();
@@ -1238,7 +1238,7 @@ void doinclude(void)
         nonSysIncludeFiles = fil;
     }
     DecGlobalFlag();
-    if (inc->handle == NULL)
+    if (inc->handle == nullptr)
     {
         pperrorstr(ERR_INCL_CANT_OPEN, inc->fname);
         return;
@@ -1267,7 +1267,7 @@ void doinclude(void)
         inc->linesHead = linesHead;
         inc->linesTail = linesTail;
 
-        linesHead = linesTail = NULL;
+        linesHead = linesTail = nullptr;
 #    ifdef PARSER_ONLY
         inc->filesize = strlen((char *)inc->handle);
 #    else
@@ -1313,14 +1313,14 @@ void glbdefine(const char* name, const char* value)
 }
 void glbUndefine(const char* name)
 {
-    HASHREC **hr = LookupName(name, defsyms);
+    SYMLIST **hr = LookupName(name, defsyms);
     if (*hr)
         (*hr) = (*hr)->next;
 }
 int undef2(const char* name)
 {
     {
-        HASHREC** p = LookupName(name, defsyms);
+        SYMLIST** p = LookupName(name, defsyms);
         if (p)
         {
             DEFSTRUCT* d = (DEFSTRUCT*)(*p)->p;
@@ -1892,9 +1892,9 @@ void SetupAlreadyReplaced(unsigned char* macro)
             instr = !instr;
         if (isstartchar((unsigned char)*src) && !instr)
         {
-            DEFSTRUCT* sp;
+            DEFSTRUCT* sym;
             defid(name, &src);
-            if ((sp = (DEFSTRUCT*)search(name, defsyms)) != 0 && sp->preprocessing)
+            if ((sym = (DEFSTRUCT*)search(name, defsyms)) != 0 && sym->preprocessing)
             {
                 *macro++ = REPLACED_ALREADY;
             }
@@ -1948,7 +1948,7 @@ int replacesegment(unsigned char* start, unsigned char* end, int* inbuffer, int 
     int rv;
     int size;
     unsigned char *p, *q;
-    DEFSTRUCT* sp;
+    DEFSTRUCT* sym;
     int insize, rv1;
     unsigned char* orig_end = end;
     p = start;
@@ -1971,10 +1971,10 @@ int replacesegment(unsigned char* start, unsigned char* end, int* inbuffer, int 
             name[0] = 0;
             defid(name, &p);
             if ((!cparams.prm_cplusplus || name[0] != 'R' || name[1] != '\0' || *p != '"') &&
-                (sp = (DEFSTRUCT*)search(name, defsyms)) != 0 && !sp->undefined && q[-1] != REPLACED_ALREADY &&
+                (sym = (DEFSTRUCT*)search(name, defsyms)) != 0 && !sym->undefined && q[-1] != REPLACED_ALREADY &&
                 !ppNumber(start, q - 1))
             {
-                if (sp->argcount)
+                if (sym->argcount)
                 {
                     unsigned char *r, *s;
                     int count = 0;
@@ -1994,7 +1994,7 @@ int replacesegment(unsigned char* start, unsigned char* end, int* inbuffer, int 
                         goto join;
                     }
                     p = q;
-                    if (sp->argcount > 1)
+                    if (sym->argcount > 1)
                     {
                         do
                         {
@@ -2031,7 +2031,7 @@ int replacesegment(unsigned char* start, unsigned char* end, int* inbuffer, int 
                             }
                             macro[rv + size] = 0;
                             expandedargs[count++] = (unsigned char*)litlate((char*)macro);
-                        } while (*p && *p++ == ',' && count != sp->argcount - 1);
+                        } while (*p && *p++ == ',' && count != sym->argcount - 1);
                     }
                     else
                     {
@@ -2041,13 +2041,13 @@ int replacesegment(unsigned char* start, unsigned char* end, int* inbuffer, int 
                         if (*p == ')')
                             p++;
                     }
-                    if (*(p - 1) != ')' || count != sp->argcount - 1)
+                    if (*(p - 1) != ')' || count != sym->argcount - 1)
                     {
-                        if (count == sp->argcount - 1 && (cparams.prm_c99 || cparams.prm_cplusplus) && (sp->varargs))
+                        if (count == sym->argcount - 1 && (cparams.prm_c99 || cparams.prm_cplusplus) && (sym->varargs))
                         {
                             unsigned char* q = varargs;
                             int nestedparen = 0;
-                            if (!(sp->varargs))
+                            if (!(sym->varargs))
                             {
                                 freeMacroBuffer(macro);
                                 return INT_MIN;
@@ -2063,7 +2063,7 @@ int replacesegment(unsigned char* start, unsigned char* end, int* inbuffer, int 
                             *q = 0;
                             p++;
                         }
-                        if (*(p - 1) != ')' || count != sp->argcount - 1)
+                        if (*(p - 1) != ')' || count != sym->argcount - 1)
                         {
                             if (!*(p) || !(*(p - 1)))
                             {
@@ -2075,9 +2075,9 @@ int replacesegment(unsigned char* start, unsigned char* end, int* inbuffer, int 
                             return INT_MIN;
                         }
                     }
-                    strcpy((char*)macro, sp->string);
+                    strcpy((char*)macro, sym->string);
                     if (count != 0 || varargs[0])
-                        if (!defreplaceargs(macro, count, (unsigned char**)sp->args, args, expandedargs, varargs))
+                        if (!defreplaceargs(macro, count, (unsigned char**)sym->args, args, expandedargs, varargs))
                         {
                             freeMacroBuffer(macro);
                             return INT_MIN;
@@ -2096,14 +2096,14 @@ int replacesegment(unsigned char* start, unsigned char* end, int* inbuffer, int 
                 }
                 else
                 {
-                    strcpy((char*)macro, sp->string);
+                    strcpy((char*)macro, sym->string);
                 }
-                sp->preprocessing = true;
+                sym->preprocessing = true;
                 SetupAlreadyReplaced(macro);
                 size = strlen((char*)macro);
                 if ((rv1 = definsert(start, p, q, macro, macro, totallen - *inbuffer, p - q)) < -MACRO_REPLACE_SIZE)
                 {
-                    sp->preprocessing = false;
+                    sym->preprocessing = false;
                     freeMacroBuffer(macro);
                     return rv1;
                 }
@@ -2113,7 +2113,7 @@ int replacesegment(unsigned char* start, unsigned char* end, int* inbuffer, int 
                 p += insize;
                 insize = 0;
                 rv = replacesegment(q, p, &insize, totallen, &p);
-                sp->preprocessing = false;
+                sym->preprocessing = false;
                 if (rv < -MACRO_REPLACE_SIZE)
                 {
                     freeMacroBuffer(macro);

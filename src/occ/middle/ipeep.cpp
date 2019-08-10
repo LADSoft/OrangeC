@@ -113,7 +113,7 @@ static void scan_gotos(QUAD* head)
                         if (ok)
                         {
                             head->dc.opcode = i_goto;
-                            head->dc.left = head->dc.right = NULL;
+                            head->dc.left = head->dc.right = nullptr;
                             head->temps &= ~(TEMP_LEFT | TEMP_RIGHT);
                         }
                         else

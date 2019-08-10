@@ -52,7 +52,7 @@ static void ScanVarStrength(INSTRUCTIONLIST* l, IMODE* multiplier, int tnum, int
     while (l)
     {
         IMODE* oldMult = multiplier;
-        IMODE* ans = NULL;
+        IMODE* ans = nullptr;
         QUAD* head = l->ins;
         switch (head->dc.opcode)
         {
@@ -203,7 +203,7 @@ static void ScanStrength(void)
                 vars = sets->vars;
                 while (vars)
                 {
-                    ScanVarStrength(tempInfo[vars->data]->instructionUses, NULL, vars->data, vars->data, sets->vars);
+                    ScanVarStrength(tempInfo[vars->data]->instructionUses, nullptr, vars->data, vars->data, sets->vars);
                     vars = vars->next;
                 }
                 sets = sets->next;
@@ -311,7 +311,7 @@ static IMODE* StrengthConstant(QUAD* head, IMODE* im1, IMODE* im2, int size)
         if (im1->offset->v.i == 0)
         {
             im2 = im1;
-            im1 = NULL;
+            im1 = nullptr;
             ins->dc.opcode = i_assn;
         }
         else

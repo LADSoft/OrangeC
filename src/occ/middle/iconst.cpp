@@ -96,8 +96,6 @@ static void setFloatZero(QUAD* d)
 {
     IMODE* ip;
     FPF val;
-    memset(&val, 0, sizeof(val));
-    val.SetZero(0);
     ip = make_fimmed(ISZ_LDOUBLE, val);
     d->dc.left = ip;
     d->dc.right = 0;

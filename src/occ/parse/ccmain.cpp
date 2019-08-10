@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "compiler.h"
@@ -38,13 +38,14 @@ extern int optflags;
 extern LIST* nonSysIncludeFiles;
 
 #ifdef _WIN32
-extern "C" {
+extern "C"
+{
     char* __stdcall GetModuleFileNameA(int handle, char* buf, int size);
 }
 #endif
 
 #ifdef HAVE_UNISTD_H
-#include <unistd.h>
+#    include <unistd.h>
 #endif
 
 #ifdef PARSER_ONLY
@@ -439,11 +440,11 @@ void compile(bool global)
     if (chosenAssembler->outcode_init)
         chosenAssembler->outcode_init();
     if (chosenAssembler->enter_filename)
-        chosenAssembler->enter_filename((char *)clist->data);
+        chosenAssembler->enter_filename((char*)clist->data);
     if (cparams.prm_debug && chosenDebugger && chosenDebugger->init)
         chosenDebugger->init();
     if (cparams.prm_browse && chosenDebugger && chosenDebugger->init_browsedata)
-        chosenDebugger->init_browsedata((char *)clist->data);
+        chosenDebugger->init_browsedata((char*)clist->data);
     browse_init();
     browse_startfile(infile, 0);
     if (cparams.prm_assemble)
@@ -464,7 +465,7 @@ void compile(bool global)
     else
     {
 #ifndef PARSER_ONLY
-        asm_header((char *)clist->data, version);
+        asm_header((char*)clist->data, version);
 #endif
         lex = getsym();
         if (lex)
@@ -538,7 +539,7 @@ int main(int argc, char* argv[])
 
     if (chosenAssembler->Args)
     {
-        CMDLIST* newArgs = (CMDLIST *)calloc(sizeof(Args) + sizeof(Args[0]) * chosenAssembler->ArgCount, 1);
+        CMDLIST* newArgs = (CMDLIST*)calloc(sizeof(Args) + sizeof(Args[0]) * chosenAssembler->ArgCount, 1);
         if (newArgs)
         {
             memcpy(&newArgs[0], chosenAssembler->Args, chosenAssembler->ArgCount * sizeof(Args[0]));
@@ -553,7 +554,7 @@ int main(int argc, char* argv[])
     if (clist && clist->next)
         multipleFiles = true;
 #ifdef PARSER_ONLY
-    strcpy(buffer, (char *)clist->data);
+    strcpy(buffer, (char*)clist->data);
     strcpy(realOutFile, outfile);
     outputfile(realOutFile, buffer, ".ods");
     if (!ccDBOpen(realOutFile))
@@ -567,7 +568,7 @@ int main(int argc, char* argv[])
     while (clist)
     {
         cparams.prm_cplusplus = false;
-        strcpy(buffer, (char *)clist->data);
+        strcpy(buffer, (char*)clist->data);
 #ifndef PARSER_ONLY
         if (buffer[0] == '-')
             strcpy(buffer, "a.c");
@@ -636,7 +637,7 @@ int main(int argc, char* argv[])
         {
             preprocini(infile, inputFile);
             if (chosenAssembler->enter_filename)
-                chosenAssembler->enter_filename((char *)clist->data);
+                chosenAssembler->enter_filename((char*)clist->data);
             MakeStubs();
         }
         else

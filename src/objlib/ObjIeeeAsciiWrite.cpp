@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "ObjFactory.h"
@@ -28,7 +28,7 @@
 #include <deque>
 
 char ObjIeeeAscii::lineend[2] = {10};
-template<typename T>
+template <typename T>
 inline constexpr int min(T x, T y)
 {
     return x < y ? x : y;
@@ -91,7 +91,7 @@ ObjString ObjIeeeAscii::GetTypeIndex(ObjType* Type)
 {
     if (Type->GetType() < ObjType::eVoid)
         return ObjUtil::ToHex(Type->GetIndex());
-        return ObjUtil::ToHex((int)Type->GetType());
+    return ObjUtil::ToHex((int)Type->GetType());
 }
 void ObjIeeeAscii::RenderStructure(ObjType* Type)
 {
@@ -317,8 +317,7 @@ void ObjIeeeAscii::RenderSection(ObjSection* Section)
         int n = Section->GetVirtualType()->GetIndex();
         if (n < ObjType::eReservedTop + 1)
             n = Section->GetVirtualType()->GetType();
-        RenderString("ATR" + ObjUtil::ToHex(Section->GetIndex()) + ",T" + ObjUtil::ToHex(n) +
-                     ".");
+        RenderString("ATR" + ObjUtil::ToHex(Section->GetIndex()) + ",T" + ObjUtil::ToHex(n) + ".");
         endl();
     }
     if (quals & ObjSection::absolute)

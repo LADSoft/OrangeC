@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <stdio.h>
@@ -165,7 +165,7 @@ static void ScanVarStrength(INSTRUCTIONLIST* l, IMODE* multiplier, int tnum, int
                 ILIST* v = vars;
                 while (v)
                 {
-                    USES_STRENGTH* s1 = (USES_STRENGTH *)tAlloc(sizeof(USES_STRENGTH));
+                    USES_STRENGTH* s1 = (USES_STRENGTH*)tAlloc(sizeof(USES_STRENGTH));
                     IMODE* rv = InitTempOpt((ans)->size, (ans)->size);
                     int n = rv->offset->v.sp->value.i;
                     s1->next = tempInfo[v->data]->sl;
@@ -266,7 +266,7 @@ void ReduceStrengthAssign(QUAD* head)
             {
                 while (sla && sll)
                 {
-                    QUAD* ins = (QUAD *)Alloc(sizeof(QUAD));
+                    QUAD* ins = (QUAD*)Alloc(sizeof(QUAD));
                     ins->dc.opcode = head->dc.opcode;
                     ins->ans = tempInfo[sla->strengthName]->enode->v.sp->imvalue;
                     ins->dc.left = tempInfo[sll->strengthName]->enode->v.sp->imvalue;
@@ -298,7 +298,7 @@ static IMODE* StrengthConstant(QUAD* head, IMODE* im1, IMODE* im2, int size)
             im2 = q->dc.left;
         }
 
-    ins = (QUAD *)Alloc(sizeof(QUAD));
+    ins = (QUAD*)Alloc(sizeof(QUAD));
     if (im2->mode == i_immed)
     {
         IMODE* im = im1;
@@ -353,7 +353,7 @@ static IMODE* StrengthConstant(QUAD* head, IMODE* im1, IMODE* im2, int size)
         }
         else
         {
-            QUAD* q2 = (QUAD *)Alloc(sizeof(QUAD));
+            QUAD* q2 = (QUAD*)Alloc(sizeof(QUAD));
             *q2 = q1;
             ReplaceHashReshape((QUAD*)ins->ans, (UBYTE*)q2, DAGCOMPARE, ins_hash);
             tempInfo[ins->ans->offset->v.sp->value.i]->preSSATemp = ins->ans->offset->v.sp->value.i;
@@ -422,7 +422,7 @@ static void ReduceStrengthAdd(QUAD* head)
             {
                 while (sla && sll)
                 {
-                    QUAD* ins = (QUAD *)Alloc(sizeof(QUAD));
+                    QUAD* ins = (QUAD*)Alloc(sizeof(QUAD));
                     ins->dc.opcode = head->dc.opcode;
                     ins->ans = tempInfo[sla->strengthName]->enode->v.sp->imvalue;
                     ins->dc.left = tempInfo[sll->strengthName]->enode->v.sp->imvalue;
@@ -447,7 +447,7 @@ static void ReduceStrengthAdd(QUAD* head)
             {
                 while (sla && slr)
                 {
-                    QUAD* ins = (QUAD *)Alloc(sizeof(QUAD));
+                    QUAD* ins = (QUAD*)Alloc(sizeof(QUAD));
                     ins->dc.opcode = head->dc.opcode;
                     ins->ans = tempInfo[sla->strengthName]->enode->v.sp->imvalue;
                     ins->dc.right = tempInfo[slr->strengthName]->enode->v.sp->imvalue;
@@ -475,7 +475,7 @@ static int HandlePhiInitVar(QUAD* insin, USES_STRENGTH* sl, int tnum)
     rv = StrengthConstant(head, rv, sl->multiplier, tempInfo[tnum]->size);
     if (rv->mode == i_immed)
     {
-        QUAD* ins = (QUAD *)Alloc(sizeof(QUAD));
+        QUAD* ins = (QUAD*)Alloc(sizeof(QUAD));
         int n;
         ins->dc.left = rv;
         ins->ans = InitTempOpt(tempInfo[tnum]->size, tempInfo[tnum]->size);
@@ -500,8 +500,8 @@ static void ReduceStrengthPhi(QUAD* head)
         while (sl)
         {
             struct _phiblock *pb = pd->temps, **newpb;
-            QUAD* ins = (QUAD *)Alloc(sizeof(QUAD));
-            PHIDATA* newpd = (PHIDATA *)Alloc(sizeof(PHIDATA));
+            QUAD* ins = (QUAD*)Alloc(sizeof(QUAD));
+            PHIDATA* newpd = (PHIDATA*)Alloc(sizeof(PHIDATA));
             ins->dc.opcode = i_phi;
             ins->dc.v.phi = newpd;
             newpd->T0 = sl->strengthName;
@@ -511,7 +511,7 @@ static void ReduceStrengthPhi(QUAD* head)
             {
                 USES_STRENGTH* sl1 = tempInfo[pb->Tn]->sl;
                 int i;
-                *newpb = (_phiblock *)Alloc(sizeof(struct _phiblock));
+                *newpb = (_phiblock*)Alloc(sizeof(struct _phiblock));
                 (*newpb)->block = pb->block;
                 for (i = 0; sl1 && i < c; i++)
                     sl1 = sl1->next;

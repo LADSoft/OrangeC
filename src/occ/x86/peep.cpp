@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <stdio.h>
@@ -174,7 +174,7 @@ OCODE* gen_code(int op, AMODE* ap1, AMODE* ap2)
     add_peep(newitem);
     return newitem;
 }
-OCODE *gen_code_sse(int ops, int opd, int sz, AMODE *ap1, AMODE *ap2)
+OCODE* gen_code_sse(int ops, int opd, int sz, AMODE* ap1, AMODE* ap2)
 {
     int op = opd;
     if (sz == ISZ_FLOAT || sz == ISZ_IFLOAT || sz == ISZ_CFLOAT)
@@ -494,8 +494,9 @@ OCODE* peep_test(OCODE* ip)
             cause a
         * stop in the search. The Line directives and the void opcodes are ignored.
         */
-        for (ip2 = ip->back; ip2 && ((e_op)ip2->opcode == op_line || (e_op)ip2->opcode == op_void || (e_op)ip2->opcode == op_blockstart ||
-                                     (e_op)ip2->opcode == op_blockend || (e_op)ip2->opcode == op_varstart);
+        for (ip2 = ip->back;
+             ip2 && ((e_op)ip2->opcode == op_line || (e_op)ip2->opcode == op_void || (e_op)ip2->opcode == op_blockstart ||
+                     (e_op)ip2->opcode == op_blockend || (e_op)ip2->opcode == op_varstart);
              ip2 = ip2->back)
             ;
         if (!ip2)
@@ -1250,7 +1251,7 @@ void peep_and(OCODE* ip)
             else if (ip2->opcode == op_and && ip->oper2->mode == am_immed && ip2->oper2->mode == am_immed &&
                      isintconst(ip->oper2->offset) && isintconst(ip2->oper2->offset))
             {
-		ip2->oper2 = aimmed(ip2->oper2->offset->v.i & ip->oper2->offset->v.i);
+                ip2->oper2 = aimmed(ip2->oper2->offset->v.i & ip->oper2->offset->v.i);
                 remove_peep_entry(ip);
                 return;
             }
@@ -1566,9 +1567,9 @@ void peep_call(OCODE* ip)
         }
     }
 }
-void peep_fmovs(OCODE *ip)
+void peep_fmovs(OCODE* ip)
 {
-    if (ip->oper1 && ip->oper2) // might be plain strin movsd...
+    if (ip->oper1 && ip->oper2)  // might be plain strin movsd...
         if (ip->oper1->mode == am_xmmreg && ip->oper2->mode == am_xmmreg)
             if (ip->oper1->preg == ip->oper2->preg)
             {
@@ -1576,7 +1577,7 @@ void peep_fmovs(OCODE *ip)
                 return;
             }
 }
-void peep_fld(OCODE *ip)
+void peep_fld(OCODE* ip)
 {
     // don't try to optimize complex returns
     if (ip->fwd->opcode == op_fld || ip->back->opcode == op_fld)
@@ -1599,7 +1600,6 @@ void peep_fld(OCODE *ip)
                             remove_peep_entry(ip->back->back);
                             remove_peep_entry(ip->back);
                         }
-
                     }
                 }
             }
@@ -1666,7 +1666,7 @@ void oa_peep(void)
             switch (ip->opcode)
             {
                 case op_lock:
-                    ip = ip->fwd; // skip next instruction
+                    ip = ip->fwd;  // skip next instruction
                     break;
                 case op_mul:
                 case op_imul:

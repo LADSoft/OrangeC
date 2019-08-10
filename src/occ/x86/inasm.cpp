@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 /*
@@ -36,7 +36,7 @@ extern int prm_assembler;
 extern HASHTABLE* labelSyms;
 extern int usingEsp;
 extern InstructionParser* instructionParser;
-extern SYMBOL*theCurrentFunc;
+extern SYMBOL* theCurrentFunc;
 
 bool assembling;
 static ASMREG* regimage;
@@ -60,18 +60,18 @@ static enum e_opcode op;
 #define ERR_BAD_OPERAND_COMBO 11
 #define ERR_INVALID_USE_OF_INSTRUCTION 12
 static const char* errors[] = {"Lable expected",
-                         "Illegal address mode",
-                         "Address mode expected",
-                         "Invalid opcode",
-                         "Invalid instruction size",
-                         "Invalid index mode",
-                         "Invalid scale specifier",
-                         "Use LEA to take address of auto variable",
-                         "Too many segment specifiers",
-                         "Syntax error while parsing instruction",
-                         "Unknown operand",
-                         "Invalid combination of operands",
-                         "Invalid use of instruction"
+                               "Illegal address mode",
+                               "Address mode expected",
+                               "Invalid opcode",
+                               "Invalid instruction size",
+                               "Invalid index mode",
+                               "Invalid scale specifier",
+                               "Use LEA to take address of auto variable",
+                               "Too many segment specifiers",
+                               "Syntax error while parsing instruction",
+                               "Unknown operand",
+                               "Invalid combination of operands",
+                               "Invalid use of instruction"
 
 };
 ASMNAME directiveLst[] = {{"db", op_reserved, ISZ_UCHAR, 0},
@@ -82,37 +82,37 @@ ASMNAME directiveLst[] = {{"db", op_reserved, ISZ_UCHAR, 0},
                           {"label", op_label, 0, 0},
                           {0}};
 ASMREG reglst[] = {{"cs", am_seg, 1, ISZ_USHORT},     {"ds", am_seg, 2, ISZ_USHORT},
-                              {"es", am_seg, 3, ISZ_USHORT},     {"fs", am_seg, 4, ISZ_USHORT},
-                              {"gs", am_seg, 5, ISZ_USHORT},     {"ss", am_seg, 6, ISZ_USHORT},
-                              {"al", am_dreg, 0, ISZ_UCHAR},     {"cl", am_dreg, 1, ISZ_UCHAR},
-                              {"dl", am_dreg, 2, ISZ_UCHAR},     {"bl", am_dreg, 3, ISZ_UCHAR},
-                              {"ah", am_dreg, 4, ISZ_UCHAR},     {"ch", am_dreg, 5, ISZ_UCHAR},
-                              {"dh", am_dreg, 6, ISZ_UCHAR},     {"bh", am_dreg, 7, ISZ_UCHAR},
-                              {"ax", am_dreg, 0, ISZ_USHORT},    {"cx", am_dreg, 1, ISZ_USHORT},
-                              {"dx", am_dreg, 2, ISZ_USHORT},    {"bx", am_dreg, 3, ISZ_USHORT},
-                              {"sym", am_dreg, 4, ISZ_USHORT},    {"bp", am_dreg, 5, ISZ_USHORT},
-                              {"si", am_dreg, 6, ISZ_USHORT},    {"di", am_dreg, 7, ISZ_USHORT},
-                              {"eax", am_dreg, 0, ISZ_UINT},     {"ecx", am_dreg, 1, ISZ_UINT},
-                              {"edx", am_dreg, 2, ISZ_UINT},     {"ebx", am_dreg, 3, ISZ_UINT},
-                              {"esp", am_dreg, 4, ISZ_UINT},     {"ebp", am_dreg, 5, ISZ_UINT},
-                              {"esi", am_dreg, 6, ISZ_UINT},     {"edi", am_dreg, 7, ISZ_UINT},
-                              {"st", am_freg, 0, ISZ_LDOUBLE},   {"cr0", am_screg, 0, ISZ_UINT},
-                              {"cr1", am_screg, 1, ISZ_UINT},    {"cr2", am_screg, 2, ISZ_UINT},
-                              {"cr3", am_screg, 3, ISZ_UINT},    {"cr4", am_screg, 4, ISZ_UINT},
-                              {"cr5", am_screg, 5, ISZ_UINT},    {"cr6", am_screg, 6, ISZ_UINT},
-                              {"cr7", am_screg, 7, ISZ_UINT},    {"dr0", am_sdreg, 0, ISZ_UINT},
-                              {"dr1", am_sdreg, 1, ISZ_UINT},    {"dr2", am_sdreg, 2, ISZ_UINT},
-                              {"dr3", am_sdreg, 3, ISZ_UINT},    {"dr4", am_sdreg, 4, ISZ_UINT},
-                              {"dr5", am_sdreg, 5, ISZ_UINT},    {"dr6", am_sdreg, 6, ISZ_UINT},
-                              {"dr7", am_sdreg, 7, ISZ_UINT},    {"tr0", am_streg, 0, ISZ_UINT},
-                              {"tr1", am_streg, 1, ISZ_UINT},    {"tr2", am_streg, 2, ISZ_UINT},
-                              {"tr3", am_streg, 3, ISZ_UINT},    {"tr4", am_streg, 4, ISZ_UINT},
-                              {"tr5", am_streg, 5, ISZ_UINT},    {"tr6", am_streg, 6, ISZ_UINT},
-                              {"tr7", am_streg, 7, ISZ_UINT},    {"byte", am_ext, akw_byte, 0},
-                              {"word", am_ext, akw_word, 0},     {"dword", am_ext, akw_dword, 0},
-                              {"fword", am_ext, akw_fword, 0},   {"qword", am_ext, akw_qword, 0},
-                              {"tbyte", am_ext, akw_tbyte, 0},   {"ptr", am_ext, akw_ptr, 0},
-                              {"offset", am_ext, akw_offset, 0}, {0, 0, 0}};
+                   {"es", am_seg, 3, ISZ_USHORT},     {"fs", am_seg, 4, ISZ_USHORT},
+                   {"gs", am_seg, 5, ISZ_USHORT},     {"ss", am_seg, 6, ISZ_USHORT},
+                   {"al", am_dreg, 0, ISZ_UCHAR},     {"cl", am_dreg, 1, ISZ_UCHAR},
+                   {"dl", am_dreg, 2, ISZ_UCHAR},     {"bl", am_dreg, 3, ISZ_UCHAR},
+                   {"ah", am_dreg, 4, ISZ_UCHAR},     {"ch", am_dreg, 5, ISZ_UCHAR},
+                   {"dh", am_dreg, 6, ISZ_UCHAR},     {"bh", am_dreg, 7, ISZ_UCHAR},
+                   {"ax", am_dreg, 0, ISZ_USHORT},    {"cx", am_dreg, 1, ISZ_USHORT},
+                   {"dx", am_dreg, 2, ISZ_USHORT},    {"bx", am_dreg, 3, ISZ_USHORT},
+                   {"sym", am_dreg, 4, ISZ_USHORT},   {"bp", am_dreg, 5, ISZ_USHORT},
+                   {"si", am_dreg, 6, ISZ_USHORT},    {"di", am_dreg, 7, ISZ_USHORT},
+                   {"eax", am_dreg, 0, ISZ_UINT},     {"ecx", am_dreg, 1, ISZ_UINT},
+                   {"edx", am_dreg, 2, ISZ_UINT},     {"ebx", am_dreg, 3, ISZ_UINT},
+                   {"esp", am_dreg, 4, ISZ_UINT},     {"ebp", am_dreg, 5, ISZ_UINT},
+                   {"esi", am_dreg, 6, ISZ_UINT},     {"edi", am_dreg, 7, ISZ_UINT},
+                   {"st", am_freg, 0, ISZ_LDOUBLE},   {"cr0", am_screg, 0, ISZ_UINT},
+                   {"cr1", am_screg, 1, ISZ_UINT},    {"cr2", am_screg, 2, ISZ_UINT},
+                   {"cr3", am_screg, 3, ISZ_UINT},    {"cr4", am_screg, 4, ISZ_UINT},
+                   {"cr5", am_screg, 5, ISZ_UINT},    {"cr6", am_screg, 6, ISZ_UINT},
+                   {"cr7", am_screg, 7, ISZ_UINT},    {"dr0", am_sdreg, 0, ISZ_UINT},
+                   {"dr1", am_sdreg, 1, ISZ_UINT},    {"dr2", am_sdreg, 2, ISZ_UINT},
+                   {"dr3", am_sdreg, 3, ISZ_UINT},    {"dr4", am_sdreg, 4, ISZ_UINT},
+                   {"dr5", am_sdreg, 5, ISZ_UINT},    {"dr6", am_sdreg, 6, ISZ_UINT},
+                   {"dr7", am_sdreg, 7, ISZ_UINT},    {"tr0", am_streg, 0, ISZ_UINT},
+                   {"tr1", am_streg, 1, ISZ_UINT},    {"tr2", am_streg, 2, ISZ_UINT},
+                   {"tr3", am_streg, 3, ISZ_UINT},    {"tr4", am_streg, 4, ISZ_UINT},
+                   {"tr5", am_streg, 5, ISZ_UINT},    {"tr6", am_streg, 6, ISZ_UINT},
+                   {"tr7", am_streg, 7, ISZ_UINT},    {"byte", am_ext, akw_byte, 0},
+                   {"word", am_ext, akw_word, 0},     {"dword", am_ext, akw_dword, 0},
+                   {"fword", am_ext, akw_fword, 0},   {"qword", am_ext, akw_qword, 0},
+                   {"tbyte", am_ext, akw_tbyte, 0},   {"ptr", am_ext, akw_ptr, 0},
+                   {"offset", am_ext, akw_offset, 0}, {0, 0, 0}};
 
 typedef struct
 {
@@ -252,7 +252,7 @@ static EXPRESSION* inasm_ident(void)
             sym->realdeclline = lex->realline;
             sym->declfilenum = lex->filenum;
             sym->attribs.inheritable.used = true;
-            sym->tp = (TYPE*)(TYPE *)beLocalAlloc(sizeof(TYPE));
+            sym->tp = (TYPE*)(TYPE*)beLocalAlloc(sizeof(TYPE));
             sym->tp->type = bt_unsigned;
             sym->tp->bits = sym->tp->startbit = -1;
             sym->offset = codeLabel++;
@@ -328,7 +328,7 @@ static EXPRESSION* inasm_label(void)
         sym->declline = sym->origdeclline = lex->line;
         sym->realdeclline = lex->realline;
         sym->declfilenum = lex->filenum;
-        sym->tp = (TYPE*)(TYPE *)beLocalAlloc(sizeof(TYPE));
+        sym->tp = (TYPE*)(TYPE*)beLocalAlloc(sizeof(TYPE));
         sym->tp->type = bt_unsigned;
         sym->tp->bits = sym->tp->startbit = -1;
         sym->offset = codeLabel++;

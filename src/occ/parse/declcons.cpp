@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "compiler.h"
@@ -105,7 +105,7 @@ MEMBERINITIALIZERS* GetMemberInitializers(LEXEME** lex2, SYMBOL* funcsp, SYMBOL*
             lex = FindClass(lex, funcsp, &sym);
             LEXEME** mylex;
             char name[1024];
-            *cur = (MEMBERINITIALIZERS *)Alloc(sizeof(MEMBERINITIALIZERS));
+            *cur = (MEMBERINITIALIZERS*)Alloc(sizeof(MEMBERINITIALIZERS));
             (*cur)->line = lex->line;
             (*cur)->file = lex->file;
             mylex = &(*cur)->initData;
@@ -121,7 +121,7 @@ MEMBERINITIALIZERS* GetMemberInitializers(LEXEME** lex2, SYMBOL* funcsp, SYMBOL*
             if (MATCHKW(lex, lt))
             {
                 int paren = 0, tmpl = 0;
-                *mylex = (LEXEME *)Alloc(sizeof(*(*cur)->initData));
+                *mylex = (LEXEME*)Alloc(sizeof(*(*cur)->initData));
                 **mylex = *lex;
                 (*mylex)->prev = last;
                 last = *mylex;
@@ -139,7 +139,7 @@ MEMBERINITIALIZERS* GetMemberInitializers(LEXEME** lex2, SYMBOL* funcsp, SYMBOL*
                         tmpl--;
                     if (lex->type == l_id)
                         lex->value.s.a = litlate(lex->value.s.a);
-                    *mylex = (LEXEME *)Alloc(sizeof(*(*cur)->initData));
+                    *mylex = (LEXEME*)Alloc(sizeof(*(*cur)->initData));
                     if (MATCHKW(lex, rightshift))
                     {
                         lex = getGTSym(lex);
@@ -156,7 +156,7 @@ MEMBERINITIALIZERS* GetMemberInitializers(LEXEME** lex2, SYMBOL* funcsp, SYMBOL*
                 }
                 if (MATCHKW(lex, gt))
                 {
-                    *mylex = (LEXEME *)Alloc(sizeof(*(*cur)->initData));
+                    *mylex = (LEXEME*)Alloc(sizeof(*(*cur)->initData));
                     **mylex = *lex;
                     (*mylex)->prev = last;
                     last = *mylex;
@@ -168,7 +168,7 @@ MEMBERINITIALIZERS* GetMemberInitializers(LEXEME** lex2, SYMBOL* funcsp, SYMBOL*
             {
                 enum e_kw open = KW(lex), close = open == openpa ? closepa : end;
                 int paren = 0;
-                *mylex = (LEXEME *)Alloc(sizeof(*(*cur)->initData));
+                *mylex = (LEXEME*)Alloc(sizeof(*(*cur)->initData));
                 **mylex = *lex;
                 (*mylex)->prev = last;
                 last = *mylex;
@@ -182,7 +182,7 @@ MEMBERINITIALIZERS* GetMemberInitializers(LEXEME** lex2, SYMBOL* funcsp, SYMBOL*
                         paren--;
                     if (lex->type == l_id)
                         lex->value.s.a = litlate(lex->value.s.a);
-                    *mylex = (LEXEME *)Alloc(sizeof(*(*cur)->initData));
+                    *mylex = (LEXEME*)Alloc(sizeof(*(*cur)->initData));
                     **mylex = *lex;
                     (*mylex)->prev = last;
                     last = *mylex;
@@ -191,7 +191,7 @@ MEMBERINITIALIZERS* GetMemberInitializers(LEXEME** lex2, SYMBOL* funcsp, SYMBOL*
                 }
                 if (MATCHKW(lex, close))
                 {
-                    *mylex = (LEXEME *)Alloc(sizeof(*(*cur)->initData));
+                    *mylex = (LEXEME*)Alloc(sizeof(*(*cur)->initData));
                     **mylex = *lex;
                     (*mylex)->prev = last;
                     last = *mylex;
@@ -262,7 +262,7 @@ SYMBOL* insertFunc(SYMBOL* sp, SYMBOL* ovl)
         SetLinkerNames(ovl, lk_cdecl);
     if (!funcs)
     {
-        TYPE* tp = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
+        TYPE* tp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
         tp->type = bt_aggregate;
         tp->rootType = tp;
         funcs = makeID(sc_overloads, tp, 0, ovl->name);
@@ -291,14 +291,14 @@ SYMBOL* insertFunc(SYMBOL* sp, SYMBOL* ovl)
 static SYMBOL* declareDestructor(SYMBOL* sp)
 {
     SYMBOL* rv;
-    SYMBOL*func, *sp1;
-    TYPE* tp = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
+    SYMBOL *func, *sp1;
+    TYPE* tp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
     VBASEENTRY* e;
     BASECLASS* b;
     SYMLIST* hr;
     tp->type = bt_func;
     tp->size = getSize(bt_pointer);
-    tp->btp = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
+    tp->btp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
     tp->btp->type = bt_void;
     tp->rootType = tp;
     tp->btp->rootType = tp->btp;
@@ -417,11 +417,11 @@ static bool constCopyConstructor(SYMBOL* sp)
 }
 static SYMBOL* declareConstructor(SYMBOL* sp, bool deflt, bool move)
 {
-    SYMBOL*func, *sp1;
-    TYPE* tp = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
+    SYMBOL *func, *sp1;
+    TYPE* tp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
     tp->type = bt_func;
     tp->size = getSize(bt_pointer);
-    tp->btp = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
+    tp->btp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
     tp->btp->type = bt_void;
     tp->rootType = tp;
     tp->btp->rootType = tp->btp;
@@ -430,9 +430,9 @@ static SYMBOL* declareConstructor(SYMBOL* sp, bool deflt, bool move)
     func->attribs.inheritable.linkage2 = sp->attribs.inheritable.linkage2;
     sp1 = makeID(sc_parameter, nullptr, nullptr, AnonymousName());
     tp->syms = CreateHashTable(1);
-    tp->syms->table[0] = (SYMLIST*)(SYMLIST *)Alloc(sizeof(SYMLIST));
-    tp->syms->table[0]->p = (SYMBOL *)sp1;
-    sp1->tp = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
+    tp->syms->table[0] = (SYMLIST*)(SYMLIST*)Alloc(sizeof(SYMLIST));
+    tp->syms->table[0]->p = (SYMBOL*)sp1;
+    sp1->tp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
     if (deflt)
     {
         sp1->tp->type = bt_void;
@@ -443,13 +443,13 @@ static SYMBOL* declareConstructor(SYMBOL* sp, bool deflt, bool move)
         TYPE* tpx = sp1->tp;
         tpx->type = move ? bt_rref : bt_lref;
         tpx->size = getSize(bt_pointer);
-        tpx->btp = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
+        tpx->btp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
         tpx = tpx->btp;
         if (constCopyConstructor(sp))
         {
             tpx->type = bt_const;
             tpx->size = getSize(bt_pointer);
-            tpx->btp = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
+            tpx->btp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
             tpx = tpx->btp;
         }
         *tpx = *basetype(sp->tp);
@@ -490,18 +490,18 @@ static bool constAssignmentOp(SYMBOL* sp, bool move)
 }
 static SYMBOL* declareAssignmentOp(SYMBOL* sp, bool move)
 {
-    SYMBOL*func, *sp1;
-    TYPE* tp = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
+    SYMBOL *func, *sp1;
+    TYPE* tp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
     TYPE* tpx;
     tp->type = bt_func;
     tp->size = getSize(bt_pointer);
-    tp->btp = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
-    tpx = tp->btp = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
+    tp->btp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
+    tpx = tp->btp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
     if (isstructured(sp->tp))
     {
         tpx->type = move ? bt_rref : bt_lref;
         tpx->size = getSize(bt_pointer);
-        tpx = tpx->btp = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
+        tpx = tpx->btp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
     }
     *(tpx) = *basetype(sp->tp);
     UpdateRootTypes(tp);
@@ -509,18 +509,18 @@ static SYMBOL* declareAssignmentOp(SYMBOL* sp, bool move)
     func->attribs.inheritable.linkage2 = sp->attribs.inheritable.linkage2;
     sp1 = makeID(sc_parameter, nullptr, nullptr, AnonymousName());
     tp->syms = CreateHashTable(1);
-    tp->syms->table[0] = (SYMLIST*)(SYMLIST *)Alloc(sizeof(SYMLIST));
-    tp->syms->table[0]->p = (SYMBOL *)sp1;
-    sp1->tp = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
+    tp->syms->table[0] = (SYMLIST*)(SYMLIST*)Alloc(sizeof(SYMLIST));
+    tp->syms->table[0]->p = (SYMBOL*)sp1;
+    sp1->tp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
     tpx = sp1->tp;
     tpx->type = move ? bt_rref : bt_lref;
-    tpx->btp = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
+    tpx->btp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
     tpx = tpx->btp;
     if (constAssignmentOp(sp, move))
     {
         tpx->type = bt_const;
         tpx->size = getSize(bt_pointer);
-        tpx->btp = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
+        tpx->btp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
         tpx = tpx->btp;
     }
     *tpx = *basetype(sp->tp);
@@ -621,7 +621,7 @@ SYMBOL* getCopyCons(SYMBOL* base, bool move)
         SYMLIST* hr = basetype(ovl->tp)->syms->table[0];
         while (hr)
         {
-            SYMBOL*sym = hr->p, *sym1 = nullptr;
+            SYMBOL *sym = hr->p, *sym1 = nullptr;
             SYMLIST* hrArgs = basetype(sym->tp)->syms->table[0];
             sym = (SYMBOL*)hrArgs->p;
             if (sym->thisPtr)
@@ -668,7 +668,7 @@ static SYMBOL* GetCopyAssign(SYMBOL* base, bool move)
         SYMLIST* hr = basetype(ovl->tp)->syms->table[0];
         while (hr)
         {
-            SYMBOL*sym = hr->p, *sym1 = nullptr;
+            SYMBOL *sym = hr->p, *sym1 = nullptr;
             SYMLIST* hrArgs = basetype(sym->tp)->syms->table[0];
             sym = (SYMBOL*)hrArgs->p;
             if (sym->thisPtr)
@@ -1308,7 +1308,7 @@ static void shimDefaultConstructor(SYMBOL* sp, SYMBOL* cons)
             STATEMENT* st;
             EXPRESSION* thisptr = varNode(en_auto, hr->p);
             EXPRESSION* e1;
-            FUNCTIONCALL* params = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
+            FUNCTIONCALL* params = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
             memset(&b, 0, sizeof(BLOCKDATA));
             hr->p->offset = chosenAssembler->arch->retblocksize;
             deref(&stdpointer, &thisptr);
@@ -1316,7 +1316,7 @@ static void shimDefaultConstructor(SYMBOL* sp, SYMBOL* cons)
             syms = localNameSpace->valueData->syms;
             localNameSpace->valueData->syms = basetype(consfunc->tp)->syms;
             params->thisptr = thisptr;
-            params->thistp = (TYPE *)Alloc(sizeof(TYPE));
+            params->thistp = (TYPE*)Alloc(sizeof(TYPE));
             params->thistp->type = bt_pointer;
             params->thistp->btp = sp->tp;
             params->thistp->rootType = params->thistp;
@@ -1328,8 +1328,8 @@ static void shimDefaultConstructor(SYMBOL* sp, SYMBOL* cons)
             AdjustParams(match, basetype(match->tp)->syms->table[0], &params->arguments, false, true);
             if (sp->vbaseEntries)
             {
-                INITLIST *x = (INITLIST*)(INITLIST *)Alloc(sizeof(INITLIST)), **p;
-                x->tp = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
+                INITLIST *x = (INITLIST*)(INITLIST*)Alloc(sizeof(INITLIST)), **p;
+                x->tp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
                 x->tp->type = bt_int;
                 x->tp->rootType = x->tp;
                 x->tp->size = getSize(bt_int);
@@ -1576,7 +1576,8 @@ static void genConsData(BLOCKDATA* b, SYMBOL* cls, MEMBERINITIALIZERS* mi, SYMBO
     }
 }
 static void genConstructorCall(BLOCKDATA* b, SYMBOL* cls, MEMBERINITIALIZERS* mi, SYMBOL* member, int memberOffs, bool top,
-                               EXPRESSION* thisptr, EXPRESSION* otherptr, SYMBOL* parentCons, bool baseClass, bool doCopy, bool useDefault)
+                               EXPRESSION* thisptr, EXPRESSION* otherptr, SYMBOL* parentCons, bool baseClass, bool doCopy,
+                               bool useDefault)
 {
     STATEMENT* st = nullptr;
     if (cls != member && member->init)
@@ -1609,7 +1610,7 @@ static void genConstructorCall(BLOCKDATA* b, SYMBOL* cls, MEMBERINITIALIZERS* mi
             }
             else
             {
-                TYPE* tp = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
+                TYPE* tp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
                 EXPRESSION* other = exprNode(en_add, otherptr, intNode(en_c_i, memberOffs));
                 if (basetype(parentCons->tp)->type == bt_rref)
                     other = exprNode(en_not_lvalue, other, nullptr);
@@ -1617,21 +1618,21 @@ static void genConstructorCall(BLOCKDATA* b, SYMBOL* cls, MEMBERINITIALIZERS* mi
                 {
                     tp->type = bt_const;
                     tp->size = basetype(member->tp)->size;
-    //                tp->btp = member->tp;
-                    tp->btp = (TYPE *)Alloc(sizeof(TYPE));
+                    //                tp->btp = member->tp;
+                    tp->btp = (TYPE*)Alloc(sizeof(TYPE));
                     *tp->btp = *member->tp;
-    //                tp->rootType = member->tp->rootType;
+                    //                tp->rootType = member->tp->rootType;
                     UpdateRootTypes(tp);
                     tp->btp->lref = true;
                     tp->btp->rref = false;
                 }
                 else
                 {
-                    tp = (TYPE *) Alloc(sizeof(TYPE));
+                    tp = (TYPE*)Alloc(sizeof(TYPE));
                     *tp = *member->tp;
                     tp->lref = true;
                     tp->rref = false;
-    //                tp = member->tp;
+                    //                tp = member->tp;
                 }
                 //			member->tp->lref = true;
                 if (!callConstructorParam(&ctype, &exp, tp, other, top, false, false, false))
@@ -1648,7 +1649,7 @@ static void genConstructorCall(BLOCKDATA* b, SYMBOL* cls, MEMBERINITIALIZERS* mi
             }
             else
             {
-                TYPE* tp = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
+                TYPE* tp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
                 EXPRESSION* other = exprNode(en_add, otherptr, intNode(en_c_i, memberOffs));
                 if (basetype(parentCons->tp)->type == bt_rref)
                     other = exprNode(en_not_lvalue, other, nullptr);
@@ -1656,21 +1657,21 @@ static void genConstructorCall(BLOCKDATA* b, SYMBOL* cls, MEMBERINITIALIZERS* mi
                 {
                     tp->type = bt_const;
                     tp->size = basetype(member->tp)->size;
-    //                tp->btp = member->tp;
-                    tp->btp = (TYPE *)Alloc(sizeof(TYPE));
+                    //                tp->btp = member->tp;
+                    tp->btp = (TYPE*)Alloc(sizeof(TYPE));
                     *tp->btp = *member->tp;
-    //                tp->rootType = member->tp->rootType;
+                    //                tp->rootType = member->tp->rootType;
                     UpdateRootTypes(tp);
                     tp->btp->rref = true;
                     tp->btp->lref = false;
                 }
                 else
                 {
-                    tp = (TYPE *)Alloc(sizeof(TYPE));
+                    tp = (TYPE*)Alloc(sizeof(TYPE));
                     *tp = *member->tp;
                     tp->rref = true;
                     tp->lref = false;
-    //                tp = member->tp;
+                    //                tp = member->tp;
                 }
                 //			member->tp->rref = true;
                 if (!callConstructorParam(&ctype, &exp, tp, other, top, false, false, false))
@@ -1699,11 +1700,11 @@ static void genConstructorCall(BLOCKDATA* b, SYMBOL* cls, MEMBERINITIALIZERS* mi
             if (mi)
             {
                 INITIALIZER* init = mi->init;
-                FUNCTIONCALL* funcparams = (FUNCTIONCALL*)(FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
+                FUNCTIONCALL* funcparams = (FUNCTIONCALL*)(FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
                 INITLIST** args = &funcparams->arguments;
                 while (init && init->exp)
                 {
-                    *args = (INITLIST*)(INITLIST *)Alloc(sizeof(INITLIST));
+                    *args = (INITLIST*)(INITLIST*)Alloc(sizeof(INITLIST));
                     (*args)->tp = init->basetp;
                     (*args)->exp = init->exp;
                     args = &(*args)->next;
@@ -1711,9 +1712,9 @@ static void genConstructorCall(BLOCKDATA* b, SYMBOL* cls, MEMBERINITIALIZERS* mi
                 }
                 if (!callConstructor(&ctype, &exp, funcparams, false, nullptr, top, false, false, false, false, false))
                     errorsym(ERR_NO_DEFAULT_CONSTRUCTOR, member);
-				// previously, callConstructor can return false here, meaning that funcparams->sp is null
-				// This used to create a nullptr dereference in PromoteConstructorArgs
-				// Why this is only being found NOW is somewhat dumb, but it is.
+                // previously, callConstructor can return false here, meaning that funcparams->sp is null
+                // This used to create a nullptr dereference in PromoteConstructorArgs
+                // Why this is only being found NOW is somewhat dumb, but it is.
                 PromoteConstructorArgs(funcparams->sp, funcparams);
             }
             else
@@ -1813,7 +1814,7 @@ static STATEMENT* unshimstmt(STATEMENT* block, EXPRESSION* ths)
     STATEMENT *rv = nullptr, **last = &rv;
     while (block != nullptr)
     {
-        *last = (STATEMENT *)Alloc(sizeof(STATEMENT));
+        *last = (STATEMENT*)Alloc(sizeof(STATEMENT));
         **last = *block;
         block = *last;
         last = &(*last)->next;
@@ -1876,7 +1877,7 @@ static EXPRESSION* unshim(EXPRESSION* exp, EXPRESSION* ths)
         return exp;
     if (exp->type == en_thisshim)
         return ths;
-    nw = (EXPRESSION *)Alloc(sizeof(EXPRESSION));
+    nw = (EXPRESSION*)Alloc(sizeof(EXPRESSION));
     *nw = *exp;
     nw->left = unshim(nw->left, ths);
     nw->right = unshim(nw->right, ths);
@@ -2112,7 +2113,7 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
                             SetAlternateLex(nullptr);
                             while (shim.arguments)
                             {
-                                *xinit = (INITIALIZER*)(INITIALIZER *)Alloc(sizeof(INITIALIZER));
+                                *xinit = (INITIALIZER*)(INITIALIZER*)Alloc(sizeof(INITIALIZER));
                                 (*xinit)->basetp = shim.arguments->tp;
                                 (*xinit)->exp = shim.arguments->exp;
                                 xinit = &(*xinit)->next;
@@ -2187,7 +2188,7 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
                     }
                     while (shim.arguments)
                     {
-                        *xinit = (INITIALIZER*)(INITIALIZER *)Alloc(sizeof(INITIALIZER));
+                        *xinit = (INITIALIZER*)(INITIALIZER*)Alloc(sizeof(INITIALIZER));
                         (*xinit)->basetp = shim.arguments->tp;
                         (*xinit)->exp = shim.arguments->exp;
                         xinit = &(*xinit)->next;
@@ -2245,7 +2246,7 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
                         SetAlternateLex(nullptr);
                         while (shim.arguments)
                         {
-                            *xinit = (INITIALIZER*)(INITIALIZER *)Alloc(sizeof(INITIALIZER));
+                            *xinit = (INITIALIZER*)(INITIALIZER*)Alloc(sizeof(INITIALIZER));
                             (*xinit)->basetp = shim.arguments->tp;
                             (*xinit)->exp = shim.arguments->exp;
                             xinit = &(*xinit)->next;
@@ -2283,7 +2284,7 @@ static void allocInitializers(SYMBOL* cls, SYMBOL* cons, EXPRESSION* ths)
             sp->lastInit = sp->init;
             if (sp->init)
             {
-                sp->init = (INITIALIZER *)Alloc(sizeof(*sp->init));
+                sp->init = (INITIALIZER*)Alloc(sizeof(*sp->init));
                 *sp->init = *sp->lastInit;
                 sp->init->exp = unshim(sp->init->exp, ths);
             }
@@ -2326,8 +2327,7 @@ static void releaseInitializers(SYMBOL* cls, SYMBOL* cons)
         hr = hr->next;
     }
 }
-EXPRESSION* thunkConstructorHead(BLOCKDATA* b, SYMBOL* sym, SYMBOL* cons, HASHTABLE* syms, bool parseInitializers,
-                                 bool doCopy)
+EXPRESSION* thunkConstructorHead(BLOCKDATA* b, SYMBOL* sym, SYMBOL* cons, HASHTABLE* syms, bool parseInitializers, bool doCopy)
 {
     BASECLASS* bc;
     SYMLIST* hr = syms->table[0];
@@ -2343,7 +2343,8 @@ EXPRESSION* thunkConstructorHead(BLOCKDATA* b, SYMBOL* sym, SYMBOL* cons, HASHTA
         allocInitializers(sym, cons, thisptr);
     if (cons->memberInitializers && cons->memberInitializers->delegating)
     {
-        genConstructorCall(b, sym, cons->memberInitializers, sym, 0, false, thisptr, otherptr, cons, true, doCopy, !cons->defaulted);
+        genConstructorCall(b, sym, cons->memberInitializers, sym, 0, false, thisptr, otherptr, cons, true, doCopy,
+                           !cons->defaulted);
     }
     else
     {
@@ -2458,8 +2459,7 @@ void createConstructor(SYMBOL* sp, SYMBOL* consfunc)
     InsertInline(consfunc);
     localNameSpace->valueData->syms = syms;
 }
-void asnVirtualBases(BLOCKDATA* b, SYMBOL* sp, VBASEENTRY* vbe, EXPRESSION* thisptr, EXPRESSION* other, bool move,
-                     bool isconst)
+void asnVirtualBases(BLOCKDATA* b, SYMBOL* sp, VBASEENTRY* vbe, EXPRESSION* thisptr, EXPRESSION* other, bool move, bool isconst)
 {
     if (vbe)
     {
@@ -2496,8 +2496,8 @@ static void genAsnCall(BLOCKDATA* b, SYMBOL* cls, SYMBOL* base, int offset, EXPR
     (void)cls;
     EXPRESSION* exp = nullptr;
     STATEMENT* st;
-    FUNCTIONCALL* params = (FUNCTIONCALL*)(FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
-    TYPE* tp = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
+    FUNCTIONCALL* params = (FUNCTIONCALL*)(FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
+    TYPE* tp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
     SYMBOL* asn1;
     SYMBOL* cons = search(overloadNameTab[assign - kw_new + CI_NEW], basetype(base->tp)->syms);
     EXPRESSION* left = exprNode(en_add, thisptr, intNode(en_c_i, offset));
@@ -2527,11 +2527,11 @@ static void genAsnCall(BLOCKDATA* b, SYMBOL* cls, SYMBOL* base, int offset, EXPR
         tp->lref = true;
         tp->rref = false;
     }
-    params->arguments = (INITLIST*)(INITLIST *)Alloc(sizeof(INITLIST));
+    params->arguments = (INITLIST*)(INITLIST*)Alloc(sizeof(INITLIST));
     params->arguments->tp = tp;
     params->arguments->exp = right;
     params->thisptr = left;
-    params->thistp = (TYPE *)Alloc(sizeof(TYPE));
+    params->thistp = (TYPE*)Alloc(sizeof(TYPE));
     params->thistp->type = bt_pointer;
     params->thistp->size = getSize(bt_pointer);
     params->thistp->btp = base->tp;
@@ -2546,7 +2546,7 @@ static void genAsnCall(BLOCKDATA* b, SYMBOL* cls, SYMBOL* base, int offset, EXPR
         parm = (SYMBOL*)basetype(asn1->tp)->syms->table[0]->next->p;
         if (parm && isref(parm->tp))
         {
-            TYPE* tp1 = (TYPE *)Alloc(sizeof(TYPE));
+            TYPE* tp1 = (TYPE*)Alloc(sizeof(TYPE));
             tp1->type = bt_lref;
             tp1->size = getSize(bt_lref);
             tp1->btp = params->arguments->tp;
@@ -2762,13 +2762,13 @@ void makeArrayConsDest(TYPE** tp, EXPRESSION** exp, SYMBOL* cons, SYMBOL* dest, 
 {
     EXPRESSION* size = intNode(en_c_i, (*tp)->size);
     EXPRESSION *econs = (cons ? varNode(en_pc, cons) : nullptr), *edest = varNode(en_pc, dest);
-    FUNCTIONCALL* params = (FUNCTIONCALL*)(FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
+    FUNCTIONCALL* params = (FUNCTIONCALL*)(FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
     SYMBOL* asn1;
-    INITLIST* arg0 = (INITLIST*)(INITLIST *)Alloc(sizeof(INITLIST));  // this
-    INITLIST* arg1 = (INITLIST*)(INITLIST *)Alloc(sizeof(INITLIST));  // cons
-    INITLIST* arg2 = (INITLIST*)(INITLIST *)Alloc(sizeof(INITLIST));  // dest
-    INITLIST* arg3 = (INITLIST*)(INITLIST *)Alloc(sizeof(INITLIST));  // size
-    INITLIST* arg4 = (INITLIST*)(INITLIST *)Alloc(sizeof(INITLIST));  // count
+    INITLIST* arg0 = (INITLIST*)(INITLIST*)Alloc(sizeof(INITLIST));  // this
+    INITLIST* arg1 = (INITLIST*)(INITLIST*)Alloc(sizeof(INITLIST));  // cons
+    INITLIST* arg2 = (INITLIST*)(INITLIST*)Alloc(sizeof(INITLIST));  // dest
+    INITLIST* arg3 = (INITLIST*)(INITLIST*)Alloc(sizeof(INITLIST));  // size
+    INITLIST* arg4 = (INITLIST*)(INITLIST*)Alloc(sizeof(INITLIST));  // count
     SYMBOL* ovl = namespacesearch("__arrCall", globalNameSpace, false, false);
     params->arguments = arg0;
     arg0->next = arg1;
@@ -2806,13 +2806,12 @@ void makeArrayConsDest(TYPE** tp, EXPRESSION** exp, SYMBOL* cons, SYMBOL* dest, 
         // dest->genreffed = true;
     }
 }
-void callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* arrayElms, bool top, bool pointer,
-                    bool skipAccess)
+void callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* arrayElms, bool top, bool pointer, bool skipAccess)
 {
     SYMBOL* dest;
     SYMBOL* dest1;
     TYPE *tp = nullptr, *stp;
-    FUNCTIONCALL* params = (FUNCTIONCALL*)(FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
+    FUNCTIONCALL* params = (FUNCTIONCALL*)(FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
     SYMBOL* sym;
     if (!against)
         against = sp;
@@ -2829,7 +2828,7 @@ void callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* a
         diag("callDestructor: no this pointer");
     }
     params->thisptr = *exp;
-    params->thistp = (TYPE *)Alloc(sizeof(TYPE));
+    params->thistp = (TYPE*)Alloc(sizeof(TYPE));
     params->thistp->type = bt_pointer;
     params->thistp->size = getSize(bt_pointer);
     params->thistp->btp = sp->tp;
@@ -2864,8 +2863,8 @@ void callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* a
         {
             if (sp->vbaseEntries)
             {
-                INITLIST *x = (INITLIST*)(INITLIST *)Alloc(sizeof(INITLIST)), **p;
-                x->tp = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
+                INITLIST *x = (INITLIST*)(INITLIST*)Alloc(sizeof(INITLIST)), **p;
+                x->tp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
                 x->tp->type = bt_int;
                 x->tp->size = getSize(bt_int);
                 x->tp->rootType = x->tp;
@@ -2892,7 +2891,7 @@ void callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* a
     }
 }
 bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool checkcopy, EXPRESSION* arrayElms, bool top,
-                        bool maybeConversion, bool implicit, bool pointer, bool usesInitList, bool isAssign)
+                     bool maybeConversion, bool implicit, bool pointer, bool usesInitList, bool isAssign)
 {
     (void)checkcopy;
     TYPE* stp = *tp;
@@ -2907,7 +2906,7 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
     PerformDeferredInitialization(stp, nullptr);
     sp = basetype(*tp)->sp;
     against = top ? sp : sp->parentClass;
-    
+
     if (isAssign)
         cons = search(overloadNameTab[assign - kw_new + CI_NEW], basetype(sp->tp)->syms);
     else
@@ -2915,7 +2914,7 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
 
     if (!params)
     {
-        params = (FUNCTIONCALL*)(FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
+        params = (FUNCTIONCALL*)(FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
     }
     else
     {
@@ -2937,8 +2936,9 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
         }
     }
     params->thisptr = *exp;
-    params->thistp = (TYPE *)Alloc(sizeof(TYPE));
-    params->thistp->type = bt_pointer;params->thistp->btp = sp->tp;
+    params->thistp = (TYPE*)Alloc(sizeof(TYPE));
+    params->thistp->type = bt_pointer;
+    params->thistp->btp = sp->tp;
     params->thistp->rootType = params->thistp;
     params->thistp->size = getSize(bt_pointer);
     params->ascall = true;
@@ -2950,7 +2950,7 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
 
         if (cons1->castoperator)
         {
-            FUNCTIONCALL* oparams = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
+            FUNCTIONCALL* oparams = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
             if (!isAccessible(cons1->parentClass, cons1->parentClass, cons1, nullptr, ac_public, false))
             {
                 errorsym(ERR_CANNOT_ACCESS, cons1);
@@ -2959,7 +2959,7 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
                 error(ERR_IMPLICIT_USE_OF_EXPLICIT_CONVERSION);
             oparams->fcall = params->fcall;
             oparams->thisptr = params->arguments->exp;
-            oparams->thistp = (TYPE *)Alloc(sizeof(TYPE));
+            oparams->thistp = (TYPE*)Alloc(sizeof(TYPE));
             oparams->thistp->type = bt_pointer;
             oparams->thistp->size = getSize(bt_pointer);
             oparams->thistp->btp = cons1->parentClass->tp;
@@ -3034,13 +3034,13 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
                 SYMBOL* dest1;
                 SYMBOL* against = top ? sp : sp->parentClass;
                 TYPE* tp = nullptr;
-                FUNCTIONCALL* params = (FUNCTIONCALL*)(FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
+                FUNCTIONCALL* params = (FUNCTIONCALL*)(FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
                 if (!*exp)
                 {
                     diag("callDestructor: no this pointer");
                 }
                 params->thisptr = *exp;
-                params->thistp = (TYPE *)Alloc(sizeof(TYPE));
+                params->thistp = (TYPE*)Alloc(sizeof(TYPE));
                 params->thistp->type = bt_pointer;
                 params->thistp->size = getSize(bt_pointer);
                 params->thistp->btp = sp->tp;
@@ -3063,8 +3063,8 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
             {
                 if (sp->vbaseEntries)
                 {
-                    INITLIST *x = (INITLIST*)(INITLIST *)Alloc(sizeof(INITLIST)), **p;
-                    x->tp = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
+                    INITLIST *x = (INITLIST*)(INITLIST*)Alloc(sizeof(INITLIST)), **p;
+                    x->tp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
                     x->tp->type = bt_int;
                     x->tp->rootType = x->tp;
                     x->tp->size = getSize(bt_int);
@@ -3103,12 +3103,12 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
     return false;
 }
 bool callConstructorParam(TYPE** tp, EXPRESSION** exp, TYPE* paramTP, EXPRESSION* paramExp, bool top, bool maybeConversion,
-                             bool implicit, bool pointer)
+                          bool implicit, bool pointer)
 {
-    FUNCTIONCALL* params = (FUNCTIONCALL*)(FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
+    FUNCTIONCALL* params = (FUNCTIONCALL*)(FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
     if (paramTP && paramExp)
     {
-        params->arguments = (INITLIST*)(INITLIST *)Alloc(sizeof(INITLIST));
+        params->arguments = (INITLIST*)(INITLIST*)Alloc(sizeof(INITLIST));
         params->arguments->tp = paramTP;
         params->arguments->exp = paramExp;
     }
@@ -3117,10 +3117,10 @@ bool callConstructorParam(TYPE** tp, EXPRESSION** exp, TYPE* paramTP, EXPRESSION
 
 void PromoteConstructorArgs(SYMBOL* cons1, FUNCTIONCALL* params)
 {
-	if (!cons1)
-	{
-		return;
-	}
+    if (!cons1)
+    {
+        return;
+    }
     SYMLIST* hr = basetype(cons1->tp)->syms->table[0];
     if (hr->p->thisPtr)
         hr = hr->next;

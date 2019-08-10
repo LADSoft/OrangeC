@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 // This file contains a lot of comments that use mutexes, this is because OrangeC currently does not have C++ mutexes but once it
@@ -33,7 +33,7 @@
 #    include <windows.h>
 #    include <process.h>
 #    include <direct.h>
- #    include <io.h>
+#    include <io.h>
 #    include <share.h>
 #    include <fcntl.h>
 #    include <sys/locking.h>
@@ -196,10 +196,7 @@ bool OS::TakeJob()
     return false;
 }
 void OS::GiveJob() { sema.Post(); }
-std::string OS::JobName()
-{
-    return jobName;
-}
+std::string OS::JobName() { return jobName; }
 void OS::JobInit()
 {
     bool first = false;
@@ -223,7 +220,7 @@ void OS::JobInit()
 
         std::generate(rnd.begin(), rnd.end(), generator);
         for (auto v : rnd)
-             name += v;
+            name += v;
         v = new Variable(".OMAKESEM", name, Variable::f_recursive, Variable::o_environ);
         *VariableContainer::Instance() += v;
         first = true;
@@ -238,7 +235,7 @@ void OS::JobInit()
         tempnam(tempfile, "hi");
         if (tempfile[1] == ':')
         {
-            char *p = strrchr(tempfile, '\\');
+            char* p = strrchr(tempfile, '\\');
             if (!p)
                 tempfile[0] = 0;
             else
@@ -246,7 +243,7 @@ void OS::JobInit()
         }
         else
         {
-            char *p = getenv("TMP");
+            char* p = getenv("TMP");
             if (p && p[0])
             {
                 char q(0);
@@ -255,7 +252,7 @@ void OS::JobInit()
                 while (*p)
                 {
                     if (!q && (*p == '/' || *p == '\\'))
-                       q = *p;
+                        q = *p;
                     p++;
                 }
                 if (p[-1] != q)
@@ -264,7 +261,7 @@ void OS::JobInit()
                     *p = 0;
                 }
             }
-            else 
+            else
                 tempfile[0] = 0;
         }
         if (tempfile[0] == 0)
@@ -282,7 +279,7 @@ void OS::JobInit()
         }
         else
         {
-            fil = open(tempfile, _SH_DENYNO | O_RDWR );
+            fil = open(tempfile, _SH_DENYNO | O_RDWR);
         }
         if (fil >= 0)
         {
@@ -293,10 +290,10 @@ void OS::JobInit()
             lockf(fil, F_LOCK, 4);
 #endif
             if (!first)
-                read(fil, (char *)&count, 4);
+                read(fil, (char*)&count, 4);
             count++;
             lseek(fil, 0, SEEK_SET);
-            write(fil, (char *)&count, 4);
+            write(fil, (char*)&count, 4);
             lseek(fil, 0, SEEK_SET);
 #ifdef BCC32c
             unlock(fil, 0, 4);
@@ -305,12 +302,12 @@ void OS::JobInit()
 #endif
             char buf[256];
             sprintf(buf, "%d> ", count);
-            jobName= buf;
+            jobName = buf;
         }
     }
 }
-void OS::JobRundown() 
-{ 
+void OS::JobRundown()
+{
     sema.~Semaphore();
     if (jobFile.size())
         RemoveFile(jobFile);
@@ -679,12 +676,12 @@ std::string OS::NormalizeFileName(const std::string file)
 void OS::CreateThread(void* func, void* data)
 {
 #ifdef _WIN32
-#ifdef BCC32c
+#    ifdef BCC32c
     DWORD tid;
     CloseHandle(::CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)func, data, 0, &tid));
-#else
+#    else
     CloseHandle((HANDLE)_beginthreadex(nullptr, 0, (unsigned(CALLBACK*)(void*))func, data, 0, nullptr));
-#endif
+#    endif
 #endif
 }
 void OS::Yield()

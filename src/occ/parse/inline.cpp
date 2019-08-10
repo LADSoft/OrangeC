@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "compiler.h"
@@ -71,9 +71,9 @@ static void inInsert(SYMBOL* sym)
 {
     // assumes the symbol isn't already there...
     SYMLIST** hr = GetHashLink(didInlines, sym->decoratedName);
-    SYMLIST* added = (SYMLIST *)Alloc(sizeof(SYMLIST));
+    SYMLIST* added = (SYMLIST*)Alloc(sizeof(SYMLIST));
     sym->mainsym = nullptr;
-    added->p = (SYMBOL *)sym;
+    added->p = (SYMBOL*)sym;
     added->next = *hr;
     *hr = added;
 }
@@ -111,7 +111,8 @@ void dumpInlines(void)
                 SYMBOL* sym = (SYMBOL*)funcList->data;
                 if (((sym->isInline && sym->dumpInlineToFile) || sym->genreffed))
                 {
-                    if ((sym->parentClass && sym->parentClass->dontinstantiate && !sym->templateLevel) || sym->attribs.inheritable.linkage2 == lk_import)
+                    if ((sym->parentClass && sym->parentClass->dontinstantiate && !sym->templateLevel) ||
+                        sym->attribs.inheritable.linkage2 == lk_import)
                     {
                         sym->dontinstantiate = true;
                         InsertExtern(sym);
@@ -337,7 +338,7 @@ SYMBOL* getvc1Thunk(int offset)
 }
 void InsertInline(SYMBOL* sym)
 {
-    LIST* temp = (LIST *)Alloc(sizeof(LIST));
+    LIST* temp = (LIST*)Alloc(sizeof(LIST));
     temp->data = sym;
     if (isfunction(sym->tp))
     {
@@ -357,7 +358,7 @@ void InsertInline(SYMBOL* sym)
 void InsertInlineData(SYMBOL* sym)
 {
 
-    LIST* temp = (LIST *)Alloc(sizeof(LIST));
+    LIST* temp = (LIST*)Alloc(sizeof(LIST));
     temp->data = sym;
     if (inlineDataHead)
         inlineDataTail = inlineDataTail->next = temp;
@@ -379,7 +380,7 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
     (void)fromlval;
     if (node == 0)
         return 0;
-    temp = (EXPRESSION*)(EXPRESSION *)Alloc(sizeof(EXPRESSION));
+    temp = (EXPRESSION*)(EXPRESSION*)Alloc(sizeof(EXPRESSION));
     memcpy(temp, node, sizeof(EXPRESSION));
     switch (temp->type)
     {
@@ -635,13 +636,13 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
             {
                 INITLIST* args = fp->arguments;
                 INITLIST** p;
-                temp->v.func = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
+                temp->v.func = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
                 *temp->v.func = *fp;
                 p = &temp->v.func->arguments;
                 *p = nullptr;
                 while (args)
                 {
-                    *p = (INITLIST *)Alloc(sizeof(INITLIST));
+                    *p = (INITLIST*)Alloc(sizeof(INITLIST));
                     **p = *args;
                     (*p)->exp = inlineexpr((*p)->exp, nullptr);
                     args = args->next;
@@ -669,7 +670,7 @@ STATEMENT* inlinestmt(STATEMENT* block)
     STATEMENT *out = nullptr, **outptr = &out;
     while (block != nullptr)
     {
-        *outptr = (STATEMENT*)(STATEMENT *)Alloc(sizeof(STATEMENT));
+        *outptr = (STATEMENT*)(STATEMENT*)Alloc(sizeof(STATEMENT));
         memcpy(*outptr, block, sizeof(STATEMENT));
         (*outptr)->next = nullptr;
         switch (block->type)
@@ -708,7 +709,7 @@ STATEMENT* inlinestmt(STATEMENT* block)
             case st_passthrough:
                 if (block->lower)
                     if (chosenAssembler->inlineAsmStmt)
-                        block->lower = (STATEMENT *)(*chosenAssembler->inlineAsmStmt)(block->lower);
+                        block->lower = (STATEMENT*)(*chosenAssembler->inlineAsmStmt)(block->lower);
                 break;
             case st_nop:
                 break;
@@ -1086,7 +1087,7 @@ static void setExp(SYMBOL* sx, EXPRESSION* exp, STATEMENT*** stp)
         deref(sx->tp, &tnode);
         sx->inlineFunc.stmt = (STATEMENT*)tnode;
         tnode = exprNode(en_assign, tnode, exp);
-        **stp = (STATEMENT *)Alloc(sizeof(STATEMENT));
+        **stp = (STATEMENT*)Alloc(sizeof(STATEMENT));
         (**stp)->type = st_expr;
         (**stp)->select = tnode;
         *stp = &(**stp)->next;
@@ -1192,7 +1193,7 @@ EXPRESSION* doinline(FUNCTIONCALL* params, SYMBOL* funcsp)
     if (stmt1)
     {
         // this will kill the ret val but we don't care since we've modified params
-        stmt = (STATEMENT *)Alloc(sizeof(STATEMENT));
+        stmt = (STATEMENT*)Alloc(sizeof(STATEMENT));
         stmt->type = st_block;
         stmt->lower = stmt1;
     }

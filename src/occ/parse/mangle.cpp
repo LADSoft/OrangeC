@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "compiler.h"
@@ -31,61 +31,61 @@ extern SYMBOL* theCurrentFunc;
 extern const char* cpp_funcname_tab[];
 
 const char* overloadNameTab[] = {"$bctr",  "$bdtr",   "$bcast",  "$bnew",   "$bdel",   "$badd",   "$bsub",   "$bmul",    "$bdiv",
-                           "$bshl",  "$bshr",   "$bmod",   "$bequ",   "$bneq",   "$blt",    "$bleq",   "$bgt",     "$bgeq",
-                           "$basn",  "$basadd", "$bassub", "$basmul", "$basdiv", "$basmod", "$basshl", "$bsasshr", "$basand",
-                           "$basor", "$basxor", "$binc",   "$bdec",   "$barray", "$bcall",  "$bstar",  "$barrow",  "$bcomma",
-                           "$blor",  "$bland",  "$bnot",   "$bor",    "$band",   "$bxor",   "$bcpl",   "$bnwa",    "$bdla",
-                           "$blit",  "$badd",   "$bsub",   "$bmul",   "$band"};
+                                 "$bshl",  "$bshr",   "$bmod",   "$bequ",   "$bneq",   "$blt",    "$bleq",   "$bgt",     "$bgeq",
+                                 "$basn",  "$basadd", "$bassub", "$basmul", "$basdiv", "$basmod", "$basshl", "$bsasshr", "$basand",
+                                 "$basor", "$basxor", "$binc",   "$bdec",   "$barray", "$bcall",  "$bstar",  "$barrow",  "$bcomma",
+                                 "$blor",  "$bland",  "$bnot",   "$bor",    "$band",   "$bxor",   "$bcpl",   "$bnwa",    "$bdla",
+                                 "$blit",  "$badd",   "$bsub",   "$bmul",   "$band"};
 const char* msiloverloadNameTab[] = {".ctor",
-                               ".dtor",
-                               ".bcast",
-                               ".new",
-                               ".delete",
-                               "op_Addition",
-                               "op_Subtraction",
-                               "op_Multiply",
-                               "op_Division",
-                               "op_LeftShift",
-                               "op_RightShift",
-                               "op_Modulus",
-                               "op_Equality",
-                               "op_Inequality",
-                               "op_LessThan",
-                               "op_LessThanOrEqual",
-                               "op_GreaterThan",
-                               "op_GreaterThanOrEqual",
-                               "$basn",
-                               "op_AdditionAssignment",
-                               "op_SubtractionAssignment",
-                               "op_MultiplicationAssignment",
-                               "op_DivisionAssignment",
-                               "op_ModulusAssignment",
-                               "op_LeftShiftAssignment",
-                               "op_RightShiftAssignment",
-                               "op_BitwiseAndAssignment",
-                               "op_BitwiseOrAssignment",
-                               "op_ExclusiveOrAssignment",
-                               "$binc",
-                               "$bdec",
-                               "$barray",
-                               "$bcall",
-                               "$bstar",
-                               "op_MemberSelection",
-                               "op_Comma",
-                               "op_LogicalOr",
-                               "op_LogicalAnd",
-                               "op_LogicalNot",
-                               "op_BitwiseOr",
-                               "op_BitwiseAnd",
-                               "op_ExclusiveOr",
-                               "op_OnesComplement",
-                               "$bnwa",
-                               "$bdla",
-                               "$blit",
-                               "op_UnaryPlus",
-                               "op_UnaryMinus",
-                               "op_PointerDereference",
-                               "op_AddressOf"};
+                                     ".dtor",
+                                     ".bcast",
+                                     ".new",
+                                     ".delete",
+                                     "op_Addition",
+                                     "op_Subtraction",
+                                     "op_Multiply",
+                                     "op_Division",
+                                     "op_LeftShift",
+                                     "op_RightShift",
+                                     "op_Modulus",
+                                     "op_Equality",
+                                     "op_Inequality",
+                                     "op_LessThan",
+                                     "op_LessThanOrEqual",
+                                     "op_GreaterThan",
+                                     "op_GreaterThanOrEqual",
+                                     "$basn",
+                                     "op_AdditionAssignment",
+                                     "op_SubtractionAssignment",
+                                     "op_MultiplicationAssignment",
+                                     "op_DivisionAssignment",
+                                     "op_ModulusAssignment",
+                                     "op_LeftShiftAssignment",
+                                     "op_RightShiftAssignment",
+                                     "op_BitwiseAndAssignment",
+                                     "op_BitwiseOrAssignment",
+                                     "op_ExclusiveOrAssignment",
+                                     "$binc",
+                                     "$bdec",
+                                     "$barray",
+                                     "$bcall",
+                                     "$bstar",
+                                     "op_MemberSelection",
+                                     "op_Comma",
+                                     "op_LogicalOr",
+                                     "op_LogicalAnd",
+                                     "op_LogicalNot",
+                                     "op_BitwiseOr",
+                                     "op_BitwiseAnd",
+                                     "op_ExclusiveOr",
+                                     "op_OnesComplement",
+                                     "$bnwa",
+                                     "$bdla",
+                                     "$blit",
+                                     "op_UnaryPlus",
+                                     "op_UnaryMinus",
+                                     "op_PointerDereference",
+                                     "op_AddressOf"};
 const char* overloadXlateTab[] = {
     0,    0,   0,    "new", "delete", "+",  "-",  "*",   "/",   "<<",    ">>",       "%",    "==", "!=", "<",  "<=", ">",
     ">=", "=", "+=", "-=",  "*=",     "/=", "%=", "<<=", ">>=", "&=",    "|=",       "^=",   "++", "--", "[]", "()", "->*",
@@ -890,7 +890,7 @@ char* mangleType(char* in, TYPE* tp, bool first)
 void SetLinkerNames(SYMBOL* sym, enum e_lk linkage)
 {
     char errbuf[8192], *p = errbuf;
-	memset(errbuf, 0, 8192);
+    memset(errbuf, 0, 8192);
     SYMBOL* lastParent;
     mangledNamesCount = 0;
     if (linkage == lk_none || linkage == lk_cdecl)

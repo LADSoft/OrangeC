@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 /* we are only doing local opts on temp variables.  At this point,
@@ -108,7 +108,7 @@ static void renameOneSym(SYMBOL* sym, int structret)
         }
         if (sym->imaddress)
         {
-            IMODE* im = (IMODE *)Alloc(sizeof(IMODE));
+            IMODE* im = (IMODE*)Alloc(sizeof(IMODE));
             *im = *sym->imaddress;
             im->size = sizeFromType(sym->tp);
             im->mode = i_direct;
@@ -116,7 +116,7 @@ static void renameOneSym(SYMBOL* sym, int structret)
         }
         else if (sym->imind)
         {
-            IMODE* im = (IMODE *)Alloc(sizeof(IMODE));
+            IMODE* im = (IMODE*)Alloc(sizeof(IMODE));
             *im = *sym->imind->im;
             im->size = ISZ_ADDR;
             im->mode = i_direct;
@@ -135,9 +135,8 @@ static void renameOneSym(SYMBOL* sym, int structret)
         tp = tp->btp;
     tp = basetype(tp);
 
-    bool fastcallCandidate =
-        sym->storage_class == sc_parameter && fastcallAlias &&
-        (sym->offset - fastcallAlias * chosenAssembler->arch->parmwidth < chosenAssembler->arch->retblocksize);
+    bool fastcallCandidate = sym->storage_class == sc_parameter && fastcallAlias &&
+                             (sym->offset - fastcallAlias * chosenAssembler->arch->parmwidth < chosenAssembler->arch->retblocksize);
 
     if (!sym->pushedtotemp && (!sym->imaddress || fastcallCandidate) && !sym->inasm && (!sym->inCatch || fastcallCandidate) &&
         (((chosenAssembler->arch->hasFloatRegs || tp->type < bt_float) && tp->type < bt_void) ||
@@ -183,13 +182,13 @@ static void renameOneSym(SYMBOL* sym, int structret)
                 }
                 else
                 {
-                    parmName = (IMODE*)(IMODE *)Alloc(sizeof(IMODE));
+                    parmName = (IMODE*)(IMODE*)Alloc(sizeof(IMODE));
                     *parmName = *sym->imvalue;
                 }
             }
             else
             {
-                parmName = (IMODE*)(IMODE *)Alloc(sizeof(IMODE));
+                parmName = (IMODE*)(IMODE*)Alloc(sizeof(IMODE));
                 *parmName = *sym->imvalue;
             }
         }
@@ -302,7 +301,7 @@ static int AllocTempOpt(int size1)
     t = rv->offset->v.sp->value.i;
     if (t >= tempSize)
     {
-        TEMP_INFO** temp = (TEMP_INFO **)oAlloc((tempSize + 1000) * sizeof(TEMP_INFO*));
+        TEMP_INFO** temp = (TEMP_INFO**)oAlloc((tempSize + 1000) * sizeof(TEMP_INFO*));
         memcpy(temp, tempInfo, sizeof(TEMP_INFO*) * tempSize);
         tempSize += 1000;
         tempInfo = temp;
@@ -352,7 +351,7 @@ static void InitTempInfo(void)
 
     for (i = 0; i < tempCount; i++)
     {
-        tempInfo[i] = (TEMP_INFO *) oAlloc(sizeof(TEMP_INFO));
+        tempInfo[i] = (TEMP_INFO*)oAlloc(sizeof(TEMP_INFO));
         tempInfo[i]->partition = i;
         tempInfo[i]->color = -1;
         tempInfo[i]->inUse = true;
@@ -434,12 +433,12 @@ static void InitTempInfo(void)
 }
 void insertDefines(QUAD* head, BLOCK* b, int tnum)
 {
-    LIST* l = (LIST *)oAlloc(sizeof(LIST));
+    LIST* l = (LIST*)oAlloc(sizeof(LIST));
     l->data = (void*)head;
     l->next = tempInfo[tnum]->idefines;
     tempInfo[tnum]->idefines = l;
 
-    l = (LIST *)oAlloc(sizeof(LIST));
+    l = (LIST*)oAlloc(sizeof(LIST));
     l->data = (void*)b;
     l->next = tempInfo[tnum]->bdefines;
     tempInfo[tnum]->bdefines = l;
@@ -453,7 +452,7 @@ void insertUses(QUAD* head, int dest)
             return;
         l = &(*l)->next;
     }
-    *l = (LIST *)oAlloc(sizeof(LIST));
+    *l = (LIST*)oAlloc(sizeof(LIST));
     (*l)->data = (void*)head;
 }
 void definesInfo(void)

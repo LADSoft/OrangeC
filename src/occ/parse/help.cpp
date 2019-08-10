@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "compiler.h"
@@ -75,7 +75,7 @@ bool ismember(SYMBOL* sym)
             return false;
     }
 }
-bool istype(SYMBOL *sym)
+bool istype(SYMBOL* sym)
 {
     if (sym->storage_class == sc_templateparam)
     {
@@ -116,7 +116,7 @@ bool startOfType(LEXEME* lex, bool assumeType)
     if (lex->type == l_id || MATCHKW(lex, classsel) || MATCHKW(lex, kw_decltype))
     {
         bool isdecltype = MATCHKW(lex, kw_decltype);
-        SYMBOL*sym, *strSym = nullptr;
+        SYMBOL *sym, *strSym = nullptr;
         LEXEME* placeholder = lex;
         bool dest = false;
         nestedSearch(lex, &sym, &strSym, nullptr, &dest, nullptr, false, sc_global, false, false);
@@ -547,11 +547,11 @@ void DeduceAuto(TYPE** pat, TYPE* nt)
                 // forwarding?  unadorned rref!
                 if (!nt->rref && basetype(nt)->type != bt_rref)
                 {
-                    *pat = (TYPE *)Alloc(sizeof(TYPE));
+                    *pat = (TYPE*)Alloc(sizeof(TYPE));
                     (*pat)->type = bt_lref;
                     (*pat)->size = getSize(bt_pointer);
                     (*pat)->rootType = (*pat);
-                    TYPE *t = basetype(nt);
+                    TYPE* t = basetype(nt);
                     if (isref(t))
                         t = t->btp;
                     (*pat)->btp = t;
@@ -590,7 +590,7 @@ void DeduceAuto(TYPE** pat, TYPE* nt)
             if ((*pat)->decltypeauto)
                 if ((*pat)->decltypeautoextended)
                 {
-                    *pat = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
+                    *pat = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
                     (*pat)->type = bt_lref;
                     (*pat)->size = getSize(bt_pointer);
                     (*pat)->btp = nt;
@@ -644,7 +644,7 @@ LEXEME* concatStringsInternal(LEXEME* lex, STRING** str, int* elems)
     enum e_lexType type = l_astr;
     STRING* string;
     IncGlobalFlag();
-    list = (SLCHAR**)(SLCHAR **)Alloc(sizeof(SLCHAR*) * count);
+    list = (SLCHAR**)(SLCHAR**)Alloc(sizeof(SLCHAR*) * count);
     while (lex &&
            (lex->type == l_astr || lex->type == l_wstr || lex->type == l_ustr || lex->type == l_Ustr || lex->type == l_msilstr))
     {
@@ -670,7 +670,7 @@ LEXEME* concatStringsInternal(LEXEME* lex, STRING** str, int* elems)
         }
         if (pos >= count)
         {
-            SLCHAR** h = (SLCHAR**)(SLCHAR **)Alloc(sizeof(SLCHAR*) * (count + 10));
+            SLCHAR** h = (SLCHAR**)(SLCHAR**)Alloc(sizeof(SLCHAR*) * (count + 10));
             memcpy(h, list, sizeof(SLCHAR*) * count);
             list = h;
             count += 10;
@@ -683,7 +683,7 @@ LEXEME* concatStringsInternal(LEXEME* lex, STRING** str, int* elems)
     string = (STRING*)Alloc(sizeof(STRING));
     string->strtype = type;
     string->size = pos;
-    string->pointers = (SLCHAR **)Alloc(pos * sizeof(SLCHAR*));
+    string->pointers = (SLCHAR**)Alloc(pos * sizeof(SLCHAR*));
     string->suffix = suffix;
     memcpy(string->pointers, list, pos * sizeof(SLCHAR*));
     *str = string;
@@ -1224,7 +1224,8 @@ bool lvalue(EXPRESSION* exp)
         case en_l_ld:
         case en_l_fc:
         case en_l_dc:
-        case en_l_ldc:        case en_l_fi:
+        case en_l_ldc:
+        case en_l_fi:
 
         case en_l_di:
         case en_l_ldi:
@@ -1260,7 +1261,8 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, SYMBOL* funcsp, INITI
             expsym = thisptr;
         else if (funcsp)
         {
-            SYMBOL* sym = (SYMBOL*)basetype(funcsp->tp)->syms->table[0] ? (SYMBOL*)basetype(funcsp->tp)->syms->table[0]->p : nullptr;
+            SYMBOL* sym =
+                (SYMBOL*)basetype(funcsp->tp)->syms->table[0] ? (SYMBOL*)basetype(funcsp->tp)->syms->table[0]->p : nullptr;
             if (sym && sym->thisPtr)
                 expsym = varNode(en_auto, sym);  // this ptr
             else
@@ -1610,7 +1612,8 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, SYMBOL* funcsp, INITI
     }
     // plop in a clear block if necessary
     if (sym && !noClear && !isdest &&
-        (isarray(tp) || (isstructured(tp) && ((!cparams.prm_cplusplus && !chosenAssembler->msil) || !basetype(tp)->sp->hasUserCons))))
+        (isarray(tp) ||
+         (isstructured(tp) && ((!cparams.prm_cplusplus && !chosenAssembler->msil) || !basetype(tp)->sp->hasUserCons))))
     {
         EXPRESSION* fexp = base;
         EXPRESSION* exp;
@@ -1805,10 +1808,7 @@ static TYPE* inttype(enum e_bt t1)
             return &stdunsignedlonglong;
     }
 }
-inline e_bt btmax(e_bt left, e_bt right)
-{
-    return left > right ? left : right;
-}
+inline e_bt btmax(e_bt left, e_bt right) { return left > right ? left : right; }
 TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool minimizeInt, TYPE* atp)
 /*
  * compare two types and determine if they are compatible for purposes
@@ -1840,7 +1840,7 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
     */
     if (tp1->type >= bt_float || tp2->type >= bt_float)
     {
-        TYPE *tp = nullptr;
+        TYPE* tp = nullptr;
         int isim1 = tp1->type >= bt_float_imaginary && tp1->type <= bt_long_double_imaginary;
         int isim2 = tp2->type >= bt_float_imaginary && tp2->type <= bt_long_double_imaginary;
         int iscx1 = tp1->type >= bt_float_complex && tp1->type <= bt_long_double_complex;
@@ -1867,13 +1867,11 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
                     tp = tp1;
                 else
                     tp = &stddoublecomplex;
-
             }
             else
             {
                 tp = tp1;
             }
-
         }
         else if (iscx2)
         {
@@ -1897,7 +1895,6 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
                     tp = tp2;
                 else
                     tp = &stddoublecomplex;
-
             }
             else
             {
@@ -1945,7 +1942,6 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
             {
                 tp = tp2;
             }
-
         }
         else if (tp1->type >= bt_float && tp2->type >= bt_float)
         {
@@ -2077,7 +2073,7 @@ EXPRESSION* RemoveAutoIncDec(EXPRESSION* exp)
     EXPRESSION* newExp;
     if (exp->type == en_autoinc || exp->type == en_autodec)
         return RemoveAutoIncDec(exp->left);
-    newExp = (EXPRESSION *)Alloc(sizeof(EXPRESSION));
+    newExp = (EXPRESSION*)Alloc(sizeof(EXPRESSION));
     *newExp = *exp;
     if (newExp->left)
         newExp->left = RemoveAutoIncDec(newExp->left);

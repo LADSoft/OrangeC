@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 /*
@@ -65,7 +65,7 @@ extern int inlinesym_count;
 extern int tempBottom, nextTemp;
 extern TYPE stdint;
 extern SYMBOL* baseThisPtr;
-extern SYMBOL*theCurrentFunc; 
+extern SYMBOL* theCurrentFunc;
 
 IMODE* returnImode;
 int retcount;
@@ -110,9 +110,9 @@ IMODE* tempreg(int size, int mode)
  */
 {
     IMODE* ap;
-    ap = (IMODE*)(IMODE *)Alloc(sizeof(IMODE));
+    ap = (IMODE*)(IMODE*)Alloc(sizeof(IMODE));
     ap->offset = tempenode();
-    ap->offset->v.sp->tp = (TYPE *)Alloc(sizeof(TYPE));
+    ap->offset->v.sp->tp = (TYPE*)Alloc(sizeof(TYPE));
     ap->offset->v.sp->tp->type = bt_int;
     ap->offset->v.sp->tp->size = sizeFromISZ(size);
     ap->size = size;
@@ -135,7 +135,7 @@ IMODE* imake_label(int label)
  */
 
 {
-    IMODE* ap = (IMODE*)(IMODE *)Alloc(sizeof(IMODE));
+    IMODE* ap = (IMODE*)(IMODE*)Alloc(sizeof(IMODE));
     ap->mode = i_immed;
     ap->offset = exprNode(en_labcon, nullptr, nullptr);
     ap->offset->v.i = label;
@@ -182,7 +182,7 @@ IMODE* set_symbol(const char* name, int isproc)
         sym->storage_class = sc_external;
         sym->name = sym->errname = sym->decoratedName = litlate(name);
         GENREF(sym);
-        sym->tp = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
+        sym->tp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
         sym->tp->type = isproc ? bt_func : bt_int;
         sym->safefunc = true;
         insert(sym, globalNameSpace->valueData->syms);
@@ -194,7 +194,7 @@ IMODE* set_symbol(const char* name, int isproc)
         if (sym->storage_class == sc_overloads)
             sym = (SYMBOL*)(sym->tp->syms->table[0]->p);
     }
-    result = (IMODE*)(IMODE *)Alloc(sizeof(IMODE));
+    result = (IMODE*)(IMODE*)Alloc(sizeof(IMODE));
     result->offset = varNode(en_global, sym);
     result->mode = i_direct;
     if (isproc)
@@ -231,14 +231,14 @@ static void AddProfilerData(SYMBOL* funcsp)
         STRING* string;
         int i;
         int l = strlen(funcsp->decoratedName);
-        pname = (LCHAR *)Alloc(sizeof(LCHAR) * l + 1);
+        pname = (LCHAR*)Alloc(sizeof(LCHAR) * l + 1);
         for (i = 0; i < l + 1; i++)
             pname[i] = funcsp->decoratedName[i];
         string = (STRING*)Alloc(sizeof(STRING));
         string->strtype = l_astr;
         string->size = 1;
-        string->pointers = (SLCHAR **)Alloc(sizeof(SLCHAR*));
-        string->pointers[0] = (SLCHAR *)Alloc(sizeof(SLCHAR));
+        string->pointers = (SLCHAR**)Alloc(sizeof(SLCHAR*));
+        string->pointers[0] = (SLCHAR*)Alloc(sizeof(SLCHAR));
         string->pointers[0]->str = pname;
         string->pointers[0]->count = l;
         string->suffix = nullptr;
@@ -295,8 +295,8 @@ void gather_cases(CASEDATA* cd, struct cases* cs)
 
 int gcs_compare(void const* left, void const* right)
 {
-    struct caseptrs const* lleft = (struct caseptrs const *) left;
-    struct caseptrs const* lright = (struct caseptrs const *)right;
+    struct caseptrs const* lleft = (struct caseptrs const*)left;
+    struct caseptrs const* lright = (struct caseptrs const*)right;
     if (lleft->id < lright->id)
         return -1;
     return lleft->id > lright->id;
@@ -332,15 +332,15 @@ void genxswitch(STATEMENT* stmt, SYMBOL* funcsp)
     if (ap != ap3)
     {
         IMODE* barrier;
-//        if (stmt->select->isatomic)
-//        {
-//            barrier = doatomicFence(funcsp, nullptr, stmt->select, nullptr);
-//        }
+        //        if (stmt->select->isatomic)
+        //        {
+        //            barrier = doatomicFence(funcsp, nullptr, stmt->select, nullptr);
+        //        }
         gen_icode(i_assn, ap, ap3, nullptr);
-//        if (stmt->select->isatomic)
-//        {
-//            doatomicFence(funcsp, nullptr, stmt->select, barrier);
-//        }
+        //        if (stmt->select->isatomic)
+        //        {
+        //            doatomicFence(funcsp, nullptr, stmt->select, barrier);
+        //        }
     }
     if (chosenAssembler->arch->preferopts & OPT_EXPANDSWITCH)
     {
@@ -351,7 +351,7 @@ void genxswitch(STATEMENT* stmt, SYMBOL* funcsp)
             gen_icode(i_assn, ap3, ap, nullptr);
             ap = ap3;
         }
-        ap3 = (IMODE *)Alloc(sizeof(IMODE));
+        ap3 = (IMODE*)Alloc(sizeof(IMODE));
         ap3->mode = i_direct;
         ap3->offset = en;
         ap3->size = -ISZ_UINT;
@@ -438,10 +438,10 @@ static STATEMENT* gen___try(SYMBOL* funcsp, STATEMENT* stmt)
                 mode = 2;
                 if (stmt->sp)
                 {
-                    left = (IMODE*)(IMODE *)Alloc(sizeof(IMODE));
+                    left = (IMODE*)(IMODE*)Alloc(sizeof(IMODE));
                     left->mode = i_direct;
                     left->size = ISZ_OBJECT;
-                    left->offset = (EXPRESSION*)(EXPRESSION *)Alloc(sizeof(EXPRESSION));
+                    left->offset = (EXPRESSION*)(EXPRESSION*)Alloc(sizeof(EXPRESSION));
                     left->offset->type = en_auto;
                     left->offset->v.sp = stmt->sp;
                 }
@@ -530,15 +530,15 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, IMODE*
             if (ap != ap3)
             {
                 IMODE* barrier;
-//                if (stmt->select->isatomic)
-//                {
-//                    barrier = doatomicFence(funcsp, nullptr, stmt->select, nullptr);
-//                }
+                //                if (stmt->select->isatomic)
+                //                {
+                //                    barrier = doatomicFence(funcsp, nullptr, stmt->select, nullptr);
+                //                }
                 gen_icode(i_assn, ap, ap3, nullptr);
-//                if (stmt->select->isatomic)
-//                {
-//                    doatomicFence(funcsp, nullptr, stmt->select, barrier);
-//                }
+                //                if (stmt->select->isatomic)
+                //                {
+                //                    doatomicFence(funcsp, nullptr, stmt->select, barrier);
+                //                }
             }
             if (abs(size) < ISZ_UINT)
                 size = -ISZ_UINT;
@@ -638,17 +638,17 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, IMODE*
 
 void gen_varstart(void* exp)
 {
-    IMODE* ap = (IMODE*)(IMODE *)Alloc(sizeof(IMODE));
+    IMODE* ap = (IMODE*)(IMODE*)Alloc(sizeof(IMODE));
     ap->mode = i_immed;
-    ap->offset = (expr *)exp;
+    ap->offset = (expr*)exp;
     ap->size = ISZ_ADDR;
     gen_icode(i_varstart, 0, ap, 0);
 }
 void gen_func(void* exp, int start)
 {
-    IMODE* ap = (IMODE*)(IMODE *)Alloc(sizeof(IMODE));
+    IMODE* ap = (IMODE*)(IMODE*)Alloc(sizeof(IMODE));
     ap->mode = i_immed;
-    ap->offset = (expr *)exp;
+    ap->offset = (expr*)exp;
     ap->size = ISZ_ADDR;
     gen_icode(i_func, 0, ap, 0)->dc.v.label = start;
 }
@@ -795,13 +795,13 @@ static void StoreInBucket(IMODE* mem, IMODE* addr)
         }
         lst = lst->next;
     }
-    lst = (DATA *) Alloc(sizeof(DATA));
+    lst = (DATA*)Alloc(sizeof(DATA));
     lst->mem = mem;
     lst->addr = addr;
     lst->next = buckets[bucket];
     buckets[bucket] = lst;
 }
-static IMODE* GetBucket(IMODE *mem)
+static IMODE* GetBucket(IMODE* mem)
 {
     DATA* lst;
     int bucket = (int)mem;
@@ -853,7 +853,7 @@ void optimize(SYMBOL* funcsp)
     if ((cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size) && !functionHasAssembly)
     {
         Precolor();
-        RearrangePrecolors();                                                                   
+        RearrangePrecolors();
         // printf("ssa\n");
         TranslateToSSA();
 
@@ -980,7 +980,7 @@ static void InsertParameterThunks(SYMBOL* funcsp, BLOCK* b)
         }
         if (funcsp->oldstyle && sym->tp->type == bt_float)
         {
-            IMODE* right = (IMODE*)(IMODE *)Alloc(sizeof(IMODE));
+            IMODE* right = (IMODE*)(IMODE*)Alloc(sizeof(IMODE));
             *right = *sym->imvalue;
             right->size = ISZ_DOUBLE;
             if (!chosenAssembler->arch->hasFloatRegs)

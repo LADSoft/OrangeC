@@ -30,8 +30,7 @@ int UTF8::Decode(const char* str)
         if ((str[1] & 0xc0) == 0x80 && (str[2] & 0xc0) == 0x80 && (str[3] & 0xc0) == 0x80)
         {
             int rv;
-            rv = ((str[0] & 0x7) << 18) + ((str[1] & 0x3f) << 12)
-                    + ((str[2] & 0x3f) << 6) + (str[3] & 0x3f);
+            rv = ((str[0] & 0x7) << 18) + ((str[1] & 0x3f) << 12) + ((str[2] & 0x3f) << 6) + (str[3] & 0x3f);
             return rv;
         }
     }
@@ -120,7 +119,7 @@ std::string UTF8::ToUpper(const std::string& val)
         }
         else
         {
-            int spn = CharSpan(str+i);
+            int spn = CharSpan(str + i);
             int v = Decode(str + i);
             int q = ToUpper(v);
             if (q == v)

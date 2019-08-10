@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "compiler.h"
@@ -62,7 +62,7 @@ extern LAMBDA* lambdas;
 extern int currentErrorLine;
 extern int templateNestingCount;
 extern bool functionCanThrow;
-extern SYMBOL*theCurrentFunc;
+extern SYMBOL* theCurrentFunc;
 
 /* lvaule */
 /* handling of const int */
@@ -76,7 +76,7 @@ void checkscope(TYPE* tp1, TYPE* tp2)
     }
     else if (tp1->scoped && tp2->scoped)
     {
-        SYMBOL*sp1 = nullptr, *sp2 = nullptr;
+        SYMBOL *sp1 = nullptr, *sp2 = nullptr;
         if ((tp1)->type == bt_enum)
             sp1 = (tp1)->sp;
         else
@@ -184,7 +184,7 @@ void qualifyForFunc(SYMBOL* sym, TYPE** tp, bool isMutable)
     {
         if (isconst(sym->tp) && !isMutable)
         {
-            TYPE* tp1 = (TYPE *)Alloc(sizeof(TYPE));
+            TYPE* tp1 = (TYPE*)Alloc(sizeof(TYPE));
             tp1->size = (*tp)->size;
             tp1->type = bt_const;
             tp1->btp = *tp;
@@ -193,7 +193,7 @@ void qualifyForFunc(SYMBOL* sym, TYPE** tp, bool isMutable)
         }
         if (isvolatile(sym->tp))
         {
-            TYPE* tp1 = (TYPE *)Alloc(sizeof(TYPE));
+            TYPE* tp1 = (TYPE*)Alloc(sizeof(TYPE));
             tp1->size = (*tp)->size;
             tp1->type = bt_volatile;
             tp1->btp = *tp;
@@ -204,7 +204,7 @@ void qualifyForFunc(SYMBOL* sym, TYPE** tp, bool isMutable)
 }
 void getThisType(SYMBOL* sym, TYPE** tp)
 {
-    *tp = (TYPE *)Alloc(sizeof(TYPE));
+    *tp = (TYPE*)Alloc(sizeof(TYPE));
     (*tp)->size = stdpointer.size;
     (*tp)->type = bt_pointer;
     (*tp)->size = getSize(bt_pointer);
@@ -296,7 +296,7 @@ EXPRESSION* getMemberPtr(SYMBOL* memberSym, SYMBOL* strSym, TYPE** tp, SYMBOL* f
 {
     (void)strSym;
     EXPRESSION* rv;
-    TYPE* tpq = (TYPE *)Alloc(sizeof(TYPE));
+    TYPE* tpq = (TYPE*)Alloc(sizeof(TYPE));
     tpq->type = bt_memberptr;
     tpq->btp = memberSym->tp;
     tpq->rootType = tpq;
@@ -320,11 +320,11 @@ bool castToArithmeticInternal(bool integer, TYPE** tp, EXPRESSION** exp, enum e_
                               : lookupArithmeticCast(sym, other ? other : &stddouble, implicit);
         if (cst)
         {
-            FUNCTIONCALL* params = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
+            FUNCTIONCALL* params = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
             EXPRESSION* e1;
             params->fcall = varNode(en_pc, cst);
             params->thisptr = *exp;
-            params->thistp = (TYPE *)Alloc(sizeof(TYPE));
+            params->thistp = (TYPE*)Alloc(sizeof(TYPE));
             params->thistp->type = bt_pointer;
             params->thistp->btp = cst->parentClass->tp;
             params->thistp->rootType = params->thistp;
@@ -410,7 +410,7 @@ bool castToPointer(TYPE** tp, EXPRESSION** exp, enum e_kw kw, TYPE* other)
             SYMBOL* cst = lookupPointerCast(sym, other);
             if (cst)
             {
-                FUNCTIONCALL* params = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
+                FUNCTIONCALL* params = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
                 EXPRESSION* e1;
                 if (isfuncptr(basetype(cst->tp)->btp) && isfuncptr(other))
                 {
@@ -426,7 +426,7 @@ bool castToPointer(TYPE** tp, EXPRESSION** exp, enum e_kw kw, TYPE* other)
                 *exp = DerivedToBase(cst->parentClass->tp, *tp, *exp, 0);
                 params->fcall = varNode(en_pc, cst);
                 params->thisptr = *exp;
-                params->thistp = (TYPE *)Alloc(sizeof(TYPE));
+                params->thistp = (TYPE*)Alloc(sizeof(TYPE));
                 params->thistp->type = bt_pointer;
                 params->thistp->btp = cst->parentClass->tp;
                 params->thistp->rootType = params->thistp;
@@ -469,13 +469,13 @@ bool cppCast(TYPE* src, TYPE** tp, EXPRESSION** exp)
             SYMBOL* cst = lookupSpecificCast(sym, *tp);
             if (cst)
             {
-                FUNCTIONCALL* params = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
+                FUNCTIONCALL* params = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
                 EXPRESSION* e1;
                 CheckCalledException(cst, *exp);
                 *exp = DerivedToBase(cst->parentClass->tp, src, *exp, 0);
                 params->fcall = varNode(en_pc, cst);
                 params->thisptr = *exp;
-                params->thistp = (TYPE *)Alloc(sizeof(TYPE));
+                params->thistp = (TYPE*)Alloc(sizeof(TYPE));
                 params->thistp->type = bt_pointer;
                 params->thistp->size = getSize(bt_pointer);
                 params->thistp->btp = cst->parentClass->tp;
@@ -551,7 +551,7 @@ static EXPRESSION* substitute_vars(EXPRESSION* exp, SUBSTITUTIONLIST* match, HAS
             }
         }
     }
-    rv = (EXPRESSION *)Alloc(sizeof(EXPRESSION));
+    rv = (EXPRESSION*)Alloc(sizeof(EXPRESSION));
     *rv = *exp;
     if (exp->left)
         rv->left = substitute_vars(exp->left, match, syms);
@@ -573,7 +573,7 @@ EXPRESSION* substitute_params_for_constexpr(EXPRESSION* exp, FUNCTIONCALL* funcp
         // than the actual parameters list
         while (hr && args)
         {
-            *plist = (SUBSTITUTIONLIST *)Alloc(sizeof(SUBSTITUTIONLIST));
+            *plist = (SUBSTITUTIONLIST*)Alloc(sizeof(SUBSTITUTIONLIST));
             (*plist)->exp = args->exp;
             (*plist)->sp = hr->p;
             plist = &(*plist)->next;
@@ -582,7 +582,7 @@ EXPRESSION* substitute_params_for_constexpr(EXPRESSION* exp, FUNCTIONCALL* funcp
         }
         while (hr)
         {
-            *plist = (SUBSTITUTIONLIST *)Alloc(sizeof(SUBSTITUTIONLIST));
+            *plist = (SUBSTITUTIONLIST*)Alloc(sizeof(SUBSTITUTIONLIST));
             (*plist)->exp = hr->p->init->exp;
             (*plist)->sp = hr->p;
             plist = &(*plist)->next;
@@ -596,7 +596,7 @@ STATEMENT* do_substitute_for_function(STATEMENT* block, FUNCTIONCALL* funcparams
     STATEMENT *rv = nullptr, **prv = &rv;
     while (block != nullptr)
     {
-        *prv = (STATEMENT *)Alloc(sizeof(STATEMENT));
+        *prv = (STATEMENT*)Alloc(sizeof(STATEMENT));
         **prv = *block;
         if (block->select)
             (*prv)->select = substitute_params_for_constexpr(block->select, funcparams, syms);
@@ -627,8 +627,8 @@ LEXEME* expression_func_type_cast(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRES
     else
     {
         *tp = nullptr;
-        lex = getBasicType(lex, funcsp, tp, nullptr, false, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd, &consdest,
-            nullptr, false, true);
+        lex = getBasicType(lex, funcsp, tp, nullptr, false, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd,
+                           &consdest, nullptr, false, true);
         if (isstructured(*tp) && !(*tp)->size && (!templateNestingCount || !basetype(*tp)->sp->templateLevel))
         {
             errorsym(ERR_STRUCT_NOT_DEFINED, basetype(*tp)->sp);
@@ -690,7 +690,7 @@ LEXEME* expression_func_type_cast(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRES
         {
             SYMBOL* sym;
             TYPE* ctype = *tp;
-            FUNCTIONCALL* funcparams = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
+            FUNCTIONCALL* funcparams = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
             EXPRESSION* exp1;
             ctype = PerformDeferredInitialization(ctype, funcsp);
             lex = getArgs(lex, funcsp, funcparams, closepa, true, flags);
@@ -813,11 +813,11 @@ bool doDynamicCast(TYPE** newType, TYPE* oldType, EXPRESSION** exp, SYMBOL* func
                     if (sym)
                     {
                         EXPRESSION* exp1 = *exp;
-                        FUNCTIONCALL* funcparams = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
-                        INITLIST* arg1 = (INITLIST *)Alloc(sizeof(INITLIST));  // thisptr
-                        INITLIST* arg2 = (INITLIST *)Alloc(sizeof(INITLIST));  // excepttab from thisptr
-                        INITLIST* arg3 = (INITLIST *)Alloc(sizeof(INITLIST));  // oldxt
-                        INITLIST* arg4 = (INITLIST *)Alloc(sizeof(INITLIST));  // newxt
+                        FUNCTIONCALL* funcparams = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
+                        INITLIST* arg1 = (INITLIST*)Alloc(sizeof(INITLIST));  // thisptr
+                        INITLIST* arg2 = (INITLIST*)Alloc(sizeof(INITLIST));  // excepttab from thisptr
+                        INITLIST* arg3 = (INITLIST*)Alloc(sizeof(INITLIST));  // oldxt
+                        INITLIST* arg4 = (INITLIST*)Alloc(sizeof(INITLIST));  // newxt
                         SYMBOL* oldrtti = RTTIDumpType(tpo);
                         SYMBOL* newrtti = basetype(tpn)->type == bt_void ? nullptr : RTTIDumpType(tpn);
                         deref(&stdpointer, &exp1);
@@ -926,7 +926,7 @@ bool doStaticCast(TYPE** newType, TYPE* oldType, EXPRESSION** exp, SYMBOL* funcs
             if (n == 1)
             {
                 // derived to base
-                EXPRESSION* v = (EXPRESSION *)Alloc(sizeof(EXPRESSION));
+                EXPRESSION* v = (EXPRESSION*)Alloc(sizeof(EXPRESSION));
                 v->type = en_c_i;
                 v = baseClassOffset(basetype(tpn)->sp, basetype(tpo)->sp, v);
                 optimize_for_constants(&v);
@@ -948,7 +948,7 @@ bool doStaticCast(TYPE** newType, TYPE* oldType, EXPRESSION** exp, SYMBOL* funcs
             else if (!n && classRefCount(basetype(tpo)->sp, basetype(tpn)->sp) == 1)
             {
                 // base to derived
-                EXPRESSION* v = (EXPRESSION *)Alloc(sizeof(EXPRESSION));
+                EXPRESSION* v = (EXPRESSION*)Alloc(sizeof(EXPRESSION));
                 v->type = en_c_i;
                 v = baseClassOffset(basetype(tpo)->sp, basetype(tpn)->sp, v);
                 optimize_for_constants(&v);
@@ -1221,12 +1221,12 @@ LEXEME* expression_typeid(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** e
             if (sym)
             {
 
-                FUNCTIONCALL* funcparams = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
-                INITLIST* arg = (INITLIST *)Alloc(sizeof(INITLIST));
-                INITLIST* arg2 = (INITLIST *)Alloc(sizeof(INITLIST));
+                FUNCTIONCALL* funcparams = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
+                INITLIST* arg = (INITLIST*)Alloc(sizeof(INITLIST));
+                INITLIST* arg2 = (INITLIST*)Alloc(sizeof(INITLIST));
                 SYMBOL* rtti;
                 SYMBOL* val;
-                TYPE* valtp = (TYPE *)Alloc(sizeof(TYPE));  // space for the virtual pointer and a pointer to the class data
+                TYPE* valtp = (TYPE*)Alloc(sizeof(TYPE));  // space for the virtual pointer and a pointer to the class data
                 valtp->type = bt_pointer;
                 valtp->array = true;
                 valtp->size = 2 * stdpointer.size;
@@ -1268,7 +1268,7 @@ LEXEME* expression_typeid(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** e
                     {
                         if (!sym->tp->syms)
                             error(ERR_NEED_TYPEINFO_H);
-                        *tp = (TYPE *)Alloc(sizeof(TYPE));
+                        *tp = (TYPE*)Alloc(sizeof(TYPE));
                         (*tp)->type = bt_const;
                         (*tp)->size = sym->tp->size;
                         (*tp)->btp = sym->tp;
@@ -1283,7 +1283,7 @@ LEXEME* expression_typeid(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** e
 }
 bool insertOperatorParams(SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* funcparams, int flags)
 {
-    SYMBOL*s2 = nullptr, *s3;
+    SYMBOL *s2 = nullptr, *s3;
     SYMLIST **hrd, *hrs;
     const char* name = overloadNameTab[openpa - kw_new + CI_NEW];
     TYPE* tpx;
@@ -1296,7 +1296,7 @@ bool insertOperatorParams(SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, FUNCTIONC
         addStructureDeclaration(&l);
         s2 = classsearch(name, false, true);
         dropStructureDeclaration();
-        funcparams->thistp = (TYPE *)Alloc(sizeof(TYPE));
+        funcparams->thistp = (TYPE*)Alloc(sizeof(TYPE));
         funcparams->thistp->type = bt_pointer;
         funcparams->thistp->size = getSize(bt_pointer);
         funcparams->thistp->btp = *tp;
@@ -1311,7 +1311,7 @@ bool insertOperatorParams(SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, FUNCTIONC
         return false;
     }
     // finally make a shell to put all this in and add shims for any builtins we want to try
-    tpx = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
+    tpx = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
     tpx->type = bt_aggregate;
     tpx->rootType = tpx;
     s3 = makeID(sc_overloads, tpx, nullptr, name);
@@ -1324,7 +1324,7 @@ bool insertOperatorParams(SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, FUNCTIONC
         hrs = s2->tp->syms->table[0];
         while (hrs)
         {
-            SYMLIST* ins = (SYMLIST *)Alloc(sizeof(SYMLIST));
+            SYMLIST* ins = (SYMLIST*)Alloc(sizeof(SYMLIST));
             ins->p = hrs->p;
             *hrd = ins;
             hrd = &(*hrd)->next;
@@ -1352,10 +1352,10 @@ bool insertOperatorParams(SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, FUNCTIONC
     return false;
 }
 bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, TYPE* tp1, EXPRESSION* exp1,
-                           INITLIST* args, int flags)
+                        INITLIST* args, int flags)
 {
     static SYMBOL* s30;
-    SYMBOL*s1 = nullptr, *s2 = nullptr, *s3, *s4 = nullptr, *s5 = nullptr;
+    SYMBOL *s1 = nullptr, *s2 = nullptr, *s3, *s4 = nullptr, *s5 = nullptr;
     SYMLIST **hrd, *hrs;
     FUNCTIONCALL* funcparams;
     const char* name = overloadNameTab[kw - kw_new + CI_NEW];
@@ -1428,7 +1428,7 @@ bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, 
         return false;
     }
     // finally make a shell to put all this in and add shims for any builtins we want to try
-    tpx = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
+    tpx = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
     tpx->type = bt_aggregate;
     tpx->rootType = tpx;
     s3 = makeID(sc_overloads, tpx, nullptr, name);
@@ -1441,7 +1441,7 @@ bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, 
         hrs = s1->tp->syms->table[0];
         while (hrs)
         {
-            SYMLIST* ins = (SYMLIST *)Alloc(sizeof(SYMLIST));
+            SYMLIST* ins = (SYMLIST*)Alloc(sizeof(SYMLIST));
             ins->p = hrs->p;
             *hrd = ins;
             hrd = &(*hrd)->next;
@@ -1453,7 +1453,7 @@ bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, 
         hrs = s2->tp->syms->table[0];
         while (hrs)
         {
-            SYMLIST* ins = (SYMLIST *)Alloc(sizeof(SYMLIST));
+            SYMLIST* ins = (SYMLIST*)Alloc(sizeof(SYMLIST));
             ins->p = hrs->p;
             *hrd = ins;
             hrd = &(*hrd)->next;
@@ -1465,7 +1465,7 @@ bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, 
         hrs = s4->tp->syms->table[0];
         while (hrs)
         {
-            SYMLIST* ins = (SYMLIST *)Alloc(sizeof(SYMLIST));
+            SYMLIST* ins = (SYMLIST*)Alloc(sizeof(SYMLIST));
             ins->p = hrs->p;
             *hrd = ins;
             hrd = &(*hrd)->next;
@@ -1477,39 +1477,39 @@ bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, 
         hrs = s5->tp->syms->table[0];
         while (hrs)
         {
-            SYMLIST* ins = (SYMLIST *)Alloc(sizeof(SYMLIST));
+            SYMLIST* ins = (SYMLIST*)Alloc(sizeof(SYMLIST));
             ins->p = hrs->p;
             *hrd = ins;
             hrd = &(*hrd)->next;
             hrs = hrs->next;
         }
     }
-    funcparams = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
+    funcparams = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
     {
         INITLIST *one = nullptr, *two = nullptr;
         if (*tp)
         {
-            one = (INITLIST *)Alloc(sizeof(INITLIST));
+            one = (INITLIST*)Alloc(sizeof(INITLIST));
             one->exp = *exp;
             one->tp = *tp;
             funcparams->arguments = one;
         }
         if (args)
         {
-            INITLIST* one = (INITLIST *)Alloc(sizeof(INITLIST));
+            INITLIST* one = (INITLIST*)Alloc(sizeof(INITLIST));
             one->nested = args;
             funcparams->arguments = one;
         }
         else if (tp1)
         {
-            two = (INITLIST *)Alloc(sizeof(INITLIST));
+            two = (INITLIST*)Alloc(sizeof(INITLIST));
             two->exp = exp1;
             two->tp = tp1;
             funcparams->arguments = two;
         }
         else if (cls == ovcl_unary_postfix)
         {
-            two = (INITLIST *)Alloc(sizeof(INITLIST));
+            two = (INITLIST*)Alloc(sizeof(INITLIST));
             two->exp = intNode(en_c_i, 0);
             two->tp = &stdint;
             funcparams->arguments = two;
@@ -1568,7 +1568,7 @@ bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, 
         if (ismember(s3))
         {
             funcparams->arguments = funcparams->arguments->next;
-            funcparams->thistp = (TYPE *)Alloc(sizeof(TYPE));
+            funcparams->thistp = (TYPE*)Alloc(sizeof(TYPE));
             funcparams->thistp->type = bt_pointer;
             funcparams->thistp->size = getSize(bt_pointer);
             funcparams->thistp->btp = tpin;
@@ -1595,7 +1595,7 @@ bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, 
 }
 LEXEME* expression_new(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, bool global, int flags)
 {
-    FUNCTIONCALL* placement = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
+    FUNCTIONCALL* placement = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
     FUNCTIONCALL* initializers = nullptr;
     const char* name = overloadNameTab[CI_NEW];
     TYPE* tpf = nullptr;
@@ -1700,7 +1700,7 @@ LEXEME* expression_new(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp,
             sz = exprNode(en_mul, sz, arrSize);
         }
         optimize_for_constants(&sz);
-        sza = (INITLIST *)Alloc(sizeof(INITLIST));
+        sza = (INITLIST*)Alloc(sizeof(INITLIST));
         sza->exp = sz;
         sza->tp = &stdint;
         sza->next = placement->arguments;
@@ -1759,7 +1759,7 @@ LEXEME* expression_new(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp,
         // initializers
         if (isstructured(*tp))
         {
-            initializers = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
+            initializers = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
             lex = getArgs(lex, funcsp, initializers, closepa, true, 0);
             if (s1)
             {
@@ -1772,7 +1772,7 @@ LEXEME* expression_new(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp,
         else
         {
             exp1 = nullptr;
-            initializers = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
+            initializers = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
             lex = getArgs(lex, funcsp, initializers, closepa, true, 0);
             if (initializers->arguments)
             {
@@ -1826,7 +1826,7 @@ LEXEME* expression_new(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp,
             }
             if (arrSize)
             {
-                tp1 = (TYPE *)Alloc(sizeof(TYPE));
+                tp1 = (TYPE*)Alloc(sizeof(TYPE));
                 tp1->size = 0;
                 tp1->array = 1;
                 tp1->type = bt_pointer;
@@ -1881,7 +1881,7 @@ LEXEME* expression_new(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp,
             callConstructor(&tpf, exp, nullptr, false, arrSize, true, false, false, true, false, false);
         }
     }
-    tpf = (TYPE *)Alloc(sizeof(TYPE));
+    tpf = (TYPE*)Alloc(sizeof(TYPE));
     tpf->type = bt_pointer;
     tpf->size = getSize(bt_pointer);
     tpf->btp = *tp;
@@ -1964,8 +1964,8 @@ LEXEME* expression_delete(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** e
         s1 = namespacesearch(name, globalNameSpace, false, false);
     }
     // should always find something
-    funcparams = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
-    one = (INITLIST *)Alloc(sizeof(INITLIST));
+    funcparams = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
+    one = (INITLIST*)Alloc(sizeof(INITLIST));
     one->exp = exp1;
     one->tp = &stdpointer;
     funcparams->arguments = one;
@@ -2301,8 +2301,8 @@ void ResolveTemplateVariable(TYPE** ttype, EXPRESSION** texpr, TYPE* rtype, TYPE
                     type = atype;
             else
                 type = rtype;
-            params = (TEMPLATEPARAMLIST*)(TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
-            params->p = (TEMPLATEPARAM*)(TEMPLATEPARAM *)Alloc(sizeof(TEMPLATEPARAM));
+            params = (TEMPLATEPARAMLIST*)(TEMPLATEPARAMLIST*)Alloc(sizeof(TEMPLATEPARAMLIST));
+            params->p = (TEMPLATEPARAM*)(TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
 
             params->p->type = kw_typename;
             params->p->byClass.dflt = type;

@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 /*      compiler header file    */
@@ -302,10 +302,11 @@ typedef struct expr
     void* altdata;
     struct
     {
-        union {
+        union
+        {
             LLONG_TYPE i;
-            struct sym* sp; /* sym will be defined later */
-            const char* name;     /* name during base class processing */
+            struct sym* sp;   /* sym will be defined later */
+            const char* name; /* name during base class processing */
             struct functioncall* func;
             struct _atomicData* ad;
             struct stmt* stmt;
@@ -367,7 +368,8 @@ typedef struct casedata
 
 struct u_val
 {
-    union {
+    union
+    {
         LLONG_TYPE i;  /* int val */
         ULLONG_TYPE u; /* unsigned val */
         union
@@ -377,7 +379,7 @@ struct u_val
         } s;
         struct _defstruct* defs; /* macro definition */
     };
-    FPF f;        /* float val */
+    FPF f; /* float val */
     _COMPLEX_S c;
 };
 typedef struct typ
@@ -511,7 +513,7 @@ typedef struct
 typedef struct __nsv
 {
     struct __nsv* next;
-    NAMESPACEVALUEDATA *valueData;
+    NAMESPACEVALUEDATA* valueData;
 } NAMESPACEVALUELIST;
 
 #ifdef PARSER_ONLY
@@ -543,38 +545,40 @@ struct xcept
 
 struct attributes
 {
-    struct {
-        int structAlign;                                      /* alignment of structures/ unions */
-        int warnAlign;                                        /* if nz, warn if not aligned */
-        unsigned vectorSize;                                  /* total size of a vectored attribute */
-        enum e_lk linkage2;                                   /* export, import, msil */
-        struct sym *cleanup;                                  /* cleanup function */
-        bool packed;                                          /* True if to reset alignment to 1 */
-        bool alignedAttribute;                                /* True if alignment came from gcc aligned attribute */
-        unsigned used : 1;                                    /* value has been fetched */
-        unsigned nonstring : 1;                               /* value is not a zero terminated string */
-        unsigned zstring : 1;                                 // (argument) was tagged as a zero terminated string 
+    struct
+    {
+        int structAlign;        /* alignment of structures/ unions */
+        int warnAlign;          /* if nz, warn if not aligned */
+        unsigned vectorSize;    /* total size of a vectored attribute */
+        enum e_lk linkage2;     /* export, import, msil */
+        struct sym* cleanup;    /* cleanup function */
+        bool packed;            /* True if to reset alignment to 1 */
+        bool alignedAttribute;  /* True if alignment came from gcc aligned attribute */
+        unsigned used : 1;      /* value has been fetched */
+        unsigned nonstring : 1; /* value is not a zero terminated string */
+        unsigned zstring : 1;   // (argument) was tagged as a zero terminated string
     } inheritable;
-    struct {
-        const char* deprecationText;                          // C++ declaration was deprecated   
-        const char* alias;                                    // link-time alias
-        struct sym *copyFrom;                                 // symbol to copy attributes from
+    struct
+    {
+        const char* deprecationText;  // C++ declaration was deprecated
+        const char* alias;            // link-time alias
+        struct sym* copyFrom;         // symbol to copy attributes from
     } uninheritable;
 };
 /* symbols */
 typedef struct sym
 {
     const char* name;
-    const char* decoratedName;                      /* symbol name with decorations, as used in output format */
-    const char* errname;                            /* name to be used in errors */
-    const char *declfile, *origdeclfile;            /* file symbol was declared in */
+    const char* decoratedName;                /* symbol name with decorations, as used in output format */
+    const char* errname;                      /* name to be used in errors */
+    const char *declfile, *origdeclfile;      /* file symbol was declared in */
     int declline, origdeclline, realdeclline; /* line number symbol was declared at */
     short declcharpos;                        /* character position symbol was declared at */
     short declfilenum;                        /* the file number */
     int sizeNoVirtual;                        /* size without virtual classes and thunks */
     struct sym* parent;
     struct sym* parentClass;
-    struct sym* parentNameSpace;  
+    struct sym* parentNameSpace;
     NAMESPACEVALUELIST* nameSpaceValues; /* for a namespace SP */
     struct sym* vtabsp;
     EXPRESSION* localInitGuard;
@@ -689,21 +693,22 @@ typedef struct sym
     unsigned has_property_setter : 1;                     // a property has a setter
     unsigned nonConstVariableUsed : 1;                    // a non-const variable was used or assigned to in this function's body
     unsigned importThunk : 1;                             // an import thunk
-    unsigned postExpansion : 1;                           // true if this templateselector is post expanded, e.g. replicate the template selector with each packed arg
-    int __func__label;                                    /* label number for the __func__ keyword */
-    int ipointerindx;                                     /* pointer index for pointer opts */
-    int labelCount;                                       /* number of code labels within a function body */
-    int nextid;                                           /* ID to use for nextage purposes (binary output) */
-    int offset;                                           /* address offset of data in the given seg, or optimize register */
-    int vtaboffset;                                       /* vtab offset for virtual functions */
-    int label;                                            /* label number for statics */
-    int uniqueID;                                         /* unique index for local statics */
-    int startLine, endLine;                               /* line numbers spanning the function */
-    short paramsize;                                      /* Size of parameter list for stdcall functions */
-    short accessibleTemplateArgument;                     /* something used as a template argument was validated for
-                                                           * accessibility before instantiating the template */
-    short retblockparamadjust;                            /* Adjustment for retblock parameters */
-    short retcount;                                         /* number of return statements in a function */
+    unsigned postExpansion : 1;  // true if this templateselector is post expanded, e.g. replicate the template selector with each
+                                 // packed arg
+    int __func__label;           /* label number for the __func__ keyword */
+    int ipointerindx;            /* pointer index for pointer opts */
+    int labelCount;              /* number of code labels within a function body */
+    int nextid;                  /* ID to use for nextage purposes (binary output) */
+    int offset;                  /* address offset of data in the given seg, or optimize register */
+    int vtaboffset;              /* vtab offset for virtual functions */
+    int label;                   /* label number for statics */
+    int uniqueID;                /* unique index for local statics */
+    int startLine, endLine;      /* line numbers spanning the function */
+    short paramsize;             /* Size of parameter list for stdcall functions */
+    short accessibleTemplateArgument; /* something used as a template argument was validated for
+                                       * accessibility before instantiating the template */
+    short retblockparamadjust;        /* Adjustment for retblock parameters */
+    short retcount;                   /* number of return statements in a function */
     /* Also name for CPP overload lists */
     /* also default for template parameters, is a TYP */
     char* importfile;    /* import name */
@@ -738,7 +743,7 @@ typedef struct sym
     // clang-format off
     enum e_xc xcMode;
     // clang-format on
-    struct xcept *xc;
+    struct xcept* xc;
     LIST* friends;
     attributes attribs;
     /* Type declarations */
@@ -835,7 +840,7 @@ typedef struct _templateParam
     int initialized : 1;
     int lref : 1;
     int rref : 1;
-    int resolved : 1; // packed template has already been resolved.
+    int resolved : 1;  // packed template has already been resolved.
     SYMBOL* packsym;
     void* hold; /* value held during partial template ordering */
     union
@@ -1162,7 +1167,7 @@ typedef struct _atomicData
 
 #define ATOMIC_FLAG_SPACE getSize(bt_int)
 
-inline void GENREF(SYMBOL *sym)
+inline void GENREF(SYMBOL* sym)
 {
     sym->genreffed = true;
     if (sym->mainsym)

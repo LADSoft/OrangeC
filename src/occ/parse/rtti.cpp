@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "compiler.h"
@@ -35,36 +35,36 @@ HASHTABLE* rttiSyms;
 
 // in enum e_bt order
 static const char* typeNames[] = {"bit",
-                            "bool",
-                            "signed char",
-                            "char",
-                            "unsigned char",
-                            "short",
-                            "char16_t",
-                            "unsigned short",
-                            "wchar_t",
-                            nullptr,
-                            "int",
-                            "inative",
-                            "char32_t",
-                            "unsigned",
-                            "unative",
-                            "long",
-                            "unsigned long",
-                            "long long",
-                            "unsigned long long",
-                            "float",
-                            "double",
-                            "long double",
-                            "float imaginary",
-                            "double imaginary",
-                            "long double imaginary",
-                            "float complex",
-                            "double complex",
-                            "long double complex",
-                            "void",
-                            "__object",
-                            "__string"};
+                                  "bool",
+                                  "signed char",
+                                  "char",
+                                  "unsigned char",
+                                  "short",
+                                  "char16_t",
+                                  "unsigned short",
+                                  "wchar_t",
+                                  nullptr,
+                                  "int",
+                                  "inative",
+                                  "char32_t",
+                                  "unsigned",
+                                  "unative",
+                                  "long",
+                                  "unsigned long",
+                                  "long long",
+                                  "unsigned long long",
+                                  "float",
+                                  "double",
+                                  "long double",
+                                  "float imaginary",
+                                  "double imaginary",
+                                  "long double imaginary",
+                                  "float complex",
+                                  "double complex",
+                                  "long double complex",
+                                  "void",
+                                  "__object",
+                                  "__string"};
 
 void rtti_init(void) { rttiSyms = CreateHashTable(32); }
 #ifndef PARSER_ONLY
@@ -623,7 +623,7 @@ static void XCExpression(EXPRESSION* node, XCLIST*** listPtr)
             XCExpression(node->left, listPtr);
             break;
         case en_thisref:
-            **listPtr = (XCLIST *) Alloc(sizeof(XCLIST));
+            **listPtr = (XCLIST*)Alloc(sizeof(XCLIST));
             (**listPtr)->exp = node;
             (*listPtr) = &(**listPtr)->next;
             XCExpression(node->left, listPtr);
@@ -665,7 +665,7 @@ static void XCStmt(STATEMENT* block, XCLIST*** listPtr)
             case st___catch:
             case st___finally:
             case st___fault:
-                **listPtr = (XCLIST *)Alloc(sizeof(XCLIST));
+                **listPtr = (XCLIST*)Alloc(sizeof(XCLIST));
                 (**listPtr)->stmt = block;
                 (**listPtr)->byStmt = true;
                 (*listPtr) = &(**listPtr)->next;
@@ -785,7 +785,7 @@ static bool allocatedXC(EXPRESSION* exp)
             return false;
     }
 }
-static int evalofs(EXPRESSION* exp, SYMBOL*funcsp)
+static int evalofs(EXPRESSION* exp, SYMBOL* funcsp)
 {
     switch (exp->type)
     {

@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "compiler.h"
@@ -35,14 +35,14 @@ extern int nextLabel;
 
 static SYMBOL* CreateSetterPrototype(SYMBOL* sym)
 {
-    SYMBOL*rv, *value;
+    SYMBOL *rv, *value;
     char name[512];
     sprintf(name, "set_%s", sym->name);
     rv = makeID(sym->storage_class, nullptr, nullptr, litlate(name));
     value = makeID(sc_parameter, sym->tp, nullptr, "value");
     value->attribs.inheritable.used = true;  // to avoid unused variable errors
     rv->access = ac_public;
-    rv->tp = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
+    rv->tp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
     rv->tp->sp = rv;
     rv->tp->type = bt_func;
     rv->tp->btp = &stdvoid;
@@ -54,13 +54,13 @@ static SYMBOL* CreateSetterPrototype(SYMBOL* sym)
 }
 static SYMBOL* CreateGetterPrototype(SYMBOL* sym)
 {
-    SYMBOL*rv, *nullparam;
+    SYMBOL *rv, *nullparam;
     char name[512];
     sprintf(name, "get_%s", sym->name);
     rv = makeID(sym->storage_class, nullptr, nullptr, litlate(name));
     nullparam = makeID(sc_parameter, &stdvoid, nullptr, "__void");
     rv->access = ac_public;
-    rv->tp = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
+    rv->tp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
     rv->tp->sp = rv;
     rv->tp->type = bt_func;
     rv->tp->btp = sym->tp;
@@ -79,7 +79,7 @@ static void insertfunc(SYMBOL* in, HASHTABLE* syms)
         funcs = (SYMBOL*)((*hr)->p);
     if (!funcs)
     {
-        TYPE* tp = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
+        TYPE* tp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
         tp->type = bt_aggregate;
         tp->rootType = tp;
         funcs = makeID(sc_overloads, tp, 0, litlate(in->name));
@@ -153,7 +153,7 @@ LEXEME* initialize_property(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc 
     {
         if (MATCHKW(lex, begin))
         {
-            SYMBOL*get = nullptr, *set = nullptr;
+            SYMBOL *get = nullptr, *set = nullptr;
             SYMBOL* prototype;
             lex = getsym();
             while (ISID(lex))

@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "Utils.h"
@@ -46,11 +46,10 @@ void FPF::Init()
         tensTab[0].type = IFPF_IS_NORMAL;
         for (i = 1; i < 10; i++)
         {
-            tensTab[i] = tensTab[0] * tensTab[i-1];
+            tensTab[i] = tensTab[0] * tensTab[i - 1];
         }
     }
 }
-
 
 void FPF::SetZero(int sign)
 {
@@ -81,8 +80,8 @@ bool FPF::ValueIsOne() const
         return false;
     if (exp != 1)
         return false;
-//    if (sign)
-//        return false;
+    //    if (sign)
+    //        return false;
     return IsMantissaOne();
 }
 bool FPF::ValueIsZero() const { return (type == IFPF_IS_ZERO); }
@@ -753,7 +752,7 @@ void FPF::MultiplyPowTen(int power)
                     temp = *this / tensTab[power - 1];
                     *this = temp;
                     return;
-               }
+                }
             }
             else if (power > 0)
 
@@ -765,7 +764,7 @@ void FPF::MultiplyPowTen(int power)
             }
             else
             {
-                return; //10 ^ 0 = 1, nop;
+                return;  // 10 ^ 0 = 1, nop;
             }
             mul = temp;
             while (power)
@@ -835,9 +834,9 @@ void FPF::ToString(std::string& dest) const
             }
         }
         int c = 0;
-        if (dest.size() >= 3 && dest[dest.size()-2] == '0')
-            c  = 1;
-        for (int i = 0; i < 24-c; i++)
+        if (dest.size() >= 3 && dest[dest.size() - 2] == '0')
+            c = 1;
+        for (int i = 0; i < 24 - c; i++)
         {
             u16 carry = 0;
             u16 val = 0;
@@ -863,7 +862,7 @@ void FPF::ToString(std::string& dest) const
             val += carry;
             dest.insert(dest.size(), 1, val + '0');
         }
-        if (dest[dest.size()-1] > '4')
+        if (dest[dest.size() - 1] > '4')
         {
             int n = dest.size() - 2;
             while (n >= 0)
@@ -884,7 +883,7 @@ void FPF::ToString(std::string& dest) const
         {
             if (power < 0)
             {
-                power = - power;
+                power = -power;
                 dest += "E-";
             }
             else

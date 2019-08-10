@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 /*
@@ -75,7 +75,7 @@ static void ReassignInt(QUAD* d, LLONG_TYPE val)
     d->temps &= ~(TEMP_LEFT | TEMP_RIGHT);
     if (d->temps & TEMP_ANS)
     {
-        IMODE *im = (IMODE *)Alloc(sizeof(IMODE));
+        IMODE* im = (IMODE*)Alloc(sizeof(IMODE));
         *im = *d->dc.left;
         d->dc.left = im;
         tempInfo[d->ans->offset->v.sp->value.i]->preSSATemp = -1;
@@ -360,15 +360,15 @@ void ConstantFold(QUAD* d, bool reflow)
                     ReassignCompare(d, left->v.i != right->v.i, reflow);
                     break;
                 case iclr:
-                    temp = (LLONG_TYPE) left->v.i;
-                    ReassignCompare(d, (temp !=right->v.f), reflow);
+                    temp = (LLONG_TYPE)left->v.i;
+                    ReassignCompare(d, (temp != right->v.f), reflow);
                     break;
                 case icrl:
-                    temp = (LLONG_TYPE) right->v.i;
-                    ReassignCompare(d, (left->v.f !=temp), reflow);
+                    temp = (LLONG_TYPE)right->v.i;
+                    ReassignCompare(d, (left->v.f != temp), reflow);
                     break;
                 case icrr:
-                    ReassignCompare(d, (left->v.f !=right->v.f), reflow);
+                    ReassignCompare(d, (left->v.f != right->v.f), reflow);
                     break;
                 case ical:
                 case icla:
@@ -388,15 +388,15 @@ void ConstantFold(QUAD* d, bool reflow)
                     ReassignCompare(d, left->v.i == right->v.i, reflow);
                     break;
                 case iclr:
-                    temp = (LLONG_TYPE) left->v.i;
-                    ReassignCompare(d, (temp ==  right->v.f), reflow);
+                    temp = (LLONG_TYPE)left->v.i;
+                    ReassignCompare(d, (temp == right->v.f), reflow);
                     break;
                 case icrl:
-                    temp = (LLONG_TYPE) right->v.i;
-                    ReassignCompare(d, (left->v.f ==temp), reflow);
+                    temp = (LLONG_TYPE)right->v.i;
+                    ReassignCompare(d, (left->v.f == temp), reflow);
                     break;
                 case icrr:
-                    ReassignCompare(d, (left->v.f ==right->v.f), reflow);
+                    ReassignCompare(d, (left->v.f == right->v.f), reflow);
                     break;
                 case ical:
                 case icla:
@@ -423,7 +423,7 @@ void ConstantFold(QUAD* d, bool reflow)
                         ReassignCompare(d, 0, reflow);
                     else
                     {
-                        temp = (ULLONG_TYPE ) left->v.i;
+                        temp = (ULLONG_TYPE)left->v.i;
                         ReassignCompare(d, (temp < right->v.f), reflow);
                     }
                     break;
@@ -432,7 +432,7 @@ void ConstantFold(QUAD* d, bool reflow)
                         ReassignCompare(d, 0, reflow);
                     else
                     {
-                        temp = (ULLONG_TYPE) right->v.i;
+                        temp = (ULLONG_TYPE)right->v.i;
                         ReassignCompare(d, (left->v.f < temp), reflow);
                     }
                     break;
@@ -453,11 +453,11 @@ void ConstantFold(QUAD* d, bool reflow)
                     ReassignCompare(d, (unsigned LLONG_TYPE)left->v.i <= (unsigned LLONG_TYPE)right->v.i, reflow);
                     break;
                 case iclr:
-                    temp = (ULLONG_TYPE ) left->v.i;
+                    temp = (ULLONG_TYPE)left->v.i;
                     ReassignCompare(d, (temp <= right->v.f), reflow);
                     break;
                 case icrl:
-                    temp = (ULLONG_TYPE) right->v.i;
+                    temp = (ULLONG_TYPE)right->v.i;
                     ReassignCompare(d, (left->v.f <= temp), reflow);
                     break;
                 case icrr:
@@ -474,11 +474,11 @@ void ConstantFold(QUAD* d, bool reflow)
                     ReassignCompare(d, (unsigned LLONG_TYPE)left->v.i > (unsigned LLONG_TYPE)right->v.i, reflow);
                     break;
                 case iclr:
-                    temp = (ULLONG_TYPE) left->v.i;
+                    temp = (ULLONG_TYPE)left->v.i;
                     ReassignCompare(d, (temp > right->v.f), reflow);
                     break;
                 case icrl:
-                    temp = (ULLONG_TYPE) right->v.i;
+                    temp = (ULLONG_TYPE)right->v.i;
                     ReassignCompare(d, (left->v.f > temp), reflow);
                     break;
                 case icrr:
@@ -495,11 +495,11 @@ void ConstantFold(QUAD* d, bool reflow)
                     ReassignCompare(d, (unsigned LLONG_TYPE)left->v.i >= (unsigned LLONG_TYPE)right->v.i, reflow);
                     break;
                 case iclr:
-                    temp = (ULLONG_TYPE) left->v.i;
+                    temp = (ULLONG_TYPE)left->v.i;
                     ReassignCompare(d, (temp >= right->v.f), reflow);
                     break;
                 case icrl:
-                    temp = (ULLONG_TYPE) right->v.i;
+                    temp = (ULLONG_TYPE)right->v.i;
                     ReassignCompare(d, (left->v.f >= temp), reflow);
                     break;
                 case icrr:
@@ -516,11 +516,11 @@ void ConstantFold(QUAD* d, bool reflow)
                     ReassignCompare(d, left->v.i < right->v.i, reflow);
                     break;
                 case iclr:
-                    temp = (LLONG_TYPE) left->v.i;
+                    temp = (LLONG_TYPE)left->v.i;
                     ReassignCompare(d, (temp < right->v.f), reflow);
                     break;
                 case icrl:
-                    temp = (LLONG_TYPE) right->v.i;
+                    temp = (LLONG_TYPE)right->v.i;
                     ReassignCompare(d, (left->v.f < temp), reflow);
                     break;
                 case icrr:
@@ -537,11 +537,11 @@ void ConstantFold(QUAD* d, bool reflow)
                     ReassignCompare(d, left->v.i <= right->v.i, reflow);
                     break;
                 case iclr:
-                    temp = (LLONG_TYPE) left->v.i;
+                    temp = (LLONG_TYPE)left->v.i;
                     ReassignCompare(d, (temp <= right->v.f), reflow);
                     break;
                 case icrl:
-                    temp = (LLONG_TYPE) right->v.i;
+                    temp = (LLONG_TYPE)right->v.i;
                     ReassignCompare(d, (left->v.f <= temp), reflow);
                     break;
                 case icrr:
@@ -558,11 +558,11 @@ void ConstantFold(QUAD* d, bool reflow)
                     ReassignCompare(d, left->v.i > right->v.i, reflow);
                     break;
                 case iclr:
-                    temp = (LLONG_TYPE) left->v.i;
+                    temp = (LLONG_TYPE)left->v.i;
                     ReassignCompare(d, (temp > right->v.f), reflow);
                     break;
                 case icrl:
-                    temp = (LLONG_TYPE) right->v.i;
+                    temp = (LLONG_TYPE)right->v.i;
                     ReassignCompare(d, (left->v.f > temp), reflow);
                     break;
                 case icrr:
@@ -579,11 +579,11 @@ void ConstantFold(QUAD* d, bool reflow)
                     ReassignCompare(d, left->v.i >= right->v.i, reflow);
                     break;
                 case iclr:
-                    temp = (LLONG_TYPE) left->v.i;
+                    temp = (LLONG_TYPE)left->v.i;
                     ReassignCompare(d, (temp >= right->v.f), reflow);
                     break;
                 case icrl:
-                    temp = (LLONG_TYPE) right->v.i;
+                    temp = (LLONG_TYPE)right->v.i;
                     ReassignCompare(d, (left->v.f >= temp), reflow);
                     break;
                 case icrr:
@@ -785,7 +785,7 @@ void ConstantFold(QUAD* d, bool reflow)
                     if (!right->v.f.ValueIsZero())
                     {
                         temp = refloat(left);
-                        temp = temp /right->v.f;
+                        temp = temp / right->v.f;
                         ReassignFloat(d, temp);
                     }
                     break;
@@ -948,11 +948,11 @@ void ConstantFold(QUAD* d, bool reflow)
                     break;
                 case icrl:
                     temp = refloat(right);
-                    temp = left->v.f *  temp;
+                    temp = left->v.f * temp;
                     ReassignFloat(d, temp);
                     break;
                 case icrr:
-                    temp  = left->v.f * right->v.f;
+                    temp = left->v.f * right->v.f;
                     ReassignFloat(d, temp);
                     break;
                 case icln:
@@ -1251,7 +1251,7 @@ static bool eval(QUAD* q)
                     set = vo_constant;
                     if (isintconst(q->dc.left->offset))
                     {
-                        val = (IMODE *)Alloc(sizeof(IMODE));
+                        val = (IMODE*)Alloc(sizeof(IMODE));
                         *val = *q->dc.left;
                     }
                     else
@@ -1408,7 +1408,7 @@ static void pushBlock(BLOCK* block, BLOCK* source)
     }
     if (*edgereached && source == (*edgereached)->block)
         return;
-    bl = (BLOCKLIST *)tAlloc(sizeof(BLOCKLIST));
+    bl = (BLOCKLIST*)tAlloc(sizeof(BLOCKLIST));
     bl->block = source;
     bl->next = *edgereached;
     *edgereached = bl;
@@ -1429,7 +1429,7 @@ static void pushBlock(BLOCK* block, BLOCK* source)
         }
         else
         {
-            l1 = (BLOCKLIST *)tAlloc(sizeof(BLOCKLIST));
+            l1 = (BLOCKLIST*)tAlloc(sizeof(BLOCKLIST));
         }
         l1->block = block;
         l1->next = nullptr;
@@ -1589,7 +1589,7 @@ static bool emulInstruction(QUAD* head, BLOCK* b)
                     }
                     else
                     {
-                        l1 = (INSTRUCTIONLIST *)tAlloc(sizeof(INSTRUCTIONLIST));
+                        l1 = (INSTRUCTIONLIST*)tAlloc(sizeof(INSTRUCTIONLIST));
                     }
                     l1->ins = uses->ins;
                     l1->next = nullptr;
@@ -1663,7 +1663,8 @@ static void iterateConstants(void)
             while (uses)
             {
 
-                if (uses->ins->dc.opcode != i_assn && (uses->ins->temps & TEMP_LEFT) && uses->ins->dc.left->mode == i_direct && !uses->ins->fastcall)
+                if (uses->ins->dc.opcode != i_assn && (uses->ins->temps & TEMP_LEFT) && uses->ins->dc.left->mode == i_direct &&
+                    !uses->ins->fastcall)
                 {
                     int t = uses->ins->dc.left->offset->v.sp->value.i;
                     if (t == i)
@@ -1876,7 +1877,7 @@ void ConstantFlow(void)
     visited = briggsAlloc(blockCount);
     insWorkHead = insWorkTail = nullptr;
     listHolder = nullptr;
-    blockWorkHead = blockWorkTail = (BLOCKLIST *)tAlloc(sizeof(BLOCKLIST));
+    blockWorkHead = blockWorkTail = (BLOCKLIST*)tAlloc(sizeof(BLOCKLIST));
 
     /* value defaults to top */
     /* now reassign any temp which is a parameter to bottom */

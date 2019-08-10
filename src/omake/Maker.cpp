@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "Maker.h"
@@ -57,7 +57,7 @@ Maker::Maker(bool Silent, bool DisplayOnly, bool IgnoreResults, bool Touch, Outp
     std::transform(shtest.begin(), shtest.end(), shtest.begin(), ::toupper);
     OS::SetSHEXE(shtest.find("SH.EXE") != std::string::npos);
 }
-Maker::~Maker() { }
+Maker::~Maker() {}
 void Maker::SetFirstGoal(const std::string& name)
 {
     if (firstGoal.empty())
@@ -125,8 +125,8 @@ bool Maker::CreateDependencyTree()
     }
     return !missingTarget;
 }
-std::unique_ptr<Depends>  Maker::Dependencies(const std::string& goal, const std::string& preferredPath, Time& timeval, bool err, std::string file,
-                             int line)
+std::unique_ptr<Depends> Maker::Dependencies(const std::string& goal, const std::string& preferredPath, Time& timeval, bool err,
+                                             std::string file, int line)
 {
     if (++dependsNesting > 200)
     {
@@ -272,7 +272,6 @@ std::unique_ptr<Depends>  Maker::Dependencies(const std::string& goal, const std
                     rv = nullptr;
                 }
             }
-
         }
     }
     if (rv)
@@ -459,8 +458,7 @@ bool Maker::SearchImplicitRules(const std::string& goal, const std::string& pref
         name = goal;
     }
     bool nonMatchAnything = false;
-    for (auto it = RuleContainer::Instance()->ImplicitBegin();
-         it != RuleContainer::Instance()->ImplicitEnd(); ++it)
+    for (auto it = RuleContainer::Instance()->ImplicitBegin(); it != RuleContainer::Instance()->ImplicitEnd(); ++it)
     {
         if ((*it)->GetTarget().find_first_of("/\\") != std::string::npos)
         {

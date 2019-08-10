@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #ifndef UTIL_H
@@ -63,7 +63,7 @@ class Utils
     static int StringToNumber(std::string str);
     static int StringToNumberHex(std::string str);
     static char* ShortName(const char* v);
-    static bool iequal(const std::string& left, const std::string& right, int sz=-1);
+    static bool iequal(const std::string& left, const std::string& right, int sz = -1);
 
     static unsigned PartialCRC32(unsigned crc, unsigned char* data, size_t len);
     static unsigned CRC32(unsigned char* data, size_t len) { return PartialCRC32(0, data, len); };

@@ -1326,7 +1326,7 @@ LEXEME* baseClasses(LEXEME* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac defa
                                             failed = true;
                                     }
                                     dest = dest->next;
-//                                    src = src->next;
+                                    //                                    src = src->next;
                                 }
                                 if (failed)
                                 {
@@ -2984,7 +2984,7 @@ LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc st
                     SYMLIST** hr = sp->tp->syms->table;
                     while (*hr)
                     {
-                        SYMBOL*ssp = getStructureDeclaration(), *ssp1;
+                        SYMBOL *ssp = getStructureDeclaration(), *ssp1;
                         SYMBOL* sp = (SYMBOL*)(*hr)->p;
                         SYMBOL* sp1 = clonesym(sp);
                         sp1->wasUsing = true;
@@ -3006,7 +3006,7 @@ LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc st
                 }
                 else
                 {
-                    SYMBOL*ssp = getStructureDeclaration(), *ssp1;
+                    SYMBOL *ssp = getStructureDeclaration(), *ssp1;
                     SYMBOL* sp1 = clonesym(sp);
                     sp1->wasUsing = true;
                     sp1->mainsym = sp;
@@ -3584,9 +3584,9 @@ static bool constArgValid(TYPE* tp)
         return true;
     if (isstructured(tp))
     {
-        SYMBOL*sym = basetype(tp)->sp, *sym1;
+        SYMBOL *sym = basetype(tp)->sp, *sym1;
         SYMLIST* hr;
-        SYMBOL*cpy, *mv;
+        SYMBOL *cpy, *mv;
         BASECLASS* bc;
         tp = basetype(tp);
         if (sym->trivialCons)
@@ -3770,9 +3770,9 @@ LEXEME* getDeclType(LEXEME* lex, SYMBOL* funcsp, TYPE** tn)
     return lex;
 }
 
-void CollapseReferences(TYPE *tp_in)
+void CollapseReferences(TYPE* tp_in)
 {
-    TYPE *tp1 = tp_in;
+    TYPE* tp1 = tp_in;
     int count = 0;
     bool lref = false;
     while (tp1 && isref(tp1))
@@ -3800,5 +3800,4 @@ void CollapseReferences(TYPE *tp_in)
             }
         }
     }
-
 }

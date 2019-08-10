@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 /* declare in select has multiple vars */
@@ -85,7 +85,7 @@ void InsertLineData(int lineno, int fileindex, const char* fname, char* line)
 {
     LINEDATA* ld;
     IncGlobalFlag();
-    ld = (LINEDATA *) Alloc(sizeof(LINEDATA));
+    ld = (LINEDATA*)Alloc(sizeof(LINEDATA));
     ld->file = fname;
     ld->line = litlate(line);
     ld->lineno = lineno;
@@ -131,7 +131,7 @@ STATEMENT* currentLineData(BLOCKDATA* parent, LEXEME* lex, int offset)
 }
 STATEMENT* stmtNode(LEXEME* lex, BLOCKDATA* parent, enum e_stmt stype)
 {
-    STATEMENT* st = (STATEMENT *)Alloc(sizeof(STATEMENT));
+    STATEMENT* st = (STATEMENT*)Alloc(sizeof(STATEMENT));
     if (!lex)
         lex = context->cur ? context->cur->prev : context->last;
     st->type = stype;
@@ -267,7 +267,7 @@ void makeXCTab(SYMBOL* funcsp)
     SYMBOL* sym;
     if (!funcsp->xc)
     {
-        funcsp->xc = (xcept *)Alloc(sizeof(struct xcept));
+        funcsp->xc = (xcept*)Alloc(sizeof(struct xcept));
     }
     if (!funcsp->xc->xctab)
     {
@@ -289,9 +289,9 @@ static void thunkCatchCleanup(STATEMENT* st, SYMBOL* funcsp, BLOCKDATA* src, BLO
             SYMBOL* sym = namespacesearch("_CatchCleanup", globalNameSpace, false, false);
             if (sym)
             {
-                FUNCTIONCALL* funcparams = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
+                FUNCTIONCALL* funcparams = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
                 STATEMENT** find = &src->head;
-                INITLIST* arg1 = (INITLIST *)Alloc(sizeof(INITLIST));  // exception table
+                INITLIST* arg1 = (INITLIST*)Alloc(sizeof(INITLIST));  // exception table
                 makeXCTab(funcsp);
                 sym = (SYMBOL*)basetype(sym->tp)->syms->table[0]->p;
                 funcparams->ascall = true;
@@ -305,7 +305,7 @@ static void thunkCatchCleanup(STATEMENT* st, SYMBOL* funcsp, BLOCKDATA* src, BLO
                     find = &(*find)->next;
                 if (*find == st)
                 {
-                    *find = (STATEMENT *)Alloc(sizeof(STATEMENT));
+                    *find = (STATEMENT*)Alloc(sizeof(STATEMENT));
                     **find = *st;
                     (*find)->next = st;
                     (*find)->type = st_expr;
@@ -481,7 +481,7 @@ static LEXEME* statement_case(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
         {
             STATEMENT* st = stmtNode(lex, parent, st_label);
             st->label = codeLabel++;
-            data = (CASEDATA *)Alloc(sizeof(CASEDATA));
+            data = (CASEDATA*)Alloc(sizeof(CASEDATA));
             data->val = val;
             data->label = st->label;
             data->file = fname;
@@ -553,7 +553,7 @@ static LEXEME* statement_default(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
 }
 static LEXEME* statement_do(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
 {
-    BLOCKDATA* dostmt = (BLOCKDATA *)Alloc(sizeof(BLOCKDATA));
+    BLOCKDATA* dostmt = (BLOCKDATA*)Alloc(sizeof(BLOCKDATA));
     STATEMENT *st, *lastLabelStmt;
     EXPRESSION* select = nullptr;
     int addedBlock = 0;
@@ -635,7 +635,7 @@ static LEXEME* statement_do(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
 }
 static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
 {
-    BLOCKDATA* forstmt = (BLOCKDATA *)Alloc(sizeof(BLOCKDATA));
+    BLOCKDATA* forstmt = (BLOCKDATA*)Alloc(sizeof(BLOCKDATA));
     STATEMENT *st, *lastLabelStmt;
     STATEMENT* forline;
     int addedBlock = 0;
@@ -709,9 +709,9 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                 else
                 {
                     EXPRESSION *ibegin = nullptr, *iend = nullptr;
-                    SYMBOL*sbegin = nullptr, *send = nullptr;
+                    SYMBOL *sbegin = nullptr, *send = nullptr;
                     TYPE* iteratorType = nullptr;
-                    TYPE* tpref = (TYPE *)Alloc(sizeof(TYPE));
+                    TYPE* tpref = (TYPE*)Alloc(sizeof(TYPE));
                     EXPRESSION* rangeExp = anonymousVar(sc_auto, tpref);
                     SYMBOL* rangeSP = rangeExp->v.sp;
                     if (isstructured(selectTP))
@@ -757,7 +757,7 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                         send = search("end", basetype(selectTP)->syms);
                         if (sbegin && send)
                         {
-                            SYMBOL*beginFunc = nullptr, *endFunc = nullptr;
+                            SYMBOL *beginFunc = nullptr, *endFunc = nullptr;
                             FUNCTIONCALL fcb, fce;
                             TYPE* ctp;
                             memset(&fcb, 0, sizeof(fcb));
@@ -802,14 +802,14 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                         initInsert(&dest, iteratorType, exp, 0, true);
                                         fce.returnSP->dest = dest;
                                     }
-                                    fc = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
+                                    fc = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
                                     *fc = fcb;
                                     fc->sp = beginFunc;
                                     fc->functp = beginFunc->tp;
                                     fc->ascall = true;
                                     ibegin = exprNode(en_func, nullptr, nullptr);
                                     ibegin->v.func = fc;
-                                    fc = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
+                                    fc = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
                                     *fc = fce;
                                     fc->sp = endFunc;
                                     fc->functp = endFunc->tp;
@@ -850,7 +850,7 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                 }
                             }
                             {
-                                SYMBOL*beginFunc = nullptr, *endFunc = nullptr;
+                                SYMBOL *beginFunc = nullptr, *endFunc = nullptr;
                                 INITLIST args;
                                 FUNCTIONCALL fcb, fce;
                                 TYPE* ctp;
@@ -900,30 +900,30 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                             initInsert(&dest, iteratorType, exp, 0, true);
                                             fce.returnSP->dest = dest;
                                         }
-                                        fc = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
+                                        fc = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
                                         *fc = fcb;
                                         fc->sp = beginFunc;
                                         fc->functp = beginFunc->tp;
                                         fc->ascall = true;
-                                        fc->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
+                                        fc->arguments = (INITLIST*)Alloc(sizeof(INITLIST));
                                         *fc->arguments = *fcb.arguments;
                                         if (isstructured(it2) && isstructured(((SYMBOL*)(it2->syms->table[0]->p))->tp))
                                         {
                                             EXPRESSION* consexp =
                                                 anonymousVar(sc_auto, basetype(rangeSP->tp)->btp);  // sc_parameter to push it...
                                             SYMBOL* esp = consexp->v.sp;
-                                            FUNCTIONCALL* funcparams = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
+                                            FUNCTIONCALL* funcparams = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
                                             TYPE* ctype = basetype(rangeSP->tp)->btp;
                                             esp->stackblock = true;
-                                            funcparams->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
+                                            funcparams->arguments = (INITLIST*)Alloc(sizeof(INITLIST));
                                             *funcparams->arguments = *fc->arguments;
-                                            callConstructor(&ctype, &consexp, funcparams, false, 0, true, false, true, false,
-                                                            false, false);
+                                            callConstructor(&ctype, &consexp, funcparams, false, 0, true, false, true, false, false,
+                                                            false);
                                             fc->arguments->exp = consexp;
                                         }
                                         else
                                         {
-                                            fc->arguments->tp = (TYPE *)Alloc(sizeof(TYPE));
+                                            fc->arguments->tp = (TYPE*)Alloc(sizeof(TYPE));
                                             fc->arguments->tp->type = bt_lref;
                                             fc->arguments->tp->size = getSize(bt_pointer);
                                             fc->arguments->tp->btp = fcb.arguments->tp;
@@ -931,30 +931,30 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                         }
                                         ibegin = exprNode(en_func, nullptr, nullptr);
                                         ibegin->v.func = fc;
-                                        fc = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
+                                        fc = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
                                         *fc = fce;
                                         fc->sp = endFunc;
                                         fc->functp = endFunc->tp;
                                         fc->ascall = true;
-                                        fc->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
+                                        fc->arguments = (INITLIST*)Alloc(sizeof(INITLIST));
                                         *fc->arguments = *fce.arguments;
                                         if (isstructured(it2) && isstructured(((SYMBOL*)(it2->syms->table[0]->p))->tp))
                                         {
                                             EXPRESSION* consexp =
                                                 anonymousVar(sc_auto, basetype(rangeSP->tp)->btp);  // sc_parameter to push it...
                                             SYMBOL* esp = consexp->v.sp;
-                                            FUNCTIONCALL* funcparams = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
+                                            FUNCTIONCALL* funcparams = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
                                             TYPE* ctype = basetype(rangeSP->tp)->btp;
                                             esp->stackblock = true;
-                                            funcparams->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
+                                            funcparams->arguments = (INITLIST*)Alloc(sizeof(INITLIST));
                                             *funcparams->arguments = *fc->arguments;
-                                            callConstructor(&ctype, &consexp, funcparams, false, 0, true, false, true, false,
-                                                            false, false);
+                                            callConstructor(&ctype, &consexp, funcparams, false, 0, true, false, true, false, false,
+                                                            false);
                                             fc->arguments->exp = consexp;
                                         }
                                         else
                                         {
-                                            fc->arguments->tp = (TYPE *)Alloc(sizeof(TYPE));
+                                            fc->arguments->tp = (TYPE*)Alloc(sizeof(TYPE));
                                             fc->arguments->tp->type = bt_lref;
                                             fc->arguments->tp->size = getSize(bt_pointer);
                                             fc->arguments->tp->btp = fce.arguments->tp;
@@ -1012,7 +1012,8 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                         {
                             TYPE* eqType = iteratorType;
                             compare = eBegin;
-                            if (!insertOperatorFunc(ovcl_unary_prefix, eq, funcsp, &eqType, &compare, iteratorType, eEnd, nullptr, 0))
+                            if (!insertOperatorFunc(ovcl_unary_prefix, eq, funcsp, &eqType, &compare, iteratorType, eEnd, nullptr,
+                                                    0))
                             {
                                 error(ERR_MISSING_OPERATOR_EQ_FORRANGE_ITERATOR);
                             }
@@ -1044,8 +1045,8 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                             {
                                 EXPRESSION* decl = declExp;
                                 TYPE* ctype = declSP->tp;
-                                FUNCTIONCALL* funcparams = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
-                                INITLIST* args = (INITLIST *)Alloc(sizeof(INITLIST));
+                                FUNCTIONCALL* funcparams = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
+                                INITLIST* args = (INITLIST*)Alloc(sizeof(INITLIST));
                                 funcparams->arguments = args;
                                 args->tp = declSP->tp;
                                 args->exp = eBegin;
@@ -1089,8 +1090,8 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                 {
                                     EXPRESSION* decl = declExp;
                                     TYPE* ctype = declSP->tp;
-                                    FUNCTIONCALL* funcparams = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
-                                    INITLIST* args = (INITLIST *)Alloc(sizeof(INITLIST));
+                                    FUNCTIONCALL* funcparams = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
+                                    INITLIST* args = (INITLIST*)Alloc(sizeof(INITLIST));
                                     funcparams->arguments = args;
                                     args->tp = declSP->tp;
                                     args->exp = eBegin;
@@ -1100,8 +1101,8 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                     callDestructor(declSP, nullptr, &declDest, nullptr, true, false, false);
                                 }
                             }
-                            else if (!insertOperatorFunc(ovcl_unary_prefix, star, funcsp, &starType, &st->select, nullptr, nullptr, nullptr,
-                                                         0))
+                            else if (!insertOperatorFunc(ovcl_unary_prefix, star, funcsp, &starType, &st->select, nullptr, nullptr,
+                                                         nullptr, 0))
                             {
                                 error(ERR_MISSING_OPERATOR_STAR_FORRANGE_ITERATOR);
                             }
@@ -1136,8 +1137,8 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                 {
                                     EXPRESSION* decl = declExp;
                                     TYPE* ctype = declSP->tp;
-                                    FUNCTIONCALL* funcparams = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
-                                    INITLIST* args = (INITLIST *)Alloc(sizeof(INITLIST));
+                                    FUNCTIONCALL* funcparams = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
+                                    INITLIST* args = (INITLIST*)Alloc(sizeof(INITLIST));
                                     funcparams->arguments = args;
                                     args->tp = declSP->tp;
                                     args->exp = st->select;
@@ -1182,8 +1183,8 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                     en_assign, eBegin,
                                     exprNode(en_add, eBegin, intNode(en_c_i, basetype(basetype(iteratorType)->btp)->size)));
                             }
-                            else if (!insertOperatorFunc(ovcl_unary_prefix, autoinc, funcsp, &ppType, &st->select, nullptr, nullptr, nullptr,
-                                                         0))
+                            else if (!insertOperatorFunc(ovcl_unary_prefix, autoinc, funcsp, &ppType, &st->select, nullptr, nullptr,
+                                                         nullptr, 0))
                             {
                                 error(ERR_MISSING_OPERATOR_PLUSPLUS_FORRANGE_ITERATOR);
                             }
@@ -1560,7 +1561,7 @@ static LEXEME* statement_goto(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     if (ISID(lex))
     {
         SYMBOL* spx = search(lex->value.s.a, labelSyms);
-        BLOCKDATA* block = (BLOCKDATA *)Alloc(sizeof(BLOCKDATA));
+        BLOCKDATA* block = (BLOCKDATA*)Alloc(sizeof(BLOCKDATA));
         STATEMENT* st = stmtNode(lex, block, st_goto);
         st->explicitGoto = true;
         block->next = parent;
@@ -1845,7 +1846,7 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                 else
                 {
                     bool oldrref, oldlref;
-                    FUNCTIONCALL* funcparams = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
+                    FUNCTIONCALL* funcparams = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
                     TYPE* ctype = tp;
                     // shortcut for conversion from single expression
                     EXPRESSION* exp1 = nullptr;
@@ -1898,7 +1899,7 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                     */
                     {
                         bool nonconst = funcsp->nonConstVariableUsed;
-                        funcparams->arguments = (INITLIST *)Alloc(sizeof(INITLIST));
+                        funcparams->arguments = (INITLIST*)Alloc(sizeof(INITLIST));
                         funcparams->arguments->tp = tp1;
                         funcparams->arguments->exp = exp1;
                         oldrref = basetype(tp1)->rref;
@@ -1906,9 +1907,9 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                         basetype(tp1)->rref =
                             exp1->type == en_func || exp1->type == en_thisref ||
                             (exp1->type == en_auto &&
-                                exp1->v.sp->storage_class !=
-                                    sc_parameter);  // || lvalue(exp1) && (exp1->type != en_l_ref || exp1->left->type != en_auto ||
-                                                   // exp1->left->v.sp->storage_class != sc_parameter);
+                             exp1->v.sp->storage_class !=
+                                 sc_parameter);  // || lvalue(exp1) && (exp1->type != en_l_ref || exp1->left->type != en_auto ||
+                                                 // exp1->left->v.sp->storage_class != sc_parameter);
                         basetype(tp1)->lref = !basetype(tp1)->rref;
                         maybeConversion = false;
                         returntype = tp;
@@ -1975,11 +1976,12 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                     {
                         returnexp = intNode(en_labcon, dumpMemberPtr(returnexp->v.sp, tp, true));
                     }
-                    if (!chosenAssembler->msil || funcsp->attribs.inheritable.linkage2 == lk_unmanaged || !chosenAssembler->msil->managed(funcsp))
+                    if (!chosenAssembler->msil || funcsp->attribs.inheritable.linkage2 == lk_unmanaged ||
+                        !chosenAssembler->msil->managed(funcsp))
                     {
                         returnexp = exprNode(en_blockassign, en, returnexp);
                         returnexp->size = basetype(tp)->size;
-                        returnexp->altdata =(void*)(basetype(tp));
+                        returnexp->altdata = (void*)(basetype(tp));
                     }
                     returntype = tp;
                 }
@@ -2198,7 +2200,7 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
 }
 static LEXEME* statement_switch(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
 {
-    BLOCKDATA* switchstmt = (BLOCKDATA *)Alloc(sizeof(BLOCKDATA));
+    BLOCKDATA* switchstmt = (BLOCKDATA*)Alloc(sizeof(BLOCKDATA));
     STATEMENT* st;
     EXPRESSION* select = nullptr;
     int addedBlock = 0;
@@ -2262,7 +2264,7 @@ static LEXEME* statement_switch(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
 }
 static LEXEME* statement_while(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
 {
-    BLOCKDATA* whilestmt = (BLOCKDATA *)Alloc(sizeof(BLOCKDATA));
+    BLOCKDATA* whilestmt = (BLOCKDATA*)Alloc(sizeof(BLOCKDATA));
     STATEMENT *st, *lastLabelStmt;
     STATEMENT* whileline;
     EXPRESSION* select = nullptr;
@@ -2495,7 +2497,7 @@ LEXEME* statement_catch(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, int labe
         {
             STATEMENT* st;
             TYPE* tp = nullptr;
-            BLOCKDATA* catchstmt = (BLOCKDATA *)Alloc(sizeof(BLOCKDATA));
+            BLOCKDATA* catchstmt = (BLOCKDATA*)Alloc(sizeof(BLOCKDATA));
             ParseAttributeSpecifiers(&lex, funcsp, true);
             catchstmt->breaklabel = label;
             catchstmt->next = parent;
@@ -2547,7 +2549,7 @@ LEXEME* statement_catch(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, int labe
 LEXEME* statement_try(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
 {
     STATEMENT* st;
-    BLOCKDATA* trystmt = (BLOCKDATA *)Alloc(sizeof(BLOCKDATA));
+    BLOCKDATA* trystmt = (BLOCKDATA*)Alloc(sizeof(BLOCKDATA));
     hasXCInfo = true;
     trystmt->breaklabel = codeLabel++;
     trystmt->next = parent;
@@ -2904,8 +2906,8 @@ LEXEME* statement(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool viacontro
             break;
         default:
             if (((startOfType(lex, false) &&
-                 ((!cparams.prm_cplusplus && (!chosenAssembler->msil || !chosenAssembler->msil->allowExtensions))||
-                  resolveToDeclaration(lex)))) ||
+                  ((!cparams.prm_cplusplus && (!chosenAssembler->msil || !chosenAssembler->msil->allowExtensions)) ||
+                   resolveToDeclaration(lex)))) ||
                 MATCHKW(lex, kw_namespace) || MATCHKW(lex, kw_using) || MATCHKW(lex, kw_decltype) || MATCHKW(lex, kw_static_assert))
             {
                 if (!cparams.prm_c99 && !cparams.prm_cplusplus)
@@ -2916,10 +2918,10 @@ LEXEME* statement(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool viacontro
                 {
                     AllocateLocalContext(parent, funcsp, codeLabel++);
                 }
-                while (
-                    ((startOfType(lex, false) && ((!cparams.prm_cplusplus && !chosenAssembler->msil) || resolveToDeclaration(lex)))) ||
-                    MATCHKW(lex, kw_namespace) || MATCHKW(lex, kw_using) || MATCHKW(lex, kw_decltype) ||
-                    MATCHKW(lex, kw_static_assert))
+                while (((startOfType(lex, false) &&
+                         ((!cparams.prm_cplusplus && !chosenAssembler->msil) || resolveToDeclaration(lex)))) ||
+                       MATCHKW(lex, kw_namespace) || MATCHKW(lex, kw_using) || MATCHKW(lex, kw_decltype) ||
+                       MATCHKW(lex, kw_static_assert))
                 {
                     STATEMENT* current = parent->tail;
                     declareAndInitialize = false;
@@ -2997,9 +2999,9 @@ static void insertXCInfo(SYMBOL* funcsp)
     sym = namespacesearch("_InitializeException", globalNameSpace, false, false);
     if (sym)
     {
-        FUNCTIONCALL* funcparams = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
-        INITLIST* arg1 = (INITLIST *)Alloc(sizeof(INITLIST));
-        INITLIST* arg2 = (INITLIST *)Alloc(sizeof(INITLIST));
+        FUNCTIONCALL* funcparams = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
+        INITLIST* arg1 = (INITLIST*)Alloc(sizeof(INITLIST));
+        INITLIST* arg2 = (INITLIST*)Alloc(sizeof(INITLIST));
         EXPRESSION* exp;
         sym = (SYMBOL*)basetype(sym->tp)->syms->table[0]->p;
         funcparams->functp = sym->tp;
@@ -3020,7 +3022,7 @@ static void insertXCInfo(SYMBOL* funcsp)
         if (sym)
         {
             sym = (SYMBOL*)basetype(sym->tp)->syms->table[0]->p;
-            funcparams = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
+            funcparams = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
             funcparams->functp = sym->tp;
             funcparams->sp = sym;
             funcparams->fcall = varNode(en_pc, sym);
@@ -3033,7 +3035,7 @@ static void insertXCInfo(SYMBOL* funcsp)
 }
 LEXEME* compound(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
 {
-    BLOCKDATA* blockstmt = (BLOCKDATA *)Alloc(sizeof(BLOCKDATA));
+    BLOCKDATA* blockstmt = (BLOCKDATA*)Alloc(sizeof(BLOCKDATA));
     int pragmas = stdpragmas;
     STATEMENT* st;
     EXPRESSION* thisptr = nullptr;
@@ -3103,7 +3105,7 @@ LEXEME* compound(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
             errorint(ERR_NEEDY, ';');
         if (MATCHKW(lex, semicolon))
         {
-            lex = getsym(); // helps in error processing to not do default statement processing here...
+            lex = getsym();  // helps in error processing to not do default statement processing here...
         }
         else
         {
@@ -3220,9 +3222,9 @@ LEXEME* compound(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
         SYMBOL* sym = namespacesearch("_CatchCleanup", globalNameSpace, false, false);
         if (sym)
         {
-            FUNCTIONCALL* funcparams = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
+            FUNCTIONCALL* funcparams = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
             STATEMENT* st = stmtNode(lex, blockstmt, st_expr);
-            INITLIST* arg1 = (INITLIST *)Alloc(sizeof(INITLIST));  // exception table
+            INITLIST* arg1 = (INITLIST*)Alloc(sizeof(INITLIST));  // exception table
             makeXCTab(funcsp);
             sym = (SYMBOL*)basetype(sym->tp)->syms->table[0]->p;
             funcparams->ascall = true;
@@ -3326,7 +3328,8 @@ static void assignParameterSizes(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* block)
             // handle structured return values
             if (chosenAssembler->arch->denyopts & DO_NOPARMADJSIZE)
             {
-                if (funcsp->attribs.inheritable.linkage2 == lk_unmanaged || !chosenAssembler->msil || !chosenAssembler->msil->managed(funcsp))
+                if (funcsp->attribs.inheritable.linkage2 == lk_unmanaged || !chosenAssembler->msil ||
+                    !chosenAssembler->msil->managed(funcsp))
                     base++;
             }
             else
@@ -3495,7 +3498,7 @@ void parseNoexcept(SYMBOL* funcsp)
             s.str = funcsp->parentClass;
             addStructureDeclaration(&s);
         }
-        LEXEME *lex = SetAlternateLex(funcsp->deferredNoexcept);
+        LEXEME* lex = SetAlternateLex(funcsp->deferredNoexcept);
         SYMLIST* hr = basetype(funcsp->tp)->syms->table[0];
         TYPE* tp = nullptr;
         EXPRESSION* exp = nullptr;
@@ -3521,7 +3524,6 @@ void parseNoexcept(SYMBOL* funcsp)
         if (funcsp->parentClass)
             dropStructureDeclaration();
     }
-
 }
 LEXEME* body(LEXEME* lex, SYMBOL* funcsp)
 {
@@ -3534,7 +3536,7 @@ LEXEME* body(LEXEME* lex, SYMBOL* funcsp)
     HASHTABLE* oldSyms = localNameSpace->valueData->syms;
     HASHTABLE* oldLabelSyms = labelSyms;
     SYMBOL* oldtheCurrentFunc = theCurrentFunc;
-    BLOCKDATA* block = (BLOCKDATA *)Alloc(sizeof(BLOCKDATA));
+    BLOCKDATA* block = (BLOCKDATA*)Alloc(sizeof(BLOCKDATA));
     STATEMENT* startStmt;
     int oldCodeLabel = codeLabel;
     int oldMatchReturnTypes = matchReturnTypes;

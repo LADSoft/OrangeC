@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <stdio.h>
@@ -66,14 +66,14 @@ extern int fastcallAlias;
 extern FILE *outputFile, *browseFile;
 extern char infile[];
 extern int usingEsp;
-extern AMODE* singleLabel, *doubleLabel, *zerolabel;
+extern AMODE *singleLabel, *doubleLabel, *zerolabel;
 LIST* includedFiles;
 InstructionParser* instructionParser;
 Section* currentSection;
 
 static const char* segnames[] = {0,         "code",     "data",     "bss",        "string",     "const",
-                           "tls",     "cstartup", "crundown", "tlsstartup", "tlsrundown", "codefix",
-                           "datafix", "lines",    "types",    "symbols",    "browse"};
+                                 "tls",     "cstartup", "crundown", "tlsstartup", "tlsrundown", "codefix",
+                                 "datafix", "lines",    "types",    "symbols",    "browse"};
 
 static int segAlignsDefault[] = {1, 2, 8, 8, 2, 8, 8, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
 static int segFlags[] = {0,
@@ -552,7 +552,7 @@ void output_obj_file(void)
 
 void compile_start(char* name)
 {
-    LIST* newItem = (LIST*)(LIST *)beGlobalAlloc(sizeof(LIST));
+    LIST* newItem = (LIST*)(LIST*)beGlobalAlloc(sizeof(LIST));
     newItem->data = beGlobalAlloc(strlen(name) + 1);
     strcpy((char*)newItem->data, name);
 
@@ -565,7 +565,7 @@ void include_start(char* name, int num)
 {
     if (num > lastIncludeNum)
     {
-        LIST* newItem = (LIST*)(LIST *)beGlobalAlloc(sizeof(LIST));
+        LIST* newItem = (LIST*)(LIST*)beGlobalAlloc(sizeof(LIST));
         newItem->data = beGlobalAlloc(strlen(name) + 1);
         strcpy((char*)newItem->data, name);
 
@@ -920,7 +920,7 @@ int resolveoffset(EXPRESSION* n, int* resolved)
             {
                 int m = n->v.sp->offset;
 
-                if (!usingEsp && m> 0)
+                if (!usingEsp && m > 0)
                     m += 4;
 
                 if (n->v.sp->storage_class == sc_parameter && fastcallAlias)
@@ -928,7 +928,7 @@ int resolveoffset(EXPRESSION* n, int* resolved)
                     if (!isstructured(basetype(theCurrentFunc->tp)->btp) || n->v.sp->offset != chosenAssembler->arch->retblocksize)
                     {
 
-                        m-= fastcallAlias * chosenAssembler->arch->parmwidth;
+                        m -= fastcallAlias * chosenAssembler->arch->parmwidth;
                         if (m >= chosenAssembler->arch->retblocksize)
                         {
                             rv += m;

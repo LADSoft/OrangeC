@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 /*
@@ -566,7 +566,7 @@ void outcodeini(void)
     putamode(q, q->dc.right);
     oprintf(icdFile, ")");
 }
-/*static*/ void iop_cmpblock(QUAD *q)
+/*static*/ void iop_cmpblock(QUAD* q)
 {
     if (chosenAssembler->gen->asm_cmpblock)
         chosenAssembler->gen->asm_cmpblock(q);
@@ -883,7 +883,7 @@ void outcodeini(void)
         int i, j;
         BITINT* p;
         oprintf(icdFile, "\n;\tLive: ");
-        p = (BITINT *)q->dc.v.data;
+        p = (BITINT*)q->dc.v.data;
 
         for (i = 0; i < (tempCount + BITINTBITS - 1) / BITINTBITS; i++, p++)
             if (*p)
@@ -1143,7 +1143,7 @@ void outcodeini(void)
     oputc(',', icdFile);
     putamode(q, q->dc.right);
 }
-/*static*/ void iop_xchg(QUAD *q)
+/*static*/ void iop_xchg(QUAD* q)
 {
     if (chosenAssembler->gen->asm_atomic)
         chosenAssembler->gen->asm_atomic(q);
@@ -2703,7 +2703,7 @@ int put_exfunc(SYMBOL* sym, int notyet)
     if (chosenAssembler->gen->extern_define)
         chosenAssembler->gen->extern_define(sym, sym->tp->type == bt_func || sym->tp->type == bt_ifunc);
     if (sym->attribs.inheritable.linkage2 == lk_import && chosenAssembler->gen->import_define)
-        chosenAssembler->gen->import_define(sym, sym->importfile ? sym->importfile : (char *)"");
+        chosenAssembler->gen->import_define(sym, sym->importfile ? sym->importfile : (char*)"");
     DecGlobalFlag();
     if (!icdFile)
         return notyet;
@@ -2757,10 +2757,10 @@ void putexterns(void)
             if (!sym->ispure &&
                 ((sym->dontinstantiate && sym->genreffed) ||
                  (!sym->inlineFunc.stmt && !sym->init &&
-                     (isfunction(sym->tp) || (!isfunction(sym->tp) && sym->storage_class != sc_global &&
-                                                sym->storage_class != sc_static && sym->storage_class != sc_localstatic)) &&
-                     ((sym->parentClass && sym->genreffed) || (sym->genreffed && sym->storage_class == sc_external)))) &&
-                    !sym->noextern)
+                  (isfunction(sym->tp) || (!isfunction(sym->tp) && sym->storage_class != sc_global &&
+                                           sym->storage_class != sc_static && sym->storage_class != sc_localstatic)) &&
+                  ((sym->parentClass && sym->genreffed) || (sym->genreffed && sym->storage_class == sc_external)))) &&
+                !sym->noextern)
             {
                 notyet = put_exfunc(sym, notyet);
                 sym->genreffed = false;
@@ -2774,7 +2774,7 @@ void putexterns(void)
         while (libincludes)
         {
             if (chosenAssembler->gen->output_includelib)
-                chosenAssembler->gen->output_includelib((char *)libincludes->data);
+                chosenAssembler->gen->output_includelib((char*)libincludes->data);
 
             oprintf(icdFile, "\tINCLUDELIB\t%s\n", libincludes->data);
             libincludes = libincludes->next;

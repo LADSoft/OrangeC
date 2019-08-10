@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 /* we are only doing local opts on temp variables.  At this point,
@@ -187,7 +187,7 @@ static void liveSetup(void)
 static void liveOut()
 {
     BITINT inWorkList[8192];
-    unsigned short* workList = (unsigned short *)sAlloc((blockCount + 1) * sizeof(unsigned short));
+    unsigned short* workList = (unsigned short*)sAlloc((blockCount + 1) * sizeof(unsigned short));
     int i;
     int head = 0, tail = 0;
     int tempDWords = (tempCount + BITINTBITS - 1) / BITINTBITS;
@@ -293,7 +293,7 @@ static void liveOut()
 
                 if (blockArray[i]->liveOut)
                 {
-                    QUAD* q = (QUAD *)Alloc(sizeof(QUAD));
+                    QUAD* q = (QUAD*)Alloc(sizeof(QUAD));
                     t = blockArray[i]->tail;
                     q->dc.opcode = i_blockend;
                     q->dc.v.data = blockArray[i]->liveOut;
@@ -582,7 +582,8 @@ void removeDead(BLOCK* b)
                         {
                             changed = true;
                             RemoveInstruction(head);
-                            if (head->dc.opcode == i_coswitch || (head->dc.opcode >= i_jne && head->dc.opcode <= i_jge)|| head->dc.opcode == i_cmpblock)
+                            if (head->dc.opcode == i_coswitch || (head->dc.opcode >= i_jne && head->dc.opcode <= i_jge) ||
+                                head->dc.opcode == i_cmpblock)
                             {
                                 BLOCKLIST* bl = head->block->succ->next;
                                 head->block->succ->next = nullptr;

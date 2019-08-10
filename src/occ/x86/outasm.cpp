@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <stdio.h>
@@ -50,9 +50,9 @@ extern int prm_assembler;
 static int uses_float;
 
 MULDIV* muldivlink = 0;
-static enum e_gt oa_gentype = nogen;        /* Current DC type */
-enum e_sg oa_currentSeg = noseg; /* Current seg */
-static int oa_outcol = 0;                   /* Curront col (roughly) */
+static enum e_gt oa_gentype = nogen; /* Current DC type */
+enum e_sg oa_currentSeg = noseg;     /* Current seg */
+static int oa_outcol = 0;            /* Curront col (roughly) */
 int newlabel;
 int needpointer;
 static int nosize = 0;
@@ -767,7 +767,7 @@ void oa_genfloat(enum e_gt type, FPF* val)
 {
     if (cparams.prm_asmfile)
     {
-       char buf[256];
+        char buf[256];
         strcpy(buf, ((std::string)*val).c_str());
         switch (type)
         {
@@ -1362,14 +1362,14 @@ long queue_large_const(unsigned constant[], int count)
     int lbl = beGetLabel;
     MULDIV *p, **q = &muldivlink;
 
-    while (*q) q = &(*q)->next;
-    for (int i = 0; i < count; i++, q=&(*q)->next)
+    while (*q)
+        q = &(*q)->next;
+    for (int i = 0; i < count; i++, q = &(*q)->next)
     {
         p = (MULDIV*)beGlobalAlloc(sizeof(MULDIV));
         p->value = constant[i];
         if (i == 0)
             p->label = lbl;
-
     }
     return lbl;
 }

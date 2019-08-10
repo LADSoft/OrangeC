@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "compiler.h"
@@ -53,20 +53,20 @@ void ccSetSymbol(SYMBOL* s);
 
 void syminit(void)
 {
-    globalNameSpace = (NAMESPACEVALUELIST *)Alloc(sizeof(NAMESPACEVALUELIST));
-    globalNameSpace->valueData = (NAMESPACEVALUEDATA *)Alloc(sizeof(NAMESPACEVALUEDATA));
+    globalNameSpace = (NAMESPACEVALUELIST*)Alloc(sizeof(NAMESPACEVALUELIST));
+    globalNameSpace->valueData = (NAMESPACEVALUEDATA*)Alloc(sizeof(NAMESPACEVALUEDATA));
     globalNameSpace->valueData->syms = CreateHashTable(GLOBALHASHSIZE);
     globalNameSpace->valueData->tags = CreateHashTable(GLOBALHASHSIZE);
 
-    localNameSpace = (NAMESPACEVALUELIST *)Alloc(sizeof(NAMESPACEVALUELIST));
-    localNameSpace->valueData = (NAMESPACEVALUEDATA *)Alloc(sizeof(NAMESPACEVALUEDATA));
+    localNameSpace = (NAMESPACEVALUELIST*)Alloc(sizeof(NAMESPACEVALUELIST));
+    localNameSpace->valueData = (NAMESPACEVALUEDATA*)Alloc(sizeof(NAMESPACEVALUEDATA));
     usingDirectives = nullptr;
     matchOverloadLevel = 0;
 }
 HASHTABLE* CreateHashTable(int size)
 {
-    HASHTABLE* rv = (HASHTABLE *)Alloc(sizeof(HASHTABLE));
-    rv->table = (SYMLIST **)Alloc(sizeof(SYMLIST*) * size);
+    HASHTABLE* rv = (HASHTABLE*)Alloc(sizeof(HASHTABLE));
+    rv->table = (SYMLIST**)Alloc(sizeof(SYMLIST*) * size);
     rv->size = size;
     return rv;
 }
@@ -96,7 +96,7 @@ void AllocateLocalContext(BLOCKDATA* block, SYMBOL* sym, int label)
     if (sym)
         localNameSpace->valueData->tags->blockLevel = sym->value.i++;
 
-    l = (LIST *)Alloc(sizeof(LIST));
+    l = (LIST*)Alloc(sizeof(LIST));
     l->data = localNameSpace->valueData->usingDirectives;
     l->next = usingDirectives;
     usingDirectives = l;
@@ -151,7 +151,7 @@ void FreeLocalContext(BLOCKDATA* block, SYMBOL* sym, int label)
     localNameSpace->valueData->syms = localNameSpace->valueData->syms->next;
     localNameSpace->valueData->tags = localNameSpace->valueData->tags->next;
 
-    localNameSpace->valueData->usingDirectives = (LIST *) usingDirectives->data;
+    localNameSpace->valueData->usingDirectives = (LIST*)usingDirectives->data;
     usingDirectives = usingDirectives->next;
 
 #    ifdef PARSER_ONLY
@@ -202,15 +202,15 @@ SYMLIST* AddName(SYMBOL* item, HASHTABLE* table)
                 return (r);
             q = q->next;
         }
-        newRec = (SYMLIST *)Alloc(sizeof(SYMLIST));
+        newRec = (SYMLIST*)Alloc(sizeof(SYMLIST));
         r->next = newRec;
-        newRec->p = (SYMBOL *)item;
+        newRec->p = (SYMBOL*)item;
     }
     else
     {
-        newRec = (SYMLIST *)Alloc(sizeof(SYMLIST));
+        newRec = (SYMLIST*)Alloc(sizeof(SYMLIST));
         *p = newRec;
-        newRec->p = (SYMBOL *)item;
+        newRec->p = (SYMBOL*)item;
     }
     return (0);
 }
@@ -236,15 +236,15 @@ SYMLIST* AddOverloadName(SYMBOL* item, HASHTABLE* table)
                 return (r);
             q = q->next;
         }
-        newRec = (SYMLIST *)Alloc(sizeof(SYMLIST));
+        newRec = (SYMLIST*)Alloc(sizeof(SYMLIST));
         r->next = newRec;
-        newRec->p = (SYMBOL *)item;
+        newRec->p = (SYMBOL*)item;
     }
     else
     {
-        newRec = (SYMLIST *)Alloc(sizeof(SYMLIST));
+        newRec = (SYMLIST*)Alloc(sizeof(SYMLIST));
         *p = newRec;
-        newRec->p = (SYMBOL *)item;
+        newRec->p = (SYMBOL*)item;
     }
     return (0);
 }
@@ -376,7 +376,7 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
             unsigned oldIndex[100], newIndex[100];
             tplNew = fnew && fnew->templateParams ? fnew->templateParams : nullptr;
             tplOld = fold && fold->templateParams ? fold->templateParams : nullptr;
-            if (tplNew) 
+            if (tplNew)
                 tplNew = tplNew->p->bySpecialization.types ? tplNew->p->bySpecialization.types : tplNew->next;
             if (tplOld)
                 tplOld = tplOld->p->bySpecialization.types ? tplOld->p->bySpecialization.types : tplOld->next;
@@ -423,7 +423,9 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
             {
                 TYPE* tps = basetype(told)->btp;
                 TYPE* tpn = basetype(tnew)->btp;
-                if ((!templatecomparetypes(tpn, tps, true) ||((tps->type == bt_templateselector || tpn->type == bt_templateselector) && tpn->type != tps->type) )&& !sameTemplate(tpn, tps))
+                if ((!templatecomparetypes(tpn, tps, true) ||
+                     ((tps->type == bt_templateselector || tpn->type == bt_templateselector) && tpn->type != tps->type)) &&
+                    !sameTemplate(tpn, tps))
                 {
                     if (isref(tps))
                         tps = basetype(tps)->btp;
@@ -475,7 +477,8 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
                                             return false;
                                     }
                                 }
-                                else if (!strcmp(tpn->sp->templateSelector->next->sp->name,tps->sp->templateSelector->next->sp->name))
+                                else if (!strcmp(tpn->sp->templateSelector->next->sp->name,
+                                                 tps->sp->templateSelector->next->sp->name))
                                 {
                                     if (tpn->sp->templateSelector->next->next->name[0])
                                         return false;
@@ -568,7 +571,8 @@ SYMBOL* searchOverloads(SYMBOL* sym, HASHTABLE* table)
             {
                 if (!spp->templateParams)
                     return spp;
-                if (sym->templateLevel == spp->templateLevel || (sym->templateLevel && !spp->templateLevel && !sym->templateParams->next))
+                if (sym->templateLevel == spp->templateLevel ||
+                    (sym->templateLevel && !spp->templateLevel && !sym->templateParams->next))
                     return spp;
 
                 if (!!spp->templateParams == !!sym->templateParams)

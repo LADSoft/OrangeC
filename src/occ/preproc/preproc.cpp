@@ -1,34 +1,34 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "compiler.h"
 #include "sys/stat.h"
 //#include "dir.h"
 #ifdef HAVE_UNISTD_H
-#include <unistd.h>
+#    include <unistd.h>
 #else
-#include <io.h>
+#    include <io.h>
 extern "C" char* getcwd(char*, int);
 #endif
 
@@ -119,7 +119,7 @@ void pushif(void), popif(void);
 /* Moudle init */
 void preprocini(char* name, FILE* fil)
 {
-    INCLUDES* p = (INCLUDES *)globalAlloc(sizeof(INCLUDES));
+    INCLUDES* p = (INCLUDES*)globalAlloc(sizeof(INCLUDES));
     p->fname = litlate(name);
     p->handle = fil;
     p->first = true;
@@ -435,7 +435,7 @@ int getstring(unsigned char* s, int len, FILE* file)
         }
         if (file == stdin)
         {
-            char* p = fgets((char *)includes->inputbuffer, sizeof(includes->inputbuffer), file);
+            char* p = fgets((char*)includes->inputbuffer, sizeof(includes->inputbuffer), file);
             if (p)
                 includes->inputlen = strlen(p);
             else
@@ -563,8 +563,8 @@ bool GetLine(void)
                 fclose(includes->handle);
 #endif
 #ifndef CPREPROCESSOR
-                linesHead = (LINEDATA *)includes->linesHead;
-                linesTail = (LINEDATA *)includes->linesTail;
+                linesHead = (LINEDATA*)includes->linesHead;
+                linesTail = (LINEDATA*)includes->linesTail;
 #endif
                 includes = includes->next;
                 FreeInclData(p);
@@ -724,7 +724,7 @@ unsigned onceCRC(FILE* handle)
     unsigned crc = 0;
     unsigned PartialCRC32(unsigned crc, unsigned char* data, size_t len);
 #    ifdef PARSER_ONLY
-    crc = PartialCRC32(crc, (unsigned char *)includes->handle, includes->filesize);
+    crc = PartialCRC32(crc, (unsigned char*)includes->handle, includes->filesize);
 #    else
     int hnd = dup(fileno(handle));
     unsigned char buf[8192];
@@ -758,7 +758,7 @@ void pragonce(void)
         }
     }
     IncGlobalFlag();
-    oncePos = (ONCE *)Alloc(sizeof(ONCE));
+    oncePos = (ONCE*)Alloc(sizeof(ONCE));
     DecGlobalFlag();
     oncePos->filesize = includes->filesize;
     oncePos->filetime = filetime;
@@ -822,7 +822,7 @@ static void pragerror(int error)
                         s++;
                     while (isdigit(*s))
                     {
-                        func(atoi((char *)s));
+                        func(atoi((char*)s));
                         while (isdigit(*s))
                             s++;
                         while (isspace(*s))
@@ -933,7 +933,7 @@ void dopragma(bool fromPragma)
                 return;
             IncGlobalFlag();
             f = litlate(buf);
-            l = (LIST*)(LIST *)Alloc(sizeof(LIST));
+            l = (LIST*)(LIST*)Alloc(sizeof(LIST));
             l->data = f;
             l->next = libincludes;
             libincludes = l;
@@ -1054,7 +1054,7 @@ unsigned char* getMacroBuffer()
     unsigned char* rv;
     if (macroBuffers)
     {
-        rv = (unsigned char *)macroBuffers;
+        rv = (unsigned char*)macroBuffers;
         macroBuffers = macroBuffers->next;
     }
     else
@@ -1086,7 +1086,7 @@ void Compile_Pragma(void)
         includes->lptr++;
     if (*includes->lptr == '"')
     {
-        unsigned char* p = includes->lptr+1;
+        unsigned char* p = includes->lptr + 1;
         while (*p)
         {
             if (*p == '\\' && (*(p + 1) == '"' || *(p + 1) == '\\'))
@@ -1151,7 +1151,7 @@ INCLUDES* GetIncludeData(void)
     }
     else
     {
-        rv = (INCLUDES *)globalAlloc(sizeof(INCLUDES));
+        rv = (INCLUDES*)globalAlloc(sizeof(INCLUDES));
     }
     rv->anonymousid = 1;
     return rv;
@@ -1232,7 +1232,7 @@ void doinclude(void)
     inc->fname = litlate(name);
     if (nonSys)
     {
-        LIST* fil = (LIST*)(LIST *)Alloc(sizeof(LIST));
+        LIST* fil = (LIST*)(LIST*)Alloc(sizeof(LIST));
         fil->data = inc->fname;
         fil->next = nonSysIncludeFiles;
         nonSysIncludeFiles = fil;
@@ -1269,7 +1269,7 @@ void doinclude(void)
 
         linesHead = linesTail = nullptr;
 #    ifdef PARSER_ONLY
-        inc->filesize = strlen((char *)inc->handle);
+        inc->filesize = strlen((char*)inc->handle);
 #    else
         fseek(inc->handle, 0, SEEK_END);
         inc->filesize = ftell(inc->handle);
@@ -1297,7 +1297,7 @@ void glbdefine(const char* name, const char* value)
 {
     char buf[32768];
     strcpy(buf, value);
-    ppdefcheck((unsigned char *)buf);
+    ppdefcheck((unsigned char*)buf);
     DEFSTRUCT* def;
     if ((DEFSTRUCT*)search(name, defsyms) != 0)
         return;
@@ -1313,7 +1313,7 @@ void glbdefine(const char* name, const char* value)
 }
 void glbUndefine(const char* name)
 {
-    SYMLIST **hr = LookupName(name, defsyms);
+    SYMLIST** hr = LookupName(name, defsyms);
     if (*hr)
         (*hr) = (*hr)->next;
 }
@@ -1361,7 +1361,7 @@ void dodefine(void)
             return;
 
     IncGlobalFlag();
-    def = (DEFSTRUCT *) globalAlloc(sizeof(DEFSTRUCT));
+    def = (DEFSTRUCT*)globalAlloc(sizeof(DEFSTRUCT));
     def->name = litlate(name);
     def->args = 0;
     def->argcount = 0;
@@ -1441,7 +1441,7 @@ void dodefine(void)
     if (i[includes->lptr] == '#' || i[includes->lptr] == REPLACED_TOKENIZING)
         pperror(ERR_PP_INV_DEFINITION, 0);
 
-    ps = (char *)Alloc((p = strlen((char*)includes->lptr)) + 1);
+    ps = (char*)Alloc((p = strlen((char*)includes->lptr)) + 1);
     strcpy(ps, (char*)includes->lptr);
     def->string = ps;
     if (hr)
@@ -1695,7 +1695,8 @@ int defreplaceargs(unsigned char* macro, int count, unsigned char** oldargs, uns
                 }
                 else
                 {
-                    if ((rv = definsert(macro, p, q, (UBYTE*)"", (UBYTE *)"", MACRO_REPLACE_SIZE - (q - macro), p - q)) < -MACRO_REPLACE_SIZE)
+                    if ((rv = definsert(macro, p, q, (UBYTE*)"", (UBYTE*)"", MACRO_REPLACE_SIZE - (q - macro), p - q)) <
+                        -MACRO_REPLACE_SIZE)
                         return (false);
                     else
                     {

@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <stdio.h>
@@ -127,7 +127,7 @@ static void InitRegAliases(ARCH_REGDESC* desc)
     for (i = 0; i < REG_MAX; i++)
     {
         int j;
-        desc[i].aliasBits = (BITARRAY *)calloc(sizeof(BITINT), sizeof(BITARRAY) + (REG_MAX + BITINTBITS - 1) / BITINTBITS);
+        desc[i].aliasBits = (BITARRAY*)calloc(sizeof(BITINT), sizeof(BITARRAY) + (REG_MAX + BITINTBITS - 1) / BITINTBITS);
 #ifdef TESTBITS
         desc[i].aliasBits->count = REG_MAX;
 #endif
@@ -149,11 +149,11 @@ static void InitTree(ARCH_REGVERTEX* parent, ARCH_REGVERTEX* child)
     {
         c->vertex = child->index;
         c->index = classCount++;
-        c->aliasBits = (BITARRAY *)calloc(sizeof(BITINT), sizeof(BITARRAY) + (REG_MAX + BITINTBITS - 1) / BITINTBITS);
+        c->aliasBits = (BITARRAY*)calloc(sizeof(BITINT), sizeof(BITARRAY) + (REG_MAX + BITINTBITS - 1) / BITINTBITS);
 #ifdef TESTBITS
         c->aliasBits->count = REG_MAX;
 #endif
-        c->regBits = (BITARRAY *)calloc(sizeof(BITINT), sizeof(BITARRAY) + (REG_MAX + BITINTBITS - 1) / BITINTBITS);
+        c->regBits = (BITARRAY*)calloc(sizeof(BITINT), sizeof(BITARRAY) + (REG_MAX + BITINTBITS - 1) / BITINTBITS);
 #ifdef TESTBITS
         c->regBits->count = REG_MAX;
 #endif
@@ -190,7 +190,7 @@ static void LoadVertexes(ARCH_REGVERTEX* child)
 static void LoadWorstCase(void)
 {
     int i, j, k, m;
-    worstCase = (unsigned *)calloc(classCount * classCount, sizeof(unsigned));
+    worstCase = (unsigned*)calloc(classCount * classCount, sizeof(unsigned));
     for (i = 0; i < classCount; i++)
     {
         for (j = 0; j < classCount; j++)
@@ -227,7 +227,7 @@ static void LoadAliases(ARCH_REGVERTEX* v)
         LoadAliases(v->left);
     if (v->right)
         LoadAliases(v->right);
-    v->aliasBits = (BITARRAY *)calloc(sizeof(BITINT), sizeof(BITARRAY) + (REG_MAX + BITINTBITS - 1) / BITINTBITS);
+    v->aliasBits = (BITARRAY*)calloc(sizeof(BITINT), sizeof(BITARRAY) + (REG_MAX + BITINTBITS - 1) / BITINTBITS);
 #ifdef TESTBITS
     v->aliasBits->count = REG_MAX;
 #endif
@@ -294,7 +294,7 @@ void cacheTempSymbol(SYMBOL* sym)
     {
         if (sym->allocate && !sym->inAllocTable)
         {
-            LIST* lst = (LIST *)Alloc(sizeof(LIST));
+            LIST* lst = (LIST*)Alloc(sizeof(LIST));
             lst->data = sym;
             lst->next = temporarySymbols;
             temporarySymbols = lst;
@@ -396,7 +396,8 @@ void AllocateStackSpace(SYMBOL* funcsp)
                     if (!sym->regmode && (sym->storage_class == sc_auto || sym->storage_class == sc_register) && sym->allocate &&
                         !sym->anonymous)
                     {
-                        int val, align = sym->attribs.inheritable.structAlign ? sym->attribs.inheritable.structAlign : getAlign(sc_auto, basetype(sym->tp));
+                        int val, align = sym->attribs.inheritable.structAlign ? sym->attribs.inheritable.structAlign
+                                                                              : getAlign(sc_auto, basetype(sym->tp));
                         lc_maxauto += basetype(sym->tp)->size;
                         if (isatomic(sym->tp) && needsAtomicLockFromType(sym->tp))
                         {
@@ -421,7 +422,8 @@ void AllocateStackSpace(SYMBOL* funcsp)
             SYMBOL* sym = (SYMBOL*)(*temps)->data;
             if (sym->storage_class != sc_static && (sym->storage_class == sc_constant || sym->value.i == i) && !sym->stackblock)
             {
-                int val, align = sym->attribs.inheritable.structAlign ? sym->attribs.inheritable.structAlign : getAlign(sc_auto, basetype(sym->tp));
+                int val, align = sym->attribs.inheritable.structAlign ? sym->attribs.inheritable.structAlign
+                                                                      : getAlign(sc_auto, basetype(sym->tp));
                 lc_maxauto += basetype(sym->tp)->size;
                 val = lc_maxauto % align;
                 if (val != 0)
@@ -512,10 +514,10 @@ static void GetSpillVar(int i)
     SPILL* spill;
     EXPRESSION* exp;
     exp = spillVar(sc_auto, tempInfo[i]->enode->v.sp->tp);
-    spill = (SPILL *)tAlloc(sizeof(SPILL));
+    spill = (SPILL*)tAlloc(sizeof(SPILL));
     tempInfo[i]->spillVar = spill->imode = make_ioffset(exp);
     spill->imode->size = tempInfo[i]->enode->v.sp->imvalue->size;
-    spill->uses = (LIST *)tAlloc(sizeof(LIST));
+    spill->uses = (LIST*)tAlloc(sizeof(LIST));
     spill->uses->data = (void*)i;
 }
 static void CopyLocalColors(void)
@@ -603,7 +605,7 @@ void SqueezeInit(void)
             if (tempInfo[i]->rawSqueeze)
                 memset(tempInfo[i]->rawSqueeze, 0, sizeof(tempInfo[0]->rawSqueeze[0]) * vertexCount);
             else
-                tempInfo[i]->rawSqueeze = (int *)aAlloc(sizeof(tempInfo[0]->rawSqueeze[0]) * vertexCount);
+                tempInfo[i]->rawSqueeze = (int*)aAlloc(sizeof(tempInfo[0]->rawSqueeze[0]) * vertexCount);
             tempInfo[i]->degree = 0;
         }
     for (i = 0; i < tempCount; i++)
@@ -809,8 +811,8 @@ static void CountInstructions(bool first)
     frozenMoves = tallocbit(instructionCount);
     tempMoves[0] = tallocbit(instructionCount);
     tempMoves[1] = tallocbit(instructionCount);
-    hiMoves = (short *)tAlloc(sizeof(short) * (instructionCount));
-    instructionList = (QUAD **)tAlloc(sizeof(QUAD *) * (instructionCount));
+    hiMoves = (short*)tAlloc(sizeof(short) * (instructionCount));
+    instructionList = (QUAD**)tAlloc(sizeof(QUAD*) * (instructionCount));
     instructionCount -= 1000;
     head = intermed_head;
     while (head)
@@ -1257,7 +1259,7 @@ static int Combine(int u, int v)
         {
             if (!tu)
             {
-                tempInfo[u]->workingMoves = tu = tallocbit(instructionCount); // DAL this was modified....
+                tempInfo[u]->workingMoves = tu = tallocbit(instructionCount);  // DAL this was modified....
             }
             for (i = 0; i < instructionByteCount; i++)
                 (bits(tu))[i] |= (bits(tv))[i];
@@ -1629,7 +1631,7 @@ static IMODE* InsertLoad(QUAD* head, IMODE* mem)
     tempInfo[t->offset->v.sp->value.i]->spilled = true;
     tempInfo[t->offset->v.sp->value.i]->ircinitial = true;
     head = head->back;
-    insert = (QUAD *)Alloc(sizeof(QUAD));
+    insert = (QUAD*)Alloc(sizeof(QUAD));
     insert->dc.opcode = i_assn;
     insert->ans = t;
     insert->dc.left = mem;
@@ -1652,7 +1654,7 @@ static void InsertStore(QUAD* head, IMODE** im, IMODE* mem)
     tempInfo[tn]->color = tempInfo[ta]->color;
     tempInfo[tn]->ircinitial = true;
     *im = t;
-    insert = (QUAD *)Alloc(sizeof(QUAD));
+    insert = (QUAD*)Alloc(sizeof(QUAD));
     insert->dc.opcode = i_assn;
     insert->ans = mem;
     insert->dc.left = t;
@@ -1733,7 +1735,7 @@ static void RewriteAllSpillNodes(void)
             }
         if (spillNodes[0] || spillNodes[1])
         {
-            IMODE* im = (IMODE *)Alloc(sizeof(IMODE));
+            IMODE* im = (IMODE*)Alloc(sizeof(IMODE));
             *im = *head->ans;
             head->ans = im;
         }
@@ -1743,7 +1745,7 @@ static void RewriteAllSpillNodes(void)
             head->ans->offset2 = spillNodes[1]->offset;
         if (spillNodes[2] || spillNodes[3])
         {
-            IMODE* im = (IMODE *)Alloc(sizeof(IMODE));
+            IMODE* im = (IMODE*)Alloc(sizeof(IMODE));
             *im = *head->dc.left;
             head->dc.left = im;
         }
@@ -1753,7 +1755,7 @@ static void RewriteAllSpillNodes(void)
             head->dc.left->offset2 = spillNodes[3]->offset;
         if (spillNodes[4] || spillNodes[5])
         {
-            IMODE* im = (IMODE *)Alloc(sizeof(IMODE));
+            IMODE* im = (IMODE*)Alloc(sizeof(IMODE));
             *im = *head->dc.right;
             head->dc.right = im;
         }
@@ -1812,8 +1814,8 @@ static void SpillCoalesce(BRIGGS_SET* C, BRIGGS_SET* S)
                                 bool test;
                                 int a = head->ans->offset->v.sp->value.i;
                                 int b = head->dc.left->offset->v.sp->value.i;
-                                if (fsizeFromISZ(tempInfo[a]->size) == fsizeFromISZ(tempInfo[b]->size) && !tempInfo[a]->directSpill &&
-                                    !tempInfo[b]->directSpill)
+                                if (fsizeFromISZ(tempInfo[a]->size) == fsizeFromISZ(tempInfo[b]->size) &&
+                                    !tempInfo[a]->directSpill && !tempInfo[b]->directSpill)
                                 {
                                     {
                                         if (n == a)
@@ -1844,7 +1846,7 @@ static void SpillCoalesce(BRIGGS_SET* C, BRIGGS_SET* S)
                                                         }
                                                         if (!*l)
                                                         {
-                                                            *l = (LIST *)tAlloc(sizeof(LIST));
+                                                            *l = (LIST*)tAlloc(sizeof(LIST));
                                                             (*l)->data = (void*)head;
                                                             (*mt)->cost += head->block->spillCost;
                                                         }
@@ -1854,11 +1856,11 @@ static void SpillCoalesce(BRIGGS_SET* C, BRIGGS_SET* S)
                                                 }
                                                 if (!*mt)
                                                 {
-                                                    *mt =(MOVE *) tAlloc(sizeof(MOVE));
+                                                    *mt = (MOVE*)tAlloc(sizeof(MOVE));
                                                     (*mt)->a = a;
                                                     (*mt)->b = b;
                                                     (*mt)->cost = head->block->spillCost;
-                                                    (*mt)->uses = (LIST *)tAlloc(sizeof(LIST));
+                                                    (*mt)->uses = (LIST*)tAlloc(sizeof(LIST));
                                                     (*mt)->uses->data = (void*)head;
                                                 }
                                             }
@@ -2138,7 +2140,7 @@ static void RewriteProgram(void)
 }
 static IMODE* copyImode(IMODE* in)
 {
-    IMODE* im = (IMODE *)Alloc(sizeof(IMODE));
+    IMODE* im = (IMODE*)Alloc(sizeof(IMODE));
     *im = *in;
     if (im->offset)
     {
@@ -2378,7 +2380,7 @@ void AllocateRegisters(QUAD* head)
         CountInstructions(first);
         simplifyBottom = simplifyTop = 0;
         tempCount += 1000;
-        simplifyWorklist = (unsigned short *)tAlloc(tempCount * sizeof(unsigned short));
+        simplifyWorklist = (unsigned short*)tAlloc(tempCount * sizeof(unsigned short));
         freezeWorklist = briggsAlloct(tempCount);
         spillWorklist = briggsAlloct(tempCount);
         spilledNodes = briggsAlloct(tempCount);
@@ -2386,7 +2388,7 @@ void AllocateRegisters(QUAD* head)
         adjacent = tallocbit(tempCount);
         adjacent1 = tallocbit(tempCount);
         stackedTemps = tallocbit(tempCount);
-        tempStack = (int *)tAlloc(tempCount * sizeof(int));
+        tempStack = (int*)tAlloc(tempCount * sizeof(int));
         tempCount -= 1000;
         liveVariables();
         CalculateFunctionFlags();

@@ -127,7 +127,7 @@ typedef enum CV_type_e
     CV_SPECIAL = 0x00,   /* special type size values*/
     CV_SIGNED = 0x01,    /* signed integral size values*/
     CV_UNSIGNED = 0x02,  /* unsigned integral size values*/
-    CV_bool = 0x03,   /* Boolean size values*/
+    CV_bool = 0x03,      /* Boolean size values*/
     CV_REAL = 0x04,      /* real number size values*/
     CV_COMPLEX = 0x05,   /* complex number size values*/
     CV_SPECIAL2 = 0x06,  /* second set of special types*/

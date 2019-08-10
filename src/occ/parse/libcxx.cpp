@@ -103,7 +103,7 @@ static LEXEME* getTypeList(LEXEME* lex, SYMBOL* funcsp, INITLIST** lptr)
             break;
         if (basetype(tp)->type != bt_templateparam)
         {
-            *lptr = (INITLIST *)Alloc(sizeof(INITLIST));
+            *lptr = (INITLIST*)Alloc(sizeof(INITLIST));
             (*lptr)->tp = tp;
             (*lptr)->exp = intNode(en_c_i, 0);
             lptr = &(*lptr)->next;
@@ -119,7 +119,7 @@ static LEXEME* getTypeList(LEXEME* lex, SYMBOL* funcsp, INITLIST** lptr)
                 {
                     if (tpl->p->byClass.val)
                     {
-                        *lptr = (INITLIST *)Alloc(sizeof(INITLIST));
+                        *lptr = (INITLIST*)Alloc(sizeof(INITLIST));
                         (*lptr)->tp = tpl->p->byClass.val;
                         (*lptr)->exp = intNode(en_c_i, 0);
                         lptr = &(*lptr)->next;
@@ -131,7 +131,7 @@ static LEXEME* getTypeList(LEXEME* lex, SYMBOL* funcsp, INITLIST** lptr)
             {
                 if (tp->templateParam->p->byClass.val)
                 {
-                    *lptr = (INITLIST *)Alloc(sizeof(INITLIST));
+                    *lptr = (INITLIST*)Alloc(sizeof(INITLIST));
                     (*lptr)->tp = tp->templateParam->p->byClass.val;
                     (*lptr)->exp = intNode(en_c_i, 0);
                     lptr = &(*lptr)->next;
@@ -175,7 +175,7 @@ static bool isStandardLayout(TYPE* tp, SYMBOL** result)
     {
         int n;
         int access = -1;
-        SYMBOL*found = nullptr, *first;
+        SYMBOL *found = nullptr, *first;
         SYMLIST* hr;
         n = FindBaseClassWithData(tp->sp, &found);
         if (n > 1)
@@ -428,11 +428,11 @@ static bool trivialStructureWithBases(TYPE* tp)
 static bool isPOD(TYPE* tp)
 {
     SYMBOL* found = nullptr;
-    if (isStandardLayout(tp,& found) && trivialStructureWithBases(tp)) // DAL fixed
+    if (isStandardLayout(tp, &found) && trivialStructureWithBases(tp))  // DAL fixed
     {
         if (found)
         {
-            SYMLIST* hr = basetype(found->tp)->syms->table[0]; // DAL fixed
+            SYMLIST* hr = basetype(found->tp)->syms->table[0];  // DAL fixed
             while (hr)
             {
                 SYMBOL* sym = hr->p;
@@ -487,7 +487,6 @@ static bool is_abstract(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EX
     *exp = intNode(en_c_i, rv);
     *tp = &stdint;
     return true;
-
 }
 static bool is_base_of(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp)
 {
@@ -589,7 +588,7 @@ static bool is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** t
                         INITLIST** arg = &funcparams.arguments;
                         SYMBOL* bcall = search(overloadNameTab[CI_FUNC], basetype(funcparams.arguments->next->tp)->syms);
                         funcparams.thisptr = intNode(en_c_i, 0);
-                        funcparams.thistp = (TYPE *)Alloc(sizeof(TYPE));
+                        funcparams.thistp = (TYPE*)Alloc(sizeof(TYPE));
                         funcparams.thistp->type = bt_pointer;
                         funcparams.thistp->btp = basetype(funcparams.arguments->next->tp);
                         funcparams.thistp->rootType = funcparams.thistp;
@@ -600,7 +599,7 @@ static bool is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** t
                         hr = basetype(basetype(tp2)->btp)->syms->table[0];
                         while (hr)
                         {
-                            *arg = (INITLIST*)(INITLIST *)Alloc(sizeof(INITLIST));
+                            *arg = (INITLIST*)(INITLIST*)Alloc(sizeof(INITLIST));
                             (*arg)->tp = hr->p->tp;
                             (*arg)->exp = intNode(en_c_i, 0);
                             arg = &(*arg)->next;
@@ -641,7 +640,7 @@ static bool is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** t
                     EXPRESSION* cexp = nullptr;
                     SYMBOL* cons = search(overloadNameTab[CI_CONSTRUCTOR], basetype(tp2)->syms);
                     funcparams.thisptr = intNode(en_c_i, 0);
-                    funcparams.thistp = (TYPE *)Alloc(sizeof(TYPE));
+                    funcparams.thistp = (TYPE*)Alloc(sizeof(TYPE));
                     funcparams.thistp->type = bt_pointer;
                     funcparams.thistp->btp = basetype(tp2);
                     funcparams.thistp->rootType = funcparams.thistp;
@@ -653,7 +652,7 @@ static bool is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** t
                     {
                         holdl[i] = temp->tp->lref;
                         holdr[i] = temp->tp->rref;
-                        if (!temp->tp->rref && basetype(temp->tp)->type != bt_rref)// DAL FIXED
+                        if (!temp->tp->rref && basetype(temp->tp)->type != bt_rref)  // DAL FIXED
                         {
                             temp->tp->lref = true;
                         }

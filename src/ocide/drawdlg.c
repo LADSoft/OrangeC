@@ -2467,7 +2467,7 @@ static void ClickAltMode(HWND hwnd, struct resRes* dlgData)
         }
     }
 }            
-BOOL CALLBACK EnumFamCallBack(LPLOGFONT lplf, LPNEWTEXTMETRIC lpntm, DWORD FontType, LPVOID hwnd) 
+BOOL CALLBACK EnumFamCallBack(LPLOGFONT lplf, LPTEXTMETRIC lpntm, DWORD FontType, LPVOID hwnd) 
 { 
     HWND rv = (HWND)hwnd;
     if (lplf->lfFaceName[0] != '@')
@@ -2622,7 +2622,7 @@ HWND DlgPropStartEdit(HWND lv, int row, struct resRes* data)
             rv = LoadFontHWNDCombobox(lv);
             char buf[256];
             GetDlgPropText(buf, lv, data, row);
-            SendMessage(rv, CB_SELECTSTRING, 0, buf);
+            SendMessage(rv, CB_SELECTSTRING, 0, (LPARAM)buf);
             return rv;
         }
         case 9:

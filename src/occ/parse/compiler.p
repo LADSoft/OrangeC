@@ -165,6 +165,7 @@ bool matchesCopy(SYMBOL* sp, bool move);
 void createConstructorsForLambda(SYMBOL* sp);
 void createConstructor(SYMBOL* sp, SYMBOL* consfunc);
 void createDefaultConstructors(SYMBOL* sp);
+EXPRESSION* destructLocal(EXPRESSION* exp);
 void destructBlock(EXPRESSION* *exp, SYMLIST* hr, bool mainDestruct);
 EXPRESSION* thunkConstructorHead(BLOCKDATA* b, SYMBOL* sp, SYMBOL* cons, HASHTABLE* syms, bool parseInitializers, bool doCopy);
 void thunkDestructorTail(BLOCKDATA* b, SYMBOL* sp, SYMBOL* dest, HASHTABLE* syms);

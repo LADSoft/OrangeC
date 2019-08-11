@@ -24,6 +24,7 @@
 
 #include "compiler.h"
 #include "rtti.h"
+#include <stack>
 extern ARCH_ASM* chosenAssembler;
 extern bool hasXCInfo;
 extern int templateNestingCount;
@@ -1487,6 +1488,57 @@ void createDefaultConstructors(SYMBOL* sp)
         conditionallyDeleteCopyConstructor(cons, true);
         conditionallyDeleteCopyAssignment(asgn, true);
     }
+}
+EXPRESSION *destructLocal(EXPRESSION* exp)
+{
+    std::stack<SYMBOL*> destructList;
+    std::stack<EXPRESSION*> stk;
+    stk.push(exp);
+    while (stk.size())
+    {
+        EXPRESSION *e = stk.top();
+        stk.pop();
+        if (!isintconst(e) && !isfloatconst(e))
+        {
+            if (e->left)
+                stk.push(e->left);
+            if (e->right)
+                stk.push(e->right);
+        }
+        if (e->type == en_thisref)
+            e = e->left;
+        if (e->type == en_func)
+        {
+            INITLIST *il = e->v.func->arguments;
+            while (il)
+            {
+                stk.push(il->exp);
+                il = il->next;
+            }
+        }
+        if (e->type == en_auto && e->v.sp->allocate && !e->v.sp->destructed)
+        {
+            TYPE *tp = e->v.sp->tp;
+            while (isarray(tp))
+                tp = basetype(tp)->btp;
+            if (isstructured(tp) && !isref(tp))
+            {
+                e->v.sp->destructed = true;
+                destructList.push(e->v.sp);
+            }
+        }
+    }
+
+    EXPRESSION *rv = exp;
+    while (destructList.size())
+    {
+        SYMBOL *sp = destructList.top();
+        destructList.pop();
+        if (sp->dest && sp->dest->exp)
+            rv = exprNode(en_void, rv, sp->dest->exp);
+
+    }
+    return rv;
 }
 void destructBlock(EXPRESSION** exp, SYMLIST* hr, bool mainDestruct)
 {

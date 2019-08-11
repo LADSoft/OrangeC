@@ -3106,32 +3106,6 @@ TYPE* AttributeFinish(SYMBOL* sym, TYPE* tp)
     }
     return tp;
 }
-static std::map<std::string, int> attribNames = {
-    {"alias", 1},    // 1 arg, alias name
-    {"aligned", 2},  // arg is alignment; for members only increase unless also packed, otherwise can increase or decrease
-    {"warn_if_not_aligned", 3},  // arg is the desired minimum alignment
-    {"alloc_size", 4},           // implement by ignoring one or two args
-    {"cleanup", 5},              // arg is afunc: similar to a destructor.   Also gets called during exception processing
-                                 //                    { "common", 6 }, // no args, decide whether to support
-                                 //                    { "nocommon", 7 }, // no args, decide whether to support
-    {"copy", 8},          // one arg, varible/func/type, the two variable kinds must match don't copy alias visibility or weak
-    {"deprecated", 9},    // zero or one arg, match C++ 
-    {"nonstring", 10},    // has no null terminator
-    {"packed", 11},       // ignore auto-align on this field
-                          //                    { "section", 12 }, // one argument, the section name
-                          //                    { "tls_model", 13 }, // one arg, the model.   Probably shouldn't support
-    {"unused", 14},       // warning control
-    {"used", 15},         // warning control
-    {"vector_size", 16},  // one arg, which must be a power of two multiple of the base size.  implement as fixed-size array
-    //                    { "visibility", 17 }, // one arg, 'default' ,'hidden', 'internal', 'protected.   don't support for now
-    //                    as requires linker changes. { "weak", 18 }, // not supporting
-    {"dllimport", 19},
-    {"dllexport", 20},
-    //                    { "selectany", 21 },  // requires linker support
-    //                    { "shared", 22 },
-    {"zstring", 23}  // non-gcc, added to support nonstring
-
-};
 void ParseOut__attribute__(LEXEME** lex, SYMBOL* funcsp)
 {
     if (MATCHKW(*lex, kw__attribute))
@@ -3143,6 +3117,32 @@ void ParseOut__attribute__(LEXEME** lex, SYMBOL* funcsp)
             {
                 if (ISID(*lex))
                 {
+                    static std::map<std::string, int> attribNames = {
+                        {"alias", 1},    // 1 arg, alias name
+                        {"aligned", 2},  // arg is alignment; for members only increase unless also packed, otherwise can increase or decrease
+                        {"warn_if_not_aligned", 3},  // arg is the desired minimum alignment
+                        {"alloc_size", 4},           // implement by ignoring one or two args
+                        {"cleanup", 5},              // arg is afunc: similar to a destructor.   Also gets called during exception processing
+                                                     //                    { "common", 6 }, // no args, decide whether to support
+                                                     //                    { "nocommon", 7 }, // no args, decide whether to support
+                        {"copy", 8},          // one arg, varible/func/type, the two variable kinds must match don't copy alias visibility or weak
+                        {"deprecated", 9},    // zero or one arg, match C++ 
+                        {"nonstring", 10},    // has no null terminator
+                        {"packed", 11},       // ignore auto-align on this field
+                                              //                    { "section", 12 }, // one argument, the section name
+                                              //                    { "tls_model", 13 }, // one arg, the model.   Probably shouldn't support
+                        {"unused", 14},       // warning control
+                        {"used", 15},         // warning control
+                        {"vector_size", 16},  // one arg, which must be a power of two multiple of the base size.  implement as fixed-size array
+                        //                    { "visibility", 17 }, // one arg, 'default' ,'hidden', 'internal', 'protected.   don't support for now
+                        //                    as requires linker changes. { "weak", 18 }, // not supporting
+                        {"dllimport", 19},
+                        {"dllexport", 20},
+                        //                    { "selectany", 21 },  // requires linker support
+                        //                    { "shared", 22 },
+                        {"zstring", 23}  // non-gcc, added to support nonstring
+
+                    };
                     std::string name = (*lex)->value.s.a;
                     // get rid of leading and trailing "__" if they both exist
                     if (name.size() >= 5 && name.substr(0, 2) == "__" && name.substr(name.size() - 2, 2) == "__")

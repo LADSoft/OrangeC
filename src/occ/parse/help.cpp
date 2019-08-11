@@ -50,6 +50,7 @@ extern SYMBOL* theCurrentFunc;
 extern NAMESPACEVALUELIST* localNameSpace;
 extern int inDefaultParam;
 extern LINEDATA *linesHead, *linesTail;
+extern int codeLabel;
 
 int anonymousNotAlloc;
 
@@ -1248,6 +1249,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, SYMBOL* funcsp, INITI
     bool noClear = false;
     if (sym)
         sym->destructed = false;
+
     if (isstructured(tp) || isarray(tp))
     {
         INITIALIZER** i2 = &init;
@@ -1603,6 +1605,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, SYMBOL* funcsp, INITI
             insertInitSym(guard->v.sp);
             deref(&stdpointer, &guard);
             optimize_for_constants(&rv);
+            rv = destructLocal(rv);
             rv = exprNode(en_voidnz,
                           exprNode(en_void, exprNode(en_not, guard, nullptr),
                                    exprNode(en_void, rv, exprNode(en_autoinc, guard, intNode(en_c_i, 1)))),

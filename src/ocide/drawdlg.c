@@ -97,7 +97,7 @@ static BOOL CALLBACK RemoveDlgWindow(HWND hwnd, LPARAM lParam);
 static void UndoChanged(struct resRes* dlgData, CONTROL* list);
 BOOL RemoveFromStyle(EXPRESSION** style, int val);
 void AddToStyle(EXPRESSION** style, char* text, int val);
-HWND PropGetHWNDCombobox(HWND parent);
+HWND PropGetHWNDCombobox(HWND parent, BOOL vscroll);
 HWND PropGetHWNDNumeric(HWND parent);
 HWND PropGetHWNDText(HWND parent);
 
@@ -657,7 +657,7 @@ static HWND CtlPropStartEdit(HWND lv, int row, struct ctlData* data)
             case iYESNO:
             case iNEGYESNO:
             case iCombo:
-                rv = PropGetHWNDCombobox(lv);
+                rv = PropGetHWNDCombobox(lv, FALSE);
                 break;
             case iX:
             case iY:
@@ -2466,7 +2466,29 @@ static void ClickAltMode(HWND hwnd, struct resRes* dlgData)
                 break;
         }
     }
+}            
+BOOL CALLBACK EnumFamCallBack(LPLOGFONT lplf, LPNEWTEXTMETRIC lpntm, DWORD FontType, LPVOID hwnd) 
+{ 
+    HWND rv = (HWND)hwnd;
+    if (lplf->lfFaceName[0] != '@')
+    {
+        int v = SendMessage(rv, CB_ADDSTRING, 0, (LPARAM) lplf->lfFaceName);
+        SendMessage(rv, CB_SETITEMDATA, v, 0);
+    }
+    return TRUE;
+} 
+HWND LoadFontHWNDCombobox(HWND lv)
+{
+    HWND rv = PropGetHWNDCombobox(lv, TRUE);
+    SendMessage(rv, CB_SETMINVISIBLE, (WPARAM)10, 0);
+    HDC hdc = GetDC(rv);
+    EnumFontFamilies(hdc, (LPCTSTR) NULL, 
+        (FONTENUMPROC) EnumFamCallBack, (LPARAM) rv); 
+    ReleaseDC(rv, hdc);
+    return rv;
 }
+
+
 static void InsertDlgProperties(HWND lv, struct resRes* data)
 {
     // style
@@ -2582,23 +2604,30 @@ HWND DlgPropStartEdit(HWND lv, int row, struct resRes* data)
     int v;
     switch (row)
     {
+        case 3:
         case 4:
         case 5:
         case 6:
-        case 7:
-        case 9:
+        case 13:
         case 14:
         case 15:
         case 16:
-        case 17:
             rv = PropGetHWNDNumeric(lv);
             break;
         default:
             rv = PropGetHWNDText(lv);
             break;
+        case 7:
+        {
+            rv = LoadFontHWNDCombobox(lv);
+            char buf[256];
+            GetDlgPropText(buf, lv, data, row);
+            SendMessage(rv, CB_SELECTSTRING, 0, buf);
+            return rv;
+        }
+        case 9:
         case 10:
-        case 11:
-            rv = PropGetHWNDCombobox(lv);
+            rv = PropGetHWNDCombobox(lv, FALSE);
             v = SendMessage(rv, CB_ADDSTRING, 0, (LPARAM) "No");
             SendMessage(rv, CB_SETITEMDATA, v, 0);
             v = SendMessage(rv, CB_ADDSTRING, 0, (LPARAM) "Yes");
@@ -2617,7 +2646,7 @@ void DlgPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes* data)
 {
     char buf[256];
     char buf1[256];
-    if (row == 10 || row == 11)
+    if (row == 7 || row == 9 || row == 10)
     {
         int v = SendMessage(editWnd, CB_GETCURSEL, 0, 0);
         if (v != CB_ERR)

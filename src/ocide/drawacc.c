@@ -62,7 +62,6 @@ void AccPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes* data);
 // callbacks to populate the properties window for this resource editor
 struct propertyFuncs accFuncs = {InsertAccProperties, GetAccPropText, AccPropStartEdit, AccPropEndEdit};
 
-HWND PropGetHWNDCombobox(HWND parent);
 HWND PropGetHWNDNumeric(HWND parent);
 HWND PropGetHWNDText(HWND parent);
 

@@ -98,9 +98,9 @@ static void SubclassPropsEditWindow(HWND hwnd)
     SetWindowLong(hwnd, GWL_WNDPROC, (long)PropsEditorSubclassProc);
     SetWindowLong(hwnd, GWL_USERDATA, (long)hwndProps);
 }
-HWND PropGetHWNDCombobox(HWND parent)
+HWND PropGetHWNDCombobox(HWND parent, BOOL vscroll)
 {
-    HWND rv = CreateWindow("combobox", "", WS_VISIBLE | WS_CHILD | WS_BORDER | CBS_SORT | CBS_DROPDOWN, CW_USEDEFAULT,
+    HWND rv = CreateWindow("combobox", "", WS_VISIBLE | WS_CHILD | WS_BORDER | CBS_SORT | CBS_DROPDOWN | (vscroll ? WS_VSCROLL : 0), CW_USEDEFAULT,
                            CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, parent, 0, hInstance, NULL);
     POINT pt;
     HWND h;
@@ -297,7 +297,21 @@ void PropsWndRedraw(void)
 void PropsWndClearEditBox(MSG* msg)
 {
     if (currentPropertyWindow && currentPropertyWindow != msg->hwnd && !IsChild(currentPropertyWindow, msg->hwnd))
-        SendMessage(hwndProps, WM_KILLPROPSEDITOR, 0, 0);
+    {
+        char buf[256] = "";
+        GetClassName(msg->hwnd, buf, sizeof(buf) - 2);
+        if (stricmp(buf, "COMBOLBOX") != 0)
+        {            
+            SendMessage(hwndProps, WM_KILLPROPSEDITOR, 0, 0);
+        }
+        else
+        {
+            RECT wrect;
+            GetWindowRect(msg->hwnd, &wrect);
+            if (wrect.right - GetSystemMetrics(SM_CXVSCROLL) > msg->pt.x)
+                SendMessage(hwndProps, WM_KILLPROPSEDITOR, 0, 0);
+        }
+    }
 }
 LRESULT CALLBACK PropsProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
@@ -346,7 +360,7 @@ LRESULT CALLBACK PropsProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lPara
                     ScreenToClient(lvwindow, &hittest.pt);
                     if (currentPropertyWindow)
                     {
-                        //                        PostMessage(hwnd, WM_KILLPROPSEDITOR, 0, 0);
+                        PostMessage(hwnd, WM_KILLPROPSEDITOR, 0, 0);
                     }
                     else
                     {

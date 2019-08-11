@@ -182,7 +182,7 @@ HWND MenuItemPropStartEdit(HWND lv, int row, struct resRes* data)
     }
     else
     {
-        rv = PropGetHWNDCombobox(lv);
+        rv = PropGetHWNDCombobox(lv, FALSE);
         if (rv)
         {
             char buf[256];

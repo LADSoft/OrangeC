@@ -54,7 +54,6 @@ static WNDPROC oldEditProc;
 HANDLE ResGetHeap(PROJECTITEM* wa, struct resRes* data);
 EXPRESSION* ResReadExp(struct resRes* data, char* buf);
 
-HWND PropGetHWNDCombobox(HWND parent);
 HWND PropGetHWNDNumeric(HWND parent);
 HWND PropGetHWNDText(HWND parent);
 

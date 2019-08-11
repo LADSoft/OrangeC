@@ -113,3 +113,9 @@ src/.vs
 *.tst
 *.err
 *.out
+src/onm/Debug/*
+src/oimplib/Debug/*
+src/obrc/Debug/*
+src/objlib/Debug/*
+src/coff2ieee/Debug/*
+src/adl/Debug/*

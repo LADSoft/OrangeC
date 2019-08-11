@@ -3115,7 +3115,7 @@ static std::map<std::string, int> attribNames = {
                                  //                    { "common", 6 }, // no args, decide whether to support
                                  //                    { "nocommon", 7 }, // no args, decide whether to support
     {"copy", 8},          // one arg, varible/func/type, the two variable kinds must match don't copy alias visibility or weak
-    {"deprecated", 9},    // zero or one arg, match C++
+    {"deprecated", 9},    // zero or one arg, match C++ 
     {"nonstring", 10},    // has no null terminator
     {"packed", 11},       // ignore auto-align on this field
                           //                    { "section", 12 }, // one argument, the section name
@@ -3144,6 +3144,9 @@ void ParseOut__attribute__(LEXEME** lex, SYMBOL* funcsp)
                 if (ISID(*lex))
                 {
                     std::string name = (*lex)->value.s.a;
+                    // get rid of leading and trailing "__" if they both exist
+                    if (name.size() >= 5 && name.substr(0, 2) == "__" && name.substr(name.size() - 2, 2) == "__")
+                        name = name.substr(2, name.size() - 4);
                     *lex = getsym();
                     switch (attribNames[name])
                     {

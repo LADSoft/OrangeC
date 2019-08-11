@@ -1382,7 +1382,7 @@ long queue_floatval(FPF* number, int size)
     {
         while (p)
         {
-            if (p->size == size && !memcmp(&p->floatvalue, number, sizeof(*number)))
+            if (p->size == size && (number != nullptr) && p->floatvalue == *number)
                 return p->label;
             p = p->next;
         }

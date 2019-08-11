@@ -2478,15 +2478,11 @@ static SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* ex
             int** lenList;
             int m = 0;
             SYMBOL *found1, *found2;
-            FUNCTIONCALL funcparams;
-            INITLIST args;
-            TYPE thistp;
-            EXPRESSION exp;
+            FUNCTIONCALL funcparams = FUNCTIONCALL();
+            INITLIST args = INITLIST();
+            TYPE thistp = TYPE();
+            EXPRESSION exp = EXPRESSION();
             lst2 = gather;
-            memset(&funcparams, 0, sizeof(funcparams));
-            memset(&args, 0, sizeof(args));
-            memset(&thistp, 0, sizeof(thistp));
-            memset(&exp, 0, sizeof(exp));
             funcparams.arguments = &args;
             args.tp = tpa;
             args.exp = &exp;
@@ -2549,7 +2545,7 @@ static SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* ex
                 }
                 lst2 = lst2->next;
             }
-            memset(&exp, 0, sizeof(exp));
+            exp = EXPRESSION();
             exp.type = en_not_lvalue;
             for (i = 0; i < funcs; i++)
             {
@@ -3593,13 +3589,10 @@ static void getInitListConversion(TYPE* tp, INITLIST* list, TYPE* tpp, int* n, e
             }
             else
             {
-                EXPRESSION exp, *expp = &exp;
+                EXPRESSION exp = EXPRESSION(), *expp = &exp;
                 TYPE* ctype = cons->tp;
-                TYPE thistp;
-                FUNCTIONCALL funcparams;
-                memset(&exp, 0, sizeof(exp));
-                memset(&funcparams, 0, sizeof(funcparams));
-                memset(&thistp, 0, sizeof(thistp));
+                TYPE thistp = TYPE();
+                FUNCTIONCALL funcparams = FUNCTIONCALL();
                 funcparams.arguments = a;
                 exp.type = en_c_i;
                 thistp.type = bt_pointer;
@@ -3674,10 +3667,9 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
     /* takes care of THIS pointer */
     if (sym->castoperator)
     {
-        TYPE tpx;
+        TYPE tpx = TYPE();
         TYPE* tpp;
         SYMBOL* argsym = (SYMBOL*)(*hr)->p;
-        memset(&tpx, 0, sizeof(tpx));
         m = 0;
         getSingleConversion(parent->tp, basetype(sym->tp)->btp, nullptr, &m, seq, sym, userFunc ? &userFunc[n] : nullptr, false);
         m1 = m;
@@ -3731,11 +3723,10 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
                 }
                 else
                 {
-                    TYPE tpx;
+                    TYPE tpx = TYPE();
                     TYPE* tpp;
                     TYPE* tpthis = f->thistp;
                     SYMBOL* argsym = (SYMBOL*)(*hr)->p;
-                    memset(&tpx, 0, sizeof(tpx));
                     hr = &(*hr)->next;
                     tpp = argsym->tp;
                     if (!tpthis)
@@ -4588,7 +4579,7 @@ SYMBOL* MatchOverloadedFunction(TYPE* tp, TYPE** mtp, SYMBOL* sym, EXPRESSION** 
     while (castvalue(exp2))
         exp2 = exp2->left;
 
-    memset(&fpargs, 0, sizeof(fpargs));
+    fpargs = FUNCTIONCALL();
     if (hrp && (hrp->p)->thisPtr)
     {
         fpargs.thistp = (hrp->p)->tp;

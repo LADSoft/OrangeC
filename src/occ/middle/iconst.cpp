@@ -307,7 +307,7 @@ QUAD* ReCast(int size, QUAD* in, QUAD* newMode)
             }
             else
             {
-                memset(&newMode->dc, 0, sizeof(newMode->dc));
+                newMode->dc = _basic_dag();
                 newMode->dc.opcode = i_icon;
                 newMode->dc.v.i = i;
                 newMode->ans = make_immed(ISZ_UINT, i);
@@ -328,7 +328,7 @@ QUAD* ReCast(int size, QUAD* in, QUAD* newMode)
             }
             else
             {
-                memset(&newMode->dc, 0, sizeof(newMode->dc));
+                newMode->dc = _basic_dag();
                 newMode->dc.opcode = i_fcon;
                 newMode->dc.v.f = f;
                 newMode->ans = make_fimmed(ISZ_LDOUBLE, f);

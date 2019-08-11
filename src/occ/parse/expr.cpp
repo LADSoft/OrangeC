@@ -1480,7 +1480,9 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
                         sp3 = sp3->mainsym;
                     if (sp4 && sp4->mainsym)
                         sp4 = sp4->mainsym;
-                        
+                        
+
+
 
 
 
@@ -2216,8 +2218,7 @@ EXPRESSION* DerivedToBase(TYPE* tpn, TYPE* tpo, EXPRESSION* exp, int flags)
             if (n == 1)
             {
                 // derived to base
-                EXPRESSION q, *v = &q;
-                memset(&q, 0, sizeof(q));
+                EXPRESSION q = EXPRESSION(), *v = &q;
                 v->type = en_c_i;
                 v = baseClassOffset(spn, spo, v);
 

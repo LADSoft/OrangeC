@@ -554,7 +554,7 @@ int dumpMemberPtr(SYMBOL* sym, TYPE* membertp, bool make_label)
     {
         if (sym->storage_class != sc_member && sym->storage_class != sc_mutable && sym->storage_class != sc_virtual)
             errortype(ERR_CANNOT_CONVERT_TYPE, sym->tp, membertp);
-        memset(&expx, 0, sizeof(expx));
+        expx = EXPRESSION();
         expx.type = en_c_i;
         exp = baseClassOffset(sym->parentClass, basetype(membertp)->sp, &expx);
         optimize_for_constants(&exp);

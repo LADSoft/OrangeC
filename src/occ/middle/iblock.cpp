@@ -282,8 +282,7 @@ int ToQuadConst(IMODE** im)
 {
     if (*im && (*im)->mode == i_immed)
     {
-        QUAD *rv, temp;
-        memset(&temp, 0, sizeof(temp));
+        QUAD *rv, temp= QUAD();
         if (isintconst((*im)->offset))
         {
             temp.dc.opcode = i_icon;

@@ -131,8 +131,7 @@ void DumpLogicalDestructors(EXPRESSION* node, SYMBOL* funcsp)
 IMODE* LookupExpression(enum i_ops op, int size, IMODE* left, IMODE* right)
 {
     IMODE* ap = nullptr;
-    QUAD head;
-    memset(&head, 0, sizeof(head));
+    QUAD head = QUAD();
     head.dc.left = left;
     head.dc.right = right;
     head.dc.opcode = op;

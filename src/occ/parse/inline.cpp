@@ -381,7 +381,7 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
     if (node == 0)
         return 0;
     temp = (EXPRESSION*)(EXPRESSION*)Alloc(sizeof(EXPRESSION));
-    memcpy(temp, node, sizeof(EXPRESSION));
+    *temp = *node;
     switch (temp->type)
     {
         case en_thisshim:

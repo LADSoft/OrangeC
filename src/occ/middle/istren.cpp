@@ -327,7 +327,7 @@ static IMODE* StrengthConstant(QUAD* head, IMODE* im1, IMODE* im2, int size)
     ins->dc.left = im2;
     ins->dc.right = im1;
     ins->ans = InitTempOpt(size, size);
-    memset(&q1, 0, sizeof(q1));
+    q1 = QUAD();
     q1.dc.opcode = ins->dc.opcode;
     q1.dc.left = im2;
     q1.dc.right = im1;

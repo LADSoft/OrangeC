@@ -27,9 +27,10 @@ endif
 
 ZIP:="c:/program files/7-zip/7z" -tzip -bd
 
-VERNAME := $(word 3, $(shell cmd /C type \orangec\src\version.h))
-VERNAME := $(subst ",,$(VERNAME))
-VERNAME := $(subst .,,$(VERNAME))
+OCC_VERSION := $(word 3, $(shell cmd /C type \orangec\src\version.h))
+OCC_VERSION := $(subst ",,$(OCC_VERSION))
+export OCC_VERSION
+VERNAME := $(subst .,,$(OCC_VERSION))
 
 DISTEXE=/orangec/dist/occ$(VERNAME)e.zip
 DISTSRC=/orangec/dist/occ$(VERNAME)s.zip

@@ -3609,7 +3609,7 @@ void asm_assn(QUAD* q) /* assignment */
                     gen_code_sse(op_movss, op_movsd, q->ans->size, ap, apa);
                     gen_code_sse(op_movss, op_movsd, q->ans->size, ap1, apa1);
                     ap1->length = ap->length = q->ans->size - ISZ_CFLOAT + ISZ_FLOAT;
-                    gen_codef(op_fld, apl, NULL);
+                    gen_codef(op_fld, ap1, NULL);
                     gen_codef(op_fld, ap, NULL);
                 }
                 else

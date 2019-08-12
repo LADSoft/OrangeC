@@ -1,3 +1,5 @@
+version: '6.0.42.{build}'
+
 image: Visual Studio 2017
 
 install:

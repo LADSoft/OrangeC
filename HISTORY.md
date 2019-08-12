@@ -1,5 +1,13 @@
 Release notes:
 
+version 6.0.42: 8/11/2019
+* occ: fix problems with tuple and shared_ptr
+* occ: source code cleanup
+* occ: fix various other problems compiling C++ code
+* occ: fix problem with freeing temporaries created in building function-local static variables
+* occ: add more support for the gnu __attribute__ keyword
+* ocide: allow modifying the face name for dialogs in the resource editor
+
 version 6.0.41: 4/10/2019
 * occ: show data at CS:EIP in exception dumps
 * occ: fix so that an empty statement at the end of a function didn't confuse the 'function needs return value' warning

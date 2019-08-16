@@ -3347,7 +3347,9 @@ void ParseOut__attribute__(LEXEME** lex, SYMBOL* funcsp)
                             basisAttribs.inheritable.zstring = true;
                             break;
                         case 24:
-                            basisAttribs.inheritable.linkage3 = lk_noreturn;
+                            if (funcsp->linkage3 != lk_none)
+                                error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
+                            funcsp->linkage3 = lk_noreturn;
                             break;
                     }
                     }
@@ -3567,7 +3569,15 @@ bool ParseAttributeSpecifiers(LEXEME** lex, SYMBOL* funcsp, bool always)
                             }
                             else
                             {
-                                if (!strcmp((*lex)->value.s.a, "noreturn") || !strcmp((*lex)->value.s.a, "carries_dependency"))
+                                if (!strcmp((*lex)->value.s.a, "noreturn"))
+                                {
+                                    *lex = getsym();
+                                    special = true;
+                                    if (funcsp->linkage3 != lk_none)
+                                        error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
+                                    funcsp->linkage3 = lk_noreturn;
+                                }
+                                else if (!strcmp((*lex)->value.s.a, "carries_dependency"))
                                 {
                                     *lex = getsym();
                                     special = true;

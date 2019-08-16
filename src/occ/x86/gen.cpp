@@ -101,13 +101,6 @@ AMODE* makesegreg(int seg)
     ap->length = ISZ_SEG;
     return ap;
 }
-AMODE* makefloat(FPF* f, int size)
-{
-    AMODE* ap = make_label(queue_floatval(f, size));
-    ap->mode = am_direct;
-    ap->length = size;
-    return ap;
-}
 
 AMODE* makeSSE(int reg)
 {
@@ -2762,36 +2755,120 @@ void asm_add(QUAD* q) /* evaluate an addition */
     getAmodes(q, &opa, q->ans, &apal, &apah);
     if (q->ans->size >= ISZ_CFLOAT)
     {
-        if (q->dc.left->size < ISZ_CFLOAT && q->dc.right->size < ISZ_CFLOAT)
+        if ((q->dc.left->size < ISZ_CFLOAT && q->dc.right->size < ISZ_CFLOAT) && (q->dc.left->size < ISZ_IFLOAT) != (q->dc.right->size < ISZ_IFLOAT))
         {
+            AMODE *realsource;
+            AMODE *imagsource;
             if (q->dc.left->size < ISZ_IFLOAT)
             {
-                gen_code_sse(op_movss, op_movsd, q->ans->size, apal, apll);
-                gen_code_sse(op_movss, op_movsd, q->ans->size, apah, aprl);
+                realsource = apll;
+                imagsource = aprl;
+
             }
             else
+
             {
-                gen_code_sse(op_movss, op_movsd, q->ans->size, apal, aprl);
-                gen_code_sse(op_movss, op_movsd, q->ans->size, apah, apll);
+                realsource = aprl;
+                imagsource = apll;
+            }
+            if (equal_address(apal, imagsource))
+            {
+                if (equal_address(apah, realsource))
+                {
+                    // poor man's swap - note for the 'single' case this alters bits 64-127 as well
+                    gen_code_sse_imm(op_shufps, op_shufpd, q->dc.left->size, apah, apal, aimmed(0)); // put apal in the high word of apah
+                    gen_code_sse_imm(op_shufps, op_shufpd, q->dc.left->size, apal, apah, aimmed(0)); // put apal in the high word of apah
+                    gen_code_sse_imm(op_shufps, op_shufpd, q->dc.left->size, apah, apah, aimmed(q->ans->size == ISZ_CFLOAT ? 2 : 1)); // move high wored of apah to low word of apah
+                    gen_code_sse_imm(op_shufps, op_shufpd, q->dc.left->size, apal, apal, aimmed(q->ans->size == ISZ_CFLOAT ? 2 : 1)); // move high wored of apah to low word of apah
+                }
+                else
+                {
+                    gen_code_sse(op_movss, op_movsd, q->ans->size, apah, imagsource);
+                    gen_code_sse(op_movss, op_movsd, q->ans->size, apal, realsource);
+                }
+            }
+            else // apal == realsource or independent of each other
+            {
+                gen_code_sse(op_movss, op_movsd, q->ans->size, apal, realsource);
+                gen_code_sse(op_movss, op_movsd, q->ans->size, apah, imagsource);
             }
         }
 
-        else if (equal_address(apal, apll))
-        {
-            gen_code_sse(op_addss, op_addsd, q->ans->size, apal, aprl);
-            gen_code_sse(op_addss, op_addsd, q->ans->size, apah, aprh);
-        }
-        else if (equal_address(apal, aprl))
-        {
-            gen_code_sse(op_addss, op_addsd, q->ans->size, apal, apll);
-            gen_code_sse(op_addss, op_addsd, q->ans->size, apah, aplh);
-        }
         else
         {
-            gen_code_sse(op_movss, op_movsd, q->ans->size, apal, apll);
-            gen_code_sse(op_addss, op_addsd, q->ans->size, apal, aprl);
-            gen_code_sse(op_movss, op_movsd, q->ans->size, apah, aplh);
-            gen_code_sse(op_addss, op_addsd, q->ans->size, apah, aprh);
+            bool highzero = false, lowzero = false;
+            if ((q->dc.left->size < ISZ_CFLOAT && q->dc.right->size < ISZ_CFLOAT) && (q->dc.left->size < ISZ_IFLOAT) == (q->dc.right->size < ISZ_IFLOAT))
+            {
+                if (q->dc.left->size < ISZ_IFLOAT)
+                    highzero = true;
+                else
+                    lowzero = true;
+            }
+            if (equal_address(apal, apll))
+            {
+                if (!lowzero)
+                {
+                    gen_code_sse(op_addss, op_addsd, q->ans->size, apal, aprl);
+                }
+                else
+                {
+                    gen_code_sse(op_movss, op_movsd, q->ans->size, apal, floatzero(apal));
+                    zerocleanup();
+                }
+                if (!highzero)
+                {
+                    gen_code_sse(op_addss, op_addsd, q->ans->size, apah, aprh);
+                }
+                else
+                {
+                    gen_code_sse(op_movss, op_movsd, q->ans->size, apah, floatzero(apah));
+                    zerocleanup();
+                }
+            }
+            else if (equal_address(apal, aprl))
+            {
+                if (!lowzero)
+                {
+                    gen_code_sse(op_addss, op_addsd, q->ans->size, apal, apll);
+                }
+                else
+                {
+                    gen_code_sse(op_movss, op_movsd, q->ans->size, apal, floatzero(apal));
+                    zerocleanup();
+                }
+                if (!highzero)
+                {
+                    gen_code_sse(op_addss, op_addsd, q->ans->size, apah, aplh);
+                }
+                else
+                {
+                    gen_code_sse(op_movss, op_movsd, q->ans->size, apah, floatzero(apah));
+                    zerocleanup();
+                }
+            }
+            else
+            {
+                if (!lowzero)
+                {
+                    gen_code_sse(op_movss, op_movsd, q->ans->size, apal, apll);
+                    gen_code_sse(op_addss, op_addsd, q->ans->size, apal, aprl);
+                }
+                else
+                {
+                    gen_code_sse(op_movss, op_movsd, q->ans->size, apal, floatzero(apal));
+                    zerocleanup();
+                }
+                if (!highzero)
+                {
+                    gen_code_sse(op_movss, op_movsd, q->ans->size, apah, aplh);
+                    gen_code_sse(op_addss, op_addsd, q->ans->size, apah, aprh);
+                }
+                else
+                {
+                    gen_code_sse(op_movss, op_movsd, q->ans->size, apah, floatzero(apah));
+                    zerocleanup();
+                }
+            }
         }
     }
     else if (q->ans->size >= ISZ_FLOAT)
@@ -3666,8 +3743,24 @@ void asm_assn(QUAD* q) /* assignment */
         }
         else if (q->ans->size >= ISZ_CFLOAT)
         {
-            moveFP(apa, q->ans->size, apl, q->dc.left->size);
-            moveFP(apa1, q->ans->size, apl1, q->dc.left->size);
+            if (q->dc.left->size >= ISZ_CFLOAT)
+            {
+                moveFP(apa, q->ans->size, apl, q->dc.left->size);
+                moveFP(apa1, q->ans->size, apl1, q->dc.left->size);
+            }
+            else
+            {
+                if (q->dc.left->size >= ISZ_IFLOAT)
+                {
+                    moveFP(apa1, q->ans->size, apl, q->dc.left->size);
+                    moveFP(apa, q->ans->size, floatzero(apl1), q->dc.left->size);
+                }
+                else
+                {
+                    moveFP(apa, q->ans->size, apl, q->dc.left->size);
+                    moveFP(apa1, q->ans->size, floatzero(apa1), q->dc.left->size);
+                }
+            }
         }
         else if (q->ans->size >= ISZ_FLOAT)
         {
@@ -3804,7 +3897,7 @@ void asm_assn(QUAD* q) /* assignment */
             if (q->ans->size >= ISZ_CFLOAT)
             {
                 moveFP(apa, q->ans->size, apl, q->dc.left->size);
-                moveFP(apa1, q->ans->size, apl, q->dc.left->size);
+                moveFP(apa1, q->ans->size, apl1, q->dc.left->size);
             }
             else if (q->ans->size >= ISZ_IFLOAT)
             {
@@ -3900,9 +3993,9 @@ void asm_assn(QUAD* q) /* assignment */
             {
                 if (q->ans->size >= ISZ_CFLOAT)
                 {
+                    moveFP(apa1, q->ans->size, apl, q->dc.left->size);
                     gen_code_sse(op_movss, op_movsd, q->ans->size, apa, floatzero(apl));
                     zerocleanup();
-                    moveFP(apa1, q->ans->size, apl, q->dc.left->size);
                 }
                 else
                 {
@@ -3913,9 +4006,9 @@ void asm_assn(QUAD* q) /* assignment */
             {
                 if (q->ans->size >= ISZ_CFLOAT)
                 {
+                    moveFP(apa, q->ans->size, apl, q->dc.left->size);
                     gen_code_sse(op_movss, op_movsd, q->ans->size, apa1, floatzero(apl));
                     zerocleanup();
-                    moveFP(apa, q->ans->size, apl, q->dc.left->size);
                 }
                 else
                 {

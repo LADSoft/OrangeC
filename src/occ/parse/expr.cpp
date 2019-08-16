@@ -1480,7 +1480,9 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
                         sp3 = sp3->mainsym;
                     if (sp4 && sp4->mainsym)
                         sp4 = sp4->mainsym;
-                        
+                        
+
+
 
 
 
@@ -3125,10 +3127,18 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
         else
         {
             // legacy c language support
-            if (p && p->tp && isstructured(p->tp))
+            if (p && p->tp)
             {
-                p->exp = exprNode(en_stackblock, p->exp, nullptr);
-                p->exp->size = p->tp->size;
+                if (isstructured(p->tp))
+                {
+                    p->exp = exprNode(en_stackblock, p->exp, nullptr);
+                    p->exp->size = p->tp->size;
+                }
+                else if (isfloat(sym->tp) || isimaginary(sym->tp) || iscomplex(sym->tp))
+                {
+                    cast(sym->tp, &p->exp);
+                    optimize_for_constants(&p->exp);
+                }
             }
         }
         hr = hr->next;

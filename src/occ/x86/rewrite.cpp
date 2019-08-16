@@ -2067,7 +2067,7 @@ int examine_icode(QUAD* head)
                     head->dc.left = ret;
                     head->dc.right = nullptr;
                     head->dc.opcode = i_assn;
-                    head->temps &= ~(TEMP_LEFT | TEMP_RIGHT);
+                    head->temps &= ~TEMP_RIGHT;
                     if (head->ans->mode == i_ind && (head->temps & TEMP_LEFT))
                     {
                         q = (QUAD*)Alloc(sizeof(QUAD));

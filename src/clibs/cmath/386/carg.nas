@@ -55,11 +55,6 @@ _cargf:
     sub dl,dl
     jmp short xexp
 _cargl:
-    lea	ecx,[esp+4]
-    fld tword[ecx+10]
-    fld	tword[ecx]
-    mov dl,2
-    jmp short xexp
 _carg:
     lea	ecx,[esp+4]
     fld qword[ecx+8]
@@ -69,10 +64,10 @@ xexp:
     lea eax,[nm]
     call clearmath
     push edx
-    sub esp,24
-    fstp tword [esp+12]
-    fstp tword [esp]
+    sub esp,16
+    fstp qword [esp+8]
+    fstp qword [esp]
     call _atan2l
-    add esp,24
+    add esp,16
     pop edx
     jmp wrapmath

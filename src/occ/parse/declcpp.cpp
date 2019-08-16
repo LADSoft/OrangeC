@@ -23,7 +23,7 @@
  */
 
 #include "compiler.h"
-#include <map>
+#include <unordered_map>
 #include <stack>
 extern ARCH_ASM* chosenAssembler;
 extern NAMESPACEVALUELIST *globalNameSpace, *localNameSpace;
@@ -3117,7 +3117,7 @@ void ParseOut__attribute__(LEXEME** lex, SYMBOL* funcsp)
             {
                 if (ISID(*lex))
                 {
-                    static std::map<std::string, int> attribNames = {
+                    const std::unordered_map<std::string, int> attribNames = {
                         {"alias", 1},    // 1 arg, alias name
                         {"aligned", 2},  // arg is alignment; for members only increase unless also packed, otherwise can increase or decrease
                         {"warn_if_not_aligned", 3},  // arg is the desired minimum alignment
@@ -3140,7 +3140,8 @@ void ParseOut__attribute__(LEXEME** lex, SYMBOL* funcsp)
                         {"dllexport", 20},
                         //                    { "selectany", 21 },  // requires linker support
                         //                    { "shared", 22 },
-                        {"zstring", 23}  // non-gcc, added to support nonstring
+                        {"zstring", 23},  // non-gcc, added to support nonstring
+                        {"noreturn", 24}
 
                     };
                     std::string name = (*lex)->value.s.a;
@@ -3148,7 +3149,12 @@ void ParseOut__attribute__(LEXEME** lex, SYMBOL* funcsp)
                     if (name.size() >= 5 && name.substr(0, 2) == "__" && name.substr(name.size() - 2, 2) == "__")
                         name = name.substr(2, name.size() - 4);
                     *lex = getsym();
-                    switch (attribNames[name])
+                    auto attrib = attribNames.find(name);
+                    if(attrib == attribNames.end())
+                    {
+                        errorstr(ERR_ATTRIBUTE_DOES_NOT_EXIST, name.c_str());
+                    } else {
+                    switch (attrib->second)
                     {
                         case 1:  // alias
                             if (MATCHKW(*lex, openpa))
@@ -3340,6 +3346,10 @@ void ParseOut__attribute__(LEXEME** lex, SYMBOL* funcsp)
                         case 23:  // zstring
                             basisAttribs.inheritable.zstring = true;
                             break;
+                        case 24:
+                            basisAttribs.inheritable.linkage3 = lk_noreturn;
+                            break;
+                    }
                     }
                 }
                 needkw(lex, closepa);
@@ -3444,6 +3454,26 @@ bool ParseAttributeSpecifiers(LEXEME** lex, SYMBOL* funcsp, bool always)
                 *lex = getsym();
                 if (MATCHKW(*lex, openbr))
                 {
+                    // note: these are only the namespaced names listed, the __attribute__ names are unlisted here as they don't exist in GCC and we want ours to follow theirs for actual consistency reasons.
+                    const std::unordered_map<std::string, int> gccAttribNames = {
+                        {"alloc_size", 4},           // implement by ignoring one or two args
+                                                     //                    { "common", 6 }, // no args, decide whether to support
+                                                     //                    { "nocommon", 7 }, // no args, decide whether to support
+                                              //                    { "section", 12 }, // one argument, the section name
+                                              //                    { "tls_model", 13 }, // one arg, the model.   Probably shouldn't support
+                        //                    { "visibility", 17 }, // one arg, 'default' ,'hidden', 'internal', 'protected.   don't support for now
+                        //                    as requires linker changes. { "weak", 18 }, // not supporting
+                        //                    { "selectany", 21 },  // requires linker support
+                        //                    { "shared", 22 },
+                        {"dllexport", 25},
+                        {"dllimport", 26}
+                    };
+                    const std::unordered_map<std::string, int> occAttribName = {
+                        {"zstring", 23}  // non-gcc, added to support nonstring
+                    };
+                    const std::string occNamespace = "occ";
+                    const std::string gccNamespace = "gnu";
+                    const std::string clangNamespace = "clang"; 
                     rv = true;
                     *lex = getsym();
                     if (!MATCHKW(*lex, closebr))
@@ -3455,6 +3485,85 @@ bool ParseAttributeSpecifiers(LEXEME** lex, SYMBOL* funcsp, bool always)
                             {
                                 *lex = getsym();
                                 error(ERR_IDENTIFIER_EXPECTED);
+                            }
+                            else if(!strcmp((*lex)->value.s.a, occNamespace.c_str()))
+                            {
+                                *lex = getsym();
+                                if(MATCHKW(*lex, classsel))
+                                {
+                                    *lex = getsym();
+                                    if (!ISID(*lex))
+                                    {
+                                        *lex = getsym();
+                                        error(ERR_IDENTIFIER_EXPECTED);
+                                    }
+                                    else if(*lex)
+                                    {
+                                        std::string name = (*lex)->value.s.a;
+                                        auto searchedName = occAttribName.find(name);
+                                        if(searchedName != occAttribName.end())
+                                        {
+                                            switch(searchedName->second)
+                                            {
+                                                case 23:
+                                                    basisAttribs.inheritable.zstring = true;
+                                                    break;
+                                            }
+                                        }
+                                        else 
+                                        {
+                                            errorstr2(ERR_ATTRIBUTE_DOES_NOT_EXIST_IN_NAMESPACE, name.c_str(), occNamespace.c_str());
+                                        }
+                                        *lex = getsym();
+                                    }
+                                }
+                                else
+                                {
+                                    errorstr(ERR_ATTRIBUTE_NAMESPACE_NOT_ATTRIBUTE, occNamespace.c_str());
+                                }
+                            }
+                            else if(!strcmp((*lex)->value.s.a, gccNamespace.c_str()))
+                            {
+                                *lex = getsym();
+                                if (MATCHKW(*lex, classsel))
+                                {
+                                    *lex = getsym();
+                                    if (!ISID(*lex))
+                                    {
+                                        *lex = getsym();
+                                        error(ERR_IDENTIFIER_EXPECTED);
+                                    }
+                                    else if(*lex)
+                                    {
+                                        std::string name = (*lex)->value.s.a;
+                                        auto searchedName = gccAttribNames.find(name);
+                                        if(searchedName != gccAttribNames.end())
+                                        {
+                                            switch(searchedName->second)
+                                            {
+                                                case 25:
+                                                    if (basisAttribs.inheritable.linkage2 != lk_none)
+                                                        error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
+                                                    basisAttribs.inheritable.linkage2 = lk_export;
+                                                    break;
+                                                case 26:
+                                                    if (basisAttribs.inheritable.linkage2 != lk_none)
+                                                        error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
+                                                    basisAttribs.inheritable.linkage2 = lk_import;
+                                                    break;
+                                            }
+                                        }
+                                        else 
+                                        {
+                                            errorstr2(ERR_ATTRIBUTE_DOES_NOT_EXIST_IN_NAMESPACE, name.c_str(), gccNamespace.c_str());
+                                        }
+                                        *lex = getsym();
+                                    }
+                                }
+                                else
+                                {
+                                    errorstr(ERR_ATTRIBUTE_NAMESPACE_NOT_ATTRIBUTE, gccNamespace.c_str());
+                                }
                             }
                             else
                             {

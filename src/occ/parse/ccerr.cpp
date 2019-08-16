@@ -573,7 +573,10 @@ static struct
               {"Need an arithmetic type with attribute((vector()))", ERROR},
               {"Type mismatch with attribute((copy()))", ERROR},
               {"Invalid cleanup function", ERROR},
-              {"Null terminated string required", ERROR}
+              {"Null terminated string required", ERROR},
+              {"Attribute namespace '%s' is not an attribute", ERROR},
+              {"Attribute '%s' does not exist", ERROR},
+              {"Attribute '%s' does not exist in attribute namespace '%s'", ERROR},
 #endif
 };
 

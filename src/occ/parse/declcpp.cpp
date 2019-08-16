@@ -68,7 +68,50 @@ static LIST* deferred;
 #ifdef PARSER_ONLY
 void ccInsertUsing(SYMBOL* ns, SYMBOL* parentns, char* file, int line);
 #endif
-
+namespace AttribContainers
+{
+const std::unordered_map<std::string, int> gccStyleAttribNames = {
+    {"alias", 1},    // 1 arg, alias name
+    {"aligned", 2},  // arg is alignment; for members only increase unless also packed, otherwise can increase or decrease
+    {"warn_if_not_aligned", 3},  // arg is the desired minimum alignment
+    {"alloc_size", 4},           // implement by ignoring one or two args
+    {"cleanup", 5},              // arg is afunc: similar to a destructor.   Also gets called during exception processing
+                                 //                    { "common", 6 }, // no args, decide whether to support
+                                 //                    { "nocommon", 7 }, // no args, decide whether to support
+    {"copy", 8},          // one arg, varible/func/type, the two variable kinds must match don't copy alias visibility or weak
+    {"deprecated", 9},    // zero or one arg, match C++
+    {"nonstring", 10},    // has no null terminator
+    {"packed", 11},       // ignore auto-align on this field
+                          //                    { "section", 12 }, // one argument, the section name
+                          //                    { "tls_model", 13 }, // one arg, the model.   Probably shouldn't support
+    {"unused", 14},       // warning control
+    {"used", 15},         // warning control
+    {"vector_size", 16},  // one arg, which must be a power of two multiple of the base size.  implement as fixed-size array
+    //                    { "visibility", 17 }, // one arg, 'default' ,'hidden', 'internal', 'protected.   don't
+    //                    support for now as requires linker changes. { "weak", 18 }, // not supporting
+    {"dllimport", 19},
+    {"dllexport", 20},
+    //                    { "selectany", 21 },  // requires linker support
+    //                    { "shared", 22 },
+    {"zstring", 23},  // non-gcc, added to support nonstring
+    {"noreturn", 24}};
+// note: these are only the namespaced names listed, the __attribute__ names are unlisted here as they don't
+// exist in GCC and we want ours to follow theirs for actual consistency reasons.
+const std::unordered_map<std::string, int> gccCPPStyleAttribNames = {
+    {"alloc_size", 4},  // implement by ignoring one or two args
+                        //                    { "common", 6 }, // no args, decide whether to support
+                        //                    { "nocommon", 7 }, // no args, decide whether to support
+                        //                    { "section", 12 }, // one argument, the section name
+    //                    { "tls_model", 13 }, // one arg, the model.   Probably shouldn't support
+    //                    { "visibility", 17 }, // one arg, 'default' ,'hidden', 'internal', 'protected.   don't
+    //                    support for now as requires linker changes. { "weak", 18 }, // not supporting {
+    //                    "selectany", 21 },  // requires linker support { "shared", 22 },
+    {"dllexport", 25},
+    {"dllimport", 26}};
+const std::unordered_map<std::string, int> occCPPStyleAttribNames = {
+    {"zstring", 23}  // non-gcc, added to support nonstring
+};
+};  // namespace AttribContainers
 typedef struct
 {
     VTABENTRY* entry;
@@ -3117,44 +3160,13 @@ void ParseOut__attribute__(LEXEME** lex, SYMBOL* funcsp)
             {
                 if (ISID(*lex))
                 {
-                    const std::unordered_map<std::string, int> attribNames = {
-                        {"alias", 1},  // 1 arg, alias name
-                        {"aligned",
-                         2},  // arg is alignment; for members only increase unless also packed, otherwise can increase or decrease
-                        {"warn_if_not_aligned", 3},  // arg is the desired minimum alignment
-                        {"alloc_size", 4},           // implement by ignoring one or two args
-                        {"cleanup", 5},  // arg is afunc: similar to a destructor.   Also gets called during exception processing
-                                         //                    { "common", 6 }, // no args, decide whether to support
-                                         //                    { "nocommon", 7 }, // no args, decide whether to support
-                        {"copy",
-                         8},  // one arg, varible/func/type, the two variable kinds must match don't copy alias visibility or weak
-                        {"deprecated", 9},  // zero or one arg, match C++
-                        {"nonstring", 10},  // has no null terminator
-                        {"packed",
-                         11},  // ignore auto-align on this field
-                               //                    { "section", 12 }, // one argument, the section name
-                               //                    { "tls_model", 13 }, // one arg, the model.   Probably shouldn't support
-                        {"unused", 14},  // warning control
-                        {"used", 15},    // warning control
-                        {"vector_size",
-                         16},  // one arg, which must be a power of two multiple of the base size.  implement as fixed-size array
-                        //                    { "visibility", 17 }, // one arg, 'default' ,'hidden', 'internal', 'protected.   don't
-                        //                    support for now as requires linker changes. { "weak", 18 }, // not supporting
-                        {"dllimport", 19},
-                        {"dllexport", 20},
-                        //                    { "selectany", 21 },  // requires linker support
-                        //                    { "shared", 22 },
-                        {"zstring", 23},  // non-gcc, added to support nonstring
-                        {"noreturn", 24}
-
-                    };
                     std::string name = (*lex)->value.s.a;
                     // get rid of leading and trailing "__" if they both exist
                     if (name.size() >= 5 && name.substr(0, 2) == "__" && name.substr(name.size() - 2, 2) == "__")
                         name = name.substr(2, name.size() - 4);
                     *lex = getsym();
-                    auto attrib = attribNames.find(name);
-                    if (attrib == attribNames.end())
+                    auto attrib = AttribContainers::gccStyleAttribNames.find(name);
+                    if (attrib == AttribContainers::gccStyleAttribNames.end())
                     {
                         errorstr(ERR_ATTRIBUTE_DOES_NOT_EXIST, name.c_str());
                     }
@@ -3462,22 +3474,6 @@ bool ParseAttributeSpecifiers(LEXEME** lex, SYMBOL* funcsp, bool always)
                 *lex = getsym();
                 if (MATCHKW(*lex, openbr))
                 {
-                    // note: these are only the namespaced names listed, the __attribute__ names are unlisted here as they don't
-                    // exist in GCC and we want ours to follow theirs for actual consistency reasons.
-                    const std::unordered_map<std::string, int> gccAttribNames = {
-                        {"alloc_size", 4},  // implement by ignoring one or two args
-                                            //                    { "common", 6 }, // no args, decide whether to support
-                                            //                    { "nocommon", 7 }, // no args, decide whether to support
-                                            //                    { "section", 12 }, // one argument, the section name
-                        //                    { "tls_model", 13 }, // one arg, the model.   Probably shouldn't support
-                        //                    { "visibility", 17 }, // one arg, 'default' ,'hidden', 'internal', 'protected.   don't
-                        //                    support for now as requires linker changes. { "weak", 18 }, // not supporting {
-                        //                    "selectany", 21 },  // requires linker support { "shared", 22 },
-                        {"dllexport", 25},
-                        {"dllimport", 26}};
-                    const std::unordered_map<std::string, int> occAttribName = {
-                        {"zstring", 23}  // non-gcc, added to support nonstring
-                    };
                     const std::string occNamespace = "occ";
                     const std::string gccNamespace = "gnu";
                     const std::string clangNamespace = "clang";
@@ -3507,8 +3503,8 @@ bool ParseAttributeSpecifiers(LEXEME** lex, SYMBOL* funcsp, bool always)
                                     else if (*lex)
                                     {
                                         std::string name = (*lex)->value.s.a;
-                                        auto searchedName = occAttribName.find(name);
-                                        if (searchedName != occAttribName.end())
+                                        auto searchedName = AttribContainers::occCPPStyleAttribNames.find(name);
+                                        if (searchedName != AttribContainers::occCPPStyleAttribNames.end())
                                         {
                                             switch (searchedName->second)
                                             {
@@ -3544,8 +3540,8 @@ bool ParseAttributeSpecifiers(LEXEME** lex, SYMBOL* funcsp, bool always)
                                     else if (*lex)
                                     {
                                         std::string name = (*lex)->value.s.a;
-                                        auto searchedName = gccAttribNames.find(name);
-                                        if (searchedName != gccAttribNames.end())
+                                        auto searchedName = AttribContainers::gccCPPStyleAttribNames.find(name);
+                                        if (searchedName != AttribContainers::gccCPPStyleAttribNames.end())
                                         {
                                             switch (searchedName->second)
                                             {

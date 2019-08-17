@@ -29,7 +29,6 @@ CPP_DEPENDENCIES= \
     $(BACKEND_FILES) \
     ccmain.cpp \
     ccif.cpp \
-    crc32.cpp \
     db.cpp \
     piper.cpp \
     beinterf.cpp \

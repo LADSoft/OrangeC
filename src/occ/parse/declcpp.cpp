@@ -25,6 +25,7 @@
 #include "compiler.h"
 #include <map>
 #include <stack>
+#include "Utils.h"
 extern ARCH_ASM* chosenAssembler;
 extern NAMESPACEVALUELIST *globalNameSpace, *localNameSpace;
 extern INCLUDES* includes;
@@ -2758,7 +2759,7 @@ LEXEME* insertNamespace(LEXEME* lex, enum e_lk linkage, enum e_sc storage_class,
             else
                 p++;
 
-            my_sprintf(anonymousNameSpaceName, "__%s__%d", p, CRC32((unsigned char*)infile, strlen(infile)));
+            my_sprintf(anonymousNameSpaceName, "__%s__%d", p, Utils::CRC32((unsigned char*)infile, strlen(infile)));
             while ((p = strchr(anonymousNameSpaceName, '.')) != 0)
                 *p = '_';
         }

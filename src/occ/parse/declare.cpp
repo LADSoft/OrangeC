@@ -24,6 +24,7 @@
 
 #include "compiler.h"
 #include <wchar.h>
+#include "Utils.h"
 /* locally declared func gloabal memory
  when redeclaring sym, make sure it gets in the global func list
 */
@@ -141,7 +142,7 @@ const char* AnonymousName(void)
 const char* AnonymousTypeName(void)
 {
     char buf[512];
-    my_sprintf(buf, "__anontype_%u_%d", CRC32((unsigned char*)includes->fname, strlen(includes->fname)), includes->anonymousid++);
+    my_sprintf(buf, "__anontype_%u_%d", Utils::CRC32((unsigned char*)includes->fname, strlen(includes->fname)), includes->anonymousid++);
     return litlate(buf);
 }
 SYMBOL* makeID(enum e_sc storage_class, TYPE* tp, SYMBOL* spi, const char* name)
@@ -167,7 +168,7 @@ SYMBOL* makeID(enum e_sc storage_class, TYPE* tp, SYMBOL* spi, const char* name)
 SYMBOL* makeUniqueID(enum e_sc storage_class, TYPE* tp, SYMBOL* spi, const char* name)
 {
     char buf[512];
-    my_sprintf(buf, "%s_%u", name, CRC32((unsigned char*)includes->fname, strlen(includes->fname)));
+    my_sprintf(buf, "%s_%u", name, Utils::CRC32((unsigned char*)includes->fname, strlen(includes->fname)));
     return makeID(storage_class, tp, spi, litlate(buf));
 }
 void addStructureDeclaration(STRUCTSYM* decl)

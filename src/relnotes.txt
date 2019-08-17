@@ -1,4 +1,10 @@
 Release notes:
+version 6.0.43:
+
+    occ: fix problems with complex math code generation
+    omake: fix wildcard function to check for file existance
+    build: use 'wildcard' function instead of spawning to a dir or ls command
+    rtl: fix problems with complex math library: there was still code for long double complex using the old long double format
 
 version 6.0.42: 8/11/2019
 
@@ -8,8 +14,8 @@ version 6.0.42: 8/11/2019
     occ: fix problem with freeing temporaries created in building function-local static variables
     occ: add more support for the gnu __attribute__ keyword
     ocide: allow modifying the face name for dialogs in the resource editor
-version 6.0.41: 4/10/2019
 
+version 6.0.41: 4/10/2019
     occ: show data at CS:EIP in exception dumps
     occ: fix so that an empty statement at the end of a function didn't confuse the 'function needs return value' warning
     occ: fix the /D and /U command line switches to work more in line with the standard usage

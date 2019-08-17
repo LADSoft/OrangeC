@@ -37,6 +37,12 @@
 #include <sstream>
 #include "Utils.h"
 
+#ifdef HAVE_UNISTD_H
+#    include <unistd.h>
+#else
+#    include <io.h>
+#endif
+
 std::string Eval::VPath;
 std::map<std::string, std::string> Eval::vpaths;
 bool Eval::internalWarnings;
@@ -1212,7 +1218,20 @@ std::string Eval::addprefix(const std::string& arglist)
 std::string Eval::wildcard(const std::string& arglist)
 {
     std::string names = strip(arglist);
-    return wildcardinternal(names);
+    std::string rv;
+    names = wildcardinternal(names);
+    while (!names.empty())
+    {
+        std::string current = ExtractFirst(names, " ");
+        if (access(current.c_str(), 0) == 0)
+        {
+            if (!rv.empty())
+                rv += " ";
+            rv += current;
+        }
+    }
+
+    return rv;
 }
 std::string Eval::wildcardinternal(std::string& names)
 {

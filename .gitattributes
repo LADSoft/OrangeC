@@ -1,13 +1,13 @@
 text=auto 
 text eol=crlf
-.c text
-.cpp text
-.h text
-.nas text
-.asm text
+*.c text
+*.cpp text
+*.h text
+*.nas text
+*.asm text
 makefile text
-.mak text
-
+*.mak text
+*.yml text
 *.cmpx binary
 *.bmp binary
 *.ico binary

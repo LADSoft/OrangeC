@@ -35,13 +35,13 @@
 #    define M_LN10 2.30258509299404568402
 #endif
 
-#define INTERNAL_FPF_PRECISION ((80 / 8) / sizeof(u16))
+#define INTERNAL_FPF_PRECISION ((80 / 8) / sizeof(u16f))
 /*
 ** DEFINES
 */
-#define u8 unsigned char
-#define u16 unsigned short
-#define u32 unsigned long
+#define u8f unsigned char
+#define u16f unsigned short
+#define u32f unsigned long
 #define uchar unsigned char
 #define ulong unsigned long
 
@@ -189,11 +189,11 @@ class FPF
     void choose_nan(const FPF& x, const FPF& y, bool addition);
     bool IsMantissaZero() const;
     bool IsMantissaOne() const;
-    void ShiftMantLeft1(u16* carry);
-    void ShiftMantRight1(u16* carry);
+    void ShiftMantLeft1(u16f* carry);
+    void ShiftMantRight1(u16f* carry);
     void StickyShiftRightMant(int amount);
-    static void Add16Bits(u16* carry, u16* a, u16 b, u16 c);
-    static void Sub16Bits(u16* borrow, u16* a, u16 b, u16 c);
+    static void Add16Bits(u16f* carry, u16f* a, u16f b, u16f c);
+    static void Sub16Bits(u16f* borrow, u16f* a, u16f b, u16f c);
     static FPF& AddSub(int flag, FPF& dest, const FPF& left, const FPF& right);
     static FPF& Multiply(FPF& dest, const FPF& left, const FPF& right);
     static FPF& Divide(FPF& dest, const FPF& left, const FPF& right);
@@ -205,9 +205,9 @@ class FPF
 
   private:
     int exp; /* Signed exponent...no bias */
-    u16 mantissa[INTERNAL_FPF_PRECISION];
-    u8 type; /* Indicates, NORMAL, SUBNORMAL, etc. */
-    u8 sign; /* Mantissa sign */
+    u16f mantissa[INTERNAL_FPF_PRECISION];
+    u8f type; /* Indicates, NORMAL, SUBNORMAL, etc. */
+    u8f sign; /* Mantissa sign */
     static bool bigEndian;
     static FPF tensTab[10];
     static bool initted;

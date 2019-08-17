@@ -21,5 +21,4 @@
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
 
-DIRS = x86 occil preproc parse86
-
+DIRS = netlink

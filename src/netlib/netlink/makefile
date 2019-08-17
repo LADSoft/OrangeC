@@ -21,5 +21,24 @@
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
 
-DIRS = x86 occil preproc parse86
+include ../../pathext2.mak
 
+NAME=netlink
+MAIN_FILE=NetLinkMain.cpp
+CPP_DEPENDENCIES=dummy.cpp
+INCLUDES=..$(PATHEXT2) ..$(PATHEXT2)..$(PATHEXT2)util
+LIB_DEPENDENCIES=netlib util
+
+ifndef _TREEROOT
+_TREEROOT := $(CURDIR)$(PATHEXT2)..$(PATHEXT2)..$(PATHEXT2)treetop.mak
+_TREETARGET := $(CURDIR)
+export _TREEROOT
+export _TREETARGET
+
+redirect:
+	@$(MAKE) -f$(_TREEROOT) localfiles
+format:
+	@$(MAKE) -f $(_TREEROOT) format
+endif
+
+DISTRIBUTE: copyexe

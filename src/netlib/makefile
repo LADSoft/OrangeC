@@ -21,5 +21,13 @@
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
 
-DIRS = x86 occil preproc parse86
+include ../pathext2.mak
 
+NAME=netlib
+INCLUDES=..$(PATHEXT2)util;..$(PATHEXT2)exefmt
+CPP_DEPENDENCIES=$(wildcard *.cpp)
+C_DEPENDENCIES=$(wildcard *.c)
+
+include ../redirect.mak
+
+DISTRIBUTE:

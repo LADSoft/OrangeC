@@ -1,0 +1,1 @@
+..\..\release\occil /Lkernel32 /c /E- /9 /Di386 *.c

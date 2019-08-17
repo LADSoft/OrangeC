@@ -79,7 +79,6 @@ CPP_DEPENDENCIES= \
     osutil.cpp \
     output.cpp \
     preproc.cpp \
-    process.cpp \
     property.cpp \
     ppexpr.cpp \
     rtti.cpp \

@@ -109,6 +109,7 @@ DISTRIBUTE:
 	$(COPYDIR) examples\win32\Huff\%.% $(DISTEXAM)\win32\Huff
 	copy license.txt $(DISTROOT)
 	copy readme.txt $(DISTROOT)
+        copy occil.txt $(DISTROOT)
 	copy relnotes.txt $(DISTROOT)
 	copy addon.txt $(DISTADDON)
 endif

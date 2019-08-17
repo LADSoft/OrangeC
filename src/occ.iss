@@ -59,7 +59,8 @@ Name: "{app}\appdata"; Components: main\memstick
 [Files]
 Source: "C:\orangec\src\ocidehld.bat"; DestDir: "{app}"; DestName: "ocide.bat"; Flags: IgnoreVersion; Components: main\memstick
 Source: "C:\orangec\license\*.*"; DestDir: "{app}\license\"; Flags: IgnoreVersion; Components: main
-Source: "C:\orangec\bin\*.*"; DestDir: "{app}\bin\"; Flags: IgnoreVersion;Components: main
+Source: "C:\orangec\bin\*.*"; Excludes: "C:\orangec\bin\lsmsilcrtl.dll"; DestDir: "{app}\bin\"; Flags: IgnoreVersion; Components: main
+Source: "C:\orangec\bin\lsmsilcrtl.dll"; DestDir: "{app}\bin\"; Flags: IgnoreVersion gacinstall; StrongAssemblyName: "lsmsilcrtl, Version=1.0.0.0, Culture=neutral, PublicKeyToken=bc9b111235642d7d, ProcessorArchitecture=x86"
 ;Source: "C:\orangec\bin_7\*.*"; DestDir: "{app}\bin_7\"; Flags: IgnoreVersion;Components: main
 ;Source: "C:\orangec\bin_7\branding\*.*"; DestDir: "{app}\bin_7\branding"; Flags: IgnoreVersion;Components: main
 ;Source: "C:\orangec\bin_8\*.*"; DestDir: "{app}\bin_8\"; Flags: IgnoreVersion;Components: main

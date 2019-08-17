@@ -147,3 +147,8 @@ lsmsilcrtl.dll: lsmsilcrtl\lsmsilcrtl.cs
 
 DISTRIBUTE: copyexe
 	copy target.cfg $(DISTBIN)$(PATHEXT2)occil.cfg
+        copy lsmsilcrtl.dll $(DISTBIN)
+ifneq "$(wildcard $(ORANGEC)$(PATHEXT2)bin$(PATHEXT2)occ.exe" ""
+	copy occmsil.dll $(DISTBIN)
+endif
+     

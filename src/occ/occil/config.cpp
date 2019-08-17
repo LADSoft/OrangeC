@@ -356,7 +356,7 @@ static int initnasm(COMPILER_PARAMS *parms, ARCH_ASM *data, ARCH_DEBUG *debug)
         {
             defines[1].respect = true;
             defines[4].respect = false;
-            pinvoke_dll = "lscrtlil.dll";
+            pinvoke_dll = "lscrtl.dll";
         }
         else if (string[1] == 'm')
         {

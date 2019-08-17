@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "Instruction.h"
@@ -30,7 +30,16 @@
 
 bool Instruction::bigEndian;
 
-Instruction::Instruction(Label* lbl) : label(lbl), type(LABEL), altdata(nullptr), pos(0), fpos(0), size(0), offs(0), repeat(1), fill(0)
+Instruction::Instruction(Label* lbl) :
+    label(lbl),
+    type(LABEL),
+    altdata(nullptr),
+    pos(0),
+    fpos(0),
+    size(0),
+    offs(0),
+    repeat(1),
+    fill(0)
 {
 }
 Instruction::Instruction(void* dataIn, int Size, bool isData) :
@@ -72,13 +81,20 @@ Instruction::Instruction(int Repeat, int Size) :
 {
     memset(data.get(), 0, size);
 }
-Instruction::Instruction(void* data) : type(ALT), label(nullptr), altdata(data), pos(0), fpos(0), size(0), offs(0), repeat(1), fill(0)
+Instruction::Instruction(void* data) :
+    type(ALT),
+    label(nullptr),
+    altdata(data),
+    pos(0),
+    fpos(0),
+    size(0),
+    offs(0),
+    repeat(1),
+    fill(0)
 {
 }
 
-Instruction::~Instruction()
-{
-}
+Instruction::~Instruction() {}
 std::unique_ptr<unsigned char[]> Instruction::LoadData(bool isCode, unsigned char* data, size_t size)
 {
 #ifdef x64
@@ -87,7 +103,7 @@ std::unique_ptr<unsigned char[]> Instruction::LoadData(bool isCode, unsigned cha
     bool found = true;
 #endif
     std::unique_ptr<unsigned char[]> rv = std::make_unique<unsigned char[]>(size);
-    unsigned char *d = rv.get();
+    unsigned char* d = rv.get();
     for (unsigned char* s = data; size; size--)
     {
         if (found || (*s & 0xf0) != 0x40)  // null REX prefix

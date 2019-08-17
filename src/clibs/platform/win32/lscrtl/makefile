@@ -65,7 +65,7 @@ DLLOBJS = $(shell dir $(B) $(DLLOBJECT)\\*.o)
 	$(CC) /c $(CFLAGS) $(STDINCLUDE) -o$@ $^
 
 $(RCFILE).res: $(RCFILE).rc ..\..\..\..\version.h
-	orc -i$(ORANGEC)\src\clibs\stdinc -i$(ORANGEC)\src\clibs\platform\win32\wininc $(RCFILE).rc
+	orc -i..\wininc $(RCFILE).rc
 
 #DISTRIBUTE:
 #	$(ZIP) -porangec a $(DISTADDON)\lscrtl $(LSCRTLOBJECT)\*.*

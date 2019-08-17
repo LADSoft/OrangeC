@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <windows.h>
@@ -98,9 +98,9 @@ static void SubclassPropsEditWindow(HWND hwnd)
     SetWindowLong(hwnd, GWL_WNDPROC, (long)PropsEditorSubclassProc);
     SetWindowLong(hwnd, GWL_USERDATA, (long)hwndProps);
 }
-HWND PropGetHWNDCombobox(HWND parent)
+HWND PropGetHWNDCombobox(HWND parent, BOOL vscroll)
 {
-    HWND rv = CreateWindow("combobox", "", WS_VISIBLE | WS_CHILD | WS_BORDER | CBS_SORT | CBS_DROPDOWN, CW_USEDEFAULT,
+    HWND rv = CreateWindow("combobox", "", WS_VISIBLE | WS_CHILD | WS_BORDER | CBS_SORT | CBS_DROPDOWN | (vscroll ? WS_VSCROLL : 0), CW_USEDEFAULT,
                            CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, parent, 0, hInstance, NULL);
     POINT pt;
     HWND h;
@@ -297,7 +297,21 @@ void PropsWndRedraw(void)
 void PropsWndClearEditBox(MSG* msg)
 {
     if (currentPropertyWindow && currentPropertyWindow != msg->hwnd && !IsChild(currentPropertyWindow, msg->hwnd))
-        SendMessage(hwndProps, WM_KILLPROPSEDITOR, 0, 0);
+    {
+        char buf[256] = "";
+        GetClassName(msg->hwnd, buf, sizeof(buf) - 2);
+        if (stricmp(buf, "COMBOLBOX") != 0)
+        {            
+            SendMessage(hwndProps, WM_KILLPROPSEDITOR, 0, 0);
+        }
+        else
+        {
+            RECT wrect;
+            GetWindowRect(msg->hwnd, &wrect);
+            if (wrect.right - GetSystemMetrics(SM_CXVSCROLL) > msg->pt.x)
+                SendMessage(hwndProps, WM_KILLPROPSEDITOR, 0, 0);
+        }
+    }
 }
 LRESULT CALLBACK PropsProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
@@ -346,7 +360,7 @@ LRESULT CALLBACK PropsProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lPara
                     ScreenToClient(lvwindow, &hittest.pt);
                     if (currentPropertyWindow)
                     {
-                        //                        PostMessage(hwnd, WM_KILLPROPSEDITOR, 0, 0);
+                        PostMessage(hwnd, WM_KILLPROPSEDITOR, 0, 0);
                     }
                     else
                     {

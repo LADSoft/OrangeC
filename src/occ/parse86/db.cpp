@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "compiler.h"
@@ -217,7 +217,7 @@ static void unregister(void)
         dbPointer = NULL;
     }
 }
-static int ccallback(void *, int, char **, char **) { return 0; }
+static int ccallback(void*, int, char**, char**) { return 0; }
 static int create_exec(const char* str)
 {
     char* zErrMsg = 0;
@@ -385,7 +385,7 @@ static int ccSelectIdFromNameTable(sqlite3_stmt** shndl, const char* name, const
     (void)tabname;
     static const char* query = "SELECT id FROM %s WHERE name = ?";
     int rc = SQLITE_OK;
-    HASHREC** p = LookupName(name, table);
+    SYMLIST** p = LookupName(name, table);
     if (p)
     {
         *id = ((SYMID*)((*p)->p))->id;
@@ -598,7 +598,7 @@ int ccWriteStructName(const char* name, sqlite_int64* id)
 int ccWriteFileName(const char* name, sqlite_int64* id)
 {
     char buf[260], *p = buf;
-    HASHREC** q;
+    SYMLIST** q;
     while (*name)
         *p++ = tolower(*name++);
     *p = 0;
@@ -753,8 +753,9 @@ int ccWriteGlobalArg(sqlite_int64 line_id, sqlite_int64 main_id, const char* sym
     }
     return rc == SQLITE_OK;
 }
-int ccWriteStructField(sqlite3_int64 name_id, const char* symname, const char* nameoftype, int indirectCount, sqlite3_int64 struct_id,
-                       sqlite3_int64 file_id, sqlite_int64 main_id, int flags, int* order, sqlite_int64* id)
+int ccWriteStructField(sqlite3_int64 name_id, const char* symname, const char* nameoftype, int indirectCount,
+                       sqlite3_int64 struct_id, sqlite3_int64 file_id, sqlite_int64 main_id, int flags, int* order,
+                       sqlite_int64* id)
 {
     int rc = SQLITE_ERROR;
     sqlite3_int64 sym_id, type_id;

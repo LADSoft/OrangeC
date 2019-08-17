@@ -54,11 +54,6 @@ _conjf:
     sub dl,dl
     jmp short xexp
 _conjl:
-    lea	ecx,[esp+4]
-    fld tword[ecx+10]
-    fld	tword[ecx]
-    mov dl,2
-    jmp short xexp
 _conj:
     lea	ecx,[esp+4]
     fld qword[ecx+8]

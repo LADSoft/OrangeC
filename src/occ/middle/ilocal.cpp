@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 /* we are only doing local opts on temp variables.  At this point,
@@ -62,11 +62,11 @@ static void CalculateFastcall(SYMBOL* funcsp)
 
     if (chosenAssembler->arch->fastcallRegCount)
     {
-        HASHREC* hr = basetype(funcsp->tp)->syms->table[0];
+        SYMLIST* hr = basetype(funcsp->tp)->syms->table[0];
         while (hr)
         {
-            SYMBOL* sp = (SYMBOL*)hr->p;
-            if (sp->thisPtr)
+            SYMBOL* sym = hr->p;
+            if (sym->thisPtr)
             {
                 fastcallAlias++;
             }
@@ -76,13 +76,13 @@ static void CalculateFastcall(SYMBOL* funcsp)
                     break;
                 if (fastcallAlias >= chosenAssembler->arch->fastcallRegCount)
                     break;
-                TYPE* tp = basetype(sp->tp);
+                TYPE* tp = basetype(sym->tp);
 
                 if ((tp->type < bt_float || (tp->type == bt_pointer && basetype(basetype(tp)->btp)->type != bt_func) ||
                      isref(tp)) &&
-                    (sp->storage_class == sc_parameter))
+                    (sym->storage_class == sc_parameter))
                 {
-                    if (sp->tp->size > chosenAssembler->arch->parmwidth)
+                    if (sym->tp->size > chosenAssembler->arch->parmwidth)
                         break;
                 }
                 else
@@ -95,55 +95,54 @@ static void CalculateFastcall(SYMBOL* funcsp)
         }
     }
 }
-static void renameOneSym(SYMBOL* sp, int structret)
+static void renameOneSym(SYMBOL* sym, int structret)
 {
     TYPE* tp;
     /* needed for pointer aliasing */
-    if (!sp->imvalue && basetype(sp->tp)->type != bt_any && basetype(sp->tp)->type != bt_memberptr && !isstructured(sp->tp) &&
-        sp->tp->type != bt_ellipse && sp->tp->type != bt_aggregate)
+    if (!sym->imvalue && basetype(sym->tp)->type != bt_any && basetype(sym->tp)->type != bt_memberptr && !isstructured(sym->tp) &&
+        sym->tp->type != bt_ellipse && sym->tp->type != bt_aggregate)
     {
-        if (sp->storage_class != sc_auto && sp->storage_class != sc_register)
+        if (sym->storage_class != sc_auto && sym->storage_class != sc_register)
         {
             IncGlobalFlag();
         }
-        if (sp->imaddress)
+        if (sym->imaddress)
         {
-            IMODE* im = (IMODE *)Alloc(sizeof(IMODE));
-            *im = *sp->imaddress;
-            im->size = sizeFromType(sp->tp);
+            IMODE* im = (IMODE*)Alloc(sizeof(IMODE));
+            *im = *sym->imaddress;
+            im->size = sizeFromType(sym->tp);
             im->mode = i_direct;
-            sp->imvalue = im;
+            sym->imvalue = im;
         }
-        else if (sp->imind)
+        else if (sym->imind)
         {
-            IMODE* im = (IMODE *)Alloc(sizeof(IMODE));
-            *im = *sp->imind->im;
+            IMODE* im = (IMODE*)Alloc(sizeof(IMODE));
+            *im = *sym->imind->im;
             im->size = ISZ_ADDR;
             im->mode = i_direct;
-            sp->imvalue = im;
+            sym->imvalue = im;
         }
         else
-            sp->imvalue = tempreg(sizeFromType(sp->tp), false);
+            sym->imvalue = tempreg(sizeFromType(sym->tp), false);
 
-        if (sp->storage_class != sc_auto && sp->storage_class != sc_register)
+        if (sym->storage_class != sc_auto && sym->storage_class != sc_register)
         {
             DecGlobalFlag();
         }
     }
-    tp = sp->tp;
+    tp = sym->tp;
     if (tp->type == bt_typedef)
         tp = tp->btp;
     tp = basetype(tp);
 
-    bool fastcallCandidate =
-        sp->storage_class == sc_parameter && fastcallAlias &&
-        (sp->offset - fastcallAlias * chosenAssembler->arch->parmwidth < chosenAssembler->arch->retblocksize);
+    bool fastcallCandidate = sym->storage_class == sc_parameter && fastcallAlias &&
+                             (sym->offset - fastcallAlias * chosenAssembler->arch->parmwidth < chosenAssembler->arch->retblocksize);
 
-    if (!sp->pushedtotemp && (!sp->imaddress || fastcallCandidate) && !sp->inasm && (!sp->inCatch || fastcallCandidate) &&
+    if (!sym->pushedtotemp && (!sym->imaddress || fastcallCandidate) && !sym->inasm && (!sym->inCatch || fastcallCandidate) &&
         (((chosenAssembler->arch->hasFloatRegs || tp->type < bt_float) && tp->type < bt_void) ||
          (tp->type == bt_pointer && basetype(basetype(tp)->btp)->type != bt_func) || isref(tp)) &&
-        (sp->storage_class == sc_auto || sp->storage_class == sc_register || sp->storage_class == sc_parameter) &&
-        (!sp->usedasbit || fastcallCandidate))
+        (sym->storage_class == sc_auto || sym->storage_class == sc_register || sym->storage_class == sc_parameter) &&
+        (!sym->usedasbit || fastcallCandidate))
     {
         /* this works because all IMODES refering to the same
          * variable are the same, at least until this point
@@ -151,87 +150,87 @@ static void renameOneSym(SYMBOL* sp, int structret)
          */
         IMODE* parmName;
         EXPRESSION* ep;
-        if (sp->imaddress || sp->inCatch)
+        if (sym->imaddress || sym->inCatch)
         {
-            ep = anonymousVar(sc_auto, sp->tp);  // fastcall which takes an address
+            ep = anonymousVar(sc_auto, sym->tp);  // fastcall which takes an address
         }
         else
         {
             ep = tempenode();
-            ep->v.sp->tp = sp->tp;
-            ep->right = (EXPRESSION*)sp;
+            ep->v.sp->tp = sym->tp;
+            ep->right = (EXPRESSION*)sym;
             /* marking both the orignal var and the new temp as pushed to temp*/
-            sp->pushedtotemp = true;
+            sym->pushedtotemp = true;
             ep->v.sp->pushedtotemp = true;
         }
-        sp->allocate = false;
+        sym->allocate = false;
 
         bool dofastcall = false;
 
-        if (sp->storage_class == sc_parameter)
+        if (sym->storage_class == sc_parameter)
         {
             if (fastcallAlias)
             {
                 // for fastcall, rename the affected parameter nodes with
                 // a temp.   It will later be precolored...
-                if (sp->offset - (fastcallAlias + structret) * chosenAssembler->arch->parmwidth <
+                if (sym->offset - (fastcallAlias + structret) * chosenAssembler->arch->parmwidth <
                         chosenAssembler->arch->retblocksize &&
-                    (!structret || sp->offset != chosenAssembler->arch->retblocksize))
+                    (!structret || sym->offset != chosenAssembler->arch->retblocksize))
                 {
-                    parmName = tempreg(sp->imvalue->size, 0);
+                    parmName = tempreg(sym->imvalue->size, 0);
                     dofastcall = true;
                 }
                 else
                 {
-                    parmName = (IMODE*)(IMODE *)Alloc(sizeof(IMODE));
-                    *parmName = *sp->imvalue;
+                    parmName = (IMODE*)(IMODE*)Alloc(sizeof(IMODE));
+                    *parmName = *sym->imvalue;
                 }
             }
             else
             {
-                parmName = (IMODE*)(IMODE *)Alloc(sizeof(IMODE));
-                *parmName = *sp->imvalue;
+                parmName = (IMODE*)(IMODE*)Alloc(sizeof(IMODE));
+                *parmName = *sym->imvalue;
             }
         }
-        if (sp->imvalue)
+        if (sym->imvalue)
         {
-            ep->isvolatile = sp->imvalue->offset->isvolatile;
-            ep->isrestrict = sp->imvalue->offset->isrestrict;
-            sp->imvalue->offset = ep;
+            ep->isvolatile = sym->imvalue->offset->isvolatile;
+            ep->isrestrict = sym->imvalue->offset->isrestrict;
+            sym->imvalue->offset = ep;
         }
-        if (sp->imaddress)
+        if (sym->imaddress)
         {
-            ep->isvolatile = sp->imvalue->offset->isvolatile;
-            ep->isrestrict = sp->imvalue->offset->isrestrict;
-            sp->imaddress->offset = ep;
+            ep->isvolatile = sym->imvalue->offset->isvolatile;
+            ep->isrestrict = sym->imvalue->offset->isrestrict;
+            sym->imaddress->offset = ep;
         }
-        if (sp->imind)
+        if (sym->imind)
         {
-            IMODELIST* iml = sp->imind;
-            ep->isvolatile = sp->imind->im->offset->isvolatile;
-            ep->isrestrict = sp->imind->im->offset->isrestrict;
+            IMODELIST* iml = sym->imind;
+            ep->isvolatile = sym->imind->im->offset->isvolatile;
+            ep->isrestrict = sym->imind->im->offset->isrestrict;
             while (iml)
             {
                 iml->im->offset = ep;
                 iml = iml->next;
             }
         }
-        ep->v.sp->imvalue = sp->imvalue;
-        if (sp->storage_class == sc_parameter && !(chosenAssembler->arch->denyopts & DO_NOLOADSTACK))
+        ep->v.sp->imvalue = sym->imvalue;
+        if (sym->storage_class == sc_parameter && !(chosenAssembler->arch->denyopts & DO_NOLOADSTACK))
         {
             QUAD* q;
             QUAD* bl1 = blockArray[1]->head;
             while (bl1->fwd->dc.opcode == i_line || bl1->fwd->dc.opcode == i_label)
                 bl1 = bl1->fwd;
-            gen_icode(i_assn, sp->imvalue, parmName, 0);
+            gen_icode(i_assn, sym->imvalue, parmName, 0);
             if (dofastcall)
             {
                 intermed_tail->alwayslive = true;
                 intermed_tail->fastcall =
-                    -(sp->offset - chosenAssembler->arch->retblocksize) / chosenAssembler->arch->parmwidth - 1 + structret;
+                    -(sym->offset - chosenAssembler->arch->retblocksize) / chosenAssembler->arch->parmwidth - 1 + structret;
             }
             q = intermed_tail;
-            q->back->fwd = NULL;
+            q->back->fwd = nullptr;
             intermed_tail = q->back;
             q->block = bl1->block;
             q->fwd = bl1->fwd;
@@ -255,10 +254,10 @@ static void renameToTemps(SYMBOL* funcsp)
     bool structret = !!isstructured(basetype(funcsp->tp)->btp);
     while (temp)
     {
-        HASHREC* hr = temp->table[0];
+        SYMLIST* hr = temp->table[0];
         while (hr)
         {
-            SYMBOL* sym = (SYMBOL*)hr->p;
+            SYMBOL* sym = hr->p;
             if (doRename)
                 renameOneSym(sym, structret);
             hr = hr->next;
@@ -302,7 +301,7 @@ static int AllocTempOpt(int size1)
     t = rv->offset->v.sp->value.i;
     if (t >= tempSize)
     {
-        TEMP_INFO** temp = (TEMP_INFO **)oAlloc((tempSize + 1000) * sizeof(TEMP_INFO*));
+        TEMP_INFO** temp = (TEMP_INFO**)oAlloc((tempSize + 1000) * sizeof(TEMP_INFO*));
         memcpy(temp, tempInfo, sizeof(TEMP_INFO*) * tempSize);
         tempSize += 1000;
         tempInfo = temp;
@@ -352,7 +351,7 @@ static void InitTempInfo(void)
 
     for (i = 0; i < tempCount; i++)
     {
-        tempInfo[i] = (TEMP_INFO *) oAlloc(sizeof(TEMP_INFO));
+        tempInfo[i] = (TEMP_INFO*)oAlloc(sizeof(TEMP_INFO));
         tempInfo[i]->partition = i;
         tempInfo[i]->color = -1;
         tempInfo[i]->inUse = true;
@@ -434,12 +433,12 @@ static void InitTempInfo(void)
 }
 void insertDefines(QUAD* head, BLOCK* b, int tnum)
 {
-    LIST* l = (LIST *)oAlloc(sizeof(LIST));
+    LIST* l = (LIST*)oAlloc(sizeof(LIST));
     l->data = (void*)head;
     l->next = tempInfo[tnum]->idefines;
     tempInfo[tnum]->idefines = l;
 
-    l = (LIST *)oAlloc(sizeof(LIST));
+    l = (LIST*)oAlloc(sizeof(LIST));
     l->data = (void*)b;
     l->next = tempInfo[tnum]->bdefines;
     tempInfo[tnum]->bdefines = l;
@@ -453,18 +452,18 @@ void insertUses(QUAD* head, int dest)
             return;
         l = &(*l)->next;
     }
-    *l = (LIST *)oAlloc(sizeof(LIST));
+    *l = (LIST*)oAlloc(sizeof(LIST));
     (*l)->data = (void*)head;
 }
 void definesInfo(void)
 {
     QUAD* head = intermed_head;
-    BLOCK* block = NULL;
+    BLOCK* block = nullptr;
     int i;
     for (i = 0; i < tempCount; i++)
     {
-        tempInfo[i]->bdefines = NULL;
-        tempInfo[i]->idefines = NULL;
+        tempInfo[i]->bdefines = nullptr;
+        tempInfo[i]->idefines = nullptr;
     }
     while (head)
     {
@@ -484,7 +483,7 @@ void usesInfo(void)
     int i;
     for (i = 0; i < tempCount; i++)
     {
-        tempInfo[i]->iuses = NULL;
+        tempInfo[i]->iuses = nullptr;
     }
     while (head)
     {

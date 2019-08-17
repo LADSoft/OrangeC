@@ -443,43 +443,46 @@ static void LoadFirstWorkArea(void* v)
         {
             int i;
             char cwd[256];
-            char *ext = NULL;
+            char* ext = NULL;
             int munged = FALSE;
             StringToProfile("FILEDIR", (char*)getcwd(cwd, 256));
-            if (argc == 2) ext = strrchr(argv[1], '.');
-            if (ext) ext++;
+            if (argc == 2)
+                ext = strrchr(argv[1], '.');
+            if (ext)
+                ext++;
             if (ext && !stricmp(ext, "cwa"))
             {
                 LoadWorkArea(argv[1], TRUE);
             }
-            else for (i = 1; i < argc; i++)
-            {
-                DWINFO info;
-                char* p = strrchr(argv[i], '\\');
-                struct stat statbuf;
-                if (p)
-                    strcpy(info.dwTitle, p + 1);
-                else
-                    strcpy(info.dwTitle, argv[i]);
-                strcpy(info.dwName, argv[i]);
-                abspath(info.dwName, 0);
-                info.dwLineNo = -1;
-                info.logMRU = TRUE;
-                info.newFile = FALSE;
-                if (stat(info.dwName, &statbuf) != -1)
-                    CreateDrawWindow(&info, TRUE);
-                else if (ExtendedMessageBox("File Error", MB_SETFOREGROUND | MB_SYSTEMMODAL | MB_YESNO,
-                                            "File '%s' not found, would you like to create it?", argv[i]) == IDYES)
+            else
+                for (i = 1; i < argc; i++)
                 {
-                    FILE* fil = fopen(argv[i], "wb");
-                    if (fil)
+                    DWINFO info;
+                    char* p = strrchr(argv[i], '\\');
+                    struct stat statbuf;
+                    if (p)
+                        strcpy(info.dwTitle, p + 1);
+                    else
+                        strcpy(info.dwTitle, argv[i]);
+                    strcpy(info.dwName, argv[i]);
+                    abspath(info.dwName, 0);
+                    info.dwLineNo = -1;
+                    info.logMRU = TRUE;
+                    info.newFile = FALSE;
+                    if (stat(info.dwName, &statbuf) != -1)
+                        CreateDrawWindow(&info, TRUE);
+                    else if (ExtendedMessageBox("File Error", MB_SETFOREGROUND | MB_SYSTEMMODAL | MB_YESNO,
+                                                "File '%s' not found, would you like to create it?", argv[i]) == IDYES)
                     {
-                        fclose(fil);
+                        FILE* fil = fopen(argv[i], "wb");
+                        if (fil)
+                        {
+                            fclose(fil);
+                        }
+                        info.newFile = TRUE;
+                        CreateDrawWindow(&info, TRUE);
                     }
-                    info.newFile = TRUE;
-                    CreateDrawWindow(&info, TRUE);
                 }
-            }
         }
     }
     else

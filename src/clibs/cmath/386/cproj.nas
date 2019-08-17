@@ -56,11 +56,6 @@ _cprojf:
     sub dl,dl
     jmp short xexp
 _cprojl:
-    lea	ecx,[esp+4]
-    fld tword[ecx+10]
-    fld	tword[ecx]
-    mov dl,2
-    jmp short xexp
 _cproj:
     lea	ecx,[esp+4]
     fld qword[ecx+8]

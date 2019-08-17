@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 /*
@@ -39,7 +39,7 @@ extern BLOCK** blockArray;
 extern int blockMax;
 extern int virtualfuncs;
 extern TYPE stdpointer;
-extern NAMESPACEVALUES* globalNameSpace;
+extern NAMESPACEVALUELIST* globalNameSpace;
 extern int calling_inline;
 extern QUAD *intermed_head, *intermed_tail;
 extern ARCH_ASM* chosenAssembler;
@@ -65,7 +65,7 @@ extern int inlinesym_count;
 extern int tempBottom, nextTemp;
 extern TYPE stdint;
 extern SYMBOL* baseThisPtr;
-extern SYMBOL *theCurrentFunc; 
+extern SYMBOL* theCurrentFunc;
 
 IMODE* returnImode;
 int retcount;
@@ -87,22 +87,22 @@ IMODE* genstmt(STATEMENT* stmt, SYMBOL* funcsp);
 
 void genstmtini(void)
 {
-    mpthunklist = NULL;
-    returnImode = NULL;
+    mpthunklist = nullptr;
+    returnImode = nullptr;
 }
 
 /*-------------------------------------------------------------------------*/
 
 EXPRESSION* tempenode(void)
 {
-    SYMBOL* sp;
+    SYMBOL* sym;
     char buf[256];
-    sp = (SYMBOL *)Alloc(sizeof(SYMBOL));
-    sp->storage_class = sc_temp;
+    sym = (SYMBOL*)Alloc(sizeof(SYMBOL));
+    sym->storage_class = sc_temp;
     sprintf(buf, "$$t%d", tempCount);
-    sp->name = litlate(buf);
-    sp->value.i = tempCount++;
-    return varNode(en_tempref, sp);
+    sym->name = litlate(buf);
+    sym->value.i = tempCount++;
+    return varNode(en_tempref, sym);
 }
 IMODE* tempreg(int size, int mode)
 /*
@@ -110,9 +110,9 @@ IMODE* tempreg(int size, int mode)
  */
 {
     IMODE* ap;
-    ap = (IMODE*)(IMODE *)Alloc(sizeof(IMODE));
+    ap = (IMODE*)(IMODE*)Alloc(sizeof(IMODE));
     ap->offset = tempenode();
-    ap->offset->v.sp->tp = (TYPE *)Alloc(sizeof(TYPE));
+    ap->offset->v.sp->tp = (TYPE*)Alloc(sizeof(TYPE));
     ap->offset->v.sp->tp->type = bt_int;
     ap->offset->v.sp->tp->size = sizeFromISZ(size);
     ap->size = size;
@@ -135,9 +135,9 @@ IMODE* imake_label(int label)
  */
 
 {
-    IMODE* ap = (IMODE*)(IMODE *)Alloc(sizeof(IMODE));
+    IMODE* ap = (IMODE*)(IMODE*)Alloc(sizeof(IMODE));
     ap->mode = i_immed;
-    ap->offset = exprNode(en_labcon, NULL, NULL);
+    ap->offset = exprNode(en_labcon, nullptr, nullptr);
     ap->offset->v.i = label;
     ap->size = ISZ_ADDR;
     return ap;
@@ -170,32 +170,32 @@ IMODE* set_symbol(const char* name, int isproc)
  *      generate a call to a library routine.
  */
 {
-    SYMBOL* sp;
+    SYMBOL* sym;
     IMODE* result;
     (void)isproc;
-    sp = gsearch(name);
-    if (sp == 0)
+    sym = gsearch(name);
+    if (sym == 0)
     {
         LIST* l1;
         IncGlobalFlag();
-        sp = (SYMBOL*)(SYMBOL *)Alloc(sizeof(SYMBOL));
-        sp->storage_class = sc_external;
-        sp->name = sp->errname = sp->decoratedName = litlate(name);
-        GENREF(sp);
-        sp->tp = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
-        sp->tp->type = isproc ? bt_func : bt_int;
-        sp->safefunc = true;
-        insert(sp, globalNameSpace->syms);
-        InsertExtern(sp);
+        sym = (SYMBOL*)Alloc(sizeof(SYMBOL));
+        sym->storage_class = sc_external;
+        sym->name = sym->errname = sym->decoratedName = litlate(name);
+        GENREF(sym);
+        sym->tp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
+        sym->tp->type = isproc ? bt_func : bt_int;
+        sym->safefunc = true;
+        insert(sym, globalNameSpace->valueData->syms);
+        InsertExtern(sym);
         DecGlobalFlag();
     }
     else
     {
-        if (sp->storage_class == sc_overloads)
-            sp = (SYMBOL*)(sp->tp->syms->table[0]->p);
+        if (sym->storage_class == sc_overloads)
+            sym = (SYMBOL*)(sym->tp->syms->table[0]->p);
     }
-    result = (IMODE*)(IMODE *)Alloc(sizeof(IMODE));
-    result->offset = varNode(en_global, sp);
+    result = (IMODE*)(IMODE*)Alloc(sizeof(IMODE));
+    result->offset = varNode(en_global, sym);
     result->mode = i_direct;
     if (isproc)
     {
@@ -231,17 +231,17 @@ static void AddProfilerData(SYMBOL* funcsp)
         STRING* string;
         int i;
         int l = strlen(funcsp->decoratedName);
-        pname = (LCHAR *)Alloc(sizeof(LCHAR) * l + 1);
+        pname = (LCHAR*)Alloc(sizeof(LCHAR) * l + 1);
         for (i = 0; i < l + 1; i++)
             pname[i] = funcsp->decoratedName[i];
         string = (STRING*)Alloc(sizeof(STRING));
         string->strtype = l_astr;
         string->size = 1;
-        string->pointers = (SLCHAR **)Alloc(sizeof(SLCHAR*));
-        string->pointers[0] = (SLCHAR *)Alloc(sizeof(SLCHAR));
+        string->pointers = (SLCHAR**)Alloc(sizeof(SLCHAR*));
+        string->pointers[0] = (SLCHAR*)Alloc(sizeof(SLCHAR));
         string->pointers[0]->str = pname;
         string->pointers[0]->count = l;
-        string->suffix = NULL;
+        string->suffix = nullptr;
         stringlit(string);
         plabel = string->label;
         gen_icode(i_parm, 0, imake_label(plabel), 0);
@@ -295,8 +295,8 @@ void gather_cases(CASEDATA* cd, struct cases* cs)
 
 int gcs_compare(void const* left, void const* right)
 {
-    struct caseptrs const* lleft = (struct caseptrs const *) left;
-    struct caseptrs const* lright = (struct caseptrs const *)right;
+    struct caseptrs const* lleft = (struct caseptrs const*)left;
+    struct caseptrs const* lright = (struct caseptrs const*)right;
     if (lleft->id < lright->id)
         return -1;
     return lleft->id > lright->id;
@@ -328,19 +328,19 @@ void genxswitch(STATEMENT* stmt, SYMBOL* funcsp)
     count_cases(stmt->cases, &cs);
     cs.top++;
     ap3 = gen_expr(funcsp, stmt->select, F_VOL | F_SWITCHVALUE, ISZ_UINT);
-    ap = LookupLoadTemp(NULL, ap3);
+    ap = LookupLoadTemp(nullptr, ap3);
     if (ap != ap3)
     {
         IMODE* barrier;
-//        if (stmt->select->isatomic)
-//        {
-//            barrier = doatomicFence(funcsp, NULL, stmt->select, NULL);
-//        }
-        gen_icode(i_assn, ap, ap3, NULL);
-//        if (stmt->select->isatomic)
-//        {
-//            doatomicFence(funcsp, NULL, stmt->select, barrier);
-//        }
+        //        if (stmt->select->isatomic)
+        //        {
+        //            barrier = doatomicFence(funcsp, nullptr, stmt->select, nullptr);
+        //        }
+        gen_icode(i_assn, ap, ap3, nullptr);
+        //        if (stmt->select->isatomic)
+        //        {
+        //            doatomicFence(funcsp, nullptr, stmt->select, barrier);
+        //        }
     }
     if (chosenAssembler->arch->preferopts & OPT_EXPANDSWITCH)
     {
@@ -348,14 +348,14 @@ void genxswitch(STATEMENT* stmt, SYMBOL* funcsp)
         if (ap->size != -ISZ_UINT)
         {
             ap3 = tempreg(-ISZ_UINT, 0);
-            gen_icode(i_assn, ap3, ap, NULL);
+            gen_icode(i_assn, ap3, ap, nullptr);
             ap = ap3;
         }
-        ap3 = (IMODE *)Alloc(sizeof(IMODE));
+        ap3 = (IMODE*)Alloc(sizeof(IMODE));
         ap3->mode = i_direct;
         ap3->offset = en;
         ap3->size = -ISZ_UINT;
-        gen_icode(i_assn, ap3, ap, NULL);
+        gen_icode(i_assn, ap3, ap, nullptr);
         ap = ap3;
     }
     gen_icode2(i_coswitch, make_immed(ISZ_UINT, cs.count), ap, make_immed(ISZ_UINT, cs.top - cs.bottom),
@@ -399,7 +399,7 @@ static void gen_try(SYMBOL* funcsp, STATEMENT* stmt, int startLab, int endLab, i
     gen_expr(funcsp, xcexp, F_NOVALUE, ISZ_ADDR);
     gen_label(endLab);
     /* not using gen_igoto because it will make a new block */
-    gen_icode(i_goto, NULL, NULL, NULL);
+    gen_icode(i_goto, nullptr, nullptr, nullptr);
     intermed_tail->dc.v.label = transferLab;
     tryStart = stmt->tryStart;
     tryEnd = stmt->tryEnd;
@@ -415,7 +415,7 @@ static void gen_catch(SYMBOL* funcsp, STATEMENT* stmt, int startLab, int transfe
     genstmt(lower, funcsp);
     catchLevel--;
     /* not using gen_igoto because it will make a new block */
-    gen_icode(i_goto, NULL, NULL, NULL);
+    gen_icode(i_goto, nullptr, nullptr, nullptr);
     intermed_tail->dc.v.label = transferLab;
     tryStart = oldtryStart;
     tryEnd = oldtryEnd;
@@ -428,7 +428,7 @@ static STATEMENT* gen___try(SYMBOL* funcsp, STATEMENT* stmt)
     while (stmt)
     {
         int mode = 0;
-        IMODE* left = NULL;
+        IMODE* left = nullptr;
         switch (stmt->type)
         {
             case st___try:
@@ -436,14 +436,14 @@ static STATEMENT* gen___try(SYMBOL* funcsp, STATEMENT* stmt)
                 break;
             case st___catch:
                 mode = 2;
-                if (stmt->sym)
+                if (stmt->sp)
                 {
-                    left = (IMODE*)(IMODE *)Alloc(sizeof(IMODE));
+                    left = (IMODE*)(IMODE*)Alloc(sizeof(IMODE));
                     left->mode = i_direct;
                     left->size = ISZ_OBJECT;
-                    left->offset = (EXPRESSION*)(EXPRESSION *)Alloc(sizeof(EXPRESSION));
+                    left->offset = (EXPRESSION*)(EXPRESSION*)Alloc(sizeof(EXPRESSION));
                     left->offset->type = en_auto;
-                    left->offset->v.sp = stmt->sym;
+                    left->offset->v.sp = stmt->sp;
                 }
                 break;
             case st___fault:
@@ -456,12 +456,12 @@ static STATEMENT* gen___try(SYMBOL* funcsp, STATEMENT* stmt)
                 gen_label(label);
                 return stmt;
         }
-        gen_icode(i_seh, NULL, left, NULL);
+        gen_icode(i_seh, nullptr, left, nullptr);
         intermed_tail->alwayslive = true;
         intermed_tail->sehMode = mode | 0x80;
         intermed_tail->dc.v.label = label;
         genstmt(stmt->lower, funcsp);
-        gen_icode(i_seh, NULL, left, NULL);
+        gen_icode(i_seh, nullptr, left, nullptr);
         intermed_tail->sehMode = mode;
         intermed_tail->dc.v.label = label;
         stmt = stmt->next;
@@ -476,7 +476,7 @@ static STATEMENT* gen___try(SYMBOL* funcsp, STATEMENT* stmt)
  */
 void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, IMODE* allocaAP)
 {
-    IMODE *ap = NULL, *ap1, *ap3;
+    IMODE *ap = nullptr, *ap1, *ap3;
     EXPRESSION ep;
     int size;
     /* returns a value? */
@@ -501,15 +501,15 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, IMODE*
             else
             {
                 EXPRESSION* en = anonymousVar(sc_parameter, &stdpointer);
-                SYMBOL* sp = en->v.sp;
+                SYMBOL* sym = en->v.sp;
                 ap = gen_expr(funcsp, stmt->select, 0, ISZ_ADDR);
                 DumpIncDec(funcsp);
-                sp->offset = chosenAssembler->arch->retblocksize;
-                sp->name = "__retblock";
-                sp->allocate = false;
+                sym->offset = chosenAssembler->arch->retblocksize;
+                sym->name = "__retblock";
+                sym->allocate = false;
                 if ((funcsp->linkage == lk_pascal) && basetype(funcsp->tp)->syms->table[0] &&
                     ((SYMBOL*)basetype(funcsp->tp)->syms->table[0])->tp->type != bt_void)
-                    sp->offset = funcsp->paramsize;
+                    sym->offset = funcsp->paramsize;
                 deref(&stdpointer, &en);
                 ap = gen_expr(funcsp, en, 0, ISZ_ADDR);
             }
@@ -526,19 +526,19 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, IMODE*
             else
                 ap3 = gen_expr(funcsp, stmt->select, 0, size);
             DumpIncDec(funcsp);
-            ap = LookupLoadTemp(NULL, ap3);
+            ap = LookupLoadTemp(nullptr, ap3);
             if (ap != ap3)
             {
                 IMODE* barrier;
-//                if (stmt->select->isatomic)
-//                {
-//                    barrier = doatomicFence(funcsp, NULL, stmt->select, NULL);
-//                }
-                gen_icode(i_assn, ap, ap3, NULL);
-//                if (stmt->select->isatomic)
-//                {
-//                    doatomicFence(funcsp, NULL, stmt->select, barrier);
-//                }
+                //                if (stmt->select->isatomic)
+                //                {
+                //                    barrier = doatomicFence(funcsp, nullptr, stmt->select, nullptr);
+                //                }
+                gen_icode(i_assn, ap, ap3, nullptr);
+                //                if (stmt->select->isatomic)
+                //                {
+                //                    doatomicFence(funcsp, nullptr, stmt->select, barrier);
+                //                }
             }
             if (abs(size) < ISZ_UINT)
                 size = -ISZ_UINT;
@@ -623,7 +623,7 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, IMODE*
                 }
                 else
                 {
-                    gen_icode(i_ret, 0, make_immed(ISZ_UINT, retsize), NULL);
+                    gen_icode(i_ret, 0, make_immed(ISZ_UINT, retsize), nullptr);
                 }
             }
         }
@@ -631,24 +631,24 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, IMODE*
     else
     {
         /* not using gen_igoto because it will make a new block */
-        gen_icode(i_goto, NULL, NULL, NULL);
+        gen_icode(i_goto, nullptr, nullptr, nullptr);
         intermed_tail->dc.v.label = retlab;
     }
 }
 
 void gen_varstart(void* exp)
 {
-    IMODE* ap = (IMODE*)(IMODE *)Alloc(sizeof(IMODE));
+    IMODE* ap = (IMODE*)(IMODE*)Alloc(sizeof(IMODE));
     ap->mode = i_immed;
-    ap->offset = (expr *)exp;
+    ap->offset = (expr*)exp;
     ap->size = ISZ_ADDR;
     gen_icode(i_varstart, 0, ap, 0);
 }
 void gen_func(void* exp, int start)
 {
-    IMODE* ap = (IMODE*)(IMODE *)Alloc(sizeof(IMODE));
+    IMODE* ap = (IMODE*)(IMODE*)Alloc(sizeof(IMODE));
     ap->mode = i_immed;
-    ap->offset = (expr *)exp;
+    ap->offset = (expr*)exp;
     ap->size = ISZ_ADDR;
     gen_icode(i_func, 0, ap, 0)->dc.v.label = start;
 }
@@ -661,7 +661,7 @@ IMODE* genstmt(STATEMENT* stmt, SYMBOL* funcsp)
  *      until the block is generated.
  */
 {
-    IMODE* rv = NULL;
+    IMODE* rv = nullptr;
     while (stmt != 0)
     {
         STATEMENT* last = stmt;
@@ -730,7 +730,7 @@ IMODE* genstmt(STATEMENT* stmt, SYMBOL* funcsp)
                     rv = gen_expr(funcsp, stmt->select, F_NOVALUE, natural_size(stmt->select));
                 break;
             case st_return:
-                genreturn(stmt, funcsp, 0, 0, NULL);
+                genreturn(stmt, funcsp, 0, 0, nullptr);
                 break;
             case st_line:
                 gen_line(stmt->lineData);
@@ -795,13 +795,13 @@ static void StoreInBucket(IMODE* mem, IMODE* addr)
         }
         lst = lst->next;
     }
-    lst = (DATA *) Alloc(sizeof(DATA));
+    lst = (DATA*)Alloc(sizeof(DATA));
     lst->mem = mem;
     lst->addr = addr;
     lst->next = buckets[bucket];
     buckets[bucket] = lst;
 }
-static IMODE* GetBucket(IMODE *mem)
+static IMODE* GetBucket(IMODE* mem)
 {
     DATA* lst;
     int bucket = (int)mem;
@@ -814,7 +814,7 @@ static IMODE* GetBucket(IMODE *mem)
             return lst->addr;
         lst = lst->next;
     }
-    return NULL;
+    return nullptr;
 }
 /* coming into this routine we have two major requirements:
  * first, imodes that describe the same thing are the same object
@@ -853,7 +853,7 @@ void optimize(SYMBOL* funcsp)
     if ((cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size) && !functionHasAssembly)
     {
         Precolor();
-        RearrangePrecolors();                                                                   
+        RearrangePrecolors();
         // printf("ssa\n");
         TranslateToSSA();
 
@@ -954,7 +954,7 @@ void optimize(SYMBOL* funcsp)
 /*-------------------------------------------------------------------------*/
 static void InsertParameterThunks(SYMBOL* funcsp, BLOCK* b)
 {
-    HASHREC* hr = basetype(funcsp->tp)->syms->table[0];
+    SYMLIST* hr = basetype(funcsp->tp)->syms->table[0];
     QUAD *old, *oldit;
     BLOCK* ocb = currentBlock;
     old = b->head->fwd;
@@ -963,25 +963,25 @@ static void InsertParameterThunks(SYMBOL* funcsp, BLOCK* b)
     old = old->fwd;
     oldit = intermed_tail;
     intermed_tail = old->back;
-    intermed_tail->fwd = NULL;
+    intermed_tail->fwd = nullptr;
     currentBlock = b;
     while (hr)
     {
-        SYMBOL* sp = (SYMBOL*)hr->p;
-        if (sp->tp->type == bt_void || sp->tp->type == bt_ellipse || isstructured(sp->tp))
+        SYMBOL* sym = hr->p;
+        if (sym->tp->type == bt_void || sym->tp->type == bt_ellipse || isstructured(sym->tp))
         {
             hr = hr->next;
             continue;
         }
-        if (!sp->imvalue || sp->imaddress)
+        if (!sym->imvalue || sym->imaddress)
         {
             hr = hr->next;
             continue;
         }
-        if (funcsp->oldstyle && sp->tp->type == bt_float)
+        if (funcsp->oldstyle && sym->tp->type == bt_float)
         {
-            IMODE* right = (IMODE*)(IMODE *)Alloc(sizeof(IMODE));
-            *right = *sp->imvalue;
+            IMODE* right = (IMODE*)(IMODE*)Alloc(sizeof(IMODE));
+            *right = *sym->imvalue;
             right->size = ISZ_DOUBLE;
             if (!chosenAssembler->arch->hasFloatRegs)
             {
@@ -990,7 +990,7 @@ static void InsertParameterThunks(SYMBOL* funcsp, BLOCK* b)
                 /* oldstyle float gets promoted from double */
                 gen_icode(i_assn, dp, right, 0);
                 gen_icode(i_assn, fp, dp, 0);
-                gen_icode(i_assn, sp->imvalue, fp, 0);
+                gen_icode(i_assn, sym->imvalue, fp, 0);
             }
         }
         hr = hr->next;
@@ -1010,14 +1010,14 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
  */
 {
     IMODE* oldReturnImode = returnImode;
-    IMODE* allocaAP = NULL;
+    IMODE* allocaAP = nullptr;
     SYMBOL* oldCurrentFunc;
     EXPRESSION* funcexp = varNode(en_global, funcsp);
     SYMBOL* tmpl = funcsp;
-    HASHREC* hr;
+    SYMLIST* hr;
     if (total_errors)
         return;
-    returnImode = NULL;
+    returnImode = nullptr;
     while (tmpl)
         if (tmpl->templateLevel)
             break;
@@ -1028,7 +1028,7 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     codeLabelOffset = nextLabel - INT_MIN;
     nextLabel += funcsp->labelCount;
 
-    temporarySymbols = NULL;
+    temporarySymbols = nullptr;
     contlab = breaklab = -1;
     structret_imode = 0;
     tempCount = 0;
@@ -1037,7 +1037,7 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     exitBlock = 0;
     consIndex = 0;
     retcount = 0;
-    objectArray_exp = NULL;
+    objectArray_exp = nullptr;
     oldCurrentFunc = theCurrentFunc;
     theCurrentFunc = funcsp;
     iexpr_func_init();
@@ -1053,7 +1053,7 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     }
     else
     {
-        xcexp = NULL;
+        xcexp = nullptr;
     }
     cseg();
     gen_line(funcsp->linedata);
@@ -1107,7 +1107,7 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     }
     /*    if (funcsp->loadds && funcsp->farproc) */
     /*	        gen_icode(i_loadcontext, 0,0,0); */
-    AllocateLocalContext(NULL, funcsp, nextLabel++);
+    AllocateLocalContext(nullptr, funcsp, nextLabel++);
     if (funcsp->allocaUsed && !chosenAssembler->msil)
     {
         EXPRESSION* allocaExp = anonymousVar(sc_auto, &stdpointer);
@@ -1128,11 +1128,11 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     tFree();
     InsertParameterThunks(funcsp, blockArray[1]);
     if (chosenAssembler->arch->denyopts & DO_NOREGALLOC)
-        FreeLocalContext(NULL, funcsp, nextLabel++);
+        FreeLocalContext(nullptr, funcsp, nextLabel++);
     if (doOptimize)
         optimize(funcsp);
     if (!(chosenAssembler->arch->denyopts & DO_NOREGALLOC))
-        FreeLocalContext(NULL, funcsp, nextLabel++);
+        FreeLocalContext(nullptr, funcsp, nextLabel++);
 
     if (!(chosenAssembler->arch->denyopts & DO_NOREGALLOC))
         AllocateStackSpace(funcsp);
@@ -1143,11 +1143,11 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
         chosenAssembler->gen->post_function_gen(funcsp, intermed_head);
     if (funcsp->linkage == lk_virtual || tmpl)
         gen_endvirtual(funcsp);
-    AllocateLocalContext(NULL, funcsp, nextLabel++);
+    AllocateLocalContext(nullptr, funcsp, nextLabel++);
     funcsp->retblockparamadjust = chosenAssembler->arch->retblockparamadjust;
     XTDumpTab(funcsp);
-    FreeLocalContext(NULL, funcsp, nextLabel++);
-    intermed_head = NULL;
+    FreeLocalContext(nullptr, funcsp, nextLabel++);
+    intermed_head = nullptr;
     dag_rundown();
     oFree();
     theCurrentFunc = oldCurrentFunc;
@@ -1161,16 +1161,16 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     hr = basetype(funcsp->tp)->syms->table[0];
     while (hr)
     {
-        SYMBOL* sym = (SYMBOL*)hr->p;
+        SYMBOL* sym = hr->p;
         if (sym->storage_class == sc_parameter)
         {
-            sym->imind = NULL;
-            sym->imvalue = NULL;
-            sym->imaddress = NULL;
+            sym->imind = nullptr;
+            sym->imvalue = nullptr;
+            sym->imaddress = nullptr;
         }
         hr = hr->next;
     }
-    baseThisPtr = NULL;
+    baseThisPtr = nullptr;
 }
 void genASM(STATEMENT* st)
 {
@@ -1181,6 +1181,6 @@ void genASM(STATEMENT* st)
     blockCount = 0;
     blockMax = 0;
     exitBlock = 0;
-    genstmt(st, NULL);
+    genstmt(st, nullptr);
     rewrite_icode(); /* Translate to machine code & dump */
 }

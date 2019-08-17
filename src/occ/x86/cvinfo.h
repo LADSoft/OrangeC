@@ -127,7 +127,7 @@ typedef enum CV_type_e
     CV_SPECIAL = 0x00,   /* special type size values*/
     CV_SIGNED = 0x01,    /* signed integral size values*/
     CV_UNSIGNED = 0x02,  /* unsigned integral size values*/
-    CV_bool = 0x03,   /* Boolean size values*/
+    CV_bool = 0x03,      /* Boolean size values*/
     CV_REAL = 0x04,      /* real number size values*/
     CV_COMPLEX = 0x05,   /* complex number size values*/
     CV_SPECIAL2 = 0x06,  /* second set of special types*/
@@ -905,7 +905,7 @@ typedef enum CV_int_e
 
             struct CV_PDMR16_NONVIRT
             {
-                CV_off16_t mdisp; /* displacement to data (NULL = -1)*/
+                CV_off16_t mdisp; /* displacement to data (nullptr = -1)*/
             };
 
             /*      representation of a 16:16 pointer to data for a class with virtual*/
@@ -913,7 +913,7 @@ typedef enum CV_int_e
 
             struct CV_PMDR16_VFCN
             {
-                CV_off16_t mdisp; /* displacement to data ( NULL = 0)*/
+                CV_off16_t mdisp; /* displacement to data ( nullptr = 0)*/
             };
 
             /*      representation of a 16:16 pointer to data for a class with*/
@@ -924,7 +924,7 @@ typedef enum CV_int_e
                 CV_off16_t mdisp; /* displacement to data*/
                 CV_off16_t pdisp; /* this pointer displacement to vbptr*/
                 CV_off16_t vdisp; /* displacement within vbase table*/
-                /* NULL = (,,0xffff)*/
+                /* nullptr = (,,0xffff)*/
             };
 
             /*      representation of a 16:32 near pointer to data for a class with*/
@@ -932,7 +932,7 @@ typedef enum CV_int_e
 
             struct CV_PDMR32_NVVFCN
             {
-                CV_off32_t mdisp; /* displacement to data (NULL = 0x80000000)*/
+                CV_off32_t mdisp; /* displacement to data (nullptr = 0x80000000)*/
             };
 
             /*      representation of a 16:32 near pointer to data for a class*/
@@ -943,7 +943,7 @@ typedef enum CV_int_e
                 CV_off32_t mdisp; /* displacement to data*/
                 CV_off32_t pdisp; /* this pointer displacement*/
                 CV_off32_t vdisp; /* vbase table displacement*/
-                /* NULL = (,,0xffffffff)*/
+                /* nullptr = (,,0xffffffff)*/
             };
 
             /*      representation of a 16:16 pointer to near member function for a*/
@@ -951,7 +951,7 @@ typedef enum CV_int_e
 
             struct CV_PMFR16_NEARNVSA
             {
-                CV_uoff16_t off; /* near address of function (NULL = 0)*/
+                CV_uoff16_t off; /* near address of function (nullptr = 0)*/
             };
 
             /*      representation of a 16:16 near pointer to member functions of a*/
@@ -959,7 +959,7 @@ typedef enum CV_int_e
 
             struct CV_PMFR16_NEARNVMA
             {
-                CV_uoff16_t off; /* offset of function (NULL = 0,x)*/
+                CV_uoff16_t off; /* offset of function (nullptr = 0,x)*/
                 signed short disp;
             };
 
@@ -968,7 +968,7 @@ typedef enum CV_int_e
 
             struct CV_PMFR16_NEARVBASE
             {
-                CV_uoff16_t off;  /* offset of function (NULL = 0,x,x,x)*/
+                CV_uoff16_t off;  /* offset of function (nullptr = 0,x,x,x)*/
                 CV_off16_t mdisp; /* displacement to data*/
                 CV_off16_t pdisp; /* this pointer displacement*/
                 CV_off16_t vdisp; /* vbase table displacement*/
@@ -979,7 +979,7 @@ typedef enum CV_int_e
 
             struct CV_PMFR16_FARNVSA
             {
-                CV_uoff16_t off;    /* offset of function (NULL = 0:0)*/
+                CV_uoff16_t off;    /* offset of function (nullptr = 0:0)*/
                 unsigned short seg; /* segment of function*/
             };
 
@@ -988,7 +988,7 @@ typedef enum CV_int_e
 
             struct CV_PMFR16_FARNVMA
             {
-                CV_uoff16_t off; /* offset of function (NULL = 0:0,x)*/
+                CV_uoff16_t off; /* offset of function (nullptr = 0:0,x)*/
                 unsigned short seg;
                 signed short disp;
             };
@@ -998,7 +998,7 @@ typedef enum CV_int_e
 
             struct CV_PMFR16_FARVBASE
             {
-                CV_uoff16_t off; /* offset of function (NULL = 0:0,x,x,x)*/
+                CV_uoff16_t off; /* offset of function (nullptr = 0:0,x,x,x)*/
                 unsigned short seg;
                 CV_off16_t mdisp; /* displacement to data*/
                 CV_off16_t pdisp; /* this pointer displacement*/
@@ -1010,7 +1010,7 @@ typedef enum CV_int_e
 
             struct CV_PMFR32_NVSA
             {
-                CV_uoff32_t off; /* near address of function (NULL = 0L)*/
+                CV_uoff32_t off; /* near address of function (nullptr = 0L)*/
             };
 
             /*      representation of a 16:32 near pointer to member function for a*/
@@ -1018,7 +1018,7 @@ typedef enum CV_int_e
 
             struct CV_PMFR32_NVMA
             {
-                CV_uoff32_t off; /* near address of function (NULL = 0L,x)*/
+                CV_uoff32_t off; /* near address of function (nullptr = 0L,x)*/
                 CV_off32_t disp;
             };
 
@@ -1027,7 +1027,7 @@ typedef enum CV_int_e
 
             struct CV_PMFR32_VBASE
             {
-                CV_uoff32_t off;  /* near address of function (NULL = 0L,x,x,x)*/
+                CV_uoff32_t off;  /* near address of function (nullptr = 0L,x,x,x)*/
                 CV_off32_t mdisp; /* displacement to data*/
                 CV_off32_t pdisp; /* this pointer displacement*/
                 CV_off32_t vdisp; /* vbase table displacement*/

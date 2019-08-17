@@ -4,21 +4,21 @@
 [Setup]
 PrivilegesRequired=admin
 AppName=Orange C
-AppVerName=Orange C Version 6.0.41.1
+AppVerName=Orange C Version {#GetEnv("OCC_VERSION")}
 OutputBaseFileName=setup
 AppPublisher=LADSoft
 AppPublisherURL=http:\\members.tripod.com\~ladsoft
 AppSupportURL=http:\\members.tripod.com\~ladsoft
 AppUpdatesURL=http:\\members.tripod.com\~ladsoft
 DefaultDirName={pf}\Orange C 386
-DefaultGroupName=Orange C 386
+DefaultGroupName=Orange C 386                                      
 SetupIconFile=c:\orangec\src\ocide\res\prj.ico
 ;AlwaysCreateUninstallIcon=yes
 LicenseFile=License.txt
 ;BackColor=clRed
 ;BackColor2=clAqua
 ;WindowVisible= yes
-AppCopyright=Copyright(C) LADSoft 1994-2018, All Rights Reserved.
+AppCopyright=Copyright(C) LADSoft 1994-2019, All Rights Reserved.
 WizardSmallImageFile=ladsoft1.bmp
 WizardImageFile=ladsoftl.bmp
 WizardImageBackColor=clAqua
@@ -29,12 +29,13 @@ UninstallDisplayIcon={app}\bin\ocide.exe,1
 uninstallable = not IsComponentSelected('main\memstick')
 ChangesAssociations=yes
 ChangesEnvironment=yes
+DisableWelcomePage=no
 
 ; uncomment the following line if you want your installation to run on NT 3.51 too.
 ; MinVersion=4,3.51
 
 [Messages]
-BeveledLabel=Orange C, Copyright (C) LADSoft, 1994-2018
+BeveledLabel=Orange C, Copyright (C) LADSoft, 1994-2019
 
 [Types]
 Name: "desktop"; Description: "Desktop Installation"

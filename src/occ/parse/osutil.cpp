@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "compiler.h"
@@ -48,7 +48,8 @@ int __dtabuflen = 32 * 1024;
 #endif
 
 #if defined(WIN32) || defined(MICROSOFT)
-extern "C" {
+extern "C"
+{
     char* __stdcall GetModuleFileNameA(void* handle, char* buf, int size);
 }
 #endif
@@ -58,7 +59,7 @@ extern int total_errors;
 #ifndef CPREPROCESSOR
 extern ARCH_ASM* chosenAssembler;
 extern int diagcount;
-extern NAMESPACEVALUES* globalNameSpace;
+extern NAMESPACEVALUELIST* globalNameSpace;
 extern char infile[];
 
 #endif
@@ -75,8 +76,8 @@ LIST* clist = 0;
 int showBanner = true;
 int showVersion = false;
 
-
-struct DefValue {
+struct DefValue
+{
     std::string name;
     bool undef;
 };
@@ -116,9 +117,9 @@ void usage(char* prog_name)
     char* extension;
 
     short_name = strrchr(prog_name, '\\');
-    if (short_name == NULL)
+    if (short_name == nullptr)
         short_name = strrchr(prog_name, '/');
-    if (short_name == NULL)
+    if (short_name == nullptr)
         short_name = strrchr(prog_name, ':');
     if (short_name)
         short_name++;
@@ -126,7 +127,7 @@ void usage(char* prog_name)
         short_name = prog_name;
 
     extension = strrchr(short_name, '.');
-    if (extension != NULL)
+    if (extension != nullptr)
         *extension = '\0';
     fprintf(stderr, "Usage: %s %s", short_name, getUsageText());
 #ifndef CPREPROCESSOR
@@ -233,7 +234,7 @@ FILE* SrchPth3(char* string, const char* searchpath, const char* mode)
 
             /* Check this path */
             in = fopen(buffer, mode);
-            if (in != NULL)
+            if (in != nullptr)
             {
                 strcpy(string, buffer);
                 return (in);
@@ -243,12 +244,12 @@ FILE* SrchPth3(char* string, const char* searchpath, const char* mode)
     else
     {
         in = fopen((char*)string, mode);
-        if (in != NULL)
+        if (in != nullptr)
         {
             return (in);
         }
     }
-    return (NULL);
+    return (nullptr);
 }
 /* this ditty takes care of the fact that on DOS
  * (and on dos shells under NT/XP)
@@ -585,12 +586,12 @@ void sysincl_setup(char select, char* string)
     (void)select;
     if (sys_searchpath)
     {
-        sys_searchpath = (char *)realloc(sys_searchpath, strlen(string) + strlen(sys_searchpath) + 2);
+        sys_searchpath = (char*)realloc(sys_searchpath, strlen(string) + strlen(sys_searchpath) + 2);
         strcat(sys_searchpath, ";");
     }
     else
     {
-        sys_searchpath = (char *)malloc(strlen(string) + 1);
+        sys_searchpath = (char*)malloc(strlen(string) + 1);
         sys_searchpath[0] = 0;
     }
     fflush(stdout);
@@ -604,12 +605,12 @@ void incl_setup(char select, char* string)
     (void)select;
     if (*set_searchpath)
     {
-        *set_searchpath = (char *)realloc(*set_searchpath, strlen(string) + strlen(*set_searchpath) + 2);
+        *set_searchpath = (char*)realloc(*set_searchpath, strlen(string) + strlen(*set_searchpath) + 2);
         strcat(*set_searchpath, ";");
     }
     else
     {
-        *set_searchpath = (char *)malloc(strlen(string) + 1);
+        *set_searchpath = (char*)malloc(strlen(string) + 1);
         *set_searchpath[0] = 0;
     }
     fflush(stdout);
@@ -620,12 +621,12 @@ void libpath_setup(char select, char* string)
     (void)select;
     if (*set_libpath)
     {
-        *set_libpath = (char *)realloc(*set_libpath, strlen(string) + strlen(*set_libpath) + 2);
+        *set_libpath = (char*)realloc(*set_libpath, strlen(string) + strlen(*set_libpath) + 2);
         strcat(*set_libpath, ";");
     }
     else
     {
-        *set_libpath = (char *)malloc(strlen(string) + 1);
+        *set_libpath = (char*)malloc(strlen(string) + 1);
         *set_libpath[0] = 0;
     }
     fflush(stdout);
@@ -645,13 +646,10 @@ void def_setup(char select, char* string)
  * activation for command line #defines
  */
 {
-    defines.push_back(DefValue{ string, 0 });
+    defines.push_back(DefValue{string, 0});
 }
 
-void undef_setup(char select, char* string)
-{
-    defines.push_back(DefValue{ string, 1 });
-}
+void undef_setup(char select, char* string) { defines.push_back(DefValue{string, 1}); }
 
 /*-------------------------------------------------------------------------*/
 
@@ -671,7 +669,7 @@ void setglbdefs(void)
  * doing
  */
 {
-   char buf[256];
+    char buf[256];
     int major, temp, minor, build;
 #ifndef CPREPROCESSOR
     ARCH_DEFINES* a = chosenAssembler->defines;
@@ -734,7 +732,7 @@ void setglbdefs(void)
         if (n != std::string::npos)
         {
             name = d.name.substr(0, n);
-            if (n != d.name.size()-1)
+            if (n != d.name.size() - 1)
                 val = d.name.substr(n + 1);
         }
         else
@@ -796,7 +794,7 @@ void InsertOneFile(char* filename, char* path, int drive, bool primary)
 
         while ((*r))
             r = &(*r)->next;
-        (*r) = (LIST *) malloc(sizeof(LIST));
+        (*r) = (LIST*)malloc(sizeof(LIST));
         s = (*r);
         if (!s)
             return;
@@ -992,7 +990,7 @@ void addinclude(void)
             strcat(temp, *set_searchpath);
             free(*set_searchpath);
         }
-        *set_searchpath = (char *)malloc(strlen(temp) + 1);
+        *set_searchpath = (char*)malloc(strlen(temp) + 1);
         strcpy(*set_searchpath, temp);
     }
     string = getenv("CPATH");
@@ -1006,7 +1004,7 @@ void addinclude(void)
             strcat(temp, *set_searchpath);
             free(*set_searchpath);
         }
-        *set_searchpath = (char *)(strlen(temp) + 1);
+        *set_searchpath = (char*)(strlen(temp) + 1);
         strcpy(*set_searchpath, temp);
     }
 }
@@ -1070,9 +1068,9 @@ void dumperrs(FILE* file)
     if (cparams.prm_listfile)
     {
         fprintf(listFile, "******** Global Symbols ********\n");
-        list_table(globalNameSpace->syms, 0);
+        list_table(globalNameSpace->valueData->syms, 0);
         fprintf(listFile, "******** Global Tags ********\n");
-        list_table(globalNameSpace->tags, 0);
+        list_table(globalNameSpace->valueData->tags, 0);
     }
     if (diagcount && !total_errors)
         fprintf(file, "%d Diagnostics\n", diagcount);
@@ -1141,7 +1139,7 @@ void ccinit(int argc, char* argv[])
         exit(0);
     }
 #if defined(WIN32) || defined(MICROSOFT)
-    GetModuleFileNameA(NULL, buffer, sizeof(buffer));
+    GetModuleFileNameA(nullptr, buffer, sizeof(buffer));
 #else
     strcpy(buffer, argv[0]);
 #endif
@@ -1213,7 +1211,7 @@ void ccinit(int argc, char* argv[])
         LIST* t = clist;
         while (t)
         {
-            t->data = litlate(fullqualify((char *)t->data));
+            t->data = litlate(fullqualify((char*)t->data));
             t = t->next;
         }
     }

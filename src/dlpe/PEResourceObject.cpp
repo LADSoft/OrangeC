@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "PEObject.h"
@@ -108,7 +108,7 @@ void PEResourceObject::Setup(ObjInt& endVa, ObjInt& endPhys)
     nameSize = (nameSize + 1) & -2;
     initSize = size = dirCount * sizeof(Dir) + entryCount * sizeof(Entry) + dataCount * sizeof(DataEntry) + nameSize * 2 + dataSize;
     data = std::make_unique<unsigned char[]>(initSize);
-    unsigned char *pdata = data.get();
+    unsigned char* pdata = data.get();
     memset(pdata, 0, initSize);
     Dir* dir = (Dir*)pdata;
     unsigned short* name = (unsigned short*)(((char*)pdata) + dirCount * sizeof(Dir) + entryCount * sizeof(Entry));

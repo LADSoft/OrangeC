@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "compiler.h"
@@ -66,7 +66,7 @@ static struct reflist
 } * refs;
 static void EnterRef(QUAD* old, QUAD* newVal)
 {
-    struct reflist* newRef = (reflist *)oAlloc(sizeof(struct reflist));
+    struct reflist* newRef = (reflist*)oAlloc(sizeof(struct reflist));
     newRef->old = old;
     newRef->newVal = newVal;
     newRef->next = refs;
@@ -127,7 +127,7 @@ static bool IsAncestor(BLOCK* b1, BLOCK* b2)
 static void MoveTo(BLOCK* dest, BLOCK* src, QUAD* head)
 {
     QUAD* insert = beforeJmp(dest->tail, true);
-    QUAD* head2 = (QUAD *)Alloc(sizeof(QUAD));
+    QUAD* head2 = (QUAD*)Alloc(sizeof(QUAD));
     *head2 = *head;
     EnterRef(head, head2);
     head = head2;
@@ -243,7 +243,7 @@ void ScanForInvariants(BLOCK* b)
                 if (!tempInfo[head->ans->offset->v.sp->value.i]->inductionLoop && (head->temps & (TEMP_LEFT | TEMP_RIGHT)))
                 {
                     bool canMove = true;
-                    BLOCK *pbl = NULL, *pbr = NULL;
+                    BLOCK *pbl = nullptr, *pbr = nullptr;
                     if ((head->temps & TEMP_LEFT) && head->dc.left->mode == i_direct)
                     {
                         pbl = tempInfo[head->dc.left->offset->v.sp->value.i]->blockDefines;
@@ -281,7 +281,7 @@ void ScanForInvariants(BLOCK* b)
                                 }
                             }
                         }
-                        
+
 
 
 
@@ -308,12 +308,12 @@ void ScanForInvariants(BLOCK* b)
 void MoveLoopInvariants(void)
 {
     int i;
-    refs = NULL;
+    refs = nullptr;
     for (i = 0; i < blockCount; i++)
         if (blockArray[i])
             blockArray[i]->preWalk = 0;
     for (i = 0; i < tempCount; i++)
-        tempInfo[i]->blockDefines = NULL;
+        tempInfo[i]->blockDefines = nullptr;
     current = 1;
     ScanForInvariants(blockArray[0]);
     WeedRefs();

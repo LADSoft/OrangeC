@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #define _CRT_SECURE_NO_WARNINGS
@@ -104,16 +104,16 @@ void MakeMain::Dispatch(const char* data)
 {
     int max = 10;
     argcx = 1;
-    argvx = std::make_unique<char*[]>(max + 1);
-    argvx[0] = (char *)"";
+    argvx = std::make_unique<char* []>(max + 1);
+    argvx[0] = (char*)"";
     while (*data)
     {
         data = GetStr(data);
         if (argcx == max)
         {
             max += 10;
-            std::unique_ptr<char*[]> p(argvx.release());
-            argvx = std::make_unique<char*[]>(max + 1);
+            std::unique_ptr<char* []> p(argvx.release());
+            argvx = std::make_unique<char* []>(max + 1);
             memcpy(argvx.get(), p.get(), argcx * sizeof(char*));
         }
     }
@@ -368,8 +368,7 @@ void MakeMain::ShowDatabase()
         ShowRule(rule.second.get());
     }
     std::cout << std::endl << "Implicit rules:" << std::endl;
-    for (auto it = RuleContainer::Instance()->ImplicitBegin();
-         it != RuleContainer::Instance()->ImplicitEnd(); ++it)
+    for (auto it = RuleContainer::Instance()->ImplicitBegin(); it != RuleContainer::Instance()->ImplicitEnd(); ++it)
     {
         ShowRule((*it).get());
     }
@@ -456,7 +455,6 @@ int MakeMain::Run(int argc, char** argv)
             return 2;
         }
     }
-
 
     if (cancelKeep.GetValue())
     {

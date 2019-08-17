@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <stdio.h>
@@ -78,8 +78,8 @@ bool dbgtypes::typecompare::operator()(const TYPE* left, const TYPE* right) cons
                             }
                             else if (left->syms && right->syms && left->syms->table && right->syms->table)
                             {
-                                const HASHREC* hr1 = left->syms->table[0];
-                                const HASHREC* hr2 = right->syms->table[0];
+                                const SYMLIST* hr1 = left->syms->table[0];
+                                const SYMLIST* hr2 = right->syms->table[0];
                                 while (hr1 && hr2)
                                 {
                                     SYMBOL* sym1 = (SYMBOL*)hr1->p;
@@ -155,7 +155,7 @@ ObjType* dbgtypes::Put(TYPE* tp)
     hash[tp] = val;
     return val;
 }
-void dbgtypes::OutputTypedef(SYMBOL* sp) { Put(sp->tp); }
+void dbgtypes::OutputTypedef(SYMBOL* sym) { Put(sym->tp); }
 ObjType* dbgtypes::Lookup(TYPE* tp)
 {
 
@@ -196,7 +196,7 @@ ObjType* dbgtypes::TypeName(ObjType* val, const char* nm)
     fi->Add(val);
     return factory.MakeType(nm, ObjType::eNone, val, val->GetIndex());
 }
-void dbgtypes::StructFields(ObjType::eType sel, ObjType* val, int sz, SYMBOL* parent, HASHREC* hr)
+void dbgtypes::StructFields(ObjType::eType sel, ObjType* val, int sz, SYMBOL* parent, SYMLIST* hr)
 {
     int index = val->GetIndex();
     int i = 0;
@@ -205,8 +205,8 @@ void dbgtypes::StructFields(ObjType::eType sel, ObjType* val, int sz, SYMBOL* pa
         BASECLASS* bc = parent->baseClasses;
         while (bc)
         {
-            SYMBOL* sp = (SYMBOL*)bc->cls;
-            // we are setting sp->offset here for use later in this function
+            SYMBOL* sym = (SYMBOL*)bc->cls;
+            // we are setting sym->offset here for use later in this function
             if (bc->isvirtual)
             {
                 VBASEENTRY* vbase = parent->vbaseEntries;
@@ -214,7 +214,7 @@ void dbgtypes::StructFields(ObjType::eType sel, ObjType* val, int sz, SYMBOL* pa
                 {
                     if (vbase->cls == bc->cls || sameTemplate(vbase->cls->tp, bc->cls->tp))
                     {
-                        sp->offset = vbase->pointerOffset;
+                        sym->offset = vbase->pointerOffset;
                         break;
                     }
                     vbase = vbase->next;
@@ -222,15 +222,15 @@ void dbgtypes::StructFields(ObjType::eType sel, ObjType* val, int sz, SYMBOL* pa
                 TYPE* tpl = (TYPE*)Alloc(sizeof(TYPE));
                 tpl->type = bt_pointer;
                 tpl->size = getSize(bt_pointer);
-                tpl->btp = sp->tp;
+                tpl->btp = sym->tp;
                 ObjType* base = Put(tpl);
-                ObjField* field = factory.MakeField(sp->name, base, -1, index);
+                ObjField* field = factory.MakeField(sym->name, base, -1, index);
                 val->Add(field);
             }
             else
             {
-                ObjType* base = Put(sp->tp);
-                ObjField* field = factory.MakeField(sp->name, base, bc->offset, index);
+                ObjType* base = Put(sym->tp);
+                ObjField* field = factory.MakeField(sym->name, base, bc->offset, index);
                 val->Add(field);
             }
             if ((++i % 16) == 0)
@@ -242,11 +242,11 @@ void dbgtypes::StructFields(ObjType::eType sel, ObjType* val, int sz, SYMBOL* pa
     }
     while (hr)
     {
-        SYMBOL* sp = (SYMBOL*)hr->p;
-        if (!istype(sp) && sp->tp->type != bt_aggregate)
+        SYMBOL* sym = hr->p;
+        if (!istype(sym) && sym->tp->type != bt_aggregate)
         {
-            ObjType* base = Put(sp->tp);
-            ObjField* field = factory.MakeField(sp->name, base, sp->offset, index);
+            ObjType* base = Put(sym->tp);
+            ObjField* field = factory.MakeField(sym->name, base, sym->offset, index);
             val->Add(field);
         }
         if ((++i % 16) == 0)
@@ -256,13 +256,13 @@ void dbgtypes::StructFields(ObjType::eType sel, ObjType* val, int sz, SYMBOL* pa
         hr = hr->next;
     }
 }
-void dbgtypes::EnumFields(ObjType* val, ObjType* base, int sz, HASHREC* hr)
+void dbgtypes::EnumFields(ObjType* val, ObjType* base, int sz, SYMLIST* hr)
 {
     int index = val->GetIndex();
     int i = 0;
     while (hr)
     {
-        SYMBOL* sym = (SYMBOL*)hr->p;
+        SYMBOL* sym = hr->p;
         ObjField* field = factory.MakeField(sym->name, base, sym->value.i, index);
         val->SetConstVal(sym->value.i);
         val->Add(field);
@@ -313,10 +313,10 @@ ObjType* dbgtypes::Function(TYPE* tp)
     val->SetLinkage((ObjFunction::eLinkage)v);
     if (basetype(tp)->syms)
     {
-        HASHREC* hr = basetype(tp)->syms->table[0];
+        SYMLIST* hr = basetype(tp)->syms->table[0];
         while (hr)
         {
-            SYMBOL* s = (SYMBOL*)hr->p;
+            SYMBOL* s = hr->p;
             val->Add(Put(s->tp));
             hr = hr->next;
         }
@@ -391,7 +391,7 @@ ObjType* dbgtypes::ExtendedType(TYPE* tp)
             if (tp->syms)
                 StructFields(sel, val, tp->size, tp->sp, tp->syms->table[0]);
             else
-                StructFields(sel, val, tp->size, tp->sp, NULL);
+                StructFields(sel, val, tp->size, tp->sp, nullptr);
             val = TypeName(val, tp->sp->decoratedName);
         }
         else if (tp->type == bt_ellipse)
@@ -402,9 +402,9 @@ ObjType* dbgtypes::ExtendedType(TYPE* tp)
         {
             val = factory.MakeType((ObjType::eType)42);
         }
-        else  if (tp->type == bt_memberptr)
-            val = Put(&stdint); // fixme
-        else// enum
+        else if (tp->type == bt_memberptr)
+            val = Put(&stdint);  // fixme
+        else                     // enum
         {
             ObjType* base;
             if (tp->type == bt_enum)
@@ -420,9 +420,9 @@ ObjType* dbgtypes::ExtendedType(TYPE* tp)
             if (tp->syms)
                 EnumFields(val, base, tp->size, tp->syms->table[0]);
             else
-                EnumFields(val, base, tp->size, NULL);
+                EnumFields(val, base, tp->size, nullptr);
             val = TypeName(val, tp->sp->decoratedName);
         }
     }
-    return val;                                                                                 
+    return val;
 }

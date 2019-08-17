@@ -1,32 +1,32 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "compiler.h"
 #include <setjmp.h>
 extern ARCH_DEBUG* chosenDebugger;
 extern ARCH_ASM* chosenAssembler;
-extern NAMESPACEVALUES* globalNameSpace;
+extern NAMESPACEVALUELIST* globalNameSpace;
 extern LIST* clist;
 extern char outfile[];
 extern FILE* outputFile;
@@ -38,13 +38,14 @@ extern int optflags;
 extern LIST* nonSysIncludeFiles;
 
 #ifdef _WIN32
-extern "C" {
+extern "C"
+{
     char* __stdcall GetModuleFileNameA(int handle, char* buf, int size);
 }
 #endif
 
 #ifdef HAVE_UNISTD_H
-#include <unistd.h>
+#    include <unistd.h>
 #endif
 
 #ifdef PARSER_ONLY
@@ -357,25 +358,25 @@ void stackalign_setup(char select, char* string)
         fatal("Invalid stack alignment parameter ");
     cparams.prm_stackalign = n;
 }
-static void debug_dumptypedefs(NAMESPACEVALUES* nameSpace)
+static void debug_dumptypedefs(NAMESPACEVALUELIST* nameSpace)
 {
     int i;
-    HASHTABLE* syms = nameSpace->syms;
+    HASHTABLE* syms = nameSpace->valueData->syms;
     for (i = 0; i < syms->size; i++)
     {
-        HASHREC* h = syms->table[i];
+        SYMLIST* h = syms->table[i];
         if (h != 0)
         {
             while (h)
             {
 
-                SYMBOL* sp = (SYMBOL*)h->p;
-                if (sp->storage_class == sc_namespace)
+                SYMBOL* sym = (SYMBOL*)h->p;
+                if (sym->storage_class == sc_namespace)
                 {
-                    debug_dumptypedefs(sp->nameSpaceValues);
+                    debug_dumptypedefs(sym->nameSpaceValues);
                 }
-                else if (istype(sp))
-                    chosenDebugger->outputtypedef(sp);
+                else if (istype(sym))
+                    chosenDebugger->outputtypedef(sym);
                 h = h->next;
             }
         }
@@ -390,7 +391,7 @@ void MakeStubs(void)
     preprocini(infile, inputFile);
     lexini();
     setglbdefs();
-    while (getsym() != NULL)
+    while (getsym() != nullptr)
         ;
     printf("%s:\\\n", infile);
     list = nonSysIncludeFiles;
@@ -403,7 +404,7 @@ void MakeStubs(void)
 }
 void compile(bool global)
 {
-    LEXEME* lex = NULL;
+    LEXEME* lex = nullptr;
     SetGlobalFlag(true);
     helpinit();
     mangleInit();
@@ -439,11 +440,11 @@ void compile(bool global)
     if (chosenAssembler->outcode_init)
         chosenAssembler->outcode_init();
     if (chosenAssembler->enter_filename)
-        chosenAssembler->enter_filename((char *)clist->data);
+        chosenAssembler->enter_filename((char*)clist->data);
     if (cparams.prm_debug && chosenDebugger && chosenDebugger->init)
         chosenDebugger->init();
     if (cparams.prm_browse && chosenDebugger && chosenDebugger->init_browsedata)
-        chosenDebugger->init_browsedata((char *)clist->data);
+        chosenDebugger->init_browsedata((char*)clist->data);
     browse_init();
     browse_startfile(infile, 0);
     if (cparams.prm_assemble)
@@ -454,7 +455,7 @@ void compile(bool global)
             BLOCKDATA block;
             memset(&block, 0, sizeof(block));
             block.type = begin;
-            while ((lex = statement_asm(lex, NULL, &block)) != NULL)
+            while ((lex = statement_asm(lex, nullptr, &block)) != nullptr)
                 ;
 #ifndef PARSER_ONLY
             genASM(block.head);
@@ -464,12 +465,12 @@ void compile(bool global)
     else
     {
 #ifndef PARSER_ONLY
-        asm_header((char *)clist->data, version);
+        asm_header((char*)clist->data, version);
 #endif
         lex = getsym();
         if (lex)
         {
-            while ((lex = declare(lex, NULL, NULL, sc_global, lk_none, NULL, true, false, false, ac_public)) != NULL)
+            while ((lex = declare(lex, nullptr, nullptr, sc_global, lk_none, nullptr, true, false, false, ac_public)) != nullptr)
                 ;
         }
     }
@@ -538,7 +539,7 @@ int main(int argc, char* argv[])
 
     if (chosenAssembler->Args)
     {
-        CMDLIST* newArgs = (CMDLIST *)calloc(sizeof(Args) + sizeof(Args[0]) * chosenAssembler->ArgCount, 1);
+        CMDLIST* newArgs = (CMDLIST*)calloc(sizeof(Args) + sizeof(Args[0]) * chosenAssembler->ArgCount, 1);
         if (newArgs)
         {
             memcpy(&newArgs[0], chosenAssembler->Args, chosenAssembler->ArgCount * sizeof(Args[0]));
@@ -553,7 +554,7 @@ int main(int argc, char* argv[])
     if (clist && clist->next)
         multipleFiles = true;
 #ifdef PARSER_ONLY
-    strcpy(buffer, (char *)clist->data);
+    strcpy(buffer, (char*)clist->data);
     strcpy(realOutFile, outfile);
     outputfile(realOutFile, buffer, ".ods");
     if (!ccDBOpen(realOutFile))
@@ -567,7 +568,7 @@ int main(int argc, char* argv[])
     while (clist)
     {
         cparams.prm_cplusplus = false;
-        strcpy(buffer, (char *)clist->data);
+        strcpy(buffer, (char*)clist->data);
 #ifndef PARSER_ONLY
         if (buffer[0] == '-')
             strcpy(buffer, "a.c");
@@ -636,7 +637,7 @@ int main(int argc, char* argv[])
         {
             preprocini(infile, inputFile);
             if (chosenAssembler->enter_filename)
-                chosenAssembler->enter_filename((char *)clist->data);
+                chosenAssembler->enter_filename((char*)clist->data);
             MakeStubs();
         }
         else
@@ -765,7 +766,7 @@ int main(int argc, char* argv[])
 #endif
         if (outputFile && openOutput)
             fclose(outputFile);
-        outputFile = NULL;
+        outputFile = nullptr;
         if (cppFile)
             fclose(cppFile);
         if (listFile)

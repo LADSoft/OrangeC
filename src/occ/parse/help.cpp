@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "compiler.h"
@@ -47,19 +47,20 @@ extern TYPE stdchar32t;
 extern TYPE stdpointer;
 extern int nextLabel;
 extern SYMBOL* theCurrentFunc;
-extern NAMESPACEVALUES* localNameSpace;
+extern NAMESPACEVALUELIST* localNameSpace;
 extern int inDefaultParam;
 extern LINEDATA *linesHead, *linesTail;
+extern int codeLabel;
 
 int anonymousNotAlloc;
 
 void helpinit() { anonymousNotAlloc = 0; }
-void deprecateMessage(SYMBOL* sp)
+void deprecateMessage(SYMBOL* sym)
 {
     char buf[1024];
-    my_sprintf(buf, "%s deprecated", sp->name);
-    if (sp->attribs.uninheritable.deprecationText && sp->attribs.uninheritable.deprecationText != (char*)-1)
-        my_sprintf(buf + strlen(buf), "; %s", sp->attribs.uninheritable.deprecationText);
+    my_sprintf(buf, "%s deprecated", sym->name);
+    if (sym->attribs.uninheritable.deprecationText && sym->attribs.uninheritable.deprecationText != (char*)-1)
+        my_sprintf(buf + strlen(buf), "; %s", sym->attribs.uninheritable.deprecationText);
     errorstr(ERR_WARNING, buf);
 }
 // well this is really only nonstatic data members...
@@ -83,7 +84,7 @@ bool istype(SYMBOL* sym)
     }
     return (sym->tp->type != bt_templateselector && sym->storage_class == sc_type) || sym->storage_class == sc_typedef;
 }
-bool ismemberdata(SYMBOL* sp) { return !isfunction(sp->tp) && ismember(sp); }
+bool ismemberdata(SYMBOL* sym) { return !isfunction(sym->tp) && ismember(sym); }
 bool startOfType(LEXEME* lex, bool assumeType)
 {
     LINEDATA *oldHead = linesHead, *oldTail = linesTail;
@@ -116,15 +117,15 @@ bool startOfType(LEXEME* lex, bool assumeType)
     if (lex->type == l_id || MATCHKW(lex, classsel) || MATCHKW(lex, kw_decltype))
     {
         bool isdecltype = MATCHKW(lex, kw_decltype);
-        SYMBOL *sp, *strSym = NULL;
+        SYMBOL *sym, *strSym = nullptr;
         LEXEME* placeholder = lex;
         bool dest = false;
-        nestedSearch(lex, &sp, &strSym, NULL, &dest, NULL, false, sc_global, false, false);
+        nestedSearch(lex, &sym, &strSym, nullptr, &dest, nullptr, false, sc_global, false, false);
         if (cparams.prm_cplusplus || chosenAssembler->msil)
             prevsym(placeholder);
         linesHead = oldHead;
         linesTail = oldTail;
-        return (!sp && isdecltype) || (sp && istype(sp)) ||
+        return (!sym && isdecltype) || (sym && istype(sym)) ||
                (assumeType && strSym && (strSym->tp->type == bt_templateselector || strSym->tp->type == bt_templatedecltype));
     }
     else
@@ -159,7 +160,7 @@ static TYPE* rootType(TYPE* tp)
                 return tp;
         }
     }
-    return NULL;
+    return nullptr;
 }
 void UpdateRootTypes(TYPE* tp)
 {
@@ -547,11 +548,11 @@ void DeduceAuto(TYPE** pat, TYPE* nt)
                 // forwarding?  unadorned rref!
                 if (!nt->rref && basetype(nt)->type != bt_rref)
                 {
-                    *pat = (TYPE *)Alloc(sizeof(TYPE));
+                    *pat = (TYPE*)Alloc(sizeof(TYPE));
                     (*pat)->type = bt_lref;
                     (*pat)->size = getSize(bt_pointer);
                     (*pat)->rootType = (*pat);
-                    TYPE *t = basetype(nt);
+                    TYPE* t = basetype(nt);
                     if (isref(t))
                         t = t->btp;
                     (*pat)->btp = t;
@@ -590,7 +591,7 @@ void DeduceAuto(TYPE** pat, TYPE* nt)
             if ((*pat)->decltypeauto)
                 if ((*pat)->decltypeautoextended)
                 {
-                    *pat = (TYPE*)(TYPE *)Alloc(sizeof(TYPE));
+                    *pat = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
                     (*pat)->type = bt_lref;
                     (*pat)->size = getSize(bt_pointer);
                     (*pat)->btp = nt;
@@ -633,18 +634,18 @@ SYMBOL* getFunctionSP(TYPE** tp)
     {
         return btp->sp;
     }
-    return NULL;
+    return nullptr;
 }
 LEXEME* concatStringsInternal(LEXEME* lex, STRING** str, int* elems)
 {
     SLCHAR** list;
-    char* suffix = NULL;
+    char* suffix = nullptr;
     int count = 3;
     int pos = 0;
     enum e_lexType type = l_astr;
     STRING* string;
     IncGlobalFlag();
-    list = (SLCHAR**)(SLCHAR **)Alloc(sizeof(SLCHAR*) * count);
+    list = (SLCHAR**)(SLCHAR**)Alloc(sizeof(SLCHAR*) * count);
     while (lex &&
            (lex->type == l_astr || lex->type == l_wstr || lex->type == l_ustr || lex->type == l_Ustr || lex->type == l_msilstr))
     {
@@ -670,7 +671,7 @@ LEXEME* concatStringsInternal(LEXEME* lex, STRING** str, int* elems)
         }
         if (pos >= count)
         {
-            SLCHAR** h = (SLCHAR**)(SLCHAR **)Alloc(sizeof(SLCHAR*) * (count + 10));
+            SLCHAR** h = (SLCHAR**)(SLCHAR**)Alloc(sizeof(SLCHAR*) * (count + 10));
             memcpy(h, list, sizeof(SLCHAR*) * count);
             list = h;
             count += 10;
@@ -683,7 +684,7 @@ LEXEME* concatStringsInternal(LEXEME* lex, STRING** str, int* elems)
     string = (STRING*)Alloc(sizeof(STRING));
     string->strtype = type;
     string->size = pos;
-    string->pointers = (SLCHAR **)Alloc(pos * sizeof(SLCHAR*));
+    string->pointers = (SLCHAR**)Alloc(pos * sizeof(SLCHAR*));
     string->suffix = suffix;
     memcpy(string->pointers, list, pos * sizeof(SLCHAR*));
     *str = string;
@@ -765,7 +766,7 @@ EXPRESSION* anonymousVar(enum e_sc storage_class, TYPE* tp)
 {
     static int anonct = 1;
     char buf[256];
-    SYMBOL* rv = (SYMBOL*)(SYMBOL *)Alloc(sizeof(SYMBOL));
+    SYMBOL* rv = (SYMBOL*)Alloc(sizeof(SYMBOL));
     if (tp->size == 0 && isstructured(tp))
         tp = basetype(tp)->sp->tp;
     rv->storage_class = storage_class;
@@ -780,7 +781,7 @@ EXPRESSION* anonymousVar(enum e_sc storage_class, TYPE* tp)
     rv->name = litlate(buf);
     if (!isatomic(tp))
         tp->size = basetype(tp)->size;
-    if (theCurrentFunc && localNameSpace->syms && !inDefaultParam && !anonymousNotAlloc)
+    if (theCurrentFunc && localNameSpace->valueData->syms && !inDefaultParam && !anonymousNotAlloc)
         InsertSymbol(rv, storage_class, lk_none, false);
     SetLinkerNames(rv, lk_none);
     return varNode(storage_class == sc_auto || storage_class == sc_parameter ? en_auto : en_global, rv);
@@ -908,7 +909,7 @@ void deref(TYPE* tp, EXPRESSION** exp)
             diag("deref error");
             break;
     }
-    *exp = exprNode(en, *exp, NULL);
+    *exp = exprNode(en, *exp, nullptr);
     if (en == en_l_object)
         (*exp)->v.tp = tp;
 }
@@ -1149,7 +1150,7 @@ void cast(TYPE* tp, EXPRESSION** exp)
             diag("cast error");
             break;
     }
-    *exp = exprNode(en, *exp, NULL);
+    *exp = exprNode(en, *exp, nullptr);
 }
 bool castvalue(EXPRESSION* exp)
 {
@@ -1224,7 +1225,8 @@ bool lvalue(EXPRESSION* exp)
         case en_l_ld:
         case en_l_fc:
         case en_l_dc:
-        case en_l_ldc:        case en_l_fi:
+        case en_l_ldc:
+        case en_l_fi:
 
         case en_l_di:
         case en_l_ldi:
@@ -1238,31 +1240,33 @@ bool lvalue(EXPRESSION* exp)
             return false;
     }
 }
-EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sp, SYMBOL* funcsp, INITIALIZER* init, EXPRESSION* thisptr, bool isdest)
+EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, SYMBOL* funcsp, INITIALIZER* init, EXPRESSION* thisptr, bool isdest)
 {
     bool local = false;
-    EXPRESSION *rv = NULL, **pos = &rv;
-    EXPRESSION *exp = NULL, **expp;
+    EXPRESSION *rv = nullptr, **pos = &rv;
+    EXPRESSION *exp = nullptr, **expp;
     EXPRESSION *expsym, *base;
     bool noClear = false;
-    if (sp)
-        sp->destructed = false;
+    if (sym)
+        sym->destructed = false;
+
     if (isstructured(tp) || isarray(tp))
     {
         INITIALIZER** i2 = &init;
         while (*i2)
             i2 = &(*i2)->next;
-        initInsert(i2, NULL, NULL, tp->size, false);
+        initInsert(i2, nullptr, nullptr, tp->size, false);
     }
-    if (!sp)
+    if (!sym)
     {
         if (thisptr)
             expsym = thisptr;
         else if (funcsp)
         {
-            SYMBOL* sp = (SYMBOL*)basetype(funcsp->tp)->syms->table[0] ? (SYMBOL*)basetype(funcsp->tp)->syms->table[0]->p : NULL;
-            if (sp && sp->thisPtr)
-                expsym = varNode(en_auto, sp);  // this ptr
+            SYMBOL* sym =
+                (SYMBOL*)basetype(funcsp->tp)->syms->table[0] ? (SYMBOL*)basetype(funcsp->tp)->syms->table[0]->p : nullptr;
+            if (sym && sym->thisPtr)
+                expsym = varNode(en_auto, sym);  // this ptr
             else
                 expsym = anonymousVar(sc_auto, tp);
         }
@@ -1273,35 +1277,35 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sp, SYMBOL* funcsp, INITIA
         }
     }
     else
-        switch (sp->storage_class)
+        switch (sym->storage_class)
         {
             case sc_auto:
             case sc_register:
             case sc_parameter:
                 local = true;
-                expsym = varNode(en_auto, sp);
+                expsym = varNode(en_auto, sym);
                 break;
             case sc_localstatic:
-                if (sp->linkage3 == lk_threadlocal)
+                if (sym->linkage3 == lk_threadlocal)
                 {
-                    expsym = exprNode(en_add, thisptr, intNode(en_c_i, sp->offset));
+                    expsym = exprNode(en_add, thisptr, intNode(en_c_i, sym->offset));
                 }
                 else
                 {
                     local = true;
-                    expsym = varNode(en_global, sp);
+                    expsym = varNode(en_global, sym);
                 }
                 break;
             case sc_static:
             case sc_global:
-                if (sp->linkage3 == lk_threadlocal)
+                if (sym->linkage3 == lk_threadlocal)
                 {
-                    expsym = exprNode(en_add, thisptr, intNode(en_c_i, sp->offset));
+                    expsym = exprNode(en_add, thisptr, intNode(en_c_i, sym->offset));
                 }
                 else
                 {
                     local = true;
-                    expsym = varNode(en_global, sp);
+                    expsym = varNode(en_global, sym);
                 }
                 break;
             case sc_member:
@@ -1316,34 +1320,34 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sp, SYMBOL* funcsp, INITIA
                     diag("convertInitToExpression: no this ptr");
                 }
                 if (chosenAssembler->msil)
-                    expsym = exprNode(en_structadd, expsym, varNode(en_structelem, sp));
+                    expsym = exprNode(en_structadd, expsym, varNode(en_structelem, sym));
                 else
-                    expsym = exprNode(en_add, expsym, intNode(en_c_i, sp->offset));
+                    expsym = exprNode(en_add, expsym, intNode(en_c_i, sym->offset));
                 break;
             case sc_external:
-                /*			expsym = varNode(en_global, sp);
+                /*			expsym = varNode(en_global, sym);
                             local = true;
                             break;
                 */
             case sc_constant:
-                return NULL;
+                return nullptr;
             default:
                 diag("convertInitToExpression: unknown sym type");
                 expsym = intNode(en_c_i, 0);
                 break;
         }
     base = copy_expression(expsym);
-    if (sp && isarray(sp->tp) && sp->tp->msil && !init->noassign)
+    if (sym && isarray(sym->tp) && sym->tp->msil && !init->noassign)
     {
         exp = intNode(en_msil_array_init, 0);
-        exp->v.tp = sp->tp;
+        exp->v.tp = sym->tp;
         // plop in a newarr call
         *pos = exprNode(en_assign, expsym, exp);
         noClear = true;
     }
     while (init)
     {
-        exp = NULL;
+        exp = nullptr;
         if (init->basetp)
         {
             if (init->noassign && init->exp)
@@ -1370,7 +1374,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sp, SYMBOL* funcsp, INITIA
             else if (!init->exp)
             {
                 // usually empty braces, coudl be an error though
-                exp = exprNode(en_blockclear, expsym, NULL);
+                exp = exprNode(en_blockclear, expsym, nullptr);
                 exp->size = init->offset;
             }
             else if (isstructured(init->basetp) || isarray(init->basetp))
@@ -1427,16 +1431,16 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sp, SYMBOL* funcsp, INITIA
                         /* some members are non-constant expressions */
                         if (!cparams.prm_c99 && !cparams.prm_cplusplus)
                             error(ERR_C99_NON_CONSTANT_INITIALIZATION);
-                        if (!sp)
+                        if (!sym)
                         {
                             expsym = anonymousVar(sc_auto, init->basetp);
-                            sp = expsym->v.sp;
+                            sym = expsym->v.sp;
                         }
                         if (!isstructured(btp) || btp->sp->trivialCons)
                         {
-                            exp = exprNode(en_blockclear, expsym, NULL);
+                            exp = exprNode(en_blockclear, expsym, nullptr);
                             exp->size = init->basetp->size;
-                            exp = exprNode(en_void, exp, NULL);
+                            exp = exprNode(en_void, exp, nullptr);
                             expp = &exp->right;
                         }
                         else
@@ -1468,7 +1472,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sp, SYMBOL* funcsp, INITIA
                         spc = exp->v.sp;
                         spc->init = init;
                         insertInitSym(spc);
-                        insert(spc, localNameSpace->syms);
+                        insert(spc, localNameSpace->valueData->syms);
                         DecGlobalFlag();
                         spc->label = nextLabel++;
                         if (expsym)
@@ -1519,7 +1523,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sp, SYMBOL* funcsp, INITIA
                 if (isarray(tp) && tp->msil)
                 {
                     TYPE* btp = tp;
-                    exps = exprNode(en_msil_array_access, NULL, NULL);
+                    exps = exprNode(en_msil_array_access, nullptr, nullptr);
                     int count = 0, i;
                     int q = init->offset;
                     while (isarray(btp) && btp->msil)
@@ -1567,7 +1571,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sp, SYMBOL* funcsp, INITIA
                         exp = exprNode(en_assign, exps, exp);
                 }
             }
-            if (sp && sp->init && isatomic(init->basetp) && needsAtomicLockFromType(init->basetp))
+            if (sym && sym->init && isatomic(init->basetp) && needsAtomicLockFromType(init->basetp))
             {
                 EXPRESSION* p1 = exprNode(en_add, expsym->left, intNode(en_c_i, init->basetp->size - ATOMIC_FLAG_SPACE));
                 deref(&stdint, &p1);
@@ -1589,11 +1593,11 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sp, SYMBOL* funcsp, INITIA
         }
         init = init->next;
     }
-    if (sp && sp->storage_class == sc_localstatic && !(chosenAssembler->msil))
+    if (sym && sym->storage_class == sc_localstatic && !(chosenAssembler->msil))
     {
         if (isdest)
         {
-            rv = exprNode(en_voidnz, exprNode(en_void, sp->localInitGuard, rv), intNode(en_c_i, 0));
+            rv = exprNode(en_voidnz, exprNode(en_void, sym->localInitGuard, rv), intNode(en_c_i, 0));
         }
         else
         {
@@ -1601,24 +1605,26 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sp, SYMBOL* funcsp, INITIA
             insertInitSym(guard->v.sp);
             deref(&stdpointer, &guard);
             optimize_for_constants(&rv);
+            rv = destructLocal(rv);
             rv = exprNode(en_voidnz,
-                          exprNode(en_void, exprNode(en_not, guard, NULL),
+                          exprNode(en_void, exprNode(en_not, guard, nullptr),
                                    exprNode(en_void, rv, exprNode(en_autoinc, guard, intNode(en_c_i, 1)))),
                           intNode(en_c_i, 0));
-            sp->localInitGuard = guard;
+            sym->localInitGuard = guard;
         }
     }
     // plop in a clear block if necessary
-    if (sp && !noClear && !isdest &&
-        (isarray(tp) || (isstructured(tp) && ((!cparams.prm_cplusplus && !chosenAssembler->msil) || !basetype(tp)->sp->hasUserCons))))
+    if (sym && !noClear && !isdest &&
+        (isarray(tp) ||
+         (isstructured(tp) && ((!cparams.prm_cplusplus && !chosenAssembler->msil) || !basetype(tp)->sp->hasUserCons))))
     {
         EXPRESSION* fexp = base;
         EXPRESSION* exp;
         optimize_for_constants(&fexp);
         if (fexp->type == en_thisref)
             fexp = fexp->left->v.func->thisptr;
-        exp = exprNode(en_blockclear, fexp, NULL);
-        exp->size = sp->tp->size;
+        exp = exprNode(en_blockclear, fexp, nullptr);
+        exp->size = sym->tp->size;
         rv = exprNode(en_void, exp, rv);
     }
     if (isstructured(tp))
@@ -1768,7 +1774,7 @@ bool isconstaddress(EXPRESSION* exp)
 }
 SYMBOL* clonesym(SYMBOL* sym)
 {
-    SYMBOL* rv = (SYMBOL*)(SYMBOL *)Alloc(sizeof(SYMBOL));
+    SYMBOL* rv = (SYMBOL*)Alloc(sizeof(SYMBOL));
     *rv = *sym;
     return rv;
 }
@@ -1805,10 +1811,7 @@ static TYPE* inttype(enum e_bt t1)
             return &stdunsignedlonglong;
     }
 }
-inline e_bt btmax(e_bt left, e_bt right)
-{
-    return left > right ? left : right;
-}
+inline e_bt btmax(e_bt left, e_bt right) { return left > right ? left : right; }
 TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool minimizeInt, TYPE* atp)
 /*
  * compare two types and determine if they are compatible for purposes
@@ -1840,7 +1843,7 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
     */
     if (tp1->type >= bt_float || tp2->type >= bt_float)
     {
-        TYPE *tp = NULL;
+        TYPE* tp = nullptr;
         int isim1 = tp1->type >= bt_float_imaginary && tp1->type <= bt_long_double_imaginary;
         int isim2 = tp2->type >= bt_float_imaginary && tp2->type <= bt_long_double_imaginary;
         int iscx1 = tp1->type >= bt_float_complex && tp1->type <= bt_long_double_complex;
@@ -1867,13 +1870,11 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
                     tp = tp1;
                 else
                     tp = &stddoublecomplex;
-
             }
             else
             {
                 tp = tp1;
             }
-
         }
         else if (iscx2)
         {
@@ -1897,7 +1898,6 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
                     tp = tp2;
                 else
                     tp = &stddoublecomplex;
-
             }
             else
             {
@@ -1945,7 +1945,6 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
             {
                 tp = tp2;
             }
-
         }
         else if (tp1->type >= bt_float && tp2->type >= bt_float)
         {
@@ -2077,7 +2076,7 @@ EXPRESSION* RemoveAutoIncDec(EXPRESSION* exp)
     EXPRESSION* newExp;
     if (exp->type == en_autoinc || exp->type == en_autodec)
         return RemoveAutoIncDec(exp->left);
-    newExp = (EXPRESSION *)Alloc(sizeof(EXPRESSION));
+    newExp = (EXPRESSION*)Alloc(sizeof(EXPRESSION));
     *newExp = *exp;
     if (newExp->left)
         newExp->left = RemoveAutoIncDec(newExp->left);

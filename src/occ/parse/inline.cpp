@@ -1,32 +1,32 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "compiler.h"
 
 extern ARCH_ASM* chosenAssembler;
 extern TYPE stdint;
-extern NAMESPACEVALUES* localNameSpace;
+extern NAMESPACEVALUELIST* localNameSpace;
 extern TYPE stdpointer, stdvoid;
 extern int startlab, retlab;
 extern int total_errors;
@@ -49,15 +49,15 @@ static int namenumber;
 void inlineinit(void)
 {
     namenumber = 0;
-    inlineHead = NULL;
-    inlineVTabHead = NULL;
-    inlineDataHead = NULL;
+    inlineHead = nullptr;
+    inlineVTabHead = nullptr;
+    inlineDataHead = nullptr;
     vc1Thunks = CreateHashTable(1);
     didInlines = CreateHashTable(32);
 }
 static SYMBOL* inSearch(SYMBOL* sp)
 {
-    HASHREC** hr = GetHashLink(didInlines, sp->decoratedName);
+    SYMLIST** hr = GetHashLink(didInlines, sp->decoratedName);
     while (*hr)
     {
         SYMBOL* sym = (SYMBOL*)(*hr)->p;
@@ -65,15 +65,15 @@ static SYMBOL* inSearch(SYMBOL* sp)
             return sym;
         hr = &(*hr)->next;
     }
-    return NULL;
+    return nullptr;
 }
-static void inInsert(SYMBOL* sp)
+static void inInsert(SYMBOL* sym)
 {
     // assumes the symbol isn't already there...
-    HASHREC** hr = GetHashLink(didInlines, sp->decoratedName);
-    HASHREC* added = (HASHREC *)Alloc(sizeof(HASHREC));
-    sp->mainsym = NULL;
-    added->p = (struct sym *)sp;
+    SYMLIST** hr = GetHashLink(didInlines, sym->decoratedName);
+    SYMLIST* added = (SYMLIST*)Alloc(sizeof(SYMLIST));
+    sym->mainsym = nullptr;
+    added->p = (SYMBOL*)sym;
     added->next = *hr;
     *hr = added;
 }
@@ -82,12 +82,12 @@ static void UndoPreviousCodegen(SYMBOL* sym)
     HASHTABLE* syms = sym->inlineFunc.syms;
     while (syms)
     {
-        HASHREC* hr = syms->table[0];
+        SYMLIST* hr = syms->table[0];
         while (hr)
         {
-            SYMBOL* sx = (SYMBOL*)hr->p;
-            sx->imaddress = sx->imvalue = NULL;
-            sx->imind = NULL;
+            SYMBOL* sx = hr->p;
+            sx->imaddress = sx->imvalue = nullptr;
+            sx->imind = nullptr;
             hr = hr->next;
         }
         syms = syms->next;
@@ -111,7 +111,8 @@ void dumpInlines(void)
                 SYMBOL* sym = (SYMBOL*)funcList->data;
                 if (((sym->isInline && sym->dumpInlineToFile) || sym->genreffed))
                 {
-                    if ((sym->parentClass && sym->parentClass->dontinstantiate && !sym->templateLevel) || sym->attribs.inheritable.linkage2 == lk_import)
+                    if ((sym->parentClass && sym->parentClass->dontinstantiate && !sym->templateLevel) ||
+                        sym->attribs.inheritable.linkage2 == lk_import)
                     {
                         sym->dontinstantiate = true;
                         InsertExtern(sym);
@@ -133,7 +134,7 @@ void dumpInlines(void)
                             if ((sym->isInline || sym->linkage == lk_virtual) && sym->inlineFunc.stmt)
                             {
                                 inInsert(sym);
-                                sym->genreffed = false;
+                                GENREF(sym);
                                 sym->noextern = true;
                                 UndoPreviousCodegen(sym);
                                 startlab = nextLabel++;
@@ -183,12 +184,12 @@ void dumpInlines(void)
                 {
                     SYMBOL* parentTemplate = sym->parentClass->parentTemplate;
                     SYMBOL* origsym;
-                    LIST* instants = parentTemplate->instantiations;
+                    SYMLIST* instants = parentTemplate->instantiations;
                     while (instants)
                     {
-                        if (TemplateInstantiationMatch((SYMBOL *)instants->data, sym->parentClass))
+                        if (TemplateInstantiationMatch(instants->p, sym->parentClass))
                         {
-                            parentTemplate = (SYMBOL*)instants->data;
+                            parentTemplate = instants->p;
                             break;
                         }
                         instants = instants->next;
@@ -223,9 +224,9 @@ void dumpInlines(void)
                             s.tmpl = sym->templateParams;
                             addTemplateDeclaration(&s);
                             lex = SetAlternateLex(origsym->deferredCompile);
-                            sym->init = NULL;
-                            lex = initialize(lex, NULL, sym, sc_global, true, 0);
-                            SetAlternateLex(NULL);
+                            sym->init = nullptr;
+                            lex = initialize(lex, nullptr, sym, sc_global, true, 0);
+                            SetAlternateLex(nullptr);
                             dropStructureDeclaration();
                             dropStructureDeclaration();
                         }
@@ -305,14 +306,14 @@ void dumpImportThunks(void)
 void dumpvc1Thunks(void)
 {
 #ifndef PARSER_ONLY
-    HASHREC* hr;
+    SYMLIST* hr;
     cseg();
     hr = vc1Thunks->table[0];
     while (hr)
     {
-        gen_virtual((SYMBOL*)hr->p, false);
-        gen_vc1((SYMBOL*)hr->p);
-        gen_endvirtual((SYMBOL*)hr->p);
+        gen_virtual(hr->p, false);
+        gen_vc1(hr->p);
+        gen_endvirtual(hr->p);
         hr = hr->next;
     }
 #endif
@@ -325,7 +326,7 @@ SYMBOL* getvc1Thunk(int offset)
     rv = search(name, vc1Thunks);
     if (!rv)
     {
-        rv = (SYMBOL *)Alloc(sizeof(SYMBOL));
+        rv = (SYMBOL*)Alloc(sizeof(SYMBOL));
         rv->name = rv->errname = rv->decoratedName = litlate(name);
         rv->storage_class = sc_static;
         rv->linkage = lk_virtual;
@@ -335,11 +336,11 @@ SYMBOL* getvc1Thunk(int offset)
     }
     return rv;
 }
-void InsertInline(SYMBOL* sp)
+void InsertInline(SYMBOL* sym)
 {
-    LIST* temp = (LIST *)Alloc(sizeof(LIST));
-    temp->data = sp;
-    if (isfunction(sp->tp))
+    LIST* temp = (LIST*)Alloc(sizeof(LIST));
+    temp->data = sym;
+    if (isfunction(sym->tp))
     {
         if (inlineHead)
             inlineTail = inlineTail->next = temp;
@@ -354,11 +355,11 @@ void InsertInline(SYMBOL* sp)
             inlineVTabHead = inlineVTabTail = temp;
     }
 }
-void InsertInlineData(SYMBOL* sp)
+void InsertInlineData(SYMBOL* sym)
 {
 
-    LIST* temp = (LIST *)Alloc(sizeof(LIST));
-    temp->data = sp;
+    LIST* temp = (LIST*)Alloc(sizeof(LIST));
+    temp->data = sym;
     if (inlineDataHead)
         inlineDataTail = inlineDataTail->next = temp;
     else
@@ -371,7 +372,7 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
     /*
      * routine takes an enode tree and replaces it with a copy of itself.
      * Used because we have to munge the block_nesting field (value.i) of each
-     * sp in an inline function to force allocation of the variables
+     * sym in an inline function to force allocation of the variables
      */
     EXPRESSION *temp, *temp1;
     FUNCTIONCALL* fp;
@@ -379,7 +380,7 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
     (void)fromlval;
     if (node == 0)
         return 0;
-    temp = (EXPRESSION*)(EXPRESSION *)Alloc(sizeof(EXPRESSION));
+    temp = (EXPRESSION*)(EXPRESSION*)Alloc(sizeof(EXPRESSION));
     memcpy(temp, node, sizeof(EXPRESSION));
     switch (temp->type)
     {
@@ -429,13 +430,13 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
             }
             else if (temp->v.sp->structuredReturn)
             {
-                SYMBOL* sp = temp->v.sp;
+                SYMBOL* sym = temp->v.sp;
                 int n = function_list_count;
-                while (sp && sp->structuredReturn && --n >= 0)
+                while (sym && sym->structuredReturn && --n >= 0)
                 {
-                    sp = function_list[n]->returnSP;
+                    sym = function_list[n]->returnSP;
                 }
-                if (n >= 0 && sp)
+                if (n >= 0 && sym)
                 {
                     temp = function_list[n]->returnEXP;
                     temp = inlineexpr(temp, fromlval);
@@ -602,7 +603,7 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
             temp->v.ad->third = inlineexpr(node->v.ad->third, nullptr);
             break;
         case en_func:
-            temp->v.func = NULL;
+            temp->v.func = nullptr;
             fp = node->v.func;
             if (fp->sp->linkage == lk_virtual)
             {
@@ -619,29 +620,29 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
             {
                 if (inlinesp_count >= MAX_INLINE_NESTING)
                 {
-                    diag("inline sp queue too deep");
+                    diag("inline sym queue too deep");
                 }
                 else
                 {
                     EXPRESSION* temp1;
                     inlinesp_list[inlinesp_count++] = fp->sp;
-                    temp1 = doinline(fp, NULL); /* discarding our allocation */
+                    temp1 = doinline(fp, nullptr); /* discarding our allocation */
                     inlinesp_count--;
                     if (temp1)
                         temp = temp1;
                 }
             }
-            if (temp->v.func == NULL)
+            if (temp->v.func == nullptr)
             {
                 INITLIST* args = fp->arguments;
                 INITLIST** p;
-                temp->v.func = (FUNCTIONCALL *)Alloc(sizeof(FUNCTIONCALL));
+                temp->v.func = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
                 *temp->v.func = *fp;
                 p = &temp->v.func->arguments;
-                *p = NULL;
+                *p = nullptr;
                 while (args)
                 {
-                    *p = (INITLIST *)Alloc(sizeof(INITLIST));
+                    *p = (INITLIST*)Alloc(sizeof(INITLIST));
                     **p = *args;
                     (*p)->exp = inlineexpr((*p)->exp, nullptr);
                     args = args->next;
@@ -666,12 +667,12 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
 
 STATEMENT* inlinestmt(STATEMENT* block)
 {
-    STATEMENT *out = NULL, **outptr = &out;
-    while (block != NULL)
+    STATEMENT *out = nullptr, **outptr = &out;
+    while (block != nullptr)
     {
-        *outptr = (STATEMENT*)(STATEMENT *)Alloc(sizeof(STATEMENT));
+        *outptr = (STATEMENT*)(STATEMENT*)Alloc(sizeof(STATEMENT));
         memcpy(*outptr, block, sizeof(STATEMENT));
-        (*outptr)->next = NULL;
+        (*outptr)->next = nullptr;
         switch (block->type)
         {
             case st__genword:
@@ -708,7 +709,7 @@ STATEMENT* inlinestmt(STATEMENT* block)
             case st_passthrough:
                 if (block->lower)
                     if (chosenAssembler->inlineAsmStmt)
-                        block->lower = (STATEMENT *)(*chosenAssembler->inlineAsmStmt)(block->lower);
+                        block->lower = (STATEMENT*)(*chosenAssembler->inlineAsmStmt)(block->lower);
                 break;
             case st_nop:
                 break;
@@ -758,7 +759,7 @@ static EXPRESSION* newReturn(TYPE* tp)
 }
 static void reduceReturns(STATEMENT* block, TYPE* rettp, EXPRESSION* retnode)
 {
-    while (block != NULL)
+    while (block != nullptr)
     {
         switch (block->type)
         {
@@ -809,8 +810,8 @@ static void reduceReturns(STATEMENT* block, TYPE* rettp, EXPRESSION* retnode)
 }
 static EXPRESSION* scanReturn(STATEMENT* block, TYPE* rettp)
 {
-    EXPRESSION* rv = NULL;
-    while (block != NULL && !rv)
+    EXPRESSION* rv = nullptr;
+    while (block != nullptr && !rv)
     {
         switch (block->type)
         {
@@ -1086,7 +1087,7 @@ static void setExp(SYMBOL* sx, EXPRESSION* exp, STATEMENT*** stp)
         deref(sx->tp, &tnode);
         sx->inlineFunc.stmt = (STATEMENT*)tnode;
         tnode = exprNode(en_assign, tnode, exp);
-        **stp = (STATEMENT *)Alloc(sizeof(STATEMENT));
+        **stp = (STATEMENT*)Alloc(sizeof(STATEMENT));
         (**stp)->type = st_expr;
         (**stp)->select = tnode;
         *stp = &(**stp)->next;
@@ -1095,18 +1096,18 @@ static void setExp(SYMBOL* sx, EXPRESSION* exp, STATEMENT*** stp)
 static STATEMENT* SetupArguments(FUNCTIONCALL* params)
 {
 
-    STATEMENT *st = NULL, **stp = &st;
+    STATEMENT *st = nullptr, **stp = &st;
     INITLIST* al = params->arguments;
-    HASHREC* hr = basetype(params->sp->tp)->syms->table[0];
+    SYMLIST* hr = basetype(params->sp->tp)->syms->table[0];
     if (ismember(params->sp))
     {
-        SYMBOL* sx = (SYMBOL*)hr->p;
+        SYMBOL* sx = hr->p;
         setExp(sx, params->thisptr, &stp);
         hr = hr->next;
     }
     while (al && hr)
     {
-        SYMBOL* sx = (SYMBOL*)hr->p;
+        SYMBOL* sx = hr->p;
         setExp(sx, al->exp, &stp);
         al = al->next;
         hr = hr->next;
@@ -1115,18 +1116,18 @@ static STATEMENT* SetupArguments(FUNCTIONCALL* params)
 }
 /*-------------------------------------------------------------------------*/
 
-void SetupVariables(SYMBOL* sp)
+void SetupVariables(SYMBOL* sym)
 /* Copy all the func args into the xsyms table.
  * This copies the function parameters twice...
  */
 {
-    HASHTABLE* syms = sp->inlineFunc.syms;
+    HASHTABLE* syms = sym->inlineFunc.syms;
     while (syms)
     {
-        HASHREC* hr = syms->table[0];
+        SYMLIST* hr = syms->table[0];
         while (hr)
         {
-            SYMBOL* sx = (SYMBOL*)hr->p;
+            SYMBOL* sx = hr->p;
             if (sx->storage_class == sc_auto)
             {
                 EXPRESSION* ev = anonymousVar(sc_auto, sx->tp);
@@ -1143,56 +1144,56 @@ void SetupVariables(SYMBOL* sp)
 EXPRESSION* doinline(FUNCTIONCALL* params, SYMBOL* funcsp)
 {
     bool found = false;
-    STATEMENT *stmt = NULL, **stp = &stmt, *stmt1;
+    STATEMENT *stmt = nullptr, **stp = &stmt, *stmt1;
     EXPRESSION* newExpression;
     bool allocated = false;
 
     if (function_list_count >= MAX_INLINE_NESTING)
     {
         params->sp->dumpInlineToFile = true;
-        return NULL;
+        return nullptr;
     }
     if (!isfunction(params->functp))
     {
         params->sp->dumpInlineToFile = true;
-        return NULL;
+        return nullptr;
     }
     if (!params->sp->isInline)
     {
         params->sp->dumpInlineToFile = true;
-        return NULL;
+        return nullptr;
     }
     if (params->sp->templateParams)
     {
         params->sp->dumpInlineToFile = true;
-        return NULL;
+        return nullptr;
     }
     if (params->sp->noinline)
     {
         params->sp->dumpInlineToFile = true;
-        return NULL;
+        return nullptr;
     }
     if (!params->sp->inlineFunc.syms)
     {
         params->sp->dumpInlineToFile = true;
-        return NULL;
+        return nullptr;
     }
     if (!params->sp->inlineFunc.stmt)
     {
         // recursive
         params->sp->dumpInlineToFile = true;
-        return NULL;
+        return nullptr;
     }
-    if (!localNameSpace->syms)
+    if (!localNameSpace->valueData->syms)
     {
         allocated = true;
-        AllocateLocalContext(NULL, NULL, nextLabel++);
+        AllocateLocalContext(nullptr, nullptr, nextLabel++);
     }
     stmt1 = SetupArguments(params);
     if (stmt1)
     {
         // this will kill the ret val but we don't care since we've modified params
-        stmt = (STATEMENT *)Alloc(sizeof(STATEMENT));
+        stmt = (STATEMENT*)Alloc(sizeof(STATEMENT));
         stmt->type = st_block;
         stmt->lower = stmt1;
     }
@@ -1202,7 +1203,7 @@ EXPRESSION* doinline(FUNCTIONCALL* params, SYMBOL* funcsp)
     while (*stp)
         stp = &(*stp)->next;
     *stp = inlinestmt(params->sp->inlineFunc.stmt);
-    newExpression = exprNode(en_stmt, NULL, NULL);
+    newExpression = exprNode(en_stmt, nullptr, nullptr);
     newExpression->v.stmt = stmt;
 
     if (params->sp->retcount == 1)
@@ -1220,7 +1221,7 @@ EXPRESSION* doinline(FUNCTIONCALL* params, SYMBOL* funcsp)
     optimize_for_constants(&newExpression->left);
     if (allocated)
     {
-        FreeLocalContext(NULL, NULL, nextLabel++);
+        FreeLocalContext(nullptr, nullptr, nextLabel++);
     }
     function_list_count--;
     if (newExpression->type == en_stmt)
@@ -1240,7 +1241,7 @@ EXPRESSION* doinline(FUNCTIONCALL* params, SYMBOL* funcsp)
 static bool IsEmptyBlocks(STATEMENT* block)
 {
     bool rv = true;
-    while (block != NULL && rv)
+    while (block != nullptr && rv)
     {
         switch (block->type)
         {
@@ -1271,7 +1272,7 @@ static bool IsEmptyBlocks(STATEMENT* block)
             case st_label:
                 break;
             case st_block:
-                rv = IsEmptyBlocks(block->lower) && block->blockTail == NULL;
+                rv = IsEmptyBlocks(block->lower) && block->blockTail == nullptr;
                 break;
             default:
                 diag("Invalid block type in IsEmptyBlocks");

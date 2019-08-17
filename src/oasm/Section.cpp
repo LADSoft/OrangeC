@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "ObjFactory.h"
@@ -38,9 +38,7 @@
 
 bool Section::dontShowError;
 
-Section::~Section()
-{
-}
+Section::~Section() {}
 void Section::Parse(AsmFile* fil)
 {
     while (!fil->AtEof() && fil->GetKeyword() != Lexer::closebr)
@@ -356,9 +354,9 @@ bool Section::MakeData(ObjFactory& factory, std::function<Label*(std::string&)> 
                     catch (std::runtime_error* e)
                     {
                         Errors::IncrementCount();
-                        if (!dontShowError) 
+                        if (!dontShowError)
                             std::cout << "Error " << f.GetFileName().c_str() << "(" << f.GetErrorLine() << "):" << e->what()
-                                  << std::endl;
+                                      << std::endl;
                         delete e;
                         t = nullptr;
                         rv = false;

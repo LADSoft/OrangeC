@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 /*
@@ -247,80 +247,79 @@ void put_ty(TYPE* tp)
 }
 
 /* List a variable */
-void list_var(SYMBOL* sp, int i)
+void list_var(SYMBOL* sym, int i)
 {
     int j;
     long val;
     if (!cparams.prm_listfile)
         return;
-    if (sp->dontlist)
+    if (sym->dontlist)
         return;
-    if (sp->tp->type == bt_aggregate)
+    if (sym->tp->type == bt_aggregate)
     {
-        HASHREC* hr = sp->tp->syms->table[0];
+        SYMLIST* hr = sym->tp->syms->table[0];
         while (hr)
         {
-            sp = (SYMBOL*)hr->p;
-            list_var(sp, 0);
+            sym = hr->p;
+            list_var(sym, 0);
             hr = hr->next;
         }
         return;
     }
     for (j = i; j; --j)
         fprintf(listFile, "    ");
-    if (sp->storage_class == sc_auto && !sp->regmode)
-        val = (long)getautoval(sp->offset);
+    if (sym->storage_class == sc_auto && !sym->regmode)
+        val = (long)getautoval(sym->offset);
     else
-        val = sp->value.u;
-    fprintf(listFile, "Identifier:   %s\n    ", unmangledname(sp->name));
+        val = sym->value.u;
+    fprintf(listFile, "Identifier:   %s\n    ", unmangledname(sym->name));
     for (j = i; j; --j)
         fprintf(listFile, "    ");
-    if (sp->regmode == 1)
+    if (sym->regmode == 1)
     {
-        fprintf(listFile, "Register: %-3s&     ", lookupRegName((-sp->offset) & 255));
+        fprintf(listFile, "Register: %-3s&     ", lookupRegName((-sym->offset) & 255));
     }
-    else if (sp->regmode == 2)
+    else if (sym->regmode == 2)
     {
-        fprintf(listFile, "Register: %-3s      ", lookupRegName((-sp->offset) & 255));
+        fprintf(listFile, "Register: %-3s      ", lookupRegName((-sym->offset) & 255));
     }
     else
         fprintf(listFile, "Offset:   %08lX ", val);
     fprintf(listFile, "Storage: ");
-    if (sp->tp->type == bt_ifunc)
-        if (sp->isInline && !sp->noinline)
+    if (sym->tp->type == bt_ifunc)
+        if (sym->isInline && !sym->noinline)
             fprintf(listFile, "%-7s", "inline");
         else
             fprintf(listFile, "%-7s", "code");
-    else if (sp->storage_class == sc_auto)
-        if (sp->regmode)
+    else if (sym->storage_class == sc_auto)
+        if (sym->regmode)
             fprintf(listFile, "%-7s", "reg");
         else
             fprintf(listFile, "%-7s", "stack");
-    else if (sp->storage_class == sc_global || sp->storage_class == sc_static || sp->storage_class == sc_localstatic)
-        if (isconst(sp->tp))
+    else if (sym->storage_class == sc_global || sym->storage_class == sc_static || sym->storage_class == sc_localstatic)
+        if (isconst(sym->tp))
             fprintf(listFile, "%-7s", "const");
-        else if (sp->init)
+        else if (sym->init)
             fprintf(listFile, "%-7s", "data");
         else
             fprintf(listFile, "%-7s", "bss");
-    else if (sp->storage_class == sc_constant || sp->storage_class == sc_enumconstant)
+    else if (sym->storage_class == sc_constant || sym->storage_class == sc_enumconstant)
         fprintf(listFile, "%-7s", "constant");
     else
         fprintf(listFile, "%-7s", "none");
-    put_sc(sp->storage_class);
-    put_ty(sp->tp);
+    put_sc(sym->storage_class);
+    put_ty(sym->tp);
     fprintf(listFile, "\n");
-    if (sp->tp == 0)
+    if (sym->tp == 0)
         return;
-    if (isstructured(sp->tp) && sp->storage_class == sc_type)
-        list_table(sp->tp->syms, i + 1);
+    if (isstructured(sym->tp) && sym->storage_class == sc_type)
+        list_table(sym->tp->syms, i + 1);
 }
 
 /* List an entire table */
 /* won't do child namespaces */
 void list_table(HASHTABLE* t, int j)
 {
-    SYMBOL* sp;
     int i;
     if (!cparams.prm_listfile)
         return;
@@ -328,10 +327,10 @@ void list_table(HASHTABLE* t, int j)
     {
         for (i = 0; i < t->size; i++)
         {
-            HASHREC* hr = t->table[i];
+            SYMLIST* hr = t->table[i];
             while (hr)
             {
-                list_var((SYMBOL*)hr->p, j);
+                list_var(hr->p, j);
                 hr = hr->next;
             }
         }

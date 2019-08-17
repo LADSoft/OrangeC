@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "InstructionParser.h"
@@ -154,7 +154,7 @@ std::string InstructionParser::FormatInstruction(ocode* ins)
                 {
                     rv += t->val->GetLeft()->label + "+";
                     char buf[256];
-                    sprintf(buf, "%d", t->val->GetRight()->ival);
+                    sprintf(buf, "%d", (int)t->val->GetRight()->ival);
                     rv += buf;
                 }
                 else if (t->val->GetType() == AsmExprNode::LABEL)
@@ -164,7 +164,7 @@ std::string InstructionParser::FormatInstruction(ocode* ins)
                 else
                 {
                     char buf[256];
-                    sprintf(buf, "%d", t->val->ival);
+                    sprintf(buf, "%d", (int)t->val->ival);
                     rv += buf;
                 }
                 break;
@@ -287,6 +287,8 @@ asmError InstructionParser::GetInstruction(OCODE* ins, Instruction*& newIns, std
                     break;
                 case op_shrd:
                 case op_shld:
+                case op_shufpd:
+                case op_shufps:
                     if (ins->oper3 && ins->oper3->mode == am_immed)
                         ins->oper3->length = 0;
                     break;

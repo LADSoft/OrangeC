@@ -1,32 +1,32 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "compiler.h"
 #include "rtti.h"
 
 extern COMPILER_PARAMS cparams;
-extern NAMESPACEVALUES* localNameSpace;
+extern NAMESPACEVALUELIST* localNameSpace;
 extern const char* overloadNameTab[];
 extern TYPE stdpointer, stdvoid;
 extern int mangledNamesCount;
@@ -35,56 +35,56 @@ HASHTABLE* rttiSyms;
 
 // in enum e_bt order
 static const char* typeNames[] = {"bit",
-                            "bool",
-                            "signed char",
-                            "char",
-                            "unsigned char",
-                            "short",
-                            "char16_t",
-                            "unsigned short",
-                            "wchar_t",
-                            NULL,
-                            "int",
-                            "inative",
-                            "char32_t",
-                            "unsigned",
-                            "unative",
-                            "long",
-                            "unsigned long",
-                            "long long",
-                            "unsigned long long",
-                            "float",
-                            "double",
-                            "long double",
-                            "float imaginary",
-                            "double imaginary",
-                            "long double imaginary",
-                            "float complex",
-                            "double complex",
-                            "long double complex",
-                            "void",
-                            "__object",
-                            "__string"};
+                                  "bool",
+                                  "signed char",
+                                  "char",
+                                  "unsigned char",
+                                  "short",
+                                  "char16_t",
+                                  "unsigned short",
+                                  "wchar_t",
+                                  nullptr,
+                                  "int",
+                                  "inative",
+                                  "char32_t",
+                                  "unsigned",
+                                  "unative",
+                                  "long",
+                                  "unsigned long",
+                                  "long long",
+                                  "unsigned long long",
+                                  "float",
+                                  "double",
+                                  "long double",
+                                  "float imaginary",
+                                  "double imaginary",
+                                  "long double imaginary",
+                                  "float complex",
+                                  "double complex",
+                                  "long double complex",
+                                  "void",
+                                  "__object",
+                                  "__string"};
 
 void rtti_init(void) { rttiSyms = CreateHashTable(32); }
 #ifndef PARSER_ONLY
-static char* addNameSpace(char* buf, SYMBOL* sp)
+static char* addNameSpace(char* buf, SYMBOL* sym)
 {
-    if (!sp)
+    if (!sym)
         return buf;
-    buf = addNameSpace(buf, sp->parentNameSpace);
-    my_sprintf(buf, "%s::", sp->name);
+    buf = addNameSpace(buf, sym->parentNameSpace);
+    my_sprintf(buf, "%s::", sym->name);
     return buf + strlen(buf);
 }
-static char* addParent(char* buf, SYMBOL* sp)
+static char* addParent(char* buf, SYMBOL* sym)
 {
-    if (!sp)
+    if (!sym)
         return buf;
-    if (sp->parentClass)
-        buf = addParent(buf, sp->parentClass);
+    if (sym->parentClass)
+        buf = addParent(buf, sym->parentClass);
     else
-        buf = addNameSpace(buf, sp->parentNameSpace);
-    my_sprintf(buf, "%s", sp->name);
+        buf = addNameSpace(buf, sym->parentNameSpace);
+    my_sprintf(buf, "%s", sym->name);
     return buf + strlen(buf);
 }
 static char* RTTIGetDisplayName(char* buf, TYPE* tp)
@@ -134,7 +134,7 @@ static char* RTTIGetDisplayName(char* buf, TYPE* tp)
     }
     else if (isfunction(tp))
     {
-        HASHREC* hr = basetype(tp)->syms->table[0];
+        SYMLIST* hr = basetype(tp)->syms->table[0];
         buf = RTTIGetDisplayName(buf, tp->btp);
         *buf++ = '(';
         *buf++ = '*';
@@ -142,7 +142,7 @@ static char* RTTIGetDisplayName(char* buf, TYPE* tp)
         *buf++ = '(';
         while (hr)
         {
-            buf = RTTIGetDisplayName(buf, ((SYMBOL*)hr->p)->tp);
+            buf = RTTIGetDisplayName(buf, hr->p->tp);
             if (hr->next)
             {
                 *buf++ = ',';
@@ -176,44 +176,44 @@ static char* RTTIGetName(char* buf, TYPE* tp)
 static void RTTIDumpHeader(SYMBOL* xtSym, TYPE* tp, int flags)
 {
     char name[4096], *p;
-    SYMBOL* sp = NULL;
+    SYMBOL* sym = nullptr;
     if (ispointer(tp))
     {
-        sp = RTTIDumpType(basetype(tp)->btp);
+        sym = RTTIDumpType(basetype(tp)->btp);
         flags = isarray(tp) ? XD_ARRAY : XD_POINTER;
     }
     else if (isref(tp))
     {
-        sp = RTTIDumpType(basetype(tp)->btp);
+        sym = RTTIDumpType(basetype(tp)->btp);
         flags = XD_REF;
     }
     else if (isstructured(tp) && !basetype(tp)->sp->trivialCons)
     {
-        sp = search(overloadNameTab[CI_DESTRUCTOR], basetype(tp)->syms);
+        sym = search(overloadNameTab[CI_DESTRUCTOR], basetype(tp)->syms);
         // at this point if the class was never instantiated the destructor
         // may not have been created...
-        if (sp)
+        if (sym)
         {
-            if (!sp->inlineFunc.stmt && !sp->deferredCompile)
+            if (!sym->inlineFunc.stmt && !sym->deferredCompile)
             {
                 EXPRESSION* exp = intNode(en_c_i, 0);
-                callDestructor(basetype(tp)->sp, NULL, &exp, NULL, true, false, true);
+                callDestructor(basetype(tp)->sp, nullptr, &exp, nullptr, true, false, true);
                 if (exp && exp->left)
-                    sp = exp->left->v.func->sp;
+                    sym = exp->left->v.func->sp;
             }
             else
             {
-                sp = (SYMBOL*)basetype(sp->tp)->syms->table[0]->p;
+                sym = (SYMBOL*)basetype(sym->tp)->syms->table[0]->p;
             }
-            GENREF(sp);
+            GENREF(sym);
         }
     }
 
     cseg();
     gen_virtual(xtSym, false);
-    if (sp)
+    if (sym)
     {
-        genref(sp, 0);
+        genref(sym, 0);
     }
     else
     {
@@ -229,8 +229,8 @@ static void RTTIDumpHeader(SYMBOL* xtSym, TYPE* tp, int flags)
 static void DumpEnclosedStructs(TYPE* tp, bool genXT)
 {
     SYMBOL* sym = basetype(tp)->sp;
-    HASHREC* hr;
-    tp = PerformDeferredInitialization(tp, NULL);
+    SYMLIST* hr;
+    tp = PerformDeferredInitialization(tp, nullptr);
     if (sym->vbaseEntries)
     {
         VBASEENTRY* entries = sym->vbaseEntries;
@@ -291,7 +291,7 @@ static void DumpEnclosedStructs(TYPE* tp, bool genXT)
         hr = sym->tp->syms->table[0];
         while (hr)
         {
-            SYMBOL* member = (SYMBOL*)hr->p;
+            SYMBOL* member = hr->p;
             TYPE* tp = member->tp;
             int flags = XD_CL_ENCLOSED;
             if (isref(tp))
@@ -304,7 +304,7 @@ static void DumpEnclosedStructs(TYPE* tp, bool genXT)
             tp = basetype(tp);
             if (isstructured(tp))
             {
-                tp = PerformDeferredInitialization(tp, NULL);
+                tp = PerformDeferredInitialization(tp, nullptr);
                 if (genXT)
                 {
                     RTTIDumpType(tp);
@@ -312,7 +312,7 @@ static void DumpEnclosedStructs(TYPE* tp, bool genXT)
                 /*
                 else
                 {
-                    SYMBOL *xtSym;
+                    SYMBOL*xtSym;
                     char name[4096];
                     RTTIGetName(name, tp);
                     xtSym = search(name, rttiSyms);
@@ -358,7 +358,7 @@ static void RTTIDumpArithmetic(SYMBOL* xtSym, TYPE* tp)
 #endif
 SYMBOL* RTTIDumpType(TYPE* tp)
 {
-    SYMBOL* xtSym = NULL;
+    SYMBOL* xtSym = nullptr;
 #ifndef PARSER_ONLY
     if (cparams.prm_xcept)
     {
@@ -367,7 +367,7 @@ SYMBOL* RTTIDumpType(TYPE* tp)
         xtSym = search(name, rttiSyms);
         if (!xtSym)
         {
-            xtSym = makeID(sc_global, tp, NULL, litlate(name));
+            xtSym = makeID(sc_global, tp, nullptr, litlate(name));
             xtSym->linkage = lk_virtual;
             if (isstructured(tp))
                 xtSym->attribs.inheritable.linkage2 = basetype(tp)->sp->attribs.inheritable.linkage2;
@@ -623,7 +623,7 @@ static void XCExpression(EXPRESSION* node, XCLIST*** listPtr)
             XCExpression(node->left, listPtr);
             break;
         case en_thisref:
-            **listPtr = (XCLIST *) Alloc(sizeof(XCLIST));
+            **listPtr = (XCLIST*)Alloc(sizeof(XCLIST));
             (**listPtr)->exp = node;
             (*listPtr) = &(**listPtr)->next;
             XCExpression(node->left, listPtr);
@@ -655,7 +655,7 @@ static void XCExpression(EXPRESSION* node, XCLIST*** listPtr)
 }
 static void XCStmt(STATEMENT* block, XCLIST*** listPtr)
 {
-    while (block != NULL)
+    while (block != nullptr)
     {
         switch (block->type)
         {
@@ -665,7 +665,7 @@ static void XCStmt(STATEMENT* block, XCLIST*** listPtr)
             case st___catch:
             case st___finally:
             case st___fault:
-                **listPtr = (XCLIST *)Alloc(sizeof(XCLIST));
+                **listPtr = (XCLIST*)Alloc(sizeof(XCLIST));
                 (**listPtr)->stmt = block;
                 (**listPtr)->byStmt = true;
                 (*listPtr) = &(**listPtr)->next;
@@ -743,7 +743,7 @@ static SYMBOL* DumpXCSpecifiers(SYMBOL* funcsp)
             }
         }
         my_sprintf(name, "@$xct%s", funcsp->decoratedName);
-        xcSym = makeID(sc_global, &stdpointer, NULL, litlate(name));
+        xcSym = makeID(sc_global, &stdpointer, nullptr, litlate(name));
         xcSym->linkage = lk_virtual;
         xcSym->decoratedName = xcSym->errname = xcSym->name;
         cseg();
@@ -785,7 +785,7 @@ static bool allocatedXC(EXPRESSION* exp)
             return false;
     }
 }
-static int evalofs(EXPRESSION* exp, SYMBOL *funcsp)
+static int evalofs(EXPRESSION* exp, SYMBOL* funcsp)
 {
     switch (exp->type)
     {
@@ -820,7 +820,7 @@ void XTDumpTab(SYMBOL* funcsp)
 {
     if (funcsp->xc && funcsp->xc->xctab && cparams.prm_xcept)
     {
-        XCLIST *list = NULL, **listPtr = &list, *p;
+        XCLIST *list = nullptr, **listPtr = &list, *p;
         SYMBOL* throwSym;
         XCStmt(funcsp->inlineFunc.stmt, &listPtr);
         p = list;

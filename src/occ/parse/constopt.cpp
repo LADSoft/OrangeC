@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 /*
@@ -546,7 +546,7 @@ FPF refloat(EXPRESSION* node)
             break;
 
         default:
-            rv = { 0 };
+            rv = 0;
             break;
     }
     return rv;
@@ -600,24 +600,24 @@ ULLONG_TYPE reint(EXPRESSION* node)
             rv = CastToInt(-ISZ_ULONGLONG, node->v.i);
             break;
         case en_c_f:
-            rv = CastToInt(-ISZ_ULONGLONG, (LLONG_TYPE) node->v.f);
+            rv = CastToInt(-ISZ_ULONGLONG, (LLONG_TYPE)node->v.f);
             break;
         case en_c_d:
-            rv = CastToInt(-ISZ_ULONGLONG, (LLONG_TYPE) node->v.f);
+            rv = CastToInt(-ISZ_ULONGLONG, (LLONG_TYPE)node->v.f);
             break;
 
         case en_c_ld:
-            rv = CastToInt(-ISZ_ULONGLONG, (LLONG_TYPE) node->v.f);
+            rv = CastToInt(-ISZ_ULONGLONG, (LLONG_TYPE)node->v.f);
             break;
         case en_c_fc:
-            rv = CastToInt(-ISZ_ULONGLONG, (LLONG_TYPE) node->v.c.r);
+            rv = CastToInt(-ISZ_ULONGLONG, (LLONG_TYPE)node->v.c.r);
             break;
         case en_c_dc:
-            rv = CastToInt(-ISZ_ULONGLONG, (LLONG_TYPE) node->v.c.r);
+            rv = CastToInt(-ISZ_ULONGLONG, (LLONG_TYPE)node->v.c.r);
             break;
 
         case en_c_ldc:
-            rv = CastToInt(-ISZ_ULONGLONG, (LLONG_TYPE) node->v.c.r);
+            rv = CastToInt(-ISZ_ULONGLONG, (LLONG_TYPE)node->v.c.r);
             break;
         case en_c_fi:
         case en_c_di:
@@ -664,7 +664,7 @@ void dooper(EXPRESSION** node, int mode)
             if (isunsignedexpr(ep2))
                 ep2->v.f = (ULLONG_TYPE)ep2->v.i;
             else
-               ep2->v.f = (LLONG_TYPE)ep2->v.i;
+                ep2->v.f = (LLONG_TYPE)ep2->v.i;
             ep2->type = en_c_d;
             refloat(ep2);
         }
@@ -697,18 +697,18 @@ void dooper(EXPRESSION** node, int mode)
                     case 2:
                         ep->type = maxfloattype(ep1, ep2);
                         if (isunsignedexpr(ep1))
-                            temp = (ULLONG_TYPE) ep1->v.i;
+                            temp = (ULLONG_TYPE)ep1->v.i;
                         else
-                            temp = (LLONG_TYPE) ep1->v.i;
+                            temp = (LLONG_TYPE)ep1->v.i;
                         ep->v.f = temp + ep2->v.f;
                         refloat(ep);
                         break;
                     case 3:
                         ep->type = maxfloattype(ep1, ep2);
                         if (isunsignedexpr(ep2))
-                            temp = (ULLONG_TYPE) ep2->v.i;
+                            temp = (ULLONG_TYPE)ep2->v.i;
                         else
-                            temp = (LLONG_TYPE) ep2->v.i;
+                            temp = (LLONG_TYPE)ep2->v.i;
                         ep->v.f = ep1->v.f + temp;
                         refloat(ep);
                         break;
@@ -745,7 +745,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c.r = (LLONG_TYPE) ep2->v.i;
+                        ep->v.c.r = (LLONG_TYPE)ep2->v.i;
                         ep->v.c.i = ep1->v.f;
                         refloat(ep);
                         break;
@@ -754,7 +754,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c.r = (LLONG_TYPE) ep1->v.i;
+                        ep->v.c.r = (LLONG_TYPE)ep1->v.i;
                         ep->v.c.i = ep2->v.f;
                         refloat(ep);
                         break;
@@ -800,7 +800,7 @@ void dooper(EXPRESSION** node, int mode)
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
                         ep->v.c.r = ep1->v.c.r + ep2->v.c.r;
-                        ep->v.c.i = ep1->v.c.i+ ep2->v.c.i;
+                        ep->v.c.i = ep1->v.c.i + ep2->v.c.i;
                         refloat(ep);
                         break;
                     case 23:
@@ -809,9 +809,9 @@ void dooper(EXPRESSION** node, int mode)
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
                         if (isunsignedexpr(ep2))
-                            temp = (ULLONG_TYPE) ep2->v.i;
+                            temp = (ULLONG_TYPE)ep2->v.i;
                         else
-                            temp = (LLONG_TYPE) ep2->v.i;
+                            temp = (LLONG_TYPE)ep2->v.i;
                         ep->v.c.r = ep1->v.c.r + temp;
                         ep->v.c.i = ep1->v.c.i;
                         refloat(ep);
@@ -822,10 +822,10 @@ void dooper(EXPRESSION** node, int mode)
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
                         if (isunsignedexpr(ep1))
-                            temp = (ULLONG_TYPE) ep1->v.i;
+                            temp = (ULLONG_TYPE)ep1->v.i;
                         else
-                            temp = (LLONG_TYPE) ep1->v.i;
-                        ep->v.c.r = ep2->v.c.r +  temp;
+                            temp = (LLONG_TYPE)ep1->v.i;
+                        ep->v.c.r = ep2->v.c.r + temp;
                         ep->v.c.i = ep2->v.c.i;
                         refloat(ep);
                         break;
@@ -844,28 +844,28 @@ void dooper(EXPRESSION** node, int mode)
                     case 2:
                         ep->type = maxfloattype(ep1, ep2);
                         if (isunsignedexpr(ep1))
-                            temp = (ULLONG_TYPE) ep1->v.i;
+                            temp = (ULLONG_TYPE)ep1->v.i;
                         else
-                            temp = (LLONG_TYPE) ep1->v.i;
+                            temp = (LLONG_TYPE)ep1->v.i;
                         ep->v.f = temp - ep2->v.f;
                         refloat(ep);
                         break;
                     case 3:
                         ep->type = maxfloattype(ep1, ep2);
                         if (isunsignedexpr(ep2))
-                            temp = (ULLONG_TYPE) ep2->v.i;
+                            temp = (ULLONG_TYPE)ep2->v.i;
                         else
-                            temp = (LLONG_TYPE) ep2->v.i;
-                        ep->v.f = ep1->v.f -temp;
+                            temp = (LLONG_TYPE)ep2->v.i;
+                        ep->v.f = ep1->v.f - temp;
                         refloat(ep);
                         break;
                     case 4:
                         ep->type = maxfloattype(ep1, ep2);
                         if (isunsignedexpr(ep1))
-                            temp = (ULLONG_TYPE) ep1->v.i;
+                            temp = (ULLONG_TYPE)ep1->v.i;
                         else
-                            temp = (LLONG_TYPE) ep1->v.i;
-                        ep->v.f = ep1->v.f -ep2->v.f;
+                            temp = (LLONG_TYPE)ep1->v.i;
+                        ep->v.f = ep1->v.f - ep2->v.f;
                         refloat(ep);
                         break;
                     case 9:
@@ -890,7 +890,7 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                     case 11:
                         ep->type = maximaginarytype(ep1, ep2);
-                        ep->v.f = ep1->v.f -ep2->v.f;
+                        ep->v.f = ep1->v.f - ep2->v.f;
                         refloat(ep);
                         break;
                     case 14:
@@ -899,9 +899,9 @@ void dooper(EXPRESSION** node, int mode)
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
                         if (isunsignedexpr(ep2))
-                            ep->v.c.r = (ULLONG_TYPE) ep2->v.i;
+                            ep->v.c.r = (ULLONG_TYPE)ep2->v.i;
                         else
-                            ep->v.c.r = (LLONG_TYPE) ep2->v.i;
+                            ep->v.c.r = (LLONG_TYPE)ep2->v.i;
                         ep->v.c.i = ep1->v.f;
                         refloat(ep);
                         break;
@@ -911,9 +911,9 @@ void dooper(EXPRESSION** node, int mode)
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
                         if (isunsignedexpr(ep1))
-                            ep->v.c.r = (ULLONG_TYPE) ep1->v.i;
+                            ep->v.c.r = (ULLONG_TYPE)ep1->v.i;
                         else
-                            ep->v.c.r = (LLONG_TYPE) ep1->v.i;
+                            ep->v.c.r = (LLONG_TYPE)ep1->v.i;
                         ep->v.c.i = ep2->v.f;
                         ep->v.c.i.Negate();
                         refloat(ep);
@@ -925,7 +925,7 @@ void dooper(EXPRESSION** node, int mode)
                                            : 0;
                         ep->v.c.r = ep2->v.c.r;
                         ep->v.c.r.Negate();
-                        ep->v.c.i = ep1->v.f -ep2->v.c.i;
+                        ep->v.c.i = ep1->v.f - ep2->v.c.i;
                         refloat(ep);
                         break;
                     case 17:
@@ -942,7 +942,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c.r = ep1->v.f -ep2->v.c.r;
+                        ep->v.c.r = ep1->v.f - ep2->v.c.r;
                         ep->v.c.i = ep2->v.c.i;
                         ep->v.c.i.Negate();
                         refloat(ep);
@@ -971,9 +971,9 @@ void dooper(EXPRESSION** node, int mode)
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
                         if (isunsignedexpr(ep2))
-                            temp = (ULLONG_TYPE) ep2->v.i;
+                            temp = (ULLONG_TYPE)ep2->v.i;
                         else
-                            temp = (LLONG_TYPE) ep2->v.i;
+                            temp = (LLONG_TYPE)ep2->v.i;
                         ep->v.c.r = ep1->v.c.r - temp;
                         ep->v.c.i = ep1->v.c.i;
                         refloat(ep);
@@ -984,9 +984,9 @@ void dooper(EXPRESSION** node, int mode)
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
                         if (isunsignedexpr(ep1))
-                            temp = (ULLONG_TYPE) ep1->v.i;
+                            temp = (ULLONG_TYPE)ep1->v.i;
                         else
-                            temp = (LLONG_TYPE) ep1->v.i;
+                            temp = (LLONG_TYPE)ep1->v.i;
                         ep->v.c.r = temp - ep2->v.c.r;
                         ep->v.c.i = ep2->v.c.i;
                         ep->v.c.i.Negate();
@@ -1009,18 +1009,18 @@ void dooper(EXPRESSION** node, int mode)
                     case 2:
                         ep->type = maxfloattype(ep1, ep2);
                         if (isunsignedexpr(ep1))
-                            temp = (ULLONG_TYPE) ep1->v.i;
+                            temp = (ULLONG_TYPE)ep1->v.i;
                         else
-                            temp = (LLONG_TYPE) ep1->v.i;
+                            temp = (LLONG_TYPE)ep1->v.i;
                         ep->v.f = temp * ep2->v.f;
                         refloat(ep);
                         break;
                     case 3:
                         ep->type = maxfloattype(ep1, ep2);
                         if (isunsignedexpr(ep2))
-                            temp = (ULLONG_TYPE) ep2->v.i;
+                            temp = (ULLONG_TYPE)ep2->v.i;
                         else
-                            temp = (LLONG_TYPE) ep2->v.i;
+                            temp = (LLONG_TYPE)ep2->v.i;
                         ep->v.f = ep1->v.f * temp;
                         refloat(ep);
                         break;
@@ -1048,18 +1048,18 @@ void dooper(EXPRESSION** node, int mode)
                     case 14:
                         ep->type = maximaginarytype(ep1, ep2);
                         if (isunsignedexpr(ep2))
-                            temp = (ULLONG_TYPE) ep2->v.i;
+                            temp = (ULLONG_TYPE)ep2->v.i;
                         else
-                            temp = (LLONG_TYPE) ep2->v.i;
+                            temp = (LLONG_TYPE)ep2->v.i;
                         ep->v.f = ep1->v.f * temp;
                         refloat(ep);
                         break;
                     case 15:
                         ep->type = maximaginarytype(ep1, ep2);
                         if (isunsignedexpr(ep1))
-                            temp = (ULLONG_TYPE) ep1->v.i;
+                            temp = (ULLONG_TYPE)ep1->v.i;
                         else
-                            temp = (LLONG_TYPE) ep1->v.i;
+                            temp = (LLONG_TYPE)ep1->v.i;
                         ep->v.f = temp * ep2->v.f;
                         refloat(ep);
                         break;
@@ -1148,9 +1148,9 @@ void dooper(EXPRESSION** node, int mode)
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
                         if (isunsignedexpr(ep1))
-                            temp = (ULLONG_TYPE) ep1->v.i;
+                            temp = (ULLONG_TYPE)ep1->v.i;
                         else
-                            temp = (LLONG_TYPE) ep1->v.i;
+                            temp = (LLONG_TYPE)ep1->v.i;
                         ep->v.c.r = temp * ep2->v.c.r;
                         ep->v.c.i = temp * ep2->v.c.i;
                         refloat(ep);
@@ -1179,18 +1179,18 @@ void dooper(EXPRESSION** node, int mode)
                     case 2:
                         ep->type = maxfloattype(ep1, ep2);
                         if (isunsignedexpr(ep1))
-                            temp = (ULLONG_TYPE) ep1->v.i;
+                            temp = (ULLONG_TYPE)ep1->v.i;
                         else
-                            temp = (LLONG_TYPE) ep1->v.i;
+                            temp = (LLONG_TYPE)ep1->v.i;
                         ep->v.f = temp / ep2->v.f;
                         refloat(ep);
                         break;
                     case 3:
                         ep->type = maxfloattype(ep1, ep2);
                         if (isunsignedexpr(ep2))
-                            temp = (ULLONG_TYPE) ep2->v.i;
+                            temp = (ULLONG_TYPE)ep2->v.i;
                         else
-                            temp = (LLONG_TYPE) ep2->v.i;
+                            temp = (LLONG_TYPE)ep2->v.i;
                         ep->v.f = ep1->v.f / temp;
                         refloat(ep);
                         break;
@@ -1229,18 +1229,18 @@ void dooper(EXPRESSION** node, int mode)
                     case 14:
                         ep->type = maximaginarytype(ep1, ep2);
                         if (isunsignedexpr(ep2))
-                            temp = (ULLONG_TYPE) ep2->v.i;
+                            temp = (ULLONG_TYPE)ep2->v.i;
                         else
-                            temp = (LLONG_TYPE) ep2->v.i;
+                            temp = (LLONG_TYPE)ep2->v.i;
                         ep->v.f = ep1->v.f / temp;
                         refloat(ep);
                         break;
                     case 15:
                         ep->type = maximaginarytype(ep1, ep2);
                         if (isunsignedexpr(ep1))
-                            temp = (ULLONG_TYPE) ep1->v.i;
+                            temp = (ULLONG_TYPE)ep1->v.i;
                         else
-                            temp = (LLONG_TYPE) ep1->v.i;
+                            temp = (LLONG_TYPE)ep1->v.i;
                         ep->v.f = temp / ep2->v.f;
                         ep->v.f.Negate();
                         refloat(ep);
@@ -1292,11 +1292,11 @@ void dooper(EXPRESSION** node, int mode)
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
                         if (isunsignedexpr(ep2))
-                            temp = (ULLONG_TYPE) ep2->v.i;
+                            temp = (ULLONG_TYPE)ep2->v.i;
                         else
-                            temp = (LLONG_TYPE) ep2->v.i;
-                        ep->v.c.r = ep1->v.c.r /temp;
-                        ep->v.c.i = ep1->v.c.i /temp;
+                            temp = (LLONG_TYPE)ep2->v.i;
+                        ep->v.c.r = ep1->v.c.r / temp;
+                        ep->v.c.i = ep1->v.c.i / temp;
                         refloat(ep);
                         break;
                     default:
@@ -1715,7 +1715,7 @@ int opt0(EXPRESSION** node)
                     }
                     else
 #endif
-                    if (!dval.ValueIsNegative() && dval.ValueIsOne())
+                        if (!dval.ValueIsNegative() && dval.ValueIsOne())
                         *node = ep->right;
                     else if (dval.ValueIsNegative() && dval.ValueIsOne())
                         *node = exprNode(negtype, ep->right, 0);
@@ -2367,45 +2367,45 @@ int opt0(EXPRESSION** node)
             if (!templateNestingCount)
             {
                 TEMPLATESELECTOR* tsl = (*node)->v.templateSelector;
-                SYMBOL* ts = tsl->next->sym;
-                SYMBOL* sp = ts;
+                SYMBOL* ts = tsl->next->sp;
+                SYMBOL* sym = ts;
                 TEMPLATESELECTOR* find = tsl->next->next;
                 if (tsl->next->isTemplate)
                 {
                     TEMPLATEPARAMLIST* current = tsl->next->templateParams;
-                    sp = GetClassTemplate(ts, current, true);
+                    sym = GetClassTemplate(ts, current, true);
                 }
-                if (sp && sp->tp->type == bt_templateselector)
+                if (sym && sym->tp->type == bt_templateselector)
                 {
-                    TYPE* tp = sp->tp;
-                    tp = SynthesizeType(tp, NULL, false);
+                    TYPE* tp = sym->tp;
+                    tp = SynthesizeType(tp, nullptr, false);
                     if (tp && isstructured(tp))
-                        sp = basetype(tp)->sp;
+                        sym = basetype(tp)->sp;
                 }
-                if (sp)
+                if (sym)
                 {
-                    sp = basetype(PerformDeferredInitialization(sp->tp, NULL))->sp;
-                    while (find && sp)
+                    sym = basetype(PerformDeferredInitialization(sym->tp, nullptr))->sp;
+                    while (find && sym)
                     {
-                        SYMBOL* spo = sp;
+                        SYMBOL* spo = sym;
                         if (!isstructured(spo->tp))
                             break;
 
-                        sp = search(find->name, spo->tp->syms);
-                        if (!sp)
+                        sym = search(find->name, spo->tp->syms);
+                        if (!sym)
                         {
-                            sp = classdata(find->name, spo, NULL, false, false);
-                            if (sp == (SYMBOL*)-1)
-                                sp = NULL;
+                            sym = classdata(find->name, spo, nullptr, false, false);
+                            if (sym == (SYMBOL*)-1)
+                                sym = nullptr;
                         }
                         find = find->next;
                     }
-                    if (!find && sp)
+                    if (!find && sym)
                     {
-                        if (sp->storage_class == sc_constant)
+                        if (sym->storage_class == sc_constant)
                         {
-                            optimize_for_constants(&sp->init->exp);
-                            *node = sp->init->exp;
+                            optimize_for_constants(&sym->init->exp);
+                            *node = sym->init->exp;
                             return true;
                         }
                     }
@@ -2417,7 +2417,7 @@ int opt0(EXPRESSION** node)
             if (!templateNestingCount && (*node)->v.sp->tp->templateParam->p->type == kw_int)
             {
                 SYMBOL* sym = (*node)->v.sp;
-                TEMPLATEPARAMLIST* found = NULL;
+                TEMPLATEPARAMLIST* found = nullptr;
                 STRUCTSYM* search = structSyms;
                 while (search && !found)
                 {
@@ -2962,7 +2962,7 @@ int fold_const(EXPRESSION* node)
             if (node->left->type == en_memberptr)
             {
                 node->type = en_c_i;
-                node->left = NULL;
+                node->left = nullptr;
                 node->v.i = 1;
                 rv = true;
             }
@@ -3625,7 +3625,7 @@ LEXEME* optimized_expression(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, 
     if (commaallowed)
         lex = expression(lex, funcsp, atp, tp, expr, 0);
     else
-        lex = expression_no_comma(lex, funcsp, atp, tp, expr, NULL, 0);
+        lex = expression_no_comma(lex, funcsp, atp, tp, expr, nullptr, 0);
     if (*tp)
     {
         optimize_for_constants(expr);

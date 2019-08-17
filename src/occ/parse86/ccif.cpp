@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "compiler.h"
@@ -150,13 +150,14 @@ static int WriteStructMembers(SYMBOL* sym, SYMBOL* parent, sqlite3_int64 struct_
 {
     if (basetype(sym->tp)->syms)
     {
-        HASHREC* hr = basetype(sym->tp)->syms->table[0];
+        SYMLIST* hr = basetype(sym->tp)->syms->table[0];
         if (!isfunction(sym->tp))
         {
             BASECLASS* bases = sym->baseClasses;
             while (bases)
             {
-                order = WriteStructMembers(bases->cls, parent, struct_id, file_id, order, true, (e_ac) imin(bases->cls->access, access));
+                order =
+                    WriteStructMembers(bases->cls, parent, struct_id, file_id, order, true, (e_ac)imin(bases->cls->access, access));
                 bases = bases->next;
             }
         }
@@ -241,8 +242,8 @@ static void DumpStructs(void)
     LIST* item = symList;
     while (item)
     {
-        SYMBOL* sym = (SYMBOL *)item->data;
-        if (sym->storage_class != sc_label && istype(sym) && isstructured(sym->tp) && sym->tp->btp->type != bt_typedef) // DAL fix
+        SYMBOL* sym = (SYMBOL*)item->data;
+        if (sym->storage_class != sc_label && istype(sym) && isstructured(sym->tp) && sym->tp->btp->type != bt_typedef)  // DAL fix
         {
             sqlite3_int64 struct_id;
             if (ccWriteStructName(sym->decoratedName, &struct_id))
@@ -253,7 +254,7 @@ static void DumpStructs(void)
     item = symList;
     while (item)
     {
-        SYMBOL* sym = (SYMBOL *)item->data;
+        SYMBOL* sym = (SYMBOL*)item->data;
         if (sym->storage_class != sc_label && istype(sym) && isstructured(sym->tp) && sym->storage_class != sc_typedef &&
             sym->tp->syms)
         {
@@ -319,7 +320,7 @@ static void DumpSymbolType(SYMBOL* sym)
     if (isvolatile(sym->tp))
         type |= ST_VOLATILE;
         */
-    ccWriteSymbolType(name, main_id, sym->origdeclfile ? sym->origdeclfile : (char *)"$$$", sym->origdeclline, sym->ccEndLine, type);
+    ccWriteSymbolType(name, main_id, sym->origdeclfile ? sym->origdeclfile : (char*)"$$$", sym->origdeclline, sym->ccEndLine, type);
 }
 static void DumpSymbol(SYMBOL* sym);
 static void DumpNamespace(SYMBOL* sym)
@@ -393,13 +394,13 @@ static void DumpSymbol(SYMBOL* sym)
         if (sym->storage_class == sc_namespace)
             DumpNamespace(sym);
         // use sym->declline here to get real function addresses
-        else if (ccWriteLineNumbers(name, litlate(type_name), sym->declfile ? sym->declfile : (char *)"$$$", indirectCount, struct_id,
-                                    main_id, sym->declline, sym->ccEndLine, sym->endLine, isfunction(sym->tp), &id))
+        else if (ccWriteLineNumbers(name, litlate(type_name), sym->declfile ? sym->declfile : (char*)"$$$", indirectCount,
+                                    struct_id, main_id, sym->declline, sym->ccEndLine, sym->endLine, isfunction(sym->tp), &id))
         {
             if (isfunction(sym->tp) && sym->tp->syms)
             {
                 int order = 1;
-                HASHREC* hr = sym->tp->syms->table[0];
+                SYMLIST* hr = sym->tp->syms->table[0];
                 while (hr && ((SYMBOL*)hr->p)->storage_class == sc_parameter)
                 {
                     SYMBOL* st = (SYMBOL*)hr->p;
@@ -424,16 +425,16 @@ static void DumpSymbols(void)
     int i;
     while (item)
     {
-        SYMBOL* sym = (SYMBOL *) item->data;
+        SYMBOL* sym = (SYMBOL*)item->data;
         DumpSymbol(sym);
         item = item->next;
     }
     for (i = 0; i < GLOBALHASHSIZE; i++)
     {
-        HASHREC* hr = defsyms->table[i];
+        SYMLIST* hr = defsyms->table[i];
         while (hr)
         {
-            ccWriteSymbolType(((SYMBOL*)hr->p)->name, main_id, (char *)"$$$", 1, 0, ST_DEFINE);
+            ccWriteSymbolType(((SYMBOL*)hr->p)->name, main_id, (char*)"$$$", 1, 0, ST_DEFINE);
             hr = hr->next;
         }
     }
@@ -443,7 +444,7 @@ static void DumpLines(void)
     int i;
     for (i = 0; i < ccHash->size; i++)
     {
-        HASHREC* hr = ccHash->table[i];
+        SYMLIST* hr = ccHash->table[i];
         while (hr)
         {
             LINEINCLUDES* x = (LINEINCLUDES*)hr->p;
@@ -451,7 +452,7 @@ static void DumpLines(void)
             {
                 x->lineTop = 0;
                 x->dataSize = 1;
-                x->data = (char *)"";  // is a null
+                x->data = (char*)"";  // is a null
             }
             ccWriteLineData(x->fileId, main_id, x->data, x->dataSize, x->lineTop);
             hr = hr->next;
@@ -478,7 +479,7 @@ static void DumpFiles(void)
     time_t n = time(0);
     for (i = 0; i < ccHash->size; i++)
     {
-        HASHREC* hr = ccHash->table[i];
+        SYMLIST* hr = ccHash->table[i];
         while (hr)
         {
             LINEINCLUDES* l = (LINEINCLUDES*)hr->p;
@@ -507,7 +508,7 @@ void ccInsertUsing(SYMBOL* ns, SYMBOL* parentns, char* file, int line)
 {
     if (!skipThisFile)
     {
-        USING* susing = (USING *)Alloc(sizeof(USING));
+        USING* susing = (USING*)Alloc(sizeof(USING));
         susing->line = line;
         susing->file = file;
         susing->sym = ns;
@@ -520,7 +521,7 @@ void ccSetSymbol(SYMBOL* sp)
 {
     if (!skipThisFile)
     {
-        LIST* newItem = (LIST *)Alloc(sizeof(LIST));
+        LIST* newItem = (LIST*)Alloc(sizeof(LIST));
         if (sp->decoratedName)
         {
             newItem->next = symList;
@@ -549,7 +550,7 @@ void ccNewFile(char* fileName, bool main)
     if (!skipThisFile)
     {
         IncGlobalFlag();
-        l = (LINEINCLUDES *)Alloc(sizeof(LINEINCLUDES));
+        l = (LINEINCLUDES*)Alloc(sizeof(LINEINCLUDES));
         l->name = litlate(s);
         lastFile = l;
         l->fileId = 0;
@@ -585,7 +586,7 @@ void ccSetFileLine(char* filename, int lineno)
             lastFile->dataSize = lastFile->dataSize ? lastFile->dataSize * 2 : 100;
             if (lastFile->dataSize < (lineno + 8) / 8)
                 lastFile->dataSize = (lineno + 8) / 8;
-            lastFile->data = (char *)realloc(lastFile->data, lastFile->dataSize);
+            lastFile->data = (char*)realloc(lastFile->data, lastFile->dataSize);
             memset(lastFile->data + n, 0, lastFile->dataSize - n);
         }
         lastFile->lineTop = lineno;

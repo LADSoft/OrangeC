@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 /*
@@ -83,12 +83,12 @@ typedef struct _imode_
     struct expr* offset;  /* offset */
     struct expr* offset2; /* a second temp reg */
     struct expr* offset3; /* an address */
-    struct expr *vararg;
-//    struct exprlist
-//    {
-//        struct exprlist* next;
-//        struct expr* offset;
-//    } * vararg;
+    struct expr* vararg;
+    //    struct exprlist
+    //    {
+    //        struct exprlist* next;
+    //        struct expr* offset;
+    //    } * vararg;
     int scale; /* scale factor on the second temp reg */
     char useindx;
     char size;                    /* size */
@@ -119,7 +119,7 @@ typedef struct _phidata
 {
     int nblocks;
     int T0;
-    struct _phiblock *temps;
+    struct _phiblock* temps;
 } PHIDATA;
 
 /*
@@ -133,7 +133,8 @@ struct _basic_dag
     IMODE* right;
     struct ival
     {
-        union {
+        union
+        {
             /* values for constant nodes */
             LLONG_TYPE i;
             void* data; /* generic data, won't be filled in until after LCSE */
@@ -202,7 +203,7 @@ typedef struct quad
     int nullvararg : 1;
     int blockassign : 1;
     int atomic : 1; /* atomic instruction */
-    char fastcall; /* index for fastcall-related arg, positive for call sites and negative as callee */
+    char fastcall;  /* index for fastcall-related arg, positive for call sites and negative as callee */
     char oldmode;
     char novalue;
     char temps;
@@ -247,7 +248,7 @@ struct cases
     LLONG_TYPE bottom;
     LLONG_TYPE top;
     int count;
-    struct caseptrs *ptrs;
+    struct caseptrs* ptrs;
 };
 // clang-format off
 enum e_gt

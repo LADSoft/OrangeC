@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "compiler.h"
@@ -54,11 +54,11 @@ const char* tn_char16_t = "char16_t";
 const char* tn_char32_t = "char32_t";
 
 const char* cpp_funcname_tab[] = {"$bctr",  "$bdtr",   "$bcast",  "$bnew",   "$bdel",   "$badd",   "$bsub",   "$bmul",    "$bdiv",
-                            "$bshl",  "$bshr",   "$bmod",   "$bequ",   "$bneq",   "$blt",    "$bleq",   "$bgt",     "$bgeq",
-                            "$basn",  "$basadd", "$bassub", "$basmul", "$basdiv", "$basmod", "$basshl", "$bsasshr", "$basand",
-                            "$basor", "$basxor", "$binc",   "$bdec",   "$barray", "$bcall",  "$bstar",  "$barrow",  "$bcomma",
-                            "$blor",  "$bland",  "$bnot",   "$bor",    "$band",   "$bxor",   "$bcpl",   "$bnwa",    "$bdla",
-                            "$blit",  "$badd",   "$bsub",   "$bmul",   "$band",   0
+                                  "$bshl",  "$bshr",   "$bmod",   "$bequ",   "$bneq",   "$blt",    "$bleq",   "$bgt",     "$bgeq",
+                                  "$basn",  "$basadd", "$bassub", "$basmul", "$basdiv", "$basmod", "$basshl", "$bsasshr", "$basand",
+                                  "$basor", "$basxor", "$binc",   "$bdec",   "$barray", "$bcall",  "$bstar",  "$barrow",  "$bcomma",
+                                  "$blor",  "$bland",  "$bnot",   "$bor",    "$band",   "$bxor",   "$bcpl",   "$bnwa",    "$bdla",
+                                  "$blit",  "$badd",   "$bsub",   "$bmul",   "$band",   0
 
 };
 const char* xlate_tab[] = {
@@ -109,8 +109,8 @@ const char* unmang_intrins(char* buf, const char* name, const char* last)
                     // fallthrough
                 case 0:  // new
                 {
-                    const char *p = last;
-                    char *q = buf;
+                    const char* p = last;
+                    char* q = buf;
                     while (*p && *p != ':')
                         *q++ = *p++;
                     *q = 0;

@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <stdio.h>
@@ -66,14 +66,14 @@ extern int fastcallAlias;
 extern FILE *outputFile, *browseFile;
 extern char infile[];
 extern int usingEsp;
-extern AMODE* singleLabel, *doubleLabel, *zerolabel;
+extern AMODE *singleLabel, *doubleLabel, *zerolabel;
 LIST* includedFiles;
 InstructionParser* instructionParser;
 Section* currentSection;
 
 static const char* segnames[] = {0,         "code",     "data",     "bss",        "string",     "const",
-                           "tls",     "cstartup", "crundown", "tlsstartup", "tlsrundown", "codefix",
-                           "datafix", "lines",    "types",    "symbols",    "browse"};
+                                 "tls",     "cstartup", "crundown", "tlsstartup", "tlsrundown", "codefix",
+                                 "datafix", "lines",    "types",    "symbols",    "browse"};
 
 static int segAlignsDefault[] = {1, 2, 8, 8, 2, 8, 8, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
 static int segFlags[] = {0,
@@ -175,7 +175,7 @@ void dbginit(void)
     autoCount = 0;
 }
 
-void debug_outputtypedef(SYMBOL* sp) { typedefs.push_back(sp); }
+void debug_outputtypedef(SYMBOL* sym) { typedefs.push_back(sym); }
 
 void outcode_file_init(void)
 {
@@ -207,17 +207,17 @@ void outcode_func_init(void)
 
 void omf_dump_browsefile(BROWSEFILE* brf) { browseFiles = brf; }
 void omf_dump_browsedata(BROWSEINFO* bri) { browseInfo.push_back(bri); }
-void omf_globaldef(SYMBOL* sp) { globals.insert(sp); }
-void omf_put_extern(SYMBOL* sp, int code)
+void omf_globaldef(SYMBOL* sym) { globals.insert(sym); }
+void omf_put_extern(SYMBOL* sym, int code)
 {
-    externs.insert(sp);
-    std::string name = sp->decoratedName;
+    externs.insert(sym);
+    std::string name = sym->decoratedName;
     Label* l = new Label(name, lblExterns.size(), 0);
     l->SetExtern(true);
     lblExterns[l->GetName()] = l;
 }
-void omf_put_impfunc(SYMBOL* sp, char* file) { impfuncs.push_back(sp); }
-void omf_put_expfunc(SYMBOL* sp) { expfuncs.push_back(sp); }
+void omf_put_impfunc(SYMBOL* sym, char* file) { impfuncs.push_back(sym); }
+void omf_put_expfunc(SYMBOL* sym) { expfuncs.push_back(sym); }
 void omf_put_includelib(char* name) { includelibs.push_back(name); }
 
 Label* LookupLabel(const std::string& string)
@@ -552,7 +552,7 @@ void output_obj_file(void)
 
 void compile_start(char* name)
 {
-    LIST* newItem = (LIST*)(LIST *)beGlobalAlloc(sizeof(LIST));
+    LIST* newItem = (LIST*)(LIST*)beGlobalAlloc(sizeof(LIST));
     newItem->data = beGlobalAlloc(strlen(name) + 1);
     strcpy((char*)newItem->data, name);
 
@@ -565,7 +565,7 @@ void include_start(char* name, int num)
 {
     if (num > lastIncludeNum)
     {
-        LIST* newItem = (LIST*)(LIST *)beGlobalAlloc(sizeof(LIST));
+        LIST* newItem = (LIST*)(LIST*)beGlobalAlloc(sizeof(LIST));
         newItem->data = beGlobalAlloc(strlen(name) + 1);
         strcpy((char*)newItem->data, name);
 
@@ -618,9 +618,9 @@ static Label* GetLabel(int lbl)
     }
     return l;
 }
-void outcode_gen_strlab(SYMBOL* sp)
+void outcode_gen_strlab(SYMBOL* sym)
 {
-    std::string name = sp->decoratedName;
+    std::string name = sym->decoratedName;
     Label* l = new Label(name, strlabs.size(), currentSection->GetSect());
     strlabs.push_back(l);
     lblpubs[name] = l;
@@ -748,9 +748,9 @@ void outcode_dump_muldivval(void)
 
 /*-------------------------------------------------------------------------*/
 
-void outcode_genref(SYMBOL* sp, int offset)
+void outcode_genref(SYMBOL* sym, int offset)
 {
-    Fixup* f = gen_symbol_fixup(sp, offset, false);
+    Fixup* f = gen_symbol_fixup(sym, offset, false);
     int i = 0;
     emit(&i, 4, f, 0);
 }
@@ -774,9 +774,9 @@ void outcode_gen_labdifref(int n1, int n2)
 
 /*-------------------------------------------------------------------------*/
 
-void outcode_gensrref(SYMBOL* sp, int val)
+void outcode_gensrref(SYMBOL* sym, int val)
 {
-    Fixup* f = gen_symbol_fixup(sp, 0, false);
+    Fixup* f = gen_symbol_fixup(sym, 0, false);
     char buf[8] = {};
     buf[1] = val;
 
@@ -857,21 +857,21 @@ void outcode_put_label(int lab) { InsertLabel(lab); }
 
 /*-------------------------------------------------------------------------*/
 
-void outcode_start_virtual_seg(SYMBOL* sp, int data)
+void outcode_start_virtual_seg(SYMBOL* sym, int data)
 {
     char buf[4096];
     if (data)
         strcpy(buf, "vsd@");
     else
         strcpy(buf, "vsc@");
-    beDecorateSymName(buf + 3 + (sp->decoratedName[0] != '@'), sp);
+    beDecorateSymName(buf + 3 + (sym->decoratedName[0] != '@'), sym);
     Section* virtsect = new Section(buf, virtualSegmentNumber++);
-    virtualSyms[virtsect] = sp;
+    virtualSyms[virtsect] = sym;
     virtuals.push_back(virtsect);
     currentSection = virtsect;
     instructionParser->Setup(virtsect);
     AsmExpr::SetSection(virtsect);
-    std::string name = sp->decoratedName;
+    std::string name = sym->decoratedName;
     Label* l = new Label(name, lblvirt.size(), virtualSegmentNumber - 1);
     l->SetOffset(0);
     lblvirt[name] = l;
@@ -879,7 +879,7 @@ void outcode_start_virtual_seg(SYMBOL* sp, int data)
 
 /*-------------------------------------------------------------------------*/
 
-void outcode_end_virtual_seg(SYMBOL* sp) { outcode_enterseg(oa_currentSeg); }
+void outcode_end_virtual_seg(SYMBOL* sym) { outcode_enterseg(oa_currentSeg); }
 
 /*-------------------------------------------------------------------------*/
 
@@ -920,7 +920,7 @@ int resolveoffset(EXPRESSION* n, int* resolved)
             {
                 int m = n->v.sp->offset;
 
-                if (!usingEsp && m> 0)
+                if (!usingEsp && m > 0)
                     m += 4;
 
                 if (n->v.sp->storage_class == sc_parameter && fastcallAlias)
@@ -928,7 +928,7 @@ int resolveoffset(EXPRESSION* n, int* resolved)
                     if (!isstructured(basetype(theCurrentFunc->tp)->btp) || n->v.sp->offset != chosenAssembler->arch->retblocksize)
                     {
 
-                        m-= fastcallAlias * chosenAssembler->arch->parmwidth;
+                        m -= fastcallAlias * chosenAssembler->arch->parmwidth;
                         if (m >= chosenAssembler->arch->retblocksize)
                         {
                             rv += m;
@@ -982,7 +982,7 @@ AsmExprNode* MakeFixup(EXPRESSION* offset)
             if (node->type == en_labcon)
             {
                 char buf[256];
-                sprintf(buf, "L_%d", node->v.i);
+                sprintf(buf, "L_%d", (int)node->v.i);
                 name = buf;
             }
             else
@@ -1010,20 +1010,20 @@ void InsertLine(LINEDATA* linedata)
     attrib->v.ld = linedata;
     InsertAttrib(attrib);
 }
-void InsertVarStart(SYMBOL* sp)
+void InsertVarStart(SYMBOL* sym)
 {
-    if (!strstr(sp->name, "++"))
+    if (!strstr(sym->name, "++"))
     {
         ATTRIBDATA* attrib = (ATTRIBDATA*)Alloc(sizeof(ATTRIBDATA));
         attrib->type = e_ad_vardata;
-        attrib->v.sp = sp;
+        attrib->v.sp = sym;
 
         InsertAttrib(attrib);
-        autos[sp] = autos.size();
-        autotab.push_back(sp);
+        autos[sym] = autos.size();
+        autotab.push_back(sym);
     }
 }
-void InsertFunc(SYMBOL* sp, int start)
+void InsertFunc(SYMBOL* sym, int start)
 {
     if (oa_currentSeg == virtseg)
     {
@@ -1037,7 +1037,7 @@ void InsertFunc(SYMBOL* sp, int start)
     {
         ATTRIBDATA* attrib = (ATTRIBDATA*)Alloc(sizeof(ATTRIBDATA));
         attrib->type = e_ad_funcdata;
-        attrib->v.sp = sp;
+        attrib->v.sp = sym;
         attrib->start = !!start;
         InsertAttrib(attrib);
     }

@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "compiler.h"
@@ -64,7 +64,8 @@ char version[256];
 char copyright[256];
 LIST* clist = 0;
 
-struct DefValue {
+struct DefValue
+{
     std::string name;
     bool undef;
 };
@@ -522,12 +523,12 @@ void incl_setup(char select, char* string)
     (void)select;
     if (*set_searchpath)
     {
-        *set_searchpath = (char *)realloc(*set_searchpath, strlen(string) + strlen(*set_searchpath) + 2);
+        *set_searchpath = (char*)realloc(*set_searchpath, strlen(string) + strlen(*set_searchpath) + 2);
         strcat(*set_searchpath, ";");
     }
     else
     {
-        *set_searchpath = (char *) malloc(strlen(string) + 1);
+        *set_searchpath = (char*)malloc(strlen(string) + 1);
         *set_searchpath[0] = 0;
     }
     fflush(stdout);
@@ -538,16 +539,13 @@ void incl_setup(char select, char* string)
 
 void def_setup(char select, char* string)
 /*
-* activation for command line #defines
-*/
+ * activation for command line #defines
+ */
 {
-    defines.push_back(DefValue{ string, 0 });
+    defines.push_back(DefValue{string, 0});
 }
 
-void undef_setup(char select, char* string)
-{
-    defines.push_back(DefValue{ string, 1 });
-}
+void undef_setup(char select, char* string) { defines.push_back(DefValue{string, 1}); }
 
 /*-------------------------------------------------------------------------*/
 
@@ -666,7 +664,7 @@ void InsertAnyFile(char* filename, char* path, int drive, bool primary)
 
         while ((*r))
             r = &(*r)->next;
-        (*r) = (LIST *)malloc(sizeof(LIST));
+        (*r) = (LIST*)malloc(sizeof(LIST));
         s = (*r);
         if (!s)
             return;
@@ -818,7 +816,7 @@ void addinclude(void)
             strcat(temp, *set_searchpath);
             free(*set_searchpath);
         }
-        *set_searchpath = (char *)malloc(strlen(temp) + 1);
+        *set_searchpath = (char*)malloc(strlen(temp) + 1);
         strcpy(*set_searchpath, temp);
     }
     string = getenv("CPATH");
@@ -832,7 +830,7 @@ void addinclude(void)
             strcat(temp, *set_searchpath);
             free(*set_searchpath);
         }
-        *set_searchpath = (char *) malloc(strlen(temp) + 1);
+        *set_searchpath = (char*)malloc(strlen(temp) + 1);
         strcpy(*set_searchpath, temp);
     }
 }

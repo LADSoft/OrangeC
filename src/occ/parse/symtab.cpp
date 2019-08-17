@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "compiler.h"
@@ -32,9 +32,10 @@ extern FILE* listFile;
 extern INCLUDES* includes;
 extern int structLevel;
 extern int templateNestingCount;
+extern TYPE stdvoid;
 #endif
 
-NAMESPACEVALUES *globalNameSpace, *localNameSpace;
+NAMESPACEVALUELIST *globalNameSpace, *localNameSpace;
 HASHTABLE* labelSyms;
 
 HASHTABLE* CreateHashTable(int size);
@@ -52,48 +53,51 @@ void ccSetSymbol(SYMBOL* s);
 
 void syminit(void)
 {
-    globalNameSpace = (NAMESPACEVALUES *)Alloc(sizeof(NAMESPACEVALUES));
-    globalNameSpace->syms = CreateHashTable(GLOBALHASHSIZE);
-    globalNameSpace->tags = CreateHashTable(GLOBALHASHSIZE);
-    localNameSpace = (NAMESPACEVALUES *)Alloc(sizeof(NAMESPACEVALUES));
-    usingDirectives = NULL;
+    globalNameSpace = (NAMESPACEVALUELIST*)Alloc(sizeof(NAMESPACEVALUELIST));
+    globalNameSpace->valueData = (NAMESPACEVALUEDATA*)Alloc(sizeof(NAMESPACEVALUEDATA));
+    globalNameSpace->valueData->syms = CreateHashTable(GLOBALHASHSIZE);
+    globalNameSpace->valueData->tags = CreateHashTable(GLOBALHASHSIZE);
+
+    localNameSpace = (NAMESPACEVALUELIST*)Alloc(sizeof(NAMESPACEVALUELIST));
+    localNameSpace->valueData = (NAMESPACEVALUEDATA*)Alloc(sizeof(NAMESPACEVALUEDATA));
+    usingDirectives = nullptr;
     matchOverloadLevel = 0;
 }
 HASHTABLE* CreateHashTable(int size)
 {
-    HASHTABLE* rv = (HASHTABLE *)Alloc(sizeof(HASHTABLE));
-    rv->table = (HASHREC **)Alloc(sizeof(HASHREC*) * size);
+    HASHTABLE* rv = (HASHTABLE*)Alloc(sizeof(HASHTABLE));
+    rv->table = (SYMLIST**)Alloc(sizeof(SYMLIST*) * size);
     rv->size = size;
     return rv;
 }
 #ifndef CPREPROCESSOR
-void AllocateLocalContext(BLOCKDATA* block, SYMBOL* sp, int label)
+void AllocateLocalContext(BLOCKDATA* block, SYMBOL* sym, int label)
 {
     HASHTABLE* tn = CreateHashTable(1);
     STATEMENT* st;
     LIST* l;
-    st = stmtNode(NULL, block, st_dbgblock);
+    st = stmtNode(nullptr, block, st_dbgblock);
     st->label = 1;
     if (block && cparams.prm_debug)
     {
-        st = stmtNode(NULL, block, st_label);
+        st = stmtNode(nullptr, block, st_label);
         st->label = label;
         tn->blocknum = st->blocknum;
     }
-    tn->next = tn->chain = localNameSpace->syms;
-    localNameSpace->syms = tn;
+    tn->next = tn->chain = localNameSpace->valueData->syms;
+    localNameSpace->valueData->syms = tn;
     tn = CreateHashTable(1);
     if (block && cparams.prm_debug)
     {
         tn->blocknum = st->blocknum;
     }
-    tn->next = tn->chain = localNameSpace->tags;
-    localNameSpace->tags = tn;
-    if (sp)
-        localNameSpace->tags->blockLevel = sp->value.i++;
+    tn->next = tn->chain = localNameSpace->valueData->tags;
+    localNameSpace->valueData->tags = tn;
+    if (sym)
+        localNameSpace->valueData->tags->blockLevel = sym->value.i++;
 
-    l = (LIST *)Alloc(sizeof(LIST));
-    l->data = localNameSpace->usingDirectives;
+    l = (LIST*)Alloc(sizeof(LIST));
+    l->data = localNameSpace->valueData->usingDirectives;
     l->next = usingDirectives;
     usingDirectives = l;
 }
@@ -103,65 +107,65 @@ void TagSyms(HASHTABLE* syms)
     int i;
     for (i = 0; i < syms->size; i++)
     {
-        HASHREC* hr = syms->table[i];
+        SYMLIST* hr = syms->table[i];
         while (hr)
         {
-            SYMBOL* sp = (SYMBOL*)hr->p;
-            sp->ccEndLine = includes->line + 1;
+            SYMBOL* sym = hr->p;
+            sym->ccEndLine = includes->line + 1;
             hr = hr->next;
         }
     }
 }
 #    endif
-void FreeLocalContext(BLOCKDATA* block, SYMBOL* sp, int label)
+void FreeLocalContext(BLOCKDATA* block, SYMBOL* sym, int label)
 {
-    HASHTABLE* locals = localNameSpace->syms;
-    HASHTABLE* tags = localNameSpace->tags;
+    HASHTABLE* locals = localNameSpace->valueData->syms;
+    HASHTABLE* tags = localNameSpace->valueData->tags;
     STATEMENT* st;
     if (block && cparams.prm_debug)
     {
-        st = stmtNode(NULL, block, st_label);
+        st = stmtNode(nullptr, block, st_label);
         st->label = label;
     }
-    checkUnused(localNameSpace->syms);
-    if (sp && listFile)
+    checkUnused(localNameSpace->valueData->syms);
+    if (sym && listFile)
     {
-        if (localNameSpace->syms->table[0])
+        if (localNameSpace->valueData->syms->table[0])
         {
             fprintf(listFile, "******** Local Symbols ********\n");
-            list_table(sp->inlineFunc.syms, 0);
+            list_table(sym->inlineFunc.syms, 0);
             fprintf(listFile, "\n");
         }
-        if (localNameSpace->tags->table[0])
+        if (localNameSpace->valueData->tags->table[0])
         {
             fprintf(listFile, "******** Local Tags ********\n");
-            list_table(sp->inlineFunc.tags, 0);
+            list_table(sym->inlineFunc.tags, 0);
             fprintf(listFile, "\n");
         }
     }
-    if (sp)
-        sp->value.i--;
+    if (sym)
+        sym->value.i--;
 
-    st = stmtNode(NULL, block, st_expr);
-    destructBlock(&st->select, localNameSpace->syms->table[0], true);
-    localNameSpace->syms = localNameSpace->syms->next;
-    localNameSpace->tags = localNameSpace->tags->next;
+    st = stmtNode(nullptr, block, st_expr);
+    destructBlock(&st->select, localNameSpace->valueData->syms->table[0], true);
+    localNameSpace->valueData->syms = localNameSpace->valueData->syms->next;
+    localNameSpace->valueData->tags = localNameSpace->valueData->tags->next;
 
-    localNameSpace->usingDirectives = (LIST *) usingDirectives->data;
+    localNameSpace->valueData->usingDirectives = (LIST*)usingDirectives->data;
     usingDirectives = usingDirectives->next;
 
 #    ifdef PARSER_ONLY
     TagSyms(locals);
     TagSyms(tags);
 #    endif
-    if (sp)
+    if (sym)
     {
-        locals->next = sp->inlineFunc.syms;
-        tags->next = sp->inlineFunc.tags;
-        sp->inlineFunc.syms = locals;
-        sp->inlineFunc.tags = tags;
+        locals->next = sym->inlineFunc.syms;
+        tags->next = sym->inlineFunc.tags;
+        sym->inlineFunc.syms = locals;
+        sym->inlineFunc.tags = tags;
     }
-    st = stmtNode(NULL, block, st_dbgblock);
+    st = stmtNode(nullptr, block, st_dbgblock);
     st->label = 0;
 }
 #endif
@@ -173,7 +177,7 @@ static int GetHashValue(const char* string)
         i = ((i << 7) + (i << 1) + i) ^ *string;
     return i;
 }
-HASHREC** GetHashLink(HASHTABLE* t, const char* string)
+SYMLIST** GetHashLink(HASHTABLE* t, const char* string)
 {
     unsigned i;
     if (t->size == 1)
@@ -183,14 +187,14 @@ HASHREC** GetHashLink(HASHTABLE* t, const char* string)
     return &t->table[i % t->size];
 }
 /* Add a hash item to the table */
-HASHREC* AddName(SYMBOL* item, HASHTABLE* table)
+SYMLIST* AddName(SYMBOL* item, HASHTABLE* table)
 {
-    HASHREC** p = GetHashLink(table, item->name);
-    HASHREC* newRec;
+    SYMLIST** p = GetHashLink(table, item->name);
+    SYMLIST* newRec;
 
     if (*p)
     {
-        HASHREC *q = *p, *r = *p;
+        SYMLIST *q = *p, *r = *p;
         while (q)
         {
             r = q;
@@ -198,22 +202,22 @@ HASHREC* AddName(SYMBOL* item, HASHTABLE* table)
                 return (r);
             q = q->next;
         }
-        newRec = (HASHREC *)Alloc(sizeof(HASHREC));
+        newRec = (SYMLIST*)Alloc(sizeof(SYMLIST));
         r->next = newRec;
-        newRec->p = (struct sym *)item;
+        newRec->p = (SYMBOL*)item;
     }
     else
     {
-        newRec = (HASHREC *)Alloc(sizeof(HASHREC));
+        newRec = (SYMLIST*)Alloc(sizeof(SYMLIST));
         *p = newRec;
-        newRec->p = (struct sym *)item;
+        newRec->p = (SYMBOL*)item;
     }
     return (0);
 }
-HASHREC* AddOverloadName(SYMBOL* item, HASHTABLE* table)
+SYMLIST* AddOverloadName(SYMBOL* item, HASHTABLE* table)
 {
-    HASHREC** p = GetHashLink(table, item->decoratedName);
-    HASHREC* newRec;
+    SYMLIST** p = GetHashLink(table, item->decoratedName);
+    SYMLIST* newRec;
 #ifdef PARSER_ONLY
     if (!item->parserSet)
     {
@@ -224,7 +228,7 @@ HASHREC* AddOverloadName(SYMBOL* item, HASHTABLE* table)
 
     if (*p)
     {
-        HASHREC *q = *p, *r = *p;
+        SYMLIST *q = *p, *r = *p;
         while (q)
         {
             r = q;
@@ -232,15 +236,15 @@ HASHREC* AddOverloadName(SYMBOL* item, HASHTABLE* table)
                 return (r);
             q = q->next;
         }
-        newRec = (HASHREC *)Alloc(sizeof(HASHREC));
+        newRec = (SYMLIST*)Alloc(sizeof(SYMLIST));
         r->next = newRec;
-        newRec->p = (struct sym *)item;
+        newRec->p = (SYMBOL*)item;
     }
     else
     {
-        newRec = (HASHREC *)Alloc(sizeof(HASHREC));
+        newRec = (SYMLIST*)Alloc(sizeof(SYMLIST));
         *p = newRec;
-        newRec->p = (struct sym *)item;
+        newRec->p = (SYMBOL*)item;
     }
     return (0);
 }
@@ -248,13 +252,13 @@ HASHREC* AddOverloadName(SYMBOL* item, HASHTABLE* table)
 /*
  * Find something in the hash table
  */
-HASHREC** LookupName(const char* name, HASHTABLE* table)
+SYMLIST** LookupName(const char* name, HASHTABLE* table)
 {
     if (table->fast)
     {
         table = table->fast;
     }
-    HASHREC** p = GetHashLink(table, name);
+    SYMLIST** p = GetHashLink(table, name);
 
     while (*p)
     {
@@ -262,7 +266,7 @@ HASHREC** LookupName(const char* name, HASHTABLE* table)
         {
             return p;
         }
-        p = (HASHREC**)*p;
+        p = (SYMLIST**)*p;
     }
     return (0);
 }
@@ -270,17 +274,17 @@ SYMBOL* search(const char* name, HASHTABLE* table)
 {
     while (table)
     {
-        HASHREC** p = LookupName(name, table);
+        SYMLIST** p = LookupName(name, table);
         if (p)
             return (SYMBOL*)(*p)->p;
         table = table->next;
     }
-    return NULL;
+    return nullptr;
 }
 bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
 {
-    HASHREC* hnew = basetype(tnew)->syms->table[0];
-    HASHREC* hold = basetype(told)->syms->table[0];
+    SYMLIST* hnew = basetype(tnew)->syms->table[0];
+    SYMLIST* hold = basetype(told)->syms->table[0];
     unsigned tableOld[100], tableNew[100];
     int tCount = 0;
     if (!cparams.prm_cplusplus)
@@ -370,8 +374,12 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
             TEMPLATEPARAMLIST *tplNew, *tplOld;
             int iCount = 0;
             unsigned oldIndex[100], newIndex[100];
-            tplNew = fnew && fnew->templateParams ? fnew->templateParams->next : NULL;
-            tplOld = fold && fold->templateParams ? fold->templateParams->next : NULL;
+            tplNew = fnew && fnew->templateParams ? fnew->templateParams : nullptr;
+            tplOld = fold && fold->templateParams ? fold->templateParams : nullptr;
+            if (tplNew)
+                tplNew = tplNew->p->bySpecialization.types ? tplNew->p->bySpecialization.types : tplNew->next;
+            if (tplOld)
+                tplOld = tplOld->p->bySpecialization.types ? tplOld->p->bySpecialization.types : tplOld->next;
             while (tplNew && tplOld)
             {
                 if (tplOld->argsym && tplNew->argsym)
@@ -415,7 +423,9 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
             {
                 TYPE* tps = basetype(told)->btp;
                 TYPE* tpn = basetype(tnew)->btp;
-                if (!templatecomparetypes(tpn, tps, true) && !sameTemplate(tpn, tps))
+                if ((!templatecomparetypes(tpn, tps, true) ||
+                     ((tps->type == bt_templateselector || tpn->type == bt_templateselector) && tpn->type != tps->type)) &&
+                    !sameTemplate(tpn, tps))
                 {
                     if (isref(tps))
                         tps = basetype(tps)->btp;
@@ -449,10 +459,10 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
                             {
                                 TEMPLATESELECTOR* ts1 = tpn->sp->templateSelector->next;
                                 TEMPLATESELECTOR* ts2 = tps->sp->templateSelector->next;
-                                if (ts2->sym->typedefSym)
+                                if (ts2->sp->typedefSym)
                                 {
                                     ts1 = ts1->next;
-                                    if (!strcmp(ts1->name, ts2->sym->typedefSym->name))
+                                    if (!strcmp(ts1->name, ts2->sp->typedefSym->name))
                                     {
                                         ts1 = ts1->next;
                                         ts2 = ts2->next;
@@ -467,7 +477,8 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
                                             return false;
                                     }
                                 }
-                                else if (!strcmp(tpn->sp->templateSelector->next->sym->name,tps->sp->templateSelector->next->sym->name))
+                                else if (!strcmp(tpn->sp->templateSelector->next->sp->name,
+                                                 tps->sp->templateSelector->next->sp->name))
                                 {
                                     if (tpn->sp->templateSelector->next->next->name[0])
                                         return false;
@@ -477,25 +488,25 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
                         else
                         {
                             TEMPLATESELECTOR* tpl = basetype(tpn)->sp->templateSelector->next;
-                            SYMBOL* sp = tpl->sym;
+                            SYMBOL* sym = tpl->sp;
                             TEMPLATESELECTOR* find = tpl->next;
-                            while (sp && find)
+                            while (sym && find)
                             {
                                 SYMBOL* fsp;
-                                if (!isstructured(sp->tp))
+                                if (!isstructured(sym->tp))
                                     break;
 
-                                fsp = search(find->name, basetype(sp->tp)->syms);
+                                fsp = search(find->name, basetype(sym->tp)->syms);
                                 if (!fsp)
                                 {
-                                    fsp = classdata(find->name, basetype(sp->tp)->sp, NULL, false, false);
+                                    fsp = classdata(find->name, basetype(sym->tp)->sp, nullptr, false, false);
                                     if (fsp == (SYMBOL*)-1)
-                                        fsp = NULL;
+                                        fsp = nullptr;
                                 }
-                                sp = fsp;
+                                sym = fsp;
                                 find = find->next;
                             }
-                            if (find || !sp || (!comparetypes(sp->tp, tps, true) && !sameTemplate(sp->tp, tps)))
+                            if (find || !sym || (!comparetypes(sym->tp, tps, true) && !sameTemplate(sym->tp, tps)))
                                 return false;
                         }
                         return true;
@@ -510,7 +521,7 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
                 {
                     TEMPLATESELECTOR *ts1 = tpn->sp->templateSelector->next, *tss1;
                     TEMPLATESELECTOR *ts2 = tps->sp->templateSelector->next, *tss2;
-                    if (ts1->isTemplate != ts2->isTemplate || strcmp(ts1->sym->decoratedName, ts2->sym->decoratedName))
+                    if (ts1->isTemplate != ts2->isTemplate || strcmp(ts1->sp->decoratedName, ts2->sp->decoratedName))
                         return false;
                     tss1 = ts1->next;
                     tss2 = ts2->next;
@@ -548,24 +559,26 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
     }
     return false;
 }
-SYMBOL* searchOverloads(SYMBOL* sp, HASHTABLE* table)
+SYMBOL* searchOverloads(SYMBOL* sym, HASHTABLE* table)
 {
-    HASHREC* p = table->table[0];
+    SYMLIST* p = table->table[0];
     if (cparams.prm_cplusplus)
     {
         while (p)
         {
             SYMBOL* spp = (SYMBOL*)p->p;
-            if (matchOverload(sp->tp, spp->tp, false))
+            if (matchOverload(sym->tp, spp->tp, false))
             {
                 if (!spp->templateParams)
                     return spp;
-                if (sp->templateLevel && !spp->templateLevel && !sp->templateParams->next)
+                if (sym->templateLevel == spp->templateLevel ||
+                    (sym->templateLevel && !spp->templateLevel && !sym->templateParams->next))
                     return spp;
-                if (!!spp->templateParams == !!sp->templateParams)
+
+                if (!!spp->templateParams == !!sym->templateParams)
                 {
                     TEMPLATEPARAMLIST* tpl = spp->templateParams->next;
-                    TEMPLATEPARAMLIST* tpr = sp->templateParams->next;
+                    TEMPLATEPARAMLIST* tpr = sym->templateParams->next;
                     while (tpl && tpr)
                     {
                         if (tpl->p->type == kw_int && tpl->p->byNonType.tp->type == bt_templateselector)
@@ -592,26 +605,26 @@ SYMBOL* searchOverloads(SYMBOL* sp, HASHTABLE* table)
 }
 SYMBOL* gsearch(const char* name)
 {
-    SYMBOL* sp = search(name, localNameSpace->syms);
-    if (sp)
-        return sp;
-    return search(name, globalNameSpace->syms);
+    SYMBOL* sym = search(name, localNameSpace->valueData->syms);
+    if (sym)
+        return sym;
+    return search(name, globalNameSpace->valueData->syms);
 }
 SYMBOL* tsearch(const char* name)
 {
-    SYMBOL* sp = search(name, localNameSpace->tags);
-    if (sp)
-        return sp;
-    return search(name, globalNameSpace->tags);
+    SYMBOL* sym = search(name, localNameSpace->valueData->tags);
+    if (sym)
+        return sym;
+    return search(name, globalNameSpace->valueData->tags);
 }
 void baseinsert(SYMBOL* in, HASHTABLE* table)
 {
     if (cparams.prm_extwarning)
         if (in->storage_class == sc_parameter || in->storage_class == sc_auto || in->storage_class == sc_register)
         {
-            SYMBOL* sp;
-            if ((sp = gsearch(in->name)) != NULL)
-                preverror(ERR_VARIABLE_OBSCURES_VARIABLE_AT_HIGHER_SCOPE, in->name, sp->declfile, sp->declline);
+            SYMBOL* sym;
+            if ((sym = gsearch(in->name)) != nullptr)
+                preverror(ERR_VARIABLE_OBSCURES_VARIABLE_AT_HIGHER_SCOPE, in->name, sym->declfile, sym->declline);
         }
 #if defined(PARSER_ONLY)
     if (AddName(in, table) && table != ccHash)
@@ -657,9 +670,9 @@ void insertOverload(SYMBOL* in, HASHTABLE* table)
     if (cparams.prm_extwarning)
         if (in->storage_class == sc_parameter || in->storage_class == sc_auto || in->storage_class == sc_register)
         {
-            SYMBOL* sp;
-            if ((sp = gsearch(in->name)) != NULL)
-                preverror(ERR_VARIABLE_OBSCURES_VARIABLE_AT_HIGHER_SCOPE, in->name, sp->declfile, sp->declline);
+            SYMBOL* sym;
+            if ((sym = gsearch(in->name)) != nullptr)
+                preverror(ERR_VARIABLE_OBSCURES_VARIABLE_AT_HIGHER_SCOPE, in->name, sym->declfile, sym->declline);
         }
     if (AddOverloadName(in, table))
     {

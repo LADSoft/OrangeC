@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "dlPmMain.h"
@@ -69,7 +69,7 @@ void dlPmMain::GetInputSections(const std::vector<std::string>& names, ObjFile* 
         ObjInt addr = s->GetOffset()->Eval(0);
         sections.push_back(std::make_unique<Section>(addr, size));
         sections.back()->data = std::make_unique<char[]>(size);
-        Section *p = sections.back().get();
+        Section* p = sections.back().get();
         s->ResolveSymbols(factory);
         ObjMemoryManager& m = s->GetMemoryManager();
         int ofs = 0;
@@ -237,7 +237,7 @@ bool dlPmMain::LoadStub(const std::string& exeName)
         int totalHeader = (preHeader + relocSize + 15) & ~15;
         stubSize = (totalHeader + bodySize + 15) & ~15;
         stubData = std::make_unique<char[]>(stubSize);
-        char *pstubData = stubData.get();
+        char* pstubData = stubData.get();
         memset(pstubData, 0, stubSize);
         int newSize = bodySize + totalHeader;
         if (newSize & 511)

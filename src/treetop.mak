@@ -53,15 +53,7 @@ endif
 
 _TARGETDIR:= $(CURRENT)
 
-ifeq "$(COMPILER)" "gcc-linux"
-TEST := $(shell ls "$(_TARGETDIR)$(PATHEXT2)dirs.mak")
-COMPARE := $(_TARGETDIR)$(PATHEXT2)dirs.mak
-else
-TEST := $(shell dir /b "$(_TARGETDIR)$(PATHEXT2)dirs.mak")
-COMPARE := dirs.mak
-endif
-
-ifeq "$(TEST)" "$(COMPARE)"
+ifneq "$(wildcard $(_TARGETDIR)$(PATHEXT2)dirs.mak)" ""
 include $(_TARGETDIR)$(PATHEXT2)dirs.mak
 endif
 	
@@ -92,14 +84,7 @@ rmdir:
 	-rmdir  $(_OUTPUTDIR) 2> $(NULLDEV)
 
 
-ifeq "$(COMPILER)" "gcc-linux"
-TEST := $(shell ls "$(_TARGETDIR)$(PATHEXT2)makefile")
-COMPARE := $(_TARGETDIR)$(PATHEXT2)makefile
-else
-TEST := $(shell dir /b "$(_TARGETDIR)$(PATHEXT2)makefile")
-COMPARE := makefile
-endif
-ifeq "$(TEST)" "$(COMPARE)"
+ifneq "$(wildcard $(_TARGETDIR)$(PATHEXT2)makefile)" ""
 include $(_TARGETDIR)$(PATHEXT2)makefile
 include $(DISTROOT)$(PATHEXT2)src$(PATHEXT2)dist.mak
 else

@@ -1,0 +1,7 @@
+Warning(105)  attrib.cpp(5):  Function should return a value in function a()
+Warning(105)  attrib.cpp(8):  Function should return a value in function b()
+Warning(105)  attrib.cpp(11):  Function should return a value in function c()
+Warning( 73)  attrib.cpp(15):  Missing type in declaration
+Warning(473)  attrib.cpp(16):  a deprecated in function main
+Warning(473)  attrib.cpp(17):  b deprecated in function main
+Warning(473)  attrib.cpp(18):  c deprecated in function main

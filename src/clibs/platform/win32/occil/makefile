@@ -35,13 +35,13 @@
 
 all:    lsmsilcrtl.dll occmsil.dll
 
-occmsil.dll: occmsil.c
+occmsil.dll:
 	-del occmsil.dll
-	occ /Wd occmsil.c
+	occ /Wd $(STDINCLUDE) /L$(SYSOBJECT) occmsil.c
+	copy occmsil.dll $(SYSOBJECT)
 
-lsmsilcrtl.dll: lsmsilcrtl\lsmsilcrtl.cs
+lsmsilcrtl.dll:
 	csc /unsafe /keyfile:lsmsilcrtl\occil.snk /t:library lsmsilcrtl\lsmsilcrtl.cs lsmsilcrtl\properties\assemblyinfo.cs
+	copy lsmsilcrtl.dll $(SYSOBJECT)
 
 DISTRIBUTE:
-	copy lsmsilcrtl.dll $(DISTBIN)
-	copy occmsil.dll $(DISTBIN)

@@ -49,6 +49,7 @@ rtl_objs: lscrtl_objs
 alldirs: rtl_objs
 ifdef FINAL
 	$(MAKE) -Clsdbghelper
+	$(MAKE) -Coccil
 else
 	$(MAKE) -Cpe
 	$(MAKE) -Cdef

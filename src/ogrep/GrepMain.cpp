@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "GrepMain.h"
@@ -51,10 +51,10 @@ CmdSwitchBool GrepMain::showHelp(SwitchParser, '?');
 // not actual parameters
 CmdSwitchBool GrepMain::displayFileNames(SwitchParser, '#');
 CmdSwitchBool GrepMain::displayHeaderFileName(SwitchParser, '#');
-CmdSwitchInt  GrepMain::showAfter(SwitchParser, 'A', 0, 0, INT_MAX);
-CmdSwitchInt  GrepMain::showBefore(SwitchParser, 'B', 0, 0, INT_MAX);
-CmdSwitchInt  GrepMain::showBoth(SwitchParser, 'C', 0, 0, INT_MAX);
-CmdSwitchInt  GrepMain::maxMatches(SwitchParser, 'm', INT_MAX, 0, INT_MAX);
+CmdSwitchInt GrepMain::showAfter(SwitchParser, 'A', 0, 0, INT_MAX);
+CmdSwitchInt GrepMain::showBefore(SwitchParser, 'B', 0, 0, INT_MAX);
+CmdSwitchInt GrepMain::showBoth(SwitchParser, 'C', 0, 0, INT_MAX);
+CmdSwitchInt GrepMain::maxMatches(SwitchParser, 'm', INT_MAX, 0, INT_MAX);
 
 const char* GrepMain::usageText = "[-rxlcnvidzwomABC?] searchstring file[s]\n";
 const char* GrepMain::helpText =
@@ -124,7 +124,7 @@ void GrepMain::SetModes(void)
         displayHeaderFileName.SetValue(true);
     }
 }
-void GrepMain::DisplayMatch(const std::string& fileName, int& matchCount, int lineno, const char *startpos, const char* text)
+void GrepMain::DisplayMatch(const std::string& fileName, int& matchCount, int lineno, const char* startpos, const char* text)
 {
     if (matchCount == 0 && displayHeaderFileName.GetValue())
     {
@@ -142,7 +142,7 @@ void GrepMain::DisplayMatch(const std::string& fileName, int& matchCount, int li
             q = p + strlen(p);
         if (showBefore.GetValue() || showAfter.GetValue())
             std::cout << "--" << std::endl;
-        for (int i = 0; i < showBefore.GetValue()+1 && p > startpos;)
+        for (int i = 0; i < showBefore.GetValue() + 1 && p > startpos;)
         {
             if (p[-1] == '\n')
                 i++, lineno--;
@@ -151,14 +151,14 @@ void GrepMain::DisplayMatch(const std::string& fileName, int& matchCount, int li
         for (int i = 0; i < showAfter.GetValue() && *q; i++)
 
         {
-            const char *s = strchr(q + 1, '\n');
+            const char* s = strchr(q + 1, '\n');
             if (!s)
                 s = q + strlen(q);
             q = s;
         }
         while (p != q)
         {
-            const char *s = strchr(p+1, '\n');
+            const char* s = strchr(p + 1, '\n');
             if (!s)
                 s = p + strlen(p);
             if (displayFileNames.GetValue())
@@ -171,7 +171,7 @@ void GrepMain::DisplayMatch(const std::string& fileName, int& matchCount, int li
             {
                 std::cout << std::setfill(' ') << std::setw(8) << std::left << lineno++;
             }
-            std::string buf(p+1, s - p-1);
+            std::string buf(p + 1, s - p - 1);
             std::cout << buf;
 
             p = s;
@@ -180,7 +180,8 @@ void GrepMain::DisplayMatch(const std::string& fileName, int& matchCount, int li
     }
     matchCount++;
 }
-void GrepMain::FindLine(const std::string fileName, int& matchCount, int& matchLine, char** matchPos, char *startpos, char* curpos, bool matched)
+void GrepMain::FindLine(const std::string fileName, int& matchCount, int& matchLine, char** matchPos, char* startpos, char* curpos,
+                        bool matched)
 {
     char* p = *matchPos;
     do
@@ -216,7 +217,8 @@ int GrepMain::OneFile(RegExpContext& regexp, const std::string fileName, std::is
 {
     openCount++;
     // couldn't do this as a straight definition as MSVC decided to treat it as a func
-    std::unique_ptr<std::string> str = std::make_unique<std::string>(std::istreambuf_iterator<char>(fil), std::istreambuf_iterator<char>());
+    std::unique_ptr<std::string> str =
+        std::make_unique<std::string>(std::istreambuf_iterator<char>(fil), std::istreambuf_iterator<char>());
     str->erase(std::remove(str->begin(), str->end(), '\r'), str->end());
     std::string bufs = " " + *str;
     bufs[0] = 0;
@@ -226,7 +228,7 @@ int GrepMain::OneFile(RegExpContext& regexp, const std::string fileName, std::is
     if (!fil.fail())
     {
         char* buf = const_cast<char*>(bufs.c_str());
-        char *start = buf;
+        char* start = buf;
         char* str = buf + 1;
         char* matchPos = buf + 1;
         int matchLine = 1;

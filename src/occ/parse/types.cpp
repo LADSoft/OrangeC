@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "compiler.h"
@@ -61,7 +61,7 @@ static TYPE* replaceTemplateSelector(TYPE* tp)
 {
     if (!templateNestingCount && tp->type == bt_templateselector && tp->sp->templateSelector->next->isTemplate)
     {
-        SYMBOL* sp2 = tp->sp->templateSelector->next->sym;
+        SYMBOL* sp2 = tp->sp->templateSelector->next->sp;
         if (sp2)
         {
             SYMBOL* sp1 = GetClassTemplate(sp2, tp->sp->templateSelector->next->templateParams, true);
@@ -242,7 +242,7 @@ bool matchingCharTypes(TYPE* typ1, TYPE* typ2)
         }
     }
     else if (typ1->type == bt_unsigned_short || typ1->type == bt_wchar_t)
-        return typ2->type == bt_unsigned_short || typ2->type == bt_wchar_t; 
+        return typ2->type == bt_unsigned_short || typ2->type == bt_wchar_t;
     return false;
 }
 static char* putpointer(char* p, TYPE* tp)
@@ -319,8 +319,8 @@ void RenderExpr(char* buf, EXPRESSION* exp)
 }
 TYPE* typenum(char* buf, TYPE* tp)
 {
-    SYMBOL* sp;
-    HASHREC* hr;
+    SYMBOL* sym;
+    SYMLIST* hr;
     char name[4096];
     if (tp == nullptr)
     {
@@ -342,13 +342,13 @@ TYPE* typenum(char* buf, TYPE* tp)
             if (!tp->syms)
                 break;
             hr = tp->syms->table[0];
-            sp = (SYMBOL*)hr->p;
-            if (hr->next || !strcmp(sp->name, tp->sp->name))  // the tail is to prevent a problem when there are a lot of errors
+            sym = hr->p;
+            if (hr->next || !strcmp(sym->name, tp->sp->name))  // the tail is to prevent a problem when there are a lot of errors
             {
                 strcpy(buf, " (*)(\?\?\?)");
                 break;
             }
-            tp = sp->tp;
+            tp = sym->tp;
             /* fall through */
         case bt_func:
         case bt_ifunc:
@@ -359,9 +359,9 @@ TYPE* typenum(char* buf, TYPE* tp)
                 hr = tp->syms->table[0];
                 if (hr && hr->p)
                 {
-                    if (((SYMBOL*)hr->p)->thisPtr)
+                    if (hr->p->thisPtr)
                     {
-                        SYMBOL* thisptr = (SYMBOL*)hr->p;
+                        SYMBOL* thisptr = hr->p;
                         *buf++ = ' ';
                         *buf++ = '(';
                         getcls(buf, basetype(basetype(thisptr->tp)->btp)->sp);
@@ -382,9 +382,9 @@ TYPE* typenum(char* buf, TYPE* tp)
                 }
                 while (hr)
                 {
-                    sp = (SYMBOL*)hr->p;
+                    sym = hr->p;
                     *buf = 0;
-                    typenum(buf, sp->tp);
+                    typenum(buf, sym->tp);
                     buf = buf + strlen(buf);
                     hr = hr->next;
                     if (hr)
@@ -517,9 +517,9 @@ TYPE* typenum(char* buf, TYPE* tp)
                     hr = basetype(func)->syms->table[0];
                     while (hr)
                     {
-                        sp = (SYMBOL*)hr->p;
+                        sym = hr->p;
                         *buf = 0;
-                        typenum(buf, sp->tp);
+                        typenum(buf, sym->tp);
                         buf = buf + strlen(buf);
                         hr = hr->next;
                         if (hr)
@@ -588,9 +588,9 @@ TYPE* typenum(char* buf, TYPE* tp)
         case bt_templateselector:
         {
             TEMPLATESELECTOR* ts = tp->sp->templateSelector->next;
-            if (ts->sym)
+            if (ts->sp)
             {
-                strcpy(buf, ts->sym->name);
+                strcpy(buf, ts->sp->name);
                 ts = ts->next;
                 while (ts)
                 {

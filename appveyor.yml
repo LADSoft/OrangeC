@@ -1,3 +1,5 @@
+version: '6.0.42.{build}'
+
 image: Visual Studio 2017
 
 install:
@@ -45,6 +47,7 @@ build_script:
         - mkdir \orangec\temp
         - cd orangec\src
         - copy omake.exe \orangec\temp
+        - call c:\orangec\appveyorversion.bat
         - c:\orangec\temp\omake -DCOMPILER=$(BUILD_PROFILE) fullbuild -j:4
         - c:\orangec\bin\occ /V
         - copy omake\omake.exe \orangec\temp

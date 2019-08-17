@@ -101,6 +101,10 @@ extern "C" {
 #define CB_SETLOCALE    (345)
 #define CB_SETTOPINDEX  (348)
 #define CB_SHOWDROPDOWN (335)
+#define CB_SETMINVISIBLE        (5889)
+#define CB_GETMINVISIBLE        (5890)
+#define CB_SETCUEBANNER         (5891)
+#define CB_GETCUEBANNER         (5892)
 
 /* Combo Box notifications */
 #define CBN_CLOSEUP     (8)

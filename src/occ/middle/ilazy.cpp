@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <stdio.h>
@@ -394,7 +394,7 @@ static QUAD* previous(QUAD* tail)
         tail = tail->back;
     } while (tail && !tail->OCP);
     if (!tail || tail->block != b)
-        return NULL;
+        return nullptr;
     return tail;
 }
 static QUAD* successor(QUAD* head)
@@ -405,7 +405,7 @@ static QUAD* successor(QUAD* head)
         head = head->fwd;
     } while (head && !head->OCP);
     if (!head || head->block != b)
-        return NULL;
+        return nullptr;
     return head;
 }
 static QUAD* First(QUAD* head)
@@ -826,14 +826,14 @@ static void HandleOCP(QUAD* after, int tn)
     {
         QUAD* p = (QUAD*)(tempInfo[tn]->idefines->data);
         QUAD* tail = after;
-        QUAD* ins = (QUAD *)Alloc(sizeof(QUAD));
+        QUAD* ins = (QUAD*)Alloc(sizeof(QUAD));
         QUAD* bans;
         bool a = false, l = false;
         if (after->dc.opcode != i_block && after->dc.opcode != i_label)
         {
-            QUAD *beforea, *beforel = NULL;
+            QUAD *beforea, *beforel = nullptr;
             after = after->back;
-            beforea = NULL;
+            beforea = nullptr;
             while (!after->OCP && !beforel && !after->ignoreMe && after->dc.opcode != i_label &&
                    (!after->dc.left || !after->dc.left->retval) && after->dc.opcode != i_block)
             {
@@ -856,15 +856,15 @@ static void HandleOCP(QUAD* after, int tn)
                 after = after->fwd;
         }
         *ins = *p;
-        ins->uses = NULL;
-        ins->transparent = NULL;
-        ins->dsafe = NULL;
-        ins->earliest = NULL;
-        ins->delay = NULL;
-        ins->latest = NULL;
-        ins->isolated = NULL;
-        ins->OCP = NULL;
-        ins->RO = NULL;
+        ins->uses = nullptr;
+        ins->transparent = nullptr;
+        ins->dsafe = nullptr;
+        ins->earliest = nullptr;
+        ins->delay = nullptr;
+        ins->latest = nullptr;
+        ins->isolated = nullptr;
+        ins->OCP = nullptr;
+        ins->RO = nullptr;
 
         ins->OCPInserted = true;
         ins->fwd = after->fwd;
@@ -874,7 +874,7 @@ static void HandleOCP(QUAD* after, int tn)
         ins->block = after->block;
         if (after == after->block->tail)
             after->block->tail = ins;
-        bans = (QUAD *)Alloc(sizeof(QUAD));
+        bans = (QUAD*)Alloc(sizeof(QUAD));
         bans->ans = tempInfo[tn]->copy;
         bans->dc.left = ins->ans;
         bans->dc.opcode = i_assn;
@@ -894,7 +894,7 @@ static IMODE* GetROVar(IMODE* oldvar, IMODE* newvar, bool mov)
     if (oldvar->mode == i_ind)
     {
         IMODELIST* iml = newvar->offset->v.sp->imind;
-        IMODE* im = NULL;
+        IMODE* im = nullptr;
         while (iml)
         {
             if (iml->im->size == oldvar->size && iml->im->bits == oldvar->bits && iml->im->startbit == oldvar->startbit)
@@ -906,8 +906,8 @@ static IMODE* GetROVar(IMODE* oldvar, IMODE* newvar, bool mov)
         }
         if (!iml)
         {
-            IMODELIST* iml2 = (IMODELIST *)Alloc(sizeof(IMODELIST));
-            im = (IMODE *)Alloc(sizeof(IMODE));
+            IMODELIST* iml2 = (IMODELIST*)Alloc(sizeof(IMODELIST));
+            im = (IMODE*)Alloc(sizeof(IMODE));
             *im = *newvar;
             im->mode = i_ind;
             im->size = oldvar->size;
@@ -951,7 +951,7 @@ static void HandleRO(QUAD* after, int tn)
                     after->dc.opcode = i_assn;
                     after->temps &= ~TEMP_RIGHT;
                     after->temps |= TEMP_LEFT;
-                    after->dc.right = NULL;
+                    after->dc.right = nullptr;
                     if (after->dc.left->offset->type != en_tempref)
                         after->temps &= ~TEMP_LEFT;
                 }
@@ -1035,7 +1035,7 @@ void RearrangePrecolors(void)
     {
         if ((head->precolored & TEMP_ANS) && !head->ans->retval)
         {
-            QUAD* newIns = (QUAD *)Alloc(sizeof(QUAD));
+            QUAD* newIns = (QUAD*)Alloc(sizeof(QUAD));
             i = head->ans->offset->v.sp->value.i;
             if (tempInfo[i]->temp < 0)
             {
@@ -1054,7 +1054,7 @@ void RearrangePrecolors(void)
         }
         if ((head->precolored & TEMP_LEFT) && !head->dc.left->retval)
         {
-            QUAD* newIns = (QUAD *)Alloc(sizeof(QUAD));
+            QUAD* newIns = (QUAD*)Alloc(sizeof(QUAD));
             i = head->dc.left->offset->v.sp->value.i;
             if (tempInfo[i]->temp < 0)
             {
@@ -1073,7 +1073,7 @@ void RearrangePrecolors(void)
         }
         if ((head->precolored & TEMP_RIGHT) && !head->dc.right->retval)
         {
-            QUAD* newIns = (QUAD *)Alloc(sizeof(QUAD));
+            QUAD* newIns = (QUAD*)Alloc(sizeof(QUAD));
             i = head->dc.right->offset->v.sp->value.i;
             if (tempInfo[i]->temp < 0)
             {
@@ -1102,7 +1102,7 @@ static void PadBlocks(void)
         BLOCK* b = blockArray[i];
         if (b && b->head == b->tail)
         {
-            QUAD* ins = (QUAD *)Alloc(sizeof(QUAD));
+            QUAD* ins = (QUAD*)Alloc(sizeof(QUAD));
             ins->dc.opcode = i_blockend;
             InsertInstruction(b->head, ins);
         }
@@ -1116,8 +1116,8 @@ void SetGlobalTerms(void)
     for (i = 0; i < tempCount; i++)
         if (tempInfo[i]->inUse)
             termCount++;
-    termMap = (unsigned short *) Alloc(sizeof(unsigned short) * tempCount);
-    termMapUp = (unsigned short *)Alloc(sizeof(unsigned short) * termCount);
+    termMap = (unsigned short*)Alloc(sizeof(unsigned short) * tempCount);
+    termMapUp = (unsigned short*)Alloc(sizeof(unsigned short) * termCount);
     for (i = 0, j = 0; i < tempCount; i++)
         if (tempInfo[i]->inUse)
         {

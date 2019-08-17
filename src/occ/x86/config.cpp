@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 /*
@@ -144,7 +144,7 @@ static KEYWORD prockeywords[] = {
         {"far", 3, kw__far, KW_NONANSI, 0 },
         {"near", 4, kw__near, KW_NONANSI, 0 },
         */
-    {0, 0, kw_none }};
+    {0, 0, kw_none}};
 static ARCH_DEFINES defines[] = {
     /* must come first in this order */
     {"__WIN32__", "1", false, true},
@@ -178,7 +178,7 @@ static ARCH_SIZING sizes = {
     /* char a_struct;  */ /* alignment only */
     4,                    /*char a_float;*/
     8,                    /*char a_double;*/
-    8,                   /*char a_longdouble;*/
+    8,                    /*char a_longdouble;*/
     0,                    /*char a_fcomplexpad;*/
     0,                    /*char a_rcomplexpad;*/
     0,                    /*char a_lrcomplexpad;*/
@@ -225,9 +225,9 @@ static ARCH_SIZING locks = {
     1,                  /*char a_lrcomplexpad; */
 };
 static ARCH_FLOAT aflt = {-126, 126, 128, 24};
-static ARCH_FLOAT adbl = { -1022, 1022, 1024, 53 };
-static ARCH_FLOAT aldbl = { -1022, 1022, 1024, 53 };
-//static ARCH_FLOAT aldbl = {-16382, 16382, 16384, 64};
+static ARCH_FLOAT adbl = {-1022, 1022, 1024, 53};
+static ARCH_FLOAT aldbl = {-1022, 1022, 1024, 53};
+// static ARCH_FLOAT aldbl = {-16382, 16382, 16384, 64};
 static ARCH_PEEP peeps[] = {0};
 static char fastcallRegs[3] = {ECX, EDX, EAX};
 static ARCH_CHARACTERISTICS architecture = {
@@ -508,7 +508,7 @@ ARCH_GEN outputfunctions = {
     oa_header,            /* generate assembly language header */
     oa_trailer,           /* generate assembly language trailer */
     oa_adjust_codelab,    /* adjust an assembly language statement for the relative code labels */
-    NULL,                 /* allow access to the quad list prior to GCSE */
+    nullptr,              /* allow access to the quad list prior to GCSE */
     examine_icode,        /* allow access to the quad list after GCSE */
     flush_peep,           /* called after function body is generated */
     oa_end_generation,    /* end of code generation */
@@ -518,7 +518,7 @@ ARCH_GEN outputfunctions = {
     oa_gen_strlab,        /* generate a named label */
     oa_put_label,         /* generate a numbered label */
     oa_put_string_label,  /* generate a numbered label */
-    NULL,                 /* reserve space for a bit */
+    nullptr,              /* reserve space for a bit */
     oa_genint,            /* initialize an int */
     oa_genfloat,          /* initialize a float */
     oa_genaddress,        /* initializae a pointer */
@@ -625,7 +625,7 @@ ARCH_GEN outputfunctions = {
     asm_stackalloc,       /* allocate stack space - positive value = allocate, negative value deallocate */
     asm_loadstack,        /* load the stack pointer from a var */
     asm_savestack,        /* save the stack pointer to a var */
-    NULL,                 /* seh */
+    nullptr,              /* seh */
     asm_functail,         /* function tail (e.g. destructor) start/end */
 };
 ARCH_ASM assemblerInterface[] = {
@@ -634,27 +634,27 @@ ARCH_ASM assemblerInterface[] = {
         0,                              /* backend data (compiler ignores) */
         "1",                            /* __STDC__HOSTED__ value "0" = embedded, "1" = hosted */
         ".asm",                         /* extension for assembly files */
-        ".o",                           /* extension for object files, NULL = has no object mode */
+        ".o",                           /* extension for object files, nullptr = has no object mode */
         "occ",                          /* name of an environment variable to parse, or 0 */
         "occ",                          /* name of the program, for usage */
-        "occ",                          /* name of a config file if you want to use one, or NULL (sans extension) */
+        "occ",                          /* name of a config file if you want to use one, or nullptr (sans extension) */
         usage_text,                     /* pointer to usage text */
         args,                           /* extra args */
         sizeof(args) / sizeof(args[0]), /* number of args */
         prockeywords,                   /* specific keywords, e.g. allow a 'bit' keyword and so forth */
         defines,                        /* defines list to create at compile time, or null */
-        &dbgStruct[0],                  /* debug structure, or NULL */
+        &dbgStruct[0],                  /* debug structure, or nullptr */
         &architecture,                  /* architecture characteristics */
         &outputfunctions,               /* pointer to backend function linkages */
-        NULL,                           /* pointer to MSIL-specific data and functions */
+        nullptr,                        /* pointer to MSIL-specific data and functions */
         BackendIntrinsicPrototypes,     /* pointer to extra builtin data */
         initnasm,                       /* return 1 to proceed */
-        0,                              /* precompile function, or NULL */
-        0,                              /* postcompile function, or NULL */
-        RunExternalFiles,               /* postprocess function, or NULL */
+        0,                              /* precompile function, or nullptr */
+        0,                              /* postcompile function, or nullptr */
+        RunExternalFiles,               /* postprocess function, or nullptr */
         0,                              /* compiler rundown */
         InsertOutputFileName,           /* insert the output (executable name) into the backend */
-        InsertExternalFile,             /* insert a non-compilable file in the backend list, e.g. for post processing, or NULL */
+        InsertExternalFile,             /* insert a non-compilable file in the backend list, e.g. for post processing, or nullptr */
         parse_param,                    /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
         parse_codegen,                  /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
         0,                              /* parse a pragma directive, or null */
@@ -662,8 +662,8 @@ ARCH_ASM assemblerInterface[] = {
         include_start,                  /* signal switching to a new source file */
         output_obj_file,                /* write the object file (for native object formats) */
         outcode_file_init,              /* initialize the object file */
-        inasmini,                       /* initialize inline assembler, per file, or NULL */
-        inasm_statement,                /* parse an assembly statement, or NULL */
+        inasmini,                       /* initialize inline assembler, per file, or nullptr */
+        inasm_statement,                /* parse an assembly statement, or nullptr */
         inlineAsmStmt,                  /* translate an assembly instruction which was inlined */
         0,                              /* initialize intrinsic mechanism, compiler startup */
         0,                              /* search for an intrinsic */
@@ -675,27 +675,27 @@ ARCH_ASM assemblerInterface[] = {
         0,                              /* backend data (compiler ignores) */
         "1",                            /* __STDC__HOSTED__ value "0" = embedded, "1" = hosted */
         ".asm",                         /* extension for assembly files */
-        ".o",                           /* extension for object files, NULL = has no object mode */
+        ".o",                           /* extension for object files, nullptr = has no object mode */
         "occ",                          /* name of an environment variable to parse, or 0 */
         "occ",                          /* name of the program, for usage */
-        "occ",                          /* name of a config file if you want to use one, or NULL (sans extension) */
+        "occ",                          /* name of a config file if you want to use one, or nullptr (sans extension) */
         usage_text,                     /* pointer to usage text */
         args,                           /* extra args */
         sizeof(args) / sizeof(args[0]), /* number of args */
         prockeywords,                   /* specific keywords, e.g. allow a 'bit' keyword and so forth */
         defines,                        /* defines list to create at compile time, or null */
-        &dbgStruct[0],                  /* debug structure, or NULL */
+        &dbgStruct[0],                  /* debug structure, or nullptr */
         &architecture,                  /* architecture characteristics */
         &outputfunctions,               /* pointer to backend function linkages */
-        NULL,                           /* pointer to MSIL-specific data and functions */
+        nullptr,                        /* pointer to MSIL-specific data and functions */
         BackendIntrinsicPrototypes,     /* pointer to extra builtin data */
         initfasm,                       /* return 1 to proceed */
-        0,                              /* precompile function, or NULL */
-        0,                              /* postcompile function, or NULL */
-        RunExternalFiles,               /* postprocess function, or NULL */
+        0,                              /* precompile function, or nullptr */
+        0,                              /* postcompile function, or nullptr */
+        RunExternalFiles,               /* postprocess function, or nullptr */
         0,                              /* compiler rundown */
         InsertOutputFileName,           /* insert the output (executable name) into the backend */
-        InsertExternalFile,             /* insert a non-compilable file in the backend list, e.g. for post processing, or NULL */
+        InsertExternalFile,             /* insert a non-compilable file in the backend list, e.g. for post processing, or nullptr */
         parse_param,                    /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
         parse_codegen,                  /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
         0,                              /* parse a pragma directive, or null */
@@ -703,8 +703,8 @@ ARCH_ASM assemblerInterface[] = {
         include_start,                  /* signal switching to a new source file */
         output_obj_file,                /* write the object file (for native object formats) */
         outcode_file_init,              /* initialize the object file */
-        inasmini,                       /* initialize inline assembler, per file, or NULL */
-        inasm_statement,                /* parse an assembly statement, or NULL */
+        inasmini,                       /* initialize inline assembler, per file, or nullptr */
+        inasm_statement,                /* parse an assembly statement, or nullptr */
         inlineAsmStmt,                  /* translate an assembly instruction which was inlined */
         0,                              /* initialize intrinsic mechanism, compiler startup */
         0,                              /* search for an intrinsic */
@@ -716,27 +716,27 @@ ARCH_ASM assemblerInterface[] = {
         0,                              /* backend data (compiler ignores) */
         "1",                            /* __STDC__HOSTED__ value "0" = embedded, "1" = hosted */
         ".asm",                         /* extension for assembly files */
-        ".o",                           /* extension for object files, NULL = has no object mode */
+        ".o",                           /* extension for object files, nullptr = has no object mode */
         "occ",                          /* name of an environment variable to parse, or 0 */
         "occ",                          /* name of the program, for usage */
-        "occ",                          /* name of a config file if you want to use one, or NULL (sans extension) */
+        "occ",                          /* name of a config file if you want to use one, or nullptr (sans extension) */
         usage_text,                     /* pointer to usage text */
         args,                           /* extra args */
         sizeof(args) / sizeof(args[0]), /* number of args */
         prockeywords,                   /* specific keywords, e.g. allow a 'bit' keyword and so forth */
         defines,                        /* defines list to create at compile time, or null */
-        &dbgStruct[0],                  /* debug structure, or NULL */
+        &dbgStruct[0],                  /* debug structure, or nullptr */
         &architecture,                  /* architecture characteristics */
         &outputfunctions,               /* pointer to backend function linkages */
-        NULL,                           /* pointer to MSIL-specific data and functions */
+        nullptr,                        /* pointer to MSIL-specific data and functions */
         BackendIntrinsicPrototypes,     /* pointer to extra builtin data */
         inittasm,                       /* return 1 to proceed */
-        0,                              /* precompile function, or NULL */
-        0,                              /* postcompile function, or NULL */
-        RunExternalFiles,               /* postprocess function, or NULL */
+        0,                              /* precompile function, or nullptr */
+        0,                              /* postcompile function, or nullptr */
+        RunExternalFiles,               /* postprocess function, or nullptr */
         0,                              /* compiler rundown */
         InsertOutputFileName,           /* insert the output (executable name) into the backend */
-        InsertExternalFile,             /* insert a non-compilable file in the backend list, e.g. for post processing, or NULL */
+        InsertExternalFile,             /* insert a non-compilable file in the backend list, e.g. for post processing, or nullptr */
         parse_param,                    /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
         parse_codegen,                  /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
         0,                              /* parse a pragma directive, or null */
@@ -744,8 +744,8 @@ ARCH_ASM assemblerInterface[] = {
         include_start,                  /* signal switching to a new source file */
         output_obj_file,                /* write the object file (for native object formats) */
         outcode_file_init,              /* initialize the object file */
-        inasmini,                       /* initialize inline assembler, per file, or NULL */
-        inasm_statement,                /* parse an assembly statement, or NULL */
+        inasmini,                       /* initialize inline assembler, per file, or nullptr */
+        inasm_statement,                /* parse an assembly statement, or nullptr */
         inlineAsmStmt,                  /* translate an assembly instruction which was inlined */
         0,                              /* initialize intrinsic mechanism, compiler startup */
         0,                              /* search for an intrinsic */
@@ -757,27 +757,27 @@ ARCH_ASM assemblerInterface[] = {
         0,                              /* backend data (compiler ignores) */
         "1",                            /* __STDC__HOSTED__ value "0" = embedded, "1" = hosted */
         ".asm",                         /* extension for assembly files */
-        ".o",                           /* extension for object files, NULL = has no object mode */
+        ".o",                           /* extension for object files, nullptr = has no object mode */
         "occ",                          /* name of an environment variable to parse, or 0 */
         "occ",                          /* name of the program, for usage */
-        "occ",                          /* name of a config file if you want to use one, or NULL (sans extension) */
+        "occ",                          /* name of a config file if you want to use one, or nullptr (sans extension) */
         usage_text,                     /* pointer to usage text */
         args,                           /* extra args */
         sizeof(args) / sizeof(args[0]), /* number of args */
         prockeywords,                   /* specific keywords, e.g. allow a 'bit' keyword and so forth */
         defines,                        /* defines list to create at compile time, or null */
-        &dbgStruct[0],                  /* debug structure, or NULL */
+        &dbgStruct[0],                  /* debug structure, or nullptr */
         &architecture,                  /* architecture characteristics */
         &outputfunctions,               /* pointer to backend function linkages */
-        NULL,                           /* pointer to MSIL-specific data and functions */
+        nullptr,                        /* pointer to MSIL-specific data and functions */
         BackendIntrinsicPrototypes,     /* pointer to extra builtin data */
         initmasm,                       /* return 1 to proceed */
-        0,                              /* precompile function, or NULL */
-        0,                              /* postcompile function, or NULL */
-        RunExternalFiles,               /* postprocess function, or NULL */
+        0,                              /* precompile function, or nullptr */
+        0,                              /* postcompile function, or nullptr */
+        RunExternalFiles,               /* postprocess function, or nullptr */
         0,                              /* compiler rundown */
         InsertOutputFileName,           /* insert the output (executable name) into the backend */
-        InsertExternalFile,             /* insert a non-compilable file in the backend list, e.g. for post processing, or NULL */
+        InsertExternalFile,             /* insert a non-compilable file in the backend list, e.g. for post processing, or nullptr */
         parse_param,                    /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
         parse_codegen,                  /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
         0,                              /* parse a pragma directive, or null */
@@ -785,8 +785,8 @@ ARCH_ASM assemblerInterface[] = {
         include_start,                  /* signal switching to a new source file */
         output_obj_file,                /* write the object file (for native object formats) */
         outcode_file_init,              /* initialize the object file */
-        inasmini,                       /* initialize inline assembler, per file, or NULL */
-        inasm_statement,                /* parse an assembly statement, or NULL */
+        inasmini,                       /* initialize inline assembler, per file, or nullptr */
+        inasm_statement,                /* parse an assembly statement, or nullptr */
         inlineAsmStmt,                  /* translate an assembly instruction which was inlined */
         0,                              /* initialize intrinsic mechanism, compiler startup */
         0,                              /* search for an intrinsic */
@@ -798,27 +798,27 @@ ARCH_ASM assemblerInterface[] = {
         0,                              /* backend data (compiler ignores) */
         "1",                            /* __STDC__HOSTED__ value "0" = embedded, "1" = hosted */
         ".asm",                         /* extension for assembly files */
-        ".o",                           /* extension for object files, NULL = has no object mode */
+        ".o",                           /* extension for object files, nullptr = has no object mode */
         "occ",                          /* name of an environment variable to parse, or 0 */
         "occ",                          /* name of the program, for usage */
-        "occ",                          /* name of a config file if you want to use one, or NULL (sans extension) */
+        "occ",                          /* name of a config file if you want to use one, or nullptr (sans extension) */
         usage_text,                     /* pointer to usage text */
         args,                           /* extra args */
         sizeof(args) / sizeof(args[0]), /* number of args */
         prockeywords,                   /* specific keywords, e.g. allow a 'bit' keyword and so forth */
         defines,                        /* defines list to create at compile time, or null */
-        &dbgStruct[0],                  /* debug structure, or NULL */
+        &dbgStruct[0],                  /* debug structure, or nullptr */
         &architecture,                  /* architecture characteristics */
         &outputfunctions,               /* pointer to backend function linkages */
-        NULL,                           /* pointer to MSIL-specific data and functions */
+        nullptr,                        /* pointer to MSIL-specific data and functions */
         BackendIntrinsicPrototypes,     /* pointer to extra builtin data */
         initgeneric,                    /* return 1 to proceed */
-        0,                              /* precompile function, or NULL */
-        0,                              /* postcompile function, or NULL */
-        RunExternalFiles,               /* postprocess function, or NULL */
+        0,                              /* precompile function, or nullptr */
+        0,                              /* postcompile function, or nullptr */
+        RunExternalFiles,               /* postprocess function, or nullptr */
         0,                              /* compiler rundown */
         InsertOutputFileName,           /* insert the output (executable name) into the backend */
-        InsertExternalFile,             /* insert a non-compilable file in the backend list, e.g. for post processing, or NULL */
+        InsertExternalFile,             /* insert a non-compilable file in the backend list, e.g. for post processing, or nullptr */
         parse_param,                    /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
         parse_codegen,                  /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
         0,                              /* parse a pragma directive, or null */
@@ -826,8 +826,8 @@ ARCH_ASM assemblerInterface[] = {
         include_start,                  /* signal switching to a new source file */
         output_obj_file,                /* write the object file (for native object formats) */
         outcode_file_init,              /* initialize the object file */
-        inasmini,                       /* initialize inline assembler, per file, or NULL */
-        inasm_statement,                /* parse an assembly statement, or NULL */
+        inasmini,                       /* initialize inline assembler, per file, or nullptr */
+        inasm_statement,                /* parse an assembly statement, or nullptr */
         inlineAsmStmt,                  /* translate an assembly instruction which was inlined */
         0,                              /* initialize intrinsic mechanism, compiler startup */
         0,                              /* search for an intrinsic */

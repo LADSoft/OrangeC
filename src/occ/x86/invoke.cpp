@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <stdio.h>
@@ -30,7 +30,7 @@
 #include "Utils.h"
 
 #ifdef HAVE_UNISTD_H
-#include <unistd.h>
+#    include <unistd.h>
 #endif
 
 extern bool compile_under_dos;
@@ -48,7 +48,7 @@ const char* winflags[] = {
     "/T:CON32 ", "/T:GUI32 ", "/T:DLL32 ", "/T:PM ", "/T:DOS32 ", "/T:BIN ", "/T:CON32;sdpmist32.bin ", "/T:CON32;shdld32.bin ",
 };
 const char* winc0[] = {"c0xpe.o", "c0pe.o", "c0dpe.o", "c0pm.o", "c0wat.o", "", "c0xpe.o", "c0hx.o",
-                 "c0xls.o", "c0ls.o", "c0dls.o", "c0om.o", "c0wat.o", "", "c0xpe.o", "c0hx.o"};
+                       "c0xls.o", "c0ls.o", "c0dls.o", "c0om.o", "c0wat.o", "", "c0xpe.o", "c0hx.o"};
 
 LIST *objlist, *asmlist, *liblist, *reslist, *rclist;
 static char outputFileName[256];
@@ -78,7 +78,7 @@ static bool InsertOption(char* name)
     int len = 0;
     if (*p)
         len = strlen(*p);
-    *p = (char *)realloc(*p, 2 + len + strlen(name + 1));
+    *p = (char*)realloc(*p, 2 + len + strlen(name + 1));
     (*p)[len] = 0;
     strcat(*p, " ");
     strcat(*p, name + 1);
@@ -104,7 +104,7 @@ static void InsertFile(LIST** r, const char* name, const char* ext, bool primary
     lst = *r;
     while (lst)
     {
-        if (Utils::iequal((char *)lst->data, buf))
+        if (Utils::iequal((char*)lst->data, buf))
             return;
         lst = lst->next;
     }
@@ -116,7 +116,7 @@ static void InsertFile(LIST** r, const char* name, const char* ext, bool primary
     /* Insert file */
     while (*r)
         r = &(*r)->next;
-    *r = (LIST *) malloc(sizeof(LIST));
+    *r = (LIST*)malloc(sizeof(LIST));
     if (!r)
         return;
     (*r)->next = 0;
@@ -180,25 +180,25 @@ int InsertExternalFile(char* name, bool primary)
 }
 
 /*-------------------------------------------------------------------------*/
-void WinmodeSetup(const char select, const char *str);
+void WinmodeSetup(const char select, const char* str);
 
-void InsertOutputFileName(char* name) 
-{ 
+void InsertOutputFileName(char* name)
+{
     char ext[256];
-    strcpy(outputFileName, name); 
+    strcpy(outputFileName, name);
 
-    char *p = strrchr(outputFileName, '.');
+    char* p = strrchr(outputFileName, '.');
     if (p)
     {
-       strcpy(ext, p);
-       p = ext;
-       while (*p)
-       {
-          *p = tolower(*p);
-          p++;
-       }
-       if (!strcmp(ext, ".dll"))
-           WinmodeSetup('W',"d");
+        strcpy(ext, p);
+        p = ext;
+        while (*p)
+        {
+            *p = tolower(*p);
+            p++;
+        }
+        if (!strcmp(ext, ".dll"))
+            WinmodeSetup('W', "d");
     }
 }
 
@@ -208,7 +208,7 @@ int RunExternalFiles(char* rootPath)
 {
     char root[260];
     char args[1024];
-    const char *c0;
+    const char* c0;
     char spname[2048];
     char outName[260], *p;
     int rv;
@@ -235,7 +235,7 @@ int RunExternalFiles(char* rootPath)
     strcpy(outName, outputFileName);
     if (objlist && outName[0] && outName[strlen(outName) - 1] == '\\')
     {
-        strcat(outName, (char *) objlist->data);
+        strcat(outName, (char*)objlist->data);
         StripExt(outName);
         strcat(outName, ".exe");
         strcpy(temp, outputFileName);
@@ -317,7 +317,7 @@ int RunExternalFiles(char* rootPath)
                 c0 = "c0pmd.o";
             else if (prm_targettype == DOS32A)
                 c0 = "c0watd.o";
-            if (!compile_under_dos) // this because I don't want to vet sqlite3 under DOS at this time.
+            if (!compile_under_dos)  // this because I don't want to vet sqlite3 under DOS at this time.
                 strcat(args, " /v");
         }
         fprintf(fil, "  %s", c0);
@@ -352,8 +352,8 @@ int RunExternalFiles(char* rootPath)
             reslist = reslist->next;
         }
         fclose(fil);
-        sprintf(spname, "\"%solink.exe\" %s %s %s /c+ %s %s @%s", root, link_params ? link_params : "", prm_targettype == WHXDOS ? "-DOBJECTALIGN=65536" : "", !showBanner ? "-!" : "", args,
-                verbosityString, tempFile);
+        sprintf(spname, "\"%solink.exe\" %s %s %s /c+ %s %s @%s", root, link_params ? link_params : "",
+                prm_targettype == WHXDOS ? "-DOBJECTALIGN=65536" : "", !showBanner ? "-!" : "", args, verbosityString, tempFile);
         if (verbosity)
         {
             FILE* fil = fopen(tempFile, "r");

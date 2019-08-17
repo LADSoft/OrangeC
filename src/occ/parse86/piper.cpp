@@ -55,12 +55,12 @@ static struct data* readFileFromPipe(const char* filname)
             {
                 if (n != 0)
                 {
-                    char* buf = (char *) malloc(n + 1);
+                    char* buf = (char*)malloc(n + 1);
                     buf[n] = 0;
                     WaitForPipeData(handle, n);
                     if (ReadFile(handle, buf, n, &read, NULL) && read == n)
                     {
-                        rv = (data *)calloc(1, sizeof(struct data));
+                        rv = (data*)calloc(1, sizeof(struct data));
                         rv->buf = buf;
                         rv->length = n;
                         rv->level = 0;

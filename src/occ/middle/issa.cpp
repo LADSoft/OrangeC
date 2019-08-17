@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <stdio.h>
@@ -59,7 +59,7 @@ static LIST* savedDag;
 
 IMODE *trueName, *falseName;
 
-void SSAInit(void) { savedDag = NULL; }
+void SSAInit(void) { savedDag = nullptr; }
 /*
  * this is an internal calculation needed to locate where to put PHI nodes
  */
@@ -95,8 +95,8 @@ static void DominancePrime(BLOCK* workList[], BRIGGS_SET* dest, BLOCKLIST* src)
  */
 static void insertPhiOp(BLOCK* b, int tnum)
 {
-    QUAD *q = (QUAD *)Alloc(sizeof(QUAD)), *I;
-    PHIDATA* phi = (PHIDATA *) oAlloc(sizeof(PHIDATA));
+    QUAD *q = (QUAD*)Alloc(sizeof(QUAD)), *I;
+    PHIDATA* phi = (PHIDATA*)oAlloc(sizeof(PHIDATA));
     BLOCKLIST* pred = b->pred;
     struct _phiblock** pbhold;
     LIST* list;
@@ -118,7 +118,7 @@ static void insertPhiOp(BLOCK* b, int tnum)
     pbhold = &phi->temps;
     while (pred)
     {
-        struct _phiblock* pb = (_phiblock *)oAlloc(sizeof(struct _phiblock));
+        struct _phiblock* pb = (_phiblock*)oAlloc(sizeof(struct _phiblock));
         LIST* list;
         phi->nblocks++;
         *pbhold = pb;
@@ -135,9 +135,9 @@ static void insertPhiOp(BLOCK* b, int tnum)
  */
 static void insertPhiNodes(void)
 {
-    BLOCK** workList = (BLOCK **)oAlloc(blockCount * sizeof(BLOCK*));
+    BLOCK** workList = (BLOCK**)oAlloc(blockCount * sizeof(BLOCK*));
     BRIGGS_SET* bset = briggsAlloc(blockCount);
-    BLOCKLIST* entry = (BLOCKLIST *)oAlloc(sizeof(BLOCKLIST));
+    BLOCKLIST* entry = (BLOCKLIST*)oAlloc(sizeof(BLOCKLIST));
     int i, max = tempCount;
 
     entry->block = blockArray[0];
@@ -173,7 +173,7 @@ static void insertPhiNodes(void)
  */
 static IMODE* renameTemp(BLOCK* b, QUAD* head, IMODE* adr)
 {
-    IMODE* im = NULL;
+    IMODE* im = nullptr;
     int tnum = adr->offset->v.sp->value.i;
     (void)b;
     (void)head;
@@ -189,7 +189,7 @@ static IMODE* renameTemp(BLOCK* b, QUAD* head, IMODE* adr)
         {
             if (adr->bits)
             {
-                im = (IMODE *)Alloc(sizeof(IMODE));
+                im = (IMODE*)Alloc(sizeof(IMODE));
                 *im = *adr;
                 im->offset = t->enode;
             }
@@ -207,8 +207,8 @@ static IMODE* renameTemp(BLOCK* b, QUAD* head, IMODE* adr)
                 }
                 if (!iml)
                 {
-                    IMODELIST* iml2 = (IMODELIST *)Alloc(sizeof(IMODELIST));
-                    im = (IMODE *)Alloc(sizeof(IMODE));
+                    IMODELIST* iml2 = (IMODELIST*)Alloc(sizeof(IMODELIST));
+                    im = (IMODE*)Alloc(sizeof(IMODE));
                     *im = *adr;
                     im->offset = t->enode;
                     iml2->im = im;
@@ -230,7 +230,7 @@ static void RemoveName(int i)
         if (list->key && !memcmp(key, list->key, sizeof(void*)))
         {
             memset(list->key, 0, sizeof(void*));
-            list->rv = NULL;
+            list->rv = nullptr;
         }
         list = list->next;
     }
@@ -239,7 +239,7 @@ static DAGLIST* InsertHash(QUAD* rv, UBYTE* key, int size, DAGLIST** table)
 {
     int hashval = dhash(key, size);
     DAGLIST* newDag;
-    newDag = (DAGLIST *)oAlloc(sizeof(DAGLIST));
+    newDag = (DAGLIST*)oAlloc(sizeof(DAGLIST));
     newDag->rv = (UBYTE*)rv;
     newDag->key = key;
     newDag->next = *table;
@@ -292,7 +292,7 @@ static void renameToPhi(BLOCK* b)
             ILIST* list;
             IMODE* rv = InitTempOpt(tempInfo[pd->T0]->enode->v.sp->imvalue->size, tempInfo[pd->T0]->size);
             int n = rv->offset->v.sp->value.i;
-            list = (ILIST *)oAlloc(sizeof(ILIST));
+            list = (ILIST*)oAlloc(sizeof(ILIST));
             list->next = tempInfo[pd->T0]->renameStack;
             list->data = n;
             tempInfo[pd->T0]->renameStack = list;
@@ -359,7 +359,7 @@ static void renameToPhi(BLOCK* b)
                 int n = rv->offset->v.sp->value.i;
                 rv->vol = head->ans->vol;
                 rv->restricted = head->ans->restricted;
-                list = (ILIST *)oAlloc(sizeof(ILIST));
+                list = (ILIST*)oAlloc(sizeof(ILIST));
                 list->next = tempInfo[tnum]->renameStack;
                 list->data = n;
                 tempInfo[tnum]->renameStack = list;
@@ -516,17 +516,17 @@ void TranslateToSSA(void)
         tempInfo[i]->preSSATemp = -1;
         tempInfo[i]->postSSATemp = -1;
         tempInfo[i]->partition = i;
-        tempInfo[i]->instructionDefines = NULL;
-        tempInfo[i]->instructionUses = NULL;
-        tempInfo[i]->renameStack = NULL;
-        tempInfo[i]->elimPredecessors = NULL;
-        tempInfo[i]->elimSuccessors = NULL;
+        tempInfo[i]->instructionDefines = nullptr;
+        tempInfo[i]->instructionUses = nullptr;
+        tempInfo[i]->renameStack = nullptr;
+        tempInfo[i]->elimPredecessors = nullptr;
+        tempInfo[i]->elimSuccessors = nullptr;
     }
-    trueName = (IMODE *)Alloc(sizeof(IMODE));
+    trueName = (IMODE*)Alloc(sizeof(IMODE));
     trueName->mode = i_immed;
     trueName->size = -ISZ_UINT;
     trueName->offset = intNode(en_c_i, 1);
-    falseName = (IMODE *)Alloc(sizeof(IMODE));
+    falseName = (IMODE*)Alloc(sizeof(IMODE));
     falseName->mode = i_immed;
     falseName->size = -ISZ_UINT;
     falseName->offset = intNode(en_c_i, 0);
@@ -743,7 +743,7 @@ static void partition(bool all)
 }
 static void returnToNormal(IMODE** adr, bool all)
 {
-    IMODE* im = NULL;
+    IMODE* im = nullptr;
     if ((*adr)->offset)
     {
         int tnum = (*adr)->offset->v.sp->value.i, T0p;
@@ -772,7 +772,7 @@ static void returnToNormal(IMODE** adr, bool all)
             {
                 if ((*adr)->bits)
                 {
-                    im = (IMODE *)Alloc(sizeof(IMODE));
+                    im = (IMODE*)Alloc(sizeof(IMODE));
                     *im = **adr;
                     im->offset = t->enode;
                 }
@@ -790,8 +790,8 @@ static void returnToNormal(IMODE** adr, bool all)
                     }
                     if (!iml)
                     {
-                        IMODELIST* iml2 = (IMODELIST *)Alloc(sizeof(IMODELIST));
-                        im = (IMODE *)Alloc(sizeof(IMODE));
+                        IMODELIST* iml2 = (IMODELIST*)Alloc(sizeof(IMODELIST));
+                        im = (IMODE*)Alloc(sizeof(IMODE));
                         *im = **adr;
                         im->offset = t->enode;
                         iml2->im = im;
@@ -807,7 +807,7 @@ static void returnToNormal(IMODE** adr, bool all)
         }
         else
         {
-            im = (IMODE *)Alloc(sizeof(IMODE));
+            im = (IMODE*)Alloc(sizeof(IMODE));
             *im = **adr;
             im->offset = t->enode;
         }
@@ -816,7 +816,7 @@ static void returnToNormal(IMODE** adr, bool all)
     {
         if (!im)
         {
-            im = (IMODE *)Alloc(sizeof(IMODE));
+            im = (IMODE*)Alloc(sizeof(IMODE));
             *im = **adr;
         }
         else
@@ -849,7 +849,7 @@ static void returnToNormal(IMODE** adr, bool all)
 }
 static void copyInstruction(BLOCK* blk, int dest, int src, bool all)
 {
-    QUAD *q = (QUAD *)Alloc(sizeof(QUAD)), *tail = blk->tail;
+    QUAD *q = (QUAD*)Alloc(sizeof(QUAD)), *tail = blk->tail;
     IMODE *destim, *srcim;
     destim = tempInfo[dest]->enode->v.sp->imvalue;
     srcim = tempInfo[src]->enode->v.sp->imvalue;
@@ -887,21 +887,21 @@ static void BuildAuxGraph(BLOCK* b, int which, BRIGGS_SET* nodes)
                 if (!briggsTest(nodes, T0p))
                 {
                     briggsSet(nodes, T0p);
-                    tempInfo[T0p]->elimPredecessors = NULL;
-                    tempInfo[T0p]->elimSuccessors = NULL;
+                    tempInfo[T0p]->elimPredecessors = nullptr;
+                    tempInfo[T0p]->elimSuccessors = nullptr;
                 }
                 if (!briggsTest(nodes, Tip))
                 {
                     briggsSet(nodes, Tip);
-                    tempInfo[Tip]->elimPredecessors = NULL;
-                    tempInfo[Tip]->elimSuccessors = NULL;
+                    tempInfo[Tip]->elimPredecessors = nullptr;
+                    tempInfo[Tip]->elimSuccessors = nullptr;
                 }
-                l = (ILIST *)oAlloc(sizeof(ILIST));
+                l = (ILIST*)oAlloc(sizeof(ILIST));
                 l->data = T0p;
                 l->next = tempInfo[Tip]->elimPredecessors;
                 tempInfo[Tip]->elimPredecessors = l;
 
-                l = (ILIST *)oAlloc(sizeof(ILIST));
+                l = (ILIST*)oAlloc(sizeof(ILIST));
                 l->data = Tip;
                 l->next = tempInfo[T0p]->elimSuccessors;
                 tempInfo[T0p]->elimSuccessors = l;
@@ -926,7 +926,7 @@ static void ElimForward(BRIGGS_SET* visited, ILIST** stack, int T)
         }
         l = l->next;
     }
-    l = (ILIST *)oAlloc(sizeof(ILIST));
+    l = (ILIST*)oAlloc(sizeof(ILIST));
     l->data = T;
     l->next = *stack;
     *stack = l;
@@ -1002,7 +1002,7 @@ static void EliminatePredecessors(BRIGGS_SET* nodes, BLOCK* pred, BLOCK* b, int 
     if (nodes->top)
     {
         BRIGGS_SET* visited = briggsAlloc(tempCount * 2);
-        ILIST* stack = NULL;
+        ILIST* stack = nullptr;
         int i;
         for (i = 0; i < nodes->top; i++)
         {

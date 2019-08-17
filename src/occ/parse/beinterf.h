@@ -1,25 +1,26 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
+ 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "browse.h"
@@ -188,7 +189,7 @@ typedef struct
     UBYTE* regOrder;            /* register allocation order */
     ARCH_PEEP* peephole_defs;   /* defines peephole information */
     int fastcallRegCount;       /* Max number of regs considered for fastcall */
-    const char* fastcallRegs;         /* register list for regs used in fastcall */
+    const char* fastcallRegs;   /* register list for regs used in fastcall */
     int preferopts;             /* preferred optimizations */
     int denyopts;               /* optimizations we don't want */
 #define DO_NOGLOBAL 1
@@ -229,14 +230,14 @@ typedef struct
     char parmwidth;                   /* minimium width/ padding of passed parameters in maus */
     char stackalign;                  /* minimum stack alignment */
     char libsasimports;               /* library functions should be genned as import calls */
-    char retblockparamadjust;                            /* Adjustment for retblock parameters */
+    char retblockparamadjust;         /* Adjustment for retblock parameters */
 
 } ARCH_CHARACTERISTICS;
 
 /* debugger characteristics */
 typedef struct _arch_dbg
 {
-    const char* name;                        /* name of debug format */
+    const char* name;                  /* name of debug format */
     void* userdata;                    /* backend specific data, compiler ignores */
     int* blocknum;                     /* pointer to variable which holds block number, or zero for no blocking */
     void (*init)(void);                /* per file initialization */
@@ -252,10 +253,10 @@ typedef struct _arch_dbg
 /* things to #define before compiling */
 typedef struct _arch_defines
 {
-    const char* define;   /* symbol to define */
-    const char* value;    /* value */
-    char respect;   /* set to true to make it define it, false to ignore it */
-    char permanent; /* set to true if the symbol cannot be undefined */
+    const char* define; /* symbol to define */
+    const char* value;  /* value */
+    char respect;       /* set to true to make it define it, false to ignore it */
+    char permanent;     /* set to true if the symbol cannot be undefined */
 } ARCH_DEFINES;
 
 /* a function for code generation */
@@ -284,7 +285,7 @@ typedef struct _arch_gen
     void (*gen_string_label)(int labnum, int type);              /* generate a numbered label */
     void (*gen_bit)(SYMBOL* sp, LLONG_TYPE val);                 /* reserve space for a bit */
     void (*gen_int)(enum e_gt type, LLONG_TYPE val);             /* initialize one of the integer types */
-    void (*gen_float)(enum e_gt type, FPF* val);                /* initialize a float */
+    void (*gen_float)(enum e_gt type, FPF* val);                 /* initialize a float */
     void (*gen_address)(ULLONG_TYPE val);                        /* initializae a pointer */
     void (*gen_string)(LCHAR* string, int len);                  /* initialize a string */
     void (*gen_ref)(SYMBOL* sp, int offset);                     /* put a reference to a variable */
@@ -308,7 +309,7 @@ typedef struct _arch_gen
     void (*extern_define)(SYMBOL* sp, int code);                 /* put an external definition */
     void (*import_define)(SYMBOL* sp, char* file);               /* put an import definition */
     void (*export_define)(SYMBOL* sp);                           /* put an export definition */
-    void (*output_alias)(char* sp, char* alias);                 /* put an alias */
+    void (*output_alias)(char* sym, char* alias);                /* put an alias */
     void (*output_includelib)(char* name);                       /* put an included library name */
     IMODE* (*handleIntrins)(EXPRESSION* node, int novalue);      /* backend handle intrinsic */
     CGFUNC asm_exprtag;                                          /* expression tag */
@@ -410,40 +411,40 @@ typedef struct
 
 typedef struct
 {
-    bool allowExtensions;              /* True if allowing language extensions */
-    bool (*managed)(SYMBOL* sp);       /* return true if the function is a managed function, false otherwise */
+    bool allowExtensions;                 /* True if allowing language extensions */
+    bool (*managed)(SYMBOL* sp);          /* return true if the function is a managed function, false otherwise */
     TYPE* (*find_boxed_type)(TYPE* tp);   /* msil - get a boxed version of type*/
     TYPE* (*find_unboxed_type)(TYPE* tp); /* msil - get an unboxed version of type*/
     void (*create_property)(SYMBOL* property, SYMBOL* getter, SYMBOL* setter);  // create a property instance
 } ARCH_MSIL;
 typedef struct _arch_asm
 {
-    const char* name;                 /* assembler name */
+    const char* name;           /* assembler name */
     void* userdata;             /* backend data (compiler ignores) */
-    const char* hosted;               /* __STDC__HOSTED__ value "0" = embedded, "1" = hosted */
-    const char* asmext;               /* extension for assembly files */
-    const char* objext;               /* extension for object files, NULL = has no object mode */
-    const char* envname;              /* name of an environment variable to parse, or 0 */
-    const char* progname;             /* name of the program, for usage */
-    const char* cfgname;              /* name of a config file if you want to use one, or NULL (sans extension) */
-    const char* usage_text;           /* pointer to usage text */
+    const char* hosted;         /* __STDC__HOSTED__ value "0" = embedded, "1" = hosted */
+    const char* asmext;         /* extension for assembly files */
+    const char* objext;         /* extension for object files, nullptr = has no object mode */
+    const char* envname;        /* name of an environment variable to parse, or 0 */
+    const char* progname;       /* name of the program, for usage */
+    const char* cfgname;        /* name of a config file if you want to use one, or nullptr (sans extension) */
+    const char* usage_text;     /* pointer to usage text */
     CMDLIST* Args;              /* argument handling */
     int ArgCount;               /* number of arguments */
     KEYWORD* keywords;          /* specific keywords, e.g. allow a 'bit' keyword and so forth */
     ARCH_DEFINES* defines;      /* defines list to create at compile time, or null */
-    ARCH_DEBUG* debug;          /* debug structure, or NULL */
+    ARCH_DEBUG* debug;          /* debug structure, or nullptr */
     ARCH_CHARACTERISTICS* arch; /* architecture characteristics */
     ARCH_GEN* gen;              /* pointer to backend function linkages */
     ARCH_MSIL* msil;            /* pointer to MSIL-specific data and functions */
-    const char* bltins;               /* pointer to extra builtin data */
+    const char* bltins;         /* pointer to extra builtin data */
     int (*init)(COMPILER_PARAMS* params, struct _arch_asm* data, ARCH_DEBUG* debug); /* return 1 to proceed */
-    int (*main_preprocess)();                                                        /* preprocess function, or NULL */
-    void (*main_postprocess)(bool hasErrors);                                     /* postprocess function, or NULL */
-    int (*compiler_postprocess)(char*);                                              /* postprocess function, or NULL */
+    int (*main_preprocess)();                                                        /* preprocess function, or nullptr */
+    void (*main_postprocess)(bool hasErrors);                                        /* postprocess function, or nullptr */
+    int (*compiler_postprocess)(char*);                                              /* postprocess function, or nullptr */
     int (*rundown)(void);                                                            /* compiler rundown */
     void (*insert_output_file)(char* name); /* insert the output (executable name) into the backend */
     int (*insert_noncompile_file)(
-        char* name, bool primary); /* insert a non-compilable file in the backend list, e.g. for post processing, or NULL */
+        char* name, bool primary); /* insert a non-compilable file in the backend list, e.g. for post processing, or nullptr */
     int (*parse_param)(char mode, char* string);    /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
     int (*parse_codegen)(char mode, char* string);  /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
     void (*doPragma)(char* kw, char* tag);          /* parse a pragma directive, or null */
@@ -451,7 +452,7 @@ typedef struct _arch_asm
     void (*enter_includename)(char* name, int num); /* switch to or from an include file */
     void (*output_obj_file)(void);                  /* write the object file (for native object formats) */
     void (*outcode_init)(void);                     /* initialize the object file */
-    void (*inlineAsmInit)(void);                    /* initialize inline assembler, per file, or NULL */
+    void (*inlineAsmInit)(void);                    /* initialize inline assembler, per file, or nullptr */
     LEXEME* (*inlineAsm)(LEXEME*, BLOCKDATA*);      /* parse an assembly statement */
     void* (*inlineAsmStmt)(void* stmt);             /* inlined asm stmt */
     void (*intrinsicInit)(void);                    /* initialize intrinsic mechanism, compiler startup */
@@ -526,17 +527,17 @@ typedef struct
 #define beGetCurrentInstruction currentQuad
 #define beGlobalAlloc(x) globalAlloc(x)
 
-    extern COMPILER_PARAMS cparams;
-    extern int nextLabel;
-    extern SYMBOL* theCurrentFunc;
-    extern char version[];
-    extern char* prm_searchpath;
-    extern ASMNAME* identdata;
-    extern QUAD* currentQuad;
+extern COMPILER_PARAMS cparams;
+extern int nextLabel;
+extern SYMBOL* theCurrentFunc;
+extern char version[];
+extern char* prm_searchpath;
+extern ASMNAME* identdata;
+extern QUAD* currentQuad;
 
-    void bePrintf(char* format, ...);
-    void beWrite(char* buf, size_t size);
-    void* globalAlloc(int siz);
-    BE_IMODEDATA* beArgType(IMODE* in);
-    void beDecorateSymName(char* buf, SYMBOL* sp);
-    int beVariableLive(IMODE* m);
+void bePrintf(char* format, ...);
+void beWrite(char* buf, size_t size);
+void* globalAlloc(int siz);
+BE_IMODEDATA* beArgType(IMODE* in);
+void beDecorateSymName(char* buf, SYMBOL* sp);
+int beVariableLive(IMODE* m);

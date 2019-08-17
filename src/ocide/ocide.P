@@ -957,7 +957,7 @@ COLORREF PropGetColor(PROJECTITEM *item, char *id);
 
                              /* Propswnd.c */
 
-HWND PropGetHWNDCombobox(HWND parent);
+HWND PropGetHWNDCombobox(HWND parent, BOOL vscroll);
 HWND PropGetHWNDNumeric(HWND parent);
 HWND PropGetHWNDText(HWND parent);
 void PropSetExp(struct resRes *data, char *buf, EXPRESSION **exp);

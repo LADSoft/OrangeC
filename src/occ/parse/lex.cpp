@@ -450,7 +450,7 @@ KEYWORD* searchkw(unsigned char** p)
                     if (!count)
                     {
                         errorstr(ERR_C99_KEYWORD, (char*)buf);
-                        return NULL;
+                        return nullptr;
                     }
                 }
                 *p = *p + len;
@@ -468,7 +468,7 @@ KEYWORD* searchkw(unsigned char** p)
         if (len)
         {
             buf[len] = 0;
-            while (len && (found = (KEYWORD*)search((char*)buf, kwhash)) == NULL)
+            while (len && (found = (KEYWORD*)search((char*)buf, kwhash)) == nullptr)
             {
                 buf[--len] = 0;
             }
@@ -497,7 +497,7 @@ KEYWORD* searchkw(unsigned char** p)
             }
         }
     }
-    return NULL;
+    return nullptr;
 }
 int getChar(unsigned char** source, enum e_lexType* tp)
 {
@@ -654,7 +654,7 @@ SLCHAR* getString(unsigned char** source, enum e_lexType* tp)
                 {
                     errorint(ERR_EOF_RAW_STRING, lineno);
                     *source = p;
-                    return NULL;
+                    return nullptr;
                 }
                 if (err)
                 {
@@ -703,7 +703,7 @@ SLCHAR* getString(unsigned char** source, enum e_lexType* tp)
                     {
                         errorint(ERR_EOF_RAW_STRING, lineno);
                         *source = p;
-                        return NULL;
+                        return nullptr;
                     }
                     else
                     {
@@ -840,7 +840,7 @@ SLCHAR* getString(unsigned char** source, enum e_lexType* tp)
         DecGlobalFlag();
         return rv;
     }
-    return NULL;
+    return nullptr;
 }
 static int radix36(char c)
 {
@@ -1267,7 +1267,7 @@ LEXEME* SkipToNextLine(void)
     {
         while (*includes->lptr)
             includes->lptr++;
-        context->cur = NULL;
+        context->cur = nullptr;
     }
     return getsym();
 }
@@ -1315,32 +1315,32 @@ LEXEME* getsym(void)
     }
     else if (context->next)
     {
-        return NULL;
+        return nullptr;
     }
     lex = &pool[nextFree];
-    lex->linedata = NULL;
+    lex->linedata = nullptr;
     lex->prev = context->last;
     context->last = lex;
-    lex->next = NULL;
+    lex->next = nullptr;
     if (lex->prev)
         lex->prev->next = lex;
     if (++nextFree >= MAX_LOOKBACK)
         nextFree = 0;
     lex->registered = false;
     TemplateRegisterDeferred(last);
-    last = NULL;
+    last = nullptr;
     do
     {
         contin = false;
         do
         {
             if (!includes)
-                return NULL;
+                return nullptr;
             if (!includes->lptr || !*includes->lptr)
             {
                 if (GetLine())
                 {
-                    return NULL;
+                    return nullptr;
                 }
             }
             while (isspace(*includes->lptr) || *includes->lptr == MACRO_PLACEHOLDER)
@@ -1374,7 +1374,7 @@ LEXEME* getsym(void)
                     lex->suffix = litlate(suffix);
             }
         }
-        else if ((strptr = getString(&includes->lptr, &tp)) != NULL)
+        else if ((strptr = getString(&includes->lptr, &tp)) != nullptr)
         {
             lex->value.s.w = (LCHAR*)strptr;
             lex->type = tp == l_u8str ? l_astr : tp;
@@ -1396,7 +1396,7 @@ LEXEME* getsym(void)
             unsigned char* start = includes->lptr;
             unsigned char* end = includes->lptr;
             enum e_lexType tp;
-            if ((tp = getNumber(&includes->lptr, &end, suffix, &rval, &ival)) != INT_MIN)
+            if ((tp = getNumber(&includes->lptr, &end, suffix, &rval, &ival)) != (unsigned)INT_MIN)
             {
                 if (tp < l_f)
                     lex->value.i = ival;
@@ -1411,7 +1411,7 @@ LEXEME* getsym(void)
                 }
                 lex->type = tp;
             }
-            else if ((kw = searchkw(&includes->lptr)) != NULL)
+            else if ((kw = searchkw(&includes->lptr)) != nullptr)
             {
                 if (kw->key == kw__Pragma)
                 {
@@ -1459,7 +1459,7 @@ LEXEME* prevsym(LEXEME* lex)
         }
         else
         {
-            context->cur = NULL;
+            context->cur = nullptr;
         }
     }
     return lex;
@@ -1493,7 +1493,7 @@ LEXEME* SetAlternateLex(LEXEME* lexList)
     else
     {
         context = context->next;
-        return NULL;
+        return nullptr;
     }
 }
 bool CompareLex(LEXEME* left, LEXEME* right)

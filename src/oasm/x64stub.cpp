@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "Instruction.h"
@@ -150,7 +150,7 @@ const char* Lexer::preData =
     "%pop\n"
     "__SECT__\n"
     "%endmacro\n";
-void Instruction::RepRemoveCancellations(AsmExprNode *exp, bool commit, int &count, Section *sect[], bool sign[], bool plus)
+void Instruction::RepRemoveCancellations(AsmExprNode* exp, bool commit, int& count, Section* sect[], bool sign[], bool plus)
 {
     if (exp->GetType() == AsmExprNode::LABEL)
     {
@@ -195,7 +195,6 @@ void Instruction::RepRemoveCancellations(AsmExprNode *exp, bool commit, int &cou
     {
         RepRemoveCancellations(exp->GetRight(), commit, count, sect, sign, exp->GetType() == AsmExprNode::SUB ? !plus : plus);
     }
-
 }
 
 void Instruction::Optimize(Section* sect, int pc, bool last)
@@ -246,7 +245,7 @@ void Instruction::Optimize(Section* sect, int pc, bool last)
     {
         for (auto& fixup : fixups)
         {
-            Section *sect[10];
+            Section* sect[10];
             bool sign[10];
             int count = 0;
             bool canceled = false;

@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "AsmFile.h"
@@ -153,7 +153,7 @@ void AsmFile::DoLabel(std::string& name, int lineno)
             {
                 throw new std::runtime_error("Multiple start addresses specified");
             }
-//            label = new Label(name, labels.size(), currentSection->GetSect());
+            //            label = new Label(name, labels.size(), currentSection->GetSect());
             startupSection = currentSection;
         }
         else
@@ -529,7 +529,7 @@ void AsmFile::AlignDirective()
     {
         NeedSection();
         int v = GetValue();
-        if ((v &(v-1)) != 0)
+        if ((v & (v - 1)) != 0)
             throw new std::runtime_error("Alignment must be power of two");
         Instruction* ins = new Instruction(v);
         currentSection->InsertInstruction(ins);
@@ -737,7 +737,8 @@ void AsmFile::SectionDirective()
     if (sections[name] == nullptr)
     {
         sections[name] = std::make_unique<Section>(name, sections.size());
-        Section* section = sections[name].get();;
+        Section* section = sections[name].get();
+        ;
         numericSections.push_back(section);
         section->Parse(this);
         currentSection = section;

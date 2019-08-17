@@ -122,8 +122,6 @@ endif
 vpath %.c $(SRCPATH)
 vpath %.cpp $(SRCPATH)
 
-compiler: redirect lsmsilcrtl.dll occmsil.dll
-
 ifndef _TREEROOT
 _TREEROOT := $(CURDIR)$(PATHEXT2)..$(PATHEXT2)..$(PATHEXT2)treetop.mak
 _TREETARGET := $(CURDIR)
@@ -136,19 +134,7 @@ format:
 	@$(MAKE) -f $(_TREEROOT) format
 endif
 
-occmsil.dll: occmsil.c
-ifneq "$(wildcard $(ORANGEC)$(PATHEXT2)bin$(PATHEXT2)occ.exe" ""
-	-del occmsil.dll
-	occ /Wd occmsil.c
-endif
-
-lsmsilcrtl.dll: lsmsilcrtl\lsmsilcrtl.cs
-	csc /unsafe /keyfile:lsmsilcrtl\occil.snk /t:library lsmsilcrtl\lsmsilcrtl.cs lsmsilcrtl\properties\assemblyinfo.cs
 
 DISTRIBUTE: copyexe
 	copy target.cfg $(DISTBIN)$(PATHEXT2)occil.cfg
-        copy lsmsilcrtl.dll $(DISTBIN)
-ifneq "$(wildcard $(ORANGEC)$(PATHEXT2)bin$(PATHEXT2)occ.exe" ""
-	copy occmsil.dll $(DISTBIN)
-endif
      

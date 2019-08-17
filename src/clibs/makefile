@@ -39,7 +39,7 @@ export SHELL
 all: mkapps
 
 BASEDIRS= ALLOC cmath COMPLIB IO locale MATH PROCONT stdlib STRING strings \
-	threads TIME uio wc uchar
+	threads TIME uio wc uchar occil
 CLIBDIRS = $(BASEDIRS) cpp
 DLLDIRS = $(BASEDIRS) cpp
 DIRS= $(CLIBDIRS)

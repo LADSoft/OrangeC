@@ -119,6 +119,12 @@ struct byLabel
 {
     bool operator () (const SYMBOL *left, const SYMBOL *right) const
     {
+        if (left->storage_class == sc_localstatic || right->storage_class == sc_localstatic)
+        {
+            if (left->storage_class != right->storage_class)
+                return left->storage_class < right->storage_class;
+            return left->decoratedName < right->decoratedName;
+        }
         return left->label < right->label;
     }
 };
@@ -266,7 +272,14 @@ bool IsPointedStruct(TYPE *tp)
 Field *GetField(SYMBOL *sp)
 {
     int flags = Qualifiers::Public | Qualifiers::Static;
-    if (sp->storage_class != sc_localstatic && sp->storage_class != sc_constant && sp->storage_class != sc_static)
+    if (sp->storage_class == sc_localstatic)
+    {
+        char buf[256];
+        sprintf(buf, "%s_%x", sp->decoratedName, uniqueId);
+        Field *field = peLib->AllocateField(buf, GetType(sp->tp, true), flags);
+        return field;
+    }
+    else if (sp->storage_class != sc_localstatic && sp->storage_class != sc_constant && sp->storage_class != sc_static)
     {
         Field *field = peLib->AllocateField(sp->name, GetType(sp->tp, true), flags);
         return field;

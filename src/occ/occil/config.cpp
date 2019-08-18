@@ -64,8 +64,8 @@ static    char usage_text[] = "[options] [@response file] files\n"
         "--version - show version info\n"
         "Codegen parameters: (/C[+][-][params])\n"
         "  +d   - display diagnostics          -b        - no BSS\n"
-        "  -l        - no C source in ASM file -m        -  no leading underscores\n"
-        "  +u        - 'char' type is unsigned\n"
+        "  -l   - no C source in ASM file      -m        -  no leading underscores\n"
+        "  +u   - 'char' type is unsigned\n"
         "\nCommand line behavior has changed.  Use environment var OCC_LEGACY_OPTIONS for old behavior\n\n"
         "Time: " __TIME__ "  Date: " __DATE__;
 
@@ -581,10 +581,8 @@ ARCH_ASM assemblerInterface[] = {
     usage_text,                           /* pointer to usage text */
     args,									/* extra args */
     sizeof(args)/sizeof(args[0]),			/* number of args */
-    NULL,                             /* inline assembler opcode list, or null */
-    NULL,                             /* inline assembler register list, or null */
-//    prockeywords,                         /* specific keywords, e.g. allow a 'bit' keyword and so forth */
-   // defines,                     /* defines list to create at compile time, or null */
+    prockeywords,                         /* specific keywords, e.g. allow a 'bit' keyword and so forth */
+    defines,                     /* defines list to create at compile time, or null */
     &dbgStruct[0],                         /* debug structure, or NULL */
     &architecture,                /* architecture characteristics */
     &outputfunctions,                              /* pointer to backend function linkages */

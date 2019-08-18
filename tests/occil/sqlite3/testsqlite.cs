@@ -18,6 +18,7 @@ namespace HelloWorld
                 int rc = sqlite.sqlite3_prepare_v2(db, CString.ToPointer(query), query.Length+1, &handle, null);
                 if (rc == 0)
                 {
+	
                     bool done = false;
                     while (!done)
                     {

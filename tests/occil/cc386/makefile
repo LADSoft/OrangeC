@@ -1,5 +1,5 @@
 %.ilo: %.c
-	..\..\release\occil /c /9 /E- /Di386 /Lkernel32 $^
+	occil /c /9 /E- /Di386 /Lkernel32 $^
 
 list = AN386.ilo \
 ANALYZE.ilo \
@@ -52,6 +52,6 @@ TYPES.ilo \
 USAGE.ilo
 
 q.exe: $(list)
-	..\..\release\netlink /oq.exe @&&|
+	netlink /occ386.exe @&&|
 $(list)
 |

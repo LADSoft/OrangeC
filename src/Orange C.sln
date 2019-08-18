@@ -110,7 +110,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DotNetPELib", "netlib\DotNe
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NetLink", "netlib\netlink\NetLink.vcxproj", "{7B52B07B-8F39-4099-8355-F2F88D31F1FD}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "occil", "occ\netil\occil.vcxproj", "{BF942009-5F08-4ACB-9002-C34FE7CFDD4C}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "occil", "occ\occil\occil.vcxproj", "{BF942009-5F08-4ACB-9002-C34FE7CFDD4C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

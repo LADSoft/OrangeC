@@ -6581,16 +6581,9 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                             }
                             if (!sp->label && sp->storage_class == sc_static && chosenAssembler->msil)
                                 sp->label = nextLabel++;
-                            if (cparams.prm_cplusplus)
-                            {
-                                TYPE* tp2 = sp->tp;
-                                while (isarray(tp2))
-                                    tp2 = basetype(tp2)->btp;
-                                structuredArray = isstructured(tp2);
-                            }
                             if (cparams.prm_cplusplus && sp->storage_class != sc_type && sp->storage_class != sc_typedef &&
                                 structLevel && (!instantiatingTemplate) &&
-                                (MATCHKW(lex, assign) || MATCHKW(lex, begin) || structuredArray))
+                                (MATCHKW(lex, assign) || MATCHKW(lex, begin)))
                             {
                                 if ((MATCHKW(lex, assign) || MATCHKW(lex, begin)) && storage_class_in == sc_member &&
                                     (sp->storage_class == sc_static || sp->storage_class == sc_external))

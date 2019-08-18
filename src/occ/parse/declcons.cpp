@@ -1408,17 +1408,20 @@ void createDefaultConstructors(SYMBOL* sp)
             while (p)
             {
                 SYMBOL* pcls = (SYMBOL*)p->p;
+                TYPE *tp = pcls->tp;
+                while (isarray(tp))
+                    tp = basetype(tp)->btp;
                 if (pcls->storage_class == sc_member || pcls->storage_class == sc_mutable || pcls->storage_class == sc_overloads)
                 {
-                    if (isstructured(pcls->tp))
+                    if (isstructured(tp))
                     {
-                        if (!basetype(pcls->tp)->sp->trivialCons)
+                        if (!basetype(tp)->sp->trivialCons)
                             break;
                     }
                     else if (pcls->storage_class == sc_overloads)
                     {
                         bool err = false;
-                        SYMLIST* p = basetype(pcls->tp)->syms->table[0];
+                        SYMLIST* p = basetype(tp)->syms->table[0];
                         while (p && !err)
                         {
                             SYMBOL* s = (SYMBOL*)p->p;

@@ -77,7 +77,7 @@ namespace DotNetPELib
         peIndex_ = peLib.PEOut().AddTableEntry(table);
         return true;
     }
-    Namespace *AssemblyDef::InsertNameSpaces(PELib &lib, std::map<std::string, Namespace *> &nameSpaces, std::string name)
+    Namespace *AssemblyDef::InsertNameSpaces(PELib &lib, std::map<std::string, Namespace *> &nameSpaces, const std::string& name)
     {
         if (nameSpaces.find(name) == nameSpaces.end())
         {
@@ -191,7 +191,7 @@ namespace DotNetPELib
         }
         return rv;
     }
-    Class *AssemblyDef::LookupClass(PELib &lib, std::string nameSpaceName, std::string name)
+    Class *AssemblyDef::LookupClass(PELib &lib, const std::string& nameSpaceName, const std::string& name)
     {
         Namespace *nameSpace = InsertNameSpaces(lib, nullptr, nameSpaceName);
         return InsertClasses(lib, nameSpace, nullptr, name);

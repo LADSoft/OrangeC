@@ -54,7 +54,7 @@ namespace DotNetPELib
     {
         flags_ = peLib.ObjInt();
     }
-    void Qualifiers::ReverseNamePrefix(std::string &rv, DataContainer *parent, int &pos, bool type)
+    void Qualifiers::ReverseNamePrefix(std::string&rv, DataContainer *parent, int &pos, bool type)
     {
         if (parent)
         {
@@ -88,7 +88,7 @@ namespace DotNetPELib
         }
         return rv;
     }
-    std::string Qualifiers::GetName(std::string root, DataContainer *parent, bool type)
+    std::string Qualifiers::GetName(const std::string& root, DataContainer *parent, bool type)
     {
         std::string rv = GetNamePrefix(parent, type);
         if (rv.size())
@@ -104,7 +104,7 @@ namespace DotNetPELib
         return rv;
     }
 
-    std::string Qualifiers::GetObjName(std::string stem, DataContainer *parent)
+    std::string Qualifiers::GetObjName(const std::string& stem, DataContainer *parent)
     {
         int pos = 0;
         std::string rv;

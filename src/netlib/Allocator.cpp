@@ -26,19 +26,19 @@
 #include <new>
 namespace DotNetPELib {
 
-    AssemblyDef *Allocator::AllocateAssemblyDef(std::string Name, bool External, Byte *KeyToken)
+    AssemblyDef *Allocator::AllocateAssemblyDef(const std::string& Name, bool External, Byte *KeyToken)
     {
         void *rv = BaseAlloc(sizeof(AssemblyDef));
         new (rv) AssemblyDef(Name, External, KeyToken);
         return static_cast<AssemblyDef *>(rv);
     }
-    Namespace * Allocator::AllocateNamespace(std::string Name)
+    Namespace * Allocator::AllocateNamespace(const std::string& Name)
     {
         void *rv = BaseAlloc(sizeof(Namespace));
         new (rv) Namespace(Name);
         return static_cast<Namespace *>(rv);
     }
-    Class *Allocator::AllocateClass (std::string Name , Qualifiers Flags, int Pack, int Size)
+    Class *Allocator::AllocateClass (const std::string& Name , Qualifiers Flags, int Pack, int Size)
     {
         void *rv = BaseAlloc(sizeof(Class));
         new (rv) Class(Name, Flags, Pack, Size);
@@ -50,7 +50,7 @@ namespace DotNetPELib {
         new (rv) Method(Prototype, flags, entry);
         return static_cast<Method *>(rv);
     }
-    Field *Allocator::AllocateField(std::string Name, Type *tp, Qualifiers Flags)
+    Field *Allocator::AllocateField(const std::string& Name, Type *tp, Qualifiers Flags)
     {
         void *rv = BaseAlloc(sizeof(Field));
         new (rv) Field(Name, tp, Flags);
@@ -62,13 +62,13 @@ namespace DotNetPELib {
         new (rv) Property();
         return static_cast<Property *>(rv);
     }
-    Property *Allocator::AllocateProperty(PELib &peLib, std::string name, Type *type, std::vector<Type *>& indices, bool hasSetter, DataContainer *parent)
+    Property *Allocator::AllocateProperty(PELib &peLib, const std::string& name, Type *type, std::vector<Type *>& indices, bool hasSetter, DataContainer *parent)
     {
         void *rv = BaseAlloc(sizeof(Property));
         new (rv) Property(peLib, name, type, indices, hasSetter, parent);
         return static_cast<Property *>(rv);
     }
-    Enum *Allocator::AllocateEnum(std::string Name, Qualifiers Flags, Field::ValueSize Size)
+    Enum *Allocator::AllocateEnum(const std::string& Name, Qualifiers Flags, Field::ValueSize Size)
     {
         void *rv = BaseAlloc(sizeof(Enum));
         new (rv) Enum(Name, Flags, Size);
@@ -98,13 +98,13 @@ namespace DotNetPELib {
         new (rv) Operand(Value, Size);
         return static_cast<Operand *>(rv);
     }
-    Operand *Allocator::AllocateOperand(std::string Value, bool)
+    Operand *Allocator::AllocateOperand(const std::string& Value, bool)
     {
         void *rv = BaseAlloc(sizeof(Operand));
         new (rv) Operand(Value, true);
         return static_cast<Operand *>(rv);
     }
-    Operand *Allocator::AllocateOperand(std::string Value)
+    Operand *Allocator::AllocateOperand(const std::string& Value)
     {
         void *rv = BaseAlloc(sizeof(Operand));
         new (rv) Operand(Value);
@@ -116,7 +116,7 @@ namespace DotNetPELib {
         new (rv) Instruction(Op, Operand);
         return static_cast<Instruction *>(rv);
     }
-    Instruction *Allocator::AllocateInstruction (Instruction::iop Op, std::string Text)
+    Instruction *Allocator::AllocateInstruction (Instruction::iop Op, const std::string& Text)
     {
         void *rv = BaseAlloc(sizeof(Instruction));
         new (rv) Instruction(Op, Text);
@@ -128,19 +128,19 @@ namespace DotNetPELib {
         new (rv) Instruction(type, begin, catchType);
         return static_cast<Instruction *>(rv);
     }
-    Value *Allocator::AllocateValue(std::string Name, Type *Tp)
+    Value *Allocator::AllocateValue(const std::string& Name, Type *Tp)
     {
         void *rv = BaseAlloc(sizeof(Value));
         new (rv) Value(Name, Tp);
         return static_cast<Value *>(rv);
     }
-    Local *Allocator::AllocateLocal(std::string Name, Type *Tp)
+    Local *Allocator::AllocateLocal(const std::string& Name, Type *Tp)
     {
         void *rv = BaseAlloc(sizeof(Local));
         new (rv) Local(Name, Tp);
         return static_cast<Local *>(rv);
     }
-    Param *Allocator::AllocateParam(std::string Name, Type *Tp)
+    Param *Allocator::AllocateParam(const std::string& Name, Type *Tp)
     {
         void *rv = BaseAlloc(sizeof(Param));
         new (rv) Param(Name, Tp);
@@ -158,7 +158,7 @@ namespace DotNetPELib {
         new (rv) MethodName(M);
         return static_cast<MethodName *>(rv);
     }
-    MethodSignature *Allocator::AllocateMethodSignature(std::string Name, int Flags, DataContainer *Container)
+    MethodSignature *Allocator::AllocateMethodSignature(const std::string& Name, int Flags, DataContainer *Container)
     {
         void *rv = BaseAlloc(sizeof(MethodSignature));
         new (rv) MethodSignature(Name, Flags, Container);

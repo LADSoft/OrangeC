@@ -26,7 +26,7 @@
 #include "PEFile.h"
 namespace DotNetPELib
 {
-    Field *Enum::AddValue(Allocator &allocator, std::string Name, longlong Value)
+    Field *Enum::AddValue(Allocator &allocator, const std::string& Name, longlong Value)
     {
         Type *type = allocator.AllocateType(this);
         Field *field = allocator.AllocateField(Name, type, Qualifiers(Qualifiers::EnumField));

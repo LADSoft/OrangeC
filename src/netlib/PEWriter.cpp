@@ -246,7 +246,7 @@ namespace DotNetPELib
         }
         methods_.push_back(method);
     }
-    size_t PEWriter::HashString(std::string utf8)
+    size_t PEWriter::HashString(const std::string& utf8)
     {
         auto it = stringMap_.find(utf8);
         if (it != stringMap_.end())

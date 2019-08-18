@@ -313,7 +313,7 @@ namespace DotNetPELib
             return instructions_[op_].stackUsage;
         }
     }
-    void Instruction::AddCaseLabel(std::string label)
+    void Instruction::AddCaseLabel(const std::string& label)
     {
         if (!switches_)
             switches_ = new std::list<std::string>();

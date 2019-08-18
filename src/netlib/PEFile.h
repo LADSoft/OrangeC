@@ -312,7 +312,7 @@ namespace DotNetPELib {
         enum { MAX_PE_OBJECTS = 4 };
 
         // Constructor to instantiate class
-        PEWriter(bool isexe, bool gui, std::string snkFile) : DLL_(!isexe), GUI_(gui), objectBase_(0), valueBase_(0), enumBase_(0),
+        PEWriter(bool isexe, bool gui, const std::string& snkFile) : DLL_(!isexe), GUI_(gui), objectBase_(0), valueBase_(0), enumBase_(0),
             systemIndex_(0), entryPoint_(0), paramAttributeType_(0), paramAttributeData_(0),
             fileAlign_(0x200), objectAlign_(0x2000), imageBase_(0x400000), language_(0x4b0),
             peHeader_(nullptr), peObjects_(nullptr), cor20Header_(nullptr), tablesHeader_(nullptr),
@@ -325,7 +325,7 @@ namespace DotNetPELib {
         // add a method entry to the output list.  Note that Index_(D methods won't be added here.
         void AddMethod(PEMethod *method);
         // various functions to throw things into one of the streams, they return the stream index
-        size_t HashString(std::string utf8);
+        size_t HashString(const std::string& utf8);
         size_t HashUS(std::wstring str);
         size_t HashGUID(Byte *Guid);
         size_t HashBlob(Byte *blobData, size_t blobLen);
@@ -481,12 +481,12 @@ namespace DotNetPELib {
         int ReadFromGUID(Byte *buf, size_t len, size_t offset);
         size_t RVAToFileLocation(size_t rva);
         const DNLTable &Table(int i) const { return tables_[i]; }
-        void LibPath(std::string libPath) { libPath_ = libPath;  }
+        void LibPath(const std::string& libPath) { libPath_ = libPath;  }
 
     protected:
-        std::string PEReader::SearchOnPath(std::string assemblyName);
-        std::string FindGACPath(std::string path, std::string fileName, int major, int minor, int build, int revision);
-        std::string SearchForManagedFile(std::string assemblyName, int major, int minor, int build, int revision);
+        std::string PEReader::SearchOnPath(const std::string& assemblyName);
+        std::string FindGACPath(const std::string& path, const std::string& fileName, int major, int minor, int build, int revision);
+        std::string SearchForManagedFile(const std::string& assemblyName, int major, int minor, int build, int revision);
         void get(void *buffer, size_t offset, size_t len);
         size_t PELocation();
         size_t Cor20Location(size_t PEHeader);

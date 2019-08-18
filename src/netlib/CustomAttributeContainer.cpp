@@ -67,7 +67,7 @@ namespace DotNetPELib
             return it->second;
         else return empty;
     }
-    bool CustomAttributeContainer::Has(CustomAttribute &attribute, std::string name, Byte *data, size_t sz) const
+    bool CustomAttributeContainer::Has(CustomAttribute &attribute, const std::string& name, Byte *data, size_t sz) const
     {
         auto it = attributes.find(&attribute);
         if (it != attributes.end())

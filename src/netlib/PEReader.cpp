@@ -127,7 +127,7 @@ namespace DotNetPELib
             }
         }
     }
-    std::string PEReader::SearchOnPath(std::string fileName)
+    std::string PEReader::SearchOnPath(const std::string& fileName)
     {
         // if it exists in the current directory accept it
         std::fstream find(fileName.c_str(), std::ios::in);
@@ -167,7 +167,7 @@ namespace DotNetPELib
         }
         return rv;
     }
-    std::string PEReader::FindGACPath(std::string path, std::string assemblyName, int major, int minor, int build, int revision)
+    std::string PEReader::FindGACPath(const std::string& path, const std::string& assemblyName, int major, int minor, int build, int revision)
     {
 #ifdef _WIN32
         std::string rv;
@@ -204,7 +204,7 @@ namespace DotNetPELib
 #endif
         return rv;
     }
-    std::string PEReader::SearchForManagedFile(std::string assemblyName, int major, int minor, int build, int revision)
+    std::string PEReader::SearchForManagedFile(const std::string& assemblyName, int major, int minor, int build, int revision)
     {
         std::string rv;
         char *windir = getenv("windir");

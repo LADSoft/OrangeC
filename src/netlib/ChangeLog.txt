@@ -1,6 +1,8 @@
 Version 3.01:
 	support virtual functions
 	use correct boxed types 'Byte and SByte' for the 8-bit values
+        fix a problem with CustomAttribute parsing: index off by one
+        speed up assembly loading a little
 
 Version 3.00:
 	support SEH

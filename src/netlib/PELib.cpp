@@ -32,7 +32,7 @@ namespace DotNetPELib
 {
 
     extern std::string DIR_SEP;
-    PELib::PELib(std::string AssemblyName, int CoreFlags)
+    PELib::PELib(const std::string& AssemblyName, int CoreFlags)
         : corFlags_(CoreFlags), peWriter_(nullptr), inputStream_(nullptr), outputStream_(nullptr)
     {
         // create the working assembly.   Note that this will ALWAYS be the first
@@ -41,14 +41,14 @@ namespace DotNetPELib
         assemblyRefs_.push_back(assemblyRef);
 
     }
-    AssemblyDef *PELib::EmptyWorkingAssembly(std::string AssemblyName)
+    AssemblyDef *PELib::EmptyWorkingAssembly(const std::string& AssemblyName)
     {
         AssemblyDef *assemblyRef = AllocateAssemblyDef(AssemblyName, false);
         assemblyRefs_.pop_front();
         assemblyRefs_.push_front(assemblyRef);
         return assemblyRef;
     }
-    bool PELib::DumpOutputFile(std::string file, OutputMode mode, bool gui)
+    bool PELib::DumpOutputFile(const std::string& file, OutputMode mode, bool gui)
     {
         bool rv;
         outputStream_ = new std::fstream(file.c_str(), std::ios::in | std::ios::out | std::ios::trunc | (mode == ilasm ? 0 : std::ios::binary));
@@ -72,25 +72,25 @@ namespace DotNetPELib
         delete outputStream_;
         return rv;
     }
-    void PELib::AddExternalAssembly(std::string assemblyName, Byte *publicKeyToken)
+    void PELib::AddExternalAssembly(const std::string& assemblyName, Byte *publicKeyToken)
     {
         AssemblyDef *assemblyRef = AllocateAssemblyDef(assemblyName, true, publicKeyToken);
         assemblyRefs_.push_back(assemblyRef);
     }
-    void PELib::AddPInvokeReference(MethodSignature *methodsig, std::string dllname, bool iscdecl)
+    void PELib::AddPInvokeReference(MethodSignature *methodsig, const std::string& dllname, bool iscdecl)
     {
         Method *m = AllocateMethod(methodsig, Qualifiers::PInvokeFunc | Qualifiers::Public);
         m->SetPInvoke(dllname, iscdecl ? Method::Cdecl : Method::Stdcall);
         pInvokeSignatures_[methodsig->Name()] = m;
     }
-    Method *PELib::FindPInvoke(std::string name) const
+    Method *PELib::FindPInvoke(const std::string& name) const
     {
         auto it = pInvokeSignatures_.find(name);
         if (it != pInvokeSignatures_.end())
             return it->second;
         return nullptr;
     }
-    MethodSignature *PELib::FindPInvokeWithVarargs(std::string name, std::vector<Param *>& vargs) const
+    MethodSignature *PELib::FindPInvokeWithVarargs(const std::string& name, std::vector<Param *>& vargs) const
     {
         auto range = pInvokeReferences_.equal_range(name);
         for (auto it = range.first; it != range.second; ++it)
@@ -112,7 +112,7 @@ namespace DotNetPELib
         }
         return nullptr;
     }
-    bool PELib::AddUsing(std::string path)
+    bool PELib::AddUsing(const std::string& path)
     {
         std::vector<std::string> split;
         SplitPath(split, path);
@@ -424,7 +424,7 @@ namespace DotNetPELib
         *outputStream_ << "$qe";
         return true;
     }
-    bool PELib::LoadObject(std::string name)
+    bool PELib::LoadObject(const std::string& name)
     {
         bool rv = false;
         inputStream_ = new std::fstream(name, std::ios::in);
@@ -611,13 +611,13 @@ namespace DotNetPELib
         objInputPos_ += n1;
         return nn;
     }
-    std::string PELib::FormatName(std::string name)
+    std::string PELib::FormatName(const std::string& name)
     {
         char buf[256];
         sprintf(buf, "%04X", name.size());
         return std::string(buf) + name.c_str();
     }
-    AssemblyDef *PELib::FindAssembly(std::string assemblyName) const
+    AssemblyDef *PELib::FindAssembly(const std::string& assemblyName) const
     {
         for (std::list<AssemblyDef *>::const_iterator it = assemblyRefs_.begin(); it != assemblyRefs_.end(); ++it)
         {
@@ -626,9 +626,9 @@ namespace DotNetPELib
         }
         return nullptr;
     }
-    Class *PELib::LookupClass(PEReader &reader, std::string assemblyName, int major,
+    Class *PELib::LookupClass(PEReader &reader, const std::string& assemblyName, int major,
                              int minor, int build, int revision, size_t publicKeyIndex, 
-                             std::string nameSpace, std::string name)
+                             const std::string& nameSpace, const std::string& name)
     {
         AssemblyDef *assembly = FindAssembly(assemblyName);
         if (!assembly)
@@ -749,7 +749,7 @@ namespace DotNetPELib
         }
         return mscorlibAssembly;
     }
-    int PELib::LoadAssembly(std::string assemblyName, int major, int minor, int build, int revision)
+    int PELib::LoadAssembly(const std::string& assemblyName, int major, int minor, int build, int revision)
     {
         AssemblyDef *assembly = FindAssembly(assemblyName);
         if (assembly == nullptr || !assembly->IsLoaded())
@@ -768,7 +768,7 @@ namespace DotNetPELib
         }
         return 0;
     }
-    int PELib::LoadUnmanaged(std::string name)
+    int PELib::LoadUnmanaged(const std::string& name)
     {
         DLLExportReader reader(name.c_str());
         if (reader.Read())
@@ -787,7 +787,7 @@ namespace DotNetPELib
         }
         return 1;
     }
-    std::string PELib::FindUnmanagedName(std::string name)
+    std::string PELib::FindUnmanagedName(const std::string& name)
     {
         return unmanagedRoutines_[name];
     }

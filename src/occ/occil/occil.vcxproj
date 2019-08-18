@@ -184,7 +184,6 @@
     <ClCompile Include="..\parse\constopt.cpp" />
     <ClCompile Include="..\parse\cppbltin.cpp" />
     <ClCompile Include="..\parse\cpplookup.cpp" />
-    <ClCompile Include="..\parse\crc32.cpp" />
     <ClCompile Include="..\parse\debug.cpp" />
     <ClCompile Include="..\parse\declare.cpp" />
     <ClCompile Include="..\parse\declcons.cpp" />
@@ -238,6 +237,9 @@
   <ItemGroup>
     <ProjectReference Include="..\..\netlib\DotNetPELib.vcxproj">
       <Project>{9e09e239-7370-4cbc-a82e-40dbcc0947f3}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\util\util.vcxproj">
+      <Project>{72430015-06c0-42a2-b9ec-d0e5e2eae83d}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

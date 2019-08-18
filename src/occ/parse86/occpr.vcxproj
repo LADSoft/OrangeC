@@ -86,7 +86,7 @@
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;WIN32;BORLAND;_CRT_SECURE_NO_WARNINGS;PARSER_ONLY;USE_LONGLONG;MICROSOFT;%(PreprocessorDefinitions); SQLITE_THREADSAFE=0</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\parse;..\preproc;..\middle;..\..\sqlite3;..\..\ocpp</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\parse;..\preproc;..\middle;..\..\sqlite3;..\..\ocpp;..\..\util</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -122,7 +122,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;WIN32;BORLAND;PARSER_ONLY;USE_LONGLONG;MICROSOFT;%(PreprocessorDefinitions); SQLITE_THREADSAFE=0</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\parse;..\preproc;..\middle;..\..\sqlite3;..\..\ocpp</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\parse;..\preproc;..\middle;..\..\sqlite3;..\..\ocpp;..\..\util</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -163,7 +163,6 @@
     <ClCompile Include="..\parse\constopt.cpp" />
     <ClCompile Include="..\parse\cppbltin.cpp" />
     <ClCompile Include="..\parse\cpplookup.cpp" />
-    <ClCompile Include="..\parse\crc32.cpp" />
     <ClCompile Include="..\parse\debug.cpp" />
     <ClCompile Include="..\parse\declare.cpp" />
     <ClCompile Include="..\parse\declcons.cpp" />

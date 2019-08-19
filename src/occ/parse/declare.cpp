@@ -2857,6 +2857,8 @@ founddecltype:
                             {
                                 *consdest = CT_CONS;
                             }
+                            if (ssp && strSym && ssp == strSym->mainsym)
+                                strSym = nullptr;
                             if (strSym_out)
                                 *strSym_out = strSym;
                             *notype = true;

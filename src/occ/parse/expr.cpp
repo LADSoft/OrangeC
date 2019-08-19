@@ -2923,6 +2923,10 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                                             exp = createTemporary(sym->tp, exp);
                                         }
                                     }
+                                    else if (exp->type == en_lvalue)
+                                    {
+                                        exp = createTemporary(sym->tp, exp);
+                                    }
                                     else
                                     {
                                         exp = exp->left;  // take address

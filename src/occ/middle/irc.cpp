@@ -472,14 +472,8 @@ void AllocateStackSpace(SYMBOL* funcsp)
 void FillInPrologue(QUAD* head, SYMBOL* funcsp)
 {
     IMODE *ip, *ip1;
-    /*
-    if (cparams.prm_cplusplus && cparams.prm_xcept || (lc_maxauto || funcsp
-        ->tp->lst.head && funcsp->tp->lst.head != (SYM*) - 1)
-         || (funcsp->value.classdata.cppflags &PF_MEMBER) && !(funcsp
-             ->value.classdata.cppflags &PF_STATIC)
-             || !cparams.prm_smartframes)
+    if ((cparams.prm_cplusplus && cparams.prm_xcept) || lc_maxauto || funcsp->paramsize || funcsp->linkage == sc_virtual || funcsp->linkage == sc_member || funcsp->linkage == sc_mutable)
         regmask |= FRAME_FLAG_NEEDS_FRAME;
-    */
     if (regmask || lc_maxauto ||
         (basetype(funcsp->tp)->syms->table[0] && ((SYMBOL*)basetype(funcsp->tp)->syms->table[0]->p)->tp->type != bt_void))
         regmask |= FRAME_FLAG_NEEDS_FRAME;

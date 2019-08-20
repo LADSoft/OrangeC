@@ -1510,6 +1510,10 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
                     {
                         *exp = varNode(en_const, sp2);
                     }
+                    else if (sp2->storage_class == sc_enumconstant)
+                    {
+                        *exp = intNode(en_c_i, sp2->value.i);
+                    }
                     else if (sp2->storage_class == sc_static || sp2->storage_class == sc_external)
                     {
                         if (chosenAssembler->msil)
@@ -1557,7 +1561,7 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
                         (*exp)->bits = tpb->bits;
                         (*exp)->startbit = tpb->startbit;
                     }
-                    if (sp2->storage_class != sc_constant)
+                    if (sp2->storage_class != sc_constant && sp2->storage_class != sc_enumconstant)
                     {
                         if (isref(*tp))
                         {
@@ -1566,7 +1570,10 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
                         }
                         deref(*tp, exp);
                     }
-                    (*exp)->v.sp = sp2;  // caching the member symbol in the enode for constexpr handling
+                    if (sp2->storage_class != sc_enumconstant)
+                    {
+                        (*exp)->v.sp = sp2;  // caching the member symbol in the enode for constexpr handling
+                    }
                     if (isatomic(basetp))
                     {
                         // note this won't work in C++ because of offset2...

@@ -3473,7 +3473,10 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_
             {
                 if (isint(tpp) && !basetype(tpa)->scoped)
                 {
-                    seq[(*n)++] = CV_ENUMINTEGRALCONVERSION;
+                    if (basetype(tpp)->type == basetype(tpa)->btp->type)
+                        seq[(*n)++] = CV_INTEGRALCONVERSIONWEAK;
+                    else
+                        seq[(*n)++] = CV_ENUMINTEGRALCONVERSION;
                 }
                 else
                 {
@@ -3492,8 +3495,8 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_
                     else
                         seq[(*n)++] = CV_NONE;
                 }
-                else
-                {
+                else                {
+
                     seq[(*n)++] = CV_ENUMINTEGRALCONVERSION;
                 }
             }

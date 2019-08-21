@@ -1591,7 +1591,7 @@ namespace DotNetPELib
         std::vector<Namespace *> usingList_;
         std::deque<DataContainer *> containerStack_;
         CodeContainer *codeContainer_;
-        char *objInputBuf_;
+        const char *objInputBuf_;
         int objInputSize_;
         int objInputPos_;
         int objInputCache_;

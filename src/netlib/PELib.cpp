@@ -51,7 +51,7 @@ namespace DotNetPELib
     bool PELib::DumpOutputFile(const std::string& file, OutputMode mode, bool gui)
     {
         bool rv;
-        outputStream_ = new std::fstream(file.c_str(), std::ios::in | std::ios::out | std::ios::trunc | (mode == ilasm ? 0 : std::ios::binary));
+        outputStream_ = new std::fstream(file.c_str(), std::ios::in | std::ios::out | std::ios::trunc | (mode == ilasm || mode == object ? 0 : std::ios::binary));
         switch (mode)
         {
         case ilasm:
@@ -439,12 +439,12 @@ namespace DotNetPELib
         bool rv = false;
         containerStack_.clear();
         codeContainer_ = nullptr;
-        inputStream_->seekg(0, inputStream_->end);
-        objInputSize_ = inputStream_->tellg();
-        objInputBuf_ = new char[objInputSize_];
+
+        std::string buf((std::istreambuf_iterator<char>(*inputStream_)), std::istreambuf_iterator<char>());
         objInputPos_ = 0;
-        inputStream_->seekg(0, inputStream_->beg);
-        inputStream_->read(objInputBuf_, objInputSize_);
+        objInputBuf_ = buf.c_str();
+        objInputSize_ = buf.size();
+
         try
         {
             if (ObjBegin() == 'q')
@@ -494,7 +494,6 @@ namespace DotNetPELib
         {
 
         }
-        delete[] objInputBuf_;
         return rv;
     }
     int PELib::ObjHex2()

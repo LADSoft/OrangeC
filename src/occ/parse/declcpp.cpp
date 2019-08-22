@@ -23,7 +23,7 @@
  */
 
 #include "compiler.h"
-#include <map>
+#include <unordered_map>
 #include <stack>
 extern ARCH_ASM* chosenAssembler;
 extern NAMESPACEVALUELIST *globalNameSpace, *localNameSpace;
@@ -68,7 +68,50 @@ static LIST* deferred;
 #ifdef PARSER_ONLY
 void ccInsertUsing(SYMBOL* ns, SYMBOL* parentns, char* file, int line);
 #endif
-
+namespace AttribContainers
+{
+const std::unordered_map<std::string, int> gccStyleAttribNames = {
+    {"alias", 1},    // 1 arg, alias name
+    {"aligned", 2},  // arg is alignment; for members only increase unless also packed, otherwise can increase or decrease
+    {"warn_if_not_aligned", 3},  // arg is the desired minimum alignment
+    {"alloc_size", 4},           // implement by ignoring one or two args
+    {"cleanup", 5},              // arg is afunc: similar to a destructor.   Also gets called during exception processing
+                                 //                    { "common", 6 }, // no args, decide whether to support
+                                 //                    { "nocommon", 7 }, // no args, decide whether to support
+    {"copy", 8},          // one arg, varible/func/type, the two variable kinds must match don't copy alias visibility or weak
+    {"deprecated", 9},    // zero or one arg, match C++
+    {"nonstring", 10},    // has no null terminator
+    {"packed", 11},       // ignore auto-align on this field
+                          //                    { "section", 12 }, // one argument, the section name
+                          //                    { "tls_model", 13 }, // one arg, the model.   Probably shouldn't support
+    {"unused", 14},       // warning control
+    {"used", 15},         // warning control
+    {"vector_size", 16},  // one arg, which must be a power of two multiple of the base size.  implement as fixed-size array
+    //                    { "visibility", 17 }, // one arg, 'default' ,'hidden', 'internal', 'protected.   don't
+    //                    support for now as requires linker changes. { "weak", 18 }, // not supporting
+    {"dllimport", 19},
+    {"dllexport", 20},
+    //                    { "selectany", 21 },  // requires linker support
+    //                    { "shared", 22 },
+    {"zstring", 23},  // non-gcc, added to support nonstring
+    {"noreturn", 24}};
+// note: these are only the namespaced names listed, the __attribute__ names are unlisted here as they don't
+// exist in GCC and we want ours to follow theirs for actual consistency reasons.
+const std::unordered_map<std::string, int> gccCPPStyleAttribNames = {
+    {"alloc_size", 4},  // implement by ignoring one or two args
+                        //                    { "common", 6 }, // no args, decide whether to support
+                        //                    { "nocommon", 7 }, // no args, decide whether to support
+                        //                    { "section", 12 }, // one argument, the section name
+    //                    { "tls_model", 13 }, // one arg, the model.   Probably shouldn't support
+    //                    { "visibility", 17 }, // one arg, 'default' ,'hidden', 'internal', 'protected.   don't
+    //                    support for now as requires linker changes. { "weak", 18 }, // not supporting {
+    //                    "selectany", 21 },  // requires linker support { "shared", 22 },
+    {"dllexport", 25},
+    {"dllimport", 26}};
+const std::unordered_map<std::string, int> occCPPStyleAttribNames = {
+    {"zstring", 23}  // non-gcc, added to support nonstring
+};
+};  // namespace AttribContainers
 typedef struct
 {
     VTABENTRY* entry;
@@ -3117,229 +3160,216 @@ void ParseOut__attribute__(LEXEME** lex, SYMBOL* funcsp)
             {
                 if (ISID(*lex))
                 {
-                    static std::map<std::string, int> attribNames = {
-                        {"alias", 1},    // 1 arg, alias name
-                        {"aligned", 2},  // arg is alignment; for members only increase unless also packed, otherwise can increase or decrease
-                        {"warn_if_not_aligned", 3},  // arg is the desired minimum alignment
-                        {"alloc_size", 4},           // implement by ignoring one or two args
-                        {"cleanup", 5},              // arg is afunc: similar to a destructor.   Also gets called during exception processing
-                                                     //                    { "common", 6 }, // no args, decide whether to support
-                                                     //                    { "nocommon", 7 }, // no args, decide whether to support
-                        {"copy", 8},          // one arg, varible/func/type, the two variable kinds must match don't copy alias visibility or weak
-                        {"deprecated", 9},    // zero or one arg, match C++ 
-                        {"nonstring", 10},    // has no null terminator
-                        {"packed", 11},       // ignore auto-align on this field
-                                              //                    { "section", 12 }, // one argument, the section name
-                                              //                    { "tls_model", 13 }, // one arg, the model.   Probably shouldn't support
-                        {"unused", 14},       // warning control
-                        {"used", 15},         // warning control
-                        {"vector_size", 16},  // one arg, which must be a power of two multiple of the base size.  implement as fixed-size array
-                        //                    { "visibility", 17 }, // one arg, 'default' ,'hidden', 'internal', 'protected.   don't support for now
-                        //                    as requires linker changes. { "weak", 18 }, // not supporting
-                        {"dllimport", 19},
-                        {"dllexport", 20},
-                        //                    { "selectany", 21 },  // requires linker support
-                        //                    { "shared", 22 },
-                        {"zstring", 23}  // non-gcc, added to support nonstring
-
-                    };
                     std::string name = (*lex)->value.s.a;
                     // get rid of leading and trailing "__" if they both exist
                     if (name.size() >= 5 && name.substr(0, 2) == "__" && name.substr(name.size() - 2, 2) == "__")
                         name = name.substr(2, name.size() - 4);
                     *lex = getsym();
-                    switch (attribNames[name])
+                    auto attrib = AttribContainers::gccStyleAttribNames.find(name);
+                    if (attrib == AttribContainers::gccStyleAttribNames.end())
                     {
-                        case 1:  // alias
-                            if (MATCHKW(*lex, openpa))
-                            {
-                                *lex = getsym();
-                                if ((*lex)->type == l_astr)
-                                {
-                                    char buf[1024];
-                                    int i;
-                                    SLCHAR* xx = (SLCHAR*)(*lex)->value.s.w;
-                                    for (i = 0; i < 1024 && i < xx->count; i++)
-                                        buf[i] = (char)xx->str[i];
-                                    buf[i] = 0;
-                                    basisAttribs.uninheritable.alias = litlate(buf);
-                                    *lex = getsym();
-                                }
-                                needkw(lex, closepa);
-                            }
-                            break;
-                        case 2:  // aligned
-                            if (needkw(lex, openpa))
-                            {
-                                TYPE* tp = nullptr;
-                                EXPRESSION* exp = nullptr;
-
-                                *lex = optimized_expression(*lex, funcsp, nullptr, &tp, &exp, false);
-                                if (!tp || !isint(tp))
-                                    error(ERR_NEED_INTEGER_TYPE);
-                                else if (!isintconst(exp))
-                                    error(ERR_CONSTANT_VALUE_EXPECTED);
-                                basisAttribs.inheritable.structAlign = exp->v.i;
-                                basisAttribs.inheritable.alignedAttribute = true;
-                                needkw(lex, closepa);
-
-                                if (basisAttribs.inheritable.structAlign > 0x10000 ||
-                                    (basisAttribs.inheritable.structAlign & (basisAttribs.inheritable.structAlign - 1)) != 0)
-                                    error(ERR_INVALID_ALIGNMENT);
-                            }
-                            break;
-                        case 3:  // warn_if_not_aligned
-                            if (needkw(lex, openpa))
-                            {
-                                TYPE* tp = nullptr;
-                                EXPRESSION* exp = nullptr;
-
-                                *lex = optimized_expression(*lex, funcsp, nullptr, &tp, &exp, false);
-                                if (!tp || !isint(tp))
-                                    error(ERR_NEED_INTEGER_TYPE);
-                                else if (!isintconst(exp))
-                                    error(ERR_CONSTANT_VALUE_EXPECTED);
-                                basisAttribs.inheritable.warnAlign = exp->v.i;
-                                needkw(lex, closepa);
-
-                                if (basisAttribs.inheritable.warnAlign > 0x10000 ||
-                                    (basisAttribs.inheritable.warnAlign & (basisAttribs.inheritable.warnAlign - 1)) != 0)
-                                    error(ERR_INVALID_ALIGNMENT);
-                            }
-                            break;
-                        case 4:  // alloc_size // doesn't restrict to numbers but maybe should?
-                            if (needkw(lex, openpa))
-                            {
-                                errskim(lex, skim_comma);
-                                if (MATCHKW(*lex, comma))
+                        errorstr(ERR_ATTRIBUTE_DOES_NOT_EXIST, name.c_str());
+                    }
+                    else
+                    {
+                        switch (attrib->second)
+                        {
+                            case 1:  // alias
+                                if (MATCHKW(*lex, openpa))
                                 {
                                     *lex = getsym();
-                                    errskim(lex, skim_closepa);
-                                }
-                                needkw(lex, closepa);
-                            }
-                            break;
-                        case 5:  // cleanup - needs work, should be in the C++ exception table for the function...
-                            if (MATCHKW(*lex, openpa))
-                            {
-                                *lex = getsym();
-                                if (ISID(*lex))
-                                {
-                                    SYMBOL* sym = gsearch((*lex)->value.s.a);
-                                    if (sym)
+                                    if ((*lex)->type == l_astr)
                                     {
-                                        if (sym->tp->type == bt_aggregate)
-                                            if (basetype(sym->tp)->syms->table[0] && !basetype(sym->tp)->syms->table[0]->next)
-                                                sym = basetype(sym->tp)->syms->table[0]->p;
-                                        if (isfunction(sym->tp) && isvoid(basetype(sym->tp)->btp))
+                                        char buf[1024];
+                                        int i;
+                                        SLCHAR* xx = (SLCHAR*)(*lex)->value.s.w;
+                                        for (i = 0; i < 1024 && i < xx->count; i++)
+                                            buf[i] = (char)xx->str[i];
+                                        buf[i] = 0;
+                                        basisAttribs.uninheritable.alias = litlate(buf);
+                                        *lex = getsym();
+                                    }
+                                    needkw(lex, closepa);
+                                }
+                                break;
+                            case 2:  // aligned
+                                if (needkw(lex, openpa))
+                                {
+                                    TYPE* tp = nullptr;
+                                    EXPRESSION* exp = nullptr;
+
+                                    *lex = optimized_expression(*lex, funcsp, nullptr, &tp, &exp, false);
+                                    if (!tp || !isint(tp))
+                                        error(ERR_NEED_INTEGER_TYPE);
+                                    else if (!isintconst(exp))
+                                        error(ERR_CONSTANT_VALUE_EXPECTED);
+                                    basisAttribs.inheritable.structAlign = exp->v.i;
+                                    basisAttribs.inheritable.alignedAttribute = true;
+                                    needkw(lex, closepa);
+
+                                    if (basisAttribs.inheritable.structAlign > 0x10000 ||
+                                        (basisAttribs.inheritable.structAlign & (basisAttribs.inheritable.structAlign - 1)) != 0)
+                                        error(ERR_INVALID_ALIGNMENT);
+                                }
+                                break;
+                            case 3:  // warn_if_not_aligned
+                                if (needkw(lex, openpa))
+                                {
+                                    TYPE* tp = nullptr;
+                                    EXPRESSION* exp = nullptr;
+
+                                    *lex = optimized_expression(*lex, funcsp, nullptr, &tp, &exp, false);
+                                    if (!tp || !isint(tp))
+                                        error(ERR_NEED_INTEGER_TYPE);
+                                    else if (!isintconst(exp))
+                                        error(ERR_CONSTANT_VALUE_EXPECTED);
+                                    basisAttribs.inheritable.warnAlign = exp->v.i;
+                                    needkw(lex, closepa);
+
+                                    if (basisAttribs.inheritable.warnAlign > 0x10000 ||
+                                        (basisAttribs.inheritable.warnAlign & (basisAttribs.inheritable.warnAlign - 1)) != 0)
+                                        error(ERR_INVALID_ALIGNMENT);
+                                }
+                                break;
+                            case 4:  // alloc_size // doesn't restrict to numbers but maybe should?
+                                if (needkw(lex, openpa))
+                                {
+                                    errskim(lex, skim_comma);
+                                    if (MATCHKW(*lex, comma))
+                                    {
+                                        *lex = getsym();
+                                        errskim(lex, skim_closepa);
+                                    }
+                                    needkw(lex, closepa);
+                                }
+                                break;
+                            case 5:  // cleanup - needs work, should be in the C++ exception table for the function...
+                                if (MATCHKW(*lex, openpa))
+                                {
+                                    *lex = getsym();
+                                    if (ISID(*lex))
+                                    {
+                                        SYMBOL* sym = gsearch((*lex)->value.s.a);
+                                        if (sym)
                                         {
-                                            auto arg = basetype(sym->tp)->syms->table[0];
-                                            if (!arg || arg == (void*)-1 || isvoid(arg->p->tp) ||
-                                                (isvoidptr(arg->p->tp) && !arg->next))
-                                                basisAttribs.inheritable.cleanup = sym;
+                                            if (sym->tp->type == bt_aggregate)
+                                                if (basetype(sym->tp)->syms->table[0] && !basetype(sym->tp)->syms->table[0]->next)
+                                                    sym = basetype(sym->tp)->syms->table[0]->p;
+                                            if (isfunction(sym->tp) && isvoid(basetype(sym->tp)->btp))
+                                            {
+                                                auto arg = basetype(sym->tp)->syms->table[0];
+                                                if (!arg || arg == (void*)-1 || isvoid(arg->p->tp) ||
+                                                    (isvoidptr(arg->p->tp) && !arg->next))
+                                                    basisAttribs.inheritable.cleanup = sym;
+                                                else
+                                                    error(ERR_INVALID_ATTRIBUTE_CLEANUP);
+                                            }
                                             else
+                                            {
                                                 error(ERR_INVALID_ATTRIBUTE_CLEANUP);
+                                            }
                                         }
                                         else
                                         {
-                                            error(ERR_INVALID_ATTRIBUTE_CLEANUP);
+                                            errorstr(ERR_UNDEFINED_IDENTIFIER, (*lex)->value.s.a);
                                         }
+                                        *lex = getsym();
                                     }
                                     else
                                     {
-                                        errorstr(ERR_UNDEFINED_IDENTIFIER, (*lex)->value.s.a);
+                                        error(ERR_IDENTIFIER_EXPECTED);
                                     }
+                                    needkw(lex, closepa);
+                                }
+                                break;
+                            case 8:  // copy
+                                if (MATCHKW(*lex, openpa))
+                                {
                                     *lex = getsym();
-                                }
-                                else
-                                {
-                                    error(ERR_IDENTIFIER_EXPECTED);
-                                }
-                                needkw(lex, closepa);
-                            }
-                            break;
-                        case 8:  // copy
-                            if (MATCHKW(*lex, openpa))
-                            {
-                                *lex = getsym();
-                                if (ISID(*lex))
-                                {
-                                    SYMBOL* sym = gsearch((*lex)->value.s.a);
-                                    if (sym)
+                                    if (ISID(*lex))
                                     {
-                                        basisAttribs.uninheritable.copyFrom = sym;
+                                        SYMBOL* sym = gsearch((*lex)->value.s.a);
+                                        if (sym)
+                                        {
+                                            basisAttribs.uninheritable.copyFrom = sym;
+                                        }
+                                        else
+                                        {
+                                            errorstr(ERR_UNDEFINED_IDENTIFIER, (*lex)->value.s.a);
+                                        }
+                                        *lex = getsym();
                                     }
                                     else
                                     {
-                                        errorstr(ERR_UNDEFINED_IDENTIFIER, (*lex)->value.s.a);
+                                        error(ERR_IDENTIFIER_EXPECTED);
                                     }
-                                    *lex = getsym();
+                                    needkw(lex, closepa);
                                 }
-                                else
+                                break;
+                            case 9:  // deprecated
+                                basisAttribs.uninheritable.deprecationText = (const char*)-1;
+                                if (MATCHKW(*lex, openpa))
                                 {
-                                    error(ERR_IDENTIFIER_EXPECTED);
-                                }
-                                needkw(lex, closepa);
-                            }
-                            break;
-                        case 9:  // deprecated
-                            basisAttribs.uninheritable.deprecationText = (const char*)-1;
-                            if (MATCHKW(*lex, openpa))
-                            {
-                                *lex = getsym();
-                                if ((*lex)->type == l_astr)
-                                {
-                                    char buf[1024];
-                                    int i;
-                                    SLCHAR* xx = (SLCHAR*)(*lex)->value.s.w;
-                                    for (i = 0; i < 1024 && i < xx->count; i++)
-                                        buf[i] = (char)xx->str[i];
-                                    buf[i] = 0;
-                                    basisAttribs.uninheritable.deprecationText = litlate(buf);
                                     *lex = getsym();
+                                    if ((*lex)->type == l_astr)
+                                    {
+                                        char buf[1024];
+                                        int i;
+                                        SLCHAR* xx = (SLCHAR*)(*lex)->value.s.w;
+                                        for (i = 0; i < 1024 && i < xx->count; i++)
+                                            buf[i] = (char)xx->str[i];
+                                        buf[i] = 0;
+                                        basisAttribs.uninheritable.deprecationText = litlate(buf);
+                                        *lex = getsym();
+                                    }
+                                    needkw(lex, closepa);
                                 }
-                                needkw(lex, closepa);
-                            }
-                            break;
-                        case 10:  // nonstring
-                            basisAttribs.inheritable.nonstring = true;
-                            break;
-                        case 11:  // packed
-                            basisAttribs.inheritable.packed = true;
-                            break;
-                        case 14:  // unused
-                            basisAttribs.inheritable.used = true;
-                            break;
-                        case 15:  // used - this forces emission of static variables.  Since we always emit it is a noop
-                            break;
-                        case 16:  // vector_size
-                            if (needkw(lex, openpa))
-                            {
-                                TYPE* tp = nullptr;
-                                EXPRESSION* exp = nullptr;
+                                break;
+                            case 10:  // nonstring
+                                basisAttribs.inheritable.nonstring = true;
+                                break;
+                            case 11:  // packed
+                                basisAttribs.inheritable.packed = true;
+                                break;
+                            case 14:  // unused
+                                basisAttribs.inheritable.used = true;
+                                break;
+                            case 15:  // used - this forces emission of static variables.  Since we always emit it is a noop
+                                break;
+                            case 16:  // vector_size
+                                if (needkw(lex, openpa))
+                                {
+                                    TYPE* tp = nullptr;
+                                    EXPRESSION* exp = nullptr;
 
-                                *lex = optimized_expression(*lex, funcsp, nullptr, &tp, &exp, false);
-                                if (!tp || !isint(tp))
-                                    error(ERR_NEED_INTEGER_TYPE);
-                                else if (!isintconst(exp))
-                                    error(ERR_CONSTANT_VALUE_EXPECTED);
-                                basisAttribs.inheritable.vectorSize = exp->v.i;
-                                needkw(lex, closepa);
-                            }
-                            break;
-                        case 19:  // dllimport
-                            if (basisAttribs.inheritable.linkage2 != lk_none)
-                                error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
-                            basisAttribs.inheritable.linkage2 = lk_import;
-                            break;
-                        case 20:  // dllexport
-                            if (basisAttribs.inheritable.linkage2 != lk_none)
-                                error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
-                            basisAttribs.inheritable.linkage2 = lk_export;
-                            break;
-                        case 23:  // zstring
-                            basisAttribs.inheritable.zstring = true;
-                            break;
+                                    *lex = optimized_expression(*lex, funcsp, nullptr, &tp, &exp, false);
+                                    if (!tp || !isint(tp))
+                                        error(ERR_NEED_INTEGER_TYPE);
+                                    else if (!isintconst(exp))
+                                        error(ERR_CONSTANT_VALUE_EXPECTED);
+                                    basisAttribs.inheritable.vectorSize = exp->v.i;
+                                    needkw(lex, closepa);
+                                }
+                                break;
+                            case 19:  // dllimport
+                                if (basisAttribs.inheritable.linkage2 != lk_none)
+                                    error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
+                                basisAttribs.inheritable.linkage2 = lk_import;
+                                break;
+                            case 20:  // dllexport
+                                if (basisAttribs.inheritable.linkage2 != lk_none)
+                                    error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
+                                basisAttribs.inheritable.linkage2 = lk_export;
+                                break;
+                            case 23:  // zstring
+                                basisAttribs.inheritable.zstring = true;
+                                break;
+                            case 24:
+                                if (funcsp->linkage3 != lk_none)
+                                    error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
+                                funcsp->linkage3 = lk_noreturn;
+                                break;
+                        }
                     }
                 }
                 needkw(lex, closepa);
@@ -3444,6 +3474,9 @@ bool ParseAttributeSpecifiers(LEXEME** lex, SYMBOL* funcsp, bool always)
                 *lex = getsym();
                 if (MATCHKW(*lex, openbr))
                 {
+                    const std::string occNamespace = "occ";
+                    const std::string gccNamespace = "gnu";
+                    const std::string clangNamespace = "clang";
                     rv = true;
                     *lex = getsym();
                     if (!MATCHKW(*lex, closebr))
@@ -3456,9 +3489,98 @@ bool ParseAttributeSpecifiers(LEXEME** lex, SYMBOL* funcsp, bool always)
                                 *lex = getsym();
                                 error(ERR_IDENTIFIER_EXPECTED);
                             }
+                            else if (!strcmp((*lex)->value.s.a, occNamespace.c_str()))
+                            {
+                                *lex = getsym();
+                                if (MATCHKW(*lex, classsel))
+                                {
+                                    *lex = getsym();
+                                    if (!ISID(*lex))
+                                    {
+                                        *lex = getsym();
+                                        error(ERR_IDENTIFIER_EXPECTED);
+                                    }
+                                    else if (*lex)
+                                    {
+                                        std::string name = (*lex)->value.s.a;
+                                        auto searchedName = AttribContainers::occCPPStyleAttribNames.find(name);
+                                        if (searchedName != AttribContainers::occCPPStyleAttribNames.end())
+                                        {
+                                            switch (searchedName->second)
+                                            {
+                                                case 23:
+                                                    basisAttribs.inheritable.zstring = true;
+                                                    break;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            errorstr2(ERR_ATTRIBUTE_DOES_NOT_EXIST_IN_NAMESPACE, name.c_str(),
+                                                      occNamespace.c_str());
+                                        }
+                                        *lex = getsym();
+                                    }
+                                }
+                                else
+                                {
+                                    errorstr(ERR_ATTRIBUTE_NAMESPACE_NOT_ATTRIBUTE, occNamespace.c_str());
+                                }
+                            }
+                            else if (!strcmp((*lex)->value.s.a, gccNamespace.c_str()))
+                            {
+                                *lex = getsym();
+                                if (MATCHKW(*lex, classsel))
+                                {
+                                    *lex = getsym();
+                                    if (!ISID(*lex))
+                                    {
+                                        *lex = getsym();
+                                        error(ERR_IDENTIFIER_EXPECTED);
+                                    }
+                                    else if (*lex)
+                                    {
+                                        std::string name = (*lex)->value.s.a;
+                                        auto searchedName = AttribContainers::gccCPPStyleAttribNames.find(name);
+                                        if (searchedName != AttribContainers::gccCPPStyleAttribNames.end())
+                                        {
+                                            switch (searchedName->second)
+                                            {
+                                                case 25:
+                                                    if (basisAttribs.inheritable.linkage2 != lk_none)
+                                                        error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
+                                                    basisAttribs.inheritable.linkage2 = lk_export;
+                                                    break;
+                                                case 26:
+                                                    if (basisAttribs.inheritable.linkage2 != lk_none)
+                                                        error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
+                                                    basisAttribs.inheritable.linkage2 = lk_import;
+                                                    break;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            errorstr2(ERR_ATTRIBUTE_DOES_NOT_EXIST_IN_NAMESPACE, name.c_str(),
+                                                      gccNamespace.c_str());
+                                        }
+                                        *lex = getsym();
+                                    }
+                                }
+                                else
+                                {
+                                    errorstr(ERR_ATTRIBUTE_NAMESPACE_NOT_ATTRIBUTE, gccNamespace.c_str());
+                                }
+                            }
                             else
                             {
-                                if (!strcmp((*lex)->value.s.a, "noreturn") || !strcmp((*lex)->value.s.a, "carries_dependency"))
+                                if (!strcmp((*lex)->value.s.a, "noreturn"))
+                                {
+                                    *lex = getsym();
+                                    special = true;
+                                    if (funcsp->linkage3 != lk_none)
+                                        error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
+                                    funcsp->linkage3 = lk_noreturn;
+                                }
+                                else if (!strcmp((*lex)->value.s.a, "carries_dependency"))
                                 {
                                     *lex = getsym();
                                     special = true;

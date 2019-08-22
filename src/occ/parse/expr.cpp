@@ -3123,7 +3123,22 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                 else if (basetype(sym->tp)->type == bt___object)
                 {
                     if (basetype(p->tp)->type != bt___object && !isstructured(p->tp) && (!isarray(p->tp) || !basetype(p->tp)->msil))
-                        p->exp = exprNode(en_x_object, p->exp, nullptr);
+                    {
+                        if ((isarray(p->tp) || ispointer(p->tp)) && !basetype(p->tp)->msil &&
+                            basetype(basetype(p->tp)->btp)->type == bt_char)
+                        {
+                            // make a 'string' object and initialize it with the string
+                            TYPE* ctype = chosenAssembler->msil->find_boxed_type(&std__string);
+                            EXPRESSION *exp1, *exp2;
+                            exp1 = exp2 = anonymousVar(sc_auto, &std__string);
+                            callConstructorParam(&ctype, &exp2, p->tp, p->exp, true, true, false, false);
+                            exp2 = exprNode(en_l_string, exp2, nullptr);
+                            p->exp = exp2;
+                            p->tp = &std__string;
+                        }
+                        else
+                            p->exp = exprNode(en_x_object, p->exp, nullptr);
+                    }
                 }
                 else if (ismsil(p->tp))
                     ;  // error

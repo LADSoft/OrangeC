@@ -1,10 +1,23 @@
 Release notes:
 version 6.0.43:
 
+    occil: add this as a first class item in the project
     occ: fix problems with complex math code generation
+    occ: fix problems initializing an array of objects in a constructor
+    occ: qualifying a constructor with the class name (inside the class definition) resulted in bad code generation.
+    occ: static cast of an argument to vector::push_back resulted in the wrong value being pushed
+    occ: when stack frames are being used, presence of ONLY the thisptr isn't enough to generate the stack frame load/save
+    occ: return statement could use an RREF copy on something that is in another container, effectively wiping the value.
+    occ: when a 'throw' occurs from a nested routine, registers such as ESI,EDI,EBX could have been modified by the lower routines
+         but they may not have been used in the catching routine, so the caller's values might not have been saved.
+    occ: declaring an enumeration in a class resulted in bad code gen, when the -> or . operators were used to access it from an object
+    occ: in function argument, an enum should prefer a match to its base type.   Was prefering unsigned char.
+         for example an enum wouldn't be translated to text characters when using streaming operators
     omake: fix wildcard function to check for file existance
     build: use 'wildcard' function instead of spawning to a dir or ls command
     rtl: fix problems with complex math library: there was still code for long double complex using the old long double format
+    dotnetpelib: fix problems parsing CustomAttributes out of assembly
+    dotnetpelib: load assemblies more quickly
 
 version 6.0.42: 8/11/2019
 

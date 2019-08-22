@@ -94,7 +94,7 @@ void lex(const char *srcfile)
 int main()
 {
   int i = 0;
-  char* fileName = "test.c";
+  char* fileName = "q2.c";
   lex(fileName);
   
   for(i=0;i<nToken;i++)

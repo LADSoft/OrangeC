@@ -72,8 +72,8 @@ namespace HelloWorld
             // Dump names table from bzip2.odx
             DumpNames(@"bzip2.odx");
             // Keep the console window open in debug mode.
-            Console.WriteLine("Press any key to exit.");
-            Console.ReadKey();
+//            Console.WriteLine("Press any key to exit.");
+//            Console.ReadKey();
         }
     }
 }

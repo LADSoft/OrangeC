@@ -1,0 +1,24 @@
+XOR LOGICO: 90^18=72
+XOR MATEMA: 90^18=72
+RSHIFT LOGICO: 45
+RSHIFT MATEMA: 45
+URSHIFT MATEM: 45
+LSHIFT LOGICO: 180
+LSHIFT MATEMA: 180
+OR LOGICO: 90
+OR MATEMA: 90
+AND LOGICO: 18
+AND MATEMA: 18
+Somar............: 20+20=40
+Subtrair.........: 30-10=20
+Negar............:   ~10=-10
+Multiplicar......: 70*27=1890
+Dividir(inteiros): 36/06=6
+Multiplicar por 2: 70*02=140
+Dividir por 2....: 40/02=20
+
+Incrementar: 20+01=21
+7 eh impar.: true
+2 eh impar.: false
+8 eh par...: true
+7 eh par...: false

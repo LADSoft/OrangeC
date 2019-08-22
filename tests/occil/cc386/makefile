@@ -1,3 +1,4 @@
+all: test
 %.ilo: %.c
 	occil /c /9 /E- /Di386 /Lkernel32 $^
 
@@ -51,7 +52,11 @@ TEMPLATE.ilo \
 TYPES.ilo \
 USAGE.ilo
 
-q.exe: $(list)
+test: cc386.exe
+	cc386 /S -Di386 /9 /E- hi.c
+	fc /b hi.asm hi.cmpx
+
+cc386.exe: $(list)
 	netlink /occ386.exe @&&|
 $(list)
 |

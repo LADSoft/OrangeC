@@ -616,7 +616,7 @@ void load_constant(int sz, EXPRESSION *exp)
     gen_code(op, operand);
     increment_stack();
 }
-void gen_load(IMODE *im, Operand *dest)
+void gen_load(IMODE *im, Operand *dest, bool retval)
 {
     if (dest && dest->OperandType() == Operand::t_string)
     {
@@ -669,7 +669,7 @@ void gen_load(IMODE *im, Operand *dest)
                 Local *l = static_cast<Local *>(dest->GetValue());
                 Type *t = l->GetType();
                 bool address = t->GetBasicType() == Type::cls && (t->GetClass()->Flags().Flags() & Qualifiers::Value) && !t->ArrayLevel();
-                if (im->mode == i_immed && (!im->msilObject || address))
+                if (im->mode == i_immed && (!im->msilObject || address) && !retval)
                     gen_code(Instruction::i_ldloca, dest);
                 else
                     gen_code(Instruction::i_ldloc, dest);
@@ -680,7 +680,7 @@ void gen_load(IMODE *im, Operand *dest)
                 Param *p = static_cast<Param *>(dest->GetValue());
                 Type *t = p->GetType();
                 bool address = t->GetBasicType() == Type::cls && (t->GetClass()->Flags().Flags() & Qualifiers::Value) && !t->ArrayLevel();
-                if (im->mode == i_immed && (!im->msilObject || address))
+                if (im->mode == i_immed && (!im->msilObject || address) && !retval)
                     gen_code(Instruction::i_ldarga, dest);
                 else
                     gen_code(Instruction::i_ldarg, dest);
@@ -703,7 +703,7 @@ void gen_load(IMODE *im, Operand *dest)
                     FieldName *f = static_cast<FieldName *>(dest->GetValue());
                     Type *t = f->GetField()->FieldType();
                     bool address = t->GetBasicType() == Type::cls && (t->GetClass()->Flags().Flags() & Qualifiers::Value) && !t->ArrayLevel();
-                    if (im->mode == i_immed && (!im->msilObject || address))
+                    if (im->mode == i_immed && (!im->msilObject || address) && !retval)
                         gen_code(Instruction::i_ldflda, dest);
                     else
                         gen_code(Instruction::i_ldfld, dest);
@@ -713,7 +713,7 @@ void gen_load(IMODE *im, Operand *dest)
                     FieldName *f = static_cast<FieldName *>(dest->GetValue());
                     Type *t = f->GetField()->FieldType();
                     bool address = t->GetBasicType() == Type::cls && (t->GetClass()->Flags().Flags() & Qualifiers::Value) && !t->ArrayLevel();
-                    if (im->mode == i_immed && (!im->msilObject || address))
+                    if (im->mode == i_immed && (!im->msilObject || address) && !retval)
                         gen_code(Instruction::i_ldsflda, dest);
                     else
                         gen_code(Instruction::i_ldsfld, dest);
@@ -1223,7 +1223,7 @@ static bool bltin_gosub(QUAD *q)
         if (q->dc.right->mode == i_immed)
         {
             Operand *ap = getOperand(q->dc.right);
-            gen_load(q->dc.right, ap);
+            gen_load(q->dc.right, ap, false);
         }
 
     }
@@ -1514,7 +1514,7 @@ static bool bltin_gosub(QUAD *q)
         }
         else
         {
-            gen_load(q->dc.left, ap);
+            gen_load(q->dc.left, ap, q->ans->retval);
             if (q->dc.left->size != 0 && q->dc.left->size != q->ans->size)
             {
                 gen_convert(ap, q->dc.left, q->ans->size);
@@ -1542,7 +1542,7 @@ void bingen(int lower, int avg, int higher)
     int nelab = beGetLabel;
     if (switchTreeBranchLabels[avg] !=  0)
         oa_gen_label(switchTreeBranchLabels[avg]);
-    gen_load(switch_ip, switch_ip_a);
+    gen_load(switch_ip, switch_ip_a, false);
     load_constant(switch_ip->size, intNode(en_c_i, switchTreeCases[avg]));
     gen_branch(Instruction::i_beq,  switchTreeLabels[avg], true);
     if (avg == lower)
@@ -1558,7 +1558,7 @@ void bingen(int lower, int avg, int higher)
             lab = switchTreeBranchLabels[avg2] = beGetLabel;
         else
             lab = switch_deflab;
-        gen_load(switch_ip, switch_ip_a);
+        gen_load(switch_ip, switch_ip_a, false);
         load_constant(switch_ip->size, intNode(en_c_i, switchTreeCases[avg]));
         if (switch_ip->size < 0)
             gen_branch(Instruction::i_bgt, lab, true);
@@ -1616,7 +1616,7 @@ void bingen(int lower, int avg, int higher)
 
     if (switch_mode == swm_compactstart)
     {
-        gen_load(switch_ip, switch_ip_a);
+        gen_load(switch_ip, switch_ip_a, false);
         if (swcase != 0)
         {
             load_constant(switch_ip->size, intNode(en_c_i, swcase));
@@ -1632,7 +1632,7 @@ void bingen(int lower, int avg, int higher)
         case swm_enumerate:
         default:
 
-            gen_load(switch_ip, switch_ip_a);
+            gen_load(switch_ip, switch_ip_a, false);
             load_constant(switch_ip->size, intNode(en_c_i, swcase));
             gen_branch(Instruction::i_beq, labin, true);
             if (-- switch_case_count == 0)

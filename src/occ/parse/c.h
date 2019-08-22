@@ -551,6 +551,7 @@ struct attributes
         int warnAlign;          /* if nz, warn if not aligned */
         unsigned vectorSize;    /* total size of a vectored attribute */
         enum e_lk linkage2;     /* export, import, msil */
+        enum e_lk linkage3;     /* used here for noreturn */
         struct sym* cleanup;    /* cleanup function */
         bool packed;            /* True if to reset alignment to 1 */
         bool alignedAttribute;  /* True if alignment came from gcc aligned attribute */

@@ -172,7 +172,7 @@ volatile uint8_t zeroise_bytes(volatile void* v, size_t n)
 /* Force linker to include copyright notice in executable object image */
 volatile char* copyright_notice(void)
 {
-    return "Contains multiple-precision arithmetic code originally written by David Ireland,"
+    return (volatile char *)"Contains multiple-precision arithmetic code originally written by David Ireland,"
            " copyright (c) 2001-16 by D.I. Management Services Pty Limited <www.di-mgt.com.au>.";
 }
 

@@ -33,7 +33,7 @@
 #include <iostream>
 #include <fstream>
 #include <stdexcept>
-
+#include <string.h>
 // reference changelog.txt to see what the changes are
 //
 #define DOTNETPELIB_VERSION "3.01"
@@ -778,7 +778,7 @@ namespace DotNetPELib
             Bytes
         };
         Field(const std::string& Name, Type *tp, Qualifiers Flags) : mode_(Field::None), name_(Name), flags_(Flags),
-            type_(tp), enumValue_(0), byteValue_(nullptr), byteLength_(0), ref_(0), peIndex_(0), explicitOffset_(0), external_(false), definitions_(0)
+            type_(tp), /*enumValue_(0),*/ byteValue_(nullptr), byteLength_(0), ref_(0), peIndex_(0), explicitOffset_(0), external_(false), definitions_(0)
         {
         }
         ///** Add an enumeration constant

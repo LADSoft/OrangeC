@@ -564,8 +564,9 @@ void msil_create_property(SYMBOL* property, SYMBOL* getter, SYMBOL* setter)
 {
     if (typeid(*mainContainer) == typeid(Class))
     {
+	auto tempvar = std::vector<Type*>{};
         Property* p = peLib->AllocateProperty(*peLib, property->name, GetType(property->tp, true, false, false),
-                                              std::vector<Type*>{}, !!setter, mainContainer);
+                                              tempvar, !!setter, mainContainer);
         p->Instance(false);  // only doing statics for now...
         static_cast<Class*>(mainContainer)->Add(p);
         property->msil = (void*)p;
@@ -1332,7 +1333,7 @@ static Field* LookupField(char* name)
 static Field* LookupManagedField(char* name)
 {
     void* rv = nullptr;
-    if (peLib->Find(std::string("lsmsilcrtl.rtl::") + name, &rv, false) == PELib::s_field)
+    if (peLib->Find(std::string("lsmsilcrtl.rtl::") + name, &rv, nullptr) == PELib::s_field)
     {
         return static_cast<Field*>(rv);
     }

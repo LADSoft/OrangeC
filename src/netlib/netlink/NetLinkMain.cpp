@@ -344,7 +344,7 @@ Field *NetLinkMain::LookupField(char *name)
 Field *NetLinkMain::LookupManagedField(char *name)
 {
     void *rv = nullptr;
-    if (peLib->Find(std::string("lsmsilcrtl.rtl::") + name, &rv, false) == PELib::s_field)
+    if (peLib->Find(std::string("lsmsilcrtl.rtl::") + name, &rv, nullptr) == PELib::s_field)
     {
         return static_cast<Field *>(rv);
     }

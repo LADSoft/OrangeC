@@ -15,7 +15,7 @@ Coverity scan status:
 
 Orange C is currently a Win32 C++ compiler.   Long term it is going to be retargetable.
 
-The Orange C package also includes a C compiler for .Net, which compiles to MSIL/CIL.   It is an offshoot of Orange C that is retarged for .NET.   Documentation may be found here: [OCCIL documentation](doc\occil.md)
+The Orange C package also includes a C compiler for .Net, which compiles to MSIL/CIL.   It is an offshoot of Orange C that is retarged for .NET.   Documentation may be found here: [OCCIL documentation](doc/occil.md)
 
 Source Code for Orange C is released under the GNU General Public License version 3.
 

@@ -17,6 +17,11 @@ vvtest.exe: vvtest.c dll.dll
 	occil vvtest /Ldll.dll
 	vvtest > vvtest.txt
 	fc /b vvtest.txt vvtest.cmpx
+cc.exe: cc.c
+	occil cc /Lkernel32
+	cc xx.cc
+	xx > xx.tst
+	fc /b xx.tst xx.cmpx
 
 dll.exe:
 	echo hi

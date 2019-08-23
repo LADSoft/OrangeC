@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <stdio.h>
@@ -29,7 +29,7 @@
 #include "be.h"
 #include "winmode.h"
 #include "Utils.h"
- 
+
 #define TEMPFILE "$$$OCC.TMP"
 
 extern COMPILER_PARAMS cparams;
@@ -39,19 +39,18 @@ extern int prm_lscrtdll;
 extern int prm_msvcrt;
 extern int showBanner;
 
-
-LIST *objlist,  *reslist,  *rclist;
+LIST *objlist, *reslist, *rclist;
 static char outputFileName[260];
 
 #ifdef MICROSOFT
-#define system(x) winsystem(x)
-extern int winsystem(const char *);
+#    define system(x) winsystem(x)
+extern int winsystem(const char*);
 #endif
-static void InsertFile(LIST **r, char *name, char *ext)
+static void InsertFile(LIST** r, char* name, char* ext)
 {
 
-    char buf[256],  *newbuffer;
-    LIST *lst;
+    char buf[256], *newbuffer;
+    LIST* lst;
     strcpy(buf, name);
     if (!outputFileName[0])
     {
@@ -67,31 +66,31 @@ static void InsertFile(LIST **r, char *name, char *ext)
     lst = *r;
     while (lst)
     {
-        if (Utils::iequal((char *)lst->data, buf))
+        if (Utils::iequal((char*)lst->data, buf))
             return;
         lst = lst->next;
     }
     newbuffer = (char*)malloc(strlen(buf) + 1);
     if (!newbuffer)
-        return ;
+        return;
     strcpy(newbuffer, buf);
 
     /* Insert file */
     while (*r)
         r = &(*r)->next;
-    *r = (LIST *)malloc(sizeof(LIST));
+    *r = (LIST*)malloc(sizeof(LIST));
     if (!r)
-        return ;
+        return;
     (*r)->next = 0;
     (*r)->data = newbuffer;
 }
 
 /*-------------------------------------------------------------------------*/
 
-int InsertExternalFile(char *name, bool)
+int InsertExternalFile(char* name, bool)
 {
     char buf[260], *p;
-    
+
     if (HasExt(name, ".rc"))
     {
         InsertFile(&reslist, name, ".res");
@@ -115,24 +114,21 @@ int InsertExternalFile(char *name, bool)
         p++;
     strcpy(buf, p);
     InsertFile(&objlist, buf, ".ilo");
-    
+
     return 0; /* compiler should process it*/
 }
 
 /*-------------------------------------------------------------------------*/
 
-void InsertOutputFileName(char *name)
-{
-    strcpy(outputFileName, name);
-}
+void InsertOutputFileName(char* name) { strcpy(outputFileName, name); }
 
 /*-------------------------------------------------------------------------*/
-static LIST *objPosition;
-void GetOutputFileName(char *name, char *path, bool obj)
+static LIST* objPosition;
+void GetOutputFileName(char* name, char* path, bool obj)
 {
     if (obj)
     {
-        char *p;
+        char* p;
         if (!objPosition)
             objPosition = objlist;
         if (!objPosition)
@@ -143,7 +139,7 @@ void GetOutputFileName(char *name, char *path, bool obj)
             p = name;
         else
             p++;
-        strcpy(p, (char *)objPosition->data);
+        strcpy(p, (char*)objPosition->data);
         strcpy(path, name);
     }
     else
@@ -152,7 +148,7 @@ void GetOutputFileName(char *name, char *path, bool obj)
         strcpy(name, outputFileName);
         if (objlist && name[0] && name[strlen(name) - 1] == '\\')
         {
-            strcat(name, (char *)objlist->data);
+            strcat(name, (char*)objlist->data);
             StripExt(name);
             strcat(name, ".exe");
             strcpy(path, outputFileName);
@@ -164,12 +160,12 @@ void NextOutputFileName()
     if (objPosition)
         objPosition = objPosition->next;
 }
-int RunExternalFiles(char *rootPath)
+int RunExternalFiles(char* rootPath)
 {
     char root[260];
     char args[1024], *c0;
     char spname[2048];
-    char outName[260] ,*p;
+    char outName[260], *p;
     int rv;
     char temp[260];
     return 0;
@@ -183,10 +179,10 @@ int RunExternalFiles(char *rootPath)
     GetOutputFileName(outName, temp, false);
     StripExt(outName);
     AddExt(outName, ".il");
-//    if (beGetIncludePath)
-//        sprintf(args, "\"-i%s\"", beGetIncludePath);
-//    else
-        args[0] = 0;
+    //    if (beGetIncludePath)
+    //        sprintf(args, "\"-i%s\"", beGetIncludePath);
+    //    else
+    args[0] = 0;
     while (rclist)
     {
         sprintf(spname, "\"%sorc.exe\" -r %s %s \"%s\"", root, !showBanner ? "-!" : "", args, rclist->data);
@@ -197,12 +193,12 @@ int RunExternalFiles(char *rootPath)
     }
     if (objlist)
     {
-        FILE *fil = fopen(TEMPFILE, "w");
+        FILE* fil = fopen(TEMPFILE, "w");
         char resources[10000];
         if (!fil)
             return 1;
         resources[0] = 0;
-        
+
         if (cparams.prm_debug)
         {
             strcat(args, " /DEBUG");
@@ -216,13 +212,13 @@ int RunExternalFiles(char *rootPath)
             sprintf(resources + strlen(resources), " /Resource:\"%s\"", reslist->data);
             reslist = reslist->next;
         }
-        //while (objlist)
+        // while (objlist)
         {
             char filname[260];
             sprintf(filname, "\"%s%s\"", temp, outName);
             sprintf(spname, "ilasm.exe /QUIET %s %s %s", args, filname, resources);
             rv = system(spname);
-+            unlink(TEMPFILE);
+            +unlink(TEMPFILE);
 
             if (rv)
             {

@@ -1408,7 +1408,7 @@ void createDefaultConstructors(SYMBOL* sp)
             while (p)
             {
                 SYMBOL* pcls = (SYMBOL*)p->p;
-                TYPE *tp = pcls->tp;
+                TYPE* tp = pcls->tp;
                 while (isarray(tp))
                     tp = basetype(tp)->btp;
                 if (pcls->storage_class == sc_member || pcls->storage_class == sc_mutable || pcls->storage_class == sc_overloads)
@@ -1492,14 +1492,14 @@ void createDefaultConstructors(SYMBOL* sp)
         conditionallyDeleteCopyAssignment(asgn, true);
     }
 }
-EXPRESSION *destructLocal(EXPRESSION* exp)
+EXPRESSION* destructLocal(EXPRESSION* exp)
 {
     std::stack<SYMBOL*> destructList;
     std::stack<EXPRESSION*> stk;
     stk.push(exp);
     while (stk.size())
     {
-        EXPRESSION *e = stk.top();
+        EXPRESSION* e = stk.top();
         stk.pop();
         if (!isintconst(e) && !isfloatconst(e))
         {
@@ -1512,7 +1512,7 @@ EXPRESSION *destructLocal(EXPRESSION* exp)
             e = e->left;
         if (e->type == en_func)
         {
-            INITLIST *il = e->v.func->arguments;
+            INITLIST* il = e->v.func->arguments;
             while (il)
             {
                 stk.push(il->exp);
@@ -1521,7 +1521,7 @@ EXPRESSION *destructLocal(EXPRESSION* exp)
         }
         if (e->type == en_auto && e->v.sp->allocate && !e->v.sp->destructed)
         {
-            TYPE *tp = e->v.sp->tp;
+            TYPE* tp = e->v.sp->tp;
             while (isarray(tp))
                 tp = basetype(tp)->btp;
             if (isstructured(tp) && !isref(tp))
@@ -1532,14 +1532,13 @@ EXPRESSION *destructLocal(EXPRESSION* exp)
         }
     }
 
-    EXPRESSION *rv = exp;
+    EXPRESSION* rv = exp;
     while (destructList.size())
     {
-        SYMBOL *sp = destructList.top();
+        SYMBOL* sp = destructList.top();
         destructList.pop();
         if (sp->dest && sp->dest->exp)
             rv = exprNode(en_void, rv, sp->dest->exp);
-
     }
     return rv;
 }

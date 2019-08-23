@@ -3495,7 +3495,8 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_
                     else
                         seq[(*n)++] = CV_NONE;
                 }
-                else                {
+                else
+                {
 
                     seq[(*n)++] = CV_ENUMINTEGRALCONVERSION;
                 }

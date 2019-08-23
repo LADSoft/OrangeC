@@ -90,7 +90,7 @@ CPP_DEPENDENCIES= \
     wseh.cpp \
     using.cpp \
     gen.cpp \
-    process.cpp \
+    Process.cpp \
     import.cpp
 
 ifeq "$(COMPILER)" "gcc-linux"

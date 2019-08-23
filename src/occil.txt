@@ -60,11 +60,6 @@ For example:
 	__finally {
 		printf("Finally!");
 	}
-## Runtime Environment
-Set the environment variable `OCCIL_ROOT` to the Orange C path for it to find include files and add the OCCIL executables to the path:
-
-    set OCCIL_ROOT=c:\orangec
-    path %OCCIL_ROOT%\bin;%PATH%
 
 ## Implementation Notes
 This compiler will generate either a .EXE or .DLL file, or alternately a .il file suitable for viewing or compiling with ilasm.   Additionally, the compiler is capable of generating object files in the familiar object-file-per-module paradigm that can be linked with a linker called `netlink`.   This linker is also part of the package.   The compiler uses an independent library `dotnetpelib` to create the output.

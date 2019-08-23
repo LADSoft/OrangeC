@@ -1,11 +1,6 @@
 # Simple-MSIL-Compiler
 
 This is a version of the Orange C compiler that does MSIL code generation for the .NET Framework.
-
-Build Status: 
-[![Build status](https://ci.appveyor.com/api/projects/status/omahydb3qgu5f6dx?svg=true)](https://ci.appveyor.com/project/LADSoft/simple-msil-compiler)
-
-
 This is a WIP.  At present it mostly supports the C language.  
 
 This version supports common RTL variables such as `stdin`, `stdout`, `stderr`, `errno`, and the variables used for the macros in `ctype.h`.   It also supports command line arguments.
@@ -18,7 +13,7 @@ The results are undefined if you try to use some extension such as `alloca`.
 
 There may be a variety of bugs.
 
-The sources for this version build independently from the main Orange C branch.   The include files from the ORANGEC compiler exist in this repository as well, an [Appveyor CI](https://ci.appveyor.com/project/LADSoft/simple-msil-compiler) project uses them and some other static data to build an installation setup file after each checkin.  All sources in this package have a VS2017 community edition solution.
+The sources for this version are build as part of the main Orange C branch and is build as part of the [Main Orange C CI](https://ci.appveyor.com/project/LADSoft/orangec) to build an installation setup file after each checkin.
 
 Run the compiler `occil` on a simple C program (`test.c` is included as an example).
 

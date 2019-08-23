@@ -99,7 +99,7 @@ namespace DotNetPELib
                 TypeDefTableEntry *entry2 = static_cast<TypeDefTableEntry *>(table2[i]);
                 TypeDefTableEntry *entry2a = static_cast<TypeDefTableEntry *>(table2[i + 1]);
                 for (int i = entry2->methods_.index_; i < entry2a->methods_.index_; i++)
-                    indices[i] = entry2;
+                    indices[i-1] = entry2;
             }
             const DNLTable &table = reader.Table(tCustomAttribute);
             for (auto tentry : table)

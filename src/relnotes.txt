@@ -2,6 +2,7 @@ Release notes:
 version 6.0.43:
 
     occil: add this as a first class item in the project
+    occil: fix various pre-existing bugs
     occ: fix problems with complex math code generation
     occ: fix problems initializing an array of objects in a constructor
     occ: qualifying a constructor with the class name (inside the class definition) resulted in bad code generation.
@@ -13,10 +14,14 @@ version 6.0.43:
     occ: declaring an enumeration in a class resulted in bad code gen, when the -> or . operators were used to access it from an object
     occ: in function argument, an enum should prefer a match to its base type.   Was prefering unsigned char.
          for example an enum wouldn't be translated to text characters when using streaming operators
+    occ: when a function is marked as nothrow, allow it to be inlined
+    occ: when a function does not have try/catch, allow it to be optimized even in the presence of an exception table
+    occ: noexcept functions that can't possibly throw anyway will have the exception table elided
+    occ: it was incorrectly adding EBP references in some cases where they weren't needed
+    occ: it was not allowing inlining of functions that return a structure by reference
     omake: fix wildcard function to check for file existance
     build: use 'wildcard' function instead of spawning to a dir or ls command
     rtl: fix problems with complex math library: there was still code for long double complex using the old long double format
-    dotnetpelib: fix problems parsing CustomAttributes out of assembly
     dotnetpelib: load assemblies more quickly
 
 version 6.0.42: 8/11/2019

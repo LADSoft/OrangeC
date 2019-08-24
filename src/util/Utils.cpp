@@ -161,7 +161,6 @@ std::string Utils::AbsolutePath(const std::string& name)
         else
             rv = std::string(buf) + CmdFiles::DIR_SEP + name;
     }
-    std::cout << rv << std::endl;
 #endif
     return rv;
 }

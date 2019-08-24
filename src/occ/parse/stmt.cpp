@@ -3599,6 +3599,7 @@ LEXEME* body(LEXEME* lex, SYMBOL* funcsp)
             }
             hasXCInfo = false;
         }
+        funcsp->canThrow = functionCanThrow;
     }
     funcsp->labelCount = codeLabel - INT_MIN;
     n1 = codeLabel;

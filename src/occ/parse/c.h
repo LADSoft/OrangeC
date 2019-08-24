@@ -665,6 +665,7 @@ typedef struct sym
     unsigned hasTry : 1;           // function surrounded by try statement
     unsigned anyTry : 1;           // function has either external or internal try statement
                                    // or variable is used within a try statement
+    unsigned canThrow : 1;         // function throws directly
     unsigned hasDest : 1;          // class has a destructor that is called
     unsigned pureDest : 1;         // destructor is pure
     unsigned inCatch : 1;          // used inside a catch block

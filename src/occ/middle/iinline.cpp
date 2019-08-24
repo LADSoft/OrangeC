@@ -332,6 +332,11 @@ IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
         f->sp->dumpInlineToFile = true;
         return nullptr;
     }
+    if (f->sp->canThrow)
+    {
+        f->sp->dumpInlineToFile = true;
+        return nullptr;
+    }
     if (f->sp->allocaUsed)
     {
         f->sp->dumpInlineToFile = true;

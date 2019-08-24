@@ -2175,7 +2175,7 @@ int examine_icode(QUAD* head)
     if (prm_useesp)
     {
         extern void SetUsesESP(bool yes);
-        SetUsesESP(!uses_substack && !theCurrentFunc->xc);
+        SetUsesESP(!uses_substack && !theCurrentFunc->xc && !theCurrentFunc->canThrow);
     }
     int floatretsize = 0;
     head = hold;

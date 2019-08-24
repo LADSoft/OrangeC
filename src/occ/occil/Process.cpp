@@ -2063,9 +2063,9 @@ void oa_end_generation(void)
         if (end)
         {
             LIST* lst = (LIST*)peLib->AllocateBytes(sizeof(LIST));
-            static SYMBOL sp;
-            sp.name = (char*)end->name;
-            std::map<SYMBOL*, Value*, byName>::iterator it = globalMethods.find(&sp);
+            static SYMBOL sp1;
+            sp1.name = (char*)end->name;
+            std::map<SYMBOL*, Value*, byName>::iterator it = globalMethods.find(&sp1);
             MethodSignature* signature = static_cast<MethodName*>(it->second)->Signature();
             lst->data = (void*)peLib->AllocateMethodName(signature);
             if (deinitializersHead)

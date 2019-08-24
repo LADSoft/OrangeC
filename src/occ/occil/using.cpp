@@ -35,7 +35,6 @@ bool _using_(char* file)
             strcpy(name, a);
             strcat(name, "\\bin\\");
             strcat(name, file);
-            printf("%s\n", name);
             if (!peLib->LoadUnmanaged(name))
                 return true;
         }

@@ -29,7 +29,7 @@ bool _using_(char* file)
         return true;
     if (peLib->LoadUnmanaged(file))
     {
-        char* a = getenv("OCCIL_ROOT");
+        char* a = getenv("ORANGEC");
         if (a)
         {
             strcpy(name, a);

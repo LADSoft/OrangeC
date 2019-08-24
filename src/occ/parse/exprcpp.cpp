@@ -63,6 +63,7 @@ extern int currentErrorLine;
 extern int templateNestingCount;
 extern bool functionCanThrow;
 extern SYMBOL* theCurrentFunc;
+extern bool hasFuncCall;
 
 /* lvaule */
 /* handling of const int */
@@ -346,6 +347,8 @@ bool castToArithmeticInternal(bool integer, TYPE** tp, EXPRESSION** exp, enum e_
                 {
                     e1 = varNode(en_func, nullptr);
                     e1->v.func = params;
+                    if (params->sp->xcMode != xc_unspecified && params->sp->xcMode != xc_none)
+                        hasFuncCall = true;
                     GENREF(cst);
                 }
                 *exp = e1;
@@ -436,6 +439,8 @@ bool castToPointer(TYPE** tp, EXPRESSION** exp, enum e_kw kw, TYPE* other)
                 params->ascall = true;
                 e1 = varNode(en_func, nullptr);
                 e1->v.func = params;
+                if (params->sp->xcMode != xc_unspecified && params->sp->xcMode != xc_none)
+                    hasFuncCall = true;
                 GENREF(cst);
                 *exp = e1;
                 if (ispointer(other))
@@ -494,6 +499,8 @@ bool cppCast(TYPE* src, TYPE** tp, EXPRESSION** exp)
                 }
                 e1 = varNode(en_func, nullptr);
                 e1->v.func = params;
+                if (params->sp->xcMode != xc_unspecified && params->sp->xcMode != xc_none)
+                    hasFuncCall = true;
                 GENREF(cst);
                 *exp = e1;
                 *exp = DerivedToBase(*tp, basetype(cst->tp)->btp, *exp, 0);
@@ -1341,6 +1348,8 @@ bool insertOperatorParams(SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, FUNCTIONC
         s3->throughClass = s3->parentClass != nullptr;
         funcparams->sp = s3;
         funcparams->functp = s3->tp;
+        if (funcparams->sp->xcMode != xc_unspecified && funcparams->sp->xcMode != xc_none)
+            hasFuncCall = true;
         *exp = intNode(en_func, 0);
         (*exp)->v.func = funcparams;
         *tp = s3->tp;

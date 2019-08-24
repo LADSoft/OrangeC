@@ -28,7 +28,6 @@ extern int tempCount;
 extern TEMP_INFO** tempInfo;
 extern BLOCKLIST** blockArray;
 extern int prm_useesp;
-extern bool hasXCInfo;
 
 extern int prm_lscrtdll;
 
@@ -2176,7 +2175,7 @@ int examine_icode(QUAD* head)
     if (prm_useesp)
     {
         extern void SetUsesESP(bool yes);
-        SetUsesESP(!uses_substack && !hasXCInfo);
+        SetUsesESP(!uses_substack && !theCurrentFunc->xc);
     }
     int floatretsize = 0;
     head = hold;

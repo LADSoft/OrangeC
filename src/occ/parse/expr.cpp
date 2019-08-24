@@ -74,6 +74,9 @@ extern int expandingParams;
 extern bool functionCanThrow;
 extern SYMBOL* theCurrentFunc;
 extern int inGetUserConversion;
+extern int tryLevel;
+extern bool hasFuncCall;
+
 int packIndex;
 
 int argument_nesting;
@@ -664,6 +667,7 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                                        * register keyword are enforced elsewhere
                                        */
                         *exp = varNode(en_auto, sym);
+                        sym->anyTry |= tryLevel != 0;
                         break;
                     case sc_parameter:
                         //                   tagNonConst(funcsp, sym->tp);
@@ -745,6 +749,7 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                             if (tpa->array)
                                 deref(&stdpointer, exp);
                         }
+                        sym->anyTry |= tryLevel != 0;
                         break;
 
                     case sc_localstatic:
@@ -1481,6 +1486,7 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
                     if (sp4 && sp4->mainsym)
                         sp4 = sp4->mainsym;
                         
+
 
 
 
@@ -3572,6 +3578,8 @@ LEXEME* expression_arguments(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION*
                     AdjustParams(funcparams->sp, hr, lptr, operands, true);
                 }
             }
+            if (funcparams->sp->xcMode != xc_unspecified && funcparams->sp->xcMode != xc_none)
+                hasFuncCall = true;
             CheckCalledException(funcparams->sp, funcparams->thisptr);
             if (cparams.prm_cplusplus)
             {

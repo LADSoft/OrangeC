@@ -2386,6 +2386,7 @@ IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         if (ap)
             return ap;
     }
+
     if (f->sp->isInline)
     {
         if (f->sp->noinline)

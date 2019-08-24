@@ -303,7 +303,6 @@ IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
     int oldretcount = retcount;
     int oldOffset = codeLabelOffset;
     EXPRESSION* oldthis = inlinesym_thisptr[inlinesym_count];
-
     //    return nullptr;
     if (chosenAssembler->arch->denyopts & DO_NOINLINE)
         return nullptr;
@@ -366,7 +365,7 @@ IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
             return nullptr;
         }
     }
-    if (f->returnEXP)
+    if (f->returnEXP && !isref(basetype(f->sp->tp)->btp))
     {
         f->sp->dumpInlineToFile = true;
         return nullptr;

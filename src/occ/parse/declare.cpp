@@ -3978,7 +3978,7 @@ LEXEME* getExceptionSpecifiers(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_s
                 lex = getsym();
                 if (MATCHKW(lex, closepa))
                 {
-                    sp->xcMode = xc_dynamic;
+                    sp->xcMode = xc_none;
                     if (!sp->xc)
                         sp->xc = (xcept*)Alloc(sizeof(struct xcept));
                 }
@@ -4039,6 +4039,8 @@ LEXEME* getExceptionSpecifiers(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_s
             else
             {
                 sp->xcMode = xc_none;
+                if (!sp->xc)
+                    sp->xc = (xcept*)Alloc(sizeof(struct xcept));
             }
             break;
         default:

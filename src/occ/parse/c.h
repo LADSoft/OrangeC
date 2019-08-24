@@ -656,13 +656,15 @@ typedef struct sym
     unsigned safefunc : 1;         /* RTL helper function with no side effects */
     unsigned throughClass : 1;     /* last search was found through a class */
     unsigned hasUserCons : 1;      /* has user-defined constructors */
-    unsigned trivialCons : 1;      /* constructor is trivial */
+    unsigned trivialCons : 1;      /* constructor is trivial */ 
     unsigned internallyGenned : 1; /* constructor declaration was made by the compiler */
     unsigned stackblock : 1;       // stacked structure in C++ mode
     unsigned islambda : 1;         // lambda closure struct
     unsigned noinline : 1;         // don't inline an inline qualified function
     unsigned didinline : 1;        // already genned an inline func for this symbol
     unsigned hasTry : 1;           // function surrounded by try statement
+    unsigned anyTry : 1;           // function has either external or internal try statement
+                                   // or variable is used within a try statement
     unsigned hasDest : 1;          // class has a destructor that is called
     unsigned pureDest : 1;         // destructor is pure
     unsigned inCatch : 1;          // used inside a catch block

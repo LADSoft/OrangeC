@@ -51,7 +51,9 @@ extern int templateNestingCount;
 
 int funcNesting;
 int funcLevel;
+int tryLevel;
 
+bool hasFuncCall;
 bool hasXCInfo;
 int startlab, retlab;
 int codeLabel;
@@ -80,6 +82,7 @@ void statement_ini(bool global)
     funcLevel = 0;
     caseDestructBlock = nullptr;
     matchReturnTypes = false;
+    tryLevel = 0;
 }
 void InsertLineData(int lineno, int fileindex, const char* fname, char* line)
 {
@@ -2557,6 +2560,7 @@ LEXEME* statement_try(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     trystmt->defaultlabel = -1; /* no default */
     trystmt->type = kw_try;
     trystmt->table = localNameSpace->valueData->syms;
+    funcsp->anyTry = true;
     lex = getsym();
     if (!MATCHKW(lex, begin))
     {
@@ -2565,7 +2569,9 @@ LEXEME* statement_try(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     else
     {
         AllocateLocalContext(trystmt, funcsp, codeLabel++);
+        tryLevel++;
         lex = compound(lex, funcsp, trystmt, false);
+        tryLevel--;
         FreeLocalContext(trystmt, funcsp, codeLabel++);
         parent->needlabel = trystmt->needlabel;
         st = stmtNode(lex, parent, st_try);
@@ -3162,7 +3168,8 @@ LEXEME* compound(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
             hasXCInfo = true;
         if (hasXCInfo && cparams.prm_xcept)
         {
-            funcsp->noinline = true;
+            if (funcsp->anyTry)
+	        funcsp->noinline = true;
             insertXCInfo(funcsp);
         }
         if (!strcmp(funcsp->name, overloadNameTab[CI_DESTRUCTOR]))
@@ -3216,6 +3223,7 @@ LEXEME* compound(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
                 } while (last);
             }
             hasXCInfo = true;
+            funcsp->anyTry = true;
         }
     }
     if (parent->type == kw_catch)
@@ -3541,6 +3549,8 @@ LEXEME* body(LEXEME* lex, SYMBOL* funcsp)
     STATEMENT* startStmt;
     int oldCodeLabel = codeLabel;
     int oldMatchReturnTypes = matchReturnTypes;
+    bool oldHasFuncCall = hasFuncCall;
+    hasFuncCall = false;
     funcNesting++;
     funcLevel++;
     functionCanThrow = false;
@@ -3577,6 +3587,18 @@ LEXEME* body(LEXEME* lex, SYMBOL* funcsp)
             funcsp->nonConstVariableUsed = true;
         else
             funcsp->nonConstVariableUsed |= !MatchesConstFunction(funcsp);
+
+        if (funcsp->xcMode == xc_none && !funcsp->anyTry && !hasFuncCall)
+        {
+            funcsp->xcMode= xc_unspecified;
+            funcsp->xc = nullptr;
+            if (funcsp->mainsym)
+            {
+                funcsp->mainsym->xcMode= xc_unspecified;
+                funcsp->mainsym->xc = nullptr;
+            }
+            hasXCInfo = false;
+        }
     }
     funcsp->labelCount = codeLabel - INT_MIN;
     n1 = codeLabel;
@@ -3643,6 +3665,8 @@ LEXEME* body(LEXEME* lex, SYMBOL* funcsp)
     localFree();
 #endif
     handleInlines(funcsp);
+
+    hasFuncCall = oldHasFuncCall;
     declareAndInitialize = oldDeclareAndInitialize;
     theCurrentFunc = oldtheCurrentFunc;
     hasXCInfo = oldHasXCInfo;

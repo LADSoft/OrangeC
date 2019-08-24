@@ -2374,7 +2374,7 @@ void AllocateRegisters(QUAD* head)
         }
         CountInstructions(first);
         simplifyBottom = simplifyTop = 0;
-        tempCount += 1000;
+        tempCount += 3000;
         simplifyWorklist = (unsigned short*)tAlloc(tempCount * sizeof(unsigned short));
         freezeWorklist = briggsAlloct(tempCount);
         spillWorklist = briggsAlloct(tempCount);
@@ -2384,7 +2384,7 @@ void AllocateRegisters(QUAD* head)
         adjacent1 = tallocbit(tempCount);
         stackedTemps = tallocbit(tempCount);
         tempStack = (int*)tAlloc(tempCount * sizeof(int));
-        tempCount -= 1000;
+        tempCount -= 3000;
         liveVariables();
         CalculateFunctionFlags();
         InitClasses();

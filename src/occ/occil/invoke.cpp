@@ -23,7 +23,6 @@
  */
 
 #include <stdio.h>
-#include <process.h>
 #include <string.h>
 #include <stdlib.h>
 #include "be.h"

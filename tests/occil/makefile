@@ -53,7 +53,7 @@ determinante.exe: determinante.c
 	fc /b determinante.txt determinante.cmpx
 
 %.exe: %.c
-	copy \orangec\bin\*.dll *.*
+	copy \orangec\bin\lsmsilcrtl.dll *.*
 	occil /9 $< /LKernel32 /LUser32 /LGDI32
 	$* > $*.txt
 	fc /b $*.txt $*.cmpx

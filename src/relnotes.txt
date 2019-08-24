@@ -19,6 +19,7 @@ version 6.0.43:
     occ: noexcept functions that can't possibly throw anyway will have the exception table elided
     occ: it was incorrectly adding EBP references in some cases where they weren't needed
     occ: it was not allowing inlining of functions that return a structure by reference
+    occ: for subtractions with long longs, generate neg instructions if necessary to relieve register pressure.
     omake: fix wildcard function to check for file existance
     build: use 'wildcard' function instead of spawning to a dir or ls command
     rtl: fix problems with complex math library: there was still code for long double complex using the old long double format

@@ -56,6 +56,7 @@ class Utils
     static char* GetModuleName();
     static void SetEnvironmentToPathParent(const char* name);
     static std::string FullPath(const std::string& path, const std::string& name);
+    static std::string AbsolutePath(const std::string& name);
     static std::string QualifiedFile(const char* path, const char* ext);
     static std::string SearchForFile(const std::string& path, const std::string& name);
     static std::string NumberToString(int num);

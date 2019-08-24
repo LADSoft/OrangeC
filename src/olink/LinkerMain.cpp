@@ -279,7 +279,7 @@ int LinkerMain::Run(int argc, char** argv)
                 path = "";
             else
                 path.erase(n + 1);
-            int rv = TargetConfig.RunApp(path, outputFile, debugFile, Verbosity.GetExists());
+            int rv = TargetConfig.RunApp(path, outputFile, Utils::AbsolutePath(debugFile), Verbosity.GetExists());
             if (!Verbosity.GetExists())
                 _unlink(outputFile.c_str());
             return rv;

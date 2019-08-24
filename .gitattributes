@@ -13,3 +13,4 @@ makefile text
 *.ico binary
 *.cur binary
 *.fnt binary
+*.odx binary

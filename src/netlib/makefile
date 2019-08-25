@@ -24,6 +24,7 @@
 include ../pathext2.mak
 
 NAME=netlib
+DISTNAME=netlink
 MAIN_FILE=NetLinkMain.cpp
 INCLUDES=..$(PATHEXT2)util ..$(PATHEXT2)exefmt
 CPP_DEPENDENCIES=$(wildcard *.cpp)

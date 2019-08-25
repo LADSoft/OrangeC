@@ -23,6 +23,7 @@ version 6.0.43:
     omake: fix wildcard function to check for file existance
     build: use 'wildcard' function instead of spawning to a dir or ls command
     rtl: fix problems with complex math library: there was still code for long double complex using the old long double format
+    rtl: printf family (and by extension C++ libraries) couldn't deal with LLONG_MIN or unsigned long longs >= ULLONG_MAX/2
     dotnetpelib: load assemblies more quickly
 
 version 6.0.42: 8/11/2019

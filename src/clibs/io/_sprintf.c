@@ -97,7 +97,7 @@ static char * getnum(char *string, LLONG_TYPE num,int radix,int lc,int unsign)
     string[NUM_SIZE-2] = '0';
 	string[NUM_SIZE-1] = 0;
 	if (num < 0 && !unsign)
-		unum = - num;
+		unum = (unsigned LLONG_TYPE)-num;
 	else
 		unum = num;
 	i = NUM_SIZE-2;
@@ -105,9 +105,13 @@ static char * getnum(char *string, LLONG_TYPE num,int radix,int lc,int unsign)
     {
         case 10:
         	while (unum >= 100) {
+/*
+		// lldiv_t doesn't work for large unsigneds...
                 lldiv_t aa = lldiv(unum, 100);
                 int val = ((int)aa.rem) * 2;
-                unum = aa.quot;
+*/
+                int val = (int)(unum %100)*2;
+                unum = unum/100;
                 string[i--] = digitsArray[val + 1];
                 string[i--] = digitsArray[val];
         		sz+=2;

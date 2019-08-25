@@ -4,7 +4,7 @@ image: Visual Studio 2017
 
 install:
     - appveyor-retry choco install InnoSetup
-    - set PATH=c:\orangec\bin;%PATH%;C:\Program Files (x86)\Inno Setup 5
+    - set PATH=c:\orangec\bin;%PATH%;C:\Program Files (x86)\Inno Setup 6
     - call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars32.bat"
     - set PATH=C:\mingw-w64\x86_64-7.2.0-posix-seh-rt_v5-rev1\mingw64\bin;%PATH%
     - set ORIGPATH=%PATH%
@@ -63,7 +63,7 @@ build_script:
         - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC /DVIAASSEMBLY=%VIAASSEMBLY% /DLSCRTL=%LSCRTL% /DWITHDEBUG=%WITHDEBUG% fullbuild -j:4
         - path=%ORIGPATH%
         - cd ..\tests
-        - omake -B
+        - omake -B -DCOMPILER=OCC
         - cd ..\.. 
         - move orangec projects
 

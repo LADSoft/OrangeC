@@ -1,0 +1,4693 @@
+Detailed Section Map
+
+Partition: pt1 addr=401000 align=001 size=9ebd4 max=0000 round=000 fill=00
+  Overlay: .text addr=401000 align=001 size=9ebd4 max=0000 round=000 fill=00
+    Region:  code  addr=401000 align=002 size=9ea8d max=0000 round=000 fill=00
+      File: .\c0xpe.nas(code) addr=000000 size=0017 
+      File: C:\orangec\src\occ\netil\cc386\AN386.c(code) addr=000018 size=13d6 
+      File: C:\orangec\src\occ\netil\cc386\ANALYZE.c(code) addr=0013ee size=1de1 
+      File: C:\orangec\src\occ\netil\cc386\ARGS.c(code) addr=0031d0 size=0530 
+      File: C:\orangec\src\occ\netil\cc386\BROWSE.c(code) addr=003700 size=052f 
+      File: C:\orangec\src\occ\netil\cc386\CMAIN.c(code) addr=003c30 size=1750 
+      File: C:\orangec\src\occ\netil\cc386\CONF386.c(code) addr=005380 size=03bc 
+      File: C:\orangec\src\occ\netil\cc386\cppbltin.c(code) addr=00573c size=01a9 
+      File: C:\orangec\src\occ\netil\cc386\DBG386.c(code) addr=0058e6 size=2ec2 
+      File: C:\orangec\src\occ\netil\cc386\DECL.c(code) addr=0087a8 size=d570 
+      File: C:\orangec\src\occ\netil\cc386\DECLASS.c(code) addr=015d18 size=2564 
+      File: C:\orangec\src\occ\netil\cc386\einit.c(code) addr=01827c size=35b9 
+      File: C:\orangec\src\occ\netil\cc386\ERROR.c(code) addr=01b836 size=303d 
+      File: C:\orangec\src\occ\netil\cc386\EXPR.c(code) addr=01e874 size=166aa 
+      File: C:\orangec\src\occ\netil\cc386\EXT.c(code) addr=034f1e size=00c1 
+      File: C:\orangec\src\occ\netil\cc386\FATAL.c(code) addr=034fe0 size=0056 
+      File: C:\orangec\src\occ\netil\cc386\FLOAT.C(code) addr=035036 size=30cb 
+      File: C:\orangec\src\occ\netil\cc386\floatexp.c(code) addr=038102 size=0754 
+      File: C:\orangec\src\occ\netil\cc386\FRIEND.c(code) addr=038856 size=01fe 
+      File: C:\orangec\src\occ\netil\cc386\FUNC.c(code) addr=038a54 size=1e1c 
+      File: C:\orangec\src\occ\netil\cc386\GETSYM.c(code) addr=03a870 size=2b6d 
+      File: C:\orangec\src\occ\netil\cc386\GEXPR386.c(code) addr=03d3de size=163ad 
+      File: C:\orangec\src\occ\netil\cc386\GSTMT386.c(code) addr=05378c size=2e1c 
+      File: C:\orangec\src\occ\netil\cc386\INASM386.c(code) addr=0565a8 size=36d1 
+      File: C:\orangec\src\occ\netil\cc386\INIT.c(code) addr=059c7a size=4c2c 
+      File: C:\orangec\src\occ\netil\cc386\INLINE.c(code) addr=05e8a6 size=1068 
+      File: C:\orangec\src\occ\netil\cc386\intexpr.c(code) addr=05f90e size=0073 
+      File: C:\orangec\src\occ\netil\cc386\intr386.c(code) addr=05f982 size=0c2d 
+      File: C:\orangec\src\occ\netil\cc386\INVOKE.c(code) addr=0605b0 size=05e5 
+      File: C:\orangec\src\occ\netil\cc386\LIST.c(code) addr=060b96 size=0a85 
+      File: C:\orangec\src\occ\netil\cc386\mangle.c(code) addr=06161c size=2f76 
+      File: C:\orangec\src\occ\netil\cc386\MEMMGT.c(code) addr=064592 size=0566 
+      File: C:\orangec\src\occ\netil\cc386\OBJ386.c(code) addr=064af8 size=3294 
+      File: C:\orangec\src\occ\netil\cc386\OPTIMIZE.c(code) addr=067d8c size=b4d4 
+      File: C:\orangec\src\occ\netil\cc386\OUTAS386.c(code) addr=073260 size=3bf4 
+      File: C:\orangec\src\occ\netil\cc386\outco386.c(code) addr=076e54 size=4e08 
+      File: C:\orangec\src\occ\netil\cc386\output.c(code) addr=07bc5c size=0064 
+      File: C:\orangec\src\occ\netil\cc386\Peep386.c(code) addr=07bcc0 size=2b8e 
+      File: C:\orangec\src\occ\netil\cc386\PREPROC.c(code) addr=07e84e size=5720 
+      File: C:\orangec\src\occ\netil\cc386\PSTR.c(code) addr=083f6e size=02e6 
+      File: C:\orangec\src\occ\netil\cc386\REG386.c(code) addr=084254 size=16a2 
+      File: C:\orangec\src\occ\netil\cc386\rtti.c(code) addr=0858f6 size=0ea9 
+      File: C:\orangec\src\occ\netil\cc386\SEARCHKW.c(code) addr=0867a0 size=0231 
+      File: C:\orangec\src\occ\netil\cc386\SRCHPATH.c(code) addr=0869d2 size=0121 
+      File: C:\orangec\src\occ\netil\cc386\STMT.c(code) addr=086af4 size=32b9 
+      File: C:\orangec\src\occ\netil\cc386\SYMBOL.c(code) addr=089dae size=16f3 
+      File: C:\orangec\src\occ\netil\cc386\TEMPLATE.c(code) addr=08b4a2 size=36c0 
+      File: C:\orangec\src\occ\netil\cc386\TYPES.c(code) addr=08eb62 size=0d75 
+      File: C:\orangec\src\occ\netil\cc386\USAGE.c(code) addr=08f8d8 size=00a8 
+      File: .\386\lxdiv.nas(code) addr=08f980 size=00c7 
+      File: .\386\lxmul.nas(code) addr=08fa48 size=001f 
+      File: .\386\lxsar.nas(code) addr=08fa68 size=0026 
+      File: .\386\lxshl.nas(code) addr=08fa8e size=0027 
+      File: .\386\lxshr.nas(code) addr=08fab6 size=0027 
+      File: C:\orangec\src\clibs\platform\WIN32\pe\c0.c(code) addr=08fade size=0233 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\crtexit.c(code) addr=08fd12 size=0001 
+      File: C:\orangec\src\clibs\platform\COMMON\srproc.c(code) addr=08fd14 size=0050 
+      File: C:\orangec\src\clibs\IO\fclose.c(code) addr=08fd64 size=021c 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\_doserrn.c(code) addr=08ff80 size=000b 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\_errno.c(code) addr=08ff8c size=000b 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\_tls.c(code) addr=08ff98 size=0161 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\llstdio.c(code) addr=0900fa size=004e 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\llcrit.c(code) addr=090148 size=0030 
+      File: .\386\substk.nas(code) addr=090178 size=0088 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\raise.c(code) addr=090200 size=01ae 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\llsleep.c(code) addr=0903ae size=006a 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\llxcept.c(code) addr=090418 size=040c 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\argset.c(code) addr=090824 size=0182 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\dos_cls.c(code) addr=0909a6 size=000e 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\llclose.c(code) addr=0909b4 size=002a 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\dos_gft.c(code) addr=0909de size=0042 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\dos_find.c(code) addr=090a20 size=02d4 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\dos_open.c(code) addr=090cf4 size=0054 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\llopen.c(code) addr=090d48 size=003d 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\envset.c(code) addr=090d86 size=0067 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\llgenv.c(code) addr=090dee size=00ae 
+      File: C:\orangec\src\clibs\PROCONT\exit.c(code) addr=090e9c size=0060 
+      File: C:\orangec\src\clibs\PROCONT\atquickexit.c(code) addr=090efc size=006d 
+      File: C:\orangec\src\clibs\uio\_uio.c(code) addr=090f6a size=00ce 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\lluio.c(code) addr=091038 size=004d 
+      File: .\386\ftol.nas(code) addr=091086 size=0047 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\llfpstub.c(code) addr=0910ce size=0092 
+      File: C:\orangec\src\clibs\locale\cctype.c(code) addr=091160 size=039b 
+      File: C:\orangec\src\clibs\locale\clocale.c(code) addr=0914fc size=001a 
+      File: C:\orangec\src\clibs\PROCONT\abort.c(code) addr=091516 size=000e 
+      File: C:\orangec\src\clibs\stdlib\atoi.c(code) addr=091524 size=07e7 
+      File: C:\orangec\src\clibs\ALLOC\calloc.c(code) addr=091d0c size=0031 
+      File: C:\orangec\src\clibs\uio\close.c(code) addr=091d3e size=0070 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\llchmod.c(code) addr=091dae size=0043 
+      File: C:\orangec\src\clibs\IO\fflush.c(code) addr=091df2 size=018a 
+      File: C:\orangec\src\clibs\uio\eof.c(code) addr=091f7c size=00d5 
+      File: C:\orangec\src\clibs\IO\fgetc.c(code) addr=092052 size=02fb 
+      File: C:\orangec\src\clibs\uio\setmode.c(code) addr=09234e size=00ed 
+      File: C:\orangec\src\clibs\IO\fgets.c(code) addr=09243c size=01d2 
+      File: C:\orangec\src\clibs\IO\fopen.c(code) addr=09260e size=051c 
+      File: C:\orangec\src\clibs\IO\fprintf.c(code) addr=092b2a size=013e 
+      File: C:\orangec\src\clibs\IO\_sprintf.c(code) addr=092c68 size=1dd4 
+      File: .\386\fpclass.nas(code) addr=094a3c size=0045 
+      File: .\386\signbit.nas(code) addr=094a82 size=0025 
+      File: .\386\fabs.nas(code) addr=094aa8 size=0028 
+      File: C:\orangec\src\clibs\IO\grisu3.c(code) addr=094ad0 size=0fa2 
+      File: .\386\ceil.nas(code) addr=095a72 size=004e 
+      File: .\386\div.nas(code) addr=095ac0 size=0017 
+      File: C:\orangec\src\clibs\IO\fputc.c(code) addr=095ad8 size=0226 
+      File: C:\orangec\src\clibs\IO\fputs.c(code) addr=095cfe size=0288 
+      File: C:\orangec\src\clibs\ALLOC\free.c(code) addr=095f86 size=0056 
+      File: C:\orangec\src\clibs\ALLOC\malloc.c(code) addr=095fdc size=0263 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\llmalloc.c(code) addr=096240 size=0046 
+      File: C:\orangec\src\clibs\IO\fseek.c(code) addr=096286 size=00da 
+      File: C:\orangec\src\clibs\IO\fwrite.c(code) addr=096360 size=027b 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\getcwd.c(code) addr=0965dc size=00f2 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\getcurd.c(code) addr=0966ce size=0012 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\dos_gpwd.c(code) addr=0966e0 size=00d3 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\getdisk.c(code) addr=0967b4 size=0011 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\dos_gdrv.c(code) addr=0967c6 size=0077 
+      File: C:\orangec\src\clibs\PROCONT\getenv.c(code) addr=09683e size=0066 
+      File: C:\orangec\src\clibs\uio\isatty.c(code) addr=0968a4 size=006e 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\lltty.c(code) addr=096912 size=0015 
+      File: .\386\lldiv.nas(code) addr=096928 size=00ba 
+      File: C:\orangec\src\clibs\TIME\lotime.c(code) addr=0969e2 size=0050 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\lltz.c(code) addr=096a32 size=0211 
+      File: C:\orangec\src\clibs\TIME\gmtime.c(code) addr=096c44 size=0187 
+      File: .\386\log10.nas(code) addr=096dcc size=003a 
+      File: .\386\setjmp.nas(code) addr=096e06 size=0060 
+      File: C:\orangec\src\clibs\uio\lseek.c(code) addr=096e66 size=009f 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\llgetpos.c(code) addr=096f06 size=0031 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\llseek.c(code) addr=096f38 size=0066 
+      File: .\386\memchr.nas(code) addr=096f9e size=001a 
+      File: .\386\memcmp.nas(code) addr=096fb8 size=0025 
+      File: .\386\memcpy.nas(code) addr=096fde size=0044 
+      File: .\386\memmove.nas(code) addr=097022 size=0029 
+      File: .\386\memset.nas(code) addr=09704c size=004e 
+      File: C:\orangec\src\clibs\uio\open.c(code) addr=09709a size=0082 
+      File: C:\orangec\src\clibs\IO\printf.c(code) addr=09711c size=0032 
+      File: C:\orangec\src\clibs\stdlib\qsort.c(code) addr=09714e size=023d 
+      File: C:\orangec\src\clibs\stdlib\rand.c(code) addr=09738c size=0028 
+      File: C:\orangec\src\clibs\uio\read.c(code) addr=0973b4 size=0213 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\llread.c(code) addr=0975c8 size=0038 
+      File: C:\orangec\src\clibs\ALLOC\realloc.c(code) addr=097600 size=0063 
+      File: C:\orangec\src\clibs\IO\remove.c(code) addr=097664 size=006c 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\llremove.c(code) addr=0976d0 size=002d 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\llrmdir.c(code) addr=0976fe size=002d 
+      File: C:\orangec\src\clibs\IO\setvbuf.c(code) addr=09772c size=010d 
+      File: C:\orangec\src\clibs\PROCONT\signal.c(code) addr=09783a size=005f 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\llsignal.c(code) addr=09789a size=004d 
+      File: C:\orangec\src\clibs\uio\sopen.c(code) addr=0978e8 size=031e 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\llcreat.c(code) addr=097c06 size=003d 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\llshf.c(code) addr=097c44 size=003a 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\lluiof.c(code) addr=097c7e size=0029 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\lliswrit.c(code) addr=097ca8 size=0023 
+      File: C:\orangec\src\clibs\uio\chsize.c(code) addr=097ccc size=0077 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\llchsize.c(code) addr=097d44 size=0151 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\llwrite.c(code) addr=097e96 size=005d 
+      File: C:\orangec\src\clibs\PROCONT\spawn.c(code) addr=097ef4 size=06bf 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\llspawn.c(code) addr=0985b4 size=0230 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\searchp.c(code) addr=0987e4 size=0041 
+      File: C:\orangec\src\clibs\IO\sprintf.c(code) addr=098826 size=0166 
+      File: C:\orangec\src\clibs\IO\sscanf.c(code) addr=09898c size=0172 
+      File: C:\orangec\src\clibs\IO\_sscanf.c(code) addr=098afe size=1acd 
+      File: C:\orangec\src\clibs\stdlib\atof.c(code) addr=09a5cc size=1250 
+      File: .\386\copysign.nas(code) addr=09b81c size=0057 
+      File: C:\orangec\src\clibs\wc\mbrtowc.c(code) addr=09b874 size=015a 
+      File: .\386\strcat.nas(code) addr=09b9ce size=003e 
+      File: .\386\strchr.nas(code) addr=09ba0c size=001c 
+      File: .\386\strcmp.nas(code) addr=09ba28 size=0056 
+      File: .\386\strcpy.nas(code) addr=09ba7e size=006a 
+      File: C:\orangec\src\clibs\ALLOC\strdup.c(code) addr=09bae8 size=0065 
+      File: C:\orangec\src\clibs\TIME\strftime.c(code) addr=09bb4e size=1c68 
+      File: C:\orangec\src\clibs\TIME\mktime.c(code) addr=09d7b6 size=02cc 
+      File: C:\orangec\src\clibs\STRING\stricmp.c(code) addr=09da82 size=01f8 
+      File: .\386\strlen.nas(code) addr=09dc7a size=0030 
+      File: C:\orangec\src\clibs\STRING\strlwr.c(code) addr=09dcaa size=0068 
+      File: .\386\strncmp.nas(code) addr=09dd12 size=002b 
+      File: C:\orangec\src\clibs\STRING\strnicmp.c(code) addr=09dd3e size=038a 
+      File: .\386\strrchr.nas(code) addr=09e0c8 size=0041 
+      File: .\386\strstr.nas(code) addr=09e10a size=003b 
+      File: C:\orangec\src\clibs\STRING\strupr.c(code) addr=09e146 size=0068 
+      File: C:\orangec\src\clibs\TIME\time.c(code) addr=09e1ae size=002e 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\llgtime.c(code) addr=09e1dc size=0055 
+      File: C:\orangec\src\clibs\TIME\tzset.c(code) addr=09e232 size=0006 
+      File: C:\orangec\src\clibs\IO\ungetc.c(code) addr=09e238 size=00ea 
+      File: C:\orangec\src\clibs\wc\wcrtomb.c(code) addr=09e322 size=00ef 
+      File: C:\orangec\src\clibs\uio\write.c(code) addr=09e412 size=0336 
+      File: .\386\genmerr.nas(code) addr=09e748 size=0287 
+      File: C:\orangec\src\clibs\COMPLIB\_matherr.c(code) addr=09e9d0 size=00bd 
+    Region:  vsc*  addr=49fa8e align=002 size=0000 max=0000 round=000 fill=00
+    Region:  tls  addr=49fa90 align=008 size=0000 max=0000 round=000 fill=00
+    Region:  importThunks  addr=49fa90 align=004 size=0144 max=0000 round=000 fill=00
+Partition: pt2 addr=4a0000 align=001 size=ab528 max=0000 round=000 fill=00
+  Overlay: .data addr=4a0000 align=001 size=ab528 max=0000 round=000 fill=00
+    Region:  const  addr=4a0000 align=008 size=02a8 max=0000 round=008 fill=00
+      File: C:\orangec\src\occ\netil\cc386\DBG386.c(const) addr=000000 size=0004 
+      File: C:\orangec\src\occ\netil\cc386\FLOAT.C(const) addr=000008 size=0008 
+      File: C:\orangec\src\occ\netil\cc386\OBJ386.c(const) addr=000010 size=0004 
+      File: C:\orangec\src\occ\netil\cc386\SYMBOL.c(const) addr=000018 size=0004 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\raise.c(const) addr=000020 size=005c 
+      File: C:\orangec\src\clibs\IO\_sprintf.c(const) addr=000080 size=010a 
+      File: C:\orangec\src\clibs\IO\grisu3.c(const) addr=000190 size=0014 
+      File: C:\orangec\src\clibs\TIME\gmtime.c(const) addr=0001a8 size=001c 
+      File: C:\orangec\src\clibs\IO\_sscanf.c(const) addr=0001c8 size=000a 
+      File: C:\orangec\src\clibs\stdlib\atof.c(const) addr=0001d8 size=005c 
+      File: C:\orangec\src\clibs\TIME\strftime.c(const) addr=000238 size=002c 
+      File: C:\orangec\src\clibs\TIME\mktime.c(const) addr=000268 size=001c 
+      File: C:\orangec\src\clibs\COMPLIB\_matherr.c(const) addr=000288 size=001a 
+    Region:  data  addr=4a02a8 align=008 size=d3f4 max=0000 round=004 fill=00
+      File: .\c0xpe.nas(data) addr=0002a8 size=001f 
+      File: C:\orangec\src\occ\netil\cc386\ANALYZE.c(data) addr=0002c8 size=000c 
+      File: C:\orangec\src\occ\netil\cc386\CMAIN.c(data) addr=0002d8 size=016c 
+      File: C:\orangec\src\occ\netil\cc386\CONF386.c(data) addr=000448 size=09ac 
+      File: C:\orangec\src\occ\netil\cc386\cppbltin.c(data) addr=000df8 size=0008 
+      File: C:\orangec\src\occ\netil\cc386\DBG386.c(data) addr=000e00 size=0060 
+      File: C:\orangec\src\occ\netil\cc386\DECL.c(data) addr=000e60 size=00f8 
+      File: C:\orangec\src\occ\netil\cc386\DECLASS.c(data) addr=000f58 size=0034 
+      File: C:\orangec\src\occ\netil\cc386\ERROR.c(data) addr=000f90 size=0484 
+      File: C:\orangec\src\occ\netil\cc386\EXPR.c(data) addr=001418 size=0188 
+      File: C:\orangec\src\occ\netil\cc386\FUNC.c(data) addr=0015a0 size=0014 
+      File: C:\orangec\src\occ\netil\cc386\GETSYM.c(data) addr=0015b8 size=808c 
+      File: C:\orangec\src\occ\netil\cc386\GEXPR386.c(data) addr=009648 size=0044 
+      File: C:\orangec\src\occ\netil\cc386\INASM386.c(data) addr=009690 size=02e4 
+      File: C:\orangec\src\occ\netil\cc386\INIT.c(data) addr=009978 size=000c 
+      File: C:\orangec\src\occ\netil\cc386\intr386.c(data) addr=009988 size=020c 
+      File: C:\orangec\src\occ\netil\cc386\INVOKE.c(data) addr=009b98 size=0060 
+      File: C:\orangec\src\occ\netil\cc386\LIST.c(data) addr=009bf8 size=0004 
+      File: C:\orangec\src\occ\netil\cc386\mangle.c(data) addr=009c00 size=01a8 
+      File: C:\orangec\src\occ\netil\cc386\MEMMGT.c(data) addr=009da8 size=0018 
+      File: C:\orangec\src\occ\netil\cc386\OBJ386.c(data) addr=009dc0 size=007c 
+      File: C:\orangec\src\occ\netil\cc386\OUTAS386.c(data) addr=009e40 size=0ecc 
+      File: C:\orangec\src\occ\netil\cc386\outco386.c(data) addr=00ad10 size=1238 
+      File: C:\orangec\src\occ\netil\cc386\Peep386.c(data) addr=00bf48 size=0088 
+      File: C:\orangec\src\occ\netil\cc386\PREPROC.c(data) addr=00bfd0 size=008c 
+      File: C:\orangec\src\occ\netil\cc386\REG386.c(data) addr=00c060 size=000c 
+      File: C:\orangec\src\occ\netil\cc386\SEARCHKW.c(data) addr=00c070 size=0644 
+      File: C:\orangec\src\occ\netil\cc386\STMT.c(data) addr=00c6b8 size=0030 
+      File: C:\orangec\src\occ\netil\cc386\SYMBOL.c(data) addr=00c6e8 size=0004 
+      File: C:\orangec\src\clibs\platform\WIN32\pe\c0.c(data) addr=00c6f0 size=0004 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\llstdio.c(data) addr=00c6f8 size=0090 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\raise.c(data) addr=00c788 size=0004 
+      File: C:\orangec\src\clibs\PROCONT\atquickexit.c(data) addr=00c790 size=0004 
+      File: C:\orangec\src\clibs\uio\_uio.c(data) addr=00c798 size=0004 
+      File: .\386\ftol.nas(data) addr=00c7a0 size=0006 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\llfpstub.c(data) addr=00c7a8 size=0008 
+      File: C:\orangec\src\clibs\locale\cctype.c(data) addr=00c7b0 size=0250 
+      File: C:\orangec\src\clibs\locale\clocale.c(data) addr=00ca00 size=02f0 
+      File: C:\orangec\src\clibs\locale\ctimeloc.c(data) addr=00ccf0 size=04e9 
+      File: C:\orangec\src\clibs\IO\_sprintf.c(data) addr=00d1e0 size=0004 
+      File: .\386\fabs.nas(data) addr=00d1e8 size=0005 
+      File: C:\orangec\src\clibs\IO\grisu3.c(data) addr=00d1f0 size=03cc 
+      File: .\386\ceil.nas(data) addr=00d5c0 size=0005 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\lltz.c(data) addr=00d5c8 size=0058 
+      File: C:\orangec\src\clibs\TIME\gmtime.c(data) addr=00d620 size=000c 
+      File: .\386\log10.nas(data) addr=00d630 size=0006 
+      File: C:\orangec\src\clibs\stdlib\rand.c(data) addr=00d638 size=0004 
+      File: C:\orangec\src\clibs\uio\sopen.c(data) addr=00d640 size=0004 
+      File: C:\orangec\src\clibs\stdlib\atof.c(data) addr=00d648 size=0008 
+      File: .\386\copysign.nas(data) addr=00d650 size=0009 
+      File: C:\orangec\src\clibs\TIME\mktime.c(data) addr=00d660 size=000c 
+      File: .\386\genmerr.nas(data) addr=00d670 size=002c 
+    Region:  vsd*  addr=4ad6a0 align=008 size=0000 max=0000 round=004 fill=00
+    Region:  cstartup  addr=4ad6a0 align=002 size=0036 max=0000 round=000 fill=00
+      File: C:\orangec\src\clibs\IO\fclose.c(cstartup) addr=00d6a0 size=0006 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\llcrit.c(cstartup) addr=00d6a6 size=0006 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\raise.c(cstartup) addr=00d6ac size=0006 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\argset.c(cstartup) addr=00d6b2 size=0006 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\envset.c(cstartup) addr=00d6b8 size=0006 
+      File: C:\orangec\src\clibs\uio\_uio.c(cstartup) addr=00d6be size=0006 
+      File: C:\orangec\src\clibs\locale\cctype.c(cstartup) addr=00d6c4 size=0006 
+      File: C:\orangec\src\clibs\locale\clocale.c(cstartup) addr=00d6ca size=0006 
+      File: C:\orangec\src\clibs\TIME\strftime.c(cstartup) addr=00d6d0 size=0006 
+    Region:  crundown  addr=4ad6d6 align=002 size=001e max=0000 round=000 fill=00
+      File: C:\orangec\src\clibs\IO\fclose.c(crundown) addr=00d6d6 size=0006 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\llcrit.c(crundown) addr=00d6dc size=0006 
+      File: C:\orangec\src\clibs\PROCONT\atquickexit.c(crundown) addr=00d6e2 size=0006 
+      File: C:\orangec\src\clibs\uio\_uio.c(crundown) addr=00d6e8 size=0006 
+      File: C:\orangec\src\clibs\ALLOC\malloc.c(crundown) addr=00d6ee size=0006 
+    Region:  string  addr=4ad6f4 align=002 size=5cc6 max=0000 round=000 fill=00
+      File: C:\orangec\src\occ\netil\cc386\AN386.c(string) addr=00d6f4 size=008d 
+      File: C:\orangec\src\occ\netil\cc386\ANALYZE.c(string) addr=00d782 size=003e 
+      File: C:\orangec\src\occ\netil\cc386\ARGS.c(string) addr=00d7c0 size=002c 
+      File: C:\orangec\src\occ\netil\cc386\BROWSE.c(string) addr=00d7ec size=000b 
+      File: C:\orangec\src\occ\netil\cc386\CMAIN.c(string) addr=00d7f8 size=0352 
+      File: C:\orangec\src\occ\netil\cc386\CONF386.c(string) addr=00db4a size=06a9 
+      File: C:\orangec\src\occ\netil\cc386\cppbltin.c(string) addr=00e1f4 size=033e 
+      File: C:\orangec\src\occ\netil\cc386\DBG386.c(string) addr=00e532 size=0068 
+      File: C:\orangec\src\occ\netil\cc386\DECL.c(string) addr=00e59a size=00c1 
+      File: C:\orangec\src\occ\netil\cc386\DECLASS.c(string) addr=00e65c size=000f 
+      File: C:\orangec\src\occ\netil\cc386\einit.c(string) addr=00e66c size=002c 
+      File: C:\orangec\src\occ\netil\cc386\ERROR.c(string) addr=00e698 size=27c8 
+      File: C:\orangec\src\occ\netil\cc386\EXPR.c(string) addr=010e60 size=00b8 
+      File: C:\orangec\src\occ\netil\cc386\FATAL.c(string) addr=010f18 size=000e 
+      File: C:\orangec\src\occ\netil\cc386\FLOAT.C(string) addr=010f26 size=0095 
+      File: C:\orangec\src\occ\netil\cc386\FRIEND.c(string) addr=010fbc size=000c 
+      File: C:\orangec\src\occ\netil\cc386\FUNC.c(string) addr=010fc8 size=0024 
+      File: C:\orangec\src\occ\netil\cc386\GETSYM.c(string) addr=010fec size=0051 
+      File: C:\orangec\src\occ\netil\cc386\GEXPR386.c(string) addr=01103e size=01bc 
+      File: C:\orangec\src\occ\netil\cc386\GSTMT386.c(string) addr=0111fa size=0081 
+      File: C:\orangec\src\occ\netil\cc386\INASM386.c(string) addr=01127c size=00f2 
+      File: C:\orangec\src\occ\netil\cc386\INIT.c(string) addr=01136e size=009a 
+      File: C:\orangec\src\occ\netil\cc386\INLINE.c(string) addr=011408 size=0063 
+      File: C:\orangec\src\occ\netil\cc386\intr386.c(string) addr=01146c size=0135 
+      File: C:\orangec\src\occ\netil\cc386\INVOKE.c(string) addr=0115a2 size=0247 
+      File: C:\orangec\src\occ\netil\cc386\LIST.c(string) addr=0117ea size=02a1 
+      File: C:\orangec\src\occ\netil\cc386\mangle.c(string) addr=011a8c size=02b0 
+      File: C:\orangec\src\occ\netil\cc386\MEMMGT.c(string) addr=011d3c size=0081 
+      File: C:\orangec\src\occ\netil\cc386\OBJ386.c(string) addr=011dbe size=0147 
+      File: C:\orangec\src\occ\netil\cc386\OPTIMIZE.c(string) addr=011f06 size=001d 
+      File: C:\orangec\src\occ\netil\cc386\OUTAS386.c(string) addr=011f24 size=0c70 
+      File: C:\orangec\src\occ\netil\cc386\outco386.c(string) addr=012b94 size=00dc 
+      File: C:\orangec\src\occ\netil\cc386\PREPROC.c(string) addr=012c70 size=01ed 
+      File: C:\orangec\src\occ\netil\cc386\REG386.c(string) addr=012e5e size=0056 
+      File: C:\orangec\src\occ\netil\cc386\rtti.c(string) addr=012eb4 size=0014 
+      File: C:\orangec\src\occ\netil\cc386\SEARCHKW.c(string) addr=012ec8 size=0221 
+      File: C:\orangec\src\occ\netil\cc386\SRCHPATH.c(string) addr=0130ea size=0002 
+      File: C:\orangec\src\occ\netil\cc386\STMT.c(string) addr=0130ec size=0009 
+      File: C:\orangec\src\occ\netil\cc386\SYMBOL.c(string) addr=0130f6 size=0006 
+      File: C:\orangec\src\occ\netil\cc386\TEMPLATE.c(string) addr=0130fc size=001b 
+      File: C:\orangec\src\occ\netil\cc386\TYPES.c(string) addr=013118 size=0021 
+      File: C:\orangec\src\occ\netil\cc386\USAGE.c(string) addr=01313a size=000e 
+      File: C:\orangec\src\clibs\platform\WIN32\pe\c0.c(string) addr=013148 size=0026 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\_tls.c(string) addr=01316e size=000e 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\llstdio.c(string) addr=01317c size=0005 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\raise.c(string) addr=013182 size=0086 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\llxcept.c(string) addr=013208 size=00d1 
+      File: C:\orangec\src\clibs\IO\fopen.c(string) addr=0132da size=0001 
+      File: C:\orangec\src\clibs\IO\_sprintf.c(string) addr=0132dc size=001f 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\dos_gpwd.c(string) addr=0132fc size=0002 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\lltz.c(string) addr=0132fe size=0003 
+      File: C:\orangec\src\clibs\PROCONT\spawn.c(string) addr=013302 size=000c 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\llspawn.c(string) addr=01330e size=0008 
+      File: C:\orangec\src\clibs\IO\_sscanf.c(string) addr=013316 size=000e 
+      File: C:\orangec\src\clibs\stdlib\atof.c(string) addr=013324 size=0006 
+      File: C:\orangec\src\clibs\wc\mbrtowc.c(string) addr=01332a size=0001 
+      File: C:\orangec\src\clibs\TIME\strftime.c(string) addr=01332c size=0034 
+      File: C:\orangec\src\clibs\COMPLIB\_matherr.c(string) addr=013360 size=005a 
+    Region:  bss  addr=4b33c0 align=008 size=98168 max=0000 round=004 fill=00
+      File: C:\orangec\src\occ\netil\cc386\AN386.c(bss) addr=0133c0 size=0014 
+      File: C:\orangec\src\occ\netil\cc386\ANALYZE.c(bss) addr=0133d8 size=0008 
+      File: C:\orangec\src\occ\netil\cc386\ARGS.c(bss) addr=0133e0 size=0004 
+      File: C:\orangec\src\occ\netil\cc386\CMAIN.c(bss) addr=0133e8 size=0644 
+      File: C:\orangec\src\occ\netil\cc386\cppbltin.c(bss) addr=013a30 size=001c 
+      File: C:\orangec\src\occ\netil\cc386\DBG386.c(bss) addr=013a50 size=2020 
+      File: C:\orangec\src\occ\netil\cc386\DECL.c(bss) addr=015a70 size=011c 
+      File: C:\orangec\src\occ\netil\cc386\DECLASS.c(bss) addr=015b90 size=0048 
+      File: C:\orangec\src\occ\netil\cc386\einit.c(bss) addr=015bd8 size=0024 
+      File: C:\orangec\src\occ\netil\cc386\ERROR.c(bss) addr=015c00 size=011f 
+      File: C:\orangec\src\occ\netil\cc386\EXPR.c(bss) addr=015d20 size=21fc 
+      File: C:\orangec\src\occ\netil\cc386\FUNC.c(bss) addr=017f20 size=0068 
+      File: C:\orangec\src\occ\netil\cc386\GETSYM.c(bss) addr=017f88 size=8811c 
+      File: C:\orangec\src\occ\netil\cc386\GEXPR386.c(bss) addr=0a00a8 size=0008 
+      File: C:\orangec\src\occ\netil\cc386\GSTMT386.c(bss) addr=0a00b0 size=0024 
+      File: C:\orangec\src\occ\netil\cc386\INASM386.c(bss) addr=0a00d8 size=001c 
+      File: C:\orangec\src\occ\netil\cc386\INIT.c(bss) addr=0a00f8 size=004c 
+      File: C:\orangec\src\occ\netil\cc386\INLINE.c(bss) addr=0a0148 size=001c 
+      File: C:\orangec\src\occ\netil\cc386\intr386.c(bss) addr=0a0168 size=0008 
+      File: C:\orangec\src\occ\netil\cc386\INVOKE.c(bss) addr=0a0170 size=0114 
+      File: C:\orangec\src\occ\netil\cc386\LIST.c(bss) addr=0a0288 size=0100 
+      File: C:\orangec\src\occ\netil\cc386\mangle.c(bss) addr=0a0388 size=4800 
+      File: C:\orangec\src\occ\netil\cc386\MEMMGT.c(bss) addr=0a4b88 size=002c 
+      File: C:\orangec\src\occ\netil\cc386\OBJ386.c(bss) addr=0a4bb8 size=04e0 
+      File: C:\orangec\src\occ\netil\cc386\OPTIMIZE.c(bss) addr=0a5098 size=0210 
+      File: C:\orangec\src\occ\netil\cc386\OUTAS386.c(bss) addr=0a52a8 size=0018 
+      File: C:\orangec\src\occ\netil\cc386\outco386.c(bss) addr=0a52c0 size=00e8 
+      File: C:\orangec\src\occ\netil\cc386\Peep386.c(bss) addr=0a53a8 size=0008 
+      File: C:\orangec\src\occ\netil\cc386\PREPROC.c(bss) addr=0a53b0 size=1005 
+      File: C:\orangec\src\occ\netil\cc386\REG386.c(bss) addr=0a63b8 size=0b58 
+      File: C:\orangec\src\occ\netil\cc386\rtti.c(bss) addr=0a6f10 size=0010 
+      File: C:\orangec\src\occ\netil\cc386\STMT.c(bss) addr=0a6f20 size=1048 
+      File: C:\orangec\src\occ\netil\cc386\SYMBOL.c(bss) addr=0a7f68 size=0254 
+      File: C:\orangec\src\occ\netil\cc386\TEMPLATE.c(bss) addr=0a81c0 size=001c 
+      File: C:\orangec\src\clibs\platform\WIN32\pe\c0.c(bss) addr=0a81e0 size=0064 
+      File: C:\orangec\src\clibs\IO\fclose.c(bss) addr=0a8248 size=00b8 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\_tls.c(bss) addr=0a8300 size=0008 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\llstdio.c(bss) addr=0a8308 size=0204 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\llcrit.c(bss) addr=0a8510 size=0018 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\raise.c(bss) addr=0a8528 size=0073 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\llsleep.c(bss) addr=0a85a0 size=0004 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\llxcept.c(bss) addr=0a85a8 size=0008 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\argset.c(bss) addr=0a85b0 size=0014 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\envset.c(bss) addr=0a85c8 size=0004 
+      File: C:\orangec\src\clibs\PROCONT\atquickexit.c(bss) addr=0a85d0 size=0194 
+      File: C:\orangec\src\clibs\uio\_uio.c(bss) addr=0a8768 size=2a08 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\llfpstub.c(bss) addr=0ab170 size=0020 
+      File: C:\orangec\src\clibs\locale\cctype.c(bss) addr=0ab190 size=0004 
+      File: C:\orangec\src\clibs\IO\fflush.c(bss) addr=0ab198 size=01ff 
+      File: C:\orangec\src\clibs\ALLOC\malloc.c(bss) addr=0ab398 size=0088 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\llsignal.c(bss) addr=0ab420 size=0004 
+      File: C:\orangec\src\clibs\platform\WIN32\rtl\searchp.c(bss) addr=0ab428 size=0100 
+    Region:  vsb*  addr=54b528 align=008 size=0000 max=0000 round=000 fill=00
+
+Publics By Name
+
+47927c X AOP0
+4792c3 X AOP1
+4799ff X AOP10
+479a7e X AOP11
+479be9 X AOP12
+479d2a X AOP13
+479e28 X AOP14
+479ff8 X AOP15
+47a114 X AOP16
+47a198 X AOP17
+47a1f7 X AOP18
+47a266 X AOP19
+479363 X AOP2
+47a301 X AOP20
+47a373 X AOP21
+47a428 X AOP22
+47a4dd X AOP23
+47a5d1 X AOP24
+47a6d3 X AOP25
+47a812 X AOP26
+47a88e X AOP27
+47a8c6 X AOP28
+47a9bf X AOP29
+479448 X AOP3
+47aa01 X AOP30
+47ab77 X AOP31
+47ad25 X AOP32
+47adef X AOP33
+47af1e X AOP34
+47afc1 X AOP35
+47b053 X AOP36
+47b0c3 X AOP37
+47b1cf X AOP38
+47b2f5 X AOP39
+4794ea X AOP4
+47b233 X AOP40
+47b334 X AOP41
+47b3df X AOP42
+47b4ba X AOP43
+47b518 X AOP44
+47b585 X AOP45
+47b59d X AOP46
+47b604 X AOP47
+47b65f X AOP48
+47b7da X AOP49
+4795e5 X AOP5
+47b6bc X AOP50
+47b812 X AOP51
+47b8a6 X AOP52
+47b9a4 X AOP53
+47b9d4 X AOP54
+47ba1a X AOP55
+47ba8d X AOP56
+47bb50 X AOP57
+47bb79 X AOP58
+47bc11 X AOP59
+479686 X AOP6
+47bca9 X AOP60
+47bd2c X AOP61
+47bdd5 X AOP62
+47be6d X AOP63
+47bef0 X AOP64
+47bf84 X AOP65
+479809 X AOP7
+4798d0 X AOP8
+479989 X AOP9
+436375 X Add16Bits
+435f1e   AddExt
+48af74 X AddHash
+455c7b X AddProfilerData
+43685a   AddSubFPF
+4a038c X ArgList
+4ac7b3   C_ctype_data
+4acc62 X C_monetary_data
+4ac9b9   C_numeric_data
+4accf3   C_time_data
+469c50 X CastToFloat
+469afa X CastToInt
+40e934 X CheckOverloadedArgs
+485537 X ChooseRegs
+4812d9 X Compile_Pragma
+418a2f X CreateBaseConstructor
+4a0e60 X Cstr
+4b3a54   DbgBlocks
+4373fe   DivideFPF
+4a044e X ENVNAME
+435f6e X EXEPath
+41f231 X Error
+4360fc   FPFEQ
+436176   FPFGT
+436277   FPFGTE
+437d01   FPFMultiplyPowTen
+437ce8 X FPFTensExponent
+4387e5   FPFToDouble
+4386a7   FPFToFloat
+438a71   FPFToLongDouble
+4384d7   FPFToLongLong
+437e5c   FPFToString
+438e2c   FPFTruncate
+4403a1 X FarPtrToHigher
+4253e3   FindMemberPointer
+440044 X FloatToHigher
+43f9cc X FloatToInt
+43facd X FloatToLower
+4666d9 X FlushExtBuf
+486852 X FreeInd
+4867da X FreeReg
+485fbd X FreeUnused
+4a0459 X GLBDEFINE
+48530c X GenPop
+485296 X GenPush
+478c68 X GetSymRef
+4615ac X HandleIntrins
+435f9d   HasExt
+4854f6 X InitRegs
+405cbe X InsertAnyFile
+46168e X InsertExternalFile
+477f0f X InsertLabel
+478033 X InsertLine
+4617f1 X InsertOutputFile
+48dd76 X InstantiateTemplateFuncDirect
+469cf5 X IntToFloat
+440707   IntToHigher
+43fcb4 X IntToLower
+460985 X IntrinsIni
+436338 X IsMantissaOne
+436319 X IsMantissaZero
+477fac X LabelAddress
+477ffd X LabelSeg
+438d18   LongDoubleToFPF
+437b72   LongLongToFPF
+48afd8 X LookupHash
+48567d X MarkRegs
+436d76   MultiplyFPF
+440967 X Normalize
+4a0460 X OBJEXT
+4a0448 X PROGNAME
+48542d X PopRegs
+485382 X PushRegs
+4401c2 X QuadToHigher
+4859f4 X RealizeDreg
+485987 X RealizeSreg
+4190f9   RefErrs
+4857ee X ReleaseRegs
+4857ba X ReleaseWouldPop
+45baff X ReshuffleDeclsp
+4366e9 X RoundFPF
+461803 X RunExternalFiles
+4a0454 X SOURCEXT
+4609f4 X SearchIntrins
+487a0d X SearchPath
+416d7c   SetExtFlag
+43605d X SetFPFInfinity
+436084 X SetFPFNaN
+436036   SetFPFZero
+485295 X SetFuncMode
+4833d2 X SetupAlreadyReplaced
+4363ff X ShiftMantLeft1
+436440 X ShiftMantRight1
+43647f X StickyShiftRightMant
+435f4e   StripExt
+4363ba X Sub16Bits
+455d68 X SubProfilerData
+455e17 X ThunkAddPeep
+455e8a X ThunkUncommittedStack
+437c3f   UnsignedLongLongToFPF
+4360b1   ValueIsOne
+4accab X _C_locale_data
+491e9c X _Exit
+490980 X _LXDIVS
+490984   _LXDIVU
+49098b X _LXMODS
+490992   _LXMODU
+490a48   _LXMUL
+490a68 X _LXSAR
+490a8e   _LXSHL
+490ab6   _LXSHR
+490f80   __GetDosErrno
+490f8c   __GetErrno
+4916db X ___xceptionhandle
+548218   __abortbranch
+5485b4 X __argc
+5485bc X __argv
+490e6c X __basefclose
+49365d X __basefopen
+490d91 X __closeall
+491a20 X __convert_file_time
+490d12 X __crtexit
+492160   __ctype_init
+4a0020   __defsigtab
+5481f0   __exitbranch
+4ac7a8 X __fe_default_env
+490d64 X __fileinit
+495a48 X __fpclassify
+495a42 X __fpclassifyf
+495a3c X __fpclassifyl
+497a32   __getDaylight
+4910e0   __getRtlData
+49113c X __getStream
+497a3d   __getTimezone
+497a48   __getTzName
+49334e   __getmode
+5481e8   __hInstance
+491136 X __iob_func
+492458 X __isascii
+4924d6 X __iscsym
+4924b1 X __iscsymf
+491401 X __ll_cancelsleep
+492dae X __ll_chmod
+498d44 X __ll_chsize
+4919b4   __ll_close
+498c06 X __ll_creat
+491160   __ll_enter_critical
+49116c   __ll_exit_critical
+497273 X __ll_free
+491e28 X __ll_getenv
+491dee X __ll_getenvsize
+497f06   __ll_getpos
+49f1dc X __ll_gettime
+4910fa X __ll_init
+497912   __ll_isatty
+497240 X __ll_malloc
+491d48   __ll_open
+4985c8 X __ll_read
+4986d0 X __ll_remove
+4986fe X __ll_rmdir
+497f38   __ll_seek
+498c44 X __ll_shflags
+4988bc X __ll_signal
+491591 X __ll_sigsegv
+499637 X __ll_spawn
+497ba0   __ll_tzset
+498c7e X __ll_uioflags
+492038 X __ll_uioinit
+498e96   __ll_write
+498ca8 X __ll_writeable
+4ac9e0   __locale_data
+4924fc X __locale_reinit
+54b398 X __mallocchains
+49f9d0 X __matherr
+5482e8   __maxfiles
+494379 X __onetostr
+5485d0 X __quick_exit
+491efc X __quickprocexit
+493052   __readbuf
+49b40c X __scanf
+495a8e X __signbit
+495a88 X __signbitf
+495a82 X __signbitl
+548528   __sigtab
+490d14 X __srproc
+490ade X __startup
+5482f8 X __stdaux
+5482f4   __stderr
+5482ec   __stdin
+5482f0   __stdout
+5482fc X __stdprn
+49a312 X __strtoone
+49117c   __substackp
+493c8d   __tensexp
+490fb1 X __threadTlsAlloc
+491028 X __threadTlsFree
+4910a4 X __threadTlsFreeAll
+490f98 X __threadinit
+490fa4 X __threadrundown
+492435 X __toascii
+54b148   __uidrives
+5488a8   __uiflags
+548768   __uihandles
+548808   __uimodes
+548948   __uinames
+492010   __uinewhandpos
+49301c   __uio_clearerr
+491f9b X __uio_rundown
+491fcf   __uiohandle
+4ad640 X __umask_perm
+49b5cc X __xstrtod
+492524   __xstrtoimax
+491261   _abort
+4ac788   _abterm
+491178 X _alloca_probe
+491178 X _alloca_probe_16
+491178 X _alloca_probe_8
+54b418 X _allocbloc
+5485b0 X _argc
+5485b8 X _argv
+492ca5 X _atoi64
+49c7e9 X _atold
+5485a0 X _cancelsleep
+498d31 X _chsize
+4920dd X _clear87
+492da2 X _close
+4920ee X _control87
+49c856 X _copysign
+4ac7ac X _default87
+4919a6 X _dos_close
+491b6a X _dos_findfirst
+491c6c X _dos_findnext
+4977c6 X _dos_getdrive
+4919de X _dos_getftime
+4976e0 X _dos_getpwd
+491cf4 X _dos_open
+4ad1e0 X _e_min_exp_digit
+5485c8   _environ
+492fc3 X _eof
+499084 X _execl
+49909d X _execle
+4990eb X _execlp
+499104 X _execlpe
+4994cf X _execv
+4994e8 X _execve
+499504 X _execvp
+49951d X _execvpe
+491eb9 X _exit
+490e20 X _fcloseall
+493aa8 X _fdopen
+49330e X _fgetc
+493340 X _fgetchar
+493aeb X _fileno
+54b170 X _fltused
+492f6b X _flushall
+4ac798   _fmode
+492138 X _fpreset
+496c9e X _fputc
+496cea X _fputchar
+493b0e X _fsopen
+492086   _ftol
+4891e6 X _genwordstmt
+497652 X _getcwd
+548240 X _isDLL
+4978d7 X _isatty
+492490 X _isctype
+4ac728 X _istreams
+49214f X _llfpinit
+497eed X _lseek
+49226a X _ltolower
+4922a9 X _ltoupper
+54b41c X _newfree
+4980db X _open
+5481e0   _oscmd
+5481e4   _osenv
+5485c0 X _passed_name
+54b190   _pctype
+548248   _pstreams
+4985af X _read
+498670 X _rmdir
+493429 X _setmode
+49140c X _sleep
+499843 X _snprintf
+498be7 X _sopen
+499152 X _spawnl
+49916e X _spawnle
+4991bf X _spawnlp
+4991db X _spawnlpe
+499539 X _spawnv
+499555 X _spawnve
+499576 X _spawnvp
+499592 X _spawnvpe
+4920ce X _status87
+49ebfb X _strcmpi
+49cb15 X _strdup
+49eb7c X _stricmp
+49ecda X _strlwr
+49efe4 X _strncmpi
+49ee1c X _strnicmp
+49c725 X _strtold
+49f176 X _strupr
+4921ec X _tolower
+49222b X _toupper
+49f310 X _ungetc
+4986c4 X _unlink
+499950 X _vsnprintf
+5481ec   _win32
+49f730 X _write
+491418 X _xceptinit
+491435 X _xceptrundown
+4b5a8c X aFriend
+492516 X abort
+404700 X abspath
+4305d4 X absrank
+40f499   actualexpr
+47d60f   add_peep
+46e382 X addaside
+43aee3   addblocklist
+4060b5 X addinclude
+431bd7 X addops
+4a02d0   addrregs
+43ae93   addrundown
+4a9e44 X addsize
+4176b1 X addvtabentry
+45da57 X agbits
+45d97d X agflush
+48b105 X aliasnamespace
+476f13 X align
+4064f4   alignment
+4b7f30   allocaSP
+4012b0   allocate
+47fbb7 X allocateMacroReplaceBuffer
+403f44 X allocstack
+430692 X ambigcontext
+449ea8 X amode_clearblock
+448f82 X amode_moveblock
+4550f4 X analyzeswitch
+433073 X andop
+4a1598   andtyp
+4848f4 X ansieol
+4b33e8 X anyusedfloat
+4b7f40   arg_nesting
+45dea7 X arr
+5400e0 X asmMask
+5400e4 X asmRMask
+457cdd X asm_enterauto
+4774db X asm_header
+45882f X asm_op
+402396   asm_repcse
+40237b X asm_repcse1
+401db4 X asm_repnode
+401d5c   asm_scan
+401d41 X asm_scan1
+401c88 X asm_scannode
+45a92a   asm_statement
+479234 X asmfrm
+546f28 X asmline
+540174 X asmlist
+478e49 X asmrm
+434344 X asncombine
+431016 X asnfit
+43467a   asnop
+4a1594   asntyp
+491f31 X at_quick_exit
+49c7bc X atof
+492ce9 X atoi
+492cc7 X atol
+492c83 X atoll
+433311   autoasnop
+5457a0 X auxlist
+485fd6 X axdx_tolower
+43e3ac   backup
+4a9634   backupchar
+517fa4 X backupid
+4908d8 X banner
+4a033c   basear
+4b5b90   baseasnsymtbl
+411179 X basedeclare
+4a0340   basedr
+4a0344   basefr
+48b8b9 X basesearch
+41ef3f   basicerror
+41ebaf X basicskim
+41f984   basictype
+4551a8 X bingen
+432e0b X binop
+43f3db X bit_load
+43f5d7 X bit_store
+433025 X bitand
+433059 X bitor
+410fe8 X bitsize
+43303f X bitxor
+43af9b X block
+546f20   blockVarArraySP
+4b7f3c   block_nesting
+4b7f50   block_rundown
+416691   blockdecl
+405603 X bool_setup
+488ac6 X breakcontrundowns
+489136 X breakstmt
+404bfc   browse_blockend
+404bc9   browse_blockstart
+404b3a   browse_define
+404942   browse_endfunc
+40486f   browse_init
+4049c6   browse_startfile
+404887   browse_startfunc
+404a4c   browse_variable
+4031ca X bsort
+540120 X bssbytes
+476b2d X bssseg
+4ad1f0 X cached
+454c64 X call_library
+492d0c X calloc
+4a962c   cantnewline
+4884e9 X casestmt
+42756b   castbegin
+4631ae X castmatch
+42e81c   castvalue
+4b3a34   catch_cleanup_func
+48a095 X catchstmt
+547f54   cbautoinithead
+547f58   cbautoinittail
+547f5c   cbautorundownhead
+547f60   cbautorundowntail
+420802 X cbll
+496a82 X ceil
+496a72 X ceilf
+496a7a X ceill
+4a04a0 X cf_freeaddress
+4a04a4 X cf_freedata
+4a04a8 X cf_freefloat
+4a0498 X cf_maxaddress
+4a049c X cf_maxdata
+4345af X checkConstClass
+4110d4 X checkDefaults
+48faa0 X checkTemplateSpecialization
+43a66b   check_funcused
+415335 X check_used
+425c34   checkexactpointer
+4315f0 X checknp
+424bb2 X checkparmconst
+420337 X checkstructconst
+48fed2 X checktype
+49011a X checktypeassign
+43e625 X chksize
+4367e3 X choose_nan
+498ccc X chsize
+518070 X chstack
+418d57   classbaseasn
+41792a X classerrs
+4b5b94 X classhead
+4a02f0 X clist
+492d3e   close
+483193 X cnvt
+4056e7 X codegen_setup
+435cf9 X commaop
+415439 X compile
+428706 X complex_functions
+43f10b X complexload
+43ed8f X complexstore
+489cbe X compound
+43b5ee   compoundblock
+4330a7 X conditional
+406380 X confcodegen
+4064e9 X confsetup
+4179a7 X conscall
+4b5a78   conscount
+40f4f7   conspair
+540128 X constbytes
+468d8c X constoptinit
+48918f X contstmt
+47ce0d   copy_addr
+425024 X copy_default
+424cdc   copy_enode
+424ca9 X copynode
+4b34f0 X copyright
+49c856 X copysign
+49c81c X copysignf
+49c839 X copysignl
+416de5   copysym
+40aaa3   copytype
+454c93 X count_cases
+40aa34   cponetype
+4a02e4   cppFile
+4a9c4c   cpp_funcname_tab
+46261c   cpp_unmang_intrins
+463ed4   cppargs
+48ab89 X cppblockedstatement
+4239d1   cppcast
+4b382c X cppfile
+4b5b6c X cppflags
+45dba0 X cppfloat
+45b97e X cppinitassign
+45b908 X cppinitinsert
+45e5ed X cppint
+463f0d X cppmangle
+463673   cpponearg
+45b952 X cpprundowninsert
+4633b0 X cppval
+415840 X createTemplate
+489676 X createVarArray
+41514c X crossrefbaseclasses
+476829   cseg
+40635d X ctrlchandler
+4b35fc X ctrlcreturn
+417c05 X curcons
+546f40 X currentCases
+4b5b44   currentTemplate
+4abfec   currentfile
+4a15b0   currentfunc
+4a9e60   curseg
+540124 X databytes
+4a02cc   dataregs
+483281 X dateisomac
+483215 X datemac
+4b3a50   dbgblocknum
+4068e6 X dbginit
+40819e   debug_beginblock
+4094fd   debug_dumpglobaltypedefs
+4087fa   debug_endblock
+40925a   debug_outdata
+408161   debug_outfunc
+407b33 X debug_outputenum
+406b2a X debug_outputpointer
+406dfe X debug_outputref
+408053 X debug_outputtype
+407eff X debug_outputtypedef
+407d37 X debug_outputtypell
+40ad1a   decl
+40d1c0   decl1
+40f8a1   decl2
+410928 X decl3
+4213cc   declRef
+413de2 X declare
+413e49 X declare2
+413ec7 X declbegin
+4b5aa0   declclass
+413f3a X declenum
+439e54 X declfuncarg
+4b5abc   declid
+40a8bf X declini
+4146f6 X declstruct
+4059d2 X def_setup
+4b5b70   defaulttype
+4845db X defcheck
+416d18 X defclassini
+4b5a84 X deferredFunctions
+4ac6e8 X defhash
+482839 X defid
+47f84e X definsert
+4a02f4 X deflist
+483393 X defmacroreplace
+482c43 X defreplaceargs
+43e51d X defseg
+482917 X defstringizing
+547f80 X defsyms
+482fa6 X deftokenizing
+43662c X denormalize
+41fbe2   deref
+403165 X desire
+41c919   diag
+4a0f90 X diagcount
+496ac0 X div
+4456dc X divintoeax
+445617 X divprepare
+445a81 X do64div
+4467a2 X do64mul
+4447d4 X do64shift
+40eddc   do_constructor
+40f13c   do_destructor
+440ee3   do_extend
+43eb27 X do_ftol
+4888ae X do_ret_constructor
+4287a6 X doalloca
+4166a5   doargdecl
+487b77 X doassign
+489a41 X doautoinit
+42a413 X docppcasts
+415c26   dodecl
+48941b X dodefaultinit
+481fdf X dodefine
+42a21c X dodelete
+445825 X dodiv
+419345   doeinit
+484c40 X doelif
+484d8d X doelse
+484e6d X doendif
+48015f X doerror
+484b0e X doif
+484967 X doifdef
+4818c3 X doinclude
+4411db X doindex
+45bbb0 X doinit
+4605fa   doinline
+48157e X doline
+429c23 X donew
+46a19b X dooper
+42ad5b X dooperator
+45f433 X dopointer
+48040a X dopragma
+414697 X doreclone
+444163 X doshift
+487d61 X dostmt
+42b003 X dothrow
+42a912 X dotypeid
+41f6e2   doubleerr
+482671 X doundef
+476a6a X dseg
+421128   dummyvar
+487242 X dumpBaseRTTI
+486ed8 X dumpClassData
+48706d X dumpClassRTTI
+48738a X dumpPointerRTTI
+48754b X dumpRTTI
+4875bf X dumpRTTIDescript
+486f15 X dumpSymData
+486d1f X dumpXceptBlock
+4875f2 X dumpXceptTabs
+4774c0 X dump_browsedata
+43a76b X dump_instantiates
+4770e0 X dump_muldivval
+486e81 X dumpdest
+406256 X dumperrs
+476629 X dumplits
+486dde X dumpname
+4746db X dumpns
+481443 X dumpstartups
+4087a9 X dumptypes
+4b3a30   dynamic_cast_func
+41a510 X ecppfloat
+41a584 X ecppint
+41c268 X edopointer
+41962e X einitarray
+41b62f X einitchar
+41b54f X einitdouble
+41b9af X einitenum
+41c730 X einitfarpointer
+41a66c X einitfcomplex
+41b38f X einitfloat
+41ba8f X einitint
+41bb6f X einitlong
+41b46f X einitlongdouble
+41be0f X einitlonglong
+41aacd X einitlrcomplex
+41c713 X einitpointer
+41c818 X einitpointerfunc
+41af2e X einitrcomplex
+41bfcf X einitref
+41b70f X einitshort
+41a144 X einitstruct
+4193e1 X einittype
+41b7ef X einituchar
+41bc4f X einituint
+41bd2f X einitulong
+41beef X einitulonglong
+419fa9 X einitunion
+41b8cf X einitushort
+4abfe8 X elsetaken
+417f35 X embeddedcons
+418323 X embeddedcopycons
+4780cb X emit
+465b98 X emit_record
+45f82c X endinit
+4709cb X enswap
+402655 X enternode
+41426d X enumbody
+492f7c   eof
+47ee0a X equal_address
+4023ee   equalnode
+432af4 X equalops
+4a02e8   errFile
+4058fb X err_setup
+5453b4   errfile
+4abfd0   errlineno
+4a0f98 X errlist
+4b392c X errorfile
+48958e X evaluateVLAtypedef
+48fb62 X exactype
+403146 X exchange
+498ef4 X execl
+498f0d X execle
+498f43 X execlp
+498f5c X execlpe
+4993eb X execv
+499404 X execve
+499420 X execvp
+499439 X execvpe
+491ecc   exit
+47673e X exitseg
+41f76a   expecttoken
+41f826   expecttokenexp
+4b7d80   expr_rundown
+4b7cb8   expr_runup
+4a1418   expr_updowncount
+435dd1   expression
+41f874 X exprini
+435b8e   exprnc
+48927b X exprstmt
+41eee3   expskim
+495ab8   fabs
+495aa8 X fabsf
+495ab0 X fabsl
+45220c   falsejp
+435fe0   fatal
+490f71 X fclose
+490dd0 X fcloseall
+493a8c X fdopen
+493d50 X fextract
+4969cf X fextractdouble
+492f1c   fflush
+493170   fgetc
+493333 X fgetchar
+49343c X fgets
+4a0388 X file_count
+4831bf X filemac
+493ac8 X fileno
+546f30 X firstlabel
+42754d X floatcheck
+43e3de   floatconvpos
+43981b X floatexpr
+43f297 X floatload
+427214   floatrecurse
+4a02c8   floatregs
+4b33d0   floatstack_mode
+43ef5e X floatstore
+47d6bf X flush_peep
+492f5a X flushall
+493c68 X fnd
+4709e4 X fold_const
+493a73 X fopen
+43073a X forcefit
+487f1d X forstmt
+493b2a X fprintf
+496ad8 X fputc
+496cd6 X fputchar
+496cfe X fputs
+4b33cc   frame_ins
+496f86   free
+47fc27 X freeMacroReplaceBuffer
+4a9648 X freg0
+4398f2 X friendsearch
+4b33c4   fsave_mask
+499a2d X fscanf
+497286 X fseek
+43e69e X fstack
+4640f7   fullcppmangle
+47fa36 X fullqualify
+43a80a   funcbody
+4b7f78   funcbrstmt
+4b7f74   funcendstmt
+4b33d8   funcfloat
+439e21 X funcini
+462d98 X funciterate
+4b7f4c   funcnesting
+463157   funcovermatch
+462f33 X funcovermatch2
+4b5a74   funcparmtable
+462781 X funcrefinsert
+4a9898 X funcs
+4b7f70   funcstmt
+406739   funcvaluesize
+46550d X funcwithns
+497360 X fwrite
+454e08 X gather_cases
+43b540   gather_labels
+42488a   gatherparms
+44393f X gen_64bin
+44abe6 X gen_aincdec
+44735d X gen_asadd
+447a39 X gen_aslogic
+448658 X gen_asmodiv
+4480b2 X gen_asmul
+447e55 X gen_asshift
+44a0ee X gen_assign
+446fa0 X gen_asunary
+444045 X gen_binary
+47d51e X gen_branch
+44a0ac X gen_clearblock
+47ceb5   gen_code
+47d46c X gen_code2
+47d0bc X gen_code3
+47d3c2 X gen_codef
+47d348 X gen_codefs
+47d4b4 X gen_codelab
+47d2e3 X gen_coden
+47d2a3   gen_codes
+47d438 X gen_codes2
+47d5a5 X gen_comment
+45027b X gen_compare
+442b1b X gen_complexadd
+4450c3 X gen_complexdiv
+445f81 X gen_complexmul
+44238c X gen_deref
+476e5c   gen_endvirtual
+4546dc   gen_expr_external
+443342 X gen_fbinary
+454947 X gen_for
+446c4b X gen_hook
+441392 X gen_index
+4764aa   gen_labdifref
+47d65c X gen_label
+4782a1 X gen_label_fixup
+4763ec   gen_labref
+47d533 X gen_line
+445cfd X gen_modiv
+449c6a X gen_moveblock
+456ee8 X gen_mp_virtual_thunk
+4469bf X gen_mul
+44cd5f X gen_parms
+445f51 X gen_pdiv
+446991 X gen_pmul
+44a8ec X gen_refassign
+4500d6 X gen_relat
+443dc3 X gen_segadd
+444edf X gen_shift
+475825   gen_strlab
+478224 X gen_symbol_fixup
+44d079 X gen_tcall
+456977 X gen_tryblock
+44287d X gen_unary
+476d5c   gen_virtual
+454725   gen_void_external
+457110 X gen_vsn_virtual_thunk
+419158 X gen_vtab
+443ec2 X gen_xbin
+4553e5 X genbinaryswitch
+475f1d X genbool
+475e4e   genbyte
+41f530   genclass2error
+41f4ab   genclasserror
+45546e X gencompactswitch
+454b2c X gendo
+475aef X gendouble
+4760c2 X genenum
+41f240   generror
+41f7ab   generrorexp
+47597f X genfloat
+45722c   genfunc
+41f3ba   genfunc2error
+41f2bb   genfuncerror
+4abe40 X genfunctab
+454a8d X genif
+4760b6 X genint
+475ff8   genlong
+475c5f X genlongdouble
+4760ce X genlonglong
+41f5f9   genmismatcherror
+5400a8   genning_inline
+47632c X genpcref
+4761ce   genref
+455f16 X genreturn
+4557d0 X gensimpleswitch
+4761af   gensrref
+456c7c X genstmt
+47633e X genstorage
+475dcf X genstring
+41f266   gensymerror
+41f7d8   gensymerrorexp
+486cb0 X genthrowdata
+4a9e5c X gentype
+454810 X genwhile
+475f29 X genword
+455a07 X genxswitch
+48ee68 X getTemplateName
+4b3a3c   get_typeinfo_func
+4066fc   getalign
+406734   getautoval
+48020f X getauxname
+43c928 X getbase
+49331a X getc
+43c2bd   getch
+493326 X getchar
+4976ce X getcurdir
+4975dc X getcwd
+48273d X getdefsym
+4977b4   getdisk
+49783e   getenv
+43c46d   getid
+4587f3 X getimmed
+43b870 X getline
+43cce4   getnum
+41c9f7 X getpunct
+43c646 X getsch
+43c1d0 X getstring
+43e1e1   getsym
+43d7ca   getsym2
+478085 X gettab
+4869d8 X getxtsym
+4a9dbc X glbblk
+481f35 X glbdefine
+4a9db0 X glbindx
+4a9da8 X glbsize
+544b88   global_flag
+547f94 X global_tag_using_list
+547f90 X global_using_list
+4b3a48   global_vararray_func
+47774e X globaldef
+497c44 X gmtime
+546f34   goodcode
+4b7f38   gotoCount
+4b7f2c X gotoList
+489f84 X gotostmt
+48bec3 X gsearch
+547f6c X gsyms
+4b33ec X has_output_file
+4a0f40   head
+4b5ab8   headptr
+520088   ibufPtr
+4abfe0 X ifs
+5453bc X ifshold
+4abfe4 X ifskip
+488384 X ifstmt
+40a985   imax
+497928 X imaxdiv
+420c37 X immed_callblock
+4b5b38 X importname
+4b5a70   inarrayindexparsing
+4575a8 X inasmini
+546f24 X incatchclause
+4a9630   incconst
+4abfd8 X incfiles
+405932 X incl_setup
+545654 X inclcurrent
+545694 X incldata
+4abfd4 X incldepth
+545514 X inclfile
+5454d4 X inclfname
+545554 X inclline
+5456d4 X inclpos
+545754 X inclptr
+545714 X inclsysflags
+4b5a7c X increatingtemplateargs
+4b5a80   indefaultinit
+441165 X indx_data
+4b3624   infile
+4b7f44   infuncargs
+4b7f48 X infunclineno
+4ac030 X ingrownmacros
+45c652 X initarray
+45ef23 X initbool
+45ef15 X initchar
+45eec3 X initdouble
+45f03b X initenum
+41c836 X initerr
+45f792 X initfarpointer
+45e7a1 X initfcomplex
+45ee1f X initfloat
+45ac7a X initini
+45efc9 X initint
+45efef X initlong
+45ee71 X initlongdouble
+45f015 X initlonglong
+45e9cb X initlrcomplex
+45f0b0 X initmemberptr
+45f701 X initpointer
+45f79b X initpointerfunc
+45ebf5 X initrcomplex
+45f239 X initref
+45acd0 X initrundown
+45ef95 X initshort
+45d29a X initstruct
+43bcf5 X initsym
+45c0d6 X inittype
+45efa9 X inituchar
+45efdd X inituint
+45f003 X initulong
+45f029 X initulonglong
+45cfbe X initunion
+45efb7 X initushort
+48b454 X inject_namespace
+45f8a6 X inlineinit
+4612c8 X inport
+4b5b4c   inprototype
+4a02d8   inputFile
+518084   inputbuffer
+520084   inputlen
+4b7f94 X inputline
+48c00f   insert
+486fb9 X insertRTTI
+45bb59 X insertSpace
+4154c5   insertTemplateChar
+417552 X insertVirtualData
+45ba4b X insert_decl_sp
+439856 X insertfriend
+40673c X installCPPBuiltins
+48e6a6 X instantiateTemplateFuncs
+4b7f6c   instantiated_inlines
+45dee8 X intconstinit
+4b7f18   intemplateargs
+5481c8 X interjectptr
+40636c X internalError
+46090e   intexpr
+4a0e00 X intrinsxlate
+4306d4 X inttype
+43f3ba X is_memory
+48b81c X isaccessible
+4923b5 X isalnum
+492322 X isalpha
+49243d X isascii
+4978a4 X isatty
+492305 X isblank
+44111e X isbyte
+4b5b28 X iscdecl
+40e8d3 X isclassarg
+492473 X iscntrl
+42135e   iscomplexconst
+4923f1 X isdigit
+4b5b30 X isexport
+421320   isfloatconst
+43994c   isfriend
+40a998 X isfunc
+4923d2 X isgraph
+42133f   isimaginaryconst
+4b5b34 X isimport
+4b5b2c X isindirect
+4212d3   isintconst
+474f30 X islabeled
+49235c X islower
+4b5b20   ispascal
+492396 X isprint
+49233f X ispunct
+4587c7 X isrm
+431494   isscalar
+4410d5 X isshort
+4922e8 X isspace
+4b5b24 X isstdcall
+42e7fa   isstructured
+431687 X isunsignedresult
+492379 X isupper
+49240e X isxdigit
+4a9620   ival
+5400d8   keyimage
+4ac074 X keywords
+4877a0 X kwini
+489e68 X labelstmt
+4b7f24   labelsyms
+547f64 X lastDestPointer
+517f98   lastch
+4b7f7c   lastfunc
+4a15b8   lastid
+54579c   lastinc
+517fa0   lastlastst
+546f00 X lastreg1
+546f04 X lastreg2
+546f08 X lastsreg1
+546f0c X lastsreg2
+517f9c   lastst
+4a161d   laststr
+4b7f90   laststrlen
+4b33c0   lc_maxauto
+496ac0 X ldiv
+41eb0a   lferror
+4abfdc X libincludes
+540178 X liblist
+43bdcd   lineToCpp
+545394 X linelist
+483346 X linemac
+4b7f8c   lineno
+545398 X linetail
+518020 X linstack
+4a02dc   listFile
+546f10 X list_of_rttis
+46259e X list_table
+46229c X list_var
+4b362c X listfile
+40a9bc   litlate
+497928 X lldiv
+485afc X loadaxdx
+417247 X loadclassdata
+401249 X loadds
+401a2a   loadregs
+547f9c X local_tag_using_list
+547f98 X local_using_list
+4b5b40   localdata
+4b5b3c   localfuncs
+4979e2 X localtime
+4a9db8 X locblk
+4a9db4 X locindx
+4a9dac X locsize
+497de0 X log10
+497dcc X log10f
+497dd6 X log10l
+497e36 X longjmp
+48e4ee X lookupTemplateFunc
+48f30e X lookupTemplateType
+41817a X lookupcopycons
+4632fe X lookupname
+48bd0a X losearch
+545794   lptr
+497e66   lseek
+4a9628 X lstackptr
+547f78   lsyms
+547f88   ltags
+42e89e   lvalue
+404c30 X main
+4b5ab4   mainfunc
+4208c2 X make_callblock
+4547cc X make_direct
+43e71a X make_floatconst
+43e9db   make_immed
+43ea2a X make_immedt
+43e972   make_label
+43e6c6 X make_muldivval
+43eac5   make_offset
+43eae6   make_stack
+4547e5 X make_strlab
+45478c   makedreg
+4547ac X makefreg
+43ae21 X makeint
+41fbb1   makeintnode
+45d835 X makelabel
+41fb71   makenode
+42fe0e X makeparam
+45d874 X makeref
+43e9c1   makesegreg
+47d98e X makeshl
+45d8de X makestorage
+40cf9c   makesym
+40a9eb   maketype
+497097   malloc
+464031   mangleclass
+4b5ab0 X mangleflag
+4b5b5c X manglelevel
+4a9da4   manglenamecount
+546d68 X markedpushes
+546efc X markpos
+546bd8 X marks
+4628c7 X matchone
+42137d   matchreflvalue
+42fe7d X mathoverload
+5463e0 X max_data
+5463e4 X max_sreg
+49c874 X mbrtowc
+465a80 X mem_summary
+497f9e X memchr
+497fb8 X memcmp
+497fde   memcpy
+465592 X memini
+498022 X memmove
+49804c   memset
+49e7b6   mktime
+46e356 X mod_mask
+448c93 X mov1
+448cd3 X mov2
+448de0 X mov3
+5400bc   mpthunklist
+4a9e58   muldivlink
+431740 X multops
+42200b X nameref
+48b5ca X namespace_search
+44ed4e   natural_size
+5452b8 X needpointer
+43e354   needpunc
+43e380 X needpuncexp
+41ebe2 X newbalance
+5452b4 X newlabel
+546f2c X nextlabel
+4097a8 X nexttagname
+47431e   nl
+5453ac   noRelease
+5453b0 X noStackFrame
+4b7ef8 X nodeclfunc
+547fa4 X nonslookup
+43655d X normalize
+47edf7 X novalue
+4b5c04 X nowarn
+4b5aac X nullnamecount
+406b01 X numeric_leaf
+465805 X oalloc
+465af8 X obj_init
+540170 X objlist
+465822 X ocalloc
+47cc79 X oflush
+47cc78 X oinit
+411060 X oksize
+4b7f54   oldlsym
+4b7f5c   oldltag
+4b33dc X olist
+467dc4 X omfComDefData
+466427 X omfComDefs
+4681ae X omfData
+465fc6 X omfDebugMarker
+468a0d X omfEmitLineInfo
+4675b9 X omfExports
+466b47 X omfExtDefs
+465c1e X omfFileName
+465dd8 X omfFileTime
+46794a X omfFixups
+46659c X omfGroups
+466fc7 X omfImports
+46606d X omfLNames
+4661ff X omfLibMod
+4688cb X omfLineNumbers
+468a62 X omfModEnd
+4678a8 X omfPassSeperator
+467411 X omfPublics
+46632e X omfSegs
+468744 X omfSourceFile
+465cf6 X omfTranslatorName
+467081 X omfgetseg
+467379 X omfpubdumphash
+46748a X omfputexport
+46678e X omfputext
+466e5b X omfputimport
+4671d4 X omfputpub
+4279ac   onefunc
+49809a   open
+547fa0 X openns_list
+4a9e6c   oplst
+47cc5c X oprintf
+46e3ac X opt0
+4040fd   opt1
+47f1cb X opt3
+4741dc   opt4
+4057c4 X optimize_setup
+47cc85 X oputc
+43308d X orop
+47c0d0 X outcode_AssembleIns
+478aa8 X outcode_align
+5452c0 X outcode_base_address
+47c5fc X outcode_dumpIns
+4784af X outcode_dump_browsedata
+47831e X outcode_dump_muldivval
+4784c4 X outcode_dumplits
+478c67 X outcode_end_virtual_seg
+477e54 X outcode_file_init
+477eac X outcode_func_init
+47cb9c   outcode_gen
+4787a4 X outcode_gen_labdifref
+4786c7 X outcode_gen_labref
+478a26 X outcode_genbyte
+4789a1 X outcode_gendouble
+47896b X outcode_genfloat
+478a52 X outcode_genlong
+4789d7 X outcode_genlongdouble
+478a68 X outcode_genlonglong
+4785ef X outcode_genref
+4787ee X outcode_gensrref
+4788fb X outcode_genstorage
+478a0d X outcode_genstring
+478a3c X outcode_genword
+47c421 X outcode_optimize
+478b43 X outcode_put_label
+478c0b X outcode_start_virtual_seg
+4742cd X outcodeini
+4a9e64 X outcol
+4b372c   outfile
+474354 X outop
+461426 X outport
+4a02e0   outputFile
+4777b6   output_alias
+468af4 X output_obj_file
+405a19 X output_setup
+405e05 X outputfile
+40cfdb X overloadoperator
+47cc9b X owrite
+5457a4 X packdata
+545934 X packlevel
+425634   parameter_rundown
+4b5d20   parm_namespaces
+4b7c60   parm_ns_counts
+4b7cb0   parm_ns_level
+425cbf   parmlist
+44ce11 X parmsize
+48f939 X parseClassFuncs
+405f1a X parse_arbitrary
+404552   parse_args
+406167 X parseconfigfile
+406154 X parseenv
+406017 X parsefile
+40abba   parsetype
+4b7cb4   parsing_params
+47d752 X peep_add
+47e792 X peep_and
+47eb45 X peep_btr
+47efe7 X peep_call
+47df93 X peep_cmp
+4abf48 X peep_head
+5453a8 X peep_insert
+47ccc0 X peep_jmp
+47ebfb X peep_label
+47da60 X peep_lea
+47da5f X peep_lea2
+47dcb7 X peep_lea3
+47e1d6 X peep_mov
+47ea66 X peep_neg
+47e9dc X peep_or
+47f0f4 X peep_pop
+47ef6d X peep_prefixes
+47e0dc X peep_push
+47dd86 X peep_signextend
+47d864 X peep_sub
+4abf4c X peep_tail
+47debd X peep_test
+47eba6 X peep_uctran
+47cdf8 X peepini
+52009c X phiputcpp
+5200a0 X phiputlist
+481f08 X plitlate
+42e9ca X pointermode
+474d39 X pointersize
+5463cc X pop
+4848aa X popif
+4aad1e X popn_aaa
+4aad2a X popn_aad
+4aad36 X popn_aam
+4aad42 X popn_aas
+4aad4e X popn_adc
+4aad66 X popn_add
+4aad7e X popn_and
+4aad96 X popn_arpl
+4aada2 X popn_bound
+4aadae X popn_bsf
+4aadba X popn_bsr
+4aadc6 X popn_bswap
+4aadd2 X popn_bt
+4aade4 X popn_btc
+4aadf6 X popn_btr
+4aae08 X popn_bts
+4aae1a X popn_call
+4aae38 X popn_cbw
+4aae44 X popn_cdq
+4aae50 X popn_clc
+4aae5c X popn_cld
+4aae68 X popn_cli
+4aae74 X popn_clts
+4aae80 X popn_cmc
+4aae8c X popn_cmova
+4aae98 X popn_cmovb
+4aaea4 X popn_cmovbe
+4aaeb0 X popn_cmovg
+4aaebc X popn_cmovge
+4aaec8 X popn_cmovl
+4aaed4 X popn_cmovle
+4aaee0 X popn_cmovnb
+4aaeec X popn_cmovno
+4aaef8 X popn_cmovnp
+4aaf04 X popn_cmovns
+4aaf10 X popn_cmovnz
+4aaf1c X popn_cmovo
+4aaf28 X popn_cmovp
+4aaf34 X popn_cmovs
+4aaf40 X popn_cmovz
+4aaf4c X popn_cmp
+4aaf64 X popn_cmps
+4aaf70 X popn_cmpsb
+4aaf7c X popn_cmpsd
+4aaf88 X popn_cmpsw
+4aaf94 X popn_cmpxchg
+4aafa0 X popn_cmpxchg8b
+4aafac X popn_cpuid
+4aafb8 X popn_cwd
+4aafc4 X popn_cwde
+4aafd0 X popn_daa
+4aafdc X popn_das
+4aafe8 X popn_dec
+4aaffa X popn_div
+4ab006 X popn_enter
+4ab012 X popn_esc
+4ab01e X popn_f2xm1
+4ab02a X popn_fabs
+4ab036 X popn_fadd
+4ab042 X popn_faddp
+4ab04e X popn_fbld
+4ab05a X popn_fbstp
+4ab066 X popn_fchs
+4ab07e X popn_fclex
+4ab08a X popn_fcom
+4ab09c X popn_fcomp
+4ab0ae X popn_fcompp
+4ab0ba X popn_fcos
+4ab0c6 X popn_fdecstp
+4ab0d2 X popn_fdisi
+4ab0de X popn_fdiv
+4ab0ea X popn_fdivp
+4ab0f6 X popn_fdivr
+4ab102 X popn_fdivrp
+4ab10e X popn_feni
+4ab11a X popn_ffree
+4ab126 X popn_fiadd
+4ab132 X popn_ficom
+4ab13e X popn_ficomp
+4ab14a X popn_fidiv
+4ab156 X popn_fidivr
+4ab162 X popn_fild
+4ab16e X popn_fimul
+4ab17a X popn_fincstp
+4ab186 X popn_finit
+4ab19e X popn_fist
+4ab1aa X popn_fistp
+4ab1b6 X popn_fisub
+4ab1c2 X popn_fisubr
+4ab1ce X popn_fld
+4ab1da X popn_fld1
+4ab1e6 X popn_fldcw
+4ab1f2 X popn_fldenv
+4ab1fe X popn_fldl2e
+4ab20a X popn_fldl2t
+4ab216 X popn_fldlg2
+4ab222 X popn_fldln2
+4ab22e X popn_fldpi
+4ab23a X popn_fldz
+4ab246 X popn_fmul
+4ab252 X popn_fmulp
+4ab072 X popn_fnclex
+4ab192 X popn_fninit
+4ab25e X popn_fnop
+4ab26a X popn_fnsave
+4ab282 X popn_fnstcw
+4ab29a X popn_fnstenv
+4ab2b2 X popn_fnstsw
+4ab2d6 X popn_fpatan
+4ab2e2 X popn_fprem
+4ab2ee X popn_fprem1
+4ab2fa X popn_fptan
+4ab306 X popn_frndint
+4ab312 X popn_frstor
+4ab276 X popn_fsave
+4ab31e X popn_fscale
+4ab32a X popn_fsetpm
+4ab336 X popn_fsin
+4ab342 X popn_fsincos
+4ab34e X popn_fsqrt
+4ab35a X popn_fst
+4ab28e X popn_fstcw
+4ab2a6 X popn_fstenv
+4ab366 X popn_fstp
+4ab2c4 X popn_fstsw
+4ab372 X popn_fsub
+4ab37e X popn_fsubp
+4ab38a X popn_fsubr
+4ab396 X popn_fsubrp
+4ab3a2 X popn_ftst
+4ab3ae X popn_fucom
+4ab3c0 X popn_fucomp
+4ab3d2 X popn_fucompp
+4ab3de X popn_fwait
+4ab3ea X popn_fxam
+4ab3f6 X popn_fxch
+4ab408 X popn_fxtract
+4ab414 X popn_fyl2x
+4ab420 X popn_fyl2xp1
+4ab42c X popn_hlt
+4ab438 X popn_ibts
+4ab444 X popn_idiv
+4ab450 X popn_imul
+4ab468 X popn_in
+4ab47a X popn_inc
+4ab48c X popn_ins
+4ab498 X popn_insb
+4ab4a4 X popn_insd
+4ab4b0 X popn_insw
+4ab4bc X popn_int
+4ab4ce X popn_int3
+4ab4da X popn_into
+4ab4e6 X popn_invd
+4ab4f2 X popn_invlpg
+4ab4fe X popn_iret
+4ab50a X popn_iretd
+4ab516 X popn_ja
+4ab528 X popn_jae
+4ab53a X popn_jb
+4ab54c X popn_jbe
+4ab55e X popn_jc
+4ab570 X popn_jcxz
+4ab57c X popn_je
+4ab58e X popn_jg
+4ab5a0 X popn_jge
+4ab5b2 X popn_jl
+4ab5c4 X popn_jle
+4ab5d6 X popn_jmp
+4ab5fa X popn_jna
+4ab60c X popn_jnae
+4ab61e X popn_jnb
+4ab630 X popn_jnbe
+4ab642 X popn_jnc
+4ab654 X popn_jne
+4ab666 X popn_jng
+4ab678 X popn_jnge
+4ab68a X popn_jnl
+4ab69c X popn_jnle
+4ab6ae X popn_jno
+4ab6c0 X popn_jnp
+4ab6d2 X popn_jns
+4ab6e4 X popn_jnz
+4ab6f6 X popn_jo
+4ab708 X popn_jp
+4ab71a X popn_jpe
+4ab72c X popn_jpo
+4ab73e X popn_js
+4ab750 X popn_jz
+4ab762 X popn_lahf
+4ab76e X popn_lar
+4ab77a X popn_lds
+4ab786 X popn_lea
+4ab792 X popn_leave
+4ab79e X popn_les
+4ab7aa X popn_lfs
+4ab7b6 X popn_lgdt
+4ab7c2 X popn_lgs
+4ab7ce X popn_lidt
+4ab7da X popn_lldt
+4ab7e6 X popn_lmsw
+4ab7f2 X popn_lock
+4ab7fe X popn_lods
+4ab80a X popn_lodsb
+4ab816 X popn_lodsd
+4ab822 X popn_lodsw
+4ab82e X popn_loop
+4ab83a X popn_loope
+4ab846 X popn_loopne
+4ab852 X popn_loopnz
+4ab85e X popn_loopz
+4ab86a X popn_lsl
+4ab876 X popn_lss
+4ab882 X popn_ltr
+4ab88e X popn_mov
+4ab8ca X popn_movs
+4ab8d6 X popn_movsb
+4ab8e2 X popn_movsd
+4ab8ee X popn_movsw
+4ab8fa X popn_movsx
+4ab906 X popn_movzx
+4ab912 X popn_mul
+4ab91e X popn_neg
+4ab92a X popn_nop
+4ab936 X popn_not
+4ab942 X popn_or
+4ab95a X popn_out
+4ab96c X popn_outs
+4ab978 X popn_outsb
+4ab984 X popn_outsd
+4ab990 X popn_outsw
+4ab99c X popn_pop
+4ab9ba X popn_popa
+4ab9c6 X popn_popad
+4ab9d2 X popn_popf
+4ab9de X popn_popfd
+4ab9ea X popn_push
+4aba0e X popn_pusha
+4aba1a X popn_pushad
+4aba26 X popn_pushf
+4aba32 X popn_pushfd
+4aba3e X popn_rcl
+4aba4a X popn_rcr
+4aba56 X popn_rdmsr
+4aba62 X popn_rdpmc
+4aba6e X popn_rdtsc
+4aba7a X popn_repnz
+4aba86 X popn_repz
+4aba92 X popn_ret
+4abaa4 X popn_retf
+4abab6 X popn_rol
+4abac2 X popn_ror
+4abace X popn_rsm
+4abada X popn_sahf
+4abae6 X popn_sal
+4abaf2 X popn_sar
+4abafe X popn_sbb
+4abb16 X popn_scas
+4abb22 X popn_scasb
+4abb2e X popn_scasd
+4abb3a X popn_scasw
+4abb46 X popn_seta
+4abb52 X popn_setae
+4abb5e X popn_setb
+4abb6a X popn_setbe
+4abb76 X popn_setc
+4abb82 X popn_sete
+4abb8e X popn_setg
+4abb9a X popn_setge
+4abba6 X popn_setl
+4abbb2 X popn_setle
+4abbbe X popn_setna
+4abbca X popn_setnae
+4abbd6 X popn_setnb
+4abbe2 X popn_setnbe
+4abbee X popn_setnc
+4abbfa X popn_setne
+4abc06 X popn_setng
+4abc12 X popn_setnge
+4abc1e X popn_setnl
+4abc2a X popn_setnle
+4abc36 X popn_setno
+4abc42 X popn_setnp
+4abc4e X popn_setns
+4abc5a X popn_setnz
+4abc66 X popn_seto
+4abc72 X popn_setp
+4abc7e X popn_setpe
+4abc8a X popn_setpo
+4abc96 X popn_sets
+4abca2 X popn_setz
+4abcae X popn_sgdt
+4abcba X popn_shl
+4abcc6 X popn_shld
+4abcd2 X popn_shr
+4abcde X popn_shrd
+4abcea X popn_sidt
+4abcf6 X popn_sldt
+4abd02 X popn_smsw
+4abd0e X popn_stc
+4abd1a X popn_std
+4abd26 X popn_sti
+4abd32 X popn_stos
+4abd3e X popn_stosb
+4abd4a X popn_stosd
+4abd56 X popn_stosw
+4abd62 X popn_str
+4abd6e X popn_sub
+4abd86 X popn_test
+4abd9e X popn_ud2
+4abdaa X popn_verr
+4abdb6 X popn_verw
+4abdc2 X popn_wait
+4abdce X popn_wbinvd
+4abdda X popn_wrmsr
+4abde6 X popn_xadd
+4abdf2 X popn_xbts
+4abdfe X popn_xchg
+4abe10 X popn_xlat
+4abe1c X popn_xlatb
+4abe28 X popn_xor
+483546 X ppNumber
+47fc57 X preprocess
+47faee X preprocini
+417d9b X prevcons
+418214 X prevcopycons
+42b3a9 X primary
+41caaa X printerr
+49811c   printf
+4a030c   prm_ansi
+4a0308   prm_asmfile
+4a0360   prm_asmopt
+4a0490 X prm_browse
+4a0320   prm_bss
+4a0310   prm_c99
+4a0334   prm_cmangle
+4a0374   prm_compileonly
+4a0330   prm_cplusplus
+4a0324 X prm_cppfile
+4b35f0   prm_crtdll
+4a0348   prm_debug
+4a031c   prm_diag
+4a0500   prm_dsnotss
+4a034c   prm_errfile
+4a0304   prm_extwarning
+4a0474   prm_fardefault
+4a0470   prm_farkeyword
+4a0484   prm_fasm
+4a0480   prm_flat
+4a035c   prm_intrinsic
+4a032c   prm_lines
+4a02f8   prm_linkreg
+4a0314   prm_listfile
+4b35f4   prm_lscrtdll
+4a0478   prm_masm
+4a0318   prm_maxerr
+4a048c   prm_microlink
+4b35f8   prm_msvcrt
+4a0488   prm_nasm
+4a047c   prm_nodos
+4a0370   prm_oldfor
+4a0358   prm_optmult
+4a0354   prm_peepopt
+4a0350   prm_profiler
+4a0368   prm_quieterrors
+4a0328   prm_revbits
+4a037c   prm_searchpath
+4a036c   prm_smartframes
+4a0494   prm_stackalign
+4a02fc X prm_stackcheck
+4a0378   prm_targettype
+4a0338   prm_trigraph
+4a0300   prm_warning
+4a0364   prm_xcept
+4a08e0   prockeywords
+424154   promote_type
+48507e X pstrcat
+4850c4 X pstrchr
+484fcc X pstrcmp
+485034 X pstrcpy
+48516e   pstrlen
+484f6e X pstrncmp
+485064 X pstrncpy
+485107 X pstrrchr
+48518c X pstrstr
+5463b8 X push
+444f9f X push_complex_param
+44b350 X push_param
+44c76a X push_stackblock
+546400 X pushcount
+5467f0 X pushed
+546408 X pushedregs
+484857 X pushif
+546404 X pushpos
+48b02a X pushusing
+475571   put_code
+4777fd X put_exdata
+4778d6 X put_exfunc
+4779a3 X put_expfunc
+465b21 X put_ident
+4758b2   put_label
+461bad X put_sc
+4758dd   put_staticlabel
+461d3a X put_ty
+474ff6 X putamode
+496cb0 X putc
+496cc2 X putchar
+4748e3 X putconst
+477c35 X putexterns
+474cb8 X putlen
+474393 X putop
+474ed9 X putseg
+474260 X putsizedreg
+474734 X putsym
+46e29b X pwrof2
+498318 X qsort
+477026 X queue_floatval
+476fa1 X queue_muldivval
+491edf X quick_exit
+49814e X quicksort
+43c8e8 X radix36
+491313   raise
+49838c X rand
+540180 X rclist
+4983b4 X read
+498600 X realloc
+4b5a9c   recordingClassFunc
+4b5a90   recordingTemplate
+4a0f94 X referrorlvl
+469d3c X refloat
+4a04f8   regasize
+4a04f4   regdsize
+49144c X regdump
+4a04fc   regfsize
+5400dc X regimage
+485254 X regini
+487040 X registerBaseRTTI
+486ffe X registeredBaseRTTI
+546f14 X registered_rttis
+4a0da4   registers
+4a9690   reglst
+546ef8 X regpos
+5463e8 X regs
+46a054 X reint
+43283b X relation
+465900 X release_global
+465880 X release_local
+465a00 X release_oc
+465980 X release_opt
+49867c X remove
+47f1a6 X remove_peep_entry
+420cbc X repcallb
+4037be X repcse
+4032f2 X repexpr
+41518d X replaceAllSizes
+48f8d2 X replaceSize
+48f7e5 X replaceTemplateFunctionClasses
+47de77 X replacereg
+48370f X replacesegment
+40394a X repvoidassign
+401018   reserveregs
+54017c X reslist
+478d1d X resolveoffset
+4b3a44   rethrow_func
+5400b0 X retlab
+488b26 X retrundowns
+488b69 X retstmt
+41f99a X retvalsize
+485d2a X reuseaxdx
+485efe X reuseop
+498664 X rmdir
+476ca6   rundownseg
+51800c X rval
+4b33c8   save_mask
+4203af X sbll
+43151c   scalarnoncomplex
+43158c   scalarnonfloat
+402f18 X scan
+405e7c X scan_env
+4028ca X scan_for_inline
+4150d4 X scanbases
+4028fe X scanexpr
+49998c X scanf
+439a54 X scanforgoto
+456ee7 X scppinit
+48bc89   search
+48ba1f X search2
+4b5b48   searchTemplate
+487967 X searchkw
+5480bc X searchname
+402624 X searchnode
+4997e4 X searchpath
+545048   segclasses
+544ff8   segnames
+4a9e48 X segregs
+5452c4 X segs
+487af4 X selectscalar
+4190c1 X setRefFlags
+4a0384 X set_searchpath
+454bd9 X set_symbol
+48140f X setalias
+41ec23 X setbalance
+405dc2 X setfile
+405a38 X setglbdefs
+497e06 X setjmp
+4b7f20 X setjmp_used
+493396 X setmode
+417b9d   setthunkflags
+48d1bb X setunaltered
+49872c X setvbuf
+4325cc X shiftop
+49883a X signal
+47ef3f X single_bit
+4b5b58 X sizeoflastbit
+4a9e40 X skipsize
+4a1568 X skm_closebr
+4a1554   skm_closepa
+4a0ee4 X skm_decl
+4a0ea0   skm_declbegin
+4a0eac X skm_declclosebr
+4a0e78   skm_declclosepa
+4a0e8c X skm_declcomma
+4a0ec0   skm_declend
+4a0e64 X skm_declopenpa
+4ac6b8 X skm_openpa
+4ac6c8 X skm_semi
+4a9978 X skm_semicolon
+4a0ed4 X skm_tempend
+4ac6d4 X skm_tocase
+4913ae   sleep
+4892fd X snp_line
+499826 X snprintf
+4988e8 X sopen
+45534f X sortcmpsigned
+45539a X sortcmpunsigned
+498faa X spawnl
+498fc6 X spawnle
+499017 X spawnlp
+499033 X spawnlpe
+499455 X spawnv
+499471 X spawnve
+499492 X spawnvp
+4994ae X spawnvpe
+499860 X sprintf
+4983aa X srand
+4b3628   srcfile
+4817fa X srchpth
+4816bd X srchpth2
+4a965c X sreg
+5463f4 X sregs
+4999a5 X sscanf
+4a04ac   stackadd
+5400b8 X stackframeoff
+4a04b0   stackmod
+5400b4 X startlab
+476bf0   startupseg
+48a60d X statement
+5481c0 X statictemplate
+4a04f0   stdaddrsize
+4a14b8 X stdbool
+4a1484 X stdchar
+4a056c   stdcomplex
+4a070c X stdconst
+4a04bc X stddefalignment
+4a05a0   stddouble
+4a04e8   stddoublesize
+4a06d8   stdenum
+4a04c0   stdenumsize
+4a0504   stdfloat
+4a04e4   stdfloatsize
+4a14ec   stdfunc
+4a0538   stdimaginary
+4a07dc   stdint
+4a04d0   stdintsize
+4a04c8   stdinttype
+4a04ec   stdldoublesize
+4a0810   stdlongdouble
+4a063c   stdlonglong
+4a04e0   stdlonglongsize
+4a04dc   stdlongsize
+4a0878   stdlrcomplex
+4a0844   stdlrimaginary
+4a1450 X stdmatch
+4a046c   stdmemberptrsize
+545798   stdpragmas
+4a0608   stdrcomplex
+4a04c4   stdretblocksize
+4a05d4   stdrimaginary
+4a04d4   stdshortsize
+4a0740   stdstring
+4a08ac   stduns
+4a0670   stdunsigned
+4a06a4   stdunsignedlonglong
+4a04cc   stdunstype
+4a141c X stdvoid
+4a1520   stdvoidfunc
+4a04d8   stdwchar_tsize
+4a07a8   stdwstring
+487b2b X stmtini
+4a02ec X stoponerr
+49c9ce X strcat
+49ca0c X strchr
+49ca28   strcmp
+49eafd X strcmpi
+49ca7e   strcpy
+49cae8 X strdup
+49e775 X strftime
+49ea82 X stricmp
+476575 X stringlit
+43c001 X stripdigraph
+43c0ef X striptrigraph
+49ec7a X strlen
+49ecaa X strlwr
+49ed12 X strncmp
+49ef00 X strncmpi
+49ed3e X strnicmp
+49f0c8 X strrchr
+49f10a X strstr
+5452a8   strtab
+49c75f X strtod
+49c78f X strtof
+492b9c X strtoimax
+492c36   strtol
+49c6ef X strtold
+492be9 X strtoll
+492c5e X strtoul
+492c11 X strtoull
+492bc4 X strtoumax
+4a04b4 X strucadd
+4a04b8 X strucmod
+4097fb X structbody
+4b5a88   structlevel
+49f146 X strupr
+4062b0 X summary
+546f38 X switchbreak
+48b42d X switchfromnamespace
+4886ff X switchstmt
+48b20a X switchtonamespace
+4b7f88 X sym_charindex
+48adae X symini
+5453b8 X sys_inc
+4a0380   sys_searchpath
+547f74   tagtable
+4a0f44   tail
+48bda6 X tcsearch
+485961 X temp_axdx
+4b5a94 X templateFunc
+547f70   templateFuncs
+4b5a98   templateLookup
+48f878 X templateMatchCheck
+5481c4 X templatePrefix
+5481cc X templateSP
+4155ff X templateWade
+48c4a2 X template_init
+48c4df X template_rundown
+4ad550 X tenpowers
+4b7f14 X thisenode
+547f68 X thisnamespace
+4b7ef4   thissp
+4b3a40   throw_func
+418645   thunkConstructors
+418783 X thunkCopyConstructors
+418893   thunkDestructors
+49f1ae X time
+4832e1 X timemac
+48d209 X tlookup
+48d270 X tlookuptp
+4a9c04   tn_char
+4a9c34   tn_class
+4a9c30   tn_const
+4a9c24   tn_double
+4a9c1c   tn_ellipse
+4a9c40   tn_fcomplex
+4a9c20   tn_float
+4a9c08   tn_int
+4a9c0c   tn_long
+4a9c28   tn_longdouble
+4a9c10   tn_longlong
+4a9c48   tn_lrcomplex
+4a9c44   tn_rcomplex
+4a9c14   tn_short
+4a9c38   tn_struct
+4a9c3c   tn_union
+4a9bf8 X tn_unnamed
+4a9c18   tn_unsigned
+4a9c00   tn_void
+4a9c2c   tn_vol
+49242d X toascii
+49216e   tolower
+4277e3 X tostring
+4a1410   total_errors
+4921ad   toupper
+4635fe X tplPlaceholder
+41ef30 X tplskm
+451e4b   truejp
+43e5d3 X truncateFloat
+546f3c X try_block_list
+48a418 X trystmt
+48ef2a X tsname
+4723fa   typedconsts
+4b3a38   typeinfo_class
+490880 X typenum
+4902d8 X typenum2
+4b5aa4   typequal
+48bfaf X typesearch
+49f232 X tzset
+4f7f96   unalteredline
+42ea25 X unary
+4b7e48   undef
+482700 X undef2
+49f238 X ungetc
+547fa8 X unique_namespace_num
+4986b8 X unlink
+48c346 X unlinkTag
+464515 X unmang1
+4652da   unmangle
+421f98 X unnamed_search
+4b5aa8 X unnamedstructcount
+4856a8 X unpush
+490917 X usage
+4a0468   usage_text
+4b7f34   used_alloca
+415bb7   using_keyword
+4b7f64   varlisthead
+4b7f68   varlisttail
+4b33f0   version
+493b42   vfprintf
+499acd X vfscanf
+54539c X virtualFirst
+5453a0 X virtualLast
+5400f8   virtualdata
+5481d0 X virtualfuncs
+403d79 X voidAssign
+4027cb X voidall
+40273c X voidauto
+401eb4 X voidexpr
+40225f   voidfloat
+40278c X voidlref
+498135 X vprintf
+499ae5 X vscanf
+49987d X vsnprintf
+49996f X vsprintf
+499a45 X vsscanf
+4b5b98 X vtabhead
+415691 X wadeTemplateArg
+4a0fa4 X warnarray
+41c86e X warning_setup
+49f322 X wcrtomb
+487be3 X whilestmt
+4a9bb8 X winc0
+4a9b98 X winflags
+4054d6 X winmode_setup
+49f412 X write
+4781ce X write_to_seg
+44056b X xIntToFloat
+4657c5   xalloc
+4868f6 X xceptinit
+546f18 X xceptoffs
+4768fe X xconstseg
+4a9cf8 X xlate_tab
+44383c X xlvalue
+4769b4   xstringseg
+5485ac X xxctxt
+49f815 X checkedscale
+49f808 X checkinvalid
+49f9bd X clearmath
+49f8ea X domainerr
+49f863 X invalid
+4ad68a X large_t
+497fed   memcpy_x
+49f7c8 X mnegeerr
+49f7d4 X mnegerr
+49f891 X overflow
+4ad670 X poptemp
+49f797 X sinularerr
+40100f   startupStruct
+49ca82 X strcat_fin
+49ca30 X strcmp_x
+49f748 X trigdomain
+49f9ae X wrapcomplex
+49f911 X wrapmath
+
+Publics By Value
+
+40100f   startupStruct
+401018   reserveregs
+401249 X loadds
+4012b0   allocate
+401a2a   loadregs
+401c88 X asm_scannode
+401d41 X asm_scan1
+401d5c   asm_scan
+401db4 X asm_repnode
+401eb4 X voidexpr
+40225f   voidfloat
+40237b X asm_repcse1
+402396   asm_repcse
+4023ee   equalnode
+402624 X searchnode
+402655 X enternode
+40273c X voidauto
+40278c X voidlref
+4027cb X voidall
+4028ca X scan_for_inline
+4028fe X scanexpr
+402f18 X scan
+403146 X exchange
+403165 X desire
+4031ca X bsort
+4032f2 X repexpr
+4037be X repcse
+40394a X repvoidassign
+403d79 X voidAssign
+403f44 X allocstack
+4040fd   opt1
+404552   parse_args
+404700 X abspath
+40486f   browse_init
+404887   browse_startfunc
+404942   browse_endfunc
+4049c6   browse_startfile
+404a4c   browse_variable
+404b3a   browse_define
+404bc9   browse_blockstart
+404bfc   browse_blockend
+404c30 X main
+4054d6 X winmode_setup
+405603 X bool_setup
+4056e7 X codegen_setup
+4057c4 X optimize_setup
+4058fb X err_setup
+405932 X incl_setup
+4059d2 X def_setup
+405a19 X output_setup
+405a38 X setglbdefs
+405cbe X InsertAnyFile
+405dc2 X setfile
+405e05 X outputfile
+405e7c X scan_env
+405f1a X parse_arbitrary
+406017 X parsefile
+4060b5 X addinclude
+406154 X parseenv
+406167 X parseconfigfile
+406256 X dumperrs
+4062b0 X summary
+40635d X ctrlchandler
+40636c X internalError
+406380 X confcodegen
+4064e9 X confsetup
+4064f4   alignment
+4066fc   getalign
+406734   getautoval
+406739   funcvaluesize
+40673c X installCPPBuiltins
+4068e6 X dbginit
+406b01 X numeric_leaf
+406b2a X debug_outputpointer
+406dfe X debug_outputref
+407b33 X debug_outputenum
+407d37 X debug_outputtypell
+407eff X debug_outputtypedef
+408053 X debug_outputtype
+408161   debug_outfunc
+40819e   debug_beginblock
+4087a9 X dumptypes
+4087fa   debug_endblock
+40925a   debug_outdata
+4094fd   debug_dumpglobaltypedefs
+4097a8 X nexttagname
+4097fb X structbody
+40a8bf X declini
+40a985   imax
+40a998 X isfunc
+40a9bc   litlate
+40a9eb   maketype
+40aa34   cponetype
+40aaa3   copytype
+40abba   parsetype
+40ad1a   decl
+40cf9c   makesym
+40cfdb X overloadoperator
+40d1c0   decl1
+40e8d3 X isclassarg
+40e934 X CheckOverloadedArgs
+40eddc   do_constructor
+40f13c   do_destructor
+40f499   actualexpr
+40f4f7   conspair
+40f8a1   decl2
+410928 X decl3
+410fe8 X bitsize
+411060 X oksize
+4110d4 X checkDefaults
+411179 X basedeclare
+413de2 X declare
+413e49 X declare2
+413ec7 X declbegin
+413f3a X declenum
+41426d X enumbody
+414697 X doreclone
+4146f6 X declstruct
+4150d4 X scanbases
+41514c X crossrefbaseclasses
+41518d X replaceAllSizes
+415335 X check_used
+415439 X compile
+4154c5   insertTemplateChar
+4155ff X templateWade
+415691 X wadeTemplateArg
+415840 X createTemplate
+415bb7   using_keyword
+415c26   dodecl
+416691   blockdecl
+4166a5   doargdecl
+416d18 X defclassini
+416d7c   SetExtFlag
+416de5   copysym
+417247 X loadclassdata
+417552 X insertVirtualData
+4176b1 X addvtabentry
+41792a X classerrs
+4179a7 X conscall
+417b9d   setthunkflags
+417c05 X curcons
+417d9b X prevcons
+417f35 X embeddedcons
+41817a X lookupcopycons
+418214 X prevcopycons
+418323 X embeddedcopycons
+418645   thunkConstructors
+418783 X thunkCopyConstructors
+418893   thunkDestructors
+418a2f X CreateBaseConstructor
+418d57   classbaseasn
+4190c1 X setRefFlags
+4190f9   RefErrs
+419158 X gen_vtab
+419345   doeinit
+4193e1 X einittype
+41962e X einitarray
+419fa9 X einitunion
+41a144 X einitstruct
+41a510 X ecppfloat
+41a584 X ecppint
+41a66c X einitfcomplex
+41aacd X einitlrcomplex
+41af2e X einitrcomplex
+41b38f X einitfloat
+41b46f X einitlongdouble
+41b54f X einitdouble
+41b62f X einitchar
+41b70f X einitshort
+41b7ef X einituchar
+41b8cf X einitushort
+41b9af X einitenum
+41ba8f X einitint
+41bb6f X einitlong
+41bc4f X einituint
+41bd2f X einitulong
+41be0f X einitlonglong
+41beef X einitulonglong
+41bfcf X einitref
+41c268 X edopointer
+41c713 X einitpointer
+41c730 X einitfarpointer
+41c818 X einitpointerfunc
+41c836 X initerr
+41c86e X warning_setup
+41c919   diag
+41c9f7 X getpunct
+41caaa X printerr
+41eb0a   lferror
+41ebaf X basicskim
+41ebe2 X newbalance
+41ec23 X setbalance
+41eee3   expskim
+41ef30 X tplskm
+41ef3f   basicerror
+41f231 X Error
+41f240   generror
+41f266   gensymerror
+41f2bb   genfuncerror
+41f3ba   genfunc2error
+41f4ab   genclasserror
+41f530   genclass2error
+41f5f9   genmismatcherror
+41f6e2   doubleerr
+41f76a   expecttoken
+41f7ab   generrorexp
+41f7d8   gensymerrorexp
+41f826   expecttokenexp
+41f874 X exprini
+41f984   basictype
+41f99a X retvalsize
+41fb71   makenode
+41fbb1   makeintnode
+41fbe2   deref
+420337 X checkstructconst
+4203af X sbll
+420802 X cbll
+4208c2 X make_callblock
+420c37 X immed_callblock
+420cbc X repcallb
+421128   dummyvar
+4212d3   isintconst
+421320   isfloatconst
+42133f   isimaginaryconst
+42135e   iscomplexconst
+42137d   matchreflvalue
+4213cc   declRef
+421f98 X unnamed_search
+42200b X nameref
+4239d1   cppcast
+424154   promote_type
+42488a   gatherparms
+424bb2 X checkparmconst
+424ca9 X copynode
+424cdc   copy_enode
+425024 X copy_default
+4253e3   FindMemberPointer
+425634   parameter_rundown
+425c34   checkexactpointer
+425cbf   parmlist
+427214   floatrecurse
+42754d X floatcheck
+42756b   castbegin
+4277e3 X tostring
+4279ac   onefunc
+428706 X complex_functions
+4287a6 X doalloca
+429c23 X donew
+42a21c X dodelete
+42a413 X docppcasts
+42a912 X dotypeid
+42ad5b X dooperator
+42b003 X dothrow
+42b3a9 X primary
+42e7fa   isstructured
+42e81c   castvalue
+42e89e   lvalue
+42e9ca X pointermode
+42ea25 X unary
+42fe0e X makeparam
+42fe7d X mathoverload
+4305d4 X absrank
+430692 X ambigcontext
+4306d4 X inttype
+43073a X forcefit
+431016 X asnfit
+431494   isscalar
+43151c   scalarnoncomplex
+43158c   scalarnonfloat
+4315f0 X checknp
+431687 X isunsignedresult
+431740 X multops
+431bd7 X addops
+4325cc X shiftop
+43283b X relation
+432af4 X equalops
+432e0b X binop
+433025 X bitand
+43303f X bitxor
+433059 X bitor
+433073 X andop
+43308d X orop
+4330a7 X conditional
+433311   autoasnop
+434344 X asncombine
+4345af X checkConstClass
+43467a   asnop
+435b8e   exprnc
+435cf9 X commaop
+435dd1   expression
+435f1e   AddExt
+435f4e   StripExt
+435f6e X EXEPath
+435f9d   HasExt
+435fe0   fatal
+436036   SetFPFZero
+43605d X SetFPFInfinity
+436084 X SetFPFNaN
+4360b1   ValueIsOne
+4360fc   FPFEQ
+436176   FPFGT
+436277   FPFGTE
+436319 X IsMantissaZero
+436338 X IsMantissaOne
+436375 X Add16Bits
+4363ba X Sub16Bits
+4363ff X ShiftMantLeft1
+436440 X ShiftMantRight1
+43647f X StickyShiftRightMant
+43655d X normalize
+43662c X denormalize
+4366e9 X RoundFPF
+4367e3 X choose_nan
+43685a   AddSubFPF
+436d76   MultiplyFPF
+4373fe   DivideFPF
+437b72   LongLongToFPF
+437c3f   UnsignedLongLongToFPF
+437ce8 X FPFTensExponent
+437d01   FPFMultiplyPowTen
+437e5c   FPFToString
+4384d7   FPFToLongLong
+4386a7   FPFToFloat
+4387e5   FPFToDouble
+438a71   FPFToLongDouble
+438d18   LongDoubleToFPF
+438e2c   FPFTruncate
+43981b X floatexpr
+439856 X insertfriend
+4398f2 X friendsearch
+43994c   isfriend
+439a54 X scanforgoto
+439e21 X funcini
+439e54 X declfuncarg
+43a66b   check_funcused
+43a76b X dump_instantiates
+43a80a   funcbody
+43ae21 X makeint
+43ae93   addrundown
+43aee3   addblocklist
+43af9b X block
+43b540   gather_labels
+43b5ee   compoundblock
+43b870 X getline
+43bcf5 X initsym
+43bdcd   lineToCpp
+43c001 X stripdigraph
+43c0ef X striptrigraph
+43c1d0 X getstring
+43c2bd   getch
+43c46d   getid
+43c646 X getsch
+43c8e8 X radix36
+43c928 X getbase
+43cce4   getnum
+43d7ca   getsym2
+43e1e1   getsym
+43e354   needpunc
+43e380 X needpuncexp
+43e3ac   backup
+43e3de   floatconvpos
+43e51d X defseg
+43e5d3 X truncateFloat
+43e625 X chksize
+43e69e X fstack
+43e6c6 X make_muldivval
+43e71a X make_floatconst
+43e972   make_label
+43e9c1   makesegreg
+43e9db   make_immed
+43ea2a X make_immedt
+43eac5   make_offset
+43eae6   make_stack
+43eb27 X do_ftol
+43ed8f X complexstore
+43ef5e X floatstore
+43f10b X complexload
+43f297 X floatload
+43f3ba X is_memory
+43f3db X bit_load
+43f5d7 X bit_store
+43f9cc X FloatToInt
+43facd X FloatToLower
+43fcb4 X IntToLower
+440044 X FloatToHigher
+4401c2 X QuadToHigher
+4403a1 X FarPtrToHigher
+44056b X xIntToFloat
+440707   IntToHigher
+440967 X Normalize
+440ee3   do_extend
+4410d5 X isshort
+44111e X isbyte
+441165 X indx_data
+4411db X doindex
+441392 X gen_index
+44238c X gen_deref
+44287d X gen_unary
+442b1b X gen_complexadd
+443342 X gen_fbinary
+44383c X xlvalue
+44393f X gen_64bin
+443dc3 X gen_segadd
+443ec2 X gen_xbin
+444045 X gen_binary
+444163 X doshift
+4447d4 X do64shift
+444edf X gen_shift
+444f9f X push_complex_param
+4450c3 X gen_complexdiv
+445617 X divprepare
+4456dc X divintoeax
+445825 X dodiv
+445a81 X do64div
+445cfd X gen_modiv
+445f51 X gen_pdiv
+445f81 X gen_complexmul
+4467a2 X do64mul
+446991 X gen_pmul
+4469bf X gen_mul
+446c4b X gen_hook
+446fa0 X gen_asunary
+44735d X gen_asadd
+447a39 X gen_aslogic
+447e55 X gen_asshift
+4480b2 X gen_asmul
+448658 X gen_asmodiv
+448c93 X mov1
+448cd3 X mov2
+448de0 X mov3
+448f82 X amode_moveblock
+449c6a X gen_moveblock
+449ea8 X amode_clearblock
+44a0ac X gen_clearblock
+44a0ee X gen_assign
+44a8ec X gen_refassign
+44abe6 X gen_aincdec
+44b350 X push_param
+44c76a X push_stackblock
+44cd5f X gen_parms
+44ce11 X parmsize
+44d079 X gen_tcall
+44ed4e   natural_size
+4500d6 X gen_relat
+45027b X gen_compare
+451e4b   truejp
+45220c   falsejp
+4546dc   gen_expr_external
+454725   gen_void_external
+45478c   makedreg
+4547ac X makefreg
+4547cc X make_direct
+4547e5 X make_strlab
+454810 X genwhile
+454947 X gen_for
+454a8d X genif
+454b2c X gendo
+454bd9 X set_symbol
+454c64 X call_library
+454c93 X count_cases
+454e08 X gather_cases
+4550f4 X analyzeswitch
+4551a8 X bingen
+45534f X sortcmpsigned
+45539a X sortcmpunsigned
+4553e5 X genbinaryswitch
+45546e X gencompactswitch
+4557d0 X gensimpleswitch
+455a07 X genxswitch
+455c7b X AddProfilerData
+455d68 X SubProfilerData
+455e17 X ThunkAddPeep
+455e8a X ThunkUncommittedStack
+455f16 X genreturn
+456977 X gen_tryblock
+456c7c X genstmt
+456ee7 X scppinit
+456ee8 X gen_mp_virtual_thunk
+457110 X gen_vsn_virtual_thunk
+45722c   genfunc
+4575a8 X inasmini
+457cdd X asm_enterauto
+4587c7 X isrm
+4587f3 X getimmed
+45882f X asm_op
+45a92a   asm_statement
+45ac7a X initini
+45acd0 X initrundown
+45b908 X cppinitinsert
+45b952 X cpprundowninsert
+45b97e X cppinitassign
+45ba4b X insert_decl_sp
+45baff X ReshuffleDeclsp
+45bb59 X insertSpace
+45bbb0 X doinit
+45c0d6 X inittype
+45c652 X initarray
+45cfbe X initunion
+45d29a X initstruct
+45d835 X makelabel
+45d874 X makeref
+45d8de X makestorage
+45d97d X agflush
+45da57 X agbits
+45dba0 X cppfloat
+45dea7 X arr
+45dee8 X intconstinit
+45e5ed X cppint
+45e7a1 X initfcomplex
+45e9cb X initlrcomplex
+45ebf5 X initrcomplex
+45ee1f X initfloat
+45ee71 X initlongdouble
+45eec3 X initdouble
+45ef15 X initchar
+45ef23 X initbool
+45ef95 X initshort
+45efa9 X inituchar
+45efb7 X initushort
+45efc9 X initint
+45efdd X inituint
+45efef X initlong
+45f003 X initulong
+45f015 X initlonglong
+45f029 X initulonglong
+45f03b X initenum
+45f0b0 X initmemberptr
+45f239 X initref
+45f433 X dopointer
+45f701 X initpointer
+45f792 X initfarpointer
+45f79b X initpointerfunc
+45f82c X endinit
+45f8a6 X inlineinit
+4605fa   doinline
+46090e   intexpr
+460985 X IntrinsIni
+4609f4 X SearchIntrins
+4612c8 X inport
+461426 X outport
+4615ac X HandleIntrins
+46168e X InsertExternalFile
+4617f1 X InsertOutputFile
+461803 X RunExternalFiles
+461bad X put_sc
+461d3a X put_ty
+46229c X list_var
+46259e X list_table
+46261c   cpp_unmang_intrins
+462781 X funcrefinsert
+4628c7 X matchone
+462d98 X funciterate
+462f33 X funcovermatch2
+463157   funcovermatch
+4631ae X castmatch
+4632fe X lookupname
+4633b0 X cppval
+4635fe X tplPlaceholder
+463673   cpponearg
+463ed4   cppargs
+463f0d X cppmangle
+464031   mangleclass
+4640f7   fullcppmangle
+464515 X unmang1
+4652da   unmangle
+46550d X funcwithns
+465592 X memini
+4657c5   xalloc
+465805 X oalloc
+465822 X ocalloc
+465880 X release_local
+465900 X release_global
+465980 X release_opt
+465a00 X release_oc
+465a80 X mem_summary
+465af8 X obj_init
+465b21 X put_ident
+465b98 X emit_record
+465c1e X omfFileName
+465cf6 X omfTranslatorName
+465dd8 X omfFileTime
+465fc6 X omfDebugMarker
+46606d X omfLNames
+4661ff X omfLibMod
+46632e X omfSegs
+466427 X omfComDefs
+46659c X omfGroups
+4666d9 X FlushExtBuf
+46678e X omfputext
+466b47 X omfExtDefs
+466e5b X omfputimport
+466fc7 X omfImports
+467081 X omfgetseg
+4671d4 X omfputpub
+467379 X omfpubdumphash
+467411 X omfPublics
+46748a X omfputexport
+4675b9 X omfExports
+4678a8 X omfPassSeperator
+46794a X omfFixups
+467dc4 X omfComDefData
+4681ae X omfData
+468744 X omfSourceFile
+4688cb X omfLineNumbers
+468a0d X omfEmitLineInfo
+468a62 X omfModEnd
+468af4 X output_obj_file
+468d8c X constoptinit
+469afa X CastToInt
+469c50 X CastToFloat
+469cf5 X IntToFloat
+469d3c X refloat
+46a054 X reint
+46a19b X dooper
+46e29b X pwrof2
+46e356 X mod_mask
+46e382 X addaside
+46e3ac X opt0
+4709cb X enswap
+4709e4 X fold_const
+4723fa   typedconsts
+4741dc   opt4
+474260 X putsizedreg
+4742cd X outcodeini
+47431e   nl
+474354 X outop
+474393 X putop
+4746db X dumpns
+474734 X putsym
+4748e3 X putconst
+474cb8 X putlen
+474d39 X pointersize
+474ed9 X putseg
+474f30 X islabeled
+474ff6 X putamode
+475571   put_code
+475825   gen_strlab
+4758b2   put_label
+4758dd   put_staticlabel
+47597f X genfloat
+475aef X gendouble
+475c5f X genlongdouble
+475dcf X genstring
+475e4e   genbyte
+475f1d X genbool
+475f29 X genword
+475ff8   genlong
+4760b6 X genint
+4760c2 X genenum
+4760ce X genlonglong
+4761af   gensrref
+4761ce   genref
+47632c X genpcref
+47633e X genstorage
+4763ec   gen_labref
+4764aa   gen_labdifref
+476575 X stringlit
+476629 X dumplits
+47673e X exitseg
+476829   cseg
+4768fe X xconstseg
+4769b4   xstringseg
+476a6a X dseg
+476b2d X bssseg
+476bf0   startupseg
+476ca6   rundownseg
+476d5c   gen_virtual
+476e5c   gen_endvirtual
+476f13 X align
+476fa1 X queue_muldivval
+477026 X queue_floatval
+4770e0 X dump_muldivval
+4774c0 X dump_browsedata
+4774db X asm_header
+47774e X globaldef
+4777b6   output_alias
+4777fd X put_exdata
+4778d6 X put_exfunc
+4779a3 X put_expfunc
+477c35 X putexterns
+477e54 X outcode_file_init
+477eac X outcode_func_init
+477f0f X InsertLabel
+477fac X LabelAddress
+477ffd X LabelSeg
+478033 X InsertLine
+478085 X gettab
+4780cb X emit
+4781ce X write_to_seg
+478224 X gen_symbol_fixup
+4782a1 X gen_label_fixup
+47831e X outcode_dump_muldivval
+4784af X outcode_dump_browsedata
+4784c4 X outcode_dumplits
+4785ef X outcode_genref
+4786c7 X outcode_gen_labref
+4787a4 X outcode_gen_labdifref
+4787ee X outcode_gensrref
+4788fb X outcode_genstorage
+47896b X outcode_genfloat
+4789a1 X outcode_gendouble
+4789d7 X outcode_genlongdouble
+478a0d X outcode_genstring
+478a26 X outcode_genbyte
+478a3c X outcode_genword
+478a52 X outcode_genlong
+478a68 X outcode_genlonglong
+478aa8 X outcode_align
+478b43 X outcode_put_label
+478c0b X outcode_start_virtual_seg
+478c67 X outcode_end_virtual_seg
+478c68 X GetSymRef
+478d1d X resolveoffset
+478e49 X asmrm
+479234 X asmfrm
+47927c X AOP0
+4792c3 X AOP1
+479363 X AOP2
+479448 X AOP3
+4794ea X AOP4
+4795e5 X AOP5
+479686 X AOP6
+479809 X AOP7
+4798d0 X AOP8
+479989 X AOP9
+4799ff X AOP10
+479a7e X AOP11
+479be9 X AOP12
+479d2a X AOP13
+479e28 X AOP14
+479ff8 X AOP15
+47a114 X AOP16
+47a198 X AOP17
+47a1f7 X AOP18
+47a266 X AOP19
+47a301 X AOP20
+47a373 X AOP21
+47a428 X AOP22
+47a4dd X AOP23
+47a5d1 X AOP24
+47a6d3 X AOP25
+47a812 X AOP26
+47a88e X AOP27
+47a8c6 X AOP28
+47a9bf X AOP29
+47aa01 X AOP30
+47ab77 X AOP31
+47ad25 X AOP32
+47adef X AOP33
+47af1e X AOP34
+47afc1 X AOP35
+47b053 X AOP36
+47b0c3 X AOP37
+47b1cf X AOP38
+47b233 X AOP40
+47b2f5 X AOP39
+47b334 X AOP41
+47b3df X AOP42
+47b4ba X AOP43
+47b518 X AOP44
+47b585 X AOP45
+47b59d X AOP46
+47b604 X AOP47
+47b65f X AOP48
+47b6bc X AOP50
+47b7da X AOP49
+47b812 X AOP51
+47b8a6 X AOP52
+47b9a4 X AOP53
+47b9d4 X AOP54
+47ba1a X AOP55
+47ba8d X AOP56
+47bb50 X AOP57
+47bb79 X AOP58
+47bc11 X AOP59
+47bca9 X AOP60
+47bd2c X AOP61
+47bdd5 X AOP62
+47be6d X AOP63
+47bef0 X AOP64
+47bf84 X AOP65
+47c0d0 X outcode_AssembleIns
+47c421 X outcode_optimize
+47c5fc X outcode_dumpIns
+47cb9c   outcode_gen
+47cc5c X oprintf
+47cc78 X oinit
+47cc79 X oflush
+47cc85 X oputc
+47cc9b X owrite
+47ccc0 X peep_jmp
+47cdf8 X peepini
+47ce0d   copy_addr
+47ceb5   gen_code
+47d0bc X gen_code3
+47d2a3   gen_codes
+47d2e3 X gen_coden
+47d348 X gen_codefs
+47d3c2 X gen_codef
+47d438 X gen_codes2
+47d46c X gen_code2
+47d4b4 X gen_codelab
+47d51e X gen_branch
+47d533 X gen_line
+47d5a5 X gen_comment
+47d60f   add_peep
+47d65c X gen_label
+47d6bf X flush_peep
+47d752 X peep_add
+47d864 X peep_sub
+47d98e X makeshl
+47da5f X peep_lea2
+47da60 X peep_lea
+47dcb7 X peep_lea3
+47dd86 X peep_signextend
+47de77 X replacereg
+47debd X peep_test
+47df93 X peep_cmp
+47e0dc X peep_push
+47e1d6 X peep_mov
+47e792 X peep_and
+47e9dc X peep_or
+47ea66 X peep_neg
+47eb45 X peep_btr
+47eba6 X peep_uctran
+47ebfb X peep_label
+47edf7 X novalue
+47ee0a X equal_address
+47ef3f X single_bit
+47ef6d X peep_prefixes
+47efe7 X peep_call
+47f0f4 X peep_pop
+47f1a6 X remove_peep_entry
+47f1cb X opt3
+47f84e X definsert
+47fa36 X fullqualify
+47faee X preprocini
+47fbb7 X allocateMacroReplaceBuffer
+47fc27 X freeMacroReplaceBuffer
+47fc57 X preprocess
+48015f X doerror
+48020f X getauxname
+48040a X dopragma
+4812d9 X Compile_Pragma
+48140f X setalias
+481443 X dumpstartups
+48157e X doline
+4816bd X srchpth2
+4817fa X srchpth
+4818c3 X doinclude
+481f08 X plitlate
+481f35 X glbdefine
+481fdf X dodefine
+482671 X doundef
+482700 X undef2
+48273d X getdefsym
+482839 X defid
+482917 X defstringizing
+482c43 X defreplaceargs
+482fa6 X deftokenizing
+483193 X cnvt
+4831bf X filemac
+483215 X datemac
+483281 X dateisomac
+4832e1 X timemac
+483346 X linemac
+483393 X defmacroreplace
+4833d2 X SetupAlreadyReplaced
+483546 X ppNumber
+48370f X replacesegment
+4845db X defcheck
+484857 X pushif
+4848aa X popif
+4848f4 X ansieol
+484967 X doifdef
+484b0e X doif
+484c40 X doelif
+484d8d X doelse
+484e6d X doendif
+484f6e X pstrncmp
+484fcc X pstrcmp
+485034 X pstrcpy
+485064 X pstrncpy
+48507e X pstrcat
+4850c4 X pstrchr
+485107 X pstrrchr
+48516e   pstrlen
+48518c X pstrstr
+485254 X regini
+485295 X SetFuncMode
+485296 X GenPush
+48530c X GenPop
+485382 X PushRegs
+48542d X PopRegs
+4854f6 X InitRegs
+485537 X ChooseRegs
+48567d X MarkRegs
+4856a8 X unpush
+4857ba X ReleaseWouldPop
+4857ee X ReleaseRegs
+485961 X temp_axdx
+485987 X RealizeSreg
+4859f4 X RealizeDreg
+485afc X loadaxdx
+485d2a X reuseaxdx
+485efe X reuseop
+485fbd X FreeUnused
+485fd6 X axdx_tolower
+4867da X FreeReg
+486852 X FreeInd
+4868f6 X xceptinit
+4869d8 X getxtsym
+486cb0 X genthrowdata
+486d1f X dumpXceptBlock
+486dde X dumpname
+486e81 X dumpdest
+486ed8 X dumpClassData
+486f15 X dumpSymData
+486fb9 X insertRTTI
+486ffe X registeredBaseRTTI
+487040 X registerBaseRTTI
+48706d X dumpClassRTTI
+487242 X dumpBaseRTTI
+48738a X dumpPointerRTTI
+48754b X dumpRTTI
+4875bf X dumpRTTIDescript
+4875f2 X dumpXceptTabs
+4877a0 X kwini
+487967 X searchkw
+487a0d X SearchPath
+487af4 X selectscalar
+487b2b X stmtini
+487b77 X doassign
+487be3 X whilestmt
+487d61 X dostmt
+487f1d X forstmt
+488384 X ifstmt
+4884e9 X casestmt
+4886ff X switchstmt
+4888ae X do_ret_constructor
+488ac6 X breakcontrundowns
+488b26 X retrundowns
+488b69 X retstmt
+489136 X breakstmt
+48918f X contstmt
+4891e6 X _genwordstmt
+48927b X exprstmt
+4892fd X snp_line
+48941b X dodefaultinit
+48958e X evaluateVLAtypedef
+489676 X createVarArray
+489a41 X doautoinit
+489cbe X compound
+489e68 X labelstmt
+489f84 X gotostmt
+48a095 X catchstmt
+48a418 X trystmt
+48a60d X statement
+48ab89 X cppblockedstatement
+48adae X symini
+48af74 X AddHash
+48afd8 X LookupHash
+48b02a X pushusing
+48b105 X aliasnamespace
+48b20a X switchtonamespace
+48b42d X switchfromnamespace
+48b454 X inject_namespace
+48b5ca X namespace_search
+48b81c X isaccessible
+48b8b9 X basesearch
+48ba1f X search2
+48bc89   search
+48bd0a X losearch
+48bda6 X tcsearch
+48bec3 X gsearch
+48bfaf X typesearch
+48c00f   insert
+48c346 X unlinkTag
+48c4a2 X template_init
+48c4df X template_rundown
+48d1bb X setunaltered
+48d209 X tlookup
+48d270 X tlookuptp
+48dd76 X InstantiateTemplateFuncDirect
+48e4ee X lookupTemplateFunc
+48e6a6 X instantiateTemplateFuncs
+48ee68 X getTemplateName
+48ef2a X tsname
+48f30e X lookupTemplateType
+48f7e5 X replaceTemplateFunctionClasses
+48f878 X templateMatchCheck
+48f8d2 X replaceSize
+48f939 X parseClassFuncs
+48faa0 X checkTemplateSpecialization
+48fb62 X exactype
+48fed2 X checktype
+49011a X checktypeassign
+4902d8 X typenum2
+490880 X typenum
+4908d8 X banner
+490917 X usage
+490980 X _LXDIVS
+490984   _LXDIVU
+49098b X _LXMODS
+490992   _LXMODU
+490a48   _LXMUL
+490a68 X _LXSAR
+490a8e   _LXSHL
+490ab6   _LXSHR
+490ade X __startup
+490d12 X __crtexit
+490d14 X __srproc
+490d64 X __fileinit
+490d91 X __closeall
+490dd0 X fcloseall
+490e20 X _fcloseall
+490e6c X __basefclose
+490f71 X fclose
+490f80   __GetDosErrno
+490f8c   __GetErrno
+490f98 X __threadinit
+490fa4 X __threadrundown
+490fb1 X __threadTlsAlloc
+491028 X __threadTlsFree
+4910a4 X __threadTlsFreeAll
+4910e0   __getRtlData
+4910fa X __ll_init
+491136 X __iob_func
+49113c X __getStream
+491160   __ll_enter_critical
+49116c   __ll_exit_critical
+491178 X _alloca_probe
+49117c   __substackp
+491261   _abort
+491313   raise
+4913ae   sleep
+491401 X __ll_cancelsleep
+49140c X _sleep
+491418 X _xceptinit
+491435 X _xceptrundown
+49144c X regdump
+491591 X __ll_sigsegv
+4916db X ___xceptionhandle
+4919a6 X _dos_close
+4919b4   __ll_close
+4919de X _dos_getftime
+491a20 X __convert_file_time
+491b6a X _dos_findfirst
+491c6c X _dos_findnext
+491cf4 X _dos_open
+491d48   __ll_open
+491dee X __ll_getenvsize
+491e28 X __ll_getenv
+491e9c X _Exit
+491eb9 X _exit
+491ecc   exit
+491edf X quick_exit
+491efc X __quickprocexit
+491f31 X at_quick_exit
+491f9b X __uio_rundown
+491fcf   __uiohandle
+492010   __uinewhandpos
+492038 X __ll_uioinit
+492086   _ftol
+4920ce X _status87
+4920dd X _clear87
+4920ee X _control87
+492138 X _fpreset
+49214f X _llfpinit
+492160   __ctype_init
+49216e   tolower
+4921ad   toupper
+4921ec X _tolower
+49222b X _toupper
+49226a X _ltolower
+4922a9 X _ltoupper
+4922e8 X isspace
+492305 X isblank
+492322 X isalpha
+49233f X ispunct
+49235c X islower
+492379 X isupper
+492396 X isprint
+4923b5 X isalnum
+4923d2 X isgraph
+4923f1 X isdigit
+49240e X isxdigit
+49242d X toascii
+492435 X __toascii
+49243d X isascii
+492458 X __isascii
+492473 X iscntrl
+492490 X _isctype
+4924b1 X __iscsymf
+4924d6 X __iscsym
+4924fc X __locale_reinit
+492516 X abort
+492524   __xstrtoimax
+492b9c X strtoimax
+492bc4 X strtoumax
+492be9 X strtoll
+492c11 X strtoull
+492c36   strtol
+492c5e X strtoul
+492c83 X atoll
+492ca5 X _atoi64
+492cc7 X atol
+492ce9 X atoi
+492d0c X calloc
+492d3e   close
+492da2 X _close
+492dae X __ll_chmod
+492f1c   fflush
+492f5a X flushall
+492f6b X _flushall
+492f7c   eof
+492fc3 X _eof
+49301c   __uio_clearerr
+493052   __readbuf
+493170   fgetc
+49330e X _fgetc
+49331a X getc
+493326 X getchar
+493333 X fgetchar
+493340 X _fgetchar
+49334e   __getmode
+493396 X setmode
+493429 X _setmode
+49343c X fgets
+49365d X __basefopen
+493a73 X fopen
+493a8c X fdopen
+493aa8 X _fdopen
+493ac8 X fileno
+493aeb X _fileno
+493b0e X _fsopen
+493b2a X fprintf
+493b42   vfprintf
+493c68 X fnd
+493c8d   __tensexp
+493d50 X fextract
+494379 X __onetostr
+495a3c X __fpclassifyl
+495a42 X __fpclassifyf
+495a48 X __fpclassify
+495a82 X __signbitl
+495a88 X __signbitf
+495a8e X __signbit
+495aa8 X fabsf
+495ab0 X fabsl
+495ab8   fabs
+4969cf X fextractdouble
+496a72 X ceilf
+496a7a X ceill
+496a82 X ceil
+496ac0 X div
+496ad8 X fputc
+496c9e X _fputc
+496cb0 X putc
+496cc2 X putchar
+496cd6 X fputchar
+496cea X _fputchar
+496cfe X fputs
+496f86   free
+497097   malloc
+497240 X __ll_malloc
+497273 X __ll_free
+497286 X fseek
+497360 X fwrite
+4975dc X getcwd
+497652 X _getcwd
+4976ce X getcurdir
+4976e0 X _dos_getpwd
+4977b4   getdisk
+4977c6 X _dos_getdrive
+49783e   getenv
+4978a4 X isatty
+4978d7 X _isatty
+497912   __ll_isatty
+497928 X imaxdiv
+4979e2 X localtime
+497a32   __getDaylight
+497a3d   __getTimezone
+497a48   __getTzName
+497ba0   __ll_tzset
+497c44 X gmtime
+497dcc X log10f
+497dd6 X log10l
+497de0 X log10
+497e06 X setjmp
+497e36 X longjmp
+497e66   lseek
+497eed X _lseek
+497f06   __ll_getpos
+497f38   __ll_seek
+497f9e X memchr
+497fb8 X memcmp
+497fde   memcpy
+497fed   memcpy_x
+498022 X memmove
+49804c   memset
+49809a   open
+4980db X _open
+49811c   printf
+498135 X vprintf
+49814e X quicksort
+498318 X qsort
+49838c X rand
+4983aa X srand
+4983b4 X read
+4985af X _read
+4985c8 X __ll_read
+498600 X realloc
+498664 X rmdir
+498670 X _rmdir
+49867c X remove
+4986b8 X unlink
+4986c4 X _unlink
+4986d0 X __ll_remove
+4986fe X __ll_rmdir
+49872c X setvbuf
+49883a X signal
+4988bc X __ll_signal
+4988e8 X sopen
+498be7 X _sopen
+498c06 X __ll_creat
+498c44 X __ll_shflags
+498c7e X __ll_uioflags
+498ca8 X __ll_writeable
+498ccc X chsize
+498d31 X _chsize
+498d44 X __ll_chsize
+498e96   __ll_write
+498ef4 X execl
+498f0d X execle
+498f43 X execlp
+498f5c X execlpe
+498faa X spawnl
+498fc6 X spawnle
+499017 X spawnlp
+499033 X spawnlpe
+499084 X _execl
+49909d X _execle
+4990eb X _execlp
+499104 X _execlpe
+499152 X _spawnl
+49916e X _spawnle
+4991bf X _spawnlp
+4991db X _spawnlpe
+4993eb X execv
+499404 X execve
+499420 X execvp
+499439 X execvpe
+499455 X spawnv
+499471 X spawnve
+499492 X spawnvp
+4994ae X spawnvpe
+4994cf X _execv
+4994e8 X _execve
+499504 X _execvp
+49951d X _execvpe
+499539 X _spawnv
+499555 X _spawnve
+499576 X _spawnvp
+499592 X _spawnvpe
+499637 X __ll_spawn
+4997e4 X searchpath
+499826 X snprintf
+499843 X _snprintf
+499860 X sprintf
+49987d X vsnprintf
+499950 X _vsnprintf
+49996f X vsprintf
+49998c X scanf
+4999a5 X sscanf
+499a2d X fscanf
+499a45 X vsscanf
+499acd X vfscanf
+499ae5 X vscanf
+49a312 X __strtoone
+49b40c X __scanf
+49b5cc X __xstrtod
+49c6ef X strtold
+49c725 X _strtold
+49c75f X strtod
+49c78f X strtof
+49c7bc X atof
+49c7e9 X _atold
+49c81c X copysignf
+49c839 X copysignl
+49c856 X _copysign
+49c874 X mbrtowc
+49c9ce X strcat
+49ca0c X strchr
+49ca28   strcmp
+49ca30 X strcmp_x
+49ca7e   strcpy
+49ca82 X strcat_fin
+49cae8 X strdup
+49cb15 X _strdup
+49e775 X strftime
+49e7b6   mktime
+49ea82 X stricmp
+49eafd X strcmpi
+49eb7c X _stricmp
+49ebfb X _strcmpi
+49ec7a X strlen
+49ecaa X strlwr
+49ecda X _strlwr
+49ed12 X strncmp
+49ed3e X strnicmp
+49ee1c X _strnicmp
+49ef00 X strncmpi
+49efe4 X _strncmpi
+49f0c8 X strrchr
+49f10a X strstr
+49f146 X strupr
+49f176 X _strupr
+49f1ae X time
+49f1dc X __ll_gettime
+49f232 X tzset
+49f238 X ungetc
+49f310 X _ungetc
+49f322 X wcrtomb
+49f412 X write
+49f730 X _write
+49f748 X trigdomain
+49f797 X sinularerr
+49f7c8 X mnegeerr
+49f7d4 X mnegerr
+49f808 X checkinvalid
+49f815 X checkedscale
+49f863 X invalid
+49f891 X overflow
+49f8ea X domainerr
+49f911 X wrapmath
+49f9ae X wrapcomplex
+49f9bd X clearmath
+49f9d0 X __matherr
+4a0020   __defsigtab
+4a02c8   floatregs
+4a02cc   dataregs
+4a02d0   addrregs
+4a02d8   inputFile
+4a02dc   listFile
+4a02e0   outputFile
+4a02e4   cppFile
+4a02e8   errFile
+4a02ec X stoponerr
+4a02f0 X clist
+4a02f4 X deflist
+4a02f8   prm_linkreg
+4a02fc X prm_stackcheck
+4a0300   prm_warning
+4a0304   prm_extwarning
+4a0308   prm_asmfile
+4a030c   prm_ansi
+4a0310   prm_c99
+4a0314   prm_listfile
+4a0318   prm_maxerr
+4a031c   prm_diag
+4a0320   prm_bss
+4a0324 X prm_cppfile
+4a0328   prm_revbits
+4a032c   prm_lines
+4a0330   prm_cplusplus
+4a0334   prm_cmangle
+4a0338   prm_trigraph
+4a033c   basear
+4a0340   basedr
+4a0344   basefr
+4a0348   prm_debug
+4a034c   prm_errfile
+4a0350   prm_profiler
+4a0354   prm_peepopt
+4a0358   prm_optmult
+4a035c   prm_intrinsic
+4a0360   prm_asmopt
+4a0364   prm_xcept
+4a0368   prm_quieterrors
+4a036c   prm_smartframes
+4a0370   prm_oldfor
+4a0374   prm_compileonly
+4a0378   prm_targettype
+4a037c   prm_searchpath
+4a0380   sys_searchpath
+4a0384 X set_searchpath
+4a0388 X file_count
+4a038c X ArgList
+4a0448 X PROGNAME
+4a044e X ENVNAME
+4a0454 X SOURCEXT
+4a0459 X GLBDEFINE
+4a0460 X OBJEXT
+4a0468   usage_text
+4a046c   stdmemberptrsize
+4a0470   prm_farkeyword
+4a0474   prm_fardefault
+4a0478   prm_masm
+4a047c   prm_nodos
+4a0480   prm_flat
+4a0484   prm_fasm
+4a0488   prm_nasm
+4a048c   prm_microlink
+4a0490 X prm_browse
+4a0494   prm_stackalign
+4a0498 X cf_maxaddress
+4a049c X cf_maxdata
+4a04a0 X cf_freeaddress
+4a04a4 X cf_freedata
+4a04a8 X cf_freefloat
+4a04ac   stackadd
+4a04b0   stackmod
+4a04b4 X strucadd
+4a04b8 X strucmod
+4a04bc X stddefalignment
+4a04c0   stdenumsize
+4a04c4   stdretblocksize
+4a04c8   stdinttype
+4a04cc   stdunstype
+4a04d0   stdintsize
+4a04d4   stdshortsize
+4a04d8   stdwchar_tsize
+4a04dc   stdlongsize
+4a04e0   stdlonglongsize
+4a04e4   stdfloatsize
+4a04e8   stddoublesize
+4a04ec   stdldoublesize
+4a04f0   stdaddrsize
+4a04f4   regdsize
+4a04f8   regasize
+4a04fc   regfsize
+4a0500   prm_dsnotss
+4a0504   stdfloat
+4a0538   stdimaginary
+4a056c   stdcomplex
+4a05a0   stddouble
+4a05d4   stdrimaginary
+4a0608   stdrcomplex
+4a063c   stdlonglong
+4a0670   stdunsigned
+4a06a4   stdunsignedlonglong
+4a06d8   stdenum
+4a070c X stdconst
+4a0740   stdstring
+4a07a8   stdwstring
+4a07dc   stdint
+4a0810   stdlongdouble
+4a0844   stdlrimaginary
+4a0878   stdlrcomplex
+4a08ac   stduns
+4a08e0   prockeywords
+4a0da4   registers
+4a0e00 X intrinsxlate
+4a0e60 X Cstr
+4a0e64 X skm_declopenpa
+4a0e78   skm_declclosepa
+4a0e8c X skm_declcomma
+4a0ea0   skm_declbegin
+4a0eac X skm_declclosebr
+4a0ec0   skm_declend
+4a0ed4 X skm_tempend
+4a0ee4 X skm_decl
+4a0f40   head
+4a0f44   tail
+4a0f90 X diagcount
+4a0f94 X referrorlvl
+4a0f98 X errlist
+4a0fa4 X warnarray
+4a1410   total_errors
+4a1418   expr_updowncount
+4a141c X stdvoid
+4a1450 X stdmatch
+4a1484 X stdchar
+4a14b8 X stdbool
+4a14ec   stdfunc
+4a1520   stdvoidfunc
+4a1554   skm_closepa
+4a1568 X skm_closebr
+4a1594   asntyp
+4a1598   andtyp
+4a15b0   currentfunc
+4a15b8   lastid
+4a161d   laststr
+4a9620   ival
+4a9628 X lstackptr
+4a962c   cantnewline
+4a9630   incconst
+4a9634   backupchar
+4a9648 X freg0
+4a965c X sreg
+4a9690   reglst
+4a9898 X funcs
+4a9978 X skm_semicolon
+4a9b98 X winflags
+4a9bb8 X winc0
+4a9bf8 X tn_unnamed
+4a9c00   tn_void
+4a9c04   tn_char
+4a9c08   tn_int
+4a9c0c   tn_long
+4a9c10   tn_longlong
+4a9c14   tn_short
+4a9c18   tn_unsigned
+4a9c1c   tn_ellipse
+4a9c20   tn_float
+4a9c24   tn_double
+4a9c28   tn_longdouble
+4a9c2c   tn_vol
+4a9c30   tn_const
+4a9c34   tn_class
+4a9c38   tn_struct
+4a9c3c   tn_union
+4a9c40   tn_fcomplex
+4a9c44   tn_rcomplex
+4a9c48   tn_lrcomplex
+4a9c4c   cpp_funcname_tab
+4a9cf8 X xlate_tab
+4a9da4   manglenamecount
+4a9da8 X glbsize
+4a9dac X locsize
+4a9db0 X glbindx
+4a9db4 X locindx
+4a9db8 X locblk
+4a9dbc X glbblk
+4a9e40 X skipsize
+4a9e44 X addsize
+4a9e48 X segregs
+4a9e58   muldivlink
+4a9e5c X gentype
+4a9e60   curseg
+4a9e64 X outcol
+4a9e6c   oplst
+4aad1e X popn_aaa
+4aad2a X popn_aad
+4aad36 X popn_aam
+4aad42 X popn_aas
+4aad4e X popn_adc
+4aad66 X popn_add
+4aad7e X popn_and
+4aad96 X popn_arpl
+4aada2 X popn_bound
+4aadae X popn_bsf
+4aadba X popn_bsr
+4aadc6 X popn_bswap
+4aadd2 X popn_bt
+4aade4 X popn_btc
+4aadf6 X popn_btr
+4aae08 X popn_bts
+4aae1a X popn_call
+4aae38 X popn_cbw
+4aae44 X popn_cdq
+4aae50 X popn_clc
+4aae5c X popn_cld
+4aae68 X popn_cli
+4aae74 X popn_clts
+4aae80 X popn_cmc
+4aae8c X popn_cmova
+4aae98 X popn_cmovb
+4aaea4 X popn_cmovbe
+4aaeb0 X popn_cmovg
+4aaebc X popn_cmovge
+4aaec8 X popn_cmovl
+4aaed4 X popn_cmovle
+4aaee0 X popn_cmovnb
+4aaeec X popn_cmovno
+4aaef8 X popn_cmovnp
+4aaf04 X popn_cmovns
+4aaf10 X popn_cmovnz
+4aaf1c X popn_cmovo
+4aaf28 X popn_cmovp
+4aaf34 X popn_cmovs
+4aaf40 X popn_cmovz
+4aaf4c X popn_cmp
+4aaf64 X popn_cmps
+4aaf70 X popn_cmpsb
+4aaf7c X popn_cmpsd
+4aaf88 X popn_cmpsw
+4aaf94 X popn_cmpxchg
+4aafa0 X popn_cmpxchg8b
+4aafac X popn_cpuid
+4aafb8 X popn_cwd
+4aafc4 X popn_cwde
+4aafd0 X popn_daa
+4aafdc X popn_das
+4aafe8 X popn_dec
+4aaffa X popn_div
+4ab006 X popn_enter
+4ab012 X popn_esc
+4ab01e X popn_f2xm1
+4ab02a X popn_fabs
+4ab036 X popn_fadd
+4ab042 X popn_faddp
+4ab04e X popn_fbld
+4ab05a X popn_fbstp
+4ab066 X popn_fchs
+4ab072 X popn_fnclex
+4ab07e X popn_fclex
+4ab08a X popn_fcom
+4ab09c X popn_fcomp
+4ab0ae X popn_fcompp
+4ab0ba X popn_fcos
+4ab0c6 X popn_fdecstp
+4ab0d2 X popn_fdisi
+4ab0de X popn_fdiv
+4ab0ea X popn_fdivp
+4ab0f6 X popn_fdivr
+4ab102 X popn_fdivrp
+4ab10e X popn_feni
+4ab11a X popn_ffree
+4ab126 X popn_fiadd
+4ab132 X popn_ficom
+4ab13e X popn_ficomp
+4ab14a X popn_fidiv
+4ab156 X popn_fidivr
+4ab162 X popn_fild
+4ab16e X popn_fimul
+4ab17a X popn_fincstp
+4ab186 X popn_finit
+4ab192 X popn_fninit
+4ab19e X popn_fist
+4ab1aa X popn_fistp
+4ab1b6 X popn_fisub
+4ab1c2 X popn_fisubr
+4ab1ce X popn_fld
+4ab1da X popn_fld1
+4ab1e6 X popn_fldcw
+4ab1f2 X popn_fldenv
+4ab1fe X popn_fldl2e
+4ab20a X popn_fldl2t
+4ab216 X popn_fldlg2
+4ab222 X popn_fldln2
+4ab22e X popn_fldpi
+4ab23a X popn_fldz
+4ab246 X popn_fmul
+4ab252 X popn_fmulp
+4ab25e X popn_fnop
+4ab26a X popn_fnsave
+4ab276 X popn_fsave
+4ab282 X popn_fnstcw
+4ab28e X popn_fstcw
+4ab29a X popn_fnstenv
+4ab2a6 X popn_fstenv
+4ab2b2 X popn_fnstsw
+4ab2c4 X popn_fstsw
+4ab2d6 X popn_fpatan
+4ab2e2 X popn_fprem
+4ab2ee X popn_fprem1
+4ab2fa X popn_fptan
+4ab306 X popn_frndint
+4ab312 X popn_frstor
+4ab31e X popn_fscale
+4ab32a X popn_fsetpm
+4ab336 X popn_fsin
+4ab342 X popn_fsincos
+4ab34e X popn_fsqrt
+4ab35a X popn_fst
+4ab366 X popn_fstp
+4ab372 X popn_fsub
+4ab37e X popn_fsubp
+4ab38a X popn_fsubr
+4ab396 X popn_fsubrp
+4ab3a2 X popn_ftst
+4ab3ae X popn_fucom
+4ab3c0 X popn_fucomp
+4ab3d2 X popn_fucompp
+4ab3de X popn_fwait
+4ab3ea X popn_fxam
+4ab3f6 X popn_fxch
+4ab408 X popn_fxtract
+4ab414 X popn_fyl2x
+4ab420 X popn_fyl2xp1
+4ab42c X popn_hlt
+4ab438 X popn_ibts
+4ab444 X popn_idiv
+4ab450 X popn_imul
+4ab468 X popn_in
+4ab47a X popn_inc
+4ab48c X popn_ins
+4ab498 X popn_insb
+4ab4a4 X popn_insd
+4ab4b0 X popn_insw
+4ab4bc X popn_int
+4ab4ce X popn_int3
+4ab4da X popn_into
+4ab4e6 X popn_invd
+4ab4f2 X popn_invlpg
+4ab4fe X popn_iret
+4ab50a X popn_iretd
+4ab516 X popn_ja
+4ab528 X popn_jae
+4ab53a X popn_jb
+4ab54c X popn_jbe
+4ab55e X popn_jc
+4ab570 X popn_jcxz
+4ab57c X popn_je
+4ab58e X popn_jg
+4ab5a0 X popn_jge
+4ab5b2 X popn_jl
+4ab5c4 X popn_jle
+4ab5d6 X popn_jmp
+4ab5fa X popn_jna
+4ab60c X popn_jnae
+4ab61e X popn_jnb
+4ab630 X popn_jnbe
+4ab642 X popn_jnc
+4ab654 X popn_jne
+4ab666 X popn_jng
+4ab678 X popn_jnge
+4ab68a X popn_jnl
+4ab69c X popn_jnle
+4ab6ae X popn_jno
+4ab6c0 X popn_jnp
+4ab6d2 X popn_jns
+4ab6e4 X popn_jnz
+4ab6f6 X popn_jo
+4ab708 X popn_jp
+4ab71a X popn_jpe
+4ab72c X popn_jpo
+4ab73e X popn_js
+4ab750 X popn_jz
+4ab762 X popn_lahf
+4ab76e X popn_lar
+4ab77a X popn_lds
+4ab786 X popn_lea
+4ab792 X popn_leave
+4ab79e X popn_les
+4ab7aa X popn_lfs
+4ab7b6 X popn_lgdt
+4ab7c2 X popn_lgs
+4ab7ce X popn_lidt
+4ab7da X popn_lldt
+4ab7e6 X popn_lmsw
+4ab7f2 X popn_lock
+4ab7fe X popn_lods
+4ab80a X popn_lodsb
+4ab816 X popn_lodsd
+4ab822 X popn_lodsw
+4ab82e X popn_loop
+4ab83a X popn_loope
+4ab846 X popn_loopne
+4ab852 X popn_loopnz
+4ab85e X popn_loopz
+4ab86a X popn_lsl
+4ab876 X popn_lss
+4ab882 X popn_ltr
+4ab88e X popn_mov
+4ab8ca X popn_movs
+4ab8d6 X popn_movsb
+4ab8e2 X popn_movsd
+4ab8ee X popn_movsw
+4ab8fa X popn_movsx
+4ab906 X popn_movzx
+4ab912 X popn_mul
+4ab91e X popn_neg
+4ab92a X popn_nop
+4ab936 X popn_not
+4ab942 X popn_or
+4ab95a X popn_out
+4ab96c X popn_outs
+4ab978 X popn_outsb
+4ab984 X popn_outsd
+4ab990 X popn_outsw
+4ab99c X popn_pop
+4ab9ba X popn_popa
+4ab9c6 X popn_popad
+4ab9d2 X popn_popf
+4ab9de X popn_popfd
+4ab9ea X popn_push
+4aba0e X popn_pusha
+4aba1a X popn_pushad
+4aba26 X popn_pushf
+4aba32 X popn_pushfd
+4aba3e X popn_rcl
+4aba4a X popn_rcr
+4aba56 X popn_rdmsr
+4aba62 X popn_rdpmc
+4aba6e X popn_rdtsc
+4aba7a X popn_repnz
+4aba86 X popn_repz
+4aba92 X popn_ret
+4abaa4 X popn_retf
+4abab6 X popn_rol
+4abac2 X popn_ror
+4abace X popn_rsm
+4abada X popn_sahf
+4abae6 X popn_sal
+4abaf2 X popn_sar
+4abafe X popn_sbb
+4abb16 X popn_scas
+4abb22 X popn_scasb
+4abb2e X popn_scasd
+4abb3a X popn_scasw
+4abb46 X popn_seta
+4abb52 X popn_setae
+4abb5e X popn_setb
+4abb6a X popn_setbe
+4abb76 X popn_setc
+4abb82 X popn_sete
+4abb8e X popn_setg
+4abb9a X popn_setge
+4abba6 X popn_setl
+4abbb2 X popn_setle
+4abbbe X popn_setna
+4abbca X popn_setnae
+4abbd6 X popn_setnb
+4abbe2 X popn_setnbe
+4abbee X popn_setnc
+4abbfa X popn_setne
+4abc06 X popn_setng
+4abc12 X popn_setnge
+4abc1e X popn_setnl
+4abc2a X popn_setnle
+4abc36 X popn_setno
+4abc42 X popn_setnp
+4abc4e X popn_setns
+4abc5a X popn_setnz
+4abc66 X popn_seto
+4abc72 X popn_setp
+4abc7e X popn_setpe
+4abc8a X popn_setpo
+4abc96 X popn_sets
+4abca2 X popn_setz
+4abcae X popn_sgdt
+4abcba X popn_shl
+4abcc6 X popn_shld
+4abcd2 X popn_shr
+4abcde X popn_shrd
+4abcea X popn_sidt
+4abcf6 X popn_sldt
+4abd02 X popn_smsw
+4abd0e X popn_stc
+4abd1a X popn_std
+4abd26 X popn_sti
+4abd32 X popn_stos
+4abd3e X popn_stosb
+4abd4a X popn_stosd
+4abd56 X popn_stosw
+4abd62 X popn_str
+4abd6e X popn_sub
+4abd86 X popn_test
+4abd9e X popn_ud2
+4abdaa X popn_verr
+4abdb6 X popn_verw
+4abdc2 X popn_wait
+4abdce X popn_wbinvd
+4abdda X popn_wrmsr
+4abde6 X popn_xadd
+4abdf2 X popn_xbts
+4abdfe X popn_xchg
+4abe10 X popn_xlat
+4abe1c X popn_xlatb
+4abe28 X popn_xor
+4abe40 X genfunctab
+4abf48 X peep_head
+4abf4c X peep_tail
+4abfd0   errlineno
+4abfd4 X incldepth
+4abfd8 X incfiles
+4abfdc X libincludes
+4abfe0 X ifs
+4abfe4 X ifskip
+4abfe8 X elsetaken
+4abfec   currentfile
+4ac030 X ingrownmacros
+4ac074 X keywords
+4ac6b8 X skm_openpa
+4ac6c8 X skm_semi
+4ac6d4 X skm_tocase
+4ac6e8 X defhash
+4ac728 X _istreams
+4ac788   _abterm
+4ac798   _fmode
+4ac7a8 X __fe_default_env
+4ac7ac X _default87
+4ac7b3   C_ctype_data
+4ac9b9   C_numeric_data
+4ac9e0   __locale_data
+4acc62 X C_monetary_data
+4accab X _C_locale_data
+4accf3   C_time_data
+4ad1e0 X _e_min_exp_digit
+4ad1f0 X cached
+4ad550 X tenpowers
+4ad640 X __umask_perm
+4ad670 X poptemp
+4ad68a X large_t
+4b33c0   lc_maxauto
+4b33c4   fsave_mask
+4b33c8   save_mask
+4b33cc   frame_ins
+4b33d0   floatstack_mode
+4b33d8   funcfloat
+4b33dc X olist
+4b33e8 X anyusedfloat
+4b33ec X has_output_file
+4b33f0   version
+4b34f0 X copyright
+4b35f0   prm_crtdll
+4b35f4   prm_lscrtdll
+4b35f8   prm_msvcrt
+4b35fc X ctrlcreturn
+4b3624   infile
+4b3628   srcfile
+4b362c X listfile
+4b372c   outfile
+4b382c X cppfile
+4b392c X errorfile
+4b3a30   dynamic_cast_func
+4b3a34   catch_cleanup_func
+4b3a38   typeinfo_class
+4b3a3c   get_typeinfo_func
+4b3a40   throw_func
+4b3a44   rethrow_func
+4b3a48   global_vararray_func
+4b3a50   dbgblocknum
+4b3a54   DbgBlocks
+4b5a70   inarrayindexparsing
+4b5a74   funcparmtable
+4b5a78   conscount
+4b5a7c X increatingtemplateargs
+4b5a80   indefaultinit
+4b5a84 X deferredFunctions
+4b5a88   structlevel
+4b5a8c X aFriend
+4b5a90   recordingTemplate
+4b5a94 X templateFunc
+4b5a98   templateLookup
+4b5a9c   recordingClassFunc
+4b5aa0   declclass
+4b5aa4   typequal
+4b5aa8 X unnamedstructcount
+4b5aac X nullnamecount
+4b5ab0 X mangleflag
+4b5ab4   mainfunc
+4b5ab8   headptr
+4b5abc   declid
+4b5b20   ispascal
+4b5b24 X isstdcall
+4b5b28 X iscdecl
+4b5b2c X isindirect
+4b5b30 X isexport
+4b5b34 X isimport
+4b5b38 X importname
+4b5b3c   localfuncs
+4b5b40   localdata
+4b5b44   currentTemplate
+4b5b48   searchTemplate
+4b5b4c   inprototype
+4b5b58 X sizeoflastbit
+4b5b5c X manglelevel
+4b5b6c X cppflags
+4b5b70   defaulttype
+4b5b90   baseasnsymtbl
+4b5b94 X classhead
+4b5b98 X vtabhead
+4b5c04 X nowarn
+4b5d20   parm_namespaces
+4b7c60   parm_ns_counts
+4b7cb0   parm_ns_level
+4b7cb4   parsing_params
+4b7cb8   expr_runup
+4b7d80   expr_rundown
+4b7e48   undef
+4b7ef4   thissp
+4b7ef8 X nodeclfunc
+4b7f14 X thisenode
+4b7f18   intemplateargs
+4b7f20 X setjmp_used
+4b7f24   labelsyms
+4b7f2c X gotoList
+4b7f30   allocaSP
+4b7f34   used_alloca
+4b7f38   gotoCount
+4b7f3c   block_nesting
+4b7f40   arg_nesting
+4b7f44   infuncargs
+4b7f48 X infunclineno
+4b7f4c   funcnesting
+4b7f50   block_rundown
+4b7f54   oldlsym
+4b7f5c   oldltag
+4b7f64   varlisthead
+4b7f68   varlisttail
+4b7f6c   instantiated_inlines
+4b7f70   funcstmt
+4b7f74   funcendstmt
+4b7f78   funcbrstmt
+4b7f7c   lastfunc
+4b7f88 X sym_charindex
+4b7f8c   lineno
+4b7f90   laststrlen
+4b7f94 X inputline
+4f7f96   unalteredline
+517f98   lastch
+517f9c   lastst
+517fa0   lastlastst
+517fa4 X backupid
+51800c X rval
+518020 X linstack
+518070 X chstack
+518084   inputbuffer
+520084   inputlen
+520088   ibufPtr
+52009c X phiputcpp
+5200a0 X phiputlist
+5400a8   genning_inline
+5400b0 X retlab
+5400b4 X startlab
+5400b8 X stackframeoff
+5400bc   mpthunklist
+5400d8   keyimage
+5400dc X regimage
+5400e0 X asmMask
+5400e4 X asmRMask
+5400f8   virtualdata
+540120 X bssbytes
+540124 X databytes
+540128 X constbytes
+540170 X objlist
+540174 X asmlist
+540178 X liblist
+54017c X reslist
+540180 X rclist
+544b88   global_flag
+544ff8   segnames
+545048   segclasses
+5452a8   strtab
+5452b4 X newlabel
+5452b8 X needpointer
+5452c0 X outcode_base_address
+5452c4 X segs
+545394 X linelist
+545398 X linetail
+54539c X virtualFirst
+5453a0 X virtualLast
+5453a8 X peep_insert
+5453ac   noRelease
+5453b0 X noStackFrame
+5453b4   errfile
+5453b8 X sys_inc
+5453bc X ifshold
+5454d4 X inclfname
+545514 X inclfile
+545554 X inclline
+545654 X inclcurrent
+545694 X incldata
+5456d4 X inclpos
+545714 X inclsysflags
+545754 X inclptr
+545794   lptr
+545798   stdpragmas
+54579c   lastinc
+5457a0 X auxlist
+5457a4 X packdata
+545934 X packlevel
+5463b8 X push
+5463cc X pop
+5463e0 X max_data
+5463e4 X max_sreg
+5463e8 X regs
+5463f4 X sregs
+546400 X pushcount
+546404 X pushpos
+546408 X pushedregs
+5467f0 X pushed
+546bd8 X marks
+546d68 X markedpushes
+546ef8 X regpos
+546efc X markpos
+546f00 X lastreg1
+546f04 X lastreg2
+546f08 X lastsreg1
+546f0c X lastsreg2
+546f10 X list_of_rttis
+546f14 X registered_rttis
+546f18 X xceptoffs
+546f20   blockVarArraySP
+546f24 X incatchclause
+546f28 X asmline
+546f2c X nextlabel
+546f30 X firstlabel
+546f34   goodcode
+546f38 X switchbreak
+546f3c X try_block_list
+546f40 X currentCases
+547f54   cbautoinithead
+547f58   cbautoinittail
+547f5c   cbautorundownhead
+547f60   cbautorundowntail
+547f64 X lastDestPointer
+547f68 X thisnamespace
+547f6c X gsyms
+547f70   templateFuncs
+547f74   tagtable
+547f78   lsyms
+547f80 X defsyms
+547f88   ltags
+547f90 X global_using_list
+547f94 X global_tag_using_list
+547f98 X local_using_list
+547f9c X local_tag_using_list
+547fa0 X openns_list
+547fa4 X nonslookup
+547fa8 X unique_namespace_num
+5480bc X searchname
+5481c0 X statictemplate
+5481c4 X templatePrefix
+5481c8 X interjectptr
+5481cc X templateSP
+5481d0 X virtualfuncs
+5481e0   _oscmd
+5481e4   _osenv
+5481e8   __hInstance
+5481ec   _win32
+5481f0   __exitbranch
+548218   __abortbranch
+548240 X _isDLL
+548248   _pstreams
+5482e8   __maxfiles
+5482ec   __stdin
+5482f0   __stdout
+5482f4   __stderr
+5482f8 X __stdaux
+5482fc X __stdprn
+548528   __sigtab
+5485a0 X _cancelsleep
+5485ac X xxctxt
+5485b0 X _argc
+5485b4 X __argc
+5485b8 X _argv
+5485bc X __argv
+5485c0 X _passed_name
+5485c8   _environ
+5485d0 X __quick_exit
+548768   __uihandles
+548808   __uimodes
+5488a8   __uiflags
+548948   __uinames
+54b148   __uidrives
+54b170 X _fltused
+54b190   _pctype
+54b398 X __mallocchains
+54b418 X _allocbloc
+54b41c X _newfree

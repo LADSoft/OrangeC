@@ -74,6 +74,9 @@ extern int expandingParams;
 extern bool functionCanThrow;
 extern SYMBOL* theCurrentFunc;
 extern int inGetUserConversion;
+extern int tryLevel;
+extern bool hasFuncCall;
+
 int packIndex;
 
 int argument_nesting;
@@ -664,6 +667,7 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                                        * register keyword are enforced elsewhere
                                        */
                         *exp = varNode(en_auto, sym);
+                        sym->anyTry |= tryLevel != 0;
                         break;
                     case sc_parameter:
                         //                   tagNonConst(funcsp, sym->tp);
@@ -745,6 +749,7 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                             if (tpa->array)
                                 deref(&stdpointer, exp);
                         }
+                        sym->anyTry |= tryLevel != 0;
                         break;
 
                     case sc_localstatic:
@@ -1491,6 +1496,7 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
 
 
 
+
                     if (sp3 && sp4 && sp3 != sp4 && classRefCount(sp3, sp4) != 1)
                     {
                         errorsym2(ERR_NOT_UNAMBIGUOUS_BASE, sp3, sp4);
@@ -1509,6 +1515,10 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
                     if (sp2->storage_class == sc_constant)
                     {
                         *exp = varNode(en_const, sp2);
+                    }
+                    else if (sp2->storage_class == sc_enumconstant)
+                    {
+                        *exp = intNode(en_c_i, sp2->value.i);
                     }
                     else if (sp2->storage_class == sc_static || sp2->storage_class == sc_external)
                     {
@@ -1557,7 +1567,7 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
                         (*exp)->bits = tpb->bits;
                         (*exp)->startbit = tpb->startbit;
                     }
-                    if (sp2->storage_class != sc_constant)
+                    if (sp2->storage_class != sc_constant && sp2->storage_class != sc_enumconstant)
                     {
                         if (isref(*tp))
                         {
@@ -1566,7 +1576,10 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
                         }
                         deref(*tp, exp);
                     }
-                    (*exp)->v.sp = sp2;  // caching the member symbol in the enode for constexpr handling
+                    if (sp2->storage_class != sc_enumconstant)
+                    {
+                        (*exp)->v.sp = sp2;  // caching the member symbol in the enode for constexpr handling
+                    }
                     if (isatomic(basetp))
                     {
                         // note this won't work in C++ because of offset2...
@@ -2923,6 +2936,10 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                                             exp = createTemporary(sym->tp, exp);
                                         }
                                     }
+                                    else if (exp->type == en_lvalue)
+                                    {
+                                        exp = createTemporary(sym->tp, exp);
+                                    }
                                     else
                                     {
                                         exp = exp->left;  // take address
@@ -3112,7 +3129,22 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                 else if (basetype(sym->tp)->type == bt___object)
                 {
                     if (basetype(p->tp)->type != bt___object && !isstructured(p->tp) && (!isarray(p->tp) || !basetype(p->tp)->msil))
-                        p->exp = exprNode(en_x_object, p->exp, nullptr);
+                    {
+                        if ((isarray(p->tp) || ispointer(p->tp)) && !basetype(p->tp)->msil &&
+                            basetype(basetype(p->tp)->btp)->type == bt_char)
+                        {
+                            // make a 'string' object and initialize it with the string
+                            TYPE* ctype = chosenAssembler->msil->find_boxed_type(&std__string);
+                            EXPRESSION *exp1, *exp2;
+                            exp1 = exp2 = anonymousVar(sc_auto, &std__string);
+                            callConstructorParam(&ctype, &exp2, p->tp, p->exp, true, true, false, false);
+                            exp2 = exprNode(en_l_string, exp2, nullptr);
+                            p->exp = exp2;
+                            p->tp = &std__string;
+                        }
+                        else
+                            p->exp = exprNode(en_x_object, p->exp, nullptr);
+                    }
                 }
                 else if (ismsil(p->tp))
                     ;  // error
@@ -3546,6 +3578,8 @@ LEXEME* expression_arguments(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION*
                     AdjustParams(funcparams->sp, hr, lptr, operands, true);
                 }
             }
+            if (funcparams->sp->xcMode != xc_unspecified && funcparams->sp->xcMode != xc_none)
+                hasFuncCall = true;
             CheckCalledException(funcparams->sp, funcparams->thisptr);
             if (cparams.prm_cplusplus)
             {

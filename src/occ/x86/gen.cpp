@@ -4876,6 +4876,8 @@ void asm_prologue(QUAD* q) /* function prologue */
         int cnt = 0;
         int mask = 1, compare;
         compare = (unsigned)(beGetIcon(q->dc.left) & ~(FRAME_FLAG_NEEDS_FRAME));
+        if (theCurrentFunc->anyTry)
+            compare |= 0xc8; // make sure we push everything if this function may have try/catch blocks
         while (mask <= compare)
         {
             if (mask & compare)
@@ -4899,6 +4901,8 @@ void asm_epilogue(QUAD* q) /* function epilogue */
         int mask = 0x80, compare;
         int cnt = 7;
         compare = (unsigned)(beGetIcon(q->dc.left) & ~(FRAME_FLAG_NEEDS_FRAME));
+        if (theCurrentFunc->anyTry)
+            compare |= 0xc8; // make sure we push everything if this function may have try/catch blocks
         while (mask)
         {
             if (mask & compare)

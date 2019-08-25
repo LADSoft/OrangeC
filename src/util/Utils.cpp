@@ -25,7 +25,6 @@
 #define _CRT_SECURE_NO_WARNINGS
 
 #include <cstdio>
-#include <cstdarg>
 #include <fstream>
 #include <cstdlib>
 #include <cstring>
@@ -146,6 +145,24 @@ std::string Utils::FullPath(const std::string& path, const std::string& name)
         }
     }
     return name;
+}
+std::string Utils::AbsolutePath(const std::string& name)
+{
+    std::string rv = name;
+#if defined(WIN32)
+    if (name.size() >= 3 && (name[1] != ':' || name[2] != CmdFiles::DIR_SEP[0]))
+    {
+        char buf[MAX_PATH];
+        GetCurrentDirectoryA(sizeof(buf), buf);
+        if (name[1] == ':')
+            rv = name.substr(0,2) + (buf +2) + CmdFiles::DIR_SEP + name.substr(2);
+        else if (name[0] == CmdFiles::DIR_SEP[0])
+            rv = std::string(buf).substr(0,2) + name;
+        else
+            rv = std::string(buf) + CmdFiles::DIR_SEP + name;
+    }
+#endif
+    return rv;
 }
 std::string Utils::QualifiedFile(const char* path, const char* ext)
 {

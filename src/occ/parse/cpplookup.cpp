@@ -372,10 +372,10 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
                 if (!sp && !templateParamAsTemplate)
                 {
                     if (!qualified)
-                        sp = namespacesearch(buf, localNameSpace, qualified, false);
+                        sp = namespacesearch(buf, localNameSpace, qualified, tagsOnly);
                     if (!sp && nssym)
                     {
-                        sp = namespacesearch(buf, nssym, qualified, false);
+                        sp = namespacesearch(buf, nssym, qualified, tagsOnly);
                     }
                 }
                 if (sp && sp->storage_class == sc_typedef)
@@ -844,7 +844,7 @@ SYMBOL* finishSearch(const char* name, SYMBOL* encloser, NAMESPACEVALUELIST* ns,
         SYMBOL* ssp = getStructureDeclaration();
         if (funcLevel || !ssp)
         {
-            if (cparams.prm_cplusplus || !tagsOnly)
+            if (!tagsOnly)
                 rv = search(name, localNameSpace->valueData->syms);
             if (!rv)
                 rv = search(name, localNameSpace->valueData->tags);
@@ -3473,7 +3473,10 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_
             {
                 if (isint(tpp) && !basetype(tpa)->scoped)
                 {
-                    seq[(*n)++] = CV_ENUMINTEGRALCONVERSION;
+                    if (basetype(tpp)->type == basetype(tpa)->btp->type)
+                        seq[(*n)++] = CV_INTEGRALCONVERSIONWEAK;
+                    else
+                        seq[(*n)++] = CV_ENUMINTEGRALCONVERSION;
                 }
                 else
                 {
@@ -3494,6 +3497,7 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_
                 }
                 else
                 {
+
                     seq[(*n)++] = CV_ENUMINTEGRALCONVERSION;
                 }
             }

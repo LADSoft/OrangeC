@@ -149,27 +149,27 @@ bool FPF::IsMantissaOne() const
     return true;
 }
 
-void FPF::Add16Bits(u16* carry, u16* a, u16 b, u16 c)
+void FPF::Add16Bits(u16f* carry, u16f* a, u16f b, u16f c)
 {
 
-    u32 accum = b + c + *carry;
+    u32f accum = b + c + *carry;
     *carry = (accum >> 16) & 1;
-    *a = (u16)accum;
+    *a = (u16f)accum;
 }
-void FPF::Sub16Bits(u16* borrow, u16* a, u16 b, u16 c)
+void FPF::Sub16Bits(u16f* borrow, u16f* a, u16f b, u16f c)
 {
-    u32 accum = (u32)b - (u32)c - (u32)*borrow;
+    u32f accum = (u32f)b - (u32f)c - (u32f)*borrow;
     *borrow = (accum >> 16) & 1;
-    *a = (u16)accum;
+    *a = (u16f)accum;
 }
 
-void FPF::ShiftMantLeft1(u16* carry)
+void FPF::ShiftMantLeft1(u16f* carry)
 {
 
     for (int i = INTERNAL_FPF_PRECISION - 1; i >= 0; i--)
     {
-        u16 accum = mantissa[i];
-        u16 new_carry = accum >> 15;
+        u16f accum = mantissa[i];
+        u16f new_carry = accum >> 15;
         accum <<= 1;
         accum |= *carry;
         *carry = new_carry;
@@ -177,13 +177,13 @@ void FPF::ShiftMantLeft1(u16* carry)
     }
 }
 
-void FPF::ShiftMantRight1(u16* carry)
+void FPF::ShiftMantRight1(u16f* carry)
 {
 
     for (int i = 0; i < INTERNAL_FPF_PRECISION; i++)
     {
-        u16 accum = mantissa[i];
-        u16 new_carry = accum & 1;
+        u16f accum = mantissa[i];
+        u16f new_carry = accum & 1;
         accum = accum >> 1;
         accum |= *carry << 15;
         *carry = new_carry;
@@ -192,7 +192,7 @@ void FPF::ShiftMantRight1(u16* carry)
 }
 void FPF::StickyShiftRightMant(int amount)
 {
-    u16 carry; /* Self-explanatory */
+    u16f carry; /* Self-explanatory */
     if (type != IFPF_IS_ZERO)
     {
         if (amount >= INTERNAL_FPF_PRECISION * 16)
@@ -219,7 +219,7 @@ void FPF::Normalize()
 
     while ((mantissa[0] & 0x8000) == 0)
     {
-        u16 carry = 0;
+        u16f carry = 0;
         ShiftMantLeft1(&carry);
         exp--;
     }
@@ -371,7 +371,7 @@ FPF& FPF::AddSub(int mode, FPF& dest, const FPF& x, const FPF& y)
             }
             if (locx.sign ^ locy.sign ^ (mode == '-'))
             {
-                u16 borrow = 0;
+                u16f borrow = 0;
                 for (int i = (INTERNAL_FPF_PRECISION - 1); i >= 0; i--)
                     Sub16Bits(&borrow, &dest.mantissa[i], locx.mantissa[i], locy.mantissa[i]);
 
@@ -395,7 +395,7 @@ FPF& FPF::AddSub(int mode, FPF& dest, const FPF& x, const FPF& y)
             }
             else
             {
-                u16 carry = 0;
+                u16f carry = 0;
                 for (int i = (INTERNAL_FPF_PRECISION - 1); i >= 0; i--)
                     Add16Bits(&carry, &dest.mantissa[i], locx.mantissa[i], locy.mantissa[i]);
 
@@ -487,7 +487,7 @@ FPF& FPF::Multiply(FPF& dest, const FPF& x, const FPF& y)
 
             for (int i = 0; i < (INTERNAL_FPF_PRECISION * 16); i++)
             {
-                u16 carry = 0;
+                u16f carry = 0;
                 locy.ShiftMantRight1(&carry);
                 if (carry)
                 {
@@ -504,7 +504,7 @@ FPF& FPF::Multiply(FPF& dest, const FPF& x, const FPF& y)
             }
             while ((dest.mantissa[0] & 0x8000) == 0)
             {
-                u16 carry = 0;
+                u16f carry = 0;
                 temp.ShiftMantLeft1(&carry);
                 dest.ShiftMantLeft1(&carry);
                 dest.exp--;
@@ -603,7 +603,7 @@ FPF& FPF::Divide(FPF& dest, const FPF& x, const FPF& y)
             while ((dest.mantissa[0] & 0x8000) == 0)
             {
                 bool do_sub = true;
-                u16 carry = 0;
+                u16f carry = 0;
                 locx.ShiftMantLeft1(&carry);
                 temp.ShiftMantLeft1(&carry);
                 if (carry == 0)
@@ -640,7 +640,7 @@ FPF& FPF::Divide(FPF& dest, const FPF& x, const FPF& y)
 }
 void FPF::FromLongLong(long long myllong)
 {
-    u16 myword; /* Used to hold converted stuff */
+    u16f myword; /* Used to hold converted stuff */
     if (myllong < 0L)
     {
         sign = 1;
@@ -666,21 +666,21 @@ void FPF::FromLongLong(long long myllong)
     {
         exp = 64;
 #ifdef LLONG_MAX
-        myword = (u16)((myllong >> 48) & 0xFFFFL);
+        myword = (u16f)((myllong >> 48) & 0xFFFFL);
         mantissa[0] = myword;
-        myword = (u16)((myllong >> 32) & 0xFFFFL);
+        myword = (u16f)((myllong >> 32) & 0xFFFFL);
         mantissa[1] = myword;
 #endif
-        myword = (u16)((myllong >> 16) & 0xFFFFL);
+        myword = (u16f)((myllong >> 16) & 0xFFFFL);
         mantissa[2] = myword;
-        myword = (u16)(myllong & 0xFFFFL);
+        myword = (u16f)(myllong & 0xFFFFL);
         mantissa[3] = myword;
         Normalize();
     }
 }
 void FPF::FromUnsignedLongLong(unsigned long long myllong)
 {
-    u16 myword; /* Used to hold converted stuff */
+    u16f myword; /* Used to hold converted stuff */
     sign = 0;
     type = IFPF_IS_NORMAL;
     memset(mantissa, 0, sizeof(mantissa));
@@ -698,14 +698,14 @@ void FPF::FromUnsignedLongLong(unsigned long long myllong)
     {
         exp = 64;
 #ifdef LLONG_MAX
-        myword = (u16)((myllong >> 48) & 0xFFFFL);
+        myword = (u16f)((myllong >> 48) & 0xFFFFL);
         mantissa[0] = myword;
-        myword = (u16)((myllong >> 32) & 0xFFFFL);
+        myword = (u16f)((myllong >> 32) & 0xFFFFL);
         mantissa[1] = myword;
 #endif
-        myword = (u16)((myllong >> 16) & 0xFFFFL);
+        myword = (u16f)((myllong >> 16) & 0xFFFFL);
         mantissa[2] = myword;
-        myword = (u16)(myllong & 0xFFFFL);
+        myword = (u16f)(myllong & 0xFFFFL);
         mantissa[3] = myword;
         Normalize();
     }
@@ -816,7 +816,7 @@ void FPF::ToString(std::string& dest) const
             int val = 0;
             while (temp.exp--)
             {
-                u16 carry = 0;
+                u16f carry = 0;
                 temp.ShiftMantLeft1(&carry);
                 val <<= 1;
                 val |= carry;
@@ -829,7 +829,7 @@ void FPF::ToString(std::string& dest) const
             dest += "0.";
             while (temp.exp++)
             {
-                u16 carry = 0;
+                u16f carry = 0;
                 temp.ShiftMantRight1(&carry);
             }
         }
@@ -838,12 +838,12 @@ void FPF::ToString(std::string& dest) const
             c = 1;
         for (int i = 0; i < 24 - c; i++)
         {
-            u16 carry = 0;
-            u16 val = 0;
+            u16f carry = 0;
+            u16f val = 0;
             temp.ShiftMantLeft1(&carry);
             val <<= 1;
             val |= carry;
-            u16 val1 = val;
+            u16f val1 = val;
             FPF temp1 = temp;
             carry = 0;
             temp.ShiftMantLeft1(&carry);
@@ -945,7 +945,7 @@ long long FPF::ToLongLong() const
             }
             while (stemp.exp++ != 64)
             {
-                u16 carry = 0;
+                u16f carry = 0;
                 stemp.ShiftMantRight1(&carry);
             }
             for (int i = 0; i < 4; i++)
@@ -961,7 +961,7 @@ long long FPF::ToLongLong() const
 }
 void FPF::ToFloat(uchar dest[]) const
 {
-    u32 val;
+    u32f val;
     if (type == IFPF_IS_ZERO)
         val = 0;
     else
@@ -985,7 +985,7 @@ void FPF::ToFloat(uchar dest[]) const
                 if (exp < -126 && exp >= -149)
                 {
                     int n = -(exp + 126);
-                    u32 r = !!(val & (1 << (n - 1)));
+                    u32f r = !!(val & (1 << (n - 1)));
                     val >>= n;
                     val += r;
                 }
@@ -1015,7 +1015,7 @@ void FPF::ToFloat(uchar dest[]) const
 }
 void FPF::ToDouble(uchar dest[]) const
 {
-    u32 val[2];
+    u32f val[2];
     if (type == IFPF_IS_ZERO)
         val[0] = val[1] = 0;
     else
@@ -1041,7 +1041,7 @@ void FPF::ToDouble(uchar dest[]) const
                 if (exp < -1022 && exp >= -1074)
                 {
                     int n = -(exp + 1022);
-                    u32 c = val[0], r, t;
+                    u32f c = val[0], r, t;
                     if (n < 32)
                     {
                         r = !!(val[1] & (1 << (n - 1)));
@@ -1098,7 +1098,7 @@ void FPF::ToDouble(uchar dest[]) const
 }
 void FPF::ToLongDouble(uchar dest[]) const
 {
-    u32 val[3];
+    u32f val[3];
     /* have to or in the high bit in case infinity or nan*/
     if (type == IFPF_IS_ZERO)
         val[0] = val[1] = val[2] = 0;
@@ -1121,7 +1121,7 @@ void FPF::ToLongDouble(uchar dest[]) const
                 if (exp < -16382 && exp >= -16446)
                 {
                     int n = -(exp + 16381);
-                    u32 c = val[1], r, t;
+                    u32f c = val[1], r, t;
                     if (n < 32)
                     {
                         r = !!(val[2] & (1 << (n - 1)));
@@ -1254,7 +1254,7 @@ void FPF::Truncate(int bits, int maxexp, int minexp)
                         else
                         {
                             /* else shift mantissa right and increment exponent... */
-                            u16 carry = 1; /* high bit should be one */
+                            u16f carry = 1; /* high bit should be one */
                             ShiftMantRight1(&carry);
                         }
                     }

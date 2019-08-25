@@ -1103,7 +1103,8 @@ static void dumpStaticInitializers(void)
         symListTail = symListTail->next;
     }
     symListHead = nullptr;
-    chosenAssembler->gen->setalign(0, adata, abss, aconst);
+    if (chosenAssembler->gen->setalign)
+        chosenAssembler->gen->setalign(0, adata, abss, aconst);
 #endif
 }
 void dumpInitializers(void)

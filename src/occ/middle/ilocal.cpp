@@ -136,18 +136,18 @@ static void renameOneSym(SYMBOL* sym, int structret)
     tp = basetype(tp);
 
     bool fastcallCandidate = sym->storage_class == sc_parameter && fastcallAlias &&
-                             (sym->offset - fastcallAlias * chosenAssembler->arch->parmwidth < chosenAssembler->arch->retblocksize);
+        (sym->offset - fastcallAlias * chosenAssembler->arch->parmwidth < chosenAssembler->arch->retblocksize);
 
     if (!sym->pushedtotemp && (!sym->imaddress || fastcallCandidate) && !sym->inasm && (!sym->inCatch || fastcallCandidate) &&
         (((chosenAssembler->arch->hasFloatRegs || tp->type < bt_float) && tp->type < bt_void) ||
-         (tp->type == bt_pointer && basetype(basetype(tp)->btp)->type != bt_func) || isref(tp)) &&
-        (sym->storage_class == sc_auto || sym->storage_class == sc_register || sym->storage_class == sc_parameter) &&
+        (tp->type == bt_pointer && basetype(basetype(tp)->btp)->type != bt_func) || isref(tp)) &&
+            (sym->storage_class == sc_auto || sym->storage_class == sc_register || sym->storage_class == sc_parameter) &&
         (!sym->usedasbit || fastcallCandidate))
     {
         /* this works because all IMODES refering to the same
-         * variable are the same, at least until this point
-         * that will change when we start inserting temps
-         */
+            * variable are the same, at least until this point
+            * that will change when we start inserting temps
+            */
         IMODE* parmName;
         EXPRESSION* ep;
         if (sym->imaddress || sym->inCatch)
@@ -174,7 +174,7 @@ static void renameOneSym(SYMBOL* sym, int structret)
                 // for fastcall, rename the affected parameter nodes with
                 // a temp.   It will later be precolored...
                 if (sym->offset - (fastcallAlias + structret) * chosenAssembler->arch->parmwidth <
-                        chosenAssembler->arch->retblocksize &&
+                    chosenAssembler->arch->retblocksize &&
                     (!structret || sym->offset != chosenAssembler->arch->retblocksize))
                 {
                     parmName = tempreg(sym->imvalue->size, 0);
@@ -249,7 +249,7 @@ static void renameToTemps(SYMBOL* funcsp)
     doRename &= (cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size) && !functionHasAssembly;
     /* if there is a setjmp in the function, no variable gets moved into a reg */
     doRename &= !(setjmp_used);
-    doRename &= !(funcsp->xc);
+    doRename &= !(funcsp->anyTry);
     temp = funcsp->inlineFunc.syms;
     bool structret = !!isstructured(basetype(funcsp->tp)->btp);
     while (temp)

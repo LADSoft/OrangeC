@@ -248,10 +248,10 @@ int RunExternalFiles(char* rootPath)
     {
         if (cparams.prm_compileonly && outputFileName[0] && !first)
             sprintf(spname, "\"%soasm.exe\" \"-o%s\" %s %s \"%s\"", root, outputFileName, asm_params ? asm_params : "",
-                    !showBanner ? "-!" : "", asmlist->data);
+                    !showBanner ? "-!" : "", (char*)asmlist->data);
         else
             sprintf(spname, "\"%soasm.exe\" %s %s \"%s\"", root, asm_params ? asm_params : "", !showBanner ? "-!" : "",
-                    asmlist->data);
+                    (char*)asmlist->data);
         first = true;
         if (verbosity)
             printf("%s\n", spname);
@@ -268,10 +268,10 @@ int RunExternalFiles(char* rootPath)
     {
         if (cparams.prm_compileonly && outputFileName[0] && !first)
             sprintf(spname, "\"%sorc.exe\" \"-o%s\" -r %s %s %s \"%s\"", root, outputFileName, rc_params ? rc_params : "",
-                    !showBanner ? "-!" : "", args, rclist->data);
+                    !showBanner ? "-!" : "", args, (char*)rclist->data);
         else
             sprintf(spname, "\"%sorc.exe\" -r %s %s %s \"%s\"", root, rc_params ? rc_params : "", !showBanner ? "-!" : "", args,
-                    rclist->data);
+                    (char*)rclist->data);
         first = true;
         if (verbosity)
             printf("%s\n", spname);
@@ -323,13 +323,13 @@ int RunExternalFiles(char* rootPath)
         fprintf(fil, "  %s", c0);
         while (objlist)
         {
-            fprintf(fil, " \"%s%s\"", temp, objlist->data);
+            fprintf(fil, " \"%s%s\"", temp, (char*)objlist->data);
             objlist = objlist->next;
         }
         fprintf(fil, "  \"/o%s\" ", outName);
         while (liblist)
         {
-            fprintf(fil, " \"%s\"", liblist->data);
+            fprintf(fil, " \"%s\"", (char*)liblist->data);
             liblist = liblist->next;
         }
         if (prm_msvcrt)
@@ -348,7 +348,7 @@ int RunExternalFiles(char* rootPath)
             fprintf(fil, " climp.l clwin.l ");
         while (reslist)
         {
-            fprintf(fil, " \"%s\"", reslist->data);
+            fprintf(fil, " \"%s\"", (char*)reslist->data);
             reslist = reslist->next;
         }
         fclose(fil);

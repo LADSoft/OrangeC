@@ -1396,7 +1396,7 @@ LEXEME* getsym(void)
             unsigned char* start = includes->lptr;
             unsigned char* end = includes->lptr;
             enum e_lexType tp;
-            if ((tp = getNumber(&includes->lptr, &end, suffix, &rval, &ival)) != (unsigned)INT_MIN)
+            if ((unsigned)(tp = getNumber(&includes->lptr, &end, suffix, &rval, &ival)) != (unsigned)INT_MIN)
             {
                 if (tp < l_f)
                     lex->value.i = ival;

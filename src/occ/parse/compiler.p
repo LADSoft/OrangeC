@@ -105,10 +105,6 @@ void optimize_for_constants(EXPRESSION* *expr);
 LEXEME* optimized_expression(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE* *tp, 
 	EXPRESSION* *expr, bool commaallowed);
 
-                               /* CRC.C */
-
-unsigned CRC32(unsigned char* data, size_t len);
-
                                /* Debug.c */
 
 void displayLexeme(LEXEME* lex);

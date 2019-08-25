@@ -22,7 +22,7 @@
     <ProjectGuid>{BF942009-5F08-4ACB-9002-C34FE7CFDD4C}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>occil</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -88,7 +88,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;USE_LONGLONG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\parse;..\preproc;..\middle;..\netil\netlib</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\parse;..\preproc;..\middle;..\x86;..\..\ocpp;..\..\oasm;..\..\util;..\..\objlib;..\..\netlib</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
     </ClCompile>
@@ -119,7 +119,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;USE_LONGLONG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\parse;..\preproc;..\middle;..\netil\netlib</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\parse;..\preproc;..\middle;..\x86;..\..\ocpp;..\..\oasm;..\..\util;..\..\objlib;..\..\netlib</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -147,6 +147,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\ocpp\Floating.cpp" />
+    <ClCompile Include="..\..\util\CmdFiles.cpp" />
+    <ClCompile Include="..\..\util\Utils.cpp" />
     <ClCompile Include="..\middle\ialias.cpp" />
     <ClCompile Include="..\middle\iblock.cpp" />
     <ClCompile Include="..\middle\iconfl.cpp" />
@@ -168,12 +171,12 @@
     <ClCompile Include="..\middle\issa.cpp" />
     <ClCompile Include="..\middle\istmt.cpp" />
     <ClCompile Include="..\middle\istren.cpp" />
-    <ClCompile Include="..\netil\config.cpp" />
-    <ClCompile Include="..\netil\gen.cpp" />
-    <ClCompile Include="..\netil\import.cpp" />
-    <ClCompile Include="..\netil\invoke.cpp" />
-    <ClCompile Include="..\netil\Process.cpp" />
-    <ClCompile Include="..\netil\using.cpp" />
+    <ClCompile Include="config.cpp" />
+    <ClCompile Include="gen.cpp" />
+    <ClCompile Include="import.cpp" />
+    <ClCompile Include="invoke.cpp" />
+    <ClCompile Include="Process.cpp" />
+    <ClCompile Include="using.cpp" />
     <ClCompile Include="..\parse\beinterf.cpp" />
     <ClCompile Include="..\parse\browse.cpp" />
     <ClCompile Include="..\parse\ccerr.cpp" />
@@ -181,14 +184,12 @@
     <ClCompile Include="..\parse\constopt.cpp" />
     <ClCompile Include="..\parse\cppbltin.cpp" />
     <ClCompile Include="..\parse\cpplookup.cpp" />
-    <ClCompile Include="..\parse\crc32.cpp" />
     <ClCompile Include="..\parse\debug.cpp" />
     <ClCompile Include="..\parse\declare.cpp" />
     <ClCompile Include="..\parse\declcons.cpp" />
     <ClCompile Include="..\parse\declcpp.cpp" />
     <ClCompile Include="..\parse\expr.cpp" />
     <ClCompile Include="..\parse\exprcpp.cpp" />
-    <ClCompile Include="..\parse\float.cpp" />
     <ClCompile Include="..\parse\help.cpp" />
     <ClCompile Include="..\parse\init.cpp" />
     <ClCompile Include="..\parse\inline.cpp" />
@@ -214,13 +215,12 @@
   <ItemGroup>
     <ClInclude Include="..\middle\iexpr.h" />
     <ClInclude Include="..\middle\IOPT.H" />
-    <ClInclude Include="..\netil\be.h" />
+    <ClInclude Include="be.h" />
     <ClInclude Include="..\parse\beinterf.h" />
     <ClInclude Include="..\parse\browse.h" />
     <ClInclude Include="..\parse\c.h" />
     <ClInclude Include="..\parse\ccerr.h" />
     <ClInclude Include="..\parse\compiler.h" />
-    <ClInclude Include="..\parse\floating.h" />
     <ClInclude Include="..\parse\osutil.h" />
     <ClInclude Include="..\parse\peheader.h" />
     <ClInclude Include="..\parse\regs.h" />
@@ -230,13 +230,16 @@
     <ClInclude Include="..\preproc\pp.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\netil\be.p" />
+    <None Include="be.p" />
     <None Include="..\parse\compiler.p" />
     <None Include="..\preproc\PP.P" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\netil\netlib\DotNetPELib.vcxproj">
+    <ProjectReference Include="..\..\netlib\DotNetPELib.vcxproj">
       <Project>{9e09e239-7370-4cbc-a82e-40dbcc0947f3}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\util\util.vcxproj">
+      <Project>{72430015-06c0-42a2-b9ec-d0e5e2eae83d}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

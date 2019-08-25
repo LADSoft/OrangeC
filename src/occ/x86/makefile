@@ -31,7 +31,6 @@ C_DEPENDENCIES= \
 CPP_DEPENDENCIES= \
     ccmain.cpp \
     config.cpp \
-    crc32.cpp \
     beinterf.cpp \
     browse.cpp \
     ccerr.cpp \

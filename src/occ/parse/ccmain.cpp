@@ -739,7 +739,7 @@ int main(int argc, char* argv[])
             }
 
             if (multipleFiles && !cparams.prm_quiet)
-                printf("%s\n", clist->data);
+                printf("%s\n", (char *)clist->data);
 
             compile(!openOutput);
         }

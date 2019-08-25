@@ -24,6 +24,7 @@
 
 #include "compiler.h"
 #include <wchar.h>
+#include "Utils.h"
 /* locally declared func gloabal memory
  when redeclaring sym, make sure it gets in the global func list
 */
@@ -141,7 +142,8 @@ const char* AnonymousName(void)
 const char* AnonymousTypeName(void)
 {
     char buf[512];
-    my_sprintf(buf, "__anontype_%u_%d", CRC32((unsigned char*)includes->fname, strlen(includes->fname)), includes->anonymousid++);
+    my_sprintf(buf, "__anontype_%u_%d", Utils::CRC32((unsigned char*)includes->fname, strlen(includes->fname)),
+               includes->anonymousid++);
     return litlate(buf);
 }
 SYMBOL* makeID(enum e_sc storage_class, TYPE* tp, SYMBOL* spi, const char* name)
@@ -167,7 +169,7 @@ SYMBOL* makeID(enum e_sc storage_class, TYPE* tp, SYMBOL* spi, const char* name)
 SYMBOL* makeUniqueID(enum e_sc storage_class, TYPE* tp, SYMBOL* spi, const char* name)
 {
     char buf[512];
-    my_sprintf(buf, "%s_%u", name, CRC32((unsigned char*)includes->fname, strlen(includes->fname)));
+    my_sprintf(buf, "%s_%u", name, Utils::CRC32((unsigned char*)includes->fname, strlen(includes->fname)));
     return makeID(storage_class, tp, spi, litlate(buf));
 }
 void addStructureDeclaration(STRUCTSYM* decl)
@@ -2856,6 +2858,8 @@ founddecltype:
                             {
                                 *consdest = CT_CONS;
                             }
+                            if (ssp && strSym && ssp == strSym->mainsym)
+                                strSym = nullptr;
                             if (strSym_out)
                                 *strSym_out = strSym;
                             *notype = true;
@@ -3974,7 +3978,7 @@ LEXEME* getExceptionSpecifiers(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_s
                 lex = getsym();
                 if (MATCHKW(lex, closepa))
                 {
-                    sp->xcMode = xc_dynamic;
+                    sp->xcMode = xc_none;
                     if (!sp->xc)
                         sp->xc = (xcept*)Alloc(sizeof(struct xcept));
                 }
@@ -4035,6 +4039,8 @@ LEXEME* getExceptionSpecifiers(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_s
             else
             {
                 sp->xcMode = xc_none;
+                if (!sp->xc)
+                    sp->xc = (xcept*)Alloc(sizeof(struct xcept));
             }
             break;
         default:
@@ -6580,16 +6586,8 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                             }
                             if (!sp->label && sp->storage_class == sc_static && chosenAssembler->msil)
                                 sp->label = nextLabel++;
-                            if (cparams.prm_cplusplus)
-                            {
-                                TYPE* tp2 = sp->tp;
-                                while (isarray(tp2))
-                                    tp2 = basetype(tp2)->btp;
-                                structuredArray = isstructured(tp2);
-                            }
                             if (cparams.prm_cplusplus && sp->storage_class != sc_type && sp->storage_class != sc_typedef &&
-                                structLevel && (!instantiatingTemplate) &&
-                                (MATCHKW(lex, assign) || MATCHKW(lex, begin) || structuredArray))
+                                structLevel && (!instantiatingTemplate) && (MATCHKW(lex, assign) || MATCHKW(lex, begin)))
                             {
                                 if ((MATCHKW(lex, assign) || MATCHKW(lex, begin)) && storage_class_in == sc_member &&
                                     (sp->storage_class == sc_static || sp->storage_class == sc_external))

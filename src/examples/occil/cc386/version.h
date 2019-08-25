@@ -1,0 +1,64 @@
+//#define VS_FFI_FILEFLAGSMASK 0x0000003FL
+#define PRODUCT_NAME "CC386 Compiler package for WIN32"
+
+#ifdef C68K
+#define PRODUCT_COPYRIGHT "Copyright (C) LADSoft 1994-2012"
+#define GNU_LIB_COPYRIGHT "LGPL (GNU) Library Copyleft Courtesy LadSoft"
+#define GNU_COPYRIGHT "Copyright (c) LADSoft 2002-2012"       
+#else
+#define PRODUCT_COPYRIGHT "Copyright (C) (GPL)  LADSoft 1994-2014"
+#define GNU_LIB_COPYRIGHT "LGPL (GNU) Library Copyleft Courtesy LadSoft"
+#define GNU_COPYRIGHT "Copyright (c) (GPL) 2002-2014"
+#endif
+#define JOSS_COPYRIGHT "(C) Kirill Joss"
+
+#define PRODUCT_STRING_VERSION "4.0.20.1"
+#define PRODUCT_VERSION 4,0,20,1
+
+#define CC_STRING_VERSION "4.0.20.7"
+#define CC_VERSION 4,0,20,7
+
+#define CCIDE_STRING_VERSION "4.0.20.2"
+#define CCIDE_VERSION 4,0,20,2
+
+#define CLIB_STRING_VERSION "4.0.20.1"
+#define CLIB_VERSION 4,0,20,1
+
+#define NASM_STRING_VERSION "0.98.38.569"
+#define NASM_VERSION 0,98,38,569
+
+#define XRC_STRING_VERSION "4.0.18.1"
+#define XRC_VERSION 4,0,18,1
+
+#define IMAKE_STRING_VERSION "4.0.1.4"
+#define IMAKE_VERSION 4,0,1,4
+
+#define ITOUCH_STRING_VERSION "4.0.1.1"
+#define ITOUCH_VERSION 4,0,1,1
+
+#define GREP_STRING_VERSION "4.0.1.1"
+#define GREP_VERSION 4,0,1,1
+
+#define XLIB_STRING_VERSION "4.0.1.1"
+#define XLIB_VERSION 4,0,1,1
+
+#define CL386_STRING_VERSION "5.1.3.8"
+#define CL386_VERSION 5,1,3,8
+
+#define MK386_STRING_VERSION "4.9.2.31"
+#define MK386_VERSION 4,9,2,31
+
+#define VALX_STRING_VERSION "4.0.1.16"
+#define VALX_VERSION 4,0,1,16
+
+#define DEFS_STRING_VERSION "4.0.1.1"
+#define DEFS_VERSION 4,0,1,1
+
+#define IMPORT_STRING_VERSION "4.0.1.1"
+#define IMPORT_VERSION 4,0,1,1
+
+#define BRC_STRING_VERSION "4.0.1.1"
+#define BRC_VERSION 4,0,1,1
+
+#define PROTOGEN_STRING_VERSION "4.0.1.1"
+#define PROTOGEN_VERSION 4,0,1,1

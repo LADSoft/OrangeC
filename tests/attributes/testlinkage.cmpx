@@ -1,0 +1,5 @@
+Error( 68)    testlinkage.cpp(1):  Too many linkage specifiers in declaration
+Error( 68)    testlinkage.cpp(2):  Too many linkage specifiers in declaration
+Error( 68)    testlinkage.cpp(3):  Too many linkage specifiers in declaration
+Error( 68)    testlinkage.cpp(4):  Too many linkage specifiers in declaration
+4 Errors

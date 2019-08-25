@@ -5324,11 +5324,13 @@ HANDLE PASCAL CreateToolhelp32Snapshot(DWORD dwFlags, DWORD th32ProcessID);
 #define AnsiPrev CharPrevA
 
 /* objbase */
+#ifndef __MSIL__
 #define WINOLEAPI        EXTERN_C DECLSPEC_IMPORT HRESULT STDAPICALLTYPE
 #define WINOLEAPI_(type) EXTERN_C DECLSPEC_IMPORT type STDAPICALLTYPE
 WINOLEAPI CoInitialize(PVOID);
 WINOLEAPI CoInitializeEx(LPVOID,DWORD);
 WINOLEAPI_(void) CoUninitialize(void);
+#endif
 
 extern WINBOOL PASCAL WINBASEAPI GetFileAttributesExA(
     LPCSTR lpFileName,

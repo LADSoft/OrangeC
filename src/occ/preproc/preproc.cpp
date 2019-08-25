@@ -23,6 +23,7 @@
  */
 
 #include "compiler.h"
+#include "Utils.h"
 #include "sys/stat.h"
 //#include "dir.h"
 #ifdef HAVE_UNISTD_H
@@ -722,9 +723,8 @@ unsigned char* getauxname(unsigned char* ptr, char** bufp)
 unsigned onceCRC(FILE* handle)
 {
     unsigned crc = 0;
-    unsigned PartialCRC32(unsigned crc, unsigned char* data, size_t len);
 #    ifdef PARSER_ONLY
-    crc = PartialCRC32(crc, (unsigned char*)includes->handle, includes->filesize);
+    crc = Utils::PartialCRC32(crc, (unsigned char*)includes->handle, includes->filesize);
 #    else
     int hnd = dup(fileno(handle));
     unsigned char buf[8192];
@@ -732,7 +732,7 @@ unsigned onceCRC(FILE* handle)
     lseek(hnd, 0, SEEK_SET);
     while ((n = read(hnd, buf, sizeof(buf))) > 0)
     {
-        crc = PartialCRC32(crc, buf, n);
+        crc = Utils::PartialCRC32(crc, buf, n);
     }
     close(hnd);
 #    endif

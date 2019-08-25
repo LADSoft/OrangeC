@@ -22,7 +22,6 @@
  *
  */
 
-#include <windows.h>
 #include <stdio.h>
 #include <string.h>
 #include "DLLExportReader.h"
@@ -61,7 +60,7 @@ bool DLLExportReader::FindDLL()
     p = getenv("SystemRoot");
     if (p)
     {
-        char buf[MAX_PATH];
+        char buf[260];
         strcpy(buf, p);
         if (buf[strlen(buf) - 1] != DIR_SEP[0])
             strcat(buf, DIR_SEP);
@@ -80,7 +79,7 @@ bool DLLExportReader::FindDLL()
     p = getenv("PATH");
     while (*p)
     {
-        char buf[MAX_PATH], *q = buf;
+        char buf[260], *q = buf;
         while (*p && *p != ';')
             *q++ = *p++;
         *q = 0;

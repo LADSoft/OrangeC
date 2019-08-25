@@ -170,8 +170,8 @@ std::string PEReader::SearchOnPath(const std::string& fileName)
 std::string PEReader::FindGACPath(const std::string& path, const std::string& assemblyName, int major, int minor, int build,
                                   int revision)
 {
-#ifdef _WIN32
     std::string rv;
+#ifdef _WIN32
     std::string root = path + DIR_SEP + assemblyName + DIR_SEP + "*.*";
     WIN32_FIND_DATA data;
     HANDLE h = FindFirstFile(root.c_str(), &data);

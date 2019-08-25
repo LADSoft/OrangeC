@@ -1,3 +1,9 @@
+ifeq "$(COMPILER)" "gcc-linux"
+NULLDEV := /dev/null
+else
+NULLDEV := NUL
+endif
+
 CURFILES = $(wildcard *.c)
 
 all: cc386 sqlite3 local
@@ -53,7 +59,7 @@ determinante.exe: determinante.c
 	fc /b determinante.txt determinante.cmpx
 
 %.exe: %.c
-	copy \orangec\bin\lsmsilcrtl.dll *.*
+	-copy \orangec\bin\lsmsilcrtl.dll *.* > $(NULLDEV)
 	occil /9 $< /LKernel32 /LUser32 /LGDI32
 	$* > $*.txt
 	fc /b $*.txt $*.cmpx

@@ -24,10 +24,12 @@
 include ../pathext2.mak
 
 NAME=netlib
+MAIN_FILE=netlinkmain.cpp
 INCLUDES=..$(PATHEXT2)util;..$(PATHEXT2)exefmt
 CPP_DEPENDENCIES=$(wildcard *.cpp)
 C_DEPENDENCIES=$(wildcard *.c)
-
+H_DEPENDENCIES=$(wildcar *.h)
+LIB_DEPENDENCIES=util
 include ../redirect.mak
 
-DISTRIBUTE:
+DISTRIBUTE: copyexe

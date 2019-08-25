@@ -844,7 +844,7 @@ SYMBOL* finishSearch(const char* name, SYMBOL* encloser, NAMESPACEVALUELIST* ns,
         SYMBOL* ssp = getStructureDeclaration();
         if (funcLevel || !ssp)
         {
-            if (cparams.prm_cplusplus || !tagsOnly)
+            if (!tagsOnly)
                 rv = search(name, localNameSpace->valueData->syms);
             if (!rv)
                 rv = search(name, localNameSpace->valueData->tags);
@@ -898,9 +898,7 @@ SYMBOL* finishSearch(const char* name, SYMBOL* encloser, NAMESPACEVALUELIST* ns,
     {
         if (namespaceOnly && !ns)
         {
-            rv = namespacesearch(name, localNameSpace, false, tagsOnly);
-            if (!rv)
-                rv = namespacesearch(name, globalNameSpace, false, tagsOnly);
+            rv = namespacesearch(name, globalNameSpace, false, tagsOnly);
             if (rv)
                 rv->throughClass = false;
         }

@@ -74,11 +74,11 @@ BACKEND_INCLUDE_PATH=.
 
 ifeq "$(COMPILER)" "gcc-linux"
 SOURCE = ..$(PATHEXT2)parse:..$(PATHEXT2)preproc:..$(PATHEXT2)middle
-INCLUDES=..$(PATHEXT2)parse ..$(PATHEXT2)preproc ..$(PATHEXT2)middle ..$(PATHEXT2)..$(PATHEXT2)Util ..$(PATHEXT2)..$(PATHEXT2)ocpp
+INCLUDES=..$(PATHEXT2)parse ..$(PATHEXT2)preproc ..$(PATHEXT2)middle ..$(PATHEXT2)..$(PATHEXT2)util ..$(PATHEXT2)..$(PATHEXT2)ocpp
 SRCPATH:=$(BACKEND_INCLUDE_PATH):$(SOURCE):..
 else
 SOURCE = ..$(PATHEXT2)parse;..$(PATHEXT2)preproc;..$(PATHEXT2)middle
-INCLUDES=..$(PATHEXT2)parse ..$(PATHEXT2)preproc ..$(PATHEXT2)middle ..$(PATHEXT2)..$(PATHEXT2)Util ..$(PATHEXT2)..$(PATHEXT2)ocpp
+INCLUDES=..$(PATHEXT2)parse ..$(PATHEXT2)preproc ..$(PATHEXT2)middle ..$(PATHEXT2)..$(PATHEXT2)util ..$(PATHEXT2)..$(PATHEXT2)ocpp
 SRCPATH:=$(BACKEND_INCLUDE_PATH);$(SOURCE);..
 endif
 BACKEND_FILES = config.cpp

@@ -2,23 +2,23 @@
 #include "DotNetPELib.h"
 #include <string>
 #include "Utils.h"
+#include "CmdFiles.h"
 
 using namespace DotNetPELib;
 
 extern PELib* peLib;
-extern char* pinvoke_dll;
+extern const char* pinvoke_dll;
 extern bool managed_library;
 
 struct data
 {
-    char* name;
-    char* dllName;
+    const char* name;
+    const char* dllName;
 };
 #define HASHLEN 2048
 static LIST* _global_using_list;
-static char* DIR_SEP = "\\";
 void _using_init() {}
-bool _using_(char* file)
+bool _using_(const char* file)
 {
     char name[260], *p;
     strcpy(name, file);

@@ -166,7 +166,7 @@ Operand* make_constant(int sz, EXPRESSION* exp)
     else if (exp->type == en_labcon)
     {
         char lbl[256];
-        sprintf(lbl, "L_%d_%x", exp->v.i, uniqueId);
+        sprintf(lbl, "L_%d_%x", (int)exp->v.i, uniqueId);
         Value* field = GetStringFieldData(exp->v.i, ((EXPRESSION*)exp->altdata)->v.i);
         operand = peLib->AllocateOperand(field);
     }
@@ -268,7 +268,7 @@ Operand* getOperand(IMODE* oper)
                         Instruction::i_ldelem_u2, Instruction::i_ldelem_i4, Instruction::i_ldelem_u4, Instruction::i_ldelem_i8,
                         Instruction::i_ldelem_u8, Instruction::i_ldelem_i,  Instruction::i_ldelem_i,  Instruction::i_ldelem_r4,
                         Instruction::i_ldelem_r8, Instruction::i_ldelem,    Instruction::i_ldelem};
-                    if (instructions[tp->GetBasicType()] = Instruction::i_ldelem)
+                    if (instructions[tp->GetBasicType()] == Instruction::i_ldelem)
                     {
                         operand = peLib->AllocateOperand(
                             peLib->AllocateValue("", GetType(basetype(oper->offset->v.msilArray->tp)->btp, true)));
@@ -896,10 +896,12 @@ void asm_expressiontag(QUAD* q)
         while (n && (q->dc.opcode == i_line || q->dc.opcode == i_expressiontag))
         {
             if (q->dc.opcode == i_expressiontag)
+            {
                 if (q->dc.v.label)
                     n--;
                 else
                     n++;
+            }
             q = q->back;
         }
         if (n)
@@ -1188,7 +1190,7 @@ void asm_add(QUAD* q) /* evaluate an addition */
     }
     // only time we generate add for non arithmetic types is for strings
     else if (q->dc.left->size == ISZ_STRING || q->dc.right->size == ISZ_STRING ||
-             q->dc.left->size == ISZ_OBJECT && q->dc.right->size == ISZ_OBJECT)
+             (q->dc.left->size == ISZ_OBJECT && q->dc.right->size == ISZ_OBJECT))
     {
         MethodSignature* sig;
         if (q->dc.left->size == q->dc.right->size && q->dc.left->size == ISZ_STRING)
@@ -1740,6 +1742,7 @@ void asm_seh(QUAD* q) /* windows seh */
             return;
     }
     if (begin)
+    {
         if (mode == Instruction::seh_catch)
         {
             if (q->dc.left)
@@ -1758,6 +1761,7 @@ void asm_seh(QUAD* q) /* windows seh */
             Instruction* i = peLib->AllocateInstruction(mode, true);
             currentMethod->AddInstruction(i);
         }
+    }
     switch (mode)
     {
         case Instruction::seh_try:
@@ -1904,7 +1908,7 @@ int examine_icode(QUAD* head)
             }
             if (head->dc.right && head->dc.right->mode == i_immed)
             {
-                if (head->dc.opcode != i_je && head->dc.opcode != i_jne || !isconstzero(&stdint, head->dc.right->offset))
+                if ((head->dc.opcode != i_je && head->dc.opcode != i_jne) || !isconstzero(&stdint, head->dc.right->offset))
                 {
                     if (head->dc.right->offset->type != en_structelem)
                     {

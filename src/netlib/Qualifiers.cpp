@@ -25,7 +25,7 @@
 #include "DotNetPELib.h"
 namespace DotNetPELib
 {
-char* Qualifiers::qualifierNames_[] = {"public",    "private",     "static",      "instance",      "explicit", "ansi",
+const char* Qualifiers::qualifierNames_[] = {"public",    "private",     "static",      "instance",      "explicit", "ansi",
                                        "sealed",    "enum",        "value",       "sequential",    "auto",     "literal",
                                        "hidebysig", "preservesig", "specialname", "rtspecialname", "cil",      "managed"};
 int Qualifiers::afterFlags_ = Qualifiers::PreserveSig | Qualifiers::CIL | Qualifiers::Managed;
@@ -103,11 +103,15 @@ std::string Qualifiers::GetObjName(const std::string& stem, DataContainer* paren
     if (npos != std::string::npos)
         rv[npos] = '.';
     if (rv.size())
+    {
         if (rv[rv.size() - 1] == '.')
+        {
             if (rv.size() == 1)
                 rv = "";
             else
                 rv = rv.substr(0, rv.size() - 1);
+        }
+    }
     if (stem.size())
     {
         if (rv.size())

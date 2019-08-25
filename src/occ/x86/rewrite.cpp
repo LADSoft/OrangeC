@@ -2269,7 +2269,7 @@ void cg_internal_conflict(QUAD* head)
                 head->dc.right->offset->type == en_tempref)
             {
                 //can't do it for long longs in registers on this architecture, due to a dearth of registers...
-                if (head->dc.opcode != i_sub || head->ans->size != ISZ_ULONGLONG && head->ans->size != -ISZ_ULONGLONG)
+                if (head->dc.opcode != i_sub || (head->ans->size != ISZ_ULONGLONG && head->ans->size != -ISZ_ULONGLONG))
                 {
                     int t1 = head->ans->offset->v.sp->value.i;
                     int t2 = head->dc.right->offset->v.sp->value.i;

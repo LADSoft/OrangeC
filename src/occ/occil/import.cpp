@@ -27,9 +27,9 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
-#include "Be.h"
+#include "be.h"
 #include "winmode.h"
-#include "DotNetpeLib.h"
+#include "DotNetPELib.h"
 
 #include <fstream>
 #include <deque>

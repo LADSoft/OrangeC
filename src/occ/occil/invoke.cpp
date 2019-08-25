@@ -45,7 +45,7 @@ static char outputFileName[260];
 #    define system(x) winsystem(x)
 extern int winsystem(const char*);
 #endif
-static void InsertFile(LIST** r, char* name, char* ext)
+static void InsertFile(LIST** r, const char* name, const char* ext)
 {
 
     char buf[256], *newbuffer;
@@ -93,17 +93,17 @@ int InsertExternalFile(char* name, bool)
     if (HasExt(name, ".rc"))
     {
         InsertFile(&reslist, name, ".res");
-        InsertFile(&rclist, name, 0);
+        InsertFile(&rclist, name, nullptr);
         return 1;
     }
     else if (HasExt(name, ".res"))
     {
-        InsertFile(&reslist, name, 0);
+        InsertFile(&reslist, name, nullptr);
         return 1;
     }
     else if (HasExt(name, ".ilo"))
     {
-        InsertFile(&objlist, name, 0);
+        InsertFile(&objlist, name, nullptr);
         return 1;
     }
     p = strrchr(name, '\\');
@@ -217,7 +217,7 @@ int RunExternalFiles(char* rootPath)
             sprintf(filname, "\"%s%s\"", temp, outName);
             sprintf(spname, "ilasm.exe /QUIET %s %s %s", args, filname, resources);
             rv = system(spname);
-            +unlink(TEMPFILE);
+            unlink(TEMPFILE);
 
             if (rv)
             {

@@ -22,7 +22,7 @@
  *
  */
 
-#include "dotnetpelib.h"
+#include "DotNetPELib.h"
 #include <new>
 namespace DotNetPELib
 {

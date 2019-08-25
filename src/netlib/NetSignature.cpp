@@ -59,6 +59,7 @@ size_t SignatureGenerator::EmbedType(int* buf, int offset, Type* tp)
     for (int i = 0; i < tp->PointerLevel(); i++)
         buf[offset + rv++] = ELEMENT_TYPE_PTR;
     if (tp->ArrayLevel())
+    {
         if (tp->ArrayLevel() == 1)
         {
             buf[offset + rv++] = ELEMENT_TYPE_SZARRAY;
@@ -67,6 +68,7 @@ size_t SignatureGenerator::EmbedType(int* buf, int offset, Type* tp)
         {
             buf[offset + rv++] = ELEMENT_TYPE_ARRAY;
         }
+    }
     switch (tp->GetBasicType())
     {
         case Type::object:

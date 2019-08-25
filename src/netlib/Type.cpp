@@ -28,11 +28,11 @@
 namespace DotNetPELib
 {
 
-char* Type::typeNames_[] = {"",        "",        "void",   "bool",       "char",
+const char* Type::typeNames_[] = {"",        "",        "void",   "bool",       "char",
                             "int8",    "uint8",   "int16",  "uint16",     "int32",
                             "uint32",  "int64",   "uint64", "native int", "native unsigned int",
                             "float32", "float64", "object", "string"};
-char* BoxedType::typeNames_[] = {"",       "",      "",       "Bool",   "Char",    "SByte",  "Byte",   "Int16",  "UInt16", "Int32",
+const char* BoxedType::typeNames_[] = {"",       "",      "",       "Bool",   "Char",    "SByte",  "Byte",   "Int16",  "UInt16", "Int32",
                                  "UInt32", "Int64", "UInt64", "IntPtr", "UIntPtr", "Single", "Double", "Object", "String"};
 bool Type::Matches(Type* right)
 {

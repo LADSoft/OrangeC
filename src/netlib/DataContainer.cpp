@@ -177,13 +177,22 @@ void DataContainer::BaseTypes(int& types) const
     for (auto child : children_)
         child->BaseTypes(types);
     if (typeid(*this) != typeid(PELib))
+    {
         if (typeid(*this) == typeid(Enum))
+        {
             types |= basetypeEnum;
-        else if (typeid(*this) != typeid(Namespace))
-            if (flags_.Flags() & Qualifiers::Value)
-                types |= basetypeValue;
-            else
-                types |= basetypeObject;
+        }
+        else 
+        {
+            if (typeid(*this) != typeid(Namespace))
+            {
+                if (flags_.Flags() & Qualifiers::Value)
+                    types |= basetypeValue;
+                else
+                    types |= basetypeObject;
+            }
+        }
+     }
 }
 bool DataContainer::Traverse(Callback& callback) const
 {

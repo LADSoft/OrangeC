@@ -57,6 +57,7 @@ Value* Value::ObjIn(PELib& peLib, bool definition)
             peLib.ObjError(oe_syntax);
             break;
     }
+    return nullptr;
 }
 size_t Value::Render(PELib& peLib, int opcode, int operandType, Byte* result) { return type_->Render(peLib, result); }
 bool Local::ILSrcDump(PELib& peLib) const
@@ -160,10 +161,12 @@ size_t Param::Render(PELib& peLib, int opcode, int operandType, Byte* result)
 bool FieldName::ILSrcDump(PELib& peLib) const
 {
     if (field_->FieldType()->GetBasicType() == Type::cls)
+    {
         if (field_->FieldType()->GetClass()->Flags().Flags() & Qualifiers::Value)
             peLib.Out() << "valuetype ";
         else
             peLib.Out() << "class ";
+    }
     field_->FieldType()->ILSrcDump(peLib);
     peLib.Out() << " ";
     peLib.Out() << Qualifiers::GetName(field_->Name(), field_->GetContainer());

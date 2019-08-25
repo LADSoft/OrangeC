@@ -68,7 +68,7 @@ bool Field::ILSrcDumpTypeName(PELib& peLib, Field::ValueSize size)
 bool Field::ILSrcDump(PELib& peLib) const
 {
     peLib.Out() << ".field";
-    if ((parent_->Flags().Flags() & Qualifiers::Explicit) || (parent_->Flags().Flags() & Qualifiers::Sequential) && explicitOffset_)
+    if ((parent_->Flags().Flags() & Qualifiers::Explicit) || ((parent_->Flags().Flags() & Qualifiers::Sequential) && explicitOffset_))
         peLib.Out() << " [" << explicitOffset_ << "]";
     flags_.ILSrcDumpBeforeFlags(peLib);
     flags_.ILSrcDumpAfterFlags(peLib);
@@ -308,13 +308,16 @@ bool Field::PEDump(PELib& peLib)
                     peflags |= FieldTableEntry::HasFieldRVA;  // in separate memory
                 }
                 break;
+            case None:
+                // should never get here
+                break;
         }
         TableEntryBase* table = new FieldTableEntry(peflags, nameindex, sigindex);
         peIndex_ = peLib.PEOut().AddTableEntry(table);
         delete[] sig;
 
         if ((parent_->Flags().Flags() & Qualifiers::Explicit) ||
-            (parent_->Flags().Flags() & Qualifiers::Sequential) && explicitOffset_)
+            ((parent_->Flags().Flags() & Qualifiers::Sequential) && explicitOffset_))
         {
             TableEntryBase* table = new FieldLayoutTableEntry(explicitOffset_, peIndex_);
             peLib.PEOut().AddTableEntry(table);
@@ -324,6 +327,9 @@ bool Field::PEDump(PELib& peLib)
         int type;
         switch (mode_)
         {
+            case None:
+                // should never get here
+                break;
             case Enum:
             {
                 switch (size_)

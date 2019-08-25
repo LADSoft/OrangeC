@@ -25,7 +25,7 @@
 #include "DotNetPELib.h"
 namespace DotNetPELib
 {
-char* PELibError::errorNames[] = {
+const char* PELibError::errorNames[] = {
     "Variable Length Argument parameters already declared",
     "Stack underflow",
     "Mismatched stack at label",

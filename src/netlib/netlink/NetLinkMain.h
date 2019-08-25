@@ -40,13 +40,13 @@ protected:
     const std::string &GetAssemblyName(CmdFiles &files);
     const std::string &GetOutputFile(CmdFiles &files);
     bool LoadImage(CmdFiles &files);
-    bool NetLinkMain::Validate();
+    bool Validate();
     bool CreateExecutable(CmdFiles &files);
 
-    DotNetPELib::MethodSignature *LookupSignature(char * name);
-    DotNetPELib::Field *LookupField(char *name);
-    DotNetPELib::MethodSignature *NetLinkMain::LookupManagedSignature(char *name);
-    DotNetPELib::Field *NetLinkMain::LookupManagedField(char *name);
+    DotNetPELib::MethodSignature *LookupSignature(const char * name);
+    DotNetPELib::Field *LookupField(const char *name);
+    DotNetPELib::MethodSignature *LookupManagedSignature(const char *name);
+    DotNetPELib::Field *LookupManagedField(const char *name);
     void MainLocals(void);
     void MainInit(void);
     void dumpInitializerCalls(std::list<DotNetPELib::MethodSignature *>&);
@@ -55,7 +55,7 @@ protected:
     bool AddRTLThunks();
 
     // pelib traverse callback
-    virtual bool NetLinkMain::EnterNamespace(const DotNetPELib::Namespace *nmspc) override;
+    virtual bool EnterNamespace(const DotNetPELib::Namespace *nmspc) override;
     virtual bool EnterClass(const DotNetPELib::Class *method) override;
     virtual bool EnterMethod(const DotNetPELib::Method *) override;
 private:
@@ -86,6 +86,6 @@ private:
     static CmdSwitchBool NoDefaultlibs;
     static CmdSwitchBool WeedPInvokes;
 
-    static char *usageText;
+    static const char *usageText;
 };
 #endif

@@ -34,7 +34,7 @@
 extern COMPILER_PARAMS cparams;
 extern char msil_bltins[];
 char namespaceAndClass[512];
-char* pinvoke_dll = "msvcrt.dll";
+const char* pinvoke_dll = "msvcrt.dll";
 bool managed_library;
 bool no_default_libs;
 bool replacePInvoke;

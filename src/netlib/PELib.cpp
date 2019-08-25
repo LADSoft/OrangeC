@@ -54,7 +54,7 @@ bool PELib::DumpOutputFile(const std::string& file, OutputMode mode, bool gui)
 {
     bool rv;
     outputStream_ = new std::fstream(file.c_str(), std::ios::in | std::ios::out | std::ios::trunc |
-                                                       (mode == ilasm || mode == object ? 0 : std::ios::binary));
+                                                       (mode == ilasm || mode == object ? std::ios::in : std::ios::binary));
     switch (mode)
     {
         case ilasm:
@@ -332,7 +332,7 @@ PELib::eFindType PELib::Find(std::string path, Method** result, std::vector<Type
         DataContainer* dc = u->FindContainer(split, n);
         if (dc)
         {
-            if (n == split.size() - 1 && typeid(*dc) == typeid(Class) || typeid(*dc) == typeid(Enum))
+            if ((n == split.size() - 1 && typeid(*dc) == typeid(Class)) || typeid(*dc) == typeid(Enum))
             {
                 for (auto cc : dc->Methods())
                 {
@@ -504,14 +504,14 @@ int PELib::ObjHex2()
     char n1, n2;
     n1 = ObjChar();
     n1 = toupper(n1);
-    if (n1 < '0' || n1 > '9' && n1 < 'A' || n1 > 'F')
+    if (n1 < '0' || (n1 > '9' && n1 < 'A') || n1 > 'F')
     {
         objInputPos_--;
         return -1;
     }
     n2 = ObjChar();
     n2 = toupper(n2);
-    if (n2 < '0' || n2 > '9' && n2 < 'A' || n2 > 'F')
+    if (n2 < '0' || (n2 > '9' && n2 < 'A') || n2 > 'F')
         ObjError(oe_syntax);
     n1 -= '0';
     if (n1 > 9)

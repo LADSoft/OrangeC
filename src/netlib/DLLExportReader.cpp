@@ -31,7 +31,7 @@
 #include "MZHeader.h"
 using namespace DotNetPELib;
 
-char* DIR_SEP = "\\";
+const char* DIR_SEP = "\\";
 
 DLLExportReader::~DLLExportReader()
 {

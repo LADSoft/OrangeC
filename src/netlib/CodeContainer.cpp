@@ -158,6 +158,7 @@ int CodeContainer::CompileSEH(std::vector<Instruction*> tags, int offset, std::v
             offset++;
         }
     } while (offset < tags.size());
+    return 1;
 }
 void CodeContainer::CompileSEH(PELib&, std::vector<SEHData>& sehData)
 {
@@ -264,6 +265,9 @@ void CodeContainer::OptimizeLDC(PELib& peLib)
                         instruction->NullOperand(peLib);
                     }
                 }
+                break;
+            default:
+                break;
         }
     }
 }
@@ -314,6 +318,8 @@ void CodeContainer::OptimizeLDLOC(PELib& peLib)
                     }
                 }
                 break;
+            default:
+                break;
         }
     }
 }
@@ -356,6 +362,8 @@ void CodeContainer::OptimizeLDARG(PELib& peLib)
                             break;
                     }
                 }
+                break;
+            default:
                 break;
         }
     }
@@ -454,6 +462,8 @@ void CodeContainer::ValidateInstructions()
                         throw PELibError(PELibError::IndexOutOfRange, ((Local*)instruction->GetOperand()->GetValue())->Name());
                     }
                     break;
+                default:
+                    break;
             }
     }
 }
@@ -526,14 +536,14 @@ void CodeContainer::ValidateSEHEpilogues()
                 switch (instruction->SEHType())
                 {
                     case Instruction::seh_try:
-                        if (!old || old->OpCode() != Instruction::i_leave && old->OpCode() != Instruction::i_leave_s)
+                        if (!old || (old->OpCode() != Instruction::i_leave && old->OpCode() != Instruction::i_leave_s))
                         {
                             throw PELibError(PELibError::InvalidSEHEpilogue);
                         }
                         break;
                     case Instruction::seh_catch:
                     case Instruction::seh_filter_handler:
-                        if (!old || old->OpCode() != Instruction::i_leave && old->OpCode() != Instruction::i_leave_s)
+                        if (!old || (old->OpCode() != Instruction::i_leave && old->OpCode() != Instruction::i_leave_s))
                         {
                             throw PELibError(PELibError::InvalidSEHEpilogue);
                         }

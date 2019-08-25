@@ -30,7 +30,7 @@ namespace DotNetPELib
 bool MethodSignature::Matches(std::vector<Type*> args)
 {
     // this is only designed for managed functions...
-    if (args.size() == params.size() || params.size() && args.size() >= params.size() - 1 && (flags_ & Vararg))
+    if (args.size() == params.size() || (params.size() && args.size() >= params.size() - 1 && (flags_ & Vararg)))
     {
         auto it = params.begin();
         for (int i = 0, n = 0; i < args.size(); i++)

@@ -453,7 +453,7 @@ namespace DotNetPELib {
         RSAEncoder rsaEncoder;
         static Byte MZHeader_[];
         static struct DotNetMetaHeader *metaHeader_;
-        static char *streamNames_[];
+        static const char *streamNames_[];
         static Byte defaultUS_[];
     };
 
@@ -484,13 +484,13 @@ namespace DotNetPELib {
         void LibPath(const std::string& libPath) { libPath_ = libPath;  }
 
     protected:
-        std::string PEReader::SearchOnPath(const std::string& assemblyName);
+        std::string SearchOnPath(const std::string& assemblyName);
         std::string FindGACPath(const std::string& path, const std::string& fileName, int major, int minor, int build, int revision);
         std::string SearchForManagedFile(const std::string& assemblyName, int major, int minor, int build, int revision);
         void get(void *buffer, size_t offset, size_t len);
         size_t PELocation();
         size_t Cor20Location(size_t PEHeader);
-        void GetStream(size_t Cor20, char *streamName, DWord pos[2]);
+        void GetStream(size_t Cor20, const char *streamName, DWord pos[2]);
         int ReadTables(size_t Cor20);
 
     private:
@@ -839,6 +839,7 @@ namespace DotNetPELib {
     class TableEntryBase
     {
     public:
+        virtual ~TableEntryBase() { }
         virtual int TableIndex() const = 0;
         virtual size_t Render(size_t sizes[MaxTables + ExtraIndexes], Byte *) const = 0;
         virtual size_t Get(size_t sizes[MaxTables + ExtraIndexes], Byte *) = 0;
@@ -1571,6 +1572,7 @@ namespace DotNetPELib {
             : flags_(Flags), hdrSize_(3), maxStack_(MaxStack), codeSize_(CodeSize), code_(nullptr), signatureToken_(signature), rva_(0), methodDef_(MethodDef)
         {
             if ((flags_ & 0xfff) == 0)
+            {
                 if (maxStack_ <= 8 && codeSize_ < 64 && localCount == 0 && !hasSEH)
                 {
                     flags_ = flags_ | (int)TinyFormat;
@@ -1579,6 +1581,7 @@ namespace DotNetPELib {
                 {
                     flags_ = flags_ | (int)FatFormat;
                 }
+            }
         }
         enum {
             EHTable = 1,

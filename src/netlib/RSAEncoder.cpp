@@ -29,7 +29,7 @@
 #include <functional>
 #include <algorithm>
 #include "RSAEncoder.h"
-#include "SHA1.h"
+#include "sha1.h"
 #include "bigdigits.h"
 #include "limits.h"
 

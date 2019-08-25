@@ -44,7 +44,7 @@ Byte PEWriter::MZHeader_[] = {
     0x6f, 0x74, 0x20, 0x62, 0x65, 0x20, 0x72, 0x75, 0x6e, 0x20, 0x69, 0x6e, 0x20, 0x44, 0x4f, 0x53, 0x20, 0x6d, 0x6f,
     0x64, 0x65, 0x2e, 0x0d, 0x0d, 0x0a, 0x24, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 };
-char* PEWriter::streamNames_[5] = {"#~", "#Strings", "#US", "#GUID", "#Blob"};
+const char* PEWriter::streamNames_[5] = {"#~", "#Strings", "#US", "#GUID", "#Blob"};
 
 static DotNetMetaHeader metaHeader1 = {META_SIG, 1, 1, 0};
 DotNetMetaHeader* PEWriter::metaHeader_ = &metaHeader1;
@@ -278,7 +278,7 @@ size_t PEWriter::HashUS(std::wstring str)
         int n = str[i];
         if (n & 0xff00)
             flag = 1;
-        else if (n <= 8 || n >= 0x0e && n < 0x20 || n == 0x27 || n == 0x2d || n == 0x7f)
+        else if (n <= 8 || (n >= 0x0e && n < 0x20) || n == 0x27 || n == 0x2d || n == 0x7f)
             flag = 1;
         us_.base[us_.size++] = n & 0xff;
         us_.base[us_.size++] = n >> 8;

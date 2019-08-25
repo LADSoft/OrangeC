@@ -29,7 +29,7 @@
 #include "PEFile.h"
 #include "MZHeader.h"
 #include "PEHeader.h"
-#include "dllexportreader.h"
+#include "DLLExportReader.h"
 #include <time.h>
 #include <stdio.h>
 namespace DotNetPELib
@@ -323,7 +323,7 @@ size_t PEReader::Cor20Location(size_t headerOffs)
     }
     return 0;
 }
-void PEReader::GetStream(size_t Cor20, char* streamName, DWord pos[2])
+void PEReader::GetStream(size_t Cor20, const char* streamName, DWord pos[2])
 {
     DotNetCOR20Header cor20;
     memset(pos, 0, sizeof(DWord) * 2);

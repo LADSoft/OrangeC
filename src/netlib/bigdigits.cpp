@@ -91,13 +91,13 @@ static const int kUseNoAllocs = 0;
 #    endif
 #    define WIN32_LEAN_AND_MEAN
 #    include <windows.h>
-void mpFail(char* msg)
+void mpFail(const char* msg)
 {
     MessageBox(NULL, msg, "BigDigits Error", MB_ICONERROR);
     exit(EXIT_FAILURE);
 }
 #else  /* Ordinary console program */
-void mpFail(char* msg)
+void mpFail(const char* msg)
 {
     perror(msg);
     exit(EXIT_FAILURE);

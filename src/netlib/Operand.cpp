@@ -307,6 +307,9 @@ size_t Operand::Render(PELib& peLib, int opcode, int operandType, Byte* result)
     {
         case t_none:  // no operand, nothing to display
             break;
+        case t_label:
+            // shouldn't be rendered...
+            break;
         case t_value:
             sz = refValue_->Render(peLib, opcode, operandType, result);
             break;

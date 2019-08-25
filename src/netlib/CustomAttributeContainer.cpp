@@ -52,13 +52,20 @@ bool CustomAttributeContainer::CustomAttributeDescriptor::operator()(const Custo
     if (left->name < right->name)
         return true;
     if (left->name == right->name)
+    {
         if (!left->data && right->data)
             return true;
         else if (left->data && right->data)
+        {
             if (left->sz < right->sz)
                 return true;
-            else if (left->sz == right->sz)
-                return memcmp(left->data, right->data, right->sz) < 0;
+            else 
+            {
+                if (left->sz == right->sz)
+                    return memcmp(left->data, right->data, right->sz) < 0;
+            }
+        }
+    }
     return false;
 }
 const std::vector<CustomAttributeContainer::CustomAttributeDescriptor*>&
@@ -80,7 +87,7 @@ bool CustomAttributeContainer::Has(CustomAttribute& attribute, const std::string
         for (auto a : it->second)
         {
             if (a->name == name)
-                if (!data || sz == a->sz && !memcmp(data, a->data, sz))
+                if (!data || (sz == a->sz && !memcmp(data, a->data, sz)))
                     return true;
         }
     }

@@ -24,7 +24,7 @@
 
 #include "DotNetPELib.h"
 #include "PEFile.h"
-#include "SHA1.h"
+#include "sha1.h"
 #include <climits>
 namespace DotNetPELib
 {

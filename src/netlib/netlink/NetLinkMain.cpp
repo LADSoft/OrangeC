@@ -40,7 +40,7 @@ CmdSwitchBool NetLinkMain::CManaged(SwitchParser, 'M');
 CmdSwitchBool NetLinkMain::NoDefaultlibs(SwitchParser, 'n');
 CmdSwitchBool NetLinkMain::WeedPInvokes(SwitchParser, 'P');
 
-char *NetLinkMain::usageText = "[options] inputfiles\n"
+const char *NetLinkMain::usageText = "[options] inputfiles\n"
         "\n"
         "/L         generate library          /S         generate .IL file\n"
         "/g         WIN32 GUI application     /kxxx      set strong name key\n"
@@ -73,6 +73,7 @@ const std::string &NetLinkMain::GetAssemblyName(CmdFiles &files)
     }
     int n = assemblyName.find_last_of(CmdFiles::DIR_SEP[0]);
     if (n != std::string::npos)
+    {
         if (n == assemblyName.size() - 1)
         {
             std::cout << "Invalid assembly name" << std::endl;
@@ -82,6 +83,7 @@ const std::string &NetLinkMain::GetAssemblyName(CmdFiles &files)
         {
             assemblyName = assemblyName.substr(n + 1);
         }
+    }
     return assemblyName;
 }
 const std::string &NetLinkMain::GetOutputFile(CmdFiles &files)
@@ -307,7 +309,7 @@ bool NetLinkMain::Validate()
         peLib->Traverse(optimizer);
     return !validator.Failed() && !optimizer.Failed();
 }
-MethodSignature *NetLinkMain::LookupSignature(char * name)
+MethodSignature *NetLinkMain::LookupSignature(const char * name)
 {
     Method *result;
     PELib::eFindType rv = peLib->Find(const_cast<char *>((namespaceAndClass + name).c_str()), &result, std::vector<Type *> { }, nullptr, false);
@@ -323,7 +325,7 @@ MethodSignature *NetLinkMain::LookupSignature(char * name)
     return NULL;
 
 }
-MethodSignature *NetLinkMain::LookupManagedSignature(char *name)
+MethodSignature *NetLinkMain::LookupManagedSignature(const char *name)
 {
     Method *rv = nullptr;
     peLib->Find(std::string("lsmsilcrtl.rtl::") + name, &rv, std::vector<Type *> {}, nullptr, false);
@@ -331,7 +333,7 @@ MethodSignature *NetLinkMain::LookupManagedSignature(char *name)
         return rv->Signature();
     return nullptr;
 }
-Field *NetLinkMain::LookupField(char *name)
+Field *NetLinkMain::LookupField(const char *name)
 {
     void *result;
     PELib::eFindType rv = peLib->Find(const_cast<char *>((namespaceAndClass + name).c_str()), &result);
@@ -341,7 +343,7 @@ Field *NetLinkMain::LookupField(char *name)
     }
     return NULL;
 }
-Field *NetLinkMain::LookupManagedField(char *name)
+Field *NetLinkMain::LookupManagedField(const char *name)
 {
     void *rv = nullptr;
     if (peLib->Find(std::string("lsmsilcrtl.rtl::") + name, &rv, nullptr) == PELib::s_field)
@@ -518,7 +520,7 @@ void NetLinkMain::dumpCallToMain(void)
         dumpInitializerCalls(destructors);
         dumpInitializerCalls(rundowns);
 
-        if (!mainSym || mainSym && mainSym->ReturnType()->IsVoid())
+        if (!mainSym || (mainSym && mainSym->ReturnType()->IsVoid()))
             currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldc_i4, peLib->AllocateOperand((longlong)0, Operand::i32)));
         if (CManaged.GetValue())
         {

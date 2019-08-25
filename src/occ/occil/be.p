@@ -153,7 +153,7 @@ void oa_header(char *filename, char *compiler_version);
 void oa_end_generation(void);
 TYPE *oa_get_boxed(TYPE *);
 TYPE *oa_get_unboxed(TYPE *);
-bool _using_(char *);
+bool _using_(const char *);
 void _using_init();
 void _add_global_using(char *str);
 void _apply_global_using(void);

@@ -27,9 +27,9 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
-#include "Be.h"
+#include "be.h"
 #include "winmode.h"
-#include "DotNetpeLib.h"
+#include "DotNetPELib.h"
 #include "Utils.h"
 
 #define STARTUP_TYPE_STARTUP 1
@@ -57,7 +57,7 @@ extern LIST* temporarySymbols;
 extern char prm_snkKeyFile[260];
 extern int assemblyVersion[4];
 extern LIST* objlist;
-extern char* pinvoke_dll;
+extern const char* pinvoke_dll;
 extern NAMESPACEVALUELIST* globalNameSpace;
 extern bool managed_library;
 extern bool no_default_libs;
@@ -214,7 +214,7 @@ MethodSignature* LookupArrayMethod(Type* tp, std::string name)
     arrayMethods[name] = sig;
     return sig;
 }
-static MethodSignature* FindMethodSignature(char* name)
+static MethodSignature* FindMethodSignature(const char* name)
 {
     void* result;
     if (peLib->Find(name, &result) == PELib::s_method)
@@ -224,7 +224,7 @@ static MethodSignature* FindMethodSignature(char* name)
     fatal("could not find built in method %s", name);
     return NULL;
 }
-static Type* FindType(char* name, bool toErr)
+static Type* FindType(const char* name, bool toErr)
 {
     void* result;
     if (peLib->Find(name, &result) == PELib::s_class)
@@ -475,7 +475,7 @@ std::string GetArrayName(TYPE* tp)
         else if (tp->size == 0)
             strcat(end, "[]");
         else
-            sprintf(end + strlen(end), "[%d]", tp->size);
+            sprintf(end + strlen(end), "[%d]", (int)tp->size);
         tp = basetype(tp->btp);
     }
     if (isstructured(tp) || basetype(tp)->type == bt_enum)
@@ -492,7 +492,7 @@ std::string GetArrayName(TYPE* tp)
     }
     else
     {
-        static char* typeNames[] = {"int8",    "int8",       "int8",    "int8",    "uint8",
+        static const char* typeNames[] = {"int8",    "int8",       "int8",    "int8",    "uint8",
                                     "int16",   "int16",      "uint16",  "uint16",  "int32",
                                     "int32",   "native int", "int32",   "uint32",  "native unsigned int",
                                     "int32",   "uint32",     "int64",   "uint64",  "float32",
@@ -512,7 +512,7 @@ Value* GetStructField(SYMBOL* sp)
 }
 TYPE* oa_get_boxed(TYPE* in)
 {
-    static char* typeNames[] = {"int8",   "Bool",  "Int8",   "Int8",   "UInt8",  "Int16",  "Int16",   "UInt16",
+    static const char* typeNames[] = {"int8",   "Bool",  "Int8",   "Int8",   "UInt8",  "Int16",  "Int16",   "UInt16",
                                 "UInt16", "Int32", "Int32",  "IntPtr", "Int32",  "UInt32", "UIntPtr", "Int32",
                                 "UInt32", "Int64", "UInt64", "Single", "Double", "Double", "Single",  "Double",
                                 "Double", "",      "",       "",       "",       "",       "String"};
@@ -546,7 +546,7 @@ TYPE* oa_get_unboxed(TYPE* in)
         if (in->sp->parentNameSpace && !in->sp->parentClass && !strcmp(in->sp->parentNameSpace->name, "System"))
         {
             const char* name = in->sp->name;
-            static char* typeNames[] = {"Bool",  "Char",   "Int8",   "UInt8",   "Int16",  "UInt16", "Int32", "UInt32",
+            static const char* typeNames[] = {"Bool",  "Char",   "Int8",   "UInt8",   "Int16",  "UInt16", "Int32", "UInt32",
                                         "Int64", "UInt64", "IntPtr", "UIntPtr", "Single", "Double", "String"};
             static TYPE* typeVals[] = {&stdbool,          &stdchar,    &stdchar,     &stdunsignedchar, &stdshort,
                                        &stdunsignedshort, &stdint,     &stdunsigned, &stdlonglong,     &stdunsignedlonglong,
@@ -1248,7 +1248,9 @@ void CreateFunction(MethodSignature* sig, SYMBOL* sp)
     else
         flags |= Qualifiers::Public;
     if (!cparams.prm_compileonly || cparams.prm_asmfile)
+    {
         if (sp->linkage3 == lk_entrypoint)
+        {
             if (hasEntryPoint)
             {
                 printf("multiple entry points detected");
@@ -1258,6 +1260,8 @@ void CreateFunction(MethodSignature* sig, SYMBOL* sp)
             {
                 hasEntryPoint = true;
             }
+        }
+    }
     currentMethod = peLib->AllocateMethod(sig, flags, sp->linkage3 == lk_entrypoint);
     mainContainer->Add(currentMethod);
     if (!strcmp(sp->name, "main"))
@@ -1293,7 +1297,7 @@ static void mainLocals(void)
         localList.push_back(peLib->AllocateLocal("newmode", peLib->AllocateType(Type::Void, 1)));
     }
 }
-static MethodSignature* LookupSignature(char* name)
+static MethodSignature* LookupSignature(const char* name)
 {
     static SYMBOL sp;
     sp.name = name;
@@ -1302,7 +1306,7 @@ static MethodSignature* LookupSignature(char* name)
         return it->second;
     return NULL;
 }
-static MethodSignature* LookupManagedSignature(char* name)
+static MethodSignature* LookupManagedSignature(const char* name)
 {
     Method* rv = nullptr;
     peLib->Find(std::string("lsmsilcrtl.rtl::") + name, &rv, std::vector<Type*>{}, nullptr, false);
@@ -1310,7 +1314,7 @@ static MethodSignature* LookupManagedSignature(char* name)
         return rv->Signature();
     return nullptr;
 }
-static Field* LookupField(char* name)
+static Field* LookupField(const char* name)
 {
     static SYMBOL sp;
     sp.name = name;
@@ -1330,7 +1334,7 @@ static Field* LookupField(char* name)
 
     return NULL;
 }
-static Field* LookupManagedField(char* name)
+static Field* LookupManagedField(const char* name)
 {
     void* rv = nullptr;
     if (peLib->Find(std::string("lsmsilcrtl.rtl::") + name, &rv, nullptr) == PELib::s_field)
@@ -1513,7 +1517,7 @@ static void dumpCallToMain(void)
             }
         }
         dumpInitializerCalls(deinitializersHead);
-        if (!mainSym || mainSym && mainSym->Signature()->ReturnType()->IsVoid())
+        if (!mainSym || (mainSym && mainSym->Signature()->ReturnType()->IsVoid()))
             currentMethod->AddInstruction(
                 peLib->AllocateInstruction(Instruction::i_ldc_i4, peLib->AllocateOperand((longlong)0, Operand::i32)));
         if (managed_library)
@@ -1958,7 +1962,7 @@ void oa_main_postprocess(bool errors)
         {
             printf("Error: main not defined\n");
         }
-        errors |= checkExterns() || errCount || prm_targettype != DLL && !mainSym && !hasEntryPoint;
+        errors |= checkExterns() || errCount || (prm_targettype != DLL && !mainSym && !hasEntryPoint);
         if (!errors)
         {
             if (replacePInvoke)

@@ -204,7 +204,7 @@ namespace DotNetPELib
         ErrorList Errnum() const { return errnum; }
     private:
         ErrorList errnum;
-        static char *errorNames[];
+        static const char *errorNames[];
     };
     class ObjectError : public std::runtime_error
     {
@@ -262,13 +262,13 @@ namespace DotNetPELib
             PInvokeFunc = HideBySig | Static | PreserveSig,
             ManagedFunc = HideBySig | Static | CIL | Managed
         };
-        Qualifiers::Qualifiers() : flags_(0)
+        Qualifiers() : flags_(0)
         {
         }
-        Qualifiers::Qualifiers(int Flags) : flags_(Flags)
+        Qualifiers(int Flags) : flags_(Flags)
         {
         }
-        Qualifiers::Qualifiers(const Qualifiers &old)
+        Qualifiers(const Qualifiers &old)
         {
             flags_ = old.flags_;
         }
@@ -294,7 +294,7 @@ namespace DotNetPELib
         static void ReverseNamePrefix(std::string&rv, DataContainer *parent, int &pos, bool type);
         static std::string GetNamePrefix(DataContainer *parent, bool type);
     private:
-        static char * qualifierNames_[];
+        static const char * qualifierNames_[];
         static int afterFlags_;
         int flags_;
     };
@@ -548,7 +548,7 @@ namespace DotNetPELib
         void SetPublicKey(PEReader &reader, size_t index);
                 
         const CustomAttributeContainer &CustomAttributes() const { return customAttributes_;  }
-        virtual bool InAssemblyRef() const { return external_; }
+        virtual bool InAssemblyRef() const override { return external_; }
         bool IsLoaded() { return loaded_; }
         void SetLoaded() { loaded_ = true; }
         bool ILHeaderDump(PELib &);
@@ -572,7 +572,7 @@ namespace DotNetPELib
     class Namespace : public DataContainer
     {
     public:
-        Namespace::Namespace(const std::string& Name) : DataContainer(Name, Qualifiers(0))
+        Namespace(const std::string& Name) : DataContainer(Name, Qualifiers(0))
         {
         }
         ///** Get the full namespace name including all parents
@@ -871,21 +871,21 @@ namespace DotNetPELib
         enum OpSize { any, i8, u8, i16, u16, i32, u32, i64, u64, inative, r4, r8 };
         enum OpType { t_none, t_value, t_int, t_real, t_string, t_label };
         ///** Default constructor
-        Operand::Operand() : type_(t_none) // no operand
+        Operand() : type_(t_none) // no operand
         {
         }
         ///** Operand is a complex value
-        Operand::Operand(Value *V) : type_(t_value), refValue_(V), property_(false)
+        Operand(Value *V) : type_(t_value), refValue_(V), property_(false)
         {
         }
         ///** Operand is an integer constant
-        Operand::Operand(longlong Value, OpSize Size) : type_(t_int), intValue_(Value), sz_(Size)
+        Operand(longlong Value, OpSize Size) : type_(t_int), intValue_(Value), sz_(Size)
         {
         }
-        Operand::Operand(int Value, OpSize Size) : Operand((longlong)Value, Size) { }
-        Operand::Operand(unsigned Value, OpSize Size) : Operand((longlong)Value, Size) { }
+        Operand(int Value, OpSize Size) : Operand((longlong)Value, Size) { }
+        Operand(unsigned Value, OpSize Size) : Operand((longlong)Value, Size) { }
         ///** Operand is a floating point constant
-        Operand::Operand(double Value, OpSize Size) : type_(t_real), floatValue_(Value), sz_(Size)
+        Operand(double Value, OpSize Size) : type_(t_real), floatValue_(Value), sz_(Size)
         {
         }
         ///** Operand is a string
@@ -918,7 +918,7 @@ namespace DotNetPELib
         size_t Render(PELib &peLib, int opcode, int operandType, Byte *);
         virtual void ObjOut(PELib &, int pass) const;
         static Operand * ObjIn(PELib &);
-        std::string Operand::EscapedString() const;
+        std::string EscapedString() const;
     protected:
         OpType type_;
         OpSize sz_;
@@ -1055,7 +1055,7 @@ namespace DotNetPELib
             o_immed1, o_immed4, o_immed8, o_float4, o_float8, o_switch
         };
         struct InstructionName {
-            char *name;
+            const char *name;
             Byte op1;
             Byte op2;
             Byte bytes;
@@ -1370,7 +1370,7 @@ namespace DotNetPELib
         MethodSignature *methodRef_;
         size_t peIndex_;
     private:
-        static char *typeNames_[];
+        static const char *typeNames_[];
     };
     ///** A boxed type, e.g. the reference to a System::* object which
     // represents the basic type
@@ -1387,7 +1387,7 @@ namespace DotNetPELib
         virtual void ObjOut(PELib &, int pass) const override;
         static BoxedType *ObjIn(PELib &);
     private:
-        static char *typeNames_[];
+        static const char *typeNames_[];
     };
 
     ///** The callback structure is passed to 'traverse'... it holds callbacks
@@ -1514,7 +1514,7 @@ namespace DotNetPELib
         ///** Load an object file
         bool LoadObject(const std::string& name);
         ///** find an unmanaged dll name
-        std::string PELib::FindUnmanagedName(const std::string& name);
+        std::string FindUnmanagedName(const std::string& name);
         ///** Find an assembly
         AssemblyDef *FindAssembly(const std::string& assemblyName) const;
         ///** Find a Class
@@ -1598,4 +1598,4 @@ namespace DotNetPELib
     };
 
 } // namespace
-#endif DOTNETPELIB_H
+#endif // DOTNETPELIB_H

@@ -25,11 +25,7 @@ include ../pathext2.mak
 
 NAME=netlib
 MAIN_FILE=NetLinkMain.cpp
-ifeq "$(COMPILER)" "gcc-linux"
-INCLUDES=..$(PATHEXT2)util /I..$(PATHEXT2)exefmt
-else
-INCLUDES=..$(PATHEXT2)util;..$(PATHEXT2)exefmt
-endif
+INCLUDES=..$(PATHEXT2)util ..$(PATHEXT2)exefmt
 CPP_DEPENDENCIES=$(wildcard *.cpp)
 H_DEPENDENCIES=$(wildcard *.h)
 LIB_DEPENDENCIES=util

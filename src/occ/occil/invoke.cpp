@@ -29,6 +29,10 @@
 #include "winmode.h"
 #include "Utils.h"
 
+#ifdef HAVE_UNISTD_H
+#    include <unistd.h>
+#endif
+
 #define TEMPFILE "$$$OCC.TMP"
 
 extern COMPILER_PARAMS cparams;
@@ -184,7 +188,7 @@ int RunExternalFiles(char* rootPath)
     args[0] = 0;
     while (rclist)
     {
-        sprintf(spname, "\"%sorc.exe\" -r %s %s \"%s\"", root, !showBanner ? "-!" : "", args, rclist->data);
+        sprintf(spname, "\"%sorc.exe\" -r %s %s \"%s\"", root, !showBanner ? "-!" : "", args, (char *)rclist->data);
         rv = system(spname);
         if (rv)
             return rv;
@@ -208,7 +212,7 @@ int RunExternalFiles(char* rootPath)
         }
         while (reslist)
         {
-            sprintf(resources + strlen(resources), " /Resource:\"%s\"", reslist->data);
+            sprintf(resources + strlen(resources), " /Resource:\"%s\"", (char *)reslist->data);
             reslist = reslist->next;
         }
         // while (objlist)

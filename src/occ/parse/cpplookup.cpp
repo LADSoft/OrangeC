@@ -372,10 +372,10 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
                 if (!sp && !templateParamAsTemplate)
                 {
                     if (!qualified)
-                        sp = namespacesearch(buf, localNameSpace, qualified, false);
+                        sp = namespacesearch(buf, localNameSpace, qualified, tagsOnly);
                     if (!sp && nssym)
                     {
-                        sp = namespacesearch(buf, nssym, qualified, false);
+                        sp = namespacesearch(buf, nssym, qualified, tagsOnly);
                     }
                 }
                 if (sp && sp->storage_class == sc_typedef)
@@ -898,7 +898,9 @@ SYMBOL* finishSearch(const char* name, SYMBOL* encloser, NAMESPACEVALUELIST* ns,
     {
         if (namespaceOnly && !ns)
         {
-            rv = namespacesearch(name, globalNameSpace, false, tagsOnly);
+            rv = namespacesearch(name, localNameSpace, false, tagsOnly);
+            if (!rv)
+                rv = namespacesearch(name, globalNameSpace, false, tagsOnly);
             if (rv)
                 rv->throughClass = false;
         }

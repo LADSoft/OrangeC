@@ -1,0 +1,4 @@
+Error: Undefined External 'aa()' in module structs.cpp
+Error: Undefined External 'bb()' in module structs.cpp
+	2 Errors, 0 Warnings
+	Errors encountered, not creating output file

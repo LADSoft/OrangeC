@@ -22,7 +22,6 @@
  *
  */
 
-#include <windows.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <stdlib.h>
@@ -96,7 +95,7 @@ static int errCount;
 static LIST *initializersHead, *initializersTail;
 static LIST *deinitializersHead, *deinitializersTail;
 static int dataPos, dataMax;
-static BYTE* dataPointer;
+static Byte* dataPointer;
 static Field* initializingField;
 static char objFileName[260];
 
@@ -2183,12 +2182,12 @@ void oa_genbyte(int bt)
     if (dataMax == 0)
     {
         dataMax = 100;
-        dataPointer = (BYTE*)realloc(dataPointer, dataMax);
+        dataPointer = (Byte*)realloc(dataPointer, dataMax);
     }
     else if (dataPos >= dataMax)
     {
         dataMax *= 2;
-        dataPointer = (BYTE*)realloc(dataPointer, dataMax);
+        dataPointer = (Byte*)realloc(dataPointer, dataMax);
     }
     if (!dataPointer)
         fatal("out of memory");
@@ -2215,7 +2214,7 @@ void oa_enterseg(e_sg segnum)
     {
         oa_genbyte(0);  // we only put strings literally into the text, and the strings
         // need a terminating zero which has been elided because we don't do anything else
-        BYTE* v = peLib->AllocateBytes(dataPos);
+        Byte* v = peLib->AllocateBytes(dataPos);
         memcpy(v, dataPointer, dataPos);
         initializingField->AddInitializer(v, dataPos);
     }

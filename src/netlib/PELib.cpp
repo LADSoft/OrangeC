@@ -596,8 +596,8 @@ char PELib::ObjChar()
 void PELib::ObjError(int errnum)
 {
     static char buf[256];
-    char* intStr = itoa(errnum, buf, 10);
-    ObjectError a(intStr);
+    sprintf(buf, "%d", errnum);
+    ObjectError a(buf);
     throw a;
 }
 std::string PELib::UnformatName()
@@ -617,7 +617,7 @@ std::string PELib::UnformatName()
 std::string PELib::FormatName(const std::string& name)
 {
     char buf[256];
-    sprintf(buf, "%04X", name.size());
+    sprintf(buf, "%04X", (unsigned)name.size());
     return std::string(buf) + name.c_str();
 }
 AssemblyDef* PELib::FindAssembly(const std::string& assemblyName) const

@@ -63,7 +63,7 @@ build_script:
         - c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC /DVIAASSEMBLY=%VIAASSEMBLY% /DLSCRTL=%LSCRTL% /DWITHDEBUG=%WITHDEBUG% fullbuild -j:4
         - path=%ORIGPATH%
         - cd ..\tests
-        - omake -B
+        - omake -B -DCOMPILER=OCC
         - cd ..\.. 
         - move orangec projects
 

@@ -39,7 +39,7 @@ extern RESOURCE_DATA* currentResData;
 
 static HWND hwndProps;
 
-static WNDPROC oldEditProc;
+static WNDPROC oldEditProc, oldComboProc;
 static HWND lvwindow;
 static struct propertyFuncs* currentPropertyFuncs;
 static void* currentPropertyData;
@@ -98,15 +98,26 @@ static void SubclassPropsEditWindow(HWND hwnd)
     SetWindowLong(hwnd, GWL_WNDPROC, (long)PropsEditorSubclassProc);
     SetWindowLong(hwnd, GWL_USERDATA, (long)hwndProps);
 }
+static LRESULT CALLBACK PropsComboSubclassProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam)
+{
+    if (iMessage == WM_KEYDOWN && wParam == VK_RETURN)
+    {
+        PostMessage((HWND)GetWindowLong(hwnd, GWL_USERDATA), WM_KILLPROPSEDITOR, 0, 0);
+        return 0;
+    }
+    return CallWindowProc(oldComboProc, hwnd, iMessage, wParam, lParam);
+}
+static void SubclassPropsComboWindow(HWND hwnd)
+{
+    oldComboProc = (WNDPROC)GetWindowLong(hwnd, GWL_WNDPROC);
+    SetWindowLong(hwnd, GWL_WNDPROC, (long)PropsComboSubclassProc);
+    SetWindowLong(hwnd, GWL_USERDATA, (long)hwndProps);
+}
 HWND PropGetHWNDCombobox(HWND parent, BOOL vscroll)
 {
     HWND rv = CreateWindow("combobox", "", WS_VISIBLE | WS_CHILD | WS_BORDER | CBS_SORT | CBS_DROPDOWN | (vscroll ? WS_VSCROLL : 0), CW_USEDEFAULT,
                            CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, parent, 0, hInstance, NULL);
-    POINT pt;
-    HWND h;
-    pt.x = pt.y = 5;
-    h = ChildWindowFromPoint(rv, pt);
-    SubclassPropsEditWindow(h);
+    SubclassPropsComboWindow(rv);
     return rv;
 }
 HWND PropGetHWNDNumeric(HWND parent)

@@ -585,6 +585,7 @@ char* unmang1(char* buf, const char* name, char* last, BOOL tof)
     int v;
     int cvol = 0, cconst = 0, clrqual = 0, crrqual = 0;
     char buf1[10000], *p, buf2[10000], buf3[1000];
+    buf1[0] = buf2[0] = buf3[0] = 0;
     while (*name == '_')
         name++;
     while (*name == 'x' || *name == 'y')

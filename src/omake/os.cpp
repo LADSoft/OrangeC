@@ -495,8 +495,6 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
 #    ifdef DEBUG
     std::cout << rv << ":" << cmd << std::endl;
 #    endif
-    if (rv < 0)
-        std::cout << rv << ":" << cmd << std::endl;
     return rv;
 #else
     return -1;

@@ -4,6 +4,8 @@ else
 NULLDEV := NUL
 endif
 
+vpath %.c $(ORANGEC)\src\sqlite3
+
 test: main
 	testsqlite < sqlite.in > sqlite.txt
 	fc /b sqlite.txt sqlite.cmpx

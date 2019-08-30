@@ -23,6 +23,8 @@ version 6.0.43:
     occ: fix problems with local variables overriding global structures
     occ: when generating line information for C++ files, line numbers were off by one.
     occ: fix debug information for parameters:   off by one
+    occ: fix rare problem where strength reduction could create an invalid multiply instruction
+    occ: 'char *xx[]' should be equivalent to 'char *(xx[])' (compiler treats them differently)
     ocide: fix problem with new font handling in resource editor dialog properties window
     ocide: fix problem with runaway stack, when a structure reference is used inside itself
     ocide/brc: fix some problems generating and parsing browse information

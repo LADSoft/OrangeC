@@ -38,6 +38,7 @@ OBJECT=.\\
 
 all: .\lsdbghelper.dll
 
+vpath %.c $(ORANGEC)\src\sqlite3
 
 .\lsdbghelper.dll: dllxcptdump.o sqlite3.o unmangle.o
 	-del $@

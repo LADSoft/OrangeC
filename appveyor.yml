@@ -45,44 +45,77 @@ skip_commits:
 build_script:
 # the appveyor virtual machine reported two processors, so, lets try running parallel compile!
         - ps: |
+              echo $env:PATH
               cd ..\..
               move projects\orangec .
               mkdir \orangec\temp
               cd orangec\src
               copy omake.exe \orangec\temp
-              call c:\orangec\appveyorversion.bat
+              c:\orangec\appveyorversion.bat
               if ($env:BUILD_PROFILE -eq "OCCIL")
               {
                   # alternate build with OCCIL
-                  c:\orangec\temp\omake -DCOMPILER=CLANG fullbuild -j:4
+                  c:\orangec\temp\omake /DCOMPILER=CLANG fullbuild -j:4
+                  if ($LastExitCode -ne 0)
+                  {
+                      throw "error"
+                  }
                   c:\orangec\bin\occ /V
                   copy omake\omake.exe \orangec\temp
-                  c:\orangec\temp\omake -DCOMPILER=OCC clean -j:4
-                  c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC /DVIAASSEMBLY=%VIAASSEMBLY% /DLSCRTL=%LSCRTL% /DWITHDEBUG=%WITHDEBUG% fullbuild -j:4
-                  path=%ORIGPATH%
+                  c:\orangec\temp\omake /DCOMPILER=OCC clean -j:4
+                  c:\orangec\temp\omake /DNOMAKEDIR /DCOMPILER=OCC /DVIAASSEMBLY=$env:VIAASEMBLY /DLSCRTL=$env:LSCRTL /DWITHDEBUG=$env:WITHDEBUG fullbuild -j:4
+                  if ($LastExitCode -ne 0)
+                  {
+                      throw "error"
+                  }
+                  path=$env:ORIGPATH
                   cd ..\tests
-                  omake -B -Coccil -DCOMPILER=OCC
+                  omake -B /Coccil /DCOMPILER=OCC
+                  if ($LastExitCode -ne 0)
+                  {
+                      throw "error"
+                  }
               }
               else
               {
                   # Primary build for Orange C
-                  c:\orangec\temp\omake -DCOMPILER=$(BUILD_PROFILE) /DORANGEC_ONLY=YES fullbuild -j:4
+                  c:\orangec\temp\omake /DCOMPILER=$env:BUILD_PROFILE /DORANGEC_ONLY=YES fullbuild -j:4
+                  if ($LastExitCode -ne 0)
+                  {
+                      throw "error"
+                  }
                   c:\orangec\bin\occ /V
                   copy omake\omake.exe \orangec\temp
-                  c:\orangec\temp\omake -DCOMPILER=OCC clean -j:4
-                  c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC /DORANGEC_ONLY=YES /DVIAASSEMBLY=%VIAASSEMBLY% /DLSCRTL=%LSCRTL% /DWITHDEBUG=%WITHDEBUG% fullbuild -j:4
+                  c:\orangec\temp\omake /DCOMPILER=OCC clean -j:4
+                  c:\orangec\temp\omake /DNOMAKEDIR /DCOMPILER=OCC /DORANGEC_ONLY=YES /DVIAASSEMBLY=$env:VIAASEMBLY /DLSCRTL=$env:LSCRTL /DWITHDEBUG=$env:WITHDEBUG fullbuild -j:4
+                  if ($LastExitCode -ne 0)
+                  {
+                      throw "error"
+                  }
                   c:\orangec\bin\occ /V
                   copy omake\omake.exe \orangec\temp
-                  c:\orangec\temp\omake -DCOMPILER=OCC clean -j:4
-                  c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC /DORANGEC_ONLY=YES /DVIAASSEMBLY=%VIAASSEMBLY% /DLSCRTL=%LSCRTL% /DWITHDEBUG=%WITHDEBUG% fullbuild -j:4
+                  c:\orangec\temp\omake /DCOMPILER=OCC clean -j:4
+                  c:\orangec\temp\omake /DNOMAKEDIR /DCOMPILER=OCC /DORANGEC_ONLY=YES /DVIAASSEMBLY=$env:VIAASEMBLY /DLSCRTL=$env:LSCRTL /DWITHDEBUG=$env:WITHDEBUG fullbuild -j:4
+                  if ($LastExitCode -ne 0)
+                  {
+                      throw "error"
+                  }
                   c:\orangec\bin\occ /V
                   copy omake\omake.exe \orangec\temp
-                  c:\orangec\temp\omake -DCOMPILER=OCC clean -j:4
+                  c:\orangec\temp\omake /DCOMPILER=OCC clean -j:4
                   # in this last one we add in OCCIL so it will be in the install packages...
-                  c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC /DVIAASSEMBLY=%VIAASSEMBLY% /DLSCRTL=%LSCRTL% /DWITHDEBUG=%WITHDEBUG% fullbuild -j:4
-                  path=%ORIGPATH%
+                  c:\orangec\temp\omake /DNOMAKEDIR /DCOMPILER=OCC /DVIAASSEMBLY=$env:VIAASEMBLY /DLSCRTL=$env:LSCRTL /DWITHDEBUG=$env:WITHDEBUG fullbuild -j:4
+                  if ($LastExitCode -ne 0)
+                  {
+                      throw "error"
+                  }
+                  path=$env:ORIGPATH
                   cd ..\tests
-                  omake -B -DCOMPILER=OCC
+                  omake -B /DCOMPILER=OCC
+                  if ($LastExitCode -ne 0)
+                  {
+                      throw "error"
+                  }
               }
               cd ..\.. 
               move orangec projects

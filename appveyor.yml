@@ -45,7 +45,8 @@ skip_commits:
 build_script:
 # the appveyor virtual machine reported two processors, so, lets try running parallel compile!
         - ps: |
-              cd ..\..
+              Convert-Path .
+              cd \
               move projects\orangec .
               mkdir \orangec\temp
               cd orangec\src

@@ -4673,7 +4673,14 @@ LEXEME* getBeforeType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMB
                         *tp = ptype;
                         while ((isref(ptype) || isfunction(ptype) || ispointer(ptype) || basetype(ptype)->type == bt_memberptr) &&
                                ptype->btp)
-                            ptype = ptype->btp;
+                            if (ptype->btp->type == bt_any)
+                            {
+                                break;
+                            }
+                            else
+                            {
+                                ptype = ptype->btp;
+                            }
                         ptype->btp = atype;
                         ptype->rootType = atype->rootType;
                         UpdateRootTypes(*tp);

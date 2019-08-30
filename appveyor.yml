@@ -78,7 +78,8 @@ build_script:
                   c:\orangec\bin\occ /V
                   copy omake\omake.exe \orangec\temp
                   c:\orangec\temp\omake -DCOMPILER=OCC clean -j:4
-                  c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC /DORANGEC_ONLY=YES /DVIAASSEMBLY=%VIAASSEMBLY% /DLSCRTL=%LSCRTL% /DWITHDEBUG=%WITHDEBUG% fullbuild -j:4
+                  # in this last one we add in OCCIL so it will be in the install packages...
+                  c:\orangec\temp\omake -DNOMAKEDIR -DCOMPILER=OCC /DVIAASSEMBLY=%VIAASSEMBLY% /DLSCRTL=%LSCRTL% /DWITHDEBUG=%WITHDEBUG% fullbuild -j:4
                   path=%ORIGPATH%
                   cd ..\tests
                   omake -B -DCOMPILER=OCC

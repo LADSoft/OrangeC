@@ -21,5 +21,10 @@
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
 
-DIRS = x86 occil preproc parse86
+ifneq "$(ORANGEC_ONLY)" "YES"
+OCCIL_DIRS := occil
+endif
+
+
+DIRS = x86 $(OCCIL_DIRS) preproc parse86
 

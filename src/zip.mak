@@ -36,6 +36,7 @@ DISTEXE=/orangec/dist/occ$(VERNAME)e.zip
 DISTSRC=/orangec/dist/occ$(VERNAME)s.zip
 
 DISTRIBUTE:
+ifneq "$(ORANGEC_ONLY)" "YES"
 	-del $(subst /,\,$(DISTEXE))
 	-del $(subst /,\,$(DISTSRC))
 	-mkdir $(DISTROOT)\appdata
@@ -55,3 +56,4 @@ DISTRIBUTE:
 	$(ZIP) a $(DISTSRC) orangec/src/clibs/repobj.bat orangec/src/copying orangec/src/ocl.lic orangec/src/addon.txt
 	"/program files (x86)/inno setup 6/iscc" /Q /Focc$(VERNAME) /O/orangec/dist orangec/src/occ.iss
 	-rmdir $(DISTROOT)\appdata
+endif

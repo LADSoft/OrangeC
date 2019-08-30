@@ -2622,7 +2622,7 @@ HWND DlgPropStartEdit(HWND lv, int row, struct resRes* data)
             rv = LoadFontHWNDCombobox(lv);
             char buf[256];
             GetDlgPropText(buf, lv, data, row);
-            SendMessage(rv, CB_SELECTSTRING, 0, (LPARAM)buf);
+            SendMessage(rv, CB_SELECTSTRING, -1, (LPARAM)buf);
             return rv;
         }
         case 9:
@@ -2648,10 +2648,35 @@ void DlgPropEndEdit(HWND lv, int row, HWND editWnd, struct resRes* data)
     char buf1[256];
     if (row == 7 || row == 9 || row == 10)
     {
+        strcpy(buf, "");
+        strcpy(buf1, "");
+
         int v = SendMessage(editWnd, CB_GETCURSEL, 0, 0);
         if (v != CB_ERR)
         {
             SendMessage(editWnd, CB_GETLBTEXT, v, (LPARAM)buf);
+        }
+        else
+        {
+
+            SendMessage(editWnd, WM_GETTEXT, 256, (LPARAM)buf);
+            int v = CB_ERR;
+            if (buf[0])
+            {
+                int v = SendMessage(editWnd, CB_SELECTSTRING, -1, (LPARAM)buf);
+                if (v != CB_ERR)
+                {
+                    SendMessage(editWnd, CB_GETLBTEXT, v, (LPARAM)buf);
+                }
+                else
+                {
+                    strcpy(buf, "");
+                }
+            }
+            else
+            {
+                strcpy(buf, "");
+            }
         }
     }
     else

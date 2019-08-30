@@ -100,6 +100,7 @@ void ParseBuiltins(void)
     includes->handle = handle;
     includes->lptr = p;
     includes->line = 0;
+    includes->realline = 0;
     if (cparams.prm_cplusplus)
     {
         stdXC.syms = CreateHashTable(1);

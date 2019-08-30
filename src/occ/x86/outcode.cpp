@@ -434,7 +434,11 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
                 ObjSymbol* s1 = factory.MakeAutoSymbol(buf);
                 if (cparams.prm_debug)
                     s1->SetBaseType(types.Put(e->tp));
-                s1->SetOffset(new ObjExpression(e->offset));
+                int resolved = 0;
+                EXPRESSION exp = { 0 };
+                exp.type = en_auto;
+                exp.v.sp = e;
+                s1->SetOffset(new ObjExpression(resolveoffset(&exp, &resolved)));
                 fi->Add(s1);
                 autovector.push_back(s1);
             }

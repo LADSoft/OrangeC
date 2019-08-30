@@ -1641,7 +1641,10 @@ VARINFO* LookupStructInfo(DEBUG_INFO* dbg_info, int type, int Address, char* str
                         (*next)->offset = sqlite3_column_int(handle, 1);
                         (*next)->address = Address + (*next)->offset;
                         (*next)->type = sqlite3_column_int(handle, 0);
-                        (*next)->size = DeclType(dbg_info, (*next));
+                        if ((*next)->type == type)
+                            (*next)->size = *size;
+                        else
+                            (*next)->size = DeclType(dbg_info, (*next));
                         strcpy((*next)->membername, (char*)sqlite3_column_text(handle, 3));
                         next = &(*next)->link;
                     }

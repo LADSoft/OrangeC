@@ -50,7 +50,7 @@ build_script:
               mkdir \orangec\temp
               cd orangec\src
               copy omake.exe \orangec\temp
-              call c:\orangec\appveyorversion.bat
+              c:\orangec\appveyorversion.bat
               if ($env:BUILD_PROFILE -eq "OCCIL")
               {
                   # alternate build with OCCIL

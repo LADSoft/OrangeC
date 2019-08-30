@@ -324,6 +324,10 @@ static IMODE* StrengthConstant(QUAD* head, IMODE* im1, IMODE* im2, int size)
             }
         }
     }
+    if (size < ISZ_UINT && size > -ISZ_UINT)
+    {
+        size = -ISZ_UINT;
+    }
     ins->dc.left = im2;
     ins->dc.right = im1;
     ins->ans = InitTempOpt(size, size);
@@ -358,6 +362,14 @@ static IMODE* StrengthConstant(QUAD* head, IMODE* im1, IMODE* im2, int size)
             ReplaceHashReshape((QUAD*)ins->ans, (UBYTE*)q2, DAGCOMPARE, ins_hash);
             tempInfo[ins->ans->offset->v.sp->value.i]->preSSATemp = ins->ans->offset->v.sp->value.i;
         }
+    }
+    if (size != ins->dc.left->size)
+    {
+        QUAD* ins1 = (QUAD*)Alloc(sizeof(QUAD));
+        ins1->dc.left = ins->dc.left;
+        ins1->ans = ins->dc.left = InitTempOpt(size, size);
+        ins1->dc.opcode = i_assn;
+        InsertInstruction(head->back, ins1);
     }
     InsertInstruction(head->back, ins);
     return ins->ans;

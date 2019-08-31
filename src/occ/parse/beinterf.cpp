@@ -29,8 +29,11 @@
 #include <string.h>
 #include <ctype.h>
 #include "compiler.h"
+#include "PreProcessor.h"
 
-extern int packdata[], packlevel;
+extern ARCH_ASM assemblerInterface[];
+extern COMPILER_PARAMS cparams;
+extern PreProcessor* preProcessor;
 
 TYPE stdobject = {bt___object, 0};
 TYPE stdvoid = {bt_void, 0};
@@ -112,6 +115,7 @@ TYPE stdcharptr = {bt_pointer, 0, &stdchar};
 
 extern ARCH_ASM assemblerInterface[];
 extern COMPILER_PARAMS cparams;
+extern PreProcessor* preProcessor;
 
 ARCH_ASM* chosenAssembler;
 ARCH_DEBUG* chosenDebugger;
@@ -503,8 +507,11 @@ int getAlign(int sc, TYPE* tp)
 {
     int align = basesize(chosenAssembler->arch->type_align, tp);
     if (sc != sc_auto)
-        if (packdata[packlevel] < align)
-            align = packdata[packlevel];
+    {
+        int pack = preProcessor->GetPack();
+        if (pack < align)
+            align = pack;
+    }
     if (chosenAssembler->arch->align)
         align = chosenAssembler->arch->align(align);
     if (isstructured(tp) && tp->sp->attribs.inheritable.structAlign > align)

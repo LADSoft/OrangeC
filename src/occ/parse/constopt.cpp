@@ -31,6 +31,7 @@
 #include <string.h>
 #include <float.h>
 #include "compiler.h"
+#include "ppPragma.h"
 
 extern int stdpragmas;
 extern ARCH_ASM* chosenAssembler;

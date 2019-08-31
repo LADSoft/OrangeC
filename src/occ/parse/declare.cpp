@@ -25,13 +25,14 @@
 #include "compiler.h"
 #include <wchar.h>
 #include "Utils.h"
+#include "PreProcessor.h"
+
 /* locally declared func gloabal memory
  when redeclaring sym, make sure it gets in the global func list
 */
 extern ARCH_ASM* chosenAssembler;
 extern ARCH_DEBUG* chosenDebugger;
 extern NAMESPACEVALUELIST *globalNameSpace, *localNameSpace;
-extern INCLUDES* includes;
 extern int nextLabel;
 extern enum e_kw skim_end[];
 extern enum e_kw skim_closepa[];
@@ -65,6 +66,7 @@ extern LINEDATA *linesHead, *linesTail;
 extern int funcLevel;
 extern SYMBOL* theCurrentFunc;
 extern attributes basisAttribs;
+extern PreProcessor *preProcessor;
 
 int inDefaultParam;
 LIST *externals, *globalCache;
@@ -142,8 +144,9 @@ const char* AnonymousName(void)
 const char* AnonymousTypeName(void)
 {
     char buf[512];
-    my_sprintf(buf, "__anontype_%u_%d", Utils::CRC32((unsigned char*)includes->fname, strlen(includes->fname)),
-               includes->anonymousid++);
+    std::string name = preProcessor->GetRealFile();
+    my_sprintf(buf, "__anontype_%u_%d", Utils::CRC32((const unsigned char *)name.c_str(), name.size()),
+               preProcessor->GetRealLineNo());
     return litlate(buf);
 }
 SYMBOL* makeID(enum e_sc storage_class, TYPE* tp, SYMBOL* spi, const char* name)
@@ -169,7 +172,8 @@ SYMBOL* makeID(enum e_sc storage_class, TYPE* tp, SYMBOL* spi, const char* name)
 SYMBOL* makeUniqueID(enum e_sc storage_class, TYPE* tp, SYMBOL* spi, const char* name)
 {
     char buf[512];
-    my_sprintf(buf, "%s_%u", name, Utils::CRC32((unsigned char*)includes->fname, strlen(includes->fname)));
+    std::string file = preProcessor->GetRealFile();
+    my_sprintf(buf, "%s_%u", name, Utils::CRC32((const unsigned char*)file.c_str(), file.size()));
     return makeID(storage_class, tp, spi, litlate(buf));
 }
 void addStructureDeclaration(STRUCTSYM* decl)
@@ -6732,7 +6736,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
             }
         }
     }
-    FlushLineData(includes->fname, includes->realline);
+    FlushLineData(preProcessor->GetRealFile().c_str(), preProcessor->GetRealLineNo());
     if (needsemi && !asExpression)
         if (templateNestingCount || !needkw(&lex, semicolon))
         {

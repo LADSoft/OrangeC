@@ -1627,7 +1627,7 @@ void oa_put_expfunc(SYMBOL* sym)
         omf_put_expfunc(sym);
 }
 
-void oa_output_includelib(char* name)
+void oa_output_includelib(const char* name)
 {
     if (cparams.prm_asmfile)
     {

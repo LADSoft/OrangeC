@@ -226,8 +226,6 @@
     <ClCompile Include="parse\types.cpp" />
     <ClCompile Include="parse\unmangle.cpp" />
     <ClCompile Include="parse\wseh.cpp" />
-    <ClCompile Include="preproc\ppexpr.cpp" />
-    <ClCompile Include="preproc\preproc.cpp" />
     <ClCompile Include="x86\beIntrins.cpp" />
     <ClCompile Include="x86\config.cpp" />
     <ClCompile Include="x86\dbgtypes.cpp" />

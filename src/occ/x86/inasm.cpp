@@ -30,7 +30,6 @@
 #include "be.h"
 #include "Instruction.h"
 
-extern INCLUDES* includes;
 extern int codeLabel;
 extern int prm_assembler;
 extern HASHTABLE* labelSyms;
@@ -1047,17 +1046,6 @@ static int getData(STATEMENT* snp)
     } while (lex && MATCHKW(lex, comma));
     return 1;
 }
-bool ateol(void)
-{
-    unsigned char* p = includes->lptr;
-    while (*p)
-    {
-        if (!isspace(*p) && *p != 0)
-            return false;
-        p++;
-    }
-    return true;
-}
 static void AssembleInstruction(OCODE* ins)
 {
     if (ins->opcode >= op_aaa)
@@ -1134,7 +1122,7 @@ LEXEME* inasm_statement(LEXEME* inlex, BLOCKDATA* parent)
             getData(snp);
             return lex;
         }
-        atend = ateol();
+        atend = AtEol();
         op = inasm_op();
         if (op == (enum e_opcode) - 1)
         {

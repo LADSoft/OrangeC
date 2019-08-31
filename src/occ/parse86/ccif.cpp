@@ -25,8 +25,11 @@
 #include "compiler.h"
 #include "db.h"
 #include "symtypes.h"
+#include "Utils.h"
+#include "PreProcessor.h"
 
-extern HASHTABLE* defsyms;
+extern PreProcessor* preProcessor;
+extern char pipeName[256];
 
 typedef struct
 {
@@ -41,7 +44,7 @@ typedef struct _using
 {
     struct _using* next;
     int line;
-    char* file;
+    const char* file;
     SYMBOL* sym;
     SYMBOL* parent;
 } USING;
@@ -429,14 +432,9 @@ static void DumpSymbols(void)
         DumpSymbol(sym);
         item = item->next;
     }
-    for (i = 0; i < GLOBALHASHSIZE; i++)
+    for (auto&& v : preProcessor->GetDefines())
     {
-        SYMLIST* hr = defsyms->table[i];
-        while (hr)
-        {
-            ccWriteSymbolType(((SYMBOL*)hr->p)->name, main_id, (char*)"$$$", 1, 0, ST_DEFINE);
-            hr = hr->next;
-        }
+        ccWriteSymbolType(v->GetName().c_str(), main_id, (char*)"$$$", 1, 0, ST_DEFINE);
     }
 }
 static void DumpLines(void)
@@ -504,7 +502,7 @@ void ccDumpSymbols(void)
     symList = NULL;
     main_id = 0;
 }
-void ccInsertUsing(SYMBOL* ns, SYMBOL* parentns, char* file, int line)
+void ccInsertUsing(SYMBOL* ns, SYMBOL* parentns, const char* file, int line)
 {
     if (!skipThisFile)
     {
@@ -530,10 +528,10 @@ void ccSetSymbol(SYMBOL* sp)
         }
     }
 }
-void ccNewFile(char* fileName, bool main)
+std::string ccNewFile(char* fileName, bool main)
 {
     LINEINCLUDES* l;
-    char *s = fullqualify(fileName), *q = s;
+    char *s = Utils::FullQualify(fileName), *q = s;
     while (*q)
     {
         *q = tolower(*q);
@@ -560,6 +558,7 @@ void ccNewFile(char* fileName, bool main)
             insert((SYMBOL*)l, ccHash);
         DecGlobalFlag();
     }
+    return pipeName;
 }
 void ccEndFile(void) { skipThisFile = oldSkip[--skipCount]; }
 void ccSetFileLine(char* filename, int lineno)
@@ -567,7 +566,7 @@ void ccSetFileLine(char* filename, int lineno)
     if (!skipThisFile)
     {
         char* q;
-        filename = fullqualify(filename);
+        filename = Utils::FullQualify(filename);
         q = filename;
         while (*q)
         {

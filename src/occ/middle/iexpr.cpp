@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include "compiler.h"
 #include "assert.h"
+#include "ppPragma.h"
 
 /*
  *      this module contains all of the code generation routines

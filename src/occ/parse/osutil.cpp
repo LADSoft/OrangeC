@@ -30,6 +30,9 @@
 #include <stdlib.h>
 #include <string>
 #include <deque>
+#include "PreProcessor.h"
+#include "Utils.h"
+
 #include "../../util/Utils.h"
 #ifdef MSIL
 #    include "../version.h"
@@ -56,13 +59,11 @@ extern "C"
 
 extern COMPILER_PARAMS cparams;
 extern int total_errors;
-#ifndef CPREPROCESSOR
 extern ARCH_ASM* chosenAssembler;
 extern int diagcount;
 extern NAMESPACEVALUELIST* globalNameSpace;
 extern char infile[];
-
-#endif
+extern PreProcessor* preProcessor;
 
 FILE* outputFile;
 FILE* listFile;
@@ -130,11 +131,9 @@ void usage(char* prog_name)
     if (extension != nullptr)
         *extension = '\0';
     fprintf(stderr, "Usage: %s %s", short_name, getUsageText());
-#ifndef CPREPROCESSOR
 #    ifndef USE_LONGLONG
     fprintf(stderr, "   long long not supported");
 #    endif
-#endif
 
     exit(1);
 }
@@ -206,117 +205,6 @@ static const char* parsepath(const char* path, char* buffer)
         return (pos);
 
     return (0);
-}
-/*
- * For each library:
- * Search local directory and all directories in the search path
- *  until it is found or run out of directories
- */
-FILE* SrchPth3(char* string, const char* searchpath, const char* mode)
-{
-    FILE* in;
-    const char* newpath = searchpath;
-
-    /* If no path specified we search along the search path */
-    if (string[0] != '\\' && string[1] != ':')
-    {
-        char buffer[200];
-        while (newpath)
-        {
-            int n;
-            ;
-            /* Create a file name along this path */
-            newpath = parsepath(newpath, buffer);
-            n = strlen(buffer);
-            if (n && buffer[n - 1] != '\\' && buffer[n - 1] != '/')
-                strcat(buffer, "\\");
-            strcat(buffer, (char*)string);
-
-            /* Check this path */
-            in = fopen(buffer, mode);
-            if (in != nullptr)
-            {
-                strcpy(string, buffer);
-                return (in);
-            }
-        }
-    }
-    else
-    {
-        in = fopen((char*)string, mode);
-        if (in != nullptr)
-        {
-            return (in);
-        }
-    }
-    return (nullptr);
-}
-/* this ditty takes care of the fact that on DOS
- * (and on dos shells under NT/XP)
- * the filenames are limited to 8.3 notation
- * which is a problem because the C++ runtime has long file names
- * while we could add RTL support for long filenamse on DOS, that doesn't help on XP/NT
- *
- * so first we search for the full filename, if that fails for the ~1 version, and if that
- * fails for the truncated 8.3 version
- */
-FILE* ccOpenFile(const char* string, FILE* fil, const char* mode);
-FILE* SrchPth2(char* name, const char* path, const char* attrib)
-{
-    FILE* rv = SrchPth3(name, path, attrib);
-#ifdef PARSER_ONLY
-    rv = ccOpenFile(name, rv, attrib);
-#endif
-#ifdef MSDOS
-    char buf[256], *p;
-    if (rv != -1)
-        return rv;
-    p = strrchr(name, '.');
-    if (!p)
-        p = name + strlen(name);
-    if (p - name < 9)
-        return rv;
-    strcpy(buf, name);
-    strcpy(buf + 6, "~1");
-    strcpy(buf + 8, p);
-    rv = SrchPth3(buf, path, attrib);
-    if (rv != -1)
-    {
-        strcpy(name, buf);
-        return rv;
-    }
-    strcpy(buf, name);
-    strcpy(buf + 8, p);
-    rv = SrchPth3(name, path, attrib);
-    if (rv != -1)
-    {
-        strcpy(name, buf);
-        return rv;
-    }
-    return -1;
-#else
-    return rv;
-#endif
-}
-
-/*-------------------------------------------------------------------------*/
-
-FILE* SrchPth(char* name, const char* path, const char* attrib, bool sys)
-{
-    FILE* rv = SrchPth2(name, path, attrib);
-    char buf[265], *p;
-    if (rv || !sys)
-        return rv;
-    strcpy(buf, name);
-    p = strrchr(buf, '.');
-    if (p && Utils::iequal(p, ".h"))
-    {
-        *p = 0;
-        rv = SrchPth2(buf, path, attrib);
-        if (rv)
-            strcpy(name, buf);
-    }
-    return rv;
 }
 
 extern CMDLIST* ArgList;
@@ -481,29 +369,9 @@ bool parse_args(int* argc, char* argv[], bool case_sensitive)
                             break;
                         case ARG_NOMATCH:
                             /* No such arg, spit an error  */
-#ifndef CPREPROCESSOR
-#    ifdef XXXXX
-                            switch (parseParam(argv[pos][index] != ARG_SEPfalse, &argv[pos][index + 1]))
-                            {
-                                case 0:
-#    endif
-#endif
                                     fprintf(stderr, "Invalid Arg: %s\n", argv[pos]);
                                     retval = false;
                                     done = true;
-#ifndef CPREPROCESSORXX
-#    ifdef XXXXX
-                                    break;
-                                case 1:
-                                    if (!argv[pos][++index])
-                                        done = true;
-                                    break;
-                                case 2:
-                                    done = true;
-                                    break;
-                            }
-#    endif
-#endif
                             break;
                         case ARG_NOARG:
                             /* Missing the arg for a CONCAT type, spit the error */
@@ -671,60 +539,54 @@ void setglbdefs(void)
 {
     char buf[256];
     int major, temp, minor, build;
-#ifndef CPREPROCESSOR
     ARCH_DEFINES* a = chosenAssembler->defines;
-#endif
     sscanf(STRING_VERSION, "%d.%d.%d.%d", &major, &temp, &minor, &build);
     my_sprintf(buf, "%d", major * 100 + minor);
-    glbdefine("__ORANGEC__", buf);
+    preProcessor->Define("__ORANGEC__", buf);
     my_sprintf(buf, "%d", major);
-    glbdefine("__ORANGEC_MAJOR__", buf);
+    preProcessor->Define("__ORANGEC_MAJOR__", buf);
     my_sprintf(buf, "%d", minor);
-    glbdefine("__ORANGEC_MINOR__", buf);
+    preProcessor->Define("__ORANGEC_MINOR__", buf);
     my_sprintf(buf, "%d", build);
-    glbdefine("__ORANGEC_PATCHLEVEL__", buf);
+    preProcessor->Define("__ORANGEC_PATCHLEVEL__", buf);
     sprintf(buf, "\"%s\"", STRING_VERSION);
-    glbdefine("__VERSION__", buf);
-    glbdefine("__CHAR_BIT__", "8");
+    preProcessor->Define("__VERSION__", buf);
+    preProcessor->Define("__CHAR_BIT__", "8");
     if (cparams.prm_cplusplus)
     {
-        glbdefine("__cplusplus", "201402");
+        preProcessor->Define("__cplusplus", "201402");
         if (cparams.prm_xcept)
-            glbdefine("__RTTI__", "1");
+            preProcessor->Define("__RTTI__", "1");
     }
-    glbdefine("__STDC__", "1");
+    preProcessor->Define("__STDC__", "1");
 
     if (cparams.prm_c99 || cparams.prm_c1x)
     {
-#ifndef CPREPROCESSOR
-        glbdefine("__STDC_HOSTED__", chosenAssembler->hosted);  // hosted compiler, not embedded
-#endif
+        preProcessor->Define("__STDC_HOSTED__", chosenAssembler->hosted);  // hosted compiler, not embedded
     }
     if (cparams.prm_c1x)
     {
-        glbdefine("__STDC_VERSION__", "201112L");
+        preProcessor->Define("__STDC_VERSION__", "201112L");
     }
     else if (cparams.prm_c99)
     {
-        glbdefine("__STDC_VERSION__", "199901L");
+        preProcessor->Define("__STDC_VERSION__", "199901L");
     }
-    /*   glbdefine("__STDC_IEC_599__","1");*/
-    /*   glbdefine("__STDC_IEC_599_COMPLEX__","1");*/
-    /*   glbdefine("__STDC_ISO_10646__","199712L");*/
-/*    glbdefine(GLBDEFINE, "");*/
-#ifndef CPREPROCESSOR
+    /*   preProcessor->Define("__STDC_IEC_599__","1");*/
+    /*   preProcessor->Define("__STDC_IEC_599_COMPLEX__","1");*/
+    /*   preProcessor->Define("__STDC_ISO_10646__","199712L");*/
+/*    preProcessor->Define(preProcessor->Define, "");*/
     if (a)
     {
         while (a->define)
         {
             if (a->respect)
             {
-                glbdefine(a->define, a->value);
+                preProcessor->Define(a->define, a->value);
             }
             a++;
         }
     }
-#endif
     for (auto d : defines)
     {
         size_t n = d.name.find_first_of("=");
@@ -741,9 +603,9 @@ void setglbdefs(void)
             val = "1";
         }
         if (d.undef)
-            glbUndefine(name.c_str());
+            preProcessor->Undefine(name);
         else
-            glbdefine(name.c_str(), val.c_str());
+            preProcessor->Define(name.c_str(), val);
     }
 }
 
@@ -774,7 +636,6 @@ void InsertOneFile(char* filename, char* path, int drive, bool primary)
         *p = 0;
     /* Allocate buffer and make .C if no extension */
     strcat(buffer, filename);
-#ifndef CPREPROCESSOR
     if (buffer[0] == '-')
     {
         a = buffer[0];
@@ -784,7 +645,6 @@ void InsertOneFile(char* filename, char* path, int drive, bool primary)
     if (a)
         buffer[0] = a;
     if (!inserted)
-#endif
     {
         AddExt(buffer, ".c");
         newbuffer = (char*)malloc(strlen(buffer) + 1);
@@ -1025,21 +885,14 @@ int parseenv(const char* name)
 int parseconfigfile(char* name)
 {
     char buf[256], *p;
-#ifndef CPREPROCESSOR
     if (!chosenAssembler->cfgname)
         return 0;
-#endif
     strcpy(buf, name);
     p = strrchr(buf, '\\');
     if (p)
     {
         FILE* temp;
-#ifdef CPREPROCESSOR
-        strcpy(p + 1, "CPP");
-#else
-        strcpy(p + 1, "CC");
         strcpy(p + 1, chosenAssembler->cfgname);
-#endif
         strcat(p, ".CFG");
         temp = fopen(buf, "r");
         if (!temp)
@@ -1064,7 +917,6 @@ int parseconfigfile(char* name)
 
 void dumperrs(FILE* file)
 {
-#ifndef CPREPROCESSOR
     if (cparams.prm_listfile)
     {
         fprintf(listFile, "******** Global Symbols ********\n");
@@ -1074,7 +926,6 @@ void dumperrs(FILE* file)
     }
     if (diagcount && !total_errors)
         fprintf(file, "%d Diagnostics\n", diagcount);
-#endif
     if (total_errors)
         fprintf(file, "%d Errors\n", total_errors);
 }
@@ -1127,11 +978,7 @@ void ccinit(int argc, char* argv[])
 
     if (showBanner || showVersion)
     {
-#ifdef CPREPROCESSOR
-        banner("CPP Version %s %s", version, copyright);
-#else
         banner("%s Version %s %s", chosenAssembler->progname, version, copyright);
-#endif
     }
     if (showVersion)
     {
@@ -1166,10 +1013,8 @@ void ccinit(int argc, char* argv[])
     }
     DisableTrivialWarnings();
     /* parse the environment and command line */
-#ifndef CPREPROCESSOR
     if (chosenAssembler->envname && !parseenv(chosenAssembler->envname))
         usage(argv[0]);
-#endif
 
     parseconfigfile(buffer);
     if (!parse_args(&argc, argv, true) || (!clist && argc == 1))
@@ -1192,10 +1037,8 @@ void ccinit(int argc, char* argv[])
 
     if (has_output_file)
     {
-#    ifndef CPREPROCESSOR
         if (chosenAssembler->insert_output_file)
             chosenAssembler->insert_output_file(outfile);
-#    endif
         if (!cparams.prm_compileonly)
         {
             has_output_file = false;
@@ -1211,7 +1054,7 @@ void ccinit(int argc, char* argv[])
         LIST* t = clist;
         while (t)
         {
-            t->data = litlate(fullqualify((char*)t->data));
+            t->data = litlate(Utils::FullQualify((char*)t->data));
             t = t->next;
         }
     }

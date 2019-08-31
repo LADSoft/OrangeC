@@ -96,15 +96,6 @@
     <ClCompile Include="db.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="piper.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\preproc\ppexpr.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\preproc\PREPROC.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="config.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

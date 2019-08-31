@@ -37,12 +37,6 @@
 #define issymchar(x) (((x) >= 0) && (isalnum(x) || (x) == '_'))
 #define isstartchar(x) (((x) >= 0) && (isalpha(x) || (x) == '_'))
 
-#define STD_PRAGMA_FENV 1
-#define STD_PRAGMA_FCONTRACT 2
-#define STD_PRAGMA_CXLIMITED 4
-
-#define MACRO_REPLACE_SIZE (128 * 1024)
-
 #define basetype(x) ((x) && (x)->rootType ? (x)->rootType : (x))
 
 #define __isref(x) ((x)->type == bt_lref || (x)->type == bt_rref)
@@ -362,7 +356,7 @@ typedef struct casedata
     struct casedata* next;
     LLONG_TYPE val;
     int label;
-    char* file;
+    const char* file;
     int line;
 } CASEDATA;
 
@@ -449,7 +443,7 @@ typedef struct stmt
     int blocknum;
     int charpos;
     int line;
-    char* file;
+    const char* file;
     int label;
     int endlabel;
     int breaklabel;  // also the label at the end of the try block
@@ -520,7 +514,7 @@ typedef struct __nsv
 struct _ccNamespaceData
 {
     struct _ccNamespaceData* next;
-    char* declfile;
+    const char* declfile;
     int startline;
     int endline;
 };
@@ -790,7 +784,7 @@ typedef struct _memberInitializers
     SYMBOL* basesym;
     INITIALIZER* init;
     int line;
-    char* file;
+    const char* file;
     struct lexeme* initData;
     int packed : 1;
     int delegating : 1;
@@ -1082,7 +1076,7 @@ typedef struct lexeme
     struct u_val value;
     char* litaslit;
     char* suffix;
-    char* file;
+    const char* file;
     LINEDATA* linedata;
     int line;
     int realline;

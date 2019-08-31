@@ -31,6 +31,7 @@
 #include <stdio.h>
 #include <malloc.h>
 #include <string.h>
+#include "ppPragma.h"
 #include "compiler.h"
 
 extern COMPILER_PARAMS cparams;

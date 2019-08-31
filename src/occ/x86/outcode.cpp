@@ -218,7 +218,7 @@ void omf_put_extern(SYMBOL* sym, int code)
 }
 void omf_put_impfunc(SYMBOL* sym, char* file) { impfuncs.push_back(sym); }
 void omf_put_expfunc(SYMBOL* sym) { expfuncs.push_back(sym); }
-void omf_put_includelib(char* name) { includelibs.push_back(name); }
+void omf_put_includelib(const char* name) { includelibs.push_back(name); }
 
 Label* LookupLabel(const std::string& string)
 {

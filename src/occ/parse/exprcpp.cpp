@@ -28,7 +28,6 @@
 
 extern COMPILER_PARAMS cparams;
 extern ARCH_ASM* chosenAssembler;
-extern int stdpragmas;
 extern enum e_kw skim_closepa[];
 extern enum e_kw skim_closebr[];
 extern enum e_kw skim_semi[];

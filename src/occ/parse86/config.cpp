@@ -30,7 +30,7 @@
 #include "compiler.h"
 #include "winmode.h"
 
-extern char pipeName[256];
+char pipeName[256];
 extern int dbgblocknum;
 #ifndef WIN32
 int prm_targettype = DOS32A;

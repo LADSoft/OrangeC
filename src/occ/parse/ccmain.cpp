@@ -23,6 +23,7 @@
  */
 
 #include "compiler.h"
+#include "PrePRocessor.h"
 #include <setjmp.h>
 extern ARCH_DEBUG* chosenDebugger;
 extern ARCH_ASM* chosenAssembler;
@@ -35,7 +36,8 @@ extern int total_errors;
 extern FILE* listFile;
 extern char version[256];
 extern int optflags;
-extern LIST* nonSysIncludeFiles;
+extern char* prm_searchpath;
+extern char* sys_searchpath;
 
 #ifdef _WIN32
 extern "C"
@@ -50,11 +52,12 @@ extern "C"
 
 #ifdef PARSER_ONLY
 void ccDumpSymbols(void);
-void ccNewFile(char* fileName, bool main);
+std::string ccNewFile(char* fileName, bool main);
 void ccCloseFile(FILE* handle);
 int ccDBOpen(const char* name);
 #endif
 
+PreProcessor *preProcessor;
 int verbosity = 0;
 
 int maxBlocks, maxTemps, maxAllocationSpills, maxAllocationPasses, maxAllocationAccesses;
@@ -68,7 +71,6 @@ static char tempOutFile[260];
 char realOutFile[260];
 static char oldOutFile[260];
 
-static FILE* inputFile = 0;
 static int stoponerr = 0;
 
 COMPILER_PARAMS cparams = {
@@ -384,21 +386,17 @@ static void debug_dumptypedefs(NAMESPACEVALUELIST* nameSpace)
 }
 void MakeStubs(void)
 {
-    LIST* list;
     // parse the file, only gets the macro expansions
     errorinit();
     syminit();
-    preprocini(infile, inputFile);
     lexini();
     setglbdefs();
     while (getsym() != nullptr)
         ;
     printf("%s:\\\n", infile);
-    list = nonSysIncludeFiles;
-    while (list)
+    for (auto&& v : preProcessor->GetUserIncludes())
     {
-        printf("    %s \\\n", (char*)list->data);
-        list = list->next;
+        printf("    %s \\\n", v.c_str());
     }
     printf("\n");
 }
@@ -419,7 +417,6 @@ void compile(bool global)
     libcxx_init();
     statement_ini(global);
     syminit();
-    preprocini(infile, inputFile);
     lexini();
     setglbdefs();
     templateInit();
@@ -569,6 +566,7 @@ int main(int argc, char* argv[])
     {
         cparams.prm_cplusplus = false;
         strcpy(buffer, (char*)clist->data);
+        std::string pipe;
 #ifndef PARSER_ONLY
         if (buffer[0] == '-')
             strcpy(buffer, "a.c");
@@ -587,7 +585,7 @@ int main(int argc, char* argv[])
         StripExt(oldOutFile);
         AddExt(oldOutFile, ".tmp");
 #else
-        ccNewFile(buffer, true);
+        pipe = ccNewFile(buffer, true);
 #endif
         AddExt(buffer, ".C");
         p = strrchr(buffer, '.');
@@ -626,16 +624,14 @@ int main(int argc, char* argv[])
             cparams.prm_c99 = cparams.prm_c1x = false;
         if (cparams.prm_cplusplus && chosenAssembler->msil)
             fatal("MSIL compiler does not compile C++ files at this time");
-        if (*(char*)clist->data == '-')
-            inputFile = stdin;
-        else
-            inputFile = SrchPth2(buffer, "", "r");
-        if (!inputFile)
+        preProcessor = new PreProcessor(buffer, prm_searchpath, sys_searchpath, true, cparams.prm_trigraph, '#', cparams.prm_charisunsigned,
+            !cparams.prm_c99 && !cparams.prm_c1x && !cparams.prm_cplusplus, !cparams.prm_ansi, pipe);
+
+        if (!preProcessor->IsOpen())
             fatal("Cannot open input file %s", buffer);
         strcpy(infile, buffer);
         if (cparams.prm_makestubs)
         {
-            preprocini(infile, inputFile);
             if (chosenAssembler->enter_filename)
                 chosenAssembler->enter_filename((char*)clist->data);
             MakeStubs();
@@ -650,8 +646,7 @@ int main(int argc, char* argv[])
                 outputFile = fopen(tempOutFile, cparams.prm_asmfile ? "w" : "wb");
                 if (!outputFile)
                 {
-                    if (inputFile != stdin)
-                        fclose(inputFile);
+                    delete preProcessor;
                     fatal("Cannot open output file %s", tempOutFile);
                 }
                 setvbuf(outputFile, 0, _IOFBF, 32768);
@@ -665,8 +660,7 @@ int main(int argc, char* argv[])
                 cppFile = fopen(buffer, "w");
                 if (!cppFile)
                 {
-                    if (inputFile != stdin)
-                        fclose(inputFile);
+                    delete preProcessor;
                     fclose(outputFile);
                     fatal("Cannot open preprocessor output file %s", buffer);
                 }
@@ -678,8 +672,7 @@ int main(int argc, char* argv[])
                 listFile = fopen(buffer, "w");
                 if (!listFile)
                 {
-                    if (inputFile != stdin)
-                        fclose(inputFile);
+                    delete preProcessor;
                     fclose(cppFile);
                     fclose(outputFile);
                     fatal("Cannot open list file %s", buffer);
@@ -692,8 +685,7 @@ int main(int argc, char* argv[])
                 errFile = fopen(buffer, "w");
                 if (!errFile)
                 {
-                    if (inputFile != stdin)
-                        fclose(inputFile);
+                    delete preProcessor;
                     fclose(cppFile);
                     fclose(listFile);
                     fclose(outputFile);
@@ -710,8 +702,7 @@ int main(int argc, char* argv[])
                 if (!browseFile)
                 {
                     fclose(errFile);
-                    if (inputFile != stdin)
-                        fclose(inputFile);
+                    delete preProcessor;
                     fclose(cppFile);
                     fclose(listFile);
                     fclose(outputFile);
@@ -728,8 +719,7 @@ int main(int argc, char* argv[])
                 {
                     fclose(browseFile);
                     fclose(errFile);
-                    if (inputFile != stdin)
-                        fclose(inputFile);
+                    delete preProcessor;
                     fclose(cppFile);
                     fclose(listFile);
                     fclose(outputFile);
@@ -758,12 +748,7 @@ int main(int argc, char* argv[])
             printf("  Allocation Accesses: %d\n", maxAllocationAccesses);
         }
         maxBlocks = maxTemps = maxAllocationSpills = maxAllocationPasses = maxAllocationAccesses = 0;
-        if (inputFile != stdin)
-#ifdef PARSER_ONLY
-            ccCloseFile(inputFile);
-#else
-            fclose(inputFile);
-#endif
+        delete preProcessor;
         if (outputFile && openOutput)
             fclose(outputFile);
         outputFile = nullptr;

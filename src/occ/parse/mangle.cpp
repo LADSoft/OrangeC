@@ -26,7 +26,6 @@
 #include <stack>
 
 extern ARCH_ASM* chosenAssembler;
-extern INCLUDES* includes;
 extern SYMBOL* theCurrentFunc;
 extern const char* cpp_funcname_tab[];
 

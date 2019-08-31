@@ -28,6 +28,7 @@
 #include <string.h>
 #include "compiler.h"
 #include "browse.h"
+#include "PreProcessor.h"
 #ifndef HAVE_UNISTD_H
 #    include <direct.h>
 #else
@@ -35,8 +36,9 @@
 #endif
 extern COMPILER_PARAMS cparams;
 extern ARCH_DEBUG* chosenDebugger;
-extern INCLUDES* includes;
 extern int funcNesting;
+extern PreProcessor *preProcessor;
+extern int charIndex;
 
 static int currentFile = 0;
 static BROWSEFILE* files;
@@ -230,8 +232,8 @@ void browse_usage(SYMBOL* var, int file)
     bri->type = BRS_USAGE;
     getBrowseName(name, var);
     bri->name = litlate(name);
-    bri->lineno = includes->line;
-    bri->charpos = includes->lptr - includes->inputline - strlen(var->name);
+    bri->lineno = preProcessor->GetRealLineNo();
+    bri->charpos = charIndex - strlen(bri->name);
     if (bri->charpos < 0)
         bri->charpos = 0;
     bri->flags = 0;

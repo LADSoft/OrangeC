@@ -26,15 +26,14 @@
 #include "compiler.h"
 #include <limits.h>
 #include <assert.h>
+#include "PreProcessor.h"
+
 extern TYPE stdint;
 extern ARCH_DEBUG* chosenDebugger;
 extern ARCH_ASM* chosenAssembler;
 extern TYPE stdint, stdvoid, stdpointer;
-extern int stdpragmas;
-extern INCLUDES* includes;
 extern HASHTABLE* labelSyms;
 extern NAMESPACEVALUELIST *globalNameSpace, *localNameSpace;
-extern INCLUDES* includes;
 extern enum e_kw skim_colon[], skim_end[];
 extern enum e_kw skim_closepa[];
 extern enum e_kw skim_semi[];
@@ -46,6 +45,7 @@ extern TYPE stdXC;
 extern TYPE std__string, stdbool;
 extern int currentErrorLine;
 extern int total_errors;
+extern PreProcessor* preProcessor;
 
 extern int templateNestingCount;
 
@@ -114,7 +114,7 @@ STATEMENT* currentLineData(BLOCKDATA* parent, LEXEME* lex, int offset)
     STATEMENT* rv = nullptr;
     LINEDATA *ld = linesHead, **p = &ld;
     int lineno;
-    char* file;
+    const char* file;
     if (!lex)
         return nullptr;
     lineno = lex->realline + offset;
@@ -465,7 +465,7 @@ static LEXEME* statement_case(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     else if (isintconst(exp))
     {
         CASEDATA **cases = &switchstmt->cases, *data;
-        char* fname = lex->file;
+        const char* fname = lex->file;
         int line = lex->line;
         val = exp->v.i;
         /* need error: lost conversion on case value */
@@ -2661,8 +2661,7 @@ LEXEME* statement_asm(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
             /* problematic, ASM keyword without a block->  Skip to end of line... */
             currentLineData(parent, lex, 0);
             parent->hassemi = true;
-            while (*includes->lptr)
-                includes->lptr++;
+            SkipToEol();
             lex = getsym();
         }
     }
@@ -3043,7 +3042,7 @@ static void insertXCInfo(SYMBOL* funcsp)
 LEXEME* compound(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
 {
     BLOCKDATA* blockstmt = (BLOCKDATA*)Alloc(sizeof(BLOCKDATA));
-    int pragmas = stdpragmas;
+    preProcessor->MarkStdPragma();
     STATEMENT* st;
     EXPRESSION* thisptr = nullptr;
     browse_blockstart(lex->line);
@@ -3256,7 +3255,7 @@ LEXEME* compound(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
         }
     }
     AddBlock(lex, parent, blockstmt);
-    stdpragmas = pragmas;
+    preProcessor->ReleaseStdPragma();
     return lex;
 }
 void assignParam(SYMBOL* funcsp, int* base, SYMBOL* param)

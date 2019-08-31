@@ -187,12 +187,9 @@
     <ClCompile Include="..\parse\types.cpp" />
     <ClCompile Include="..\parse\unmangle.cpp" />
     <ClCompile Include="..\parse\wseh.cpp" />
-    <ClCompile Include="..\preproc\ppexpr.cpp" />
-    <ClCompile Include="..\preproc\PREPROC.cpp" />
     <ClCompile Include="ccif.cpp" />
     <ClCompile Include="config.cpp" />
     <ClCompile Include="db.cpp" />
-    <ClCompile Include="piper.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\parse\beinterf.h" />

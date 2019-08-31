@@ -28,7 +28,6 @@
 #include "Utils.h"
 extern ARCH_ASM* chosenAssembler;
 extern NAMESPACEVALUELIST *globalNameSpace, *localNameSpace;
-extern INCLUDES* includes;
 extern const char* overloadNameTab[];
 extern const char* overloadXlateTab[];
 extern enum e_kw skim_end[];
@@ -67,7 +66,7 @@ char anonymousNameSpaceName[512];
 static LIST* deferred;
 
 #ifdef PARSER_ONLY
-void ccInsertUsing(SYMBOL* ns, SYMBOL* parentns, char* file, int line);
+void ccInsertUsing(SYMBOL* ns, SYMBOL* parentns, const char* file, int line);
 #endif
 namespace AttribContainers
 {

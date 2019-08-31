@@ -32,6 +32,7 @@
 #include <string.h>
 #include <ctype.h>
 #include "compiler.h"
+#include "PreProcessor.h"
 /*      variable initialization         */
 extern int tempCount;
 extern BITINT bittab[BITINTBITS];
@@ -44,7 +45,6 @@ extern TEMP_INFO** tempInfo;
 extern LIST *localfuncs, *localdata;
 extern FILE* icdFile;
 extern char outfile[];
-extern LIST* libincludes;
 extern int nextLabel;
 extern LIST* externals;
 extern SYMBOL* theCurrentFunc;
@@ -52,6 +52,7 @@ extern unsigned termCount;
 extern QUAD* criticalThunks;
 extern int cachedTempCount;
 extern LIST* exports;
+extern PreProcessor* preProcessor;
 
 QUAD* currentQuad;
 
@@ -1275,7 +1276,7 @@ void beDecorateSymName(char* buf, SYMBOL* sym)
     }
     else
     {
-        q = lookupAlias(sym->name);
+        q = preProcessor->LookupAlias(sym->name);
         if (q)
             strcpy(buf, q);
         else
@@ -2771,13 +2772,12 @@ void putexterns(void)
             externList = externList->next;
         }
         exitseg();
-        while (libincludes)
+        for (auto&& v : preProcessor->GetIncludeLibs())
         {
             if (chosenAssembler->gen->output_includelib)
-                chosenAssembler->gen->output_includelib((char*)libincludes->data);
+                chosenAssembler->gen->output_includelib(v.c_str());
 
-            oprintf(icdFile, "\tINCLUDELIB\t%s\n", libincludes->data);
-            libincludes = libincludes->next;
+            oprintf(icdFile, "\tINCLUDELIB\t%s\n", v.c_str());
         }
         oputc('\n', icdFile);
     }

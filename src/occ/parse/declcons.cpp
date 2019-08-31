@@ -34,7 +34,6 @@ extern const char* overloadNameTab[];
 extern NAMESPACEVALUELIST *globalNameSpace, *localNameSpace;
 extern TYPE stdpointer, stdint;
 extern int total_errors;
-extern INCLUDES* includes;
 extern bool functionCanThrow;
 extern int argument_nesting;
 

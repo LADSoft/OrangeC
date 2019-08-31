@@ -310,7 +310,7 @@ typedef struct _arch_gen
     void (*import_define)(SYMBOL* sp, char* file);               /* put an import definition */
     void (*export_define)(SYMBOL* sp);                           /* put an export definition */
     void (*output_alias)(char* sym, char* alias);                /* put an alias */
-    void (*output_includelib)(char* name);                       /* put an included library name */
+    void (*output_includelib)(const char* name);                       /* put an included library name */
     IMODE* (*handleIntrins)(EXPRESSION* node, int novalue);      /* backend handle intrinsic */
     CGFUNC asm_exprtag;                                          /* expression tag */
     CGFUNC asm_tag;                                              /* tag */

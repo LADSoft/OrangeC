@@ -29,6 +29,8 @@
 #include "math.h"
 #include <limits.h>
 #include "../../util/Utils.h"
+#include "PreProcessor.h"
+#include <stack>
 
 #define KWHASHSIZE 253
 
@@ -41,17 +43,29 @@
 
 extern COMPILER_PARAMS cparams;
 extern ARCH_ASM* chosenAssembler;
-extern INCLUDES* includes;
 extern LINEDATA *linesHead, *linesTail;
-
+extern PreProcessor* preProcessor;
 LEXCONTEXT* context;
+
+int charIndex;
 
 static LEXEME* pool;
 static ULLONG_TYPE llminus1;
 static int nextFree;
+static const char *linePointer;
+static std::string currentLine;
 #ifdef KW_HASH
 HASHTABLE* kwhash;
 #endif
+
+struct ParseHold
+{
+    std::string currentLine;
+    const char *linePointer;
+};
+
+static std::stack<ParseHold> parseStack;
+
 
 KEYWORD keywords[] = {
     {"!", 1, notx, KW_ASSEMBLER, TT_UNARY | TT_OPERATOR},
@@ -360,6 +374,10 @@ void lexini(void)
     context = (LEXCONTEXT*)Alloc(sizeof(LEXCONTEXT));
     nextFree = 0;
     pool = (LEXEME*)Alloc(sizeof(LEXEME) * MAX_LOOKBACK);
+    currentLine = "";
+    linePointer = currentLine.c_str();
+    while (parseStack.size())
+        parseStack.pop();
 }
 
 /*-------------------------------------------------------------------------*/
@@ -412,13 +430,14 @@ static bool kwmatches(KEYWORD* kw)
     }
     return false;
 }
-KEYWORD* searchkw(unsigned char** p)
+KEYWORD* searchkw(const char** p)
 /*
  * see if the current symbol is a keyword
  */
 {
     KEYWORD* kw;
-    unsigned char buf[1000], *q = buf, *q1 = *p;
+    char buf[1000], *q = buf;
+    const char *q1 = *p;
     if (isstartchar(*q1))
     {
         int len = 0;
@@ -499,10 +518,103 @@ KEYWORD* searchkw(unsigned char** p)
     }
     return nullptr;
 }
-int getChar(unsigned char** source, enum e_lexType* tp)
+int getsch(int bytes, const unsigned char** source) /* return an in-quote character */
+{
+    int i = *(*source)++, j;
+    if (**source == '\n')
+        return INT_MIN;
+    if (i != '\\')
+    {
+        return (char)i;
+    }
+    i = *(*source); /* get an escaped character */
+    if (isdigit(i) && i < '8')
+    {
+        for (i = 0, j = 0; j < 3; ++j)
+        {
+            if (*(*source) <= '7' && *(*source) >= '0')
+                i = (i << 3) + *(*source) - '0';
+            else
+                break;
+            (*source)++;
+        }
+        return i;
+    }
+    (*source)++;
+    switch (i)
+    {
+    case 'a':
+        return '\a';
+    case 'b':
+        return '\b';
+    case 'f':
+        return '\f';
+    case 'n':
+        return '\n';
+    case 'r':
+        return '\r';
+    case 'v':
+        return '\v';
+    case 't':
+        return '\t';
+    case '\'':
+        return '\'';
+    case '\"':
+        return '\"';
+    case '\\':
+        return '\\';
+    case '?':
+        return '?';
+    case 'U':
+        bytes = 4;
+    case 'u':
+        if (i == 'u')
+            bytes = 2;
+    case 'x':
+    {
+        int n = 0;
+        while (isxdigit(*(*source)))
+        {
+            int ch = *(*source)++;
+            if (ch >= 0x60)
+                ch &= 0xdf;
+            ch -= 0x30;
+
+            if (ch > 10)
+                ch -= 7;
+            if (ch > 15)
+                ch -= 32;
+            n *= 16;
+            n += ch;
+            (*source)++;
+        }
+        /* hexadecimal escape sequences are only terminated by a non hex char */
+        /* we sign extend or truncate */
+        if (bytes == 1)
+        {
+            if (cparams.prm_charisunsigned)
+                n = (int)(UBYTE)n;
+            else
+                n = (int)(char)n;
+        }
+        if (bytes == 2 && i == 'x')
+            n = (int)(LCHAR)n;
+        if (i != 'x')
+        {
+            if (n <= 0x20 || (n >= 0x7f && n <= 0x9f) || (n >= 0xd800 && n <= 0xdfff))
+                pperror(ERR_INVCONST, 0);
+        }
+        return n;
+    }
+    default:
+        return (char)i;
+    }
+}
+
+int getChar(const char** source, enum e_lexType* tp)
 {
     enum e_lexType v = l_achr;
-    unsigned char* p = (unsigned char*)*source;
+    const unsigned char* p = (const unsigned char*)*source;
     if (*p == 'L')
     {
         v = l_wchr;
@@ -526,7 +638,7 @@ int getChar(unsigned char** source, enum e_lexType* tp)
         int i;
         do
             p++;
-        while (*p == MACRO_PLACEHOLDER);
+        while (*p == ppDefine::MACRO_PLACEHOLDER);
         i = getsch(v == l_Uchr ? 8 : v == l_wchr || v == l_uchr ? 4 : 2, &p);
         if (i == INT_MIN)
         {
@@ -556,20 +668,30 @@ int getChar(unsigned char** source, enum e_lexType* tp)
                 else
                     do
                         p++;
-                    while (*p == MACRO_PLACEHOLDER);
+                    while (*p == ppDefine::MACRO_PLACEHOLDER);
             }
         }
         else
             do
                 p++;
-            while (*p == MACRO_PLACEHOLDER);
+            while (*p == ppDefine::MACRO_PLACEHOLDER);
         *tp = v;
-        *source = p;
+        *source = (char *)p;
         return i;
     }
     return INT_MIN;
 }
-SLCHAR* getString(unsigned char** source, enum e_lexType* tp)
+int nextch()
+{
+    if (!*linePointer)
+    {
+        if (!preProcessor->GetLine(currentLine))
+            return -1;
+        linePointer = currentLine.c_str();
+    }
+    return *linePointer++;
+}
+SLCHAR* getString(const char** source, enum e_lexType* tp)
 {
     // the static declaration speeds it up by about 5% on windows platforms.
     static LCHAR data[32768];
@@ -577,7 +699,7 @@ SLCHAR* getString(unsigned char** source, enum e_lexType* tp)
     bool raw = false;
     bool found = false;
     bool msil = false;
-    unsigned char* p = (unsigned char*)*source;
+    const unsigned char* p = (const unsigned char *) *source;
     int len = sizeof(data) / sizeof(data[0]);
     int count = 0;
     int errored = 0;
@@ -587,14 +709,14 @@ SLCHAR* getString(unsigned char** source, enum e_lexType* tp)
         v = l_wstr;
         do
             p++;
-        while (*p == MACRO_PLACEHOLDER);
+        while (*p == ppDefine::MACRO_PLACEHOLDER);
     }
     else if (*p == '@' && chosenAssembler->msil && chosenAssembler->msil->allowExtensions)
     {
         v = l_msilstr;
         do
             p++;
-        while (*p == MACRO_PLACEHOLDER);
+        while (*p == ppDefine::MACRO_PLACEHOLDER);
     }
     else if (cparams.prm_cplusplus || cparams.prm_c1x)
     {
@@ -603,13 +725,13 @@ SLCHAR* getString(unsigned char** source, enum e_lexType* tp)
             v = l_ustr;
             do
                 p++;
-            while (*p == MACRO_PLACEHOLDER);
+            while (*p == ppDefine::MACRO_PLACEHOLDER);
             if (*p == '8')
             {
                 v = l_u8str;
                 do
                     p++;
-                while (*p == MACRO_PLACEHOLDER);
+                while (*p == ppDefine::MACRO_PLACEHOLDER);
             }
         }
         else if (*p == 'U')
@@ -617,7 +739,7 @@ SLCHAR* getString(unsigned char** source, enum e_lexType* tp)
             v = l_Ustr;
             do
                 p++;
-            while (*p == MACRO_PLACEHOLDER);
+            while (*p == ppDefine::MACRO_PLACEHOLDER);
         }
     }
     if (cparams.prm_cplusplus && *p == 'R')
@@ -625,20 +747,20 @@ SLCHAR* getString(unsigned char** source, enum e_lexType* tp)
         raw = true;
         do
             p++;
-        while (*p == MACRO_PLACEHOLDER);
+        while (*p == ppDefine::MACRO_PLACEHOLDER);
     }
     if (*p == '"')
     {
         do
             p++;
-        while (*p == MACRO_PLACEHOLDER);
+        while (*p == ppDefine::MACRO_PLACEHOLDER);
         if (raw)
         {
             // fixme utf8 raw strings...
             char preamble[16];
             int pcount = 0, qcount;
             LCHAR* qpos = 0;
-            int lineno = includes->line;
+            int lineno = preProcessor->GetErrLineNo();
             unsigned char st[2];
             bool err = false;
             while (true)
@@ -648,12 +770,12 @@ SLCHAR* getString(unsigned char** source, enum e_lexType* tp)
                     st[0] = *p;
                     do
                         p++;
-                    while (*p == MACRO_PLACEHOLDER);
+                    while (*p == ppDefine::MACRO_PLACEHOLDER);
                 }
-                else if (getstring(st, 1, includes->handle))
+                else if (st[0] = nextch())
                 {
                     errorint(ERR_EOF_RAW_STRING, lineno);
-                    *source = p;
+                    *source = (const char *)p;
                     return nullptr;
                 }
                 if (err)
@@ -662,7 +784,7 @@ SLCHAR* getString(unsigned char** source, enum e_lexType* tp)
                     {
                         SLCHAR* rv;
                         int i;
-                        *source = p;
+                        *source = (const char *)p;
                         IncGlobalFlag();
                         rv = (SLCHAR*)Alloc(sizeof(SLCHAR));
                         rv->str = (LCHAR*)Alloc(1);
@@ -697,20 +819,13 @@ SLCHAR* getString(unsigned char** source, enum e_lexType* tp)
                         st[0] = *p;
                         do
                             p++;
-                        while (*p == MACRO_PLACEHOLDER);
+                        while (*p == ppDefine::MACRO_PLACEHOLDER);
                     }
-                    else if (getstring(st, 1, includes->handle))
+                    else if (st[0] = nextch())
                     {
                         errorint(ERR_EOF_RAW_STRING, lineno);
-                        *source = p;
+                        *source = (const char *)p;
                         return nullptr;
-                    }
-                    else
-                    {
-                        if (st[0] == '\n')
-                        {
-                            ++includes->line;
-                        }
                     }
                     if (len == 1)
                     {
@@ -746,9 +861,9 @@ SLCHAR* getString(unsigned char** source, enum e_lexType* tp)
                 }
             *dest = 0;
             found = true;
-            while (isspace(*p) || *p == MACRO_PLACEHOLDER)
+            while (isspace(*p) || *p == ppDefine::MACRO_PLACEHOLDER)
                 p++;
-            *source = p;
+            *source = (const char *)p;
         }
         else
         {
@@ -819,11 +934,11 @@ SLCHAR* getString(unsigned char** source, enum e_lexType* tp)
             else
                 do
                     p++;
-                while (*p == MACRO_PLACEHOLDER);
+                while (*p == ppDefine::MACRO_PLACEHOLDER);
             found = true;
-            while (*p == MACRO_PLACEHOLDER)
+            while (*p == ppDefine::MACRO_PLACEHOLDER)
                 p++;
-            *source = p;
+            *source = (const char *)p;
         }
     }
     *tp = v;
@@ -957,7 +1072,7 @@ static int getexp(char** ptr)
  *      getnum handles all of the numeric input. it accepts
  *      decimal, octal, hexidecimal, and floating point numbers.
  */
-e_lexType getNumber(unsigned char** ptr, unsigned char** end, unsigned char* suffix, FPF* rval, LLONG_TYPE* ival)
+e_lexType getNumber(const char** ptr, const char** end, char* suffix, FPF* rval, LLONG_TYPE* ival)
 {
     char buf[200], *p = buf;
     int radix = 10;
@@ -1088,7 +1203,7 @@ e_lexType getNumber(unsigned char** ptr, unsigned char** end, unsigned char* suf
     *suffix = 0;
     if (isstartchar(**ptr))
     {
-        unsigned char* ufd = suffix;
+        char* ufd = suffix;
         while (issymchar(**ptr))
             *ufd++ = *(*ptr)++;
         *ufd = 0;
@@ -1205,7 +1320,7 @@ e_lexType getNumber(unsigned char** ptr, unsigned char** end, unsigned char* suf
     }
     return lastst;
 }
-int getId(unsigned char** ptr, unsigned char* dest)
+int getId(const char** ptr, unsigned char* dest)
 {
     if (!isstartchar(**ptr))
         return INT_MIN;
@@ -1263,10 +1378,10 @@ int getId(unsigned char** ptr, unsigned char* dest)
 }
 LEXEME* SkipToNextLine(void)
 {
+
     if (!context->next)
     {
-        while (*includes->lptr)
-            includes->lptr++;
+        SkipToEol();
         context->cur = nullptr;
     }
     return getsym();
@@ -1274,13 +1389,64 @@ LEXEME* SkipToNextLine(void)
 LEXEME* getGTSym(LEXEME* in)
 {
     static LEXEME lex;
-    char pgreater[2] = {'>', 0}, *ppgreater = pgreater;
+    const char pgreater[2] = {'>', 0}, *ppgreater = pgreater;
     KEYWORD* kw;
-    kw = searchkw((UBYTE**)&ppgreater);
+    kw = searchkw(&ppgreater);
     lex = *in;
     lex.type = l_kw;
     lex.kw = kw;
     return &lex;
+}
+void SkipToEol()
+{
+    linePointer = currentLine.c_str() + currentLine.size();
+}
+bool AtEol()
+{
+    const char *p = linePointer;
+    while (isspace(*p))
+        p++;
+    return *p == 0;
+}
+void CompilePragma(const char **linePointer)
+{
+    int err;
+    while (isspace(*(*linePointer)))
+        (*linePointer)++;
+    if (**linePointer == '(')
+    {
+        (*linePointer)++;
+        while (isspace(*(*linePointer)))
+            (*linePointer)++;
+        err = -1;
+        if (**linePointer == '"')
+        {
+            linePointer++;
+            const char *p = *linePointer;
+            while (**linePointer && **linePointer != '"')
+                (*linePointer)++;
+            std::string toCompile(p, *linePointer - p);
+            preProcessor->CompilePragma(toCompile);
+            if (**linePointer)
+                (*linePointer)++;
+        }
+        while (isspace(*(*linePointer)))
+            (*linePointer)++;
+        if (**linePointer == ')')
+        {
+            (*linePointer)++;
+            return;
+        }
+        err = closepa;
+    }
+    else
+    {
+        err = openpa;
+    }
+    if (err > 0)
+        needkw(nullptr, (e_kw)err);
+    else
+        error(ERR_NEEDSTRING);
 }
 LEXEME* getsym(void)
 {
@@ -1296,31 +1462,37 @@ LEXEME* getsym(void)
     int cval;
     SLCHAR* strptr;
 
-    if (context->cur)
+    if (!parseStack.size())
     {
-        LEXEME* rv;
-        rv = context->cur;
-        if (context->last == rv->prev)
-            TemplateRegisterDeferred(context->last);
-        context->last = rv;
-        context->cur = context->cur->next;
-        if (rv->linedata)
+        if (context->cur)
         {
-            linesHead = rv->linedata;
-            linesTail = linesHead;
-            while (linesTail && linesTail->next)
-                linesTail = linesTail->next;
+            LEXEME* rv;
+            rv = context->cur;
+            if (context->last == rv->prev)
+                TemplateRegisterDeferred(context->last);
+            context->last = rv;
+            context->cur = context->cur->next;
+            if (rv->linedata)
+            {
+                linesHead = rv->linedata;
+                linesTail = linesHead;
+                while (linesTail && linesTail->next)
+                    linesTail = linesTail->next;
+            }
+            return rv;
         }
-        return rv;
-    }
-    else if (context->next)
-    {
-        return nullptr;
+        else if (context->next)
+        {
+            return nullptr;
+        }
     }
     lex = &pool[nextFree];
     lex->linedata = nullptr;
-    lex->prev = context->last;
-    context->last = lex;
+    if (!parseStack.size())
+    {
+        lex->prev = context->last;
+        context->last = lex;
+    }
     lex->next = nullptr;
     if (lex->prev)
         lex->prev->next = lex;
@@ -1334,24 +1506,20 @@ LEXEME* getsym(void)
         contin = false;
         do
         {
-            if (!includes)
-                return nullptr;
-            if (!includes->lptr || !*includes->lptr)
+            if (parseStack.size() || (*linePointer == 0 && !preProcessor->GetLine(currentLine)))
             {
-                if (GetLine())
-                {
-                    return nullptr;
-                }
+                return nullptr;
             }
-            while (isspace(*includes->lptr) || *includes->lptr == MACRO_PLACEHOLDER)
-                includes->lptr++;
-        } while (*includes->lptr == 0);
-        lex->charindex = includes->lptr - includes->inputline;
-        lex->line = includes->line;
-        lex->realline = includes->realline;
-        lex->file = includes->linename ? includes->linename : includes->fname;
-        lex->filenum = includes->fileindex;
-        if ((cval = getChar(&includes->lptr, &tp)) != INT_MIN)
+            linePointer = currentLine.c_str();
+            while (isspace(*linePointer) || *linePointer == ppDefine::MACRO_PLACEHOLDER)
+                linePointer++;
+        } while (*linePointer== 0);
+        charIndex = lex->charindex = linePointer - currentLine.c_str();
+        lex->line = preProcessor->GetErrLineNo();
+        lex->realline = preProcessor->GetRealLineNo();
+        lex->file = preProcessor->GetErrFile().c_str();
+        lex->filenum = preProcessor->GetFileIndex();
+        if ((cval = getChar(&linePointer, &tp)) != INT_MIN)
         {
             if (tp == l_achr && !cparams.prm_charisunsigned && !(cval & 0xffffff00))
                 cval = (e_lexType)(char)cval;
@@ -1362,11 +1530,11 @@ LEXEME* getsym(void)
                 lex->type = l_i;
             else
                 lex->type = tp;
-            if (isstartchar(*includes->lptr))
+            if (isstartchar(*linePointer))
             {
                 char suffix[256], *p = suffix;
-                while (issymchar(*includes->lptr))
-                    *p++ = *includes->lptr++;
+                while (issymchar(*linePointer))
+                    *p++ = *linePointer++;
                 *p = 0;
                 if (!cparams.prm_cplusplus)
                     error(ERR_INVCONST);
@@ -1374,15 +1542,15 @@ LEXEME* getsym(void)
                     lex->suffix = litlate(suffix);
             }
         }
-        else if ((strptr = getString(&includes->lptr, &tp)) != nullptr)
+        else if ((strptr = getString(&linePointer, &tp)) != nullptr)
         {
             lex->value.s.w = (LCHAR*)strptr;
             lex->type = tp == l_u8str ? l_astr : tp;
-            if (isstartchar(*includes->lptr) && !isspace(*(includes->lptr - 1)))
+            if (isstartchar(*linePointer) && !isspace(*(linePointer - 1)))
             {
                 char suffix[256], *p = suffix;
-                while (issymchar(*includes->lptr))
-                    *p++ = *includes->lptr++;
+                while (issymchar(*linePointer))
+                    *p++ = *linePointer++;
                 *p = 0;
                 if (!cparams.prm_cplusplus)
                     error(ERR_INVCONST);
@@ -1390,13 +1558,13 @@ LEXEME* getsym(void)
                     lex->suffix = litlate(suffix);
             }
         }
-        else if (*includes->lptr != 0)
+        else if (*linePointer != 0)
         {
-            unsigned char suffix[256];
-            unsigned char* start = includes->lptr;
-            unsigned char* end = includes->lptr;
+            char suffix[256];
+            const char* start = linePointer;
+            const char* end = linePointer;
             enum e_lexType tp;
-            if ((unsigned)(tp = getNumber(&includes->lptr, &end, suffix, &rval, &ival)) != (unsigned)INT_MIN)
+            if ((unsigned)(tp = getNumber(&linePointer, &end, suffix, &rval, &ival)) != (unsigned)INT_MIN)
             {
                 if (tp < l_f)
                     lex->value.i = ival;
@@ -1411,11 +1579,12 @@ LEXEME* getsym(void)
                 }
                 lex->type = tp;
             }
-            else if ((kw = searchkw(&includes->lptr)) != nullptr)
+            else if ((kw = searchkw(&linePointer)) != nullptr)
             {
                 if (kw->key == kw__Pragma)
                 {
-                    Compile_Pragma();
+
+                    CompilePragma(&linePointer);
                     contin = true;
                 }
                 else
@@ -1424,7 +1593,7 @@ LEXEME* getsym(void)
                     lex->kw = kw;
                 }
             }
-            else if (getId(&includes->lptr, buf + pos) != INT_MIN)
+            else if (getId(&linePointer, buf + pos) != INT_MIN)
             {
                 lex->value.s.a = (char*)buf + pos;
                 lex->type = l_id;
@@ -1435,7 +1604,7 @@ LEXEME* getsym(void)
             else
             {
                 contin = true;
-                errorint(ERR_UNKNOWN_CHAR, *includes->lptr++);
+                errorint(ERR_UNKNOWN_CHAR, *linePointer++);
             }
         }
         else
@@ -1557,4 +1726,19 @@ bool CompareLex(LEXEME* left, LEXEME* right)
         right = right->next;
     }
     return !left && !right;
+}
+void SetAlternateParse(bool set, const std::string& val)
+{
+    if (set)
+    {
+        parseStack.push(std::move(ParseHold{ currentLine, linePointer }));
+        currentLine = val;
+        linePointer = currentLine.c_str();
+    }
+    else if (parseStack.size())
+    {
+        currentLine = parseStack.top().currentLine;
+        linePointer = parseStack.top().linePointer;
+        parseStack.pop();
+    }
 }

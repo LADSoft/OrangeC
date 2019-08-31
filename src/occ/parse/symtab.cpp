@@ -23,17 +23,16 @@
  */
 
 #include "compiler.h"
+#include "PreProcessor.h"
 
 extern int codeLabel;
 
-#ifndef CPREPROCESSOR
 extern ARCH_DEBUG* chosenDebugger;
 extern FILE* listFile;
-extern INCLUDES* includes;
 extern int structLevel;
 extern int templateNestingCount;
 extern TYPE stdvoid;
-#endif
+extern PreProcessor* preProcessor;
 
 NAMESPACEVALUELIST *globalNameSpace, *localNameSpace;
 HASHTABLE* labelSyms;
@@ -45,7 +44,6 @@ static LIST* usingDirectives;
 
 #ifdef PARSER_ONLY
 extern HASHTABLE* kwhash;
-extern HASHTABLE* defsyms;
 extern HASHTABLE* labelSyms;
 extern HASHTABLE* ccHash;
 void ccSetSymbol(SYMBOL* s);
@@ -70,7 +68,6 @@ HASHTABLE* CreateHashTable(int size)
     rv->size = size;
     return rv;
 }
-#ifndef CPREPROCESSOR
 void AllocateLocalContext(BLOCKDATA* block, SYMBOL* sym, int label)
 {
     HASHTABLE* tn = CreateHashTable(1);
@@ -111,7 +108,7 @@ void TagSyms(HASHTABLE* syms)
         while (hr)
         {
             SYMBOL* sym = hr->p;
-            sym->ccEndLine = includes->line + 1;
+            sym->ccEndLine = preProcessor->GetRealLineNo() + 1;
             hr = hr->next;
         }
     }
@@ -168,7 +165,7 @@ void FreeLocalContext(BLOCKDATA* block, SYMBOL* sym, int label)
     st = stmtNode(nullptr, block, st_dbgblock);
     st->label = 0;
 }
-#endif
+
 /* SYMBOL tab hash function */
 static int GetHashValue(const char* string)
 {
@@ -632,7 +629,7 @@ void baseinsert(SYMBOL* in, HASHTABLE* table)
     if (AddName(in, table))
 #endif
     {
-#if defined(CPREPROCESSOR) || defined(PARSER_ONLY)
+#if defined(PARSER_ONLY)
         pperrorstr(ERR_DUPLICATE_IDENTIFIER, in->name);
 #else
         if (!structLevel || !templateNestingCount)
@@ -649,7 +646,7 @@ void insert(SYMBOL* in, HASHTABLE* table)
     if (table)
     {
 #ifdef PARSER_ONLY
-        if (table != defsyms && table != kwhash && table != ccHash)
+        if (table != kwhash && table != ccHash)
             if (!in->parserSet)
             {
                 in->parserSet = true;
@@ -676,11 +673,7 @@ void insertOverload(SYMBOL* in, HASHTABLE* table)
         }
     if (AddOverloadName(in, table))
     {
-#ifdef CPREPROCESSOR
-        pperrorstr(ERR_DUPLICATE_IDENTIFIER, in->name);
-#else
         SetLinkerNames(in, lk_cdecl);
         preverrorsym(ERR_DUPLICATE_IDENTIFIER, in, in->declfile, in->declline);
-#endif
     }
 }

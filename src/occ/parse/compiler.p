@@ -752,7 +752,7 @@ void ReduceLoopStrength(void);
                                 /* Lex.c */
 
 void lexini(void);
-KEYWORD* searchkw(unsigned char* *p);
+KEYWORD* searchkw(const char* *p);
 int getChar(unsigned char* *source, enum e_lexType* tp);
 SLCHAR* getString(unsigned char* *source, enum e_lexType* tp);
 int getId(unsigned char* *ptr , unsigned char* dest);
@@ -763,6 +763,9 @@ LEXEME* prevsym(LEXEME* lex);
 LEXEME* backupsym(void);
 LEXEME* SetAlternateLex(LEXEME* lexList);
 bool CompareLex(LEXEME *left, LEXEME *right);
+void SetAlternateParse(bool set, const std::string& alt);
+void SkipToEol();
+bool AtEol();
                                /* List.c */
 
 void put_sc(int scl);
@@ -855,63 +858,11 @@ void beRewind(void);
                               /* Ppexpr.c */
 
 int getsch(int UBYTEs, unsigned char* *source) ;
-PPINT ppexpr(void);
-
-                              /* Ppmain.c */
-
-const char* getUsageText(void);
-void bool_setup(char select, char* string);
-int main(int argc, char* argv[]);
 
                               /* Preproc.c */
 
-void preprocini(char* name, FILE* fil);
-int defid(char* name, unsigned char* *p);
-void skipspace(void);
-bool expectid(char* buf);
-bool expectstring(char* buf, unsigned char* *in, bool angle);
-LLONG_TYPE expectnum(bool* uns);
-int getstring(unsigned char* s, int len, FILE* file);
-bool GetLine(void);
-void preprocess(void);
-void doerror(void);
-void dowarning(void);
-unsigned char* getauxname(unsigned char* ptr, char* *bufp);
-void dopragma(bool fromPragma);
-void Compile_Pragma(void);
-void doline(void);
-INCLUDES* GetIncludeData(void);
-void FreeInclData(INCLUDES* data);
-void doinclude(void);
 void glbdefine(const char* name, const char* value);
 void glbUndefine(const char* name);
-int undef2(const char* name);
-void dodefine(void);
-void doundef(void);
-void nodefines(void);
-bool indefine(DEFSTRUCT* sym);
-void enterdefine(DEFSTRUCT* sym);
-void exitdefine(void);
-int definsert(unsigned char* macro, unsigned char* end, unsigned char* begin, unsigned char* text, unsigned char* expandedtext, int len, int replen);
-void defstringizing(unsigned char* macro);
-int defreplaceargs(unsigned char* macro, int count, unsigned char* *oldargs, unsigned char* *newargs, unsigned char* *expandedargs, unsigned char* varargs);
-void deftokenizing(unsigned char* macro);
-char* fullqualify(char* string);
-void filemac(char* string);
-void datemac(char* string);
-void timemac(char* string);
-void linemac(char* string);
-void defmacroreplace(char* macro, char* name);
-int replacesegment(unsigned char* start, unsigned char* end, int* inbuffer, int totallen, unsigned char* *pptr);
-int defcheck(unsigned char* line);
-void pushif(void);
-void popif(void);
-void ansieol(void);
-void doifdef(bool flag);
-void doif(void);
-void doelif(void);
-void doelse(void);
-void doendif(void);
 
                                /* Rtti.c */
 

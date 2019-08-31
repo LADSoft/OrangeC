@@ -26,5 +26,5 @@ OCCIL_DIRS := occil
 endif
 
 
-DIRS = x86 $(OCCIL_DIRS) preproc parse86
+DIRS = x86 $(OCCIL_DIRS) parse86
 

@@ -25,6 +25,7 @@
 #include "compiler.h"
 #include <assert.h>
 #include <limits.h>
+#include "PreProcessor.h"
 /* initializers, local... can do w/out c99 */
 
 extern ARCH_DEBUG* chosenDebugger;
@@ -50,9 +51,8 @@ extern int instantiatingTemplate;
 extern int total_errors;
 extern int templateNestingCount;
 extern int codeLabel;
-extern INCLUDES* includes;
-extern int cppprio;
 extern const char* overloadNameTab[];
+extern PreProcessor* preProcessor;
 
 typedef struct _startups_
 {
@@ -80,9 +80,7 @@ int ignore_global_init;
 
 static DYNAMIC_INITIALIZER *dynamicInitializers, *TLSInitializers;
 static DYNAMIC_INITIALIZER *dynamicDestructors, *TLSDestructors;
-static STARTUP *startupList, *rundownList;
 static LIST *symListHead, *symListTail;
-static HASHTABLE* aliasHash;
 static int inittag = 0;
 
 LEXEME* initType(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_sc sc, INITIALIZER** init, INITIALIZER** dest, TYPE* itype,
@@ -91,8 +89,6 @@ LEXEME* initType(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_sc sc, INITIALI
 void init_init(void)
 {
     symListHead = nullptr;
-    startupList = rundownList = nullptr;
-    aliasHash = CreateHashTable(13);
     dynamicInitializers = TLSInitializers = nullptr;
     dynamicDestructors = TLSDestructors = nullptr;
     initializingGlobalVar = false;
@@ -101,79 +97,49 @@ void dumpStartups(void)
 {
 #ifndef PARSER_ONLY
     SYMBOL* s;
-    if (startupList)
+    bool started = false;
+    for (auto&& starts : preProcessor->GetStartups())
     {
-        startupseg();
-        while (startupList)
+        if (starts.second->startup)
         {
-            s = search(startupList->name, globalNameSpace->valueData->syms);
+            if (!started)
+            {
+                started = true;
+                startupseg();
+            }
+            s = search(starts.first.c_str(), globalNameSpace->valueData->syms);
             if (!s || s->storage_class != sc_overloads)
-                errorstr(ERR_UNDEFINED_IDENTIFIER, startupList->name);
+                errorstr(ERR_UNDEFINED_IDENTIFIER, starts.first.c_str());
             else
             {
-                s = search(startupList->name, s->tp->syms);
-                gensrref(s, startupList->prio, STARTUP_TYPE_STARTUP);
+                s = search(starts.first.c_str(), s->tp->syms);
+                gensrref(s, starts.second->prio, STARTUP_TYPE_STARTUP);
                 s->attribs.inheritable.used = true;
             }
-            startupList = startupList->next;
         }
     }
-    if (rundownList)
+    started = false;
+    for (auto&& starts : preProcessor->GetStartups())
     {
-        rundownseg();
-        while (rundownList)
+        if (starts.second->startup)
         {
-            s = search(rundownList->name, globalNameSpace->valueData->syms);
+            if (!started)
+            {
+                started = true;
+                rundownseg();
+            }
+            s = search(starts.first.c_str(), globalNameSpace->valueData->syms);
             if (!s || s->storage_class != sc_overloads)
-                errorstr(ERR_UNDEFINED_IDENTIFIER, rundownList->name);
+                errorstr(ERR_UNDEFINED_IDENTIFIER, starts.first.c_str());
             else
             {
-                s = search(rundownList->name, s->tp->syms);
-                gensrref(s, rundownList->prio, STARTUP_TYPE_RUNDOWN);
+                s = search(starts.first.c_str(), s->tp->syms);
+                gensrref(s, starts.second->prio, STARTUP_TYPE_RUNDOWN);
                 s->attribs.inheritable.used = true;
             }
-            rundownList = rundownList->next;
         }
     }
 #endif
-}
-void insertStartup(bool startupFlag, char* name, int prio)
-{
-    STARTUP* startup;
-
-    IncGlobalFlag();
-    startup = (STARTUP*)Alloc(sizeof(STARTUP));
-    startup->name = litlate(name);
-    DecGlobalFlag();
-
-    startup->prio = prio;
-    if (startupFlag)
-    {
-        startup->next = startupList;
-        startupList = startup;
-    }
-    else
-    {
-        startup->next = rundownList;
-        rundownList = startup;
-    }
-}
-const char* lookupAlias(const char* name)
-{
-    ALIAS* x = (ALIAS*)search(name, aliasHash);
-    if (x)
-        return x->alias;
-    return nullptr;
-}
-void insertAlias(char* name, char* alias)
-{
-    ALIAS* newAlias;
-    IncGlobalFlag();
-    newAlias = (ALIAS*)Alloc(sizeof(ALIAS));
-    newAlias->name = name;
-    newAlias->alias = alias;
-    insert((SYMBOL*)newAlias, aliasHash);
-    DecGlobalFlag();
 }
 static int dumpBits(INITIALIZER** init)
 {
@@ -377,7 +343,7 @@ static void dumpDynamicInitializers(void)
         if (!(chosenAssembler->arch->denyopts & DO_NOADDRESSINIT))
         {
             startupseg();
-            gensrref(funcsp, 32 + cppprio, STARTUP_TYPE_STARTUP);
+            gensrref(funcsp, 32 + preProcessor->GetCppPrio(), STARTUP_TYPE_STARTUP);
         }
         else
         {

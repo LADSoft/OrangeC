@@ -147,7 +147,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\ocpp\Floating.cpp" />
     <ClCompile Include="..\..\util\CmdFiles.cpp" />
     <ClCompile Include="..\..\util\Utils.cpp" />
     <ClCompile Include="..\middle\ialias.cpp" />
@@ -209,8 +208,6 @@
     <ClCompile Include="..\parse\types.cpp" />
     <ClCompile Include="..\parse\unmangle.cpp" />
     <ClCompile Include="..\parse\wseh.cpp" />
-    <ClCompile Include="..\preproc\ppexpr.cpp" />
-    <ClCompile Include="..\preproc\preproc.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\middle\iexpr.h" />
@@ -227,16 +224,17 @@
     <ClInclude Include="..\parse\rtti.h" />
     <ClInclude Include="..\parse\winmode.h" />
     <ClInclude Include="..\preproc\osutil.hpp" />
-    <ClInclude Include="..\preproc\pp.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="be.p" />
     <None Include="..\parse\compiler.p" />
-    <None Include="..\preproc\PP.P" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\netlib\DotNetPELib.vcxproj">
       <Project>{9e09e239-7370-4cbc-a82e-40dbcc0947f3}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\ocpp\ocpp.vcxproj">
+      <Project>{15b031ac-a404-4064-be4e-cd5705b6293c}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\util\util.vcxproj">
       <Project>{72430015-06c0-42a2-b9ec-d0e5e2eae83d}</Project>

@@ -30,7 +30,6 @@ extern NAMESPACEVALUELIST* localNameSpace;
 extern TYPE stdpointer, stdvoid;
 extern int startlab, retlab;
 extern int total_errors;
-extern INCLUDES* includes;
 extern LIST* importThunks;
 
 static LIST *inlineHead, *inlineTail, *inlineVTabHead, *inlineVTabTail;

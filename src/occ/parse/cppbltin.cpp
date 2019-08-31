@@ -25,11 +25,10 @@
 /* declare in select has multiple vars */
 #include "compiler.h"
 #include "rtti.h"
-extern INCLUDES* includes;
 extern TYPE stdint;
 extern ARCH_ASM* chosenAssembler;
 
-static unsigned char *cppbuiltin = (unsigned char *)"void * operator new(unsigned size); "
+static std::string cppbuiltin = "void * operator new(unsigned size); "
     "void __rtllinkage * operator new[](unsigned size); " 
     "void __rtllinkage * operator new(unsigned size, void *ptr) noexcept; " 
     "void __rtllinkage * operator new[](unsigned size, void *ptr) noexcept; " 
@@ -74,33 +73,29 @@ TYPE stdXC = {bt_struct, XCTAB_SIZE};
 void ParseBuiltins(void)
 {
     LEXEME* lex;
-    FILE* handle = includes->handle;
-    unsigned char* p = includes->lptr;
-    includes->handle = nullptr;
     if (cparams.prm_cplusplus)
     {
-        includes->lptr = cppbuiltin;
+        SetAlternateParse(true, cppbuiltin);
         lex = getsym();
         if (lex)
         {
             while ((lex = declare(lex, nullptr, nullptr, sc_global, lk_none, nullptr, true, false, false, ac_public)) != nullptr)
                 ;
         }
+        SetAlternateParse(false, "");
     }
     if (chosenAssembler->bltins)
     {
-        includes->lptr = (unsigned char*)chosenAssembler->bltins;
+        std::string temp = chosenAssembler->bltins;
+        SetAlternateParse(true, temp);
         lex = getsym();
         if (lex)
         {
             while ((lex = declare(lex, nullptr, nullptr, sc_global, lk_none, nullptr, true, false, false, ac_public)) != nullptr)
                 ;
         }
+        SetAlternateParse(false, "");
     }
-    includes->handle = handle;
-    includes->lptr = p;
-    includes->line = 0;
-    includes->realline = 0;
     if (cparams.prm_cplusplus)
     {
         stdXC.syms = CreateHashTable(1);

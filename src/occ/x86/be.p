@@ -126,7 +126,7 @@ void omf_globaldef(SYMBOL*sym);
 void omf_put_extern(SYMBOL*sym, int code);
 void omf_put_impfunc(SYMBOL*sym, char *file);
 void omf_put_expfunc(SYMBOL*sym);
-void omf_put_includelib(char *name);
+void omf_put_includelib(const char *name);
 void omfFileName(void);
 void omfTranslatorName(void);
 void omfFileTime(char *file);
@@ -209,7 +209,7 @@ void oa_output_alias(char *name, char *alias);
 void oa_put_extern(SYMBOL*sym, int code);
 void oa_put_impfunc(SYMBOL*sym, char *file);
 void oa_put_expfunc(SYMBOL*sym);
-void oa_output_includelib(char *name);
+void oa_output_includelib(const char *name);
 void oa_end_generation(void);
 
                               /* Outcode.c */

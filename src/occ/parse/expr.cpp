@@ -24,10 +24,10 @@
 
 #include "compiler.h"
 #include "rtti.h"
+#include "PreProcessor.h"
 
 extern COMPILER_PARAMS cparams;
 extern ARCH_ASM* chosenAssembler;
-extern int stdpragmas;
 extern enum e_kw skim_closepa[], skim_end[];
 extern enum e_kw skim_closebr[];
 extern enum e_kw skim_semi[];
@@ -65,7 +65,6 @@ extern LAMBDA* lambdas;
 extern int instantiatingTemplate;
 extern int currentErrorLine;
 extern int templateNestingCount;
-extern INCLUDES* includes;
 extern NAMESPACEVALUELIST* globalNameSpace;
 extern bool hasXCInfo;
 extern STRUCTSYM* structSyms;
@@ -76,6 +75,7 @@ extern SYMBOL* theCurrentFunc;
 extern int inGetUserConversion;
 extern int tryLevel;
 extern bool hasFuncCall;
+extern PreProcessor* preProcessor;
 
 int packIndex;
 
@@ -891,7 +891,7 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
 
             if (lvalue(*exp) && (*exp)->type != en_l_object)
                 (*exp)->v.sp = sym;  // catch for constexpr
-            (*exp)->pragmas = stdpragmas;
+            (*exp)->pragmas = preProcessor->GetStdPragmas();
             if (isvolatile(*tp))
                 (*exp)->isvolatile = true;
             if (isrestrict(*tp))
@@ -4811,7 +4811,7 @@ static LEXEME* expression_primary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE**
                     (*exp)->type = en_c_fi;
                     (*exp)->v.f = (LLONG_TYPE)1;
                     *tp = &stdfloatimaginary;
-                    (*exp)->pragmas = stdpragmas;
+                    (*exp)->pragmas = preProcessor->GetStdPragmas();
                     lex = getsym();
                     break;
                 case kw___offsetof:
@@ -5022,14 +5022,14 @@ static LEXEME* expression_primary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE**
         case l_f:
             *exp = intNode(en_c_f, 0);
             (*exp)->v.f = lex->value.f;
-            (*exp)->pragmas = stdpragmas;
+            (*exp)->pragmas = preProcessor->GetStdPragmas();
             *tp = &stdfloat;
             lex = getsym();
             break;
         case l_d:
             *exp = intNode(en_c_d, 0);
             (*exp)->v.f = lex->value.f;
-            (*exp)->pragmas = stdpragmas;
+            (*exp)->pragmas = preProcessor->GetStdPragmas();
             *tp = &stddouble;
             lex = getsym();
             break;
@@ -5038,7 +5038,7 @@ static LEXEME* expression_primary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE**
             {
                 *exp = intNode(en_c_ld, 0);
                 (*exp)->v.f = lex->value.f;
-                (*exp)->pragmas = stdpragmas;
+                (*exp)->pragmas = preProcessor->GetStdPragmas();
                 *tp = &stdlongdouble;
             }
             lex = getsym();

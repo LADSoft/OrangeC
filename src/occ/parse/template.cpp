@@ -25,6 +25,7 @@
 #include "compiler.h"
 #include "assert.h"
 #include <stack>
+#include "PreProcessor.h"
 
 extern int currentErrorLine;
 extern NAMESPACEVALUELIST* localNameSpace;
@@ -34,7 +35,6 @@ extern TYPE stdany;
 extern STRUCTSYM* structSyms;
 extern LIST* deferred;
 extern LIST* nameSpaceList;
-extern INCLUDES* includes;
 extern int inDefaultParam;
 extern LINEDATA *linesHead, *linesTail;
 extern int packIndex;
@@ -83,6 +83,7 @@ extern int noSpecializationError;
 extern int funcLevel;
 extern enum e_kw skim_templateend[];
 extern enum e_kw skim_end[];
+extern PreProcessor* preProcessor;
 
 int dontRegisterTemplate;
 int instantiatingTemplate;
@@ -1763,9 +1764,9 @@ SYMBOL* LookupSpecialization(SYMBOL* sym, TEMPLATEPARAMLIST* templateParams)
     candidate->tp->syms = nullptr;
     candidate->tp->tags = nullptr;
     candidate->baseClasses = nullptr;
-    candidate->declline = candidate->origdeclline = includes->line;
-    candidate->realdeclline = includes->realline;
-    candidate->declfile = candidate->origdeclfile = includes->fname;
+    candidate->declline = candidate->origdeclline = preProcessor->GetErrLineNo();
+    candidate->realdeclline = preProcessor->GetRealLineNo();
+    candidate->declfile = candidate->origdeclfile = litlate(preProcessor->GetErrFile().c_str());
     candidate->trivialCons = false;
     SetLinkerNames(candidate, lk_cdecl);
     return candidate;
@@ -9410,7 +9411,6 @@ LEXEME* TemplateDeclaration(LEXEME* lex, SYMBOL* funcsp, enum e_ac access, enum 
         struct templateListData l;
         int count = 0;
         int oldInstantiatingTemplate = instantiatingTemplate;
-        extern INCLUDES* includes;
         lex = backupsym();
         if (isExtern)
             error(ERR_DECLARE_SYNTAX);

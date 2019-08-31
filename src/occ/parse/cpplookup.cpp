@@ -37,13 +37,10 @@ extern STRUCTSYM* structSyms;
 extern int currentErrorLine;
 extern int templateNestingCount;
 extern int total_errors;
-#ifndef CPREPROCESSOR
 extern ARCH_DEBUG* chosenDebugger;
 extern FILE* listFile;
-#endif
 extern int noSpecializationError;
 extern int instantiatingTemplate;
-extern INCLUDES* includes;
 extern bool inTemplateType;
 extern LIST* nameSpaceList;
 extern int funcLevel;

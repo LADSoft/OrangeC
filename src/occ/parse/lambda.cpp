@@ -59,7 +59,6 @@ extern const char* overloadNameTab[];
 extern TYPE stdpointer, stdvoid, stdauto, stdint;
 extern int nextLabel;
 extern char infile[];
-extern INCLUDES* includes;
 extern int templateNestingCount;
 extern int dontRegisterTemplate;
 extern SYMBOL* theCurrentFunc;
@@ -448,10 +447,6 @@ static SYMBOL* createPtrToCaller(SYMBOL* self)
     if (lambdas->templateFunctions)
     {
         LEXEME* lex1;
-        FILE* handle = includes->handle;
-        unsigned char* p = includes->lptr;
-        int line = includes->line;
-        char buf[1000];
         int l = 0;
         SYMLIST* hr = basetype(lambdas->func->tp)->syms->table[0];
         if (isautotype(lambdas->functp))
@@ -459,28 +454,21 @@ static SYMBOL* createPtrToCaller(SYMBOL* self)
         cloneTemplateParams(func);
         func->templateLevel = templateNestingCount;
         func->parentTemplate = func;
-        strcpy(buf + l, "{return ___self->operator()(");
-        l += strlen(buf + l);
-        if (!hr)
-            strcpy(buf, ",");
+        std::string val = "{return ___self->operator()(";
         while (hr)
         {
             SYMBOL* sym = (SYMBOL*)hr->p;
             if (!sym->thisPtr)
             {
-                sprintf(buf + l, "%s,", sym->name);
-                l += strlen(buf + l);
+                val += sym->name;
             }
             hr = hr->next;
         }
-        strcpy(buf + l - 1, ");} ;");
-        includes->handle = NULL;
-        includes->lptr = (unsigned char*)buf;
+        val += ");} ;";
+        SetAlternateParse(true, val);
         lex1 = getsym();
         getDeferredData(lex1, &func->deferredCompile, true);
-        includes->handle = handle;
-        includes->lptr = p;
-        includes->line = line;
+        SetAlternateParse(false, "");
     }
     else
     {
@@ -540,11 +528,6 @@ static void createConverter(SYMBOL* self)
     if (lambdas->templateFunctions)
     {
         LEXEME* lex1;
-        FILE* handle = includes->handle;
-        unsigned char* p = includes->lptr;
-        int line = includes->line;
-        char buf[1000];
-        int l = 0;
         TEMPLATEPARAMLIST *tpl, **tplp, **tplp2;
         FUNCTIONCALL* f = (FUNCTIONCALL*)(FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
         INITLIST** args = &f->arguments;
@@ -584,15 +567,12 @@ static void createConverter(SYMBOL* self)
             f->returnEXP = intNode(en_c_i, 0);
             f->returnSP = basetype(basetype(caller->tp)->btp)->sp;
         }
-        strcpy(buf + l, "{ ___self=this;return &___ptrcall;} ;");
+        std::string val =  "{ ___self=this;return &___ptrcall;} ;";
 
-        includes->handle = NULL;
-        includes->lptr = (unsigned char*)buf;
+        SetAlternateParse(true, val);
         lex1 = getsym();
         getDeferredData(lex1, &func->deferredCompile, true);
-        includes->handle = handle;
-        includes->lptr = p;
-        includes->line = line;
+        SetAlternateParse(false, "");
         func->templateLevel = templateNestingCount;
         func->parentTemplate = func;
     }

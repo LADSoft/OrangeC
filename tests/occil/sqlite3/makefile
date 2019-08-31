@@ -12,9 +12,9 @@ test: main
 
 main: sqlite3.dll zzz.dll testsqlite.exe test.exe
 
-sqlite3.dll:
+sqlite3.dll: sqlite3.c
 	copy \orangec\bin\lsmsilcrtl.dll *.* > $(NULLDEV)
-	occil /9 /Wd /Lkernel32 sqlite3.c /Nsqlite3.sqlite
+	occil /9 /Wd /Lkernel32 $< /Nsqlite3.sqlite
 
 zzz.dll:
 	copy \orangec\bin\lsmsilcrtl.dll *.* > $(NULLDEV)

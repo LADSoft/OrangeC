@@ -42,8 +42,8 @@ class ppFile : public InputFile
 
   public:
     ppFile(bool fullname, bool Trigraph, bool extended, const std::string& Name, ppDefine* define, ppCtx& Ctx, bool isunsignedchar,
-           bool c89, bool asmpp) :
-        InputFile(fullname, Name),
+           bool c89, bool asmpp, PipeArbitrator &piper) :
+        InputFile(fullname, Name, piper),
         trigraphs(Trigraph),
         extendedComment(extended),
         cond(isunsignedchar, c89, extended, asmpp),
@@ -53,7 +53,7 @@ class ppFile : public InputFile
     }
     virtual ~ppFile() {}
     virtual bool GetLine(std::string& line);
-    bool Check(int token, const std::string& line, int lineno) { return cond.Check(token, line, lineno); }
+    bool Check(kw token, const std::string& line, int lineno) { return cond.Check(token, line, lineno); }
     bool Skipping() { return cond.Skipping(); }
     void Mark() { cond.Mark(); }
     void Drop() { cond.Drop(); }

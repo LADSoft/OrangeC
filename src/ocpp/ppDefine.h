@@ -81,7 +81,6 @@ class ppDefine
         std::string& GetValue() { return value; }
         bool IsCaseInsensitive() { return caseInsensitive; }
         void SetCaseInsensitive(bool flag) { caseInsensitive = flag; }
-
       private:
         bool caseInsensitive;
         bool undefined;
@@ -102,7 +101,7 @@ class ppDefine
         ctx = Ctx;
         macro = Macro;
     }
-    bool Check(int token, std::string& line);
+    bool Check(kw token, std::string& line);
     Definition* Define(const std::string& name, std::string& value, DefinitionArgList* args, bool permanent, bool varargs,
                        bool errors, bool caseInsensitive);
     void Undefine(const std::string& name);
@@ -114,8 +113,8 @@ class ppDefine
         std::string v = Utils::NumberToString(value);
         Define(name, v, nullptr, false, false, false, caseInsensitive);
     }
+    SymbolTable& GetDefines() { return symtab; }
 
-  protected:
     enum
     {
         MACRO_REPLACE_SIZE = 65536,
@@ -151,7 +150,6 @@ class ppDefine
     std::string date;
     std::string dateiso;
     std::string time;
-    std::set<std::string> defineList;
     static KeywordHash defTokens;
     bool c89;
     ppExpr expr;

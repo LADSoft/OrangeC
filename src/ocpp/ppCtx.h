@@ -47,7 +47,7 @@ class ppCtx
         else
             return -1;
     }
-    bool Check(int token, std::string& line);
+    bool Check(kw token, std::string& line);
     bool Matches(const std::string& Name) const
     {
         if (!stack.empty())

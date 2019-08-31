@@ -27,6 +27,7 @@
 #include "ppDefine.h"
 #include "Token.h"
 #include "PreProcessor.h"
+#include "ppkw.h"
 #include "Errors.h"
 #include "SymbolTable.h"
 #include "UTF8.h"
@@ -35,12 +36,11 @@
 #include <climits>
 #include <cstdlib>
 
-static const int ellipses = 100;
 KeywordHash ppDefine::defTokens = {
-    {"(", openpa},
-    {")", closepa},
-    {",", comma},
-    {"...", ellipses},
+    {"(", kw::openpa},
+    {")", kw::closepa},
+    {",", kw::comma},
+    {"...", kw::ellipses},
 
 };
 
@@ -59,18 +59,18 @@ ppDefine::ppDefine(bool UseExtensions, ppInclude* Include, bool C89, bool Asmpp)
     SetDefaults();
     expr.SetDefine(this);
 }
-bool ppDefine::Check(int token, std::string& line)
+bool ppDefine::Check(kw token, std::string& line)
 {
     bool rv = true;
     switch (token)
     {
-        case DEFINE:
+        case kw::DEFINE:
             DoDefine(line, false);
             break;
-        case IDEFINE:
+        case kw::IDEFINE:
             DoDefine(line, true);
             break;
-        case UNDEF:
+        case kw::UNDEF:
             DoUndefine(line);
             break;
             //		case ASSIGN:
@@ -274,7 +274,7 @@ void ppDefine::DoDefine(std::string& line, bool caseInsensitive)
             // the below is ok because the first one gets the '(' and the next one gets the next token
             next = tk.Next();  // get '('
             next = tk.Next();  // past '('
-            if (!next->IsIdentifier() && next->GetKeyword() != closepa && next->GetKeyword() != ellipses)
+            if (!next->IsIdentifier() && next->GetKeyword() != kw::closepa && next->GetKeyword() != kw::ellipses)
             {
                 failed = true;
             }
@@ -287,7 +287,7 @@ void ppDefine::DoDefine(std::string& line, bool caseInsensitive)
                 {
                     da->push_back(next->GetId());
                     next = tk.Next();
-                    if (next->GetKeyword() != comma)
+                    if (next->GetKeyword() != kw::comma)
                     {
                         hascomma = false;
                         break;
@@ -296,7 +296,7 @@ void ppDefine::DoDefine(std::string& line, bool caseInsensitive)
                 }
                 if (hascomma)
                 {
-                    if (next->GetKeyword() == ellipses)
+                    if (next->GetKeyword() == kw::ellipses)
                     {
                         if (c89)
                             Errors::Error("Macro variable argument specifier only allowed in C99");
@@ -304,7 +304,7 @@ void ppDefine::DoDefine(std::string& line, bool caseInsensitive)
                         next = tk.Next();
                     }
                 }
-                if (next->GetKeyword() != closepa)
+                if (next->GetKeyword() != kw::closepa)
                 {
                     failed = true;
                 }
@@ -356,10 +356,10 @@ int ppDefine::LookupDefault(std::string& macro, int begin, int end, const std::s
 {
     std::string insert;
     if (name == "__FILE__")
-        insert = std::string("\"") + include->GetFile() + "\"";
+        insert = std::string("\"") + include->GetErrFile() + "\"";
     else if (name == "__LINE__")
     {
-        insert = Utils::NumberToString(include->GetLineNo());
+        insert = Utils::NumberToString(include->GetErrLineNo());
     }
     else if (name == "__DATE__")
         insert = date;

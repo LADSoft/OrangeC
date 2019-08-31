@@ -29,37 +29,10 @@
 
 #include "Token.h"
 class ppDefine;
+class ppInclude;
 
 typedef long long PPINT;
 
-enum kw
-{
-    openpa,
-    closepa,
-    plus,
-    minus,
-    lnot,
-    bcompl,
-    star,
-    divide,
-    mod,
-    leftshift,
-    rightshift,
-    gt,
-    lt,
-    geq,
-    leq,
-    eq,
-    ne,
-    bor,
-    bxor,
-    band,
-    land,
-    lor,
-    hook,
-    colon,
-    comma
-};
 class ppExpr
 {
   public:
@@ -72,6 +45,7 @@ class ppExpr
     void SetDefine(ppDefine* Define) { define = Define; }
     static KeywordHash* GetHash() { return &hash; }
 
+    static void SetInclude(ppInclude* inc) { include = inc; }
   protected:
     PPINT primary(std::string& line);
     PPINT unary(std::string& line);
@@ -94,5 +68,6 @@ class ppExpr
     std::unique_ptr<Tokenizer> tokenizer;
     const Token* token;
     static KeywordHash hash;
+    static ppInclude* include;
 };
 #endif

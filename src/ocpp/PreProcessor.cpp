@@ -23,6 +23,7 @@
  */
 
 #include "PreProcessor.h"
+#include "ppkw.h"
 #include "Errors.h"
 #include "UTF8.h"
 #include <fstream>
@@ -30,60 +31,60 @@
 
 void PreProcessor::InitHash()
 {
-    hash["define"] = DEFINE;
-    hash["undef"] = UNDEF;
-    hash["pragma"] = PRAGMA;
-    hash["error"] = ERROR;
-    hash["warning"] = WARNING;
-    hash["line"] = LINE;
-    hash["include"] = INCLUDE;
-    hash["if"] = IF;
-    hash["elif"] = ELIF;
-    hash["ifdef"] = IFDEF;
-    hash["ifndef"] = IFNDEF;
-    hash["else"] = ELSE;
-    hash["endif"] = ENDIF;
+    hash["define"] = kw::DEFINE;
+    hash["undef"] = kw::UNDEF;
+    hash["pragma"] = kw::PRAGMA;
+    hash["error"] = kw::ERROR;
+    hash["warning"] = kw::WARNING;
+    hash["line"] = kw::LINE;
+    hash["include"] = kw::INCLUDE;
+    hash["if"] = kw::IF;
+    hash["elif"] = kw::ELIF;
+    hash["ifdef"] = kw::IFDEF;
+    hash["ifndef"] = kw::IFNDEF;
+    hash["else"] = kw::ELSE;
+    hash["endif"] = kw::ENDIF;
     if (ppStart == '%')
     {
-        hash["idefine"] = IDEFINE;
-        hash["iassign"] = IASSIGN;
-        hash["ifctx"] = IFCTX;
-        hash["elifctx"] = ELIFCTX;
-        hash["ifnctx"] = IFNCTX;
-        hash["elifnctx"] = ELIFNCTX;
-        hash["ifidn"] = IFIDN;
-        hash["elifidn"] = ELIFIDN;
-        hash["ifidni"] = IFIDNI;
-        hash["elifidni"] = ELIFIDNI;
-        hash["ifid"] = IFID;
-        hash["elifid"] = ELIFID;
-        hash["ifnum"] = IFNUM;
-        hash["elifnum"] = ELIFNUM;
-        hash["ifstr"] = IFSTR;
-        hash["elifstr"] = ELIFSTR;
-        hash["ifnidn"] = IFNIDN;
-        hash["elifnidn"] = ELIFNIDN;
-        hash["ifnidni"] = IFNIDNI;
-        hash["elifnidni"] = ELIFNIDNI;
-        hash["ifnid"] = IFNID;
-        hash["elifnid"] = ELIFNID;
-        hash["ifnnum"] = IFNNUM;
-        hash["elifnnum"] = ELIFNNUM;
-        hash["ifnstr"] = IFNSTR;
-        hash["elifnstr"] = ELIFNSTR;
-        hash["elifdef"] = ELIFDEF;
-        hash["elifndef"] = ELIFNDEF;
-        hash["assign"] = ASSIGN;
-        hash["rep"] = REP;
-        hash["endrep"] = ENDREP;
-        hash["exitrep"] = EXITREP;
-        hash["macro"] = MACRO;
-        hash["imacro"] = IMACRO;
-        hash["endmacro"] = ENDMACRO;
-        hash["rotate"] = ROTATE;
-        hash["push"] = PUSH;
-        hash["pop"] = POP;
-        hash["repl"] = REPL;
+        hash["idefine"] = kw::IDEFINE;
+        hash["iassign"] = kw::IASSIGN;
+        hash["ifctx"] = kw::IFCTX;
+        hash["elifctx"] = kw::ELIFCTX;
+        hash["ifnctx"] = kw::IFNCTX;
+        hash["elifnctx"] = kw::ELIFNCTX;
+        hash["ifidn"] = kw::IFIDN;
+        hash["elifidn"] = kw::ELIFIDN;
+        hash["ifidni"] = kw::IFIDNI;
+        hash["elifidni"] = kw::ELIFIDNI;
+        hash["ifid"] = kw::IFID;
+        hash["elifid"] = kw::ELIFID;
+        hash["ifnum"] = kw::IFNUM;
+        hash["elifnum"] = kw::ELIFNUM;
+        hash["ifstr"] = kw::IFSTR;
+        hash["elifstr"] = kw::ELIFSTR;
+        hash["ifnidn"] = kw::IFNIDN;
+        hash["elifnidn"] = kw::ELIFNIDN;
+        hash["ifnidni"] = kw::IFNIDNI;
+        hash["elifnidni"] = kw::ELIFNIDNI;
+        hash["ifnid"] = kw::IFNID;
+        hash["elifnid"] = kw::ELIFNID;
+        hash["ifnnum"] = kw::IFNNUM;
+        hash["elifnnum"] = kw::ELIFNNUM;
+        hash["ifnstr"] = kw::IFNSTR;
+        hash["elifnstr"] = kw::ELIFNSTR;
+        hash["elifdef"] = kw::ELIFDEF;
+        hash["elifndef"] = kw::ELIFNDEF;
+        hash["assign"] = kw::ASSIGN;
+        hash["rep"] = kw::REP;
+        hash["endrep"] = kw::ENDREP;
+        hash["exitrep"] = kw::EXITREP;
+        hash["macro"] = kw::MACRO;
+        hash["imacro"] = kw::IMACRO;
+        hash["endmacro"] = kw::ENDMACRO;
+        hash["rotate"] = kw::ROTATE;
+        hash["push"] = kw::PUSH;
+        hash["pop"] = kw::POP;
+        hash["repl"] = kw::REPL;
     }
 }
 bool PreProcessor::GetPreLine(std::string& line)
@@ -191,7 +192,7 @@ bool PreProcessor::GetLine(std::string& line)
                         const Token* t = tk.Next();
                         if (t->IsKeyword())
                         {
-                            if (t->GetKeyword() == ASSIGN || t->GetKeyword() == IASSIGN)
+                            if (t->GetKeyword() == kw::ASSIGN || t->GetKeyword() == kw::IASSIGN)
                             {
                                 if (include.Skipping())
                                     line.erase(0, line.size());
@@ -219,7 +220,7 @@ bool PreProcessor::GetLine(std::string& line)
                             else
                             {
                                 line = tk.GetString();
-                                int token = t->GetKeyword();
+                                kw token = t->GetKeyword();
                                 // must come first
                                 if (!include.Check(token, line))
                                 {

@@ -50,7 +50,7 @@ class ppCond
         ctx = Ctx;
         expr.SetParams(Define);
     }
-    bool Check(int token, const std::string& line, int lineno);
+    bool Check(kw token, const std::string& line, int lineno);
     void CheckErrors();
     bool Skipping() { return current && current->skipping; }
     void Mark() { marks.push_front(skipList.size() + current.get() != nullptr); }

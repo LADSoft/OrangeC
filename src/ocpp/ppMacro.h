@@ -53,7 +53,7 @@ class ppMacro
   public:
     ppMacro(ppInclude& Include, ppDefine& Define);
     ~ppMacro();
-    bool Check(int token, std::string& line);
+    bool Check(kw token, std::string& line);
     bool GetLine(std::string& line, int& lineno);
     bool Invoke(std::string name, std::string line);
     int GetMacroId()

@@ -26,6 +26,7 @@
 
 #include "ppPragma.h"
 #include "PreProcessor.h"
+#include "ppkw.h"
 #include "ppInclude.h"
 #include "Errors.h"
 #include "sys/stat.h"
@@ -41,14 +42,14 @@ Startups* Startups::instance;
 Once* Once::instance;
 
 KeywordHash ppPragma::hash = {
-    {"(", openpa},
-    {")", closepa},
-    {",", comma},
-    {"=", eq},
+    {"(", kw::openpa},
+    {")", kw::closepa},
+    {",", kw::comma},
+    {"=", kw::eq},
 };
-bool ppPragma::Check(int token, const std::string& args)
+bool ppPragma::Check(kw token, const std::string& args)
 {
-    if (token == PRAGMA)
+    if (token == kw::PRAGMA)
     {
         ParsePragma(args);
         return true;
@@ -83,6 +84,10 @@ void ppPragma::ParsePragma(const std::string& args)
             HandleFar(tk);
         else if (str == "ONCE")
             HandleOnce(tk);
+        else if (str == "PRIORITYCPP")
+            cppprio++;
+        else if (str == "IGNORE_GLOBAL_INIT")
+            HandleIgnoreGlobalInit(tk);
         // unmatched is not an error
     }
 }
@@ -123,7 +128,7 @@ void ppPragma::HandleSTDC(Tokenizer& tk)
 void ppPragma::HandlePack(Tokenizer& tk)
 {
     const Token* tok = tk.Next();
-    if (tok && tok->GetKeyword() == openpa)
+    if (tok && tok->GetKeyword() == kw::openpa)
     {
         tok = tk.Next();
         int val = -1;
@@ -134,7 +139,7 @@ void ppPragma::HandlePack(Tokenizer& tk)
             }
         tok = tk.Next();
         if (tok)
-            if (tok->GetKeyword() == closepa)
+            if (tok->GetKeyword() == kw::closepa)
             {
                 if (val <= 0)
                 {
@@ -174,7 +179,7 @@ Startups::~Startups() {}
 
 bool Once::AddToList()
 {
-    OnceItem item(include->GetFile());
+    OnceItem item(include->GetErrFile());
     if (items.find(item) != items.end())
         return false;
     items.insert(item);
@@ -254,7 +259,7 @@ void ppPragma::HandleAlias(Tokenizer& tk)
     {
         std::string id = name->GetId();
         const Token* alias = tk.Next();
-        if (alias && alias->GetKeyword() == eq)
+        if (alias && alias->GetKeyword() == kw::eq)
         {
             alias = tk.Next();
             if (alias && alias->IsIdentifier())
@@ -269,3 +274,24 @@ void ppPragma::HandleFar(Tokenizer& tk)
     // fixme
 }
 void ppPragma::HandleOnce(Tokenizer& tk) { Once::Instance()->CheckForMultiple(); }
+
+void ppPragma::HandleIgnoreGlobalInit(Tokenizer& tk)
+{
+    const Token* name = tk.Next();
+    if (name && name->IsNumeric())
+    {
+         ignoreGlobalInit = !!name->GetInteger();
+    }
+}
+
+int ppPragma::StdPragmas()
+{
+    int rv = 0;
+    if (FenvAccess::Instance()->Get())
+        rv |= STD_PRAGMA_FENV;
+    if (CXLimitedRange::Instance()->Get())
+        rv |= STD_PRAGMA_CXLIMITED;
+    if (FPContract::Instance()->Get())
+        rv |= STD_PRAGMA_FCONTRACT;
+    return rv;
+}

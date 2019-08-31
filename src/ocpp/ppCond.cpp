@@ -25,113 +25,114 @@
 #include "ppCond.h"
 #include "Errors.h"
 #include "PreProcessor.h"
+#include "ppkw.h"
 #include "UTF8.h"
 #include <cctype>
 
 ppCond::~ppCond() {}
-bool ppCond::Check(int token, const std::string& line, int lineno)
+bool ppCond::Check(kw token, const std::string& line, int lineno)
 {
     std::string line1 = line;
     switch (token)
     {
-        case ELSE:
+        case kw::ELSE:
             HandleElse(line1);
             break;
-        case ENDIF:
+        case kw::ENDIF:
             HandleEndIf(line1);
             break;
-        case IF:
+        case kw::IF:
             define->replaceDefined(line1);
             define->Process(line1);
             HandleIf(expr.Eval(line1), line1, lineno);
             break;
-        case ELIF:
+        case kw::ELIF:
             define->replaceDefined(line1);
             define->Process(line1);
             HandleElif(expr.Eval(line1), line1);
             break;
-        case IFDEF:
+        case kw::IFDEF:
             HandleDef(line1, false, false, lineno);
             break;
-        case IFNDEF:
+        case kw::IFNDEF:
             HandleDef(line1, false, true, lineno);
             break;
-        case ELIFDEF:
+        case kw::ELIFDEF:
             HandleDef(line1, true, false, lineno);
             break;
-        case ELIFNDEF:
+        case kw::ELIFNDEF:
             HandleDef(line1, true, true, lineno);
             break;
-        case IFIDN:
+        case kw::IFIDN:
             HandleIdn(line1, false, false, true, lineno);
             break;
-        case ELIFIDN:
+        case kw::ELIFIDN:
             HandleIdn(line1, true, false, true, lineno);
             break;
-        case IFNIDN:
+        case kw::IFNIDN:
             HandleIdn(line1, false, true, true, lineno);
             break;
-        case ELIFNIDN:
+        case kw::ELIFNIDN:
             HandleIdn(line1, true, true, true, lineno);
             break;
-        case IFIDNI:
+        case kw::IFIDNI:
             HandleIdn(line1, false, false, false, lineno);
             break;
-        case ELIFIDNI:
+        case kw::ELIFIDNI:
             HandleIdn(line1, true, false, false, lineno);
             break;
-        case IFNIDNI:
+        case kw::IFNIDNI:
             HandleIdn(line1, false, true, false, lineno);
             break;
-        case ELIFNIDNI:
+        case kw::ELIFNIDNI:
             HandleIdn(line1, true, true, false, lineno);
             break;
-        case IFID:
+        case kw::IFID:
             HandleId(line1, false, false, lineno);
             break;
-        case ELIFID:
+        case kw::ELIFID:
             HandleId(line1, true, false, lineno);
             break;
-        case IFNID:
+        case kw::IFNID:
             HandleId(line1, false, true, lineno);
             break;
-        case ELIFNID:
+        case kw::ELIFNID:
             HandleId(line1, true, true, lineno);
             break;
-        case IFNUM:
+        case kw::IFNUM:
             HandleNum(line1, false, false, lineno);
             break;
-        case ELIFNUM:
+        case kw::ELIFNUM:
             HandleNum(line1, true, false, lineno);
             break;
-        case IFNNUM:
+        case kw::IFNNUM:
             HandleNum(line1, false, true, lineno);
             break;
-        case ELIFNNUM:
+        case kw::ELIFNNUM:
             HandleNum(line1, true, true, lineno);
             break;
-        case IFSTR:
+        case kw::IFSTR:
             HandleStr(line1, false, false, lineno);
             break;
-        case ELIFSTR:
+        case kw::ELIFSTR:
             HandleStr(line1, true, false, lineno);
             break;
-        case IFNSTR:
+        case kw::IFNSTR:
             HandleStr(line1, false, true, lineno);
             break;
-        case ELIFNSTR:
+        case kw::ELIFNSTR:
             HandleStr(line1, true, true, lineno);
             break;
-        case IFCTX:
+        case kw::IFCTX:
             HandleCtx(line1, false, false, lineno);
             break;
-        case ELIFCTX:
+        case kw::ELIFCTX:
             HandleCtx(line1, true, false, lineno);
             break;
-        case IFNCTX:
+        case kw::IFNCTX:
             HandleCtx(line1, false, true, lineno);
             break;
-        case ELIFNCTX:
+        case kw::ELIFNCTX:
             HandleCtx(line1, true, true, lineno);
             break;
         default:

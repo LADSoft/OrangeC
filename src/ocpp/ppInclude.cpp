@@ -26,6 +26,7 @@
 
 #include "ppInclude.h"
 #include "PreProcessor.h"
+#include "ppkw.h"
 #include "Errors.h"
 #include "CmdFiles.h"
 #include <climits>
@@ -37,7 +38,7 @@ std::string ppInclude::srchPath, ppInclude::sysSrchPath;
 
 ppInclude::~ppInclude() {}
 
-bool ppInclude::Check(int token, const std::string& args)
+bool ppInclude::Check(kw token, const std::string& args)
 {
     if (!current || !current->Check(token, args, current->GetErrorLine()))
         if (!CheckInclude(token, args))
@@ -46,14 +47,15 @@ bool ppInclude::Check(int token, const std::string& args)
     return true;
 }
 
-bool ppInclude::CheckInclude(int token, const std::string& args)
+bool ppInclude::CheckInclude(kw token, const std::string& args)
 {
-    if (token == INCLUDE)
+    if (token == kw::INCLUDE)
     {
         std::string line1 = args;
         define->Process(line1);
-        std::string name = ParseName(line1);
-        name = FindFile(name);
+        bool specifiedAsSystem = false;
+        std::string name = ParseName(line1, specifiedAsSystem);
+        name = FindFile(specifiedAsSystem, name);
         pushFile(name, line1);
         return true;
     }
@@ -62,13 +64,14 @@ bool ppInclude::CheckInclude(int token, const std::string& args)
 bool ppInclude::has_include(const std::string& args)
 {
     std::string line1 = args;
-    std::string name = ParseName(line1);
-    name = FindFile(name);
+    bool specifiedAsSystem = false;
+    std::string name = ParseName(line1, specifiedAsSystem);
+    name = FindFile(specifiedAsSystem, name);
     return !name.empty();
 }
-bool ppInclude::CheckLine(int token, const std::string& args)
+bool ppInclude::CheckLine(kw token, const std::string& args)
 {
-    if (token == LINE)
+    if (token == kw::LINE)
     {
         std::string line1 = args;
         define->Process(line1);
@@ -76,14 +79,16 @@ bool ppInclude::CheckLine(int token, const std::string& args)
         if (npos == std::string::npos)
         {
             int n = expr.Eval(line1);
-            std::string name = ParseName(line1);
+            bool specifiedAsSystem = false;
+            std::string name = ParseName(line1, specifiedAsSystem);
             current->SetErrlineInfo(name, n - 1);
         }
         else
         {
             std::string temp = line1.substr(0, npos);
             int n = expr.Eval(temp);
-            std::string name = ParseName(line1.substr(npos + 1));
+            bool specifiedAsSystem = false;
+            std::string name = ParseName(line1.substr(npos + 1), specifiedAsSystem);
             current->SetErrlineInfo(name, n - 1);
         }
         return true;
@@ -106,7 +111,14 @@ void ppInclude::pushFile(const std::string& name, const std::string& errname)
             files.push_front(std::move(current));
             current = nullptr;
         }
-        current = std::make_unique<ppFile>(fullname, trigraphs, extendedComment, name, define, *ctx, unsignedchar, c89, asmpp);
+        auto it = fileNameCache.find(name);
+        if (it == fileNameCache.end())
+        {
+            fileNameCache.insert(name);
+            auto it = fileNameCache.find(name);
+        }
+        // this next line and the support code have been carefully crafted so that GetRealFile() should return a reference to the cached object.
+        current = std::make_unique<ppFile>(fullname, trigraphs, extendedComment, *it, define, *ctx, unsignedchar, c89, asmpp, piper);
         // if (current)
         if (!current->Open())
         {
@@ -114,6 +126,17 @@ void ppInclude::pushFile(const std::string& name, const std::string& errname)
             popFile();
         }
     }
+    auto it = fileMap.find(name);
+    int currentIndex;
+    if (it != fileMap.end())
+    {
+        currentIndex = it->second;
+    }
+    else
+    {
+        fileMap[name] = currentIndex = nextIndex++;
+    }
+    current->SetIndex(currentIndex);
 }
 bool ppInclude::popFile()
 {
@@ -129,7 +152,7 @@ bool ppInclude::popFile()
     forcedEOF = false;
     return true;
 }
-std::string ppInclude::ParseName(const std::string& args)
+std::string ppInclude::ParseName(const std::string& args, bool& specifiedAsSystem)
 {
     std::string name = "";
     const char* p = args.c_str();
@@ -138,6 +161,7 @@ std::string ppInclude::ParseName(const std::string& args)
     int stchr = *p++;
     if (stchr == '"' || stchr == '<')
     {
+        specifiedAsSystem = stchr == '<';
         const char* q = p;
         system = stchr == '<';
         int enchr = '"';
@@ -163,26 +187,56 @@ std::string ppInclude::ParseName(const std::string& args)
         Errors::Error("File name expected");
     return name;
 }
-std::string ppInclude::FindFile(const std::string& name)
+// system include: search on system search path first
+// search where the source file is from next
+// search in local directory next
+// search the user include path next
+// if didn't already search system path do it now
+std::string ppInclude::FindFile(bool specifiedAsSystem, const std::string& name)
 {
-    FILE* fil = fopen(name.c_str(), "rb");
-    if (fil)
-    {
-        fclose(fil);
-        return name;
-    }
-    std::string rv = SrchPath(system, name);
+    std::string rv;
+    // search in system search path first, if they specified it with <>
+    if (specifiedAsSystem)
+        rv = SrchPath(true, name, sysSrchPath);
+    // if not there get the file path of the last included file, and search there
     if (rv.empty())
-        rv = SrchPath(!system, name);
+    {
+        rv = current->GetRealFile();
+        size_t npos = rv.find_last_of(CmdFiles::DIR_SEP[0]);
+        if (npos != std::string::npos)
+        {
+            rv = rv.substr(0, npos);
+            rv = SrchPath(false, name, rv);
+        }
+        else
+        {
+            rv = "";
+        }
+    }
+    // if not there search in local directory
+    if (rv.empty())
+    {
+        FILE* fil = fopen(name.c_str(), "rb");
+        if (fil)
+        {
+            fclose(fil);
+            rv = name;
+        }
+    }
+    // if not there search on user search path
+    if (rv.empty())
+        rv = SrchPath(false, name, srchPath);
+    // if not there and we haven't searched the system search path, do it now
+    if (rv.empty() && !specifiedAsSystem)
+        rv = SrchPath(true, name, sysSrchPath);
+
+
     return rv;
 }
-std::string ppInclude::SrchPath(bool system, const std::string& name)
+
+std::string ppInclude::SrchPath(bool system, const std::string& name, const std::string& searchPath)
 {
-    const char* path;
-    if (system)
-        path = sysSrchPath.c_str();
-    else
-        path = srchPath.c_str();
+    const char* path = searchPath.c_str();
     char buf[260];
     do
     {
@@ -196,6 +250,13 @@ std::string ppInclude::SrchPath(bool system, const std::string& name)
         FILE* fil = fopen(buf, "rb");
         if (fil)
         {
+            if (!system)
+            {
+                if (userIncludes.find(buf) == userIncludes.end())
+                {
+                    userIncludes.insert(buf);
+                }
+            }
             fclose(fil);
             return buf;
         }
@@ -276,7 +337,7 @@ bool ppInclude::GetLine(std::string& line, int& lineno)
             if (current->GetLine(line))
             {
                 if (current && !files.empty())
-                    lineno = GetLineNo();
+                    lineno = GetErrLineNo();
                 else
                     lineno = INT_MIN;
                 if (asmpp)

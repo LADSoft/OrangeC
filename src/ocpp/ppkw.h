@@ -22,24 +22,86 @@
  *
  */
 
-#ifndef ppError_h
-#define ppError_h
-
-#include <string>
-#include "Errors.h"
-
-enum class kw;
-
-class ppError
+enum class kw
 {
-  public:
-    ppError() {}
-    bool Check(kw token, const std::string& args);
+    openpa,
+    closepa,
+    plus,
+    minus,
+    lnot,
+    bcompl,
+    star,
+    divide,
+    mod,
+    leftshift,
+    rightshift,
+    gt,
+    lt,
+    geq,
+    leq,
+    eq,
+    ne,
+    bor,
+    bxor,
+    band,
+    land,
+    lor,
+    hook,
+    colon,
+    comma,
+    ellipses = 100,
 
-  protected:
-    void IssueError(const std::string& msg) { Errors::Error("Error directive:" + msg); }
-    void IssueWarning(const std::string& msg) { Errors::Warning("Warning directive:" + msg); }
+    DEFINE = 200,
+    UNDEF,
+    PRAGMA,
+    ERROR,
+    LINE,
+    INCLUDE,
+    IF,
+    ELIF,
+    IFDEF,
+    IFNDEF,
+    ELSE,
+    ENDIF,
+    IFIDN,
+    ELIFIDN,
+    IFIDNI,
+    ELIFIDNI,
+    IFID,
+    ELIFID,
+    IFNUM,
+    ELIFNUM,
+    IFSTR,
+    ELIFSTR,
+    IFNIDN,
+    ELIFNIDN,
+    IFNIDNI,
+    ELIFNIDNI,
+    IFNID,
+    ELIFNID,
+    IFNNUM,
+    ELIFNNUM,
+    IFNSTR,
+    ELIFNSTR,
+    ELIFDEF,
+    ELIFNDEF,
+    ASSIGN,
+    REP,
+    EXITREP,
+    ENDREP,
+    MACRO,
+    ENDMACRO,
+    ROTATE,
+    PUSH,
+    POP,
+    REPL,
+    IFCTX,
+    ELIFCTX,
+    IFNCTX,
+    ELIFNCTX,
+    IDEFINE,
+    IASSIGN,
+    IMACRO,
+    WARNING,
 
-  private:
 };
-#endif

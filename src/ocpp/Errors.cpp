@@ -113,10 +113,10 @@ void Errors::FileName()
 {
     if (include)
     {
-        std::string filname = include->GetFile();
-        std::cout << filname << "(" << include->GetLineNo() << "): ";
+        std::string filname = include->GetErrFile();
+        std::cout << filname << "(" << include->GetErrLineNo() << "): ";
     }
 }
 std::string Errors::ToNum(long long num) { return Utils::NumberToString(num); }
-int Errors::GetErrorLine() { return include->GetLineNo(); }
-std::string Errors::GetFileName() { return include->GetFile(); }
+int Errors::GetErrorLine() { return include->GetErrLineNo(); }
+std::string Errors::GetFileName() { return include->GetErrFile(); }

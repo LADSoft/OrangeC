@@ -22,24 +22,25 @@
  *
  */
 
-#ifndef ppError_h
-#define ppError_h
+#pragma once
 
 #include <string>
-#include "Errors.h"
 
-enum class kw;
-
-class ppError
+class PipeArbitrator
 {
-  public:
-    ppError() {}
-    bool Check(kw token, const std::string& args);
+public:
+    PipeArbitrator(const std::string& pipeName) { Init(pipeName); }
+    ~PipeArbitrator();
 
-  protected:
-    void IssueError(const std::string& msg) { Errors::Error("Error directive:" + msg); }
-    void IssueWarning(const std::string& msg) { Errors::Warning("Warning directive:" + msg); }
+    void Init(const std::string& pipeNae);
 
-  private:
+    int OpenFile(const std::string& fileName);
+
+    bool HasPipe() { return mainRead >= 0;  }
+
+private:
+    int mainRead = -1;
+    int mainWrite = -1;
+
 };
-#endif
+

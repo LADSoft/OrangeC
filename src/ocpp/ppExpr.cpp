@@ -26,13 +26,17 @@
 #include "ppDefine.h"
 #include "Errors.h"
 #include "ppInclude.h"
+#include "ppkw.h"
 
 KeywordHash ppExpr::hash = {
-    {"(", openpa}, {")", closepa}, {"+", plus},       {"-", minus},       {"!", lnot}, {"~", bcompl}, {"*", star},
-    {"/", divide}, {"%", mod},     {"<<", leftshift}, {">>", rightshift}, {">", gt},   {"<", lt},     {">=", geq},
-    {"<=", leq},   {"==", eq},     {"!=", ne},        {"|", bor},         {"&", band}, {"^", bxor},   {"||", lor},
-    {"&&", land},  {"?", hook},    {":", colon},      {",", comma},
+    {"(", kw::openpa}, {")", kw::closepa}, {"+", kw::plus},       {"-", kw::minus},       {"!", kw::lnot}, {"~", kw::bcompl}, {"*", kw::star},
+    {"/", kw::divide}, {"%", kw::mod},     {"<<", kw::leftshift}, {">>", kw::rightshift}, {">", kw::gt},   {"<", kw::lt},     {">=", kw::geq},
+    {"<=", kw::leq},   {"==", kw::eq},     {"!=", kw::ne},        {"|", kw::bor},         {"&", kw::band}, {"^", kw::bxor},   {"||", kw::lor},
+    {"&&", kw::land},  {"?", kw::hook},    {":", kw::colon},      {",", kw::comma},
 };
+
+ppInclude* ppExpr::include;
+
 PPINT ppExpr::Eval(std::string& line)
 {
     tokenizer = std::make_unique<Tokenizer>(line, &hash);
@@ -51,13 +55,13 @@ PPINT ppExpr::Eval(std::string& line)
 PPINT ppExpr::primary(std::string& line)
 {
     PPINT rv = 0;
-    if (token->GetKeyword() == openpa)
+    if (token->GetKeyword() == kw::openpa)
     {
         token = tokenizer->Next();
         if (!token->IsEnd())
         {
             rv = comma_(line);
-            if (token->GetKeyword() == closepa)
+            if (token->GetKeyword() == kw::closepa)
                 token = tokenizer->Next();
             else
                 Errors::Error("Expected ')'");
@@ -71,7 +75,7 @@ PPINT ppExpr::primary(std::string& line)
             if (!token->IsEnd())
             {
                 bool open = false;
-                if (token->GetKeyword() == openpa)
+                if (token->GetKeyword() == kw::openpa)
                 {
                     open = true;
                     token = tokenizer->Next();
@@ -91,7 +95,7 @@ PPINT ppExpr::primary(std::string& line)
                         token = tokenizer->Next();
                         if (!token->IsEnd())
                         {
-                            if (token->GetKeyword() != closepa)
+                            if (token->GetKeyword() != kw::closepa)
                             {
                                 Errors::Error("Expected ')'");
                             }
@@ -109,7 +113,7 @@ PPINT ppExpr::primary(std::string& line)
             token = tokenizer->Next();
             if (!token->IsEnd())
             {
-                if (token->GetKeyword() == openpa)
+                if (token->GetKeyword() == kw::openpa)
                 {
                     std::string line = tokenizer->GetString();
                     int n = line.find(")");
@@ -122,7 +126,7 @@ PPINT ppExpr::primary(std::string& line)
                         std::string arg = line.substr(0, n);
                         define->Process(arg);
 
-                        rv = ppInclude::has_include(arg);
+                        rv = include->has_include(arg);
                         tokenizer->SetString(line.substr(n + 1));
                         token = tokenizer->Next();
                     }
@@ -159,25 +163,25 @@ PPINT ppExpr::unary(std::string& line)
 {
     if (!token->IsEnd())
     {
-        int kw = token->GetKeyword();
-        if (kw == plus || kw == minus || kw == lnot || kw == bcompl)
+        kw keyWord = token->GetKeyword();
+        if (keyWord == kw::plus || keyWord == kw::minus || keyWord == kw::lnot || keyWord == kw::bcompl)
         {
             token = tokenizer->Next();
             if (!token->IsEnd())
             {
                 PPINT val1 = unary(line);
-                switch (kw)
+                switch (keyWord)
                 {
-                    case minus:
+                    case kw::minus:
                         val1 = -val1;
                         break;
-                    case plus:
+                    case kw::plus:
                         val1 = +val1;
                         break;
-                    case lnot:
+                    case kw::lnot:
                         val1 = !val1;
                         break;
-                    case bcompl:
+                    case kw::bcompl:
                         val1 = ~val1;
                         break;
                 }
@@ -195,19 +199,19 @@ PPINT ppExpr::unary(std::string& line)
 PPINT ppExpr::multiply(std::string& line)
 {
     PPINT val1 = unary(line);
-    int kw = token->GetKeyword();
-    while (kw == star || kw == divide || kw == mod)
+    kw keyWord = token->GetKeyword();
+    while (keyWord == kw::star || keyWord == kw::divide || keyWord == kw::mod)
     {
         token = tokenizer->Next();
         if (!token->IsEnd())
         {
             PPINT val2 = unary(line);
-            switch (kw)
+            switch (keyWord)
             {
-                case star:
+                case kw::star:
                     val1 *= val2;
                     break;
-                case divide:
+                case kw::divide:
                     if (val2 == 0)
                     {
                         val1 = 0;
@@ -217,7 +221,7 @@ PPINT ppExpr::multiply(std::string& line)
                         val1 /= val2;
                     }
                     break;
-                case mod:
+                case kw::mod:
                     if (val2 == 0)
                     {
                         val1 = 0;
@@ -229,116 +233,116 @@ PPINT ppExpr::multiply(std::string& line)
                     break;
             }
         }
-        kw = token->GetKeyword();
+        keyWord = token->GetKeyword();
     }
     return val1;
 }
 PPINT ppExpr::add(std::string& line)
 {
     PPINT val1 = multiply(line);
-    int kw = token->GetKeyword();
-    while (kw == plus || kw == minus)
+    kw keyWord = token->GetKeyword();
+    while (keyWord == kw::plus || keyWord == kw::minus)
     {
         token = tokenizer->Next();
         if (!token->IsEnd())
         {
             PPINT val2 = multiply(line);
-            switch (kw)
+            switch (keyWord)
             {
-                case plus:
+                case kw::plus:
                     val1 += val2;
                     break;
-                case minus:
+                case kw::minus:
                     val1 -= val2;
                     break;
             }
         }
-        kw = token->GetKeyword();
+        keyWord = token->GetKeyword();
     }
     return val1;
 }
 PPINT ppExpr::shift(std::string& line)
 {
     PPINT val1 = add(line);
-    int kw = token->GetKeyword();
-    while (kw == leftshift || kw == rightshift)
+    kw keyWord = token->GetKeyword();
+    while (keyWord == kw::leftshift || keyWord == kw::rightshift)
     {
         token = tokenizer->Next();
         if (!token->IsEnd())
         {
             PPINT val2 = add(line);
-            switch (kw)
+            switch (keyWord)
             {
-                case leftshift:
+                case kw::leftshift:
                     val1 <<= val2;
                     break;
-                case rightshift:
+                case kw::rightshift:
                     val1 >>= val2;
                     break;
             }
         }
-        kw = token->GetKeyword();
+        keyWord = token->GetKeyword();
     }
     return val1;
 }
 PPINT ppExpr::relation(std::string& line)
 {
     PPINT val1 = shift(line);
-    int kw = token->GetKeyword();
-    while (kw == gt || kw == lt || kw == geq || kw == leq)
+    kw keyWord = token->GetKeyword();
+    while (keyWord == kw::gt || keyWord == kw::lt || keyWord == kw::geq || keyWord == kw::leq)
     {
         token = tokenizer->Next();
         if (!token->IsEnd())
         {
             PPINT val2 = shift(line);
-            switch (kw)
+            switch (keyWord)
             {
-                case gt:
+                case kw::gt:
                     val1 = val1 > val2;
                     break;
-                case lt:
+                case kw::lt:
                     val1 = val1 < val2;
                     break;
-                case geq:
+                case kw::geq:
                     val1 = val1 >= val2;
                     break;
-                case leq:
+                case kw::leq:
                     val1 = val1 <= val2;
                     break;
             }
         }
-        kw = token->GetKeyword();
+        keyWord = token->GetKeyword();
     }
     return val1;
 }
 PPINT ppExpr::equal(std::string& line)
 {
     PPINT val1 = relation(line);
-    int kw = token->GetKeyword();
-    while (kw == eq || kw == ne)
+    kw keyWord = token->GetKeyword();
+    while (keyWord == kw::eq || keyWord == kw::ne)
     {
         token = tokenizer->Next();
         if (!token->IsEnd())
         {
             PPINT val2 = shift(line);
-            switch (kw)
+            switch (keyWord)
             {
-                case eq:
+                case kw::eq:
                     val1 = val1 == val2;
                     break;
-                case ne:
+                case kw::ne:
                     val1 = val1 != val2;
                     break;
             }
         }
-        kw = token->GetKeyword();
+        keyWord = token->GetKeyword();
     }
     return val1;
 }
 PPINT ppExpr::and_(std::string& line)
 {
     PPINT val1 = equal(line);
-    while (!token->IsEnd() && token->GetKeyword() == band)
+    while (!token->IsEnd() && token->GetKeyword() == kw::band)
     {
         token = tokenizer->Next();
         if (!token->IsEnd())
@@ -352,7 +356,7 @@ PPINT ppExpr::and_(std::string& line)
 PPINT ppExpr::xor_(std::string& line)
 {
     PPINT val1 = and_(line);
-    while (!token->IsEnd() && token->GetKeyword() == bxor)
+    while (!token->IsEnd() && token->GetKeyword() == kw::bxor)
     {
         token = tokenizer->Next();
         if (!token->IsEnd())
@@ -366,7 +370,7 @@ PPINT ppExpr::xor_(std::string& line)
 PPINT ppExpr::or_(std::string& line)
 {
     PPINT val1 = xor_(line);
-    while (!token->IsEnd() && token->GetKeyword() == bor)
+    while (!token->IsEnd() && token->GetKeyword() == kw::bor)
     {
         token = tokenizer->Next();
         if (!token->IsEnd())
@@ -380,7 +384,7 @@ PPINT ppExpr::or_(std::string& line)
 PPINT ppExpr::logicaland(std::string& line)
 {
     PPINT val1 = or_(line);
-    while (!token->IsEnd() && token->GetKeyword() == land)
+    while (!token->IsEnd() && token->GetKeyword() == kw::land)
     {
         token = tokenizer->Next();
         if (!token->IsEnd())
@@ -394,7 +398,7 @@ PPINT ppExpr::logicaland(std::string& line)
 PPINT ppExpr::logicalor(std::string& line)
 {
     PPINT val1 = logicaland(line);
-    while (!token->IsEnd() && token->GetKeyword() == lor)
+    while (!token->IsEnd() && token->GetKeyword() == kw::lor)
     {
         token = tokenizer->Next();
         if (!token->IsEnd())
@@ -408,7 +412,7 @@ PPINT ppExpr::logicalor(std::string& line)
 PPINT ppExpr::conditional(std::string& line)
 {
     PPINT val1 = logicalor(line);
-    if ((!token->IsEnd()) && token->GetKeyword() == hook)
+    if ((!token->IsEnd()) && token->GetKeyword() == kw::hook)
     {
         token = tokenizer->Next();
         if (!token->IsEnd())
@@ -416,7 +420,7 @@ PPINT ppExpr::conditional(std::string& line)
             PPINT val2 = comma_(line);
             if (!token->IsEnd())
             {
-                if (token->GetKeyword() == colon)
+                if (token->GetKeyword() == kw::colon)
                 {
                     token = tokenizer->Next();
                     if (!token->IsEnd())
@@ -442,7 +446,7 @@ PPINT ppExpr::comma_(std::string& line)
 {
     PPINT rv = 0;
     rv = conditional(line);
-    while (!token->IsEnd() && token->GetKeyword() == comma)
+    while (!token->IsEnd() && token->GetKeyword() == kw::comma)
     {
         token = tokenizer->Next();
         if (token->IsEnd())

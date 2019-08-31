@@ -24,6 +24,7 @@
 
 #include "PreProcessor.h"
 #include "ppMacro.h"
+#include "ppkw.h"
 #include "UTF8.h"
 #include <fstream>
 #include <climits>
@@ -33,31 +34,31 @@ ppMacro::ppMacro(ppInclude& Include, ppDefine& Define) : include(Include), expr(
     expr.SetParams(&define);
 }
 ppMacro::~ppMacro() {}
-bool ppMacro::Check(int token, std::string& line)
+bool ppMacro::Check(kw token, std::string& line)
 {
     bool rv = false;
     switch (token)
     {
-        case REP:
+        case kw::REP:
             rv = HandleRep(line);
             break;
-        case EXITREP:
+        case kw::EXITREP:
             include.Release();
             rv = HandleExitRep();
             break;
-        case ENDREP:
+        case kw::ENDREP:
             rv = HandleEndRep();
             break;
-        case MACRO:
+        case kw::MACRO:
             rv = HandleMacro(line, false);
             break;
-        case IMACRO:
+        case kw::IMACRO:
             rv = HandleMacro(line, true);
             break;
-        case ENDMACRO:
+        case kw::ENDMACRO:
             rv = HandleEndMacro();
             break;
-        case ROTATE:
+        case kw::ROTATE:
             rv = HandleRotate(line);
             break;
     }
@@ -236,7 +237,7 @@ bool ppMacro::HandleMacro(std::string& line, bool caseInsensitive)
             start = end = next->GetInteger();
             plussign = false;
             next = tk.Next();
-            if (next->GetKeyword() == ::minus)
+            if (next->GetKeyword() == kw::minus)
             {
                 next = tk.Next();
                 if (next->IsNumeric())
@@ -250,14 +251,14 @@ bool ppMacro::HandleMacro(std::string& line, bool caseInsensitive)
                     else
                     {
                         next = tk.Next();
-                        if (next->GetKeyword() == ::plus)
+                        if (next->GetKeyword() == kw::plus)
                         {
                             next = tk.Next();
                             plussign = true;
                         }
                     }
                 }
-                else if (next->GetKeyword() == star)
+                else if (next->GetKeyword() == kw::star)
                 {
                     end = INT_MAX;
                 }
@@ -267,7 +268,7 @@ bool ppMacro::HandleMacro(std::string& line, bool caseInsensitive)
                     bailed = true;
                 }
             }
-            else if (next->GetKeyword() == ::plus)
+            else if (next->GetKeyword() == kw::plus)
             {
                 next = tk.Next();
                 plussign = true;

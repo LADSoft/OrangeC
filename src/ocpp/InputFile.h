@@ -31,6 +31,8 @@
 #include <cstdio>
 #include "ppDefine.h"
 
+class PipeArbitrator;
+
 class InputFile
 {
     enum
@@ -39,7 +41,7 @@ class InputFile
     };
 
   public:
-    InputFile(bool fullname, const std::string& Name) :
+    InputFile(bool fullname, const std::string& Name, PipeArbitrator &Piper) :
         name(Name),
         lineno(0),
         errlineno(0),
@@ -47,41 +49,39 @@ class InputFile
         inComment(false),
         commentLine(0),
         endedWithoutEOL(false),
-        file(nullptr),
-        utf8BOM(false)
+        fileno(-1),
+        utf8BOM(false),
+        fileIndex(0),
+        inputLen(0),
+        bufPtr(inputBuffer),
+        piper(Piper)
     {
     }
-    virtual ~InputFile()
-    {
-        if (file && file != stdin)
-            fclose(file);
-        CheckErrors();
-    }
-    virtual bool Open()
-    {
-        if (name[0] == '-')
-            file = stdin;
-        else
-            file = fopen(name.c_str(), "r");
-        CheckUTF8BOM();
-        return file != nullptr;
-    }
+    virtual ~InputFile();
+    virtual bool Open();
+    bool IsOpen() const { return fileno >= 0; }
     int GetLineNo() { return lineno; }
     int GetErrorLine() { return errlineno; }
-    std::string GetErrorFile() { return errname; }
+    const std::string& GetErrorFile() { return errname; }
+    int GetRealLine() { return lineno; }
+    const std::string& GetRealFile() { return name; }
     void CheckErrors();
     virtual bool GetLine(std::string& line);
     void SetErrlineInfo(std::string& name, int line)
     {
         errname = name;
-        lineno = line;
+        errlineno = line;
     }
+    int GetIndex() const { return fileIndex; }
+    void SetIndex(int index) { fileIndex = index; }
 
   protected:
-    std::string GetErrorName(bool full, std::string& name);
+    std::string GetErrorName(bool full, const std::string& name);
     virtual int StripComment(char* line) { return strlen(line); }
     bool ReadLine(char* line);
     void CheckUTF8BOM();
+    bool ReadString(char *line, int width);
+
 
   protected:
     bool inComment;
@@ -92,9 +92,14 @@ class InputFile
                    // input files are assumed to be UTF8 anyway...
 
   private:
-    FILE* file;
-    std::string name;
+    int inputLen;
+    char inputBuffer[32000];
+    char *bufPtr;
+    int fileno;
+    const std::string& name;
     std::string errname;
     bool endedWithoutEOL;
+    int fileIndex;
+    PipeArbitrator& piper;
 };
 #endif

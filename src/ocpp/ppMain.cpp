@@ -98,7 +98,7 @@ int ppMain::Run(int argc, char* argv[])
     for (auto it = files.FileNameBegin(); it != files.FileNameEnd(); ++it)
     {
         PreProcessor pp((*it), srchPth, sysSrchPth, false, trigraphs.GetValue(), assembly.GetValue() ? '%' : '#', false,
-                        !c99Mode.GetValue(), !disableExtensions.GetValue());
+                        !c99Mode.GetValue(), !disableExtensions.GetValue(), "");
         if (c99Mode.GetValue())
         {
             std::string ver = "199901L";

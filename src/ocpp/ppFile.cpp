@@ -29,7 +29,6 @@ bool ppFile::GetLine(std::string& line)
     while (true)
     {
         char buf[LINE_WIDTH];
-        errlineno = lineno + 1;
         if (!ReadLine(buf))
         {
             cond.CheckErrors();

@@ -30,7 +30,9 @@
 #include <memory>
 #include "Floating.h"
 
-typedef std::map<std::string, int> KeywordHash;
+enum class kw;
+
+typedef std::map<std::string, kw> KeywordHash;
 
 class Token
 {
@@ -61,7 +63,7 @@ class Token
     virtual long long GetInteger() const { return 0; }
     virtual Type GetNumericType() const { return t_int; }
     virtual const FPF* GetFloat() const { return 0; }
-    virtual int GetKeyword() const { return -1; }
+    virtual kw GetKeyword() const { return (kw)-1; }
     virtual const std::string& GetId() const
     {
         static std::string aa;
@@ -152,7 +154,7 @@ class KeywordToken : public Token
   public:
     KeywordToken(std::string& line, KeywordHash* table) : keyValue(-1), keywordTable(table) { Parse(line); }
     virtual bool IsKeyword() const { return keyValue != -1; }
-    virtual int GetKeyword() const { return keyValue; }
+    virtual kw GetKeyword() const { return (kw)keyValue; }
     virtual bool IsError() const { return keyValue == -1; }
     static bool Start(const std::string& line);
 
@@ -175,7 +177,7 @@ class IdentifierToken : public Token
     }
     virtual bool IsIdentifier() const { return keyValue == -1; }
     virtual bool IsKeyword() const { return keyValue != -1; }
-    virtual int GetKeyword() const { return keyValue; }
+    virtual kw GetKeyword() const { return (kw)keyValue; }
     virtual const std::string& GetId() const { return id; }
     static bool Start(const std::string& line);
 

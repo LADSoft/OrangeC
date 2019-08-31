@@ -24,16 +24,17 @@
 
 #include "PreProcessor.h"
 #include "ppCtx.h"
+#include "ppkw.h"
 
 ppCtx::~ppCtx() {}
-bool ppCtx::Check(int token, std::string& line)
+bool ppCtx::Check(kw token, std::string& line)
 {
     bool rv = false;
-    if (token == PUSH)
+    if (token == kw::PUSH)
         rv = push(line);
-    else if (token == POP)
+    else if (token == kw::POP)
         rv = pop();
-    else if (token == REPL)
+    else if (token == kw::REPL)
         rv = repl(line);
     return rv;
 }

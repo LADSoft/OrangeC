@@ -22,24 +22,48 @@
  *
  */
 
-#ifndef ppError_h
-#define ppError_h
 
-#include <string>
-#include "Errors.h"
+#include "PipeArbitrator.h"
+#include "Utils.h"
 
-enum class kw;
-
-class ppError
-{
-  public:
-    ppError() {}
-    bool Check(kw token, const std::string& args);
-
-  protected:
-    void IssueError(const std::string& msg) { Errors::Error("Error directive:" + msg); }
-    void IssueWarning(const std::string& msg) { Errors::Warning("Warning directive:" + msg); }
-
-  private:
-};
+#ifdef HAVE_UNISTD_H
+#    include <unistd.h>
+#else
+#    include <io.h>
+extern "C" char* getcwd(char*, int);
 #endif
+
+
+PipeArbitrator::~PipeArbitrator()
+{
+    if (mainRead >= 3)
+        close(mainRead);
+    if (mainWrite >= 3)
+        close(mainWrite);
+}
+
+void PipeArbitrator::Init(const std::string& pipeName)
+{
+    int fds[2];
+    if (Utils::NamedPipe(fds, pipeName))
+    {
+        mainRead = fds[0];
+        mainWrite = fds[1];
+    }
+}
+
+int PipeArbitrator::OpenFile(const std::string& fileName)
+{
+    if (mainRead >= 0)
+    {
+        Utils::PipeWrite(mainWrite, fileName);
+        std::string val = Utils::PipeRead(mainRead);
+        int fds[2];
+        if (Utils::NamedPipe(fds, val))
+        {
+            close(fds[1]);
+            return fds[0];
+        }
+    }
+    return -1;
+}

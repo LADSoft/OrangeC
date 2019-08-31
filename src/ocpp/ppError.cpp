@@ -22,24 +22,21 @@
  *
  */
 
-#ifndef ppError_h
-#define ppError_h
 
-#include <string>
-#include "Errors.h"
+#include "ppError.h"
+#include "ppkw.h"
 
-enum class kw;
-
-class ppError
+bool ppError::Check(kw token, const std::string& args)
 {
-  public:
-    ppError() {}
-    bool Check(kw token, const std::string& args);
-
-  protected:
-    void IssueError(const std::string& msg) { Errors::Error("Error directive:" + msg); }
-    void IssueWarning(const std::string& msg) { Errors::Warning("Warning directive:" + msg); }
-
-  private:
-};
-#endif
+    if (token == kw::ERROR)
+    {
+        IssueError(args);
+        return true;
+    }
+    if (token == kw::WARNING)
+    {
+        IssueWarning(args);
+        return true;
+    }
+    return false;
+}

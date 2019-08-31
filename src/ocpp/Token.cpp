@@ -601,7 +601,7 @@ void KeywordToken::Parse(std::string& line)
             {
                 SetChars(line.substr(0, j));
                 line.erase(0, j);
-                keyValue = it->second;
+                keyValue = (int)it->second;
                 break;
             }
         }
@@ -639,7 +639,7 @@ void IdentifierToken::Parse(std::string& line)
             it = keywordTable->find(id);
         }
         if (it != keywordTable->end())
-            keyValue = it->second;
+            keyValue = (int)it->second;
     }
 }
 void ErrorToken::Parse(std::string& line)

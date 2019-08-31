@@ -24,6 +24,36 @@
 
 #include "InputFile.h"
 #include "Errors.h"
+#include "PipeArbitrator.h"
+
+#ifdef HAVE_UNISTD_H
+#    include <unistd.h>
+#else
+#    include <io.h>
+extern "C" char* getcwd(char*, int);
+#endif
+
+InputFile::~InputFile()
+{
+    if (fileno >= 3)
+        close(fileno);
+    CheckErrors();
+}
+bool InputFile::Open()
+{
+    if (piper.HasPipe())
+    {
+        fileno = piper.OpenFile(name);
+    }
+    else if (name[0] == '-')
+    {
+        fileno = 0;
+    }
+    else
+        fileno = open(name.c_str(), 0); // readonly
+    CheckUTF8BOM();
+    return fileno >= 0;
+}
 
 void InputFile::CheckErrors()
 {
@@ -50,7 +80,7 @@ bool InputFile::GetLine(std::string& line)
     line = std::string(buf);
     return true;
 }
-std::string InputFile::GetErrorName(bool full, std::string& name)
+std::string InputFile::GetErrorName(bool full, const std::string& name)
 {
     if (full)
     {
@@ -75,11 +105,54 @@ std::string InputFile::GetErrorName(bool full, std::string& name)
         return std::string(q);
     }
 }
+bool InputFile::ReadString(char *s, int len)
+{
+    char* olds = s;
+    if (fileno < 0)
+    {
+        *s = 0;
+        inputLen = 0;
+        return false;
+    }
+    while (true)
+    {
+        while (inputLen--)
+        {
+            if (*bufPtr == 0x1a)
+            {
+                *s = 0;
+                inputLen = 0;
+                return s != olds;
+            }
+            if (*bufPtr != '\r')
+            {
+                if ((*s++ = *bufPtr++) == '\n' || !--len)
+                {
+                    *s = 0;
+                    return true;
+                }
+            }
+            else
+            {
+                bufPtr++;
+            }
+        }
+        inputLen = read(fileno, inputBuffer, sizeof(inputBuffer));
+        bufPtr = inputBuffer;
+        if (inputLen <= 0)
+        {
+            *s = 0;
+            inputLen = 0;
+            return s != olds;
+        }
+    }
+}
 bool InputFile::ReadLine(char* line)
 {
     line[0] = 0;
     lineno++;
-    fgets(line, LINE_WIDTH, file);
+    errlineno++;
+    ReadString(line, LINE_WIDTH);
     int n = strlen(line);
     if (n)
     {
@@ -95,11 +168,11 @@ void InputFile::CheckUTF8BOM()
 {
     static unsigned char BOM[] = {0xef, 0xbb, 0xbf};
     unsigned char buf[3];
-    if (3 == fread(buf, 1, 3, file))
+    if (3 == read(fileno, buf, 3))
     {
         utf8BOM = !memcmp(BOM, buf, 3);
         if (utf8BOM)
             return;
     }
-    fseek(file, 0, SEEK_SET);
+    lseek(fileno, 0, SEEK_SET);
 }

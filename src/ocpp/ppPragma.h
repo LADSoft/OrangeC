@@ -30,7 +30,12 @@
 #include <map>
 #include <set>
 #include <ctime>
+#include <stack>
 #include "Token.h"
+
+#define STD_PRAGMA_FENV 1
+#define STD_PRAGMA_FCONTRACT 2
+#define STD_PRAGMA_CXLIMITED 4
 
 class ppInclude;
 
@@ -44,24 +49,30 @@ class Packing
         return instance;
     }
 
-    int Get() { return list.front(); }
-    void Add(int item) { list.push_front(item); }
+    int Get() { return list.top(); }
+    void Add(int item) { list.push(item); }
     void Remove()
     {
         if (list.size() > 1)
-            list.pop_front();
+            list.pop();
+    }
+
+    void Clear()
+    {
+        while (list.size() > 1)
+            list.pop();
     }
 
   protected:
 #ifdef MSDOS
-    Packing() { list.push_front(1); }
+    Packing() { list.push(1); }
 #else
-    Packing() { list.push_front(8); }
+    Packing() { list.push(8); }
 #endif
 
   private:
     static Packing* instance;
-    std::list<int> list;
+    std::stack<int> list;
 };
 class FenvAccess
 {
@@ -73,27 +84,37 @@ class FenvAccess
         return instance;
     }
 
-    bool Get() { return list.front(); }
-    void Add(bool item) { list.push_front(item); }
+    bool Get() { return list.top(); }
+    void Add(bool item) { list.push(item); }
     void Remove()
     {
         if (list.size() > 1)
-            list.pop_front();
+            list.pop();
     }
-    void Mark() { pos = list.size(); }
+    void Mark() { marks.push(list.size()); }
     void Release()
     {
-        while (pos > list.size())
-            list.pop_front();
+        if (marks.size())
+        {
+            while (marks.top() < list.size())
+                list.pop();
+            marks.pop();
+        }
+    }
+
+    void Clear()
+    {
+        while (list.size() > 1)
+            list.pop();
     }
 
   protected:
-    FenvAccess() : pos(0) { list.push_front(false); }
+    FenvAccess() { list.push(false); }
 
   private:
-    size_t pos;
+    std::stack<int> marks;
     static FenvAccess* instance;
-    std::list<bool> list;
+    std::stack<bool> list;
 };
 class CXLimitedRange
 {
@@ -105,27 +126,37 @@ class CXLimitedRange
         return instance;
     }
 
-    bool Get() { return list.front(); }
-    void Add(bool item) { list.push_front(item); }
+    bool Get() { return list.top(); }
+    void Add(bool item) { list.push(item); }
     void Remove()
     {
         if (list.size() > 1)
-            list.pop_front();
+            list.pop();
     }
-    void Mark() { pos = list.size(); }
+    void Mark() { marks.push(list.size()); }
     void Release()
     {
-        while (pos > list.size())
-            list.pop_front();
+        if (marks.size())
+        {
+            while (marks.top() < list.size())
+                list.pop();
+            marks.pop();
+        }
+    }
+
+    void Clear()
+    {
+        while (list.size() > 1)
+            list.pop();
     }
 
   protected:
-    CXLimitedRange() : pos(0) { list.push_front(false); }
+    CXLimitedRange() { list.push(false); }
 
   private:
-    size_t pos;
-    static CXLimitedRange* instance;
-    std::list<bool> list;
+      std::stack<int> marks;
+      static CXLimitedRange* instance;
+      std::stack<bool> list;
 };
 class FPContract
 {
@@ -137,27 +168,37 @@ class FPContract
         return instance;
     }
 
-    bool Get() { return list.front(); }
-    void Add(bool item) { list.push_front(item); }
+    bool Get() { return list.top(); }
+    void Add(bool item) { list.push(item); }
     void Remove()
     {
         if (list.size() > 1)
-            list.pop_front();
+            list.pop();
     }
-    void Mark() { pos = list.size(); }
+    void Mark() { marks.push(list.size()); }
     void Release()
     {
-        while (pos > list.size())
-            list.pop_front();
+        if (marks.size())
+        {
+            while (marks.top() < list.size())
+                list.pop();
+            marks.pop();
+        }
+    }
+
+    void Clear()
+    {
+        while (list.size() > 1)
+            list.pop();
     }
 
   protected:
-    FPContract() : pos(0) { list.push_front(true); }
+    FPContract() { list.push(true); }
 
   private:
-    size_t pos;
-    static FPContract* instance;
-    std::list<bool> list;
+      std::stack<int> marks;
+      static FPContract* instance;
+      std::stack<bool> list;
 };
 class Libraries
 {
@@ -174,8 +215,12 @@ class Libraries
     LibraryIterator begin() { return list.begin(); }
     LibraryIterator end() { return list.end(); }
     std::string& GetName(LibraryIterator it) { return (*it); }
-
-  protected:
+    std::list<std::string>& Get() { return list; }
+    void Clear()
+    {
+        list.clear();
+    }
+protected:
     Libraries() {}
 
   private:
@@ -198,7 +243,18 @@ class Aliases
     AliasIterator end() { return list.end(); }
     std::string GetName(AliasIterator it) { return it->second; }
     std::string GetAlias(AliasIterator it) { return it->first; }
-
+    void Clear()
+    {
+        list.clear();
+    }
+    const char *Lookup(const char *name)
+    {
+        std::string finder = name;
+        auto it = list.find(name);
+        if (it != list.end())
+            return it->second.c_str();
+        return name;
+    }
   protected:
     Aliases() {}
 
@@ -231,6 +287,11 @@ class Startups
     std::string GetName(StartupIterator it) { return it->first; }
     int GetPriority(StartupIterator it) { return it->second->prio; }
     bool IsStartup(StartupIterator it) { return it->second->startup; }
+    std::map<std::string, std::unique_ptr<Properties>>& GetStartups() { return list; }
+    void Clear()
+    {
+        list.clear();
+    }
 
   protected:
     Startups() {}
@@ -278,6 +339,10 @@ class Once
         time_t filetime;
         unsigned crc;
     };
+    void Clear()
+    {
+        items.clear();
+    }
 
     static Once* instance;
     std::set<OnceItem> items;
@@ -286,9 +351,26 @@ class Once
 class ppPragma
 {
   public:
-    ppPragma(ppInclude* Include) { Once::Instance()->SetInclude(Include); }
-    bool Check(int token, const std::string& args);
+    ppPragma(ppInclude* Include) : cppprio(0), ignoreGlobalInit(false) 
+    {
+        Packing::Instance()->Clear();
+        FenvAccess::Instance()->Clear();
+        CXLimitedRange::Instance()->Clear();
+        FPContract::Instance()->Clear();
+        Libraries::Instance()->Clear();
+        Aliases::Instance()->Clear();
+        Startups::Instance()->Clear();
+        Once::Instance()->SetInclude(Include);
+    }
+    bool Check(kw token, const std::string& args);
     void ParsePragma(const std::string& args);
+    int Pack() { return Packing::Instance()->Get(); }
+    int StdPragmas();
+    int CppPrio() { return cppprio; }
+    std::list<std::string>& IncludeLibs() { return Libraries::Instance()->Get(); }
+    std::map<std::string, std::unique_ptr<Startups::Properties>>& GetStartups() { return Startups::Instance()->GetStartups(); }
+    const char *LookupAlias(const char *name) const { return Aliases::Instance()->Lookup(name); }
+
     void Mark()
     {
         FenvAccess::Instance()->Mark();
@@ -314,8 +396,10 @@ class ppPragma
     void HandleAlias(Tokenizer& tk);
     void HandleFar(Tokenizer& tk);
     void HandleOnce(Tokenizer& tk);
-
+    void HandleIgnoreGlobalInit(Tokenizer& tk);
   private:
+    int cppprio;
+    bool ignoreGlobalInit;
     static KeywordHash hash;
 };
 #endif

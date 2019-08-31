@@ -31,6 +31,14 @@
 #ifdef _WIN32
 #    include <windows.h>
 #endif
+#ifdef HAVE_UNISTD_H
+#    include <unistd.h>
+#else
+#    include <io.h>
+extern "C" char* getcwd(char*, int);
+#endif
+
+
 #include "Utils.h"
 #include "CmdFiles.h"
 
@@ -173,6 +181,38 @@ std::string Utils::QualifiedFile(const char* path, const char* ext)
         p = buf + strlen(buf);
     strcpy(p, ext);
     return std::string(buf);
+}
+char* Utils::FullQualify(char* string)
+{
+    static char buf[265];
+    if (string[0] == '\\')
+    {
+        getcwd(buf, 265);
+        strcpy(buf + 2, string);
+        return buf;
+    }
+    else if (string[1] != ':')
+    {
+        char *p, *q = string;
+        getcwd(buf, 265);
+        p = buf + strlen(buf);
+        if (!strncmp(q, ".\\", 2))
+            q += 2;
+        p--;
+        while (!strncmp(q, "..\\", 3))
+        {
+            q += 3;
+            while (p > buf && *p != '\\')
+                p--;
+            if (p > buf)
+                p--;
+        }
+        p++;
+        *p++ = '\\';
+        strcpy(p, q);
+        return buf;
+    }
+    return string;
 }
 std::string Utils::SearchForFile(const std::string& path, const std::string& name)
 {

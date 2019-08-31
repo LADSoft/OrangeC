@@ -125,6 +125,7 @@
     <ClCompile Include="CmdFiles.cpp" />
     <ClCompile Include="CmdSwitch.cpp" />
     <ClCompile Include="crc.cpp" />
+    <ClCompile Include="NamedPipe.cpp" />
     <ClCompile Include="UTF8.cpp" />
     <ClCompile Include="UTF8Table.cpp" />
     <ClCompile Include="UTF8Upper.cpp" />
@@ -135,7 +136,6 @@
   <ItemGroup>
     <ClInclude Include="CmdFiles.h" />
     <ClInclude Include="CmdSwitch.h" />
-    <ClInclude Include="sha1.h" />
     <ClInclude Include="UTF8.h" />
     <ClInclude Include="Utils.h" />
     <ClInclude Include="xml.h" />

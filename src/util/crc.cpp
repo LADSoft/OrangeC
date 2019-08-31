@@ -53,7 +53,7 @@ unsigned Utils::crctab[256] = {
     0x8f6af48f, 0xf86dc419, 0x660951ba, 0x110e612c, 0x88073096, 0xff000000,
 };
 
-unsigned Utils::PartialCRC32(unsigned crc, unsigned char* data, size_t len)
+unsigned Utils::PartialCRC32(unsigned crc, const unsigned char* data, size_t len)
 {
     for (size_t i = 0; i < len; ++i)
         crc = crctab[(unsigned char)crc ^ data[i]] ^ crc >> 8;

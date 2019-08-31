@@ -42,15 +42,15 @@
     <ClCompile Include="crc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="NamedPipe.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CmdFiles.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="CmdSwitch.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="sha1.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="UTF8.h">

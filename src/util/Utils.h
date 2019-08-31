@@ -58,6 +58,7 @@ class Utils
     static std::string FullPath(const std::string& path, const std::string& name);
     static std::string AbsolutePath(const std::string& name);
     static std::string QualifiedFile(const char* path, const char* ext);
+    static char* FullQualify(char* string);
     static std::string SearchForFile(const std::string& path, const std::string& name);
     static std::string NumberToString(int num);
     static std::string NumberToStringHex(int num);
@@ -66,10 +67,14 @@ class Utils
     static char* ShortName(const char* v);
     static bool iequal(const std::string& left, const std::string& right, int sz = -1);
 
-    static unsigned PartialCRC32(unsigned crc, unsigned char* data, size_t len);
-    static unsigned CRC32(unsigned char* data, size_t len) { return PartialCRC32(0, data, len); };
+    static bool NamedPipe(int fds[2], const std::string& name);
+    static bool PipeWrite(int fileno, const std::string& data);
+    static std::string PipeRead(int fileno);
+
+    static unsigned PartialCRC32(unsigned crc, const unsigned char* data, size_t len);
+    static unsigned CRC32(const unsigned char* data, size_t len) { return PartialCRC32(0, data, len); };
     template <size_t len>
-    static unsigned CRC32(unsigned char (&data)[len])
+    static unsigned CRC32(const unsigned char (&data)[len])
     {
         return CRC32(data, len);
     }

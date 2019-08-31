@@ -53,26 +53,26 @@ void DefFile::Init()
     if (!initted)
     {
         initted = true;
-        keywords["@"] = edt_at;
-        keywords["."] = edt_dot;
-        keywords["="] = edt_equals;
-        keywords["NAME"] = edt_name;
-        keywords["LIBRARY"] = edt_library;
-        keywords["EXPORTS"] = edt_exports;
-        keywords["IMPORTS"] = edt_imports;
-        keywords["DESCRIPTION"] = edt_description;
-        keywords["STACKSIZE"] = edt_stacksize;
-        keywords["HEAPSIZE"] = edt_heapsize;
-        keywords["CODE"] = edt_code;
-        keywords["DATA"] = edt_data;
-        keywords["SECTIONS"] = edt_sections;
-        keywords["NONAME"] = edt_noname;
-        keywords["CONSTANT"] = edt_constant;
-        keywords["PRIVATE"] = edt_private;
-        keywords["READ"] = edt_read;
-        keywords["WRITE"] = edt_write;
-        keywords["EXECUTE"] = edt_execute;
-        keywords["SHARED"] = edt_shared;
+        keywords["@"] = kw::at;
+        keywords["."] = kw::dot;
+        keywords["="] = kw::equals;
+        keywords["NAME"] = kw::name;
+        keywords["LIBRARY"] = kw::library;
+        keywords["EXPORTS"] = kw::exports;
+        keywords["IMPORTS"] = kw::imports;
+        keywords["DESCRIPTION"] = kw::description;
+        keywords["STACKSIZE"] = kw::stacksize;
+        keywords["HEAPSIZE"] = kw::heapsize;
+        keywords["CODE"] = kw::code;
+        keywords["DATA"] = kw::data;
+        keywords["SECTIONS"] = kw::sections;
+        keywords["NONAME"] = kw::noname;
+        keywords["CONSTANT"] = kw::constant;
+        keywords["PRIVATE"] = kw::private_;
+        keywords["READ"] = kw::read;
+        keywords["WRITE"] = kw::write;
+        keywords["EXECUTE"] = kw::execute;
+        keywords["SHARED"] = kw::shared;
         Tokenizer::IsSymbolChar = IsSymbolChar;
     }
 }
@@ -111,34 +111,34 @@ bool DefFile::Read()
                 {
                     switch (token->GetKeyword())
                     {
-                        case edt_name:
+                        case kw::name:
                             ReadName();
                             break;
-                        case edt_library:
+                        case kw::library:
                             ReadLibrary();
                             break;
-                        case edt_exports:
+                        case kw::exports:
                             ReadExports();
                             break;
-                        case edt_imports:
+                        case kw::imports:
                             ReadImports();
                             break;
-                        case edt_description:
+                        case kw::description:
                             ReadDescription();
                             break;
-                        case edt_stacksize:
+                        case kw::stacksize:
                             ReadStacksize();
                             break;
-                        case edt_heapsize:
+                        case kw::heapsize:
                             ReadHeapsize();
                             break;
-                        case edt_code:
+                        case kw::code:
                             ReadCode();
                             break;
-                        case edt_data:
+                        case kw::data:
                             ReadData();
                             break;
-                        case edt_sections:
+                        case kw::sections:
                             ReadSections();
                             break;
                         default:
@@ -262,14 +262,14 @@ void DefFile::ReadExports()
             std::unique_ptr<Export> oneExport = std::make_unique<Export>();
             oneExport->id = token->GetId();
             NextToken();
-            if (token->GetKeyword() == edt_equals)
+            if (token->GetKeyword() == kw::equals)
             {
                 NextToken();
                 if (!token->IsIdentifier())
                     throw std::runtime_error("Expected entry specifier");
                 oneExport->entry = token->GetId();
                 NextToken();
-                if (token->GetKeyword() == edt_dot)
+                if (token->GetKeyword() == kw::dot)
                 {
                     NextToken();
                     std::string line = tokenizer.GetString();
@@ -301,7 +301,7 @@ void DefFile::ReadExports()
                     oneExport->entry = oneExport->id;
                 }
             }
-            if (token->GetKeyword() == edt_at)
+            if (token->GetKeyword() == kw::at)
             {
                 NextToken();
                 if (token->IsNumeric())
@@ -319,13 +319,13 @@ void DefFile::ReadExports()
             {
                 switch (token->GetKeyword())
                 {
-                    case edt_noname:
+                    case kw::noname:
                         oneExport->byOrd = true;
                         NextToken();
                         break;
-                    case edt_constant:
-                    case edt_private:
-                    case edt_data:
+                    case kw::constant:
+                    case kw::private_:
+                    case kw::data:
                         NextToken();
                         break;
                     default:
@@ -353,7 +353,7 @@ void DefFile::ReadImports()
             std::unique_ptr<Import> oneImport = std::make_unique<Import>();
             oneImport->id = token->GetId();
             NextToken();
-            if (token->GetKeyword() == edt_dot)
+            if (token->GetKeyword() == kw::dot)
             {
                 oneImport->module = oneImport->id;
                 NextToken();
@@ -361,7 +361,7 @@ void DefFile::ReadImports()
                     throw std::runtime_error("Expected id specifier");
                 oneImport->id = oneImport->entry = token->GetId();
             }
-            else if (token->GetKeyword() == edt_equals)
+            else if (token->GetKeyword() == kw::equals)
             {
                 std::string line = tokenizer.GetString();
                 int npos = line.find_first_of(".");
@@ -420,16 +420,16 @@ void DefFile::ReadSectionsInternal(const char* name)
     {
         switch (token->GetKeyword())
         {
-            case edt_read:
+            case kw::read:
                 flags |= WINF_READABLE;
                 break;
-            case edt_write:
+            case kw::write:
                 flags |= WINF_WRITEABLE;
                 break;
-            case edt_execute:
+            case kw::execute:
                 flags |= WINF_EXECUTE;
                 break;
-            case edt_shared:
+            case kw::shared:
                 flags |= WINF_SHARED;
                 break;
             default:

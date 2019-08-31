@@ -82,24 +82,24 @@ bool Control::ValidType(RCFile& rcFile)
 {
     switch (rcFile.GetToken()->GetKeyword())
     {
-        case Lexer::AUTO3STATE:
-        case Lexer::AUTOCHECKBOX:
-        case Lexer::AUTORADIOBUTTON:
-        case Lexer::CHECKBOX:
-        case Lexer::COMBOBOX:
-        case Lexer::CTEXT:
-        case Lexer::DEFPUSHBUTTON:
-        case Lexer::EDITTEXT:
-        case Lexer::GROUPBOX:
-        case Lexer::ICON:
-        case Lexer::LISTBOX:
-        case Lexer::LTEXT:
-        case Lexer::PUSHBUTTON:
-        case Lexer::RADIOBUTTON:
-        case Lexer::RTEXT:
-        case Lexer::SCROLLBAR:
-        case Lexer::STATE3:
-        case Lexer::CONTROL:
+        case kw::AUTO3STATE:
+        case kw::AUTOCHECKBOX:
+        case kw::AUTORADIOBUTTON:
+        case kw::CHECKBOX:
+        case kw::COMBOBOX:
+        case kw::CTEXT:
+        case kw::DEFPUSHBUTTON:
+        case kw::EDITTEXT:
+        case kw::GROUPBOX:
+        case kw::ICON:
+        case kw::LISTBOX:
+        case kw::LTEXT:
+        case kw::PUSHBUTTON:
+        case kw::RADIOBUTTON:
+        case kw::RTEXT:
+        case kw::SCROLLBAR:
+        case kw::STATE3:
+        case kw::CONTROL:
             return true;
         default:
             return false;
@@ -179,33 +179,33 @@ void Control::GetClass(RCFile& rcFile)
     else
         switch (rcFile.GetTokenId())
         {
-            case Lexer::AUTO3STATE:
-            case Lexer::AUTOCHECKBOX:
-            case Lexer::AUTORADIOBUTTON:
-            case Lexer::CHECKBOX:
-            case Lexer::PUSHBUTTON:
-            case Lexer::RADIOBUTTON:
-            case Lexer::DEFPUSHBUTTON:
-            case Lexer::STATE3:
-            case Lexer::GROUPBOX:
+            case kw::AUTO3STATE:
+            case kw::AUTOCHECKBOX:
+            case kw::AUTORADIOBUTTON:
+            case kw::CHECKBOX:
+            case kw::PUSHBUTTON:
+            case kw::RADIOBUTTON:
+            case kw::DEFPUSHBUTTON:
+            case kw::STATE3:
+            case kw::GROUPBOX:
                 cls.SetId(Button);
                 break;
-            case Lexer::COMBOBOX:
+            case kw::COMBOBOX:
                 cls.SetId(Combobox);
                 break;
-            case Lexer::CTEXT:
-            case Lexer::LTEXT:
-            case Lexer::RTEXT:
-            case Lexer::ICON:
+            case kw::CTEXT:
+            case kw::LTEXT:
+            case kw::RTEXT:
+            case kw::ICON:
                 cls.SetId(Static);
                 break;
-            case Lexer::EDITTEXT:
+            case kw::EDITTEXT:
                 cls.SetId(Edit);
                 break;
-            case Lexer::LISTBOX:
+            case kw::LISTBOX:
                 cls.SetId(Listbox);
                 break;
-            case Lexer::SCROLLBAR:
+            case kw::SCROLLBAR:
                 cls.SetId(Scrollbar);
                 break;
             default:
@@ -250,60 +250,60 @@ void Control::ReadRC(RCFile& rcFile, bool extended)
 #ifndef HAVE_UNISTD_H
     switch (rcFile.GetTokenId())
     {
-        case Lexer::AUTO3STATE:
+        case kw::AUTO3STATE:
             ReadStandard(rcFile, Button, BS_AUTO3STATE | WS_TABSTOP, extended, 1);
             break;
-        case Lexer::AUTOCHECKBOX:
+        case kw::AUTOCHECKBOX:
             ReadStandard(rcFile, Button, BS_AUTOCHECKBOX | WS_TABSTOP, extended, 1);
             break;
-        case Lexer::AUTORADIOBUTTON:
+        case kw::AUTORADIOBUTTON:
             ReadStandard(rcFile, Button, BS_AUTORADIOBUTTON, extended, 1);
             break;
-        case Lexer::CHECKBOX:
+        case kw::CHECKBOX:
             ReadStandard(rcFile, Button, BS_CHECKBOX | WS_TABSTOP, extended, 1);
             break;
-        case Lexer::COMBOBOX:
+        case kw::COMBOBOX:
             ReadStandard(rcFile, Combobox, 0, extended, 0);
             if (!(style & 3))
                 style |= CBS_SIMPLE;
             break;
-        case Lexer::CTEXT:
+        case kw::CTEXT:
             ReadStandard(rcFile, Static, SS_CENTER | WS_GROUP, extended, 1);
             break;
-        case Lexer::DEFPUSHBUTTON:
+        case kw::DEFPUSHBUTTON:
             ReadStandard(rcFile, Button, BS_DEFPUSHBUTTON | WS_TABSTOP, extended, 1);
             break;
-        case Lexer::EDITTEXT:
+        case kw::EDITTEXT:
             ReadStandard(rcFile, Edit, ES_LEFT | WS_BORDER | WS_TABSTOP, extended, 0);
             break;
-        case Lexer::GROUPBOX:
+        case kw::GROUPBOX:
             ReadStandard(rcFile, Button, BS_GROUPBOX, extended, 1);
             break;
-        case Lexer::ICON:
+        case kw::ICON:
             ReadStandard(rcFile, Static, SS_ICON, extended, 1);
             break;
-        case Lexer::LISTBOX:
+        case kw::LISTBOX:
             ReadStandard(rcFile, Listbox, LBS_NOTIFY | WS_BORDER, extended, 0);
             break;
-        case Lexer::LTEXT:
+        case kw::LTEXT:
             ReadStandard(rcFile, Static, SS_LEFT | WS_GROUP, extended, 1);
             break;
-        case Lexer::PUSHBUTTON:
+        case kw::PUSHBUTTON:
             ReadStandard(rcFile, Button, BS_PUSHBUTTON | WS_TABSTOP, extended, 1);
             break;
-        case Lexer::RADIOBUTTON:
+        case kw::RADIOBUTTON:
             ReadStandard(rcFile, Button, BS_RADIOBUTTON, extended, 1);
             break;
-        case Lexer::RTEXT:
+        case kw::RTEXT:
             ReadStandard(rcFile, Static, SS_RIGHT | WS_GROUP, extended, 1);
             break;
-        case Lexer::SCROLLBAR:
+        case kw::SCROLLBAR:
             ReadStandard(rcFile, Scrollbar, SBS_HORZ, extended, 0);
             break;
-        case Lexer::STATE3:
+        case kw::STATE3:
             ReadStandard(rcFile, Button, BS_3STATE | WS_TABSTOP, extended, 1);
             break;
-        case Lexer::CONTROL:
+        case kw::CONTROL:
             ReadGeneric(rcFile, extended);
             break;
         default:
@@ -376,7 +376,7 @@ void Dialog::ReadSettings(RCFile& rcFile)
     {
         switch (rcFile.GetToken()->GetKeyword())
         {
-            case Lexer::LANGUAGE:
+            case kw::LANGUAGE:
             {
                 rcFile.NextToken();
                 int n = rcFile.GetNumber();
@@ -385,28 +385,28 @@ void Dialog::ReadSettings(RCFile& rcFile)
                 resInfo.SetLanguage(n);
             }
             break;
-            case Lexer::VERSION:
+            case kw::VERSION:
                 rcFile.NextToken();
                 resInfo.SetVersion(rcFile.GetNumber());
                 break;
-            case Lexer::CHARACTERISTICS:
+            case kw::CHARACTERISTICS:
                 rcFile.NextToken();
                 resInfo.SetCharacteristics(rcFile.GetNumber());
                 break;
-            case Lexer::STYLE:
+            case kw::STYLE:
                 hasstyle = true;
                 rcFile.NextToken();
                 style = rcFile.GetNumber();
                 break;
-            case Lexer::EXSTYLE:
+            case kw::EXSTYLE:
                 rcFile.NextToken();
                 exStyle |= rcFile.GetNumber();
                 break;
-            case Lexer::MENU:
+            case kw::MENU:
                 rcFile.NextToken();
                 menu.ReadRC(rcFile);
                 break;
-            case Lexer::FONT:
+            case kw::FONT:
                 hasfont = true;
                 rcFile.NextToken();
                 pointSize = rcFile.GetNumber();
@@ -431,28 +431,28 @@ void Dialog::ReadSettings(RCFile& rcFile)
                     }
                 }
                 break;
-            case Lexer::CAPTION:
+            case kw::CAPTION:
                 hascaption = true;
                 rcFile.NextToken();
                 caption = rcFile.GetString();
                 break;
-            case Lexer::CLASS:
+            case kw::CLASS:
                 rcFile.NextToken();
                 cls.ReadRC(rcFile, true);
                 break;
-            case Lexer::HELP:
+            case kw::HELP:
                 rcFile.NextToken();
                 if (!extended)
                     throw std::runtime_error("Need DialogEx");
                 helpIndex = rcFile.GetNumber();
                 break;
-            case Lexer::WEIGHT:
+            case kw::WEIGHT:
                 rcFile.NextToken();
                 if (!extended)
                     throw std::runtime_error("Need DialogEx");
                 weight = rcFile.GetNumber();
                 break;
-            case Lexer::ITALIC:
+            case kw::ITALIC:
                 rcFile.NextToken();
                 if (!extended)
                     throw std::runtime_error("Need DialogEx");

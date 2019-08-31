@@ -49,7 +49,7 @@ void RCData::ReadRC(RCFile& rcFile)
     resInfo.ReadRC(rcFile, false);
 
     const Token* t = rcFile.GetToken();
-    if (t->GetKeyword() != Lexer::BEGIN)
+    if (t->GetKeyword() != kw::BEGIN)
     {
         data.push_back(std::make_unique<ResourceData>());
         data.back()->ReadRC(rcFile);
@@ -99,7 +99,7 @@ void RCData::ReadRC(RCFile& rcFile)
             {
                 rcFile.NextToken();
                 if (rcFile.IsKeyword())
-                    if (rcFile.GetToken()->GetKeyword() == Lexer::comma)
+                    if (rcFile.GetToken()->GetKeyword() == kw::comma)
                         concatwide = false;
                 rcFile.SkipComma();
             }

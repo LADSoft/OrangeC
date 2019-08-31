@@ -33,29 +33,29 @@
 #include <deque>
 #include <memory>
 
-enum
+enum class kw
 {
-    edt_none = 256,
-    edt_at,
-    edt_dot,
-    edt_equals,
-    edt_name,
-    edt_library,
-    edt_exports,
-    edt_imports,
-    edt_description,
-    edt_stacksize,
-    edt_heapsize,
-    edt_code,
-    edt_data,
-    edt_sections,
-    edt_noname,
-    edt_constant,
-    edt_private,
-    edt_read,
-    edt_write,
-    edt_execute,
-    edt_shared
+    none = 256,
+    at,
+    dot,
+    equals,
+    name,
+    library,
+    exports,
+    imports,
+    description,
+    stacksize,
+    heapsize,
+    code,
+    data,
+    sections,
+    noname,
+    constant,
+    private_,
+    read,
+    write,
+    execute,
+    shared
 };
 
 class DefFile

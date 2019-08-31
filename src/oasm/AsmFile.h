@@ -87,8 +87,8 @@ class AsmFile
     void MakeData(ObjFactory& factory, ObjSection* sect, Section* s);
     const Token* GetToken() { return lexer.GetToken(); }
     bool IsKeyword();
-    int GetKeyword();
-    unsigned GetTokenId();
+    kw GetKeyword();
+    kw GetTokenId();
     bool IsNumber();
     AsmExprNode* GetNumber();
     bool IsString();

@@ -415,19 +415,19 @@ void x64Parser::Setup(Section* sect)
 bool x64Parser::ParseSection(AsmFile* fil, Section* sect)
 {
     bool rv = false;
-    if (fil->GetKeyword() == Lexer::USE16)
+    if (fil->GetKeyword() == kw::USE16)
     {
         sect->beValues[0] = 16;
         fil->NextToken();
         rv = true;
     }
-    else if (fil->GetKeyword() == Lexer::USE32)
+    else if (fil->GetKeyword() == kw::USE32)
     {
         sect->beValues[0] = 32;
         fil->NextToken();
         rv = true;
     }
-    else if (fil->GetKeyword() == Lexer::USE64)
+    else if (fil->GetKeyword() == kw::USE64)
     {
         sect->beValues[0] = 64;
         fil->NextToken();
@@ -438,7 +438,7 @@ bool x64Parser::ParseSection(AsmFile* fil, Section* sect)
 bool x64Parser::ParseDirective(AsmFile* fil, Section* sect)
 {
     bool rv = false;
-    if (fil->GetKeyword() == Lexer::BITS)
+    if (fil->GetKeyword() == kw::BITS)
     {
         fil->NextToken();
         if (fil->IsNumber())

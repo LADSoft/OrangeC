@@ -64,7 +64,7 @@ bool AsmFile::Read()
         bool inInstruction = false;
         try
         {
-            if (GetKeyword() == Lexer::openbr)
+            if (GetKeyword() == kw::openbr)
             {
                 Directive();
                 thisLabel = nullptr;
@@ -201,7 +201,7 @@ void AsmFile::DoLabel(std::string& name, int lineno)
         if (realName == "..start")
             startupLabel = label;
     }
-    if (GetKeyword() == Lexer::colon)
+    if (GetKeyword() == kw::colon)
     {
         NextToken();
         thisLabel = nullptr;
@@ -211,7 +211,7 @@ void AsmFile::DoDB()
 {
     char buf[3000];
     int size = 0;
-    bool byte = GetKeyword() == Lexer::DB;
+    bool byte = GetKeyword() == kw::DB;
     short val = 0;
     std::deque<Fixup*> fixups;
     NeedSection();
@@ -272,7 +272,7 @@ void AsmFile::DoDB()
             if (!byte)
                 buf[size++] = 0;
         }
-    } while (GetKeyword() == Lexer::comma);
+    } while (GetKeyword() == kw::comma);
     Instruction* ins = new Instruction((unsigned char*)buf, size, true);
     if (lineno >= 0)
         listing.Add(ins, lineno, preProcessor.InMacro());
@@ -326,7 +326,7 @@ void AsmFile::DoDD()
             *((unsigned*)(buf + size)) = 0;
             size += 4;
         }
-    } while (GetKeyword() == Lexer::comma);
+    } while (GetKeyword() == kw::comma);
     Instruction* ins = new Instruction((unsigned char*)buf, size, true);
     if (lineno >= 0)
         listing.Add(ins, lineno, preProcessor.InMacro());
@@ -342,7 +342,7 @@ void AsmFile::DoFloat()
 {
     unsigned char buf[4000];
     int size = 0;
-    bool tbyte = GetKeyword() == Lexer::DT;
+    bool tbyte = GetKeyword() == kw::DT;
     NeedSection();
     int lineno = preProcessor.GetMainLineNo();
     std::deque<Fixup*> fixups;
@@ -361,7 +361,7 @@ void AsmFile::DoFloat()
         f->SetErrorLine(errLine);
         fixups.push_back(f);
         size += tbyte ? 10 : 8;
-    } while (GetKeyword() == Lexer::comma);
+    } while (GetKeyword() == kw::comma);
     Instruction* ins = new Instruction((unsigned char*)buf, size, true);
     if (lineno >= 0)
         listing.Add(ins, lineno, preProcessor.InMacro());
@@ -392,7 +392,7 @@ void AsmFile::ReserveDirective(int n)
     }
     else
     {
-        if (GetKeyword() == Lexer::comma)
+        if (GetKeyword() == kw::comma)
         {
             NextToken();
             Fixup* f = new Fixup(GetNumber(), n, false, 0);
@@ -433,69 +433,69 @@ void AsmFile::Directive()
     NextToken();
     switch (GetKeyword())
     {
-        case Lexer::EQU:
+        case kw::EQU:
             EquDirective();
             break;
-        case Lexer::DB:
-        case Lexer::DW:
+        case kw::DB:
+        case kw::DW:
             NoAbsolute();
             DoDB();
             break;
-        case Lexer::DD:
+        case kw::DD:
             NoAbsolute();
             DoDD();
             break;
-        case Lexer::DQ:
-        case Lexer::DT:
+        case kw::DQ:
+        case kw::DT:
             NoAbsolute();
             DoFloat();
             break;
-        case Lexer::RESB:
+        case kw::RESB:
             ReserveDirective(1);
             break;
-        case Lexer::RESD:
+        case kw::RESD:
             ReserveDirective(4);
             break;
-        case Lexer::RESQ:
+        case kw::RESQ:
             ReserveDirective(8);
             break;
-        case Lexer::REST:
+        case kw::REST:
             ReserveDirective(10);
             break;
-        case Lexer::RESW:
+        case kw::RESW:
             ReserveDirective(2);
             break;
-        case Lexer::SECTION:
+        case kw::SECTION:
             SectionDirective();
             break;
-        case Lexer::ABSOLUTE:
+        case kw::ABSOLUTE:
             AbsoluteDirective();
             break;
-        case Lexer::PUBLIC:
+        case kw::PUBLIC:
             PublicDirective();
             break;
-        case Lexer::EXTERN:
+        case kw::EXTERN:
             ExternDirective();
             break;
-        case Lexer::ALIGN:
+        case kw::ALIGN:
             AlignDirective();
             break;
-        case Lexer::GALIGN:
+        case kw::GALIGN:
             GnuAlignDirective();
             break;
-        case Lexer::INCBIN:
+        case kw::INCBIN:
             NoAbsolute();
             IncbinDirective();
             break;
-        case Lexer::IMPORT:
+        case kw::IMPORT:
             NoAbsolute();
             ImportDirective();
             break;
-        case Lexer::EXPORT:
+        case kw::EXPORT:
             NoAbsolute();
             ExportDirective();
             break;
-        case Lexer::TIMES:
+        case kw::TIMES:
             NoAbsolute();
             TimesDirective();  // timesdirective eats the ']'
             return;
@@ -504,7 +504,7 @@ void AsmFile::Directive()
             if (!GetParser()->ParseDirective(this, currentSection))
                 throw new std::runtime_error("Expected directive");
     }
-    if (GetKeyword() == Lexer::closebr)
+    if (GetKeyword() == kw::closebr)
     {
         NextToken();
     }
@@ -559,16 +559,16 @@ void AsmFile::GnuAlignDirective()
         int n = currentSection->GetAlign();
         if (v > n)
             currentSection->SetAlign(v);
-        if (GetKeyword() == Lexer::comma)
+        if (GetKeyword() == kw::comma)
         {
             NextToken();
-            if (GetKeyword() != Lexer::comma)
+            if (GetKeyword() != kw::comma)
             {
                 if (!IsNumber())
                     throw new std::runtime_error("Fill value expected");
                 ins->SetFill(GetValue());
             }
-            if (GetKeyword() == Lexer::comma)
+            if (GetKeyword() == kw::comma)
             {
                 NextToken();
                 if (!IsNumber())
@@ -599,7 +599,7 @@ void AsmFile::TimesDirective()
     for (int i = 0; i < n; i++)
     {
         lexer.Reset(line);
-        if (GetKeyword() == Lexer::openbr)
+        if (GetKeyword() == kw::openbr)
         {
             Directive();
         }
@@ -635,11 +635,11 @@ void AsmFile::IncbinDirective()
         buf[1] = 0;
         name = name + buf;
     }
-    if (GetKeyword() == Lexer::comma)
+    if (GetKeyword() == kw::comma)
     {
         NextToken();
         start = GetValue();
-        if (GetKeyword() == Lexer::comma)
+        if (GetKeyword() == kw::comma)
         {
             NextToken();
             size = GetValue();
@@ -673,7 +673,7 @@ void AsmFile::PublicDirective()
             name = UTF8::ToUpper(name);
         }
         globals.insert(name);
-    } while (GetKeyword() == Lexer::comma);
+    } while (GetKeyword() == kw::comma);
 }
 void AsmFile::ExternDirective()
 {
@@ -700,17 +700,17 @@ void AsmFile::ExternDirective()
             label->SetExtern(true);
             numericLabels.push_back(label);
         }
-    } while (GetKeyword() == Lexer::comma);
+    } while (GetKeyword() == kw::comma);
 }
 void AsmFile::ImportDirective()
 {
     NextToken();
     std::string internal = GetId();
     std::string dll;
-    if (GetKeyword() != Lexer::closebr)
+    if (GetKeyword() != kw::closebr)
         dll = GetId();
     std::string external;
-    if (GetKeyword() != Lexer::closebr)
+    if (GetKeyword() != kw::closebr)
         external = GetId();
     else
         external = internal;
@@ -724,7 +724,7 @@ void AsmFile::ExportDirective()
     NextToken();
     std::string internal = GetId();
     std::string external;
-    if (GetKeyword() != Lexer::closebr)
+    if (GetKeyword() != kw::closebr)
         external = GetId();
     else
         external = internal;
@@ -919,10 +919,10 @@ bool AsmFile::IsKeyword()
     bool rv = GetToken() && GetToken()->IsKeyword();
     return rv;
 }
-int AsmFile::GetKeyword() { return GetToken()->GetKeyword(); }
-unsigned AsmFile::GetTokenId()
+kw AsmFile::GetKeyword() { return GetToken()->GetKeyword(); }
+kw AsmFile::GetTokenId()
 {
-    unsigned rv = 0;
+    kw rv = (kw)0;
     if (IsKeyword())
     {
         rv = GetToken()->GetKeyword();
@@ -934,9 +934,9 @@ bool AsmFile::IsNumber()
 {
     bool rv = GetToken() &&
               (GetToken()->IsNumeric() ||
-               (GetToken()->IsKeyword() && (GetToken()->GetKeyword() == Lexer::openpa || GetToken()->GetKeyword() == Lexer::plus ||
-                                            GetToken()->GetKeyword() == Lexer::minus || GetToken()->GetKeyword() == Lexer::lnot ||
-                                            GetToken()->GetKeyword() == Lexer::bcompl)));
+               (GetToken()->IsKeyword() && (GetToken()->GetKeyword() == kw::openpa || GetToken()->GetKeyword() == kw::plus ||
+                                            GetToken()->GetKeyword() == kw::minus || GetToken()->GetKeyword() == kw::lnot ||
+                                            GetToken()->GetKeyword() == kw::bcompl)));
     return rv;
 }
 unsigned AsmFile::GetValue()

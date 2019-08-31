@@ -197,7 +197,7 @@ int AsmMain::Run(int argc, char* argv[])
         {
             inName = Utils::QualifiedFile((*it).c_str(), ".asm");
         }
-        PreProcessor pp(inName, srchPth, sysSrchPth, false, false, '%', false, false, true);
+        PreProcessor pp(inName, srchPth, sysSrchPth, false, false, '%', false, false, true, "");
         int n = Defines.GetCount();
         for (int i = 0; i < n; i++)
         {

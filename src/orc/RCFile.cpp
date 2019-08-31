@@ -69,9 +69,9 @@ bool RCFile::IsKeyword()
     bool rv = GetToken() && GetToken()->IsKeyword();
     return rv;
 }
-unsigned RCFile::GetTokenId()
+kw RCFile::GetTokenId()
 {
-    unsigned rv = 0;
+    kw rv = (kw) 0;
     if (IsKeyword())
     {
         rv = GetToken()->GetKeyword();
@@ -84,14 +84,14 @@ bool RCFile::IsNumber()
     bool rv =
         GetToken() &&
         (GetToken()->IsNumeric() ||
-         (GetToken()->IsKeyword() && (GetToken()->GetKeyword() == Lexer::openpa || GetToken()->GetKeyword() == Lexer::plus ||
-                                      GetToken()->GetKeyword() == Lexer::minus || GetToken()->GetKeyword() == Lexer::lnot ||
-                                      GetToken()->GetKeyword() == Lexer::bcompl || GetToken()->GetKeyword() == Lexer::comma)));
+         (GetToken()->IsKeyword() && (GetToken()->GetKeyword() == kw::openpa || GetToken()->GetKeyword() == kw::plus ||
+                                      GetToken()->GetKeyword() == kw::minus || GetToken()->GetKeyword() == kw::lnot ||
+                                      GetToken()->GetKeyword() == kw::bcompl || GetToken()->GetKeyword() == kw::comma)));
     return rv;
 }
 unsigned RCFile::GetNumber()
 {
-    if (GetToken()->GetKeyword() == Lexer::comma)
+    if (GetToken()->GetKeyword() == kw::comma)
         return 0;
     return expr.Eval();
 }
@@ -145,12 +145,12 @@ void RCFile::NeedEol()
 }
 void RCFile::SkipComma()
 {
-    if (IsKeyword() && GetToken()->GetKeyword() == Lexer::comma)
+    if (IsKeyword() && GetToken()->GetKeyword() == kw::comma)
         NextToken();
 }
 void RCFile::NeedBegin()
 {
-    if (!IsKeyword() || (GetToken()->GetKeyword() != Lexer::openbr && GetToken()->GetKeyword() != Lexer::BEGIN))
+    if (!IsKeyword() || (GetToken()->GetKeyword() != kw::openbr && GetToken()->GetKeyword() != kw::BEGIN))
     {
         throw std::runtime_error("Begin expected");
     }
@@ -158,7 +158,7 @@ void RCFile::NeedBegin()
 }
 void RCFile::NeedEnd()
 {
-    if (!IsKeyword() || (GetToken()->GetKeyword() != Lexer::closebr && GetToken()->GetKeyword() != Lexer::END))
+    if (!IsKeyword() || (GetToken()->GetKeyword() != kw::closebr && GetToken()->GetKeyword() != kw::END))
         throw std::runtime_error("End expected");
     NextToken();
 }
@@ -189,7 +189,7 @@ std::string RCFile::GetFileName()
 }
 Resource* RCFile::GetRes()
 {
-    int type;
+    kw type;
     int val = 0;
     std::wstring name;
     ResourceId id;
@@ -202,12 +202,12 @@ Resource* RCFile::GetRes()
         {
             type = GetToken()->GetKeyword();
             name = GetToken()->GetString();
-            if (type >= Lexer::ACCELERATORS)
+            if (type >= kw::ACCELERATORS)
             {
-                if (type != Lexer::STRINGTABLE && type != Lexer::LANGUAGE)
+                if (type != kw::STRINGTABLE && type != kw::LANGUAGE)
                 {
                     NextToken();
-                    if (GetToken()->IsKeyword() && GetToken()->GetKeyword() >= Lexer::ACCELERATORS)
+                    if (GetToken()->IsKeyword() && GetToken()->GetKeyword() >= kw::ACCELERATORS)
                     {
                         id.SetName(name);
                         type = GetToken()->GetKeyword();
@@ -216,19 +216,19 @@ Resource* RCFile::GetRes()
                     else if (GetToken()->IsIdentifier())
                     {
                         id.SetName(name);
-                        type = -1;
+                        type = (kw)-1;
                         name = CvtString(GetToken()->GetId());
                     }
                     else if (IsNumber())
                     {
-                        type = -2;
+                        type = (kw)-2;
                         val = GetNumber();
                     }
                     else
                     {
                         throw std::runtime_error("Expected resource type");
                     }
-                    if (type != -2)
+                    if (type != (kw)-2)
                         NextToken();
                 }
                 else
@@ -251,19 +251,19 @@ Resource* RCFile::GetRes()
             }
             else if (GetToken()->IsIdentifier())
             {
-                type = -1;
+                type = (kw)-1;
                 name = CvtString(GetToken()->GetId());
             }
             else if (IsNumber())
             {
-                type = -2;
+                type = (kw)-2;
                 val = GetNumber();
             }
             else
             {
                 throw std::runtime_error("Expected resource type");
             }
-            if (type != -2)
+            if (type != (kw)-2)
                 NextToken();
         }
         ResourceInfo info(language);
@@ -271,54 +271,54 @@ Resource* RCFile::GetRes()
         rv = nullptr;
         switch (type)
         {
-            case -1:
+            case (kw)-1:
                 for (int i = 0; i < name.size(); i++)
                     name[i] = toupper(name[i]);
                 rv = new GenericResource(ResourceId(name), id, info);
                 break;
-            case -2:
+            case (kw)-2:
                 rv = new GenericResource(ResourceId(val), id, info);
                 break;
-            case Lexer::ACCELERATORS:
+            case kw::ACCELERATORS:
                 rv = new Accelerators(id, info);
                 break;
-            case Lexer::TBITMAP:
+            case kw::TBITMAP:
                 rv = new Bitmap(id, info);
                 break;
-            case Lexer::CURSOR:
+            case kw::CURSOR:
                 rv = new GroupCursor(id, info);
                 break;
-            case Lexer::DIALOG:
+            case kw::DIALOG:
                 rv = new Dialog(id, info, false);
                 break;
-            case Lexer::DIALOGEX:
+            case kw::DIALOGEX:
                 rv = new Dialog(id, info, true);
                 break;
-            case Lexer::DLGINCLUDE:
+            case kw::DLGINCLUDE:
                 rv = new DlgInclude(id, info);
                 break;
-            case Lexer::FONT:
+            case kw::FONT:
                 rv = new Font(id, info);
                 break;
-            case Lexer::ICON:
+            case kw::ICON:
                 rv = new GroupIcon(id, info);
                 break;
-            case Lexer::MENU:
+            case kw::MENU:
                 rv = new Menu(id, info, false);
                 break;
-            case Lexer::MENUEX:
+            case kw::MENUEX:
                 rv = new Menu(id, info, true);
                 break;
-            case Lexer::RCDATA:
+            case kw::RCDATA:
                 rv = new RCData(id, info);
                 break;
-            case Lexer::VERSIONINFO:
+            case kw::VERSIONINFO:
                 rv = new VersionInfo(id, info);
                 break;
-            case Lexer::MESSAGETABLE:
+            case kw::MESSAGETABLE:
                 rv = new MessageTable(id, info);
                 break;
-            case Lexer::STRINGTABLE:
+            case kw::STRINGTABLE:
             {
                 std::unique_ptr<StringTable> temp = std::make_unique<StringTable>(info);
                 temp->ReadRC(*this);
@@ -326,7 +326,7 @@ Resource* RCFile::GetRes()
                 done = false;
             }
             break;
-            case Lexer::LANGUAGE:
+            case kw::LANGUAGE:
             {
                 language = GetNumber();
                 SkipComma();
@@ -335,7 +335,7 @@ Resource* RCFile::GetRes()
                 done = false;
                 break;
             }
-            case Lexer::RCINCLUDE:
+            case kw::RCINCLUDE:
             {
                 std::string name = GetFileName();
                 pp.IncludeFile(name);

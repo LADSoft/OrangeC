@@ -50,7 +50,7 @@ class RCFile
     void NextToken() { lexer.NextToken(); }
     const Token* GetToken() { return lexer.GetToken(); }
     bool IsKeyword();
-    unsigned GetTokenId();
+    kw GetTokenId();
     bool IsNumber();
     unsigned GetNumber();
     bool IsString();

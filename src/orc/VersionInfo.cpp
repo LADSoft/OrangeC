@@ -72,7 +72,7 @@ void StringVerInfo::WriteRes(ResFile& resFile)
 void StringVerInfo::ReadRC(RCFile& rcFile)
 {
     rcFile.NeedBegin();
-    while (rcFile.GetToken()->GetKeyword() == Lexer::VALUE)
+    while (rcFile.GetToken()->GetKeyword() == kw::VALUE)
     {
         rcFile.NextToken();
         std::wstring key = rcFile.GetString();
@@ -124,15 +124,15 @@ void VarVerInfo::WriteRes(ResFile& resFile)
 }
 void VarVerInfo::ReadRC(RCFile& rcFile)
 {
-    while (rcFile.GetToken()->GetKeyword() == Lexer::VALUE)
+    while (rcFile.GetToken()->GetKeyword() == kw::VALUE)
     {
         rcFile.NextToken();
 
         std::wstring key = rcFile.GetString();
-        if (rcFile.GetToken()->GetKeyword() != Lexer::comma)
+        if (rcFile.GetToken()->GetKeyword() != kw::comma)
             throw std::runtime_error("Comma expected");
         Info v(key);
-        while (rcFile.GetToken()->GetKeyword() == Lexer::comma)
+        while (rcFile.GetToken()->GetKeyword() == kw::comma)
         {
             rcFile.NextToken();
             v.languages.push_back(rcFile.GetNumber());
@@ -203,7 +203,7 @@ void VersionInfo::ReadRC(RCFile& rcFile)
     {
         switch (rcFile.GetTokenId())
         {
-            case Lexer::FILEVERSION:
+            case kw::FILEVERSION:
             {
                 count++;
                 fileVersionMS = rcFile.GetNumber() << 16;
@@ -225,7 +225,7 @@ void VersionInfo::ReadRC(RCFile& rcFile)
                 rcFile.NeedEol();
             }
             break;
-            case Lexer::PRODUCTVERSION:
+            case kw::PRODUCTVERSION:
             {
                 count++;
                 productVersionMS = rcFile.GetNumber() << 16;
@@ -247,32 +247,32 @@ void VersionInfo::ReadRC(RCFile& rcFile)
                 rcFile.NeedEol();
             }
             break;
-            case Lexer::FILEFLAGSMASK:
+            case kw::FILEFLAGSMASK:
                 count++;
                 fileFlagsMask = rcFile.GetNumber();
                 rcFile.NeedEol();
                 break;
-            case Lexer::FILEFLAGS:
+            case kw::FILEFLAGS:
                 count++;
                 fileFlags = rcFile.GetNumber();
                 rcFile.NeedEol();
                 break;
-            case Lexer::FILEOS:
+            case kw::FILEOS:
                 count++;
                 fileOS = rcFile.GetNumber();
                 rcFile.NeedEol();
                 break;
-            case Lexer::FILETYPE:
+            case kw::FILETYPE:
                 count++;
                 fileType = rcFile.GetNumber();
                 rcFile.NeedEol();
                 break;
-            case Lexer::FILESUBTYPE:
+            case kw::FILESUBTYPE:
                 count++;
                 fileSubType = rcFile.GetNumber();
                 rcFile.NeedEol();
                 break;
-            case Lexer::BEGIN:
+            case kw::BEGIN:
                 done = true;
                 if (!count)
                     throw std::runtime_error("Version info expected");
@@ -284,7 +284,7 @@ void VersionInfo::ReadRC(RCFile& rcFile)
         }
     }
     count = 0;
-    while (rcFile.GetToken()->GetKeyword() == Lexer::BLOCK)
+    while (rcFile.GetToken()->GetKeyword() == kw::BLOCK)
     {
         rcFile.NextToken();
         count++;
@@ -293,7 +293,7 @@ void VersionInfo::ReadRC(RCFile& rcFile)
         {
             rcFile.NeedEol();
             rcFile.NeedBegin();
-            if (rcFile.GetTokenId() != Lexer::BLOCK)
+            if (rcFile.GetTokenId() != kw::BLOCK)
                 throw std::runtime_error("Block expected");
             std::wstring language = rcFile.GetString();
             varInfo.push_back(std::make_unique<StringVerInfo>(language));

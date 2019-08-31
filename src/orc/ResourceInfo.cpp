@@ -41,28 +41,28 @@ void ResourceInfo::ReadRC(RCFile& rcFile, bool secondary)
     {
         switch (rcFile.GetToken()->GetKeyword())
         {
-            case Lexer::DISCARDABLE:
+            case kw::DISCARDABLE:
                 memoryFlags |= Discardable;
                 break;
-            case Lexer::PURE:
+            case kw::PURE:
                 memoryFlags |= Pure;
                 break;
-            case Lexer::PRELOAD:
+            case kw::PRELOAD:
                 memoryFlags |= Preload;
                 break;
-            case Lexer::MOVEABLE:
+            case kw::MOVEABLE:
                 memoryFlags |= Moveable;
                 break;
-            case Lexer::LOADONCALL:
+            case kw::LOADONCALL:
                 memoryFlags |= LoadOnCall;
                 break;
-            case Lexer::NONDISCARDABLE:
+            case kw::NONDISCARDABLE:
                 memoryFlags &= ~Discardable;
                 break;
-            case Lexer::IMPURE:
+            case kw::IMPURE:
                 memoryFlags &= ~Pure;
                 break;
-            case Lexer::FIXED:
+            case kw::FIXED:
                 memoryFlags &= ~Moveable;
                 break;
             default:
@@ -80,18 +80,18 @@ void ResourceInfo::ReadRC(RCFile& rcFile, bool secondary)
         {
             switch (rcFile.GetToken()->GetKeyword())
             {
-                case Lexer::LANGUAGE:
+                case kw::LANGUAGE:
                     rcFile.NextToken();
                     language = rcFile.GetNumber();
                     rcFile.GetNumber();
                     rcFile.NeedEol();
                     break;
-                case Lexer::VERSION:
+                case kw::VERSION:
                     rcFile.NextToken();
                     version = rcFile.GetNumber();
                     rcFile.NeedEol();
                     break;
-                case Lexer::CHARACTERISTICS:
+                case kw::CHARACTERISTICS:
                     rcFile.NextToken();
                     characteristics = rcFile.GetNumber();
                     rcFile.NeedEol();

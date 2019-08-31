@@ -29,13 +29,13 @@
 int Expression::primary()
 {
     int rv = 0;
-    if (lexer.GetToken()->GetKeyword() == Lexer::openpa)
+    if (lexer.GetToken()->GetKeyword() == kw::openpa)
     {
         lexer.NextToken();
         if (lexer.GetToken() != nullptr)
         {
             rv = Eval();
-            if (lexer.GetToken()->GetKeyword() == Lexer::closepa)
+            if (lexer.GetToken()->GetKeyword() == kw::closepa)
                 lexer.NextToken();
             else
                 throw std::runtime_error("Expected ')'");
@@ -61,25 +61,25 @@ int Expression::unary()
 {
     if (lexer.GetToken() != nullptr)
     {
-        int kw = lexer.GetToken()->GetKeyword();
-        if (kw == Lexer::plus || kw == Lexer::minus || kw == Lexer::lnot || kw == Lexer::bcompl)
+        kw keyWord = lexer.GetToken()->GetKeyword();
+        if (keyWord == kw::plus || keyWord == kw::minus || keyWord == kw::lnot || keyWord == kw::bcompl)
         {
             lexer.NextToken();
             if (lexer.GetToken() != nullptr)
             {
                 int val1 = unary();
-                switch (kw)
+                switch (keyWord)
                 {
-                    case Lexer::minus:
+                    case kw::minus:
                         val1 = -val1;
                         break;
-                    case Lexer::plus:
+                    case kw::plus:
                         val1 = +val1;
                         break;
-                    case Lexer::lnot:
+                    case kw::lnot:
                         val1 = !val1;
                         break;
-                    case Lexer::bcompl:
+                    case kw::bcompl:
                         val1 = ~val1;
                         break;
                 }
@@ -96,19 +96,19 @@ int Expression::unary()
 int Expression::multiply()
 {
     int val1 = unary();
-    int kw = lexer.GetToken()->GetKeyword();
-    while (kw == Lexer::star || kw == Lexer::divide || kw == Lexer::mod)
+    kw keyWord = lexer.GetToken()->GetKeyword();
+    while (keyWord == kw::star || keyWord == kw::divide || keyWord == kw::mod)
     {
         lexer.NextToken();
         if (lexer.GetToken() != nullptr)
         {
             int val2 = unary();
-            switch (kw)
+            switch (keyWord)
             {
-                case Lexer::star:
+                case kw::star:
                     val1 *= val2;
                     break;
-                case Lexer::divide:
+                case kw::divide:
                     if (val2 == 0)
                     {
                         throw std::runtime_error("Divide by zero in preprocessor constant");
@@ -118,7 +118,7 @@ int Expression::multiply()
                         val1 /= val2;
                     }
                     break;
-                case Lexer::mod:
+                case kw::mod:
                     if (val2 == 0)
                     {
                         throw std::runtime_error("Divide by zero in preprocessor constant");
@@ -130,116 +130,116 @@ int Expression::multiply()
                     break;
             }
         }
-        kw = lexer.GetToken()->GetKeyword();
+        keyWord = lexer.GetToken()->GetKeyword();
     }
     return val1;
 }
 int Expression::add()
 {
     int val1 = multiply();
-    int kw = lexer.GetToken()->GetKeyword();
-    while (kw == Lexer::plus || kw == Lexer::minus)
+    kw keyWord = lexer.GetToken()->GetKeyword();
+    while (keyWord == kw::plus || keyWord == kw::minus)
     {
         lexer.NextToken();
         if (lexer.GetToken() != nullptr)
         {
             int val2 = multiply();
-            switch (kw)
+            switch (keyWord)
             {
-                case Lexer::plus:
+                case kw::plus:
                     val1 += val2;
                     break;
-                case Lexer::minus:
+                case kw::minus:
                     val1 -= val2;
                     break;
             }
         }
-        kw = lexer.GetToken()->GetKeyword();
+        keyWord = lexer.GetToken()->GetKeyword();
     }
     return val1;
 }
 int Expression::shift()
 {
     int val1 = add();
-    int kw = lexer.GetToken()->GetKeyword();
-    while (kw == Lexer::leftshift || kw == Lexer::rightshift)
+    kw keyWord = lexer.GetToken()->GetKeyword();
+    while (keyWord == kw::leftshift || keyWord == kw::rightshift)
     {
         lexer.NextToken();
         if (lexer.GetToken() != nullptr)
         {
             int val2 = add();
-            switch (kw)
+            switch (keyWord)
             {
-                case Lexer::leftshift:
+                case kw::leftshift:
                     val1 <<= val2;
                     break;
-                case Lexer::rightshift:
+                case kw::rightshift:
                     val1 >>= val2;
                     break;
             }
         }
-        kw = lexer.GetToken()->GetKeyword();
+        keyWord = lexer.GetToken()->GetKeyword();
     }
     return val1;
 }
 int Expression::relation()
 {
     int val1 = shift();
-    int kw = lexer.GetToken()->GetKeyword();
-    while (kw == Lexer::gt || kw == Lexer::lt || kw == Lexer::geq || kw == Lexer::leq)
+    kw keyWord = lexer.GetToken()->GetKeyword();
+    while (keyWord == kw::gt || keyWord == kw::lt || keyWord == kw::geq || keyWord == kw::leq)
     {
         lexer.NextToken();
         if (lexer.GetToken() != nullptr)
         {
             int val2 = shift();
-            switch (kw)
+            switch (keyWord)
             {
-                case Lexer::gt:
+                case kw::gt:
                     val1 = val1 > val2;
                     break;
-                case Lexer::lt:
+                case kw::lt:
                     val1 = val1 < val2;
                     break;
-                case Lexer::geq:
+                case kw::geq:
                     val1 = val1 >= val2;
                     break;
-                case Lexer::leq:
+                case kw::leq:
                     val1 = val1 <= val2;
                     break;
             }
         }
-        kw = lexer.GetToken()->GetKeyword();
+        keyWord = lexer.GetToken()->GetKeyword();
     }
     return val1;
 }
 int Expression::equal()
 {
     int val1 = relation();
-    int kw = lexer.GetToken()->GetKeyword();
-    while (kw == Lexer::eq || kw == Lexer::ne)
+    kw keyWord = lexer.GetToken()->GetKeyword();
+    while (keyWord == kw::eq || keyWord == kw::ne)
     {
         lexer.NextToken();
         if (lexer.GetToken() != nullptr)
         {
             int val2 = shift();
-            switch (kw)
+            switch (keyWord)
             {
-                case Lexer::eq:
+                case kw::eq:
                     val1 = val1 == val2;
                     break;
-                case Lexer::ne:
+                case kw::ne:
                     val1 = val1 != val2;
                     break;
             }
         }
-        kw = lexer.GetToken()->GetKeyword();
+        keyWord = lexer.GetToken()->GetKeyword();
     }
     return val1;
 }
 int Expression::and_()
 {
     int val1 = equal();
-    while (lexer.GetToken() != nullptr && lexer.GetToken()->GetKeyword() == Lexer::band)
+    while (lexer.GetToken() != nullptr && lexer.GetToken()->GetKeyword() == kw::band)
     {
         lexer.NextToken();
         if (lexer.GetToken() != nullptr)
@@ -253,7 +253,7 @@ int Expression::and_()
 int Expression::xor_()
 {
     int val1 = and_();
-    while (lexer.GetToken() != nullptr && lexer.GetToken()->GetKeyword() == Lexer::bxor)
+    while (lexer.GetToken() != nullptr && lexer.GetToken()->GetKeyword() == kw::bxor)
     {
         lexer.NextToken();
         if (lexer.GetToken() != nullptr)
@@ -267,7 +267,7 @@ int Expression::xor_()
 int Expression::or_()
 {
     int val1 = xor_();
-    while (lexer.GetToken() != nullptr && lexer.GetToken()->GetKeyword() == Lexer::bor)
+    while (lexer.GetToken() != nullptr && lexer.GetToken()->GetKeyword() == kw::bor)
     {
         lexer.NextToken();
         if (lexer.GetToken() != nullptr)
@@ -281,7 +281,7 @@ int Expression::or_()
 int Expression::logicaland()
 {
     int val1 = or_();
-    while (lexer.GetToken() != nullptr && lexer.GetToken()->GetKeyword() == Lexer::land)
+    while (lexer.GetToken() != nullptr && lexer.GetToken()->GetKeyword() == kw::land)
     {
         lexer.NextToken();
         if (lexer.GetToken() != nullptr)
@@ -295,7 +295,7 @@ int Expression::logicaland()
 int Expression::logicalor()
 {
     int val1 = logicaland();
-    while (lexer.GetToken() != nullptr && lexer.GetToken()->GetKeyword() == Lexer::lor)
+    while (lexer.GetToken() != nullptr && lexer.GetToken()->GetKeyword() == kw::lor)
     {
         lexer.NextToken();
         if (lexer.GetToken() != nullptr)
@@ -309,7 +309,7 @@ int Expression::logicalor()
 int Expression::conditional()
 {
     int val1 = logicalor();
-    if ((lexer.GetToken() != nullptr) && lexer.GetToken()->GetKeyword() == Lexer::hook)
+    if ((lexer.GetToken() != nullptr) && lexer.GetToken()->GetKeyword() == kw::hook)
     {
         lexer.NextToken();
         if (lexer.GetToken() != nullptr)
@@ -318,7 +318,7 @@ int Expression::conditional()
             lexer.NextToken();
             if (lexer.GetToken() != nullptr)
             {
-                if (lexer.GetToken()->GetKeyword() == Lexer::colon)
+                if (lexer.GetToken()->GetKeyword() == kw::colon)
                 {
                     lexer.NextToken();
                     if (lexer.GetToken() != nullptr)

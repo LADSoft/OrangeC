@@ -87,25 +87,25 @@ void MenuItem::GetFlags(RCFile& rcFile)
     {
         switch (rcFile.GetToken()->GetKeyword())
         {
-            case Lexer::GRAYED:
+            case kw::GRAYED:
                 type |= Grayed;
                 break;
-            case Lexer::INACTIVE:
+            case kw::INACTIVE:
                 type |= Inactive;
                 break;
-            case Lexer::CHECKED:
+            case kw::CHECKED:
                 type |= Checked;
                 break;
-            case Lexer::MENUBARBREAK:
+            case kw::MENUBARBREAK:
                 type |= MenuBarBreak;
                 break;
-            case Lexer::MENUBREAK:
+            case kw::MENUBREAK:
                 type |= MenuBreak;
                 break;
-            case Lexer::HELP:
+            case kw::HELP:
                 type |= Help;
                 break;
-            case Lexer::SEPARATOR:
+            case kw::SEPARATOR:
                 break;
             default:
                 done = true;
@@ -128,12 +128,12 @@ bool MenuItem::ReadRCInternal(RCFile& rcFile, bool ex)
     if (rcFile.IsKeyword())
         switch (rcFile.GetToken()->GetKeyword())
         {
-            case Lexer::MENUITEM:
+            case kw::MENUITEM:
             {
                 rcFile.NextToken();
                 if (rcFile.IsKeyword())
                 {
-                    if (rcFile.GetTokenId() != Lexer::SEPARATOR)
+                    if (rcFile.GetTokenId() != kw::SEPARATOR)
                         throw std::runtime_error("Invalid menu type");
                 }
                 else if (rcFile.IsString())
@@ -166,7 +166,7 @@ bool MenuItem::ReadRCInternal(RCFile& rcFile, bool ex)
                 rcFile.NeedEol();
             }
             break;
-            case Lexer::POPUP:
+            case kw::POPUP:
             {
                 rcFile.NextToken();
                 if (rcFile.IsString())

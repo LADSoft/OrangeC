@@ -25,6 +25,7 @@
 #include "Accelerators.h"
 #include "RCFile.h"
 #include "ResFile.h"
+
 #include <stdexcept>
 void Accelerators::Key::WriteRes(ResFile& resFile, bool last)
 {
@@ -66,22 +67,22 @@ void Accelerators::Key::ReadRC(RCFile& rcFile)
     {
         switch (rcFile.GetToken()->GetKeyword())
         {
-            case Lexer::ASCII:
+            case kw::ASCII:
                 flags &= ~Virtkey;
                 break;
-            case Lexer::VIRTKEY:
+            case kw::VIRTKEY:
                 flags |= Virtkey;
                 break;
-            case Lexer::NOINVERT:
+            case kw::NOINVERT:
                 flags |= NoInvert;
                 break;
-            case Lexer::SHIFT:
+            case kw::SHIFT:
                 flags |= Shift;
                 break;
-            case Lexer::CONTROL:
+            case kw::CONTROL:
                 flags |= Control;
                 break;
-            case Lexer::ALT:
+            case kw::ALT:
                 flags |= Alt;
                 break;
             default:

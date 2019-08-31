@@ -41,27 +41,27 @@ bool Section::dontShowError;
 Section::~Section() {}
 void Section::Parse(AsmFile* fil)
 {
-    while (!fil->AtEof() && fil->GetKeyword() != Lexer::closebr)
+    while (!fil->AtEof() && fil->GetKeyword() != kw::closebr)
     {
-        if (fil->GetKeyword() == Lexer::ALIGN)
+        if (fil->GetKeyword() == kw::ALIGN)
         {
             fil->NextToken();
-            if (fil->GetKeyword() != Lexer::assn)
+            if (fil->GetKeyword() != kw::assn)
                 throw new std::runtime_error("Expected '='");
             fil->NextToken();
             if (!fil->IsNumber())
                 throw new std::runtime_error("Expected alignment value");
             align = fil->GetValue();
         }
-        else if (fil->GetKeyword() == Lexer::CLASS)
+        else if (fil->GetKeyword() == kw::CLASS)
         {
             fil->NextToken();
-            if (fil->GetKeyword() != Lexer::assn)
+            if (fil->GetKeyword() != kw::assn)
                 throw new std::runtime_error("Expected '='");
             fil->NextToken();
             fil->GetId();
         }
-        else if (fil->GetKeyword() == Lexer::VIRTUAL)
+        else if (fil->GetKeyword() == kw::VIRTUAL)
         {
             Section* old = fil->GetCurrentSection();
             if (!old)
@@ -71,7 +71,7 @@ void Section::Parse(AsmFile* fil)
             isVirtual = true;
             fil->NextToken();
         }
-        else if (fil->GetKeyword() == Lexer::STACK)
+        else if (fil->GetKeyword() == kw::STACK)
         {
             fil->NextToken();
         }

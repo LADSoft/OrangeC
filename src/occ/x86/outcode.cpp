@@ -278,7 +278,6 @@ static void DumpFileList(ObjFactory& f, ObjFile* fi)
         bf = bf->next;
     }
 }
-
 void HandleDebugInfo(ObjFactory& factory, Section* sect, Instruction* ins)
 {
     int n = sect->GetSect();

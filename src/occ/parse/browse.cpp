@@ -139,7 +139,7 @@ void browse_endfunc(SYMBOL* func, int lineno)
 
 /*-------------------------------------------------------------------------*/
 
-void browse_startfile(char* name, int index)
+void browse_startfile(const char* name, int index)
 {
     char exname[260];
     BROWSEFILE *bf, *bff, **bffp;

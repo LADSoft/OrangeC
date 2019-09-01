@@ -48,7 +48,7 @@ class ppFile : public InputFile
           extendedComment(extended),
           cond(isunsignedchar, c89, extended, asmpp),
           ctx(Ctx),
-          anonymousIndex(0)
+          anonymousIndex(1)
     {
         cond.SetParams(define, &ctx);
     }

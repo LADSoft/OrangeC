@@ -54,6 +54,7 @@ static ULLONG_TYPE llminus1;
 static int nextFree;
 static const unsigned char *linePointer;
 static std::string currentLine;
+static int lastBrowseIndex;
 #ifdef KW_HASH
 HASHTABLE* kwhash;
 #endif
@@ -378,6 +379,7 @@ void lexini(void)
     linePointer = (const unsigned char *)currentLine.c_str();
     while (parseStack.size())
         parseStack.pop();
+    lastBrowseIndex = 0;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -1516,6 +1518,11 @@ LEXEME* getsym(void)
         lex->realline = preProcessor->GetRealLineNo();
         lex->file = preProcessor->GetErrFile().c_str();
         lex->filenum = preProcessor->GetFileIndex();
+        if (lex->filenum != lastBrowseIndex)
+        {
+            browse_startfile(preProcessor->GetRealFile().c_str(), lex->filenum);
+            lastBrowseIndex = lex->filenum;
+        }
         if ((cval = getChar(&linePointer, &tp)) != INT_MIN)
         {
             if (tp == l_achr && !cparams.prm_charisunsigned && !(cval & 0xffffff00))

@@ -22,7 +22,7 @@ void abspath(char* name);
 void browse_init(void);
 void browse_startfunc(SYMBOL* func, int lineno);
 void browse_endfunc(SYMBOL* func, int lineno);
-void browse_startfile(char* name, int filenum);
+void browse_startfile(const char* name, int filenum);
 void browse_variable(SYMBOL* var);
 void browse_define(char* name, int lineno, int charindex);
 void browse_blockstart(int lineno);

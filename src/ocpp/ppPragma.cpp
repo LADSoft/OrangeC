@@ -89,6 +89,10 @@ void ppPragma::ParsePragma(const std::string& args)
             cppprio++;
         else if (str == "IGNORE_GLOBAL_INIT")
             HandleIgnoreGlobalInit(tk);
+        else if (str == "PUSH_MACRO")
+            HandlePushPopMacro(tk, true);
+        else if (str == "POP_MACRO")
+            HandlePushPopMacro(tk, false);
         // unmatched is not an error
     }
 }
@@ -286,6 +290,32 @@ void ppPragma::HandleIgnoreGlobalInit(Tokenizer& tk)
     {
          ignoreGlobalInit = !!name->GetInteger();
     }
+}
+
+void ppPragma::HandlePushPopMacro(Tokenizer& tk, bool push)
+{
+   int n = 0;
+   std::string cache = tk.GetString();
+   const char *p = cache.c_str();
+   while (isspace(*p)) p++;
+   if (*p++ == '(')
+   {
+       while (isspace(*p)) p++;
+       if (*p++ == '"')
+       {
+           const char *start = p;
+           while(isalnum(*p) || *p == '_') p++;
+           const char *end = p;
+           if (*p++ == '"')
+           {
+               while (isspace(*p)) p++;
+               if (*p == ')')
+               {
+                   define->PushPopMacro(std::string(start, end - start), push);
+               }
+           }
+       }
+   }
 }
 
 int ppPragma::StdPragmas()

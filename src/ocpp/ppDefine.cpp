@@ -43,6 +43,39 @@ KeywordHash ppDefine::defTokens = {
     {"...", kw::ellipses},
 
 };
+ppDefine::Definition& ppDefine::Definition::operator=(const ppDefine::Definition& old)
+{
+    caseInsensitive = old.caseInsensitive;
+    undefined = old.undefined;
+    permanent = old.permanent;
+    elipses = old.elipses;
+    varargs = old.varargs; 
+    preprocessing = old.preprocessing;
+    value = old.value;
+    if (old.argList)
+    {
+        argList = std::make_unique<DefinitionArgList>();
+        for (auto&& a : *old.argList)
+            argList->push_back(a);
+    }
+    return *this;
+}
+ppDefine::Definition::Definition(const Definition& old) : Symbol(old.GetName())
+{
+    caseInsensitive = old.caseInsensitive;
+    undefined = old.undefined;
+    permanent = old.permanent;
+    elipses = old.elipses;
+    varargs = old.varargs; 
+    preprocessing = old.preprocessing;
+    value = old.value;
+    if (old.argList)
+    {
+        argList = std::make_unique<DefinitionArgList>();
+        for (auto&& a : *old.argList)
+            argList->push_back(a);
+    }
+}
 
 ppDefine::ppDefine(bool UseExtensions, ppInclude* Include, bool C89, bool Asmpp) :
     expr(false),
@@ -179,7 +212,11 @@ ppDefine::Definition* ppDefine::Define(const std::string& name, std::string& val
                 }
         }
         if (failed)
-            d->DefinedWarning("macro redefinition changes value");
+        {
+            auto it = macroStacks.find(d->GetName());
+            if (it == macroStacks.end()) // only give the error if never been involved in a push
+                d->DefinedWarning("macro redefinition changes value");
+        }
         symtab.Remove(old);
     }
     symtab.Add(d);
@@ -1090,6 +1127,7 @@ int ppDefine::Process(std::string& line)
 {
     if (asmpp)
     {
+
         ParseAsmSubstitutions(line);
     }
     int sv = 0;
@@ -1118,4 +1156,25 @@ int ppDefine::Process(std::string& line)
     }
     return rvi;
 }
+void ppDefine::PushPopMacro(std::string name, bool push)
+{
+    Definition *d = Lookup(name);
+    if (push)
+    {
+        Definition *pushval = new Definition(*d);
+        macroStacks[name].push(pushval);
+    }
+    else
+    {
+        auto it = macroStacks.find(name);
+        if (it != macroStacks.end() && it->second.size())
+        {
+            Definition *popval = it->second.top();
+            it->second.pop();
+            *d = *popval;
+            delete popval;
+        }
+    }
+}
+
 ppDefine::Definition* ppDefine::Lookup(const std::string& name) { return static_cast<Definition*>(symtab.Lookup(name)); }

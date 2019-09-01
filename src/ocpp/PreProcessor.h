@@ -45,7 +45,7 @@ class PreProcessor
         macro(include, define),
         ctx(define),
         trigraphs(Trigraph),
-        pragma(&include)
+        pragma(&include, &define)
     {
         InitHash();
         Errors::SetInclude(&include);

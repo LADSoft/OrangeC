@@ -30,6 +30,7 @@
 #include <set>
 #include <ctime>
 #include <memory>
+#include <stack>
 #include "Utils.h"
 #include "SymbolTable.h"
 #include "Token.h"
@@ -58,6 +59,8 @@ class ppDefine
             preprocessing(false)
         {
         }
+        Definition& operator=(const Definition&);
+        Definition(const Definition&);
         virtual ~Definition() {}
         bool IsPreprocessing() const { return preprocessing; }
         void SetPreprocessing(bool flag) { preprocessing = flag; }
@@ -115,6 +118,7 @@ class ppDefine
     }
     SymbolTable& GetDefines() { return symtab; }
 
+    void PushPopMacro(std::string name, bool push);
     enum
     {
         MACRO_REPLACE_SIZE = 65536,
@@ -150,6 +154,7 @@ class ppDefine
     std::string date;
     std::string dateiso;
     std::string time;
+    std::map<std::string, std::stack<Definition*>> macroStacks;
     static KeywordHash defTokens;
     bool c89;
     ppExpr expr;

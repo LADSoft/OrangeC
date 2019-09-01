@@ -38,6 +38,7 @@
 #define STD_PRAGMA_CXLIMITED 4
 
 class ppInclude;
+class ppDefine;
 
 class Packing
 {
@@ -351,7 +352,7 @@ class Once
 class ppPragma
 {
   public:
-    ppPragma(ppInclude* Include) : cppprio(0), ignoreGlobalInit(false) 
+    ppPragma(ppInclude* Include, ppDefine *Define) : cppprio(0), ignoreGlobalInit(false) 
     {
         Packing::Instance()->Clear();
         FenvAccess::Instance()->Clear();
@@ -361,6 +362,7 @@ class ppPragma
         Aliases::Instance()->Clear();
         Startups::Instance()->Clear();
         Once::Instance()->SetInclude(Include);
+        define = Define;
     }
     bool Check(kw token, const std::string& args);
     void ParsePragma(const std::string& args);
@@ -397,7 +399,9 @@ class ppPragma
     void HandleFar(Tokenizer& tk);
     void HandleOnce(Tokenizer& tk);
     void HandleIgnoreGlobalInit(Tokenizer& tk);
+    void HandlePushPopMacro(Tokenizer& tk, bool push);
   private:
+    ppDefine *define;
     int cppprio;
     bool ignoreGlobalInit;
     static KeywordHash hash;

@@ -42,7 +42,7 @@ class Symbol
         lineNo = old.lineNo;
     }
     virtual ~Symbol() {}
-    std::string& GetName() { return name; }
+    const std::string& GetName() const { return name; }
     void SetLocation(std::string& name, int line)
     {
         fileName = name;

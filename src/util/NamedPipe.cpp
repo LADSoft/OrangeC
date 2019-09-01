@@ -34,10 +34,10 @@
 bool Utils::NamedPipe(int fds[2], const std::string& pipeName)
 {
     char pipe[MAX_PATH];
-    sprintf(pipe, "\\\\.\\pipe\\%s", pipeName, std::string::npos);
+    sprintf(pipe, "\\\\.\\pipe\\%s", pipeName.c_str(), std::string::npos);
 #ifndef HAVE_UNISTD_H
     HANDLE handle;
-    handle = CreateFile(pipe, GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    handle = CreateFile(pipe, GENERIC_READ, 0, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
     if (handle != INVALID_HANDLE_VALUE)
     {
         HANDLE handle1 = CreateFile(pipe, GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);

@@ -44,11 +44,14 @@ PipeArbitrator::~PipeArbitrator()
 
 void PipeArbitrator::Init(const std::string& pipeName)
 {
-    int fds[2];
-    if (Utils::NamedPipe(fds, pipeName))
+    if (pipeName.size())
     {
-        mainRead = fds[0];
-        mainWrite = fds[1];
+        int fds[2];
+        if (Utils::NamedPipe(fds, pipeName))
+        {
+            mainRead = fds[0];
+            mainWrite = fds[1];
+        }
     }
 }
 

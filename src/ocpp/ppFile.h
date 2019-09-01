@@ -41,13 +41,14 @@ class ppFile : public InputFile
     };
 
   public:
-    ppFile(bool fullname, bool Trigraph, bool extended, const std::string& Name, ppDefine* define, ppCtx& Ctx, bool isunsignedchar,
-           bool c89, bool asmpp, PipeArbitrator &piper) :
-        InputFile(fullname, Name, piper),
-        trigraphs(Trigraph),
-        extendedComment(extended),
-        cond(isunsignedchar, c89, extended, asmpp),
-        ctx(Ctx)
+      ppFile(bool fullname, bool Trigraph, bool extended, const std::string& Name, ppDefine* define, ppCtx& Ctx, bool isunsignedchar,
+          bool c89, bool asmpp, PipeArbitrator &piper) :
+          InputFile(fullname, Name, piper),
+          trigraphs(Trigraph),
+          extendedComment(extended),
+          cond(isunsignedchar, c89, extended, asmpp),
+          ctx(Ctx),
+          anonymousIndex(0)
     {
         cond.SetParams(define, &ctx);
     }
@@ -58,7 +59,7 @@ class ppFile : public InputFile
     void Mark() { cond.Mark(); }
     void Drop() { cond.Drop(); }
     void Release() { cond.Release(); }
-
+    int AnonymousIndex() { return anonymousIndex++; }
   protected:
     virtual int StripComment(char* line);
     void StripTrigraphs(char* line);
@@ -68,5 +69,6 @@ class ppFile : public InputFile
     bool extendedComment;
     ppCond cond;
     ppCtx& ctx;
+    int anonymousIndex;
 };
 #endif

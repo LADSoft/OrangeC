@@ -86,6 +86,7 @@ class PreProcessor
     bool InMacro() { return macro.InMacro(); }
     void SetPreData(const char* data) { preData = data; }
     bool GetPreLine(std::string& line);
+    int GetAnonymousIndex() { return include.AnonymousIndex(); }
     std::string StripDigraphs(std::string line);
     std::string StripTrigraphs(std::string line);
 // this returns the state of the current input file, only means main file when no include files are opened.

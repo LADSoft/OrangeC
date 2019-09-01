@@ -115,7 +115,7 @@ void ppInclude::pushFile(const std::string& name, const std::string& errname)
         if (it == fileNameCache.end())
         {
             fileNameCache.insert(name);
-            auto it = fileNameCache.find(name);
+            it = fileNameCache.find(name);
         }
         // this next line and the support code have been carefully crafted so that GetRealFile() should return a reference to the cached object.
         current = std::make_unique<ppFile>(fullname, trigraphs, extendedComment, *it, define, *ctx, unsignedchar, c89, asmpp, piper);
@@ -126,17 +126,20 @@ void ppInclude::pushFile(const std::string& name, const std::string& errname)
             popFile();
         }
     }
-    auto it = fileMap.find(name);
-    int currentIndex;
-    if (it != fileMap.end())
+    if (current)
     {
-        currentIndex = it->second;
+        auto it = fileMap.find(name);
+        int currentIndex;
+        if (it != fileMap.end())
+        {
+            currentIndex = it->second;
+        }
+        else
+        {
+            fileMap[name] = currentIndex = nextIndex++;
+        }
+        current->SetIndex(currentIndex);
     }
-    else
-    {
-        fileMap[name] = currentIndex = nextIndex++;
-    }
-    current->SetIndex(currentIndex);
 }
 bool ppInclude::popFile()
 {

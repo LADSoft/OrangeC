@@ -69,7 +69,7 @@ class ppInclude
         pushFile(Name, Name);
     }
     bool Check(kw token, const std::string& line);
-    bool IsOpen() const { return current->IsOpen(); }
+    bool IsOpen() const { if (current) return current->IsOpen(); else return false; }
     int GetErrLineNo()
     {
         if (current)
@@ -116,6 +116,7 @@ class ppInclude
     void ForceEOF() { forcedEOF = true; }
     std::set<std::string>& GetUserIncludes() { return userIncludes; }
 
+    int AnonymousIndex() const { if (current) return current->AnonymousIndex(); else return 1; }
   protected:
     void StripAsmComment(std::string& line);
     bool CheckInclude(kw token, const std::string& line);

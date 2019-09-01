@@ -688,6 +688,7 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr)
 {
     std::string name;
     int waiting = 0;
+
     int orig_end = end;
     int rv;
     int size;
@@ -740,7 +741,7 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr)
 
                     while (q1 < line.size() && (isspace(line[q1]) || line[q1] == MACRO_PLACEHOLDER))
                         q1++;
-                    if (q1 == line.size())
+                    if (q1 == line.size() && line[q1-1] == '\n')
                     {
                         // continues on the next line, get more text..
                         return INT_MIN + 1;
@@ -811,7 +812,7 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr)
                         {
                             q1 = p;
                             int nestedparen = 0;
-                            while (p < line.size() && (line[p] != ')' || nestedparen))
+                            while (line[p] != '\n' && (line[p] != ')' || nestedparen))
                             {
                                 if (line[p] == '(')
                                     nestedparen++;
@@ -877,9 +878,12 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr)
             {
                 int n = LookupDefault(line, q, p, name);
                 if (n)
-                    p = q + n - 1;
-                else
-                    p = q;
+                {
+                    insize = n - (p - q);
+                    end += insize;
+                    p += insize;
+                    insize = 0;
+                }
             }
         }
     }

@@ -6916,11 +6916,10 @@ static LEXEME* expression_equality(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE*
         }
         else
         {
-            extern int total_errors;
             checkscope(*tp, tp1);
             castToArithmetic(false, tp, exp, kw, tp1, true);
             castToArithmetic(false, &tp1, &exp1, (enum e_kw) - 1, *tp, true);
-            if (total_errors)
+            if (TotalErrors())
             {
                 insertOperatorFunc(ovcl_binary_numericptr, kw, funcsp, tp, exp, tp1, exp1, nullptr, flags);
             }

@@ -44,7 +44,6 @@ extern LEXCONTEXT* context;
 extern TYPE stdXC;
 extern TYPE std__string, stdbool;
 extern int currentErrorLine;
-extern int total_errors;
 extern PreProcessor* preProcessor;
 
 extern int templateNestingCount;
@@ -3647,7 +3646,7 @@ LEXEME* body(LEXEME* lex, SYMBOL* funcsp)
 
             if (!isTemplate)
             {
-                if (!total_errors)
+                if (!TotalErrors())
                 {
                     int oldstartlab = startlab;
                     int oldretlab = retlab;

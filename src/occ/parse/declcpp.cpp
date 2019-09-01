@@ -37,7 +37,6 @@ extern enum e_kw skim_comma[];
 extern TYPE stdint;
 extern TYPE stdpointer;
 extern char infile[256];
-extern int total_errors;
 extern TYPE stdvoid, stdfunc;
 extern int currentErrorLine;
 extern int templateNestingCount;

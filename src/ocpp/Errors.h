@@ -61,6 +61,7 @@ class Errors
     static std::string GetFileName();
     static void IncrementCount() { errorCount++; }
 
+    static bool GetErrorCount() { return errorCount; }
   protected:
     static void FileName();
 

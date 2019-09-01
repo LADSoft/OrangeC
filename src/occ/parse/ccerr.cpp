@@ -26,6 +26,7 @@
 #include <stdarg.h>
 #include "PreProcessor.h"
 #include "Utils.h"
+#include "Errors.h"
 
 #define ERROR 1
 #define WARNING 2
@@ -673,9 +674,13 @@ void DisableTrivialWarnings()
             if (errors[i].level & TRIVIALWARNING)
                 warningFlags[i] |= WARNING_DISABLE;
 }
-int total_errors;
+static int total_errors;
 int diagcount;
 
+int TotalErrors()
+{
+    return total_errors + Errors::GetErrorCount();
+}
 void errorinit(void)
 {
     total_errors = diagcount = 0;
@@ -809,7 +814,7 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
     {
         name = Utils::FullQualify(nameb);
     }
-    if (total_errors > cparams.prm_maxerr)
+    if (TotalErrors() > cparams.prm_maxerr)
         return false;
     if (!alwaysErr(err) && currentErrorFile && !strcmp(currentErrorFile, preProcessor->GetRealFile().c_str()) && preProcessor->GetRealLineNo() == currentErrorLine)
         return false;
@@ -873,7 +878,7 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
     if (cparams.prm_errfile)
         fprintf(errFile, " %s(%d):  %s%s\n", name, line, buf, infunc);
     AddErrorToList(listerr, buf);
-    if (total_errors == cparams.prm_maxerr)
+    if (TotalErrors() >= cparams.prm_maxerr)
     {
         extern void Cleanup();
         Cleanup();

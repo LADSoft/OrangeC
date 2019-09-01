@@ -28,7 +28,6 @@ extern ARCH_ASM* chosenAssembler;
 extern enum e_kw skim_end[];
 extern NAMESPACEVALUELIST *globalNameSpace, *localNameSpace;
 extern TYPE stdvoid;
-extern int total_errors;
 extern int startlab;
 extern int retlab;
 extern int nextLabel;

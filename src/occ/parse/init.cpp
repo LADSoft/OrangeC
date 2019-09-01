@@ -48,7 +48,6 @@ extern TYPE std__string;
 extern int startlab, retlab;
 extern bool declareAndInitialize;
 extern int instantiatingTemplate;
-extern int total_errors;
 extern int templateNestingCount;
 extern int codeLabel;
 extern const char* overloadNameTab[];
@@ -1076,7 +1075,7 @@ static void dumpStaticInitializers(void)
 void dumpInitializers(void)
 {
 #ifndef PARSER_ONLY
-    if (!total_errors)
+    if (!TotalErrors())
     {
         dumpStaticInitializers();
         dumpDynamicInitializers();
@@ -3447,7 +3446,7 @@ bool checkconstexprfunc(EXPRESSION* node)
 bool IsConstantExpression(EXPRESSION* node, bool allowParams, bool allowFunc)
 {
     bool rv = false;
-    if (total_errors)  // in some error conditions nodes can get into a loop
+    if (TotalErrors())  // in some error conditions nodes can get into a loop
         // for purposes of this function...  guard against it.   Consider everything
         // CONST to avoid more errors..
         return true;

@@ -28,7 +28,6 @@ extern ARCH_ASM* chosenAssembler;
 extern enum e_kw skim_end[];
 extern NAMESPACEVALUELIST* globalNameSpace;
 extern TYPE stdvoid;
-extern int total_errors;
 extern int startlab;
 extern int retlab;
 extern int nextLabel;
@@ -222,7 +221,7 @@ LEXEME* initialize_property(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc 
             insertfunc(setter, globalNameSpace->valueData->syms);
             insertfunc(getter, globalNameSpace->valueData->syms);
             insert(backing, globalNameSpace->valueData->syms);
-            if (!total_errors)
+            if (!TotalErrors())
             {
                 int oldstartlab = startlab;
                 int oldretlab = retlab;
@@ -232,7 +231,7 @@ LEXEME* initialize_property(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc 
                 retlab = oldretlab;
                 startlab = oldstartlab;
             }
-            if (!total_errors)
+            if (!TotalErrors())
             {
                 int oldstartlab = startlab;
                 int oldretlab = retlab;

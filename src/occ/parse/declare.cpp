@@ -42,7 +42,6 @@ extern TYPE stdint;
 extern TYPE stdpointer;
 extern int currentErrorLine;
 extern char infile[256];
-extern int total_errors;
 extern char anonymousNameSpaceName[512];
 extern LIST* nameSpaceList;
 extern TYPE stdvoid;
@@ -763,7 +762,7 @@ static void resolveAnonymousGlobalUnion(SYMBOL* sp)
 void resolveAnonymousUnions(SYMBOL* sp)
 {
     SYMLIST** member = (SYMLIST**)&sp->tp->syms->table[0];
-    if (total_errors)
+    if (TotalErrors())
         return;
     while (*member)
     {

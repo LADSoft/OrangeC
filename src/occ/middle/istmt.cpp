@@ -49,7 +49,6 @@ extern TYPE stdfunc;
 extern int prm_globsub, prm_copyprop;
 extern int prm_optlive;
 extern int blockCount, exitBlock;
-extern int total_errors;
 extern TEMP_INFO** tempInfo;
 extern bool functionHasAssembly;
 extern TYPE stddouble;
@@ -1015,7 +1014,7 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     EXPRESSION* funcexp = varNode(en_global, funcsp);
     SYMBOL* tmpl = funcsp;
     SYMLIST* hr;
-    if (total_errors)
+    if (TotalErrors())
         return;
     returnImode = nullptr;
     while (tmpl)

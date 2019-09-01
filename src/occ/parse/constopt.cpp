@@ -37,7 +37,6 @@ extern int stdpragmas;
 extern ARCH_ASM* chosenAssembler;
 extern TYPE stdvoid;
 extern bool initializingGlobalVar;
-extern int total_errors;
 extern STRUCTSYM* structSyms;
 extern int templateNestingCount;
 

@@ -58,7 +58,6 @@ extern "C"
 #endif
 
 extern COMPILER_PARAMS cparams;
-extern int total_errors;
 extern ARCH_ASM* chosenAssembler;
 extern int diagcount;
 extern NAMESPACEVALUELIST* globalNameSpace;
@@ -924,10 +923,10 @@ void dumperrs(FILE* file)
         fprintf(listFile, "******** Global Tags ********\n");
         list_table(globalNameSpace->valueData->tags, 0);
     }
-    if (diagcount && !total_errors)
+    if (diagcount && !TotalErrors())
         fprintf(file, "%d Diagnostics\n", diagcount);
-    if (total_errors)
-        fprintf(file, "%d Errors\n", total_errors);
+    if (TotalErrors())
+        fprintf(file, "%d Errors\n", TotalErrors());
 }
 
 /*-------------------------------------------------------------------------*/

@@ -75,7 +75,7 @@ void checkUnused(HASHTABLE* syms);
 void findUnusedStatics(NAMESPACEVALUELIST* syms);
 void assignmentUsages(EXPRESSION* node, bool first);
 void checkDefaultArguments(SYMBOL* spi);
-
+int TotalErrors();
                               /* Ccmain.c */
 
 void bool_setup(char select, char* string);

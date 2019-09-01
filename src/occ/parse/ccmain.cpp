@@ -31,7 +31,6 @@ extern NAMESPACEVALUELIST* globalNameSpace;
 extern LIST* clist;
 extern char outfile[];
 extern FILE* outputFile;
-extern int total_errors;
 /*extern int prm_peepopt; */
 extern FILE* listFile;
 extern char version[256];
@@ -474,7 +473,7 @@ void compile(bool global)
 #ifdef PARSER_ONLY
     ccDumpSymbols();
 #endif
-    if (!total_errors)
+    if (!TotalErrors())
     {
         dumpInlines();
         dumpInitializers();
@@ -765,7 +764,7 @@ int main(int argc, char* argv[])
 
         if (openOutput)
         {
-            if (total_errors)
+            if (TotalErrors())
             {
                 Cleanup();
             }
@@ -776,7 +775,7 @@ int main(int argc, char* argv[])
             }
         }
         /* Flag to stop if there are any errors */
-        stoponerr |= total_errors;
+        stoponerr |= TotalErrors();
 
         clist = clist->next;
     }

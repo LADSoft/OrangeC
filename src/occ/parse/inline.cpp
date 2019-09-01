@@ -29,7 +29,6 @@ extern TYPE stdint;
 extern NAMESPACEVALUELIST* localNameSpace;
 extern TYPE stdpointer, stdvoid;
 extern int startlab, retlab;
-extern int total_errors;
 extern LIST* importThunks;
 
 static LIST *inlineHead, *inlineTail, *inlineVTabHead, *inlineVTabTail;
@@ -95,7 +94,7 @@ static void UndoPreviousCodegen(SYMBOL* sym)
 void dumpInlines(void)
 {
 #ifndef PARSER_ONLY
-    if (!total_errors)
+    if (!TotalErrors())
     {
         bool done;
         LIST* vtabList;

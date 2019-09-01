@@ -73,7 +73,6 @@ extern int structLevel;
 extern TYPE stdnullpointer;
 extern TYPE stdvoid;
 extern TYPE std__string, std__object;
-extern int total_errors;
 extern int matchOverloadLevel;
 extern int codeLabel;
 extern LAMBDA* lambdas;

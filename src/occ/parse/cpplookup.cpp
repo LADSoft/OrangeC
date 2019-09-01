@@ -36,7 +36,6 @@ extern LAMBDA* lambdas;
 extern STRUCTSYM* structSyms;
 extern int currentErrorLine;
 extern int templateNestingCount;
-extern int total_errors;
 extern ARCH_DEBUG* chosenDebugger;
 extern FILE* listFile;
 extern int noSpecializationError;

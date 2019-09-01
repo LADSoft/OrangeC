@@ -1464,22 +1464,64 @@ static char* GetFileData(char* filname, int* size)
     }
     return rv;
 }
+struct ServerData
+{
+    char *data;
+    HANDLE serverPipe;
+};
+static DWORD servupProc(void *b)
+{
+    struct ServerData* data = (struct ServerData*)b;
+    char name[256];
+    sprintf(name, "%s%d-%d", pipeName, rand(), rand());
+
+    HANDLE handle;
+    handle = CreateNamedPipe(name, PIPE_ACCESS_OUTBOUND, PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT,
+        1, 8192, 8192, 0, NULL);
+    if (handle != INVALID_HANDLE_VALUE)
+    {
+        int n = strlen(name);
+        DWORD read;
+        WriteFile(data->serverPipe, &n, sizeof(DWORD), &read, NULL);
+        WriteFile(data->serverPipe, name, n, &read, NULL);
+        BOOL fConnected = ConnectNamedPipe(handle, NULL) ? TRUE : (GetLastError() == ERROR_PIPE_CONNECTED);
+        if (fConnected)
+        {
+            while (n > 0)
+            {
+                int len = n > 8192 ? 8192 : n;
+                if (!WriteFile(handle, data->data, len, &read, NULL))
+                    break;
+                n -= len;
+            }
+        }
+        FlushFileBuffers(handle);
+        DisconnectNamedPipe(handle);
+        CloseHandle(handle);
+    }
+    free(data->data);
+    free(data);
+}
 static DWORD serverProc(void* b)
 {
+    srand(GetTickCount());
     HANDLE myPipe = (HANDLE)b;
     int n;
     DWORD read;
-    if (ReadFile(myPipe, &n, sizeof(DWORD), &read, NULL))
+    while (1)
     {
-        char filname[256];
-        if (ReadFile(myPipe, filname, n, &read, NULL))
+        if (ReadFile(myPipe, &n, sizeof(DWORD), &read, NULL))
         {
-            char* buf;
-            filname[n] = 0;
-            buf = GetFileData(filname, &n);
-            WriteFile(myPipe, &n, sizeof(DWORD), &read, NULL);
-            if (n)
-                WriteFile(myPipe, buf, n, &read, NULL);
+            char filname[256];
+            if (ReadFile(myPipe, filname, n, &read, NULL))
+            {
+                char* buf;
+                filname[n] = 0;
+                struct ServerData *data = (struct ServerData *)calloc(1, sizeof(struct ServerData));
+                data->data = GetFileData(filname, &n);
+                data->serverPipe = myPipe;
+                _beginthread(servupProc, 0, data);
+            }
         }
     }
     FlushFileBuffers(myPipe);

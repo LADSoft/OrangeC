@@ -79,7 +79,7 @@ class Utils
         return CRC32(data, len);
     }
     template <size_t len>
-    static unsigned PartialCRC32(unsigned crc, unsigned char* data)
+    static unsigned PartialCRC32(unsigned crc, const unsigned char* data)
     {
         return PartialCRC32(crc, data, len);
     }

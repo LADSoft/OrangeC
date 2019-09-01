@@ -89,7 +89,7 @@ std::string Utils::PipeRead(int fileno)
 #ifndef HAVE_UNISTD_H
     HANDLE hPipe = (HANDLE)_get_osfhandle(fileno);
     WaitForPipeData(hPipe, sizeof(DWORD));
-    int n;
+    int n = sizeof(DWORD);
     DWORD read = 0;
     WaitForPipeData(hPipe, n);
     char *buffer = (char *)calloc(1, n + 1);

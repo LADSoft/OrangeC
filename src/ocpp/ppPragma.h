@@ -253,7 +253,7 @@ class Aliases
         auto it = list.find(name);
         if (it != list.end())
             return it->second.c_str();
-        return name;
+        return nullptr;
     }
   protected:
     Aliases() {}

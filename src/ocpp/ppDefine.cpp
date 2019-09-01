@@ -179,7 +179,7 @@ ppDefine::Definition* ppDefine::Define(const std::string& name, std::string& val
                 }
         }
         if (failed)
-            d->DefinedError("macro redefinition changes value");
+            d->DefinedWarning("macro redefinition changes value");
         symtab.Remove(old);
     }
     symtab.Add(d);

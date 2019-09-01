@@ -56,6 +56,12 @@ class Symbol
         if (lineNo && !fileName.empty())
             Errors::Previous(name, lineNo, fileName);
     }
+    void DefinedWarning(const std::string& msg)
+    {
+        Errors::Warning(name + " " + msg);
+        if (lineNo && !fileName.empty())
+            Errors::Previous(name, lineNo, fileName);
+    }
 
   private:
     std::string name;

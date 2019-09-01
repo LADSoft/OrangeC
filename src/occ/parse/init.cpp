@@ -121,7 +121,7 @@ void dumpStartups(void)
     started = false;
     for (auto&& starts : preProcessor->GetStartups())
     {
-        if (starts.second->startup)
+        if (!starts.second->startup)
         {
             if (!started)
             {

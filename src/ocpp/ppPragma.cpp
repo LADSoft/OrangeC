@@ -31,6 +31,7 @@
 #include "Errors.h"
 #include "sys/stat.h"
 #include <algorithm>
+#include <iostream>
 
 Packing* Packing::instance;
 FenvAccess* FenvAccess::instance;
@@ -136,8 +137,8 @@ void ppPragma::HandlePack(Tokenizer& tk)
             if (tok->IsNumeric())
             {
                 val = tok->GetInteger();
+                tok = tk.Next();
             }
-        tok = tk.Next();
         if (tok)
             if (tok->GetKeyword() == kw::closepa)
             {
@@ -156,11 +157,14 @@ void ppPragma::HandleError(Tokenizer& tk) { Errors::Error(tk.GetString()); }
 void ppPragma::HandleWarning(Tokenizer& tk)
 {
     // check for microsoft warning pragma
-    const char* p = tk.GetString().c_str();
+    std::string warn = tk.GetString();
+    const char* p = warn.c_str();
     while (isspace(*p))
         p++;
     if (*p != '(')
+    {
         Errors::Warning(p);
+    }
 }
 void ppPragma::HandleSR(Tokenizer& tk, bool startup)
 {
@@ -254,7 +258,7 @@ void ppPragma::HandleLibrary(Tokenizer& tk)
 }
 void ppPragma::HandleAlias(Tokenizer& tk)
 {
-    const Token* name = tk.Next();
+   const Token* name = tk.Next();
     if (name && name->IsIdentifier())
     {
         std::string id = name->GetId();

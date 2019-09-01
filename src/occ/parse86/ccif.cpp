@@ -246,7 +246,7 @@ static void DumpStructs(void)
     while (item)
     {
         SYMBOL* sym = (SYMBOL*)item->data;
-        if (sym->storage_class != sc_label && istype(sym) && isstructured(sym->tp) && sym->tp->btp->type != bt_typedef)  // DAL fix
+        if (sym->storage_class != sc_label && istype(sym) && isstructured(sym->tp) && (!sym->tp->btp || sym->tp->btp->type != bt_typedef))  // DAL fix
         {
             sqlite3_int64 struct_id;
             if (ccWriteStructName(sym->decoratedName, &struct_id))

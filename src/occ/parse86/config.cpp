@@ -352,7 +352,7 @@ static int init(COMPILER_PARAMS* parms, ARCH_ASM* data, ARCH_DEBUG* debug)
     (void)data;
     (void)debug;
     WinmodeSetup(0, "c");
-    return 0;
+    return 1;
 }
 static int parse_param(char select, char* string)
 {

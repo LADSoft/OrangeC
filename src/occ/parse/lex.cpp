@@ -588,7 +588,6 @@ int getsch(int bytes, const unsigned char** source) /* return an in-quote charac
                 ch -= 32;
             n *= 16;
             n += ch;
-            (*source)++;
         }
         /* hexadecimal escape sequences are only terminated by a non hex char */
         /* we sign extend or truncate */

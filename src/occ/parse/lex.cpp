@@ -52,7 +52,7 @@ int charIndex;
 static LEXEME* pool;
 static ULLONG_TYPE llminus1;
 static int nextFree;
-static const char *linePointer;
+static const unsigned char *linePointer;
 static std::string currentLine;
 #ifdef KW_HASH
 HASHTABLE* kwhash;
@@ -61,7 +61,7 @@ HASHTABLE* kwhash;
 struct ParseHold
 {
     std::string currentLine;
-    const char *linePointer;
+    int charIndex;
 };
 
 static std::stack<ParseHold> parseStack;
@@ -375,7 +375,7 @@ void lexini(void)
     nextFree = 0;
     pool = (LEXEME*)Alloc(sizeof(LEXEME) * MAX_LOOKBACK);
     currentLine = "";
-    linePointer = currentLine.c_str();
+    linePointer = (const unsigned char *)currentLine.c_str();
     while (parseStack.size())
         parseStack.pop();
 }
@@ -430,14 +430,14 @@ static bool kwmatches(KEYWORD* kw)
     }
     return false;
 }
-KEYWORD* searchkw(const char** p)
+KEYWORD* searchkw(const unsigned char** p)
 /*
  * see if the current symbol is a keyword
  */
 {
     KEYWORD* kw;
-    char buf[1000], *q = buf;
-    const char *q1 = *p;
+    unsigned char buf[1000], *q = buf;
+    const unsigned char *q1 = *p;
     if (isstartchar(*q1))
     {
         int len = 0;
@@ -611,10 +611,10 @@ int getsch(int bytes, const unsigned char** source) /* return an in-quote charac
     }
 }
 
-int getChar(const char** source, enum e_lexType* tp)
+int getChar(const unsigned char** source, enum e_lexType* tp)
 {
     enum e_lexType v = l_achr;
-    const unsigned char* p = (const unsigned char*)*source;
+    const unsigned char* p = *source;
     if (*p == 'L')
     {
         v = l_wchr;
@@ -676,7 +676,7 @@ int getChar(const char** source, enum e_lexType* tp)
                 p++;
             while (*p == ppDefine::MACRO_PLACEHOLDER);
         *tp = v;
-        *source = (char *)p;
+        *source = p;
         return i;
     }
     return INT_MIN;
@@ -687,11 +687,11 @@ int nextch()
     {
         if (!preProcessor->GetLine(currentLine))
             return -1;
-        linePointer = currentLine.c_str();
+        linePointer = (const unsigned char *)currentLine.c_str();
     }
     return *linePointer++;
 }
-SLCHAR* getString(const char** source, enum e_lexType* tp)
+SLCHAR* getString(const unsigned char** source, enum e_lexType* tp)
 {
     // the static declaration speeds it up by about 5% on windows platforms.
     static LCHAR data[32768];
@@ -699,7 +699,7 @@ SLCHAR* getString(const char** source, enum e_lexType* tp)
     bool raw = false;
     bool found = false;
     bool msil = false;
-    const unsigned char* p = (const unsigned char *) *source;
+    const unsigned char* p = *source;
     int len = sizeof(data) / sizeof(data[0]);
     int count = 0;
     int errored = 0;
@@ -775,7 +775,7 @@ SLCHAR* getString(const char** source, enum e_lexType* tp)
                 else if (st[0] = nextch())
                 {
                     errorint(ERR_EOF_RAW_STRING, lineno);
-                    *source = (const char *)p;
+                    *source = p;
                     return nullptr;
                 }
                 if (err)
@@ -784,7 +784,7 @@ SLCHAR* getString(const char** source, enum e_lexType* tp)
                     {
                         SLCHAR* rv;
                         int i;
-                        *source = (const char *)p;
+                        *source = p;
                         IncGlobalFlag();
                         rv = (SLCHAR*)Alloc(sizeof(SLCHAR));
                         rv->str = (LCHAR*)Alloc(1);
@@ -824,7 +824,7 @@ SLCHAR* getString(const char** source, enum e_lexType* tp)
                     else if (st[0] = nextch())
                     {
                         errorint(ERR_EOF_RAW_STRING, lineno);
-                        *source = (const char *)p;
+                        *source = p;
                         return nullptr;
                     }
                     if (len == 1)
@@ -863,7 +863,7 @@ SLCHAR* getString(const char** source, enum e_lexType* tp)
             found = true;
             while (isspace(*p) || *p == ppDefine::MACRO_PLACEHOLDER)
                 p++;
-            *source = (const char *)p;
+            *source = p;
         }
         else
         {
@@ -938,7 +938,7 @@ SLCHAR* getString(const char** source, enum e_lexType* tp)
             found = true;
             while (*p == ppDefine::MACRO_PLACEHOLDER)
                 p++;
-            *source = (const char *)p;
+            *source = p;
         }
     }
     *tp = v;
@@ -1072,7 +1072,7 @@ static int getexp(char** ptr)
  *      getnum handles all of the numeric input. it accepts
  *      decimal, octal, hexidecimal, and floating point numbers.
  */
-e_lexType getNumber(const char** ptr, const char** end, char* suffix, FPF* rval, LLONG_TYPE* ival)
+e_lexType getNumber(const unsigned char** ptr, const unsigned char** end, unsigned char* suffix, FPF* rval, LLONG_TYPE* ival)
 {
     char buf[200], *p = buf;
     int radix = 10;
@@ -1203,7 +1203,7 @@ e_lexType getNumber(const char** ptr, const char** end, char* suffix, FPF* rval,
     *suffix = 0;
     if (isstartchar(**ptr))
     {
-        char* ufd = suffix;
+        unsigned char* ufd = suffix;
         while (issymchar(**ptr))
             *ufd++ = *(*ptr)++;
         *ufd = 0;
@@ -1320,7 +1320,7 @@ e_lexType getNumber(const char** ptr, const char** end, char* suffix, FPF* rval,
     }
     return lastst;
 }
-int getId(const char** ptr, unsigned char* dest)
+int getId(const unsigned char** ptr, unsigned char* dest)
 {
     if (!isstartchar(**ptr))
         return INT_MIN;
@@ -1389,7 +1389,7 @@ LEXEME* SkipToNextLine(void)
 LEXEME* getGTSym(LEXEME* in)
 {
     static LEXEME lex;
-    const char pgreater[2] = {'>', 0}, *ppgreater = pgreater;
+    const unsigned char pgreater[2] = {'>', 0}, *ppgreater = pgreater;
     KEYWORD* kw;
     kw = searchkw(&ppgreater);
     lex = *in;
@@ -1399,16 +1399,16 @@ LEXEME* getGTSym(LEXEME* in)
 }
 void SkipToEol()
 {
-    linePointer = currentLine.c_str() + currentLine.size();
+    linePointer = (const unsigned char *)currentLine.c_str() + currentLine.size();
 }
 bool AtEol()
 {
-    const char *p = linePointer;
+    const unsigned char *p = linePointer;
     while (isspace(*p))
         p++;
     return *p == 0;
 }
-void CompilePragma(const char **linePointer)
+void CompilePragma(const unsigned char **linePointer)
 {
     int err;
     while (isspace(*(*linePointer)))
@@ -1422,10 +1422,10 @@ void CompilePragma(const char **linePointer)
         if (**linePointer == '"')
         {
             linePointer++;
-            const char *p = *linePointer;
+            const char *p = (const char *)*linePointer;
             while (**linePointer && **linePointer != '"')
                 (*linePointer)++;
-            std::string toCompile(p, *linePointer - p);
+            std::string toCompile(p, *linePointer - (const unsigned char*) p);
             preProcessor->CompilePragma(toCompile);
             if (**linePointer)
                 (*linePointer)++;
@@ -1462,37 +1462,32 @@ LEXEME* getsym(void)
     int cval;
     SLCHAR* strptr;
 
-    if (!parseStack.size())
+    if (context->cur)
     {
-        if (context->cur)
+        LEXEME* rv;
+        rv = context->cur;
+        if (context->last == rv->prev)
+            TemplateRegisterDeferred(context->last);
+        context->last = rv;
+        context->cur = context->cur->next;
+        if (rv->linedata)
         {
-            LEXEME* rv;
-            rv = context->cur;
-            if (context->last == rv->prev)
-                TemplateRegisterDeferred(context->last);
-            context->last = rv;
-            context->cur = context->cur->next;
-            if (rv->linedata)
-            {
-                linesHead = rv->linedata;
-                linesTail = linesHead;
-                while (linesTail && linesTail->next)
-                    linesTail = linesTail->next;
-            }
-            return rv;
+            linesHead = rv->linedata;
+            linesTail = linesHead;
+            while (linesTail && linesTail->next)
+                linesTail = linesTail->next;
         }
-        else if (context->next)
-        {
-            return nullptr;
-        }
+        return rv;
+    }
+    else if (context->next)
+    {
+        return nullptr;
     }
     lex = &pool[nextFree];
     lex->linedata = nullptr;
-    if (!parseStack.size())
-    {
-        lex->prev = context->last;
-        context->last = lex;
-    }
+    lex->prev = context->last;
+    context->last = lex;
+
     lex->next = nullptr;
     if (lex->prev)
         lex->prev->next = lex;
@@ -1506,15 +1501,17 @@ LEXEME* getsym(void)
         contin = false;
         do
         {
-            if (parseStack.size() || (*linePointer == 0 && !preProcessor->GetLine(currentLine)))
+            if (*linePointer == 0)
             {
-                return nullptr;
+                if (parseStack.size() || !preProcessor->GetLine(currentLine))
+                    return nullptr;
+                linePointer = (const unsigned char*)currentLine.c_str();
+                InsertLineData(preProcessor->GetRealLineNo(), preProcessor->GetFileIndex(), preProcessor->GetRealFile().c_str(), (char *)linePointer);
             }
-            linePointer = currentLine.c_str();
             while (isspace(*linePointer) || *linePointer == ppDefine::MACRO_PLACEHOLDER)
                 linePointer++;
         } while (*linePointer== 0);
-        charIndex = lex->charindex = linePointer - currentLine.c_str();
+        charIndex = lex->charindex = linePointer - (const unsigned char*)currentLine.c_str();
         lex->line = preProcessor->GetErrLineNo();
         lex->realline = preProcessor->GetRealLineNo();
         lex->file = preProcessor->GetErrFile().c_str();
@@ -1560,9 +1557,9 @@ LEXEME* getsym(void)
         }
         else if (*linePointer != 0)
         {
-            char suffix[256];
-            const char* start = linePointer;
-            const char* end = linePointer;
+            unsigned char suffix[256];
+            const unsigned char* start = linePointer;
+            const unsigned char* end = linePointer;
             enum e_lexType tp;
             if ((unsigned)(tp = getNumber(&linePointer, &end, suffix, &rval, &ival)) != (unsigned)INT_MIN)
             {
@@ -1731,14 +1728,14 @@ void SetAlternateParse(bool set, const std::string& val)
 {
     if (set)
     {
-        parseStack.push(std::move(ParseHold{ currentLine, linePointer }));
+        parseStack.push(std::move(ParseHold{ currentLine, linePointer - (unsigned char *)currentLine.c_str() }));
         currentLine = val;
-        linePointer = currentLine.c_str();
+        linePointer = (const unsigned char *)currentLine.c_str();
     }
     else if (parseStack.size())
     {
         currentLine = parseStack.top().currentLine;
-        linePointer = parseStack.top().linePointer;
+        linePointer = (const unsigned char *)currentLine.c_str() + parseStack.top().charIndex;
         parseStack.pop();
     }
 }

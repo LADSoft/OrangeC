@@ -146,7 +146,7 @@ const char* AnonymousTypeName(void)
     char buf[512];
     std::string name = preProcessor->GetRealFile();
     my_sprintf(buf, "__anontype_%u_%d", Utils::CRC32((const unsigned char *)name.c_str(), name.size()),
-               preProcessor->GetRealLineNo());
+               preProcessor->GetAnonymousIndex());
     return litlate(buf);
 }
 SYMBOL* makeID(enum e_sc storage_class, TYPE* tp, SYMBOL* spi, const char* name)
@@ -158,10 +158,13 @@ SYMBOL* makeID(enum e_sc storage_class, TYPE* tp, SYMBOL* spi, const char* name)
     sp->name = name;
     sp->storage_class = storage_class;
     sp->tp = tp;
-    sp->declfile = sp->origdeclfile = lex->file;
-    sp->declline = sp->origdeclline = lex->line;
-    sp->realdeclline = lex->realline;
-    sp->declfilenum = lex->filenum;
+    if (lex)
+    {
+        sp->declfile = sp->origdeclfile = lex->file;
+        sp->declline = sp->origdeclline = lex->line;
+        sp->realdeclline = lex->realline;
+        sp->declfilenum = lex->filenum;
+    }
     if (spi)
     {
         error(ERR_TOO_MANY_IDENTIFIERS_IN_DECLARATION);

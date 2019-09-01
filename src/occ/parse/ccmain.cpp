@@ -624,11 +624,11 @@ int main(int argc, char* argv[])
             cparams.prm_c99 = cparams.prm_c1x = false;
         if (cparams.prm_cplusplus && chosenAssembler->msil)
             fatal("MSIL compiler does not compile C++ files at this time");
-        preProcessor = new PreProcessor(buffer, prm_searchpath, sys_searchpath, true, cparams.prm_trigraph, '#', cparams.prm_charisunsigned,
+        preProcessor = new PreProcessor(buffer, prm_searchpath == nullptr ? "" : prm_searchpath, sys_searchpath, true, cparams.prm_trigraph, '#', cparams.prm_charisunsigned,
             !cparams.prm_c99 && !cparams.prm_c1x && !cparams.prm_cplusplus, !cparams.prm_ansi, pipe);
 
         if (!preProcessor->IsOpen())
-            fatal("Cannot open input file %s", buffer);
+            exit(1);
         strcpy(infile, buffer);
         if (cparams.prm_makestubs)
         {

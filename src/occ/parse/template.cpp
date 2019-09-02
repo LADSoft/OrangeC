@@ -6060,6 +6060,8 @@ static bool TemplateInstantiationMatchInternal(TEMPLATEPARAMLIST* porig, TEMPLAT
                                 return false;
                             if (basetype(torig)->array && !!basetype(torig)->esize != !!basetype(tsym)->esize)
                                 return false;
+                            if (basetype(torig)->type == bt_enum != basetype(tsym)->type == bt_enum)
+                                return false;
                             if (tsym->type == bt_templateparam)
                                 tsym = tsym->templateParam->p->byClass.val;
                             if (!templatecomparetypes(torig, tsym, true) && !sameTemplate(torig, tsym))
@@ -6087,6 +6089,8 @@ static bool TemplateInstantiationMatchInternal(TEMPLATEPARAMLIST* porig, TEMPLAT
                         if (basetype(torig)->array != basetype(tsym)->array)
                             return false;
                         if (basetype(torig)->array && !!basetype(torig)->esize != !!basetype(tsym)->esize)
+                            return false;
+                        if (basetype(torig)->type == bt_enum != basetype(tsym)->type == bt_enum)
                             return false;
                         if ((!templatecomparetypes(torig, tsym, true) || !templatecomparetypes(tsym, torig, true)) &&
                             !sameTemplate(torig, tsym))

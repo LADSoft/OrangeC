@@ -2987,10 +2987,10 @@ bool sameTemplate(TYPE* P, TYPE* A)
                         break;
                     if ((PAd || PA->p->byClass.val) && (PLd || PL->p->byClass.val) && !templatecomparetypes(pa, pl, true))
                     {
-                        if ((basetype(pa)->type == bt_enum && isint(pl)) || (basetype(pl)->type == bt_enum && isint(pa)))
-                        {
-                        }
-                        else
+//                        if ((basetype(pa)->type == bt_enum && isint(pl)) || (basetype(pl)->type == bt_enum && isint(pa)))
+//                        {
+//                        }
+//                        else
                         {
                             break;
                         }

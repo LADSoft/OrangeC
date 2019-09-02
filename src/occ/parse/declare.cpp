@@ -1647,7 +1647,7 @@ static LEXEME* declenum(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, enum e_sc storag
     {
         errorsym(ERR_ORIGINAL_TYPE_NOT_ENUMERATION, sp);
     }
-    else if (scoped != sp->tp->scoped || (fixedType && sp->tp->type != fixedType->type))
+    else if (scoped != (bool)sp->tp->scoped || (fixedType && sp->tp->btp->type != fixedType->type))
     {
         error(ERR_REDEFINITION_OF_ENUMERATION_SCOPE_OR_BASE_TYPE);
     }

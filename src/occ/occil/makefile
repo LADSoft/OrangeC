@@ -78,9 +78,7 @@ CPP_DEPENDENCIES= \
     memory.cpp \
     osutil.cpp \
     output.cpp \
-    preproc.cpp \
     property.cpp \
-    ppexpr.cpp \
     rtti.cpp \
     stmt.cpp \
     symtab.cpp \

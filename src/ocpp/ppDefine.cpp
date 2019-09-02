@@ -190,6 +190,7 @@ ppDefine::Definition* ppDefine::Define(const std::string& name, std::string& val
     else if (value[value.size() - 2] == REPLACED_TOKENIZING || value[value.size() - 2] == '#')
         d->DefinedError("macro definition ends with tokenizing or stringizing token");
     d->SetCaseInsensitive(caseInsensitive);
+    d->SetLocation(include->GetRealFile(), include->GetRealLineNo());
     if (varargs)
         d->SetHasVarArgs();
     if (errors && old)
@@ -215,7 +216,7 @@ ppDefine::Definition* ppDefine::Define(const std::string& name, std::string& val
         {
             auto it = macroStacks.find(d->GetName());
             if (it == macroStacks.end()) // only give the error if never been involved in a push
-                d->DefinedWarning("macro redefinition changes value");
+                old->DefinedWarning("macro redefinition changes value");
         }
         symtab.Remove(old);
     }

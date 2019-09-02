@@ -43,7 +43,7 @@ class Symbol
     }
     virtual ~Symbol() {}
     const std::string& GetName() const { return name; }
-    void SetLocation(std::string& name, int line)
+    void SetLocation(const std::string& name, int line)
     {
         fileName = name;
         lineNo = line;

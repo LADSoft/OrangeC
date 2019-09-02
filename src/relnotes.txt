@@ -25,6 +25,7 @@ version 6.0.43:
     occ: fix debug information for parameters:   off by one
     occ: fix rare problem where strength reduction could create an invalid multiply instruction
     occ: 'char *xx[]' should be equivalent to 'char *(xx[])' (compiler treats them differently)
+    occ: fix error generated when declaring a scoped enum that had been forward declared.
     ocide: fix problem with new font handling in resource editor dialog properties window
     ocide: fix problem with runaway stack, when a structure reference is used inside itself
     ocide/brc: fix some problems generating and parsing browse information
@@ -34,6 +35,7 @@ version 6.0.43:
     rtl: fix problems with complex math library: there was still code for long double complex using the old long double format
     rtl: printf family (and by extension C++ libraries) couldn't deal with LLONG_MIN or unsigned long longs >= ULLONG_MAX/2
     rtl: the exception dump was off by one line, when the source code associated with the exception line is C++
+    rtl: fix definition of 'InterlockedCompareExchange' so that using the function will work.
     dotnetpelib: load assemblies more quickly
 
 version 6.0.42: 8/11/2019

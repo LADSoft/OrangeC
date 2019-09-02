@@ -3,8 +3,8 @@ Warning(191)  errchk.c(29):  Expression has no effect in function expression_no_
 Warning(191)  errchk.c(30):  Expression has no effect in function expression_no_effect_f
 Warning(191)  errchk.c(31):  Expression has no effect in function expression_no_effect_f
 Warning(191)  errchk.c(32):  Expression has no effect in function expression_no_effect_f
-Warning( 36)  errchk.c(40):  Redefinition of macro 'umacro' changes value in function expression_no_effect_f
-Warning( 39)  errchk.c(39):  Previous declaration of 'umacro' here
+Warning errchk.c(40): umacro macro redefinition changes value
+Warning errchk.c(39): Previous definition here
 Warning(105)  errchk.c(63):  Function should return a value in function switch_noreturn_f
 Warning(105)  errchk.c(71):  Function should return a value in function while_noreturn_f1
 Warning(105)  errchk.c(75):  Function should return a value in function while_noreturn_f2

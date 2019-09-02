@@ -349,6 +349,48 @@ class Once
     std::set<OnceItem> items;
     ppInclude* include;
 };
+class Warning
+{
+public:
+    static Warning* Instance()
+    {
+        if (!instance)
+            instance = new Warning;
+        return instance;
+    }
+    enum
+    {
+        Disable = 1,
+        AsError = 2,
+        OnlyOnce = 4,
+        Emitted = 8
+    };
+
+    void SetFlag(int warning, int flag) { flags[warning] |= flag; }
+    void ClearFlag(int warning, int flag) { flags[warning] &= ~flag; }
+    bool IsSet(int warning, int flag) { return !!(flags[warning] & flag); }
+
+    void Clear()
+    {
+        for (auto&& f : flags)
+            f.second = 0;
+    }
+    void Push()
+    {
+        stack.push(flags);
+    }
+    void Pop()
+    {
+        flags = stack.top();
+        stack.pop();
+    }
+protected:
+    Warning() { };
+private:
+    static Warning* instance;
+    std::map<int, int> flags;
+    std::stack<std::map<int, int>> stack;
+};
 class ppPragma
 {
   public:

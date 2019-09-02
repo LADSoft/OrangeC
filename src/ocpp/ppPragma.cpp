@@ -41,6 +41,7 @@ Libraries* Libraries::instance;
 Aliases* Aliases::instance;
 Startups* Startups::instance;
 Once* Once::instance;
+Warning* Warning::instance;
 
 KeywordHash ppPragma::hash = {
     {"(", kw::openpa},
@@ -168,6 +169,65 @@ void ppPragma::HandleWarning(Tokenizer& tk)
     if (*p != '(')
     {
         Errors::Warning(p);
+    }
+    else
+    {
+        p++;
+        while(*p)
+        {
+            while (isspace(*p)) p++;
+            if (!strnicmp(p, "push",4))
+            {
+                Warning::Instance()->Push();
+                p += 4;
+            }
+            else if (!strnicmp(p, "pop",3))
+            {
+                Warning::Instance()->Pop();
+                p+= 3;
+            }
+            else
+            {
+                bool enable = true;
+                if (!strnicmp(p, "enable", 6))
+                {
+                    enable = true;
+                    p += 6;
+                }
+                else if (!strnicmp(p, "disable", 7))
+                {
+                    enable = false;
+                    p += 7;
+                }
+                else
+                {
+                    break;
+                }
+                while (isspace(*p)) p++;
+                if (*p++ == ':')
+                {
+                    while (isspace(*p)) p++;
+                    while (isdigit(*p))
+                    {
+                        int w = 0;
+                        while (isdigit(*p))
+                            w = w * 10 + ((*p++)-'0') ;
+                        if (enable)
+                            Warning::Instance()->ClearFlag(w, Warning::Disable);
+                        else
+                            Warning::Instance()->SetFlag(w, Warning::Disable);
+                        while (isspace(*p)) p++;
+                    }
+                }
+                else
+                {
+                    break;
+                }
+            }
+            while (isspace(*p)) p++;
+            if (*p++ != ',')
+                break;
+       }
     }
 }
 void ppPragma::HandleSR(Tokenizer& tk, bool startup)

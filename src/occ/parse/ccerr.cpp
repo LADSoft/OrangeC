@@ -56,7 +56,6 @@ SYMBOL* theCurrentFunc;
 
 static LIST* listErrors;
 static const char* currentErrorFile;
-static LIST* warningStack;
 
 enum e_kw skim_end[] = {end, kw_none};
 enum e_kw skim_closepa[] = {closepa, semicolon, end, kw_none};
@@ -577,16 +576,9 @@ static struct
     {"Attribute '%s' does not exist in attribute namespace '%s'", ERROR},
 };
 
-#define WARNING_DISABLE 1
-#define WARNING_AS_ERROR 2
-#define WARNING_ONLY_ONCE 4
-#define WARNING_EMITTED 8
-
-unsigned char warningFlags[sizeof(errors) / sizeof(errors[0])];
-
 static bool ValidateWarning(int num)
 {
-    if (num && num < sizeof(warningFlags))
+    if (num && num < sizeof(errors)/sizeof(errors[0]))
     {
         if (!(errors[num].level & ERROR))
         {
@@ -600,79 +592,58 @@ void DisableWarning(int num)
 {
     if (ValidateWarning(num))
     {
-        warningFlags[num] |= WARNING_DISABLE;
+        Warning::Instance()->SetFlag(num, Warning::Disable);
     }
 }
 void EnableWarning(int num)
 {
     if (ValidateWarning(num))
     {
-        warningFlags[num] &= ~WARNING_DISABLE;
+        Warning::Instance()->ClearFlag(num, Warning::Disable);
     }
 }
 void WarningOnlyOnce(int num)
 {
     if (ValidateWarning(num))
     {
-        warningFlags[num] |= WARNING_ONLY_ONCE;
+        Warning::Instance()->SetFlag(num, Warning::OnlyOnce);
     }
 }
 void WarningAsError(int num)
 {
     if (ValidateWarning(num))
     {
-        warningFlags[num] |= WARNING_AS_ERROR;
+        Warning::Instance()->SetFlag(num, Warning::AsError);
     }
 }
 void AllWarningsAsError()
 {
-    for (int i = 0; i < sizeof(warningFlags); i++)
-        warningFlags[i] |= WARNING_AS_ERROR;
+    for (int i = 0; i < sizeof(errors)/sizeof(errors[0]); i++)
+        Warning::Instance()->SetFlag(i, Warning::AsError);
 }
 void AllWarningsDisable()
 {
-    for (int i = 0; i < sizeof(warningFlags); i++)
-        warningFlags[i] |= WARNING_DISABLE;
+    for (int i = 0; i < sizeof(errors)/sizeof(errors[0]); i++)
+        Warning::Instance()->SetFlag(i, Warning::Disable);
 }
 void PushWarnings()
 {
-    LIST* lst = (LIST*)calloc(1, sizeof(LIST));
-    if (lst)
-    {
-        lst->data = calloc(1, sizeof(warningFlags));
-        if (lst->data)
-        {
-            memcpy(lst->data, warningFlags, sizeof(warningFlags));
-            lst->next = warningStack;
-            warningStack = lst;
-        }
-        else
-        {
-            free(lst);
-        }
-    }
+    Warning::Instance()->Push();
 }
 void PopWarnings()
 {
-    if (warningStack)
-    {
-        memcpy(warningFlags, warningStack->data, sizeof(warningFlags));
-        LIST* old = warningStack;
-        warningStack = warningStack->next;
-        free(old->data);
-        free(old);
-    }
+    Warning::Instance()->Pop();
 }
 void DisableTrivialWarnings()
 {
-    memset(warningFlags, 0, sizeof(warningFlags));
+    Warning::Instance()->Clear();
     if (!cparams.prm_warning)
-        for (int i = 0; i < sizeof(warningFlags); i++)
-            warningFlags[i] |= WARNING_DISABLE;
+        for (int i = 0; i < sizeof(errors)/sizeof(errors[0]); i++)
+            Warning::Instance()->SetFlag(i, Warning::Disable);
     if (!cparams.prm_extwarning)
-        for (int i = 0; i < sizeof(warningFlags); i++)
+        for (int i = 0; i < sizeof(errors)/sizeof(errors[0]); i++)
             if (errors[i].level & TRIVIALWARNING)
-                warningFlags[i] |= WARNING_DISABLE;
+                Warning::Instance()->SetFlag(i, Warning::Disable);
 }
 static int total_errors;
 int diagcount;
@@ -685,7 +656,6 @@ void errorinit(void)
 {
     total_errors = diagcount = 0;
     currentErrorFile = nullptr;
-    warningStack = nullptr;
 }
 
 static char kwtosym(enum e_kw kw)
@@ -840,12 +810,13 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
     }
     else
     {
-        if (warningFlags[err] & WARNING_DISABLE)
+        if (Warning::Instance()->IsSet(err, Warning::Disable))
             return false;
-        if ((warningFlags[err] & (WARNING_ONLY_ONCE | WARNING_EMITTED)) == (WARNING_ONLY_ONCE | WARNING_EMITTED))
-            return false;
-        warningFlags[err] |= WARNING_EMITTED;
-        if (warningFlags[err] & WARNING_AS_ERROR)
+        if (Warning::Instance()->IsSet(err, Warning::OnlyOnce))
+            if (Warning::Instance()->IsSet(err, Warning::Emitted))
+                return false;
+        Warning::Instance()->SetFlag(err, Warning::Emitted);
+        if (Warning::Instance()->IsSet(err, Warning::AsError))
         {
             if (!cparams.prm_quiet)
                 printf("Error(%3d)   ", err);

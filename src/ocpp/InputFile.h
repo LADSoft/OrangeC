@@ -42,14 +42,14 @@ class InputFile
 
   public:
     InputFile(bool fullname, const std::string& Name, PipeArbitrator &Piper) :
-        name(Name),
+        name(cache(Name)),
         lineno(0),
         errlineno(0),
-        errname(GetErrorName(fullname, name)),
+        errname(cache(GetErrorName(fullname, Name))),
         inComment(false),
         commentLine(0),
         endedWithoutEOL(false),
-        fileno(-1),
+        streamid(-1),
         utf8BOM(false),
         fileIndex(0),
         inputLen(0),
@@ -59,17 +59,17 @@ class InputFile
     }
     virtual ~InputFile();
     virtual bool Open();
-    bool IsOpen() const { return fileno >= 0; }
+    bool IsOpen() const { return streamid >= 0; }
     int GetLineNo() { return lineno; }
     int GetErrorLine() { return errlineno; }
-    const std::string& GetErrorFile() { return errname; }
+    const std::string& GetErrorFile() { return *errname; }
     int GetRealLine() { return lineno; }
-    const std::string& GetRealFile() { return name; }
+    const std::string& GetRealFile() { return *name; }
     void CheckErrors();
     virtual bool GetLine(std::string& line);
     void SetErrlineInfo(std::string& name, int line)
     {
-        errname = name;
+        errname = cache(name);
         errlineno = line;
     }
     int GetIndex() const { return fileIndex; }
@@ -81,7 +81,16 @@ class InputFile
     bool ReadLine(char* line);
     void CheckUTF8BOM();
     bool ReadString(char *line, int width);
-
+    const std::string* cache(const std::string& name)
+    {
+        auto it = fileNameCache.find(name);
+        if (it == fileNameCache.end())
+        {
+            fileNameCache.insert(name);
+            it = fileNameCache.find(name);
+        }
+        return &*it;
+    }
 
   protected:
     bool inComment;
@@ -95,11 +104,12 @@ class InputFile
     int inputLen;
     char inputBuffer[32000];
     char *bufPtr;
-    int fileno;
-    const std::string& name;
-    std::string errname;
+    int streamid;
+    const std::string* name;
+    const std::string* errname;
     bool endedWithoutEOL;
     int fileIndex;
     PipeArbitrator& piper;
+    static std::set<std::string> fileNameCache;
 };
 #endif

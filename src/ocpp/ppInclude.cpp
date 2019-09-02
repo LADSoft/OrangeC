@@ -52,8 +52,10 @@ bool ppInclude::CheckInclude(kw token, const std::string& args)
     if (token == kw::INCLUDE)
     {
         std::string line1 = args;
-        define->Process(line1);
-        bool specifiedAsSystem = false;
+        int npos = line1.find_first_not_of(" \t\v");
+        if (npos != std::string::npos && line1[npos] != '"' && line1[npos] != '<')
+            define->Process(line1);
+        bool specifiedAsSystem= false;
         std::string name = ParseName(line1, specifiedAsSystem);
         name = FindFile(specifiedAsSystem, name);
         pushFile(name, line1);
@@ -111,14 +113,8 @@ void ppInclude::pushFile(const std::string& name, const std::string& errname)
             files.push_front(std::move(current));
             current = nullptr;
         }
-        auto it = fileNameCache.find(name);
-        if (it == fileNameCache.end())
-        {
-            fileNameCache.insert(name);
-            it = fileNameCache.find(name);
-        }
         // this next line and the support code have been carefully crafted so that GetRealFile() should return a reference to the cached object.
-        current = std::make_unique<ppFile>(fullname, trigraphs, extendedComment, *it, define, *ctx, unsignedchar, c89, asmpp, piper);
+        current = std::make_unique<ppFile>(fullname, trigraphs, extendedComment, name, define, *ctx, unsignedchar, c89, asmpp, piper);
         // if (current)
         if (!current->Open())
         {
@@ -205,7 +201,9 @@ std::string ppInclude::FindFile(bool specifiedAsSystem, const std::string& name)
     if (rv.empty())
     {
         rv = current->GetRealFile();
-        size_t npos = rv.find_last_of(CmdFiles::DIR_SEP[0]);
+        size_t npos = rv.find_last_of('\\');
+        if (npos == std::string::npos)
+            npos = rv.find_last_of('/');
         if (npos != std::string::npos)
         {
             rv = rv.substr(0, npos);

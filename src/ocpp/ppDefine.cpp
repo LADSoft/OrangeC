@@ -731,17 +731,18 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr)
     int size;
     int p;
     int insize, rv1;
-    for (p = begin; p < end; p++)
+    for (p = begin; p < end;)
     {
         int q = p;
         if (!waiting && (line[p] == '"' || line[p] == '\'') && NotSlashed(line, p))
         {
-            waiting = line[p];
+            waiting = line[p++];
         }
         else if (waiting)
         {
             if (line[p] == waiting && NotSlashed(line, p))
                 waiting = 0;
+            p++;
         }
         else if (Tokenizer::IsSymbolChar(line.c_str() + p, true) &&
                  (p == begin || line[p - 1] == '$' || !Tokenizer::IsSymbolChar(line.c_str() + p - 1, false)))
@@ -849,7 +850,7 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr)
                         {
                             q1 = p;
                             int nestedparen = 0;
-                            while (line[p] != '\n' && (line[p] != ')' || nestedparen))
+                            while (p < line.size() && line[p] != '\n' && (line[p] != ')' || nestedparen))
                             {
                                 if (line[p] == '(')
                                     nestedparen++;
@@ -922,6 +923,10 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr)
                     insize = 0;
                 }
             }
+        }
+        else
+        {
+            p++;
         }
     }
     pptr = p;

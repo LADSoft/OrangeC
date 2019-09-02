@@ -45,6 +45,8 @@ extern COMPILER_PARAMS cparams;
 extern ARCH_ASM* chosenAssembler;
 extern LINEDATA *linesHead, *linesTail;
 extern PreProcessor* preProcessor;
+extern FILE* cppFile;
+
 LEXCONTEXT* context;
 
 int charIndex;
@@ -1449,6 +1451,26 @@ void CompilePragma(const unsigned char **linePointer)
     else
         error(ERR_NEEDSTRING);
 }
+static void DumpPreprocessedLine()
+{
+    if (cppFile)
+    {
+        const unsigned char* p = linePointer;
+        /* this isn't quite kosher, because, for example
+         * #define FFLUSH -2
+         * int a = -FFLUSH;
+         * won't compile correctly from a file that has been generated from here
+         */
+        while (*p)
+        {
+            if (*p != ppDefine::MACRO_PLACEHOLDER)
+                fputc(*p++, cppFile);
+            else
+                p++;
+        }
+        fputc('\n', cppFile);
+    }
+}
 LEXEME* getsym(void)
 {
     static LEXEME* last;
@@ -1507,6 +1529,8 @@ LEXEME* getsym(void)
                 if (parseStack.size() || !preProcessor->GetLine(currentLine))
                     return nullptr;
                 linePointer = (const unsigned char*)currentLine.c_str();
+                if (cppFile)
+                    DumpPreprocessedLine();
                 InsertLineData(preProcessor->GetRealLineNo(), preProcessor->GetFileIndex(), preProcessor->GetRealFile().c_str(), (char *)linePointer);
             }
             while (isspace(*linePointer) || *linePointer == ppDefine::MACRO_PLACEHOLDER)

@@ -134,7 +134,6 @@ class ppInclude
     std::list<std::unique_ptr<ppFile>> files;
     std::set<std::string> userIncludes;
     std::unique_ptr<ppFile> current;
-    std::set<std::string> fileNameCache;
     std::map<std::string, int> fileMap;
     ppDefine* define;
     bool unsignedchar;

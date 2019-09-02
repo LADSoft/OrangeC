@@ -34,5 +34,5 @@ H_FILES=$(wildcard *.h)
 
 include ../redirect.mak
 
-#DISTRIBUTE: copyexe
 DISTRIBUTE:
+	copy ocpplib.exe $(DISTBIN)\ocpp.exe

@@ -33,26 +33,28 @@
 extern "C" char* getcwd(char*, int);
 #endif
 
+std::set<std::string> InputFile::fileNameCache;
+
 InputFile::~InputFile()
 {
-    if (fileno >= 3)
-        close(fileno);
+    if (streamid >= 3)
+        close(streamid);
     CheckErrors();
 }
 bool InputFile::Open()
 {
     if (piper.HasPipe())
     {
-        fileno = piper.OpenFile(name);
+        streamid = piper.OpenFile(*name);
     }
-    else if (name[0] == '-')
+    else if ((*name)[0] == '-')
     {
-        fileno = 0;
+        streamid = 0;
     }
     else
-        fileno = open(name.c_str(), 0); // readonly
+        streamid = open(name->c_str(), 0); // readonly
     CheckUTF8BOM();
-    return fileno >= 0;
+    return streamid >= 0;
 }
 
 void InputFile::CheckErrors()
@@ -108,7 +110,7 @@ std::string InputFile::GetErrorName(bool full, const std::string& name)
 bool InputFile::ReadString(char *s, int len)
 {
     char* olds = s;
-    if (fileno < 0)
+    if (streamid < 0)
     {
         *s = 0;
         inputLen = 0;
@@ -137,7 +139,7 @@ bool InputFile::ReadString(char *s, int len)
                 bufPtr++;
             }
         }
-            inputLen = read(fileno, inputBuffer, sizeof(inputBuffer));
+            inputLen = read(streamid, inputBuffer, sizeof(inputBuffer));
         bufPtr = inputBuffer;
         if (inputLen <= 0)
         {
@@ -168,11 +170,11 @@ void InputFile::CheckUTF8BOM()
 {
     static unsigned char BOM[] = {0xef, 0xbb, 0xbf};
     unsigned char buf[3];
-    if (3 == read(fileno, buf, 3))
+    if (3 == read(streamid, buf, 3))
     {
         utf8BOM = !memcmp(BOM, buf, 3);
         if (utf8BOM)
             return;
     }
-    lseek(fileno, 0, SEEK_SET);
+    lseek(streamid, 0, SEEK_SET);
 }

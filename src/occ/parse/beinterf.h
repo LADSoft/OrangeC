@@ -442,12 +442,12 @@ typedef struct _arch_asm
     void (*main_postprocess)(bool hasErrors);                                        /* postprocess function, or nullptr */
     int (*compiler_postprocess)(char*);                                              /* postprocess function, or nullptr */
     int (*rundown)(void);                                                            /* compiler rundown */
-    void (*insert_output_file)(char* name); /* insert the output (executable name) into the backend */
+    void (*insert_output_file)(const char* name); /* insert the output (executable name) into the backend */
     int (*insert_noncompile_file)(
         char* name, bool primary); /* insert a non-compilable file in the backend list, e.g. for post processing, or nullptr */
-    int (*parse_param)(char mode, char* string);    /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
-    int (*parse_codegen)(char mode, char* string);  /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
-    void (*doPragma)(char* kw, char* tag);          /* parse a pragma directive, or null */
+    int (*parse_param)(char mode, const char* string);    /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
+    int (*parse_codegen)(char mode,const char* string);  /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
+    void (*doPragma)(const char* kw, const char* tag);          /* parse a pragma directive, or null */
     void (*enter_filename)(char* name);             /* signal start of compile on a per file basis */
     void (*enter_includename)(char* name, int num); /* switch to or from an include file */
     void (*output_obj_file)(void);                  /* write the object file (for native object formats) */
@@ -522,7 +522,6 @@ typedef struct
 #define beGetCurrentFunc theCurrentFunc
 #define beLocalAlloc(x) Alloc(x)
 #define beCompilerVersion version
-#define beGetIncludePath prm_searchpath
 #define beGetKeywordData identdata
 #define beGetCurrentInstruction currentQuad
 #define beGlobalAlloc(x) globalAlloc(x)

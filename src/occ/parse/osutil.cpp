@@ -32,22 +32,15 @@
 #include <deque>
 #include "PreProcessor.h"
 #include "Utils.h"
-
+#include "CmdFiles.h"
+#include "CmdSwitch.h"
+#include <vector>
+#include <sstream>
+#include <iostream>
 #include "../../util/Utils.h"
-#ifdef MSIL
-#    include "../version.h"
-#else
 #    include "../../version.h"
-#endif
 #if defined(_MSC_VER) || defined(BORLAND) || defined(__ORANGEC__)
 #    include <io.h>
-#endif
-
-#ifdef __CCDL__
-int _stklen = 100 * 1024;
-#    ifdef MSDOS
-int __dtabuflen = 32 * 1024;
-#    endif
 #endif
 
 #if defined(WIN32) || defined(MICROSOFT)
@@ -63,15 +56,10 @@ extern int diagcount;
 extern NAMESPACEVALUELIST* globalNameSpace;
 extern char infile[];
 extern PreProcessor* preProcessor;
+extern int verbosity;
 
 FILE* outputFile;
 FILE* listFile;
-char outfile[256];
-char* prm_searchpath = 0;
-char* sys_searchpath = 0;
-char* prm_libpath = 0;
-char version[256];
-char copyright[256];
 LIST* clist = 0;
 int showBanner = true;
 int showVersion = false;
@@ -83,59 +71,49 @@ struct DefValue
 };
 std::deque<DefValue> defines;
 
-static bool has_output_file;
-static char** set_searchpath = &prm_searchpath;
-static char** set_libpath = &prm_libpath;
-void fatal(const char* fmt, ...)
-{
-    va_list argptr;
+CmdSwitchParser switchParser;
+CmdSwitchBool prm_c89(switchParser, '8');
+CmdSwitchBool prm_c99(switchParser, '9');
+CmdSwitchBool prm_c11(switchParser, '1');
+CmdSwitchBool prm_ansi(switchParser, 'A');
+CmdSwitchBool prm_errfile(switchParser, 'e');
+CmdSwitchBool prm_cppfile(switchParser, 'i');
+CmdSwitchBool prm_quiet(switchParser, 'Q');
+CmdSwitchBool prm_icdfile(switchParser, 'Y');
+CmdSwitchBool prm_trigraph(switchParser, 'T');
+CmdSwitchBool prm_debug(switchParser, 'v');
+CmdSwitchBool prm_makestubs(switchParser, 'M');
+CmdSwitchBool prm_compileonly(switchParser, 'c');
+CmdSwitchBool prm_xcept(switchParser, 'x');
+CmdSwitchBool prm_viaassembly(switchParser, '#');
+CmdSwitchInt prm_stackalign(switchParser, 's', 16, 0, 2048);
+CmdSwitchString prm_error(switchParser, 'E');
+CmdSwitchString prm_define(switchParser, 'D', ';');
+CmdSwitchString prm_undefine(switchParser, 'U', ';');
+CmdSwitchFile prm_file(switchParser, '@');
+CmdSwitchString prm_codegen(switchParser, 'C', ';');
+CmdSwitchString prm_optimize(switchParser, 'O', ';');
+CmdSwitchString prm_verbose(switchParser, 'y');
+CmdSwitchString prm_warning(switchParser, 'w', ';');
+CmdSwitchString prm_output(switchParser, 'o');
+CmdSwitchString prm_tool(switchParser, 'p', ';');
 
-    va_start(argptr, fmt);
-    fprintf(stderr, "Fatal error: ");
-    vfprintf(stderr, fmt, argptr);
-    va_end(argptr);
-    extern void Cleanup();
-    Cleanup();
-    exit(1);
-}
-void banner(const char* fmt, ...)
-{
-    va_list argptr;
+CmdSwitchString prm_library(switchParser, 'l', ';');
 
-    va_start(argptr, fmt);
-    vfprintf(stderr, fmt, argptr);
-    va_end(argptr);
+CmdSwitchString prm_include(switchParser, 'I', ';');
+CmdSwitchString prm_sysinclude(switchParser, 'z', ';');
+CmdSwitchString prm_libpath(switchParser, 'L', ';');
+CmdSwitchString prm_pipe(switchParser, 'P', ';');
 
-    putc('\n', stderr);
-    putc('\n', stderr);
-}
+
+CmdSwitchBool prm_msil_noextensions(switchParser, 'd');
+CmdSwitchString prm_msil_strongnamekeyfile(switchParser, 'K');
+CmdSwitchString prm_msil_namespace(switchParser, 'N');
+CmdSwitchString prm_msil_version(switchParser, 'V');
+
+CmdSwitchString prm_Winmode(switchParser, 'W');
 
 /* Print usage info */
-void usage(char* prog_name)
-{
-    char* short_name;
-    char* extension;
-
-    short_name = strrchr(prog_name, '\\');
-    if (short_name == nullptr)
-        short_name = strrchr(prog_name, '/');
-    if (short_name == nullptr)
-        short_name = strrchr(prog_name, ':');
-    if (short_name)
-        short_name++;
-    else
-        short_name = prog_name;
-
-    extension = strrchr(short_name, '.');
-    if (extension != nullptr)
-        *extension = '\0';
-    fprintf(stderr, "Usage: %s %s", short_name, getUsageText());
-#    ifndef USE_LONGLONG
-    fprintf(stderr, "   long long not supported");
-#    endif
-
-    exit(1);
-}
 /*
  * If no extension, add the one specified
  */
@@ -206,325 +184,351 @@ static const char* parsepath(const char* path, char* buffer)
     return (0);
 }
 
-extern CMDLIST* ArgList;
-/*int parseParam(int bool, char *string); */
-
-static int use_case; /* Gets set for case sensitivity */
-
-/*
- * Function that unlinks the argument from che argv[] chain
- */
-static void remove_arg(int pos, int* count, char* list[])
+/*-------------------------------------------------------------------------*/
+void library_setup(char select, char* string)
 {
-    int i;
-
-    /* Decrement length of list */
-    (*count)--;
-
-    /* move items down */
-    for (i = pos; i < *count; i++)
-        list[i] = list[i + 1];
-}
-
-/*
- * ompare two characters, ignoring case if necessary
- */
-static int cmatch(char t1, char t2)
-{
-    if (use_case)
-        return (t1 == t2);
-
-    return (toupper(t1) == toupper(t2));
-}
-
-/* Routine scans a string to see if any of the characters match
- *  the arguments, then dispatches to the action routine if so.
- */
-/* Callbacks of the form
- *   void boolcallback( char selectchar, int value)
- *   void switchcallback( char selectchar, int value)  ;; value always true
- *   void stringcallback( char selectchar, char *string)
- */
-static int scan_args(char* string, int index, char* arg)
-{
-    int i = -1;
-    bool legacyArguments = !!getenv("OCC_LEGACY_OPTIONS");
-    while (ArgList[++i].id)
+    (void)select;
+    if (string[0] == 0)
     {
-        switch (ArgList[i].mode)
+        cparams.prm_listfile = true;
+    }
+    else
+    {
+        char buf[260];
+        strcpy(buf, string);
+        StripExt(buf);
+        AddExt(buf, ".l");
+        InsertAnyFile(buf, 0, -1, false);
+    }
+}
+static std::vector<std::string> split(std::string strToSplit, char delimeter = ';')
+{
+    std::stringstream ss(strToSplit);
+    std::string item;
+    std::vector<std::string> splittedStrings;
+    while (std::getline(ss, item, delimeter))
+    {
+        splittedStrings.push_back(item);
+    }
+    return splittedStrings;
+}
+void optimize_setup(char select, const char* string)
+{
+    (void)select;
+    if (!*string || (*string == '+' && string[1] == '\0'))
+    {
+        cparams.prm_optimize_for_speed = true;
+        cparams.prm_optimize_for_size = false;
+        cparams.prm_debug = false;
+    }
+    else if (*string == '-' && string[1] == '\0')
+        cparams.prm_optimize_for_speed = cparams.prm_optimize_for_size = cparams.prm_optimize_float_access = false;
+    else
+    {
+        cparams.prm_debug = false;
+        if (*string == '0')
         {
-            case ARG_SWITCHSTRING:
-                if (cmatch(string[index], ArgList[i].id))
-                {
-                    (*ArgList[i].routine)(string[index], &string[index]);
-                    return (ARG_NEXTCHAR);
-                }
-                break;
-            case ARG_SWITCH:
-                if (cmatch(string[index], ArgList[i].id))
-                {
-                    (*ArgList[i].routine)(string[index], (char*)true);
-                    return (ARG_NEXTCHAR);
-                }
-                break;
-            case ARG_BOOL:
-                if (cmatch(string[index], ArgList[i].id))
-                {
-                    if (!legacyArguments || string[0] == ARG_SEPtrue || string[0] == '/')
-                        (*ArgList[i].routine)(string[index], (char*)true);
-                    else
-                        (*ArgList[i].routine)(string[index], (char*)false);
-                    return (ARG_NEXTCHAR);
-                }
-                break;
-            case ARG_CONCATSTRING:
-                if (cmatch(string[index], ArgList[i].id))
-                {
-                    (*ArgList[i].routine)(string[index], string + index + 1);
-                    return (ARG_NEXTARG);
-                }
-                break;
-            case ARG_NOCONCATSTRING:
-                if (cmatch(string[index], ArgList[i].id))
-                {
-                    if (!arg)
-                        return (ARG_NOARG);
-                    (*ArgList[i].routine)(string[index], arg);
-                    return (ARG_NEXTNOCAT);
-                }
-                break;
-            case ARG_COMBINESTRING:
-                if (cmatch(string[index], ArgList[i].id))
-                {
-                    if (string[index + 1])
-                    {
-                        (*ArgList[i].routine)(string[index], string + index + 1);
-                        return (ARG_NEXTARG);
-                    }
-                    else
-                    {
-                        if (!arg)
-                            return (ARG_NEXTARG);
-                        (*ArgList[i].routine)(string[index], arg);
-                        return (ARG_NEXTNOCAT);
-                    }
-                }
-                break;
+            cparams.prm_optimize_for_speed = cparams.prm_optimize_for_size = 0;
+        }
+        else if (*string == 'f')
+            cparams.prm_optimize_float_access = true;
+        else if (*string == '2')
+        {
+            cparams.prm_optimize_for_speed = true;
+            cparams.prm_optimize_for_size = false;
+        }
+        else if (*string == '1')
+        {
+            cparams.prm_optimize_for_speed = false;
+            cparams.prm_optimize_for_size = true;
         }
     }
-    return (ARG_NOMATCH);
-}
-
-/*
- * Main parse routine.  Scans for '-', then scan for arguments and
- * delete from the argv[] array if so.
- */
-bool parse_args(int* argc, char* argv[], bool case_sensitive)
-{
-
-    int pos = 0;
-    bool retval = true;
-    use_case = case_sensitive;
-
-    while (++pos < *argc)
-    {
-        if ((argv[pos][0] == ARG_SEPSWITCH) || (argv[pos][0] == ARG_SEPfalse) || (argv[pos][0] == ARG_SEPtrue))
-        {
-            if (argv[pos][1] == '!' || !strcmp(argv[pos], "--nologo"))
-            {
-                // skip the silence arg
-            }
-            else if (argv[pos][0] == ARG_SEPfalse && !argv[pos][1])
-            {
-                continue;
-            }
-            else
-            {
-                int argmode;
-                int index = 1;
-                bool done = false;
-                do
-                {
-                    /* Scan the present arg */
-                    if (pos < *argc - 1)
-                        argmode = scan_args(argv[pos], index, argv[pos + 1]);
-                    else
-                        argmode = scan_args(argv[pos], index, 0);
-
-                    switch (argmode)
-                    {
-                        case ARG_NEXTCHAR:
-                            /* If it was a char, go to the next one */
-                            if (!argv[pos][++index])
-                                done = true;
-                            break;
-                        case ARG_NEXTNOCAT:
-                            /* Otherwise if it was a nocat, remove the extra arg */
-                            remove_arg(pos, argc, argv);
-                            /* Fall through to NEXTARG */
-                        case ARG_NEXTARG:
-                            /* Just a next arg, go do it */
-                            done = true;
-                            break;
-                        case ARG_NOMATCH:
-                            /* No such arg, spit an error  */
-                                    fprintf(stderr, "Invalid Arg: %s\n", argv[pos]);
-                                    retval = false;
-                                    done = true;
-                            break;
-                        case ARG_NOARG:
-                            /* Missing the arg for a CONCAT type, spit the error */
-                            fprintf(stderr, "Missing string for Arg %s\n", argv[pos]);
-                            done = true;
-                            retval = false;
-                            break;
-                    };
-
-                } while (!done);
-            }
-            /* We'll always get rid of the present arg
-             * And back up one
-             */
-            remove_arg(pos--, argc, argv);
-        }
-    }
-    return (retval);
 }
 /*-------------------------------------------------------------------------*/
 
-void err_setup(char select, char* string)
+void codegen_setup(char select, const char* string)
 /*
- * activation for the max errs argument
+ * activation for code-gen type command line arguments
  */
 {
-    int n;
+    char v = true;
     (void)select;
-    if (*string == '+')
+    while (*string)
     {
-        cparams.prm_extwarning = true;
+        switch (*string)
+        {
+            /*               case 'f':*/
+            /*                  cparams.prm_smartframes = bool ;*/
+            /*                  break ;*/
+        case 'u':
+            cparams.prm_charisunsigned = v;
+            break;
+        case 'd':
+            cparams.prm_diag = v;
+            break;
+        case 'r':
+            cparams.prm_revbits = v;
+            break;
+        case 'b':
+            cparams.prm_bss = v;
+            break;
+        case 'l':
+            cparams.prm_lines = v;
+            break;
+        case 'm':
+            cparams.prm_cmangle = v;
+            break;
+#ifndef i386
+            /*                case 'R':*/
+            /*                    cparams.prm_linkreg = v;*/
+            /*                    break;*/
+#endif
+        case 'S':
+            cparams.prm_stackcheck = v;
+            break;
+        case 'O':
+            cparams.prm_oldfor = v;
+            break;
+        case 'Z':
+            cparams.prm_profiler = v;
+            break;
+        case 'i':
+            cparams.prm_allowinline = v;
+            break;
+        case '-':
+            v = false;
+            break;
+        case '+':
+            v = true;
+            break;
+        default:
+            if (chosenAssembler->parse_codegen)
+            {
+                switch (chosenAssembler->parse_codegen(v, string))
+                {
+                case 1:
+                    break;
+                case 2:
+                    return;
+                case 0:
+                default:
+                    Utils::fatal("Invalid codegen parameter ");
+                    break;
+                }
+            }
+            else
+                Utils::fatal("Invalid codegen parameter ");
+        }
         string++;
     }
-    else if (*string == '-')
-    {
-        cparams.prm_warning = false;
-        string++;
-    }
-    n = atoi(string);
-    if (n > 0)
-        cparams.prm_maxerr = n;
-    DisableTrivialWarnings();
 }
-void warning_setup(char select, char* string)
+void warning_setup(char select, const char* string)
 {
     if (string[0] == 0)
         AllWarningsDisable();
     else
         switch (string[0])
         {
-            case '+':
-                cparams.prm_extwarning = true;
-                DisableTrivialWarnings();
-                break;
-            case 'd':
-                DisableWarning(atoi(string + 1));
-                break;
-            case 'o':
-                WarningOnlyOnce(atoi(string + 1));
-                break;
-            case 'x':
+        case '+':
+            cparams.prm_extwarning = true;
+            DisableTrivialWarnings();
+            break;
+        case 'd':
+            DisableWarning(atoi(string + 1));
+            break;
+        case 'o':
+            WarningOnlyOnce(atoi(string + 1));
+            break;
+        case 'x':
+            AllWarningsAsError();
+            break;
+        case 'e':
+            if (!strcmp(string, "error"))
                 AllWarningsAsError();
-                break;
-            case 'e':
-                if (!strcmp(string, "error"))
-                    AllWarningsAsError();
-                else
-                    WarningAsError(atoi(string + 1));
-                break;
-            default:
-                EnableWarning(atoi(string));
-                break;
+            else
+                WarningAsError(atoi(string + 1));
+            break;
+        default:
+            EnableWarning(atoi(string));
+            break;
         }
 }
-
-/*-------------------------------------------------------------------------*/
-
-void sysincl_setup(char select, char* string)
-{
-    (void)select;
-    if (sys_searchpath)
-    {
-        sys_searchpath = (char*)realloc(sys_searchpath, strlen(string) + strlen(sys_searchpath) + 2);
-        strcat(sys_searchpath, ";");
-    }
-    else
-    {
-        sys_searchpath = (char*)malloc(strlen(string) + 1);
-        sys_searchpath[0] = 0;
-    }
-    fflush(stdout);
-    strcat(sys_searchpath, string);
-}
-void incl_setup(char select, char* string)
+void ParamTransfer()
 /*
- * activation for include paths
+ * activation routine (callback) for boolean command line arguments
  */
 {
-    (void)select;
-    if (*set_searchpath)
-    {
-        *set_searchpath = (char*)realloc(*set_searchpath, strlen(string) + strlen(*set_searchpath) + 2);
-        strcat(*set_searchpath, ";");
-    }
-    else
-    {
-        *set_searchpath = (char*)malloc(strlen(string) + 1);
-        *set_searchpath[0] = 0;
-    }
-    fflush(stdout);
-    strcat(*set_searchpath, string);
-}
-void libpath_setup(char select, char* string)
-{
-    (void)select;
-    if (*set_libpath)
-    {
-        *set_libpath = (char*)realloc(*set_libpath, strlen(string) + strlen(*set_libpath) + 2);
-        strcat(*set_libpath, ";");
-    }
-    else
-    {
-        *set_libpath = (char*)malloc(strlen(string) + 1);
-        *set_libpath[0] = 0;
-    }
-    fflush(stdout);
-    strcat(*set_libpath, string);
-}
-void tool_setup(char select, char* string)
-{
-    char buf[2048];
-    buf[0] = '$';
-    strcpy(buf + 1, string);
-    InsertAnyFile(buf, 0, -1, false);
-}
-/*-------------------------------------------------------------------------*/
 
-void def_setup(char select, char* string)
-/*
- * activation for command line #defines
- */
-{
-    defines.push_back(DefValue{string, 0});
-}
+    // booleans
+    if (prm_c89.GetExists())
+        cparams.prm_c99 = cparams.prm_c1x = prm_c89.GetValue();
+    if (prm_c99.GetExists())
+    {
+        cparams.prm_c99 = prm_c99.GetValue();
+        cparams.prm_c1x = !prm_c99.GetValue();
+    }
+    if (prm_c99.GetExists())
+    {
+        cparams.prm_c99 = prm_c11.GetValue();
+        cparams.prm_c1x = prm_c11.GetValue();
+    }
+    if (prm_makestubs.GetExists())
+        cparams.prm_makestubs = prm_makestubs.GetValue();
+    if (prm_ansi.GetExists())
+        cparams.prm_ansi = prm_ansi.GetValue();
+    if (prm_errfile.GetExists())
+        cparams.prm_errfile = prm_errfile.GetValue();
+    if (prm_cppfile.GetExists())
+        cparams.prm_cppfile = prm_cppfile.GetValue();
+    if (prm_quiet.GetExists())
+        cparams.prm_quiet = prm_quiet.GetValue();
+    if (prm_trigraph.GetExists())
+        cparams.prm_trigraph = prm_trigraph.GetValue();
+    if (prm_icdfile.GetExists())
+        cparams.prm_icdfile = prm_icdfile.GetValue();
+    if (prm_viaassembly.GetExists())
+    {
+        cparams.prm_assemble = true;
+        cparams.prm_asmfile = false;
+    }
+    if (prm_debug.GetExists())
+    {
+        cparams.prm_debug = prm_debug.GetValue();
+        if (cparams.prm_debug)
+        {
+            cparams.prm_optimize_for_speed = cparams.prm_optimize_for_size = 0;
+        }
+    }
+    if (prm_compileonly.GetExists())
+    {
+        if (chosenAssembler->objext)
+        {
+            cparams.prm_compileonly = prm_compileonly.GetValue();
+            cparams.prm_asmfile = false;
+        }
+    }
+    if (prm_xcept.GetExists())
+        cparams.prm_xcept = prm_xcept.GetValue();
+    // non-bools
+    if (prm_verbose.GetExists())
+    {
+        verbosity = 1 + prm_verbose.GetValue().size();
+    }
+    std::vector<std::string> checks = split(prm_optimize.GetValue());
+    for (auto&& v : checks)
+    {
+        if (v.size() >= 1)
+        {
+            char ch = v[0];
+            optimize_setup(ch, v.c_str() + 1);
+        }
+        
+    }
+    checks = split(prm_codegen.GetValue());
+    for (auto&& v : checks)
+    {
+        if (v.size() >= 1)
+        {
+            char ch = v[0];
+            codegen_setup(ch, v.c_str() + 1);
+        }
 
-void undef_setup(char select, char* string) { defines.push_back(DefValue{string, 1}); }
+    }
+    if (prm_stackalign.GetExists())
+    {
+        int n = prm_stackalign.GetValue();
+        if (!n || (n % chosenAssembler->arch->stackalign))
+            Utils::fatal("Invalid stack alignment parameter ");
+        cparams.prm_stackalign = n;
+    }
+    if (prm_error.GetExists())
+    {
+        const char *string = prm_error.GetValue().c_str();
+        if (*string == '+')
+        {
+            cparams.prm_extwarning = true;
+            string++;
+        }
+        else if (*string == '-')
+        {
+            cparams.prm_warning = false;
+            string++;
+        }
+        int n = atoi(string);
+        if (n > 0)
+            cparams.prm_maxerr = n;
+        DisableTrivialWarnings();
+    }
+    checks = split(prm_warning.GetValue());
+    for (auto&& v : checks)
+    {
+        warning_setup('w', v.c_str());
 
-/*-------------------------------------------------------------------------*/
-
-void output_setup(char select, char* string)
-{
-    (void)select;
-    strcpy(outfile, string);
-    has_output_file = true;
+    }
+    checks = split(prm_tool.GetValue());
+    for (auto&& v : checks)
+    {
+        std::string hash = "$" + v;
+        InsertAnyFile(hash.c_str(), 0, -1, false);
+    }
+    checks = split(prm_define.GetValue());
+    for (auto&& v : checks)
+    {
+        defines.push_back(DefValue{ v.c_str(), 0 });
+    }
+    checks = split(prm_undefine.GetValue());
+    for (auto&& v : checks)
+    {
+        defines.push_back(DefValue{ v.c_str(), 1 });
+    }
+    checks = split(prm_library.GetValue());
+    for (auto&& v : checks)
+    {
+        if (v.size() == 0)
+        {
+            cparams.prm_listfile = true;
+        }
+        else
+        {
+            char buf[260];
+            strcpy(buf, v.c_str());
+            StripExt(buf);
+            AddExt(buf, ".l");
+            InsertAnyFile(buf, 0, -1, false);
+            if (chosenAssembler->parse_param)
+                chosenAssembler->parse_param('L', prm_library.GetValue().c_str());
+        }
+    }
+    if (prm_Winmode.GetExists())
+    {
+        if (chosenAssembler->parse_param)
+            chosenAssembler->parse_param('W', prm_Winmode.GetValue().c_str());
+    }
+    if (prm_pipe.GetExists() && prm_pipe.GetValue().size() == 0)
+    {
+        if (chosenAssembler->parse_param)
+            chosenAssembler->parse_param('P', prm_Winmode.GetValue().c_str());
+    }
+    if (prm_msil_noextensions.GetExists())
+    {
+        if (chosenAssembler->parse_param)
+            chosenAssembler->parse_param('d', prm_Winmode.GetValue().c_str());
+    }
+    if (prm_msil_strongnamekeyfile.GetExists() && prm_msil_strongnamekeyfile.GetValue().size() == 0)
+    {
+        if (chosenAssembler->parse_param)
+            chosenAssembler->parse_param('K', prm_Winmode.GetValue().c_str());
+    }
+    if (prm_msil_namespace.GetExists() && prm_msil_namespace.GetValue().size() == 0)
+    {
+        if (chosenAssembler->parse_param)
+            chosenAssembler->parse_param('N', prm_Winmode.GetValue().c_str());
+    }
+    if (prm_msil_version.GetExists() && prm_msil_version.GetValue().size() == 0)
+    {
+        if (chosenAssembler->parse_param)
+            chosenAssembler->parse_param('V', prm_Winmode.GetValue().c_str());
+    }
 }
 
 /*-------------------------------------------------------------------------*/
@@ -610,7 +614,7 @@ void setglbdefs(void)
 
 /*-------------------------------------------------------------------------*/
 
-void InsertOneFile(char* filename, char* path, int drive, bool primary)
+void InsertOneFile(const char* filename, char* path, int drive, bool primary)
 /*
  * Insert a file name onto the list of files to process
  */
@@ -661,7 +665,7 @@ void InsertOneFile(char* filename, char* path, int drive, bool primary)
         s->data = newbuffer;
     }
 }
-void InsertAnyFile(char* filename, char* path, int drive, bool primary)
+void InsertAnyFile(const char* filename, char* path, int drive, bool primary)
 {
     char drv[256], dir[256], name[256], ext[256];
 #if defined(_MSC_VER) || defined(BORLAND) || defined(__ORANGEC__)
@@ -724,7 +728,7 @@ void outputfile(char* buf, const char* orgbuf, const char* ext)
         StripExt(buf);
         AddExt(buf, ext);
     }
-    else if (has_output_file)
+    else if (prm_output.GetExists())
     {
         AddExt(buf, ext);
     }
@@ -736,181 +740,24 @@ void outputfile(char* buf, const char* orgbuf, const char* ext)
 
 /*-------------------------------------------------------------------------*/
 
-void scan_env(char* output, char* string)
-{
-    char name[256], *p;
-    while (*string)
-    {
-        if (*string == '%')
-        {
-            p = name;
-            string++;
-            while (*string && *string != '%')
-                *p++ = *string++;
-            if (*string)
-                string++;
-            *p = 0;
-            p = getenv(name);
-            if (p)
-            {
-                strcpy(output, p);
-                output += strlen(output);
-            }
-        }
-        else
-            *output++ = *string++;
-    }
-    *output = 0;
-}
-
-/*-------------------------------------------------------------------------*/
-
-int parse_arbitrary(char* string)
-/*
- * take a C string and and convert it to ARGC, ARGV format and then run
- * it through the argument parser
- */
-{
-    char* argv[40];
-    char output[1024];
-    int rv, i;
-    int argc = 1;
-    if (!string || !*string)
-        return 1;
-    scan_env(output, string);
-    string = output;
-    while (1)
-    {
-        int quoted = ' ';
-        while (*string == ' ')
-            string++;
-        if (!*string)
-            break;
-        if (*string == '\"')
-            quoted = *string++;
-        argv[argc++] = string;
-        while (*string && *string != quoted)
-            string++;
-        if (!*string)
-            break;
-        *string = 0;
-        string++;
-    }
-    rv = parse_args(&argc, argv, true);
-    for (i = 1; i < argc; i++)
-        InsertAnyFile(argv[i], 0, -1, true);
-    return rv;
-}
-
-/*-------------------------------------------------------------------------*/
-
-void parsefile(char select, char* string)
-/*
- * parse arguments from an input file
- */
-{
-    FILE* temp = fopen(string, "r");
-    (void)select;
-    if (!temp)
-        fatal("Response file not found");
-    while (!feof(temp))
-    {
-        char buf[256];
-        buf[0] = 0;
-        fgets(buf, 256, temp);
-        if (buf[strlen(buf) - 1] == '\n')
-            buf[strlen(buf) - 1] = 0;
-        if (!parse_arbitrary(buf))
-            break;
-    }
-    fclose(temp);
-}
-
-/*-------------------------------------------------------------------------*/
-
 void addinclude(void)
 /*
  * Look up the INCLUDE environment variable and append it to the
  * search path
  */
 {
-#ifdef COLDFIRE
-    char* string = getenv("cfccincl");
-#else
     char* string = getenv("CCINCL");
-#endif
     if (string && string[0])
     {
-        char temp[1000];
-        strcpy(temp, string);
-        if (*set_searchpath)
-        {
-            strcat(temp, ";");
-            strcat(temp, *set_searchpath);
-            free(*set_searchpath);
-        }
-        *set_searchpath = (char*)malloc(strlen(temp) + 1);
-        strcpy(*set_searchpath, temp);
+        prm_include.Parse(string);
     }
     string = getenv("CPATH");
     if (string && string[0])
     {
-        char temp[1000];
-        strcpy(temp, string);
-        if (*set_searchpath)
-        {
-            strcat(temp, ";");
-            strcat(temp, *set_searchpath);
-            free(*set_searchpath);
-        }
-        *set_searchpath = (char*)(strlen(temp) + 1);
-        strcpy(*set_searchpath, temp);
+        prm_include.Parse(string);
     }
 }
 
-/*-------------------------------------------------------------------------*/
-
-int parseenv(const char* name)
-/*
- * Parse the environment argument string
- */
-{
-    char* string = getenv(name);
-    return parse_arbitrary(string);
-}
-
-/*-------------------------------------------------------------------------*/
-
-int parseconfigfile(char* name)
-{
-    char buf[256], *p;
-    if (!chosenAssembler->cfgname)
-        return 0;
-    strcpy(buf, name);
-    p = strrchr(buf, '\\');
-    if (p)
-    {
-        FILE* temp;
-        strcpy(p + 1, chosenAssembler->cfgname);
-        strcat(p, ".CFG");
-        temp = fopen(buf, "r");
-        if (!temp)
-            return 0;
-        set_searchpath = &sys_searchpath;
-        while (!feof(temp))
-        {
-            buf[0] = 0;
-            fgets(buf, 256, temp);
-            if (buf[strlen(buf) - 1] == '\n')
-                buf[strlen(buf) - 1] = 0;
-            if (!parse_arbitrary(buf))
-                break;
-        }
-        set_searchpath = &prm_searchpath;
-        fclose(temp);
-    }
-    return 0;
-}
 
 /*-------------------------------------------------------------------------*/
 
@@ -958,10 +805,6 @@ void ccinit(int argc, char* argv[])
     int rv;
     int i;
 
-    strcpy(copyright, COPYRIGHT);
-    strcpy(version, STRING_VERSION);
-
-    outfile[0] = 0;
     for (i = 1; i < argc; i++)
         if (argv[i][0] == '-' || argv[i][0] == '/')
         {
@@ -977,13 +820,15 @@ void ccinit(int argc, char* argv[])
 
     if (showBanner || showVersion)
     {
-        banner("%s Version %s %s", chosenAssembler->progname, version, copyright);
+        Utils::banner(chosenAssembler->progname);
     }
     if (showVersion)
     {
         fprintf(stderr, "Compile date: " __DATE__ ", time: " __TIME__ "\n");
         exit(0);
     }
+    extern void Cleanup();
+    Utils::SetCleanup(Cleanup);
 #if defined(WIN32) || defined(MICROSOFT)
     GetModuleFileNameA(nullptr, buffer, sizeof(buffer));
 #else
@@ -1012,13 +857,34 @@ void ccinit(int argc, char* argv[])
     }
     DisableTrivialWarnings();
     /* parse the environment and command line */
-    if (chosenAssembler->envname && !parseenv(chosenAssembler->envname))
-        usage(argv[0]);
+    int ecnt = 0;
+    char *eargs[200];
+    if (chosenAssembler->envname && !switchParser.Parse(std::string(chosenAssembler->envname), &ecnt, eargs))
+        Utils::usage(argv[0], getUsageText());
 
-    parseconfigfile(buffer);
-    if (!parse_args(&argc, argv, true) || (!clist && argc == 1))
-        usage(argv[0]);
+    CmdSwitchFile internalConfig(switchParser);
+    if (chosenAssembler->cfgname)
+    {
+        std::string configName = Utils::QualifiedFile(buffer, ".cfg");
+        std::fstream configTest(configName, std::ios::in);
+        if (!configTest.fail())
+        {
+            configTest.close();
+            if (!internalConfig.Parse(configName.c_str()))
+                Utils::fatal("Corrupt configuration file");
+        }
+    }
 
+    if (!switchParser.Parse(&argc, argv) || argc == 1 && prm_file.GetCount() <= 1 && ecnt <= 1)
+        Utils::usage(argv[0], getUsageText());
+
+    ParamTransfer();
+    if (chosenAssembler->doPragma)
+    {
+        preProcessor->SetPragmaCatchall([](const std::string&kw, const std::string&tag) {
+            chosenAssembler->doPragma(kw.c_str(), tag.c_str());
+        });
+    }
     /* tack the environment includes in */
     addinclude();
 
@@ -1026,26 +892,31 @@ void ccinit(int argc, char* argv[])
     {
         int i;
         for (i = 1; i < argc; i++)
-            if (argv[i][0] == '@')
-                parsefile(0, argv[i] + 1);
-            else
-                InsertAnyFile(argv[i], 0, -1, true);
+           InsertAnyFile(argv[i], 0, -1, true);
+        for (i = 1; i < ecnt; i++)
+            InsertAnyFile(eargs[i], 0, -1, true);
+        int count = prm_file.GetCount();
+        char **value = prm_file.GetValue();
+        for (int i = 1; i < count; i++)
+        {
+            InsertAnyFile(argv[i], 0, -1, true);
+        }   
     }
 
 #ifndef PARSER_ONLY
 
-    if (has_output_file)
+    if (prm_output.GetExists())
     {
         if (chosenAssembler->insert_output_file)
-            chosenAssembler->insert_output_file(outfile);
+            chosenAssembler->insert_output_file(prm_output.GetValue().c_str());
         if (!cparams.prm_compileonly)
         {
-            has_output_file = false;
+            prm_output.SetExists(false);
         }
         else
         {
-            if (clist && clist->next && outfile[strlen(outfile) - 1] != '\\')
-                fatal("Cannot specify output file for multiple input files\n");
+            if (clist && clist->next && prm_output.GetValue()[prm_output.GetValue().size() - 1] != '\\')
+                Utils::fatal("Cannot specify output file for multiple input files\n");
         }
     }
 #else

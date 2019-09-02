@@ -27,6 +27,7 @@
 #include <string.h>
 #include <limits.h>
 #include "compiler.h"
+#include "Utils.h"
 
 /* Basic loop identity and data gathering
  * note: some optimizations depend on the fact that the loop numbers
@@ -497,7 +498,7 @@ void BuildLoopTree(void)
         tail = tail->back;
     }
     if (loopCount >= blockCount * 4)
-        fatal("internal error");
+        Utils::fatal("internal error");
 }
 bool isAncestor(LOOP* l1, LOOP* l2)
 {

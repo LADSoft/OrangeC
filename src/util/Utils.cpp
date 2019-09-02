@@ -46,6 +46,8 @@ extern "C" char* getcwd(char*, int);
 #include "../version.h"
 #include <iostream>
 
+void (*Utils::cleanup)();
+
 char* Utils::ShortName(const char* v)
 {
     static char prog_name[260], *short_name, *extension;

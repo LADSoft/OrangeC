@@ -33,6 +33,7 @@
 #include <ctype.h>
 #include "compiler.h"
 #include "PreProcessor.h"
+#include "CmdSwitch.h"
 /*      variable initialization         */
 extern int tempCount;
 extern BITINT bittab[BITINTBITS];
@@ -44,7 +45,6 @@ extern int cachedTempCount;
 extern TEMP_INFO** tempInfo;
 extern LIST *localfuncs, *localdata;
 extern FILE* icdFile;
-extern char outfile[];
 extern int nextLabel;
 extern LIST* externals;
 extern SYMBOL* theCurrentFunc;
@@ -53,6 +53,7 @@ extern QUAD* criticalThunks;
 extern int cachedTempCount;
 extern LIST* exports;
 extern PreProcessor* preProcessor;
+extern CmdSwitchString prm_output;
 
 QUAD* currentQuad;
 
@@ -2650,7 +2651,7 @@ void asm_header(char* name, char* version)
         if (chosenAssembler->gen->gen_header)
             chosenAssembler->gen->gen_header(name, version);
 
-        oprintf(icdFile, ";Icode test - %s\n\n", outfile);
+//        oprintf(icdFile, ";Icode test - %s\n\n", outfile);
     }
 }
 void asm_trailer(void)

@@ -158,7 +158,7 @@ static std::map<std::string, Type*> typeList;
 static std::map<SYMBOL*, Value*, byField> fieldList;
 static std::map<std::string, MethodSignature*> arrayMethods;
 
-void parse_pragma(char* kw, char* tag)
+void parse_pragma(const char* kw, const char* tag)
 {
     if (Utils::iequal(kw, "netlib"))
     {
@@ -166,9 +166,12 @@ void parse_pragma(char* kw, char* tag)
             tag++;
         if (*tag)
         {
-            char* p = tag + strlen(tag) - 1;
-            while (isspace(*p))
-                *p-- = 0;
+            std::string temp = tag;
+            int npos = temp.find_last_not_of(" \t\v\n");
+            if (npos != std::string::npos)
+            {
+                temp = temp.substr(0, npos);
+            }
             peLib->LoadAssembly(tag);
             Import();
         }
@@ -220,7 +223,7 @@ static MethodSignature* FindMethodSignature(const char* name)
     {
         return static_cast<Method*>(result)->Signature();
     }
-    fatal("could not find built in method %s", name);
+    Utils::fatal("could not find built in method %s", name);
     return NULL;
 }
 static Type* FindType(const char* name, bool toErr)
@@ -231,7 +234,7 @@ static Type* FindType(const char* name, bool toErr)
         return peLib->AllocateType(static_cast<Class*>(result));
     }
     if (toErr)
-        fatal("could not find built in type %s", name);
+        Utils::fatal("could not find built in type %s", name);
     return NULL;
 }
 
@@ -318,7 +321,7 @@ MethodSignature* GetMethodSignature(TYPE* tp, bool pinvoke)
             }
             else
             {
-                fatal("missing rtl function: %s", buf);
+                Utils::fatal("missing rtl function: %s", buf);
             }
         }
         else
@@ -572,7 +575,7 @@ void msil_create_property(SYMBOL* property, SYMBOL* getter, SYMBOL* setter)
     }
     else
     {
-        fatal("Cannot add property at non-class level");
+        Utils::fatal("Cannot add property at non-class level");
     }
 }
 void AddType(SYMBOL* sym, Type* type) { typeList[sym->decoratedName] = type; }
@@ -1606,7 +1609,7 @@ static void CreateExternalCSharpReferences()
         // have to create various function signatures if not loading the library
         Namespace* ns = nullptr;
         if (peLib->Find("lsmsilcrtl", (void**)&ns, 0) != PELib::s_namespace)
-            fatal("namespace lsmsilcrtl does not exist");
+            Utils::fatal("namespace lsmsilcrtl does not exist");
         Type* object = peLib->AllocateType(Type::object, 0);
         Type* voidPtr = peLib->AllocateType(Type::Void, 1);
         Type* objectArray = peLib->AllocateType(Type::object, 0);
@@ -1689,7 +1692,7 @@ static void CreateExternalCSharpReferences()
         toStr = result->Signature();
     }
     if (!concatStr || !concatObj || !toStr)
-        fatal("could not find builtin function");
+        Utils::fatal("could not find builtin function");
 }
 void ReplaceName(std::map<std::string, Value*>& list, Value* v, char* name)
 {
@@ -1756,11 +1759,11 @@ int oa_main_preprocess(void)
 
         if (peLib->LoadAssembly("mscorlib"))
         {
-            fatal("could not load mscorlib.dll");
+            Utils::fatal("could not load mscorlib.dll");
         }
         if (!no_default_libs && peLib->LoadAssembly("lsmsilcrtl"))
         {
-            fatal("could not load lsmsilcrtl.dll");
+            Utils::fatal("could not load lsmsilcrtl.dll");
         }
         _apply_global_using();
 
@@ -2190,7 +2193,7 @@ void oa_genbyte(int bt)
         dataPointer = (Byte*)realloc(dataPointer, dataMax);
     }
     if (!dataPointer)
-        fatal("out of memory");
+        Utils::fatal("out of memory");
     dataPointer[dataPos++] = bt;
 }
 

@@ -74,7 +74,11 @@ class PreProcessor
     int GetStdPragmas() { return pragma.StdPragmas();  }
     void MarkStdPragma() { pragma.Mark(); }
     void ReleaseStdPragma() { pragma.Release(); }
-    int GetCppPrio() { return pragma.CppPrio(); }  
+    void SetPragmaCatchall(std::function<void(const std::string&, const std::string&)> callback)
+    {
+        pragma.SetPragmaCatchall(callback);
+    }
+    int GetCppPrio() { return pragma.CppPrio(); }
     std::list<std::string>& GetIncludeLibs() { return pragma.IncludeLibs(); }
     std::set<std::string>& GetUserIncludes() { return include.GetUserIncludes(); }
     std::map<std::string, std::unique_ptr<Startups::Properties>>& GetStartups() { return pragma.GetStartups(); }

@@ -29,6 +29,7 @@
 #include "be.h"
 #include "winmode.h"
 #include "DotNetPELib.h"
+#include "Utils.h"
 
 #include <fstream>
 #include <deque>
@@ -237,7 +238,7 @@ bool Importer::EnterNamespace(const Namespace* nameSpace)
         sp = (SYMBOL*)(*hr)->p;
         if (sp->storage_class != sc_namespace)
         {
-            fatal("internal error: misuse of namespace");
+            Utils::fatal("internal error: misuse of namespace");
         }
     }
     sp->value.i++;
@@ -315,7 +316,7 @@ bool Importer::EnterClass(const Class* cls)
         {
             if (!isstructured(sp->tp) && sp->tp->type != bt_enum)
             {
-                fatal("internal error: misuse of class");
+                Utils::fatal("internal error: misuse of class");
             }
         }
         structures_.push_back(sp);
@@ -553,7 +554,7 @@ bool Importer::EnterMethod(const Method* method)
             }
             else
             {
-                fatal("backend: invalid overload tab");
+                Utils::fatal("backend: invalid overload tab");
             }
             sp->msil = (void*)method;
         }

@@ -23,6 +23,7 @@
  */
 
 #include "compiler.h"
+#include "Utils.h"
 
 extern ARCH_ASM* chosenAssembler;
 extern enum e_kw skim_end[];
@@ -96,7 +97,7 @@ static void insertfunc(SYMBOL* in, HASHTABLE* syms)
     }
     else
     {
-        fatal("insertfuncs: invalid overload tab");
+        Utils::fatal("insertfuncs: invalid overload tab");
     }
 }
 static SYMBOL* CreateBackingVariable(SYMBOL* sym)

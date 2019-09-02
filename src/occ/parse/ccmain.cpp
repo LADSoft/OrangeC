@@ -23,20 +23,24 @@
  */
 
 #include "compiler.h"
-#include "PrePRocessor.h"
+#include "PreProcessor.h"
+#include "Utils.h"
+#include "CmdSwitch.h"
 #include <setjmp.h>
+#include "..\..\version.h"
 extern ARCH_DEBUG* chosenDebugger;
 extern ARCH_ASM* chosenAssembler;
 extern NAMESPACEVALUELIST* globalNameSpace;
 extern LIST* clist;
-extern char outfile[];
 extern FILE* outputFile;
 /*extern int prm_peepopt; */
 extern FILE* listFile;
-extern char version[256];
 extern int optflags;
-extern char* prm_searchpath;
-extern char* sys_searchpath;
+extern CmdSwitchString prm_include;
+extern CmdSwitchString prm_sysinclude;
+extern CmdSwitchString prm_libpath;
+extern CmdSwitchString prm_pipe;
+extern CmdSwitchString prm_output;
 
 #ifdef _WIN32
 extern "C"
@@ -112,253 +116,6 @@ COMPILER_PARAMS cparams = {
     false, /* char prm_charisunsigned;*/
 };
 
-void bool_setup(char select, char* string);
-void err_setup(char select, char* string);
-void incl_setup(char select, char* string);
-void libpath_setup(char select, char* string);
-void def_setup(char select, char* string);
-void codegen_setup(char select, char* string);
-void optimize_setup(char select, char* string);
-void parsefile(char select, char* string);
-void output_setup(char select, char* string);
-void stackalign_setup(char select, char* string);
-void verbose_setup(char select, char* string);
-void library_setup(char select, char* string);
-void tool_setup(char select, char* string);
-void warning_setup(char select, char* string);
-void sysincl_setup(char select, char* string);
-/* setup for ARGS.C */
-static CMDLIST Args[] = {{'8', ARG_BOOL, bool_setup},
-                         {'9', ARG_BOOL, bool_setup},
-                         {'1', ARG_BOOL, bool_setup},
-                         {'A', ARG_BOOL, bool_setup},
-                         {'E', ARG_CONCATSTRING, err_setup},
-                         {'I', ARG_COMBINESTRING, incl_setup},
-                         {'z', ARG_COMBINESTRING, sysincl_setup},
-                         {'L', ARG_COMBINESTRING, libpath_setup},
-                         {'D', ARG_CONCATSTRING, def_setup},
-                         {'U', ARG_CONCATSTRING, undef_setup},
-                         {'e', ARG_BOOL, bool_setup},
-                         {'l', ARG_CONCATSTRING, library_setup},
-                         {'i', ARG_BOOL, bool_setup},
-                         {'Q', ARG_BOOL, bool_setup},
-                         {'Y', ARG_BOOL, bool_setup},
-                         {'T', ARG_BOOL, bool_setup},
-                         {'v', ARG_BOOL, bool_setup},
-                         {'M', ARG_BOOL, bool_setup},
-                         {'c', ARG_BOOL, bool_setup},
-                         {'X', ARG_BOOL, bool_setup},
-                         {'@', ARG_CONCATSTRING, parsefile},
-                         {'o', ARG_COMBINESTRING, output_setup},
-                         {'C', ARG_CONCATSTRING, codegen_setup},
-                         {'O', ARG_CONCATSTRING, optimize_setup},
-                         {'s', ARG_CONCATSTRING, stackalign_setup},
-                         {'#', ARG_BOOL, bool_setup},
-                         {'y', ARG_CONCATSTRING, verbose_setup},
-                         {'p', ARG_CONCATSTRING, tool_setup},
-                         {'w', ARG_CONCATSTRING, warning_setup},
-                         {0, 0, 0}};
-
-CMDLIST* ArgList = &Args[0];
-
-void library_setup(char select, char* string)
-{
-    (void)select;
-    if (string[0] == 0)
-    {
-        cparams.prm_listfile = true;
-    }
-    else
-    {
-        char buf[260];
-        strcpy(buf, string);
-        StripExt(buf);
-        AddExt(buf, ".l");
-        InsertAnyFile(buf, 0, -1, false);
-    }
-}
-void bool_setup(char select, char* string)
-/*
- * activation routine (callback) for boolean command line arguments
- */
-{
-    bool v = (bool)string;
-    if (select == '1')
-        cparams.prm_c99 = cparams.prm_c1x = v;
-    if (select == '9')
-    {
-        cparams.prm_c99 = v;
-        cparams.prm_c1x = !v;
-    }
-    if (select == '8')
-        cparams.prm_c99 = cparams.prm_c1x = !v;
-    if (select == 'M')
-        cparams.prm_makestubs = v;
-    if (select == 'A')
-        cparams.prm_ansi = v;
-    if (select == 'e')
-        cparams.prm_errfile = v;
-    //    if (select == 'l')
-    //        cparams.prm_listfile = v;
-    if (select == 'i')
-        cparams.prm_cppfile = v;
-    if (select == 'Q')
-        cparams.prm_quiet = v;
-    if (select == 'T')
-        cparams.prm_trigraph = v;
-    if (select == 'Y')
-        cparams.prm_icdfile = v;
-    if (select == '#')
-    {
-        cparams.prm_assemble = true;
-        cparams.prm_asmfile = false;
-    }
-    if (select == 'v')
-    {
-        cparams.prm_debug = v;
-        if (v)
-        {
-            cparams.prm_optimize_for_speed = cparams.prm_optimize_for_size = 0;
-        }
-    }
-    if (select == 'c')
-    {
-        if (chosenAssembler->objext)
-        {
-            cparams.prm_compileonly = v;
-            cparams.prm_asmfile = false;
-        }
-    }
-    if (select == 'X')
-    {
-        cparams.prm_xcept = v;
-    }
-}
-void verbose_setup(char select, char* string)
-{
-    (void)select;
-    verbosity = 1 + strlen(string);
-}
-void optimize_setup(char select, char* string)
-{
-    (void)select;
-    if (!*string || (*string == '+' && string[1] == '\0'))
-    {
-        cparams.prm_optimize_for_speed = true;
-        cparams.prm_optimize_for_size = false;
-        cparams.prm_debug = false;
-    }
-    else if (*string == '-' && string[1] == '\0')
-        cparams.prm_optimize_for_speed = cparams.prm_optimize_for_size = cparams.prm_optimize_float_access = false;
-    else
-    {
-        cparams.prm_debug = false;
-        if (*string == '0')
-        {
-            cparams.prm_optimize_for_speed = cparams.prm_optimize_for_size = 0;
-        }
-        else if (*string == 'f')
-            cparams.prm_optimize_float_access = true;
-        else if (*string == '2')
-        {
-            cparams.prm_optimize_for_speed = true;
-            cparams.prm_optimize_for_size = false;
-        }
-        else if (*string == '1')
-        {
-            cparams.prm_optimize_for_speed = false;
-            cparams.prm_optimize_for_size = true;
-        }
-    }
-}
-/*-------------------------------------------------------------------------*/
-
-void codegen_setup(char select, char* string)
-/*
- * activation for code-gen type command line arguments
- */
-{
-    char v = true;
-    (void)select;
-    while (*string)
-    {
-        switch (*string)
-        {
-            /*               case 'f':*/
-            /*                  cparams.prm_smartframes = bool ;*/
-            /*                  break ;*/
-            case 'u':
-                cparams.prm_charisunsigned = v;
-                break;
-            case 'd':
-                cparams.prm_diag = v;
-                break;
-            case 'r':
-                cparams.prm_revbits = v;
-                break;
-            case 'b':
-                cparams.prm_bss = v;
-                break;
-            case 'l':
-                cparams.prm_lines = v;
-                break;
-            case 'm':
-                cparams.prm_cmangle = v;
-                break;
-#ifndef i386
-                /*                case 'R':*/
-                /*                    cparams.prm_linkreg = v;*/
-                /*                    break;*/
-#endif
-            case 'S':
-                cparams.prm_stackcheck = v;
-                break;
-            case 'O':
-                cparams.prm_oldfor = v;
-                break;
-            case 'Z':
-                cparams.prm_profiler = v;
-                break;
-            case 'i':
-                cparams.prm_allowinline = v;
-                break;
-            case '-':
-                v = false;
-                break;
-            case '+':
-                v = true;
-                break;
-            default:
-                if (chosenAssembler->parse_codegen)
-                {
-                    switch (chosenAssembler->parse_codegen(v, string))
-                    {
-                        case 1:
-                            break;
-                        case 2:
-                            return;
-                        case 0:
-                        default:
-                            fatal("Invalid codegen parameter ");
-                            break;
-                    }
-                }
-                else
-                    fatal("Invalid codegen parameter ");
-        }
-        string++;
-    }
-}
-void stackalign_setup(char select, char* string)
-{
-    (void)select;
-    int n = 16;
-    if (string[0])
-        n = atoi(string);
-    if (!n || (n % chosenAssembler->arch->stackalign))
-        fatal("Invalid stack alignment parameter ");
-    cparams.prm_stackalign = n;
-}
 static void debug_dumptypedefs(NAMESPACEVALUELIST* nameSpace)
 {
     int i;
@@ -461,7 +218,7 @@ void compile(bool global)
     else
     {
 #ifndef PARSER_ONLY
-        asm_header((char*)clist->data, version);
+        asm_header((char*)clist->data, STRING_VERSION);
 #endif
         lex = getsym();
         if (lex)
@@ -531,8 +288,9 @@ int main(int argc, char* argv[])
 
     /* initialize back end */
     if (!init_backend(&argc, argv))
-        fatal("Could not initialize back end");
+        Utils::fatal("Could not initialize back end");
 
+    /*
     if (chosenAssembler->Args)
     {
         CMDLIST* newArgs = (CMDLIST*)calloc(sizeof(Args) + sizeof(Args[0]) * chosenAssembler->ArgCount, 1);
@@ -543,6 +301,7 @@ int main(int argc, char* argv[])
             ArgList = newArgs;
         }
     }
+    */
     /* parse environment variables, command lines, and config files  */
     ccinit(argc, argv);
 
@@ -551,10 +310,10 @@ int main(int argc, char* argv[])
         multipleFiles = true;
 #ifdef PARSER_ONLY
     strcpy(buffer, (char*)clist->data);
-    strcpy(realOutFile, outfile);
+    strcpy(realOutFile, prm_output.GetValue().c_str());
     outputfile(realOutFile, buffer, ".ods");
     if (!ccDBOpen(realOutFile))
-        fatal("Cannot open database file %s", realOutFile);
+        Utils::fatal("Cannot open database file %s", realOutFile);
 #else
     BitInit();
     regInit();
@@ -565,12 +324,11 @@ int main(int argc, char* argv[])
     {
         cparams.prm_cplusplus = false;
         strcpy(buffer, (char*)clist->data);
-        std::string pipe;
 #ifndef PARSER_ONLY
         if (buffer[0] == '-')
             strcpy(buffer, "a.c");
-        strcpy(realOutFile, outfile);
-        strcpy(tempOutFile, outfile);
+        strcpy(realOutFile, prm_output.GetValue().c_str());
+        strcpy(tempOutFile, realOutFile);
         outputfile(tempOutFile, buffer, ".oo");
         if (cparams.prm_asmfile)
         {
@@ -584,7 +342,7 @@ int main(int argc, char* argv[])
         StripExt(oldOutFile);
         AddExt(oldOutFile, ".tmp");
 #else
-        pipe = ccNewFile(buffer, true);
+        ccNewFile(buffer, true);
 #endif
         AddExt(buffer, ".C");
         p = strrchr(buffer, '.');
@@ -622,9 +380,9 @@ int main(int argc, char* argv[])
         if (cparams.prm_cplusplus)
             cparams.prm_c99 = cparams.prm_c1x = false;
         if (cparams.prm_cplusplus && chosenAssembler->msil)
-            fatal("MSIL compiler does not compile C++ files at this time");
-        preProcessor = new PreProcessor(buffer, prm_searchpath == nullptr ? "" : prm_searchpath, sys_searchpath, true, cparams.prm_trigraph, '#', cparams.prm_charisunsigned,
-            !cparams.prm_c99 && !cparams.prm_c1x && !cparams.prm_cplusplus, !cparams.prm_ansi, pipe);
+            Utils::fatal("MSIL compiler does not compile C++ files at this time");
+        preProcessor = new PreProcessor(buffer, prm_include.GetValue(), prm_sysinclude.GetValue(), true, cparams.prm_trigraph, '#', cparams.prm_charisunsigned,
+            !cparams.prm_c99 && !cparams.prm_c1x && !cparams.prm_cplusplus, !cparams.prm_ansi, prm_pipe.GetValue());
 
         if (!preProcessor->IsOpen())
             exit(1);
@@ -646,7 +404,7 @@ int main(int argc, char* argv[])
                 if (!outputFile)
                 {
                     delete preProcessor;
-                    fatal("Cannot open output file %s", tempOutFile);
+                    Utils::fatal("Cannot open output file %s", tempOutFile);
                 }
                 setvbuf(outputFile, 0, _IOFBF, 32768);
             }
@@ -661,7 +419,7 @@ int main(int argc, char* argv[])
                 {
                     delete preProcessor;
                     fclose(outputFile);
-                    fatal("Cannot open preprocessor output file %s", buffer);
+                    Utils::fatal("Cannot open preprocessor output file %s", buffer);
                 }
             }
             if (cparams.prm_listfile)
@@ -674,7 +432,7 @@ int main(int argc, char* argv[])
                     delete preProcessor;
                     fclose(cppFile);
                     fclose(outputFile);
-                    fatal("Cannot open list file %s", buffer);
+                    Utils::fatal("Cannot open list file %s", buffer);
                 }
             }
             if (cparams.prm_errfile)
@@ -688,7 +446,7 @@ int main(int argc, char* argv[])
                     fclose(cppFile);
                     fclose(listFile);
                     fclose(outputFile);
-                    fatal("Cannot open error file %s", buffer);
+                    Utils::fatal("Cannot open error file %s", buffer);
                 }
             }
             if (cparams.prm_browse)
@@ -705,7 +463,7 @@ int main(int argc, char* argv[])
                     fclose(cppFile);
                     fclose(listFile);
                     fclose(outputFile);
-                    fatal("Cannot open browse file %s", buffer);
+                    Utils::fatal("Cannot open browse file %s", buffer);
                 }
                 setvbuf(browseFile, 0, _IOFBF, 32768);
             }
@@ -722,7 +480,7 @@ int main(int argc, char* argv[])
                     fclose(cppFile);
                     fclose(listFile);
                     fclose(outputFile);
-                    fatal("Cannot open error file %s", buffer);
+                    Utils::fatal("Cannot open error file %s", buffer);
                 }
                 setvbuf(icdFile, 0, _IOFBF, 32768);
             }

@@ -2427,7 +2427,7 @@ void CreateInitializerList(TYPE* initializerListTemplate, TYPE* initializerListT
     start = search("_M_start", basetype(initializerListTemplate)->syms);
     end = search("_M_end", basetype(initializerListTemplate)->syms);
     if (!start || !end)
-        fatal("Invalid definition of initializer-list");
+        Utils::fatal("Invalid definition of initializer-list");
     if (!(*initial)->nested && comparetypes((*initial)->tp, initializerListTemplate, true))
     {
         *initial = (INITLIST*)Alloc(sizeof(INITLIST));

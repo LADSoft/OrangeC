@@ -389,3 +389,57 @@ bool CmdSwitchParser::Parse(int* argc, char* argv[])
     }
     return true;
 }
+void CmdSwitchParser::ScanEnv(char* output, const char* string)
+{
+    char name[256], *p;
+    while (*string)
+    {
+        if (*string == '%')
+        {
+            p = name;
+            string++;
+            while (*string && *string != '%')
+                *p++ = *string++;
+            if (*string)
+                string++;
+            *p = 0;
+            p = getenv(name);
+            if (p)
+            {
+                strcpy(output, p);
+                output += strlen(output);
+            }
+        }
+        else
+            *output++ = *string++;
+    }
+    *output = 0;
+}
+
+bool CmdSwitchParser::Parse(const std::string &val, int *argc, char *argv[])
+{
+    char output[1024], *string = output;
+    int rv, i;
+    if (val.size() == 0)
+        return true;
+    ScanEnv(output, val.c_str());
+    while (1)
+    {
+        int quoted = ' ';
+        while (*string == ' ')
+            string++;
+        if (!*string)
+            break;
+        if (*string == '\"')
+            quoted = *string++;
+        argv[(*argc)++] = string;
+        while (*string && *string != quoted)
+            string++;
+        if (!*string)
+            break;
+        *string = 0;
+        string++;
+    }
+    return Parse(argc, argv);
+
+}

@@ -94,6 +94,8 @@ void ppPragma::ParsePragma(const std::string& args)
             HandlePushPopMacro(tk, true);
         else if (str == "POP_MACRO")
             HandlePushPopMacro(tk, false);
+        else if (catchAll)
+            catchAll(str, tk.GetString());
         // unmatched is not an error
     }
 }

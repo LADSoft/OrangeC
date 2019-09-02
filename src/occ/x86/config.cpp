@@ -27,6 +27,7 @@
  */
 #include <stdio.h>
 #include <string.h>
+#include "Utils.h"
 #include "be.h"
 #include "winmode.h"
 #include "x86regs.h"
@@ -75,11 +76,8 @@ static char usage_text[] =
     "\nCommand line behavior has changed.  Use environment var OCC_LEGACY_OPTIONS for old behavior\n\n"
     "Time: " __TIME__ "  Date: " __DATE__;
 
-static int parse_param(char mode, char* string);
-static CMDLIST args[] = {{'W', ARG_CONCATSTRING, (void (*)(char, char*))parse_param},
-                         {'P', ARG_CONCATSTRING, (void (*)(char, char*))parse_param}
+static int parse_param(char mode, const char* string);
 
-};
 static KEYWORD prockeywords[] = {
     /*
         {"_CR0", 4, kw_cr0, KW_NONANSI, 0 },
@@ -397,32 +395,32 @@ void WinmodeSetup(const char select, const char* string)
             defines[6].respect = false;
             break;
         default:
-            fatal("Invalid executable type");
+            Utils::fatal("Invalid executable type");
     }
     if (string[1] == 'm')
     {
         if (!defines[0].respect)
-            fatal("Invalid use of LSCRTDLL");
+            Utils::fatal("Invalid use of LSCRTDLL");
         prm_msvcrt = true;
         defines[4].respect = true;
     }
     if (string[1] == 'c')
     {
         if (!defines[0].respect)
-            fatal("Invalid use of CRTDLL");
+            Utils::fatal("Invalid use of CRTDLL");
         prm_crtdll = true;
         defines[5].respect = true;
     }
     else if (string[1] == 'l')
     {
         if (!defines[0].respect)
-            fatal("Invalid use of LSCRTDLL");
+            Utils::fatal("Invalid use of LSCRTDLL");
         prm_lscrtdll = true;
         defines[1].respect = true;
         architecture.libsasimports = true;
     }
 }
-static int parse_param(char select, char* string)
+static int parse_param(char select, const char* string)
 {
     if (select == 'W')
     {
@@ -432,7 +430,7 @@ static int parse_param(char select, char* string)
         prm_bepeep = false;
     return 0;
 }
-static int parse_codegen(char mode, char* string)
+static int parse_codegen(char mode, const char* string)
 {
     switch (string[0])
     {
@@ -639,8 +637,8 @@ ARCH_ASM assemblerInterface[] = {
         "occ",                          /* name of the program, for usage */
         "occ",                          /* name of a config file if you want to use one, or nullptr (sans extension) */
         usage_text,                     /* pointer to usage text */
-        args,                           /* extra args */
-        sizeof(args) / sizeof(args[0]), /* number of args */
+        nullptr,// args,                           /* extra args */
+        0, //sizeof(args) / sizeof(args[0]), /* number of args */
         prockeywords,                   /* specific keywords, e.g. allow a 'bit' keyword and so forth */
         defines,                        /* defines list to create at compile time, or null */
         &dbgStruct[0],                  /* debug structure, or nullptr */
@@ -680,8 +678,8 @@ ARCH_ASM assemblerInterface[] = {
         "occ",                          /* name of the program, for usage */
         "occ",                          /* name of a config file if you want to use one, or nullptr (sans extension) */
         usage_text,                     /* pointer to usage text */
-        args,                           /* extra args */
-        sizeof(args) / sizeof(args[0]), /* number of args */
+        nullptr,// args,                           /* extra args */
+        0, //sizeof(args) / sizeof(args[0]), /* number of args */
         prockeywords,                   /* specific keywords, e.g. allow a 'bit' keyword and so forth */
         defines,                        /* defines list to create at compile time, or null */
         &dbgStruct[0],                  /* debug structure, or nullptr */
@@ -721,8 +719,8 @@ ARCH_ASM assemblerInterface[] = {
         "occ",                          /* name of the program, for usage */
         "occ",                          /* name of a config file if you want to use one, or nullptr (sans extension) */
         usage_text,                     /* pointer to usage text */
-        args,                           /* extra args */
-        sizeof(args) / sizeof(args[0]), /* number of args */
+        nullptr,// args,                           /* extra args */
+        0, //sizeof(args) / sizeof(args[0]), /* number of args */
         prockeywords,                   /* specific keywords, e.g. allow a 'bit' keyword and so forth */
         defines,                        /* defines list to create at compile time, or null */
         &dbgStruct[0],                  /* debug structure, or nullptr */
@@ -762,8 +760,8 @@ ARCH_ASM assemblerInterface[] = {
         "occ",                          /* name of the program, for usage */
         "occ",                          /* name of a config file if you want to use one, or nullptr (sans extension) */
         usage_text,                     /* pointer to usage text */
-        args,                           /* extra args */
-        sizeof(args) / sizeof(args[0]), /* number of args */
+        nullptr,// args,                           /* extra args */
+        0, //sizeof(args) / sizeof(args[0]), /* number of args */
         prockeywords,                   /* specific keywords, e.g. allow a 'bit' keyword and so forth */
         defines,                        /* defines list to create at compile time, or null */
         &dbgStruct[0],                  /* debug structure, or nullptr */
@@ -803,8 +801,8 @@ ARCH_ASM assemblerInterface[] = {
         "occ",                          /* name of the program, for usage */
         "occ",                          /* name of a config file if you want to use one, or nullptr (sans extension) */
         usage_text,                     /* pointer to usage text */
-        args,                           /* extra args */
-        sizeof(args) / sizeof(args[0]), /* number of args */
+        nullptr,// args,                           /* extra args */
+        0, //sizeof(args) / sizeof(args[0]), /* number of args */
         prockeywords,                   /* specific keywords, e.g. allow a 'bit' keyword and so forth */
         defines,                        /* defines list to create at compile time, or null */
         &dbgStruct[0],                  /* debug structure, or nullptr */

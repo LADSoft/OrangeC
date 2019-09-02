@@ -37,6 +37,8 @@ class Utils
     {
         fprintf(stderr, "Fatal error: ");
         fputs(format, stderr);
+        if (cleanup)
+            cleanup();
         exit(1);
     }
     template <typename... Args>  // templates are MUCH more portable than varargs
@@ -45,6 +47,8 @@ class Utils
         fprintf(stderr, "Fatal error: ");
         fprintf(stderr, format, arg...);
         fputc('\n', stderr);
+        if (cleanup)
+            cleanup();
         exit(1);
     }
     static void fatal(const std::string& format) { fatal(format.c_str()); }
@@ -53,6 +57,7 @@ class Utils
     {
         fatal(format.c_str(), arg...);
     }
+    static void SetCleanup(void(Cleanup)()) { cleanup = Cleanup; }
     static char* GetModuleName();
     static void SetEnvironmentToPathParent(const char* name);
     static std::string FullPath(const std::string& path, const std::string& name);
@@ -84,5 +89,7 @@ class Utils
         return PartialCRC32(crc, data, len);
     }
     static unsigned crctab[256];
+private:
+    static void(*cleanup)();
 };
 #endif

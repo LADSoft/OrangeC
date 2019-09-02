@@ -812,28 +812,14 @@ LCHAR* wlitlate(const LCHAR* name);
 
                               /* Osutil.c */
 
-void fatal(const char* fmt, ...);
-void banner(const char* fmt, ...);
-void usage(char* prog_name);
 void AddExt(char* buffer, const char* ext);
 void StripExt(char* buffer);
 void EXEPath(char* buffer, char* filename);
 int HasExt(char* buffer, const char* ext);
-FILE* SrchPth3(char* string, const char* searchpath, const char* mode);
-FILE* SrchPth2(char* name, const char* path, const char* attrib);
-FILE* SrchPth(char* name, const char* path, const char* attrib, bool sys);
-bool parse_args(int* argc, char* argv[], bool case_sensitive);
-void err_setup(char select, char* string);
-void incl_setup(char select, char* string);
-void sysincl_setup(char select, char* string);
-void def_setup(char select, char* string);
-void undef_setup(char select, char* string);
-void output_setup(char select, char* string);
 void setglbdefs(void);
-void InsertAnyFile(char* filename, char* path, int drive, bool primary);
+void InsertAnyFile(const char* filename, char* path, int drive, bool primary);
 void setfile(char* buf, char* orgbuf, char* ext);
 void outputfile(char* buf, const char* orgbuf, const char* ext);
-void scan_env(char* output, char* string);
 int parse_arbitrary(char* string);
 void parsefile(char select, char* string);
 void addinclude(void);

@@ -32,7 +32,7 @@
 #include <ctime>
 #include <stack>
 #include "Token.h"
-
+#include <functional>
 #define STD_PRAGMA_FENV 1
 #define STD_PRAGMA_FCONTRACT 2
 #define STD_PRAGMA_CXLIMITED 4
@@ -415,6 +415,10 @@ class ppPragma
     std::map<std::string, std::unique_ptr<Startups::Properties>>& GetStartups() { return Startups::Instance()->GetStartups(); }
     const char *LookupAlias(const char *name) const { return Aliases::Instance()->Lookup(name); }
 
+    void SetPragmaCatchall(std::function<void(const std::string&, const std::string&)> callback)
+    {
+        catchAll = callback;
+    }
     void Mark()
     {
         FenvAccess::Instance()->Mark();
@@ -446,6 +450,7 @@ class ppPragma
     ppDefine *define;
     int cppprio;
     bool ignoreGlobalInit;
+    std::function<void(const std::string&, const std::string&)> catchAll;
     static KeywordHash hash;
 };
 #endif

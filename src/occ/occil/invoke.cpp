@@ -123,7 +123,7 @@ int InsertExternalFile(char* name, bool)
 
 /*-------------------------------------------------------------------------*/
 
-void InsertOutputFileName(char* name) { strcpy(outputFileName, name); }
+void InsertOutputFileName(const char* name) { strcpy(outputFileName, name); }
 
 /*-------------------------------------------------------------------------*/
 static LIST* objPosition;
@@ -135,7 +135,7 @@ void GetOutputFileName(char* name, char* path, bool obj)
         if (!objPosition)
             objPosition = objlist;
         if (!objPosition)
-            fatal("Cannot get object file name");
+            Utils::fatal("Cannot get object file name");
         strcpy(name, outputFileName);
         p = strrchr(name, '\\');
         if (!p)

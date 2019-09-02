@@ -97,7 +97,7 @@ void asm_atomic(QUAD *q);
                               /* Invoke.c */
 
 int InsertExternalFile(char *name, bool primary);
-void InsertOutputFileName(char *name);
+void InsertOutputFileName(const char *name);
 int RunExternalFiles(char *);
 
                               /* Outasm.c */
@@ -155,7 +155,7 @@ TYPE *oa_get_boxed(TYPE *);
 TYPE *oa_get_unboxed(TYPE *);
 bool _using_(const char *);
 void _using_init();
-void _add_global_using(char *str);
+void _add_global_using(const char *str);
 void _apply_global_using(void);
 bool msil_managed(SYMBOL *sp);
 void msil_create_property(SYMBOL *property, SYMBOL *getter, SYMBOL *setter);

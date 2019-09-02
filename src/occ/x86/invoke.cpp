@@ -28,6 +28,7 @@
 #include "be.h"
 #include "winmode.h"
 #include "Utils.h"
+#include "CmdSwitch.h"
 
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
@@ -42,7 +43,8 @@ extern int prm_lscrtdll;
 extern int prm_msvcrt;
 extern int showBanner;
 extern int verbosity;
-extern char* prm_libpath;
+extern CmdSwitchString prm_libpath;
+extern CmdSwitchString prm_include;
 
 const char* winflags[] = {
     "/T:CON32 ", "/T:GUI32 ", "/T:DLL32 ", "/T:PM ", "/T:DOS32 ", "/T:BIN ", "/T:CON32;sdpmist32.bin ", "/T:CON32;shdld32.bin ",
@@ -131,7 +133,7 @@ int InsertExternalFile(char* name, bool primary)
     if (name[0] == '$')
     {
         if (!InsertOption(name + 1))
-            fatal("invalid parameter: /p%s", name + 1);
+            Utils::fatal("invalid parameter: /p%s", name + 1);
         return true;
     }
     if (HasExt(name, ".asm") || HasExt(name, ".nas") || HasExt(name, ".s"))
@@ -182,7 +184,7 @@ int InsertExternalFile(char* name, bool primary)
 /*-------------------------------------------------------------------------*/
 void WinmodeSetup(const char select, const char* str);
 
-void InsertOutputFileName(char* name)
+void InsertOutputFileName(const char* name)
 {
     char ext[256];
     strcpy(outputFileName, name);
@@ -260,8 +262,8 @@ int RunExternalFiles(char* rootPath)
             return rv;
         asmlist = asmlist->next;
     }
-    if (beGetIncludePath)
-        sprintf(args, "\"-i%s\"", beGetIncludePath);
+    if (prm_include.GetExists())
+        sprintf(args, "\"-i%s\"", prm_include.GetValue().c_str());
     else
         args[0] = 0;
     while (rclist)
@@ -299,12 +301,12 @@ int RunExternalFiles(char* rootPath)
             fil = fopen(tempFile, "w");
             if (!fil)
             {
-                fatal("TMP environment variable not set or invalid");
+                Utils::fatal("TMP environment variable not set or invalid");
             }
         }
-        if (prm_libpath)
+        if (prm_libpath.GetExists())
         {
-            fprintf(fil, "\"/L%s\" ", prm_libpath);
+            fprintf(fil, "\"/L%s\" ", prm_libpath.GetValue().c_str());
         }
 
         strcpy(args, winflags[prm_targettype]);

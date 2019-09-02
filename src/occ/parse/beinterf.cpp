@@ -30,6 +30,7 @@
 #include <ctype.h>
 #include "compiler.h"
 #include "PreProcessor.h"
+#include "Utils.h"
 
 extern ARCH_ASM assemblerInterface[];
 extern COMPILER_PARAMS cparams;
@@ -567,7 +568,7 @@ int init_backend(int* argc, char** argv)
             a++;
         }
         if (!a->name)
-            fatal("Chosen assembler format '%s' not found", assembler);
+            Utils::fatal("Chosen assembler format '%s' not found", assembler);
     }
     else
     {
@@ -592,7 +593,7 @@ int init_backend(int* argc, char** argv)
         }
         if (!d || !d->name)
         {
-            fatal("Chosen debugger format '%s' not found", debugger);
+            Utils::fatal("Chosen debugger format '%s' not found", debugger);
         }
     }
     else

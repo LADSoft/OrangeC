@@ -30,7 +30,7 @@
 #include "be.h"
 #include "winmode.h"
 #include "x86regs.h"
-
+#include "Utils.h"
 extern COMPILER_PARAMS cparams;
 extern char msil_bltins[];
 char namespaceAndClass[512];
@@ -71,14 +71,7 @@ static char usage_text[] =
     "\nCommand line behavior has changed.  Use environment var OCC_LEGACY_OPTIONS for old behavior\n\n"
     "Time: " __TIME__ "  Date: " __DATE__;
 
-static int parse_param(char mode, char* string);
-static CMDLIST args[] = {
-    {'d', ARG_BOOL, (void (*)(char, char*))parse_param},         {'P', ARG_BOOL, (void (*)(char, char*))parse_param},
-    {'K', ARG_CONCATSTRING, (void (*)(char, char*))parse_param}, {'L', ARG_CONCATSTRING, (void (*)(char, char*))parse_param},
-    {'N', ARG_CONCATSTRING, (void (*)(char, char*))parse_param}, {'V', ARG_CONCATSTRING, (void (*)(char, char*))parse_param},
-    {'W', ARG_CONCATSTRING, (void (*)(char, char*))parse_param},
-
-};
+static int parse_param(char mode, const char* string);
 static KEYWORD prockeywords[] = {
     /*
         {"_CR0", 4, kw_cr0, KW_NONANSI, 0 },
@@ -289,7 +282,7 @@ static int initnasm(COMPILER_PARAMS* parms, ARCH_ASM* data, ARCH_DEBUG* debug)
     prm_assembler = pa_nasm;
     return 1;
 }
-static void WinmodeSetup(char select, char* string)
+static void WinmodeSetup(char select, const char* string)
 {
     (void)select;
     switch (string[0])
@@ -316,7 +309,7 @@ static void WinmodeSetup(char select, char* string)
             defines[6].respect = false;
             break;
         default:
-            fatal("Invalid executable type");
+            Utils::fatal("Invalid executable type");
     }
     if (string[1] == 'l')
     {
@@ -339,7 +332,7 @@ static void WinmodeSetup(char select, char* string)
     if (string[2] == 'n')
         no_default_libs = true;
 }
-static bool validatenamespaceAndClass(char* str)
+static bool validatenamespaceAndClass(const char* str)
 {
     if (!isalpha(str[0]))
         return false;
@@ -361,7 +354,7 @@ static bool validatenamespaceAndClass(char* str)
     }
     return true;
 }
-static int parse_param(char select, char* string)
+static int parse_param(char select, const char* string)
 {
     if (select == 'd')
         msilData.allowExtensions = !!string;
@@ -383,18 +376,18 @@ static int parse_param(char select, char* string)
     if (select == 'N')
     {
         if (!validatenamespaceAndClass(string))
-            fatal("namesplace/class info in wrong format");
+            Utils::fatal("namesplace/class info in wrong format");
         strcpy(namespaceAndClass, string);
     }
     if (select == 'V')
     {
         if (sscanf(string, "%d.%d.%d.%d", &assemblyVersion[0], &assemblyVersion[1], &assemblyVersion[2], &assemblyVersion[3]) != 4)
-            fatal("invalid Version number");
+            Utils::fatal("invalid Version number");
     }
     return 0;
 }
-static int parse_codegen(char mode, char* string) { return 0; /* illegal */ }
-void parse_pragma(char* kw, char* tag);
+static int parse_codegen(char mode, const char* string) { return 0; /* illegal */ }
+void parse_pragma(const char* kw, const char* tag);
 ARCH_DEBUG dbgStruct[] = {{
                               "LS",         /* name of debug format */
                               0,            /* backend specific data, compiler ignores */
@@ -546,8 +539,8 @@ ARCH_ASM assemblerInterface[] = {
         "occil",                        /* name of the program, for usage */
         "occil",                        /* name of a config file if you want to use one, or NULL (sans extension) */
         usage_text,                     /* pointer to usage text */
-        args,                           /* extra args */
-        sizeof(args) / sizeof(args[0]), /* number of args */
+        nullptr,//args,                           /* extra args */
+        0,//sizeof(args) / sizeof(args[0]), /* number of args */
         prockeywords,                   /* specific keywords, e.g. allow a 'bit' keyword and so forth */
         defines,                        /* defines list to create at compile time, or null */
         &dbgStruct[0],                  /* debug structure, or NULL */

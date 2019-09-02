@@ -113,7 +113,7 @@ void *inlineAsmStmt(void *);
                               /* Invoke.c */
 
 int InsertExternalFile(char *name, bool primary);
-void InsertOutputFileName(char *name);
+void InsertOutputFileName(const char *name);
 int RunExternalFiles(char *);
 
                               /* Object.c */

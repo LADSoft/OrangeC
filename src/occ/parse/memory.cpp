@@ -23,6 +23,7 @@
  */
 
 #include "compiler.h"
+#include "Utils.h"
 
 static MEMBLK* freestdmem;
 static MEMBLK* globals;
@@ -81,7 +82,7 @@ static MEMBLK* galloc(MEMBLK** arena, int size)
         selected = (MEMBLK*)malloc(allocsize + sizeof(MEMBLK) - 1);
 #endif
         if (!selected)
-            fatal("out of memory");
+            Utils::fatal("out of memory");
         selected->size = allocsize;
     }
     selected->left = selected->size;

@@ -29,7 +29,6 @@
 #include "PreProcessor.h"
 
 extern PreProcessor* preProcessor;
-extern char pipeName[256];
 
 typedef struct
 {
@@ -558,7 +557,7 @@ std::string ccNewFile(char* fileName, bool main)
             insert((SYMBOL*)l, ccHash);
         DecGlobalFlag();
     }
-    return pipeName;
+    return nullptr;
 }
 void ccEndFile(void) { skipThisFile = oldSkip[--skipCount]; }
 void ccSetFileLine(char* filename, int lineno)

@@ -45,7 +45,7 @@ class CmdSwitchBase
 
     char GetSwitchChar() const { return switchChar; }
     const std::string& GetLongName() const { return longName; }
-    void SetExists() { exists = true; }
+    void SetExists(bool val = true) { exists = val; }
     bool GetExists() const { return exists; }
     virtual void SetArgNum(int an) {}
 
@@ -232,7 +232,9 @@ class CmdSwitchParser
     CmdSwitchParser() : nologo(*this, '!', false, "nologo") {}
     ~CmdSwitchParser() {}
 
-    bool Parse(int* argc, char** argv);
+    bool Parse(const std::string &v, int* argc, char* argv[]);
+
+    bool Parse(int* argc, char* argv[]);
 
     CmdSwitchParser& operator+=(CmdSwitchBase* Switch)
     {
@@ -241,6 +243,9 @@ class CmdSwitchParser
     }
 
     CmdSwitchBase *Find(const char *sw, bool useLongName);
+
+  protected:
+      void ScanEnv(char* output, const char* string);
 
   private:
     std::set<CmdSwitchBase*> switches;

@@ -289,7 +289,7 @@ EXPRESSION* getMemberBase(SYMBOL* memberSym, SYMBOL* strSym, SYMBOL* funcsp, boo
 EXPRESSION* getMemberNode(SYMBOL* memberSym, SYMBOL* strSym, TYPE** tp, SYMBOL* funcsp)
 {
     EXPRESSION* en = getMemberBase(memberSym, strSym, funcsp, true);
-    en = exprNode(en_add, en, intNode(en_c_i, memberSym->offset));
+    en = exprNode(en_structadd, en, intNode(en_c_i, memberSym->offset));
     *tp = memberSym->tp;
     return en;
 }

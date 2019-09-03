@@ -1244,7 +1244,7 @@ static bool eval(QUAD* q)
         case i_assn:
             if (q->dc.left->mode == i_immed)
             {
-                if (isintconst(q->dc.left->offset))
+                if (isintconst(q->dc.left->offset) || q->dc.left->size == ISZ_ADDR)
                 {
                     set = vo_constant;
                     if (isintconst(q->dc.left->offset))
@@ -1370,6 +1370,10 @@ static bool eval(QUAD* q)
                 {
                     set = vo_constant;
                     val = qn.dc.left;
+                }
+                else
+                {
+                    set = vo_bottom;
                 }
             }
             break;
@@ -1660,7 +1664,6 @@ static void iterateConstants(void)
             //			QUAD *defines = tempInfo[i]->instructionDefines;
             while (uses)
             {
-
                 if (uses->ins->dc.opcode != i_assn && (uses->ins->temps & TEMP_LEFT) && uses->ins->dc.left->mode == i_direct &&
                     !uses->ins->fastcall)
                 {

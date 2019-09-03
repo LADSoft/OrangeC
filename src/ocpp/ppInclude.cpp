@@ -217,12 +217,7 @@ std::string ppInclude::FindFile(bool specifiedAsSystem, const std::string& name)
     // if not there search in local directory
     if (rv.empty())
     {
-        FILE* fil = fopen(name.c_str(), "rb");
-        if (fil)
-        {
-            fclose(fil);
-            rv = name;
-        }
+        rv = SrchPath(false, name, ".");
     }
     // if not there search on user search path
     if (rv.empty())
@@ -251,6 +246,8 @@ std::string ppInclude::SrchPath(bool system, const std::string& name, const std:
         FILE* fil = fopen(buf, "rb");
         if (fil)
         {
+            if (searchPath == ".") // clean up for current directory searches
+                strcpy(buf, buf + 2);
             if (!system)
             {
                 if (userIncludes.find(buf) == userIncludes.end())

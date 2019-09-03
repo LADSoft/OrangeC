@@ -21,5 +21,5 @@ PROTO("unsigned short __fastcall __inword(unsigned short Port);", __inword, hand
 PROTO("unsigned long __fastcall __indword(unsigned short Port);", __indword, handleIND)
 PROTO("unsigned short __fastcall __builtin_bswap16(unsigned short val);", __builtin_bswap16, handleBSWAP16)
 PROTO("unsigned __fastcall __builtin_bswap32(unsigned val);", __builtin_bswap32, handleBSWAP32)
-PROTO("unsigned long long __fastcall __builtin_bswap64(unsigned long long val);", __builtin_bswap64, handleBSWAP64)
+PROTO("unsigned __int64  __fastcall __builtin_bswap64(unsigned __int64 val);", __builtin_bswap64, handleBSWAP64)
 #undef PROTO

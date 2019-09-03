@@ -575,27 +575,8 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, IMODE*
         {
             retsize = funcsp->paramsize;
         }
-        if (1 || !inlinesym_count || (!noepilogue && funcsp->retcount > 1))
-        {
-            gen_label(retlab);
-        }
-        else
-        {
-            QUAD* q = intermed_tail;
-            while (q && q->dc.opcode != i_block && q->dc.opcode != i_goto)
-            {
-                q = q->back;
-            }
-            if (q && q->dc.opcode == i_goto)
-            {
-                q->back->fwd = q->fwd;
-                if (q->fwd)
-                    q->fwd->back = q->back;
-                else
-                    intermed_tail = q->back;
-                addblock(-1);
-            }
-        }
+        gen_label(retlab);
+        intermed_tail->retcount = retcount;
         if (!noepilogue)
         {
 
@@ -632,6 +613,7 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, IMODE*
         /* not using gen_igoto because it will make a new block */
         gen_icode(i_goto, nullptr, nullptr, nullptr);
         intermed_tail->dc.v.label = retlab;
+        retcount++;
     }
 }
 

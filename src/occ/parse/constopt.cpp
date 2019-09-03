@@ -1571,7 +1571,7 @@ int opt0(EXPRESSION** node)
                 case 5:
                     if (ep->left->v.i == 0)
                     {
-                        if (ep->left->type != en_auto)
+                        if (ep->left->type != en_auto && ep->type != en_structadd)
                         {
                             if (ep->type == en_sub)
                                 *node = exprNode(en_uminus, ep->right, 0);
@@ -1602,7 +1602,7 @@ int opt0(EXPRESSION** node)
                 case 7:
                     if (ep->right->v.i == 0)
                     {
-                        if (ep->left->type != en_auto)
+                        if (ep->left->type != en_auto && ep->type != en_structadd)
                         {
                             *node = ep->left;
                             rv = true;

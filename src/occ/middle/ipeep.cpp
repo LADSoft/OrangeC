@@ -42,6 +42,7 @@ extern QUAD* intermed_head;
 extern SYMBOL* theCurrentFunc;
 extern bool functionHasAssembly;
 extern ARCH_ASM* chosenAssembler;
+extern TYPE stdint;
 
 static BITINT* occursInAbnormal;
 
@@ -411,6 +412,142 @@ static int peep_assn(BLOCK* b, QUAD* head)
     return 0;
 }
 /*-------------------------------------------------------------------------*/
+static void merge_setxx(BLOCK* b, QUAD* head)
+{
+    if (head->dc.opcode == i_je || head->dc.opcode == i_jne)
+    {
+        if (head->temps == TEMP_LEFT && head->dc.left->mode == i_direct)
+        {
+            if (head->dc.right->mode == i_immed && isconstzero(&stdint, head->dc.right->offset))
+            {
+                int lab = -1;
+                QUAD *find = head->back;
+                int tn = head->dc.left->offset->v.sp->value.i;
+                while (true)
+                {
+                    if (find->dc.opcode == i_label)
+                    {
+                        if (find->retcount != 1)
+                            break;
+                        lab = find->dc.v.label;
+                    }
+                    if (!find->ignoreMe && find->dc.opcode != i_block && find->dc.opcode != i_blockend && find->dc.opcode != i_label)
+                    {
+                        if (find->dc.opcode == i_goto)
+                        {
+                            if (find->dc.v.label != lab)
+                                break;
+                        }
+                        else if (find->dc.opcode == i_assn)
+                        {
+                            if (find->temps == (TEMP_LEFT | TEMP_ANS) && find->ans->mode == i_direct && find->ans->offset->v.sp->value.i == tn &&
+                                find->dc.left->mode == i_direct)
+                            {
+                                tn = find->dc.left->offset->v.sp->value.i;
+                            }
+                            else
+                            {
+                                break;
+                            }
+                        }
+                        else if (find->dc.opcode >= i_setne && find->dc.opcode <= i_setge)
+                        {
+                            i_ops newtype;
+                            if (head->dc.opcode == i_je)
+                            {
+                                switch (find->dc.opcode)
+                                {
+                                case i_setc:
+                                    newtype = i_jnc;
+                                    break;
+                                case i_setnc:
+                                    newtype = i_jc;
+                                    break;
+                                case i_setbe:
+                                    newtype = i_ja;
+                                    break;
+                                case i_seta:
+                                    newtype = i_jbe;
+                                    break;
+                                case i_sete:
+                                    newtype = i_jne;
+                                    break;
+                                case i_setne:
+                                    newtype = i_je;
+                                    break;
+                                case i_setge:
+                                    newtype = i_jl;
+                                    break;
+                                case i_setg:
+                                    newtype = i_jle;
+                                    break;
+                                case i_setle:
+                                    newtype = i_jg;
+                                    break;
+                                case i_setl:
+                                    newtype = i_jge;
+                                    break;
+                                default:
+                                    break;
+                                }
+
+                            }
+                            else if (head->dc.opcode == i_jne)
+                            {
+                                switch (find->dc.opcode)
+                                {
+                                case i_setnc:
+                                    newtype = i_jnc;
+                                    break;
+                                case i_setc:
+                                    newtype = i_jc;
+                                    break;
+                                case i_seta:
+                                    newtype = i_ja;
+                                    break;
+                                case i_setbe:
+                                    newtype = i_jbe;
+                                    break;
+                                case i_setne:
+                                    newtype = i_jne;
+                                    break;
+                                case i_sete:
+                                    newtype = i_je;
+                                    break;
+                                case i_setl:
+                                    newtype = i_jl;
+                                    break;
+                                case i_setle:
+                                    newtype = i_jle;
+                                    break;
+                                case i_setg:
+                                    newtype = i_jg;
+                                    break;
+                                case i_setge:
+                                    newtype = i_jge;
+                                    break;
+                                default:
+                                    break;
+                                }
+
+                            }
+                            head->dc.opcode = newtype;
+                            head->dc.left = find->dc.left;
+                            head->dc.right = find->dc.right;
+                            head->temps = find->temps & ~TEMP_ANS;
+                            break;
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                    find = find->back;
+                }
+            }
+        }
+    }
+}
 
 static bool peep(BLOCK* b, bool branches)
 /*
@@ -445,6 +582,8 @@ static bool peep(BLOCK* b, bool branches)
             case i_jg:
             case i_jle:
             case i_jl:
+                if (!chosenAssembler->msil)
+                    merge_setxx(b, head);
                 if (branches && !functionHasAssembly)
                 {
                     kill_jumpover(b, head);

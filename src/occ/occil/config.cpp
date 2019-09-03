@@ -357,9 +357,9 @@ static bool validatenamespaceAndClass(const char* str)
 static int parse_param(char select, const char* string)
 {
     if (select == 'd')
-        msilData.allowExtensions = !!string;
+        msilData.allowExtensions = string[0] != '+' ;
     if (select == 'P')
-        replacePInvoke = !!string;
+        replacePInvoke = string[0] == 0 || string[0] == '+';
 
     if (select == 'K')
     {

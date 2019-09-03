@@ -361,13 +361,13 @@ void ParamTransfer()
 
     // booleans
     if (prm_c89.GetExists())
-        cparams.prm_c99 = cparams.prm_c1x = prm_c89.GetValue();
+        cparams.prm_c99 = cparams.prm_c1x = !prm_c89.GetValue();
     if (prm_c99.GetExists())
     {
         cparams.prm_c99 = prm_c99.GetValue();
         cparams.prm_c1x = !prm_c99.GetValue();
     }
-    if (prm_c99.GetExists())
+    if (prm_c11.GetExists())
     {
         cparams.prm_c99 = prm_c11.GetValue();
         cparams.prm_c1x = prm_c11.GetValue();
@@ -419,8 +419,7 @@ void ParamTransfer()
     {
         if (v.size() >= 1)
         {
-            char ch = v[0];
-            optimize_setup(ch, v.c_str() + 1);
+            optimize_setup('O', v.c_str());
         }
         
     }
@@ -482,52 +481,48 @@ void ParamTransfer()
         defines.push_back(DefValue{ v.c_str(), 1 });
     }
     checks = split(prm_library.GetValue());
+    if (!checks.size() && prm_library.GetExists())
+        cparams.prm_listfile = true;
     for (auto&& v : checks)
     {
-        if (v.size() == 0)
-        {
-            cparams.prm_listfile = true;
-        }
-        else
-        {
-            char buf[260];
-            strcpy(buf, v.c_str());
-            StripExt(buf);
-            AddExt(buf, ".l");
-            InsertAnyFile(buf, 0, -1, false);
-            if (chosenAssembler->parse_param)
-                chosenAssembler->parse_param('L', prm_library.GetValue().c_str());
-        }
+        char buf[260];
+        strcpy(buf, v.c_str());
+        StripExt(buf);
+        AddExt(buf, ".l");
+        InsertAnyFile(buf, 0, -1, false);
+        if (chosenAssembler->parse_param)
+            chosenAssembler->parse_param('L', prm_library.GetValue().c_str());
     }
     if (prm_Winmode.GetExists())
     {
         if (chosenAssembler->parse_param)
             chosenAssembler->parse_param('W', prm_Winmode.GetValue().c_str());
     }
-    if (prm_pipe.GetExists() && prm_pipe.GetValue().size() == 0)
+    if (prm_pipe.GetExists() && prm_pipe.GetValue().size() != 0)
     {
         if (chosenAssembler->parse_param)
-            chosenAssembler->parse_param('P', prm_Winmode.GetValue().c_str());
+            chosenAssembler->parse_param('P', prm_pipe.GetValue().c_str());
     }
     if (prm_msil_noextensions.GetExists())
     {
         if (chosenAssembler->parse_param)
-            chosenAssembler->parse_param('d', prm_Winmode.GetValue().c_str());
+            chosenAssembler->parse_param('d', prm_msil_noextensions.GetValue() ? "+" : "-");
     }
-    if (prm_msil_strongnamekeyfile.GetExists() && prm_msil_strongnamekeyfile.GetValue().size() == 0)
+    if (prm_msil_strongnamekeyfile.GetExists() && prm_msil_strongnamekeyfile.GetValue().size() != 0)
     {
         if (chosenAssembler->parse_param)
-            chosenAssembler->parse_param('K', prm_Winmode.GetValue().c_str());
+            chosenAssembler->parse_param('K', prm_msil_strongnamekeyfile.GetValue().c_str());
     }
-    if (prm_msil_namespace.GetExists() && prm_msil_namespace.GetValue().size() == 0)
+    if (prm_msil_namespace.GetExists() && prm_msil_namespace.GetValue().size() != 0)
     {
         if (chosenAssembler->parse_param)
-            chosenAssembler->parse_param('N', prm_Winmode.GetValue().c_str());
+            chosenAssembler->parse_param('N', prm_msil_namespace.GetValue().c_str());
+
     }
-    if (prm_msil_version.GetExists() && prm_msil_version.GetValue().size() == 0)
+    if (prm_msil_version.GetExists() && prm_msil_version.GetValue().size() != 0)
     {
         if (chosenAssembler->parse_param)
-            chosenAssembler->parse_param('V', prm_Winmode.GetValue().c_str());
+            chosenAssembler->parse_param('V', prm_msil_version.GetValue().c_str());
     }
 }
 
@@ -859,9 +854,12 @@ void ccinit(int argc, char* argv[])
     /* parse the environment and command line */
     int ecnt = 0;
     char *eargs[200];
-    if (chosenAssembler->envname && !switchParser.Parse(std::string(chosenAssembler->envname), &ecnt, eargs))
-        Utils::usage(argv[0], getUsageText());
-
+    if (chosenAssembler->envname)
+    {
+        const char *env = getenv(chosenAssembler->envname);
+        if (env && !switchParser.Parse(std::string(env), &ecnt, eargs))
+            Utils::usage(argv[0], getUsageText());
+    }
     CmdSwitchFile internalConfig(switchParser);
     if (chosenAssembler->cfgname)
     {
@@ -879,12 +877,6 @@ void ccinit(int argc, char* argv[])
         Utils::usage(argv[0], getUsageText());
 
     ParamTransfer();
-    if (chosenAssembler->doPragma)
-    {
-        preProcessor->SetPragmaCatchall([](const std::string&kw, const std::string&tag) {
-            chosenAssembler->doPragma(kw.c_str(), tag.c_str());
-        });
-    }
     /* tack the environment includes in */
     addinclude();
 

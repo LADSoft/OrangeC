@@ -440,6 +440,7 @@ bool CmdSwitchParser::Parse(const std::string &val, int *argc, char *argv[])
         *string = 0;
         string++;
     }
+    argv[*argc] = nullptr;
     return Parse(argc, argv);
 
 }

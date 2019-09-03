@@ -386,6 +386,13 @@ int main(int argc, char* argv[])
 
         if (!preProcessor->IsOpen())
             exit(1);
+        if (chosenAssembler->doPragma)
+        {
+            preProcessor->SetPragmaCatchall([](const std::string&kw, const std::string&tag) {
+                chosenAssembler->doPragma(kw.c_str(), tag.c_str());
+            });
+        }
+
         strcpy(infile, buffer);
         if (cparams.prm_makestubs)
         {

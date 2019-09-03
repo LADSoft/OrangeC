@@ -170,9 +170,9 @@ void parse_pragma(const char* kw, const char* tag)
             int npos = temp.find_last_not_of(" \t\v\n");
             if (npos != std::string::npos)
             {
-                temp = temp.substr(0, npos);
+                temp = temp.substr(0, npos+1);
             }
-            peLib->LoadAssembly(tag);
+            peLib->LoadAssembly(temp);
             Import();
         }
     }

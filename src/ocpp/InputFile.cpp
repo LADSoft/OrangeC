@@ -53,7 +53,8 @@ bool InputFile::Open()
     }
     else
         streamid = open(name->c_str(), 0); // readonly
-    CheckUTF8BOM();
+    if (streamid >= 0)
+        CheckUTF8BOM();
     return streamid >= 0;
 }
 
@@ -168,13 +169,18 @@ bool InputFile::ReadLine(char* line)
 }
 void InputFile::CheckUTF8BOM()
 {
-    static unsigned char BOM[] = {0xef, 0xbb, 0xbf};
+    static unsigned char BOM[] = { 0xef, 0xbb, 0xbf };
     unsigned char buf[3];
-    if (3 == read(streamid, buf, 3))
+    int l;
+    if (3 == (l = read(streamid, buf, 3)))
     {
         utf8BOM = !memcmp(BOM, buf, 3);
         if (utf8BOM)
             return;
     }
-    lseek(streamid, 0, SEEK_SET);
+    if (l > 0)
+    {
+        memcpy(inputBuffer, buf, inputLen = l);
+        bufPtr = inputBuffer;
+    }
 }

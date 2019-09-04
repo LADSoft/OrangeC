@@ -36,11 +36,10 @@ public:
 
     int OpenFile(const std::string& fileName);
 
-    bool HasPipe() { return mainRead >= 0;  }
+    bool HasPipe() { return main >= 0;  }
 
 private:
-    int mainRead = -1;
-    int mainWrite = -1;
+    int main = -1;
 
 };
 

@@ -31,23 +31,18 @@
 #include "fcntl.h"
 #endif
 
-bool Utils::NamedPipe(int fds[2], const std::string& pipeName)
+bool Utils::NamedPipe(int *fds, const std::string& pipeName)
 {
     char pipe[MAX_PATH];
     sprintf(pipe, "\\\\.\\pipe\\%s", pipeName.c_str(), std::string::npos);
 #ifndef HAVE_UNISTD_H
     HANDLE handle;
-    handle = CreateFile(pipe, GENERIC_READ, 0, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    handle = CreateFile(pipe, GENERIC_READ|GENERIC_WRITE, 0, 0, OPEN_EXISTING, 0, NULL);
+    int n = GetLastError();
     if (handle != INVALID_HANDLE_VALUE)
     {
-        HANDLE handle1 = CreateFile(pipe, GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-        if (handle1 != INVALID_HANDLE_VALUE)
-        {
-            fds[0] = _open_osfhandle((long)handle, O_RDONLY);
-            fds[1] = _open_osfhandle((long)handle1, O_WRONLY);
-            return true;
-        }
-        CloseHandle(handle);
+        *fds = _open_osfhandle((long)handle, O_RDWR);
+        return true;
     }
 #endif
     return false;
@@ -91,15 +86,18 @@ std::string Utils::PipeRead(int fileno)
     WaitForPipeData(hPipe, sizeof(DWORD));
     int n = sizeof(DWORD);
     DWORD read = 0;
-    WaitForPipeData(hPipe, n);
-    char *buffer = (char *)calloc(1, n + 1);
-    if (ReadFile(hPipe, buffer, n, &read, nullptr) && read == n);
+    if (ReadFile(hPipe, &n, sizeof(DWORD), &read, nullptr) && read == sizeof(DWORD))
     {
-        std::string rv = buffer;
+        WaitForPipeData(hPipe, n);
+        char *buffer = (char *)calloc(1, n + 1);
+        if (ReadFile(hPipe, buffer, n, &read, nullptr) && read == n);
+        {
+            std::string rv = buffer;
+            free(buffer);
+            return rv;
+        }
         free(buffer);
-        return rv;
     }
-    free(buffer);
 #endif;
     return "";
 }

@@ -539,6 +539,7 @@
 #define PIPE_TYPE_MESSAGE       (4)
 #define PIPE_READMODE_BYTE      (0)
 #define PIPE_READMODE_MESSAGE   (2)
+#define PIPE_REJECT_REMOTE_CLIENTS (8)
 #define PIPE_WAIT       (0)
 #define PIPE_NOWAIT     (1)
 

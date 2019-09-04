@@ -72,7 +72,7 @@ class Utils
     static char* ShortName(const char* v);
     static bool iequal(const std::string& left, const std::string& right, int sz = -1);
 
-    static bool NamedPipe(int fds[2], const std::string& name);
+    static bool NamedPipe(int *fds, const std::string& name);
     static bool PipeWrite(int fileno, const std::string& data);
     static std::string PipeRead(int fileno);
 

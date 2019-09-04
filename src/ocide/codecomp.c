@@ -1467,88 +1467,77 @@ static char* GetFileData(char* filname, int* size)
 struct ServerData
 {
     char *data;
-    HANDLE serverPipe;
+    HANDLE handle;
 };
 static DWORD servupProc(void *b)
 {
     struct ServerData* data = (struct ServerData*)b;
-    char name[256];
-    sprintf(name, "%s%d-%d", pipeName, rand(), rand());
-
-    HANDLE handle;
-    handle = CreateNamedPipe(name, PIPE_ACCESS_OUTBOUND, PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT,
-        1, 8192, 8192, 0, NULL);
-    if (handle != INVALID_HANDLE_VALUE)
+    BOOL fConnected = ConnectNamedPipe(data->handle, NULL) ? TRUE : (GetLastError() == ERROR_PIPE_CONNECTED);
+    if (fConnected)
     {
-        int n = strlen(name);
-        DWORD read;
-        WriteFile(data->serverPipe, &n, sizeof(DWORD), &read, NULL);
-        WriteFile(data->serverPipe, name, n, &read, NULL);
-        BOOL fConnected = ConnectNamedPipe(handle, NULL) ? TRUE : (GetLastError() == ERROR_PIPE_CONNECTED);
-        if (fConnected)
+        DWORD read, n = strlen(data->data);
+        while (n > 0)
         {
-            while (n > 0)
-            {
-                int len = n > 8192 ? 8192 : n;
-                if (!WriteFile(handle, data->data, len, &read, NULL))
-                    break;
-                n -= len;
-            }
+            int len = n > 8192 ? 8192 : n;
+            if (!WriteFile(data->handle, data->data, len, &read, NULL))
+                break;
+            n -= len;
         }
-        FlushFileBuffers(handle);
-        DisconnectNamedPipe(handle);
-        CloseHandle(handle);
     }
+    FlushFileBuffers(data->handle);
+    DisconnectNamedPipe(data->handle);
+    CloseHandle(data->handle);
     free(data->data);
     free(data);
-}
-static DWORD serverProc(void* b)
-{
-    srand(GetTickCount());
-    HANDLE myPipe = (HANDLE)b;
-    int n;
-    DWORD read;
-    while (1)
-    {
-        if (ReadFile(myPipe, &n, sizeof(DWORD), &read, NULL))
-        {
-            char filname[256];
-            if (ReadFile(myPipe, filname, n, &read, NULL))
-            {
-                char* buf;
-                filname[n] = 0;
-                struct ServerData *data = (struct ServerData *)calloc(1, sizeof(struct ServerData));
-                data->data = GetFileData(filname, &n);
-                data->serverPipe = myPipe;
-                _beginthread(servupProc, 0, data);
-            }
-        }
-    }
-    FlushFileBuffers(myPipe);
-    DisconnectNamedPipe(myPipe);
-    CloseHandle(myPipe);
-    return 0;
 }
 static unsigned int __stdcall Start(void* aa)
 {
     char pipe[260];
     HANDLE serverPipe = 0;
     sprintf(pipe, "\\\\.\\pipe\\%s", pipeName);
+    srand(GetTickCount());
 
     while (serverPipe != INVALID_HANDLE_VALUE)
     {
-        serverPipe = CreateNamedPipe(pipe, PIPE_ACCESS_DUPLEX, PIPE_TYPE_BYTE | 8 /* to reject remote connections */,
-                                     PIPE_UNLIMITED_INSTANCES, 100000, 10000, 0, NULL);
+        serverPipe = CreateNamedPipe(pipe, PIPE_ACCESS_DUPLEX, PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT | PIPE_REJECT_REMOTE_CLIENTS,
+                                     PIPE_UNLIMITED_INSTANCES, 8192, 8192, 0, NULL);
         if (serverPipe != INVALID_HANDLE_VALUE)
         {
 
             BOOL fConnected = ConnectNamedPipe(serverPipe, NULL) ? TRUE : (GetLastError() == ERROR_PIPE_CONNECTED);
             if (fConnected)
             {
-                _beginthread((BEGINTHREAD_FUNC)serverProc, 0, (LPVOID)serverPipe);
+                DWORD read;
+                DWORD n;
+                while (ReadFile(serverPipe, &n, sizeof(DWORD), &read, NULL))
+                {
+                    char filname[256];
+                    if (ReadFile(serverPipe, filname, n, &read, NULL))
+                    {
+                        char* buf;
+                        filname[n] = 0;
+                        char name[256];
+                        sprintf(name, "%s%d-%d", pipeName, rand(), rand());
+                        char pipe[MAX_PATH];
+                        sprintf(pipe, "\\\\.\\pipe\\%s", name);
+                        HANDLE handle;
+                        handle = CreateNamedPipe(pipe, PIPE_ACCESS_DUPLEX, PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT | PIPE_REJECT_REMOTE_CLIENTS,
+                            PIPE_UNLIMITED_INSTANCES, 8192, 8192, 0, NULL);
+                        if (handle != INVALID_HANDLE_VALUE)
+                        {
+                            struct ServerData *data = (struct ServerData *)calloc(1, sizeof(struct ServerData));
+                            data->data = GetFileData(filname, &n);
+                            data->handle = handle;
+                            int n = strlen(filname);
+                            DWORD read;
+                            WriteFile(serverPipe, &n, sizeof(DWORD), &read, NULL);
+                            WriteFile(serverPipe, name, n, &read, NULL);
+                            _beginthread(servupProc, 0, data);
+                        }
+                    }
+                }
+                DisconnectNamedPipe(serverPipe);
             }
-            else
-                CloseHandle(serverPipe);
         }
     }
     return 0;

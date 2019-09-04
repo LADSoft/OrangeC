@@ -36,36 +36,32 @@ extern "C" char* getcwd(char*, int);
 
 PipeArbitrator::~PipeArbitrator()
 {
-    if (mainRead >= 3)
-        close(mainRead);
-    if (mainWrite >= 3)
-        close(mainWrite);
+    if (main >= 3)
+        close(main);
 }
 
 void PipeArbitrator::Init(const std::string& pipeName)
 {
     if (pipeName.size())
     {
-        int fds[2];
-        if (Utils::NamedPipe(fds, pipeName))
+        int fds;
+        if (Utils::NamedPipe(&fds, pipeName))
         {
-            mainRead = fds[0];
-            mainWrite = fds[1];
+            main = fds;
         }
     }
 }
 
 int PipeArbitrator::OpenFile(const std::string& fileName)
 {
-    if (mainRead >= 0)
+    if (main >= 0)
     {
-        Utils::PipeWrite(mainWrite, fileName);
-        std::string val = Utils::PipeRead(mainRead);
-        int fds[2];
-        if (Utils::NamedPipe(fds, val))
+        Utils::PipeWrite(main, fileName);
+        std::string val = Utils::PipeRead(main);
+        int fds;
+        if (Utils::NamedPipe(&fds, val))
         {
-            close(fds[1]);
-            return fds[0];
+            return fds;
         }
     }
     return -1;

@@ -557,7 +557,7 @@ std::string ccNewFile(char* fileName, bool main)
             insert((SYMBOL*)l, ccHash);
         DecGlobalFlag();
     }
-    return nullptr;
+    return "";
 }
 void ccEndFile(void) { skipThisFile = oldSkip[--skipCount]; }
 void ccSetFileLine(char* filename, int lineno)

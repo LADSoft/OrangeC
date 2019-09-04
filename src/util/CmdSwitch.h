@@ -167,7 +167,7 @@ class CmdSwitchOutput : public CmdSwitchCombineString
   public:
     CmdSwitchOutput(CmdSwitchParser& parser, char SwitchChar, const char* Extension, bool concat = false, std::string LongName = "") :
         CmdSwitchCombineString(parser, SwitchChar, concat, LongName),
-        extension(Extension)
+        extension(Extension) 
     {
     }
     CmdSwitchOutput(const CmdSwitchOutput& orig) = default;

@@ -57,7 +57,8 @@ bool ppInclude::CheckInclude(kw token, const std::string& args)
             define->Process(line1);
         bool specifiedAsSystem= false;
         std::string name = ParseName(line1, specifiedAsSystem);
-        name = FindFile(specifiedAsSystem, name);
+        if (!piper.HasPipe())
+            name = FindFile(specifiedAsSystem, name);
         pushFile(name, line1);
         return true;
     }
@@ -101,7 +102,7 @@ void ppInclude::pushFile(const std::string& name, const std::string& errname)
 {
     // gotta do the test first to get the error correct if it isn't there
     std::fstream in(name, std::ios::in);
-    if (name[0] != '-' && !in.is_open())
+    if (!piper.HasPipe() && name[0] != '-' && !in.is_open())
     {
         Errors::Error(std::string("Could not open ") + errname + " for input");
     }

@@ -199,7 +199,7 @@ long queue_floatval(FPF *number, int size);
 void dump_muldivval(void);
 void dump_browsedata(BROWSEINFO *bri);
 void dump_browsefile(BROWSEFILE *brf);
-void oa_header(char *filename, char *compiler_version);
+void oa_header(const char *filename, const char *compiler_version);
 void oa_trailer(void);
 void oa_adjust_codelab(void *select, int offset);
 void oa_globaldef(SYMBOL*sym);

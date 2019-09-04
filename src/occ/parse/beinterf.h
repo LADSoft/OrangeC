@@ -269,7 +269,7 @@ typedef void (*CGFUNC)(QUAD* q);
  */
 typedef struct _arch_gen
 {
-    void (*gen_header)(char* filename, char* compiler_version); /* generate assembly language header */
+    void (*gen_header)(const char* filename, const char* compiler_version); /* generate assembly language header */
     void (*gen_trailer)(void);                                  /* generate assembly language trailer */
     void (*adjust_codelab)(void* select, int offset);      /* adjust an assembly language statement for the relative code labels */
     int (*pre_gcse)(QUAD* list);                           /* allow access to the quad list prior to GCSE */

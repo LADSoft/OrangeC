@@ -873,7 +873,7 @@ void ccinit(int argc, char* argv[])
         }
     }
 
-    if (!switchParser.Parse(&argc, argv) || argc == 1 && prm_file.GetCount() <= 1 && ecnt <= 1)
+    if (!switchParser.Parse(&argc, argv) || (argc == 1 && prm_file.GetCount() <= 1 && ecnt <= 1))
         Utils::usage(argv[0], getUsageText());
 
     ParamTransfer();

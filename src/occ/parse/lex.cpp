@@ -777,7 +777,7 @@ SLCHAR* getString(const unsigned char** source, enum e_lexType* tp)
                         p++;
                     while (*p == ppDefine::MACRO_PLACEHOLDER);
                 }
-                else if (st[0] = nextch())
+                else if ((st[0] = nextch()))
                 {
                     errorint(ERR_EOF_RAW_STRING, lineno);
                     *source = p;
@@ -826,7 +826,7 @@ SLCHAR* getString(const unsigned char** source, enum e_lexType* tp)
                             p++;
                         while (*p == ppDefine::MACRO_PLACEHOLDER);
                     }
-                    else if (st[0] = nextch())
+                    else if ((st[0] = nextch()))
                     {
                         errorint(ERR_EOF_RAW_STRING, lineno);
                         *source = p;

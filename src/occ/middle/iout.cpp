@@ -2644,7 +2644,7 @@ void align(int size)
 }
 /*-------------------------------------------------------------------------*/
 
-void asm_header(char* name, char* version)
+void asm_header(const char* name, const char* version)
 {
     if (cparams.prm_asmfile)
     {

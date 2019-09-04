@@ -670,7 +670,7 @@ void tlsrundownseg(void);
 void gen_virtual(SYMBOL* sp, int data);
 void gen_endvirtual(SYMBOL* sp);
 void align(int size);
-void asm_header(char* name, char* version);
+void asm_header(const char* name, const char* version);
 void asm_trailer(void);
 void globaldef(SYMBOL* sp);
 int put_exfunc(SYMBOL* sp, int notyet);

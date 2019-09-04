@@ -34,7 +34,7 @@
 bool Utils::NamedPipe(int *fds, const std::string& pipeName)
 {
     char pipe[MAX_PATH];
-    sprintf(pipe, "\\\\.\\pipe\\%s", pipeName.c_str(), std::string::npos);
+    sprintf(pipe, "\\\\.\\pipe\\%s", pipeName.c_str());
 #ifndef HAVE_UNISTD_H
     HANDLE handle;
     handle = CreateFile(pipe, GENERIC_READ|GENERIC_WRITE, 0, 0, OPEN_EXISTING, 0, NULL);
@@ -90,7 +90,7 @@ std::string Utils::PipeRead(int fileno)
     {
         WaitForPipeData(hPipe, n);
         char *buffer = (char *)calloc(1, n + 1);
-        if (ReadFile(hPipe, buffer, n, &read, nullptr) && read == n);
+        if (ReadFile(hPipe, buffer, n, &read, nullptr) && read == n)
         {
             std::string rv = buffer;
             free(buffer);
@@ -98,7 +98,7 @@ std::string Utils::PipeRead(int fileno)
         }
         free(buffer);
     }
-#endif;
+#endif
     return "";
 }
 

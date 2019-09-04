@@ -1475,7 +1475,7 @@ void dump_browsefile(BROWSEFILE* brf)
 /*-------------------------------------------------------------------------*/
 char asmfile[256];
 char compilerversion[256];
-void oa_header(char* filename, char* compiler_version)
+void oa_header(const char* filename, const char* compiler_version)
 {
     strcpy(asmfile, filename);
     strcpy(compilerversion, compiler_version);

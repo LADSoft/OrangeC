@@ -303,7 +303,7 @@ distribute_self:  cleanDISTRIBUTE
 distribute_exe: $(DISTS1)
 
 distribute_clibs_no_binary:
-	@$(MAKE) -Cclibs DISTRIBUTE --eval="BUILDENV:=1"
+	@$(MAKE) -Cclibs DISTRIBUTE --eval="BUILDENV=1"
 distribute_clibs:
 	@$(MAKE) -Cclibs DISTRIBUTE
 

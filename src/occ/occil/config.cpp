@@ -273,7 +273,7 @@ ARCH_MSIL msilData = {
     msil_create_property, /* create a property instance */
 };
 
-static void WinmodeSetup(char select, char* string);
+static void WinmodeSetup(char select, const char* string);
 static int initnasm(COMPILER_PARAMS* parms, ARCH_ASM* data, ARCH_DEBUG* debug)
 {
     (void)parms;

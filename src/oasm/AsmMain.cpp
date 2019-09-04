@@ -31,11 +31,16 @@
 #include "Listing.h"
 #include "UTF8.h"
 #include <stdlib.h>
+#include "Token.h"
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
 #else
 #    include <io.h>
 #endif
+
+extern bool IsSymbolCharRoutine(const char *, bool);
+bool (*Tokenizer::IsSymbolChar)(const char*, bool) = IsSymbolCharRoutine;
+
 
 CmdSwitchParser AsmMain::SwitchParser;
 CmdSwitchBool AsmMain::CaseInsensitive(SwitchParser, 'i', false, "case-insensitive");

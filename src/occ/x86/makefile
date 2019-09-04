@@ -102,7 +102,7 @@ else
 H_FILES=$(wildcard *.h) $(wildcard ..$(PATHEXT2)parse$(PATHEXT2)*.h) $(wildcard ..$(PATHEXT2)middle$(PATHEXT2)*.h) $(wildcard ..$(PATHEXT2)preproc$(PATHEXT2)*.h)
 endif
 
-LIB_DEPENDENCIES=oasm ocpplib objlib util
+LIB_DEPENDENCIES=ocpplib oasm objlib util
 #determine if we can ignore the banner for a batch compile
 #use long long type
 LL = USE_LONGLONG

@@ -45,12 +45,10 @@ static bool IsSymbolChar(const char* data)
            *data == '&' || UTF8::IsAlnum(data);
 }
 
-static bool IsSymbolCharRoutine(const char* data, bool startOnly)
+bool IsSymbolCharRoutine(const char* data, bool startOnly)
 {
     return startOnly ? IsSymbolStartChar(data) : IsSymbolChar(data);
 }
-
-bool (*Tokenizer::IsSymbolChar)(const char*, bool) = IsSymbolCharRoutine;
 
 bool StringToken::Start(const std::string& line)
 {

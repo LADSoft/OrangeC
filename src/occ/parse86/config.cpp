@@ -64,7 +64,7 @@ static char usage_text[] =
     "  +R   - honor FAR keyword            +u        - 'char' type is unsigned\n"
     "Time: " __TIME__ "  Date: " __DATE__;
 
-static int parse_param(char mode, char* string);
+static int parse_param(char mode, const char* string);
 static KEYWORD prockeywords[] = {
     /*
         {"_CR0", 4, kw_cr0, KW_NONANSI, 0 },

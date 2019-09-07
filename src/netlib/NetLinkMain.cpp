@@ -53,7 +53,18 @@ const char *NetLinkMain::usageText = "[options] inputfiles\n"
 int main(int argc, char **argv)
 {
     NetLinkMain linker;
-    return linker.Run(argc, argv);
+    try
+    {
+        return linker.Run(argc, argv);
+    }
+    catch (std::ios_base::failure)
+    {
+        return 1;
+    }
+    catch (DotNetPELib::PELibError)
+    {
+        return 1;
+    }
 }
 const std::string &NetLinkMain::GetAssemblyName(CmdFiles &files)
 {

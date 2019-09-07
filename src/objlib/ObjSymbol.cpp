@@ -27,6 +27,7 @@
 #include <cctype>
 #include <cstdio>
 #include <cstring>
+#include "Utils.h"
 
 static const char* unmangle(char* val, const char* name);
 
@@ -457,6 +458,7 @@ char* unmangleExpression(char* dest, const char* name)
                     }
                 }
             }
+            break;
             case 'f':
             {
                 int v;
@@ -571,7 +573,7 @@ static const char* unmangTemplate(char* buf, const char* name, const char* last)
                         {
                             name++;
                             strcat(tname, "=");
-                            name = unmangleExpression(tname + strlen(tname), name);
+                            unmangleExpression(tname + strlen(tname), name);
                         }
                         strcpy(buf, tname);
                         buf += strlen(buf);
@@ -674,7 +676,7 @@ start:
             }
         }
         if (manglenamecount < MAX_MANGLE_NAME_COUNT)
-            strcpy(manglenames[manglenamecount++], s);
+            Utils::StrCpy(manglenames[manglenamecount++], s);
     }
     else
         switch (*name++)
@@ -810,9 +812,11 @@ start:
                 }
                 break;
             case 'M':
+                buf2[0] = 0;
                 if (*name == '#')
                 {
                     name = unmangTemplate(buf2, name, last);
+                    p = buf2;
                 }
                 else if (*name == 'n')
                 {
@@ -842,7 +846,7 @@ start:
                         *p = 0;
                     }
                     if (manglenamecount < MAX_MANGLE_NAME_COUNT)
-                        strcpy(manglenames[manglenamecount++], buf2);
+                        Utils::StrCpy(manglenames[manglenamecount++], buf2);
                     if (buf3[0] == '#')
                     {
                         unmangTemplate(buf2, buf3, last);

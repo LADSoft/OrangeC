@@ -889,7 +889,9 @@ SYMBOL* finishSearch(const char* name, SYMBOL* encloser, NAMESPACEVALUELIST* ns,
         }
         if (!rv && (!ssp || ssp->nameSpaceValues != globalNameSpace))
         {
-            rv = namespacesearch(name, globalNameSpace, false, tagsOnly);
+            rv = namespacesearch(name, localNameSpace, false, tagsOnly);
+            if (!rv)
+                rv = namespacesearch(name, globalNameSpace, false, tagsOnly);
             if (rv)
                 rv->throughClass = false;
         }

@@ -151,6 +151,8 @@ static Section dummySection("dummy", -1);
 
 void omfInit(void)
 {
+    memset(sections, 0, sizeof(sections));
+    currentSection = nullptr;
     browseInfo.clear();
     browseFiles = nullptr;
     globals.clear();
@@ -160,14 +162,22 @@ void omfInit(void)
     autovector.clear();
     objExterns.clear();
     objGlobals.clear();
+    labelMap.clear();
     lblExterns.clear();
     impfuncs.clear();
     expfuncs.clear();
     includelibs.clear();
+    strlabs.clear();
+    lblpubs.clear();
+    lbllabs.clear();
+    lblExterns.clear();
+    lblvirt.clear();
     objSectionsByNumber.clear();
     objSectionsByName.clear();
     sourceFiles.clear();
     typedefs.clear();
+    virtuals.clear();
+    virtualSyms.clear();
 }
 void dbginit(void)
 {
@@ -434,7 +444,11 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
                 ObjSymbol* s1 = factory.MakeAutoSymbol(buf);
                 if (cparams.prm_debug)
                     s1->SetBaseType(types.Put(e->tp));
-                s1->SetOffset(new ObjExpression(e->offset));
+                int resolved = 0;
+                EXPRESSION exp = { 0 };
+                exp.type = en_auto;
+                exp.v.sp = e;
+                s1->SetOffset(new ObjExpression(resolveoffset(&exp, &resolved)));
                 fi->Add(s1);
                 autovector.push_back(s1);
             }

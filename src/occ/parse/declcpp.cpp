@@ -537,8 +537,8 @@ static void checkExceptionSpecification(SYMBOL* sp)
 void CheckCalledException(SYMBOL* cst, EXPRESSION* exp)
 {
     (void)exp;
-    if (cst->xcMode != xc_none && (cst->xcMode != xc_dynamic || (cst->xc && cst->xc->xcDynamic)))
-        functionCanThrow = true;
+//    if (cst->xcMode != xc_none && (cst->xcMode != xc_dynamic || (cst->xc && cst->xc->xcDynamic)))
+//        functionCanThrow = true;
 }
 void calculateVTabEntries(SYMBOL* sym, SYMBOL* base, VTABENTRY** pos, int offset)
 {

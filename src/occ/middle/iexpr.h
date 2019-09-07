@@ -178,6 +178,7 @@ typedef struct quad
     int available;
     int sourceindx;
     int copy;
+    int retcount;
     char sehMode;
     int denormal : 1;
     int isvolatile : 1;

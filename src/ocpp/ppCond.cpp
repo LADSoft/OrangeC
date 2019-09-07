@@ -142,11 +142,14 @@ bool ppCond::Check(int token, const std::string& line, int lineno)
 void ppCond::HandleIf(bool val, const std::string& line, int lineno)
 {
     skip* old = current.get();
+    bool skipping = false;
+    if (old)
+        skipping = old->skipping;
     if (current)
         skipList.push_front(std::move(current));
     current = std::make_unique<skip>();
     current->line = lineno;
-    if (old && old->skipping)
+    if (skipping)
     {
         current->skipping = true;
     }

@@ -55,7 +55,14 @@ const char* ppMain::usageText =
 int main(int argc, char* argv[])
 {
     ppMain preproc;
-    return preproc.Run(argc, argv);
+    try
+    {
+        return preproc.Run(argc, argv);
+    }
+    catch (std::ios_base::failure)
+    {
+        return 1;
+    }
 }
 int ppMain::Run(int argc, char* argv[])
 {

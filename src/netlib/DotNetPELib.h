@@ -304,7 +304,7 @@ namespace DotNetPELib
     class CodeContainer : public DestructorBase
     {
     public:
-        CodeContainer(Qualifiers Flags) :flags_(Flags), hasSEH_(false) { }
+        CodeContainer(Qualifiers Flags) :flags_(Flags), hasSEH_(false), parent_(nullptr) { }
         ///** This is the interface to add a single CIL instruction
         void AddInstruction(Instruction *instruction);
 
@@ -777,7 +777,7 @@ namespace DotNetPELib
             ///** Byte stream, goes into the sdata
             Bytes
         };
-        Field(const std::string& Name, Type *tp, Qualifiers Flags) : mode_(Field::None), name_(Name), flags_(Flags),
+        Field(const std::string& Name, Type *tp, Qualifiers Flags) : mode_(Field::None), name_(Name), flags_(Flags), parent_(nullptr), size_(i8),
             type_(tp), /*enumValue_(0),*/ byteValue_(nullptr), byteLength_(0), ref_(0), peIndex_(0), explicitOffset_(0), external_(false), definitions_(0)
         {
         }
@@ -871,30 +871,30 @@ namespace DotNetPELib
         enum OpSize { any, i8, u8, i16, u16, i32, u32, i64, u64, inative, r4, r8 };
         enum OpType { t_none, t_value, t_int, t_real, t_string, t_label };
         ///** Default constructor
-        Operand() : type_(t_none) // no operand
+        Operand() : type_(t_none), intValue_(0), sz_(i8), refValue_(nullptr), floatValue_(0), property_(0) // no operand
         {
         }
         ///** Operand is a complex value
-        Operand(Value *V) : type_(t_value), refValue_(V), property_(false)
+        Operand(Value *V) : type_(t_value), refValue_(V), property_(false), sz_(i8), intValue_(0), floatValue_(0)
         {
         }
         ///** Operand is an integer constant
-        Operand(longlong Value, OpSize Size) : type_(t_int), intValue_(Value), sz_(Size)
+        Operand(longlong Value, OpSize Size) : type_(t_int), intValue_(Value), sz_(Size), refValue_(nullptr), floatValue_(0), property_(0)
         {
         }
         Operand(int Value, OpSize Size) : Operand((longlong)Value, Size) { }
         Operand(unsigned Value, OpSize Size) : Operand((longlong)Value, Size) { }
         ///** Operand is a floating point constant
-        Operand(double Value, OpSize Size) : type_(t_real), floatValue_(Value), sz_(Size)
+        Operand(double Value, OpSize Size) : type_(t_real), floatValue_(Value), sz_(Size), intValue_(0), refValue_(nullptr), property_(0)
         {
         }
         ///** Operand is a string
-        Operand(const std::string& Value, bool) : type_(t_string) // string
+        Operand(const std::string& Value, bool) : type_(t_string), intValue_(0), sz_(i8), refValue_(nullptr), floatValue_(0), property_(0) // string
         {
             stringValue_ = Value;
         }
         ///** Operand is a label
-        Operand(const std::string& Value) : type_(t_label) // label
+        Operand(const std::string& Value) : type_(t_label), intValue_(0), sz_(i8), refValue_(nullptr), floatValue_(0), property_(0) // label
         {
             stringValue_ = Value;
         }
@@ -980,9 +980,9 @@ namespace DotNetPELib
 
         Instruction(iop Op, Operand *Operand);
         // for now only do comments and labels and branches...
-        Instruction(iop Op, const std::string& Text) : op_(Op), text_(Text), switches_(nullptr), live_(false), sehType_(seh_try), sehBegin_(false), sehCatchType_(nullptr) { }
+        Instruction(iop Op, const std::string& Text) : op_(Op), text_(Text), switches_(nullptr), live_(false), sehType_(seh_try), sehBegin_(false), sehCatchType_(nullptr), offset_(0) { }
 
-        Instruction(iseh type, bool begin, Type *catchType = NULL) : op_(i_SEH), switches_(nullptr), live_(false), sehType_(type), sehBegin_(begin), sehCatchType_(catchType) { }
+        Instruction(iseh type, bool begin, Type *catchType = NULL) : op_(i_SEH), switches_(nullptr), live_(false), sehType_(type), sehBegin_(begin), sehCatchType_(catchType), offset_(0) { }
 
         virtual ~Instruction() { if (switches_) delete switches_; }
 

@@ -67,7 +67,7 @@ size_t DataContainer::ParentAssembly(PELib& peLib) const
     {
         current = current->Parent();
     }
-    if (current && current->InAssemblyRef())
+    if (current->InAssemblyRef())
         static_cast<AssemblyDef*>(current)->PEDump(peLib);
     return current->PEIndex();
 }

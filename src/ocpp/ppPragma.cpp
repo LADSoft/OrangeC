@@ -151,7 +151,8 @@ void ppPragma::HandleError(Tokenizer& tk) { Errors::Error(tk.GetString()); }
 void ppPragma::HandleWarning(Tokenizer& tk)
 {
     // check for microsoft warning pragma
-    const char* p = tk.GetString().c_str();
+    std::string temp = tk.GetString();
+    const char* p = temp.c_str();
     while (isspace(*p))
         p++;
     if (*p != '(')
@@ -227,7 +228,7 @@ void ppPragma::HandleLibrary(Tokenizer& tk)
     char buf[260 + 10];
     char* p = buf;
     char* q = p;
-    strcpy(buf, tk.GetString().c_str());
+    Utils::StrCpy(buf, tk.GetString().c_str());
     while (isspace(*p))
         p++;
     if (*p == '(')

@@ -99,7 +99,6 @@
 /*
 ** TYPEDEFS
 */
-
 class FPF
 {
   public:
@@ -111,7 +110,7 @@ class FPF
         type = n.type;
         sign = n.sign;
     }
-    ~FPF() {}
+    virtual ~FPF() {}
     void SetZero(int sign);
     void Negate() { sign = !sign; }
     void SetInfinity(int sign);
@@ -130,15 +129,23 @@ class FPF
     void Denormalize(int minimum_exponent);
     void Round();
 
-    FPF& operator+(const FPF& right) const { return AddSub('+', *new FPF, *this, right); }
-    FPF& operator+=(const FPF& right) { return AddSub('+', *this, *this, right); }
-    FPF& operator-(const FPF& right) const { return AddSub('-', *new FPF, *this, right); }
-    FPF& operator-=(const FPF& right) { return AddSub('+', *this, *this, right); }
-    FPF& operator*(const FPF& right) const { return Multiply(*new FPF, *this, right); }
-    FPF& operator*=(const FPF& right) { return Multiply(*this, *this, right); };
-    FPF& operator/(const FPF& right) const { return Divide(*new FPF, *this, right); };
-    FPF& operator/=(const FPF& right) { return Divide(*this, *this, right); };
+    FPF operator+(const FPF& right) const { return AddSub('+', *this, right); }
+    FPF& operator+=(const FPF& right) { return *this = AddSub('+', *this, right); }
+    FPF operator-(const FPF& right) const { return AddSub('-', *this, right); }
+    FPF& operator-=(const FPF& right) { return *this = AddSub('+', *this, right); }
+    FPF operator*(const FPF& right) const { return Multiply(*this, right); }
+    FPF& operator*=(const FPF& right) { return *this = Multiply(*this, right); };
+    FPF operator/(const FPF& right) const { return Divide(*this, right); };
+    FPF& operator/=(const FPF& right) { return *this = Divide(*this, right); };
     FPF& operator=(const FPF& right)
+    {
+        exp = right.exp;
+        memcpy(mantissa, right.mantissa, sizeof(mantissa));
+        sign = right.sign;
+        type = right.type;
+        return *this;
+    }
+    FPF& operator=(const FPF&& right)
     {
         exp = right.exp;
         memcpy(mantissa, right.mantissa, sizeof(mantissa));
@@ -194,9 +201,9 @@ class FPF
     void StickyShiftRightMant(int amount);
     static void Add16Bits(u16f* carry, u16f* a, u16f b, u16f c);
     static void Sub16Bits(u16f* borrow, u16f* a, u16f b, u16f c);
-    static FPF& AddSub(int flag, FPF& dest, const FPF& left, const FPF& right);
-    static FPF& Multiply(FPF& dest, const FPF& left, const FPF& right);
-    static FPF& Divide(FPF& dest, const FPF& left, const FPF& right);
+    static FPF AddSub(int flag, const FPF& left, const FPF& right);
+    static FPF Multiply(const FPF& left, const FPF& right);
+    static FPF Divide(const FPF& left, const FPF& right);
     void FromLongLong(long long right);
     void FromUnsignedLongLong(unsigned long long right);
     long long ToLongLong() const;

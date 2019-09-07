@@ -39,7 +39,7 @@ void SegmentDisplay(char* buffer, long value) { sprintf(buffer, "0x%x", value); 
 
 void FormatValue(char* buffer, OPERAND* record, uint segs, uint type)
 {
-    char buf[256];
+    char buf[4096];
     DEBUG_INFO* dbg;
     buf[0] = 0;
     if (record->address)

@@ -457,6 +457,7 @@ void BRCWriter::InsertMappingSym(std::string name, SymData* orig, Symbols& syms,
     if (!sym)
     {
         newSyms[name] = std::make_unique<SymData>(name);
+        sym = newSyms[name].get();
     }
     sym->mapping.push_back(orig);
 }

@@ -27,7 +27,8 @@ namespace DotNetPELib
 {
 const char* Qualifiers::qualifierNames_[] = {"public",    "private",     "static",      "instance",      "explicit", "ansi",
                                        "sealed",    "enum",        "value",       "sequential",    "auto",     "literal",
-                                       "hidebysig", "preservesig", "specialname", "rtspecialname", "cil",      "managed"};
+                                       "hidebysig", "preservesig", "specialname", "rtspecialname", "cil",      "managed",
+                                        "", "", "", "", "", "", "", "", "", "", "", "", "", ""};
 int Qualifiers::afterFlags_ = Qualifiers::PreserveSig | Qualifiers::CIL | Qualifiers::Managed;
 void Qualifiers::ILSrcDumpBeforeFlags(PELib& peLib) const
 {

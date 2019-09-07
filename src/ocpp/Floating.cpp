@@ -288,9 +288,10 @@ void FPF::choose_nan(const FPF& x, const FPF& y, bool addition)
         *this = x;
 }
 
-FPF& FPF::AddSub(int mode, FPF& dest, const FPF& x, const FPF& y)
+FPF FPF::AddSub(int mode, const FPF& x, const FPF& y)
 {
     int diff;
+    FPF dest;
     FPF locx, locy; /* Needed since we alter them */
 
     /*
@@ -424,8 +425,9 @@ FPF& FPF::AddSub(int mode, FPF& dest, const FPF& x, const FPF& y)
     return dest;
 }
 
-FPF& FPF::Multiply(FPF& dest, const FPF& x, const FPF& y)
+FPF FPF::Multiply(const FPF& x, const FPF& y)
 {
+    FPF dest;
     FPF temp, locy, locx;
 
     /*
@@ -524,8 +526,9 @@ FPF& FPF::Multiply(FPF& dest, const FPF& x, const FPF& y)
     return dest;
 }
 
-FPF& FPF::Divide(FPF& dest, const FPF& x, const FPF& y)
+FPF FPF::Divide(const FPF& x, const FPF& y)
 {
+    FPF dest;
     FPF temp, locx;
 
     switch ((x.type * IFPF_TYPE_COUNT) + y.type)

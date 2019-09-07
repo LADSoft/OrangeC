@@ -36,7 +36,12 @@ PELib::PELib(const std::string& AssemblyName, int CoreFlags) :
     corFlags_(CoreFlags),
     peWriter_(nullptr),
     inputStream_(nullptr),
-    outputStream_(nullptr)
+    outputStream_(nullptr),
+    codeContainer_(nullptr),
+    objInputBuf_(nullptr),
+    objInputSize_(0),
+    objInputPos_(0),
+    objInputCache_(0)
 {
     // create the working assembly.   Note that this will ALWAYS be the first
     // assembly in the list
@@ -68,6 +73,7 @@ bool PELib::DumpOutputFile(const std::string& file, OutputMode mode, bool gui)
             break;
         case object:
             rv = ObjOut();
+            break;
         default:
             rv = false;
             break;
@@ -497,6 +503,9 @@ bool PELib::ObjIn()
     catch (ObjectError&)
     {
     }
+    objInputBuf_ = nullptr;
+    objInputSize_ = 0;
+    objInputPos_ = 0;
     return rv;
 }
 int PELib::ObjHex2()

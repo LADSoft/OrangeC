@@ -33,6 +33,7 @@ bool ppFile::GetLine(std::string& line)
         if (!ReadLine(buf))
         {
             cond.CheckErrors();
+            CheckErrors();
             return false;
         }
         StripComment(buf);

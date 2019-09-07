@@ -23,6 +23,7 @@
  */
 
 #include "compiler.h"
+#include "Utils.h"
 
 extern char anonymousNameSpaceName[512];
 const char* tn_void = "void";
@@ -665,7 +666,7 @@ const char* unmang1(char* buf, const char* name, const char* last, bool tof)
             }
         }
         if (manglenamecount < MAX_MANGLE_NAME_COUNT)
-            strcpy(manglenames[manglenamecount++], s);
+            Utils::StrCpy(manglenames[manglenamecount++], s);
     }
     else
         switch (*name++)
@@ -813,6 +814,7 @@ const char* unmang1(char* buf, const char* name, const char* last, bool tof)
                 if (*name == '#')
                 {
                     name = unmangTemplate(buf2, name, last);
+                    p = buf2;
                 }
                 else if (*name == 'n')
                 {
@@ -842,7 +844,7 @@ const char* unmang1(char* buf, const char* name, const char* last, bool tof)
                         *p = 0;
                     }
                     if (manglenamecount < MAX_MANGLE_NAME_COUNT)
-                        strcpy(manglenames[manglenamecount++], buf2);
+                        Utils::StrCpy(manglenames[manglenamecount++], buf2);
                     if (buf3[0] == '#')
                     {
                         unmangTemplate(buf2, buf3, last);

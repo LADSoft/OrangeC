@@ -249,7 +249,7 @@ void ppDefine::DoDefine(std::string& line, bool caseInsensitive)
     const Token* next = tk.Next();
     bool failed = false;
     bool hasEllipses = false;
-    DefinitionArgList* da = nullptr;
+    std::unique_ptr<DefinitionArgList> da;
     std::string name;
     if (!next->IsIdentifier())
     {
@@ -281,7 +281,7 @@ void ppDefine::DoDefine(std::string& line, bool caseInsensitive)
             else
             {
                 bool hascomma = true;
-                da = new DefinitionArgList();
+                da = std::make_unique<DefinitionArgList>();
                 bool done = false;
                 while (next->IsIdentifier())
                 {
@@ -314,7 +314,7 @@ void ppDefine::DoDefine(std::string& line, bool caseInsensitive)
     if (!failed)
     {
         std::string ref = tk.GetString();
-        Define(name, ref, da, false, hasEllipses, !asmpp, caseInsensitive);
+        Define(name, ref, da.get(), false, hasEllipses, !asmpp, caseInsensitive);
     }
     else
         Errors::Error("Macro argument syntax error");

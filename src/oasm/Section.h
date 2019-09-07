@@ -63,7 +63,7 @@ class Section
     }
     void pop_back() { instructions.pop_back(); }
     std::vector<std::unique_ptr<Instruction>>& GetInstructions() { return instructions; }
-    void ClearInstructions() { instructions.clear(); }
+    void ClearInstructions() { instructions.clear(); labels.clear();  }
     int GetSect() { return sect; }
     ObjSection* GetObjectSection() { return objectSection; }
     std::string GetName() { return name; }

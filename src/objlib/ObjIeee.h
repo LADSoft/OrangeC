@@ -278,7 +278,19 @@ class ObjIeeeAscii : public ObjIOBase
     };
 
   public:
-    ObjIeeeAscii(const ObjString Name, bool CaseSensitive = true) : ObjIOBase(Name, CaseSensitive), ioBufferLen(0), ioBuffer(0) {}
+    ObjIeeeAscii(const ObjString Name, bool CaseSensitive = true) : 
+        ObjIOBase(Name, CaseSensitive), 
+        ioBufferLen(0), 
+        ioBuffer(0),
+        ioBufferPos(0),
+        sfile(nullptr),
+        factory(nullptr), 
+        file(nullptr),
+        cs(0),
+        currentDataSection(nullptr),
+        lineno(0)
+
+    {}
     virtual ~ObjIeeeAscii() {}
     virtual bool Write(FILE* fil, ObjFile* File, ObjFactory* Factory)
     {

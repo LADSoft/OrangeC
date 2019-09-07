@@ -362,7 +362,7 @@ void AssemblyDef::Load(PELib& lib, PEReader& reader)
                         flags |= Qualifiers::Explicit;
                     if (entry->flags_ & TypeDefTableEntry::Sealed)
                         flags |= Qualifiers::Sealed;
-                    if (entry->flags_ & TypeDefTableEntry::AnsiClass)
+                    if ((entry->flags_ & TypeDefTableEntry::StringFormatMask) == TypeDefTableEntry::AnsiClass)
                         flags |= Qualifiers::Ansi;
 
                     if (name_ == "mscorlib" && entry->extends_.tag_ == TypeDefOrRef::TypeDef && n < classes.size() && classes[n] &&

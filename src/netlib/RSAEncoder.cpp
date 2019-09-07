@@ -71,12 +71,18 @@ size_t RSAEncoder::LoadStrongNameKeys(const std::string& file)
             privateExponent = new Byte[2048];
             keyPair = new Byte[2048];
             publicExponent = *(DWord*)(buf + sizeof(test) + 4);
-            fread(modulus, 1, modulusBits / 8, fil);
-            fseek(fil, 5 * modulusBits / 16, SEEK_CUR);
-            fread(privateExponent, 1, modulusBits / 8, fil);
-            fseek(fil, 0, SEEK_SET);
-            fread(keyPair, 1, modulusBits / 8 + 0x14, fil);
-            rv = modulusBits / 8;
+            if (fread(modulus, 1, modulusBits / 8, fil) == modulusBits / 8)
+            {
+                fseek(fil, 5 * modulusBits / 16, SEEK_CUR);
+                if (fread(privateExponent, 1, modulusBits / 8, fil) == modulusBits / 8)
+                {
+                    fseek(fil, 0, SEEK_SET);
+                    if (fread(keyPair, 1, modulusBits / 8 + 0x14, fil) == modulusBits / 8 + 0x14)
+                    {
+                        rv = modulusBits / 8;
+                    }
+                }
+            }
         }
         fclose(fil);
     }

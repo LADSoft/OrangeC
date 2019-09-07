@@ -259,7 +259,7 @@ Instruction::InstructionName Instruction::instructions_[] = {{"<unknown>", 0, (B
                                                              {"unbox.any", 0xa5, (Byte)-1, 5, o_index4, 0},
                                                              {"volatile.", 0xfe, 13, 2, o_single, 0},
                                                              {"xor", 0x61, (Byte)-1, 1, o_single, -1}};
-Instruction::Instruction(iop Op, Operand* Oper) : op_(Op), switches_(nullptr), live_(false)
+Instruction::Instruction(iop Op, Operand* Oper) : op_(Op), switches_(nullptr), live_(false), offset_(0), sehType_(0), sehBegin_(0)
 {
     switches_ = new std::list<std::string>();
     operand_ = Oper;

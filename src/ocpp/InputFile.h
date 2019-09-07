@@ -55,7 +55,6 @@ class InputFile
     {
         if (file && file != stdin)
             fclose(file);
-        CheckErrors();
     }
     virtual bool Open()
     {
@@ -63,7 +62,8 @@ class InputFile
             file = stdin;
         else
             file = fopen(name.c_str(), "r");
-        CheckUTF8BOM();
+        if (file != nullptr)
+            CheckUTF8BOM();
         return file != nullptr;
     }
     int GetLineNo() { return lineno; }

@@ -1879,7 +1879,7 @@ class PInvokeWeeder : public Callback
                         if (typeid(*v) == typeid(MethodName))
                         {
                             MethodSignature* ms = static_cast<MethodName*>(v)->Signature();
-                            if (!ms->Flags() && MethodSignature::Managed)  // pinvoke
+                            if (!(ms->Flags() & MethodSignature::Managed))  // pinvoke
                             {
                                 pinvokeCounters[ms->Name()]++;
                                 for (auto m : method->GetContainer()->Methods())

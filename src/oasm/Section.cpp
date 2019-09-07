@@ -155,6 +155,9 @@ void Section::InsertInstruction(Instruction* ins)
 ObjSection* Section::CreateObject(ObjFactory& factory)
 {
     objectSection = factory.MakeSection(name);
+    objectSection->SetSize(factory.MakeExpression(0));
+    objectSection->SetOffset(factory.MakeExpression(0));
+
     if (isVirtual)
         objectSection->SetQuals(objectSection->GetQuals() | ObjSection::max | ObjSection::virt);
     return objectSection;

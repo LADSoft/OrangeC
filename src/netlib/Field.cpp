@@ -314,7 +314,6 @@ bool Field::PEDump(PELib& peLib)
         }
         TableEntryBase* table = new FieldTableEntry(peflags, nameindex, sigindex);
         peIndex_ = peLib.PEOut().AddTableEntry(table);
-        delete[] sig;
 
         if ((parent_->Flags().Flags() & Qualifiers::Explicit) ||
             ((parent_->Flags().Flags() & Qualifiers::Sequential) && explicitOffset_))
@@ -357,7 +356,14 @@ bool Field::PEDump(PELib& peLib)
                 Constant constant(Constant::FieldDef, peIndex_);
                 table = new ConstantTableEntry(type, constant, valueIndex);
                 peLib.PEOut().AddTableEntry(table);
+                if (byteValue_ && byteLength_)
+                {
+                    size_t valueIndex = peLib.PEOut().RVABytes(byteValue_, byteLength_);
+                    table = new FieldRVATableEntry(valueIndex, peIndex_);
+                    peLib.PEOut().AddTableEntry(table);
+                }
             }
+                break;
             case Bytes:
                 if (byteValue_ && byteLength_)
                 {
@@ -368,6 +374,7 @@ bool Field::PEDump(PELib& peLib)
                 break;
         }
     }
+    delete[] sig;
     return true;
 }
 }  // namespace DotNetPELib

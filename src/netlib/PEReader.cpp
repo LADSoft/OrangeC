@@ -430,6 +430,7 @@ int PEReader::ReadTables(size_t Cor20)
     ulonglong tableFlags = mth->MaskValid;
     if (tableFlags & ~tKnownTablesMask)
     {
+        delete[] tableMem;
         return ERR_UNKNOWN_TABLE;
     }
     GetStream(Cor20, "#Strings", pos);

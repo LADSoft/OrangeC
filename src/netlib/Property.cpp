@@ -218,6 +218,10 @@ bool Property::PEDump(PELib& peLib)
     peLib.PEOut().AddTableEntry(table);
 
     Semantics semantics = Semantics(Semantics::Property, propertyIndex);
+    // FIXME : Coverity complains that the following 'new' statements leak memory, however, I think
+    // the design is that the related constructors have side effects and the whole point of the new is to invoke those
+    // however, this is an awkard design that is hard to maintain and should probably be reworked.
+
     table = new MethodSemanticsTableEntry(MethodSemanticsTableEntry::Getter, getter_->Signature()->PEIndex(), semantics);
 
     if (setter_)

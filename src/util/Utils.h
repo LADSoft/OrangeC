@@ -68,6 +68,28 @@ class Utils
 
     static unsigned PartialCRC32(unsigned crc, unsigned char* data, size_t len);
     static unsigned CRC32(unsigned char* data, size_t len) { return PartialCRC32(0, data, len); };
+    static char* StrCpy(char *data, size_t len, const char* source)
+    {
+        strncpy(data, source, len);
+        data[len - 1] = '\0';
+        return data;
+    }
+    template<size_t len>
+    static char *StrCpy(char (&data)[len], const char* source)
+    {
+        return StrCpy(data, len, source);
+    }
+    static char* StrCat(char *data, size_t len, const char* source)
+    {
+        strncat(data, source, len);
+        data[len - 1] = '\0';
+        return data;
+    }
+    template<size_t len>
+    static char *StrCat(char(&data)[len], const char* source)
+    {
+        return StrCat(data, len, source);
+    }
     template <size_t len>
     static unsigned CRC32(unsigned char (&data)[len])
     {

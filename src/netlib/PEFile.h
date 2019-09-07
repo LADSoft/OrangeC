@@ -10,7 +10,8 @@
  *     (at your option) any later version.
  * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
- *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of 
+
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
  * 
@@ -316,7 +317,7 @@ namespace DotNetPELib {
             systemIndex_(0), entryPoint_(0), paramAttributeType_(0), paramAttributeData_(0),
             fileAlign_(0x200), objectAlign_(0x2000), imageBase_(0x400000), language_(0x4b0),
             peHeader_(nullptr), peObjects_(nullptr), cor20Header_(nullptr), tablesHeader_(nullptr),
-            snkFile_(snkFile), snkLen_(0) { }
+            snkFile_(snkFile), snkLen_(0), outputFile_(nullptr), peBase_(0), corBase_(0), snkBase_(0) { }
         virtual ~PEWriter();
         // add an entry to one of the tables
         // note the data for the table will be a class inherited from TableEntryBase,
@@ -1491,7 +1492,7 @@ namespace DotNetPELib {
             Public = 1,
             Private = 2
         };
-        ManifestResourceTableEntry() : flags_(0) { }
+        ManifestResourceTableEntry() : offset_(0), flags_(0) { }
         ManifestResourceTableEntry(DWord offset, DWord flags, size_t name, Implementation implementation) : 
                 offset_(offset), flags_(flags), name_(name), implementation_(implementation) { }
         DWord offset_;
@@ -1600,5 +1601,27 @@ namespace DotNetPELib {
         size_t methodDef_;
         size_t Write(size_t sizes[MaxTables + ExtraIndexes], std::fstream &out) const;
     };
+    inline char* StrCpy(char *data, size_t len, const char* source)
+    {
+        strncpy(data, source, len);
+        data[len - 1] = '\0';
+        return data;
+    }
+    template<size_t len>
+    inline char *StrCpy(char(&data)[len], const char* source)
+    {
+        return StrCpy(data, len, source);
+    }
+    inline char* StrCat(char *data, size_t len, const char* source)
+    {
+        strncat(data, source, len);
+        data[len - 1] = '\0';
+        return data;
+    }
+    template<size_t len>
+    inline char *StrCat(char(&data)[len], const char* source)
+    {
+        return StrCat(data, len, source);
+    }
 
 } // namespace

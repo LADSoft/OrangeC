@@ -23,6 +23,7 @@ version 6.0.43:
     occ: fix problems with local variables overriding global structures
     occ: when generating line information for C++ files, line numbers were off by one.
     occ: fix debug information for parameters:   off by one
+    occ: when multiple input files were specified on the command line, the wrong output could occur for files after the first one
     ocide: fix problem with new font handling in resource editor dialog properties window
     ocide: fix problem with runaway stack, when a structure reference is used inside itself
     ocide/brc: fix some problems generating and parsing browse information
@@ -33,6 +34,7 @@ version 6.0.43:
     rtl: printf family (and by extension C++ libraries) couldn't deal with LLONG_MIN or unsigned long longs >= ULLONG_MAX/2
     rtl: the exception dump was off by one line, when the source code associated with the exception line is C++
     dotnetpelib: load assemblies more quickly
+    general: started work on taking care of bugs found by static analysis
 
 version 6.0.42: 8/11/2019
 

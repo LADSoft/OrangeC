@@ -63,8 +63,7 @@ size_t RSAEncoder::LoadStrongNameKeys(const std::string& file)
     {
         static Byte test[] = {0x07, 0x02, 0x00, 0x00, 0x00, 0x24, 0x00, 0x00, 0x52, 0x53, 0x41, 0x32};
         Byte buf[0x14];
-        fread(buf, 1, 0x14, fil);
-        if (!memcmp(buf, test, sizeof(test)))
+        if (fread(buf, 1, 0x14, fil) == 0x14 && !memcmp(buf, test, sizeof(test)))
         {
             modulusBits = *(int*)(buf + sizeof(test));
             modulus = new Byte[2048];
@@ -73,13 +72,17 @@ size_t RSAEncoder::LoadStrongNameKeys(const std::string& file)
             publicExponent = *(DWord*)(buf + sizeof(test) + 4);
             if (fread(modulus, 1, modulusBits / 8, fil) == modulusBits / 8)
             {
-                fseek(fil, 5 * modulusBits / 16, SEEK_CUR);
-                if (fread(privateExponent, 1, modulusBits / 8, fil) == modulusBits / 8)
+                if (!fseek(fil, 5 * modulusBits / 16, SEEK_CUR))
                 {
-                    fseek(fil, 0, SEEK_SET);
-                    if (fread(keyPair, 1, modulusBits / 8 + 0x14, fil) == modulusBits / 8 + 0x14)
+                    if (fread(privateExponent, 1, modulusBits / 8, fil) == modulusBits / 8)
                     {
-                        rv = modulusBits / 8;
+                        if (!fseek(fil, 0, SEEK_SET))
+                        {
+                            if (fread(keyPair, 1, modulusBits / 8 + 0x14, fil) == modulusBits / 8 + 0x14)
+                            {
+                                rv = modulusBits / 8;
+                            }
+                        }
                     }
                 }
             }

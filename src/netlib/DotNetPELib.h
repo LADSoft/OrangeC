@@ -777,7 +777,7 @@ namespace DotNetPELib
             ///** Byte stream, goes into the sdata
             Bytes
         };
-        Field(const std::string& Name, Type *tp, Qualifiers Flags) : mode_(Field::None), name_(Name), flags_(Flags),
+        Field(const std::string& Name, Type *tp, Qualifiers Flags) : mode_(Field::None), name_(Name), flags_(Flags), parent_(nullptr), size_(i8),
             type_(tp), /*enumValue_(0),*/ byteValue_(nullptr), byteLength_(0), ref_(0), peIndex_(0), explicitOffset_(0), external_(false), definitions_(0)
         {
         }
@@ -894,7 +894,7 @@ namespace DotNetPELib
             stringValue_ = Value;
         }
         ///** Operand is a label
-        Operand(const std::string& Value) : type_(t_label) // label
+        Operand(const std::string& Value) : type_(t_label), intValue_(0), sz_(i8), refValue_(nullptr), floatValue_(0), property_(0) // label
         {
             stringValue_ = Value;
         }

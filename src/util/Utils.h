@@ -81,8 +81,9 @@ class Utils
     }
     static char* StrCat(char *data, size_t len, const char* source)
     {
-        strncat(data, source, len);
-        data[len - 1] = '\0';
+        int num = (int)len - (int)strlen(data) - 1;
+        if (num > 0)
+            strncat(data, source, num);
         return data;
     }
     template<size_t len>

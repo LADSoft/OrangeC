@@ -56,7 +56,9 @@ class ppDefine
             permanent(Permanent),
             varargs(false),
             caseInsensitive(false),
-            preprocessing(false)
+            preprocessing(false),
+            undefined(false),
+            elipses(false)
         {
         }
         Definition& operator=(const Definition&);

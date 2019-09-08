@@ -1,5 +1,11 @@
 Release notes:
-version 6.0.43:
+version 6.0.44:
+    occ: fix rare problem where strength reduction could create an invalid multiply instruction
+    occ: 'char *xx[]' should be equivalent to 'char *(xx[])' (compiler treats them differently)
+    occ: fix error generated when declaring a scoped enum that had been forward declared.
+    general: started work on taking care of bugs found by static analysis
+
+version 6.0.43: 9/8/2018
 
     occil: add this as a first class item in the project
     occil: fix various pre-existing bugs
@@ -23,9 +29,7 @@ version 6.0.43:
     occ: fix problems with local variables overriding global structures
     occ: when generating line information for C++ files, line numbers were off by one.
     occ: fix debug information for parameters:   off by one
-    occ: fix rare problem where strength reduction could create an invalid multiply instruction
-    occ: 'char *xx[]' should be equivalent to 'char *(xx[])' (compiler treats them differently)
-    occ: fix error generated when declaring a scoped enum that had been forward declared.
+    occ: when multiple input files were specified on the command line, the wrong output could occur for files after the first one
     ocide: fix problem with new font handling in resource editor dialog properties window
     ocide: fix problem with runaway stack, when a structure reference is used inside itself
     ocide/brc: fix some problems generating and parsing browse information

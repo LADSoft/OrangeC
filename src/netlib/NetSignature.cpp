@@ -301,8 +301,6 @@ Type* SignatureGenerator::TypeFromTypeRef(PELib& lib, AssemblyDef& assembly, PER
     {
         printf("%s\n", "type from type spec");
     }
-    if (rv)
-        rv->PointerLevel(pointerLevel);
     return rv;
 }
 Type* SignatureGenerator::BasicType(PELib& lib, int typeIndex, int pointerLevel)

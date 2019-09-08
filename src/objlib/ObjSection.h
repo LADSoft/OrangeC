@@ -63,14 +63,15 @@ class ObjSection : public ObjWrapper
         index(Index),
         utilityFlag(false),
         virtualOffset(-1),
-        size(new ObjExpression(0)),
-        offset(new ObjExpression(0)),
+        size(nullptr),
+        offset(nullptr),
         aliasFor(nullptr),
         used(false),
-        virtualSectionType(nullptr)
+        virtualSectionType(nullptr),
+        genOffset(0)
     {
     }
-    virtual ~ObjSection(){};
+    virtual ~ObjSection() { }
     ObjString GetName() const { return name; }
     void SetName(ObjString Name) { name = Name; }
     ObjString GetDisplayName();

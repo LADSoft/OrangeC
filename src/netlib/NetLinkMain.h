@@ -32,7 +32,15 @@
 class NetLinkMain : public DotNetPELib::Callback
 {
 public:
-    NetLinkMain() : mainNameSpace(nullptr), mainClass(nullptr), hasEntryPoint(false) { }
+    NetLinkMain() : 
+        mainContainer(nullptr),
+        mainNameSpace(nullptr), 
+        mainClass(nullptr), 
+        hasEntryPoint(false),
+        peLib(nullptr),
+        mainSym(nullptr),
+        currentMethod(nullptr)
+    { }
 
     int Run(int argc, char **argv);
 protected:

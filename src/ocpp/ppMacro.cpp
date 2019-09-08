@@ -29,7 +29,12 @@
 #include <fstream>
 #include <climits>
 
-ppMacro::ppMacro(ppInclude& Include, ppDefine& Define) : include(Include), expr(false), define(Define), nextMacro(1)
+ppMacro::ppMacro(ppInclude& Include, ppDefine& Define) : 
+    include(Include), 
+    expr(false), 
+    define(Define), 
+    nextMacro(1),
+    pp(nullptr)
 {
     expr.SetParams(&define);
 }

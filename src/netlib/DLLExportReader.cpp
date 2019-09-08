@@ -28,6 +28,8 @@
 #include "DotNetPELib.h"
 #include "PEHeader.h"
 #include "MZHeader.h"
+
+#include "PEFile.h"
 using namespace DotNetPELib;
 
 const char* DIR_SEP = "\\";
@@ -61,12 +63,12 @@ bool DLLExportReader::FindDLL()
     if (p)
     {
         char buf[260];
-        strcpy(buf, p);
+        StrCpy(buf, p);
         if (buf[strlen(buf) - 1] != DIR_SEP[0])
-            strcat(buf, DIR_SEP);
-        strcat(buf, "System32");
-        strcat(buf, DIR_SEP);
-        strcat(buf, name.c_str());
+            StrCat(buf, DIR_SEP);
+        StrCat(buf, "System32");
+        StrCat(buf, DIR_SEP);
+        StrCat(buf, name.c_str());
         fil = fopen(buf, "rb");
         if (fil)
         {
@@ -77,23 +79,26 @@ bool DLLExportReader::FindDLL()
     }
     // now search the path
     p = getenv("PATH");
-    while (*p)
+    if (p)
     {
-        char buf[260], *q = buf;
-        while (*p && *p != ';')
-            *q++ = *p++;
-        *q = 0;
-        if (*p)
-            p++;
-        if (buf[strlen(buf) - 1] != DIR_SEP[0])
-            strcat(buf, DIR_SEP);
-        strcat(buf, name.c_str());
-        fil = fopen(buf, "rb");
-        if (fil)
+        while (*p)
         {
-            name = buf;
-            fclose(fil);
-            return true;
+            char buf[260], *q = buf;
+            while (*p && *p != ';')
+                *q++ = *p++;
+            *q = 0;
+            if (*p)
+                p++;
+            if (buf[strlen(buf) - 1] != DIR_SEP[0])
+                StrCat(buf, DIR_SEP);
+            StrCat(buf, name.c_str());
+            fil = fopen(buf, "rb");
+            if (fil)
+            {
+                name = buf;
+                fclose(fil);
+                return true;
+            }
         }
     }
     return false;

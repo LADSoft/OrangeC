@@ -302,7 +302,7 @@ void ppPragma::HandleLibrary(Tokenizer& tk)
     char buf[260 + 10];
     char* p = buf;
     char* q = p;
-    strcpy(buf, tk.GetString().c_str());
+    Utils::StrCpy(buf, tk.GetString().c_str());
     while (isspace(*p))
         p++;
     if (*p == '(')

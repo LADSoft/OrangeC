@@ -942,7 +942,7 @@ bool ObjIeeeAscii::Comment(const char* buffer, eParseType ParseType)
             ObjString name = ParseString(data, &pos);
             if (data[pos++] != ',')
                 ThrowSyntax(buffer, ParseType);
-            std::tm time;
+            std::tm time = { };
             ParseTime(data, time, &pos);
             ObjSourceFile* sf = factory->MakeSourceFile(name, index);
             sf->SetFileTime(time);
@@ -1330,7 +1330,7 @@ bool ObjIeeeAscii::ModuleDate(const char* buffer, eParseType ParseType)
 {
     if (!file)
         ThrowSyntax(buffer, ParseType);
-    std::tm time;
+    std::tm time = {};
     int pos = 2;
     ParseTime(buffer, time, &pos);
     CheckTerm(buffer + pos);

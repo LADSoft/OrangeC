@@ -185,10 +185,12 @@ int CharacterToken::QuotedChar(int bytes, const char** source)
             return '?';
         case 'U':
             bytes = 4;
+            goto dox;
         case 'u':
-            if (i == 'u')
-                bytes = 2;
+             bytes = 2;
+            goto dox;
         case 'x':
+dox:
         {
             int n = 0;
             while (isxdigit(*(*source)))
@@ -215,12 +217,6 @@ int CharacterToken::QuotedChar(int bytes, const char** source)
             }
             if (bytes == 2 && i == 'x')
                 n = (int)(wchar_t)n;
-            //				if (i != 'x')
-            //				{
-            //					if (n <= 0x20 || n >= 0x7f && n <= 0x9f ||
-            //						n >=0xd800 && n<= 0xdfff)
-            //						Errors::Error("Invalid character constant");
-            //				}
             return n;
         }
         default:

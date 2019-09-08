@@ -46,6 +46,7 @@ class ObjIOBase
         MAUS(4),
         debugInfo(true),
         startAddress(nullptr),
+        startFile(nullptr),
         caseSensitive(CaseSensitive),
         absolute(false)
     {

@@ -454,6 +454,8 @@ ObjFile* LinkRemapper::Remap()
         for (auto its = (*it)->ExternalBegin(); its != (*it)->ExternalEnd(); ++its)
         {
             std::string name = (*its)->GetName();
+            if (name == "AA")
+                printf("hi");
             if (manager->IsExternal(name))
             {
                 auto itf = externs.find(name);

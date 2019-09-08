@@ -65,7 +65,10 @@ class ObjType : public ObjWrapper
         constVal(0),
         baseType(nullptr),
         index(Index),
-        indexType(&defaultIndexType)
+        indexType(&defaultIndexType),
+        size(0),
+        startBit(0),
+        bitCount(0)
     {
     }
     ObjType(eType Type, ObjType* BaseType, ObjInt Index) :
@@ -76,7 +79,10 @@ class ObjType : public ObjWrapper
         index(Index),
         constVal(0),
         baseType(BaseType),
-        indexType(&defaultIndexType)
+        indexType(&defaultIndexType),
+        size(0),
+        startBit(0),
+        bitCount(0)
     {
     }
     ObjType(ObjString Name, eType Type, ObjType* BaseType, ObjInt Index) :
@@ -87,7 +93,10 @@ class ObjType : public ObjWrapper
         index(Index),
         constVal(0),
         baseType(BaseType),
-        indexType(&defaultIndexType)
+        indexType(&defaultIndexType),
+        size(0),
+        startBit(0),
+        bitCount(0)
     {
     }
     virtual ~ObjType() {}

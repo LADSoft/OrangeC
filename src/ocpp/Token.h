@@ -84,7 +84,7 @@ inline bool operator==(const Token& tk, char* id) { return tk.GetId() == id; }
 class StringToken : public Token
 {
   public:
-    StringToken(std::string& line) : wide(false) { Parse(line); }
+    StringToken(std::string& line) : wide(false), doParse(true) { Parse(line); }
     virtual std::wstring GetString() const { return str; }
     virtual std::wstring GetRawString() const { return raw; }
     virtual bool IsString() const { return true; }
@@ -171,7 +171,8 @@ class IdentifierToken : public Token
     IdentifierToken(std::string& line, KeywordHash* Table, bool CaseInsensitive) :
         keyValue(-1),
         keywordTable(Table),
-        caseInsensitive(CaseInsensitive)
+        caseInsensitive(CaseInsensitive),
+        parseKeyword(true)
     {
         Parse(line);
     }

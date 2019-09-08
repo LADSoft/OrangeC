@@ -36,7 +36,11 @@ typedef long long PPINT;
 class ppExpr
 {
   public:
-    ppExpr(bool isunsignedchar) : define(nullptr), unsignedchar(isunsignedchar) {}
+    ppExpr(bool isunsignedchar) : 
+        define(nullptr), 
+        unsignedchar(isunsignedchar),
+        token(nullptr)
+    {}
     ~ppExpr() {}
 
     void SetParams(ppDefine* Define) { define = Define; }

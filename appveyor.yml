@@ -1,4 +1,4 @@
-version: '6.0.42.{build}'
+version: '6.0.43.1'
 
 image: Visual Studio 2017
 

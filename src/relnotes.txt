@@ -1,5 +1,5 @@
 Release notes:
-version 6.0.43:
+version 6.0.43: 9/8/2018
 
     occil: add this as a first class item in the project
     occil: fix various pre-existing bugs

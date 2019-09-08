@@ -548,33 +548,6 @@ bool LinkManager::LoadLibrarySymbol(LinkLibrary* lib, std::string& name)
     }
     return found;
 }
-bool LinkManager::ResolveLibrary(LinkLibrary* lib, std::string& name)
-{
-    if (LoadLibrarySymbol(lib, name))
-    {
-        bool done = false;
-        for (auto sym : externals)
-            sym->SetVisited(false);
-        while (!done)
-        {
-            done = true;
-            for (auto sym : externals)
-            {
-                if (!sym->GetVisited())
-                {
-                    sym->SetVisited(true);
-                    if (LoadLibrarySymbol(lib, sym->GetSymbol()->GetName()))
-                    {
-                        done = false;
-                        break;
-                    }
-                }
-            }
-        }
-        return true;
-    }
-    return false;
-}
 void LinkManager::ScanLibraries()
 {
     SymbolData dt;
@@ -592,7 +565,7 @@ void LinkManager::ScanLibraries()
         LinkSymbolData* current = *extit;
         for (auto& d : dictionaries)
         {
-            found = ResolveLibrary(d.get(), (*extit)->GetSymbol()->GetName());
+            found = LoadLibrarySymbol(d.get(), (*extit)->GetSymbol()->GetName());
             if (found)
                 break;
         }

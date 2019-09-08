@@ -30,6 +30,7 @@ version 6.0.43:
     ocide: fix problem with runaway stack, when a structure reference is used inside itself
     ocide/brc: fix some problems generating and parsing browse information
     ocide: fix disassembler to not crash for long C++ function names
+    olink: fix library load order to match other compilers
     omake: fix wildcard function to check for file existance
     build: use 'wildcard' function instead of spawning to a dir or ls command
     rtl: fix problems with complex math library: there was still code for long double complex using the old long double format

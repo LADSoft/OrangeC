@@ -186,7 +186,6 @@ class LinkManager
     std::unique_ptr<LinkLibrary> OpenLibrary(const ObjString& name);
     void LoadLibraries();
     bool LoadLibrarySymbol(LinkLibrary* lib, std::string& name);
-    bool ResolveLibrary(LinkLibrary* lib, std::string& name);
     void ScanLibraries();
     void CloseLibraries();
     bool ParseAssignment(LinkTokenizer& spec);

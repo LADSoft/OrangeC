@@ -369,7 +369,7 @@ void ppDefine::DoDefine(std::string& line, bool caseInsensitive)
     if (!failed)
     {
         std::string ref = tk.GetString();
-        Define(name, ref, da.get(), false, hasEllipses, !asmpp, caseInsensitive);
+        Define(name, ref, da.release(), false, hasEllipses, !asmpp, caseInsensitive);
     }
     else
         Errors::Error("Macro argument syntax error");

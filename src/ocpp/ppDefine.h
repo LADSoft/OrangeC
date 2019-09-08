@@ -63,7 +63,7 @@ class ppDefine
         }
         Definition& operator=(const Definition&);
         Definition(const Definition&);
-        virtual ~Definition() {}
+        virtual ~Definition() { }
         bool IsPreprocessing() const { return preprocessing; }
         void SetPreprocessing(bool flag) { preprocessing = flag; }
         bool HasVarArgs() const { return varargs; }

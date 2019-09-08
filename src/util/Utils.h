@@ -27,7 +27,7 @@
 
 #include <string>
 #include <stdlib.h>
-
+#include <string.h>
 class Utils
 {
   public:

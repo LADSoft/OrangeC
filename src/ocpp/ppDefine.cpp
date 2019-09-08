@@ -200,8 +200,6 @@ ppDefine::Definition* ppDefine::Define(const std::string& name, std::string& val
             failed = true;
         else if (old->HasVarArgs() != d->HasVarArgs())
             failed = true;
-        else if (old->GetValue() != d->GetValue())
-            failed = true;
         else
         {
             int n = old->GetArgCount();
@@ -211,6 +209,25 @@ ppDefine::Definition* ppDefine::Define(const std::string& name, std::string& val
                     failed = true;
                     break;
                 }
+            const char *p = old->GetValue().c_str();
+            const char *q = d->GetValue().c_str();
+            while (*p && *q)
+            {
+                if (isspace(*p) && isspace(*q))
+                {
+                    while (isspace(*p)) p++;
+                    while (isspace(*q)) q++;
+                }
+                if (*p != *q)
+                    break;
+                p++, q++;
+            }
+            while (isspace(*p)) p++;
+            while (isspace(*q)) q++;
+            if (*p || *q)
+            {
+                failed = true;
+            }
         }
         if (failed)
         {

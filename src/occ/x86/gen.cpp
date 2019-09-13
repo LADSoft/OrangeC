@@ -296,7 +296,7 @@ AMODE* make_offset(EXPRESSION* node)
     }
     else
         ap->mode = am_direct;
-    ap->offset = node;
+    ap->offset = copy_expression(node);
     ap->seg = 0;
     return ap;
 }

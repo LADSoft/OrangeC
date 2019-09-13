@@ -519,7 +519,7 @@ void LinkManager::LoadLibraries()
         std::unique_ptr<LinkLibrary> newLibrary = std::move(OpenLibrary((*it)));
         if (newLibrary)
         {
-            dictionaries.insert(std::move(newLibrary));
+            dictionaries.push_back(std::move(newLibrary));
         }
         else
         {

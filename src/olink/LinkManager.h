@@ -35,6 +35,7 @@
 #include <cstring>
 #include <map>
 #include <memory>
+#include <deque>
 
 class LibManager;
 class LinkPartition;
@@ -209,7 +210,7 @@ class LinkManager
     FileData fileData;
     CmdFiles objectFiles;
     CmdFiles libFiles;
-    std::set<std::unique_ptr<LinkLibrary>> dictionaries;
+    std::deque<std::unique_ptr<LinkLibrary>> dictionaries;
     std::vector<ObjSection*> virtualSections;
     std::map<ObjSection*, ObjSection*> parentSections;
     ObjIOBase* ioBase;

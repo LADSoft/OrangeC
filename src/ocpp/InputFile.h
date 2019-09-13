@@ -35,12 +35,11 @@ class PipeArbitrator;
 
 class InputFile
 {
+public:
     enum
     {
-        LINE_WIDTH = 4096
+        LINE_WIDTH = 65536
     };
-
-  public:
     InputFile(bool fullname, const std::string& Name, PipeArbitrator &Piper) :
         name(cache(Name)),
         lineno(0),

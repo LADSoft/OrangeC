@@ -35,10 +35,6 @@ class ppDefine;
 class ppCtx;
 class ppFile : public InputFile
 {
-    enum
-    {
-        LINE_WIDTH = 4096
-    };
 
   public:
       ppFile(bool fullname, bool Trigraph, bool extended, const std::string& Name, ppDefine* define, ppCtx& Ctx, bool isunsignedchar,

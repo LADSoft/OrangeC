@@ -540,7 +540,6 @@ bool LinkManager::LoadLibrarySymbol(LinkLibrary* lib, std::string& name)
         }
         else
         {
-
             fileData.push_back(file);
             MergePublics(file, false);
         }
@@ -550,36 +549,32 @@ bool LinkManager::LoadLibrarySymbol(LinkLibrary* lib, std::string& name)
 }
 void LinkManager::ScanLibraries()
 {
-    SymbolData dt;
-    while (!externals.empty())
+    bool changed = true;
+    while (changed)
     {
-        bool found = false;
-        auto extit = externals.begin();
-        for (; extit != externals.end(); ++extit)
+        changed = false;
+        for (auto&& d : dictionaries)
         {
-            if (!(*extit)->GetUsed() && virtsections.find(*extit) == virtsections.end())
-                break;
+            bool changed1 = true;
+            while (changed1)
+            {
+                changed1 = false;
+                for (auto&& extit = externals.begin(); extit != externals.end(); ++extit)
+                {
+                    if (!(*extit)->GetUsed() && virtsections.find(*extit) == virtsections.end())
+                    {
+                        bool found = LoadLibrarySymbol(d.get(), (*extit)->GetSymbol()->GetName());
+                        // not resolved?
+                        if (found)
+                        {
+                            changed = true;
+                            changed1 = true;
+                            break;
+                        }
+                    }
+                }
+            }
         }
-        if (extit == externals.end())
-            break;
-        LinkSymbolData* current = *extit;
-        for (auto& d : dictionaries)
-        {
-            found = LoadLibrarySymbol(d.get(), (*extit)->GetSymbol()->GetName());
-            if (found)
-                break;
-        }
-        // not resolved?
-        if (!found)
-        {
-            dt.insert(current);
-            extit = externals.find(current);
-            externals.erase(extit);
-        }
-    }
-    for (auto d : dt)
-    {
-        externals.insert(d);
     }
 }
 void LinkManager::CloseLibraries() { dictionaries.clear(); }

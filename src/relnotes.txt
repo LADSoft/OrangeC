@@ -3,6 +3,7 @@ version 6.0.44:
     occ: fix rare problem where strength reduction could create an invalid multiply instruction
     occ: 'char *xx[]' should be equivalent to 'char *(xx[])' (compiler treats them differently)
     occ: fix error generated when declaring a scoped enum that had been forward declared.
+    olink: fix library search order to be more like other windows compilers
     general: started work on taking care of bugs found by static analysis
 
 version 6.0.43: 9/8/2018

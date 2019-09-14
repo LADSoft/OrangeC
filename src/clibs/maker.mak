@@ -67,13 +67,14 @@ endif
 
 CFLAGS := $(CCFLAGS)
 CXXFLAGS := $(CCFLAGS)
+
 %.o: %.cpp
-	$(CC) /c /C-E $(CXXFLAGS) $(BUILDING_DLL) /D_LIBCPP_BUILDING_SYSTEM_ERROR $(STDINCLUDE) -o$(OBJECT)\$@ $^
+	$(CC) /c /C-E $(CXXFLAGS) $(BUILDING_DLL) /D_LIBCPP_BUILDING_SYSTEM_ERROR $(STDINCLUDE) -I$(ORANGEC)\src\sqlite3 -o$(OBJECT)\$@ $^
 #	$(CC) /S $(CXXFLAGS) $(BUILDING_DLL) $(STDINCLUDE) $^
 #	$(ASM) $(ASMFLAGS) $(BUILDING_DLL) -o$(OBJECT)\$@ $*
 
 %.o: %.c
-	$(CC) /1 /c /C-E $(CFLAGS) $(BUILDING_DLL) $(STDINCLUDE) -o$(OBJECT)\$@ $^
+	$(CC) /1 /c /C-E $(CFLAGS) $(BUILDING_DLL) $(STDINCLUDE) -I$(ORANGEC)\src\sqlite3 -o$(OBJECT)\$@ $^
 #	$(CC) /S $(CFLAGS) $(BUILDING_DLL) $(STDINCLUDE) $^
 #	$(ASM) $(ASMFLAGS) $(BUILDING_DLL) -o$(OBJECT)\$@ $*
 %.o: %.nas

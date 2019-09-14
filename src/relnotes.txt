@@ -4,6 +4,7 @@ version 6.0.44:
     occ: 'char *xx[]' should be equivalent to 'char *(xx[])' (compiler treats them differently)
     occ: fix error generated when declaring a scoped enum that had been forward declared.
     occ: fix problem with shared expression node getting modified (could result in invalid ASM code)
+    occ: fix recursion problem in debug info, for function types that reference themselves in their argument list
     olink: fix library search order to be more like other windows compilers
     general: started work on taking care of bugs found by static analysis
 

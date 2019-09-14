@@ -311,6 +311,7 @@ ObjType* dbgtypes::Function(TYPE* tp)
         v |= 32;  // structured return value
     val = factory.MakeFunction("", rv);
     val->SetLinkage((ObjFunction::eLinkage)v);
+    hash[tp] = val; // for self referencing
     if (basetype(tp)->syms)
     {
         SYMLIST* hr = basetype(tp)->syms->table[0];

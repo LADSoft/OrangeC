@@ -85,6 +85,8 @@ bool InputFile::GetLine(std::string& line)
 }
 std::string InputFile::GetErrorName(bool full, const std::string& name)
 {
+    return name;
+#if 0
     if (full)
     {
         return name;
@@ -107,6 +109,7 @@ std::string InputFile::GetErrorName(bool full, const std::string& name)
         }
         return std::string(q);
     }
+#endif
 }
 bool InputFile::ReadString(char *s, int len)
 {

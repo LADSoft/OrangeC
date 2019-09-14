@@ -5713,7 +5713,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                         {
                             sp->importfile = importFile;
                         }
-                        SetLinkerNames(sp, storage_class_in == sc_auto && isstructured(sp->tp) ? lk_auto : linkage);
+                        SetLinkerNames(sp, storage_class == sc_auto && isstructured(sp->tp) ? lk_auto : linkage);
                         if (inTemplate && templateNestingCount == 1)
                         {
                             inTemplateBody++;

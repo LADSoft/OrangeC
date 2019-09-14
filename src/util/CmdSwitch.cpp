@@ -323,7 +323,7 @@ bool CmdSwitchParser::Parse(int* argc, char* argv[])
             memmove(argv, argv + 1, (*argc + 1 - i) * sizeof(char*));
             (*argc)--;
         }
-        else if ((argv[0][0] == '-' || argv[0][0] == '/') && argv[0][1] && (argv[0][1] != '-' || argv[0][2]))
+        else if ((argv[0][0] == '-' || argv[0][0] == '/' || argv[0][0] == '+') && argv[0][1] && (argv[0][1] != '-' || argv[0][2]))
         {
             const char *data = &argv[0][0];
             bool longName = data[1] == '-';

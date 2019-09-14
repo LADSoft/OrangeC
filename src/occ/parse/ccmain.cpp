@@ -36,11 +36,11 @@ extern FILE* outputFile;
 /*extern int prm_peepopt; */
 extern FILE* listFile;
 extern int optflags;
-extern CmdSwitchString prm_include;
-extern CmdSwitchString prm_sysinclude;
-extern CmdSwitchString prm_libpath;
+extern CmdSwitchCombineString prm_include;
+extern CmdSwitchCombineString prm_sysinclude;
+extern CmdSwitchCombineString prm_libpath;
 extern CmdSwitchString prm_pipe;
-extern CmdSwitchString prm_output;
+extern CmdSwitchCombineString prm_output;
 
 #ifdef _WIN32
 extern "C"

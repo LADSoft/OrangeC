@@ -43,8 +43,8 @@ extern int prm_lscrtdll;
 extern int prm_msvcrt;
 extern int showBanner;
 extern int verbosity;
-extern CmdSwitchString prm_libpath;
-extern CmdSwitchString prm_include;
+extern CmdSwitchCombineString prm_libpath;
+extern CmdSwitchCombineString prm_include;
 
 const char* winflags[] = {
     "/T:CON32 ", "/T:GUI32 ", "/T:DLL32 ", "/T:PM ", "/T:DOS32 ", "/T:BIN ", "/T:CON32;sdpmist32.bin ", "/T:CON32;shdld32.bin ",

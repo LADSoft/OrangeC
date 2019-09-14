@@ -24,9 +24,9 @@
  */
 
 #include "Utils.h"
-#include <windows.h>
 #include <stdlib.h>
 #ifndef HAVE_UNISTD_H
+#include <windows.h>
 #include "io.h"
 #include "fcntl.h"
 #endif

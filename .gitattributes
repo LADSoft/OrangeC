@@ -14,3 +14,4 @@ makefile text
 *.cur binary
 *.fnt binary
 *.odx binary
+*.zip binary

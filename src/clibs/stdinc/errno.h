@@ -141,7 +141,6 @@
     #define EPROTOTYPE      136
     #define ETIME           137
     #define ETIMEDOUT       138
-    #define ETXTBSY         139
     #define EWOULDBLOCK     140
 #endif // _CRT_NO_POSIX_ERROR_CODES
 

@@ -97,7 +97,8 @@ COMPLIB=lscrtl$(LIB_EXT) climp$(LIB_EXT)
 CCFLAGS:=$(CCFLAGS) /Wcl
 endif
 endif
-CCFLAGS := $(CCFLAGS) $(CINCLUDES) $(DEFINES) /DMICROSOFT /DWIN32
+CFLAGS := $(CCFLAGS) $(CINCLUDES) $(DEFINES) /DMICROSOFT /DWIN32
+CXXFLAGS := $(CCFLAGS) $(CINCLUDES) $(DEFINES) /DMICROSOFT /DWIN32
 
 vpath %.o $(_OUTPUTDIR)
 vpath %.l $(_LIBDIR)
@@ -105,17 +106,17 @@ vpath %.res $(_OUTPUTDIR)
 
 ifeq "$(VIAASSEMBLY)" ""
 %.o: %.cpp
-	$(CC) $(CCFLAGS) -o$(_OUTPUTDIR)/$@ $^
+	$(CC) $(CXXFLAGS) -o$(_OUTPUTDIR)/$@ $^
 
 %.o: %.c
-	$(CC) $(CCFLAGS) -o$(_OUTPUTDIR)/$@ $^
+	$(CC) $(CFLAGS) -o$(_OUTPUTDIR)/$@ $^
 
 else
 %.o: %.cpp
-	$(CC) $(CCFLAGS) -o$(_OUTPUTDIR)/$*.asm $^
+	$(CC) $(CXXFLAGS) -o$(_OUTPUTDIR)/$*.asm $^
 	$(ASM) $(ASMFLAGS) -o$(_OUTPUTDIR)/$@ $(_OUTPUTDIR)/$*.asm
 %.o: %.c
-	$(CC) /9 $(CCFLAGS) -o$(_OUTPUTDIR)/$*.asm $^
+	$(CC) /9 $(CFLAGS) -o$(_OUTPUTDIR)/$*.asm $^
 	$(ASM) $(ASMFLAGS) -o$(_OUTPUTDIR)/$@ $(_OUTPUTDIR)/$*.asm
 endif
 

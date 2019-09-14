@@ -68,7 +68,8 @@ DEFINES := $(addprefix /D,$(DEFINES))
 DEFINES := $(subst @, ,$(DEFINES))
 LIB_DEPENDENCIES := $(foreach file,$(addsuffix $(LIB_EXT),$(LIB_DEPENDENCIES)), $(_LIBDIR)\$(file))
 
-CCFLAGS := $(CCFLAGS) $(CINCLUDES) $(DEFINES) /DMICROSOFT /DWIN32
+CFLAGS := $(CCFLAGS) $(CINCLUDES) $(DEFINES) /DMICROSOFT /DWIN32
+CXXFLAGS := $(CCFLAGS) $(CINCLUDES) $(DEFINES) /DMICROSOFT /DWIN32
 
 ifeq "$(TARGET)" "GUI"
 LFLAGS:= $(LFLAGS) /SUBSYSTEM:WINDOWS
@@ -83,10 +84,10 @@ vpath %.lib $(_LIBDIR)
 vpath %.res $(_OUTPUTDIR)
 
 %.obj: %.cpp
-	$(CC) $(CCFLAGS) -Fo$(_OUTPUTDIR)/$@ $^
+	$(CC) $(CXXFLAGS) -Fo$(_OUTPUTDIR)/$@ $^
 
 %.obj: %.c
-	$(CC) $(CCFLAGS) -Fo$(_OUTPUTDIR)/$@ $^
+	$(CC) $(CFLAGS) -Fo$(_OUTPUTDIR)/$@ $^
 
 %.obj: %.asm
 	$(TASM) /ml /zi /i$(INCLUDE) $(ADEFINES) $^, $(_OUTPUTDIR)/$@
@@ -107,9 +108,9 @@ $(NAME).exe: $(MAIN_DEPENDENCIES) $(LIB_DEPENDENCIES) $(NAME)$(LIB_EXT) $(_LIBDI
 
 
 %.exe: %.c
-	$(CC) $(CCFLAGS) -nologo $^
+	$(CC) $(CFLAGS) -nologo $^
 
 %.exe: %.cpp
-	$(CC) $(CCFLAGS) -nologo $^
+	$(CC) $(CXXFLAGS) -nologo $^
 
 endif

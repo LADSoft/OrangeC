@@ -72,7 +72,8 @@ DEFINES := $(addprefix /D,$(DEFINES))
 DEFINES := $(subst @, ,$(DEFINES))
 LIB_DEPENDENCIES := $(foreach file, $(addsuffix .lib,$(LIB_DEPENDENCIES)), $(_LIBDIR)\$(file))
 
-CCFLAGS := $(CCFLAGS) $(CINCLUDES) $(DEFINES) /DMICROSOFT /DBORLAND 
+CFLAGS := $(CCFLAGS) $(CINCLUDES) $(DEFINES) /DMICROSOFT /DBORLAND
+CXXFLAGS := $(CCFLAGS) $(CINCLUDES) $(DEFINES) /DMICROSOFT /DBORLAND
 ifeq "$(TARGET)" "GUI"
 STARTUP=C0W32.obj
 TYPE=/Tpe/aa
@@ -89,10 +90,10 @@ vpath %.lib $(_LIBDIR)
 vpath %.res $(_OUTPUTDIR)
 
 %.obj: %.cpp
-	$(CC) $(CCFLAGS) -o$(_OUTPUTDIR)/$@ $^
+	$(CC) $(CXXFLAGS) -o$(_OUTPUTDIR)/$@ $^
 
 %.obj: %.c
-	$(CC) $(CCFLAGS) -o$(_OUTPUTDIR)/$@ $^
+	$(CC) $(CFLAGS) -o$(_OUTPUTDIR)/$@ $^
 
 %.obj: %.asm
 	$(TASM) /ml /zi /i$(INCLUDE) $(ADEFINES) $^, $(_OUTPUTDIR)/$@

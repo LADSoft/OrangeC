@@ -66,8 +66,8 @@ endif
 DEFINES:=$(addprefix -D,$(DEFINES))
 DEFINES:=$(subst @, ,$(DEFINES))
 
-CCFLAGS := $(CCFLAGS) $(CINCLUDES) -fpermissive $(DEFINES)\
-    -DGNUC
+CFLAGS := $(CCFLAGS) $(CINCLUDES) $(DEFINES) -DGNUC -std=c99
+CXXFLAGS := $(CCFLAGS) $(CINCLUDES) -fpermissive $(DEFINES) -DGNUC -std=c++14
 
 ifeq "$(TARGET)" "GUI"
 LFLAGS := $(LFLAGS) -s -Wl,--subsystem,windows
@@ -81,10 +81,10 @@ vpath %.a $(_LIBDIR)
 vpath %.res $(_OUTPUTDIR)
 
 $(_OUTPUTDIR)/%.o: %.cpp
-	$(CXX) -std=c++14 $(CCFLAGS) -o $@ $^
+	$(CXX) $(CXXFLAGS) -o $@ $^
 
 $(_OUTPUTDIR)/%.o: %.c
-	$(CC) -std=c99 $(CCFLAGS) -o $@ $^
+	$(CC) $(CFLAGS) -o $@ $^
 
 $(_OUTPUTDIR)/%.o: %.asm
 	$(ASM) $(ASMFLAGS) -o $@ $^

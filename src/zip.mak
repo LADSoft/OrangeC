@@ -32,8 +32,8 @@ OCC_VERSION := $(subst ",,$(OCC_VERSION))
 export OCC_VERSION
 VERNAME := $(subst .,,$(OCC_VERSION))
 
-DISTEXE=/orangec/dist/occ$(VERNAME)e.zip
-DISTSRC=/orangec/dist/occ$(VERNAME)s.zip
+DISTEXE=/orangec/dist/ZippedBinaries$(VERNAME).zip
+DISTSRC=/orangec/dist/ZippedSources$(VERNAME).zip
 
 DISTRIBUTE:
 ifneq "$(ORANGEC_ONLY)" "YES"
@@ -54,6 +54,6 @@ ifneq "$(ORANGEC_ONLY)" "YES"
 	$(ZIP) a $(DISTSRC) orangec/src/*.exe orangec/src/*.iss orangec/src/*.bmp orangec/src/config.bat orangec/src/ocidehld.bat
 	$(ZIP) a $(DISTSRC) orangec/src/LICENSE.TXT orangec/license/*.* orangec/src/readme.txt orangec/src/relnotes.txt
 	$(ZIP) a $(DISTSRC) orangec/src/clibs/repobj.bat orangec/src/copying orangec/src/ocl.lic orangec/src/addon.txt
-	"/program files (x86)/inno setup 6/iscc" /Q /Focc$(VERNAME) /O/orangec/dist orangec/src/occ.iss
+	"/program files (x86)/inno setup 6/iscc" /Q /FWindowsInstaller$(VERNAME) /O/orangec/dist orangec/src/occ.iss
 	-rmdir $(DISTROOT)\appdata
 endif

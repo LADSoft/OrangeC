@@ -4,11 +4,14 @@ image: Visual Studio 2017
 
 install:
     - appveyor-retry choco install InnoSetup
-    - set PATH=c:\orangec\bin;%PATH%;C:\Program Files (x86)\Inno Setup 6
+    - cd \
+    - 7z x projects\orangec\src\cc386.zip *
+    - set PATH=c:\orangec\bin;c:\cc386\bin;%PATH%;C:\Program Files (x86)\Inno Setup 6
     - call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars32.bat"
     - set PATH=C:\mingw-w64\x86_64-7.2.0-posix-seh-rt_v5-rev1\mingw64\bin;%PATH%
     - set ORIGPATH=%PATH%
     - set ORANGEC=c:\ORANGEC
+    - set LADSOFT_DEV=c:\cc386
 
 branches:
    only:
@@ -104,7 +107,7 @@ build_script:
                   copy omake\omake.exe \orangec\temp
                   c:\orangec\temp\omake /DCOMPILER=OCC clean -j:4
                   # in this last one we add in OCCIL so it will be in the install packages...
-                  c:\orangec\temp\omake /DNOMAKEDIR /DCOMPILER=OCC /DVIAASSEMBLY=$env:VIAASEMBLY /DLSCRTL=$env:LSCRTL /DWITHDEBUG=$env:WITHDEBUG fullbuild -j:4
+                  c:\orangec\temp\omake /DNOMAKEDIR /DCOMPILER=OCC /DVIAASSEMBLY=$env:VIAASEMBLY /DLSCRTL=$env:LSCRTL /DWITHDEBUG=$env:WITHDEBUG /DWITHMSDOS fullbuild -j:4
                   if ($LastExitCode -ne 0)
                   {
                       throw "error"
@@ -123,3 +126,16 @@ build_script:
 artifacts:
   - path: "dist\\*.*"
     name: releasefiles
+
+deploy:
+  release: Orange C-v$(appveyor_build_version)
+  description: 'Current Release'
+  provider: GitHub
+  auth_token:
+    secure: gOXANm+uz1YSqzv6tHI8/UAlAbA/ofp6o1NNxA+dsVX/jnTZioWTVD3f8Q8S6Un7
+  artifact: /.*
+  draft: false
+  prerelease: false
+  on:
+    branch: master
+    APPVEYOR_REPO_TAG: true

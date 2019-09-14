@@ -46,4 +46,4 @@ pack.exe: pack.c
 dopack: pack.exe install.exe
 	copy install.exe pinstall.exe
 	pack
-	copy pinstall.exe \orangec\dist\occ$(VERNAME)d.exe
+	copy pinstall.exe \orangec\dist\MSDosInstaller$(VERNAME).exe

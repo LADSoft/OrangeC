@@ -30,10 +30,13 @@
 #include <algorithm>
 #include "Instruction.h"
 #include "Fixup.h"
+#include "ppInclude.h"
 #include "UTF8.h"
 #include <stdexcept>
 #include <iostream>
 #include "Token.h"
+
+bool IsSymbolCharRoutine(const char* data, bool startOnly);
 
 static const unsigned mask[32] = {
     0x1,      0x3,      0x7,       0xf,       0x1f,      0x3f,      0x7f,       0xff,       0x1ff,      0x3ff,      0x7ff,
@@ -128,13 +131,141 @@ bool InstructionParser::SetNumber(int tokenPos, int oldVal, int newVal)
     }
     return rv;
 }
+void InstructionParser::SetATT(bool att) 
+{ 
+    attSyntax = att; 
+    if (attSyntax)
+    {
+        opcodeTable["cbtw"] = opcodeTable["cbw"];
+        opcodeTable["cwtl"] = opcodeTable["cwde"];
+        opcodeTable["cwtd"] = opcodeTable["cwd"];
+        opcodeTable["cltd"] = opcodeTable["cdq"];
+        opcodeTable["cltq"] = opcodeTable["cdqe"];
+        opcodeTable["cqto"] = opcodeTable["cqo"];
+        ppInclude::SetCommentChar('#');
+    }
+    else
+    {
+        opcodeTable.erase("cbtw");
+        opcodeTable.erase("cwtl");
+        opcodeTable.erase("cwtd");
+        opcodeTable.erase("cltd");
+        opcodeTable.erase("cltq");
+        opcodeTable.erase("cqto");
+        ppInclude::SetCommentChar(';');
+    }
+}
+
 bool InstructionParser::MatchesOpcode(std::string opcode)
 {
     std::transform(opcode.begin(), opcode.end(), opcode.begin(), ::tolower);
 
-    return opcodeTable.end() != opcodeTable.find(opcode) || prefixTable.end() != prefixTable.find(opcode);
+    if (opcodeTable.end() != opcodeTable.find(opcode) || prefixTable.end() != prefixTable.find(opcode))
+        return true;
+    if (attSyntax)
+    {
+        if (opcode.size() == 6)
+        {
+            if (opcode.substr(0, 4) == "movs" || opcode.substr(0, 4) == "movx")
+                if (opcode[4] == 'b' || opcode[4] == 'w' || opcode[4] == 'l')
+                    if (opcode[5] == 'w' || opcode[5] == 'l' || opcode[5] == 'q')
+                        return true;
+        }
+        else
+        {
+            char ch = opcode[opcode.size() - 1];
+            if (opcodeTable.end() != opcodeTable.find(opcode.substr(0, opcode.size() - 1)))
+            {
+                switch (ch)
+                {
+                case 'b':
+                case 'w':
+                case 'l':
+                case 's':
+                case 't':
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
 }
-Instruction* InstructionParser::Parse(const std::string args, int PC)
+std::map<std::string, int>::iterator InstructionParser::GetOpcode(const std::string& opcode, int& size1, int& size2)
+{
+    size1 = size2 = 0;
+    auto it = opcodeTable.find(opcode);
+    if (it == opcodeTable.end() && attSyntax)
+    {
+        if (opcode.size() == 6)
+        {
+            if (opcode.substr(0, 4) == "movs" || opcode.substr(0, 4) == "movx")
+            {
+                it = opcodeTable.find(opcode.substr(0, 4));
+                switch (opcode[4])
+                {
+                case 'b':
+                    size1 = 1;
+                    break;
+                case 'w':
+                    size1 = 2;
+                    break;
+                case 'l':
+                    size1 = 4;
+                    break;
+                default:
+                    return opcodeTable.end();
+                }
+                switch (opcode[5])
+                {
+                case 'w':
+                    size2 = 2;
+                    break;
+                case 'l':
+                    size2 = 4;
+                    break;
+                case 'q':
+                    size2 = 8;
+                    break;
+                default:
+                    return opcodeTable.end();
+                }
+                if (size2 <= size1)
+                    return opcodeTable.end();
+            }
+        }
+        else
+        {
+            char ch = opcode[opcode.size() - 1];
+            it = opcodeTable.find(opcode.substr(0, opcode.size() - 1));
+
+            switch (ch)
+            {
+            case 'b':
+                size1 = 1;
+                break;
+            case 'w':
+                size1 = 2;
+                break;
+            case 'l':
+                size1 = 4;
+                break;
+            case 'q':
+                size1 = 8;
+                break;
+            case 's':
+                size1 = -4;
+                break;
+            case 't':
+                size1 = -10;
+                break;
+            default:
+                return opcodeTable.end();
+            }
+        }
+    }
+    return it;
+}
+Instruction* InstructionParser::Parse(const std::string& args, int PC)
 {
     int errLine = Errors::GetErrorLine();
     std::string errName = Errors::GetFileName();
@@ -197,11 +328,12 @@ Instruction* InstructionParser::Parse(const std::string args, int PC)
     }
     else
     {
-        auto it = opcodeTable.find(op);
+        int size1 = 0, size2 = 0;
+        auto it = GetOpcode(op, size1, size2);
         if (it != opcodeTable.end())
         {
             bits.Reset();
-            if (!Tokenize(PC))
+            if (!Tokenize(PC, size1, size2))
             {
                 throw new std::runtime_error("Unknown token sequence");
             }
@@ -575,8 +707,197 @@ void InstructionParser::ParseNumeric(int PC)
         }
     }
 }
-bool InstructionParser::Tokenize(int PC)
+void InstructionParser::Split(const std::string& line, std::vector<std::string>& splt)
 {
+    int start = 0;
+    int parens = 0;
+    int i;
+    for (i = 0; i < line.size(); i++)
+    {
+        if (line[i] == '(')
+            parens++;
+        else if (line[i] == ')' && parens)
+            parens--;
+        else if (line[i] == ',' && !parens)
+        {
+            splt.push_back(line.substr(start, i));
+            start = i + 1;
+        }
+    }
+    if (i > start)
+        splt.push_back(line.substr(start, i));
+}
+std::string InstructionParser::RewriteATTArg(const std::string& line)
+{
+    int i = line.find_first_not_of("\t\v \r\n");
+    std::string seg;
+    if (line[i] == '%')
+    {
+        seg = line.substr(i+1);
+        if (seg.size() >2 && seg[2] == ':')
+        {
+            seg = seg.substr(0, 3);
+            i += 4;
+        }
+        else
+        {
+            return seg;
+        }
+    }
+    if (line[i] == '$')
+    {
+        for (i = i + 1; i < line.size(); i++) 
+            if (!isspace(line[i])) 
+                break;
+        if (i < line.size() && (line[i] == '-' || isdigit(line[i])))
+        {
+            return line.substr(i);
+        }
+        return "dword " + line.substr(i);
+    }
+    else
+    {
+        std::string name;
+        if (IsSymbolCharRoutine(line.c_str() + i, true))
+        {
+            int j = i + 1;
+            while (IsSymbolCharRoutine(line.c_str() + j, false)) j++;
+            name = line.substr(i, j);
+            i = j;
+        }
+        else if (line[i] == '-' || isdigit(line[i]))
+            for (; i < line.size(); i++)
+                if (!isspace(line[i]))
+                    break;
+        if (i < line.size())
+        {
+            int start = i;
+            if (line[i] != '(')
+            {
+                // error
+                return line;
+            }
+            else
+            {
+                std::string primary, secondary, times;
+                i++;
+                for (; i < line.size(); i++)
+                    if (!isspace(line[i]))
+                        break;
+                int j = line.size() - 1;
+                while (j > i && isspace(line[j]))
+                    j--;
+                if (line[j] == ')')
+                {
+                    std::vector<std::string> splt;
+                    Split(line.substr(i, j), splt);
+                    switch (splt.size())
+                    {
+                    case 1:
+                        if (splt[0] != "" && splt[0][0] == '%')
+                        {
+                            primary = splt[0].substr(1);
+                            break;
+                        }
+                        // error
+                        return line;
+                    case 2:
+                        if (splt[0] == "")
+                        {
+                            if (splt[1] == "1")
+                            {
+                                return "[" + seg + name + "]";
+                            }
+                        }
+                        else if (splt[0][0] == '%')
+                        {
+                            primary = splt[0].substr(1);
+                            if (splt[1] != "" && splt[1][0] == '%')
+                            {
+                                secondary = splt[1].substr(1);
+                                break;
+                            }
+                        }
+                        // error
+                        return line;
+                    case 3:
+                        if (splt[0] != "")
+                        {
+                            if (splt[0][0] == '%')
+                                primary = splt[0].substr(1);
+                            else
+                                return "[" + seg + name + line.substr(i) + "]";
+                        }
+                        if (splt[1] != "")
+                        {
+                            if (splt[1][0] == '%')
+                                secondary = splt[1].substr(1);
+                            else
+                                return "[" + seg + name + line.substr(i) + "]";
+                        }
+                        if (splt[2] != "")
+                        {
+                            times = splt[2];
+                        }
+                        break;
+                    default:
+                        // error
+                        return line;
+
+                    }
+                    if (secondary.size())
+                    {
+                        if (primary.size())
+                            primary += "+";
+                        primary += secondary;
+                        if (times.size())
+                        {
+                            primary += "*" + times;
+                        }
+                        if (name.size())
+                            primary += "+" + name;
+                        primary = "[" + seg + primary + "]";
+                        return primary;
+                    }
+                }
+                else
+                {
+                    // error
+                    return line;
+                }
+            }
+        }
+        else
+        {
+            return "[" + seg + name + "]";
+        }
+        return line;
+    }
+}
+std::string InstructionParser::RewriteATT(const std::string& line)
+{
+    std::vector<std::string> splt, splt2;
+    // split arguments out into multiple strings
+    Split(line, splt);
+    // process each arg
+    for (auto s : splt)
+    {
+        splt2.push_back(RewriteATTArg(s));
+    }
+    std::string rv;
+    // reverse
+    for (int i = splt2.size() - 1; i >= 0; i--)
+    {
+        if (rv.size())
+            rv += ",";
+        rv += splt2[i];
+    }
+    return rv;
+}
+bool InstructionParser::Tokenize(int PC, int& size1, int& size2)
+{
+    if (attSyntax)
+        line = RewriteATT(line);
     while (line.size())
     {
         NextToken(PC);

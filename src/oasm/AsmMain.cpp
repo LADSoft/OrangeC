@@ -235,7 +235,7 @@ int AsmMain::Run(int argc, char* argv[])
         else
         {
             Listing listing;
-            AsmFile asmFile(pp, CaseInsensitive.GetValue(), BinaryOutput.GetValue(), listing);
+            AsmFile asmFile(pp, CaseInsensitive.GetValue(), BinaryOutput.GetValue(), listing, GAS.GetValue());
             if (asmFile.Read())
             {
                 if (!asmFile.Write(outName, inName) || Errors::ErrorCount())

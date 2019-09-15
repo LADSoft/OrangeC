@@ -116,6 +116,7 @@ class ppInclude
     void ForceEOF() { forcedEOF = true; }
     std::set<std::string>& GetUserIncludes() { return userIncludes; }
 
+    static void SetCommentChar(char ch) { commentChar = ch; }
     int AnonymousIndex() const { if (current) return current->AnonymousIndex(); else return 1; }
   protected:
     void StripAsmComment(std::string& line);
@@ -150,5 +151,6 @@ class ppInclude
     std::string dummy;
     int nextIndex;
     PipeArbitrator piper;
+    static char commentChar;
 };
 #endif

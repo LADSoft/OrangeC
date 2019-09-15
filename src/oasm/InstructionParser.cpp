@@ -992,7 +992,6 @@ std::string InstructionParser::RewriteATT(int& op, const std::string& line, int&
             rv += ",";
         rv += splt2[i];
     }
-printf("::%s\n", rv.c_str());
     return rv;
 }
 bool InstructionParser::Tokenize(int& op, int PC, int& size1, int& size2)

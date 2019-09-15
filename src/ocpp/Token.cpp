@@ -42,7 +42,8 @@ bool Tokenizer::IsSymbolCharDefault(const char* data, bool startOnly)
     return *data == '_' || (startOnly ? UTF8::IsAlpha(data) : UTF8::IsAlnum(data));
 }
 
-unsigned llminus1 = -1;
+unsigned long long llminus1 = (unsigned long long)-1LL;
+
 bool StringToken::Start(const std::string& line)
 {
     if (line[0] == '"')

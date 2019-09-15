@@ -17,31 +17,22 @@ branches:
    only:
      - master
 
-environment:
-  matrix:
-    - type: MINGW64
-      BUILD_PROFILE: MINGW64
-    - type: MS
-      BUILD_PROFILE: MS
-    - type: MS WITH LSCRTL
-      BUILD_PROFILE: MS
-      LSCRTL: YES
-    - type: MS VIA ASSEMBLY
-      BUILD_PROFILE: MS
-      VIAASSEMBLY: YES
-    - type: MS WITH DEBUG
-      BUILD_PROFILE: MS
-      WITHDEBUG: YES
-    - type: CLANG
-      BUILD_PROFILE: CLANG
-    - type: MSIL COMPILER
-      BUILD_PROFILE: OCCIL
+configuration:
+     - MINGW64
+     - MS
+     - MS WITH LSCRTL
+     - MS VIA ASSEMBLY
+     - MS WITH DEBUG
+     - CLANG
+     - MSIL COMPILER
 
 for:
 -
       matrix:
             only:
-                -type: MS
+                - configuration: MS
+      environment:
+          BUILD_PROFILE: MS
       deploy:
           release: Orange C-v$(appveyor_build_version)
           description: 'Current Release'
@@ -54,6 +45,46 @@ for:
           on:
               branch: master
               APPVEYOR_REPO_TAG: true
+-
+      matrix:
+            only:
+                - configuration: MINGW64
+      environment:
+          BUILD_PROFILE: MINGW64
+-
+      matrix:
+            only:
+                - configuration: CLANG
+      environment:
+          BUILD_PROFILE: CLANG
+-
+      matrix:
+            only:
+                - configuration: MSIL COMPILER
+      environment:
+          BUILD_PROFILE: OCCIL
+-
+      matrix:
+            only:
+                - configuration: MS VIA ASSEMBLY
+      environment:
+          BUILD_PROFILE: MS
+          VIAASSEMBLY: YES
+-
+      matrix:
+            only:
+                - configuration: MS WITH LSCRTL
+      environment:
+          BUILD_PROFILE: MS
+          LSCRTL: YES
+-
+      matrix:
+            only:
+                - configuration: MS WITH DEBUG
+      environment:
+          BUILD_PROFILE: MS
+          WITHDEBUG: YES
+
 
 skip_commits:
   files:

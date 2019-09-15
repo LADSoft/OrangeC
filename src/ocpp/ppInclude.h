@@ -91,7 +91,7 @@ class ppInclude
     const std::string& GetRealFile()
     {
         if (current)
-            return current->GetErrorFile();
+            return current->GetRealFile();
         return dummy;
     }
     bool GetLine(std::string& line, int& lineno);

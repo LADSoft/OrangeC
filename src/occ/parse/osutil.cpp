@@ -490,8 +490,14 @@ void ParamTransfer()
         StripExt(buf);
         AddExt(buf, ".l");
         InsertAnyFile(buf, 0, -1, false);
-        if (chosenAssembler->parse_param)
-            chosenAssembler->parse_param('L', prm_library.GetValue().c_str());
+    }
+    if (prm_libpath.GetExists())
+    {
+        checks = split(prm_libpath.GetValue());
+
+        for (auto&& v : checks)
+            if (chosenAssembler->parse_param)
+                chosenAssembler->parse_param('L', v.c_str());
     }
     if (prm_Winmode.GetExists())
     {

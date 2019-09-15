@@ -53,7 +53,7 @@ CmdSwitchCombineString AsmMain::includePath(SwitchParser, 'I', ';', "include-pat
 CmdSwitchBool AsmMain::BinaryOutput(SwitchParser, 'b', false, "binary");
 CmdSwitchBool AsmMain::Intel(SwitchParser, '\0', false, "intel");
 CmdSwitchBool AsmMain::GAS(SwitchParser, '\0', false, "gas");
-CmdSwitchInt AsmMain::ProcessorMode(SwitchParser, 's', 16,0,100,"processor-mode");
+CmdSwitchInt AsmMain::ProcessorMode(SwitchParser, 's', 32,0,100,"processor-mode");
 const char* AsmMain::usageText =
     "[options] file"
     "\n"

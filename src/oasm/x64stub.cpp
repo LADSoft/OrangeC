@@ -151,7 +151,7 @@ const char* Lexer::preData =
     "__SECT__\n"
     "%endmacro\n";
 
-int InstructionParser::processorMode = 16;
+int InstructionParser::processorMode = 32;
 
 void Instruction::RepRemoveCancellations(AsmExprNode *exp, bool commit, int &count, Section *sect[], bool sign[], bool plus)
 {
@@ -408,7 +408,7 @@ int x64Parser::DoMath(char op, int left, int right)
 void x64Parser::Setup(Section* sect)
 {
     if (sect->beValues[0] == 0)
-        sect->beValues[0] = processorMode;  // 16 bit mode is the default
+        sect->beValues[0] = processorMode;  // 32 bit mode is the default
     Setprocessorbits(sect->beValues[0]);
 }
 

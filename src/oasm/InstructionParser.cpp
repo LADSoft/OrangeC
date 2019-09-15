@@ -29,6 +29,7 @@
 #include <cstdio>
 #include <algorithm>
 #include "Instruction.h"
+#include "x64Instructions.h"
 #include "Fixup.h"
 #include "ppInclude.h"
 #include "UTF8.h"
@@ -333,12 +334,13 @@ Instruction* InstructionParser::Parse(const std::string& args, int PC)
         if (it != opcodeTable.end())
         {
             bits.Reset();
-            if (!Tokenize(PC, size1, size2))
+            int opcode = it->second;
+            if (!Tokenize(opcode, PC, size1, size2))
             {
                 throw new std::runtime_error("Unknown token sequence");
             }
             eol = false;
-            auto rv = DispatchOpcode(it->second);
+            auto rv = DispatchOpcode(opcode);
             Instruction* s = nullptr;
             switch (rv)
             {
@@ -720,12 +722,18 @@ void InstructionParser::Split(const std::string& line, std::vector<std::string>&
             parens--;
         else if (line[i] == ',' && !parens)
         {
-            splt.push_back(line.substr(start, i));
+            splt.push_back(line.substr(start, i-start));
             start = i + 1;
         }
     }
     if (i > start)
-        splt.push_back(line.substr(start, i));
+        splt.push_back(line.substr(start, i-start));
+    for (i = 0; i < splt.size(); i++)
+    {
+        int npos = splt[i].find_first_not_of("\t\v \r\n");
+        if (npos && npos != std::string::npos)
+            splt[i] = splt[i].substr(npos);
+    }
 }
 std::string InstructionParser::RewriteATTArg(const std::string& line)
 {
@@ -741,6 +749,13 @@ std::string InstructionParser::RewriteATTArg(const std::string& line)
         }
         else
         {
+            if (seg.size() >= 2 && seg.substr(0,2) == "st")
+            {
+                if (seg == "st")
+                    return "st0";
+                else if (seg[2] == '(' && seg[4] == ')')
+                    return "st" + seg.substr(3,1);
+            }
             return seg;
         }
     }
@@ -762,13 +777,21 @@ std::string InstructionParser::RewriteATTArg(const std::string& line)
         {
             int j = i + 1;
             while (IsSymbolCharRoutine(line.c_str() + j, false)) j++;
-            name = line.substr(i, j);
+            name = line.substr(i, j-i);
             i = j;
         }
-        else if (line[i] == '-' || isdigit(line[i]))
-            for (; i < line.size(); i++)
-                if (!isspace(line[i]))
-                    break;
+        else 
+        {
+            if (line[i] == '-' || isdigit(line[i]))
+            {
+                int j = i +1;
+                for (; j < line.size(); j++)
+                    if (!isdigit(line[j]))
+                        break;
+                name = line.substr(i,j-i);
+                i = j;
+            }
+        }
         if (i < line.size())
         {
             int start = i;
@@ -784,13 +807,14 @@ std::string InstructionParser::RewriteATTArg(const std::string& line)
                 for (; i < line.size(); i++)
                     if (!isspace(line[i]))
                         break;
-                int j = line.size() - 1;
+                int j = line.size()-1;
                 while (j > i && isspace(line[j]))
                     j--;
                 if (line[j] == ')')
                 {
                     std::vector<std::string> splt;
-                    Split(line.substr(i, j), splt);
+                    Split(line.substr(i, j-i), splt);
+
                     switch (splt.size())
                     {
                     case 1:
@@ -854,11 +878,11 @@ std::string InstructionParser::RewriteATTArg(const std::string& line)
                         {
                             primary += "*" + times;
                         }
-                        if (name.size())
-                            primary += "+" + name;
-                        primary = "[" + seg + primary + "]";
-                        return primary;
                     }
+                    if (name.size())
+                        primary += "+" + name;
+                    primary = "[" + seg + primary + "]";
+                    return primary;
                 }
                 else
                 {
@@ -874,7 +898,32 @@ std::string InstructionParser::RewriteATTArg(const std::string& line)
         return line;
     }
 }
-std::string InstructionParser::RewriteATT(const std::string& line)
+void InstructionParser::PreprendSize(std::string& val, int sz)
+{
+    char *str = "";
+    switch (sz)
+    {
+    case 1:
+        str = "byte ";
+        break;
+    case 2:
+        str = "word ";
+        break;
+    case 4:
+    case -4:
+        str = "dword ";
+        break;
+    case 8:
+    case -8:
+        str = "qword ";
+        break;
+    case -10:
+        str = "tword ";
+        break;
+    }
+    val = std::string(str) + val;
+}
+std::string InstructionParser::RewriteATT(int& op, const std::string& line, int& size1, int& size2)
 {
     std::vector<std::string> splt, splt2;
     // split arguments out into multiple strings
@@ -884,6 +933,57 @@ std::string InstructionParser::RewriteATT(const std::string& line)
     {
         splt2.push_back(RewriteATTArg(s));
     }
+    if (size1 == 4) // 'l'
+    {
+        if (op >= op_f2xm1 && op <= op_fyl2xp1)
+        {
+            size1 = -8;
+        }
+    }
+    if (size2 && splt2[0].find_first_of("[") != std::string::npos)
+    {
+        PreprendSize(splt2[0], size2);
+    }
+    else if (size1)
+    {
+        // the other combination has a destination which MUST BE a reg so we don't consider it.
+        if (splt2[1].find_first_of("[") != std::string::npos)
+            if (splt[0].find_first_of("%") == std::string::npos)
+                PreprendSize(splt2[1], size1);
+    }
+    if (op >= op_f2xm1 && op <= op_fyl2xp1 && splt.size() == 2)
+    {
+        if (splt[1].size() >= 2 && splt[1].substr(0, 2) == "st" && splt[1] != "st" && splt[1] != "st(0)")
+        {
+            switch (op)
+            {
+            case op_fsub:
+                op = op_fsubr;
+                break;
+            case op_fsubp:
+                op = op_fsubrp;
+                break;
+            case op_fsubr:
+                op = op_fsub;
+                break;
+            case op_fsubrp:
+                op = op_fsubp;
+                break;
+            case op_fdiv:
+                op = op_fdivr;
+                break;
+            case op_fdivp:
+                op = op_fdivrp;
+                break;
+            case op_fdivr:
+                op = op_fdiv;
+                break;
+            case op_fdivrp:
+                op = op_fdivp;
+                break;
+            }
+        }
+    }
     std::string rv;
     // reverse
     for (int i = splt2.size() - 1; i >= 0; i--)
@@ -892,12 +992,13 @@ std::string InstructionParser::RewriteATT(const std::string& line)
             rv += ",";
         rv += splt2[i];
     }
+printf("::%s\n", rv.c_str());
     return rv;
 }
-bool InstructionParser::Tokenize(int PC, int& size1, int& size2)
+bool InstructionParser::Tokenize(int& op, int PC, int& size1, int& size2)
 {
     if (attSyntax)
-        line = RewriteATT(line);
+        line = RewriteATT(op, line, size1, size2);
     while (line.size())
     {
         NextToken(PC);

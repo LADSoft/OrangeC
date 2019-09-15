@@ -28,6 +28,7 @@
 
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
+#    include <fcntl.h>
 #else
 #    include <io.h>
 extern "C" char* getcwd(char*, int);

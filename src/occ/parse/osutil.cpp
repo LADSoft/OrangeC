@@ -95,14 +95,14 @@ CmdSwitchString prm_codegen(switchParser, 'C', ';');
 CmdSwitchString prm_optimize(switchParser, 'O', ';');
 CmdSwitchString prm_verbose(switchParser, 'y');
 CmdSwitchString prm_warning(switchParser, 'w', ';');
-CmdSwitchString prm_output(switchParser, 'o');
-CmdSwitchString prm_tool(switchParser, 'p', ';');
+CmdSwitchCombineString prm_output(switchParser, 'o');
+CmdSwitchCombineString prm_tool(switchParser, 'p', ';');
 
 CmdSwitchString prm_library(switchParser, 'l', ';');
 
-CmdSwitchString prm_include(switchParser, 'I', ';');
-CmdSwitchString prm_sysinclude(switchParser, 'z', ';');
-CmdSwitchString prm_libpath(switchParser, 'L', ';');
+CmdSwitchCombineString prm_include(switchParser, 'I', ';');
+CmdSwitchCombineString prm_sysinclude(switchParser, 'z', ';');
+CmdSwitchCombineString prm_libpath(switchParser, 'L', ';');
 CmdSwitchString prm_pipe(switchParser, 'P', ';');
 
 
@@ -490,8 +490,14 @@ void ParamTransfer()
         StripExt(buf);
         AddExt(buf, ".l");
         InsertAnyFile(buf, 0, -1, false);
-        if (chosenAssembler->parse_param)
-            chosenAssembler->parse_param('L', prm_library.GetValue().c_str());
+    }
+    if (prm_libpath.GetExists())
+    {
+        checks = split(prm_libpath.GetValue());
+
+        for (auto&& v : checks)
+            if (chosenAssembler->parse_param)
+                chosenAssembler->parse_param('L', v.c_str());
     }
     if (prm_Winmode.GetExists())
     {

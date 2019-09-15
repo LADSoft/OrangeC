@@ -616,10 +616,13 @@ QUAD* gen_icode_with_conflict(enum i_ops op, IMODE* res, IMODE* left, IMODE* rig
     QUAD* newQuad;
     if (right && right->mode == i_immed /*&& right->size == ISZ_NONE*/)
     {
-        IMODE* newRight = (IMODE*)Alloc(sizeof(IMODE));
-        *newRight = *right;
-        right = newRight;
-        right->size = left->size;
+	if (op != i_lsl && op != i_asr && op != i_lsr)
+        {
+            IMODE* newRight = (IMODE*)Alloc(sizeof(IMODE));
+            *newRight = *right;
+            right = newRight;
+            right->size = left->size;
+        }
     }
     switch (op)
     {

@@ -24,18 +24,18 @@
  */
 
 #include "Utils.h"
-#include <windows.h>
 #include <stdlib.h>
 #ifndef HAVE_UNISTD_H
+#include <windows.h>
 #include "io.h"
 #include "fcntl.h"
 #endif
 
 bool Utils::NamedPipe(int *fds, const std::string& pipeName)
 {
+#ifndef HAVE_UNISTD_H
     char pipe[MAX_PATH];
     sprintf(pipe, "\\\\.\\pipe\\%s", pipeName.c_str());
-#ifndef HAVE_UNISTD_H
     HANDLE handle;
     handle = CreateFile(pipe, GENERIC_READ|GENERIC_WRITE, 0, 0, OPEN_EXISTING, 0, NULL);
     int n = GetLastError();
@@ -50,9 +50,9 @@ bool Utils::NamedPipe(int *fds, const std::string& pipeName)
 }
 bool Utils::PipeWrite(int fileno, const std::string& data)
 {
+#ifndef HAVE_UNISTD_H
     DWORD n = data.size();
     DWORD read;
-#ifndef HAVE_UNISTD_H
     return WriteFile((HANDLE)_get_osfhandle(fileno), &n, sizeof(DWORD), &read, NULL) && WriteFile((HANDLE)_get_osfhandle(fileno), data.c_str(), n, &read, NULL);
 #else
     return false;

@@ -1683,6 +1683,7 @@ int opt0(EXPRESSION** node)
                                 ep->left = ep->right;
                                 ep->right = x;
                                 ep->right->v.i = i;
+                                ep->right->type = en_c_i;
                                 rv = true;
                                 switch (ep->type)
                                 {
@@ -1746,6 +1747,7 @@ int opt0(EXPRESSION** node)
                             if (i != -1)
                             {
                                 ep->right->v.i = i;
+                                ep->right->type = en_c_i;
                                 rv = true;
                                 switch (ep->type)
                                 {

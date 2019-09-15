@@ -66,6 +66,7 @@ extern int funcLevel;
 extern SYMBOL* theCurrentFunc;
 extern attributes basisAttribs;
 extern PreProcessor *preProcessor;
+extern char realOutFile[260];
 
 int inDefaultParam;
 LIST *externals, *globalCache;
@@ -174,8 +175,7 @@ SYMBOL* makeID(enum e_sc storage_class, TYPE* tp, SYMBOL* spi, const char* name)
 SYMBOL* makeUniqueID(enum e_sc storage_class, TYPE* tp, SYMBOL* spi, const char* name)
 {
     char buf[512];
-    std::string file = preProcessor->GetRealFile();
-    my_sprintf(buf, "%s_%u", name, Utils::CRC32((const unsigned char*)file.c_str(), file.size()));
+    my_sprintf(buf, "%s_%u", name, Utils::CRC32((const unsigned char *)realOutFile, strlen(realOutFile)));
     return makeID(storage_class, tp, spi, litlate(buf));
 }
 void addStructureDeclaration(STRUCTSYM* decl)
@@ -5713,7 +5713,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                         {
                             sp->importfile = importFile;
                         }
-                        SetLinkerNames(sp, storage_class_in == sc_auto && isstructured(sp->tp) ? lk_auto : linkage);
+                        SetLinkerNames(sp, storage_class == sc_auto && isstructured(sp->tp) ? lk_auto : linkage);
                         if (inTemplate && templateNestingCount == 1)
                         {
                             inTemplateBody++;

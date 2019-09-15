@@ -37,6 +37,24 @@ environment:
     - type: MSIL COMPILER
       BUILD_PROFILE: OCCIL
 
+for:
+-
+      matrix:
+            only:
+                -type: MS
+      deploy:
+          release: Orange C-v$(appveyor_build_version)
+          description: 'Current Release'
+          provider: GitHub
+          auth_token:
+              secure: gOXANm+uz1YSqzv6tHI8/UAlAbA/ofp6o1NNxA+dsVX/jnTZioWTVD3f8Q8S6Un7
+          artifact: /.*
+          draft: false
+          prerelease: false
+          on:
+              branch: master
+              APPVEYOR_REPO_TAG: true
+
 skip_commits:
   files:
     - '**/*.txt'
@@ -127,15 +145,3 @@ artifacts:
   - path: "dist\\*.*"
     name: releasefiles
 
-deploy:
-  release: Orange C-v$(appveyor_build_version)
-  description: 'Current Release'
-  provider: GitHub
-  auth_token:
-    secure: gOXANm+uz1YSqzv6tHI8/UAlAbA/ofp6o1NNxA+dsVX/jnTZioWTVD3f8Q8S6Un7
-  artifact: /.*
-  draft: false
-  prerelease: false
-  on:
-    branch: master
-    APPVEYOR_REPO_TAG: true

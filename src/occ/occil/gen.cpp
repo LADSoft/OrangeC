@@ -1838,12 +1838,15 @@ int examine_icode(QUAD* head)
     {
         if (head->dc.opcode == i_gosub)
         {
-            if (fillinvararg)
-                fillinvararg->offset->v.i = parmIndex;
-            if (!parmIndex && ((FUNCTIONCALL*)head->altdata)->vararg)
-                head->nullvararg = true;
-            fillinvararg = NULL;
-            parmIndex = 0;
+            if (((FUNCTIONCALL*)head->altdata)->vararg)
+            {
+                if (fillinvararg)
+                    fillinvararg->offset->v.i = parmIndex;
+                if (!parmIndex)
+                    head->nullvararg = true;
+                fillinvararg = NULL;
+                parmIndex = 0;
+            }
         }
         if (head->dc.opcode != i_block && head->dc.opcode != i_blockend && head->dc.opcode != i_dbgblock &&
             head->dc.opcode != i_dbgblockend && head->dc.opcode != i_var && head->dc.opcode != i_label &&

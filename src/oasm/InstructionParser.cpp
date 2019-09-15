@@ -951,9 +951,12 @@ std::string InstructionParser::RewriteATT(int& op, const std::string& line, int&
             if (splt[0].find_first_of("%") == std::string::npos)
                 PreprendSize(splt2[1], size1);
     }
+
     if (op >= op_f2xm1 && op <= op_fyl2xp1 && splt.size() == 2)
     {
-        if (splt[1].size() >= 2 && splt[1].substr(0, 2) == "st" && splt[1] != "st" && splt[1] != "st(0)")
+        // as swaps the sense of some of the floating point instructions
+        // and gcc depends on this...
+        if (splt2[1].size() > 2 && splt2[1].substr(0, 2) == "st" && splt2[1] != "st0")
         {
             switch (op)
             {

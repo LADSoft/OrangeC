@@ -671,6 +671,8 @@ typedef struct dwinfo
     int deferClose : 1;
     int shouldClose : 1;
     int active : 1;
+    int UTF8 : 1;
+    int UCS2LE : 1;
 } DWINFO;
 
 typedef struct hdwebkpt

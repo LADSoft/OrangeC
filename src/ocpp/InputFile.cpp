@@ -25,6 +25,7 @@
 #include "InputFile.h"
 #include "Errors.h"
 #include "PipeArbitrator.h"
+#include "UTF8.h"
 
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
@@ -123,25 +124,45 @@ bool InputFile::ReadString(char *s, int len)
     }
     while (true)
     {
-        while (inputLen--)
+        while (inputLen > 0)
         {
-            if (*bufPtr == 0x1a)
+            int ch;
+            if (ucs2BOM)
+            {
+                ch = *((unsigned short *)bufPtr);
+                bufPtr += 2;
+                inputLen -= 2;
+            }
+            else
+            {
+                ch = *bufPtr++;
+                inputLen--;
+            }
+            if (ch == 0x1a)
             {
                 *s = 0;
                 inputLen = 0;
                 return s != olds;
             }
-            if (*bufPtr != '\r')
+            if (ch != '\r')
             {
-                if ((*s++ = *bufPtr++) == '\n' || !--len)
+
+                if (ch < 128 || !ucs2BOM)
+                {
+                    *s++ = ch;
+                    len--;
+                }
+                else
+                {
+                    int l = UTF8::Encode(s, ch);
+                    s += l;
+                    len -= l;
+                }
+                if (ch == '\n' || len < 4)
                 {
                     *s = 0;
                     return true;
                 }
-            }
-            else
-            {
-                bufPtr++;
             }
         }
             inputLen = read(streamid, inputBuffer, sizeof(inputBuffer));
@@ -174,13 +195,27 @@ bool InputFile::ReadLine(char* line)
 void InputFile::CheckUTF8BOM()
 {
     static unsigned char BOM[] = { 0xef, 0xbb, 0xbf };
-    unsigned char buf[3];
+    static unsigned char BOM2[] = { 0xff, 0xfe }; // only LE version at this time...
+    unsigned char buf[4];
     int l;
-    if (3 == (l = read(streamid, buf, 3)))
+    if (4 == (l = read(streamid, buf, 4)))
     {
         utf8BOM = !memcmp(BOM, buf, 3);
         if (utf8BOM)
-            return;
+        {
+           buf[0] = buf[3];
+           l = 1;
+        }
+        else
+        {
+            ucs2BOM = !memcmp(BOM2, buf, 2);
+            if (ucs2BOM)
+            {
+               buf[0] = buf[2];
+               buf[1] = buf[3];
+               l = 2;
+            }
+        }
     }
     if (l > 0)
     {

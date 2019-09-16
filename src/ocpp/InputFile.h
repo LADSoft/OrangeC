@@ -50,6 +50,7 @@ public:
         endedWithoutEOL(false),
         streamid(-1),
         utf8BOM(false),
+        ucs2BOM(false),
         fileIndex(0),
         inputLen(0),
         bufPtr(inputBuffer),
@@ -98,7 +99,7 @@ public:
     int errlineno;
     bool utf8BOM;  // just cache whether it exists, we don't actually use it at this point though.
                    // input files are assumed to be UTF8 anyway...
-
+    bool ucs2BOM;
   private:
     int inputLen;
     char inputBuffer[32000];

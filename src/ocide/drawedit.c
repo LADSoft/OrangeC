@@ -454,6 +454,8 @@ void backupFile(char* name)
 }
 
 //-------------------------------------------------------------------------
+    static unsigned char BOM[] = { 0xef, 0xbb, 0xbf };
+    static unsigned char BOM2[] = { 0xff, 0xfe }; // only LE version at this time...
 
 int SaveFile(HWND hwnd, DWINFO* info)
 {
@@ -474,13 +476,53 @@ int SaveFile(HWND hwnd, DWINFO* info)
         free(buf);
         return FALSE;
     }
-    fputs(buf, out);
+    if (info->UTF8)
+    {
+         fwrite(BOM, 1, 3, out);
+         fputs(buf, out);
+    }
+    else if (info->UCS2LE)
+    {
+         fwrite(BOM2, 1, 2, out);
+         int len = strlen(buf);
+         for (int i=0; i < len; i+=4096)
+         {
+             WCHAR wbuf[4096], *p = wbuf;
+             for (int j=0; j < 4096 && j < len -i; j++)
+                 *p++ = buf[i+j];
+             fwrite(wbuf, 2, p - wbuf, out);
+         }
+    }
+    else
+    {
+        fputs(buf, out);
+    }
     fclose(out);
     FreeEditData(buf);
     FileTime(&info->time, info->dwName);
     return TRUE;
 }
 
+static void BOMAdjust(DWINFO *info, char *buf)
+{
+    // this is very naive, the IDE doesn't support UTF8 so 
+    // we just strip the UTF8 bom and elide the high byte when a UCS-2 bom is used 
+
+    if (!memcmp(buf, BOM, 3))
+    {
+        info->UTF8 = TRUE;
+        strcpy(buf, buf + 3);
+    }
+    else if (!memcmp(buf, BOM2, 2))
+    {
+        info-> UCS2LE = TRUE;
+        WCHAR *p = (WCHAR *)(buf +2);
+        char *d = buf;
+        while (*p)
+            *d++ = (char)*p++;
+        *d = 0;
+    }
+}
 //-------------------------------------------------------------------------
 
 int LoadFile(HWND hwnd, DWINFO* info, BOOL savepos)
@@ -526,6 +568,7 @@ int LoadFile(HWND hwnd, DWINFO* info, BOOL savepos)
         }
     }
     *q = 0;
+    BOMAdjust(info, buf);
     SetEditData(hwnd, buf, savepos);
     SendMessage(info->dwHandle, EM_SETMODIFY, 0, 0);
     recolorize(info);

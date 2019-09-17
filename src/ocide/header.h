@@ -647,6 +647,11 @@ typedef struct cinfo
     int creation;
 } CINFO;
 
+// fileflags field
+#define FD_DOS 1
+#define FD_UTF8 2
+#define FD_UCS2LE 4
+
 typedef struct dwinfo
 {
     struct dwinfo *prev, *next;
@@ -662,17 +667,15 @@ typedef struct dwinfo
     int lineNumberDigits;
     DWORD temp;
     unsigned timerId;
+    int fileFlags;
     int logMRU : 1;
     int newFile : 1;
     int timing : 1;
     int uninstantiated : 1;
-    int dosStyle : 1;
     int inSaveDialog : 1;
     int deferClose : 1;
     int shouldClose : 1;
     int active : 1;
-    int UTF8 : 1;
-    int UCS2LE : 1;
 } DWINFO;
 
 typedef struct hdwebkpt

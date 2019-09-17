@@ -690,6 +690,7 @@ typedef struct
     int nextControlId;
     int nextMenuId;
     int nextResourceId;
+    int fileFlags;
 } RESOURCE_DATA;
 
 #include "rcgui.h"

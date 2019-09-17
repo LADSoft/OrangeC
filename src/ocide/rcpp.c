@@ -39,7 +39,6 @@
 extern BOOL needingID;
 extern char* rcIdFile;
 extern WCHAR inputline[];
-extern FILE* inputFile;
 extern TABLE *gsyms, defsyms;
 extern long ival;
 extern char laststr[];
@@ -57,7 +56,7 @@ extern char laststr[];
 extern int lastch;
 extern int lineno;
 extern char* inputBuffer;
-extern int inputLen;
+extern int inputLength;
 extern char* ibufPtr;
 typedef struct _startups_
 {
@@ -308,7 +307,6 @@ int doinclude(int unquoted)
  */
 {
     int rv;
-    FILE* oldfile = inputFile;
     int sysinc = FALSE;
     incconst = TRUE;
     getsym();       /* get file to include */
@@ -332,15 +330,15 @@ int doinclude(int unquoted)
         generror(ERR_PREPROCID, 0);
         return incldepth == 0;
     }
-    inputFile = MySearchPath(laststr, rcSearchPath, "r");
+    FILE *inputFile = MySearchPath(laststr, rcSearchPath, "r");
     if (inputFile == 0)
     {
         gensymerror(ERR_CANTOPEN, laststr);
-        inputFile = oldfile;
         rv = incldepth == 0;
     }
     else
     {
+        fclose(inputFile);
         LIST* list;
         if (!sysinc && !rcIdFile && incldepth == 0 && !strstr(laststr, "windows.h"))
         {
@@ -354,13 +352,17 @@ int doinclude(int unquoted)
         ifs = 0;
         inclhfile[incldepth] = inhfile;
         inclline[incldepth] = lineno;
-        inclfile[incldepth] = oldfile; /* push current input file */
-        inclInputLen[incldepth] = inputLen;
+        inclInputLen[incldepth] = inputLength;
         inclInputBuffer[incldepth] = inputBuffer;
         inclibufPtr[incldepth] = ibufPtr;
         inclfname[incldepth++] = infile;
-        inputLen = 0;
-        inputBuffer = calloc(INPUT_BUFFER_LEN, 1);
+        inputLength = 0;
+        int fileFlags = 0;
+        inputBuffer = ReadFileData(laststr, & fileFlags);
+        if (!inputBuffer)
+            fatal("Internal error");
+        ibufPtr = inputBuffer;
+        inputLength = strlen(inputBuffer);
         infile = rcStrdup(laststr);
         list = rcAlloc(sizeof(LIST));
         list->data = infile;

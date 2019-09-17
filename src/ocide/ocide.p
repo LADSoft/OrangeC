@@ -425,6 +425,8 @@ void RedrawAllBreakpoints(void);
 char *GetEditData(HWND hwnd);
 void FreeEditData(char *buf);
 int SetEditData(HWND hwnd, char *buf, BOOL savepos);
+int WriteFileData(char *name, char *buf, int flags);
+char* ReadFileData(char *name, int*flags);
 int SaveFile(HWND hwnd, DWINFO *info);
 int LoadFile(HWND hwnd, DWINFO *info, BOOL savepos);
 void SetTitle(HWND hwnd);

@@ -40,7 +40,6 @@
 extern HWND hwndFrame;
 extern int errlineno;
 extern char* errfile;
-extern FILE* outputFile;
 extern int lastch;
 extern enum e_sym lastst;
 extern char lastid[];
@@ -48,7 +47,7 @@ extern int lineno;
 extern FILE* inclfile[10]; /* shared with preproc */
 extern int incldepth;      /* shared with preproc */
 extern char* infile;
-extern FILE* inputFile;
+extern char* inputBuffer;
 extern jmp_buf errjump;
 
 int diagcount = 0;
@@ -275,7 +274,7 @@ void generror(int n, int data)
  * most errors come here
  */
 {
-    if (inputFile)
+    if (inputBuffer)
         basicerror(n, (void*)data);
 }
 

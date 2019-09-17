@@ -60,7 +60,8 @@ extern TABLE defsyms;
 instances of this structure.  */
 
 char* rcIdFile;
-FILE* inputFile;
+char *inputBuffer, *ibufPtr;
+int inputLength;
 int rc_lineno;
 
 jmp_buf errjump;
@@ -2156,6 +2157,7 @@ RESOURCE_DATA* ReadResources(char* fileName)
     memset(&cd, 0, sizeof(cd));
     cd.resourcesTail = &cd.resources;
     memHeap = NULL;
+    int fileFlags;
 
     if (setjmp(errjump))
     {
@@ -2176,14 +2178,17 @@ RESOURCE_DATA* ReadResources(char* fileName)
         glbdefine("__IDE_RC_INVOKED", "");
 
         errfile = infile = fileName;
-        inputFile = fopen(fileName, "r");
-        if (!inputFile)
+        inputBuffer = ReadFileData(fileName, &fileFlags);
+        if (!inputBuffer)
             fatal("file %s not found", fileName);
+        inputLength = strlen(inputBuffer);
+        ibufPtr = inputBuffer;
         Parse(&cd);
     }
-    if (inputFile)
-        fclose(inputFile);
-    inputFile = NULL;
+    free(inputBuffer);
+    inputBuffer = NULL;
+    ibufPtr = NULL;
+    inputLength = 0;
     if (cd.resources)
     {
         RESOURCE_DATA* rv = rcAlloc(sizeof(RESOURCE_DATA));
@@ -2193,6 +2198,7 @@ RESOURCE_DATA* ReadResources(char* fileName)
         rv->resourceIdFile = rcIdFile;
         rv->syms = defsyms;
         rv->headerDefinitions = GetIds(rv, rcDefs);
+        rv->fileFlags = fileFlags;
         return rv;
     }
     else

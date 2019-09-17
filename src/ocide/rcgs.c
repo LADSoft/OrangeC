@@ -44,7 +44,8 @@
 
 extern int inSymFile;
 extern char version[];
-extern FILE* inputFile;
+extern char* inputBuffer, *ibufPtr;
+extern int inputLength;
 extern int ifskip, elsetaken;
 extern IFSTRUCT* ifs;
 extern char* errfile;
@@ -71,9 +72,7 @@ char intstring[50];
 int lineno;
 int laststrlen;
 WCHAR inputline[4096];
-char* inputBuffer;
-char* ibufPtr;
-int inputLen;
+int inputPos;
 int lastch;
 enum e_sym lastst;
 char lastid[256] = "";
@@ -98,7 +97,6 @@ BOOL issymchar(short x) { return (isalnum(x) || (x) == '_'); }
 BOOL isstartchar(short x) { return (isalpha(x) || (x) == '_'); }
 void initsym(void)
 {
-    inputLen = 0;
     lptr = inputline;
     inputline[0] = 0;
     lineno = 0;
@@ -110,7 +108,6 @@ void initsym(void)
     cantnewline = FALSE;
     incconst = FALSE;
     backupchar = -1;
-    inputBuffer = calloc(INPUT_BUFFER_LEN, 1);
     cachedLineTail = &cachedLineHead;
     cachedLineHead = 0;
     hCachedLineTail = &hCachedLineHead;
@@ -168,39 +165,30 @@ static void stripcomment(WCHAR* line)
     *s = 0;
 }
 
-int getstring(char* s, int len, FILE* file)
+int getstring(char* s, int len)
 {
     char* olds = s;
-    while (TRUE)
+    if (inputLength > 0)
     {
-        while (inputLen--)
+        while (inputLength--)
         {
             if (*ibufPtr == 0x1a)
             {
                 *s = 0;
-                inputLen = 0;
+                inputLength = 0;
                 return s == olds;
             }
-            if (*ibufPtr != '\r')
+            if ((*s++ = *ibufPtr++) == '\n' || !--len)
             {
-                if ((*s++ = *ibufPtr++) == '\n' || !--len)
-                {
-                    *s = 0;
-                    return 0;
-                }
+                *s = 0;
+                return 0;
             }
-            else
-                ibufPtr++;
         }
-        inputLen = fread(inputBuffer, 1, INPUT_BUFFER_LEN, file);
-        ibufPtr = inputBuffer;
-        if (inputLen <= 0)
-        {
-            *s = 0;
-            inputLen = 0;
-            return s == olds;
-        }
+        *s = 0;
+        inputLength = 0;
+        return s == olds;
     }
+    return 1;
 }
 LIST* GetCachedLines(void)
 {
@@ -272,7 +260,7 @@ repeatit:
         {
             ++lineno;
             ++errlineno;
-            rv = getstring(ibuf + rvc, 4096 - rvc, inputFile);
+            rv = getstring(ibuf + rvc, 4096 - rvc);
             if (rv)
             {
                 break;
@@ -301,14 +289,13 @@ repeatit:
             {
                 if (inSymFile && !strcmp(infile, rcIdFile))
                     inSymFile = FALSE;
-                fclose(inputFile);
-                inputFile = inclfile[--incldepth];
+                incldepth--;
                 lineno = inclline[incldepth];
                 inhfile = inclhfile[incldepth];
                 infile = inclfname[incldepth];
                 free(inputBuffer);
                 inputBuffer = inclInputBuffer[incldepth];
-                inputLen = inclInputLen[incldepth];
+                inputLength = inclInputLen[incldepth];
                 ibufPtr = inclibufPtr[incldepth];
                 errlineno = lineno;
                 errfile = infile;

@@ -27,7 +27,7 @@
 #include "Utils.h"
 #include "CmdSwitch.h"
 #include <setjmp.h>
-#include "..\..\version.h"
+#include "../../version.h"
 extern ARCH_DEBUG* chosenDebugger;
 extern ARCH_ASM* chosenAssembler;
 extern NAMESPACEVALUELIST* globalNameSpace;

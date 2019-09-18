@@ -98,7 +98,6 @@ skip_commits:
 build_script:
 # the appveyor virtual machine reported two processors, so, lets try running parallel compile!
         - ps: |
-              echo $env:PATH
               cd ..\..
               move projects\orangec .
               mkdir \orangec\temp
@@ -172,7 +171,18 @@ build_script:
               }
               cd ..\.. 
               move orangec projects
+              cd projects\orangec
 
+on_success:
+  - ps: |
+      cd ..\..
+      move projects\orangec .
+      cd orangec\src
+      omake -fzip7z
+      cd ..\.. 
+      move orangec projects
+      cd projects\orangec
+ 
 artifacts:
   - path: "dist\\*.*"
     name: releasefiles

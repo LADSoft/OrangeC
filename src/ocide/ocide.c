@@ -428,6 +428,7 @@ static void LoadFirstWorkArea(void* v)
             LoadWorkArea(szNewWS, TRUE);
         if (bCmdLineProj)
         {
+            ProjectRemoveAll();
             LoadProject(szNewProj);
             SelectWindow(DID_PROJWND);
         }
@@ -453,6 +454,17 @@ static void LoadFirstWorkArea(void* v)
             if (ext && !stricmp(ext, "cwa"))
             {
                 LoadWorkArea(argv[1], TRUE);
+            }
+            else if (ext && !stricmp(ext, "cpj"))
+            {
+                strcpy(szNewProj, argv[1]);
+                abspath(szNewProj, 0);
+                char* p = stristr(szNewProj, ".cpj");
+                if (p)
+                    *p = 0;
+                ProjectRemoveAll();
+                LoadProject(szNewProj);
+                SelectWindow(DID_PROJWND);
             }
             else
                 for (i = 1; i < argc; i++)

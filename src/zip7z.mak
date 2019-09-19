@@ -37,9 +37,8 @@ SRC=/orangec/dist/ZippedBinaries$(VERNAME).zip
 
 DISTRIBUTE:
 ifneq "$(ORANGEC_ONLY)" "YES"
-        mkdir ztemp
-        cd ztemp
-        7z x $(SRC) *
-        7z -r -mx=9 a $(DEST) * 
-        cd ..
+
+	7z x $(SRC) *
+	7z -r -mx=9 a $(DEST) orangec\* 
+	cd ..
 endif

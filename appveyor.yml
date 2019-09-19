@@ -169,20 +169,15 @@ build_script:
                       throw "error"
                   }
               }
+              omake -fzip7z.mak
+              if ($LastExitCode -ne 0)
+              {
+                  throw "error"
+              }
               cd ..\.. 
               move orangec projects
               cd projects\orangec
 
-on_success:
-  - ps: |
-      cd ..\..
-      move projects\orangec .
-      cd orangec\src
-      omake -fzip7z
-      cd ..\.. 
-      move orangec projects
-      cd projects\orangec
- 
 artifacts:
   - path: "dist\\*.*"
     name: releasefiles

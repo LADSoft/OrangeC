@@ -127,6 +127,7 @@ build_script:
                   {
                       throw "error"
                   }
+                  cd ..\src
               }
               else
               {
@@ -168,6 +169,7 @@ build_script:
                   {
                       throw "error"
                   }
+                  cd ..\src
               }
               omake -fzip7z.mak
               if ($LastExitCode -ne 0)

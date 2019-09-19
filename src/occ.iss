@@ -2,8 +2,8 @@
 ; inno setup installation script for WIN32 Orange C package
 ;
 [Setup]
-PrivilegesRequired=lowest
-;PrivilegesRequiredOverridesAllowed=dialog
+PrivilegesRequired=admin
+PrivilegesRequiredOverridesAllowed=dialog
 AppName=Orange C
 AppVerName=Orange C Version {#GetEnv("OCC_VERSION")}
 OutputBaseFileName=setup
@@ -340,7 +340,7 @@ begin
     End;
   if not IsAdminInstallMode then
     Begin
-      retval := retval + NewLine + NewLine + 'OCCIL will not becompletely installed.' + NewLine +  'Install for all users for complete support';
+      retval := retval + NewLine + NewLine + 'OCCIL will not be completely installed.' + NewLine +  'Install for all users for complete support.';
     End;
   result := retval;
 end;

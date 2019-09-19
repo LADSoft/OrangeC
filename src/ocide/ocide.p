@@ -995,7 +995,7 @@ BOOL iswhitespacechar(short x) ;
 BOOL issymchar(short x) ;
 BOOL isstartchar(short x) ;
 void initsym(void);
-int getstring(char *s, int len, FILE *file);
+int getstring(char *s, int len);
 LIST *GetCachedLines(void);
 int getch(void);
 void getid(void);

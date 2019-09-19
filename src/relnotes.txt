@@ -9,6 +9,8 @@ version 6.0.44:
     occil: fix problem with a function call in the middle of a variable arguments sequence resulting in bad code
     oasm: add 'gas' syntax
     oasm: set default assembler word size to 32 bits
+    ocide, tools: add support for UTF8 and UCS2LE BOMs
+    ocide: allow opening a CPJ file directly on the command line
     olink: fix library search order to be more like other windows compilers
     general: started work on taking care of bugs found by static analysis
 

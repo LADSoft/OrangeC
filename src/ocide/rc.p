@@ -22,7 +22,7 @@ BOOL issymchar(short x) ;
 BOOL isstartchar(short x) ;
 void initsym(void);
 void backup(int st);
-int getstring(char *s, int len, FILE *file);
+int getstring(char *s, int len);
 void getnum(void);
 LIST *GetCachedLines(void);
 int getch(void);

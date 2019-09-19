@@ -457,31 +457,21 @@ void backupFile(char* name)
     static unsigned char BOM[] = { 0xef, 0xbb, 0xbf };
     static unsigned char BOM2[] = { 0xff, 0xfe }; // only LE version at this time...
 
-int SaveFile(HWND hwnd, DWINFO* info)
+int WriteFileData(char *name, char *buf, int flags)
 {
-    char* buf = GetEditData(GetDlgItem(hwnd, ID_EDITCHILD));
-    FILE* out;
-
-    if (PropGetBool(NULL, "BACKUP_FILES"))
-        backupFile(info->dwName);
-    if (!buf)
-        return FALSE;
-    if (info->dosStyle)
-        out = fopen(info->dwName, "w");
+    FILE *out;
+    if (flags & FD_DOS)
+        out = fopen(name, "w");
     else
-        out = fopen(info->dwName, "wb");
-    if (!out)
-    {
-        ExtendedMessageBox("File Error", MB_SETFOREGROUND | MB_SYSTEMMODAL, "Output file is not writeable");
-        free(buf);
+        out = fopen(name, "wb");
+    if (out == NULL)
         return FALSE;
-    }
-    if (info->UTF8)
+    if (flags & FD_UTF8)
     {
          fwrite(BOM, 1, 3, out);
          fputs(buf, out);
     }
-    else if (info->UCS2LE)
+    else if (flags & FD_UCS2LE)
     {
          fwrite(BOM2, 1, 2, out);
          int len = strlen(buf);
@@ -498,53 +488,23 @@ int SaveFile(HWND hwnd, DWINFO* info)
         fputs(buf, out);
     }
     fclose(out);
-    FreeEditData(buf);
-    FileTime(&info->time, info->dwName);
     return TRUE;
 }
 
-static void BOMAdjust(DWINFO *info, char *buf)
+char* ReadFileData(char *name, int*flags)
 {
-    // this is very naive, the IDE doesn't support UTF8 so 
-    // we just strip the UTF8 bom and elide the high byte when a UCS-2 bom is used 
+    *flags = FD_DOS;
 
-    if (!memcmp(buf, BOM, 3))
-    {
-        info->UTF8 = TRUE;
-        strcpy(buf, buf + 3);
-    }
-    else if (!memcmp(buf, BOM2, 2))
-    {
-        info-> UCS2LE = TRUE;
-        WCHAR *p = (WCHAR *)(buf +2);
-        char *d = buf;
-        while (*p)
-            *d++ = (char)*p++;
-        *d = 0;
-    }
-}
-//-------------------------------------------------------------------------
-
-int LoadFile(HWND hwnd, DWINFO* info, BOOL savepos)
-{
-    long size;
-    char *buf, *p, *q;
-    FILE* in = fopen(info->dwName, "rb");
-    info->dosStyle = TRUE;
+    FILE* in = fopen(name, "rb");
     if (!in)
-    {
-        ShowWindow(info->dwHandle, SW_SHOW);
-        return FALSE;
-    }
+        return NULL;
     fseek(in, 0L, SEEK_END);
-    size = ftell(in);
-    buf = calloc(size + 1, 1);
+    int size = ftell(in);
+    char* buf = calloc(size + 1, 1);
     if (!buf)
     {
-        info->dosStyle = TRUE;
         fclose(in);
-        ShowWindow(info->dwHandle, SW_SHOW);
-        return FALSE;
+        return NULL;
     }
     fseek(in, 0L, SEEK_SET);
     size = fread(buf, 1, size, in);
@@ -552,9 +512,10 @@ int LoadFile(HWND hwnd, DWINFO* info, BOOL savepos)
         size = 0;
     buf[size] = 0;
     fclose(in);
+    char *p, *q;
     p = q = buf;
     if (*p)
-        info->dosStyle = FALSE;
+        *flags = 0;
     while (*p)
     {
         if (*p != '\r')
@@ -563,12 +524,56 @@ int LoadFile(HWND hwnd, DWINFO* info, BOOL savepos)
         }
         else
         {
-            info->dosStyle = TRUE;
+            *flags |= FD_DOS;
             p++;
         }
     }
     *q = 0;
-    BOMAdjust(info, buf);
+    if (!memcmp(buf, BOM, 3))
+    {
+        *flags |= FD_UTF8;
+        strcpy(buf, buf + 3);
+    }
+    else if (!memcmp(buf, BOM2, 2))
+    {
+        *flags |= FD_UCS2LE;
+        WCHAR *p = (WCHAR *)(buf +2);
+        char *d = buf;
+        while (*p)
+            *d++ = (char)*p++;
+        *d = 0;
+    }
+    return buf;
+}
+int SaveFile(HWND hwnd, DWINFO* info)
+{
+    char* buf = GetEditData(GetDlgItem(hwnd, ID_EDITCHILD));
+
+    if (PropGetBool(NULL, "BACKUP_FILES"))
+        backupFile(info->dwName);
+    if (!buf)
+        return FALSE;
+    if (!WriteFileData(info->dwName, buf, info->fileFlags))
+    {
+        ExtendedMessageBox("File Error", MB_SETFOREGROUND | MB_SYSTEMMODAL, "Output file is not writeable");
+        FreeEditData(buf);
+        return FALSE;
+    }
+    FreeEditData(buf);
+    FileTime(&info->time, info->dwName);
+    return TRUE;
+}
+
+//-------------------------------------------------------------------------
+
+int LoadFile(HWND hwnd, DWINFO* info, BOOL savepos)
+{
+    char *buf = ReadFileData(info->dwName, &info->fileFlags);
+    if (!buf)
+    {
+        ShowWindow(info->dwHandle, SW_SHOW);
+        return FALSE;
+    }
     SetEditData(hwnd, buf, savepos);
     SendMessage(info->dwHandle, EM_SETMODIFY, 0, 0);
     recolorize(info);
@@ -1399,7 +1404,7 @@ LRESULT CALLBACK DrawProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam
                 if (ptr->dwName[0] && (!newInfo || !newInfo->newFile))
                     LoadFile(ptr->self, ptr, FALSE);
                 else
-                    ptr->dosStyle = TRUE;
+                    ptr->fileFlags = FD_DOS;
                 if (ptr->dwLineNo != -1)
                 {
                     PostMessage(ptr->self, WM_COMMAND, IDM_SETLINE, ptr->dwLineNo);
@@ -1408,7 +1413,7 @@ LRESULT CALLBACK DrawProc(HWND hwnd, UINT iMessage, WPARAM wParam, LPARAM lParam
             }
             else
             {
-                ptr->dosStyle = TRUE;
+                ptr->fileFlags = FD_DOS;
             }
             MsgWait(ewSem, INFINITE);
             if (editWindows)
@@ -1715,7 +1720,7 @@ HWND CreateDrawWindow(DWINFO* baseinfo, int visible)
         newInfo->dwLineNo = -1;
         newInfo->logMRU = TRUE;
         newInfo->newFile = TRUE;
-        newInfo->dosStyle = TRUE;
+        newInfo->fileFlags = FD_DOS;
         if (SaveFileDialog(&ofn, 0, 0, TRUE, szNewFileFilter, "Open New File"))
         {
             char *q = ofn.lpstrFile, path[256];

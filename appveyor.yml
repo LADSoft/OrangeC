@@ -16,6 +16,7 @@ install:
 branches:
    only:
      - master
+     - /v\d*\.\d*\.\d*\.\d*/
 
 configuration:
      - MINGW64
@@ -34,16 +35,16 @@ for:
       environment:
           BUILD_PROFILE: MS
       deploy:
-          release: Orange C-v$(appveyor_build_version)
+          release: Orange C-$(APPVEYOR_REPO_TAG_NAME)
           description: 'Current Release'
           provider: GitHub
           auth_token:
               secure: gOXANm+uz1YSqzv6tHI8/UAlAbA/ofp6o1NNxA+dsVX/jnTZioWTVD3f8Q8S6Un7
-          artifact: /.*
+          artifact: /.*/
           draft: false
           prerelease: false
           on:
-              branch: master
+              branch: /v\d*\.\d*\.\d*\.\d*/
               APPVEYOR_REPO_TAG: true
 -
       matrix:
@@ -97,7 +98,6 @@ skip_commits:
 build_script:
 # the appveyor virtual machine reported two processors, so, lets try running parallel compile!
         - ps: |
-              echo $env:PATH
               cd ..\..
               move projects\orangec .
               mkdir \orangec\temp
@@ -127,6 +127,7 @@ build_script:
                   {
                       throw "error"
                   }
+                  cd ..\src
               }
               else
               {
@@ -168,9 +169,16 @@ build_script:
                   {
                       throw "error"
                   }
+                  cd ..\src
+              }
+              omake -fzip7z.mak
+              if ($LastExitCode -ne 0)
+              {
+                  throw "error"
               }
               cd ..\.. 
               move orangec projects
+              cd projects\orangec
 
 artifacts:
   - path: "dist\\*.*"

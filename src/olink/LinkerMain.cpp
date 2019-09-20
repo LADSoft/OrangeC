@@ -54,6 +54,7 @@ CmdSwitchParser LinkerMain::SwitchParser;
 CmdSwitchBool LinkerMain::CaseSensitive(SwitchParser, 'c', true);
 CmdSwitchCombo LinkerMain::Map(SwitchParser, 'm', "x");
 CmdSwitchBool LinkerMain::DebugInfo(SwitchParser, 'v', false);
+CmdSwitchBool LinkerMain::DebugInfo2(SwitchParser, 'g', false);
 CmdSwitchBool LinkerMain::LinkOnly(SwitchParser, 'l', false);
 CmdSwitchBool LinkerMain::RelFile(SwitchParser, 'r', false);
 CmdSwitchFile LinkerMain::File(SwitchParser, '@');
@@ -71,7 +72,7 @@ const char* LinkerMain::usageText =
     "/c+       Case sensitive link        /l             link only\n"
     "/m[x]     Generate Map file          /oxxx          Set output file\n"
     "/r+       Relative output file       /sxxx          Read specification file\n"
-    "/v        Pass debug info            /y[...]        Verbose\n"
+    "/v or /g  Pass debug info            /y[...]        Verbose\n"
     "/!, --nologo   No logo\n"
     "@xxx      Read commands from file\n"
     "\nTime: " __TIME__ "  Date: " __DATE__;
@@ -234,7 +235,7 @@ int LinkerMain::Run(int argc, char** argv)
     ObjIeeeIndexManager im1;
     ObjIeeeIndexManager im2;
     ObjFactory fact1(&im2);
-    if (DebugInfo.GetValue())
+    if (DebugInfo.GetValue() || DebugInfo2.GetValue())
         debugFile = Utils::QualifiedFile(outputFile.c_str(), ".odx");
     char* lpath = getenv("LIBRARY_PATH");
     if (lpath)
@@ -249,7 +250,7 @@ int LinkerMain::Run(int argc, char** argv)
     linker.SetIndexManager(&im1);
     linker.SetFactory(&fact1);
     ObjIeee ieee(outputFile, CaseSensitive.GetValue());
-    ieee.SetDebugInfoFlag(DebugInfo.GetValue());
+    ieee.SetDebugInfoFlag(DebugInfo.GetValue() || DebugInfo2.GetValue());
     linker.SetObjIo(&ieee);
     // enter files and link
     AddFiles(linker, files);

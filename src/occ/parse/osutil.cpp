@@ -82,6 +82,7 @@ CmdSwitchBool prm_quiet(switchParser, 'Q');
 CmdSwitchBool prm_icdfile(switchParser, 'Y');
 CmdSwitchBool prm_trigraph(switchParser, 'T');
 CmdSwitchBool prm_debug(switchParser, 'v');
+CmdSwitchBool prm_debug2(switchParser, 'g');
 CmdSwitchBool prm_makestubs(switchParser, 'M');
 CmdSwitchBool prm_compileonly(switchParser, 'c');
 CmdSwitchBool prm_xcept(switchParser, 'x');
@@ -391,9 +392,9 @@ void ParamTransfer()
         cparams.prm_assemble = true;
         cparams.prm_asmfile = false;
     }
-    if (prm_debug.GetExists())
+    if (prm_debug.GetExists() || prm_debug2.GetExists())
     {
-        cparams.prm_debug = prm_debug.GetValue();
+        cparams.prm_debug = prm_debug.GetValue() || prm_debug2.GetValue();
         if (cparams.prm_debug)
         {
             cparams.prm_optimize_for_speed = cparams.prm_optimize_for_size = 0;

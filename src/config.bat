@@ -1,2 +1,2 @@
-set orangec=\orangec
-set path=\orangec\bin;%PATH%
+set ORANGEC=\orangec
+set PATH=\orangec\bin;%PATH%

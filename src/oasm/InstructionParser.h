@@ -132,13 +132,17 @@ class InstructionParser
 
     static InstructionParser* GetInstance();
 
-    bool MatchesOpcode(std::string opcode);
+    void SetATT(bool att);
 
-    Instruction* Parse(const std::string args, int PC);
+    bool MatchesOpcode(std::string opcode);
+    std::map<std::string, int>::iterator GetOpcode(const std::string& opcode, int& size1, int& size2);
+
+    Instruction* Parse(const std::string& args, int PC);
     virtual void Setup(Section* sect) = 0;
     virtual void Init() = 0;
     virtual bool ParseSection(AsmFile* fil, Section* sect) = 0;
     virtual bool ParseDirective(AsmFile* fil, Section* sect) = 0;
+    virtual std::string ParsePreInstruction(const std::string& op, bool doParse);
     virtual bool IsBigEndian() = 0;
     bool SetNumber(int tokenPos, int oldVal, int newVal);
     static bool SetProcessorMode(int mode) 
@@ -158,7 +162,11 @@ class InstructionParser
     bool CheckRegs(AsmExprNode* val);
     void ParseNumeric(int PC);
     bool ParseNumber(int relOfs, int sign, int bits, int needConstant, int tokenPos);
-    bool Tokenize(int PC);
+    void Split(const std::string& line, std::vector<std::string>& splt);
+    void PreprendSize(std::string& val, int sz);
+    std::string RewriteATTArg(const std::string& line);
+    std::string RewriteATT(int& op, const std::string& line, int& size1, int& size2);
+    bool Tokenize(int& op, int PC, int& size1, int& size2);
     bool IsNumber();
     enum
     {
@@ -189,6 +197,7 @@ class InstructionParser
     std::vector<InputToken*> inputTokens;
     BitStream bits;
     AsmExpr asmexpr;
+    bool attSyntax;
     static int processorMode;
     // c compiler support
 

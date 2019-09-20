@@ -36,6 +36,8 @@
 bool ppInclude::system;
 std::string ppInclude::srchPath, ppInclude::sysSrchPath;
 
+char ppInclude::commentChar = ';';
+
 ppInclude::~ppInclude() {}
 
 bool ppInclude::Check(kw token, const std::string& args)
@@ -291,6 +293,8 @@ void ppInclude::AddName(char* buf, const std::string& name)
 void ppInclude::StripAsmComment(std::string& line)
 {
     int quote = 0;
+    if (line[0] == '/')
+        line = "";
     int n = line.size();
     for (int i = 0; i < n; i++)
     {
@@ -306,8 +310,8 @@ void ppInclude::StripAsmComment(std::string& line)
                 case '\'':
                     quote = line[i];
                     break;
-                case ';':
-                    if (!quote)
+                default:
+                    if (!quote && line[i] == commentChar)
                     {
                         while (i && isspace(line[i - 1]))
                             i--;

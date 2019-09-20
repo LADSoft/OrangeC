@@ -559,4 +559,4 @@ void InstructionParser::SetTokens(ocode* ins)
         SetOperandTokens(ins->oper3);
     }
 }
-Instruction* InstructionParser::Parse(const std::string args, int PC) { return nullptr; }
+Instruction* InstructionParser::Parse(const std::string& args, int PC) { return nullptr; }

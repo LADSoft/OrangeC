@@ -319,6 +319,10 @@ void Instruction::Optimize(Section* sect, int pc, bool last)
         }
     }
 }
+std::string InstructionParser::ParsePreInstruction(const std::string& op, bool doParse)
+{
+    return op;
+}
 int x64Parser::DoMath(char op, int left, int right)
 {
     switch (op)

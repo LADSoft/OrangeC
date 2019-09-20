@@ -53,7 +53,7 @@ CmdSwitchCombineString AsmMain::includePath(SwitchParser, 'I', ';', "include-pat
 CmdSwitchBool AsmMain::BinaryOutput(SwitchParser, 'b', false, "binary");
 CmdSwitchBool AsmMain::Intel(SwitchParser, '\0', false, "intel");
 CmdSwitchBool AsmMain::GAS(SwitchParser, '\0', false, "gas");
-CmdSwitchInt AsmMain::ProcessorMode(SwitchParser, 's', 16,0,100,"processor-mode");
+CmdSwitchInt AsmMain::ProcessorMode(SwitchParser, 's', 32,0,100,"processor-mode");
 const char* AsmMain::usageText =
     "[options] file"
     "\n"
@@ -235,7 +235,7 @@ int AsmMain::Run(int argc, char* argv[])
         else
         {
             Listing listing;
-            AsmFile asmFile(pp, CaseInsensitive.GetValue(), BinaryOutput.GetValue(), listing);
+            AsmFile asmFile(pp, CaseInsensitive.GetValue(), BinaryOutput.GetValue(), listing, GAS.GetValue());
             if (asmFile.Read())
             {
                 if (!asmFile.Write(outName, inName) || Errors::ErrorCount())

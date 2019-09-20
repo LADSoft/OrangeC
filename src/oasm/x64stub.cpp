@@ -26,12 +26,15 @@
 #include "InstructionParser.h"
 #include "x64Operand.h"
 #include "x64Parser.h"
+#include "x64Instructions.h"
 #include "AsmFile.h"
 #include "Section.h"
 #include "Fixup.h"
 #include "AsmLexer.h"
 #include <fstream>
 #include <iostream>
+#include "Errors.h"
+
 const char* Lexer::preData =
     "%define __SECT__\n"
     "%imacro	pdata1	0+ .native\n"
@@ -151,7 +154,10 @@ const char* Lexer::preData =
     "__SECT__\n"
     "%endmacro\n";
 
-int InstructionParser::processorMode = 16;
+int InstructionParser::processorMode = 32;
+
+bool IsSymbolCharRoutine(const char* data, bool startOnly);
+
 
 void Instruction::RepRemoveCancellations(AsmExprNode *exp, bool commit, int &count, Section *sect[], bool sign[], bool plus)
 {
@@ -379,6 +385,341 @@ void Instruction::Optimize(Section* sect, int pc, bool last)
         }
     }
 }
+std::string InstructionParser::RewriteATTArg(const std::string& line)
+{
+    int i = line.find_first_not_of("\t\v \r\n");
+    std::string seg;
+    if (line[i] == '%')
+    {
+        seg = line.substr(i + 1);
+        if (seg.size() > 2 && seg[2] == ':')
+        {
+            seg = seg.substr(0, 3);
+            i += 4;
+        }
+        else
+        {
+            if (seg.size() >= 2 && seg.substr(0, 2) == "st")
+            {
+                if (seg == "st")
+                    return "st0";
+                else if (seg[2] == '(' && seg[4] == ')')
+                    return "st" + seg.substr(3, 1);
+            }
+            return seg;
+        }
+    }
+    if (line[i] == '$')
+    {
+        for (i = i + 1; i < line.size(); i++)
+            if (!isspace(line[i]))
+                break;
+        if (i < line.size() && (line[i] == '-' || isdigit(line[i])))
+        {
+            return line.substr(i);
+        }
+        return "dword " + line.substr(i);
+    }
+    else
+    {
+        std::string name;
+        if (IsSymbolCharRoutine(line.c_str() + i, true))
+        {
+            int j = i + 1;
+            while (IsSymbolCharRoutine(line.c_str() + j, false)) j++;
+            name = line.substr(i, j - i);
+            i = j;
+        }
+        else
+        {
+            if (line[i] == '-' || isdigit(line[i]))
+            {
+                int j = i + 1;
+                for (; j < line.size(); j++)
+                    if (!isdigit(line[j]))
+                        break;
+                name = line.substr(i, j - i);
+                i = j;
+            }
+        }
+        if (i < line.size())
+        {
+            int start = i;
+            if (line[i] != '(')
+            {
+                // error
+                return line;
+            }
+            else
+            {
+                std::string primary, secondary, times;
+                i++;
+                for (; i < line.size(); i++)
+                    if (!isspace(line[i]))
+                        break;
+                int j = line.size() - 1;
+                while (j > i && isspace(line[j]))
+                    j--;
+                if (line[j] == ')')
+                {
+                    std::vector<std::string> splt;
+                    Split(line.substr(i, j - i), splt);
+
+                    switch (splt.size())
+                    {
+                    case 1:
+                        if (splt[0] != "" && splt[0][0] == '%')
+                        {
+                            primary = splt[0].substr(1);
+                            break;
+                        }
+                        // error
+                        return line;
+                    case 2:
+                        if (splt[0] == "")
+                        {
+                            if (splt[1] == "1")
+                            {
+                                return "[" + seg + name + "]";
+                            }
+                        }
+                        else if (splt[0][0] == '%')
+                        {
+                            primary = splt[0].substr(1);
+                            if (splt[1] != "" && splt[1][0] == '%')
+                            {
+                                secondary = splt[1].substr(1);
+                                break;
+                            }
+                        }
+                        // error
+                        return line;
+                    case 3:
+                        if (splt[0] != "")
+                        {
+                            if (splt[0][0] == '%')
+                                primary = splt[0].substr(1);
+                            else
+                                return "[" + seg + name + line.substr(i) + "]";
+                        }
+                        if (splt[1] != "")
+                        {
+                            if (splt[1][0] == '%')
+                                secondary = splt[1].substr(1);
+                            else
+                                return "[" + seg + name + line.substr(i) + "]";
+                        }
+                        if (splt[2] != "")
+                        {
+                            times = splt[2];
+                        }
+                        break;
+                    default:
+                        // error
+                        return line;
+
+                    }
+                    if (secondary.size())
+                    {
+                        if (primary.size())
+                            primary += "+";
+                        primary += secondary;
+                        if (times.size())
+                        {
+                            primary += "*" + times;
+                        }
+                    }
+                    if (name.size())
+                        primary += "+" + name;
+                    primary = "[" + seg + primary + "]";
+                    return primary;
+                }
+                else
+                {
+                    // error
+                    return line;
+                }
+            }
+        }
+        else
+        {
+            return "[" + seg + name + "]";
+        }
+        return line;
+    }
+}
+void InstructionParser::PreprendSize(std::string& val, int sz)
+{
+    const char *str = "";
+    switch (sz)
+    {
+    case 1:
+        str = "byte ";
+        break;
+    case 2:
+        str = "word ";
+        break;
+    case 4:
+    case -4:
+        str = "dword ";
+        break;
+    case 8:
+    case -8:
+        str = "qword ";
+        break;
+    case -10:
+        str = "tword ";
+        break;
+    }
+    val = std::string(str) + val;
+}
+
+std::string InstructionParser::ParsePreInstruction(const std::string& op, bool doParse) 
+{ 
+    std::string parse = op;
+    while (true)
+    {
+        int npos = parse.find_first_not_of("\t\v \n\r");
+        if (npos != std::string::npos)
+            parse = parse.substr(npos);
+        if (!parse.size() || parse[0] != '{')
+            break;
+        npos = parse.find_first_of("}");
+        if (npos == std::string::npos)
+            break;
+        Errors::Warning("Unknown qualifier " +  parse.substr(0, npos+1));
+
+        parse = parse.substr(npos + 1);
+    }
+    return parse; 
+}
+
+std::string InstructionParser::RewriteATT(int& op, const std::string& line, int& size1, int& size2)
+{
+    switch (op)
+    {
+    case op_call:
+    case op_jmp:
+    {
+        int npos = line.find_first_not_of("\t\v \r\n");
+        if (npos != std::string::npos)
+            if (line[npos] == '*')
+                return "[" + line.substr(npos + 1) + "]";
+        return line;
+    }
+    case 10000://lcall
+        op = op_call;
+        return "far [" + line + "]";
+    case 10001://ljmp
+        op = op_jmp;
+        return "far [" + line + "]";
+    case op_ja:
+    case op_jae:
+    case op_jb:
+    case op_jbe:
+    case op_jc:
+    case op_jcxz:
+    case op_jecxz:
+    case op_je:
+    case op_jg:
+    case op_jge:
+    case op_jl:
+    case op_jle:
+    case op_jna:
+    case op_jnae:
+    case op_jnb:
+    case op_jnbe:
+    case op_jnc:
+    case op_jne:
+    case op_jng:
+    case op_jnge:
+    case op_jnl:
+    case op_jnle:
+    case op_jno:
+    case op_jnp:
+    case op_jns:
+    case op_jnz:
+    case op_jo:
+    case op_jp:
+    case op_jpe:
+    case op_jpo:
+    case op_js:
+    case op_jz:
+        return line;
+    }
+    std::vector<std::string> splt, splt2;
+    // split arguments out into multiple strings
+    Split(line, splt);
+    // process each arg
+    for (auto s : splt)
+    {
+        splt2.push_back(RewriteATTArg(s));
+    }
+    if (size1 == 4) // 'l'
+    {
+        if (op >= op_f2xm1 && op <= op_fyl2xp1)
+        {
+            size1 = -8;
+        }
+    }
+    if (size2 && splt2[0].find_first_of("[") != std::string::npos)
+    {
+        PreprendSize(splt2[0], size2);
+    }
+    else if (size1)
+    {
+        // the other combination has a destination which MUST BE a reg so we don't consider it.
+        if (splt2[1].find_first_of("[") != std::string::npos)
+            if (splt[0].find_first_of("%") == std::string::npos)
+                PreprendSize(splt2[1], size1);
+    }
+
+    if (op >= op_f2xm1 && op <= op_fyl2xp1 && splt.size() == 2)
+    {
+        // as swaps the sense of some of the floating point instructions
+        // and gcc depends on this...
+        if (splt2[1].size() > 2 && splt2[1].substr(0, 2) == "st" && splt2[1] != "st0")
+        {
+            switch (op)
+            {
+            case op_fsub:
+                op = op_fsubr;
+                break;
+            case op_fsubp:
+                op = op_fsubrp;
+                break;
+            case op_fsubr:
+                op = op_fsub;
+                break;
+            case op_fsubrp:
+                op = op_fsubp;
+                break;
+            case op_fdiv:
+                op = op_fdivr;
+                break;
+            case op_fdivp:
+                op = op_fdivrp;
+                break;
+            case op_fdivr:
+                op = op_fdiv;
+                break;
+            case op_fdivrp:
+                op = op_fdivp;
+                break;
+            }
+        }
+    }
+    std::string rv;
+    // reverse
+    for (int i = splt2.size() - 1; i >= 0; i--)
+    {
+        if (rv.size())
+            rv += ",";
+        rv += splt2[i];
+    }
+    return rv;
+}
+
 int x64Parser::DoMath(char op, int left, int right)
 {
     switch (op)
@@ -408,7 +749,7 @@ int x64Parser::DoMath(char op, int left, int right)
 void x64Parser::Setup(Section* sect)
 {
     if (sect->beValues[0] == 0)
-        sect->beValues[0] = processorMode;  // 16 bit mode is the default
+        sect->beValues[0] = processorMode;  // 32 bit mode is the default
     Setprocessorbits(sect->beValues[0]);
 }
 

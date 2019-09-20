@@ -30,6 +30,7 @@
 #include <algorithm>
 #include "Instruction.h"
 #include "Fixup.h"
+#include "ppInclude.h"
 #include "UTF8.h"
 #include <stdexcept>
 #include <iostream>
@@ -128,17 +129,148 @@ bool InstructionParser::SetNumber(int tokenPos, int oldVal, int newVal)
     }
     return rv;
 }
+void InstructionParser::SetATT(bool att) 
+{ 
+    attSyntax = att; 
+    if (attSyntax)
+    {
+        opcodeTable["cbtw"] = opcodeTable["cbw"];
+        opcodeTable["cwtl"] = opcodeTable["cwde"];
+        opcodeTable["cwtd"] = opcodeTable["cwd"];
+        opcodeTable["cltd"] = opcodeTable["cdq"];
+        opcodeTable["cltq"] = opcodeTable["cdqe"];
+        opcodeTable["cqto"] = opcodeTable["cqo"];
+        opcodeTable["lcall"] = 10000;
+        opcodeTable["ljmp"] = 10001;
+        ppInclude::SetCommentChar('#');
+    }
+    else
+    {
+        opcodeTable.erase("cbtw");
+        opcodeTable.erase("cwtl");
+        opcodeTable.erase("cwtd");
+        opcodeTable.erase("cltd");
+        opcodeTable.erase("cltq");
+        opcodeTable.erase("cqto");
+        ppInclude::SetCommentChar(';');
+    }
+}
+
 bool InstructionParser::MatchesOpcode(std::string opcode)
 {
     std::transform(opcode.begin(), opcode.end(), opcode.begin(), ::tolower);
 
-    return opcodeTable.end() != opcodeTable.find(opcode) || prefixTable.end() != prefixTable.find(opcode);
+    opcode = ParsePreInstruction(opcode, false);
+    if (opcodeTable.end() != opcodeTable.find(opcode) || prefixTable.end() != prefixTable.find(opcode))
+        return true;
+    if (attSyntax)
+    {
+        if (opcode.size() == 6)
+        {
+            if (opcode.substr(0, 4) == "movs" || opcode.substr(0, 4) == "movx")
+                if (opcode[4] == 'b' || opcode[4] == 'w' || opcode[4] == 'l')
+                    if (opcode[5] == 'w' || opcode[5] == 'l' || opcode[5] == 'q')
+                        return true;
+        }
+        else if (opcode.size() > 0)
+        {
+            char ch = opcode[opcode.size() - 1];
+            if (opcodeTable.end() != opcodeTable.find(opcode.substr(0, opcode.size() - 1)))
+            {
+                switch (ch)
+                {
+                case 'b':
+                case 'w':
+                case 'l':
+                case 's':
+                case 't':
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
 }
-Instruction* InstructionParser::Parse(const std::string args, int PC)
+std::map<std::string, int>::iterator InstructionParser::GetOpcode(const std::string& opcode, int& size1, int& size2)
+{
+    size1 = size2 = 0;
+    auto it = opcodeTable.find(opcode);
+    if (it == opcodeTable.end() && attSyntax)
+    {
+        if (opcode.size() == 6)
+        {
+            if (opcode.substr(0, 4) == "movs" || opcode.substr(0, 4) == "movx")
+            {
+                it = opcodeTable.find(opcode.substr(0, 4));
+                switch (opcode[4])
+                {
+                case 'b':
+                    size1 = 1;
+                    break;
+                case 'w':
+                    size1 = 2;
+                    break;
+                case 'l':
+                    size1 = 4;
+                    break;
+                default:
+                    return opcodeTable.end();
+                }
+                switch (opcode[5])
+                {
+                case 'w':
+                    size2 = 2;
+                    break;
+                case 'l':
+                    size2 = 4;
+                    break;
+                case 'q':
+                    size2 = 8;
+                    break;
+                default:
+                    return opcodeTable.end();
+                }
+                if (size2 <= size1)
+                    return opcodeTable.end();
+            }
+        }
+        else
+        {
+            char ch = opcode[opcode.size() - 1];
+            it = opcodeTable.find(opcode.substr(0, opcode.size() - 1));
+
+            switch (ch)
+            {
+            case 'b':
+                size1 = 1;
+                break;
+            case 'w':
+                size1 = 2;
+                break;
+            case 'l':
+                size1 = 4;
+                break;
+            case 'q':
+                size1 = 8;
+                break;
+            case 's':
+                size1 = -4;
+                break;
+            case 't':
+                size1 = -10;
+                break;
+            default:
+                return opcodeTable.end();
+            }
+        }
+    }
+    return it;
+}
+Instruction* InstructionParser::Parse(const std::string& args, int PC)
 {
     int errLine = Errors::GetErrorLine();
     std::string errName = Errors::GetFileName();
-    line = args;
+    line = ParsePreInstruction(args, true);
     std::string op;
     inputTokens.clear();
 
@@ -197,16 +329,18 @@ Instruction* InstructionParser::Parse(const std::string args, int PC)
     }
     else
     {
-        auto it = opcodeTable.find(op);
+        int size1 = 0, size2 = 0;
+        auto it = GetOpcode(op, size1, size2);
         if (it != opcodeTable.end())
         {
             bits.Reset();
-            if (!Tokenize(PC))
+            int opcode = it->second;
+            if (!Tokenize(opcode, PC, size1, size2))
             {
                 throw new std::runtime_error("Unknown token sequence");
             }
             eol = false;
-            auto rv = DispatchOpcode(it->second);
+            auto rv = DispatchOpcode(opcode);
             Instruction* s = nullptr;
             switch (rv)
             {
@@ -575,8 +709,36 @@ void InstructionParser::ParseNumeric(int PC)
         }
     }
 }
-bool InstructionParser::Tokenize(int PC)
+void InstructionParser::Split(const std::string& line, std::vector<std::string>& splt)
 {
+    int start = 0;
+    int parens = 0;
+    int i;
+    for (i = 0; i < line.size(); i++)
+    {
+        if (line[i] == '(')
+            parens++;
+        else if (line[i] == ')' && parens)
+            parens--;
+        else if (line[i] == ',' && !parens)
+        {
+            splt.push_back(line.substr(start, i-start));
+            start = i + 1;
+        }
+    }
+    if (i > start)
+        splt.push_back(line.substr(start, i-start));
+    for (i = 0; i < splt.size(); i++)
+    {
+        int npos = splt[i].find_first_not_of("\t\v \r\n");
+        if (npos && npos != std::string::npos)
+            splt[i] = splt[i].substr(npos);
+    }
+}
+bool InstructionParser::Tokenize(int& op, int PC, int& size1, int& size2)
+{
+    if (attSyntax)
+        line = RewriteATT(op, line, size1, size2);
     while (line.size())
     {
         NextToken(PC);

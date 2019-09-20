@@ -55,7 +55,7 @@ class Import
 class AsmFile
 {
   public:
-    AsmFile(PreProcessor& pp, bool CaseInsensitive, bool BinaryOutput, Listing& List) :
+    AsmFile(PreProcessor& pp, bool CaseInsensitive, bool BinaryOutput, Listing& List, bool GAS) :
         preProcessor(pp),
         caseInsensitive(CaseInsensitive),
         binaryOutput(BinaryOutput),
@@ -67,9 +67,12 @@ class AsmFile
         inAbsolute(false),
         currentSection(nullptr),
         currentLabel(nullptr),
-        listing(List)
+        listing(List),
+        attSyntax(GAS)
+
     {
         parser = InstructionParser::GetInstance();
+        parser->SetATT(attSyntax);
         lexer.SetAsmFile(this);
         lexer.NextToken();
     }
@@ -163,6 +166,7 @@ class AsmFile
     Listing& listing;
     bool bigEndian;
     bool binaryOutput;
+    bool attSyntax;
 };
 
 #endif

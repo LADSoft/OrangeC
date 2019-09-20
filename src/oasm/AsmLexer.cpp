@@ -57,6 +57,8 @@ KeywordHash Lexer::hash = {
     {",", kw::comma},
     {"[", kw::openbr},
     {"]", kw::closebr},
+    {"{", kw::begin},
+    {"}", kw::end},
     {"ABSOLUTE", kw::ABSOLUTE},
     {"ALIGN", kw::ALIGN},
     {"BITS", kw::BITS},
@@ -113,7 +115,16 @@ std::string Lexer::GetRestOfLine()
     if (token)
         rv = token->GetChars();
     rv += tokenizer->GetString();
-    tokenizer->Reset("");
+    int npos = rv.find_first_of(";"); // for GAS, semicolon is a statement seperator, in intel syntax these will have been elided as comments...
+    if (npos == std::string::npos)
+    {
+        tokenizer->Reset("");
+    }
+    else
+    {
+        tokenizer->Reset(rv.substr(npos+1));
+        rv = rv.substr(0, npos);
+    }
     return rv;
 }
 void Lexer::CheckAssign(std::string& line, PreProcessor& pp)

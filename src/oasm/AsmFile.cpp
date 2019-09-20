@@ -69,7 +69,7 @@ bool AsmFile::Read()
                 Directive();
                 thisLabel = nullptr;
             }
-            else if (parser->MatchesOpcode(GetToken()->GetChars()))
+            else if (GetKeyword() == kw::begin || parser->MatchesOpcode(GetToken()->GetChars()))
             {
                 NoAbsolute();
                 NeedSection();
@@ -124,7 +124,7 @@ bool AsmFile::Read()
             labels[global]->SetPublic(true);
         }
     }
-    return rv && !Errors::ErrorCount();
+    return rv && !Errors::GetErrorCount();
 }
 void AsmFile::DoLabel(std::string& name, int lineno)
 {

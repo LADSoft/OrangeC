@@ -245,5 +245,5 @@ int ppMain::Run(int argc, char* argv[])
             delete f;
         }
     }
-    return 0;
+    return Errors::GetErrorCount() != 0;
 }

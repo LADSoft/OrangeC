@@ -69,26 +69,29 @@ char* Utils::ShortName(const char* v)
 }
 void Utils::banner(const char* progName)
 {
+    bool have_version = false;
     // no banner if they specify -!, this is also caught in the cmd switch module
     // so it is transparent to the proggy
-#ifndef HAVE_UNISTD_H
-    for (int i = 1; i < __argc && __argv[i]; i++)
-        if (__argv[i] && (__argv[i][0] == '/' || __argv[i][0] == '-'))
-            if (__argv[i][1] == '!' || !strcmp(__argv[i], "--nologo"))
-                return;
-#endif
-    fprintf(stderr, "%s Version " STRING_VERSION " " COPYRIGHT "\n", ShortName(progName));
-
 #ifndef HAVE_UNISTD_H
     // handle /V switch
     for (int i = 1; i < __argc && __argv[i]; i++)
         if (__argv[i] && (__argv[i][0] == '/' || __argv[i][0] == '-'))
             if ((__argv[i][1] == 'V' && __argv[i][2] == 0) || !strcmp(__argv[i], "--version"))
             {
-                fprintf(stderr, "\nCompile date: " __DATE__ " time: " __TIME__ "\n");
-                exit(0);
+                have_version = true;
             }
+    if (!have_version)
+        for (int i = 1; i < __argc && __argv[i]; i++)
+            if (__argv[i] && (__argv[i][0] == '/' || __argv[i][0] == '-'))
+                if (__argv[i][1] == '!' || !strcmp(__argv[i], "--nologo"))
+                    return;
 #endif
+    fprintf(stderr, "%s Version " STRING_VERSION " " COPYRIGHT "\n", ShortName(progName));
+    if (have_version)
+    {
+        fprintf(stderr, "\nCompile date: " __DATE__ " time: " __TIME__ "\n");
+        exit(0);
+    }
 }
 void Utils::usage(const char* prog_name, const char* text)
 {

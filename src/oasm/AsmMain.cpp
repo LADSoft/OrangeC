@@ -57,7 +57,7 @@ CmdSwitchInt AsmMain::ProcessorMode(SwitchParser, 's', 32,0,100,"processor-mode"
 const char* AsmMain::usageText =
     "[options] file"
     "\n"
-    "  @filename                          use response file\n"
+    "  @filename                          Use response file\n"
     "  /b, --binary                       Use binary output\n"
     "  /e, --preprocess-only              Preprocess only\n"
     "  /i, --case-insensitive             Case Insensitive Labels\n"   

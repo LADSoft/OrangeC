@@ -60,7 +60,7 @@ static char usage_text[] =
     "+e        - dump errors to file       +i        - dump preprocessed file\n"
     "/lxxx     - include library           /oname    - specify output file name\n"
     "/pxxx     - pass command to tool      /snn      - align stack\n"
-    "+v        - enable debug symbols      /y[...]   - verbosity\n"
+    "+v or /g  - enable debug symbols      /y[...]   - verbosity\n"
     "+A        - disable extensions        /Dxxx     - define something\n"
     "/E[+]nn   - max number of errors      /Ipath    - specify include path\n"
     "/Lxxx     - set library path          /M        - generate make stubs\n"

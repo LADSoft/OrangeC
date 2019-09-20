@@ -79,6 +79,17 @@
  
  By default the listing file will not show macro expansions.  To get a listing file where macros are shown in expanded form, use **-ml**.  This will also expand preprocessor repeat statements.  Note that there is a special qualifier used in a macro definition, **.nolist**, which can be used on a macro-by-macro basis.  When used, it prevents macros from being expanded in the listing file even when **-ml** is used.  This is useful for example to prevent cluttering the the listing file with expansions of often-used macros or macros that are composed largely of preprocessor statements.  In fact the builtin macros that map preprocessor directives to native form all use this qualifier.
 
+### Assembly Modes
+
+OAsm can compile either Intel or AT&T syntax files.   When in AT&T mode, it uses directives to those similar to the ones in gnu assembler.
+
+>     OAsm --gas test.c
+
+compiles AT&T syntax files
+
+>     OAsm --intel test.c
+
+compiles in intel mode.   The default is to compile in intel mode, as if --intel were specified.
  
 ### Alternative display options
 

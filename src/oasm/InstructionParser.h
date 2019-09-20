@@ -142,6 +142,7 @@ class InstructionParser
     virtual void Init() = 0;
     virtual bool ParseSection(AsmFile* fil, Section* sect) = 0;
     virtual bool ParseDirective(AsmFile* fil, Section* sect) = 0;
+    virtual std::string ParsePreInstruction(const std::string& op, bool doParse);
     virtual bool IsBigEndian() = 0;
     bool SetNumber(int tokenPos, int oldVal, int newVal);
     static bool SetProcessorMode(int mode) 

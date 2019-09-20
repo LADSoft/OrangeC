@@ -59,6 +59,8 @@ enum class kw
     comma,
     openbr,
     closebr,
+    begin,
+    end,
     assn,
     // must be after punctuation
     ABSOLUTE,

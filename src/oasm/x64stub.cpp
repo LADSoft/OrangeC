@@ -33,6 +33,8 @@
 #include "AsmLexer.h"
 #include <fstream>
 #include <iostream>
+#include "Errors.h"
+
 const char* Lexer::preData =
     "%define __SECT__\n"
     "%imacro	pdata1	0+ .native\n"
@@ -571,6 +573,27 @@ void InstructionParser::PreprendSize(std::string& val, int sz)
     }
     val = std::string(str) + val;
 }
+
+std::string InstructionParser::ParsePreInstruction(const std::string& op, bool doParse) 
+{ 
+    std::string parse = op;
+    while (true)
+    {
+        int npos = parse.find_first_not_of("\t\v \n\r");
+        if (npos != std::string::npos)
+            parse = parse.substr(npos);
+        if (!parse.size() || parse[0] != '{')
+            break;
+        npos = parse.find_first_of("}");
+        if (npos == std::string::npos)
+            break;
+        Errors::Warning("Unknown qualifier " +  parse.substr(0, npos+1));
+
+        parse = parse.substr(npos + 1);
+    }
+    return parse; 
+}
+
 std::string InstructionParser::RewriteATT(int& op, const std::string& line, int& size1, int& size2)
 {
     switch (op)

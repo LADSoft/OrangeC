@@ -160,6 +160,7 @@ bool InstructionParser::MatchesOpcode(std::string opcode)
 {
     std::transform(opcode.begin(), opcode.end(), opcode.begin(), ::tolower);
 
+    opcode = ParsePreInstruction(opcode, false);
     if (opcodeTable.end() != opcodeTable.find(opcode) || prefixTable.end() != prefixTable.find(opcode))
         return true;
     if (attSyntax)
@@ -171,7 +172,7 @@ bool InstructionParser::MatchesOpcode(std::string opcode)
                     if (opcode[5] == 'w' || opcode[5] == 'l' || opcode[5] == 'q')
                         return true;
         }
-        else
+        else if (opcode.size() > 0)
         {
             char ch = opcode[opcode.size() - 1];
             if (opcodeTable.end() != opcodeTable.find(opcode.substr(0, opcode.size() - 1)))
@@ -269,7 +270,7 @@ Instruction* InstructionParser::Parse(const std::string& args, int PC)
 {
     int errLine = Errors::GetErrorLine();
     std::string errName = Errors::GetFileName();
-    line = args;
+    line = ParsePreInstruction(args, true);
     std::string op;
     inputTokens.clear();
 

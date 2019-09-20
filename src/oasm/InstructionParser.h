@@ -163,7 +163,7 @@ class InstructionParser
     void ParseNumeric(int PC);
     bool ParseNumber(int relOfs, int sign, int bits, int needConstant, int tokenPos);
     void Split(const std::string& line, std::vector<std::string>& splt);
-    void InstructionParser::PreprendSize(std::string& val, int sz);
+    void PreprendSize(std::string& val, int sz);
     std::string RewriteATTArg(const std::string& line);
     std::string RewriteATT(int& op, const std::string& line, int& size1, int& size2);
     bool Tokenize(int& op, int PC, int& size1, int& size2);

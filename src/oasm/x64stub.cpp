@@ -550,7 +550,7 @@ std::string InstructionParser::RewriteATTArg(const std::string& line)
 }
 void InstructionParser::PreprendSize(std::string& val, int sz)
 {
-    char *str = "";
+    const char *str = "";
     switch (sz)
     {
     case 1:

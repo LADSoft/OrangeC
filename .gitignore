@@ -119,3 +119,8 @@ src/obrc/Debug/*
 src/objlib/Debug/*
 src/coff2ieee/Debug/*
 src/adl/Debug/*
+src/*/obj
+src/*/Debug
+src/*/Release
+src/occ/*/obj
+src/lib

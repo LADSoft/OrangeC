@@ -571,19 +571,6 @@ const Token* Tokenizer::Next()
 }
 void Tokenizer::Reset(const std::string& Line)
 {
-    line = "";
-    int last = 0;
-    for (int p = 0; p < Line.size(); p++)
-    {
-        if (Line[p] == ppDefine::MACRO_PLACEHOLDER)
-        {
-            if (p != last)
-                line += Line.substr(last, p - last);
-            while (Line[p] == ppDefine::MACRO_PLACEHOLDER)
-                p++;
-            last = p;
-        }
-    }
-    line += Line.substr(last);
+    line = Line;
     currentToken = nullptr;
 }

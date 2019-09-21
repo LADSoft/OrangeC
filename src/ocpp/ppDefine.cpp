@@ -1150,7 +1150,7 @@ int ppDefine::Process(std::string& line, bool leavePlaceholder)
 {
     if (asmpp)
     {
-
+        leavePlaceholder = false;
         ParseAsmSubstitutions(line);
     }
     int sv = 0;

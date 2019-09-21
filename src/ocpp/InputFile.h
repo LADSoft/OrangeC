@@ -69,7 +69,8 @@ public:
     virtual bool GetLine(std::string& line);
     void SetErrlineInfo(std::string& name, int line)
     {
-        errname = cache(name);
+        if (name != "")
+            errname = cache(name);
         errlineno = line;
     }
     int GetIndex() const { return fileIndex; }

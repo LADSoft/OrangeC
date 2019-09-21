@@ -80,22 +80,15 @@ bool ppInclude::CheckLine(kw token, const std::string& args)
     {
         std::string line1 = args;
         define->Process(line1);
-        int npos = line1.find_first_of(',');
-        if (npos == std::string::npos)
+        int n = expr.Eval(line1);
+        std::string file;
+        int npos = line1.find_first_not_of(" \r\v\t\n");
+        if (npos < line1.size())
         {
-            int n = expr.Eval(line1);
             bool specifiedAsSystem = false;
-            std::string name = ParseName(line1, specifiedAsSystem);
-            current->SetErrlineInfo(name, n - 1);
+            file = ParseName(line1.substr(npos), specifiedAsSystem);
         }
-        else
-        {
-            std::string temp = line1.substr(0, npos);
-            int n = expr.Eval(temp);
-            bool specifiedAsSystem = false;
-            std::string name = ParseName(line1.substr(npos + 1), specifiedAsSystem);
-            current->SetErrlineInfo(name, n - 1);
-        }
+        current->SetErrlineInfo(file, n - 1);
         return true;
     }
     return false;

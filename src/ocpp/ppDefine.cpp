@@ -739,7 +739,7 @@ void ppDefine::SetupAlreadyReplaced(std::string& macro)
         }
     }
 }
-int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr)
+int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr, bool eol)
 {
     std::string name;
     int waiting = 0;
@@ -787,7 +787,7 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr)
 #ifndef NOCPLUSPLUS
                 (name != "R" || line[p] != '"') &&
 #endif
-                d != nullptr && (!q || line[q - 1] != REPLACED_ALREADY) && !ppNumber(line, q, p - 1))
+                d != nullptr && (!q || line[q - 1] != REPLACED_ALREADY) && !ppNumber(line, 0, p - 1 - name.size()))
             {
                 std::string macro;
                 if (d->GetArgList() != nullptr)
@@ -797,7 +797,7 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr)
 
                     while (q1 < line.size() && (isspace(line[q1]) || line[q1] == MACRO_PLACEHOLDER))
                         q1++;
-                    if (q1 == line.size() && line[q1-1] == '\n')
+                    if (q1 == line.size() && eol)
                     {
                         // continues on the next line, get more text..
                         return INT_MIN + 1;
@@ -846,7 +846,7 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr)
                             args.push_back(temp);
                             expandedargs.push_back(temp);
                             int sv;
-                            rv = ReplaceSegment(expandedargs[count], 0, expandedargs[count].size(), sv);
+                            rv = ReplaceSegment(expandedargs[count], 0, expandedargs[count].size(), sv, p == line.size());
                             if (rv < -MACRO_REPLACE_SIZE)
                             {
                                 return rv;
@@ -921,7 +921,7 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr)
                 end += insize;
                 p += insize;
                 insize = 0;
-                rv = ReplaceSegment(line, q, p, p);
+                rv = ReplaceSegment(line, q, p, p, false);
                 d->SetPreprocessing(false);
                 if (rv < -MACRO_REPLACE_SIZE)
                 {
@@ -1146,7 +1146,7 @@ void ppDefine::replaceDefined(std::string& line)
     }
 }
 
-int ppDefine::Process(std::string& line)
+int ppDefine::Process(std::string& line, bool leavePlaceholder)
 {
     if (asmpp)
     {
@@ -1154,18 +1154,18 @@ int ppDefine::Process(std::string& line)
         ParseAsmSubstitutions(line);
     }
     int sv = 0;
-    int rvi = ReplaceSegment(line, 0, line.size(), sv);
+    int rvi = ReplaceSegment(line, 0, line.size(), sv, true);
     if (rvi == INT_MIN + 1)
         return rvi;
     std::string rv;
     int p, last = 0;
     for (p = 0; p < line.size(); p++)
     {
-        if (line[p] == REPLACED_TOKENIZING || line[p] == MACRO_PLACEHOLDER || line[p] == REPLACED_ALREADY)
+        if (line[p] == REPLACED_TOKENIZING || !leavePlaceholder && line[p] == MACRO_PLACEHOLDER || line[p] == REPLACED_ALREADY)
         {
             if (p != last)
                 rv += line.substr(last, p - last);
-            while (line[p] == REPLACED_TOKENIZING || line[p] == MACRO_PLACEHOLDER || line[p] == REPLACED_ALREADY)
+            while (line[p] == REPLACED_TOKENIZING || !leavePlaceholder&& line[p] == MACRO_PLACEHOLDER || line[p] == REPLACED_ALREADY)
                 p++;
             last = p;
         }

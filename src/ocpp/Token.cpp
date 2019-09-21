@@ -26,6 +26,12 @@
 #include "Errors.h"
 #include "SymbolTable.h"
 #include "UTF8.h"
+#include "ppExpr.h"
+#include "ppDefine.h"
+#include "Errors.h"
+#include "ppInclude.h"
+#include "ppkw.h"
+
 #include <cfloat>
 #include <climits>
 
@@ -664,4 +670,22 @@ const Token* Tokenizer::Next()
     else
         currentToken = std::make_unique<ErrorToken>(line);
     return currentToken.get();
+}
+void Tokenizer::Reset(const std::string& Line)
+{
+    line = "";
+    int last = 0;
+    for (int p = 0; p < Line.size(); p++)
+    {
+        if (Line[p] == ppDefine::MACRO_PLACEHOLDER)
+        {
+            if (p != last)
+                line += Line.substr(last, p - last);
+            while (Line[p] == ppDefine::MACRO_PLACEHOLDER)
+                p++;
+            last = p;
+        }
+    }
+    line += Line.substr(last);
+    currentToken = nullptr;
 }

@@ -220,11 +220,7 @@ class Tokenizer
     {
     }
     virtual ~Tokenizer() {}
-    void Reset(const std::string& Line)
-    {
-        line = Line;
-        currentToken = nullptr;
-    }
+    void Reset(const std::string& Line);
     const Token* Next();
     std::string GetString() { return line; }
     void SetString(const std::string& Line) { line = Line; }

@@ -268,7 +268,7 @@ bool PreProcessor::GetLine(std::string& line)
                 }
                 else
                 {
-                    if (define.Process(line) != INT_MIN + 1)
+                    if (define.Process(line, true) != INT_MIN + 1)
                         break;
                     last = line;
                 }

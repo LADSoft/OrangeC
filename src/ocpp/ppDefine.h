@@ -111,7 +111,7 @@ class ppDefine
                        bool errors, bool caseInsensitive);
     void Undefine(const std::string& name);
     Definition* Lookup(const std::string& name);
-    int Process(std::string& line);
+    int Process(std::string& line, bool leavePlaceholder=false);
     void replaceDefined(std::string& line);
     void Assign(const std::string& name, int value, bool caseInsensitive)
     {
@@ -145,7 +145,7 @@ class ppDefine
     bool ReplaceArgs(std::string& macro, const DefinitionArgList& oldargs, const DefinitionArgList& newArgs,
                      const DefinitionArgList& expandedargs, const std::string varargs);
     void SetupAlreadyReplaced(std::string& macro);
-    int ReplaceSegment(std::string& line, int begin, int end, int& pptr);
+    int ReplaceSegment(std::string& line, int begin, int end, int& pptr, bool eol);
     void SyntaxError(const std::string& name);
     void ParseAsmSubstitutions(std::string& line);
     void ReplaceAsmMacros(std::string& line);

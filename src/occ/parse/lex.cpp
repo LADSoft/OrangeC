@@ -874,6 +874,10 @@ SLCHAR* getString(const unsigned char** source, enum e_lexType* tp)
         {
             while (*p && *p != '"')
             {
+                while (*p == ppDefine::MACRO_PLACEHOLDER) 
+                    p++;
+                if (!*p || *p == '"')
+                    continue;
                 int i;
                 if (v == l_msilstr)
                     i = *p++;

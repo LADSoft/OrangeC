@@ -32,7 +32,7 @@
 #include "AsmLexer.h"
 #include <fstream>
 #include <iostream>
-const char* Lexer::preData =
+const char* Lexer::preDataIntel =
     "%define __SECT__\n"
     "%imacro	pdata1	0+ .native\n"
     "	[db %1]\n"
@@ -147,6 +147,8 @@ const char* Lexer::preData =
     "%pop\n"
     "__SECT__\n"
     "%endmacro\n";
+
+const char* Lexer::preDataGas = "";
 
 void Instruction::Optimize(Section* sect, int pc, bool last)
 {

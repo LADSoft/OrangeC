@@ -104,7 +104,7 @@ enum class kw
 class Lexer
 {
   public:
-    Lexer(PreProcessor& PP);
+    Lexer(PreProcessor& PP, bool GAS);
     ~Lexer() {}
 
     void SetAsmFile(AsmFile* th) { asmFile = th; }
@@ -139,6 +139,7 @@ class Lexer
     const Token* token;
     bool parsingDirective;
     static KeywordHash hash;
-    static const char* preData;
+    static const char* preDataIntel;
+    static const char* preDataGas;
 };
 #endif  // Lexer_h

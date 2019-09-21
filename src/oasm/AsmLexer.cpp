@@ -91,7 +91,7 @@ KeywordHash Lexer::hash = {
 
 };
 
-Lexer::Lexer(PreProcessor& PP) :
+Lexer::Lexer(PreProcessor& PP, bool GAS) :
     asmFile(nullptr),
     pp(PP),
     atEol(false),
@@ -101,7 +101,7 @@ Lexer::Lexer(PreProcessor& PP) :
     stopAtEol(false),
     parsingDirective(false)
 {
-    pp.SetPreData(preData);
+    pp.SetPreData(GAS? preDataGas : preDataIntel);
     InitTokenizer();
 }
 void Lexer::InitTokenizer()

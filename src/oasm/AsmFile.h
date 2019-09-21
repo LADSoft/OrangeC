@@ -59,7 +59,7 @@ class AsmFile
         preProcessor(pp),
         caseInsensitive(CaseInsensitive),
         binaryOutput(BinaryOutput),
-        lexer(pp),
+        lexer(pp, GAS),
         asmexpr(nullptr),
         startSection(nullptr),
         startupLabel(nullptr),

@@ -428,8 +428,7 @@ void peep_add(OCODE* ip)
             {
                 if (!isintconst(ip->oper2->offset))
                     ip1->oper2->length = ISZ_UINT;
-                if (!isintconst(ip1->oper2->offset))
-                    ip->oper2->length = ISZ_UINT;
+                ip->oper2->length = ISZ_UINT;
                 ip->oper2->offset = exprNode(en_add, ip->oper2->offset, ip1->oper2->offset);
                 ip->opcode = ip1->opcode;
                 remove_peep_entry(ip1);
@@ -442,8 +441,7 @@ void peep_add(OCODE* ip)
                 {
                     if (!isintconst(ip->oper2->offset))
                         ip1->oper2->length = ISZ_UINT;
-                    if (!isintconst(ip1->oper2->offset))
-                        ip->oper2->length = ISZ_UINT;
+                    ip->oper2->length = ISZ_UINT;
                     ip->oper2->offset = exprNode(en_add, ip->oper2->offset, ip1->oper2->offset);
                     ip->opcode = ip1->opcode;
                     remove_peep_entry(ip1);

@@ -6,22 +6,24 @@
 	.byte 2
 
 	.pushsection one,4
-	.popsection
 	.byte 102
-	.subsection 0
+	.popsection
 	.byte 3
 	.subsection 4
 	.byte 103
 
 	.pushsection one
-	.previous
 	.byte 4
 	.previous
 	.byte 104
 	.previous
 	.byte 5
+        .previous
+        .byte 105
+        .previous
+        .byte 6
 	.popsection
-	.byte 105
+	.byte 106
 
 
 	.text 7

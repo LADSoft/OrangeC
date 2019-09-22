@@ -1268,7 +1268,7 @@ void AsmFile::PushsectionDirective()
     NextToken();
     if (!IsIdentifier())
         throw new std::runtime_error("Expected section name");
-    std::string id = GetId();
+    std::string name = GetId();
     int subsection = 0;
     if (GetKeyword() == kw::comma)
     {
@@ -1282,7 +1282,21 @@ void AsmFile::PushsectionDirective()
             NextToken();
         }
     }
-    PushSection(id, subsection);
+    PushSection(currentSection->GetName(), currentSection->GetSubsection());
+    if (sections[name] == nullptr)
+    {
+        sections[name] = std::make_unique<Section>(name, sections.size());
+        Section* section = sections[name].get();
+        ;
+        numericSections.push_back(section);
+        section->Parse(this);
+        currentSection = section;
+    }
+    else
+    {
+        currentSection = sections[name].get();
+    }
+    currentSection->SetSubsection(subsection);
 }
 void AsmFile::PopsectionDirective()
 {

@@ -46,7 +46,7 @@
 [extern _fesetexceptflag]
 SECTION data CLASS=DATA USE32 ALIGN=8
 ranges  dq  0.0, 255.0
-        dq  -128.0, 128
+        dq  -128.0, 128.0
         dq  0.0, 65536.0
         dq  -32768.0, 32767.0
         dq  0.0,4294967296.0

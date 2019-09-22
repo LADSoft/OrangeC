@@ -64,6 +64,8 @@ class Instruction
     int GetOffset() const { return offs; }
     void SetFill(int fv) { fill = fv; }
     int GetFill() const { return fill; }
+    void SetFillWidth(int fv) { fillWidth = fv; }
+    int GetFillWidth() const { return fillWidth; }
     int const GetSize()
     {
         if (type == ALIGN)
@@ -77,7 +79,8 @@ class Instruction
             return size * repeat;
         return size;
     }
-    unsigned char fill;
+    unsigned fill = 0;
+    unsigned fillWidth = 1;
     int GetRepeat() const { return repeat; }
     int GetNext(Fixup& fixup, unsigned char* buf);
     void Rewind() { pos = fpos = 0; }

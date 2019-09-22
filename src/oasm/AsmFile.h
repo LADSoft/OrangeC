@@ -36,6 +36,8 @@
 #include "AsmExpr.h"
 #include "ObjTypes.h"
 #include "Section.h"
+#include <stack>
+
 class Token;
 class Label;
 class PreProcessor;
@@ -55,7 +57,7 @@ class Import
 class AsmFile
 {
   public:
-    AsmFile(PreProcessor& pp, bool CaseInsensitive, bool BinaryOutput, Listing& List, bool GAS) :
+    AsmFile(PreProcessor& pp, bool CaseInsensitive, bool BinaryOutput, Listing& List, bool GAS, bool NoGASdirectivewarning) :
         preProcessor(pp),
         caseInsensitive(CaseInsensitive),
         binaryOutput(BinaryOutput),
@@ -68,7 +70,8 @@ class AsmFile
         currentSection(nullptr),
         currentLabel(nullptr),
         listing(List),
-        attSyntax(GAS)
+        attSyntax(GAS),
+        noGASdirectivewarning(NoGASdirectivewarning)
 
     {
         parser = InstructionParser::GetInstance();
@@ -124,12 +127,13 @@ class AsmFile
     void DoMacro(MacroObject* obj);
     void DoDB();
     void DoDD();
+    void DoDQ();
     void DoFloat();
     void ReserveDirective(int n);
     void EquDirective();
     void Directive();
     void AlignDirective();
-    void GnuAlignDirective();
+    void GnuAlignDirective(bool p2);
     void PublicDirective();
     void ExternDirective();
     void ImportDirective();
@@ -138,9 +142,39 @@ class AsmFile
     void AbsoluteDirective();
     void TimesDirective();
     void IncbinDirective();
+    void StringDirective();
+    void SingleDirective();
+    void DoubleDirective();
+    void EqvDirective();
+    void SetDirective();
+    void AbortDirective();
+    void ErrorDirective();
+    void WarningDirective();
+    void FailDirective();
+    void FillDirective();
+    void SpaceDirective();
+    void NopsDirective();
+    void PushsectionDirective();
+    void PopsectionDirective();
+    void PreviousDirective();
+    void SubsectionDirective();
+    void GnuSectionDirective();
+    void EjectDirective();
+    void PrintDirective();
+    void TextDirective();
+    void DataDirective();
+    void UnknownDirective();
     void NoAbsolute();
-
+    void SetSubsection(Section* sect, int sid);
+    void PushSection(const std::string&name, int sid);
+    void PopSection();
+    void SwapSections();
   private:
+    struct SectionPair
+    {
+        Section* section;
+        int subsection;
+    };
     bool inAbsolute;
     int absoluteValue;
     bool caseInsensitive;
@@ -167,6 +201,8 @@ class AsmFile
     bool bigEndian;
     bool binaryOutput;
     bool attSyntax;
+    bool noGASdirectivewarning;
+    std::stack<SectionPair> sectionStack;
 };
 
 #endif

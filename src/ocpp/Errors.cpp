@@ -35,6 +35,7 @@ int Errors::warningCount;
 ppInclude* Errors::include;
 bool Errors::showWarnings = true;
 bool Errors::showTrivialWarnings;
+bool Errors::warningsAsErrors;
 
 void Errors::ErrorWithLine(const std::string& msg, std::string& filname, int lineno)
 {
@@ -60,8 +61,16 @@ void Errors::WarningWithLine(const std::string& msg, std::string& filname, int l
 {
     if (showWarnings)
     {
-        warningCount++;
-        std::cout << "Warning ";
+        if (warningsAsErrors)
+        {
+            errorCount++;
+            std::cout << "Error ";
+        }
+        else
+        {
+            warningCount++;
+            std::cout << "Warning ";
+        }
         std::cout << filname << "(" << lineno << "): ";
         std::cout << msg << std::endl;
     }
@@ -70,8 +79,16 @@ void Errors::Warning(const std::string& msg)
 {
     if (showWarnings)
     {
-        warningCount++;
-        std::cout << "Warning ";
+        if (warningsAsErrors)
+        {
+            errorCount++;
+            std::cout << "Error ";
+        }
+        else
+        {
+            warningCount++;
+            std::cout << "Warning ";
+        }
         FileName();
         std::cout << msg << std::endl;
     }
@@ -80,8 +97,16 @@ void Errors::TrivialWarningWithLine(const std::string& msg, std::string& filname
 {
     if (showTrivialWarnings)
     {
-        warningCount++;
-        std::cout << "Warning ";
+        if (warningsAsErrors)
+        {
+            errorCount++;
+            std::cout << "Error ";
+        }
+        else
+        {
+            warningCount++;
+            std::cout << "Warning ";
+        }
         std::cout << filname << "(" << lineno << "): ";
         std::cout << msg << std::endl;
     }
@@ -90,8 +115,16 @@ void Errors::TrivialWarning(const std::string& msg)
 {
     if (showTrivialWarnings)
     {
-        warningCount++;
-        std::cout << "Warning ";
+        if (warningsAsErrors)
+        {
+            errorCount++;
+            std::cout << "Error ";
+        }
+        else
+        {
+            warningCount++;
+            std::cout << "Warning ";
+        }
         FileName();
         std::cout << msg << std::endl;
     }

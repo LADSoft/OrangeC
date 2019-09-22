@@ -54,6 +54,8 @@ CmdSwitchBool AsmMain::BinaryOutput(SwitchParser, 'b', false, "binary");
 CmdSwitchBool AsmMain::Intel(SwitchParser, '\0', false, "intel");
 CmdSwitchBool AsmMain::GAS(SwitchParser, '\0', false, "gas");
 CmdSwitchInt AsmMain::ProcessorMode(SwitchParser, 's', 32,0,100,"processor-mode");
+CmdSwitchBool AsmMain::WarningsAsErrors(SwitchParser, '\0', false, "warningsaserrors");
+CmdSwitchBool AsmMain::NoGasDirectiveWarning(SwitchParser, '\0', false, "nogasdirectivewarning");
 const char* AsmMain::usageText =
     "[options] file"
     "\n"
@@ -70,6 +72,8 @@ const char* AsmMain::usageText =
     "  /!, --nologo                       Don't show logo\n"
     "  --intel                            Use intel syntax\n"
     "  --gas                              Use extended AT&T syntax\n"
+    "  --warningsaserrors                 Warnings should be generated as errors\n"
+    "  --nogasdirectivewarning            Don't show warnings for missing GAS directives\n"
     "\n"
     "Time: " __TIME__ "  Date: " __DATE__;
 
@@ -164,6 +168,7 @@ int AsmMain::Run(int argc, char* argv[])
     {
         Utils::usage(argv[0], usageText);
     }
+    Errors::WarningsAsErrors(WarningsAsErrors.GetValue());
     CmdFiles files(argv + 1);
     if (File.GetValue())
         files.Add(File.GetValue() + 1);
@@ -235,10 +240,10 @@ int AsmMain::Run(int argc, char* argv[])
         else
         {
             Listing listing;
-            AsmFile asmFile(pp, CaseInsensitive.GetValue(), BinaryOutput.GetValue(), listing, GAS.GetValue());
+            AsmFile asmFile(pp, CaseInsensitive.GetValue(), BinaryOutput.GetValue(), listing, GAS.GetValue(), NoGasDirectiveWarning.GetValue());
             if (asmFile.Read())
             {
-                if (!asmFile.Write(outName, inName) || Errors::ErrorCount())
+                if (!asmFile.Write(outName, inName) || Errors::GetErrorCount())
                 {
                     rv = 1;
                 }
@@ -257,6 +262,7 @@ int AsmMain::Run(int argc, char* argv[])
             }
             if (rv)
                 _unlink(outName.c_str());
+            Errors::ErrorCount();
         }
     }
     return rv;

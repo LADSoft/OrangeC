@@ -625,6 +625,8 @@ bool ppDefine::NotSlashed(const std::string& macro, int pos)
 bool ppDefine::ppNumber(const std::string& macro, int start, int pos)
 {
     int x = pos;
+    if (pos <= 0)
+        return false;
     if (macro[pos] == '+' || macro[pos] == '-' ||
         isdigit(macro[pos]))  // we would get here with the first alpha char following the number
     {

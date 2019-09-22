@@ -338,6 +338,40 @@ void AsmFile::DoDD()
         ins->Add(f);
     }
 }
+void AsmFile::DoDQ()
+{
+    char buf[3000];
+    int size = 0;
+    NeedSection();
+    int val = 0;
+    int lineno = preProcessor.GetMainLineNo();
+    std::deque<Fixup*> fixups;
+    do
+    {
+        int errLine = Errors::GetErrorLine();
+        std::string errFile = Errors::GetFileName();
+        AsmExprNode* num;
+        NextToken();
+        num = GetNumber();
+        Fixup* f = new Fixup(num, 8, false, 0);
+        f->SetInsOffs(size);
+        f->SetFileName(errFile);
+        f->SetErrorLine(errLine);
+        fixups.push_back(f);
+        *((unsigned long long *)(buf + size)) = 0;
+        size += 8;
+    } while (GetKeyword() == kw::comma);
+    Instruction* ins = new Instruction((unsigned char*)buf, size, true);
+    if (lineno >= 0)
+        listing.Add(ins, lineno, preProcessor.InMacro());
+    currentSection->InsertInstruction(ins);
+    while (fixups.size())
+    {
+        Fixup* f = fixups.front();
+        fixups.pop_front();
+        ins->Add(f);
+    }
+}
 void AsmFile::DoFloat()
 {
     unsigned char buf[4000];
@@ -433,6 +467,78 @@ void AsmFile::Directive()
     NextToken();
     switch (GetKeyword())
     {
+        case kw::UNKNOWNDIRECTIVE:
+            UnknownDirective();
+            break;
+        case kw::STRING:
+            NoAbsolute();
+            StringDirective();
+            break;
+        case kw::SINGLE:
+            NoAbsolute();
+            SingleDirective();
+            break;
+        case kw::DOUBLE:
+            NoAbsolute();
+            DoubleDirective();
+            break;
+        case kw::EQV:
+            EqvDirective();
+            break;
+        case kw::SET:
+            SetDirective();
+            break;
+        case kw::ABORT:
+            AbortDirective();
+            break;
+        case kw::ERROR:
+            ErrorDirective();
+            break;
+        case kw::WARNING:
+            WarningDirective();
+            break;
+        case kw::FAIL:
+            FailDirective();
+            break;
+        case kw::FILL:
+            NoAbsolute();
+            FillDirective();
+            break;
+        case kw::SPACE:
+            NoAbsolute();
+            SpaceDirective();
+            break;
+        case kw::NOPS:
+            NoAbsolute();
+            NopsDirective();
+            break;
+        case kw::PUSHSECTION:
+            PushsectionDirective();
+            break;
+        case kw::POPSECTION:
+            PopsectionDirective();
+            break;
+        case kw::PREVIOUS:
+            PreviousDirective();
+            break;
+        case kw::SUBSECTION:
+            SubsectionDirective();
+            break;
+        case kw::GSECTION:
+            GnuSectionDirective();
+            break;
+        case kw::EJECT:
+            EjectDirective();
+            break;
+        case kw::PRINT:
+            PrintDirective();
+            break;
+        case kw::TEXT:
+            TextDirective();
+            break;
+        case kw::DATA:
+            DataDirective();
+            break;
         case kw::EQU:
             EquDirective();
             break;
@@ -446,6 +552,9 @@ void AsmFile::Directive()
             DoDD();
             break;
         case kw::DQ:
+            NoAbsolute();
+            DoDQ();
+            break;
         case kw::DT:
             NoAbsolute();
             DoFloat();
@@ -480,8 +589,14 @@ void AsmFile::Directive()
         case kw::ALIGN:
             AlignDirective();
             break;
+        case kw::BALIGN:
+            GnuAlignDirective(false);
+            break;
+        case kw::P2ALIGN:
+            GnuAlignDirective(true);
+            break;
         case kw::GALIGN:
-            GnuAlignDirective();
+            GnuAlignDirective(true);
             break;
         case kw::INCBIN:
             NoAbsolute();
@@ -513,6 +628,24 @@ void AsmFile::Directive()
         throw new std::runtime_error("Expected ']'");
     }
 }
+void AsmFile::UnknownDirective()
+{
+    NextToken();
+    if (IsString())
+    {
+        std::wstring str = GetString();
+        std::string dir;
+        for (int i=0; i < str.size(); i++)
+            dir += str[i] & 255;
+        if (!noGASdirectivewarning)
+           Errors::Warning("Unimplemented directive: " + dir);
+    }
+    else
+    {
+        if (!noGASdirectivewarning)
+            Errors::Warning("Unimplemented directive");
+    }       
+}
 void AsmFile::AlignDirective()
 {
     NextToken();
@@ -538,14 +671,20 @@ void AsmFile::AlignDirective()
             currentSection->SetAlign(v);
     }
 }
-void AsmFile::GnuAlignDirective()
+void AsmFile::GnuAlignDirective(bool p2)
 {
     NextToken();
+    if (!IsNumber())
+        throw new std::runtime_error("Width expected");
+    int width = GetValue();
+    NextToken(); // past comma
+    if (width > 4)
+        width = 4;
     if (!IsNumber())
         throw new std::runtime_error("Alignment expected");
     if (inAbsolute)
     {
-        int v = 1 << GetValue();
+        int v = p2 ? 1 << GetValue() : GetValue();
         int n = (absoluteValue % v);
         if (n)
             absoluteValue += n - v;
@@ -553,8 +692,9 @@ void AsmFile::GnuAlignDirective()
     else
     {
         NeedSection();
-        int v = 1 << GetValue();
+        int v = p2 ? 1 << GetValue() : GetValue();
         Instruction* ins = new Instruction(v);
+        ins->SetFillWidth(width);
         currentSection->InsertInstruction(ins);
         int n = currentSection->GetAlign();
         if (v > n)
@@ -565,8 +705,23 @@ void AsmFile::GnuAlignDirective()
             if (GetKeyword() != kw::comma)
             {
                 if (!IsNumber())
-                    throw new std::runtime_error("Fill value expected");
-                ins->SetFill(GetValue());
+                {
+                    if (IsString())
+                    {
+                        std::wstring val = GetString();
+                        if (val.size() != 1)
+                            throw new std::runtime_error("Character constant expected");
+                        ins->SetFill(val[0]);
+                    }
+                    else
+                    {
+                        throw new std::runtime_error("Fill value expected");
+                    }
+                }
+                else
+                {
+                    ins->SetFill(GetValue());
+                }
             }
             if (GetKeyword() == kw::comma)
             {
@@ -760,6 +915,445 @@ void AsmFile::AbsoluteDirective()
     absoluteValue = GetValue();
     inAbsolute = true;
 }
+void AsmFile::StringDirective()
+{
+    char buf[3000];
+    int size = 0;
+    short val = 0;
+    NeedSection();
+    int lineno = preProcessor.GetMainLineNo();
+    NextToken();
+    int width = GetValue();
+    do
+    {
+        int errLine = Errors::GetErrorLine();
+        std::string errFile = Errors::GetFileName();
+        NextToken();
+        std::wstring str = GetString();
+        int len = str.size();
+        for (int i = 0; i < len; i++)
+        {
+            buf[size++] = str[i];
+            if (width > 1)
+                buf[size++] = 0;
+            if (width > 2)
+            {
+                buf[size++] = 0;
+                buf[size++] = 0;
+            }
+        }
+    } while (GetKeyword() == kw::comma);
+    Instruction* ins = new Instruction((unsigned char*)buf, size, true);
+    if (lineno >= 0)
+        listing.Add(ins, lineno, preProcessor.InMacro());
+    currentSection->InsertInstruction(ins);
+}
+void AsmFile::SingleDirective()
+{
+    unsigned char buf[4000];
+    int size = 0;
+    NeedSection();
+    int lineno = preProcessor.GetMainLineNo();
+    std::deque<Fixup*> fixups;
+    memset(buf, 0, sizeof(buf));
+    do
+    {
+        int errLine = Errors::GetErrorLine();
+        std::string errFile = Errors::GetFileName();
+        int lineno = preProcessor.GetMainLineNo();
+        AsmExprNode* num;
+        NextToken();
+        num = GetNumber();
+        if (num->GetType() == AsmExprNode::IVAL)
+        {
+            num->fval = num->ival;	
+            num->SetType(AsmExprNode::FVAL);
+        }
+
+        Fixup* f = new Fixup(num, 4, false, 0);
+        f->SetInsOffs(size);
+        f->SetFileName(errFile);
+        f->SetErrorLine(errLine);
+        fixups.push_back(f);
+        size += 4;
+    } while (GetKeyword() == kw::comma);
+    Instruction* ins = new Instruction((unsigned char*)buf, size, true);
+    if (lineno >= 0)
+        listing.Add(ins, lineno, preProcessor.InMacro());
+    currentSection->InsertInstruction(ins);
+    while (fixups.size())
+    {
+        Fixup* f = fixups.front();
+        fixups.pop_front();
+        ins->Add(f);
+    }
+}
+void AsmFile::DoubleDirective()
+{
+    unsigned char buf[4000];
+    int size = 0;
+    NeedSection();
+    int lineno = preProcessor.GetMainLineNo();
+    std::deque<Fixup*> fixups;
+    memset(buf, 0, sizeof(buf));
+    do
+    {
+        int errLine = Errors::GetErrorLine();
+        std::string errFile = Errors::GetFileName();
+        int lineno = preProcessor.GetMainLineNo();
+        AsmExprNode* num;
+        NextToken();
+        num = GetNumber();
+        if (num->GetType() == AsmExprNode::IVAL)
+        {
+            num->fval = num->ival;	
+            num->SetType(AsmExprNode::FVAL);
+        }
+        Fixup* f = new Fixup(num, 8, false, 0);
+        f->SetInsOffs(size);
+        f->SetFileName(errFile);
+        f->SetErrorLine(errLine);
+        fixups.push_back(f);
+        size += 8;
+    } while (GetKeyword() == kw::comma);
+    Instruction* ins = new Instruction((unsigned char*)buf, size, true);
+    if (lineno >= 0)
+        listing.Add(ins, lineno, preProcessor.InMacro());
+    currentSection->InsertInstruction(ins);
+    while (fixups.size())
+    {
+        Fixup* f = fixups.front();
+        fixups.pop_front();
+        ins->Add(f);
+    }
+}
+void AsmFile::EqvDirective()
+{
+    // Eqv shouldn't evaluate immediately, but this will do for now...
+    SetDirective();
+}
+void AsmFile::SetDirective()
+{
+    NextToken();
+    int lineno = preProcessor.GetMainLineNo();
+    std::string name = GetId();
+    DoLabel(name, lineno);
+    EquDirective();
+}
+void AsmFile::AbortDirective()
+{
+    exit(1);
+}
+void AsmFile::ErrorDirective()
+{
+    NextToken();
+    if (IsString())
+    {
+         std::wstring str = GetString();
+         int len = str.size();
+         std::string err;
+         for (int i=0; i < str.size(); i++)
+             err += (char)str[i];
+         Errors::Error(err);
+    }
+    else
+    {
+	Errors::Error(".err directive");
+    }
+}
+void AsmFile::WarningDirective()
+{
+    NextToken();
+    if (IsString())
+    {
+         std::wstring str = GetString();
+         int len = str.size();
+         std::string err;
+         for (int i=0; i < str.size(); i++)
+             err += (char)str[i];
+         Errors::Warning(err);
+    }
+    else
+    {
+	Errors::Warning("");
+    }
+}
+void AsmFile::FailDirective()
+{
+    NextToken();
+    if (!IsNumber())
+        throw new std::runtime_error("Expected fail value");
+    int n = GetValue();
+    char buf[256];
+    sprintf(buf, "%d", n);
+    if (n >= 500)
+        Errors::Warning(std::string("fail code ") + buf);
+    else
+        Errors::Error(std::string("fail code ") + buf);
+}
+void AsmFile::FillDirective()
+{
+    NextToken();
+    if (!IsNumber())
+        throw new std::runtime_error("Repeat expected");
+    int lineno = preProcessor.GetMainLineNo();
+    NeedSection();
+    int repeat = GetValue();
+    int size = 1;
+    int value = 0;
+    if (GetKeyword() == kw::comma)
+    {
+        NextToken();
+        if (GetKeyword() != kw::comma)
+        {
+            if (!IsNumber())
+                throw new std::runtime_error("Size value expected");
+            size = GetValue();
+            if (size > 8)
+                size = 8;
+        }
+        if (GetKeyword() == kw::comma)
+        {
+            NextToken();
+            if (!IsNumber())
+            {
+                if (IsString())
+                {
+                    std::wstring val = GetString();
+                    if (val.size() != 1)
+                        throw new std::runtime_error("Character constant expected");
+                    value = val[0];
+                }
+                else
+                {
+                    throw new std::runtime_error("Fill value expected");
+                }
+            }
+            else
+            {
+                value = GetValue() & 0xffffffff;
+            }
+        }
+    }
+    if (repeat && size)
+    {
+        unsigned char val[8];
+        memset(val, 0, sizeof(val));
+        *(unsigned *)val = value;
+        unsigned char *buf = (unsigned char *)calloc(repeat, size);
+        for (int i=0; i < repeat; i++)
+        {
+            memcpy(buf + i * size, val, size);
+        }
+        Instruction* ins = new Instruction((unsigned char*)buf, repeat * size, true);
+        if (lineno >= 0)
+            listing.Add(ins, lineno, preProcessor.InMacro());
+        currentSection->InsertInstruction(ins);
+    }
+}
+void AsmFile::SpaceDirective()
+{
+    NextToken();
+    if (!IsNumber())
+        throw new std::runtime_error("Repeat expected");
+    int lineno = preProcessor.GetMainLineNo();
+    NeedSection();
+    int repeat = GetValue();
+    int value = 0;
+    if (GetKeyword() == kw::comma)
+    {
+        NextToken();
+        if (!IsNumber())
+        {
+            if (IsString())
+            {
+                std::wstring val = GetString();
+                if (val.size() != 1)
+                    throw new std::runtime_error("Character constant expected");
+                value = val[0];
+            }
+            else
+            {
+                throw new std::runtime_error("Fill value expected");
+            }
+        }
+        else
+        {
+            value = GetValue() & 0xffffffff;
+        }
+    }
+    if (repeat)
+    {
+        unsigned char *buf = (unsigned char *)calloc(1, repeat);
+        memset(buf, value, repeat);
+        Instruction* ins = new Instruction((unsigned char*)buf, repeat, true);
+        if (lineno >= 0)
+            listing.Add(ins, lineno, preProcessor.InMacro());
+        currentSection->InsertInstruction(ins);
+    }
+}
+void AsmFile::NopsDirective()
+{
+    NextToken();
+    if (!IsNumber())
+        throw new std::runtime_error("Repeat expected");
+    int lineno = preProcessor.GetMainLineNo();
+    NeedSection();
+    int repeat = GetValue();
+    int value = 0x90; // processor specific
+    if (GetKeyword() == kw::comma)
+    {
+        NextToken();
+        if (!IsNumber())
+            throw new std::runtime_error("control value expected");
+        // we are being naive and just nop filling
+        GetValue();
+    }
+    if (repeat)
+    {
+        unsigned char *buf = (unsigned char *)calloc(1, repeat);
+        memset(buf, value, repeat);
+        Instruction* ins = new Instruction((unsigned char*)buf, repeat, true);
+        if (lineno >= 0)
+            listing.Add(ins, lineno, preProcessor.InMacro());
+        currentSection->InsertInstruction(ins);
+    }
+}
+void AsmFile::GnuSectionDirective()
+{
+    NextToken();
+    std::string name = GetId();
+    if (sections[name] == nullptr)
+    {
+        sections[name] = std::make_unique<Section>(name, sections.size());
+        Section* section = sections[name].get();
+        ;
+        numericSections.push_back(section);
+        section->Parse(this);
+        currentSection = section;
+    }
+    else
+    {
+        currentSection = sections[name].get();
+    }
+    if (GetKeyword() == kw::comma)
+    {
+        NextToken();
+        if (IsString())
+            Errors::Warning(".section: ignoring flags");
+        else if (IsNumber())
+            SetSubsection(currentSection, GetValue());
+        else
+            throw new std::runtime_error("Expected subsection id");
+    }
+    else
+    {
+        SetSubsection(currentSection, 0);
+    }
+    AsmExpr::SetSection(currentSection);
+    parser->Setup(currentSection);
+    currentLabel = nullptr;
+    AsmExpr::SetCurrentLabel(std::string(""));
+    inAbsolute = false;
+}
+void AsmFile::SubsectionDirective()
+{
+    NextToken();
+    if (!IsNumber())
+         throw new std::runtime_error("Expected subsection id");
+    SetSubsection(currentSection, GetValue());
+}
+void AsmFile::PushsectionDirective()
+{
+    NextToken();
+    if (!IsIdentifier())
+        throw new std::runtime_error("Expected section name");
+    std::string id = GetId();
+    int subsection = 0;
+    if (GetKeyword() == kw::comma)
+    {
+        NextToken();
+        if (!IsNumber())
+           throw new std::runtime_error("Expected subsection id");
+        subsection = GetValue();
+        while (GetKeyword() == kw::comma)
+        {
+            NextToken();
+            NextToken();
+        }
+    }
+    PushSection(id, subsection);
+}
+void AsmFile::PopsectionDirective()
+{
+    NextToken();
+    PopSection();
+}
+void AsmFile::PreviousDirective()
+{
+    NextToken();
+    SwapSections();
+}
+void AsmFile::TextDirective()
+{
+    NextToken();
+    int subsection = 0;
+    if (IsNumber())
+	subsection = GetValue();
+    std::string name = "code";
+    if (sections[name] == nullptr)
+    {
+        sections[name] = std::make_unique<Section>(name, sections.size());
+        Section* section = sections[name].get();
+        ;
+        numericSections.push_back(section);
+        section->Parse(this);
+        currentSection = section;
+    }
+    else
+    {
+        currentSection = sections[name].get();
+    }
+    SetSubsection(currentSection, subsection);
+}
+void AsmFile::DataDirective()
+{
+    NextToken();
+    int subsection = 0;
+    if (IsNumber())
+	subsection = GetValue();
+    std::string name = "data";
+    if (sections[name] == nullptr)
+    {
+        sections[name] = std::make_unique<Section>(name, sections.size());
+        Section* section = sections[name].get();
+        ;
+        numericSections.push_back(section);
+        section->Parse(this);
+        currentSection = section;
+    }
+    else
+    {
+        currentSection = sections[name].get();
+    }
+    SetSubsection(currentSection, subsection);
+}
+void AsmFile::EjectDirective()
+{
+    // ignoring for now (needs a form feed in listing file)
+}
+void AsmFile::PrintDirective()
+{
+    NextToken();
+    if (!IsString())
+        throw new std::runtime_error("String expected");
+    std::wstring str = GetString();
+
+    std::string p;
+    for (int i=0; i < str.size(); i++)
+        p += str[i] & 255;
+    std::cout << p << std::endl;
+}
 void AsmFile::NoAbsolute()
 {
     if (inAbsolute)
@@ -841,6 +1435,7 @@ ObjFile* AsmFile::MakeFile(ObjFactory& factory, std::string& name)
         fi->Add(sf);
         for (int i = 0; i < numericSections.size(); ++i)
         {
+            numericSections[i]->MergeSubsections();
             numericSections[i]->Resolve();
             ObjSection* s = numericSections[i]->CreateObject(factory);
             if (s)
@@ -1016,3 +1611,37 @@ ObjSection* AsmFile::GetSectionByName(std::string& name)
         return it->second->GetObjectSection();
     return nullptr;
 }
+void AsmFile::SetSubsection(Section* sect, int sid)
+{
+    sid &= 0x1fff;
+    sect->SetSubsection(sid);
+}
+void AsmFile::PushSection(const std::string&name, int sid)
+{
+    auto it = sections.find(name);
+    if (it == sections.end())
+        throw new std::runtime_error("Unknown section: " + name);
+    SectionPair v{it->second.get(), sid};
+    sectionStack.push(v);
+}
+void AsmFile::PopSection()
+{
+    if (sectionStack.size() != 0)
+    {
+        currentSection = sectionStack.top().section;
+        SetSubsection(currentSection, sectionStack.top().subsection);
+        sectionStack.pop();
+    }
+}
+void AsmFile::SwapSections()
+{
+    if (sectionStack.size() != 0)
+    {
+        SectionPair hold = sectionStack.top();
+        sectionStack.pop();
+        sectionStack.push(SectionPair{currentSection, currentSection->GetSubsection()});
+        currentSection = hold.section;
+        SetSubsection(currentSection, hold.subsection);
+    }
+}
+

@@ -38,8 +38,7 @@ Instruction::Instruction(Label* lbl) :
     fpos(0),
     size(0),
     offs(0),
-    repeat(1),
-    fill(0)
+    repeat(1)
 {
 }
 Instruction::Instruction(void* dataIn, int Size, bool isData) :
@@ -51,7 +50,6 @@ Instruction::Instruction(void* dataIn, int Size, bool isData) :
     size(Size),
     offs(0),
     lost(false),
-    fill(0),
     data(LoadData(!isData, (unsigned char*)dataIn, Size))
 {
 }
@@ -59,7 +57,6 @@ Instruction::Instruction(int aln) :
     type(ALIGN),
     label(nullptr),
     altdata(nullptr),
-    fill(0),
     pos(0),
     fpos(0),
     size(aln),
@@ -71,7 +68,6 @@ Instruction::Instruction(int Repeat, int Size) :
     type(RESERVE),
     label(nullptr),
     altdata(nullptr),
-    fill(0),
     pos(0),
     fpos(0),
     size(Size),
@@ -89,8 +85,7 @@ Instruction::Instruction(void* data) :
     fpos(0),
     size(0),
     offs(0),
-    repeat(1),
-    fill(0)
+    repeat(1)
 {
 }
 
@@ -154,7 +149,38 @@ int Instruction::GetNext(Fixup& fixup, unsigned char* buf)
         int sz = GetSize();
         if (sz == 0 || pos != 0)
             return 0;
-        memset(buf, fill, sz);
+        switch (fillWidth)
+        {
+	case 1:
+        default:
+            memset(buf, fill, sz);
+            break;
+        case 2:
+            for (int i=0; i < sz; i+= 2)
+                *(unsigned short *)(buf + i) = fill;
+            if (sz & 1)
+            {
+                buf[sz-1] = fill;
+            }
+            break;
+        case 4:
+            for (int i=0; i < sz; i+= 4)
+                *(unsigned *)(buf + i) = fill;
+            switch (sz & 3)
+            {
+                case 1:
+                  *(unsigned short *)(sz-3) = fill;
+                  *(unsigned char *)(sz-1) = fill >> 16;
+                  break;
+                case 2:
+                  *(unsigned short *)(sz-2) = fill;
+                  break;
+                case 3:
+                  *(unsigned char *)(sz-1) = fill;
+                  break;
+            }
+            break;
+        }
         pos += sz;
         return sz;
     }

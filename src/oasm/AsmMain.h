@@ -53,6 +53,8 @@ class AsmMain
     static CmdSwitchBool Intel;
     static CmdSwitchBool GAS;
     static CmdSwitchInt ProcessorMode;
+    static CmdSwitchBool WarningsAsErrors;
+    static CmdSwitchBool NoGasDirectiveWarning;
 
     static const char* usageText;
 };

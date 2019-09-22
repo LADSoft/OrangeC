@@ -143,14 +143,58 @@ void Section::Optimize()
         pc += instructions[i]->GetSize();
     }
 }
+void Section::MergeSubsections()
+{
+    for (auto&& s : subsections)
+    {
+        for (auto&& i : s.second->GetInstructions())
+        {
+            instructions.push_back(std::move(i));
+            if (instructions.back()->IsLabel())
+            {
+                labels[instructions.back()->GetLabel()->GetName()] = pc;
+            }
+            else
+            {
+                instructions.back()->SetOffset(pc);
+                pc += instructions.back()->GetSize();
+            }
+        }
+        s.second->ClearInstructions();
+    }
+}
+
 void Section::Resolve() { Optimize(); }
 void Section::InsertInstruction(Instruction* ins)
 {
-    std::unique_ptr<Instruction> temp;
-    temp.reset(ins);
-    instructions.push_back(std::move(temp));
-    ins->SetOffset(pc);
-    pc += ins->GetSize();
+    if (subSection == 0)
+    {
+        std::unique_ptr<Instruction> temp;
+        temp.reset(ins);
+        instructions.push_back(std::move(temp));
+        ins->SetOffset(pc);
+        pc += ins->GetSize();
+    }
+    else
+    {
+        subsections[subSection]->InsertInstruction(ins);
+    }
+}
+Instruction* Section::InsertLabel(Label* label)
+{
+    if (subSection == 0)
+        instructions.push_back(std::make_unique<Instruction>(label));
+    else
+        subsections[subSection]->GetInstructions().push_back(std::make_unique<Instruction>(label));
+    labels[label->GetName()] = pc;
+    return subSection == 0 ? instructions.back().get() : subsections[subSection]->GetInstructions().back().get();
+}
+void Section::pop_back() 
+{ 
+    if (subSection == 0)
+	instructions.pop_back(); 
+    else
+        subsections[subSection]->pop_back();
 }
 ObjSection* Section::CreateObject(ObjFactory& factory)
 {

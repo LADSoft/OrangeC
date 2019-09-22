@@ -23,4 +23,4 @@ aa:
 	jmp aa
 	ljmp mm
 	lcall mm
-mm	dd 0
+mm	.4byte 0

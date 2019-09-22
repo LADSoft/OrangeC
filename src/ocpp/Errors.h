@@ -53,6 +53,10 @@ class Errors
         if (showWarnings)
             showTrivialWarnings = flag;
     }
+    static void WarningsAsErrors(bool flag)
+    {
+        warningsAsErrors = flag;
+    }
     static bool ErrorCount();
     static void SetMaxErrors(int count) { maxErrors = count; }
     static void SetInclude(ppInclude* inc) { include = inc; }
@@ -72,5 +76,6 @@ class Errors
     static ppInclude* include;
     static bool showWarnings;
     static bool showTrivialWarnings;
+    static bool warningsAsErrors;
 };
 #endif

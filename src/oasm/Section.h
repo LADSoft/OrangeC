@@ -55,13 +55,8 @@ class Section
     void SetAlign(int aln) { align = aln; }
     int GetAlign() { return align; }
     void InsertInstruction(Instruction* ins);
-    Instruction* InsertLabel(Label* label)
-    {
-        instructions.push_back(std::make_unique<Instruction>(label));
-        labels[label->GetName()] = pc;
-        return instructions.back().get();
-    }
-    void pop_back() { instructions.pop_back(); }
+    Instruction* InsertLabel(Label* label);
+    void pop_back();
     std::vector<std::unique_ptr<Instruction>>& GetInstructions() { return instructions; }
     void ClearInstructions() { instructions.clear(); labels.clear();  }
     int GetSect() { return sect; }
@@ -75,7 +70,17 @@ class Section
     bool HasInstructions() const { return instructions.size() != 0; }
 
     static void NoShowError() { dontShowError = true; }
-
+    int GetSubsection() const { return subSection; }
+    void SetSubsection(int sid) 
+    { 
+        subSection = sid; 
+        if (sid != 0)
+        {
+            if (subsections[sid] == nullptr)
+                subsections[sid] = new Section(name, sect);
+        }
+    }
+    void MergeSubsections();
   protected:
     ObjExpression* ConvertExpression(AsmExprNode* node, std::function<Label*(std::string&)> Lookup,
                                      std::function<ObjSection*(std::string&)> SectLookup, ObjFactory& factory);
@@ -84,6 +89,7 @@ class Section
 
   private:
     static bool dontShowError;
+    int subSection = 0;
     std::string name;
     int sect;
     int align;
@@ -93,5 +99,6 @@ class Section
     ObjSection* objectSection;
     int pc;
     std::map<std::string, int> labels;
+    std::map<int, Section*> subsections;
 };
 #endif

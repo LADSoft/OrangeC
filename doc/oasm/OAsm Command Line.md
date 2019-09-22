@@ -85,11 +85,23 @@ OAsm can compile either Intel or AT&T syntax files.   When in AT&T mode, it uses
 
 >     OAsm --gas test.c
 
-compiles AT&T syntax files
+compiles AT&T syntax files, using GAS directive syntax.   Note the gas directive syntax isn't complete; at this time it does not support
+gas-style macros or irp/irpc.
 
 >     OAsm --intel test.c
 
 compiles in intel mode.   The default is to compile in intel mode, as if --intel were specified.
+
+### Warning Control
+
+Oasm can render all warnings as errors:
+
+>     Oasm --warningsaserrors test.c
+
+There is a specific warning for unimplemented .GAS directives, those that are likely to modify code generation are flagged.   It may not
+be useful to show these warnings:
+
+>     Oasm --nogasdirectivewarning --gas test.c
  
 ### Alternative display options
 

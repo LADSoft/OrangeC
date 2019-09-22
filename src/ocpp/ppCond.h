@@ -54,7 +54,7 @@ class ppCond
     void CheckErrors();
     bool Skipping() { return current && current->skipping; }
     void Mark() { marks.push_front(skipList.size() + current.get() != nullptr); }
-    void Drop() { marks.pop_front(); }
+    void Drop() { if (marks.size()) marks.pop_front(); }
     void Release()
     {
         if (marks.size())

@@ -120,10 +120,13 @@ bool ppMacro::HandleRep(std::string& line)
     {
         if (p->begline == 0)
             p->begline = pp->GetMainLineNo();
+        std::string orig = ll;
         int t = ll.find_first_not_of(" \t\v\r\n");
         if (t != std::string::npos)
         {
-            if (ll[t] == '%')
+            define.Process(ll);
+            t = ll.find_first_not_of(" \t\v\r\n");
+            if (t != std::string::npos && ll[t] == '%')
             {
                 t = ll.find_first_not_of(" \t\v\r\n", t + 1);
                 if (ll.substr(t, 5) == "macro")

@@ -175,6 +175,7 @@ bool PreProcessor::GetLine(std::string& line)
             return false;
         if (!last.empty())
             line = last + " " + line;
+preprocess:
         size_t n = line.find_first_not_of(" \n\t\v\r");
         if (n != std::string::npos)
         {
@@ -261,17 +262,30 @@ bool PreProcessor::GetLine(std::string& line)
             else
             {
             join:
-                if (include.Skipping())
+                if (ppStart != '%' && include.Skipping())
                 {
                     line.erase(0, line.size());
                     break;
                 }
-                else
+                if (define.Process(line, true) != INT_MIN + 1)
                 {
-                    if (define.Process(line, true) != INT_MIN + 1)
-                        break;
-                    last = line;
+                    if (ppStart == '%')
+                    {
+                        size_t n = line.find_first_not_of(" \n\t\v\r");
+                        if (n != std::string::npos)
+                        {
+                             if ((line[n] == ppStart && (n + 1 < line.length() && line[n + 1] != ppStart)) ||
+                                 (trigraphs && n < line.size() - 1 && line[n] == '%' && line[n + 1] == ':'))
+                                 goto preprocess;
+                        }
+                        if (include.Skipping())
+                        {
+                            line.erase(0, line.size());
+                        }                    
+                    }
+                    break;
                 }
+                last = line;
             }
         }
     }

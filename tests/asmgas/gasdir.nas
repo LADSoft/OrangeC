@@ -123,3 +123,11 @@
 	.space 4, 0x44
 	.comm comm1, 4
 	.lcomm comm2, 44
+
+
+	.globl _foo
+	.def	_foo
+	.scl	2
+	.type	32
+	.endef
+_foo

@@ -51,20 +51,20 @@ class ppExpr
 
     static void SetInclude(ppInclude* inc) { include = inc; }
   protected:
-    PPINT primary(std::string& line);
-    PPINT unary(std::string& line);
-    PPINT multiply(std::string& line);
-    PPINT add(std::string& line);
-    PPINT shift(std::string& line);
-    PPINT relation(std::string& line);
-    PPINT equal(std::string& line);
-    PPINT and_(std::string& line);
-    PPINT xor_(std::string& line);
-    PPINT or_(std::string& line);
-    PPINT logicaland(std::string& line);
-    PPINT logicalor(std::string& line);
-    PPINT conditional(std::string& line);
-    PPINT comma_(std::string& line);
+    PPINT primary(std::string& line, bool &isunsigned);
+    PPINT unary(std::string& line, bool &isunsigned);
+    PPINT multiply(std::string& line, bool &isunsigned);
+    PPINT add(std::string& line, bool &isunsigned);
+    PPINT shift(std::string& line, bool &isunsigned);
+    PPINT relation(std::string& line, bool &isunsigned);
+    PPINT equal(std::string& line, bool &isunsigned);
+    PPINT and_(std::string& line, bool &isunsigned);
+    PPINT xor_(std::string& line, bool &isunsigned);
+    PPINT or_(std::string& line, bool &isunsigned);
+    PPINT logicaland(std::string& line, bool &isunsigned);
+    PPINT logicalor(std::string& line, bool &isunsigned);
+    PPINT conditional(std::string& line, bool &isunsigned);
+    PPINT comma_(std::string& line, bool &isunsigned);
 
   private:
     bool unsignedchar;

@@ -88,9 +88,10 @@ void SymbolTable::ProcessObjectFile(ObjFile* file)
     {
         if ((*it)->GetIndex() > max)
             max = (*it)->GetIndex();
+        (*it)->SetOffset(new ObjExpression(0));
     }
     sections.clear();
-    sections.reserve(max + 1);
+    sections.resize(max + 1);
     for (auto it = file->SectionBegin(); it != file->SectionEnd(); ++it)
     {
         sections[(*it)->GetIndex()] = *it;

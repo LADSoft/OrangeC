@@ -86,14 +86,14 @@ extern "C"
             __ch -= 'a' - 'A';
         return __ch;
     }
-    inline int iswcntrl_l(wint_t __wc, locale_t larg) { return std::iswcntrl(__wc); }
+    inline int iswcntrl_l(wint_t __wc, locale_t larg) { return __STD_NS_QUALIFIER iswcntrl(__wc); }
     inline int iswdigit_l(wint_t __wc, locale_t larg) { return __wc >= '0' && __wc <= '9'; }
-    inline int iswgraph_l(wint_t __wc, locale_t larg) { return std::iswgraph(__wc); }
+    inline int iswgraph_l(wint_t __wc, locale_t larg) { return __STD_NS_QUALIFIER iswgraph(__wc); }
     inline int iswlower_l(wint_t __wc, locale_t larg) { return __wc >= 'a' && __wc <= 'z'; }
     inline int iswprint_l(wint_t __wc, locale_t larg) { return __wc >= ' ' && __wc <= '~'; }
-    inline int iswpunct_l(wint_t __wc, locale_t larg) { return std::iswpunct(__wc); }
-    inline int iswspace_l(wint_t __wc, locale_t larg) { return std::iswspace(__wc); }
-    inline int iswblank_l(wint_t __wc, locale_t larg) { return std::iswblank(__wc); }
+    inline int iswpunct_l(wint_t __wc, locale_t larg) { return __STD_NS_QUALIFIER iswpunct(__wc); }
+    inline int iswspace_l(wint_t __wc, locale_t larg) { return __STD_NS_QUALIFIER iswspace(__wc); }
+    inline int iswblank_l(wint_t __wc, locale_t larg) { return __STD_NS_QUALIFIER iswblank(__wc); }
     inline int iswupper_l(wint_t __wc, locale_t larg) { return __wc >= 'A' && __wc <= 'Z'; }
     inline int iswxdigit_l(wint_t __wc, locale_t larg)
     {

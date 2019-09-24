@@ -971,128 +971,93 @@ std::string InstructionParser::RewriteATTArg(const std::string& line)
     else
     {
         std::string name;
-        if (IsSymbolCharRoutine(line.c_str() + i, true))
+        int npos = line.find_first_of("(", i);
+        if (npos == std::string::npos)
+           return "[" + seg + line.substr(i) + "]";
+        name = line. substr(i, npos - i);
+        std::string primary, secondary, times;
+        i = npos+1;
+        for (; i < line.size(); i++)
+            if (!isspace(line[i]))
+                break;
+        int j = line.size() - 1;
+        while (j > i && isspace(line[j]))
+            j--;
+        if (line[j] == ')')
         {
-            int j = i + 1;
-            while (IsSymbolCharRoutine(line.c_str() + j, false)) j++;
-            name = line.substr(i, j - i);
-            i = j;
-        }
-        else
-        {
-            if (line[i] == '-' || isdigit(line[i]))
+            std::vector<std::string> splt;
+            Split(line.substr(i, j - i), splt);
+
+            switch (splt.size())
             {
-                int j = i + 1;
-                for (; j < line.size(); j++)
-                    if (!isdigit(line[j]))
-                        break;
-                name = line.substr(i, j - i);
-                i = j;
-            }
-        }
-        if (i < line.size())
-        {
-            int start = i;
-            if (line[i] != '(')
-            {
+            case 1:
+                if (splt[0] != "" && splt[0][0] == '%')
+                {
+                    primary = splt[0].substr(1);
+                    break;
+                }
                 // error
                 return line;
+            case 2:
+                if (splt[0] == "")
+                {
+                    if (splt[1] == "1")
+                    {
+                        return "[" + seg + name + "]";
+                    }
+                }
+                else if (splt[0][0] == '%')
+                {
+                    primary = splt[0].substr(1);
+                    if (splt[1] != "" && splt[1][0] == '%')
+                    {
+                        secondary = splt[1].substr(1);
+                        break;
+                    }
+                }
+                // error
+                return line;
+            case 3:
+                if (splt[0] != "")
+                {
+                    if (splt[0][0] == '%')
+                        primary = splt[0].substr(1);
+                    else
+                        return "[" + seg + name + line.substr(i) + "]";
+                }
+                if (splt[1] != "")
+                {
+                    if (splt[1][0] == '%')
+                        secondary = splt[1].substr(1);
+                    else
+                        return "[" + seg + name + line.substr(i) + "]";
+                }
+                if (splt[2] != "")
+                {
+                    times = splt[2];
+                }
+                break;
+            default:
+                // error
+                return line;
+
             }
-            else
+            if (secondary.size())
             {
-                std::string primary, secondary, times;
-                i++;
-                for (; i < line.size(); i++)
-                    if (!isspace(line[i]))
-                        break;
-                int j = line.size() - 1;
-                while (j > i && isspace(line[j]))
-                    j--;
-                if (line[j] == ')')
+                if (primary.size())
+                    primary += "+";
+                primary += secondary;
+                if (times.size())
                 {
-                    std::vector<std::string> splt;
-                    Split(line.substr(i, j - i), splt);
-
-                    switch (splt.size())
-                    {
-                    case 1:
-                        if (splt[0] != "" && splt[0][0] == '%')
-                        {
-                            primary = splt[0].substr(1);
-                            break;
-                        }
-                        // error
-                        return line;
-                    case 2:
-                        if (splt[0] == "")
-                        {
-                            if (splt[1] == "1")
-                            {
-                                return "[" + seg + name + "]";
-                            }
-                        }
-                        else if (splt[0][0] == '%')
-                        {
-                            primary = splt[0].substr(1);
-                            if (splt[1] != "" && splt[1][0] == '%')
-                            {
-                                secondary = splt[1].substr(1);
-                                break;
-                            }
-                        }
-                        // error
-                        return line;
-                    case 3:
-                        if (splt[0] != "")
-                        {
-                            if (splt[0][0] == '%')
-                                primary = splt[0].substr(1);
-                            else
-                                return "[" + seg + name + line.substr(i) + "]";
-                        }
-                        if (splt[1] != "")
-                        {
-                            if (splt[1][0] == '%')
-                                secondary = splt[1].substr(1);
-                            else
-                                return "[" + seg + name + line.substr(i) + "]";
-                        }
-                        if (splt[2] != "")
-                        {
-                            times = splt[2];
-                        }
-                        break;
-                    default:
-                        // error
-                        return line;
-
-                    }
-                    if (secondary.size())
-                    {
-                        if (primary.size())
-                            primary += "+";
-                        primary += secondary;
-                        if (times.size())
-                        {
-                            primary += "*" + times;
-                        }
-                    }
-                    if (name.size())
-                        primary += "+" + name;
-                    primary = "[" + seg + primary + "]";
-                    return primary;
-                }
-                else
-                {
-                    // error
-                    return line;
+                    primary += "*" + times;
                 }
             }
+            if (name.size())
+                primary += "+" + name;
+            primary = "[" + seg + primary + "]";
+            return primary;
         }
-        else
-        {
-            return "[" + seg + name + "]";
-        }
+        // error
         return line;
     }
 }
@@ -1152,7 +1117,10 @@ std::string InstructionParser::RewriteATT(int& op, const std::string& line, int&
         int npos = line.find_first_not_of("\t\v \r\n");
         if (npos != std::string::npos)
             if (line[npos] == '*')
-                return "[" + line.substr(npos + 1) + "]";
+                if (line.find_first_of("%") != std::string::npos)
+                    return "[" + RewriteATTArg(line.substr(npos + 1)) + "]";
+                else
+                    return "[" + line.substr(npos + 1) + "]";
         return line;
     }
     case 10000://lcall
@@ -1216,10 +1184,18 @@ std::string InstructionParser::RewriteATT(int& op, const std::string& line, int&
     }
     else if (size1)
     {
+        if (splt2.size() == 1)
+        {
+            if (splt2[0].find_first_of("[") != std::string::npos)
+                PreprendSize(splt2[0], size1);
+        }
         // the other combination has a destination which MUST BE a reg so we don't consider it.
-        if (splt2[1].find_first_of("[") != std::string::npos)
-            if (splt[0].find_first_of("%") == std::string::npos)
-                PreprendSize(splt2[1], size1);
+        else 
+        {
+            if (splt2[1].find_first_of("[") != std::string::npos)
+                if (splt[0].find_first_of("%") == std::string::npos)
+                    PreprendSize(splt2[1], size1);
+        }
     }
 
     if (op >= op_f2xm1 && op <= op_fyl2xp1 && splt.size() == 2)
@@ -1255,6 +1231,24 @@ std::string InstructionParser::RewriteATT(int& op, const std::string& line, int&
                 op = op_fdivp;
                 break;
             }
+        }
+    }
+    if (splt2.size() == 1)
+    {
+        switch (op)
+        {
+            case op_shl:
+            case op_shr:
+            case op_sal:
+            case op_sar:
+            case op_rcl:
+            case op_rcr:
+            case op_rol:
+            case op_ror:
+               splt2.push_back("");
+               splt2[1] = splt2[0];
+               splt2[0] = "1";
+               break;
         }
     }
     std::string rv;

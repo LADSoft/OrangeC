@@ -39,7 +39,7 @@ typedef unsigned long long L_UINT;
 
 bool CharacterToken::unsignedchar;
 bool NumericToken::ansi;
-bool NumericToken::c99;
+bool NumericToken::c99 = true;
 
 bool (*Tokenizer::IsSymbolChar)(const char*, bool) = Tokenizer::IsSymbolCharDefault;
 

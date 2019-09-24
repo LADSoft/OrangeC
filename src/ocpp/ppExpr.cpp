@@ -221,7 +221,7 @@ PPINT ppExpr::multiply(std::string& line, bool &isunsigned)
             {
                 case kw::star:
                     if (isunsigned)
-                        val1 = (unsigned)val1 * val2;
+                        val1 = (PPUINT)val1 * val2;
                     else
                         val1 *= val2;
                     break;
@@ -233,7 +233,7 @@ PPINT ppExpr::multiply(std::string& line, bool &isunsigned)
                     else
                     {
                         if (isunsigned)
-                            val1 = (unsigned)val1 / val2;
+                            val1 = (PPUINT)val1 / val2;
                         else
                             val1 /= val2;
                     }
@@ -246,7 +246,7 @@ PPINT ppExpr::multiply(std::string& line, bool &isunsigned)
                     else
                     {
                         if (isunsigned)
-                            val1 = (unsigned)val1 % val2;
+                            val1 = (PPUINT)val1 % val2;
                         else
                             val1 %= val2;
                     }
@@ -320,25 +320,25 @@ PPINT ppExpr::relation(std::string& line, bool &isunsigned)
             {
                 case kw::gt:
                     if (isunsigned)
-                        val1 = (unsigned)val1 > val2;
+                        val1 = (PPUINT)val1 > val2;
                     else
                         val1 = val1 > val2;
                     break;
                 case kw::lt:
                     if (isunsigned)
-                        val1 = (unsigned)val1 < val2;
+                        val1 = (PPUINT)val1 < val2;
                     else
                         val1 = val1 < val2;
                     break;
                 case kw::geq:
                     if (isunsigned)
-                        val1 = (unsigned)val1 >= val2;
+                        val1 = (PPUINT)val1 >= val2;
                     else
                         val1 = val1 >= val2;
                     break;
                 case kw::leq:
                     if (isunsigned)
-                        val1 = (unsigned)val1 <= val2;
+                        val1 = (PPUINT)val1 <= val2;
                     else
                         val1 = val1 <= val2;
                     break;

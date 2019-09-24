@@ -32,6 +32,7 @@ class ppDefine;
 class ppInclude;
 
 typedef long long PPINT;
+typedef unsigned long long PPUINT;
 
 class ppExpr
 {

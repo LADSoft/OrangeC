@@ -1296,6 +1296,7 @@ void AsmFile::PushsectionDirective()
     {
         currentSection = sections[name].get();
     }
+    AsmExpr::SetSection(currentSection);
     currentSection->SetSubsection(subsection);
 }
 void AsmFile::PopsectionDirective()
@@ -1328,6 +1329,7 @@ void AsmFile::TextDirective()
     {
         currentSection = sections[name].get();
     }
+    AsmExpr::SetSection(currentSection);
     SetSubsection(currentSection, subsection);
 }
 void AsmFile::DataDirective()
@@ -1350,6 +1352,7 @@ void AsmFile::DataDirective()
     {
         currentSection = sections[name].get();
     }
+    AsmExpr::SetSection(currentSection);
     SetSubsection(currentSection, subsection);
 }
 void AsmFile::EjectDirective()
@@ -1643,6 +1646,7 @@ void AsmFile::PopSection()
     if (sectionStack.size() != 0)
     {
         currentSection = sectionStack.top().section;
+        AsmExpr::SetSection(currentSection);
         SetSubsection(currentSection, sectionStack.top().subsection);
         sectionStack.pop();
     }
@@ -1655,6 +1659,7 @@ void AsmFile::SwapSections()
         sectionStack.pop();
         sectionStack.push(SectionPair{currentSection, currentSection->GetSubsection()});
         currentSection = hold.section;
+        AsmExpr::SetSection(currentSection);
         SetSubsection(currentSection, hold.subsection);
     }
 }

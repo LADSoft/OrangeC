@@ -149,12 +149,6 @@
     <ClCompile Include="middle\istren.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="preproc\ppexpr.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="preproc\PREPROC.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="x86\invoke.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

@@ -55,7 +55,7 @@ CmdSwitchCombineString MakeMain::dir(switchParser, 'C', '+');
 CmdSwitchBool MakeMain::debug(switchParser, 'd');  // not implemented
 CmdSwitchBool MakeMain::environOverride(switchParser, 'e');
 CmdSwitchBool MakeMain::help(switchParser, 'h');
-CmdSwitchBool MakeMain::help2(switchParser, '?');
+CmdSwitchBool MakeMain::help2(switchParser, '?', false, "help");
 CmdSwitchCombineString MakeMain::includes(switchParser, 'I', ';');
 CmdSwitchBool MakeMain::showDatabase(switchParser, 'p');
 CmdSwitchBool MakeMain::noBuiltinRules(switchParser, 'r');
@@ -86,7 +86,7 @@ const char* MakeMain::usageText =
     "/r    Ignore builtin rules    /s    Don't print commands\n"
     "/t    Touch                   /u    Debug warnings\n"
     "/w    Print make status       --eval=STRING evaluate a statement\n"
-    "/!    No logo\n"
+    "/!    No logo                 /? or --help  this help\n"
     "--version show version info\n"
     "\nTime: " __TIME__ "  Date: " __DATE__;
 const char* MakeMain::builtinVars = "";

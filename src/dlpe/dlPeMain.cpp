@@ -86,6 +86,7 @@ const char* dlPeMain::usageText =
     "/mxxx          Set output file type\n"
     "/oxxx          Set output file name\n"
     "/sxxx          Set stub file name\n"
+    "/y             Verbose\n"
     "/V, --version  Show version and date\n"
     "/!             No logo\n"
     "\n"

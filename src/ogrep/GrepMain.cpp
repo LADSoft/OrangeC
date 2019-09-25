@@ -47,7 +47,7 @@ CmdSwitchBool GrepMain::displayLineNumbers(SwitchParser, 'n');
 CmdSwitchBool GrepMain::unixMode(SwitchParser, 'o');
 CmdSwitchBool GrepMain::displayNonMatching(SwitchParser, 'v');
 CmdSwitchBool GrepMain::verboseMode(SwitchParser, 'z');
-CmdSwitchBool GrepMain::showHelp(SwitchParser, '?');
+CmdSwitchBool GrepMain::showHelp(SwitchParser, '?', false, "help");
 // not actual parameters
 CmdSwitchBool GrepMain::displayFileNames(SwitchParser, '#');
 CmdSwitchBool GrepMain::displayHeaderFileName(SwitchParser, '#');
@@ -56,7 +56,7 @@ CmdSwitchInt GrepMain::showBefore(SwitchParser, 'B', 0, 0, INT_MAX);
 CmdSwitchInt GrepMain::showBoth(SwitchParser, 'C', 0, 0, INT_MAX);
 CmdSwitchInt GrepMain::maxMatches(SwitchParser, 'm', INT_MAX, 0, INT_MAX);
 
-const char* GrepMain::usageText = "[-rxlcnvidzwomABC?] searchstring file[s]\n";
+const char* GrepMain::usageText = "[-rlcnvidzwomABC?] searchstring file[s]\n";
 const char* GrepMain::helpText =
     "[options] searchstring file[s]"
     "\n"
@@ -67,7 +67,7 @@ const char* GrepMain::helpText =
     "   -w             Complete Words Only        -z   Verbose\n"
     "   -A:#           Show Lines After           -B:# Show Lines Before\n"
     "   -C:#           Show Lines Both            -m:# Set Max Matches\n"
-    "   -V, --version  Show version and date      -?   This help\n"
+    "   -V, --version  Show version and date      -? or --help  This help\n"
     "\n"
     "Regular expressions special characters:\n"
     "   .  Match any character   \\  Quote next character\n"

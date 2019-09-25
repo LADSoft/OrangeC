@@ -60,6 +60,7 @@ const char* nmMain::usageText =
     "/n,/v          Sort By Address\n"
     "/p             Don't sort\n"
     "/r             Reverse sort\n"
+    "/s             Reserved\n"
     "/tx            Select radix (d,o,x)\n"
     "/u             Show undefined externals\n"
     "/A,/o          Show file on each line\n"

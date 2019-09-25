@@ -52,7 +52,7 @@ class ObjSymbol : public ObjWrapper
     virtual ~ObjSymbol() {}
     bool IsSectionRelative() { return sectionRelative; }
     void SetSectionRelative(bool flag) { sectionRelative = flag; }
-    ObjString& GetName() { return name; }
+    const ObjString& GetName() const { return name; }
     ObjString GetDisplayName();
     void SetName(ObjString Name) { name = Name; }
     eType GetType() { return type; }

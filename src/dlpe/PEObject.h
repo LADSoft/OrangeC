@@ -53,7 +53,7 @@ class PEObject
     virtual ~PEObject() {}
     virtual void Setup(ObjInt& endVa, ObjInt& endPhys) = 0;
     virtual void Fill() {}
-    const std::string& GetName() { return name; }
+    const std::string& GetName() const { return name; }
     unsigned GetAddr() { return virtual_addr; }
     unsigned GetSize() { return size; }
     unsigned GetRawSize() { return initSize; }

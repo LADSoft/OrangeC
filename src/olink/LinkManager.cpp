@@ -527,7 +527,7 @@ void LinkManager::LoadLibraries()
         }
     }
 }
-bool LinkManager::LoadLibrarySymbol(LinkLibrary* lib, std::string& name)
+bool LinkManager::LoadLibrarySymbol(LinkLibrary* lib, const std::string& name)
 {
     bool found = false;
     ObjInt objNum = lib->GetSymbol(name);

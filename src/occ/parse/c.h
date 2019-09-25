@@ -580,7 +580,6 @@ typedef struct sym
     LINEDATA* linedata;
     enum e_sc storage_class; /* storage class */
     enum e_lk linkage;       /* cdecl, pascal, stdcall, inline */
-    enum e_lk linkage3;      /* noreturn */
     enum e_ac access;        /* c++ access rights for members */
     int operatorId;          /* operator id, CI + kw for an operator function */
     struct _imode_* imaddress;

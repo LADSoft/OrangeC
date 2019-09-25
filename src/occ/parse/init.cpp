@@ -229,7 +229,7 @@ void insertDynamicInitializer(SYMBOL* sym, INITIALIZER* init)
         DYNAMIC_INITIALIZER* di = (DYNAMIC_INITIALIZER*)Alloc(sizeof(DYNAMIC_INITIALIZER));
         di->sp = sym;
         di->init = init;
-        if (sym->linkage3 == lk_threadlocal)
+        if (sym->attribs.inheritable.linkage3 == lk_threadlocal)
         {
             di->next = TLSInitializers;
             TLSInitializers = di;
@@ -257,7 +257,7 @@ void insertDynamicDestructor(SYMBOL* sym, INITIALIZER* init)
         DYNAMIC_INITIALIZER* di = (DYNAMIC_INITIALIZER*)Alloc(sizeof(DYNAMIC_INITIALIZER));
         di->sp = sym;
         di->init = init;
-        if (sym->linkage3 == lk_threadlocal)
+        if (sym->attribs.inheritable.linkage3 == lk_threadlocal)
         {
             di->next = TLSDestructors;
             TLSDestructors = di;
@@ -658,7 +658,7 @@ int dumpInit(SYMBOL* sym, INITIALIZER* init)
         im = init->exp->v.c.i;
         i = (LLONG_TYPE)(f);
     }
-    else if (sym->linkage3 == lk_threadlocal)
+    else if (sym->attribs.inheritable.linkage3 == lk_threadlocal)
     {
         if (cparams.prm_cplusplus)
             insertTLSInitializer(sym, init);
@@ -995,7 +995,7 @@ static void dumpStaticInitializers(void)
                 sizep = &sconst;
                 alignp = &aconst;
             }
-            else if (sym->linkage3 == lk_threadlocal)
+            else if (sym->attribs.inheritable.linkage3 == lk_threadlocal)
             {
                 tseg();
                 sizep = &thread;
@@ -2570,7 +2570,7 @@ EXPRESSION* getThisNode(SYMBOL* sym)
             break;
 
         case sc_localstatic:
-            if (sym->linkage3 == lk_threadlocal)
+            if (sym->attribs.inheritable.linkage3 == lk_threadlocal)
                 exp = varNode(en_threadlocal, sym);
             else
                 exp = varNode(en_global, sym);
@@ -2581,7 +2581,7 @@ EXPRESSION* getThisNode(SYMBOL* sym)
         case sc_static:
         case sc_global:
         case sc_external:
-            if (sym->linkage3 == lk_threadlocal)
+            if (sym->attribs.inheritable.linkage3 == lk_threadlocal)
                 exp = varNode(en_threadlocal, sym);
             else
                 exp = varNode(en_global, sym);

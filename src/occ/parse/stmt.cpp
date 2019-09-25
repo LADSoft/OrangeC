@@ -1778,7 +1778,7 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     TYPE* returntype = nullptr;
     EXPRESSION* destexp = nullptr;
 
-    if (funcsp->linkage3 == lk_noreturn)
+    if (funcsp->attribs.inheritable.linkage3 == lk_noreturn)
         error(ERR_NORETURN);
     funcsp->retcount++;
 
@@ -2433,7 +2433,7 @@ static LEXEME* statement_expr(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     }
     else
     {
-        if (select->type == en_func && select->v.func->sp && select->v.func->sp->linkage3 == lk_noreturn)
+        if (select->type == en_func && select->v.func->sp && select->v.func->sp->attribs.inheritable.linkage3 == lk_noreturn)
         {
             parent->needlabel = true;
         }
@@ -3179,7 +3179,7 @@ LEXEME* compound(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
     if (first && !blockstmt->needlabel && !isvoid(basetype(funcsp->tp)->btp) && basetype(funcsp->tp)->btp->type != bt_auto &&
         !funcsp->isConstructor)
     {
-        if (funcsp->linkage3 == lk_noreturn)
+        if (funcsp->attribs.inheritable.linkage3 == lk_noreturn)
             error(ERR_NORETURN);
         else if (cparams.prm_c99 || cparams.prm_cplusplus)
         {

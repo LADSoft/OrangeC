@@ -5708,7 +5708,10 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                             else if (linkage2 != lk_none)
                                 error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
                         }
-                        sp->linkage3 = linkage3;
+                        if (sp->attribs.inheritable.linkage3 == lk_none)
+                            sp->attribs.inheritable.linkage3 = linkage3;
+                        else if (linkage3 != lk_none)
+                            error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
                         if (linkage2 == lk_import)
                         {
                             sp->importfile = importFile;
@@ -5744,7 +5747,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                         if (isvoid(tp1))
                             if (sp->storage_class != sc_parameter && sp->storage_class != sc_typedef)
                                 error(ERR_VOID_NOT_ALLOWED);
-                        if (sp->linkage3 == lk_threadlocal)
+                        if (sp->attribs.inheritable.linkage3 == lk_threadlocal)
                         {
                             if (isfunction(tp1))
                                 error(ERR_FUNC_NOT_THREAD_LOCAL);
@@ -6052,8 +6055,8 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                                 {
                                     errorsym(ERR_DECLARATION_DIFFERENT_QUALIFIERS, sp);
                                 }
-                                if (sp->linkage3 != spi->linkage3 &&
-                                    (sp->linkage3 == lk_threadlocal || spi->linkage3 == lk_threadlocal))
+                                if (sp->attribs.inheritable.linkage3 != spi->attribs.inheritable.linkage3 &&
+                                    (sp->attribs.inheritable.linkage3 == lk_threadlocal || spi->attribs.inheritable.linkage3 == lk_threadlocal))
                                     if (!spi->parentClass)
                                         errorsym(ERR_THREAD_LOCAL_MUST_ALWAYS_APPEAR, sp);
                                 if (strSym && storage_class == sc_static)

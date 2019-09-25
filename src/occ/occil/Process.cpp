@@ -1251,7 +1251,7 @@ void CreateFunction(MethodSignature* sig, SYMBOL* sp)
         flags |= Qualifiers::Public;
     if (!cparams.prm_compileonly || cparams.prm_asmfile)
     {
-        if (sp->linkage3 == lk_entrypoint)
+        if (sp->attribs.inheritable.linkage3 == lk_entrypoint)
         {
             if (hasEntryPoint)
             {
@@ -1264,7 +1264,7 @@ void CreateFunction(MethodSignature* sig, SYMBOL* sp)
             }
         }
     }
-    currentMethod = peLib->AllocateMethod(sig, flags, sp->linkage3 == lk_entrypoint);
+    currentMethod = peLib->AllocateMethod(sig, flags, sp->attribs.inheritable.linkage3 == lk_entrypoint);
     mainContainer->Add(currentMethod);
     if (!strcmp(sp->name, "main"))
         if (!theCurrentFunc->parentClass && !theCurrentFunc->parentNameSpace)

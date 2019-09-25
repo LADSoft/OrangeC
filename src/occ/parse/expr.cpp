@@ -763,7 +763,7 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                                 funcsp->isInline = funcsp->dumpInlineToFile = funcsp->promotedToInline = false;
                             }
                         }
-                        if (sym->linkage3 == lk_threadlocal)
+                        if (sym->attribs.inheritable.linkage3 == lk_threadlocal)
                         {
                             funcsp->nonConstVariableUsed = true;
                             *exp = varNode(en_threadlocal, sym);
@@ -801,7 +801,7 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                             GENREF(sym);
                         if (sym->parentClass && !isExpressionAccessible(nullptr, sym, funcsp, nullptr, false))
                             errorsym(ERR_CANNOT_ACCESS, sym);
-                        if (sym->linkage3 == lk_threadlocal)
+                        if (sym->attribs.inheritable.linkage3 == lk_threadlocal)
                             *exp = varNode(en_threadlocal, sym);
                         else
                             *exp = varNode(en_global, sym);

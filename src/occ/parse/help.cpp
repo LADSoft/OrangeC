@@ -1286,7 +1286,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, SYMBOL* funcsp, INITI
                 expsym = varNode(en_auto, sym);
                 break;
             case sc_localstatic:
-                if (sym->linkage3 == lk_threadlocal)
+                if (sym->attribs.inheritable.linkage3 == lk_threadlocal)
                 {
                     expsym = exprNode(en_add, thisptr, intNode(en_c_i, sym->offset));
                 }
@@ -1298,7 +1298,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, SYMBOL* funcsp, INITI
                 break;
             case sc_static:
             case sc_global:
-                if (sym->linkage3 == lk_threadlocal)
+                if (sym->attribs.inheritable.linkage3 == lk_threadlocal)
                 {
                     expsym = exprNode(en_add, thisptr, intNode(en_c_i, sym->offset));
                 }

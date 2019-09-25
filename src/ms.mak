@@ -47,11 +47,19 @@ LLIB_DEPENDENCIES := $(notdir $(filter-out $(addsuffix .obj,$(EXCLUDE)) $(MAIN_D
 
 
 CC=cl.exe
-CCFLAGS = /O2 /EHs /c /nologo
+ifneq "$(WITHDEBUG)" ""
+CCFLAGS =/Od /Zi /FS /EHs /c /nologo /MTd
+else
+CCFLAGS = /O2 /EHs /c /nologo /MT
+endif
 
 LINK=link.exe
-LFLAGS=/LTCG:incremental /nologo /NXCOMPAT /DYNAMICBASE /MACHINE:x86 /OPT:REF /SAFESEH  /OPT:ICF /TLBID:1
 
+ifneq "$(WITHDEBUG)" ""
+LFLAGS=/LTCG:incremental /nologo /NXCOMPAT /MACHINE:x86 /TLBID:1 /DEBUG
+else
+LFLAGS=/LTCG:incremental /nologo /NXCOMPAT /DYNAMICBASE /MACHINE:x86 /OPT:REF /SAFESEH  /OPT:ICF /TLBID:1
+endif
 LIBEXE=lib.exe
 LIBFLAGS=/MACHINE:x86 /LTCG /nologo
 LIB_EXT:=.lib

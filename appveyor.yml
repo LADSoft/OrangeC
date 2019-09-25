@@ -26,6 +26,7 @@ configuration:
      - MS WITH DEBUG
      - CLANG
      - MSIL COMPILER
+     - MS DEBUG BUILD
 
 for:
 -
@@ -64,6 +65,13 @@ for:
                 - configuration: MSIL COMPILER
       environment:
           BUILD_PROFILE: OCCIL
+-
+      matrix:
+            only:
+                - configuration: MS DEBUG BUILD
+      environment:
+          BUILD_PROFILE: MSDEBUGBUILD
+          WITHDEBUG: YES
 -
       matrix:
             only:
@@ -123,6 +131,16 @@ build_script:
                   path=$env:ORIGPATH
                   cd ..\tests
                   omake -B /Coccil /DCOMPILER=OCC
+                  if ($LastExitCode -ne 0)
+                  {
+                      throw "error"
+                  }
+                  cd ..\src
+              }
+              else if ($env:BUILD_PROFILE -eq "MSDEBUGBUILD")
+              {
+                  # Primary build for Orange C
+                  c:\orangec\temp\omake /DCOMPILER=MS /DWITHDEBUG=$env:WITHDEBUG fullbuild
                   if ($LastExitCode -ne 0)
                   {
                       throw "error"

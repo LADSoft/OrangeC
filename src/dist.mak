@@ -31,5 +31,10 @@ stubexe:
 #	$(RENSEG) $(DISTBIN)\$(DISTNAME).exe
 distcopy:
 	copy $(RELEASEPATH)\$(NAME).exe $(DISTBIN)\$(DISTNAME).exe
+ifeq "$(COMPILER)" "MS"
+ifneq "$(WITHDEBUG)" ""
+	copy $(RELEASEPATH)\$(NAME).pdb $(DISTBIN)\$(DISTNAME).pdb
+endif
+endif
 copyexe: distcopy stubexe
 

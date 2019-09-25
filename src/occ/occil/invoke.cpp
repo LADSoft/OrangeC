@@ -47,7 +47,7 @@ static char outputFileName[260];
 
 #ifdef MICROSOFT
 #    define system(x) winsystem(x)
-extern int winsystem(const char*);
+extern "C" int winsystem(char*);
 #endif
 static void InsertFile(LIST** r, const char* name, const char* ext)
 {

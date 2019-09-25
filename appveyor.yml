@@ -137,8 +137,10 @@ build_script:
                   }
                   cd ..\src
               }
-              else if ($env:BUILD_PROFILE -eq "MSDEBUGBUILD")
+              else
               {
+                if ($env:BUILD_PROFILE -eq "MSDEBUGBUILD")
+                {
                   # Primary build for Orange C
                   c:\orangec\temp\omake /DCOMPILER=MS /DWITHDEBUG=$env:WITHDEBUG fullbuild
                   if ($LastExitCode -ne 0)
@@ -146,9 +148,9 @@ build_script:
                       throw "error"
                   }
                   cd ..\src
-              }
-              else
-              {
+                }
+                else
+                {
                   # Primary build for Orange C
                   c:\orangec\temp\omake /DCOMPILER=$env:BUILD_PROFILE /DORANGEC_ONLY=YES fullbuild -j:4
                   if ($LastExitCode -ne 0)
@@ -188,6 +190,7 @@ build_script:
                       throw "error"
                   }
                   cd ..\src
+                }
               }
               omake /fzip7z.mak
               if ($LastExitCode -ne 0)

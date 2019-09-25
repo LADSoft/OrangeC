@@ -86,7 +86,7 @@ static char usage_text[] =
     "\nWarning Control:\n"
     " /w      - display no warnings         /wx or /werror - display warnings as errors\n"
     " /woxxx  - only display warning once   /wexxx         - display warning xxx as error\n"
-    " /wdxxx  - disable warning # xxx       /wxxx          - enable warning xxx\n"
+    " /wdxxx  - disable warning xxx         /wxxx          - enable warning xxx\n"
     "\nExecutable Mode:\n"
     "  /Wxy\n"
     "  x is executable type               y is library type\n"

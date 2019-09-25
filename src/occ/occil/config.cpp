@@ -64,10 +64,14 @@ static char usage_text[] =
     "+Q        - quiet mode                /T        - translate trigraphs\n"
     "/Vx.x.x.x - set assembly version      /!        - No logo\n"
     "--version - show version info\n"
-    "Codegen parameters: (/C[+][-][params])\n"
+    "\nCodegen parameters: (/C[+][-][params])\n"
     "  +d   - display diagnostics          -b        - no BSS\n"
     "  -l   - no C source in ASM file      -m        -  no leading underscores\n"
     "  +u   - 'char' type is unsigned\n"
+    "\nWarning Control:\n"
+    " /w      - display no warnings         /wx or /werror - display warnings as errors\n"
+    " /woxxx  - only display warning once   /wexxx         - display warning xxx as error\n"
+    " /wdxxx  - disable warning xxx         /wxxx          - enable warning xxx\n"
     "\nCommand line behavior has changed.  Use environment var OCC_LEGACY_OPTIONS for old behavior\n\n"
     "Time: " __TIME__ "  Date: " __DATE__;
 

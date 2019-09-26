@@ -19,20 +19,20 @@ branches:
      - /v\d*\.\d*\.\d*\.\d*/
 
 configuration:
-     - MINGW64
-     - MS
-     - MS WITH LSCRTL
-     - MS VIA ASSEMBLY
-     - MS WITH DEBUG
-     - CLANG
+     - MINGW64 THEN WITH STATIC LIB
+     - CLANG THEN WITH STATIC LIB
+     - MSVC THEN WITH STATIC LIB
+     - MSVC THEN WITH LSCRTL
+     - MSVC THEN VIA ASSEMBLY
+     - MSVC THEN WITH DEBUG
      - MSIL COMPILER
-     - MS DEBUG BUILD
+     - MS WITH PDB
 
 for:
 -
       matrix:
             only:
-                - configuration: MS
+                - configuration: MSVC THEN WITH STATIC LIB
       environment:
           BUILD_PROFILE: MS
       deploy:
@@ -50,7 +50,7 @@ for:
 -
       matrix:
             only:
-                - configuration: MINGW64
+                - configuration: MINGW64 THEN WITH STATIC LIB
       environment:
           BUILD_PROFILE: MINGW64
 -
@@ -58,7 +58,7 @@ for:
             only:
                 - configuration: CLANG
       environment:
-          BUILD_PROFILE: CLANG
+          BUILD_PROFILE: CLANG THEN WITH STATIC LIB
 -
       matrix:
             only:
@@ -68,28 +68,28 @@ for:
 -
       matrix:
             only:
-                - configuration: MS DEBUG BUILD
+                - configuration: MS WITH PDB
       environment:
           BUILD_PROFILE: MSDEBUGBUILD
           WITHDEBUG: YES
 -
       matrix:
             only:
-                - configuration: MS VIA ASSEMBLY
+                - configuration: MSVC THEN VIA ASSEMBLY
       environment:
           BUILD_PROFILE: MS
           VIAASSEMBLY: YES
 -
       matrix:
             only:
-                - configuration: MS WITH LSCRTL
+                - configuration: MSVC THEN WITH LSCRTL
       environment:
           BUILD_PROFILE: MS
           LSCRTL: YES
 -
       matrix:
             only:
-                - configuration: MS/PDB
+                - configuration: MSVC THEN WITH DEBUG
       environment:
           BUILD_PROFILE: MS
           WITHDEBUG: YES

@@ -89,7 +89,7 @@ for:
 -
       matrix:
             only:
-                - configuration: MS WITH DEBUG
+                - configuration: MS/PDB
       environment:
           BUILD_PROFILE: MS
           WITHDEBUG: YES

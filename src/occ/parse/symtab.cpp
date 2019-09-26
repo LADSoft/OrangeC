@@ -630,7 +630,9 @@ void baseinsert(SYMBOL* in, HASHTABLE* table)
 #endif
     {
 #if defined(PARSER_ONLY)
-        pperrorstr(ERR_DUPLICATE_IDENTIFIER, in->name);
+        SYMBOL* sym = search(in->name, table);
+        if (!sym || !sym->wasUsing || !in->wasUsing)
+            preverrorsym(ERR_DUPLICATE_IDENTIFIER, in, in->declfile, in->declline);
 #else
         if (!structLevel || !templateNestingCount)
         {

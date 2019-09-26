@@ -923,7 +923,7 @@ void ccinit(int argc, char* argv[])
         LIST* t = clist;
         while (t)
         {
-            t->data = litlate(Utils::FullQualify((char*)t->data));
+            t->data = strdup(Utils::FullQualify((char*)t->data));
             t = t->next;
         }
     }

@@ -38,7 +38,7 @@
 class namelt
 {
   public:
-    bool operator()(const ObjExportSymbol* left, const ObjExportSymbol* right) { return left->GetName() < right->GetName(); }
+    bool operator()(const ObjExportSymbol* left, const ObjExportSymbol* right) const { return left->GetName() < right->GetName(); }
 };
 void PEExportObject::Setup(ObjInt& endVa, ObjInt& endPhys)
 {

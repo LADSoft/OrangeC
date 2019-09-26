@@ -88,14 +88,14 @@ class LinkMap
     LinkManager* manager;
     struct linkltcomparebyname
     {
-        bool operator()(const MapSymbolData& left, const MapSymbolData& right)
+        bool operator() (const MapSymbolData& left, const MapSymbolData& right) const
         {
             return left.sym->GetSymbol()->GetName() < right.sym->GetSymbol()->GetName();
         }
     };
     struct linkltcomparebyvalue
     {
-        bool operator()(const MapSymbolData& left, const MapSymbolData& right) { return left.abs < right.abs; }
+        bool operator()(const MapSymbolData& left, const MapSymbolData& right) const { return left.abs < right.abs; }
     };
     std::vector<LinkOverlay*> overlays;
 };

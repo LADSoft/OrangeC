@@ -6158,6 +6158,7 @@ LEXEME* expression_cast(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRE
                     }
                     else
                     {
+                        LEXEME *lastSym = lex;
                         lex = expression_cast(lex, funcsp, nullptr, &throwaway, exp, ismutable, flags);
                         if ((*exp)->type == en_pc || ((*exp)->type == en_func && !(*exp)->v.func->ascall))
                             thunkForImportTable(exp);
@@ -6201,6 +6202,11 @@ LEXEME* expression_cast(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRE
                             {
                                 cast(*tp, exp);
                             }
+                        }
+                        else
+                        {
+                            prevsym(lastSym);
+                            error(ERR_EXPRESSION_SYNTAX);
                         }
                     }
                 }

@@ -56,9 +56,9 @@ for:
 -
       matrix:
             only:
-                - configuration: CLANG
+                - configuration: CLANG THEN WITH STATIC LIB
       environment:
-          BUILD_PROFILE: CLANG THEN WITH STATIC LIB
+          BUILD_PROFILE: CLANG
 -
       matrix:
             only:
@@ -177,7 +177,14 @@ build_script:
                   copy omake\omake.exe \orangec\temp
                   c:\orangec\temp\omake /DCOMPILER=OCC clean -j:4
                   # in this last one we add in OCCIL so it will be in the install packages...
-                  c:\orangec\temp\omake /DNOMAKEDIR /DCOMPILER=OCC /DVIAASSEMBLY=$env:VIAASEMBLY /DLSCRTL=$env:LSCRTL /DWITHDEBUG=$env:WITHDEBUG /DWITHMSDOS fullbuild -j:4
+                  if ($env:WITHDEBUG -eq "")
+                  {
+                      c:\orangec\temp\omake /DNOMAKEDIR /DCOMPILER=OCC /DVIAASSEMBLY=$env:VIAASEMBLY /DLSCRTL=$env:LSCRTL /DWITHDEBUG=$env:WITHDEBUG /DWITHMSDOS fullbuild -j:4
+                  }
+                  else
+                  {
+                      c:\orangec\temp\omake /DNOMAKEDIR /DCOMPILER=OCC /DVIAASSEMBLY=$env:VIAASEMBLY /DLSCRTL=$env:LSCRTL /DWITHDEBUG=$env:WITHDEBUG fullbuild -j:4
+                  }
                   if ($LastExitCode -ne 0)
                   {
                       throw "error"

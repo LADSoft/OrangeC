@@ -1636,7 +1636,7 @@ static void LookupSingleAggregate(TYPE* tp, EXPRESSION** exp)
 }
 static LEXEME* expression_bracket(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, int flags)
 {
-    TYPE* tp2;
+    TYPE* tp2 = nullptr;
     EXPRESSION* expr2 = nullptr;
     lex = getsym();
     if (cparams.prm_cplusplus && MATCHKW(lex, begin))
@@ -1862,6 +1862,10 @@ void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp)
                         if (decl->attribs.inheritable.zstring)
                         {
                             EXPRESSION* exp = list->exp;
+                            if (!exp)
+                            {
+                                exp = list->exp = intNode(en_c_i, 0);
+                            }
                             if (lvalue(exp))
                                 exp = exp->left;
                             switch (exp->type)
@@ -3179,6 +3183,11 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
     while (*lptr)  // take care of elliptical arguments and arguments without a prototype
     {
         INITLIST* p = *lptr;
+        if (!p->tp || !p->exp)
+        {
+            p->tp = &stdint;
+            p->exp = intNode(en_c_i, 0);
+        }
         if (func->msil && p->exp->type == en_labcon && p->exp->string)
         {
             p->exp->type = en_c_string;
@@ -5797,6 +5806,11 @@ LEXEME* expression_unary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPR
         case minus:
             lex = getsym();
             lex = expression_cast(lex, funcsp, atp, tp, exp, nullptr, flags);
+            if (!*tp)
+            {
+                error(ERR_EXPRESSION_SYNTAX);
+                *tp = &stdint;
+            }
             LookupSingleAggregate(*tp, exp);
             if (*tp)
             {
@@ -5840,6 +5854,11 @@ LEXEME* expression_unary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPR
         case notx:
             lex = getsym();
             lex = expression_cast(lex, funcsp, atp, tp, exp, nullptr, flags);
+            if (!*tp)
+            {
+                error(ERR_EXPRESSION_SYNTAX);
+                *tp = &stdint;
+            }
             LookupSingleAggregate(*tp, exp);
             if (*tp)
             {
@@ -5884,6 +5903,11 @@ LEXEME* expression_unary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPR
         case complx:
             lex = getsym();
             lex = expression_cast(lex, funcsp, atp, tp, exp, nullptr, flags);
+            if (!*tp)
+            {
+                error(ERR_EXPRESSION_SYNTAX);
+                *tp = &stdint;
+            }
             LookupSingleAggregate(*tp, exp);
             if (*tp)
             {
@@ -6043,7 +6067,7 @@ LEXEME* expression_unary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPR
 }
 LEXEME* expression_cast(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, bool* ismutable, int flags)
 {
-    TYPE* throwaway;
+    TYPE* throwaway = nullptr;
     if (MATCHKW(lex, openpa))
     {
         LEXEME* start = lex;
@@ -6160,12 +6184,12 @@ LEXEME* expression_cast(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRE
                     {
                         LEXEME *lastSym = lex;
                         lex = expression_cast(lex, funcsp, nullptr, &throwaway, exp, ismutable, flags);
-                        if ((*exp)->type == en_pc || ((*exp)->type == en_func && !(*exp)->v.func->ascall))
-                            thunkForImportTable(exp);
                         //                if ((*exp)->type == en_func)
                         //                    *exp = (*exp)->v.func->fcall;
                         if (throwaway)
                         {
+                            if ((*exp)->type == en_pc || ((*exp)->type == en_func && !(*exp)->v.func->ascall))
+                                thunkForImportTable(exp);
                             if (basetype(*tp)->type == bt___string)
                             {
                                 if ((*exp)->type == en_labcon && (*exp)->string)
@@ -6205,6 +6229,8 @@ LEXEME* expression_cast(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRE
                         }
                         else
                         {
+                            *exp = intNode(en_c_i, 0);
+                            *tp = &stdint;
                             prevsym(lastSym);
                             error(ERR_EXPRESSION_SYNTAX);
                         }
@@ -7816,7 +7842,7 @@ LEXEME* expression_assign(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
                             if (cparams.prm_cplusplus && !isconst(basetype(*tp)->btp) && basetype(tp1)->stringconst)
                                 error(ERR_INVALID_CHARACTER_STRING_CONVERSION);
 
-                            while (tp1->type == bt_any)
+                            while (tp1->type == bt_any && tp1->btp)
                                 tp1 = tp1->btp;
                             if (!ispointer(basetype(tp1)))
                                 goto end;

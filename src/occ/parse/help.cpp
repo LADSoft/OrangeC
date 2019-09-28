@@ -125,7 +125,7 @@ bool startOfType(LEXEME* lex, bool assumeType)
             prevsym(placeholder);
         linesHead = oldHead;
         linesTail = oldTail;
-        return (!sym && isdecltype) || (sym && istype(sym)) ||
+        return (!sym && isdecltype) || (sym && sym->tp && istype(sym)) ||
                (assumeType && strSym && (strSym->tp->type == bt_templateselector || strSym->tp->type == bt_templatedecltype));
     }
     else

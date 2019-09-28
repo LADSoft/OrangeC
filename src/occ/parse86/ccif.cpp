@@ -245,7 +245,7 @@ static void DumpStructs(void)
     while (item)
     {
         SYMBOL* sym = (SYMBOL*)item->data;
-        if (sym->storage_class != sc_label && istype(sym) && isstructured(sym->tp) && (!sym->tp->btp || sym->tp->btp->type != bt_typedef))  // DAL fix
+        if (sym->storage_class != sc_label && sym->tp && istype(sym) && isstructured(sym->tp) && (!sym->tp->btp || sym->tp->btp->type != bt_typedef))  // DAL fix
         {
             sqlite3_int64 struct_id;
             if (ccWriteStructName(sym->decoratedName, &struct_id))
@@ -257,7 +257,7 @@ static void DumpStructs(void)
     while (item)
     {
         SYMBOL* sym = (SYMBOL*)item->data;
-        if (sym->storage_class != sc_label && istype(sym) && isstructured(sym->tp) && sym->storage_class != sc_typedef &&
+        if (sym->storage_class != sc_label && sym->tp && istype(sym) && isstructured(sym->tp) && sym->storage_class != sc_typedef &&
             sym->tp->syms)
         {
             sqlite3_int64 struct_id = basetype(sym->tp)->sp->ccStructId, file_id;
@@ -338,7 +338,7 @@ static void DumpNamespace(SYMBOL* sym)
 static void DumpSymbol(SYMBOL* sym)
 {
     DumpSymbolType(sym);
-    if (sym->storage_class != sc_label && (!istype(sym) || sym->storage_class == sc_typedef) &&
+    if (sym->storage_class != sc_label && sym->tp && (!istype(sym) || sym->storage_class == sc_typedef) &&
         sym->storage_class != sc_overloads && sym->tp->type != bt_any)
     {
         SYMBOL* declsym;

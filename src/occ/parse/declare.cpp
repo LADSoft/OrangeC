@@ -3080,6 +3080,7 @@ static LEXEME* getArrayType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, enum e_sc st
         lex = getPointerQualifiers(lex, quals, true);
         if (!tpc)
         {
+            tpc = &stdint;
             error(ERR_EXPRESSION_SYNTAX);
         }
         if (*quals && !cparams.prm_c99)
@@ -4884,6 +4885,8 @@ static EXPRESSION* vlaSetSizes(EXPRESSION*** rptr, EXPRESSION* vlanode, TYPE* bt
     {
         mul = vlaSetSizes(rptr, vlanode, btp->btp, sp, index, vlaindex, sou);
         mul1 = (EXPRESSION*)Alloc(sizeof(EXPRESSION));
+        if (!btp->esize)
+            btp->esize = intNode(en_c_i, 1);
         *mul1 = *btp->esize;
         mul = mul1 = exprNode(en_arraymul, mul, mul1);
         btp->sp = sp;

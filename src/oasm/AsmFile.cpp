@@ -71,16 +71,30 @@ bool AsmFile::Read()
             }
             else if (GetKeyword() == kw::begin || parser->MatchesOpcode(GetToken()->GetChars()))
             {
-                NoAbsolute();
-                NeedSection();
-                inInstruction = true;
-                int lineno = preProcessor.GetMainLineNo();
-                Instruction* ins = parser->Parse(lexer.GetRestOfLine(), currentSection->GetPC());
-                if (lineno >= 0)
-                    listing.Add(ins, lineno, preProcessor.InMacro());
-                NextToken();
-                currentSection->InsertInstruction(ins);
-                thisLabel = nullptr;
+                std::string eol = lexer.GetRestOfLine(false);
+                int npos = eol.find_first_not_of(" \r\n\v\t");
+                if (npos != std::string::npos && eol[npos] == ':')
+                {
+                    // treat as label
+                    int lineno = preProcessor.GetMainLineNo();
+                    std::string name = GetToken()->GetChars();
+                    NextToken();
+                    DoLabel(name, lineno);
+                }
+                else
+                {
+                    // assume instruction
+                    NoAbsolute();
+                    NeedSection();
+                    inInstruction = true;
+                    int lineno = preProcessor.GetMainLineNo();
+                    Instruction* ins = parser->Parse(lexer.GetRestOfLine(), currentSection->GetPC());
+                    if (lineno >= 0)
+                        listing.Add(ins, lineno, preProcessor.InMacro());
+                    NextToken();
+                    currentSection->InsertInstruction(ins);
+                    thisLabel = nullptr;
+                }
             }
             else
             {

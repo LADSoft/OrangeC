@@ -134,21 +134,28 @@ void Lexer::InitTokenizer()
     tokenizer = new Tokenizer("", &hash);
     tokenizer->SetCaseInsensitive(true);
 }
-std::string Lexer::GetRestOfLine()
+std::string Lexer::GetRestOfLine(bool reset)
 {
     std::string rv;
-    if (token)
-        rv = token->GetChars();
-    rv += tokenizer->GetString();
-    int npos = rv.find_first_of(";"); // for GAS, semicolon is a statement seperator, in intel syntax these will have been elided as comments...
-    if (npos == std::string::npos)
+    if (reset)
     {
-        tokenizer->Reset("");
+        if (token)
+            rv = token->GetChars();
+        rv += tokenizer->GetString();
+        int npos = rv.find_first_of(";"); // for GAS, semicolon is a statement seperator, in intel syntax these will have been elided as comments...
+        if (npos == std::string::npos)
+        { 
+            tokenizer->Reset("");
+        }
+        else
+        {
+            tokenizer->Reset(rv.substr(npos+1));
+            rv = rv.substr(0, npos);
+        }
     }
     else
     {
-        tokenizer->Reset(rv.substr(npos+1));
-        rv = rv.substr(0, npos);
+         rv = tokenizer->GetString();
     }
     return rv;
 }

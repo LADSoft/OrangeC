@@ -133,7 +133,7 @@ class Lexer
     ~Lexer() {}
 
     void SetAsmFile(AsmFile* th) { asmFile = th; }
-    std::string GetRestOfLine();
+    std::string GetRestOfLine(bool reset=true);
     const Token* GetToken() { return token; }
     void NextToken();
     void Reset(const std::string& line)

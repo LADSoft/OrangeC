@@ -565,5 +565,9 @@ int main(int argc, char* argv[])
         if (chosenAssembler->rundown)
             chosenAssembler->rundown();
     }
+#ifdef PARSER_ONLY
+// to make testing of error cases possible
+    rv = 0;
+#endif
     return rv;
 }

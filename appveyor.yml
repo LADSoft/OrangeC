@@ -71,7 +71,7 @@ for:
                 - configuration: MS WITH PDB
       environment:
           BUILD_PROFILE: MSDEBUGBUILD
-          WITHDEBUG: YES
+          MSPDB: YES
 -
       matrix:
             only:
@@ -142,7 +142,7 @@ build_script:
                 if ($env:BUILD_PROFILE -eq "MSDEBUGBUILD")
                 {
                   # Primary build for Orange C
-                  c:\orangec\temp\omake /DCOMPILER=MS /DWITHDEBUG=$env:WITHDEBUG fullbuild
+                  c:\orangec\temp\omake /DCOMPILER=MS /DMSPDB=$env:MSPDB fullbuild
                   if ($LastExitCode -ne 0)
                   {
                       throw "error"

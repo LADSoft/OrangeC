@@ -854,7 +854,11 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
         extern void Cleanup();
         Cleanup();
         error(ERR_TOO_MANY_ERRORS);
+#ifdef PARSER_ONLY
+	exit(0);
+#else
         exit(1);
+#endif
     }
 
     return true;

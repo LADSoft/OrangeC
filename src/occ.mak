@@ -40,7 +40,12 @@ endif
 LLIB_DEPENDENCIES = $(notdir $(filter-out $(addsuffix .o,$(EXCLUDE)) $(MAIN_DEPENDENCIES), $(CPP_deps) $(C_deps) $(ASM_deps) $(TASM_deps)))
 
 
+ifneq "$(OCCPR)" ""
+CC=$(COMPILER_PATH)\bin\occpr /z$(ORANGEC)\include
+else
 CC=$(COMPILER_PATH)\bin\occ
+endif
+
 ifneq "$(WITHDEBUG)" ""
 DEBUGFLAG := /v
 endif
@@ -50,6 +55,7 @@ CCFLAGS = /c /E- /! $(DEBUGFLAG)
 else
 CCFLAGS = /S /E- /!
 endif
+
 LINK=$(COMPILER_PATH)\bin\olink
 LFLAGS=-c -mx /L$(_LIBDIR) /! $(DEBUGFLAG)
 
@@ -104,6 +110,16 @@ vpath %.o $(_OUTPUTDIR)
 vpath %.l $(_LIBDIR)
 vpath %.res $(_OUTPUTDIR)
 
+ifneq "$(OCCPR)" ""
+%.o: %.cpp
+	$(CC) $(CXXFLAGS) -o$(_OUTPUTDIR)/temp.ods $^
+	echo "" > $(_OUTPUTDIR)/$@
+
+%.o: %.c
+	$(CC) $(CFLAGS) -o$(_OUTPUTDIR)/temp.ods $^
+	echo "" > $(_OUTPUTDIR)/$@
+
+else
 ifeq "$(VIAASSEMBLY)" ""
 %.o: %.cpp
 	$(CC) $(CXXFLAGS) -o$(_OUTPUTDIR)/$@ $^
@@ -116,8 +132,9 @@ else
 	$(CC) $(CXXFLAGS) -o$(_OUTPUTDIR)/$*.asm $^
 	$(ASM) $(ASMFLAGS) -o$(_OUTPUTDIR)/$@ $(_OUTPUTDIR)/$*.asm
 %.o: %.c
-	$(CC) /9 $(CFLAGS) -o$(_OUTPUTDIR)/$*.asm $^
+	$(CC) $(CFLAGS) -o$(_OUTPUTDIR)/$*.asm $^
 	$(ASM) $(ASMFLAGS) -o$(_OUTPUTDIR)/$@ $(_OUTPUTDIR)/$*.asm
+endif
 endif
 
 %.o: %.asm
@@ -128,15 +145,23 @@ endif
 
 $(_LIBDIR)\$(NAME)$(LIB_EXT): $(LLIB_DEPENDENCIES)
 #	-del $(_LIBDIR)\$(NAME)$(LIB_EXT) >> $(NULLDEV)
+ifeq "$(OCCPR)" ""
 	$(LIB) $(LIBFLAGS) $(_LIBDIR)\$(NAME)$(LIB_EXT) $(addprefix +-$(_OUTPUTDIR)\,$(LLIB_DEPENDENCIES))
+else
+	echo "" > $(_LIBDIR)\$(NAME)$(LIB_EXT)
+endif
 
 $(NAME).exe: $(MAIN_DEPENDENCIES) $(LIB_DEPENDENCIES) $(_LIBDIR)\$(NAME)$(LIB_EXT) $(RES_deps)
+ifeq "$(OCCPR)" ""
 	$(LINK) /o$(NAME).exe $(TYPE) $(LFLAGS) $(STARTUP) $(addprefix $(_OUTPUTDIR)\,$(MAIN_DEPENDENCIES)) $(_LIBDIR)\$(NAME)$(LIB_EXT) $(LIB_DEPENDENCIES) $(COMPLIB) $(DEF_DEPENDENCIES) $(addprefix $(_OUTPUTDIR)\,$(RES_deps))
+endif
 
+ifeq "$(OCCPR)" ""
 %.exe: %.c
 	$(CC) -! -o$@ $^
 
 %.exe: %.cpp
 	$(CC) -! -o$@ $^
+endif
 
 endif

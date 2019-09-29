@@ -48,7 +48,7 @@ DLLOBJS = $(shell dir $(B) $(DLLOBJECT)\\*.o)
 
 .\lscrtl.dll: .\lscrtl.o .\c0dll.o $(RCFILE).res
 	-del $@
-	$(LINK) $(LINKFLAGS) /T:DLL32 -o.\lscrtl .\lscrtl.o .\c0dll.o $(CLIBOBJECT)\srproc.o $(foreach dir, $(filter-out c0.o c0lsstartup.o, $(DLLOBJS)), $(DLLOBJECT)\$(dir)) $(SYSOBJECT)\climp.l $(RCFILE).res
+	$(LINK) $(LINKFLAGS) /mx /T:DLL32 -o.\lscrtl .\lscrtl.o .\c0dll.o $(CLIBOBJECT)\srproc.o $(foreach dir, $(filter-out c0.o c0lsstartup.o, $(DLLOBJS)), $(DLLOBJECT)\$(dir)) $(SYSOBJECT)\climp.l $(RCFILE).res
 	move lscrtl.dll $(LSCRTLOBJECT)
 	olib lscrtl.l + $(DLLOBJECT)\shlguid.o + $(DLLOBJECT)\xmluuid.o
 	move lscrtl.l $(LSCRTLOBJECT)

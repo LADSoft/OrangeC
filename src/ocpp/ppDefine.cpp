@@ -1163,11 +1163,11 @@ int ppDefine::Process(std::string& line, bool leavePlaceholder)
     int p, last = 0;
     for (p = 0; p < line.size(); p++)
     {
-        if (line[p] == REPLACED_TOKENIZING || !leavePlaceholder && line[p] == MACRO_PLACEHOLDER || line[p] == REPLACED_ALREADY)
+        if (line[p] == REPLACED_TOKENIZING || (!leavePlaceholder && line[p] == MACRO_PLACEHOLDER) || line[p] == REPLACED_ALREADY)
         {
             if (p != last)
                 rv += line.substr(last, p - last);
-            while (line[p] == REPLACED_TOKENIZING || !leavePlaceholder&& line[p] == MACRO_PLACEHOLDER || line[p] == REPLACED_ALREADY)
+            while (line[p] == REPLACED_TOKENIZING || (!leavePlaceholder&& line[p] == MACRO_PLACEHOLDER) || line[p] == REPLACED_ALREADY)
                 p++;
             last = p;
         }

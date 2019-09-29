@@ -110,7 +110,7 @@ class FPF
         type = n.type;
         sign = n.sign;
     }
-    virtual ~FPF() {}
+    ~FPF() {}
     void SetZero(int sign);
     void Negate() { sign = !sign; }
     void SetInfinity(int sign);

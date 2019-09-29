@@ -1268,20 +1268,26 @@ static LEXEME* declstruct(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, bool inTemplat
     {
         // primarily for the type_info definition when building LSCRTL.DLL
         if (linkage1 != lk_none && linkage1 != sp->linkage)
+        {
             if (sp->linkage != lk_none)
                 error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
             else
                 sp->linkage = linkage1;
+        }
         if (linkage2 != lk_none && linkage2 != sp->attribs.inheritable.linkage2)
+        {
             if (sp->attribs.inheritable.linkage2 != lk_none)
                 error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
             else
                 sp->attribs.inheritable.linkage2 = linkage2;
+        }
         if (linkage3 != lk_none && linkage3 != sp->attribs.inheritable.linkage3)
+        {
             if (sp->attribs.inheritable.linkage3 != lk_none)
                 error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
             else
                 sp->attribs.inheritable.linkage3 = linkage3;
+        }
         if (type != sp->tp->type && (type == bt_union || sp->tp->type == bt_union))
         {
             errorsym(ERR_MISMATCHED_STRUCTURED_TYPE_IN_REDEFINITION, sp);

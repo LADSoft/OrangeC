@@ -1264,86 +1264,105 @@ static LEXEME* declstruct(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, bool inTemplat
 
         insert(sp, cparams.prm_cplusplus && !sp->parentClass ? globalNameSpace->valueData->tags : table);
     }
-    else if (type != sp->tp->type && (type == bt_union || sp->tp->type == bt_union))
+    else 
     {
-        errorsym(ERR_MISMATCHED_STRUCTURED_TYPE_IN_REDEFINITION, sp);
-    }
-    else if (inTemplate && templateNestingCount)
-    {
-
-        // definition or declaration
-        if (!sp->templateLevel)
+        // primarily for the type_info definition when building LSCRTL.DLL
+        if (linkage1 != lk_none && linkage1 != sp->linkage)
+            if (sp->linkage != lk_none)
+                error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
+            else
+                sp->linkage = linkage1;
+        if (linkage2 != lk_none && linkage2 != sp->attribs.inheritable.linkage2)
+            if (sp->attribs.inheritable.linkage2 != lk_none)
+                error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
+            else
+                sp->attribs.inheritable.linkage2 = linkage2;
+        if (linkage3 != lk_none && linkage3 != sp->attribs.inheritable.linkage3)
+            if (sp->attribs.inheritable.linkage3 != lk_none)
+                error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
+            else
+                sp->attribs.inheritable.linkage3 = linkage3;
+        if (type != sp->tp->type && (type == bt_union || sp->tp->type == bt_union))
         {
-            if (!sp->parentClass || !sp->parentClass->templateLevel)
-                errorsym(ERR_NOT_A_TEMPLATE, sp);
-            SetLinkerNames(sp, lk_cdecl);
+            errorsym(ERR_MISMATCHED_STRUCTURED_TYPE_IN_REDEFINITION, sp);
         }
-        else
+        else if (inTemplate && templateNestingCount)
         {
-            if (inTemplate && KW(lex) == lt)
+    
+            // definition or declaration
+            if (!sp->templateLevel)
             {
-                TEMPLATEPARAMLIST* origParams = sp->templateParams;
-                TEMPLATEPARAMLIST* templateParams = TemplateGetParams(sp);
-                inTemplateSpecialization++;
-                parsingSpecializationDeclaration = true;
-                lex = GetTemplateArguments(lex, funcsp, nullptr, &templateParams->p->bySpecialization.types);
-                parsingSpecializationDeclaration = false;
-                inTemplateSpecialization--;
-                sp = LookupSpecialization(sp, templateParams);
-                if (linkage2 != lk_none)
-                    sp->attribs.inheritable.linkage2 = linkage2;
-                sp->templateParams =
-                    TemplateMatching(lex, origParams, templateParams, sp, MATCHKW(lex, begin) || MATCHKW(lex, colon));
+                if (!sp->parentClass || !sp->parentClass->templateLevel)
+                    errorsym(ERR_NOT_A_TEMPLATE, sp);
+                SetLinkerNames(sp, lk_cdecl);
             }
             else
             {
-                SYMLIST* instants;
-                TEMPLATEPARAMLIST* templateParams = TemplateGetParams(sp);
-                sp->templateParams =
-                    TemplateMatching(lex, sp->templateParams, templateParams, sp, MATCHKW(lex, begin) || MATCHKW(lex, colon));
-                instants = sp->parentTemplate->instantiations;
-                while (instants)
+                if (inTemplate && KW(lex) == lt)
                 {
-                    SYMBOL* instant = instants->p;
-                    TEMPLATEPARAMLIST* tpln = instant->templateParams->next;
-                    TEMPLATEPARAMLIST* tpl = templateParams->next;
-                    while (tpl && tpln)
+                    TEMPLATEPARAMLIST* origParams = sp->templateParams;
+                    TEMPLATEPARAMLIST* templateParams = TemplateGetParams(sp);
+                    inTemplateSpecialization++;
+                    parsingSpecializationDeclaration = true;
+                    lex = GetTemplateArguments(lex, funcsp, nullptr, &templateParams->p->bySpecialization.types);
+                    parsingSpecializationDeclaration = false;
+                    inTemplateSpecialization--;
+                    sp = LookupSpecialization(sp, templateParams);
+                    if (linkage2 != lk_none)
+                        sp->attribs.inheritable.linkage2 = linkage2;
+                    sp->templateParams =
+                        TemplateMatching(lex, origParams, templateParams, sp, MATCHKW(lex, begin) || MATCHKW(lex, colon));
+                }
+                else
+                {
+                    SYMLIST* instants;
+                    TEMPLATEPARAMLIST* templateParams = TemplateGetParams(sp);
+                    sp->templateParams =
+                        TemplateMatching(lex, sp->templateParams, templateParams, sp, MATCHKW(lex, begin) || MATCHKW(lex, colon));
+                    instants = sp->parentTemplate->instantiations;
+                    while (instants)
                     {
-                        tpln->argsym->name = tpl->argsym->name;
-                        tpln = tpln->next;
-                        tpl = tpl->next;
+                        SYMBOL* instant = instants->p;
+                        TEMPLATEPARAMLIST* tpln = instant->templateParams->next;
+                        TEMPLATEPARAMLIST* tpl = templateParams->next;
+                        while (tpl && tpln)
+                        {
+                            tpln->argsym->name = tpl->argsym->name;
+                            tpln = tpln->next;
+                            tpl = tpl->next;
+                        }
+                        instants = instants->next;
                     }
-                    instants = instants->next;
+                }
+                SetLinkerNames(sp, lk_cdecl);
+            }
+        }
+        else if (MATCHKW(lex, lt))
+        {
+            if (inTemplate)
+            {
+                // instantiation
+                TEMPLATEPARAMLIST* templateParams = TemplateGetParams(sp);
+                lex = GetTemplateArguments(lex, funcsp, nullptr, &templateParams->p->bySpecialization.types);
+            }
+            else if (sp->templateLevel)
+            {
+                if ((MATCHKW(lex, begin) || MATCHKW(lex, colon)))
+                {
+                    errorsym(ERR_IS_ALREADY_DEFINED_AS_A_TEMPLATE, sp);
+                }
+                else
+                {
+                    TEMPLATEPARAMLIST* lst = nullptr;
+                    lex = GetTemplateArguments(lex, funcsp, nullptr, &lst);
+                    sp = GetClassTemplate(sp, lst, false);
                 }
             }
-            SetLinkerNames(sp, lk_cdecl);
         }
-    }
-    else if (MATCHKW(lex, lt))
-    {
-        if (inTemplate)
+        else if (sp->templateLevel && (MATCHKW(lex, begin) || MATCHKW(lex, colon)))
         {
-            // instantiation
-            TEMPLATEPARAMLIST* templateParams = TemplateGetParams(sp);
-            lex = GetTemplateArguments(lex, funcsp, nullptr, &templateParams->p->bySpecialization.types);
+            errorsym(ERR_IS_ALREADY_DEFINED_AS_A_TEMPLATE, sp);
         }
-        else if (sp->templateLevel)
-        {
-            if ((MATCHKW(lex, begin) || MATCHKW(lex, colon)))
-            {
-                errorsym(ERR_IS_ALREADY_DEFINED_AS_A_TEMPLATE, sp);
-            }
-            else
-            {
-                TEMPLATEPARAMLIST* lst = nullptr;
-                lex = GetTemplateArguments(lex, funcsp, nullptr, &lst);
-                sp = GetClassTemplate(sp, lst, false);
-            }
-        }
-    }
-    else if (sp->templateLevel && (MATCHKW(lex, begin) || MATCHKW(lex, colon)))
-    {
-        errorsym(ERR_IS_ALREADY_DEFINED_AS_A_TEMPLATE, sp);
     }
     if (sp)
     {

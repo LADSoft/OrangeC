@@ -206,6 +206,12 @@ static void RTTIDumpHeader(SYMBOL* xtSym, TYPE* tp, int flags)
                 sym = (SYMBOL*)basetype(sym->tp)->syms->table[0]->p;
             }
             GENREF(sym);
+            if (sym->attribs.inheritable.linkage2 == lk_import)
+            {
+                EXPRESSION *exp = varNode(en_pc, sym);
+                thunkForImportTable(&exp);
+                sym = exp->v.sp;
+            }
         }
     }
 
@@ -374,7 +380,7 @@ SYMBOL* RTTIDumpType(TYPE* tp)
             xtSym->decoratedName = xtSym->errname = xtSym->name;
             xtSym->xtEntry = true;
             insert(xtSym, rttiSyms);
-            if (isstructured(tp) && basetype(tp)->sp->dontinstantiate)
+            if (isstructured(tp) && basetype(tp)->sp->dontinstantiate && basetype(tp)->sp->attribs.inheritable.linkage2 != lk_import)
             {
                 InsertExtern(xtSym);
                 GENREF(xtSym);

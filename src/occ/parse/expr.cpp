@@ -7459,6 +7459,10 @@ LEXEME* expression_throw(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** ex
             arg3->tp = &stdint;
             arg4->exp = cons ? varNode(en_pc, cons) : intNode(en_c_i, 0);
             arg4->tp = &stdpointer;
+            if (cons && cons->attribs.inheritable.linkage2 == lk_import)
+            {
+               arg4->exp = exprNode(en_l_p, arg4->exp, nullptr);   
+            }
             arg5->exp = rtti ? varNode(en_global, rtti) : intNode(en_c_i, 0);
             arg5->tp = &stdpointer;
             params->arguments = arg1;

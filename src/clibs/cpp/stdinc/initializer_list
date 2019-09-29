@@ -7,7 +7,7 @@ namespace __STD_NS__
 { 
 
     template<class _TYPE> 
-    _RTL_CLASS class initializer_list 
+    class _RTL_CLASS initializer_list 
     { 
     public: 
         typedef _TYPE value_type; 
@@ -17,21 +17,21 @@ namespace __STD_NS__
         typedef const _TYPE* iterator; 
         typedef const _TYPE* const_iterator;
     
-        _RTL_FUNC initializer_list() __NOTHROW : _M_start(0), _M_end(0) { }
-        _RTL_FUNC size_t size() const __NOTHROW { return _M_end - _M_start; }
-        _RTL_FUNC const _TYPE* begin() const __NOTHROW { return _M_start; } 
-        _RTL_FUNC const _TYPE* end() const __NOTHROW { return _M_end; }
+        initializer_list() __NOTHROW : _M_start(0), _M_end(0) { }
+        size_t size() const __NOTHROW { return _M_end - _M_start; }
+        const _TYPE* begin() const __NOTHROW { return _M_start; } 
+        const _TYPE* end() const __NOTHROW { return _M_end; }
 
     private:
-        _RTL_FUNC const _TYPE *_M_start;
-        _RTL_FUNC const _TYPE *_M_end;
+        const _TYPE *_M_start;
+        const _TYPE *_M_end;
     };
 
     template<class _TYPE> 
-    _RTL_FUNC const _TYPE* begin(initializer_list<_TYPE> il) __NOTHROW { return il.begin(); }
+    const _TYPE* begin(initializer_list<_TYPE> il) __NOTHROW { return il.begin(); }
 
     template<class _TYPE> 
-    _RTL_FUNC const _TYPE* end(initializer_list<_TYPE> il) __NOTHROW { return il.end(); }
+    const _TYPE* end(initializer_list<_TYPE> il) __NOTHROW { return il.end(); }
 } 
 
 #endif

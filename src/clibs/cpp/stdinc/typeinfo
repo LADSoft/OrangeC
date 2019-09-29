@@ -15,33 +15,33 @@ class                   tpid;
 
 namespace std {
 
-_RTL_CLASS class type_info
+class _RTL_CLASS type_info
 {
 
 public:
 
-        tpid          _RTL_DATA * tpp;
+        tpid          * tpp;
 
 private:
-                 _RTL_FUNC type_info(const type_info &);
-    type_info &  _RTL_FUNC operator=(const type_info &);
+                 type_info(const type_info &);
+    type_info &  operator=(const type_info &);
 
 public:
-    virtual      _RTL_FUNC ~type_info();
+    virtual      ~type_info();
 
-    bool         _RTL_FUNC operator==(const type_info  &) const;
-    bool         _RTL_FUNC operator!=(const type_info  &) const;
+    bool         operator==(const type_info  &) const;
+    bool         operator!=(const type_info  &) const;
 
-    bool         _RTL_FUNC before(const type_info  &) const;
+    bool         before(const type_info  &) const;
 
-    const char * _RTL_FUNC name() const;
+    const char * name() const;
 
 protected:
-                 _RTL_FUNC type_info(tpid *_tpp) { tpp = _tpp; }
+                 type_info(tpid *_tpp) { tpp = _tpp; }
 };
 
-_RTL_CLASS class   bad_cast : public exception {};
-_RTL_CLASS class   bad_typeid{};
+class _RTL_CLASS   bad_cast : public exception {};
+class _RTL_CLASS   bad_typeid{};
 
 } // std
 

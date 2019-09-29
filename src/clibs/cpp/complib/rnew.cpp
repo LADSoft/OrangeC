@@ -46,7 +46,7 @@ const char _RTL_DATA* __dls_bad_alloc = "bad_alloc";
 namespace std {
 
 //   nothrow_t _RTL_DATA nothrow;
-   _RTL_FUNC bad_alloc::~bad_alloc()
+   bad_alloc::~bad_alloc()
    {
    }
 

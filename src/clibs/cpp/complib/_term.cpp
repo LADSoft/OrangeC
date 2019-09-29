@@ -56,8 +56,8 @@ const char _RTL_DATA* __dls_BadException = "Bad Exception";
 
 namespace std
 {
-_RTL_FUNC exception::~exception() throw() {}
-_RTL_FUNC bad_exception::~bad_exception() throw() {}
+exception::~exception() throw() {}
+bad_exception::~bad_exception() throw() {}
 };  // namespace std
 
 void _RTL_FUNC std::terminate()

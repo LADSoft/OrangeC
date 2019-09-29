@@ -39,18 +39,18 @@
 
 /* RTL Function and data declarators */
 #    if defined(__BUILDING_LSCRTL_DLL)
-#        define _RTL_FUNC _export
-#        define _RTL_DATA _export
+#        define _RTL_FUNC __declspec(dllexport)
+#        define _RTL_DATA __declspec(dllexport)
 #        define _IMPORT
 #        define _IMPORTMM
-#        define _RTL_CLASS
+#        define _RTL_CLASS __declspec(dllexport)
 #        define _MSIL_RTL
 #    elif defined(__LSCRTL_DLL) || defined(__CRTDLL_DLL)
 #        define _RTL_FUNC
 #        define _RTL_DATA
-#        define _IMPORT _import
-#        define _IMPORTMM _import
-#        define _RTL_CLASS
+#        define _IMPORT __declspec(dllimport)
+#        define _IMPORTMM __declspec(dllimport)
+#        define _RTL_CLASS __declspec(dllimport)
 #        define _MSIL_RTL
 #    elif defined(__MSVCRT_DLL)
 #        define _RTL_FUNC

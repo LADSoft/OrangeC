@@ -43,12 +43,12 @@ extern void _RTL_FUNC __undecorate(char* buf, char* name);
 namespace std
 {
 
-_RTL_FUNC type_info::type_info(const type_info& in) { this->tpp = in.tpp; }
-type_info& _RTL_FUNC type_info::operator=(const type_info& in) { return *this; }
+type_info::type_info(const type_info& in) { this->tpp = in.tpp; }
+type_info& type_info::operator=(const type_info& in) { return *this; }
 
-_RTL_FUNC type_info::~type_info() {}
+type_info::~type_info() {}
 
-bool _RTL_FUNC type_info::operator==(const type_info& in) const
+bool type_info::operator==(const type_info& in) const
 {
     if (this->tpp == in.tpp)
         return true;
@@ -59,16 +59,16 @@ bool _RTL_FUNC type_info::operator==(const type_info& in) const
             return true;
     return false;
 }
-bool _RTL_FUNC type_info::operator!=(const type_info& in) const { return !(*this == in); }
+bool type_info::operator!=(const type_info& in) const { return !(*this == in); }
 
-bool _RTL_FUNC type_info::before(const type_info& in) const
+bool type_info::before(const type_info& in) const
 {
     RTTI* left = (RTTI*)this->tpp;
     RTTI* right = (RTTI*)in.tpp;
     return (strcmp(left->name, right->name) > 0);
 }
 
-const char* _RTL_FUNC type_info::name() const
+const char* type_info::name() const
 {
     RTTI* ths = (RTTI*)this->tpp;
     return ths->name;

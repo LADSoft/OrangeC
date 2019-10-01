@@ -40,7 +40,8 @@ class ppExpr
     ppExpr(bool isunsignedchar) : 
         define(nullptr), 
         unsignedchar(isunsignedchar),
-        token(nullptr)
+        token(nullptr),
+        floatWarned(false)
     {}
     ~ppExpr() {}
 
@@ -68,6 +69,7 @@ class ppExpr
     PPINT comma_(std::string& line, bool &isunsigned);
 
   private:
+    bool floatWarned;
     bool unsignedchar;
     ppDefine* define;
     std::unique_ptr<Tokenizer> tokenizer;

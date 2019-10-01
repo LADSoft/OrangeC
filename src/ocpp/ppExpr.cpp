@@ -39,6 +39,7 @@ ppInclude* ppExpr::include;
 
 PPINT ppExpr::Eval(std::string& line)
 {
+    floatWarned = false;
     tokenizer = std::make_unique<Tokenizer>(line, &hash);
     token = tokenizer->Next();
     if (!token)
@@ -146,6 +147,12 @@ PPINT ppExpr::primary(std::string& line, bool &isunsigned)
     }
     else if (token->IsNumeric())
     {
+        if (token->IsFloating())
+        {
+            if (!floatWarned)
+                Errors::Error("Invalid integer constant expression");
+            floatWarned = true;
+        }
         rv = token->GetInteger();
         Token::Type t = token->GetNumericType();
         switch (t)

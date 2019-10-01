@@ -2686,7 +2686,7 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                             }
                             hr = hr->next;
                         }
-                        p->exp = convertInitToExpression(stype, nullptr, theCurrentFunc, init, thisptr, false);
+                        p->exp = convertInitToExpression(stype, nullptr, nullptr, theCurrentFunc, init, thisptr, false);
                         if (!isref(sym->tp))
                             sp->stackblock = true;
                         done = true;
@@ -2749,7 +2749,7 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                         n += btp->size;
                         pinit = pinit->next;
                     }
-                    p->exp = convertInitToExpression(sym->tp, nullptr, theCurrentFunc, init, thisptr, false);
+                    p->exp = convertInitToExpression(sym->tp, nullptr, nullptr, theCurrentFunc, init, thisptr, false);
                     p->tp = sym->tp;
                     done = true;
                 }
@@ -6101,7 +6101,7 @@ LEXEME* expression_cast(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRE
                             insert(sym, localNameSpace->valueData->syms);
                         }
                         lex = initType(lex, funcsp, 0, sc_auto, &init, nullptr, *tp, sym, false, flags);
-                        *exp = convertInitToExpression(*tp, nullptr, funcsp, init, nullptr, false);
+                        *exp = convertInitToExpression(*tp, nullptr, nullptr, funcsp, init, nullptr, false);
                         while (!done && lex)
                         {
                             enum e_kw kw;
@@ -7575,12 +7575,18 @@ LEXEME* expression_assign(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
                         spinit = anonymousVar(sc_localstatic, tp1)->v.sp;
                         insert(spinit, localNameSpace->valueData->syms);
                         lex = initType(lex, funcsp, 0, sc_auto, &init, nullptr, tp1, spinit, false, flags | _F_ASSIGNINIT);
+                        EXPRESSION *exp2 = nullptr;
                         if (init && init->exp->type == en_thisref)
                         {
                             ReplaceThisAssign(&init->exp->left->v.func->thisptr, spinit, *exp);
                             spinit->allocate = false;
                         }
-                        *exp = convertInitToExpression(tp1, nullptr, funcsp, init, exp1, false);
+                        else
+                        {
+                            exp2 = *exp;
+                        }
+                        *exp = convertInitToExpression(tp1, nullptr, exp2, funcsp, init, exp1, false);
+
                         return lex;
                     }
                     else

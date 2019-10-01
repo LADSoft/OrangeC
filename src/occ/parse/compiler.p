@@ -368,7 +368,7 @@ void cast(TYPE* tp, EXPRESSION* *exp);
 bool castvalue(EXPRESSION* exp);
 bool lvalue(EXPRESSION* exp);
 bool xvalue(EXPRESSION* exp);
-EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sp, SYMBOL* funcsp, INITIALIZER* init, EXPRESSION* thisptr, bool isdest);
+EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sp, EXPRESSION* expsym, SYMBOL* funcsp, INITIALIZER* init, EXPRESSION* thisptr, bool isdest);
 bool assignDiscardsConst(TYPE* dest, TYPE* source);
 bool isconstzero(TYPE* tp, EXPRESSION* exp);
 bool fittedConst(TYPE* tp, EXPRESSION* exp);

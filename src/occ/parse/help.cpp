@@ -1240,12 +1240,12 @@ bool lvalue(EXPRESSION* exp)
             return false;
     }
 }
-EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, SYMBOL* funcsp, INITIALIZER* init, EXPRESSION* thisptr, bool isdest)
+EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION *expsym, SYMBOL* funcsp, INITIALIZER* init, EXPRESSION* thisptr, bool isdest)
 {
     bool local = false;
     EXPRESSION *rv = nullptr, **pos = &rv;
     EXPRESSION *exp = nullptr, **expp;
-    EXPRESSION *expsym, *base;
+    EXPRESSION *expsymin = expsym, *base;
     bool noClear = false;
     if (sym)
         sym->destructed = false;
@@ -1257,28 +1257,31 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, SYMBOL* funcsp, INITI
             i2 = &(*i2)->next;
         initInsert(i2, nullptr, nullptr, tp->size, false);
     }
-    if (!sym)
+    if (!expsym)
     {
-        if (thisptr)
-            expsym = thisptr;
-        else if (funcsp)
+        if (!sym)
         {
-            SYMBOL* sym =
-                (SYMBOL*)basetype(funcsp->tp)->syms->table[0] ? (SYMBOL*)basetype(funcsp->tp)->syms->table[0]->p : nullptr;
-            if (sym && sym->thisPtr)
-                expsym = varNode(en_auto, sym);  // this ptr
+            if (thisptr)
+                expsym = thisptr;
+            else if (funcsp)
+            {
+                SYMBOL* sym =
+                    (SYMBOL*)basetype(funcsp->tp)->syms->table[0] ? (SYMBOL*)basetype(funcsp->tp)->syms->table[0]->p : nullptr;
+                if (sym && sym->thisPtr)
+                    expsym = varNode(en_auto, sym);  // this ptr
+                else
+                    expsym = anonymousVar(sc_auto, tp);
+            }
             else
-                expsym = anonymousVar(sc_auto, tp);
+            {
+                expsym = intNode(en_c_i, 0);
+                diag("convertInitToExpression: no this ptr");
+            }
         }
         else
         {
-            expsym = intNode(en_c_i, 0);
-            diag("convertInitToExpression: no this ptr");
-        }
-    }
-    else
-        switch (sym->storage_class)
-        {
+            switch (sym->storage_class)
+            {
             case sc_auto:
             case sc_register:
             case sc_parameter:
@@ -1325,17 +1328,19 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, SYMBOL* funcsp, INITI
                     expsym = exprNode(en_add, expsym, intNode(en_c_i, sym->offset));
                 break;
             case sc_external:
-                /*			expsym = varNode(en_global, sym);
-                            local = true;
-                            break;
-                */
+                                /*			expsym = varNode(en_global, sym);
+                                            local = true;
+                                            break;
+                                */
             case sc_constant:
                 return nullptr;
             default:
                 diag("convertInitToExpression: unknown sym type");
                 expsym = intNode(en_c_i, 0);
                 break;
+            }
         }
+    }
     base = copy_expression(expsym);
     if (sym && isarray(sym->tp) && sym->tp->msil && !init->noassign)
     {
@@ -1614,7 +1619,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, SYMBOL* funcsp, INITI
         }
     }
     // plop in a clear block if necessary
-    if (sym && !noClear && !isdest &&
+    if ((sym || expsymin) && !noClear && !isdest &&
         (isarray(tp) ||
          (isstructured(tp) && ((!cparams.prm_cplusplus && !chosenAssembler->msil) || !basetype(tp)->sp->hasUserCons))))
     {
@@ -1624,7 +1629,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, SYMBOL* funcsp, INITI
         if (fexp->type == en_thisref)
             fexp = fexp->left->v.func->thisptr;
         exp = exprNode(en_blockclear, fexp, nullptr);
-        exp->size = sym->tp->size;
+        exp->size = tp->size;
         rv = exprNode(en_void, exp, rv);
     }
     if (isstructured(tp))

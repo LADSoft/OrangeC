@@ -280,7 +280,7 @@ static void dumpDynamicInitializers(void)
         STATEMENT *stmt = nullptr, **stmtp = &stmt;
         int i = 0;
         exp = convertInitToExpression(dynamicInitializers->init ? dynamicInitializers->init->basetp : dynamicInitializers->sp->tp,
-                                      dynamicInitializers->sp, nullptr, dynamicInitializers->init, nullptr, false);
+                                      dynamicInitializers->sp, nullptr, nullptr, dynamicInitializers->init, nullptr, false);
 
         while (*next && (*next)->type == en_void)
         {
@@ -376,7 +376,7 @@ static void dumpTLSInitializers(void)
             EXPRESSION* exp;
             STATEMENT* stmt;
             stmt = stmtNode(nullptr, nullptr, st_expr);
-            exp = convertInitToExpression(TLSInitializers->init->basetp, TLSInitializers->sp, nullptr, TLSInitializers->init,
+            exp = convertInitToExpression(TLSInitializers->init->basetp, TLSInitializers->sp, nullptr, nullptr, TLSInitializers->init,
                                           nullptr, false);
             optimize_for_constants(&exp);
             stmt->select = exp;
@@ -402,7 +402,7 @@ static void dumpDynamicDestructors(void)
     codeLabel = INT_MIN;
     while (dynamicDestructors)
     {
-        EXPRESSION* exp = convertInitToExpression(dynamicDestructors->init->basetp, dynamicDestructors->sp, nullptr,
+        EXPRESSION* exp = convertInitToExpression(dynamicDestructors->init->basetp, dynamicDestructors->sp, nullptr, nullptr,
                                                   dynamicDestructors->init, nullptr, true);
         *stp = stmtNode(nullptr, nullptr, st_expr);
         optimize_for_constants(&exp);
@@ -463,7 +463,7 @@ static void dumpTLSDestructors(void)
         codeLabel = INT_MIN;
         while (TLSDestructors)
         {
-            EXPRESSION* exp = convertInitToExpression(TLSDestructors->init->basetp, TLSDestructors->sp, nullptr,
+            EXPRESSION* exp = convertInitToExpression(TLSDestructors->init->basetp, TLSDestructors->sp, nullptr, nullptr,
                                                       TLSDestructors->init, nullptr, true);
             *stp = stmtNode(nullptr, nullptr, st_expr);
             optimize_for_constants(&exp);

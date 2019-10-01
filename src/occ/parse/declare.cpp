@@ -6702,7 +6702,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                                         STATEMENT* st;
                                         currentLineData(block, hold, 0);
                                         st = stmtNode(hold, block, st_expr);
-                                        st->select = convertInitToExpression(sp->tp, sp, funcsp, sp->init, nullptr, false);
+                                        st->select = convertInitToExpression(sp->tp, sp, nullptr, funcsp, sp->init, nullptr, false);
                                     }
                                 }
                             }

@@ -1840,7 +1840,7 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                     SYMBOL* sym = nullptr;
                     sym = anonymousVar(sc_localstatic, tp)->v.sp;
                     lex = initType(lex, funcsp, 0, sc_auto, &init, &dest, tp, sym, false, 0);
-                    returnexp = convertInitToExpression(tp, nullptr, funcsp, init, en, false);
+                    returnexp = convertInitToExpression(tp, nullptr, nullptr, funcsp, init, en, false);
                     returntype = tp;
                     if (sym)
                         sym->dest = dest;

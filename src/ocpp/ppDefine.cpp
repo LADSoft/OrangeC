@@ -400,6 +400,9 @@ void ppDefine::SetDefaults()
     if (t1)
     {
         strftime(string, 40, "\"%b %d %Y\"", t1);
+        // first character of day must be space or non-zero
+        if (string[5] == '0')
+            string[5] = ' ';
         date = string;
         strftime(string, 40, "\"%H:%M:%S\"", t1);
         time = string;

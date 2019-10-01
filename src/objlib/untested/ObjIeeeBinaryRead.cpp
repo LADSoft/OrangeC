@@ -37,7 +37,7 @@ ObjString ObjIeeeBinary::ParseString(const ObjByte *buffer, int *pos)
     memcpy(name, buffer + *pos, len);
     name[len] = '\0';
     *pos += len;
-    return ObjString(name);
+    return name;
 }
 void ObjIeeeBinary::ParseTime(const ObjByte *buffer, std::tm &tms, int *pos)
 {

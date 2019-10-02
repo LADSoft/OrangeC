@@ -1224,6 +1224,11 @@ static bool eval(QUAD* q)
     int rv = false;
     IMODE* val;
     enum vop set;
+    if (q->temps & TEMP_ANS)
+    {
+        if (q->ans->offset->v.sp->value.i == 544 || q->ans->offset->v.sp->value.i == 545)
+            printf("hi");
+    }
     if (q->dc.opcode == i_phi)
     {
         tnum = q->dc.v.phi->T0;
@@ -1367,7 +1372,7 @@ static bool eval(QUAD* q)
             if (set != vo_bottom)
             {
                 ConstantFold(&qn, false);
-                if (qn.dc.opcode == i_assn)
+                if (qn.dc.opcode == i_assn && qn.dc.left->mode == i_immed)
                 {
                     set = vo_constant;
                     val = qn.dc.left;

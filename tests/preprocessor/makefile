@@ -34,9 +34,11 @@ TEST_FILES = n_1.exe \
     bignum.exe
 
 
-all: $(TEST_FILES)
+all: af.o $(TEST_FILES)
+
+af.o : af.c
+	occ /c $^
 
 %.exe: %.c
-	occ /T /9 $^
+	occ /T /9 $^ af.o
 	$*.exe
-

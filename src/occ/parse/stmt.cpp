@@ -2246,6 +2246,7 @@ static LEXEME* statement_switch(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
             st->label = switchstmt->breaklabel;
             if (!switchstmt->nosemi && !switchstmt->hassemi)
                 errorint(ERR_NEEDY, ';');
+            parent->nosemi = true;
         }
         else
         {
@@ -2858,22 +2859,27 @@ LEXEME* statement(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool viacontro
             parent->nosemi = true;
             break;
         case kw_case:
-            if (cparams.prm_cplusplus)
-                HandleEndOfCase(parent);
-            lex = statement_case(lex, funcsp, parent);
+            while (KW(lex) == kw_case)
+            {
+                if (cparams.prm_cplusplus)
+                    HandleEndOfCase(parent);
+                lex = statement_case(lex, funcsp, parent);
+                if (cparams.prm_cplusplus)
+                    HandleStartOfCase(parent);
+            }
+            lex = statement(lex, funcsp, parent, true);
             parent->nosemi = true;
-            if (cparams.prm_cplusplus)
-                HandleStartOfCase(parent);
-            parent->lastcaseordefault = true;
+            return lex;
             break;
         case kw_default:
             if (cparams.prm_cplusplus)
                 HandleEndOfCase(parent);
             lex = statement_default(lex, funcsp, parent);
-            parent->nosemi = true;
             if (cparams.prm_cplusplus)
                 HandleStartOfCase(parent);
-            parent->lastcaseordefault = true;
+            lex = statement(lex, funcsp, parent, true);
+            parent->nosemi = true;
+            return lex;
             break;
         case kw_continue:
             lex = statement_continue(lex, funcsp, parent);
@@ -3114,7 +3120,6 @@ LEXEME* compound(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
         }
         else
         {
-            blockstmt->lastcaseordefault = false;
             lex = statement(lex, funcsp, blockstmt, false);
         }
     }
@@ -3132,7 +3137,7 @@ LEXEME* compound(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
     if (parent->type == begin || parent->type == kw_switch || parent->type == kw_try || parent->type == kw_catch ||
         parent->type == kw_do)
         parent->needlabel = blockstmt->needlabel;
-    if (!blockstmt->hassemi && (!blockstmt->nosemi || blockstmt->lastcaseordefault))
+    if (!blockstmt->hassemi && !blockstmt->nosemi)
     {
         errorint(ERR_NEEDY, ';');
     }

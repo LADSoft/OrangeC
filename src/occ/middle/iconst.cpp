@@ -1327,6 +1327,9 @@ static bool eval(QUAD* q)
         case i_udiv:
         case i_neg:
         case i_not:
+        case i_and:
+        case i_or:
+        case i_eor:
             qn = *q;
             if ((qn.temps & TEMP_LEFT) && qn.dc.left->mode == i_direct)
             {

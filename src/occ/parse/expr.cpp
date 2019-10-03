@@ -6101,7 +6101,7 @@ LEXEME* expression_cast(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRE
                             insert(sym, localNameSpace->valueData->syms);
                         }
                         lex = initType(lex, funcsp, 0, sc_auto, &init, nullptr, *tp, sym, false, flags);
-                        *exp = convertInitToExpression(*tp, nullptr, nullptr, funcsp, init, nullptr, false);
+                        *exp = convertInitToExpression(*tp, nullptr, nullptr, funcsp, init, *exp, false);
                         while (!done && lex)
                         {
                             enum e_kw kw;

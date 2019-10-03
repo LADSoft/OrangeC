@@ -472,7 +472,6 @@ typedef struct blockdata
     int hasbreak : 1;
     int hassemi : 1;
     int nosemi : 1; /* ok to skip semi */
-    int lastcaseordefault : 1;
 } BLOCKDATA;
 
 typedef struct init

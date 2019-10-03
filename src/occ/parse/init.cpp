@@ -670,6 +670,8 @@ int dumpInit(SYMBOL* sym, INITIALIZER* init)
         EXPRESSION* exp = init->exp;
         while (castvalue(exp))
             exp = exp->left;
+        while (exp->type == en_void && exp->right)
+            exp = exp->right;
         if (exp->type == en_func && !exp->v.func->ascall)
             exp = exp->v.func->fcall;
         if (!IsConstantExpression(exp, false, false))
@@ -1390,8 +1392,8 @@ static void refExp(EXPRESSION* exp)
 }
 static LEXEME* initialize_pointer_type(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_sc sc, TYPE* itype, INITIALIZER** init)
 {
-    TYPE* tp;
-    EXPRESSION* exp;
+    TYPE* tp = nullptr;
+    EXPRESSION* exp = nullptr;
     bool string = false;
     bool needend = false;
     if (MATCHKW(lex, begin))
@@ -1428,7 +1430,10 @@ static LEXEME* initialize_pointer_type(LEXEME* lex, SYMBOL* funcsp, int offset, 
         DeduceAuto(&itype, tp);
         if (sc != sc_auto && sc != sc_register)
         {
-            if (!isarithmeticconst(exp) && !isconstaddress(exp) && !cparams.prm_cplusplus)
+            EXPRESSION *exp2 = exp;
+            while (exp2->type == en_void && exp2->right)
+                exp2 = exp2->right;
+            if (!isarithmeticconst(exp2) && !isconstaddress(exp2) && !cparams.prm_cplusplus)
                 error(ERR_NEED_CONSTANT_OR_ADDRESS);
         }
         if (tp)
@@ -2761,6 +2766,34 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
                 callDestructor(basetype(itype)->sp, nullptr, &exp, nullptr, true, false, false);
                 initInsert(&it, itype, exp, offset, true);
                 *dest = it;
+            }
+        }
+        return lex;
+    }
+    else if (!MATCHKW(lex, begin) && !itype->msil)
+    {
+        EXPRESSION* exp = getThisNode(base);
+        TYPE* tp = nullptr;
+        lex = expression(lex, funcsp, nullptr, &tp, &exp, 0);
+        if (!tp)
+        {
+            error(ERR_EXPRESSION_SYNTAX);
+        }
+        else
+        {
+            INITIALIZER* it = nullptr;
+            if (!comparetypes(itype, tp, true))
+            {
+                error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
+            }
+            initInsert(&it, itype, exp, offset, true);
+            if (sc != sc_auto && sc != sc_localstatic && sc != sc_parameter && sc != sc_member && sc != sc_mutable && !arrayMember)
+            {
+                insertDynamicInitializer(base, it);
+            }
+            else
+            {
+                *init = it;
             }
         }
         return lex;

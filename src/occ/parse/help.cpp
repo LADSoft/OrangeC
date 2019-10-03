@@ -54,7 +54,9 @@ extern int codeLabel;
 
 int anonymousNotAlloc;
 
-void helpinit() { anonymousNotAlloc = 0; }
+static int staticanonymousIndex;
+
+void helpinit() { anonymousNotAlloc = 0; staticanonymousIndex = 1; }
 void deprecateMessage(SYMBOL* sym)
 {
     char buf[1024];
@@ -1272,10 +1274,16 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION *expsym, S
                 else
                     expsym = anonymousVar(sc_auto, tp);
             }
-            else
+            else // global initialization, make a temporary variable
             {
-                expsym = intNode(en_c_i, 0);
-                diag("convertInitToExpression: no this ptr");
+                char sanon[256];
+                sprintf(sanon, "sanon_%d", staticanonymousIndex++);
+                // this is probably for a structured cast that is being converted to a pointer with ampersand...
+                SYMBOL* sym = makeID(sc_static, tp, nullptr, sanon);
+                SetLinkerNames(sym, lk_cdecl);
+                insertDynamicInitializer(sym, init);
+                expsym = varNode(en_global, sym);
+                insertInitSym(sym);
             }
         }
         else

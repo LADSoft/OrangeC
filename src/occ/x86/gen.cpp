@@ -2661,8 +2661,21 @@ void asm_gosub(QUAD* q) /* normal gosub to an immediate label or through a var *
 
         if (q->dc.left->mode == i_immed)
         {
-            apl->length = 0;
-            gen_code(op_call, apl, 0);
+            if (isintconst(q->dc.left->offset))
+            {
+                // doing call via ret here because we really need a register and we may not have one...
+                apl->length = 0;
+                int lbl = nextLabel++;
+                gen_code(op_push, make_label(lbl), nullptr);
+                gen_code(op_push, apl, nullptr);
+                gen_code(op_ret, nullptr, nullptr);
+                oa_gen_label(lbl);
+            }
+            else
+            {
+                apl->length = 0;
+                gen_code(op_call, apl, nullptr);
+            }
         }
         else
         {

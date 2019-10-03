@@ -897,7 +897,7 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr, b
                     }
 
                     macro = d->GetValue();
-                    if (count != 0 || !varargs.empty())
+                    if (count != 0 || !varargs.empty() || d->HasVarArgs())
                         if (!ReplaceArgs(macro, *d->GetArgList(), args, expandedargs, varargs))
                             return INT_MIN;
                     Tokenize(macro);

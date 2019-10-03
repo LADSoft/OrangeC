@@ -3088,6 +3088,7 @@ static LEXEME* getArrayType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, enum e_sc st
     bool empty = false;
     lex = getsym(); /* past '[' */
     *tp = PerformDeferredInitialization(*tp, funcsp);
+    lex = getPointerQualifiers(lex, quals, true);
     if (MATCHKW(lex, star))
     {
         if (!cparams.prm_c99 && !cparams.prm_cplusplus)
@@ -3100,7 +3101,6 @@ static LEXEME* getArrayType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, enum e_sc st
     else if (!MATCHKW(lex, closebr))
     {
 
-        lex = getPointerQualifiers(lex, quals, true);
         lex = optimized_expression(lex, funcsp, nullptr, &tpc, &constant, false);
         lex = getPointerQualifiers(lex, quals, true);
         if (!tpc)

@@ -532,8 +532,9 @@ void ppDefine::Stringize(std::string& macro)
         repl += macro.substr(last);
     macro = repl;
 }
-void ppDefine::Tokenize(std::string& macro)
+bool ppDefine::Tokenize(std::string& macro)
 {
+    bool rv = false;
     int waiting = 0;
     for (int i = 0; i < macro.size(); i++)
     {
@@ -555,16 +556,17 @@ void ppDefine::Tokenize(std::string& macro)
             while (++e < macro.size() && (isspace(macro[e]) || macro[e] == MACRO_PLACEHOLDER))
                 ;
             if (b > 0 && macro[b - 1] == TOKENIZING_PLACEHOLDER && macro[e] != TOKENIZING_PLACEHOLDER)
-                b--;
+                macro[b - 1] = MACRO_PLACEHOLDER;
             if (e < macro.size() && macro[e] == TOKENIZING_PLACEHOLDER)
             {
-                e++;
+                macro[e] = MACRO_PLACEHOLDER;
             }
             macro.erase(b, e - b);
-
+            rv = true;
             i = b - 1;
         }
     }
+    return rv;
 }
 int ppDefine::InsertReplacementString(std::string& macro, int end, int begin, std::string text, std::string etext)
 {
@@ -744,7 +746,7 @@ void ppDefine::SetupAlreadyReplaced(std::string& macro)
         }
     }
 }
-int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr, bool eol)
+int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr, bool eol, std::deque<Definition*>& definitions)
 {
     std::string name;
     int waiting = 0;
@@ -773,6 +775,7 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr, b
             name = defid(line, q, p);
             Symbol* sym = symtab.Lookup(name);
             Definition* d = static_cast<Definition*>(sym);
+            bool tokenized = false;
             if (!d && asmpp)
             {
                 std::string name1 = UTF8::ToUpper(name);
@@ -851,7 +854,7 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr, b
                             args.push_back(temp);
                             expandedargs.push_back(temp);
                             int sv;
-                            rv = ReplaceSegment(expandedargs[count], 0, expandedargs[count].size(), sv, p == line.size());
+                            rv = ReplaceSegment(expandedargs[count], 0, expandedargs[count].size(), sv, p == line.size(), definitions);
                             if (rv < -MACRO_REPLACE_SIZE)
                             {
                                 return rv;
@@ -900,7 +903,7 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr, b
                     if (count != 0 || !varargs.empty() || d->HasVarArgs())
                         if (!ReplaceArgs(macro, *d->GetArgList(), args, expandedargs, varargs))
                             return INT_MIN;
-                    Tokenize(macro);
+                    tokenized = Tokenize(macro);
                     Stringize(macro);
                     static char tk[2] = {TOKENIZING_PLACEHOLDER, 0};
                     size_t n = macro.find(tk);
@@ -909,25 +912,46 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr, b
                         macro.erase(n, 1);
                         n = macro.find(tk, n);
                     }
+                    if (tokenized)
+                    {
+                        for (auto&& d : definitions)
+                            d->SetPreprocessing(false);
+                        definitions.clear();
+
+                    }
                 }
                 else
                 {
                     macro = d->GetValue();
                 }
-                d->SetPreprocessing(true);
+                if (!tokenized)
+                {
+                    d->SetPreprocessing(true);
+                    definitions.push_back(d);
+                }
                 SetupAlreadyReplaced(macro);
                 rv1 = InsertReplacementString(line, p, q, macro, macro);
                 if (rv1 < -MACRO_REPLACE_SIZE)
                 {
-                    d->SetPreprocessing(false);
+                    if (!tokenized)
+                    {
+                        if (definitions.size())
+                            definitions.pop_back();
+                        d->SetPreprocessing(false);
+                    }
                     return rv1;
                 }
                 insize = rv1 - (p - q);
                 end += insize;
                 p += insize;
                 insize = 0;
-                rv = ReplaceSegment(line, q, p, p, false);
-                d->SetPreprocessing(false);
+                rv = ReplaceSegment(line, q, p, p, false, definitions);
+                if (!tokenized)
+                {
+                    if (definitions.size())
+                        definitions.pop_back();
+                    d->SetPreprocessing(false);
+                }
                 if (rv < -MACRO_REPLACE_SIZE)
                 {
                     return rv;
@@ -1159,7 +1183,8 @@ int ppDefine::Process(std::string& line, bool leavePlaceholder)
         ParseAsmSubstitutions(line);
     }
     int sv = 0;
-    int rvi = ReplaceSegment(line, 0, line.size(), sv, true);
+    std::deque<Definition*> definitions;
+    int rvi = ReplaceSegment(line, 0, line.size(), sv, true, definitions);
     if (rvi == INT_MIN + 1)
         return rvi;
     std::string rv;

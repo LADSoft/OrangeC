@@ -138,14 +138,14 @@ class ppDefine
     void SetDefaults();
     int LookupDefault(std::string& macro, int begin, int end, const std::string& name);
     void Stringize(std::string& macro);
-    void Tokenize(std::string& macro);
+    bool Tokenize(std::string& macro);
     int InsertReplacementString(std::string& macro, int end, int begin, std::string text, std::string etext);
     bool NotSlashed(const std::string& macro, int pos);
     bool ppNumber(const std::string& macro, int begin, int pos);
     bool ReplaceArgs(std::string& macro, const DefinitionArgList& oldargs, const DefinitionArgList& newArgs,
                      const DefinitionArgList& expandedargs, const std::string varargs);
     void SetupAlreadyReplaced(std::string& macro);
-    int ReplaceSegment(std::string& line, int begin, int end, int& pptr, bool eol);
+    int ReplaceSegment(std::string& line, int begin, int end, int& pptr, bool eol, std::deque<Definition*>& definitions);
     void SyntaxError(const std::string& name);
     void ParseAsmSubstitutions(std::string& line);
     void ReplaceAsmMacros(std::string& line);

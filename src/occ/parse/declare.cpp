@@ -4271,7 +4271,7 @@ static LEXEME* getAfterType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** sp,
                 }
                 break;
             case openbr:
-                lex = getArrayType(lex, funcsp, tp, (*sp)->storage_class, &isvla, &quals, true, false);
+                lex = getArrayType(lex, funcsp, tp, (*sp) ? (*sp)->storage_class : storage_class, &isvla, &quals, true, false);
                 if (isvla)
                 {
                     resolveVLAs(*tp);
@@ -4658,11 +4658,15 @@ LEXEME* getBeforeType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMB
                         addStructureDeclaration(&s);
                     }
                     lex = prevsym(start);
-                    lex = getAfterType(lex, funcsp, tp, spi, inTemplate, storage_class, consdest);
                     if (*strSym)
                     {
                         dropStructureDeclaration();
                     }
+                }
+                else if (MATCHKW(lex, openbr))
+                {
+                    lex = getAfterType(lex, funcsp, tp, spi, inTemplate, storage_class, consdest);
+                    needkw(&lex, closepa);
                 }
                 else
                 {

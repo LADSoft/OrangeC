@@ -4663,6 +4663,7 @@ LEXEME* getBeforeType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMB
                         addStructureDeclaration(&s);
                     }
                     lex = prevsym(start);
+                    lex = getAfterType(lex, funcsp, tp, spi, inTemplate, storage_class, consdest);
                     if (*strSym)
                     {
                         dropStructureDeclaration();

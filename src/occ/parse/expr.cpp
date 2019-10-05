@@ -5164,7 +5164,7 @@ static EXPRESSION* nodeSizeof(TYPE* tp, EXPRESSION* exp)
     if (!exp)
     {
         // array which is an argument has different sizeof requirements
-        if (tp->type == bt_pointer && tp->array && exp_in->type == en_l_p)
+        if (tp->type == bt_pointer && tp->array && exp_in && exp_in->type == en_l_p && exp_in->left->type == en_auto && exp_in->left->v.sp->storage_class == sc_parameter)
             exp = intNode(en_c_i, getSize(bt_pointer));
         else
             exp = intNode(en_c_i, tp->size);

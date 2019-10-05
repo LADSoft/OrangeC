@@ -2770,7 +2770,7 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
         }
         return lex;
     }
-    else if (!MATCHKW(lex, begin) && !itype->msil && !itype->array)
+    else if (!cparams.prm_cplusplus && !MATCHKW(lex, begin) && !itype->msil && !itype->array)
     {
         EXPRESSION* exp = getThisNode(base);
         TYPE* tp = nullptr;

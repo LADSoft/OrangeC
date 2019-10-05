@@ -5,7 +5,7 @@ image: Visual Studio 2017
 install:
     - appveyor-retry choco install InnoSetup
     - git clone https://github.com/c-testsuite/c-testsuite.git
-    - copy c-testsuite\tests\single-exec tests\c-testsuite
+    - copy c-testsuite\tests\single-exec tests\c-testsuite > NUL
     - cd \
     - 7z x projects\orangec\src\cc386.zip *
     - set PATH=c:\orangec\bin;c:\cc386\bin;%PATH%;C:\Program Files (x86)\Inno Setup 6

@@ -341,7 +341,7 @@ char *__onetostr(FILE *__stream, const char *restrict format, void *restrict arg
 			break;
         case 'a':
             if (mode == 'L') {
-                (*count)+=3 ;
+                (*count)+=2 ;
 				fmant = *(long double *)arg;
 			}
 			else {
@@ -441,7 +441,7 @@ char *__onetostr(FILE *__stream, const char *restrict format, void *restrict arg
         {
 dofloat:
              if (mode == 'L') {
-                (*count)+=3 ;
+                (*count)+=2 ;
 				fmant = *(long double *)arg;
 			 }
 			 else {

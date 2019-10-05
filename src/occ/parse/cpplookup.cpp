@@ -106,7 +106,7 @@ LIST* tablesearchinline(const char* name, NAMESPACEVALUELIST* ns, bool tagsOnly)
         lst = lst->next;
     }
     // enclosing ns if this one is inline
-    if (ns->valueData->name && !ns->valueData->name->visited && ns->valueData->name->linkage == lk_inline)
+    if (ns->valueData->name && !ns->valueData->name->visited && ns->valueData->name->attribs.inheritable.linkage == lk_inline)
     {
         LIST* rv1;
         ns->valueData->name->visited = true;

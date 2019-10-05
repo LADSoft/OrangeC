@@ -543,6 +543,7 @@ struct attributes
         int structAlign;        /* alignment of structures/ unions */
         int warnAlign;          /* if nz, warn if not aligned */
         unsigned vectorSize;    /* total size of a vectored attribute */
+        enum e_lk linkage;      /* stdcall */
         enum e_lk linkage2;     /* export, import, msil */
         enum e_lk linkage3;     /* used here for noreturn */
         struct sym* cleanup;    /* cleanup function */
@@ -578,7 +579,6 @@ typedef struct sym
     EXPRESSION* localInitGuard;
     LINEDATA* linedata;
     enum e_sc storage_class; /* storage class */
-    enum e_lk linkage;       /* cdecl, pascal, stdcall, inline */
     enum e_ac access;        /* c++ access rights for members */
     int operatorId;          /* operator id, CI + kw for an operator function */
     struct _imode_* imaddress;

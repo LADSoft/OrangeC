@@ -69,44 +69,49 @@ void ccInsertUsing(SYMBOL* ns, SYMBOL* parentns, const char* file, int line);
 #endif
 namespace AttribContainers
 {
-const std::unordered_map<std::string, int> gccStyleAttribNames = {
-    {"alias", 1},    // 1 arg, alias name
-    {"aligned", 2},  // arg is alignment; for members only increase unless also packed, otherwise can increase or decrease
-    {"warn_if_not_aligned", 3},  // arg is the desired minimum alignment
-    {"alloc_size", 4},           // implement by ignoring one or two args
-    {"cleanup", 5},              // arg is afunc: similar to a destructor.   Also gets called during exception processing
-                                 //                    { "common", 6 }, // no args, decide whether to support
-                                 //                    { "nocommon", 7 }, // no args, decide whether to support
-    {"copy", 8},          // one arg, varible/func/type, the two variable kinds must match don't copy alias visibility or weak
-    {"deprecated", 9},    // zero or one arg, match C++
-    {"nonstring", 10},    // has no null terminator
-    {"packed", 11},       // ignore auto-align on this field
-                          //                    { "section", 12 }, // one argument, the section name
-                          //                    { "tls_model", 13 }, // one arg, the model.   Probably shouldn't support
-    {"unused", 14},       // warning control
-    {"used", 15},         // warning control
-    {"vector_size", 16},  // one arg, which must be a power of two multiple of the base size.  implement as fixed-size array
-    //                    { "visibility", 17 }, // one arg, 'default' ,'hidden', 'internal', 'protected.   don't
-    //                    support for now as requires linker changes. { "weak", 18 }, // not supporting
-    {"dllimport", 19},
-    {"dllexport", 20},
-    //                    { "selectany", 21 },  // requires linker support
-    //                    { "shared", 22 },
-    {"zstring", 23},  // non-gcc, added to support nonstring
-    {"noreturn", 24}};
-// note: these are only the namespaced names listed, the __attribute__ names are unlisted here as they don't
-// exist in GCC and we want ours to follow theirs for actual consistency reasons.
-const std::unordered_map<std::string, int> gccCPPStyleAttribNames = {
-    {"alloc_size", 4},  // implement by ignoring one or two args
-                        //                    { "common", 6 }, // no args, decide whether to support
-                        //                    { "nocommon", 7 }, // no args, decide whether to support
-                        //                    { "section", 12 }, // one argument, the section name
-    //                    { "tls_model", 13 }, // one arg, the model.   Probably shouldn't support
-    //                    { "visibility", 17 }, // one arg, 'default' ,'hidden', 'internal', 'protected.   don't
-    //                    support for now as requires linker changes. { "weak", 18 }, // not supporting {
-    //                    "selectany", 21 },  // requires linker support { "shared", 22 },
-    {"dllexport", 25},
-    {"dllimport", 26}};
+    const std::unordered_map<std::string, int> gccStyleAttribNames = {
+        {"alias", 1},    // 1 arg, alias name
+        {"aligned", 2},  // arg is alignment; for members only increase unless also packed, otherwise can increase or decrease
+        {"warn_if_not_aligned", 3},  // arg is the desired minimum alignment
+        {"alloc_size", 4},           // implement by ignoring one or two args
+        {"cleanup", 5},              // arg is afunc: similar to a destructor.   Also gets called during exception processing
+                                     //                    { "common", 6 }, // no args, decide whether to support
+                                     //                    { "nocommon", 7 }, // no args, decide whether to support
+        {"copy", 8},          // one arg, varible/func/type, the two variable kinds must match don't copy alias visibility or weak
+        {"deprecated", 9},    // zero or one arg, match C++
+        {"nonstring", 10},    // has no null terminator
+        {"packed", 11},       // ignore auto-align on this field
+                              //                    { "section", 12 }, // one argument, the section name
+                              //                    { "tls_model", 13 }, // one arg, the model.   Probably shouldn't support
+        {"unused", 14},       // warning control
+        {"used", 15},         // warning control
+        {"vector_size", 16},  // one arg, which must be a power of two multiple of the base size.  implement as fixed-size array
+        //                    { "visibility", 17 }, // one arg, 'default' ,'hidden', 'internal', 'protected.   don't
+        //                    support for now as requires linker changes. { "weak", 18 }, // not supporting
+        {"dllimport", 19},
+        {"dllexport", 20},
+        //                    { "selectany", 21 },  // requires linker support
+        //                    { "shared", 22 },
+        {"zstring", 23},  // non-gcc, added to support nonstring
+        {"noreturn", 24},
+        {"stdcall", 25 }
+
+    };
+    // note: these are only the namespaced names listed, the __attribute__ names are unlisted here as they don't
+    // exist in GCC and we want ours to follow theirs for actual consistency reasons.
+    const std::unordered_map<std::string, int> gccCPPStyleAttribNames = {
+        {"alloc_size", 4},  // implement by ignoring one or two args
+                            //                    { "common", 6 }, // no args, decide whether to support
+                            //                    { "nocommon", 7 }, // no args, decide whether to support
+                            //                    { "section", 12 }, // one argument, the section name
+        //                    { "tls_model", 13 }, // one arg, the model.   Probably shouldn't support
+        //                    { "visibility", 17 }, // one arg, 'default' ,'hidden', 'internal', 'protected.   don't
+        //                    support for now as requires linker changes. { "weak", 18 }, // not supporting {
+        //                    "selectany", 21 },  // requires linker support { "shared", 22 },
+        {"dllexport", 25},
+        {"dllimport", 26},
+        {"stdcall", 27 }
+};
 const std::unordered_map<std::string, int> occCPPStyleAttribNames = {
     {"zstring", 23}  // non-gcc, added to support nonstring
 };
@@ -189,7 +194,7 @@ static int dumpVTabEntries(int count, THUNK* thunks, SYMBOL* sym, VTABENTRY* ent
                     thunks[count].name = localsp = makeID(sc_static, &stdfunc, nullptr, litlate(buf));
                     localsp->decoratedName = localsp->errname = localsp->name;
                     GENREF(localsp);
-                    localsp->linkage = lk_virtual;
+                    localsp->attribs.inheritable.linkage = lk_virtual;
                     genref(localsp, 0);
                     InsertInline(localsp);
                     InsertExtern(localsp);
@@ -801,7 +806,7 @@ void deferredCompileOne(SYMBOL* cur)
         LINEDATA *linesHeadOld = linesHead, *linesTailOld = linesTail;
         linesHead = linesTail = nullptr;
 
-        cur->linkage = lk_virtual;
+        cur->attribs.inheritable.linkage = lk_virtual;
         if (cur->templateParams && cur->templateLevel)
         {
             n.tmpl = cur->templateParams;
@@ -1033,7 +1038,7 @@ TYPE* PerformDeferredInitialization(TYPE* tp, SYMBOL* funcsp)
                 *tpx = sym->tp;
             }
         }
-        else if (sym->templateLevel && (!sym->instantiated || sym->linkage != lk_virtual) && sym->templateParams &&
+        else if (sym->templateLevel && (!sym->instantiated || sym->attribs.inheritable.linkage != lk_virtual) && sym->templateParams &&
                  allTemplateArgsSpecified(sym, sym->templateParams->next))
         {
             sym = TemplateClassInstantiateInternal(sym, nullptr, false);
@@ -1041,7 +1046,7 @@ TYPE* PerformDeferredInitialization(TYPE* tp, SYMBOL* funcsp)
                 *tpx = sym->tp;
         }
         else if (!sym->templateLevel && sym->parentClass && sym->parentClass->templateLevel &&
-                 (!sym->instantiated || sym->linkage != lk_virtual) && sym->parentClass->templateParams &&
+                 (!sym->instantiated || sym->attribs.inheritable.linkage != lk_virtual) && sym->parentClass->templateParams &&
                  allTemplateArgsSpecified(sym->parentClass, sym->parentClass->templateParams->next))
         {
             TEMPLATEPARAMLIST* tpl = sym->parentClass->templateParams;
@@ -2823,7 +2828,7 @@ LEXEME* insertNamespace(LEXEME* lex, enum e_lk linkage, enum e_sc storage_class,
         sym->nameSpaceValues->valueData->origname = sym;
         sym->nameSpaceValues->valueData->name = sym;
         sym->parentNameSpace = globalNameSpace->valueData->name;
-        sym->linkage = linkage;
+        sym->attribs.inheritable.linkage = linkage;
         if (nameSpaceList)
         {
             sym->parentNameSpace = (SYMBOL*)nameSpaceList->data;
@@ -2857,7 +2862,7 @@ LEXEME* insertNamespace(LEXEME* lex, enum e_lk linkage, enum e_sc storage_class,
             return lex;
         }
         if (linkage == lk_inline)
-            if (sym->linkage != lk_inline)
+            if (sym->attribs.inheritable.linkage != lk_inline)
                 errorsym(ERR_NAMESPACE_NOT_INLINE, sym);
     }
     sym->value.i++;
@@ -3037,7 +3042,7 @@ LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc st
                         // while (sp1->mainsym->mainsym)
                         //    sp1->mainsym = sp1->mainsym->mainsym;
                         sp1->access = access;
-                        InsertSymbol(sp1, storage_class, sp1->linkage, true);
+                        InsertSymbol(sp1, storage_class, sp1->attribs.inheritable.linkage, true);
                         InsertExtern(sp1);
                         InsertInline(sp1);
                         sp1->parentClass = ssp1;
@@ -3368,6 +3373,11 @@ void ParseOut__attribute__(LEXEME** lex, SYMBOL* funcsp)
                                     error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
                                 basisAttribs.inheritable.linkage3 = lk_noreturn;
                                 break;
+                            case 25: // stdcall
+                                if (basisAttribs.inheritable.linkage != lk_none)
+                                    error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
+                                basisAttribs.inheritable.linkage = lk_stdcall;
+                                break;
                         }
                     }
                 }
@@ -3554,6 +3564,10 @@ bool ParseAttributeSpecifiers(LEXEME** lex, SYMBOL* funcsp, bool always)
                                                         error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
                                                     basisAttribs.inheritable.linkage2 = lk_import;
                                                     break;
+                                                case 27:
+                                                    if (basisAttribs.inheritable.linkage != lk_none)
+                                                        error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
+                                                    basisAttribs.inheritable.linkage = lk_stdcall;
                                             }
                                         }
                                         else

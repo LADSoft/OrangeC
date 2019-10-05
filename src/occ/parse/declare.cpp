@@ -417,8 +417,13 @@ LEXEME* get_type_id(LEXEME* lex, TYPE** tp, SYMBOL* funcsp, enum e_sc storage_cl
     else if (sp && !sp->anonymous && toErr)
         if (sp->tp->type != bt_templateparam)
             error(ERR_TOO_MANY_IDENTIFIERS);
-    if (sp && sp->anonymous)
-        sp->linkage = linkage;
+    if (sp && sp->anonymous && linkage != lk_none)
+    {
+        if (sp->attribs.inheritable.linkage != lk_none)
+            error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
+        else
+            sp->attribs.inheritable.linkage = linkage;
+    }
     inTemplateType = oldTemplateType;
     return lex;
 }
@@ -968,7 +973,7 @@ static LEXEME* structbody(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_ac cur
             else if (sp->vtabsp->attribs.inheritable.linkage2 == lk_export)
                 GENREF(sp->vtabsp);
             InsertInline(sp);
-            sp->vtabsp->linkage = lk_virtual;
+            sp->vtabsp->attribs.inheritable.linkage = lk_virtual;
             sp->vtabsp->decoratedName = sp->vtabsp->errname = sp->vtabsp->name;
             warnCPPWarnings(sp, funcsp != nullptr);
         }
@@ -1267,12 +1272,12 @@ static LEXEME* declstruct(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, bool inTemplat
     else 
     {
         // primarily for the type_info definition when building LSCRTL.DLL
-        if (linkage1 != lk_none && linkage1 != sp->linkage)
+        if (linkage1 != lk_none && linkage1 != sp->attribs.inheritable.linkage)
         {
-            if (sp->linkage != lk_none)
+            if (sp->attribs.inheritable.linkage != lk_none)
                 error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
             else
-                sp->linkage = linkage1;
+                sp->attribs.inheritable.linkage = linkage1;
         }
         if (linkage2 != lk_none && linkage2 != sp->attribs.inheritable.linkage2)
         {
@@ -3551,7 +3556,7 @@ LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp,
                     }
                 }
                 spi->tp = tp1;
-                spi->linkage = linkage;
+                spi->attribs.inheritable.linkage = linkage;
                 spi->attribs.inheritable.linkage2 = linkage2;
                 if (spi->packed)
                 {
@@ -3828,7 +3833,7 @@ LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp,
                     {
                         SYMBOL* spo;
                         TYPE* tpb;
-                        spi->linkage = linkage;
+                        spi->attribs.inheritable.linkage = linkage;
                         spi->attribs.inheritable.linkage2 = linkage2;
                         SetLinkerNames(spi, lk_none);
                         if (tpx && isfunction(tpx))
@@ -4676,9 +4681,15 @@ LEXEME* getBeforeType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMB
                      * we are treating them both the same, e.g. the resulting
                      * pointer-to-function will be stdcall linkage either way
                      */
+                    attributes oldAttribs = basisAttribs;
+
+                    basisAttribs = { 0 };
+
+                    ParseAttributeSpecifiers(&lex, funcsp, true);
                     lex = getQualifiers(lex, tp, linkage, linkage2, linkage3, nullptr);
                     lex = getBeforeType(lex, funcsp, &ptype, spi, strSym, nsv, inTemplate, storage_class, linkage, linkage2,
                                         linkage3, asFriend, false, beforeOnly, true);
+                    basisAttribs = oldAttribs;
                     if (!ptype ||
                         (!isref(ptype) && !ispointer(ptype) && !isfunction(ptype) && basetype(ptype)->type != bt_memberptr))
                     {
@@ -5174,7 +5185,7 @@ static LEXEME* getStorageAndType(LEXEME* lex, SYMBOL* funcsp, SYMBOL** strSym, b
 }
 static bool mismatchedOverloadLinkage(SYMBOL* sp, HASHTABLE* table)
 {
-    if (((SYMBOL*)(table->table[0]->p))->linkage != sp->linkage)
+    if (((SYMBOL*)(table->table[0]->p))->attribs.inheritable.linkage != sp->attribs.inheritable.linkage)
         return true;
     return false;
 }
@@ -5725,7 +5736,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                         if (!asFriend)
                             sp->tp = tp1;
                         if (!sp->instantiated)
-                            sp->linkage = linkage;
+                            sp->attribs.inheritable.linkage = linkage;
                         if (ssp && ssp->attribs.inheritable.linkage2 != lk_none)
                         {
                             if (linkage2 != lk_none && !asFriend)
@@ -5882,7 +5893,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                                     hr = hr->next;
                                 }
                                 sym = searchOverloads(sp, spi->tp->syms);
-                                if (sp->linkage == lk_c || (sym && sym->linkage == lk_c))
+                                if (sp->attribs.inheritable.linkage == lk_c || (sym && sym->attribs.inheritable.linkage == lk_c))
                                     if (!sym || !sameNameSpace(sp->parentNameSpace, sym->parentNameSpace))
                                         preverrorsym(ERR_CONFLICTS_WITH, sp, spi->declfile, spi->declline);
                                 if (sym && sym->templateParams && (!sp->templateParams || sp->templateParams->next) &&
@@ -5891,11 +5902,11 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                             }
                             if (sym && cparams.prm_cplusplus)
                             {
-                                if (sym->linkage == lk_c && sp->linkage == lk_cdecl)
-                                    sp->linkage = lk_c;
-                                if (sp->linkage != sym->linkage &&
-                                    ((sp->linkage != lk_cdecl && sp->linkage != lk_virtual) ||
-                                     (sym->linkage != lk_cdecl && sym->linkage != lk_virtual)) &&
+                                if (sym->attribs.inheritable.linkage == lk_c && sp->attribs.inheritable.linkage == lk_cdecl)
+                                    sp->attribs.inheritable.linkage = lk_c;
+                                if (sp->attribs.inheritable.linkage != sym->attribs.inheritable.linkage &&
+                                    ((sp->attribs.inheritable.linkage != lk_cdecl && sp->attribs.inheritable.linkage != lk_virtual) ||
+                                     (sym->attribs.inheritable.linkage != lk_cdecl && sym->attribs.inheritable.linkage != lk_virtual)) &&
                                     !sp->isInline && !sym->isInline)
                                 {
                                     preverrorsym(ERR_LINKAGE_MISMATCH_IN_FUNC_OVERLOAD, spi, spi->declfile, spi->declline);
@@ -6440,7 +6451,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                     if (lex)
                     {
                         if (linkage != lk_cdecl)
-                            sp->linkage = linkage;
+                            sp->attribs.inheritable.linkage = linkage;
                         if (linkage2 != lk_none)
                             sp->attribs.inheritable.linkage2 = linkage2;
                         if (linkage2 == lk_import)
@@ -6520,7 +6531,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                                 if (storage_class_in != sc_member && TemplateFullySpecialized(sp->parentClass))
                                 {
                                     GENREF(sp);
-                                    sp->linkage = lk_virtual;
+                                    sp->attribs.inheritable.linkage = lk_virtual;
                                     SetGlobalFlag(old + 1);
                                     lex = body(lex, sp);
                                     SetGlobalFlag(old);

@@ -56,7 +56,7 @@ static void CalculateFastcall(SYMBOL* funcsp)
 {
     fastcallAlias = 0;
 #ifndef CPPTHISCALL
-    if (funcsp->linkage != lk_fastcall)
+    if (funcsp->attribs.inheritable.linkage != lk_fastcall)
         return;
 #endif
 
@@ -72,7 +72,7 @@ static void CalculateFastcall(SYMBOL* funcsp)
             }
             else
             {
-                if (funcsp->linkage != lk_fastcall)
+                if (funcsp->attribs.inheritable.linkage != lk_fastcall)
                     break;
                 if (fastcallAlias >= chosenAssembler->arch->fastcallRegCount)
                     break;

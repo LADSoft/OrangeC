@@ -391,7 +391,7 @@ static SYMBOL* createPtrToCaller(SYMBOL* self)
     basetype(args)->sp = func;
     basetype(args)->btp = basetype(lambdas->func->tp)->btp;
     func->parentClass = lambdas->cls;
-    func->linkage = lk_cdecl;
+    func->attribs.inheritable.linkage = lk_cdecl;
     func->isInline = true;
     func->storage_class = sc_static;
     func->access = ac_private;
@@ -497,7 +497,7 @@ static void createConverter(SYMBOL* self)
     func->tp->btp->rootType = func->tp->btp;
     func->tp->syms = CreateHashTable(1);
     func->parentClass = lambdas->cls;
-    func->linkage = lk_virtual;
+    func->attribs.inheritable.linkage = lk_virtual;
     func->isInline = true;
     func->storage_class = sc_member;
     func->castoperator = true;
@@ -1093,7 +1093,7 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
     injectThisPtr(lambdas->func, basetype(lambdas->func->tp)->syms);
     lambdas->func->tp->btp = self->functp;
     lambdas->func->tp->rootType = lambdas->func->tp;
-    lambdas->func->linkage = lk_virtual;
+    lambdas->func->attribs.inheritable.linkage = lk_virtual;
     lambdas->func->isInline = true;
     lambdas->templateFunctions = lambda_get_template_state(lambdas->func);
     ssl.str = self->cls;

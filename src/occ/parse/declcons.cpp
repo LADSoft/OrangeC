@@ -253,7 +253,7 @@ SYMBOL* insertFunc(SYMBOL* sp, SYMBOL* ovl)
     SYMBOL* funcs = search(ovl->name, basetype(sp->tp)->syms);
     ovl->parentClass = sp;
     ovl->internallyGenned = true;
-    ovl->linkage = lk_virtual;
+    ovl->attribs.inheritable.linkage = lk_virtual;
     ovl->defaulted = true;
     ovl->access = ac_public;
     ovl->templateLevel = templateNestingCount;

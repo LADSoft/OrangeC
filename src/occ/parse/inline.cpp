@@ -129,7 +129,7 @@ void dumpInlines(void)
                             {
                                 propagateTemplateDefinition(sym);
                             }
-                            if ((sym->isInline || sym->linkage == lk_virtual) && sym->inlineFunc.stmt)
+                            if ((sym->isInline || sym->attribs.inheritable.linkage == lk_virtual) && sym->inlineFunc.stmt)
                             {
                                 inInsert(sym);
                                 GENREF(sym);
@@ -157,7 +157,7 @@ void dumpInlines(void)
                     {
                         InsertExtern(sym->vtabsp);
                         sym->vtabsp->storage_class = sc_external;
-                        sym->vtabsp->linkage = lk_c;
+                        sym->vtabsp->attribs.inheritable.linkage = lk_c;
                     }
                     else
                     {
@@ -212,7 +212,7 @@ void dumpInlines(void)
                         sym->genreffed = false;
                         sym->noextern = true;
                         sym->storage_class = sc_global;
-                        sym->linkage = lk_virtual;
+                        sym->attribs.inheritable.linkage = lk_virtual;
                         if (origsym->deferredCompile)
                         {
                             STRUCTSYM s1, s;
@@ -327,7 +327,7 @@ SYMBOL* getvc1Thunk(int offset)
         rv = (SYMBOL*)Alloc(sizeof(SYMBOL));
         rv->name = rv->errname = rv->decoratedName = litlate(name);
         rv->storage_class = sc_static;
-        rv->linkage = lk_virtual;
+        rv->attribs.inheritable.linkage = lk_virtual;
         rv->offset = offset;
         rv->tp = &stdvoid;
         insert(rv, vc1Thunks);
@@ -603,7 +603,7 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
         case en_func:
             temp->v.func = nullptr;
             fp = node->v.func;
-            if (fp->sp->linkage == lk_virtual)
+            if (fp->sp->attribs.inheritable.linkage == lk_virtual)
             {
                 // check for recursion
                 for (i = 0; i < inlinesp_count; i++)

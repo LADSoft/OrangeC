@@ -215,7 +215,7 @@ bool Importer::EnterNamespace(const Namespace* nameSpace)
         sp->nameSpaceValues->valueData->origname = sp;
         sp->nameSpaceValues->valueData->name = sp;
         sp->parentNameSpace = globalNameSpace->valueData->name;
-        sp->linkage = lk_cdecl;
+        sp->attribs.inheritable.linkage = lk_cdecl;
         sp->msil = (void*)nameSpace;
         if (nameSpaces_.size())
         {

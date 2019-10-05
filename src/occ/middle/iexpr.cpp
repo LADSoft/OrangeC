@@ -2277,7 +2277,7 @@ static void gen_arg_destructors(SYMBOL* funcsp, INITLIST* arg)
 static int MarkFastcall(SYMBOL* sym, TYPE* functp, bool thisptr)
 {
 #ifndef CPPTHISCALL
-    if (sym->linkage != lk_fastcall)
+    if (sym->attribs.inheritable.linkage != lk_fastcall)
         return 0;
 #endif
 
@@ -2295,7 +2295,7 @@ static int MarkFastcall(SYMBOL* sym, TYPE* functp, bool thisptr)
                 if (basetype(functp)->sp)
                     sym = basetype(functp)->sp;
                 hr = basetype(functp)->syms->table[0];
-                if (!ismember(sym) && sym->linkage != lk_fastcall && basetype(sym->tp)->type != bt_memberptr)
+                if (!ismember(sym) && sym->attribs.inheritable.linkage != lk_fastcall && basetype(sym->tp)->type != bt_memberptr)
                     return 0;
             }
             else
@@ -2338,7 +2338,7 @@ static int MarkFastcall(SYMBOL* sym, TYPE* functp, bool thisptr)
                     {
                         break;
                     }
-                    if (sym->linkage != lk_fastcall)
+                    if (sym->attribs.inheritable.linkage != lk_fastcall)
                         break;
                     if (thisptr)
                     {
@@ -2449,7 +2449,7 @@ IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         }
     }
     int cdeclare = stackblockOfs;
-    if (f->sp->linkage == lk_pascal)
+    if (f->sp->attribs.inheritable.linkage == lk_pascal)
     {
         if (isstructured(basetype(f->functp)->btp) || basetype(basetype(f->functp)->btp)->type == bt_memberptr)
         {
@@ -2611,7 +2611,7 @@ IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         adjust2 -= fastcallSize;
         if (adjust2 < 0)
             adjust2 = 0;
-        if (f->sp->linkage != lk_stdcall && f->sp->linkage != lk_pascal)
+        if (f->sp->attribs.inheritable.linkage != lk_stdcall && f->sp->attribs.inheritable.linkage != lk_pascal)
             gen_nodag(i_parmadj, 0, make_parmadj(adjust), make_parmadj(adjust));
         else
             gen_nodag(i_parmadj, 0, make_parmadj(adjust2), make_parmadj(adjust));

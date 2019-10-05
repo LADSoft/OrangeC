@@ -506,7 +506,7 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, IMODE*
                 sym->offset = chosenAssembler->arch->retblocksize;
                 sym->name = "__retblock";
                 sym->allocate = false;
-                if ((funcsp->linkage == lk_pascal) && basetype(funcsp->tp)->syms->table[0] &&
+                if ((funcsp->attribs.inheritable.linkage == lk_pascal) && basetype(funcsp->tp)->syms->table[0] &&
                     ((SYMBOL*)basetype(funcsp->tp)->syms->table[0])->tp->type != bt_void)
                     sym->offset = funcsp->paramsize;
                 deref(&stdpointer, &en);
@@ -571,7 +571,7 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, IMODE*
     if (flag)
     {
         int retsize = 0;
-        if (funcsp->linkage == lk_pascal || funcsp->linkage == lk_stdcall)
+        if (funcsp->attribs.inheritable.linkage == lk_pascal || funcsp->attribs.inheritable.linkage == lk_stdcall)
         {
             retsize = funcsp->paramsize;
         }
@@ -593,13 +593,13 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, IMODE*
                     gen_expr(funcsp, funcsp->xc->xcRundownFunc, F_NOVALUE, ISZ_UINT);
                 SubProfilerData();
                 gen_icode(i_epilogue, 0, 0, 0);
-                if (funcsp->linkage == lk_interrupt || funcsp->linkage == lk_fault)
+                if (funcsp->attribs.inheritable.linkage == lk_interrupt || funcsp->attribs.inheritable.linkage == lk_fault)
                 {
                     /*				if (funcsp->loadds)
                                         gen_icode(i_unloadcontext,0,0,0);
                     */
                     gen_icode(i_popcontext, 0, 0, 0);
-                    gen_icode(i_rett, 0, make_immed(ISZ_UINT, funcsp->linkage == lk_interrupt), 0);
+                    gen_icode(i_rett, 0, make_immed(ISZ_UINT, funcsp->attribs.inheritable.linkage == lk_interrupt), 0);
                 }
                 else
                 {
@@ -1041,9 +1041,9 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     gen_func(funcexp, 1);
     /* in C99 inlines can clash if declared 'extern' in multiple modules */
     /* in C++ we introduce virtual functions that get coalesced at link time */
-    if (funcsp->linkage == lk_virtual || tmpl)
+    if (funcsp->attribs.inheritable.linkage == lk_virtual || tmpl)
     {
-        funcsp->linkage = lk_virtual;
+        funcsp->attribs.inheritable.linkage = lk_virtual;
         gen_virtual(funcsp, false);
     }
     else
@@ -1056,7 +1056,7 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
         gen_strlab(funcsp); /* name of function */
     }
     addblock(-1);
-    if (funcsp->linkage == lk_interrupt || funcsp->linkage == lk_fault)
+    if (funcsp->attribs.inheritable.linkage == lk_interrupt || funcsp->attribs.inheritable.linkage == lk_fault)
     {
         gen_icode(i_pushcontext, 0, 0, 0);
         /*		if (funcsp->loadds) */
@@ -1122,7 +1122,7 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     rewrite_icode(); /* Translate to machine code & dump */
     if (chosenAssembler->gen->post_function_gen)
         chosenAssembler->gen->post_function_gen(funcsp, intermed_head);
-    if (funcsp->linkage == lk_virtual || tmpl)
+    if (funcsp->attribs.inheritable.linkage == lk_virtual || tmpl)
         gen_endvirtual(funcsp);
     AllocateLocalContext(nullptr, funcsp, nextLabel++);
     funcsp->retblockparamadjust = chosenAssembler->arch->retblockparamadjust;

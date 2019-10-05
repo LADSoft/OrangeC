@@ -1807,7 +1807,7 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
             DeduceAuto(&basetype(funcsp->tp)->btp, tp1);
             tp = basetype(funcsp->tp)->btp;
             UpdateRootTypes(funcsp->tp);
-            SetLinkerNames(funcsp, funcsp->linkage);
+            SetLinkerNames(funcsp, funcsp->attribs.inheritable.linkage);
             matchReturnTypes = true;
         }
         if (isstructured(tp) || basetype(tp)->type == bt_memberptr)
@@ -1819,7 +1819,7 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
             sp->offset = chosenAssembler->arch->retblocksize;
             sp->structuredReturn = true;
             sp->name = "__retblock";
-            if ((funcsp->linkage == lk_pascal) && basetype(funcsp->tp)->syms->table[0] &&
+            if ((funcsp->attribs.inheritable.linkage == lk_pascal) && basetype(funcsp->tp)->syms->table[0] &&
                 ((SYMBOL*)basetype(funcsp->tp)->syms->table[0])->tp->type != bt_void)
                 sp->offset = funcsp->paramsize;
             deref(&stdpointer, &en);
@@ -2999,7 +2999,7 @@ static void insertXCInfo(SYMBOL* funcsp)
     makeXCTab(funcsp);
     my_sprintf(name, "@$xc%s", funcsp->decoratedName);
     sym = makeID(sc_global, &stdpointer, nullptr, litlate(name));
-    sym->linkage = lk_virtual;
+    sym->attribs.inheritable.linkage = lk_virtual;
     sym->decoratedName = sym->errname = sym->name;
     sym->allocate = true;
     sym->attribs.inheritable.used = sym->assigned = true;
@@ -3329,7 +3329,7 @@ static void assignParameterSizes(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* block)
         base = 0;
     else
         base = chosenAssembler->arch->retblocksize;
-    if (funcsp->linkage == lk_pascal)
+    if (funcsp->attribs.inheritable.linkage == lk_pascal)
     {
         assignPascalParams(lex, funcsp, &base, params, basetype(funcsp->tp)->btp, block);
     }
@@ -3478,7 +3478,7 @@ static void handleInlines(SYMBOL* funcsp)
                     funcsp->noinline = true;
             }
         }
-        if (funcsp->linkage == lk_virtual)
+        if (funcsp->attribs.inheritable.linkage == lk_virtual)
         {
 
             SYMLIST* hr = basetype(funcsp->tp)->syms->table[0];
@@ -3628,7 +3628,7 @@ LEXEME* body(LEXEME* lex, SYMBOL* funcsp)
                     funcsp->isInline = funcsp->dumpInlineToFile = funcsp->promotedToInline = false;
             }
         }
-        if (funcsp->linkage == lk_virtual || funcsp->isInline)
+        if (funcsp->attribs.inheritable.linkage == lk_virtual || funcsp->isInline)
         {
             if (funcsp->isInline)
                 funcsp->attribs.inheritable.linkage2 = lk_none;

@@ -326,7 +326,7 @@ MethodSignature* GetMethodSignature(TYPE* tp, bool pinvoke)
         }
         else
         {
-            rv = peLib->AllocateMethodSignature(sp->name, flags, pinvoke && sp->linkage != lk_msil_rtl ? NULL : mainContainer);
+            rv = peLib->AllocateMethodSignature(sp->name, flags, pinvoke && sp->attribs.inheritable.linkage != lk_msil_rtl ? NULL : mainContainer);
         }
     }
     else
@@ -424,7 +424,7 @@ MethodSignature* GetMethodSignature(SYMBOL* sp)
         {
             // no current pinvoke instance, create a new one
             MethodSignature* parent = GetMethodSignature(sp->tp, true);
-            peLib->AddPInvokeReference(parent, _dll_name(sp->name), sp->linkage != lk_stdcall);
+            peLib->AddPInvokeReference(parent, _dll_name(sp->name), sp->attribs.inheritable.linkage != lk_stdcall);
             sp = clone(sp);
             if (parent->Flags() & MethodSignature::Vararg)
             {

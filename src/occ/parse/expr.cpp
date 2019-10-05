@@ -76,6 +76,7 @@ extern int inGetUserConversion;
 extern int tryLevel;
 extern bool hasFuncCall;
 extern PreProcessor* preProcessor;
+extern attributes basisAttribs;
 
 int packIndex;
 
@@ -129,7 +130,7 @@ void thunkForImportTable(EXPRESSION** exp)
             newThunk = makeID(sc_global, &stdpointer, nullptr, litlate(buf));
             newThunk->errname = newThunk->decoratedName = newThunk->name;
             newThunk->mainsym = sym;  // mainsym is the symbol this was derived from
-            newThunk->linkage = lk_virtual;
+            newThunk->attribs.inheritable.linkage = lk_virtual;
             newThunk->importThunk = true;
             search = (LIST*)(LIST*)Alloc(sizeof(LIST));
             search->next = importThunks;
@@ -188,7 +189,7 @@ static EXPRESSION* GetManagedFuncData(TYPE* tp)
     sym = basetype(tp)->sp;
     *save++ = 0;  // space for the number of dwords
     *save++ = 0;
-    *save++ = sym->linkage == lk_stdcall;
+    *save++ = sym->attribs.inheritable.linkage == lk_stdcall;
     hr = basetype(tp)->syms->table[0];
     if (hr && hr->p->tp->type != bt_void)
     {
@@ -953,7 +954,7 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
             {
                 /* no prototype error will be added later */
                 sym->storage_class = sc_external;
-                sym->linkage = lk_c;
+                sym->attribs.inheritable.linkage = lk_c;
                 sym->tp = (TYPE*)Alloc(sizeof(TYPE));
                 sym->tp->type = bt_func;
                 sym->tp->size = getSize(bt_pointer);
@@ -6070,8 +6071,19 @@ LEXEME* expression_cast(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRE
     TYPE* throwaway = nullptr;
     if (MATCHKW(lex, openpa))
     {
+        bool loadedAttribs = false;
+        attributes oldAttribs;
         LEXEME* start = lex;
         lex = getsym();
+        if (MATCHKW(lex, kw__attribute))
+        {
+            loadedAttribs = true;
+            oldAttribs = basisAttribs;
+
+            basisAttribs = { 0 };
+            ParseAttributeSpecifiers(&lex, funcsp, true);
+
+        }
         if (startOfType(lex, false))
         {
             if (!cparams.prm_cplusplus || resolveToDeclaration(lex))
@@ -6248,6 +6260,8 @@ LEXEME* expression_cast(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRE
             lex = prevsym(start);
             lex = expression_unary(lex, funcsp, atp, tp, exp, ismutable, flags);
         }
+        if (loadedAttribs)
+            basisAttribs = oldAttribs;
     }
     else
     {

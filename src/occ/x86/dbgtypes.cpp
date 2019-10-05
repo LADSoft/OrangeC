@@ -287,7 +287,7 @@ ObjType* dbgtypes::Function(TYPE* tp)
                 v = 4;  // has a this pointer
                 break;
             default:
-                switch (basetype(tp)->sp->linkage)
+                switch (basetype(tp)->sp->attribs.inheritable.linkage)
                 {
                     default:
                     case lk_cdecl:

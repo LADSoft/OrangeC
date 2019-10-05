@@ -4190,7 +4190,7 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_c
             if (!sym->parentClass ||
                 (sym->parentClass && allTemplateArgsSpecified(sym->parentClass, sym->parentClass->templateParams->next)))
             {
-                sym->linkage = lk_virtual;
+                sym->attribs.inheritable.linkage = lk_virtual;
                 InsertInlineData(sym);
             }
         }

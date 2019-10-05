@@ -186,7 +186,7 @@ bool comparetypes(TYPE* typ1, TYPE* typ2, int exact)
         return typ1->sp == typ2->sp;
     if (typ1->type == typ2->type || (!exact && isarithmetic(typ2) && isarithmetic(typ1)))
         return true;
-    if (isfunction(typ1) && isfunction(typ2) && typ1->sp->linkage == typ2->sp->linkage)
+    if (isfunction(typ1) && isfunction(typ2) && typ1->sp->attribs.inheritable.linkage == typ2->sp->attribs.inheritable.linkage)
         return true;
     else if (!exact && ((ispointer(typ1) && (isfuncptr(typ2) || isfunction(typ2) || isint(typ2))) ||
                         (ispointer(typ2) && (isfuncptr(typ1) || isfunction(typ1) || isint(typ1)))))

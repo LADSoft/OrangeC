@@ -2680,7 +2680,7 @@ void localstaticdef(SYMBOL* sym)
 }
 void globaldef(SYMBOL* sym)
 {
-    if (sym->attribs.inheritable.linkage2 == lk_export && sym->linkage != lk_virtual)
+    if (sym->attribs.inheritable.linkage2 == lk_export && sym->attribs.inheritable.linkage != lk_virtual)
         put_expfunc(sym);
     IncGlobalFlag();
     if (chosenAssembler->gen->global_define)

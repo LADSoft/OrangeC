@@ -322,6 +322,7 @@ int main(int argc, char* argv[])
         openOutput = chosenAssembler->main_preprocess();
     while (clist)
     {
+        Errors::Reset();
         cparams.prm_cplusplus = false;
         strcpy(buffer, (char*)clist->data);
 #ifndef PARSER_ONLY

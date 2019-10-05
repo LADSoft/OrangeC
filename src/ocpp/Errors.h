@@ -66,6 +66,7 @@ class Errors
     static void IncrementCount() { errorCount++; }
 
     static bool GetErrorCount() { return errorCount; }
+    static void Reset() { errorCount = warningCount = 0; }
   protected:
     static void FileName();
 

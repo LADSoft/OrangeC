@@ -1192,10 +1192,13 @@ void ConstantFold(QUAD* d, bool reflow)
             index = xgetmode(d, &left, &right);
             switch (index)
             {
+                long long n, s;
                 case icnone:
                     break;
                 case icln:
-                    ReassignInt(d, -left->v.i);
+                    n = -left->v.i;
+                    s = (1ULL << (sizeFromISZ(d->dc.left->size) * 8))-1;
+                    ReassignInt(d, n & s);
                     break;
                 case icrn:
                     left->v.f.Negate();
@@ -1207,10 +1210,13 @@ void ConstantFold(QUAD* d, bool reflow)
             index = xgetmode(d, &left, &right);
             switch (index)
             {
+                long long n, s;
                 case icnone:
                     break;
                 case icln:
-                    ReassignInt(d, ~left->v.i);
+                    n = ~left->v.i;
+                    s = (1ULL << (sizeFromISZ(d->dc.left->size) * 8))- 1;
+                    ReassignInt(d, n & s);
                     break;
             }
             break;

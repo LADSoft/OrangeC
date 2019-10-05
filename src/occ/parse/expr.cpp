@@ -5848,12 +5848,6 @@ LEXEME* expression_unary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPR
                         cast(&stdint, exp);
                         *tp = &stdint;
                     }
-                    else
-                    {
-                        if (atp)
-                            *tp = atp;
-                        cast(basetype(*tp), exp);
-                    }
                 }
             }
             break;
@@ -5957,8 +5951,6 @@ LEXEME* expression_unary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPR
                     }
                     else
                     {
-                        if (atp)
-                            *tp = atp;
                         cast(basetype(*tp), exp);
                     }
                 }

@@ -216,6 +216,6 @@ FILES = \
 
 %.tst: %.exe
 	$^ > $*.tst
-	fc /b $*.tst $*.c.expected
+	fc $*.tst $*.c.expected
 
 all: $(FILES:.exe=.tst)

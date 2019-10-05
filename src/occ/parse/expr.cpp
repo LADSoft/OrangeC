@@ -5101,6 +5101,7 @@ static LEXEME* expression_primary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE**
 }
 static EXPRESSION* nodeSizeof(TYPE* tp, EXPRESSION* exp)
 {
+    EXPRESSION *exp_in = exp;
     tp = PerformDeferredInitialization(basetype(tp), nullptr);
     if (isstructured(tp))
         tp = basetype(tp)->sp->tp;
@@ -5162,7 +5163,11 @@ static EXPRESSION* nodeSizeof(TYPE* tp, EXPRESSION* exp)
     }
     if (!exp)
     {
-        exp = intNode(en_c_i, tp->size);
+        // array which is an argument has different sizeof requirements
+        if (tp->type == bt_pointer && tp->array && exp_in->type == en_l_p)
+            exp = intNode(en_c_i, getSize(bt_pointer));
+        else
+            exp = intNode(en_c_i, tp->size);
     }
     return exp;
 }

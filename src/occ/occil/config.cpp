@@ -272,8 +272,6 @@ extern ARCH_GEN outputfunctions;
 ARCH_MSIL msilData = {
     true,                 /* True if allowing language extensions */
     msil_managed,         /* return true if the function is a managed function, false otherwise */
-    oa_get_boxed,         /* msil - get a boxed version of type*/
-    oa_get_unboxed,       /* msil - get an unboxed version of type*/
     msil_create_property, /* create a property instance */
 };
 

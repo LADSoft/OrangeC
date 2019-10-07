@@ -80,9 +80,9 @@ void _apply_global_using(void)
         lst = lst->next;
     }
 }
-bool msil_managed(SYMBOL* sp)
+bool msil_managed(SimpleSymbol* sp)
 {
-    if (sp->attribs.inheritable.linkage2 == lk_msil_rtl)
+    if (sp->msil_rtl)
         return true;
     return !_dll_name(sp->name).size();
 }

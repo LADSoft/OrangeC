@@ -53,7 +53,6 @@ extern int tempCount;
 extern QUAD *intermed_head, *intermed_tail;
 extern FILE* icdFile;
 extern int walkPostorder;
-extern SYMBOL* theCurrentFunc;
 extern unsigned termCount;
 extern int loopCount;
 extern LOOP** loopArray;
@@ -202,8 +201,8 @@ static ALIASNAME* LookupMem(IMODE* im)
         case en_pc:
         case en_auto:
         case en_threadlocal:
-            if (im->offset->v.sp->imvalue)
-                im = im->offset->v.sp->imvalue;
+            if (im->offset->sp->imvalue)
+                im = im->offset->sp->imvalue;
             break;
         default:
             break;
@@ -382,7 +381,7 @@ static ALIASADDRESS* LookupAddress(ALIASNAME* name, int offset)
     switch (im->offset->type)
     {
         case en_auto:
-            //			if (im->offset->v.sp->storage_class != sc_parameter)
+            //			if (im->offset->sp->storage_class != sc_parameter)
             break;
         case en_global:
         {
@@ -445,7 +444,7 @@ static void CreateMem(IMODE* im)
     {
         if (im->mode == i_immed)
         {
-            if (!im->offset->v.sp->imvalue)
+            if (!im->offset->sp->imvalue)
             {
                 // make one in the case of global addresses that aren't used
                 // directly
@@ -453,9 +452,9 @@ static void CreateMem(IMODE* im)
                 ap2->offset = im->offset;
                 ap2->mode = i_direct;
                 ap2->size = ISZ_ADDR;
-                im->offset->v.sp->imvalue = ap2;
+                im->offset->sp->imvalue = ap2;
             }
-            p = LookupMem(im->offset->v.sp->imvalue);
+            p = LookupMem(im->offset->sp->imvalue);
         }
         else
         {
@@ -520,7 +519,7 @@ static bool IntersectsUIV(ALIASLIST* list)
 }
 static void HandlePhi(QUAD* head)
 {
-    if (tempInfo[head->dc.v.phi->T0]->enode->v.sp->imvalue->size == ISZ_ADDR)
+    if (tempInfo[head->dc.v.phi->T0]->enode->sp->imvalue->size == ISZ_ADDR)
     {
         struct _phiblock* pb = head->dc.v.phi->temps;
         ALIASLIST* l = nullptr;
@@ -544,8 +543,8 @@ static void HandleAssn(QUAD* head)
         {
             // ind, temp
             ALIASLIST* addr;
-            ALIASLIST* src = tempInfo[head->dc.left->offset->v.sp->value.i]->pointsto;
-            addr = tempInfo[head->ans->offset->v.sp->value.i]->pointsto;
+            ALIASLIST* src = tempInfo[head->dc.left->offset->sp->i]->pointsto;
+            addr = tempInfo[head->ans->offset->sp->i]->pointsto;
             while (addr)
             {
                 AliasUnion(&addr->address->pointsto, src);
@@ -556,12 +555,12 @@ static void HandleAssn(QUAD* head)
         {
             // ind, immed
             ALIASLIST* addr;
-            ALIASNAME* an = LookupMem(head->ans->offset->v.sp->imvalue);
+            ALIASNAME* an = LookupMem(head->ans->offset->sp->imvalue);
             ALIASADDRESS* aa;
             if (head->ans->mode == i_direct)
                 an = LookupAliasName(an, 0);
             aa = LookupAddress(an, 0);
-            addr = tempInfo[head->ans->offset->v.sp->value.i]->pointsto;
+            addr = tempInfo[head->ans->offset->sp->i]->pointsto;
             while (addr)
             {
                 AliasUnion(&addr->address->pointsto, aa->pointsto);
@@ -573,7 +572,7 @@ static void HandleAssn(QUAD* head)
     {
         // temp, ind
         ALIASLIST* result = nullptr;
-        ALIASLIST* addr = tempInfo[head->dc.left->offset->v.sp->value.i]->pointsto;
+        ALIASLIST* addr = tempInfo[head->dc.left->offset->sp->i]->pointsto;
         bool xchanged = changed;
         while (addr)
         {
@@ -592,7 +591,7 @@ static void HandleAssn(QUAD* head)
             addr = addr->next;
         }
         changed = xchanged;
-        tempInfo[head->ans->offset->v.sp->value.i]->pointsto = result;
+        tempInfo[head->ans->offset->sp->i]->pointsto = result;
     }
     else if (head->ans->size == ISZ_ADDR)
     {
@@ -606,16 +605,16 @@ static void HandleAssn(QUAD* head)
                 ALIASADDRESS* aa;
                 an = LookupAliasName(an, 0);
                 aa = LookupAddress(an, 0);
-                AliasUnion(&aa->pointsto, tempInfo[head->dc.left->offset->v.sp->value.i]->pointsto);
+                AliasUnion(&aa->pointsto, tempInfo[head->dc.left->offset->sp->i]->pointsto);
             }
             else if (head->dc.left->mode == i_immed && head->dc.left->size == ISZ_ADDR && head->dc.left->offset->type != en_labcon)
             {
                 // mem, immed
                 ALIASNAME* an2 = LookupMem(head->dc.left);
                 ALIASADDRESS* aa2 = LookupAddress(an2, 0);
-                if (head->ans->offset->v.sp->imvalue)
+                if (head->ans->offset->sp->imvalue)
                 {
-                    ALIASNAME* an = LookupMem(head->ans->offset->v.sp->imvalue);
+                    ALIASNAME* an = LookupMem(head->ans->offset->sp->imvalue);
                     ALIASADDRESS* aa;
                     ALIASLIST* al = (ALIASLIST*)aAlloc(sizeof(ALIASLIST));
                     al->address = aa2;
@@ -637,13 +636,13 @@ static void HandleAssn(QUAD* head)
                 ALIASADDRESS* aa = LookupAddress(an, 0);
                 ALIASLIST* al = (ALIASLIST*)(ALIASLIST*)aAlloc(sizeof(ALIASLIST));
                 al->address = aa;
-                tempInfo[head->ans->offset->v.sp->value.i]->pointsto = nullptr;
-                AliasUnion(&tempInfo[head->ans->offset->v.sp->value.i]->pointsto, al);
+                tempInfo[head->ans->offset->sp->i]->pointsto = nullptr;
+                AliasUnion(&tempInfo[head->ans->offset->sp->i]->pointsto, al);
                 changed = xchanged;
             }
             else if (head->dc.left->retval)
             {
-                AliasUnion(&tempInfo[head->ans->offset->v.sp->value.i]->pointsto, parmList);
+                AliasUnion(&tempInfo[head->ans->offset->sp->i]->pointsto, parmList);
             }
             else if (!(head->temps & TEMP_LEFT) && head->dc.left->mode == i_direct)
             {
@@ -655,21 +654,21 @@ static void HandleAssn(QUAD* head)
                 bool xchanged = changed;
                 an = LookupAliasName(an, 0);
                 aa = LookupAddress(an, 0);
-                AliasUnion(&tempInfo[head->ans->offset->v.sp->value.i]->pointsto, aa->pointsto);
+                AliasUnion(&tempInfo[head->ans->offset->sp->i]->pointsto, aa->pointsto);
                 changed = xchanged;
             }
             else if (head->temps & TEMP_LEFT)
             {
                 // temp, temp
-                AliasUnion(&tempInfo[head->ans->offset->v.sp->value.i]->pointsto,
-                           tempInfo[head->dc.left->offset->v.sp->value.i]->pointsto);
+                AliasUnion(&tempInfo[head->ans->offset->sp->i]->pointsto,
+                           tempInfo[head->dc.left->offset->sp->i]->pointsto);
             }
         }
     }
 }
 static int InferOffset(IMODE* im)
 {
-    QUAD* q = tempInfo[im->offset->v.sp->value.i]->instructionDefines;
+    QUAD* q = tempInfo[im->offset->sp->i]->instructionDefines;
     if (q)
     {
         if (q->dc.opcode == i_add)
@@ -677,12 +676,12 @@ static int InferOffset(IMODE* im)
             if ((q->temps & TEMP_LEFT) && q->dc.left->mode == i_direct)
             {
                 if (q->dc.right->mode == i_immed && isintconst(q->dc.right->offset))
-                    return q->dc.right->offset->v.i;
+                    return q->dc.right->offset->i;
             }
             else if ((q->temps & TEMP_RIGHT) && q->dc.right->mode == i_direct)
             {
                 if (q->dc.left->mode == i_immed && isintconst(q->dc.left->offset))
-                    return q->dc.left->offset->v.i;
+                    return q->dc.left->offset->i;
             }
         }
         else if (q->dc.opcode == i_sub)
@@ -690,30 +689,30 @@ static int InferOffset(IMODE* im)
             if ((q->temps & TEMP_LEFT) && q->dc.left->mode == i_direct)
             {
                 if (q->dc.right->mode == i_immed && isintconst(q->dc.right->offset))
-                    return -q->dc.right->offset->v.i;
+                    return -q->dc.right->offset->i;
             }
         }
         else if (q->dc.opcode == i_lsl)
         {
             if (q->dc.right->mode == i_immed && isintconst(q->dc.right->offset))
                 if (q->temps & TEMP_LEFT)
-                    return InferOffset(q->dc.left) << q->dc.right->offset->v.i;
+                    return InferOffset(q->dc.left) << q->dc.right->offset->i;
         }
         else if (q->dc.opcode == i_mul)
         {
             if (q->dc.left->mode == i_immed && isintconst(q->dc.left->offset))
                 if (q->temps & TEMP_RIGHT)
-                    return InferOffset(q->dc.right) * q->dc.left->offset->v.i;
+                    return InferOffset(q->dc.right) * q->dc.left->offset->i;
             if (q->dc.right->mode == i_immed && isintconst(q->dc.right->offset))
                 if (q->temps & TEMP_LEFT)
-                    return InferOffset(q->dc.left) * q->dc.right->offset->v.i;
+                    return InferOffset(q->dc.left) * q->dc.right->offset->i;
         }
     }
     return 0;
 }
 static int InferStride(IMODE* im)
 {
-    QUAD* q = tempInfo[im->offset->v.sp->value.i]->instructionDefines;
+    QUAD* q = tempInfo[im->offset->sp->i]->instructionDefines;
     if (q)
     {
         if (q->dc.opcode == i_lsl)
@@ -721,7 +720,7 @@ static int InferStride(IMODE* im)
             if ((q->temps & TEMP_LEFT) && q->dc.left->mode == i_direct)
             {
                 if (q->dc.right->mode == i_immed && isintconst(q->dc.right->offset))
-                    return 1 << q->dc.right->offset->v.i;
+                    return 1 << q->dc.right->offset->i;
             }
         }
         else if (q->dc.opcode == i_mul || q->dc.opcode == i_add || q->dc.opcode == i_sub)
@@ -740,7 +739,7 @@ static int InferStride(IMODE* im)
                 {
                     if (q->dc.opcode == i_add || q->dc.opcode == i_sub)
                         return InferStride(one);
-                    return two->offset->v.i;
+                    return two->offset->i;
                 }
             }
         }
@@ -812,7 +811,7 @@ static void Infer(IMODE* ans, IMODE* reg, ALIASLIST* pointsto)
                 pointsto = pointsto->next;
             }
             changed = xchanged;
-            AliasUnion(&tempInfo[ans->offset->v.sp->value.i]->pointsto, result);
+            AliasUnion(&tempInfo[ans->offset->sp->i]->pointsto, result);
         }
     }
 }
@@ -827,26 +826,26 @@ static void HandleAdd(QUAD* head)
                 if (isintconst(head->dc.left->offset))
                 {
                     // C + R
-                    ALIASLIST* scan = tempInfo[head->dc.right->offset->v.sp->value.i]->pointsto;
+                    ALIASLIST* scan = tempInfo[head->dc.right->offset->sp->i]->pointsto;
                     ALIASLIST* result = nullptr;
                     bool xchanged = changed;
                     while (scan)
                     {
-                        ALIASADDRESS* addr = LookupAddress(scan->address->name, scan->address->offset + head->dc.left->offset->v.i);
+                        ALIASADDRESS* addr = LookupAddress(scan->address->name, scan->address->offset + head->dc.left->offset->i);
                         ALIASLIST* al = (ALIASLIST*)aAlloc(sizeof(ALIASLIST));
                         al->address = addr;
                         AliasUnion(&result, al);
                         scan = scan->next;
                     }
                     changed = xchanged;
-                    AliasUnion(&tempInfo[head->ans->offset->v.sp->value.i]->pointsto, result);
+                    AliasUnion(&tempInfo[head->ans->offset->sp->i]->pointsto, result);
                 }
                 else
                 {
                     // p + R
                     if (head->dc.left->offset->type != en_labcon)  // needed for exports
                     {
-                        ALIASNAME* nm = LookupMem(head->dc.left->offset->v.sp->imvalue);
+                        ALIASNAME* nm = LookupMem(head->dc.left->offset->sp->imvalue);
                         ALIASADDRESS* aa = LookupAddress(nm, 0);
                         ALIASLIST* al = (ALIASLIST*)aAlloc(sizeof(ALIASLIST));
                         al->address = aa;
@@ -859,20 +858,20 @@ static void HandleAdd(QUAD* head)
                 if (!isintconst(head->dc.left->offset) && head->dc.left->offset->type != en_labcon)
                 {
                     // p + C
-                    ALIASNAME* nm = LookupMem(head->dc.left->offset->v.sp->imvalue);
-                    ALIASADDRESS* aa = LookupAddress(nm, head->dc.right->offset->v.i);
+                    ALIASNAME* nm = LookupMem(head->dc.left->offset->sp->imvalue);
+                    ALIASADDRESS* aa = LookupAddress(nm, head->dc.right->offset->i);
                     ALIASLIST* al = (ALIASLIST*)aAlloc(sizeof(ALIASLIST));
                     al->address = aa;
-                    AliasUnion(&tempInfo[head->ans->offset->v.sp->value.i]->pointsto, al);
+                    AliasUnion(&tempInfo[head->ans->offset->sp->i]->pointsto, al);
                 }
                 else if (!isintconst(head->dc.right->offset) && head->dc.right->offset->type != en_labcon)
                 {
                     // C + p
-                    ALIASNAME* nm = LookupMem(head->dc.right->offset->v.sp->imvalue);
-                    ALIASADDRESS* aa = LookupAddress(nm, head->dc.left->offset->v.i);
+                    ALIASNAME* nm = LookupMem(head->dc.right->offset->sp->imvalue);
+                    ALIASADDRESS* aa = LookupAddress(nm, head->dc.left->offset->i);
                     ALIASLIST* al = (ALIASLIST*)aAlloc(sizeof(ALIASLIST));
                     al->address = aa;
-                    AliasUnion(&tempInfo[head->ans->offset->v.sp->value.i]->pointsto, al);
+                    AliasUnion(&tempInfo[head->ans->offset->sp->i]->pointsto, al);
                 }
             }
         }
@@ -884,8 +883,8 @@ static void HandleAdd(QUAD* head)
                 if (isintconst(head->dc.right->offset))
                 {
                     // R+C
-                    int c = head->dc.opcode == i_add ? head->dc.right->offset->v.i : -head->dc.right->offset->v.i;
-                    ALIASLIST* scan = tempInfo[head->dc.left->offset->v.sp->value.i]->pointsto;
+                    int c = head->dc.opcode == i_add ? head->dc.right->offset->i : -head->dc.right->offset->i;
+                    ALIASLIST* scan = tempInfo[head->dc.left->offset->sp->i]->pointsto;
                     ALIASLIST* result = nullptr;
                     bool xchanged = changed;
                     while (scan)
@@ -897,14 +896,14 @@ static void HandleAdd(QUAD* head)
                         scan = scan->next;
                     }
                     changed = xchanged;
-                    AliasUnion(&tempInfo[head->ans->offset->v.sp->value.i]->pointsto, result);
+                    AliasUnion(&tempInfo[head->ans->offset->sp->i]->pointsto, result);
                 }
                 else
                 {
                     // R + p
                     if (head->dc.right->offset->type != en_labcon)  // needed for exports
                     {
-                        ALIASNAME* nm = LookupMem(head->dc.right->offset->v.sp->imvalue);
+                        ALIASNAME* nm = LookupMem(head->dc.right->offset->sp->imvalue);
                         ALIASADDRESS* aa = LookupAddress(nm, 0);
                         ALIASLIST* al = (ALIASLIST*)aAlloc(sizeof(ALIASLIST));
                         al->address = aa;
@@ -928,7 +927,7 @@ static void HandleAdd(QUAD* head)
             if (one->size == ISZ_ADDR)
             {
                 // now one has the pointer, two has something else
-                src = tempInfo[one->offset->v.sp->value.i]->pointsto;
+                src = tempInfo[one->offset->sp->i]->pointsto;
                 Infer(head->ans, two, src);
             }
         }
@@ -954,7 +953,7 @@ static void HandleAssnBlock(QUAD* head)
 
     if (head->dc.right->mode == i_direct && ((head->temps & TEMP_RIGHT) || head->dc.right->retval))
     {
-        ALIASLIST* src = tempInfo[head->dc.right->offset->v.sp->value.i]->pointsto;
+        ALIASLIST* src = tempInfo[head->dc.right->offset->sp->i]->pointsto;
         while (src)
         {
             ALIASNAME* srcn = src->address->name;
@@ -996,7 +995,7 @@ static void HandleParm(QUAD* head)
         ALIASLIST *result = nullptr, **base = nullptr, *addr;
         if (head->temps & TEMP_LEFT)
         {
-            base = &tempInfo[head->dc.left->offset->v.sp->value.i]->pointsto;
+            base = &tempInfo[head->dc.left->offset->sp->i]->pointsto;
         }
         else if (!isintconst(head->dc.left->offset))
         {
@@ -1012,7 +1011,7 @@ static void HandleParm(QUAD* head)
                 default:
                     break;
             }
-            an = LookupMem(head->dc.left->offset->v.sp->imvalue);
+            an = LookupMem(head->dc.left->offset->sp->imvalue);
             if (head->dc.left->mode == i_direct)
                 an = LookupAliasName(an, 0);
             aa = LookupAddress(an, 0);
@@ -1150,10 +1149,10 @@ static void scanDepends(BITINT* bits, ALIASLIST* alin)
 void AliasStruct(BITINT* bits, IMODE* ans, IMODE* left, IMODE* right)
 {
     ALIASLIST* src;
-    int i, n = ans->offset->v.i;
+    int i, n = ans->offset->i;
     if (left->offset->type == en_tempref && left->mode == i_direct)
     {
-        src = tempInfo[left->offset->v.sp->value.i]->pointsto;
+        src = tempInfo[left->offset->sp->i]->pointsto;
         while (src)
         {
             ALIASADDRESS* aa = src->address;
@@ -1175,7 +1174,7 @@ void AliasStruct(BITINT* bits, IMODE* ans, IMODE* left, IMODE* right)
             }
             src = src->next;
         }
-        setbit(bits, termMap[left->offset->v.sp->value.i]);
+        setbit(bits, termMap[left->offset->sp->i]);
         return;
     }
     else if (left->mode == i_immed)
@@ -1216,7 +1215,7 @@ void AliasGosub(QUAD* tail, BITINT* parms, BITINT* bits, int n)
         {
             if (tail->temps & TEMP_LEFT)
             {
-                ALIASLIST* al = tempInfo[tail->dc.left->offset->v.sp->value.i]->pointsto;
+                ALIASLIST* al = tempInfo[tail->dc.left->offset->sp->i]->pointsto;
                 ResetProcessed();
                 scanDepends(parms, al);
             }
@@ -1241,12 +1240,12 @@ void AliasUses(BITINT* bits, IMODE* im, bool rhs)
         {
             if (im->offset->type == en_tempref)
             {
-                ormap(bits, tempInfo[im->offset->v.sp->value.i]->modifiedBy);
+                ormap(bits, tempInfo[im->offset->sp->i]->modifiedBy);
                 if (im->mode == i_direct)
                 {
                     im = LookupLoadTemp(im, im);
                 }
-                setbit(bits, termMap[im->offset->v.sp->value.i]);
+                setbit(bits, termMap[im->offset->sp->i]);
             }
             else if (im->mode == i_direct)
             {
@@ -1261,7 +1260,7 @@ void AliasUses(BITINT* bits, IMODE* im, bool rhs)
                 im = GetLoadTemp(im);
                 if (im)
                 {
-                    setbit(bits, termMap[im->offset->v.sp->value.i]);
+                    setbit(bits, termMap[im->offset->sp->i]);
                 }
             }
             else if (im->mode == i_immed && !isintconst(im->offset) && !isimaginaryconst(im->offset) &&
@@ -1274,20 +1273,20 @@ void AliasUses(BITINT* bits, IMODE* im, bool rhs)
                     aa = aa->merge;
                 if (aa->modifiedBy)
                     ormap(bits, aa->modifiedBy);
-                im = im->offset->v.sp->imvalue;
+                im = im->offset->sp->imvalue;
                 if (im)
                 {
                     im = GetLoadTemp(im);
                     if (im)
                     {
-                        setbit(bits, termMap[im->offset->v.sp->value.i]);
+                        setbit(bits, termMap[im->offset->sp->i]);
                     }
                 }
             }
         }
         else
         {
-            setbit(bits, termMap[im->offset->v.sp->value.i]);
+            setbit(bits, termMap[im->offset->sp->i]);
         }
     }
 }
@@ -1323,7 +1322,7 @@ static void ScanUIVs(void)
                 case en_threadlocal:
                     im = GetLoadTemp(im);
                     if (im)
-                        setbit(uivBytes, termMap[im->offset->v.sp->value.i]);
+                        setbit(uivBytes, termMap[im->offset->sp->i]);
                     break;
                 default:
                     break;

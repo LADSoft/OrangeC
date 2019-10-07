@@ -208,8 +208,8 @@ class InstructionParser
   protected:
     void SetRegToken(int reg, int sz);
     void SetNumberToken(int val);
-    bool SetNumberToken(expr* offset, int& n);
-    void SetExpressionToken(expr* offset);
+    bool SetNumberToken(struct SimpleExpression* offset, int& n);
+    void SetExpressionToken(struct SimpleExpression* offset);
     void SetSize(int sz);
     void SetBracketSequence(bool open, int sz, int seg);
     void SetOperandTokens(amode* operand);

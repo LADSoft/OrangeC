@@ -112,7 +112,7 @@ void dumpStartups(void)
             else
             {
                 s = search(starts.first.c_str(), s->tp->syms);
-                gensrref(s, starts.second->prio, STARTUP_TYPE_STARTUP);
+                gensrref(SymbolManager::Get(s), starts.second->prio, STARTUP_TYPE_STARTUP);
                 s->attribs.inheritable.used = true;
             }
         }
@@ -133,7 +133,7 @@ void dumpStartups(void)
             else
             {
                 s = search(starts.first.c_str(), s->tp->syms);
-                gensrref(s, starts.second->prio, STARTUP_TYPE_RUNDOWN);
+                gensrref(SymbolManager::Get(s), starts.second->prio, STARTUP_TYPE_RUNDOWN);
                 s->attribs.inheritable.used = true;
             }
         }
@@ -342,7 +342,7 @@ static void dumpDynamicInitializers(void)
         if (!(chosenAssembler->arch->denyopts & DO_NOADDRESSINIT))
         {
             startupseg();
-            gensrref(funcsp, 32 + preProcessor->GetCppPrio(), STARTUP_TYPE_STARTUP);
+            gensrref(SymbolManager::Get(funcsp), 32 + preProcessor->GetCppPrio(), STARTUP_TYPE_STARTUP);
         }
         else
         {
@@ -391,7 +391,7 @@ static void dumpTLSInitializers(void)
         genfunc(funcsp, true);
         startlab = retlab = 0;
         tlsstartupseg();
-        gensrref(funcsp, 32, STARTUP_TYPE_TLS_STARTUP);
+        gensrref(SymbolManager::Get(funcsp), 32, STARTUP_TYPE_TLS_STARTUP);
     }
 #endif
 }
@@ -432,7 +432,7 @@ static void dumpDynamicDestructors(void)
         if (!(chosenAssembler->arch->denyopts & DO_NOADDRESSINIT))
         {
             rundownseg();
-            gensrref(funcsp, 32, STARTUP_TYPE_RUNDOWN);
+            gensrref(SymbolManager::Get(funcsp), 32, STARTUP_TYPE_RUNDOWN);
         }
         else
         {
@@ -479,7 +479,7 @@ static void dumpTLSDestructors(void)
         genfunc(funcsp, true);
         startlab = retlab = 0;
         tlsrundownseg();
-        gensrref(funcsp, 32, STARTUP_TYPE_TLS_RUNDOWN);
+        gensrref(SymbolManager::Get(funcsp), 32, STARTUP_TYPE_TLS_RUNDOWN);
     }
 #endif
 }
@@ -530,7 +530,7 @@ int dumpMemberPtr(SYMBOL* sym, TYPE* membertp, bool make_label)
                 genned = getvc1Thunk(sym->vtaboffset);
             else
                 genned = sym;
-            genref(genned, 0);
+            genref(SymbolManager::Get(genned), 0);
             if (exp->type == en_add)
             {
                 if (exp->left->type == en_l_p)
@@ -739,10 +739,10 @@ int dumpInit(SYMBOL* sym, INITIALIZER* init)
             switch (exp->type)
             {
                 case en_pc:
-                    genpcref(exp->v.sp, 0);
+                    genpcref(SymbolManager::Get(exp->v.sp), 0);
                     break;
                 case en_global:
-                    genref(exp->v.sp, 0);
+                    genref(SymbolManager::Get(exp->v.sp), 0);
                     break;
                 case en_labcon:
                     gen_labref(exp->v.i);
@@ -761,11 +761,11 @@ int dumpInit(SYMBOL* sym, INITIALIZER* init)
                     {
                         if (ep1->type == en_pc)
                         {
-                            genpcref(ep1->v.sp, offs);
+                            genpcref(SymbolManager::Get(ep1->v.sp), offs);
                         }
                         else if (ep1->type == en_global)
                         {
-                            genref(ep1->v.sp, offs);
+                            genref(SymbolManager::Get(ep1->v.sp), offs);
                             break;
                         }
                     }
@@ -1050,18 +1050,18 @@ static void dumpStaticInitializers(void)
             sym->offset = *sizep;
             *sizep += basetype(tp)->size;
             if (sym->storage_class == sc_global || (sym->storage_class == sc_constant && !sym->parent))
-                globaldef(sym);
+                globaldef(SymbolManager::Get(sym));
             else if (sym->storage_class == sc_static)
-                localdef(sym);
+                localdef(SymbolManager::Get(sym));
             if (sym->storage_class == sc_localstatic)
             {
-                localstaticdef(sym);  // for debug info
-                gen_strlab(sym);
+                localstaticdef(SymbolManager::Get(sym));  // for debug info
+                gen_strlab(SymbolManager::Get(sym));
                 //                    put_label(sym->label);
             }
             else
             {
-                gen_strlab(sym);
+                gen_strlab(SymbolManager::Get(sym));
                 if (sym->storage_class == sc_constant)
                     put_label(sym->label);
             }
@@ -3930,7 +3930,7 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_c
                 sym->storage_class = sc_global;
             {
                 bool assigned = false;
-                TYPE* t = !isassign && chosenAssembler->msil ? chosenAssembler->msil->find_boxed_type(sym->tp) : 0;
+                TYPE* t = !isassign && chosenAssembler->msil ? find_boxed_type(sym->tp) : 0;
                 if (!t || !search(overloadNameTab[CI_CONSTRUCTOR], basetype(t)->syms))
                     t = sym->tp;
                 if (MATCHKW(lex, assign))
@@ -3961,7 +3961,7 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_c
              sym->storage_class != sc_typedef && sym->storage_class != sc_external && !asExpression)
     {
         TYPE* t =
-            (chosenAssembler->msil && chosenAssembler->msil->allowExtensions) ? chosenAssembler->msil->find_boxed_type(sym->tp) : 0;
+            (chosenAssembler->msil && chosenAssembler->msil->allowExtensions) ? find_boxed_type(sym->tp) : 0;
         if (!t || !search(overloadNameTab[CI_CONSTRUCTOR], basetype(t)->syms))
             t = sym->tp;
         if (isstructured(t))
@@ -4219,6 +4219,6 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_c
     DecGlobalFlag();
     initializingGlobalVar = false;
     if (chosenAssembler->enter_type)
-        chosenAssembler->enter_type(sym);
+        chosenAssembler->enter_type(SymbolManager::Get(sym));
     return lex;
 }

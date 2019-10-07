@@ -179,7 +179,7 @@ static void GatherGlobals(void)
                     else if (head->ans)
                     {
                         if (!(head->temps & TEMP_ANS) || head->dc.opcode == i_clrblock || head->dc.opcode == i_assnblock ||
-                            ((head->temps & TEMP_ANS) && (head->ans->mode == i_ind || head->ans->offset->v.sp->pushedtotemp)))
+                            ((head->temps & TEMP_ANS) && (head->ans->mode == i_ind || head->ans->offset->sp->pushedtotemp)))
                         {
                             EnterGlobal(head);
                         }
@@ -218,9 +218,9 @@ void SetunMoveableTerms(void)
                 {
                     if (head->temps & TEMP_ANS)
                     {
-                        int n = termMap[head->ans->offset->v.sp->value.i];
+                        int n = termMap[head->ans->offset->sp->i];
                         if ((!chosenAssembler->arch->hasFloatRegs && head->ans->size >= ISZ_FLOAT) || head->ans->bits ||
-                            head->ans->vol || head->ans->offset->v.sp->loadTemp)
+                            head->ans->vol || head->ans->offset->sp->loadTemp)
                             clearbit(unMoveableTerms, n);
                     }
                 }
@@ -252,29 +252,29 @@ static void CalculateUses(void)
                 {
                     if (head->ans->mode == i_ind)
                     {
-                        setbit(tail->uses, termMap[head->ans->offset->v.sp->value.i]);
+                        setbit(tail->uses, termMap[head->ans->offset->sp->i]);
                     }
                 }
                 if (head->temps & TEMP_LEFT)
                 {
                     if (head->dc.left->mode == i_ind)
                     {
-                        setbit(tail->uses, termMap[head->dc.left->offset->v.sp->value.i]);
+                        setbit(tail->uses, termMap[head->dc.left->offset->sp->i]);
                     }
-                    else if (!head->dc.left->offset->v.sp->pushedtotemp)
+                    else if (!head->dc.left->offset->sp->pushedtotemp)
                     {
-                        setbit(tail->uses, termMap[head->dc.left->offset->v.sp->value.i]);
+                        setbit(tail->uses, termMap[head->dc.left->offset->sp->i]);
                     }
                 }
                 if (head->temps & TEMP_RIGHT)
                 {
                     if (head->dc.right->mode == i_ind)
                     {
-                        setbit(tail->uses, termMap[head->dc.right->offset->v.sp->value.i]);
+                        setbit(tail->uses, termMap[head->dc.right->offset->sp->i]);
                     }
-                    else if (!head->dc.right->offset->v.sp->pushedtotemp)
+                    else if (!head->dc.right->offset->sp->pushedtotemp)
                     {
-                        setbit(tail->uses, termMap[head->dc.right->offset->v.sp->value.i]);
+                        setbit(tail->uses, termMap[head->dc.right->offset->sp->i]);
                     }
                 }
             }
@@ -303,7 +303,7 @@ static void CalculateTransparent(void)
             {
                 if (next->dc.left && next->dc.left->retval && (next->temps & TEMP_ANS) && next->ans->mode == i_direct)
                 {
-                    int n = next->ans->offset->v.sp->value.i;
+                    int n = next->ans->offset->sp->i;
                     clearbit(head->transparent, termMap[n]);
                     if (tempInfo[n]->terms)
                         andmap(tail->transparent, tempInfo[n]->terms);
@@ -342,7 +342,7 @@ static void CalculateTransparent(void)
                 {
                     if (head->temps & TEMP_ANS)
                     {
-                        int n = head->ans->offset->v.sp->value.i;
+                        int n = head->ans->offset->sp->i;
                         if (!tempInfo[n]->uses)
                         {
                             tempInfo[n]->uses = aallocbit(termCount);
@@ -738,13 +738,13 @@ static void GatherTerms(void)
         {
             if ((tail->temps & TEMP_ANS) && tail->ans->mode == i_direct)
             {
-                int n = tail->ans->offset->v.sp->value.i;
+                int n = tail->ans->offset->sp->i;
                 if ((tail->temps & (TEMP_LEFT | TEMP_RIGHT)) || tail->dc.left->retval)
                 {
                     if (((tail->temps & TEMP_LEFT) || tail->dc.left->retval) /*&& 
-                        (!tail->dc.left->offset->v.sp->pushedtotemp)*/)
+                        (!tail->dc.left->offset->sp->pushedtotemp)*/)
                     {
-                        int l = tail->dc.left->offset->v.sp->value.i;
+                        int l = tail->dc.left->offset->sp->i;
                         if (!tempInfo[l]->terms)
                         {
                             tempInfo[l]->terms = aallocbit(termCount);
@@ -760,9 +760,9 @@ static void GatherTerms(void)
                         }
                         clearbit(tempInfo[l]->terms, termMap[n]);
                     }
-                    if ((tail->temps & TEMP_RIGHT) && !tail->dc.right->offset->v.sp->pushedtotemp)
+                    if ((tail->temps & TEMP_RIGHT) && !tail->dc.right->offset->sp->pushedtotemp)
                     {
-                        int l = tail->dc.right->offset->v.sp->value.i;
+                        int l = tail->dc.right->offset->sp->i;
                         if (!tempInfo[l]->terms)
                         {
                             tempInfo[l]->terms = aallocbit(termCount);
@@ -839,7 +839,7 @@ static void HandleOCP(QUAD* after, int tn)
             {
                 if (after->temps & TEMP_ANS)
                 {
-                    if (tn == after->ans->offset->v.sp->value.i)
+                    if (tn == after->ans->offset->sp->i)
                         if (after->ans->mode == i_direct)
                             beforea = after;
                 }
@@ -893,7 +893,7 @@ static IMODE* GetROVar(IMODE* oldvar, IMODE* newvar, bool mov)
 {
     if (oldvar->mode == i_ind)
     {
-        IMODELIST* iml = newvar->offset->v.sp->imind;
+        IMODELIST* iml = newvar->offset->sp->imind;
         IMODE* im = nullptr;
         while (iml)
         {
@@ -915,18 +915,18 @@ static IMODE* GetROVar(IMODE* oldvar, IMODE* newvar, bool mov)
             im->startbit = oldvar->startbit;
             im->bits = oldvar->bits;
             iml2->im = im;
-            iml2->next = newvar->offset->v.sp->imind;
-            newvar->offset->v.sp->imind = iml2;
+            iml2->next = newvar->offset->sp->imind;
+            newvar->offset->sp->imind = iml2;
         }
         newvar = im;
     }
     else
     {
-        if (oldvar->offset->v.sp->pushedtotemp)
+        if (oldvar->offset->sp->pushedtotemp)
             return oldvar;
         if (mov)
         {
-            int n = oldvar->offset->v.sp->value.i;
+            int n = oldvar->offset->sp->i;
             QUAD* q = (QUAD*)tempInfo[n]->idefines->data;
             if (q->dc.opcode == i_assn && q->dc.left->mode == i_immed)
                 return q->dc.left;
@@ -943,11 +943,11 @@ static void HandleRO(QUAD* after, int tn)
         {
             if (!after->OCPInserted)
             {
-                if ((after->temps & TEMP_ANS) && after->ans->mode == i_direct && after->ans->offset->v.sp->value.i == tn &&
-                    (after->dc.opcode != i_assn || !(after->temps & TEMP_LEFT) || !after->dc.left->offset->v.sp->pushedtotemp))
+                if ((after->temps & TEMP_ANS) && after->ans->mode == i_direct && after->ans->offset->sp->i == tn &&
+                    (after->dc.opcode != i_assn || !(after->temps & TEMP_LEFT) || !after->dc.left->offset->sp->pushedtotemp))
                 {
                     after->dc.left =
-                        GetROVar(after->ans, tempInfo[after->ans->offset->v.sp->value.i]->copy, after->dc.opcode == i_assn);
+                        GetROVar(after->ans, tempInfo[after->ans->offset->sp->i]->copy, after->dc.opcode == i_assn);
                     after->dc.opcode = i_assn;
                     after->temps &= ~TEMP_RIGHT;
                     after->temps |= TEMP_LEFT;
@@ -958,16 +958,16 @@ static void HandleRO(QUAD* after, int tn)
                 else
                 {
 
-                    if ((after->temps & TEMP_LEFT) && after->dc.left->offset->v.sp->value.i == tn)
+                    if ((after->temps & TEMP_LEFT) && after->dc.left->offset->sp->i == tn)
                     {
-                        after->dc.left = GetROVar(after->dc.left, tempInfo[after->dc.left->offset->v.sp->value.i]->copy,
+                        after->dc.left = GetROVar(after->dc.left, tempInfo[after->dc.left->offset->sp->i]->copy,
                                                   after->dc.opcode == i_assn);
                         if (after->dc.left->offset->type != en_tempref)
                             after->temps &= ~TEMP_LEFT;
                     }
-                    if ((after->temps & TEMP_RIGHT) && after->dc.right->offset->v.sp->value.i == tn)
+                    if ((after->temps & TEMP_RIGHT) && after->dc.right->offset->sp->i == tn)
                     {
-                        after->dc.right = GetROVar(after->dc.right, tempInfo[after->dc.right->offset->v.sp->value.i]->copy, false);
+                        after->dc.right = GetROVar(after->dc.right, tempInfo[after->dc.right->offset->sp->i]->copy, false);
                     }
                 }
             }
@@ -983,7 +983,7 @@ static void MoveExpressions(void)
         if (isset(ocpTerms, i))
         {
             int j;
-            int size = tempInfo[termMapUp[i]]->enode->v.sp->imvalue->size;
+            int size = tempInfo[termMapUp[i]]->enode->sp->imvalue->size;
             tempInfo[termMapUp[i]]->copy = InitTempOpt(size, size);
             for (j = 0; j < blocks; j++)
             {
@@ -1036,16 +1036,16 @@ void RearrangePrecolors(void)
         if ((head->precolored & TEMP_ANS) && !head->ans->retval)
         {
             QUAD* newIns = (QUAD*)Alloc(sizeof(QUAD));
-            i = head->ans->offset->v.sp->value.i;
+            i = head->ans->offset->sp->i;
             if (tempInfo[i]->temp < 0)
             {
                 IMODE* newImode = InitTempOpt(head->ans->size, head->ans->size);
-                tempInfo[i]->temp = newImode->offset->v.sp->value.i;
+                tempInfo[i]->temp = newImode->offset->sp->i;
                 newIns->dc.left = newImode;
             }
             else
             {
-                newIns->dc.left = tempInfo[tempInfo[i]->temp]->enode->v.sp->imvalue;
+                newIns->dc.left = tempInfo[tempInfo[i]->temp]->enode->sp->imvalue;
             }
             newIns->dc.opcode = i_assn;
             newIns->ans = head->ans;
@@ -1055,16 +1055,16 @@ void RearrangePrecolors(void)
         if ((head->precolored & TEMP_LEFT) && !head->dc.left->retval)
         {
             QUAD* newIns = (QUAD*)Alloc(sizeof(QUAD));
-            i = head->dc.left->offset->v.sp->value.i;
+            i = head->dc.left->offset->sp->i;
             if (tempInfo[i]->temp < 0)
             {
                 IMODE* newImode = InitTempOpt(head->dc.left->size, head->dc.left->size);
-                tempInfo[i]->temp = newImode->offset->v.sp->value.i;
+                tempInfo[i]->temp = newImode->offset->sp->i;
                 newIns->ans = newImode;
             }
             else
             {
-                newIns->ans = tempInfo[tempInfo[i]->temp]->enode->v.sp->imvalue;
+                newIns->ans = tempInfo[tempInfo[i]->temp]->enode->sp->imvalue;
             }
             newIns->dc.opcode = i_assn;
             newIns->dc.left = head->dc.left;
@@ -1074,16 +1074,16 @@ void RearrangePrecolors(void)
         if ((head->precolored & TEMP_RIGHT) && !head->dc.right->retval)
         {
             QUAD* newIns = (QUAD*)Alloc(sizeof(QUAD));
-            i = head->dc.right->offset->v.sp->value.i;
+            i = head->dc.right->offset->sp->i;
             if (tempInfo[i]->temp < 0)
             {
                 IMODE* newImode = InitTempOpt(head->dc.right->size, head->dc.right->size);
-                tempInfo[i]->temp = newImode->offset->v.sp->value.i;
+                tempInfo[i]->temp = newImode->offset->sp->i;
                 newIns->ans = newImode;
             }
             else
             {
-                newIns->ans = tempInfo[tempInfo[i]->temp]->enode->v.sp->imvalue;
+                newIns->ans = tempInfo[tempInfo[i]->temp]->enode->sp->imvalue;
             }
             newIns->dc.opcode = i_assn;
             newIns->dc.left = head->dc.right;

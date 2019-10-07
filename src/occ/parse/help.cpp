@@ -769,6 +769,7 @@ EXPRESSION* anonymousVar(enum e_sc storage_class, TYPE* tp)
     static int anonct = 1;
     char buf[256];
     SYMBOL* rv = (SYMBOL*)Alloc(sizeof(SYMBOL));
+    rv->key = NextSymbolKey();
     if (tp->size == 0 && isstructured(tp))
         tp = basetype(tp)->sp->tp;
     rv->storage_class = storage_class;

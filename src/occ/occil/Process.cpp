@@ -30,7 +30,7 @@
 #include "winmode.h"
 #include "DotNetPELib.h"
 #include "Utils.h"
-
+#include <unordered_map>
 #define STARTUP_TYPE_STARTUP 1
 #define STARTUP_TYPE_RUNDOWN 2
 #define STARTUP_TYPE_TLS_STARTUP 3
@@ -43,12 +43,9 @@ using namespace DotNetPELib;
 extern void Import();
 BoxedType* boxedType(int isz);
 
-extern SYMBOL* theCurrentFunc;
+extern SimpleSymbol* currentFunction;
 extern COMPILER_PARAMS cparams;
 extern bool replacePInvoke;
-extern TYPE stdbool, stdchar, stdunsignedchar, stdshort, stdunsignedshort, stdint, stdunsigned;
-extern TYPE stdlonglong, stdunsignedlonglong, stdinative, stdunative, stdfloat, stddouble, stdstring;
-extern TYPE std__string;
 extern LIST* externals;
 extern int prm_targettype;
 extern char namespaceAndClass[512];
@@ -86,7 +83,7 @@ char msil_bltins[] =
     "void *__va_arg__(void *, ...); ";
 std::string _dll_name(const char* name);
 int uniqueId;
-static SYMBOL retblocksym;
+static SimpleSymbol retblocksym;
 
 static Method* mainSym;
 
@@ -99,19 +96,19 @@ static Byte* dataPointer;
 static Field* initializingField;
 static char objFileName[260];
 
-Type* GetType(TYPE* tp, bool commit, bool funcarg = false, bool pinvoke = false);
-static SYMBOL* clone(SYMBOL* sp, bool ctype = true);
-void CacheExtern(SYMBOL* sp);
-void CacheGlobal(SYMBOL* sp);
-void CacheStatic(SYMBOL* sp);
+Type* GetType(SimpleType* tp, bool commit, bool funcarg = false, bool pinvoke = false);
+static SimpleSymbol* clone(SimpleSymbol* sp, bool ctype = true);
+void CacheExtern(SimpleSymbol* sp);
+void CacheGlobal(SimpleSymbol* sp);
+void CacheStatic(SimpleSymbol* sp);
 
 struct byName
 {
-    bool operator()(const SYMBOL* left, const SYMBOL* right) const { return strcmp(left->name, right->name) < 0; }
+    bool operator()(const SimpleSymbol* left, const SimpleSymbol* right) const { return strcmp(left->name, right->name) < 0; }
 };
 struct byLabel
 {
-    bool operator()(const SYMBOL* left, const SYMBOL* right) const
+    bool operator()(const SimpleSymbol* left, const SimpleSymbol* right) const
     {
         if (left->storage_class == sc_localstatic || right->storage_class == sc_localstatic)
         {
@@ -124,7 +121,7 @@ struct byLabel
 };
 struct byField
 {
-    bool operator()(const SYMBOL* left, const SYMBOL* right) const
+    bool operator()(const SimpleSymbol* left, const SimpleSymbol* right) const
     {
         int n = strcmp(left->parentClass->name, right->parentClass->name);
         if (n < 0)
@@ -141,21 +138,21 @@ struct byField
         }
     }
 };
-static std::map<SYMBOL*, Value*, byName> externalMethods;
-static std::map<SYMBOL*, Value*, byName> externalList;
-static std::map<SYMBOL*, Value*, byName> globalMethods;
-static std::map<SYMBOL*, Value*, byName> globalList;
-static std::map<SYMBOL*, Value*, byLabel> staticMethods;
-static std::map<SYMBOL*, Value*, byLabel> staticList;
-static std::map<SYMBOL*, MethodSignature*, byName> pinvokeInstances;
-static std::map<SYMBOL*, Param*, byName> paramList;
+static std::map<SimpleSymbol*, Value*, byName> externalMethods;
+static std::map<SimpleSymbol*, Value*, byName> externalList;
+static std::map<SimpleSymbol*, Value*, byName> globalMethods;
+static std::map<SimpleSymbol*, Value*, byName> globalList;
+static std::map<SimpleSymbol*, Value*, byLabel> staticMethods;
+static std::map<SimpleSymbol*, Value*, byLabel> staticList;
+static std::map<SimpleSymbol*, MethodSignature*, byName> pinvokeInstances;
+static std::map<SimpleSymbol*, Param*, byName> paramList;
 std::multimap<std::string, MethodSignature*> pInvokeReferences;
 
 std::map<std::string, Value*> startups, rundowns, tlsstartups, tlsrundowns;
 
 std::vector<Local*> localList;
 static std::map<std::string, Type*> typeList;
-static std::map<SYMBOL*, Value*, byField> fieldList;
+static std::map<SimpleSymbol*, Value*, byField> fieldList;
 static std::map<std::string, MethodSignature*> arrayMethods;
 
 void parse_pragma(const char* kw, const char* tag)
@@ -239,15 +236,15 @@ static Type* FindType(const char* name, bool toErr)
 }
 
 // weed out structures with nested structures or bit fields
-bool qualifiedStruct(SYMBOL* sp)
+bool qualifiedStruct(SimpleSymbol* sp)
 {
     //    SYMLIST *hr;
     if (!sp->tp->size)
         return false;
 #if 0
-    if (sp->tp->type == bt_union)
+    if (sp->tp->type == st_union)
         return false;
-    hr = basetype(sp->tp)->syms->table[0];
+    hr = sp->tp->syms->table[0];
     while (hr)
     {
         SYMBOL *check = (SYMBOL *)hr->p;
@@ -262,13 +259,13 @@ bool qualifiedStruct(SYMBOL* sp)
 #endif
     return true;
 }
-bool IsPointedStruct(TYPE* tp)
+bool IsPointedStruct(SimpleType* tp)
 {
-    while (ispointer(tp))
-        tp = basetype(tp)->btp;
-    return isstructured(tp);
+    while (tp->type == st_pointer)
+        tp = tp->btp;
+    return tp->type == st_struct || tp->type == st_union;
 }
-Field* GetField(SYMBOL* sp)
+Field* GetField(SimpleSymbol* sp)
 {
     int flags = Qualifiers::Public | Qualifiers::Static;
     if (sp->storage_class == sc_localstatic)
@@ -291,24 +288,24 @@ Field* GetField(SYMBOL* sp)
         return field;
     }
 }
-MethodSignature* GetMethodSignature(TYPE* tp, bool pinvoke)
+MethodSignature* GetMethodSignature(SimpleType* tp, bool pinvoke)
 {
     int flags = pinvoke ? 0 : MethodSignature::Managed;
-    while (ispointer(tp))
-        tp = basetype(tp)->btp;
-    SYMBOL* sp = tp->sp;
+    while (tp->type == st_pointer)
+        tp = tp->btp;
+    SimpleSymbol* sp = tp->sp;
     // this compiler never uses instance members, maybe when we do C++
-    SYMLIST* hr = basetype(tp)->syms->table[0];
+    LIST* hr = tp->syms;
     while (hr && hr->next)
         hr = hr->next;
-    if (hr && ((SYMBOL*)hr->p)->tp->type == bt_ellipse)
+    if (hr && ((SimpleSymbol*)hr->data)->tp->type == st_ellipse)
     {
         flags |= MethodSignature::Vararg;
     }
     MethodSignature* rv;
     if (sp->storage_class != sc_localstatic && sp->storage_class != sc_constant && sp->storage_class != sc_static)
     {
-        if (sp->attribs.inheritable.linkage2 == lk_msil_rtl && !no_default_libs)
+        if (sp->msil_rtl && !no_default_libs)
         {
             char buf[1024];
             void* result;
@@ -326,7 +323,7 @@ MethodSignature* GetMethodSignature(TYPE* tp, bool pinvoke)
         }
         else
         {
-            rv = peLib->AllocateMethodSignature(sp->name, flags, pinvoke && sp->attribs.inheritable.linkage != lk_msil_rtl ? NULL : mainContainer);
+            rv = peLib->AllocateMethodSignature(sp->name, flags, pinvoke && sp->msil_rtl ? NULL : mainContainer);
         }
     }
     else
@@ -335,7 +332,7 @@ MethodSignature* GetMethodSignature(TYPE* tp, bool pinvoke)
         sprintf(buf, "L_%d_%x", sp->label, uniqueId);
         rv = peLib->AllocateMethodSignature(buf, flags, pinvoke ? NULL : mainContainer);
     }
-    if (isstructured(basetype(tp)->btp) && (sp->attribs.inheritable.linkage2 == lk_unmanaged || !msil_managed(sp)))
+    if ((tp->btp->type == st_struct || tp->btp->type == st_union) && (sp->unmanaged || !msil_managed(sp)))
     {
         rv->ReturnType(peLib->AllocateType(Type::Void, 1));
         Param* p = peLib->AllocateParam("__retblock", peLib->AllocateType(Type::Void, 1));
@@ -343,16 +340,16 @@ MethodSignature* GetMethodSignature(TYPE* tp, bool pinvoke)
     }
     else
     {
-        rv->ReturnType(GetType(basetype(tp)->btp, true));
+        rv->ReturnType(GetType(tp->btp, true));
     }
 
-    hr = basetype(tp)->syms->table[0];
+    hr = tp->syms;
     while (hr)
     {
-        SYMBOL* sym = (SYMBOL*)hr->p;
-        if (sym->tp->type == bt_void)
+        SimpleSymbol* sym = (SimpleSymbol*)hr->data;
+        if (sym->tp->type == st_void)
             break;
-        if (sym->tp->type == bt_ellipse)
+        if (sym->tp->type == st_ellipse)
         {
             if (!pinvoke)
             {
@@ -391,12 +388,12 @@ MethodSignature* FindPInvokeWithVarargs(std::string name, std::list<Param*>::ite
     }
     return nullptr;
 }
-MethodSignature* GetMethodSignature(SYMBOL* sp)
+MethodSignature* GetMethodSignature(SimpleSymbol* sp)
 {
     bool pinvoke = false;
     if (sp)
         pinvoke = !msil_managed(sp);
-    std::map<SYMBOL*, Value*, byName>::iterator it = globalMethods.find(sp);
+    std::map<SimpleSymbol*, Value*, byName>::iterator it = globalMethods.find(sp);
     if (it != globalMethods.end())
     {
         return static_cast<MethodName*>(it->second)->Signature();
@@ -408,7 +405,7 @@ MethodSignature* GetMethodSignature(SYMBOL* sp)
     }
     if (pinvoke)
     {
-        std::map<SYMBOL*, MethodSignature*, byName>::iterator it1 = pinvokeInstances.find(sp);
+        std::map<SimpleSymbol*, MethodSignature*, byName>::iterator it1 = pinvokeInstances.find(sp);
         if (it1 != pinvokeInstances.end())
         {
             // if we get here we have a pinvoke instance.   If it isnt vararg just return it
@@ -424,7 +421,7 @@ MethodSignature* GetMethodSignature(SYMBOL* sp)
         {
             // no current pinvoke instance, create a new one
             MethodSignature* parent = GetMethodSignature(sp->tp, true);
-            peLib->AddPInvokeReference(parent, _dll_name(sp->name), sp->attribs.inheritable.linkage != lk_stdcall);
+            peLib->AddPInvokeReference(parent, _dll_name(sp->name), sp->isstdcall);
             sp = clone(sp);
             if (parent->Flags() & MethodSignature::Vararg)
             {
@@ -440,7 +437,7 @@ MethodSignature* GetMethodSignature(SYMBOL* sp)
             }
         }
     }
-    else if (!isfunction(sp->tp))
+    else if (!sp->tp->type == st_func)
     {
         // function pointer is here
         // we aren't caching these aggressively...
@@ -455,7 +452,7 @@ MethodSignature* GetMethodSignature(SYMBOL* sp)
     else if (sp->storage_class == sc_static)
     {
         CacheStatic(sp);
-        std::map<SYMBOL*, Value*, byLabel>::iterator it = staticMethods.find(sp);
+        std::map<SimpleSymbol*, Value*, byLabel>::iterator it = staticMethods.find(sp);
         return static_cast<MethodName*>(it->second)->Signature();
     }
     else
@@ -465,44 +462,67 @@ MethodSignature* GetMethodSignature(SYMBOL* sp)
         return static_cast<MethodName*>(it->second)->Signature();
     }
 }
-std::string GetArrayName(TYPE* tp)
+std::string GetArrayName(SimpleType* tp)
 {
     char end[512];
     end[0] = 0;
-    tp = basetype(tp);
-    while (isarray(tp))
+    tp = tp;
+    while (tp->isarray)
     {
-        if (tp->vla)
+        if (tp->isvla)
             strcat(end, "[vla]");
         else if (tp->size == 0)
             strcat(end, "[]");
         else
             sprintf(end + strlen(end), "[%d]", (int)tp->size);
-        tp = basetype(tp->btp);
+        tp = tp->btp;
     }
-    if (isstructured(tp) || basetype(tp)->type == bt_enum)
+    if ((tp->type == st_struct || tp->type == st_union) || tp->type == st_enum)
     {
         return std::string(tp->sp->name) + end;
     }
-    else if (isfuncptr(tp))
+    else if (tp->type == st_pointer && tp->btp->type == st_func)
     {
         return std::string("void *") + end;
     }
-    else if (ispointer(tp))
+    else if (tp->type == st_pointer)
     {
         return std::string("void *") + end;
     }
     else
     {
-        static const char* typeNames[] = {"int8",    "int8",       "int8",    "int8",    "uint8",
-                                    "int16",   "int16",      "uint16",  "uint16",  "int32",
-                                    "int32",   "native int", "int32",   "uint32",  "native unsigned int",
-                                    "int32",   "uint32",     "int64",   "uint64",  "float32",
-                                    "float64", "float64",    "float32", "float64", "float64"};
-        return std::string(typeNames[basetype(tp)->type]) + end;
+        static std::unordered_map<int, std::string> typeNames = {
+            { -ISZ_UCHAR, "int8"},
+            { ISZ_UCHAR, "uint8" },
+            { -ISZ_USHORT, "int16" },
+            { ISZ_USHORT, "uint16" },
+            { ISZ_WCHAR, "uint16" },
+            { ISZ_U16, "uint16"},
+            { -ISZ_UINT, "int32"},
+            { ISZ_UINT, "uint32" },
+            { -ISZ_UNATIVE, "native int" },
+            { ISZ_UNATIVE, "native unsigned int" },
+            { -ISZ_ULONG, "int32" },
+            { ISZ_ULONG, "uint32" },
+            { ISZ_U32, "uint32" },
+            { -ISZ_ULONGLONG, "int64" },
+            { ISZ_ULONGLONG, "uint64" },
+            { ISZ_STRING, "string???"},
+            { ISZ_OBJECT, "object???"},
+            { ISZ_FLOAT, "float32"},
+            { ISZ_DOUBLE, "float64"},
+            { ISZ_LDOUBLE, "float64"},
+            { ISZ_IFLOAT, "float32"},
+            { ISZ_IDOUBLE, "float64"},
+            { ISZ_ILDOUBLE, "float64"},
+            { ISZ_CFLOAT, "float32"},
+            { ISZ_CDOUBLE, "float64"},
+            { ISZ_CLDOUBLE, "float64"},
+        };
+        return typeNames[tp->sizeFromType] + end;
     }
 }
-Value* GetStructField(SYMBOL* sp)
+Value* GetStructField(SimpleSymbol* sp)
 {
     if (sp->msil)
         return peLib->AllocateFieldName(static_cast<Field*>(sp->msil));
@@ -512,57 +532,7 @@ Value* GetStructField(SYMBOL* sp)
     it = fieldList.find(sp);
     return it->second;
 }
-TYPE* oa_get_boxed(TYPE* in)
-{
-    static const char* typeNames[] = {"int8",   "Bool",  "Int8",   "Int8",   "UInt8",  "Int16",  "Int16",   "UInt16",
-                                "UInt16", "Int32", "Int32",  "IntPtr", "Int32",  "UInt32", "UIntPtr", "Int32",
-                                "UInt32", "Int64", "UInt64", "Single", "Double", "Double", "Single",  "Double",
-                                "Double", "",      "",       "",       "",       "",       "String"};
-    if (isarray(basetype(in)) && basetype(in)->msil)
-    {
-        SYMBOL* sym = search("System", globalNameSpace->valueData->syms);
-        if (sym && sym->storage_class == sc_namespace)
-        {
-            SYMBOL* sym2 = search("Array", sym->nameSpaceValues->valueData->syms);
-            if (sym2)
-                return sym2->tp;
-        }
-    }
-    else if (basetype(in)->type < sizeof(typeNames) / sizeof(typeNames[0]))
-    {
-        SYMBOL* sym = search("System", globalNameSpace->valueData->syms);
-        if (sym && sym->storage_class == sc_namespace)
-        {
-            SYMBOL* sym2 = search(typeNames[basetype(in)->type], sym->nameSpaceValues->valueData->syms);
-            if (sym2)
-                return sym2->tp;
-        }
-    }
-    return nullptr;
-}
-TYPE* oa_get_unboxed(TYPE* in)
-{
-    if (isstructured(in))
-    {
-        in = basetype(in);
-        if (in->sp->parentNameSpace && !in->sp->parentClass && !strcmp(in->sp->parentNameSpace->name, "System"))
-        {
-            const char* name = in->sp->name;
-            static const char* typeNames[] = {"Bool",  "Char",   "Int8",   "UInt8",   "Int16",  "UInt16", "Int32", "UInt32",
-                                        "Int64", "UInt64", "IntPtr", "UIntPtr", "Single", "Double", "String"};
-            static TYPE* typeVals[] = {&stdbool,          &stdchar,    &stdchar,     &stdunsignedchar, &stdshort,
-                                       &stdunsignedshort, &stdint,     &stdunsigned, &stdlonglong,     &stdunsignedlonglong,
-                                       &stdinative,       &stdunative, &stdfloat,    &stddouble,       &std__string};
-            for (int i = 0; i < sizeof(typeNames) / sizeof(typeNames[0]); i++)
-                if (!strcmp(typeNames[i], name))
-                {
-                    return typeVals[i];
-                }
-        }
-    }
-    return nullptr;
-}
-void msil_create_property(SYMBOL* property, SYMBOL* getter, SYMBOL* setter)
+void msil_create_property(SimpleSymbol* property, SimpleSymbol* getter, SimpleSymbol* setter)
 {
     if (typeid(*mainContainer) == typeid(Class))
     {
@@ -578,19 +548,19 @@ void msil_create_property(SYMBOL* property, SYMBOL* getter, SYMBOL* setter)
         Utils::fatal("Cannot add property at non-class level");
     }
 }
-void AddType(SYMBOL* sym, Type* type) { typeList[sym->decoratedName] = type; }
-Type* GetType(TYPE* tp, bool commit, bool funcarg, bool pinvoke)
+void AddType(SimpleSymbol* sym, Type* type) { typeList[sym->decoratedName] = type; }
+Type* GetType(SimpleType* tp, bool commit, bool funcarg, bool pinvoke)
 {
     bool byref = false;
-    if (isref(tp))
+    if ((tp->type == st_lref || tp->type == st_rref))
     {
         byref = true;
-        tp = basetype(tp)->btp;
+        tp = tp->btp;
     }
-    if (isstructured(tp))
+    if ((tp->type == st_struct || tp->type == st_union))
     {
         Type* type = NULL;
-        std::map<std::string, Type*>::iterator it = typeList.find(basetype(tp)->sp->decoratedName);
+        std::map<std::string, Type*>::iterator it = typeList.find(tp->sp->decoratedName);
         if (it != typeList.end())
             type = it->second;
         if (commit)
@@ -598,38 +568,38 @@ Type* GetType(TYPE* tp, bool commit, bool funcarg, bool pinvoke)
             if (!type)
             {
                 Class* newClass = peLib->AllocateClass(
-                    basetype(tp)->sp->name,
-                    Qualifiers::Public | (basetype(tp)->type == bt_union ? Qualifiers::ClassUnion : Qualifiers::ClassClass),
-                    basetype(tp)->sp->attribs.inheritable.structAlign, basetype(tp)->size);
+                    tp->sp->name,
+                    Qualifiers::Public | (tp->type == st_union ? Qualifiers::ClassUnion : Qualifiers::ClassClass),
+                    tp->sp->align, tp->size);
                 mainContainer->Add(newClass);
                 type = peLib->AllocateType(newClass);
-                typeList[basetype(tp)->sp->decoratedName] = type;
-                basetype(tp)->sp->msil = (void*)newClass;
+                typeList[tp->sp->decoratedName] = type;
+                tp->sp->msil = (void*)newClass;
             }
             else
             {
-                basetype(tp)->sp->msil = (void*)type->GetClass();
+                tp->sp->msil = (void*)type->GetClass();
                 type = peLib->AllocateType(type->GetClass());
             }
             if (!type->GetClass()->InAssemblyRef())
             {
-                if (basetype(tp)->size != 0)
+                if (tp->size != 0)
                 {
                     Class* cls = (Class*)type->GetClass();
-                    cls->size(basetype(tp)->size);
-                    cls->pack(basetype(tp)->sp->attribs.inheritable.structAlign);
+                    cls->size(tp->size);
+                    cls->pack(tp->sp->align);
                 }
-                if (qualifiedStruct(basetype(tp)->sp) && !type->GetClass()->IsInstantiated())
+                if (qualifiedStruct(tp->sp) && !type->GetClass()->IsInstantiated())
                 {
 
                     Class* cls = (Class*)type->GetClass();
                     cls->SetInstantiated();
-                    SYMLIST* hr = basetype(tp)->syms->table[0];
+                    LIST* hr = tp->syms;
                     Field* bitField = nullptr;
                     int start = 1000;
                     while (hr)
                     {
-                        SYMBOL* sym = (SYMBOL*)hr->p;
+                        SimpleSymbol* sym = (SimpleSymbol*)hr->data;
                         if (!sym->tp->bits || sym->tp->startbit < start)
                         {
                             Type* newType = GetType(sym->tp, true);
@@ -667,30 +637,30 @@ Type* GetType(TYPE* tp, bool commit, bool funcarg, bool pinvoke)
             return peLib->AllocateType((DataContainer*)NULL);
         }
     }
-    else if (basetype(tp)->type == bt_enum)
+    else if (tp->type == st_enum)
     {
-        std::map<std::string, Type*>::iterator it = typeList.find(basetype(tp)->sp->decoratedName);
+        std::map<std::string, Type*>::iterator it = typeList.find(tp->sp->decoratedName);
         if (it != typeList.end())
             return it->second;
         if (commit)
         {
-            Enum* newEnum = peLib->AllocateEnum(basetype(tp)->sp->name, Qualifiers::Public | Qualifiers::EnumClass, Field::i32);
+            Enum* newEnum = peLib->AllocateEnum(tp->sp->name, Qualifiers::Public | Qualifiers::EnumClass, Field::i32);
             mainContainer->Add(newEnum);
 
-            if (basetype(tp)->syms)
+            if (tp->syms)
             {
-                SYMLIST* hr = basetype(tp)->syms->table[0];
+                LIST* hr = tp->syms;
                 while (hr)
                 {
-                    SYMBOL* sym = (SYMBOL*)hr->p;
-                    newEnum->AddValue(*peLib, sym->name, sym->value.i);
+                    SimpleSymbol* sym = (SimpleSymbol*)hr->data;
+                    newEnum->AddValue(*peLib, sym->name, sym->i);
                     hr = hr->next;
                 }
             }
             // note we make enums ints in the file
             // this is because pinvokes with enums doesn't work...
             Type* type = peLib->AllocateType(Type::i32, 0);
-            typeList[basetype(tp)->sp->decoratedName] = type;
+            typeList[tp->sp->decoratedName] = type;
             return type;
         }
         else
@@ -698,16 +668,16 @@ Type* GetType(TYPE* tp, bool commit, bool funcarg, bool pinvoke)
             return peLib->AllocateType((DataContainer*)NULL);
         }
     }
-    else if (isarray(tp) && basetype(tp)->msil)
+    else if (tp->isarray && tp->msil)
     {
         char name[512];
-        TYPE* base = tp;
+        SimpleType* base = tp;
         Type* rv;
         int count = 0;
-        while (isarray(base))
+        while (base->isarray)
         {
             count++;
-            base = basetype(base)->btp;
+            base = base->btp;
         }
         sprintf(name, "$$$marray%d;%s;%d", base->type, base->sp ? base->sp->name : "", count);
         std::map<std::string, Type*>::iterator it = typeList.find(name);
@@ -718,7 +688,7 @@ Type* GetType(TYPE* tp, bool commit, bool funcarg, bool pinvoke)
             rv = GetType(base, true);
             rv->ArrayLevel(count);
             typeList[name] = rv;
-            if (isstructured(base))
+            if ((base->type == st_struct || base->type == st_union))
                 GetType(base, true);
             rv->ByRef(byref);
             return rv;
@@ -728,7 +698,7 @@ Type* GetType(TYPE* tp, bool commit, bool funcarg, bool pinvoke)
             return peLib->AllocateType((DataContainer*)NULL);
         }
     }
-    else if (isarray(tp) && !funcarg)
+    else if (tp->isarray && !funcarg)
     {
         std::string name = GetArrayName(tp);
         std::map<std::string, Type*>::iterator it = typeList.find(name);
@@ -737,14 +707,14 @@ Type* GetType(TYPE* tp, bool commit, bool funcarg, bool pinvoke)
         if (commit)
         {
             Class* newClass = peLib->AllocateClass(name, Qualifiers::Public | Qualifiers::ClassClass, -1,
-                                                   basetype(tp)->size == 0 ? 1 : basetype(tp)->size);
+                                                   tp->size == 0 ? 1 : tp->size);
             mainContainer->Add(newClass);
             Type* type = peLib->AllocateType(newClass);
             typeList[name] = type;
-            while (ispointer(tp))
-                tp = basetype(tp)->btp;
+            while (tp->type == st_pointer)
+                tp = tp->btp;
             // declare any structure we are referencing..
-            if (isstructured(tp))
+            if ((tp->type == st_struct || tp->type == st_union))
                 GetType(tp, true);
             type->ByRef(byref);
             return type;
@@ -754,38 +724,38 @@ Type* GetType(TYPE* tp, bool commit, bool funcarg, bool pinvoke)
             return peLib->AllocateType((DataContainer*)NULL);
         }
     }
-    else if (isfuncptr(tp))
+    else if (tp->type == st_pointer && tp->btp->type == st_func)
     {
         return peLib->AllocateType(Type::Void, 1);  // pointer to void
-                                                    //        tp = basetype(tp)->btp;
-                                                    //        MethodSignature *sig = GetMethodSignature(basetype(tp), false);
+                                                    //        tp = tp->btp;
+                                                    //        MethodSignature *sig = GetMethodSignature(tp, false);
                                                     //        return peLib->AllocateType(sig);
     }
-    else if (ispointer(tp))
+    else if (tp->type == st_pointer)
     {
 
         if (pinvoke)
             return peLib->AllocateType(Type::Void, 1);  // pointer to void
-        TYPE* tp1 = tp;
+        SimpleType* tp1 = tp;
         int level = 0;
-        while (ispointer(tp1))
+        while (tp1->type == bt_pointer)
         {
-            if (tp1->type == bt_va_list)
+            if (tp1->va_list)
             {
                 Type* rv = FindType("lsmsilcrtl.args", true);
                 rv->PointerLevel(level);
                 return rv;
             }
-            if (tp1->type == bt_pointer)
+            if (tp1->type == st_pointer)
                 level++;
             tp1 = tp1->btp;
-            if (level > 0 && isarray(tp1))
+            if (level > 0 && tp1->isarray)
                 break;
         }
         // we don't currently support multiple indirections on a function pointer
         // as an independent type
         // this is a limitation of the netlib
-        if (isfunction(tp1))
+        if (tp1->type == st_func)
             return peLib->AllocateType(Type::Void, 1);  // pointer to void
         Type* rv = GetType(tp1, commit);
 
@@ -798,13 +768,13 @@ Type* GetType(TYPE* tp, bool commit, bool funcarg, bool pinvoke)
         rv->ByRef(byref);
         return rv;
     }
-    else if (basetype(tp)->type == bt_void)
+    else if (tp->type == st_void)
     {
         return peLib->AllocateType(Type::Void, 0);
     }
-    else if (ismsil(tp))
+    else if (tp->msil)
     {
-        if (basetype(tp)->type == bt___string)
+        if (tp->type == st___string)
             return peLib->AllocateType(Type::string, 0);
         else
             return peLib->AllocateType(Type::object, 0);
@@ -815,47 +785,50 @@ Type* GetType(TYPE* tp, bool commit, bool funcarg, bool pinvoke)
                                               Type::u16,     Type::u16, Type::i32, Type::i32, Type::inative, Type::i32, Type::u32,
                                               Type::unative, Type::i32, Type::u32, Type::i64, Type::u64,     Type::r32, Type::r64,
                                               Type::r64,     Type::r32, Type::r64, Type::r64};
-        Type* rv = peLib->AllocateType(typeNames[basetype(tp)->type], 0);
+        Type* rv = peLib->AllocateType(typeNames[tp->type], 0);
         rv->ByRef(byref);
         return rv;
     }
 }
-void oa_enter_type(SYMBOL* sp)
+bool istype(SimpleSymbol* sym)
+{
+    return (sym->storage_class == sc_type || sym->storage_class == sc_typedef);
+}
+void oa_enter_type(SimpleSymbol* sp)
 {
     if (!istype(sp) || sp->storage_class == sc_typedef)
     {
-        TYPE* tp = basetype(sp->tp);
-        while (ispointer(tp))
-            tp = basetype(tp)->btp;
+        SimpleType* tp = sp->tp;
+        while (tp->type == st_pointer)
+            tp = tp->btp;
 
-        if (isstructured(tp))
+        if ((tp->type == st_struct || tp->type == st_union))
         {
             GetType(tp, true, false, false);
         }
     }
 }
-static bool validateGlobalRef(SYMBOL* sp1, SYMBOL* sp2);
-static TYPE* cloneType(TYPE* tp)
+static bool validateGlobalRef(SimpleSymbol* sp1, SimpleSymbol* sp2);
+static SimpleType* cloneType(SimpleType* tp)
 {
-    TYPE *rv = NULL, **lst = &rv;
+    SimpleType *rv = NULL, **lst = &rv;
     while (tp)
     {
-        *lst = (TYPE*)peLib->AllocateBytes(sizeof(TYPE));
+        *lst = (SimpleType*)peLib->AllocateBytes(sizeof(SimpleType));
         **lst = *tp;
-        if (tp->type == bt_struct || tp->type == bt_enum)
+        if (tp->type == st_struct || tp->type == st_enum)
         {
             (*lst)->sp = clone(tp->sp, false);
         }
         tp = tp->btp;
         lst = &(*lst)->btp;
     }
-    UpdateRootTypes(rv);
     return rv;
 }
-static SYMBOL* clone(SYMBOL* sp, bool ctype)
+static SimpleSymbol* clone(SimpleSymbol* sp, bool ctype)
 {
     // shallow copy
-    SYMBOL* rv = (SYMBOL*)peLib->AllocateBytes(sizeof(SYMBOL));
+    SimpleSymbol* rv = (SimpleSymbol*)peLib->AllocateBytes(sizeof(SimpleSymbol));
     *rv = *sp;
     rv->name = (char*)peLib->AllocateBytes(strlen(rv->name) + 1);
     if (ctype)
@@ -863,11 +836,11 @@ static SYMBOL* clone(SYMBOL* sp, bool ctype)
     strcpy((char*)rv->name, sp->name);
     return rv;
 }
-void CacheExtern(SYMBOL* sp)
+void CacheExtern(SimpleSymbol* sp)
 {
-    if (isfunction(sp->tp))
+    if (sp->tp->type == st_func)
     {
-        std::map<SYMBOL*, Value*, byName>::iterator it = globalMethods.find(sp);
+        std::map<SimpleSymbol*, Value*, byName>::iterator it = globalMethods.find(sp);
         if (it == globalMethods.end())
         {
             it = externalMethods.find(sp);
@@ -880,7 +853,7 @@ void CacheExtern(SYMBOL* sp)
     }
     else
     {
-        std::map<SYMBOL*, Value*, byName>::iterator it = globalList.find(sp);
+        std::map<SimpleSymbol*, Value*, byName>::iterator it = globalList.find(sp);
         if (it != globalList.end())
         {
             validateGlobalRef(sp, it->first);
@@ -900,11 +873,11 @@ void CacheExtern(SYMBOL* sp)
         }
     }
 }
-void CacheGlobal(SYMBOL* sp)
+void CacheGlobal(SimpleSymbol* sp)
 {
-    if (isfunction(sp->tp))
+    if (sp->tp->type == st_func)
     {
-        std::map<SYMBOL*, Value*, byName>::iterator it = globalMethods.find(sp);
+        std::map<SimpleSymbol*, Value*, byName>::iterator it = globalMethods.find(sp);
         if (it == globalMethods.end())
         {
             sp = clone(sp);
@@ -928,7 +901,7 @@ void CacheGlobal(SYMBOL* sp)
     }
     else
     {
-        std::map<SYMBOL*, Value*, byName>::iterator it = globalList.find(sp);
+        std::map<SimpleSymbol*, Value*, byName>::iterator it = globalList.find(sp);
         if (it != globalList.end())
         {
             printf("Error: Multiple definition of %s", sp->name);
@@ -954,11 +927,11 @@ void CacheGlobal(SYMBOL* sp)
         }
     }
 }
-void CacheStatic(SYMBOL* sp)
+void CacheStatic(SimpleSymbol* sp)
 {
-    if (isfunction(sp->tp))
+    if (sp->tp->type == st_func)
     {
-        std::map<SYMBOL*, Value*, byLabel>::iterator it = staticMethods.find(sp);
+        std::map<SimpleSymbol*, Value*, byLabel>::iterator it = staticMethods.find(sp);
         if (it == staticMethods.end())
         {
             sp = clone(sp);
@@ -971,7 +944,7 @@ void CacheStatic(SYMBOL* sp)
     }
     else
     {
-        std::map<SYMBOL*, Value*, byLabel>::iterator it = staticList.find(sp);
+        std::map<SimpleSymbol*, Value*, byLabel>::iterator it = staticList.find(sp);
         if (it != staticList.end())
         {
             //            printf("Error: Multiple definition of %s", sp->name);
@@ -987,11 +960,11 @@ void CacheStatic(SYMBOL* sp)
 }
 Value* GetParamData(std::string name)
 {
-    SYMBOL sp = {0};
+    SimpleSymbol sp = {0};
     sp.name = (char*)name.c_str();
     return paramList.find(&sp)->second;
 }
-Value* GetLocalData(SYMBOL* sp)
+Value* GetLocalData(SimpleSymbol* sp)
 {
     if (sp->storage_class == sc_parameter)
     {
@@ -1002,15 +975,15 @@ Value* GetLocalData(SYMBOL* sp)
         return localList[sp->offset];
     }
 }
-Value* GetFieldData(SYMBOL* sp)
+Value* GetFieldData(SimpleSymbol* sp)
 {
     if (sp->msil)
         return peLib->AllocateFieldName(static_cast<Field*>(sp->msil));
-    if (isfunction(sp->tp))
+    if (sp->tp->type == st_func)
     {
         if (sp->storage_class != sc_localstatic && sp->storage_class != sc_const && sp->storage_class != sc_static)
         {
-            std::map<SYMBOL*, Value*, byName>::iterator it = globalMethods.find(sp);
+            std::map<SimpleSymbol*, Value*, byName>::iterator it = globalMethods.find(sp);
             if (it == globalMethods.end())
             {
                 it = externalMethods.find(sp);
@@ -1021,7 +994,7 @@ Value* GetFieldData(SYMBOL* sp)
         }
         else
         {
-            std::map<SYMBOL*, Value*, byLabel>::iterator it = staticMethods.find(sp);
+            std::map<SimpleSymbol*, Value*, byLabel>::iterator it = staticMethods.find(sp);
             if (it != staticMethods.end())
                 return it->second;
         }
@@ -1035,7 +1008,7 @@ Value* GetFieldData(SYMBOL* sp)
                 return localList[sp->offset];
             case sc_parameter:
             {
-                std::map<SYMBOL*, Param*, byName>::iterator it = paramList.find(sp);
+                std::map<SimpleSymbol*, Param*, byName>::iterator it = paramList.find(sp);
                 if (it != paramList.end())
                     return it->second;
             }
@@ -1044,7 +1017,7 @@ Value* GetFieldData(SYMBOL* sp)
             case sc_localstatic:
             case sc_constant:
             {
-                std::map<SYMBOL*, Value*, byLabel>::iterator it = staticList.find(sp);
+                std::map<SimpleSymbol*, Value*, byLabel>::iterator it = staticList.find(sp);
                 if (it != staticList.end())
                     return it->second;
                 CacheStatic(sp);
@@ -1055,7 +1028,7 @@ Value* GetFieldData(SYMBOL* sp)
             }
             default:
             {
-                std::map<SYMBOL*, Value*, byName>::iterator it = globalList.find(sp);
+                std::map<SimpleSymbol*, Value*, byName>::iterator it = globalList.find(sp);
                 if (it != globalList.end())
                     return it->second;
                 it = externalList.find(sp);
@@ -1071,32 +1044,26 @@ Value* GetFieldData(SYMBOL* sp)
     }
     return NULL;
 }
-void LoadLocals(SYMBOL* sp)
+void LoadLocals(LIST* vars)
 {
     localList.clear();
     int count = 0;
-    HASHTABLE* temp = sp->inlineFunc.syms;
+    LIST *temp = vars;
     LIST* lst = NULL;
     while (temp)
     {
-        SYMLIST* hr = temp->table[0];
-        while (hr)
-        {
-            SYMBOL* sym = (SYMBOL*)hr->p;
-            if (sym->storage_class == sc_auto || sym->storage_class == sc_register)
-                break;
-            hr = hr->next;
-        }
-        if (hr)
+        SimpleSymbol* sym = (SimpleSymbol*) temp->data;
+        if (sym->storage_class == sc_auto || sym->storage_class == sc_register)
             break;
         temp = temp->next;
     }
+
     if (!temp)
     {
         lst = temporarySymbols;
         while (lst)
         {
-            SYMBOL* sym = (SYMBOL*)lst->data;
+            SimpleSymbol* sym = (SimpleSymbol*)lst->data;
             if (!sym->anonymous)
             {
                 break;
@@ -1108,46 +1075,36 @@ void LoadLocals(SYMBOL* sp)
     {
         while (temp)
         {
-            SYMLIST* hr = temp->table[0];
-            while (hr)
-            {
-                SYMBOL* sym = (SYMBOL*)hr->p;
-                sym->temp = false;
-                hr = hr->next;
-            }
+            SimpleSymbol* sym = (SimpleSymbol*)temp->data;
+            sym->temp = false;
             temp = temp->next;
         }
         lst = temporarySymbols;
         while (lst)
         {
-            SYMBOL* sym = (SYMBOL*)lst->data;
+            SimpleSymbol* sym = (SimpleSymbol*)lst->data;
             sym->temp = false;
             lst = lst->next;
         }
-        temp = theCurrentFunc->inlineFunc.syms;
+        temp = vars;
         while (temp)
         {
-            SYMLIST* hr = temp->table[0];
-            while (hr)
+            SimpleSymbol* sym = (SimpleSymbol*)temp->data;
+            if ((sym->storage_class == sc_auto || sym->storage_class == sc_register) && !sym->temp)
             {
-                SYMBOL* sym = (SYMBOL*)hr->p;
-                if ((sym->storage_class == sc_auto || sym->storage_class == sc_register) && !sym->temp)
-                {
-                    sym->temp = true;
-                    Type* type = GetType(sym->tp, true);
-                    Local* newLocal = peLib->AllocateLocal(sym->name, type);
-                    localList.push_back(newLocal);
-                    newLocal->Index(count);
-                    sym->offset = count++;
-                }
-                hr = hr->next;
+                sym->temp = true;
+                Type* type = GetType(sym->tp, true);
+                Local* newLocal = peLib->AllocateLocal(sym->name, type);
+                localList.push_back(newLocal);
+                newLocal->Index(count);
+                sym->offset = count++;
             }
             temp = temp->next;
         }
         lst = temporarySymbols;
         while (lst)
         {
-            SYMBOL* sym = (SYMBOL*)lst->data;
+            SimpleSymbol* sym = (SimpleSymbol*)lst->data;
             if (!sym->anonymous && !sym->temp)
             {
                 sym->temp = true;
@@ -1161,24 +1118,23 @@ void LoadLocals(SYMBOL* sp)
         }
     }
 }
-void LoadParams(SYMBOL* sp)
+void LoadParams(SimpleSymbol* funcsp, LIST* vars)
 {
     int count = 0;
     paramList.clear();
-    if (isstructured(basetype(sp->tp)->btp) && (sp->attribs.inheritable.linkage2 == lk_unmanaged || !msil_managed(sp)))
+    if ((funcsp->tp->btp->type == st_struct || funcsp->tp->btp->type == st_union) && (funcsp->unmanaged || !msil_managed(funcsp)))
     {
         Param* newParam = peLib->AllocateParam("__retblock", peLib->AllocateType(Type::Void, 1));
         newParam->Index(count++);
         paramList[&retblocksym] = newParam;
     }
-    SYMLIST* hr = basetype(sp->tp)->syms->table[0];
-    while (hr)
+    while (vars)
     {
-        SYMBOL* sym = (SYMBOL*)hr->p;
-        if (sym->tp->type == bt_void)
+        SimpleSymbol* sym = (SimpleSymbol*)vars->data;
+        if (sym->tp->type == st_void)
             break;
         Param* newParam;
-        if (sym->tp->type == bt_ellipse)
+        if (sym->tp->type == st_ellipse)
         {
             Type* oa = peLib->AllocateType(Type::object, 0);
             oa->ArrayLevel(1);
@@ -1192,7 +1148,7 @@ void LoadParams(SYMBOL* sp)
         }
         newParam->Index(count++);
         paramList[sym] = newParam;
-        hr = hr->next;
+        vars = vars->next;
     }
 }
 void compile_start(char* name)
@@ -1223,7 +1179,7 @@ void LoadFuncs(void)
             ((SYMBOL*)sp->tp->syms->table[0]->p)->genreffed = true;
     }
 }
-void flush_peep(SYMBOL* funcsp, QUAD* list)
+void flush_peep(SimpleSymbol* funcsp, QUAD* list)
 {
     LoadFuncs();
     if (!(cparams.prm_compileonly && !cparams.prm_asmfile))
@@ -1242,7 +1198,7 @@ void flush_peep(SYMBOL* funcsp, QUAD* list)
 //    Field *field = GetField(sp);
 //    mainContainer->Add(field);
 //}
-void CreateFunction(MethodSignature* sig, SYMBOL* sp)
+void CreateFunction(MethodSignature* sig, SimpleSymbol* sp)
 {
     int flags = Qualifiers::ManagedFunc;
     if (sp->storage_class == sc_static)
@@ -1251,7 +1207,7 @@ void CreateFunction(MethodSignature* sig, SYMBOL* sp)
         flags |= Qualifiers::Public;
     if (!cparams.prm_compileonly || cparams.prm_asmfile)
     {
-        if (sp->attribs.inheritable.linkage3 == lk_entrypoint)
+        if (sp->entrypoint)
         {
             if (hasEntryPoint)
             {
@@ -1264,22 +1220,22 @@ void CreateFunction(MethodSignature* sig, SYMBOL* sp)
             }
         }
     }
-    currentMethod = peLib->AllocateMethod(sig, flags, sp->attribs.inheritable.linkage3 == lk_entrypoint);
+    currentMethod = peLib->AllocateMethod(sig, flags, sp->entrypoint);
     mainContainer->Add(currentMethod);
     if (!strcmp(sp->name, "main"))
-        if (!theCurrentFunc->parentClass && !theCurrentFunc->parentNameSpace)
+        if (!currentFunction->parentClass && !currentFunction->namespaceName)
             mainSym = currentMethod;
 
-    auto hr = basetype(sp->tp)->syms->table[0];
+    auto hr = sp->tp->syms;
     auto it = sig->begin();
-    if (isstructured(basetype(sp->tp)->btp) && (sp->attribs.inheritable.linkage2 == lk_unmanaged || !msil_managed(sp)))
+    if ((sp->tp->btp->type == st_struct || sp->tp->btp->type == st_union) && (sp->unmanaged || !msil_managed(sp)))
         it++;
     while (hr && it != sig->end())
     {
-        SYMBOL* sym = (SYMBOL*)hr->p;
-        if (sym->tp->type == bt_void)
+        SimpleSymbol* sym = (SimpleSymbol*)hr->data;
+        if (sym->tp->type == st_void)
             break;
-        if (sym->tp->type != bt_ellipse)
+        if (sym->tp->type != st_ellipse)
         {
             (*it)->Name(sym->name);
         }
@@ -1301,9 +1257,9 @@ static void mainLocals(void)
 }
 static MethodSignature* LookupSignature(const char* name)
 {
-    static SYMBOL sp;
+    static SimpleSymbol sp;
     sp.name = name;
-    std::map<SYMBOL*, MethodSignature*, byName>::iterator it = pinvokeInstances.find(&sp);
+    std::map<SimpleSymbol*, MethodSignature*, byName>::iterator it = pinvokeInstances.find(&sp);
     if (it != pinvokeInstances.end())
         return it->second;
     return NULL;
@@ -1318,15 +1274,15 @@ static MethodSignature* LookupManagedSignature(const char* name)
 }
 static Field* LookupField(const char* name)
 {
-    static SYMBOL sp;
+    static SimpleSymbol sp;
     sp.name = name;
-    std::map<SYMBOL*, Value*, byName>::iterator it = globalList.find(&sp);
+    std::map<SimpleSymbol*, Value*, byName>::iterator it = globalList.find(&sp);
     if (it != globalList.end())
         return static_cast<FieldName*>(it->second)->GetField();
     it = externalList.find(&sp);
     if (it != externalList.end())
     {
-        SYMBOL* sp = it->first;
+        SimpleSymbol* sp = it->first;
         Value* v = it->second;
         externalList.erase(it);
         globalList[sp] = v;
@@ -1700,7 +1656,7 @@ void ReplaceName(std::map<std::string, Value*>& list, Value* v, char* name)
     n->Signature()->SetName(name);
     list[name] = v;
 }
-void oa_gensrref(SYMBOL* sp, int val, int type)
+void oa_gensrref(SimpleSymbol* sp, int val, int type)
 {
     static int count = 1;
     Value* v = globalMethods[sp];
@@ -1808,15 +1764,15 @@ int oa_main_preprocess(void)
 static bool checkExterns(void)
 {
     bool rv = false;
-    for (std::map<SYMBOL*, Value*, byName>::iterator it = externalMethods.begin(); it != externalMethods.end(); ++it)
+    for (std::map<SimpleSymbol*, Value*, byName>::iterator it = externalMethods.begin(); it != externalMethods.end(); ++it)
     {
-        if (it->first->attribs.inheritable.linkage2 != lk_msil_rtl)
+        if (it->first->msil_rtl)
         {
             printf("Error: Undefined external symbol %s\n", it->first->name);
             rv = true;
         }
     }
-    for (std::map<SYMBOL*, Value*, byName>::iterator it = externalList.begin(); it != externalList.end(); ++it)
+    for (std::map<SimpleSymbol*, Value*, byName>::iterator it = externalList.begin(); it != externalList.end(); ++it)
     {
         const char* name = it->first->name;
         if (strcmp(name, "_pctype") && strcmp(name, "__stdin") && strcmp(name, "__stdout") && strcmp(name, "__stderr"))
@@ -1827,26 +1783,25 @@ static bool checkExterns(void)
     }
     return rv;
 }
-static bool validateGlobalRef(SYMBOL* sp1, SYMBOL* sp2)
+static bool validateGlobalRef(SimpleSymbol* sp1, SimpleSymbol* sp2)
 {
-    if (!isfunction(sp1->tp) && !isfunction(sp2->tp))
+    if (sp1->tp->type != st_func && sp2->tp->type != st_func)
     {
-        TYPE* tp = sp1->tp;
-        TYPE* tpx = sp2->tp;
-        tp = basetype(tp);
-        tpx = basetype(tpx);
-        while (ispointer(tp) && ispointer(tpx))
+        SimpleType* tp = sp1->tp;
+        SimpleType* tpx = sp2->tp;
+        tp = tp;
+        while (tp->type == st_pointer && tpx->type == st_pointer)
         {
             if (tpx->size != 0 && tp->size != 0 && tp->size != tpx->size)
                 break;
-            tp = basetype(tp->btp);
-            tpx = basetype(tpx->btp);
+            tp = tp->btp;
+            tpx = tpx->btp;
         }
-        if (!ispointer(tp) && !ispointer(tpx))
+        if (tp->type != st_pointer && tpx->type != bt_pointer)
         {
             if (tp->type == tpx->type)
             {
-                if (isstructured(tp) || isfunction(tp) || tp->type == bt_enum)
+                if ((tp->type == st_struct || tp->type == st_union) || tp->type == st_func || tp->type == st_enum)
                 {
                     if (!strcmp(tp->sp->name, tpx->sp->name))
                         return true;
@@ -2038,12 +1993,12 @@ void oa_end_generation(void)
     }
     else
     {
-        SYMBOL *start = NULL, *end = NULL;
+        SimpleSymbol *start = NULL, *end = NULL;
         LIST* externalList;
         externalList = externals;
         while (externalList)
         {
-            SYMBOL* sym = (SYMBOL*)externalList->data;
+            SimpleSymbol* sym = (SimpleSymbol*)externalList->data;
             if (!strncmp(sym->name, "__DYNAMIC", 9))
             {
                 if (strstr(sym->name, "STARTUP"))
@@ -2056,9 +2011,9 @@ void oa_end_generation(void)
         if (start)
         {
             LIST* lst = (LIST*)peLib->AllocateBytes(sizeof(LIST));
-            static SYMBOL sp;
+            static SimpleSymbol sp;
             sp.name = (char*)start->name;
-            std::map<SYMBOL*, Value*, byName>::iterator it = globalMethods.find(&sp);
+            std::map<SimpleSymbol*, Value*, byName>::iterator it = globalMethods.find(&sp);
             MethodSignature* signature = static_cast<MethodName*>(it->second)->Signature();
             lst->data = (void*)peLib->AllocateMethodName(signature);
             if (initializersHead)
@@ -2069,9 +2024,9 @@ void oa_end_generation(void)
         if (end)
         {
             LIST* lst = (LIST*)peLib->AllocateBytes(sizeof(LIST));
-            static SYMBOL sp1;
+            static SimpleSymbol sp1;
             sp1.name = (char*)end->name;
-            std::map<SYMBOL*, Value*, byName>::iterator it = globalMethods.find(&sp1);
+            std::map<SimpleSymbol*, Value*, byName>::iterator it = globalMethods.find(&sp1);
             MethodSignature* signature = static_cast<MethodName*>(it->second)->Signature();
             lst->data = (void*)peLib->AllocateMethodName(signature);
             if (deinitializersHead)
@@ -2081,14 +2036,14 @@ void oa_end_generation(void)
         }
     }
 }
-void oa_put_extern(SYMBOL* sp, int code)
+void oa_put_extern(SimpleSymbol* sp, int code)
 {
-    if (isfunction(sp->tp))
+    if (sp->tp->type == st_func)
     {
         if (!msil_managed(sp))
         {
         }
-        else if (sp->attribs.inheritable.linkage2 != lk_msil_rtl)
+        else if (sp->msil_rtl)
         {
             CacheExtern(sp);
         }
@@ -2098,7 +2053,7 @@ void oa_put_extern(SYMBOL* sp, int code)
         CacheExtern(sp);
     }
 }
-void oa_gen_strlab(SYMBOL* sp)
+void oa_gen_strlab(SimpleSymbol* sp)
 /*
  *      generate a named label.
  */
@@ -2112,7 +2067,7 @@ void oa_gen_strlab(SYMBOL* sp)
     {
         CacheStatic(sp);
     }
-    if (isfunction(sp->tp))
+    if (sp->tp->type == st_func)
     {
         CreateFunction(GetMethodSignature(sp), sp);
     }
@@ -2149,12 +2104,11 @@ Type* GetStringType(int type)
 }
 Value* GetStringFieldData(int lab, int type)
 {
-    static SYMBOL sp1;
-    sp1.name = "$$$";
-    sp1.label = lab;
-    SYMBOL* sp = clonesym(&sp1);
+    SimpleSymbol* sp = (SimpleSymbol*)Alloc(sizeof(SimpleSymbol));
+    sp->name = "$$$";
+    sp->label = lab;
 
-    std::map<SYMBOL*, Value*, byLabel>::iterator it = staticList.find(sp);
+    std::map<SimpleSymbol*, Value*, byLabel>::iterator it = staticList.find(sp);
     if (it != staticList.end())
         return it->second;
 

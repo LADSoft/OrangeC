@@ -242,6 +242,12 @@
     <ClCompile Include="parse\lambda.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="middle\iconversion.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="middle\SymbolManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="parse\beinterf.h">

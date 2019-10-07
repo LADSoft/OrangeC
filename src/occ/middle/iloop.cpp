@@ -566,20 +566,20 @@ static void CalculateLoopInvariants(BLOCK* b)
             int tnum;
             if ((head->temps & TEMP_LEFT) && head->dc.left->mode == i_direct)
             {
-                tnum = head->dc.left->offset->v.sp->value.i;
+                tnum = head->dc.left->offset->sp->i;
                 t_varying = nearestAncestor(tempInfo[tnum]->variantLoop, b->loopParent);
                 varying = t_varying;
             }
             if ((head->temps & TEMP_RIGHT) && head->dc.right->mode == i_direct)
             {
-                tnum = head->dc.right->offset->v.sp->value.i;
+                tnum = head->dc.right->offset->sp->i;
                 t_varying = nearestAncestor(tempInfo[tnum]->variantLoop, b->loopParent);
                 // if t_varying is a more inner level than varying, we need to choose
                 // t_varying because we need the innermost loop
                 if (isAncestor(varying, t_varying))
                     varying = t_varying;
             }
-            tnum = head->ans->offset->v.sp->value.i;
+            tnum = head->ans->offset->sp->i;
             tempInfo[tnum]->variantLoop = varying;
         }
         head = head->fwd;
@@ -626,7 +626,7 @@ static void PruneInductionCandidate(int tnum, LOOP* l)
                 case i_sub:
                     if (I->temps & TEMP_RIGHT)
                     {
-                        int tn2 = I->dc.right->offset->v.sp->value.i;
+                        int tn2 = I->dc.right->offset->sp->i;
                         if (!briggsTest(candidates, tn2))
                             briggsReset(candidates, tnum);
                     }
@@ -635,7 +635,7 @@ static void PruneInductionCandidate(int tnum, LOOP* l)
                 case i_assn:
                     if (I->temps & TEMP_LEFT)
                     {
-                        int tn2 = I->dc.left->offset->v.sp->value.i;
+                        int tn2 = I->dc.left->offset->sp->i;
                         if (!briggsTest(candidates, tn2))
                             briggsReset(candidates, tnum);
                     }
@@ -689,7 +689,7 @@ static void CalculateInductionCandidates(LOOP* l)
                                     if (head->ans->size < ISZ_FLOAT && head->dc.left->size < ISZ_FLOAT &&
                                         head->dc.right->size < ISZ_FLOAT)
                                     {
-                                        int tnum = head->ans->offset->v.sp->value.i;
+                                        int tnum = head->ans->offset->sp->i;
                                         briggsSet(candidates, tnum);
                                         inductionCandidateStack[inductionCandidateStackTop++] = tnum;
                                         tempInfo[tnum]->onstack = true;
@@ -705,7 +705,7 @@ static void CalculateInductionCandidates(LOOP* l)
                             {
                                 if (head->ans->size < ISZ_FLOAT && head->dc.left->size < ISZ_FLOAT)
                                 {
-                                    int tnum = head->ans->offset->v.sp->value.i;
+                                    int tnum = head->ans->offset->sp->i;
                                     briggsSet(candidates, tnum);
                                     inductionCandidateStack[inductionCandidateStackTop++] = tnum;
                                     tempInfo[tnum]->onstack = true;
@@ -739,20 +739,20 @@ static void CalculateInductionCandidates(LOOP* l)
                         {
                             if (head->temps & TEMP_ANS)
                             {
-                                int tnum = head->ans->offset->v.sp->value.i;
+                                int tnum = head->ans->offset->sp->i;
                                 INSTRUCTIONLIST* l = tempInfo[tnum]->instructionUses;
                                 while (l)
                                 {
                                     if ((l->ins->temps & TEMP_ANS) && l->ins->ans->mode == i_ind)
                                     {
-                                        if (tnum == l->ins->ans->offset->v.sp->value.i)
+                                        if (tnum == l->ins->ans->offset->sp->i)
                                         {
                                             tempInfo[tnum]->expressionRoot = true;
                                         }
                                     }
                                     if (l->ins->temps & TEMP_LEFT)
                                     {
-                                        if (tnum == l->ins->dc.left->offset->v.sp->value.i)
+                                        if (tnum == l->ins->dc.left->offset->sp->i)
                                         {
                                             if (l->ins->dc.left->mode == i_ind)
                                                 tempInfo[tnum]->expressionRoot = true;
@@ -763,7 +763,7 @@ static void CalculateInductionCandidates(LOOP* l)
                                     }
                                     if (l->ins->temps & TEMP_RIGHT)
                                     {
-                                        if (tnum == l->ins->dc.right->offset->v.sp->value.i)
+                                        if (tnum == l->ins->dc.right->offset->sp->i)
                                         {
                                             if (l->ins->dc.right->mode == i_ind)
                                                 tempInfo[tnum]->expressionRoot = true;
@@ -798,7 +798,7 @@ static void CalculateInductionCandidates(LOOP* l)
                 {
                     if (li->ins->temps & TEMP_ANS)
                     {
-                        int tnum = li->ins->ans->offset->v.sp->value.i;
+                        int tnum = li->ins->ans->offset->sp->i;
                         if (briggsTest(candidates, tnum))
                         {
                             if (!tempInfo[tnum]->onstack)
@@ -841,7 +841,7 @@ LIST* strongRegiondfs(int tnum)
             case i_neg:
                 if (u->ins->temps & TEMP_ANS)
                 {
-                    ux = u->ins->ans->offset->v.sp->value.i;
+                    ux = u->ins->ans->offset->sp->i;
                     if (tempInfo[ux]->size >= ISZ_FLOAT)
                         ux = -1;
                 }

@@ -211,7 +211,7 @@ bool handleBSWAP64()
 //
 bool BackendIntrinsic(QUAD* q)
 {
-    const char* name = q->dc.left->offset->v.sp->name;
+    const char* name = q->dc.left->offset->sp->name;
 
     for (int i = 0; i < (sizeof(builtins) / sizeof(builtins[0])); i++)
     {

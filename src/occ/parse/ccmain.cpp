@@ -134,7 +134,7 @@ static void debug_dumptypedefs(NAMESPACEVALUELIST* nameSpace)
                     debug_dumptypedefs(sym->nameSpaceValues);
                 }
                 else if (istype(sym))
-                    chosenDebugger->outputtypedef(sym);
+                    chosenDebugger->outputtypedef(SymbolManager::Get(sym));
                 h = h->next;
             }
         }
@@ -159,6 +159,7 @@ void MakeStubs(void)
 void compile(bool global)
 {
     LEXEME* lex = nullptr;
+    SymbolManager::clear();
     SetGlobalFlag(true);
     helpinit();
     mangleInit();

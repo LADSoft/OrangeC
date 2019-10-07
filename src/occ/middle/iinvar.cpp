@@ -28,7 +28,6 @@ extern BLOCK** blockArray;
 extern int blockCount;
 extern TEMP_INFO** tempInfo;
 extern int tempCount;
-extern SYMBOL* theCurrentFunc;
 extern BITINT bittab[BITINTBITS];
 
 static int current;
@@ -89,8 +88,8 @@ static void WeedRefs(void)
             refs->newVal->fwd->back = refs->newVal->back;
             if (refs->newVal == refs->newVal->block->tail)
                 refs->newVal->block->tail = refs->newVal->back;
-            tempInfo[refs->old->ans->offset->v.sp->value.i]->blockDefines = refs->old->block;
-            tempInfo[refs->old->ans->offset->v.sp->value.i]->instructionDefines = refs->old;
+            tempInfo[refs->old->ans->offset->sp->i]->blockDefines = refs->old->block;
+            tempInfo[refs->old->ans->offset->sp->i]->instructionDefines = refs->old;
         }
         refs = refs->next;
     }
@@ -99,7 +98,7 @@ static void keep(IMODE* l)
 {
     if (l && l->mode == i_direct && l->offset->type == en_tempref)
     {
-        QUAD* i = tempInfo[l->offset->v.sp->value.i]->instructionDefines;
+        QUAD* i = tempInfo[l->offset->sp->i]->instructionDefines;
         if (i->invarInserted)
         {
             i->invarKeep = true;
@@ -136,8 +135,8 @@ static void MoveTo(BLOCK* dest, BLOCK* src, QUAD* head)
     head->back = insert;
     head->fwd = insert->fwd;
     insert->fwd = insert->fwd->back = head;
-    tempInfo[head->ans->offset->v.sp->value.i]->blockDefines = dest;
-    tempInfo[head->ans->offset->v.sp->value.i]->instructionDefines = head;
+    tempInfo[head->ans->offset->sp->i]->blockDefines = dest;
+    tempInfo[head->ans->offset->sp->i]->instructionDefines = head;
     head->block = dest;
     head->invarInserted = true;
     if (head->dc.opcode != i_assn || head->dc.left->mode == i_immed)
@@ -182,16 +181,16 @@ static bool isPhiUsing(LOOP* considering, int temp)
 }
 static bool InvariantPhiUsing(QUAD* head)
 {
-    int ans = head->ans->offset->v.sp->value.i;
+    int ans = head->ans->offset->sp->i;
     bool rv = false;
     int left = -1, right = -1;
     LOOP* considering = head->block->loopParent;
     if (tempInfo[ans]->preSSATemp >= 0)
-        rv = !tempInfo[tempInfo[ans]->preSSATemp]->enode->v.sp->pushedtotemp;
+        rv = !tempInfo[tempInfo[ans]->preSSATemp]->enode->sp->pushedtotemp;
     if (head->temps & TEMP_LEFT)
-        left = head->dc.left->offset->v.sp->value.i;
+        left = head->dc.left->offset->sp->i;
     if (head->temps & TEMP_RIGHT)
-        right = head->dc.right->offset->v.sp->value.i;
+        right = head->dc.right->offset->sp->i;
     while (considering && !considering->invariantPhiList)
     {
         considering = considering->parent;
@@ -239,20 +238,20 @@ void ScanForInvariants(BLOCK* b)
             }
             else if ((head->temps & TEMP_ANS) && head->ans->mode == i_direct && head->ans->size < ISZ_FLOAT)
             {
-                tempInfo[head->ans->offset->v.sp->value.i]->blockDefines = b;
-                if (!tempInfo[head->ans->offset->v.sp->value.i]->inductionLoop && (head->temps & (TEMP_LEFT | TEMP_RIGHT)))
+                tempInfo[head->ans->offset->sp->i]->blockDefines = b;
+                if (!tempInfo[head->ans->offset->sp->i]->inductionLoop && (head->temps & (TEMP_LEFT | TEMP_RIGHT)))
                 {
                     bool canMove = true;
                     BLOCK *pbl = nullptr, *pbr = nullptr;
                     if ((head->temps & TEMP_LEFT) && head->dc.left->mode == i_direct)
                     {
-                        pbl = tempInfo[head->dc.left->offset->v.sp->value.i]->blockDefines;
+                        pbl = tempInfo[head->dc.left->offset->sp->i]->blockDefines;
                     }
                     else if (head->dc.left->mode != i_immed)
                         canMove = false;
                     if ((head->temps & TEMP_RIGHT) && head->dc.right->mode == i_direct)
                     {
-                        pbr = tempInfo[head->dc.right->offset->v.sp->value.i]->blockDefines;
+                        pbr = tempInfo[head->dc.right->offset->sp->i]->blockDefines;
                     }
                     else if (head->dc.right && head->dc.right->mode != i_immed)
                         canMove = false;

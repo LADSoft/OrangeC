@@ -268,23 +268,12 @@ void list_var(SYMBOL* sym, int i)
     }
     for (j = i; j; --j)
         fprintf(listFile, "    ");
-    if (sym->storage_class == sc_auto && !sym->regmode)
+    if (sym->storage_class == sc_auto)
         val = (long)getautoval(sym->offset);
-    else
-        val = sym->value.u;
     fprintf(listFile, "Identifier:   %s\n    ", unmangledname(sym->name));
     for (j = i; j; --j)
         fprintf(listFile, "    ");
-    if (sym->regmode == 1)
-    {
-        fprintf(listFile, "Register: %-3s&     ", lookupRegName((-sym->offset) & 255));
-    }
-    else if (sym->regmode == 2)
-    {
-        fprintf(listFile, "Register: %-3s      ", lookupRegName((-sym->offset) & 255));
-    }
-    else
-        fprintf(listFile, "Offset:   %08lX ", val);
+    fprintf(listFile, "Offset:   %08lX ", val);
     fprintf(listFile, "Storage: ");
     if (sym->tp->type == bt_ifunc)
         if (sym->isInline && !sym->noinline)
@@ -292,10 +281,7 @@ void list_var(SYMBOL* sym, int i)
         else
             fprintf(listFile, "%-7s", "code");
     else if (sym->storage_class == sc_auto)
-        if (sym->regmode)
-            fprintf(listFile, "%-7s", "reg");
-        else
-            fprintf(listFile, "%-7s", "stack");
+        fprintf(listFile, "%-7s", "stack");
     else if (sym->storage_class == sc_global || sym->storage_class == sc_static || sym->storage_class == sc_localstatic)
         if (isconst(sym->tp))
             fprintf(listFile, "%-7s", "const");

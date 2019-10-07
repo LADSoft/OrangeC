@@ -245,13 +245,13 @@ void ValidateMSILFuncPtr(TYPE* dest, TYPE* src, EXPRESSION** exp)
     {
         // function arg or assignment to function constant
         managedDest =
-            basetype(dest)->sp->attribs.inheritable.linkage2 != lk_unmanaged && chosenAssembler->msil->managed(basetype(dest)->sp);
+            basetype(dest)->sp->attribs.inheritable.linkage2 != lk_unmanaged && chosenAssembler->msil->managed(SymbolManager::Get(basetype(dest)->sp));
     }
     else if (isfuncptr(dest))
     {
         // function var
         managedDest = basetype(basetype(dest)->btp)->sp->attribs.inheritable.linkage2 != lk_unmanaged &&
-                      chosenAssembler->msil->managed(basetype(basetype(dest)->btp)->sp);
+                      chosenAssembler->msil->managed(SymbolManager::Get(basetype(basetype(dest)->btp)->sp));
     }
     else
     {
@@ -261,12 +261,12 @@ void ValidateMSILFuncPtr(TYPE* dest, TYPE* src, EXPRESSION** exp)
     if (isfunction(src))
     {
         // function arg or assignment to function constant
-        managedSrc = chosenAssembler->msil->managed(basetype(src)->sp);
+        managedSrc = chosenAssembler->msil->managed(SymbolManager::Get(basetype(src)->sp));
     }
     else if (isfuncptr(src))
     {
         // function var
-        managedSrc = chosenAssembler->msil->managed(basetype(basetype(src)->btp)->sp);
+        managedSrc = chosenAssembler->msil->managed(SymbolManager::Get(basetype(basetype(src)->btp)->sp));
     }
     else
     {
@@ -933,6 +933,7 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
         else
             name = litlate("__unknown");
         sym = (SYMBOL*)Alloc(sizeof(SYMBOL));
+        sym->key = NextSymbolKey();
         sym->name = name;
         sym->attribs.inheritable.used = true;
         sym->declfile = sym->origdeclfile = lex->file;
@@ -1096,11 +1097,10 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
     (void)funcsp;
     // find structured version of arithmetic types for msil member matching
     if (chosenAssembler->msil && chosenAssembler->msil->allowExtensions &&
-        (isarithmetic(*tp) || (*tp)->type == bt___string || (isarray(*tp) && basetype(*tp)->msil)) &&
-        chosenAssembler->msil->find_boxed_type)
+        (isarithmetic(*tp) || (*tp)->type == bt___string || (isarray(*tp) && basetype(*tp)->msil)))
     {
         // auto-boxing for msil
-        TYPE* tp1 = chosenAssembler->msil->find_boxed_type(basetype(*tp));
+        TYPE* tp1 = find_boxed_type(basetype(*tp));
         if (tp1)
         {
             while (castvalue(*exp))
@@ -1841,7 +1841,7 @@ void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp)
                     else if (basetype(decl->tp)->type == bt_ellipse)
                     {
                         hasEllipse = true;
-                        vararg = chosenAssembler->msil && chosenAssembler->msil->managed(params->sp);
+                        vararg = chosenAssembler->msil && chosenAssembler->msil->managed(SymbolManager::Get(params->sp));
                         params->vararg = vararg;
                         matching = false;
                         decl = nullptr;
@@ -3122,7 +3122,7 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                              basetype(basetype(p->tp)->btp)->type == bt_char)
                     {
                         // make a 'string' object and initialize it with the string
-                        TYPE* ctype = chosenAssembler->msil->find_boxed_type(basetype(sym->tp));
+                        TYPE* ctype = find_boxed_type(basetype(sym->tp));
                         EXPRESSION *exp1, *exp2;
                         exp1 = exp2 = anonymousVar(sc_auto, &std__string);
                         callConstructorParam(&ctype, &exp2, p->tp, p->exp, true, true, false, false);
@@ -3139,7 +3139,7 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                             basetype(basetype(p->tp)->btp)->type == bt_char)
                         {
                             // make a 'string' object and initialize it with the string
-                            TYPE* ctype = chosenAssembler->msil->find_boxed_type(&std__string);
+                            TYPE* ctype = find_boxed_type(&std__string);
                             EXPRESSION *exp1, *exp2;
                             exp1 = exp2 = anonymousVar(sc_auto, &std__string);
                             callConstructorParam(&ctype, &exp2, p->tp, p->exp, true, true, false, false);

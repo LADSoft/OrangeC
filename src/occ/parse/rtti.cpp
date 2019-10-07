@@ -66,7 +66,65 @@ static const char* typeNames[] = {"bit",
                                   "__object",
                                   "__string"};
 
+
 void rtti_init(void) { rttiSyms = CreateHashTable(32); }
+bool equalnode(EXPRESSION* node1, EXPRESSION* node2)
+/*
+ *      equalnode will return 1 if the expressions pointed to by
+ *      node1 and node2 are equivalent.
+ */
+{
+    if (node1 == 0 || node2 == 0)
+        return 0;
+    if (node1->type != node2->type)
+        return 0;
+    if (natural_size(node1) != natural_size(node2))
+        return 0;
+    switch (node1->type)
+    {
+    case en_const:
+    case en_pc:
+    case en_global:
+    case en_auto:
+    case en_absolute:
+    case en_threadlocal:
+    case en_structelem:
+        return node1->v.sp == node2->v.sp;
+    case en_labcon:
+        return node1->v.i == node2->v.i;
+    default:
+        return (!node1->left || equalnode(node1->left, node2->left)) &&
+            (!node1->right || equalnode(node1->right, node2->right));
+    case en_c_i:
+    case en_c_l:
+    case en_c_ul:
+    case en_c_ui:
+    case en_c_c:
+    case en_c_u16:
+    case en_c_u32:
+    case en_c_bool:
+    case en_c_uc:
+    case en_c_ll:
+    case en_c_ull:
+    case en_c_wc:
+    case en_nullptr:
+        return node1->v.i == node2->v.i;
+    case en_c_d:
+    case en_c_f:
+    case en_c_ld:
+    case en_c_di:
+    case en_c_fi:
+    case en_c_ldi:
+        return (node1->v.f == node2->v.f);
+    case en_c_dc:
+    case en_c_fc:
+    case en_c_ldc:
+        return (node1->v.c.r == node2->v.c.r) && (node1->v.c.i == node2->v.c.i);
+    case en_tempref:
+        return node1->v.sp == node2->v.sp;
+    }
+}
+
 #ifndef PARSER_ONLY
 static char* addNameSpace(char* buf, SYMBOL* sym)
 {
@@ -216,10 +274,10 @@ static void RTTIDumpHeader(SYMBOL* xtSym, TYPE* tp, int flags)
     }
 
     cseg();
-    gen_virtual(xtSym, false);
+    gen_virtual(SymbolManager::Get(xtSym), false);
     if (sym)
     {
-        genref(sym, 0);
+        genref(SymbolManager::Get(sym), 0);
     }
     else
     {
@@ -260,7 +318,7 @@ static void DumpEnclosedStructs(TYPE* tp, bool genXT)
                         xtSym = search(name, rttiSyms);
                     }
                     genint(XD_CL_VIRTUAL);
-                    genref(xtSym, 0);
+                    genref(SymbolManager::Get(xtSym), 0);
                     genint(entries->structOffset);
                 }
             }
@@ -285,7 +343,7 @@ static void DumpEnclosedStructs(TYPE* tp, bool genXT)
                     RTTIGetName(name, bc->cls->tp);
                     xtSym = search(name, rttiSyms);
                     genint(XD_CL_BASE);
-                    genref(xtSym, 0);
+                    genref(SymbolManager::Get(xtSym), 0);
                     genint(bc->offset);
                 }
             }
@@ -338,28 +396,28 @@ static void RTTIDumpStruct(SYMBOL* xtSym, TYPE* tp)
     RTTIDumpHeader(xtSym, tp, XD_CL_PRIMARY);
     DumpEnclosedStructs(tp, false);
     genint(0);
-    gen_endvirtual(xtSym);
+    gen_endvirtual(SymbolManager::Get(xtSym));
 }
 static void RTTIDumpArray(SYMBOL* xtSym, TYPE* tp)
 {
     RTTIDumpHeader(xtSym, tp, XD_ARRAY | getSize(bt_int));
     genint(tp->size / (tp->btp->size));
-    gen_endvirtual(xtSym);
+    gen_endvirtual(SymbolManager::Get(xtSym));
 }
 static void RTTIDumpPointer(SYMBOL* xtSym, TYPE* tp)
 {
     RTTIDumpHeader(xtSym, tp, XD_POINTER);
-    gen_endvirtual(xtSym);
+    gen_endvirtual(SymbolManager::Get(xtSym));
 }
 static void RTTIDumpRef(SYMBOL* xtSym, TYPE* tp)
 {
     RTTIDumpHeader(xtSym, tp, XD_REF);
-    gen_endvirtual(xtSym);
+    gen_endvirtual(SymbolManager::Get(xtSym));
 }
 static void RTTIDumpArithmetic(SYMBOL* xtSym, TYPE* tp)
 {
     RTTIDumpHeader(xtSym, tp, 0);
-    gen_endvirtual(xtSym);
+    gen_endvirtual(SymbolManager::Get(xtSym));
 }
 #endif
 SYMBOL* RTTIDumpType(TYPE* tp)
@@ -753,7 +811,7 @@ static SYMBOL* DumpXCSpecifiers(SYMBOL* funcsp)
         xcSym->attribs.inheritable.linkage = lk_virtual;
         xcSym->decoratedName = xcSym->errname = xcSym->name;
         cseg();
-        gen_virtual(xcSym, false);
+        gen_virtual(SymbolManager::Get(xcSym), false);
         switch (funcsp->xcMode)
         {
             case xc_none:
@@ -768,14 +826,14 @@ static SYMBOL* DumpXCSpecifiers(SYMBOL* funcsp)
                 genint(XD_DYNAMICXC);
                 for (i = 0; i < count; i++)
                 {
-                    genref(list[i], 0);
+                    genref(SymbolManager::Get(list[i]), 0);
                 }
                 genint(0);
                 break;
             case xc_unspecified:
                 break;
         }
-        gen_endvirtual(xcSym);
+        gen_endvirtual(SymbolManager::Get(xcSym));
     }
     return xcSym;
 }
@@ -846,10 +904,10 @@ void XTDumpTab(SYMBOL* funcsp)
             p = p->next;
         }
         throwSym = DumpXCSpecifiers(funcsp);
-        gen_virtual(funcsp->xc->xclab, false);
+        gen_virtual(SymbolManager::Get(funcsp->xc->xclab), false);
         if (throwSym)
         {
-            genref(throwSym, 0);
+            genref(SymbolManager::Get(throwSym), 0);
         }
         else
         {
@@ -864,7 +922,7 @@ void XTDumpTab(SYMBOL* funcsp)
                 genint(XD_CL_TRYBLOCK);
                 if (p->xtSym)
                 {
-                    genref(p->xtSym, 0);
+                    genref(SymbolManager::Get(p->xtSym), 0);
                 }
                 else
                 {
@@ -893,7 +951,7 @@ void XTDumpTab(SYMBOL* funcsp)
                     if (q)
                         q->used = true;
                     genint(XD_CL_PRIMARY | (throughThis(p->exp) ? XD_THIS : 0));
-                    genref(p->xtSym, 0);
+                    genref(SymbolManager::Get(p->xtSym), 0);
                     genint(evalofs(p->exp->v.t.thisptr, funcsp));
                     genint(p->exp->v.t.thisptr->xcInit);
                     genint(p->exp->v.t.thisptr->xcDest);
@@ -909,7 +967,7 @@ void XTDumpTab(SYMBOL* funcsp)
             {
                 p->used = true;
                 genint(XD_CL_PRIMARY | (throughThis(p->exp) ? XD_THIS : 0));
-                genref(p->xtSym, 0);
+                genref(SymbolManager::Get(p->xtSym), 0);
                 genint(evalofs(p->exp->v.t.thisptr, funcsp));
                 genint(0);
                 genint(p->exp->v.t.thisptr->xcDest);
@@ -917,7 +975,7 @@ void XTDumpTab(SYMBOL* funcsp)
             p = p->next;
         }
         genint(0);
-        gen_endvirtual(funcsp->xc->xclab);
+        gen_endvirtual(SymbolManager::Get(funcsp->xc->xclab));
     }
 }
 #endif

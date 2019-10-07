@@ -1980,7 +1980,7 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                         returnexp = intNode(en_labcon, dumpMemberPtr(returnexp->v.sp, tp, true));
                     }
                     if (!chosenAssembler->msil || funcsp->attribs.inheritable.linkage2 == lk_unmanaged ||
-                        !chosenAssembler->msil->managed(funcsp))
+                        !chosenAssembler->msil->managed(SymbolManager::Get(funcsp)))
                     {
                         returnexp = exprNode(en_blockassign, en, returnexp);
                         returnexp->size = basetype(tp)->size;
@@ -3341,7 +3341,7 @@ static void assignParameterSizes(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* block)
             if (chosenAssembler->arch->denyopts & DO_NOPARMADJSIZE)
             {
                 if (funcsp->attribs.inheritable.linkage2 == lk_unmanaged || !chosenAssembler->msil ||
-                    !chosenAssembler->msil->managed(funcsp))
+                    !chosenAssembler->msil->managed(SymbolManager::Get(funcsp)))
                     base++;
             }
             else

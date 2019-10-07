@@ -1,10 +1,12 @@
 /* Protogen Version 1.00 Saturday November 18, 2006  21:08:23 */
+SimpleExpression* GetSymRef(SimpleExpression* n);
 
                              /* Beinterf.c */
 
 BE_IMODEDATA* beArgType(IMODE* in);
 int sizeFromISZ(int isz);
 int needsAtomicLockFromType(TYPE* tp);
+int needsAtomicLockFromISZ(int isz);
 int getSize(enum e_bt type);
 int getBaseAlign(enum e_bt type);
 long getautoval(long val);
@@ -91,6 +93,7 @@ ULLONG_TYPE CastToInt(int size, LLONG_TYPE value);
 FPF CastToFloat(int size, FPF* value);
 FPF* IntToFloat(FPF* temp, int size, LLONG_TYPE value);
 FPF refloat(EXPRESSION* node);
+FPF dorefloat(SimpleExpression* node);
 LLONG_TYPE MaxOut(enum e_bt size, LLONG_TYPE value);
 ULLONG_TYPE reint(EXPRESSION* node);
 void dooper(EXPRESSION* *node, int mode);
@@ -112,6 +115,7 @@ void displayLexeme(LEXEME* lex);
                               /* Declare.c */
 int CountPacks(TEMPLATEPARAMLIST* packs);
 void calculateVirtualBaseOffsets(SYMBOL* sp);
+unsigned NextSymbolKey();
 
 
 SYMBOL* finishSearch(const char* name, SYMBOL* encloser, NAMESPACEVALUELIST* ns, bool tagsOnly, bool throughClass,
@@ -362,6 +366,7 @@ bool isfloatconst(EXPRESSION* exp);
 bool isimaginaryconst(EXPRESSION* exp);
 bool iscomplexconst(EXPRESSION* exp);
 EXPRESSION* anonymousVar(enum e_sc storage_class, TYPE* tp);
+struct SimpleExpression* anonymousVar(enum e_sc storage_class, struct SimpleType* tp);
 void deref(TYPE* tp, EXPRESSION* *exp);
 int sizeFromType(TYPE* tp);
 void cast(TYPE* tp, EXPRESSION* *exp);
@@ -393,7 +398,8 @@ void AliasUses(BITINT* bit, IMODE* im, bool rhs);
 
                               /* Iblock.c */
 
-int equalnode(EXPRESSION* node1, EXPRESSION* node2);
+bool equalnode(struct SimpleExpression* node1, struct SimpleExpression* node2);
+bool equalnode(EXPRESSION* node1, EXPRESSION* node2);
 int equalimode(IMODE* ap1, IMODE* ap2);
 short dhash(UBYTE* str, int len);
 QUAD* LookupNVHash(UBYTE* key, int size, DAGLIST* *table);
@@ -450,7 +456,7 @@ void iexpr_func_init(void);
 IMODE* GetLoadTemp(IMODE* dest);
 IMODE* LookupLoadTemp(IMODE* dest, IMODE* source);
 int chksize(int lsize, int rsize);
-SYMBOL* varsp(EXPRESSION* node);
+SimpleSymbol* varsp(SimpleExpression* node);
 void DumpIncDec(SYMBOL* funcsp);
 IMODE* make_imaddress(EXPRESSION* node, int size);
 IMODE* make_bf(EXPRESSION* node, IMODE* ap, int size);
@@ -539,7 +545,7 @@ void usesInfo(void);
 void definesInfo(void);
 IMODE* InitTempOpt(int size1, int size2);
 void TransferInlineTemps(void);
-void gatherLocalInfo(SYMBOL* funcsp);
+void gatherLocalInfo(LIST* functionVariables);
 void removeDead(BLOCK* b);
 								/* iloop.c */
 
@@ -614,7 +620,7 @@ int briggsIntersect(BRIGGS_SET* s1, BRIGGS_SET* s2);
 
 void outcodeini(void);
 void BitInit(void);
-void beDecorateSymName(char* buf, SYMBOL* sp);
+void beDecorateSymName(char* buf, struct SimpleSymbol* sp);
 void putconst(EXPRESSION* offset, int color);
 void putlen(int l);
 void putamode(QUAD* q, IMODE* ap);
@@ -623,10 +629,10 @@ int beVariableLive(IMODE* m);
 void rewrite_icode(void);
 void genbyte(long val);
 void genbool(int val);
-void gen_vtt(VTABENTRY* entry, SYMBOL* func, SYMBOL* name);
-void gen_strlab(SYMBOL* sp);
-void gen_importThunk(SYMBOL* func);
-void gen_vc1(SYMBOL* func);
+void gen_vtt(VTABENTRY* entry, struct SimpleSymbol* func, struct SimpleSymbol* name);
+void gen_strlab(struct SimpleSymbol* sp);
+void gen_importThunk(struct SimpleSymbol* func);
+void gen_vc1(struct SimpleSymbol* func);
 void put_label(int lab);
 void put_staticlabel(long label);
 void genfloat(FPF* val);
@@ -645,13 +651,13 @@ void genuint32(int val);
 void genenum(int val);
 int genstring(STRING* str);
 void genaddress(ULLONG_TYPE address);
-void gensrref(SYMBOL* sp, int val, int prio);
+void gensrref(struct SimpleSymbol* sp, int val, int prio);
 void genlabref(int label);
-void genref(SYMBOL* sp, int offset);
-void genpcref(SYMBOL* sp, int offset);
-void localdef(SYMBOL* sp);
-void localstaticdef(SYMBOL* sp);
-void genstorage(int nUBYTEs);
+void genref(struct SimpleSymbol* sp, int offset);
+void genpcref(struct SimpleSymbol* sp, int offset);
+void localdef(struct SimpleSymbol* sp);
+void localstaticdef(struct SimpleSymbol* sp);
+void genstorage(int nbytes);
 void gen_labref(int n);
 void gen_labdifref(int n1, int n2);
 EXPRESSION* stringlit(STRING* s);
@@ -667,14 +673,14 @@ void startupseg(void);
 void rundownseg(void);
 void tlsstartupseg(void);
 void tlsrundownseg(void);
-void gen_virtual(SYMBOL* sp, int data);
-void gen_endvirtual(SYMBOL* sp);
+void gen_virtual(struct SimpleSymbol* sp, int data);
+void gen_endvirtual(struct SimpleSymbol* sp);
 void align(int size);
 void asm_header(const char* name, const char* version);
 void asm_trailer(void);
-void globaldef(SYMBOL* sp);
-int put_exfunc(SYMBOL* sp, int notyet);
-void put_expfunc(SYMBOL* sp);
+void globaldef(struct SimpleSymbol* sp);
+int put_exfunc(struct SimpleSymbol* sp, int notyet);
+void put_expfunc(struct SimpleSymbol* sp);
 void putexterns(void);
 
                                /* Ipeep.c */
@@ -687,7 +693,7 @@ void peep_icode(bool branches);
 
 void regInit(void);
 void alloc_init(void);
-void cacheTempSymbol(SYMBOL* sp);
+void cacheTempSymbol(SimpleSymbol* sp);
 void AllocateStackSpace(SYMBOL* funcsp);
 void FillInPrologue(QUAD* head, SYMBOL* funcsp);
 void Precolor(void);
@@ -719,7 +725,7 @@ void TranslateFromSSA(bool all);
 
 void genstmtini(void);
 void makeXCTab(SYMBOL* funcsp);
-EXPRESSION* tempenode(void);
+SimpleExpression* tempenode(void);
 IMODE* tempregpure(int size, int mode);
 IMODE* tempreg(int size, int mode);
 IMODE* imake_label(int label);
@@ -849,6 +855,11 @@ int getsch(int UBYTEs, unsigned char* *source) ;
 
 void glbdefine(const char* name, const char* value);
 void glbUndefine(const char* name);
+
+
+
+TYPE* find_unboxed_type(TYPE* in);
+TYPE* find_boxed_type(TYPE* in);
 
                                /* Rtti.c */
 

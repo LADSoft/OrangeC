@@ -37,7 +37,6 @@ extern int tempCount;
 extern BLOCK** blockArray;
 extern int exitBlock;
 extern int maxAddr;
-extern SYMBOL* theCurrentFunc;
 
 void conflictini(void) {}
 void resetConflict(void)
@@ -166,7 +165,7 @@ void CalculateConflictGraph(BRIGGS_SET* nodes, bool optimize)
                 {
                     if (tail->dc.right->offset->type == en_tempref && tail->dc.left->offset->type == en_tempref)
                     {
-                        insertConflict(tail->dc.right->offset->v.sp->value.i, tail->dc.left->offset->v.sp->value.i);
+                        insertConflict(tail->dc.right->offset->sp->i, tail->dc.left->offset->sp->i);
                     }
                 }
                 else if (tail->dc.opcode == i_gosub)
@@ -178,7 +177,7 @@ void CalculateConflictGraph(BRIGGS_SET* nodes, bool optimize)
                         {
                             if (x->fastcall > 0)
                             {
-                                briggsSet(live, x->dc.left->offset->v.sp->value.i);
+                                briggsSet(live, x->dc.left->offset->sp->i);
                             }
                             x = x->back;
                         }
@@ -188,7 +187,7 @@ void CalculateConflictGraph(BRIGGS_SET* nodes, bool optimize)
                 {
                     if (tail->ans->mode == i_direct)
                     {
-                        int tnum = tail->ans->offset->v.sp->value.i;
+                        int tnum = tail->ans->offset->sp->i;
                         int k = -1;
                         if (!nodes || briggsTest(nodes, tnum))
                         {
@@ -203,10 +202,10 @@ void CalculateConflictGraph(BRIGGS_SET* nodes, bool optimize)
                                         {
                                             if (tail->dc.left->size == tail->ans->size)
                                             {
-                                                if (!tail->ans->offset->v.sp->pushedtotemp &&
-                                                    !tail->dc.left->offset->v.sp->pushedtotemp)
+                                                if (!tail->ans->offset->sp->pushedtotemp &&
+                                                    !tail->dc.left->offset->sp->pushedtotemp)
                                                 {
-                                                    k = tail->dc.left->offset->v.sp->value.i;
+                                                    k = tail->dc.left->offset->sp->i;
                                                 }
                                             }
                                         }
@@ -221,16 +220,16 @@ void CalculateConflictGraph(BRIGGS_SET* nodes, bool optimize)
                                 {
                                     //                                    if (tail->dc.left->offset)
                                     //                                        insertConflict(tnum,
-                                    //                                        tail->dc.left->offset->v.sp->value.i);
+                                    //                                        tail->dc.left->offset->sp->i);
                                     if (tail->dc.left->offset2)
-                                        insertConflict(tnum, tail->dc.left->offset2->v.sp->value.i);
+                                        insertConflict(tnum, tail->dc.left->offset2->sp->i);
                                 }
                                 if (tail->dc.right && tail->dc.right->mode == i_ind)
                                 {
                                     if (tail->dc.right->offset)
-                                        insertConflict(tnum, tail->dc.right->offset->v.sp->value.i);
+                                        insertConflict(tnum, tail->dc.right->offset->sp->i);
                                     if (tail->dc.right->offset2)
-                                        insertConflict(tnum, tail->dc.right->offset2->v.sp->value.i);
+                                        insertConflict(tnum, tail->dc.right->offset2->sp->i);
                                 }
                             }
                             for (j = 0; j < live->top; j++)
@@ -244,7 +243,7 @@ void CalculateConflictGraph(BRIGGS_SET* nodes, bool optimize)
                     {
                         if (tail->ans->offset)
                         {
-                            int tnum = tail->ans->offset->v.sp->value.i;
+                            int tnum = tail->ans->offset->sp->i;
                             if (!nodes || briggsTest(nodes, tnum))
                             {
                                 briggsSet(live, tnum);
@@ -252,7 +251,7 @@ void CalculateConflictGraph(BRIGGS_SET* nodes, bool optimize)
                         }
                         if (tail->ans->offset2)
                         {
-                            int tnum = tail->ans->offset2->v.sp->value.i;
+                            int tnum = tail->ans->offset2->sp->i;
                             if (!nodes || briggsTest(nodes, tnum))
                             {
                                 briggsSet(live, tnum);
@@ -264,7 +263,7 @@ void CalculateConflictGraph(BRIGGS_SET* nodes, bool optimize)
                 {
                     if (tail->dc.left->offset)
                     {
-                        int tnum = tail->dc.left->offset->v.sp->value.i;
+                        int tnum = tail->dc.left->offset->sp->i;
                         if (!nodes || briggsTest(nodes, tnum))
                         {
                             briggsSet(live, tnum);
@@ -272,7 +271,7 @@ void CalculateConflictGraph(BRIGGS_SET* nodes, bool optimize)
                     }
                     if (tail->dc.left->offset2)
                     {
-                        int tnum = tail->dc.left->offset2->v.sp->value.i;
+                        int tnum = tail->dc.left->offset2->sp->i;
                         if (!nodes || briggsTest(nodes, tnum))
                         {
                             briggsSet(live, tnum);
@@ -283,7 +282,7 @@ void CalculateConflictGraph(BRIGGS_SET* nodes, bool optimize)
                 {
                     if (tail->dc.right->offset)
                     {
-                        int tnum = tail->dc.right->offset->v.sp->value.i;
+                        int tnum = tail->dc.right->offset->sp->i;
                         if (!nodes || briggsTest(nodes, tnum))
                         {
                             briggsSet(live, tnum);
@@ -291,7 +290,7 @@ void CalculateConflictGraph(BRIGGS_SET* nodes, bool optimize)
                     }
                     if (tail->dc.right->offset2)
                     {
-                        int tnum = tail->dc.right->offset2->v.sp->value.i;
+                        int tnum = tail->dc.right->offset2->sp->i;
                         if (!nodes || briggsTest(nodes, tnum))
                         {
                             briggsSet(live, tnum);

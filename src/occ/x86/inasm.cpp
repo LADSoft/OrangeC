@@ -208,7 +208,7 @@ static AMODE* inasm_const(void)
     AMODE* rv = nullptr;
     TYPE* tp = nullptr;
     EXPRESSION* exp = nullptr;
-    lex = optimized_expression(lex, beGetCurrentFunc, nullptr, &tp, &exp, false);
+    lex = optimized_expression(lex, theCurrentFunc, nullptr, &tp, &exp, false);
     if (!tp)
     {
         error(ERR_EXPRESSION_SYNTAX);
@@ -221,7 +221,7 @@ static AMODE* inasm_const(void)
     {
         rv = (AMODE*)Alloc(sizeof(AMODE));
         rv->mode = am_immed;
-        rv->offset = exp;
+        rv->offset = SymbolManager::Get(exp);
     }
     return rv;
 }
@@ -244,6 +244,7 @@ static EXPRESSION* inasm_ident(void)
         if ((sym = search(nm, labelSyms)) == 0 && (sym = gsearch(nm)) == 0)
         {
             sym = (SYMBOL*)Alloc(sizeof(SYMBOL));
+            sym->key = NextSymbolKey();
             sym->storage_class = sc_ulabel;
             sym->name = litlate(nm);
             sym->declfile = sym->origdeclfile = lex->file;
@@ -321,6 +322,7 @@ static EXPRESSION* inasm_label(void)
     if ((sym = search(lex->value.s.a, labelSyms)) == 0)
     {
         sym = (SYMBOL*)Alloc(sizeof(SYMBOL));
+        sym->key = NextSymbolKey();
         sym->storage_class = sc_label;
         sym->name = litlate(lex->value.s.a);
         sym->declfile = sym->origdeclfile = lex->file;
@@ -691,7 +693,7 @@ static AMODE* inasm_mem(void)
     rv = (AMODE*)beLocalAlloc(sizeof(AMODE));
     if (node)
     {
-        rv->offset = node;
+        rv->offset = SymbolManager::Get(node);
     }
     if (reg1 >= 0)
     {
@@ -827,7 +829,7 @@ static AMODE* inasm_amode(int nosegreg)
                     break;
                 case l_id:
                     rv->mode = am_immed;
-                    rv->offset = inasm_ident();
+                    rv->offset = SymbolManager::Get(inasm_ident());
                     rv->length = ISZ_UINT;
                     if (rv->offset->type == en_auto)
                     {
@@ -1187,6 +1189,8 @@ void* inlineAsmStmt(void* param)
     memcpy(rv, param, sizeof(*rv));
     if ((e_op)rv->opcode != op_label && (e_op)rv->opcode != op_line)
     {
+        diag("inlineAsmStmt not supported");
+        /*
         AMODE* ap = rv->oper1;
         if (ap && ap->offset)
             ap->offset = inlineexpr(ap->offset, nullptr);
@@ -1196,6 +1200,7 @@ void* inlineAsmStmt(void* param)
         ap = rv->oper3;
         if (ap && ap->offset)
             ap->offset = inlineexpr(ap->offset, nullptr);
+        */
     }
     return rv;
 }

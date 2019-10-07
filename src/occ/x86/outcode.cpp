@@ -61,7 +61,7 @@ extern MULDIV* muldivlink;
 extern ASMNAME oplst[];
 extern enum e_sg oa_currentSeg;
 extern DBGBLOCK* DbgBlocks[];
-extern SYMBOL* theCurrentFunc;
+extern SimpleSymbol* currentFunction;
 extern int fastcallAlias;
 extern FILE *outputFile, *browseFile;
 extern char infile[];
@@ -105,14 +105,14 @@ static int lastIncludeNum;
 static int sectionMap[MAX_SEGS];
 static std::map<int, Label*> labelMap;
 
-static std::vector<SYMBOL*> autotab;
+static std::vector<SimpleSymbol*> autotab;
 static std::vector<Label*> strlabs;
 static std::map<std::string, Label*> lblpubs;
 static std::map<std::string, Label*> lbllabs;
 static std::map<std::string, Label*> lblExterns;
 static std::map<std::string, Label*> lblvirt;
 static std::vector<Section*> virtuals;
-static std::map<Section*, SYMBOL*> virtualSyms;
+static std::map<Section*, SimpleSymbol*> virtualSyms;
 
 static Section* sections[MAX_SEGS];
 
@@ -120,17 +120,17 @@ static int autoCount;
 
 struct symname
 {
-    bool operator()(const SYMBOL* left, const SYMBOL* right) const { return strcmp(left->decoratedName, right->decoratedName) < 0; }
+    bool operator()(const SimpleSymbol* left, const SimpleSymbol* right) const { return strcmp(left->decoratedName, right->decoratedName) < 0; }
 };
-static std::set<SYMBOL*, symname> globals;
-static std::set<SYMBOL*, symname> externs;
-static std::map<SYMBOL*, int> autos;
+static std::set<SimpleSymbol*, symname> globals;
+static std::set<SimpleSymbol*, symname> externs;
+static std::map<SimpleSymbol*, int> autos;
 static std::vector<ObjSymbol*> autovector;
-static std::map<SYMBOL*, ObjSymbol*> objExterns;
-static std::map<SYMBOL*, ObjSymbol*> objGlobals;
+static std::map<SimpleSymbol*, ObjSymbol*> objExterns;
+static std::map<SimpleSymbol*, ObjSymbol*> objGlobals;
 
-static std::vector<SYMBOL*> impfuncs;
-static std::vector<SYMBOL*> expfuncs;
+static std::vector<SimpleSymbol*> impfuncs;
+static std::vector<SimpleSymbol*> expfuncs;
 static std::vector<std::string> includelibs;
 
 static std::map<std::string, ObjSection*> objSectionsByName;
@@ -145,7 +145,7 @@ int dbgblocknum = 0;
 
 static int sectofs;
 
-static std::deque<SYMBOL*> typedefs;
+static std::deque<SimpleSymbol*> typedefs;
 
 static Section dummySection("dummy", -1);
 
@@ -185,7 +185,7 @@ void dbginit(void)
     autoCount = 0;
 }
 
-void debug_outputtypedef(SYMBOL* sym) { typedefs.push_back(sym); }
+void debug_outputtypedef(SimpleSymbol* sym) { typedefs.push_back(sym); }
 
 void outcode_file_init(void)
 {
@@ -217,8 +217,8 @@ void outcode_func_init(void)
 
 void omf_dump_browsefile(BROWSEFILE* brf) { browseFiles = brf; }
 void omf_dump_browsedata(BROWSEINFO* bri) { browseInfo.push_back(bri); }
-void omf_globaldef(SYMBOL* sym) { globals.insert(sym); }
-void omf_put_extern(SYMBOL* sym, int code)
+void omf_globaldef(SimpleSymbol* sym) { globals.insert(sym); }
+void omf_put_extern(SimpleSymbol* sym, int code)
 {
     externs.insert(sym);
     std::string name = sym->decoratedName;
@@ -226,8 +226,8 @@ void omf_put_extern(SYMBOL* sym, int code)
     l->SetExtern(true);
     lblExterns[l->GetName()] = l;
 }
-void omf_put_impfunc(SYMBOL* sym, char* file) { impfuncs.push_back(sym); }
-void omf_put_expfunc(SYMBOL* sym) { expfuncs.push_back(sym); }
+void omf_put_impfunc(SimpleSymbol* sym, const char* file) { impfuncs.push_back(sym); }
+void omf_put_expfunc(SimpleSymbol* sym) { expfuncs.push_back(sym); }
 void omf_put_includelib(const char* name) { includelibs.push_back(name); }
 
 Label* LookupLabel(const std::string& string)
@@ -401,7 +401,7 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
 
         if (objSectionsByNumber.size())
         {
-            SYMBOL s = {};
+            SimpleSymbol s = {};
             for (auto l : strlabs)
             {
                 std::string name = l->GetName();
@@ -444,10 +444,10 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
                 if (cparams.prm_debug)
                     s1->SetBaseType(types.Put(e->tp));
                 int resolved = 0;
-                EXPRESSION exp = { 0 };
-                exp.type = en_auto;
-                exp.v.sp = e;
-                s1->SetOffset(new ObjExpression(resolveoffset(&exp, &resolved)));
+                SimpleExpression* exp = (SimpleExpression*)Alloc(sizeof(SimpleExpression));
+                exp->type = se_auto;
+                exp->sp = e;
+                s1->SetOffset(new ObjExpression(resolveoffset(exp, &resolved)));
                 fi->Add(s1);
                 autovector.push_back(s1);
             }
@@ -631,7 +631,7 @@ static Label* GetLabel(int lbl)
     }
     return l;
 }
-void outcode_gen_strlab(SYMBOL* sym)
+void outcode_gen_strlab(SimpleSymbol* sym)
 {
     std::string name = sym->decoratedName;
     Label* l = new Label(name, strlabs.size(), currentSection->GetSect());
@@ -685,7 +685,7 @@ void emit(int size)
 }
 /*-------------------------------------------------------------------------*/
 
-Fixup* gen_symbol_fixup(SYMBOL* pub, int offset, bool PC)
+Fixup* gen_symbol_fixup(SimpleSymbol* pub, int offset, bool PC)
 {
     AsmExprNode* expr = new AsmExprNode(pub->decoratedName);
     if (offset)
@@ -708,7 +708,7 @@ Fixup* gen_label_fixup(int lab, int offset, bool PC)
     Fixup* f = new Fixup(expr, 4, !!PC, PC ? 4 : 0);
     return f;
 }
-Fixup* gen_threadlocal_fixup(SYMBOL* tls, SYMBOL* base, int offset)
+Fixup* gen_threadlocal_fixup(SimpleSymbol* tls, SimpleSymbol* base, int offset)
 {
     AsmExprNode* expr = new AsmExprNode(base->decoratedName);
     AsmExprNode* expr1 = new AsmExprNode(tls->decoratedName);
@@ -761,7 +761,7 @@ void outcode_dump_muldivval(void)
 
 /*-------------------------------------------------------------------------*/
 
-void outcode_genref(SYMBOL* sym, int offset)
+void outcode_genref(SimpleSymbol* sym, int offset)
 {
     Fixup* f = gen_symbol_fixup(sym, offset, false);
     int i = 0;
@@ -787,7 +787,7 @@ void outcode_gen_labdifref(int n1, int n2)
 
 /*-------------------------------------------------------------------------*/
 
-void outcode_gensrref(SYMBOL* sym, int val)
+void outcode_gensrref(SimpleSymbol* sym, int val)
 {
     Fixup* f = gen_symbol_fixup(sym, 0, false);
     char buf[8] = {};
@@ -870,7 +870,7 @@ void outcode_put_label(int lab) { InsertLabel(lab); }
 
 /*-------------------------------------------------------------------------*/
 
-void outcode_start_virtual_seg(SYMBOL* sym, int data)
+void outcode_start_virtual_seg(SimpleSymbol* sym, int data)
 {
     char buf[4096];
     if (data)
@@ -892,53 +892,40 @@ void outcode_start_virtual_seg(SYMBOL* sym, int data)
 
 /*-------------------------------------------------------------------------*/
 
-void outcode_end_virtual_seg(SYMBOL* sym) { outcode_enterseg(oa_currentSeg); }
+void outcode_end_virtual_seg(SimpleSymbol* sym) { outcode_enterseg(oa_currentSeg); }
 
 /*-------------------------------------------------------------------------*/
 
-int resolveoffset(EXPRESSION* n, int* resolved)
+int resolveoffset(SimpleExpression* n, int* resolved)
 {
     int rv = 0;
     if (n)
     {
         switch (n->type)
         {
-            case en_sub:
+            case se_sub:
                 rv += resolveoffset(n->left, resolved);
                 rv -= resolveoffset(n->right, resolved);
                 break;
-            case en_add:
+            case se_add:
                 // case en_addstruc:
                 rv += resolveoffset(n->left, resolved);
                 rv += resolveoffset(n->right, resolved);
                 break;
-            case en_c_ll:
-            case en_c_ull:
-            case en_c_i:
-            case en_c_c:
-            case en_c_uc:
-            case en_c_u16:
-            case en_c_u32:
-            case en_c_l:
-            case en_c_ul:
-            case en_c_ui:
-            case en_c_wc:
-            case en_c_s:
-            case en_c_us:
-            case en_absolute:
-            case en_c_bool:
-                rv += n->v.i;
+            case se_i:
+            case se_ui:
+                rv += n->i;
                 break;
             case en_auto:
             {
-                int m = n->v.sp->offset;
+                int m = n->sp->offset;
 
                 if (!usingEsp && m > 0)
                     m += 4;
 
-                if (n->v.sp->storage_class == sc_parameter && fastcallAlias)
+                if (n->sp->storage_class == sc_parameter && fastcallAlias)
                 {
-                    if (!isstructured(basetype(theCurrentFunc->tp)->btp) || n->v.sp->offset != chosenAssembler->arch->retblocksize)
+                    if ((currentFunction->tp->btp->type != st_struct && currentFunction->tp->btp->type != st_union) || n->sp->offset != chosenAssembler->arch->retblocksize)
                     {
 
                         m -= fastcallAlias * chosenAssembler->arch->parmwidth;
@@ -971,7 +958,7 @@ int resolveoffset(EXPRESSION* n, int* resolved)
     }
     return rv;
 }
-AsmExprNode* MakeFixup(EXPRESSION* offset)
+AsmExprNode* MakeFixup(SimpleExpression* offset)
 {
     int resolved = 1;
     int n = resolveoffset(offset, &resolved);
@@ -980,27 +967,27 @@ AsmExprNode* MakeFixup(EXPRESSION* offset)
         AsmExprNode* rv;
         if (offset->type == en_sub && offset->left->type == en_threadlocal)
         {
-            EXPRESSION* node = GetSymRef(offset->left);
-            EXPRESSION* node1 = GetSymRef(offset->right);
-            std::string name = node->v.sp->decoratedName;
+            SimpleExpression* node = GetSymRef(offset->left);
+            SimpleExpression* node1 = GetSymRef(offset->right);
+            std::string name = node->sp->decoratedName;
             AsmExprNode* left = new AsmExprNode(name);
-            name = node1->v.sp->decoratedName;
+            name = node1->sp->decoratedName;
             AsmExprNode* right = new AsmExprNode(name);
             rv = new AsmExprNode(AsmExprNode::SUB, left, right);
         }
         else
         {
-            EXPRESSION* node = GetSymRef(offset);
+            SimpleExpression* node = GetSymRef(offset);
             std::string name;
-            if (node->type == en_labcon)
+            if (node->type == se_labcon)
             {
                 char buf[256];
-                sprintf(buf, "L_%d", (int)node->v.i);
+                sprintf(buf, "L_%d", (int)node->i);
                 name = buf;
             }
             else
             {
-                name = node->v.sp->decoratedName;
+                name = node->sp->decoratedName;
             }
             rv = new AsmExprNode(name);
         }
@@ -1023,7 +1010,7 @@ void InsertLine(LINEDATA* linedata)
     attrib->v.ld = linedata;
     InsertAttrib(attrib);
 }
-void InsertVarStart(SYMBOL* sym)
+void InsertVarStart(SimpleSymbol* sym)
 {
     if (!strstr(sym->name, "++"))
     {
@@ -1036,7 +1023,7 @@ void InsertVarStart(SYMBOL* sym)
         autotab.push_back(sym);
     }
 }
-void InsertFunc(SYMBOL* sym, int start)
+void InsertFunc(SimpleSymbol* sym, int start)
 {
     if (oa_currentSeg == virtseg)
     {
@@ -1148,7 +1135,7 @@ void outcode_AssembleIns(OCODE* ins)
         switch ((e_op)ins->opcode)
         {
             case op_label:
-                InsertLabel(ins->oper1->offset->v.i);
+                InsertLabel(ins->oper1->offset->i);
                 return;
             case op_line:
                 if (cparams.prm_debug)
@@ -1161,7 +1148,7 @@ void outcode_AssembleIns(OCODE* ins)
                 break;
             case op_varstart:
                 if (cparams.prm_debug)
-                    InsertVarStart((SYMBOL*)ins->oper1);
+                    InsertVarStart((SimpleSymbol*)ins->oper1);
                 break;
             case op_blockstart:
                 if (cparams.prm_debug)
@@ -1173,18 +1160,18 @@ void outcode_AssembleIns(OCODE* ins)
                 break;
             case op_funcstart:
                 if (cparams.prm_debug)
-                    InsertFunc((SYMBOL*)ins->oper1, 1);
+                    InsertFunc((SimpleSymbol*)ins->oper1, 1);
                 break;
             case op_funcend:
                 if (cparams.prm_debug)
-                    InsertFunc((SYMBOL*)ins->oper1, 0);
+                    InsertFunc((SimpleSymbol*)ins->oper1, 0);
                 break;
             case op_genword:
-                outcode_genbyte(ins->oper1->offset->v.i);
+                outcode_genbyte(ins->oper1->offset->i);
                 break;
             case op_align:
             {
-                Instruction* newIns = new Instruction(ins->oper1->offset->v.i);
+                Instruction* newIns = new Instruction(ins->oper1->offset->i);
                 InsertInstruction(newIns);
                 break;
             }

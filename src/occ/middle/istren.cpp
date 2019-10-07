@@ -59,7 +59,7 @@ static void ScanVarStrength(INSTRUCTIONLIST* l, IMODE* multiplier, int tnum, int
             case i_mul:
                 if (head->temps & TEMP_RIGHT)
                 {
-                    int tr = head->dc.right->offset->v.sp->value.i;
+                    int tr = head->dc.right->offset->sp->i;
                     if (tr == match)
                     {
                         if (head->dc.left->mode == i_immed)
@@ -67,14 +67,14 @@ static void ScanVarStrength(INSTRUCTIONLIST* l, IMODE* multiplier, int tnum, int
                             if (!multiplier)
                             {
                                 multiplier = head->dc.left;
-                                tr = head->ans->offset->v.sp->value.i;
+                                tr = head->ans->offset->sp->i;
                                 ans = head->ans;
                                 ScanVarStrength(tempInfo[tr]->instructionUses, multiplier, tnum, tr, vars);
                             }
                             else if (multiplier->mode == i_immed)
                             {
-                                multiplier = make_immed(multiplier->size, head->dc.left->offset->v.i * multiplier->offset->v.i);
-                                tr = head->ans->offset->v.sp->value.i;
+                                multiplier = make_immed(multiplier->size, head->dc.left->offset->i * multiplier->offset->i);
+                                tr = head->ans->offset->sp->i;
                                 ans = head->ans;
                                 ScanVarStrength(tempInfo[tr]->instructionUses, multiplier, tnum, tr, vars);
                             }
@@ -83,7 +83,7 @@ static void ScanVarStrength(INSTRUCTIONLIST* l, IMODE* multiplier, int tnum, int
                 }
                 if (head->temps & TEMP_LEFT)
                 {
-                    int tr = head->dc.left->offset->v.sp->value.i;
+                    int tr = head->dc.left->offset->sp->i;
                     if (tr == match)
                     {
                         if (head->dc.right->mode == i_immed)
@@ -91,14 +91,14 @@ static void ScanVarStrength(INSTRUCTIONLIST* l, IMODE* multiplier, int tnum, int
                             if (!multiplier)
                             {
                                 multiplier = head->dc.right;
-                                tr = head->ans->offset->v.sp->value.i;
+                                tr = head->ans->offset->sp->i;
                                 ans = head->ans;
                                 ScanVarStrength(tempInfo[tr]->instructionUses, multiplier, tnum, tr, vars);
                             }
                             else if (multiplier->mode == i_immed)
                             {
-                                multiplier = make_immed(multiplier->size, head->dc.right->offset->v.i * multiplier->offset->v.i);
-                                tr = head->ans->offset->v.sp->value.i;
+                                multiplier = make_immed(multiplier->size, head->dc.right->offset->i * multiplier->offset->i);
+                                tr = head->ans->offset->sp->i;
                                 ans = head->ans;
                                 ScanVarStrength(tempInfo[tr]->instructionUses, multiplier, tnum, tr, vars);
                             }
@@ -109,19 +109,19 @@ static void ScanVarStrength(INSTRUCTIONLIST* l, IMODE* multiplier, int tnum, int
             case i_lsl:
                 if (head->temps & TEMP_LEFT)
                 {
-                    int tr = head->dc.left->offset->v.sp->value.i;
+                    int tr = head->dc.left->offset->sp->i;
                     if (tr == match)
                     {
                         if (head->dc.right->mode == i_immed)
                         {
                             // this first if is architecture specific
                             // forces use of shifts in addressing modes
-                            if (head->dc.right->offset->v.i > 3)
+                            if (head->dc.right->offset->i > 3)
                             {
                                 if (!multiplier)
                                 {
-                                    multiplier = make_immed(head->dc.right->size, 1 << head->dc.right->offset->v.i);
-                                    tr = head->ans->offset->v.sp->value.i;
+                                    multiplier = make_immed(head->dc.right->size, 1 << head->dc.right->offset->i);
+                                    tr = head->ans->offset->sp->i;
                                     ans = head->ans;
                                     ScanVarStrength(tempInfo[tr]->instructionUses, multiplier, tnum, tr, vars);
                                     break;
@@ -129,8 +129,8 @@ static void ScanVarStrength(INSTRUCTIONLIST* l, IMODE* multiplier, int tnum, int
                                 else if (multiplier->mode == i_immed)
                                 {
                                     multiplier =
-                                        make_immed(multiplier->size, (1 << head->dc.right->offset->v.i) * multiplier->offset->v.i);
-                                    tr = head->ans->offset->v.sp->value.i;
+                                        make_immed(multiplier->size, (1 << head->dc.right->offset->i) * multiplier->offset->i);
+                                    tr = head->ans->offset->sp->i;
                                     ans = head->ans;
                                     ScanVarStrength(tempInfo[tr]->instructionUses, multiplier, tnum, tr, vars);
                                     break;
@@ -143,7 +143,7 @@ static void ScanVarStrength(INSTRUCTIONLIST* l, IMODE* multiplier, int tnum, int
             case i_assn:
                 if (head->dc.left->mode == i_direct && head->ans->mode == i_direct)
                 {
-                    int tr = head->ans->offset->v.sp->value.i;
+                    int tr = head->ans->offset->sp->i;
                     ScanVarStrength(tempInfo[tr]->instructionUses, multiplier, tnum, tr, vars);
                 }
             default:
@@ -151,7 +151,7 @@ static void ScanVarStrength(INSTRUCTIONLIST* l, IMODE* multiplier, int tnum, int
         }
         if (multiplier && (ans) && multiplier->size < ISZ_FLOAT && ans->size < ISZ_FLOAT &&
             (multiplier->mode == i_immed ||
-             multiplier->offset->type == en_tempref))  // && !tempInfo[multiplier->offset->v.sp->value.i]->markStrength))
+             multiplier->offset->type == en_tempref))  // && !tempInfo[multiplier->offset->sp->i]->markStrength))
         {
             USES_STRENGTH* s = tempInfo[tnum]->sl;
             while (s)
@@ -167,19 +167,19 @@ static void ScanVarStrength(INSTRUCTIONLIST* l, IMODE* multiplier, int tnum, int
                 {
                     USES_STRENGTH* s1 = (USES_STRENGTH*)tAlloc(sizeof(USES_STRENGTH));
                     IMODE* rv = InitTempOpt((ans)->size, (ans)->size);
-                    int n = rv->offset->v.sp->value.i;
+                    int n = rv->offset->sp->i;
                     s1->next = tempInfo[v->data]->sl;
                     tempInfo[v->data]->sl = s1;
                     s1->multiplier = multiplier;
                     s1->strengthName = n;
-                    tempInfo[n]->enode->v.sp->pushedtotemp = true;
+                    tempInfo[n]->enode->sp->pushedtotemp = true;
                     tempInfo[n]->inductionLoop = tempInfo[v->data]->inductionLoop;
                     tempInfo[n]->oldInductionVar = v->data;
                     v = v->next;
                 }
                 s = tempInfo[tnum]->sl;
             }
-            tempInfo[ans->offset->v.sp->value.i]->strengthRename = s->strengthName;
+            tempInfo[ans->offset->sp->i]->strengthRename = s->strengthName;
         }
         multiplier = oldMult;
         l = l->next;
@@ -213,7 +213,7 @@ static void ScanStrength(void)
 }
 void ReplaceOneUses(QUAD* head, IMODE** im)
 {
-    int n = tempInfo[(*im)->offset->v.sp->value.i]->strengthRename;
+    int n = tempInfo[(*im)->offset->sp->i]->strengthRename;
 
     if (n > 0)
     {
@@ -221,10 +221,10 @@ void ReplaceOneUses(QUAD* head, IMODE** im)
         if ((head->temps & TEMP_ANS) && head->ans->mode == i_direct)
             unmarkPreSSA(head);
         if ((*im)->mode == i_direct)
-            *im = tempInfo[n]->enode->v.sp->imvalue;
+            *im = tempInfo[n]->enode->sp->imvalue;
         else
         {
-            IMODELIST* iml = tempInfo[n]->enode->v.sp->imind;
+            IMODELIST* iml = tempInfo[n]->enode->sp->imind;
             while (iml)
             {
                 if (iml->im->size == (*im)->size)
@@ -258,8 +258,8 @@ void ReduceStrengthAssign(QUAD* head)
     {
         if (head->dc.left->mode == i_direct && head->ans->mode == i_direct)
         {
-            int ta = head->ans->offset->v.sp->value.i;
-            int tl = head->dc.left->offset->v.sp->value.i;
+            int ta = head->ans->offset->sp->i;
+            int tl = head->dc.left->offset->sp->i;
             USES_STRENGTH* sla = tempInfo[ta]->sl;
             USES_STRENGTH* sll = tempInfo[tl]->sl;
             if (sla && sll)
@@ -268,8 +268,8 @@ void ReduceStrengthAssign(QUAD* head)
                 {
                     QUAD* ins = (QUAD*)Alloc(sizeof(QUAD));
                     ins->dc.opcode = head->dc.opcode;
-                    ins->ans = tempInfo[sla->strengthName]->enode->v.sp->imvalue;
-                    ins->dc.left = tempInfo[sll->strengthName]->enode->v.sp->imvalue;
+                    ins->ans = tempInfo[sla->strengthName]->enode->sp->imvalue;
+                    ins->dc.left = tempInfo[sll->strengthName]->enode->sp->imvalue;
                     InsertInstruction(head->back, ins);
                     sla = sla->next;
                     sll = sll->next;
@@ -287,12 +287,12 @@ static IMODE* StrengthConstant(QUAD* head, IMODE* im1, IMODE* im2, int size)
     if (im1->mode == i_immed && isintconst(im1->offset))
         if (im2->mode == i_immed && isintconst(im2->offset))
         {
-            return make_immed(ISZ_UINT, im1->offset->v.i * im2->offset->v.i);
+            return make_immed(ISZ_UINT, im1->offset->i * im2->offset->i);
         }
     if (im2->offset && im2->offset->type == en_tempref && im2->mode == i_direct)
         while (true)
         {
-            QUAD* q = tempInfo[im2->offset->v.sp->value.i]->instructionDefines;
+            QUAD* q = tempInfo[im2->offset->sp->i]->instructionDefines;
             if (q->dc.opcode != i_assn || q->dc.left->size != q->ans->size || q->dc.left->offset->type != en_tempref)
                 break;
             im2 = q->dc.left;
@@ -308,7 +308,7 @@ static IMODE* StrengthConstant(QUAD* head, IMODE* im1, IMODE* im2, int size)
     ins->dc.opcode = i_mul;
     if (im1->mode == i_immed)
     {
-        if (im1->offset->v.i == 0)
+        if (im1->offset->i == 0)
         {
             im2 = im1;
             im1 = nullptr;
@@ -316,7 +316,7 @@ static IMODE* StrengthConstant(QUAD* head, IMODE* im1, IMODE* im2, int size)
         }
         else
         {
-            int n = pwrof2(im1->offset->v.i);
+            int n = pwrof2(im1->offset->i);
             if (n >= 0)
             {
                 ins->dc.opcode = i_lsl;
@@ -337,30 +337,30 @@ static IMODE* StrengthConstant(QUAD* head, IMODE* im1, IMODE* im2, int size)
     q1.dc.right = im1;
     if (q1.dc.left->offset->type == en_tempref && q1.dc.left->mode == i_direct)
     {
-        int n = q1.dc.left->offset->v.sp->value.i;
+        int n = q1.dc.left->offset->sp->i;
         if (tempInfo[n]->preSSATemp >= 0)
-            q1.dc.left = tempInfo[tempInfo[n]->preSSATemp]->enode->v.sp->imvalue;
+            q1.dc.left = tempInfo[tempInfo[n]->preSSATemp]->enode->sp->imvalue;
     }
     if (q1.dc.right && q1.dc.right->offset->type == en_tempref && q1.dc.right->mode == i_direct)
     {
-        int n = q1.dc.right->offset->v.sp->value.i;
+        int n = q1.dc.right->offset->sp->i;
         if (tempInfo[n]->preSSATemp >= 0)
-            q1.dc.right = tempInfo[tempInfo[n]->preSSATemp]->enode->v.sp->imvalue;
+            q1.dc.right = tempInfo[tempInfo[n]->preSSATemp]->enode->sp->imvalue;
     }
     if (ins->dc.opcode != i_assn)
     {
         rv = (IMODE*)LookupNVHash((UBYTE*)&q1, DAGCOMPARE, ins_hash);
         if (rv)
         {
-            int n = rv->offset->v.sp->value.i;
-            tempInfo[ins->ans->offset->v.sp->value.i]->preSSATemp = n;
+            int n = rv->offset->sp->i;
+            tempInfo[ins->ans->offset->sp->i]->preSSATemp = n;
         }
         else
         {
             QUAD* q2 = (QUAD*)Alloc(sizeof(QUAD));
             *q2 = q1;
             ReplaceHashReshape((QUAD*)ins->ans, (UBYTE*)q2, DAGCOMPARE, ins_hash);
-            tempInfo[ins->ans->offset->v.sp->value.i]->preSSATemp = ins->ans->offset->v.sp->value.i;
+            tempInfo[ins->ans->offset->sp->i]->preSSATemp = ins->ans->offset->sp->i;
         }
     }
     if (size != ins->dc.left->size)
@@ -377,9 +377,9 @@ static IMODE* StrengthConstant(QUAD* head, IMODE* im1, IMODE* im2, int size)
 static void DoCompare(QUAD* head, IMODE** temp, IMODE** cnst)
 {
     IMODE* working = *temp;
-    while (!tempInfo[working->offset->v.sp->value.i]->inductionLoop)
+    while (!tempInfo[working->offset->sp->i]->inductionLoop)
     {
-        QUAD* l = tempInfo[working->offset->v.sp->value.i]->instructionDefines;
+        QUAD* l = tempInfo[working->offset->sp->i]->instructionDefines;
         if (l && l->dc.opcode == i_assn && (l->temps & TEMP_LEFT) && l->dc.left->mode == i_direct)
         {
             working = l->dc.left;
@@ -387,10 +387,10 @@ static void DoCompare(QUAD* head, IMODE** temp, IMODE** cnst)
         else
             return;
     }
-    if (tempInfo[working->offset->v.sp->value.i]->inductionLoop)
+    if (tempInfo[working->offset->sp->i]->inductionLoop)
     {
         USES_STRENGTH* sl;
-        int n = working->offset->v.sp->value.i;
+        int n = working->offset->sp->i;
 
         int il;
         //		if (tempInfo[n]->oldInductionVar >= 0)
@@ -400,7 +400,7 @@ static void DoCompare(QUAD* head, IMODE** temp, IMODE** cnst)
         if (sl)
         {
             if (!tempInfo[n]->inductionInitVar)
-                *temp = tempInfo[sl->strengthName]->enode->v.sp->imvalue;
+                *temp = tempInfo[sl->strengthName]->enode->sp->imvalue;
             *cnst = StrengthConstant(head, *cnst, sl->multiplier, (*cnst)->size);
         }
     }
@@ -426,8 +426,8 @@ static void ReduceStrengthAdd(QUAD* head)
     {
         if (head->dc.left->mode == i_direct && head->ans->mode == i_direct)
         {
-            int ta = head->ans->offset->v.sp->value.i;
-            int tl = head->dc.left->offset->v.sp->value.i;
+            int ta = head->ans->offset->sp->i;
+            int tl = head->dc.left->offset->sp->i;
             USES_STRENGTH* sla = tempInfo[ta]->sl;
             USES_STRENGTH* sll = tempInfo[tl]->sl;
             if (sla && sll)
@@ -436,8 +436,8 @@ static void ReduceStrengthAdd(QUAD* head)
                 {
                     QUAD* ins = (QUAD*)Alloc(sizeof(QUAD));
                     ins->dc.opcode = head->dc.opcode;
-                    ins->ans = tempInfo[sla->strengthName]->enode->v.sp->imvalue;
-                    ins->dc.left = tempInfo[sll->strengthName]->enode->v.sp->imvalue;
+                    ins->ans = tempInfo[sla->strengthName]->enode->sp->imvalue;
+                    ins->dc.left = tempInfo[sll->strengthName]->enode->sp->imvalue;
                     ins->dc.right = StrengthConstant(head, sla->multiplier, head->dc.right, head->dc.right->size);
                     InsertInstruction(head->back, ins);  // /// pulled out// the extra back is an attempt to go past the load
                     sla = sla->next;
@@ -451,8 +451,8 @@ static void ReduceStrengthAdd(QUAD* head)
     {
         if (head->dc.right->mode == i_direct && head->ans->mode == i_direct)
         {
-            int ta = head->ans->offset->v.sp->value.i;
-            int tr = head->dc.right->offset->v.sp->value.i;
+            int ta = head->ans->offset->sp->i;
+            int tr = head->dc.right->offset->sp->i;
             USES_STRENGTH* sla = tempInfo[ta]->sl;
             USES_STRENGTH* slr = tempInfo[tr]->sl;
             if (sla && slr)
@@ -461,8 +461,8 @@ static void ReduceStrengthAdd(QUAD* head)
                 {
                     QUAD* ins = (QUAD*)Alloc(sizeof(QUAD));
                     ins->dc.opcode = head->dc.opcode;
-                    ins->ans = tempInfo[sla->strengthName]->enode->v.sp->imvalue;
-                    ins->dc.right = tempInfo[slr->strengthName]->enode->v.sp->imvalue;
+                    ins->ans = tempInfo[sla->strengthName]->enode->sp->imvalue;
+                    ins->dc.right = tempInfo[slr->strengthName]->enode->sp->imvalue;
                     ins->dc.left = StrengthConstant(head, sla->multiplier, head->dc.left, head->dc.left->size);
                     InsertInstruction(head->back, ins);
                     sla = sla->next;
@@ -481,7 +481,7 @@ static int HandlePhiInitVar(QUAD* insin, USES_STRENGTH* sl, int tnum)
     if (head->dc.opcode == i_assn && (head->dc.left->mode == i_immed || head->dc.left->size == head->ans->size))
         rv = head->dc.left;
     else if (head->dc.opcode == i_phi)
-        rv = tempInfo[head->dc.v.phi->T0]->enode->v.sp->imvalue;
+        rv = tempInfo[head->dc.v.phi->T0]->enode->sp->imvalue;
     else
         rv = head->ans;
     rv = StrengthConstant(head, rv, sl->multiplier, tempInfo[tnum]->size);
@@ -493,14 +493,14 @@ static int HandlePhiInitVar(QUAD* insin, USES_STRENGTH* sl, int tnum)
         ins->ans = InitTempOpt(tempInfo[tnum]->size, tempInfo[tnum]->size);
         ins->dc.opcode = i_assn;
         InsertInstruction(head->back, ins);
-        n = ins->ans->offset->v.sp->value.i;
+        n = ins->ans->offset->sp->i;
         tempInfo[n]->sl = sl;
         tempInfo[n]->inductionLoop = insin->block->loopParent->loopnum;
         tempInfo[n]->inductionInitVar = 1;
         tempInfo[tnum]->strengthRename = n;
-        return ins->ans->offset->v.sp->value.i;
+        return ins->ans->offset->sp->i;
     }
-    return rv->offset->v.sp->value.i;
+    return rv->offset->sp->i;
 }
 static void ReduceStrengthPhi(QUAD* head)
 {

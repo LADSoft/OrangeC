@@ -174,7 +174,7 @@ static void insertPhiNodes(void)
 static IMODE* renameTemp(BLOCK* b, QUAD* head, IMODE* adr)
 {
     IMODE* im = nullptr;
-    int tnum = adr->offset->v.sp->value.i;
+    int tnum = adr->offset->sp->i;
     (void)b;
     (void)head;
     if (tempInfo[tnum]->renameStack)
@@ -183,7 +183,7 @@ static IMODE* renameTemp(BLOCK* b, QUAD* head, IMODE* adr)
         TEMP_INFO* t = tempInfo[n];
         if (adr->mode == i_direct)
         {
-            im = t->enode->v.sp->imvalue;
+            im = t->enode->sp->imvalue;
         }
         else if (adr->mode == i_ind)
         {
@@ -195,7 +195,7 @@ static IMODE* renameTemp(BLOCK* b, QUAD* head, IMODE* adr)
             }
             else
             {
-                IMODELIST* iml = t->enode->v.sp->imind;
+                IMODELIST* iml = t->enode->sp->imind;
                 while (iml)
                 {
                     if (iml->im->size == adr->size)
@@ -212,8 +212,8 @@ static IMODE* renameTemp(BLOCK* b, QUAD* head, IMODE* adr)
                     *im = *adr;
                     im->offset = t->enode;
                     iml2->im = im;
-                    iml2->next = t->enode->v.sp->imind;
-                    t->enode->v.sp->imind = iml2;
+                    iml2->next = t->enode->sp->imind;
+                    t->enode->sp->imind = iml2;
                 }
             }
         }
@@ -222,7 +222,7 @@ static IMODE* renameTemp(BLOCK* b, QUAD* head, IMODE* adr)
 }
 static void RemoveName(int i)
 {
-    IMODE* key = tempInfo[i]->enode->v.sp->imvalue;
+    IMODE* key = tempInfo[i]->enode->sp->imvalue;
     int hashval = dhash((UBYTE*)&key, sizeof(void*));
     DAGLIST* list = name_hash[hashval];
     while (list)
@@ -290,17 +290,17 @@ static void renameToPhi(BLOCK* b)
         {
             PHIDATA* pd = head->dc.v.phi;
             ILIST* list;
-            IMODE* rv = InitTempOpt(tempInfo[pd->T0]->enode->v.sp->imvalue->size, tempInfo[pd->T0]->size);
-            int n = rv->offset->v.sp->value.i;
+            IMODE* rv = InitTempOpt(tempInfo[pd->T0]->enode->sp->imvalue->size, tempInfo[pd->T0]->size);
+            int n = rv->offset->sp->i;
             list = (ILIST*)oAlloc(sizeof(ILIST));
             list->next = tempInfo[pd->T0]->renameStack;
             list->data = n;
             tempInfo[pd->T0]->renameStack = list;
             tempInfo[n]->instructionDefines = head;
             tempInfo[n]->blockDefines = b;
-            tempInfo[n]->enode->v.sp->pushedtotemp = tempInfo[pd->T0]->enode->v.sp->pushedtotemp;
-            tempInfo[n]->enode->v.sp->storeTemp = tempInfo[pd->T0]->enode->v.sp->storeTemp;
-            tempInfo[n]->enode->v.sp->loadTemp = tempInfo[pd->T0]->enode->v.sp->loadTemp;
+            tempInfo[n]->enode->sp->pushedtotemp = tempInfo[pd->T0]->enode->sp->pushedtotemp;
+            tempInfo[n]->enode->sp->storeTemp = tempInfo[pd->T0]->enode->sp->storeTemp;
+            tempInfo[n]->enode->sp->loadTemp = tempInfo[pd->T0]->enode->sp->loadTemp;
             tempInfo[n]->preSSATemp = pd->T0;
         }
         /* replace Left if necessary */
@@ -334,13 +334,13 @@ static void renameToPhi(BLOCK* b)
         //			ConstantFold(head, true);
         if (head->temps & TEMP_ANS)
         {
-            int tnum = head->ans->offset->v.sp->value.i;
+            int tnum = head->ans->offset->sp->i;
             if (head->ans->mode == i_ind)
             {
                 im = renameTemp(b, head, head->ans);
                 if (im)
                 {
-                    InsertUses(head, im->offset->v.sp->value.i);
+                    InsertUses(head, im->offset->sp->i);
                     if (!im->offset || im->offset->type != en_tempref)
                         head->temps &= ~TEMP_ANS;
                     else
@@ -354,9 +354,9 @@ static void renameToPhi(BLOCK* b)
                  * rename it
                  */
                 ILIST* list;
-                IMODE* rv = InitTempOpt(tempInfo[tnum]->enode->v.sp->imvalue->size, tempInfo[tnum]->size);
+                IMODE* rv = InitTempOpt(tempInfo[tnum]->enode->sp->imvalue->size, tempInfo[tnum]->size);
                 //						tempInfo[n]->enode->right = tempInfo[tnum]->enode->right;
-                int n = rv->offset->v.sp->value.i;
+                int n = rv->offset->sp->i;
                 rv->vol = head->ans->vol;
                 rv->restricted = head->ans->restricted;
                 list = (ILIST*)oAlloc(sizeof(ILIST));
@@ -366,19 +366,19 @@ static void renameToPhi(BLOCK* b)
                 tempInfo[n]->instructionDefines = head;
                 tempInfo[n]->blockDefines = b;
                 tempInfo[n]->preSSATemp = tnum;
-                tempInfo[n]->enode->v.sp->pushedtotemp = tempInfo[tnum]->enode->v.sp->pushedtotemp;
-                tempInfo[n]->enode->v.sp->loadTemp = tempInfo[tnum]->enode->v.sp->loadTemp;
-                tempInfo[n]->enode->v.sp->storeTemp = tempInfo[tnum]->enode->v.sp->storeTemp;
+                tempInfo[n]->enode->sp->pushedtotemp = tempInfo[tnum]->enode->sp->pushedtotemp;
+                tempInfo[n]->enode->sp->loadTemp = tempInfo[tnum]->enode->sp->loadTemp;
+                tempInfo[n]->enode->sp->storeTemp = tempInfo[tnum]->enode->sp->storeTemp;
             }
         }
         if (head->temps & TEMP_LEFT)
         {
-            int tnum = head->dc.left->offset->v.sp->value.i;
+            int tnum = head->dc.left->offset->sp->i;
             InsertUses(head, tnum);
         }
         if (head->temps & TEMP_RIGHT)
         {
-            int tnum = head->dc.right->offset->v.sp->value.i;
+            int tnum = head->dc.right->offset->sp->i;
             InsertUses(head, tnum);
         }
         if (head == b->tail)
@@ -454,7 +454,7 @@ static void renameToPhi(BLOCK* b)
             {
                 if (tail->ans->mode == i_direct)
                 {
-                    int tnum = tail->ans->offset->v.sp->value.i;
+                    int tnum = tail->ans->offset->sp->i;
                     if (tempInfo[tnum]->renameStack)
                     {
                         TEMP_INFO* t = tempInfo[(int)tempInfo[tnum]->renameStack->data];
@@ -467,7 +467,7 @@ static void renameToPhi(BLOCK* b)
                         }
                         else
                         {
-                            im = t->enode->v.sp->imvalue;
+                            im = t->enode->sp->imvalue;
                             tail->ans = im;
                         }
                     }
@@ -525,11 +525,15 @@ void TranslateToSSA(void)
     trueName = (IMODE*)Alloc(sizeof(IMODE));
     trueName->mode = i_immed;
     trueName->size = -ISZ_UINT;
-    trueName->offset = intNode(en_c_i, 1);
+    trueName->offset = (SimpleExpression*)Alloc(sizeof(SimpleExpression));
+    trueName->offset->type = se_i;
+    trueName->offset->i = 1;
     falseName = (IMODE*)Alloc(sizeof(IMODE));
     falseName->mode = i_immed;
     falseName->size = -ISZ_UINT;
-    falseName->offset = intNode(en_c_i, 0);
+    falseName->offset = (SimpleExpression*)Alloc(sizeof(SimpleExpression));
+    falseName->offset->type = se_i;
+    falseName->offset->i = 0;
     liveVariables();
     insertPhiNodes();
     for (i = 0; i < blockCount; i++)
@@ -560,12 +564,12 @@ static void findCopies(BRIGGS_SET* copies, bool all)
         {
             if ((head->temps == (TEMP_LEFT | TEMP_ANS)) && head->dc.left->mode == i_direct && head->ans->mode == i_direct &&
                 head->ans->size == head->dc.left->size && !head->dc.left->retval &&
-                (all || (!head->ans->offset->v.sp->pushedtotemp && !head->dc.left->offset->v.sp->pushedtotemp &&
-                         !head->ans->offset->v.sp->storeTemp && !head->dc.left->offset->v.sp->storeTemp &&
-                         !head->ans->offset->v.sp->loadTemp && !head->dc.left->offset->v.sp->loadTemp)))
+                (all || (!head->ans->offset->sp->pushedtotemp && !head->dc.left->offset->sp->pushedtotemp &&
+                         !head->ans->offset->sp->storeTemp && !head->dc.left->offset->sp->storeTemp &&
+                         !head->ans->offset->sp->loadTemp && !head->dc.left->offset->sp->loadTemp)))
             {
-                briggsSet(copies, head->ans->offset->v.sp->value.i);
-                briggsSet(copies, head->dc.left->offset->v.sp->value.i);
+                briggsSet(copies, head->ans->offset->sp->i);
+                briggsSet(copies, head->dc.left->offset->sp->i);
             }
         }
         head = head->fwd;
@@ -575,7 +579,7 @@ static void mergePartition(int tnew, int told)
 {
     if (tnew == told)
         return;
-    if (tempInfo[tnew]->enode->v.sp->imvalue && tempInfo[tnew]->enode->v.sp->imvalue->retval)
+    if (tempInfo[tnew]->enode->sp->imvalue && tempInfo[tnew]->enode->sp->imvalue->retval)
     {
         int temp = told;
         told = tnew;
@@ -583,7 +587,7 @@ static void mergePartition(int tnew, int told)
     }
     else if (tempInfo[told]->preSSATemp >= 0)
     {
-        if (tempInfo[tempInfo[told]->preSSATemp]->enode->v.sp->pushedtotemp)
+        if (tempInfo[tempInfo[told]->preSSATemp]->enode->sp->pushedtotemp)
         {
             int temp = told;
             told = tnew;
@@ -664,16 +668,16 @@ static void CoalesceTemps(LOOP* l, bool all)
                                 {
                                     if (all)
                                     {
-                                        CheckCoalesce(head->ans->offset->v.sp->value.i, head->dc.left->offset->v.sp->value.i);
+                                        CheckCoalesce(head->ans->offset->sp->i, head->dc.left->offset->sp->i);
                                     }
-                                    else if (!head->ans->offset->v.sp->pushedtotemp)
+                                    else if (!head->ans->offset->sp->pushedtotemp)
                                     {
-                                        if (!head->dc.left->offset->v.sp->pushedtotemp)
-                                            if (!head->dc.left->offset->v.sp->loadTemp)
-                                                if (!head->ans->offset->v.sp->storeTemp)
+                                        if (!head->dc.left->offset->sp->pushedtotemp)
+                                            if (!head->dc.left->offset->sp->loadTemp)
+                                                if (!head->ans->offset->sp->storeTemp)
                                                 {
-                                                    CheckCoalesce(head->ans->offset->v.sp->value.i,
-                                                                  head->dc.left->offset->v.sp->value.i);
+                                                    CheckCoalesce(head->ans->offset->sp->i,
+                                                                  head->dc.left->offset->sp->i);
                                                 }
                                     }
                                 }
@@ -746,11 +750,11 @@ static void returnToNormal(IMODE** adr, bool all)
     IMODE* im = nullptr;
     if ((*adr)->offset)
     {
-        int tnum = (*adr)->offset->v.sp->value.i, T0p;
+        int tnum = (*adr)->offset->sp->i, T0p;
         TEMP_INFO* t;
         T0p = findPartition(tnum);
         t = tempInfo[T0p];
-        if (t->preSSATemp >= 0 && (!all || tempInfo[t->preSSATemp]->enode->v.sp->pushedtotemp))
+        if (t->preSSATemp >= 0 && (!all || tempInfo[t->preSSATemp]->enode->sp->pushedtotemp))
         {
             tempInfo[tnum]->postSSATemp = t->postSSATemp = t->preSSATemp;
             tempInfo[t->preSSATemp]->variantLoop = t->variantLoop;
@@ -759,11 +763,11 @@ static void returnToNormal(IMODE** adr, bool all)
         else
         {
             tempInfo[tnum]->postSSATemp = t->postSSATemp = T0p;
-            t->enode->v.sp->pushedtotemp |= tempInfo[tnum]->enode->v.sp->pushedtotemp;
-            t->enode->v.sp->storeTemp |= tempInfo[tnum]->enode->v.sp->storeTemp;
-            t->enode->v.sp->loadTemp |= tempInfo[tnum]->enode->v.sp->loadTemp;
-            t->enode->v.sp->imvalue->vol |= tempInfo[tnum]->enode->v.sp->imvalue->vol;
-            t->enode->v.sp->imvalue->restricted |= tempInfo[tnum]->enode->v.sp->imvalue->restricted;
+            t->enode->sp->pushedtotemp |= tempInfo[tnum]->enode->sp->pushedtotemp;
+            t->enode->sp->storeTemp |= tempInfo[tnum]->enode->sp->storeTemp;
+            t->enode->sp->loadTemp |= tempInfo[tnum]->enode->sp->loadTemp;
+            t->enode->sp->imvalue->vol |= tempInfo[tnum]->enode->sp->imvalue->vol;
+            t->enode->sp->imvalue->restricted |= tempInfo[tnum]->enode->sp->imvalue->restricted;
         }
         t->temp = true;
         if (!(*adr)->offset2 && !(*adr)->offset3)
@@ -778,7 +782,7 @@ static void returnToNormal(IMODE** adr, bool all)
                 }
                 else
                 {
-                    IMODELIST* iml = t->enode->v.sp->imind;
+                    IMODELIST* iml = t->enode->sp->imind;
                     while (iml)
                     {
                         if (iml->im->size == (*adr)->size)
@@ -795,14 +799,14 @@ static void returnToNormal(IMODE** adr, bool all)
                         *im = **adr;
                         im->offset = t->enode;
                         iml2->im = im;
-                        iml2->next = t->enode->v.sp->imind;
-                        t->enode->v.sp->imind = iml2;
+                        iml2->next = t->enode->sp->imind;
+                        t->enode->sp->imind = iml2;
                     }
                 }
             }
             else
             {
-                im = t->enode->v.sp->imvalue;
+                im = t->enode->sp->imvalue;
             }
         }
         else
@@ -823,11 +827,11 @@ static void returnToNormal(IMODE** adr, bool all)
             im->offset3 = (*adr)->offset3;
         if ((*adr)->offset2)
         {
-            int tnum = (*adr)->offset2->v.sp->value.i, T0p;
+            int tnum = (*adr)->offset2->sp->i, T0p;
             TEMP_INFO* t;
             T0p = findPartition(tnum);
             t = tempInfo[T0p];
-            if (t->preSSATemp >= 0 && (!all || tempInfo[t->preSSATemp]->enode->v.sp->pushedtotemp))
+            if (t->preSSATemp >= 0 && (!all || tempInfo[t->preSSATemp]->enode->sp->pushedtotemp))
             {
                 tempInfo[tnum]->postSSATemp = t->postSSATemp = t->preSSATemp;
                 t = tempInfo[t->preSSATemp];
@@ -835,11 +839,11 @@ static void returnToNormal(IMODE** adr, bool all)
             else
             {
                 tempInfo[tnum]->postSSATemp = t->postSSATemp = T0p;
-                t->enode->v.sp->pushedtotemp |= tempInfo[tnum]->enode->v.sp->pushedtotemp;
-                t->enode->v.sp->storeTemp |= tempInfo[tnum]->enode->v.sp->storeTemp;
-                t->enode->v.sp->loadTemp |= tempInfo[tnum]->enode->v.sp->loadTemp;
-                t->enode->v.sp->imvalue->vol |= tempInfo[tnum]->enode->v.sp->imvalue->vol;
-                t->enode->v.sp->imvalue->restricted |= tempInfo[tnum]->enode->v.sp->imvalue->restricted;
+                t->enode->sp->pushedtotemp |= tempInfo[tnum]->enode->sp->pushedtotemp;
+                t->enode->sp->storeTemp |= tempInfo[tnum]->enode->sp->storeTemp;
+                t->enode->sp->loadTemp |= tempInfo[tnum]->enode->sp->loadTemp;
+                t->enode->sp->imvalue->vol |= tempInfo[tnum]->enode->sp->imvalue->vol;
+                t->enode->sp->imvalue->restricted |= tempInfo[tnum]->enode->sp->imvalue->restricted;
             }
             t->temp = true;
             im->offset2 = t->enode;
@@ -851,8 +855,8 @@ static void copyInstruction(BLOCK* blk, int dest, int src, bool all)
 {
     QUAD *q = (QUAD*)Alloc(sizeof(QUAD)), *tail = blk->tail;
     IMODE *destim, *srcim;
-    destim = tempInfo[dest]->enode->v.sp->imvalue;
-    srcim = tempInfo[src]->enode->v.sp->imvalue;
+    destim = tempInfo[dest]->enode->sp->imvalue;
+    srcim = tempInfo[src]->enode->sp->imvalue;
     tail = beforeJmp(tail, true);
     q->dc.opcode = i_assn;
     q->dc.left = srcim;
@@ -967,11 +971,11 @@ static void CreateCopy(BRIGGS_SET* visited, BLOCK* pred, int T, bool all)
     if (unvisitedPredecessor(visited, T))
     {
         ILIST* l;
-        IMODE* rv = InitTempOpt(tempInfo[T]->enode->v.sp->imvalue->size, tempInfo[T]->size);
-        int u = rv->offset->v.sp->value.i;
-        tempInfo[u]->enode->v.sp->pushedtotemp = tempInfo[T]->enode->v.sp->pushedtotemp;
-        tempInfo[u]->enode->v.sp->storeTemp = tempInfo[T]->enode->v.sp->storeTemp;
-        tempInfo[u]->enode->v.sp->loadTemp = tempInfo[T]->enode->v.sp->loadTemp;
+        IMODE* rv = InitTempOpt(tempInfo[T]->enode->sp->imvalue->size, tempInfo[T]->size);
+        int u = rv->offset->sp->i;
+        tempInfo[u]->enode->sp->pushedtotemp = tempInfo[T]->enode->sp->pushedtotemp;
+        tempInfo[u]->enode->sp->storeTemp = tempInfo[T]->enode->sp->storeTemp;
+        tempInfo[u]->enode->sp->loadTemp = tempInfo[T]->enode->sp->loadTemp;
         copyInstruction(pred, u, T, all);
         l = tempInfo[T]->elimPredecessors;
         while (l)
@@ -1040,7 +1044,7 @@ void TranslateFromSSA(bool all)
     for (i = 0; i < tempCount; i++)
     {
         tempInfo[i]->temp = false;
-        if (all && tempInfo[i]->enode)  // && !tempInfo[i]->enode->v.sp->imaddress)
+        if (all && tempInfo[i]->enode)  // && !tempInfo[i]->enode->sp->imaddress)
             tempInfo[i]->preSSATemp = i;
         //        tempInfo[i]->conflicts = allocbit(tempCount*2);
     }
@@ -1072,7 +1076,7 @@ void TranslateFromSSA(bool all)
                     if (head->temps == (TEMP_LEFT | TEMP_ANS) && head->dc.left->mode == i_direct && head->ans->mode == i_direct &&
                         head->dc.left->size == head->ans->size)
                     {
-                        if (head->dc.left->offset->v.sp->value.i == head->ans->offset->v.sp->value.i)
+                        if (head->dc.left->offset->sp->i == head->ans->offset->sp->i)
                         {
                             if (head == blockArray[i]->head)
                             {
@@ -1135,7 +1139,7 @@ void TranslateFromSSA(bool all)
     for (i = 0; i < tempCount; i++)
     {
         tempInfo[i]->inUse = tempInfo[i]->temp;
-        if (tempInfo[i]->enode && tempInfo[i]->enode->v.sp->imvalue->retval)
+        if (tempInfo[i]->enode && tempInfo[i]->enode->sp->imvalue->retval)
             tempInfo[i]->postSSATemp = i;
         else
             tempInfo[i]->postSSATemp = tempInfo[findPartition(i)]->postSSATemp;

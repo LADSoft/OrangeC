@@ -59,59 +59,6 @@ static sqlite3_int64 main_id;
 static bool skipThisFile;
 static LIST* symList;
 static LINEINCLUDES* mainFile;
-int equalnode(EXPRESSION* node1, EXPRESSION* node2)
-/*
- *      equalnode will return 1 if the expressions pointed to by
- *      node1 and node2 are equivalent.
- */
-{
-    if (node1 == 0 || node2 == 0)
-        return 0;
-    if (node1->type != node2->type)
-        return 0;
-    if (natural_size(node1) != natural_size(node2))
-        return 0;
-    switch (node1->type)
-    {
-        case en_const:
-        case en_pc:
-        case en_global:
-        case en_auto:
-        case en_absolute:
-        case en_threadlocal:
-        case en_tempref:
-            return node1->v.sp == node2->v.sp;
-        default:
-            return (!node1->left || equalnode(node1->left, node2->left)) &&
-                   (!node1->right || equalnode(node1->right, node2->right));
-        case en_labcon:
-        case en_c_i:
-        case en_c_l:
-        case en_c_ul:
-        case en_c_ui:
-        case en_c_c:
-        case en_c_u16:
-        case en_c_u32:
-        case en_c_bool:
-        case en_c_uc:
-        case en_c_ll:
-        case en_c_ull:
-        case en_c_wc:
-        case en_nullptr:
-            return node1->v.i == node2->v.i;
-        case en_c_d:
-        case en_c_f:
-        case en_c_ld:
-        case en_c_di:
-        case en_c_fi:
-        case en_c_ldi:
-            return (node1->v.f == node2->v.f);
-        case en_c_dc:
-        case en_c_fc:
-        case en_c_ldc:
-            return (node1->v.c.r == node2->v.c.r) && (node1->v.c.i == node2->v.c.i);
-    }
-}
 const char* GetSymName(SYMBOL* sp, SYMBOL* parent)
 {
     static char buf[4096];

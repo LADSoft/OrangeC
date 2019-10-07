@@ -118,7 +118,7 @@ struct amode
 #define e_fs 4
 #define e_gs 5
 #define e_ss 6
-    EXPRESSION* offset;
+    SimpleExpression* offset;
     int liveRegs;
     int keepesp : 1;
 };
@@ -316,7 +316,7 @@ typedef struct _attribdata
     union
     {
         LINEDATA* ld;
-        SYMBOL* sp;
+        struct SimpleSymbol* sp;
         void* section;
     } v;
     bool start;

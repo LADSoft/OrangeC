@@ -41,7 +41,7 @@ extern LIST* nameSpaceList;
 extern bool managed_library;
 extern TYPE stdint;
 
-void AddType(SYMBOL* sym, Type* type);
+void AddType(SimpleSymbol* sym, Type* type);
 
 class Importer : public Callback
 {
@@ -309,7 +309,7 @@ bool Importer::EnterClass(const Class* cls)
                 insert(sp,
                        structures_.size() ? structures_.back()->tp->syms : nameSpaces_.back()->nameSpaceValues->valueData->syms);
             sp->msil = (void*)cls;
-            AddType(sp, peLib->AllocateType(const_cast<Class*>(cls)));
+            AddType(SymbolManager::Get(sp), peLib->AllocateType(const_cast<Class*>(cls)));
             cachedClasses_[sp->name] = sp;
         }
         else

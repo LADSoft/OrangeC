@@ -165,7 +165,7 @@ static bool GatherExpression(int tx, RESHAPE_EXPRESSION* expr, int flags)
             {
                 if (ins->dc.left->size < ISZ_FLOAT)
                 {
-                    int tnum = ins->dc.left->offset->v.sp->value.i;
+                    int tnum = ins->dc.left->offset->sp->i;
                     if (ins->dc.opcode == i_neg)
                         flags ^= RF_NEG;
                     else
@@ -183,8 +183,8 @@ static bool GatherExpression(int tx, RESHAPE_EXPRESSION* expr, int flags)
                 if (ins->dc.left->size < ISZ_FLOAT && ins->dc.right->size < ISZ_FLOAT)
                 {
 
-                    int tnuml = ins->dc.left->offset->v.sp->value.i;
-                    int tnumr = ins->dc.right->offset->v.sp->value.i;
+                    int tnuml = ins->dc.left->offset->sp->i;
+                    int tnumr = ins->dc.right->offset->sp->i;
                     int flags1 = flags;
                     if (ins->dc.opcode == i_sub)
                         flags ^= RF_NEG;
@@ -200,7 +200,7 @@ static bool GatherExpression(int tx, RESHAPE_EXPRESSION* expr, int flags)
         {
             if (ins->dc.left->size < ISZ_FLOAT && ins->dc.right->size < ISZ_FLOAT)
             {
-                int tnum = ins->dc.left->offset->v.sp->value.i;
+                int tnum = ins->dc.left->offset->sp->i;
                 int flags1 = flags;
                 RESHAPE_LIST* re;
                 if (ins->dc.opcode == i_sub)
@@ -217,7 +217,7 @@ static bool GatherExpression(int tx, RESHAPE_EXPRESSION* expr, int flags)
         {
             if (ins->dc.left->size < ISZ_FLOAT && ins->dc.right->size < ISZ_FLOAT)
             {
-                int tnum = ins->dc.right->offset->v.sp->value.i;
+                int tnum = ins->dc.right->offset->sp->i;
                 int flags1 = flags;
                 RESHAPE_LIST* re;
                 if (ins->dc.opcode == i_sub)
@@ -239,7 +239,7 @@ static void CreateExpressionLists(void)
     {
         if (tempInfo[i]->expressionRoot)
         {
-            if (tempInfo[i]->enode->size < ISZ_FLOAT)
+            if (tempInfo[i]->enode->sizeFromType < ISZ_FLOAT)
             {
                 LOOP* lp = tempInfo[i]->instructionDefines->block->loopParent;
                 /* if the prior of the entry is a critical block,
@@ -290,7 +290,7 @@ static void DistributeMultiplies(RESHAPE_EXPRESSION* re, RESHAPE_LIST* rl, int t
                 replace = temp;
                 break;
             }
-            tnx = temp->im->offset->v.sp->value.i;
+            tnx = temp->im->offset->sp->i;
             if (tempInfo[tnx]->expression.count < n)
             {
                 n = tempInfo[tnx]->expression.count;
@@ -344,7 +344,7 @@ static void ApplyDistribution(void)
                             {
                                 if (l->im->offset->type == en_tempref)
                                 {
-                                    RESHAPE_EXPRESSION* re = &tempInfo[l->im->offset->v.sp->value.i]->expression;
+                                    RESHAPE_EXPRESSION* re = &tempInfo[l->im->offset->sp->i]->expression;
                                     if (re->count > n)
                                     {
                                         n = re->count;
@@ -386,12 +386,12 @@ static void replaceIM(IMODE** iml, IMODE* im)
 {
     if ((*iml)->mode == i_immed)
         return;
-    ReplaceHashReshape((QUAD*)im, (UBYTE*)&(*iml)->offset->v.sp->imvalue, sizeof(IMODE*), name_hash);
+    ReplaceHashReshape((QUAD*)im, (UBYTE*)&(*iml)->offset->sp->imvalue, sizeof(IMODE*), name_hash);
     if ((*iml)->mode == i_direct)
         *iml = im;
     else
     {
-        IMODELIST* imlx = im->offset->v.sp->imind;
+        IMODELIST* imlx = im->offset->sp->imind;
         while (imlx)
         {
             if (im->size == imlx->im->size)
@@ -403,7 +403,7 @@ static void replaceIM(IMODE** iml, IMODE* im)
         }
         if (!imlx)
         {
-            SYMBOL* sym = im->offset->v.sp;
+            SimpleSymbol* sym = im->offset->sp;
             IMODE* imind;
             IMODELIST* imindl;
             if (sym && sym->storage_class != sc_auto && sym->storage_class != sc_register)
@@ -421,8 +421,8 @@ static void replaceIM(IMODE** iml, IMODE* im)
             imind->ptrsize = (*iml)->ptrsize;
             imind->size = (*iml)->size;
             imindl->im = imind;
-            imindl->next = im->offset->v.sp->imind;
-            im->offset->v.sp->imind = imindl;
+            imindl->next = im->offset->sp->imind;
+            im->offset->sp->imind = imindl;
             *iml = imind;
         }
     }
@@ -431,9 +431,9 @@ static void CopyExpressionTree(enum i_ops op, BLOCK* b, QUAD* insertBefore, IMOD
 {
     if ((*iml) && (*iml)->offset->type == en_tempref)
     {
-        int tnum = (*iml)->offset->v.sp->value.i;
+        int tnum = (*iml)->offset->sp->i;
         QUAD* def = tempInfo[tnum]->instructionDefines;
-        IMODE* im = (IMODE*)LookupNVHash((UBYTE*)&(*iml)->offset->v.sp->imvalue, sizeof(IMODE*), name_hash);
+        IMODE* im = (IMODE*)LookupNVHash((UBYTE*)&(*iml)->offset->sp->imvalue, sizeof(IMODE*), name_hash);
         if (im)
         {
             replaceIM(iml, im);
@@ -443,7 +443,7 @@ static void CopyExpressionTree(enum i_ops op, BLOCK* b, QUAD* insertBefore, IMOD
             QUAD* newIns;
             op = i_nop;
             newIns = (QUAD*)Alloc(sizeof(QUAD));
-            newIns->ans = InitTempOpt(def->ans->offset->v.sp->imvalue->size, def->ans->offset->v.sp->imvalue->size);
+            newIns->ans = InitTempOpt(def->ans->offset->sp->imvalue->size, def->ans->offset->sp->imvalue->size);
             newIns->dc.left = def->dc.left;
             newIns->dc.right = def->dc.right;
             newIns->dc.opcode = def->dc.opcode;
@@ -455,9 +455,9 @@ static void CopyExpressionTree(enum i_ops op, BLOCK* b, QUAD* insertBefore, IMOD
     }
     if ((*imr) && (*imr)->offset->type == en_tempref)
     {
-        int tnum = (*imr)->offset->v.sp->value.i;
+        int tnum = (*imr)->offset->sp->i;
         QUAD* def = tempInfo[tnum]->instructionDefines;
-        IMODE* im = (IMODE*)LookupNVHash((UBYTE*)&(*imr)->offset->v.sp->imvalue, sizeof(IMODE*), name_hash);
+        IMODE* im = (IMODE*)LookupNVHash((UBYTE*)&(*imr)->offset->sp->imvalue, sizeof(IMODE*), name_hash);
         if (im)
         {
             replaceIM(imr, im);
@@ -467,7 +467,7 @@ static void CopyExpressionTree(enum i_ops op, BLOCK* b, QUAD* insertBefore, IMOD
             QUAD* newIns;
             op = i_nop;
             newIns = (QUAD*)Alloc(sizeof(QUAD));
-            newIns->ans = InitTempOpt(def->ans->offset->v.sp->imvalue->size, def->ans->offset->v.sp->imvalue->size);
+            newIns->ans = InitTempOpt(def->ans->offset->sp->imvalue->size, def->ans->offset->sp->imvalue->size);
             newIns->dc.left = def->dc.left;
             newIns->dc.right = def->dc.right;
             newIns->dc.opcode = def->dc.opcode;
@@ -544,7 +544,7 @@ static IMODE* InsertMulInstruction(BLOCK* b, int size, QUAD* insertBefore, int f
     {
         if (iml->mode == i_immed && isintconst(iml->offset))
         {
-            iml->offset->v.i = (1 << iml->offset->v.i);
+            iml->offset->i = (1 << iml->offset->i);
         }
         else
         {
@@ -579,8 +579,8 @@ void unmarkPreSSA(QUAD* ins)
 {
     if ((ins->temps & TEMP_ANS) && ins->ans->mode == i_direct)
     {
-        INSTRUCTIONLIST* il = tempInfo[ins->ans->offset->v.sp->value.i]->instructionUses;
-        tempInfo[ins->ans->offset->v.sp->value.i]->preSSATemp = -1;
+        INSTRUCTIONLIST* il = tempInfo[ins->ans->offset->sp->i]->instructionUses;
+        tempInfo[ins->ans->offset->sp->i]->preSSATemp = -1;
         while (il)
         {
             unmarkPreSSA(il->ins);
@@ -610,7 +610,7 @@ static void RewriteAdd(BLOCK* b, int tnum)
     }
     while (gather &&
            (!b || gather->im->mode == i_immed ||
-            (!variantThisLoop(b, gather->im->offset->v.sp->value.i) && usedThisLoop(b, gather->im->offset->v.sp->value.i))))
+            (!variantThisLoop(b, gather->im->offset->sp->i) && usedThisLoop(b, gather->im->offset->sp->i))))
     {
         if (!gather->genned)
         {
@@ -657,23 +657,23 @@ static void RewriteAdd(BLOCK* b, int tnum)
     }
     tempInfo[tnum]->expression.lastName = left;
     if (left)
-        ReplaceHashReshape((QUAD*)left, (UBYTE*)&tempInfo[tnum]->enode->v.sp->imvalue, sizeof(IMODE*), name_hash);
+        ReplaceHashReshape((QUAD*)left, (UBYTE*)&tempInfo[tnum]->enode->sp->imvalue, sizeof(IMODE*), name_hash);
     ia = tempInfo[tnum]->instructionDefines;
     if (ia && left)  // && !inductionThisLoop(ia->block, tnum))
     {
         unmarkPreSSA(ia);
         if ((ia->temps & TEMP_ANS) && ia->ans->mode == i_direct)
         {
-            tempInfo[ia->ans->offset->v.sp->value.i]->preSSATemp = -1;
+            tempInfo[ia->ans->offset->sp->i]->preSSATemp = -1;
         }
         if (ia->dc.left && (ia->temps & TEMP_LEFT))
         {
-            RemoveFromUses(ia, ia->dc.left->offset->v.sp->value.i);
+            RemoveFromUses(ia, ia->dc.left->offset->sp->i);
         }
         ia->dc.left = left;
         if (ia->dc.left && ia->dc.left->offset->type == en_tempref)
         {
-            InsertUses(ia, ia->dc.left->offset->v.sp->value.i);
+            InsertUses(ia, ia->dc.left->offset->sp->i);
             ia->temps |= TEMP_LEFT;
         }
         else
@@ -689,7 +689,7 @@ static IMODE* RewriteDistributed(BLOCK* b, int size, IMODE* im, QUAD* ia, RESHAP
     int flagsr;
     while (gather &&
            (!b || gather->im->mode == i_immed ||
-            (!variantThisLoop(b, gather->im->offset->v.sp->value.i) && usedThisLoop(b, gather->im->offset->v.sp->value.i))))
+            (!variantThisLoop(b, gather->im->offset->sp->i) && usedThisLoop(b, gather->im->offset->sp->i))))
     {
         if (!gather->genned)
         {
@@ -739,7 +739,7 @@ static void RewriteMul(BLOCK* b, int tnum)
         // should be a branch of some sort at ia....
         while (current &&
                (!b || current->im->mode == i_immed ||
-                (!variantThisLoop(b, current->im->offset->v.sp->value.i) && usedThisLoop(b, current->im->offset->v.sp->value.i))))
+                (!variantThisLoop(b, current->im->offset->sp->i) && usedThisLoop(b, current->im->offset->sp->i))))
         {
             if (!current->genned && !current->distrib)
             {
@@ -765,7 +765,7 @@ static void RewriteMul(BLOCK* b, int tnum)
         tempInfo[tnum]->expression.lastName = left;
         while (gather &&
                (!b || gather->im->mode == i_immed ||
-                (!variantThisLoop(b, gather->im->offset->v.sp->value.i) && usedThisLoop(b, gather->im->offset->v.sp->value.i))))
+                (!variantThisLoop(b, gather->im->offset->sp->i) && usedThisLoop(b, gather->im->offset->sp->i))))
         {
             if (gather->distrib && !gather->genned)
             {
@@ -785,19 +785,19 @@ static void RewriteMul(BLOCK* b, int tnum)
             gather = gather->next;
         }
         if (left)
-            ReplaceHashReshape((QUAD*)left, (UBYTE*)&tempInfo[tnum]->enode->v.sp->imvalue, sizeof(IMODE*), name_hash);
+            ReplaceHashReshape((QUAD*)left, (UBYTE*)&tempInfo[tnum]->enode->sp->imvalue, sizeof(IMODE*), name_hash);
         ia = tempInfo[tnum]->instructionDefines;
         if (ia && left)  // && !inductionThisLoop(ia->block, tnum))
         {
             unmarkPreSSA(ia);
             if (ia->dc.left && (ia->temps & TEMP_LEFT))
             {
-                RemoveFromUses(ia, ia->dc.left->offset->v.sp->value.i);
+                RemoveFromUses(ia, ia->dc.left->offset->sp->i);
             }
             ia->dc.left = tempInfo[tnum]->expression.lastName;
             if (ia->dc.left && ia->dc.left->offset->type == en_tempref)
             {
-                InsertUses(ia, ia->dc.left->offset->v.sp->value.i);
+                InsertUses(ia, ia->dc.left->offset->sp->i);
                 ia->temps |= TEMP_LEFT;
             }
             else

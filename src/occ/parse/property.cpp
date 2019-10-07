@@ -32,7 +32,11 @@ extern TYPE stdvoid;
 extern int startlab;
 extern int retlab;
 extern int nextLabel;
+extern TYPE stdbool, stdchar, stdunsignedchar, stdshort, stdunsignedshort, stdint, stdunsigned;
+extern TYPE stdlonglong, stdunsignedlonglong, stdinative, stdunative, stdfloat, stddouble, stdstring;
+extern TYPE std__string;
 
+#ifndef PARSER_ONLY
 static SYMBOL* CreateSetterPrototype(SYMBOL* sym)
 {
     SYMBOL *rv, *value;
@@ -208,7 +212,7 @@ LEXEME* initialize_property(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc 
                 errorsym(ERR_MUST_DECLARE_PROPERTY_GETTER, sym);
             if (set)
                 sym->has_property_setter = true;
-            chosenAssembler->msil->create_property(sym, get, set);
+            chosenAssembler->msil->create_property(SymbolManager::Get(sym), SymbolManager::Get(get), SymbolManager::Get(set));
             needkw(&lex, end);
         }
         else  // create default getter and setter
@@ -243,9 +247,60 @@ LEXEME* initialize_property(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc 
                 startlab = oldstartlab;
             }
             insertInitSym(backing);
-            chosenAssembler->msil->create_property(sym, getter, setter);
+            chosenAssembler->msil->create_property(SymbolManager::Get(sym), SymbolManager::Get(getter), SymbolManager::Get(setter));
             sym->has_property_setter = true;
         }
     }
     return lex;
+}
+#endif
+TYPE* find_boxed_type(TYPE* in)
+{
+    static const char* typeNames[] = { "int8",   "Bool",  "Int8",   "Int8",   "UInt8",  "Int16",  "Int16",   "UInt16",
+                                "UInt16", "Int32", "Int32",  "IntPtr", "Int32",  "UInt32", "UIntPtr", "Int32",
+                                "UInt32", "Int64", "UInt64", "Single", "Double", "Double", "Single",  "Double",
+                                "Double", "",      "",       "",       "",       "",       "String" };
+    if (isarray(basetype(in)) && basetype(in)->msil)
+    {
+        SYMBOL* sym = search("System", globalNameSpace->valueData->syms);
+        if (sym && sym->storage_class == sc_namespace)
+        {
+            SYMBOL* sym2 = search("Array", sym->nameSpaceValues->valueData->syms);
+            if (sym2)
+                return sym2->tp;
+        }
+    }
+    else if (basetype(in)->type < sizeof(typeNames) / sizeof(typeNames[0]))
+    {
+        SYMBOL* sym = search("System", globalNameSpace->valueData->syms);
+        if (sym && sym->storage_class == sc_namespace)
+        {
+            SYMBOL* sym2 = search(typeNames[basetype(in)->type], sym->nameSpaceValues->valueData->syms);
+            if (sym2)
+                return sym2->tp;
+        }
+    }
+    return nullptr;
+}
+TYPE* find_unboxed_type(TYPE* in)
+{
+    if (isstructured(in))
+    {
+        in = basetype(in);
+        if (in->sp->parentNameSpace && !in->sp->parentClass && !strcmp(in->sp->parentNameSpace->name, "System"))
+        {
+            const char* name = in->sp->name;
+            static const char* typeNames[] = { "Bool",  "Char",   "Int8",   "UInt8",   "Int16",  "UInt16", "Int32", "UInt32",
+                                        "Int64", "UInt64", "IntPtr", "UIntPtr", "Single", "Double", "String" };
+            static TYPE* typeVals[] = { &stdbool,          &stdchar,    &stdchar,     &stdunsignedchar, &stdshort,
+                                       &stdunsignedshort, &stdint,     &stdunsigned, &stdlonglong,     &stdunsignedlonglong,
+                                       &stdinative,       &stdunative, &stdfloat,    &stddouble,       &std__string };
+            for (int i = 0; i < sizeof(typeNames) / sizeof(typeNames[0]); i++)
+                if (!strcmp(typeNames[i], name))
+                {
+                    return typeVals[i];
+                }
+        }
+    }
+    return nullptr;
 }

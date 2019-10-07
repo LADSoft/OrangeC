@@ -195,7 +195,7 @@ static int dumpVTabEntries(int count, THUNK* thunks, SYMBOL* sym, VTABENTRY* ent
                     localsp->decoratedName = localsp->errname = localsp->name;
                     GENREF(localsp);
                     localsp->attribs.inheritable.linkage = lk_virtual;
-                    genref(localsp, 0);
+                    genref(SymbolManager::Get(localsp), 0);
                     InsertInline(localsp);
                     InsertExtern(localsp);
                     count++;
@@ -206,11 +206,11 @@ static int dumpVTabEntries(int count, THUNK* thunks, SYMBOL* sym, VTABENTRY* ent
                     {
                         EXPRESSION* exp = varNode(en_pc, vf->func);
                         thunkForImportTable(&exp);
-                        genref(exp->v.sp, 0);
+                        genref(SymbolManager::Get(exp->v.sp), 0);
                     }
                     else
                     {
-                        genref(vf->func, 0);
+                        genref(SymbolManager::Get(vf->func), 0);
                     }
                 }
                 vf = vf->next;
@@ -232,13 +232,13 @@ void dumpVTab(SYMBOL* sym)
     int count = 0;
 
     dseg();
-    gen_virtual(sym->vtabsp, true);
+    gen_virtual(SymbolManager::Get(sym->vtabsp), true);
     if (xtSym)
-        genref(xtSym, 0);
+        genref(SymbolManager::Get(xtSym), 0);
     else
         genaddress(0);
     count = dumpVTabEntries(count, thunks, sym, sym->vtabEntries);
-    gen_endvirtual(sym->vtabsp);
+    gen_endvirtual(SymbolManager::Get(sym->vtabsp));
 
     if (count)
     {
@@ -246,9 +246,9 @@ void dumpVTab(SYMBOL* sym)
         cseg();
         for (i = 0; i < count; i++)
         {
-            gen_virtual(thunks[i].name, false);
-            gen_vtt(thunks[i].entry, thunks[i].func, thunks[i].name);
-            gen_endvirtual(thunks[i].name);
+            gen_virtual(SymbolManager::Get(thunks[i].name), false);
+            gen_vtt(thunks[i].entry, SymbolManager::Get(thunks[i].func), SymbolManager::Get(thunks[i].name));
+            gen_endvirtual(SymbolManager::Get(thunks[i].name));
         }
     }
 #endif

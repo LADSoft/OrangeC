@@ -64,29 +64,29 @@ void Prealloc(int pass)
                 {
                     if ((tail->temps & TEMP_ANS) && (tail->ans->mode == i_direct))
                     {
-                        briggsReset(globalVars, tail->ans->offset->v.sp->value.i);
+                        briggsReset(globalVars, tail->ans->offset->sp->i);
                     }
                     done |= chosenAssembler->gen->preRegAlloc(tail, globalVars, eobGlobals, pass);
                     if ((tail->temps & TEMP_ANS) && (tail->ans->mode == i_ind))
                     {
                         if (tail->ans->offset)
-                            briggsSet(globalVars, tail->ans->offset->v.sp->value.i);
+                            briggsSet(globalVars, tail->ans->offset->sp->i);
                         if (tail->ans->offset2)
-                            briggsSet(globalVars, tail->ans->offset2->v.sp->value.i);
+                            briggsSet(globalVars, tail->ans->offset2->sp->i);
                     }
                     if (tail->temps & TEMP_LEFT)
                     {
                         if (tail->dc.left->offset)
-                            briggsSet(globalVars, tail->dc.left->offset->v.sp->value.i);
+                            briggsSet(globalVars, tail->dc.left->offset->sp->i);
                         if (tail->dc.left->offset2)
-                            briggsSet(globalVars, tail->dc.left->offset2->v.sp->value.i);
+                            briggsSet(globalVars, tail->dc.left->offset2->sp->i);
                     }
                     if (tail->temps & TEMP_RIGHT)
                     {
                         if (tail->dc.right->offset)
-                            briggsSet(globalVars, tail->dc.right->offset->v.sp->value.i);
+                            briggsSet(globalVars, tail->dc.right->offset->sp->i);
                         if (tail->dc.right->offset2)
-                            briggsSet(globalVars, tail->dc.right->offset2->v.sp->value.i);
+                            briggsSet(globalVars, tail->dc.right->offset2->sp->i);
                     }
                     tail = tail->back;
                 }
@@ -138,7 +138,7 @@ void CalculateBackendLives(void)
                     {
                         if (tail->ans->size < ISZ_FLOAT)
                         {
-                            int tnum = tail->ans->offset->v.sp->value.i;
+                            int tnum = tail->ans->offset->sp->i;
                             liveRegs &= ~(((ULLONG_TYPE)1) << chosenAssembler->arch->regNames[tempInfo[tnum]->color].reg1live);
                             if (chosenAssembler->arch->regNames[tempInfo[tnum]->color].reg2live >= 0)
                                 liveRegs &= ~(((ULLONG_TYPE)1) << chosenAssembler->arch->regNames[tempInfo[tnum]->color].reg2live);
@@ -149,14 +149,14 @@ void CalculateBackendLives(void)
                         int tnum;
                         if (tail->ans->offset)
                         {
-                            tnum = tail->ans->offset->v.sp->value.i;
+                            tnum = tail->ans->offset->sp->i;
                             liveRegs |= ((ULLONG_TYPE)1) << chosenAssembler->arch->regNames[tempInfo[tnum]->color].reg1live;
                             if (chosenAssembler->arch->regNames[tempInfo[tnum]->color].reg2live >= 0)
                                 liveRegs |= ((ULLONG_TYPE)1) << chosenAssembler->arch->regNames[tempInfo[tnum]->color].reg2live;
                         }
                         if (tail->ans->offset2)
                         {
-                            tnum = tail->ans->offset2->v.sp->value.i;
+                            tnum = tail->ans->offset2->sp->i;
                             liveRegs |= ((ULLONG_TYPE)1) << chosenAssembler->arch->regNames[tempInfo[tnum]->color].reg1live;
                             if (chosenAssembler->arch->regNames[tempInfo[tnum]->color].reg2live >= 0)
                                 liveRegs |= ((ULLONG_TYPE)1) << chosenAssembler->arch->regNames[tempInfo[tnum]->color].reg2live;
@@ -168,7 +168,7 @@ void CalculateBackendLives(void)
                     int tnum;
                     if ((tail->dc.left->offset) && (tail->dc.left->size < ISZ_FLOAT || tail->dc.left->mode == i_ind))
                     {
-                        tnum = tail->dc.left->offset->v.sp->value.i;
+                        tnum = tail->dc.left->offset->sp->i;
                         if (tail->dc.left->retval)
                             gosubcolor = tnum;
                         liveRegs |= ((ULLONG_TYPE)1) << chosenAssembler->arch->regNames[tempInfo[tnum]->color].reg1live;
@@ -177,7 +177,7 @@ void CalculateBackendLives(void)
                     }
                     if (tail->dc.left->offset2)
                     {
-                        tnum = tail->dc.left->offset2->v.sp->value.i;
+                        tnum = tail->dc.left->offset2->sp->i;
                         liveRegs |= ((ULLONG_TYPE)1) << chosenAssembler->arch->regNames[tempInfo[tnum]->color].reg1live;
                         if (chosenAssembler->arch->regNames[tempInfo[tnum]->color].reg2live >= 0)
                             liveRegs |= ((ULLONG_TYPE)1) << chosenAssembler->arch->regNames[tempInfo[tnum]->color].reg2live;
@@ -188,14 +188,14 @@ void CalculateBackendLives(void)
                     int tnum;
                     if ((tail->dc.right->offset) && (tail->dc.right->size < ISZ_FLOAT || tail->dc.right->mode == i_ind))
                     {
-                        tnum = tail->dc.right->offset->v.sp->value.i;
+                        tnum = tail->dc.right->offset->sp->i;
                         liveRegs |= ((ULLONG_TYPE)1) << chosenAssembler->arch->regNames[tempInfo[tnum]->color].reg1live;
                         if (chosenAssembler->arch->regNames[tempInfo[tnum]->color].reg2live >= 0)
                             liveRegs |= ((ULLONG_TYPE)1) << chosenAssembler->arch->regNames[tempInfo[tnum]->color].reg2live;
                     }
                     if (tail->dc.right->offset2)
                     {
-                        tnum = tail->dc.right->offset2->v.sp->value.i;
+                        tnum = tail->dc.right->offset2->sp->i;
                         liveRegs |= ((ULLONG_TYPE)1) << chosenAssembler->arch->regNames[tempInfo[tnum]->color].reg1live;
                         if (chosenAssembler->arch->regNames[tempInfo[tnum]->color].reg2live >= 0)
                             liveRegs |= ((ULLONG_TYPE)1) << chosenAssembler->arch->regNames[tempInfo[tnum]->color].reg2live;

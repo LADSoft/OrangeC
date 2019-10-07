@@ -4437,6 +4437,7 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                     SYMBOL* sym = (SYMBOL*)Alloc(sizeof(SYMBOL));
                     sym->parentClass = sp->parentClass;
                     sym->name = sp->name;
+                    sym->key = sp->key;
                     if (atp)
                     {
                         sym->tp = atp;
@@ -4459,6 +4460,7 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                             my_sprintf(nn, "%d", v++);
                             sym1->name = litlate(nn);
                             sym1->tp = a->tp;
+                            sym1->key = NextSymbolKey();
                             insert(sym1, sym->tp->syms);
                             a = a->next;
                         }

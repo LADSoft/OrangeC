@@ -121,7 +121,7 @@ static void liveSetup(void)
                     {
                         if (tail->ans->mode == i_direct)
                         {
-                            int tnum = tail->ans->offset->v.sp->value.i;
+                            int tnum = tail->ans->offset->sp->i;
                             briggsReset(exposed, tnum);
                             clearbit(blk->liveGen, tnum);
                             setbit(blk->liveKills, tnum);
@@ -130,13 +130,13 @@ static void liveSetup(void)
                         {
                             if (tail->ans->offset)
                             {
-                                briggsSet(exposed, tail->ans->offset->v.sp->value.i);
-                                setbit(blk->liveGen, tail->ans->offset->v.sp->value.i);
+                                briggsSet(exposed, tail->ans->offset->sp->i);
+                                setbit(blk->liveGen, tail->ans->offset->sp->i);
                             }
                             if (tail->ans->offset2)
                             {
-                                briggsSet(exposed, tail->ans->offset2->v.sp->value.i);
-                                setbit(blk->liveGen, tail->ans->offset2->v.sp->value.i);
+                                briggsSet(exposed, tail->ans->offset2->sp->i);
+                                setbit(blk->liveGen, tail->ans->offset2->sp->i);
                             }
                         }
                     }
@@ -147,13 +147,13 @@ static void liveSetup(void)
                             {
                                 if (tail->dc.left->offset)
                                 {
-                                    briggsSet(exposed, tail->dc.left->offset->v.sp->value.i);
-                                    setbit(blk->liveGen, tail->dc.left->offset->v.sp->value.i);
+                                    briggsSet(exposed, tail->dc.left->offset->sp->i);
+                                    setbit(blk->liveGen, tail->dc.left->offset->sp->i);
                                 }
                                 if (tail->dc.left->offset2)
                                 {
-                                    briggsSet(exposed, tail->dc.left->offset2->v.sp->value.i);
-                                    setbit(blk->liveGen, tail->dc.left->offset2->v.sp->value.i);
+                                    briggsSet(exposed, tail->dc.left->offset2->sp->i);
+                                    setbit(blk->liveGen, tail->dc.left->offset2->sp->i);
                                 }
                             }
                         }
@@ -162,13 +162,13 @@ static void liveSetup(void)
                         {
                             if (tail->dc.right->offset)
                             {
-                                briggsSet(exposed, tail->dc.right->offset->v.sp->value.i);
-                                setbit(blk->liveGen, tail->dc.right->offset->v.sp->value.i);
+                                briggsSet(exposed, tail->dc.right->offset->sp->i);
+                                setbit(blk->liveGen, tail->dc.right->offset->sp->i);
                             }
                             if (tail->dc.right->offset2)
                             {
-                                briggsSet(exposed, tail->dc.right->offset2->v.sp->value.i);
-                                setbit(blk->liveGen, tail->dc.right->offset2->v.sp->value.i);
+                                briggsSet(exposed, tail->dc.right->offset2->sp->i);
+                                setbit(blk->liveGen, tail->dc.right->offset2->sp->i);
                             }
                         }
                 }
@@ -462,9 +462,9 @@ static void markLiveInstruction(BRIGGS_SET* live, QUAD* ins)
             return;
         default:
             if (!(ins->temps & TEMP_ANS) || ins->ans->mode == i_ind ||
-                ((chosenAssembler->arch->denyopts & DO_NODEADPUSHTOTEMP) && ins->ans->offset->v.sp->pushedtotemp))
+                ((chosenAssembler->arch->denyopts & DO_NODEADPUSHTOTEMP) && ins->ans->offset->sp->pushedtotemp))
                 ins->live = true;
-            else if ((ins->temps & TEMP_ANS) && briggsTest(live, ins->ans->offset->v.sp->value.i))
+            else if ((ins->temps & TEMP_ANS) && briggsTest(live, ins->ans->offset->sp->i))
                 ins->live = true;
 
             break;
@@ -475,14 +475,14 @@ static void markLiveInstruction(BRIGGS_SET* live, QUAD* ins)
         {
             if (ins->ans->mode == i_direct)
             {
-                briggsReset(live, ins->ans->offset->v.sp->value.i);
+                briggsReset(live, ins->ans->offset->sp->i);
             }
             else if (ins->ans->mode == i_ind)
             {
                 if (ins->ans->offset)
-                    briggsSet(live, ins->ans->offset->v.sp->value.i);
+                    briggsSet(live, ins->ans->offset->sp->i);
                 if (ins->ans->offset2)
-                    briggsSet(live, ins->ans->offset2->v.sp->value.i);
+                    briggsSet(live, ins->ans->offset2->sp->i);
             }
         }
         if (ins->temps & TEMP_LEFT)
@@ -490,9 +490,9 @@ static void markLiveInstruction(BRIGGS_SET* live, QUAD* ins)
             if (ins->dc.left->mode == i_direct || ins->dc.left->mode == i_ind)
             {
                 if (ins->dc.left->offset)
-                    briggsSet(live, ins->dc.left->offset->v.sp->value.i);
+                    briggsSet(live, ins->dc.left->offset->sp->i);
                 if (ins->dc.left->offset2)
-                    briggsSet(live, ins->dc.left->offset2->v.sp->value.i);
+                    briggsSet(live, ins->dc.left->offset2->sp->i);
             }
         }
         if (ins->temps & TEMP_RIGHT)
@@ -500,9 +500,9 @@ static void markLiveInstruction(BRIGGS_SET* live, QUAD* ins)
             if (ins->dc.right->mode == i_direct || ins->dc.right->mode == i_ind)
             {
                 if (ins->dc.right->offset)
-                    briggsSet(live, ins->dc.right->offset->v.sp->value.i);
+                    briggsSet(live, ins->dc.right->offset->sp->i);
                 if (ins->dc.right->offset2)
-                    briggsSet(live, ins->dc.right->offset2->v.sp->value.i);
+                    briggsSet(live, ins->dc.right->offset2->sp->i);
             }
         }
     }

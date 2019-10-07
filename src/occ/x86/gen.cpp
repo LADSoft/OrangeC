@@ -27,13 +27,15 @@
 #include <string.h>
 #include <limits.h>
 #include "be.h"
+#include <stack>
 
 extern ARCH_ASM* chosenAssembler;
-extern EXPRESSION* fltexp;
+extern SimpleExpression* fltexp;
 extern OCODE* peep_tail;
 extern int startlab, retlab;
 extern int usingEsp;
 extern int prm_lscrtdll;
+extern SimpleSymbol* currentFunction;
 
 #define MAX_ALIGNS 50
 int pushlevel = 0;
@@ -63,11 +65,21 @@ extern int regmap[REG_MAX][2];
 
 bool BackendIntrinsic(QUAD* q);
 
+SimpleExpression* copy_expression(SimpleExpression* node)
+{
+    SimpleExpression* rv = (SimpleExpression*)Alloc(sizeof(SimpleExpression));
+    memcpy(rv, node, sizeof(*rv));
+    if (rv->left)
+        rv->left = copy_expression(rv->left);
+    if (rv->right)
+        rv->right = copy_expression(rv->right);
+    return rv;
+}
 //-------------------------------------------------------------------------
 
 AMODE* make_muldivval(AMODE* ap)
 {
-    AMODE* ap1 = make_label(queue_muldivval(ap->offset->v.i));
+    AMODE* ap1 = make_label(queue_muldivval(ap->offset->i));
     ap1->mode = am_direct;
     return (ap1);
 }
@@ -79,11 +91,11 @@ AMODE* make_label(int lab)
  *      construct a reference node for an internal label number.
  */
 {
-    EXPRESSION* lnode;
+    SimpleExpression* lnode;
     AMODE* ap;
-    lnode = (EXPRESSION*)(EXPRESSION*)beLocalAlloc(sizeof(EXPRESSION));
-    lnode->type = en_labcon;
-    lnode->v.i = lab;
+    lnode = (SimpleExpression*)(SimpleExpression*)beLocalAlloc(sizeof(SimpleExpression));
+    lnode->type = se_labcon;
+    lnode->i = lab;
     ap = (AMODE*)beLocalAlloc(sizeof(AMODE));
     ap->mode = am_immed;
     ap->offset = lnode;
@@ -115,46 +127,15 @@ void make_floatconst(AMODE* ap)
     int size = ap->length;
     if (isintconst(ap->offset))
     {
-        ap->offset->v.f = (LLONG_TYPE)ap->offset->v.i;
-        ap->offset->type = en_c_d;
+        ap->offset->f = (LLONG_TYPE)ap->offset->i;
+        ap->offset->type = se_f;
         size = ISZ_DOUBLE;
     }
     else
     {
-        switch (ap->offset->type)
-        {
-            case en_c_f:
-                size = ISZ_FLOAT;
-                break;
-            case en_c_d:
-                size = ISZ_DOUBLE;
-                break;
-            case en_c_ld:
-                size = ISZ_LDOUBLE;
-                break;
-            case en_c_fi:
-                size = ISZ_IFLOAT;
-                break;
-            case en_c_di:
-                size = ISZ_IDOUBLE;
-                break;
-            case en_c_ldi:
-                size = ISZ_ILDOUBLE;
-                break;
-            case en_c_fc:
-                size = ISZ_CFLOAT;
-                break;
-            case en_c_dc:
-                size = ISZ_CDOUBLE;
-                break;
-            case en_c_ldc:
-                size = ISZ_CLDOUBLE;
-                break;
-            default:
-                break;
-        }
+        size = ap->offset->sizeFromType;
     }
-    AMODE* ap1 = make_label(queue_floatval(&ap->offset->v.f, size));
+    AMODE* ap1 = make_label(queue_floatval(&ap->offset->f, size));
     ap->mode = am_direct;
     ap->length = 0;
     ap->offset = ap1->offset;
@@ -221,11 +202,11 @@ AMODE* aimmed(ULLONG_TYPE i)
  */
 {
     AMODE* ap;
-    EXPRESSION* ep;
+    SimpleExpression* ep;
     i &= 0xffffffffU;
-    ep = (EXPRESSION*)(EXPRESSION*)beLocalAlloc(sizeof(EXPRESSION));
-    ep->type = en_c_i;
-    ep->v.i = i;
+    ep = (SimpleExpression*)(SimpleExpression*)beLocalAlloc(sizeof(SimpleExpression));
+    ep->type = se_i;
+    ep->i = i;
     ap = (AMODE*)beLocalAlloc(sizeof(AMODE));
     ap->mode = am_immed;
     ap->offset = ep;
@@ -268,24 +249,24 @@ AMODE* aimmedt(long i, int size)
 }
 
 /*-------------------------------------------------------------------------*/
-bool isauto(EXPRESSION* ep)
+bool isauto(SimpleExpression* ep)
 {
-    if (ep->type == en_auto)
+    if (ep->type == se_auto)
         return true;
-    if (ep->type == en_add || ep->type == en_structadd)
+    if (ep->type == se_add)
         return isauto(ep->left) || isauto(ep->right);
-    if (ep->type == en_sub)
+    if (ep->type == se_sub)
         return isauto(ep->left);
     return false;
 }
-AMODE* make_offset(EXPRESSION* node)
+AMODE* make_offset(SimpleExpression* node)
 /*
  *      make a direct reference to a node.
  */
 {
     AMODE* ap;
     ap = (AMODE*)beLocalAlloc(sizeof(AMODE));
-    if (node->type == en_tempref)
+    if (node->type == se_tempref)
     {
         diag("make_offset: orignode");
     }
@@ -305,9 +286,9 @@ AMODE* make_offset(EXPRESSION* node)
 AMODE* make_stack(int number)
 {
     AMODE* ap = (AMODE*)beLocalAlloc(sizeof(AMODE));
-    EXPRESSION* ep = (EXPRESSION*)(EXPRESSION*)beLocalAlloc(sizeof(EXPRESSION));
-    ep->type = en_c_i;
-    ep->v.i = -number;
+    SimpleExpression* ep = (SimpleExpression*)(SimpleExpression*)beLocalAlloc(sizeof(SimpleExpression));
+    ep->type = se_i;
+    ep->i = -number;
     ap->mode = am_indisp;
     ap->preg = ESP;
     ap->offset = ep;
@@ -326,30 +307,35 @@ static void callLibrary(const char* name, int size)
     if (size)
         gen_code(op_add, makedreg(ESP), aimmed(size));
 }
-void oa_gen_vtt(VTABENTRY* vt, SYMBOL* func)
+void oa_gen_vtt(VTABENTRY* vt, SimpleSymbol* func)
 {
-    AMODE* ofs = make_offset(varNode(en_pc, func));
+    SimpleExpression* n = (SimpleExpression*)Alloc(sizeof(SimpleExpression));
+    n->type = se_pc;
+    n->sp = func;
+    AMODE* ofs = make_offset(n);
     ofs->mode = am_immed;
     gen_code(op_add, make_stack(-4), aimmedt(-vt->dataOffset, ISZ_ADDR));
     gen_code(op_jmp, ofs, NULL);
     flush_peep(NULL, NULL);
 }
-void oa_gen_vc1(SYMBOL* func)
+void oa_gen_vc1(SimpleSymbol* func)
 {
     AMODE* ofs = makedreg(EAX);
-    ofs->offset = intNode(en_c_i, 0);
+    ofs->offset = simpleIntNode(se_i, 0);
     ofs->mode = am_indisp;
     gen_code(op_mov, makedreg(EAX), makedreg(ECX));
     gen_code(op_mov, makedreg(EAX), ofs);
-    ofs->offset = intNode(en_c_i, func->offset);
+    ofs->offset = simpleIntNode(se_i, func->offset);
     gen_code(op_jmp, ofs, NULL);
     flush_peep(NULL, NULL);
 }
-void oa_gen_importThunk(SYMBOL* func)
+void oa_gen_importThunk(SimpleSymbol* func)
 {
     AMODE* ofs = (AMODE*)Alloc(sizeof(AMODE));
     ofs->mode = am_direct;
-    ofs->offset = varNode(en_pc, func->mainsym);
+    ofs->offset = (SimpleExpression*)Alloc(sizeof(SimpleExpression));
+    ofs->offset->type = se_pc;
+    ofs->offset->sp = func; // was func->mainsym
     gen_code(op_jmp, ofs, NULL);
     flush_peep(NULL, NULL);
 }
@@ -359,56 +345,69 @@ void make_complexconst(AMODE* ap, AMODE* api)
     AMODE* apt;
     if (isintconst(ap->offset))
     {
-        api->offset = exprNode(en_c_d, 0, 0); /* defaults to zero. 0 */
+        api->offset = simpleExpressionNode(se_f, 0, 0); /* defaults to zero. 0 */
+        api->offset->sp->sizeFromType = ISZ_DOUBLE;
     }
     else
     {
         switch (ap->offset->type)
         {
             case en_c_f:
-                api->offset = exprNode(en_c_f, 0, 0); /* defaults to zero. 0 */
+                api->offset = simpleExpressionNode(se_f, 0, 0); /* defaults to zero. 0 */
+                api->offset->sp->sizeFromType = ISZ_FLOAT;
                 break;
             case en_c_d:
-                api->offset = exprNode(en_c_d, 0, 0); /* defaults to zero. 0 */
+                api->offset = simpleExpressionNode(se_f, 0, 0); /* defaults to zero. 0 */
+                api->offset->sp->sizeFromType = ISZ_DOUBLE;
                 break;
             case en_c_ld:
-                api->offset = exprNode(en_c_ld, 0, 0); /* defaults to zero. 0 */
+                api->offset = simpleExpressionNode(se_f, 0, 0); /* defaults to zero. 0 */
+                api->offset->sp->sizeFromType = ISZ_LDOUBLE;
                 break;
             case en_c_fi:
-                api->offset = exprNode(en_c_fi, 0, 0); /* defaults to zero. 0 */
+                api->offset = simpleExpressionNode(se_fi, 0, 0); /* defaults to zero. 0 */
+                api->offset->sp->sizeFromType = ISZ_IFLOAT;
                 apt = api;
                 api = ap;
                 ap = apt;
                 break;
             case en_c_di:
-                api->offset = exprNode(en_c_di, 0, 0); /* defaults to zero. 0 */
+                api->offset = simpleExpressionNode(se_fi, 0, 0); /* defaults to zero. 0 */
+                api->offset->sp->sizeFromType = ISZ_IDOUBLE;
                 apt = api;
                 api = ap;
                 ap = apt;
                 break;
             case en_c_ldi:
-                api->offset = exprNode(en_c_ldi, 0, 0); /* defaults to zero. 0 */
+                api->offset = simpleExpressionNode(se_fi, 0, 0); /* defaults to zero. 0 */
+                api->offset->sp->sizeFromType = ISZ_ILDOUBLE;
                 apt = api;
                 api = ap;
                 ap = apt;
                 break;
             case en_c_fc:
-                api->offset = exprNode(en_c_fc, 0, 0); /* defaults to zero. 0 */
-                api->offset->v.f = ap->offset->v.c.i;
-                ap->offset->type = en_c_f;
-                ap->offset->v.f = ap->offset->v.c.r;
+                api->offset = simpleExpressionNode(se_fc, 0, 0); /* defaults to zero. 0 */
+                api->offset->sp->sizeFromType = ISZ_CFLOAT;
+                api->offset->f = ap->offset->c.i;
+                ap->offset->type = se_f;
+                ap->offset->sp->sizeFromType = ISZ_CFLOAT;
+                ap->offset->f = ap->offset->c.r;
                 break;
             case en_c_dc:
-                api->offset = exprNode(en_c_dc, 0, 0); /* defaults to zero. 0 */
-                api->offset->v.f = ap->offset->v.c.i;
-                ap->offset->type = en_c_d;
-                ap->offset->v.f = ap->offset->v.c.r;
+                api->offset = simpleExpressionNode(se_fc, 0, 0); /* defaults to zero. 0 */
+                api->offset->sp->sizeFromType = ISZ_CDOUBLE;
+                api->offset->f = ap->offset->c.i;
+                ap->offset->type = se_f;
+                ap->offset->sp->sizeFromType = ISZ_CDOUBLE;
+                ap->offset->f = ap->offset->c.r;
                 break;
             case en_c_ldc:
-                api->offset = exprNode(en_c_ldc, 0, 0); /* defaults to zero. 0 */
-                api->offset->v.f = ap->offset->v.c.i;
-                ap->offset->type = en_c_ld;
-                ap->offset->v.f = ap->offset->v.c.r;
+                api->offset = simpleExpressionNode(se_fc, 0, 0); /* defaults to zero. 0 */
+                api->offset->sp->sizeFromType = ISZ_CLDOUBLE;
+                api->offset->f = ap->offset->c.i;
+                ap->offset->type = se_f;
+                ap->offset->sp->sizeFromType = ISZ_CLDOUBLE;
+                ap->offset->f = ap->offset->c.r;
                 break;
             default:
                 break;
@@ -476,7 +475,7 @@ void floatchs(AMODE* ap, int sz)
         lbl = makedreg(reg);
         gen_code(op_mov, lbl, ap1);
         lbl->mode = am_indisp;
-        lbl->offset = intNode(en_c_i, 0);
+        lbl->offset = simpleIntNode(se_i, 0);
         lbl->length = 0;
         if (!pushed)
             reg = -1;
@@ -535,7 +534,7 @@ AMODE* floatzero(AMODE* ap)
         zerolabel = makedreg(reg);
         gen_code(op_mov, zerolabel, ap1);
         zerolabel->mode = am_indisp;
-        zerolabel->offset = intNode(en_c_i, 0);
+        zerolabel->offset = simpleIntNode(se_i, 0);
     }
     return zerolabel;
 }
@@ -567,7 +566,7 @@ bool sameTemp(QUAD* head)
     {
         if (head->dc.left->mode == i_direct && head->dc.right->mode == i_direct)
         {
-            if (head->dc.left->offset->v.sp->value.i == head->dc.right->offset->v.sp->value.i)
+            if (head->dc.left->offset->sp->i == head->dc.right->offset->sp->i)
             {
                 return true;
             }
@@ -636,8 +635,8 @@ void getAmodes(QUAD* q, enum e_opcode* op, IMODE* im, AMODE** apl, AMODE** aph)
     {
         AMODE* temp = (AMODE*)beLocalAlloc(sizeof(AMODE));
         IMODE* ip = beSetProcSymbol("__TLSINITSTART");
-        EXPRESSION* exp;
-        exp = exprNode(en_sub, im->offset, ip->offset);
+        SimpleExpression* exp;
+        exp = simpleExpressionNode(se_sub, im->offset, ip->offset);
         temp->offset = exp;
         temp->mode = am_immed;
         gen_code(op_push, temp, 0);
@@ -676,7 +675,7 @@ void getAmodes(QUAD* q, enum e_opcode* op, IMODE* im, AMODE** apl, AMODE** aph)
             }
         }
         (*apl)->scale = im->scale;
-        (*apl)->offset = im->offset3 ? im->offset3 : intNode(en_c_i, 0);
+        (*apl)->offset = im->offset3 ? im->offset3 : simpleIntNode(se_i, 0);
         if (im->size < ISZ_FLOAT)
             (*apl)->length = im->size;
         if (im->offset3)
@@ -720,7 +719,7 @@ void getAmodes(QUAD* q, enum e_opcode* op, IMODE* im, AMODE** apl, AMODE** aph)
         {
             *aph = (AMODE*)beLocalAlloc(sizeof(AMODE));
             **aph = **apl;
-            (*aph)->offset = exprNode(en_add, (*apl)->offset, intNode(en_c_i, imaginary_offset(im->size)));
+            (*aph)->offset = simpleExpressionNode(se_add, (*apl)->offset, simpleIntNode(se_i, imaginary_offset(im->size)));
             if ((*apl)->preg >= 0)
                 (*apl)->liveRegs |= 1 << (*apl)->preg;
             if ((*apl)->sreg >= 0)
@@ -730,7 +729,7 @@ void getAmodes(QUAD* q, enum e_opcode* op, IMODE* im, AMODE** apl, AMODE** aph)
         {
             *aph = (AMODE*)beLocalAlloc(sizeof(AMODE));
             **aph = **apl;
-            (*aph)->offset = exprNode(en_add, (*apl)->offset, intNode(en_c_i, 4));
+            (*aph)->offset = simpleExpressionNode(se_add, (*apl)->offset, simpleIntNode(se_i, 4));
             if ((*apl)->preg >= 0)
                 (*apl)->liveRegs |= 1 << (*apl)->preg;
             if ((*apl)->sreg >= 0)
@@ -754,11 +753,11 @@ void getAmodes(QUAD* q, enum e_opcode* op, IMODE* im, AMODE** apl, AMODE** aph)
         }
         else if (im->size == ISZ_ULONGLONG || im->size == -ISZ_ULONGLONG)
         {
-            *apl = aimmed(im->offset->v.i);
+            *apl = aimmed(im->offset->i);
 #ifdef USE_LONGLONG
-            *aph = aimmed((im->offset->v.i >> 32));
+            *aph = aimmed((im->offset->i >> 32));
 #else
-            if (im->size < 0 && im->offset->v.i < 0)
+            if (im->size < 0 && im->offset->i < 0)
                 *aph = aimmed(-1);
             else
                 *aph = aimmed(0);
@@ -793,11 +792,11 @@ void getAmodes(QUAD* q, enum e_opcode* op, IMODE* im, AMODE** apl, AMODE** aph)
                 }
                 else if (im->offset->type == en_c_ll || im->offset->type == en_c_ull)
                 {
-                    *apl = aimmed(im->offset->v.i);
+                    *apl = aimmed(im->offset->i);
 #ifdef USE_LONGLONG
-                    *aph = aimmed((im->offset->v.i >> 32));
+                    *aph = aimmed((im->offset->i >> 32));
 #else
-                    if (im->size < 0 && im->offset->v.i < 0)
+                    if (im->size < 0 && im->offset->i < 0)
                         *aph = aimmed(-1);
                     else
                         *aph = aimmed(0);
@@ -810,14 +809,14 @@ void getAmodes(QUAD* q, enum e_opcode* op, IMODE* im, AMODE** apl, AMODE** aph)
                         *op = op_lea;
                     else
                     {
-                        (*apl)->offset->v.i &= 0xffffffffU;
+                        (*apl)->offset->i &= 0xffffffffU;
                         (*apl)->mode = am_immed;
                     }
                     // in case of a int const being used with a long long
 #ifdef USE_LONGLONG
-                    *aph = aimmed((im->offset->v.i >> 32));
+                    *aph = aimmed((im->offset->i >> 32));
 #else
-                    if (im->size < 0 && im->offset->v.i < 0)
+                    if (im->size < 0 && im->offset->i < 0)
                         *aph = aimmed(-1);
                     else
                         *aph = aimmed(0);
@@ -831,7 +830,7 @@ void getAmodes(QUAD* q, enum e_opcode* op, IMODE* im, AMODE** apl, AMODE** aph)
         /*
             if (im->offset->type == en_reg)
             {
-                *apl = makedreg(im->offset->v.i);
+                *apl = makedreg(im->offset->i);
             }
             else
         */
@@ -861,7 +860,7 @@ void getAmodes(QUAD* q, enum e_opcode* op, IMODE* im, AMODE** apl, AMODE** aph)
                 {
                     *apl = make_offset(im->offset);
                     *aph = make_offset(im->offset);
-                    (*aph)->offset = exprNode(en_add, (*aph)->offset, intNode(en_c_i, imaginary_offset(im->size)));
+                    (*aph)->offset = simpleExpressionNode(se_add, (*aph)->offset, simpleIntNode(se_i, imaginary_offset(im->size)));
                 }
             }
             else if (im->offset->type == en_tempref && !im->offset->right)
@@ -890,7 +889,7 @@ void getAmodes(QUAD* q, enum e_opcode* op, IMODE* im, AMODE** apl, AMODE** aph)
             {
                 *apl = make_offset(im->offset);
                 *aph = copy_addr(*apl);
-                (*aph)->offset = exprNode(en_add, (*aph)->offset, intNode(en_c_i, 4));
+                (*aph)->offset = simpleExpressionNode(se_add, (*aph)->offset, simpleIntNode(se_i, 4));
             }
         }
         else if (im->offset->type == en_tempref)
@@ -920,7 +919,7 @@ void bit_store(AMODE* dest, AMODE* src, int size, int bits, int startbit)
     {
         if (bits == 1)
         {
-            if (src->offset->v.i & 1)
+            if (src->offset->i & 1)
                 gen_codes(op_bts, ISZ_UINT, dest, aimmed(startbit));
             else
                 gen_codes(op_btr, ISZ_UINT, dest, aimmed(startbit));
@@ -935,7 +934,7 @@ void bit_store(AMODE* dest, AMODE* src, int size, int bits, int startbit)
                 gen_codes(op_and, size, dest, aimmed(~(((1 << bits) - 1) << startbit)));
             }
             dest->liveRegs = l;
-            gen_codes(op_or, size, dest, aimmed((src->offset->v.i & ((1 << bits) - 1)) << startbit));
+            gen_codes(op_or, size, dest, aimmed((src->offset->i & ((1 << bits) - 1)) << startbit));
         }
     }
     else
@@ -999,8 +998,8 @@ void func_axdx(enum e_opcode func, AMODE* apal, AMODE* apah, AMODE* apll, AMODE*
     {
         if (isintconst(apll->offset))
         {
-            aplh = aimmedt(apll->offset->v.i >> 32, ISZ_UINT);
-            apll->offset->v.i &= 0xffffffff;
+            aplh = aimmedt(apll->offset->i >> 32, ISZ_UINT);
+            apll->offset->i &= 0xffffffff;
         }
         else
             aplh = aimmedt(0, ISZ_UINT);
@@ -1105,7 +1104,7 @@ void gen_lshift(enum e_opcode op, AMODE* aph, AMODE* apl, AMODE* n)
             gen_code(op_shr, apl, n);
             gen_code(op_mov, makedreg(reg), aph);
             gen_code(op_ror, makedreg(reg), n);
-            gen_code(op_and, makedreg(reg), aimmed(-1 >> (n->offset->v.i)));
+            gen_code(op_and, makedreg(reg), aimmed(-1 >> (n->offset->i)));
             gen_code(op_or, apl, makedreg(reg));
         }
         else
@@ -1113,7 +1112,7 @@ void gen_lshift(enum e_opcode op, AMODE* aph, AMODE* apl, AMODE* n)
             gen_code(op_shl, aph, n);
             gen_code(op_mov, makedreg(reg), apl);
             gen_code(op_rol, makedreg(reg), n);
-            gen_code(op_and, makedreg(reg), aimmed((1 << (n->offset->v.i)) - 1));
+            gen_code(op_and, makedreg(reg), aimmed((1 << (n->offset->i)) - 1));
             gen_code(op_or, aph, makedreg(reg));
         }
         if (pushed)
@@ -1152,7 +1151,7 @@ void gen_xset(QUAD* q, enum e_opcode pos, enum e_opcode neg, enum e_opcode flt)
         gen_codes(op_bt, ISZ_UINT, apll, aimmed(q->dc.left->startbit));
         if (op == op_sete)
         {
-            if (right->offset->v.i & 1)
+            if (right->offset->i & 1)
             {
                 op = op_setc;
             }
@@ -1163,7 +1162,7 @@ void gen_xset(QUAD* q, enum e_opcode pos, enum e_opcode neg, enum e_opcode flt)
         }
         else if (op == op_setne)
         {
-            if (right->offset->v.i & 1)
+            if (right->offset->i & 1)
             {
                 op = op_setnc;
             }
@@ -1390,7 +1389,7 @@ void gen_goto(QUAD* q, enum e_opcode pos, enum e_opcode neg, enum e_opcode llpos
         gen_codes(op_bt, ISZ_UINT, apll, aimmed(q->dc.left->startbit));
         if (sop == op_je)
         {
-            if (right->offset->v.i & 1)
+            if (right->offset->i & 1)
             {
                 sop = op_jc;
             }
@@ -1401,7 +1400,7 @@ void gen_goto(QUAD* q, enum e_opcode pos, enum e_opcode neg, enum e_opcode llpos
         }
         else if (sop == op_jne)
         {
-            if (right->offset->v.i & 1)
+            if (right->offset->i & 1)
             {
                 sop = op_jnc;
             }
@@ -1723,7 +1722,7 @@ static void compactSwitchHeader(LLONG_TYPE bottom)
 {
     int tablab, size;
     AMODE* ap;
-    EXPRESSION* lnode;
+    SimpleExpression* lnode;
     tablab = beGetLabel;
     size = switch_ip->size;
     if (size == ISZ_ULONGLONG || size == -ISZ_ULONGLONG)
@@ -1818,12 +1817,12 @@ static void compactSwitchHeader(LLONG_TYPE bottom)
     }
 
     peep_tail->noopt = true;
-    lnode = (EXPRESSION*)(EXPRESSION*)beLocalAlloc(sizeof(EXPRESSION));
-    lnode->type = en_labcon;
-    lnode->v.i = tablab;
+    lnode = (SimpleExpression*)(SimpleExpression*)beLocalAlloc(sizeof(SimpleExpression));
+    lnode->type = se_labcon;
+    lnode->i = tablab;
     if (bottom)
     {
-        lnode = exprNode(en_add, lnode, intNode(en_c_i, -bottom * 4));
+        lnode = simpleExpressionNode(se_add, lnode, simpleIntNode(se_i, -bottom * 4));
     }
     ap = (AMODE*)beLocalAlloc(sizeof(AMODE));
     ap->mode = am_indispscale;
@@ -1938,20 +1937,20 @@ static void llongatomicmath(e_opcode low, e_opcode high, QUAD* q)
         gen_code(op_lea, makedreg(EAX), aprl);
         aprl = makedreg(EAX);
         aprl->mode = am_indisp;
-        aprl->offset = intNode(en_c_i, 0);
+        aprl->offset = simpleIntNode(se_i, 0);
         aprh = makedreg(EAX);
         aprh->mode = am_indisp;
-        aprh->offset = intNode(en_c_i, 4);
+        aprh->offset = simpleIntNode(se_i, 4);
     }
     if (apll->mode == am_indispscale || (apll->mode == am_indisp && apll->preg != EBP && apll->preg != ESP))
     {
         gen_code(op_lea, makedreg(EBP), apll);
         apll = makedreg(EBP);
         apll->mode = am_indisp;
-        apll->offset = intNode(en_c_i, 0);
+        apll->offset = simpleIntNode(se_i, 0);
         aplh = makedreg(EBP);
         aplh->mode = am_indisp;
-        aplh->offset = intNode(en_c_i, 4);
+        aplh->offset = simpleIntNode(se_i, 4);
     }
     if (high == op_cmpxchg8b)
     {
@@ -2094,7 +2093,7 @@ static void addsubatomic(e_opcode op, QUAD* q)
             gen_code(op_lea, makedreg(EBP), apll);
             apll = makedreg(EBP);
             apll->mode = am_indisp;
-            apll->offset = intNode(en_c_i, 0);
+            apll->offset = simpleIntNode(se_i, 0);
         }
         if (apal->liveRegs & (1 << apal->preg))
         {
@@ -2166,7 +2165,7 @@ static void logicatomic(e_opcode op, QUAD* q)
             gen_code(op_lea, makedreg(EBP), apll);
             apll = makedreg(EBP);
             apll->mode = am_indisp;
-            apll->offset = intNode(en_c_i, 0);
+            apll->offset = simpleIntNode(se_i, 0);
         }
         if (apal->liveRegs & (1 << apal->preg))
         {
@@ -2272,14 +2271,14 @@ void asm_varstart(QUAD* q) /* line number information and text */
 {
     OCODE* newitem = (OCODE*)beLocalAlloc(sizeof(OCODE));
     newitem->opcode = (e_opcode)op_varstart;
-    newitem->oper1 = (AMODE*)(q->dc.left->offset->v.sp); /* line data */
+    newitem->oper1 = (AMODE*)(q->dc.left->offset->sp); /* line data */
     add_peep(newitem);
 }
 void asm_func(QUAD* q) /* line number information and text */
 {
     OCODE* newitem = (OCODE*)beLocalAlloc(sizeof(OCODE));
     newitem->opcode = (e_opcode)(q->dc.v.label ? op_funcstart : op_funcend);
-    newitem->oper1 = (AMODE*)(q->dc.left->offset->v.sp); /* line data */
+    newitem->oper1 = (AMODE*)(q->dc.left->offset->sp); /* line data */
     add_peep(newitem);
 }
 void asm_passthrough(QUAD* q) /* reserved */
@@ -2287,7 +2286,7 @@ void asm_passthrough(QUAD* q) /* reserved */
     OCODE* val = (OCODE*)q->dc.left;
     if (val->oper1 && val->oper1->mode == am_indisp && val->oper1->preg == EBP)
     {
-        SYMBOL* sp = varsp(val->oper1->offset);
+        SimpleSymbol* sp = varsp(val->oper1->offset);
         if (usingEsp)
             val->oper1->preg = ESP;
         if (sp && sp->regmode == 2)
@@ -2305,7 +2304,7 @@ void asm_passthrough(QUAD* q) /* reserved */
     }
     if (val->oper2 && val->oper2->mode == am_indisp && val->oper2->preg == EBP)
     {
-        SYMBOL* sp = varsp(val->oper2->offset);
+        SimpleSymbol* sp = varsp(val->oper2->offset);
         if (usingEsp)
             val->oper2->preg = ESP;
         if (sp && sp->regmode == 2)
@@ -2339,7 +2338,7 @@ void asm_goto(QUAD* q) /* unconditional branch */
     else /* directbranch */
     {
         AMODE* ap;
-        SYMBOL* sp = q->dc.left->offset->v.sp;
+        SimpleSymbol* sp = q->dc.left->offset->sp;
         if (sp->regmode)
         {
             ap = makedreg(regmap[q->leftColor & 0xff][0]);
@@ -2347,7 +2346,7 @@ void asm_goto(QUAD* q) /* unconditional branch */
             if (q->dc.left->mode == i_ind)
             {
                 ap->mode = am_indisp;
-                ap->offset = intNode(en_c_i, 0);
+                ap->offset = simpleIntNode(se_i, 0);
             }
         }
         else
@@ -2382,10 +2381,10 @@ void asm_parm(QUAD* q) /* push a parameter*/
             else
             {
                 if (sz == 8)
-                    gen_codes(op_push, ISZ_UINT, make_offset(exprNode(en_add, aph->offset, intNode(en_c_i, 4))), NULL);
+                    gen_codes(op_push, ISZ_UINT, make_offset(simpleExpressionNode(se_add, aph->offset, simpleIntNode(se_i, 4))), NULL);
                 gen_codes(op_push, ISZ_UINT, aph, NULL);
                 if (sz == 8)
-                    gen_codes(op_push, ISZ_UINT, make_offset(exprNode(en_add, apl->offset, intNode(en_c_i, 4))), NULL);
+                    gen_codes(op_push, ISZ_UINT, make_offset(simpleExpressionNode(se_add, apl->offset, simpleIntNode(se_i, 4))), NULL);
                 gen_codes(op_push, ISZ_UINT, apl, NULL);
             }
         }
@@ -2406,7 +2405,7 @@ void asm_parm(QUAD* q) /* push a parameter*/
             else
             {
                 if (sz == 8)
-                    gen_codes(op_push, ISZ_UINT, make_offset(exprNode(en_add, apl->offset, intNode(en_c_i, 4))), NULL);
+                    gen_codes(op_push, ISZ_UINT, make_offset(simpleExpressionNode(se_add, apl->offset, simpleIntNode(se_i, 4))), NULL);
                 gen_codes(op_push, ISZ_UINT, apl, NULL);
             }
         }
@@ -2428,7 +2427,7 @@ void asm_parm(QUAD* q) /* push a parameter*/
             else
             {
                 LLONG_TYPE i;
-                i = apl->offset->v.i;
+                i = apl->offset->i;
                 switch (sz)
                 {
                     case ISZ_USHORT:
@@ -2543,10 +2542,10 @@ void asm_parm(QUAD* q) /* push a parameter*/
 }
 void asm_parmblock(QUAD* q) /* push a block of memory */
 {
-    int n = q->dc.right->offset->v.i;
+    int n = q->dc.right->offset->i;
     AMODE *apl, *aph;
     enum e_opcode op;
-    EXPRESSION* ofs;
+    SimpleExpression* ofs;
 
     getAmodes(q, &op, q->dc.left, &apl, &aph);
 
@@ -2578,7 +2577,7 @@ void asm_parmblock(QUAD* q) /* push a block of memory */
         while (n > 0)
         {
             n -= 4;
-            apl->offset = exprNode(en_add, ofs, intNode(en_c_i, n));
+            apl->offset = simpleExpressionNode(se_add, ofs, simpleIntNode(se_i, n));
             gen_codes(op_push, ISZ_UINT, apl, 0);
             pushlevel += 4;
         }
@@ -2642,8 +2641,7 @@ void asm_parmadj(QUAD* q) /* adjust stack after function call */
 }
 void asm_gosub(QUAD* q) /* normal gosub to an immediate label or through a var */
 {
-    TYPE* tp = NULL;
-    EXPRESSION* en = NULL;
+    SimpleExpression* en = NULL;
     enum e_opcode op;
     AMODE *apl, *aph;
     if (!q->dc.left->offset || q->dc.left->offset->type != en_pc || !BackendIntrinsic(q))
@@ -2655,9 +2653,6 @@ void asm_gosub(QUAD* q) /* normal gosub to an immediate label or through a var *
         if (!en && q->dc.left->offset3)
             en = GetSymRef(q->dc.left->offset3);
         getAmodes(q, &op, q->dc.left, &apl, &aph);
-
-        if (en)
-            tp = en->v.sp->tp;
 
         if (q->dc.left->mode == i_immed)
         {
@@ -2713,10 +2708,10 @@ void asm_fargosub(QUAD* q) /* far version of gosub */
 }
 void asm_trap(QUAD* q) /* 'trap' instruction - the arg will be an immediate # */
 {
-    if (q->dc.left->offset->v.i == 3)
+    if (q->dc.left->offset->i == 3)
         gen_code(op_int3, 0, 0);
     else
-        gen_code(op_int, aimmed(q->dc.left->offset->v.i), 0);
+        gen_code(op_int, aimmed(q->dc.left->offset->i), 0);
 }
 void asm_int(QUAD* q) /* 'int' instruction(QUAD *q) calls a labeled function which is an interrupt */
 {
@@ -3142,7 +3137,7 @@ void asm_mul(QUAD* q) /* signed multiply */
         {
             if (aprl->mode == am_immed)
             {
-                apll = aimmed(apll->offset->v.i * aprl->offset->v.i);
+                apll = aimmed(apll->offset->i * aprl->offset->i);
                 gen_codes(op_mov, q->ans->size, apal, apll);
             }
             else
@@ -3182,7 +3177,7 @@ void asm_lsr(QUAD* q) /* unsigned shift right */
     {
         if (aprl->mode == am_immed)
         {
-            int n = aprl->offset->v.i;
+            int n = aprl->offset->i;
             if (n >= 32)
             {
                 n -= 32;
@@ -3224,7 +3219,7 @@ void asm_lsl(QUAD* q) /* signed shift left */
     {
         if (aprl->mode == am_immed)
         {
-            int n = aprl->offset->v.i;
+            int n = aprl->offset->i;
             if (n >= 32)
             {
                 n -= 32;
@@ -3266,7 +3261,7 @@ void asm_asr(QUAD* q) /* signed shift right */
     {
         if (aprl->mode == am_immed)
         {
-            int n = aprl->offset->v.i;
+            int n = aprl->offset->i;
             if (n >= 32)
             {
                 n -= 32;
@@ -3589,7 +3584,7 @@ void asm_assn(QUAD* q) /* assignment */
 #ifdef USE_LONGLONG
             apl1 = aimmed((q->dc.v.i >> 32));
 #else
-            if (q->dc.v.i < 0)
+            if (q->dc.i < 0)
                 apl1 = aimmed(-1);
             else
                 apl1 = aimmed(0);
@@ -3602,8 +3597,9 @@ void asm_assn(QUAD* q) /* assignment */
     }
     else if (q->dc.opcode == i_fcon)
     {
-        EXPRESSION* node = exprNode(en_c_ld, 0, 0);
-        node->v.f = q->dc.v.f;
+        SimpleExpression* node = simpleExpressionNode(se_f, 0, 0);
+        node->sizeFromType = ISZ_LDOUBLE;
+        node->f = q->dc.v.f;
         apl = (AMODE*)beLocalAlloc(sizeof(AMODE));
         apl->offset = node;
         make_floatconst(apl);
@@ -3646,10 +3642,10 @@ void asm_assn(QUAD* q) /* assignment */
                 gen_code(op_lea, makedreg(EBP), apl);
                 apl = makedreg(EBP);
                 apl->mode = am_indisp;
-                apl->offset = intNode(en_c_i, 0);
+                apl->offset = simpleIntNode(se_i, 0);
                 apl1 = makedreg(EBP);
                 apl1->mode = am_indisp;
-                apl1->offset = intNode(en_c_i, 4);
+                apl1->offset = simpleIntNode(se_i, 4);
             }
             gen_code(op_mov, makedreg(EAX), apl);
             gen_code(op_mov, makedreg(EDX), apl1);
@@ -3693,7 +3689,7 @@ void asm_assn(QUAD* q) /* assignment */
                     int sz = 8;
                     if (q->ans->size == ISZ_CFLOAT)
                         sz = 4;
-                    AMODE* ap1 = make_offset(exprNode(en_add, fltexp, intNode(en_c_i, sz)));
+                    AMODE* ap1 = make_offset(simpleExpressionNode(se_add, fltexp, simpleIntNode(se_i, sz)));
                     apa = moveFP(apa, q->ans->size, apl, q->dc.left->size);
                     apa1 = moveFP(apa1, q->ans->size, apl1, q->dc.left->size);
                     gen_code_sse(op_movss, op_movsd, q->ans->size, ap, apa);
@@ -3731,7 +3727,7 @@ void asm_assn(QUAD* q) /* assignment */
                         int sz = 8;
                         if (q->ans->size == ISZ_CFLOAT)
                             sz = 4;
-                        AMODE* ap1 = make_offset(exprNode(en_add, fltexp, intNode(en_c_i, sz)));
+                        AMODE* ap1 = make_offset(simpleExpressionNode(se_add, fltexp, simpleIntNode(se_i, sz)));
                         ap1->length = ap->length = q->ans->size - ISZ_CFLOAT + ISZ_FLOAT;
                         gen_codef(op_fstp, ap, NULL);
                         gen_codef(op_fstp, ap1, NULL);
@@ -4226,15 +4222,15 @@ void asm_assn(QUAD* q) /* assignment */
 }
 void asm_genword(QUAD* q) /* put a byte or word into the code stream */
 {
-    gen_code(op_genword, aimmed(q->dc.left->offset->v.i), 0);
+    gen_code(op_genword, aimmed(q->dc.left->offset->i), 0);
 }
 
 void asm_coswitch(QUAD* q) /* switch characteristics */
 {
     enum e_opcode op;
     switch_deflab = q->dc.v.label;
-    switch_range = q->dc.right->offset->v.i;
-    switch_case_max = switch_case_count = q->ans->offset->v.i;
+    switch_range = q->dc.right->offset->i;
+    switch_case_max = switch_case_count = q->ans->offset->i;
     switch_ip = q->dc.left;
     getAmodes(q, &op, switch_ip, &switch_apl, &switch_aph);
     switch_live = 0;
@@ -4269,7 +4265,7 @@ void asm_coswitch(QUAD* q) /* switch characteristics */
 }
 void asm_swbranch(QUAD* q) /* case characteristics */
 {
-    ULLONG_TYPE swcase = q->dc.left->offset->v.i;
+    ULLONG_TYPE swcase = q->dc.left->offset->i;
     int lab = q->dc.v.label;
     if (switch_case_count == 0)
     {
@@ -4340,10 +4336,10 @@ void asm_swbranch(QUAD* q) /* case characteristics */
 void asm_dc(QUAD* q) /* unused */ { (void)q; }
 void asm_assnblock(QUAD* q) /* copy block of memory*/
 {
-    int n = q->ans->offset->v.i;
+    int n = q->ans->offset->i;
     AMODE *apl, *aph, *apal, *apah;
     enum e_opcode op, opa;
-    EXPRESSION *ofs, *ofsa;
+    SimpleExpression *ofs, *ofsa;
 
     getAmodes(q, &op, q->dc.right, &apl, &aph);
     getAmodes(q, &opa, q->dc.left, &apal, &apah);
@@ -4396,12 +4392,12 @@ void asm_assnblock(QUAD* q) /* copy block of memory*/
         if (apl->mode == am_dreg)
         {
             apl->mode = am_indisp;
-            ofs = intNode(en_c_i, 0);
+            ofs = simpleIntNode(se_i, 0);
         }
         if (apal->mode == am_dreg)
         {
             apal->mode = am_indisp;
-            ofsa = intNode(en_c_i, 0);
+            ofsa = simpleIntNode(se_i, 0);
         }
         for (i = 0; i < 4; i++)
         {
@@ -4441,16 +4437,16 @@ void asm_assnblock(QUAD* q) /* copy block of memory*/
         }
         if (n & 1)
         {
-            apl->offset = exprNode(en_add, ofs, intNode(en_c_i, n - 1));
-            apal->offset = exprNode(en_add, ofsa, intNode(en_c_i, n - 1));
+            apl->offset = simpleExpressionNode(se_add, ofs, simpleIntNode(se_i, n - 1));
+            apal->offset = simpleExpressionNode(se_add, ofsa, simpleIntNode(se_i, n - 1));
             gen_codes(op_mov, ISZ_UCHAR, ax, apl);
             gen_codes(op_mov, ISZ_UCHAR, apal, ax);
             n--;
         }
         if (n & 2)
         {
-            apl->offset = exprNode(en_add, ofs, intNode(en_c_i, n - 2));
-            apal->offset = exprNode(en_add, ofsa, intNode(en_c_i, n - 2));
+            apl->offset = simpleExpressionNode(se_add, ofs, simpleIntNode(se_i, n - 2));
+            apal->offset = simpleExpressionNode(se_add, ofsa, simpleIntNode(se_i, n - 2));
             gen_codes(op_mov, ISZ_USHORT, ax, apl);
             gen_codes(op_mov, ISZ_USHORT, apal, ax);
             n -= 2;
@@ -4459,8 +4455,8 @@ void asm_assnblock(QUAD* q) /* copy block of memory*/
         while (n > 0)
         {
             n -= 4;
-            apl->offset = exprNode(en_add, ofs, intNode(en_c_i, n));
-            apal->offset = exprNode(en_add, ofsa, intNode(en_c_i, n));
+            apl->offset = simpleExpressionNode(se_add, ofs, simpleIntNode(se_i, n));
+            apal->offset = simpleExpressionNode(se_add, ofsa, simpleIntNode(se_i, n));
             gen_codes(op_mov, ISZ_UINT, ax, apl);
             gen_codes(op_mov, ISZ_UINT, apal, ax);
         }
@@ -4517,11 +4513,11 @@ void asm_assnblock(QUAD* q) /* copy block of memory*/
 }
 void asm_clrblock(QUAD* q) /* clear block of memory */
 {
-    int n = q->dc.right->offset->v.i;
+    int n = q->dc.right->offset->i;
     AMODE *apl, *aph;
     AMODE *aprl, *aprh;
     enum e_opcode op, opr;
-    EXPRESSION* ofs;
+    SimpleExpression* ofs;
 
     getAmodes(q, &opr, q->dc.right, &aprl, &aprh);
     getAmodes(q, &op, q->dc.left, &apl, &aph);
@@ -4553,24 +4549,24 @@ void asm_clrblock(QUAD* q) /* clear block of memory */
         if (apl->mode == am_dreg)
         {
             apl->mode = am_indisp;
-            ofs = intNode(en_c_i, 0);
+            ofs = simpleIntNode(se_i, 0);
         }
         if (n & 1)
         {
-            apl->offset = exprNode(en_add, ofs, intNode(en_c_i, n - 1));
+            apl->offset = simpleExpressionNode(se_add, ofs, simpleIntNode(se_i, n - 1));
             gen_codes(op_mov, ISZ_UCHAR, apl, aimmed(0));
             n--;
         }
         if (n & 2)
         {
-            apl->offset = exprNode(en_add, ofs, intNode(en_c_i, n - 2));
+            apl->offset = simpleExpressionNode(se_add, ofs, simpleIntNode(se_i, n - 2));
             gen_codes(op_mov, ISZ_USHORT, apl, aimmed(0));
             n -= 2;
         }
         while (n > 0)
         {
             n -= 4;
-            apl->offset = exprNode(en_add, ofs, intNode(en_c_i, n));
+            apl->offset = simpleExpressionNode(se_add, ofs, simpleIntNode(se_i, n));
             gen_codes(op_mov, ISZ_ULONG, apl, aimmed(0));
         }
     }
@@ -4611,10 +4607,10 @@ void asm_clrblock(QUAD* q) /* clear block of memory */
 }
 void asm_cmpblock(QUAD* q)
 {
-    int n = q->ans->offset->v.i;
+    int n = q->ans->offset->i;
     AMODE *apl, *aph, *apal, *apah;
     enum e_opcode op, opa;
-    EXPRESSION *ofs, *ofsa;
+    SimpleExpression *ofs, *ofsa;
 
     getAmodes(q, &op, q->dc.right, &apl, &aph);
     getAmodes(q, &opa, q->dc.left, &apal, &apah);
@@ -4669,12 +4665,12 @@ void asm_cmpblock(QUAD* q)
         if (apl->mode == am_dreg)
         {
             apl->mode = am_indisp;
-            ofs = intNode(en_c_i, 0);
+            ofs = simpleIntNode(se_i, 0);
         }
         if (apal->mode == am_dreg)
         {
             apal->mode = am_indisp;
-            ofsa = intNode(en_c_i, 0);
+            ofsa = simpleIntNode(se_i, 0);
         }
         for (i = 0; i < 4; i++)
         {
@@ -4714,8 +4710,8 @@ void asm_cmpblock(QUAD* q)
         }
         if (n & 1)
         {
-            apl->offset = exprNode(en_add, ofs, intNode(en_c_i, n - 1));
-            apal->offset = exprNode(en_add, ofsa, intNode(en_c_i, n - 1));
+            apl->offset = simpleExpressionNode(se_add, ofs, simpleIntNode(se_i, n - 1));
+            apal->offset = simpleExpressionNode(se_add, ofsa, simpleIntNode(se_i, n - 1));
             gen_codes(op_mov, ISZ_UCHAR, ax, apl);
             gen_codes(op_cmp, ISZ_UCHAR, apal, ax);
             gen_code(op_jne, make_label(labno), NULL);
@@ -4723,8 +4719,8 @@ void asm_cmpblock(QUAD* q)
         }
         if (n & 2)
         {
-            apl->offset = exprNode(en_add, ofs, intNode(en_c_i, n - 2));
-            apal->offset = exprNode(en_add, ofsa, intNode(en_c_i, n - 2));
+            apl->offset = simpleExpressionNode(se_add, ofs, simpleIntNode(se_i, n - 2));
+            apal->offset = simpleExpressionNode(se_add, ofsa, simpleIntNode(se_i, n - 2));
             gen_codes(op_mov, ISZ_USHORT, ax, apl);
             gen_codes(op_cmp, ISZ_USHORT, apal, ax);
             gen_code(op_jne, make_label(labno), NULL);
@@ -4734,8 +4730,8 @@ void asm_cmpblock(QUAD* q)
         while (n > 0)
         {
             n -= 4;
-            apl->offset = exprNode(en_add, ofs, intNode(en_c_i, n));
-            apal->offset = exprNode(en_add, ofsa, intNode(en_c_i, n));
+            apl->offset = simpleExpressionNode(se_add, ofs, simpleIntNode(se_i, n));
+            apal->offset = simpleExpressionNode(se_add, ofsa, simpleIntNode(se_i, n));
             gen_codes(op_mov, ISZ_UINT, ax, apl);
             gen_codes(op_cmp, ISZ_UINT, apal, ax);
             gen_code(op_jne, make_label(labno), NULL);
@@ -4889,7 +4885,7 @@ void asm_prologue(QUAD* q) /* function prologue */
         int cnt = 0;
         int mask = 1, compare;
         compare = (unsigned)(beGetIcon(q->dc.left) & ~(FRAME_FLAG_NEEDS_FRAME));
-        if (theCurrentFunc->anyTry)
+        if (currentFunction->anyTry)
             compare |= 0xc8; // make sure we push everything if this function may have try/catch blocks
         while (mask <= compare)
         {
@@ -4914,7 +4910,7 @@ void asm_epilogue(QUAD* q) /* function epilogue */
         int mask = 0x80, compare;
         int cnt = 7;
         compare = (unsigned)(beGetIcon(q->dc.left) & ~(FRAME_FLAG_NEEDS_FRAME));
-        if (theCurrentFunc->anyTry)
+        if (currentFunction->anyTry)
             compare |= 0xc8; // make sure we push everything if this function may have try/catch blocks
         while (mask)
         {
@@ -5003,15 +4999,15 @@ void asm_tryblock(QUAD* q) /* try/catch */
     if (usingEsp)
     {
         ap1->preg = ESP;
-        ap1->offset = intNode(en_c_i, q->dc.v.label + funcstackheight);  // ESP
+        ap1->offset = simpleIntNode(se_i, q->dc.v.label + funcstackheight);  // ESP
     }
     else
     {
         ap1->preg = EBP;
-        ap1->offset = intNode(en_c_i, q->dc.v.label);  // ESP
+        ap1->offset = simpleIntNode(se_i, q->dc.v.label);  // ESP
     }
 
-    switch ((int)q->dc.left->offset->v.i)
+    switch ((int)q->dc.left->offset->i)
     {
         case 0: /* try */
             gen_codes(op_push, ISZ_UINT, ap1, 0);
@@ -5037,7 +5033,7 @@ void asm_stackalloc(QUAD* q) /* allocate stack space - positive value = allocate
     getAmodes(q, &op, q->dc.left, &apl, &aph);
     if (apl->mode == am_immed)
     {
-        int n = apl->offset->v.i;
+        int n = apl->offset->i;
         if (n)
         {
             if (n < 0)
@@ -5124,7 +5120,7 @@ void asm_functail(QUAD* q, int begin, int size) /* functail start or end */
 void asm_atomic(QUAD* q)
 {
     bool pushed;
-    int needsync = q->dc.opcode != i_xchg ? q->dc.left->offset->v.i : 0;
+    int needsync = q->dc.opcode != i_xchg ? q->dc.left->offset->i : 0;
     if (needsync < 0)
         needsync = 0;
     // direct store has bit 7 set...
@@ -5147,8 +5143,8 @@ void asm_atomic(QUAD* q)
         case i_atomic_flag_fence:
             getAmodes(q, &opl, q->dc.right, &apll, &aplh);
             apll->mode = am_indisp;
-            apll->offset = intNode(en_c_i, 0);
-            if (q->dc.left->offset->v.i > 0)
+            apll->offset = simpleIntNode(se_i, 0);
+            if (q->dc.left->offset->i > 0)
             {
                 lbl1 = beGetLabel;
                 lbl2 = beGetLabel;
@@ -5202,7 +5198,7 @@ void asm_atomic(QUAD* q)
                 gen_codes(op_lea, ISZ_UINT, makedreg(EBP), apll);
                 apll = makedreg(EBP);
                 apll->mode = am_indisp;
-                apll->offset = intNode(en_c_i, 0);
+                apll->offset = simpleIntNode(se_i, 0);
             }
             gen_codes(op_mov, ISZ_UCHAR, apal, aimmed(1));
             gen_code(op_lock, NULL, NULL);
@@ -5245,7 +5241,7 @@ void asm_atomic(QUAD* q)
                     gen_code(op_lea, makedreg(EBP), apll);
                     apll = makedreg(EBP);
                     apll->mode = am_indisp;
-                    apll->offset = intNode(en_c_i, 0);
+                    apll->offset = simpleIntNode(se_i, 0);
                 }
 
                 if (aprl->mode == am_dreg)
@@ -5297,10 +5293,10 @@ void asm_atomic(QUAD* q)
                         pushed = true;
                         aprl = makedreg(EBP);
                         aprl->mode = am_indisp;
-                        aprl->offset = intNode(en_c_i, 0);
+                        aprl->offset = simpleIntNode(se_i, 0);
                         aprh = makedreg(EBP);
                         aprh->mode = am_indisp;
-                        aprh->offset = intNode(en_c_i, 4);
+                        aprh->offset = simpleIntNode(se_i, 4);
                     }
                     llongatomicmath(op_xchg, op_cmpxchg8b, q);
                     int labno = beGetLabel;

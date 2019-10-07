@@ -27,7 +27,8 @@
 #include <string.h>
 #include <limits.h>
 #include "compiler.h"
-
+#include <vector>
+#include <deque>
 #define MAX_INTERNAL_REGS 256
 
 #define REG_MAX (chosenAssembler->arch->registerCount)
@@ -60,11 +61,10 @@ extern BLOCK** blockArray;
 extern int tempCount;
 extern int maxAllocationSpills, maxAllocationPasses, maxAllocationAccesses;
 extern int has_double;
-extern SYMBOL* theCurrentFunc;
 
 int maxAddr = 0;
 LIST* temporarySymbols;
-
+LIST* functionVariables;
 typedef struct _spill_
 {
     struct _spill_* next;
@@ -288,7 +288,7 @@ void regInit(void)
 }
 
 void alloc_init(void) { spillcount = maxAllocationSpills = 0; }
-void cacheTempSymbol(SYMBOL* sym)
+void cacheTempSymbol(SimpleSymbol* sym)
 {
     if (sym->anonymous && sym->storage_class != sc_parameter)
     {
@@ -302,13 +302,13 @@ void cacheTempSymbol(SYMBOL* sym)
         }
     }
 }
-static void ScanForVar(EXPRESSION* exp)
+static void ScanForVar(SimpleExpression* exp)
 {
     if (exp)
     {
         if (exp->type == en_auto)
         {
-            cacheTempSymbol(exp->v.sp);
+            cacheTempSymbol(exp->sp);
         }
         else if (exp->type != en_tempref)
         {
@@ -358,101 +358,81 @@ void AllocateStackSpace(SYMBOL* funcsp)
 {
     int maxlvl = -1;
     /* base assignments are at level 0, function body starts at level 1*/
-    int oldauto, max;
+    int max;
     int i;
-    HASHTABLE* syms = funcsp->inlineFunc.syms;
-    LIST** temps = &temporarySymbols;
-    bool show = false;
     ScanForAnonymousVars();
-    while (syms)
-    {
-        if (syms->blockLevel >= maxlvl)
-            maxlvl = syms->blockLevel + 1;
-        syms = syms->next;
-    }
 
-    while (*temps)
+    LIST *syms = functionVariables;
+    for (LIST *syms = functionVariables; syms; syms = syms->next)
+        if (((SimpleSymbol*)syms->data)->i >= maxlvl)
+            maxlvl = ((SimpleSymbol*)syms->data)->i + 1;
+    for (LIST *syms = temporarySymbols; syms; syms = syms->next)
+        if (((SimpleSymbol*)syms->data)->i >= maxlvl)
+            maxlvl = ((SimpleSymbol*)syms->data)->i + 1;
+    std::vector<std::deque<SimpleSymbol *>> queue;
+    queue.resize(maxlvl);
+    int oldlvl = -1;
+    for (LIST *syms = functionVariables; syms; syms = syms->next)
     {
-        SYMBOL* sym = (SYMBOL*)(*temps)->data;
-        if (sym->storage_class == sc_auto && sym->value.i >= maxlvl)
-            maxlvl = sym->value.i + 1;
-        temps = &(*temps)->next;
+        int lvl = ((SimpleSymbol*)syms->data)->i;
+        queue[lvl].push_back((SimpleSymbol *)syms->data);
+        queue[lvl].back()->i = (lvl > oldlvl);
     }
-    lc_maxauto = max = oldauto = 0;
-
-    for (i = 0; i < maxlvl; i++)
+    for (LIST *syms = temporarySymbols; syms; syms = syms->next)
     {
-        syms = funcsp->inlineFunc.syms;
-        while (syms)
+        int lvl = ((SimpleSymbol*)syms->data)->i;
+        queue[lvl].push_back((SimpleSymbol *)syms->data);
+        queue[lvl].back()->i = 2;
+        queue[((SimpleSymbol*)syms->data)->i].push_back((SimpleSymbol *)syms->data);
+    }
+    bool show = false;
+    lc_maxauto = max = 0;
+
+    for (auto&& dq : queue)
+    { 
+        int oldauto = lc_maxauto;
+        lc_maxauto = max;
+        for (auto&&sym : dq)
         {
-            if (syms->blockLevel == i)
-            {
-                SYMLIST* hr = syms->table[0];
+            if (sym->i & 1) // overlay?
                 lc_maxauto = oldauto;
-                while (hr)
+            bool doit;
+            if (sym->i & 2)
+            {
+                // compiler-created variable
+                doit = sym->storage_class != sc_static && (sym->storage_class == sc_constant || sym->i == i) && !sym->stackblock;
+            }
+            else
+            {
+                // declared variable
+                doit = !sym->regmode && (sym->storage_class == sc_auto || sym->storage_class == sc_register) && sym->allocate &&
+                    !sym->anonymous;
+            }
+            if (doit)
+            {
+                int val;
+                lc_maxauto += sym->tp->size;
+                if (sym->tp->isatomic && needsAtomicLockFromISZ(sym->tp->sizeFromType))
                 {
-
-                    SYMBOL* sym = hr->p;
-                    if (!sym->regmode && (sym->storage_class == sc_auto || sym->storage_class == sc_register) && sym->allocate &&
-                        !sym->anonymous)
-                    {
-                        int val, align = sym->attribs.inheritable.structAlign ? sym->attribs.inheritable.structAlign
-                                                                              : getAlign(sc_auto, basetype(sym->tp));
-                        lc_maxauto += basetype(sym->tp)->size;
-                        if (isatomic(sym->tp) && needsAtomicLockFromType(sym->tp))
-                        {
-                            lc_maxauto += ATOMIC_FLAG_SPACE;
-                        }
-                        val = lc_maxauto % align;
-                        if (val != 0)
-                            lc_maxauto += align - val;
-                        sym->offset = -lc_maxauto;
-                        if (lc_maxauto > max)
-                            max = lc_maxauto;
-                    }
-                    hr = hr->next;
+                    lc_maxauto += ATOMIC_FLAG_SPACE;
                 }
+                val = lc_maxauto % sym->align;
+                if (val != 0)
+                    lc_maxauto += sym->align - val;
+                sym->offset = -lc_maxauto;
+                if (lc_maxauto > max)
+                    max = lc_maxauto;
             }
             oldauto = max;
             syms = syms->next;
         }
-        temps = &temporarySymbols;
-        while (*temps)
+    }
+    for (LIST *syms = temporarySymbols; syms; syms = syms->next)
+    {
+        SimpleSymbol* sym = (SimpleSymbol*)(syms->data);
+        if (sym->stackblock)
         {
-            SYMBOL* sym = (SYMBOL*)(*temps)->data;
-            if (sym->storage_class != sc_static && (sym->storage_class == sc_constant || sym->value.i == i) && !sym->stackblock)
-            {
-                int val, align = sym->attribs.inheritable.structAlign ? sym->attribs.inheritable.structAlign
-                                                                      : getAlign(sc_auto, basetype(sym->tp));
-                lc_maxauto += basetype(sym->tp)->size;
-                val = lc_maxauto % align;
-                if (val != 0)
-                    lc_maxauto += align - val;
-                sym->offset = -lc_maxauto;
-                if (lc_maxauto > max)
-                    max = lc_maxauto;
-                oldauto = max;
-                *temps = (*temps)->next;
-                sym->inAllocTable = false;  // needed because due to inlining a temp may be used across multiple function bodies
-            }
-            else
-            {
-                temps = &(*temps)->next;
-            }
-        }
-        temps = &temporarySymbols;
-        while (*temps)
-        {
-            SYMBOL* sym = (SYMBOL*)(*temps)->data;
-            if (sym->stackblock)
-            {
-                sym->offset -= max;
-                *temps = (*temps)->next;
-            }
-            else
-            {
-                temps = &(*temps)->next;
-            }
+            sym->offset -= max;
         }
     }
 
@@ -493,24 +473,39 @@ void FillInPrologue(QUAD* head, SYMBOL* funcsp)
         head->dc.right = ip1;
     }
 }
-static EXPRESSION* spillVar(enum e_sc storage_class, TYPE* tp)
+static SimpleExpression* spillVar(enum e_sc storage_class, SimpleType* tp)
 {
-    extern int unnamed_id;
-    EXPRESSION* rv = anonymousVar(storage_class, tp);
-    SYMBOL* sym = rv->v.sp;
-    deref(tp, &rv);
+    SimpleExpression* rv = anonymousVar(storage_class, tp);
+    SimpleSymbol* sym = rv->sp;
+    rv->sizeFromType = tp->sizeFromType;
+    sym->sizeFromType = tp->sizeFromType;
     sym->spillVar = true;
     sym->anonymous = false;
     return rv;
 }
+static IMODE* make_ioffset(SimpleExpression* exp)
+{
+    IMODE* ap;
+    SimpleSymbol* sym = varsp(exp);
+    if (sym && sym->imvalue && sym->imvalue->size == exp->sizeFromType)
+        return sym->imvalue;
+    ap = (IMODE*)(IMODE*)Alloc(sizeof(IMODE));
+    ap->offset = exp;
+    ap->mode = i_direct;
+    ap->size = exp->sizeFromType;
+    if (sym && !sym->imvalue)
+        sym->imvalue = ap;
+    return ap;
+}
 static void GetSpillVar(int i)
 {
     SPILL* spill;
-    EXPRESSION* exp;
-    exp = spillVar(sc_auto, tempInfo[i]->enode->v.sp->tp);
+    SimpleExpression* exp;
+    exp = spillVar(sc_auto, tempInfo[i]->enode->sp->tp);
     spill = (SPILL*)tAlloc(sizeof(SPILL));
     tempInfo[i]->spillVar = spill->imode = make_ioffset(exp);
-    spill->imode->size = tempInfo[i]->enode->v.sp->imvalue->size;
+    spill->imode->offset->sp->spillVar = true;
+    spill->imode->size = tempInfo[i]->enode->sp->imvalue->size;
     spill->uses = (LIST*)tAlloc(sizeof(LIST));
     spill->uses->data = (void*)i;
 }
@@ -526,13 +521,13 @@ static void CopyLocalColors(void)
             {
                 if (head->ans->offset)
                 {
-                    head->ansColor = tempInfo[head->ans->offset->v.sp->value.i]->color;
+                    head->ansColor = tempInfo[head->ans->offset->sp->i]->color;
                     if (head->ansColor >= 0)
                         regmask |= chosenAssembler->arch->regNames[head->ansColor].pushMask;
                 }
                 if (head->ans->offset2)
                 {
-                    head->scaleColor = tempInfo[head->ans->offset2->v.sp->value.i]->color;
+                    head->scaleColor = tempInfo[head->ans->offset2->sp->i]->color;
                     if (head->scaleColor >= 0)
                         regmask |= chosenAssembler->arch->regNames[head->scaleColor].pushMask;
                 }
@@ -541,13 +536,13 @@ static void CopyLocalColors(void)
             {
                 if (head->dc.left->offset)
                 {
-                    head->leftColor = tempInfo[head->dc.left->offset->v.sp->value.i]->color;
+                    head->leftColor = tempInfo[head->dc.left->offset->sp->i]->color;
                     if (head->leftColor >= 0)
                         regmask |= chosenAssembler->arch->regNames[head->leftColor].pushMask;
                 }
                 if (head->dc.left->offset2)
                 {
-                    head->scaleColor = tempInfo[head->dc.left->offset2->v.sp->value.i]->color;
+                    head->scaleColor = tempInfo[head->dc.left->offset2->sp->i]->color;
                     if (head->scaleColor >= 0)
                         regmask |= chosenAssembler->arch->regNames[head->scaleColor].pushMask;
                 }
@@ -556,13 +551,13 @@ static void CopyLocalColors(void)
             {
                 if (head->dc.right->offset)
                 {
-                    head->rightColor = tempInfo[head->dc.right->offset->v.sp->value.i]->color;
+                    head->rightColor = tempInfo[head->dc.right->offset->sp->i]->color;
                     if (head->rightColor >= 0)
                         regmask |= chosenAssembler->arch->regNames[head->rightColor].pushMask;
                 }
                 if (head->dc.right->offset2)
                 {
-                    head->scaleColor = tempInfo[head->dc.right->offset2->v.sp->value.i]->color;
+                    head->scaleColor = tempInfo[head->dc.right->offset2->sp->i]->color;
                     if (head->scaleColor >= 0)
                         regmask |= chosenAssembler->arch->regNames[head->scaleColor].pushMask;
                 }
@@ -673,15 +668,15 @@ static void CalculateFunctionFlags(void)
                 {
                     if (tail->ans->mode == i_direct)
                     {
-                        int tnum = tail->ans->offset->v.sp->value.i;
+                        int tnum = tail->ans->offset->sp->i;
                         briggsReset(exposed, tnum);
                     }
                     else if (tail->ans->mode == i_ind)
                     {
                         if (tail->ans->offset)
-                            briggsSet(exposed, tail->ans->offset->v.sp->value.i);
+                            briggsSet(exposed, tail->ans->offset->sp->i);
                         if (tail->ans->offset2)
-                            briggsSet(exposed, tail->ans->offset2->v.sp->value.i);
+                            briggsSet(exposed, tail->ans->offset2->sp->i);
                     }
                 }
                 if (tail->temps & TEMP_LEFT)
@@ -690,18 +685,18 @@ static void CalculateFunctionFlags(void)
                         if (!tail->dc.left->retval)
                         {
                             if (tail->dc.left->offset)
-                                briggsSet(exposed, tail->dc.left->offset->v.sp->value.i);
+                                briggsSet(exposed, tail->dc.left->offset->sp->i);
                             if (tail->dc.left->offset2)
-                                briggsSet(exposed, tail->dc.left->offset2->v.sp->value.i);
+                                briggsSet(exposed, tail->dc.left->offset2->sp->i);
                         }
                     }
                 if (tail->temps & TEMP_RIGHT)
                     if (tail->dc.right->mode == i_ind || tail->dc.right->mode == i_direct)
                     {
                         if (tail->dc.right->offset)
-                            briggsSet(exposed, tail->dc.right->offset->v.sp->value.i);
+                            briggsSet(exposed, tail->dc.right->offset->sp->i);
                         if (tail->dc.right->offset2)
-                            briggsSet(exposed, tail->dc.right->offset2->v.sp->value.i);
+                            briggsSet(exposed, tail->dc.right->offset2->sp->i);
                     }
                 tail = tail->back;
             }
@@ -760,33 +755,33 @@ static void CountInstructions(bool first)
                 {
                     if (head->ans->offset)
                     {
-                        tempInfo[head->ans->offset->v.sp->value.i]->doGlobal = true;
+                        tempInfo[head->ans->offset->sp->i]->doGlobal = true;
                     }
                     if (head->ans->offset2)
                     {
-                        tempInfo[head->ans->offset2->v.sp->value.i]->doGlobal = true;
+                        tempInfo[head->ans->offset2->sp->i]->doGlobal = true;
                     }
                 }
                 if (head->temps & TEMP_LEFT)
                 {
                     if (head->dc.left->offset)
                     {
-                        tempInfo[head->dc.left->offset->v.sp->value.i]->doGlobal = true;
+                        tempInfo[head->dc.left->offset->sp->i]->doGlobal = true;
                     }
                     if (head->dc.left->offset2)
                     {
-                        tempInfo[head->dc.left->offset2->v.sp->value.i]->doGlobal = true;
+                        tempInfo[head->dc.left->offset2->sp->i]->doGlobal = true;
                     }
                 }
                 if (head->temps & TEMP_RIGHT)
                 {
                     if (head->dc.right->offset)
                     {
-                        tempInfo[head->dc.right->offset->v.sp->value.i]->doGlobal = true;
+                        tempInfo[head->dc.right->offset->sp->i]->doGlobal = true;
                     }
                     if (head->dc.right->offset2)
                     {
-                        tempInfo[head->dc.right->offset2->v.sp->value.i]->doGlobal = true;
+                        tempInfo[head->dc.right->offset2->sp->i]->doGlobal = true;
                     }
                 }
                 break;
@@ -894,7 +889,7 @@ static int tiny(QUAD* head, IMODE* compare)
         tail = tail->back;
     }
     if ((tail->temps & TEMP_ANS) && tail->ans->offset)
-        return tail->ans->offset->v.sp->value.i == compare->offset->v.sp->value.i;
+        return tail->ans->offset->sp->i == compare->offset->sp->i;
     else
         return false;
 }
@@ -935,8 +930,8 @@ static void Build(BLOCK* b)
                 if (head->ans->mode == i_direct && head->dc.left->mode == i_direct && !head->ans->bits && !head->dc.left->bits &&
                     !head->dc.left->retval)
                 {
-                    int u = head->ans->offset->v.sp->value.i;
-                    int v = head->dc.left->offset->v.sp->value.i;
+                    int u = head->ans->offset->sp->i;
+                    int v = head->dc.left->offset->sp->i;
                     if (tempInfo[u]->regClass && (tempInfo[u]->regClass == tempInfo[v]->regClass ||
                                                   fsizeFromISZ(tempInfo[u]->size) == fsizeFromISZ(tempInfo[v]->size)))
                     {
@@ -968,39 +963,39 @@ static void Build(BLOCK* b)
         {
             if (head->ans->offset)
             {
-                tempInfo[head->ans->offset->v.sp->value.i]->spillCost += head->block->spillCost;
+                tempInfo[head->ans->offset->sp->i]->spillCost += head->block->spillCost;
             }
             if (head->ans->offset2)
             {
-                tempInfo[head->ans->offset2->v.sp->value.i]->spillCost += head->block->spillCost;
+                tempInfo[head->ans->offset2->sp->i]->spillCost += head->block->spillCost;
             }
         }
         if (head->temps & TEMP_LEFT)
         {
             if (head->dc.left->offset)
             {
-                tempInfo[head->dc.left->offset->v.sp->value.i]->spillCost += head->block->spillCost;
+                tempInfo[head->dc.left->offset->sp->i]->spillCost += head->block->spillCost;
                 if (!tiny(head, head->dc.left))
-                    tempInfo[head->dc.left->offset->v.sp->value.i]->temp = 1;
+                    tempInfo[head->dc.left->offset->sp->i]->temp = 1;
             }
             if (head->dc.left->offset2)
             {
-                tempInfo[head->dc.left->offset2->v.sp->value.i]->spillCost += head->block->spillCost;
-                tempInfo[head->dc.left->offset2->v.sp->value.i]->temp = 1;
+                tempInfo[head->dc.left->offset2->sp->i]->spillCost += head->block->spillCost;
+                tempInfo[head->dc.left->offset2->sp->i]->temp = 1;
             }
         }
         if (head->temps & TEMP_RIGHT)
         {
             if (head->dc.right->offset)
             {
-                tempInfo[head->dc.right->offset->v.sp->value.i]->spillCost += head->block->spillCost;
+                tempInfo[head->dc.right->offset->sp->i]->spillCost += head->block->spillCost;
                 if (!tiny(head, head->dc.right))
-                    tempInfo[head->dc.right->offset->v.sp->value.i]->temp = 1;
+                    tempInfo[head->dc.right->offset->sp->i]->temp = 1;
             }
             if (head->dc.right->offset2)
             {
-                tempInfo[head->dc.right->offset2->v.sp->value.i]->spillCost += head->block->spillCost;
-                tempInfo[head->dc.right->offset2->v.sp->value.i]->temp = 1;
+                tempInfo[head->dc.right->offset2->sp->i]->spillCost += head->block->spillCost;
+                tempInfo[head->dc.right->offset2->sp->i]->temp = 1;
             }
         }
         head = head->fwd;
@@ -1233,8 +1228,8 @@ static int Combine(int u, int v)
                 {
                     if ((z & 1) && instructionList[k])
                     {
-                        int x = instructionList[k]->ans->offset->v.sp->value.i;
-                        int y = instructionList[k]->dc.left->offset->v.sp->value.i;
+                        int x = instructionList[k]->ans->offset->sp->i;
+                        int y = instructionList[k]->dc.left->offset->sp->i;
                         if (!tempInfo[x]->precolored && !tempInfo[y]->precolored)
                         {
                             hiMoves[k] = 0;
@@ -1303,7 +1298,7 @@ static int Combine(int u, int v)
 static bool AllOK(int u, int v)
 {
     int i, t;
-    if (tempInfo[u]->enode->v.sp->imvalue->retval)
+    if (tempInfo[u]->enode->sp->imvalue->retval)
         return false;
     Adjacent(v);
     for (i = 0; i < (tempCount + BITINTBITS - 1) / BITINTBITS; i++)
@@ -1388,8 +1383,8 @@ join:
     if (sel != -1)
     {
         int u, v;
-        u = findPartition(instructionList[sel]->ans->offset->v.sp->value.i);
-        v = findPartition(instructionList[sel]->dc.left->offset->v.sp->value.i);
+        u = findPartition(instructionList[sel]->ans->offset->sp->i);
+        v = findPartition(instructionList[sel]->dc.left->offset->sp->i);
         clearbit(workingMoves, sel);
         clearbit(tempInfo[u]->workingMoves, sel);
         clearbit(tempInfo[v]->workingMoves, sel);
@@ -1455,14 +1450,14 @@ static void FreezeMoves(int u)
                     if (isset(nm, j))
                     {
                         int v;
-                        int n = instructionList[j]->ans->offset->v.sp->value.i;
+                        int n = instructionList[j]->ans->offset->sp->i;
                         if (findPartition(n) == u)
                         {
-                            v = instructionList[j]->dc.left->offset->v.sp->value.i;
+                            v = instructionList[j]->dc.left->offset->sp->i;
                         }
                         else
                         {
-                            v = instructionList[j]->ans->offset->v.sp->value.i;
+                            v = instructionList[j]->ans->offset->sp->i;
                         }
                         if (v != -1)
                         {
@@ -1508,7 +1503,7 @@ static unsigned SpillCost(int i)
         QUAD* q = (QUAD*)use->data;
         if (((QUAD*)def->data)->index == q->index - 1)
             if (!(q->temps & TEMP_ANS) && q->dc.opcode == i_assn && q->ans->offset->type != en_add && q->ans->mode == i_direct &&
-                (q->ans->offset->v.sp->spillVar))
+                (q->ans->offset->sp->spillVar))
                 return UINT_MAX;
     }
     //	if (!use)
@@ -1604,7 +1599,7 @@ static void AssignColors(void)
                     if (regs[cls->regs[i]])
                     {
                         tempInfo[n]->color = cls->regs[i];
-                        tempInfo[n]->enode->v.sp->regmode = 2;
+                        tempInfo[n]->enode->sp->regmode = 2;
                         break;
                     }
                 if (i == cls->regCount)
@@ -1622,8 +1617,8 @@ static IMODE* InsertLoad(QUAD* head, IMODE* mem)
 {
     QUAD* insert;
     IMODE* t = InitTempOpt(mem->size, mem->size);
-    tempInfo[t->offset->v.sp->value.i]->spilled = true;
-    tempInfo[t->offset->v.sp->value.i]->ircinitial = true;
+    tempInfo[t->offset->sp->i]->spilled = true;
+    tempInfo[t->offset->sp->i]->ircinitial = true;
     head = head->back;
     insert = (QUAD*)Alloc(sizeof(QUAD));
     insert->dc.opcode = i_assn;
@@ -1640,11 +1635,11 @@ static void InsertStore(QUAD* head, IMODE** im, IMODE* mem)
 {
     IMODE* t = InitTempOpt(mem->size, mem->size);
     QUAD* insert;
-    int tn = t->offset->v.sp->value.i;
-    int ta = (*im)->offset->v.sp->value.i;
+    int tn = t->offset->sp->i;
+    int ta = (*im)->offset->sp->i;
     tempInfo[tn]->spilled = true;
     tempInfo[tn]->precolored = tempInfo[ta]->precolored;
-    tempInfo[tn]->enode->v.sp->regmode = tempInfo[ta]->enode->v.sp->regmode;
+    tempInfo[tn]->enode->sp->regmode = tempInfo[ta]->enode->sp->regmode;
     tempInfo[tn]->color = tempInfo[ta]->color;
     tempInfo[tn]->ircinitial = true;
     *im = t;
@@ -1674,38 +1669,38 @@ static void RewriteAllSpillNodes(void)
         {
             if (head->ans->mode == i_direct)
             {
-                if (tempInfo[head->ans->offset->v.sp->value.i]->spilling)
+                if (tempInfo[head->ans->offset->sp->i]->spilling)
                 {
-                    InsertStore(head, &head->ans, tempInfo[head->ans->offset->v.sp->value.i]->spillVar);
+                    InsertStore(head, &head->ans, tempInfo[head->ans->offset->sp->i]->spillVar);
                 }
             }
             else
             {
                 if (head->ans->offset && head->ans->offset->type == en_tempref &&
-                    tempInfo[head->ans->offset->v.sp->value.i]->spilling)
-                    spillVars[0] = head->ans->offset->v.sp->value.i;
+                    tempInfo[head->ans->offset->sp->i]->spilling)
+                    spillVars[0] = head->ans->offset->sp->i;
                 if (head->ans->offset2 && head->ans->offset2->type == en_tempref &&
-                    tempInfo[head->ans->offset2->v.sp->value.i]->spilling)
-                    spillVars[1] = head->ans->offset2->v.sp->value.i;
+                    tempInfo[head->ans->offset2->sp->i]->spilling)
+                    spillVars[1] = head->ans->offset2->sp->i;
             }
         }
         if (head->temps & TEMP_LEFT)
         {
             if (head->dc.left->offset && head->dc.left->offset->type == en_tempref &&
-                tempInfo[head->dc.left->offset->v.sp->value.i]->spilling)
-                spillVars[2] = head->dc.left->offset->v.sp->value.i;
+                tempInfo[head->dc.left->offset->sp->i]->spilling)
+                spillVars[2] = head->dc.left->offset->sp->i;
             if (head->dc.left->offset2 && head->dc.left->offset2->type == en_tempref &&
-                tempInfo[head->dc.left->offset2->v.sp->value.i]->spilling)
-                spillVars[3] = head->dc.left->offset2->v.sp->value.i;
+                tempInfo[head->dc.left->offset2->sp->i]->spilling)
+                spillVars[3] = head->dc.left->offset2->sp->i;
         }
         if (head->temps & TEMP_RIGHT)
         {
             if (head->dc.right->offset && head->dc.right->offset->type == en_tempref &&
-                tempInfo[head->dc.right->offset->v.sp->value.i]->spilling)
-                spillVars[4] = head->dc.right->offset->v.sp->value.i;
+                tempInfo[head->dc.right->offset->sp->i]->spilling)
+                spillVars[4] = head->dc.right->offset->sp->i;
             if (head->dc.right->offset2 && head->dc.right->offset2->type == en_tempref &&
-                tempInfo[head->dc.right->offset2->v.sp->value.i]->spilling)
-                spillVars[5] = head->dc.right->offset2->v.sp->value.i;
+                tempInfo[head->dc.right->offset2->sp->i]->spilling)
+                spillVars[5] = head->dc.right->offset2->sp->i;
         }
         // this is all to guard against loading the same var two or more times for the same instruction
         // which is both optimally bad and can also lead to insidious bugs
@@ -1806,8 +1801,8 @@ static void SpillCoalesce(BRIGGS_SET* C, BRIGGS_SET* S)
                             if (head)
                             {
                                 bool test;
-                                int a = head->ans->offset->v.sp->value.i;
-                                int b = head->dc.left->offset->v.sp->value.i;
+                                int a = head->ans->offset->sp->i;
+                                int b = head->dc.left->offset->sp->i;
                                 if (fsizeFromISZ(tempInfo[a]->size) == fsizeFromISZ(tempInfo[b]->size) &&
                                     !tempInfo[a]->directSpill && !tempInfo[b]->directSpill)
                                 {
@@ -1898,7 +1893,7 @@ static void SpillCoalesce(BRIGGS_SET* C, BRIGGS_SET* S)
                     int i;
                     if (nw != spill)
                     {
-                        spill->offset->v.sp->allocate = false;
+                        spill->offset->sp->allocate = false;
                         // make sure all uses of the deallocated spill get renamed
                         for (i = 0; i < tempCount; i++)
                             if (tempInfo[i]->spillVar == spill)
@@ -1947,9 +1942,9 @@ static void InsertCandidates(int W, BRIGGS_SET* L)
                         QUAD* head = instructionList[j];
                         if (head)
                         {
-                            int n = head->ans->offset->v.sp->value.i;
+                            int n = head->ans->offset->sp->i;
                             if (n == W)
-                                n = head->dc.left->offset->v.sp->value.i;
+                                n = head->dc.left->offset->sp->i;
                             if (!tempInfo[n]->spilled && !briggsTest(spillProcessed, n))
                             {
                                 briggsSet(L, n);
@@ -2034,13 +2029,13 @@ static unsigned SpillPropagateSavings(int w, BRIGGS_SET* S)
                     QUAD* head = instructionList[j];
                     if (head)
                     {
-                        int n = head->ans->offset->v.sp->value.i;
+                        int n = head->ans->offset->sp->i;
                         if (n == w)
-                            n = head->dc.left->offset->v.sp->value.i;
+                            n = head->dc.left->offset->sp->i;
                         if (briggsTest(S, n) && !isConflicting(n, w))
                         {
                             int sv;
-                            int cost = lscost(abs(tempInfo[n]->enode->v.sp->imvalue->size));
+                            int cost = lscost(abs(tempInfo[n]->enode->sp->imvalue->size));
                             if (UINT_MAX / cost < head->block->spillCost)
                                 return UINT_MAX;
                             sv = cost * head->block->spillCost;
@@ -2138,7 +2133,7 @@ static IMODE* copyImode(IMODE* in)
     *im = *in;
     if (im->offset)
     {
-        int tnum = im->offset->v.sp->value.i;
+        int tnum = im->offset->sp->i;
         if (tnum < spilledNodes->size && isset(coalescedNodes, tnum))
         {
             im->offset = tempInfo[findPartition(tnum)]->enode;
@@ -2146,7 +2141,7 @@ static IMODE* copyImode(IMODE* in)
     }
     if (im->offset2)
     {
-        int tnum = im->offset2->v.sp->value.i;
+        int tnum = im->offset2->sp->i;
         if (tnum < spilledNodes->size && isset(coalescedNodes, tnum))
         {
             im->offset2 = tempInfo[findPartition(tnum)]->enode;
@@ -2224,7 +2219,7 @@ void Precolor(void)
         tempInfo[i]->color = -1;
         tempInfo[i]->precolored = false;
         if (tempInfo[i]->enode)
-            tempInfo[i]->enode->v.sp->regmode = 0;
+            tempInfo[i]->enode->sp->regmode = 0;
     }
     while (head)
     {
@@ -2257,23 +2252,23 @@ void retemp(void)
             if (head->ans)
             {
                 if (head->ans->offset && head->ans->offset->type == en_tempref)
-                    tempInfo[head->ans->offset->v.sp->value.i]->inUse = true;
+                    tempInfo[head->ans->offset->sp->i]->inUse = true;
                 if (head->ans->offset2 && head->ans->offset2->type == en_tempref)
-                    tempInfo[head->ans->offset2->v.sp->value.i]->inUse = true;
+                    tempInfo[head->ans->offset2->sp->i]->inUse = true;
             }
             if (head->dc.left)
             {
                 if (head->dc.left->offset && head->dc.left->offset->type == en_tempref)
-                    tempInfo[head->dc.left->offset->v.sp->value.i]->inUse = true;
+                    tempInfo[head->dc.left->offset->sp->i]->inUse = true;
                 if (head->dc.left->offset2 && head->dc.left->offset2->type == en_tempref)
-                    tempInfo[head->dc.left->offset2->v.sp->value.i]->inUse = true;
+                    tempInfo[head->dc.left->offset2->sp->i]->inUse = true;
             }
             if (head->dc.right)
             {
                 if (head->dc.right->offset && head->dc.right->offset->type == en_tempref)
-                    tempInfo[head->dc.right->offset->v.sp->value.i]->inUse = true;
+                    tempInfo[head->dc.right->offset->sp->i]->inUse = true;
                 if (head->dc.right->offset2 && head->dc.right->offset2->type == en_tempref)
-                    tempInfo[head->dc.right->offset2->v.sp->value.i]->inUse = true;
+                    tempInfo[head->dc.right->offset2->sp->i]->inUse = true;
             }
         }
         head = head->fwd;
@@ -2283,8 +2278,8 @@ void retemp(void)
         {
             map[i] = cur;
             tempInfo[cur] = tempInfo[i];
-            tempInfo[cur]->enode->v.sp->retemp = true;
-            tempInfo[cur]->enode->v.sp->value.i = cur;
+            tempInfo[cur]->enode->sp->retemp = true;
+            tempInfo[cur]->enode->sp->i = cur;
             cur++;
         }
     for (i = cur; i < tempCount; i++)
@@ -2297,42 +2292,42 @@ void retemp(void)
         {
             if (head->ans)
             {
-                if (head->ans->offset && head->ans->offset->type == en_tempref && !head->ans->offset->v.sp->retemp)
+                if (head->ans->offset && head->ans->offset->type == en_tempref && !head->ans->offset->sp->retemp)
                 {
-                    head->ans->offset->v.sp->retemp = true;
-                    head->ans->offset->v.sp->value.i = map[head->ans->offset->v.sp->value.i];
+                    head->ans->offset->sp->retemp = true;
+                    head->ans->offset->sp->i = map[head->ans->offset->sp->i];
                 }
-                if (head->ans->offset2 && head->ans->offset2->type == en_tempref && !head->ans->offset2->v.sp->retemp)
+                if (head->ans->offset2 && head->ans->offset2->type == en_tempref && !head->ans->offset2->sp->retemp)
                 {
-                    head->ans->offset2->v.sp->retemp = true;
-                    head->ans->offset2->v.sp->value.i = map[head->ans->offset2->v.sp->value.i];
+                    head->ans->offset2->sp->retemp = true;
+                    head->ans->offset2->sp->i = map[head->ans->offset2->sp->i];
                 }
             }
             if (head->dc.left)
             {
-                if (head->dc.left->offset && head->dc.left->offset->type == en_tempref && !head->dc.left->offset->v.sp->retemp)
+                if (head->dc.left->offset && head->dc.left->offset->type == en_tempref && !head->dc.left->offset->sp->retemp)
                 {
-                    head->dc.left->offset->v.sp->retemp = true;
-                    head->dc.left->offset->v.sp->value.i = map[head->dc.left->offset->v.sp->value.i];
+                    head->dc.left->offset->sp->retemp = true;
+                    head->dc.left->offset->sp->i = map[head->dc.left->offset->sp->i];
                 }
-                if (head->dc.left->offset2 && head->dc.left->offset2->type == en_tempref && !head->dc.left->offset2->v.sp->retemp)
+                if (head->dc.left->offset2 && head->dc.left->offset2->type == en_tempref && !head->dc.left->offset2->sp->retemp)
                 {
-                    head->dc.left->offset2->v.sp->retemp = true;
-                    head->dc.left->offset2->v.sp->value.i = map[head->dc.left->offset2->v.sp->value.i];
+                    head->dc.left->offset2->sp->retemp = true;
+                    head->dc.left->offset2->sp->i = map[head->dc.left->offset2->sp->i];
                 }
             }
             if (head->dc.right)
             {
-                if (head->dc.right->offset && head->dc.right->offset->type == en_tempref && !head->dc.right->offset->v.sp->retemp)
+                if (head->dc.right->offset && head->dc.right->offset->type == en_tempref && !head->dc.right->offset->sp->retemp)
                 {
-                    head->dc.right->offset->v.sp->retemp = true;
-                    head->dc.right->offset->v.sp->value.i = map[head->dc.right->offset->v.sp->value.i];
+                    head->dc.right->offset->sp->retemp = true;
+                    head->dc.right->offset->sp->i = map[head->dc.right->offset->sp->i];
                 }
                 if (head->dc.right->offset2 && head->dc.right->offset2->type == en_tempref &&
-                    !head->dc.right->offset2->v.sp->retemp)
+                    !head->dc.right->offset2->sp->retemp)
                 {
-                    head->dc.right->offset2->v.sp->retemp = true;
-                    head->dc.right->offset2->v.sp->value.i = map[head->dc.right->offset2->v.sp->value.i];
+                    head->dc.right->offset2->sp->retemp = true;
+                    head->dc.right->offset2->sp->i = map[head->dc.right->offset2->sp->i];
                 }
             }
         }
@@ -2348,7 +2343,6 @@ void AllocateRegisters(QUAD* head)
     int spills = 0;
     int passes = 0;
     (void)head;
-    //	printf("%s:%d\n", theCurrentFunc->name, tempCount);
     retemp();
     accesses = 0;
     Prealloc(3);
@@ -2366,7 +2360,7 @@ void AllocateRegisters(QUAD* head)
             {
                 tempInfo[i]->color = -1;
                 if (tempInfo[i]->enode)
-                    tempInfo[i]->enode->v.sp->regmode = 0;
+                    tempInfo[i]->enode->sp->regmode = 0;
             }
             tempInfo[i]->workingMoves = nullptr;
             tempInfo[i]->partition = i;
@@ -2427,7 +2421,7 @@ void AllocateRegisters(QUAD* head)
             {
                 tempInfo[i]->color = -1;
                 if (tempInfo[i]->enode)
-                    tempInfo[i]->enode->v.sp->regmode = 0;
+                    tempInfo[i]->enode->sp->regmode = 0;
             }
         }
         AssignColors();
@@ -2453,7 +2447,6 @@ void AllocateRegisters(QUAD* head)
         maxAllocationAccesses = accesses;
     if (passes >= 100)
         diag("register allocator failed");
-    //	printf("%s:%d\n", theCurrentFunc->name, tempCount);
     tFree();
     aFree();
     cFree();

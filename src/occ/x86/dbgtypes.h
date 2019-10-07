@@ -34,24 +34,24 @@ class dbgtypes
 {
   public:
     dbgtypes(ObjFactory& Factory, ObjFile* FI) : factory(Factory), fi(FI) {}
-    ObjType* Put(TYPE* tp);
-    void OutputTypedef(SYMBOL* sym);
+    ObjType* Put(SimpleType* tp);
+    void OutputTypedef(struct SimpleSymbol* sym);
 
   protected:
-    ObjType* Lookup(TYPE* tp);
-    ObjType* BasicType(TYPE* tp);
+    ObjType* Lookup(SimpleType* tp);
+    ObjType* BasicType(SimpleType* tp);
     ObjType* TypeName(ObjType* val, const char* nm);
-    void StructFields(ObjType::eType sel, ObjType* val, int sz, SYMBOL* parent, SYMLIST* hr);
-    void EnumFields(ObjType* val, ObjType* base, int sz, SYMLIST* hr);
-    ObjType* Function(TYPE* tp);
-    ObjType* ExtendedType(TYPE* tp);
+    void StructFields(ObjType::eType sel, ObjType* val, int sz, SimpleSymbol* parent, LIST* hr);
+    void EnumFields(ObjType* val, ObjType* base, int sz, LIST* hr);
+    ObjType* Function(SimpleType* tp);
+    ObjType* ExtendedType(SimpleType* tp);
 
   private:
     struct typecompare
     {
-        bool operator()(const TYPE* left, const TYPE* right) const;
+        bool operator()(const SimpleType* left, const SimpleType* right) const;
     };
-    std::map<TYPE*, ObjType*, typecompare> hash;
+    std::map<SimpleType*, ObjType*, typecompare> hash;
     ObjFactory& factory;
     ObjFile* fi;
 };

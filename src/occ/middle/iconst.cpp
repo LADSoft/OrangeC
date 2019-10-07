@@ -65,7 +65,7 @@ static void ReassignMulDiv(QUAD* d, enum i_ops op, LLONG_TYPE val, int fromleft)
     d->dc.opcode = op;
     d->temps &= ~TEMP_RIGHT;
     if (d->temps & TEMP_ANS)
-        tempInfo[d->ans->offset->v.sp->value.i]->preSSATemp = -1;
+        tempInfo[d->ans->offset->sp->i]->preSSATemp = -1;
 }
 static void ReassignInt(QUAD* d, LLONG_TYPE val)
 {
@@ -79,7 +79,7 @@ static void ReassignInt(QUAD* d, LLONG_TYPE val)
         IMODE* im = (IMODE*)Alloc(sizeof(IMODE));
         *im = *d->dc.left;
         d->dc.left = im;
-        tempInfo[d->ans->offset->v.sp->value.i]->preSSATemp = -1;
+        tempInfo[d->ans->offset->sp->i]->preSSATemp = -1;
         d->dc.left->size = d->ans->size;
     }
 }
@@ -91,7 +91,7 @@ static void ReassignFloat(QUAD* d, FPF val)
     d->dc.opcode = i_assn;
     d->temps &= ~(TEMP_LEFT | TEMP_RIGHT);
     if (d->temps & TEMP_ANS)
-        tempInfo[d->ans->offset->v.sp->value.i]->preSSATemp = -1;
+        tempInfo[d->ans->offset->sp->i]->preSSATemp = -1;
 }
 static void setFloatZero(QUAD* d)
 {
@@ -103,7 +103,7 @@ static void setFloatZero(QUAD* d)
     d->dc.opcode = i_assn;
     d->temps &= ~(TEMP_LEFT | TEMP_RIGHT);
     if (d->temps & TEMP_ANS)
-        tempInfo[d->ans->offset->v.sp->value.i]->preSSATemp = -1;
+        tempInfo[d->ans->offset->sp->i]->preSSATemp = -1;
 }
 static void ReassignCompare(QUAD* d, int yes, bool reflow)
 {
@@ -164,7 +164,7 @@ static void ASNFromRight(QUAD* d)
     d->temps |= (d->temps & TEMP_RIGHT) ? TEMP_LEFT : 0;
     d->temps &= ~TEMP_RIGHT;
 }
-static int xgetmode(QUAD* d, EXPRESSION** left, EXPRESSION** right)
+static int xgetmode(QUAD* d, SimpleExpression** left, SimpleExpression** right)
 {
     int mode = icnone;
     *left = d->dc.left->offset;
@@ -347,7 +347,7 @@ void ConstantFold(QUAD* d, bool reflow)
     int index; /*, shift; */
     int shift;
     FPF temp;
-    EXPRESSION *left = 0, *right = 0;
+    SimpleExpression *left = 0, *right = 0;
     switch (d->dc.opcode)
     {
         case i_setne:
@@ -356,18 +356,18 @@ void ConstantFold(QUAD* d, bool reflow)
             switch (index)
             {
                 case icll:
-                    ReassignCompare(d, left->v.i != right->v.i, reflow);
+                    ReassignCompare(d, left->i != right->i, reflow);
                     break;
                 case iclr:
-                    temp = (LLONG_TYPE)left->v.i;
-                    ReassignCompare(d, (temp != right->v.f), reflow);
+                    temp = (LLONG_TYPE)left->i;
+                    ReassignCompare(d, (temp != right->f), reflow);
                     break;
                 case icrl:
-                    temp = (LLONG_TYPE)right->v.i;
-                    ReassignCompare(d, (left->v.f != temp), reflow);
+                    temp = (LLONG_TYPE)right->i;
+                    ReassignCompare(d, (left->f != temp), reflow);
                     break;
                 case icrr:
-                    ReassignCompare(d, (left->v.f != right->v.f), reflow);
+                    ReassignCompare(d, (left->f != right->f), reflow);
                     break;
                 case ical:
                 case icla:
@@ -384,18 +384,18 @@ void ConstantFold(QUAD* d, bool reflow)
             switch (index)
             {
                 case icll:
-                    ReassignCompare(d, left->v.i == right->v.i, reflow);
+                    ReassignCompare(d, left->i == right->i, reflow);
                     break;
                 case iclr:
-                    temp = (LLONG_TYPE)left->v.i;
-                    ReassignCompare(d, (temp == right->v.f), reflow);
+                    temp = (LLONG_TYPE)left->i;
+                    ReassignCompare(d, (temp == right->f), reflow);
                     break;
                 case icrl:
-                    temp = (LLONG_TYPE)right->v.i;
-                    ReassignCompare(d, (left->v.f == temp), reflow);
+                    temp = (LLONG_TYPE)right->i;
+                    ReassignCompare(d, (left->f == temp), reflow);
                     break;
                 case icrr:
-                    ReassignCompare(d, (left->v.f == right->v.f), reflow);
+                    ReassignCompare(d, (left->f == right->f), reflow);
                     break;
                 case ical:
                 case icla:
@@ -412,34 +412,34 @@ void ConstantFold(QUAD* d, bool reflow)
             switch (index)
             {
                 case icll:
-                    if (right->v.i == 0)
+                    if (right->i == 0)
                         ReassignCompare(d, 0, reflow);
                     else
-                        ReassignCompare(d, (unsigned LLONG_TYPE)left->v.i < (unsigned LLONG_TYPE)right->v.i, reflow);
+                        ReassignCompare(d, (unsigned LLONG_TYPE)left->i < (unsigned LLONG_TYPE)right->i, reflow);
                     break;
                 case iclr:
-                    if (right->v.f.ValueIsZero())
+                    if (right->f.ValueIsZero())
                         ReassignCompare(d, 0, reflow);
                     else
                     {
-                        temp = (ULLONG_TYPE)left->v.i;
-                        ReassignCompare(d, (temp < right->v.f), reflow);
+                        temp = (ULLONG_TYPE)left->i;
+                        ReassignCompare(d, (temp < right->f), reflow);
                     }
                     break;
                 case icrl:
-                    if (right->v.i == 0)
+                    if (right->i == 0)
                         ReassignCompare(d, 0, reflow);
                     else
                     {
-                        temp = (ULLONG_TYPE)right->v.i;
-                        ReassignCompare(d, (left->v.f < temp), reflow);
+                        temp = (ULLONG_TYPE)right->i;
+                        ReassignCompare(d, (left->f < temp), reflow);
                     }
                     break;
                 case icrr:
-                    if (right->v.f.ValueIsZero())
+                    if (right->f.ValueIsZero())
                         ReassignCompare(d, 0, reflow);
                     else
-                        ReassignCompare(d, (left->v.f < right->v.f), reflow);
+                        ReassignCompare(d, (left->f < right->f), reflow);
                     break;
             }
             break;
@@ -449,18 +449,18 @@ void ConstantFold(QUAD* d, bool reflow)
             switch (index)
             {
                 case icll:
-                    ReassignCompare(d, (unsigned LLONG_TYPE)left->v.i <= (unsigned LLONG_TYPE)right->v.i, reflow);
+                    ReassignCompare(d, (unsigned LLONG_TYPE)left->i <= (unsigned LLONG_TYPE)right->i, reflow);
                     break;
                 case iclr:
-                    temp = (ULLONG_TYPE)left->v.i;
-                    ReassignCompare(d, (temp <= right->v.f), reflow);
+                    temp = (ULLONG_TYPE)left->i;
+                    ReassignCompare(d, (temp <= right->f), reflow);
                     break;
                 case icrl:
-                    temp = (ULLONG_TYPE)right->v.i;
-                    ReassignCompare(d, (left->v.f <= temp), reflow);
+                    temp = (ULLONG_TYPE)right->i;
+                    ReassignCompare(d, (left->f <= temp), reflow);
                     break;
                 case icrr:
-                    ReassignCompare(d, (left->v.f <= right->v.f), reflow);
+                    ReassignCompare(d, (left->f <= right->f), reflow);
                     break;
             }
             break;
@@ -470,18 +470,18 @@ void ConstantFold(QUAD* d, bool reflow)
             switch (index)
             {
                 case icll:
-                    ReassignCompare(d, (unsigned LLONG_TYPE)left->v.i > (unsigned LLONG_TYPE)right->v.i, reflow);
+                    ReassignCompare(d, (unsigned LLONG_TYPE)left->i > (unsigned LLONG_TYPE)right->i, reflow);
                     break;
                 case iclr:
-                    temp = (ULLONG_TYPE)left->v.i;
-                    ReassignCompare(d, (temp > right->v.f), reflow);
+                    temp = (ULLONG_TYPE)left->i;
+                    ReassignCompare(d, (temp > right->f), reflow);
                     break;
                 case icrl:
-                    temp = (ULLONG_TYPE)right->v.i;
-                    ReassignCompare(d, (left->v.f > temp), reflow);
+                    temp = (ULLONG_TYPE)right->i;
+                    ReassignCompare(d, (left->f > temp), reflow);
                     break;
                 case icrr:
-                    ReassignCompare(d, (left->v.f > right->v.f), reflow);
+                    ReassignCompare(d, (left->f > right->f), reflow);
                     break;
             }
             break;
@@ -491,18 +491,18 @@ void ConstantFold(QUAD* d, bool reflow)
             switch (index)
             {
                 case icll:
-                    ReassignCompare(d, (unsigned LLONG_TYPE)left->v.i >= (unsigned LLONG_TYPE)right->v.i, reflow);
+                    ReassignCompare(d, (unsigned LLONG_TYPE)left->i >= (unsigned LLONG_TYPE)right->i, reflow);
                     break;
                 case iclr:
-                    temp = (ULLONG_TYPE)left->v.i;
-                    ReassignCompare(d, (temp >= right->v.f), reflow);
+                    temp = (ULLONG_TYPE)left->i;
+                    ReassignCompare(d, (temp >= right->f), reflow);
                     break;
                 case icrl:
-                    temp = (ULLONG_TYPE)right->v.i;
-                    ReassignCompare(d, (left->v.f >= temp), reflow);
+                    temp = (ULLONG_TYPE)right->i;
+                    ReassignCompare(d, (left->f >= temp), reflow);
                     break;
                 case icrr:
-                    ReassignCompare(d, (left->v.f >= right->v.f), reflow);
+                    ReassignCompare(d, (left->f >= right->f), reflow);
                     break;
             }
             break;
@@ -512,18 +512,18 @@ void ConstantFold(QUAD* d, bool reflow)
             switch (index)
             {
                 case icll:
-                    ReassignCompare(d, left->v.i < right->v.i, reflow);
+                    ReassignCompare(d, left->i < right->i, reflow);
                     break;
                 case iclr:
-                    temp = (LLONG_TYPE)left->v.i;
-                    ReassignCompare(d, (temp < right->v.f), reflow);
+                    temp = (LLONG_TYPE)left->i;
+                    ReassignCompare(d, (temp < right->f), reflow);
                     break;
                 case icrl:
-                    temp = (LLONG_TYPE)right->v.i;
-                    ReassignCompare(d, (left->v.f < temp), reflow);
+                    temp = (LLONG_TYPE)right->i;
+                    ReassignCompare(d, (left->f < temp), reflow);
                     break;
                 case icrr:
-                    ReassignCompare(d, (left->v.f < right->v.f), reflow);
+                    ReassignCompare(d, (left->f < right->f), reflow);
                     break;
             }
             break;
@@ -533,18 +533,18 @@ void ConstantFold(QUAD* d, bool reflow)
             switch (index)
             {
                 case icll:
-                    ReassignCompare(d, left->v.i <= right->v.i, reflow);
+                    ReassignCompare(d, left->i <= right->i, reflow);
                     break;
                 case iclr:
-                    temp = (LLONG_TYPE)left->v.i;
-                    ReassignCompare(d, (temp <= right->v.f), reflow);
+                    temp = (LLONG_TYPE)left->i;
+                    ReassignCompare(d, (temp <= right->f), reflow);
                     break;
                 case icrl:
-                    temp = (LLONG_TYPE)right->v.i;
-                    ReassignCompare(d, (left->v.f <= temp), reflow);
+                    temp = (LLONG_TYPE)right->i;
+                    ReassignCompare(d, (left->f <= temp), reflow);
                     break;
                 case icrr:
-                    ReassignCompare(d, (left->v.f <= right->v.f), reflow);
+                    ReassignCompare(d, (left->f <= right->f), reflow);
                     break;
             }
             break;
@@ -554,18 +554,18 @@ void ConstantFold(QUAD* d, bool reflow)
             switch (index)
             {
                 case icll:
-                    ReassignCompare(d, left->v.i > right->v.i, reflow);
+                    ReassignCompare(d, left->i > right->i, reflow);
                     break;
                 case iclr:
-                    temp = (LLONG_TYPE)left->v.i;
-                    ReassignCompare(d, (temp > right->v.f), reflow);
+                    temp = (LLONG_TYPE)left->i;
+                    ReassignCompare(d, (temp > right->f), reflow);
                     break;
                 case icrl:
-                    temp = (LLONG_TYPE)right->v.i;
-                    ReassignCompare(d, (left->v.f > temp), reflow);
+                    temp = (LLONG_TYPE)right->i;
+                    ReassignCompare(d, (left->f > temp), reflow);
                     break;
                 case icrr:
-                    ReassignCompare(d, (left->v.f > right->v.f), reflow);
+                    ReassignCompare(d, (left->f > right->f), reflow);
                     break;
             }
             break;
@@ -575,18 +575,18 @@ void ConstantFold(QUAD* d, bool reflow)
             switch (index)
             {
                 case icll:
-                    ReassignCompare(d, left->v.i >= right->v.i, reflow);
+                    ReassignCompare(d, left->i >= right->i, reflow);
                     break;
                 case iclr:
-                    temp = (LLONG_TYPE)left->v.i;
-                    ReassignCompare(d, (temp >= right->v.f), reflow);
+                    temp = (LLONG_TYPE)left->i;
+                    ReassignCompare(d, (temp >= right->f), reflow);
                     break;
                 case icrl:
-                    temp = (LLONG_TYPE)right->v.i;
-                    ReassignCompare(d, (left->v.f >= temp), reflow);
+                    temp = (LLONG_TYPE)right->i;
+                    ReassignCompare(d, (left->f >= temp), reflow);
                     break;
                 case icrr:
-                    ReassignCompare(d, (left->v.f >= right->v.f), reflow);
+                    ReassignCompare(d, (left->f >= right->f), reflow);
                     break;
             }
             break;
@@ -598,42 +598,42 @@ void ConstantFold(QUAD* d, bool reflow)
             switch (index)
             {
                 case icll:
-                    ReassignInt(d, left->v.i + right->v.i);
+                    ReassignInt(d, left->i + right->i);
                     break;
                 case iclr:
-                    temp = refloat(left);
-                    temp = temp + right->v.f;
+                    temp = dorefloat(left);
+                    temp = temp + right->f;
                     ReassignFloat(d, temp);
                     break;
                 case icrl:
-                    temp = refloat(right);
-                    temp = left->v.f + temp;
+                    temp = dorefloat(right);
+                    temp = left->f + temp;
                     ReassignFloat(d, temp);
                     break;
                 case icrr:
-                    temp = left->v.f + right->v.f;
+                    temp = left->f + right->f;
                     ReassignFloat(d, temp);
                     break;
                 case icln:
-                    if (left->v.i == 0)
+                    if (left->i == 0)
                     {
                         ASNFromRight(d);
                     }
                     break;
                 case icrn:
-                    if (left->v.f.ValueIsZero())
+                    if (left->f.ValueIsZero())
                     {
                         ASNFromRight(d);
                     }
                     break;
                 case icnl:
-                    if (right->v.i == 0)
+                    if (right->i == 0)
                     {
                         ASNFromLeft(d);
                     }
                     break;
                 case icnr:
-                    if (right->v.f.ValueIsZero())
+                    if (right->f.ValueIsZero())
                     {
                         ASNFromLeft(d);
                     }
@@ -651,40 +651,40 @@ void ConstantFold(QUAD* d, bool reflow)
                     }
                     break;
                 case icll:
-                    ReassignInt(d, left->v.i - right->v.i);
+                    ReassignInt(d, left->i - right->i);
                     break;
                 case iclr:
-                    temp = refloat(left);
-                    temp = temp - right->v.f;
+                    temp = dorefloat(left);
+                    temp = temp - right->f;
                     ReassignFloat(d, temp);
                     break;
                 case icrl:
-                    temp = refloat(right);
-                    temp = left->v.f - temp;
+                    temp = dorefloat(right);
+                    temp = left->f - temp;
                     ReassignFloat(d, temp);
                     break;
                 case icrr:
-                    temp = left->v.f - right->v.f;
+                    temp = left->f - right->f;
                     ReassignFloat(d, temp);
                     break;
                 case icln:
-                    if (left->v.i == 0)
+                    if (left->i == 0)
                     {
                         ASNFromLeft(d);
                     }
                     break;
                 case icrn:
-                    if (left->v.f.ValueIsZero())
+                    if (left->f.ValueIsZero())
                     {
                     }
                     break;
                 case icnl:
-                    if (right->v.i == 0)
+                    if (right->i == 0)
                     {
                     }
                     break;
                 case icnr:
-                    if (right->v.f.ValueIsZero())
+                    if (right->f.ValueIsZero())
                     {
                     }
                     break;
@@ -695,56 +695,56 @@ void ConstantFold(QUAD* d, bool reflow)
             switch (index)
             {
                 case icll:
-                    if ((unsigned LLONG_TYPE)right->v.i != 0)
-                        ReassignInt(d, (unsigned LLONG_TYPE)left->v.i / (unsigned LLONG_TYPE)right->v.i);
+                    if ((unsigned LLONG_TYPE)right->i != 0)
+                        ReassignInt(d, (unsigned LLONG_TYPE)left->i / (unsigned LLONG_TYPE)right->i);
                     break;
                 case iclr:
-                    if (!right->v.f.ValueIsZero())
+                    if (!right->f.ValueIsZero())
                     {
-                        temp = refloat(left);
-                        temp = temp / right->v.f;
+                        temp = dorefloat(left);
+                        temp = temp / right->f;
                         ReassignFloat(d, temp);
                     }
                     break;
                 case icrl:
-                    if ((unsigned LLONG_TYPE)right->v.i != 0)
+                    if ((unsigned LLONG_TYPE)right->i != 0)
                     {
-                        temp = refloat(right);
-                        temp = left->v.f / temp;
+                        temp = dorefloat(right);
+                        temp = left->f / temp;
                         ReassignFloat(d, temp);
                     }
                     break;
                 case icrr:
-                    if (!right->v.f.ValueIsZero())
+                    if (!right->f.ValueIsZero())
                     {
-                        temp = left->v.f / right->v.f;
+                        temp = left->f / right->f;
                         ReassignFloat(d, temp);
                     }
                     break;
                 case icln:
-                    if ((unsigned LLONG_TYPE)left->v.i == 0)
+                    if ((unsigned LLONG_TYPE)left->i == 0)
                     {
                         ReassignInt(d, 0);
                     }
                     break;
                 case icrn:
-                    if (left->v.f.ValueIsZero())
+                    if (left->f.ValueIsZero())
                     {
                         setFloatZero(d);
                     }
                     break;
                 case icnl:
-                    if ((unsigned LLONG_TYPE)right->v.i == 1)
+                    if ((unsigned LLONG_TYPE)right->i == 1)
                     {
                         ASNFromLeft(d);
                     }
-                    else if ((shift = pwrof2((unsigned LLONG_TYPE)right->v.i)) != -1)
+                    else if ((shift = pwrof2((unsigned LLONG_TYPE)right->i)) != -1)
                     {
                         ReassignMulDiv(d, i_lsr, shift, false);
                     }
                     break;
                 case icnr:
-                    if (right->v.f.ValueIsOne())
+                    if (right->f.ValueIsOne())
                     {
                         ASNFromLeft(d);
                     }
@@ -758,11 +758,11 @@ void ConstantFold(QUAD* d, bool reflow)
                 case icnone:
                     break;
                 case icll:
-                    if ((unsigned LLONG_TYPE)right->v.i != 0)
-                        ReassignInt(d, (unsigned LLONG_TYPE)left->v.i % (unsigned LLONG_TYPE)right->v.i);
+                    if ((unsigned LLONG_TYPE)right->i != 0)
+                        ReassignInt(d, (unsigned LLONG_TYPE)left->i % (unsigned LLONG_TYPE)right->i);
                     break;
                 case icnl:
-                    if ((shift = calmask((unsigned LLONG_TYPE)right->v.i)) != -1)
+                    if ((shift = calmask((unsigned LLONG_TYPE)right->i)) != -1)
                     {
                         ReassignMulDiv(d, i_and, shift, false);
                     }
@@ -777,56 +777,56 @@ void ConstantFold(QUAD* d, bool reflow)
             switch (index)
             {
                 case icll:
-                    if (right->v.i != 0)
-                        ReassignInt(d, left->v.i / right->v.i);
+                    if (right->i != 0)
+                        ReassignInt(d, left->i / right->i);
                     break;
                 case iclr:
-                    if (!right->v.f.ValueIsZero())
+                    if (!right->f.ValueIsZero())
                     {
-                        temp = refloat(left);
-                        temp = temp / right->v.f;
+                        temp = dorefloat(left);
+                        temp = temp / right->f;
                         ReassignFloat(d, temp);
                     }
                     break;
                 case icrl:
-                    if (right->v.i != 0)
+                    if (right->i != 0)
                     {
-                        temp = refloat(right);
-                        temp = left->v.f / temp;
+                        temp = dorefloat(right);
+                        temp = left->f / temp;
                         ReassignFloat(d, temp);
                     }
                     break;
                 case icrr:
-                    if (!right->v.f.ValueIsZero())
+                    if (!right->f.ValueIsZero())
                     {
-                        temp = left->v.f / right->v.f;
+                        temp = left->f / right->f;
                         ReassignFloat(d, temp);
                     }
                     break;
                 case icln:
-                    if (left->v.i == 0)
+                    if (left->i == 0)
                     {
                         ReassignInt(d, 0);
                     }
                     break;
                 case icrn:
-                    if (left->v.f.ValueIsZero())
+                    if (left->f.ValueIsZero())
                     {
                         setFloatZero(d);
                     }
                     break;
                 case icnl:
-                    if (right->v.i == 1)
+                    if (right->i == 1)
                     {
                         ASNFromLeft(d);
                     }
-                    else if ((shift = pwrof2(right->v.i)) != -1)
+                    else if ((shift = pwrof2(right->i)) != -1)
                     {
                         ReassignMulDiv(d, i_lsr, shift, false);
                     }
                     break;
                 case icnr:
-                    if (right->v.f.ValueIsOne())
+                    if (right->f.ValueIsOne())
                     {
                         ASNFromLeft(d);
                     }
@@ -840,17 +840,17 @@ void ConstantFold(QUAD* d, bool reflow)
                 case icnone:
                     break;
                 case icll:
-                    if (right->v.i != 0)
-                        ReassignInt(d, left->v.i % right->v.i);
+                    if (right->i != 0)
+                        ReassignInt(d, left->i % right->i);
                     break;
                 case icln:
-                    if (left->v.i == 0)
+                    if (left->i == 0)
                     {
                         ReassignInt(d, 0);
                     }
                     break;
                 case icnl:
-                    if ((shift = calmask(right->v.i)) != -1)
+                    if ((shift = calmask(right->i)) != -1)
                     {
                         ReassignMulDiv(d, i_and, shift, false);
                     }
@@ -866,67 +866,67 @@ void ConstantFold(QUAD* d, bool reflow)
             switch (index)
             {
                 case icll:
-                    ReassignInt(d, (unsigned LLONG_TYPE)left->v.i * (unsigned LLONG_TYPE)right->v.i);
+                    ReassignInt(d, (unsigned LLONG_TYPE)left->i * (unsigned LLONG_TYPE)right->i);
                     break;
                 case iclr:
-                    temp = refloat(left);
-                    temp = temp * right->v.f;
+                    temp = dorefloat(left);
+                    temp = temp * right->f;
                     ReassignFloat(d, temp);
                     break;
                 case icrl:
-                    temp = refloat(right);
-                    temp = left->v.f * temp;
+                    temp = dorefloat(right);
+                    temp = left->f * temp;
                     ReassignFloat(d, temp);
                     break;
                 case icrr:
-                    temp = left->v.f * right->v.f;
+                    temp = left->f * right->f;
                     ReassignFloat(d, temp);
                     break;
                 case icln:
-                    if ((unsigned LLONG_TYPE)left->v.i == 0)
+                    if ((unsigned LLONG_TYPE)left->i == 0)
                     {
                         ReassignInt(d, 0);
                     }
-                    else if ((unsigned LLONG_TYPE)left->v.i == 1)
+                    else if ((unsigned LLONG_TYPE)left->i == 1)
                     {
                         ASNFromRight(d);
                     }
-                    else if ((shift = pwrof2((unsigned LLONG_TYPE)left->v.i)) != -1)
+                    else if ((shift = pwrof2((unsigned LLONG_TYPE)left->i)) != -1)
                     {
                         ReassignMulDiv(d, i_lsl, shift, true);
                     }
 
                     break;
                 case icrn:
-                    if (left->v.f.ValueIsZero())
+                    if (left->f.ValueIsZero())
                     {
                         setFloatZero(d);
                     }
-                    else if (left->v.f.ValueIsOne())
+                    else if (left->f.ValueIsOne())
                     {
                         ASNFromRight(d);
                     }
                     break;
                 case icnl:
-                    if ((unsigned LLONG_TYPE)right->v.i == 0)
+                    if ((unsigned LLONG_TYPE)right->i == 0)
                     {
                         ReassignInt(d, 0);
                     }
-                    else if ((unsigned LLONG_TYPE)right->v.i == 1)
+                    else if ((unsigned LLONG_TYPE)right->i == 1)
                     {
                         ASNFromLeft(d);
                     }
-                    else if ((shift = pwrof2((unsigned LLONG_TYPE)right->v.i)) != -1)
+                    else if ((shift = pwrof2((unsigned LLONG_TYPE)right->i)) != -1)
                     {
                         ReassignMulDiv(d, i_lsl, shift, false);
                     }
                     break;
                 case icnr:
-                    if (right->v.f.ValueIsZero())
+                    if (right->f.ValueIsZero())
                     {
                         setFloatZero(d);
                     }
-                    else if (right->v.f.ValueIsOne())
+                    else if (right->f.ValueIsOne())
                     {
                         ASNFromLeft(d);
                     }
@@ -938,67 +938,67 @@ void ConstantFold(QUAD* d, bool reflow)
             switch (index)
             {
                 case icll:
-                    ReassignInt(d, left->v.i * right->v.i);
+                    ReassignInt(d, left->i * right->i);
                     break;
                 case iclr:
-                    temp = refloat(left);
-                    temp = temp * right->v.f;
+                    temp = dorefloat(left);
+                    temp = temp * right->f;
                     ReassignFloat(d, temp);
                     break;
                 case icrl:
-                    temp = refloat(right);
-                    temp = left->v.f * temp;
+                    temp = dorefloat(right);
+                    temp = left->f * temp;
                     ReassignFloat(d, temp);
                     break;
                 case icrr:
-                    temp = left->v.f * right->v.f;
+                    temp = left->f * right->f;
                     ReassignFloat(d, temp);
                     break;
                 case icln:
-                    if (left->v.i == 0)
+                    if (left->i == 0)
                     {
                         ReassignInt(d, 0);
                     }
-                    else if (left->v.i == 1)
+                    else if (left->i == 1)
                     {
                         ASNFromRight(d);
                     }
-                    else if ((shift = pwrof2(left->v.i)) != -1)
+                    else if ((shift = pwrof2(left->i)) != -1)
                     {
                         ReassignMulDiv(d, i_lsl, shift, true);
                     }
 
                     break;
                 case icrn:
-                    if (left->v.f.ValueIsZero())
+                    if (left->f.ValueIsZero())
                     {
                         setFloatZero(d);
                     }
-                    else if (left->v.f.ValueIsOne())
+                    else if (left->f.ValueIsOne())
                     {
                         ASNFromRight(d);
                     }
                     break;
                 case icnl:
-                    if (right->v.i == 0)
+                    if (right->i == 0)
                     {
                         ReassignInt(d, 0);
                     }
-                    else if (right->v.i == 1)
+                    else if (right->i == 1)
                     {
                         ASNFromLeft(d);
                     }
-                    else if ((shift = pwrof2(right->v.i)) != -1)
+                    else if ((shift = pwrof2(right->i)) != -1)
                     {
                         ReassignMulDiv(d, i_lsl, shift, false);
                     }
                     break;
                 case icnr:
-                    if (right->v.f.ValueIsZero())
+                    if (right->f.ValueIsZero())
                     {
                         setFloatZero(d);
                     }
-                    else if (right->v.f.ValueIsOne())
+                    else if (right->f.ValueIsOne())
                     {
                         ASNFromLeft(d);
                     }
@@ -1012,16 +1012,16 @@ void ConstantFold(QUAD* d, bool reflow)
                 case icnone:
                     break;
                 case icll:
-                    ReassignInt(d, (unsigned LLONG_TYPE)left->v.i << (unsigned LLONG_TYPE)right->v.i);
+                    ReassignInt(d, (unsigned LLONG_TYPE)left->i << (unsigned LLONG_TYPE)right->i);
                     break;
                 case icln:
-                    if (left->v.i == 0)
+                    if (left->i == 0)
                     {
                         ReassignInt(d, 0);
                     }
                     break;
                 case icnl:
-                    if (right->v.i == 0)
+                    if (right->i == 0)
                     {
                         ASNFromLeft(d);
                     }
@@ -1038,16 +1038,16 @@ void ConstantFold(QUAD* d, bool reflow)
                 case icnone:
                     break;
                 case icll:
-                    ReassignInt(d, (unsigned LLONG_TYPE)left->v.i >> (unsigned LLONG_TYPE)right->v.i);
+                    ReassignInt(d, (unsigned LLONG_TYPE)left->i >> (unsigned LLONG_TYPE)right->i);
                     break;
                 case icln:
-                    if (left->v.i == 0)
+                    if (left->i == 0)
                     {
                         ReassignInt(d, 0);
                     }
                     break;
                 case icnl:
-                    if (right->v.i == 0)
+                    if (right->i == 0)
                     {
                         ASNFromLeft(d);
                     }
@@ -1065,16 +1065,16 @@ void ConstantFold(QUAD* d, bool reflow)
                 case icnone:
                     break;
                 case icll:
-                    ReassignInt(d, left->v.i << right->v.i);
+                    ReassignInt(d, left->i << right->i);
                     break;
                 case icln:
-                    if (left->v.i == 0)
+                    if (left->i == 0)
                     {
                         ReassignInt(d, 0);
                     }
                     break;
                 case icnl:
-                    if (right->v.i == 0)
+                    if (right->i == 0)
                     {
                         ASNFromLeft(d);
                     }
@@ -1091,16 +1091,16 @@ void ConstantFold(QUAD* d, bool reflow)
                 case icnone:
                     break;
                 case icll:
-                    ReassignInt(d, left->v.i >> right->v.i);
+                    ReassignInt(d, left->i >> right->i);
                     break;
                 case icln:
-                    if (left->v.i == 0)
+                    if (left->i == 0)
                     {
                         ReassignInt(d, 0);
                     }
                     break;
                 case icnl:
-                    if (right->v.i == 0)
+                    if (right->i == 0)
                     {
                         ASNFromLeft(d);
                     }
@@ -1117,16 +1117,16 @@ void ConstantFold(QUAD* d, bool reflow)
                 case icnone:
                     break;
                 case icll:
-                    ReassignInt(d, left->v.i & right->v.i);
+                    ReassignInt(d, left->i & right->i);
                     break;
                 case icln:
-                    if (left->v.i == 0)
+                    if (left->i == 0)
                     {
                         ReassignInt(d, 0);
                     }
                     break;
                 case icnl:
-                    if (right->v.i == 0)
+                    if (right->i == 0)
                     {
                         ReassignInt(d, 0);
                     }
@@ -1143,16 +1143,16 @@ void ConstantFold(QUAD* d, bool reflow)
                 case icnone:
                     break;
                 case icll:
-                    ReassignInt(d, left->v.i | right->v.i);
+                    ReassignInt(d, left->i | right->i);
                     break;
                 case icln:
-                    if (left->v.i == 0)
+                    if (left->i == 0)
                     {
                         ASNFromRight(d);
                     }
                     break;
                 case icnl:
-                    if (right->v.i == 0)
+                    if (right->i == 0)
                     {
                         ASNFromLeft(d);
                     }
@@ -1169,16 +1169,16 @@ void ConstantFold(QUAD* d, bool reflow)
                 case icnone:
                     break;
                 case icll:
-                    ReassignInt(d, left->v.i ^ right->v.i);
+                    ReassignInt(d, left->i ^ right->i);
                     break;
                 case icln:
-                    if (left->v.i == 0)
+                    if (left->i == 0)
                     {
                         ASNFromRight(d);
                     }
                     break;
                 case icnl:
-                    if (right->v.i == 0)
+                    if (right->i == 0)
                     {
                         ASNFromLeft(d);
                     }
@@ -1195,11 +1195,11 @@ void ConstantFold(QUAD* d, bool reflow)
                 case icnone:
                     break;
                 case icln:
-                    ReassignInt(d, -left->v.i);
+                    ReassignInt(d, -left->i);
                     break;
                 case icrn:
-                    left->v.f.Negate();
-                    ReassignFloat(d, left->v.f);
+                    left->f.Negate();
+                    ReassignFloat(d, left->f);
                     break;
             }
             break;
@@ -1211,7 +1211,7 @@ void ConstantFold(QUAD* d, bool reflow)
                 case icnone:
                     break;
                 case icln:
-                    n = ~left->v.i;
+                    n = ~left->i;
                     s = (1ULL << (sizeFromISZ(d->dc.left->size) * 8))- 1;
                     ReassignInt(d, n & s);
                     break;
@@ -1235,7 +1235,7 @@ static bool eval(QUAD* q)
     {
         if (q->ans->mode != i_direct || q->ans->retval)
             return false;
-        tnum = q->ans->offset->v.sp->value.i;
+        tnum = q->ans->offset->sp->i;
     }
     set = tempInfo[tnum]->value.type;
     val = tempInfo[tnum]->value.imode;
@@ -1279,7 +1279,7 @@ static bool eval(QUAD* q)
             }
             else if ((q->temps & TEMP_LEFT) && q->dc.left->mode == i_direct && (!q->ans || q->ans->size == q->dc.left->size))
             {
-                int t = q->dc.left->offset->v.sp->value.i;
+                int t = q->dc.left->offset->sp->i;
                 if (tempInfo[t]->value.type == vo_constant)
                 {
                     set = tempInfo[t]->value.type;
@@ -1314,7 +1314,7 @@ static bool eval(QUAD* q)
                             }
                             else
                             {
-                                if (tempInfo[pb->Tn]->value.imode->offset->v.i != val->offset->v.i)
+                                if (tempInfo[pb->Tn]->value.imode->offset->i != val->offset->i)
                                     set = vo_bottom;
                             }
                             break;
@@ -1336,7 +1336,7 @@ static bool eval(QUAD* q)
             qn = *q;
             if ((qn.temps & TEMP_LEFT) && qn.dc.left->mode == i_direct)
             {
-                int t = q->dc.left->offset->v.sp->value.i;
+                int t = q->dc.left->offset->sp->i;
                 if (tempInfo[t]->value.type == vo_constant)
                 {
                     if (tempInfo[t]->size == tempInfo[tnum]->size)
@@ -1354,7 +1354,7 @@ static bool eval(QUAD* q)
                 set = vo_bottom;
             if ((qn.temps & TEMP_RIGHT) && qn.dc.right->mode == i_direct)
             {
-                int t = q->dc.right->offset->v.sp->value.i;
+                int t = q->dc.right->offset->sp->i;
                 if (tempInfo[t]->value.type == vo_constant)
                 {
                     if (tempInfo[t]->size == tempInfo[tnum]->size)
@@ -1391,7 +1391,7 @@ static bool eval(QUAD* q)
     {
         if (set == tempInfo[tnum]->value.type)
         {
-            if (tempInfo[tnum]->value.imode->offset->v.i != val->offset->v.i)
+            if (tempInfo[tnum]->value.imode->offset->i != val->offset->i)
             {
                 /* evaluated to a different constant */
                 tempInfo[tnum]->value.type = vo_bottom;
@@ -1474,7 +1474,7 @@ static bool evalBranch(QUAD* I, BLOCK* b)
                 qn = *I;
                 if ((qn.temps & TEMP_LEFT) && qn.dc.left->mode == i_direct)
                 {
-                    int t = qn.dc.left->offset->v.sp->value.i;
+                    int t = qn.dc.left->offset->sp->i;
                     if (tempInfo[t]->value.type == vo_constant)
                     {
                         qn.dc.left = tempInfo[t]->value.imode;
@@ -1487,7 +1487,7 @@ static bool evalBranch(QUAD* I, BLOCK* b)
                     break;
                 if ((qn.temps & TEMP_RIGHT) && qn.dc.right->mode == i_direct)
                 {
-                    int t = qn.dc.right->offset->v.sp->value.i;
+                    int t = qn.dc.right->offset->sp->i;
                     if (tempInfo[t]->value.type == vo_constant)
                     {
                         qn.dc.right = tempInfo[t]->value.imode;
@@ -1516,7 +1516,7 @@ static bool evalBranch(QUAD* I, BLOCK* b)
             case i_coswitch:
                 if (I->dc.left->mode == i_direct && (I->temps & TEMP_LEFT))
                 {
-                    int t = I->dc.left->offset->v.sp->value.i;
+                    int t = I->dc.left->offset->sp->i;
                     if (tempInfo[t]->value.type == vo_constant)
                     {
                         BLOCKLIST* ff = b->succ->next;
@@ -1525,7 +1525,7 @@ static bool evalBranch(QUAD* I, BLOCK* b)
                             I = I->fwd;
                         if (I == b->tail)
                             return false;
-                        while (I && ff && I->dc.left->offset->v.i != tempInfo[t]->value.imode->offset->v.i)
+                        while (I && ff && I->dc.left->offset->i != tempInfo[t]->value.imode->offset->i)
                         {
                             I = I->fwd;
                             ff = ff->next;
@@ -1578,7 +1578,7 @@ static bool emulInstruction(QUAD* head, BLOCK* b)
             if (head->dc.opcode == i_phi)
                 tnum = head->dc.v.phi->T0;
             else
-                tnum = head->ans->offset->v.sp->value.i;
+                tnum = head->ans->offset->sp->i;
             uses = tempInfo[tnum]->instructionUses;
             while (uses)
             {
@@ -1650,9 +1650,9 @@ static void iterateMark(int n)
     {
         if ((uses->ins->temps & TEMP_ANS) && uses->ins->ans->mode == i_direct)
         {
-            if (!uses->ins->ans->offset->v.sp->pushedtotemp)
+            if (!uses->ins->ans->offset->sp->pushedtotemp)
             {
-                int t = uses->ins->ans->offset->v.sp->value.i;
+                int t = uses->ins->ans->offset->sp->i;
                 tempInfo[t]->preSSATemp = -1;
                 iterateMark(t);
             }
@@ -1674,7 +1674,7 @@ static void iterateConstants(void)
                 if (uses->ins->dc.opcode != i_assn && (uses->ins->temps & TEMP_LEFT) && uses->ins->dc.left->mode == i_direct &&
                     !uses->ins->fastcall)
                 {
-                    int t = uses->ins->dc.left->offset->v.sp->value.i;
+                    int t = uses->ins->dc.left->offset->sp->i;
                     if (t == i)
                     {
                         uses->ins->dc.left = tempInfo[i]->value.imode;
@@ -1685,7 +1685,7 @@ static void iterateConstants(void)
                 }
                 if ((uses->ins->temps & TEMP_RIGHT) && uses->ins->dc.left->mode == i_direct)
                 {
-                    int t = uses->ins->dc.right->offset->v.sp->value.i;
+                    int t = uses->ins->dc.right->offset->sp->i;
                     if (t == i)
                     {
                         uses->ins->dc.right = tempInfo[i]->value.imode;
@@ -1752,7 +1752,7 @@ static void removeForward(BLOCK* start)
             case i_cmpblock:
                 if ((tail->temps & TEMP_LEFT) && tail->dc.left->mode == i_direct)
                 {
-                    int t = tail->dc.left->offset->v.sp->value.i;
+                    int t = tail->dc.left->offset->sp->i;
                     if (tempInfo[t]->value.type == vo_constant)
                     {
                         tail->dc.left = tempInfo[t]->value.imode;
@@ -1761,7 +1761,7 @@ static void removeForward(BLOCK* start)
                 }
                 if ((tail->temps & TEMP_RIGHT) && tail->dc.right->mode == i_direct)
                 {
-                    int t = tail->dc.right->offset->v.sp->value.i;
+                    int t = tail->dc.right->offset->sp->i;
                     if (tempInfo[t]->value.type == vo_constant)
                     {
                         tail->dc.right = tempInfo[t]->value.imode;
@@ -1779,14 +1779,14 @@ static void removeForward(BLOCK* start)
             case i_coswitch:
                 if (tail->dc.left->mode == i_immed)
                 {
-                    con = tail->dc.left->offset->v.i;
+                    con = tail->dc.left->offset->i;
                 }
                 else if ((tail->temps & TEMP_LEFT) && tail->dc.left->mode == i_direct)
                 {
-                    int t = tail->dc.left->offset->v.sp->value.i;
+                    int t = tail->dc.left->offset->sp->i;
                     if (tempInfo[t]->value.type == vo_constant)
                     {
-                        con = tail->dc.left->offset->v.i;
+                        con = tail->dc.left->offset->i;
                     }
                     else
                         break;
@@ -1801,7 +1801,7 @@ static void removeForward(BLOCK* start)
                         QUAD* find = tail->fwd;
                         while (find && find->dc.opcode == i_swbranch)
                         {
-                            if (find->dc.left->offset->v.i == con)
+                            if (find->dc.left->offset->i == con)
                             {
                                 tail->dc.v.label = find->dc.v.label;
                                 succ = &(*succ)->next;
@@ -1914,14 +1914,14 @@ void ConstantFlow(void)
                 {
                     if (head->dc.left->vol)
                     {
-                        tempInfo[head->ans->offset->v.sp->value.i]->value.type = vo_bottom;
+                        tempInfo[head->ans->offset->sp->i]->value.type = vo_bottom;
                     }
                 }
                 if (head->temps & TEMP_RIGHT)
                 {
                     if (head->dc.right->vol)
                     {
-                        tempInfo[head->ans->offset->v.sp->value.i]->value.type = vo_bottom;
+                        tempInfo[head->ans->offset->sp->i]->value.type = vo_bottom;
                     }
                 }
             }

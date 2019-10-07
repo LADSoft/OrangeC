@@ -121,143 +121,6 @@ extern PreProcessor* preProcessor;
 ARCH_ASM* chosenAssembler;
 ARCH_DEBUG* chosenDebugger;
 
-static int recurseNode(EXPRESSION* node, EXPRESSION** type, EXPRESSION** bits)
-{
-    switch (node->type)
-    {
-        case en_tempref:
-            *type = node;
-            return 0;
-        case en_bits:
-            *bits = node;
-            return recurseNode(node->left, type, bits);
-        case en_absolute:
-        case en_auto:
-        case en_global:
-        case en_pc:
-        case en_threadlocal:
-            *type = node;
-            return 0;
-        case en_add:
-        case en_arrayadd:
-        case en_structadd:
-            return (recurseNode(node->left, type, bits) + recurseNode(node->right, type, bits));
-        default:
-            if (isintconst(node))
-                return node->v.i;
-            if (isfloatconst(node) || isimaginaryconst(node) || iscomplexconst(node))
-            {
-                *type = node;
-                return 0;
-            }
-            diag("recurseNode: unknown node");
-            break;
-    }
-    return 0;
-}
-
-BE_IMODEDATA* beArgType(IMODE* in)
-{
-    BE_IMODEDATA* rv = (BE_IMODEDATA*)Alloc(sizeof(BE_IMODEDATA));
-    EXPRESSION *node = in->offset, *bits = 0;
-    int ofs;
-    rv->size = in->size;
-    rv->u.sym.startBit = BIT_NO_BITS;
-    rv->m = in;
-    switch (in->mode)
-    {
-        case i_none:
-        default:
-            rv->mode = bee_unknown;
-            break;
-        case i_ind:
-            rv->ind = true;
-        case i_immed:
-            if (in->mode == i_immed)
-                rv->immed = true;
-        case i_direct:
-            if (in->retval)
-            {
-                rv->mode = bee_rv;
-                break;
-            }
-            ofs = recurseNode(in->offset, &node, &bits);
-            switch (node->type)
-            {
-                case en_tempref:
-                    rv->mode = bee_temp;
-                    rv->u.sym.sp = node->v.sp;
-                    rv->u.tempRegNum = node->v.sp->offset;
-                    break;
-                case en_auto:
-                case en_absolute:
-                    rv->u.sym.localOffset = node->v.sp->offset;
-                case en_global:
-                case en_pc:
-                    rv->u.sym.symOffset = ofs;
-                    rv->u.sym.sp = node->v.sp;
-                    rv->u.sym.name = node->v.sp->decoratedName;
-                    if (bits)
-                    {
-                        rv->u.sym.startBit = bits->startbit;
-                        rv->u.sym.bits = bits->bits;
-                    }
-                    switch (node->type)
-                    {
-                        case en_auto:
-                            rv->mode = bee_local;
-                            break;
-                        case en_absolute:
-                            rv->mode = bee_abs;
-                            break;
-                        case en_global:
-                            rv->mode = bee_global_data;
-                            break;
-                        case en_pc:
-                            rv->mode = bee_global_pc;
-                            break;
-                        default:
-                            break;
-                    }
-                    break;
-                case en_labcon:
-                    rv->mode = bee_label;
-                    rv->u.labelNum = node->v.i;
-                    break;
-                case en_threadlocal:
-                    rv->mode = bee_threadlocal;
-                    break;
-                default:
-                    if (isintconst(node))
-                    {
-                        rv->mode = bee_icon;
-                        rv->u.i = ofs;
-                        break;
-                    }
-                    if (isfloatconst(node))
-                    {
-                        rv->mode = bee_float;
-                        rv->u.f.r = &node->v.f;
-                        break;
-                    }
-                    if (isimaginaryconst(node))
-                    {
-                        rv->mode = bee_imaginary;
-                        rv->u.f.r = &node->v.f;
-                        break;
-                    }
-                    if (iscomplexconst(node))
-                    {
-                        rv->mode = bee_complex;
-                        rv->u.f.r = &node->v.c.r;
-                        rv->u.f.i = &node->v.c.i;
-                    }
-                    break;
-            }
-            break;
-    }
-    return rv;
-}
 int sizeFromISZ(int isz)
 {
     ARCH_SIZING* p = chosenAssembler->arch->type_sizes;
@@ -317,6 +180,67 @@ int sizeFromISZ(int isz)
             return (p->a_longdouble + p->a_lrcomplexpad) * 2;
         default:
             return 1;
+    }
+}
+int needsAtomicLockFromISZ(int isz)
+{
+    ARCH_SIZING* p = chosenAssembler->arch->type_needsLock;
+    switch (isz)
+    {
+    case ISZ_U16:
+        return 0;
+    case ISZ_U32:
+        return 0;
+    case ISZ_BIT:
+        return 0;
+    case ISZ_UCHAR:
+    case -ISZ_UCHAR:
+        return p->a_char;
+    case ISZ_BOOLEAN:
+        return p->a_bool;
+    case ISZ_USHORT:
+    case -ISZ_USHORT:
+        return p->a_short;
+        /*        case ISZ_:*/
+        /*            return p->a_wchar_t;*/
+    case ISZ_ULONG:
+    case -ISZ_ULONG:
+        return p->a_long;
+    case ISZ_ULONGLONG:
+    case -ISZ_ULONGLONG:
+        return p->a_longlong;
+    case ISZ_UINT:
+    case -ISZ_UINT:
+    case ISZ_UNATIVE:
+    case -ISZ_UNATIVE:
+        return p->a_int;
+        /*        case ISZ_ENUM:*/
+        /*            return p->a_enum;*/
+    case ISZ_ADDR:
+    case ISZ_STRING:
+    case ISZ_OBJECT:
+        return p->a_addr;
+    case ISZ_SEG:
+        return p->a_farseg;
+    case ISZ_FARPTR:
+        return p->a_farptr;
+    case ISZ_FLOAT:
+    case ISZ_IFLOAT:
+        return p->a_float;
+    case ISZ_DOUBLE:
+    case ISZ_IDOUBLE:
+        return p->a_double;
+    case ISZ_LDOUBLE:
+    case ISZ_ILDOUBLE:
+        return p->a_longdouble;
+    case ISZ_CFLOAT:
+        return 1;
+    case ISZ_CDOUBLE:
+       return 1;
+    case ISZ_CLDOUBLE:
+        return 1;
+    default:
+        return 1;
     }
 }
 int needsAtomicLockFromType(TYPE* tp)

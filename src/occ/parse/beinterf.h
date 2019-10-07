@@ -242,7 +242,7 @@ typedef struct _arch_dbg
     int* blocknum;                     /* pointer to variable which holds block number, or zero for no blocking */
     void (*init)(void);                /* per file initialization */
     void (*rundown)(void);             /* per file rundown */
-    void (*outputtypedef)(SYMBOL* sp); /* dump the typedef HASHTABLE */
+    void (*outputtypedef)(struct SimpleSymbol* sp); /* dump the typedef HASHTABLE */
     /* browser funcs */
     void (*init_browsedata)(char* name); /* per file initialization */
     void (*browsedata)(BROWSEINFO* bri); /* put browse info somewhere */
@@ -274,41 +274,41 @@ typedef struct _arch_gen
     void (*adjust_codelab)(void* select, int offset);      /* adjust an assembly language statement for the relative code labels */
     int (*pre_gcse)(QUAD* list);                           /* allow access to the quad list prior to GCSE */
     int (*post_gcse)(QUAD* list);                          /* allow access to the quad list after GCSE */
-    void (*post_function_gen)(SYMBOL* funcsp, QUAD* list); /* called after function body is generated */
+    void (*post_function_gen)(struct SimpleSymbol* funcsp, QUAD* list); /* called after function body is generated */
     void (*finalGen)(void);                                /* end of code generation, lits have been dumped */
     void (*internalConflict)(QUAD* q);                     /* enter a conflict for this instruction if necessary */
     int (*preRegAlloc)(QUAD* ins, BRIGGS_SET* globals, BRIGGS_SET* eobGlobals,
                        int pass);                                /* allow access to the quad list before register allocation */
     void (*preColor)(QUAD* q);                                   /* precolor an instruction */
-    void (*gen_strlab)(SYMBOL* sp);                              /* generate a named label */
+    void (*gen_strlab)(struct SimpleSymbol* sp);                              /* generate a named label */
     void (*gen_label)(int labnum);                               /* generate a numbered label */
     void (*gen_string_label)(int labnum, int type);              /* generate a numbered label */
-    void (*gen_bit)(SYMBOL* sp, LLONG_TYPE val);                 /* reserve space for a bit */
+    void (*gen_bit)(struct SimpleSymbol* sp, LLONG_TYPE val);                 /* reserve space for a bit */
     void (*gen_int)(enum e_gt type, LLONG_TYPE val);             /* initialize one of the integer types */
     void (*gen_float)(enum e_gt type, FPF* val);                 /* initialize a float */
     void (*gen_address)(ULLONG_TYPE val);                        /* initializae a pointer */
     void (*gen_string)(LCHAR* string, int len);                  /* initialize a string */
-    void (*gen_ref)(SYMBOL* sp, int offset);                     /* put a reference to a variable */
-    void (*gen_pcref)(SYMBOL* sp, int offset);                   /* put a reference to something in the code segment */
-    void (*gen_srref)(SYMBOL* sp, int val, int type);            /* put a reference to the startup.rundown */
+    void (*gen_ref)(struct SimpleSymbol* sp, int offset);                     /* put a reference to a variable */
+    void (*gen_pcref)(struct SimpleSymbol* sp, int offset);                   /* put a reference to something in the code segment */
+    void (*gen_srref)(struct SimpleSymbol* sp, int val, int type);            /* put a reference to the startup.rundown */
     void (*gen_labref)(int label);                               /* put a reference to a label */
     void (*gen_labdifref)(int left, int right);                  /* put the difference of two labels */
-    void (*gen_virtual)(SYMBOL* sp, int data);                   /* start a virtual segment */
-    void (*gen_endvirtual)(SYMBOL* sp);                          /* end a virtual segment */
-    void (*gen_vtt)(VTABENTRY* vt, SYMBOL* func);                /* vttthunk entry */
-    void (*gen_vc1)(SYMBOL* func);                               /* vc1thunk entry */
-    void (*gen_importThunk)(SYMBOL* func);                       /* import thunk entry */
+    void (*gen_virtual)(struct SimpleSymbol* sp, int data);                   /* start a virtual segment */
+    void (*gen_endvirtual)(struct SimpleSymbol* sp);                          /* end a virtual segment */
+    void (*gen_vtt)(VTABENTRY* vt, struct SimpleSymbol* func);                /* vttthunk entry */
+    void (*gen_vc1)(struct SimpleSymbol* func);                               /* vc1thunk entry */
+    void (*gen_importThunk)(struct SimpleSymbol* func);                       /* import thunk entry */
     void (*gen_storage)(int size);                               /* generate uninitialized storage */
     void (*align)(int size);                                     /* put an alignment command */
     void (*setalign)(int code, int data, int bss, int constant); /* put alignment sizes */
     void (*enterseg)(enum e_sg segnum);                          /* enter a new segment */
     void (*exitseg)(enum e_sg segnum);                           /* exit current segment */
-    void (*global_define)(SYMBOL* sp);                           /* put a global definition */
-    void (*local_define)(SYMBOL* sp);                            /* put a global definition */
-    void (*local_static_define)(SYMBOL* sp);                     /* put a function local definition */
-    void (*extern_define)(SYMBOL* sp, int code);                 /* put an external definition */
-    void (*import_define)(SYMBOL* sp, char* file);               /* put an import definition */
-    void (*export_define)(SYMBOL* sp);                           /* put an export definition */
+    void (*global_define)(struct SimpleSymbol* sp);                           /* put a global definition */
+    void (*local_define)(struct SimpleSymbol* sp);                            /* put a global definition */
+    void (*local_static_define)(struct SimpleSymbol* sp);                     /* put a function local definition */
+    void (*extern_define)(struct SimpleSymbol* sp, int code);                 /* put an external definition */
+    void (*import_define)(struct SimpleSymbol* sp, const char* file);         /* put an import definition */
+    void (*export_define)(struct SimpleSymbol* sp);                           /* put an export definition */
     void (*output_alias)(char* sym, char* alias);                /* put an alias */
     void (*output_includelib)(const char* name);                       /* put an included library name */
     IMODE* (*handleIntrins)(EXPRESSION* node, int novalue);      /* backend handle intrinsic */
@@ -412,10 +412,8 @@ typedef struct
 typedef struct
 {
     bool allowExtensions;                 /* True if allowing language extensions */
-    bool (*managed)(SYMBOL* sp);          /* return true if the function is a managed function, false otherwise */
-    TYPE* (*find_boxed_type)(TYPE* tp);   /* msil - get a boxed version of type*/
-    TYPE* (*find_unboxed_type)(TYPE* tp); /* msil - get an unboxed version of type*/
-    void (*create_property)(SYMBOL* property, SYMBOL* getter, SYMBOL* setter);  // create a property instance
+    bool (*managed)(struct SimpleSymbol* sp);          /* return true if the function is a managed function, false otherwise */
+    void (*create_property)(struct SimpleSymbol* property, struct SimpleSymbol* getter, struct SimpleSymbol* setter);  // create a property instance
 } ARCH_MSIL;
 typedef struct _arch_asm
 {
@@ -456,8 +454,8 @@ typedef struct _arch_asm
     LEXEME* (*inlineAsm)(LEXEME*, BLOCKDATA*);      /* parse an assembly statement */
     void* (*inlineAsmStmt)(void* stmt);             /* inlined asm stmt */
     void (*intrinsicInit)(void);                    /* initialize intrinsic mechanism, compiler startup */
-    void (*SearchIntrins)(SYMBOL* sp);              /* search for an intrinsic */
-    void (*enter_type)(SYMBOL* sp);                 /* enter a type in the BE */
+    void (*SearchIntrins)(struct SimpleSymbol* sp);              /* search for an intrinsic */
+    void (*enter_type)(struct SimpleSymbol* sp);                 /* enter a type in the BE */
     enum e_lk (*getDefaultLinkage)();               /* get dll linkage corresponding to command line switches */
 } ARCH_ASM;
 
@@ -498,7 +496,7 @@ typedef struct
         struct
         {
             const char* name;
-            SYMBOL* sp;
+            struct SimpleSymbol* sp;
             int localOffset;
             int symOffset;
             int startBit;
@@ -514,12 +512,11 @@ typedef struct
 #define STARTUP_TYPE_TLS_STARTUP 3
 #define STARTUP_TYPE_TLS_RUNDOWN 4
 
-#define beGetIcon(x) ((x)->offset->v.i)
+#define beGetIcon(x) ((x)->offset->i)
 
 #define beGetLabel nextLabel++
 #define beSetProcSymbol(x) set_symbol(x, true)
 #define beSetDataSymbol(x) set_symbol(x, false)
-#define beGetCurrentFunc theCurrentFunc
 #define beLocalAlloc(x) Alloc(x)
 #define beCompilerVersion version
 #define beGetKeywordData identdata
@@ -528,7 +525,6 @@ typedef struct
 
 extern COMPILER_PARAMS cparams;
 extern int nextLabel;
-extern SYMBOL* theCurrentFunc;
 extern char version[];
 extern char* prm_searchpath;
 extern ASMNAME* identdata;
@@ -538,5 +534,5 @@ void bePrintf(char* format, ...);
 void beWrite(char* buf, size_t size);
 void* globalAlloc(int siz);
 BE_IMODEDATA* beArgType(IMODE* in);
-void beDecorateSymName(char* buf, SYMBOL* sp);
+void beDecorateSymName(char* buf, struct SimpleSymbol* sp);
 int beVariableLive(IMODE* m);

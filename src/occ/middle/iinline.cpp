@@ -33,7 +33,6 @@
 #include "assert.h"
 
 extern ARCH_ASM* chosenAssembler;
-extern TYPE stdpointer;
 extern IMODE* returnImode;
 extern int startlab;
 extern int retlab;
@@ -102,16 +101,17 @@ static void inlineBindThis(SYMBOL* funcsp, SYMLIST* hr, EXPRESSION* thisptr)
         {
             if (thisptr)
             {
+                SimpleSymbol* simpleSym;
                 IMODE *src, *ap1, *idest;
                 EXPRESSION* dest;
                 LIST* lst = (LIST*)Alloc(sizeof(LIST));
                 thisptr = inlinesym_count == 0 || inlinesym_thisptr[inlinesym_count - 1] == nullptr || !hasRelativeThis(thisptr)
                               ? thisptr
                               : inlineGetThisPtr(thisptr);
-                sym = makeID(sc_auto, sym->tp, nullptr, AnonymousName());
-                sym->allocate = true;
-                sym->inAllocTable = true;
-                lst->data = sym;
+                simpleSym = SymbolManager::Get(sym = makeID(sc_auto, sym->tp, nullptr, AnonymousName()));
+                simpleSym->allocate = true;
+                simpleSym->inAllocTable = true;
+                lst->data = simpleSym;
                 lst->next = temporarySymbols;
                 temporarySymbols = lst;
                 dest = varNode(en_auto, sym);
@@ -162,11 +162,12 @@ static void inlineBindArgs(SYMBOL* funcsp, SYMLIST* hr, INITLIST* args)
             {
                 IMODE *src, *ap1, *idest;
                 EXPRESSION* dest;
-                SYMBOL* sym2 = makeID(sc_auto, sym->tp, nullptr, AnonymousName());
+                SYMBOL *sym2;
+                SimpleSymbol* simpleSym = SymbolManager::Get(sym2 = makeID(sc_auto, sym->tp, nullptr, AnonymousName()));
                 LIST* lst = (LIST*)Alloc(sizeof(LIST));
-                sym2->allocate = true;
-                sym2->inAllocTable = true;
-                lst->data = sym2;
+                simpleSym->allocate = true;
+                simpleSym->inAllocTable = true;
+                lst->data = simpleSym;
                 lst->next = temporarySymbols;
                 temporarySymbols = lst;
                 dest = varNode(en_auto, sym2);
@@ -221,7 +222,7 @@ static void inlineResetTable(SYMLIST* table)
 {
     while (table)
     {
-        SYMBOL* sym = (SYMBOL*)table->p;
+        SimpleSymbol* sym = SymbolManager::Get((SYMBOL*)table->p);
         sym->imvalue = nullptr;
         sym->imind = nullptr;
         sym->imaddress = nullptr;
@@ -260,13 +261,14 @@ static void inlineCopySyms(HASHTABLE* src)
             SYMBOL* sym = hr->p;
             if (!sym->thisPtr && !sym->anonymous && sym->storage_class != sc_parameter)
             {
-                if (!sym->inAllocTable)
+                SimpleSymbol *simpleSym = SymbolManager::Get(sym);
+                if (!simpleSym->inAllocTable)
                 {
                     LIST* lst = (LIST*)Alloc(sizeof(LIST));
-                    lst->data = sym;
+                    lst->data = simpleSym;
                     lst->next = temporarySymbols;
                     temporarySymbols = lst;
-                    sym->inAllocTable = true;
+                    simpleSym->inAllocTable = true;
                 }
             }
             hr = hr->next;

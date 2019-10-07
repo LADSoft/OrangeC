@@ -567,6 +567,7 @@ typedef struct sym
     const char* decoratedName;                /* symbol name with decorations, as used in output format */
     const char* errname;                      /* name to be used in errors */
     const char *declfile, *origdeclfile;      /* file symbol was declared in */
+    unsigned key;                             /* unique key for backend matching */
     int declline, origdeclline, realdeclline; /* line number symbol was declared at */
     short declcharpos;                        /* character position symbol was declared at */
     short declfilenum;                        /* the file number */
@@ -581,10 +582,6 @@ typedef struct sym
     enum e_sc storage_class; /* storage class */
     enum e_ac access;        /* c++ access rights for members */
     int operatorId;          /* operator id, CI + kw for an operator function */
-    struct _imode_* imaddress;
-    struct _imode_* imvalue;
-    struct _im_list* imind;
-    struct _imode_* imstore;
     enum e_cm lambdaMode;
     INLINEFUNC inlineFunc;
     int overlayIndex; /* differentiating index when function differs only in return type from similar functions */
@@ -600,10 +597,8 @@ typedef struct sym
     unsigned intagtable : 1;            /* it is in a tag table */
     unsigned dontlist : 1;              /* it is a system include, don't put in list file */
     unsigned allocate : 1;              /* variable is used, allocate space for it */
-    unsigned inAllocTable : 1;          /* auto temp var is in the allocation table already */
     unsigned indecltable : 1;           /* global already in dump table */
     unsigned spaceallocated : 1;        /* space has been allocated */
-    unsigned regmode : 2;               /* 0 = pure var, 1 = addr in reg, 2 = value in reg*/
     unsigned loadds : 1;                /* to load data seg (limited) */
     unsigned farproc : 1;               /* this procedure should be terminated with retf */
     unsigned calleenearret : 1;         /* true if callee provided a place for the return
@@ -613,9 +608,7 @@ typedef struct sym
     unsigned recalculateParameters : 1; /* inline func needs its parameters
          recalculated */
     unsigned nullsym : 1;               /* if was a callblock return which isn't used */
-    unsigned pushedtotemp : 1;          /* if a local variable has been transformed to a temp */
     unsigned anonymous : 1;             /* if it is a generated variable */
-    unsigned usedasbit : 1;             /* used in a bit field op */
     unsigned inasm : 1;                 /* a way to force the local optimizer to leave autos on the stack */
     unsigned assigned : 1;              /* value has been assigned */
     unsigned altered : 1;
@@ -624,11 +617,6 @@ typedef struct sym
     unsigned gentemplate : 1; /* template instantiation or reference generated */
     unsigned allocaUsed : 1;
     unsigned oldstyle : 1;         /* pointer to a names list if an old style function arg */
-    unsigned spillVar : 1;         /* backend allocator spill variable */
-    unsigned noGlobal : 1;         /* no global opts on this temp var */
-    unsigned storeTemp : 1;        /* is a storetemp */
-    unsigned loadTemp : 1;         /* is a loadtemp */
-    unsigned visited : 1;          /* temproary which means it is visited */
     unsigned constexpression : 1;  /* declared with constexpression */
     unsigned addressTaken : 1;     /* address taken */
     unsigned wasUsing : 1;         /* came to this symbol table as a result of 'using' */
@@ -660,7 +648,6 @@ typedef struct sym
     unsigned canThrow : 1;         // function throws directly
     unsigned hasDest : 1;          // class has a destructor that is called
     unsigned pureDest : 1;         // destructor is pure
-    unsigned inCatch : 1;          // used inside a catch block
     unsigned isConstructor : 1;    // is a constructor
     unsigned isDestructor : 1;     // is  adestructor
     unsigned xtEntry : 1;          // is an exception table label
@@ -678,19 +665,17 @@ typedef struct sym
     unsigned dumpInlineToFile : 1;               /* inline function needs to be placed in the output file */
     unsigned promotedToInline : 1;               /* function wasn't declare inline but was promoted to it */
     unsigned temp : 1;                           // temporary boolean...
-    unsigned noCoalesceImmed : 1;                // set to true if temp or memory address which references an immediate is used
-                                                 // other than as the immediate reference
     unsigned pushedTemplateSpecializationDefinition : 1;  // set to true if the current body for the template
                                                           // specialization was pushed from the generalized version of the template
     unsigned destructed : 1;                              // the c++ class instance has had a destructor generated
     unsigned initializer_list : 1;                        // constructor with initializer_list parameter
     unsigned va_typeof : 1;                               // MSIL: a va_typeof symbol
-    unsigned retemp : 1;                                  // retemp has already been performed on this SP
     unsigned has_property_setter : 1;                     // a property has a setter
     unsigned nonConstVariableUsed : 1;                    // a non-const variable was used or assigned to in this function's body
     unsigned importThunk : 1;                             // an import thunk
     unsigned postExpansion : 1;  // true if this templateselector is post expanded, e.g. replicate the template selector with each
                                  // packed arg
+    unsigned visited : 1;        // symbol has been visited in a traversal
     int __func__label;           /* label number for the __func__ keyword */
     int ipointerindx;            /* pointer index for pointer opts */
     int labelCount;              /* number of code labels within a function body */

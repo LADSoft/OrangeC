@@ -81,6 +81,7 @@ LIST* openStructs;
 
 static int unnamed_tag_id, unnamed_id;
 static char* importFile;
+static unsigned symbolKey;
 #define CT_NONE 0
 #define CT_CONS 1
 #define CT_DEST 2
@@ -106,6 +107,7 @@ void declare_init(void)
     inDefaultParam = 0;
     openStructs = nullptr;
     argument_nesting = 0;
+    symbolKey = 0;
 }
 
 void InsertGlobal(SYMBOL* sp)
@@ -149,9 +151,14 @@ const char* AnonymousTypeName(void)
                preProcessor->GetAnonymousIndex());
     return litlate(buf);
 }
+unsigned NextSymbolKey() 
+{
+    return symbolKey++;
+}
 SYMBOL* makeID(enum e_sc storage_class, TYPE* tp, SYMBOL* spi, const char* name)
 {
     SYMBOL* sp = (SYMBOL*)Alloc(sizeof(SYMBOL));
+    sp->key = NextSymbolKey();
     LEXEME* lex = context->cur ? context->cur->prev : context->last;
     if (name && strstr(name, "++"))
         sp->compilerDeclared = true;
@@ -1228,6 +1235,7 @@ static LEXEME* declstruct(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, bool inTemplat
     {
         addedNew = true;
         sp = (SYMBOL*)Alloc(sizeof(SYMBOL));
+        sp->key = NextSymbolKey();
         if (!strcmp(newName, tagname))
             sp->name = tagname;
         else
@@ -1634,6 +1642,7 @@ static LEXEME* declenum(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, enum e_sc storag
     if (!sp)
     {
         sp = (SYMBOL*)Alloc(sizeof(SYMBOL));
+        sp->key = NextSymbolKey();
         if (!strcmp(newName, tagname))
             sp->name = tagname;
         else
@@ -2996,11 +3005,11 @@ founddecltype:
         }
     }
 exit:
-    if (chosenAssembler->msil && chosenAssembler->msil->allowExtensions && tn && chosenAssembler->msil->find_unboxed_type)
+    if (chosenAssembler->msil && chosenAssembler->msil->allowExtensions && tn)
     {
         // select an unboxed variable type for use in compiler
         // will be converted back to boxed as needed
-        TYPE* tnn = chosenAssembler->msil->find_unboxed_type(tn);
+        TYPE* tnn = find_unboxed_type(tn);
         if (tnn)
         {
             tn = tnn;

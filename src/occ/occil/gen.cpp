@@ -33,12 +33,12 @@
 using namespace DotNetPELib;
 
 extern int nextLabel;
-extern SYMBOL* theCurrentFunc;
+extern SimpleSymbol* currentFunction;
 extern PELib* peLib;
 extern int startlab, retlab;
 extern int MSILLocalOffset;
 extern TYPE stdint;
-extern EXPRESSION* objectArray_exp;
+extern SimpleExpression* objectArray_exp;
 extern MethodSignature* argsCtor;
 extern MethodSignature* argsNextArg;
 extern MethodSignature* argsUnmanaged;
@@ -52,7 +52,7 @@ extern Method* currentMethod;
 extern std::vector<Local*> localList;
 extern DataContainer* mainContainer;
 extern TYPE stdint;
-
+extern LIST* functionVariables;
 #define MAX_ALIGNS 50
 MethodSignature* FindPInvokeWithVarargs(std::string name, std::list<Param*>::iterator begin, std::list<Param*>::iterator end,
                                         size_t size);
@@ -85,18 +85,18 @@ static void box(IMODE* im);
 
 MethodSignature* LookupArrayMethod(Type* cls, std::string name);
 
-Type* GetType(TYPE* tp, bool commit, bool funcarg = false, bool pinvoke = false);
+Type* GetType(SimpleType* tp, bool commit, bool funcarg = false, bool pinvoke = false);
 Type* GetStringType(int type);
-Value* GetLocalData(SYMBOL* sp);
+Value* GetLocalData(SimpleSymbol* sp);
 Value* GetParamData(std::string name);
-Value* GetFieldData(SYMBOL* sp);
-MethodSignature* GetMethodSignature(TYPE* tp, bool);
-MethodSignature* GetMethodSignature(SYMBOL* sp);
-void LoadLocals(SYMBOL* sp);
-void LoadParams(SYMBOL* sp);
-bool qualifiedStruct(SYMBOL* sp);
+Value* GetFieldData(SimpleSymbol* sp);
+MethodSignature* GetMethodSignature(SimpleType* tp, bool);
+MethodSignature* GetMethodSignature(SimpleSymbol* sp);
+void LoadLocals(LIST *vars);
+void LoadParams(SimpleSymbol* funcsp, LIST *vars);
+bool qualifiedStruct(SimpleSymbol* sp);
 Value* GetStringFieldData(int i, int type);
-Value* GetStructField(SYMBOL* sp);
+Value* GetStructField(SimpleSymbol* sp);
 
 void include_start(char* name, int num) {}
 
@@ -107,6 +107,21 @@ Instruction* gen_code(Instruction::iop op, Operand* operand)
     Instruction* i = peLib->AllocateInstruction(op, operand);
     currentMethod->AddInstruction(i);
     return i;
+}
+SimpleExpression *simpleExpressionNode(enum se_type type, SimpleExpression*left, SimpleExpression* right)
+{
+    SimpleExpression *rv = (SimpleExpression*)Alloc(sizeof(SimpleExpression));
+    rv->type = type;
+    rv->left = left;
+    rv->right = right;
+    return rv;
+}
+SimpleExpression *simpleIntNode(enum se_type type, ULLONG_TYPE i)
+{
+    SimpleExpression *rv = (SimpleExpression*)Alloc(sizeof(SimpleExpression));
+    rv->type = type;
+    rv->i = i;
+    return rv;
 }
 void oa_gen_label(int labno)
 /*
@@ -119,29 +134,29 @@ void oa_gen_label(int labno)
     currentMethod->AddInstruction(i);
 }
 
-Operand* make_constant(int sz, EXPRESSION* exp)
+Operand* make_constant(int sz, SimpleExpression* exp)
 {
     Operand* operand = NULL;
     if (isintconst(exp))
     {
-        operand = peLib->AllocateOperand((longlong)exp->v.i, Operand::any);
+        operand = peLib->AllocateOperand((longlong)exp->i, Operand::any);
     }
     else if (isfloatconst(exp))
     {
         double a;
-        exp->v.f.ToDouble((unsigned char*)&a);
+        exp->f.ToDouble((unsigned char*)&a);
         operand = peLib->AllocateOperand(a, Operand::any);
     }
     else if (exp->type == en_structelem)
     {
-        if (exp->v.sp->attribs.inheritable.linkage2 == lk_property)
+        if (exp->sp->isproperty)
         {
-            operand = peLib->AllocateOperand(GetFieldData(exp->v.sp));
+            operand = peLib->AllocateOperand(GetFieldData(exp->sp));
             operand->Property(true);
         }
         else
         {
-            Value* field = GetStructField(exp->v.sp);
+            Value* field = GetStructField(exp->sp);
             operand = peLib->AllocateOperand(field);
         }
     }
@@ -166,28 +181,28 @@ Operand* make_constant(int sz, EXPRESSION* exp)
     else if (exp->type == en_labcon)
     {
         char lbl[256];
-        sprintf(lbl, "L_%d_%x", (int)exp->v.i, uniqueId);
-        Value* field = GetStringFieldData(exp->v.i, ((EXPRESSION*)exp->altdata)->v.i);
+        sprintf(lbl, "L_%d_%x", (int)exp->i, uniqueId);
+        Value* field = GetStringFieldData(exp->i, exp->altData->i);
         operand = peLib->AllocateOperand(field);
     }
     else if (exp->type == en_auto)
     {
-        operand = peLib->AllocateOperand(GetLocalData(exp->v.sp));
+        operand = peLib->AllocateOperand(GetLocalData(exp->sp));
     }
-    else if (isfunction(exp->v.sp->tp))
+    else if (exp->sp->tp->type == st_func)
     {
-        operand = peLib->AllocateOperand(peLib->AllocateMethodName(GetMethodSignature(exp->v.sp)));
+        operand = peLib->AllocateOperand(peLib->AllocateMethodName(GetMethodSignature(exp->sp)));
     }
     else
     {
-        operand = peLib->AllocateOperand(GetFieldData(exp->v.sp));
-        if (exp->v.sp->attribs.inheritable.linkage2 == lk_property)
+        operand = peLib->AllocateOperand(GetFieldData(exp->sp));
+        if (exp->sp->isproperty)
             operand->Property(true);
     }
     return operand;
 }
 /*-------------------------------------------------------------------------*/
-bool isauto(EXPRESSION* ep)
+bool isauto(SimpleExpression* ep)
 {
     if (ep->type == en_auto)
         return true;
@@ -197,22 +212,22 @@ bool isauto(EXPRESSION* ep)
         return isauto(ep->left);
     return false;
 }
-void oa_gen_vtt(VTABENTRY* vt, SYMBOL* func) {}
-void oa_gen_vc1(SYMBOL* func) {}
-void oa_gen_importThunk(SYMBOL* func) {}
+void oa_gen_vtt(VTABENTRY* vt, SimpleSymbol* func) {}
+void oa_gen_vc1(SimpleSymbol* func) {}
+void oa_gen_importThunk(SimpleSymbol* func) {}
 Operand* getCallOperand(QUAD* q, bool& virt)
 {
-    EXPRESSION* en = GetSymRef(q->dc.left->offset);
+    SimpleExpression* en = GetSymRef(q->dc.left->offset);
 
     Operand* operand;
     MethodSignature* sig;
     if (q->dc.left->mode == i_immed)
     {
-        SYMBOL* sp = en->v.sp;
+        SimpleSymbol* sp = en->sp;
         if (!msil_managed(sp))
         {
             sig = GetMethodSignature(sp);
-            INITLIST* valist = ((FUNCTIONCALL*)q->altdata)->arguments;
+            ArgList* valist = q->altargs;
             int n = sig->ParamCount();
             while (n-- && valist)
                 valist = valist->next;
@@ -243,7 +258,7 @@ Operand* getCallOperand(QUAD* q, bool& virt)
     }
     else
     {
-        SYMBOL* sp = ((FUNCTIONCALL*)q->altdata)->sp;
+        SimpleSymbol* sp = q->altsp;
         sig = GetMethodSignature(sp->tp, false);
         sig->SetName("");  // for calli instruction
     }
@@ -258,7 +273,7 @@ Operand* getOperand(IMODE* oper)
         case i_immed:
             if (oper && oper->mode == i_immed && oper->offset->type == en_msil_array_access)
             {
-                Type* tp = GetType(oper->offset->v.msilArray->tp, true);
+                Type* tp = GetType(oper->offset->msilArrayTP, true);
                 if (tp->ArrayLevel() == 1)
                 {
                     Operand* operand = NULL;
@@ -271,7 +286,7 @@ Operand* getOperand(IMODE* oper)
                     if (instructions[tp->GetBasicType()] == Instruction::i_ldelem)
                     {
                         operand = peLib->AllocateOperand(
-                            peLib->AllocateValue("", GetType(basetype(oper->offset->v.msilArray->tp)->btp, true)));
+                            peLib->AllocateValue("", GetType(oper->offset->msilArrayTP->btp, true)));
                     }
                     gen_code(instructions[tp->GetBasicType()], operand);
                     decrement_stack();
@@ -295,28 +310,28 @@ Operand* getOperand(IMODE* oper)
         {
             if (oper->offset->type == en_structelem)
             {
-                if (oper->offset->v.sp->attribs.inheritable.linkage2 == lk_property)
+                if (oper->offset->sp->isproperty)
                 {
-                    rv = peLib->AllocateOperand(GetFieldData(oper->offset->v.sp));
+                    rv = peLib->AllocateOperand(GetFieldData(oper->offset->sp));
                     rv->Property(true);
                 }
                 else
                 {
-                    Value* field = GetStructField(oper->offset->v.sp);
+                    Value* field = GetStructField(oper->offset->sp);
                     rv = peLib->AllocateOperand(field);
                 }
             }
             else
             {
-                EXPRESSION* en = GetSymRef(oper->offset);
-                SYMBOL* sp = NULL;
+                SimpleExpression* en = GetSymRef(oper->offset);
+                SimpleSymbol* sp = NULL;
                 if (en)
                 {
-                    sp = en->v.sp;
+                    sp = en->sp;
                 }
                 else if (oper->offset->type == en_tempref)
                 {
-                    sp = (SYMBOL*)oper->offset->right;
+                    sp = (SimpleSymbol*)oper->offset->right;
                 }
                 if (sp)
                 {
@@ -327,7 +342,7 @@ Operand* getOperand(IMODE* oper)
                     else
                     {
                         rv = peLib->AllocateOperand(GetFieldData(sp));
-                        if (sp->attribs.inheritable.linkage2 == lk_property)
+                        if (sp->isproperty)
                             rv->Property(true);
                     }
                 }
@@ -427,7 +442,7 @@ void load_ind(IMODE* im)
             break;
         case ISZ_OBJECT:
             op = Instruction::i_ldobj;
-            operand = peLib->AllocateOperand(peLib->AllocateValue("", GetType(im->offset->v.sp->tp, true, 0, 0)));
+            operand = peLib->AllocateOperand(peLib->AllocateValue("", GetType(im->offset->sp->tp, true, 0, 0)));
             break;
         case ISZ_STRING:
             op = Instruction::i_ldobj;
@@ -493,7 +508,7 @@ void store_ind(IMODE* im)
             break;
         case ISZ_OBJECT:
             op = Instruction::i_stobj;
-            operand = peLib->AllocateOperand(peLib->AllocateValue("", GetType(im->offset->v.sp->tp, true, 0, 0)));
+            operand = peLib->AllocateOperand(peLib->AllocateValue("", GetType(im->offset->sp->tp, true, 0, 0)));
             break;
     }
     gen_code(op, operand);
@@ -549,7 +564,7 @@ void load_arithmetic_constant(int sz, Operand* operand)
     gen_code(op, operand);
     increment_stack();
 }
-void load_constant(int sz, EXPRESSION* exp)
+void load_constant(int sz, SimpleExpression* exp)
 {
     int sz1;
     Instruction::iop op;
@@ -614,17 +629,17 @@ void gen_load(IMODE* im, Operand* dest, bool retval)
     {
         if (im->fieldname)
         {
-            EXPRESSION* offset = (EXPRESSION*)im->vararg;
-            if (qualifiedStruct(offset->v.sp->parentClass))
+            SimpleExpression* offset = (SimpleExpression*)im->vararg;
+            if (qualifiedStruct(offset->sp->parentClass))
             {
-                if (offset->v.sp->attribs.inheritable.linkage2 == lk_property)
+                if (offset->sp->isproperty)
                 {
-                    Property* p = static_cast<Property*>(offset->v.sp->msil);
+                    Property* p = static_cast<Property*>(offset->sp->msil);
                     p->CallGet(*peLib, currentMethod);
                 }
                 else
                 {
-                    Value* field = GetStructField(offset->v.sp);
+                    Value* field = GetStructField(offset->sp);
                     Operand* operand = peLib->AllocateOperand(field);
                     gen_code(Instruction::i_ldfld, operand);
                 }
@@ -719,19 +734,19 @@ void gen_store(IMODE* im, Operand* dest)
     {
         if (im->fieldname)
         {
-            EXPRESSION* offset = (EXPRESSION*)im->vararg;
-            if (qualifiedStruct(offset->v.sp->parentClass))
+            SimpleExpression* offset = (SimpleExpression*)im->vararg;
+            if (qualifiedStruct(offset->sp->parentClass))
             {
-                if (offset->v.sp->attribs.inheritable.linkage2 == lk_property)
+                if (offset->sp->isproperty)
                 {
-                    Property* p = static_cast<Property*>(offset->v.sp->msil);
+                    Property* p = static_cast<Property*>(offset->sp->msil);
                     p->CallSet(*peLib, currentMethod);
                     decrement_stack();
                     decrement_stack();
                 }
                 else
                 {
-                    Value* field = GetStructField(offset->v.sp);
+                    Value* field = GetStructField(offset->sp);
                     Operand* operand = peLib->AllocateOperand(field);
                     gen_code(Instruction::i_stfld, operand);
                     decrement_stack();
@@ -921,17 +936,16 @@ void asm_tag(QUAD* q)
             find = find->fwd;
         if (find)
         {
-            FUNCTIONCALL* params = (FUNCTIONCALL*)find->altdata;
-            if (msil_managed(params->sp) || find->dc.left->mode != i_immed)
+            if (msil_managed(find->altsp) || find->dc.left->mode != i_immed)
             {
-                if (params->vararg)
+                if (find->altvararg)
                 {
-                    if (strcmp(params->sp->name, "__va_arg__"))
+                    if (strcmp(find->altsp->name, "__va_arg__"))
                     {
                         if (find->nullvararg)
                             gen_code(Instruction::i_ldnull, NULL);
                         else
-                            gen_code(Instruction::i_ldloc, peLib->AllocateOperand(localList[objectArray_exp->v.sp->offset]));
+                            gen_code(Instruction::i_ldloc, peLib->AllocateOperand(localList[objectArray_exp->sp->offset]));
                     }
                 }
             }
@@ -1020,15 +1034,14 @@ void asm_parm(QUAD* q) /* push a parameter*/
         decrement_stack();
         decrement_stack();
     }
-    else if (q->valist && q->valist->type == en_l_p)
+    else if (q->valist)
     {
         QUAD* find = q;
         while (find && find->dc.opcode != i_gosub)
             find = find->fwd;
         if (find)
         {
-            FUNCTIONCALL* params = (FUNCTIONCALL*)find->altdata;
-            if (!msil_managed(params->sp))
+            if (!msil_managed(find->altsp))
             {
                 Operand* operand = peLib->AllocateOperand(peLib->AllocateMethodName(argsUnmanaged));
                 gen_code(Instruction::i_callvirt, operand);
@@ -1057,7 +1070,7 @@ void asm_parmblock(QUAD* q) /* push a block of memory */
             return;
         }
         // no it is a member of a structure, we have to load it
-        Type* tp = GetType((TYPE*)q->altdata, true);
+        Type* tp = GetType(q->alttp, true);
         gen_code(Instruction::i_ldobj, peLib->AllocateOperand(peLib->AllocateValue("", tp)));
     }
 }
@@ -1073,16 +1086,16 @@ void asm_parmadj(QUAD* q) /* adjust stack after function call */
 }
 static bool bltin_gosub(QUAD* q)
 {
-    EXPRESSION* en = GetSymRef(q->dc.left->offset);
+    SimpleExpression* en = GetSymRef(q->dc.left->offset);
 
     Operand* operand;
     if (q->dc.left->mode == i_immed)
     {
-        SYMBOL* sp = en->v.sp;
+        SimpleSymbol* sp = en->sp;
         if (!strcmp(sp->name, "__va_start__"))
         {
-            EXPRESSION* en = GetSymRef(q->dc.left->offset);
-            en->v.sp->genreffed = false;
+            SimpleExpression* en = GetSymRef(q->dc.left->offset);
+            en->sp->genreffed = false;
             Operand* op1 = peLib->AllocateOperand(GetParamData("__va_list__"));
             gen_code(Instruction::i_ldarg, op1);
             op1 = peLib->AllocateOperand(peLib->AllocateMethodName(argsCtor));
@@ -1091,26 +1104,26 @@ static bool bltin_gosub(QUAD* q)
         }
         else if (!strcmp(sp->name, "__va_arg__"))
         {
-            EXPRESSION* en = GetSymRef(q->dc.left->offset);
-            en->v.sp->genreffed = false;
-            FUNCTIONCALL* func = (FUNCTIONCALL*)q->altdata;
-            TYPE* tp = en->v.sp->tp;
-            if (func->arguments->next)
-                tp = func->arguments->next->tp;
+            SimpleExpression* en = GetSymRef(q->dc.left->offset);
+            en->sp->genreffed = false;
+            ArgList* args = q->altargs;
+            SimpleType* tp = en->sp->tp;
+            if (args->next)
+                tp = args->next->tp;
             Operand* operand = peLib->AllocateOperand(peLib->AllocateMethodName(argsNextArg));
             // the function pushes both an arglist val and a type to cast to on the stack
             // remove the type to cast to.
             currentMethod->RemoveLastInstruction();
             gen_code(Instruction::i_callvirt, operand);
-            if (ispointer(tp))
+            if (tp->type == st_pointer)
             {
                 Operand* operand = peLib->AllocateOperand(peLib->AllocateMethodName(ptrUnbox));
                 gen_code(Instruction::i_call, operand);
             }
-            else if (!isstructured(tp) && !isarray(tp))
+            else if (tp->type != st_struct && tp->type != st_union && !tp->isarray)
             {
-                EXPRESSION* exp = func->arguments->next->exp;
-                unbox(basetype(exp->v.sp->tp)->type);
+                SimpleExpression* exp = args->next->exp;
+                unbox(exp->sp->tp->type);
             }
             return true;
         }
@@ -1125,7 +1138,7 @@ void asm_gosub(QUAD* q) /* normal gosub to an immediate label or through a var *
         {
             bool virt = false;
             Operand* ap = getCallOperand(q, virt);
-            if (!strcmp(q->dc.left->offset->v.sp->name, ".ctor"))
+            if (!strcmp(q->dc.left->offset->sp->name, ".ctor"))
             {
                 gen_code(Instruction::i_newobj, ap);
                 increment_stack();
@@ -1238,7 +1251,7 @@ void asm_smod(QUAD* q) /* signed modulous */
 }
 void asm_muluh(QUAD* q)
 {
-    EXPRESSION* en = intNode(en_c_i, 32);
+    SimpleExpression* en = simpleIntNode(se_i, 32);
     Operand* ap = make_constant(ISZ_UINT, en);
     gen_code(Instruction::i_mul, NULL);
     gen_code(Instruction::i_ldc_i4, ap);
@@ -1247,7 +1260,7 @@ void asm_muluh(QUAD* q)
 }
 void asm_mulsh(QUAD* q)
 {
-    EXPRESSION* en = intNode(en_c_i, 32);
+    SimpleExpression* en = simpleIntNode(se_i, 32);
     Operand* ap = make_constant(ISZ_UINT, en);
     gen_code(Instruction::i_mul, NULL);
     gen_code(Instruction::i_ldc_i4, ap);
@@ -1367,7 +1380,7 @@ void asm_assn(QUAD* q) /* assignment */
 
     if (q->ans && q->ans->mode == i_immed && q->ans->offset->type == en_msil_array_access)
     {
-        Type* tp = GetType(q->ans->offset->v.msilArray->tp, true);
+        Type* tp = GetType(q->ans->offset->msilArrayTP, true);
         if (tp->ArrayLevel() == 1)
         {
             Operand* operand = NULL;
@@ -1380,7 +1393,7 @@ void asm_assn(QUAD* q) /* assignment */
             if (instructions[tp->GetBasicType()] == Instruction::i_stelem)
             {
                 operand =
-                    peLib->AllocateOperand(peLib->AllocateValue("", GetType(basetype(q->ans->offset->v.msilArray->tp)->btp, true)));
+                    peLib->AllocateOperand(peLib->AllocateValue("", GetType(q->ans->offset->msilArrayTP->btp, true)));
             }
             gen_code(instructions[tp->GetBasicType()], operand);
             decrement_stack();
@@ -1400,7 +1413,7 @@ void asm_assn(QUAD* q) /* assignment */
     }
     else if (q->dc.left && q->dc.left->mode == i_immed && q->dc.left->offset->type == en_msil_array_init)
     {
-        if (!isarray(basetype(q->dc.left->offset->v.tp)->btp))
+        if (q->dc.left->offset->tp->btp->isarray)
         {
             Type* tp = boxedType(q->ans->size);
             Operand* operand = peLib->AllocateOperand(peLib->AllocateValue("", tp));
@@ -1408,7 +1421,7 @@ void asm_assn(QUAD* q) /* assignment */
         }
         else
         {
-            Type* tp = GetType(q->dc.left->offset->v.tp, true);
+            Type* tp = GetType(q->dc.left->offset->tp, true);
             MethodSignature* sig = LookupArrayMethod(tp, ".ctor");
             Operand* operand = peLib->AllocateOperand(peLib->AllocateMethodName(sig));
             gen_code(Instruction::i_newobj, operand);
@@ -1418,18 +1431,18 @@ void asm_assn(QUAD* q) /* assignment */
         }
     }
     else if (q->dc.left && q->dc.left->mode == i_immed && (q->dc.left->size == ISZ_OBJECT || q->dc.left->size == ISZ_STRING) &&
-             isconstzero(&stdint, q->dc.left->offset))
+             ((q->dc.left->offset->type == se_i || q->dc.left->offset->type == se_ui)&& q->dc.left->offset->i == 0))
     {
         gen_code(Instruction::i_ldnull, NULL);
         increment_stack();
     }
     else
     {
-        TYPE* tp;
+        SimpleType* tp;
         // don't generate if it is a placeholder ind...
         if (q->ans->mode == i_direct && !(q->temps & TEMP_ANS) && q->ans->offset->type == en_auto)
         {
-            if (objectArray_exp && q->ans->offset->v.sp == objectArray_exp->v.sp)
+            if (objectArray_exp && q->ans->offset->sp == objectArray_exp->sp)
             {
                 // assign to object array, call the ctor here
                 // count is already on the stack
@@ -1443,11 +1456,11 @@ void asm_assn(QUAD* q) /* assignment */
         ap = getOperand(q->dc.left);
         if (q->blockassign)
         {
-            tp = (TYPE*)q->altdata;
+            tp = q->alttp;
             GetType(tp, true, false, false);
-            if (basetype(tp)->sp->msil)
+            if (tp->sp->msil)
             {
-                Class* c = static_cast<Class*>(basetype(tp)->sp->msil);
+                Class* c = static_cast<Class*>(tp->sp->msil);
                 if (c->Flags().Flags() & Qualifiers::Value)
                     if (!currentMethod->LastInstruction()->IsCall() ||
                         static_cast<MethodName*>(currentMethod->LastInstruction()->GetOperand()->GetValue())
@@ -1504,7 +1517,7 @@ void bingen(int lower, int avg, int higher)
     if (switchTreeBranchLabels[avg] != 0)
         oa_gen_label(switchTreeBranchLabels[avg]);
     gen_load(switch_ip, switch_ip_a, false);
-    load_constant(switch_ip->size, intNode(en_c_i, switchTreeCases[avg]));
+    load_constant(switch_ip->size, simpleIntNode(se_i, switchTreeCases[avg]));
     gen_branch(Instruction::i_beq, switchTreeLabels[avg], true);
     if (avg == lower)
     {
@@ -1520,7 +1533,7 @@ void bingen(int lower, int avg, int higher)
         else
             lab = switch_deflab;
         gen_load(switch_ip, switch_ip_a, false);
-        load_constant(switch_ip->size, intNode(en_c_i, switchTreeCases[avg]));
+        load_constant(switch_ip->size, simpleIntNode(se_i, switchTreeCases[avg]));
         if (switch_ip->size < 0)
             gen_branch(Instruction::i_bgt, lab, true);
         else
@@ -1535,8 +1548,8 @@ void asm_coswitch(QUAD* q) /* switch characteristics */
 {
     Instruction::iop op;
     switch_deflab = q->dc.v.label;
-    switch_range = q->dc.right->offset->v.i;
-    switch_case_max = switch_case_count = q->ans->offset->v.i;
+    switch_range = q->dc.right->offset->i;
+    switch_case_max = switch_case_count = q->ans->offset->i;
     switch_ip = q->dc.left;
     switch_ip_a = getOperand(switch_ip);
     if (switch_ip->size == ISZ_ULONGLONG || switch_ip->size == -ISZ_ULONGLONG || switch_case_max <= 5)
@@ -1567,7 +1580,7 @@ void asm_coswitch(QUAD* q) /* switch characteristics */
 void asm_swbranch(QUAD* q) /* case characteristics */
 {
     static Instruction* swins;
-    ULLONG_TYPE swcase = q->dc.left->offset->v.i;
+    ULLONG_TYPE swcase = q->dc.left->offset->i;
     int labin = q->dc.v.label, lab;
     if (switch_case_count == 0)
     {
@@ -1580,7 +1593,7 @@ void asm_swbranch(QUAD* q) /* case characteristics */
         gen_load(switch_ip, switch_ip_a, false);
         if (swcase != 0)
         {
-            load_constant(switch_ip->size, intNode(en_c_i, swcase));
+            load_constant(switch_ip->size, simpleIntNode(se_i, swcase));
             gen_code(Instruction::i_sub, NULL);
             decrement_stack();
         }
@@ -1594,7 +1607,7 @@ void asm_swbranch(QUAD* q) /* case characteristics */
         default:
 
             gen_load(switch_ip, switch_ip_a, false);
-            load_constant(switch_ip->size, intNode(en_c_i, swcase));
+            load_constant(switch_ip->size, simpleIntNode(se_i, swcase));
             gen_branch(Instruction::i_beq, labin, true);
             if (--switch_case_count == 0)
             {
@@ -1654,7 +1667,7 @@ void asm_jc(QUAD* q) /* branch if a U< b */ { gen_branch(Instruction::i_blt_un, 
 void asm_ja(QUAD* q) /* branch if a U> b */ { gen_branch(Instruction::i_bgt_un, q->dc.v.label, true); }
 void asm_je(QUAD* q) /* branch if a == b */
 {
-    if (q->dc.right->mode == i_immed && isconstzero(&stdint, q->dc.right->offset))
+    if (q->dc.right->mode == i_immed && ((q->dc.right->offset->type == se_i || q->dc.right->offset->type == se_ui) && q->dc.right->offset->i == 0))
         gen_branch(Instruction::i_brfalse, q->dc.v.label, true);
     else
         gen_branch(Instruction::i_beq, q->dc.v.label, true);
@@ -1663,7 +1676,7 @@ void asm_jnc(QUAD* q) /* branch if a U>= b */ { gen_branch(Instruction::i_bge_un
 void asm_jbe(QUAD* q) /* branch if a U<= b */ { gen_branch(Instruction::i_ble_un, q->dc.v.label, true); }
 void asm_jne(QUAD* q) /* branch if a != b */
 {
-    if (q->dc.right->mode == i_immed && isconstzero(&stdint, q->dc.right->offset))
+    if (q->dc.right->mode == i_immed && ((q->dc.right->offset->type == se_i || q->dc.right->offset->type == se_ui) && q->dc.right->offset->i == 0))
         gen_branch(Instruction::i_brtrue, q->dc.v.label, true);
     else
         gen_branch(Instruction::i_bne_un, q->dc.v.label, true);
@@ -1685,8 +1698,8 @@ void asm_prologue(QUAD* q) /* function prologue */
     stackpos = 0;
     returnCount = 0;
     hookCount = 0;
-    LoadLocals(theCurrentFunc);
-    LoadParams(theCurrentFunc);
+    LoadLocals(functionVariables);
+    LoadParams(currentFunction, functionVariables);
     for (int i = 0; i < localList.size(); i++)
         currentMethod->AddLocal(localList[i]);
 }
@@ -1695,7 +1708,7 @@ void asm_prologue(QUAD* q) /* function prologue */
  */
 void asm_epilogue(QUAD* q) /* function epilogue */
 {
-    if (basetype(theCurrentFunc->tp)->btp->type != bt_void)
+    if (currentFunction->tp->btp->type != st_void)
         stackpos--;
     if (returnCount)
         stackpos -= returnCount - 1;
@@ -1747,7 +1760,7 @@ void asm_seh(QUAD* q) /* windows seh */
         {
             if (q->dc.left)
             {
-                Instruction* i = peLib->AllocateInstruction(mode, true, GetType(q->dc.left->offset->v.sp->tp, true));
+                Instruction* i = peLib->AllocateInstruction(mode, true, GetType(q->dc.left->offset->sp->tp, true));
                 currentMethod->AddInstruction(i);
             }
             else
@@ -1816,13 +1829,13 @@ QUAD* leftInsertionPos(QUAD* head, IMODE* im)
     {
         if (head->temps & TEMP_ANS)
         {
-            if (im->offset->v.sp->value.i == head->ans->offset->v.sp->value.i)
+            if (im->offset->sp->i == head->ans->offset->sp->i)
             {
                 rv = head;
                 if (!(head->temps & TEMP_LEFT))
                     break;
                 im = head->dc.left;
-                if (im->offset->v.sp->pushedtotemp)
+                if (im->offset->sp->pushedtotemp)
                     break;
             }
         }
@@ -1838,10 +1851,10 @@ int examine_icode(QUAD* head)
     {
         if (head->dc.opcode == i_gosub)
         {
-            if (((FUNCTIONCALL*)head->altdata)->vararg)
+            if (head->altvararg)
             {
                 if (fillinvararg)
-                    fillinvararg->offset->v.i = parmIndex;
+                    fillinvararg->offset->i = parmIndex;
                 if (!parmIndex)
                     head->nullvararg = true;
                 fillinvararg = NULL;
@@ -1896,22 +1909,22 @@ int examine_icode(QUAD* head)
                 q->temps = TEMP_ANS;
                 q->dc.left = (IMODE *)Alloc(sizeof(IMODE));
                 q->dc.left->mode = i_immed;
-                q->dc.left->offset = intNode(en_c_i, 0);
+                q->dc.left->offset = simpleIntNode(se_i, 0);
                 InsertInstruction(head->back, q);
             }
             */
             if (head->dc.right && head->dc.right->offset->type == en_structelem)
             {
                 // by definition this is an add node...
-                if (!qualifiedStruct(head->dc.right->offset->v.sp->parentClass))
+                if (!qualifiedStruct(head->dc.right->offset->sp->parentClass))
                 {
                     head->dc.right->mode = i_immed;
-                    head->dc.right->offset = intNode(en_c_i, head->dc.right->offset->v.sp->offset);
+                    head->dc.right->offset = simpleIntNode(se_i, head->dc.right->offset->sp->offset);
                 }
             }
             if (head->dc.right && head->dc.right->mode == i_immed)
             {
-                if ((head->dc.opcode != i_je && head->dc.opcode != i_jne) || !isconstzero(&stdint, head->dc.right->offset))
+                if ((head->dc.opcode != i_je && head->dc.opcode != i_jne) || !((head->dc.right->offset->type == se_i|| head->dc.right->offset->type == se_ui)&& head->dc.right->offset->i == 0))
                 {
                     if (head->dc.right->offset->type != en_structelem)
                     {
@@ -1955,7 +1968,7 @@ int examine_icode(QUAD* head)
                     ap6->size = ISZ_ADDR;
                     ap5->mode = i_immed;
                     ap5->size = ISZ_UINT;
-                    ap5->offset = intNode(en_c_i, 0);
+                    ap5->offset = simpleIntNode(se_i, 0);
                     fillinvararg = ap5;
                     q2->dc.opcode = i_assn;
                     q2->ans = ap4;

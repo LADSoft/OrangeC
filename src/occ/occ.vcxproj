@@ -177,6 +177,7 @@
     <ClCompile Include="middle\iblock.cpp" />
     <ClCompile Include="middle\iconfl.cpp" />
     <ClCompile Include="middle\iconst.cpp" />
+    <ClCompile Include="middle\iconversion.cpp" />
     <ClCompile Include="middle\iexpr.cpp" />
     <ClCompile Include="middle\iflow.cpp" />
     <ClCompile Include="middle\iinline.cpp" />
@@ -194,6 +195,7 @@
     <ClCompile Include="middle\issa.cpp" />
     <ClCompile Include="middle\istmt.cpp" />
     <ClCompile Include="middle\istren.cpp" />
+    <ClCompile Include="middle\SymbolManager.cpp" />
     <ClCompile Include="parse\beinterf.cpp" />
     <ClCompile Include="parse\browse.cpp" />
     <ClCompile Include="parse\ccerr.cpp" />

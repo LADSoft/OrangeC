@@ -35,7 +35,7 @@ extern ARCH_ASM* chosenAssembler;
 extern int prm_nodos;
 extern int prm_flat;
 extern int fastcallAlias;
-extern SYMBOL* theCurrentFunc;
+extern SimpleSymbol* currentFunction;
 extern int segAligns[];
 extern int usingEsp;
 int skipsize = 0;
@@ -112,8 +112,8 @@ void putop(enum e_opcode op, AMODE* aps, AMODE* apd, int nooptx)
                 addsize = true;
                 if (!aps->length)
                     aps->length = ISZ_UINT;
-                if (aps->mode == am_immed && isintconst(aps->offset) && aps->offset->v.i >= CHAR_MIN &&
-                    aps->offset->v.i <= CHAR_MAX)
+                if (aps->mode == am_immed && (aps->offset->type == se_i || aps->offset->type == se_ui) && aps->offset->i >= CHAR_MIN &&
+                    aps->offset->i <= CHAR_MAX)
                     aps->length = ISZ_UCHAR;
                 break;
             case op_add:
@@ -130,8 +130,8 @@ void putop(enum e_opcode op, AMODE* aps, AMODE* apd, int nooptx)
 
                 if (apd)
                 {
-                    if (apd->mode == am_immed && isintconst(apd->offset) && apd->offset->v.i >= CHAR_MIN &&
-                        apd->offset->v.i <= CHAR_MAX)
+                    if (apd->mode == am_immed && (apd->offset->type == se_i || apd->offset->type == se_ui) && apd->offset->i >= CHAR_MIN &&
+                        apd->offset->i <= CHAR_MAX)
                         apd->length = ISZ_UCHAR;
                     addsize = apd->length != 0;
                 }
@@ -188,24 +188,24 @@ void putop(enum e_opcode op, AMODE* aps, AMODE* apd, int nooptx)
 
 /*-------------------------------------------------------------------------*/
 
-void oa_putconst(int op, int sz, EXPRESSION* offset, bool doSign)
+void oa_putconst(int op, int sz, SimpleExpression* offset, bool doSign)
 /*
  *      put a constant to the outputFile file.
  */
 {
     char buf[4096];
-    SYMBOL* sym;
+    SimpleSymbol* sym;
     int toffs;
     switch (offset->type)
     {
         int m;
-        case en_auto:
-            m = offset->v.sp->offset;
+        case se_auto:
+            m = offset->sp->offset;
             if (!usingEsp && m > 0)
                 m += 4;
-            if (offset->v.sp->storage_class == sc_parameter && fastcallAlias)
+            if (offset->sp->storage_class == sc_parameter && fastcallAlias)
             {
-                if (!isstructured(basetype(theCurrentFunc->tp)->btp) || offset->v.sp->offset != chosenAssembler->arch->retblocksize)
+                if ((currentFunction->tp->btp->type != st_struct && currentFunction->tp->btp->type != st_union) || offset->sp->offset != chosenAssembler->arch->retblocksize)
                 {
                     m -= fastcallAlias * chosenAssembler->arch->parmwidth;
                     if (m < chosenAssembler->arch->retblocksize)
@@ -216,8 +216,8 @@ void oa_putconst(int op, int sz, EXPRESSION* offset, bool doSign)
             }
             if (doSign)
             {
-                if ((int)offset->v.sp->offset < 0)
-                    bePrintf("-0%lxh", -offset->v.sp->offset);
+                if ((int)offset->sp->offset < 0)
+                    bePrintf("-0%lxh", -offset->sp->offset);
                 else
                     bePrintf("+0%lxh", m);
             }
@@ -225,29 +225,17 @@ void oa_putconst(int op, int sz, EXPRESSION* offset, bool doSign)
                 bePrintf("0%lxh", m);
 
             break;
-        case en_c_i:
-        case en_c_l:
-        case en_c_ui:
-        case en_c_ul:
-        case en_c_ll:
-        case en_c_ull:
-        case en_absolute:
-        case en_c_c:
-        case en_c_uc:
-        case en_c_u16:
-        case en_c_u32:
-        case en_c_bool:
-        case en_c_s:
-        case en_c_us:
-        case en_c_wc:
+        case se_i:
+        case se_ui:
+        case se_absolute:
             if (doSign)
             {
-                if (offset->v.i == 0)
+                if (offset->i == 0)
                     break;
                 beputc('+');
             }
             {
-                int n = offset->v.i;
+                int n = offset->i;
                 if (op == op_mov)
                 {
                     if (sz == ISZ_UCHAR || sz == -ISZ_UCHAR)
@@ -258,49 +246,41 @@ void oa_putconst(int op, int sz, EXPRESSION* offset, bool doSign)
                 bePrintf("0%xh", n);
             }
             break;
-        case en_c_fc:
-        case en_c_dc:
-        case en_c_ldc:
+        case se_fc:
             if (doSign)
                 beputc('+');
-            bePrintf("%s,%s", ((std::string)offset->v.c.r).c_str(), ((std::string)offset->v.c.i).c_str());
+            bePrintf("%s,%s", ((std::string)offset->c.r).c_str(), ((std::string)offset->c.i).c_str());
             break;
-        case en_c_f:
-        case en_c_d:
-        case en_c_ld:
-        case en_c_fi:
-        case en_c_di:
-        case en_c_ldi:
+        case se_f:
+        case se_fi:
             if (doSign)
                 beputc('+');
-            bePrintf("%s", ((std::string)offset->v.f).c_str());
+            bePrintf("%s", ((std::string)offset->f).c_str());
             break;
-        case en_labcon:
+        case se_labcon:
             if (doSign)
                 beputc('+');
-            bePrintf("L_%d", offset->v.i);
+            bePrintf("L_%d", offset->i);
             break;
-        case en_pc:
-        case en_global:
-        case en_threadlocal:
+        case se_pc:
+        case se_global:
+        case se_threadlocal:
             if (doSign)
                 beputc('+');
-            sym = offset->v.sp;
+            sym = offset->sp;
             beDecorateSymName(buf, sym);
             bePrintf("%s", buf);
             break;
-        case en_add:
-        case en_structadd:
-        case en_arrayadd:
+        case se_add:
             oa_putconst(0, ISZ_ADDR, offset->left, doSign);
             oa_putconst(0, ISZ_ADDR, offset->right, true);
             break;
-        case en_sub:
+        case se_sub:
             oa_putconst(0, ISZ_ADDR, offset->left, doSign);
             bePrintf("-");
             oa_putconst(0, ISZ_ADDR, offset->right, false);
             break;
-        case en_uminus:
+        case se_uminus:
             bePrintf("-");
             oa_putconst(0, ISZ_ADDR, offset->left, false);
             break;
@@ -438,38 +418,26 @@ void putseg(int seg, int usecolon)
 
 /*-------------------------------------------------------------------------*/
 
-int islabeled(EXPRESSION* n)
+int islabeled(SimpleExpression* n)
 {
     int rv = 0;
     switch (n->type)
     {
-        case en_add:
-        case en_structadd:
-        case en_arrayadd:
-        case en_sub:
+        case se_add:
+        case se_sub:
             //        case en_addstruc:
             rv |= islabeled(n->left);
             rv |= islabeled(n->right);
             break;
-        case en_c_i:
-        case en_c_c:
-        case en_c_uc:
-        case en_c_u16:
-        case en_c_u32:
-        case en_c_l:
-        case en_c_ul:
-        case en_c_ui:
-        case en_c_bool:
-        case en_c_wc:
-        case en_c_s:
-        case en_c_us:
+        case se_i:
+        case se_ui:
             return 0;
-        case en_labcon:
-        case en_global:
-        case en_auto:
-        case en_absolute:
-        case en_pc:
-        case en_threadlocal:
+        case se_labcon:
+        case se_global:
+        case se_auto:
+        case se_absolute:
+        case se_pc:
+        case se_threadlocal:
             return 1;
         default:
             diag("Unexpected node type in islabeled");
@@ -632,7 +600,7 @@ void oa_put_code(OCODE* cd)
     }
     else if (op == op_align)
     {
-        oa_align(aps->offset->v.i);
+        oa_align(aps->offset->i);
         return;
     }
     else if (op == op_void)
@@ -713,7 +681,7 @@ void oa_put_code(OCODE* cd)
 
 /*-------------------------------------------------------------------------*/
 
-void oa_gen_strlab(SYMBOL* sym)
+void oa_gen_strlab(SimpleSymbol* sym)
 /*
  *      generate a named label.
  */
@@ -933,7 +901,7 @@ void oa_genint(enum e_gt type, LLONG_TYPE val)
 void oa_genaddress(ULLONG_TYPE val) { oa_genint(longgen, val); }
 /*-------------------------------------------------------------------------*/
 
-void oa_gensrref(SYMBOL* sym, int val, int type)
+void oa_gensrref(SimpleSymbol* sym, int val, int type)
 {
     char buf[4096];
     if (cparams.prm_asmfile)
@@ -950,7 +918,7 @@ void oa_gensrref(SYMBOL* sym, int val, int type)
 
 /*-------------------------------------------------------------------------*/
 
-void oa_genref(SYMBOL* sym, int offset)
+void oa_genref(SimpleSymbol* sym, int offset)
 /*
  * Output a reference to the data area (also gens fixups )
  */
@@ -984,7 +952,7 @@ void oa_genref(SYMBOL* sym, int offset)
 
 /*-------------------------------------------------------------------------*/
 
-void oa_genpcref(SYMBOL* sym, int offset)
+void oa_genpcref(SimpleSymbol* sym, int offset)
 /*
  * Output a reference to the code area (also gens fixups )
  */
@@ -1245,7 +1213,7 @@ void oa_enterseg(enum e_sg seg)
 
 /*-------------------------------------------------------------------------*/
 
-void oa_gen_virtual(SYMBOL* sym, int data)
+void oa_gen_virtual(SimpleSymbol* sym, int data)
 {
     virtual_mode = data;
     oa_currentSeg = virtseg;
@@ -1275,7 +1243,7 @@ void oa_gen_virtual(SYMBOL* sym, int data)
     }
     outcode_start_virtual_seg(sym, data);
 }
-void oa_gen_endvirtual(SYMBOL* sym)
+void oa_gen_endvirtual(SimpleSymbol* sym)
 {
     if (cparams.prm_asmfile)
     {
@@ -1526,21 +1494,21 @@ void oa_trailer(void)
     oa_header(asmfile, compilerversion);
 }
 /*-------------------------------------------------------------------------*/
-void oa_localdef(SYMBOL* sym)
+void oa_localdef(SimpleSymbol* sym)
 {
     if (!cparams.prm_asmfile)
     {
         omf_globaldef(sym);
     }
 }
-void oa_localstaticdef(SYMBOL* sym)
+void oa_localstaticdef(SimpleSymbol* sym)
 {
     if (!cparams.prm_asmfile)
     {
         omf_globaldef(sym);
     }
 }
-void oa_globaldef(SYMBOL* sym)
+void oa_globaldef(SimpleSymbol* sym)
 {
     if (cparams.prm_asmfile)
     {
@@ -1572,7 +1540,7 @@ void oa_output_alias(char* name, char* alias)
 
 /*-------------------------------------------------------------------------*/
 
-void oa_put_extern(SYMBOL* sym, int code)
+void oa_put_extern(SimpleSymbol* sym, int code)
 {
     if (cparams.prm_asmfile)
     {
@@ -1596,7 +1564,7 @@ void oa_put_extern(SYMBOL* sym, int code)
 }
 /*-------------------------------------------------------------------------*/
 
-void oa_put_impfunc(SYMBOL* sym, char* file)
+void oa_put_impfunc(SimpleSymbol* sym, const char* file)
 {
     if (cparams.prm_asmfile)
     {
@@ -1612,7 +1580,7 @@ void oa_put_impfunc(SYMBOL* sym, char* file)
 
 /*-------------------------------------------------------------------------*/
 
-void oa_put_expfunc(SYMBOL* sym)
+void oa_put_expfunc(SimpleSymbol* sym)
 {
     char buf[4096];
     if (cparams.prm_asmfile)

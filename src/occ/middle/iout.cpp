@@ -47,7 +47,7 @@ extern LIST *localfuncs, *localdata;
 extern FILE* icdFile;
 extern int nextLabel;
 extern LIST* externals;
-extern SYMBOL* theCurrentFunc;
+extern SimpleSymbol* currentFunction;
 extern unsigned termCount;
 extern QUAD* criticalThunks;
 extern int cachedTempCount;
@@ -89,9 +89,9 @@ void outcodeini(void)
 {
     PHIDATA* phi = q->dc.v.phi;
     struct _phiblock* pb = phi->temps;
-    EXPRESSION* enode = tempInfo[phi->T0]->enode;
+    SimpleExpression* enode = tempInfo[phi->T0]->enode;
     if (enode->right)
-        oprintf(icdFile, "\tT%d[%s] = PHI(", phi->T0, ((SYMBOL*)(enode->right))->name);
+        oprintf(icdFile, "\tT%d[%s] = PHI(", phi->T0, ((SimpleSymbol*)(enode->right))->name);
     else
         oprintf(icdFile, "\tT%d = PHI(", phi->T0);
     while (pb)
@@ -899,7 +899,7 @@ void outcodeini(void)
 {
     if (chosenAssembler->gen->asm_varstart)
         chosenAssembler->gen->asm_varstart(q);
-    oprintf(icdFile, "\tVAR START\t%s", q->dc.left->offset->v.sp->name);
+    oprintf(icdFile, "\tVAR START\t%s", q->dc.left->offset->sp->name);
 }
 /*static*/ void iop_func(QUAD* q)
 {
@@ -1051,9 +1051,9 @@ void outcodeini(void)
 }
 /*static*/ void iop_functailstart(QUAD* q)
 {
-    if (theCurrentFunc->tp->btp->type != bt_void && chosenAssembler->gen->asm_functail)
+    if (currentFunction->tp->btp->type != st_void && chosenAssembler->gen->asm_functail)
     {
-        int r = getSize(theCurrentFunc->tp->btp->type);
+        int r = sizeFromISZ(currentFunction->tp->btp->sizeFromType);
         if (r < 0)
             r = -r;
         chosenAssembler->gen->asm_functail(q, true, r);
@@ -1062,9 +1062,9 @@ void outcodeini(void)
 }
 /*static*/ void iop_functailend(QUAD* q)
 {
-    if (theCurrentFunc->tp->btp->type != bt_void && chosenAssembler->gen->asm_functail)
+    if (currentFunction->tp->btp->type != st_void && chosenAssembler->gen->asm_functail)
     {
-        int r = getSize(theCurrentFunc->tp->btp->type);
+        int r = sizeFromISZ(currentFunction->tp->btp->sizeFromType);
         if (r < 0)
             r = -r;
         chosenAssembler->gen->asm_functail(q, false, r);
@@ -1268,12 +1268,12 @@ void outcodeini(void)
     iop_initblk,
     iop_cpblk};
 /*-------------------------------------------------------------------------*/
-void beDecorateSymName(char* buf, SYMBOL* sym)
+void beDecorateSymName(char* buf, SimpleSymbol* sym)
 {
     const char* q;
-    if (sym->attribs.uninheritable.alias)
+    if (sym->alias)
     {
-        strcpy(buf, sym->attribs.uninheritable.alias);
+        strcpy(buf, sym->alias);
     }
     else
     {
@@ -1289,51 +1289,32 @@ void beDecorateSymName(char* buf, SYMBOL* sym)
 
 /*-------------------------------------------------------------------------*/
 
-void putconst(EXPRESSION* offset, int color)
+void putconst(SimpleExpression* offset, int color)
 /*
  *      put a constant to the icdFile file.
  */
 {
     switch (offset->type)
     {
-        case en_c_fc:
-        case en_c_dc:
-        case en_c_ldc:
-            oprintf(icdFile, "%s + %s * I", ((std::string)offset->v.c.r).c_str(), ((std::string)offset->v.c.i).c_str());
+        case se_fc:
+            oprintf(icdFile, "%s + %s * I", ((std::string)offset->c.r).c_str(), ((std::string)offset->c.i).c_str());
             break;
-        case en_c_i:
-        case en_c_l:
-        case en_c_ui:
-        case en_c_ul:
-        case en_c_c:
-        case en_c_bool:
-        case en_c_uc:
-        case en_c_wc:
-        case en_c_u32:
-        case en_c_u16:
-            oprintf(icdFile, "%lX", offset->v.i);
+        case se_i:
+        case se_ui:
+            oprintf(icdFile, "%llX", offset->i);
             break;
-        case en_c_ll:
-        case en_c_ull:
-        case en_nullptr:
-            oprintf(icdFile, "%llX", offset->v.i);
+        case se_f:
+        case se_fi:
+            oprintf(icdFile, "%s", ((std::string)offset->f).c_str());
             break;
-        case en_c_f:
-        case en_c_d:
-        case en_c_ld:
-        case en_c_fi:
-        case en_c_di:
-        case en_c_ldi:
-            oprintf(icdFile, "%s", ((std::string)offset->v.f).c_str());
-            break;
-        case en_tempref:
-            if (offset->v.sp)
+        case se_tempref:
+            if (offset->sp)
             {
-                SYMBOL* sym = (SYMBOL*)offset->v.sp;
+                SimpleSymbol* sym = (SimpleSymbol*)offset->sp;
                 if (offset->right)
-                    oprintf(icdFile, "T%d[%s]", (int)(sym->value.i), ((SYMBOL*)offset->right)->name);
+                    oprintf(icdFile, "T%d[%s]", (int)(sym->i), ((SimpleSymbol*)offset->right)->name);
                 else
-                    oprintf(icdFile, "T%d", (int)sym->value.i);
+                    oprintf(icdFile, "T%d", (int)sym->i);
                 if (sym->regmode)
                     oprintf(icdFile, "(%s)", lookupRegName(color));
                 else if (offset->right && sym->offset)
@@ -1342,24 +1323,23 @@ void putconst(EXPRESSION* offset, int color)
             }
             else
             {
-                oprintf(icdFile, "T%d", ((SYMBOL*)offset->v.sp)->value.i);
-                if (offset->v.sp->regmode)
+                oprintf(icdFile, "T%d", (offset->sp)->i);
+                if (offset->sp->regmode)
                     oprintf(icdFile, "(%s)", lookupRegName(color));
             }
             break;
-        case en_auto:
-            oprintf(icdFile, "%s:LINK", ((SYMBOL*)offset->v.sp)->decoratedName);
-            /*            if (offset->v.sp->value.i >= chosenAssembler->arch->retblocksize)*/
-            if (!offset->v.sp->regmode)
+        case se_auto:
+            oprintf(icdFile, "%s:LINK", (offset->sp)->decoratedName);
+            if (!offset->sp->regmode)
                 oprintf(icdFile, "(%d)",
-                        offset->v.sp->offset); /* - chosenAssembler->arch->retblocksize)/chosenAssembler->arch->parmwidth);*/
+                        offset->sp->offset);
             else
                 oprintf(icdFile, "(%s)", lookupRegName(color));
             break;
-        case en_structelem:
-            oprintf(icdFile, "%s:STRUCTELEM(%d)", ((SYMBOL*)offset->v.sp)->decoratedName, offset->v.sp->offset);
+        case se_structelem:
+            oprintf(icdFile, "%s:STRUCTELEM(%d)", (offset->sp)->decoratedName, offset->sp->offset);
             break;
-        case en_c_string:
+        case se_string:
             if (offset->string)
             {
                 int i;
@@ -1374,39 +1354,33 @@ void putconst(EXPRESSION* offset, int color)
                 oputc('"', icdFile);
             }
             break;
-        case en_labcon:
-            oprintf(icdFile, "L_%ld:PC", offset->v.i);
+        case se_labcon:
+            oprintf(icdFile, "L_%ld:PC", offset->i);
             break;
-        case en_pc:
-            oprintf(icdFile, "%s:PC", ((SYMBOL*)offset->v.sp)->decoratedName);
+        case se_pc:
+            oprintf(icdFile, "%s:PC", (offset->sp)->decoratedName);
             break;
-        case en_threadlocal:
-            oprintf(icdFile, "%s:TLS", ((SYMBOL*)offset->v.sp)->decoratedName);
+        case se_threadlocal:
+            oprintf(icdFile, "%s:TLS", (offset->sp)->decoratedName);
             break;
-        case en_global:
-            oprintf(icdFile, "%s:RAM", ((SYMBOL*)offset->v.sp)->decoratedName);
+        case se_global:
+            oprintf(icdFile, "%s:RAM", (offset->sp)->decoratedName);
             break;
-        case en_absolute:
-            oprintf(icdFile, "$%lX:ABS", ((SYMBOL*)offset->v.sp)->value.i);
+        case se_absolute:
+            oprintf(icdFile, "$%lX:ABS", (offset->sp)->i);
             break;
-        case en_add:
-        case en_structadd:
-        case en_arrayadd:
+        case se_add:
             putconst(offset->left, color);
             oprintf(icdFile, "+");
             putconst(offset->right, color);
             break;
-        case en_sub:
+        case se_sub:
             putconst(offset->left, color);
             oprintf(icdFile, "-");
             putconst(offset->right, color);
             break;
-        case en_uminus:
+        case se_uminus:
             oputc('-', icdFile);
-            putconst(offset->left, color);
-            break;
-        case en_not_lvalue:
-        case en_lvalue:
             putconst(offset->left, color);
             break;
         default:
@@ -1703,7 +1677,7 @@ void rewrite_icode(void)
     intermed_head = 0;
 }
 
-void gen_vtt(VTABENTRY* entry, SYMBOL* func, SYMBOL* name)
+void gen_vtt(VTABENTRY* entry, SimpleSymbol* func, SimpleSymbol* name)
 {
     if (chosenAssembler->gen->gen_vtt)
         chosenAssembler->gen->gen_vtt(entry, func);
@@ -1712,7 +1686,7 @@ void gen_vtt(VTABENTRY* entry, SYMBOL* func, SYMBOL* name)
     oprintf(icdFile, "\t[this] = [this] - %d\n", entry->dataOffset);
     oprintf(icdFile, "\tGOTO\t%s:PC", func->decoratedName);
 }
-void gen_importThunk(SYMBOL* func)
+void gen_importThunk(SimpleSymbol* func)
 {
     if (chosenAssembler->gen->gen_importThunk)
         chosenAssembler->gen->gen_importThunk(func);
@@ -1720,7 +1694,7 @@ void gen_importThunk(SYMBOL* func)
         return;
     oprintf(icdFile, "\tGOTO [%s]\n", func->name);
 }
-void gen_vc1(SYMBOL* func)
+void gen_vc1(SimpleSymbol* func)
 {
     if (chosenAssembler->gen->gen_vc1)
         chosenAssembler->gen->gen_vc1(func);
@@ -1730,7 +1704,7 @@ void gen_vc1(SYMBOL* func)
 }
 /*-------------------------------------------------------------------------*/
 
-void gen_strlab(SYMBOL* sym)
+void gen_strlab(SimpleSymbol* sym)
 /*
  *      generate a named label.
  */
@@ -1901,7 +1875,7 @@ void genbool(int val)
     }
 }
 /* val not really used and will always be zero*/
-void genbit(SYMBOL* sym, int val)
+void genbit(SimpleSymbol* sym, int val)
 {
     if (chosenAssembler->gen->gen_bit)
         chosenAssembler->gen->gen_bit(sym, val);
@@ -2199,7 +2173,7 @@ void genaddress(ULLONG_TYPE address)
 
 /*-------------------------------------------------------------------------*/
 
-void gensrref(SYMBOL* sym, int val, int type)
+void gensrref(SimpleSymbol* sym, int val, int type)
 /*
  * Output a startup/rundown reference
  */
@@ -2223,7 +2197,7 @@ void gensrref(SYMBOL* sym, int val, int type)
 }
 
 /*-------------------------------------------------------------------------*/
-void genref(SYMBOL* sym, int offset)
+void genref(SimpleSymbol* sym, int offset)
 /*
  * Output a reference to the data area (also gens fixups )
  */
@@ -2260,7 +2234,7 @@ void genref(SYMBOL* sym, int offset)
 
 /*-------------------------------------------------------------------------*/
 
-void genpcref(SYMBOL* sym, int offset)
+void genpcref(SimpleSymbol* sym, int offset)
 /*
  * Output a reference to the code area (also gens fixups )
  */
@@ -2600,12 +2574,12 @@ void tlsrundownseg(void)
         oprintf(icdFile, "\tSECTION\tcpptlsrundown\n");
     }
 }
-void gen_virtual(SYMBOL* sym, int data)
+void gen_virtual(SimpleSymbol* sym, int data)
 {
     {
         if (chosenAssembler->gen->gen_virtual)
             chosenAssembler->gen->gen_virtual(sym, data);
-        if (sym->attribs.inheritable.linkage2 == lk_export)
+        if (sym->isexport)
             put_expfunc(sym);
         if (!icdFile)
             return;
@@ -2620,7 +2594,7 @@ void gen_virtual(SYMBOL* sym, int data)
 
 /*-------------------------------------------------------------------------*/
 
-void gen_endvirtual(SYMBOL* sym)
+void gen_endvirtual(SimpleSymbol* sym)
 {
     {
         if (chosenAssembler->gen->gen_endvirtual)
@@ -2664,23 +2638,23 @@ void asm_trailer(void)
     }
 }
 /*-------------------------------------------------------------------------*/
-void localdef(SYMBOL* sym)
+void localdef(SimpleSymbol* sym)
 {
     IncGlobalFlag();
     if (chosenAssembler->gen->local_define)
         chosenAssembler->gen->local_define(sym);
     DecGlobalFlag();
 }
-void localstaticdef(SYMBOL* sym)
+void localstaticdef(SimpleSymbol* sym)
 {
     IncGlobalFlag();
     if (chosenAssembler->gen->local_static_define)
         chosenAssembler->gen->local_static_define(sym);
     DecGlobalFlag();
 }
-void globaldef(SYMBOL* sym)
+void globaldef(SimpleSymbol* sym)
 {
-    if (sym->attribs.inheritable.linkage2 == lk_export && sym->attribs.inheritable.linkage != lk_virtual)
+    if (sym->isexport && !sym->isvirtual)
         put_expfunc(sym);
     IncGlobalFlag();
     if (chosenAssembler->gen->global_define)
@@ -2694,7 +2668,7 @@ void globaldef(SYMBOL* sym)
 /*-------------------------------------------------------------------------*/
 /*-------------------------------------------------------------------------*/
 
-int put_exfunc(SYMBOL* sym, int notyet)
+int put_exfunc(SimpleSymbol* sym, int notyet)
 {
     if (notyet)
     {
@@ -2704,12 +2678,12 @@ int put_exfunc(SYMBOL* sym, int notyet)
     IncGlobalFlag();
     if (chosenAssembler->gen->extern_define)
         chosenAssembler->gen->extern_define(sym, sym->tp->type == bt_func || sym->tp->type == bt_ifunc);
-    if (sym->attribs.inheritable.linkage2 == lk_import && chosenAssembler->gen->import_define)
+    if (sym->isimport && chosenAssembler->gen->import_define)
         chosenAssembler->gen->import_define(sym, sym->importfile ? sym->importfile : (char*)"");
     DecGlobalFlag();
     if (!icdFile)
         return notyet;
-    if (isfunction(sym->tp))
+    if (sym->tp->type == st_func)
     {
         oprintf(icdFile, "\tEXTRN\t%s:PROC\n", sym->decoratedName);
     }
@@ -2717,14 +2691,14 @@ int put_exfunc(SYMBOL* sym, int notyet)
     {
         oprintf(icdFile, "\tEXTRN\t%s:DATA\n", sym->decoratedName);
     }
-    if (sym->attribs.inheritable.linkage2 == lk_import)
+    if (sym->isimport)
         oprintf(icdFile, "\timport %s %s\n", sym->decoratedName, sym->importfile ? sym->importfile : "");
     return notyet;
 }
 
 /*-------------------------------------------------------------------------*/
 
-void put_expfunc(SYMBOL* sym)
+void put_expfunc(SimpleSymbol* sym)
 {
     IncGlobalFlag();
     if (chosenAssembler->gen->export_define)
@@ -2749,7 +2723,7 @@ void putexterns(void)
         exitseg();
         while (globalCache)
         {
-            SYMBOL* sym = (SYMBOL*)globalCache->data;
+            SimpleSymbol* sym = (SimpleSymbol*)globalCache->data;
             globaldef(sym);
             globalCache = globalCache->next;
         }
@@ -2764,7 +2738,7 @@ void putexterns(void)
                   ((sym->parentClass && sym->genreffed) || (sym->genreffed && sym->storage_class == sc_external)))) &&
                 !sym->noextern)
             {
-                notyet = put_exfunc(sym, notyet);
+                notyet = put_exfunc(SymbolManager::Get(sym), notyet);
                 sym->genreffed = false;
                 /*            if (sym->mainsym->exportable && !(sym->value.classdata.cppflags & PF_INLINE))
                                 notyet = put_expfunc(sym, notyet);

@@ -43,6 +43,8 @@ extern int exitBlock;
 extern bool functionHasAssembly;
 extern LIST* temporarySymbols;
 extern QUAD* intermed_tail;
+extern int anonymousNotAlloc;
+extern SimpleSymbol* currentFunction;
 
 TEMP_INFO** tempInfo;
 int tempSize;
@@ -52,34 +54,34 @@ int tempBottom, nextTemp;
 
 int fastcallAlias;
 
-static void CalculateFastcall(SYMBOL* funcsp)
+static void CalculateFastcall(SimpleSymbol* funcsp)
 {
     fastcallAlias = 0;
 #ifndef CPPTHISCALL
-    if (funcsp->attribs.inheritable.linkage != lk_fastcall)
+    if (!funcsp->isfastcall)
         return;
 #endif
 
     if (chosenAssembler->arch->fastcallRegCount)
     {
-        SYMLIST* hr = basetype(funcsp->tp)->syms->table[0];
+        LIST* hr = funcsp->tp->syms;
         while (hr)
         {
-            SYMBOL* sym = hr->p;
+            SimpleSymbol* sym = (SimpleSymbol*)hr->data;
             if (sym->thisPtr)
             {
                 fastcallAlias++;
             }
             else
             {
-                if (funcsp->attribs.inheritable.linkage != lk_fastcall)
+                if (!funcsp->isfastcall)
                     break;
                 if (fastcallAlias >= chosenAssembler->arch->fastcallRegCount)
                     break;
-                TYPE* tp = basetype(sym->tp);
+                SimpleType* tp = sym->tp;
 
-                if ((tp->type < bt_float || (tp->type == bt_pointer && basetype(basetype(tp)->btp)->type != bt_func) ||
-                     isref(tp)) &&
+                if ((tp->type < st_f || (tp->type == bt_pointer && tp->btp->type != st_func) ||
+                     tp->type == st_lref || tp->type == st_rref) &&
                     (sym->storage_class == sc_parameter))
                 {
                     if (sym->tp->size > chosenAssembler->arch->parmwidth)
@@ -95,12 +97,34 @@ static void CalculateFastcall(SYMBOL* funcsp)
         }
     }
 }
-static void renameOneSym(SYMBOL* sym, int structret)
+SimpleExpression* anonymousVar(enum e_sc storage_class, SimpleType* tp)
 {
-    TYPE* tp;
+    static int anonct = 1;
+    char buf[256];
+    SimpleSymbol* rv = (SimpleSymbol*)Alloc(sizeof(SimpleSymbol));
+    rv->key = NextSymbolKey();
+    if (tp->size == 0 && (tp->type == st_struct || tp->type == st_union))
+        tp = tp->sp->tp;
+    rv->storage_class = storage_class;
+    rv->tp = tp;
+    rv->anonymous = true;
+    rv->allocate = !anonymousNotAlloc;
+    if (currentFunction)
+        rv->i = currentFunction->i;
+    my_sprintf(buf, "$anontempSE%d", anonct++);
+    rv->name = litlate(buf);
+    cacheTempSymbol(rv);
+    SimpleExpression *rve = (SimpleExpression*)Alloc(sizeof(SimpleExpression));
+    rve->type = storage_class == sc_auto || storage_class == sc_parameter ? se_auto : se_global;
+    rve->sp = rv;
+    return rve;
+}
+static void renameOneSym(SimpleSymbol* sym, int structret)
+{
+    SimpleType* tp;
     /* needed for pointer aliasing */
-    if (!sym->imvalue && basetype(sym->tp)->type != bt_any && basetype(sym->tp)->type != bt_memberptr && !isstructured(sym->tp) &&
-        sym->tp->type != bt_ellipse && sym->tp->type != bt_aggregate)
+    if (!sym->imvalue && sym->tp->type != st_any && sym->tp->type != st_memberptr && sym->tp->type != st_struct &&
+        sym->tp->type != st_union && sym->tp->type != st_ellipse && sym->tp->type != st_aggregate)
     {
         if (sym->storage_class != sc_auto && sym->storage_class != sc_register)
         {
@@ -110,7 +134,7 @@ static void renameOneSym(SYMBOL* sym, int structret)
         {
             IMODE* im = (IMODE*)Alloc(sizeof(IMODE));
             *im = *sym->imaddress;
-            im->size = sizeFromType(sym->tp);
+            im->size = sym->tp->sizeFromType;
             im->mode = i_direct;
             sym->imvalue = im;
         }
@@ -123,7 +147,7 @@ static void renameOneSym(SYMBOL* sym, int structret)
             sym->imvalue = im;
         }
         else
-            sym->imvalue = tempreg(sizeFromType(sym->tp), false);
+            sym->imvalue = tempreg(sym->tp->sizeFromType, false);
 
         if (sym->storage_class != sc_auto && sym->storage_class != sc_register)
         {
@@ -133,14 +157,13 @@ static void renameOneSym(SYMBOL* sym, int structret)
     tp = sym->tp;
     if (tp->type == bt_typedef)
         tp = tp->btp;
-    tp = basetype(tp);
 
     bool fastcallCandidate = sym->storage_class == sc_parameter && fastcallAlias &&
         (sym->offset - fastcallAlias * chosenAssembler->arch->parmwidth < chosenAssembler->arch->retblocksize);
 
     if (!sym->pushedtotemp && (!sym->imaddress || fastcallCandidate) && !sym->inasm && (!sym->inCatch || fastcallCandidate) &&
-        (((chosenAssembler->arch->hasFloatRegs || tp->type < bt_float) && tp->type < bt_void) ||
-        (tp->type == bt_pointer && basetype(basetype(tp)->btp)->type != bt_func) || isref(tp)) &&
+        (((chosenAssembler->arch->hasFloatRegs || tp->type < st_f) && tp->type < st_void) ||
+        (tp->type == bt_pointer && tp->btp->type != st_func) || tp->type == st_lref || tp->type == st_rref) &&
             (sym->storage_class == sc_auto || sym->storage_class == sc_register || sym->storage_class == sc_parameter) &&
         (!sym->usedasbit || fastcallCandidate))
     {
@@ -149,7 +172,7 @@ static void renameOneSym(SYMBOL* sym, int structret)
             * that will change when we start inserting temps
             */
         IMODE* parmName;
-        EXPRESSION* ep;
+        SimpleExpression* ep;
         if (sym->imaddress || sym->inCatch)
         {
             ep = anonymousVar(sc_auto, sym->tp);  // fastcall which takes an address
@@ -157,11 +180,11 @@ static void renameOneSym(SYMBOL* sym, int structret)
         else
         {
             ep = tempenode();
-            ep->v.sp->tp = sym->tp;
-            ep->right = (EXPRESSION*)sym;
+            ep->sp->tp = sym->tp;
+            ep->right = (SimpleExpression*)sym;
             /* marking both the orignal var and the new temp as pushed to temp*/
             sym->pushedtotemp = true;
-            ep->v.sp->pushedtotemp = true;
+            ep->sp->pushedtotemp = true;
         }
         sym->allocate = false;
 
@@ -215,7 +238,7 @@ static void renameOneSym(SYMBOL* sym, int structret)
                 iml = iml->next;
             }
         }
-        ep->v.sp->imvalue = sym->imvalue;
+        ep->sp->imvalue = sym->imvalue;
         if (sym->storage_class == sc_parameter && !(chosenAssembler->arch->denyopts & DO_NOLOADSTACK))
         {
             QUAD* q;
@@ -240,34 +263,28 @@ static void renameOneSym(SYMBOL* sym, int structret)
         }
     }
 }
-static void renameToTemps(SYMBOL* funcsp)
+static void renameToTemps(LIST* functionVariables)
 {
     LIST* lst;
     bool doRename = true;
-    HASHTABLE* temp = funcsp->inlineFunc.syms;
-    CalculateFastcall(funcsp);
+    CalculateFastcall(currentFunction);
     doRename &= (cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size) && !functionHasAssembly;
     /* if there is a setjmp in the function, no variable gets moved into a reg */
     doRename &= !(setjmp_used);
-    doRename &= !(funcsp->anyTry);
-    temp = funcsp->inlineFunc.syms;
-    bool structret = !!isstructured(basetype(funcsp->tp)->btp);
-    while (temp)
+    doRename &= !(currentFunction->anyTry);
+    bool structret = currentFunction->tp->btp->type == st_struct || currentFunction->tp->btp->type == st_union;
+    while (functionVariables)
     {
-        SYMLIST* hr = temp->table[0];
-        while (hr)
-        {
-            SYMBOL* sym = hr->p;
-            if (doRename)
-                renameOneSym(sym, structret);
-            hr = hr->next;
-        }
-        temp = temp->next;
+        SimpleSymbol* sym = (SimpleSymbol*)functionVariables->data;
+        if (doRename)
+            renameOneSym(sym, structret);
+        functionVariables = functionVariables->next;
     }
+
     lst = temporarySymbols;
     while (lst)
     {
-        SYMBOL* sym = (SYMBOL*)lst->data;
+        SimpleSymbol* sym = (SimpleSymbol*)lst->data;
         if (!sym->anonymous && doRename)
         {
             renameOneSym(sym, structret);
@@ -298,7 +315,7 @@ static int AllocTempOpt(int size1)
     {
         rv = tempreg(size1, false);
     }
-    t = rv->offset->v.sp->value.i;
+    t = rv->offset->sp->i;
     if (t >= tempSize)
     {
         TEMP_INFO** temp = (TEMP_INFO**)oAlloc((tempSize + 1000) * sizeof(TEMP_INFO*));
@@ -339,7 +356,7 @@ IMODE* InitTempOpt(int size1, int size2)
     if (size2 >= ISZ_FLOAT)
         tempInfo[t]->usedAsFloat = true;
     tempInfo[t]->size = size2;
-    return tempInfo[t]->enode->v.sp->imvalue;
+    return tempInfo[t]->enode->sp->imvalue;
 }
 static void InitTempInfo(void)
 {
@@ -365,11 +382,11 @@ static void InitTempInfo(void)
             {
                 if (head->ans->offset->type == en_tempref)
                 {
-                    int tnum = head->ans->offset->v.sp->value.i;
+                    int tnum = head->ans->offset->sp->i;
                     if (!head->ans->retval)
                         head->temps |= TEMP_ANS;
                     tempInfo[tnum]->enode = head->ans->offset;
-                    tempInfo[tnum]->size = head->ans->offset->v.sp->imvalue->size;
+                    tempInfo[tnum]->size = head->ans->offset->sp->imvalue->size;
                     if (tempInfo[tnum]->size < 0)
                         tempInfo[tnum]->size = -tempInfo[tnum]->size;
                     if (tempInfo[tnum]->size == ISZ_UINT)
@@ -387,11 +404,11 @@ static void InitTempInfo(void)
             {
                 if (head->dc.left->offset->type == en_tempref)
                 {
-                    int tnum = head->dc.left->offset->v.sp->value.i;
+                    int tnum = head->dc.left->offset->sp->i;
                     if (!head->dc.left->retval)
                         head->temps |= TEMP_LEFT;
                     tempInfo[tnum]->enode = head->dc.left->offset;
-                    tempInfo[tnum]->size = head->dc.left->offset->v.sp->imvalue->size;
+                    tempInfo[tnum]->size = head->dc.left->offset->sp->imvalue->size;
                     if (tempInfo[tnum]->size < 0)
                         tempInfo[tnum]->size = -tempInfo[tnum]->size;
                     if (tempInfo[tnum]->size == ISZ_UINT)
@@ -409,11 +426,11 @@ static void InitTempInfo(void)
             {
                 if (head->dc.right->offset->type == en_tempref)
                 {
-                    int tnum = head->dc.right->offset->v.sp->value.i;
+                    int tnum = head->dc.right->offset->sp->i;
                     if (!head->dc.right->retval)
                         head->temps |= TEMP_RIGHT;
                     tempInfo[tnum]->enode = head->dc.right->offset;
-                    tempInfo[tnum]->size = head->dc.right->offset->v.sp->imvalue->size;
+                    tempInfo[tnum]->size = head->dc.right->offset->sp->imvalue->size;
                     if (tempInfo[tnum]->size < 0)
                         tempInfo[tnum]->size = -tempInfo[tnum]->size;
                     if (tempInfo[tnum]->size == ISZ_UINT)
@@ -471,7 +488,7 @@ void definesInfo(void)
             block = head->block;
         if ((head->temps & TEMP_ANS) && head->ans->mode == i_direct)
         {
-            int tnum = head->ans->offset->v.sp->value.i;
+            int tnum = head->ans->offset->sp->i;
             insertDefines(head, block, tnum);
         }
         head = head->fwd;
@@ -490,30 +507,30 @@ void usesInfo(void)
         if ((head->temps & TEMP_ANS) && head->ans->mode == i_ind)
         {
             if (head->ans->offset)
-                insertUses(head, head->ans->offset->v.sp->value.i);
+                insertUses(head, head->ans->offset->sp->i);
             if (head->ans->offset2)
-                insertUses(head, head->ans->offset2->v.sp->value.i);
+                insertUses(head, head->ans->offset2->sp->i);
         }
         if (head->temps & TEMP_LEFT)
         {
             if (head->dc.left->offset)
-                insertUses(head, head->dc.left->offset->v.sp->value.i);
+                insertUses(head, head->dc.left->offset->sp->i);
             if (head->dc.left->offset2)
-                insertUses(head, head->dc.left->offset2->v.sp->value.i);
+                insertUses(head, head->dc.left->offset2->sp->i);
         }
         if (head->temps & TEMP_RIGHT)
         {
             if (head->dc.right->offset)
-                insertUses(head, head->dc.right->offset->v.sp->value.i);
+                insertUses(head, head->dc.right->offset->sp->i);
             if (head->dc.right->offset2)
-                insertUses(head, head->dc.right->offset2->v.sp->value.i);
+                insertUses(head, head->dc.right->offset2->sp->i);
         }
         head = head->fwd;
     }
 }
-void gatherLocalInfo(SYMBOL* funcsp)
+void gatherLocalInfo(LIST *functionVariables)
 {
-    renameToTemps(funcsp);
+    renameToTemps(functionVariables);
     InitTempInfo();
     definesInfo();
 }

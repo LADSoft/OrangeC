@@ -156,6 +156,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\sqlite3\sqlite3.c" />
+    <ClCompile Include="..\middle\iconversion.cpp" />
+    <ClCompile Include="..\middle\SymbolManager.cpp" />
     <ClCompile Include="..\parse\beinterf.cpp" />
     <ClCompile Include="..\parse\BROWSE.cpp" />
     <ClCompile Include="..\parse\ccerr.cpp" />
@@ -180,6 +182,7 @@
     <ClCompile Include="..\parse\memory.cpp" />
     <ClCompile Include="..\parse\osutil.cpp" />
     <ClCompile Include="..\parse\output.cpp" />
+    <ClCompile Include="..\parse\property.cpp" />
     <ClCompile Include="..\parse\rtti.cpp" />
     <ClCompile Include="..\parse\stmt.cpp" />
     <ClCompile Include="..\parse\symtab.cpp" />

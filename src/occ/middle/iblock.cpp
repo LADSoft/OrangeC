@@ -60,62 +60,6 @@ int blockMax;
 static void add_intermed(QUAD* newQuad);
 void gen_nodag(enum i_ops op, IMODE* res, IMODE* left, IMODE* right);
 
-int equalnode(EXPRESSION* node1, EXPRESSION* node2)
-/*
- *      equalnode will return 1 if the expressions pointed to by
- *      node1 and node2 are equivalent.
- */
-{
-    if (node1 == 0 || node2 == 0)
-        return 0;
-    if (node1->type != node2->type)
-        return 0;
-    if (natural_size(node1) != natural_size(node2))
-        return 0;
-    switch (node1->type)
-    {
-        case en_const:
-        case en_pc:
-        case en_global:
-        case en_auto:
-        case en_absolute:
-        case en_threadlocal:
-        case en_structelem:
-            return node1->v.sp == node2->v.sp;
-        case en_labcon:
-            return node1->v.i == node2->v.i;
-        default:
-            return (!node1->left || equalnode(node1->left, node2->left)) &&
-                   (!node1->right || equalnode(node1->right, node2->right));
-        case en_c_i:
-        case en_c_l:
-        case en_c_ul:
-        case en_c_ui:
-        case en_c_c:
-        case en_c_u16:
-        case en_c_u32:
-        case en_c_bool:
-        case en_c_uc:
-        case en_c_ll:
-        case en_c_ull:
-        case en_c_wc:
-        case en_nullptr:
-            return node1->v.i == node2->v.i;
-        case en_c_d:
-        case en_c_f:
-        case en_c_ld:
-        case en_c_di:
-        case en_c_fi:
-        case en_c_ldi:
-            return (node1->v.f == node2->v.f);
-        case en_c_dc:
-        case en_c_fc:
-        case en_c_ldc:
-            return (node1->v.c.r == node2->v.c.r) && (node1->v.c.i == node2->v.c.i);
-        case en_tempref:
-            return node1->v.sp == node2->v.sp;
-    }
-}
 
 /*-------------------------------------------------------------------------*/
 
@@ -287,23 +231,23 @@ int ToQuadConst(IMODE** im)
         if (isintconst((*im)->offset))
         {
             temp.dc.opcode = i_icon;
-            temp.dc.v.i = (*im)->offset->v.i;
+            temp.dc.v.i = (*im)->offset->i;
         }
         else if (isfloatconst((*im)->offset))
         {
             temp.dc.opcode = i_fcon;
-            temp.dc.v.f = (*im)->offset->v.f;
+            temp.dc.v.f = (*im)->offset->f;
         }
         else if (isimaginaryconst((*im)->offset))
         {
             temp.dc.opcode = i_imcon;
-            temp.dc.v.f = (*im)->offset->v.f;
+            temp.dc.v.f = (*im)->offset->f;
         }
         else if (iscomplexconst((*im)->offset))
         {
             temp.dc.opcode = i_cxcon;
-            temp.dc.v.c.r = (*im)->offset->v.c.r;
-            temp.dc.v.c.i = (*im)->offset->v.c.i;
+            temp.dc.v.c.r = (*im)->offset->c.r;
+            temp.dc.v.c.i = (*im)->offset->c.i;
         }
         else
         {
@@ -412,7 +356,7 @@ static QUAD* add_dag(QUAD* newQuad)
     node = LookupNVHash((UBYTE*)&newQuad->dc.left, sizeof(void*), name_hash);
     if (node)
     {
-        if (node->dc.opcode == i_assn && node->dc.left->mode == i_immed && !node->ans->offset->v.sp->storeTemp)
+        if (node->dc.opcode == i_assn && node->dc.left->mode == i_immed && !node->ans->offset->sp->storeTemp)
         {
             newQuad->dc.left = node->dc.left;
             newQuad->livein |= IM_LIVELEFT;
@@ -910,7 +854,7 @@ void RemoveInstruction(QUAD* ins)
     {
         if (ins->temps & TEMP_ANS)
         {
-            int tnum = ins->ans->offset->v.sp->value.i;
+            int tnum = ins->ans->offset->sp->i;
             if (ins->ans->mode == i_direct)
                 tempInfo[tnum]->instructionDefines = nullptr;
             else
@@ -918,22 +862,22 @@ void RemoveInstruction(QUAD* ins)
                 if (ins->ans->offset)
                     RemoveFromUses(ins, tnum);
                 if (ins->ans->offset2)
-                    RemoveFromUses(ins, ins->ans->offset2->v.sp->value.i);
+                    RemoveFromUses(ins, ins->ans->offset2->sp->i);
             }
         }
         if (ins->temps & TEMP_LEFT)
         {
             if (ins->dc.left->offset)
-                RemoveFromUses(ins, ins->dc.left->offset->v.sp->value.i);
+                RemoveFromUses(ins, ins->dc.left->offset->sp->i);
             if (ins->dc.left->offset2)
-                RemoveFromUses(ins, ins->dc.left->offset2->v.sp->value.i);
+                RemoveFromUses(ins, ins->dc.left->offset2->sp->i);
         }
         if (ins->temps & TEMP_RIGHT)
         {
             if (ins->dc.right->offset)
-                RemoveFromUses(ins, ins->dc.right->offset->v.sp->value.i);
+                RemoveFromUses(ins, ins->dc.right->offset->sp->i);
             if (ins->dc.right->offset2)
-                RemoveFromUses(ins, ins->dc.right->offset2->v.sp->value.i);
+                RemoveFromUses(ins, ins->dc.right->offset2->sp->i);
         }
     }
 }
@@ -970,14 +914,14 @@ void InsertInstruction(QUAD* before, QUAD* ins)
             ins->temps |= TEMP_ANS;
             if (ins->ans->mode == i_direct)
             {
-                tempInfo[ins->ans->offset->v.sp->value.i]->instructionDefines = ins;
+                tempInfo[ins->ans->offset->sp->i]->instructionDefines = ins;
             }
             else
             {
                 if (ins->ans->offset)
-                    InsertUses(ins, ins->ans->offset->v.sp->value.i);
+                    InsertUses(ins, ins->ans->offset->sp->i);
                 if (ins->ans->offset2)
-                    InsertUses(ins, ins->ans->offset2->v.sp->value.i);
+                    InsertUses(ins, ins->ans->offset2->sp->i);
             }
         }
         if (ins->dc.left && ((ins->dc.left->offset && ins->dc.left->offset->type == en_tempref) || ins->dc.left->offset2))
@@ -985,18 +929,18 @@ void InsertInstruction(QUAD* before, QUAD* ins)
             if (!ins->dc.left->retval)
                 ins->temps |= TEMP_LEFT;
             if (ins->dc.left->offset)
-                InsertUses(ins, ins->dc.left->offset->v.sp->value.i);
+                InsertUses(ins, ins->dc.left->offset->sp->i);
             if (ins->dc.left->offset2)
-                InsertUses(ins, ins->dc.left->offset2->v.sp->value.i);
+                InsertUses(ins, ins->dc.left->offset2->sp->i);
         }
         if (ins->dc.right && ins->dc.right->offset && ins->dc.right->offset->type == en_tempref)
         {
             if (!ins->dc.right->retval)
                 ins->temps |= TEMP_RIGHT;
             if (ins->dc.right->offset)
-                InsertUses(ins, ins->dc.right->offset->v.sp->value.i);
+                InsertUses(ins, ins->dc.right->offset->sp->i);
             if (ins->dc.right->offset2)
-                InsertUses(ins, ins->dc.right->offset2->v.sp->value.i);
+                InsertUses(ins, ins->dc.right->offset2->sp->i);
         }
     }
 }

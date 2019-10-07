@@ -31,10 +31,25 @@ extern int prm_useesp;
 
 extern int prm_lscrtdll;
 
-EXPRESSION* fltexp;
+SimpleExpression* fltexp;
 
 int uses_substack;
 
+SimpleExpression *simpleExpressionNode(enum se_type type, SimpleExpression*left, SimpleExpression* right)
+{
+    SimpleExpression *rv = (SimpleExpression*)Alloc(sizeof(SimpleExpression));
+    rv->type = type;
+    rv->left = left;
+    rv->right = right;
+    return rv;
+}
+SimpleExpression *simpleIntNode(enum se_type type, ULLONG_TYPE i)
+{
+    SimpleExpression *rv = (SimpleExpression*)Alloc(sizeof(SimpleExpression));
+    rv->type = type;
+    rv->i = i;
+    return rv;
+}
 static IMODE* AllocateTemp(int size) { return InitTempOpt(size, size); }
 void insert_parm(QUAD* head, QUAD* q)
 {
@@ -67,7 +82,7 @@ void insert_nullparmadj(QUAD* head, int v)
 }
 static void rvColor(IMODE* ip)
 {
-    int n = ip->offset->v.sp->value.i;
+    int n = ip->offset->sp->i;
     tempInfo[n]->precolored = true;
     if (ip->size >= ISZ_CFLOAT)
     {
@@ -87,7 +102,7 @@ static void rvColor(IMODE* ip)
         tempInfo[n]->color = R_AL;
     else
         tempInfo[n]->color = R_EAX;
-    tempInfo[n]->enode->v.sp->regmode = 2;
+    tempInfo[n]->enode->sp->regmode = 2;
     tempInfo[n]->precolored = true;
 }
 void precolor(QUAD* head) /* precolor an instruction */
@@ -98,10 +113,10 @@ void precolor(QUAD* head) /* precolor an instruction */
         if (head->fastcall < 0)
         {
             // callee
-            ta = head->dc.left->offset->v.sp->value.i;
+            ta = head->dc.left->offset->sp->i;
             head->precolored |= TEMP_LEFT;
             tempInfo[ta]->precolored = true;
-            tempInfo[ta]->enode->v.sp->regmode = 2;
+            tempInfo[ta]->enode->sp->regmode = 2;
             if (tempInfo[ta]->size == ISZ_ULONGLONG || tempInfo[ta]->size == -ISZ_ULONGLONG)
                 tempInfo[ta]->color = 10;  // ASSUME ECX::EDX
             else
@@ -123,13 +138,13 @@ void precolor(QUAD* head) /* precolor an instruction */
             }
             if (head->dc.left->offset && head->dc.left->offset->type == en_tempref)
             {
-                ta = head->dc.left->offset->v.sp->value.i;
+                ta = head->dc.left->offset->sp->i;
                 head->precolored |= TEMP_LEFT;
 
-                //            ta = head->ans->offset->v.sp->value.i;
+                //            ta = head->ans->offset->sp->i;
                 //            head->precolored |= TEMP_ANS;
                 tempInfo[ta]->precolored = true;
-                tempInfo[ta]->enode->v.sp->regmode = 2;
+                tempInfo[ta]->enode->sp->regmode = 2;
                 if (tempInfo[ta]->size == ISZ_ULONGLONG || tempInfo[ta]->size == -ISZ_ULONGLONG)
                     tempInfo[ta]->color = 10;  // ASSUME ECX::EDX
                 else
@@ -142,22 +157,22 @@ void precolor(QUAD* head) /* precolor an instruction */
     {
         if (head->temps & TEMP_ANS)
         {
-            int ta = head->ans->offset->v.sp->value.i;
+            int ta = head->ans->offset->sp->i;
             if (tempInfo[ta]->size < ISZ_FLOAT)
             {
                 tempInfo[ta]->precolored = true;
-                tempInfo[ta]->enode->v.sp->regmode = 2;
+                tempInfo[ta]->enode->sp->regmode = 2;
                 tempInfo[ta]->color = R_EAX;
                 head->precolored |= TEMP_ANS;
             }
         }
         if ((head->temps & TEMP_LEFT) && head->dc.left->mode == i_direct)
         {
-            int tl = head->dc.left->offset->v.sp->value.i;
+            int tl = head->dc.left->offset->sp->i;
             if (tempInfo[tl]->size < ISZ_FLOAT)
             {
                 tempInfo[tl]->precolored = true;
-                tempInfo[tl]->enode->v.sp->regmode = 2;
+                tempInfo[tl]->enode->sp->regmode = 2;
                 tempInfo[tl]->color = R_EAXEDX;
                 head->precolored |= TEMP_LEFT;
             }
@@ -167,22 +182,22 @@ void precolor(QUAD* head) /* precolor an instruction */
     {
         if (head->temps & TEMP_ANS)
         {
-            int ta = head->ans->offset->v.sp->value.i;
+            int ta = head->ans->offset->sp->i;
             if (tempInfo[ta]->size < ISZ_FLOAT)
             {
                 tempInfo[ta]->precolored = true;
-                tempInfo[ta]->enode->v.sp->regmode = 2;
+                tempInfo[ta]->enode->sp->regmode = 2;
                 tempInfo[ta]->color = R_EDX;
                 head->precolored |= TEMP_ANS;
             }
         }
         if ((head->temps & TEMP_LEFT) && head->dc.left->mode == i_direct)
         {
-            int tl = head->dc.left->offset->v.sp->value.i;
+            int tl = head->dc.left->offset->sp->i;
             if (tempInfo[tl]->size < ISZ_FLOAT)
             {
                 tempInfo[tl]->precolored = true;
-                tempInfo[tl]->enode->v.sp->regmode = 2;
+                tempInfo[tl]->enode->sp->regmode = 2;
                 tempInfo[tl]->color = R_EAXEDX;
                 head->precolored |= TEMP_LEFT;
             }
@@ -192,22 +207,22 @@ void precolor(QUAD* head) /* precolor an instruction */
     {
         if (head->temps & TEMP_ANS)
         {
-            int ta = head->ans->offset->v.sp->value.i;
+            int ta = head->ans->offset->sp->i;
             if (tempInfo[ta]->size < ISZ_FLOAT)
             {
                 tempInfo[ta]->precolored = true;
-                tempInfo[ta]->enode->v.sp->regmode = 2;
+                tempInfo[ta]->enode->sp->regmode = 2;
                 tempInfo[ta]->color = R_EDX;
                 head->precolored |= TEMP_ANS;
             }
         }
         if ((head->temps & TEMP_LEFT) && head->dc.left->mode == i_direct)
         {
-            int tl = head->dc.left->offset->v.sp->value.i;
+            int tl = head->dc.left->offset->sp->i;
             if (tempInfo[tl]->size < ISZ_FLOAT)
             {
                 tempInfo[tl]->precolored = true;
-                tempInfo[tl]->enode->v.sp->regmode = 2;
+                tempInfo[tl]->enode->sp->regmode = 2;
                 tempInfo[tl]->color = R_EAX;
                 head->precolored |= TEMP_LEFT;
             }
@@ -217,7 +232,7 @@ void precolor(QUAD* head) /* precolor an instruction */
     {
         if (head->temps & TEMP_RIGHT)
         {
-            int tr = head->dc.right->offset->v.sp->value.i;
+            int tr = head->dc.right->offset->sp->i;
             tempInfo[tr]->precolored = true;
             head->precolored |= TEMP_RIGHT;
             switch (tempInfo[tr]->size)
@@ -240,7 +255,7 @@ void precolor(QUAD* head) /* precolor an instruction */
                     tempInfo[tr]->color = R_ECX;
                     break;
             }
-            tempInfo[tr]->enode->v.sp->regmode = 2;
+            tempInfo[tr]->enode->sp->regmode = 2;
         }
     }
     if (head->ans && head->ans->retval)
@@ -250,21 +265,21 @@ void precolor(QUAD* head) /* precolor an instruction */
     if (head->dc.right && head->dc.right->retval)
         rvColor(head->dc.right);
 }
-static bool hasbp(EXPRESSION* expr)
+static bool hasbp(SimpleExpression* expr)
 {
     if (!expr)
         return false;
-    if (expr->type == en_add || expr->type == en_structadd)
+    if (expr->type == se_add || expr->type == en_structadd)
         return (hasbp(expr->left) || hasbp(expr->right));
     return expr->type == en_auto;
 }
-static int mult(EXPRESSION* match, int mpy, int total)
+static int mult(SimpleExpression* match, int mpy, int total)
 {
     if (isintconst(match))
     {
-        total = total + mpy * match->v.i;
+        total = total + mpy * match->i;
     }
-    else if (match->type == en_add)
+    else if (match->type == se_add)
     {
         total = mult(match->left, mpy, total);
         total = mult(match->right, mpy, total);
@@ -273,22 +288,22 @@ static int mult(EXPRESSION* match, int mpy, int total)
         diag("mult: invalid node type");
     return total;
 }
-void ProcessOneInd(EXPRESSION* match, EXPRESSION** ofs1, EXPRESSION** ofs2, EXPRESSION** ofs3, int* scale)
+void ProcessOneInd(SimpleExpression* match, SimpleExpression** ofs1, SimpleExpression** ofs2, SimpleExpression** ofs3, int* scale)
 {
     if (match && match->type == en_tempref)
     {
-        int n = match->v.sp->value.i;
+        int n = match->sp->i;
         QUAD* ins = tempInfo[n]->instructionDefines;
         if (ins)
         {
             switch (ins->dc.opcode)
             {
                 case i_add:
-                    if (!tempInfo[ins->ans->offset->v.sp->value.i]->inductionLoop)
+                    if (!tempInfo[ins->ans->offset->sp->i]->inductionLoop)
                     {
-                        if (*ofs1 && ins->ans->offset->v.sp->value.i == (*ofs1)->v.sp->value.i)
+                        if (*ofs1 && ins->ans->offset->sp->i == (*ofs1)->sp->i)
                         {
-                            EXPRESSION *offset1, *offset2 = *ofs2, *offset3 = nullptr;
+                            SimpleExpression *offset1, *offset2 = *ofs2, *offset3 = nullptr;
                             if (ins->temps & TEMP_LEFT)
                             {
                                 offset1 = ins->dc.left->offset;
@@ -318,7 +333,7 @@ void ProcessOneInd(EXPRESSION* match, EXPRESSION** ofs1, EXPRESSION** ofs2, EXPR
                             else if (ins->dc.left->mode == i_immed && ins->dc.right->mode == i_immed)
                             {
                                 offset1 = nullptr;
-                                offset3 = exprNode(en_add, ins->dc.left->offset, ins->dc.right->offset);
+                                offset3 = simpleExpressionNode(se_add, ins->dc.left->offset, ins->dc.right->offset);
                             }
                             else
                                 break;
@@ -329,14 +344,14 @@ void ProcessOneInd(EXPRESSION* match, EXPRESSION** ofs1, EXPRESSION** ofs2, EXPR
                             if (offset3)
                             {
                                 if (*ofs3)
-                                    *ofs3 = exprNode(en_add, *ofs3, offset3);
+                                    *ofs3 = simpleExpressionNode(se_add, *ofs3, offset3);
                                 else
                                     *ofs3 = offset3;
                             }
                         }
-                        else if (*ofs2 && ins->ans->offset->v.sp->value.i == (*ofs2)->v.sp->value.i)
+                        else if (*ofs2 && ins->ans->offset->sp->i == (*ofs2)->sp->i)
                         {
-                            EXPRESSION *offset1 = *ofs1, *offset2, *offset3 = nullptr;
+                            SimpleExpression *offset1 = *ofs1, *offset2, *offset3 = nullptr;
                             if (ins->temps & TEMP_LEFT)
                             {
                                 offset2 = ins->dc.left->offset;
@@ -368,7 +383,7 @@ void ProcessOneInd(EXPRESSION* match, EXPRESSION** ofs1, EXPRESSION** ofs2, EXPR
                                 if (*scale && (ins->dc.left->size == ISZ_ADDR || ins->dc.right->size == ISZ_ADDR))
                                     break;
                                 offset2 = nullptr;
-                                offset3 = exprNode(en_add, ins->dc.left->offset, ins->dc.right->offset);
+                                offset3 = simpleExpressionNode(se_add, ins->dc.left->offset, ins->dc.right->offset);
                             }
                             else
                                 break;
@@ -377,11 +392,11 @@ void ProcessOneInd(EXPRESSION* match, EXPRESSION** ofs1, EXPRESSION** ofs2, EXPR
                             *ofs1 = offset1;
                             *ofs2 = offset2;
                             if (offset3 && *scale)
-                                offset3 = intNode(offset3->type, offset3->v.i << *scale);
+                                offset3 = simpleIntNode(se_i, offset3->i << *scale);
                             if (offset3)
                             {
                                 if (*ofs3)
-                                    *ofs3 = exprNode(en_add, *ofs3, offset3);
+                                    *ofs3 = simpleExpressionNode(se_add, *ofs3, offset3);
                                 else
                                     *ofs3 = offset3;
                             }
@@ -389,40 +404,40 @@ void ProcessOneInd(EXPRESSION* match, EXPRESSION** ofs1, EXPRESSION** ofs2, EXPR
                     }
                     break;
                 case i_sub:
-                    if (!tempInfo[ins->ans->offset->v.sp->value.i]->inductionLoop)
+                    if (!tempInfo[ins->ans->offset->sp->i]->inductionLoop)
                     {
-                        if (*ofs1 && ins->ans->offset->v.sp->value.i == (*ofs1)->v.sp->value.i)
+                        if (*ofs1 && ins->ans->offset->sp->i == (*ofs1)->sp->i)
                         {
                             if (ins->temps & TEMP_LEFT)
                             {
-                                EXPRESSION *offset1, *offset3;
+                                SimpleExpression *offset1, *offset3;
                                 offset1 = ins->dc.left->offset;
                                 if (ins->dc.right->mode != i_immed || !isintconst(ins->dc.right->offset))
                                     break;
                                 offset3 = ins->dc.right->offset;
                                 *ofs1 = offset1;
                                 if (*ofs3)
-                                    *ofs3 = exprNode(en_sub, *ofs3, offset3);
+                                    *ofs3 = simpleExpressionNode(se_sub, *ofs3, offset3);
                                 else
-                                    *ofs3 = intNode(offset3->type, -offset3->v.i);
+                                    *ofs3 = simpleIntNode(se_i, -offset3->i);
                             }
                         }
-                        else if (*ofs2 && ins->ans->offset->v.sp->value.i == (*ofs2)->v.sp->value.i)
+                        else if (*ofs2 && ins->ans->offset->sp->i == (*ofs2)->sp->i)
                         {
                             if (ins->temps & TEMP_LEFT)
                             {
-                                EXPRESSION *offset2, *offset3;
+                                SimpleExpression *offset2, *offset3;
                                 offset2 = ins->dc.left->offset;
                                 if (ins->dc.right->mode != i_immed || !isintconst(ins->dc.right->offset))
                                     break;
                                 offset3 = ins->dc.right->offset;
                                 *ofs2 = offset2;
                                 if (offset3 && *scale)
-                                    offset3 = intNode(offset3->type, offset3->v.i << *scale);
+                                    offset3 = simpleIntNode(se_i, offset3->i << *scale);
                                 if (*ofs3)
-                                    *ofs3 = exprNode(en_sub, *ofs3, offset3);
+                                    *ofs3 = simpleExpressionNode(se_sub, *ofs3, offset3);
                                 else
-                                    *ofs3 = intNode(offset3->type, -offset3->v.i);
+                                    *ofs3 = simpleIntNode(se_i, -offset3->i);
                             }
                         }
                     }
@@ -432,16 +447,16 @@ void ProcessOneInd(EXPRESSION* match, EXPRESSION** ofs1, EXPRESSION** ofs2, EXPR
                     {
                         if (ins->dc.right->mode == i_immed && isintconst(ins->dc.right->offset))
                         {
-                            EXPRESSION *offset1 = *ofs1, *offset2 = *ofs2;
-                            int scl = ins->dc.right->offset->v.i;
+                            SimpleExpression *offset1 = *ofs1, *offset2 = *ofs2;
+                            int scl = ins->dc.right->offset->i;
                             if (scl >= 4)
                                 break;
-                            if (*ofs1 && ins->ans->offset->v.sp->value.i == (*ofs1)->v.sp->value.i)
+                            if (*ofs1 && ins->ans->offset->sp->i == (*ofs1)->sp->i)
                             {
                                 offset1 = offset2;
                                 offset2 = ins->dc.left->offset;
                             }
-                            else if (*ofs2 && ins->ans->offset->v.sp->value.i == (*ofs2)->v.sp->value.i)
+                            else if (*ofs2 && ins->ans->offset->sp->i == (*ofs2)->sp->i)
                             {
                                 offset2 = ins->dc.left->offset;
                             }
@@ -459,15 +474,15 @@ void ProcessOneInd(EXPRESSION* match, EXPRESSION** ofs1, EXPRESSION** ofs2, EXPR
                         if (ins->ans->mode == i_direct && ins->dc.left->mode == i_direct)
                             if (ins->ans->size == ins->dc.left->size || ins->ans->size == -ins->dc.left->size)
                                 if (ins->ans->size >= ISZ_UINT || ins->ans->size <= -ISZ_UINT)
-                                    if (!ins->dc.left->retval && !ins->ans->offset->v.sp->pushedtotemp)
+                                    if (!ins->dc.left->retval && !ins->ans->offset->sp->pushedtotemp)
                                     {
-                                        QUAD* insz = tempInfo[ins->dc.left->offset->v.sp->value.i]->instructionDefines;
+                                        QUAD* insz = tempInfo[ins->dc.left->offset->sp->i]->instructionDefines;
                                         if ((insz && insz->dc.opcode != i_assn) ||
                                             ins->block == tempInfo[n]->instructionUses->ins->block)
                                         {
-                                            if (*ofs1 && (*ofs1)->v.sp->value.i == ins->ans->offset->v.sp->value.i)
+                                            if (*ofs1 && (*ofs1)->sp->i == ins->ans->offset->sp->i)
                                                 *ofs1 = ins->dc.left->offset;
-                                            else if (*ofs2 && (*ofs2)->v.sp->value.i == ins->ans->offset->v.sp->value.i)
+                                            else if (*ofs2 && (*ofs2)->sp->i == ins->ans->offset->sp->i)
                                                 *ofs2 = ins->dc.left->offset;
                                         }
                                     }
@@ -475,19 +490,19 @@ void ProcessOneInd(EXPRESSION* match, EXPRESSION** ofs1, EXPRESSION** ofs2, EXPR
                     else if ((ins->temps & (TEMP_LEFT | TEMP_ANS)) == TEMP_ANS && ins->ans->mode == i_direct &&
                              ins->dc.left->mode == i_immed)
                     {
-                        EXPRESSION* xofs = ins->dc.left->offset;
-                        if (*ofs1 && (*ofs1)->v.sp->value.i == ins->ans->offset->v.sp->value.i)
+                        SimpleExpression* xofs = ins->dc.left->offset;
+                        if (*ofs1 && (*ofs1)->sp->i == ins->ans->offset->sp->i)
                             *ofs1 = nullptr;
-                        else if (*ofs2 && (*ofs2)->v.sp->value.i == ins->ans->offset->v.sp->value.i)
+                        else if (*ofs2 && (*ofs2)->sp->i == ins->ans->offset->sp->i)
                         {
                             if (*scale)
-                                xofs = intNode(xofs->type, mult(xofs, 1 << *scale, 0));
+                                xofs = simpleIntNode(xofs->type, mult(xofs, 1 << *scale, 0));
                             *ofs2 = nullptr;
                             scale = 0;
                         }
                         if (*ofs3)
                         {
-                            *ofs3 = exprNode(en_add, *ofs3, xofs);
+                            *ofs3 = simpleExpressionNode(se_add, *ofs3, xofs);
                         }
                         else
                         {
@@ -501,9 +516,9 @@ void ProcessOneInd(EXPRESSION* match, EXPRESSION** ofs1, EXPRESSION** ofs2, EXPR
         }
     }
 }
-void ProcessInd(EXPRESSION** ofs1, EXPRESSION** ofs2, EXPRESSION** ofs3, int* scale)
+void ProcessInd(SimpleExpression** ofs1, SimpleExpression** ofs2, SimpleExpression** ofs3, int* scale)
 {
-    EXPRESSION *ofs4, *ofs5;
+    SimpleExpression *ofs4, *ofs5;
     do
     {
         ofs4 = *ofs1, ofs5 = *ofs2;
@@ -512,7 +527,7 @@ void ProcessInd(EXPRESSION** ofs1, EXPRESSION** ofs2, EXPRESSION** ofs3, int* sc
     } while ((ofs4 != *ofs1 || ofs5 != *ofs2));
 }
 // relies on constant offsets being calculated the same way every time
-static bool MatchesConst(EXPRESSION* one, EXPRESSION* two)
+static bool MatchesConst(SimpleExpression* one, SimpleExpression* two)
 {
     if (one == two)
         return true;
@@ -523,7 +538,7 @@ static bool MatchesConst(EXPRESSION* one, EXPRESSION* two)
     if (!MatchesConst(one->left, two->left) || !MatchesConst(one->right, two->right))
         return false;
     if (isintconst(one))
-        return one->v.i == two->v.i;
+        return one->i == two->i;
     switch (one->type)
     {
         case en_global:
@@ -531,7 +546,7 @@ static bool MatchesConst(EXPRESSION* one, EXPRESSION* two)
         case en_pc:
         case en_labcon:
         case en_threadlocal:
-            return one->v.sp == two->v.sp;
+            return one->sp == two->sp;
         default:
             return false;
     }
@@ -547,11 +562,11 @@ static bool MatchesMem(IMODE* one, IMODE* two)
         if ((!one->offset && two->offset) || (!one->offset2 && two->offset2) || (!one->offset3 && two->offset3))
             return false;
         if (one->offset)
-            if (one->offset->v.sp->value.i != two->offset->v.sp->value.i)
+            if (one->offset->sp->i != two->offset->sp->i)
                 return false;
         if (one->offset2)
         {
-            if (one->offset2->v.sp->value.i != two->offset2->v.sp->value.i)
+            if (one->offset2->sp->i != two->offset2->sp->i)
                 return false;
             if (one->scale != two->scale)
                 return false;
@@ -576,7 +591,7 @@ static void HandleAssn(QUAD* ins, BRIGGS_SET* globalVars)
     {
         if (ins->ans->mode == i_ind || !(ins->temps & TEMP_ANS))
         {
-            if (!briggsTest(globalVars, ins->dc.left->offset->v.sp->value.i))
+            if (!briggsTest(globalVars, ins->dc.left->offset->sp->i))
             {
                 if (ins->back->ans == ins->dc.left)
                 {
@@ -595,8 +610,8 @@ static void HandleAssn(QUAD* ins, BRIGGS_SET* globalVars)
                                         if (ins->back->dc.left == ins->back->back->ans)
                                             if (MatchesMem(ins->ans, ins->back->back->dc.left))
                                             {
-                                                if (!briggsTest(globalVars, ins->back->ans->offset->v.sp->value.i) &&
-                                                    !briggsTest(globalVars, ins->back->back->ans->offset->v.sp->value.i))
+                                                if (!briggsTest(globalVars, ins->back->ans->offset->sp->i) &&
+                                                    !briggsTest(globalVars, ins->back->back->ans->offset->sp->i))
                                                 {
                                                     if (!twomem(ins->ans, ins->back->dc.right))
                                                     {
@@ -628,8 +643,8 @@ static void HandleAssn(QUAD* ins, BRIGGS_SET* globalVars)
                                         if (ins->back->dc.left == ins->back->back->ans)
                                             if (MatchesMem(ins->ans, ins->back->back->dc.left))
                                             {
-                                                if (!briggsTest(globalVars, ins->back->ans->offset->v.sp->value.i) &&
-                                                    !briggsTest(globalVars, ins->back->back->ans->offset->v.sp->value.i))
+                                                if (!briggsTest(globalVars, ins->back->ans->offset->sp->i) &&
+                                                    !briggsTest(globalVars, ins->back->back->ans->offset->sp->i))
                                                 {
                                                     if (!twomem(ins->ans, ins->back->dc.right))
                                                     {
@@ -657,8 +672,8 @@ static void HandleAssn(QUAD* ins, BRIGGS_SET* globalVars)
                                         if (ins->back->dc.right == ins->back->back->ans)
                                             if (MatchesMem(ins->ans, ins->back->back->dc.left))
                                             {
-                                                if (!briggsTest(globalVars, ins->back->ans->offset->v.sp->value.i) &&
-                                                    !briggsTest(globalVars, ins->back->back->ans->offset->v.sp->value.i))
+                                                if (!briggsTest(globalVars, ins->back->ans->offset->sp->i) &&
+                                                    !briggsTest(globalVars, ins->back->back->ans->offset->sp->i))
                                                 {
                                                     if (!twomem(ins->ans, ins->back->dc.left))
                                                     {
@@ -692,7 +707,7 @@ static void HandleAssn(QUAD* ins, BRIGGS_SET* globalVars)
     // this to use xors instead of loading zeros...
     else if (ins->dc.left->mode == i_immed && ((!ins->temps & TEMP_ANS) || (ins->ans->mode == i_ind)))
     {
-        if (isintconst(ins->dc.left->offset) && ins->dc.left->offset->v.i== 0)
+        if (isintconst(ins->dc.left->offset) && ins->dc.left->offset->i== 0)
         {
             if (ins->ans->size >= ISZ_UINT || ins->ans->size <= -ISZ_UINT)
             {
@@ -770,7 +785,7 @@ int preRegAlloc(QUAD* ins, BRIGGS_SET* globalVars, BRIGGS_SET* eobGlobals, int p
         }
         if (ins->ans && ins->ans->mode == i_ind)
         {
-            EXPRESSION *offset1 = ins->ans->offset, *offset2 = nullptr, *offset3 = nullptr;
+            SimpleExpression *offset1 = ins->ans->offset, *offset2 = nullptr, *offset3 = nullptr;
             int scale = 0;
             ProcessInd(&offset1, &offset2, &offset3, &scale);
             if (offset2 || offset3)
@@ -802,7 +817,7 @@ int preRegAlloc(QUAD* ins, BRIGGS_SET* globalVars, BRIGGS_SET* eobGlobals, int p
         }
         if (ins->dc.left && ins->dc.left->mode == i_ind)
         {
-            EXPRESSION *offset1 = ins->dc.left->offset, *offset2 = nullptr, *offset3 = nullptr;
+            SimpleExpression *offset1 = ins->dc.left->offset, *offset2 = nullptr, *offset3 = nullptr;
             int scale = 0;
             ProcessInd(&offset1, &offset2, &offset3, &scale);
             if (offset2 || offset3)
@@ -834,7 +849,7 @@ int preRegAlloc(QUAD* ins, BRIGGS_SET* globalVars, BRIGGS_SET* eobGlobals, int p
         }
         if (ins->dc.right && ins->dc.right->mode == i_ind)
         {
-            EXPRESSION *offset1 = ins->dc.right->offset, *offset2 = nullptr, *offset3 = nullptr;
+            SimpleExpression *offset1 = ins->dc.right->offset, *offset2 = nullptr, *offset3 = nullptr;
             int scale = 0;
             ProcessInd(&offset1, &offset2, &offset3, &scale);
             if (offset2 || offset3)
@@ -1097,7 +1112,7 @@ int examine_icode(QUAD* head)
                 if ((head->dc.opcode != i_setne && head->dc.opcode != i_sete && head->dc.opcode != i_jne &&
                      head->dc.opcode != i_je) ||
                     (head->dc.left->bits != 1 ||
-                     (head->dc.right->mode != i_immed || !isintconst(head->dc.right->offset) || head->dc.right->offset->v.i != 0)))
+                     (head->dc.right->mode != i_immed || !isintconst(head->dc.right->offset) || head->dc.right->offset->i != 0)))
                 {
                     IMODE* temp;
                     QUAD* q;
@@ -1117,7 +1132,7 @@ int examine_icode(QUAD* head)
                 if ((head->dc.opcode != i_setne && head->dc.opcode != i_sete && head->dc.opcode != i_jne &&
                      head->dc.opcode != i_je) ||
                     (head->dc.right->bits != 1 ||
-                     (head->dc.left->mode != i_immed || !isintconst(head->dc.left->offset) || head->dc.left->offset->v.i != 0)))
+                     (head->dc.left->mode != i_immed || !isintconst(head->dc.left->offset) || head->dc.left->offset->i != 0)))
                 {
                     IMODE* temp;
                     QUAD* q;
@@ -1508,7 +1523,7 @@ int examine_icode(QUAD* head)
                  * GPFs
                  */
                 /*
-               if (head->dc.left->mode != i_immed || head->dc.left->offset->v.i > 4080)
+               if (head->dc.left->mode != i_immed || head->dc.left->offset->i > 4080)
                {
                    QUAD *q = (QUAD *)beLocalAlloc(sizeof(QUAD));
                     IMODE *ret ;
@@ -2157,7 +2172,7 @@ int examine_icode(QUAD* head)
                 // and replaced with zero...
                 else if (head->dc.right->mode == i_immed &&
                          (isfloatconst(head->dc.right->offset) || isimaginaryconst(head->dc.right->offset)) &&
-                         head->dc.right->offset->v.f.ValueIsOne())
+                         head->dc.right->offset->f.ValueIsOne())
                 {
                     head->temps &= ~TEMP_RIGHT;
                     head->dc.right = nullptr;
@@ -2175,7 +2190,8 @@ int examine_icode(QUAD* head)
     if (prm_useesp)
     {
         extern void SetUsesESP(bool yes);
-        SetUsesESP(!uses_substack && !theCurrentFunc->xc && !theCurrentFunc->canThrow);
+        extern SimpleSymbol* currentFunction;
+        SetUsesESP(!uses_substack && !currentFunction->xc && !currentFunction->canThrow);
     }
     int floatretsize = 0;
     head = hold;
@@ -2188,28 +2204,28 @@ int examine_icode(QUAD* head)
         }
         head = head->fwd;
     }
-    TYPE* fltret = nullptr;
+    SimpleType* fltret = nullptr;
     switch (floatretsize)
     {
         case ISZ_FLOAT:
         case ISZ_DOUBLE:
-            fltret = (TYPE*)Alloc(sizeof(TYPE));
-            fltret->type = bt_double;
+            fltret = (SimpleType*)Alloc(sizeof(SimpleType));
+            fltret->type = st_f;
             fltret->size = 8;
-            fltret->rootType = fltret;
+            fltret->sizeFromType = ISZ_DOUBLE;
             break;
         case ISZ_CFLOAT:
         case ISZ_CDOUBLE:
-            fltret = (TYPE*)Alloc(sizeof(TYPE));
-            fltret->type = bt_double_complex;
+            fltret = (SimpleType*)Alloc(sizeof(SimpleType));
+            fltret->type = st_fc;
             fltret->size = 16;
-            fltret->rootType = fltret;
+            fltret->sizeFromType = ISZ_CDOUBLE;
             break;
     }
     if (fltret)
     {
         fltexp = anonymousVar(sc_auto, fltret);
-        cacheTempSymbol(fltexp->v.sp);
+        cacheTempSymbol(fltexp->sp);
     }
     else
     {
@@ -2224,17 +2240,17 @@ static void IterateConflict(int ans, int t)
     {
         if ((head->temps & TEMP_LEFT) && head->dc.left->mode == i_direct)
         {
-            if (head->dc.left->offset->v.sp->pushedtotemp)
-                insertConflict(ans, head->dc.left->offset->v.sp->value.i);
+            if (head->dc.left->offset->sp->pushedtotemp)
+                insertConflict(ans, head->dc.left->offset->sp->i);
             else
-                IterateConflict(ans, head->dc.left->offset->v.sp->value.i);
+                IterateConflict(ans, head->dc.left->offset->sp->i);
         }
         if ((head->temps & TEMP_RIGHT) && head->dc.right->mode == i_direct)
         {
-            if (head->dc.right->offset->v.sp->pushedtotemp)
-                insertConflict(ans, head->dc.right->offset->v.sp->value.i);
+            if (head->dc.right->offset->sp->pushedtotemp)
+                insertConflict(ans, head->dc.right->offset->sp->i);
             else
-                IterateConflict(ans, head->dc.right->offset->v.sp->value.i);
+                IterateConflict(ans, head->dc.right->offset->sp->i);
         }
     }
 }
@@ -2254,8 +2270,8 @@ void cg_internal_conflict(QUAD* head)
             if (head->ans->offset && head->ans->offset->type == en_tempref && head->dc.left->offset &&
                 head->dc.left->offset->type == en_tempref)
             {
-                int t1 = head->ans->offset->v.sp->value.i;
-                IterateConflict(t1, head->dc.left->offset->v.sp->value.i);
+                int t1 = head->ans->offset->sp->i;
+                IterateConflict(t1, head->dc.left->offset->sp->i);
             }
         case i_lsl:
         case i_lsr:
@@ -2271,8 +2287,8 @@ void cg_internal_conflict(QUAD* head)
                 //can't do it for long longs in registers on this architecture, due to a dearth of registers...
                 if (head->dc.opcode != i_sub || (head->ans->size != ISZ_ULONGLONG && head->ans->size != -ISZ_ULONGLONG))
                 {
-                    int t1 = head->ans->offset->v.sp->value.i;
-                    int t2 = head->dc.right->offset->v.sp->value.i;
+                    int t1 = head->ans->offset->sp->i;
+                    int t2 = head->dc.right->offset->sp->i;
                     insertConflict(t1, t2);
                 }
             }
@@ -2282,8 +2298,8 @@ void cg_internal_conflict(QUAD* head)
             {
                 if (head->temps == (TEMP_ANS | TEMP_LEFT))
                 {
-                    int t1 = head->ans->offset->v.sp->value.i;
-                    int t2 = head->dc.left->offset->v.sp->value.i;
+                    int t1 = head->ans->offset->sp->i;
+                    int t2 = head->dc.left->offset->sp->i;
                     insertConflict(t1, t2);
                 }
             }

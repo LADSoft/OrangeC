@@ -283,7 +283,7 @@ typedef struct
     BITINT* conflicts;
     IMODE* spillVar;
     IMODE* spillAlias;
-    EXPRESSION* enode;
+    SimpleExpression* enode;
     QUAD* spillTag;
     IMODE* newname;
     IMODE* newnameind;

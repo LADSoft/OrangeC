@@ -52,14 +52,14 @@ void oa_adjust_codelab(void* select, int offset)
 {
     OCODE* peep = (OCODE*)select;
     if (peep->oper1 && peep->oper1->offset && peep->oper1->offset->type == en_labcon)
-        if (peep->oper1->offset->v.i < 0)
-            peep->oper1->offset->v.i += offset;
+        if (peep->oper1->offset->i < 0)
+            peep->oper1->offset->i += offset;
     if (peep->oper2 && peep->oper2->offset && peep->oper2->offset->type == en_labcon)
-        if (peep->oper2->offset->v.i < 0)
-            peep->oper2->offset->v.i += offset;
+        if (peep->oper2->offset->i < 0)
+            peep->oper2->offset->i += offset;
     if (peep->oper3 && peep->oper3->offset && peep->oper3->offset->type == en_labcon)
-        if (peep->oper3->offset->v.i < 0)
-            peep->oper3->offset->v.i += offset;
+        if (peep->oper3->offset->i < 0)
+            peep->oper3->offset->i += offset;
 }
 AMODE* makedregSZ(int r, char size)
 {
@@ -137,7 +137,7 @@ static void fixlen(AMODE* ap)
              * sizing and we do this by setting the constant size to 1
              * and the output routines will know what to do with this info
              */
-            if ((int)ap->offset->v.i <= CHAR_MAX && (int)ap->offset->v.i >= CHAR_MIN)
+            if ((int)ap->offset->i <= CHAR_MAX && (int)ap->offset->i >= CHAR_MIN)
                 ap->length = ISZ_UCHAR;
             else
                 ap->length = ISZ_NONE;
@@ -148,7 +148,7 @@ static void fixlen(AMODE* ap)
             {
                 // this is to adjust the stack level to the current depth
                 if (ap->preg == ESP && !ap->keepesp)
-                    ap->offset = exprNode(en_add, ap->offset, intNode(en_c_i, pushlevel + funcstackheight));
+                    ap->offset = simpleExpressionNode(se_add, ap->offset, simpleIntNode(se_i, pushlevel + funcstackheight));
             }
         }
     }
@@ -358,7 +358,7 @@ void oa_gen_label(int labno)
 
 /*-------------------------------------------------------------------------*/
 
-void flush_peep(SYMBOL* funcsp, QUAD* list)
+void flush_peep(SimpleSymbol* funcsp, QUAD* list)
 /*
  *      output all code and labels in the peep list.
  */
@@ -376,10 +376,10 @@ void flush_peep(SYMBOL* funcsp, QUAD* list)
             switch ((e_op)peep_head->opcode)
             {
                 case op_label:
-                    oa_put_label(peep_head->oper1->offset->v.i);
+                    oa_put_label(peep_head->oper1->offset->i);
                     break;
                 case op_funclabel:
-                    oa_gen_strlab((SYMBOL*)peep_head->oper1);
+                    oa_gen_strlab((SimpleSymbol*)peep_head->oper1);
                     break;
                 default:
                     oa_put_code(peep_head);
@@ -407,13 +407,13 @@ void peep_add(OCODE* ip)
         /* change to inc */
         if (isintconst(ip->oper2->offset))
         {
-            if (ip->oper2->offset->v.i == 1)
+            if (ip->oper2->offset->i == 1)
             {
                 ip->opcode = op_inc;
                 ip->oper2 = 0;
                 return;
             }
-            else if (ip->oper2->offset->v.i == 0)
+            else if (ip->oper2->offset->i == 0)
             {
                 remove_peep_entry(ip);
                 return;
@@ -429,7 +429,7 @@ void peep_add(OCODE* ip)
                 if (!isintconst(ip->oper2->offset))
                     ip1->oper2->length = ISZ_UINT;
                 ip->oper2->length = ISZ_UINT;
-                ip->oper2->offset = exprNode(en_add, ip->oper2->offset, ip1->oper2->offset);
+                ip->oper2->offset = simpleExpressionNode(se_add, ip->oper2->offset, ip1->oper2->offset);
                 ip->opcode = ip1->opcode;
                 remove_peep_entry(ip1);
             }
@@ -442,7 +442,7 @@ void peep_add(OCODE* ip)
                     if (!isintconst(ip->oper2->offset))
                         ip1->oper2->length = ISZ_UINT;
                     ip->oper2->length = ISZ_UINT;
-                    ip->oper2->offset = exprNode(en_add, ip->oper2->offset, ip1->oper2->offset);
+                    ip->oper2->offset = simpleExpressionNode(se_add, ip->oper2->offset, ip1->oper2->offset);
                     ip->opcode = ip1->opcode;
                     remove_peep_entry(ip1);
                 }
@@ -461,20 +461,20 @@ void peep_sub(OCODE* ip)
         return;
     if (ip->fwd->opcode != op_sbb)
     {
-        if (ip->oper2->offset->v.i == 1)
+        if (ip->oper2->offset->i == 1)
         {
             ip->opcode = op_dec;
             ip->oper2 = 0;
         }
-        else if (ip->oper2->offset->v.i == 0)
+        else if (ip->oper2->offset->i == 0)
         {
             remove_peep_entry(ip);
         }
         else if (ip->oper1->mode == am_dreg && ip->oper1->preg == ESP)
         {
-            if ((int)ip->oper2->offset->v.i < 0)
+            if ((int)ip->oper2->offset->i < 0)
             {
-                ip->oper2->offset->v.i = -ip->oper2->offset->v.i;
+                ip->oper2->offset->i = -ip->oper2->offset->i;
                 ip->opcode = op_add;
             }
         }
@@ -489,7 +489,7 @@ OCODE* peep_test(OCODE* ip)
     OCODE* ip2;
 
     if (ip->oper1->mode == am_dreg && (ip->oper1->length == ISZ_UINT || ip->oper1->length == ISZ_U32) &&
-        ip->oper2->mode == am_immed && isintconst(ip->oper2->offset) && (ip->oper2->offset->v.i & 0xffffffffU) == 0xffffffffU)
+        ip->oper2->mode == am_immed && isintconst(ip->oper2->offset) && (ip->oper2->offset->i & 0xffffffffU) == 0xffffffffU)
 
     {
         ip->oper2 = ip->oper1;
@@ -613,7 +613,7 @@ void peep_cmpzx(OCODE* ip)
                                 while (ip2 && ip2->opcode < op_aaa && ip2->opcode != op_label)
                                     ip2 = ip2->fwd;
                                 if (ip2->opcode == op_mov && ip2->oper1->mode == am_dreg && isintconst(ip2->oper2->offset) &&
-                                    ip2->oper2->offset->v.i == 0)
+                                    ip2->oper2->offset->i == 0)
                                 {
                                     if (ip2->fwd->oper1 && ip2->fwd->oper1->mode == am_dreg &&
                                         ip2->fwd->oper1->preg == ip2->oper1->preg)
@@ -678,14 +678,14 @@ void peep_cmpzx(OCODE* ip)
             int bContinue;
             if (ip->back->oper2->length == ISZ_UCHAR)
             {
-                int n = ip->oper2->offset->v.i & 0xffffff80U;
+                int n = ip->oper2->offset->i & 0xffffff80U;
                 int n1 = n & 0xffffff00U;
                 bContinue =
                     (ip->back->opcode == op_movsx && (n == 0 || n == 0xffffff80U) || ip->back->opcode == op_movzx && n1 == 0);
             }
             else
             {
-                int n = ip->oper2->offset->v.i & 0xffff8000U;
+                int n = ip->oper2->offset->i & 0xffff8000U;
                 int n1 = n & 0xffff0000U;
                 bContinue =
                     (ip->back->opcode == op_movsx && (n == 0 || n == 0xffff8000U) || ip->back->opcode == op_movzx && n1 == 0);
@@ -705,7 +705,7 @@ void peep_cmpzx(OCODE* ip)
                             while (ip2 && ip2->opcode < op_aaa && ip2->opcode != op_label)
                                 ip2 = ip2->fwd;
                             if (ip2->opcode == op_mov && ip2->oper1->mode == am_dreg && isintconst(ip2->oper2->offset) &&
-                                ip2->oper2->offset->v.i == 0)
+                                ip2->oper2->offset->i == 0)
                             {
                                 if (ip2->fwd->oper1 && ip2->fwd->oper1->mode == am_dreg &&
                                     ip2->fwd->oper1->preg == ip2->oper1->preg)
@@ -785,7 +785,7 @@ void peep_cmp(OCODE* ip)
             }
         }
         ip1 = ip->fwd;
-        if (ip->oper1->mode == am_dreg && ip->oper2->mode == am_immed && ip->oper2->offset->v.i == 0 && ip1->opcode != op_jc &&
+        if (ip->oper1->mode == am_dreg && ip->oper2->mode == am_immed && ip->oper2->offset->i == 0 && ip1->opcode != op_jc &&
             ip1->opcode != op_jnc && ip1->opcode != op_jae && ip1->opcode != op_jbe && ip1->opcode != op_ja && ip1->opcode != op_jb)
         {
             OCODE* ip2 = ip->back;
@@ -823,7 +823,7 @@ void peep_cmp(OCODE* ip)
                 }
             }
         }
-        if (ip->oper1->mode == am_dreg && ip->oper2->mode == am_immed && ip->oper2->offset->v.i != 0 &&
+        if (ip->oper1->mode == am_dreg && ip->oper2->mode == am_immed && ip->oper2->offset->i != 0 &&
             (ip1->opcode == op_je || ip1->opcode == op_jne))
         {
             OCODE* ip2 = ip->back;
@@ -861,7 +861,7 @@ void peep_mov(OCODE* ip)
     /*    OCODE *ip2;*/
     if (ip->oper1->mode == am_dreg && ip->oper2->mode == am_immed)
     {
-        if (isintconst(ip->oper2->offset) && (int)ip->oper2->offset->v.i == -1)
+        if (isintconst(ip->oper2->offset) && (int)ip->oper2->offset->i == -1)
         {
             if (ip->oper2->length == ISZ_ULONG || ip->oper2->length == ISZ_UINT || ip->oper2->length == ISZ_U32)
             {
@@ -871,7 +871,7 @@ void peep_mov(OCODE* ip)
             }
         }
 
-        if (isintconst(ip->oper2->offset) && ip->oper2->offset->v.i == 0)
+        if (isintconst(ip->oper2->offset) && ip->oper2->offset->i == 0)
         {
             switch (ip1->opcode)
             {
@@ -1043,11 +1043,11 @@ void peep_movzx(OCODE* ip)
                                     {
                                         if (ip->oper2->length == 1)
                                         {
-                                            ip->oper2->offset->v.i = (int)(char)ip->oper2->offset->v.i;
+                                            ip->oper2->offset->i = (int)(char)ip->oper2->offset->i;
                                         }
                                         else /* two */
                                         {
-                                            ip->oper2->offset->v.i = (int)(short)ip->oper2->offset->v.i;
+                                            ip->oper2->offset->i = (int)(short)ip->oper2->offset->i;
                                         }
                                         ip->oper2->length = ISZ_UINT;
                                     }
@@ -1214,11 +1214,11 @@ void peep_mathdirect(OCODE* ip)
     {
         if (ip->oper1->length == ISZ_USHORT || ip->oper1->length == -ISZ_USHORT || ip->oper1->length == ISZ_U16)
         {
-            ip->oper2->offset->v.i &= 0xffff;
+            ip->oper2->offset->i &= 0xffff;
         }
         if (ip->oper1->length == ISZ_UCHAR || ip->oper1->length == -ISZ_UCHAR)
         {
-            ip->oper2->offset->v.i &= 0xff;
+            ip->oper2->offset->i &= 0xff;
         }
     }
 }
@@ -1232,7 +1232,7 @@ void peep_xor(OCODE* ip)
 void peep_or(OCODE* ip)
 {
     if (ip->oper2->mode == am_immed)
-        if (ip->oper2->offset->v.i == 0)
+        if (ip->oper2->offset->i == 0)
             remove_peep_entry(ip);
 }
 /*
@@ -1260,7 +1260,7 @@ void peep_and(OCODE* ip)
             else if (ip2->opcode == op_and && ip->oper2->mode == am_immed && ip2->oper2->mode == am_immed &&
                      isintconst(ip->oper2->offset) && isintconst(ip2->oper2->offset))
             {
-                ip2->oper2 = aimmed(ip2->oper2->offset->v.i & ip->oper2->offset->v.i);
+                ip2->oper2 = aimmed(ip2->oper2->offset->i & ip->oper2->offset->i);
                 remove_peep_entry(ip);
                 return;
             }
@@ -1270,7 +1270,7 @@ void peep_and(OCODE* ip)
     {
         if (ip->oper2->mode == am_immed)
         {
-            unsigned t = ip->oper2->offset->v.i;
+            unsigned t = ip->oper2->offset->i;
             if (ip->oper1->length == ISZ_USHORT || ip->oper1->length == ISZ_U16)
             {
                 t &= 0xffff;
@@ -1294,7 +1294,7 @@ void peep_and(OCODE* ip)
                 {
                     if (ip->back->oper2->mode == am_immed)
                     {
-                        int t1 = ip->back->oper2->offset->v.i;
+                        int t1 = ip->back->oper2->offset->i;
                         if ((t == 0xff && t1 == 24) || (t == 0xffff && t1 == 16) || (t == 0xffffff && t1 == 8))
                         {
                             remove_peep_entry(ip);
@@ -1309,7 +1309,7 @@ void peep_and(OCODE* ip)
                 {
                     if (ip->back->oper2->mode == am_immed)
                     {
-                        int t1 = ip->back->oper2->offset->v.i;
+                        int t1 = ip->back->oper2->offset->i;
                         if ((t == 0xff000000U && t1 == 24) || (t == 0xffff0000U && t1 == 16) || (t == 0xffffff00U && t1 == 8))
                         {
                             remove_peep_entry(ip);
@@ -1322,7 +1322,7 @@ void peep_and(OCODE* ip)
     }
     else if (ip->oper2->mode == am_immed)
     {
-        unsigned t = ip->oper2->offset->v.i;
+        unsigned t = ip->oper2->offset->i;
         if (t == 0xffffffffU)
         {
             remove_peep_entry(ip);
@@ -1341,7 +1341,7 @@ void peep_lea(OCODE* ip)
         {
             if (ip1->oper2->mode == am_immed)
             {
-                ip->oper2->offset = exprNode(en_add, ip->oper2->offset, ip1->oper2->offset);
+                ip->oper2->offset = simpleExpressionNode(se_add, ip->oper2->offset, ip1->oper2->offset);
                 remove_peep_entry(ip1);
             }
         }
@@ -1360,7 +1360,7 @@ void peep_btr(OCODE* ip)
 void peep_sar(OCODE* ip)
 {
     if (ip->oper1->mode == am_dreg && ip->oper1->preg == EDX && (ip->oper1->length == ISZ_UINT || ip->oper1->length == ISZ_U32))
-        if (ip->oper2->mode == am_immed && isintconst(ip->oper2->offset) && ip->oper2->offset->v.i == 0x1f)
+        if (ip->oper2->mode == am_immed && isintconst(ip->oper2->offset) && ip->oper2->offset->i == 0x1f)
         {
             OCODE* ip1 = ip->back;
             if (ip1->opcode == op_mov)
@@ -1385,12 +1385,12 @@ void peep_mul(OCODE* ip)
     if (ip->oper1->mode == am_dreg)
         if (ip->oper2 && ip->oper2->mode == am_immed && isintconst(ip->oper2->offset))
         {
-            if (ip->oper2->offset->v.i == 0)
+            if (ip->oper2->offset->i == 0)
             {
                 ip->opcode = op_xor;
                 ip->oper2 = ip->oper1;
             }
-            else if (ip->oper2->offset->v.i == 1)
+            else if (ip->oper2->offset->i == 1)
             {
                 remove_peep_entry(ip);
             }

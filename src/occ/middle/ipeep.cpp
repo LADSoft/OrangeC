@@ -39,10 +39,8 @@ extern int blockCount;
 extern int exitBlock;
 extern BITINT bittab[BITINTBITS];
 extern QUAD* intermed_head;
-extern SYMBOL* theCurrentFunc;
 extern bool functionHasAssembly;
 extern ARCH_ASM* chosenAssembler;
-extern TYPE stdint;
 
 static BITINT* occursInAbnormal;
 
@@ -73,8 +71,8 @@ static void scan_gotos(QUAD* head)
                 {
                     if (isintconst(head->dc.left->offset) && isintconst(head->dc.right->offset))
                     {
-                        LLONG_TYPE l = head->dc.left->offset->v.i;
-                        LLONG_TYPE r = head->dc.right->offset->v.i;
+                        LLONG_TYPE l = head->dc.left->offset->i;
+                        LLONG_TYPE r = head->dc.right->offset->i;
                         int ok;
                         switch (head->dc.opcode)
                         {
@@ -377,8 +375,8 @@ static int peep_assn(BLOCK* b, QUAD* head)
     if (head->temps == (TEMP_LEFT | TEMP_ANS) && !(head->dc.right) && head->dc.left->size == head->ans->size &&
         head->dc.left->mode == i_direct && head->ans->mode == i_direct && !head->dc.left->bits)
     {
-        int t0 = head->ans->offset->v.sp->value.i;
-        int t1 = head->dc.left->offset->v.sp->value.i;
+        int t0 = head->ans->offset->sp->i;
+        int t1 = head->dc.left->offset->sp->i;
         if (!isset(occursInAbnormal, t0) && !isset(occursInAbnormal, t1))
         {
             if (t0 == t1)
@@ -418,11 +416,11 @@ static void merge_setxx(BLOCK* b, QUAD* head)
     {
         if (head->temps == TEMP_LEFT && head->dc.left->mode == i_direct)
         {
-            if (head->dc.right->mode == i_immed && isconstzero(&stdint, head->dc.right->offset))
+            if (head->dc.right->mode == i_immed && ((head->dc.right->offset->type == se_i || head->dc.right->offset->type == se_ui) && head->dc.right->offset->i == 0))
             {
                 int lab = -1;
                 QUAD *find = head->back;
-                int tn = head->dc.left->offset->v.sp->value.i;
+                int tn = head->dc.left->offset->sp->i;
                 while (true)
                 {
                     if (find->dc.opcode == i_label)
@@ -440,10 +438,10 @@ static void merge_setxx(BLOCK* b, QUAD* head)
                         }
                         else if (find->dc.opcode == i_assn)
                         {
-                            if (find->temps == (TEMP_LEFT | TEMP_ANS) && find->ans->mode == i_direct && find->ans->offset->v.sp->value.i == tn &&
+                            if (find->temps == (TEMP_LEFT | TEMP_ANS) && find->ans->mode == i_direct && find->ans->offset->sp->i == tn &&
                                 find->dc.left->mode == i_direct)
                             {
-                                tn = find->dc.left->offset->v.sp->value.i;
+                                tn = find->dc.left->offset->sp->i;
                             }
                             else
                             {

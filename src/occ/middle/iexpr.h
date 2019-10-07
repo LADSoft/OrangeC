@@ -27,6 +27,7 @@
  *
  * ICODE structures
  */
+#include <unordered_map>
 
 #define F_VOL 1
 #define F_NOVALUE 2
@@ -37,6 +38,207 @@
 #define F_OBJECT 64
 #define F_INRETURN 128
 
+enum st_type
+{
+    st_i, st_ui, st_f, st_fi, st_fc, st_pointer, st_void, 
+    st___string, st___object,
+    st_func, st_lref, st_rref, st_typedef, st_struct, st_union, st_enum, st_memberptr, st_aggregate, st_ellipse, st_any
+};
+struct SimpleType
+{
+    SimpleType *btp;
+    struct SimpleSymbol* sp;
+    LIST* syms;
+    st_type type;
+    int size;
+    int sizeFromType;
+    int bits;
+    int startbit;
+    unsigned isarray : 1;
+    unsigned isvla : 1;
+    unsigned isatomic : 1;
+    unsigned msil : 1;
+    unsigned scoped : 1;
+    unsigned va_list : 1;
+};
+
+struct SimpleSymbol
+{
+    const char *name;
+    const char *decoratedName;
+    const char *alias;
+    const char *importfile;
+    const char *namespaceName;
+
+    // copied from main symbol
+    int i;
+    unsigned key;
+    enum e_sc storage_class;
+    int sizeFromType;
+    int offset;
+    int align;
+    int size;
+    int label;
+    LIST* baseClasses;
+    SimpleType *tp;
+    SimpleSymbol* paramSubstitute;
+    SimpleSymbol* parentClass;
+    void* msil;
+    int templateLevel;
+    unsigned isstructured : 1;
+    unsigned anonymous : 1;             /* if it is a generated variable */
+    unsigned allocate : 1;              /* variable is used, allocate space for it */
+    unsigned genreffed : 1;
+    unsigned thisPtr : 1;
+    unsigned stackblock : 1;
+    unsigned inasm : 1;
+    unsigned isimport : 1;
+    unsigned isexport : 1;
+    unsigned isvirtual : 1;
+    unsigned msil_rtl : 1;
+    unsigned isproperty : 1;
+    unsigned unmanaged : 1;
+    unsigned isstdcall : 1;
+    unsigned iscdecl : 1;
+    unsigned ispascal : 1;
+    unsigned isfastcall : 1;
+    unsigned entrypoint : 1;
+    unsigned temp : 1;             // temporary
+    unsigned vbase : 1;
+    unsigned anyTry : 1;
+    unsigned xc : 1;
+    unsigned canThrow : 1;
+    // new for intermediate
+    unsigned inCatch : 1;          // used inside a catch block
+    unsigned usedasbit : 1;             /* used in a bit field op */
+    unsigned spillVar : 1;         /* backend allocator spill variable */
+    unsigned noGlobal : 1;         /* no global opts on this temp var */
+    unsigned storeTemp : 1;        /* is a storetemp */
+    unsigned loadTemp : 1;         /* is a loadtemp */
+    unsigned visited : 1;          /* temproary which means it is visited */
+    unsigned pushedtotemp : 1;          /* if a local variable has been transformed to a temp */
+    unsigned noCoalesceImmed : 1;                // set to true if temp or memory address which references an immediate is used
+                                                 // other than as the immediate reference
+    unsigned regmode : 2;               /* 0 = pure var, 1 = addr in reg, 2 = value in reg*/
+    unsigned retemp : 1;                                  // retemp has already been performed on this SP
+    unsigned inAllocTable : 1;          /* auto temp var is in the allocation table already */
+    struct _imode_* imaddress;
+    struct _imode_* imvalue;
+    struct _im_list* imind;
+    struct _imode_* imstore;
+
+};
+enum se_type
+{
+    se_add, se_sub, se_uminus, se_i, se_ui, se_f, se_fi, se_fc, se_const, se_absolute, se_auto, se_global, se_threadlocal, se_pc, se_label, se_labcon, se_structelem, se_func, se_tempref,
+    se_msil_array_init, se_msil_array_access, se_string
+};
+struct SimpleExpression
+{
+    enum se_type type;
+    union
+    {
+        SimpleSymbol *sp;
+        long long i;
+        FPF f;
+        struct
+        {
+            FPF r;
+            FPF i;
+        } c;
+        SimpleType *tp;
+        SimpleType *msilArrayTP;
+    };
+    int isvolatile : 1;
+    int isrestrict : 1;
+    int ascall : 1;
+    int pragmas;
+    int unionoffset;
+    int sizeFromType;
+    struct _string* string;
+    SimpleExpression* left;
+    SimpleExpression* right;
+    SimpleExpression* altData;
+};
+bool equalnode(SimpleExpression* left, SimpleExpression *right);
+inline bool isarithmeticconst(SimpleExpression* e)
+{
+    switch (e->type)
+        case se_i:
+        case se_ui:
+        case se_f:
+        case se_fc:
+        case se_fi:
+            return true;
+    return false;
+}
+inline bool isintconst(SimpleExpression* e)
+{
+    switch (e->type)
+        case se_i:
+        case se_ui:
+            return true;
+    return false;
+}
+inline bool isfloatconst(SimpleExpression* e)
+{
+    switch (e->type)
+        case se_f:
+            return true;
+    return false;
+}
+inline bool iscomplexconst(SimpleExpression* e)
+{
+    switch (e->type)
+        case se_fc:
+            return true;
+    return false;
+}
+inline bool isimaginaryconst(SimpleExpression* e)
+{
+    switch (e->type)
+        case se_fi:
+            return true;
+    return false;
+}
+inline bool isconstaddress(SimpleExpression* exp)
+{
+    switch (exp->type)
+    {
+    case se_add:
+        return (isconstaddress(exp->left) || isintconst(exp->left)) && (isconstaddress(exp->right) || isintconst(exp->right));
+    case se_global:
+    case se_pc:
+    case se_labcon:
+        return true;
+    case se_func:
+        return !exp->ascall;
+    case se_threadlocal:
+    default:
+        return false;
+    }
+}
+inline void GENREF(SimpleSymbol* sym)
+{
+    sym->genreffed = true;
+}
+
+struct ArgList
+{
+    ArgList* next;
+    SimpleType* tp;
+    SimpleExpression* exp;
+};
+struct SymbolManager
+{
+    static SimpleSymbol* Get(struct sym *sym);
+    static SimpleExpression* Get(struct expr* e);
+    static SimpleType* Get(struct typ *tp);
+    static void clear() { symbols.clear(); }
+private:
+    static SimpleSymbol* Make(struct sym *sym);
+    static std::unordered_map<unsigned, SimpleSymbol*> symbols;
+};
 /* icode innstruction opcodes */
 // clang-format off
 enum i_ops
@@ -80,14 +282,14 @@ enum i_adr
 typedef struct _imode_
 {
     enum i_adr mode;      /* mode */
-    struct expr* offset;  /* offset */
-    struct expr* offset2; /* a second temp reg */
-    struct expr* offset3; /* an address */
-    struct expr* vararg;
-    //    struct exprlist
+    SimpleExpression* offset;  /* offset */
+    SimpleExpression* offset2; /* a second temp reg */
+    SimpleExpression* offset3; /* an address */
+    SimpleExpression* vararg;
+    //    SimpleExpressionlist
     //    {
-    //        struct exprlist* next;
-    //        struct expr* offset;
+    //        SimpleExpressionlist* next;
+    //        SimpleExpression* offset;
     //    } * vararg;
     int scale; /* scale factor on the second temp reg */
     char useindx;
@@ -157,7 +359,9 @@ typedef struct quad
     ULLONG_TYPE liveRegs;
     struct quad *fwd, *back;
     struct _block* block;
-    void* altdata;
+    SimpleSymbol* altsp;
+    SimpleType* alttp;
+    ArgList* altargs;
     BITINT* uses;
     BITINT* transparent;
     BITINT* dsafe;
@@ -167,7 +371,6 @@ typedef struct quad
     BITINT* isolated;
     BITINT* OCP;
     BITINT* RO;
-    struct expr* valist; /* argument is a valist that needs translation */
                          //	unsigned short *modifiesTnum;
     int index;
     int ansColor;
@@ -180,6 +383,8 @@ typedef struct quad
     int copy;
     int retcount;
     char sehMode;
+    int altvararg : 1; // for MSIL
+    int valist : 1; /* argument is a valist that needs translation */
     int denormal : 1;
     int isvolatile : 1;
     int isrestrict : 1;

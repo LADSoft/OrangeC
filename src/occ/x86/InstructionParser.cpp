@@ -226,8 +226,8 @@ asmError InstructionParser::GetInstruction(OCODE* ins, Instruction*& newIns, std
                     AMODE* aps = ins->oper1;
                     if (!aps->length)
                         aps->length = ISZ_UINT;
-                    if (aps->mode == am_immed && isintconst(aps->offset) && aps->offset->v.i >= CHAR_MIN &&
-                        aps->offset->v.i <= CHAR_MAX)
+                    if (aps->mode == am_immed && isintconst(aps->offset) && aps->offset->i >= CHAR_MIN &&
+                        aps->offset->i <= CHAR_MAX)
                         aps->length = ISZ_UCHAR;
                     break;
                 }
@@ -247,8 +247,8 @@ asmError InstructionParser::GetInstruction(OCODE* ins, Instruction*& newIns, std
                     AMODE* apd = ins->oper2;
                     if (apd)
                     {
-                        if (apd->mode == am_immed && isintconst(apd->offset) && apd->offset->v.i >= CHAR_MIN &&
-                            apd->offset->v.i <= CHAR_MAX)
+                        if (apd->mode == am_immed && isintconst(apd->offset) && apd->offset->i >= CHAR_MIN &&
+                            apd->offset->i <= CHAR_MAX)
                             apd->length = ISZ_UCHAR;
                     }
                     else
@@ -265,9 +265,9 @@ asmError InstructionParser::GetInstruction(OCODE* ins, Instruction*& newIns, std
                         if (isintconst(ins->oper2->offset))
                         {
                             if (ins->oper1->length == ISZ_UCHAR)
-                                ins->oper2->offset->v.i &= 0xff;
+                                ins->oper2->offset->i &= 0xff;
                             else if (ins->oper1->length == ISZ_USHORT || ins->oper1->length == ISZ_U16)
-                                ins->oper2->offset->v.i &= 0xffff;
+                                ins->oper2->offset->i &= 0xffff;
                         }
                     }
                     break;
@@ -389,10 +389,10 @@ void InstructionParser::SetNumberToken(int val)
     next->val = new AsmExprNode(val);
     inputTokens.push_back(next);
 }
-int resolveoffset(EXPRESSION* n, int* resolved);
-AsmExprNode* MakeFixup(EXPRESSION* oper);
+int resolveoffset(SimpleExpression* n, int* resolved);
+AsmExprNode* MakeFixup(SimpleExpression* oper);
 
-bool InstructionParser::SetNumberToken(EXPRESSION* offset, int& n)
+bool InstructionParser::SetNumberToken(SimpleExpression* offset, int& n)
 {
     int resolved = 1;
     n = resolveoffset(offset, &resolved);
@@ -401,12 +401,12 @@ bool InstructionParser::SetNumberToken(EXPRESSION* offset, int& n)
         SetNumberToken(n);
     return !!resolved;
 }
-void InstructionParser::SetExpressionToken(EXPRESSION* offset)
+void InstructionParser::SetExpressionToken(SimpleExpression* offset)
 {
     int n;
     if (!SetNumberToken(offset, n))
     {
-        EXPRESSION* exp = GetSymRef(offset);
+        SimpleExpression* exp = GetSymRef(offset);
         AsmExprNode* expr = MakeFixup(offset);
         InputToken* next = new InputToken;
         next->type = InputToken::NUMBER;
@@ -501,7 +501,7 @@ void InstructionParser::SetOperandTokens(amode* operand)
         case am_indisp:
             SetBracketSequence(true, operand->length, operand->seg);
             SetRegToken(operand->preg, ISZ_UINT);
-            if (operand->offset && !isconstzero(&stdint, operand->offset))
+            if (operand->offset && ((operand->offset->type == se_ui || operand->offset->type == se_i) && operand->offset->i == 0))
             {
                 inputTokens.push_back(&Tokenplus);
                 SetExpressionToken(operand->offset);
@@ -521,7 +521,7 @@ void InstructionParser::SetOperandTokens(amode* operand)
                 inputTokens.push_back(&Tokenstar);
                 SetNumberToken(1 << operand->scale);
             }
-            if (operand->offset && !isconstzero(&stdint, operand->offset))
+            if (operand->offset && ((operand->offset->type == se_ui || operand->offset->type == se_i) && operand->offset->i == 0))
             {
                 inputTokens.push_back(&Tokenplus);
                 SetExpressionToken(operand->offset);

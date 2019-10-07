@@ -77,19 +77,6 @@ static void inInsert(SYMBOL* sym)
 }
 static void UndoPreviousCodegen(SYMBOL* sym)
 {
-    HASHTABLE* syms = sym->inlineFunc.syms;
-    while (syms)
-    {
-        SYMLIST* hr = syms->table[0];
-        while (hr)
-        {
-            SYMBOL* sx = hr->p;
-            sx->imaddress = sx->imvalue = nullptr;
-            sx->imind = nullptr;
-            hr = hr->next;
-        }
-        syms = syms->next;
-    }
 }
 void dumpInlines(void)
 {
@@ -228,7 +215,7 @@ void dumpInlines(void)
                             dropStructureDeclaration();
                             dropStructureDeclaration();
                         }
-                        gen_virtual(sym, true);
+                        gen_virtual(SymbolManager::Get(sym), true);
                         if (sym->init)
                         {
                             if (isstructured(sym->tp) || isarray(sym->tp))
@@ -246,7 +233,7 @@ void dumpInlines(void)
                         {
                             genstorage(basetype(sym->tp)->size);
                         }
-                        gen_endvirtual(sym);
+                        gen_endvirtual(SymbolManager::Get(sym));
                     }
                 }
                 else
@@ -262,7 +249,7 @@ void dumpInlines(void)
                         else
                         {
                             inInsert(sym);
-                            gen_virtual(sym, true);
+                            gen_virtual(SymbolManager::Get(sym), true);
                             if (sym->init)
                             {
                                 if (isstructured(sym->tp) || isarray(sym->tp))
@@ -278,7 +265,7 @@ void dumpInlines(void)
                             }
                             else
                                 genstorage(basetype(sym->tp)->size);
-                            gen_endvirtual(sym);
+                            gen_endvirtual(SymbolManager::Get(sym));
                         }
                     }
                 }
@@ -294,9 +281,9 @@ void dumpImportThunks(void)
     LIST* l = importThunks;
     while (l)
     {
-        gen_virtual((SYMBOL*)l->data, false);
-        gen_importThunk((SYMBOL*)l->data);
-        gen_endvirtual((SYMBOL*)l->data);
+        gen_virtual(SymbolManager::Get((SYMBOL*)l->data), false);
+        gen_importThunk(SymbolManager::Get(((SYMBOL*)l->data)->mainsym));
+        gen_endvirtual(SymbolManager::Get((SYMBOL*)l->data));
         l = l->next;
     }
 #endif
@@ -309,9 +296,9 @@ void dumpvc1Thunks(void)
     hr = vc1Thunks->table[0];
     while (hr)
     {
-        gen_virtual(hr->p, false);
-        gen_vc1(hr->p);
-        gen_endvirtual(hr->p);
+        gen_virtual(SymbolManager::Get(hr->p), false);
+        gen_vc1(SymbolManager::Get(hr->p));
+        gen_endvirtual(SymbolManager::Get(hr->p));
         hr = hr->next;
     }
 #endif
@@ -325,6 +312,7 @@ SYMBOL* getvc1Thunk(int offset)
     if (!rv)
     {
         rv = (SYMBOL*)Alloc(sizeof(SYMBOL));
+        rv->key = NextSymbolKey();
         rv->name = rv->errname = rv->decoratedName = litlate(name);
         rv->storage_class = sc_static;
         rv->attribs.inheritable.linkage = lk_virtual;

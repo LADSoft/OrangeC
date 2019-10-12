@@ -7717,7 +7717,8 @@ LEXEME* expression_assign(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
         symRef = chosenAssembler->msil ? GetSymRef(*exp) : nullptr;
         LookupSingleAggregate(tp1, &exp1);
 
-        if (isconstraw(*tp, true) && !localMutable)
+        EXPRESSION*temp = GetSymRef(*exp);
+        if (isconstraw(*tp, true) && !localMutable && (!temp || temp->v.sp->storage_class != sc_parameter || !isarray(*tp)))
             error(ERR_CANNOT_MODIFY_CONST_OBJECT);
         else if (isvoid(*tp) || isvoid(tp1) || (*tp)->type == bt_aggregate)
             error(ERR_NOT_AN_ALLOWED_TYPE);

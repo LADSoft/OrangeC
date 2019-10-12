@@ -43,6 +43,7 @@ CPP_DEPENDENCIES= \
     expr.cpp \
     exprcpp.cpp \
     help.cpp \
+    iconversion.cpp \
     init.cpp \
     inline.cpp \
     lambda.cpp \
@@ -56,6 +57,7 @@ CPP_DEPENDENCIES= \
     property.cpp \
     rtti.cpp \
     stmt.cpp \
+    symbolmanager.cpp \
     symtab.cpp \
     template.cpp \
     types.cpp \

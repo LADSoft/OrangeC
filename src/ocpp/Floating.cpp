@@ -1276,7 +1276,7 @@ int main()
     long double l;
     FPF one, two, three;
     int val;
-    LLONG_TYPE aa;
+    long long aa;
     LongLongToFPF(&one, -1976543);
     LongLongToFPF(&two, 100000000);
     DivideFPF(&one, &two, &three);

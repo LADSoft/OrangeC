@@ -48,6 +48,7 @@ CPP_DEPENDENCIES= \
     iblock.cpp \
     iconfl.cpp \
     iconst.cpp \
+    iconversion.cpp \
     iexpr.cpp \
     iflow.cpp \
     iinline.cpp \
@@ -80,6 +81,7 @@ CPP_DEPENDENCIES= \
     rewrite.cpp \
     rtti.cpp \
     stmt.cpp \
+    symbolmanager.cpp \
     symtab.cpp \
     template.cpp \
     types.cpp \

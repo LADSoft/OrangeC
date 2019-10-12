@@ -49,7 +49,7 @@ void __tss_run_dtors(thrd_t thrd);
 void __mtx_remove_thrd(thrd_t thrd);
 void __cnd_remove_thrd(thrd_t thrd);
 
-extern char _TLSINITSTART[], _TLSINITEND[];
+extern void * __tlsStart, *__tlsEnd;
 
 #pragma startup thrd_init 240
 
@@ -78,7 +78,7 @@ void _RTL_FUNC __tlsaddr(int n)
 static void load_local_data(void)
 {
     struct __rtl_data* r = __getRtlData();
-    int n = _TLSINITEND - _TLSINITSTART;
+    int n = __tlsEnd - __tlsStart;
     if (!n)
     {
         n = 4;
@@ -86,7 +86,7 @@ static void load_local_data(void)
     char* p = malloc(n);
     if (!p)
         abort();
-    memcpy(p, _TLSINITSTART, n);
+    memcpy(p, __tlsStart, n);
     r->thread_local_data = p;
 }
 static void thrd_init(void)

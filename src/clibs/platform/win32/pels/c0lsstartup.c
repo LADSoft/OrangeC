@@ -43,6 +43,7 @@ extern void _import _exit(int);
 #include <string.h>
 
 extern char INITSTART[], INITEND[], EXITSTART[], EXITEND[], BSSSTART[], BSSEND[];
+extern char _TLSINITSTART[], _TLSINITEND[];
 extern __import int _argc;
 extern __import char** _argv;
 extern __import char** _environ;
@@ -52,7 +53,7 @@ static unsigned dllexists = 0;
 static void _dorundown(void);
 // in the follow, the args are ONLY valid for DLLs
 int __stdcall DllEntryPoint(HINSTANCE hInst, DWORD fdwReason, LPVOID lpvReserved);
-void __stdcall __import ___lsdllinit(DWORD flags, void (*rundown)(void), unsigned* exceptBlock);
+void __stdcall __import ___lsdllinit(void* tlsStart, void* tlsEnd, DWORD flags, void (*rundown)(void), unsigned* exceptBlock);
 void __srproc(char*, char*);
 int __stdcall ___lscrtl_startup(HINSTANCE hInst, DWORD fdwReason, LPVOID lpvReserved)
 {
@@ -65,7 +66,7 @@ int __stdcall ___lscrtl_startup(HINSTANCE hInst, DWORD fdwReason, LPVOID lpvRese
     quote = 0;
     if (!(flags & DLL) || fdwReason == DLL_PROCESS_ATTACH)
     {
-        ___lsdllinit(flags, _dorundown, exceptBlock);
+        ___lsdllinit(_TLSINITSTART, _TLSINITEND, flags, _dorundown, exceptBlock);
         if (flags & DLL)
         {
             if (!dllexists)

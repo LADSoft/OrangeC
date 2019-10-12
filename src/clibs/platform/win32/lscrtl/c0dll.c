@@ -42,6 +42,10 @@
 #include <string.h>
 
 extern char INITSTART[], INITEND[], EXITSTART[], EXITEND[], BSSSTART[], BSSEND[];
+extern char _TLSINITSTART[], _TLSINITEND[];
+
+void *__tlsStart, *__tlsEnd;
+
 extern int _argc;
 extern char **_argv;
 extern char **_environ;
@@ -76,11 +80,13 @@ int __stdcall ___startup(HINSTANCE hInst, DWORD fdwReason, LPVOID lpvReserved)
     }
     return TRUE;
 }
-void __export __stdcall ___lsdllinit(DWORD flags, void (*rundown)(), int *exceptBlock)
+void __export __stdcall ___lsdllinit(void *tlsStart, void *tlsEnd, DWORD flags, void (*rundown)(), int *exceptBlock)
 {
     static int Flags ;
     static int rv;
     memset(BSSSTART, 0, BSSEND - BSSSTART); // for DLL second load cleanup
+    __tlsStart = tlsStart;
+    __tlsEnd = tlsEnd;
     Flags = flags;
     if (flags & GUI)
         _win32 = 1;
@@ -109,7 +115,7 @@ void __export __stdcall ___lsdllinit(DWORD flags, void (*rundown)(), int *except
 void __export __getmainargs(int **pargc, char ***pargv, char ***penviron, int flags, void **newmode)
 {
 	msvcrt_compat = 1;
-	___lsdllinit(0, 0, 0);
+	___lsdllinit(_TLSINITSTART, _TLSINITEND, 0, 0, 0);
 	*pargc = _argc;
 	*pargv = _argv;
 	*penviron = _environ;

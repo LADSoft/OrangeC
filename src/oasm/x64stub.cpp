@@ -35,6 +35,8 @@
 #include <iostream>
 #include "Errors.h"
 
+std::set<std::string> InstructionParser::attPotentialExterns;
+
 const char* Lexer::preDataIntel =
     "%define __SECT__\n"
     "%imacro	pdata1	0+ .native\n"
@@ -975,6 +977,10 @@ std::string InstructionParser::RewriteATTArg(const std::string& line)
         if (npos == std::string::npos)
            return "[" + seg + line.substr(i) + "]";
         name = line. substr(i, npos - i);
+        if (!name.empty())
+        {
+            attPotentialExterns.insert(name);
+        }
         std::string primary, secondary, times;
         i = npos+1;
         for (; i < line.size(); i++)
@@ -1053,7 +1059,10 @@ std::string InstructionParser::RewriteATTArg(const std::string& line)
                 }
             }
             if (name.size())
+            {
+                attPotentialExterns.insert(name);
                 primary += "+" + name;
+            }
             primary = "[" + seg + primary + "]";
             return primary;
         }
@@ -1162,6 +1171,31 @@ std::string InstructionParser::RewriteATT(int& op, const std::string& line, int&
     case op_js:
     case op_jz:
         return line;
+    case op_lods:
+    case op_stos:
+    case op_movs:
+    case op_cmps:
+    case op_scas:
+    case op_ins:
+    case op_outs:
+        switch (size1)
+        {
+        case 1:
+            op += 1;
+            break;
+        case 2:
+            op += 2;
+            break;
+        case 4:
+        case -4:
+            op += 3;
+            break;
+        case 8:
+        case -8:
+            op += 4;
+            break;
+        }
+        return line;
     }
     std::vector<std::string> splt, splt2;
     // split arguments out into multiple strings
@@ -1178,9 +1212,10 @@ std::string InstructionParser::RewriteATT(int& op, const std::string& line, int&
             size1 = -8;
         }
     }
+
     if (size2 && splt2[0].find_first_of("[") != std::string::npos)
     {
-        PreprendSize(splt2[0], size2);
+        PreprendSize(splt2[0], size1);
     }
     else if (size1)
     {

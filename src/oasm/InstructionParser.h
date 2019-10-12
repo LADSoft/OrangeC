@@ -33,6 +33,7 @@
 #include <climits>
 #include "AsmExpr.h"
 #include <memory>
+#include <set>
 class Instruction;
 class Section;
 class AsmFile;
@@ -154,6 +155,8 @@ class InstructionParser
         }
         return false;
     }
+    static const std::set<std::string>& GetAttExterns() { return attPotentialExterns; }
+
   protected:
     void RenameRegisters(AsmExprNode* val);
     AsmExprNode* ExtractReg(AsmExprNode** val);
@@ -199,6 +202,8 @@ class InstructionParser
     AsmExpr asmexpr;
     bool attSyntax;
     static int processorMode;
+    static std::set<std::string> attPotentialExterns;
+
     // c compiler support
 
   public:

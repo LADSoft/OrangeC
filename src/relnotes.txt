@@ -22,7 +22,18 @@ version 6.0.44:
     occ: generate error if using floating point in a preprocessor expression
     occ: fix rare problem where constant evaluation could crash optimizer
     occ: fix some crashes on invalid input
-    occ: fix various problems found by the c-testsuite (tests for tcc)
+    occ: fix some problems zeroing structures in a function but not in a declaration.
+    occ: handle constant evaluation for complement operation correctly
+    occ: fix sizeof an array which is a function param to be sizeof(void *)
+    occ: add __attribute__((__stdcall__)) and parse for attributes in a couple of new places
+    occ: allow argument which is an array surrounded by parenthesis
+    occ: fix some preprocessor replacement issues found by c-testsuite tests
+    occ: handle cast to structured constant which is in the global space
+    occ: fix call to address which is an integer constant to generate correct code
+    occ: fix a vagary wherein switch-case statements without brackets did not compile properly
+    occ: optimize constant expressions involving and, or, and exclusive or a little better
+    occ: handle __VA_ARGS__ for empty argument lists properly
+
     occil: fix problem with generating code that shifted by an int64 constant
     occil: fix problem with a function call in the middle of a variable arguments sequence resulting in bad code
     oasm: add 'gas' syntax
@@ -36,6 +47,7 @@ version 6.0.44:
     occpr: (code completion analyzer) fix many crashes on invalid input
     olink: fix library search order to be more like other windows compilers
     general: started work on taking care of bugs found by static analysis
+    rtl: fix printf() and friends to work properly with long double variables
     rtl: throwing standard C++ classes such as the std::runtime wouldn't work when compiled against lscrtl.dll
     rtl: support more errno values
     rtl, tools: update to latest version of SQLITE3

@@ -53,6 +53,8 @@ extern char _TLSINITSTART[], _TLSINITEND[];
 
 #pragma startup thrd_init 240
 
+static int tlsoffset = __offsetof(struct __rtl_data, thread_local_data);
+
 // this func is a compiler helper... it is not visible to the optimizer so it
 // cannot muddle with any registers.  The return value is stacked back where
 // the arg came from, because, the compiler has to put the return value into some
@@ -64,8 +66,10 @@ void _RTL_FUNC __tlsaddr(int n)
     asm push eax;
     asm push ecx;
     asm push edx;
-    struct __rtl_data* r = __getRtlData();
-    n = (int)r->thread_local_data + n;  // return value is on stack for this one...
+    __getRtlData(); // eax has pointer to thread data now
+    asm mov ecx,[tlsoffset]
+    asm mov eax,[eax + ecx]
+    asm add [esp + 16], eax
     asm pop edx;
     asm pop ecx;
     asm pop eax;

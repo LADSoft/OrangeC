@@ -33,54 +33,15 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  * 
  */
+#ifndef	_ALLOCA_H
+#define	_ALLOCA_H
 
-/*  malloc.h
-
-    memory management functions and variables.
-
-*/
-
-#ifndef __MALLOC_H
-#define __MALLOC_H
-
-#ifndef __STDDEF_H
 #include <stddef.h>
-#endif
-
-#define _HEAPEMPTY      1
-#define _HEAPOK         2
-#define _FREEENTRY      3
-#define _USEDENTRY      4
-#define _HEAPEND        5
-#define _HEAPCORRUPT    -1
-#define _BADNODE        -2
-#define _BADVALUE       -3
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#ifdef __CC386__
-#define _fmalloc(size) farmalloc(size)
-#define _ffree(size)  farfree(size)
-#endif
-
-void        _RTL_FUNC _IMPORT _MSIL_RTL *calloc(size_t __nitems, size_t __size);
-void        _RTL_FUNC _IMPORT _MSIL_RTL free(void *__block);
-void        _RTL_FUNC _IMPORT _MSIL_RTL *malloc(size_t __size);
-void        _RTL_FUNC _IMPORT _MSIL_RTL *realloc(void *__block, size_t __size);
-#ifdef __CC386__
-void        _RTL_FUNC _IMPORT _FAR *farmalloc(size_t __size) ;
-void        _RTL_FUNC _IMPORT farfree(void _FAR *__block) ;
-#endif
 
 #undef _alloca
 #undef alloca
+
 #define _alloca(x) __alloca((x))
 #define alloca(x) __alloca((x))
 
-#ifdef __cplusplus
-} ;
 #endif
-
-#endif  /* __MALLOC_H */

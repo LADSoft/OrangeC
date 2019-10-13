@@ -47,6 +47,8 @@ extern LINEDATA *linesHead, *linesTail;
 extern PreProcessor* preProcessor;
 extern FILE* cppFile;
 
+bool parsingPreprocessorConstant;
+
 LEXCONTEXT* context;
 
 int charIndex;
@@ -1774,4 +1776,24 @@ void SetAlternateParse(bool set, const std::string& val)
         linePointer = (const unsigned char *)currentLine.c_str() + parseStack.top().charIndex;
         parseStack.pop();
     }
+}
+long long ParseExpression(std::string& line)
+{
+    LEXCONTEXT *oldContext = context;
+    LEXCONTEXT* newContext = (LEXCONTEXT*)Alloc(sizeof(LEXCONTEXT));
+    context = newContext;
+    TYPE *tp = nullptr;
+    EXPRESSION *exp = nullptr;
+    SetAlternateParse(true, line);
+    LEXEME* lex = getsym();
+    parsingPreprocessorConstant = true;
+    lex = optimized_expression(lex, nullptr, nullptr, &tp, &exp, false);
+    parsingPreprocessorConstant = false;
+    if (lex || !tp || !exp || !isintconst(exp))
+    {
+        error(ERR_CONSTANT_VALUE_EXPECTED);
+    }
+    SetAlternateParse(false, "");
+    context = oldContext;
+    return exp->v.i;
 }

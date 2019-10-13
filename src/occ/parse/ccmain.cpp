@@ -42,6 +42,8 @@ extern CmdSwitchCombineString prm_libpath;
 extern CmdSwitchString prm_pipe;
 extern CmdSwitchCombineString prm_output;
 
+long long ParseExpression(std::string& line);
+
 #ifdef _WIN32
 extern "C"
 {
@@ -387,6 +389,7 @@ int main(int argc, char* argv[])
 
         if (!preProcessor->IsOpen())
             exit(1);
+        preProcessor->SetExpressionHandler(ParseExpression);
         if (chosenAssembler->doPragma)
         {
             preProcessor->SetPragmaCatchall([](const std::string&kw, const std::string&tag) {

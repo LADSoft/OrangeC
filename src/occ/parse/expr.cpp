@@ -77,6 +77,7 @@ extern int tryLevel;
 extern bool hasFuncCall;
 extern PreProcessor* preProcessor;
 extern attributes basisAttribs;
+extern bool parsingPreprocessorConstant;
 
 int packIndex;
 
@@ -911,6 +912,12 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
             }
         }
     }
+    else if (parsingPreprocessorConstant)
+    {
+        *tp = &stdint;
+        *exp = intNode(en_c_i, 0);
+        lex = getsym();
+    }
     else
     {
         char* name;
@@ -1084,7 +1091,8 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
     }
     if (!*exp)
         *exp = intNode(en_c_i, 0);
-    sym->allocate = true;
+    if (sym)
+        sym->allocate = true;
     return lex;
 }
 static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, bool* ismutable, int flags)

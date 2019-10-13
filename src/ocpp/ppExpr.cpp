@@ -35,10 +35,14 @@ KeywordHash ppExpr::hash = {
     {"&&", kw::land},  {"?", kw::hook},    {":", kw::colon},      {",", kw::comma},
 };
 
+ppExpr::CompilerExpression *ppExpr::expressionHandler;
+
 ppInclude* ppExpr::include;
 
 PPINT ppExpr::Eval(std::string& line)
 {
+    if (expressionHandler)
+        return expressionHandler(line);
     floatWarned = false;
     tokenizer = std::make_unique<Tokenizer>(line, &hash);
     token = tokenizer->Next();

@@ -37,6 +37,8 @@ typedef unsigned long long PPUINT;
 class ppExpr
 {
   public:
+    typedef long long CompilerExpression(std::string&line);
+
     ppExpr(bool isunsignedchar) : 
         define(nullptr), 
         unsignedchar(isunsignedchar),
@@ -52,6 +54,7 @@ class ppExpr
     static KeywordHash* GetHash() { return &hash; }
 
     static void SetInclude(ppInclude* inc) { include = inc; }
+    static void SetExpressionHandler(CompilerExpression* handler) { expressionHandler = handler; }
   protected:
     PPINT primary(std::string& line, bool &isunsigned);
     PPINT unary(std::string& line, bool &isunsigned);
@@ -76,5 +79,6 @@ class ppExpr
     const Token* token;
     static KeywordHash hash;
     static ppInclude* include;
+    static CompilerExpression* expressionHandler;
 };
 #endif

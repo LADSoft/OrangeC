@@ -32,6 +32,7 @@
 #include "ppPragma.h"
 #include "ppMacro.h"
 #include "ppCtx.h"
+#include "ppExpr.h"
 
 class PreProcessor
 {
@@ -78,6 +79,7 @@ class PreProcessor
     {
         pragma.SetPragmaCatchall(callback);
     }
+    void SetExpressionHandler(ppExpr::CompilerExpression* handler) { ppExpr::SetExpressionHandler(handler); }
     int GetCppPrio() { return pragma.CppPrio(); }
     std::list<std::string>& GetIncludeLibs() { return pragma.IncludeLibs(); }
     std::set<std::string>& GetUserIncludes() { return include.GetUserIncludes(); }

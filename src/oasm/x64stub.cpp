@@ -1127,16 +1127,37 @@ std::string InstructionParser::RewriteATT(int& op, const std::string& line, int&
         if (npos != std::string::npos)
             if (line[npos] == '*')
                 if (line.find_first_of("%") != std::string::npos)
+                {
                     return "[" + RewriteATTArg(line.substr(npos + 1)) + "]";
+                }
                 else
-                    return "[" + line.substr(npos + 1) + "]";
+                {
+                    std::string name = line.substr(npos + 1);
+                    if (!name.empty())
+                    {
+                        attPotentialExterns.insert(name);
+                    }
+                    return "[" + name + "]";
+                }
+        if (!line.empty())
+        {
+            attPotentialExterns.insert(line);
+        }
         return line;
     }
     case 10000://lcall
         op = op_call;
+        if (!line.empty())
+        {
+            attPotentialExterns.insert(line);
+        }
         return "far [" + line + "]";
     case 10001://ljmp
         op = op_jmp;
+        if (!line.empty())
+        {
+            attPotentialExterns.insert(line);
+        }
         return "far [" + line + "]";
     case op_ja:
     case op_jae:
@@ -1170,6 +1191,10 @@ std::string InstructionParser::RewriteATT(int& op, const std::string& line, int&
     case op_jpo:
     case op_js:
     case op_jz:
+        if (!line.empty())
+        {
+            attPotentialExterns.insert(line);
+        }
         return line;
     case op_lods:
     case op_stos:

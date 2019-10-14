@@ -5657,7 +5657,7 @@ static LEXEME* expression_postfix(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE**
         }
     if (!*tp)
         return lex;
-    while (!done && lex)
+    while (!done && !parsingPreprocessorConstant && lex)
     {
         enum e_kw kw;
         switch (KW(lex))

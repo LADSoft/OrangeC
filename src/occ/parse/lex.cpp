@@ -1525,7 +1525,8 @@ LEXEME* getsym(void)
     if (++nextFree >= MAX_LOOKBACK)
         nextFree = 0;
     lex->registered = false;
-    TemplateRegisterDeferred(last);
+    if (!parsingPreprocessorConstant)   
+        TemplateRegisterDeferred(last);
     last = nullptr;
     do
     {
@@ -1535,7 +1536,11 @@ LEXEME* getsym(void)
             if (*linePointer == 0)
             {
                 if (parseStack.size() || !preProcessor->GetLine(currentLine))
+                {
+                    if (lex->prev)
+                        lex->prev->next = nullptr;
                     return nullptr;
+                }
                 linePointer = (const unsigned char*)currentLine.c_str();
                 if (cppFile)
                     DumpPreprocessedLine();
@@ -1789,7 +1794,7 @@ long long ParseExpression(std::string& line)
     parsingPreprocessorConstant = true;
     lex = optimized_expression(lex, nullptr, nullptr, &tp, &exp, false);
     parsingPreprocessorConstant = false;
-    if (lex || !tp || !exp || !isintconst(exp))
+    if (!tp || !exp || !isintconst(exp))
     {
         error(ERR_CONSTANT_VALUE_EXPECTED);
     }

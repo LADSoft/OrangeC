@@ -41,6 +41,10 @@ ppInclude* ppExpr::include;
 
 PPINT ppExpr::Eval(std::string& line)
 {
+    if (line.empty() || line.find_first_not_of(" \t\r\v\n") == std::string::npos)
+    {
+        return 0;
+    }
     if (expressionHandler)
         return expressionHandler(line);
     floatWarned = false;

@@ -539,7 +539,6 @@ OCODE* peep_test(OCODE* ip)
 }
 OCODE* peep_neg(OCODE* ip)
 {
-    return ip->fwd;
     if (ip->oper1->mode == am_dreg)
     {
         OCODE* ipf = ip->fwd;
@@ -549,7 +548,7 @@ OCODE* peep_neg(OCODE* ip)
             {
                 if (ipf->oper2->mode == am_dreg && ipf->oper2->preg == ip->oper1->preg)
                 {
-                    if (!live(ip->oper1->liveRegs, ip->oper1->preg))
+                    if (!live(ipf->oper2->liveRegs, ip->oper2->preg))
                     {
                         remove_peep_entry(ip);
                         ipf->opcode = op_sub;

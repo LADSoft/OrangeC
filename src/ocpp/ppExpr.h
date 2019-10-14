@@ -48,7 +48,7 @@ class ppExpr
     ~ppExpr() {}
 
     void SetParams(ppDefine* Define) { define = Define; }
-    PPINT Eval(std::string& line);
+    PPINT Eval(std::string& line, bool fromConditional = false);
     std::string GetString() { return tokenizer->GetString(); }
     void SetDefine(ppDefine* Define) { define = Define; }
     static KeywordHash* GetHash() { return &hash; }

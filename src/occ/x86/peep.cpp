@@ -539,6 +539,7 @@ OCODE* peep_test(OCODE* ip)
 }
 OCODE* peep_neg(OCODE* ip)
 {
+    return ip->fwd;
     if (ip->oper1->mode == am_dreg)
     {
         OCODE* ipf = ip->fwd;

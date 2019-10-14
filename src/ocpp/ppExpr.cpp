@@ -39,13 +39,13 @@ ppExpr::CompilerExpression *ppExpr::expressionHandler;
 
 ppInclude* ppExpr::include;
 
-PPINT ppExpr::Eval(std::string& line)
+PPINT ppExpr::Eval(std::string& line, bool fromConditional)
 {
     if (line.empty() || line.find_first_not_of(" \t\r\v\n") == std::string::npos)
     {
         return 0;
     }
-    if (expressionHandler)
+    if (fromConditional && expressionHandler)
         return expressionHandler(line);
     floatWarned = false;
     tokenizer = std::make_unique<Tokenizer>(line, &hash);

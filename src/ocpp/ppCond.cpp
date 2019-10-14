@@ -44,12 +44,12 @@ bool ppCond::Check(kw token, const std::string& line, int lineno)
         case kw::IF:
             define->replaceDefined(line1);
             define->Process(line1);
-            HandleIf(expr.Eval(line1), line1, lineno);
+            HandleIf(expr.Eval(line1, true), line1, lineno);
             break;
         case kw::ELIF:
             define->replaceDefined(line1);
             define->Process(line1);
-            HandleElif(expr.Eval(line1), line1);
+            HandleElif(expr.Eval(line1, true), line1);
             break;
         case kw::IFDEF:
             HandleDef(line1, false, false, lineno);
@@ -194,7 +194,7 @@ void ppCond::HandleElse(std::string& line)
             line1 = line1.substr(npos + 2);
             define->replaceDefined(line1);
             define->Process(line1);
-            HandleElif(expr.Eval(line1), line1);
+            HandleElif(expr.Eval(line1, true), line1);
             return;
         }
     }

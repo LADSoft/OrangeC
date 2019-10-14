@@ -1982,6 +1982,12 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
         enum e_bt t1, t2;
         t1 = tp1->type;
         t2 = tp2->type;
+        if (tp1->size == tp2->size)
+            if (isunsigned(tp1) != isunsigned(tp2))
+                if (isunsigned(tp1))
+                    t2 = t1;
+                else
+                    t1 = t2;
         /*
         if (cparams.prm_cplusplus && (t1 == bt_enum || t2 == bt_enum))
         {

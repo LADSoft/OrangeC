@@ -38,20 +38,4 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-int __test = 0;
-void _RTL_FUNC operator delete[](void* __p) 
-{ 
-if (__test)
-{
-    asm mov eax,4
-    asm mov eax,[esp+eax]
-    asm push eax
-    asm mov eax,4
-    asm mov eax,[esp+eax]
-    asm push eax
-    printf("%x %x\n");
-    asm pop ecx
-    asm pop ecx
-}
-free(__p); 
-}
+void _RTL_FUNC operator delete[](void* __p) { free(__p); }

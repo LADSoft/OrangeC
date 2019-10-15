@@ -237,7 +237,6 @@ char* CmdSwitchFile::GetStr(char* data)
         if (q)
         {
             int len = q + 1 - p;
-            printf("len: %d\n", len); 
             char* name = new char[len - 1];
             memcpy(name, p + 1, len - 2);
             name[len - 2] = 0;

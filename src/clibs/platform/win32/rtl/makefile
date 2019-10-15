@@ -53,6 +53,6 @@ vsconio.o: vsconio.c
 	$(CC) /! /c $(STDINCLUDE) $(CFLAGS) /DVSDLL -o$(OBJECT)\$@ $^
 
 llthrd.o: llthrd.c
-	$(CC) /! /c /C-E $(STDINCLUDE) $(BUILDING_DLL) /9 -o$(OBJECT)\$@ $^
+	$(CC) /! /c /C+E $(STDINCLUDE) $(BUILDING_DLL) /9 -o$(OBJECT)\$@ $^
 
 DISTRIBUTE:

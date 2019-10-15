@@ -425,15 +425,8 @@ void ParamTransfer()
         
     }
     checks = split(prm_codegen.GetValue());
-    for (auto&& v : checks)
-    {
-        if (v.size() >= 1)
-        {
-            char ch = v[0];
-            codegen_setup(ch, v.c_str() + 1);
-        }
+    codegen_setup('C', prm_codegen.GetValue().c_str());
 
-    }
     if (prm_stackalign.GetExists())
     {
         int n = prm_stackalign.GetValue();

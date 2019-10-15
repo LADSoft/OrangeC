@@ -305,7 +305,14 @@ int main(int argc, char* argv[])
     }
     */
     /* parse environment variables, command lines, and config files  */
+#ifdef __ORANGEC__
+extern int __test;
+__test++;
+#endif
     ccinit(argc, argv);
+#ifdef __ORANGEC__
+__test--;
+#endif
 
     /* loop through and preprocess all the files on the file list */
     if (clist && clist->next)

@@ -46,12 +46,25 @@
 extern FREELIST* __mallocchains[MEMCHAINS];
 extern char ___realloc_stub;
 
+int __test = 0;
 
 void _RTL_FUNC free(void* buf)
 {
     FREELIST *p, **c;
     if (!buf || buf == ___realloc_stub)
         return;
+if (__test)
+{
+    asm mov eax,16
+    asm mov eax,[esp+eax]
+    asm push eax
+    asm mov eax,16
+    asm mov eax,[esp+eax]
+    asm push eax
+    printf("%x %x\n");
+    asm pop ecx
+    asm pop ecx
+}
     p = buf;
 
     p--;

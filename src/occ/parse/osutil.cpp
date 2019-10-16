@@ -862,9 +862,13 @@ printf("44444444\n");
 
     if (chosenAssembler->envname)
     {
+printf("%s\n", chosenAssembler->envname);
         const char *env = getenv(chosenAssembler->envname);
+printf("%s\n", env);
         if (env && !switchParser.Parse(std::string(env), &ecnt, eargs))
+        {
             Utils::usage(argv[0], getUsageText());
+        }
     }
 printf("55555555\n");
 

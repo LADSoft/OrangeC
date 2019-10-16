@@ -114,7 +114,7 @@ skip_commits:
 build_script:
 # the appveyor virtual machine reported two processors, so, lets try running parallel compile!
         - ps: |
-              set
+	      gci env:* | sort-object name
               cd ..\..
               move projects\orangec .
               mkdir \orangec\temp

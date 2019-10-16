@@ -799,7 +799,6 @@ void ccinit(int argc, char* argv[])
     char* p;
     int rv;
     int i;
-printf("11111111\n");
 
     for (i = 1; i < argc; i++)
         if (argv[i][0] == '-' || argv[i][0] == '/')
@@ -823,7 +822,6 @@ printf("11111111\n");
         fprintf(stderr, "Compile date: " __DATE__ ", time: " __TIME__ "\n");
         exit(0);
     }
-printf("2222222222\n");
 
     extern void Cleanup();
     Utils::SetCleanup(Cleanup);
@@ -832,7 +830,6 @@ printf("2222222222\n");
 #else
     strcpy(buffer, argv[0]);
 #endif
-printf("33333333\n");
 
     if (!getenv("ORANGEC"))
     {
@@ -858,20 +855,16 @@ printf("33333333\n");
     /* parse the environment and command line */
     int ecnt = 0;
     char *eargs[200];
-printf("44444444\n");
 
     if (chosenAssembler->envname)
     {
-printf("%s\n", chosenAssembler->envname);
         const char *env = getenv(chosenAssembler->envname);
-printf("%x\n", env);
-printf("%s\n", env);
-        if (env && !switchParser.Parse(std::string(env), &ecnt, eargs))
-        {
-            Utils::usage(argv[0], getUsageText());
-        }
+        if (env)
+            if (!switchParser.Parse(std::string(env), &ecnt, eargs))
+            {
+                Utils::usage(argv[0], getUsageText());
+            }
     }
-printf("55555555\n");
 
     CmdSwitchFile internalConfig(switchParser);
     if (chosenAssembler->cfgname)
@@ -885,7 +878,6 @@ printf("55555555\n");
                 Utils::fatal("Corrupt configuration file");
         }
     }
-printf("66666666\n");
 
     if (!switchParser.Parse(&argc, argv) || (argc == 1 && prm_file.GetCount() <= 1 && ecnt <= 1))
         Utils::usage(argv[0], getUsageText());
@@ -893,7 +885,6 @@ printf("66666666\n");
     ParamTransfer();
     /* tack the environment includes in */
     addinclude();
-printf("77777777\n");
 
     /* Scan the command line for file names or response files */
     {
@@ -909,7 +900,6 @@ printf("77777777\n");
             InsertAnyFile(argv[i], 0, -1, true);
         }   
     }
-printf("88888888\n");
 
 #ifndef PARSER_ONLY
 
@@ -937,7 +927,6 @@ printf("88888888\n");
         }
     }
 #endif
-printf("99999999\n");
 
     /* Set up a ctrl-C handler so we can exit the prog with cleanup */
     signal(SIGINT, ctrlchandler);

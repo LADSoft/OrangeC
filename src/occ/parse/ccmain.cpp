@@ -305,9 +305,7 @@ int main(int argc, char* argv[])
     }
     */
     /* parse environment variables, command lines, and config files  */
-printf("aaaaaaaa\n");
     ccinit(argc, argv);
-printf("bbbbbbbb\n");
 
     /* loop through and preprocess all the files on the file list */
     if (clist && clist->next)

@@ -14,6 +14,7 @@ install:
     - set ORIGPATH=%PATH%
     - set ORANGEC=c:\ORANGEC
     - set LADSOFT_DEV=c:\cc386
+    - set
 
 branches:
    only:
@@ -114,7 +115,6 @@ skip_commits:
 build_script:
 # the appveyor virtual machine reported two processors, so, lets try running parallel compile!
         - ps: |
-	      gci env:* | sort-object name
               cd ..\..
               move projects\orangec .
               mkdir \orangec\temp

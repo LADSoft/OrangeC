@@ -1221,6 +1221,11 @@ std::string InstructionParser::RewriteATT(int& op, const std::string& line, int&
             break;
         }
         return line;
+    case op_push:
+    case op_pop:
+        if (size1 == 0)
+             size1 = processorMode/8;
+        break;
     }
     std::vector<std::string> splt, splt2;
     // split arguments out into multiple strings

@@ -968,14 +968,26 @@ std::string InstructionParser::RewriteATTArg(const std::string& line)
         {
             return line.substr(i);
         }
-        return "dword " + line.substr(i);
+        std::string name = line.substr(i);
+        if (!name.empty())
+        {
+            attPotentialExterns.insert(name);
+        }
+        return "dword " + name;
     }
     else
     {
         std::string name;
         int npos = line.find_first_of("(", i);
         if (npos == std::string::npos)
-           return "[" + seg + line.substr(i) + "]";
+        {
+            name = line. substr(i, npos - i);
+            if (!name.empty())
+            {
+                attPotentialExterns.insert(name);
+            }
+            return "[" + seg + name + "]";
+        }
         name = line. substr(i, npos - i);
         if (!name.empty())
         {

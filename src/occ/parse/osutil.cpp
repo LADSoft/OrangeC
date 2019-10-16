@@ -864,6 +864,7 @@ printf("44444444\n");
     {
 printf("%s\n", chosenAssembler->envname);
         const char *env = getenv(chosenAssembler->envname);
+printf("%x\n", env);
 printf("%s\n", env);
         if (env && !switchParser.Parse(std::string(env), &ecnt, eargs))
         {

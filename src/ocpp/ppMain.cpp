@@ -28,6 +28,7 @@
 #include "PreProcessor.h"
 #include "Errors.h"
 #include <cstdlib>
+#include <algorithm>
 
 CmdSwitchParser ppMain::SwitchParser;
 CmdSwitchBool ppMain::assembly(SwitchParser, 'a', false);
@@ -171,19 +172,7 @@ int ppMain::Run(int argc, char* argv[])
         while (pp.GetLine(working))
         {
             int last = 0;
-            std::string rv;
-            for (int p = 0; p < working.size(); p++)
-            {
-                if (working[p] == ppDefine::MACRO_PLACEHOLDER)
-                {
-                    if (p != last)
-                        rv += working.substr(last, p - last);
-                    while (working[p] == ppDefine::MACRO_PLACEHOLDER)
-                        p++;
-                    last = p;
-                }
-            }
-            working = rv;
+            working.erase(std::remove(working.begin(), working.end(), ppDefine::MACRO_PLACEHOLDER), working.end());
             if (assembly.GetValue())
             {
                 int npos = working.find_first_not_of(" \t\r\n\v");

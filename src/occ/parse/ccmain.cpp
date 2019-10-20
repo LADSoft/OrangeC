@@ -348,40 +348,16 @@ int main(int argc, char* argv[])
         ccNewFile(buffer, true);
 #endif
         AddExt(buffer, ".C");
-        p = strrchr(buffer, '.');
-        if (*(p - 1) != '.')
+        static const std::list<std::string> cppExtensions = { ".h", ".cpp", ".cxx", ".cc", ".c++" };
+        for (auto & str : cppExtensions)
         {
-            if (p[1] == 'h' || p[1] == 'H')  // compile H files as C++ for the IDE
-                cparams.prm_cplusplus = true;
-            if (p[1] == 'c' || p[1] == 'C')
-                if (p[2] == 'p' || p[2] == 'P')
-                {
-                    if (p[3] == 'p' || p[3] == 'P')
-                        cparams.prm_cplusplus = true;
-                }
-                else
-                {
-                    if (p[2] == 'x' || p[2] == 'X')
-                    {
-                        if (p[3] == 'x' || p[3] == 'X')
-                            cparams.prm_cplusplus = true;
-                    }
-                }
-            else if ((p[2] == 'c' || p[2] == 'C') && !p[3])
+            if (HasExt(buffer, str.c_str()))
             {
                 cparams.prm_cplusplus = true;
-            }
-            else
-            {
-                if (p[2] == '+')
-                {
-                    if (p[3] == '+')
-                        cparams.prm_cplusplus = true;
-                }
+                cparams.prm_c99 = cparams.prm_c1x = false;
+                break;
             }
         }
-        if (cparams.prm_cplusplus)
-            cparams.prm_c99 = cparams.prm_c1x = false;
         if (cparams.prm_cplusplus && chosenAssembler->msil)
             Utils::fatal("MSIL compiler does not compile C++ files at this time");
         preProcessor = new PreProcessor(buffer, prm_include.GetValue(), prm_sysinclude.GetValue(), true, cparams.prm_trigraph, '#', cparams.prm_charisunsigned,

@@ -2392,7 +2392,7 @@ static bool checkNoEffect(EXPRESSION* exp)
         case en_funcret:
             return checkNoEffect(exp->left);
         case en_cond:
-            return checkNoEffect(exp->right->left) | checkNoEffect(exp->right->right);
+            return checkNoEffect(exp->right->left) && checkNoEffect(exp->right->right);
         default:
             return true;
     }

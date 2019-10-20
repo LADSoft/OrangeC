@@ -78,6 +78,7 @@ extern bool hasFuncCall;
 extern PreProcessor* preProcessor;
 extern attributes basisAttribs;
 extern bool parsingPreprocessorConstant;
+extern bool isCallExit;
 int packIndex;
 
 int argument_nesting;
@@ -608,8 +609,7 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                             *exp = intNode(en_c_i, 0);
                         return lex;
                     case sc_overloads:
-                        if (!strcmp(sym->name, "setjmp") && sym->parentClass == nullptr && sym->parentNameSpace == nullptr)
-                            setjmp_used = true;
+
                         hr = basetype(sym->tp)->syms->table[0];
                         funcparams = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
                         if (cparams.prm_cplusplus && MATCHKW(lex, lt))
@@ -627,6 +627,7 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                             // we only get here for C language, sadly we have to do
                             // argument based lookup in C++...
                             funcparams->sp = hr->p;
+                            
                             funcparams->sp->attribs.inheritable.used = true;
                             funcparams->fcall = varNode(en_pc, funcparams->sp);
                             if (!MATCHKW(lex, openpa))
@@ -3550,6 +3551,13 @@ LEXEME* expression_arguments(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION*
             lptr = &funcparams->arguments;
             if (funcparams->sp)
             {
+                if (funcparams->sp->parentClass == nullptr && funcparams->sp->parentNameSpace == nullptr)
+                {
+                    if (!strcmp(funcparams->sp->name, "setjmp"))
+                        setjmp_used = true;
+                    if (!strcmp(funcparams->sp->name, "exit"))
+                        isCallExit = true;
+                }
                 TYPE* tp1 = funcparams->sp->tp;
                 if (ispointer(tp1))
                     tp1 = basetype(tp1)->btp;
@@ -7286,6 +7294,7 @@ static LEXEME* expression_hook(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp
         else if (isvoid(*tp) || ismsil(*tp))
             error(ERR_NOT_AN_ALLOWED_TYPE);
         lex = getsym();
+        isCallExit = false;
         if (MATCHKW(lex, colon))
         {
             // replicate the selector into the 'true' value
@@ -7298,6 +7307,8 @@ static LEXEME* expression_hook(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp
         {
             lex = expression_comma(lex, funcsp, nullptr, &tph, &eph, nullptr, flags);
         }
+        bool oldCallExit = isCallExit;
+        isCallExit = false;
         if (!tph)
         {
             *tp = nullptr;
@@ -7306,6 +7317,7 @@ static LEXEME* expression_hook(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp
         {
             lex = getsym();
             lex = expression_assign(lex, funcsp, nullptr, &tpc, &epc, nullptr, flags);
+            isCallExit &= oldCallExit;
             if (!tpc)
             {
                 *tp = nullptr;

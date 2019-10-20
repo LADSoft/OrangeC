@@ -48,6 +48,8 @@ extern PreProcessor* preProcessor;
 
 extern int templateNestingCount;
 
+bool isCallExit;
+
 int funcNesting;
 int funcLevel;
 int tryLevel;
@@ -2959,7 +2961,9 @@ LEXEME* statement(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool viacontro
             }
             else
             {
+                isCallExit = false;
                 lex = statement_expr(lex, funcsp, parent);
+                parent->needlabel = isCallExit;
             }
     }
     if (MATCHKW(lex, semicolon))

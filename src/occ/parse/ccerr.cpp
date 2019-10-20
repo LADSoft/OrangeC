@@ -50,6 +50,8 @@ extern LEXCONTEXT* context;
 extern int templateNestingCount;
 extern LIST* externals;
 extern int inDeduceArgs;
+extern int eofLine;
+extern const char* eofFile;
 
 int currentErrorLine;
 SYMBOL* theCurrentFunc;
@@ -551,7 +553,7 @@ static struct
     {"Use of __catch or __fault or __finally must be preceded by __try", ERROR},
     {"Expected __catch or __fault or __finally", ERROR},
     {"__fault or __finally can appear only once per __try block", ERROR},
-    {"static function '%s' is undefined", ERROR},
+    {"static function '%s' is undefined", TRIVIALWARNING},
     {"Missing type specifier for identifier '%s'", WARNING},
     {"Cannot deduce auto type from '%s'", ERROR},
     {"%s: dll interface member may not be declared in dll interface class", ERROR},
@@ -574,6 +576,8 @@ static struct
     {"Attribute namespace '%s' is not an attribute", ERROR},
     {"Attribute '%s' does not exist", ERROR},
     {"Attribute '%s' does not exist in attribute namespace '%s'", ERROR},
+    {"static function '%s' is used but never defined", WARNING},
+
 };
 
 static bool ValidateWarning(int num)
@@ -980,6 +984,16 @@ void errorsym(int err, SYMBOL* sym)
     }
     unmangle(buf, sym->errname);
     printerr(err, preProcessor->GetErrFile().c_str(), preProcessor->GetErrLineNo(), buf);
+}
+void errorsym(int err, SYMBOL *sym, int line, const char *file)
+{
+    char buf[2048];
+    if (!sym->errname)
+    {
+        SetLinkerNames(sym, lk_cdecl);
+    }
+    unmangle(buf, sym->errname);
+    printerr(err, file, line, buf);
 }
 void errorsym2(int err, SYMBOL* sym1, SYMBOL* sym2)
 {
@@ -1746,7 +1760,10 @@ void findUnusedStatics(NAMESPACEVALUELIST* nameSpace)
                             }
                             else if (sp1->storage_class == sc_static && !sp1->inlineFunc.stmt &&
                                      !(sp1->templateLevel || sp1->instantiated))
-                                errorsym(ERR_UNDEFINED_STATIC_FUNCTION, sp1);
+                            if (sp1->attribs.inheritable.used)
+                                errorsym(ERR_STATIC_FUNCTION_USED_BUT_NOT_DEFINED, sp1, eofLine, eofFile);
+                            else
+                                errorsym(ERR_UNDEFINED_STATIC_FUNCTION, sp1, eofLine, eofFile);
                             hr1 = hr1->next;
                         }
                     }

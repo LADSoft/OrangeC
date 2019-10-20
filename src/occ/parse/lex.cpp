@@ -47,6 +47,8 @@ extern LINEDATA *linesHead, *linesTail;
 extern PreProcessor* preProcessor;
 extern FILE* cppFile;
 
+int eofLine;
+const char* eofFile;
 bool parsingPreprocessorConstant;
 
 LEXCONTEXT* context;
@@ -1554,6 +1556,8 @@ LEXEME* getsym(void)
         lex->realline = preProcessor->GetRealLineNo();
         lex->file = preProcessor->GetErrFile().c_str();
         lex->filenum = preProcessor->GetFileIndex();
+        eofLine = lex->line;
+        eofFile = lex->file;
         if (lex->filenum != lastBrowseIndex)
         {
             browse_startfile(preProcessor->GetRealFile().c_str(), lex->filenum);

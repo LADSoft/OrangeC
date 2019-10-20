@@ -627,6 +627,7 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                             // we only get here for C language, sadly we have to do
                             // argument based lookup in C++...
                             funcparams->sp = hr->p;
+                            funcparams->sp->attribs.inheritable.used = true;
                             funcparams->fcall = varNode(en_pc, funcparams->sp);
                             if (!MATCHKW(lex, openpa))
                                 funcparams->sp->dumpInlineToFile = funcparams->sp->isInline;
@@ -3345,6 +3346,7 @@ LEXEME* expression_arguments(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION*
                 GetOverloadedFunction(tp, &funcparams->fcall, funcparams->sp, funcparams, nullptr, true, false, true, flags);
             if (sym)
             {
+                sym->attribs.inheritable.used = true;
                 funcparams->sp = sym;
                 *tp = sym->tp;
             }
@@ -3404,6 +3406,7 @@ LEXEME* expression_arguments(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION*
                 tp1 = tp1->btp;
             if (sym)
             {
+                sym->attribs.inheritable.used = true;
                 if (sym->decoratedName[0] == '@' && lex)
                     browse_usage(sym, lex->filenum);
                 if (funcparams->astemplate && sym->templateLevel && !sym->specialized)
@@ -3502,7 +3505,6 @@ LEXEME* expression_arguments(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION*
             }
         }
     }
-
     if (basetype(*tp)->type == bt_memberptr)
     {
         memberPtr = true;

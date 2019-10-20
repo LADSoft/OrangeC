@@ -5146,6 +5146,8 @@ static EXPRESSION* nodeSizeof(TYPE* tp, EXPRESSION* exp)
         exp = nullptr;
         if (isstructured(tp))
         {
+            if (basetype(tp)->size == 0)
+                errorsym(ERR_UNSIZED_TYPE,basetype(tp)->sp);
             if (basetype(tp)->syms)
             {
                 SYMLIST* hr = basetype(tp)->syms->table[0];

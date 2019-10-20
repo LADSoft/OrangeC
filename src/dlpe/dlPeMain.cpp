@@ -51,7 +51,8 @@ CmdSwitchString dlPeMain::outputFileSwitch(SwitchParser, 'o');
 CmdSwitchString dlPeMain::DebugFile(SwitchParser, 'v');
 CmdSwitchBool dlPeMain::FlatExports(SwitchParser, 'f');
 CmdSwitchBool dlPeMain::Verbose(SwitchParser, 'y');
-
+CmdSwitchString dlPeMain::OutputDefFile(SwitchParser, 0, 0, "output-def");
+ 
 int dlPeMain::osMajor = 4;
 int dlPeMain::osMinor = 0;
 int dlPeMain::userMajor = 0;
@@ -89,6 +90,8 @@ const char* dlPeMain::usageText =
     "/y             Verbose\n"
     "/V, --version  Show version and date\n"
     "/!             No logo\n"
+    "\n"
+    "--output-def,filename    for DLL, output a .def file instead of a .lib\n"
     "\n"
     "Available output file types:\n"
     "   CON - Windows console (default)\n"
@@ -586,7 +589,10 @@ int dlPeMain::Run(int argc, char** argv)
                 std::string cmd = std::string("\"") + path + "oimplib" + "\" ";
                 if (!Verbose.GetExists())
                     cmd += "/! ";
-                cmd += usesC + "\"" + implibName + "\" \"" + outputName + "\"";
+                if (OutputDefFile.GetExists())
+                    cmd += usesC + "\"" + OutputDefFile.GetValue() + "\" \"" + outputName + "\"";
+                else
+                    cmd += usesC + "\"" + implibName + "\" \"" + outputName + "\"";
                 if (Verbose.GetExists())
                     std::cout << "Running: " << cmd << std::endl;
                 return system(cmd.c_str());

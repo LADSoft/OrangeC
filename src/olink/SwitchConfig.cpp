@@ -286,7 +286,7 @@ bool SwitchConfig::InterceptFile(const std::string& file)
     }
     return false;
 }
-int SwitchConfig::RunApp(const std::string& path, const std::string& file, const std::string& debugFile, bool verbose)
+int SwitchConfig::RunApp(const std::string& path, const std::string& file, const std::string& debugFile, bool verbose, std::string outDefFile)
 {
     std::string flags;
     std::string name;
@@ -310,6 +310,8 @@ int SwitchConfig::RunApp(const std::string& path, const std::string& file, const
     cmd = cmd + flags + "\"" + file + "\"";
     for (auto name : files)
         cmd = cmd + " \"" + name + "\"";
+    if (!outDefFile.empty())
+        cmd = cmd + " --output-def,\"" + outDefFile + "\"";
     if (verbose)
         std::cout << "Running App: " << cmd << std::endl;
     return system(cmd.c_str());

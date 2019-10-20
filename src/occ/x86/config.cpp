@@ -94,6 +94,9 @@ static char usage_text[] =
     "    c - console                         empty = static lib   l = lscrtl.dll\n"
     "    d - dll                             c = crtdll.dll\n"
     "    w - windowing                       m = msvcrtdll.dll\n"
+    "\n"
+    " --output-def-file,filename      output a .def file instead of a .lib file for DLLs\n"
+    " --export-all-symbols            reserved\n"
     "\nCommand line behavior has changed.  Use environment var OCC_LEGACY_OPTIONS for old behavior\n\n"
     "Time: " __TIME__ "  Date: " __DATE__;
 

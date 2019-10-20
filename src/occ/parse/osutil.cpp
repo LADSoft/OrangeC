@@ -113,6 +113,8 @@ CmdSwitchString prm_msil_namespace(switchParser, 'N');
 CmdSwitchString prm_msil_version(switchParser, 'V');
 
 CmdSwitchString prm_Winmode(switchParser, 'W');
+CmdSwitchCombineString OutputDefFile(switchParser, 0, 0, "output-def");
+CmdSwitchBool ExportAll(switchParser, 0, false, "export-all-symbols");
 
 /* Print usage info */
 /*

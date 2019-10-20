@@ -36,7 +36,7 @@
 
 #include <cctype>
 #include <iostream>
-
+#include <algorithm>
 int main(int argc, char** argv)
 {
     ImpLibMain librarian;
@@ -113,10 +113,7 @@ void ImpLibMain::AddFile(LibManager& librarian, const char* arg)
                     if (n != std::string::npos && (n == 0 || inputFile[n - 1] != '.'))
                     {
                         std::string ext = inputFile.substr(n);
-                        for (int i = 0; i < ext.size(); ++i)
-                        {
-                            ext[i] = tolower(ext[i]);
-                        }
+                        transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
                         if (ext == ".def")
                         {
                             DefFile defFile(inputFile, CDLLSwitch.GetValue());
@@ -200,11 +197,10 @@ std::string ImpLibMain::GetInputFile(int argc, char** argv, bool& def)
     else
     {
         std::string ext = name.substr(npos);
-        for (int i = 0; i < ext.size(); i++)
-            ext[i] = toupper(ext[i]);
-        if (ext == ".DEF")
+        transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+        if (ext == ".def")
             def = true;
-        else if (ext != ".DLL")
+        else if (ext != ".dll")
             name = "";
     }
     if (name == "")
@@ -218,6 +214,7 @@ int ImpLibMain::HandleDefFile(const std::string& outputFile, int argc, char** ar
 {
     bool def;
     std::string inputFile = GetInputFile(argc, argv, def);
+
     if (inputFile == "")
         return 1;
     if (def)
@@ -233,7 +230,7 @@ int ImpLibMain::HandleDefFile(const std::string& outputFile, int argc, char** ar
     else
     {
         DLLExportReader dllFile(inputFile);
-        if (!dllFile.Read())
+        if (dllFile.Read())
             return 1;
         DefFile defFile(outputFile, CDLLSwitch.GetValue());
         int npos = inputFile.find_last_of(CmdFiles::DIR_SEP);
@@ -311,7 +308,7 @@ int ImpLibMain::HandleObjFile(const std::string& outputFile, int argc, char** ar
     else
     {
         DLLExportReader dllFile(inputFile);
-        if (!dllFile.Read())
+        if (dllFile.Read())
             return 1;
         obj = DllFileToObjFile(dllFile);
     }
@@ -398,10 +395,7 @@ int ImpLibMain::Run(int argc, char** argv)
     else if (n != std::string::npos)
     {
         std::string ext = outputFile.substr(n);
-        for (int i = 0; i < ext.size(); ++i)
-        {
-            ext[i] = tolower(ext[i]);
-        }
+        transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
         if (ext == ".def")
         {
             if (HandleDefFile(outputFile, argc, argv))

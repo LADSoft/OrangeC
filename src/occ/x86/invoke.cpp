@@ -45,6 +45,7 @@ extern int showBanner;
 extern int verbosity;
 extern CmdSwitchCombineString prm_libpath;
 extern CmdSwitchCombineString prm_include;
+extern CmdSwitchCombineString OutputDefFile;
 
 const char* winflags[] = {
     "/T:CON32 ", "/T:GUI32 ", "/T:DLL32 ", "/T:PM ", "/T:DOS32 ", "/T:BIN ", "/T:CON32;sdpmist32.bin ", "/T:CON32;shdld32.bin ",
@@ -354,8 +355,9 @@ int RunExternalFiles(char* rootPath)
             reslist = reslist->next;
         }
         fclose(fil);
-        sprintf(spname, "\"%solink.exe\" %s %s %s /c+ %s %s @%s", root, link_params ? link_params : "",
-                prm_targettype == WHXDOS ? "-DOBJECTALIGN=65536" : "", !showBanner ? "-!" : "", args, verbosityString, tempFile);
+        sprintf(spname, "\"%solink.exe\" %s %s %s /c+ %s %s %s @%s", root, link_params ? link_params : "",
+                prm_targettype == WHXDOS ? "-DOBJECTALIGN=65536" : "", !showBanner ? "-!" : "", args, verbosityString, 
+                !OutputDefFile.GetValue().empty() ? ("--output-def,\"" + OutputDefFile.GetValue() + "\"").c_str() : "", tempFile);
         if (verbosity)
         {
             FILE* fil = fopen(tempFile, "r");

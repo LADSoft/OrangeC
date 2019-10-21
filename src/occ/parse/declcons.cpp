@@ -2828,6 +2828,10 @@ void makeArrayConsDest(TYPE** tp, EXPRESSION** exp, SYMBOL* cons, SYMBOL* dest, 
     arg2->next = arg3;
     arg3->next = arg4;
 
+    if (econs)
+        thunkForImportTable(&econs);
+    if (edest)
+        thunkForImportTable(&edest);
     arg0->exp = *exp;
     arg0->tp = &stdpointer;
     arg1->exp = econs ? econs : intNode(en_c_i, 0);

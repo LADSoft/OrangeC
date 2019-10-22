@@ -482,6 +482,7 @@ void ppDefine::Stringize(std::string& macro)
     std::string repl;
     int waiting = 0;
     int last = 0, pos;
+
     for (pos = 0; pos < macro.size(); pos++)
     {
         if (!waiting && (macro[pos] == '"' || macro[pos] == '\'') && NotSlashed(macro, pos))
@@ -496,7 +497,7 @@ void ppDefine::Stringize(std::string& macro)
         else if (macro[pos] == '#' && (pos == 0 || macro[pos - 1] != '#') &&
                  (pos == macro.size() - 1 || macro[pos + 1] != '#')) /* # ## # */
         {
-            repl += macro.substr(last, pos);
+            repl += macro.substr(last, pos-last);
 
             pos++;
             for (; pos < macro.size() && isspace(macro[pos]); ++pos)

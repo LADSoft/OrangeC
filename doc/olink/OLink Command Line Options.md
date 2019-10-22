@@ -75,6 +75,14 @@
  
  Usually, a complete link happens automatically when the **/T** switch is used to specify a [target configuration](OLink%20Target%20Configurations.md).  However in some cases it is desirable to indicate to the linker that a complete link is desired without specifying a target configuration.  Use **/r+** for this purpose.
 
+### DLL control
+
+ The swicth --output-def is used to ask the downloader (dlpe) to generate a .DEF file with dll exports.   This switch only has meaning
+when creating dlls. 
+
+>     OLink /T:DLL32 /c --output-def test.def /o test.exe c0dpe.o test.o clwin.l climp.l
+
+generates a DLL from test.o, and outputs a file test.def with the exports
 
 ### Map File
 

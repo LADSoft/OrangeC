@@ -47,6 +47,13 @@ is specified with the **/o** switch.  For example:
    
   The default output format if no **/m** switch is specified is the console format.
 
+### Creating a .def file with exports
+
+When creating a DLL, the switch --output-def instructs dlpe to use oimplib to create a .def file with the exports.
+
+>     dlpe /mDLL /otest --output-def test.def test.rel
+
+creates a DLL and outputs the exports file test.def from test.rel.
 
 ### Specifying a stub file
 

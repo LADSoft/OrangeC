@@ -63,7 +63,7 @@ CmdSwitchDefine LinkerMain::Defines(SwitchParser, 'D');
 CmdSwitchCombineString LinkerMain::LibPath(SwitchParser, 'L', ';');
 CmdSwitchOutput LinkerMain::OutputFile(SwitchParser, 'o', ".rel");
 CmdSwitchBool LinkerMain::Verbosity(SwitchParser, 'y');
-CmdSwitchString LinkerMain::OutputDefFile(SwitchParser, 0, 0, "output-def");
+CmdSwitchCombineString LinkerMain::OutputDefFile(SwitchParser, 0, 0, "output-def");
 
 SwitchConfig LinkerMain::TargetConfig(SwitchParser, 'T');
 const char* LinkerMain::usageText =
@@ -77,7 +77,7 @@ const char* LinkerMain::usageText =
     "/v or /g  Pass debug info            /y[...]        Verbose\n"
     "/!, --nologo   No logo\n"
     "\n"
-    " --output-def,filename    create a .def file for DLLs\n"
+    " --output-def filename    create a .def file for DLLs\n"
     "@xxx      Read commands from file\n"
     "\nTime: " __TIME__ "  Date: " __DATE__;
 

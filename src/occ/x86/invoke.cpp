@@ -357,7 +357,7 @@ int RunExternalFiles(char* rootPath)
         fclose(fil);
         sprintf(spname, "\"%solink.exe\" %s %s %s /c+ %s %s %s @%s", root, link_params ? link_params : "",
                 prm_targettype == WHXDOS ? "-DOBJECTALIGN=65536" : "", !showBanner ? "-!" : "", args, verbosityString, 
-                !OutputDefFile.GetValue().empty() ? ("--output-def,\"" + OutputDefFile.GetValue() + "\"").c_str() : "", tempFile);
+                !OutputDefFile.GetValue().empty() ? ("--output-def \"" + OutputDefFile.GetValue() + "\"").c_str() : "", tempFile);
         if (verbosity)
         {
             FILE* fil = fopen(tempFile, "r");

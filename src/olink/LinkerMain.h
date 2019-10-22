@@ -57,7 +57,7 @@ class LinkerMain
     static CmdSwitchBool LinkOnly;
     static CmdSwitchBool RelFile;
     static CmdSwitchBool Verbosity;
-    static CmdSwitchString OutputDefFile;
+    static CmdSwitchCombineString OutputDefFile;
     static SwitchConfig TargetConfig;
     static const char* usageText;
 };

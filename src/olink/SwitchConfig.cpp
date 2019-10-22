@@ -311,7 +311,7 @@ int SwitchConfig::RunApp(const std::string& path, const std::string& file, const
     for (auto name : files)
         cmd = cmd + " \"" + name + "\"";
     if (!outDefFile.empty())
-        cmd = cmd + " --output-def,\"" + outDefFile + "\"";
+        cmd = cmd + " --output-def \"" + outDefFile + "\"";
     if (verbose)
         std::cout << "Running App: " << cmd << std::endl;
     return system(cmd.c_str());

@@ -643,7 +643,7 @@ void getAmodes(QUAD* q, enum e_opcode* op, IMODE* im, AMODE** apl, AMODE** aph)
         gen_code(op_push, temp, 0);
         callLibrary("___tlsaddr", 0);
         *apl = (AMODE*)beLocalAlloc(sizeof(AMODE));
-        (*apl)->preg = regmap[beRegFromTemp(q, im)][0];
+        (*apl)->preg = regmap[beRegFromTemp(q, q->ans)][0];
         (*apl)->mode = am_dreg;
         gen_codes(op_pop, ISZ_ADDR, (*apl), 0);
     }

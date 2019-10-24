@@ -88,7 +88,7 @@ LIST* importThunks;
 /* handling of const int */
 /*--------------------------------------------------------------------------------------------------------------------------------
  */
-static EXPRESSION* nodeSizeof(TYPE* tp, EXPRESSION* exp);
+static EXPRESSION* nodeSizeof(TYPE* tp, EXPRESSION* exp, int flags= 0);
 static LEXEME* expression_primary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, bool* ismutable, int flags);
 static LEXEME* expression_pm(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, bool* ismutable, int flags);
 LEXEME* expression_assign(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, bool* ismutable, int flags);
@@ -5116,7 +5116,7 @@ static LEXEME* expression_primary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE**
     }
     return lex;
 }
-static EXPRESSION* nodeSizeof(TYPE* tp, EXPRESSION* exp)
+static EXPRESSION* nodeSizeof(TYPE* tp, EXPRESSION* exp, int flags)
 {
     EXPRESSION *exp_in = exp;
     tp = PerformDeferredInitialization(basetype(tp), nullptr);
@@ -5124,6 +5124,7 @@ static EXPRESSION* nodeSizeof(TYPE* tp, EXPRESSION* exp)
         tp = basetype(tp)->sp->tp;
     if (isref(tp))
         tp = basetype(tp)->btp;
+    tp = basetype(tp);
     if (exp)
     {
         while (castvalue(exp))
@@ -5183,7 +5184,7 @@ static EXPRESSION* nodeSizeof(TYPE* tp, EXPRESSION* exp)
     if (!exp)
     {
         // array which is an argument has different sizeof requirements
-        if (tp->type == bt_pointer && tp->array && exp_in && exp_in->type == en_l_p && exp_in->left->type == en_auto && exp_in->left->v.sp->storage_class == sc_parameter)
+        if ((flags & _F_SIZEOF) && tp->type == bt_pointer && tp->array && exp_in && exp_in->type == en_l_p && exp_in->left->type == en_auto && exp_in->left->v.sp->storage_class == sc_parameter)
             exp = intNode(en_c_i, getSize(bt_pointer));
         else
             exp = intNode(en_c_i, tp->size);
@@ -5202,8 +5203,7 @@ static LEXEME* expression_sizeof(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
     int paren = false;
     *exp = nullptr;
     lex = getsym();
-    if (cparams.prm_cplusplus && MATCHKW(lex, ellipse))
-    {
+    if (cparams.prm_cplusplus && MATCHKW(lex, ellipse))   {
         lex = getsym();
         if (MATCHKW(lex, openpa))
         {
@@ -5278,7 +5278,7 @@ static LEXEME* expression_sizeof(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
             }
             else
             {
-                *exp = nodeSizeof(*tp, *exp);
+                *exp = nodeSizeof(*tp, *exp, _F_SIZEOF);
             }
         }
         else
@@ -5323,7 +5323,7 @@ static LEXEME* expression_sizeof(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
             else
             {
                 checkauto(*tp, ERR_AUTO_NOT_ALLOWED);
-                *exp = nodeSizeof(*tp, *exp);
+                *exp = nodeSizeof(*tp, *exp, _F_SIZEOF);
             }
         }
 

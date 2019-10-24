@@ -77,7 +77,7 @@
 
 ### DLL control
 
- The swicth --output-def is used to ask the downloader (dlpe) to generate a .DEF file with dll exports.   This switch only has meaning
+ The switch --output-def is used to ask the downloader (dlpe) to generate a .DEF file with dll exports.   This switch only has meaning
 when creating dlls. 
 
 >     OLink /T:DLL32 /c --output-def test.def /o test.exe c0dpe.o test.o clwin.l climp.l

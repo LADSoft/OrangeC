@@ -910,7 +910,7 @@ void dumpInitGroup(SYMBOL* sym, TYPE* tp)
         }
         else
         {
-            if (sym->tp->array || isstructured(tp))
+            if (basetype(sym->tp)->array || isstructured(tp))
             {
                 INITIALIZER* init = sym->init;
                 int pos = 0;

@@ -658,13 +658,6 @@ int dumpInit(SYMBOL* sym, INITIALIZER* init)
         im = init->exp->v.c.i;
         i = (LLONG_TYPE)(f);
     }
-    else if (sym->attribs.inheritable.linkage3 == lk_threadlocal)
-    {
-        if (cparams.prm_cplusplus)
-            insertTLSInitializer(sym, init);
-        else
-            diag("dumpsym: unknown constant type");
-    }
     else
     {
         EXPRESSION* exp = init->exp;
@@ -678,8 +671,14 @@ int dumpInit(SYMBOL* sym, INITIALIZER* init)
         {
             if (cparams.prm_cplusplus)
             {
-                if (sym->storage_class != sc_localstatic)
+                if (sym->attribs.inheritable.linkage3 == lk_threadlocal)
+                {
+                    insertTLSInitializer(sym, init);
+                }
+                else if (sym->storage_class != sc_localstatic)
+                {
                     insertDynamicInitializer(sym, init);
+                }
                 return 0;
             }
             else

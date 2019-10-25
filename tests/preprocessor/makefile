@@ -31,7 +31,8 @@ TEST_FILES = n_1.exe \
     n_7.exe \
     n_9.exe \
     n_std.exe \
-    bignum.exe
+    bignum.exe \
+    stringize1.exe
 
 
 all: af.o $(TEST_FILES)

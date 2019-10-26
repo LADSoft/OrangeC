@@ -893,7 +893,7 @@ IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
                 sym = node->left->v.sp;
                 GENREF(sym);
                 ap1 = make_ioffset(node);
-                ap1 = indnode(ap2, siz1);
+                ap1 = indnode(ap1, siz1);
                 break;
             case en_auto:
                 sym = node->left->v.sp;

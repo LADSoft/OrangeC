@@ -310,7 +310,7 @@ Operand* getOperand(IMODE* oper)
             {
                 EXPRESSION* en = GetSymRef(oper->offset);
                 SYMBOL* sp = NULL;
-                if (en)
+                if (en && en->type != en_labcon)
                 {
                     sp = en->v.sp;
                 }
@@ -330,6 +330,13 @@ Operand* getOperand(IMODE* oper)
                         if (sp->attribs.inheritable.linkage2 == lk_property)
                             rv->Property(true);
                     }
+                }
+                else if (oper->offset->type == en_labcon)
+                {
+                    char lbl[256];
+                    sprintf(lbl, "L_%d_%x", (int)oper->offset->v.i, uniqueId);
+                    Value* field = GetStringFieldData(oper->offset->v.i, ((EXPRESSION*)oper->offset->altdata)->v.i);
+                    rv = peLib->AllocateOperand(field);
                 }
                 else if (oper->offset->type != en_tempref)
                 {

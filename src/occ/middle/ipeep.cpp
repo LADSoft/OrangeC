@@ -289,7 +289,7 @@ void kill_labeledgoto(BLOCK* b, QUAD* head)
 
 void kill_jumpover(BLOCK* b, QUAD* head)
 /*
- * Conditionnal jumps over gotos get squashed here
+ * Conditional jumps over gotos get squashed here
  */
 {
     i_ops newtype;
@@ -591,7 +591,7 @@ static bool peep(BLOCK* b, bool branches)
                 }
                 break;
             case i_label:
-                if (branches)
+                if (branches && !(chosenAssembler->arch->denyopts & DO_NOBRANCHTOBRANCH))
                 {
                     kill_labeledgoto(b, head);
                 }

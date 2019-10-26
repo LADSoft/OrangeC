@@ -99,7 +99,7 @@ CmdSwitchString prm_warning(switchParser, 'w', ';');
 CmdSwitchCombineString prm_output(switchParser, 'o');
 CmdSwitchCombineString prm_tool(switchParser, 'p', ';');
 
-CmdSwitchString prm_library(switchParser, 'l', ';');
+CmdSwitchCombineString prm_library(switchParser, 'l', ';');
 
 CmdSwitchCombineString prm_include(switchParser, 'I', ';');
 CmdSwitchCombineString prm_sysinclude(switchParser, 'z', ';');
@@ -187,23 +187,6 @@ static const char* parsepath(const char* path, char* buffer)
     return (0);
 }
 
-/*-------------------------------------------------------------------------*/
-void library_setup(char select, char* string)
-{
-    (void)select;
-    if (string[0] == 0)
-    {
-        cparams.prm_listfile = true;
-    }
-    else
-    {
-        char buf[260];
-        strcpy(buf, string);
-        StripExt(buf);
-        AddExt(buf, ".l");
-        InsertAnyFile(buf, 0, -1, false);
-    }
-}
 static std::vector<std::string> split(std::string strToSplit, char delimeter = ';')
 {
     std::stringstream ss(strToSplit);
@@ -477,8 +460,8 @@ void ParamTransfer()
         defines.push_back(DefValue{ v.c_str(), 1 });
     }
     checks = split(prm_library.GetValue());
-    if (!checks.size() && prm_library.GetExists())
-        cparams.prm_listfile = true;
+//    if (!checks.size() && prm_library.GetExists())
+//        cparams.prm_listfile = true;
     for (auto&& v : checks)
     {
         char buf[260];

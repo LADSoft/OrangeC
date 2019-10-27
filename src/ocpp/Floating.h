@@ -210,11 +210,12 @@ class FPF
     void ToString(std::string& dest) const;
     void Init();
 
-  private:
+  public:
     int exp; /* Signed exponent...no bias */
     u16f mantissa[INTERNAL_FPF_PRECISION];
     u8f type; /* Indicates, NORMAL, SUBNORMAL, etc. */
     u8f sign; /* Mantissa sign */
+  protected:
     static bool bigEndian;
     static FPF tensTab[10];
     static bool initted;

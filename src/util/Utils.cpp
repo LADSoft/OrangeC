@@ -284,3 +284,58 @@ bool Utils::iequal(const std::string& a, const std::string& b, int sz)
             return false;
     return true;
 }
+
+FILE* Utils::TempName(std::string &name)
+{
+    char tempFile[260];
+    tmpnam(tempFile);
+    if (tempFile[0] == '\\')
+    {
+        // fix for buggy mingw on windows
+        strcpy(tempFile, getenv("TMP"));
+        tmpnam(tempFile + strlen(tempFile));
+    }
+    FILE* fil = fopen(tempFile, "w");
+    if (!fil)
+    {
+        strcpy(tempFile, ".\\");
+        tmpnam(tempFile + strlen(tempFile));
+        fil = fopen(tempFile, "w");
+        if (!fil)
+        {
+            Utils::fatal("TMP environment variable not set or invalid");
+        }
+    }
+    name = tempFile;
+    return fil;
+}
+
+/*
+ * If no extension, add the one specified
+ */
+void Utils::AddExt(char* buffer, const char* ext)
+{
+    char* pos = strrchr(buffer, '.');
+    if (!pos || (*(pos - 1) == '.') || (*(pos + 1) == '\\'))
+        strcat(buffer, ext);
+}
+
+/*
+ * Strip extension, if it has one
+ */
+void Utils::StripExt(char* buffer)
+{
+    char* pos = strrchr(buffer, '.');
+    if (pos && (*(pos - 1) != '.'))
+        *pos = 0;
+}
+
+bool Utils::HasExt(const char* buffer, const char* ext)
+{
+    int l = strlen(buffer), l1 = strlen(ext);
+    if (l1 < l)
+    {
+        return Utils::iequal(buffer + l - l1, ext);
+    }
+    return 0;
+}

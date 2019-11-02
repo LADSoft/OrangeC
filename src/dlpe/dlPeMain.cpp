@@ -39,11 +39,6 @@
 #include <cstring>
 #include <cstdlib>
 
-#if defined(MICROSOFT) || defined __MINGW64__
-#    define system(x) winsystem(x)
-extern "C" int winsystem(const char*);
-#endif
-
 CmdSwitchParser dlPeMain::SwitchParser;
 CmdSwitchString dlPeMain::stubSwitch(SwitchParser, 's');
 CmdSwitchString dlPeMain::modeSwitch(SwitchParser, 'm');
@@ -504,7 +499,6 @@ int dlPeMain::Run(int argc, char** argv)
 {
     Utils::banner(argv[0]);
     Utils::SetEnvironmentToPathParent("ORANGEC");
-    char* modName = Utils::GetModuleName();
     CmdSwitchFile internalConfig(SwitchParser);
     std::string configName = Utils::QualifiedFile(argv[0], ".cfg");
     std::fstream configTest(configName, std::ios::in);
@@ -575,21 +569,10 @@ int dlPeMain::Run(int argc, char** argv)
         {
             if (mode == DLL)
             {
-                std::string path = modName;
-                int n = path.find_last_of(CmdFiles::DIR_SEP[0]);
-                if (n == std::string::npos)
-                    path = "";
-                else
-                    path.erase(n + 1);
-                std::string usesC = exportObject && exportObject->ImportsNeedUnderscore() ? "/C " : "";
+                std::string usesC = exportObject && exportObject->ImportsNeedUnderscore() ? "/C" : "";
                 std::string implibName = Utils::QualifiedFile(outputName.c_str(), ".l");
-                std::string cmd = std::string("\"") + path + "oimplib" + "\" ";
-                if (!Verbose.GetExists())
-                    cmd += "/! ";
-                cmd += usesC + "\"" + implibName + "\" \"" + outputName + "\"";
-                if (Verbose.GetExists())
-                    std::cout << "Running: " << cmd << std::endl;
-                return system(cmd.c_str());
+		return Utils::ToolInvoke("oimplib", Verbose.GetExists() ? "" : nullptr, "%s \"%s\" \"%s\"", 
+			usesC.c_str(), implibName.c_str(), outputName.c_str());
             }
             return 0;
         }

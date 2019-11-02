@@ -274,13 +274,7 @@ int LinkerMain::Run(int argc, char** argv)
         }
         else
         {
-            std::string path = modName;
-            int n = path.find_last_of(CmdFiles::DIR_SEP[0]);
-            if (n == std::string::npos)
-                path = "";
-            else
-                path.erase(n + 1);
-            int rv = TargetConfig.RunApp(path, outputFile, Utils::AbsolutePath(debugFile), Verbosity.GetExists());
+            int rv = TargetConfig.RunApp(outputFile, Utils::AbsolutePath(debugFile), Verbosity.GetExists());
             if (!Verbosity.GetExists())
                 _unlink(outputFile.c_str());
             return rv;

@@ -28,6 +28,14 @@
 #include <string>
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef _WIN32
+#    define mysystem(x) winsystem(x)
+extern "C" int winsystem(const char*);
+#else
+#    define mysystem(x) system(x)
+#endif
+
 class Utils
 {
   public:
@@ -57,6 +65,36 @@ class Utils
     {
         fatal(format.c_str(), arg...);
     }
+    template <typename... Args>
+    static int ToolInvoke(const std::string& exeName, const char *with, const char *fmt, const Args... arg)
+    {
+        char buf[10000];
+        buf[0] = '"';
+        strcpy(buf+1, GetModuleName());
+        char *p = strrchr(buf, '/');
+        char *p1 = strrchr(buf, '\\');
+        if (p1 > p)
+            p = p1;
+        else if (!p)
+            p = p1;
+        if (p)
+        {
+            p++;
+        }
+        else
+            p = buf;
+        *p = 0;
+        strcat(p, exeName.c_str());
+        strcat(p, "\" ");
+        sprintf(buf + strlen(buf), fmt, arg...);
+        if (with)
+        {
+            printf("%s\n", buf);
+            if (with[0])
+                printf("   with %s", with);
+        }
+        return system(buf);
+    }
     static void SetCleanup(void(Cleanup)()) { cleanup = Cleanup; }
     static char* GetModuleName();
     static void SetEnvironmentToPathParent(const char* name);
@@ -71,6 +109,11 @@ class Utils
     static int StringToNumberHex(std::string str);
     static char* ShortName(const char* v);
     static bool iequal(const std::string& left, const std::string& right, int sz = -1);
+    static FILE* TempName(std::string &name);
+    static void AddExt(char* buffer, const char* ext);
+    static void StripExt(char* buffer);
+    static bool HasExt(const char* buffer, const char* ext);
+
 
     static bool NamedPipe(int *fds, const std::string& name);
     static bool PipeWrite(int fileno, const std::string& data);

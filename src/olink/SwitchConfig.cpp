@@ -26,15 +26,11 @@
 #include "ObjUtil.h"
 #include "ObjExpression.h"
 #include "LinkExpression.h"
+#include "Utils.h"
 #include <fstream>
 #include <cstdlib>
 #include <cctype>
 #include <cstring>
-
-#if defined(WIN32) || defined(MICROSOFT)
-#    define system(x) winsystem(x)
-extern "C" int winsystem(const char*);
-#endif
 
 ConfigData::~ConfigData() {}
 bool ConfigData::VisitAttrib(xmlNode& node, xmlAttrib* attrib, void* userData)
@@ -286,7 +282,7 @@ bool SwitchConfig::InterceptFile(const std::string& file)
     }
     return false;
 }
-int SwitchConfig::RunApp(const std::string& path, const std::string& file, const std::string& debugFile, bool verbose)
+int SwitchConfig::RunApp(const std::string& file, const std::string& debugFile, bool verbose)
 {
     std::string flags;
     std::string name;
@@ -300,19 +296,12 @@ int SwitchConfig::RunApp(const std::string& path, const std::string& file, const
     }
     if (name.empty())
         return 0;  // nothing to do, all ok
-    std::string cmd = std::string("\"") + path + name + "\" ";
-    if (!verbose)
-        cmd = cmd + "/! ";
-    if (!debugFile.empty())
-        cmd = cmd + "\"/v" + debugFile + "\" ";
-    if (verbose)
-        cmd = cmd + "/y ";
-    cmd = cmd + flags + "\"" + file + "\"";
+    std::string sverbose = verbose ? "/y" : "/!";
+    std::string sdebug = debugFile.empty() ? "" : "\"/v" + debugFile + "\"";
+    std::string sfiles;
     for (auto name : files)
-        cmd = cmd + " \"" + name + "\"";
-    if (verbose)
-        std::cout << "Running App: " << cmd << std::endl;
-    return system(cmd.c_str());
+        sfiles = sfiles + " \"" + name + "\"";
+    return Utils::ToolInvoke(name, verbose ? "" : nullptr, "%s %s %s \"%s\" %s", flags.c_str(), sverbose.c_str(), sdebug.c_str(), file.c_str(), sfiles.c_str());
 }
 bool SwitchConfig::VisitAttrib(xmlNode& node, xmlAttrib* attrib, void* userData) { return false; }
 bool SwitchConfig::VisitNode(xmlNode& node, xmlNode* child, void* userData)

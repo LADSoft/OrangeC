@@ -21,16 +21,16 @@
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
 
-ifeq "$(COMPILER)" "gcc-linux"
+include ../pathext2.mak
 
-DIRS := sqlite3 util objlib netlib occopt obrc ocpp ogrep oasm dlhex dlle dlmz dlpe dlpm olib olink \
-       oimplib omake onm orc occparse occ occil coff2ieee
-else
+NAME=occopt
+MAIN_FILE=occopt.cpp
+INCLUDES=..$(PATHEXT2)util ..$(PATHEXT2)ocpp ..$(PATHEXT2)objlib
+CPP_DEPENDENCIES=$(wildcard *.cpp)
+LIB_DEPENDENCIES=util
+DEFINES=x64
+H_FILES=$(wildcard *.h)
 
-ifneq "$(ORANGEC_ONLY)" "YES"
-OCCIL_DIRS := netlib
-endif
+include ../redirect.mak
 
-DIRS := sqlite3 util objlib $(OCCIL_DIRS) occopt obrc ocpp ogrep oasm dlhex dlle dlmz dlpe dlpm olib olink \
-       oimplib omake onm orc ocl ocide occparse occ occil coff2ieee help MSDNHelp
-endif
+DISTRIBUTE: copyexe

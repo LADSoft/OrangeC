@@ -19,20 +19,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\occopt\beinterf.h" />
-    <ClInclude Include="be.h" />
-    <ClInclude Include="beIntrinsicProtos.h" />
-    <ClInclude Include="dbgtypes.h" />
-    <ClInclude Include="winmode.h" />
-    <ClInclude Include="x86regs.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="..\oasm\AsmExpr.cpp" />
-    <ClCompile Include="..\oasm\AsmFile.cpp" />
-    <ClCompile Include="..\oasm\AsmLexer.cpp" />
-    <ClCompile Include="..\oasm\Instruction.cpp" />
-    <ClCompile Include="..\oasm\Section.cpp" />
-    <ClCompile Include="..\oasm\x64Instructions.cpp" />
     <ClCompile Include="..\occopt\config.cpp" />
     <ClCompile Include="..\occopt\configmsil.cpp" />
     <ClCompile Include="..\occopt\configx86.cpp" />
@@ -40,58 +26,41 @@
     <ClCompile Include="..\occopt\ifloatconv.cpp" />
     <ClCompile Include="..\occopt\ildata.cpp" />
     <ClCompile Include="..\occopt\ilunstream.cpp" />
-    <ClCompile Include="..\occopt\iout.cpp" />
     <ClCompile Include="..\occopt\memory.cpp" />
     <ClCompile Include="..\occopt\output.cpp" />
     <ClCompile Include="..\occopt\symfuncs.cpp" />
     <ClCompile Include="..\occopt\Utils.cpp" />
-    <ClCompile Include="..\ocpp\Errors.cpp" />
     <ClCompile Include="..\ocpp\Floating.cpp" />
-    <ClCompile Include="..\ocpp\InputFile.cpp" />
-    <ClCompile Include="..\ocpp\PipeArbitrator.cpp" />
-    <ClCompile Include="..\ocpp\ppCond.cpp" />
-    <ClCompile Include="..\ocpp\ppCtx.cpp" />
-    <ClCompile Include="..\ocpp\ppDefine.cpp" />
-    <ClCompile Include="..\ocpp\ppError.cpp" />
-    <ClCompile Include="..\ocpp\ppExpr.cpp" />
-    <ClCompile Include="..\ocpp\ppFile.cpp" />
-    <ClCompile Include="..\ocpp\ppInclude.cpp" />
-    <ClCompile Include="..\ocpp\ppMacro.cpp" />
-    <ClCompile Include="..\ocpp\ppPragma.cpp" />
-    <ClCompile Include="..\ocpp\PreProcessor.cpp" />
-    <ClCompile Include="..\ocpp\SymbolTable.cpp" />
-    <ClCompile Include="..\ocpp\Token.cpp" />
-    <ClCompile Include="beIntrins.cpp" />
-    <ClCompile Include="dbgtypes.cpp" />
     <ClCompile Include="gen.cpp" />
-    <ClCompile Include="igen.cpp" />
-    <ClCompile Include="InstructionParser.cpp" />
     <ClCompile Include="invoke.cpp" />
-    <ClCompile Include="occ.cpp" />
-    <ClCompile Include="outasm.cpp" />
-    <ClCompile Include="outcode.cpp" />
-    <ClCompile Include="peep.cpp" />
-    <ClCompile Include="x64Parser.cpp" />
-    <ClCompile Include="x64stub.cpp" />
+    <ClCompile Include="occil.cpp" />
+    <ClCompile Include="Process.cpp" />
+    <ClCompile Include="using.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="be.p" />
+    <ClInclude Include="..\occopt\ildata.h" />
+    <ClInclude Include="be.h" />
+    <ClInclude Include="winmode.h" />
+    <ClInclude Include="x86regs.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\objlib\obj.vcxproj">
-      <Project>{22e147d5-e684-4b10-9cb4-d6cd8ef02118}</Project>
+    <ProjectReference Include="..\netlib\DotNetPELib.vcxproj">
+      <Project>{9e09e239-7370-4cbc-a82e-40dbcc0947f3}</Project>
     </ProjectReference>
     <ProjectReference Include="..\util\util.vcxproj">
       <Project>{72430015-06c0-42a2-b9ec-d0e5e2eae83d}</Project>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="be.p" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
-    <ProjectGuid>{FCE76643-5237-4199-A752-D95A85BEBB39}</ProjectGuid>
+    <ProjectGuid>{658E5D2A-CF60-4DA7-8CBC-AD91F998822B}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>occx86</RootNamespace>
+    <RootNamespace>occmsil</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
-    <ProjectName>occ</ProjectName>
+    <ProjectName>occil</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -171,7 +140,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;USE_LONGLONG;BORLAND;MICROSOFT;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;x64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;x64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalIncludeDirectories>..\ocpp;..\oasm;..\util;..\objlib;..\netlib;..\occopt</AdditionalIncludeDirectories>
@@ -190,7 +159,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)WIN32;NDEBUG;_CONSOLE;USE_LONGLONG;BORLAND;MICROSOFT;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;x64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;x64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalIncludeDirectories>..\ocpp;..\oasm;..\util;..\objlib;..\netlib;..\occopt</AdditionalIncludeDirectories>

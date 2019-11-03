@@ -19,32 +19,28 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\occopt\beinterf.h" />
-    <ClInclude Include="be.h" />
-    <ClInclude Include="beIntrinsicProtos.h" />
-    <ClInclude Include="dbgtypes.h" />
-    <ClInclude Include="winmode.h" />
-    <ClInclude Include="x86regs.h" />
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="..\oasm\AsmExpr.cpp" />
     <ClCompile Include="..\oasm\AsmFile.cpp" />
     <ClCompile Include="..\oasm\AsmLexer.cpp" />
     <ClCompile Include="..\oasm\Instruction.cpp" />
     <ClCompile Include="..\oasm\Section.cpp" />
     <ClCompile Include="..\oasm\x64Instructions.cpp" />
+    <ClCompile Include="..\occil\using.cpp" />
     <ClCompile Include="..\occopt\config.cpp" />
     <ClCompile Include="..\occopt\configmsil.cpp" />
     <ClCompile Include="..\occopt\configx86.cpp" />
     <ClCompile Include="..\occopt\iblock.cpp" />
     <ClCompile Include="..\occopt\ifloatconv.cpp" />
     <ClCompile Include="..\occopt\ildata.cpp" />
-    <ClCompile Include="..\occopt\ilunstream.cpp" />
+    <ClCompile Include="..\occopt\ilstream.cpp" />
     <ClCompile Include="..\occopt\iout.cpp" />
     <ClCompile Include="..\occopt\memory.cpp" />
     <ClCompile Include="..\occopt\output.cpp" />
     <ClCompile Include="..\occopt\symfuncs.cpp" />
     <ClCompile Include="..\occopt\Utils.cpp" />
+    <ClCompile Include="..\occ\InstructionParser.cpp" />
+    <ClCompile Include="..\occ\x64Parser.cpp" />
+    <ClCompile Include="..\occ\x64stub.cpp" />
     <ClCompile Include="..\ocpp\Errors.cpp" />
     <ClCompile Include="..\ocpp\Floating.cpp" />
     <ClCompile Include="..\ocpp\InputFile.cpp" />
@@ -61,23 +57,87 @@
     <ClCompile Include="..\ocpp\PreProcessor.cpp" />
     <ClCompile Include="..\ocpp\SymbolTable.cpp" />
     <ClCompile Include="..\ocpp\Token.cpp" />
-    <ClCompile Include="beIntrins.cpp" />
-    <ClCompile Include="dbgtypes.cpp" />
-    <ClCompile Include="gen.cpp" />
-    <ClCompile Include="igen.cpp" />
-    <ClCompile Include="InstructionParser.cpp" />
-    <ClCompile Include="invoke.cpp" />
-    <ClCompile Include="occ.cpp" />
-    <ClCompile Include="outasm.cpp" />
-    <ClCompile Include="outcode.cpp" />
-    <ClCompile Include="peep.cpp" />
-    <ClCompile Include="x64Parser.cpp" />
-    <ClCompile Include="x64stub.cpp" />
+    <ClCompile Include="beinterf.cpp" />
+    <ClCompile Include="browse.cpp" />
+    <ClCompile Include="ccerr.cpp" />
+    <ClCompile Include="occparse.cpp" />
+    <ClCompile Include="constopt.cpp" />
+    <ClCompile Include="cppbltin.cpp" />
+    <ClCompile Include="cpplookup.cpp" />
+    <ClCompile Include="crc32.cpp" />
+    <ClCompile Include="debug.cpp" />
+    <ClCompile Include="declare.cpp" />
+    <ClCompile Include="declcons.cpp" />
+    <ClCompile Include="declcpp.cpp" />
+    <ClCompile Include="expr.cpp" />
+    <ClCompile Include="exprcpp.cpp" />
+    <ClCompile Include="floatconv.cpp" />
+    <ClCompile Include="help.cpp" />
+    <ClCompile Include="iexpr.cpp" />
+    <ClCompile Include="iinline.cpp" />
+    <ClCompile Include="import.cpp" />
+    <ClCompile Include="inasm.cpp" />
+    <ClCompile Include="init.cpp" />
+    <ClCompile Include="initbackend.cpp" />
+    <ClCompile Include="inline.cpp" />
+    <ClCompile Include="istmt.cpp" />
+    <ClCompile Include="lambda.cpp" />
+    <ClCompile Include="lex.cpp" />
+    <ClCompile Include="libcxx.cpp" />
+    <ClCompile Include="mangle.cpp" />
+    <ClCompile Include="osutil.cpp" />
+    <ClCompile Include="property.cpp" />
+    <ClCompile Include="rtti.cpp" />
+    <ClCompile Include="stmt.cpp" />
+    <ClCompile Include="SymbolManager.cpp" />
+    <ClCompile Include="symtab.cpp" />
+    <ClCompile Include="template.cpp" />
+    <ClCompile Include="types.cpp" />
+    <ClCompile Include="unmangle.cpp" />
+    <ClCompile Include="wseh.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="be.p" />
+    <ClInclude Include="..\netlib\DotNetPELib.h" />
+    <ClInclude Include="..\oasm\AsmLexer.h" />
+    <ClInclude Include="..\occopt\beinterf.h" />
+    <ClInclude Include="..\occopt\browse.h" />
+    <ClInclude Include="..\occopt\ildata.h" />
+    <ClInclude Include="..\ocpp\Errors.h" />
+    <ClInclude Include="..\ocpp\Floating.h" />
+    <ClInclude Include="..\ocpp\InputFile.h" />
+    <ClInclude Include="..\ocpp\PipeArbitrator.h" />
+    <ClInclude Include="..\ocpp\ppCond.h" />
+    <ClInclude Include="..\ocpp\ppCtx.h" />
+    <ClInclude Include="..\ocpp\ppDefine.h" />
+    <ClInclude Include="..\ocpp\ppError.h" />
+    <ClInclude Include="..\ocpp\ppExpr.h" />
+    <ClInclude Include="..\ocpp\ppFile.h" />
+    <ClInclude Include="..\ocpp\ppInclude.h" />
+    <ClInclude Include="..\ocpp\ppkw.h" />
+    <ClInclude Include="..\ocpp\ppMacro.h" />
+    <ClInclude Include="..\ocpp\ppPragma.h" />
+    <ClInclude Include="..\ocpp\pragma.h" />
+    <ClInclude Include="..\ocpp\PreProcessor.h" />
+    <ClInclude Include="..\ocpp\SymbolTable.h" />
+    <ClInclude Include="..\ocpp\Token.h" />
+    <ClInclude Include="..\occopt\iexpr.h" />
+    <ClInclude Include="..\occopt\iopt.h" />
+    <ClInclude Include="c.h" />
+    <ClInclude Include="ccerr.h" />
+    <ClInclude Include="compiler.h" />
+    <ClInclude Include="osutil.h" />
+    <ClInclude Include="peheader.h" />
+    <ClInclude Include="rtti.h" />
+    <ClInclude Include="SymbolManager.h" />
+    <ClInclude Include="winmode.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="compiler.p" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\netlib\DotNetPELib.vcxproj">
+      <Project>{9e09e239-7370-4cbc-a82e-40dbcc0947f3}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\objlib\obj.vcxproj">
       <Project>{22e147d5-e684-4b10-9cb4-d6cd8ef02118}</Project>
     </ProjectReference>
@@ -87,11 +147,11 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
-    <ProjectGuid>{FCE76643-5237-4199-A752-D95A85BEBB39}</ProjectGuid>
+    <ProjectGuid>{6F4A4182-7ACB-4C9F-934B-394768E49574}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>occx86</RootNamespace>
+    <RootNamespace>occ</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
-    <ProjectName>occ</ProjectName>
+    <ProjectName>occparse</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -138,10 +198,10 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -150,6 +210,24 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;ISPARSER;USE_LONGLONG;BORLAND;MICROSOFT;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;x64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <AdditionalIncludeDirectories>..\ocpp;..\oasm;..\util;..\objlib;..\netlib;..\occopt</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <ConformanceMode>true</ConformanceMode>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -165,23 +243,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <ClCompile>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
-      <Optimization>Disabled</Optimization>
-      <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;USE_LONGLONG;BORLAND;MICROSOFT;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;x64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
-      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>..\ocpp;..\oasm;..\util;..\objlib;..\netlib;..\occopt</AdditionalIncludeDirectories>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-    </ClCompile>
-    <Link>
-      <SubSystem>Console</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-    </Link>
-  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -190,10 +251,11 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)WIN32;NDEBUG;_CONSOLE;USE_LONGLONG;BORLAND;MICROSOFT;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;x64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;ISPARSER;USE_LONGLONG;BORLAND;MICROSOFT;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;x64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalIncludeDirectories>..\ocpp;..\oasm;..\util;..\objlib;..\netlib;..\occopt</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <ConformanceMode>true</ConformanceMode>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>

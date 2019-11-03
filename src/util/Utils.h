@@ -93,7 +93,7 @@ class Utils
             if (with[0])
                 printf("   with %s", with);
         }
-        return system(buf);
+        return mysystem(buf);
     }
     static void SetCleanup(void(Cleanup)()) { cleanup = Cleanup; }
     static char* GetModuleName();

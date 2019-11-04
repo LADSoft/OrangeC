@@ -42,6 +42,7 @@ extern std::vector<SimpleSymbol*> typeSymbols;
 extern std::vector<SimpleSymbol*> typedefs;
 extern std::vector<BROWSEINFO*> browseInfo;
 extern std::vector<BROWSEFILE*> browseFiles;
+extern int registersAssigned;
 
 extern std::deque<BaseData*> baseData;
 extern std::list<MsilProperty> msilProperties;
@@ -247,7 +248,8 @@ static void StreamSymbol(SimpleSymbol* sym)
             StreamTextIndex(sym->namespaceName);
             StreamTextIndex(sym->msil);
             StreamInt(sym->i);
-            StreamInt(sym->offset);
+            StreamInt(sym->regmode);
+            StreamIntValue(&sym->offset, 4);
             StreamInt(sym->label);
             StreamInt(sym->templateLevel);
             StreamInt(sym->flags >> 32);
@@ -437,6 +439,8 @@ static void StreamInstruction(QUAD *q)
                 }
                 break;
             case i_block:
+                StreamInt(q->block->blocknum);
+                break;
             case i_blockend:
                 StreamInt(q->block->blocknum);
                 break;
@@ -547,6 +551,7 @@ static void StreamXParams()
         StreamInt(dataAlign);
         StreamInt(bssAlign);
         StreamInt(constAlign);
+        StreamInt(registersAssigned);
         StreamString(prm_assemblerSpecifier);
         StreamString(prm_libPath);
         StreamString(prm_include);

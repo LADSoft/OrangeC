@@ -45,6 +45,8 @@ extern std::vector<BROWSEFILE*> browseFiles;
 extern std::deque<BaseData*> baseData;
 extern std::list<MsilProperty> msilProperties;
 
+extern int registersAssigned;
+
 extern std::string prm_libPath;
 extern std::string prm_include;
 extern const char* pinvoke_dll;
@@ -239,7 +241,8 @@ static SimpleSymbol* UnstreamSymbol()
             rv->namespaceName = (const char*)UnstreamTextIndex();
             rv->msil = (const char*)UnstreamTextIndex();
             rv->i = UnstreamInt();
-            rv->offset = UnstreamInt();
+            rv->regmode = UnstreamInt();
+            UnstreamIntValue(&rv->offset, 4);
             rv->label = UnstreamInt();
             rv->templateLevel = UnstreamInt();
             rv->flags = (unsigned long long)UnstreamInt()<< 32;
@@ -471,8 +474,9 @@ static QUAD* UnstreamInstruction(FunctionData& fd)
                 currentBlock->head = currentBlock->tail = rv;
                 rv->block = currentBlock;
                 break;
-                //fallthrough
             case i_blockend:
+                rv->dc.v.label = currentBlock->blocknum = UnstreamInt();
+                break;
             case i_dbgblock:
             case i_dbgblockend:
             case i_livein:
@@ -584,6 +588,7 @@ static void UnstreamXParams()
         dataAlign = UnstreamInt();
         bssAlign = UnstreamInt();
         constAlign = UnstreamInt();
+        registersAssigned = UnstreamInt();
         UnstreamString(prm_assemblerSpecifier);
         UnstreamString(prm_libPath);
         UnstreamString(prm_include);

@@ -82,9 +82,10 @@ static void InsertFile(LIST** r, const char* name, const char* ext)
 
 /*-------------------------------------------------------------------------*/
 
-int InsertExternalFile(char* name, bool)
+int InsertExternalFile(const char* name, bool)
 {
-    char buf[260], *p;
+    char buf[260];
+    const char* p;
 
     if (Utils::HasExt(name, ".rc"))
     {

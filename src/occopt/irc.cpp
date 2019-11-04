@@ -63,7 +63,7 @@ extern int tempCount;
 extern int has_double;
 extern std::vector<SimpleSymbol*> functionVariables;
 extern std::vector<SimpleSymbol*> temporarySymbols;
-
+extern int registersAssigned;
 
 int maxAddr = 0;
 typedef struct _spill_
@@ -354,6 +354,8 @@ void AllocateStackSpace()
     for (auto sym : temporarySymbols)
         if (sym->i >= maxlvl)
             maxlvl = sym->i + 1;
+    if (maxlvl == -1)
+        return;
     std::vector<std::deque<SimpleSymbol *>> queue;
     queue.resize(maxlvl);
     int oldlvl = -1;
@@ -2425,4 +2427,5 @@ void AllocateRegisters(QUAD* head)
     tFree();
     aFree();
     cFree();
+    registersAssigned = true;
 }

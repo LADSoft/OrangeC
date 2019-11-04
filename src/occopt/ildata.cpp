@@ -30,7 +30,6 @@ extern int tempCount;
 extern int blockCount;
 extern QUAD* intermed_head;
 
-
 int gentype; /* Current DC type */
 int curseg;  /* Current seg */
 int outcol;      /* Curront col (roughly) */
@@ -82,6 +81,7 @@ int bssAlign;
 int constAlign;
 int architecture;
 
+int registersAssigned;
 
 std::deque<BaseData*> baseData;
 static bool virtualMode;

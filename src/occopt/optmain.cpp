@@ -366,7 +366,7 @@ void SaveFile(const char *name)
         strcpy(buf, name);
         Utils::StripExt(buf);
         Utils::AddExt(buf, ".icd2");
-        icdFile = fopen(buf, "wb");
+        icdFile = fopen(buf, "w");
         if (!icdFile)
             return;
         OutputIcdFile();

@@ -66,6 +66,12 @@
     <ClCompile Include="occil.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="igen.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\occopt\iout.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="be.h">
@@ -78,6 +84,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\occopt\ildata.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\occopt\iopt.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

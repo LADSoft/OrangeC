@@ -2314,7 +2314,7 @@ void asm_goto(QUAD* q) /* unconditional branch */
     {
         AMODE* ap;
         SimpleSymbol* sp = q->dc.left->offset->sp;
-        if (sp->regmode)
+        if (sp->storage_class == scc_temp)
         {
             ap = makedreg(chosenAssembler->arch->regMap[q->leftColor & 0xff][0]);
             ap->liveRegs = q->liveRegs;

@@ -2116,7 +2116,7 @@ void oa_genbyte(int bt)
 
 /*-------------------------------------------------------------------------*/
 
-void oa_genstring(LCHAR* str, int len)
+void oa_genstring(char* str, int len)
 /*
  * Generate a string literal
  */

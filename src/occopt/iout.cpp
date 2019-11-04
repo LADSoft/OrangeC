@@ -37,6 +37,8 @@
 #include "ildata.h"
 
 /*      variable initialization         */
+extern int registersAssigned;
+
 extern int tempCount;
 extern BITINT bittab[BITINTBITS];
 extern COMPILER_PARAMS cparams;
@@ -705,6 +707,7 @@ static void iop_block(QUAD* q) { oprintf(icdFile, "\tBLOCK %d", q->dc.v.label + 
 static void iop_blockend(QUAD* q)
 {
     oprintf(icdFile, "\tBLOCK END");
+    /*
     if (q->dc.v.data)
     {
         int i, j;
@@ -718,6 +721,7 @@ static void iop_blockend(QUAD* q)
                     if ((*p) & (1 << j))
                         oprintf(icdFile, "TEMP%d, ", i * BITINTBITS + j);
     }
+    */
 }
 
 static void iop_varstart(QUAD* q)
@@ -1044,26 +1048,19 @@ void putconst(SimpleExpression* offset, int color)
                     oprintf(icdFile, "T%d[%s]", (int)(sym->i), ((SimpleSymbol*)offset->right)->name);
                 else
                     oprintf(icdFile, "T%d", (int)sym->i);
-                if (sym->regmode)
+                if (registersAssigned)
                     oprintf(icdFile, "(%s)", lookupRegName(color));
-                else if (offset->right && sym->offset)
-                    oprintf(icdFile, "(%d)",
-                            sym->offset); /* - chosenAssembler->arch->retblocksize)/chosenAssembler->arch->parmwidth);*/
             }
             else
             {
                 oprintf(icdFile, "T%d", (offset->sp)->i);
-                if (offset->sp->regmode)
+                if (registersAssigned)
                     oprintf(icdFile, "(%s)", lookupRegName(color));
             }
             break;
         case se_auto:
             oprintf(icdFile, "%s:LINK", (offset->sp)->outputName);
-            if (!offset->sp->regmode)
-                oprintf(icdFile, "(%d)",
-                        offset->sp->offset);
-            else
-                oprintf(icdFile, "(%s)", lookupRegName(color));
+            oprintf(icdFile, "(%d)", offset->sp->offset);
             break;
         case se_structelem:
             oprintf(icdFile, "%s:STRUCTELEM(%d)", (offset->sp)->outputName, offset->sp->offset);

@@ -272,6 +272,7 @@ bool ProcessData(const char *name)
                 intermed_tail = intermed_tail->fwd;
             objectArray_exp = v->funcData->objectArray_exp;
             currentFunction = v->funcData->name;
+            SetUsesESP(currentFunction->usesEsp);
             generate_instructions(intermed_head);
             flush_peep(currentFunction, nullptr);
         }
@@ -312,6 +313,7 @@ bool LoadFile(const char *name)
         return false;
     InitIntermediate();
     bool rv = InputIntermediate();
+    SelectBackendData();
     if (rv)
     {
         icdFile = fopen("q.tmp", "w");
@@ -438,7 +440,7 @@ int main(int argc, char* argv[])
                 Utils::fatal("File I/O error");
             for (auto p : files)
             {
-                if (!Matches(argv[1], p.c_str()))
+                if (!Matches(fileName, p.c_str()))
                 {
                     if (!LoadFile(p.c_str()) || !ProcessData(p.c_str()) || !SaveFile(p.c_str()))
                         Utils::fatal("File I/O error");

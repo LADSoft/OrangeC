@@ -26,12 +26,14 @@
     <ClCompile Include="..\occopt\ifloatconv.cpp" />
     <ClCompile Include="..\occopt\ildata.cpp" />
     <ClCompile Include="..\occopt\ilunstream.cpp" />
+    <ClCompile Include="..\occopt\iout.cpp" />
     <ClCompile Include="..\occopt\memory.cpp" />
     <ClCompile Include="..\occopt\output.cpp" />
     <ClCompile Include="..\occopt\symfuncs.cpp" />
     <ClCompile Include="..\occopt\Utils.cpp" />
     <ClCompile Include="..\ocpp\Floating.cpp" />
     <ClCompile Include="gen.cpp" />
+    <ClCompile Include="igen.cpp" />
     <ClCompile Include="invoke.cpp" />
     <ClCompile Include="occil.cpp" />
     <ClCompile Include="Process.cpp" />
@@ -39,6 +41,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\occopt\ildata.h" />
+    <ClInclude Include="..\occopt\iopt.h" />
     <ClInclude Include="be.h" />
     <ClInclude Include="winmode.h" />
     <ClInclude Include="x86regs.h" />

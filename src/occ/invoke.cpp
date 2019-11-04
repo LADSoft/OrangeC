@@ -42,6 +42,7 @@ extern int verbosity;
 extern std::string prm_libPath;
 extern std::string prm_include;
 extern std::string prm_OutputDefFile;
+extern std::string outputFileName;
 
 const char* winflags[] = {
     "/T:CON32 ", "/T:GUI32 ", "/T:DLL32 ", "/T:PM ", "/T:DOS32 ", "/T:BIN ", "/T:CON32;sdpmist32.bin ", "/T:CON32;shdld32.bin ",
@@ -50,7 +51,6 @@ const char* winc0[] = {"c0xpe.o", "c0pe.o", "c0dpe.o", "c0pm.o", "c0wat.o", "", 
                        "c0xls.o", "c0ls.o", "c0dls.o", "c0om.o", "c0wat.o", "", "c0xpe.o", "c0hx.o"};
 
 LIST *objlist, *asmlist, *liblist, *reslist, *rclist;
-static char outputFileName[256];
 static char *asm_params, *rc_params, *link_params;
 
 bool InsertOption(const char* name)
@@ -84,13 +84,6 @@ static void InsertFile(LIST** r, const char* name, const char* ext, bool primary
     LIST* lst;
     char buf[256], *newbuffer;
     strcpy(buf, name);
-    if (primary && !outputFileName[0])
-    {
-        strcpy(outputFileName, name);
-        Utils::StripExt(outputFileName);
-        if (!cparams.prm_compileonly && !cparams.prm_assemble)
-            strcat(outputFileName, ".exe");
-    }
     if (ext)
     {
         Utils::StripExt(buf);
@@ -171,28 +164,6 @@ int InsertExternalFile(const char* name, bool primary)
 
 /*-------------------------------------------------------------------------*/
 
-void InsertOutputFileName(const char* name)
-{
-    char ext[256];
-    strcpy(outputFileName, name);
-
-    char* p = strrchr(outputFileName, '.');
-    if (p)
-    {
-        strcpy(ext, p);
-        p = ext;
-        while (*p)
-        {
-            *p = tolower(*p);
-            p++;
-        }
-//        if (!strcmp(ext, ".dll"))
-//            WinmodeSetup('W', "d");
-    }
-}
-
-/*-------------------------------------------------------------------------*/
-
 int RunExternalFiles()
 {
     char args[1024];
@@ -210,13 +181,13 @@ int RunExternalFiles()
         memset(verbosityString + 1, 'y', verbosity > sizeof(verbosityString) - 2 ? sizeof(verbosityString) - 2 : verbosity);
     }
     temp[0] = 0;
-    strcpy(outName, outputFileName);
+    strcpy(outName, outputFileName.c_str());
     if (objlist && outName[0] && outName[strlen(outName) - 1] == '\\')
     {
         strcat(outName, (char*)objlist->data);
         Utils::StripExt(outName);
         strcat(outName, ".exe");
-        strcpy(temp, outputFileName);
+        strcpy(temp, outputFileName.c_str());
     }
     //    p = strrchr(outName, '.');
     //    if (p && p[1] != '\\')

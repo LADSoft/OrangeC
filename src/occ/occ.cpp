@@ -120,10 +120,18 @@ void global(SimpleSymbol* sym, int flags)
 {
     if (flags & BaseData::DF_GLOBAL)
     {
+        if (cparams.prm_asmfile)
+        {
+            bePrintf("\t[global %s]\n", sym->outputName);
+        }
         omf_globaldef(sym);
     }
     if (flags & BaseData::DF_EXPORT)
     {
+        if (cparams.prm_asmfile)
+        {
+            bePrintf("\texport %s\n", sym->outputName);
+        }
         omf_put_expfunc(sym);
     }
 }
@@ -137,8 +145,8 @@ void ProcessData(BaseData* v)
     case DT_SEGEXIT:
         break;
     case DT_DEFINITION:
-        oa_gen_strlab(v->symbol.sym);
         global(v->symbol.sym, v->symbol.i);
+        oa_gen_strlab(v->symbol.sym);
         break;
     case DT_LABELDEFINITION:
         oa_put_label(v->i);
@@ -156,8 +164,8 @@ void ProcessData(BaseData* v)
         oa_genpcref(v->symbol.sym, v->symbol.i);
         break;
     case DT_FUNCREF:
+//        global(v->symbol.sym, v->symbol.i);
         gen_funcref(v->symbol.sym);
-        global(v->symbol.sym, v->symbol.i);
         break;
     case DT_LABEL:
         gen_labref(v->i);

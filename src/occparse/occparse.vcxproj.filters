@@ -192,15 +192,6 @@
     <ClCompile Include="inasm.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\occx86\InstructionParser.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\occx86\x64Parser.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\occx86\x64stub.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\oasm\x64Instructions.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -237,10 +228,19 @@
     <ClCompile Include="..\occopt\ilstream.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\occmsil\using.cpp">
+    <ClCompile Include="occparse.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="occparse.cpp">
+    <ClCompile Include="..\occ\InstructionParser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\occil\using.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\occ\x64Parser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\occ\x64stub.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

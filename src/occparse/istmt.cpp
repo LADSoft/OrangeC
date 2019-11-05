@@ -983,12 +983,7 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     gen_func(funcexp, 0);
     tFree();
     InsertParameterThunks(funcsp, blockArray[1]);
-    if (chosenAssembler->arch->denyopts & DO_NOREGALLOC)
-        FreeLocalContext(nullptr, funcsp, nextLabel++);
-//    if (doOptimize)
-//        optimize(funcsp);
-    if (!(chosenAssembler->arch->denyopts & DO_NOREGALLOC))
-        FreeLocalContext(nullptr, funcsp, nextLabel++);
+    FreeLocalContext(nullptr, funcsp, nextLabel++);
 
 //    if (!(chosenAssembler->arch->denyopts & DO_NOREGALLOC))
 //        AllocateStackSpace(funcsp);

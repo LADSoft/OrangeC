@@ -29,6 +29,7 @@ extern SimpleSymbol* currentFunction;
 extern int tempCount;
 extern int blockCount;
 extern QUAD* intermed_head;
+extern std::unordered_map<IMODE*, IMODE*> loadHash;
 
 int gentype; /* Current DC type */
 int curseg;  /* Current seg */
@@ -127,6 +128,7 @@ void AddFunction()
     data->objectArray_exp = objectArray_exp;
     data->temporarySymbols = temporarySymbols;
     data->variables = functionVariables;
+    data->loadHash = loadHash;
     data->instructionList = intermed_head;
     data->setjmp_used = setjmp_used;
     data->hasAssembly =  functionHasAssembly;

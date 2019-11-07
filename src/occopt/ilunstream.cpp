@@ -700,6 +700,18 @@ static void UnstreamIModes(FunctionData& fd)
         }
     });
 }
+static void UnstreamLoadCache(FunctionData* fd, std::unordered_map<IMODE*, IMODE*>& hash)
+{
+    int i = UnstreamInt();
+    for (; i; i--)
+    {
+        int n = UnstreamInt();
+        IMODE* key = fd->imodeList[n - 1];
+        n = UnstreamInt();
+        IMODE* value = fd->imodeList[n - 1];
+        hash[key] = value;
+    }
+}
 static FunctionData *UnstreamFunc()
 {
     currentBlock = nullptr;
@@ -724,6 +736,7 @@ static FunctionData *UnstreamFunc()
     UnstreamIModes(*fd);
     fd->objectArray_exp = UnstreamExpression();
     fd->instructionList = UnstreamInstructions(*fd);
+    UnstreamLoadCache(fd, fd->loadHash);
     return fd;
 }
 static void UnstreamData()

@@ -59,9 +59,7 @@ extern TYPE stdint;
 extern int fastcallAlias;
 extern bool setjmp_used;
 extern bool functionHasAssembly;
-extern STORETEMPHASH* storeHash[DAGSIZE];
-extern STORETEMPHASH* loadHash[DAGSIZE];
-extern STORETEMPHASH* immedHash[DAGSIZE];
+extern std::unordered_map<IMODE*, IMODE*> loadHash;
 extern CASTTEMPHASH* castHash[DAGSIZE];
 extern SimpleExpression* objectArray_exp;
 
@@ -100,9 +98,7 @@ void iexpr_init(void)
 void iexpr_func_init(void)
 {
     memset(name_value_hash, 0, sizeof(DAGLIST*) * DAGSIZE);
-    memset(storeHash, 0, sizeof(storeHash));
-    memset(loadHash, 0, sizeof(loadHash));
-    memset(immedHash, 0, sizeof(immedHash));
+    loadHash.clear();
     memset(castHash, 0, sizeof(castHash));
     incdecList = nullptr;
 }

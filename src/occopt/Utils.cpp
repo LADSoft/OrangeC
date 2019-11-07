@@ -34,9 +34,7 @@ extern ARCH_ASM *chosenAssembler;
 extern std::vector<SimpleSymbol*>temporarySymbols;
 
 
-STORETEMPHASH* storeHash[DAGSIZE];
-STORETEMPHASH* loadHash[DAGSIZE];
-STORETEMPHASH* immedHash[DAGSIZE];
+std::unordered_map<IMODE*, IMODE*> loadHash;
 CASTTEMPHASH* castHash[DAGSIZE];
 int tempCount;
 
@@ -363,60 +361,15 @@ IMODE* tempreg(int size, int mode)
     return ap;
 }
 
-IMODE* GetStoreTemp(IMODE* dest)
-{
-    int hash = dhash((UBYTE*)&dest, sizeof(dest));
-    STORETEMPHASH* sh = storeHash[hash];
-    while (sh)
-    {
-        if (sh->mem == dest)
-        {
-            return sh->temp;
-        }
-        sh = sh->next;
-    }
-    return nullptr;
-}
 IMODE* GetLoadTemp(IMODE* dest)
 {
-    int hash = dhash((UBYTE*)&dest, sizeof(dest));
-    STORETEMPHASH* sh = loadHash[hash];
-    while (sh)
-    {
-        if (sh->mem == dest)
-        {
-            return sh->temp;
-        }
-        sh = sh->next;
-    }
+    auto it = loadHash.find(dest);
+    if (it != loadHash.end())
+        return it->second;
     return nullptr;
 }
 IMODE* LookupStoreTemp(IMODE* dest, IMODE* src)
 {
-    /*	if (dest->offset->type != se_tempref || dest->mode == i_ind)
-        {
-            if (!dest->bits)
-            {
-                int hash = dhash((UBYTE *)&dest, sizeof(dest));
-                STORETEMPHASH *sh = storeHash[hash];
-                while (sh)
-                {
-                    if (sh->mem == dest)
-                    {
-                        return sh->temp;
-                    }
-                    sh = sh->next;
-                }
-                sh = Alloc(sizeof(STORETEMPHASH));
-                sh->next = storeHash[hash];
-                storeHash[hash] = sh;
-                sh->mem = dest;
-                sh->temp = tempreg(dest->size, false);
-                sh->temp->offset->sp->storeTemp = true;
-                return sh->temp;
-            }
-        }
-        */
     return src;
 }
 IMODE* LookupLoadTemp(IMODE* dest, IMODE* source)
@@ -435,25 +388,16 @@ IMODE* LookupLoadTemp(IMODE* dest, IMODE* source)
         }
         else
         {
-            int hash = dhash((UBYTE*)&source, sizeof(source));
-            STORETEMPHASH* sh = loadHash[hash];
-            while (sh)
+            IMODE *found = GetLoadTemp(source);
+            if (!found)
             {
-                if (sh->mem == source)
-                {
-                    return sh->temp;
-                }
-                sh = sh->next;
+                found  = tempreg(source->size, false);
+                found->offset->sp->loadTemp = true;
+                found->vol = source->vol;
+                found->restricted = source->restricted;
+                loadHash[source] = found;
             }
-            sh = (STORETEMPHASH*)Alloc(sizeof(STORETEMPHASH));
-            sh->next = loadHash[hash];
-            loadHash[hash] = sh;
-            sh->mem = source;
-            sh->temp = tempreg(source->size, false);
-            sh->temp->offset->sp->loadTemp = true;
-            sh->temp->vol = source->vol;
-            sh->temp->restricted = source->restricted;
-            return sh->temp;
+            return found;
         }
     }
     return source;

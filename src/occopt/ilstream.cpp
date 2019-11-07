@@ -680,6 +680,15 @@ static void StreamIModes(FunctionData* fd)
         }
     });
 }
+static void StreamLoadCache(std::unordered_map<IMODE*, IMODE*> hash)
+{
+    StreamInt(hash.size());
+    for (auto v : hash)
+    {
+        StreamInt(cachedImodes[v.first]);
+        StreamInt(cachedImodes[v.second]); // a tempreg number
+    }
+}
 static void StreamFunc(FunctionData *fd)
 {
     cachedAutos.clear();
@@ -728,6 +737,7 @@ static void StreamFunc(FunctionData *fd)
     StreamIModes(fd);
     StreamExpression(fd->objectArray_exp);
     StreamInstructions(fd->instructionList);
+    StreamLoadCache(fd->loadHash);
 }
 static void StreamData()
 {

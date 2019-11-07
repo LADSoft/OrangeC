@@ -273,7 +273,6 @@ bool ProcessData(const char *name)
 //            exitBlock = v->funcData->exitBlock;
 //            tempCount = v->funcData->tempCount;
 //            functionHasAssembly = v->funcData->hasAssembly;
-            nextLabel = v->funcData->nextLabel;
             intermed_head = v->funcData->instructionList;
             intermed_tail = intermed_head;
             while (intermed_tail && intermed_tail->fwd)

@@ -706,16 +706,26 @@ static void UnstreamLoadCache(FunctionData* fd, std::unordered_map<IMODE*, IMODE
     for (; i; i--)
     {
         int n = UnstreamInt();
-        IMODE* key = fd->imodeList[n - 1];
-        n = UnstreamInt();
-        IMODE* value = fd->imodeList[n - 1];
-        hash[key] = value;
+        if (n)
+        {
+            IMODE* key = fd->imodeList[n - 1];
+            n = UnstreamInt();
+            if (n) // might fail in the backend...
+            {
+                IMODE* value = fd->imodeList[n - 1];
+                hash[key] = value;
+            }
+        }
+        else
+        {
+            n = UnstreamInt();
+        }
     }
 }
 static FunctionData *UnstreamFunc()
 {
     currentBlock = nullptr;
-    FunctionData *fd = (FunctionData*)Alloc(sizeof(FunctionData));
+    FunctionData *fd = new FunctionData;
     std::vector<SimpleSymbol*> temporarySymbols;
     std::vector<SimpleSymbol*> variables;
     QUAD *instructionList;

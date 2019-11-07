@@ -490,6 +490,7 @@ static LEXEME* statement_case(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
         {
             STATEMENT* st = stmtNode(lex, parent, st_label);
             st->label = codeLabel++;
+            codeLabel++; // reserve a label in case a bingen is used in the back end...
             data = (CASEDATA*)Alloc(sizeof(CASEDATA));
             data->val = val;
             data->label = st->label;

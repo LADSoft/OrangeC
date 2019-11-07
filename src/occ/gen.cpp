@@ -416,6 +416,7 @@ void floatchs(AMODE* ap, int sz)
         if (!singleLabel)
         {
             singleLabel = setSymbol("__fschsmask");
+            singleLabel->mode = am_direct;
         }
         lbl = singleLabel;
         op = op_xorps;
@@ -425,6 +426,7 @@ void floatchs(AMODE* ap, int sz)
         if (!doubleLabel)
         {
             doubleLabel = setSymbol("__fdchsmask");
+            doubleLabel->mode = am_direct;
         }
         lbl = doubleLabel;
         op = op_xorpd;
@@ -485,6 +487,7 @@ AMODE* floatzero(AMODE* ap)
     if (!zerolabel)
     {
         zerolabel = setSymbol("__fzero");
+        zerolabel->mode = am_direct;
     }
     if (cparams.prm_lscrtdll)
     {
@@ -613,6 +616,7 @@ void getAmodes(QUAD* q, enum e_opcode* op, IMODE* im, AMODE** apl, AMODE** aph)
     if (im->offset && im->offset->type == se_threadlocal)
     {
         AMODE* temp = setSymbol("__TLSINITSTART");
+        temp->mode = am_immed;
         temp->offset = simpleExpressionNode(se_sub, im->offset, temp->offset);
         gen_code(op_push, temp, 0);
         callLibrary("___tlsaddr", 0);
@@ -1833,7 +1837,7 @@ void bingen(int lower, int avg, int higher)
         int avg2 = (higher + avg + 1) / 2;
         int lab;
         if (avg + 1 < higher)
-            lab = switchTreeBranchLabels[avg2] = beGetLabel;
+            lab = switchTreeBranchLabels[avg2];// = beGetLabel;
         else
             lab = switch_deflab;
         if (switch_apl->length < 0)
@@ -4301,7 +4305,8 @@ void asm_swbranch(QUAD* q) /* case characteristics */
         case swm_tree:
             liveQualify(switch_apl, switch_apl, switch_aph);
             switchTreeCases[switchTreePos] = swcase;
-            switchTreeLabels[switchTreePos++] = lab;
+            switchTreeLabels[switchTreePos] = lab;
+            switchTreeBranchLabels[switchTreePos++] = lab + 1;
             if (--switch_case_count == 0)
                 bingen(0, switch_case_max / 2, switch_case_max);
 

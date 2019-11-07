@@ -1129,8 +1129,6 @@ void SetGlobalTerms(void)
 }
 void GlobalOptimization(void)
 {
-    if (strstr(currentFunction->name, "Finish"))
-        printf("hi");
     int i;
     PadBlocks();
     forwardOrder = (BLOCK**)oAlloc(sizeof(BLOCK*) * blockCount);

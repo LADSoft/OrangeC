@@ -23,7 +23,6 @@
  */
 
 #include "ildata.h"
-#include <map>
 
 extern SimpleSymbol* currentFunction;
 extern int tempCount;

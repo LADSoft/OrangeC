@@ -26,6 +26,7 @@
 #include "beinterf.h"
 #include "../occ/Winmode.h"
 #include <deque>
+#include <map>
 
 enum DataType
 {

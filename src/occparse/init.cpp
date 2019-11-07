@@ -1208,7 +1208,7 @@ void dumpInitializers(void)
         dumpTLSDestructors();
         dumpvc1Thunks();
         dumpImportThunks();
-        dumpStaticInitializers();
+//        dumpStaticInitializers();
     }
 #endif
 }

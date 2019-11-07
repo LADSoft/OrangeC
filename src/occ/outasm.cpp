@@ -1368,7 +1368,7 @@ long queue_floatval(FPF* number, int size)
 void dump_muldivval(void)
 {
     int tag = false;
-    xconstseg();
+    oa_enterseg(constseg);
     if (cparams.prm_asmfile)
     {
         bePrintf("\n");

@@ -46,6 +46,7 @@ extern SimpleExpression* objectArray_exp;
 extern TEMP_INFO** tempInfo;
 extern int blockMax;
 extern int tempMax;
+extern std::unordered_map<IMODE*, IMODE*> loadHash;
 
 CmdSwitchParser SwitchParser;
 CmdSwitchBool single(SwitchParser, 's', false, "single");
@@ -318,6 +319,7 @@ void ProcessFunctions()
                 intermed_tail = intermed_tail->fwd;
             objectArray_exp = v->funcData->objectArray_exp;
             currentFunction = v->funcData->name;
+            loadHash = v->funcData->loadHash;
             ProcessFunction(v->funcData);
             v->funcData->temporarySymbols = temporarySymbols;
             v->funcData->variables = functionVariables;

@@ -124,7 +124,7 @@ struct SimpleSymbol
     int label;
     BaseList* baseClasses;
     SimpleType *tp;
-    SimpleSymbol* paramSubstitute;
+    struct expr* paramSubstitute;
     SimpleSymbol* parentClass;
     LIST *syms;
     const char* msil;

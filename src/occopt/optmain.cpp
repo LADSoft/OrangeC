@@ -311,7 +311,6 @@ void ProcessFunctions()
             blockCount = v->funcData->blockCount;
             exitBlock = v->funcData->exitBlock;
             tempCount = v->funcData->tempCount;
-            nextLabel = v->funcData->nextLabel;
             functionHasAssembly = v->funcData->hasAssembly;
             intermed_head = v->funcData->instructionList;
             intermed_tail = intermed_head;
@@ -325,7 +324,6 @@ void ProcessFunctions()
             v->funcData->blockCount = blockCount;
             v->funcData->exitBlock = exitBlock;
             v->funcData->tempCount = tempCount;
-            v->funcData->nextLabel = nextLabel;
             v->funcData->instructionList = intermed_head;
         }
     }

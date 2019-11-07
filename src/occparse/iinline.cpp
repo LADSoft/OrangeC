@@ -176,7 +176,7 @@ static void inlineBindArgs(SYMBOL* funcsp, SYMLIST* hr, INITLIST* args)
                     deref(sym->tp, &dest);
                 }
                 list[cnt++] = dest;
-                sym->inlineFunc.stmt = (STATEMENT*)dest;
+                SymbolManager::Get(sym)->paramSubstitute = dest;
                 idest = gen_expr(funcsp, dest, F_STORE, natural_size(dest));
                 src = gen_expr(funcsp, args->exp, 0, natural_size(args->exp));
                 ap1 = LookupLoadTemp(nullptr, src);
@@ -299,6 +299,7 @@ IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
     int oldOffset = codeLabelOffset;
     EXPRESSION* oldthis = inlinesym_thisptr[inlinesym_count];
     //    return nullptr;
+
     if (chosenAssembler->arch->denyopts & DO_NOINLINE)
         return nullptr;
     if (cparams.prm_debug)

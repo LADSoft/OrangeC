@@ -261,10 +261,6 @@ static void StreamSymbol(SimpleSymbol* sym)
                 StreamInt(sym->parentClass->fileIndex);
             else
                 StreamInt(0);
-            if (sym->paramSubstitute)
-                StreamInt(sym->paramSubstitute->fileIndex);
-            else
-                StreamInt(0);
             StreamType(sym->tp);
             StreamSymbolTable(sym->syms);
             StreamBases(sym->baseClasses);
@@ -517,6 +513,7 @@ static void StreamInstruction(QUAD *q)
             StreamInt(q->precolored);
             StreamInt(q->moved);
             StreamInt(q->livein);
+            StreamInt(q->liveRegs);
         }
     });
 }
@@ -551,6 +548,7 @@ static void StreamXParams()
         StreamInt(dataAlign);
         StreamInt(bssAlign);
         StreamInt(constAlign);
+        StreamInt(nextLabel);
         StreamInt(registersAssigned);
         StreamString(prm_assemblerSpecifier);
         StreamString(prm_libPath);
@@ -725,7 +723,6 @@ static void StreamFunc(FunctionData *fd)
     StreamInt(fd->blockCount);
     StreamInt(fd->tempCount);
     StreamInt(fd->exitBlock);
-    StreamInt(fd->nextLabel);
     StreamSymbolList(fd->variables);
     StreamSymbolList(fd->temporarySymbols);
     StreamIModes(fd);

@@ -77,7 +77,6 @@ struct FunctionData
     int tempCount;
     int blockCount;
     int exitBlock;
-    int nextLabel;
     QUAD *instructionList;
     int setjmp_used : 1;
     int hasAssembly : 1;

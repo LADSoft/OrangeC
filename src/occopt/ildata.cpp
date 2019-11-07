@@ -133,7 +133,6 @@ void AddFunction()
     data->exitBlock = exitBlock;
     data->tempCount = tempCount;
     data->blockCount = blockCount;
-    data->nextLabel = nextLabel;
     val->funcData = data;
 #endif
 }

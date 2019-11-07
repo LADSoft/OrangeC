@@ -995,10 +995,10 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
 //    post_function_gen(currentFunction, intermed_head);
     if (funcsp->attribs.inheritable.linkage == lk_virtual || tmpl)
         gen_endvirtual(SymbolManager::Get(funcsp));
-    AllocateLocalContext(nullptr, funcsp, nextLabel++);
+    AllocateLocalContext(nullptr, funcsp, nextLabel);
     funcsp->retblockparamadjust = chosenAssembler->arch->retblockparamadjust;
     XTDumpTab(funcsp);
-    FreeLocalContext(nullptr, funcsp, nextLabel++);
+    FreeLocalContext(nullptr, funcsp, nextLabel);
     AddFunction();
     intermed_head = nullptr;
 //    dag_rundown();

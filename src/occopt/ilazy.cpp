@@ -68,7 +68,7 @@ extern int tempCount;
 extern QUAD *intermed_head, *intermed_tail;
 extern int walkPostorder;
 extern BITINT* uivBytes;
-
+extern SimpleSymbol* currentFunction;
 unsigned short* termMap;
 unsigned short* termMapUp;
 unsigned termCount;
@@ -1129,6 +1129,8 @@ void SetGlobalTerms(void)
 }
 void GlobalOptimization(void)
 {
+    if (strstr(currentFunction->name, "Finish"))
+        printf("hi");
     int i;
     PadBlocks();
     forwardOrder = (BLOCK**)oAlloc(sizeof(BLOCK*) * blockCount);

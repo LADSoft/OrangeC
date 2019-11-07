@@ -317,12 +317,6 @@ SimpleSymbol* SymbolManager::Make(struct sym* sym)
     rv->importfile = sym->importfile;
     if (sym->parentNameSpace)
         rv->namespaceName = sym->parentNameSpace->name;
-    if (sym->storage_class == sc_auto)
-    {
-        EXPRESSION *node = (EXPRESSION*)sym->inlineFunc.stmt;
-        if (node)
-            rv->paramSubstitute = SymbolManager::Get(node->left->v.sp);
-    }
     rv->i = sym->value.i;
     Add(sym->mainsym ? sym->mainsym : sym, rv);
     rv->storage_class = Get(sym->storage_class);

@@ -531,9 +531,11 @@ IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
                         }
                     }
                 }
-                if (sym->storage_class == sc_parameter && sym->paramSubstitute)
+                if (sym->storage_class == scc_parameter && sym->paramSubstitute)
                 {
-                    sym = sym->paramSubstitute;
+                    node = sym->paramSubstitute;
+                    // paramsubstitute is a NORMAL expression which is a derefed auto constant 
+                    sym = SymbolManager::Get(sym->paramSubstitute->left->v.sp);
                 }
                 sym->allocate = true;
                 if (catchLevel)
@@ -2899,9 +2901,10 @@ IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
                 rv = SymbolManager::Get(node->v.sp)->imvalue;
                 break;
             }
-            if (node->v.sp->storage_class == sc_parameter && node->v.sp->inlineFunc.stmt)
+            sym = SymbolManager::Get(node->v.sp);
+            if (sym->storage_class == scc_parameter && sym->paramSubstitute)
             {
-                return gen_expr(funcsp, ((EXPRESSION*)node->v.sp->inlineFunc.stmt)->left, flags, size);
+                return gen_expr(funcsp, sym->paramSubstitute->left, flags, size);
             }
             node->v.sp->allocate = true;
             // fallthrough

@@ -251,7 +251,6 @@ static SimpleSymbol* UnstreamSymbol()
             rv->align = UnstreamInt();
             rv->size = UnstreamInt();
             rv->parentClass = (SimpleSymbol*)UnstreamInt();
-            rv->paramSubstitute = (SimpleSymbol*)UnstreamInt();
             rv->tp = UnstreamType();
             rv->syms = UnstreamSymbolTable();
             rv->baseClasses = UnstreamBases();
@@ -545,6 +544,7 @@ static QUAD* UnstreamInstruction(FunctionData& fd)
             rv->precolored = UnstreamInt();
             rv->moved = UnstreamInt();
             rv->livein = UnstreamInt();
+            rv->liveRegs = UnstreamInt();
         }
     });
     return rv;
@@ -588,6 +588,7 @@ static void UnstreamXParams()
         dataAlign = UnstreamInt();
         bssAlign = UnstreamInt();
         constAlign = UnstreamInt();
+        nextLabel = UnstreamInt();
         registersAssigned = UnstreamInt();
         UnstreamString(prm_assemblerSpecifier);
         UnstreamString(prm_libPath);
@@ -716,7 +717,6 @@ static FunctionData *UnstreamFunc()
     fd->blockCount = UnstreamInt();
     fd->tempCount = UnstreamInt();
     fd->exitBlock = UnstreamInt();
-    fd->nextLabel = UnstreamInt();
     temps.clear();
     temps.resize(fd->tempCount);
     UnstreamSymbolList(fd->variables);
@@ -1005,7 +1005,6 @@ static void ResolveSymbol(SimpleSymbol*& sym, std::map<int, std::string>& texts,
             return;
         sym->visited = true;
         ResolveSymbol(sym->parentClass, texts, typeSymbols);
-        ResolveSymbol(sym->paramSubstitute, texts, typeSymbols);
         for (auto l = sym->syms; l; l = l->next)
         {
             SimpleSymbol *s = (SimpleSymbol*)l->data;

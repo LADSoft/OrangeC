@@ -654,8 +654,6 @@ void getAmodes(QUAD* q, enum e_opcode* op, IMODE* im, AMODE** apl, AMODE** aph)
             }
         }
         (*apl)->scale = im->scale;
-        if (im->offset3)
-            printf("hi");
         (*apl)->offset = im->offset3 ? im->offset3 : simpleIntNode(se_i, 0);
         if (im->size < ISZ_FLOAT)
             (*apl)->length = im->size;

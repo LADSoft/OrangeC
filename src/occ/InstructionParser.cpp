@@ -614,7 +614,7 @@ void InstructionParser::SetOperandTokens(amode* operand)
         case am_indisp:
             SetBracketSequence(true, operand->length, operand->seg);
             SetRegToken(operand->preg, ISZ_UINT);
-            if (operand->offset && ((operand->offset->type == se_ui || operand->offset->type == se_i) && operand->offset->i != 0))
+            if (operand->offset && ((operand->offset->type != se_ui && operand->offset->type != se_i) || operand->offset->i != 0))
             {
                 inputTokens.push_back(&Tokenplus);
                 SetExpressionToken(operand->offset);
@@ -634,7 +634,7 @@ void InstructionParser::SetOperandTokens(amode* operand)
                 inputTokens.push_back(&Tokenstar);
                 SetNumberToken(1 << operand->scale);
             }
-            if (operand->offset && ((operand->offset->type == se_ui || operand->offset->type == se_i) && operand->offset->i != 0))
+            if (operand->offset && ((operand->offset->type != se_ui && operand->offset->type != se_i) || operand->offset->i != 0))
             {
                 inputTokens.push_back(&Tokenplus);
                 SetExpressionToken(operand->offset);

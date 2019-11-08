@@ -259,6 +259,7 @@ IMODE* make_immed(int size, long long i)
  */
 
 {
+    /*
     int index = ((unsigned long long)i) % (sizeof(immed_list) / sizeof(immed_list[0]));
     LIST* a = immed_list[index];
     IMODE* ap;
@@ -269,7 +270,8 @@ IMODE* make_immed(int size, long long i)
             return ap;
         a = a->next;
     }
-
+*/
+    IMODE* ap;
     IncGlobalFlag();
     ap = (IMODE*)(IMODE*)Alloc(sizeof(IMODE));
     ap->mode = i_immed;
@@ -277,11 +279,12 @@ IMODE* make_immed(int size, long long i)
     ap->offset->type = se_i;
     ap->offset->i = i;
     ap->size = size;
-
+    /*
     a = (LIST*)(LIST*)Alloc(sizeof(LIST));
     a->data = ap;
     a->next = immed_list[index];
     immed_list[index] = a;
+    */
     DecGlobalFlag();
     return ap;
 }

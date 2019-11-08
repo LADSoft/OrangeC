@@ -1026,6 +1026,7 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
         hr = hr->next;
     }
     baseThisPtr = nullptr;
+    nextLabel+=2; // temporary
 }
 void genASM(STATEMENT* st)
 {

@@ -122,7 +122,7 @@ void global(SimpleSymbol* sym, int flags)
     {
         if (cparams.prm_asmfile)
         {
-            bePrintf("\t[global %s]\n", sym->outputName);
+            bePrintf("[global %s]\n", sym->outputName);
         }
         omf_globaldef(sym);
     }
@@ -130,7 +130,7 @@ void global(SimpleSymbol* sym, int flags)
     {
         if (cparams.prm_asmfile)
         {
-            bePrintf("\texport %s\n", sym->outputName);
+            bePrintf("export %s\n", sym->outputName);
         }
         omf_put_expfunc(sym);
     }

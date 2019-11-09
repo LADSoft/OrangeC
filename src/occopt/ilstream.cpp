@@ -89,6 +89,7 @@ static std::map<IMODE*, int> cachedImodes;
 static char outBuf[8192];
 static int outLevel;
 static std::set<SimpleSymbol*> cachedAutos;
+static std::set<SimpleSymbol*> cachedTemps;
 
 static size_t TextName(const std::string& name)
 {
@@ -648,6 +649,10 @@ static void CacheOffset(FunctionData* fd, SimpleExpression*offset)
                 fd->temporarySymbols.push_back(offset->sp);
             }
         }
+        else if (offset->type == se_tempref)
+        {
+            cachedTemps.insert(offset->sp);
+        }
         else
         {
             CacheOffset(fd, offset->left);
@@ -680,6 +685,30 @@ static void StreamIModes(FunctionData* fd)
         }
     });
 }
+static void StreamTemps()
+{
+    int count = 0;
+    for (auto t : cachedTemps)
+    {
+        if (t->loadTemp | t->pushedtotemp)
+            count++;
+
+    }
+    StreamInt(count);
+    for (auto t : cachedTemps)
+    {
+        if (t->loadTemp | t->pushedtotemp)
+        {
+            StreamInt(t->i);
+            int val = 0;
+            if (t->loadTemp)
+                val |= 1;
+            if (t->pushedtotemp)
+                val |= 2;
+            StreamByte(val);
+        }
+    }
+}
 static void StreamLoadCache(std::unordered_map<IMODE*, IMODE*> hash)
 {
     StreamInt(hash.size());
@@ -692,6 +721,7 @@ static void StreamLoadCache(std::unordered_map<IMODE*, IMODE*> hash)
 static void StreamFunc(FunctionData *fd)
 {
     cachedAutos.clear();
+    cachedTemps.clear();
     for (auto v : fd->variables)
         if (v->storage_class == scc_auto || v->storage_class == scc_parameter)
             cachedAutos.insert(v);
@@ -737,6 +767,7 @@ static void StreamFunc(FunctionData *fd)
     StreamIModes(fd);
     StreamExpression(fd->objectArray_exp);
     StreamInstructions(fd->instructionList);
+    StreamTemps();
     StreamLoadCache(fd->loadHash);
 }
 static void StreamData()

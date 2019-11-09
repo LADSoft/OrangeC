@@ -359,18 +359,18 @@ void AllocateStackSpace()
     std::vector<std::deque<SimpleSymbol *>> queue;
     queue.resize(maxlvl);
     int oldlvl = -1;
+    std::unordered_map<SimpleSymbol*, int> modes;
     for (auto sym : functionVariables)
     {
         int lvl = sym->i;
         queue[lvl].push_back(sym);
-        queue[lvl].back()->i = (lvl > oldlvl);
+        modes[sym] = (lvl > oldlvl);
     }
     for (auto sym : temporarySymbols)
     {
         int lvl = sym->i;
         queue[lvl].push_back(sym);
-        queue[sym->i].push_back(sym);
-        queue[lvl].back()->i = 2;
+        modes[sym] = 2;
     }
     bool show = false;
     lc_maxauto = max = 0;
@@ -381,10 +381,10 @@ void AllocateStackSpace()
         lc_maxauto = max;
         for (auto&&sym : dq)
         {
-            if (sym->i & 1) // overlay?
+            if (modes[sym] & 1) // overlay?
                 lc_maxauto = oldauto;
             bool doit;
-            if (sym->i & 2)
+            if (modes[sym] & 2)
             {
                 // compiler-created variable
                 doit = sym->storage_class != scc_static && sym->storage_class != scc_constant && !sym->stackblock;

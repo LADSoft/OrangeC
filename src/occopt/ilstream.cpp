@@ -693,10 +693,10 @@ static void StreamFunc(FunctionData *fd)
 {
     cachedAutos.clear();
     for (auto v : fd->variables)
-        if (v->storage_class == scc_auto)
+        if (v->storage_class == scc_auto || v->storage_class == scc_parameter)
             cachedAutos.insert(v);
     for (auto v : fd->temporarySymbols)
-        if (v->storage_class == scc_auto)
+        if (v->storage_class == scc_auto || v->storage_class == scc_parameter)
             cachedAutos.insert(v);
 
     cachedImodes.clear();

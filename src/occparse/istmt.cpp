@@ -854,9 +854,12 @@ void CopyVariables(SYMBOL *funcsp)
     {
         for (SYMLIST* hr = syms->table[0]; hr; hr = hr->next)
         {
-            SimpleSymbol *sym = SymbolManager::Get(hr->p);
-            sym->i = syms->blockLevel;
-            functionVariables.push_back(sym);
+            if (hr->p->storage_class == sc_auto || hr->p->storage_class == sc_parameter)
+            {
+                SimpleSymbol *sym = SymbolManager::Get(hr->p);
+                sym->i = syms->blockLevel;
+                functionVariables.push_back(sym);
+            }
         }
     }
 }
@@ -993,13 +996,13 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
 //    if (chosenAssembler->gen->post_function_gen)
 //        chosenAssembler->gen->post_function_gen(SymbolManager::Get(funcsp), intermed_head);
 //    post_function_gen(currentFunction, intermed_head);
+    AddFunction();
     if (funcsp->attribs.inheritable.linkage == lk_virtual || tmpl)
         gen_endvirtual(SymbolManager::Get(funcsp));
     AllocateLocalContext(nullptr, funcsp, nextLabel);
     funcsp->retblockparamadjust = chosenAssembler->arch->retblockparamadjust;
     XTDumpTab(funcsp);
     FreeLocalContext(nullptr, funcsp, nextLabel);
-    AddFunction();
     intermed_head = nullptr;
 //    dag_rundown();
 //    oFree();

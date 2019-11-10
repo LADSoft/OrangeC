@@ -57,7 +57,7 @@ extern CmdSwitchString prm_output;
 extern std::vector<SimpleSymbol*> temporarySymbols;
 extern std::vector<SimpleSymbol*> functionVariables;
 extern std::deque<BaseData*> baseData;
-
+extern std::vector<SimpleSymbol*> externals;
 
 extern int gentype; /* Current DC type */
 extern int curseg;  /* Current seg */
@@ -1561,6 +1561,12 @@ void OutputIcdFile()
         {
             PutData(d);
         }
+    }
+    for (auto e : externals)
+    {
+        if (e)
+            oprintf(icdFile, "\textern %s\n", e->outputName);
+
     }
 }
 

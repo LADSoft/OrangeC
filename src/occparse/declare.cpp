@@ -26,6 +26,7 @@
 #include <wchar.h>
 #include "Utils.h"
 #include "PreProcessor.h"
+#include "iexpr.h"
 
 /* locally declared func gloabal memory
  when redeclaring sym, make sure it gets in the global func list
@@ -109,6 +110,12 @@ void declare_init(void)
     symbolKey = 0;
 }
 
+void GENREF(SYMBOL* sym)
+{
+    if (!sym->templateLevel || sym->instantiated)
+        SymbolManager::Get(sym)->genreffed = true;
+}
+
 void InsertGlobal(SYMBOL* sp)
 {
     globalCache.push_back(SymbolManager::Get(sp));
@@ -139,7 +146,7 @@ void WeedExterns()
             !sym->noextern)
         {
             sym->genreffed = false;
-            ++it;
+            ++it;   
         }
         else
         {
@@ -990,7 +997,7 @@ static LEXEME* structbody(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_ac cur
         if (sp->vtabEntries)
         {
             char buf[4096];
-            InsertInline(sp);
+//            InsertInline(sp);
             my_sprintf(buf, "%s@_$vt", sp->decoratedName);
             sp->vtabsp = makeID(sc_static, &stdvoid, nullptr, litlate(buf));
             sp->vtabsp->attribs.inheritable.linkage2 = sp->attribs.inheritable.linkage2;
@@ -3568,6 +3575,7 @@ LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp,
                     spi->anonymous = true;
                     SetLinkerNames(spi, lk_none);
                 }
+                spi->parent = sp;
                 tp1 = AttributeFinish(spi, tp1);
                 tp2 = tp1;
                 while (ispointer(tp2) || isref(tp2))

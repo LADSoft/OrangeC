@@ -68,7 +68,7 @@ SimpleSymbol* SymbolManager::Get(struct sym *sym)
     if (sym)
     {
         SimpleSymbol *rv;
-        rv = symbols[sym->mainsym ? sym->mainsym : sym];
+        rv = Lookup(sym);
         if (!rv)
         {
             rv = Make(sym);
@@ -241,7 +241,7 @@ SimpleType* SymbolManager::Get(struct typ *tp)
             isvalist = true;
         tp = tp->btp;
     }
-    if (isstructured(tp) && tp->sp->templateLevel && !tp->sp->instantiated)
+    if ((isstructured(tp) && basetype(tp)->sp->templateLevel && !basetype(tp)->sp->instantiated) || basetype(tp)->type == bt_auto)
     {
         rv->type = st_i;
         rv->size = getSize(bt_int);
@@ -255,7 +255,7 @@ SimpleType* SymbolManager::Get(struct typ *tp)
             rv->sp = Get(tp->sp);
         }
         rv->size = tp->size;
-        if (!isstructured(tp) && !isfunction(tp) && tp->type != bt_ellipse)
+        if (!isstructured(tp) && !isfunction(tp) && tp->type != bt_ellipse && basetype(tp)->type != bt_any)
             rv->sizeFromType = sizeFromType(tp);
         else
             rv->sizeFromType = ISZ_ADDR;
@@ -264,10 +264,10 @@ SimpleType* SymbolManager::Get(struct typ *tp)
         rv->isarray = tp->array;
         rv->isvla = tp->vla;
         rv->va_list = tp->type == bt_va_list;
+        if (rv->sp && rv->sp->storage_class == scc_type)
+            typeSymbols.push_back(rv->sp);
         if (tp->syms && tp->syms->table && rv->sp && !rv->sp->syms)
         {
-            if (rv->sp->storage_class == scc_type)
-                typeSymbols.push_back(rv->sp);
             SYMLIST* list = tp->syms->table[0];
             LIST **p = &rv->sp->syms;
             SYMLIST *old = nullptr;
@@ -280,8 +280,20 @@ SimpleType* SymbolManager::Get(struct typ *tp)
                 }
                 *p = (LIST*)Alloc(sizeof(LIST));
                 (*p)->data = Get(list->p);
-                if (rv->sp->storage_class == scc_type || rv->type == st_func)
+                if (rv->sp->storage_class == scc_type)
+                {
+                    if (list->p->storage_class == sc_static || isfunction(list->p->tp))
+                    {
+                        SimpleSymbol* ns = (SimpleSymbol*)Alloc(sizeof(SimpleSymbol));
+                        *ns = *(SimpleSymbol*)(*p)->data;
+                        (*p)->data = ns;
+                    }
                     typeSymbols.push_back((SimpleSymbol*)(*p)->data);
+                }
+                else if (isfunction(tp))
+                {
+                    typeSymbols.push_back((SimpleSymbol*)(*p)->data);
+                }
                 p = &(*p)->next;
                 list = list->next;
                 if (!list)
@@ -293,8 +305,6 @@ SimpleType* SymbolManager::Get(struct typ *tp)
 
 
         }
-        if (tp->sp && tp->sp->storage_class == scc_type)
-            typeSymbols.push_back(rv->sp);
         if (tp->btp)
             rv->btp = Get(tp->btp);
     }
@@ -318,9 +328,9 @@ SimpleSymbol* SymbolManager::Make(struct sym* sym)
     if (sym->parentNameSpace)
         rv->namespaceName = sym->parentNameSpace->name;
     rv->i = sym->value.i;
-    Add(sym->mainsym ? sym->mainsym : sym, rv);
+    Add(sym, rv);
     rv->storage_class = Get(sym->storage_class);
-    if (!isstructured(sym->tp) && !isfunction(sym->tp) && sym->tp->type != bt_ellipse)
+    if (!isstructured(sym->tp) && !isfunction(sym->tp) && sym->tp->type != bt_ellipse && basetype(sym->tp)->type != bt_any)
         rv->sizeFromType = sizeFromType(sym->tp);
     else
         rv->sizeFromType = ISZ_ADDR;
@@ -332,6 +342,8 @@ SimpleSymbol* SymbolManager::Make(struct sym* sym)
         *p = (BaseList*)Alloc(sizeof(BaseList));
         (*p)->offset = src->offset;
         (*p)->sym = Get(src->cls);
+        if ((*p)->sym->tp->type == st_i)
+            typeSymbols.push_back((*p)->sym);
         src = src->next;
         p = &(*p)->next;
     }
@@ -344,7 +356,6 @@ SimpleSymbol* SymbolManager::Make(struct sym* sym)
     rv->isstructured = isstructured(sym->tp);
     rv->anonymous = sym->anonymous;
     rv->allocate = sym->allocate;
-    rv->genreffed = sym->genreffed;
     rv->thisPtr = sym->thisPtr;
     rv->stackblock = sym->stackblock;
     rv->inasm = sym->inasm;
@@ -520,4 +531,45 @@ e_scc_type SymbolManager::Get(enum e_sc storageClass)
     case sc_virtual:
         return scc_virtual;
     }
+}
+const char* SymbolManager::Key(struct sym* old)
+{
+    if (!old->key)
+    {
+        char buf[8192];
+        buf[0] = 0;
+        if (old->parent)
+        {
+            strcat(buf, old->parent->decoratedName);
+            sprintf(buf + strlen(buf), "%d", old->uniqueID);
+        }
+        strcat(buf, old->decoratedName ? old->decoratedName : old->name);
+        if (old->storage_class == sc_type)
+            strcat(buf, "#");
+        old->key = litlate(buf);
+    }
+    return old->key;
+}
+SimpleSymbol* SymbolManager::Lookup(struct sym* old)
+{
+    return symbols[Key(old)];
+}
+void SymbolManager::Add(struct sym* old, SimpleSymbol* sym)
+{
+    symbols[Key(old)] = sym;
+    switch (sym->storage_class)
+    {
+    case scc_member:
+        if (sym->tp->type != st_func)
+            break;
+        // fallthrough
+    case scc_global:
+    case scc_static:
+    case scc_localstatic:
+    case scc_external:
+    case scc_virtual:
+        globalSymbols[sym->outputName] = sym;
+        break;
+    }
+
 }

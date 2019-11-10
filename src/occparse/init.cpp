@@ -1201,14 +1201,13 @@ void dumpInitializers(void)
 #ifndef PARSER_ONLY
     if (!TotalErrors())
     {
-        dumpStaticInitializers();
         dumpDynamicInitializers();
         dumpTLSInitializers();
         dumpDynamicDestructors();
         dumpTLSDestructors();
         dumpvc1Thunks();
         dumpImportThunks();
-//        dumpStaticInitializers();
+        dumpStaticInitializers();
     }
 #endif
 }

@@ -280,7 +280,7 @@ static EXPRESSION* inasm_ident(void)
                 case sc_global:
                 case sc_external:
                 case sc_static:
-                    sym->genreffed = true;
+                    GENREF(sym);
                     node = varNode(en_global, sym);
                     break;
                 case sc_const:

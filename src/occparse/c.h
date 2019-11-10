@@ -552,6 +552,7 @@ typedef struct sym
     const char* name;
     const char* decoratedName;                /* symbol name with decorations, as used in output format */
     const char* errname;                      /* name to be used in errors */
+    const char* key;
     const char *declfile, *origdeclfile;      /* file symbol was declared in */
     int declline, origdeclline, realdeclline; /* line number symbol was declared at */
     short declcharpos;                        /* character position symbol was declared at */
@@ -597,7 +598,6 @@ typedef struct sym
     unsigned inasm : 1;                 /* a way to force the local optimizer to leave autos on the stack */
     unsigned assigned : 1;              /* value has been assigned */
     unsigned altered : 1;
-    unsigned genreffed : 1;   /* reffed in codegen */
     unsigned noextern : 1;    /* no external reference needed, it was inlined */
     unsigned gentemplate : 1; /* template instantiation or reference generated */
     unsigned allocaUsed : 1;
@@ -1100,9 +1100,4 @@ typedef struct _atomicData
     TYPE* tp;
 } ATOMICDATA;
 
-inline void GENREF(SYMBOL* sym)
-{
-    sym->genreffed = true;
-    if (sym->mainsym)
-        sym->mainsym->genreffed = true;
-}
+void GENREF(SYMBOL* sym);

@@ -394,7 +394,7 @@ int main(int argc, char* argv[])
         Utils::usage(argv[0], usageText);
     }
     if (!LoadFile(argv[1]))
-        return 1;
+        Utils::fatal("internal error: could not load intermediate file");
     regInit();
     alloc_init();
     ProcessFunctions();
@@ -407,7 +407,7 @@ int main(int argc, char* argv[])
             if (!Matches(argv[1], p.c_str()))
             {
                 if (!LoadFile(p.c_str()))
-                    return 1;
+                    Utils::fatal("internal error: could not load intermediate file");
                 ProcessFunctions();
                 SaveFile(p.c_str());
             }

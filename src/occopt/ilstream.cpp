@@ -188,9 +188,9 @@ static void StreamSymbol(SimpleSymbol* sym);
 static void StreamSymbolTable(LIST *syms)
 {
     int i = 0;
-    for (auto l = syms; l; l = l->next, i++);
+    for (auto l = syms; l && l->data; l = l->next, i++);
     StreamInt(i);
-    for (auto l = syms; l; l = l->next)
+    for (auto l = syms; l && l->data; l = l->next)
     {
         StreamInt(((SimpleSymbol*)l->data)->fileIndex);
     }
@@ -224,7 +224,7 @@ static void StreamType(SimpleType* type)
             StreamInt(type->sizeFromType);
             StreamInt(type->bits);
             StreamInt(type->startbit);
-            if (type->sp)
+            if (type->sp && type->type != st_any)
                 StreamInt(type->sp->fileIndex);
             else
                 StreamInt(0);
@@ -300,6 +300,8 @@ static void StreamExpression(SimpleExpression* exp)
             case se_threadlocal:
             case se_pc:
             case se_structelem:
+                if (exp->sp->fileIndex == 0)
+                    printf("hi");
                 StreamInt(exp->sp->fileIndex);
                 break;
             case se_labcon:
@@ -797,6 +799,8 @@ static void StreamData()
                     StreamInt(data->i);
                     break;
                 case DT_SYM:
+                    if (data->symbol.sym->fileIndex == 0)
+                        printf("hi");
                     StreamInt(data->symbol.sym->fileIndex);
                     break;
                 case DT_SRREF:
@@ -933,7 +937,7 @@ static void NumberGlobals()
     {
         if (*it)
         {
-            if ((*it)->fileIndex)
+            if ((*it)->fileIndex && (!(*it)->dontinstantiate) && ((*it)->storage_class != scc_virtual || (*it)->hasInlineFunc))
             {
                 *it = 0;
             }

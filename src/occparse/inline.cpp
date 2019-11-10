@@ -70,7 +70,7 @@ static void inInsert(SYMBOL* sym)
     // assumes the symbol isn't already there...
     SYMLIST** hr = GetHashLink(didInlines, sym->decoratedName);
     SYMLIST* added = (SYMLIST*)Alloc(sizeof(SYMLIST));
-    sym->mainsym = nullptr;
+//    sym->mainsym = nullptr;
     added->p = (SYMBOL*)sym;
     added->next = *hr;
     *hr = added;
@@ -94,7 +94,7 @@ void dumpInlines(void)
             while (funcList)
             {
                 SYMBOL* sym = (SYMBOL*)funcList->data;
-                if (((sym->isInline && sym->dumpInlineToFile) || sym->genreffed))
+                if (((sym->isInline && sym->dumpInlineToFile) || SymbolManager::Get(sym)->genreffed))
                 {
                     if ((sym->parentClass && sym->parentClass->dontinstantiate && !sym->templateLevel) ||
                         sym->attribs.inheritable.linkage2 == lk_import)
@@ -107,7 +107,7 @@ void dumpInlines(void)
                         SYMBOL* srch = inSearch(sym);
                         if (srch)
                         {
-                            sym->mainsym = srch;
+//                            sym->mainsym = srch;
                             sym->didinline = true;
                         }
                         else
@@ -138,7 +138,7 @@ void dumpInlines(void)
             while (vtabList)
             {
                 SYMBOL* sym = (SYMBOL*)vtabList->data;
-                if (sym->vtabsp->genreffed && hasVTab(sym) && !sym->vtabsp->didinline)
+                if (SymbolManager::Get(sym->vtabsp)->genreffed && hasVTab(sym) && !sym->vtabsp->didinline)
                 {
                     if (sym->dontinstantiate || sym->vtabsp->dontinstantiate)
                     {
@@ -149,7 +149,7 @@ void dumpInlines(void)
                     else
                     {
                         sym->vtabsp->didinline = true;
-                        sym->vtabsp->genreffed = false;
+                        SymbolManager::Get(sym->vtabsp)->genreffed = false;
                         sym->vtabsp->noextern = true;
                         dumpVTab(sym);
                         done = false;
@@ -196,7 +196,7 @@ void dumpInlines(void)
                     if (origsym && origsym->storage_class == sc_global && !sym->didinline && !sym->dontinstantiate)
                     {
                         sym->didinline = true;
-                        sym->genreffed = false;
+                        SymbolManager::Get(sym)->genreffed = false;
                         sym->noextern = true;
                         sym->storage_class = sc_global;
                         sym->attribs.inheritable.linkage = lk_virtual;
@@ -243,7 +243,7 @@ void dumpInlines(void)
                         SYMBOL* srch = inSearch(sym);
                         if (srch)
                         {
-                            sym->mainsym = srch;
+//                            sym->mainsym = srch;
                             sym->didinline = true;
                         }
                         else

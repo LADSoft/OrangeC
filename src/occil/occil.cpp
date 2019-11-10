@@ -229,22 +229,22 @@ void ProcessData(BaseData* v)
         genaddress(v->i);
         break;
     case DT_VIRTUAL:
-        gen_virtual(v->symbol.sym, v->symbol.i);
+//        oa_gen_virtual(v->symbol.sym, v->symbol.i);
         break;
     case DT_ENDVIRTUAL:
-        gen_endvirtual(v->symbol.sym);
+//        oa_gen_endvirtual(v->symbol.sym);
         break;
     case DT_ALIGN:
 //        oa_align(v->i);
         break;
     case DT_VTT:
-        gen_vtt(v->symbol.i, v->symbol.sym, nullptr);
+        oa_gen_vtt(v->symbol.i, v->symbol.sym);
         break;
     case DT_IMPORTTHUNK:
-        gen_importThunk(v->symbol.sym);
+        oa_gen_importThunk(v->symbol.sym);
         break;
     case DT_VC1:
-        gen_vc1(v->symbol.sym);
+        oa_gen_vc1(v->symbol.sym);
         break;
     }
 }
@@ -417,7 +417,7 @@ int main(int argc, char* argv[])
         {
             if (!LoadFile(fileName))
             {
-                Utils::fatal("File I/O error");
+                Utils::fatal("internal error: could not load intermediate file");
             }
             for (auto f : backendFiles)
             {
@@ -431,7 +431,9 @@ int main(int argc, char* argv[])
             {
                 if (!Matches(fileName, p.c_str()))
                 {
-                    if (!LoadFile(p.c_str()) || !ProcessData(p.c_str()) || !SaveFile(p.c_str()))
+                    if (!LoadFile(p.c_str()))
+                        Utils::fatal("internal error: could not load intermediate file");
+                    if (!ProcessData(p.c_str()) || !SaveFile(p.c_str()))
                         Utils::fatal("File I/O error");
                 }
             }

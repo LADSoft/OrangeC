@@ -118,13 +118,13 @@ void outputfile(char* buf, const char* name, const char* ext)
 
 void global(SimpleSymbol* sym, int flags)
 {
+    omf_globaldef(sym);
     if (flags & BaseData::DF_GLOBAL)
     {
         if (cparams.prm_asmfile)
         {
             bePrintf("[global %s]\n", sym->outputName);
         }
-        omf_globaldef(sym);
     }
     if (flags & BaseData::DF_EXPORT)
     {
@@ -168,10 +168,10 @@ void ProcessData(BaseData* v)
         gen_funcref(v->symbol.sym);
         break;
     case DT_LABEL:
-        gen_labref(v->i);
+        outcode_gen_labref(v->i);
         break;
     case DT_LABDIFFREF:
-        gen_labdifref(v->diff.l1, v->diff.l2);
+        outcode_gen_labdifref(v->diff.l1, v->diff.l2);
         break;
     case DT_STRING:
         oa_genstring(v->astring.str, v->astring.i);
@@ -227,25 +227,25 @@ void ProcessData(BaseData* v)
         oa_genfloat(longdoublegen, &v->c.i);
         break;
     case DT_ADDRESS:
-        genaddress(v->i);
+        oa_genaddress(v->i);
         break;
     case DT_VIRTUAL:
-        gen_virtual(v->symbol.sym, v->symbol.i);
+        oa_gen_virtual(v->symbol.sym, v->symbol.i);
         break;
     case DT_ENDVIRTUAL:
-        gen_endvirtual(v->symbol.sym);
+        oa_gen_endvirtual(v->symbol.sym);
         break;
     case DT_ALIGN:
         oa_align(v->i);
         break;
     case DT_VTT:
-        gen_vtt(v->symbol.i, v->symbol.sym, nullptr);
+        oa_gen_vtt(v->symbol.i, v->symbol.sym);
         break;
     case DT_IMPORTTHUNK:
-        gen_importThunk(v->symbol.sym);
+        oa_gen_importThunk(v->symbol.sym);
         break;
     case DT_VC1:
-        gen_vc1(v->symbol.sym);
+        oa_gen_vc1(v->symbol.sym);
         break;
     }
 }
@@ -321,7 +321,7 @@ bool LoadFile(const char *name)
     InitIntermediate();
     bool rv = InputIntermediate();
     SelectBackendData();
-    if (rv)
+    if (rv && 0)
     {
         icdFile = fopen("q.tmp", "w");
         OutputIcdFile();
@@ -431,7 +431,7 @@ int main(int argc, char* argv[])
         {
             if (!LoadFile(fileName))
             {
-                Utils::fatal("File I/O error");
+                Utils::fatal("internal error: could not load intermediate file");
             }
             for (auto v : toolArgs)
             {
@@ -449,7 +449,9 @@ int main(int argc, char* argv[])
             {
                 if (!Matches(fileName, p.c_str()))
                 {
-                    if (!LoadFile(p.c_str()) || !ProcessData(p.c_str()) || !SaveFile(p.c_str()))
+                    if (!LoadFile(p.c_str()))
+                        Utils::fatal("internal error: could not load intermediate file");
+                    if (!ProcessData(p.c_str()) || !SaveFile(p.c_str()))
                         Utils::fatal("File I/O error");
                 }
             }

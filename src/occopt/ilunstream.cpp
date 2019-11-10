@@ -1038,6 +1038,8 @@ static void ResolveSymbol(SimpleSymbol*& sym, std::map<int, std::string>& texts,
 {
     if (sym != nullptr)
     {
+        static int val;
+        val = (int)sym;
         // low bit set means this is an index not a symbol
         if ((int)sym & 1)
             sym = SymbolName(sym, &table);

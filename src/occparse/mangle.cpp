@@ -939,13 +939,14 @@ void SetLinkerNames(SYMBOL* sym, enum e_lk linkage)
             break;
         case lk_c:
         default:
+            if (sym->parent)
+                if (sym->uniqueID == 0)
+                    sym->uniqueID = uniqueID++;
             if (sym->storage_class == sc_localstatic && sym->parent)
             {
                 strcpy(errbuf, sym->parent->decoratedName);
                 strcat(errbuf, "_");
                 strcat(errbuf, sym->name);
-                if (sym->uniqueID == 0)
-                    sym->uniqueID = uniqueID++;
                 sprintf(errbuf + strlen(errbuf), "_%d", sym->uniqueID);
             }
             else

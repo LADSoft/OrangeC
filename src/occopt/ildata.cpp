@@ -506,7 +506,7 @@ void gen_virtual(SimpleSymbol* sym, int data)
 
 void gen_endvirtual(SimpleSymbol* sym)
 {
-    auto v = AddData(DT_VIRTUAL);
+    auto v = AddData(DT_ENDVIRTUAL);
 
     v->symbol.sym = sym;
     if (virtualMode)

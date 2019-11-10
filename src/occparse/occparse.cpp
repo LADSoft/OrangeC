@@ -188,19 +188,19 @@ void LoadFuncs(void)
         SYMBOL* sp;
         sp = gsearch("exit");
         if (sp)
-            ((SYMBOL*)sp->tp->syms->table[0]->p)->genreffed = true;
+            GENREF((SYMBOL*)sp->tp->syms->table[0]->p);
         sp = gsearch("__getmainargs");
         if (sp)
-            ((SYMBOL*)sp->tp->syms->table[0]->p)->genreffed = true;
+            GENREF((SYMBOL*)sp->tp->syms->table[0]->p);
         sp = gsearch("__pctype_func");
         if (sp)
-            ((SYMBOL*)sp->tp->syms->table[0]->p)->genreffed = true;
+            GENREF((SYMBOL*)sp->tp->syms->table[0]->p);
         sp = gsearch("__iob_func");
         if (sp)
-            ((SYMBOL*)sp->tp->syms->table[0]->p)->genreffed = true;
+            GENREF((SYMBOL*)sp->tp->syms->table[0]->p);
         sp = gsearch("_errno");
         if (sp)
-            ((SYMBOL*)sp->tp->syms->table[0]->p)->genreffed = true;
+            GENREF((SYMBOL*)sp->tp->syms->table[0]->p);
     }
 }
 

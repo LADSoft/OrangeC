@@ -27,7 +27,7 @@
 
 
 
-std::unordered_map<struct sym*, SimpleSymbol*> SymbolManager::symbols;
+std::unordered_map<std::string, SimpleSymbol*> SymbolManager::symbols;
 std::unordered_map<std::string, SimpleSymbol*> SymbolManager::globalSymbols;
 
 extern COMPILER_PARAMS cparams;
@@ -158,7 +158,10 @@ bool equalnode(SimpleExpression* left, SimpleExpression *right)
     {
     case se_msil_array_init:
         return comparetypes(left->tp, right->tp, true);
+    case se_uminus:
+        return equalnode(left->left, right->left);
     case se_add:
+    case se_sub:
         return equalnode(left->left, right->left) && equalnode(left->right, right->right); // this is naive but...
     case se_i:
     case se_labcon:
@@ -218,23 +221,4 @@ SimpleSymbol* SymbolManager::Get(const char* name)
     if (it == globalSymbols.end())
         return nullptr;
     return it->second;
-}
-void SymbolManager::Add(struct sym* old, SimpleSymbol* sym)
-{
-    symbols[old] = sym;
-    switch (sym->storage_class)
-    {
-    case scc_member:
-        if (sym->tp->type != st_func)
-            break;
-        // fallthrough
-    case scc_global:
-    case scc_static:
-    case scc_localstatic:
-    case scc_external:
-    case scc_virtual:
-        globalSymbols[sym->outputName] = sym;
-        break;
-    }
-
 }

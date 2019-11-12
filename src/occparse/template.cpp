@@ -6825,6 +6825,7 @@ SYMBOL* TemplateFunctionInstantiate(SYMBOL* sym, bool warning, bool isExtern)
             }
             templateHeaderCount = 0;
             lex = body(lex, sym);
+            SymbolManager::Get(sym)->xc = false;
             templateHeaderCount = oldHeaderCount;
             lex = sym->deferredCompile;
             while (lex)

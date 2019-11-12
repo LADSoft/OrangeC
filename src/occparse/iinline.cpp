@@ -211,6 +211,7 @@ static void inlineUnbindArgs(SYMLIST* hr)
     {
         SYMBOL* sym = hr->p;
         sym->inlineFunc.stmt = nullptr;
+        SymbolManager::Get(sym)->paramSubstitute = nullptr;
         hr = hr->next;
     }
 }

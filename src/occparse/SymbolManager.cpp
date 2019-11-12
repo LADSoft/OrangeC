@@ -268,7 +268,7 @@ SimpleType* SymbolManager::Get(struct typ *tp)
             typeSymbols.push_back(rv->sp);
         if (tp->syms && tp->syms->table && rv->sp && !rv->sp->syms)
         {
-            SYMLIST* list = tp->syms->table[0];
+            SYMLIST *list = tp->syms->table[0];
             LIST **p = &rv->sp->syms;
             SYMLIST *old = nullptr;
             while (list)
@@ -316,6 +316,21 @@ SimpleType* SymbolManager::Get(struct typ *tp)
     rv->isatomic = isAtomic;
     rv->va_list = isvalist;
     return rv;
+}
+void refreshBackendParams(SYMBOL* funcsp)
+{
+    if (isfunction(funcsp->tp))
+    {
+        SYMLIST* hr = basetype(funcsp->tp)->syms->table[0];
+        LIST* syms = SymbolManager::Get(funcsp)->syms;
+        while (hr && syms)
+        {
+            SimpleSymbol *sym = (SimpleSymbol*)syms->data;
+            sym->offset = hr->p->offset;
+            hr = hr->next;
+            syms = syms->next;
+        }
+    }
 }
 SimpleSymbol* SymbolManager::Make(struct sym* sym)
 {

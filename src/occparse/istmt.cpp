@@ -908,6 +908,7 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     if (funcsp->xc && funcsp->xc->xctab)
     {
         EXPRESSION* exp;
+        temporarySymbols.push_back(SymbolManager::Get(funcsp->xc->xctab));
         xcexp = varNode(en_auto, funcsp->xc->xctab);
         xcexp = exprNode(en_add, xcexp, intNode(en_c_i, XCTAB_INDEX_OFS));
         deref(&stdpointer, &xcexp);

@@ -3592,6 +3592,7 @@ LEXEME* body(LEXEME* lex, SYMBOL* funcsp)
     funcsp->declaring = true;
     labelSyms = CreateHashTable(1);
     assignParameterSizes(lex, funcsp, block);
+    refreshBackendParams(funcsp);
     funcsp->startLine = lex->line;
     lex = compound(lex, funcsp, block, true);
     checkUnlabeledReferences(block);
@@ -3608,11 +3609,13 @@ LEXEME* body(LEXEME* lex, SYMBOL* funcsp)
         if (funcsp->xcMode == xc_none && !funcsp->anyTry && !hasFuncCall)
         {
             funcsp->xcMode= xc_unspecified;
+            SymbolManager::Get(funcsp)->xc = false;
             funcsp->xc = nullptr;
             if (funcsp->mainsym)
             {
                 funcsp->mainsym->xcMode= xc_unspecified;
                 funcsp->mainsym->xc = nullptr;
+                SymbolManager::Get(funcsp->mainsym)->xc = false;
             }
             hasXCInfo = false;
         }

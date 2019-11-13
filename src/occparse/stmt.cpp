@@ -3615,7 +3615,6 @@ LEXEME* body(LEXEME* lex, SYMBOL* funcsp)
             {
                 funcsp->mainsym->xcMode= xc_unspecified;
                 funcsp->mainsym->xc = nullptr;
-                SymbolManager::Get(funcsp->mainsym)->xc = false;
             }
             hasXCInfo = false;
         }

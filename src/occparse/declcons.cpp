@@ -247,6 +247,7 @@ void SetParams(SYMBOL* cons)
         params = params->next;
     }
     cons->paramsize = base - chosenAssembler->arch->retblocksize;
+    refreshBackendParams(cons);
 }
 SYMBOL* insertFunc(SYMBOL* sp, SYMBOL* ovl)
 {

@@ -300,8 +300,6 @@ static void StreamExpression(SimpleExpression* exp)
             case se_threadlocal:
             case se_pc:
             case se_structelem:
-                if (exp->sp->fileIndex == 0)
-                    printf("hi");
                 StreamInt(exp->sp->fileIndex);
                 break;
             case se_labcon:
@@ -799,8 +797,6 @@ static void StreamData()
                     StreamInt(data->i);
                     break;
                 case DT_SYM:
-                    if (data->symbol.sym->fileIndex == 0)
-                        printf("hi");
                     StreamInt(data->symbol.sym->fileIndex);
                     break;
                 case DT_SRREF:

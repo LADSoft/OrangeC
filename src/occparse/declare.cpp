@@ -3975,6 +3975,7 @@ LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp,
         {
             spi = makeID(sc_parameter, tp1, nullptr, NewUnnamedID());
             spi->anonymous = true;
+            spi->attribs.inheritable.structAlign = getAlign(sc_parameter, &stdpointer);
             SetLinkerNames(spi, lk_none);
             spi->tp = (TYPE*)Alloc(sizeof(TYPE));
             spi->tp->type = bt_void;

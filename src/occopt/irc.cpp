@@ -364,7 +364,7 @@ void AllocateStackSpace()
     {
         int lvl = sym->i;
         queue[lvl].push_back(sym);
-        modes[sym] = (lvl > oldlvl);
+        modes[sym] = sym->anonymous ? 2 : (lvl > oldlvl);
     }
     for (auto sym : temporarySymbols)
     {

@@ -234,8 +234,8 @@ int getAlign(int sc, TYPE* tp)
     }
     if (chosenAssembler->arch->align)
         align = chosenAssembler->arch->align(align);
-    if (isstructured(tp) && tp->sp->attribs.inheritable.structAlign > align)
-        align = tp->sp->attribs.inheritable.structAlign;
+    if (isstructured(tp) && basetype(tp)->sp->attribs.inheritable.structAlign > align)
+        align = basetype(tp)->sp->attribs.inheritable.structAlign;
     return align;
 }
 const char* getUsageText(void) { return chosenAssembler->usage_text; }

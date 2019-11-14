@@ -2206,6 +2206,7 @@ int x86_examine_icode(QUAD* head)
     if (cparams.prm_useesp)
     {
         currentFunction->usesEsp &= !uses_substack && !currentFunction->xc && !currentFunction->canThrow;
+        SetUsesESP(currentFunction->usesEsp);
     }
     int floatretsize = 0;
     head = hold;

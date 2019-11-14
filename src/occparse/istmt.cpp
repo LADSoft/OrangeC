@@ -475,7 +475,12 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, IMODE*
                 sym->allocate = false;
                 if ((funcsp->attribs.inheritable.linkage == lk_pascal) && basetype(funcsp->tp)->syms->table[0] &&
                     ((SYMBOL*)basetype(funcsp->tp)->syms->table[0])->tp->type != bt_void)
+                {
                     sym->offset = funcsp->paramsize;
+                }
+                SimpleSymbol *ssym = SymbolManager::Get(sym);
+                ssym->offset = sym->offset;
+                ssym->allocate = false;
                 deref(&stdpointer, &en);
                 ap = gen_expr(funcsp, en, 0, ISZ_ADDR);
             }

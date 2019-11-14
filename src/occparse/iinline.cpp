@@ -411,6 +411,8 @@ IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
         }
         fargs = fargs->next;
     }
+    if (!strcmp(theCurrentFunc->name, "cc"))
+        printf("hi");
     inline_nesting++;
     codeLabelOffset = nextLabel - INT_MIN;
     nextLabel += f->sp->labelCount + 10;

@@ -277,6 +277,7 @@ void makeXCTab(SYMBOL* funcsp)
     if (!funcsp->xc)
     {
         funcsp->xc = (xcept*)Alloc(sizeof(struct xcept));
+        SymbolManager::Get(funcsp)->xc = true;
     }
     if (!funcsp->xc->xctab)
     {

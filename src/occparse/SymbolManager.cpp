@@ -326,7 +326,12 @@ void refreshBackendParams(SYMBOL* funcsp)
         while (hr && syms)
         {
             SimpleSymbol *sym = (SimpleSymbol*)syms->data;
+            if (hr->p->thisPtr && !sym->thisPtr)
+            {
+                hr = hr->next;
+            }
             sym->offset = hr->p->offset;
+            SymbolManager::Get(hr->p)->offset = sym->offset;
             hr = hr->next;
             syms = syms->next;
         }

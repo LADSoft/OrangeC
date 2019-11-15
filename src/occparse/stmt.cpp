@@ -3188,7 +3188,10 @@ LEXEME* compound(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
         if (hasXCInfo && cparams.prm_xcept)
         {
             if (funcsp->anyTry)
-	        funcsp->noinline = true;
+            {
+                SymbolManager::Get(funcsp)->anyTry = true;
+                funcsp->noinline = true;
+            }
             insertXCInfo(funcsp);
         }
         if (!strcmp(funcsp->name, overloadNameTab[CI_DESTRUCTOR]))

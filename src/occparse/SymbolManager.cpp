@@ -399,7 +399,7 @@ SimpleSymbol* SymbolManager::Make(struct sym* sym)
     rv->inFunc = theCurrentFunc != nullptr;
     rv->temp = sym->temp;
     rv->vbase = !!sym->vbaseEntries;
-    rv->anyTry = sym->hasTry;
+    rv->anyTry = sym->anyTry;
     rv->xc = !!sym->xc;
     rv->canThrow = sym->canThrow;
     rv->hasInlineFunc = sym->inlineFunc.stmt != nullptr;

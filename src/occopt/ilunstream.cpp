@@ -545,6 +545,8 @@ static QUAD* UnstreamInstruction(FunctionData& fd)
             rv->moved = UnstreamInt();
             rv->livein = UnstreamInt();
             rv->liveRegs = UnstreamInt();
+            if (rv->alwayslive)
+                rv->block->alwayslive = true;
         }
     });
     return rv;

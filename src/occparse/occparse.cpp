@@ -291,7 +291,6 @@ void compile(bool global)
 //    intrinsicInit();
     inlineAsmInit();
 //outcodeInit();
-    enter_filename((char*)clist->data);
 //    debuggerInit();
 //    browsdataInit();
     browse_init();
@@ -406,7 +405,26 @@ int main(int argc, char* argv[])
 #endif
 #ifndef PARSER_ONLY
     instructionParser = new x64Parser();
+    if (!clist)
+    {
+        if (bePostFile.size())
+        {
+            FILE *fil = fopen(bePostFile.c_str(), "wb");
+            if (!fil)
+                Utils::fatal("can't open backend communications file");
+            fputs(argv[1], fil);
+            fclose(fil);
+            outputfile(realOutFile, argv[1], ".icf");
+            outputFile = fopen(realOutFile, "wb");
+            OutputIntermediate();
+            fclose(outputFile);
+        }
+    }
 #endif
+    for (auto c = clist; c; c = c->next)
+    {
+        enter_filename((const char *)c->data);
+    }
 //    mainPreprocess();
     bool first = true;
     while (clist)

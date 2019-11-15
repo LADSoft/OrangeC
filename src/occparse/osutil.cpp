@@ -1009,7 +1009,7 @@ void ccinit(int argc, char* argv[])
     else
     {
         char temp[260];
-        strcpy(temp, (char *)clist->data);
+        strcpy(temp, argv[1]);
         Utils::StripExt(temp);
         if (!cparams.prm_compileonly && !cparams.prm_assemble)
             Utils::AddExt(temp, ".exe");

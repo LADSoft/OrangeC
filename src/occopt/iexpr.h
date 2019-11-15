@@ -248,7 +248,7 @@ struct SymbolManager
     static e_scc_type Get(enum e_sc storage_class);
     static SimpleType* Get(struct typ *tp);
     static st_type Get(enum e_bt type);
-    static void clear() { symbols.clear(); }
+    static void clear() { symbols.clear(); globalSymbols.clear(); }
     static SimpleSymbol* Get(const char* name);
     static SimpleSymbol* Lookup(struct sym* old);
     static void Add(struct sym* old, SimpleSymbol* sym);

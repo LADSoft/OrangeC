@@ -97,7 +97,7 @@ void InitIntermediate()
     globalCache.clear();
     browseInfo.clear();
     browseFiles.clear();
-    inputFiles.clear();
+//    inputFiles.clear();
     typedefs.clear();
     bePragma.clear();
     msilProperties.clear();

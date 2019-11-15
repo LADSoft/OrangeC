@@ -966,6 +966,7 @@ void OutputIntermediate()
 {
     textRegion.clear();
     textOffset = 1;
+    cachedText.clear();
     outLevel = 0;
     NumberGlobals();
     NumberTypes();

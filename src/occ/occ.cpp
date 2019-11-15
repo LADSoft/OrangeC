@@ -352,6 +352,7 @@ bool LoadFile(const char *name)
     dbginit();
     outcode_file_init();
     oinit();
+    omfInit();
     SelectBackendData();
     return rv;
 }
@@ -463,8 +464,9 @@ int main(int argc, char* argv[])
 
             }
             std::list<std::string> files = inputFiles;
-            if (!ProcessData(files.front().c_str()) || !SaveFile(files.front().c_str()))
-                Utils::fatal("File I/O error");
+            if (files.size())
+                if (!ProcessData(files.front().c_str()) || !SaveFile(files.front().c_str()))
+                    Utils::fatal("File I/O error");
             for (auto p : files)
             {
                 if (!Matches(fileName, p.c_str()))

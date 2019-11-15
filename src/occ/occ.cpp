@@ -69,6 +69,7 @@ FILE *inputFile;
 SimpleExpression* fltexp;
 
 static const char *verbosity = nullptr;
+static FunctionData* lastFunc;
 
 void regInit() { }
 
@@ -168,7 +169,7 @@ void ProcessData(BaseData* v)
         gen_funcref(v->symbol.sym);
         break;
     case DT_LABEL:
-        outcode_gen_labref(v->i);
+        oa_gen_labref(v->i);
         break;
     case DT_LABDIFFREF:
         outcode_gen_labdifref(v->diff.l1, v->diff.l2);
@@ -247,6 +248,24 @@ void ProcessData(BaseData* v)
     case DT_VC1:
         oa_gen_vc1(v->symbol.sym);
         break;
+    case DT_AUTOREF:
+        oa_genint(intgen, v->symbol.sym->offset + v->symbol.i);
+        break;
+    case DT_XCTABREF:
+    {
+        int offset = 0;
+        if (lastFunc)
+        {
+            for (auto v : lastFunc->temporarySymbols)
+                if (v->xctab)
+                {
+                    offset = v->offset;
+                    break;
+                }
+        }
+        oa_genint(intgen, offset);
+    }
+    break;
     }
 }
 bool ProcessData(const char *name)
@@ -267,6 +286,7 @@ bool ProcessData(const char *name)
     {
         if (v->type == DT_FUNC)
         {
+            lastFunc = v->funcData;
 //            temporarySymbols = v->funcData->temporarySymbols;
 //            functionVariables = v->funcData->variables;
 //            blockCount = v->funcData->blockCount;

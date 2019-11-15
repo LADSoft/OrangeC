@@ -66,7 +66,9 @@ enum DataType
     DT_ALIGN,
     DT_VTT,
     DT_IMPORTTHUNK,
-    DT_VC1
+    DT_VC1,
+    DT_AUTOREF,
+    DT_XCTABREF,
 };
 struct FunctionData
 {

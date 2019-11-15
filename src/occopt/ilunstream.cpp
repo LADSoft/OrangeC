@@ -86,7 +86,7 @@ extern BLOCK* currentBlock;
 static std::list<std::string> textRegion;
 static std::map <std::string, int> cachedText;
 static size_t textOffset;
-static FunctionData* current;
+static FunctionData* current, *lastFunction;
 static std::map<int, std::string> texts;
 static std::vector<SimpleSymbol*> temps;
 
@@ -899,6 +899,12 @@ static void UnstreamData()
                 case DT_VC1:
                     data->symbol.sym = (SimpleSymbol*)UnstreamInt();
                     break;
+                case DT_XCTABREF:
+                    break;
+                case DT_AUTOREF:
+                    data->symbol.sym = (SimpleSymbol*)UnstreamInt();
+                    data->symbol.i = UnstreamInt();
+                    break;
                 case DT_FUNC:
                     data->funcData = UnstreamFunc();
                     break;
@@ -1080,6 +1086,7 @@ static void ResolveFunction(FunctionData *fd, std::map<int, std::string>& texts)
     }
     for (auto q = fd->instructionList; q; q = q->fwd)
         ResolveInstruction(q, texts);
+    lastFunction = current;
     current = nullptr;
 }
 static void ResolveNames(std::map<int, std::string>& texts)
@@ -1099,6 +1106,12 @@ static void ResolveNames(std::map<int, std::string>& texts)
         case DT_FUNC:
             ResolveFunction(d->funcData, texts);
             break;
+        case DT_AUTOREF:
+            current = lastFunction;
+            ResolveSymbol(d->symbol.sym, texts, current->variables); // assumes the variables of the last generated function
+            current = nullptr;
+            break;
+
         case DT_DEFINITION:
         case DT_SYM:
         case DT_SRREF:

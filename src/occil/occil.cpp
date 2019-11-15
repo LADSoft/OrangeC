@@ -246,6 +246,10 @@ void ProcessData(BaseData* v)
     case DT_VC1:
         oa_gen_vc1(v->symbol.sym);
         break;
+    case DT_AUTOREF:
+    case DT_XCTABREF:
+//        oa_gen_int(0);
+        break;
     }
 }
 bool ProcessData(const char *name)

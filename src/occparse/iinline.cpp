@@ -192,6 +192,8 @@ static void inlineBindArgs(SYMBOL* funcsp, SYMLIST* hr, INITLIST* args)
         }
         // we have to fill in the args last in case the same constructor was used
         // in multiple arguments...
+
+        // also deals with things like the << and >> operators, where an expression can have arguments chained into the same operator over and over...
         hr = hr1;
         cnt = 0;
         while (hr)
@@ -199,7 +201,7 @@ static void inlineBindArgs(SYMBOL* funcsp, SYMLIST* hr, INITLIST* args)
             SYMBOL* sym = hr->p;
             if (!isvoid(sym->tp))
             {
-                sym->inlineFunc.stmt = (STATEMENT*)list[cnt++];
+                SymbolManager::Get(sym)->paramSubstitute = list[cnt++];
             }
             hr = hr->next;
         }
@@ -411,8 +413,6 @@ IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
         }
         fargs = fargs->next;
     }
-    if (!strcmp(theCurrentFunc->name, "cc"))
-        printf("hi");
     inline_nesting++;
     codeLabelOffset = nextLabel - INT_MIN;
     nextLabel += f->sp->labelCount + 10;

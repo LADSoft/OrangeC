@@ -661,6 +661,7 @@ typedef struct sym
     unsigned postExpansion : 1;  // true if this templateselector is post expanded, e.g. replicate the template selector with each
                                  // packed arg
     unsigned visited : 1;        // symbol has been visited in a traversal
+    unsigned xctab : 1;          // symbol is the C++ XCTAB instance on the stack
     int __func__label;           /* label number for the __func__ keyword */
     int ipointerindx;            /* pointer index for pointer opts */
     int labelCount;              /* number of code labels within a function body */

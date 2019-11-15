@@ -900,6 +900,12 @@ static void StreamData()
                 case DT_VC1:
                     StreamInt(data->symbol.sym->fileIndex);
                     break;
+                case DT_AUTOREF:
+                    StreamInt(data->symbol.sym->fileIndex);
+                    StreamInt(data->symbol.i);
+                    break;
+                case DT_XCTABREF:
+                    break;
                 case DT_FUNC:
                     StreamFunc(data->funcData);
                     break;

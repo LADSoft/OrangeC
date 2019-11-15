@@ -373,6 +373,24 @@ void genstorage(int nbytes)
     v->i = nbytes;
 }
 
+void gen_xctabref()
+{
+    AddData(DT_XCTABREF);
+}
+void gen_autoref(SimpleSymbol*sym, int offset)
+{
+    if (sym == nullptr) // this is likely a bug but was preexisting...
+    {
+        genint(offset);
+    }
+    else
+    {
+        auto v = AddData(DT_AUTOREF);
+        v->symbol.sym = sym;
+        v->symbol.i = offset;
+    }
+}
+
 /*-------------------------------------------------------------------------*/
 
 void gen_labref(int n)

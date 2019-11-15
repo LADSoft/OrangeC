@@ -850,6 +850,23 @@ static bool allocatedXC(EXPRESSION* exp)
             return false;
     }
 }
+static SimpleSymbol* evalsp(EXPRESSION* exp)
+{
+    switch (exp->type)
+    {
+        SimpleSymbol *rv;
+    case en_add:
+        rv = evalsp(exp->left);
+        if (rv)
+            return rv;
+        return evalsp(exp->right);
+    case en_auto:
+        return SymbolManager::Get(exp->v.sp);
+    default:
+        return nullptr;
+    }
+
+}
 static int evalofs(EXPRESSION* exp, SYMBOL* funcsp)
 {
     switch (exp->type)
@@ -862,7 +879,8 @@ static int evalofs(EXPRESSION* exp, SYMBOL* funcsp)
         case en_c_ul:
             return exp->v.i;
         case en_auto:
-            return exp->v.sp->offset + (exp->v.sp->offset > 0 ? funcsp->retblockparamadjust : 0);
+            return 0;
+//            return exp->v.sp->offset + (exp->v.sp->offset > 0 ? funcsp->retblockparamadjust : 0);
         case en_structelem:
             return exp->v.sp->offset;
         default:
@@ -914,7 +932,8 @@ void XTDumpTab(SYMBOL* funcsp)
         {
             genaddress(0);
         }
-        genint(funcsp->xc->xctab->offset);
+        gen_xctabref();
+//        genint(funcsp->xc->xctab->offset);
         p = list;
         while (p)
         {
@@ -953,7 +972,7 @@ void XTDumpTab(SYMBOL* funcsp)
                         q->used = true;
                     genint(XD_CL_PRIMARY | (throughThis(p->exp) ? XD_THIS : 0));
                     genref(SymbolManager::Get(p->xtSym), 0);
-                    genint(evalofs(p->exp->v.t.thisptr, funcsp));
+                    gen_autoref(evalsp(p->exp->v.t.thisptr), evalofs(p->exp->v.t.thisptr, funcsp));
                     genint(p->exp->v.t.thisptr->xcInit);
                     genint(p->exp->v.t.thisptr->xcDest);
                 }
@@ -969,7 +988,7 @@ void XTDumpTab(SYMBOL* funcsp)
                 p->used = true;
                 genint(XD_CL_PRIMARY | (throughThis(p->exp) ? XD_THIS : 0));
                 genref(SymbolManager::Get(p->xtSym), 0);
-                genint(evalofs(p->exp->v.t.thisptr, funcsp));
+                gen_autoref(evalsp(p->exp->v.t.thisptr), evalofs(p->exp->v.t.thisptr, funcsp));
                 genint(0);
                 genint(p->exp->v.t.thisptr->xcDest);
             }

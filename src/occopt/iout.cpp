@@ -1539,6 +1539,12 @@ static void PutData(BaseData* data)
     case DT_VC1:
         oprintf(icdFile, "\tGOTO [[this] + %d]\n", data->symbol.i);
         break;
+    case DT_XCTABREF:
+        oprintf(icdFile, "\tDC.I XCTAB_REF\n");
+        break;
+    case DT_AUTOREF:
+        oprintf(icdFile, "\tDC.I OFFSETOF %s + %d\n", data->symbol.sym->outputName, data->symbol.i);
+        break;
 
     }
 }

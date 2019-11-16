@@ -901,8 +901,6 @@ static void UnstreamData()
                 case DT_VC1:
                     data->symbol.sym = (SimpleSymbol*)UnstreamInt();
                     break;
-                case DT_XCTABREF:
-                    break;
                 case DT_AUTOREF:
                     data->symbol.sym = (SimpleSymbol*)UnstreamInt();
                     data->symbol.i = UnstreamInt();

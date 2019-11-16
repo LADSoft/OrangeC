@@ -284,7 +284,6 @@ void makeXCTab(SYMBOL* funcsp)
         sym = makeID(sc_auto, &stdXC, nullptr, "$$xctab");
         sym->decoratedName = sym->errname = sym->name;
         sym->allocate = true;
-        sym->xctab = true;
         sym->attribs.inheritable.used = sym->assigned = true;
         insert(sym, localNameSpace->valueData->syms);
         funcsp->xc->xctab = sym;

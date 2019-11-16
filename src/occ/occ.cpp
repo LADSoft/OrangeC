@@ -33,6 +33,9 @@
 #include <sstream>
 #include <iostream>
 #include "..\version.h"
+#ifdef HAVE_UNISTD_H
+#    include <unistd.h>
+#endif
 extern int architecture;
 extern std::list<std::string> toolArgs;
 extern std::list<std::string> backendFiles;
@@ -251,20 +254,6 @@ void ProcessData(BaseData* v)
     case DT_AUTOREF:
         oa_genint(intgen, v->symbol.sym->offset + v->symbol.i);
         break;
-    case DT_XCTABREF:
-    {
-        int offset = 0;
-        if (lastFunc)
-        {
-            for (auto v : lastFunc->temporarySymbols)
-                if (v->xctab)
-                {
-                    offset = v->offset;
-                    break;
-                }
-        }
-        oa_genint(intgen, offset);
-    }
     break;
     }
 }
@@ -349,6 +338,7 @@ bool LoadFile(const char *name)
         icdFile = nullptr;
     }
     fclose(inputFile);
+    unlink(buf);
     dbginit();
     outcode_file_init();
     oinit();

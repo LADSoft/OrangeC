@@ -395,7 +395,7 @@ void AllocateStackSpace()
                 doit = !sym->regmode && (sym->storage_class == scc_auto || sym->storage_class == scc_register) && sym->allocate &&
                     !sym->anonymous;
             }
-            if (doit && sym->offset == 0)
+            if (doit && sym->offset == 0 && sym->tp->size)
             {
                 int val;
                 lc_maxauto += sym->tp->size;

@@ -932,7 +932,7 @@ void XTDumpTab(SYMBOL* funcsp)
         {
             genaddress(0);
         }
-        gen_xctabref();
+        gen_autoref(SymbolManager::Get(funcsp->xc->xctab), 0);
 //        genint(funcsp->xc->xctab->offset);
         p = list;
         while (p)

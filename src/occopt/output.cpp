@@ -28,7 +28,7 @@
 #include <string.h>
 #include <stdarg.h>
 
-extern FILE* outputFile;
+FILE* outputFile;
 
 void oinit(void) {}
 

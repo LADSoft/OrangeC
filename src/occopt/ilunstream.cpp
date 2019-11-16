@@ -30,6 +30,7 @@
 #include "beinterf.h"
 #include "ildata.h"
 #include "iexpr.h"
+#include "SharedMemory.h"
 #include "../occ/Winmode.h"
 #include "../occ/be.h"
 #include <deque>
@@ -80,7 +81,6 @@ extern std::map<std::string, std::string> bePragma;
 extern std::string outputFileName;
 extern std::string prm_assemblerSpecifier;
 
-extern FILE* inputFile;
 extern BLOCK* currentBlock;
 
 static std::list<std::string> textRegion;
@@ -90,6 +90,9 @@ static FunctionData* current, *lastFunction;
 static std::map<int, std::string> texts;
 static std::vector<SimpleSymbol*> temps;
 
+static unsigned char *streamPointer;
+static int inputPos; // it is not intended we ever reset this, as multiple files could be streamed one after the other and we are going to
+// read them in order
 inline void dothrow()
 {
     std::runtime_error e("");
@@ -98,12 +101,7 @@ inline void dothrow()
 }
 inline static int UnstreamByte()
 {
-    int n = fgetc(inputFile);
-    if (n == -1)
-    {
-        dothrow();
-    }
-    return n;
+    return streamPointer[inputPos++];
 }
 inline static void UnstreamBlockType(int blockType, bool end)
 {
@@ -155,8 +153,8 @@ static void UnstreamStringList(std::list<std::string> & list)
 }
 static void UnstreamBuffer(void *buf, int len)
 {
-    if (1 != fread(buf, len, 1, inputFile))
-        dothrow();
+    memcpy(buf, &streamPointer[inputPos], len);
+    inputPos += len;
 }
 inline static void UnstreamIntValue(void *buf, int len)
 {
@@ -1137,8 +1135,9 @@ static void ResolveNames(std::map<int, std::string>& texts)
     }
 
 }
-bool InputIntermediate()
+bool InputIntermediate(SharedMemory* inputMem)
 {
+    streamPointer = inputMem->GetMapping();
     currentBlock = nullptr;
     texts.clear();
     texts[0] = "";

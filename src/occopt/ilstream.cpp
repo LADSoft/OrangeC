@@ -32,6 +32,7 @@
 #include "iexpr.h"
 #include "../occ/Winmode.h"
 #include "../occ/be.h"
+#include "SharedMemory.h"
 #include <deque>
 #include <functional>
 #include <map>
@@ -80,16 +81,20 @@ extern std::map<std::string, std::string> bePragma;
 extern std::string outputFileName;
 extern std::string prm_assemblerSpecifier;
 
-extern FILE* outputFile;
-
 static std::list<std::string> textRegion;
 static std::map <std::string, int> cachedText;
 static size_t textOffset;
 static std::map<IMODE*, int> cachedImodes;
-static char outBuf[8192];
-static int outLevel;
 static std::set<SimpleSymbol*> cachedAutos;
 static std::set<SimpleSymbol*> cachedTemps;
+
+static SharedMemory* sharedRegion;
+// the next are intended not to be reset on each read, as there will be another file streamed next
+static int outputPos;
+static int outputSize;
+static unsigned char *streamPointer;
+
+static const int WRITE_INCREMENT = 256 * 1024;
 
 static size_t TextName(const std::string& name)
 {
@@ -104,14 +109,20 @@ static size_t TextName(const std::string& name)
     cachedText[name] = rv;
     return rv;
 }
+inline static void resize(int size)
+{
+    if (outputPos + size > outputSize)
+    {
+        outputSize += WRITE_INCREMENT;
+        sharedRegion->EnsureCommitted(outputSize);
+        sharedRegion->CloseMapping();
+        streamPointer = sharedRegion->GetMapping();
+    }
+}
 inline static void StreamByte(int value)
 {
-    outBuf[outLevel++] = value;
-    if (outLevel >= sizeof(outBuf))
-    {
-        owrite(outBuf, 1, outLevel, outputFile);
-        outLevel = 0;
-    }
+    resize(1);
+    streamPointer[outputPos++] = value;
 }
 inline static void StreamBlockType(int blockType, bool end)
 {
@@ -162,9 +173,9 @@ static void StreamStringList(const std::list<std::string> & list)
 }
 static void StreamBuffer(const void *buf, int len)
 {
-    owrite(outBuf, outLevel, 1, outputFile);
-    outLevel = 0;
-    owrite((char *)buf, len, 1, outputFile);
+    resize(len);
+    memcpy(&streamPointer[outputPos], buf, len);
+    outputPos += len;
 }
 inline static void StreamIntValue(const void *buf, int len)
 {
@@ -960,12 +971,13 @@ static void NumberTypes()
         s->fileIndex = 2 * i++ + 1;
 
 }
-void OutputIntermediate()
+void OutputIntermediate(SharedMemory *mem)
 {
+    sharedRegion = mem;
+    streamPointer = sharedRegion->GetMapping();
     textRegion.clear();
     textOffset = 1;
     cachedText.clear();
-    outLevel = 0;
     NumberGlobals();
     NumberTypes();
     StreamHeader();
@@ -978,5 +990,4 @@ void OutputIntermediate()
     StreamMSILProperties();
     StreamData();
     WriteText();
-    owrite(outBuf, 1, outLevel, outputFile);
 }

@@ -851,8 +851,6 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
         fprintf(errFile, " %s(%d):  %s%s\n", name, line, buf, infunc);
     if (TotalErrors() >= cparams.prm_maxerr)
     {
-        extern void Cleanup();
-        Cleanup();
         error(ERR_TOO_MANY_ERRORS);
 #ifdef PARSER_ONLY
 	exit(0);

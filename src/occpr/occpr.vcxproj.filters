@@ -195,13 +195,13 @@
     <ClCompile Include="..\occopt\ildata.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\occopt\output.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\occparse\occparse.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\occopt\OptUtils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\occopt\output.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

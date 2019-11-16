@@ -70,7 +70,6 @@ extern int architecture;
 extern std::string outputFileName;
 extern std::string prm_assemblerSpecifier;
 
-FILE* outputFile;
 LIST* clist = 0;
 int showVersion = false;
 std::string bePostFile;
@@ -846,21 +845,11 @@ void dumperrs(FILE* file)
 
 /*-------------------------------------------------------------------------*/
 
-void ctrlchandler(int aa)
-{
-    fprintf(stderr, "^C");
-    extern void Cleanup();
-    Cleanup();
-    exit(1);
-}
-
 /*-------------------------------------------------------------------------*/
 
 void internalError(int a)
 {
     (void)a;
-    extern void Cleanup();
-    Cleanup();
     fprintf(stderr, "Internal Error - Aborting compile");
     exit(1);
 }
@@ -895,8 +884,6 @@ void ccinit(int argc, char* argv[])
         fprintf(stderr, "Compile date: " __DATE__ ", time: " __TIME__ "\n");
         exit(0);
     }
-    extern void Cleanup();
-    Utils::SetCleanup(Cleanup);
 #if defined(WIN32) || defined(MICROSOFT)
     GetModuleFileNameA(nullptr, buffer, sizeof(buffer));
 #else
@@ -1028,6 +1015,6 @@ void ccinit(int argc, char* argv[])
 #endif
 
     /* Set up a ctrl-C handler so we can exit the prog with cleanup */
-    signal(SIGINT, ctrlchandler);
+//    signal(SIGINT, ctrlchandler);
     //    signal(SIGSEGV, internalError);
 }

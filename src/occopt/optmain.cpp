@@ -27,7 +27,7 @@
 #include "CmdSwitch.h"
 #include "Utils.h"
 #include "ildata.h"
-
+#include "SharedMemory.h"
 extern int architecture;
 extern std::vector<SimpleSymbol*> temporarySymbols;
 extern std::vector<SimpleSymbol*> functionVariables;
@@ -59,14 +59,14 @@ const char* usageText =
 "-Y output icd file\n"
 "\nTime: " __TIME__ "  Date: " __DATE__;
 
-FILE* inputFile;
-
-FILE* outputFile;
 int anonymousNotAlloc;
 SimpleSymbol* currentFunction;
 int usingEsp;
 
 static bool functionHasAssembly;
+
+bool InputIntermediate(SharedMemory* mem);
+void OutputIntermediate(SharedMemory* mem);
 
 void InternalConflict(QUAD* head)
 {
@@ -330,18 +330,10 @@ void ProcessFunctions()
         }
     }
 }
-bool LoadFile(const char *name)
+bool LoadFile(SharedMemory* parserMem)
 {
-    char buf[260];
-    strcpy(buf, name);
-    Utils::StripExt(buf);
-    Utils::AddExt(buf, ".icf");
-    inputFile = fopen(buf, "rb");
-    if (!inputFile)
-        return false;
     InitIntermediate();
-    bool rv = InputIntermediate();
-    fclose(inputFile);
+    bool rv = InputIntermediate(parserMem);
     flow_init();
     BitInit();
     SSAInit();
@@ -349,21 +341,13 @@ bool LoadFile(const char *name)
     SelectBackendData();
     return rv;
 }
-void SaveFile(const char *name)
+void SaveFile(std::string& name, SharedMemory* optimizerMem)
 {
-    char buf[260];
-    strcpy(buf, name);
-    Utils::StripExt(buf);
-    Utils::AddExt(buf, ".icf");
-    outputFile = fopen(buf, "wb");
-    if (!outputFile)
-        return;
-    OutputIntermediate();
-    fclose(outputFile);
+    OutputIntermediate(optimizerMem);
     if (WriteIcdFile.GetValue() || cparams.prm_icdfile)
     {
         char buf[260];
-        strcpy(buf, name);
+        strcpy(buf, name.c_str());
         Utils::StripExt(buf);
         Utils::AddExt(buf, ".icd2");
         icdFile = fopen(buf, "w");
@@ -374,44 +358,40 @@ void SaveFile(const char *name)
         icdFile = nullptr;
     }
 }
-bool Matches(const char *arg, const char *cur)
-{
-    const char *l = strrchr(arg, '\\');
-    if (!l)
-        l = arg;
-    const char *r = strrchr(cur, '\\');
-    if (!r)
-        r = cur;
-    return Utils::iequal(l, r);
-}
 int main(int argc, char* argv[])
 {
     Utils::banner(argv[0]);
     Utils::SetEnvironmentToPathParent("ORANGEC");
 
-    if (!SwitchParser.Parse(&argc, argv) || argc != 2)
+    if (!SwitchParser.Parse(&argc, argv) || argc != 3)
     {
         Utils::usage(argv[0], usageText);
     }
-    if (!LoadFile(argv[1]))
+    auto parserMem = new SharedMemory(0, argv[1]);
+    auto optimizerMem = new SharedMemory(0, argv[2]);
+    if (!parserMem->Open() || !optimizerMem->Open())
+    {
+        Utils::fatal("invalid shared memory specifiers");
+    }
+    if (!LoadFile(parserMem))
         Utils::fatal("internal error: could not load intermediate file");
     regInit();
     alloc_init();
     ProcessFunctions();
-    SaveFile(argv[1]);
+    SaveFile(inputFiles.front(), optimizerMem);
     if (!single.GetValue())
     {
         std::list<std::string> files = inputFiles;
+        files.pop_front();
         for (auto p : files)
         {
-            if (!Matches(argv[1], p.c_str()))
-            {
-                if (!LoadFile(p.c_str()))
-                    Utils::fatal("internal error: could not load intermediate file");
-                ProcessFunctions();
-                SaveFile(p.c_str());
-            }
+            if (!LoadFile(parserMem))
+                Utils::fatal("internal error: could not load intermediate file");
+            ProcessFunctions();
+            SaveFile(p, optimizerMem);
         }
     }
+    delete parserMem;
+    delete optimizerMem;
     return 0;
 }

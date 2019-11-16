@@ -30,6 +30,8 @@
 #include "../version.h"
 #include "winmode.h"
 #include "InstructionParser.h"
+#include "SharedMemory.h"
+
 #ifndef PARSER_ONLY
 #include "x64Operand.h"
 #include "x64Parser.h"
@@ -39,7 +41,6 @@ extern ARCH_DEBUG* chosenDebugger;
 extern ARCH_ASM* chosenAssembler;
 extern NAMESPACEVALUELIST* globalNameSpace;
 extern LIST* clist;
-extern FILE* outputFile;
 extern int optflags;
 extern CmdSwitchCombineString prm_include;
 extern CmdSwitchCombineString prm_sysinclude;
@@ -56,13 +57,6 @@ extern std::string outputFileName;
 extern std::string bePostFile;
 
 long long ParseExpression(std::string&line);
-
-#ifdef _WIN32
-extern "C"
-{
-    char* __stdcall GetModuleFileNameA(int handle, char* buf, int size);
-}
-#endif
 
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
@@ -84,9 +78,7 @@ char infile[256];
 FILE *errFile;
 PreProcessor *preProcessor;
 
-static char tempOutFile[260];
 char realOutFile[260];
-static char oldOutFile[260];
 
 static int stoponerr = 0;
 
@@ -174,8 +166,10 @@ void doPragma(const char *key, const char *tag)
 }
     */
 
+void OutputIntermediate(SharedMemory* mem);
 void regInit() { }
 int usingEsp;
+
 
 #ifdef PARSER_ONLY
 int natural_size(EXPRESSION* exp) { return ISZ_UINT; }
@@ -350,14 +344,6 @@ void enter_filename(const char *name)
 {
     inputFiles.push_back(name);
 }
-void Cleanup()
-{
-    if (outputFile)
-        fclose(outputFile);
-    unlink(realOutFile);
-    unlink(tempOutFile);
-    rename(oldOutFile, realOutFile);
-}
 int main(int argc, char* argv[])
 {
     cparams = cparams_default;
@@ -365,7 +351,6 @@ int main(int argc, char* argv[])
     char buffer[256];
     char* p;
     bool multipleFiles = false;
-    bool openOutput = true;
     int rv;
 
     srand(time(0));
@@ -405,20 +390,22 @@ int main(int argc, char* argv[])
 #endif
 #ifndef PARSER_ONLY
     instructionParser = new x64Parser();
-    if (!clist)
+    SharedMemory* parserMem = nullptr;
+    if (bePostFile.size())
     {
-        if (bePostFile.size())
+        parserMem = new SharedMemory(0, bePostFile.c_str());
+        if (!parserMem->Open())
+            Utils::fatal("internal error: invalid shared memory region");
+        if (!clist)
         {
-            FILE *fil = fopen(bePostFile.c_str(), "wb");
-            if (!fil)
-                Utils::fatal("can't open backend communications file");
-            fputs(argv[1], fil);
-            fclose(fil);
-            outputfile(realOutFile, argv[1], ".icf");
-            outputFile = fopen(realOutFile, "wb");
-            OutputIntermediate();
-            fclose(outputFile);
+            OutputIntermediate(parserMem);
         }
+    }
+    else // so we can do compiles without the output going anywhere...
+    {
+        parserMem = new SharedMemory(500*1024*1024);
+        parserMem->Create();
+
     }
 #endif
     for (auto c = clist; c; c = c->next)
@@ -436,12 +423,7 @@ int main(int argc, char* argv[])
         if (buffer[0] == '-')
             strcpy(buffer, "a.c");
         strcpy(realOutFile, prm_output.GetValue().c_str());
-        strcpy(tempOutFile, realOutFile);
-        outputfile(tempOutFile, buffer, ".oo");
         outputfile(realOutFile, buffer, ".icf");
-        strcpy(oldOutFile, realOutFile);
-        Utils::StripExt(oldOutFile);
-        Utils::AddExt(oldOutFile, ".tmp");
         if (first)
         {
             first = false;
@@ -488,20 +470,6 @@ int main(int argc, char* argv[])
         }
         else
         {
-#ifndef PARSER_ONLY
-            if (openOutput)
-            {
-                unlink(oldOutFile);
-                rename(realOutFile, oldOutFile);
-                outputFile = fopen(tempOutFile, "wb");
-                if (!outputFile)
-                {
-                    delete preProcessor;
-                    Utils::fatal("Cannot open output file %s", tempOutFile);
-                }
-                setvbuf(outputFile, 0, _IOFBF, 32768);
-            }
-#endif
             if (cparams.prm_cppfile)
             {
                 Utils::StripExt(buffer);
@@ -511,7 +479,6 @@ int main(int argc, char* argv[])
                 if (!cppFile)
                 {
                     delete preProcessor;
-                    fclose(outputFile);
                     Utils::fatal("Cannot open preprocessor output file %s", buffer);
                 }
             }
@@ -524,7 +491,6 @@ int main(int argc, char* argv[])
                 {
                     delete preProcessor;
                     fclose(cppFile);
-                    fclose(outputFile);
                     Utils::fatal("Cannot open error file %s", buffer);
                 }
             }
@@ -540,7 +506,6 @@ int main(int argc, char* argv[])
                     fclose(errFile);
                     delete preProcessor;
                     fclose(cppFile);
-                    fclose(outputFile);
                     Utils::fatal("Cannot open browse file %s", buffer);
                 }
                 setvbuf(browseFile, 0, _IOFBF, 32768);
@@ -556,7 +521,6 @@ int main(int argc, char* argv[])
                     fclose(errFile);
                     delete preProcessor;
                     fclose(cppFile);
-                    fclose(outputFile);
                     Utils::fatal("Cannot open error file %s", buffer);
                 }
                 setvbuf(icdFile, 0, _IOFBF, 32768);
@@ -565,9 +529,9 @@ int main(int argc, char* argv[])
             if (multipleFiles && !cparams.prm_quiet)
                 printf("%s\n", (char *)clist->data);
 
-            compile(!openOutput);
+            compile(false);
 #ifndef PARSER_ONLY
-            OutputIntermediate();
+            OutputIntermediate(parserMem);
             if (cparams.prm_icdfile)
                 OutputIcdFile();
 #endif
@@ -585,9 +549,6 @@ int main(int argc, char* argv[])
         }
         maxBlocks = maxTemps = 0;
         delete preProcessor;
-        if (outputFile && openOutput)
-            fclose(outputFile);
-        outputFile = nullptr;
         if (cppFile)
             fclose(cppFile);
         if (errFile)
@@ -597,23 +558,14 @@ int main(int argc, char* argv[])
         if (icdFile)
             fclose(icdFile);
 
-        if (openOutput)
-        {
-            if (TotalErrors())
-            {
-                Cleanup();
-            }
-            else
-            {
-                unlink(oldOutFile);
-                rename(tempOutFile, realOutFile);
-            }
-        }
         /* Flag to stop if there are any errors */
         stoponerr |= TotalErrors();
 
         clist = clist->next;
     }
+#ifndef PARSER_ONLY
+    delete parserMem;
+#endif
     rv = !!stoponerr;
 #ifdef PARSER_ONLY
 // to make testing of error cases possible

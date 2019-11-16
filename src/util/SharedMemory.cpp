@@ -28,18 +28,16 @@
 #include <algorithm>
 #include <functional>
 
-SharedMemory::SharedMemory(unsigned max, std::string name) : max_(max), current_(0), regionStart(0)
-{
 #ifdef _WIN32
+#include <Windows.h>
+#endif
+
+SharedMemory::SharedMemory(unsigned max, std::string name) : max_(max), current_(0), regionStart(0), regionHandle(nullptr)
+{
     if (!name.empty())
         name_ = name;
     else
         SetName();
-    regionHandle = CreateFileMapping(INVALID_HANDLE_VALUE, NULL,
-        PAGE_READWRITE | SEC_RESERVE,
-        0, max_, name_.c_str()
-        );
-#endif
 }
 
 SharedMemory::~SharedMemory()
@@ -51,6 +49,24 @@ SharedMemory::~SharedMemory()
 
 }
 
+bool SharedMemory::Open()
+{
+#ifdef _WIN32
+    regionHandle = OpenFileMapping(FILE_MAP_ALL_ACCESS, false, name_.c_str());
+#endif
+    return !!regionHandle;
+}
+
+bool SharedMemory::Create()
+{
+#ifdef _WIN32
+    regionHandle = CreateFileMapping(INVALID_HANDLE_VALUE, NULL,
+        PAGE_READWRITE | SEC_RESERVE,
+        0, max_, name_.c_str()
+        );
+#endif
+    return !!regionHandle;
+}
 BYTE* SharedMemory::GetMapping()
 {
 #ifdef _WIN32
@@ -71,14 +87,11 @@ void SharedMemory::CloseMapping()
     }
 #endif
 }
-bool SharedMemory::EnsureCommitted(int size, bool relative)
+bool SharedMemory::EnsureCommitted(int size)
 {
     int end = size;
     end += 4095;
     end = (end / 4096) * 4096;
-    if (relative)
-        end += current_;
-printf("\n%x\n", regionStart);
 #ifdef _WIN32
     if (end > current_)
     {
@@ -102,5 +115,6 @@ void SharedMemory::SetName()
 
     std::generate(rnd.begin(), rnd.end(), generator);
 
-    name_ = std::string(rnd.begin(), rnd.end());
+    // the lssm: is an attempt to prevent the RNG from choosing someone else's name accidentally...
+    name_ = "lssm:" + std::string(rnd.begin(), rnd.end());
 }

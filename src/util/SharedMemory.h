@@ -23,32 +23,25 @@
  *
  */
 #include <string>
-#ifdef _WIN32
-#include <Windows.h>
-#endif
 class SharedMemory
 {
 public:
     SharedMemory(unsigned max, std::string name = "");
     ~SharedMemory();
 
+    bool Open();
+    bool Create();
+
     std::string Name() { return name_; }
-#ifdef _WIN32
-    BYTE* GetMapping();
-#else
     unsigned char* GetMapping();
-#endif
     void CloseMapping();
-    bool EnsureCommitted(int size, bool relative = false);
+    bool EnsureCommitted(int size);
 private:
     void SetName();
     std::string name_;
 
     unsigned max_;
     unsigned current_;
-#ifdef _WIN32
-    HANDLE regionHandle;
-    BYTE *regionStart;
-#endif
+    void* regionHandle;
+    unsigned char* regionStart;
 };
-#pragma once

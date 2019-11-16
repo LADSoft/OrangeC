@@ -30,6 +30,7 @@
 #include "Utils.h"
 #include "CmdSwitch.h"
 #include "ildata.h"
+#include "SharedMemory.h"
 #include <sstream>
 #include <iostream>
 #include "..\version.h"
@@ -67,17 +68,19 @@ char outFile[260];
 char infile[260];
 
 SimpleSymbol* currentFunction;
-FILE* outputFile;
+extern FILE* outputFile;
 FILE* browseFile;
-
-FILE *inputFile;
 
 SimpleExpression* fltexp;
 
 static const char *verbosity = nullptr;
 static FunctionData* lastFunc;
 
+bool InputIntermediate(SharedMemory* mem);
+
 void regInit() { }
+
+static const int MAX_SHARED_REGION = 500 * 1024 * 1024;
 
 void diag(const char*, ...)
 {
@@ -321,27 +324,11 @@ bool ProcessData(const char *name)
     return true;
 }
 
-bool LoadFile(const char *name)
+bool LoadFile(SharedMemory* optimizerMem)
 {
-    char buf[260];
-    strcpy(buf, name);
-    Utils::StripExt(buf);
-    Utils::AddExt(buf, ".icf");
-    inputFile = fopen(buf, "rb");
-    if (!inputFile)
-        return false;
     InitIntermediate();
-    bool rv = InputIntermediate();
+    bool rv = InputIntermediate(optimizerMem);
     SelectBackendData();
-    if (rv && 0)
-    {
-        icdFile = fopen("q.tmp", "w");
-        OutputIcdFile();
-        fclose(icdFile);
-        icdFile = nullptr;
-    }
-    fclose(inputFile);
-    unlink(buf);
     dbginit();
     outcode_file_init();
     oinit();
@@ -377,18 +364,7 @@ bool SaveFile(const char *name)
     }
     return true;
 }
-bool Matches(const char *arg, const char *cur)
-{
-    const char *l = strrchr(arg, '\\');
-    if (!l)
-        l = arg;
-    const char *r = strrchr(cur, '\\');
-    if (!r)
-        r = cur;
-    return Utils::iequal(l, r);
-}
-
-int InvokeParser(int argc, char**argv, char *tempPath)
+int InvokeParser(int argc, char**argv, SharedMemory* parserMem)
 {
     std::string args;
     for (int i = 1; i < argc; i++)
@@ -397,31 +373,12 @@ int InvokeParser(int argc, char**argv, char *tempPath)
             args += " ";
         args += std::string("\"") + argv[i] + "\"";
     }
-    std::string tempName;
-    fclose(Utils::TempName(tempName));
-    strcpy(tempPath, tempName.c_str());
 
-    return Utils::ToolInvoke("occparse", verbosity, "-! --architecture \"x86;%s\" %s", tempPath, args.c_str());
+    return Utils::ToolInvoke("occparse", verbosity, "-! --architecture \"x86;%s\" %s", parserMem->Name().c_str(), args.c_str());
 }
-int InvokeOptimizer(char *tempPath, char *fileName)
+int InvokeOptimizer(SharedMemory* parserMem, SharedMemory* optimizerMem)
 {
-    int rv = 0;
-    FILE *fil = fopen(tempPath, "r");
-    if (!fil)
-    {
-        Utils::fatal("Cannot open communications temp file");
-    }
-    if (fgets(fileName, 260, fil) < 0)
-    {
-        rv = 1;
-    }
-    fclose(fil);
-    unlink(tempPath);
-    if (rv == 0)
-    {
-        rv = Utils::ToolInvoke("occopt", verbosity, "-! %s", fileName);
-    }
-    return rv;
+    return Utils::ToolInvoke("occopt", verbosity, "-! %s %s", parserMem->Name().c_str(), optimizerMem->Name().c_str());
 }
 
 int main(int argc, char* argv[])
@@ -435,15 +392,18 @@ int main(int argc, char* argv[])
         if (strstr(*p, "/y") || strstr(*p, "-y"))
             verbosity = "";
     }
-    char tempPath[260];
-    rv = InvokeParser(argc, argv, tempPath);
+    auto parserMem = new SharedMemory(MAX_SHARED_REGION);
+    parserMem->Create();
+    auto optimizerMem = new SharedMemory(MAX_SHARED_REGION);
+    optimizerMem->Create();
+    rv = InvokeParser(argc, argv, parserMem);
     if (!rv)
     {
-        char fileName[260];
-        rv = InvokeOptimizer(tempPath, fileName);
+        rv = InvokeOptimizer(parserMem, optimizerMem);
+        delete parserMem;
         if (!rv)
         {
-            if (!LoadFile(fileName))
+            if (!LoadFile(optimizerMem))
             {
                 Utils::fatal("internal error: could not load intermediate file");
             }
@@ -458,23 +418,24 @@ int main(int argc, char* argv[])
             }
             std::list<std::string> files = inputFiles;
             if (files.size())
+            {
                 if (!ProcessData(files.front().c_str()) || !SaveFile(files.front().c_str()))
                     Utils::fatal("File I/O error");
+                files.pop_front();
+            }
             for (auto p : files)
             {
-                if (!Matches(fileName, p.c_str()))
-                {
-                    if (!LoadFile(p.c_str()))
-                        Utils::fatal("internal error: could not load intermediate file");
-                    if (!ProcessData(p.c_str()) || !SaveFile(p.c_str()))
-                        Utils::fatal("File I/O error");
-                }
+                if (!LoadFile(optimizerMem))
+                    Utils::fatal("internal error: could not load intermediate file");
+                if (!ProcessData(p.c_str()) || !SaveFile(p.c_str()))
+                    Utils::fatal("File I/O error");
             }
             if (!cparams.prm_compileonly)
             {
                 rv = RunExternalFiles();
             }
         }
+        delete optimizerMem;
     }
     return rv ;
 }

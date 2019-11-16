@@ -92,9 +92,6 @@
     <ClCompile Include="..\occopt\memory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\occopt\Utils.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\occopt\iblock.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -105,9 +102,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\oasm\AsmLexer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\ocpp\Token.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\ocpp\ppDefine.cpp">
@@ -171,6 +165,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="occ.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\oasm\AsmToken.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\occopt\OptUtils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

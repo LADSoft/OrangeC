@@ -41,7 +41,6 @@
 extern bool IsSymbolCharRoutine(const char *, bool);
 bool (*Tokenizer::IsSymbolChar)(const char*, bool) = IsSymbolCharRoutine;
 
-
 CmdSwitchParser AsmMain::SwitchParser;
 CmdSwitchBool AsmMain::CaseInsensitive(SwitchParser, 'i', false, "case-insensitive");
 CmdSwitchCombo AsmMain::CreateListFile(SwitchParser, 'l', "m", "list");

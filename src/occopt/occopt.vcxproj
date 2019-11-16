@@ -49,11 +49,11 @@
     <ClCompile Include="istren.cpp" />
     <ClCompile Include="memory.cpp" />
     <ClCompile Include="optmain.cpp" />
+    <ClCompile Include="OptUtils.cpp" />
     <ClCompile Include="output.cpp" />
     <ClCompile Include="rewritemsil.cpp" />
     <ClCompile Include="rewritex86.cpp" />
     <ClCompile Include="symfuncs.cpp" />
-    <ClCompile Include="Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="iexpr.p" />

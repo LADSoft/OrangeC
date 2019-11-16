@@ -252,6 +252,13 @@ static void iop_xchg(QUAD* q)
 {
     asm_atomic(q);
 }
+static void iop_parm(QUAD* q)
+{
+    // for fastcall, the moves generated before the push are sufficient.
+    if (q->fastcall)
+        return;
+    asm_parm(q);
+}
 /* List of opcodes
  * This list MUST be in the same order as the op_ enums
  */
@@ -321,7 +328,7 @@ static void (*oplst[])(QUAD* q) = {
     asm_cmpblock,
     asm_parmadj,
     asm_parmblock,
-    asm_parm,
+    iop_parm,
     iop_array,
     iop_arrayindex,
     iop_arraylsh,

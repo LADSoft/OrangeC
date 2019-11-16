@@ -25,10 +25,10 @@ include ../pathext2.mak
 
 NAME=occil
 MAIN_FILE=occil.cpp
-INCLUDES=..$(PATHEXT2)util ..$(PATHEXT2)ocpp ..$(PATHEXT2)objlib
+INCLUDES=..$(PATHEXT2)util ..$(PATHEXT2)ocpp ..$(PATHEXT2)occopt ..$(PATHEXT2)objlib ..$(PATHEXT2)netlib
 CPP_DEPENDENCIES=$(wildcard *.cpp)
-LIB_DEPENDENCIES=netlib occopt util
-DEFINES=x64
+LIB_DEPENDENCIES=netlib ocpplib occopt util
+DEFINES=x64 USE_LONGLONG
 H_FILES=$(wildcard *.h)
 
 include ../redirect.mak

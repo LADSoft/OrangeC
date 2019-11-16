@@ -25,10 +25,10 @@ include ../pathext2.mak
 
 NAME=occparse
 MAIN_FILE=occparse.cpp
-INCLUDES=..$(PATHEXT2)util ..$(PATHEXT2)ocpp ..$(PATHEXT2)objlib
+INCLUDES=..$(PATHEXT2)util ..$(PATHEXT2)ocpp ..$(PATHEXT2)occopt ..$(PATHEXT2)occ ..$(PATHEXT2)objlib ..$(PATHEXT2)netlib ..$(PATHEXT2)oasm
 CPP_DEPENDENCIES=$(wildcard *.cpp)
-LIB_DEPENDENCIES=occplib netlib oasm occopt util
-DEFINES=x64
+LIB_DEPENDENCIES=occ ocpplib netlib oasm occopt util objlib occil
+DEFINES=x64 USE_LONGLONG
 H_FILES=$(wildcard *.h)
 
 include ../redirect.mak

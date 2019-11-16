@@ -42,12 +42,16 @@ extern NAMESPACEVALUELIST* globalNameSpace;
 extern LIST* nameSpaceList;
 extern TYPE stdint;
 
+#ifdef VSIDE
 PELib* peLib;
 void AddType(SimpleSymbol* sym, Type* type)
 {
 #ifdef ISPARSER
 #endif
 }
+#else
+void AddType(SimpleSymbol* sym, Type* type);
+#endif
 
 class Importer : public Callback
 {

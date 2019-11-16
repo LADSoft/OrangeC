@@ -2,7 +2,6 @@
 #include "DotNetPELib.h"
 #include <string>
 #include "Utils.h"
-#include "CmdFiles.h"
 
 using namespace DotNetPELib;
 

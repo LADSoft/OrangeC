@@ -30,6 +30,7 @@
     <ClCompile Include="..\oasm\AsmExpr.cpp" />
     <ClCompile Include="..\oasm\AsmFile.cpp" />
     <ClCompile Include="..\oasm\AsmLexer.cpp" />
+    <ClCompile Include="..\oasm\AsmToken.cpp" />
     <ClCompile Include="..\oasm\Instruction.cpp" />
     <ClCompile Include="..\oasm\Section.cpp" />
     <ClCompile Include="..\oasm\x64Instructions.cpp" />
@@ -42,9 +43,9 @@
     <ClCompile Include="..\occopt\ilunstream.cpp" />
     <ClCompile Include="..\occopt\iout.cpp" />
     <ClCompile Include="..\occopt\memory.cpp" />
+    <ClCompile Include="..\occopt\OptUtils.cpp" />
     <ClCompile Include="..\occopt\output.cpp" />
     <ClCompile Include="..\occopt\symfuncs.cpp" />
-    <ClCompile Include="..\occopt\Utils.cpp" />
     <ClCompile Include="..\ocpp\Errors.cpp" />
     <ClCompile Include="..\ocpp\Floating.cpp" />
     <ClCompile Include="..\ocpp\InputFile.cpp" />
@@ -60,7 +61,6 @@
     <ClCompile Include="..\ocpp\ppPragma.cpp" />
     <ClCompile Include="..\ocpp\PreProcessor.cpp" />
     <ClCompile Include="..\ocpp\SymbolTable.cpp" />
-    <ClCompile Include="..\ocpp\Token.cpp" />
     <ClCompile Include="beIntrins.cpp" />
     <ClCompile Include="dbgtypes.cpp" />
     <ClCompile Include="gen.cpp" />

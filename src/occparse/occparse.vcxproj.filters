@@ -177,9 +177,6 @@
     <ClCompile Include="..\occopt\memory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\occopt\Utils.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\occopt\iblock.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -241,6 +238,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\occ\x64stub.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\occopt\OptUtils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

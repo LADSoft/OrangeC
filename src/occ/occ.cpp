@@ -60,6 +60,9 @@ extern int bssAlign;
 extern int constAlign;
 extern std::string outputFileName;
 
+extern bool IsSymbolCharRoutine(const char *, bool);
+bool (*Tokenizer::IsSymbolChar)(const char*, bool) = IsSymbolCharRoutine;
+
 char outFile[260];
 char infile[260];
 

@@ -25,11 +25,19 @@ include ../pathext2.mak
 
 NAME=occ
 MAIN_FILE=occ.cpp
-INCLUDES=..$(PATHEXT2)util ..$(PATHEXT2)ocpp ..$(PATHEXT2)objlib
+INCLUDES=..$(PATHEXT2)util ..$(PATHEXT2)ocpp ..$(PATHEXT2)occopt ..$(PATHEXT2)objlib ..$(PATHEXT2)oasm
 CPP_DEPENDENCIES=$(wildcard *.cpp)
-LIB_DEPENDENCIES=objlib oasm occopt util
-DEFINES=x64
+LIB_DEPENDENCIES=oasm objlib occopt ocpplib util
+DEFINES=x64 USE_LONGLONG
 H_FILES=$(wildcard *.h)
+
+ifeq "$(COMPILER)" "gcc-linux"
+x64Parser.cpp: ..$(PATHEXT2)oasm$(PATHEXT2)x64Parser.cpp
+	cp $< $@
+else
+x64Parser.cpp: ..$(PATHEXT2)oasm$(PATHEXT2)x64Parser.cpp
+	copy $< $@
+endif
 
 include ../redirect.mak
 

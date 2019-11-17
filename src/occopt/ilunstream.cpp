@@ -117,7 +117,7 @@ inline static void UnstreamBlock(T blockType, std::function<void(void)> blockRen
     UnstreamBlockType(blockType, true);
 }
 
-inline static int UnstreamInt()
+inline static int UnstreamIndex()
 {
     int value = UnstreamByte() << 8;
     value |= UnstreamByte();
@@ -133,18 +133,18 @@ inline static int UnstreamInt()
 }
 inline static int UnstreamTextIndex()
 {
-    return UnstreamInt();
+    return UnstreamIndex();
 }
 inline static void UnstreamString(std::string&value)
 {
-    int v = UnstreamInt();
+    int v = UnstreamIndex();
     value.resize(v, 0);
     for (auto&& c : value)
         c = UnstreamByte();
 }
 static void UnstreamStringList(std::list<std::string> & list)
 {
-    int v = UnstreamInt();
+    int v = UnstreamIndex();
     for (int i = 0; i < v; i++)
     {
         list.push_back("");
@@ -166,11 +166,11 @@ inline static void UnstreamIntValue(void *buf, int len)
 static void UnstreamFloatValue(FPF& fv)
 {
     UnstreamBlock(STT_FLOAT, [&fv]() {
-        fv.type = UnstreamInt();
-        fv.sign = UnstreamInt();
-        fv.exp = UnstreamInt();
+        fv.type = UnstreamIndex();
+        fv.sign = UnstreamIndex();
+        fv.exp = UnstreamIndex();
         for (int i = 0; i < INTERNAL_FPF_PRECISION; i++)
-            fv.mantissa[i] = UnstreamInt();
+            fv.mantissa[i] = UnstreamIndex();
     });
 
 }
@@ -178,12 +178,12 @@ static SimpleSymbol* UnstreamSymbol();
 static LIST* UnstreamSymbolTable()
 {
     LIST *syms = nullptr;
-    int i = UnstreamInt();
+    int i = UnstreamIndex();
     LIST **p = &syms;
     for (;i>0; i--)
     {
         *p = (LIST*)Alloc(sizeof(LIST));
-        (*p)->data = (SimpleSymbol*)UnstreamInt();
+        (*p)->data = (SimpleSymbol*)UnstreamIndex();
         p = &(*p)->next;
     }
     return syms;
@@ -191,14 +191,14 @@ static LIST* UnstreamSymbolTable()
 static BaseList* UnstreamBases()
 {
     BaseList* bases= nullptr;
-    int i = UnstreamInt();
+    int i = UnstreamIndex();
     BaseList**p = &bases;
     for (;i > 0; i--)
     {
         *p = (BaseList*)Alloc(sizeof(BaseList));
         UnstreamBlock(STT_BASE, [p]() {
-            (*p)->sym = (SimpleSymbol*)UnstreamInt();
-            (*p)->offset = UnstreamInt();
+            (*p)->sym = (SimpleSymbol*)UnstreamIndex();
+            (*p)->offset = UnstreamIndex();
         });
         p = &(*p)->next;
     }
@@ -208,17 +208,17 @@ static SimpleType* UnstreamType()
 {
     SimpleType* rv = nullptr;
     UnstreamBlock(STT_TYPE, [&rv]() {
-        st_type type = (st_type)UnstreamInt();
+        st_type type = (st_type)UnstreamIndex();
         if (type != st_none)
         {
             rv = (SimpleType*)Alloc(sizeof(SimpleType));
             rv->type = type;
-            rv->size = UnstreamInt();
-            rv->sizeFromType = UnstreamInt();
-            rv->bits = UnstreamInt();
-            rv->startbit = UnstreamInt();
-            rv->sp = (SimpleSymbol*)UnstreamInt();
-            rv->flags = UnstreamInt();
+            rv->size = UnstreamIndex();
+            rv->sizeFromType = UnstreamIndex();
+            rv->bits = UnstreamIndex();
+            rv->startbit = UnstreamIndex();
+            rv->sp = (SimpleSymbol*)UnstreamIndex();
+            rv->flags = UnstreamIndex();
             rv->btp = UnstreamType();
         }
     });
@@ -228,7 +228,7 @@ static SimpleSymbol* UnstreamSymbol()
 {
     SimpleSymbol* rv = nullptr;
     UnstreamBlock(STT_SYMBOL, [&rv]() {
-        int storage_class = UnstreamInt();
+        int storage_class = UnstreamIndex();
         if (storage_class != scc_none)
         {
             rv = (SimpleSymbol*)Alloc(sizeof(SimpleSymbol));
@@ -238,17 +238,17 @@ static SimpleSymbol* UnstreamSymbol()
             rv->importfile = (const char*)UnstreamTextIndex();
             rv->namespaceName = (const char*)UnstreamTextIndex();
             rv->msil = (const char*)UnstreamTextIndex();
-            rv->i = UnstreamInt();
-            rv->regmode = UnstreamInt();
+            rv->i = UnstreamIndex();
+            rv->regmode = UnstreamIndex();
             UnstreamIntValue(&rv->offset, 4);
-            rv->label = UnstreamInt();
-            rv->templateLevel = UnstreamInt();
-            rv->flags = (unsigned long long)UnstreamInt()<< 32;
-            rv->flags |= UnstreamInt();
-            rv->sizeFromType = UnstreamInt();
-            rv->align = UnstreamInt();
-            rv->size = UnstreamInt();
-            rv->parentClass = (SimpleSymbol*)UnstreamInt();
+            rv->label = UnstreamIndex();
+            rv->templateLevel = UnstreamIndex();
+            rv->flags = (unsigned long long)UnstreamIndex()<< 32;
+            rv->flags |= UnstreamIndex();
+            rv->sizeFromType = UnstreamIndex();
+            rv->align = UnstreamIndex();
+            rv->size = UnstreamIndex();
+            rv->parentClass = (SimpleSymbol*)UnstreamIndex();
             rv->tp = UnstreamType();
             rv->syms = UnstreamSymbolTable();
             rv->baseClasses = UnstreamBases();
@@ -274,12 +274,12 @@ static SimpleExpression* UnstreamExpression()
 {
     SimpleExpression* rv = nullptr;
     UnstreamBlock(STT_EXPRESSION, [&rv]() {
-        int type = UnstreamInt();
+        int type = UnstreamIndex();
         if (type != se_none)
         {
             rv = (SimpleExpression*)Alloc(sizeof(SimpleExpression));
             rv->type = (se_type)type;
-            rv->flags = UnstreamInt();
+            rv->flags = UnstreamIndex();
             switch (rv->type)
             {
             case se_i:
@@ -301,14 +301,14 @@ static SimpleExpression* UnstreamExpression()
             case se_threadlocal:
             case se_pc:
             case se_structelem:
-                rv->sp = (SimpleSymbol*)UnstreamInt();
+                rv->sp = (SimpleSymbol*)UnstreamIndex();
                 break;
             case se_labcon:
-                rv->i = UnstreamInt();
+                rv->i = UnstreamIndex();
                 break;
             case se_tempref:
             {
-                int n = UnstreamInt();
+                int n = UnstreamIndex();
                 rv->sp = GetTempref(n);
                 break;
             }
@@ -321,7 +321,7 @@ static SimpleExpression* UnstreamExpression()
             case se_string:
                 {
                 std::string val;
-                int count = UnstreamInt();
+                int count = UnstreamIndex();
                 val.resize(count, 0);
                 for (auto&& c : val)
                     c = UnstreamByte();
@@ -340,7 +340,7 @@ static BROWSEFILE* UnstreamBrowseFile()
     BROWSEFILE* rv = (BROWSEFILE*)Alloc(sizeof(BROWSEFILE));
     UnstreamBlock(STT_BROWSEFILE, [&rv]() {
         rv->name = (const char *)UnstreamTextIndex();
-        rv->filenum = UnstreamInt();
+        rv->filenum = UnstreamIndex();
     });
     return rv;
 }
@@ -349,11 +349,11 @@ static BROWSEINFO* UnstreamBrowseInfo()
     BROWSEINFO* rv = (BROWSEINFO*)Alloc(sizeof(BROWSEINFO));
     UnstreamBlock(STT_BROWSEINFO, [&rv]() {
         rv->name = (const char *)UnstreamTextIndex();
-        rv->filenum = UnstreamInt();
-        rv->type = UnstreamInt();
-        rv->lineno = UnstreamInt();
-        rv->charpos = UnstreamInt();
-        rv->flags = UnstreamInt();
+        rv->filenum = UnstreamIndex();
+        rv->type = UnstreamIndex();
+        rv->lineno = UnstreamIndex();
+        rv->charpos = UnstreamIndex();
+        rv->flags = UnstreamIndex();
     });
     return rv;
 }
@@ -361,20 +361,20 @@ static BROWSEINFO* UnstreamBrowseInfo()
 static AMODE* UnstreamAssemblyOperand()
 {
     AMODE *rv = nullptr;
-    int mode = UnstreamInt();
+    int mode = UnstreamIndex();
     if (mode != am_none)
     {
         rv = (AMODE*)Alloc(sizeof(AMODE));
         rv->mode = (e_am)mode;
-        rv->preg = UnstreamInt();
-        rv->sreg = UnstreamInt();
-        rv->tempflag = UnstreamInt();
-        rv->scale = UnstreamInt();
-        rv->length = UnstreamInt();
-        rv->addrlen = UnstreamInt();
-        rv->seg = UnstreamInt();
+        rv->preg = UnstreamIndex();
+        rv->sreg = UnstreamIndex();
+        rv->tempflag = UnstreamIndex();
+        rv->scale = UnstreamIndex();
+        rv->length = UnstreamIndex();
+        rv->addrlen = UnstreamIndex();
+        rv->seg = UnstreamIndex();
         UnstreamIntValue(&rv->liveRegs, 8);
-        rv->keepesp = UnstreamInt();
+        rv->keepesp = UnstreamIndex();
         rv->offset = UnstreamExpression();
 
     }
@@ -383,11 +383,11 @@ static AMODE* UnstreamAssemblyOperand()
 static OCODE* UnstreamAssemblyInstruction()
 {
     OCODE *rv = (OCODE*)Alloc(sizeof(OCODE));
-    rv->opcode = (e_opcode)UnstreamInt();
-    rv->diag = UnstreamInt();
-    rv->noopt = UnstreamInt();
-    rv->size = UnstreamInt();
-    rv->blocknum = UnstreamInt();
+    rv->opcode = (e_opcode)UnstreamIndex();
+    rv->diag = UnstreamIndex();
+    rv->noopt = UnstreamIndex();
+    rv->size = UnstreamIndex();
+    rv->blocknum = UnstreamIndex();
     rv->oper1 = UnstreamAssemblyOperand();
     rv->oper2 = UnstreamAssemblyOperand();
     rv->oper3 = UnstreamAssemblyOperand();
@@ -397,15 +397,15 @@ static IMODE* UnstreamOperand()
 {
     IMODE *rv = (IMODE*)Alloc(sizeof(IMODE));
     UnstreamBlock(STT_OPERAND, [&rv]() {
-        rv->mode = (i_adr)UnstreamInt();
-        rv->scale = UnstreamInt();
-        rv->useindx = UnstreamInt();
-        rv->size = UnstreamInt();
-        rv->ptrsize = UnstreamInt();
-        rv->startbit = UnstreamInt();
-        rv->bits = UnstreamInt();
-        rv->seg = UnstreamInt();
-        rv->flags = UnstreamInt();
+        rv->mode = (i_adr)UnstreamIndex();
+        rv->scale = UnstreamIndex();
+        rv->useindx = UnstreamIndex();
+        rv->size = UnstreamIndex();
+        rv->ptrsize = UnstreamIndex();
+        rv->startbit = UnstreamIndex();
+        rv->bits = UnstreamIndex();
+        rv->seg = UnstreamIndex();
+        rv->flags = UnstreamIndex();
         rv->offset = UnstreamExpression();
         rv->offset2 = UnstreamExpression();
         rv->offset3 = UnstreamExpression();
@@ -417,8 +417,8 @@ static IMODE* UnstreamOperand()
 static QUAD* UnstreamInstruction(FunctionData& fd)
 {
     QUAD* rv = (QUAD*)Alloc(sizeof(QUAD));
-    UnstreamBlock(STT_BROWSEFILE, [&rv, &fd]() {
-        rv->dc.opcode = (i_ops)UnstreamInt();
+    UnstreamBlock(STT_INSTRUCTION, [&rv, &fd]() {
+        rv->dc.opcode = (i_ops)UnstreamIndex();
         rv->block = currentBlock;        
         if (currentBlock)
         {
@@ -449,16 +449,16 @@ static QUAD* UnstreamInstruction(FunctionData& fd)
                 UnstreamFloatValue(rv->dc.v.c.i);
                 break;
             case i_label:
-                rv->dc.v.label = UnstreamInt();
+                rv->dc.v.label = UnstreamIndex();
                 break;
             case i_line:
             {
-                i = UnstreamInt();
+                i = UnstreamIndex();
                 LINEDATA* ld  = nullptr, **p = &ld;
                 for(;i;i--)
                 {
                     *p = (LINEDATA*)Alloc(sizeof(LINEDATA));
-                    (*p)->lineno = UnstreamInt();
+                    (*p)->lineno = UnstreamIndex();
                     (*p)->line = (const char *)UnstreamTextIndex();
                     p = &(*p)->next;
                 }
@@ -467,12 +467,12 @@ static QUAD* UnstreamInstruction(FunctionData& fd)
                 break;
             case i_block:
                 currentBlock = (BLOCK*)Alloc(sizeof(BLOCK));
-                rv->dc.v.label = currentBlock->blocknum = UnstreamInt();
+                rv->dc.v.label = currentBlock->blocknum = UnstreamIndex();
                 currentBlock->head = currentBlock->tail = rv;
                 rv->block = currentBlock;
                 break;
             case i_blockend:
-                rv->dc.v.label = currentBlock->blocknum = UnstreamInt();
+                rv->dc.v.label = currentBlock->blocknum = UnstreamIndex();
                 break;
             case i_dbgblock:
             case i_dbgblockend:
@@ -480,8 +480,8 @@ static QUAD* UnstreamInstruction(FunctionData& fd)
                 break;
             case i_func:
             {
-                rv->dc.v.label = UnstreamInt();
-                int n = UnstreamInt();
+                rv->dc.v.label = UnstreamIndex();
+                int n = UnstreamIndex();
                 if (n)
                     rv->dc.left = fd.imodeList[n - 1];
                 break;
@@ -500,23 +500,23 @@ static QUAD* UnstreamInstruction(FunctionData& fd)
             case i_coswitch:
             case i_goto:
             case i_cmpblock:
-                rv->dc.v.label = UnstreamInt();
+                rv->dc.v.label = UnstreamIndex();
                 // fallthrough
             default:
-                int n = UnstreamInt();
+                int n = UnstreamIndex();
                 if (n)
                     rv->dc.left = fd.imodeList[n-1];
-                n = UnstreamInt();
+                n = UnstreamIndex();
                 if (n)
                     rv->dc.right = fd.imodeList[n - 1];
                 break;
             }
-            int n = UnstreamInt();
+            int n = UnstreamIndex();
             if (n)
                 rv->ans = fd.imodeList[n - 1];
-            rv->altsp = (SimpleSymbol*)UnstreamInt();
+            rv->altsp = (SimpleSymbol*)UnstreamIndex();
             rv->alttp = UnstreamType();
-            i = UnstreamInt();
+            i = UnstreamIndex();
             ArgList** p = (ArgList**)&rv->altargs;
             for (;i;i--)
             {
@@ -524,25 +524,25 @@ static QUAD* UnstreamInstruction(FunctionData& fd)
                 (*p)->tp = UnstreamType();
                 (*p)->exp = UnstreamExpression();
             }
-            rv->ansColor = UnstreamInt();
-            rv->leftColor = UnstreamInt();
-            rv->rightColor = UnstreamInt();
-            rv->scaleColor = UnstreamInt();
-            rv->flags = UnstreamInt();
-            rv->definition = UnstreamInt();
-            rv->available = UnstreamInt();
-            rv->sourceindx = UnstreamInt();
-            rv->copy = UnstreamInt();
-            rv->retcount = UnstreamInt();
-            rv->sehMode = UnstreamInt();
-            rv->fastcall = UnstreamInt();
-            rv->oldmode = UnstreamInt();
-            rv->novalue = UnstreamInt();
-            rv->temps = UnstreamInt();
-            rv->precolored = UnstreamInt();
-            rv->moved = UnstreamInt();
-            rv->livein = UnstreamInt();
-            rv->liveRegs = UnstreamInt();
+            rv->ansColor = UnstreamIndex();
+            rv->leftColor = UnstreamIndex();
+            rv->rightColor = UnstreamIndex();
+            rv->scaleColor = UnstreamIndex();
+            rv->flags = UnstreamIndex();
+            rv->definition = UnstreamIndex();
+            rv->available = UnstreamIndex();
+            rv->sourceindx = UnstreamIndex();
+            rv->copy = UnstreamIndex();
+            rv->retcount = UnstreamIndex();
+            rv->sehMode = UnstreamIndex();
+            rv->fastcall = UnstreamIndex();
+            rv->oldmode = UnstreamIndex();
+            rv->novalue = UnstreamIndex();
+            rv->temps = UnstreamIndex();
+            rv->precolored = UnstreamIndex();
+            rv->moved = UnstreamIndex();
+            rv->livein = UnstreamIndex();
+            rv->liveRegs = UnstreamIndex();
             if (rv->alwayslive)
                 rv->block->alwayslive = true;
         }
@@ -551,7 +551,7 @@ static QUAD* UnstreamInstruction(FunctionData& fd)
 }
 static void UnstreamSymbolList(std::vector<SimpleSymbol*>& list)
 {
-    int i = UnstreamInt();
+    int i = UnstreamIndex();
     for (; i; i--)
     {
         list.push_back(UnstreamSymbol());
@@ -568,7 +568,7 @@ static void UnstreamHeader()
     UnstreamIntValue(&vers, sizeof(vers));
     if (vers != fileVersion)
         dothrow();
-    architecture = UnstreamInt();
+    architecture = UnstreamIndex();
 }
 static void UnstreamParams()
 {
@@ -582,14 +582,14 @@ static void UnstreamXParams()
         UnstreamString(compilerName);
         UnstreamString(intermediateName);
         UnstreamString(backendName);
-        showBanner = UnstreamInt();
-        verbosity = UnstreamInt();
-        assembling = UnstreamInt();
-        dataAlign = UnstreamInt();
-        bssAlign = UnstreamInt();
-        constAlign = UnstreamInt();
-        nextLabel = UnstreamInt();
-        registersAssigned = UnstreamInt();
+        showBanner = UnstreamIndex();
+        verbosity = UnstreamIndex();
+        assembling = UnstreamIndex();
+        dataAlign = UnstreamIndex();
+        bssAlign = UnstreamIndex();
+        constAlign = UnstreamIndex();
+        nextLabel = UnstreamIndex();
+        registersAssigned = UnstreamIndex();
         UnstreamString(prm_assemblerSpecifier);
         UnstreamString(prm_libPath);
         UnstreamString(prm_include);
@@ -606,7 +606,7 @@ static void UnstreamXParams()
         UnstreamStringList(libIncludes);
         UnstreamStringList(toolArgs);
         UnstreamStringList(prm_Using);
-        int i = UnstreamInt();
+        int i = UnstreamIndex();
         for (; i; i--)
         {
             std::string key, val;
@@ -637,13 +637,13 @@ static void UnstreamTypes()
 static void UnstreamMSILProperties()
 {
     UnstreamBlock(SBT_MSILPROPS, []() {
-        int i = UnstreamInt();
+        int i = UnstreamIndex();
         for (;i;i--)
         {
             MsilProperty p;
-            p.prop = (SimpleSymbol*)UnstreamInt();
-            p.getter = (SimpleSymbol*)UnstreamInt();
-            p.setter = (SimpleSymbol*)UnstreamInt();
+            p.prop = (SimpleSymbol*)UnstreamIndex();
+            p.getter = (SimpleSymbol*)UnstreamIndex();
+            p.setter = (SimpleSymbol*)UnstreamIndex();
             msilProperties.push_back(p);
         }
     });
@@ -658,14 +658,14 @@ static void UnstreamTypedefs()
 static void UnstreamBrowse()
 {
     UnstreamBlock(SBT_BROWSEFILES, []() {
-        int i = UnstreamInt();
+        int i = UnstreamIndex();
         for (; i; i--)
         {
             browseFiles.push_back(UnstreamBrowseFile());
         }            
     });
     UnstreamBlock(SBT_BROWSEINFO, []() {
-        int i = UnstreamInt();
+        int i = UnstreamIndex();
         for (; i; i--)
         {
             browseInfo.push_back(UnstreamBrowseInfo());
@@ -677,7 +677,7 @@ static QUAD* UnstreamInstructions(FunctionData& fd)
 {
     QUAD *rv = nullptr, *last = nullptr;
 
-    int i = UnstreamInt();
+    int i = UnstreamIndex();
     for (; i; i--)
     {
         QUAD *newQuad = UnstreamInstruction(fd);
@@ -693,7 +693,7 @@ static QUAD* UnstreamInstructions(FunctionData& fd)
 static void UnstreamIModes(FunctionData& fd)
 {
     UnstreamBlock(SBT_IMODES, [&fd]() {
-        int len = UnstreamInt();
+        int len = UnstreamIndex();
         for (int i = 0; i < len; i++)
         {
             fd.imodeList.push_back(UnstreamOperand());
@@ -702,10 +702,10 @@ static void UnstreamIModes(FunctionData& fd)
 }
 static void UnstreamTemps()
 {
-    int i = UnstreamInt();
+    int i = UnstreamIndex();
     for (;i;i--)
     { 
-        int temp = UnstreamInt();
+        int temp = UnstreamIndex();
         int val = UnstreamByte();
         if (temps[temp])
         {
@@ -718,14 +718,14 @@ static void UnstreamTemps()
 }
 static void UnstreamLoadCache(FunctionData* fd, std::unordered_map<IMODE*, IMODE*>& hash)
 {
-    int i = UnstreamInt();
+    int i = UnstreamIndex();
     for (; i; i--)
     {
-        int n = UnstreamInt();
+        int n = UnstreamIndex();
         if (n)
         {
             IMODE* key = fd->imodeList[n - 1];
-            n = UnstreamInt();
+            n = UnstreamIndex();
             if (n) // might fail in the backend...
             {
                 IMODE* value = fd->imodeList[n - 1];
@@ -734,7 +734,7 @@ static void UnstreamLoadCache(FunctionData* fd, std::unordered_map<IMODE*, IMODE
         }
         else
         {
-            n = UnstreamInt();
+            n = UnstreamIndex();
         }
     }
 }
@@ -746,15 +746,15 @@ static FunctionData *UnstreamFunc()
     std::vector<SimpleSymbol*> variables;
     QUAD *instructionList;
 
-    fd->name = (SimpleSymbol*)UnstreamInt();
-    int flgs = UnstreamInt();
+    fd->name = (SimpleSymbol*)UnstreamIndex();
+    int flgs = UnstreamIndex();
     if (flgs & 1)
         fd->setjmp_used = true;
     if (flgs & 2)
         fd->hasAssembly = true;
-    fd->blockCount = UnstreamInt();
-    fd->tempCount = UnstreamInt();
-    fd->exitBlock = UnstreamInt();
+    fd->blockCount = UnstreamIndex();
+    fd->tempCount = UnstreamIndex();
+    fd->exitBlock = UnstreamIndex();
     temps.clear();
     temps.resize(fd->tempCount);
     UnstreamSymbolList(fd->variables);
@@ -769,12 +769,12 @@ static FunctionData *UnstreamFunc()
 static void UnstreamData()
 {
     UnstreamBlock(SBT_DATA, []() {
-        int len = UnstreamInt();
+        int len = UnstreamIndex();
         for (int i=0; i < len; i++)
         {
             BaseData *data = (BaseData*)Alloc(sizeof(BaseData));
             baseData.push_back(data);
-            data->type = (DataType)UnstreamInt();
+            data->type = (DataType)UnstreamIndex();
             UnstreamBlock(data->type, [data]() {
                 switch (data->type)
                 {
@@ -782,43 +782,43 @@ static void UnstreamData()
                     break;
                 case DT_SEG:
                 case DT_SEGEXIT:
-                    data->i = UnstreamInt();
+                    data->i = UnstreamIndex();
                     break;
                 case DT_DEFINITION:
-                    data->symbol.sym = (SimpleSymbol*)UnstreamInt();
-                    data->symbol.i = UnstreamInt();
+                    data->symbol.sym = (SimpleSymbol*)UnstreamIndex();
+                    data->symbol.i = UnstreamIndex();
                     break;
                 case DT_LABELDEFINITION:
-                    data->i = UnstreamInt();
+                    data->i = UnstreamIndex();
                     break;
                 case DT_RESERVE:
-                    data->i = UnstreamInt();
+                    data->i = UnstreamIndex();
                     break;
                 case DT_SYM:
-                    data->symbol.sym = (SimpleSymbol*)UnstreamInt();
+                    data->symbol.sym = (SimpleSymbol*)UnstreamIndex();
                     break;
                 case DT_SRREF:
-                    data->symbol.sym = (SimpleSymbol*)UnstreamInt();
-                    data->symbol.i = UnstreamInt();
+                    data->symbol.sym = (SimpleSymbol*)UnstreamIndex();
+                    data->symbol.i = UnstreamIndex();
                     break;
                 case DT_PCREF:
-                    data->symbol.sym = (SimpleSymbol*)UnstreamInt();
+                    data->symbol.sym = (SimpleSymbol*)UnstreamIndex();
                     break;
                 case DT_FUNCREF:
-                    data->symbol.sym = (SimpleSymbol*)UnstreamInt();
-                    data->symbol.i = UnstreamInt();
+                    data->symbol.sym = (SimpleSymbol*)UnstreamIndex();
+                    data->symbol.i = UnstreamIndex();
                     break;
                 case DT_LABEL:
-                    data->i = UnstreamInt();
+                    data->i = UnstreamIndex();
                     break;
                 case DT_LABDIFFREF:
-                    data->diff.l1 = UnstreamInt();
-                    data->diff.l2 = UnstreamInt();
+                    data->diff.l1 = UnstreamIndex();
+                    data->diff.l2 = UnstreamIndex();
                     break;
                 case DT_STRING:
                 {
                     bool instring = false;
-                    data->astring.i = UnstreamInt();
+                    data->astring.i = UnstreamIndex();
                     data->astring.str = (char *)Alloc(data->astring.i + 1);
                     for (int i = 0; i < data->astring.i; i++)
                     {
@@ -880,28 +880,28 @@ static void UnstreamData()
                     UnstreamIntValue(&data->i, 8);
                     break;
                 case DT_VIRTUAL:
-                    data->symbol.sym = (SimpleSymbol*)UnstreamInt();
-                    data->symbol.i = UnstreamInt();
+                    data->symbol.sym = (SimpleSymbol*)UnstreamIndex();
+                    data->symbol.i = UnstreamIndex();
                     break;
                 case DT_ENDVIRTUAL:
-                    data->symbol.sym = (SimpleSymbol*)UnstreamInt();
+                    data->symbol.sym = (SimpleSymbol*)UnstreamIndex();
                     break;
                 case DT_ALIGN:
-                    data->i = UnstreamInt();
+                    data->i = UnstreamIndex();
                     break;
                 case DT_VTT:
-                    data->symbol.sym = (SimpleSymbol*)UnstreamInt();
-                    data->symbol.i = UnstreamInt();
+                    data->symbol.sym = (SimpleSymbol*)UnstreamIndex();
+                    data->symbol.i = UnstreamIndex();
                     break;
                 case DT_IMPORTTHUNK:
-                    data->symbol.sym = (SimpleSymbol*)UnstreamInt();
+                    data->symbol.sym = (SimpleSymbol*)UnstreamIndex();
                     break;
                 case DT_VC1:
-                    data->symbol.sym = (SimpleSymbol*)UnstreamInt();
+                    data->symbol.sym = (SimpleSymbol*)UnstreamIndex();
                     break;
                 case DT_AUTOREF:
-                    data->symbol.sym = (SimpleSymbol*)UnstreamInt();
-                    data->symbol.i = UnstreamInt();
+                    data->symbol.sym = (SimpleSymbol*)UnstreamIndex();
+                    data->symbol.i = UnstreamIndex();
                     break;
                 case DT_FUNC:
                     data->funcData = UnstreamFunc();
@@ -914,10 +914,10 @@ static void UnstreamData()
 void ReadText(std::map<int ,std::string>& texts)
 {
     UnstreamBlock(SBT_TEXT, [&texts]() {
-        textOffset = UnstreamInt();
+        textOffset = UnstreamIndex();
         for (int i = 1; i < textOffset;)
         {
-            int len = UnstreamInt();
+            int len = UnstreamIndex();
             std::string val;
             val.resize(len, 0);
             for (auto&& c : val)

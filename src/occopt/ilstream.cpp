@@ -137,7 +137,7 @@ inline static void StreamBlock(T blockType, std::function<void(void)> blockRende
     StreamBlockType(blockType, true);
 }
 
-inline static void StreamInt(int value)
+inline static void StreamIndex(int value)
 {
     if (value >= 0 && value < 0x8000)
     {
@@ -155,19 +155,19 @@ inline static void StreamInt(int value)
 inline static void StreamTextIndex(const char* name)
 {
     if (!name)
-        StreamInt(0);
+        StreamIndex(0);
     else
-        StreamInt(TextName(name));
+        StreamIndex(TextName(name));
 }
 inline static void StreamString(const std::string&value)
 {
-    StreamInt(value.size());
+    StreamIndex(value.size());
     for (auto c : value)
         StreamByte(c);
 }
 static void StreamStringList(const std::list<std::string> & list)
 {
-    StreamInt(list.size());
+    StreamIndex(list.size());
     for (auto&& s : list)
         StreamString(s);
 }
@@ -187,11 +187,11 @@ inline static void StreamIntValue(const void *buf, int len)
 static void StreamFloatValue(FPF& fv)
 {
     StreamBlock(STT_FLOAT, [&fv]() {
-        StreamInt(fv.type);
-        StreamInt(fv.sign);
-        StreamInt(fv.exp);
+        StreamIndex(fv.type);
+        StreamIndex(fv.sign);
+        StreamIndex(fv.exp);
         for (int i = 0; i < INTERNAL_FPF_PRECISION; i++)
-            StreamInt(fv.mantissa[i]);
+            StreamIndex(fv.mantissa[i]);
     });
 
 }
@@ -200,10 +200,10 @@ static void StreamSymbolTable(LIST *syms)
 {
     int i = 0;
     for (auto l = syms; l && l->data; l = l->next, i++);
-    StreamInt(i);
+    StreamIndex(i);
     for (auto l = syms; l && l->data; l = l->next)
     {
-        StreamInt(((SimpleSymbol*)l->data)->fileIndex);
+        StreamIndex(((SimpleSymbol*)l->data)->fileIndex);
     }
 }
 static void StreamBases(BaseList *bases)
@@ -211,12 +211,12 @@ static void StreamBases(BaseList *bases)
     BaseList* baseClasses;
     int i = 0;
     for (auto l = bases; l; l = l->next, i++);
-    StreamInt(i);
+    StreamIndex(i);
     for (auto l = bases; l; l = l->next)
     {
         StreamBlock(STT_BASE, [l]() {
-            StreamInt(l->sym->fileIndex);
-            StreamInt(l->offset);
+            StreamIndex(l->sym->fileIndex);
+            StreamIndex(l->offset);
         });
     }
 
@@ -226,20 +226,20 @@ static void StreamType(SimpleType* type)
     StreamBlock(STT_TYPE, [type]() {
         if (!type)
         {
-            StreamInt(st_none);
+            StreamIndex(st_none);
         }
         else
         {
-            StreamInt(type->type);
-            StreamInt(type->size);
-            StreamInt(type->sizeFromType);
-            StreamInt(type->bits);
-            StreamInt(type->startbit);
+            StreamIndex(type->type);
+            StreamIndex(type->size);
+            StreamIndex(type->sizeFromType);
+            StreamIndex(type->bits);
+            StreamIndex(type->startbit);
             if (type->sp && type->type != st_any)
-                StreamInt(type->sp->fileIndex);
+                StreamIndex(type->sp->fileIndex);
             else
-                StreamInt(0);
-            StreamInt(type->flags);
+                StreamIndex(0);
+            StreamIndex(type->flags);
             StreamType(type->btp);
         }
     });
@@ -249,30 +249,30 @@ static void StreamSymbol(SimpleSymbol* sym)
     StreamBlock(STT_SYMBOL, [sym]() {
         if (!sym)
         {
-            StreamInt(scc_none);
+            StreamIndex(scc_none);
         }
         else
         {
-            StreamInt(sym->storage_class);
+            StreamIndex(sym->storage_class);
             StreamTextIndex(sym->name);
             StreamTextIndex(sym->outputName);
             StreamTextIndex(sym->importfile);
             StreamTextIndex(sym->namespaceName);
             StreamTextIndex(sym->msil);
-            StreamInt(sym->i);
-            StreamInt(sym->regmode);
+            StreamIndex(sym->i);
+            StreamIndex(sym->regmode);
             StreamIntValue(&sym->offset, 4);
-            StreamInt(sym->label);
-            StreamInt(sym->templateLevel);
-            StreamInt(sym->flags >> 32);
-            StreamInt(sym->flags & 0xffffffff);
-            StreamInt(sym->sizeFromType);
-            StreamInt(sym->align);
-            StreamInt(sym->size);
+            StreamIndex(sym->label);
+            StreamIndex(sym->templateLevel);
+            StreamIndex(sym->flags >> 32);
+            StreamIndex(sym->flags & 0xffffffff);
+            StreamIndex(sym->sizeFromType);
+            StreamIndex(sym->align);
+            StreamIndex(sym->size);
             if (sym->parentClass)
-                StreamInt(sym->parentClass->fileIndex);
+                StreamIndex(sym->parentClass->fileIndex);
             else
-                StreamInt(0);
+                StreamIndex(0);
             StreamType(sym->tp);
             StreamSymbolTable(sym->syms);
             StreamBases(sym->baseClasses);
@@ -284,12 +284,12 @@ static void StreamExpression(SimpleExpression* exp)
     StreamBlock(STT_EXPRESSION, [exp]() {
         if (!exp)
         {
-            StreamInt(se_none);
+            StreamIndex(se_none);
         }
         else
         {
-            StreamInt(exp->type);
-            StreamInt(exp->flags);
+            StreamIndex(exp->type);
+            StreamIndex(exp->flags);
             switch (exp->type)
             {
             case se_i:
@@ -311,13 +311,13 @@ static void StreamExpression(SimpleExpression* exp)
             case se_threadlocal:
             case se_pc:
             case se_structelem:
-                StreamInt(exp->sp->fileIndex);
+                StreamIndex(exp->sp->fileIndex);
                 break;
             case se_labcon:
-                StreamInt(exp->i);
+                StreamIndex(exp->i);
                 break;
             case se_tempref:
-                StreamInt(exp->sp->i);
+                StreamIndex(exp->sp->i);
                 break;
             case se_msil_array_access:
                 StreamType(exp->msilArrayTP);
@@ -326,7 +326,7 @@ static void StreamExpression(SimpleExpression* exp)
                 StreamType(exp->tp);
                 break;
             case se_string:
-                StreamInt(exp->astring.len);
+                StreamIndex(exp->astring.len);
                 for (int i = 0; i < exp->astring.len; i++)
                     StreamByte(exp->astring.str[i]);
                 break;
@@ -341,18 +341,18 @@ static void StreamBrowseFile(BROWSEFILE *bf)
 {
     StreamBlock(STT_BROWSEFILE, [bf]() {
         StreamTextIndex(bf->name);
-        StreamInt(bf->filenum);
+        StreamIndex(bf->filenum);
     });
 }
 static void StreamBrowseInfo(BROWSEINFO *bi)
 {
     StreamBlock(STT_BROWSEINFO, [bi]() {
         StreamTextIndex(bi->name);
-        StreamInt(bi->filenum);
-        StreamInt(bi->type);
-        StreamInt(bi->lineno);
-        StreamInt(bi->charpos);
-        StreamInt(bi->flags);
+        StreamIndex(bi->filenum);
+        StreamIndex(bi->type);
+        StreamIndex(bi->lineno);
+        StreamIndex(bi->charpos);
+        StreamIndex(bi->flags);
     });
 
 }
@@ -361,31 +361,31 @@ static void StreamAssemblyOperand(AMODE *im)
 {
     if (!im)
     {
-        StreamInt(am_none);
+        StreamIndex(am_none);
     }
     else
     {
-        StreamInt(im->mode);
-        StreamInt(im->preg);
-        StreamInt(im->sreg);
-        StreamInt(im->tempflag);
-        StreamInt(im->scale);
-        StreamInt(im->length);
-        StreamInt(im->addrlen);
-        StreamInt(im->seg);
+        StreamIndex(im->mode);
+        StreamIndex(im->preg);
+        StreamIndex(im->sreg);
+        StreamIndex(im->tempflag);
+        StreamIndex(im->scale);
+        StreamIndex(im->length);
+        StreamIndex(im->addrlen);
+        StreamIndex(im->seg);
         StreamIntValue(&im->liveRegs, 8);
-        StreamInt(im->keepesp);
+        StreamIndex(im->keepesp);
         StreamExpression(im->offset);
 
     }
 }
 static void StreamAssemblyInstruction(OCODE *oc)
 {
-    StreamInt(oc->opcode);
-    StreamInt(oc->diag);
-    StreamInt(oc->noopt);
-    StreamInt(oc->size);
-    StreamInt(oc->blocknum);
+    StreamIndex(oc->opcode);
+    StreamIndex(oc->diag);
+    StreamIndex(oc->noopt);
+    StreamIndex(oc->size);
+    StreamIndex(oc->blocknum);
     StreamAssemblyOperand(oc->oper1);
     StreamAssemblyOperand(oc->oper2);
     StreamAssemblyOperand(oc->oper3);
@@ -393,15 +393,15 @@ static void StreamAssemblyInstruction(OCODE *oc)
 static void StreamOperand(IMODE* im)
 {
     StreamBlock(STT_OPERAND, [im]() {
-        StreamInt(im->mode);
-        StreamInt(im->scale);
-        StreamInt(im->useindx);
-        StreamInt(im->size);
-        StreamInt(im->ptrsize);
-        StreamInt(im->startbit);
-        StreamInt(im->bits);
-        StreamInt(im->seg);
-        StreamInt(im->flags);
+        StreamIndex(im->mode);
+        StreamIndex(im->scale);
+        StreamIndex(im->useindx);
+        StreamIndex(im->size);
+        StreamIndex(im->ptrsize);
+        StreamIndex(im->startbit);
+        StreamIndex(im->bits);
+        StreamIndex(im->seg);
+        StreamIndex(im->flags);
         StreamExpression(im->offset);
         StreamExpression(im->offset2);
         StreamExpression(im->offset3);
@@ -411,8 +411,8 @@ static void StreamOperand(IMODE* im)
 
 static void StreamInstruction(QUAD *q)
 {
-    StreamBlock(STT_BROWSEFILE, [q]() {
-        StreamInt(q->dc.opcode);
+    StreamBlock(STT_INSTRUCTION, [q]() {
+        StreamIndex(q->dc.opcode);
         if (q->dc.opcode == i_passthrough)
         {
             StreamAssemblyInstruction((OCODE *)q->dc.left);
@@ -434,34 +434,34 @@ static void StreamInstruction(QUAD *q)
                 StreamFloatValue(q->dc.v.c.i);
                 break;
             case i_label:
-                StreamInt(q->dc.v.label);
+                StreamIndex(q->dc.v.label);
                 break;
             case i_line:
                 i = 0;
                 for (auto v = (LINEDATA*)q->dc.left; v; v = v->next, i++);
-                StreamInt(i);
+                StreamIndex(i);
                 for (auto v = (LINEDATA*)q->dc.left; v; v = v->next)
                 {
-                    StreamInt(v->lineno);
+                    StreamIndex(v->lineno);
                     StreamTextIndex(v->line);
                 }
                 break;
             case i_block:
-                StreamInt(q->block->blocknum);
+                StreamIndex(q->block->blocknum);
                 break;
             case i_blockend:
-                StreamInt(q->block->blocknum);
+                StreamIndex(q->block->blocknum);
                 break;
             case i_dbgblock:
             case i_dbgblockend:
             case i_livein:
                 break;
             case i_func:
-                StreamInt(q->dc.v.label);
+                StreamIndex(q->dc.v.label);
                 if (q->dc.left)
-                    StreamInt(cachedImodes[q->dc.left]);
+                    StreamIndex(cachedImodes[q->dc.left]);
                 else
-                    StreamInt(0);
+                    StreamIndex(0);
                 break;
             case i_jc:
             case i_jnc:
@@ -477,61 +477,61 @@ static void StreamInstruction(QUAD *q)
             case i_coswitch:
             case i_goto:
             case i_cmpblock:
-                StreamInt(q->dc.v.label);
+                StreamIndex(q->dc.v.label);
                 // fallthrough
             default:
                 if (q->dc.left)
-                    StreamInt(cachedImodes[q->dc.left]);
+                    StreamIndex(cachedImodes[q->dc.left]);
                 else
-                    StreamInt(0);
+                    StreamIndex(0);
                 if (q->dc.right)
-                    StreamInt(cachedImodes[q->dc.right]);
+                    StreamIndex(cachedImodes[q->dc.right]);
                 else
-                    StreamInt(0);
+                    StreamIndex(0);
                 break;
             }
             if (q->ans)
-                StreamInt(cachedImodes[q->ans]);
+                StreamIndex(cachedImodes[q->ans]);
             else
-                StreamInt(0);
+                StreamIndex(0);
             if (q->altsp)
-                StreamInt(q->altsp->fileIndex);
+                StreamIndex(q->altsp->fileIndex);
             else
-                StreamInt(0);
+                StreamIndex(0);
             StreamType(q->alttp);
             i = 0;
             for (auto v = (ArgList*)q->altargs; v; v = v->next, i++);
-            StreamInt(i);
+            StreamIndex(i);
             for (auto v = (ArgList*)q->altargs; v; v = v->next)
             {
                 StreamType(v->tp);
                 StreamExpression(v->exp);
             }
-            StreamInt(q->ansColor);
-            StreamInt(q->leftColor);
-            StreamInt(q->rightColor);
-            StreamInt(q->scaleColor);
-            StreamInt(q->flags);
-            StreamInt(q->definition);
-            StreamInt(q->available);
-            StreamInt(q->sourceindx);
-            StreamInt(q->copy);
-            StreamInt(q->retcount);
-            StreamInt(q->sehMode);
-            StreamInt(q->fastcall);
-            StreamInt(q->oldmode);
-            StreamInt(q->novalue);
-            StreamInt(q->temps);
-            StreamInt(q->precolored);
-            StreamInt(q->moved);
-            StreamInt(q->livein);
-            StreamInt(q->liveRegs);
+            StreamIndex(q->ansColor);
+            StreamIndex(q->leftColor);
+            StreamIndex(q->rightColor);
+            StreamIndex(q->scaleColor);
+            StreamIndex(q->flags);
+            StreamIndex(q->definition);
+            StreamIndex(q->available);
+            StreamIndex(q->sourceindx);
+            StreamIndex(q->copy);
+            StreamIndex(q->retcount);
+            StreamIndex(q->sehMode);
+            StreamIndex(q->fastcall);
+            StreamIndex(q->oldmode);
+            StreamIndex(q->novalue);
+            StreamIndex(q->temps);
+            StreamIndex(q->precolored);
+            StreamIndex(q->moved);
+            StreamIndex(q->livein);
+            StreamIndex(q->liveRegs);
         }
     });
 }
 static void StreamSymbolList(const std::vector<SimpleSymbol*>& list)
 {
-    StreamInt(list.size());
+    StreamIndex(list.size());
     for (auto s : list)
         StreamSymbol(s);
 }
@@ -540,7 +540,7 @@ static void StreamHeader()
 {
     StreamBuffer(magic, strlen(magic));
     StreamIntValue(&fileVersion, sizeof(fileVersion));
-    StreamInt(architecture);
+    StreamIndex(architecture);
 }
 static void StreamParams()
 {
@@ -554,14 +554,14 @@ static void StreamXParams()
         StreamString(compilerName);
         StreamString(intermediateName);
         StreamString(backendName);
-        StreamInt(showBanner);
-        StreamInt(verbosity);
-        StreamInt(assembling);
-        StreamInt(dataAlign);
-        StreamInt(bssAlign);
-        StreamInt(constAlign);
-        StreamInt(nextLabel);
-        StreamInt(registersAssigned);
+        StreamIndex(showBanner);
+        StreamIndex(verbosity);
+        StreamIndex(assembling);
+        StreamIndex(dataAlign);
+        StreamIndex(bssAlign);
+        StreamIndex(constAlign);
+        StreamIndex(nextLabel);
+        StreamIndex(registersAssigned);
         StreamString(prm_assemblerSpecifier);
         StreamString(prm_libPath);
         StreamString(prm_include);
@@ -576,7 +576,7 @@ static void StreamXParams()
         StreamStringList(libIncludes);
         StreamStringList(toolArgs);
         StreamStringList(prm_Using);
-        StreamInt(bePragma.size());
+        StreamIndex(bePragma.size());
         for (auto s : bePragma)
         {
             StreamString(s.first);
@@ -605,12 +605,12 @@ static void StreamTypes()
 static void StreamMSILProperties()
 {
     StreamBlock(SBT_MSILPROPS, []() {
-        StreamInt(msilProperties.size());
+        StreamIndex(msilProperties.size());
         for (auto&&s : msilProperties)
         {
-            StreamInt(s.prop->fileIndex);
-            StreamInt(s.getter->fileIndex);
-            StreamInt(s.setter->fileIndex);
+            StreamIndex(s.prop->fileIndex);
+            StreamIndex(s.getter->fileIndex);
+            StreamIndex(s.setter->fileIndex);
         }
     });
 }
@@ -624,14 +624,14 @@ static void StreamTypedefs()
 static void StreamBrowse()
 {
     StreamBlock(SBT_BROWSEFILES, []() {
-        StreamInt(browseFiles.size());
+        StreamIndex(browseFiles.size());
         for (auto s : browseFiles)
         {
             StreamBrowseFile(s);
         }
     });
     StreamBlock(SBT_BROWSEINFO, []() {
-        StreamInt(browseInfo.size());
+        StreamIndex(browseInfo.size());
         for (auto s : browseInfo)
         {
             StreamBrowseInfo(s);
@@ -643,7 +643,7 @@ static void StreamInstructions(QUAD *ins)
 {
     int i=0;
     for (QUAD *q = ins; q; q = q->fwd, i++);
-    StreamInt(i);
+    StreamIndex(i);
     for (QUAD *q = ins; q; q = q->fwd)
         StreamInstruction(q);
 
@@ -689,7 +689,7 @@ static void CacheImode(FunctionData* fd, IMODE *im)
 static void StreamIModes(FunctionData* fd)
 {
     StreamBlock(SBT_IMODES, [fd]() {
-        StreamInt(fd->imodeList.size());
+        StreamIndex(fd->imodeList.size());
         for (auto v : fd->imodeList)
         {
             StreamOperand(v);
@@ -705,12 +705,12 @@ static void StreamTemps()
             count++;
 
     }
-    StreamInt(count);
+    StreamIndex(count);
     for (auto t : cachedTemps)
     {
         if (t->loadTemp | t->pushedtotemp)
         {
-            StreamInt(t->i);
+            StreamIndex(t->i);
             int val = 0;
             if (t->loadTemp)
                 val |= 1;
@@ -722,11 +722,11 @@ static void StreamTemps()
 }
 static void StreamLoadCache(std::unordered_map<IMODE*, IMODE*> hash)
 {
-    StreamInt(hash.size());
+    StreamIndex(hash.size());
     for (auto v : hash)
     {
-        StreamInt(cachedImodes[v.first]);
-        StreamInt(cachedImodes[v.second]); // a tempreg number
+        StreamIndex(cachedImodes[v.first]);
+        StreamIndex(cachedImodes[v.second]); // a tempreg number
     }
 }
 static void StreamFunc(FunctionData *fd)
@@ -768,11 +768,11 @@ static void StreamFunc(FunctionData *fd)
         s->fileIndex = 2 * i++ + 1;
 
 
-    StreamInt(fd->name->fileIndex);
-    StreamInt((fd->setjmp_used ? 1 : 0) + (fd->hasAssembly ? 2 : 0));
-    StreamInt(fd->blockCount);
-    StreamInt(fd->tempCount);
-    StreamInt(fd->exitBlock);
+    StreamIndex(fd->name->fileIndex);
+    StreamIndex((fd->setjmp_used ? 1 : 0) + (fd->hasAssembly ? 2 : 0));
+    StreamIndex(fd->blockCount);
+    StreamIndex(fd->tempCount);
+    StreamIndex(fd->exitBlock);
     StreamSymbolList(fd->variables);
     StreamSymbolList(fd->temporarySymbols);
     StreamIModes(fd);
@@ -784,10 +784,10 @@ static void StreamFunc(FunctionData *fd)
 static void StreamData()
 {
     StreamBlock(SBT_DATA, []() {
-        StreamInt(baseData.size());
+        StreamIndex(baseData.size());
         for (auto data : baseData)
         {
-            StreamInt(data->type);
+            StreamIndex(data->type);
             StreamBlock(data->type, [data]() {
                 switch (data->type)
                 {
@@ -795,43 +795,43 @@ static void StreamData()
                     break;
                 case DT_SEG:
                 case DT_SEGEXIT:
-                    StreamInt(data->i);
+                    StreamIndex(data->i);
                     break;
                 case DT_DEFINITION:
-                    StreamInt(data->symbol.sym->fileIndex);
-                    StreamInt(data->symbol.i);
+                    StreamIndex(data->symbol.sym->fileIndex);
+                    StreamIndex(data->symbol.i);
                     break;
                 case DT_LABELDEFINITION:
-                    StreamInt(data->i);
+                    StreamIndex(data->i);
                     break;
                 case DT_RESERVE:
-                    StreamInt(data->i);
+                    StreamIndex(data->i);
                     break;
                 case DT_SYM:
-                    StreamInt(data->symbol.sym->fileIndex);
+                    StreamIndex(data->symbol.sym->fileIndex);
                     break;
                 case DT_SRREF:
-                    StreamInt(data->symbol.sym->fileIndex);
-                    StreamInt(data->symbol.i);
+                    StreamIndex(data->symbol.sym->fileIndex);
+                    StreamIndex(data->symbol.i);
                     break;
                 case DT_PCREF:
-                    StreamInt(data->symbol.sym->fileIndex);
+                    StreamIndex(data->symbol.sym->fileIndex);
                     break;
                 case DT_FUNCREF:
-                    StreamInt(data->symbol.sym->fileIndex);
-                    StreamInt(data->symbol.i);
+                    StreamIndex(data->symbol.sym->fileIndex);
+                    StreamIndex(data->symbol.i);
                     break;
                 case DT_LABEL:
-                    StreamInt(data->i);
+                    StreamIndex(data->i);
                     break;
                 case DT_LABDIFFREF:
-                    StreamInt(data->diff.l1);
-                    StreamInt(data->diff.l2);
+                    StreamIndex(data->diff.l1);
+                    StreamIndex(data->diff.l2);
                     break;
                 case DT_STRING:
                 {
                     bool instring = false;
-                    StreamInt(data->astring.i);
+                    StreamIndex(data->astring.i);
                     for (int i = 0; i < data->astring.i; i++)
                     {
                         StreamByte(data->astring.str[i]);
@@ -892,28 +892,28 @@ static void StreamData()
                     StreamIntValue(&data->i, 8);
                     break;
                 case DT_VIRTUAL:
-                    StreamInt(data->symbol.sym->fileIndex);
-                    StreamInt(data->symbol.i);
+                    StreamIndex(data->symbol.sym->fileIndex);
+                    StreamIndex(data->symbol.i);
                     break;
                 case DT_ENDVIRTUAL:
-                    StreamInt(data->symbol.sym->fileIndex);
+                    StreamIndex(data->symbol.sym->fileIndex);
                     break;
                 case DT_ALIGN:
-                    StreamInt(data->i);
+                    StreamIndex(data->i);
                     break;
                 case DT_VTT:
-                    StreamInt(data->symbol.sym->fileIndex);
-                    StreamInt(data->symbol.i);
+                    StreamIndex(data->symbol.sym->fileIndex);
+                    StreamIndex(data->symbol.i);
                     break;
                 case DT_IMPORTTHUNK:
-                    StreamInt(data->symbol.sym->fileIndex);
+                    StreamIndex(data->symbol.sym->fileIndex);
                     break;
                 case DT_VC1:
-                    StreamInt(data->symbol.sym->fileIndex);
+                    StreamIndex(data->symbol.sym->fileIndex);
                     break;
                 case DT_AUTOREF:
-                    StreamInt(data->symbol.sym->fileIndex);
-                    StreamInt(data->symbol.i);
+                    StreamIndex(data->symbol.sym->fileIndex);
+                    StreamIndex(data->symbol.i);
                     break;
                 case DT_FUNC:
                     StreamFunc(data->funcData);
@@ -926,10 +926,10 @@ static void StreamData()
 void WriteText()
 {
     StreamBlock(SBT_TEXT, []() {
-        StreamInt(textOffset);
+        StreamIndex(textOffset);
         for (auto&& t : textRegion)
         {
-            StreamInt(t.size());
+            StreamIndex(t.size());
             for (auto c : t)
                 StreamByte(c);
         }

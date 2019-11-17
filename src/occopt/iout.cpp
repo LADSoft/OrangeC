@@ -124,7 +124,7 @@ static void iop_line(QUAD* q)
 
 static void iop_passthrough(QUAD* q)
 {
-    oprintf(icdFile, "%s\n", (char*)q->dc.left);
+    oprintf(icdFile, "PASSTHROUGH\n");
 }
 static void iop_datapassthrough(QUAD* q)
 {
@@ -626,7 +626,7 @@ static void iop_setne(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_setl(QUAD* q)
+    static void iop_setl(QUAD* q)
 {
     putset(q, "S<");
 }
@@ -1300,10 +1300,10 @@ void put_code(QUAD* q)
  */
 {
     int i;
-    if (q->block && q->block->head == q)
-    {
-        oprintf(icdFile, "block %d\n", q->block->blocknum);
-    }
+//    if (q->block && q->block->head == q)
+//    {
+//        oprintf(icdFile, "block %d\n", q->block->blocknum);
+//    }
     (*oplst[q->dc.opcode])(q);
     if (q->genConflict)
         oputc('^', icdFile);
@@ -1420,7 +1420,7 @@ static void PutData(BaseData* data)
         nl();
         break;
     case DT_LABDIFFREF:
-        oprintf(icdFile, "\tDC.D L_%d-L_%d", data->diff.l1, data->diff.l2);
+        oprintf(icdFile, "\tDC.I L_%d-L_%d", data->diff.l1, data->diff.l2);
         nl();
         break;
     case DT_STRING:
@@ -1446,6 +1446,7 @@ static void PutData(BaseData* data)
                     nl();
                 }
                 oprintf(icdFile, "\tDC.B 0x%x", data->astring.str[i]);
+                nl();
             }
         }
     }
@@ -1534,7 +1535,7 @@ static void PutData(BaseData* data)
         oprintf(icdFile, "\tGOTO\t%s:PC", data->symbol.sym->outputName);
         break;
     case DT_IMPORTTHUNK:
-        oprintf(icdFile, "\tGOTO [%s]\n", data->symbol.sym->name);
+        oprintf(icdFile, "\tGOTO [%s]\n", data->symbol.sym->outputName);
         break;
     case DT_VC1:
         oprintf(icdFile, "\tGOTO [[this] + %d]\n", data->symbol.i);

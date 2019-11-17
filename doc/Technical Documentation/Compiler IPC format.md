@@ -18,7 +18,7 @@ the streamed data, preferring to refer to them by the name given in the source c
 
 At the lowest level, various structures such as the type structure and symbol structure are being streamed.
 In this document, we will be considering things in a general sense and won't delve into exact details of
-what is being streamed for each item.
+what is being streamed for each low-level structure.
 
 
 ## 1.0.0 Multiple input files
@@ -27,7 +27,7 @@ The streamed data is placed in shared memory.   Since size is always implicitly 
 data for multiple input files successively into the same shared memory, concatening one immediately after the 
 other.   The handling for multiple input files is that simple, although in practice this is augmented by a 
 list of input files that is found inside the streamed data.   The remainder of this document will focus 
-on the data found in just one of the pieces of streamed data.
+on the data found in just one of stream datas.
 
 ## 1.1.0 Overall Format
 
@@ -58,7 +58,7 @@ It is always known whether to expect a block token, based on context.   Block to
 are information as to whether it is the beginning or ending of a block so that means there are effectively a maximum of 64 block
 types.   The block types are currently separated into two categories, which are determined based on context.
 
-block tokens have bit 6 set if it is the begin token, or bit 7 set if it is the end token.
+Block tokens have bit 6 set if it is the begin token, or bit 7 set if it is the end token.
 
 An end token has to be given for each begin token.
 
@@ -95,13 +95,13 @@ usually also be spelled out with block tokens around each list element.
 After streaming the count of items, each list element is streamed in the order it exists in the list.
 
 For example, a list of strings would start with a count of the number of strings, followed by count number of
-strings.  Each string would have a count, then data bytes for the string.
+strings.  Each string would also have a count, then data bytes for the string.
 
 ## 1.2.6 text
 
-when text is encountered, for example for the name of a symbol or for line information, the text is
+When text is encountered, for example for the name of a symbol or for line information, the text is
 placed into a separete 'text' section.   When streaming such text, the offset into the text section 
-is streamed in place of the actual text.
+is streamed in place of the actual text.   The text section is streamed into the file last.
 
 ## 1.2.6 symbol indices
 
@@ -241,8 +241,8 @@ things such as integer or floating point values, references to symbols, and so f
 e.g. for a structure defined with a value there would be several data references, usually one per member unless the member
 is itself a structure or array and then those elements get enumerated.
 
-For example the DT_UINT stream type is followed by a 4-byte integer value, while the DT_SYM would be followed by a
-symbol index; it is defining a symbolic label in the text.  ST_SYMREF would be followed by a symbol reference and would
+For example the DT_UINT stream type is followed by a 4-byte integer value, while the DT_DEFINITION would be followed by a
+symbol index; it is defining a symbolic label in the text.  DT_SYM would be followed by a symbol reference and would
 define data which is the reference to a symbol.  And so forth.   The backend can parse this data directly into an ASM file
 or into segments...
 
@@ -250,23 +250,24 @@ This document isn't going to detail every streamed type but it will go into the 
 
 ## 10.1.0 Streaming functions
 
-Streaming a function consists of streaming various administrative details about the function.
+Streaming a function consists of streaming various administrative details about the function.   This information is kept
+and streamed on a per-function basis.
 
 Some of the salient features we want to consider are the list of variables defined by the function; the list
 of temporaries which may have to be placed on the stack; the list of instructions and their operands; a list of
 flags for temporaries; and the list of load temporaries.
 
 The lists of variables and temporaries are symbol tables similar to the global and external symbol tables;  they
-are lists of symbols streamed in exactly the same manner.   Note that the unstreamer can tell by context whether
+are lists of symbols streamed in exactly the same manner as before.   Note that the unstreamer can tell by context whether
 to use these tables rather than the global/external tables when interpreting symbol indexes.
 
-Variables and temporaries can be referenced after the function body is processed, e.g. by exception table processing for
+Variables and temporaries can sometimes be referenced after the function body is processed, e.g. by exception table processing for
 the function.   The exception information needs location about where on the stack to find variables to destroy.
 
 Operands are oft-repeated and need to be kept the same for each use, so they are collected and streamed 
 independently in a list.  See section 10.2.0 for details.
 
-Instructions are also streamed in a list.   Note there are 'special' instructions which amount to being assembly
+Instructions are also streamed in a list.   Note there are 'passthrough' instructions which amount to being target assembly
 language instructions passed through from the parser to the backend.   This is somewhat tailored to the x86 
 at present but in future could be generalized to other architectures.
 
@@ -279,16 +280,16 @@ Section 10.5.0 details how a sparse list of load temporaries is stored.
 ## 10.2.0 Operands
 
 Intermediate language instructions are usually three-operand expressions, usually with one operand being 
-assigned to and the other two operands being the inputs.   For example an ADD instruction has a target 
+assigned to and the other two operands being the inputs.   For example an addition instruction has a target 
 and two inputs that are added together.   
 
 This isn't always the case, with some instructions such as a  parameter specification or gosub instruction 
 only having one operand which isn't the target, and other  instructions having a label instead of the target.  
-However, in general instructions are saved as if they are an opcode with three operands.
+However, in general instructions are streamed as if they are an opcode with three operands.
 
 Operands must be handled specially for the optimizer, for example an operand which refers to a variable 
 'i' directly must be exactly the same object as any other operand referring to that same variable (although if there
-are multiple variables 'i' in the same procedure each can be a unique address).
+are multiple variables 'i' in the same procedure each is a unique object).
 
 Therefore operands are gathered from the instruction stream first and then each unique instance is streamed out.
 The instance index is used later when streaming instructions.  This is called streaming the IMODE list in the code.
@@ -303,11 +304,11 @@ but a later target-specific optimization can generate more complex sets of expre
 ## 10.2.1 Expressions
 
 Expressions are used in the operands for the intermediate language instructions, and in the operands for streamed
-assembly language instructions.   An expression consits of the expression type, and two optional sub-expressions.
+assembly language instructions.   An expression consists of the expression type, and two optional sub-expressions.
 An expression with all its subexpressions and all their subexpressions combined is an expression tree.
 
-For example an ADD expression adds the 'left' expression to the 'right' expression and returns a result.  an
-INTEGER expression returns an integer value.   A symbolic expression returns the address of some symbol, which
+For example an addition expression adds the 'left' expression to the 'right' expression and returns a result.  an
+integer expression holds an integer value.   A symbolic expression holds the address of some symbol, which
 can be either user-defined or compiler-defined.   Symbolic expressions are further broken down by type, for example
 there is one for global variables, one for auto variables, one for variables that can be accessed by the program counter
 (e.g. subroutines) and one for temporary variables.
@@ -344,6 +345,8 @@ The temporary variables are compiler-generated placeholders for intermediate res
 program.   By the end of the optimization process, some will be removed, others will be in registers, and still others
 will be placed on the stack.
 
+Other operands might be constants, variable addresesses, or variable values.
+
 The intermediate language has instructions for things like arithmetic functions, conditional branches, gosubs and
 accompanying parameter pushes/adjustments, and block copy/clear instructions used in structure operations.   It also
 includes a couple of advanced concepts used to ease the generation of C++ programs.
@@ -355,11 +358,11 @@ The intermediate language is specified in a separate document.
 ## 10.4.0 Temporary flags
 
 Some boolean information about temporaries has to be propagated from the front end to the optimizer, to allow
-various optimizations.   This information is expected to be sparse.   A list of temporaries is streamed,
-each item being accompanied with the boolean information.
+various optimizations.   This information is expected to be sparse compared to the number of temporaries typically in use.
+A list of temporaries is streamed, each item being accompanied with the boolean information.
 
 ## 10.5.0 Load Temporaries
 
 A list of which temporaries essentially load from user-defined variables is valuable for some aspects of optimizations.
-This list is expected to be rather sparse.  Each list element has two components: one is the number of the temporary, 
-and the other is the imode index for the imode that the temporary loads from.
+This list is expected to be sparse compared to the number of temporaries.  Each list element has two components: one 
+is the number of the temporary, and the other is the imode index for the imode that the temporary loads from.

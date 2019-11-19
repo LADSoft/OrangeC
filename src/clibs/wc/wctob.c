@@ -39,5 +39,5 @@
 
 int wctob (wint_t c)
 {
-  return (c >= 0 && c < 0x80) ? c : EOF;
+  return (c >= 0 && c < 0x100) ? c : EOF;
 }

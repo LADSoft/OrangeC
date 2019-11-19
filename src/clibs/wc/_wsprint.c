@@ -35,6 +35,7 @@
  */
 
 #include <wctype.h>
+#include <wchar.h>
 #include <math.h>
 #include <time.h>
 #include <locale.h>
@@ -51,8 +52,29 @@ extern int _e_min_exp_digit;  /* min exp digits for %e (stdc is 2, MS is 3) */
 #endif
 
 #define NUM_SIZE 100
-#define PUTCH(x)  fputwc(x, __stream)
-#define PUTSTR(x) fputws(x, __stream)
+
+static inline void PUTCH(wchar_t x, FILE* stream)
+{
+     if (stream->flags & _F_BUFFEREDSTRING)
+     {
+         fputwc(x, stream);
+     }
+     else
+     {
+         char buf[32];
+         int n = wcrtomb(buf, x, (mbstate_t*)stream->extended->mbstate);
+         if (n > 0)
+         {
+             buf[n] = '\0';
+             fputs(buf, stream);
+         }
+     }
+}
+static inline void PUTSTR(wchar_t* x, FILE* stream)
+{
+	while (*x)
+		PUTCH(*x++, stream);
+}
 
 extern int fnd(unsigned char *buf, int index);
 extern int fextractdouble(long double *fmant, int *fexp, int *fsign, unsigned char *buf);
@@ -98,16 +120,16 @@ static void justifiedOutput(FILE *__stream, wchar_t *buf, int ljustify, int widt
 	if (ljustify)
 	{
 		int l;
-		PUTSTR(buf);
+		PUTSTR(buf, __stream);
 		for (l=wcslen(buf); l < width; l++)
-			PUTCH(pad);
+			PUTCH(pad, __stream);
 	}
 	else
 	{
 		int l;
 		for (l=wcslen(buf); l < width; l++)
-			PUTCH(pad);
-		PUTSTR(buf);
+			PUTCH(pad, __stream);
+		PUTSTR(buf, __stream);
 	}
 	if (xx)
 	{
@@ -227,7 +249,7 @@ wchar_t *__wonetostr(FILE *__stream, const wchar_t *restrict format, void *restr
    fbuf = alloca(fbufsize * sizeof(wchar_t));
    switch (type) {
 		case '%':
-			PUTCH('%');
+			PUTCH('%', __stream);
 			(*written)++;
 			break;
 		case 'c':
@@ -237,7 +259,7 @@ wchar_t *__wonetostr(FILE *__stream, const wchar_t *restrict format, void *restr
             ch = *(int *)arg;
 			if (!ljustify && width > 1)
 				justifiedOutput(__stream, "", 0, width-1, ' ', written);
-			PUTCH(ch);
+			PUTCH(ch, __stream);
 			(*written)++;
 			if (ljustify && width > 1)
 				justifiedOutput(__stream, "", 1, width-1, ' ', written);
@@ -351,7 +373,7 @@ dofloat:
 				fmant = *(double *)arg;
 			 }
 #ifndef USE_FLOAT
-			PUTSTR(L"(FP not linked)");
+			PUTSTR(L"(FP not linked)", __stream);
 			(*written)+=wcslen(L"(FP not linked)");
 #else
     		fbp = fbuf;
@@ -612,7 +634,23 @@ doinf:
 		    (*count)++;
             xxx = *(wchar_t **)arg ;
             if (xxx == NULL)
+            {
                 xxx = L"(null)";
+                lc = 1;
+            }
+            else if (!lc)
+            {
+                 char *yyy = xxx;
+                 int n = mbsrtowcs(NULL, &yyy, 10000, (mbstate_t*)__stream->extended->mbstate);
+                 if (n > 0)
+                 {
+                      yyy = malloc(n+1);
+                      if (!yyy)
+                          return format + wcslen(format);
+                      mbsrtowcs(yyy, &xxx, 10000, (mbstate_t*)__stream->extended->mbstate);
+                      xxx = yyy;
+                 }
+            }
 			fxs = wcslen(xxx);
 			if (prec > 0 && prec < fxs)
 			{
@@ -626,6 +664,8 @@ doinf:
 			if (hold)
 				xxx[fxs] = hold;
 		}
+            if (!lc)
+                 free(xxx);
 			break;
         case 'p':
          leadzero = 1 ;
@@ -702,7 +742,7 @@ doinf:
 			{
 				if (leadzero)
 				{
-					PUTCH(signch);
+					PUTCH(signch, __stream);
 					(*written)++;
 				}
 				else
@@ -714,19 +754,19 @@ doinf:
             if (prefixed)
                 if ((type == 'o' || type == 'b') && sz[0] != '0')
 				{
-					PUTCH('0');
+					PUTCH('0', __stream);
 					(*written)++;
 				}
                 else if ((type == 'x') && c)
 				{
-					PUTCH('0');
-					PUTCH('X');
+					PUTCH('0', __stream);
+					PUTCH('X', __stream);
 					(*written)+=2;
 				}
 			justifiedOutput(__stream, sz, ljustify, width, leadzero ? '0' : ' ', written);
 			break;
 		default:
-			PUTCH(format[-1]);
+			PUTCH(format[-1], __stream);
 			(*written)++;
 			break;
 	}

@@ -1100,6 +1100,7 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
     ssl.tmpl = NULL;
     addStructureDeclaration(&ssl);
     ths = makeID(sc_member, &stdpointer, NULL, "$this");
+    SetLinkerNames(ths, lk_cdecl);
     lambda_insert(ths, lambdas);
     if (MATCHKW(lex, begin))
     {

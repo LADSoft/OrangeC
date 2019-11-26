@@ -183,7 +183,15 @@ bool comparetypes(TYPE* typ1, TYPE* typ2, int exact)
     if (typ1->type == bt___object)  // object matches anything
         return true;
     if (typ1->type == typ2->type && (isstructured(typ1) || (exact && typ1->type == bt_enum)))
-        return typ1->sp == typ2->sp;
+    {
+        SYMBOL* s1 = typ1->sp;
+        SYMBOL* s2 = typ2->sp;
+        if (s1->mainsym)
+            s1 = s1->mainsym;
+        if (s2->mainsym)
+            s2 = s2->mainsym;
+        return s1 == s2;
+    }
     if (typ1->type == typ2->type || (!exact && isarithmetic(typ2) && isarithmetic(typ1)))
         return true;
     if (isfunction(typ1) && isfunction(typ2) && typ1->sp->attribs.inheritable.linkage == typ2->sp->attribs.inheritable.linkage)

@@ -2083,7 +2083,7 @@ int opt0(EXPRESSION** node)
                 TEMPLATESELECTOR* find = tsl->next->next;
                 if (tsl->next->isTemplate)
                 {
-                    TEMPLATEPARAMLIST* current = tsl->next->templateParams;
+                    TEMPLATEPARAMLIST* current = SolidifyTemplateParams(tsl->next->templateParams);
                     sym = GetClassTemplate(ts, current, true);
                 }
                 if (sym && sym->tp->type == bt_templateselector)

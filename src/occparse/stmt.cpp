@@ -3518,15 +3518,19 @@ static void handleInlines(SYMBOL* funcsp)
         }
     }
 }
+static int count8;
 void parseNoexcept(SYMBOL* funcsp)
 {
     if (funcsp->deferredNoexcept)
     {
-        STRUCTSYM s;
+        STRUCTSYM s, t;
         if (funcsp->parentClass)
         {
             s.str = funcsp->parentClass;
             addStructureDeclaration(&s);
+            t.tmpl = funcsp->parentClass->templateParams;
+            if (t.tmpl)
+                addTemplateDeclaration(&t);
         }
         LEXEME* lex = SetAlternateLex(funcsp->deferredNoexcept);
         SYMLIST* hr = basetype(funcsp->tp)->syms->table[0];
@@ -3552,7 +3556,12 @@ void parseNoexcept(SYMBOL* funcsp)
         }
         SetAlternateLex(nullptr);
         if (funcsp->parentClass)
+        {
+            if (t.tmpl)
+                dropStructureDeclaration();
             dropStructureDeclaration();
+
+        }
     }
 }
 LEXEME* body(LEXEME* lex, SYMBOL* funcsp)

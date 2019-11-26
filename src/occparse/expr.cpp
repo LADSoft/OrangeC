@@ -413,6 +413,7 @@ static void tagNonConst(SYMBOL* sym, TYPE* tp)
         sym->nonConstVariableUsed |= !isconst(tp);
     }
 }
+
 static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, bool* ismutable, int flags)
 {
     char idname[512];
@@ -5221,7 +5222,7 @@ static LEXEME* expression_sizeof(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
         {
             EXPRESSION* exp1 = nullptr;
             lex = variableName(lex, funcsp, nullptr, tp, &exp1, nullptr, _F_PACKABLE | _F_SIZEOF);
-            if (!exp1 || !exp1->v.sp->tp->templateParam->p->packed)
+            if (!exp1 || !exp1->v.sp->tp->templateParam || !exp1->v.sp->tp->templateParam->p->packed)
             {
                 //                error(ERR_SIZEOFELLIPSE_NEEDS_TEMPLATE_PACK);
                 *tp = &stdunsigned;

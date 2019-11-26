@@ -3164,9 +3164,15 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_
         {
             if (isstructured(tppp))
             {
-                if (basetype(tpa)->sp != basetype(tppp)->sp && !sameTemplate(tppp, tpa))
+                SYMBOL *s1 = basetype(tpa)->sp;
+                SYMBOL *s2 = basetype(tppp)->sp;
+                if (s1->mainsym)
+                    s1 = s1->mainsym;
+                if (s2->mainsym)
+                    s2 = s2->mainsym;
+                if (s1 != s2 && !sameTemplate(tppp, tpa))
                 {
-                    if (classRefCount(basetype(tppp)->sp, basetype(tpa)->sp) == 1)
+                    if (classRefCount(s2, s1) == 1)
                     {
                         seq[(*n)++] = CV_DERIVEDFROMBASE;
                     }

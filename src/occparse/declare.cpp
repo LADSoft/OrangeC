@@ -2552,7 +2552,7 @@ LEXEME* getBasicType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** strSym_out
                     SYMBOL* sp;
                     lex = nestedSearch(lex, &sp, nullptr, nullptr, nullptr, nullptr, false, storage_class, true, true);
                     if (sp)
-                        *tp = sp->tp;
+                        tn = sp->tp;
                 }
                 else
                 {
@@ -2859,8 +2859,6 @@ founddecltype:
                             TEMPLATEPARAMLIST* lst = nullptr;
                             if (MATCHKW(lex, lt))
                             {
-                                static int count = 0;
-                                count++;
                                 if (sp->parentTemplate)
                                     sp = sp->parentTemplate;
 

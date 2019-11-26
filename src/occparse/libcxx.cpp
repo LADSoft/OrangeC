@@ -24,6 +24,7 @@
  */
 
 #include "compiler.h"
+#include <stack>
 
 extern const char* overloadNameTab[];
 extern TYPE stdint;
@@ -658,8 +659,22 @@ static bool is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** t
                         }
                         temp = temp->next;
                     }
+                    std::stack<SYMBOL*> stk;
+                    for (auto spl = cons->tp->syms->table[0]; spl; spl = spl->next)
+                    {
+                        if (spl->p->templateParams)
+                        {
+                            stk.push(spl->p);
+                            PushPopTemplateArgs(spl->p, true);
+                        }
+                    }
                     rv = GetOverloadedFunction(tp, &funcparams.fcall, cons, &funcparams, nullptr, false, false, false, _F_SIZEOF) !=
                          nullptr;
+                    while (stk.size())
+                    {
+                        PushPopTemplateArgs(stk.top(), false);
+                        stk.pop();
+                    }
                     temp = funcparams.arguments;
                     while (temp)
                     {

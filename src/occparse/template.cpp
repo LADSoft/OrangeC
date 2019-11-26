@@ -253,8 +253,17 @@ bool templatecomparetypes(TYPE* tp1, TYPE* tp2, bool exact)
     }
     if (!comparetypes(tp1, tp2, exact))
         return false;
+    if (isint(tp1) && basetype(tp1)->btp &&basetype(tp1)->btp->type == bt_enum)
+        tp1 = basetype(tp1)->btp;
+    if (isint(tp2) && basetype(tp2)->btp &&basetype(tp2)->btp->type == bt_enum)
+        tp2 = basetype(tp2)->btp;
     if (basetype(tp1)->type != basetype(tp2)->type)
         return false;
+    if (basetype(tp1)->type == bt_enum)
+    {
+        if (basetype(tp1)->sp != basetype(tp2)->sp)
+            return false;
+    }
     return true;
 }
 void TemplateGetDeferred(SYMBOL* sym)
@@ -1058,7 +1067,9 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
                 if (!tp)
                     tp = &stdint;
                 else if (tp && !templateNestingCount)
+                {
                     tp = PerformDeferredInitialization(tp, nullptr);
+                }
                 if (MATCHKW(lex, begin))  // initializer list?
                 {
                     LEXEME* oldlex = lex;
@@ -2318,6 +2329,61 @@ bool TemplateIntroduceArgs(TEMPLATEPARAMLIST* sym, TEMPLATEPARAMLIST* args)
     }
     return true;
 }
+TYPE* SolidifyType(TYPE *tp)
+{
+    for (auto v = tp; v; v = v->btp)
+    {
+        if (isstructured(v))
+        {
+            TYPE *rv = nullptr, **last = &rv;
+            for (auto v = tp; v; v = v->btp)
+            {
+                *last = (TYPE*)Alloc(sizeof(TYPE));
+                **last = *v;
+                last = &(*last)->btp;
+            }
+            UpdateRootTypes(rv);
+            for (auto v = rv; v; v = v->btp)
+                if (isstructured(v))
+                {
+                    SYMBOL *old = basetype(v)->sp;
+                    basetype(v)->sp = clonesym(old);
+                    SYMBOL *sym = basetype(v)->sp;
+                    if (!sym->mainsym)
+                        sym->mainsym = old;
+                    TYPE *tp1 = (TYPE *)Alloc(sizeof(TYPE));
+                    *tp1 = *sym->tp;
+                    sym->tp = tp1;
+                    sym->tp->sp = sym;
+                    sym->templateParams = SolidifyTemplateParams(copyParams(sym->templateParams, true));
+                    UpdateRootTypes(sym->tp);
+                    break;
+                }
+            return rv;
+        }
+    }
+    return tp;
+}
+TEMPLATEPARAMLIST* SolidifyTemplateParams(TEMPLATEPARAMLIST*in)
+{
+    for (auto v = in; v; v = v->next)
+    {
+        if (v->p->type == kw_typename)
+        {
+            if (v->p->packed)
+            {
+                for (auto q = v->p->byPack.pack; q; q = q->next)
+                    q->p->byClass.val = SolidifyType(q->p->byClass.val);
+            }
+            else
+            {
+                v->p->byClass.val = SolidifyType(v->p->byClass.val);
+            }
+        }
+    }
+    return in;
+}
+
 static TEMPLATEPARAMLIST* copyParams(TEMPLATEPARAMLIST* t, bool alsoSpecializations)
 {
     if (t)
@@ -2330,7 +2396,7 @@ static TEMPLATEPARAMLIST* copyParams(TEMPLATEPARAMLIST* t, bool alsoSpecializati
             *last = (TEMPLATEPARAMLIST*)Alloc(sizeof(TEMPLATEPARAMLIST));
             (*last)->p = (TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
             *((*last)->p) = *(parse->p);
-            (*last)->argsym = parse->argsym;
+            (*last)->argsym = parse->argsym ? clonesym(parse->argsym) : nullptr;
             sp = (*last)->argsym;
             if (sp)
             {
@@ -2354,7 +2420,7 @@ static TEMPLATEPARAMLIST* copyParams(TEMPLATEPARAMLIST* t, bool alsoSpecializati
                 *last = (TEMPLATEPARAMLIST*)Alloc(sizeof(TEMPLATEPARAMLIST));
                 (*last)->p = (TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
                 *((*last)->p) = *(parse->p);
-                (*last)->argsym = parse->argsym;
+                (*last)->argsym = parse->argsym ? clonesym(parse->argsym) : nullptr;
                 last = &(*last)->next;
                 parse = parse->next;
             }
@@ -3940,6 +4006,68 @@ static void ClearArgValues(TEMPLATEPARAMLIST* params, bool specialized)
         params = params->next;
     }
 }
+static void PushPopValues(TEMPLATEPARAMLIST* params, bool push)
+{
+    while (params)
+    {
+        if (params->p->type != kw_new)
+        {
+            LIST *lst;
+            if (push)
+            {
+                lst = (LIST*)Alloc(sizeof(LIST));
+                lst->next = params->p->stack;
+                params->p->stack = lst;
+            }
+            else
+            {
+                lst = (LIST*)params->p->stack->data;
+                params->p->stack = params->p->stack->next;
+            }
+            if (params->p->packed)
+            {
+                if (push)
+                {
+                    lst->data = params->p->byPack.pack;
+                    PushPopValues(params->p->byPack.pack, push);
+                }
+                else
+                {
+                    params->p->byPack.pack = (TEMPLATEPARAMLIST*)lst;
+                }
+            }
+            else
+            {
+                if (push)
+                {
+                    lst->data = params->p->byClass.val;
+                    if (params->p->type == kw_typename)
+                    {
+                        TYPE *tp = params->p->byClass.val;
+                        if (tp)
+                        {
+                            while (ispointer(tp) || isref(tp))
+                                tp = basetype(tp)->btp;
+                            if (isstructured(tp))
+                            {
+                                PushPopValues(basetype(tp)->sp->templateParams, push);
+                            }
+                            else if (basetype(tp)->type == bt_templateselector)
+                            {
+                                PushPopValues(basetype(tp)->sp->templateSelector->next->templateParams, push);
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    params->p->byClass.val = (TYPE*)lst;
+                }
+            }
+        }
+        params = params->next;
+    }
+}
 static bool Deduce(TYPE* P, TYPE* A, bool change, bool byClass, bool allowSelectors);
 static bool DeduceFromTemplates(TYPE* P, TYPE* A, bool change, bool byClass)
 {
@@ -5335,6 +5463,23 @@ void ScrubTemplateValues(SYMBOL* func)
     if (isstructured(retval) && retval->sp->templateParams && !retval->sp->instantiated && !retval->sp->declaring)
         ClearArgValues(retval->sp->templateParams, retval->sp->specialized);
 }
+void PushPopTemplateArgs(SYMBOL* func, bool push)
+{
+    SYMLIST* templateArgs = basetype(func->tp)->syms->table[0];
+    PushPopValues(func->templateParams, push);
+    while (templateArgs)
+    {
+        TYPE* tp = ((SYMBOL*)templateArgs->p)->tp;
+        while (isref(tp) || ispointer(tp))
+            tp = basetype(tp)->btp;
+        if (isstructured(tp) && basetype(tp)->sp->templateParams && !basetype(tp)->sp->instantiated && !basetype(tp)->sp->declaring)
+            PushPopValues(basetype(tp)->sp->templateParams, push);
+        templateArgs = templateArgs->next;
+    }
+    TYPE* retval = basetype(basetype(func->tp)->btp);
+    if (isstructured(retval) && retval->sp->templateParams && !retval->sp->instantiated && !retval->sp->declaring)
+        PushPopValues(retval->sp->templateParams, push);
+}
 static void TransferClassTemplates(TEMPLATEPARAMLIST* dflt, TEMPLATEPARAMLIST* val, TEMPLATEPARAMLIST* params);
 SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
 {
@@ -6499,7 +6644,7 @@ static void SetAccessibleTemplateArgs(TEMPLATEPARAMLIST* args, bool accessible)
         args = args->next;
     }
 }
-static void SwapMainTemplateArgs(SYMBOL* cls)
+void SwapMainTemplateArgs(SYMBOL* cls)
 {
     if (cls->maintemplate)
     {
@@ -6615,8 +6760,7 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, TEMPLATEPARAMLIST* args, b
             dontRegisterTemplate = templateNestingCount != 0;
             SwapMainTemplateArgs(cls);
             lex = SetAlternateLex(lex);
-            lex =
-                innerDeclStruct(lex, nullptr, cls, false, cls->tp->type == bt_class ? ac_private : ac_public, cls->isfinal, &defd);
+            lex = innerDeclStruct(lex, nullptr, cls, false, cls->tp->type == bt_class ? ac_private : ac_public, cls->isfinal, &defd);
             SetAlternateLex(nullptr);
             SwapMainTemplateArgs(cls);
             lex = reinstateLex;
@@ -8172,7 +8316,6 @@ static void copySyms(SYMBOL* found1, SYMBOL* sym)
 }
 SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
 {
-
     int n = 1, i = 0;
     TEMPLATEPARAMLIST* unspecialized = sp->templateParams->next;
     SYMBOL *found1 = nullptr, *found2 = nullptr;
@@ -9354,7 +9497,34 @@ void propagateTemplateDefinition(SYMBOL* sym)
     else if (sym->deferredCompile && !sym->inlineFunc.stmt)
     {
         int n = PushTemplateNamespace(sym);
+        if (sym->parentClass)
+            SwapMainTemplateArgs(sym->parentClass);
+        STRUCTSYM t, s, r;
+        SYMBOL* thsprospect = (SYMBOL*)basetype(sym->tp)->syms->table[0]->p;
+        t.tmpl = nullptr;
+        r.tmpl = nullptr;
+        if (sym->templateParams)
+        {
+            r.tmpl = sym->templateParams;
+            addTemplateDeclaration(&r);
+        }
+        if (thsprospect && thsprospect->thisPtr)
+        {
+            SYMBOL* spt = basetype(basetype(thsprospect->tp)->btp)->sp;
+            t.tmpl = spt->templateParams;
+            if (t.tmpl)
+                addTemplateDeclaration(&t);
+        }
+        s.str = sym->parentClass;
+        addStructureDeclaration(&s);
         deferredCompileOne(sym);
+        dropStructureDeclaration();
+        if (r.tmpl)
+            dropStructureDeclaration();
+        if (t.tmpl)
+            dropStructureDeclaration();
+        if (sym->parentClass)
+            SwapMainTemplateArgs(sym->parentClass);
         PopTemplateNamespace(n);
     }
     currents = oldList;

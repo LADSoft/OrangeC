@@ -666,6 +666,8 @@ char* mangleType(char* in, TYPE* tp, bool first)
             if (isrrqual(tp))
                 *in++ = 'R';
             tp = basetype(tp);
+            if (isint(tp) && tp->btp && tp->btp->type == bt_enum)
+                tp = tp->btp;
             switch (tp->type)
             {
                 case bt_func:

@@ -1785,6 +1785,7 @@ bool isconstaddress(EXPRESSION* exp)
             return false;
     }
 }
+
 SYMBOL* clonesym(SYMBOL* sym)
 {
     SYMBOL* rv = (SYMBOL*)Alloc(sizeof(SYMBOL));

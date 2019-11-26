@@ -747,7 +747,7 @@ void calculateVirtualBaseOffsets(SYMBOL* sym)
 void deferredCompileOne(SYMBOL* cur)
 {
     LEXEME* lex;
-    STRUCTSYM l, n;
+    STRUCTSYM l, n,x;
     int count = 0;
     LAMBDA* oldLambdas;
     // function body
@@ -984,7 +984,7 @@ TYPE* PerformDeferredInitialization(TYPE* tp, SYMBOL* funcsp)
         }
         if (declaringTemplate(sym))
         {
-            if (sym->instantiated)
+            if (!sym->instantiated)
             {
                 *tpx = sym->tp;
             }
@@ -1007,7 +1007,7 @@ TYPE* PerformDeferredInitialization(TYPE* tp, SYMBOL* funcsp)
             if (sym)
                 *tpx = sym->tp;
         }
-        else if (sym->instantiated)
+        else if (!sym->instantiated)
         {
             *tpx = sym->tp;
         }

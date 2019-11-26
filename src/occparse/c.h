@@ -809,6 +809,7 @@ typedef struct _templateParam
     int resolved : 1;  // packed template has already been resolved.
     SYMBOL* packsym;
     void* hold; /* value held during partial template ordering */
+    LIST* stack;
     union
     {
         // the dflt & val fields must be in the same place for each item

@@ -323,6 +323,7 @@ SYMBOL* getvc1Thunk(int offset)
 }
 void InsertInline(SYMBOL* sym)
 {
+    SYMBOL *sp = sym;
     LIST* temp = (LIST*)Alloc(sizeof(LIST));
     temp->data = sym;
     if (isfunction(sym->tp))
@@ -342,7 +343,6 @@ void InsertInline(SYMBOL* sym)
 }
 void InsertInlineData(SYMBOL* sym)
 {
-
     LIST* temp = (LIST*)Alloc(sizeof(LIST));
     temp->data = sym;
     if (inlineDataHead)

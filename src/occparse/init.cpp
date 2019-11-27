@@ -4016,8 +4016,9 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_c
                         TYPE** tp2 = &sym->tp;
                         while (ispointer(*tp2) || isref(*tp2))
                             tp2 = &basetype(*tp2)->btp;
+                        *tp2 = tp1;
                         if (isstructured(*tp2))
-                            *tp2 = (*tp2)->sp->tp;
+                            *tp2 = basetype(*tp2)->sp->tp;
 
                         if (sym->storage_class != sc_typedef && sym->storage_class != sc_external && isstructured(*tp2) &&
                             !isref(sym->tp) && !(*tp2)->syms)

@@ -243,8 +243,7 @@ static SimpleSymbol* UnstreamSymbol()
             UnstreamIntValue(&rv->offset, 4);
             rv->label = UnstreamIndex();
             rv->templateLevel = UnstreamIndex();
-            rv->flags = (unsigned long long)UnstreamIndex()<< 32;
-            rv->flags |= UnstreamIndex();
+            UnstreamIntValue(&rv->flags, 8);
             rv->sizeFromType = UnstreamIndex();
             rv->align = UnstreamIndex();
             rv->size = UnstreamIndex();
@@ -1029,6 +1028,10 @@ static void ResolveInstruction(QUAD* q, std::map<int, std::string>& texts)
     if (q->altsp)
     {
         ResolveSymbol(q->altsp, texts, globalCache);
+    }
+    if (q->alttp)
+    {
+        ResolveType(q->alttp, texts, typeSymbols);
     }
 }
 static void ResolveSymbol(std::vector<SimpleSymbol*> symbols, std::map<int, std::string>& texts, std::vector<SimpleSymbol*>& table)

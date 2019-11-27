@@ -300,6 +300,8 @@ void ProcessFunction(FunctionData* fd)
         AllocateStackSpace();
     FillInPrologue(intermed_head, currentFunction);
     // post_function_gen(currentFunction, intermed_head);
+    tFree();
+    oFree();
 }
 void ProcessFunctions()
 {
@@ -338,6 +340,7 @@ bool LoadFile(SharedMemory* parserMem)
     BitInit();
     SSAInit();
     oinit();
+    constoptinit();
     SelectBackendData();
     return rv;
 }
@@ -357,6 +360,8 @@ void SaveFile(std::string& name, SharedMemory* optimizerMem)
         fclose(icdFile);
         icdFile = nullptr;
     }
+    localFree();
+    globalFree();
 }
 int main(int argc, char* argv[])
 {

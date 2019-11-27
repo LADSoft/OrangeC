@@ -23,6 +23,7 @@
  */
 
 #include "compiler.h"
+#include <unordered_set>
 
 extern ARCH_ASM* chosenAssembler;
 extern TYPE stdint;
@@ -38,7 +39,7 @@ static SYMBOL* inlinesp_list[MAX_INLINE_NESTING];
 
 static int inlinesp_count;
 static HASHTABLE* vc1Thunks;
-static HASHTABLE* didInlines;
+static std::unordered_set<std::string> didInlines;
 
 static FUNCTIONCALL* function_list[MAX_INLINE_NESTING];
 static int function_list_count;
@@ -51,10 +52,12 @@ void inlineinit(void)
     inlineVTabHead = nullptr;
     inlineDataHead = nullptr;
     vc1Thunks = CreateHashTable(1);
-    didInlines = CreateHashTable(32);
+    didInlines.clear();// = CreateHashTable(32);
 }
-static SYMBOL* inSearch(SYMBOL* sp)
+static bool inSearch(SYMBOL* sp)
 {
+    return didInlines.find(sp->decoratedName) != didInlines.end();
+    /*
     SYMLIST** hr = GetHashLink(didInlines, sp->decoratedName);
     while (*hr)
     {
@@ -64,9 +67,12 @@ static SYMBOL* inSearch(SYMBOL* sp)
         hr = &(*hr)->next;
     }
     return nullptr;
+    */
 }
 static void inInsert(SYMBOL* sym)
 {
+    didInlines.insert(sym->decoratedName);
+                /*
     // assumes the symbol isn't already there...
     SYMLIST** hr = GetHashLink(didInlines, sym->decoratedName);
     SYMLIST* added = (SYMLIST*)Alloc(sizeof(SYMLIST));
@@ -74,6 +80,7 @@ static void inInsert(SYMBOL* sym)
     added->p = (SYMBOL*)sym;
     added->next = *hr;
     *hr = added;
+    */
 }
 static void UndoPreviousCodegen(SYMBOL* sym)
 {
@@ -104,10 +111,8 @@ void dumpInlines(void)
                     }
                     if (!sym->didinline && !sym->dontinstantiate)
                     {
-                        SYMBOL* srch = inSearch(sym);
-                        if (srch)
+                        if (inSearch(sym))
                         {
-//                            sym->mainsym = srch;
                             sym->didinline = true;
                         }
                         else
@@ -240,10 +245,8 @@ void dumpInlines(void)
                 {
                     if (!sym->didinline)
                     {
-                        SYMBOL* srch = inSearch(sym);
-                        if (srch)
+                        if (inSearch(sym))
                         {
-//                            sym->mainsym = srch;
                             sym->didinline = true;
                         }
                         else

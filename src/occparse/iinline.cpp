@@ -226,7 +226,8 @@ static void inlineResetTable(SYMLIST* table)
         sym->imind = nullptr;
         sym->imaddress = nullptr;
         sym->imstore = nullptr;
-        sym->allocate = false;
+        if (sym->anonymous)
+            sym->allocate = false;
         sym->inAllocTable = false;
         table = table->next;
     }

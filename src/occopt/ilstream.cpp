@@ -264,8 +264,7 @@ static void StreamSymbol(SimpleSymbol* sym)
             StreamIntValue(&sym->offset, 4);
             StreamIndex(sym->label);
             StreamIndex(sym->templateLevel);
-            StreamIndex(sym->flags >> 32);
-            StreamIndex(sym->flags & 0xffffffff);
+            StreamIntValue(&sym->flags, 8);
             StreamIndex(sym->sizeFromType);
             StreamIndex(sym->align);
             StreamIndex(sym->size);

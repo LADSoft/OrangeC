@@ -1094,7 +1094,9 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
     if (!*exp)
         *exp = intNode(en_c_i, 0);
     if (sym)
-	sym->allocate = true;
+    {
+        sym->allocate = true;
+    }
     return lex;
 }
 static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, bool* ismutable, int flags)

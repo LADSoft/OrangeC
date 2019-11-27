@@ -463,6 +463,7 @@ st_type SymbolManager::Get(enum e_bt type)
     case bt_typedef:
         return st_typedef;
     case bt_struct:
+    case bt_class:
         return st_struct;
     case bt_union:
         return st_union;

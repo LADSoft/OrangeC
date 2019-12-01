@@ -6746,6 +6746,7 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, TEMPLATEPARAMLIST* args, b
                             }
                         }
                         */
+            SwapMainTemplateArgs(cls);
             pushCount = pushContext(cls, false);
             cls->attribs.inheritable.linkage = lk_virtual;
             cls->tp = (TYPE*)Alloc(sizeof(TYPE));
@@ -6791,6 +6792,7 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, TEMPLATEPARAMLIST* args, b
             templateHeaderCount = oldHeaderCount;
             while (pushCount--)
                 dropStructureDeclaration();
+            SwapMainTemplateArgs(cls);
         }
         else
         {

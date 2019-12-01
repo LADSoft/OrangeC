@@ -139,6 +139,7 @@ void thunkForImportTable(EXPRESSION** exp)
             search->data = newThunk;
             importThunks = search;
             *exp = varNode(en_pc, (SYMBOL*)search->data);
+            GENREF(sym);
         }
     }
 }

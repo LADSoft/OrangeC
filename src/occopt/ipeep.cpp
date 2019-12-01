@@ -639,7 +639,7 @@ void peep_icode(bool branches)
 {
     int i;
     bool changed;
-    golist = (QUAD**)oAlloc(sizeof(QUAD*) * (nextLabel - firstLabel));
+    golist = (QUAD**)calloc(1, sizeof(QUAD*) * (nextLabel - firstLabel));
     scan_gotos(intermed_head);
     scan_abnormal();
     for (i = 0; i < blockCount; i++)
@@ -653,4 +653,5 @@ void peep_icode(bool branches)
             if (blockArray[i])
                 changed |= peep(blockArray[i], branches);
     } while (changed);
+    free(golist);
 }

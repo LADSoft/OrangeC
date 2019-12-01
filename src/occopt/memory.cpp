@@ -35,7 +35,7 @@ static MEMBLK* live;
 static MEMBLK* templates;
 static MEMBLK* conflicts;
 
-static int globalFlag;
+static int globalFlag=1;
 static int globalPeak, localPeak, optPeak, tempsPeak, aliasPeak, livePeak, templatePeak, conflictPeak;
 
 #define MINALLOC (128 * 1024)

@@ -1392,7 +1392,7 @@ static void PutData(BaseData* data)
         nl();
         break;
     case DT_SYM:
-        oprintf(icdFile, "\tDC.A %s", data->symbol.sym->outputName);
+        oprintf(icdFile, "\tDC.A %s+%d", data->symbol.sym->outputName, data->symbol.sym->i);
         nl();
         break;
     case DT_SRREF:

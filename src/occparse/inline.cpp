@@ -148,6 +148,7 @@ void dumpInlines(void)
                     if (sym->dontinstantiate || sym->vtabsp->dontinstantiate)
                     {
                         InsertExtern(sym->vtabsp);
+                        SymbolManager::Get(sym->vtabsp)->dontinstantiate = true;
                         sym->vtabsp->storage_class = sc_external;
                         sym->vtabsp->attribs.inheritable.linkage = lk_c;
                     }

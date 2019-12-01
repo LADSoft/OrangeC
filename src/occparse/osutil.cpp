@@ -128,6 +128,7 @@ CmdSwitchCombineString prm_architecture(switchParser, 0, 0, "architecture");
 
 CmdSwitchString prm_Winmode(switchParser, 'W');
 
+static std::string firstFile;
 enum e_lk getDefaultLinkage() 
 {
     switch (architecture)
@@ -718,6 +719,23 @@ void InsertOneFile(const char* filename, char* path, int drive)
         a = buffer[0];
         buffer[0] = 'a';
     }
+    if (firstFile.empty())
+    {
+        char temp[260];
+        char *p = strrchr(buffer, '/');
+        char *q = strrchr(buffer, '\\');
+        if (q > p)
+            p = q;
+        if (!p)
+            p = buffer;
+        else
+            p++;
+        strcpy(temp, p);
+        Utils::StripExt(temp);
+        if (!cparams.prm_compileonly && !cparams.prm_assemble)
+            Utils::AddExt(temp, ".exe");
+        firstFile = temp;
+    }
     inserted = insert_noncompile_file(buffer);
     if (a)
         buffer[0] = a;
@@ -974,7 +992,7 @@ void ccinit(int argc, char* argv[])
         char **value = prm_file.GetValue();
         for (int i = 1; i < count; i++)
         {
-            InsertAnyFile(argv[i], 0, -1);
+            InsertAnyFile(value[i], 0, -1);
         }   
     }
 
@@ -993,14 +1011,13 @@ void ccinit(int argc, char* argv[])
                 Utils::fatal("Cannot specify output file for multiple input files\pn");
         }
     }
+    else if (!firstFile.empty())
+    {
+        outputFileName = firstFile;
+    }
     else
     {
-        char temp[260];
-        strcpy(temp, argv[1]);
-        Utils::StripExt(temp);
-        if (!cparams.prm_compileonly && !cparams.prm_assemble)
-            Utils::AddExt(temp, ".exe");
-        outputFileName = temp;
+        outputFileName = "unknown";
     }
 
 #else

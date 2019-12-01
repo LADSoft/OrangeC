@@ -1201,6 +1201,7 @@ void dumpInitializers(void)
 #ifndef PARSER_ONLY
     if (!TotalErrors())
     {
+        dumpStaticInitializers();
         dumpDynamicInitializers();
         dumpTLSInitializers();
         dumpDynamicDestructors();
@@ -3937,6 +3938,11 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_c
             sym->assigned = true;
             break;
         case sc_global:
+            SymbolManager::Get(sym)->storage_class = SymbolManager::Get(sym->storage_class);
+            initializingGlobalVar = true;
+            sym->assigned = true;
+            sym->attribs.inheritable.used = true;
+            break;
         case sc_external:
             initializingGlobalVar = true;
             sym->assigned = true;
@@ -3944,6 +3950,7 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_c
             break;
         case sc_static:
         case sc_localstatic:
+            SymbolManager::Get(sym)->storage_class = SymbolManager::Get(sym->storage_class);
             initializingGlobalVar = true;
             sym->assigned = true;
             break;

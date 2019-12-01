@@ -297,6 +297,7 @@ IMODE* make_fimmed(int size, FPF f)
     ap->offset = (SimpleExpression*)Alloc(sizeof(SimpleExpression));
     ap->offset->type = se_f;
     ap->offset->f = f;
+    ap->offset->sizeFromType = size;
     ap->size = size;
     return ap;
 }

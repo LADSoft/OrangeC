@@ -33,7 +33,7 @@ extern BLOCKLIST** blockArray;
 extern std::vector<SimpleSymbol*> externals;
 extern SimpleSymbol* currentFunction;
 
-SimpleExpression* fltexp;
+extern SimpleExpression* fltexp;
 
 int uses_substack;
 
@@ -991,6 +991,7 @@ static int floatsize(IMODE* im)
 
 int x86_examine_icode(QUAD* head)
 {
+    fltexp = nullptr;
     BLOCK* b = nullptr;
     bool changed = false;
     QUAD* hold = head;

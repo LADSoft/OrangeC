@@ -750,6 +750,7 @@ void oa_genfloat(enum e_gt type, FPF* val)
                         if (i != 3)
                             bePrintf(", ");
                     }
+                    beputc('\n');
                 }
                 else
                     bePrintf("\tdd\t%s\n", buf);
@@ -768,6 +769,7 @@ void oa_genfloat(enum e_gt type, FPF* val)
                         if (i != 7)
                             bePrintf(", ");
                     }
+                    beputc('\n');
                 }
                 else
                     bePrintf("\tdq\t%s\n", buf);

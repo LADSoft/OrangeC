@@ -222,7 +222,10 @@ IMODE* make_imaddress(EXPRESSION* node, int size)
     if (sym && sym->storage_class != sc_auto && sym->storage_class != sc_register)
         DecGlobalFlag();
     if (sym)
+    {
+        sym->addressTaken = true;
         sym->imaddress = ap2;
+    }
     return ap2;
 }
 
@@ -2130,7 +2133,7 @@ IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         if (node->type == en_intcall)
             type = i_int;
         ap = ap3 = gen_expr(funcsp, f->fcall, 0, ISZ_UINT);
-        if (ap->mode == i_immed && ap->offset->type == en_pc)
+        if (ap->mode == i_immed && ap->offset->type == se_pc)
         {
             if (f->sp && f->sp->attribs.inheritable.linkage2 == lk_import && ((architecture != ARCHITECTURE_MSIL)))
             {
@@ -2902,7 +2905,7 @@ IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
             {
                 return gen_expr(funcsp, sym->paramSubstitute->left, flags, size);
             }
-            node->v.sp->allocate = true;
+            sym->allocate = true;
             // fallthrough
         case en_pc:
         case en_global:
@@ -2932,6 +2935,7 @@ IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
             }
             rv = ap1; /* return reg */
             sym->imaddress = ap1;
+            sym->addressTaken = true;
             break;
         case en_labcon:
             ap1 = (IMODE*)(IMODE*)Alloc(sizeof(IMODE));

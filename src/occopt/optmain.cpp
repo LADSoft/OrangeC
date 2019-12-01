@@ -43,10 +43,12 @@ extern int tempBottom;
 extern BLOCK** blockArray;
 extern ARCH_ASM* chosenAssembler;
 extern SimpleExpression* objectArray_exp;
+extern SimpleExpression* fltexp;
 extern TEMP_INFO** tempInfo;
 extern int blockMax;
 extern int tempMax;
 extern std::unordered_map<IMODE*, IMODE*> loadHash;
+extern int fastcallAlias;
 
 CmdSwitchParser SwitchParser;
 CmdSwitchBool single(SwitchParser, 's', false, "single");
@@ -313,6 +315,7 @@ void ProcessFunctions()
             functionVariables = v->funcData->variables;
             blockCount = v->funcData->blockCount;
             exitBlock = v->funcData->exitBlock;
+            fastcallAlias = v->funcData->fastcallAlias;
             tempCount = v->funcData->tempCount;
             functionHasAssembly = v->funcData->hasAssembly;
             intermed_head = v->funcData->instructionList;
@@ -320,6 +323,7 @@ void ProcessFunctions()
             while (intermed_tail && intermed_tail->fwd)
                 intermed_tail = intermed_tail->fwd;
             objectArray_exp = v->funcData->objectArray_exp;
+            fltexp = v->funcData->fltexp;
             currentFunction = v->funcData->name;
             loadHash = v->funcData->loadHash;
             ProcessFunction(v->funcData);
@@ -327,8 +331,10 @@ void ProcessFunctions()
             v->funcData->variables = functionVariables;
             v->funcData->blockCount = blockCount;
             v->funcData->exitBlock = exitBlock;
+            v->funcData->fastcallAlias = fastcallAlias;
             v->funcData->tempCount = tempCount;
             v->funcData->instructionList = intermed_head;
+            v->funcData->fltexp = fltexp;
         }
     }
 }
@@ -347,7 +353,7 @@ bool LoadFile(SharedMemory* parserMem)
 void SaveFile(std::string& name, SharedMemory* optimizerMem)
 {
     OutputIntermediate(optimizerMem);
-    if (WriteIcdFile.GetValue() || cparams.prm_icdfile)
+    if (WriteIcdFile.GetValue() || cparams.prm_icdfile && !name.empty())
     {
         char buf[260];
         strcpy(buf, name.c_str());
@@ -383,8 +389,9 @@ int main(int argc, char* argv[])
     regInit();
     alloc_init();
     ProcessFunctions();
-    SaveFile(inputFiles.front(), optimizerMem);
-    if (!single.GetValue())
+    std::string aa = inputFiles.size() ? inputFiles.front() : "";
+    SaveFile(aa, optimizerMem);
+    if (!single.GetValue() && inputFiles.size())
     {
         std::list<std::string> files = inputFiles;
         files.pop_front();

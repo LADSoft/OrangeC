@@ -222,13 +222,16 @@ static void inlineResetTable(SYMLIST* table)
     while (table)
     {
         SimpleSymbol* sym = SymbolManager::Get((SYMBOL*)table->p);
-        sym->imvalue = nullptr;
-        sym->imind = nullptr;
-        sym->imaddress = nullptr;
-        sym->imstore = nullptr;
-        if (sym->anonymous)
-            sym->allocate = false;
-        sym->inAllocTable = false;
+        if (sym->storage_class != scc_localstatic)
+        {
+            sym->imvalue = nullptr;
+            sym->imind = nullptr;
+            sym->imaddress = nullptr;
+            sym->imstore = nullptr;
+            if (sym->anonymous)
+                sym->allocate = false;
+            sym->inAllocTable = false;
+        }
         table = table->next;
     }
 }
@@ -259,7 +262,7 @@ static void inlineCopySyms(HASHTABLE* src)
         while (hr)
         {
             SYMBOL* sym = hr->p;
-            if (!sym->thisPtr && !sym->anonymous && sym->storage_class != sc_parameter)
+            if (!sym->thisPtr && !sym->anonymous && sym->storage_class != sc_parameter && sym->storage_class != sc_localstatic)
             {
                 SimpleSymbol *simpleSym = SymbolManager::Get(sym);
                 if (!simpleSym->inAllocTable)
@@ -306,6 +309,7 @@ IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
 
     if (chosenAssembler->arch->denyopts & DO_NOINLINE)
         return nullptr;
+
     if (cparams.prm_debug)
     {
         f->sp->dumpInlineToFile = true;

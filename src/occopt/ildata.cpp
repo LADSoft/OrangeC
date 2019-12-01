@@ -62,6 +62,7 @@ std::string prm_assemblerSpecifier;
 std::string outputFileName;
 
 SimpleExpression* objectArray_exp;
+SimpleExpression* fltexp;
 
 int exitBlock;
 COMPILER_PARAMS cparams;
@@ -125,6 +126,7 @@ void AddFunction()
     FunctionData* data = new FunctionData;
     data->name = currentFunction;
     data->objectArray_exp = objectArray_exp;
+    data->fltexp = fltexp;
     data->temporarySymbols = temporarySymbols;
     data->variables = functionVariables;
     data->loadHash = loadHash;
@@ -134,6 +136,7 @@ void AddFunction()
     data->exitBlock = exitBlock;
     data->tempCount = tempCount;
     data->blockCount = blockCount;
+    data->fastcallAlias = fastcallAlias;
     val->funcData = data;
 #endif
 }
@@ -347,6 +350,7 @@ void genref(SimpleSymbol* sym, int offset)
 {
     auto v = AddData(DT_SYM);
     v->symbol.sym = sym;
+    v->symbol.i = offset;
     globalCache.push_back(v->symbol.sym);
 }
 
@@ -513,7 +517,7 @@ void gen_virtual(SimpleSymbol* sym, int data)
     v->symbol.i = data;
     v->symbol.sym = sym;
     virtualMode = data;
-    globalCache.push_back(v->symbol.sym);
+//    globalCache.push_back(v->symbol.sym);
 }
 
 /*-------------------------------------------------------------------------*/

@@ -158,6 +158,7 @@ struct SimpleSymbol
             unsigned xc : 1;
             unsigned canThrow : 1;
             unsigned usesEsp : 1;
+            unsigned addressTaken : 1;
         };
         unsigned long long flags;
     };

@@ -189,7 +189,7 @@ static void StreamFloatValue(FPF& fv)
     StreamBlock(STT_FLOAT, [&fv]() {
         StreamIndex(fv.type);
         StreamIndex(fv.sign);
-        StreamIndex(fv.exp);
+        StreamIntValue(&fv.exp, sizeof(int));
         for (int i = 0; i < INTERNAL_FPF_PRECISION; i++)
             StreamIndex(fv.mantissa[i]);
     });
@@ -289,6 +289,7 @@ static void StreamExpression(SimpleExpression* exp)
         {
             StreamIndex(exp->type);
             StreamIndex(exp->flags);
+            StreamIndex(exp->sizeFromType);
             switch (exp->type)
             {
             case se_i:
@@ -310,6 +311,8 @@ static void StreamExpression(SimpleExpression* exp)
             case se_threadlocal:
             case se_pc:
             case se_structelem:
+                if (exp->sp->fileIndex == 0)
+                    printf("hi");
                 StreamIndex(exp->sp->fileIndex);
                 break;
             case se_labcon:
@@ -494,9 +497,16 @@ static void StreamInstruction(QUAD *q)
             else
                 StreamIndex(0);
             if (q->altsp)
-                StreamIndex(q->altsp->fileIndex);
+            {
+                if (q->altsp->storage_class == scc_member || q->altsp->storage_class == scc_type)
+                    StreamIndex(q->altsp->fileIndex | 0x40000000);
+                else
+                    StreamIndex(q->altsp->fileIndex);
+            }
             else
+            {
                 StreamIndex(0);
+            }
             StreamType(q->alttp);
             i = 0;
             for (auto v = (ArgList*)q->altargs; v; v = v->next, i++);
@@ -772,10 +782,12 @@ static void StreamFunc(FunctionData *fd)
     StreamIndex(fd->blockCount);
     StreamIndex(fd->tempCount);
     StreamIndex(fd->exitBlock);
+    StreamIndex(fd->fastcallAlias);
     StreamSymbolList(fd->variables);
     StreamSymbolList(fd->temporarySymbols);
     StreamIModes(fd);
     StreamExpression(fd->objectArray_exp);
+    StreamExpression(fd->fltexp);
     StreamInstructions(fd->instructionList);
     StreamTemps();
     StreamLoadCache(fd->loadHash);
@@ -808,6 +820,7 @@ static void StreamData()
                     break;
                 case DT_SYM:
                     StreamIndex(data->symbol.sym->fileIndex);
+                    StreamIndex(data->symbol.i);
                     break;
                 case DT_SRREF:
                     StreamIndex(data->symbol.sym->fileIndex);
@@ -947,7 +960,7 @@ static void NumberGlobals()
     {
         if (*it)
         {
-            if ((*it)->fileIndex && (!(*it)->dontinstantiate) && ((*it)->storage_class != scc_virtual || (*it)->hasInlineFunc))
+            if ((*it)->fileIndex && !(*it)->dontinstantiate && (*it)->initialized)// && ((*it)->storage_class != scc_virtual || (*it)->hasInlineFunc))
             {
                 *it = 0;
             }

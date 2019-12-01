@@ -73,11 +73,13 @@ struct FunctionData
 {
     SimpleSymbol* name;
     SimpleExpression* objectArray_exp;
+    SimpleExpression* fltexp;
     std::vector<SimpleSymbol*> temporarySymbols;
     std::vector<SimpleSymbol*> variables;
     std::vector<IMODE*> imodeList;
     std::unordered_map<IMODE*, IMODE*> loadHash;
     TEMP_INFO **tempInfo;
+    int fastcallAlias;
     int tempCount;
     int blockCount;
     int exitBlock;

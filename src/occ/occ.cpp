@@ -60,6 +60,8 @@ extern int dataAlign;
 extern int bssAlign;
 extern int constAlign;
 extern std::string outputFileName;
+extern SimpleExpression* fltexp;
+extern int fastcallAlias;
 
 extern bool IsSymbolCharRoutine(const char *, bool);
 bool (*Tokenizer::IsSymbolChar)(const char*, bool) = IsSymbolCharRoutine;
@@ -70,8 +72,6 @@ char infile[260];
 SimpleSymbol* currentFunction;
 extern FILE* outputFile;
 FILE* browseFile;
-
-SimpleExpression* fltexp;
 
 static const char *verbosity = nullptr;
 static FunctionData* lastFunc;
@@ -113,7 +113,17 @@ void outputfile(char* buf, const char* name, const char* ext)
             p = buf;
         else
             p++;
-        strcpy(p, name);
+        const char* r = strrchr(name, '\\');
+        const char* r1 = strrchr(name, '/');
+        if (r1 > r)
+            r = r1;
+        else if (!r)
+            r = r1;
+        if (!r)
+            r = name;
+        else
+            r++;
+        strcpy(p, r);
         Utils::StripExt(buf);
         Utils::AddExt(buf, ext);
     }
@@ -129,12 +139,10 @@ void outputfile(char* buf, const char* name, const char* ext)
 void global(SimpleSymbol* sym, int flags)
 {
     omf_globaldef(sym);
-    if (flags & BaseData::DF_GLOBAL)
+    if (cparams.prm_asmfile)
     {
-        if (cparams.prm_asmfile)
-        {
+        if (sym->storage_class != scc_localstatic && sym->storage_class != scc_static)
             bePrintf("[global %s]\n", sym->outputName);
-        }
     }
     if (flags & BaseData::DF_EXPORT)
     {
@@ -293,6 +301,8 @@ bool ProcessData(const char *name)
             while (intermed_tail && intermed_tail->fwd)
                 intermed_tail = intermed_tail->fwd;
             objectArray_exp = v->funcData->objectArray_exp;
+            fltexp = v->funcData->fltexp;
+            fastcallAlias = v->funcData->fastcallAlias;
             currentFunction = v->funcData->name;
             SetUsesESP(currentFunction->usesEsp);
             generate_instructions(intermed_head);
@@ -371,7 +381,10 @@ int InvokeParser(int argc, char**argv, SharedMemory* parserMem)
     {
         if (args.size())
             args += " ";
-        args += std::string("\"") + argv[i] + "\"";
+        std::string curArg = argv[i];
+        if (curArg[curArg.size() - 1] == '\\')
+            curArg += "\\";
+        args += std::string("\"") + curArg + "\"";
     }
 
     return Utils::ToolInvoke("occparse", verbosity, "-! --architecture \"x86;%s\" %s", parserMem->Name().c_str(), args.c_str());

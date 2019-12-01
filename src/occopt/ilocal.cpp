@@ -60,7 +60,7 @@ void diag(const char *fmt, ...)
 
 }
 
-static void CalculateFastcall(SimpleSymbol* funcsp)
+static void CalculateFastcall(SimpleSymbol* funcsp, std::vector<SimpleSymbol*>& functionVariables)
 {
     fastcallAlias = 0;
 #ifndef CPPTHISCALL
@@ -70,10 +70,8 @@ static void CalculateFastcall(SimpleSymbol* funcsp)
 
     if (chosenAssembler->arch->fastcallRegCount)
     {
-        LIST* hr = funcsp->syms;
-        while (hr)
+        for (auto sym : functionVariables)
         {
-            SimpleSymbol* sym = (SimpleSymbol*)hr->data;
             if (sym->thisPtr)
             {
                 fastcallAlias++;
@@ -99,7 +97,6 @@ static void CalculateFastcall(SimpleSymbol* funcsp)
                 }
                 fastcallAlias++;
             }
-            hr = hr->next;
         }
     }
 }
@@ -168,7 +165,7 @@ static void renameOneSym(SimpleSymbol* sym, int structret)
     bool fastcallCandidate = sym->storage_class == scc_parameter && fastcallAlias &&
         (sym->offset - fastcallAlias * chosenAssembler->arch->parmwidth < chosenAssembler->arch->retblocksize);
 
-    if (!sym->pushedtotemp && (!sym->imaddress || fastcallCandidate) && !sym->inasm && (!sym->inCatch || fastcallCandidate) &&
+    if (!sym->pushedtotemp && (!sym->addressTaken || fastcallCandidate) && !sym->inasm && (!sym->inCatch || fastcallCandidate) &&
         (((chosenAssembler->arch->hasFloatRegs || tp->type < st_f) && tp->type < st_void) ||
         (tp->type == st_pointer && tp->btp->type != st_func) || tp->type == st_lref || tp->type == st_rref) &&
             (sym->storage_class == scc_auto || sym->storage_class == scc_register || sym->storage_class == scc_parameter) &&
@@ -274,7 +271,7 @@ static void renameToTemps(std::vector<SimpleSymbol*>& functionVariables)
 {
     LIST* lst;
     bool doRename = true;
-    CalculateFastcall(currentFunction);
+    CalculateFastcall(currentFunction, functionVariables);
     doRename &= (cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size) && !functionHasAssembly;
     /* if there is a setjmp in the function, no variable gets moved into a reg */
     doRename &= !(setjmp_used);

@@ -168,7 +168,7 @@ static void UnstreamFloatValue(FPF& fv)
     UnstreamBlock(STT_FLOAT, [&fv]() {
         fv.type = UnstreamIndex();
         fv.sign = UnstreamIndex();
-        fv.exp = UnstreamIndex();
+        UnstreamIntValue(&fv.exp, sizeof(int));
         for (int i = 0; i < INTERNAL_FPF_PRECISION; i++)
             fv.mantissa[i] = UnstreamIndex();
     });
@@ -279,6 +279,7 @@ static SimpleExpression* UnstreamExpression()
             rv = (SimpleExpression*)Alloc(sizeof(SimpleExpression));
             rv->type = (se_type)type;
             rv->flags = UnstreamIndex();
+            rv->sizeFromType = UnstreamIndex();
             switch (rv->type)
             {
             case se_i:
@@ -754,12 +755,14 @@ static FunctionData *UnstreamFunc()
     fd->blockCount = UnstreamIndex();
     fd->tempCount = UnstreamIndex();
     fd->exitBlock = UnstreamIndex();
+    fd->fastcallAlias = UnstreamIndex();
     temps.clear();
     temps.resize(fd->tempCount);
     UnstreamSymbolList(fd->variables);
     UnstreamSymbolList(fd->temporarySymbols);
     UnstreamIModes(*fd);
     fd->objectArray_exp = UnstreamExpression();
+    fd->fltexp = UnstreamExpression();
     fd->instructionList = UnstreamInstructions(*fd);
     UnstreamTemps();
     UnstreamLoadCache(fd, fd->loadHash);
@@ -795,6 +798,7 @@ static void UnstreamData()
                     break;
                 case DT_SYM:
                     data->symbol.sym = (SimpleSymbol*)UnstreamIndex();
+                    data->symbol.i = UnstreamIndex();
                     break;
                 case DT_SRREF:
                     data->symbol.sym = (SimpleSymbol*)UnstreamIndex();
@@ -950,11 +954,13 @@ static SimpleSymbol *SymbolName(SimpleSymbol* selection, std::vector<SimpleSymbo
 static void ResolveSymbol(SimpleSymbol*& sym, std::map<int, std::string>& texts, std::vector<SimpleSymbol*>& table);
 static void ResolveType(SimpleType* tp, std::map<int, std::string>& texts, std::vector<SimpleSymbol*>& table)
 {
+    bool ispointer = false;
     while (tp)
     {
+        ispointer |= tp->type == st_pointer || tp->type == st_memberptr;
         if (tp->sp)
         {
-            ResolveSymbol(tp->sp, texts, typeSymbols);
+            ResolveSymbol(tp->sp, texts, !ispointer && tp->type == st_func ? globalCache : typeSymbols);
         }
         tp = tp->btp;
     }
@@ -1027,7 +1033,15 @@ static void ResolveInstruction(QUAD* q, std::map<int, std::string>& texts)
     }
     if (q->altsp)
     {
-        ResolveSymbol(q->altsp, texts, globalCache);
+        if ((int)q->altsp & 0x40000000)
+        {
+            q->altsp = (SimpleSymbol*)((int)q->altsp & 0x3fffffff);
+            ResolveSymbol(q->altsp, texts, typeSymbols);
+        }
+        else
+        {
+            ResolveSymbol(q->altsp, texts, globalCache);
+        }
     }
     if (q->alttp)
     {
@@ -1087,6 +1101,7 @@ static void ResolveFunction(FunctionData *fd, std::map<int, std::string>& texts)
     }
     for (auto q = fd->instructionList; q; q = q->fwd)
         ResolveInstruction(q, texts);
+    ResolveExpression(fd->fltexp, texts);
     lastFunction = current;
     current = nullptr;
 }
@@ -1140,6 +1155,7 @@ static void ResolveNames(std::map<int, std::string>& texts)
 }
 bool InputIntermediate(SharedMemory* inputMem)
 {
+    FPF temp; // force init
     streamPointer = inputMem->GetMapping();
     currentBlock = nullptr;
     texts.clear();

@@ -53,8 +53,9 @@ extern SimpleExpression* objectArray_exp;
 extern std::string outputFileName;
 extern std::vector<SimpleSymbol*> externals;
 extern std::list<std::string> backendFiles;
-
+extern SimpleExpression* fltexp;
 extern int usingEsp;
+extern int fastcallAlias;
 
 CmdSwitchParser SwitchParser;
 CmdSwitchBool single(SwitchParser, 's', false, "single");
@@ -284,6 +285,8 @@ bool ProcessData(const char *name)
             while (intermed_tail && intermed_tail->fwd)
                 intermed_tail = intermed_tail->fwd;
             objectArray_exp = v->funcData->objectArray_exp;
+            fltexp = v->funcData->fltexp;
+            fastcallAlias = v->funcData->fastcallAlias;
             currentFunction = v->funcData->name;
             SetUsesESP(currentFunction->usesEsp);
             generate_instructions(intermed_head);

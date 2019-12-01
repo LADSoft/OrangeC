@@ -884,6 +884,7 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
         return;
     oldCurrentFunction = currentFunction;
     currentFunction = SymbolManager::Get(funcsp);
+    currentFunction->initialized = true;
     CopyVariables(funcsp);
     returnImode = nullptr;
     while (tmpl)

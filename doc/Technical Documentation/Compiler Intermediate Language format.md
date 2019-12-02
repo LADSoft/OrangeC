@@ -20,7 +20,7 @@ int main(int argc, char **argv)
       printf("hi %d\n", i);
 }
 ```
-when the /Y switch is used to compile it, the compiler dumps out the initial intermediate code representation as
+when the `/Y` switch is used to compile it, the compiler dumps out the initial intermediate code representation as
 generated from parsing, and the optimizer dumps out the final intermediate code representation after all optimizations
 have been applied and registers have been assigned
 
@@ -103,7 +103,7 @@ L_1:
   extern _printf
 ```
 
-Here the Txxx variables are compiler-generated temporaries; they haven't been assigned to either registers or the stack at this point.
+Here the `Txxx` variables are compiler-generated temporaries; they haven't been assigned to either registers or the stack at this point.
 
 Lines such as:
 ```
@@ -113,7 +113,7 @@ assign a temporary variable from a program-defined variable.   At this point the
 Offsets are relative to where the stack pointer is when entering the function.  The offset will be 0 at this point because register allocation and
 stack allocation are performed in the optimizer rather than in the parser.
 
-Here the .I means it is an integer value.  In general operands will be qualified with the value type in these types of outputs.
+Here the `.I` means it is an integer value.  In general operands will be qualified with the value type in these types of outputs.
 
 Lines such as:
 ```
@@ -131,10 +131,9 @@ perform a comparison then a branch.   An x86 assembly language rendition of this
 cmp ecx, 10
 jl L_5
 ```
-assuming T0 was later stored in ECX.
+assuming `T0` was later stored in ECX.
 
-GOSUB, PARM, and PARMADJ go together to form a call site.   Note that when using FASTCALL, the parms are just replaced by assignments
-to temporary variables.
+`GOSUB`, `PARM`, and `PARMADJ` go together to form a call site.   Note that when using FASTCALL, the parms are just replaced by assignments to temporary variables.
 
 the following give the backend hints about what to generate at the beginning and ending of functions.   For example is a stack
 frame required, how much space to allocate to variables, what registers to push, etc...   These are mostly target-specific although
@@ -160,7 +159,7 @@ DC.A  _main
 ```
 and so forth.
 
-The BLOCK and BLOCK END statements indicate the beginning and ending of basic blocks; basic blocks will often be terminated by 
+The `BLOCK` and `BLOCK END` statements indicate the beginning and ending of basic blocks; basic blocks will often be terminated by 
 a branch instruction.
 
 Finally, instructions like this:
@@ -168,7 +167,7 @@ Finally, instructions like this:
 RV.T3.I =   #0.I
 ```
 instruct the compiler to generate the sequence required for a return value, e.g. on the x86 most integers would be moved into eax.
-Not shown here you can also have something similar after a GOSUB statement:
+Not shown here you can also have something similar after a `GOSUB` statement:
 ```
 GOSUB  #_compute_value:PC.UI
 PARMADJ #0.I
@@ -293,11 +292,11 @@ For example:
 T3.A
 _counter:RAM.I
 ```
-here T3 is an address, and _counter is an integer.   For indirections through a temporary there are two types:
+here `T3` is an address, and `_counter` is an integer.   For indirections through a temporary there are two types:
 ```
 (T5.A).I
 ```
-Here the first type will usually be .A (in a future version of the compiler it could also be .FA) and the
+Here the first type will usually be `.A` (in a future version of the compiler it could also be `.FA`) and the
 second type will be the type of the data being referenced through the pointer.
 
 The complete list of types is as follows:
@@ -392,9 +391,9 @@ target-specific, and no attempt is made to display the actual instruction in the
 ```
 L_5:
 ```
-Label definitions such as the one for L_5 are compiler-generated labels used for the targets of implicitly declared 
-branches such as the ones in IF-ELSE or WHILE statements.   They are also used in other situations, e.g. for SWITCH_CASE
-statements, labels targeted by the GOT instruction  or for C++ exception table information.
+Label definitions such as the one for `L_5` are compiler-generated labels used for the targets of implicitly declared 
+branches such as the ones in `IF-ELSE` or `WHILE` statements.   They are also used in other situations, e.g. for `SWITCH_CASE`
+statements, labels targeted by the `GOT` instruction  or for C++ exception table information.
 
 
 ## 2.2.3 GOTO
@@ -421,15 +420,15 @@ PARM #5.I
 GOSUB #_AddTwoNumbers:PC
 PARMADJ #8
 ```
-where the PARMADJ cleans the stack up after the function call.
+where the `PARMADJ` cleans the stack up after the function call.
 
 
-there is also a PARMBLOCK which pushes a structured value on the stack:
+there is also a `PARMBLOCK` which pushes a structured value on the stack:
 ```
 PARMBLOCK _structuredValue.A(#20)
 ```
-The compiler might sometimes use STACKALLOC to create space for a temporary class or structure being constructed then passed 
-to another function.   The PARMADJ would take care of cleaning up such allocations.
+The compiler might sometimes use `STACKALLOC` to create space for a temporary class or structure being constructed then passed 
+to another function.   The `PARMADJ` would take care of cleaning up such allocations.
 
 ## 2.2.5  RET
 ```
@@ -443,37 +442,37 @@ to pop the arguments off the stack after returning.
 ```
 T4.I = T3.I + T2.I
 ```
-Add two values and store the result in T4
+Add two values and store the result in `T4`
 
 ## 2.2.7 Subtract
 ```
 T4.I = T3.I - T2.I
 ```
-Subtract two values and store the result in T4
+Subtract two values and store the result in `T4`
 
 ## 2.2.8 Unsigned divide
 ```
 T4.UI = T3.UI U/ T2.UI
 ```
-Divide two values and store the result in T4
+Divide two values and store the result in `T4`
 
 ## 2.2.9 Unsigned modulus
 ```
 T4.UI = T3.UI U% T2.UI
 ```
-Divide two values and store the modulus of the result in T4
+Divide two values and store the modulus of the result in `T4`
 
 ## 2.2.10 Signed divide
 ```
 T4.I = T3.I S/ T2.I
 ```
-Divide two values and store the result in T4
+Divide two values and store the result in `T4`
 
 ## 2.2.11 Signed modulus
 ```
 T4.I = T3.I S% T2.I
 ```
-Divide two values and store the modulus of the result in T4
+Divide two values and store the modulus of the result in `T4`
 
 ## 2.2.12 multiply unsigned and return high word
 ```
@@ -481,7 +480,7 @@ T4.UI = T3.UI U*H T2.UI
 ```
 Multiply two unsigned values to an intermediate type of unsigned long long, and return the high 32 bits of the result
 
-This is used to optimize DIVIDE by constant instructions.
+This is used to optimize `DIVIDE` by constant instructions.
 
 ## 2.2.13 multiply signed and return high word
 ```
@@ -489,50 +488,50 @@ T4.I = T3.I S*H T2.I
 ```
 Multiply two signed values to an intermediate type of signed long long, and return the high 32 bits of the result
 
-This is used to optimize DIVIDE by constant instructions.
+This is used to optimize `DIVIDE` by constant instructions.
 
 ## 2.2.14 multiply
 ```
 T4.UI = T3.UI * T2.UI
 T4.S = T3.S * T2.S
 ```
-Multiply two values and store the result in T4
+Multiply two values and store the result in `T4`
 
 ## 2.2.15 shift left
 ```
 T4.I = T3.I << T2.I
 ```
-Shift a value left and store the result in T4
+Shift a value left and store the result in `T4`
 
 ## 2.2.16 Unsigned shift right
 ```
 T4.I = T3.I UI >> T2.I
 ```
-Shift a value right and store the result in T4
+Shift a value right and store the result in `T4`
 
 ## 2.2.17 Signed shift right
 ```
 T4.I = T3.I S>> T2.I
 ```
-Shift a value right and store the result in T4
+Shift a value right and store the result in `T4`
 
 ## 2.2.18 Bitwise and
 ```
 T4.I = T3.I & T2.I
 ```
-Take the bitwise and of two operands and store the result in T4
+Take the bitwise and of two operands and store the result in `T4`
 
 ## 2.2.19 Bitwise or
 ```
 T4.I = T3.I | T2.I
 ```
-Take the bitwise or of two operands and store the result in T4
+Take the bitwise or of two operands and store the result in `T4`
 
 ## 2.2.19 Bitwise exclusive or
 ```
 T4.I = T3.I ^ T2.I
 ```
-Take the bitwise exclusive or of two operands and store the result in T4
+Take the bitwise exclusive or of two operands and store the result in `T4`
 
 ## 2.2.20 Negation
 ```
@@ -567,7 +566,7 @@ SWBRANCH(#A.I, L_6)
 SWBRANCH(#14.I, L_7)
 ```
 
-here we define a switch based on the value of T3.i.   There are three case values and the spread between the lowest (5) and the highest +1 (21) is sixteen.
+here we define a switch based on the value of `T3.i`.   There are three case values and the spread between the lowest (5) and the highest +1 (21) is sixteen.
 From this information the backend can deduce the sparseness of the branch list.  
 
 The cases go labels 5,6,7 and the default label is 3.
@@ -594,7 +593,7 @@ compare two blocks
 ```
 CONDGO:L_10:PC ; T3.I == #5
 ```
-branch to label 10 if T3 is equal to 5.   The == may be replaced by a variety of other conditional operators.  These include:
+branch to label 10 if T3 is equal to 5.   The `==` may be replaced by a variety of other conditional operators.  These include:
 
 
 * `U<`     unsigned less than
@@ -613,7 +612,7 @@ branch to label 10 if T3 is equal to 5.   The == may be replaced by a variety of
 ```
 T5.I = T3.I == #5
 ```
-compute a boolean indicating whether the two values are equal.   The == may be replaced by a variety of other conditional operators.
+compute a boolean indicating whether the two values are equal.   The `==` may be replaced by a variety of other conditional operators.
 These include:
 
 * `U<`     unsigned less than
@@ -629,13 +628,13 @@ These include:
 
 ## 2.2.29 Debug blocks
 
-The beginning and end of source code blocks are delimited by the DBG_BLOCK_START and DBG_BLOCK_END tags, for correlation of
+The beginning and end of source code blocks are delimited by the `DBG_BLOCK_START` and `DBG_BLOCK_END` tags, for correlation of
 variable declarations with positions in the code segment.   This is used by the debugger.
 
 
 ## 2.2.30 Basic blocks
 
-Basic blocks as generated by the code generator are delimited by BLOCK START and BLOCK END statements.   These blocks are used by
+Basic blocks as generated by the code generator are delimited by `BLOCK START` and `BLOCK END` statements.   These blocks are used by
 the optimizer and don't bear an obvious relationship to the blocks specified in the source code.  Instead of optimizing on a 
 per-instruction basis most optimizations are done on a per-block basis.   Blocks are guaranteed to end when a branch has 
 been indicated, so they are also often used to graph the branch tree of a function.
@@ -662,13 +661,13 @@ Allocate 12 bytes on the stack and return the new stack pointer
 ```
 LOADSTACK T3.A
 ```
-Load the stack pointer into T3.A
+Load the stack pointer into `T3.A`
 ```
 SAVESTACK T3.A
 ```
-Save T3.A into the stack pointer
+Save `T3.A` into the stack pointer
 
-These are used by alloca; STACKALLOC also is used in other situations.
+These are used by alloca; `STACKALLOC` also is used in other situations.
 
 ## 2.2.33 tags
 ```
@@ -689,19 +688,19 @@ with the mode not orred with `#0x80`.
 ```
 SEH 1
 ```
-the body of the SEH sequence is a __try block statements
+the body of the SEH sequence is a `__try` block statements
 ```
 SEH 2
 ```
-the body of the SEH sequence is a __catch block statements
+the body of the SEH sequence is a `__catch` block statements
 ```
 SEH 3
 ```
-the body of the SEH sequence is a __fault block statements
+the body of the SEH sequence is a `__fault` block statements
 ```
 SEH 4
 ```
-the body of the SEH sequence is the __finally block statemnts
+the body of the SEH sequence is the `__finally` block statemnts
 
 ## 2.2.35 Atomics
 ```
@@ -789,7 +788,7 @@ define data which is the difference between two label offsets.  Used by exceptio
 ```
 DC.B #77
 ```
-Defines data which is a constant.   The .B may be replaced by any of the basic types:
+Defines data which is a constant.   The `.B` may be replaced by any of the basic types:
 
 * `.BOOL`      Boolean
 * `.STRING`    MSIL string
@@ -822,7 +821,7 @@ Defines data which is a constant.   The .B may be replaced by any of the basic t
 * `.CLD`       complex long double
 * `.BIT`       bit
 
-Note that in the special case of "DC.B" a string constant may appear in place of the numeric constant.
+Note that in the special case of `DC.B` a string constant may appear in place of the numeric constant.
 ```
 DC.B "hello"
 ```

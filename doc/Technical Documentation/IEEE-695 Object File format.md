@@ -11,8 +11,8 @@ numbers, such as dates and the CO record identifiers, are decimal.
 
 ## 2.1.1. Brief guide to linker format 
 
-Each record in the relocatable object file starts with a two-letter command and ends with a '.'. Symbols with periods in them may be embedded in the text so the location of the ending period is context-sensitive. 
-Control characters such as CR/LF can be used for readability and are generally assumed by the linker to occur after each '.' character at the end of a record. 
+Each record in the relocatable object file starts with a two-letter command and ends with a period. Symbols with periods in them may be embedded in the text so the location of the ending period is context-sensitive. 
+Control characters such as CR/LF can be used for readability and are generally assumed by the linker to occur after each period character at the end of a record. 
 
 Checksums are kept as running additions of the ascii value of the characters, excluding any control characters that may be embedded.
 
@@ -46,7 +46,7 @@ if an absolute object file is output.
 * `P`:     the current value of the program counter. 
 
 This is only valid in the LR (fixup) records.  It is derived from the low limit 
-of the section and the data previously encountered in the sections LD and LR records. 
+of the section and the data previously encountered in the sections `LD` and `LR` records. 
 
 
 
@@ -60,7 +60,7 @@ The ladsoft tools also define the following extra variable types:
 
 ## 2.2.2 Expressions 
 
-In some cases such as in fixups/LR Records, an expression is used to specify 
+In some cases such as in fixups or `LR` Records, an expression is used to specify 
 an address or offset. An expression is a comma-delimited sequence of constants, 
 the operators '+','-'.'*','/', and internal variables.  The elements of an expression 
 are in postfix notation, that is the expression: 
@@ -168,7 +168,7 @@ processor type and compiler settings.
 
 * `endian` gives the endianness.  It is 'L' for little endian, 'B'
 for big endian.  Endianness is used for example when a tool needs
-to convert an LR record to an LD record when turning the object file
+to convert an `LR` record to an `LD` record when turning the object file
 into absolute format.
 
 
@@ -186,7 +186,7 @@ CSxx.
 
 When a checksum record is encountered the two hex digits after it give
 the sum, modulo 128, of all non-control characters after the '.' of the
-last checksum record (or start of file) and up to and including the 'S'
+last checksum record (or start of file) and up to and including the '`S`'
 of the current checksum record.   (Since it ignores control characters any
 formatting such as line feeds, carriage returns, or tabs are not counted)
 
@@ -240,7 +240,7 @@ Attributes are separated by a comma and are as follows:
 
 * `'R'`: readonly (ROM) section 
 * `'S'`: a non-common section
-  * This is assumed without C or M or E
+  * This is assumed without `C` or `M` or `E`
 * `'U'`: unique section. 
   * No other section can have the same name as a section with this attribute
 
@@ -291,8 +291,8 @@ record, the section alignment is assumed to be 1.
 ## 3.3.4 Assign Symbol record
 
 The assign size record gives the size when used with a section.  Even though 
-the size is implied by the LD and LR records, this record is required to allow 
-the linker to do relocations without having read in the LD/LR records.  It has the
+the size is implied by the `LD` and `LR` records, this record is required to allow 
+the linker to do relocations without having read in the `LD`/`LR` records.  It has the
 format:
 
 ```
@@ -309,7 +309,7 @@ mau's worth of data in the section.
 The assign location record gives the absolute location a section 
 should be loaded at.  It would be used for example by a tool that 
 converted the object file into one of the HEX file formats.  It 
-must be present for if the section has the 'A' attribute, but 
+must be present for if the section has the '`A`' attribute, but 
 otherwise should not be present.  It has the format:
 
 ```
@@ -339,10 +339,10 @@ SB#.
 
 * `#` is the index of the section as defined in the `ST` record
 
-Subsequent LD and LR records, along with debug comment records, will
+Subsequent `LD` and `LR` records, along with debug comment records, will
 refer to this section.  No load address is specified in any of the
 data records; the load address is implied by the final section location
-and preceding LD and LR records in this section.
+and preceding `LD` and `LR` records in this section.
 
 
 ## 3.4.3 Load Data record
@@ -356,7 +356,7 @@ LDxxxxxxxxxxxxxxxxxxxxxxxx.
 ```
 
 
-When the `AD` record specifies `maus=8` (byte architecture) the LD record loads bytes of data, with each byte described by two ASCII characters.
+When the `AD` record specifies `maus=8` (byte architecture) the `LD` record loads bytes of data, with each byte described by two ASCII characters.
 
 
 ## 3.4.4 Load Relocation record
@@ -392,7 +392,7 @@ the record that creates the variable index.  It has the format:
 ```
 N$#,name.
 ```
-(variable indexes will subsequently be used in LR records or sometimes in comment records)
+(variable indexes will subsequently be used in `LR` records or sometimes in comment records)
 
 * `$` is the type of variable:
   * `'A'`    auto 
@@ -416,8 +416,8 @@ AS$#,expr.
 
 
 * `$` is the type of variable:
-  * `'I'` public 
-  * `'N'` local 
+  * `'I'` is a public variable 
+  * `'N'` is a local variable 
 * `#` is the index assigned with the Name record
 * `expr` is an expression indicating the location of the variable or
 procedure
@@ -476,8 +476,7 @@ The following sections outline the comment records in use.
 ## 3.6.2 Comment records 1-99 
 
 A general comment inserted by the
-translator and discarded by other tools. For example: "CO1,16this is a
-cool program."
+translator and discarded by other tools. For example: `CO1,16this is a cool program.`
 
 
 

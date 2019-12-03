@@ -119,9 +119,9 @@ Lines such as:
 ```
 T2.I = T0.I + #1.I
 ```
-perform arithmetic functions; in this case it is adding 1 to T0 (T0 being a load of _i).
+perform arithmetic functions; in this case it is adding 1 to `T0` (`T0` being a load of '`_i`').
 
-Lines such as :
+Lines such as:
 ```
 CONDGO  L_5:PC ; T0.I S< #A.I
 ```
@@ -131,7 +131,7 @@ perform a comparison then a branch.   An x86 assembly language rendition of this
 cmp ecx, 10
 jl L_5
 ```
-assuming `T0` was later stored in ECX.
+assuming `T0` was later stored in `ECX`.
 
 `GOSUB`, `PARM`, and `PARMADJ` go together to form a call site.   Note that when using FASTCALL, the parms are just replaced by assignments to temporary variables.
 
@@ -166,16 +166,16 @@ Finally, instructions like this:
 ```
 RV.T3.I =   #0.I
 ```
-instruct the compiler to generate the sequence required for a return value, e.g. on the x86 most integers would be moved into eax.
+instruct the compiler to generate the sequence required for a return value, e.g. on the x86 most integers would be moved into `EAX`.
 Not shown here you can also have something similar after a `GOSUB` statement:
 ```
 GOSUB  #_compute_value:PC.UI
 PARMADJ #0.I
 T4.I = RV.T3.I
 ```
-In this case the RV refers to the value returned by the function, with the assumption on the x86 that T3 would be in eax.
+In this case the RV refers to the value returned by the function, with the assumption on the x86 that T3 would be in `EAX`.
 
-There are other registers on the x86 that are predefined, for example EAX/EDX are used in division and some forms of multiplication.   
+There are other registers on the x86 that are predefined, for example `EAX/EDX` are used in division and some forms of multiplication.   
 When a specific register must be used it is called precolored.
 
 Not shown in this example is the indirect mode of temporary access:
@@ -218,7 +218,7 @@ L_2:
 
 L_5:
 ; Line 6:         printf("hi %d\n", i); 
--
+
   T2(EAX).I =   T3(EBX).I
   PARM    T2(EAX).I
   PARM    #L_1:PC.A
@@ -267,9 +267,9 @@ L_1:
   DC.B 0x0
   extern _printf
 ```
-The salient differences after optimization are that it figured out that it could put _i in register EBX and
+The salient differences after optimization are that it figured out that it could put _i in register `EBX` and
 elided various temporaries initially defined for the increment.   It also figured out what values to use for
-the prologue and epilogue; from these values one can gather one register is pushed (EBX?) and there is a stack frame
+the prologue and epilogue; from these values one can gather one register is pushed (`EBX`?) and there is a stack frame
 used for referencing either variables or arguments or both.
 
 ## 2.0.0 Detailed list of instructions
@@ -343,7 +343,7 @@ _bufferPointer:RAM.A
 ```
 Valid are:
 
-* `:LINK(#)`             a stacked (auto) variable or parameter
+* `:LINK(#)`             a stacked (auto) variable or parameter  
     By convention, variables have a negative offset, parameters have a positive offset
 * `:STRUCTELEM(#)`       a reference to a structure element (MSIL)
 * `:PC`                  a reference to the code segment
@@ -408,7 +408,7 @@ GOSUB _compute_somthings:PC
 ```
 a branch to a subroutine.
 
-This will usually be accompanied by PARM and PARMADJ instructions.   For example the
+This will usually be accompanied by `PARM` and `PARMADJ` instructions.   For example the
 C language function call:
 ```c
 AddTwoNumbers(5, 10)
@@ -427,8 +427,7 @@ there is also a `PARMBLOCK` which pushes a structured value on the stack:
 ```
 PARMBLOCK _structuredValue.A(#20)
 ```
-The compiler might sometimes use `STACKALLOC` to create space for a temporary class or structure being constructed then passed 
-to another function.   The `PARMADJ` would take care of cleaning up such allocations.
+The compiler might sometimes use `STACKALLOC` to create space for a temporary class or structure being constructed then passed to another function. The `PARMADJ` would take care of cleaning up such allocations.
 
 ## 2.2.5  RET
 ```
@@ -566,7 +565,7 @@ SWBRANCH(#A.I, L_6)
 SWBRANCH(#14.I, L_7)
 ```
 
-here we define a switch based on the value of `T3.i`.   There are three case values and the spread between the lowest (5) and the highest +1 (21) is sixteen.
+here we define a switch based on the value of `T3.I`.   There are three case values and the spread between the lowest (5) and the highest +1 (21) is sixteen.
 From this information the backend can deduce the sparseness of the branch list.  
 
 The cases go labels 5,6,7 and the default label is 3.
@@ -844,7 +843,7 @@ aligns current section on 4-byte boundary
 goto @myfunc$qv
 ```
 when overriding base class virtual functions with derived class virtual functions, it is sometimes necessary
-to add a thunk to adjust for the new offset of the THIS pointer of the base class within the derived class.
+to add a thunk to adjust for the new offset of the `this` pointer of the base class within the derived class.
 
 ## 2.3.12 Import thunk
 ```

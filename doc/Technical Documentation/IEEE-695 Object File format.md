@@ -45,7 +45,7 @@ if an absolute object file is output.
 
 * `P`:     the current value of the program counter. 
 
-This is only valid in the LR (fixup) records.  It is derived from the low limit 
+This is only valid in the `LR` (fixup) records.  It is derived from the low limit 
 of the section and the data previously encountered in the sections `LD` and `LR` records. 
 
 
@@ -87,7 +87,7 @@ when a string such as a name or comment text is placed into the output file,
 it is preceded by a two-digit hexadecimal number that gives the length of the 
 string. This implicitly limits strings and variable names to 255 characters, 
 but allows characters that would normally be record internal delimiters such as
-',' and '.' to be embedded in the string. 
+commas and periods to be embedded in the string. 
 
 For example to create a public variable with the name 'apple' one would
 do the following: 
@@ -166,7 +166,7 @@ maximimum number of machine architectural units in an address.
 For example on the 68K this would be either 2 or 4 depending on the
 processor type and compiler settings.
 
-* `endian` gives the endianness.  It is 'L' for little endian, 'B'
+* `endian` gives the endianness.  It is '`L`' for little endian, '`B`'
 for big endian.  Endianness is used for example when a tool needs
 to convert an `LR` record to an `LD` record when turning the object file
 into absolute format.
@@ -222,33 +222,33 @@ ST#,attributes,name.
 
 Attributes are separated by a comma and are as follows: 
 
-* `'A'`: an absolute section not subject to relocation.
-  * When this attribute is present an ASL record must be present in the input file telling exactly where the section is located. 
+* '`A`': an absolute section not subject to relocation.  
+   When this attribute is present an ASL record must be present in the input file telling exactly where the section is located. 
 
-* `'B'`: a section made up of bit values
-  * This attribute is reserved for processors like the C167 or 8051. 
+* '`B`': a section made up of bit values  
+   This attribute is reserved for processors like the C167 or 8051. 
 
-* `'C'`: A common section. 
-  * Two common sections with the same name are overlayed on each other at link time. 
-  * Non-common sections normally follow one another. 
+* '`C`': A common section.  
+   Two common sections with the same name are overlayed on each other at link time.  
+   Non-common sections normally follow one another. 
 
-* `'E'`: an equal section
-  * Two equal sections with the same name must have exactly the same contents and attributes when 'E' is present in the attribute list 
+* '`E`': an equal section  
+   Two equal sections with the same name must have exactly the same contents and attributes when '`E`' is present in the attribute list 
 
-* `'M'`: maximum section
-  * if there are two sections with the same name, take the largest one. 
+* '`M`': maximum section  
+   if there are two sections with the same name, take the largest one. 
 
-* `'R'`: readonly (ROM) section 
-* `'S'`: a non-common section
-  * This is assumed without `C` or `M` or `E`
-* `'U'`: unique section. 
-  * No other section can have the same name as a section with this attribute
+* '`R`': readonly (ROM) section 
+* '`S`': a non-common section  
+   This is assumed without `C` or `M` or `E`
+* '`U`': unique section.  
+   No other section can have the same name as a section with this attribute
 
-* `'W'`: readwrite (RAM) section 
-* `'X'`: executable section 
-* `'Z':` section to be zeroed out
+* '`W`': readwrite (RAM) section 
+* '`X`': executable section 
+* '`Z`': section to be zeroed out
 
-Generally data will not be provided with the SB,LR,LD records and the runtime 
+Generally data will not be provided with the `SB`,`LR`,`LD` records and the runtime 
 system will use the size of the section to initialize it. (e.g. C language 
 uninitialized variables).  
 
@@ -258,9 +258,9 @@ In addition there are attributes which consider ordering sections with
 the same
 name. 
 
-* `'N'`: 'now' order sections with this attribute first 
+* '`N`': 'now' order sections with this attribute first 
 * `(no qualifier)`: order sections with this attribute next 
-* `'P'`: 'postpone' order sections with this attribute last
+* '`P`': 'postpone' order sections with this attribute last
 
 
 
@@ -394,12 +394,12 @@ N$#,name.
 ```
 (variable indexes will subsequently be used in `LR` records or sometimes in comment records)
 
-* `$` is the type of variable:
-  * `'A'`    auto 
-  * `'E'`    register 
-  * `'I'`    public 
-  * `'N'`    local 
-  * `'X'`    external
+* `$` is the type of variable:  
+   '`A`'    auto  
+   '`E`'    register  
+   '`I`'    public  
+   '`N`'    local  
+   '`X`'    external
 * `#` is the index to assign
 * `name` is a string specifying the programmer's name for the variable.
 
@@ -415,9 +415,9 @@ AS$#,expr.
 
 
 
-* `$` is the type of variable:
-  * `'I'` is a public variable 
-  * `'N'` is a local variable 
+* `$` is the type of variable:  
+  '`I`' is a public variable  
+  '`N`' is a local variable 
 * `#` is the index assigned with the Name record
 * `expr` is an expression indicating the location of the variable or
 procedure
@@ -433,12 +433,12 @@ AT$#,T%.
 ```
 
 
-* `$` is the type of variable:
-  * `'A'`    auto 
-  * `'E'`    register 
-  * `'I'`    public 
-  * `'N'`    local 
-  * `'X'`    external
+* `$` is the type of variable:  
+   '`A`'    auto  
+   '`E`'    register  
+   '`I`'    public  
+   '`N`'    local  
+   '`X`'    external
 
 
 additionally there is a command  `ATT` which is used to construct new types.  
@@ -604,8 +604,8 @@ ATT#,T%,type expression.
 
 
 * `#`: is the type index assigned by the translator, which must be >= 1024
-* `%`: some type constructor such as a structure or union designator.
-  * the type expression depends on the constructor used for the type, but is typically a base type, or a list of other types.  
+* `%`: some type constructor such as a structure or union designator.  
+    the type expression depends on the constructor used for the type, but is typically a base type or a list of other types.  
 
 Type information is in the file header with other information about variables. 
 It is further specified for each constructor below:
@@ -613,20 +613,17 @@ It is further specified for each constructor below:
 
 * `0`: undefined 
 * `1`: pointer: `ATT$,T1,T#.` 
-
 * `$` is the translator-defined type of the pointer.
 * `#` is the base type index
-
-
 * `2`: function:  `ATT$,T2,TR,#,argument list.` 
 * `$` is the translator defined type of the function 
 * `R` is the type index of the return value 
-* `#` is a hexadecimal value giving the linkage: 
-  * `0`= unadorned label (assembler) 
-  * `1` = C style function call 
-  * `2` = stdcall style function call
-  * `3` = pascall style function call
-  * `4` = C++ object method 
+* `#` is a hexadecimal value giving the linkage:  
+    `0` = unadorned label (assembler)  
+    `1` = C style function call  
+    `2` = stdcall style function call  
+    `3` = pascall style function call  
+    `4` = C++ object method 
 
 The argument list is a comma-delimited list of
 `A#`, which gives the parameters 
@@ -697,53 +694,66 @@ The type indexes for the base types are as follows:
 * `34`: boolean 
 * `35`: bit 
 
+&nbsp;
 * `40`: char 
 * `41`: short 
 * `42`: int 
 * `43`: long 
 * `44`: long long 
 
+&nbsp;
 * `48`: unsigned char 
 * `49`: unsigned short 
 * `50`: unsigned int 
 * `51`: unsigned long 
 * `52`: unsigned long long 
 
+&nbsp;
 * `56`: pointer to char 
 * `57`: pointer to short 
 * `58`: pointer to int 
 * `59`: pointer to long 
 * `60`: pointer to long long 
 
+&nbsp;
 * `64`: pointer to unsigned char 
 * `65`: pointer to unsigned short 
 * `66`: pointer to unsigned int 
 * `67`: pointer to unsigned long 
 * `68`: pointer to unsigned long long 
 
+&nbsp;
 * `72`: float 
 * `73`: double 
 * `74`: long double 
 
+&nbsp;
 * `80`: float (imaginary) 
 * `81`: double (imaginary) 
 * `82`: long double (imaginary) 
 
+&nbsp;
 * `88`: float (complex) 
 * `89`: double (complex) 
 * `90`: long double (complex) 
 
+&nbsp;
 * `96`: pointer to float 
 * `97`: pointer to double 
 * `98`: pointer to long double 
 
+&nbsp;
 * `104`: pointer to float (imaginary) 
 * `105`: pointer to double (imaginary) 
 * `106`: pointer to long double (imaginary) 
 
+&nbsp;
+
 * `112`: pointer to float (complex)
 * `113`: pointer to double (complex) 
 * `114`: pointer to long double(complex) 
+
+&nbsp;
 
 * `115-1023`: reserved
 
@@ -844,27 +854,22 @@ C0500,subtype,qualifiers,file index,linenumber,name.
 ```
 
 
-* `subtype` gives the type of browse information.
-  * `0`: This is for preprocessor definitions like #defines. 
-  * `1`: variable: this is some type of program variable. 
-  * `2`: file start: this is a file start 
-  * `3`: function start: this is a function start 
-  * `4`: function end: this is the end of a function 
-  * `5`: block start: this is the start of a block 
-  * `6`: block end: this is the end of a block 
-
-* `qualifiers` are used for variable and function names as follows: 
-  * `0`: program global 
-  * `1`: file global 
-  * `2`: external 
-  * `3`: local variable 
-  * `4`: function prototype
-
+* `subtype` gives the type of browse information.  
+   `0`: This is for preprocessor definitions like #defines.  
+   `1`: variable: this is some type of program variable.  
+   `2`: file start: this is a file start  
+   `3`: function start: this is a function start  
+   `4`: function end: this is the end of a function  
+   `5`: block start: this is the start of a block  
+   `6`: block end: this is the end of a block  
+* `qualifiers` are used for variable and function names as follows:  
+   `0`: program global  
+   `1`: file global  
+   `2`: external  
+   `3`: local variable  
+   `4`: function prototype
 * `file index` gives the index assigned by the CO300 record
-
 * `line number` references the line within the given file and is given in decimal.
-
-
 * `name` is the name of the symbol this record defines
 
 

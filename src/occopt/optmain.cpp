@@ -53,10 +53,12 @@ extern int fastcallAlias;
 CmdSwitchParser SwitchParser;
 CmdSwitchBool single(SwitchParser, 's', false, "single");
 CmdSwitchBool WriteIcdFile(SwitchParser, 'Y', false);
+CmdSwitchCombineString output(SwitchParser, 'o');
 
 const char* usageText =
 "[options] inputfile\n"
 "\n"
+"-ofile       set output file (in file mode)\n"
 "--single     don't open internal file list\n"
 "-Y output icd file\n"
 "\nTime: " __TIME__ "  Date: " __DATE__;
@@ -69,6 +71,8 @@ static bool functionHasAssembly;
 
 bool InputIntermediate(SharedMemory* mem);
 void OutputIntermediate(SharedMemory* mem);
+
+static const int MAX_SHARED_REGION = 500 * 1024 * 1024;
 
 void InternalConflict(QUAD* head)
 {
@@ -374,15 +378,60 @@ int main(int argc, char* argv[])
     Utils::banner(argv[0]);
     Utils::SetEnvironmentToPathParent("ORANGEC");
 
-    if (!SwitchParser.Parse(&argc, argv) || argc != 3)
+    if (!SwitchParser.Parse(&argc, argv) || argc < 2 || argc > 3)
     {
         Utils::usage(argv[0], usageText);
     }
-    auto parserMem = new SharedMemory(0, argv[1]);
-    auto optimizerMem = new SharedMemory(0, argv[2]);
-    if (!parserMem->Open() || !optimizerMem->Open())
+    bool fileMode = false;
+    if (argc == 2)
+        fileMode = true;
+    SharedMemory* parserMem = nullptr;
+    SharedMemory* optimizerMem = nullptr;
+    std::string outputFile;
+    if (fileMode)
     {
-        Utils::fatal("invalid shared memory specifiers");
+        if (output.GetExists())
+        {
+            outputFile = output.GetValue();
+        }
+        else
+        {
+            char buf[260];
+            strcpy(buf, argv[1]);
+            Utils::StripExt(buf);
+            strcat(buf, "_1");
+            Utils::AddExt(buf, ".icf");
+            outputFile = buf;
+        }
+        FILE* fil = fopen(argv[1], "rb");
+        if (fil)
+        {
+            fseek(fil, 0, SEEK_END);
+            long size = ftell(fil);
+            fseek(fil, 0, SEEK_SET);
+            parserMem = new SharedMemory(MAX_SHARED_REGION);
+            parserMem->Create();
+            parserMem->GetMapping();
+            parserMem->EnsureCommitted(size);
+            fread(parserMem->GetMapping(), 1, size, fil);
+            optimizerMem = new SharedMemory(MAX_SHARED_REGION);
+            optimizerMem->Create();
+            fclose(fil);
+        }
+        else
+        {
+            Utils::fatal("cannot open input file");
+        }
+
+    }
+    else
+    {
+        parserMem = new SharedMemory(0, argv[1]);
+        optimizerMem = new SharedMemory(0, argv[2]);
+        if (!parserMem->Open() || !optimizerMem->Open())
+        {
+            Utils::fatal("invalid shared memory specifiers");
+        }
     }
     if (!LoadFile(parserMem))
         Utils::fatal("internal error: could not load intermediate file");
@@ -402,6 +451,17 @@ int main(int argc, char* argv[])
             ProcessFunctions();
             SaveFile(p, optimizerMem);
         }
+    }
+    if (fileMode)
+    {
+        //compile to file
+        int size = GetOutputSize();
+        void *p = optimizerMem->GetMapping();
+        FILE *fil = fopen(outputFile.c_str(), "wb");
+        if (!fil)
+            Utils::fatal("could not open output file");
+        fwrite(p, size, 1, fil);
+        fclose(fil);
     }
     delete parserMem;
     delete optimizerMem;

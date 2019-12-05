@@ -124,7 +124,17 @@ void outputfile(char* buf, const char* name, const char* ext)
             p = buf;
         else
             p++;
-        strcpy(p, name);
+        const char* r = strrchr(name, '\\');
+        const char* r1 = strrchr(name, '/');
+        if (r1 > r)
+            r = r1;
+        else if (!r)
+            r = r1;
+        if (!r)
+            r = name;
+        else
+            r++;
+        strcpy(p, r);
         Utils::StripExt(buf);
         Utils::AddExt(buf, ext);
     }
@@ -353,19 +363,21 @@ int InvokeParser(int argc, char**argv, SharedMemory* parserMem)
     {
         if (args.size())
             args += " ";
-        args += std::string("\"") + argv[i] + "\"";
+        std::string curArg = argv[i];
+        if (curArg[curArg.size() - 1] == '\\')
+            curArg += "\\";
+        args += std::string("\"") + curArg + "\"";
     }
 
-    return Utils::ToolInvoke("occparse", verbosity, "-! --architecture \"x86;%s\" %s", parserMem->Name().c_str(), args.c_str());
+    return Utils::ToolInvoke("occparse", verbosity, "-! --architecture \"msil;%s\" %s", parserMem->Name().c_str(), args.c_str());
 }
 int InvokeOptimizer(SharedMemory* parserMem, SharedMemory* optimizerMem)
 {
-    return  Utils::ToolInvoke("occopt", verbosity, "-! %s %s", parserMem->Name().c_str(), optimizerMem->Name().c_str());
+    return Utils::ToolInvoke("occopt", verbosity, "-! %s %s", parserMem->Name().c_str(), optimizerMem->Name().c_str());
 }
 
 int main(int argc, char* argv[])
 {
-    int rv = 0;
     Utils::banner(argv[0]);
     Utils::SetEnvironmentToPathParent("ORANGEC");
 
@@ -374,44 +386,64 @@ int main(int argc, char* argv[])
         if (strstr(*p, "/y") || strstr(*p, "-y"))
             verbosity = "";
     }
-    auto parserMem = new SharedMemory(MAX_SHARED_REGION);
-    parserMem->Create();
     auto optimizerMem = new SharedMemory(MAX_SHARED_REGION);
     optimizerMem->Create();
-    rv = InvokeParser(argc, argv, parserMem);
+    int rv = 0;
+    if (argc == 2 && Utils::HasExt(argv[1], ".icf"))
+    {
+        FILE* fil = fopen(argv[1], "rb");
+        if (fil)
+        {
+            fseek(fil, 0, SEEK_END);
+            long size = ftell(fil);
+            fseek(fil, 0, SEEK_SET);
+            optimizerMem->GetMapping();
+            optimizerMem->EnsureCommitted(size);
+            fread(optimizerMem->GetMapping(), 1, size, fil);
+            fclose(fil);
+        }
+        else
+        {
+            Utils::fatal("cannot open input file");
+        }
+
+    }
+    else
+    {
+        auto parserMem = new SharedMemory(MAX_SHARED_REGION);
+        parserMem->Create();
+        rv = InvokeParser(argc, argv, parserMem) || InvokeOptimizer(parserMem, optimizerMem);
+        delete parserMem;
+    }
     if (!rv)
     {
         char fileName[260];
-        rv = InvokeOptimizer(parserMem, optimizerMem);
-        if (!rv)
+        if (!LoadFile(optimizerMem))
         {
-            if (!LoadFile(parserMem))
-            {
-                Utils::fatal("internal error: could not load intermediate file");
-            }
-            for (auto f : backendFiles)
-            {
-                InsertExternalFile(f.c_str(), false);
+            Utils::fatal("internal error: could not load intermediate file");
+        }
+        for (auto f : backendFiles)
+        {
+            InsertExternalFile(f.c_str(), false);
 
-            }
-            std::list<std::string> files = inputFiles;
-            if (files.size())
-            {
-                if (!ProcessData(files.front().c_str()) || !SaveFile(files.front().c_str()))
-                    Utils::fatal("File I/O error");
-                files.pop_front();
-            }
-            for (auto p : files)
-            {
-                if (!LoadFile(parserMem))
-                    Utils::fatal("internal error: could not load intermediate file");
-                if (!ProcessData(p.c_str()) || !SaveFile(p.c_str()))
-                    Utils::fatal("File I/O error");
-            }
-            if (!cparams.prm_compileonly)
-            {
-                rv = RunExternalFiles();
-            }
+        }
+        std::list<std::string> files = inputFiles;
+        if (files.size())
+        {
+            if (!ProcessData(files.front().c_str()) || !SaveFile(files.front().c_str()))
+                Utils::fatal("File I/O error");
+            files.pop_front();
+        }
+        for (auto p : files)
+        {
+            if (!LoadFile(optimizerMem))
+                Utils::fatal("internal error: could not load intermediate file");
+            if (!ProcessData(p.c_str()) || !SaveFile(p.c_str()))
+                Utils::fatal("File I/O error");
+        }
+        if (!cparams.prm_compileonly)
+        {
+            rv = RunExternalFiles();
         }
         if (!rv)
             oa_main_postprocess(false);

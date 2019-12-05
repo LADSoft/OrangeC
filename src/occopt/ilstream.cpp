@@ -983,6 +983,10 @@ static void NumberTypes()
         s->fileIndex = 2 * i++ + 1;
 
 }
+int GetOutputSize()
+{
+    return outputPos;
+}
 void OutputIntermediate(SharedMemory *mem)
 {
     sharedRegion = mem;

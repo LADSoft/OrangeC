@@ -352,6 +352,7 @@ int main(int argc, char* argv[])
     char* p;
     bool multipleFiles = false;
     int rv;
+    bool compileToFile = false;
 
     srand(time(0));
 
@@ -405,7 +406,7 @@ int main(int argc, char* argv[])
     {
         parserMem = new SharedMemory(500*1024*1024);
         parserMem->Create();
-
+        compileToFile = true;
     }
 #endif
     for (auto c = clist; c; c = c->next)
@@ -424,18 +425,6 @@ int main(int argc, char* argv[])
             strcpy(buffer, "a.c");
         strcpy(realOutFile, prm_output.GetValue().c_str());
         outputfile(realOutFile, buffer, ".icf");
-        if (first)
-        {
-            first = false;
-            if (bePostFile.size())
-            {
-                FILE *fil = fopen(bePostFile.c_str(), "wb");
-                if (!fil)
-                    Utils::fatal("can't open backend communications file");
-                fputs((char *)clist->data, fil);
-                fclose(fil);
-            }
-        }
 #else
         ccNewFile(buffer, true);
 #endif
@@ -564,6 +553,20 @@ int main(int argc, char* argv[])
         clist = clist->next;
     }
 #ifndef PARSER_ONLY
+    if (compileToFile)
+    {
+        //compile to file
+        strcpy(realOutFile, outputFileName.c_str());
+        Utils::StripExt(realOutFile);
+        Utils::AddExt(realOutFile, ".icf");
+        int size = GetOutputSize();
+        void *p = parserMem->GetMapping();
+        FILE *fil = fopen(realOutFile, "wb");
+        if (!fil)
+            Utils::fatal("could not open output file");
+        fwrite(p, size, 1, fil);
+        fclose(fil);
+    }
     delete parserMem;
 #endif
     rv = !!stoponerr;

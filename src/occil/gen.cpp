@@ -51,6 +51,8 @@ extern Method* currentMethod;
 extern std::vector<Local*> localList;
 extern DataContainer* mainContainer;
 extern std::vector<SimpleSymbol*> functionVariables;
+extern std::map<SimpleSymbol*, Param*, byName> paramList;
+
 #define MAX_ALIGNS 50
 MethodSignature* FindPInvokeWithVarargs(std::string name, std::list<Param*>::iterator begin, std::list<Param*>::iterator end,
                                         size_t size);
@@ -225,9 +227,14 @@ Operand* getCallOperand(QUAD* q, bool& virt)
             if (sp->storage_class == scc_virtual)
                 virt = true;
             if (sp->msil)
+            {
+
                 sig = ((Method*)sp->msil)->Signature();
+            }
             else
+            {
                 sig = GetMethodSignature(sp);
+            }
         }
     }
     else
@@ -1686,7 +1693,7 @@ void asm_prologue(QUAD* q) /* function prologue */
     returnCount = 0;
     hookCount = 0;
     LoadLocals(functionVariables);
-    LoadParams(currentFunction, functionVariables);
+    LoadParams(currentFunction, functionVariables, paramList);
     for (int i = 0; i < localList.size(); i++)
         currentMethod->AddLocal(localList[i]);
 }

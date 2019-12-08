@@ -39,9 +39,6 @@
     <ClCompile Include="..\occopt\config.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\occopt\configmsil.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\occopt\configx86.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -75,6 +72,12 @@
     <ClCompile Include="..\occopt\output.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="msilInit.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\occopt\configmsil.cpp">
+      <Filter>Resource Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="be.h">
@@ -95,5 +98,10 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\adl\Release\adl.Build.CppClean.log" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="be.p">
+      <Filter>Header Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

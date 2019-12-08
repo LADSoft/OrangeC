@@ -232,7 +232,7 @@ static void StreamType(SimpleType* type)
         {
             StreamIndex(type->type);
             StreamIndex(type->size);
-            StreamIndex(type->sizeFromType);
+            StreamIntValue(&type->sizeFromType,sizeof(int));
             StreamIndex(type->bits);
             StreamIndex(type->startbit);
             if (type->sp && type->type != st_any)
@@ -265,7 +265,7 @@ static void StreamSymbol(SimpleSymbol* sym)
             StreamIndex(sym->label);
             StreamIndex(sym->templateLevel);
             StreamIntValue(&sym->flags, 8);
-            StreamIndex(sym->sizeFromType);
+            StreamIntValue(&sym->sizeFromType, sizeof(int));
             StreamIndex(sym->align);
             StreamIndex(sym->size);
             if (sym->parentClass)
@@ -289,7 +289,7 @@ static void StreamExpression(SimpleExpression* exp)
         {
             StreamIndex(exp->type);
             StreamIndex(exp->flags);
-            StreamIndex(exp->sizeFromType);
+            StreamIntValue(&exp->sizeFromType, sizeof(int));
             switch (exp->type)
             {
             case se_i:
@@ -334,7 +334,22 @@ static void StreamExpression(SimpleExpression* exp)
                 break;
             }
             StreamExpression(exp->left);
-            StreamExpression(exp->right);
+            if (exp->type == se_tempref)
+            {
+                SimpleSymbol* sp = ((SimpleSymbol*)exp->right);
+                int n = 0;
+                if (sp)
+                {
+                    n = sp->fileIndex;
+                    if (sp->storage_class != scc_auto && sp->storage_class != scc_register && sp->storage_class != scc_parameter)
+                        n |= 0x40000000;
+                }
+                 StreamIndex(n);
+            }
+            else
+            {
+                StreamExpression(exp->right);
+            }
             StreamExpression(exp->altData);
         }
     });
@@ -514,7 +529,7 @@ static void StreamInstruction(QUAD *q)
             for (auto v = (ArgList*)q->altargs; v; v = v->next)
             {
                 StreamType(v->tp);
-                StreamExpression(v->exp);
+//                StreamExpression(v->exp);
             }
             StreamIndex(q->ansColor);
             StreamIndex(q->leftColor);

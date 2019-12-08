@@ -1702,6 +1702,8 @@ static int gen_parm(INITLIST* a, SYMBOL* funcsp)
             tp->btp->size = getSize(bt_pointer);
             tp->btp->rootType = tp->btp;
             objectArray_exp = SymbolManager::Get(anonymousVar(sc_auto, tp));
+            cacheTempSymbol(objectArray_exp->sp);
+            objectArray_exp->sp->anonymous = false;
         }
         intermed_tail->varargPrev = true;
     }
@@ -2167,9 +2169,14 @@ IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         gosub->altvararg = f->vararg;
         ArgList **p = &gosub->altargs;
         INITLIST *il = f->arguments;
-        *p = (ArgList*)Alloc(sizeof(ArgList));
-        (*p)->tp = SymbolManager::Get(il->tp);
-        (*p)->exp = SymbolManager::Get(il->exp);
+        while (il)
+        {
+            *p = (ArgList*)Alloc(sizeof(ArgList));
+            (*p)->tp = SymbolManager::Get(il->tp);
+//            (*p)->exp = SymbolManager::Get(il->exp);
+            il = il->next;
+            p = &(*p)->next;
+        }
     }
     gosub->altsp = SymbolManager::Get(f->sp);
     gosub->fastcall = !!fastcallSize;

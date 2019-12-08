@@ -364,32 +364,6 @@ void ParamTransfer()
  */
 {
 
-    if (prm_architecture.GetExists())
-    {
-        auto splt = split(prm_architecture.GetValue(), ';');
-        static std::map<std::string, int> architectures =
-        {
-            { "x86", ARCHITECTURE_X86 },
-            { "msil", ARCHITECTURE_MSIL },
-        };
-        if (architectures.find(splt[0]) != architectures.end())
-        {
-            architecture = architectures[splt[0]];
-        }
-        else
-        {
-            Utils::fatal("invalid architecture");
-        }
-        if (sizeof(splt) > 1)
-        {
-            bePostFile = splt[1];
-        }
-    }
-    else
-    {
-        // default to x86
-        architecture = ARCHITECTURE_X86;
-    }
     // booleans
     if (prm_c89.GetExists())
         cparams.prm_c99 = cparams.prm_c1x = !prm_c89.GetValue();
@@ -526,7 +500,12 @@ void ParamTransfer()
         {
             auto v = split(prm_libpath.GetValue());
             for (auto&&s : v)
+            {
                 prm_Using.push_back(s);
+#ifndef PARSER_ONLY
+                _add_global_using(s.c_str());
+#endif
+            }
             break;
         }
         case ARCHITECTURE_X86:
@@ -942,6 +921,32 @@ void ccinit(int argc, char* argv[])
     {
         cparams.prm_asmfile = true;
         prm_assemblerSpecifier = prm_assemble.GetValue();
+    }
+    if (prm_architecture.GetExists())
+    {
+        auto splt = split(prm_architecture.GetValue(), ';');
+        static std::map<std::string, int> architectures =
+        {
+            { "x86", ARCHITECTURE_X86 },
+            { "msil", ARCHITECTURE_MSIL },
+        };
+        if (architectures.find(splt[0]) != architectures.end())
+        {
+            architecture = architectures[splt[0]];
+        }
+        else
+        {
+            Utils::fatal("invalid architecture");
+        }
+        if (splt.size() > 1)
+        {
+            bePostFile = splt[1];
+        }
+    }
+    else
+    {
+        // default to x86
+        architecture = ARCHITECTURE_X86;
     }
     if (!init_backend())
         Utils::fatal("Could not initialize back end");

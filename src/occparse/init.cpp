@@ -478,6 +478,7 @@ static void dumpDynamicInitializers(void)
         retlab = nextLabel++;
         genfunc(funcsp, !((architecture == ARCHITECTURE_MSIL)));
         startlab = retlab = 0;
+        
         if (!(chosenAssembler->arch->denyopts & DO_NOADDRESSINIT))
         {
             startupseg();

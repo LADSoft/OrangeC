@@ -80,7 +80,7 @@ SimpleSymbol* SymbolManager::Get(struct sym *sym)
 
 SimpleExpression* SymbolManager::Get(struct expr* e)
 {
-    while (e && e->type == en_lvalue || e->type == en_not_lvalue)
+    while (e && e->type == en_lvalue || e->type == en_not_lvalue || e->type == en_x_string || e->type == en_x_object)
         e = e->left;
     SimpleExpression* rv = (SimpleExpression*)Alloc(sizeof(SimpleExpression));
     rv->sizeFromType = natural_size(e);
@@ -195,7 +195,7 @@ SimpleExpression* SymbolManager::Get(struct expr* e)
     case en_c_string:
         rv->type = se_string;
         {
-            char buf[1000], *dest = buf;
+            char buf[50000], *dest = buf;
             if (e->string)
             {
                 int i;
@@ -206,7 +206,7 @@ SimpleExpression* SymbolManager::Get(struct expr* e)
                     int j;
                     for (j = 0; j < s->count; j++)
                     {
-                        *dest++ - s->str[j];
+                        *dest++ = s->str[j];
                         if (dest - buf >= sizeof(buf) - 1)
                         {
                             done = true;
@@ -382,7 +382,7 @@ SimpleSymbol* SymbolManager::Make(struct sym* sym)
     rv->isimport = sym->attribs.inheritable.linkage2 == lk_import;
     rv->isexport = sym->attribs.inheritable.linkage2 == lk_export;
     rv->isvirtual = sym->attribs.inheritable.linkage == lk_virtual;
-    rv->msil_rtl = !!sym->msil;
+    rv->msil_rtl = sym->attribs.inheritable.linkage2 == lk_msil_rtl;
     rv->isproperty = sym->attribs.inheritable.linkage2 == lk_property;
     rv->unmanaged = sym->attribs.inheritable.linkage2 == lk_unmanaged;
     rv->isstdcall = sym->attribs.inheritable.linkage == lk_stdcall;

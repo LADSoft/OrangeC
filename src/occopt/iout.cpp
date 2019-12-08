@@ -1077,6 +1077,7 @@ void putconst(SimpleExpression* offset, int color)
                 oputc('"', icdFile);
             }
             break;
+
         case se_labcon:
             oprintf(icdFile, "L_%ld:PC", offset->i);
             break;

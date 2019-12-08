@@ -214,7 +214,7 @@ static SimpleType* UnstreamType()
             rv = (SimpleType*)Alloc(sizeof(SimpleType));
             rv->type = type;
             rv->size = UnstreamIndex();
-            rv->sizeFromType = UnstreamIndex();
+            UnstreamIntValue(&rv->sizeFromType, sizeof(int));
             rv->bits = UnstreamIndex();
             rv->startbit = UnstreamIndex();
             rv->sp = (SimpleSymbol*)UnstreamIndex();
@@ -244,7 +244,7 @@ static SimpleSymbol* UnstreamSymbol()
             rv->label = UnstreamIndex();
             rv->templateLevel = UnstreamIndex();
             UnstreamIntValue(&rv->flags, 8);
-            rv->sizeFromType = UnstreamIndex();
+            UnstreamIntValue(&rv->sizeFromType, sizeof(int));
             rv->align = UnstreamIndex();
             rv->size = UnstreamIndex();
             rv->parentClass = (SimpleSymbol*)UnstreamIndex();
@@ -279,7 +279,7 @@ static SimpleExpression* UnstreamExpression()
             rv = (SimpleExpression*)Alloc(sizeof(SimpleExpression));
             rv->type = (se_type)type;
             rv->flags = UnstreamIndex();
-            rv->sizeFromType = UnstreamIndex();
+            UnstreamIntValue(&rv->sizeFromType, sizeof(int));
             switch (rv->type)
             {
             case se_i:
@@ -325,11 +325,21 @@ static SimpleExpression* UnstreamExpression()
                 val.resize(count, 0);
                 for (auto&& c : val)
                     c = UnstreamByte();
+                rv->astring.str = (char *)Alloc(count);
+                memcpy(rv->astring.str, val.c_str(), count);
+                rv->astring.len = count;
                 break;
                 }
             }
             rv->left = UnstreamExpression();
-            rv->right = UnstreamExpression();
+            if (type == se_tempref)
+            {
+                rv->right = (SimpleExpression*)UnstreamIndex();
+            }
+            else
+            {
+                rv->right = UnstreamExpression();
+            }
             rv->altData = UnstreamExpression();
         }
     });
@@ -522,7 +532,8 @@ static QUAD* UnstreamInstruction(FunctionData& fd)
             {
                 *p = (ArgList*)Alloc(sizeof(ArgList));
                 (*p)->tp = UnstreamType();
-                (*p)->exp = UnstreamExpression();
+//                (*p)->exp = UnstreamExpression();
+                p = &(*p)->next;
             }
             rv->ansColor = UnstreamIndex();
             rv->leftColor = UnstreamIndex();
@@ -992,7 +1003,28 @@ static void ResolveExpression(SimpleExpression* exp, std::map<int, std::string>&
             break;
         }
         ResolveExpression(exp->left, texts);
-        ResolveExpression(exp->right, texts);
+        if (exp->type == se_tempref) 
+        {
+            if (exp->right)
+            {
+                SimpleSymbol *sym = (SimpleSymbol *)exp->right;
+                int n = (int)(exp->right);
+                if (n & 0x40000000)
+                {
+                    sym = (SimpleSymbol*)((int)exp->right & 0x3fffffff);
+                    ResolveSymbol(sym, texts, globalCache);
+                }
+                else
+                {
+                    ResolveSymbol(sym, texts, current->variables);
+                }
+                exp->right = (SimpleExpression*)sym;
+            }
+        }
+        else
+        {
+            ResolveExpression(exp->right, texts);
+        }
         ResolveExpression(exp->altData, texts);
     }
 }
@@ -1047,6 +1079,8 @@ static void ResolveInstruction(QUAD* q, std::map<int, std::string>& texts)
     {
         ResolveType(q->alttp, texts, typeSymbols);
     }
+    for (auto a = q->altargs; a; a = a->next)
+        ResolveType(a->tp, texts, typeSymbols);
 }
 static void ResolveSymbol(std::vector<SimpleSymbol*> symbols, std::map<int, std::string>& texts, std::vector<SimpleSymbol*>& table)
 {
@@ -1082,7 +1116,8 @@ static void ResolveSymbol(SimpleSymbol*& sym, std::map<int, std::string>& texts,
         sym->outputName = texts[(int)sym->outputName].c_str();
         sym->importfile = texts[(int)sym->importfile].c_str();
         sym->namespaceName = texts[(int)sym->namespaceName].c_str();
-        sym->msil = texts[(int)sym->msil].c_str();
+        if (sym->msil)
+            sym->msil = texts[(int)sym->msil].c_str();
     }
 }
 static void ResolveFunction(FunctionData *fd, std::map<int, std::string>& texts)
@@ -1098,9 +1133,11 @@ static void ResolveFunction(FunctionData *fd, std::map<int, std::string>& texts)
         ResolveExpression(v->offset, texts);
         ResolveExpression(v->offset2, texts);
         ResolveExpression(v->offset3, texts);
+        ResolveExpression(v->vararg, texts);
     }
     for (auto q = fd->instructionList; q; q = q->fwd)
         ResolveInstruction(q, texts);
+    ResolveExpression(fd->objectArray_exp, texts);
     ResolveExpression(fd->fltexp, texts);
     lastFunction = current;
     current = nullptr;

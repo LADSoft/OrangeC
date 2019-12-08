@@ -67,6 +67,11 @@ void ccDumpSymbols(void);
 std::string ccNewFile(char* fileName, bool main);
 void ccCloseFile(FILE* handle);
 int ccDBOpen(const char* name);
+namespace DotNetPELib
+{
+    class PELib;
+}
+DotNetPELib::PELib* peLib;
 #endif
 
 
@@ -141,6 +146,7 @@ COMPILER_PARAMS cparams_default = {
     false, /* char managed_library;*/
     false, /* char no_default_libs;*/
     false, /*char replacePInvoke;*/
+    true, /* char msilAllowExtensions;*/
 };
 
 /*
@@ -289,6 +295,12 @@ void compile(bool global)
 //    browsdataInit();
     browse_init();
     browse_startfile(infile, 0);
+#ifndef PARSER_ONLY
+    if (architecture == ARCHITECTURE_MSIL)
+    {
+        compile_start((char*)clist->data);
+    }
+#endif
     if (cparams.prm_assemble)
     {
         lex = getsym();
@@ -417,6 +429,12 @@ int main(int argc, char* argv[])
     bool first = true;
     while (clist)
     {
+#ifndef PARSER_ONLY
+        if (architecture == ARCHITECTURE_MSIL)
+        {
+            msil_main_preprocess((char *)clist->data);
+        }
+#endif
         Errors::Reset();
         cparams.prm_cplusplus = false;
         strcpy(buffer, (char*)clist->data);
@@ -549,7 +567,10 @@ int main(int argc, char* argv[])
 
         /* Flag to stop if there are any errors */
         stoponerr |= TotalErrors();
-
+#ifndef PARSER_ONLY
+        if (architecture == ARCHITECTURE_MSIL)
+            msil_end_generation(nullptr);
+#endif
         clist = clist->next;
     }
 #ifndef PARSER_ONLY

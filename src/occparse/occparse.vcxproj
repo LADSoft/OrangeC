@@ -25,6 +25,7 @@
     <ClCompile Include="..\oasm\Instruction.cpp" />
     <ClCompile Include="..\oasm\Section.cpp" />
     <ClCompile Include="..\oasm\x64Instructions.cpp" />
+    <ClCompile Include="..\occil\msilInit.cpp" />
     <ClCompile Include="..\occil\using.cpp" />
     <ClCompile Include="..\occopt\config.cpp" />
     <ClCompile Include="..\occopt\configmsil.cpp" />

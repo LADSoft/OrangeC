@@ -48,4 +48,42 @@ enum asmTypes
 
 using namespace DotNetPELib;
 
+struct byLabel
+{
+    bool operator()(const SimpleSymbol* left, const SimpleSymbol* right) const
+    {
+        if (left->storage_class == scc_localstatic || right->storage_class == scc_localstatic)
+        {
+            if (left->storage_class != right->storage_class)
+                return left->storage_class < right->storage_class;
+            return left->outputName < right->outputName;
+        }
+        return left->label < right->label;
+    }
+};
+struct byField
+{
+    bool operator()(const SimpleSymbol* left, const SimpleSymbol* right) const
+    {
+        int n = strcmp(left->parentClass->name, right->parentClass->name);
+        if (n < 0)
+        {
+            return true;
+        }
+        else if (n > 0)
+        {
+            return false;
+        }
+        else
+        {
+            return strcmp(left->name, right->name) < 0;
+        }
+    }
+};
+
+struct byName
+{
+    bool operator()(const SimpleSymbol* left, const SimpleSymbol* right) const { return strcmp(left->name, right->name) < 0; }
+};
+
 #include "be.p"

@@ -43,7 +43,6 @@ extern LIST* nameSpaceList;
 extern TYPE stdint;
 
 #ifdef VSIDE
-PELib* peLib;
 void AddType(SimpleSymbol* sym, Type* type)
 {
 #ifdef ISPARSER
@@ -71,6 +70,8 @@ class Importer : public Callback
     virtual bool EnterField(const Field*) override;
     virtual bool EnterProperty(const Property*) override;
     void Pass(int p) { pass_ = p; }
+    void Rundown();
+
 #if 1
 #    define diag(x, y)
 #else
@@ -103,6 +104,7 @@ class Importer : public Callback
     std::deque<SYMBOL*> nameSpaces_;
     std::deque<SYMBOL*> structures_;
     std::map<std::string, SYMBOL*> cachedClasses_;
+    std::deque<SYMBOL*> cachedMethods_;
     int level_;
     int pass_;
     bool inlsmsilcrtl_;
@@ -118,8 +120,15 @@ void Import()
     peLib->Traverse(importer);
     importer.Pass(3);
     peLib->Traverse(importer);
+    importer.Rundown();
+
 }
 
+void Importer::Rundown()
+{
+    for (auto v : cachedMethods_)
+        InsertExtern(v);
+}
 e_bt Importer::translatedTypes[] = {
     ///** type is a reference to a class
     bt_void,
@@ -172,7 +181,7 @@ TYPE* Importer::TranslateType(Type* in)
             (*last) = (TYPE*)Alloc(sizeof(TYPE));
             (*last)->type = tp;
             (*last)->size = 1;
-            if (in->ArrayLevel())
+            if (in->ArrayLevel() || tp == bt___string || tp == bt___object)
             {
                 (*last)->msil = true;
             }
@@ -326,7 +335,6 @@ bool Importer::EnterClass(const Class* cls)
                 insert(sp,
                        structures_.size() ? structures_.back()->tp->syms : nameSpaces_.back()->nameSpaceValues->valueData->syms);
             sp->msil = GetName(cls);
-            AddType(SymbolManager::Get(sp), peLib->AllocateType(const_cast<Class*>(cls)));
             cachedClasses_[sp->name] = sp;
         }
         else
@@ -349,7 +357,9 @@ bool Importer::EnterClass(const Class* cls)
             }
         }
         if (pass_ == 3)
+        {
             InsertBaseClassTree(sp, cls);
+        }
     }
     return true;
 }
@@ -357,6 +367,11 @@ bool Importer::ExitClass(const Class* cls)
 {
     level_--;
     diag("Exit Class", cls->Name());
+    if (pass_ == 3)
+    {
+        SYMBOL* sp = structures_.back();
+        AddType(SymbolManager::Get(sp), peLib->AllocateType(const_cast<Class*>(cls)));
+    }
     structures_.pop_back();
     if (!structures_.size())
         inlsmsilcrtl_ = false;
@@ -490,6 +505,7 @@ bool Importer::EnterMethod(const Method* method)
                 sp->storage_class = sc_member;
             sp->tp = tp;
             sp->tp->sp = sp;
+            sp->msil = GetName(method->GetContainer(), method->Signature()->Name());
             sp->parentClass = structures_.back();
             sp->declfile = sp->origdeclfile = "[import]";
             sp->access = ac_public;
@@ -514,6 +530,7 @@ bool Importer::EnterMethod(const Method* method)
                 sp1->tp->btp = structures_.back()->tp;
                 sp1->declfile = sp1->origdeclfile = "[import]";
                 sp1->access = ac_public;
+                sp1->parent = sp;
                 SetLinkerNames(sp1, lk_cdecl);
                 insert(sp1, sp->tp->syms);
             }
@@ -525,6 +542,7 @@ bool Importer::EnterMethod(const Method* method)
                 sp1->tp = args[i];
                 sp1->declfile = sp1->origdeclfile = "[import]";
                 sp1->access = ac_public;
+                sp1->parent = sp;
                 SetLinkerNames(sp1, lk_cdecl);
                 insert(sp1, sp->tp->syms);
             }
@@ -537,10 +555,12 @@ bool Importer::EnterMethod(const Method* method)
                 sp1->tp->type = bt_ellipse;
                 sp1->declfile = sp1->origdeclfile = "[import]";
                 sp1->access = ac_public;
+                sp1->parent = sp;
                 SetLinkerNames(sp1, lk_cdecl);
                 insert(sp1, sp->tp->syms);
             }
             SetLinkerNames(sp, lk_cdecl);
+            cachedMethods_.push_back(sp);
 
             SYMLIST** hr = LookupName((char*)method->Signature()->Name().c_str(), structures_.back()->tp->syms);
             SYMBOL* funcs = NULL;
@@ -573,7 +593,6 @@ bool Importer::EnterMethod(const Method* method)
             {
                 Utils::fatal("backend: invalid overload tab");
             }
-            sp->msil = GetName(method->GetContainer(), method->Signature()->Name());
         }
     }
     return true;

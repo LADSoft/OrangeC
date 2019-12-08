@@ -36,6 +36,7 @@
     <ClCompile Include="gen.cpp" />
     <ClCompile Include="igen.cpp" />
     <ClCompile Include="invoke.cpp" />
+    <ClCompile Include="msilInit.cpp" />
     <ClCompile Include="occil.cpp" />
     <ClCompile Include="Process.cpp" />
     <ClCompile Include="using.cpp" />
@@ -58,6 +59,9 @@
   <ItemGroup>
     <Text Include="..\adl\Release\adl.Build.CppClean.log" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="be.p" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{658E5D2A-CF60-4DA7-8CBC-AD91F998822B}</ProjectGuid>
@@ -71,7 +75,7 @@
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>NotSet</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>

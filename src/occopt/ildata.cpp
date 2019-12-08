@@ -52,7 +52,7 @@ std::list<std::string> toolArgs;
 const char* pinvoke_dll = "msvcrt.dll";
 std::string prm_snkKeyFile;
 std::list<std::string> prm_Using;
-std::string prm_assemblyVersion;
+std::string prm_assemblyVersion = "0.0.0.0";
 std::string prm_namespace_and_class;
 std::map<std::string, std::string> bePragma;
 std::list<MsilProperty> msilProperties;

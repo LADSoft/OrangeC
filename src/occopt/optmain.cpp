@@ -388,7 +388,7 @@ int main(int argc, char* argv[])
     SharedMemory* parserMem = nullptr;
     SharedMemory* optimizerMem = nullptr;
     std::string outputFile;
-    if (fileMode)
+        if (fileMode)
     {
         if (output.GetExists())
         {

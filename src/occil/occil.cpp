@@ -34,6 +34,7 @@
 #include "CmdSwitch.h"
 #include "ildata.h"
 #include "SharedMemory.h"
+#include "DotNetPELib.h"
 
 extern int architecture;
 extern std::vector<SimpleSymbol*> temporarySymbols;
@@ -56,6 +57,9 @@ extern std::list<std::string> backendFiles;
 extern SimpleExpression* fltexp;
 extern int usingEsp;
 extern int fastcallAlias;
+extern PELib* peLib;
+extern FILE* outputFile;
+extern std::list<std::string> prm_Using;
 
 CmdSwitchParser SwitchParser;
 CmdSwitchBool single(SwitchParser, 's', false, "single");
@@ -74,7 +78,6 @@ char outFile[260];
 int dbgblocknum;
 
 static const char* verbosity = nullptr;
-extern FILE* outputFile;
 
 void regInit() { }
 int usingEsp;
@@ -100,6 +103,58 @@ void diag(const char*fmt, ...)
 
 }
 
+void ResolveMSILExterns()
+{
+    for (auto&& sp : externals)
+    {
+        if (sp->msil)
+        {
+            if (sp->tp->type == st_func)
+            {
+                std::vector<SimpleSymbol*> params;
+                for (auto v = sp->syms; v != nullptr; v = v->next)
+                {
+                    SimpleSymbol *sym = (SimpleSymbol*)v->data;
+                    if (!sym->thisPtr && sym->tp->type != st_void)
+                        params.push_back(sym);
+                }
+                std::map<SimpleSymbol*, Param*, byName> paramList;
+                LoadParams(sp, params, paramList);
+                std::vector<Type*> types;
+                for (auto v : paramList)
+                {
+                    types.push_back(v.second->GetType());
+                }
+                Method* rv = nullptr;
+                peLib->Find(sp->msil, &rv, types, nullptr, true);
+                if (rv)
+                    sp->msil = (const char *)rv;
+                else
+                    sp->msil = nullptr; // error!!!!!!!
+            }
+            else // field
+            {
+                void* rv = nullptr;
+                if (peLib->Find(sp->msil, &rv, nullptr) == PELib::s_field)
+                {
+                    sp->msil = (const char *)rv;
+                }
+                else
+                {
+                    sp->msil = nullptr; ////   errror!!!!!!!
+                }
+
+            }
+        }
+    }
+    for (auto it = externals.begin(); it != externals.end();)
+    {
+        if ((*it)->msil)
+            it = externals.erase(it);
+        else
+            ++it;
+    }
+}
 void outputfile(char* buf, const char* name, const char* ext)
 {
     strcpy(buf, outputFileName.c_str());
@@ -160,8 +215,12 @@ void ProcessData(BaseData* v)
     case DT_SEGEXIT:
         break;
     case DT_DEFINITION:
+        if (v->symbol.sym->tp->type == st_func)
+            currentFunction = v->symbol.sym;
         oa_gen_strlab(v->symbol.sym);
         global(v->symbol.sym, v->symbol.i);
+        if (v->symbol.sym->tp->type == st_func)
+            currentFunction = nullptr;
         break;
     case DT_LABELDEFINITION:
         oa_put_string_label(v->i, 0);
@@ -284,8 +343,8 @@ bool ProcessData(const char *name)
     {
         if (v->type == DT_FUNC)
         {
-            //            temporarySymbols = v->funcData->temporarySymbols;
-            //            functionVariables = v->funcData->variables;
+            temporarySymbols = v->funcData->temporarySymbols;
+            functionVariables = v->funcData->variables;
             //            blockCount = v->funcData->blockCount;
             //            exitBlock = v->funcData->exitBlock;
             //            tempCount = v->funcData->tempCount;
@@ -301,6 +360,7 @@ bool ProcessData(const char *name)
             SetUsesESP(currentFunction->usesEsp);
             generate_instructions(intermed_head);
             flush_peep(currentFunction, nullptr);
+            currentFunction = nullptr;
         }
         else
         {
@@ -316,20 +376,29 @@ bool ProcessData(const char *name)
                 oa_put_extern(v, 0);
             }
         }
-        oa_end_generation();
+        msil_end_generation(nullptr);
         fclose(outputFile);
         outputFile = nullptr;
     }
     return true;
 }
 
-bool LoadFile(SharedMemory* parserMem)
+bool LoadFile(SharedMemory* parserMem, std::string fileName)
 {
     InitIntermediate();
     bool rv = InputIntermediate(parserMem);
     SelectBackendData();
     oinit();
     SelectBackendData();
+    if (fileName.empty())
+    {
+        for (auto&& s : prm_Using)
+            _add_global_using(s.c_str());
+    }
+    if (fileName.empty() && inputFiles.size())
+        fileName = inputFiles.front();
+    msil_main_preprocess((char *)fileName.c_str());
+    ResolveMSILExterns();
     return rv;
 }
 bool SaveFile(const char *name)
@@ -339,9 +408,9 @@ bool SaveFile(const char *name)
         strcpy(infile, name);
         outputfile(outFile, name, chosenAssembler->objext);
         InsertExternalFile(outFile, false);
-        outputFile = fopen(outFile, "wb");
-        if (!outputFile)
-            return false;
+//        outputFile = fopen(outFile, "wb");
+//        if (!outputFile)
+//            return false;
         for (auto v : externals)
         {
             if (v)
@@ -350,8 +419,8 @@ bool SaveFile(const char *name)
             }
         }
         //        oa_setalign(2, dataAlign, bssAlign, constAlign);
-        fclose(outputFile);
-        oa_end_generation();
+//        fclose(outputFile);
+        msil_end_generation(outFile);
     }
     return true;
 }
@@ -418,7 +487,7 @@ int main(int argc, char* argv[])
     if (!rv)
     {
         char fileName[260];
-        if (!LoadFile(optimizerMem))
+        if (!LoadFile(optimizerMem, ""))
         {
             Utils::fatal("internal error: could not load intermediate file");
         }
@@ -436,7 +505,7 @@ int main(int argc, char* argv[])
         }
         for (auto p : files)
         {
-            if (!LoadFile(optimizerMem))
+            if (!LoadFile(optimizerMem, p))
                 Utils::fatal("internal error: could not load intermediate file");
             if (!ProcessData(p.c_str()) || !SaveFile(p.c_str()))
                 Utils::fatal("File I/O error");
@@ -446,7 +515,7 @@ int main(int argc, char* argv[])
             rv = RunExternalFiles();
         }
         if (!rv)
-            oa_main_postprocess(false);
+            msil_main_postprocess(false);
     }
     return rv;
 }

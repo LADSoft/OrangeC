@@ -4196,7 +4196,7 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
         LIST* gather = nullptr;
         SYMBOL *found1 = nullptr, *found2 = nullptr;
         if (!cparams.prm_cplusplus &&
-            ((architecture != ARCHITECTURE_MSIL) || cparams.msilAllowExtensions || (sp && !sp->tp->syms->table[0]->next)))
+            ((architecture != ARCHITECTURE_MSIL) || !cparams.msilAllowExtensions || (sp && !sp->tp->syms->table[0]->next)))
         {
             sp = ((SYMBOL*)sp->tp->syms->table[0]->p);
             if (sp)

@@ -165,6 +165,15 @@ void PELib::SplitPath(std::vector<std::string>& split, std::string path)
     {
         split.push_back(last);
     }
+    if (split.size() > 2)
+    {
+        if (split[split.size() - 1] == "ctor" || split[split.size() - 1] == "cctor")
+            if (split[split.size() - 2] == "")
+            {
+                split[split.size() - 2] = "." + split[split.size() - 1];
+                split.resize(split.size() - 1);
+            }
+    }
 }
 PELib::eFindType PELib::Find(std::string path, void** result, AssemblyDef* assembly)
 {

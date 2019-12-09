@@ -2930,7 +2930,7 @@ LEXEME* statement(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool viacontro
             break;
         default:
             if (((startOfType(lex, false) &&
-                  ((!cparams.prm_cplusplus && ((architecture != ARCHITECTURE_MSIL) || cparams.msilAllowExtensions)) ||
+                  ((!cparams.prm_cplusplus && ((architecture != ARCHITECTURE_MSIL) || !cparams.msilAllowExtensions)) ||
                    resolveToDeclaration(lex)))) ||
                 MATCHKW(lex, kw_namespace) || MATCHKW(lex, kw_using) || MATCHKW(lex, kw_decltype) || MATCHKW(lex, kw_static_assert))
             {

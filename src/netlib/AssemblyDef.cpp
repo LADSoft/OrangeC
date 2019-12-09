@@ -324,7 +324,6 @@ void AssemblyDef::Load(PELib& lib, PEReader& reader)
         fields.push_back(0);
         methods.push_back(0);
         properties.push_back(0);
-        semantics.push_back(0);
         const DNLTable& table2 = reader.Table(tTypeDef);
         for (auto tentry : table2)
         {
@@ -498,9 +497,12 @@ void AssemblyDef::Load(PELib& lib, PEReader& reader)
                             }
                             break;
                             case TypeDefOrRef::TypeRef:
-                                if (refClasses[entry->extends_.index_] == "System.ValueType")
-                                    classes[i]->Flags() |= Qualifiers::Value;
-                                classes[i]->ExtendsName(refClasses[entry->extends_.index_]);
+                                if (entry->extends_.index_ < refClasses.size())
+                                {
+                                    if (refClasses[entry->extends_.index_] == "System.ValueType")
+                                        classes[i]->Flags() |= Qualifiers::Value;
+                                    classes[i]->ExtendsName(refClasses[entry->extends_.index_]);
+                                }
                                 break;
                         }
                     };
@@ -576,7 +578,7 @@ void AssemblyDef::Load(PELib& lib, PEReader& reader)
                 */
             }
         }
-        semantics[classes.size() - 1] = properties.size();
+//        semantics[classes.size() - 1] = properties.size();
         // load the namespaces.
         // Note: classes fields and functions not in a namespace will NOT
         // be imported, as per the C# rules.

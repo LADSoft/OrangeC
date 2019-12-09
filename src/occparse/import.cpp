@@ -453,6 +453,7 @@ bool Importer::EnterMethod(const Method* method)
         {
             ctor = true;
             structures_.back()->trivialCons = false;
+            structures_.back()->hasUserCons = true;
         }
         TYPE* tp = (TYPE*)Alloc(sizeof(TYPE));
         std::vector<TYPE*> args;

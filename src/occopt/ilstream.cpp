@@ -451,6 +451,7 @@ static void StreamInstruction(QUAD *q)
                 StreamFloatValue(q->dc.v.c.i);
                 break;
             case i_label:
+            case i_expressiontag:
                 StreamIndex(q->dc.v.label);
                 break;
             case i_line:

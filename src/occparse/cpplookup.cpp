@@ -934,7 +934,7 @@ LEXEME* nestedSearch(LEXEME* lex, SYMBOL** sym, SYMBOL** strSym, NAMESPACEVALUEL
     bool namespaceOnly = false;
     *sym = nullptr;
 
-    if (!cparams.prm_cplusplus && ((architecture != ARCHITECTURE_MSIL) || cparams.msilAllowExtensions))
+    if (!cparams.prm_cplusplus && ((architecture != ARCHITECTURE_MSIL) || !cparams.msilAllowExtensions))
     {
         if (ISID(lex))
         {

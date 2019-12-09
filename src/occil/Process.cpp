@@ -513,14 +513,27 @@ Type* GetType(SimpleType* tp, bool commit, bool funcarg, bool pinvoke)
         {
             if (!type)
             {
-                Class* newClass = peLib->AllocateClass(
-                    tp->sp->name,
-                    Qualifiers::Public | (tp->type == st_union ? Qualifiers::ClassUnion : Qualifiers::ClassClass),
-                    tp->sp->align, tp->size);
-                mainContainer->Add(newClass);
-                type = peLib->AllocateType(newClass);
-                typeList[tp->sp->outputName] = type;
-                tp->sp->msil = GetName(newClass);
+                if (tp->sp->msil)
+                {
+                    void *rv = nullptr;
+                    if (peLib->Find(tp->sp->msil, &rv) == PELib::s_class)
+                    {
+                        type = peLib->AllocateType((Class*)rv);
+                        typeList[tp->sp->outputName] = type;
+
+                    }
+                }
+                else
+                {
+                    Class* newClass = peLib->AllocateClass(
+                        tp->sp->name,
+                        Qualifiers::Public | (tp->type == st_union ? Qualifiers::ClassUnion : Qualifiers::ClassClass),
+                        tp->sp->align, tp->size);
+                    mainContainer->Add(newClass);
+                    type = peLib->AllocateType(newClass);
+                    typeList[tp->sp->outputName] = type;
+                    tp->sp->msil = GetName(newClass);
+                }
             }
             else
             {

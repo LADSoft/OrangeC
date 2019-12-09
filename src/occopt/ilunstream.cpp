@@ -459,6 +459,7 @@ static QUAD* UnstreamInstruction(FunctionData& fd)
                 UnstreamFloatValue(rv->dc.v.c.i);
                 break;
             case i_label:
+            case i_expressiontag:
                 rv->dc.v.label = UnstreamIndex();
                 break;
             case i_line:

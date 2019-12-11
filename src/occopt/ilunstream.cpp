@@ -1189,7 +1189,13 @@ static void ResolveNames(std::map<int, std::string>& texts)
         b->name = texts[(int)b->name].c_str();
 
     }
+    for (auto &&v : msilProperties)
+    {
+        ResolveSymbol(v.prop, texts, globalCache);
+        ResolveSymbol(v.getter, texts, globalCache);
+        ResolveSymbol(v.setter, texts, globalCache);
 
+    }
 }
 bool InputIntermediate(SharedMemory* inputMem)
 {

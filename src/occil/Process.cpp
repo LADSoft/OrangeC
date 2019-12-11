@@ -485,7 +485,7 @@ void msil_create_property(SimpleSymbol* property, SimpleSymbol* getter, SimpleSy
 	auto tempvar = std::vector<Type*>{};
         Property* p = peLib->AllocateProperty(*peLib, property->name, GetType(property->tp, true, false, false),
                                               tempvar, !!setter, mainContainer);
-        p->Instance(false);  // only doing statics for now...
+        p->Instance(false);
         static_cast<Class*>(mainContainer)->Add(p);
         property->msil = GetName(p->GetContainer(), p->Name());
     }
@@ -1390,6 +1390,7 @@ void oa_genstring(char* str, int len)
     {
         oa_genbyte(*str++);
     }
+    oa_enterseg((e_sg)0);
 }
 
 void oa_enterseg(e_sg segnum)
@@ -1752,42 +1753,37 @@ static void dumpGlobalFuncs() {}
 
 static void LoadDynamics()
 {
-    SimpleSymbol *start = NULL, *end = NULL;
     for (auto sym : globalCache)
     {
         if (!strncmp(sym->name, "__DYNAMIC", 9))
         {
             if (strstr(sym->name, "STARTUP"))
-                start = sym;
+            {
+                LIST* lst = (LIST*)peLib->AllocateBytes(sizeof(LIST));
+                static SimpleSymbol sp;
+                sp.name = (char*)sym->name;
+                std::map<SimpleSymbol*, Value*, byName>::iterator it = globalMethods.find(&sp);
+                MethodSignature* signature = static_cast<MethodName*>(it->second)->Signature();
+                lst->data = (void*)peLib->AllocateMethodName(signature);
+                if (initializersHead)
+                    initializersTail = initializersTail->next = lst;
+                else
+                    initializersHead = initializersTail = lst;          
+            }
             else
-                end = sym;
+            {
+                LIST* lst = (LIST*)peLib->AllocateBytes(sizeof(LIST));
+                static SimpleSymbol sp1;
+                sp1.name = (char*)sym->name;
+                std::map<SimpleSymbol*, Value*, byName>::iterator it = globalMethods.find(&sp1);
+                MethodSignature* signature = static_cast<MethodName*>(it->second)->Signature();
+                lst->data = (void*)peLib->AllocateMethodName(signature);
+                if (deinitializersHead)
+                    deinitializersTail = deinitializersTail->next = lst;
+                else
+                    deinitializersHead = initializersTail = lst;
+            }
         }
-    }
-    if (start)
-    {
-        LIST* lst = (LIST*)peLib->AllocateBytes(sizeof(LIST));
-        static SimpleSymbol sp;
-        sp.name = (char*)start->name;
-        std::map<SimpleSymbol*, Value*, byName>::iterator it = globalMethods.find(&sp);
-        MethodSignature* signature = static_cast<MethodName*>(it->second)->Signature();
-        lst->data = (void*)peLib->AllocateMethodName(signature);
-        if (initializersHead)
-            initializersTail = initializersTail->next = lst;
-        else
-            initializersHead = initializersTail = lst;
-    }
-    if (end)
-    {
-        LIST* lst = (LIST*)peLib->AllocateBytes(sizeof(LIST));
-        static SimpleSymbol sp1;
-        sp1.name = (char*)end->name;
-        std::map<SimpleSymbol*, Value*, byName>::iterator it = globalMethods.find(&sp1);
-        MethodSignature* signature = static_cast<MethodName*>(it->second)->Signature();
-        lst->data = (void*)peLib->AllocateMethodName(signature);
-        if (deinitializersHead)
-            deinitializersTail = deinitializersTail->next = lst;
-        else
-            deinitializersHead = initializersTail = lst;
     }
 }
 static void AddRTLThunks()

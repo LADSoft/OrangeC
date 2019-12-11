@@ -440,6 +440,8 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
         browse_usage(sym, lex->filenum);
         *tp = sym->tp;
         lex = getsym();
+        if (!strcmp(sym->name, "XX"))
+            printf("hi");
         if (sym->attribs.uninheritable.deprecationText)
         {
             deprecateMessage(sym);

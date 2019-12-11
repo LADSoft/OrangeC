@@ -40,6 +40,12 @@ extern PreProcessor* preProcessor;
 extern SYMBOL* theCurrentFunc;
 extern std::vector<SimpleSymbol*> typeSymbols;
 
+void SymbolManager::clear()
+{
+    if (architecture != ARCHITECTURE_MSIL || (cparams.prm_compileonly && !cparams.prm_asmfile))
+        symbols.clear(); globalSymbols.clear();
+}
+
 void beDecorateSymName(char* buf, SYMBOL* sym)
 {
     const char* q;

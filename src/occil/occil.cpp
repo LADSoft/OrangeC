@@ -60,6 +60,7 @@ extern int fastcallAlias;
 extern PELib* peLib;
 extern FILE* outputFile;
 extern std::list<std::string> prm_Using;
+extern std::list<MsilProperty> msilProperties;
 
 CmdSwitchParser SwitchParser;
 CmdSwitchBool single(SwitchParser, 's', false, "single");
@@ -328,17 +329,6 @@ void ProcessData(BaseData* v)
 }
 bool ProcessData(const char *name)
 {
-    if (cparams.prm_asmfile)
-    {
-        char buf[260];
-        outputfile(buf, name, chosenAssembler->asmext);
-        InsertExternalFile(buf, false);
-        outputFile = fopen(buf, "w");
-        if (!outputFile)
-            return false;
-//        oa_setalign(2, dataAlign, bssAlign, constAlign);
-
-    }
     for (auto v : baseData)
     {
         if (v->type == DT_FUNC)
@@ -367,19 +357,6 @@ bool ProcessData(const char *name)
             ProcessData(v);
         }
     }
-    if (cparams.prm_asmfile)
-    {
-        for (auto v : externals)
-        {
-            if (v)
-            {
-                oa_put_extern(v, 0);
-            }
-        }
-        msil_end_generation(nullptr);
-        fclose(outputFile);
-        outputFile = nullptr;
-    }
     return true;
 }
 
@@ -396,21 +373,28 @@ bool LoadFile(SharedMemory* parserMem, std::string fileName)
             _add_global_using(s.c_str());
     }
     if (fileName.empty() && inputFiles.size())
+    {
+        if (!cparams.prm_compileonly || cparams.prm_asmfile)
+        {
+            outputfile(outFile, inputFiles.front().c_str(), chosenAssembler->objext);
+            InsertExternalFile(outFile, false);
+        }
         fileName = inputFiles.front();
+    }
     msil_main_preprocess((char *)fileName.c_str());
     ResolveMSILExterns();
     return rv;
 }
 bool SaveFile(const char *name)
 {
-    if (!cparams.prm_asmfile)
+    if (cparams.prm_compileonly && !cparams.prm_asmfile)
     {
         strcpy(infile, name);
         outputfile(outFile, name, chosenAssembler->objext);
         InsertExternalFile(outFile, false);
-//        outputFile = fopen(outFile, "wb");
-//        if (!outputFile)
-//            return false;
+        outputFile = fopen(outFile, "wb");
+        if (!outputFile)
+            return false;
         for (auto v : externals)
         {
             if (v)
@@ -419,8 +403,9 @@ bool SaveFile(const char *name)
             }
         }
         //        oa_setalign(2, dataAlign, bssAlign, constAlign);
-//        fclose(outputFile);
         msil_end_generation(outFile);
+        fclose(outputFile);
+        outputFile = nullptr;
     }
     return true;
 }
@@ -475,7 +460,7 @@ int main(int argc, char* argv[])
         {
             Utils::fatal("cannot open input file");
         }
-
+         
     }
     else
     {
@@ -503,12 +488,15 @@ int main(int argc, char* argv[])
                 Utils::fatal("File I/O error");
             files.pop_front();
         }
-        for (auto p : files)
+        if (cparams.prm_compileonly && !cparams.prm_asmfile)
         {
-            if (!LoadFile(optimizerMem, p))
-                Utils::fatal("internal error: could not load intermediate file");
-            if (!ProcessData(p.c_str()) || !SaveFile(p.c_str()))
-                Utils::fatal("File I/O error");
+            for (auto p : files)
+            {
+                if (!LoadFile(optimizerMem, p))
+                    Utils::fatal("internal error: could not load intermediate file");
+                if (!ProcessData(p.c_str()) || !SaveFile(p.c_str()))
+                    Utils::fatal("File I/O error");
+            }
         }
         if (!cparams.prm_compileonly)
         {

@@ -145,7 +145,7 @@ void WeedExterns()
                     ((sym->parentClass && sym->genreffed) || (sym->genreffed && sym->storage_class == scc_external)))) &&
             !sym->noextern)
         {
-            sym->genreffed = false;
+            //sym->genreffed = false;
             ++it;   
         }
         else

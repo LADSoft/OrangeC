@@ -90,20 +90,23 @@ static bool virtualMode;
 void InitIntermediate()
 {
     curseg = noseg;
-    for (auto b : baseData)
-        if (b->type == DT_FUNC)
-            delete b->funcData;
-    baseData.clear();
-    externals.clear();
-    globalCache.clear();
-    browseInfo.clear();
-    browseFiles.clear();
-//    inputFiles.clear();
-    typedefs.clear();
-    bePragma.clear();
-    msilProperties.clear();
-    typeSymbols.clear();
     dataAlign = bssAlign = constAlign = 1;
+    if (architecture != ARCHITECTURE_MSIL || (cparams.prm_compileonly && !cparams.prm_asmfile))
+    {
+        for (auto b : baseData)
+            if (b->type == DT_FUNC)
+                delete b->funcData;
+        baseData.clear();
+        externals.clear();
+        globalCache.clear();
+        browseInfo.clear();
+        browseFiles.clear();
+        //    inputFiles.clear();
+        typedefs.clear();
+        bePragma.clear();
+        msilProperties.clear();
+        typeSymbols.clear();
+    }
 }
 
 static BaseData* AddData(DataType dt)

@@ -440,16 +440,19 @@ int main(int argc, char* argv[])
     ProcessFunctions();
     std::string aa = inputFiles.size() ? inputFiles.front() : "";
     SaveFile(aa, optimizerMem);
-    if (!single.GetValue() && inputFiles.size())
+    if (architecture != ARCHITECTURE_MSIL || (cparams.prm_compileonly && !cparams.prm_asmfile))
     {
-        std::list<std::string> files = inputFiles;
-        files.pop_front();
-        for (auto p : files)
+        if (!single.GetValue() && inputFiles.size())
         {
-            if (!LoadFile(parserMem))
-                Utils::fatal("internal error: could not load intermediate file");
-            ProcessFunctions();
-            SaveFile(p, optimizerMem);
+            std::list<std::string> files = inputFiles;
+            files.pop_front();
+            for (auto p : files)
+            {
+                if (!LoadFile(parserMem))
+                    Utils::fatal("internal error: could not load intermediate file");
+                ProcessFunctions();
+                SaveFile(p, optimizerMem);
+            }
         }
     }
     if (fileMode)

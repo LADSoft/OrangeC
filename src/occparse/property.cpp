@@ -258,6 +258,7 @@ LEXEME* initialize_property(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc 
             msilCreateProperty(sym, getter, setter);
             sym->has_property_setter = true;
         }
+        InsertGlobal(sym);
     }
     return lex;
 }

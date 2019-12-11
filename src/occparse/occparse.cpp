@@ -275,7 +275,9 @@ void compile(bool global)
     templateInit();
     InitIntermediate();
     if (architecture != ARCHITECTURE_MSIL)
+    {
         nextLabel = 1;
+    }
 #ifndef ISPARSER
 #ifndef PARSER_ONLY
     SSAInit();
@@ -296,10 +298,13 @@ void compile(bool global)
     browse_init();
     browse_startfile(infile, 0);
 #ifndef PARSER_ONLY
+    static bool first = true;
     if (architecture == ARCHITECTURE_MSIL)
-    {
-        compile_start((char*)clist->data);
-    }
+        if (first || cparams.prm_compileonly && !cparams.prm_asmfile)
+        {
+            compile_start((char*)clist->data);
+        }
+    first = false;
 #endif
     if (cparams.prm_assemble)
     {
@@ -432,9 +437,11 @@ int main(int argc, char* argv[])
 #ifndef PARSER_ONLY
         if (architecture == ARCHITECTURE_MSIL)
         {
-            msil_main_preprocess((char *)clist->data);
+            if (first || cparams.prm_compileonly && !cparams.prm_asmfile)
+                msil_main_preprocess((char *)clist->data);
         }
 #endif
+        first = false;
         Errors::Reset();
         cparams.prm_cplusplus = false;
         strcpy(buffer, (char*)clist->data);
@@ -538,7 +545,8 @@ int main(int argc, char* argv[])
 
             compile(false);
 #ifndef PARSER_ONLY
-            OutputIntermediate(parserMem);
+            if (architecture != ARCHITECTURE_MSIL || cparams.prm_compileonly && !cparams.prm_asmfile)
+                OutputIntermediate(parserMem);
             if (cparams.prm_icdfile)
                 OutputIcdFile();
 #endif
@@ -546,7 +554,8 @@ int main(int argc, char* argv[])
 #ifdef PARSER_ONLY
         localFree();
 #endif
-        globalFree();
+        if (architecture != ARCHITECTURE_MSIL || (cparams.prm_compileonly && !cparams.prm_asmfile))
+            globalFree();
         if (cparams.prm_diag)
         {
             mem_summary();
@@ -569,11 +578,19 @@ int main(int argc, char* argv[])
         stoponerr |= TotalErrors();
 #ifndef PARSER_ONLY
         if (architecture == ARCHITECTURE_MSIL)
-            msil_end_generation(nullptr);
+            if (cparams.prm_compileonly && !cparams.prm_asmfile)
+                msil_end_generation(nullptr);
 #endif
         clist = clist->next;
     }
 #ifndef PARSER_ONLY
+    if (architecture == ARCHITECTURE_MSIL)
+        if (!cparams.prm_compileonly || cparams.prm_asmfile)
+        {
+            msil_end_generation(nullptr);
+            OutputIntermediate(parserMem);
+        }
+    globalFree();
     if (compileToFile)
     {
         //compile to file

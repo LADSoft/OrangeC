@@ -105,6 +105,7 @@ class Importer : public Callback
     std::deque<SYMBOL*> structures_;
     std::map<std::string, SYMBOL*> cachedClasses_;
     std::deque<SYMBOL*> cachedMethods_;
+    std::deque<SYMBOL*> cachedProperties_;
     int level_;
     int pass_;
     bool inlsmsilcrtl_;
@@ -128,6 +129,8 @@ void Importer::Rundown()
 {
     for (auto v : cachedMethods_)
         InsertExtern(v);
+    for (auto v : cachedProperties_)
+        InsertGlobal(v);
 }
 e_bt Importer::translatedTypes[] = {
     ///** type is a reference to a class
@@ -627,6 +630,8 @@ bool Importer::EnterField(const Field* field)
             sp->declfile = sp->origdeclfile = "[import]";
             sp->access = ac_public;
             SetLinkerNames(sp, lk_cdecl);
+            if (sp->storage_class == sc_static)
+                cachedProperties_.push_back(sp);
             if (useGlobal())
                 insert(sp, globalNameSpace->valueData->syms);
             else
@@ -658,6 +663,8 @@ bool Importer::EnterProperty(const Property* property)
             if (const_cast<Property*>(property)->Setter())
                 sp->has_property_setter = true;
             SetLinkerNames(sp, lk_cdecl);
+            if (sp->storage_class == sc_static)
+                cachedProperties_.push_back(sp);
             if (useGlobal())
                 insert(sp, globalNameSpace->valueData->syms);
             else

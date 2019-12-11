@@ -223,10 +223,11 @@ bool Property::PEDump(PELib& peLib)
     // however, this is an awkard design that is hard to maintain and should probably be reworked.
 
     table = new MethodSemanticsTableEntry(MethodSemanticsTableEntry::Getter, getter_->Signature()->PEIndex(), semantics);
-
+    peLib.PEOut().AddTableEntry(table);
     if (setter_)
     {
         table = new MethodSemanticsTableEntry(MethodSemanticsTableEntry::Setter, setter_->Signature()->PEIndex(), semantics);
+        peLib.PEOut().AddTableEntry(table);
     }
     return true;
 }

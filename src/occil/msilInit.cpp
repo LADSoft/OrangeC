@@ -213,13 +213,14 @@ int msil_main_preprocess(char *fileName)
     PELib::CorFlags corFlags = PELib::bits32;
     if (prm_namespace_and_class[0])
         corFlags = (PELib::CorFlags)((int)corFlags | PELib::ilonly);
-//    char path[260], fileName[256];
+    char path[260];
+    strcpy(path, fileName);
 //    GetOutputFileName(fileName, path, cparams.prm_compileonly && !cparams.prm_asmfile);
     uniqueId = Utils::CRC32((unsigned char*)fileName, strlen(fileName));
-    char* p = strrchr(fileName, '.');
-    char* q = strrchr(fileName, '\\');
+    char* p = strrchr(path, '.');
+    char* q = strrchr(path, '\\');
     if (!q)
-        q = fileName;
+        q = path;
     else
         q++;
     if (p)
@@ -241,7 +242,7 @@ int msil_main_preprocess(char *fileName)
         }
         _apply_global_using();
 
-        peLib->AddUsing("System");
+        //peLib->AddUsing("System");
         newFile = true;
     }
     else

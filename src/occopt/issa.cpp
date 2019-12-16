@@ -370,6 +370,8 @@ static void renameToPhi(BLOCK* b)
                 tempInfo[n]->enode->sp->pushedtotemp = tempInfo[tnum]->enode->sp->pushedtotemp;
                 tempInfo[n]->enode->sp->loadTemp = tempInfo[tnum]->enode->sp->loadTemp;
                 tempInfo[n]->enode->sp->storeTemp = tempInfo[tnum]->enode->sp->storeTemp;
+                if (tempInfo[tnum]->enode->sp->tp)
+                    tempInfo[n]->enode->sp->tp = tempInfo[tnum]->enode->sp->tp;
             }
         }
         if (head->temps & TEMP_LEFT)

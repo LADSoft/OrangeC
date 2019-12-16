@@ -503,6 +503,7 @@ void store_ind(IMODE* im)
     decrement_stack();
     decrement_stack();
 }
+
 void load_arithmetic_constant(int sz, Operand* operand)
 {
     Instruction::iop op;
@@ -928,9 +929,9 @@ void asm_tag(QUAD* q)
             find = find->fwd;
         if (find)
         {
-            if (msil_managed(find->altsp) || find->dc.left->mode != i_immed)
+            if (find->altvararg)
             {
-                if (find->altvararg)
+                if (msil_managed(find->altsp) || find->dc.left->mode != i_immed)
                 {
                     if (strcmp(find->altsp->name, "__va_arg__"))
                     {
@@ -970,16 +971,16 @@ void asm_goto(QUAD* q) /* unconditional branch */
         gen_code(Instruction::i_calli, 0);
     }
 }
+static Type::BasicType names[] = {
+    Type::u32, Type::u32, Type::u8,  Type::u8,  Type::u16, Type::u16, Type::u16, Type::u32, Type::unative, Type::u32, Type::u32,
+    Type::u64, Type::u32, Type::u32, Type::u16, Type::u16, Type::r32, Type::r64, Type::r64, Type::r32,     Type::r64, Type::r64,
+};
+static Type::BasicType mnames[] = {
+    Type::i32, Type::i32, Type::i8,  Type::i8,  Type::i16, Type::i16, Type::i16, Type::i32, Type::inative, Type::i32, Type::i32,
+    Type::i64, Type::i32, Type::i32, Type::i16, Type::i16, Type::r32, Type::r64, Type::r64, Type::r32,     Type::r64, Type::r64,
+};
 BoxedType* boxedType(int isz)
 {
-    static Type::BasicType names[] = {
-        Type::u32, Type::u32, Type::u8,  Type::u8,  Type::u16, Type::u16, Type::u16, Type::u32, Type::unative, Type::u32, Type::u32,
-        Type::u64, Type::u32, Type::u32, Type::u16, Type::u16, Type::r32, Type::r64, Type::r64, Type::r32,     Type::r64, Type::r64,
-    };
-    static Type::BasicType mnames[] = {
-        Type::i32, Type::i32, Type::i8,  Type::i8,  Type::i16, Type::i16, Type::i16, Type::i32, Type::inative, Type::i32, Type::i32,
-        Type::i64, Type::i32, Type::i32, Type::i16, Type::i16, Type::r32, Type::r64, Type::r64, Type::r32,     Type::r64, Type::r64,
-    };
     Type::BasicType n;
     if (isz == ISZ_OBJECT)
         n = Type::object;  // to support newarr object[]
@@ -998,13 +999,10 @@ void box(IMODE* im)
         gen_code(Instruction::i_box, operand);
     }
 }
-void unbox(int val)
+void unbox(int isz)
 {
-    static Type::BasicType typeNames[] = {Type::i8,      Type::i8,  Type::i8,  Type::i8,  Type::u8,      Type::i16, Type::i16,
-                                          Type::u16,     Type::u16, Type::i32, Type::i32, Type::inative, Type::i32, Type::u32,
-                                          Type::unative, Type::i32, Type::u32, Type::i64, Type::u64,     Type::r32, Type::r64,
-                                          Type::r64,     Type::r32, Type::r64, Type::r64};
-    Operand* op1 = peLib->AllocateOperand(peLib->AllocateValue("", peLib->AllocateType(typeNames[val], 0)));
+    Type::BasicType n = isz < 0 ? mnames[-isz] : names[isz];
+    Operand* op1 = peLib->AllocateOperand(peLib->AllocateValue("", peLib->AllocateType(n, 0)));
     if (op1)
         gen_code(Instruction::i_unbox, op1);
 }
@@ -1115,7 +1113,7 @@ static bool bltin_gosub(QUAD* q)
             else if (tp->type != st_struct && tp->type != st_union && !tp->isarray)
             {
                 SimpleExpression* exp = args->next->exp;
-                unbox(exp->sp->tp->type);
+                unbox(exp->sp->tp->sizeFromType);
             }
             return true;
         }

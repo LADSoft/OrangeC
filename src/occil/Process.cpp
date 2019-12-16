@@ -1114,6 +1114,8 @@ void LoadParams(SimpleSymbol* funcsp, std::vector<SimpleSymbol*>& vars, std::map
             newParam = peLib->AllocateParam("__va_list__", oa);
             sym->name = "__va_list__";
         }
+        else if (sym->storage_class != scc_parameter)
+            continue;
         else
         {
             Type* type = GetType(sym->tp, true);
@@ -1848,7 +1850,7 @@ static bool checkExterns(void)
     bool rv = false;
     for (std::map<SimpleSymbol*, Value*, byName>::iterator it = externalMethods.begin(); it != externalMethods.end(); ++it)
     {
-        if (it->first->msil_rtl)
+        if (!it->first->msil_rtl)
         {
             printf("Error: Undefined external symbol %s\n", it->first->name);
             rv = true;

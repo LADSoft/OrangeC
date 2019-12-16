@@ -39,6 +39,7 @@
 extern PreProcessor* preProcessor;
 extern SYMBOL* theCurrentFunc;
 extern std::vector<SimpleSymbol*> typeSymbols;
+extern std::vector<SimpleSymbol*> typedefs;
 
 void SymbolManager::clear()
 {
@@ -270,8 +271,13 @@ SimpleType* SymbolManager::Get(struct typ *tp)
         rv->isarray = tp->array;
         rv->isvla = tp->vla;
         rv->va_list = tp->type == bt_va_list;
-        if (rv->sp && rv->sp->storage_class == scc_type)
-            typeSymbols.push_back(rv->sp);
+        if (rv->sp)
+        {
+            if (rv->sp->storage_class == scc_type || rv->sp->storage_class == scc_parameter || rv->sp->storage_class == scc_cast)
+                typeSymbols.push_back(rv->sp);
+            else if (rv->sp->storage_class == scc_typedef)
+                typedefs.push_back(rv->sp);
+        }
         if (tp->syms && tp->syms->table && rv->sp && !rv->sp->syms)
         {
             SYMLIST *list = tp->syms->table[0];
@@ -286,7 +292,7 @@ SimpleType* SymbolManager::Get(struct typ *tp)
                 }
                 *p = (LIST*)Alloc(sizeof(LIST));
                 (*p)->data = Get(list->p);
-                if (rv->sp->storage_class == scc_type)
+                if (rv->sp->storage_class == scc_type || rv->sp->storage_class == scc_cast)
                 {
                     if (list->p->storage_class == sc_static || isfunction(list->p->tp))
                     {
@@ -336,6 +342,7 @@ void refreshBackendParams(SYMBOL* funcsp)
             {
                 hr = hr->next;
             }
+            sym->name = hr->p->name; // update name to prototype in use...
             sym->offset = hr->p->offset;
             SymbolManager::Get(hr->p)->offset = sym->offset;
             hr = hr->next;

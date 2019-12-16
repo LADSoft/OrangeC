@@ -236,9 +236,22 @@ static void StreamType(SimpleType* type)
             StreamIndex(type->bits);
             StreamIndex(type->startbit);
             if (type->sp && type->type != st_any)
-                StreamIndex(type->sp->fileIndex);
+            {
+//                if (type->sp->fileIndex == 0)
+//                    printf("hi");
+                if (type->sp->storage_class == scc_auto || type->sp->storage_class == scc_register)
+                {
+                    StreamIndex(type->sp->fileIndex | 0x20000000);
+                }
+                else if (type->sp->typeIndex)
+                    StreamIndex(0x40000000 | type->sp->typeIndex);
+                else
+                    StreamIndex(type->sp->fileIndex);
+            }
             else
+            {
                 StreamIndex(0);
+            }
             StreamIndex(type->flags);
             StreamType(type->btp);
         }
@@ -311,8 +324,8 @@ static void StreamExpression(SimpleExpression* exp)
             case se_threadlocal:
             case se_pc:
             case se_structelem:
-                if (exp->sp->fileIndex == 0)
-                    printf("hi");
+//                if (exp->sp->fileIndex == 0)
+//                    printf("hi");
                 StreamIndex(exp->sp->fileIndex);
                 break;
             case se_labcon:
@@ -422,6 +435,10 @@ static void StreamOperand(IMODE* im)
         StreamExpression(im->offset);
         StreamExpression(im->offset2);
         StreamExpression(im->offset3);
+        if (im->mode == i_ind && im->offset && im->offset->type == se_tempref)
+        {
+            StreamType(im->offset->sp->tp);
+        }
         StreamExpression(im->vararg);
     });
 }
@@ -514,7 +531,12 @@ static void StreamInstruction(QUAD *q)
                 StreamIndex(0);
             if (q->altsp)
             {
-                if (q->altsp->storage_class == scc_member || q->altsp->storage_class == scc_type)
+//                if (q->altsp->fileIndex == 0)
+//                    printf("hi");
+                if (q->altsp->storage_class == scc_auto || q->altsp->storage_class == scc_parameter || q->altsp->storage_class == scc_register)
+                    StreamIndex(q->altsp->fileIndex | 0x20000000);
+                else if ((q->altsp->storage_class == scc_member && q->altsp->tp->type != st_func) || 
+                    q->altsp->storage_class == scc_type || q->altsp->storage_class == scc_typedef || q->altsp->storage_class == scc_cast)
                     StreamIndex(q->altsp->fileIndex | 0x40000000);
                 else
                     StreamIndex(q->altsp->fileIndex);
@@ -530,7 +552,15 @@ static void StreamInstruction(QUAD *q)
             for (auto v = (ArgList*)q->altargs; v; v = v->next)
             {
                 StreamType(v->tp);
-//                StreamExpression(v->exp);
+                if (v->exp)
+                {
+                    StreamByte(1);
+                    StreamExpression(v->exp);
+                }
+                else
+                {
+                    StreamByte(0);
+                }
             }
             StreamIndex(q->ansColor);
             StreamIndex(q->leftColor);
@@ -625,6 +655,7 @@ static void StreamTypes()
 {
     StreamBlock(SBT_TYPES, []() {
         StreamSymbolList(typeSymbols);
+        StreamSymbolList(typedefs);
     });
 }
 static void StreamMSILProperties()
@@ -787,8 +818,16 @@ static void StreamFunc(FunctionData *fd)
     }
     // have to do this here because inlining results in symbols being used across functions...
     int i = 1;
+    std::deque<int> oldIndices;
     for (auto s : fd->variables)
+    {
+        if (s->storage_class == scc_parameter)
+        {
+            s->paramThisFunc = true;
+            oldIndices.push_back(s->fileIndex);
+        }
         s->fileIndex = 2 * i++ + 1;
+    }
     for (auto s : fd->temporarySymbols)
         s->fileIndex = 2 * i++ + 1;
 
@@ -807,6 +846,15 @@ static void StreamFunc(FunctionData *fd)
     StreamInstructions(fd->instructionList);
     StreamTemps();
     StreamLoadCache(fd->loadHash);
+    for (auto s : fd->variables)
+    {
+        if (s->storage_class == scc_parameter)
+        {
+            s->paramThisFunc = true;
+            s->fileIndex = oldIndices.front();
+            oldIndices.pop_front();
+        }
+    }
 }
 static void StreamData()
 {
@@ -993,10 +1041,12 @@ static void NumberTypes()
 {
     int i = 1;
     for (auto s : typeSymbols)
-        s->fileIndex = 2 * i++ + 1;
-    i = 1;
+    {
+        s->typeIndex = s->fileIndex = 2 * i++ + 1;
+        s->paramThisFunc = false;
+    }
     for (auto s : typedefs)
-        s->fileIndex = 2 * i++ + 1;
+        s->typeIndex = s->fileIndex = 2 * i++ + 1;
 
 }
 int GetOutputSize()

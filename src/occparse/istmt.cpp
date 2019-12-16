@@ -311,6 +311,8 @@ void genxswitch(STATEMENT* stmt, SYMBOL* funcsp)
     if (chosenAssembler->arch->preferopts & OPT_EXPANDSWITCH)
     {
         EXPRESSION* en = anonymousVar(sc_auto, &stdint);
+        en->v.sp->anonymous = false;
+        cacheTempSymbol(SymbolManager::Get(en->v.sp));
         if (ap->size != -ISZ_UINT)
         {
             ap3 = tempreg(-ISZ_UINT, 0);

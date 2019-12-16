@@ -1989,7 +1989,7 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                         returnexp = intNode(en_labcon, dumpMemberPtr(returnexp->v.sp, tp, true));
                     }
                     if ((architecture != ARCHITECTURE_MSIL) || funcsp->attribs.inheritable.linkage2 == lk_unmanaged ||
-                        msilManaged(funcsp))
+                        !msilManaged(funcsp))
                     {
                         returnexp = exprNode(en_blockassign, en, returnexp);
                         returnexp->size = basetype(tp)->size;

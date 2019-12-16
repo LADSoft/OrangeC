@@ -408,9 +408,46 @@ void insertDynamicDestructor(SYMBOL* sym, INITIALIZER* init)
         }
     }
 }
+static void callDynamic(const char *name, int startupType, int index, STATEMENT *st)
+{
+    if (st)
+    {
+        char fullName[512];
+        my_sprintf(fullName, "%s_%d", name, index);
+        SYMBOL* funcsp;
+        TYPE* tp = (TYPE*)Alloc(sizeof(TYPE));
+        tp->type = bt_ifunc;
+        tp->btp = (TYPE*)Alloc(sizeof(TYPE));
+        tp->btp->type = bt_void;
+        tp->rootType = tp;
+        tp->btp->rootType = tp->btp;
+        tp->syms = CreateHashTable(1);
+        funcsp = makeUniqueID((architecture == ARCHITECTURE_MSIL) ? sc_global : sc_static, tp, nullptr, fullName);
+        funcsp->inlineFunc.stmt = stmtNode(nullptr, nullptr, st_block);
+        funcsp->inlineFunc.stmt->lower = st;
+        tp->sp = funcsp;
+        SetLinkerNames(funcsp, lk_none);
+        startlab = nextLabel++;
+        retlab = nextLabel++;
+        genfunc(funcsp, !((architecture == ARCHITECTURE_MSIL)));
+        startlab = retlab = 0;
+
+        if (!(chosenAssembler->arch->denyopts & DO_NOADDRESSINIT))
+        {
+            startupseg();
+            gensrref(SymbolManager::Get(funcsp), 32 + preProcessor->GetCppPrio(), startupType);
+        }
+        else
+        {
+            InsertExtern(funcsp);
+        }
+    }
+}
 static void dumpDynamicInitializers(void)
 {
 #ifndef PARSER_ONLY
+    int index = 0;
+    int counter = 0;
     STATEMENT *st = nullptr, **stp = &st;
     codeLabel = INT_MIN;
     while (dynamicInitializers)
@@ -423,6 +460,7 @@ static void dumpDynamicInitializers(void)
 
         while (*next && (*next)->type == en_void)
         {
+            counter++;
             if (++i == 10)
             {
                 exp1 = *next;
@@ -457,38 +495,16 @@ static void dumpDynamicInitializers(void)
             *stmtp = st;
             st = stmt;
         }
+        if (++counter >= 1500)
+        {
+            counter = 0;
+            callDynamic("__DYNAMIC_STARTUP__", STARTUP_TYPE_STARTUP, index++, st);
+            st = nullptr;
+            stp = &st;
+        }
         dynamicInitializers = dynamicInitializers->next;
     }
-    if (st)
-    {
-        SYMBOL* funcsp;
-        TYPE* tp = (TYPE*)Alloc(sizeof(TYPE));
-        tp->type = bt_ifunc;
-        tp->btp = (TYPE*)Alloc(sizeof(TYPE));
-        tp->btp->type = bt_void;
-        tp->rootType = tp;
-        tp->btp->rootType = tp->btp;
-        tp->syms = CreateHashTable(1);
-        funcsp = makeUniqueID((architecture == ARCHITECTURE_MSIL) ? sc_global : sc_static, tp, nullptr, "__DYNAMIC_STARTUP__");
-        funcsp->inlineFunc.stmt = stmtNode(nullptr, nullptr, st_block);
-        funcsp->inlineFunc.stmt->lower = st;
-        tp->sp = funcsp;
-        SetLinkerNames(funcsp, lk_none);
-        startlab = nextLabel++;
-        retlab = nextLabel++;
-        genfunc(funcsp, !((architecture == ARCHITECTURE_MSIL)));
-        startlab = retlab = 0;
-        
-        if (!(chosenAssembler->arch->denyopts & DO_NOADDRESSINIT))
-        {
-            startupseg();
-            gensrref(SymbolManager::Get(funcsp), 32 + preProcessor->GetCppPrio(), STARTUP_TYPE_STARTUP);
-        }
-        else
-        {
-            InsertExtern(funcsp);
-        }
-    }
+    callDynamic("__DYNAMIC_STARTUP__", STARTUP_TYPE_STARTUP, index++, st);
 #endif
 }
 static void dumpTLSInitializers(void)
@@ -538,6 +554,8 @@ static void dumpTLSInitializers(void)
 static void dumpDynamicDestructors(void)
 {
 #ifndef PARSER_ONLY
+    int index=0;
+    int counter=0;
     STATEMENT *st = nullptr, **stp = &st;
     codeLabel = INT_MIN;
     while (dynamicDestructors)
@@ -549,36 +567,14 @@ static void dumpDynamicDestructors(void)
         (*stp)->select = exp;
         stp = &(*stp)->next;
         dynamicDestructors = dynamicDestructors->next;
-    }
-    if (st)
-    {
-        SYMBOL* funcsp;
-        TYPE* tp = (TYPE*)Alloc(sizeof(TYPE));
-        tp->type = bt_ifunc;
-        tp->btp = (TYPE*)Alloc(sizeof(TYPE));
-        tp->btp->type = bt_void;
-        tp->rootType = tp;
-        tp->btp->rootType = tp->btp;
-        tp->syms = CreateHashTable(1);
-        funcsp = makeUniqueID((architecture == ARCHITECTURE_MSIL) ? sc_global : sc_static, tp, nullptr, "__DYNAMIC_RUNDOWN__");
-        funcsp->inlineFunc.stmt = stmtNode(nullptr, nullptr, st_block);
-        funcsp->inlineFunc.stmt->lower = st;
-        tp->sp = funcsp;
-        SetLinkerNames(funcsp, lk_none);
-        startlab = nextLabel++;
-        retlab = nextLabel++;
-        genfunc(funcsp, true);
-        startlab = retlab = 0;
-        if (!(chosenAssembler->arch->denyopts & DO_NOADDRESSINIT))
+        if (++counter % 1500 == 0)
         {
-            rundownseg();
-            gensrref(SymbolManager::Get(funcsp), 32, STARTUP_TYPE_RUNDOWN);
-        }
-        else
-        {
-            InsertExtern(funcsp);
+            callDynamic("__DYNAMIC_STARTUP__", STARTUP_TYPE_RUNDOWN, index++, st);
+            st = nullptr;
+            stp = &st;
         }
     }
+    callDynamic("__DYNAMIC_RUNDOWN__", STARTUP_TYPE_RUNDOWN, index++, st);
 #endif
 }
 static void dumpTLSDestructors(void)
@@ -4345,7 +4341,9 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_c
     {
         declareAndInitialize = true;
     }
-
+    if (sym->tp->array && sym->tp->size)
+        if (sym->storage_class == sc_global || sym->storage_class == sc_static || sym->storage_class == sc_localstatic)
+            SymbolManager::Get(sym)->tp->size = sym->tp->size;
     DecGlobalFlag();
     initializingGlobalVar = false;
     return lex;

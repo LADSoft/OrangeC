@@ -62,6 +62,7 @@ extern bool functionHasAssembly;
 extern std::unordered_map<IMODE*, IMODE*> loadHash;
 extern CASTTEMPHASH* castHash[DAGSIZE];
 extern SimpleExpression* objectArray_exp;
+extern std::vector<SimpleSymbol*> typedefs;
 
 SimpleSymbol* baseThisPtr;
 
@@ -2166,6 +2167,9 @@ IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
     }
     if ((architecture == ARCHITECTURE_MSIL))
     {
+        bool vaarg = false;
+        if (f->sp->name[0] == '_' && !strcmp(f->sp->name, "__va_arg__"))
+            vaarg = true;
         gosub->altvararg = f->vararg;
         ArgList **p = &gosub->altargs;
         INITLIST *il = f->arguments;
@@ -2173,12 +2177,17 @@ IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         {
             *p = (ArgList*)Alloc(sizeof(ArgList));
             (*p)->tp = SymbolManager::Get(il->tp);
-//            (*p)->exp = SymbolManager::Get(il->exp);
+            if (vaarg && !lvalue(il->exp) && !castvalue(il->exp))
+                (*p)->exp = SymbolManager::Get(il->exp);
             il = il->next;
             p = &(*p)->next;
         }
     }
     gosub->altsp = SymbolManager::Get(f->sp);
+    if ((f->sp->storage_class == sc_typedef || f->sp->storage_class == sc_cast) && isfuncptr(f->sp->tp))
+    {
+        typedefs.push_back(gosub->altsp);
+    }
     gosub->fastcall = !!fastcallSize;
 
     if ((flags & F_NOVALUE) && !isstructured(basetype(f->functp)->btp) && basetype(f->functp)->btp->type != bt_memberptr)

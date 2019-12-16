@@ -376,7 +376,10 @@ bool LoadFile(SharedMemory* parserMem, std::string fileName)
     {
         if (!cparams.prm_compileonly || cparams.prm_asmfile)
         {
-            outputfile(outFile, inputFiles.front().c_str(), chosenAssembler->objext);
+            if (!outputFileName.empty())
+                outputfile(outFile, outputFileName.c_str(), chosenAssembler->objext);
+            else
+                outputfile(outFile, inputFiles.front().c_str(), chosenAssembler->objext);
             InsertExternalFile(outFile, false);
         }
         fileName = inputFiles.front();

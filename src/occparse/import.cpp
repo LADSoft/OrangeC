@@ -128,7 +128,10 @@ void Import()
 void Importer::Rundown()
 {
     for (auto v : cachedMethods_)
+    {
         InsertExtern(v);
+//        SymbolManager::Get(v)->genreffed = true;
+    }
     for (auto v : cachedProperties_)
         InsertGlobal(v);
 }

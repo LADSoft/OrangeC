@@ -419,6 +419,10 @@ static IMODE* UnstreamOperand()
         rv->offset = UnstreamExpression();
         rv->offset2 = UnstreamExpression();
         rv->offset3 = UnstreamExpression();
+        if (rv->mode == i_ind && rv->offset && rv->offset->type == se_tempref)
+        {
+            rv->offset->sp->tp = UnstreamType();
+        }
         rv->vararg = UnstreamExpression();
     });
     return rv;
@@ -533,7 +537,8 @@ static QUAD* UnstreamInstruction(FunctionData& fd)
             {
                 *p = (ArgList*)Alloc(sizeof(ArgList));
                 (*p)->tp = UnstreamType();
-//                (*p)->exp = UnstreamExpression();
+                if (UnstreamByte())
+                    (*p)->exp = UnstreamExpression();
                 p = &(*p)->next;
             }
             rv->ansColor = UnstreamIndex();
@@ -644,6 +649,7 @@ static void UnstreamTypes()
 {
     UnstreamBlock(SBT_TYPES, []() {
         UnstreamSymbolList(typeSymbols);
+        UnstreamSymbolList(typedefs);
     });
 }
 static void UnstreamMSILProperties()
@@ -954,6 +960,11 @@ static SimpleSymbol *SymbolName(SimpleSymbol* selection, std::vector<SimpleSymbo
             index -= globalCache.size();
             table = &externals;
         }
+        else if (table == &typeSymbols && index >= typeSymbols.size())
+        {
+            index -= typeSymbols.size();
+            table = &typedefs;
+        }
         else if (current && table == &current->variables && index >= current->variables.size())
         {
             index -= current->variables.size();
@@ -969,10 +980,19 @@ static void ResolveType(SimpleType* tp, std::map<int, std::string>& texts, std::
     bool ispointer = false;
     while (tp)
     {
-        ispointer |= tp->type == st_pointer || tp->type == st_memberptr;
-        if (tp->sp)
+        if ((int)tp->sp & 1)
         {
-            ResolveSymbol(tp->sp, texts, !ispointer && tp->type == st_func ? globalCache : typeSymbols);
+            if ((int)tp->sp & 0x20000000)
+            {
+                tp->sp = (SimpleSymbol*)((int)tp->sp & 0x1fffffff);
+                ResolveSymbol(tp->sp, texts, current->variables);
+            }
+            else
+            {
+                bool param = !!((int)tp->sp & 0x40000000);
+                tp->sp = (SimpleSymbol*)((int)tp->sp & 0x3fffffff);
+                ResolveSymbol(tp->sp, texts, tp->type == st_func && !param ? globalCache : typeSymbols);
+            }
         }
         tp = tp->btp;
     }
@@ -1071,6 +1091,11 @@ static void ResolveInstruction(QUAD* q, std::map<int, std::string>& texts)
             q->altsp = (SimpleSymbol*)((int)q->altsp & 0x3fffffff);
             ResolveSymbol(q->altsp, texts, typeSymbols);
         }
+        else if ((int)q->altsp & 0x20000000)
+        {
+            q->altsp = (SimpleSymbol*)((int)q->altsp & 0x1fffffff);
+            ResolveSymbol(q->altsp, texts, current->variables);
+        }
         else
         {
             ResolveSymbol(q->altsp, texts, globalCache);
@@ -1081,7 +1106,11 @@ static void ResolveInstruction(QUAD* q, std::map<int, std::string>& texts)
         ResolveType(q->alttp, texts, typeSymbols);
     }
     for (auto a = q->altargs; a; a = a->next)
+    {
         ResolveType(a->tp, texts, typeSymbols);
+        if (a->exp)
+            ResolveExpression(a->exp, texts);
+    }
 }
 static void ResolveSymbol(std::vector<SimpleSymbol*> symbols, std::map<int, std::string>& texts, std::vector<SimpleSymbol*>& table)
 {
@@ -1134,6 +1163,8 @@ static void ResolveFunction(FunctionData *fd, std::map<int, std::string>& texts)
         ResolveExpression(v->offset, texts);
         ResolveExpression(v->offset2, texts);
         ResolveExpression(v->offset3, texts);
+        if (v->mode == i_ind && v->offset)
+            ResolveType(v->offset->sp->tp, texts, typeSymbols);
         ResolveExpression(v->vararg, texts);
     }
     for (auto q = fd->instructionList; q; q = q->fwd)

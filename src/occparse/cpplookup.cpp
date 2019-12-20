@@ -2457,11 +2457,14 @@ static SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* ex
             if (isstructured(tppp))
             {
                 SYMBOL* sym = basetype(tppp)->sp;
+                sym->tp = PerformDeferredInitialization(sym->tp, nullptr);
+                /*
                 if (sym->templateLevel && !templateNestingCount && !sym->instantiated &&
                     allTemplateArgsSpecified(sym, sym->templateParams))
                 {
                     sym = TemplateClassInstantiate(sym, sym->templateParams, false, sc_global);
                 }
+                */
                 gather = GetMemberConstructors(gather, sym);
                 tppp = sym->tp;
             }
@@ -2597,6 +2600,7 @@ static SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* ex
                                 thistp.size = getSize(bt_pointer);
                                 getSingleConversion(((SYMBOL*)args->p)->tp, &thistp, &exp, &n2, seq3, candidate, nullptr, true);
                                 seq3[n2 + n3++] = CV_USER;
+                                inGetUserConversion--;
                                 if (tpc->type == bt_auto)
                                 {
                                     seq3[n2 + n3++] = CV_USER;
@@ -2655,6 +2659,7 @@ static SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* ex
                                     getSingleConversion(basetype(candidate->tp)->btp, tppp, lref ? nullptr : &exp, &n3, seq3 + n2,
                                                         candidate, nullptr, true);
                                 }
+                                inGetUserConversion++;
                             }
                         }
                         else

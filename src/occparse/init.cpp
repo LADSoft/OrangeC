@@ -434,7 +434,10 @@ static void callDynamic(const char *name, int startupType, int index, STATEMENT 
 
         if (!(chosenAssembler->arch->denyopts & DO_NOADDRESSINIT))
         {
-            startupseg();
+            if (startupType == STARTUP_TYPE_STARTUP)
+                startupseg();
+            else
+                rundownseg();
             gensrref(SymbolManager::Get(funcsp), 32 + preProcessor->GetCppPrio(), startupType);
         }
         else

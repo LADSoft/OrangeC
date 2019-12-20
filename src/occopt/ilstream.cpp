@@ -533,10 +533,10 @@ static void StreamInstruction(QUAD *q)
             {
 //                if (q->altsp->fileIndex == 0)
 //                    printf("hi");
-                if (q->altsp->storage_class == scc_auto || q->altsp->storage_class == scc_parameter || q->altsp->storage_class == scc_register)
+                if (q->altsp->storage_class == scc_auto || (q->altsp->storage_class == scc_parameter && q->altsp->fileIndex != q->altsp->typeIndex) ||q->altsp->storage_class == scc_register)
                     StreamIndex(q->altsp->fileIndex | 0x20000000);
                 else if ((q->altsp->storage_class == scc_member && q->altsp->tp->type != st_func) || 
-                    q->altsp->storage_class == scc_type || q->altsp->storage_class == scc_typedef || q->altsp->storage_class == scc_cast)
+                    q->altsp->storage_class == scc_type || q->altsp->storage_class == scc_parameter || q->altsp->storage_class == scc_typedef || q->altsp->storage_class == scc_cast)
                     StreamIndex(q->altsp->fileIndex | 0x40000000);
                 else
                     StreamIndex(q->altsp->fileIndex);
@@ -818,14 +818,8 @@ static void StreamFunc(FunctionData *fd)
     }
     // have to do this here because inlining results in symbols being used across functions...
     int i = 1;
-    std::deque<int> oldIndices;
     for (auto s : fd->variables)
     {
-        if (s->storage_class == scc_parameter)
-        {
-            s->paramThisFunc = true;
-            oldIndices.push_back(s->fileIndex);
-        }
         s->fileIndex = 2 * i++ + 1;
     }
     for (auto s : fd->temporarySymbols)
@@ -846,15 +840,6 @@ static void StreamFunc(FunctionData *fd)
     StreamInstructions(fd->instructionList);
     StreamTemps();
     StreamLoadCache(fd->loadHash);
-    for (auto s : fd->variables)
-    {
-        if (s->storage_class == scc_parameter)
-        {
-            s->paramThisFunc = true;
-            s->fileIndex = oldIndices.front();
-            oldIndices.pop_front();
-        }
-    }
 }
 static void StreamData()
 {
@@ -988,6 +973,8 @@ static void StreamData()
                     StreamIndex(data->symbol.sym->fileIndex);
                     break;
                 case DT_AUTOREF:
+                    if (data->symbol.sym->fileIndex == 0x2d83)
+                        printf("hi");
                     StreamIndex(data->symbol.sym->fileIndex);
                     StreamIndex(data->symbol.i);
                     break;
@@ -1043,7 +1030,6 @@ static void NumberTypes()
     for (auto s : typeSymbols)
     {
         s->typeIndex = s->fileIndex = 2 * i++ + 1;
-        s->paramThisFunc = false;
     }
     for (auto s : typedefs)
         s->typeIndex = s->fileIndex = 2 * i++ + 1;

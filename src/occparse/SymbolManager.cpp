@@ -382,6 +382,12 @@ SimpleSymbol* SymbolManager::Make(struct sym* sym)
     }
     rv->label = sym->label;
     rv->tp = Get(sym->tp);
+    // normalize for middle and backend.   Not modifying the front end data structures because there would be too much ripple...
+    if (rv->storage_class == scc_parameter && rv->tp->isarray)
+    {
+        rv->tp->size = getSize(bt_pointer);
+        rv->tp->sizeFromType = ISZ_ADDR;
+    }
     rv->parentClass = Get(sym->parentClass);
     rv->msil = sym->msil;
     rv->templateLevel = sym->templateLevel;

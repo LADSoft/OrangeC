@@ -344,7 +344,6 @@ void ProcessFunctions()
 }
 bool LoadFile(SharedMemory* parserMem)
 {
-    InitIntermediate();
     bool rv = InputIntermediate(parserMem);
     flow_init();
     BitInit();
@@ -370,6 +369,7 @@ void SaveFile(std::string& name, SharedMemory* optimizerMem)
         fclose(icdFile);
         icdFile = nullptr;
     }
+    InitIntermediate();
     localFree();
     globalFree();
 }
@@ -388,7 +388,7 @@ int main(int argc, char* argv[])
     SharedMemory* parserMem = nullptr;
     SharedMemory* optimizerMem = nullptr;
     std::string outputFile;
-        if (fileMode)
+    if (fileMode)
     {
         if (output.GetExists())
         {

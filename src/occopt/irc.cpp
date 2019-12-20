@@ -2333,10 +2333,13 @@ void AllocateRegisters(QUAD* head)
     Precolor();
     while (true)
     {
+
         int i;
         passes++;
         if (passes >= 100)
             break;
+        tFree();
+        cFree();
         for (i = 0; i < tempCount; i++)
         {
             if (!tempInfo[i]->precolored)
@@ -2417,8 +2420,6 @@ void AllocateRegisters(QUAD* head)
         {
             break;
         }
-        tFree();
-        cFree();
     }
     KeepCoalescedNodes();
     CopyLocalColors();

@@ -273,7 +273,6 @@ void compile(bool global)
     lexini();
     setglbdefs();
     templateInit();
-    InitIntermediate();
     if (architecture != ARCHITECTURE_MSIL)
     {
         nextLabel = 1;
@@ -542,13 +541,14 @@ int main(int argc, char* argv[])
 
             if (multipleFiles && !cparams.prm_quiet)
                 printf("%s\n", (char *)clist->data);
-
+                
             compile(false);
 #ifndef PARSER_ONLY
             if (architecture != ARCHITECTURE_MSIL || cparams.prm_compileonly && !cparams.prm_asmfile)
                 OutputIntermediate(parserMem);
             if (cparams.prm_icdfile)
                 OutputIcdFile();
+            InitIntermediate();
 #endif
         }
 #ifdef PARSER_ONLY

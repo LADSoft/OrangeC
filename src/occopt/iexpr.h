@@ -28,6 +28,8 @@
  * ICODE structures
  */
 #include <unordered_map>
+#include <list>
+#include <vector>
 #include "ctypes.h"
 #include <Floating.h>
 

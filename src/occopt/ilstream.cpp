@@ -973,8 +973,6 @@ static void StreamData()
                     StreamIndex(data->symbol.sym->fileIndex);
                     break;
                 case DT_AUTOREF:
-                    if (data->symbol.sym->fileIndex == 0x2d83)
-                        printf("hi");
                     StreamIndex(data->symbol.sym->fileIndex);
                     StreamIndex(data->symbol.i);
                     break;

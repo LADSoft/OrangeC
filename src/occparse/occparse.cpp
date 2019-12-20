@@ -411,7 +411,7 @@ int main(int argc, char* argv[])
     if (bePostFile.size())
     {
         parserMem = new SharedMemory(0, bePostFile.c_str());
-        if (!parserMem->Open())
+        if (!parserMem->Open() || !parserMem->GetMapping())
             Utils::fatal("internal error: invalid shared memory region");
         if (!clist)
         {
@@ -420,8 +420,9 @@ int main(int argc, char* argv[])
     }
     else // so we can do compiles without the output going anywhere...
     {
-        parserMem = new SharedMemory(500*1024*1024);
+        parserMem = new SharedMemory(240*1024*1024);
         parserMem->Create();
+        parserMem->GetMapping();
         compileToFile = true;
     }
 #endif
@@ -544,6 +545,7 @@ int main(int argc, char* argv[])
                 
             compile(false);
 #ifndef PARSER_ONLY
+            oFree();
             if (architecture != ARCHITECTURE_MSIL || cparams.prm_compileonly && !cparams.prm_asmfile)
                 OutputIntermediate(parserMem);
             if (cparams.prm_icdfile)

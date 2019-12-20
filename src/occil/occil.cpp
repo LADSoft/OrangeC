@@ -83,7 +83,7 @@ static const char* verbosity = nullptr;
 void regInit() { }
 int usingEsp;
 
-static const int MAX_SHARED_REGION = 500 * 1024 * 1024;
+static const int MAX_SHARED_REGION = 240 * 1024 * 1024;
 
 bool InputIntermediate(SharedMemory* mem);
 

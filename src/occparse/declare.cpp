@@ -716,12 +716,6 @@ static bool validateAnonymousUnion(SYMBOL* parent, TYPE* unionType)
 {
     bool rv = true;
     unionType = basetype(unionType);
-    if (cparams.prm_cplusplus && (!unionType->sp->trivialCons))  // || unionType->tags->table[0]->next))
-    {
-        error(ERR_ANONYMOUS_UNION_NO_FUNCTION_OR_TYPE);
-        rv = false;
-    }
-    else
     {
         SYMLIST* newhr = unionType->syms->table[0];
         while (newhr)

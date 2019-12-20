@@ -236,8 +236,13 @@ SYMBOL* lambda_capture(SYMBOL* sym, enum e_cm mode, bool isExplicit)
                     else
                     {
                         current = lambdas;
-                        while (current->next)
-                            current = current->next;
+                        SYMBOL *sp = nullptr;
+                        while (current->next && !sp)
+                        {
+                            sp = search(sym->name, current->oldSyms);
+                            if (!sp)
+                                current = current->next;
+                        }
                     }
                     check = current;
                     // have to try to replicate the symbol into the current context
@@ -805,7 +810,6 @@ static EXPRESSION* createLambda(bool noinline)
 }
 LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, int flags)
 {
-
     LAMBDA* self;
     SYMBOL *vpl, *ths;
     SYMLIST* hrl;

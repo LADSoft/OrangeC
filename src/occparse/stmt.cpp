@@ -2890,7 +2890,7 @@ LEXEME* statement(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool viacontro
             lex = statement_default(lex, funcsp, parent);
             if (cparams.prm_cplusplus)
                 HandleStartOfCase(parent);
-            lex = statement(lex, funcsp, parent, true);
+            lex = statement(lex, funcsp, parent, false);
             parent->nosemi = true;
             return lex;
             break;

@@ -6461,15 +6461,6 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                         if (!isfunction(sp->tp))
                             error(ERR_INLINE_NOT_ALLOWED);
                     }
-                    if (!strcmp(sp->name, "main"))
-                    {
-                        // fixme don't check if in parent class...
-                        if (!globalNameSpace->next)
-                        {
-                            if (cparams.prm_cplusplus)
-                                SetLinkerNames(sp, lk_c);
-                        }
-                    }
                     if (inTemplate && templateNestingCount == 1)
                     {
                         inTemplateBody++;

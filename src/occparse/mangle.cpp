@@ -894,6 +894,8 @@ void SetLinkerNames(SYMBOL* sym, enum e_lk linkage)
     memset(errbuf, 0, 8192);
     SYMBOL* lastParent;
     mangledNamesCount = 0;
+    if (cparams.prm_cplusplus && !sym->parentClass && !sym->parentNameSpace && sym->name[0] == 'm' && !strcmp(sym->name, "main"))
+        linkage = lk_c;
     if (linkage == lk_none || linkage == lk_cdecl)
     {
         if (cparams.prm_cplusplus || (architecture == ARCHITECTURE_MSIL))

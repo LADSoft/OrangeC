@@ -863,6 +863,7 @@ void deferredInitializeStructFunctions(SYMBOL* cur)
                                         sym->stackblock = !isref(sp2->tp);
                                         lex = initialize(lex, theCurrentFunc, sym, sc_auto, false, 0); /* also reserves space */
                                         sp2->init = sym->init;
+                                        sym->allocate = false;
                                         if (sp2->init->exp->type == en_thisref)
                                         {
                                             EXPRESSION** expr = &sp2->init->exp->left->v.func->thisptr;
@@ -970,6 +971,7 @@ TYPE* PerformDeferredInitialization(TYPE* tp, SYMBOL* funcsp)
     TYPE** tpx = &tp;
     if (isref(*tpx))
         tpx = &basetype(*tpx)->btp;
+    TYPE **tpx1 = tpx;
     while ((*tpx)->btp && !isfunction(*tpx))
         tpx = &(*tpx)->btp;
     if (cparams.prm_cplusplus && !inTemplateType && isstructured(*tpx))
@@ -1007,10 +1009,11 @@ TYPE* PerformDeferredInitialization(TYPE* tp, SYMBOL* funcsp)
             if (sym)
                 *tpx = sym->tp;
         }
-        else if (!sym->instantiated)
+        else if (!sym->instantiated || ((*tpx)->size != sym->tp->size && sym->tp->size != 0))
         {
             *tpx = sym->tp;
         }
+        UpdateRootTypes(tp);
     }
     return tp;
 }

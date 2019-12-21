@@ -64,7 +64,7 @@ extern int has_double;
 extern std::vector<SimpleSymbol*> functionVariables;
 extern std::vector<SimpleSymbol*> temporarySymbols;
 extern int registersAssigned;
-
+extern SimpleSymbol* currentFunction;
 int maxAddr = 0;
 typedef struct _spill_
 {

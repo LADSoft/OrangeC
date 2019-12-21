@@ -71,8 +71,9 @@ extern std::vector<BROWSEINFO*> browseInfo;
 extern std::vector<BROWSEFILE*> browseFiles;
 
 
-InstructionParser* instructionParser;
-Section* currentSection;
+extern InstructionParser* instructionParser;
+
+static Section* currentSection;
 
 static const char* segnames[] = {0,         "code",     "data",     "bss",        "string",     "const",
                                  "tls",     "cstartup", "crundown", "tlsstartup", "tlsrundown", "codefix",

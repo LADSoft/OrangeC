@@ -410,6 +410,7 @@ void insertDynamicDestructor(SYMBOL* sym, INITIALIZER* init)
 }
 static void callDynamic(const char *name, int startupType, int index, STATEMENT *st)
 {
+#ifndef PARSER_ONLY
     if (st)
     {
         char fullName[512];
@@ -445,6 +446,7 @@ static void callDynamic(const char *name, int startupType, int index, STATEMENT 
             InsertExtern(funcsp);
         }
     }
+#endif
 }
 static void dumpDynamicInitializers(void)
 {
@@ -4020,6 +4022,33 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_c
                     lex = expression_no_check(lex, funcsp, nullptr, &tp1, &exp1, _F_TYPETEST);
                     if (tp1)
                     {
+                        if (isarray(tp1))
+                        {
+                            TYPE* itp = (TYPE*)Alloc(sizeof(TYPE));
+                            itp->type = bt_pointer;
+                            itp->size = getSize(bt_pointer);
+                            itp->btp = basetype(tp1)->btp;
+                            itp->rootType = itp;
+                            if (isconst(tp1))
+                            {
+                                TYPE* itp1 = (TYPE*)Alloc(sizeof(TYPE));
+                                itp1->type = bt_const;
+                                itp1->size = itp->size;
+                                itp1->btp = itp;
+                                itp1->rootType = itp->rootType;
+                                itp = itp1;
+                            }
+                            if (isvolatile(tp1))
+                            {
+                                TYPE* itp1 = (TYPE*)Alloc(sizeof(TYPE));
+                                itp1->type = bt_volatile;
+                                itp1->size = itp->size;
+                                itp1->btp = itp;
+                                itp1->rootType = itp->rootType;
+                                itp = itp1;
+                            }
+                            tp1 = itp;
+                        }
                         TYPE** tp2 = &sym->tp;
                         while (ispointer(*tp2) || isref(*tp2))
                             tp2 = &basetype(*tp2)->btp;

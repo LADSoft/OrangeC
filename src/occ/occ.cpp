@@ -69,6 +69,8 @@ bool (*Tokenizer::IsSymbolChar)(const char*, bool) = IsSymbolCharRoutine;
 char outFile[260];
 char infile[260];
 
+InstructionParser* instructionParser;
+
 SimpleSymbol* currentFunction;
 extern FILE* outputFile;
 FILE* browseFile;

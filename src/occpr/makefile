@@ -51,7 +51,6 @@ CPP_DEPENDENCIES=$(wildcard *.cpp) \
      lex.cpp \
      libcxx.cpp \
      mangle.cpp \
-     occparse.cpp \
      osutil.cpp \
      property.cpp \
      rtti.cpp \

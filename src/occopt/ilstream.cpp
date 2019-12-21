@@ -701,7 +701,9 @@ static void StreamInstructions(QUAD *ins)
     for (QUAD *q = ins; q; q = q->fwd, i++);
     StreamIndex(i);
     for (QUAD *q = ins; q; q = q->fwd)
+    {
         StreamInstruction(q);
+    }
 
 }
 static void CacheOffset(FunctionData* fd, SimpleExpression*offset)

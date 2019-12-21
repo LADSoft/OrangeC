@@ -56,6 +56,8 @@ extern std::map<std::string, std::string> bePragma;
 extern std::string outputFileName;
 extern std::string bePostFile;
 
+char outFile[260];
+
 long long ParseExpression(std::string&line);
 
 #ifdef HAVE_UNISTD_H

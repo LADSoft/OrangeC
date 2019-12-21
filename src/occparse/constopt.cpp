@@ -435,13 +435,6 @@ void dooper(EXPRESSION** node, int mode)
                         ep->type = maxinttype(ep1, ep2);
                         ep->v.i = ep1->v.i + ep2->v.i;
                         ep->v.i = reint(ep);
-                        //				if (ep->unionoffset)
-                        //					printf("1");
-                        //				if (ep1->unionoffset)
-                        //					printf("2");
-                        //				if (ep2->unionoffset)
-                        //					printf("3");
-                        //				printf(";");
                         break;
                     case 2:
                         ep->type = maxfloattype(ep1, ep2);

@@ -4447,7 +4447,7 @@ LEXEME* getBeforeType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMB
     {
         SYMBOL* strSymX = nullptr;
         NAMESPACEVALUELIST* nsvX = nullptr;
-        STRUCTSYM s;
+        STRUCTSYM s,s1;
         bool oldTemplateSpecialization = inTemplateSpecialization;
         s.tmpl = nullptr;
         inTemplateSpecialization = inTemplateType;
@@ -4468,8 +4468,8 @@ LEXEME* getBeforeType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMB
             {
                 if (strSym)
                     *strSym = strSymX;
-                s.str = strSymX;
-                addStructureDeclaration(&s);
+                s1.str = strSymX;
+                addStructureDeclaration(&s1);
             }
             if (nsv)
                 *nsv = nsvX;

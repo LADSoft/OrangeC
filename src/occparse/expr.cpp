@@ -2822,8 +2822,8 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                     }
                     else
                     {
-                        TYPE* ctype = sym->tp;
-                        EXPRESSION* consexp = anonymousVar(sc_auto, sym->tp);  // sc_parameter to push it...
+                        TYPE* ctype = basetype(sym->tp = PerformDeferredInitialization(sym->tp, nullptr));
+                        EXPRESSION* consexp = anonymousVar(sc_auto, ctype);  // sc_parameter to push it...
                         SYMBOL* esp = consexp->v.sp;
                         esp->stackblock = true;
                         callConstructorParam(&ctype, &consexp, p->tp, p->exp, true, true, implicit, false);

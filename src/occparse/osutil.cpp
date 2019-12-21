@@ -954,8 +954,12 @@ void ccinit(int argc, char* argv[])
     if (chosenAssembler->envname)
     {
         const char *env = getenv(chosenAssembler->envname);
-        if (env && !switchParser.Parse(std::string(env), &ecnt, eargs))
-            Utils::usage(argv[0], getUsageText());
+        if (env)
+        {
+            std::string aa = env;
+            if (!switchParser.Parse(aa, &ecnt, eargs))
+                Utils::usage(argv[0], getUsageText());
+        }
     }
     CmdSwitchFile internalConfig(switchParser);
     if (chosenAssembler->cfgname)

@@ -59,7 +59,7 @@ extern TYPE stdint;
 extern int fastcallAlias;
 extern bool setjmp_used;
 extern bool functionHasAssembly;
-extern std::unordered_map<IMODE*, IMODE*> loadHash;
+extern std::map<IMODE*, IMODE*> loadHash;
 extern CASTTEMPHASH* castHash[DAGSIZE];
 extern SimpleExpression* objectArray_exp;
 extern std::vector<SimpleSymbol*> typedefs;

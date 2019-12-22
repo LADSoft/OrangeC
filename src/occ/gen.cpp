@@ -1837,7 +1837,7 @@ void bingen(int lower, int avg, int higher)
         int avg2 = (higher + avg + 1) / 2;
         int lab;
         if (avg + 1 < higher)
-            lab = switchTreeBranchLabels[avg2];// = beGetLabel;
+            lab = switchTreeBranchLabels[avg2] = switchTreeLabels[avg] + 1;
         else
             lab = switch_deflab;
         if (switch_apl->length < 0)
@@ -4305,8 +4305,8 @@ void asm_swbranch(QUAD* q) /* case characteristics */
         case swm_tree:
             liveQualify(switch_apl, switch_apl, switch_aph);
             switchTreeCases[switchTreePos] = swcase;
-            switchTreeLabels[switchTreePos] = lab;
-            switchTreeBranchLabels[switchTreePos++] = lab + 1;
+            switchTreeLabels[switchTreePos++] = lab;
+//            switchTreeBranchLabels[switchTreePos++] = lab + 1;
             if (--switch_case_count == 0)
                 bingen(0, switch_case_max / 2, switch_case_max);
 

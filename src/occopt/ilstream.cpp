@@ -778,7 +778,7 @@ static void StreamTemps()
         }
     }
 }
-static void StreamLoadCache(std::unordered_map<IMODE*, IMODE*> hash)
+static void StreamLoadCache(std::map<IMODE*, IMODE*> hash)
 {
     StreamIndex(hash.size());
     for (auto v : hash)

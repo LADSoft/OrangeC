@@ -28,7 +28,7 @@ extern SimpleSymbol* currentFunction;
 extern int tempCount;
 extern int blockCount;
 extern QUAD* intermed_head;
-extern std::unordered_map<IMODE*, IMODE*> loadHash;
+extern std::map<IMODE*, IMODE*> loadHash;
 
 int gentype; /* Current DC type */
 int curseg;  /* Current seg */

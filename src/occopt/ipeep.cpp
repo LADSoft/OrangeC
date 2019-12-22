@@ -267,6 +267,7 @@ void kill_labeledgoto(BLOCK* b, QUAD* head)
                 }
                 break;
             case i_coswitch:
+/* can't do this op because the BE needs the original label for bingen
                 do
                 {
                     if (tail->dc.v.label == oldlabel)
@@ -276,7 +277,7 @@ void kill_labeledgoto(BLOCK* b, QUAD* head)
                     }
                     tail = tail->fwd;
                 } while (tail->dc.opcode == i_swbranch);
-
+*/
                 break;
             default:
                 break;

@@ -734,7 +734,7 @@ static void UnstreamTemps()
         }
     }
 }
-static void UnstreamLoadCache(FunctionData* fd, std::unordered_map<IMODE*, IMODE*>& hash)
+static void UnstreamLoadCache(FunctionData* fd, std::map<IMODE*, IMODE*>& hash)
 {
     int i = UnstreamIndex();
     for (; i; i--)

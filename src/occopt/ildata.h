@@ -77,7 +77,7 @@ struct FunctionData
     std::vector<SimpleSymbol*> temporarySymbols;
     std::vector<SimpleSymbol*> variables;
     std::vector<IMODE*> imodeList;
-    std::unordered_map<IMODE*, IMODE*> loadHash;
+    std::map<IMODE*, IMODE*> loadHash;
     TEMP_INFO **tempInfo;
     int fastcallAlias;
     int tempCount;

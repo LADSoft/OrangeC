@@ -29,12 +29,13 @@
 #include "iexpr.h"
 #include "beinterf.h"
 #include <stdarg.h>
+#include <map>
 
 extern ARCH_ASM *chosenAssembler;
 extern std::vector<SimpleSymbol*>temporarySymbols;
 
 
-std::unordered_map<IMODE*, IMODE*> loadHash;
+std::map<IMODE*, IMODE*> loadHash;
 CASTTEMPHASH* castHash[DAGSIZE];
 int tempCount;
 

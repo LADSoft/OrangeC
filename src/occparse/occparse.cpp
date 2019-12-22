@@ -568,6 +568,7 @@ int main(int argc, char* argv[])
             printf("  Temp peak:           %d\n", maxTemps);
         }
         maxBlocks = maxTemps = 0;
+
         delete preProcessor;
         if (cppFile)
             fclose(cppFile);
@@ -585,6 +586,7 @@ int main(int argc, char* argv[])
             if (cparams.prm_compileonly && !cparams.prm_asmfile)
                 msil_end_generation(nullptr);
 #endif
+printf("6");
         clist = clist->next;
     }
 #ifndef PARSER_ONLY

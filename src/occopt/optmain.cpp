@@ -47,7 +47,7 @@ extern SimpleExpression* fltexp;
 extern TEMP_INFO** tempInfo;
 extern int blockMax;
 extern int tempMax;
-extern std::unordered_map<IMODE*, IMODE*> loadHash;
+extern std::map<IMODE*, IMODE*> loadHash;
 extern int fastcallAlias;
 
 CmdSwitchParser SwitchParser;

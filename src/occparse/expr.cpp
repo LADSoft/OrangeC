@@ -7425,8 +7425,6 @@ static LEXEME* expression_hook(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp
                     *tp = tpc;
                 }
                 *exp = exprNode(en_cond, *exp, exprNode(en_void, eph, epc));
-                if (isstructured(*tp))
-                    *exp = exprNode(en_not_lvalue, *exp, nullptr);
             }
         }
         else

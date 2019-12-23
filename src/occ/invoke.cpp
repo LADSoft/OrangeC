@@ -196,7 +196,7 @@ int RunExternalFiles()
     while (asmlist)
     {
         if (cparams.prm_compileonly && outputFileName[0] && !first)
-            rv = Utils::ToolInvoke("oasm.exe", verbosity?"":nullptr, "\"-o%s\" %s %s \"%s\"", outputFileName, asm_params ? asm_params : "",
+            rv = Utils::ToolInvoke("oasm.exe", verbosity?"":nullptr, "\"-o%s\" %s %s \"%s\"", outputFileName.c_str(), asm_params ? asm_params : "",
                     !showBanner ? "-!" : "", (char*)asmlist->data);
         else
             rv = Utils::ToolInvoke("oasm.exe", verbosity ? "" : nullptr, "%s %s \"%s\"", asm_params ? asm_params : "", !showBanner ? "-!" : "",
@@ -213,7 +213,7 @@ int RunExternalFiles()
     while (rclist)
     {
         if (cparams.prm_compileonly && outputFileName[0] && !first)
-            rv = Utils::ToolInvoke("orc.exe", verbosity ? "" : nullptr, "\"-o%s\" -r %s %s %s \"%s\"", outputFileName, rc_params ? rc_params : "",
+            rv = Utils::ToolInvoke("orc.exe", verbosity ? "" : nullptr, "\"-o%s\" -r %s %s %s \"%s\"", outputFileName.c_str(), rc_params ? rc_params : "",
                     !showBanner ? "-!" : "", args, (char*)rclist->data);
         else
             rv = Utils::ToolInvoke("orc.exe", verbosity ? "" : nullptr, "-r %s %s %s \"%s\"", rc_params ? rc_params : "", !showBanner ? "-!" : "", args,
@@ -301,7 +301,7 @@ int RunExternalFiles()
             return rv;
         if (cparams.prm_targettype == WHXDOS)
         {
-            rv = Utils::ToolInvoke("patchpe.exe", verbosity ? "" : nullptr, "%s", outputFileName);
+            rv = Utils::ToolInvoke("patchpe.exe", verbosity ? "" : nullptr, "%s", outputFileName.c_str());
             if (rv)
             {
                 printf("Could not spawn patchpe.exe\n");

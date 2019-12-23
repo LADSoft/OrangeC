@@ -468,7 +468,7 @@ static int getscale(int* scale)
 
 int inasm_enterauto(EXPRESSION* node, int* reg1, int* reg2)
 {
-    if (node && node->type == se_auto)
+    if (node && node->type == en_auto)
     {
         int* vreg;
         if (*reg1 >= 0 && *reg2 >= 0)
@@ -497,7 +497,7 @@ static int inasm_structsize(void)
             return ISZ_UCHAR;
         if (lastsym->tp->size == 2)
             return ISZ_USHORT;
-        return 1000;
+        return 0;
     }
     else
     {
@@ -1065,6 +1065,7 @@ static void AssembleInstruction(OCODE* ins)
         AMODE oper1;
         AMODE oper2;
         AMODE oper3;
+        /*
         if (ins1.oper1 && ins1.oper1->offset)
         {
             oper1 = *ins1.oper1;
@@ -1083,6 +1084,7 @@ static void AssembleInstruction(OCODE* ins)
             ins1.oper3 = &oper3;
             ins1.oper3->offset = SymbolManager::Get((EXPRESSION*)ins1.oper3->offset);
         }
+        */
         Instruction* newIns = nullptr;
         std::list<Numeric*> operands;
         assembling = true;
@@ -1203,8 +1205,6 @@ LEXEME* inlineAsm(LEXEME* inlex, BLOCKDATA* parent)
                 else
                     rv->oper1->length = rv->oper2->length;
             }
-            // else if (!rv->oper2->length && insdata->amode != OPE_BOUND && insdata->amode != OPE_LOADSEG)
-            // rv->oper2->length = rv->oper1->length;
         }
         rv->noopt = true;
         rv->opcode = op;
@@ -1218,13 +1218,13 @@ LEXEME* inlineAsm(LEXEME* inlex, BLOCKDATA* parent)
 void adjust_codelab(void* select, int offset)
 {
     OCODE* peep = (OCODE*)select;
-    if (peep->oper1 && peep->oper1->offset && peep->oper1->offset->type == en_labcon)
+    if (peep->oper1 && peep->oper1->offset && peep->oper1->offset->type == se_labcon)
         if (peep->oper1->offset->i < 0)
             peep->oper1->offset->i += offset;
-    if (peep->oper2 && peep->oper2->offset && peep->oper2->offset->type == en_labcon)
+    if (peep->oper2 && peep->oper2->offset && peep->oper2->offset->type == se_labcon)
         if (peep->oper2->offset->i < 0)
             peep->oper2->offset->i += offset;
-    if (peep->oper3 && peep->oper3->offset && peep->oper3->offset->type == en_labcon)
+    if (peep->oper3 && peep->oper3->offset && peep->oper3->offset->type == se_labcon)
         if (peep->oper3->offset->i < 0)
             peep->oper3->offset->i += offset;
 }

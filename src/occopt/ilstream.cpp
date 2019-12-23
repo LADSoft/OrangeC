@@ -810,6 +810,7 @@ static void StreamFunc(FunctionData *fd)
         case i_cxcon:
         case i_label:
         case i_line:
+        case i_passthrough:
             break;
         default:
             CacheImode(fd, q->dc.left);

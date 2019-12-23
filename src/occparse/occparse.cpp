@@ -586,7 +586,6 @@ int main(int argc, char* argv[])
             if (cparams.prm_compileonly && !cparams.prm_asmfile)
                 msil_end_generation(nullptr);
 #endif
-printf("6");
         clist = clist->next;
     }
 #ifndef PARSER_ONLY

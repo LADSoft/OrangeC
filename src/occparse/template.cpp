@@ -5671,7 +5671,7 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
                         }
                         else
                         {
-                            (*p)->p->byClass.val = symArgs->tp;
+                            (*p)->p->byClass.val = rewriteNonRef(symArgs->tp);
                         }
                         p = &(*p)->next;
                         symArgs = symArgs->next;

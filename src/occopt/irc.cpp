@@ -349,10 +349,10 @@ void AllocateStackSpace()
     ScanForAnonymousVars();
 
     for (auto sym : functionVariables)
-        if (sym->i >= maxlvl)
+        if (sym->i >= maxlvl && sym->storage_class != scc_constant)
             maxlvl = sym->i + 1;
     for (auto sym : temporarySymbols)
-        if (sym->i >= maxlvl)
+        if (sym->i >= maxlvl && sym->storage_class != scc_constant)
             maxlvl = sym->i + 1;
     if (maxlvl == -1)
         return;
@@ -362,15 +362,21 @@ void AllocateStackSpace()
     std::unordered_map<SimpleSymbol*, int> modes;
     for (auto sym : functionVariables)
     {
-        int lvl = sym->i;
-        queue[lvl].push_back(sym);
-        modes[sym] = sym->anonymous ? 2 : (lvl > oldlvl);
+        if (sym->storage_class != scc_constant)
+        {
+            int lvl = sym->i;
+            queue[lvl].push_back(sym);
+            modes[sym] = sym->anonymous ? 2 : (lvl > oldlvl);
+        }
     }
     for (auto sym : temporarySymbols)
     {
-        int lvl = sym->i;
-        queue[lvl].push_back(sym);
-        modes[sym] = 2;
+        if (sym->storage_class != scc_constant)
+        {
+            int lvl = sym->i;
+            queue[lvl].push_back(sym);
+            modes[sym] = 2;
+        }
     }
     bool show = false;
     lc_maxauto = max = 0;
@@ -392,7 +398,7 @@ void AllocateStackSpace()
             else
             {
                 // declared variable
-                doit = !sym->regmode && (sym->storage_class == scc_auto || sym->storage_class == scc_register) && sym->allocate &&
+                doit = !sym->regmode && sym->storage_class != scc_constant && (sym->storage_class == scc_auto || sym->storage_class == scc_register) && sym->allocate &&
                     !sym->anonymous;
             }
             if (doit && sym->offset == 0 && sym->tp->size)

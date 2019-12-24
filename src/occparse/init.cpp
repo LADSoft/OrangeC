@@ -4312,6 +4312,8 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_c
                         insertInitSym(sym);
                     sym->value.i = sym->init->exp->v.i;
                     sym->storage_class = sc_constant;
+                    SymbolManager::Get(sym)->i = sym->value.i;
+                    SymbolManager::Get(sym)->storage_class = scc_constant;
                 }
             }
         }
@@ -4320,6 +4322,8 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_c
             if (sym->storage_class != sc_static && !cparams.prm_cplusplus && !funcsp)
                 insertInitSym(sym);
             sym->storage_class = sc_constant;
+            SymbolManager::Get(sym)->i = sym->value.i;
+            SymbolManager::Get(sym)->storage_class = scc_constant;
         }
     }
     if (isatomic(sym->tp) && (sym->storage_class == sc_auto))

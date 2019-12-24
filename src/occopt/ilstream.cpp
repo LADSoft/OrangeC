@@ -1030,7 +1030,10 @@ static void NumberTypes()
     int i = 1;
     for (auto s : typeSymbols)
     {
-        s->typeIndex = s->fileIndex = 2 * i++ + 1;
+        s->typeIndex = 2 * i++ + 1;
+        // static members
+        if (s->storage_class != scc_external && s->storage_class != scc_global)
+            s->fileIndex = s->typeIndex;
     }
     for (auto s : typedefs)
         s->typeIndex = s->fileIndex = 2 * i++ + 1;

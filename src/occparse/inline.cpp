@@ -169,7 +169,7 @@ void dumpInlines(void)
         while (dataList)
         {
             SYMBOL* sym = (SYMBOL*)dataList->data;
-            if (sym->attribs.inheritable.linkage2 != lk_import)
+            if (sym->attribs.inheritable.linkage2 != lk_import && sym->storage_class != sc_constant)
             {
                 if (sym->parentClass && sym->parentClass->parentTemplate)
                 {

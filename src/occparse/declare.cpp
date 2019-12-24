@@ -94,6 +94,7 @@ static LEXEME* getStorageAndType(LEXEME* lex, SYMBOL* funcsp, SYMBOL** strSym, b
                                  enum e_lk* linkage3, enum e_ac access, bool* notype, bool* defd, int* consdest, bool* templateArg,
                                  bool* asFriend);
 
+
 void declare_init(void)
 {
     unnamed_tag_id = 1;
@@ -996,9 +997,14 @@ static LEXEME* structbody(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_ac cur
             sp->vtabsp = makeID(sc_static, &stdvoid, nullptr, litlate(buf));
             sp->vtabsp->attribs.inheritable.linkage2 = sp->attribs.inheritable.linkage2;
             if (sp->vtabsp->attribs.inheritable.linkage2 == lk_import)
+            {
                 sp->vtabsp->dontinstantiate = true;
+            }
             else if (sp->vtabsp->attribs.inheritable.linkage2 == lk_export)
+            {
+                SetLinkerNames(sp->vtabsp, lk_cdecl);
                 GENREF(sp->vtabsp);
+            }
             InsertInline(sp);
             sp->vtabsp->attribs.inheritable.linkage = lk_virtual;
             sp->vtabsp->decoratedName = sp->vtabsp->errname = sp->vtabsp->name;
@@ -6662,7 +6668,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                                 STATEMENT* s = stmtNode(lex, block, st_varstart);
                                 s->select = varNode(en_auto, sp);
                             }
-                            if (!sp->label && sp->storage_class == sc_static && (architecture == ARCHITECTURE_MSIL))
+                            if (!sp->label && (sp->storage_class == sc_static || sp->storage_class == sc_localstatic) && (architecture == ARCHITECTURE_MSIL))
                                 sp->label = nextLabel++;
                             if (cparams.prm_cplusplus && sp->storage_class != sc_type && sp->storage_class != sc_typedef &&
                                 structLevel && (!instantiatingTemplate) && (MATCHKW(lex, assign) || MATCHKW(lex, begin)))

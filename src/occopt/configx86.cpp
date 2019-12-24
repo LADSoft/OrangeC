@@ -38,6 +38,8 @@ extern ARCH_ASM *chosenAssembler;
 extern int usingEsp;
 extern enum asmTypes prm_assembler;
 
+bool doBackendInit = false;
+
 static char BackendIntrinsicPrototypes[] =
 #include "../occ/beIntrinsicProtos.h"
 ;
@@ -95,16 +97,19 @@ static char usage_text[] =
 void WinmodeSetup(const char* string);
 static void chkdos(void)
 {
-    char* a = getenv("ORANGECDOS");
-    if (a && *a)
+    if (doBackendInit)
     {
-        WinmodeSetup("a");  // DOS32A
-        cparams.prm_useesp = false;
-        cparams.compile_under_dos = true;
-    }
-    else
-    {
-        WinmodeSetup("c");  // Windows console
+        char* a = getenv("ORANGECDOS");
+        if (a && *a)
+        {
+            WinmodeSetup("a");  // DOS32A
+            cparams.prm_useesp = false;
+            cparams.compile_under_dos = true;
+        }
+        else
+        {
+            WinmodeSetup("c");  // Windows console
+        }
     }
 }
 static int initnasm(COMPILER_PARAMS* parms, ARCH_ASM* data, ARCH_DEBUG* debug)

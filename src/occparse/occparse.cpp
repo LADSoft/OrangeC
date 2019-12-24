@@ -547,9 +547,11 @@ int main(int argc, char* argv[])
                 
             compile(false);
 #ifndef PARSER_ONLY
-            oFree();
             if (architecture != ARCHITECTURE_MSIL || cparams.prm_compileonly && !cparams.prm_asmfile)
+            {
                 OutputIntermediate(parserMem);
+                oFree();
+            }
             if (cparams.prm_icdfile)
                 OutputIcdFile();
             InitIntermediate();
@@ -595,6 +597,7 @@ int main(int argc, char* argv[])
             msil_end_generation(nullptr);
             OutputIntermediate(parserMem);
         }
+    oFree();
     globalFree();
     if (compileToFile)
     {

@@ -69,6 +69,7 @@ extern std::string prm_OutputDefFile;
 extern int architecture;
 extern std::string outputFileName;
 extern std::string prm_assemblerSpecifier;
+extern bool doBackendInit;
 
 LIST* clist = 0;
 int showVersion = false;
@@ -858,6 +859,8 @@ void ccinit(int argc, char* argv[])
     char* p;
     int rv;
     int i;
+
+    doBackendInit = true;
 
     for (i = 1; i < argc; i++)
         if (argv[i][0] == '-' || argv[i][0] == '/')

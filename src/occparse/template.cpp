@@ -6360,7 +6360,8 @@ static void TemplateTransferClassDeferred(SYMBOL* newCls, SYMBOL* tmpl)
                             SYMLIST* ssf = basetype(ss2->tp)->syms->table[0];
                             while (tsf && ssf)
                             {
-                                ssf->p->name = tsf->p->name;
+                                if (!ssf->p->anonymous || !tsf->p->anonymous)
+                                    ssf->p->name = tsf->p->name;
                                 tsf = tsf->next;
                                 ssf = ssf->next;
                             }

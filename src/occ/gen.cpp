@@ -383,11 +383,13 @@ void make_complexconst(AMODE* ap, AMODE* api)
             case ISZ_DOUBLE:
             case ISZ_LDOUBLE:
                 api->offset = simpleExpressionNode(se_f, 0, 0); /* defaults to zero. 0 */
+                api->offset->sizeFromType = ap->offset->sizeFromType;
                 break;
             case ISZ_IFLOAT:
             case ISZ_IDOUBLE:
             case ISZ_ILDOUBLE:
                 api->offset = simpleExpressionNode(se_fi, 0, 0); /* defaults to zero. 0 */
+                api->offset->sizeFromType = ap->offset->sizeFromType;
                 apt = api;
                 api = ap;
                 ap = apt;
@@ -395,8 +397,9 @@ void make_complexconst(AMODE* ap, AMODE* api)
             case ISZ_CFLOAT:
             case ISZ_CDOUBLE:
             case ISZ_CLDOUBLE:
-                api->offset = simpleExpressionNode(se_f, 0, 0); /* defaults to zero. 0 */
+                api->offset = simpleExpressionNode(se_fi, 0, 0); /* defaults to zero. 0 */
                 api->offset->f = ap->offset->c.i;
+                api->offset->sizeFromType = ap->offset->sizeFromType;
                 ap->offset->type = se_f;
                 ap->offset->f = ap->offset->c.r;
                 break;

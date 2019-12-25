@@ -305,7 +305,7 @@ static SYMBOL* declareDestructor(SYMBOL* sp)
     func = makeID(sc_member, tp, nullptr, overloadNameTab[CI_DESTRUCTOR]);
     func->xcMode = xc_none;
     func->attribs.inheritable.linkage2 = sp->attribs.inheritable.linkage2;
-    tp->syms = CreateHashTable(1);
+    tp->syms = CreateHashTable(1);  
     sp1 = makeID(sc_parameter, tp->btp, nullptr, AnonymousName());
     insert(sp1, tp->syms);
     if (sp->vbaseEntries)
@@ -2431,7 +2431,7 @@ EXPRESSION* thunkConstructorHead(BLOCKDATA* b, SYMBOL* sym, SYMBOL* cons, HASHTA
         {
             if (sym->vbaseEntries)
             {
-                SYMBOL* sp = makeID(sc_parameter, &stdint, nullptr, "__$$constop");
+                SYMBOL* sp = makeID(sc_parameter, &stdint, nullptr, AnonymousName());
                 EXPRESSION* val = varNode(en_auto, sp);
                 int lbl = codeLabel++;
                 STATEMENT* st;
@@ -2773,6 +2773,7 @@ void thunkDestructorTail(BLOCKDATA* b, SYMBOL* sp, SYMBOL* dest, HASHTABLE* syms
         STATEMENT* st;
         sp->decoratedName = sp->errname = sp->name;
         sp->offset = chosenAssembler->arch->retblocksize + getSize(bt_pointer);
+        SymbolManager::Get(sp)->offset = sp->offset;
         deref(&stdint, &val);
         st = stmtNode(nullptr, b, st_notselect);
         optimize_for_constants(&val);

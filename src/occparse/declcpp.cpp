@@ -1009,7 +1009,7 @@ TYPE* PerformDeferredInitialization(TYPE* tp, SYMBOL* funcsp)
             if (sym)
                 *tpx = sym->tp;
         }
-        else if (!sym->instantiated || ((*tpx)->size != sym->tp->size && sym->tp->size != 0))
+        else if (!sym->instantiated || ((*tpx)->size < sym->tp->size && sym->tp->size != 0))
         {
             *tpx = sym->tp;
         }

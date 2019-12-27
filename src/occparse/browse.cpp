@@ -35,7 +35,6 @@
 #    include <unistd.h>
 #endif
 extern COMPILER_PARAMS cparams;
-extern ARCH_DEBUG* chosenDebugger;
 extern int funcNesting;
 extern PreProcessor *preProcessor;
 extern int charIndex;
@@ -114,7 +113,7 @@ void browse_startfunc(SYMBOL* func, int lineno)
 {
     char name[4096];
     BROWSEINFO* bri;
-    if (!cparams.prm_browse || !chosenDebugger)
+    if (!cparams.prm_browse || func->declline <= 0)
         return;
     bri = (BROWSEINFO*)Alloc(sizeof(BROWSEINFO));
     bri->type = BRS_STARTFUNC;
@@ -133,7 +132,7 @@ void browse_endfunc(SYMBOL* func, int lineno)
 {
     char name[4096];
     BROWSEINFO* bri;
-    if (!cparams.prm_browse || !chosenDebugger)
+    if (!cparams.prm_browse || func->declline <= 0)
         return;
     bri = (BROWSEINFO*)Alloc(sizeof(BROWSEINFO));
     bri->type = BRS_ENDFUNC;
@@ -183,7 +182,7 @@ void browse_variable(SYMBOL* var)
 {
     char name[4096];
     BROWSEINFO* bri;
-    if (!cparams.prm_browse || !chosenDebugger)
+    if (!cparams.prm_browse || var->declline <= 0)
         return;
     if (var->thisPtr)
         return;
@@ -220,7 +219,7 @@ void browse_usage(SYMBOL* var, int file)
 {
     char name[4096];
     BROWSEINFO* bri;
-    if (!cparams.prm_browse || !chosenDebugger || funcNesting > 1)
+    if (!cparams.prm_browse || var->declline <= 0 || funcNesting > 1)
         return;
     if (var->thisPtr)
         return;
@@ -247,7 +246,7 @@ void browse_usage(SYMBOL* var, int file)
 void browse_define(char* name, int lineno, int charindex)
 {
     BROWSEINFO* bri;
-    if (!cparams.prm_browse || !chosenDebugger)
+    if (!cparams.prm_browse || lineno <= 0)
         return;
     bri = (BROWSEINFO*)Alloc(sizeof(BROWSEINFO));
     bri->type = BRS_DEFINE;
@@ -264,7 +263,7 @@ void browse_define(char* name, int lineno, int charindex)
 void browse_blockstart(int lineno)
 {
     BROWSEINFO* bri;
-    if (!cparams.prm_browse || !chosenDebugger)
+    if (!cparams.prm_browse || lineno <= 0)
         return;
     bri = (BROWSEINFO*)Alloc(sizeof(BROWSEINFO));
     bri->type = BRS_BLOCKSTART;
@@ -281,7 +280,7 @@ void browse_blockstart(int lineno)
 void browse_blockend(int lineno)
 {
     BROWSEINFO* bri;
-    if (!cparams.prm_browse || !chosenDebugger)
+    if (!cparams.prm_browse || lineno <= 0)
         return;
     bri = (BROWSEINFO*)Alloc(sizeof(BROWSEINFO));
     bri->type = BRS_BLOCKEND;

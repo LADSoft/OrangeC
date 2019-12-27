@@ -356,7 +356,9 @@ bool SaveFile(const char *name)
         outputfile(outFile, name, chosenAssembler->objext);
         InsertExternalFile(outFile, false);
         outputFile = fopen(outFile, "wb");
-        if (!outputFile)
+        outputfile(outFile, name, ".cbr");
+        browseFile = fopen(outFile, "wb");
+        if (!outputFile || !browseFile)
             return false;
         oa_end_generation();
         for (auto v : externals)

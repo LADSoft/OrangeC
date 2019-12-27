@@ -1473,15 +1473,17 @@ static DWORD servupProc(void *b)
 {
     struct ServerData* data = (struct ServerData*)b;
     BOOL fConnected = ConnectNamedPipe(data->handle, NULL) ? TRUE : (GetLastError() == ERROR_PIPE_CONNECTED);
-    if (fConnected)
+    if (fConnected && data->data)
     {
         DWORD read, n = strlen(data->data);
+        int ofs = 0;
         while (n > 0)
         {
             int len = n > 8192 ? 8192 : n;
-            if (!WriteFile(data->handle, data->data, len, &read, NULL))
+            if (!WriteFile(data->handle, data->data+ofs, len, &read, NULL))
                 break;
             n -= len;
+            ofs += len;
         }
     }
     FlushFileBuffers(data->handle);
@@ -1528,7 +1530,7 @@ static unsigned int __stdcall Start(void* aa)
                             struct ServerData *data = (struct ServerData *)calloc(1, sizeof(struct ServerData));
                             data->data = GetFileData(filname, &n);
                             data->handle = handle;
-                            int n = strlen(filname);
+                            int n = strlen(name);
                             DWORD read;
                             WriteFile(serverPipe, &n, sizeof(DWORD), &read, NULL);
                             WriteFile(serverPipe, name, n, &read, NULL);

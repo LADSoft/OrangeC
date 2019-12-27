@@ -13,7 +13,7 @@
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *F
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
  *
@@ -103,6 +103,8 @@ bool dbgtypes::typecompare::operator()(const SimpleType* left, const SimpleType*
                     return true;
                 break;
             default:
+                if (left->sizeFromType < right->sizeFromType)
+                    return true;
                 break;
         }
     }
@@ -152,23 +154,48 @@ ObjType* dbgtypes::Lookup(SimpleType* tp)
 }
 ObjType* dbgtypes::BasicType(SimpleType* tp)
 {
-    static int basicTypes[] = {35, 34, 40, 40, 48, 41, 46, 49, 45, 0,  42, 42, 47, 50, 50,
-                               43, 51, 44, 52, 72, 73, 74, 80, 81, 82, 88, 89, 90, 32};
-    static int pointedTypes[] = {0,       0,       40 + 16, 40 + 16, 48 + 16, 41 + 16, 46 + 16, 49 + 16, 45 + 16, 0,
-                                 42 + 16, 42 + 16, 47 + 16, 50 + 16, 50 + 16, 43 + 16, 51 + 16, 44 + 16, 52 + 16, 72 + 16,
-                                 73 + 16, 74 + 16, 80 + 16, 81 + 16, 82 + 16, 88 + 16, 89 + 16, 90 + 16, 33};
+    static int basicTypesUnsigned[] = {
+        0, 35, 34, 48, 49, 49, 49, 50,
+        50, 51, 50, 52, 50, 0, 0, 0, 
+        0, 0, 72, 73, 74, 80, 81, 82, 
+        88, 89, 90 
+    };
+    static int basicTypesSigned[] = { 
+        0, 35,34, 40, 41, 41, 41, 42,
+        42, 43, 42, 44, 42, 0, 0, 0,
+        0, 0, 72, 73, 74, 80, 81, 82, 
+        88, 89, 90 
+    };
+    static int pointedAddition[] = {
+        0, 0, 16, 16, 16, 16, 16, 16,
+        16, 16, 16, 16, 16, 0, 0, 0,
+        0, 0, 16, 16, 16, 16, 16, 16,
+        16, 16, 16
+    };
     int n = 0;
     SimpleType* tp1 = tp;
     if (tp1->type <= st_void)
     {
-        n = basicTypes[tp1->type];
-    }
-    else if (tp1->type == st_pointer && !tp1->isarray && !tp1->isvla && !tp1->bits)
-    {
-        SimpleType* tp2 = tp1->btp;
-        if (tp2->type <= st_void)
+        int add = 0;
+        if (tp1->type == st_void)
+            n = 32;
+        else
         {
-            n = pointedTypes[tp2->type];
+            if (tp1->type == st_pointer && !tp1->isarray && !tp1->isvla && !tp1->bits)
+            {
+                tp1 = tp1->btp;
+                if (tp1->type < st_void && tp1->type != st_pointer)
+                    add = pointedAddition[tp1->sizeFromType >= 0 ? tp1->sizeFromType : -tp1->sizeFromType];
+            }
+            if (tp1->type == st_void) // pointer to void
+                n = 33;
+            else if (tp1->type < st_pointer)
+            {
+                if (tp1->sizeFromType < 0)
+                    n = basicTypesSigned[-tp1->sizeFromType] + add;
+                else
+                    n = basicTypesUnsigned[tp1->sizeFromType] + add;
+            }
         }
     }
     if (n)
@@ -347,7 +374,7 @@ ObjType* dbgtypes::ExtendedType(SimpleType* tp)
             val->SetStartBit(tp->startbit);
             val->SetBitCount(tp->bits);
         }
-        else if (tp->type == st_struct)
+        else if (tp->type == st_struct || tp->type == st_union)
         {
             ObjType::eType sel;
             tp = tp->sp->tp;  // find instantiated version in case of C++ struct

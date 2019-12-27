@@ -165,7 +165,7 @@ bool InputFile::ReadString(char *s, int len)
                 }
             }
         }
-            inputLen = read(streamid, inputBuffer, sizeof(inputBuffer));
+        inputLen = read(streamid, inputBuffer, sizeof(inputBuffer));
         bufPtr = inputBuffer;
         if (inputLen <= 0)
         {

@@ -59,8 +59,7 @@ bool ppInclude::CheckInclude(kw token, const std::string& args)
             define->Process(line1);
         bool specifiedAsSystem= false;
         std::string name = ParseName(line1, specifiedAsSystem);
-        if (!piper.HasPipe())
-            name = FindFile(specifiedAsSystem, name);
+        name = FindFile(specifiedAsSystem, name);
         pushFile(name, line1);
         return true;
     }

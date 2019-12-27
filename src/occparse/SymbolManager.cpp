@@ -235,17 +235,19 @@ SimpleExpression* SymbolManager::Get(struct expr* e)
 }
 SimpleType* SymbolManager::Get(struct typ *tp)
 {
-
     SimpleType* rv = (SimpleType*)Alloc(sizeof(SimpleType));
     bool isConst = isconst(tp);
     bool isVolatile = isvolatile(tp);
     bool isRestrict = isrestrict(tp);
     bool isAtomic = isatomic(tp);
     bool isvalist = false;
+    bool istypedef = false;
     while (tp != basetype(tp))
     {
         if (tp->type == bt_va_list)
             isvalist = true;
+        if (tp->type == bt_typedef)
+            istypedef = true;
         tp = tp->btp;
     }
     if ((isstructured(tp) && basetype(tp)->sp->templateLevel && !basetype(tp)->sp->instantiated) || basetype(tp)->type == bt_auto)
@@ -257,9 +259,10 @@ SimpleType* SymbolManager::Get(struct typ *tp)
     else
     {
         rv->type = Get(tp->type);
-        if (tp->sp)
+
+        if (basetype(tp)->sp)
         {
-            rv->sp = Get(tp->sp);
+            rv->sp = Get(basetype(tp)->sp);
         }
         rv->size = tp->size;
         if (!isstructured(tp) && !isfunction(tp) && tp->type != bt_ellipse && basetype(tp)->type != bt_any)
@@ -282,14 +285,8 @@ SimpleType* SymbolManager::Get(struct typ *tp)
         {
             SYMLIST *list = tp->syms->table[0];
             LIST **p = &rv->sp->syms;
-            SYMLIST *old = nullptr;
             while (list)
             {
-                if (list->p->tp->type == bt_aggregate)
-                {
-                    old = list->next;
-                    list = list->p->tp->syms->table[0];
-                }
                 *p = (LIST*)Alloc(sizeof(LIST));
                 (*p)->data = Get(list->p);
                 if (rv->sp->storage_class == scc_type || rv->sp->storage_class == scc_cast)
@@ -308,11 +305,6 @@ SimpleType* SymbolManager::Get(struct typ *tp)
                 }
                 p = &(*p)->next;
                 list = list->next;
-                if (!list)
-                {
-                    list = old;
-                    old = nullptr;
-                }
             }
 
 
@@ -327,12 +319,14 @@ SimpleType* SymbolManager::Get(struct typ *tp)
     rv->isrestrict = isRestrict;
     rv->isatomic = isAtomic;
     rv->va_list = isvalist;
+    rv->istypedef = istypedef;
     return rv;
 }
 void refreshBackendParams(SYMBOL* funcsp)
 {
     if (isfunction(funcsp->tp))
     {
+        basetype(funcsp->tp)->sp = funcsp;
         SYMLIST* hr = basetype(funcsp->tp)->syms->table[0];
         LIST* syms = SymbolManager::Get(funcsp)->syms;
         while (hr && syms)
@@ -479,8 +473,6 @@ st_type SymbolManager::Get(enum e_bt type)
         return st_lref;
     case bt_rref:
         return st_rref;
-    case bt_typedef:
-        return st_typedef;
     case bt_struct:
     case bt_class:
         return st_struct;

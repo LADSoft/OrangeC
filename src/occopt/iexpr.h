@@ -68,7 +68,7 @@ enum st_type
     st_none,
     st_i, st_ui, st_f, st_fi, st_fc, st_pointer, st_void, 
     st___string, st___object,
-    st_func, st_lref, st_rref, st_typedef, st_struct, st_union, st_class, st_enum, st_memberptr, st_aggregate, st_ellipse, st_any
+    st_func, st_lref, st_rref, st_struct, st_union, st_class, st_enum, st_memberptr, st_aggregate, st_ellipse, st_any
 };
 struct SimpleType
 {
@@ -93,6 +93,7 @@ struct SimpleType
             unsigned isconst : 1;
             unsigned isvolatile : 1;
             unsigned isrestrict : 1;
+            unsigned istypedef : 1;
         };
         unsigned flags;
     };

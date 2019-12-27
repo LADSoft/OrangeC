@@ -79,7 +79,7 @@ DotNetPELib::PELib* peLib;
 
 int maxBlocks, maxTemps;
 char cppfile[256];
-FILE *cppFile, *browseFile;
+FILE *cppFile;
 char infile[256];
 
 FILE *errFile;
@@ -230,7 +230,7 @@ static void debug_dumptypedefs(NAMESPACEVALUELIST* nameSpace)
                     {
                         tp = basetype(tp)->btp;
                     }
-                    if (!isstructured(tp) || !tp->sp->templateLevel || tp->sp->instantiated)
+                    if (!isstructured(tp) || !basetype(tp)->sp->templateLevel || basetype(tp)->sp->instantiated)
                         typedefs.push_back(SymbolManager::Get(sym));
                 }
                 h = h->next;
@@ -510,22 +510,6 @@ int main(int argc, char* argv[])
                     Utils::fatal("Cannot open error file %s", buffer);
                 }
             }
-            if (cparams.prm_browse)
-            {
-                char name[260];
-                strcpy(name, realOutFile);
-                Utils::StripExt(name);
-                Utils::AddExt(name, ".cbr");
-                browseFile = fopen(name, "wb");
-                if (!browseFile)
-                {
-                    fclose(errFile);
-                    delete preProcessor;
-                    fclose(cppFile);
-                    Utils::fatal("Cannot open browse file %s", buffer);
-                }
-                setvbuf(browseFile, 0, _IOFBF, 32768);
-            }
             if (cparams.prm_icdfile)
             {
                 Utils::StripExt(buffer);
@@ -533,7 +517,6 @@ int main(int argc, char* argv[])
                 icdFile = fopen(buffer, "w");
                 if (!icdFile)
                 {
-                    fclose(browseFile);
                     fclose(errFile);
                     delete preProcessor;
                     fclose(cppFile);
@@ -576,8 +559,6 @@ int main(int argc, char* argv[])
             fclose(cppFile);
         if (errFile)
             fclose(errFile);
-        if (browseFile)
-            fclose(browseFile);
         if (icdFile)
             fclose(icdFile);
 

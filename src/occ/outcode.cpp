@@ -69,6 +69,7 @@ extern int usingEsp;
 extern AMODE *singleLabel, *doubleLabel, *zerolabel;
 extern std::vector<BROWSEINFO*> browseInfo;
 extern std::vector<BROWSEFILE*> browseFiles;
+extern std::vector<SimpleSymbol*> typedefs;
 
 
 extern InstructionParser* instructionParser;
@@ -147,8 +148,6 @@ int dbgblocknum = 0;
 
 static int sectofs;
 
-static std::deque<SimpleSymbol*> typedefs;
-
 static Section dummySection("dummy", -1);
 
 void omfInit(void)
@@ -175,7 +174,6 @@ void omfInit(void)
     objSectionsByNumber.clear();
     objSectionsByName.clear();
     sourceFiles.clear();
-    typedefs.clear();
     virtuals.clear();
     virtualSyms.clear();
 }
@@ -184,8 +182,6 @@ void dbginit(void)
     dbgblocknum = 0;
     autoCount = 0;
 }
-
-void debug_outputtypedef(SimpleSymbol* sym) { typedefs.push_back(sym); }
 
 void outcode_file_init(void)
 {

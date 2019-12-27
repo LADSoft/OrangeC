@@ -159,8 +159,6 @@ static void renameOneSym(SimpleSymbol* sym, int structret)
         }
     }
     tp = sym->tp;
-    if (tp->type == st_typedef)
-        tp = tp->btp;
 
     bool fastcallCandidate = sym->storage_class == scc_parameter && fastcallAlias &&
         (sym->offset - fastcallAlias * chosenAssembler->arch->parmwidth < chosenAssembler->arch->retblocksize);

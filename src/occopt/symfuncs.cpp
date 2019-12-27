@@ -36,17 +36,9 @@ bool comparetypes(SimpleType* typ1, SimpleType* typ2, int exact)
 {
     if (typ1->type == st_any || typ2->type == st_any)
         return true;
-    while (typ1->type == st_typedef)
-        typ1 = typ1->btp;
-    while (typ2->type == st_typedef)
-        typ2 = typ2->btp;
     while (typ1->type == st_rref || typ1->type == st_lref)
         typ1 = typ1->btp;
     while (typ2->type == st_rref || typ2->type == st_lref)
-        typ2 = typ2->btp;
-    while (typ1->type == st_typedef)
-        typ1 = typ1->btp;
-    while (typ2->type == st_typedef)
         typ2 = typ2->btp;
     if (typ1->type == st_pointer && typ2->type == st_pointer)
     {

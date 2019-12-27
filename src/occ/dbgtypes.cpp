@@ -37,16 +37,12 @@
 
 bool dbgtypes::typecompare::operator()(const SimpleType* left, const SimpleType* right) const
 {
-    if (left->type == st_typedef)
-        if (right->type != st_typedef)
+    if (left->istypedef)
+        if (!right->istypedef)
             return true;
-    if (right->type == st_typedef)
-        if (left->type != st_typedef)
+    if (right->istypedef)
+        if (!left->istypedef)
             return false;
-    while (left->type == st_typedef)
-        left = left->btp;
-    while (right->type == st_typedef)
-        right = right->btp;
     left = left;
     right = right;
     if (left->type < right->type)
@@ -111,7 +107,7 @@ bool dbgtypes::typecompare::operator()(const SimpleType* left, const SimpleType*
     return false;
 }
 
-ObjType* dbgtypes::Put(SimpleType* tp)
+ObjType* dbgtypes::Put(SimpleType* tp, bool istypedef)
 {
     auto val = Lookup(tp);
     if (val)
@@ -120,14 +116,11 @@ ObjType* dbgtypes::Put(SimpleType* tp)
     {
         val = factory.MakeType((ObjType::eType)42);
     }
-    else if (tp->type == st_typedef)
+    else if (tp->istypedef && !istypedef)
     {
-        if (!tp->sp->templateLevel)
-        {
-            val = Put(tp->btp);
+        val = Put(tp, true);
 
-            val = factory.MakeType(ObjType::eTypeDef, val);
-        }
+        val = factory.MakeType(ObjType::eTypeDef, val);
     }
     else
     {
@@ -143,7 +136,15 @@ ObjType* dbgtypes::Put(SimpleType* tp)
     hash[tp] = val;
     return val;
 }
-void dbgtypes::OutputTypedef(struct SimpleSymbol* sym) { Put(sym->tp); }
+
+void dbgtypes::OutputTypedef(struct SimpleSymbol* sym)
+{
+    auto val = Put(sym->tp, true);
+    const char *nm = sym->outputName;
+    if (nm[0] == '_')
+        nm++;
+    fi->Add(factory.MakeType(nm, ObjType::eNone, val, val->GetIndex()));
+}
 ObjType* dbgtypes::Lookup(SimpleType* tp)
 {
 
@@ -244,7 +245,6 @@ void dbgtypes::StructFields(ObjType::eType sel, ObjType* val, int sz, SimpleSymb
             {
                 index = factory.GetIndexManager()->NextType();
             }
-            bc = bc->next;
         }
     }
     while (hr)
@@ -378,6 +378,9 @@ ObjType* dbgtypes::ExtendedType(SimpleType* tp)
         {
             ObjType::eType sel;
             tp = tp->sp->tp;  // find instantiated version in case of C++ struct
+            // uninstantiated templates resolve to st_i
+            if (tp->type != st_struct && tp->type != st_union)
+                return Put(tp);
             if (tp->type == st_union)
             {
                 sel = ObjType::eUnion;

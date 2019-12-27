@@ -34,7 +34,7 @@ class dbgtypes
 {
   public:
     dbgtypes(ObjFactory& Factory, ObjFile* FI) : factory(Factory), fi(FI) {}
-    ObjType* Put(SimpleType* tp);
+    ObjType* Put(SimpleType* tp, bool istypedef = false);
     void OutputTypedef(struct SimpleSymbol* sym);
 
   protected:

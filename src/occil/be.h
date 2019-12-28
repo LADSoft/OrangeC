@@ -38,7 +38,7 @@ struct asm_details
 {
     char* name;
 };
-enum asmTypes
+enum asmTypes : int
 {
     pa_nasm,
     pa_fasm,

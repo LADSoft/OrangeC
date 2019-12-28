@@ -27,7 +27,10 @@ NAME=occparse
 MAIN_FILE=occparse.cpp
 INCLUDES=..$(PATHEXT2)util ..$(PATHEXT2)ocpp ..$(PATHEXT2)occopt ..$(PATHEXT2)occ ..$(PATHEXT2)objlib ..$(PATHEXT2)netlib ..$(PATHEXT2)oasm
 CPP_DEPENDENCIES=$(wildcard *.cpp)
-LIB_DEPENDENCIES=occ ocpplib netlib oasm occopt util objlib occil
+LIB_DEPENDENCIES=occ ocpplib oasm occopt util objlib occil netlib 
+ifeq "$(COMPILER)" "MINGW64"
+LIB_DEPENDENCIES:=$(LIB_DEPENDENCIES) occparse occil
+endif
 DEFINES=x64 USE_LONGLONG
 H_FILES=$(wildcard *.h)
 

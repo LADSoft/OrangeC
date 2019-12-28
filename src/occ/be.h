@@ -36,6 +36,8 @@
 /* address mode specifications */
 #define MAX_SEGS browseseg + 1
 
+enum e_lk : int;
+
 enum e_op
 {
     op_reserved,
@@ -284,7 +286,7 @@ typedef struct _dbgblock
     int endlab;
 } DBGBLOCK;
 
-enum asmTypes
+enum asmTypes : int
 {
     pa_nasm,
     pa_fasm,

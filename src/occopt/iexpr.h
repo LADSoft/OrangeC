@@ -33,6 +33,9 @@
 #include "ctypes.h"
 #include <Floating.h>
 
+enum e_bt : int;
+enum e_sc : int;
+
 #define F_VOL 1
 #define F_NOVALUE 2
 #define F_ADDR 4

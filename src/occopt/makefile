@@ -25,7 +25,7 @@ include ../pathext2.mak
 
 NAME=occopt
 MAIN_FILE=optmain.cpp
-INCLUDES=..$(PATHEXT2)util ..$(PATHEXT2)ocpp ..$(PATHEXT2)occ ..$(PATHEXT2)objlib ..$(PATHEXT2)oasm
+INCLUDES=..$(PATHEXT2)util ..$(PATHEXT2)ocpp ..$(PATHEXT2)occ ..$(PATHEXT2)objlib ..$(PATHEXT2)oasm ..$(PATHEXT2)occopt
 CPP_DEPENDENCIES=$(wildcard *.cpp)
 LIB_DEPENDENCIES=util ocpplib
 DEFINES=x64 USE_LONGLONG

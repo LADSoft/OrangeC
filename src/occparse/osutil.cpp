@@ -758,7 +758,7 @@ void InsertAnyFile(const char* filename, char* path, int drive)
         InsertOneFile(filename, path, drive);
     }
 #else
-    InsertOneFile(filename, path, drive, primary);
+    InsertOneFile(filename, path, drive);
 #endif
 }
 /*-------------------------------------------------------------------------*/

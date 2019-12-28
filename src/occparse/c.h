@@ -180,7 +180,7 @@ enum e_stmt
 
 /* storage classes */
 // clang-format off
-enum e_sc
+enum e_sc : int
 {
         sc_none, sc_static, sc_localstatic, sc_auto, sc_register, sc_global, sc_external, sc_templateparam,
         sc_parameter, sc_catchvar, sc_type, sc_typedef, sc_member, sc_mutable, sc_cast, sc_defunc, sc_label, sc_ulabel,
@@ -192,7 +192,7 @@ enum e_sc
 
 /* basic types */
 // clang-format off
-enum e_bt
+enum e_bt : int
 {
     /* keep this ordering and dont insert anything before the end of the
      * basic types, type comparisons (LOSTCONV) depends on the ordering,
@@ -218,7 +218,7 @@ enum e_bt
 // clang-format on
 
 // clang-format off
-enum e_lk { lk_none, lk_cdecl, lk_pascal, lk_stdcall, lk_fastcall, lk_c, lk_cpp,
+enum e_lk : int { lk_none, lk_cdecl, lk_pascal, lk_stdcall, lk_fastcall, lk_c, lk_cpp,
     lk_interrupt, lk_fault, lk_inline, lk_virtual, lk_noreturn, lk_threadlocal, 
     lk_import, lk_export, lk_auto, lk_msil_rtl, lk_unmanaged, lk_property, lk_entrypoint };
 // clang-format on

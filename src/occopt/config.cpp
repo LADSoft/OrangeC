@@ -11,6 +11,7 @@ extern ARCH_ASM x86AssemblerInterface[];
 ARCH_ASM* chosenAssembler;
 ARCH_DEBUG* chosenDebugger;
 
+enum asmTypes : int;
 enum asmTypes prm_assembler;
 
 static ARCH_ASM *assemblerInterface;

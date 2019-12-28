@@ -784,7 +784,7 @@ void peep_cmp(OCODE* ip)
             }
         }
         ip1 = ip->fwd;
-        if (ip->oper1->mode == am_dreg && ip->oper2->mode == am_immed && ip->oper2->offset->i == 0 && ip1->opcode != op_jc &&
+        if (ip->oper1->mode == am_dreg && ip->oper2->mode == am_immed &&  ip->oper2->offset->type != se_add && ip->oper2->offset->i == 0 && ip1->opcode != op_jc &&
             ip1->opcode != op_jnc && ip1->opcode != op_jae && ip1->opcode != op_jbe && ip1->opcode != op_ja && ip1->opcode != op_jb)
         {
             OCODE* ip2 = ip->back;

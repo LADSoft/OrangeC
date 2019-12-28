@@ -35,9 +35,9 @@ extern OCODE* peep_tail;
 extern int startlab, retlab;
 extern SimpleSymbol* currentFunction;
 extern std::vector<SimpleSymbol*> externals;
+extern int usingEsp;
 
 #define MAX_ALIGNS 50
-int usingEsp;
 int pushlevel = 0;
 int funcstackheight = 0;
 

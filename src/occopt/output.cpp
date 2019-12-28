@@ -29,6 +29,7 @@
 #include <stdarg.h>
 
 FILE* outputFile;
+FILE* browseFile;
 
 void oinit(void) {}
 

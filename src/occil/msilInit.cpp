@@ -328,7 +328,7 @@ void msil_end_generation(char *fileName)
         tlsrundowns.clear();
     }
 }
-void compile_start(char* name)
+void msil_compile_start(char* name)
 {
     _using_init();
     Import();

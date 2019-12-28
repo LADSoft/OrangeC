@@ -62,18 +62,19 @@ extern int constAlign;
 extern std::string outputFileName;
 extern SimpleExpression* fltexp;
 extern int fastcallAlias;
+extern FILE* outputFile;
+extern FILE* browseFile;
 
 extern bool IsSymbolCharRoutine(const char *, bool);
 bool (*Tokenizer::IsSymbolChar)(const char*, bool) = IsSymbolCharRoutine;
 
 char outFile[260];
 char infile[260];
+int usingEsp;
 
 InstructionParser* instructionParser;
 
 SimpleSymbol* currentFunction;
-extern FILE* outputFile;
-FILE* browseFile;
 
 static const char *verbosity = nullptr;
 static FunctionData* lastFunc;
@@ -356,10 +357,15 @@ bool SaveFile(const char *name)
         outputfile(outFile, name, chosenAssembler->objext);
         InsertExternalFile(outFile, false);
         outputFile = fopen(outFile, "wb");
-        outputfile(outFile, name, ".cbr");
-        browseFile = fopen(outFile, "wb");
-        if (!outputFile || !browseFile)
+        if (!outputFile)
             return false;
+        if (cparams.prm_browse)
+        {
+            outputfile(outFile, name, ".cbr");
+            browseFile = fopen(outFile, "wb");
+            if (!browseFile)
+                return false;
+        }
         oa_end_generation();
         for (auto v : externals)
         {

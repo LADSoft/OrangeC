@@ -303,7 +303,7 @@ void compile(bool global)
     if (architecture == ARCHITECTURE_MSIL)
         if (first || cparams.prm_compileonly && !cparams.prm_asmfile)
         {
-            compile_start((char*)clist->data);
+            msil_compile_start((char*)clist->data);
         }
     first = false;
 #endif

@@ -211,32 +211,32 @@ void ProcessData(BaseData* v)
     switch (v->type)
     {
     case DT_SEG:
-        oa_enterseg((e_sg)v->i);
+        msil_oa_enterseg((e_sg)v->i);
         break;
     case DT_SEGEXIT:
         break;
     case DT_DEFINITION:
         if (v->symbol.sym->tp->type == st_func)
             currentFunction = v->symbol.sym;
-        oa_gen_strlab(v->symbol.sym);
+        msil_oa_gen_strlab(v->symbol.sym);
         global(v->symbol.sym, v->symbol.i);
         if (v->symbol.sym->tp->type == st_func)
             currentFunction = nullptr;
         break;
     case DT_LABELDEFINITION:
-        oa_put_string_label(v->i, 0);
+        msil_oa_put_string_label(v->i, 0);
         break;
     case DT_RESERVE:
-        //oa_genstorage(v->i);
+        //msil_oa_genstorage(v->i);
         break;
     case DT_SYM:
-        //oa_genref(v->symbol.sym, v->symbol.i);
+        //msil_oa_genref(v->symbol.sym, v->symbol.i);
         break;
     case DT_SRREF:
-        oa_gensrref(v->symbol.sym, v->symbol.i, 0);
+        msil_oa_gensrref(v->symbol.sym, v->symbol.i, 0);
         break;
     case DT_PCREF:
-        //oa_genpcref(v->symbol.sym, v->symbol.i);
+        //msil_oa_genpcref(v->symbol.sym, v->symbol.i);
         break;
     case DT_FUNCREF:
         gen_funcref(v->symbol.sym);
@@ -249,81 +249,81 @@ void ProcessData(BaseData* v)
         gen_labdifref(v->diff.l1, v->diff.l2);
         break;
     case DT_STRING:
-        oa_genstring(v->astring.str, v->astring.i);
+        msil_oa_genstring(v->astring.str, v->astring.i);
         break;
     case DT_BIT:
         break;
     case DT_BOOL:
-//        oa_genint(chargen, v->i);
+//        msil_oa_genint(chargen, v->i);
         break;
     case DT_BYTE:
-//        oa_genint(chargen, v->i);
+//        msil_oa_genint(chargen, v->i);
         break;
     case DT_USHORT:
-//        oa_genint(shortgen, v->i);
+//        msil_oa_genint(shortgen, v->i);
         break;
     case DT_UINT:
-//        oa_genint(intgen, v->i);
+//        msil_oa_genint(intgen, v->i);
         break;
     case DT_ULONG:
-//        oa_genint(longgen, v->i);
+//        msil_oa_genint(longgen, v->i);
         break;
     case DT_ULONGLONG:
-//        oa_genint(longlonggen, v->i);
+//        msil_oa_genint(longlonggen, v->i);
         break;
     case DT_16:
-//        oa_genint(u16gen, v->i);
+//        msil_oa_genint(u16gen, v->i);
         break;
     case DT_32:
- //       oa_genint(u32gen, v->i);
+ //       msil_oa_genint(u32gen, v->i);
         break;
     case DT_ENUM:
-//        oa_genint(intgen, v->i);
+//        msil_oa_genint(intgen, v->i);
         break;
     case DT_FLOAT:
-//        oa_genfloat(floatgen, &v->f);
+//        msil_oa_genfloat(floatgen, &v->f);
         break;
     case DT_DOUBLE:
-//        oa_genfloat(doublegen, &v->f);
+//        msil_oa_genfloat(doublegen, &v->f);
         break;
     case DT_LDOUBLE:
-//        oa_genfloat(longdoublegen, &v->f);
+//        msil_oa_genfloat(longdoublegen, &v->f);
         break;
     case DT_CFLOAT:
-//        oa_genfloat(floatgen, &v->c.r);
-//        oa_genfloat(floatgen, &v->c.i);
+//        msil_oa_genfloat(floatgen, &v->c.r);
+//        msil_oa_genfloat(floatgen, &v->c.i);
         break;
     case DT_CDOUBLE:
-  //      oa_genfloat(doublegen, &v->c.r);
-//        oa_genfloat(doublegen, &v->c.i);
+  //      msil_oa_genfloat(doublegen, &v->c.r);
+//        msil_oa_genfloat(doublegen, &v->c.i);
         break;
     case DT_CLONGDOUBLE:
-//        oa_genfloat(longdoublegen, &v->c.r);
-//        oa_genfloat(longdoublegen, &v->c.i);
+//        msil_oa_genfloat(longdoublegen, &v->c.r);
+//        msil_oa_genfloat(longdoublegen, &v->c.i);
         break;
     case DT_ADDRESS:
         genaddress(v->i);
         break;
     case DT_VIRTUAL:
-//        oa_gen_virtual(v->symbol.sym, v->symbol.i);
+//        msil_oa_gen_virtual(v->symbol.sym, v->symbol.i);
         break;
     case DT_ENDVIRTUAL:
-//        oa_gen_endvirtual(v->symbol.sym);
+//        msil_oa_gen_endvirtual(v->symbol.sym);
         break;
     case DT_ALIGN:
-//        oa_align(v->i);
+//        msil_oa_align(v->i);
         break;
     case DT_VTT:
-        oa_gen_vtt(v->symbol.i, v->symbol.sym);
+        msil_oa_gen_vtt(v->symbol.i, v->symbol.sym);
         break;
     case DT_IMPORTTHUNK:
-        oa_gen_importThunk(v->symbol.sym);
+        msil_oa_gen_importThunk(v->symbol.sym);
         break;
     case DT_VC1:
-        oa_gen_vc1(v->symbol.sym);
+        msil_oa_gen_vc1(v->symbol.sym);
         break;
     case DT_AUTOREF:
-//        oa_gen_int(0);
+//        msil_oa_gen_int(0);
         break;
     }
 }
@@ -349,7 +349,7 @@ bool ProcessData(const char *name)
             currentFunction = v->funcData->name;
             SetUsesESP(currentFunction->usesEsp);
             generate_instructions(intermed_head);
-            flush_peep(currentFunction, nullptr);
+            msil_flush_peep(currentFunction, nullptr);
             currentFunction = nullptr;
         }
         else
@@ -402,10 +402,10 @@ bool SaveFile(const char *name)
         {
             if (v)
             {
-                oa_put_extern(v, 0);
+                msil_oa_put_extern(v, 0);
             }
         }
-        //        oa_setalign(2, dataAlign, bssAlign, constAlign);
+        //        msil_oa_setalign(2, dataAlign, bssAlign, constAlign);
         msil_end_generation(outFile);
         fclose(outputFile);
         outputFile = nullptr;

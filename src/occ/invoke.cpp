@@ -285,7 +285,7 @@ int RunExternalFiles()
             if (fil)
             {
                 sprintf(with, "with %s=\n", tempName.c_str());
-                while (fgets(with + strlen(with), 1000, fil) > 0);
+                while (fgets(with + strlen(with), 1000, fil) != 0);
                 fclose(fil);
                 strcat(with, "\n");
             }

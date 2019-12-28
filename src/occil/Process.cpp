@@ -773,11 +773,11 @@ Type* GetType(SimpleType* tp, bool commit, bool funcarg, bool pinvoke)
         return rv;
     }
 }
-bool istype(SimpleSymbol* sym)
+static bool istype(SimpleSymbol* sym)
 {
     return (sym->storage_class == scc_type || sym->storage_class == scc_typedef);
 }
-void oa_enter_type(SimpleSymbol* sp)
+void msil_oa_enter_type(SimpleSymbol* sp)
 {
     if (!istype(sp) || sp->storage_class == scc_typedef)
     {
@@ -1125,7 +1125,7 @@ void LoadParams(SimpleSymbol* funcsp, std::vector<SimpleSymbol*>& vars, std::map
         paramList[sym] = newParam;
     }
 }
-void flush_peep(SimpleSymbol* funcsp, QUAD* list)
+void msil_flush_peep(SimpleSymbol* funcsp, QUAD* list)
 {
     LoadFuncs();
     if (!(cparams.prm_compileonly && !cparams.prm_asmfile))
@@ -1197,7 +1197,7 @@ void ReplaceName(std::map<std::string, Value*>& list, Value* v, char* name)
     n->Signature()->SetName(name);
     list[name] = v;
 }
-void oa_gensrref(SimpleSymbol* sp, int val, int type)
+void msil_oa_gensrref(SimpleSymbol* sp, int val, int type)
 {
     static int count = 1;
     Value* v = globalMethods[sp];
@@ -1227,7 +1227,7 @@ void oa_gensrref(SimpleSymbol* sp, int val, int type)
     }
     else
     {
-        diag("oa_startup: function not found");
+        diag("msil_oa_startup: function not found");
     }
 }
 static bool validateGlobalRef(SimpleSymbol* sp1, SimpleSymbol* sp2)
@@ -1264,7 +1264,7 @@ static bool validateGlobalRef(SimpleSymbol* sp1, SimpleSymbol* sp2)
     }
     return false;
 }
-void oa_put_extern(SimpleSymbol* sp, int code)
+void msil_oa_put_extern(SimpleSymbol* sp, int code)
 {
     if (sp->tp->type == st_func)
     {
@@ -1281,12 +1281,12 @@ void oa_put_extern(SimpleSymbol* sp, int code)
         CacheExtern(sp);
     }
 }
-void oa_gen_strlab(SimpleSymbol* sp)
+void msil_oa_gen_strlab(SimpleSymbol* sp)
 /*
  *      generate a named label.
  */
 {
-    oa_enterseg((e_sg)0);
+    msil_oa_enterseg((e_sg)0);
     if (sp->storage_class != scc_localstatic && sp->storage_class != scc_constant && sp->storage_class != scc_static)
     {
         CacheGlobal(sp);
@@ -1352,9 +1352,9 @@ Value* GetStringFieldData(int lab, int type)
 
     return v;
 }
-void oa_put_string_label(int lab, int type)
+void msil_oa_put_string_label(int lab, int type)
 {
-    oa_enterseg((e_sg)0);
+    msil_oa_enterseg((e_sg)0);
 
     Field* field = static_cast<FieldName*>(GetStringFieldData(lab, type))->GetField();
 
@@ -1363,7 +1363,7 @@ void oa_put_string_label(int lab, int type)
 }
 /*-------------------------------------------------------------------------*/
 // we should only get here for strings...
-void oa_genbyte(int bt)
+void msil_oa_genbyte(int bt)
 {
     if (dataMax == 0)
     {
@@ -1382,7 +1382,7 @@ void oa_genbyte(int bt)
 
 /*-------------------------------------------------------------------------*/
 
-void oa_genstring(char* str, int len)
+void msil_oa_genstring(char* str, int len)
 /*
  * Generate a string literal
  */
@@ -1390,16 +1390,16 @@ void oa_genstring(char* str, int len)
     int nlen = len;
     while (nlen--)
     {
-        oa_genbyte(*str++);
+        msil_oa_genbyte(*str++);
     }
-    oa_enterseg((e_sg)0);
+    msil_oa_enterseg((e_sg)0);
 }
 
-void oa_enterseg(e_sg segnum)
+void msil_oa_enterseg(e_sg segnum)
 {
     if (initializingField && dataPos)
     {
-        oa_genbyte(0);  // we only put strings literally into the text, and the strings
+        msil_oa_genbyte(0);  // we only put strings literally into the text, and the strings
         // need a terminating zero which has been elided because we don't do anything else
         Byte* v = peLib->AllocateBytes(dataPos);
         memcpy(v, dataPointer, dataPos);
@@ -1806,7 +1806,7 @@ static void AddRTLThunks()
                 mainSym->Signature()->AddParam(param);
             }
         }
-        oa_enterseg((e_sg)0);
+        msil_oa_enterseg((e_sg)0);
         for (auto ri = startups.begin(); ri != startups.end(); ++ri)
         {
             LIST* lst = (LIST*)peLib->AllocateBytes(sizeof(LIST));

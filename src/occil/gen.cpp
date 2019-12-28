@@ -93,7 +93,7 @@ Instruction* gen_code(Instruction::iop op, Operand* operand)
     currentMethod->AddInstruction(i);
     return i;
 }
-void oa_gen_label(int labno)
+void msil_oa_gen_label(int labno)
 /*
  *      add a compiler generated label to the peep list.
  */
@@ -188,9 +188,9 @@ bool isauto(SimpleExpression* ep)
         return isauto(ep->left);
     return false;
 }
-void oa_gen_vtt(int dataOffset, SimpleSymbol* func) {}
-void oa_gen_vc1(SimpleSymbol* func) {}
-void oa_gen_importThunk(SimpleSymbol* func) {}
+void msil_oa_gen_vtt(int dataOffset, SimpleSymbol* func) {}
+void msil_oa_gen_vc1(SimpleSymbol* func) {}
+void msil_oa_gen_importThunk(SimpleSymbol* func) {}
 Operand* getCallOperand(QUAD* q, bool& virt)
 {
     SimpleExpression* en = GetSymRef(q->dc.left->offset);
@@ -959,7 +959,7 @@ void asm_varstart(QUAD* q) /* line number information and text */ {}
 void asm_func(QUAD* q) /* line number information and text */ {}
 void asm_passthrough(QUAD* q) /* reserved */ {}
 void asm_datapassthrough(QUAD* q) /* reserved */ {}
-void asm_label(QUAD* q) /* put a label in the code stream */ { oa_gen_label(q->dc.v.label); }
+void asm_label(QUAD* q) /* put a label in the code stream */ { msil_oa_gen_label(q->dc.v.label); }
 void asm_goto(QUAD* q) /* unconditional branch */
 {
     if (q->dc.opcode == i_goto)
@@ -1507,7 +1507,7 @@ void bingen(int lower, int avg, int higher)
 {
     int nelab = beGetLabel;
     if (switchTreeBranchLabels[avg] != 0)
-        oa_gen_label(switchTreeBranchLabels[avg]);
+        msil_oa_gen_label(switchTreeBranchLabels[avg]);
     gen_load(switch_ip, switch_ip_a, false);
     load_constant(switch_ip->size, simpleIntNode(se_i, switchTreeCases[avg]));
     gen_branch(Instruction::i_beq, switchTreeLabels[avg], true);

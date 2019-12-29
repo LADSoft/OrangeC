@@ -30,7 +30,7 @@
 #include "beinterf.h"
 #include "ildata.h"
 #include "iexpr.h"
-#include "../occ/Winmode.h"
+#include "../occ/winmode.h"
 #include "../occ/be.h"
 #include "SharedMemory.h"
 #include <deque>

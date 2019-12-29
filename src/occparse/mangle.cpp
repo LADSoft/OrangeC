@@ -105,7 +105,7 @@ static int uniqueID;
 void mangleInit()
 {
     uniqueID = 0;
-    if ((architecture == ARCHITECTURE_MSIL))
+    if (architecture == ARCHITECTURE_MSIL)
     {
         memcpy(overloadNameTab, msiloverloadNameTab, sizeof(msiloverloadNameTab));
         memcpy(cpp_funcname_tab, msiloverloadNameTab, sizeof(msiloverloadNameTab));

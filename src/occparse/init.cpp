@@ -430,7 +430,7 @@ static void callDynamic(const char *name, int startupType, int index, STATEMENT 
         SetLinkerNames(funcsp, lk_none);
         startlab = nextLabel++;
         retlab = nextLabel++;
-        genfunc(funcsp, !((architecture == ARCHITECTURE_MSIL)));
+        genfunc(funcsp, !(architecture == ARCHITECTURE_MSIL));
         startlab = retlab = 0;
 
         if (!(chosenAssembler->arch->denyopts & DO_NOADDRESSINIT))
@@ -1040,7 +1040,7 @@ void dumpInitGroup(SYMBOL* sym, TYPE* tp)
 
     if (sym->init || (isarray(sym->tp) && sym->tp->msil))
     {
-        if ((architecture == ARCHITECTURE_MSIL))
+        if (architecture == ARCHITECTURE_MSIL)
         {
             insertDynamicInitializer(sym, sym->init);
         }
@@ -1161,7 +1161,7 @@ static void dumpStaticInitializers(void)
             if (*sizep % al)
             {
                 int n = al - *sizep % al;
-                if (!((architecture == ARCHITECTURE_MSIL)))
+                if (!(architecture == ARCHITECTURE_MSIL))
                 {
                     genstorage(n);
                 }

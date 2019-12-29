@@ -34,9 +34,10 @@
 #include "../occ/be.h"
 #include "../occparse/winmode.h"
 
+
+extern COMPILER_PARAMS cparams;
 extern ARCH_ASM *chosenAssembler;
 extern int usingEsp;
-extern enum asmTypes prm_assembler;
 
 bool doBackendInit = false;
 
@@ -117,7 +118,7 @@ static int initnasm(COMPILER_PARAMS* parms, ARCH_ASM* data, ARCH_DEBUG* debug)
     (void)parms;
     (void)data;
     (void)debug;
-    prm_assembler = pa_nasm;
+    cparams.prm_assembler = pa_nasm;
     chkdos();
     return 1;
 }
@@ -126,7 +127,7 @@ static int initfasm(COMPILER_PARAMS* parms, ARCH_ASM* data, ARCH_DEBUG* debug)
     (void)parms;
     (void)data;
     (void)debug;
-    prm_assembler = pa_fasm;
+    cparams.prm_assembler = pa_fasm;
     chkdos();
     return 1;
 }
@@ -145,7 +146,7 @@ static int inittasm(COMPILER_PARAMS* parms, ARCH_ASM* data, ARCH_DEBUG* debug)
     (void)parms;
     (void)data;
     (void)debug;
-    prm_assembler = pa_tasm;
+    cparams.prm_assembler = pa_tasm;
     chkdos();
     return 1;
 }
@@ -154,7 +155,7 @@ static int initmasm(COMPILER_PARAMS* parms, ARCH_ASM* data, ARCH_DEBUG* debug)
     (void)parms;
     (void)data;
     (void)debug;
-    prm_assembler = pa_masm;
+    cparams.prm_assembler = pa_masm;
     chkdos();
     return 1;
 }

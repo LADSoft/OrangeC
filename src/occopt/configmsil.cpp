@@ -34,8 +34,8 @@
 #include "../occ/be.h"
 #include "../occparse/winmode.h"
 
+extern COMPILER_PARAMS cparams;
 extern const char *pinvoke_dll;
-extern enum asmTypes prm_assembler;
 
 static char usage_text[] =
     "[options] [@response file] files\n"
@@ -82,7 +82,7 @@ static int initnasm(COMPILER_PARAMS* parms, ARCH_ASM* data, ARCH_DEBUG* debug)
     (void)parms;
     (void)data;
     (void)debug;
-    prm_assembler = pa_nasm;
+    cparams.prm_assembler = pa_nasm;
     return 1;
 }
 

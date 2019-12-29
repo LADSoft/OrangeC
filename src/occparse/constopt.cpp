@@ -3253,7 +3253,7 @@ static void rebalance(EXPRESSION* ep)
         case en_add:
             // fixme : without the (architecture == ARCHITECTURE_MSIL) some complex expressions inside loops
             // get optimized wrong see x264::analyse.c around line 849
-            if ((architecture == ARCHITECTURE_MSIL))
+            if (architecture == ARCHITECTURE_MSIL)
                 if (!isarithmeticconst(ep->left) || !isarithmeticconst(ep->right))
                     break;
         case en_mul:

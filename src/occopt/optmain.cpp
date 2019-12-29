@@ -356,7 +356,7 @@ bool LoadFile(SharedMemory* parserMem)
 void SaveFile(std::string& name, SharedMemory* optimizerMem)
 {
     OutputIntermediate(optimizerMem);
-    if (WriteIcdFile.GetValue() || cparams.prm_icdfile && !name.empty())
+    if (WriteIcdFile.GetValue() || (cparams.prm_icdfile && !name.empty()))
     {
         char buf[260];
         strcpy(buf, name.c_str());

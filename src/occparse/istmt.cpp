@@ -455,7 +455,7 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, IMODE*
             (isstructured(basetype(funcsp->tp)->btp) || (isarray(basetype(funcsp->tp)->btp) && (architecture == ARCHITECTURE_MSIL)) ||
              basetype(basetype(funcsp->tp)->btp)->type == bt_memberptr))
         {
-            if ((architecture == ARCHITECTURE_MSIL))
+            if (architecture == ARCHITECTURE_MSIL)
             {
                 EXPRESSION* exp = stmt->select;
                 while (castvalue(exp))

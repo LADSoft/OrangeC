@@ -29,6 +29,8 @@
 #define ARCHITECTURE_MSIL 1
 extern int architecture;
 
+enum asmTypes : int;
+
 #define FRAME_FLAG_NEEDS_FRAME (((~(unsigned long long)0) >> 1) + 1)
 
 /* max registers we support */
@@ -83,7 +85,7 @@ typedef struct
     bool prm_crtdll;         /* use crtdll.dll*/
     bool prm_lscrtdll;       /* use lscrtl.dll*/
     bool prm_msvcrt;         /* use msvcrt.dll*/
-    bool prm_assembler;      /* via assembly*/
+    enum asmTypes prm_assembler;      /* via assembly*/
     bool prm_flat;           /* flat mode*/
     bool prm_nodos;          /* no dos support */
     bool prm_useesp;         /* use ESP global selection (may be overridden)*/

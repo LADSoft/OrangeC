@@ -4987,7 +4987,7 @@ static EXPRESSION* llallocateVLA(SYMBOL* sp, EXPRESSION* ep1, EXPRESSION* ep2)
 {
     EXPRESSION *loader, *unloader;
 
-    if ((architecture == ARCHITECTURE_MSIL))
+    if (architecture == ARCHITECTURE_MSIL)
     {
         SYMBOL* al = gsearch("malloc");
         SYMBOL* fr = gsearch("free");

@@ -1715,10 +1715,12 @@ void findUnusedStatics(NAMESPACEVALUELIST* nameSpace)
                             }
                             else if (sp1->storage_class == sc_static && !sp1->inlineFunc.stmt &&
                                      !(sp1->templateLevel || sp1->instantiated))
-                            if (sp1->attribs.inheritable.used)
-                                errorsym(ERR_UNDEFINED_STATIC_FUNCTION, sp1, eofLine, eofFile);
-                            else
-                                errorsym(ERR_STATIC_FUNCTION_USED_BUT_NOT_DEFINED, sp1, eofLine, eofFile);
+                            {
+                                if (sp1->attribs.inheritable.used)
+                                    errorsym(ERR_UNDEFINED_STATIC_FUNCTION, sp1, eofLine, eofFile);
+                                else
+                                    errorsym(ERR_STATIC_FUNCTION_USED_BUT_NOT_DEFINED, sp1, eofLine, eofFile);
+                            }
                             hr1 = hr1->next;
                         }
                     }

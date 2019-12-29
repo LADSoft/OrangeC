@@ -24,7 +24,7 @@
 #pragma once
 #include "iexpr.h"
 #include "beinterf.h"
-#include "../occ/Winmode.h"
+#include "../occ/winmode.h"
 #include <deque>
 #include <map>
 

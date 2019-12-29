@@ -451,7 +451,7 @@ void oa_putamode(int op, int szalt, AMODE* ap)
  *      output a general addressing mode.
  */
 {
-    int oldnasm;
+    enum asmTypes oldnasm;
 
     switch (ap->mode)
     {

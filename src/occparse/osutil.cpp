@@ -233,6 +233,7 @@ static int parseCodegen(bool v, const char *string)
     default:
         break;
     }
+    return 0;
 }
 
 void codegen_setup(char select, const char* string)
@@ -541,7 +542,7 @@ void ParamTransfer()
     }
     if (prm_msil_noextensions.GetExists())
     {
-        cparams.msilAllowExtensions = prm_msil_noextensions.GetValue() != '-';
+        cparams.msilAllowExtensions = !prm_msil_noextensions.GetValue();
     }
     if (prm_msil_strongnamekeyfile.GetExists() && prm_msil_strongnamekeyfile.GetValue().size() != 0)
     {
@@ -1020,7 +1021,7 @@ void ccinit(int argc, char* argv[])
         else
         {
             if (clist && clist->next && prm_output.GetValue()[prm_output.GetValue().size() - 1] != '\\')
-                Utils::fatal("Cannot specify output file for multiple input files\pn");
+                Utils::fatal("Cannot specify output file for multiple input files\n");
         }
     }
     else if (!firstFile.empty())

@@ -1338,12 +1338,10 @@ static void PutFunc(BaseData *d)
 static void PutFloat(const char *sz, FPF& flt)
 {
     oprintf(icdFile, "DC%s %s", sz, ((std::string)flt).c_str());
-    nl;
 }
 static void PutComplex(const char *sz, FPF& r, FPF& i)
 {
     oprintf(icdFile, "DC%s %s+%s*I", sz, ((std::string)r).c_str(), ((std::string)i).c_str());
-    nl;
 }
 static void PutData(BaseData* data)
 {

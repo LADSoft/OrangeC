@@ -141,7 +141,7 @@ COMPILER_PARAMS cparams_default = {
     false,  /* char prm_crtdll;*/
     false,  /* char prm_lscrtdll;*/
     false,  /* char prm_msvcrt;*/
-    false,  /* char prm_assembler;*/
+    (asmTypes)0,  /* char prm_assembler;*/
     false,  /* char prm_flat;*/
     false,  /* char prm_nodos;*/
     true,  /* char prm_useesp;*/
@@ -301,7 +301,7 @@ void compile(bool global)
 #ifndef PARSER_ONLY
     static bool first = true;
     if (architecture == ARCHITECTURE_MSIL)
-        if (first || cparams.prm_compileonly && !cparams.prm_asmfile)
+        if (first || (cparams.prm_compileonly && !cparams.prm_asmfile))
         {
             msil_compile_start((char*)clist->data);
         }
@@ -439,7 +439,7 @@ int main(int argc, char* argv[])
 #ifndef PARSER_ONLY
         if (architecture == ARCHITECTURE_MSIL)
         {
-            if (first || cparams.prm_compileonly && !cparams.prm_asmfile)
+            if (first || (cparams.prm_compileonly && !cparams.prm_asmfile))
                 msil_main_preprocess((char *)clist->data);
         }
 #endif
@@ -530,7 +530,7 @@ int main(int argc, char* argv[])
                 
             compile(false);
 #ifndef PARSER_ONLY
-            if (architecture != ARCHITECTURE_MSIL || cparams.prm_compileonly && !cparams.prm_asmfile)
+            if (architecture != ARCHITECTURE_MSIL || (cparams.prm_compileonly && !cparams.prm_asmfile))
             {
                 OutputIntermediate(parserMem);
                 oFree();

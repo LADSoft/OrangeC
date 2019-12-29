@@ -1117,10 +1117,12 @@ std::string InstructionParser::RewriteATT(int& op, const std::string& line, int&
         int npos = line.find_first_not_of("\t\v \r\n");
         if (npos != std::string::npos)
             if (line[npos] == '*')
+            {
                 if (line.find_first_of("%") != std::string::npos)
                     return "[" + RewriteATTArg(line.substr(npos + 1)) + "]";
                 else
                     return "[" + line.substr(npos + 1) + "]";
+            }
         return line;
     }
     case 10000://lcall

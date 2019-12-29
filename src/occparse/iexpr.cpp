@@ -198,7 +198,7 @@ IMODE* make_imaddress(EXPRESSION* node, int size)
     IMODE* ap2;
     if (sym && sym->imaddress)
         return sym->imaddress;
-    if (sym && sym->storage_class != sc_auto && sym->storage_class != sc_register)
+    if (sym && sym->storage_class != scc_auto && sym->storage_class != scc_register)
     {
         IncGlobalFlag();
         sym->allocate = true;
@@ -220,7 +220,7 @@ IMODE* make_imaddress(EXPRESSION* node, int size)
         else
             sym->imvalue->size = sizeFromType(tp);
     }
-    if (sym && sym->storage_class != sc_auto && sym->storage_class != sc_register)
+    if (sym && sym->storage_class != scc_auto && sym->storage_class != scc_register)
         DecGlobalFlag();
     if (sym)
     {
@@ -240,13 +240,13 @@ IMODE* make_ioffset(EXPRESSION* node)
     SimpleSymbol* sym = varsp(node1);
     if (sym && sym->imvalue && sym->imvalue->size == natural_size(node))
         return sym->imvalue;
-    if (sym && sym->storage_class != sc_auto && sym->storage_class != sc_register)
+    if (sym && sym->storage_class != scc_auto && sym->storage_class != scc_register)
     {
         IncGlobalFlag();
     }
     ap = (IMODE*)(IMODE*)Alloc(sizeof(IMODE));
     ap->offset = node1;
-    if (sym && sym->storage_class != sc_auto && sym->storage_class != sc_register)
+    if (sym && sym->storage_class != scc_auto && sym->storage_class != scc_register)
         DecGlobalFlag();
     ap->mode = i_direct;
     ap->size = natural_size(node);
@@ -1028,7 +1028,7 @@ IMODE* gen_hook(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
     false_label = nextLabel++;
     end_label = nextLabel++;
     flags = flags | F_VOL;
-    if ((architecture == ARCHITECTURE_MSIL))
+    if (architecture == ARCHITECTURE_MSIL)
         flags &= ~F_NOVALUE;
     DumpIncDec(funcsp);
     falsejp(node->left, funcsp, false_label);
@@ -1065,7 +1065,7 @@ IMODE* gen_moveblock(EXPRESSION* node, SYMBOL* funcsp)
     IMODE *ap1, *ap2, *ap3, *ap6, *ap7, *ap8;
     if (!node->size)
         return (0);
-    if ((architecture == ARCHITECTURE_MSIL))
+    if (architecture == ARCHITECTURE_MSIL)
     {
         int mode;
         if (node->left->type == en_msil_array_access)
@@ -1142,7 +1142,7 @@ IMODE* gen_clearblock(EXPRESSION* node, SYMBOL* funcsp)
     ap1 = LookupLoadTemp(nullptr, ap3);
     if (ap1 != ap3)
         gen_icode(i_assn, ap1, ap3, nullptr);
-    if ((architecture == ARCHITECTURE_MSIL))
+    if (architecture == ARCHITECTURE_MSIL)
     {
         ap6 = make_immed(ISZ_UINT, 0);
         ap7 = LookupLoadTemp(nullptr, ap6);
@@ -1432,7 +1432,7 @@ IMODE* gen_aincdec(SYMBOL* funcsp, EXPRESSION* node, int flags, int size, enum i
         ap5 = LookupLoadTemp(ap1, ap1);
         if (ap1 != ap5)
             gen_icode(i_assn, ap5, ap1, nullptr);
-        if ((architecture == ARCHITECTURE_MSIL))
+        if (architecture == ARCHITECTURE_MSIL)
         {
             ap3 = gen_expr(funcsp, RemoveAutoIncDec(node->left), 0, siz1);
             ap5 = LookupLoadTemp(ap3, ap3);
@@ -1460,7 +1460,7 @@ IMODE* gen_aincdec(SYMBOL* funcsp, EXPRESSION* node, int flags, int size, enum i
             }
             ap7 = gen_bit_mask(ap4);
         }
-        if (!((architecture == ARCHITECTURE_MSIL)))
+        if (!(architecture == ARCHITECTURE_MSIL))
         {
             ap3 = tempreg(siz1, 0);
             gen_icode(i_assn, ap3, ap5, nullptr);
@@ -1689,7 +1689,7 @@ static int gen_parm(INITLIST* a, SYMBOL* funcsp)
  */
 {
     int rv;
-    if (a->vararg && ((architecture == ARCHITECTURE_MSIL)))
+    if (a->vararg && (architecture == ARCHITECTURE_MSIL))
     {
         if (!objectArray_exp)
         {
@@ -2138,7 +2138,7 @@ IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         ap = ap3 = gen_expr(funcsp, f->fcall, 0, ISZ_UINT);
         if (ap->mode == i_immed && ap->offset->type == se_pc)
         {
-            if (f->sp && f->sp->attribs.inheritable.linkage2 == lk_import && ((architecture != ARCHITECTURE_MSIL)))
+            if (f->sp && f->sp->attribs.inheritable.linkage2 == lk_import && (architecture != ARCHITECTURE_MSIL))
             {
                 IMODE* ap1 = (IMODE*)(IMODE*)Alloc(sizeof(IMODE));
                 *ap1 = *ap;
@@ -2165,7 +2165,7 @@ IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         }
         gosub = gen_igosub(type, ap);
     }
-    if ((architecture == ARCHITECTURE_MSIL))
+    if (architecture == ARCHITECTURE_MSIL)
     {
         bool vaarg = false;
         if (f->sp->name[0] == '_' && !strcmp(f->sp->name, "__va_arg__"))
@@ -2681,7 +2681,7 @@ IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
     //    rbarrier = doatomicFence(funcsp, nullptr, node->right, 0);
     if (flags & F_NOVALUE)
     {
-        if ((architecture == ARCHITECTURE_MSIL))
+        if (architecture == ARCHITECTURE_MSIL)
         {
             switch (node->type)
             {
@@ -3362,7 +3362,7 @@ IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
     }
     if (flags & F_NOVALUE)
     {
-        if ((architecture == ARCHITECTURE_MSIL))
+        if (architecture == ARCHITECTURE_MSIL)
         {
             switch (node->type)
             {

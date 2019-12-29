@@ -708,7 +708,7 @@ LEXEME* expression_func_type_cast(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRES
                 callConstructor(&ctype, exp, funcparams, false, nullptr, true, true, false, false, false, false);
                 PromoteConstructorArgs(funcparams->sp, funcparams);
                 callDestructor(basetype(*tp)->sp, nullptr, &exp1, nullptr, true, false, false);
-                if ((architecture == ARCHITECTURE_MSIL))
+                if (architecture == ARCHITECTURE_MSIL)
                     *exp = exprNode(en_void, *exp, exp2);
                 initInsert(&sym->dest, *tp, exp1, 0, true);
                 //                if (flags & _F_SIZEOF)
@@ -719,7 +719,7 @@ LEXEME* expression_func_type_cast(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRES
             if (unboxed)
                 *tp = unboxed;
         }
-        else if ((architecture == ARCHITECTURE_MSIL))
+        else if (architecture == ARCHITECTURE_MSIL)
         {
             *exp = intNode(en_c_i, 0);
             errortype(ERR_IMPROPER_USE_OF_TYPE, *tp, nullptr);

@@ -1330,7 +1330,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION *expsym, S
                     expsym = intNode(en_c_i, 0);
                     diag("convertInitToExpression: no this ptr");
                 }
-                if ((architecture == ARCHITECTURE_MSIL))
+                if (architecture == ARCHITECTURE_MSIL)
                     expsym = exprNode(en_structadd, expsym, varNode(en_structelem, sym));
                 else
                     expsym = exprNode(en_add, expsym, intNode(en_c_i, sym->offset));
@@ -1606,7 +1606,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION *expsym, S
         }
         init = init->next;
     }
-    if (sym && sym->storage_class == sc_localstatic && !((architecture == ARCHITECTURE_MSIL)))
+    if (sym && sym->storage_class == sc_localstatic && !(architecture == ARCHITECTURE_MSIL))
     {
         if (isdest)
         {
@@ -1986,10 +1986,12 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
         t2 = tp2->type;
         if (tp1->size == tp2->size)
             if (isunsigned(tp1) != isunsigned(tp2))
+            {
                 if (isunsigned(tp1))
                     t2 = t1;
                 else
                     t1 = t2;
+            }
         /*
         if (cparams.prm_cplusplus && (t1 == bt_enum || t2 == bt_enum))
         {

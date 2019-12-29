@@ -44,7 +44,7 @@ LLIB_DEPENDENCIES := $(notdir $(filter-out $(addsuffix .obj,$(EXCLUDE)) $(MAIN_D
 
 CC="$(CLANG_PATH)\bin\clang-cl"
 PCC="$(CLANG_PATH)\bin\clang++"
-CCFLAGS = /O2 /EHs /c /nologo -m32 -Wno-deprecated-declarations -Wpotentially-evaluated-expression
+CCFLAGS = /O2 /EHs /c /nologo -m32 -Wno-deprecated-declarations -Wno-potentially-evaluated-expression -Wno-switch
 
 LINK=link.exe
 LFLAGS=/LTCG:incremental /nologo /NXCOMPAT /DYNAMICBASE /MACHINE:x86 /OPT:REF /SAFESEH  /OPT:ICF /TLBID:1

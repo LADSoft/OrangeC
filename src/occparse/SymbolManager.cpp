@@ -32,7 +32,7 @@
 #include "compiler.h"
 #include "assert.h"
 #include "ppPragma.h"
-#include "xxHash.h"
+#include "xxhash.h"
 
 #include <string>
 #include <vector>
@@ -88,7 +88,7 @@ SimpleSymbol* SymbolManager::Get(struct sym *sym)
 
 SimpleExpression* SymbolManager::Get(struct expr* e)
 {
-    while (e && e->type == en_lvalue || e->type == en_not_lvalue || e->type == en_x_string || e->type == en_x_object)
+    while (e && (e->type == en_lvalue || e->type == en_not_lvalue || e->type == en_x_string || e->type == en_x_object))
         e = e->left;
     SimpleExpression* rv = (SimpleExpression*)Alloc(sizeof(SimpleExpression));
     rv->sizeFromType = natural_size(e);

@@ -104,7 +104,7 @@ void expr_init(void)
 void thunkForImportTable(EXPRESSION** exp)
 {
     SYMBOL* sym;
-    if ((architecture == ARCHITECTURE_MSIL))
+    if (architecture == ARCHITECTURE_MSIL)
         return;
     if ((*exp)->type == en_pc)
         sym = (*exp)->v.sp;
@@ -1536,7 +1536,7 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
                     }
                     else if (sp2->storage_class == sc_static || sp2->storage_class == sc_external)
                     {
-                        if ((architecture == ARCHITECTURE_MSIL))
+                        if (architecture == ARCHITECTURE_MSIL)
                         {
                             *exp = varNode(en_global, sp2);
                         }
@@ -2036,14 +2036,14 @@ void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp)
                 {
                     if (basetype(list->tp)->type <= bt_int)
                         dest = &stdint;
-                    else if (!((architecture == ARCHITECTURE_MSIL)))
+                    else if (!(architecture == ARCHITECTURE_MSIL))
                         cast(list->tp, &list->exp);
                 }
                 else if (isfloat(list->tp))
                 {
                     if (basetype(list->tp)->type < bt_double)
                         dest = &stddouble;
-                    else if (!((architecture == ARCHITECTURE_MSIL)))
+                    else if (!(architecture == ARCHITECTURE_MSIL))
                         cast(list->tp, &list->exp);
                 }
                 if (dest && list && list->tp && basetype(dest)->type != bt_memberptr && !comparetypes(dest, list->tp, true))
@@ -2658,7 +2658,7 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
         p = *lptr;
         if (p && p->exp && (p->exp->type == en_pc || p->exp->type == en_func))
         {
-            if ((architecture == ARCHITECTURE_MSIL))
+            if (architecture == ARCHITECTURE_MSIL)
             {
                 ValidateMSILFuncPtr(func->tp, p->tp, &p->exp);
             }
@@ -3074,7 +3074,7 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                 }
             }
         }
-        else if ((architecture == ARCHITECTURE_MSIL))
+        else if (architecture == ARCHITECTURE_MSIL)
         {
             if (isref(sym->tp))
             {
@@ -7403,7 +7403,7 @@ static LEXEME* expression_hook(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp
                     *tp = destSize(tpc, tph, &epc, &eph, false, nullptr);
                 else
                 {
-                    if ((architecture == ARCHITECTURE_MSIL))
+                    if (architecture == ARCHITECTURE_MSIL)
                     {
                         EXPRESSION* exp1 = eph;
                         while (castvalue(exp1))
@@ -7736,7 +7736,7 @@ LEXEME* expression_assign(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
         }
         if (exp1->type == en_pc || (exp1->type == en_func && !exp1->v.func->ascall))
         {
-            if ((architecture == ARCHITECTURE_MSIL))
+            if (architecture == ARCHITECTURE_MSIL)
             {
                 ValidateMSILFuncPtr(*tp, tp1, &exp1);
             }

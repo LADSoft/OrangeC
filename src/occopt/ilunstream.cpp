@@ -31,7 +31,7 @@
 #include "ildata.h"
 #include "iexpr.h"
 #include "SharedMemory.h"
-#include "../occ/Winmode.h"
+#include "../occ/winmode.h"
 #include "../occ/be.h"
 #include <deque>
 #include <functional>

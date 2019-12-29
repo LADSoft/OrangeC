@@ -260,9 +260,9 @@ struct SymbolManager
     static SimpleSymbol* Lookup(struct sym* old);
     static void Add(struct sym* old, SimpleSymbol* sym);
 private:
-    static const char* Key(struct sym* old);
+    static unsigned long long Key(struct sym* old);
     static SimpleSymbol* Make(struct sym *sym);
-    static std::unordered_map<std::string, SimpleSymbol*> symbols;
+    static std::unordered_map<unsigned long long, SimpleSymbol*> symbols;
     static std::unordered_map<std::string, SimpleSymbol*> globalSymbols;
 };
 

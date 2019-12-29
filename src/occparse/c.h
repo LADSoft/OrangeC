@@ -552,7 +552,7 @@ typedef struct sym
     const char* name;
     const char* decoratedName;                /* symbol name with decorations, as used in output format */
     const char* errname;                      /* name to be used in errors */
-    const char* key;
+    unsigned long long key;
     const char *declfile, *origdeclfile;      /* file symbol was declared in */
     int declline, origdeclline, realdeclline; /* line number symbol was declared at */
     short declcharpos;                        /* character position symbol was declared at */

@@ -80,6 +80,7 @@
     <ClCompile Include="..\ocpp\SymbolTable.cpp" />
     <ClCompile Include="..\ocpp\Token.cpp" />
     <ClCompile Include="..\sqlite3\sqlite3.c" />
+    <ClCompile Include="..\xxHash\xxhash.c" />
     <ClCompile Include="ccif.cpp" />
     <ClCompile Include="db.cpp" />
   </ItemGroup>
@@ -92,6 +93,7 @@
     <ClInclude Include="..\occparse\rtti.h" />
     <ClInclude Include="..\occparse\SymbolManager.h" />
     <ClInclude Include="..\occparse\winmode.h" />
+    <ClInclude Include="..\xxHash\xxhash.h" />
     <ClInclude Include="db.h" />
     <ClInclude Include="parser.h" />
     <ClInclude Include="symtypes.h" />
@@ -193,7 +195,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <AdditionalIncludeDirectories>..\ocpp;..\oasm;..\util;..\objlib;..\occparse;..\occopt;..\netlib</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\ocpp;..\oasm;..\util;..\objlib;..\occparse;..\occopt;..\netlib;..\xxHash</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -212,7 +214,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>..\ocpp;..\oasm;..\util;..\objlib;..\occparse;..\occopt;..\netlib</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\ocpp;..\oasm;..\util;..\objlib;..\occparse;..\occopt;..\netlib;..\xxHash</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

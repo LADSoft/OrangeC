@@ -32,6 +32,7 @@
 #include "compiler.h"
 #include "assert.h"
 #include "ppPragma.h"
+#include "xxHash.h"
 
 #include <string>
 #include <vector>
@@ -564,7 +565,7 @@ e_scc_type SymbolManager::Get(enum e_sc storageClass)
         return scc_virtual;
     }
 }
-const char* SymbolManager::Key(struct sym* old)
+unsigned long long SymbolManager::Key(struct sym* old)
 {
     if (!old->key)
     {
@@ -578,7 +579,7 @@ const char* SymbolManager::Key(struct sym* old)
         strcat(buf, old->decoratedName ? old->decoratedName : old->name);
         if (old->storage_class == sc_type)
             strcat(buf, "#");
-        old->key = litlate(buf);
+        old->key = XXH64(buf, strlen(buf), -1LL);
     }
     return old->key;
 }

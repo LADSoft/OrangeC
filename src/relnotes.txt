@@ -42,6 +42,7 @@ version 6.0.44:
     occ: using variadic templates for a variable length argument list didn't promote arrays to pointers
     occ: fix compiler crash when generating debug type info for a union
     occ: fix problem where a complex constant in a CMP instruction could be optimized to zero by the peephole optimizer
+    occ: fix problem with template parameter lookup:  sometimes returned the wrong value
     occil: fix problem with generating code that shifted by an int64 constant
     occil: fix problem with a function call in the middle of a variable arguments sequence resulting in bad code
     oasm: add 'gas' syntax

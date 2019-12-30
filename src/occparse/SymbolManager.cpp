@@ -579,7 +579,11 @@ unsigned long long SymbolManager::Key(struct sym* old)
         if (old->storage_class == sc_type)
             strcat(buf, "#");
         std::hash<std::string> hasher;
-        old->key = hasher(buf);
+        std::string aa(buf);
+        size_t key = hasher(aa);
+        std::reverse(aa.begin(), aa.end());
+        size_t key2 = hasher(aa);
+        old->key = ((unsigned long long)key << 32) | key2;
     }
     return old->key;
 }

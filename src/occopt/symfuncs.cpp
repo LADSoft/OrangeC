@@ -27,7 +27,7 @@
 
 
 
-std::unordered_map<size_t, SimpleSymbol*> SymbolManager::symbols;
+std::unordered_map<unsigned long long, SimpleSymbol*> SymbolManager::symbols;
 std::unordered_map<std::string, SimpleSymbol*> SymbolManager::globalSymbols;
 
 extern COMPILER_PARAMS cparams;

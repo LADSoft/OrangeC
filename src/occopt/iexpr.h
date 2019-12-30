@@ -262,7 +262,7 @@ struct SymbolManager
 private:
     static unsigned long long Key(struct sym* old);
     static SimpleSymbol* Make(struct sym *sym);
-    static std::unordered_map<size_t, SimpleSymbol*> symbols;
+    static std::unordered_map<unsigned long long, SimpleSymbol*> symbols;
     static std::unordered_map<std::string, SimpleSymbol*> globalSymbols;
 };
 

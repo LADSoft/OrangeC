@@ -32,11 +32,10 @@
 #include "compiler.h"
 #include "assert.h"
 #include "ppPragma.h"
-#include "xxhash.h"
-
 #include <string>
 #include <vector>
 #include "PreProcessor.h"
+
 extern PreProcessor* preProcessor;
 extern SYMBOL* theCurrentFunc;
 extern std::vector<SimpleSymbol*> typeSymbols;
@@ -579,7 +578,8 @@ unsigned long long SymbolManager::Key(struct sym* old)
         strcat(buf, old->decoratedName ? old->decoratedName : old->name);
         if (old->storage_class == sc_type)
             strcat(buf, "#");
-        old->key = XXH64(buf, strlen(buf), -1LL);
+        std::hash<std::string> hasher;
+        old->key = hasher(buf);
     }
     return old->key;
 }

@@ -25,7 +25,7 @@ include ../pathext2.mak
 
 NAME=occpr
 MAIN_FILE=occparse.cpp
-INCLUDES=..$(PATHEXT2)util ..$(PATHEXT2)ocpp ..$(PATHEXT2)occparse ..$(PATHEXT2)occopt ..$(PATHEXT2)objlib ..$(PATHEXT2)netlib ..$(PATHEXT2)oasm ..$(PATHEXT2)xxHash
+INCLUDES=..$(PATHEXT2)util ..$(PATHEXT2)ocpp ..$(PATHEXT2)occparse ..$(PATHEXT2)occopt ..$(PATHEXT2)objlib ..$(PATHEXT2)netlib ..$(PATHEXT2)oasm
 CPP_DEPENDENCIES=$(wildcard *.cpp) \
      beinterf.cpp \
      browse.cpp \
@@ -62,7 +62,7 @@ CPP_DEPENDENCIES=$(wildcard *.cpp) \
      unmangle.cpp \
      wseh.cpp
 
-LIB_DEPENDENCIES=ocpplib objlib occopt util netlib oasm sqlite3 xxHash
+LIB_DEPENDENCIES=ocpplib objlib occopt util netlib oasm sqlite3
 DEFINES=x64 PARSER_ONLY
 H_FILES=$(wildcard *.h)
 

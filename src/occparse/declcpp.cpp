@@ -747,7 +747,7 @@ void calculateVirtualBaseOffsets(SYMBOL* sym)
 void deferredCompileOne(SYMBOL* cur)
 {
     LEXEME* lex;
-    STRUCTSYM l, n,x;
+    STRUCTSYM l, n, x, q;
     int count = 0;
     LAMBDA* oldLambdas;
     // function body
@@ -769,6 +769,12 @@ void deferredCompileOne(SYMBOL* cur)
             l.str = cur->parentClass;
             addStructureDeclaration(&l);
             count++;
+            if (cur->parentClass->templateParams)
+            {
+                q.tmpl = cur->parentClass->templateParams;
+                addTemplateDeclaration(&q);
+                count++;
+            }
         }
         dontRegisterTemplate++;
         lex = SetAlternateLex(cur->deferredCompile);

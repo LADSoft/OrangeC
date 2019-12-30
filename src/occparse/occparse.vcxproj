@@ -58,7 +58,6 @@
     <ClCompile Include="..\ocpp\PreProcessor.cpp" />
     <ClCompile Include="..\ocpp\SymbolTable.cpp" />
     <ClCompile Include="..\ocpp\Token.cpp" />
-    <ClCompile Include="..\xxHash\xxhash.c" />
     <ClCompile Include="beinterf.cpp" />
     <ClCompile Include="browse.cpp" />
     <ClCompile Include="ccerr.cpp" />
@@ -124,7 +123,6 @@
     <ClInclude Include="..\ocpp\Token.h" />
     <ClInclude Include="..\occopt\iexpr.h" />
     <ClInclude Include="..\occopt\iopt.h" />
-    <ClInclude Include="..\xxHash\xxhash.h" />
     <ClInclude Include="c.h" />
     <ClInclude Include="ccerr.h" />
     <ClInclude Include="compiler.h" />

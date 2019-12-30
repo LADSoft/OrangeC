@@ -204,9 +204,6 @@
     <ClCompile Include="..\occopt\output.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\xxHash\xxhash.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="db.h">
@@ -240,9 +237,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\occopt\ildata.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\xxHash\xxhash.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

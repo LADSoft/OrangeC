@@ -1992,19 +1992,6 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
                 else
                     t1 = t2;
             }
-        /*
-        if (cparams.prm_cplusplus && (t1 == bt_enum || t2 == bt_enum))
-        {
-            if (t1 == t2)
-         {
-             if (tp1->sp->mainsym == tp2->sp->mainsym)
-             {
-                 return tp1;
-             }
-             genmismatcherror(ERR_ENUMMISMATCH, tp1, tp2);
-         }
-        }
-        */
         if (t1 == bt_enum)
             t1 = bt_int;
         if (t2 == bt_enum)

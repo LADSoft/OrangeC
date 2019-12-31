@@ -1773,7 +1773,7 @@ void SetAlternateParse(bool set, const std::string& val)
 {
     if (set)
     {
-        parseStack.push(std::move(ParseHold{ currentLine, linePointer - (unsigned char *)currentLine.c_str() }));
+        parseStack.push(std::move(ParseHold{ currentLine, (int)(linePointer - (unsigned char *)currentLine.c_str()) }));
         currentLine = val;
         linePointer = (const unsigned char *)currentLine.c_str();
     }

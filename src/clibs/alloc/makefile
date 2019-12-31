@@ -36,7 +36,7 @@
 C_DEPENDENCIES = $(wildcard *.c)
 CIL_DEPENDENCIES = $(wildcard cil/*.c)
 
-EXCLUDE = lea.o farmems.o farmem.o
+EXCLUDE = malloc.o calloc.o realloc.o free.o farmems.o farmem.o
 
 all: $(DEPENDENCIES)
 

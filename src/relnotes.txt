@@ -62,6 +62,7 @@ version 6.0.44:
     rtl: support more errno values
     rtl, tools: update to latest version of SQLITE3
     rtl: fix nl_types.h to work standalone in C code
+    rtl: in command lines, the sequence '\\"' was contracted incorrectly
     tests: add new tests for code analyzer and preprocessor
 
 version 6.0.43: 9/8/2018

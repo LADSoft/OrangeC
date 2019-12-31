@@ -1018,5 +1018,5 @@ void SetLinkerNames(SYMBOL* sym, enum e_lk linkage)
             *p = 0;
             break;
     }
-    sym->decoratedName = sym->errname = litlate(errbuf);
+    sym->decoratedName = litlate(errbuf);
 }

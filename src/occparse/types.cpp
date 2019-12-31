@@ -575,22 +575,22 @@ TYPE* typenum(char* buf, TYPE* tp)
             break;
         case bt_class:
             /*                strcpy(buf, tn_class); */
-            unmangle(name, tp->sp->errname ? tp->sp->errname : tp->sp->name);
+            unmangle(name, tp->sp->decoratedName ? tp->sp->decoratedName : tp->sp->name);
             strcpy(buf, name);
             break;
         case bt_struct:
             /*                strcpy(buf, tn_struct); */
-            unmangle(name, tp->sp->errname ? tp->sp->errname : tp->sp->name);
+            unmangle(name, tp->sp->decoratedName ? tp->sp->decoratedName : tp->sp->name);
             strcpy(buf, name);
             break;
         case bt_union:
             /*                strcpy(buf, tn_union); */
-            unmangle(name, tp->sp->errname ? tp->sp->errname : tp->sp->name);
+            unmangle(name, tp->sp->decoratedName ? tp->sp->decoratedName : tp->sp->name);
             strcpy(buf, name);
             break;
         case bt_enum:
             /*                strcpy(buf, tn_enum);  */
-            unmangle(name, tp->sp->errname ? tp->sp->errname : tp->sp->name);
+            unmangle(name, tp->sp->decoratedName ? tp->sp->decoratedName : tp->sp->name);
             strcpy(buf, name);
             break;
         case bt_templateselector:

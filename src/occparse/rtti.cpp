@@ -436,7 +436,7 @@ SYMBOL* RTTIDumpType(TYPE* tp)
             xtSym->attribs.inheritable.linkage = lk_virtual;
             if (isstructured(tp))
                 xtSym->attribs.inheritable.linkage2 = basetype(tp)->sp->attribs.inheritable.linkage2;
-            xtSym->decoratedName = xtSym->errname = xtSym->name;
+            xtSym->decoratedName = xtSym->name;
             xtSym->xtEntry = true;
             insert(xtSym, rttiSyms);
             if (isstructured(tp) && basetype(tp)->sp->dontinstantiate && basetype(tp)->sp->attribs.inheritable.linkage2 != lk_import)
@@ -810,7 +810,7 @@ static SYMBOL* DumpXCSpecifiers(SYMBOL* funcsp)
         my_sprintf(name, "@$xct%s", funcsp->decoratedName);
         xcSym = makeID(sc_global, &stdpointer, nullptr, litlate(name));
         xcSym->attribs.inheritable.linkage = lk_virtual;
-        xcSym->decoratedName = xcSym->errname = xcSym->name;
+        xcSym->decoratedName = xcSym->name;
         cseg();
         gen_virtual(SymbolManager::Get(xcSym), false);
         switch (funcsp->xcMode)

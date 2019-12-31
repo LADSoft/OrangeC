@@ -143,7 +143,7 @@ IMODE* set_symbol(const char* name, int isproc)
         IncGlobalFlag();
         sym = (SYMBOL*)Alloc(sizeof(SYMBOL));
         sym->storage_class = sc_external;
-        sym->name = sym->errname = sym->decoratedName = litlate(name);
+        sym->name = sym->decoratedName = litlate(name);
         GENREF(sym);
         sym->tp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
         sym->tp->type = isproc ? bt_func : bt_int;

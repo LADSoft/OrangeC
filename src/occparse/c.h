@@ -551,7 +551,6 @@ typedef struct sym
 {
     const char* name;
     const char* decoratedName;                /* symbol name with decorations, as used in output format */
-    const char* errname;                      /* name to be used in errors */
     unsigned long long key;
     const char *declfile, *origdeclfile;      /* file symbol was declared in */
     int declline, origdeclline, realdeclline; /* line number symbol was declared at */
@@ -662,9 +661,7 @@ typedef struct sym
                                  // packed arg
     unsigned visited : 1;        // symbol has been visited in a traversal
     int __func__label;           /* label number for the __func__ keyword */
-    int ipointerindx;            /* pointer index for pointer opts */
     int labelCount;              /* number of code labels within a function body */
-    int nextid;                  /* ID to use for nextage purposes (binary output) */
     int offset;                  /* address offset of data in the given seg, or optimize register */
     int vtaboffset;              /* vtab offset for virtual functions */
     int label;                   /* label number for statics */

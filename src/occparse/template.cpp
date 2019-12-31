@@ -3531,7 +3531,7 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                                     clone->tp = SynthesizeType(templateParams->p->byClass.val, enclosing, alt);
                                     if (!first)
                                     {
-                                        clone->name = clone->decoratedName = clone->errname = AnonymousName();
+                                        clone->name = clone->decoratedName = AnonymousName();
                                         clone->packed = false;
                                     }
                                     else
@@ -8308,7 +8308,7 @@ static void copySyms(SYMBOL* found1, SYMBOL* sym)
         {
             dest->argsym->name = hold->name;
             dest->argsym->decoratedName = hold->decoratedName;
-            dest->argsym->errname = hold->errname;
+            dest->argsym->decoratedName = hold->decoratedName;
         }
         *dest->argsym->tp = *src->argsym->tp;
         UpdateRootTypes(dest->argsym->tp);

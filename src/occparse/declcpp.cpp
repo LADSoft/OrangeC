@@ -143,7 +143,7 @@ static int dumpVTabEntries(int count, THUNK* thunks, SYMBOL* sym, VTABENTRY* ent
                         thunks[count].func = vf->func;
                     }
                     thunks[count].name = localsp = makeID(sc_static, &stdfunc, nullptr, litlate(buf));
-                    localsp->decoratedName = localsp->errname = localsp->name;
+                    localsp->decoratedName = localsp->name;
                     GENREF(localsp);
                     localsp->attribs.inheritable.linkage = lk_virtual;
                     genref(SymbolManager::Get(localsp), 0);

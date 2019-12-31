@@ -1007,7 +1007,7 @@ static LEXEME* structbody(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_ac cur
             }
             InsertInline(sp);
             sp->vtabsp->attribs.inheritable.linkage = lk_virtual;
-            sp->vtabsp->decoratedName = sp->vtabsp->errname = sp->vtabsp->name;
+            sp->vtabsp->decoratedName = sp->vtabsp->name;
             warnCPPWarnings(sp, funcsp != nullptr);
         }
     }
@@ -1466,7 +1466,7 @@ static LEXEME* enumbody(LEXEME* lex, SYMBOL* funcsp, SYMBOL* spi, enum e_sc stor
                     tp->rootType = tp;
                 }
                 sp = makeID(sc_enumconstant, tp, 0, litlate(lex->value.s.a));
-                sp->name = sp->errname = sp->decoratedName = litlate(lex->value.s.a);
+                sp->name = sp->decoratedName = litlate(lex->value.s.a);
                 sp->declcharpos = lex->charindex;
                 sp->declline = sp->origdeclline = lex->line;
                 sp->realdeclline = lex->realline;
@@ -3623,7 +3623,7 @@ LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp,
                                     sizeQualifiers(clone->tp);
                                     if (!first)
                                     {
-                                        clone->name = clone->decoratedName = clone->errname = AnonymousName();
+                                        clone->name = clone->decoratedName = AnonymousName();
                                         clone->packed = false;
                                     }
                                     else

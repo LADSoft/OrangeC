@@ -282,7 +282,7 @@ void makeXCTab(SYMBOL* funcsp)
     if (!funcsp->xc->xctab)
     {
         sym = makeID(sc_auto, &stdXC, nullptr, "$$xctab");
-        sym->decoratedName = sym->errname = sym->name;
+        sym->decoratedName = sym->name;
         sym->allocate = true;
         sym->attribs.inheritable.used = sym->assigned = true;
         insert(sym, localNameSpace->valueData->syms);
@@ -3015,7 +3015,7 @@ static void insertXCInfo(SYMBOL* funcsp)
     my_sprintf(name, "@$xc%s", funcsp->decoratedName);
     sym = makeID(sc_global, &stdpointer, nullptr, litlate(name));
     sym->attribs.inheritable.linkage = lk_virtual;
-    sym->decoratedName = sym->errname = sym->name;
+    sym->decoratedName = sym->name;
     sym->allocate = true;
     sym->attribs.inheritable.used = sym->assigned = true;
     funcsp->xc->xcInitLab = codeLabel++;

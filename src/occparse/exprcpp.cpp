@@ -1743,7 +1743,7 @@ LEXEME* expression_new(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp,
         SYMBOL* sym;
         val = anonymousVar(sc_auto, &stdpointer);
         sym = val->v.sp;
-        sym->decoratedName = sym->errname = sym->name;
+        sym->decoratedName = sym->name;
         //        if (localNameSpace->valueData->syms)
         //            insert(sym, localNameSpace->valueData->syms);
         deref(&stdpointer, &val);

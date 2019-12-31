@@ -316,7 +316,7 @@ SYMBOL* getvc1Thunk(int offset)
     if (!rv)
     {
         rv = (SYMBOL*)Alloc(sizeof(SYMBOL));
-        rv->name = rv->errname = rv->decoratedName = litlate(name);
+        rv->name = rv->decoratedName = litlate(name);
         rv->storage_class = sc_static;
         rv->attribs.inheritable.linkage = lk_virtual;
         rv->offset = offset;

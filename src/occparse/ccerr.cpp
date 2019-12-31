@@ -841,7 +841,7 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
     if (theCurrentFunc && err != ERR_TOO_MANY_ERRORS && err != ERR_PREVIOUS && err != ERR_TEMPLATE_INSTANTIATION_STARTED_IN)
     {
         strcpy(infunc, " in function ");
-        unmangle(infunc + strlen(infunc), theCurrentFunc->errname);
+        unmangle(infunc + strlen(infunc), theCurrentFunc->decoratedName);
     }
     else
         infunc[0] = 0;
@@ -885,7 +885,7 @@ void preverror(int err, const char* name, const char* origFile, int origLine)
 void preverrorsym(int err, SYMBOL* sp, const char* origFile, int origLine)
 {
     char buf[2048];
-    unmangle(buf, sp->errname);
+    unmangle(buf, sp->decoratedName);
     if (origFile && origLine)
         preverror(err, buf, origFile, origLine);
 }
@@ -972,34 +972,34 @@ void errorstr2(int err, const char* val, const char* two) { printerr(err, prePro
 void errorsym(int err, SYMBOL* sym)
 {
     char buf[2048];
-    if (!sym->errname)
+    if (!sym->decoratedName)
     {
         SetLinkerNames(sym, lk_cdecl);
     }
-    unmangle(buf, sym->errname);
+    unmangle(buf, sym->decoratedName);
     printerr(err, preProcessor->GetErrFile().c_str(), preProcessor->GetErrLineNo(), buf);
 }
 void errorsym(int err, SYMBOL* sym, int line, const char* file)
 {
     char buf[2048];
-    if (!sym->errname)
+    if (!sym->decoratedName)
     {
         SetLinkerNames(sym, lk_cdecl);
     }
-    unmangle(buf, sym->errname);
+    unmangle(buf, sym->decoratedName);
     printerr(err, file, line, buf);
 }
 void errorsym2(int err, SYMBOL* sym1, SYMBOL* sym2)
 {
     char one[2048], two[2048];
-    unmangle(one, sym1->errname);
-    unmangle(two, sym2->errname);
+    unmangle(one, sym1->decoratedName);
+    unmangle(two, sym2->decoratedName);
     printerr(err, preProcessor->GetErrFile().c_str(), preProcessor->GetErrLineNo(), one, two);
 }
 void errorstrsym(int err, const char* name, SYMBOL* sym2)
 {
     char two[2048];
-    unmangle(two, sym2->errname);
+    unmangle(two, sym2->decoratedName);
     printerr(err, preProcessor->GetErrFile().c_str(), preProcessor->GetErrLineNo(), name, two);
 }
 void errorstringtype(int err, char* str, TYPE* tp1)
@@ -1038,9 +1038,9 @@ void errorarg(int err, int argnum, SYMBOL* declsp, SYMBOL* funcsp)
         my_sprintf(argbuf, "%d", argnum);
     else
     {
-        unmangle(argbuf, declsp->errname);
+        unmangle(argbuf, declsp->decoratedName);
     }
-    unmangle(buf, funcsp->errname);
+    unmangle(buf, funcsp->decoratedName);
     currentErrorLine = 0;
     printerr(err, preProcessor->GetErrFile().c_str(), preProcessor->GetErrLineNo(), argbuf, buf);
 }

@@ -2436,7 +2436,7 @@ EXPRESSION* thunkConstructorHead(BLOCKDATA* b, SYMBOL* sym, SYMBOL* cons, HASHTA
                 int lbl = codeLabel++;
                 STATEMENT* st;
                 sp->constop = true;
-                sp->decoratedName = sp->errname = sp->name;
+                sp->decoratedName = sp->name;
                 sp->offset = chosenAssembler->arch->retblocksize + cons->paramsize;
                 insert(sp, localNameSpace->valueData->syms);
 
@@ -2771,7 +2771,7 @@ void thunkDestructorTail(BLOCKDATA* b, SYMBOL* sp, SYMBOL* dest, HASHTABLE* syms
         EXPRESSION* val = varNode(en_auto, sp);
         int lbl = codeLabel++;
         STATEMENT* st;
-        sp->decoratedName = sp->errname = sp->name;
+        sp->decoratedName = sp->name;
         sp->offset = chosenAssembler->arch->retblocksize + getSize(bt_pointer);
         SymbolManager::Get(sp)->offset = sp->offset;
         deref(&stdint, &val);

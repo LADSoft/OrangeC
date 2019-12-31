@@ -130,7 +130,7 @@ void thunkForImportTable(EXPRESSION** exp)
             char buf[2048];
             my_sprintf(buf, "@$%s", sym->decoratedName);
             newThunk = makeID(sc_global, &stdpointer, nullptr, litlate(buf));
-            newThunk->errname = newThunk->decoratedName = newThunk->name;
+            newThunk->decoratedName = newThunk->name;
             newThunk->mainsym = sym;  // mainsym is the symbol this was derived from
             newThunk->attribs.inheritable.linkage = lk_virtual;
             newThunk->importThunk = true;

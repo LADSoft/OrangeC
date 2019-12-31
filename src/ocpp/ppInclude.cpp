@@ -92,13 +92,13 @@ bool ppInclude::CheckLine(kw token, const std::string& args)
     }
     return false;
 }
-void ppInclude::pushFile(const std::string& name, const std::string& errname)
+void ppInclude::pushFile(const std::string& name, const std::string& decoratedName)
 {
     // gotta do the test first to get the error correct if it isn't there
     std::fstream in(name, std::ios::in);
     if (!piper.HasPipe() && name[0] != '-' && !in.is_open())
     {
-        Errors::Error(std::string("Could not open ") + errname + " for input");
+        Errors::Error(std::string("Could not open ") + decoratedName + " for input");
     }
     else
     {
@@ -113,7 +113,7 @@ void ppInclude::pushFile(const std::string& name, const std::string& errname)
         // if (current)
         if (!current->Open())
         {
-            Errors::Error(std::string("Could not open ") + errname + " for input");
+            Errors::Error(std::string("Could not open ") + decoratedName + " for input");
             popFile();
         }
     }

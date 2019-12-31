@@ -30,6 +30,7 @@
 #include "beinterf.h"
 #include <vector>
 #include <deque>
+#include <map>
 #define MAX_INTERNAL_REGS 256
 
 #define REG_MAX (chosenAssembler->arch->registerCount)
@@ -359,7 +360,7 @@ void AllocateStackSpace()
     std::vector<std::deque<SimpleSymbol *>> queue;
     queue.resize(maxlvl);
     int oldlvl = -1;
-    std::unordered_map<SimpleSymbol*, int> modes;
+    std::map<SimpleSymbol*, int> modes;
     for (auto sym : functionVariables)
     {
         if (sym->storage_class != scc_constant)

@@ -48,25 +48,25 @@ void SymbolManager::clear()
         symbols.clear(); globalSymbols.clear();
 }
 
-void beDecorateSymName(char* buf, SYMBOL* sym)
+const char* beDecorateSymName(SYMBOL* sym)
 {
     const char* q;
     if (sym->attribs.uninheritable.alias)
     {
-        strcpy(buf, sym->attribs.uninheritable.alias);
+        return litlate(sym->attribs.uninheritable.alias);
     }
     else
     {
         q = preProcessor->LookupAlias(sym->name);
         if (q)
-            strcpy(buf, q);
+            return litlate(q);
         else if (sym->compilerDeclared || sym->tp->type == bt_templateparam || sym->tp->type == bt_templateselector)
         {
-            strcpy(buf, sym->name);
+	    return litlate(sym->name);
         }
         else
         {
-            strcpy(buf, sym->decoratedName);
+            return sym->decoratedName;
         }
     }
 }
@@ -418,9 +418,7 @@ SimpleSymbol* SymbolManager::Make(struct sym* sym)
     rv->hasInlineFunc = sym->inlineFunc.stmt != nullptr;
     rv->usesEsp = cparams.prm_useesp;
 
-    char buf[8192];
-    beDecorateSymName(buf, sym);
-    rv->outputName = litlate(buf);
+    rv->outputName = beDecorateSymName(sym);
 
     return rv;
 }

@@ -186,7 +186,6 @@ void ProcessData(BaseData* v)
         break;
     case DT_FUNCREF:
 //        global(v->symbol.sym, v->symbol.i);
-        gen_funcref(v->symbol.sym);
         break;
     case DT_LABEL:
         oa_gen_labref(v->i);

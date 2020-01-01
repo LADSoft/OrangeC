@@ -936,7 +936,6 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
             }
             return lex;
         }
-        IncGlobalFlag();
         if (ISID(lex))
             name = litlate(lex->value.s.a);
         else
@@ -1018,7 +1017,6 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                 (*tp)->type = bt_aggregate;
                 UpdateRootTypes(*tp);
                 (*tp)->sp = sym;
-                DecGlobalFlag();
                 funcparams = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
                 funcparams->ascall = true;
                 sym = GetOverloadedFunction(tp, &funcparams->fcall, sym, nullptr, atp, true, false, true, flags);
@@ -1033,7 +1031,6 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                 funcparams->functp = funcparams->sp->tp;
                 *exp = varNode(en_func, nullptr);
                 (*exp)->v.func = funcparams;
-                IncGlobalFlag();
             }
             else
             {
@@ -1090,7 +1087,6 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                 }
             }
         }
-        DecGlobalFlag();
     }
     if (!*exp)
         *exp = intNode(en_c_i, 0);
@@ -3966,10 +3962,8 @@ static LEXEME* expression_string(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
     STRING* data;
     (void)funcsp;
 
-    IncGlobalFlag();
     lex = concatStringsInternal(lex, &data, &elems);
     *exp = stringlit(data);
-    DecGlobalFlag();
     if (data->suffix)
     {
         enum e_bt tpb = (*tp)->type;
@@ -4308,7 +4302,6 @@ static bool getSuffixedNumber(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION
                 f->arguments = (INITLIST*)Alloc(sizeof(INITLIST));
                 f->arguments->tp = &stdcharptr;
                 f->arguments->tp->size = (strlen(lex->litaslit) + 1) * f->arguments->tp->btp->size;
-                IncGlobalFlag();
                 data = (STRING*)Alloc(sizeof(STRING));
                 data->strtype = l_astr;
                 data->size = 1;
@@ -4319,7 +4312,6 @@ static bool getSuffixedNumber(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION
                 for (i = 0; i < data->pointers[0]->count; i++)
                     data->pointers[0]->str[i] = lex->litaslit[i];
                 f->arguments->exp = stringlit(data);
-                DecGlobalFlag();
                 *exp = intNode(en_func, 0);
                 (*exp)->v.func = f;
                 *tp = sym1->tp;
@@ -4882,7 +4874,6 @@ static LEXEME* expression_primary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE**
                         LCHAR buf[256], *q = buf;
                         const char* p = funcsp->name;
                         STRING* string;
-                        IncGlobalFlag();
                         string = (STRING*)Alloc(sizeof(STRING));
                         string->strtype = l_astr;
                         string->size = 1;
@@ -4895,7 +4886,6 @@ static LEXEME* expression_primary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE**
                         string->pointers[0]->count = q - buf;
                         *exp = stringlit(string);
                         funcsp->__func__label = string->label;
-                        DecGlobalFlag();
                     }
                     else
                         *exp = intNode(en_labcon, funcsp->__func__label);
@@ -5457,7 +5447,6 @@ static LEXEME* expression_ampersand(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE
                     bool done = false;
                     SYMBOL* spold = sym;
                     sym->label = nextLabel++;
-                    IncGlobalFlag();
                     sym = clonesym(sym);
                     spold->indecltable = true;
                     tp = sym->tp;
@@ -5476,13 +5465,10 @@ static LEXEME* expression_ampersand(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE
                     sym->tp = tpn;
                     sym->storage_class = sc_static;
                     insertInitSym(sym);
-                    DecGlobalFlag();
                 }
                 else
                 {
-                    IncGlobalFlag();
                     insertInitSym(sym);
-                    DecGlobalFlag();
                 }
                 if (!sym->parent)
                     sym->parent = funcsp;  // this promotion of a global to local is necessary to not make it linkable

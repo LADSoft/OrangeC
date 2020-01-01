@@ -140,7 +140,6 @@ IMODE* set_symbol(const char* name, int isproc)
     if (sym == 0)
     {
         LIST* l1;
-        IncGlobalFlag();
         sym = (SYMBOL*)Alloc(sizeof(SYMBOL));
         sym->storage_class = sc_external;
         sym->name = sym->decoratedName = litlate(name);
@@ -150,7 +149,6 @@ IMODE* set_symbol(const char* name, int isproc)
         sym->safefunc = true;
         insert(sym, globalNameSpace->valueData->syms);
         InsertExtern(sym);
-        DecGlobalFlag();
     }
     else
     {
@@ -245,9 +243,7 @@ void gather_cases(CASEDATA* cd, struct cases* cs)
     int pos = 0;
     if (!cs->ptrs)
     {
-        IncGlobalFlag();
         cs->ptrs = (struct caseptrs*)Alloc((cs->count) * sizeof(struct caseptrs));
-        DecGlobalFlag();
     }
     while (cd)
     {

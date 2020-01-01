@@ -267,7 +267,6 @@ SYMBOL* lambda_capture(SYMBOL* sym, enum e_cm mode, bool isExplicit)
                         if (check)
                             check = check->prev;
                     }
-                    IncGlobalFlag();
                     while (current)
                     {
                         // we are replicating captures through intermediate lambdas
@@ -289,7 +288,6 @@ SYMBOL* lambda_capture(SYMBOL* sym, enum e_cm mode, bool isExplicit)
                         baseinsert((SYMBOL*)ins, current->captured);
                         current = current->prev;
                     }
-                    DecGlobalFlag();
                 }
             }
         }
@@ -817,7 +815,6 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
     STRUCTSYM ssl;
     if (funcsp)
         funcsp->noinline = true;
-    IncGlobalFlag();
     self = (LAMBDA*)Alloc(sizeof(LAMBDA));
     ltp = (TYPE*)Alloc(sizeof(TYPE));
     ltp->type = bt_struct;
@@ -1136,6 +1133,5 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
     lambdas = lambdas->next;
     if (lambdas)
         lambdas->prev = NULL;
-    DecGlobalFlag();
     return lex;
 }

@@ -56,6 +56,12 @@
 #define __isstructured(x) ((x)->type == bt_class || (x)->type == bt_struct || (x)->type == bt_union)
 #define isstructured(x) (__isstructured(basetype(x)))
 
+#define SET_GLOBAL(val, index) bool oldgf##index; SetGlobalFlag(val, oldgf##index);
+#define RELEASE_GLOBAL(index) ReleaseGlobalFlag(oldgf##index);
+#define GET_GLOBAL GetGlobalFlag();
+void SetGlobalFlag(bool flag, bool &old);
+void ReleaseGlobalFlag(bool old);
+bool GetGlobalFlag();
 /* keywords and symbols */
 // clang-format off
 enum e_kw

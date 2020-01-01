@@ -44,7 +44,6 @@ static IMODE* rwSetSymbol(const char* name, bool unused)
     if (sym == 0)
     {
         LIST* l1;
-        IncGlobalFlag();
         sym = (SimpleSymbol*)Alloc(sizeof(SimpleSymbol));
         sym->storage_class = scc_external;
         sym->name = sym->outputName = litlate(name);
@@ -53,7 +52,6 @@ static IMODE* rwSetSymbol(const char* name, bool unused)
         sym->tp->type = st_func;
 //        SymbolManager::Add(name, sym);
         externals.push_back(sym);
-        DecGlobalFlag();
     }
     result = (IMODE*)(IMODE*)Alloc(sizeof(IMODE));
     result->offset = (SimpleExpression*)Alloc(sizeof(SimpleExpression));

@@ -209,10 +209,7 @@ LEXEME* initialize_property(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc 
                 }
                 else
                 {
-                    int old = GetGlobalFlag();
-                    SetGlobalFlag(old + 1);
                     lex = body(lex, prototype);
-                    SetGlobalFlag(old);
                     insertfunc(prototype, globalNameSpace->valueData->syms);
                 }
             }

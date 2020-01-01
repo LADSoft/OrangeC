@@ -270,7 +270,6 @@ IMODE* make_immed(int size, long long i)
             return ap;
         a = a->next;
     }
-    IncGlobalFlag();
     ap = (IMODE*)(IMODE*)Alloc(sizeof(IMODE));
     ap->mode = i_immed;
     ap->offset = (SimpleExpression*)Alloc(sizeof(SimpleExpression));
@@ -281,7 +280,6 @@ IMODE* make_immed(int size, long long i)
     a->data = ap;
     a->next = immed_list[index];
     immed_list[index] = a;
-    DecGlobalFlag();
     return ap;
 }
 
@@ -544,16 +542,10 @@ IMODE* indnode(IMODE* ap1, int size)
             if (sym)
             {
                 SimpleExpression* node1 = ap1->offset;
-                if (sym && sym->storage_class != scc_auto && sym->storage_class != scc_register)
-                {
-                    IncGlobalFlag();
-                }
                 ap = (IMODE*)(IMODE*)Alloc(sizeof(IMODE));
                 *ap = *ap1;
                 ap->offset = node1;
                 ap->retval = false;
-                if (sym && sym->storage_class != scc_auto && sym->storage_class != scc_register)
-                    DecGlobalFlag();
             }
             else
             {
@@ -580,18 +572,10 @@ IMODE* indnode(IMODE* ap1, int size)
                 if (sym)
                 {
                     IMODELIST* iml;
-                    if (sym->storage_class != scc_auto && sym->storage_class != scc_register)
-                    {
-                        IncGlobalFlag();
-                    }
                     iml = (IMODELIST*)Alloc(sizeof(IMODELIST));
                     iml->next = sym->imind;
                     sym->imind = iml;
                     iml->im = ap;
-                    if (sym->storage_class != scc_auto && sym->storage_class != scc_register)
-                    {
-                        DecGlobalFlag();
-                    }
                 }
             }
         }

@@ -3928,7 +3928,6 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_c
     bool initialized = MATCHKW(lex, assign) || MATCHKW(lex, begin) || MATCHKW(lex, openpa);
     inittag = 0;
     browse_variable(sym);
-    IncGlobalFlag();
     // MSIL property
 #ifndef PARSER_ONLY
     if (sym->attribs.inheritable.linkage2 == lk_property)
@@ -4064,23 +4063,6 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_c
                     }
                 }
                 lex = prevsym(placeholder);
-            }
-            if (GetGlobalFlag() == 1)
-            {
-                /* have to copy the type since it was created
-                 * at auto scope without the global flag
-                 */
-                TYPE* tp = sym->tp;
-                TYPE *tp2 = nullptr, **tp3 = &tp2;
-                while (tp)
-                {
-                    *tp3 = (TYPE*)Alloc(sizeof(TYPE));
-                    **tp3 = *tp;
-                    UpdateRootTypes(*tp3);
-                    tp3 = &(*tp3)->btp;
-                    tp = tp->btp;
-                }
-                sym->tp = tp2;
             }
             if (sym->storage_class == sc_absolute)
                 error(ERR_ABSOLUTE_NOT_INITIALIZED);
@@ -4380,7 +4362,6 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_c
     if (sym->tp->array && sym->tp->size)
         if (sym->storage_class == sc_global || sym->storage_class == sc_static || sym->storage_class == sc_localstatic)
             SymbolManager::Get(sym)->tp->size = sym->tp->size;
-    DecGlobalFlag();
     initializingGlobalVar = false;
     return lex;
 }

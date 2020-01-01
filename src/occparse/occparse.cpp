@@ -256,9 +256,9 @@ void MakeStubs(void)
 }
 void compile(bool global)
 {
+    SET_GLOBAL(true, 1);
     LEXEME* lex = nullptr;
     SymbolManager::clear();
-    SetGlobalFlag(true);
     helpinit();
     mangleInit();
     errorinit();
@@ -355,6 +355,7 @@ void compile(bool global)
     }
     findUnusedStatics(globalNameSpace);
     dumperrs(stdout);
+    RELEASE_GLOBAL(1);
 }
 /*-------------------------------------------------------------------------*/
 
@@ -427,6 +428,7 @@ int main(int argc, char* argv[])
         parserMem->GetMapping();
         compileToFile = true;
     }
+
 #endif
     for (auto c = clist; c; c = c->next)
     {
@@ -530,6 +532,7 @@ int main(int argc, char* argv[])
                 
             compile(false);
 #ifndef PARSER_ONLY
+
             if (architecture != ARCHITECTURE_MSIL || (cparams.prm_compileonly && !cparams.prm_asmfile))
             {
                 OutputIntermediate(parserMem);
@@ -571,6 +574,7 @@ int main(int argc, char* argv[])
 #endif
         clist = clist->next;
     }
+
 #ifndef PARSER_ONLY
     if (architecture == ARCHITECTURE_MSIL)
         if (!cparams.prm_compileonly || cparams.prm_asmfile)

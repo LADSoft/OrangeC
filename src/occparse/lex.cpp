@@ -794,12 +794,10 @@ SLCHAR* getString(const unsigned char** source, enum e_lexType* tp)
                         SLCHAR* rv;
                         int i;
                         *source = p;
-                        IncGlobalFlag();
                         rv = (SLCHAR*)Alloc(sizeof(SLCHAR));
                         rv->str = (LCHAR*)Alloc(1);
                         rv->str[0] = 0;
                         rv->count = 1;
-                        DecGlobalFlag();
                         return rv;
                     }
                 }
@@ -959,13 +957,11 @@ SLCHAR* getString(const unsigned char** source, enum e_lexType* tp)
     {
         SLCHAR* rv;
         int i;
-        IncGlobalFlag();
         rv = (SLCHAR*)Alloc(sizeof(SLCHAR));
         rv->str = (LCHAR*)Alloc(count * sizeof(LCHAR));
         for (i = 0; i < count; i++)
             rv->str[i] = data[i];
         rv->count = count;
-        DecGlobalFlag();
         return rv;
     }
     return nullptr;

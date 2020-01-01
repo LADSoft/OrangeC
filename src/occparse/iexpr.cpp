@@ -200,7 +200,6 @@ IMODE* make_imaddress(EXPRESSION* node, int size)
         return sym->imaddress;
     if (sym && sym->storage_class != scc_auto && sym->storage_class != scc_register)
     {
-        IncGlobalFlag();
         sym->allocate = true;
     }
     ap2 = (IMODE*)(IMODE*)Alloc(sizeof(IMODE));
@@ -220,8 +219,6 @@ IMODE* make_imaddress(EXPRESSION* node, int size)
         else
             sym->imvalue->size = sizeFromType(tp);
     }
-    if (sym && sym->storage_class != scc_auto && sym->storage_class != scc_register)
-        DecGlobalFlag();
     if (sym)
     {
         sym->addressTaken = true;
@@ -240,14 +237,8 @@ IMODE* make_ioffset(EXPRESSION* node)
     SimpleSymbol* sym = varsp(node1);
     if (sym && sym->imvalue && sym->imvalue->size == natural_size(node))
         return sym->imvalue;
-    if (sym && sym->storage_class != scc_auto && sym->storage_class != scc_register)
-    {
-        IncGlobalFlag();
-    }
     ap = (IMODE*)(IMODE*)Alloc(sizeof(IMODE));
     ap->offset = node1;
-    if (sym && sym->storage_class != scc_auto && sym->storage_class != scc_register)
-        DecGlobalFlag();
     ap->mode = i_direct;
     ap->size = natural_size(node);
     if (sym && !sym->imvalue)

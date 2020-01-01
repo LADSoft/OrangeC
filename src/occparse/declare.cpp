@@ -3475,7 +3475,6 @@ LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp,
     STRUCTSYM s;
     s.tmpl = nullptr;
     lex = getsym();
-    IncGlobalFlag();
     if (*tp == nullptr)
         *tp = &stdint;
     tp1 = (TYPE*)Alloc(sizeof(TYPE));
@@ -4027,7 +4026,6 @@ LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp,
         skip(&lex, closepa);
     }
     localNameSpace->valueData->syms = locals;
-    DecGlobalFlag();
     basisAttribs = oldAttribs;
     ParseAttributeSpecifiers(&lex, funcsp, true);
     if (voiderror)
@@ -4249,7 +4247,6 @@ static LEXEME* getAfterType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** sp,
                                 if (inTemplate && templateNestingCount == 1)
                                     noSpecializationError++;
                                 localNameSpace->valueData->syms = basetype(*tp)->syms;
-                                IncGlobalFlag();
                                 funcLevel++;
                                 lex = getsym();
                                 ParseAttributeSpecifiers(&lex, funcsp, true);
@@ -4295,7 +4292,6 @@ static LEXEME* getAfterType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** sp,
                                 }
                                 localNameSpace->valueData->syms = locals;
                                 funcLevel--;
-                                DecGlobalFlag();
                                 if (inTemplate && templateNestingCount == 1)
                                     noSpecializationError--;
                             }
@@ -5418,7 +5414,6 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
         }
         else
         {
-            int incrementedStorageClass = 0;
             bool blocked;
             bool constexpression;
             bool defd = false;
@@ -5428,7 +5423,6 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
             bool asFriend = false;
             int consdest = CT_NONE;
 
-            IncGlobalFlag(); /* in case we have to initialize a func level static */
             lex = getStorageAndType(lex, funcsp, &strSym, inTemplate, false, &storage_class, &storage_class_in, &address, &blocked,
                                     &isExplicit, &constexpression, &tp, &linkage, &linkage2, &linkage3, access, &notype, &defd,
                                     &consdest, &templateArg, &asFriend);
@@ -5436,20 +5430,11 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
             {
                 if (tp != nullptr)
                     error(ERR_TOO_MANY_TYPE_SPECIFIERS);
-                DecGlobalFlag();
 
                 needsemi = false;
             }
             else
             {
-                if (storage_class != sc_static && storage_class != sc_localstatic && storage_class != sc_external)
-                {
-                    DecGlobalFlag();
-                }
-                else
-                {
-                    incrementedStorageClass++;
-                }
                 if (storage_class_in == sc_member && asFriend)
                 {
                     storage_class = sc_external;
@@ -5536,12 +5521,6 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                             l->str = strSym;
                             addStructureDeclaration(l);
                         }
-                    }
-                    if (!incrementedStorageClass && tp1->type == bt_func)
-                    {
-                        /* at this point the arguments will be global but the rv won't */
-                        incrementedStorageClass++;
-                        IncGlobalFlag(); /* in case we have to initialize a func level static */
                     }
                     if (cparams.prm_cplusplus && isfunction(tp1) &&
                         (storage_class_in == sc_member || storage_class_in == sc_mutable) && !asFriend)
@@ -6522,7 +6501,6 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                             {
                                 TYPE* tp = sp->tp;
                                 SYMLIST* hr;
-                                int old = GetGlobalFlag();
                                 if (sp->storage_class == sc_member && storage_class_in == sc_member)
                                     browse_variable(sp);
                                 if (sp->storage_class == sc_external)
@@ -6557,9 +6535,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                                 {
                                     GENREF(sp);
                                     sp->attribs.inheritable.linkage = lk_virtual;
-                                    SetGlobalFlag(old + 1);
                                     lex = body(lex, sp);
-                                    SetGlobalFlag(old);
                                 }
                                 else if (storage_class_in == sc_member || storage_class_in == sc_mutable ||
                                          templateNestingCount == 1 || (asFriend && templateNestingCount == 2))
@@ -6583,9 +6559,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                                 }
                                 else
                                 {
-                                    SetGlobalFlag(old + 1);
                                     lex = body(lex, sp);
-                                    SetGlobalFlag(old);
                                 }
                                 if (sp->constexpression)
                                 {
@@ -6802,10 +6776,6 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                         dropStructureDeclaration();
                     }
                 } while (!asExpression && !inTemplate && MATCHKW(lex, comma) && (lex = getsym()) != nullptr);
-                if (incrementedStorageClass)
-                {
-                    DecGlobalFlag(); /* in case we have to initialize a func level static */
-                }
             }
         }
     }

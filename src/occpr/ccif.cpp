@@ -495,7 +495,6 @@ std::string ccNewFile(char* fileName, bool main)
     skipThisFile = !!LookupName(s, ccHash);
     if (!skipThisFile)
     {
-        IncGlobalFlag();
         l = (LINEINCLUDES*)Alloc(sizeof(LINEINCLUDES));
         l->name = litlate(s);
         lastFile = l;
@@ -504,7 +503,6 @@ std::string ccNewFile(char* fileName, bool main)
             mainFile = l;
         else
             insert((SYMBOL*)l, ccHash);
-        DecGlobalFlag();
     }
     return "";
 }

@@ -8432,7 +8432,7 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
             }
         }
     }
-    if (count > 1 && found1 && !found2)
+    if (found1 && !found2)
     {
         found1 = ValidateClassTemplate(origList[i - 1], unspecialized, args);
     }

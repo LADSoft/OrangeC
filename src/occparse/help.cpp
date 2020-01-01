@@ -646,7 +646,6 @@ LEXEME* concatStringsInternal(LEXEME* lex, STRING** str, int* elems)
     int pos = 0;
     enum e_lexType type = l_astr;
     STRING* string;
-    IncGlobalFlag();
     list = (SLCHAR**)(SLCHAR**)Alloc(sizeof(SLCHAR*) * count);
     while (lex &&
            (lex->type == l_astr || lex->type == l_wstr || lex->type == l_ustr || lex->type == l_Ustr || lex->type == l_msilstr))
@@ -690,16 +689,13 @@ LEXEME* concatStringsInternal(LEXEME* lex, STRING** str, int* elems)
     string->suffix = suffix;
     memcpy(string->pointers, list, pos * sizeof(SLCHAR*));
     *str = string;
-    DecGlobalFlag();
     return lex;
 }
 LEXEME* concatStrings(LEXEME* lex, EXPRESSION** expr, enum e_lexType* tp, int* elems)
 {
     STRING* data;
     lex = concatStringsInternal(lex, &data, elems);
-    IncGlobalFlag();
     *expr = stringlit(data);
-    DecGlobalFlag();
     *tp = data->strtype;
     return lex;
 }
@@ -1480,13 +1476,11 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION *expsym, S
                     {
                         /* constant expression */
                         SYMBOL* spc;
-                        IncGlobalFlag();
                         exp = anonymousVar(sc_localstatic, init->basetp);
                         spc = exp->v.sp;
                         spc->init = init;
                         insertInitSym(spc);
                         insert(spc, localNameSpace->valueData->syms);
-                        DecGlobalFlag();
                         spc->label = nextLabel++;
                         if (expsym)
                         {

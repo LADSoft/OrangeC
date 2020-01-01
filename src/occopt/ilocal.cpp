@@ -130,10 +130,6 @@ static void renameOneSym(SimpleSymbol* sym, int structret)
     if (!sym->imvalue && sym->tp->type != st_any && sym->tp->type != st_memberptr && sym->tp->type != st_struct &&
         sym->tp->type != st_union && sym->tp->type != st_ellipse && sym->tp->type != st_aggregate)
     {
-        if (sym->storage_class != scc_auto && sym->storage_class != scc_register)
-        {
-            IncGlobalFlag();
-        }
         if (sym->imaddress)
         {
             IMODE* im = (IMODE*)Alloc(sizeof(IMODE));
@@ -153,10 +149,6 @@ static void renameOneSym(SimpleSymbol* sym, int structret)
         else
             sym->imvalue = tempreg(sym->tp->sizeFromType, false);
 
-        if (sym->storage_class != scc_auto && sym->storage_class != scc_register)
-        {
-            DecGlobalFlag();
-        }
     }
     tp = sym->tp;
 

@@ -95,7 +95,6 @@ bool msilManaged(SYMBOL* s)
 void InsertLineData(int lineno, int fileindex, const char* fname, char* line)
 {
     LINEDATA* ld;
-    IncGlobalFlag();
     ld = (LINEDATA*)Alloc(sizeof(LINEDATA));
     ld->file = fname;
     ld->line = litlate(line);
@@ -105,7 +104,6 @@ void InsertLineData(int lineno, int fileindex, const char* fname, char* line)
         linesTail = linesTail->next = ld;
     else
         linesHead = linesTail = ld;
-    DecGlobalFlag();
 }
 void FlushLineData(const char* file, int lineno)
 {
@@ -3695,7 +3693,8 @@ LEXEME* body(LEXEME* lex, SYMBOL* funcsp)
 #endif
     }
 #ifndef PARSER_ONLY
-    localFree();
+    if (funcNesting == 1) // top level function
+        localFree();
 #endif
     handleInlines(funcsp);
 

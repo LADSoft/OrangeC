@@ -304,7 +304,6 @@ AMODE* setSymbol(const char* name)
     if (sym == 0)
     {
         LIST* l1;
-        IncGlobalFlag();
         sym = (SimpleSymbol*)Alloc(sizeof(SimpleSymbol));
         sym->storage_class = scc_external;
         sym->name = sym->outputName = litlate(name);
@@ -313,7 +312,6 @@ AMODE* setSymbol(const char* name)
         sym->tp->type = st_func;
 //        SymbolManager::Add(name, sym);
         externals.push_back(sym);
-        DecGlobalFlag();
     }
     result = (AMODE*)(AMODE*)Alloc(sizeof(AMODE));
     result->offset = (SimpleExpression*)Alloc(sizeof(SimpleExpression));

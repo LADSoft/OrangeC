@@ -407,16 +407,8 @@ static void replaceIM(IMODE** iml, IMODE* im)
             SimpleSymbol* sym = im->offset->sp;
             IMODE* imind;
             IMODELIST* imindl;
-            if (sym && sym->storage_class != scc_auto && sym->storage_class != scc_register)
-            {
-                IncGlobalFlag();
-            }
             imind = (IMODE*)Alloc(sizeof(IMODE));
             imindl = (IMODELIST*)Alloc(sizeof(IMODELIST));
-            if (sym && sym->storage_class != scc_auto && sym->storage_class != scc_register)
-            {
-                DecGlobalFlag();
-            }
             *imind = *(im);
             imind->mode = i_ind;
             imind->ptrsize = (*iml)->ptrsize;

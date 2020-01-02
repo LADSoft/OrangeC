@@ -77,29 +77,29 @@ FPF refloat(EXPRESSION* node)
         break;
     case en_c_f:
     case en_c_fi:
-        rv = CastToFloat(ISZ_FLOAT, &node->v.f);
+        rv = CastToFloat(ISZ_FLOAT, node->v.f);
         break;
     case en_c_d:
     case en_c_di:
-        rv = CastToFloat(ISZ_DOUBLE, &node->v.f);
+        rv = CastToFloat(ISZ_DOUBLE, node->v.f);
         break;
 
     case en_c_ld:
     case en_c_ldi:
-        rv = CastToFloat(ISZ_LDOUBLE, &node->v.f);
+        rv = CastToFloat(ISZ_LDOUBLE, node->v.f);
         break;
     case en_c_fc:
-        rv = CastToFloat(ISZ_FLOAT, &node->v.c.i);
-        rv = CastToFloat(ISZ_FLOAT, &node->v.c.r);
+        rv = CastToFloat(ISZ_FLOAT, &node->v.c->i);
+        rv = CastToFloat(ISZ_FLOAT, &node->v.c->r);
         break;
 
     case en_c_dc:
-        rv = CastToFloat(ISZ_DOUBLE, &node->v.c.i);
-        rv = CastToFloat(ISZ_DOUBLE, &node->v.c.r);
+        rv = CastToFloat(ISZ_DOUBLE, &node->v.c->i);
+        rv = CastToFloat(ISZ_DOUBLE, &node->v.c->r);
         break;
     case en_c_ldc:
-        rv = CastToFloat(ISZ_LDOUBLE, &node->v.c.i);
-        rv = CastToFloat(ISZ_LDOUBLE, &node->v.c.r);
+        rv = CastToFloat(ISZ_LDOUBLE, &node->v.c->i);
+        rv = CastToFloat(ISZ_LDOUBLE, &node->v.c->r);
         break;
 
     default:
@@ -167,14 +167,14 @@ unsigned long long reint(EXPRESSION* node)
         rv = CastToInt(-ISZ_ULONGLONG, (long long)node->v.f);
         break;
     case en_c_fc:
-        rv = CastToInt(-ISZ_ULONGLONG, (long long)node->v.c.r);
+        rv = CastToInt(-ISZ_ULONGLONG, (long long)node->v.c->r);
         break;
     case en_c_dc:
-        rv = CastToInt(-ISZ_ULONGLONG, (long long)node->v.c.r);
+        rv = CastToInt(-ISZ_ULONGLONG, (long long)node->v.c->r);
         break;
 
     case en_c_ldc:
-        rv = CastToInt(-ISZ_ULONGLONG, (long long)node->v.c.r);
+        rv = CastToInt(-ISZ_ULONGLONG, (long long)node->v.c->r);
         break;
     case en_c_fi:
     case en_c_di:

@@ -1605,9 +1605,14 @@ LEXEME* getsym(void)
             if ((unsigned)(tp = getNumber(&linePointer, &end, suffix, &rval, &ival)) != (unsigned)INT_MIN)
             {
                 if (tp < l_f)
+                {
                     lex->value.i = ival;
+                }
                 else
-                    lex->value.f = rval;
+                {
+                    lex->value.f = (FPF*)Alloc(sizeof(FPF));
+                    *lex->value.f = rval;
+                }
                 if (suffix[0])
                 {
                     lex->suffix = litlate((char*)suffix);

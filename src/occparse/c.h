@@ -300,6 +300,8 @@ typedef struct expr
         union
         {
             long long i;
+            FPF *f;
+            _COMPLEX_S *c;
             struct sym* sp;   /* sym will be defined later */
             const char* name; /* name during base class processing */
             struct functioncall* func;
@@ -317,8 +319,6 @@ typedef struct expr
         };
         struct _templateParamList* templateParam;
         struct _templateSelector* templateSelector;
-        FPF f;
-        _COMPLEX_S c;
     } v;
     struct _string* string;
     LIST* destructors;  // for &&  and ||
@@ -373,9 +373,9 @@ struct u_val
             const LCHAR* w;
         } s;
         struct _defstruct* defs; /* macro definition */
+        FPF *f; /* float val */
+        _COMPLEX_S *c;
     };
-    FPF f; /* float val */
-    _COMPLEX_S c;
 };
 typedef struct typ
 {
@@ -409,7 +409,6 @@ typedef struct typ
     HASHTABLE* syms; /* Symbol table for structs & functions */
     HASHTABLE* tags; /* Symbol table for nested types*/
     struct _templateParamList* templateParam;
-    int dbgindex;                 /* type index for debugger */
     int alignment;                /* alignment pref for this structure/class/union   */
     EXPRESSION* esize;            /* enode version of size */
     struct typ* etype;            /* type of size field  when size isn't constant */

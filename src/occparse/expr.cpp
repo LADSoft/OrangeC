@@ -4264,7 +4264,8 @@ static bool getSuffixedNumber(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION
             {
                 f->arguments->tp = &stdlongdouble;
                 f->arguments->exp = intNode(en_c_ld, 0);
-                f->arguments->exp->v.f = lex->value.f;
+                f->arguments->exp->v.f = (FPF*)Alloc(sizeof(FPF));
+                *f->arguments->exp->v.f = *lex->value.f;
             }
             *exp = intNode(en_func, 0);
             (*exp)->v.func = f;
@@ -4833,7 +4834,8 @@ static LEXEME* expression_primary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE**
                 case kw___I:
                     *exp = intNode(en_c_i, 0);
                     (*exp)->type = en_c_fi;
-                    (*exp)->v.f = (long long)1;
+                    (*exp)->v.f = (FPF*)Alloc(sizeof(FPF));
+                    *(*exp)->v.f = (long long)1;
                     *tp = &stdfloatimaginary;
                     (*exp)->pragmas = preProcessor->GetStdPragmas();
                     lex = getsym();
@@ -4965,14 +4967,16 @@ static LEXEME* expression_primary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE**
                 case kw__NAN:
                     *exp = intNode(en_c_i, 0);
                     (*exp)->type = en_c_f;
-                    (*exp)->v.f.SetNaN();
+                    (*exp)->v.f = (FPF*)Alloc(sizeof(FPF));
+                    (*exp)->v.f->SetNaN();
                     lex = getsym();
                     *tp = &stdfloat;
                     break;
                 case kw__INF:
                     *exp = intNode(en_c_i, 0);
                     (*exp)->type = en_c_f;
-                    (*exp)->v.f.SetInfinity(0);
+                    (*exp)->v.f = (FPF*)Alloc(sizeof(FPF));
+                    (*exp)->v.f->SetInfinity(0);
                     lex = getsym();
                     *tp = &stdfloat;
                     break;
@@ -5043,14 +5047,16 @@ static LEXEME* expression_primary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE**
             break;
         case l_f:
             *exp = intNode(en_c_f, 0);
-            (*exp)->v.f = lex->value.f;
+            (*exp)->v.f = (FPF*)Alloc(sizeof(FPF));
+            *(*exp)->v.f = *lex->value.f;
             (*exp)->pragmas = preProcessor->GetStdPragmas();
             *tp = &stdfloat;
             lex = getsym();
             break;
         case l_d:
             *exp = intNode(en_c_d, 0);
-            (*exp)->v.f = lex->value.f;
+            (*exp)->v.f = (FPF*)Alloc(sizeof(FPF));
+            *(*exp)->v.f = *lex->value.f;
             (*exp)->pragmas = preProcessor->GetStdPragmas();
             *tp = &stddouble;
             lex = getsym();
@@ -5059,7 +5065,8 @@ static LEXEME* expression_primary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE**
             if (!lex->suffix || !getSuffixedNumber(lex, funcsp, tp, exp))
             {
                 *exp = intNode(en_c_ld, 0);
-                (*exp)->v.f = lex->value.f;
+                (*exp)->v.f = (FPF*)Alloc(sizeof(FPF));
+                *(*exp)->v.f = *lex->value.f;
                 (*exp)->pragmas = preProcessor->GetStdPragmas();
                 *tp = &stdlongdouble;
             }

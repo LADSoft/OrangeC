@@ -1023,7 +1023,8 @@ static int getData(STATEMENT* snp)
                     }
                     else
                     {
-                        expr->v.f = refloat(expr);
+                        expr->v.f = (FPF*)Alloc(sizeof(FPF));
+                        *expr->v.f = refloat(expr);
                         expr->type = en_c_f;
                     }
                     break;
@@ -1035,12 +1036,14 @@ static int getData(STATEMENT* snp)
                     }
                     else
                     {
-                        expr->v.f = refloat(expr);
+                        expr->v.f = (FPF*)Alloc(sizeof(FPF));
+                        *expr->v.f = refloat(expr);
                         expr->type = en_c_d;
                     }
                     break;
                 case ISZ_LDOUBLE:
-                    expr->v.f = refloat(expr);
+                    expr->v.f = (FPF*)Alloc(sizeof(FPF));
+                    *expr->v.f = refloat(expr);
                     expr->type = en_c_ld;
                     break;
             }

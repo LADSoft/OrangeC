@@ -47,13 +47,13 @@ void displayLexeme(LEXEME* lex)
             printf("unsigned long long constant: " LLONG_FORMAT_SPECIFIER "\n", lex->value.i);
             break;
         case l_f:
-            printf("float constant: %s\n", ((std::string)lex->value.f).c_str());
+            printf("float constant: %s\n", ((std::string)*lex->value.f).c_str());
             break;
         case l_d:
-            printf("double constant: %s\n", ((std::string)lex->value.f).c_str());
+            printf("double constant: %s\n", ((std::string)*lex->value.f).c_str());
             break;
         case l_ld:
-            printf("long double constant: %s\n", ((std::string)lex->value.f).c_str());
+            printf("long double constant: %s\n", ((std::string)*lex->value.f).c_str());
             break;
         case l_astr:
             printf("ascii string: ");

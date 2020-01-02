@@ -97,7 +97,7 @@ void InsertLineData(int lineno, int fileindex, const char* fname, char* line)
     LINEDATA* ld;
     ld = (LINEDATA*)Alloc(sizeof(LINEDATA));
     ld->file = fname;
-    ld->line = litlate(line);
+    ld->line = litlate(" ");
     ld->lineno = lineno;
     ld->fileindex = fileindex;
     if (linesHead)

@@ -3028,11 +3028,11 @@ IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
         case en_c_ld:
             if (size >= ISZ_FLOAT)
             {
-                ap1 = make_fimmed(size, node->v.f);
+                ap1 = make_fimmed(size, *node->v.f);
             }
             else
             {
-                long long a = (long long)node->v.f;
+                long long a = (long long)*node->v.f;
                 ap1 = make_immed(size, a);
             }
             ap1->offset->type = se_f;
@@ -3049,11 +3049,11 @@ IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
         case en_c_ldi:
             if (size >= ISZ_FLOAT)
             {
-                ap1 = make_fimmed(size, node->v.f);
+                ap1 = make_fimmed(size, *node->v.f);
             }
             else
             {
-                long long a = (long long)node->v.f;
+                long long a = (long long)*node->v.f;
                 ap1 = make_immed(size, a);
             }
             ap1->offset->type = se_fi;

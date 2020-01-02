@@ -308,7 +308,7 @@ static int dumpBits(INITIALIZER** init)
         }
         else if (iscomplexconst((*init)->exp))
         {
-            i = (long long)((*init)->exp->v.c.r);
+            i = (long long)((*init)->exp->v.c->r);
         }
         else
             diag("dump-bits: non-constant");
@@ -777,7 +777,7 @@ int dumpInit(SYMBOL* sym, INITIALIZER* init)
     }
     if (isfloatconst(init->exp))
     {
-        f = init->exp->v.f;
+        f = *init->exp->v.f;
         i = (long long)f;
         im.SetZero(0);
     }
@@ -791,12 +791,12 @@ int dumpInit(SYMBOL* sym, INITIALIZER* init)
     {
         i = 0;
         f.SetZero(0);
-        im = init->exp->v.f;
+        im = *init->exp->v.f;
     }
     else if (iscomplexconst(init->exp))
     {
-        f = init->exp->v.c.r;
-        im = init->exp->v.c.i;
+        f = init->exp->v.c->r;
+        im = init->exp->v.c->i;
         i = (long long)(f);
     }
     else

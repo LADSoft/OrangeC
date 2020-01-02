@@ -197,8 +197,8 @@ SimpleExpression* SymbolManager::Get(struct expr* e)
     case en_c_dc:
     case en_c_ldc:
         rv->type = se_fc;
-        rv->c.r = e->v.c.r;
-        rv->c.i = e->v.c.i;
+        rv->c.r = e->v.c->r;
+        rv->c.i = e->v.c->i;
         break;
     case en_c_string:
         rv->type = se_string;

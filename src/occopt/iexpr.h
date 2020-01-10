@@ -144,7 +144,6 @@ struct SimpleSymbol
             unsigned isstructured : 1;
             unsigned anonymous : 1;             /* if it is a generated variable */
             unsigned allocate : 1;              /* variable is used, allocate space for it */
-            unsigned genreffed : 1;
             unsigned thisPtr : 1;
             unsigned stackblock : 1;
             unsigned inasm : 1;
@@ -166,6 +165,7 @@ struct SimpleSymbol
             unsigned canThrow : 1;
             unsigned usesEsp : 1;
             unsigned addressTaken : 1;
+            unsigned genreffed : 1;
         };
         unsigned long long flags;
     };
@@ -251,6 +251,7 @@ struct SimpleExpression
 struct SymbolManager
 {
     static SimpleSymbol* Get(struct sym *sym);
+    static SimpleSymbol* Test(struct sym* sym);
     static SimpleExpression* Get(struct expr* e);
     static e_scc_type Get(enum e_sc storage_class);
     static SimpleType* Get(struct typ *tp);
@@ -323,10 +324,6 @@ inline bool isconstaddress(SimpleExpression* exp)
     default:
         return false;
     }
-}
-inline void GENREF(SimpleSymbol* sym)
-{
-    sym->genreffed = true;
 }
 
 struct ArgList

@@ -6789,7 +6789,6 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, TEMPLATEPARAMLIST* args, b
             argument_nesting = oldArgumentNesting;
             expandingParams = oldExpandingParams;
             funcLevel = oldFuncLevel;
-            GENREF(cls);
             templateHeaderCount = oldHeaderCount;
             while (pushCount--)
                 dropStructureDeclaration();
@@ -6848,7 +6847,6 @@ void TemplateDataInstantiate(SYMBOL* sym, bool warning, bool isExtern)
     if (!sym->gentemplate)
     {
         InsertInlineData(sym);
-        InsertExtern(sym);
         sym->gentemplate = true;
     }
     else if (warning)
@@ -6989,16 +6987,11 @@ SYMBOL* TemplateFunctionInstantiate(SYMBOL* sym, bool warning, bool isExtern)
             instantiatingTemplate--;
             instantiatingFunction--;
             expandingParams = oldExpandingParams;
-            if (warning)
-            {
-                GENREF(sym);
-            }
         }
         else
         {
             if (!ismember(sym))
                 sym->storage_class = sc_external;
-            InsertExtern(sym);
             InsertInline(sym);
         }
     }
@@ -9268,7 +9261,7 @@ static void referenceInstanceMembers(SYMBOL* cls)
                             deferredCompileOne(sym);
                         }
                         InsertInline(sym);
-                        GENREF(sym);
+                        SymbolManager::Get(sym)->genreffed = true;
                     }
                     hr2 = hr2->next;
                 }
@@ -9277,7 +9270,7 @@ static void referenceInstanceMembers(SYMBOL* cls)
             {
                 if (cls->templateLevel || sym->templateLevel)
                     InsertInlineData(sym);
-                GENREF(sym);
+                SymbolManager::Get(sym)->genreffed = true;
             }
             hr = hr->next;
         }
@@ -9579,6 +9572,93 @@ static void MarkDllLinkage(SYMBOL* sp, enum e_lk linkage)
         }
     }
 }
+static void DoInstantiate(SYMBOL* strSym, SYMBOL* sym, TYPE* tp, NAMESPACEVALUELIST* nsv, bool isExtern)
+{
+    STRUCTSYM s;
+    if (strSym)
+    {
+        s.str = strSym;
+        addStructureDeclaration(&s);
+    }
+    if (isfunction(tp))
+    {
+        SYMBOL* sp = sym;
+        TEMPLATEPARAMLIST* templateParams = TemplateGetParams(sym->parentClass);
+        DoInstantiateTemplateFunction(tp, &sp, nsv, strSym, templateParams, isExtern);
+        sym = sp;
+        sym->parentClass = strSym;
+        SetLinkerNames(sym, lk_cdecl);
+        if (!comparetypes(basetype(sp->tp)->btp, basetype(tp)->btp, true))
+        {
+            errorsym(ERR_TYPE_MISMATCH_IN_REDECLARATION, sp);
+        }
+        SymbolManager::Get(sp)->genreffed = true;
+        if (isExtern)
+        {
+            sp->dontinstantiate = true;
+        }
+        else
+        {
+            sp->dontinstantiate = false;
+            InsertInline(sp);
+        }
+    }
+    else
+    {
+        SYMBOL *spi = nullptr, *ssp;
+        SYMLIST** p = nullptr;
+        if (nsv)
+        {
+            LIST* rvl = tablesearchone(sym->name, nsv, false);
+            if (rvl)
+                spi = (SYMBOL*)rvl->data;
+            else
+                errorNotMember(strSym, nsv, sym->name);
+        }
+        else
+        {
+            ssp = getStructureDeclaration();
+            if (ssp)
+                p = LookupName(sym->name, ssp->tp->syms);
+            else
+                p = LookupName(sym->name, globalNameSpace->valueData->syms);
+            if (p)
+            {
+                spi = (SYMBOL*)(*p)->p;
+            }
+        }
+        if (spi)
+        {
+            SYMBOL* tmpl = spi;
+            while (tmpl)
+                if (tmpl->templateLevel)
+                    break;
+                else
+                    tmpl = tmpl->parentClass;
+            if ((tmpl && spi->storage_class == sc_static) || spi->storage_class == sc_external)
+            {
+                TemplateDataInstantiate(spi, true, isExtern);
+                spi->dontinstantiate = isExtern;
+                SymbolManager::Get(spi)->genreffed = true;
+                if (!comparetypes(sym->tp, spi->tp, true))
+                    preverrorsym(ERR_TYPE_MISMATCH_IN_REDECLARATION, spi, sym->declfile, sym->declline);
+            }
+            else
+            {
+                errorsym(ERR_NOT_A_TEMPLATE, sym);
+            }
+        }
+        else
+        {
+            errorsym(ERR_NOT_A_TEMPLATE, sym);
+        }
+    }
+    if (strSym)
+    {
+        dropStructureDeclaration();
+    }
+
+}
 LEXEME* TemplateDeclaration(LEXEME* lex, SYMBOL* funcsp, enum e_ac access, enum e_sc storage_class, bool isExtern)
 {
     HASHTABLE* oldSyms = localNameSpace->valueData->syms;
@@ -9638,17 +9718,33 @@ LEXEME* TemplateDeclaration(LEXEME* lex, SYMBOL* funcsp, enum e_ac access, enum 
                 {
                     error(ERR_TEMPLATES_MUST_BE_CLASSES_OR_FUNCTIONS);
                 }
-                /*
-                else if (tp != (TYPE *)-1)
-                    if (!isfunction(tp) && !isstructured(tp) )
+                if (l.sp)
+                {
+                    if (l.sp && isfunction(l.sp->tp) && l.sp->parentClass && !l.sp->deferredCompile)
                     {
-                        if (!l.sp || !l.sp->parentClass || ismember(l.sp))
+                        SYMBOL *srch = l.sp->parentClass;
+                        while (srch)
                         {
-                            if (l.sp && (isarray(l.sp->tp)|| isfunction(l.sp->tp) || isstructured(l.sp->tp)))
-                                error(ERR_TEMPLATES_MUST_BE_CLASSES_OR_FUNCTIONS);
+                            if (srch->deferredCompile)
+                                break;
+                            srch = srch->parentClass;
+                        }
+                        if (srch)
+                        {
+                            TEMPLATEPARAMLIST **srch1 = currents->plast;
+                            while (srch1 && srch1 != currents->ptail)
+                            {
+                                if ((*srch1)->next != nullptr)
+                                    break;
+                                srch1 = &(*srch1)->p->bySpecialization.next;
+                            }
+                            if (srch1 == currents->ptail)
+                            {
+                                DoInstantiate(l.sp->parentClass, l.sp, l.sp->tp, l.sp->nameSpaceValues, false);
+                            }
                         }
                     }
-                */
+                }
                 FlushLineData("", INT_MAX);
             }
         }
@@ -9730,7 +9826,6 @@ LEXEME* TemplateDeclaration(LEXEME* lex, SYMBOL* funcsp, enum e_ac access, enum 
             bool notype = false;
             NAMESPACEVALUELIST* nsv = nullptr;
             SYMBOL* strSym = nullptr;
-            STRUCTSYM s;
             int consdest = 0;
             lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3, nullptr);
             lex = getBasicType(lex, funcsp, &tp, &strSym, true, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3,
@@ -9739,11 +9834,6 @@ LEXEME* TemplateDeclaration(LEXEME* lex, SYMBOL* funcsp, enum e_ac access, enum 
             lex = getBeforeType(lex, funcsp, &tp, &sym, &strSym, &nsv, true, sc_cast, &linkage, &linkage2, &linkage3, false,
                                 consdest, false, false);
             sizeQualifiers(tp);
-            if (strSym)
-            {
-                s.str = strSym;
-                addStructureDeclaration(&s);
-            }
             if (!sym)
             {
                 error(ERR_IDENTIFIER_EXPECTED);
@@ -9752,86 +9842,11 @@ LEXEME* TemplateDeclaration(LEXEME* lex, SYMBOL* funcsp, enum e_ac access, enum 
             {
                 error(ERR_TYPE_NAME_EXPECTED);
             }
-            else if (isfunction(tp))
-            {
-                SYMBOL* sp = sym;
-                TEMPLATEPARAMLIST* templateParams = TemplateGetParams(sym->parentClass);
-                DoInstantiateTemplateFunction(tp, &sp, nsv, strSym, templateParams, isExtern);
-                sym = sp;
-                sym->parentClass = strSym;
-                SetLinkerNames(sym, lk_cdecl);
-                if (sym->attribs.inheritable.linkage2 == lk_none)
-                    sym->attribs.inheritable.linkage2 = linkage2;
-                if (!comparetypes(basetype(sp->tp)->btp, basetype(tp)->btp, true))
-                {
-                    errorsym(ERR_TYPE_MISMATCH_IN_REDECLARATION, sp);
-                }
-                if (isExtern)
-                {
-                    sp->dontinstantiate = true;
-                    InsertExtern(sp);
-                }
-                else
-                {
-                    sp->dontinstantiate = false;
-                    GENREF(sp);
-                    InsertInline(sp);
-                }
-            }
             else
             {
-                SYMBOL *spi = nullptr, *ssp;
-                SYMLIST** p = nullptr;
-                if (nsv)
-                {
-                    LIST* rvl = tablesearchone(sym->name, nsv, false);
-                    if (rvl)
-                        spi = (SYMBOL*)rvl->data;
-                    else
-                        errorNotMember(strSym, nsv, sym->name);
-                }
-                else
-                {
-                    ssp = getStructureDeclaration();
-                    if (ssp)
-                        p = LookupName(sym->name, ssp->tp->syms);
-                    else
-                        p = LookupName(sym->name, globalNameSpace->valueData->syms);
-                    if (p)
-                    {
-                        spi = (SYMBOL*)(*p)->p;
-                    }
-                }
-                if (spi)
-                {
-                    SYMBOL* tmpl = spi;
-                    while (tmpl)
-                        if (tmpl->templateLevel)
-                            break;
-                        else
-                            tmpl = tmpl->parentClass;
-                    if ((tmpl && spi->storage_class == sc_static) || spi->storage_class == sc_external)
-                    {
-                        TemplateDataInstantiate(spi, true, isExtern);
-                        spi->dontinstantiate = isExtern;
-                        if (isExtern)
-                            InsertExtern(spi);
-                        if (!comparetypes(sym->tp, spi->tp, true))
-                            preverrorsym(ERR_TYPE_MISMATCH_IN_REDECLARATION, spi, sym->declfile, sym->declline);
-                    }
-                    else
-                    {
-                        errorsym(ERR_NOT_A_TEMPLATE, sym);
-                    }
-                }
-                else
-                {
-                    errorsym(ERR_NOT_A_TEMPLATE, sym);
-                }
-            }
-            if (strSym)
-            {
-                dropStructureDeclaration();
+                if (sym->attribs.inheritable.linkage2 == lk_none)
+                    sym->attribs.inheritable.linkage2 = linkage2;
+                DoInstantiate(strSym, sym, tp, nsv, isExtern);
             }
         }
     }

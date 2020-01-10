@@ -157,14 +157,14 @@ unsigned long long reint(EXPRESSION* node)
         rv = CastToInt(-ISZ_ULONGLONG, node->v.i);
         break;
     case en_c_f:
-        rv = CastToInt(-ISZ_ULONGLONG, (long long)node->v.f);
+        rv = CastToInt(-ISZ_ULONGLONG, (long long)*node->v.f);
         break;
     case en_c_d:
-        rv = CastToInt(-ISZ_ULONGLONG, (long long)node->v.f);
+        rv = CastToInt(-ISZ_ULONGLONG, (long long)*node->v.f);
         break;
 
     case en_c_ld:
-        rv = CastToInt(-ISZ_ULONGLONG, (long long)node->v.f);
+        rv = CastToInt(-ISZ_ULONGLONG, (long long)*node->v.f);
         break;
     case en_c_fc:
         rv = CastToInt(-ISZ_ULONGLONG, (long long)node->v.c->r);

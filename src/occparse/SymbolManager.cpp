@@ -86,6 +86,16 @@ SimpleSymbol* SymbolManager::Get(struct sym *sym)
     return nullptr;
 }
 
+
+SimpleSymbol* SymbolManager::Test(struct sym* sym)
+{
+    if (sym)
+    {
+        return Lookup(sym);
+    }
+    return nullptr;
+}
+
 SimpleExpression* SymbolManager::Get(struct expr* e)
 {
     while (e && (e->type == en_lvalue || e->type == en_not_lvalue || e->type == en_x_string || e->type == en_x_object))
@@ -277,8 +287,10 @@ SimpleType* SymbolManager::Get(struct typ *tp)
         rv->va_list = tp->type == bt_va_list;
         if (rv->sp)
         {
-            if (rv->sp->storage_class == scc_type || rv->sp->storage_class == scc_parameter || rv->sp->storage_class == scc_cast)
+            if (rv->sp->storage_class == scc_type || rv->sp->storage_class == scc_parameter || (rv->sp->storage_class == scc_cast && rv->sp->tp))
+            {
                 typeSymbols.push_back(rv->sp);
+            }
             else if (rv->sp->storage_class == scc_typedef)
                 typedefs.push_back(rv->sp);
         }
@@ -370,7 +382,7 @@ SimpleSymbol* SymbolManager::Make(struct sym* sym)
         *p = (BaseList*)Alloc(sizeof(BaseList));
         (*p)->offset = src->offset;
         (*p)->sym = Get(src->cls);
-        if ((*p)->sym->tp->type == st_i)
+        if ((*p)->sym->tp && (*p)->sym->tp->type == st_i)
             typeSymbols.push_back((*p)->sym);
         src = src->next;
         p = &(*p)->next;
@@ -572,11 +584,13 @@ unsigned long long SymbolManager::Key(struct sym* old)
         if (old->parent)
         {
             strcat(buf, old->parent->decoratedName);
-            sprintf(buf + strlen(buf), "%d", old->uniqueID);
+            my_sprintf(buf + strlen(buf), "%d", old->uniqueID);
         }
         strcat(buf, old->decoratedName ? old->decoratedName : old->name);
         if (old->storage_class == sc_type)
             strcat(buf, "#");
+        if (old->attribs.inheritable.linkage == lk_stdcall)
+            strcat(buf, "$");
         std::hash<std::string> hasher;
         std::string aa(buf);
         size_t key = hasher(aa);

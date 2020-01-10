@@ -1904,7 +1904,7 @@ int opt0(EXPRESSION** node)
 
                     break;
                 case 4:
-                    *node = intNode(en_c_i, (ep->left->v.f == ep->right->v.f));
+                    *node = intNode(en_c_i, (*ep->left->v.f == *ep->right->v.f));
                     rv = true;
                     break;
                 default:
@@ -1922,7 +1922,7 @@ int opt0(EXPRESSION** node)
                     rv = true;
                     break;
                 case 4:
-                    *node = intNode(en_c_i, (ep->left->v.f != ep->right->v.f));
+                    *node = intNode(en_c_i, (*ep->left->v.f != *ep->right->v.f));
                     rv = true;
                     break;
                 default:
@@ -1940,7 +1940,7 @@ int opt0(EXPRESSION** node)
                     rv = true;
                     break;
                 case 4:
-                    *node = intNode(en_c_i, (&ep->left->v.f < &ep->right->v.f));
+                    *node = intNode(en_c_i, (*ep->left->v.f < *ep->right->v.f));
                     rv = true;
                     break;
                 default:
@@ -1958,7 +1958,7 @@ int opt0(EXPRESSION** node)
                     rv = true;
                     break;
                 case 4:
-                    *node = intNode(en_c_i, (&ep->left->v.f <= &ep->right->v.f));
+                    *node = intNode(en_c_i, (*ep->left->v.f <= *ep->right->v.f));
                     rv = true;
                     break;
                 default:
@@ -2032,7 +2032,7 @@ int opt0(EXPRESSION** node)
                     rv = true;
                     break;
                 case 4:
-                    *node = intNode(en_c_i, (&ep->left->v.f > &ep->right->v.f));
+                    *node = intNode(en_c_i, (*ep->left->v.f > *ep->right->v.f));
                     rv = true;
                     break;
                 default:
@@ -2050,7 +2050,7 @@ int opt0(EXPRESSION** node)
                     rv = true;
                     break;
                 case 4:
-                    *node = intNode(en_c_i, (&ep->left->v.f > &ep->right->v.f));
+                    *node = intNode(en_c_i, (*ep->left->v.f > *ep->right->v.f));
                     rv = true;
                     break;
                 default:

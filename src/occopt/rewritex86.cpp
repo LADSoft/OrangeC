@@ -47,7 +47,6 @@ static IMODE* rwSetSymbol(const char* name, bool unused)
         sym = (SimpleSymbol*)Alloc(sizeof(SimpleSymbol));
         sym->storage_class = scc_external;
         sym->name = sym->outputName = litlate(name);
-        GENREF(sym);
         sym->tp = (SimpleType*)Alloc(sizeof(SimpleType));
         sym->tp->type = st_func;
 //        SymbolManager::Add(name, sym);

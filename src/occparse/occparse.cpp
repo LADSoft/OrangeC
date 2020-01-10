@@ -183,29 +183,6 @@ int usingEsp;
 int natural_size(EXPRESSION* exp) { return ISZ_UINT; }
 #endif
 
-void LoadFuncs(void)
-{
-    if (!cparams.managed_library)
-    {
-        SYMBOL* sp;
-        sp = gsearch("exit");
-        if (sp)
-            GENREF((SYMBOL*)sp->tp->syms->table[0]->p);
-        sp = gsearch("__getmainargs");
-        if (sp)
-            GENREF((SYMBOL*)sp->tp->syms->table[0]->p);
-        sp = gsearch("__pctype_func");
-        if (sp)
-            GENREF((SYMBOL*)sp->tp->syms->table[0]->p);
-        sp = gsearch("__iob_func");
-        if (sp)
-            GENREF((SYMBOL*)sp->tp->syms->table[0]->p);
-        sp = gsearch("_errno");
-        if (sp)
-            GENREF((SYMBOL*)sp->tp->syms->table[0]->p);
-    }
-}
-
 static void debug_dumptypedefs(NAMESPACEVALUELIST* nameSpace)
 {
     int i;
@@ -279,16 +256,10 @@ void compile(bool global)
     {
         nextLabel = 1;
     }
-#ifndef ISPARSER
 #ifndef PARSER_ONLY
-    SSAInit();
-    outcodeini();
-    conflictini();
     iexpr_init();
     iinlineInit();
-    flow_init();
     genstmtini();
-#endif
 #endif
     ParseBuiltins();
 //    intrinsicInit();

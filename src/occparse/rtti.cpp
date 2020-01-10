@@ -263,7 +263,7 @@ static void RTTIDumpHeader(SYMBOL* xtSym, TYPE* tp, int flags)
             {
                 sym = (SYMBOL*)basetype(sym->tp)->syms->table[0]->p;
             }
-            GENREF(sym);
+            SymbolManager::Get(sym);
             if (sym->attribs.inheritable.linkage2 == lk_import)
             {
                 EXPRESSION *exp = varNode(en_pc, sym);
@@ -277,7 +277,6 @@ static void RTTIDumpHeader(SYMBOL* xtSym, TYPE* tp, int flags)
     gen_virtual(SymbolManager::Get(xtSym), false);
     if (sym)
     {
-        SymbolManager::Get(sym)->genreffed = true;
         genref(SymbolManager::Get(sym), 0);
     }
     else
@@ -442,8 +441,7 @@ SYMBOL* RTTIDumpType(TYPE* tp)
             if (isstructured(tp) && basetype(tp)->sp->dontinstantiate && basetype(tp)->sp->attribs.inheritable.linkage2 != lk_import)
             {
                 xtSym->dontinstantiate = true;
-                InsertExtern(xtSym);
-                GENREF(xtSym);
+                SymbolManager::Get(xtSym);
             }
             else
             {

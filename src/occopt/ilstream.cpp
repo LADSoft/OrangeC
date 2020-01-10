@@ -237,8 +237,8 @@ static void StreamType(SimpleType* type)
             StreamIndex(type->startbit);
             if (type->sp && type->type != st_any)
             {
-//                if (type->sp->fileIndex == 0)
-//                    printf("hi");
+                if (type->sp->fileIndex == 0)
+                    printf("hi");
                 if (type->sp->storage_class == scc_auto || type->sp->storage_class == scc_register)
                 {
                     StreamIndex(type->sp->fileIndex | 0x20000000);
@@ -324,8 +324,8 @@ static void StreamExpression(SimpleExpression* exp)
             case se_threadlocal:
             case se_pc:
             case se_structelem:
-//                if (exp->sp->fileIndex == 0)
-//                    printf("hi");
+                if (exp->sp->fileIndex == 0)
+                    printf("hi");
                 StreamIndex(exp->sp->fileIndex);
                 break;
             case se_labcon:
@@ -531,8 +531,8 @@ static void StreamInstruction(QUAD *q)
                 StreamIndex(0);
             if (q->altsp)
             {
-//                if (q->altsp->fileIndex == 0)
-//                    printf("hi");
+                if (q->altsp->fileIndex == 0)
+                    printf("hi");
                 if (q->altsp->storage_class == scc_auto || (q->altsp->storage_class == scc_parameter && q->altsp->fileIndex != q->altsp->typeIndex) ||q->altsp->storage_class == scc_register)
                     StreamIndex(q->altsp->fileIndex | 0x20000000);
                 else if ((q->altsp->storage_class == scc_member && q->altsp->tp->type != st_func) || 
@@ -882,6 +882,8 @@ static void StreamData()
                     StreamIndex(data->symbol.sym->fileIndex);
                     break;
                 case DT_FUNCREF:
+                    if (data->symbol.sym->fileIndex == 0xc5c9)
+                        printf("hi");
                     StreamIndex(data->symbol.sym->fileIndex);
                     StreamIndex(data->symbol.i);
                     break;

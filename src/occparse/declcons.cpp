@@ -247,7 +247,6 @@ void SetParams(SYMBOL* cons)
         params = params->next;
     }
     cons->paramsize = base - chosenAssembler->arch->retblocksize;
-    refreshBackendParams(cons);
 }
 SYMBOL* insertFunc(SYMBOL* sp, SYMBOL* ovl)
 {
@@ -2809,7 +2808,6 @@ static void createDestructor(SYMBOL* sp)
     dest->isInline = dest->attribs.inheritable.linkage2 != lk_export;
     //    dest->inlineFunc.stmt->blockTail = b.tail;
     InsertInline(dest);
-    InsertExtern(dest);
     localNameSpace->valueData->syms = syms;
 }
 void makeArrayConsDest(TYPE** tp, EXPRESSION** exp, SYMBOL* cons, SYMBOL* dest, EXPRESSION* count)
@@ -2857,10 +2855,6 @@ void makeArrayConsDest(TYPE** tp, EXPRESSION** exp, SYMBOL* cons, SYMBOL* dest, 
         params->ascall = true;
         *exp = varNode(en_func, nullptr);
         (*exp)->v.func = params;
-        // asn1->genreffed = true;
-        // if (cons)
-        // cons->genreffed = true;
-        // dest->genreffed = true;
     }
 }
 void callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* arrayElms, bool top, bool pointer, bool skipAccess)
@@ -2914,7 +2908,6 @@ void callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* a
         if (arrayElms)
         {
             makeArrayConsDest(&stp, exp, nullptr, dest1, arrayElms);
-            // dest1->genreffed = true;
         }
         else
         {

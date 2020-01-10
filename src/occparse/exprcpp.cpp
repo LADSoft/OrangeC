@@ -348,7 +348,6 @@ bool castToArithmeticInternal(bool integer, TYPE** tp, EXPRESSION** exp, enum e_
                     e1->v.func = params;
                     if (params->sp->xcMode != xc_unspecified && params->sp->xcMode != xc_none)
                         hasFuncCall = true;
-                    GENREF(cst);
                 }
                 *exp = e1;
                 if (other)
@@ -440,7 +439,6 @@ bool castToPointer(TYPE** tp, EXPRESSION** exp, enum e_kw kw, TYPE* other)
                 e1->v.func = params;
                 if (params->sp->xcMode != xc_unspecified && params->sp->xcMode != xc_none)
                     hasFuncCall = true;
-                GENREF(cst);
                 *exp = e1;
                 if (ispointer(other))
                 {
@@ -500,7 +498,6 @@ bool cppCast(TYPE* src, TYPE** tp, EXPRESSION** exp)
                 e1->v.func = params;
                 if (params->sp->xcMode != xc_unspecified && params->sp->xcMode != xc_none)
                     hasFuncCall = true;
-                GENREF(cst);
                 *exp = e1;
                 *exp = DerivedToBase(*tp, basetype(cst->tp)->btp, *exp, 0);
                 return true;

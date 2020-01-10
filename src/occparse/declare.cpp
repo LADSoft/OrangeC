@@ -111,27 +111,9 @@ void declare_init(void)
     symbolKey = 0;
 }
 
-void GENREF(SYMBOL* sym)
-{
-    if (!sym->templateLevel || sym->instantiated)
-        SymbolManager::Get(sym)->genreffed = true;
-}
-
 void InsertGlobal(SYMBOL* sp)
 {
     globalCache.push_back(SymbolManager::Get(sp));
-}
-void InsertExtern(SYMBOL* sp)
-{
-    switch (sp->tp->type)
-    {
-    case bt_templateparam:
-    case bt_templateselector:
-    case bt_templatedecltype:
-    case bt_aggregate:
-        return;
-    }
-    externals.push_back(SymbolManager::Get(sp));
 }
 void WeedExterns()
 {
@@ -139,14 +121,13 @@ void WeedExterns()
     {
         SimpleSymbol* sym = *it;
         if (!sym->ispure &&
-            ((sym->dontinstantiate && sym->genreffed) ||
-            (!sym->hasInlineFunc && !sym->initialized &&
+            (sym->dontinstantiate && sym->genreffed ||
+            (!sym->initialized &&
                 (sym->tp->type == st_func || (sym->tp->type != st_func && sym->storage_class != scc_global &&
                     sym->storage_class != scc_static && sym->storage_class != scc_localstatic)) &&
-                    ((sym->parentClass && sym->genreffed) || (sym->genreffed && sym->storage_class == scc_external)))) &&
+                    (sym->genreffed && (sym->parentClass || sym->storage_class == scc_external)))) &&
             !sym->noextern)
         {
-            //sym->genreffed = false;
             ++it;   
         }
         else
@@ -1003,7 +984,6 @@ static LEXEME* structbody(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_ac cur
             else if (sp->vtabsp->attribs.inheritable.linkage2 == lk_export)
             {
                 SetLinkerNames(sp->vtabsp, lk_cdecl);
-                GENREF(sp->vtabsp);
             }
             InsertInline(sp);
             sp->vtabsp->attribs.inheritable.linkage = lk_virtual;
@@ -4990,12 +4970,10 @@ static EXPRESSION* llallocateVLA(SYMBOL* sp, EXPRESSION* ep1, EXPRESSION* ep2)
         if (al)
         {
             al = (SYMBOL*)al->tp->syms->table[0]->p;
-            GENREF(al);
         }
         if (fr)
         {
             fr = (SYMBOL*)fr->tp->syms->table[0]->p;
-            GENREF(fr);
         }
         if (al && fr)
         {
@@ -5750,7 +5728,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                             sp->tp = tp1;
                         if (!sp->instantiated)
                             sp->attribs.inheritable.linkage = linkage;
-                        if (ssp && ssp->attribs.inheritable.linkage2 != lk_none)
+                        if (ssp && ssp->attribs.inheritable.linkage2 != lk_none && sp->storage_class != sc_localstatic)
                         {
                             if (linkage2 != lk_none && !asFriend)
                                 errorsym(ERR_DECLSPEC_MEMBER_OF_DECLSPEC_CLASS_NOT_ALLOWED, sp);
@@ -6156,7 +6134,6 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                                             else if (spi->isInline && basetype(spi->tp)->type == bt_ifunc)
                                             {
                                                 spi->storage_class = sc_global;
-                                                GENREF(spi);
                                             }
                                         }
                                         break;
@@ -6308,8 +6285,6 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                                         (asFriend && !MATCHKW(lex, begin) && !MATCHKW(lex, colon)))
                                     {
                                         InsertSymbol(sp, sc_external, linkage, false);
-                                        if (!sp->templateLevel || asFriend)
-                                            InsertExtern(sp);
                                         if (sp->templateLevel)
                                         {
                                             InsertInline(sp);
@@ -6324,8 +6299,6 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                                             if (getStructureDeclaration() || asFriend)
                                             {
                                                 SYMBOL* parent = getStructureDeclaration();
-                                                if (!sp->templateLevel || asFriend)
-                                                    InsertExtern(sp);
 
                                                 while (parent)
                                                 {
@@ -6533,7 +6506,6 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                                 }
                                 if (storage_class_in != sc_member && TemplateFullySpecialized(sp->parentClass))
                                 {
-                                    GENREF(sp);
                                     sp->attribs.inheritable.linkage = lk_virtual;
                                     lex = body(lex, sp);
                                 }
@@ -6553,7 +6525,6 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                                             sp->tp = SynthesizeType(sp->tp, sp->parentClass->templateParams, false);
                                             sp = TemplateFunctionInstantiate(sp, false, false);
                                             sp->specialized2 = true;
-                                            GENREF(sp);
                                         }
                                     }
                                 }

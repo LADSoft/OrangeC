@@ -139,7 +139,6 @@ void thunkForImportTable(EXPRESSION** exp)
             search->data = newThunk;
             importThunks = search;
             *exp = varNode(en_pc, (SYMBOL*)search->data);
-            GENREF(sym);
         }
     }
 }
@@ -758,8 +757,6 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
 
                     case sc_localstatic:
                         tagNonConst(funcsp, sym->tp);
-                        if (!(flags & _F_SIZEOF))
-                            GENREF(sym);
                         if (funcsp && funcsp->isInline)
                         {
                             if (funcsp->promotedToInline || cparams.prm_cplusplus)
@@ -801,8 +798,6 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                                 TemplateDataInstantiate(sym, false, false);
                             }
                         }
-                        if (!(flags & _F_SIZEOF))
-                            GENREF(sym);
                         if (sym->parentClass && !isExpressionAccessible(nullptr, sym, funcsp, nullptr, false))
                             errorsym(ERR_CANNOT_ACCESS, sym);
                         if (sym->attribs.inheritable.linkage3 == lk_threadlocal)
@@ -975,7 +970,6 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                 sym->tp->btp->type = bt_int;
                 sym->tp->btp->size = getSize(bt_int);
                 SetLinkerNames(sym, lk_c);
-                InsertExtern(sym);
                 *tp = sym->tp;
             }
             SetLinkerNames(sym, lk_c);
@@ -6886,8 +6880,6 @@ static LEXEME* expression_inequality(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYP
                         (*exp) = varNode(en_pc, (*tp)->syms->table[0]->p);
                         (*tp) = ((SYMBOL*)(*tp)->syms->table[0]->p)->tp;
                     }
-                    if (funcsp)
-                        GENREF(funcsp);
                 }
                 if ((*exp)->type == en_pc || ((*exp)->type == en_func && !(*exp)->v.func->ascall))
                     thunkForImportTable(exp);
@@ -7013,8 +7005,6 @@ static LEXEME* expression_equality(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE*
                     (*exp) = varNode(en_pc, (*tp)->syms->table[0]->p);
                     (*tp) = ((SYMBOL*)(*tp)->syms->table[0]->p)->tp;
                 }
-                if (funcsp)
-                    GENREF(funcsp);
             }
             if ((*exp)->type == en_pc || ((*exp)->type == en_func && !(*exp)->v.func->ascall))
                 thunkForImportTable(exp);
@@ -7476,7 +7466,6 @@ LEXEME* expression_throw(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** ex
                     else if (cons->deferredCompile)
                         deferredCompileOne(cons);
                 }
-                GENREF(cons);
             }
             sym = (SYMBOL*)basetype(sym->tp)->syms->table[0]->p;
             arg1->next = arg2;

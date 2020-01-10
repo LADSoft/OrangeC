@@ -97,7 +97,7 @@ void InsertLineData(int lineno, int fileindex, const char* fname, char* line)
     LINEDATA* ld;
     ld = (LINEDATA*)Alloc(sizeof(LINEDATA));
     ld->file = fname;
-    ld->line = litlate(" ");
+    ld->line = litlate(line);
     ld->lineno = lineno;
     ld->fileindex = fileindex;
     if (linesHead)
@@ -2466,13 +2466,9 @@ static LEXEME* asm_declare(LEXEME* lex)
                 switch (kw)
                 {
                     case kw_public:
-                        if (sym->storage_class != sc_global)
-                            InsertGlobal(sym);
                         sym->storage_class = sc_global;
                         break;
                     case kw_extern:
-                        if (sym->storage_class != sc_external)
-                            InsertExtern(sym);
                         sym->storage_class = sc_external;
                         break;
                     case kw_const:
@@ -3603,9 +3599,11 @@ LEXEME* body(LEXEME* lex, SYMBOL* funcsp)
     funcsp->declaring = true;
     labelSyms = CreateHashTable(1);
     assignParameterSizes(lex, funcsp, block);
-    refreshBackendParams(funcsp);
     funcsp->startLine = lex->line;
     lex = compound(lex, funcsp, block, true);
+    if (isstructured(basetype(funcsp->tp)->btp))    
+        assignParameterSizes(lex, funcsp, block);
+    refreshBackendParams(funcsp);
     checkUnlabeledReferences(block);
     checkGotoPastVLA(block->head, true);
     if (isautotype(basetype(funcsp->tp)->btp) && !templateNestingCount)
@@ -3661,7 +3659,7 @@ LEXEME* body(LEXEME* lex, SYMBOL* funcsp)
                 funcsp->attribs.inheritable.linkage2 = lk_none;
             InsertInline(funcsp);
             if (!cparams.prm_cplusplus && funcsp->storage_class != sc_static)
-                GENREF(funcsp);
+                SymbolManager::Get(funcsp);
         }
 #ifndef PARSER_ONLY
         else

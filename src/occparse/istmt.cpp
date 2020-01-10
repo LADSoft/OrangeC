@@ -65,6 +65,7 @@ extern TYPE stdint;
 extern SimpleSymbol* baseThisPtr;
 extern SYMBOL* theCurrentFunc;
 extern std::vector<SimpleSymbol*> functionVariables;
+extern std::vector<SimpleSymbol*> globalCache;
 
 IMODE* returnImode;
 int retcount;
@@ -143,12 +144,11 @@ IMODE* set_symbol(const char* name, int isproc)
         sym = (SYMBOL*)Alloc(sizeof(SYMBOL));
         sym->storage_class = sc_external;
         sym->name = sym->decoratedName = litlate(name);
-        GENREF(sym);
+        SymbolManager::Get(sym);
         sym->tp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
         sym->tp->type = isproc ? bt_func : bt_int;
         sym->safefunc = true;
         insert(sym, globalNameSpace->valueData->syms);
-        InsertExtern(sym);
     }
     else
     {

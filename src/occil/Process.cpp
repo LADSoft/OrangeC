@@ -1127,7 +1127,6 @@ void LoadParams(SimpleSymbol* funcsp, std::vector<SimpleSymbol*>& vars, std::map
 }
 void msil_flush_peep(SimpleSymbol* funcsp, QUAD* list)
 {
-    LoadFuncs();
     if (!(cparams.prm_compileonly && !cparams.prm_asmfile))
         try
         {

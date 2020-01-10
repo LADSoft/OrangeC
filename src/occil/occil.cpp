@@ -95,10 +95,6 @@ void Import()
 {
 
 }
-void LoadFuncs()
-{
-
-}
 void diag(const char*fmt, ...)
 {
 

@@ -441,10 +441,6 @@ static void callDynamic(const char *name, int startupType, int index, STATEMENT 
                 rundownseg();
             gensrref(SymbolManager::Get(funcsp), 32 + preProcessor->GetCppPrio(), startupType);
         }
-        else
-        {
-            InsertExtern(funcsp);
-        }
     }
 #endif
 }
@@ -695,7 +691,6 @@ int dumpMemberPtr(SYMBOL* sym, TYPE* membertp, bool make_label)
                 genint(exp->v.i);
                 genint(0);
             }
-            GENREF(genned);
             if (genned->deferredCompile && !genned->inlineFunc.stmt)
             {
                 deferredCompileOne(genned);
@@ -1391,8 +1386,6 @@ static LEXEME* initialize_arithmetic_type(LEXEME* lex, SYMBOL* funcsp, int offse
                     SYMBOL* sp2;
                     TYPE* tp1 = nullptr;
                     sp2 = MatchOverloadedFunction((*exp2)->v.func->sp->tp, &tp1, (*exp2)->v.func->sp, exp2, 0);
-                    if (sp2)
-                        GENREF(sp2);
                 }
                 if (cparams.prm_cplusplus && (isarithmetic(itype) || basetype(itype)->type == bt_enum) && isstructured(tp))
                 {
@@ -1488,32 +1481,6 @@ static LEXEME* initialize_string(LEXEME* lex, SYMBOL* funcsp, TYPE** rtype, EXPR
     }
     return lex;
 }
-static void refExp(EXPRESSION* exp)
-{
-    if (!exp)
-        return;
-    while (castvalue(exp))
-        exp = exp->left;
-    switch (exp->type)
-    {
-        case en_func:
-            refExp(exp->v.func->fcall);
-            break;
-        case en_add:
-        case en_arrayadd:
-        case en_structadd:
-            refExp(exp->left);
-            refExp(exp->right);
-            break;
-        case en_global:
-        case en_pc:
-        case en_threadlocal:
-            GENREF(exp->v.sp);
-            break;
-        default:
-            break;
-    }
-}
 static LEXEME* initialize_pointer_type(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_sc sc, TYPE* itype, INITIALIZER** init)
 {
     TYPE* tp = nullptr;
@@ -1577,7 +1544,6 @@ static LEXEME* initialize_pointer_type(LEXEME* lex, SYMBOL* funcsp, int offset, 
                 sp2 = MatchOverloadedFunction(itype, ispointer(itype) ? &tp : &tp1, (*exp2)->v.func->sp, exp2, 0);
                 if (sp2)
                 {
-                    GENREF(sp2);
                     if ((*exp2)->type == en_pc || ((*exp2)->type == en_func && !(*exp2)->v.func->ascall))
                         thunkForImportTable(exp2);
                 }
@@ -1642,7 +1608,6 @@ static LEXEME* initialize_pointer_type(LEXEME* lex, SYMBOL* funcsp, int offset, 
         }
     }
     initInsert(init, itype, exp, offset, false);
-    refExp(exp);
     if (needend)
     {
         if (!needkw(&lex, end))

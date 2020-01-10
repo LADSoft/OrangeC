@@ -1085,7 +1085,6 @@ static bool bltin_gosub(QUAD* q)
         if (!strcmp(sp->name, "__va_start__"))
         {
             SimpleExpression* en = GetSymRef(q->dc.left->offset);
-            en->sp->genreffed = false;
             Operand* op1 = peLib->AllocateOperand(GetParamData("__va_list__"));
             gen_code(Instruction::i_ldarg, op1);
             op1 = peLib->AllocateOperand(peLib->AllocateMethodName(argsCtor));
@@ -1095,7 +1094,6 @@ static bool bltin_gosub(QUAD* q)
         else if (!strcmp(sp->name, "__va_arg__"))
         {
             SimpleExpression* en = GetSymRef(q->dc.left->offset);
-            en->sp->genreffed = false;
             ArgList* args = q->altargs;
             SimpleType* tp = en->sp->tp;
             if (args->next)

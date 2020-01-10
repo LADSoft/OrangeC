@@ -1103,4 +1103,3 @@ typedef struct _atomicData
     TYPE* tp;
 } ATOMICDATA;
 
-void GENREF(SYMBOL* sym);

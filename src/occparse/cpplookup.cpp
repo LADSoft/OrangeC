@@ -2763,7 +2763,6 @@ static SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* ex
                     inGetUserConversion--;
                     if (flags & F_CONVERSION)
                     {
-                        GENREF(found1);
                         if (found1->templateLevel && !templateNestingCount && found1->templateParams)
                         {
                             found1 = TemplateFunctionInstantiate(found1, false, false);
@@ -4293,9 +4292,7 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                     {
                         argl->tp = func->tp;
                         argl->exp = varNode(en_pc, func);
-                        GENREF(func);
                         InsertInline(func);
-                        InsertExtern(func);
                     }
                 }
                 argl = argl->next;
@@ -4524,7 +4521,6 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                         *tp1 = (*tp1)->sp->tp;
                     }
                     CollapseReferences(basetype(found1->tp)->btp);
-                    GENREF(found1);
                     if (found1->templateLevel && !templateNestingCount && found1->templateParams)
                     {
                         found1 = TemplateFunctionInstantiate(found1, false, false);

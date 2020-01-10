@@ -63,6 +63,8 @@ extern std::map<IMODE*, IMODE*> loadHash;
 extern CASTTEMPHASH* castHash[DAGSIZE];
 extern SimpleExpression* objectArray_exp;
 extern std::vector<SimpleSymbol*> typedefs;
+extern std::vector<SimpleSymbol*> externals;
+extern std::set<SimpleSymbol *> externalSet;
 
 SimpleSymbol* baseThisPtr;
 
@@ -73,6 +75,7 @@ IMODE* structret_imode;
 
 SYMBOL* inlinesp_list[MAX_INLINE_NESTING];
 int inlinesp_count;
+
 
 static DAGLIST* name_value_hash[DAGSIZE];
 static LIST* incdecList;
@@ -95,6 +98,7 @@ void iexpr_init(void)
     push_nesting = 0;
     this_bound = 0;
     inline_level = 0;
+    externalSet.clear();
 }
 void iexpr_func_init(void)
 {
@@ -493,16 +497,20 @@ IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
                 ap1->mode = i_direct;
                 ap1->offset = SymbolManager::Get(node->left);
                 ap1->size = siz1;
-                // node->left->v.sp->genreffed = true;
                 break;
             case en_threadlocal:
                 sym = SymbolManager::Get(node->left->v.sp);
-                GENREF(sym);
                 ap1 = make_ioffset(node);
                 ap2 = LookupLoadTemp(ap1, ap1);
                 if (ap1 != ap2)
                     gen_icode(i_assn, ap2, ap1, nullptr);
                 ap1 = indnode(ap2, siz1);
+                sym->genreffed = true;
+                if (externalSet.find(sym) == externalSet.end())
+                {
+                    externals.push_back(sym);
+                    externalSet.insert(sym);
+                }
                 break;
             case en_auto:
                 sym = SymbolManager::Get(node->left->v.sp);
@@ -539,12 +547,19 @@ IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
                 // fall through
             case en_global:
             case en_pc:
-                if (nt == en_global || nt == en_pc)
-                    sym = SymbolManager::Get(node->left->v.sp);
-                if (!sym->stackblock)
-                //    			if (!isstructured(sym->tp))
+            case en_absolute:
+                if (nt == en_global || nt == en_pc || nt == en_absolute)
                 {
-                    GENREF(sym);
+                    sym = SymbolManager::Get(node->left->v.sp);
+                    sym->genreffed = true;
+                    if (externalSet.find(sym) == externalSet.end())
+                    {
+                        externals.push_back(sym);
+                        externalSet.insert(sym);
+                    }
+                }
+                if (!sym->stackblock)
+                {
                     ap1 = make_ioffset(node);
                     if (!store)
                     {
@@ -2900,6 +2915,13 @@ IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
             if (ap1 != ap2)
                 gen_icode(i_assn, ap2, ap1, nullptr);
             rv = ap2;
+            sym = ap1->offset->sp;
+            sym->genreffed = true;
+            if (externalSet.find(sym) == externalSet.end())
+            {
+                externals.push_back(sym);
+                externalSet.insert(sym);
+            }
             break;
         case en_auto:
             if (node->v.sp->stackblock)
@@ -2918,7 +2940,15 @@ IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
         case en_global:
         case en_absolute:
             sym = SymbolManager::Get(node->v.sp);
-            GENREF(sym);
+            sym->genreffed = true;
+            if (node->type == en_pc || node->type == en_global || node->type == en_absolute)
+            {
+                if (externalSet.find(sym) == externalSet.end())
+                {
+                    externals.push_back(sym);
+                    externalSet.insert(sym);
+                }
+            }
             if (sym->imaddress && (architecture != ARCHITECTURE_MSIL))
             {
                 ap1 = sym->imaddress;

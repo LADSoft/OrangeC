@@ -225,9 +225,9 @@ LEXEME* initialize_property(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc 
             SYMBOL* backing = CreateBackingVariable(sym);
             SYMBOL* setter = CreateBackingSetter(sym, backing);
             SYMBOL* getter = CreateBackingGetter(sym, backing);
-            GENREF(backing);
-            GENREF(setter);
-            GENREF(getter);
+            SymbolManager::Get(backing);
+            SymbolManager::Get(setter);
+            SymbolManager::Get(getter);
             insertfunc(setter, globalNameSpace->valueData->syms);
             insertfunc(getter, globalNameSpace->valueData->syms);
             insert(backing, globalNameSpace->valueData->syms);

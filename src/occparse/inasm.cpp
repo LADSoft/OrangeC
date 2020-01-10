@@ -30,12 +30,15 @@
 #include "compiler.h"
 #include "../occ/be.h"
 #include "Instruction.h"
+#include <set>
 
 extern int codeLabel;
 extern HASHTABLE* labelSyms;
 extern int usingEsp;
 extern InstructionParser* instructionParser;
 extern SYMBOL* theCurrentFunc;
+extern std::vector<SimpleSymbol*> externals;
+extern std::set<SimpleSymbol *> externalSet;
 
 extern bool assembling;
 
@@ -269,20 +272,29 @@ static EXPRESSION* inasm_ident(void)
             switch (sym->storage_class)
             {
                 case sc_absolute:
-                    GENREF(sym);
+                    SymbolManager::Get(sym);
                     node = varNode(en_absolute, sym);
                     break;
                 case sc_overloads:
                     node = varNode(en_pc, (SYMBOL*)sym->tp->syms->table[0]->p);
-                    GENREF(((SYMBOL*)(sym->tp->syms->table[0]->p)));
+                    SymbolManager::Get(sym->tp->syms->table[0]->p)->genreffed = true;
                     break;
                 case sc_localstatic:
                 case sc_global:
                 case sc_external:
                 case sc_static:
-                    GENREF(sym);
+                {
+                    SimpleSymbol *sym1 = SymbolManager::Get(sym);
+                    sym1->genreffed = true;
                     node = varNode(en_global, sym);
+                    InsertGlobal(sym);
+                    if (externalSet.find(sym1) == externalSet.end())
+                    {
+                        externals.push_back(sym1);
+                        externalSet.insert(sym1);
+                    }
                     break;
+                }
                 case sc_const:
                     /* constants and enums */
                     node = intNode(en_c_i, sym->value.i);
@@ -1068,26 +1080,6 @@ static void AssembleInstruction(OCODE* ins)
         AMODE oper1;
         AMODE oper2;
         AMODE oper3;
-        /*
-        if (ins1.oper1 && ins1.oper1->offset)
-        {
-            oper1 = *ins1.oper1;
-            ins1.oper1 = &oper1;
-            ins1.oper1->offset = SymbolManager::Get((EXPRESSION*)ins1.oper1->offset);
-        }
-        if (ins1.oper2 && ins1.oper2->offset)
-        {
-            oper2 = *ins1.oper2;
-            ins1.oper2 = &oper2;
-            ins1.oper2->offset = SymbolManager::Get((EXPRESSION*)ins1.oper2->offset);
-        }
-        if (ins1.oper3 && ins1.oper3->offset)
-        {
-            oper3 = *ins1.oper3;
-            ins1.oper3 = &oper3;
-            ins1.oper3->offset = SymbolManager::Get((EXPRESSION*)ins1.oper3->offset);
-        }
-        */
         Instruction* newIns = nullptr;
         std::list<Numeric*> operands;
         assembling = true;
@@ -1096,7 +1088,6 @@ static void AssembleInstruction(OCODE* ins)
         delete newIns;
         switch (err)
         {
-
             case AERR_NONE:
                 break;
             case AERR_SYNTAX:

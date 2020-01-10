@@ -117,9 +117,7 @@ static int dumpVTabEntries(int count, THUNK* thunks, SYMBOL* sym, VTABENTRY* ent
                     if (sp)
                         vf->func = sp;
                 }
-                GENREF(vf->func);
                 InsertInline(vf->func);
-                InsertExtern(vf->func);
                 if (vf->func->ispure)
                 {
                     genaddress(0);
@@ -144,11 +142,9 @@ static int dumpVTabEntries(int count, THUNK* thunks, SYMBOL* sym, VTABENTRY* ent
                     }
                     thunks[count].name = localsp = makeID(sc_static, &stdfunc, nullptr, litlate(buf));
                     localsp->decoratedName = localsp->name;
-                    GENREF(localsp);
                     localsp->attribs.inheritable.linkage = lk_virtual;
                     genref(SymbolManager::Get(localsp), 0);
                     InsertInline(localsp);
-                    InsertExtern(localsp);
                     count++;
                 }
                 else
@@ -3003,7 +2999,6 @@ LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc st
                         //    sp1->mainsym = sp1->mainsym->mainsym;
                         sp1->access = access;
                         InsertSymbol(sp1, storage_class, sp1->attribs.inheritable.linkage, true);
-                        InsertExtern(sp1);
                         InsertInline(sp1);
                         sp1->parentClass = ssp1;
                         hr = &(*hr)->next;

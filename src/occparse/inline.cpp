@@ -101,13 +101,12 @@ void dumpInlines(void)
             while (funcList)
             {
                 SYMBOL* sym = (SYMBOL*)funcList->data;
-                if (((sym->isInline && sym->dumpInlineToFile) || SymbolManager::Get(sym)->genreffed))
+                if (((sym->isInline && sym->dumpInlineToFile) || SymbolManager::Test(sym) && SymbolManager::Test(sym)->genreffed))
                 {
                     if ((sym->parentClass && sym->parentClass->dontinstantiate && !sym->templateLevel) ||
                         sym->attribs.inheritable.linkage2 == lk_import)
                     {
                         sym->dontinstantiate = true;
-                        InsertExtern(sym);
                     }
                     if (!sym->didinline && !sym->dontinstantiate)
                     {
@@ -124,7 +123,6 @@ void dumpInlines(void)
                             if ((sym->isInline || sym->attribs.inheritable.linkage == lk_virtual) && sym->inlineFunc.stmt)
                             {
                                 inInsert(sym);
-                                GENREF(sym);
                                 sym->noextern = true;
                                 UndoPreviousCodegen(sym);
                                 startlab = nextLabel++;
@@ -143,11 +141,10 @@ void dumpInlines(void)
             while (vtabList)
             {
                 SYMBOL* sym = (SYMBOL*)vtabList->data;
-                if (SymbolManager::Get(sym->vtabsp)->genreffed && hasVTab(sym) && !sym->vtabsp->didinline)
+                if (SymbolManager::Test(sym->vtabsp) && hasVTab(sym) && !sym->vtabsp->didinline)
                 {
                     if (sym->dontinstantiate || sym->vtabsp->dontinstantiate)
                     {
-                        InsertExtern(sym->vtabsp);
                         SymbolManager::Get(sym->vtabsp)->dontinstantiate = true;
                         sym->vtabsp->storage_class = sc_external;
                         sym->vtabsp->attribs.inheritable.linkage = lk_c;
@@ -155,7 +152,6 @@ void dumpInlines(void)
                     else
                     {
                         sym->vtabsp->didinline = true;
-                        SymbolManager::Get(sym->vtabsp)->genreffed = false;
                         sym->vtabsp->noextern = true;
                         dumpVTab(sym);
                         done = false;
@@ -197,12 +193,10 @@ void dumpInlines(void)
                     if (sym->parentClass && sym->parentClass->dontinstantiate)
                     {
                         sym->dontinstantiate = true;
-                        InsertExtern(sym);
                     }
                     if (origsym && origsym->storage_class == sc_global && !sym->didinline && !sym->dontinstantiate)
                     {
                         sym->didinline = true;
-                        SymbolManager::Get(sym)->genreffed = false;
                         sym->noextern = true;
                         sym->storage_class = sc_global;
                         sym->attribs.inheritable.linkage = lk_virtual;

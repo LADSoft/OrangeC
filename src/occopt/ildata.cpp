@@ -23,6 +23,7 @@
  */
 
 #include "ildata.h"
+#include <set>
 
 extern SimpleSymbol* currentFunction;
 extern int tempCount;
@@ -42,6 +43,7 @@ std::vector<SimpleSymbol*> temporarySymbols;
 std::vector<SimpleSymbol*> functionVariables;
 std::vector<BROWSEINFO*> browseInfo;
 std::vector<BROWSEFILE*> browseFiles;
+std::set<SimpleSymbol *> externalSet;
 
 std::list<std::string> inputFiles;
 std::list<std::string> backendFiles;
@@ -156,12 +158,24 @@ void gen_importThunk(SimpleSymbol* func)
     auto val = AddData(DT_IMPORTTHUNK);
     val->symbol.sym = func;
     globalCache.push_back(val->symbol.sym);
+    func->genreffed = true;
+    if (externalSet.find(func) == externalSet.end())
+    {
+        externals.push_back(func);
+        externalSet.insert(func);
+    }
 }
 void gen_vc1(SimpleSymbol* func)
 {
     auto val = AddData(DT_VC1);
     val->symbol.sym = func;
     globalCache.push_back(val->symbol.sym);
+    func->genreffed = true;
+    if (externalSet.find(func) == externalSet.end())
+    {
+        externals.push_back(func);
+        externalSet.insert(func);
+    }
 }
 /*-------------------------------------------------------------------------*/
 
@@ -172,6 +186,8 @@ void gen_strlab(SimpleSymbol* sym)
 {
     auto val = AddData(DT_DEFINITION);
     val->symbol.sym = sym;
+    sym->genreffed = true;
+
     if (sym->storage_class == scc_global || (sym->storage_class == scc_constant && !sym->inFunc))
         val->symbol.i |= BaseData::DF_GLOBAL;
     else if (sym->storage_class == scc_static)
@@ -343,6 +359,12 @@ void gensrref(SimpleSymbol* sym, int val, int type)
     v->symbol.sym = sym;
     v->symbol.i = val;
     globalCache.push_back(v->symbol.sym);
+    sym->genreffed = true;
+    if (externalSet.find(sym) == externalSet.end())
+    {
+        externals.push_back(sym);
+        externalSet.insert(sym);
+    }
 }
 
 /*-------------------------------------------------------------------------*/
@@ -355,6 +377,12 @@ void genref(SimpleSymbol* sym, int offset)
     v->symbol.sym = sym;
     v->symbol.i = offset;
     globalCache.push_back(v->symbol.sym);
+    sym->genreffed = true;
+    if (externalSet.find(sym) == externalSet.end())
+    {
+        externals.push_back(sym);
+        externalSet.insert(sym);
+    }
 }
 
 /*-------------------------------------------------------------------------*/
@@ -367,6 +395,12 @@ void genpcref(SimpleSymbol* sym, int offset)
     auto v = AddData(DT_PCREF);
     v->symbol.sym = sym;
     globalCache.push_back(v->symbol.sym);
+    sym->genreffed = true;
+    if (externalSet.find(sym) == externalSet.end())
+    {
+        externals.push_back(sym);
+        externalSet.insert(sym);
+    }
 }
 
 /*-------------------------------------------------------------------------*/
@@ -543,6 +577,8 @@ void align(int size)
 }
 void gen_funcref(SimpleSymbol* sym)
 {
+    if (sym->storage_class == st_aggregate)
+        printf("hi");
     auto v = AddData(DT_FUNCREF);
     v->symbol.sym = sym;
 

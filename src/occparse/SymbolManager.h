@@ -82,10 +82,6 @@ inline bool isconstaddress(SimpleExpression* exp)
         return false;
     }
 }
-inline void GENREF(SimpleSymbol* sym)
-{
-    sym->genreffed = true;
-}
 
 struct ArgList
 {

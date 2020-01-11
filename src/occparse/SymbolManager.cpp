@@ -577,35 +577,37 @@ e_scc_type SymbolManager::Get(enum e_sc storageClass)
 }
 unsigned long long SymbolManager::Key(struct sym* old)
 {
-    if (!old->key)
+    char buf[8192];
+    buf[0] = 0;
+    if (old->parent)
     {
-        char buf[8192];
-        buf[0] = 0;
-        if (old->parent)
-        {
-            strcat(buf, old->parent->decoratedName);
-            my_sprintf(buf + strlen(buf), "%d", old->uniqueID);
-        }
-        strcat(buf, old->decoratedName ? old->decoratedName : old->name);
-        if (old->storage_class == sc_type)
-            strcat(buf, "#");
-        if (old->attribs.inheritable.linkage == lk_stdcall)
-            strcat(buf, "$");
-        std::hash<std::string> hasher;
-        std::string aa(buf);
-        size_t key = hasher(aa);
-        std::reverse(aa.begin(), aa.end());
-        size_t key2 = hasher(aa);
-        old->key = ((unsigned long long)key << 32) | key2;
+        strcat(buf, old->parent->decoratedName);
+        my_sprintf(buf + strlen(buf), "%d", old->uniqueID);
     }
-    return old->key;
+    strcat(buf, old->decoratedName ? old->decoratedName : old->name);
+    if (old->storage_class == sc_type)
+        strcat(buf, "#");
+    if (old->attribs.inheritable.linkage == lk_stdcall)
+        strcat(buf, "$");
+    std::hash<std::string> hasher;
+    std::string aa(buf);
+    size_t key = hasher(aa);
+    std::reverse(aa.begin(), aa.end());
+    size_t key2 = hasher(aa);
+    return ((unsigned long long)key << 32) | key2;
 }
 SimpleSymbol* SymbolManager::Lookup(struct sym* old)
 {
-    return symbols[Key(old)];
+    if (old->symRef)
+        return old->symRef;
+    SimpleSymbol *rv = symbols[Key(old)];
+    if (rv)
+        old->symRef = rv;
+    return rv;
 }
 void SymbolManager::Add(struct sym* old, SimpleSymbol* sym)
 {
+    old->symRef = sym;
     symbols[Key(old)] = sym;
     switch (sym->storage_class)
     {

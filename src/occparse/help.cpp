@@ -1784,7 +1784,7 @@ SYMBOL* clonesym(SYMBOL* sym)
 {
     SYMBOL* rv = (SYMBOL*)Alloc(sizeof(SYMBOL));
     *rv = *sym;
-    rv->key = 0;
+    rv->symRef = nullptr;
     return rv;
 }
 static TYPE* inttype(enum e_bt t1)

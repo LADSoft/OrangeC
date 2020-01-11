@@ -292,6 +292,7 @@ SimpleType* SymbolManager::Get(struct typ *tp)
             // this ignores pointer-to-functions
             if (rv->type == st_func && rv->sp && rv->sp->tp && rv->sp->tp->type == st_func)
                 definedFunctions.insert(rv->sp);
+            // have to put static member functions in the type table as well...
             if (rv->sp->storage_class == scc_type || rv->sp->storage_class == scc_parameter || (rv->sp->storage_class == scc_cast && rv->sp->tp))
             {
                 typeSymbols.push_back(rv->sp);
@@ -321,6 +322,8 @@ SimpleType* SymbolManager::Get(struct typ *tp)
                 {
                     typeSymbols.push_back((SimpleSymbol*)(*p)->data);
                 }
+                if (((SimpleSymbol*)(*p)->data)->storage_class == scc_static || ((SimpleSymbol*)(*p)->data)->storage_class == scc_external)
+                    definedFunctions.insert((SimpleSymbol*)(*p)->data);
                 p = &(*p)->next;
                 list = list->next;
             }

@@ -578,8 +578,6 @@ void align(int size)
 }
 void gen_funcref(SimpleSymbol* sym)
 {
-    if (sym->storage_class == st_aggregate)
-        printf("hi");
     auto v = AddData(DT_FUNCREF);
     v->symbol.sym = sym;
 

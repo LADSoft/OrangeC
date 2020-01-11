@@ -1137,7 +1137,9 @@ static void ResolveSymbol(SimpleSymbol*& sym, std::map<int, std::string>& texts,
             l->data = (void*)s;
         }
         for (auto b = sym->baseClasses; b; b = b->next)
+        {
             ResolveSymbol(b->sym, texts, typeSymbols);
+        }
         ResolveType(sym->tp, texts, typeSymbols);
 
         sym->name = texts[(int)sym->name].c_str();

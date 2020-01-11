@@ -205,7 +205,10 @@ static void StreamSymbolTable(LIST *syms)
     StreamIndex(i);
     for (auto l = syms; l && l->data; l = l->next)
     {
-        StreamIndex(((SimpleSymbol*)l->data)->fileIndex);
+        if (((SimpleSymbol*)l->data)->fileIndex == 0)
+            StreamIndex(((SimpleSymbol*)l->data)->typeIndex);
+        else
+            StreamIndex(((SimpleSymbol*)l->data)->fileIndex);
     }
 }
 static void StreamBases(BaseList *bases)
@@ -886,8 +889,6 @@ static void StreamData()
                     StreamIndex(data->symbol.sym->fileIndex);
                     break;
                 case DT_FUNCREF:
-                    if (data->symbol.sym->fileIndex == 0xc5c9)
-                        printf("hi");
                     StreamIndex(data->symbol.sym->fileIndex);
                     StreamIndex(data->symbol.i);
                     break;

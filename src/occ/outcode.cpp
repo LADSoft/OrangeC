@@ -382,7 +382,12 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
             if (s)
             {
                 if (cparams.prm_debug)
-                    s->SetVirtualType(types.Put(virtualSyms[v]->tp));
+                {
+                    //destructor symbols aren't there so don't put the type...
+                    auto tp = virtualSyms[v]->tp;
+                    if (tp->type != st_func || tp->sp)
+                        s->SetVirtualType(types.Put(tp));
+                }
                 bool cseg = s->GetName()[2] == 'c';
                 s->SetQuals((cseg ? segFlags[codeseg] : segFlags[dataseg]) + virtualSegFlags);
                 objSectionsByName[s->GetName()] = s;

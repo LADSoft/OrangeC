@@ -376,6 +376,7 @@ ObjType* dbgtypes::ExtendedType(SimpleType* tp)
         }
         else if (tp->type == st_struct || tp->type == st_union)
         {
+            auto tpo = tp;
             ObjType::eType sel;
             tp = tp->sp->tp;  // find instantiated version in case of C++ struct
             // uninstantiated templates resolve to st_i
@@ -391,7 +392,7 @@ ObjType* dbgtypes::ExtendedType(SimpleType* tp)
             }
             val = factory.MakeType(sel);
             val->SetSize(tp->size);
-            hash[tp] = val;  // for self-referencing
+            hash[tpo] = val;  // for self-referencing
             if (tp->sp->syms)
                 StructFields(sel, val, tp->size, tp->sp, tp->sp->syms);
             else

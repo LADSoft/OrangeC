@@ -41,6 +41,8 @@ extern std::vector<SimpleSymbol*> externals;
 extern std::vector<SimpleSymbol*> globalCache;
 extern std::vector<SimpleSymbol*> typeSymbols;
 extern std::vector<SimpleSymbol*> typedefs;
+extern std::set<SimpleSymbol*> definedFunctions;
+
 extern std::vector<BROWSEINFO*> browseInfo;
 extern std::vector<BROWSEFILE*> browseFiles;
 extern int registersAssigned;
@@ -237,8 +239,11 @@ static void StreamType(SimpleType* type)
             StreamIndex(type->startbit);
             if (type->sp && type->type != st_any)
             {
-                if (type->sp->fileIndex == 0)
+                if (type->sp->fileIndex == 0 && type->sp->typeIndex == 0)
+                {
                     printf("hi");
+                }
+ 
                 if (type->sp->storage_class == scc_auto || type->sp->storage_class == scc_register)
                 {
                     StreamIndex(type->sp->fileIndex | 0x20000000);
@@ -535,9 +540,8 @@ static void StreamInstruction(QUAD *q)
                     printf("hi");
                 if (q->altsp->storage_class == scc_auto || (q->altsp->storage_class == scc_parameter && q->altsp->fileIndex != q->altsp->typeIndex) ||q->altsp->storage_class == scc_register)
                     StreamIndex(q->altsp->fileIndex | 0x20000000);
-                else if ((q->altsp->storage_class == scc_member && q->altsp->tp->type != st_func) || 
-                    q->altsp->storage_class == scc_type || q->altsp->storage_class == scc_parameter || q->altsp->storage_class == scc_typedef || q->altsp->storage_class == scc_cast)
-                    StreamIndex(q->altsp->fileIndex | 0x40000000);
+                else if (q->altsp->fileIndex == q->altsp->typeIndex)
+                    StreamIndex(q->altsp->typeIndex | 0x40000000);
                 else
                     StreamIndex(q->altsp->fileIndex);
             }
@@ -1030,6 +1034,9 @@ static void NumberGlobals()
 static void NumberTypes()
 {
     int i = 1;
+    for (auto s : definedFunctions)
+        if (!s->fileIndex)
+            typeSymbols.push_back(s);
     for (auto s : typeSymbols)
     {
         s->typeIndex = 2 * i++ + 1;
@@ -1039,7 +1046,6 @@ static void NumberTypes()
     }
     for (auto s : typedefs)
         s->typeIndex = s->fileIndex = 2 * i++ + 1;
-
 }
 int GetOutputSize()
 {

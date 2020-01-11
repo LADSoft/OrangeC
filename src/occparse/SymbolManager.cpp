@@ -41,6 +41,7 @@ extern PreProcessor* preProcessor;
 extern SYMBOL* theCurrentFunc;
 extern std::vector<SimpleSymbol*> typeSymbols;
 extern std::vector<SimpleSymbol*> typedefs;
+extern std::set<SimpleSymbol*> definedFunctions;
 
 void SymbolManager::clear()
 {
@@ -287,6 +288,10 @@ SimpleType* SymbolManager::Get(struct typ *tp)
         rv->va_list = tp->type == bt_va_list;
         if (rv->sp)
         {
+            // have to put functions in the type table if unreferenced int the global tables
+            // this ignores pointer-to-functions
+            if (rv->type == st_func && rv->sp && rv->sp->tp && rv->sp->tp->type == st_func)
+                definedFunctions.insert(rv->sp);
             if (rv->sp->storage_class == scc_type || rv->sp->storage_class == scc_parameter || (rv->sp->storage_class == scc_cast && rv->sp->tp))
             {
                 typeSymbols.push_back(rv->sp);
@@ -294,7 +299,7 @@ SimpleType* SymbolManager::Get(struct typ *tp)
             else if (rv->sp->storage_class == scc_typedef)
                 typedefs.push_back(rv->sp);
         }
-        if (tp->syms && tp->syms->table && rv->sp && !rv->sp->syms)
+        if (tp->type != bt_aggregate && tp->syms && tp->syms->table && rv->sp && !rv->sp->syms)
         {
             SYMLIST *list = tp->syms->table[0];
             LIST **p = &rv->sp->syms;

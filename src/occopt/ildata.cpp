@@ -44,6 +44,7 @@ std::vector<SimpleSymbol*> functionVariables;
 std::vector<BROWSEINFO*> browseInfo;
 std::vector<BROWSEFILE*> browseFiles;
 std::set<SimpleSymbol *> externalSet;
+std::set<SimpleSymbol*> definedFunctions;
 
 std::list<std::string> inputFiles;
 std::list<std::string> backendFiles;
@@ -554,7 +555,7 @@ void gen_virtual(SimpleSymbol* sym, int data)
     v->symbol.i = data;
     v->symbol.sym = sym;
     virtualMode = data;
-//    globalCache.push_back(v->symbol.sym);
+    //    globalCache.push_back(v->symbol.sym);
 }
 
 /*-------------------------------------------------------------------------*/

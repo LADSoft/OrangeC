@@ -2722,22 +2722,31 @@ static void undoVars(BLOCKDATA* b, SYMLIST* vars, EXPRESSION* base)
 {
     if (vars)
     {
-        SYMBOL* s = (SYMBOL*)vars->p;
-        undoVars(b, vars->next, base);
-        if ((s->storage_class == sc_member || s->storage_class == sc_mutable))
+        std::stack<SYMBOL*> stk;
+        while (vars)
         {
-            if (isstructured(s->tp))
+            stk.push(vars->p);
+            vars = vars->next;
+        }
+        while (stk.size())
+        {
+            SYMBOL* s = (SYMBOL*)stk.top();
+            stk.pop();
+            if ((s->storage_class == sc_member || s->storage_class == sc_mutable))
             {
-                genDestructorCall(b, (SYMBOL*)basetype(s->tp)->sp, nullptr, base, nullptr, s->offset, true);
-            }
-            else if (isarray(s->tp))
-            {
-                TYPE* tp = s->tp;
-                while (isarray(tp))
-                    tp = basetype(tp)->btp;
-                tp = basetype(tp);
-                if (isstructured(tp))
-                    genDestructorCall(b, tp->sp, nullptr, base, intNode(en_c_i, s->tp->size / tp->size), s->offset, true);
+                if (isstructured(s->tp))
+                {
+                    genDestructorCall(b, (SYMBOL*)basetype(s->tp)->sp, nullptr, base, nullptr, s->offset, true);
+                }
+                else if (isarray(s->tp))
+                {
+                    TYPE* tp = s->tp;
+                    while (isarray(tp))
+                        tp = basetype(tp)->btp;
+                    tp = basetype(tp);
+                    if (isstructured(tp))
+                        genDestructorCall(b, tp->sp, nullptr, base, intNode(en_c_i, s->tp->size / tp->size), s->offset, true);
+                }
             }
         }
     }

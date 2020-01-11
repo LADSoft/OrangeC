@@ -101,7 +101,7 @@ void dumpInlines(void)
             while (funcList)
             {
                 SYMBOL* sym = (SYMBOL*)funcList->data;
-                if (((sym->isInline && sym->dumpInlineToFile) || SymbolManager::Test(sym) && SymbolManager::Test(sym)->genreffed))
+                if (((sym->isInline && sym->dumpInlineToFile) || (SymbolManager::Test(sym) && SymbolManager::Test(sym)->genreffed)))
                 {
                     if ((sym->parentClass && sym->parentClass->dontinstantiate && !sym->templateLevel) ||
                         sym->attribs.inheritable.linkage2 == lk_import)

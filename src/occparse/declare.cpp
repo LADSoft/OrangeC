@@ -121,7 +121,7 @@ void WeedExterns()
     {
         SimpleSymbol* sym = *it;
         if (!sym->ispure &&
-            (sym->dontinstantiate && sym->genreffed ||
+            ((sym->dontinstantiate && sym->genreffed) ||
             (!sym->initialized &&
                 (sym->tp->type == st_func || (sym->tp->type != st_func && sym->storage_class != scc_global &&
                     sym->storage_class != scc_static && sym->storage_class != scc_localstatic)) &&

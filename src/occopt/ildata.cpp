@@ -109,6 +109,7 @@ void InitIntermediate()
         bePragma.clear();
         msilProperties.clear();
         typeSymbols.clear();
+        definedFunctions.clear();
     }
 }
 

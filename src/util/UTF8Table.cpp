@@ -22,6 +22,7 @@
  *
  */
 #include "UTF8.h"
+#include <ctype.h>
 
 int UTF8::alpha[] = {
     0x000041, 0x000042, 0x000043, 0x000044, 0x000045, 0x000046, 0x000047, 0x000048, 0x000049, 0x00004a, 0x00004b, 0x00004c,
@@ -804,8 +805,18 @@ static bool Match(int* table, int size, int val)
         return 0;
     return 1;
 }
-bool UTF8::IsAlpha(int n) { return Match(alpha, sizeof(alpha) / sizeof(alpha[0]), n); }
-bool UTF8::IsAlnum(int n) { return Match(alnum, sizeof(alnum) / sizeof(alnum[0]), n); }
+bool UTF8::IsAlpha(int n) 
+{ 
+    if (n < 0x7f)
+        return isalpha(n);
+    return Match(alpha, sizeof(alpha) / sizeof(alpha[0]), n); 
+}
+bool UTF8::IsAlnum(int n) 
+{ 
+    if (n < 0x7f)
+        return isalnum(n);
+    return Match(alnum, sizeof(alnum) / sizeof(alnum[0]), n); 
+}
 bool UTF8::IsAlpha(const char* str)
 {
     int n = Decode(str);

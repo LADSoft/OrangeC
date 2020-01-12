@@ -149,11 +149,7 @@ void global(SimpleSymbol* sym, int flags)
     }
     if (flags & BaseData::DF_EXPORT)
     {
-        if (cparams.prm_asmfile)
-        {
-            bePrintf("export %s\n", sym->outputName);
-        }
-        omf_put_expfunc(sym);
+        oa_put_expfunc(sym);
     }
 }
 void ProcessData(BaseData* v)
@@ -251,6 +247,8 @@ void ProcessData(BaseData* v)
         break;
     case DT_VIRTUAL:
         oa_gen_virtual(v->symbol.sym, v->symbol.i);
+        if (v->symbol.sym->isexport)
+            oa_put_expfunc(v->symbol.sym);
         break;
     case DT_ENDVIRTUAL:
         oa_gen_endvirtual(v->symbol.sym);
@@ -325,7 +323,7 @@ bool ProcessData(const char *name)
                 oa_put_extern(v, 0);
                 if (v->isimport)
                 {
-                    omf_put_impfunc(v, v->importfile);
+                    oa_put_impfunc(v, v->importfile);
                 }
             }
         }
@@ -373,7 +371,7 @@ bool SaveFile(const char *name)
                 oa_put_extern(v, 0);
                 if (v->isimport)
                 {
-                    omf_put_impfunc(v, v->importfile);
+                    oa_put_impfunc(v, v->importfile);
                 }
             }
         }

@@ -310,6 +310,7 @@ void compile(bool global)
         dumpInlines();
         dumpInitializers();
         dumpInlines();
+        dumpImportThunks();
         dumpStartups();
 #ifndef PARSER_ONLY
         dumpLits();

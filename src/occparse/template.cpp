@@ -9241,6 +9241,10 @@ static void referenceInstanceMembers(SYMBOL* cls)
 {
     if (cparams.prm_xcept)
         RTTIDumpType(cls->tp);
+    if (cls->vtabsp)
+    {
+        SymbolManager::Get(cls->vtabsp);
+    }
     if (cls->tp->syms)
     {
         SYMLIST* hr = cls->tp->syms->table[0];
@@ -9537,11 +9541,21 @@ static void MarkDllLinkage(SYMBOL* sp, enum e_lk linkage)
         else
         {
             sp->attribs.inheritable.linkage2 = linkage;
+            SymbolManager::Get(sp)->isexport = linkage == lk_export;
+            SymbolManager::Get(sp)->isimport = linkage == lk_import;
             if (sp->vtabsp)
             {
                 sp->vtabsp->attribs.inheritable.linkage2 = linkage;
+                if (sp->vtabsp->symRef)
+                {
+                    SymbolManager::Get(sp->vtabsp)->isexport = linkage == lk_export;
+                    SymbolManager::Get(sp->vtabsp)->isimport = linkage == lk_import;
+                }
                 if (sp->vtabsp->attribs.inheritable.linkage2 == lk_import)
+                {
                     sp->vtabsp->dontinstantiate = true;
+                    SymbolManager::Get(sp->vtabsp)->dontinstantiate = true;
+                }
             }
             if (sp->tp->syms)
             {
@@ -9558,6 +9572,8 @@ static void MarkDllLinkage(SYMBOL* sp, enum e_lk linkage)
                             {
                                 (hr2->p)->attribs.inheritable.linkage2 = linkage;
                                 (hr2->p)->isInline = false;
+                                SymbolManager::Get(hr2->p)->isexport = linkage == lk_export;
+                                SymbolManager::Get(hr2->p)->isimport = linkage == lk_import;
                             }
                             hr2 = hr2->next;
                         }
@@ -9565,6 +9581,8 @@ static void MarkDllLinkage(SYMBOL* sp, enum e_lk linkage)
                     else if (!ismember(sym) && !istype(sym))
                     {
                         sym->attribs.inheritable.linkage2 = linkage;
+                        SymbolManager::Get(sym)->isexport = linkage == lk_export;
+                        SymbolManager::Get(sym)->isimport = linkage == lk_import;
                     }
                     hr = hr->next;
                 }
@@ -9585,6 +9603,7 @@ static void DoInstantiate(SYMBOL* strSym, SYMBOL* sym, TYPE* tp, NAMESPACEVALUEL
         SYMBOL* sp = sym;
         TEMPLATEPARAMLIST* templateParams = TemplateGetParams(sym->parentClass);
         DoInstantiateTemplateFunction(tp, &sp, nsv, strSym, templateParams, isExtern);
+        sp->attribs.inheritable.linkage2 = sym->attribs.inheritable.linkage2;
         sym = sp;
         sym->parentClass = strSym;
         SetLinkerNames(sym, lk_cdecl);

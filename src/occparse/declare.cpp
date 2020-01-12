@@ -977,17 +977,17 @@ static LEXEME* structbody(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_ac cur
             my_sprintf(buf, "%s@_$vt", sp->decoratedName);
             sp->vtabsp = makeID(sc_static, &stdvoid, nullptr, litlate(buf));
             sp->vtabsp->attribs.inheritable.linkage2 = sp->attribs.inheritable.linkage2;
+            sp->vtabsp->attribs.inheritable.linkage = lk_virtual;
+            sp->vtabsp->decoratedName = sp->vtabsp->name;
             if (sp->vtabsp->attribs.inheritable.linkage2 == lk_import)
             {
                 sp->vtabsp->dontinstantiate = true;
             }
             else if (sp->vtabsp->attribs.inheritable.linkage2 == lk_export)
             {
-                SetLinkerNames(sp->vtabsp, lk_cdecl);
+                SymbolManager::Get(sp->vtabsp);
             }
             InsertInline(sp);
-            sp->vtabsp->attribs.inheritable.linkage = lk_virtual;
-            sp->vtabsp->decoratedName = sp->vtabsp->name;
             warnCPPWarnings(sp, funcsp != nullptr);
         }
     }

@@ -18,6 +18,7 @@ install:
 branches:
    only:
      - master
+     - split
      - /v\d*\.\d*\.\d*\.\d*/
 
 configuration:

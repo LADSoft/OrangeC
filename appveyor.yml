@@ -14,11 +14,11 @@ install:
     - set ORIGPATH=%PATH%
     - set ORANGEC=c:\ORANGEC
     - set LADSOFT_DEV=c:\cc386
-    - set
 
 branches:
    only:
      - master
+     - split
      - /v\d*\.\d*\.\d*\.\d*/
 
 configuration:

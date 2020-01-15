@@ -67,7 +67,7 @@ bool SharedMemory::Create()
 #endif
     return !!regionHandle;
 }
-BYTE* SharedMemory::GetMapping()
+unsigned char* SharedMemory::GetMapping()
 {
 #ifdef _WIN32
     if (!regionStart)

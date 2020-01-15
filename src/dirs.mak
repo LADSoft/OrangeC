@@ -27,10 +27,6 @@ DIRS := sqlite3 util objlib netlib occopt obrc ocpp ogrep oasm dlhex dlle dlmz d
        oimplib omake onm orc occparse occpr occ occil coff2ieee
 else
 
-ifneq "$(ORANGEC_ONLY)" "YES"
-OCCIL_DIRS := netlib
-endif
-
-DIRS := sqlite3 util objlib $(OCCIL_DIRS) occopt obrc ocpp ogrep oasm dlhex dlle dlmz dlpe dlpm olib olink \
+DIRS := sqlite3 util objlib netlib occopt obrc ocpp ogrep oasm dlhex dlle dlmz dlpe dlpm olib olink \
        oimplib omake onm orc ocl ocide occparse occpr occ occil coff2ieee help MSDNHelp
 endif

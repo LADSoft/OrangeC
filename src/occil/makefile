@@ -34,3 +34,4 @@ H_FILES=$(wildcard *.h)
 include ../redirect.mak
 
 DISTRIBUTE: copyexe
+	copy target.cfg $(DISTBIN)$(PATHEXT2)occil.cfg

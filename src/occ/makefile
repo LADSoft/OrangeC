@@ -42,3 +42,4 @@ endif
 include ../redirect.mak
 
 DISTRIBUTE: copyexe
+	copy target.cfg $(DISTBIN)$(PATHEXT2)occ.cfg

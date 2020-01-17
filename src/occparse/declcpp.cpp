@@ -194,7 +194,7 @@ void dumpVTab(SYMBOL* sym)
         for (i = 0; i < count; i++)
         {
             gen_virtual(SymbolManager::Get(thunks[i].name), false);
-            gen_vtt(thunks[i].entry->dataOffset, SymbolManager::Get(thunks[i].func), SymbolManager::Get(thunks[i].name));
+            gen_vtt(-(int)thunks[i].entry->dataOffset, SymbolManager::Get(thunks[i].func), SymbolManager::Get(thunks[i].name));
             gen_endvirtual(SymbolManager::Get(thunks[i].name));
         }
     }

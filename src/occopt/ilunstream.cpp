@@ -912,7 +912,7 @@ static void UnstreamData()
                     break;
                 case DT_VTT:
                     data->symbol.sym = (SimpleSymbol*)UnstreamIndex();
-                    data->symbol.i = UnstreamIndex();
+                    UnstreamIntValue(&data->symbol.i, sizeof(data->symbol.i));
                     break;
                 case DT_IMPORTTHUNK:
                     data->symbol.sym = (SimpleSymbol*)UnstreamIndex();

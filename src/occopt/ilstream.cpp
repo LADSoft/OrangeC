@@ -550,7 +550,7 @@ static void StreamInstruction(QUAD *q)
             }
             else
             {
-                StreamIndex(0);
+                     StreamIndex(0);
             }
             StreamType(q->alttp);
             i = 0;
@@ -974,7 +974,7 @@ static void StreamData()
                     break;
                 case DT_VTT:
                     StreamIndex(data->symbol.sym->fileIndex);
-                    StreamIndex(data->symbol.i);
+                    StreamIntValue(&data->symbol.i, sizeof(data->symbol.i));
                     break;
                 case DT_IMPORTTHUNK:
                     StreamIndex(data->symbol.sym->fileIndex);

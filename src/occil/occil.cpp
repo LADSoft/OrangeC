@@ -165,32 +165,10 @@ void outputfile(char* buf, const char* name, const char* ext)
     }
     else if (buf[0] != 0)
     {
-        // output file is a real name, strip the name portion off the path and add our name and ext
-        char* p = strrchr(buf, '\\');
-        char* p1 = strrchr(buf, '/');
-        if (p1 > p)
-            p = p1;
-        else if (!p)
-            p = p1;
-        if (!p)
-            p = buf;
-        else
-            p++;
-        const char* r = strrchr(name, '\\');
-        const char* r1 = strrchr(name, '/');
-        if (r1 > r)
-            r = r1;
-        else if (!r)
-            r = r1;
-        if (!r)
-            r = name;
-        else
-            r++;
-        strcpy(p, r);
-        Utils::StripExt(buf);
+        // output file is a real name, add the ext
         Utils::AddExt(buf, ext);
     }
-    else // no output file specified, put the output wherever the input was...
+    else if (buf[0] == 0) // no output file specified, put the output wherever the input was...
     {
         strcpy(buf, name);
         Utils::StripExt(buf);

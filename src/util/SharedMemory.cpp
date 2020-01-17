@@ -72,7 +72,7 @@ unsigned char* SharedMemory::GetMapping()
 #ifdef _WIN32
     if (!regionStart)
     {
-        regionStart = (BYTE*)MapViewOfFile(regionHandle, FILE_MAP_ALL_ACCESS, 0, 0, max_);
+        regionStart = (unsigned char*)MapViewOfFile(regionHandle, FILE_MAP_ALL_ACCESS, 0, 0, max_);
     }
 #endif
     return regionStart;

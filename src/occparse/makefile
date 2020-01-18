@@ -31,6 +31,9 @@ LIB_DEPENDENCIES=occ ocpplib oasm occopt util objlib occil netlib
 ifeq "$(COMPILER)" "MINGW64"
 LIB_DEPENDENCIES:=$(LIB_DEPENDENCIES) occparse occil
 endif
+ifeq "$(COMPILER)" "gcc-linux"
+LIB_DEPENDENCIES:=$(LIB_DEPENDENCIES) occparse occil
+endif
 DEFINES=x64 USE_LONGLONG
 H_FILES=$(wildcard *.h)
 

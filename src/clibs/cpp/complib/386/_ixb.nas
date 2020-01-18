@@ -51,7 +51,7 @@ SECTION code CLASS=CODE USE32
     mov ecx,[fs:0]      ; next pointer in chain
     mov [eax],ecx
     mov DWORD [eax+4], ___cppexceptionhandle
-    lea ecx,[esp + 12] ; pointer to what ESP should be when a catch block is entered
+    lea ecx,[esp + 12 + 12] ; pointer to what ESP should be when a catch block is entered
     mov [eax + 8],ecx
     mov ecx,[esp+8 + 12]  ; function xcept block
     mov edx, eax

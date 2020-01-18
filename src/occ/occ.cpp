@@ -33,7 +33,7 @@
 #include "SharedMemory.h"
 #include <sstream>
 #include <iostream>
-#include "..\version.h"
+#include "../version.h"
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
 #endif

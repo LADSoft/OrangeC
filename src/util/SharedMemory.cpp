@@ -61,7 +61,7 @@ bool SharedMemory::Create()
 {
 #ifdef _WIN32
     regionHandle = CreateFileMapping(INVALID_HANDLE_VALUE, NULL,
-        PAGE_READWRITE | SEC_RESERVE,
+        PAGE_READWRITE,
         0, max_, name_.c_str()
         );
 #endif
@@ -87,8 +87,34 @@ void SharedMemory::CloseMapping()
     }
 #endif
 }
+#ifdef _MINGW
+static bool acquire_context(HCRYPTPROV *ctx)
+{
+    if (!CryptAcquireContext(ctx, nullptr, nullptr, PROV_RSA_FULL, 0)) {
+        return CryptAcquireContext(ctx, nullptr, nullptr, PROV_RSA_FULL, CRYPT_NEWKEYSET);
+    }
+    return true;
+}
+
+
+static size_t sysrandom(void* dst, size_t dstlen)
+{
+    HCRYPTPROV ctx;
+    if (!acquire_context(&ctx)) {
+        return;
+    }
+
+    BYTE* buffer = reinterpret_cast<BYTE*>(dst);
+    CryptGenRandom(ctx, dstlen, buffer);
+
+    CryptReleaseContext(ctx, 0);
+
+    return dstlen;
+}
+#endif
 bool SharedMemory::EnsureCommitted(int size)
 {
+    return true;
     int end = size;
     end += 4095;
     end = (end / 4096) * 4096;
@@ -109,8 +135,14 @@ void SharedMemory::SetName()
     std::array<unsigned char, 21> rnd;
 
     std::uniform_int_distribution<int> distribution('a', 'z');
+#ifdef _MINGW
+    unsigned gg;
+    sysrandom(&gg, sizeof(gg));
+    std::mt19937 engine(gg);
+#else
     std::random_device dev;
     std::mt19937 engine(dev());
+#endif
     auto generator = std::bind(distribution, engine);
 
     std::generate(rnd.begin(), rnd.end(), generator);

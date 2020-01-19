@@ -64,6 +64,7 @@ extern SimpleExpression* fltexp;
 extern int fastcallAlias;
 extern FILE* outputFile;
 extern FILE* browseFile;
+extern bool assembling;
 
 extern bool IsSymbolCharRoutine(const char *, bool);
 bool (*Tokenizer::IsSymbolChar)(const char*, bool) = IsSymbolCharRoutine;
@@ -92,7 +93,7 @@ void diag(const char*, ...)
 
 /*-------------------------------------------------------------------------*/
 
-void outputfile(char* buf, const char* name, const char* ext)
+void outputfile(char* buf, const char* name, const char* ext, bool obj)
 {
     strcpy(buf, outputFileName.c_str());
     if (buf[strlen(buf) - 1] == '\\')
@@ -103,17 +104,23 @@ void outputfile(char* buf, const char* name, const char* ext)
         Utils::StripExt(buf);
         Utils::AddExt(buf, ext);
     }
-    else if (buf[0] != 0)
+    else if (buf[0] == 0 || obj && !cparams.prm_compileonly && !assembling)// no output file specified, put the output wherever the input was...
     {
-        // output file is a real name, add the ext
+        strcpy(buf, name);
+        char *p = strrchr(buf, '\\');
+        char *q = strrchr(buf, '/');
+        if (q > p)
+            p = q;
+        if (p)
+            strcpy(buf, p+1);
         Utils::StripExt(buf);
         Utils::AddExt(buf, ext);
     }
-    else if (buf[0] == 0)// no output file specified, put the output wherever the input was...
+    else
     {
-        strcpy(buf, name);
-        Utils::StripExt(buf);
-        Utils::AddExt(buf, ext);
+        // use specified output file name
+        if (obj)
+            Utils::AddExt(buf, ext);
     }
 }
 
@@ -255,7 +262,7 @@ bool ProcessData(const char *name)
     if (cparams.prm_asmfile)
     {
         char buf[260];
-        outputfile(buf, name, chosenAssembler->asmext);
+        outputfile(buf, name, chosenAssembler->asmext, true);
         InsertExternalFile(buf, false);
         outputFile = fopen(buf, "w");
         if (!outputFile)
@@ -330,14 +337,14 @@ bool SaveFile(const char *name)
     if (!cparams.prm_asmfile)
     {
         strcpy(infile, name);
-        outputfile(outFile, name, chosenAssembler->objext);
+        outputfile(outFile, name, chosenAssembler->objext, true);
         InsertExternalFile(outFile, false);
         outputFile = fopen(outFile, "wb");
         if (!outputFile)
             return false;
         if (cparams.prm_browse)
         {
-            outputfile(outFile, name, ".cbr");
+            outputfile(outFile, name, ".cbr", true);
             browseFile = fopen(outFile, "wb");
             if (!browseFile)
                 return false;

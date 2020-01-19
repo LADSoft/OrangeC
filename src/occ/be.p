@@ -6,6 +6,7 @@ bool InsertOption(const char* name);
 void asm_seh(QUAD* q);
 void asm_tag(QUAD* q);
 void SelectBackendData();
+void outputfile(char* buf, const char* name, const char* ext, bool obj);
 
                             /* Beintrins.cpp */
 

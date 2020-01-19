@@ -163,17 +163,15 @@ void outputfile(char* buf, const char* name, const char* ext)
         Utils::StripExt(buf);
         Utils::AddExt(buf, ext);
     }
-    else if (buf[0] != 0)
-    {
-        // output file is a real name, add the ext
-        Utils::StripExt(buf);
-        Utils::AddExt(buf, ext);
-    }
     else if (buf[0] == 0) // no output file specified, put the output wherever the input was...
     {
         strcpy(buf, name);
         Utils::StripExt(buf);
         Utils::AddExt(buf, ext);
+    }
+    else
+    {
+        // use specified output file name
     }
 }
 

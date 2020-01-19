@@ -1024,15 +1024,6 @@ void ccinit(int argc, char* argv[])
                 Utils::fatal("Cannot specify output file for multiple input files\n");
         }
     }
-    else if (!firstFile.empty())
-    {
-        outputFileName = firstFile;
-    }
-    else
-    {
-        outputFileName = "unknown";
-    }
-
 #else
     {
         LIST* t = clist;

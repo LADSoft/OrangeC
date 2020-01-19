@@ -181,14 +181,7 @@ int RunExternalFiles()
         memset(verbosityString + 1, 'y', verbosity > sizeof(verbosityString) - 2 ? sizeof(verbosityString) - 2 : verbosity);
     }
     temp[0] = 0;
-    strcpy(outName, outputFileName.c_str());
-    if (objlist && outName[0] && outName[strlen(outName) - 1] == '\\')
-    {
-        strcat(outName, (char*)objlist->data);
-        Utils::StripExt(outName);
-        strcat(outName, ".exe");
-        strcpy(temp, outputFileName.c_str());
-    }
+    outputfile(outName, (const char *)objlist->data, ".exe", false);
     //    p = strrchr(outName, '.');
     //    if (p && p[1] != '\\')
     //        *p = 0;
@@ -251,7 +244,7 @@ int RunExternalFiles()
             fprintf(fil, " \"%s%s\"", temp, (char*)objlist->data);
             objlist = objlist->next;
         }
-        fprintf(fil, "  \"/o%s\" ", outName);
+//        fprintf(fil, "  \"/o%s\" ", outName);
         while (liblist)
         {
             fprintf(fil, " \"%s\"", (char*)liblist->data);
@@ -290,8 +283,8 @@ int RunExternalFiles()
                 strcat(with, "\n");
             }
         }
-        rv = Utils::ToolInvoke("olink.exe", verbosity?with:nullptr, "%s %s %s /c+ %s %s %s @%s", link_params ? link_params : "",
-            cparams.prm_targettype == WHXDOS ? "-DOBJECTALIGN=65536" : "", !showBanner ? "-!" : "", args, verbosityString, 
+        rv = Utils::ToolInvoke("olink.exe", verbosity?with:nullptr, "%s %s %s /c+ \"/o%s\" %s %s %s @%s", link_params ? link_params : "",
+            cparams.prm_targettype == WHXDOS ? "-DOBJECTALIGN=65536" : "", !showBanner ? "-!" : "", outName, args, verbosityString, 
             !prm_OutputDefFile.empty() ? ("--output-def \"" + prm_OutputDefFile + "\"").c_str() : "", tempName.c_str());
         unlink(tempName.c_str());
         if (verbosity > 1)

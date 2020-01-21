@@ -23,7 +23,8 @@
  */
 void memfunc(const char*);
 /*      compiler header file    */
-#define clonesym(x, ...) (clonesym)(__func__, x, __VA_ARGS__)
+#define clonesym(x) (clonesym)(__func__, x, true)
+#define clonesymfalse(x) (clonesym)(__func__, x, false)
 #define CI_CONSTRUCTOR 0
 #define CI_DESTRUCTOR 1
 #define CI_CAST 2

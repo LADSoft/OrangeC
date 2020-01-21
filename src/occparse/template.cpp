@@ -9023,7 +9023,7 @@ SYMBOL* GetTypedefSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args)
     found1 = ValidateClassTemplate(sp, sp->templateParams->next, args);
     if (!found1)
         return sp;
-    found1 = clonesym(found1, false);
+    found1 = clonesymfalse(found1);
     tpi = &found1->tp;
     if (!templateNestingCount)
     {

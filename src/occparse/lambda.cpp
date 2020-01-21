@@ -315,7 +315,7 @@ static TYPE* cloneFuncType(SYMBOL* funcin)
     while (src)
     {
         *dest = (SYMLIST*)Alloc(sizeof(SYMLIST));
-        (*dest)->p = (SYMBOL*)clonesym((SYMBOL*)src->p, false);
+        (*dest)->p = (SYMBOL*)clonesymfalse((SYMBOL*)src->p);
         dest = &(*dest)->next;
         src = src->next;
     }

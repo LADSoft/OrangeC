@@ -9,7 +9,7 @@ test: inc.exe
 	-inc
 	-inc q.q
 	inc main.in basic.in windows.in
-	output.exe < test.cmd > test.cmpx
+	output.exe < test.cmd > test.out
 	fc /b test.cmpx test.out  
 
 inc.exe: $(FILES)

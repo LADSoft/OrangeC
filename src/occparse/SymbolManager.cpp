@@ -52,29 +52,29 @@ void SymbolManager::clear()
 const char* beDecorateSymName(SYMBOL* sym)
 {
     const char* q;
-    if (sym->attribs.uninheritable.alias)
+    if (sym->sb->attribs.uninheritable.alias)
     {
-        return litlate(sym->attribs.uninheritable.alias);
+        return litlate(sym->sb->attribs.uninheritable.alias);
     }
     else
     {
         q = preProcessor->LookupAlias(sym->name);
         if (q)
             return litlate(q);
-        else if (sym->compilerDeclared || sym->tp->type == bt_templateparam || sym->tp->type == bt_templateselector)
+        else if (sym->sb->compilerDeclared || sym->tp->type == bt_templateparam || sym->tp->type == bt_templateselector)
         {
 	    return litlate(sym->name);
         }
         else
         {
-            return sym->decoratedName;
+            return sym->sb->decoratedName;
         }
     }
 }
 
 SimpleSymbol* SymbolManager::Get(struct sym *sym)
 {
-    if (sym)
+    if (sym && sym->sb)
     {
         SimpleSymbol *rv;
         rv = Lookup(sym);
@@ -262,7 +262,7 @@ SimpleType* SymbolManager::Get(struct typ *tp)
             istypedef = true;
         tp = tp->btp;
     }
-    if ((isstructured(tp) && basetype(tp)->sp->templateLevel && !basetype(tp)->sp->instantiated) || basetype(tp)->type == bt_auto)
+    if ((isstructured(tp) && basetype(tp)->sp->sb->templateLevel && !basetype(tp)->sp->sb->instantiated) || basetype(tp)->type == bt_auto)
     {
         rv->type = st_i;
         rv->size = getSize(bt_int);
@@ -310,7 +310,7 @@ SimpleType* SymbolManager::Get(struct typ *tp)
                 (*p)->data = Get(list->p);
                 if (rv->sp->storage_class == scc_type || rv->sp->storage_class == scc_cast)
                 {
-                    if (list->p->storage_class == sc_static || isfunction(list->p->tp))
+                    if (list->p->sb->storage_class == sc_static || isfunction(list->p->tp))
                     {
                         SimpleSymbol* ns = (SimpleSymbol*)Alloc(sizeof(SimpleSymbol));
                         *ns = *(SimpleSymbol*)(*p)->data;
@@ -353,12 +353,12 @@ void refreshBackendParams(SYMBOL* funcsp)
         while (hr && syms)
         {
             SimpleSymbol *sym = (SimpleSymbol*)syms->data;
-            if (hr->p->thisPtr && !sym->thisPtr)
+            if (hr->p->sb->thisPtr && !sym->thisPtr)
             {
                 hr = hr->next;
             }
             sym->name = hr->p->name; // update name to prototype in use...
-            sym->offset = hr->p->offset;
+            sym->offset = hr->p->sb->offset;
             SymbolManager::Get(hr->p)->offset = sym->offset;
             hr = hr->next;
             syms = syms->next;
@@ -369,22 +369,22 @@ SimpleSymbol* SymbolManager::Make(struct sym* sym)
 {
     SimpleSymbol* rv = (SimpleSymbol*)Alloc(sizeof(SimpleSymbol));
     rv->name = sym->name;
-    rv->align = sym->attribs.inheritable.structAlign ? sym->attribs.inheritable.structAlign
+    rv->align = sym->sb->attribs.inheritable.structAlign ? sym->sb->attribs.inheritable.structAlign
         : getAlign(sc_auto, basetype(sym->tp));
     rv->size = basetype(sym->tp)->size;
-    rv->importfile = sym->importfile;
-    if (sym->parentNameSpace)
-        rv->namespaceName = sym->parentNameSpace->name;
-    rv->i = sym->value.i;
+    rv->importfile = sym->sb->importfile;
+    if (sym->sb->parentNameSpace)
+        rv->namespaceName = sym->sb->parentNameSpace->name;
+    rv->i = sym->sb->value.i;
     Add(sym, rv);
-    rv->storage_class = Get(sym->storage_class);
+    rv->storage_class = Get(sym->sb->storage_class);
     if (!isstructured(sym->tp) && !isfunction(sym->tp) && sym->tp->type != bt_ellipse && basetype(sym->tp)->type != bt_any)
         rv->sizeFromType = sizeFromType(sym->tp);
     else
         rv->sizeFromType = ISZ_ADDR;
-    rv->offset = sym->offset;
+    rv->offset = sym->sb->offset;
     BaseList **p = &rv->baseClasses;
-    BASECLASS *src = sym->baseClasses;
+    BASECLASS *src = sym->sb->baseClasses;
     while (src)
     {
         *p = (BaseList*)Alloc(sizeof(BaseList));
@@ -395,7 +395,7 @@ SimpleSymbol* SymbolManager::Make(struct sym* sym)
         src = src->next;
         p = &(*p)->next;
     }
-    rv->label = sym->label;
+    rv->label = sym->sb->label;
     rv->tp = Get(sym->tp);
     // normalize for middle and backend.   Not modifying the front end data structures because there would be too much ripple...
     if (rv->storage_class == scc_parameter && rv->tp->isarray)
@@ -403,39 +403,39 @@ SimpleSymbol* SymbolManager::Make(struct sym* sym)
         rv->tp->size = getSize(bt_pointer);
         rv->tp->sizeFromType = ISZ_ADDR;
     }
-    rv->parentClass = Get(sym->parentClass);
-    rv->msil = sym->msil;
-    rv->templateLevel = sym->templateLevel;
-    rv->hasParams = sym->paramsize != 0;
+    rv->parentClass = Get(sym->sb->parentClass);
+    rv->msil = sym->sb->msil;
+    rv->templateLevel = sym->sb->templateLevel;
+    rv->hasParams = sym->sb->paramsize != 0;
     rv->isstructured = isstructured(sym->tp);
-    rv->anonymous = sym->anonymous;
-    rv->allocate = sym->allocate;
-    rv->thisPtr = sym->thisPtr;
-    rv->stackblock = sym->stackblock;
-    rv->inasm = sym->inasm;
-    rv->isimport = sym->attribs.inheritable.linkage2 == lk_import;
-    rv->isexport = sym->attribs.inheritable.linkage2 == lk_export;
-    rv->isvirtual = sym->attribs.inheritable.linkage == lk_virtual;
-    rv->msil_rtl = sym->attribs.inheritable.linkage2 == lk_msil_rtl;
-    rv->isproperty = sym->attribs.inheritable.linkage2 == lk_property;
-    rv->unmanaged = sym->attribs.inheritable.linkage2 == lk_unmanaged;
-    rv->isstdcall = sym->attribs.inheritable.linkage == lk_stdcall;
-    rv->iscdecl = sym->attribs.inheritable.linkage == lk_cdecl;
-    rv->ispascal = sym->attribs.inheritable.linkage == lk_pascal;
-    rv->isfastcall = sym->attribs.inheritable.linkage == lk_fastcall;
-    rv->entrypoint = sym->attribs.inheritable.linkage3 == lk_entrypoint;
-    rv->ispure = sym->ispure;
-    rv->dontinstantiate = sym->dontinstantiate;
-    rv->noextern = sym->noextern;
-    rv->initialized = !!sym->init;
+    rv->anonymous = sym->sb->anonymous;
+    rv->allocate = sym->sb->allocate;
+    rv->thisPtr = sym->sb->thisPtr;
+    rv->stackblock = sym->sb->stackblock;
+    rv->inasm = sym->sb->inasm;
+    rv->isimport = sym->sb->attribs.inheritable.linkage2 == lk_import;
+    rv->isexport = sym->sb->attribs.inheritable.linkage2 == lk_export;
+    rv->isvirtual = sym->sb->attribs.inheritable.linkage == lk_virtual;
+    rv->msil_rtl = sym->sb->attribs.inheritable.linkage2 == lk_msil_rtl;
+    rv->isproperty = sym->sb->attribs.inheritable.linkage2 == lk_property;
+    rv->unmanaged = sym->sb->attribs.inheritable.linkage2 == lk_unmanaged;
+    rv->isstdcall = sym->sb->attribs.inheritable.linkage == lk_stdcall;
+    rv->iscdecl = sym->sb->attribs.inheritable.linkage == lk_cdecl;
+    rv->ispascal = sym->sb->attribs.inheritable.linkage == lk_pascal;
+    rv->isfastcall = sym->sb->attribs.inheritable.linkage == lk_fastcall;
+    rv->entrypoint = sym->sb->attribs.inheritable.linkage3 == lk_entrypoint;
+    rv->ispure = sym->sb->ispure;
+    rv->dontinstantiate = sym->sb->dontinstantiate;
+    rv->noextern = sym->sb->noextern;
+    rv->initialized = !!sym->sb->init;
 
     rv->inFunc = theCurrentFunc != nullptr;
-    rv->temp = sym->temp;
-    rv->vbase = !!sym->vbaseEntries;
-    rv->anyTry = sym->anyTry;
-    rv->xc = !!sym->xc;
-    rv->canThrow = sym->canThrow;
-    rv->hasInlineFunc = sym->inlineFunc.stmt != nullptr;
+    rv->temp = sym->sb->temp;
+    rv->vbase = !!sym->sb->vbaseEntries;
+    rv->anyTry = sym->sb->anyTry;
+    rv->xc = !!sym->sb->xc;
+    rv->canThrow = sym->sb->canThrow;
+    rv->hasInlineFunc = sym->sb->inlineFunc.stmt != nullptr;
     rv->usesEsp = cparams.prm_useesp;
 
     rv->outputName = beDecorateSymName(sym);
@@ -587,15 +587,15 @@ unsigned long long SymbolManager::Key(struct sym* old)
 {
     char buf[8192];
     buf[0] = 0;
-    if (old->parent)
+    if (old->sb->parent)
     {
-        strcat(buf, old->parent->decoratedName);
-        my_sprintf(buf + strlen(buf), "%d", old->uniqueID);
+        strcat(buf, old->sb->parent->sb->decoratedName);
+        my_sprintf(buf + strlen(buf), "%d", old->sb->uniqueID);
     }
-    strcat(buf, old->decoratedName ? old->decoratedName : old->name);
-    if (old->storage_class == sc_type)
+    strcat(buf, old->sb->decoratedName ? old->sb->decoratedName : old->name);
+    if (old->sb->storage_class == sc_type)
         strcat(buf, "#");
-    if (old->attribs.inheritable.linkage == lk_stdcall)
+    if (old->sb->attribs.inheritable.linkage == lk_stdcall)
         strcat(buf, "$");
     std::hash<std::string> hasher;
     std::string aa(buf);
@@ -606,16 +606,16 @@ unsigned long long SymbolManager::Key(struct sym* old)
 }
 SimpleSymbol* SymbolManager::Lookup(struct sym* old)
 {
-    if (old->symRef)
-        return old->symRef;
+    if (old->sb->symRef)
+        return old->sb->symRef;
     SimpleSymbol *rv = symbols[Key(old)];
     if (rv)
-        old->symRef = rv;
+        old->sb->symRef = rv;
     return rv;
 }
 void SymbolManager::Add(struct sym* old, SimpleSymbol* sym)
 {
-    old->symRef = sym;
+    old->sb->symRef = sym;
     symbols[Key(old)] = sym;
     switch (sym->storage_class)
     {

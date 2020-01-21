@@ -141,18 +141,18 @@ IMODE* set_symbol(const char* name, int isproc)
     if (sym == 0)
     {
         LIST* l1;
-        sym = (SYMBOL*)Alloc(sizeof(SYMBOL));
-        sym->storage_class = sc_external;
-        sym->name = sym->decoratedName = litlate(name);
+        sym = SymAlloc();
+        sym->sb->storage_class = sc_external;
+        sym->name = sym->sb->decoratedName = litlate(name);
         SymbolManager::Get(sym);
         sym->tp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
         sym->tp->type = isproc ? bt_func : bt_int;
-        sym->safefunc = true;
+        sym->sb->safefunc = true;
         insert(sym, globalNameSpace->valueData->syms);
     }
     else
     {
-        if (sym->storage_class == sc_overloads)
+        if (sym->sb->storage_class == sc_overloads)
             sym = (SYMBOL*)(sym->tp->syms->table[0]->p);
     }
     result = (IMODE*)(IMODE*)Alloc(sizeof(IMODE));
@@ -194,10 +194,10 @@ static void AddProfilerData(SYMBOL* funcsp)
     {
         STRING* string;
         int i;
-        int l = strlen(funcsp->decoratedName);
+        int l = strlen(funcsp->sb->decoratedName);
         pname = (LCHAR*)Alloc(sizeof(LCHAR) * l + 1);
         for (i = 0; i < l + 1; i++)
-            pname[i] = funcsp->decoratedName[i];
+            pname[i] = funcsp->sb->decoratedName[i];
         string = (STRING*)Alloc(sizeof(STRING));
         string->strtype = l_astr;
         string->size = 1;
@@ -307,7 +307,7 @@ void genxswitch(STATEMENT* stmt, SYMBOL* funcsp)
     if (chosenAssembler->arch->preferopts & OPT_EXPANDSWITCH)
     {
         EXPRESSION* en = anonymousVar(sc_auto, &stdint);
-        en->v.sp->anonymous = false;
+        en->v.sp->sb->anonymous = false;
         cacheTempSymbol(SymbolManager::Get(en->v.sp));
         if (ap->size != -ISZ_UINT)
         {
@@ -468,16 +468,16 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, IMODE*
                 SYMBOL* sym = en->v.sp;
                 ap = gen_expr(funcsp, stmt->select, 0, ISZ_ADDR);
                 DumpIncDec(funcsp);
-                sym->offset = chosenAssembler->arch->retblocksize;
+                sym->sb->offset = chosenAssembler->arch->retblocksize;
                 sym->name = "__retblock";
-                sym->allocate = false;
-                if ((funcsp->attribs.inheritable.linkage == lk_pascal) && basetype(funcsp->tp)->syms->table[0] &&
+                sym->sb->allocate = false;
+                if ((funcsp->sb->attribs.inheritable.linkage == lk_pascal) && basetype(funcsp->tp)->syms->table[0] &&
                     ((SYMBOL*)basetype(funcsp->tp)->syms->table[0])->tp->type != bt_void)
                 {
-                    sym->offset = funcsp->paramsize;
+                    sym->sb->offset = funcsp->sb->paramsize;
                 }
                 SimpleSymbol *ssym = SymbolManager::Get(sym);
-                ssym->offset = sym->offset;
+                ssym->offset = sym->sb->offset;
                 ssym->allocate = false;
                 deref(&stdpointer, &en);
                 ap = gen_expr(funcsp, en, 0, ISZ_ADDR);
@@ -541,9 +541,9 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, IMODE*
     if (flag)
     {
         int retsize = 0;
-        if (funcsp->attribs.inheritable.linkage == lk_pascal || funcsp->attribs.inheritable.linkage == lk_stdcall)
+        if (funcsp->sb->attribs.inheritable.linkage == lk_pascal || funcsp->sb->attribs.inheritable.linkage == lk_stdcall)
         {
-            retsize = funcsp->paramsize;
+            retsize = funcsp->sb->paramsize;
         }
         gen_label(retlab);
         intermed_tail->retcount = retcount;
@@ -556,20 +556,20 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, IMODE*
                 {
                     gen_icode(i_loadstack, 0, allocaAP, 0);
                 }
-                /*			if (funcsp->loadds && funcsp->farproc)
+                /*			if (funcsp->sb->loadds && funcsp->sb->farproc)
                                 gen_icode(i_unloadcontext,0,0,0);
                 */
-                if (cparams.prm_xcept && funcsp->xc && funcsp->xc->xcRundownFunc)
-                    gen_expr(funcsp, funcsp->xc->xcRundownFunc, F_NOVALUE, ISZ_UINT);
+                if (cparams.prm_xcept && funcsp->sb->xc && funcsp->sb->xc->xcRundownFunc)
+                    gen_expr(funcsp, funcsp->sb->xc->xcRundownFunc, F_NOVALUE, ISZ_UINT);
                 SubProfilerData();
                 gen_icode(i_epilogue, 0, 0, 0);
-                if (funcsp->attribs.inheritable.linkage == lk_interrupt || funcsp->attribs.inheritable.linkage == lk_fault)
+                if (funcsp->sb->attribs.inheritable.linkage == lk_interrupt || funcsp->sb->attribs.inheritable.linkage == lk_fault)
                 {
-                    /*				if (funcsp->loadds)
+                    /*				if (funcsp->sb->loadds)
                                         gen_icode(i_unloadcontext,0,0,0);
                     */
                     gen_icode(i_popcontext, 0, 0, 0);
-                    gen_icode(i_rett, 0, make_immed(ISZ_UINT, funcsp->attribs.inheritable.linkage == lk_interrupt), 0);
+                    gen_icode(i_rett, 0, make_immed(ISZ_UINT, funcsp->sb->attribs.inheritable.linkage == lk_interrupt), 0);
                 }
                 else
                 {
@@ -824,7 +824,7 @@ static void InsertParameterThunks(SYMBOL* funcsp, BLOCK* b)
             hr = hr->next;
             continue;
         }
-        if (funcsp->oldstyle && sym->tp->type == bt_float)
+        if (funcsp->sb->oldstyle && sym->tp->type == bt_float)
         {
             IMODE* right = (IMODE*)(IMODE*)Alloc(sizeof(IMODE));
             *right = *simpleSym->imvalue;
@@ -853,11 +853,11 @@ static void InsertParameterThunks(SYMBOL* funcsp, BLOCK* b)
 void CopyVariables(SYMBOL *funcsp)
 {
     functionVariables.clear();
-    for (HASHTABLE* syms = funcsp->inlineFunc.syms; syms; syms = syms->next)
+    for (HASHTABLE* syms = funcsp->sb->inlineFunc.syms; syms; syms = syms->next)
     {
         for (SYMLIST* hr = syms->table[0]; hr; hr = hr->next)
         {
-            if (hr->p->storage_class == sc_auto || hr->p->storage_class == sc_parameter)
+            if (hr->p->sb->storage_class == sc_auto || hr->p->sb->storage_class == sc_parameter)
             {
                 SimpleSymbol *sym = SymbolManager::Get(hr->p);
                 sym->i = syms->blockLevel;
@@ -886,14 +886,14 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     CopyVariables(funcsp);
     returnImode = nullptr;
     while (tmpl)
-        if (tmpl->templateLevel)
+        if (tmpl->sb->templateLevel)
             break;
         else
-            tmpl = tmpl->parentClass;
+            tmpl = tmpl->sb->parentClass;
 
     /* for inlines */
     codeLabelOffset = nextLabel - INT_MIN;
-    nextLabel += funcsp->labelCount;
+    nextLabel += funcsp->sb->labelCount;
 
     temporarySymbols.clear();
     contlab = breaklab = -1;
@@ -909,11 +909,11 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     theCurrentFunc = funcsp;
     iexpr_func_init();
 
-    if (funcsp->xc && funcsp->xc->xctab)
+    if (funcsp->sb->xc && funcsp->sb->xc->xctab)
     {
         EXPRESSION* exp;
-        temporarySymbols.push_back(SymbolManager::Get(funcsp->xc->xctab));
-        xcexp = varNode(en_auto, funcsp->xc->xctab);
+        temporarySymbols.push_back(SymbolManager::Get(funcsp->sb->xc->xctab));
+        xcexp = varNode(en_auto, funcsp->sb->xc->xctab);
         xcexp = exprNode(en_add, xcexp, intNode(en_c_i, XCTAB_INDEX_OFS));
         deref(&stdpointer, &xcexp);
         exp = intNode(en_c_i, 0);
@@ -924,13 +924,13 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
         xcexp = nullptr;
     }
     cseg();
-    gen_line(funcsp->linedata);
+    gen_line(funcsp->sb->linedata);
     gen_func(funcexp, 1);
     /* in C99 inlines can clash if declared 'extern' in multiple modules */
     /* in C++ we introduce virtual functions that get coalesced at link time */
-    if (funcsp->attribs.inheritable.linkage == lk_virtual || tmpl)
+    if (funcsp->sb->attribs.inheritable.linkage == lk_virtual || tmpl)
     {
-        funcsp->attribs.inheritable.linkage = lk_virtual;
+        funcsp->sb->attribs.inheritable.linkage = lk_virtual;
         gen_virtual(SymbolManager::Get(funcsp), false);
     }
     else
@@ -939,16 +939,16 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
         gen_strlab(SymbolManager::Get(funcsp)); /* name of function */
     }
     addblock(-1);
-    if (funcsp->attribs.inheritable.linkage == lk_interrupt || funcsp->attribs.inheritable.linkage == lk_fault)
+    if (funcsp->sb->attribs.inheritable.linkage == lk_interrupt || funcsp->sb->attribs.inheritable.linkage == lk_fault)
     {
         gen_icode(i_pushcontext, 0, 0, 0);
-        /*		if (funcsp->loadds) */
+        /*		if (funcsp->sb->loadds) */
         /*	        gen_icode(i_loadcontext, 0,0,0); */
     }
     gen_icode(i_prologue, 0, 0, 0);
     if (cparams.prm_debug)
     {
-        if (basetype(funcsp->tp)->syms->table[0] && ((SYMBOL*)basetype(funcsp->tp)->syms->table[0]->p)->thisPtr)
+        if (basetype(funcsp->tp)->syms->table[0] && ((SYMBOL*)basetype(funcsp->tp)->syms->table[0]->p)->sb->thisPtr)
         {
             EXPRESSION* exp = varNode(en_auto, ((SYMBOL*)basetype(funcsp->tp)->syms->table[0]->p));
             exp->v.sp->tp->used = true;
@@ -957,22 +957,22 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     }
     else
     {
-        if (basetype(funcsp->tp)->syms->table[0] && ((SYMBOL*)basetype(funcsp->tp)->syms->table[0]->p)->thisPtr)
+        if (basetype(funcsp->tp)->syms->table[0] && ((SYMBOL*)basetype(funcsp->tp)->syms->table[0]->p)->sb->thisPtr)
         {
             baseThisPtr = SymbolManager::Get((SYMBOL*)basetype(funcsp->tp)->syms->table[0]->p);
         }
     }
     gen_label(startlab);
     AddProfilerData(funcsp);
-    if (cparams.prm_xcept && funcsp->xc && funcsp->xc->xcInitializeFunc)
+    if (cparams.prm_xcept && funcsp->sb->xc && funcsp->sb->xc->xcInitializeFunc)
     {
-        gen_expr(funcsp, funcsp->xc->xcInitializeFunc, F_NOVALUE, ISZ_UINT);
-        gen_label(funcsp->xc->xcInitLab + codeLabelOffset);
+        gen_expr(funcsp, funcsp->sb->xc->xcInitializeFunc, F_NOVALUE, ISZ_UINT);
+        gen_label(funcsp->sb->xc->xcInitLab + codeLabelOffset);
     }
-    /*    if (funcsp->loadds && funcsp->farproc) */
+    /*    if (funcsp->sb->loadds && funcsp->sb->farproc) */
     /*	        gen_icode(i_loadcontext, 0,0,0); */
     AllocateLocalContext(nullptr, funcsp, nextLabel++);
-    if (funcsp->allocaUsed && (architecture != ARCHITECTURE_MSIL))
+    if (funcsp->sb->allocaUsed && (architecture != ARCHITECTURE_MSIL))
     {
         EXPRESSION* allocaExp = anonymousVar(sc_auto, &stdpointer);
         allocaAP = gen_expr(funcsp, allocaExp, 0, ISZ_ADDR);
@@ -980,11 +980,11 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     }
     /* Generate the icode */
     /* LCSE is done while code is generated */
-    genstmt(funcsp->inlineFunc.stmt->lower, funcsp);
-    if (funcsp->inlineFunc.stmt->blockTail)
+    genstmt(funcsp->sb->inlineFunc.stmt->lower, funcsp);
+    if (funcsp->sb->inlineFunc.stmt->blockTail)
     {
         gen_icode(i_functailstart, 0, 0, 0);
-        genstmt(funcsp->inlineFunc.stmt->blockTail, funcsp);
+        genstmt(funcsp->sb->inlineFunc.stmt->blockTail, funcsp);
         gen_icode(i_functailend, 0, 0, 0);
     }
     genreturn(0, funcsp, 1, 0, allocaAP);
@@ -1002,10 +1002,10 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
 //        chosenAssembler->gen->post_function_gen(SymbolManager::Get(funcsp), intermed_head);
 //    post_function_gen(currentFunction, intermed_head);
     AddFunction();
-    if (funcsp->attribs.inheritable.linkage == lk_virtual || tmpl)
+    if (funcsp->sb->attribs.inheritable.linkage == lk_virtual || tmpl)
         gen_endvirtual(SymbolManager::Get(funcsp));
     AllocateLocalContext(nullptr, funcsp, nextLabel);
-    funcsp->retblockparamadjust = chosenAssembler->arch->retblockparamadjust;
+    funcsp->sb->retblockparamadjust = chosenAssembler->arch->retblockparamadjust;
     XTDumpTab(funcsp);
     FreeLocalContext(nullptr, funcsp, nextLabel);
     intermed_head = nullptr;
@@ -1024,7 +1024,7 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     while (hr)
     {
         SYMBOL* sym = hr->p;
-        if (sym->storage_class == sc_parameter)
+        if (sym->sb->storage_class == sc_parameter)
         {
             SimpleSymbol* simpleSym = SymbolManager::Get(sym);
             simpleSym->imind = nullptr;

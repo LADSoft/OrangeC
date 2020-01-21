@@ -477,8 +477,8 @@ IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
     }
     else if (node->left->type == en_const)
     {
-        ap1 = gen_expr(funcsp, node->left->v.sp->init->exp, 0, 0);
-        //            ap1 = make_immed(siz1, node->v.sp->value.i);
+        ap1 = gen_expr(funcsp, node->left->v.sp->sb->init->exp, 0, 0);
+        //            ap1 = make_immed(siz1, node->v.sp->sb->value.i);
     }
     /* deref for auto variables */
     else if (node->left->type == en_imode)
@@ -1572,7 +1572,7 @@ int push_param(EXPRESSION* ep, SYMBOL* funcsp, bool vararg, EXPRESSION* valist, 
         {
             exp = ep->left;
         }
-        if (exp && exp->type == en_auto && exp->v.sp->stackblock)
+        if (exp && exp->type == en_auto && exp->v.sp->sb->stackblock)
         {
             // constructor or other function creating a structure on the stack
             rv = exp->v.sp->tp->size;
@@ -1758,12 +1758,12 @@ static int gen_parm(INITLIST* a, SYMBOL* funcsp)
     else if (isstructured(a->tp) && a->exp->type == en_thisref)  // constructor
     {
         EXPRESSION* ths = a->exp->v.t.thisptr;
-        if (ths && ths->type == en_auto && ths->v.sp->stackblock)
+        if (ths && ths->type == en_auto && ths->v.sp->sb->stackblock)
         {
             IMODE* ap;
             // constructor or other function creating a structure on the stack
             ths = a->exp->left->v.func->thisptr;
-            ths->v.sp->stackblock = true;
+            ths->v.sp->sb->stackblock = true;
 
             rv = ths->v.sp->tp->size;
             if (rv % chosenAssembler->arch->stackalign)
@@ -1811,8 +1811,8 @@ static int genCdeclArgs(INITLIST* args, SYMBOL* funcsp)
         rv += n;
         stackblockOfs -= n;
         if (args->exp->type == en_auto)
-            if (args->exp->v.sp->stackblock)
-                args->exp->v.sp->offset = stackblockOfs;
+            if (args->exp->v.sp->sb->stackblock)
+                args->exp->v.sp->sb->offset = stackblockOfs;
     }
     return rv;
 }
@@ -1886,7 +1886,7 @@ static void gen_arg_destructors(SYMBOL* funcsp, INITLIST* arg)
 static int MarkFastcall(SYMBOL* sym, TYPE* functp, bool thisptr)
 {
 #ifndef CPPTHISCALL
-    if (sym->attribs.inheritable.linkage != lk_fastcall)
+    if (sym->sb->attribs.inheritable.linkage != lk_fastcall)
         return 0;
 #endif
 
@@ -1904,7 +1904,7 @@ static int MarkFastcall(SYMBOL* sym, TYPE* functp, bool thisptr)
                 if (basetype(functp)->sp)
                     sym = basetype(functp)->sp;
                 hr = basetype(functp)->syms->table[0];
-                if (!ismember(sym) && sym->attribs.inheritable.linkage != lk_fastcall && basetype(sym->tp)->type != bt_memberptr)
+                if (!ismember(sym) && sym->sb->attribs.inheritable.linkage != lk_fastcall && basetype(sym->tp)->type != bt_memberptr)
                     return 0;
             }
             else
@@ -1925,7 +1925,7 @@ static int MarkFastcall(SYMBOL* sym, TYPE* functp, bool thisptr)
                     if (thisptr ||
                         ((tp->type < bt_float || (tp->type == bt_pointer && basetype(basetype(tp)->btp)->type != bt_func) ||
                           isref(tp)) &&
-                         sp->offset - (chosenAssembler->arch->fastcallRegCount + structret) * chosenAssembler->arch->parmwidth <
+                         sp->sb->offset - (chosenAssembler->arch->fastcallRegCount + structret) * chosenAssembler->arch->parmwidth <
                              chosenAssembler->arch->retblocksize))
                     {
                         IMODE* temp = tempreg(tail->dc.left->size, 0);
@@ -1947,11 +1947,11 @@ static int MarkFastcall(SYMBOL* sym, TYPE* functp, bool thisptr)
                     {
                         break;
                     }
-                    if (sym->attribs.inheritable.linkage != lk_fastcall)
+                    if (sym->sb->attribs.inheritable.linkage != lk_fastcall)
                         break;
                     if (thisptr)
                     {
-                        if (hr->p->thisPtr)
+                        if (hr->p->sb->thisPtr)
                             hr = hr->next;
                         thisptr = false;
                     }
@@ -1991,11 +1991,11 @@ IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         return gen_expr(funcsp, f->fcall, 0, ISZ_ADDR);
     }
 
-    if (f->sp->isInline)
+    if (f->sp->sb->isInline)
     {
-        if (f->sp->noinline)
+        if (f->sp->sb->noinline)
         {
-            f->sp->dumpInlineToFile = true;
+            f->sp->sb->dumpInlineToFile = true;
         }
         else
         {
@@ -2004,7 +2004,7 @@ IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
                 return ap;
         }
     }
-    if ((architecture == ARCHITECTURE_MSIL) && (f->sp->attribs.inheritable.linkage2 != lk_unmanaged && msilManaged(f->sp)))
+    if ((architecture == ARCHITECTURE_MSIL) && (f->sp->sb->attribs.inheritable.linkage2 != lk_unmanaged && msilManaged(f->sp)))
         managed = true;
     if (f->returnEXP && managed && isstructured(basetype(f->functp)->btp))
     {
@@ -2052,7 +2052,7 @@ IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         }
     }
     int cdeclare = stackblockOfs;
-    if (f->sp->attribs.inheritable.linkage == lk_pascal)
+    if (f->sp->sb->attribs.inheritable.linkage == lk_pascal)
     {
         if (isstructured(basetype(f->functp)->btp) || basetype(basetype(f->functp)->btp)->type == bt_memberptr)
         {
@@ -2064,7 +2064,7 @@ IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
     else
     {
         int n = 0;
-        if (f->thisptr && f->thisptr->type == en_auto && f->thisptr->v.sp->stackblock)
+        if (f->thisptr && f->thisptr->type == en_auto && f->thisptr->v.sp->sb->stackblock)
         {
             EXPRESSION* exp = f->thisptr;
             // constructor or other function creating a structure on the stack
@@ -2144,7 +2144,7 @@ IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         ap = ap3 = gen_expr(funcsp, f->fcall, 0, ISZ_UINT);
         if (ap->mode == i_immed && ap->offset->type == se_pc)
         {
-            if (f->sp && f->sp->attribs.inheritable.linkage2 == lk_import && (architecture != ARCHITECTURE_MSIL))
+            if (f->sp && f->sp->sb->attribs.inheritable.linkage2 == lk_import && (architecture != ARCHITECTURE_MSIL))
             {
                 IMODE* ap1 = (IMODE*)(IMODE*)Alloc(sizeof(IMODE));
                 *ap1 = *ap;
@@ -2153,7 +2153,7 @@ IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
                 ap->mode = i_direct;
             }
         }
-        else if (f->sp && f->sp->attribs.inheritable.linkage2 == lk_import && f->sp->storage_class != sc_virtual)
+        else if (f->sp && f->sp->sb->attribs.inheritable.linkage2 == lk_import && f->sp->sb->storage_class != sc_virtual)
         {
             IMODE* ap1 = ap;
             gen_icode(i_assn, ap = tempreg(ISZ_ADDR, 0), ap1, 0);
@@ -2190,7 +2190,7 @@ IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         }
     }
     gosub->altsp = SymbolManager::Get(f->sp);
-    if ((f->sp->storage_class == sc_typedef || f->sp->storage_class == sc_cast) && isfuncptr(f->sp->tp))
+    if ((f->sp->sb->storage_class == sc_typedef || f->sp->sb->storage_class == sc_cast) && isfuncptr(f->sp->tp))
     {
         typedefs.push_back(gosub->altsp);
     }
@@ -2237,7 +2237,7 @@ IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         adjust2 -= fastcallSize;
         if (adjust2 < 0)
             adjust2 = 0;
-        if (f->sp->attribs.inheritable.linkage != lk_stdcall && f->sp->attribs.inheritable.linkage != lk_pascal)
+        if (f->sp->sb->attribs.inheritable.linkage != lk_stdcall && f->sp->sb->attribs.inheritable.linkage != lk_pascal)
             gen_nodag(i_parmadj, 0, make_parmadj(adjust), make_parmadj(adjust));
         else
             gen_nodag(i_parmadj, 0, make_parmadj(adjust2), make_parmadj(adjust));
@@ -2924,7 +2924,7 @@ IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
             }
             break;
         case en_auto:
-            if (node->v.sp->stackblock)
+            if (node->v.sp->sb->stackblock)
             {
                 rv = SymbolManager::Get(node->v.sp)->imvalue;
                 break;
@@ -3368,8 +3368,8 @@ IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
             break;
         case en_const:
             /* should never get here unless the constant optimizer is turned off */
-            ap1 = gen_expr(funcsp, node->v.sp->init->exp, 0, 0);
-            //            ap1 = make_immed(natural_size(node), node->v.sp->value.i);
+            ap1 = gen_expr(funcsp, node->v.sp->sb->init->exp, 0, 0);
+            //            ap1 = make_immed(natural_size(node), node->v.sp->sb->value.i);
             rv = ap1;
             break;
         default:

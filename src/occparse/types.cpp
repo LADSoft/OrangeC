@@ -59,15 +59,15 @@ TYPE* typenum(char* buf, TYPE* tp);
 
 static TYPE* replaceTemplateSelector(TYPE* tp)
 {
-    if (!templateNestingCount && tp->type == bt_templateselector && tp->sp->templateSelector->next->isTemplate)
+    if (!templateNestingCount && tp->type == bt_templateselector && tp->sp->sb->templateSelector->next->isTemplate)
     {
-        SYMBOL* sp2 = tp->sp->templateSelector->next->sp;
+        SYMBOL* sp2 = tp->sp->sb->templateSelector->next->sp;
         if (sp2)
         {
-            SYMBOL* sp1 = GetClassTemplate(sp2, tp->sp->templateSelector->next->templateParams, true);
+            SYMBOL* sp1 = GetClassTemplate(sp2, tp->sp->sb->templateSelector->next->templateParams, true);
             if (sp1)
             {
-                sp1 = search(tp->sp->templateSelector->next->next->name, sp1->tp->syms);
+                sp1 = search(tp->sp->sb->templateSelector->next->next->name, sp1->tp->syms);
                 if (sp1)
                 {
                     tp = sp1->tp;
@@ -100,7 +100,7 @@ bool comparetypes(TYPE* typ1, TYPE* typ2, int exact)
     while (typ2->type == bt_typedef)
         typ2 = basetype(typ2);
     if (typ1->type == bt_templateselector && typ2->type == bt_templateselector)
-        return templateselectorcompare(typ1->sp->templateSelector, typ2->sp->templateSelector);
+        return templateselectorcompare(typ1->sp->sb->templateSelector, typ2->sp->sb->templateSelector);
     if (typ1->type == bt_templatedecltype && typ2->type == bt_templatedecltype)
         return templatecompareexpressions(typ1->templateDeclType, typ2->templateDeclType);
     if (ispointer(typ1) && ispointer(typ2))
@@ -186,15 +186,15 @@ bool comparetypes(TYPE* typ1, TYPE* typ2, int exact)
     {
         SYMBOL* s1 = typ1->sp;
         SYMBOL* s2 = typ2->sp;
-        if (s1->mainsym)
-            s1 = s1->mainsym;
-        if (s2->mainsym)
-            s2 = s2->mainsym;
+        if (s1->sb && s1->sb->mainsym)
+            s1 = s1->sb->mainsym;
+        if (s2->sb && s2->sb->mainsym)
+            s2 = s2->sb->mainsym;
         return s1 == s2;
     }
     if (typ1->type == typ2->type || (!exact && isarithmetic(typ2) && isarithmetic(typ1)))
         return true;
-    if (isfunction(typ1) && isfunction(typ2) && typ1->sp->attribs.inheritable.linkage == typ2->sp->attribs.inheritable.linkage)
+    if (isfunction(typ1) && isfunction(typ2) && typ1->sp->sb->attribs.inheritable.linkage == typ2->sp->sb->attribs.inheritable.linkage)
         return true;
     else if (!exact && ((ispointer(typ1) && (isfuncptr(typ2) || isfunction(typ2) || isint(typ2))) ||
                         (ispointer(typ2) && (isfuncptr(typ1) || isfunction(typ1) || isint(typ1)))))
@@ -367,7 +367,7 @@ TYPE* typenum(char* buf, TYPE* tp)
                 hr = tp->syms->table[0];
                 if (hr && hr->p)
                 {
-                    if (hr->p->thisPtr)
+                    if (hr->p->sb->thisPtr)
                     {
                         SYMBOL* thisptr = hr->p;
                         *buf++ = ' ';
@@ -575,27 +575,27 @@ TYPE* typenum(char* buf, TYPE* tp)
             break;
         case bt_class:
             /*                strcpy(buf, tn_class); */
-            unmangle(name, tp->sp->decoratedName ? tp->sp->decoratedName : tp->sp->name);
+            unmangle(name, tp->sp->sb->decoratedName ? tp->sp->sb->decoratedName : tp->sp->name);
             strcpy(buf, name);
             break;
         case bt_struct:
             /*                strcpy(buf, tn_struct); */
-            unmangle(name, tp->sp->decoratedName ? tp->sp->decoratedName : tp->sp->name);
+            unmangle(name, tp->sp->sb->decoratedName ? tp->sp->sb->decoratedName : tp->sp->name);
             strcpy(buf, name);
             break;
         case bt_union:
             /*                strcpy(buf, tn_union); */
-            unmangle(name, tp->sp->decoratedName ? tp->sp->decoratedName : tp->sp->name);
+            unmangle(name, tp->sp->sb->decoratedName ? tp->sp->sb->decoratedName : tp->sp->name);
             strcpy(buf, name);
             break;
         case bt_enum:
             /*                strcpy(buf, tn_enum);  */
-            unmangle(name, tp->sp->decoratedName ? tp->sp->decoratedName : tp->sp->name);
+            unmangle(name, tp->sp->sb->decoratedName ? tp->sp->sb->decoratedName : tp->sp->name);
             strcpy(buf, name);
             break;
         case bt_templateselector:
         {
-            TEMPLATESELECTOR* ts = tp->sp->templateSelector->next;
+            TEMPLATESELECTOR* ts = tp->sp->sb->templateSelector->next;
             if (ts->sp)
             {
                 strcpy(buf, ts->sp->name);

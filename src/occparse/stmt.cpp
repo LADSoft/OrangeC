@@ -272,19 +272,19 @@ static BLOCKDATA* getCommonParent(BLOCKDATA* src, BLOCKDATA* dest)
 void makeXCTab(SYMBOL* funcsp)
 {
     SYMBOL* sym;
-    if (!funcsp->xc)
+    if (!funcsp->sb->xc)
     {
-        funcsp->xc = (xcept*)Alloc(sizeof(struct xcept));
+        funcsp->sb->xc = (xcept*)Alloc(sizeof(struct xcept));
         SymbolManager::Get(funcsp)->xc = true;
     }
-    if (!funcsp->xc->xctab)
+    if (!funcsp->sb->xc->xctab)
     {
         sym = makeID(sc_auto, &stdXC, nullptr, "$$xctab");
-        sym->decoratedName = sym->name;
-        sym->allocate = true;
-        sym->attribs.inheritable.used = sym->assigned = true;
+        sym->sb->decoratedName = sym->name;
+        sym->sb->allocate = true;
+        sym->sb->attribs.inheritable.used = sym->sb->assigned = true;
         insert(sym, localNameSpace->valueData->syms);
-        funcsp->xc->xctab = sym;
+        funcsp->sb->xc->xctab = sym;
     }
 }
 static void thunkCatchCleanup(STATEMENT* st, SYMBOL* funcsp, BLOCKDATA* src, BLOCKDATA* dest)
@@ -307,7 +307,7 @@ static void thunkCatchCleanup(STATEMENT* st, SYMBOL* funcsp, BLOCKDATA* src, BLO
                 funcparams->functp = sym->tp;
                 funcparams->fcall = varNode(en_pc, sym);
                 funcparams->arguments = arg1;
-                arg1->exp = varNode(en_auto, funcsp->xc->xctab);
+                arg1->exp = varNode(en_auto, funcsp->sb->xc->xctab);
                 arg1->tp = &stdpointer;
                 while (*find && *find != st)
                     find = &(*find)->next;
@@ -342,7 +342,7 @@ static void ThunkUndestructSyms(HASHTABLE* syms)
     while (hr)
     {
         SYMBOL* sym = hr->p;
-        sym->destructed = true;
+        sym->sb->destructed = true;
         hr = hr->next;
     }
 }
@@ -694,13 +694,13 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                 }
                 else
                 {
-                    if (declSP->init)
+                    if (declSP->sb->init)
                     {
                         error(ERR_FORRANGE_DECLARATOR_NO_INIT);
                     }
-                    declSP->dest = nullptr;
+                    declSP->sb->dest = nullptr;
                     declExp = varNode(en_auto, declSP);
-                    declSP->assigned = declSP->attribs.inheritable.used = true;
+                    declSP->sb->assigned = declSP->sb->attribs.inheritable.used = true;
                 }
                 lex = getsym();
                 if (MATCHKW(lex, begin))
@@ -801,7 +801,7 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                         dest = nullptr;
                                         callDestructor(fcb.returnSP, nullptr, &exp, nullptr, true, false, false);
                                         initInsert(&dest, iteratorType, exp, 0, true);
-                                        fcb.returnSP->dest = dest;
+                                        fcb.returnSP->sb->dest = dest;
 
                                         fce.returnEXP = anonymousVar(sc_auto, iteratorType);
                                         fce.returnSP = fcb.returnEXP->v.sp;
@@ -809,7 +809,7 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                         dest = nullptr;
                                         callDestructor(fce.returnSP, nullptr, &exp, nullptr, true, false, false);
                                         initInsert(&dest, iteratorType, exp, 0, true);
-                                        fce.returnSP->dest = dest;
+                                        fce.returnSP->sb->dest = dest;
                                     }
                                     fc = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
                                     *fc = fcb;
@@ -844,17 +844,17 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                 SYMBOL* standard = namespacesearch("std", globalNameSpace, false, false);
                                 if (standard)
                                 {
-                                    sbegin = namespacesearch("begin", standard->nameSpaceValues, false, false);
-                                    send = namespacesearch("end", standard->nameSpaceValues, false, false);
+                                    sbegin = namespacesearch("begin", standard->sb->nameSpaceValues, false, false);
+                                    send = namespacesearch("end", standard->sb->nameSpaceValues, false, false);
                                 }
                             }
                             if (!sbegin || !send)
                             {
-                                if (rangeSP->tp->btp->sp->parentNameSpace)
+                                if (rangeSP->tp->btp->sp->sb->parentNameSpace)
                                 {
-                                    sbegin = namespacesearch("begin", rangeSP->tp->btp->sp->parentNameSpace->nameSpaceValues, false,
+                                    sbegin = namespacesearch("begin", rangeSP->tp->btp->sp->sb->parentNameSpace->sb->nameSpaceValues, false,
                                                              false);
-                                    send = namespacesearch("end", rangeSP->tp->btp->sp->parentNameSpace->nameSpaceValues, false,
+                                    send = namespacesearch("end", rangeSP->tp->btp->sp->sb->parentNameSpace->sb->nameSpaceValues, false,
                                                            false);
                                 }
                             }
@@ -899,7 +899,7 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                             dest = nullptr;
                                             callDestructor(fcb.returnSP, nullptr, &exp, nullptr, true, false, false);
                                             initInsert(&dest, iteratorType, exp, 0, true);
-                                            fcb.returnSP->dest = dest;
+                                            fcb.returnSP->sb->dest = dest;
 
                                             fce.returnEXP = anonymousVar(sc_auto, iteratorType);
                                             fce.returnSP = fcb.returnEXP->v.sp;
@@ -907,7 +907,7 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                             dest = nullptr;
                                             callDestructor(fce.returnSP, nullptr, &exp, nullptr, true, false, false);
                                             initInsert(&dest, iteratorType, exp, 0, true);
-                                            fce.returnSP->dest = dest;
+                                            fce.returnSP->sb->dest = dest;
                                         }
                                         fc = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
                                         *fc = fcb;
@@ -923,7 +923,7 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                             SYMBOL* esp = consexp->v.sp;
                                             FUNCTIONCALL* funcparams = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
                                             TYPE* ctype = basetype(rangeSP->tp)->btp;
-                                            esp->stackblock = true;
+                                            esp->sb->stackblock = true;
                                             funcparams->arguments = (INITLIST*)Alloc(sizeof(INITLIST));
                                             *funcparams->arguments = *fc->arguments;
                                             callConstructor(&ctype, &consexp, funcparams, false, 0, true, false, true, false, false,
@@ -954,7 +954,7 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                             SYMBOL* esp = consexp->v.sp;
                                             FUNCTIONCALL* funcparams = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
                                             TYPE* ctype = basetype(rangeSP->tp)->btp;
-                                            esp->stackblock = true;
+                                            esp->sb->stackblock = true;
                                             funcparams->arguments = (INITLIST*)Alloc(sizeof(INITLIST));
                                             *funcparams->arguments = *fc->arguments;
                                             callConstructor(&ctype, &consexp, funcparams, false, 0, true, false, true, false, false,
@@ -1249,7 +1249,7 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                 if (declaration && cparams.prm_cplusplus)
                 {
                     SYMLIST* hr = localNameSpace->valueData->syms->table[0];
-                    while (hr && hr->p->anonymous)
+                    while (hr && hr->p->sb->anonymous)
                         hr = hr->next;
                     if (!hr)
                     {
@@ -1258,9 +1258,9 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                     else
                     {
                         SYMBOL* declSP = hr->p;
-                        if (!declSP->init)
+                        if (!declSP->sb->init)
                         {
-                            if (isstructured(declSP->tp) && !basetype(declSP->tp)->sp->trivialCons)
+                            if (isstructured(declSP->tp) && !basetype(declSP->tp)->sp->sb->trivialCons)
                             {
                                 lex = initialize(lex, funcsp, declSP, sc_auto, false, 0);
                             }
@@ -1579,21 +1579,21 @@ static LEXEME* statement_goto(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
         if (!spx)
         {
             spx = makeID(sc_ulabel, nullptr, nullptr, litlate(lex->value.s.a));
-            spx->declfile = spx->origdeclfile = lex->file;
-            spx->declline = spx->origdeclline = lex->line;
-            spx->realdeclline = lex->realline;
-            spx->declfilenum = lex->filenum;
+            spx->sb->declfile = spx->sb->origdeclfile = lex->file;
+            spx->sb->declline = spx->sb->origdeclline = lex->line;
+            spx->sb->realdeclline = lex->realline;
+            spx->sb->declfilenum = lex->filenum;
             SetLinkerNames(spx, lk_none);
-            spx->offset = codeLabel++;
-            spx->gotoTable = st;
+            spx->sb->offset = codeLabel++;
+            spx->sb->gotoTable = st;
             insert(spx, labelSyms);
         }
         else
         {
-            thunkGotoDestructors(&st->destexp, block, spx->gotoTable->parent);
-            thunkCatchCleanup(st, funcsp, block, spx->gotoTable->parent);
+            thunkGotoDestructors(&st->destexp, block, spx->sb->gotoTable->parent);
+            thunkCatchCleanup(st, funcsp, block, spx->sb->gotoTable->parent);
         }
-        st->label = spx->offset;
+        st->label = spx->sb->offset;
         lex = getsym();
         parent->needlabel = true;
         AddBlock(lex, parent, block);
@@ -1604,7 +1604,7 @@ static LEXEME* statement_goto(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
         errskim(&lex, skim_semi);
         skip(&lex, semicolon);
     }
-    if (funcsp->constexpression)
+    if (funcsp->sb->constexpression)
         error(ERR_CONSTEXPR_FUNC_NO_GOTO);
     return lex;
 }
@@ -1616,14 +1616,14 @@ static LEXEME* statement_label(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     st = stmtNode(lex, parent, st_label);
     if (spx)
     {
-        if (spx->storage_class == sc_ulabel)
+        if (spx->sb->storage_class == sc_ulabel)
         {
-            spx->storage_class = sc_label;
+            spx->sb->storage_class = sc_label;
             // may come here from assembly language...
-            if (spx->gotoTable)
+            if (spx->sb->gotoTable)
             {
-                thunkGotoDestructors(&spx->gotoTable->destexp, spx->gotoTable->parent, parent);
-                thunkCatchCleanup(spx->gotoTable, funcsp, spx->gotoTable->parent, parent);
+                thunkGotoDestructors(&spx->sb->gotoTable->destexp, spx->sb->gotoTable->parent, parent);
+                thunkCatchCleanup(spx->sb->gotoTable, funcsp, spx->sb->gotoTable->parent, parent);
             }
         }
         else
@@ -1635,11 +1635,11 @@ static LEXEME* statement_label(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     {
         spx = makeID(sc_label, nullptr, nullptr, litlate(lex->value.s.a));
         SetLinkerNames(spx, lk_none);
-        spx->offset = codeLabel++;
-        spx->gotoTable = st;
+        spx->sb->offset = codeLabel++;
+        spx->sb->gotoTable = st;
         insert(spx, labelSyms);
     }
-    st->label = spx->offset;
+    st->label = spx->sb->offset;
     st->purelabel = true;
     getsym();       /* colon */
     lex = getsym(); /* next sym */
@@ -1660,10 +1660,10 @@ static EXPRESSION* ConvertReturnToRef(EXPRESSION* exp, TYPE* tp, TYPE* boundTP)
             {
                 if (!isstructured(basetype(basetype(tp)->btp)->btp))
                 {
-                    if (exp->left->type != en_auto || exp->left->v.sp->storage_class != sc_parameter)
+                    if (exp->left->type != en_auto || exp->left->v.sp->sb->storage_class != sc_parameter)
                         exp = exp->left;
                     if (exp->type == en_l_ref)
-                        if (exp->left->type != en_auto || exp->left->v.sp->storage_class != sc_parameter)
+                        if (exp->left->type != en_auto || exp->left->v.sp->sb->storage_class != sc_parameter)
                             exp = exp->left;
                 }
                 else
@@ -1673,7 +1673,7 @@ static EXPRESSION* ConvertReturnToRef(EXPRESSION* exp, TYPE* tp, TYPE* boundTP)
             }
             else
             {
-                if (exp->left->type != en_auto || exp->left->v.sp->storage_class != sc_parameter)
+                if (exp->left->type != en_auto || exp->left->v.sp->sb->storage_class != sc_parameter)
                     exp = exp->left;
             }
         }
@@ -1689,11 +1689,11 @@ static EXPRESSION* ConvertReturnToRef(EXPRESSION* exp, TYPE* tp, TYPE* boundTP)
         }
         else if (exp->type == en_auto)
         {
-            if (exp->v.sp->storage_class == sc_auto)
+            if (exp->v.sp->sb->storage_class == sc_auto)
             {
                 error(ERR_REF_RETURN_LOCAL);
             }
-            else if (exp->v.sp->storage_class == sc_parameter)
+            else if (exp->v.sp->sb->storage_class == sc_parameter)
             {
                 exp = exp2;
             }
@@ -1715,7 +1715,7 @@ static EXPRESSION* ConvertReturnToRef(EXPRESSION* exp, TYPE* tp, TYPE* boundTP)
         {
             error(ERR_LVALUE);
         }
-        else if (exp->type == en_auto && exp->v.sp->storage_class == sc_auto)
+        else if (exp->type == en_auto && exp->v.sp->sb->storage_class == sc_auto)
         {
             error(ERR_REF_RETURN_LOCAL);
         }
@@ -1785,16 +1785,16 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     TYPE* returntype = nullptr;
     EXPRESSION* destexp = nullptr;
 
-    if (funcsp->attribs.inheritable.linkage3 == lk_noreturn)
+    if (funcsp->sb->attribs.inheritable.linkage3 == lk_noreturn)
         error(ERR_NORETURN);
-    funcsp->retcount++;
+    funcsp->sb->retcount++;
 
     lex = getsym();
     if (MATCHKW(lex, semicolon))
     {
         if (!isvoid(basetype(funcsp->tp)->btp))
         {
-            if (!basetype(funcsp->tp)->sp->isConstructor && !basetype(funcsp->tp)->sp->isDestructor)
+            if (!basetype(funcsp->tp)->sp->sb->isConstructor && !basetype(funcsp->tp)->sp->sb->isDestructor)
                 error(ERR_RETURN_MUST_RETURN_VALUE);
         }
     }
@@ -1814,7 +1814,7 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
             DeduceAuto(&basetype(funcsp->tp)->btp, tp1);
             tp = basetype(funcsp->tp)->btp;
             UpdateRootTypes(funcsp->tp);
-            SetLinkerNames(funcsp, funcsp->attribs.inheritable.linkage);
+            SetLinkerNames(funcsp, funcsp->sb->attribs.inheritable.linkage);
             matchReturnTypes = true;
         }
         if (isstructured(tp) || basetype(tp)->type == bt_memberptr)
@@ -1822,18 +1822,18 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
             EXPRESSION* en = anonymousVar(sc_parameter, &stdpointer);
             SYMBOL* sp = en->v.sp;
             bool maybeConversion = true;
-            sp->allocate = false;  // static var
-            sp->offset = chosenAssembler->arch->retblocksize;
-            sp->structuredReturn = true;
+            sp->sb->allocate = false;  // static var
+            sp->sb->offset = chosenAssembler->arch->retblocksize;
+            sp->sb->structuredReturn = true;
             sp->name = "__retblock";
-            if ((funcsp->attribs.inheritable.linkage == lk_pascal) && basetype(funcsp->tp)->syms->table[0] &&
+            if ((funcsp->sb->attribs.inheritable.linkage == lk_pascal) && basetype(funcsp->tp)->syms->table[0] &&
                 ((SYMBOL*)basetype(funcsp->tp)->syms->table[0])->tp->type != bt_void)
-                sp->offset = funcsp->paramsize;
+                sp->sb->offset = funcsp->sb->paramsize;
             deref(&stdpointer, &en);
             if (cparams.prm_cplusplus && isstructured(tp))
             {
                 bool implicit = false;
-                if (basetype(tp)->sp->templateLevel && basetype(tp)->sp->templateParams && !basetype(tp)->sp->instantiated)
+                if (basetype(tp)->sp->sb->templateLevel && basetype(tp)->sp->templateParams && !basetype(tp)->sp->sb->instantiated)
                 {
                     SYMBOL* sym = basetype(tp)->sp;
                     if (!allTemplateArgsSpecified(sym, sym->templateParams))
@@ -1850,7 +1850,7 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                     returnexp = convertInitToExpression(tp, nullptr, nullptr, funcsp, init, en, false);
                     returntype = tp;
                     if (sym)
-                        sym->dest = dest;
+                        sym->sb->dest = dest;
                 }
                 else
                 {
@@ -1867,8 +1867,8 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                         if (sameTemplate(tp, tp1))
                             basetype(funcsp->tp)->btp = tp1;
                         ctype = tp1;
-                        if (basetype(tp1)->sp->templateLevel && basetype(tp1)->sp->templateParams &&
-                            !basetype(tp1)->sp->instantiated && !templateNestingCount)
+                        if (basetype(tp1)->sp->sb->templateLevel && basetype(tp1)->sp->templateParams &&
+                            !basetype(tp1)->sp->sb->instantiated && !templateNestingCount)
                         {
                             SYMBOL* sym = basetype(tp1)->sp;
                             if (!allTemplateArgsSpecified(sym, sym->templateParams))
@@ -1883,17 +1883,17 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                     if (exp2->type == en_thisref)
                         exp2 = exp2->left;
                     if (exp2->type == en_func)
-                        if (exp2->v.func->sp->isConstructor)
+                        if (exp2->v.func->sp->sb->isConstructor)
                             exp3 = baseNode(exp2->v.func->thisptr);
                         else if (exp2->v.func->returnEXP)
                             exp3 = baseNode(exp2->v.func->returnEXP);
-                    if (exp2->type == en_func && exp3 && exp3->type == en_auto && exp3->v.sp->anonymous &&
-                        (exp2->v.func->sp->isConstructor && comparetypes(basetype(exp2->v.func->thistp)->btp, tp1, true) ||
-                         !exp2->v.func->sp->isConstructor && exp2->v.func->returnSP && comparetypes(exp2->v.func->returnSP->tp, tp1,
+                    if (exp2->type == en_func && exp3 && exp3->type == en_auto && exp3->v.sp->sb->anonymous &&
+                        (exp2->v.func->sp->sb->isConstructor && comparetypes(basetype(exp2->v.func->thistp)->btp, tp1, true) ||
+                         !exp2->v.func->sp->sb->isConstructor && exp2->v.func->returnSP && comparetypes(exp2->v.func->returnSP->tp, tp1,
                     true)))
                     {
                         // either a constructor for the return type or function returning the return type
-                        if (exp2->v.func->sp->isConstructor)
+                        if (exp2->v.func->sp->sb->isConstructor)
                         {
                             exp2->v.func->thisptr = en;
                         }
@@ -1907,13 +1907,13 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                     else
                     */
                     {
-                        bool nonconst = funcsp->nonConstVariableUsed;
+                        bool nonconst = funcsp->sb->nonConstVariableUsed;
                         funcparams->arguments = (INITLIST*)Alloc(sizeof(INITLIST));
                         funcparams->arguments->tp = tp1;
                         funcparams->arguments->exp = exp1;
                         oldrref = basetype(tp1)->rref;
                         oldlref = basetype(tp1)->lref;
-                        basetype(tp1)->rref = exp1->type == en_auto && exp1->v.sp->storage_class != sc_parameter;
+                        basetype(tp1)->rref = exp1->type == en_auto && exp1->v.sp->sb->storage_class != sc_parameter;
                         EXPRESSION* exptemp = exp1;
                         if (exptemp->type == en_thisref)
                             exptemp = exptemp->left;
@@ -1925,7 +1925,7 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                         returntype = tp;
                         implicit = true;
                         callConstructor(&ctype, &en, funcparams, false, nullptr, true, maybeConversion, false, false, false, false);
-                        funcsp->nonConstVariableUsed = nonconst;
+                        funcsp->sb->nonConstVariableUsed = nonconst;
                         returnexp = en;
                         basetype(tp1)->rref = oldrref;
                         basetype(tp1)->lref = oldlref;
@@ -1936,7 +1936,7 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                 case en_global:
                                 case en_auto:
                                 case en_threadlocal:
-                                    exp1->v.sp->dest = nullptr;
+                                    exp1->v.sp->sb->dest = nullptr;
                                     break;
                                 default:
                                     break;
@@ -1965,10 +1965,10 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                 {
                     if (returnexp->type == en_func && !returnexp->v.func->ascall)
                     {
-                        if (returnexp->v.func->sp->storage_class == sc_overloads)
+                        if (returnexp->v.func->sp->sb->storage_class == sc_overloads)
                         {
                             SYMBOL* funcsp;
-                            if (returnexp->v.func->sp->parentClass && !returnexp->v.func->asaddress)
+                            if (returnexp->v.func->sp->sb->parentClass && !returnexp->v.func->asaddress)
                                 error(ERR_NO_IMPLICIT_MEMBER_FUNCTION_ADDRESS);
                             funcsp = MatchOverloadedFunction(tp, &tp1, returnexp->v.func->sp, &returnexp, 0);
                             if (funcsp && basetype(tp)->type == bt_memberptr)
@@ -1986,7 +1986,7 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                     {
                         returnexp = intNode(en_labcon, dumpMemberPtr(returnexp->v.sp, tp, true));
                     }
-                    if ((architecture != ARCHITECTURE_MSIL) || funcsp->attribs.inheritable.linkage2 == lk_unmanaged ||
+                    if ((architecture != ARCHITECTURE_MSIL) || funcsp->sb->attribs.inheritable.linkage2 == lk_unmanaged ||
                         !msilManaged(funcsp))
                     {
                         returnexp = exprNode(en_blockassign, en, returnexp);
@@ -2056,10 +2056,10 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
             }
             if (returnexp->type == en_func)
             {
-                if (returnexp->v.func->sp->storage_class == sc_overloads)
+                if (returnexp->v.func->sp->sb->storage_class == sc_overloads)
                 {
                     EXPRESSION* exp1 = returnexp;
-                    if (returnexp->v.func->sp->parentClass && !returnexp->v.func->asaddress)
+                    if (returnexp->v.func->sp->sb->parentClass && !returnexp->v.func->asaddress)
                         error(ERR_NO_IMPLICIT_MEMBER_FUNCTION_ADDRESS);
                     returnexp->v.func->sp = MatchOverloadedFunction(tp, &tp1, returnexp->v.func->sp, &exp1, 0);
                     returnexp->v.func->fcall = varNode(en_pc, returnexp->v.func->sp);
@@ -2079,7 +2079,7 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
             if (basetype(basetype(tp)->btp)->type != bt_memberptr)
                 returnexp = ConvertReturnToRef(returnexp, basetype(funcsp->tp)->btp, returntype);
         }
-        else if (returnexp && returnexp->type == en_auto && returnexp->v.sp->storage_class == sc_auto)
+        else if (returnexp && returnexp->type == en_auto && returnexp->v.sp->sb->storage_class == sc_auto)
         {
             if (!isstructured(basetype(funcsp->tp)->btp) && basetype(basetype(funcsp->tp)->btp)->type != bt_memberptr)
                 if (basetype(basetype(funcsp->tp)->btp)->type != bt___object &&
@@ -2109,7 +2109,7 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
             error(ERR_RETURN_NO_VALUE);
         else
         {
-            if (cparams.prm_cplusplus && (funcsp->isConstructor || funcsp->isDestructor))
+            if (cparams.prm_cplusplus && (funcsp->sb->isConstructor || funcsp->sb->isDestructor))
             {
                 error(ERR_CONSTRUCTOR_HAS_RETURN);
             }
@@ -2214,7 +2214,7 @@ static LEXEME* statement_switch(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     STATEMENT* st;
     EXPRESSION* select = nullptr;
     int addedBlock = 0;
-    funcsp->noinline = true;
+    funcsp->sb->noinline = true;
     switchstmt->breaklabel = codeLabel++;
     switchstmt->next = parent;
     switchstmt->defaultlabel = -1; /* no default */
@@ -2429,19 +2429,19 @@ static LEXEME* statement_expr(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
         if (cparams.prm_cplusplus && isstructured(tp) && select->type == en_func)
         {
             SYMBOL* sym = select->v.func->returnSP;
-            if (sym && sym->allocate)
+            if (sym && sym->sb->allocate)
             {
                 INITIALIZER* init = nullptr;
                 EXPRESSION* exp = select->v.func->returnEXP;
                 callDestructor(basetype(tp)->sp, nullptr, &exp, nullptr, true, false, false);
                 initInsert(&init, sym->tp, exp, 0, false);
-                sym->dest = init;
+                sym->sb->dest = init;
             }
         }
     }
     else
     {
-        if (select->type == en_func && select->v.func->sp && select->v.func->sp->attribs.inheritable.linkage3 == lk_noreturn)
+        if (select->type == en_func && select->v.func->sp && select->v.func->sp->sb->attribs.inheritable.linkage3 == lk_noreturn)
         {
             parent->needlabel = true;
         }
@@ -2466,13 +2466,13 @@ static LEXEME* asm_declare(LEXEME* lex)
                 switch (kw)
                 {
                     case kw_public:
-                        sym->storage_class = sc_global;
+                        sym->sb->storage_class = sc_global;
                         break;
                     case kw_extern:
-                        sym->storage_class = sc_external;
+                        sym->sb->storage_class = sc_external;
                         break;
                     case kw_const:
-                        sym->storage_class = sc_constant;
+                        sym->sb->storage_class = sc_constant;
                         break;
                     default:
                         break;
@@ -2563,7 +2563,7 @@ LEXEME* statement_try(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     trystmt->defaultlabel = -1; /* no default */
     trystmt->type = kw_try;
     trystmt->table = localNameSpace->valueData->syms;
-    funcsp->anyTry = true;
+    funcsp->sb->anyTry = true;
     lex = getsym();
     if (!MATCHKW(lex, begin))
     {
@@ -2982,7 +2982,7 @@ LEXEME* statement(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool viacontro
 }
 static bool thunkmainret(SYMBOL* funcsp, BLOCKDATA* parent, bool always)
 {
-    if (always || (!strcmp(funcsp->name, "main") && !funcsp->parentClass && !funcsp->parentNameSpace))
+    if (always || (!strcmp(funcsp->name, "main") && !funcsp->sb->parentClass && !funcsp->sb->parentNameSpace))
     {
         STATEMENT* s = stmtNode(nullptr, parent, st_return);
         s->select = intNode(en_c_i, 0);
@@ -3006,15 +3006,15 @@ static void insertXCInfo(SYMBOL* funcsp)
     char name[2048];
     SYMBOL* sym;
     makeXCTab(funcsp);
-    my_sprintf(name, "@$xc%s", funcsp->decoratedName);
+    my_sprintf(name, "@$xc%s", funcsp->sb->decoratedName);
     sym = makeID(sc_global, &stdpointer, nullptr, litlate(name));
-    sym->attribs.inheritable.linkage = lk_virtual;
-    sym->decoratedName = sym->name;
-    sym->allocate = true;
-    sym->attribs.inheritable.used = sym->assigned = true;
-    funcsp->xc->xcInitLab = codeLabel++;
-    funcsp->xc->xcDestLab = codeLabel++;
-    funcsp->xc->xclab = sym;
+    sym->sb->attribs.inheritable.linkage = lk_virtual;
+    sym->sb->decoratedName = sym->name;
+    sym->sb->allocate = true;
+    sym->sb->attribs.inheritable.used = sym->sb->assigned = true;
+    funcsp->sb->xc->xcInitLab = codeLabel++;
+    funcsp->sb->xc->xcDestLab = codeLabel++;
+    funcsp->sb->xc->xclab = sym;
 
     sym = namespacesearch("_InitializeException", globalNameSpace, false, false);
     if (sym)
@@ -3032,12 +3032,12 @@ static void insertXCInfo(SYMBOL* funcsp)
         arg1->next = arg2;
         arg1->tp = &stdpointer;
 
-        arg1->exp = varNode(en_auto, funcsp->xc->xctab);
+        arg1->exp = varNode(en_auto, funcsp->sb->xc->xctab);
         arg2->tp = &stdpointer;
-        arg2->exp = varNode(en_global, funcsp->xc->xclab);
+        arg2->exp = varNode(en_global, funcsp->sb->xc->xclab);
         exp = exprNode(en_func, 0, 0);
         exp->v.func = funcparams;
-        funcsp->xc->xcInitializeFunc = exp;
+        funcsp->sb->xc->xcInitializeFunc = exp;
         sym = namespacesearch("_RundownException", globalNameSpace, false, false);
         if (sym)
         {
@@ -3049,7 +3049,7 @@ static void insertXCInfo(SYMBOL* funcsp)
             funcparams->ascall = true;
             exp = exprNode(en_func, 0, 0);
             exp->v.func = funcparams;
-            funcsp->xc->xcRundownFunc = exp;
+            funcsp->sb->xc->xcRundownFunc = exp;
         }
     }
 }
@@ -3071,22 +3071,22 @@ LEXEME* compound(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
     {
         SYMLIST* hr = basetype(funcsp->tp)->syms->table[0];
         int n = 1;
-        browse_startfunc(funcsp, funcsp->declline);
+        browse_startfunc(funcsp, funcsp->sb->declline);
         while (hr)
         {
             SYMBOL* sp2 = hr->p;
-            if (!cparams.prm_cplusplus && sp2->tp->type != bt_ellipse && !isvoid(sp2->tp) && sp2->anonymous)
+            if (!cparams.prm_cplusplus && sp2->tp->type != bt_ellipse && !isvoid(sp2->tp) && sp2->sb->anonymous)
                 errorarg(ERR_PARAMETER_MUST_HAVE_NAME, n, sp2, funcsp);
-            sp2->destructed = false;
+            sp2->sb->destructed = false;
             insert(sp2, localNameSpace->valueData->syms);
             browse_variable(sp2);
             n++;
             hr = hr->next;
         }
-        if (cparams.prm_cplusplus && funcsp->isConstructor && funcsp->parentClass)
+        if (cparams.prm_cplusplus && funcsp->sb->isConstructor && funcsp->sb->parentClass)
         {
-            ParseMemberInitializers(funcsp->parentClass, funcsp);
-            thisptr = thunkConstructorHead(blockstmt, funcsp->parentClass, funcsp, basetype(funcsp->tp)->syms, true, false);
+            ParseMemberInitializers(funcsp->sb->parentClass, funcsp);
+            thisptr = thunkConstructorHead(blockstmt, funcsp->sb->parentClass, funcsp, basetype(funcsp->tp)->syms, true, false);
         }
     }
     lex = getsym(); /* past { */
@@ -3134,7 +3134,7 @@ LEXEME* compound(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
     }
     if (first)
     {
-        browse_endfunc(funcsp, funcsp->endLine = lex ? lex->line : endline);
+        browse_endfunc(funcsp, funcsp->sb->endLine = lex ? lex->line : endline);
     }
     if (!lex)
     {
@@ -3163,7 +3163,7 @@ LEXEME* compound(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
         {
             if (first)
             {
-                funcsp->allocaUsed = true;
+                funcsp->sb->allocaUsed = true;
             }
         }
     }
@@ -3171,32 +3171,32 @@ LEXEME* compound(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
     {
         if (functionCanThrow)
         {
-            if (funcsp->xcMode == xc_none || funcsp->xcMode == xc_dynamic)
+            if (funcsp->sb->xcMode == xc_none || funcsp->sb->xcMode == xc_dynamic)
             {
                 hasXCInfo = true;
             }
         }
-        else if (funcsp->xcMode == xc_dynamic && funcsp->xc && funcsp->xc->xcDynamic)
+        else if (funcsp->sb->xcMode == xc_dynamic && funcsp->sb->xc && funcsp->sb->xc->xcDynamic)
             hasXCInfo = true;
         if (hasXCInfo && cparams.prm_xcept)
         {
-            if (funcsp->anyTry)
+            if (funcsp->sb->anyTry)
             {
                 SymbolManager::Get(funcsp)->anyTry = true;
-                funcsp->noinline = true;
+                funcsp->sb->noinline = true;
             }
             insertXCInfo(funcsp);
         }
         if (!strcmp(funcsp->name, overloadNameTab[CI_DESTRUCTOR]))
-            thunkDestructorTail(blockstmt, funcsp->parentClass, funcsp, basetype(funcsp->tp)->syms);
+            thunkDestructorTail(blockstmt, funcsp->sb->parentClass, funcsp, basetype(funcsp->tp)->syms);
     }
     if (cparams.prm_cplusplus)
         HandleEndOfSwitchBlock(blockstmt);
     FreeLocalContext(blockstmt, funcsp, codeLabel++);
     if (first && !blockstmt->needlabel && !isvoid(basetype(funcsp->tp)->btp) && basetype(funcsp->tp)->btp->type != bt_auto &&
-        !funcsp->isConstructor)
+        !funcsp->sb->isConstructor)
     {
-        if (funcsp->attribs.inheritable.linkage3 == lk_noreturn)
+        if (funcsp->sb->attribs.inheritable.linkage3 == lk_noreturn)
             error(ERR_NORETURN);
         else if (cparams.prm_c99 || cparams.prm_cplusplus)
         {
@@ -3222,7 +3222,7 @@ LEXEME* compound(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
     needkw(&lex, end);
     if (first && cparams.prm_cplusplus)
     {
-        if (funcsp->hasTry)
+        if (funcsp->sb->hasTry)
         {
             STATEMENT* last = stmtNode(nullptr, blockstmt, st_return);
             lex = statement_catch(lex, funcsp, blockstmt, retlab, startlab, 0);
@@ -3238,7 +3238,7 @@ LEXEME* compound(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
                 } while (last);
             }
             hasXCInfo = true;
-            funcsp->anyTry = true;
+            funcsp->sb->anyTry = true;
         }
     }
     if (parent->type == kw_catch)
@@ -3256,7 +3256,7 @@ LEXEME* compound(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
             funcparams->functp = sym->tp;
             funcparams->fcall = varNode(en_pc, sym);
             funcparams->arguments = arg1;
-            arg1->exp = varNode(en_auto, funcsp->xc->xctab);
+            arg1->exp = varNode(en_auto, funcsp->sb->xc->xctab);
             arg1->tp = &stdpointer;
             st->select = exprNode(en_func, nullptr, nullptr);
             st->select->v.func = funcparams;
@@ -3277,24 +3277,24 @@ LEXEME* compound(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
 void assignParam(SYMBOL* funcsp, int* base, SYMBOL* param)
 {
     TYPE* tp = basetype(param->tp);
-    param->parent = funcsp;
+    param->sb->parent = funcsp;
     if (tp->type == bt_void)
         return;
-    if (isstructured(tp) && !basetype(tp)->sp->pureDest)
+    if (isstructured(tp) && !basetype(tp)->sp->sb->pureDest)
         hasXCInfo = true;
     if (chosenAssembler->arch->denyopts & DO_NOPARMADJSIZE)
     {
         // calculate index for CIL
-        param->offset = (*base)++;
+        param->sb->offset = (*base)++;
     }
     else if (!ispointer(tp) && tp->size <= chosenAssembler->arch->parmwidth)
     {
-        param->offset = *base + funcvaluesize(tp->size);
+        param->sb->offset = *base + funcvaluesize(tp->size);
         *base += chosenAssembler->arch->parmwidth;
     }
     else
     {
-        param->offset = *base;
+        param->sb->offset = *base;
         if (tp->type == bt_pointer)
         {
             if (!tp->vla)
@@ -3341,7 +3341,7 @@ static void assignParameterSizes(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* block)
         base = 0;
     else
         base = chosenAssembler->arch->retblocksize;
-    if (funcsp->attribs.inheritable.linkage == lk_pascal)
+    if (funcsp->sb->attribs.inheritable.linkage == lk_pascal)
     {
         assignPascalParams(lex, funcsp, &base, params, basetype(funcsp->tp)->btp, block);
     }
@@ -3352,7 +3352,7 @@ static void assignParameterSizes(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* block)
             // handle structured return values
             if (chosenAssembler->arch->denyopts & DO_NOPARMADJSIZE)
             {
-                if (funcsp->attribs.inheritable.linkage2 == lk_unmanaged || (architecture != ARCHITECTURE_MSIL) ||
+                if (funcsp->sb->attribs.inheritable.linkage2 == lk_unmanaged || (architecture != ARCHITECTURE_MSIL) ||
                     msilManaged(funcsp))
                     base++;
             }
@@ -3371,7 +3371,7 @@ static void assignParameterSizes(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* block)
         }
         assignCParams(lex, funcsp, &base, params, basetype(funcsp->tp)->btp, block);
     }
-    funcsp->paramsize = base - chosenAssembler->arch->retblocksize;
+    funcsp->sb->paramsize = base - chosenAssembler->arch->retblocksize;
 }
 static void checkUndefinedStructures(SYMBOL* funcsp)
 {
@@ -3461,17 +3461,17 @@ static int inlineStatementCount(STATEMENT* block)
 static void handleInlines(SYMBOL* funcsp)
 {
     /* so it will get instantiated as a virtual function */
-    if (!funcsp->isInline)
+    if (!funcsp->sb->isInline)
         return;
     if (cparams.prm_c99)
-        funcsp->attribs.inheritable.used = true;
+        funcsp->sb->attribs.inheritable.used = true;
     /* this unqualified the current function if it has structured
      * args or return value, or if it has nested declarations
      */
     {
-        if (funcsp->inlineFunc.syms)
+        if (funcsp->sb->inlineFunc.syms)
         {
-            HASHTABLE* ht = funcsp->inlineFunc.syms->next; /* past params */
+            HASHTABLE* ht = funcsp->sb->inlineFunc.syms->next; /* past params */
             if (ht)
                 ht = ht->next; /* past first level */
             /* if any vars declared at another level */
@@ -3479,18 +3479,18 @@ static void handleInlines(SYMBOL* funcsp)
             {
                 if (ht->table[0])
                 {
-                    funcsp->noinline = true;
+                    funcsp->sb->noinline = true;
                     break;
                 }
                 ht = ht->next;
             }
-            if (funcsp->inlineFunc.syms->next)
+            if (funcsp->sb->inlineFunc.syms->next)
             {
-                if (funcsp->inlineFunc.syms->next->table[0])
-                    funcsp->noinline = true;
+                if (funcsp->sb->inlineFunc.syms->next->table[0])
+                    funcsp->sb->noinline = true;
             }
         }
-        if (funcsp->attribs.inheritable.linkage == lk_virtual)
+        if (funcsp->sb->attribs.inheritable.linkage == lk_virtual)
         {
 
             SYMLIST* hr = basetype(funcsp->tp)->syms->table[0];
@@ -3500,33 +3500,33 @@ static void handleInlines(SYMBOL* funcsp)
                 head = hr->p;
                 if (isstructured(head->tp))
                 {
-                    funcsp->noinline = true;
+                    funcsp->sb->noinline = true;
                     break;
                 }
                 hr = hr->next;
             }
         }
-        if (inlineStatementCount(funcsp->inlineFunc.stmt) > 100)
+        if (inlineStatementCount(funcsp->sb->inlineFunc.stmt) > 100)
         {
-            funcsp->noinline = true;
+            funcsp->sb->noinline = true;
         }
     }
 }
 static int count8;
 void parseNoexcept(SYMBOL* funcsp)
 {
-    if (funcsp->deferredNoexcept)
+    if (funcsp->sb->deferredNoexcept)
     {
         STRUCTSYM s, t;
-        if (funcsp->parentClass)
+        if (funcsp->sb->parentClass)
         {
-            s.str = funcsp->parentClass;
+            s.str = funcsp->sb->parentClass;
             addStructureDeclaration(&s);
-            t.tmpl = funcsp->parentClass->templateParams;
+            t.tmpl = funcsp->sb->parentClass->templateParams;
             if (t.tmpl)
                 addTemplateDeclaration(&t);
         }
-        LEXEME* lex = SetAlternateLex(funcsp->deferredNoexcept);
+        LEXEME* lex = SetAlternateLex(funcsp->sb->deferredNoexcept);
         SYMLIST* hr = basetype(funcsp->tp)->syms->table[0];
         TYPE* tp = nullptr;
         EXPRESSION* exp = nullptr;
@@ -3546,10 +3546,10 @@ void parseNoexcept(SYMBOL* funcsp)
         }
         else
         {
-            funcsp->xcMode = exp->v.i ? xc_none : xc_all;
+            funcsp->sb->xcMode = exp->v.i ? xc_none : xc_all;
         }
         SetAlternateLex(nullptr);
-        if (funcsp->parentClass)
+        if (funcsp->sb->parentClass)
         {
             if (t.tmpl)
                 dropStructureDeclaration();
@@ -3584,22 +3584,22 @@ LEXEME* body(LEXEME* lex, SYMBOL* funcsp)
     functionHasAssembly = false;
     setjmp_used = false;
     declareAndInitialize = false;
-    block->type = funcsp->hasTry ? kw_try : begin;
+    block->type = funcsp->sb->hasTry ? kw_try : begin;
     theCurrentFunc = funcsp;
 
     checkUndefinedStructures(funcsp);
     parseNoexcept(funcsp);
-    FlushLineData(funcsp->declfile, funcsp->realdeclline);
-    if (!funcsp->linedata)
+    FlushLineData(funcsp->sb->declfile, funcsp->sb->realdeclline);
+    if (!funcsp->sb->linedata)
     {
         startStmt = currentLineData(nullptr, lex, 0);
         if (startStmt)
-            funcsp->linedata = startStmt->lineData;
+            funcsp->sb->linedata = startStmt->lineData;
     }
-    funcsp->declaring = true;
+    funcsp->sb->declaring = true;
     labelSyms = CreateHashTable(1);
     assignParameterSizes(lex, funcsp, block);
-    funcsp->startLine = lex->line;
+    funcsp->sb->startLine = lex->line;
     lex = compound(lex, funcsp, block, true);
     if (isstructured(basetype(funcsp->tp)->btp))    
         assignParameterSizes(lex, funcsp, block);
@@ -3610,39 +3610,39 @@ LEXEME* body(LEXEME* lex, SYMBOL* funcsp)
         basetype(funcsp->tp)->btp = &stdvoid;  // return value for auto function without return statements
     if (cparams.prm_cplusplus)
     {
-        if (!funcsp->constexpression)
-            funcsp->nonConstVariableUsed = true;
+        if (!funcsp->sb->constexpression)
+            funcsp->sb->nonConstVariableUsed = true;
         else
-            funcsp->nonConstVariableUsed |= !MatchesConstFunction(funcsp);
+            funcsp->sb->nonConstVariableUsed |= !MatchesConstFunction(funcsp);
 
-        if (funcsp->xcMode == xc_none && !funcsp->anyTry && !hasFuncCall)
+        if (funcsp->sb->xcMode == xc_none && !funcsp->sb->anyTry && !hasFuncCall)
         {
-            funcsp->xcMode= xc_unspecified;
+            funcsp->sb->xcMode= xc_unspecified;
             SymbolManager::Get(funcsp)->xc = false;
-            funcsp->xc = nullptr;
-            if (funcsp->mainsym)
+            funcsp->sb->xc = nullptr;
+            if (funcsp->sb->mainsym)
             {
-                funcsp->mainsym->xcMode= xc_unspecified;
-                funcsp->mainsym->xc = nullptr;
+                funcsp->sb->mainsym->sb->xcMode= xc_unspecified;
+                funcsp->sb->mainsym->sb->xc = nullptr;
             }
             hasXCInfo = false;
         }
-        funcsp->canThrow = functionCanThrow;
+        funcsp->sb->canThrow = functionCanThrow;
     }
-    funcsp->labelCount = codeLabel - INT_MIN;
+    funcsp->sb->labelCount = codeLabel - INT_MIN;
     n1 = codeLabel;
-    if (!funcsp->templateLevel || funcsp->instantiated || funcsp->instantiated2)
+    if (!funcsp->sb->templateLevel || funcsp->sb->instantiated || funcsp->sb->instantiated2)
     {
-        funcsp->inlineFunc.stmt = stmtNode(lex, nullptr, st_block);
-        funcsp->inlineFunc.stmt->lower = block->head;
-        funcsp->inlineFunc.stmt->blockTail = block->blockTail;
-        funcsp->declaring = false;
-        if (funcsp->isInline && (functionHasAssembly || funcsp->attribs.inheritable.linkage2 == lk_export))
-            funcsp->isInline = funcsp->dumpInlineToFile = funcsp->promotedToInline = false;
+        funcsp->sb->inlineFunc.stmt = stmtNode(lex, nullptr, st_block);
+        funcsp->sb->inlineFunc.stmt->lower = block->head;
+        funcsp->sb->inlineFunc.stmt->blockTail = block->blockTail;
+        funcsp->sb->declaring = false;
+        if (funcsp->sb->isInline && (functionHasAssembly || funcsp->sb->attribs.inheritable.linkage2 == lk_export))
+            funcsp->sb->isInline = funcsp->sb->dumpInlineToFile = funcsp->sb->promotedToInline = false;
         if (!cparams.prm_allowinline)
-            funcsp->isInline = funcsp->dumpInlineToFile = funcsp->promotedToInline = false;
+            funcsp->sb->isInline = funcsp->sb->dumpInlineToFile = funcsp->sb->promotedToInline = false;
         // if it is variadic don't allow it to be inline
-        if (funcsp->isInline)
+        if (funcsp->sb->isInline)
         {
             SYMLIST* hr = basetype(funcsp->tp)->syms->table[0];
             if (hr)
@@ -3650,15 +3650,15 @@ LEXEME* body(LEXEME* lex, SYMBOL* funcsp)
                 while (hr->next)
                     hr = hr->next;
                 if (hr->p->tp->type == bt_ellipse)
-                    funcsp->isInline = funcsp->dumpInlineToFile = funcsp->promotedToInline = false;
+                    funcsp->sb->isInline = funcsp->sb->dumpInlineToFile = funcsp->sb->promotedToInline = false;
             }
         }
-        if (funcsp->attribs.inheritable.linkage == lk_virtual || funcsp->isInline)
+        if (funcsp->sb->attribs.inheritable.linkage == lk_virtual || funcsp->sb->isInline)
         {
-            if (funcsp->isInline)
-                funcsp->attribs.inheritable.linkage2 = lk_none;
+            if (funcsp->sb->isInline)
+                funcsp->sb->attribs.inheritable.linkage2 = lk_none;
             InsertInline(funcsp);
-            if (!cparams.prm_cplusplus && funcsp->storage_class != sc_static)
+            if (!cparams.prm_cplusplus && funcsp->sb->storage_class != sc_static)
                 SymbolManager::Get(funcsp);
         }
 #ifndef PARSER_ONLY
@@ -3668,10 +3668,10 @@ LEXEME* body(LEXEME* lex, SYMBOL* funcsp)
             SYMBOL* spt = funcsp;
             while (spt && !isTemplate)
             {
-                if (spt->templateLevel)
+                if (spt->sb->templateLevel)
                     isTemplate = true;
                 else
-                    spt = spt->parentClass;
+                    spt = spt->sb->parentClass;
             }
 
             if (!isTemplate)

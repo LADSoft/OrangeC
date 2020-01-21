@@ -182,7 +182,7 @@ static int basesize(ARCH_SIZING* p, TYPE* tp)
             else if (tp->alignment)
                 return tp->alignment;
             else
-                return tp->sp->attribs.inheritable.structAlign ? tp->sp->attribs.inheritable.structAlign : 1;
+                return tp->sp->sb->attribs.inheritable.structAlign ? tp->sp->sb->attribs.inheritable.structAlign : 1;
         default:
             /*            diag("basesize: unknown type");*/
             return 1;
@@ -234,8 +234,8 @@ int getAlign(int sc, TYPE* tp)
     }
     if (chosenAssembler->arch->align)
         align = chosenAssembler->arch->align(align);
-    if (isstructured(tp) && basetype(tp)->sp->attribs.inheritable.structAlign > align)
-        align = basetype(tp)->sp->attribs.inheritable.structAlign;
+    if (isstructured(tp) && basetype(tp)->sp->sb->attribs.inheritable.structAlign > align)
+        align = basetype(tp)->sp->sb->attribs.inheritable.structAlign;
     return align;
 }
 const char* getUsageText(void) { return chosenAssembler->usage_text; }

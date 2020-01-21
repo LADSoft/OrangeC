@@ -51,6 +51,7 @@ SimpleExpression* GetSymRef(SimpleExpression* n);
 	void _add_global_using(const char* str);
 	char *strcpy(char*, const char*);
     void refreshBackendParams(SYMBOL* funcsp);
+	SYMBOL *SymAlloc();
 
                              /* Beinterf.c */
 
@@ -431,7 +432,7 @@ bool isconstzero(TYPE* tp, EXPRESSION* exp);
 bool fittedConst(TYPE* tp, EXPRESSION* exp);
 bool isarithmeticconst(EXPRESSION* exp);
 bool isconstaddress(EXPRESSION* exp);
-SYMBOL* clonesym(SYMBOL* sp);
+SYMBOL* (clonesym)(const char *func, SYMBOL* sp, bool full = true);
 TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION* *exp1, EXPRESSION* *exp2, bool minimizeInt, TYPE* atp);
 EXPRESSION* RemoveAutoIncDec(EXPRESSION* exp);
 long long imax(long long x, long long y);
@@ -852,6 +853,7 @@ void* globalAlloc(int size);
 void globalFree(void);
 void* localAlloc(int size);
 void localFree(void);
+void* nzAlloc(int size);
 void* Alloc( int size);
 void* oAlloc(int size);
 void oFree(void);

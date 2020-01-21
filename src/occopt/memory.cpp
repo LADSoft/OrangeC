@@ -24,6 +24,7 @@
 
 #include "ctypes.h"
 #include "Utils.h"
+#include <map>
     
 static MEMBLK* globals;
 static MEMBLK* locals;
@@ -34,8 +35,8 @@ static MEMBLK* live;
 static MEMBLK* templates;
 static MEMBLK* conflicts;
 
-
-
+static std::map<int, unsigned> vv;
+static std::map<std::string, unsigned> xx;
 static bool globalFlag=true;
 static int globalPeak, localPeak, optPeak, tempsPeak, aliasPeak, livePeak, templatePeak, conflictPeak;
 
@@ -43,6 +44,10 @@ static int globalPeak, localPeak, optPeak, tempsPeak, aliasPeak, livePeak, templ
 #define MALIGN (4)
 
 //#define DEBUG
+void memfunc(const char *a)
+{
+//    xx[a]++;
+}
 void mem_summary(void)
 {
     printf("Memory used:\n");
@@ -55,12 +60,16 @@ void mem_summary(void)
     printf("\tLive peak %dK\n", (livePeak + 1023) / 1024);
     printf("\tConflict peak %dK\n", (conflictPeak + 1023) / 1024);
     globalPeak = localPeak = optPeak = tempsPeak = aliasPeak = livePeak = conflictPeak = 0;
+for (auto v : vv)
+	printf("%d, %d\n", v.first, v.second);
+for (auto v : xx)
+    printf("%s, %d\n", v.first.c_str(), v.second);
 }
 static MEMBLK* galloc(MEMBLK** arena, int size)
 {
     MEMBLK* selected;
     int allocsize = size <= MINALLOC ? MINALLOC : (size + (MINALLOC - 1)) & -MINALLOC;
-    selected = (MEMBLK*)calloc(1, allocsize + sizeof(MEMBLK) - 1);
+    selected = (MEMBLK*)malloc(allocsize + sizeof(MEMBLK) - 1);
     if (!selected)
         Utils::fatal("out of memory");
     selected->size = allocsize;
@@ -69,8 +78,9 @@ static MEMBLK* galloc(MEMBLK** arena, int size)
     *arena = selected;
     return selected;
 }
-void* memAlloc(MEMBLK** arena, int size)
+void* memAlloc(MEMBLK** arena, int size, bool clear = true)
 {
+//vv[size] += size;
     MEMBLK* selected = *arena;
     void* rv;
     if (!selected || selected->left < size)
@@ -78,6 +88,8 @@ void* memAlloc(MEMBLK** arena, int size)
         selected = galloc(arena, size);
     }
     rv = (void*)(selected->m + selected->size - selected->left);
+    if (clear)
+	memset(rv, 0, size);
     selected->left = selected->left - ((size + MALIGN - 1) & -MALIGN);
     return rv;
 }
@@ -114,6 +126,14 @@ void* Alloc(int size)
 #endif
     return memAlloc(&globals, size);
 }
+void* nzAlloc(int size)
+{
+#ifndef PARSER_ONLY
+    if (!globalFlag)
+        return memAlloc(&locals, size, false);
+#endif
+    return memAlloc(&globals, size, false);
+}
 void* oAlloc(int size) { return memAlloc(&opts, size); }
 void oFree(void) { memFree(&opts, &optPeak); }
 void* aAlloc(int size) { return memAlloc(&alias, size); }
@@ -130,8 +150,8 @@ bool GetGlobalFlag(void) { return globalFlag; }
 char* litlate(const char* name)
 {
     int l;
-    char* rv = (char*)Alloc((l = strlen(name)) + 1);
-    memcpy(rv, name, l);
+    char* rv = (char*)nzAlloc((l = strlen(name)) + 1);
+    strcpy(rv, name);
     return rv;
 }
 LCHAR* wlitlate(const LCHAR* name)
@@ -141,7 +161,7 @@ LCHAR* wlitlate(const LCHAR* name)
     LCHAR* rv;
     while (*p)
         p++, count++;
-    rv = (LCHAR*)Alloc((count + 1) * sizeof(LCHAR));
+    rv = (LCHAR*)nzAlloc((count + 1) * sizeof(LCHAR));
     p = name;
     count = 0;
     while (*p)

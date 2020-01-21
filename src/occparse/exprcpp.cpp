@@ -107,7 +107,7 @@ EXPRESSION* baseClassOffset(SYMBOL* base, SYMBOL* derived, EXPRESSION* en)
     EXPRESSION* rv = en;
     if (base != derived)
     {
-        VBASEENTRY* vbase = derived->vbaseEntries;
+        VBASEENTRY* vbase = derived->sb->vbaseEntries;
         while (vbase)
         {
             // this will get all virtual bases since they are all listed on each deriviation
@@ -122,7 +122,7 @@ EXPRESSION* baseClassOffset(SYMBOL* base, SYMBOL* derived, EXPRESSION* en)
         }
         if (!vbase)
         {
-            BASECLASS* lst = derived->baseClasses;
+            BASECLASS* lst = derived->sb->baseClasses;
             if (lst)
             {
                 BASECLASS* stack[200];
@@ -132,9 +132,9 @@ EXPRESSION* baseClassOffset(SYMBOL* base, SYMBOL* derived, EXPRESSION* en)
                 {
                     if (lst->cls == base)
                         break;
-                    if (lst->cls->baseClasses)
+                    if (lst->cls->sb->baseClasses)
                     {
-                        lst = lst->cls->baseClasses;
+                        lst = lst->cls->sb->baseClasses;
                         stack[top++] = lst;
                     }
                     else if (lst->next)
@@ -158,7 +158,7 @@ EXPRESSION* baseClassOffset(SYMBOL* base, SYMBOL* derived, EXPRESSION* en)
                         if (stack[i]->isvirtual)
                         {
                             int offset;
-                            VBASEENTRY* cur = i ? stack[i - 1]->cls->vbaseEntries : derived->vbaseEntries;
+                            VBASEENTRY* cur = i ? stack[i - 1]->cls->sb->vbaseEntries : derived->sb->vbaseEntries;
                             while (cur && cur->cls != stack[i]->cls)
                                 cur = cur->next;
                             offset = cur->pointerOffset;
@@ -208,7 +208,7 @@ void getThisType(SYMBOL* sym, TYPE** tp)
     (*tp)->size = stdpointer.size;
     (*tp)->type = bt_pointer;
     (*tp)->size = getSize(bt_pointer);
-    (*tp)->btp = sym->parentClass->tp;
+    (*tp)->btp = sym->sb->parentClass->tp;
     (*tp)->rootType = (*tp);
     qualifyForFunc(sym, tp, false);
 }
@@ -217,8 +217,8 @@ EXPRESSION* getMemberBase(SYMBOL* memberSym, SYMBOL* strSym, SYMBOL* funcsp, boo
     EXPRESSION* en;
     SYMBOL* enclosing = getStructureDeclaration();
 
-    if (enclosing && (!funcsp || (funcsp->storage_class != sc_global &&
-                                  funcsp->storage_class != sc_static)))  // lambdas will be caught by this too
+    if (enclosing && (!funcsp || (funcsp->sb->storage_class != sc_global &&
+                                  funcsp->sb->storage_class != sc_static)))  // lambdas will be caught by this too
     {
         if (strSym)
         {
@@ -236,7 +236,7 @@ EXPRESSION* getMemberBase(SYMBOL* memberSym, SYMBOL* strSym, SYMBOL* funcsp, boo
             en = varNode(en_auto, (SYMBOL*)basetype(funcsp->tp)->syms->table[0]->p);  // this ptr
         else
             en = intNode(en_thisshim, 0);
-        if (lambdas && !memberSym->parentClass->islambda)
+        if (lambdas && !memberSym->sb->parentClass->sb->islambda)
         {
             if (!lambdas->lthis || !lambdas->captured)
             {
@@ -251,7 +251,7 @@ EXPRESSION* getMemberBase(SYMBOL* memberSym, SYMBOL* strSym, SYMBOL* funcsp, boo
                 if (sym)
                 {
                     deref(&stdpointer, &en);
-                    en = exprNode(en_add, en, intNode(en_c_i, sym->offset));
+                    en = exprNode(en_add, en, intNode(en_c_i, sym->sb->offset));
                 }
                 else
                 {
@@ -260,12 +260,12 @@ EXPRESSION* getMemberBase(SYMBOL* memberSym, SYMBOL* strSym, SYMBOL* funcsp, boo
             }
         }
         deref(&stdpointer, &en);
-        if (enclosing != memberSym->parentClass && enclosing->mainsym != memberSym->parentClass)
+        if (enclosing != memberSym->sb->parentClass && enclosing->sb->mainsym != memberSym->sb->parentClass)
         {
-            if (classRefCount(memberSym->parentClass, enclosing) != 1)
+            if (classRefCount(memberSym->sb->parentClass, enclosing) != 1)
             {
                 if (toError)
-                    errorsym2(ERR_NOT_UNAMBIGUOUS_BASE, memberSym->parentClass, enclosing);
+                    errorsym2(ERR_NOT_UNAMBIGUOUS_BASE, memberSym->sb->parentClass, enclosing);
             }
             else if (!isExpressionAccessible(nullptr, memberSym, funcsp, en, false))
             {
@@ -274,7 +274,7 @@ EXPRESSION* getMemberBase(SYMBOL* memberSym, SYMBOL* strSym, SYMBOL* funcsp, boo
                     errorsym(ERR_CANNOT_ACCESS, memberSym);
                 }
             }
-            en = baseClassOffset(memberSym->parentClass, enclosing, en);
+            en = baseClassOffset(memberSym->sb->parentClass, enclosing, en);
         }
     }
     else
@@ -288,7 +288,7 @@ EXPRESSION* getMemberBase(SYMBOL* memberSym, SYMBOL* strSym, SYMBOL* funcsp, boo
 EXPRESSION* getMemberNode(SYMBOL* memberSym, SYMBOL* strSym, TYPE** tp, SYMBOL* funcsp)
 {
     EXPRESSION* en = getMemberBase(memberSym, strSym, funcsp, true);
-    en = exprNode(en_structadd, en, intNode(en_c_i, memberSym->offset));
+    en = exprNode(en_structadd, en, intNode(en_c_i, memberSym->sb->offset));
     *tp = memberSym->tp;
     return en;
 }
@@ -300,7 +300,7 @@ EXPRESSION* getMemberPtr(SYMBOL* memberSym, SYMBOL* strSym, TYPE** tp, SYMBOL* f
     tpq->type = bt_memberptr;
     tpq->btp = memberSym->tp;
     tpq->rootType = tpq;
-    tpq->sp = memberSym->parentClass;
+    tpq->sp = memberSym->sb->parentClass;
     *tp = tpq;
     rv = varNode(en_memberptr, memberSym);
     rv->isfunc = true;
@@ -326,7 +326,7 @@ bool castToArithmeticInternal(bool integer, TYPE** tp, EXPRESSION** exp, enum e_
             params->thisptr = *exp;
             params->thistp = (TYPE*)Alloc(sizeof(TYPE));
             params->thistp->type = bt_pointer;
-            params->thistp->btp = cst->parentClass->tp;
+            params->thistp->btp = cst->sb->parentClass->tp;
             params->thistp->rootType = params->thistp;
             params->thistp->size = getSize(bt_pointer);
             params->functp = cst->tp;
@@ -336,17 +336,17 @@ bool castToArithmeticInternal(bool integer, TYPE** tp, EXPRESSION** exp, enum e_
             {
                 *exp = substitute_params_for_function(params, (*exp)->v.syms);
                 optimize_for_constants(exp);
-                if (!cst->constexpression || !IsConstantExpression(*exp, true, false))
+                if (!cst->sb->constexpression || !IsConstantExpression(*exp, true, false))
                     error(ERR_CONSTANT_FUNCTION_EXPECTED);
             }
             else
             {
-                *exp = DerivedToBase(cst->parentClass->tp, *tp, *exp, 0);
+                *exp = DerivedToBase(cst->sb->parentClass->tp, *tp, *exp, 0);
                 params->thisptr = *exp;
                 {
                     e1 = varNode(en_func, nullptr);
                     e1->v.func = params;
-                    if (params->sp->xcMode != xc_unspecified && params->sp->xcMode != xc_none)
+                    if (params->sp->sb->xcMode != xc_unspecified && params->sp->sb->xcMode != xc_none)
                         hasFuncCall = true;
                 }
                 *exp = e1;
@@ -424,12 +424,12 @@ bool castToPointer(TYPE** tp, EXPRESSION** exp, enum e_kw kw, TYPE* other)
                     if (*tpx && *tpy)
                         *tpx = *tpy;
                 }
-                *exp = DerivedToBase(cst->parentClass->tp, *tp, *exp, 0);
+                *exp = DerivedToBase(cst->sb->parentClass->tp, *tp, *exp, 0);
                 params->fcall = varNode(en_pc, cst);
                 params->thisptr = *exp;
                 params->thistp = (TYPE*)Alloc(sizeof(TYPE));
                 params->thistp->type = bt_pointer;
-                params->thistp->btp = cst->parentClass->tp;
+                params->thistp->btp = cst->sb->parentClass->tp;
                 params->thistp->rootType = params->thistp;
                 params->thistp->size = getSize(bt_pointer);
                 params->functp = cst->tp;
@@ -437,7 +437,7 @@ bool castToPointer(TYPE** tp, EXPRESSION** exp, enum e_kw kw, TYPE* other)
                 params->ascall = true;
                 e1 = varNode(en_func, nullptr);
                 e1->v.func = params;
-                if (params->sp->xcMode != xc_unspecified && params->sp->xcMode != xc_none)
+                if (params->sp->sb->xcMode != xc_unspecified && params->sp->sb->xcMode != xc_none)
                     hasFuncCall = true;
                 *exp = e1;
                 if (ispointer(other))
@@ -447,8 +447,8 @@ bool castToPointer(TYPE** tp, EXPRESSION** exp, enum e_kw kw, TYPE* other)
                 else
                 {
                     SYMBOL* retsp = makeID(sc_auto, other, nullptr, AnonymousName());
-                    retsp->allocate = true;
-                    retsp->attribs.inheritable.used = retsp->assigned = true;
+                    retsp->sb->allocate = true;
+                    retsp->sb->attribs.inheritable.used = retsp->sb->assigned = true;
                     SetLinkerNames(retsp, lk_cdecl);
                     insert(retsp, localNameSpace->valueData->syms);
                     params->returnSP = retsp;
@@ -474,13 +474,13 @@ bool cppCast(TYPE* src, TYPE** tp, EXPRESSION** exp)
                 FUNCTIONCALL* params = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
                 EXPRESSION* e1;
                 CheckCalledException(cst, *exp);
-                *exp = DerivedToBase(cst->parentClass->tp, src, *exp, 0);
+                *exp = DerivedToBase(cst->sb->parentClass->tp, src, *exp, 0);
                 params->fcall = varNode(en_pc, cst);
                 params->thisptr = *exp;
                 params->thistp = (TYPE*)Alloc(sizeof(TYPE));
                 params->thistp->type = bt_pointer;
                 params->thistp->size = getSize(bt_pointer);
-                params->thistp->btp = cst->parentClass->tp;
+                params->thistp->btp = cst->sb->parentClass->tp;
                 params->thistp->rootType = params->thistp;
                 params->functp = cst->tp;
                 params->sp = cst;
@@ -492,11 +492,11 @@ bool cppCast(TYPE* src, TYPE** tp, EXPRESSION** exp)
                     params->returnEXP = ev;
                     params->returnSP = sym;
                     callDestructor(basetype(*tp)->sp, nullptr, &ev, nullptr, true, false, false);
-                    initInsert(&av->dest, *tp, ev, 0, true);
+                    initInsert(&av->sb->dest, *tp, ev, 0, true);
                 }
                 e1 = varNode(en_func, nullptr);
                 e1->v.func = params;
-                if (params->sp->xcMode != xc_unspecified && params->sp->xcMode != xc_none)
+                if (params->sp->sb->xcMode != xc_unspecified && params->sp->sb->xcMode != xc_none)
                     hasFuncCall = true;
                 *exp = e1;
                 *exp = DerivedToBase(*tp, basetype(cst->tp)->btp, *exp, 0);
@@ -567,9 +567,9 @@ EXPRESSION* substitute_params_for_constexpr(EXPRESSION* exp, FUNCTIONCALL* funcp
     SYMLIST* hr = basetype(funcparams->sp->tp)->syms->table[0];
     INITLIST* args = funcparams->arguments;
     SUBSTITUTIONLIST *list = nullptr, **plist = &list;
-    if (!funcparams->sp->castoperator)
+    if (!funcparams->sp->sb->castoperator)
     {
-        if (hr->p->thisPtr)
+        if (hr->p->sb->thisPtr)
             hr = hr->next;
         // because we already did function matching to get the constructor,
         // the worst that can happen here is that the specified arg list is shorter
@@ -586,7 +586,7 @@ EXPRESSION* substitute_params_for_constexpr(EXPRESSION* exp, FUNCTIONCALL* funcp
         while (hr)
         {
             *plist = (SUBSTITUTIONLIST*)Alloc(sizeof(SUBSTITUTIONLIST));
-            (*plist)->exp = hr->p->init->exp;
+            (*plist)->exp = hr->p->sb->init->exp;
             (*plist)->sp = hr->p;
             plist = &(*plist)->next;
             hr = hr->next;
@@ -612,7 +612,7 @@ STATEMENT* do_substitute_for_function(STATEMENT* block, FUNCTIONCALL* funcparams
 }
 EXPRESSION* substitute_params_for_function(FUNCTIONCALL* funcparams, HASHTABLE* syms)
 {
-    STATEMENT* st = do_substitute_for_function(funcparams->sp->inlineFunc.stmt, funcparams, syms);
+    STATEMENT* st = do_substitute_for_function(funcparams->sp->sb->inlineFunc.stmt, funcparams, syms);
     EXPRESSION* exp = exprNode(en_stmt, 0, 0);
     exp->v.stmt = st;
     return exp;
@@ -632,7 +632,7 @@ LEXEME* expression_func_type_cast(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRES
         *tp = nullptr;
         lex = getBasicType(lex, funcsp, tp, nullptr, false, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd,
                            &consdest, nullptr, false, true);
-        if (isstructured(*tp) && !(*tp)->size && (!templateNestingCount || !basetype(*tp)->sp->templateLevel))
+        if (isstructured(*tp) && !(*tp)->size && (!templateNestingCount || !basetype(*tp)->sp->sb->templateLevel))
         {
             errorsym(ERR_STRUCT_NOT_DEFINED, basetype(*tp)->sp);
         }
@@ -656,7 +656,7 @@ LEXEME* expression_func_type_cast(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRES
                     if ((*e1)->type == en_void)
                         e1 = &(*e1)->left;
                     *e1 = exprNode(en_void, *e1, varNode(en_auto, sym));
-                    sym->dest = dest;
+                    sym->sb->dest = dest;
                 }
             }
         }
@@ -707,9 +707,9 @@ LEXEME* expression_func_type_cast(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRES
                 callDestructor(basetype(*tp)->sp, nullptr, &exp1, nullptr, true, false, false);
                 if (architecture == ARCHITECTURE_MSIL)
                     *exp = exprNode(en_void, *exp, exp2);
-                initInsert(&sym->dest, *tp, exp1, 0, true);
+                initInsert(&sym->sb->dest, *tp, exp1, 0, true);
                 //                if (flags & _F_SIZEOF)
-                //                    sym->destructed = true; // in case we don't actually use this instantiation
+                //                    sym->sb->destructed = true; // in case we don't actually use this instantiation
             }
             else
                 *exp = intNode(en_c_i, 0);
@@ -848,7 +848,7 @@ bool doDynamicCast(TYPE** newType, TYPE* oldType, EXPRESSION** exp, SYMBOL* func
                     }
                     if (isref(*newType))
                         *newType = tpn;
-                    if (!basetype(tpo)->sp->hasvtab || !basetype(tpo)->sp->tp->syms->table[0])
+                    if (!basetype(tpo)->sp->sb->hasvtab || !basetype(tpo)->sp->tp->syms->table[0])
                         errorsym(ERR_NOT_DEFINED_WITH_VIRTUAL_FUNCS, basetype(tpo)->sp);
                     return true;
                 }
@@ -979,8 +979,8 @@ bool doStaticCast(TYPE** newType, TYPE* oldType, EXPRESSION** exp, SYMBOL* funcs
         {
             if (!checkconst || isconst(basetype(*newType)->btp) || !isconst(basetype(oldType)->btp))
             {
-                int vbo = basetype(oldType)->sp->vbaseEntries != 0;
-                int vbn = basetype(*newType)->sp->vbaseEntries != 0;
+                int vbo = basetype(oldType)->sp->sb->vbaseEntries != 0;
+                int vbn = basetype(*newType)->sp->sb->vbaseEntries != 0;
                 // can't have just new one being virtual...
                 if ((vbo && vbn) || !vbn)
                 {
@@ -1100,9 +1100,9 @@ bool doReinterpretCast(TYPE** newType, TYPE* oldType, EXPRESSION** exp, SYMBOL* 
             {
                 return true;
             }
-            if (!isstructured(tpo) || (!spo->hasvtab && !spo->accessspecified && !spo->baseClasses))
+            if (!isstructured(tpo) || (!spo->sb->hasvtab && !spo->sb->accessspecified && !spo->sb->baseClasses))
             {
-                if (!isstructured(tpn) || (!spn->hasvtab && !spn->accessspecified && !spn->baseClasses))
+                if (!isstructured(tpn) || (!spn->sb->hasvtab && !spn->sb->accessspecified && !spn->sb->baseClasses))
                 {
                     // new alignment has to be the same or more restrictive than old
                     if (basetype(tpn)->alignment >= basetype(tpo)->alignment)
@@ -1148,9 +1148,9 @@ bool doReinterpretCast(TYPE** newType, TYPE* oldType, EXPRESSION** exp, SYMBOL* 
                 {
                     return true;
                 }
-                if (!isstructured(tpo) || (!spo->hasvtab && !spo->accessspecified && !spo->baseClasses))
+                if (!isstructured(tpo) || (!spo->sb->hasvtab && !spo->sb->accessspecified && !spo->sb->baseClasses))
                 {
-                    if (!isstructured(tpn) || (!spn->hasvtab && !spn->accessspecified && !spn->baseClasses))
+                    if (!isstructured(tpn) || (!spn->sb->hasvtab && !spn->sb->accessspecified && !spn->sb->baseClasses))
                     {
                         // new alignment has to be the same or more restrictive than old
                         if (basetype(tpn)->alignment >= basetype(tpo)->alignment)
@@ -1237,7 +1237,7 @@ LEXEME* expression_typeid(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** e
                 valtp->rootType = valtp;
                 valtp->esize = intNode(en_c_i, 2);
                 val = makeID(sc_auto, valtp, nullptr, AnonymousName());
-                val->allocate = true;
+                val->sb->allocate = true;
                 insert(val, localNameSpace->valueData->syms);
                 sym = (SYMBOL*)basetype(sym->tp)->syms->table[0]->p;
                 funcparams->arguments = arg;
@@ -1249,7 +1249,7 @@ LEXEME* expression_typeid(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** e
                 arg->exp = varNode(en_auto, val);
                 arg->next = arg2;
                 arg2->tp = &stdpointer;
-                if (!byType && isstructured(*tp) && basetype(*tp)->sp->hasvtab)
+                if (!byType && isstructured(*tp) && basetype(*tp)->sp->sb->hasvtab)
                 {
                     deref(&stdpointer, exp);
                     *exp = exprNode(en_sub, *exp, intNode(en_c_i, VTAB_XT_OFFS));
@@ -1264,9 +1264,9 @@ LEXEME* expression_typeid(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** e
                 *exp = exprNode(en_func, 0, 0);
                 (*exp)->v.func = funcparams;
                 sym = namespacesearch("std", globalNameSpace, false, false);
-                if (sym->storage_class == sc_namespace)
+                if (sym->sb->storage_class == sc_namespace)
                 {
-                    sym = namespacesearch("type_info", sym->nameSpaceValues, true, false);
+                    sym = namespacesearch("type_info", sym->sb->nameSpaceValues, true, false);
                     if (sym)
                     {
                         if (!sym->tp->syms)
@@ -1341,10 +1341,10 @@ bool insertOperatorParams(SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, FUNCTIONC
     {
         if (!isExpressionAccessible(nullptr, s3, funcsp, funcparams->thisptr, false))
             errorsym(ERR_CANNOT_ACCESS, s3);
-        s3->throughClass = s3->parentClass != nullptr;
+        s3->sb->throughClass = s3->sb->parentClass != nullptr;
         funcparams->sp = s3;
         funcparams->functp = s3->tp;
-        if (funcparams->sp->xcMode != xc_unspecified && funcparams->sp->xcMode != xc_none)
+        if (funcparams->sp->sb->xcMode != xc_unspecified && funcparams->sp->sb->xcMode != xc_none)
             hasFuncCall = true;
         *exp = intNode(en_func, 0);
         (*exp)->v.func = funcparams;
@@ -1580,15 +1580,15 @@ bool insertOperatorFunc(enum ovcl cls, enum e_kw kw, SYMBOL* funcsp, TYPE** tp, 
             funcparams->thistp->rootType = funcparams->thistp;
             funcparams->thisptr = *exp;
         }
-        s3->throughClass = s3->parentClass != nullptr;
+        s3->sb->throughClass = s3->sb->parentClass != nullptr;
         funcparams->sp = s3;
         funcparams->functp = s3->tp;
         *exp = intNode(en_func, 0);
         (*exp)->v.func = funcparams;
         *tp = s3->tp;
         expression_arguments(nullptr, funcsp, tp, exp, 0);
-        if (s3->defaulted && kw == assign)
-            createAssignment(s3->parentClass, s3);
+        if (s3->sb->defaulted && kw == assign)
+            createAssignment(s3->sb->parentClass, s3);
         if (l.str)
             dropStructureDeclaration();
         CheckCalledException(s3, funcparams->thisptr);
@@ -1695,9 +1695,9 @@ LEXEME* expression_new(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp,
             error(ERR_NEW_NO_ALLOCATE_REFERENCE);
         if (arrSize && isstructured(*tp))
         {
-            int al = n % basetype(*tp)->sp->attribs.inheritable.structAlign;
+            int al = n % basetype(*tp)->sp->sb->attribs.inheritable.structAlign;
             if (al != 0)
-                n += basetype(*tp)->sp->attribs.inheritable.structAlign - al;
+                n += basetype(*tp)->sp->sb->attribs.inheritable.structAlign - al;
         }
         sz = intNode(en_c_i, n);
         if (arrSize)
@@ -1740,13 +1740,13 @@ LEXEME* expression_new(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp,
         SYMBOL* sym;
         val = anonymousVar(sc_auto, &stdpointer);
         sym = val->v.sp;
-        sym->decoratedName = sym->name;
+        sym->sb->decoratedName = sym->name;
         //        if (localNameSpace->valueData->syms)
         //            insert(sym, localNameSpace->valueData->syms);
         deref(&stdpointer, &val);
-        s1->throughClass = s1->parentClass != nullptr;
-        if (s1->throughClass &&
-            !isAccessible(s1->parentClass, s1->parentClass, s1, funcsp, placement->thisptr ? ac_protected : ac_public, false))
+        s1->sb->throughClass = s1->sb->parentClass != nullptr;
+        if (s1->sb->throughClass &&
+            !isAccessible(s1->sb->parentClass, s1->sb->parentClass, s1, funcsp, placement->thisptr ? ac_protected : ac_public, false))
         {
             errorsym(ERR_CANNOT_ACCESS, s1);
         }
@@ -1754,7 +1754,7 @@ LEXEME* expression_new(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp,
         placement->functp = s1->tp;
         placement->ascall = true;
         placement->fcall = varNode(en_pc, s1);
-        //        placement->noinline = (flags & _F_NOINLINE) | s1->noinline;
+        //        placement->sb->noinline = (flags & _F_NOINLINE) | s1->sb->noinline;
         exp1 = intNode(en_func, 0);
         exp1->v.func = placement;
         newfunc = exp1;
@@ -1978,9 +1978,9 @@ LEXEME* expression_delete(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** e
     s1 = GetOverloadedFunction(&tpf, &funcparams->fcall, s1, funcparams, nullptr, true, false, true, flags);
     if (s1)
     {
-        s1->throughClass = s1->parentClass != nullptr;
-        if (s1->throughClass &&
-            !isAccessible(s1->parentClass, s1->parentClass, s1, funcsp, funcparams->thisptr ? ac_protected : ac_public, false))
+        s1->sb->throughClass = s1->sb->parentClass != nullptr;
+        if (s1->sb->throughClass &&
+            !isAccessible(s1->sb->parentClass, s1->sb->parentClass, s1, funcsp, funcparams->thisptr ? ac_protected : ac_public, false))
         {
             errorsym(ERR_CANNOT_ACCESS, s1);
         }
@@ -1988,7 +1988,7 @@ LEXEME* expression_delete(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** e
         funcparams->functp = s1->tp;
         funcparams->ascall = true;
         funcparams->fcall = varNode(en_pc, s1);
-        // funcparams->noinline =  (flags & _F_NOINLINE) | s1->noinline;
+        // funcparams->sb->noinline =  (flags & _F_NOINLINE) | s1->sb->noinline;
         exp1 = intNode(en_func, 0);
         exp1->v.func = funcparams;
         exp1 = exprNode(en_void, *exp, exp1);
@@ -2198,7 +2198,7 @@ static bool noexceptExpression(EXPRESSION* node)
             fp = node->v.func;
             {
                 SYMBOL* sym = fp->sp;
-                rv = sym->xcMode == xc_none || (sym->xcMode == xc_dynamic && (!sym->xc || !sym->xc->xcDynamic));
+                rv = sym->sb->xcMode == xc_none || (sym->sb->xcMode == xc_dynamic && (!sym->sb->xc || !sym->sb->xc->xcDynamic));
             }
             break;
         case en_stmt:
@@ -2291,7 +2291,7 @@ void ResolveTemplateVariable(TYPE** ttype, EXPRESSION** texpr, TYPE* rtype, TYPE
     }
     if (exp->type == en_templateparam)
     {
-        if (exp->v.sp->templateLevel && !exp->v.sp->instantiated)
+        if (exp->v.sp->sb && exp->v.sp->sb->templateLevel && !exp->v.sp->sb->instantiated)
         {
             SYMBOL* sym;
             TYPE* type;

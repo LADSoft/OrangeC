@@ -841,7 +841,7 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
     if (theCurrentFunc && err != ERR_TOO_MANY_ERRORS && err != ERR_PREVIOUS && err != ERR_TEMPLATE_INSTANTIATION_STARTED_IN)
     {
         strcpy(infunc, " in function ");
-        unmangle(infunc + strlen(infunc), theCurrentFunc->decoratedName);
+        unmangle(infunc + strlen(infunc), theCurrentFunc->sb->decoratedName);
     }
     else
         infunc[0] = 0;
@@ -885,7 +885,7 @@ void preverror(int err, const char* name, const char* origFile, int origLine)
 void preverrorsym(int err, SYMBOL* sp, const char* origFile, int origLine)
 {
     char buf[2048];
-    unmangle(buf, sp->decoratedName);
+    unmangle(buf, sp->sb->decoratedName);
     if (origFile && origLine)
         preverror(err, buf, origFile, origLine);
 }
@@ -893,8 +893,8 @@ void errorat(int err, const char* name, const char* file, int line) { printerr(e
 void errorcurrent(int err) { printerr(err, preProcessor->GetErrFile().c_str(), preProcessor->GetErrLineNo()); }
 void getns(char* buf, SYMBOL* nssym)
 {
-    if (nssym->parentNameSpace)
-    {        getns(buf, nssym->parentNameSpace);
+    if (nssym->sb->parentNameSpace)
+    {        getns(buf, nssym->sb->parentNameSpace);
         strcat(buf, "::");
 
     }
@@ -902,14 +902,14 @@ void getns(char* buf, SYMBOL* nssym)
 }
 void getcls(char* buf, SYMBOL* clssym)
 {
-    if (clssym->parentClass)
+    if (clssym->sb->parentClass)
     {
-        getcls(buf, clssym->parentClass);
+        getcls(buf, clssym->sb->parentClass);
         strcat(buf, "::");
     }
-    else if (clssym->parentNameSpace)
+    else if (clssym->sb->parentNameSpace)
     {
-        getns(buf, clssym->parentNameSpace);
+        getns(buf, clssym->sb->parentNameSpace);
         strcat(buf, "::");
     }
     strcat(buf, clssym->name);
@@ -923,7 +923,7 @@ void errorqualified(int err, SYMBOL* strSym, NAMESPACEVALUELIST* nsv, const char
     memset(buf, 0, sizeof(buf));
     if (strSym)
     {
-        unmangle(lastb, strSym->decoratedName);
+        unmangle(lastb, strSym->sb->decoratedName);
         last = strrchr(lastb, ':');
         if (last)
             last++;
@@ -972,34 +972,41 @@ void errorstr2(int err, const char* val, const char* two) { printerr(err, prePro
 void errorsym(int err, SYMBOL* sym)
 {
     char buf[2048];
-    if (!sym->decoratedName)
+    if (sym->sb)
     {
-        SetLinkerNames(sym, lk_cdecl);
+        if (!sym->sb->decoratedName)
+        {
+            SetLinkerNames(sym, lk_cdecl);
+        }
+        unmangle(buf, sym->sb->decoratedName);
     }
-    unmangle(buf, sym->decoratedName);
+    else
+    {
+        strcpy(buf, sym->name);
+    }
     printerr(err, preProcessor->GetErrFile().c_str(), preProcessor->GetErrLineNo(), buf);
 }
 void errorsym(int err, SYMBOL* sym, int line, const char* file)
 {
     char buf[2048];
-    if (!sym->decoratedName)
+    if (!sym->sb->decoratedName)
     {
         SetLinkerNames(sym, lk_cdecl);
     }
-    unmangle(buf, sym->decoratedName);
+    unmangle(buf, sym->sb->decoratedName);
     printerr(err, file, line, buf);
 }
 void errorsym2(int err, SYMBOL* sym1, SYMBOL* sym2)
 {
     char one[2048], two[2048];
-    unmangle(one, sym1->decoratedName);
-    unmangle(two, sym2->decoratedName);
+    unmangle(one, sym1->sb->decoratedName);
+    unmangle(two, sym2->sb->decoratedName);
     printerr(err, preProcessor->GetErrFile().c_str(), preProcessor->GetErrLineNo(), one, two);
 }
 void errorstrsym(int err, const char* name, SYMBOL* sym2)
 {
     char two[2048];
-    unmangle(two, sym2->decoratedName);
+    unmangle(two, sym2->sb->decoratedName);
     printerr(err, preProcessor->GetErrFile().c_str(), preProcessor->GetErrLineNo(), name, two);
 }
 void errorstringtype(int err, char* str, TYPE* tp1)
@@ -1034,13 +1041,13 @@ void errorarg(int err, int argnum, SYMBOL* declsp, SYMBOL* funcsp)
 {
     char argbuf[2048];
     char buf[2048];
-    if (declsp->anonymous)
+    if (declsp->sb->anonymous)
         my_sprintf(argbuf, "%d", argnum);
     else
     {
-        unmangle(argbuf, declsp->decoratedName);
+        unmangle(argbuf, declsp->sb->decoratedName);
     }
-    unmangle(buf, funcsp->decoratedName);
+    unmangle(buf, funcsp->sb->decoratedName);
     currentErrorLine = 0;
     printerr(err, preProcessor->GetErrFile().c_str(), preProcessor->GetErrLineNo(), argbuf, buf);
 }
@@ -1158,7 +1165,7 @@ void diag(const char* fmt, ...)
             printf("Diagnostic: ");
             vprintf(fmt, argptr);
             if (theCurrentFunc)
-                printf(":%s", theCurrentFunc->decoratedName);
+                printf(":%s", theCurrentFunc->sb->decoratedName);
             printf("\n");
             va_end(argptr);
         }
@@ -1644,13 +1651,13 @@ void checkUnlabeledReferences(BLOCKDATA* block)
         while (hr)
         {
             SYMBOL* sp = hr->p;
-            if (sp->storage_class == sc_ulabel)
+            if (sp->sb->storage_class == sc_ulabel)
             {
                 STATEMENT* st;
-                specerror(ERR_UNDEFINED_LABEL, sp->name, sp->declfile, sp->declline);
-                sp->storage_class = sc_label;
+                specerror(ERR_UNDEFINED_LABEL, sp->name, sp->sb->declfile, sp->sb->declline);
+                sp->sb->storage_class = sc_label;
                 st = stmtNode(nullptr, block, st_label);
-                st->label = sp->offset;
+                st->label = sp->sb->offset;
             }
             hr = hr->next;
         }
@@ -1665,18 +1672,18 @@ void checkUnused(HASHTABLE* syms)
         while (hr)
         {
             SYMBOL* sp = hr->p;
-            if (sp->storage_class == sc_overloads)
+            if (sp->sb->storage_class == sc_overloads)
                 sp = (SYMBOL*)sp->tp->syms->table[0]->p;
-            if (!sp->attribs.inheritable.used && !sp->anonymous)
+            if (!sp->sb->attribs.inheritable.used && !sp->sb->anonymous)
             {
-                if (sp->assigned || sp->altered)
+                if (sp->sb->assigned || sp->sb->altered)
                 {
-                    if (sp->storage_class == sc_auto || sp->storage_class == sc_register || sp->storage_class == sc_parameter)
+                    if (sp->sb->storage_class == sc_auto || sp->sb->storage_class == sc_register || sp->sb->storage_class == sc_parameter)
                         errorsym(ERR_SYM_ASSIGNED_VALUE_NEVER_USED, sp);
                 }
                 else
                 {
-                    if (sp->storage_class == sc_parameter)
+                    if (sp->sb->storage_class == sc_parameter)
                         errorsym(ERR_UNUSED_PARAMETER, sp);
                     else
                         errorsym(ERR_UNUSED_VARIABLE, sp);
@@ -1697,26 +1704,26 @@ void findUnusedStatics(NAMESPACEVALUELIST* nameSpace)
             SYMBOL* sp = hr->p;
             if (sp)
             {
-                if (sp->storage_class == sc_namespace)
+                if (sp->sb->storage_class == sc_namespace)
                 {
-                    findUnusedStatics(sp->nameSpaceValues);
+                    findUnusedStatics(sp->sb->nameSpaceValues);
                 }
                 else
                 {
-                    if (sp->storage_class == sc_overloads)
+                    if (sp->sb->storage_class == sc_overloads)
                     {
                         SYMLIST* hr1 = sp->tp->syms->table[0];
                         while (hr1)
                         {
                             SYMBOL* sp1 = (SYMBOL*)hr1->p;
-                            if (sp1->isInline && !sp1->inlineFunc.stmt && !sp1->templateLevel)
+                            if (sp1->sb->isInline && !sp1->sb->inlineFunc.stmt && !sp1->sb->templateLevel)
                             {
                                 errorsym(ERR_UNDEFINED_IDENTIFIER, sp1);
                             }
-                            else if (sp1->storage_class == sc_static && !sp1->inlineFunc.stmt &&
-                                     !(sp1->templateLevel || sp1->instantiated))
+                            else if (sp1->sb->storage_class == sc_static && !sp1->sb->inlineFunc.stmt &&
+                                     !(sp1->sb->templateLevel || sp1->sb->instantiated))
                             {
-                                if (sp1->attribs.inheritable.used)
+                                if (sp1->sb->attribs.inheritable.used)
                                     errorsym(ERR_UNDEFINED_STATIC_FUNCTION, sp1, eofLine, eofFile);
                                 else
                                     errorsym(ERR_STATIC_FUNCTION_USED_BUT_NOT_DEFINED, sp1, eofLine, eofFile);
@@ -1727,13 +1734,13 @@ void findUnusedStatics(NAMESPACEVALUELIST* nameSpace)
                     else
                     {
                         currentErrorLine = 0;
-                        if (sp->storage_class == sc_static && !sp->attribs.inheritable.used)
+                        if (sp->sb->storage_class == sc_static && !sp->sb->attribs.inheritable.used)
                             errorsym(ERR_UNUSED_STATIC, sp);
                         currentErrorLine = 0;
-                        if (sp->storage_class == sc_global || sp->storage_class == sc_static || sp->storage_class == sc_localstatic)
+                        if (sp->sb->storage_class == sc_global || sp->sb->storage_class == sc_static || sp->sb->storage_class == sc_localstatic)
                             /* void will be caught earlier */
                             if (!isfunction(sp->tp) && !isarray(sp->tp) && sp->tp->size == 0 && !isvoid(sp->tp) &&
-                                sp->tp->type != bt_any && !sp->templateLevel)
+                                sp->tp->type != bt_any && !sp->sb->templateLevel)
                                 errorsym(ERR_UNSIZED, sp);
                     }
                 }
@@ -1744,13 +1751,13 @@ void findUnusedStatics(NAMESPACEVALUELIST* nameSpace)
 }
 static void usageErrorCheck(SYMBOL* sp)
 {
-    if ((sp->storage_class == sc_auto || sp->storage_class == sc_register || sp->storage_class == sc_localstatic) &&
-        !sp->assigned && !sp->attribs.inheritable.used && !sp->altered)
+    if ((sp->sb->storage_class == sc_auto || sp->sb->storage_class == sc_register || sp->sb->storage_class == sc_localstatic) &&
+        !sp->sb->assigned && !sp->sb->attribs.inheritable.used && !sp->sb->altered)
     {
-        if (!structLevel || !sp->deferredCompile)
+        if (!structLevel || !sp->sb->deferredCompile)
             errorsym(ERR_USED_WITHOUT_ASSIGNMENT, sp);
     }
-    sp->attribs.inheritable.used = true;
+    sp->sb->attribs.inheritable.used = true;
 }
 static SYMBOL* getAssignSP(EXPRESSION* exp)
 {
@@ -1782,12 +1789,12 @@ static void assignmentAssign(EXPRESSION* left, bool assign)
         sp = getAssignSP(left->left);
         if (sp)
         {
-            if (sp->storage_class == sc_auto || sp->storage_class == sc_register || sp->storage_class == sc_parameter)
+            if (sp->sb->storage_class == sc_auto || sp->sb->storage_class == sc_register || sp->sb->storage_class == sc_parameter)
             {
                 if (assign)
-                    sp->assigned = true;
-                sp->altered = true;
-                //				sp->attribs.inheritable.used = false;
+                    sp->sb->assigned = true;
+                sp->sb->altered = true;
+                //				sp->sb->attribs.inheritable.used = false;
             }
         }
     }
@@ -1800,7 +1807,8 @@ void assignmentUsages(EXPRESSION* node, bool first)
     switch (node->type)
     {
         case en_auto:
-            node->v.sp->attribs.inheritable.used = true;
+            if (node->v.sp->sb)
+                node->v.sp->sb->attribs.inheritable.used = true;
             break;
         case en_const:
         case en_msil_array_access:
@@ -2032,7 +2040,7 @@ static int checkDefaultExpression(EXPRESSION* node)
     switch (node->type)
     {
         case en_auto:
-            if (!node->v.sp->anonymous)
+            if (!node->v.sp->sb->anonymous)
                 rv = true;
             break;
         case en_const:
@@ -2225,7 +2233,7 @@ static int checkDefaultExpression(EXPRESSION* node)
                     args = args->next;
                 }
             }
-            if (fp->sp->parentClass && fp->sp->parentClass->islambda)
+            if (fp->sp->sb->parentClass && fp->sp->sb->parentClass->sb->islambda)
                 rv |= 2;
             break;
         case en_stmt:
@@ -2240,7 +2248,7 @@ static int checkDefaultExpression(EXPRESSION* node)
 }
 void checkDefaultArguments(SYMBOL* spi)
 {
-    INITIALIZER* p = spi->init;
+    INITIALIZER* p = spi->sb->init;
     int r = 0;
     while (p)
     {

@@ -220,25 +220,25 @@ bool Importer::EnterNamespace(const Namespace* nameSpace)
     level_++;
     SYMLIST** hr = LookupName((char*)nameSpace->Name().c_str(), nameSpaces_.size() == 0
                                                                     ? globalNameSpace->valueData->syms
-                                                                    : nameSpaces_.back()->nameSpaceValues->valueData->syms);
+                                                                    : nameSpaces_.back()->sb->nameSpaceValues->valueData->syms);
     SYMBOL* sp;
     if (!hr)
     {
         TYPE* tp = (TYPE*)Alloc(sizeof(TYPE));
         tp->type = bt_void;
         sp = makeID(sc_namespace, tp, NULL, litlate((char*)nameSpace->Name().c_str()));
-        sp->nameSpaceValues = (NAMESPACEVALUELIST*)Alloc(sizeof(NAMESPACEVALUELIST));
-        sp->nameSpaceValues->valueData = (NAMESPACEVALUEDATA*)Alloc(sizeof(NAMESPACEVALUEDATA));
-        sp->nameSpaceValues->valueData->syms = CreateHashTable(GLOBALHASHSIZE);
-        sp->nameSpaceValues->valueData->tags = CreateHashTable(GLOBALHASHSIZE);
-        sp->nameSpaceValues->valueData->origname = sp;
-        sp->nameSpaceValues->valueData->name = sp;
-        sp->parentNameSpace = globalNameSpace->valueData->name;
-        sp->attribs.inheritable.linkage = lk_cdecl;
-        sp->msil = GetName(nameSpace);
+        sp->sb->nameSpaceValues = (NAMESPACEVALUELIST*)Alloc(sizeof(NAMESPACEVALUELIST));
+        sp->sb->nameSpaceValues->valueData = (NAMESPACEVALUEDATA*)Alloc(sizeof(NAMESPACEVALUEDATA));
+        sp->sb->nameSpaceValues->valueData->syms = CreateHashTable(GLOBALHASHSIZE);
+        sp->sb->nameSpaceValues->valueData->tags = CreateHashTable(GLOBALHASHSIZE);
+        sp->sb->nameSpaceValues->valueData->origname = sp;
+        sp->sb->nameSpaceValues->valueData->name = sp;
+        sp->sb->parentNameSpace = globalNameSpace->valueData->name;
+        sp->sb->attribs.inheritable.linkage = lk_cdecl;
+        sp->sb->msil = GetName(nameSpace);
         if (nameSpaces_.size())
         {
-            sp->parentNameSpace = nameSpaces_.back();
+            sp->sb->parentNameSpace = nameSpaces_.back();
         }
         SetLinkerNames(sp, lk_none);
         if (nameSpaces_.size() == 0)
@@ -248,19 +248,19 @@ bool Importer::EnterNamespace(const Namespace* nameSpace)
         }
         else
         {
-            insert(sp, nameSpaces_.back()->nameSpaceValues->valueData->syms);
-            insert(sp, nameSpaces_.back()->nameSpaceValues->valueData->tags);
+            insert(sp, nameSpaces_.back()->sb->nameSpaceValues->valueData->syms);
+            insert(sp, nameSpaces_.back()->sb->nameSpaceValues->valueData->tags);
         }
     }
     else
     {
         sp = (SYMBOL*)(*hr)->p;
-        if (sp->storage_class != sc_namespace)
+        if (sp->sb->storage_class != sc_namespace)
         {
             Utils::fatal("internal error: misuse of namespace");
         }
     }
-    sp->value.i++;
+    sp->sb->value.i++;
     nameSpaces_.push_back(sp);
     return true;
 }
@@ -289,15 +289,15 @@ bool Importer::EnterClass(const Class* cls)
         }
         else if (nameSpaces_.size())
         {
-            hr = LookupName((char*)cls->Name().c_str(), nameSpaces_.back()->nameSpaceValues->valueData->syms);
+            hr = LookupName((char*)cls->Name().c_str(), nameSpaces_.back()->sb->nameSpaceValues->valueData->syms);
         }
         if (hr)
             sp = (SYMBOL*)(*hr)->p;
         if (!sp)
         {
-            sp = (SYMBOL*)Alloc(sizeof(SYMBOL));
+            sp = SymAlloc();
             sp->name = litlate((char*)cls->Name().c_str());
-            sp->storage_class = sc_type;
+            sp->sb->storage_class = sc_type;
             sp->tp = (TYPE*)Alloc(sizeof(TYPE));
             if (typeid(*cls) == typeid(Enum))
             {
@@ -309,25 +309,25 @@ bool Importer::EnterClass(const Class* cls)
             {
                 sp->tp->type = bt_struct;
                 sp->tp->size = 1;  // needs to be NZ but we don't really care what is is in the MSIL compiler
-                sp->trivialCons = true;
+                sp->sb->trivialCons = true;
             }
             if (structures_.size())
-                sp->parentClass = structures_.back();
+                sp->sb->parentClass = structures_.back();
             sp->tp->syms = CreateHashTable(1);
             sp->tp->rootType = sp->tp;
             sp->tp->sp = sp;
-            sp->declfile = sp->origdeclfile = "[import]";
+            sp->sb->declfile = sp->sb->origdeclfile = "[import]";
             if (nameSpaces_.size())
-                sp->parentNameSpace = nameSpaces_.back();
-            sp->access = ac_public;
+                sp->sb->parentNameSpace = nameSpaces_.back();
+            sp->sb->access = ac_public;
             SetLinkerNames(sp, lk_cdecl);
 
             if (useGlobal())
                 insert(sp, globalNameSpace->valueData->syms);
             else
                 insert(sp,
-                       structures_.size() ? structures_.back()->tp->syms : nameSpaces_.back()->nameSpaceValues->valueData->syms);
-            sp->msil = GetName(cls);
+                       structures_.size() ? structures_.back()->tp->syms : nameSpaces_.back()->sb->nameSpaceValues->valueData->syms);
+            sp->sb->msil = GetName(cls);
             cachedClasses_[sp->name] = sp;
         }
         else
@@ -394,7 +394,7 @@ void Importer::InsertBaseClass(SYMBOL* sp, Class* cls)
     SYMBOL* parent = cachedClasses_[cls->Name()];
     if (parent != sp && parent != NULL)  // object is parent to itself
     {
-        BASECLASS* srch = sp->baseClasses;
+        BASECLASS* srch = sp->sb->baseClasses;
         while (srch)
         {
             if (srch->cls && !strcmp(srch->cls->name, parent->name))
@@ -404,8 +404,8 @@ void Importer::InsertBaseClass(SYMBOL* sp, Class* cls)
         BASECLASS* cl = (BASECLASS*)Alloc(sizeof(BASECLASS));
         cl->accessLevel = ac_public;
         cl->cls = parent;
-        cl->next = sp->baseClasses;
-        sp->baseClasses = cl;
+        cl->next = sp->sb->baseClasses;
+        sp->sb->baseClasses = cl;
         InsertFuncs(sp, parent);
     }
 }
@@ -416,7 +416,7 @@ void Importer::InsertFuncs(SYMBOL* sp, SYMBOL* base)
     {
         SYMBOL* sym = (SYMBOL*)hr->p;
         // inserts an overload list, if there is not already an overload list for this func
-        if (sym->storage_class == sc_overloads)
+        if (sym->sb->storage_class == sc_overloads)
         {
             SYMLIST* hrc = sp->tp->syms->table[0];
             while (hrc)
@@ -445,8 +445,8 @@ bool Importer::EnterMethod(const Method* method)
         if (method->Signature()->Name() == ".ctor")
         {
             ctor = true;
-            structures_.back()->trivialCons = false;
-            structures_.back()->hasUserCons = true;
+            structures_.back()->sb->trivialCons = false;
+            structures_.back()->sb->hasUserCons = true;
         }
         TYPE* tp = (TYPE*)Alloc(sizeof(TYPE));
         std::vector<TYPE*> args;
@@ -489,22 +489,22 @@ bool Importer::EnterMethod(const Method* method)
         }
         if (tp)
         {
-            SYMBOL* sp = (SYMBOL*)Alloc(sizeof(SYMBOL));
+            SYMBOL* sp = SymAlloc();
             sp->name = litlate((char*)method->Signature()->Name().c_str());
             if (method->Signature()->Flags() & MethodSignature::VirtualFlag)
-                sp->storage_class = sc_virtual;
+                sp->sb->storage_class = sc_virtual;
             else if (!(method->Signature()->Flags() & MethodSignature::InstanceFlag))
-                sp->storage_class = sc_static;
+                sp->sb->storage_class = sc_static;
             else
-                sp->storage_class = sc_member;
+                sp->sb->storage_class = sc_member;
             sp->tp = tp;
             sp->tp->sp = sp;
-            sp->msil = GetName(method->GetContainer(), method->Signature()->Name());
-            sp->parentClass = structures_.back();
-            sp->declfile = sp->origdeclfile = "[import]";
-            sp->access = ac_public;
+            sp->sb->msil = GetName(method->GetContainer(), method->Signature()->Name());
+            sp->sb->parentClass = structures_.back();
+            sp->sb->declfile = sp->sb->origdeclfile = "[import]";
+            sp->sb->access = ac_public;
             sp->tp->syms = CreateHashTable(1);
-            sp->isConstructor = ctor;
+            sp->sb->isConstructor = ctor;
             if (!args.size())
             {
                 TYPE* tp1 = (TYPE*)Alloc(sizeof(TYPE));
@@ -512,44 +512,44 @@ bool Importer::EnterMethod(const Method* method)
                 args.push_back(tp1);
                 names.push_back("$$void");
             }
-            if (sp->storage_class == sc_member || sp->storage_class == sc_virtual)
+            if (sp->sb->storage_class == sc_member || sp->sb->storage_class == sc_virtual)
             {
-                SYMBOL* sp1 = (SYMBOL*)Alloc(sizeof(SYMBOL));
+                SYMBOL* sp1 = SymAlloc();
                 sp1->name = litlate("$$this");
-                sp1->storage_class = sc_parameter;
-                sp1->thisPtr = true;
+                sp1->sb->storage_class = sc_parameter;
+                sp1->sb->thisPtr = true;
                 sp1->tp = (TYPE*)Alloc(sizeof(TYPE));
                 sp1->tp->type = bt_pointer;
                 sp1->tp->size = getSize(bt_int);
                 sp1->tp->btp = structures_.back()->tp;
-                sp1->declfile = sp1->origdeclfile = "[import]";
-                sp1->access = ac_public;
-                sp1->parent = sp;
+                sp1->sb->declfile = sp1->sb->origdeclfile = "[import]";
+                sp1->sb->access = ac_public;
+                sp1->sb->parent = sp;
                 SetLinkerNames(sp1, lk_cdecl);
                 insert(sp1, sp->tp->syms);
             }
             for (int i = 0; i < args.size(); i++)
             {
-                SYMBOL* sp1 = (SYMBOL*)Alloc(sizeof(SYMBOL));
+                SYMBOL* sp1 = SymAlloc();
                 sp1->name = litlate((char*)names[i].c_str());
-                sp1->storage_class = sc_parameter;
+                sp1->sb->storage_class = sc_parameter;
                 sp1->tp = args[i];
-                sp1->declfile = sp1->origdeclfile = "[import]";
-                sp1->access = ac_public;
-                sp1->parent = sp;
+                sp1->sb->declfile = sp1->sb->origdeclfile = "[import]";
+                sp1->sb->access = ac_public;
+                sp1->sb->parent = sp;
                 SetLinkerNames(sp1, lk_cdecl);
                 insert(sp1, sp->tp->syms);
             }
             if (method->Signature()->Flags() & MethodSignature::Vararg)
             {
-                SYMBOL* sp1 = (SYMBOL*)Alloc(sizeof(SYMBOL));
+                SYMBOL* sp1 = SymAlloc();
                 sp1->name = litlate((char*)"$$vararg");
-                sp1->storage_class = sc_parameter;
+                sp1->sb->storage_class = sc_parameter;
                 sp1->tp = (TYPE*)Alloc(sizeof(TYPE));
                 sp1->tp->type = bt_ellipse;
-                sp1->declfile = sp1->origdeclfile = "[import]";
-                sp1->access = ac_public;
-                sp1->parent = sp;
+                sp1->sb->declfile = sp1->sb->origdeclfile = "[import]";
+                sp1->sb->access = ac_public;
+                sp1->sb->parent = sp;
                 SetLinkerNames(sp1, lk_cdecl);
                 insert(sp1, sp->tp->syms);
             }
@@ -565,22 +565,22 @@ bool Importer::EnterMethod(const Method* method)
                 tp->type = bt_aggregate;
                 tp->rootType = tp;
                 funcs = makeID(sc_overloads, tp, 0, litlate((char*)method->Signature()->Name().c_str()));
-                funcs->parentClass = structures_.back();
+                funcs->sb->parentClass = structures_.back();
                 tp->sp = funcs;
                 SetLinkerNames(funcs, lk_cdecl);
                 if (useGlobal())
                     insert(funcs, globalNameSpace->valueData->syms);
                 else
                     insert(funcs, structures_.back()->tp->syms);
-                funcs->parent = sp;
+                funcs->sb->parent = sp;
                 funcs->tp->syms = CreateHashTable(1);
                 insert(sp, funcs->tp->syms);
-                sp->overloadName = funcs;
+                sp->sb->overloadName = funcs;
             }
-            else if (funcs->storage_class == sc_overloads)
+            else if (funcs->sb->storage_class == sc_overloads)
             {
                 insertOverload(sp, funcs->tp->syms);
-                sp->overloadName = funcs;
+                sp->sb->overloadName = funcs;
             }
             else
             {
@@ -598,26 +598,26 @@ bool Importer::EnterField(const Field* field)
         TYPE* tp = TranslateType(field->FieldType());
         if (tp)
         {
-            SYMBOL* sp = (SYMBOL*)Alloc(sizeof(SYMBOL));
+            SYMBOL* sp = SymAlloc();
             sp->name = litlate((char*)field->Name().c_str());
             if (structures_.back()->tp->type == bt_enum)
             {
-                sp->storage_class = sc_enumconstant;
+                sp->sb->storage_class = sc_enumconstant;
                 tp->scoped = tp->enumConst = true;
-                sp->value.i = field->EnumValue();
+                sp->sb->value.i = field->EnumValue();
             }
             else
             {
                 if (field->Flags().Flags() & Qualifiers::Static)
-                    sp->storage_class = sc_static;
+                    sp->sb->storage_class = sc_static;
                 else
-                    sp->storage_class = sc_member;
-                sp->msil = GetName(field->GetContainer(), field->Name());
+                    sp->sb->storage_class = sc_member;
+                sp->sb->msil = GetName(field->GetContainer(), field->Name());
             }
             sp->tp = tp;
-            sp->parentClass = structures_.back();
-            sp->declfile = sp->origdeclfile = "[import]";
-            sp->access = ac_public;
+            sp->sb->parentClass = structures_.back();
+            sp->sb->declfile = sp->sb->origdeclfile = "[import]";
+            sp->sb->access = ac_public;
             SetLinkerNames(sp, lk_cdecl);
             if (useGlobal())
                 insert(sp, globalNameSpace->valueData->syms);
@@ -635,20 +635,20 @@ bool Importer::EnterProperty(const Property* property)
         TYPE* tp = TranslateType(property->GetType());
         if (tp)
         {
-            SYMBOL* sp = (SYMBOL*)Alloc(sizeof(SYMBOL));
+            SYMBOL* sp = SymAlloc();
             sp->name = litlate((char*)property->Name().c_str());
             if (!property->Instance())
-                sp->storage_class = sc_static;
+                sp->sb->storage_class = sc_static;
             else
-                sp->storage_class = sc_member;
+                sp->sb->storage_class = sc_member;
             sp->tp = tp;
-            sp->parentClass = structures_.back();
-            sp->declfile = sp->origdeclfile = "[import]";
-            sp->access = ac_public;
-            sp->msil = GetName(property->GetContainer(), property->Name());
-            sp->attribs.inheritable.linkage2 = lk_property;
+            sp->sb->parentClass = structures_.back();
+            sp->sb->declfile = sp->sb->origdeclfile = "[import]";
+            sp->sb->access = ac_public;
+            sp->sb->msil = GetName(property->GetContainer(), property->Name());
+            sp->sb->attribs.inheritable.linkage2 = lk_property;
             if (const_cast<Property*>(property)->Setter())
-                sp->has_property_setter = true;
+                sp->sb->has_property_setter = true;
             SetLinkerNames(sp, lk_cdecl);
             if (useGlobal())
                 insert(sp, globalNameSpace->valueData->syms);

@@ -61,14 +61,14 @@ void deprecateMessage(SYMBOL* sym)
 {
     char buf[1024];
     my_sprintf(buf, "%s deprecated", sym->name);
-    if (sym->attribs.uninheritable.deprecationText && sym->attribs.uninheritable.deprecationText != (char*)-1)
-        my_sprintf(buf + strlen(buf), "; %s", sym->attribs.uninheritable.deprecationText);
+    if (sym->sb->attribs.uninheritable.deprecationText && sym->sb->attribs.uninheritable.deprecationText != (char*)-1)
+        my_sprintf(buf + strlen(buf), "; %s", sym->sb->attribs.uninheritable.deprecationText);
     errorstr(ERR_WARNING, buf);
 }
 // well this is really only nonstatic data members...
 bool ismember(SYMBOL* sym)
 {
-    switch (sym->storage_class)
+    switch (sym->sb->storage_class)
     {
         case sc_member:
         case sc_mutable:
@@ -80,11 +80,11 @@ bool ismember(SYMBOL* sym)
 }
 bool istype(SYMBOL* sym)
 {
-    if (sym->storage_class == sc_templateparam)
+    if (!sym->sb || sym->sb->storage_class == sc_templateparam)
     {
         return sym->tp->templateParam->p->type == kw_typename || sym->tp->templateParam->p->type == kw_template;
     }
-    return (sym->tp->type != bt_templateselector && sym->storage_class == sc_type) || sym->storage_class == sc_typedef;
+    return (sym->tp->type != bt_templateselector && sym->sb->storage_class == sc_type) || sym->sb->storage_class == sc_typedef;
 }
 bool ismemberdata(SYMBOL* sym) { return !isfunction(sym->tp) && ismember(sym); }
 bool startOfType(LEXEME* lex, bool assumeType)
@@ -764,17 +764,17 @@ EXPRESSION* anonymousVar(enum e_sc storage_class, TYPE* tp)
 {
     static int anonct = 1;
     char buf[256];
-    SYMBOL* rv = (SYMBOL*)Alloc(sizeof(SYMBOL));
+    SYMBOL* rv = SymAlloc();
     if (tp->size == 0 && isstructured(tp))
         tp = basetype(tp)->sp->tp;
-    rv->storage_class = storage_class;
+    rv->sb->storage_class = storage_class;
     rv->tp = tp;
-    rv->anonymous = true;
-    rv->allocate = !anonymousNotAlloc;
-    rv->assigned = true;
-    rv->attribs.inheritable.used = true;
+    rv->sb->anonymous = true;
+    rv->sb->allocate = !anonymousNotAlloc;
+    rv->sb->assigned = true;
+    rv->sb->attribs.inheritable.used = true;
     if (theCurrentFunc)
-        rv->value.i = theCurrentFunc->value.i;
+        rv->sb->value.i = theCurrentFunc->sb->value.i;
     my_sprintf(buf, "$anontemp%d", anonct++);
     rv->name = litlate(buf);
     if (!isatomic(tp))
@@ -1246,7 +1246,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION *expsym, S
     EXPRESSION *expsymin = expsym, *base;
     bool noClear = false;
     if (sym)
-        sym->destructed = false;
+        sym->sb->destructed = false;
 
     if (isstructured(tp) || isarray(tp))
     {
@@ -1265,7 +1265,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION *expsym, S
             {
                 SYMBOL* sym =
                     (SYMBOL*)basetype(funcsp->tp)->syms->table[0] ? (SYMBOL*)basetype(funcsp->tp)->syms->table[0]->p : nullptr;
-                if (sym && sym->thisPtr)
+                if (sym && sym->sb->thisPtr)
                     expsym = varNode(en_auto, sym);  // this ptr
                 else
                     expsym = anonymousVar(sc_auto, tp);
@@ -1284,7 +1284,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION *expsym, S
         }
         else
         {
-            switch (sym->storage_class)
+            switch (sym->sb->storage_class)
             {
             case sc_auto:
             case sc_register:
@@ -1293,9 +1293,9 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION *expsym, S
                 expsym = varNode(en_auto, sym);
                 break;
             case sc_localstatic:
-                if (sym->attribs.inheritable.linkage3 == lk_threadlocal)
+                if (sym->sb->attribs.inheritable.linkage3 == lk_threadlocal)
                 {
-                    expsym = exprNode(en_add, thisptr, intNode(en_c_i, sym->offset));
+                    expsym = exprNode(en_add, thisptr, intNode(en_c_i, sym->sb->offset));
                 }
                 else
                 {
@@ -1305,9 +1305,9 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION *expsym, S
                 break;
             case sc_static:
             case sc_global:
-                if (sym->attribs.inheritable.linkage3 == lk_threadlocal)
+                if (sym->sb->attribs.inheritable.linkage3 == lk_threadlocal)
                 {
-                    expsym = exprNode(en_add, thisptr, intNode(en_c_i, sym->offset));
+                    expsym = exprNode(en_add, thisptr, intNode(en_c_i, sym->sb->offset));
                 }
                 else
                 {
@@ -1329,7 +1329,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION *expsym, S
                 if (architecture == ARCHITECTURE_MSIL)
                     expsym = exprNode(en_structadd, expsym, varNode(en_structelem, sym));
                 else
-                    expsym = exprNode(en_add, expsym, intNode(en_c_i, sym->offset));
+                    expsym = exprNode(en_add, expsym, intNode(en_c_i, sym->sb->offset));
                 break;
             case sc_external:
                                 /*			expsym = varNode(en_global, sym);
@@ -1396,19 +1396,19 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION *expsym, S
                         exp2 = exp2->left;
                     if (exp2->type == en_func && exp2->v.func->returnSP)
                     {
-                        exp2->v.func->returnSP->allocate = false;
+                        exp2->v.func->returnSP->sb->allocate = false;
                         exp2->v.func->returnEXP = expsym;
                         exp = exp2;
                         noClear = true;
                     }
                     else if (exp2->type == en_thisref && exp2->left->v.func->returnSP)
                     {
-                        exp2->left->v.func->returnSP->allocate = false;
+                        exp2->left->v.func->returnSP->sb->allocate = false;
                         exp2->left->v.func->returnEXP = expsym;
                         exp = exp2;
                         noClear = true;
                     }
-                    else if ((cparams.prm_cplusplus) && !basetype(init->basetp)->sp->trivialCons)
+                    else if ((cparams.prm_cplusplus) && !basetype(init->basetp)->sp->sb->trivialCons)
                     {
                         TYPE* ctype = init->basetp;
                         callConstructorParam(&ctype, &expsym, ctype, exp2, true, false, false, false);
@@ -1445,7 +1445,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION *expsym, S
                             expsym = anonymousVar(sc_auto, init->basetp);
                             sym = expsym->v.sp;
                         }
-                        if (!isstructured(btp) || btp->sp->trivialCons)
+                        if (!isstructured(btp) || btp->sp->sb->trivialCons)
                         {
                             exp = exprNode(en_blockclear, expsym, nullptr);
                             exp->size = init->basetp->size;
@@ -1478,13 +1478,13 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION *expsym, S
                         SYMBOL* spc;
                         exp = anonymousVar(sc_localstatic, init->basetp);
                         spc = exp->v.sp;
-                        spc->init = init;
+                        spc->sb->init = init;
                         insertInitSym(spc);
                         insert(spc, localNameSpace->valueData->syms);
-                        spc->label = nextLabel++;
+                        spc->sb->label = nextLabel++;
                         if (expsym)
                         {
-                            if (cparams.prm_cplusplus && isstructured(init->basetp) && !init->basetp->sp->trivialCons)
+                            if (cparams.prm_cplusplus && isstructured(init->basetp) && !init->basetp->sp->sb->trivialCons)
                             {
                                 TYPE* ctype = init->basetp;
                                 callConstructorParam(&ctype, &expsym, ctype, exp, true, false, false, false);
@@ -1508,7 +1508,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION *expsym, S
                     exp2 = exp2->left;
                 if (exp2->type == en_func && exp2->v.func->returnSP)
                 {
-                    exp2->v.func->returnSP->allocate = false;
+                    exp2->v.func->returnSP->sb->allocate = false;
                     exp2->v.func->returnEXP = expsym;
                     exp = exp2;
                 }
@@ -1578,7 +1578,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION *expsym, S
                         exp = exprNode(en_assign, exps, exp);
                 }
             }
-            if (sym && sym->init && isatomic(init->basetp) && needsAtomicLockFromType(init->basetp))
+            if (sym && sym->sb->init && isatomic(init->basetp) && needsAtomicLockFromType(init->basetp))
             {
                 EXPRESSION* p1 = exprNode(en_add, expsym->left, intNode(en_c_i, init->basetp->size - ATOMIC_FLAG_SPACE));
                 deref(&stdint, &p1);
@@ -1600,11 +1600,11 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION *expsym, S
         }
         init = init->next;
     }
-    if (sym && sym->storage_class == sc_localstatic && !(architecture == ARCHITECTURE_MSIL))
+    if (sym && sym->sb->storage_class == sc_localstatic && !(architecture == ARCHITECTURE_MSIL))
     {
         if (isdest)
         {
-            rv = exprNode(en_voidnz, exprNode(en_void, sym->localInitGuard, rv), intNode(en_c_i, 0));
+            rv = exprNode(en_voidnz, exprNode(en_void, sym->sb->localInitGuard, rv), intNode(en_c_i, 0));
         }
         else
         {
@@ -1617,13 +1617,13 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION *expsym, S
                           exprNode(en_void, exprNode(en_not, guard, nullptr),
                                    exprNode(en_void, rv, exprNode(en_autoinc, guard, intNode(en_c_i, 1)))),
                           intNode(en_c_i, 0));
-            sym->localInitGuard = guard;
+            sym->sb->localInitGuard = guard;
         }
     }
     // plop in a clear block if necessary
     if ((sym || expsymin) && !noClear && !isdest &&
         (isarray(tp) ||
-         (isstructured(tp) && ((!cparams.prm_cplusplus && (architecture != ARCHITECTURE_MSIL)) || !basetype(tp)->sp->hasUserCons))))
+         (isstructured(tp) && ((!cparams.prm_cplusplus && (architecture != ARCHITECTURE_MSIL)) || !basetype(tp)->sp->sb->hasUserCons))))
     {
         EXPRESSION* fexp = base;
         EXPRESSION* exp;
@@ -1779,12 +1779,21 @@ bool isconstaddress(EXPRESSION* exp)
             return false;
     }
 }
-
-SYMBOL* clonesym(SYMBOL* sym)
+SYMBOL* (clonesym)(const char *func, SYMBOL* sym_in, bool full)
 {
-    SYMBOL* rv = (SYMBOL*)Alloc(sizeof(SYMBOL));
-    *rv = *sym;
-    rv->symRef = nullptr;
+    SYMBOL* rv= (SYMBOL*)nzAlloc(sizeof(SYMBOL));
+    *rv = *sym_in;
+    if (rv->sb)
+    {
+        if (full)
+        {
+            extern void memfunc(const char *);
+            memfunc(func);
+            rv->sb = (sym::_symbody*)nzAlloc(sizeof(sym::_symbody));
+            *rv->sb = *sym_in->sb;
+        }
+        rv->sb->symRef = nullptr;
+    }
     return rv;
 }
 static TYPE* inttype(enum e_bt t1)

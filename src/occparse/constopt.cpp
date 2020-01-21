@@ -2168,10 +2168,10 @@ int opt0(EXPRESSION** node)
                     }
                     if (!find && sym)
                     {
-                        if (sym->storage_class == sc_constant)
+                        if (sym->sb->storage_class == sc_constant)
                         {
-                            optimize_for_constants(&sym->init->exp);
-                            *node = sym->init->exp;
+                            optimize_for_constants(&sym->sb->init->exp);
+                            *node = sym->sb->init->exp;
                             return true;
                         }
                     }
@@ -2681,10 +2681,10 @@ int fold_const(EXPRESSION* node)
                 *node = *node->left;
             break;
         case en_func:
-            if (node->v.func->sp && node->v.func->sp->constexpression && node->v.func->sp->inlineFunc.stmt)
+            if (node->v.func->sp && node->v.func->sp->sb->constexpression && node->v.func->sp->sb->inlineFunc.stmt)
             {
                 int i;
-                STATEMENT* stmt = node->v.func->sp->inlineFunc.stmt;
+                STATEMENT* stmt = node->v.func->sp->sb->inlineFunc.stmt;
                 while (stmt && stmt->type == st_expr)
                     stmt = stmt->next;
                 if (stmt && stmt->type == st_block && stmt->lower)
@@ -2789,9 +2789,9 @@ int typedconsts(EXPRESSION* node1)
             //                node1->type = en_c_ll;
             //            else
             //                node1->type = en_c_i;
-            //            node1->v.i = node1->v.sp->value.i;
-            optimize_for_constants(&node1->v.sp->init->exp);
-            *node1 = *node1->v.sp->init->exp;
+            //            node1->v.i = node1->v.sp->sb->value.i;
+            optimize_for_constants(&node1->v.sp->sb->init->exp);
+            *node1 = *node1->v.sp->sb->init->exp;
             rv = true;
             break;
         default:
@@ -2912,10 +2912,10 @@ int typedconsts(EXPRESSION* node1)
         case en_bits:
             if (node1->left->type == en_global)
             {
-                if (node1->left->v.sp->storage_class == sc_constant && isintconst(node1->left->v.sp->init->exp))
+                if (node1->left->v.sp->sb->storage_class == sc_constant && isintconst(node1->left->v.sp->sb->init->exp))
                 {
-                    optimize_for_constants(&node1->v.sp->init->exp);
-                    *node1 = *node1->left->v.sp->init->exp;
+                    optimize_for_constants(&node1->v.sp->sb->init->exp);
+                    *node1 = *node1->left->v.sp->sb->init->exp;
                     rv = true;
                 }
             }

@@ -50,10 +50,10 @@ static SYMBOL* CreateSetterPrototype(SYMBOL* sym)
     SYMBOL *rv, *value;
     char name[512];
     sprintf(name, "set_%s", sym->name);
-    rv = makeID(sym->storage_class, nullptr, nullptr, litlate(name));
+    rv = makeID(sym->sb->storage_class, nullptr, nullptr, litlate(name));
     value = makeID(sc_parameter, sym->tp, nullptr, "value");
-    value->attribs.inheritable.used = true;  // to avoid unused variable errors
-    rv->access = ac_public;
+    value->sb->attribs.inheritable.used = true;  // to avoid unused variable errors
+    rv->sb->access = ac_public;
     rv->tp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
     rv->tp->sp = rv;
     rv->tp->type = bt_func;
@@ -69,9 +69,9 @@ static SYMBOL* CreateGetterPrototype(SYMBOL* sym)
     SYMBOL *rv, *nullparam;
     char name[512];
     sprintf(name, "get_%s", sym->name);
-    rv = makeID(sym->storage_class, nullptr, nullptr, litlate(name));
+    rv = makeID(sym->sb->storage_class, nullptr, nullptr, litlate(name));
     nullparam = makeID(sc_parameter, &stdvoid, nullptr, "__void");
-    rv->access = ac_public;
+    rv->sb->access = ac_public;
     rv->tp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
     rv->tp->sp = rv;
     rv->tp->type = bt_func;
@@ -100,12 +100,12 @@ static void insertfunc(SYMBOL* in, HASHTABLE* syms)
         insert(funcs, syms);
         funcs->tp->syms = CreateHashTable(1);
         insert(in, funcs->tp->syms);
-        in->overloadName = funcs;
+        in->sb->overloadName = funcs;
     }
-    else if (funcs->storage_class == sc_overloads)
+    else if (funcs->sb->storage_class == sc_overloads)
     {
         insertOverload(in, funcs->tp->syms);
-        in->overloadName = funcs;
+        in->sb->overloadName = funcs;
     }
     else
     {
@@ -118,7 +118,7 @@ static SYMBOL* CreateBackingVariable(SYMBOL* sym)
     SYMBOL* rv;
     sprintf(name, "__backing_%s", sym->name);
     rv = makeID(sc_static, sym->tp, nullptr, litlate(name));
-    rv->label = nextLabel++;
+    rv->sb->label = nextLabel++;
     SetLinkerNames(rv, lk_cdecl);
     return rv;
 }
@@ -135,9 +135,9 @@ static SYMBOL* CreateBackingSetter(SYMBOL* sym, SYMBOL* backing)
     deref(sym->tp, &right);
     st = stmtNode(nullptr, &b, st_expr);
     st->select = exprNode(en_assign, left, right);
-    p->inlineFunc.stmt = stmtNode(nullptr, nullptr, st_block);
-    p->inlineFunc.stmt->lower = b.head;
-    p->inlineFunc.syms = p->tp->syms;
+    p->sb->inlineFunc.stmt = stmtNode(nullptr, nullptr, st_block);
+    p->sb->inlineFunc.stmt->lower = b.head;
+    p->sb->inlineFunc.syms = p->tp->syms;
     return p;
 }
 static SYMBOL* CreateBackingGetter(SYMBOL* sym, SYMBOL* backing)
@@ -150,18 +150,18 @@ static SYMBOL* CreateBackingGetter(SYMBOL* sym, SYMBOL* backing)
     st = stmtNode(nullptr, &b, st_return);
     st->select = varNode(en_global, backing);
     deref(sym->tp, &st->select);
-    p->inlineFunc.stmt = stmtNode(nullptr, nullptr, st_block);
-    p->inlineFunc.stmt->lower = b.head;
-    p->inlineFunc.syms = p->tp->syms;
+    p->sb->inlineFunc.stmt = stmtNode(nullptr, nullptr, st_block);
+    p->sb->inlineFunc.stmt->lower = b.head;
+    p->sb->inlineFunc.syms = p->tp->syms;
     return p;
 }
 LEXEME* initialize_property(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_class_in, bool asExpression, int flags)
 {
     if (isstructured(sym->tp))
         error(ERR_ONLY_SIMPLE_PROPERTIES_SUPPORTED);
-    if (funcsp || sym->storage_class == sc_parameter)
+    if (funcsp || sym->sb->storage_class == sc_parameter)
         error(ERR_NO_PROPERTY_IN_FUNCTION);
-    if (sym->storage_class != sc_external)
+    if (sym->sb->storage_class != sc_external)
     {
         if (MATCHKW(lex, begin))
         {
@@ -216,7 +216,7 @@ LEXEME* initialize_property(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc 
             if (!get)
                 errorsym(ERR_MUST_DECLARE_PROPERTY_GETTER, sym);
             if (set)
-                sym->has_property_setter = true;
+                sym->sb->has_property_setter = true;
             msilCreateProperty(sym, get, set);
             needkw(&lex, end);
         }
@@ -253,7 +253,7 @@ LEXEME* initialize_property(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc 
             }
             insertInitSym(backing);
             msilCreateProperty(sym, getter, setter);
-            sym->has_property_setter = true;
+            sym->sb->has_property_setter = true;
         }
         InsertGlobal(sym);
     }
@@ -269,9 +269,9 @@ TYPE* find_boxed_type(TYPE* in)
     if (isarray(basetype(in)) && basetype(in)->msil)
     {
         SYMBOL* sym = search("System", globalNameSpace->valueData->syms);
-        if (sym && sym->storage_class == sc_namespace)
+        if (sym && sym->sb->storage_class == sc_namespace)
         {
-            SYMBOL* sym2 = search("Array", sym->nameSpaceValues->valueData->syms);
+            SYMBOL* sym2 = search("Array", sym->sb->nameSpaceValues->valueData->syms);
             if (sym2)
                 return sym2->tp;
         }
@@ -279,9 +279,9 @@ TYPE* find_boxed_type(TYPE* in)
     else if (basetype(in)->type < sizeof(typeNames) / sizeof(typeNames[0]))
     {
         SYMBOL* sym = search("System", globalNameSpace->valueData->syms);
-        if (sym && sym->storage_class == sc_namespace)
+        if (sym && sym->sb->storage_class == sc_namespace)
         {
-            SYMBOL* sym2 = search(typeNames[basetype(in)->type], sym->nameSpaceValues->valueData->syms);
+            SYMBOL* sym2 = search(typeNames[basetype(in)->type], sym->sb->nameSpaceValues->valueData->syms);
             if (sym2)
                 return sym2->tp;
         }
@@ -293,7 +293,7 @@ TYPE* find_unboxed_type(TYPE* in)
     if (isstructured(in))
     {
         in = basetype(in);
-        if (in->sp->parentNameSpace && !in->sp->parentClass && !strcmp(in->sp->parentNameSpace->name, "System"))
+        if (in->sp->sb->parentNameSpace && !in->sp->sb->parentClass && !strcmp(in->sp->sb->parentNameSpace->name, "System"))
         {
             const char* name = in->sp->name;
             static const char* typeNames[] = { "Bool",  "Char",   "Int8",   "UInt8",   "Int16",  "UInt16", "Int32", "UInt32",

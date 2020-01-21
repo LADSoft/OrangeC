@@ -150,7 +150,7 @@ static int FindBaseClassWithData(SYMBOL* sym, SYMBOL** result)
 {
     SYMLIST* hr;
     int n = 0;
-    BASECLASS* bc = sym->baseClasses;
+    BASECLASS* bc = sym->sb->baseClasses;
     while (bc)
     {
         n += FindBaseClassWithData(bc->cls, result);
@@ -160,7 +160,7 @@ static int FindBaseClassWithData(SYMBOL* sym, SYMBOL** result)
     while (hr)
     {
         SYMBOL* sym = hr->p;
-        if (sym->storage_class == sc_mutable || sym->storage_class == sc_member)
+        if (sym->sb->storage_class == sc_mutable || sym->sb->storage_class == sc_member)
         {
             if (result)
                 *result = sym;
@@ -172,7 +172,7 @@ static int FindBaseClassWithData(SYMBOL* sym, SYMBOL** result)
 }
 static bool isStandardLayout(TYPE* tp, SYMBOL** result)
 {
-    if (isstructured(tp) && !hasVTab(basetype(tp)->sp) && !basetype(tp)->sp->vbaseEntries)
+    if (isstructured(tp) && !hasVTab(basetype(tp)->sp) && !basetype(tp)->sp->sb->vbaseEntries)
     {
         int n;
         int access = -1;
@@ -190,22 +190,22 @@ static bool isStandardLayout(TYPE* tp, SYMBOL** result)
                 SYMBOL* sym = hr->p;
                 if (!first)
                     first = sym;
-                if (sym->storage_class == sc_member || sym->storage_class == sc_mutable)
+                if (sym->sb->storage_class == sc_member || sym->sb->storage_class == sc_mutable)
                 {
                     if (isstructured(sym->tp) && !isStandardLayout(sym->tp, nullptr))
                         return false;
                     if (access != -1)
                     {
-                        if (access != sym->access)
+                        if (access != sym->sb->access)
                             return false;
                     }
-                    access = sym->access;
+                    access = sym->sb->access;
                 }
                 hr = hr->next;
             }
             if (first && isstructured(first->tp))
             {
-                BASECLASS* bc = found->baseClasses;
+                BASECLASS* bc = found->sb->baseClasses;
                 while (bc)
                 {
                     if (comparetypes(bc->cls->tp, first->tp, true))
@@ -237,7 +237,7 @@ static bool trivialFunc(SYMBOL* func, bool move)
         SYMBOL* sym = hr->p;
         if (matchesCopy(sym, move))
         {
-            return sym->defaulted;
+            return sym->sb->defaulted;
         }
         hr = hr->next;
     }
@@ -256,7 +256,7 @@ static bool trivialCopyConstructible(TYPE* tp)
             if (!trivialFunc(ovl, false) || !trivialFunc(ovl, true))
                 return false;
         }
-        bc = basetype(tp)->sp->baseClasses;
+        bc = basetype(tp)->sp->sb->baseClasses;
         while (bc)
         {
             if (!trivialCopyConstructible(bc->cls->tp))
@@ -267,7 +267,7 @@ static bool trivialCopyConstructible(TYPE* tp)
         while (hr)
         {
             SYMBOL* sym = hr->p;
-            if (sym->storage_class == sc_mutable || sym->storage_class == sc_member)
+            if (sym->sb->storage_class == sc_mutable || sym->sb->storage_class == sc_member)
                 if (!trivialCopyConstructible(sym->tp))
                     return false;
             hr = hr->next;
@@ -288,7 +288,7 @@ static bool trivialCopyAssignable(TYPE* tp)
             if (!trivialFunc(ovl, false) || !trivialFunc(ovl, true))
                 return false;
         }
-        bc = basetype(tp)->sp->baseClasses;
+        bc = basetype(tp)->sp->sb->baseClasses;
         while (bc)
         {
             if (!trivialCopyAssignable(bc->cls->tp))
@@ -299,7 +299,7 @@ static bool trivialCopyAssignable(TYPE* tp)
         while (hr)
         {
             SYMBOL* sym = hr->p;
-            if (sym->storage_class == sc_mutable || sym->storage_class == sc_member)
+            if (sym->sb->storage_class == sc_mutable || sym->sb->storage_class == sc_member)
                 if (!trivialCopyAssignable(sym->tp))
                     return false;
             hr = hr->next;
@@ -318,10 +318,10 @@ static bool trivialDestructor(TYPE* tp)
         if (ovl)
         {
             ovl = (SYMBOL*)ovl->tp->syms->table[0]->p;
-            if (!ovl->defaulted)
+            if (!ovl->sb->defaulted)
                 return false;
         }
-        bc = basetype(tp)->sp->baseClasses;
+        bc = basetype(tp)->sp->sb->baseClasses;
         while (bc)
         {
             if (!trivialDestructor(bc->cls->tp))
@@ -332,7 +332,7 @@ static bool trivialDestructor(TYPE* tp)
         while (hr)
         {
             SYMBOL* sym = hr->p;
-            if (sym->storage_class == sc_mutable || sym->storage_class == sc_member)
+            if (sym->sb->storage_class == sc_mutable || sym->sb->storage_class == sc_member)
                 if (!trivialDestructor(sym->tp))
                     return false;
             hr = hr->next;
@@ -358,7 +358,7 @@ static bool trivialDefaultConstructor(TYPE* tp)
 
                 if (!hr1->next || !hr1->next->next || (hr1->next->next->p)->tp->type == bt_void)
                 {
-                    if (!sym->defaulted)
+                    if (!sym->sb->defaulted)
                         return false;
                     else
                         break;
@@ -366,7 +366,7 @@ static bool trivialDefaultConstructor(TYPE* tp)
                 hr = hr->next;
             }
         }
-        bc = basetype(tp)->sp->baseClasses;
+        bc = basetype(tp)->sp->sb->baseClasses;
         while (bc)
         {
             if (!trivialDefaultConstructor(bc->cls->tp))
@@ -377,7 +377,7 @@ static bool trivialDefaultConstructor(TYPE* tp)
         while (hr)
         {
             SYMBOL* sym = hr->p;
-            if (sym->storage_class == sc_mutable || sym->storage_class == sc_member)
+            if (sym->sb->storage_class == sc_mutable || sym->sb->storage_class == sc_member)
                 if (!trivialDefaultConstructor(sym->tp))
                     return false;
             hr = hr->next;
@@ -416,7 +416,7 @@ static bool trivialStructureWithBases(TYPE* tp)
         BASECLASS* bc;
         if (!trivialStructure(tp))
             return false;
-        bc = basetype(tp)->sp->baseClasses;
+        bc = basetype(tp)->sp->sb->baseClasses;
         while (bc)
         {
             if (!trivialStructureWithBases(bc->cls->tp))
@@ -464,7 +464,7 @@ static bool nothrowConstructible(TYPE* tp)
                 if (matchesCopy(sym, false) || matchesCopy(sym, true) || !hr1->next || !hr1->next->next ||
                     (hr1->next->next->p)->tp->type == bt_void)
                 {
-                    if (sym->xcMode != xc_none)
+                    if (sym->sb->xcMode != xc_none)
                         return false;
                 }
                 hr = hr->next;
@@ -483,7 +483,7 @@ static bool is_abstract(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EX
     *lex = getTypeList(*lex, funcsp, &funcparams.arguments);
     if (funcparams.arguments && !funcparams.arguments->next)
     {
-        rv = isstructured(funcparams.arguments->tp) && basetype(funcparams.arguments->tp)->sp->isabstract;
+        rv = isstructured(funcparams.arguments->tp) && basetype(funcparams.arguments->tp)->sp->sb->isabstract;
     }
     *exp = intNode(en_c_i, rv);
     *tp = &stdint;
@@ -817,7 +817,7 @@ static bool is_final(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRE
     if (funcparams.arguments && !funcparams.arguments->next)
     {
         if (isstructured(funcparams.arguments->tp))
-            rv = basetype(funcparams.arguments->tp)->sp->isfinal;
+            rv = basetype(funcparams.arguments->tp)->sp->sb->isfinal;
     }
     *exp = intNode(en_c_i, rv);
     *tp = &stdint;
@@ -861,7 +861,7 @@ static bool is_nothrow_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, 
             tp = basetype(tp)->btp;
         if (isstructured(tp))
         {
-            if (!basetype(tp)->sp->trivialCons)
+            if (!basetype(tp)->sp->sb->trivialCons)
                 rv = nothrowConstructible(funcparams.arguments->tp);
         }
         else

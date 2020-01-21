@@ -42,27 +42,27 @@ static void createDestructor(SYMBOL* sp);
 
 void ConsDestDeclarationErrors(SYMBOL* sp, bool notype)
 {
-    if (sp->isConstructor)
+    if (sp->sb->isConstructor)
     {
         if (!notype)
             error(ERR_CONSTRUCTOR_OR_DESTRUCTOR_NO_TYPE);
-        else if (sp->storage_class == sc_virtual)
+        else if (sp->sb->storage_class == sc_virtual)
             errorstr(ERR_INVALID_STORAGE_CLASS, "virtual");
-        else if (sp->storage_class == sc_static)
+        else if (sp->sb->storage_class == sc_static)
             errorstr(ERR_INVALID_STORAGE_CLASS, "static");
         else if (isconst(sp->tp) || isvolatile(sp->tp))
             error(ERR_CONSTRUCTOR_OR_DESTRUCTOR_NO_CONST_VOLATILE);
     }
-    else if (sp->isDestructor)
+    else if (sp->sb->isDestructor)
     {
         if (!notype)
             error(ERR_CONSTRUCTOR_OR_DESTRUCTOR_NO_TYPE);
-        else if (sp->storage_class == sc_static)
+        else if (sp->sb->storage_class == sc_static)
             errorstr(ERR_INVALID_STORAGE_CLASS, "static");
         else if (isconst(sp->tp) || isvolatile(sp->tp))
             error(ERR_CONSTRUCTOR_OR_DESTRUCTOR_NO_CONST_VOLATILE);
     }
-    else if (sp->parentClass && !strcmp(sp->name, sp->parentClass->name))
+    else if (sp->sb->parentClass && !strcmp(sp->name, sp->sb->parentClass->name))
     {
         error(ERR_CONSTRUCTOR_OR_DESTRUCTOR_NO_TYPE);
     }
@@ -246,18 +246,18 @@ void SetParams(SYMBOL* cons)
         assignParam(cons, &base, (SYMBOL*)params->p);
         params = params->next;
     }
-    cons->paramsize = base - chosenAssembler->arch->retblocksize;
+    cons->sb->paramsize = base - chosenAssembler->arch->retblocksize;
 }
 SYMBOL* insertFunc(SYMBOL* sp, SYMBOL* ovl)
 {
     SYMBOL* funcs = search(ovl->name, basetype(sp->tp)->syms);
-    ovl->parentClass = sp;
-    ovl->internallyGenned = true;
-    ovl->attribs.inheritable.linkage = lk_virtual;
-    ovl->defaulted = true;
-    ovl->access = ac_public;
-    ovl->templateLevel = templateNestingCount;
-    if (!ovl->decoratedName)
+    ovl->sb->parentClass = sp;
+    ovl->sb->internallyGenned = true;
+    ovl->sb->attribs.inheritable.linkage = lk_virtual;
+    ovl->sb->defaulted = true;
+    ovl->sb->access = ac_public;
+    ovl->sb->templateLevel = templateNestingCount;
+    if (!ovl->sb->decoratedName)
         SetLinkerNames(ovl, lk_cdecl);
     if (!funcs)
     {
@@ -265,19 +265,19 @@ SYMBOL* insertFunc(SYMBOL* sp, SYMBOL* ovl)
         tp->type = bt_aggregate;
         tp->rootType = tp;
         funcs = makeID(sc_overloads, tp, 0, ovl->name);
-        funcs->parentClass = sp;
+        funcs->sb->parentClass = sp;
         tp->sp = funcs;
         SetLinkerNames(funcs, lk_cdecl);
         insert(funcs, basetype(sp->tp)->syms);
-        funcs->parent = sp;
+        funcs->sb->parent = sp;
         funcs->tp->syms = CreateHashTable(1);
         insert(ovl, funcs->tp->syms);
-        ovl->overloadName = funcs;
+        ovl->sb->overloadName = funcs;
     }
-    else if (funcs->storage_class == sc_overloads)
+    else if (funcs->sb->storage_class == sc_overloads)
     {
         insertOverload(ovl, funcs->tp->syms);
-        ovl->overloadName = funcs;
+        ovl->sb->overloadName = funcs;
     }
     else
     {
@@ -302,32 +302,32 @@ static SYMBOL* declareDestructor(SYMBOL* sp)
     tp->rootType = tp;
     tp->btp->rootType = tp->btp;
     func = makeID(sc_member, tp, nullptr, overloadNameTab[CI_DESTRUCTOR]);
-    func->xcMode = xc_none;
-    func->attribs.inheritable.linkage2 = sp->attribs.inheritable.linkage2;
+    func->sb->xcMode = xc_none;
+    func->sb->attribs.inheritable.linkage2 = sp->sb->attribs.inheritable.linkage2;
     tp->syms = CreateHashTable(1);  
     sp1 = makeID(sc_parameter, tp->btp, nullptr, AnonymousName());
     insert(sp1, tp->syms);
-    if (sp->vbaseEntries)
+    if (sp->sb->vbaseEntries)
     {
         sp1 = makeID(sc_parameter, &stdint, nullptr, AnonymousName());
-        sp1->isDestructor = true;
+        sp1->sb->isDestructor = true;
         insert(sp1, tp->syms);
     }
     rv = insertFunc(sp, func);
-    rv->isDestructor = true;
-    b = sp->baseClasses;
+    rv->sb->isDestructor = true;
+    b = sp->sb->baseClasses;
     while (b)
     {
-        if (!b->cls->pureDest)
+        if (!b->cls->sb->pureDest)
             break;
         b = b->next;
     }
     if (!b)
     {
-        e = sp->vbaseEntries;
+        e = sp->sb->vbaseEntries;
         while (e)
         {
-            if (!e->cls->pureDest)
+            if (!e->cls->sb->pureDest)
                 break;
             e = e->next;
         }
@@ -340,12 +340,12 @@ static SYMBOL* declareDestructor(SYMBOL* sp)
                 TYPE* tp = cls->tp;
                 while (isarray(tp))
                     tp = basetype(tp)->btp;
-                if (isstructured(tp) && !basetype(tp)->sp->pureDest)
+                if (isstructured(tp) && !basetype(tp)->sp->sb->pureDest)
                     break;
                 hr = hr->next;
             }
             if (!hr)
-                sp->pureDest = true;
+                sp->sb->pureDest = true;
         }
     }
 
@@ -361,7 +361,7 @@ static bool hasConstFunc(SYMBOL* sp, int type, bool move)
         {
             SYMBOL* func = hr->p;
             SYMLIST* hra = basetype(func->tp)->syms->table[0]->next;
-            if (hra && (!hra->next || (hra->next->p)->init))
+            if (hra && (!hra->next || (hra->next->p)->sb->init))
             {
                 SYMBOL* arg = (SYMBOL*)hra->p;
                 if (isref(arg->tp))
@@ -388,14 +388,14 @@ static bool constCopyConstructor(SYMBOL* sp)
     VBASEENTRY* e;
     BASECLASS* b;
     SYMLIST* hr;
-    b = sp->baseClasses;
+    b = sp->sb->baseClasses;
     while (b)
     {
         if (!b->isvirtual && !hasConstFunc(b->cls, CI_CONSTRUCTOR, false))
             return false;
         b = b->next;
     }
-    e = sp->vbaseEntries;
+    e = sp->sb->vbaseEntries;
     while (e)
     {
         if (e->alloc && !hasConstFunc(e->cls, CI_CONSTRUCTOR, false))
@@ -406,7 +406,7 @@ static bool constCopyConstructor(SYMBOL* sp)
     while (hr)
     {
         SYMBOL* cls = hr->p;
-        if (isstructured(cls->tp) && cls->storage_class != sc_typedef && !cls->trivialCons)
+        if (isstructured(cls->tp) && cls->sb->storage_class != sc_typedef && !cls->sb->trivialCons)
             if (!hasConstFunc(basetype(cls->tp)->sp, CI_CONSTRUCTOR, false))
                 return false;
         hr = hr->next;
@@ -425,8 +425,8 @@ static SYMBOL* declareConstructor(SYMBOL* sp, bool deflt, bool move)
     tp->rootType = tp;
     tp->btp->rootType = tp->btp;
     func = makeID(sc_member, tp, nullptr, overloadNameTab[CI_CONSTRUCTOR]);
-    func->isConstructor = true;
-    func->attribs.inheritable.linkage2 = sp->attribs.inheritable.linkage2;
+    func->sb->isConstructor = true;
+    func->sb->attribs.inheritable.linkage2 = sp->sb->attribs.inheritable.linkage2;
     sp1 = makeID(sc_parameter, nullptr, nullptr, AnonymousName());
     tp->syms = CreateHashTable(1);
     tp->syms->table[0] = (SYMLIST*)(SYMLIST*)Alloc(sizeof(SYMLIST));
@@ -461,14 +461,14 @@ static bool constAssignmentOp(SYMBOL* sp, bool move)
     VBASEENTRY* e;
     BASECLASS* b;
     SYMLIST* hr;
-    b = sp->baseClasses;
+    b = sp->sb->baseClasses;
     while (b)
     {
         if (!b->isvirtual && !hasConstFunc(b->cls, assign - kw_new + CI_NEW, move))
             return false;
         b = b->next;
     }
-    e = sp->vbaseEntries;
+    e = sp->sb->vbaseEntries;
     while (e)
     {
         if (e->alloc && !hasConstFunc(e->cls, assign - kw_new + CI_NEW, move))
@@ -479,7 +479,7 @@ static bool constAssignmentOp(SYMBOL* sp, bool move)
     while (hr)
     {
         SYMBOL* cls = hr->p;
-        if (isstructured(cls->tp) && cls->storage_class != sc_typedef && !cls->trivialCons)
+        if (isstructured(cls->tp) && cls->sb->storage_class != sc_typedef && !cls->sb->trivialCons)
             if (!hasConstFunc(cls, assign - kw_new + CI_NEW, move))
                 return false;
         hr = hr->next;
@@ -505,7 +505,7 @@ static SYMBOL* declareAssignmentOp(SYMBOL* sp, bool move)
     *(tpx) = *basetype(sp->tp);
     UpdateRootTypes(tp);
     func = makeID(sc_member, tp, nullptr, overloadNameTab[assign - kw_new + CI_NEW]);
-    func->attribs.inheritable.linkage2 = sp->attribs.inheritable.linkage2;
+    func->sb->attribs.inheritable.linkage2 = sp->sb->attribs.inheritable.linkage2;
     sp1 = makeID(sc_parameter, nullptr, nullptr, AnonymousName());
     tp->syms = CreateHashTable(1);
     tp->syms->table[0] = (SYMLIST*)(SYMLIST*)Alloc(sizeof(SYMLIST));
@@ -532,7 +532,7 @@ static bool matchesDefaultConstructor(SYMBOL* sp)
     if (hr)
     {
         SYMBOL* arg1 = hr->p;
-        if (arg1->tp->type == bt_void || arg1->init)
+        if (arg1->tp->type == bt_void || arg1->sb->init)
             return true;
     }
     return false;
@@ -543,14 +543,14 @@ bool matchesCopy(SYMBOL* sp, bool move)
     if (hr)
     {
         SYMBOL* arg1 = hr->p;
-        if (!hr->next || (hr->next->p)->init || (hr->next->p)->constop)
+        if (!hr->next || (hr->next->p)->sb->init || (hr->next->p)->sb->constop)
         {
             if (basetype(arg1->tp)->type == (move ? bt_rref : bt_lref))
             {
                 TYPE* tp = basetype(arg1->tp)->btp;
                 if (isstructured(tp))
-                    if (basetype(tp)->sp == sp->parentClass || basetype(tp)->sp == sp->parentClass->mainsym ||
-                        basetype(tp)->sp->mainsym == sp->parentClass || sameTemplate(tp, sp->parentClass->tp))
+                    if (basetype(tp)->sp == sp->sb->parentClass || basetype(tp)->sp == sp->sb->parentClass->sb->mainsym ||
+                        basetype(tp)->sp->sb->mainsym == sp->sb->parentClass || sameTemplate(tp, sp->sb->parentClass->tp))
                         return true;
             }
         }
@@ -563,7 +563,7 @@ static bool hasCopy(SYMBOL* func, bool move)
     while (hr)
     {
         SYMBOL* sp = hr->p;
-        if (!sp->internallyGenned && matchesCopy(sp, move))
+        if (!sp->sb->internallyGenned && matchesCopy(sp, move))
             return true;
         hr = hr->next;
     }
@@ -576,9 +576,9 @@ static bool checkDest(SYMBOL* sp, HASHTABLE* syms, enum e_ac access)
     if (dest)
     {
         dest = (SYMBOL*)basetype(dest->tp)->syms->table[0]->p;
-        if (dest->deleted)
+        if (dest->sb->deleted)
             return true;
-        if (!isAccessible(sp, dest->parentClass, dest, nullptr, access, false))
+        if (!isAccessible(sp, dest->sb->parentClass, dest, nullptr, access, false))
             return true;
     }
     return false;
@@ -603,9 +603,9 @@ static bool checkDefaultCons(SYMBOL* sp, HASHTABLE* syms, enum e_ac access)
         }
         if (dflt)
         {
-            if (dflt->deleted)
+            if (dflt->sb->deleted)
                 return true;
-            if (!isAccessible(sp, dflt->parentClass, dflt, nullptr, access, false))
+            if (!isAccessible(sp, dflt->sb->parentClass, dflt, nullptr, access, false))
                 return true;
         }
     }
@@ -623,7 +623,7 @@ SYMBOL* getCopyCons(SYMBOL* base, bool move)
             SYMBOL *sym = hr->p, *sym1 = nullptr;
             SYMLIST* hrArgs = basetype(sym->tp)->syms->table[0];
             sym = (SYMBOL*)hrArgs->p;
-            if (sym->thisPtr)
+            if (sym->sb->thisPtr)
             {
                 hrArgs = hrArgs->next;
                 if (hrArgs)
@@ -633,7 +633,7 @@ SYMBOL* getCopyCons(SYMBOL* base, bool move)
             {
                 sym1 = (SYMBOL*)hrArgs->next->p;
             }
-            if (hrArgs && (!sym1 || sym1->init))
+            if (hrArgs && (!sym1 || sym1->sb->init))
             {
                 TYPE* tp = basetype(sym->tp);
                 if (tp->type == (move ? bt_rref : bt_lref))
@@ -646,7 +646,7 @@ SYMBOL* getCopyCons(SYMBOL* base, bool move)
                             hr = hr->next;
                             continue;
                         }
-                        if (tp->sp == base->tp->sp || tp->sp == base->tp->sp->mainsym || sameTemplate(tp, base->tp))
+                        if (tp->sp == base->tp->sp || tp->sp == base->tp->sp->sb->mainsym || sameTemplate(tp, base->tp))
                         {
                             return hr->p;
                         }
@@ -670,7 +670,7 @@ static SYMBOL* GetCopyAssign(SYMBOL* base, bool move)
             SYMBOL *sym = hr->p, *sym1 = nullptr;
             SYMLIST* hrArgs = basetype(sym->tp)->syms->table[0];
             sym = (SYMBOL*)hrArgs->p;
-            if (sym->thisPtr)
+            if (sym->sb->thisPtr)
             {
                 hrArgs = hrArgs->next;
                 if (hrArgs)
@@ -680,7 +680,7 @@ static SYMBOL* GetCopyAssign(SYMBOL* base, bool move)
             {
                 sym1 = (SYMBOL*)hrArgs->next->p;
             }
-            if (hrArgs && (!sym1 || sym1->init))
+            if (hrArgs && (!sym1 || sym1->sb->init))
             {
                 TYPE* tp = basetype(sym->tp);
                 if (tp->type == (move ? bt_rref : bt_lref))
@@ -702,7 +702,7 @@ static SYMBOL* GetCopyAssign(SYMBOL* base, bool move)
 }
 bool hasVTab(SYMBOL* sp)
 {
-    VTABENTRY* vt = sp->vtabEntries;
+    VTABENTRY* vt = sp->sb->vtabEntries;
     while (vt)
     {
         if (vt->virtuals)
@@ -716,15 +716,15 @@ static bool hasTrivialCopy(SYMBOL* sp, bool move)
     SYMLIST* hr;
     SYMBOL* dflt;
     BASECLASS* base;
-    if (sp->vbaseEntries || hasVTab(sp))
+    if (sp->sb->vbaseEntries || hasVTab(sp))
         return false;
-    base = sp->baseClasses;
+    base = sp->sb->baseClasses;
     while (base)
     {
         dflt = getCopyCons(base->cls, move);
         if (!dflt)
             return false;
-        if (!dflt->trivialCons)
+        if (!dflt->sb->trivialCons)
             return false;
         base = base->next;
     }
@@ -737,7 +737,7 @@ static bool hasTrivialCopy(SYMBOL* sp, bool move)
             dflt = getCopyCons(basetype(cls->tp)->sp, move);
             if (!dflt)
                 return false;
-            if (!dflt->trivialCons)
+            if (!dflt->sb->trivialCons)
                 return false;
         }
         hr = hr->next;
@@ -749,15 +749,15 @@ static bool hasTrivialAssign(SYMBOL* sp, bool move)
     SYMLIST* hr;
     SYMBOL* dflt;
     BASECLASS* base;
-    if (sp->vbaseEntries || hasVTab(sp))
+    if (sp->sb->vbaseEntries || hasVTab(sp))
         return false;
-    base = sp->baseClasses;
+    base = sp->sb->baseClasses;
     while (base)
     {
         dflt = GetCopyAssign(base->cls, move);
         if (!dflt)
             return false;
-        if (!dflt->trivialCons)
+        if (!dflt->sb->trivialCons)
             return false;
         base = base->next;
     }
@@ -770,7 +770,7 @@ static bool hasTrivialAssign(SYMBOL* sp, bool move)
             dflt = getCopyCons(basetype(cls->tp)->sp, move);
             if (!dflt)
                 return false;
-            if (!dflt->trivialCons)
+            if (!dflt->sb->trivialCons)
                 return false;
         }
         hr = hr->next;
@@ -782,9 +782,9 @@ static bool checkCopyCons(SYMBOL* sp, SYMBOL* base, enum e_ac access)
     SYMBOL* dflt = getCopyCons(base, false);
     if (dflt)
     {
-        if (dflt->deleted)
+        if (dflt->sb->deleted)
             return true;
-        if (!isAccessible(sp, dflt->parentClass, dflt, nullptr, access, false))
+        if (!isAccessible(sp, dflt->sb->parentClass, dflt, nullptr, access, false))
             return true;
     }
     return false;
@@ -794,9 +794,9 @@ static bool checkCopyAssign(SYMBOL* sp, SYMBOL* base, enum e_ac access)
     SYMBOL* dflt = GetCopyAssign(base, false);
     if (dflt)
     {
-        if (dflt->deleted)
+        if (dflt->sb->deleted)
             return true;
-        if (!isAccessible(sp, dflt->parentClass, dflt, nullptr, access, false))
+        if (!isAccessible(sp, dflt->sb->parentClass, dflt, nullptr, access, false))
             return true;
     }
     return false;
@@ -806,9 +806,9 @@ static bool checkMoveCons(SYMBOL* sp, SYMBOL* base, enum e_ac access)
     SYMBOL* dflt = getCopyCons(base, true);
     if (dflt)
     {
-        if (dflt->deleted)
+        if (dflt->sb->deleted)
             return true;
-        if (!isAccessible(sp, dflt->parentClass, dflt, nullptr, access, false))
+        if (!isAccessible(sp, dflt->sb->parentClass, dflt, nullptr, access, false))
             return true;
     }
     return false;
@@ -818,9 +818,9 @@ static bool checkMoveAssign(SYMBOL* sp, SYMBOL* base, enum e_ac access)
     SYMBOL* dflt = GetCopyAssign(base, true);
     if (dflt)
     {
-        if (dflt->deleted)
+        if (dflt->sb->deleted)
             return true;
-        if (!isAccessible(sp, dflt->parentClass, dflt, nullptr, access, false))
+        if (!isAccessible(sp, dflt->sb->parentClass, dflt, nullptr, access, false))
             return true;
     }
     else
@@ -852,7 +852,7 @@ static bool isDefaultDeleted(SYMBOL* sp)
                 {
                     cons = (SYMBOL*)hr1->p;
                     if (matchesDefaultConstructor(cons))
-                        if (!cons->trivialCons)
+                        if (!cons->sb->trivialCons)
                             return true;
                     hr1 = hr1->next;
                 }
@@ -867,10 +867,10 @@ static bool isDefaultDeleted(SYMBOL* sp)
     {
         SYMBOL* sp1 = hr->p;
         TYPE* m;
-        if (sp1->storage_class == sc_member || sp1->storage_class == sc_mutable)
+        if (sp1->sb->storage_class == sc_member || sp1->sb->storage_class == sc_mutable)
         {
             if (isref(sp1->tp))
-                if (!sp1->init)
+                if (!sp1->sb->init)
                     return true;
             if (basetype(sp1->tp)->type == bt_union)
             {
@@ -906,7 +906,7 @@ static bool isDefaultDeleted(SYMBOL* sp)
         hr = hr->next;
     }
 
-    base = sp->baseClasses;
+    base = sp->sb->baseClasses;
     while (base)
     {
         if (checkDest(sp, basetype(base->cls->tp)->syms, ac_protected))
@@ -915,7 +915,7 @@ static bool isDefaultDeleted(SYMBOL* sp)
             return true;
         base = base->next;
     }
-    vbase = sp->vbaseEntries;
+    vbase = sp->sb->vbaseEntries;
     while (vbase)
     {
         if (vbase->alloc)
@@ -948,7 +948,7 @@ static bool isCopyConstructorDeleted(SYMBOL* sp)
                 {
                     cons = (SYMBOL*)hr1->p;
                     if (matchesCopy(cons, false))
-                        if (!cons->trivialCons)
+                        if (!cons->sb->trivialCons)
                             return true;
                     hr1 = hr1->next;
                 }
@@ -961,7 +961,7 @@ static bool isCopyConstructorDeleted(SYMBOL* sp)
     {
         SYMBOL* sp1 = hr->p;
         TYPE* m;
-        if (sp1->storage_class == sc_member || sp1->storage_class == sc_mutable)
+        if (sp1->sb->storage_class == sc_member || sp1->sb->storage_class == sc_mutable)
         {
             if (basetype(sp1->tp)->type == bt_rref)
                 return true;
@@ -983,7 +983,7 @@ static bool isCopyConstructorDeleted(SYMBOL* sp)
         hr = hr->next;
     }
 
-    base = sp->baseClasses;
+    base = sp->sb->baseClasses;
     while (base)
     {
         if (checkDest(sp, basetype(base->cls->tp)->syms, ac_protected))
@@ -992,7 +992,7 @@ static bool isCopyConstructorDeleted(SYMBOL* sp)
             return true;
         base = base->next;
     }
-    vbase = sp->vbaseEntries;
+    vbase = sp->sb->vbaseEntries;
     while (vbase)
     {
         if (vbase->alloc)
@@ -1025,7 +1025,7 @@ static bool isCopyAssignmentDeleted(SYMBOL* sp)
                 {
                     cons = (SYMBOL*)hr1->p;
                     if (matchesCopy(cons, false))
-                        if (!cons->trivialCons)
+                        if (!cons->sb->trivialCons)
                             return true;
                     hr1 = hr1->next;
                 }
@@ -1038,7 +1038,7 @@ static bool isCopyAssignmentDeleted(SYMBOL* sp)
     {
         SYMBOL* sp1 = hr->p;
         TYPE* m;
-        if (sp1->storage_class == sc_member || sp1->storage_class == sc_mutable)
+        if (sp1->sb->storage_class == sc_member || sp1->sb->storage_class == sc_mutable)
         {
             if (isref(sp1->tp))
                 return true;
@@ -1056,14 +1056,14 @@ static bool isCopyAssignmentDeleted(SYMBOL* sp)
         hr = hr->next;
     }
 
-    base = sp->baseClasses;
+    base = sp->sb->baseClasses;
     while (base)
     {
         if (checkCopyAssign(sp, base->cls, ac_protected))
             return true;
         base = base->next;
     }
-    vbase = sp->vbaseEntries;
+    vbase = sp->sb->vbaseEntries;
     while (vbase)
     {
         if (vbase->alloc && checkCopyAssign(sp, vbase->cls, ac_protected))
@@ -1091,7 +1091,7 @@ static bool isMoveConstructorDeleted(SYMBOL* sp)
                 {
                     cons = (SYMBOL*)hr1->p;
                     if (matchesCopy(cons, true))
-                        if (!cons->trivialCons)
+                        if (!cons->sb->trivialCons)
                             return true;
                     hr1 = hr1->next;
                 }
@@ -1104,7 +1104,7 @@ static bool isMoveConstructorDeleted(SYMBOL* sp)
     {
         SYMBOL* sp1 = hr->p;
         TYPE* m;
-        if (sp1->storage_class == sc_member || sp1->storage_class == sc_mutable)
+        if (sp1->sb->storage_class == sc_member || sp1->sb->storage_class == sc_mutable)
         {
             if (basetype(sp1->tp)->type == bt_rref)
                 return true;
@@ -1126,7 +1126,7 @@ static bool isMoveConstructorDeleted(SYMBOL* sp)
         hr = hr->next;
     }
 
-    base = sp->baseClasses;
+    base = sp->sb->baseClasses;
     while (base)
     {
         if (checkDest(sp, basetype(base->cls->tp)->syms, ac_protected))
@@ -1135,7 +1135,7 @@ static bool isMoveConstructorDeleted(SYMBOL* sp)
             return true;
         base = base->next;
     }
-    vbase = sp->vbaseEntries;
+    vbase = sp->sb->vbaseEntries;
     while (vbase)
     {
         if (vbase->alloc)
@@ -1168,7 +1168,7 @@ static bool isMoveAssignmentDeleted(SYMBOL* sp)
                 {
                     cons = (SYMBOL*)hr1->p;
                     if (matchesCopy(cons, true))
-                        if (!cons->trivialCons)
+                        if (!cons->sb->trivialCons)
                             return true;
                     hr1 = hr1->next;
                 }
@@ -1181,7 +1181,7 @@ static bool isMoveAssignmentDeleted(SYMBOL* sp)
     {
         SYMBOL* sp1 = hr->p;
         TYPE* m;
-        if (sp1->storage_class == sc_member || sp1->storage_class == sc_mutable)
+        if (sp1->sb->storage_class == sc_member || sp1->sb->storage_class == sc_mutable)
         {
             if (isref(sp1->tp))
                 return true;
@@ -1199,14 +1199,14 @@ static bool isMoveAssignmentDeleted(SYMBOL* sp)
         hr = hr->next;
     }
 
-    base = sp->baseClasses;
+    base = sp->sb->baseClasses;
     while (base)
     {
         if (checkMoveAssign(sp, base->cls, ac_protected))
             return true;
         base = base->next;
     }
-    vbase = sp->vbaseEntries;
+    vbase = sp->sb->vbaseEntries;
     while (vbase)
     {
         if (vbase->alloc && checkMoveAssign(sp, vbase->cls, ac_protected))
@@ -1221,11 +1221,11 @@ static void conditionallyDeleteDefaultConstructor(SYMBOL* func)
     while (hr)
     {
         SYMBOL* sp = hr->p;
-        if (sp->defaulted && matchesDefaultConstructor(sp))
+        if (sp->sb->defaulted && matchesDefaultConstructor(sp))
         {
-            if (isDefaultDeleted(sp->parentClass))
+            if (isDefaultDeleted(sp->sb->parentClass))
             {
-                sp->deleted = true;
+                sp->sb->deleted = true;
             }
         }
         hr = hr->next;
@@ -1237,10 +1237,10 @@ static bool conditionallyDeleteCopyConstructor(SYMBOL* func, bool move)
     while (hr)
     {
         SYMBOL* sp = hr->p;
-        if (sp->defaulted && matchesCopy(sp, move))
+        if (sp->sb->defaulted && matchesCopy(sp, move))
         {
-            if (isCopyConstructorDeleted(sp->parentClass))
-                sp->deleted = true;
+            if (isCopyConstructorDeleted(sp->sb->parentClass))
+                sp->sb->deleted = true;
         }
         hr = hr->next;
     }
@@ -1252,10 +1252,10 @@ static bool conditionallyDeleteCopyAssignment(SYMBOL* func, bool move)
     while (hr)
     {
         SYMBOL* sp = hr->p;
-        if (sp->defaulted && matchesCopy(sp, move))
+        if (sp->sb->defaulted && matchesCopy(sp, move))
         {
-            if (isCopyAssignmentDeleted(sp->parentClass))
-                sp->deleted = true;
+            if (isCopyAssignmentDeleted(sp->sb->parentClass))
+                sp->sb->deleted = true;
         }
         hr = hr->next;
     }
@@ -1266,15 +1266,15 @@ void createConstructorsForLambda(SYMBOL* sp)
     SYMBOL* newcons;
     declareDestructor(sp);
     newcons = declareConstructor(sp, true, false);  // default
-    newcons->deleted = true;
+    newcons->sb->deleted = true;
     newcons = declareConstructor(sp, false, false);  // copy
     conditionallyDeleteCopyConstructor(newcons, false);
     newcons = declareAssignmentOp(sp, false);
-    newcons->deleted = true;
+    newcons->sb->deleted = true;
     if (!isMoveConstructorDeleted(sp))
     {
         newcons = declareConstructor(sp, false, true);
-        //        newcons->deleted = isMoveAssignmentDeleted(sp);
+        //        newcons->sb->deleted = isMoveAssignmentDeleted(sp);
     }
 }
 // if there is a constructor with defaulted args that would match the
@@ -1298,7 +1298,7 @@ static void shimDefaultConstructor(SYMBOL* sp, SYMBOL* cons)
     if (match)
     {
         hr = basetype(match->tp)->syms->table[0];
-        if (hr->next && (hr->next->p)->init)
+        if (hr->next && (hr->next->p)->sb->init)
         {
             // will match a default constructor but has defaulted args
             SYMBOL* consfunc = declareConstructor(sp, true, false);  // default
@@ -1309,7 +1309,7 @@ static void shimDefaultConstructor(SYMBOL* sp, SYMBOL* cons)
             EXPRESSION* e1;
             FUNCTIONCALL* params = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
             memset(&b, 0, sizeof(BLOCKDATA));
-            hr->p->offset = chosenAssembler->arch->retblocksize;
+            hr->p->sb->offset = chosenAssembler->arch->retblocksize;
             deref(&stdpointer, &thisptr);
             b.type = begin;
             syms = localNameSpace->valueData->syms;
@@ -1325,7 +1325,7 @@ static void shimDefaultConstructor(SYMBOL* sp, SYMBOL* cons)
             params->sp = match;
             params->ascall = true;
             AdjustParams(match, basetype(match->tp)->syms->table[0], &params->arguments, false, true);
-            if (sp->vbaseEntries)
+            if (sp->sb->vbaseEntries)
             {
                 INITLIST *x = (INITLIST*)(INITLIST*)Alloc(sizeof(INITLIST)), **p;
                 x->tp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
@@ -1349,20 +1349,20 @@ static void shimDefaultConstructor(SYMBOL* sp, SYMBOL* cons)
             }
             st = stmtNode(nullptr, &b, st_return);
             st->select = e1;
-            consfunc->xcMode = cons->xcMode;
-            consfunc->xc->xcDynamic = cons->xc->xcDynamic;
-            consfunc->inlineFunc.stmt = stmtNode(nullptr, nullptr, st_block);
-            consfunc->inlineFunc.stmt->lower = b.head;
-            consfunc->inlineFunc.syms = basetype(consfunc->tp)->syms;
-            consfunc->retcount = 1;
-            consfunc->isInline = consfunc->attribs.inheritable.linkage2 != lk_export;
+            consfunc->sb->xcMode = cons->sb->xcMode;
+            consfunc->sb->xc->xcDynamic = cons->sb->xc->xcDynamic;
+            consfunc->sb->inlineFunc.stmt = stmtNode(nullptr, nullptr, st_block);
+            consfunc->sb->inlineFunc.stmt->lower = b.head;
+            consfunc->sb->inlineFunc.syms = basetype(consfunc->tp)->syms;
+            consfunc->sb->retcount = 1;
+            consfunc->sb->isInline = consfunc->sb->attribs.inheritable.linkage2 != lk_export;
             InsertInline(consfunc);
             // now get rid of the first default arg
             // leave others so the old constructor can be considered
             // under other circumstances
             hr = hr->next;
-            hr->p->init = nullptr;
-            if (match->deferredCompile && !match->inlineFunc.stmt)
+            hr->p->sb->init = nullptr;
+            if (match->sb->deferredCompile && !match->sb->inlineFunc.stmt)
                 deferredCompileOne(match);
             localNameSpace->valueData->syms = syms;
         }
@@ -1377,10 +1377,10 @@ void createDefaultConstructors(SYMBOL* sp)
     if (!dest)
         declareDestructor(sp);
     else
-        sp->hasDest = true;
+        sp->sb->hasDest = true;
     if (cons)
     {
-        sp->hasUserCons = true;
+        sp->sb->hasUserCons = true;
         shimDefaultConstructor(sp, cons);
     }
     else
@@ -1391,12 +1391,12 @@ void createDefaultConstructors(SYMBOL* sp)
         conditionallyDeleteDefaultConstructor(cons);
     }
     // see if the default constructor could be trivial
-    if (!hasVTab(sp) && sp->vbaseEntries == nullptr && !dest)
+    if (!hasVTab(sp) && sp->sb->vbaseEntries == nullptr && !dest)
     {
-        BASECLASS* base = sp->baseClasses;
+        BASECLASS* base = sp->sb->baseClasses;
         while (base)
         {
-            if (!base->cls->trivialCons || base->accessLevel != ac_public)
+            if (!base->cls->sb->trivialCons || base->accessLevel != ac_public)
                 break;
             base = base->next;
         }
@@ -1409,50 +1409,50 @@ void createDefaultConstructors(SYMBOL* sp)
                 TYPE* tp = pcls->tp;
                 while (isarray(tp))
                     tp = basetype(tp)->btp;
-                if (pcls->storage_class == sc_member || pcls->storage_class == sc_mutable || pcls->storage_class == sc_overloads)
+                if (pcls->sb->storage_class == sc_member || pcls->sb->storage_class == sc_mutable || pcls->sb->storage_class == sc_overloads)
                 {
                     if (isstructured(tp))
                     {
-                        if (!basetype(tp)->sp->trivialCons)
+                        if (!basetype(tp)->sp->sb->trivialCons)
                             break;
                     }
-                    else if (pcls->storage_class == sc_overloads)
+                    else if (pcls->sb->storage_class == sc_overloads)
                     {
                         bool err = false;
                         SYMLIST* p = basetype(tp)->syms->table[0];
                         while (p && !err)
                         {
                             SYMBOL* s = (SYMBOL*)p->p;
-                            if (s->storage_class != sc_static)
+                            if (s->sb->storage_class != sc_static)
                             {
-                                err |= s->isConstructor && !s->defaulted && !s->deleted;
-                                err |= s->access != ac_public;
+                                err |= s->sb->isConstructor && !s->sb->defaulted && !s->sb->deleted;
+                                err |= s->sb->access != ac_public;
                             }
                             p = p->next;
                         }
                         if (err)
                             break;
                     }
-                    else if (pcls->access != ac_public)
+                    else if (pcls->sb->access != ac_public)
                         break;
                 }
                 p = p->next;
             }
             if (!p)
             {
-                sp->trivialCons = true;
+                sp->sb->trivialCons = true;
             }
         }
     }
     if (newcons)
-        newcons->trivialCons = true;
+        newcons->sb->trivialCons = true;
     // now if there is no copy constructor or assignment operator declare them
     if (!hasCopy(cons, false))
     {
         SYMBOL* newcons = declareConstructor(sp, false, false);
-        newcons->trivialCons = hasTrivialCopy(sp, false);
+        newcons->sb->trivialCons = hasTrivialCopy(sp, false);
         if (hasCopy(cons, true) || (asgn && hasCopy(asgn, true)))
-            newcons->deleted = true;
+            newcons->sb->deleted = true;
         if (!asgn)
             asgn = search(overloadNameTab[assign - kw_new + CI_NEW], basetype(sp->tp)->syms);
         conditionallyDeleteCopyConstructor(cons, false);
@@ -1460,9 +1460,9 @@ void createDefaultConstructors(SYMBOL* sp)
     if (!asgn || !hasCopy(asgn, false))
     {
         SYMBOL* newsp = declareAssignmentOp(sp, false);
-        newsp->trivialCons = hasTrivialAssign(sp, false);
+        newsp->sb->trivialCons = hasTrivialAssign(sp, false);
         if (hasCopy(cons, true) || (asgn && hasCopy(asgn, true)))
-            newsp->deleted = true;
+            newsp->sb->deleted = true;
         if (!asgn)
             asgn = search(overloadNameTab[assign - kw_new + CI_NEW], basetype(sp->tp)->syms);
         conditionallyDeleteCopyAssignment(asgn, false);
@@ -1478,11 +1478,11 @@ void createDefaultConstructors(SYMBOL* sp)
         if (!b)
         {
             newcons = declareConstructor(sp, false, true);
-            newcons->trivialCons = hasTrivialCopy(sp, true);
+            newcons->sb->trivialCons = hasTrivialCopy(sp, true);
         }
         newcons = declareAssignmentOp(sp, true);
-        newcons->trivialCons = hasTrivialAssign(sp, true);
-        newcons->deleted = isMoveAssignmentDeleted(sp);
+        newcons->sb->trivialCons = hasTrivialAssign(sp, true);
+        newcons->sb->deleted = isMoveAssignmentDeleted(sp);
     }
     else
     {
@@ -1517,14 +1517,14 @@ EXPRESSION* destructLocal(EXPRESSION* exp)
                 il = il->next;
             }
         }
-        if (e->type == en_auto && e->v.sp->allocate && !e->v.sp->destructed)
+        if (e->type == en_auto && e->v.sp->sb->allocate && !e->v.sp->sb->destructed)
         {
             TYPE* tp = e->v.sp->tp;
             while (isarray(tp))
                 tp = basetype(tp)->btp;
             if (isstructured(tp) && !isref(tp))
             {
-                e->v.sp->destructed = true;
+                e->v.sp->sb->destructed = true;
                 destructList.push(e->v.sp);
             }
         }
@@ -1535,8 +1535,8 @@ EXPRESSION* destructLocal(EXPRESSION* exp)
     {
         SYMBOL* sp = destructList.top();
         destructList.pop();
-        if (sp->dest && sp->dest->exp)
-            rv = exprNode(en_void, rv, sp->dest->exp);
+        if (sp->sb->dest && sp->sb->dest->exp)
+            rv = exprNode(en_void, rv, sp->sb->dest->exp);
     }
     return rv;
 }
@@ -1547,10 +1547,10 @@ void destructBlock(EXPRESSION** exp, SYMLIST* hr, bool mainDestruct)
     while (hr)
     {
         SYMBOL* sp = hr->p;
-        if (sp->allocate && !sp->destructed && !isref(sp->tp))
+        if (sp->sb->allocate && !sp->sb->destructed && !isref(sp->tp))
         {
-            sp->destructed = mainDestruct;
-            if (sp->storage_class == sc_parameter)
+            sp->sb->destructed = mainDestruct;
+            if (sp->sb->storage_class == sc_parameter)
             {
                 if (isstructured(sp->tp))
                 {
@@ -1568,10 +1568,10 @@ void destructBlock(EXPRESSION** exp, SYMLIST* hr, bool mainDestruct)
                     }
                 }
             }
-            else if (sp->storage_class != sc_localstatic && sp->dest)
+            else if (sp->sb->storage_class != sc_localstatic && sp->sb->dest)
             {
 
-                EXPRESSION* iexp = sp->dest->exp;
+                EXPRESSION* iexp = sp->sb->dest->exp;
                 if (iexp)
                 {
                     optimize_for_constants(&iexp);
@@ -1618,11 +1618,11 @@ static void genConsData(BLOCKDATA* b, SYMBOL* cls, MEMBERINITIALIZERS* mi, SYMBO
             st->select = exp;
         }
     }
-    else if (member->init)
+    else if (member->sb->init)
     {
         EXPRESSION* exp;
         STATEMENT* st = stmtNode(nullptr, b, st_expr);
-        exp = convertInitToExpression(member->tp, member, nullptr, nullptr, member->init, thisptr, false);
+        exp = convertInitToExpression(member->tp, member, nullptr, nullptr, member->sb->init, thisptr, false);
         optimize_for_constants(&exp);
         st->select = exp;
     }
@@ -1632,16 +1632,16 @@ static void genConstructorCall(BLOCKDATA* b, SYMBOL* cls, MEMBERINITIALIZERS* mi
                                bool useDefault)
 {
     STATEMENT* st = nullptr;
-    if (cls != member && member->init)
+    if (cls != member && member->sb->init)
     {
         EXPRESSION* exp;
-        if (member->init->exp)
+        if (member->sb->init->exp)
         {
-            exp = convertInitToExpression(member->tp, member, nullptr, nullptr, member->init, thisptr, false);
+            exp = convertInitToExpression(member->tp, member, nullptr, nullptr, member->sb->init, thisptr, false);
         }
         else
         {
-            exp = exprNode(en_add, thisptr, intNode(en_c_i, member->offset));
+            exp = exprNode(en_add, thisptr, intNode(en_c_i, member->sb->offset));
             exp = exprNode(en_blockclear, exp, 0);
             exp->size = member->tp->size;
         }
@@ -1783,7 +1783,7 @@ static void genConstructorCall(BLOCKDATA* b, SYMBOL* cls, MEMBERINITIALIZERS* mi
 }
 static void virtualBaseThunks(BLOCKDATA* b, SYMBOL* sp, EXPRESSION* thisptr)
 {
-    VBASEENTRY* entries = sp->vbaseEntries;
+    VBASEENTRY* entries = sp->sb->vbaseEntries;
     EXPRESSION *first = nullptr, **pos = &first;
     STATEMENT* st;
     while (entries)
@@ -1813,13 +1813,13 @@ static void virtualBaseThunks(BLOCKDATA* b, SYMBOL* sp, EXPRESSION* thisptr)
 }
 static void dovtabThunks(BLOCKDATA* b, SYMBOL* sym, EXPRESSION* thisptr, bool isvirtual)
 {
-    VTABENTRY* entries = sym->vtabEntries;
+    VTABENTRY* entries = sym->sb->vtabEntries;
     EXPRESSION *first = nullptr, **pos = &first;
     STATEMENT* st;
     SYMBOL* localsp;
-    localsp = sym->vtabsp;
+    localsp = sym->sb->vtabsp;
     EXPRESSION* vtabBase = varNode(en_global, localsp);
-    if (localsp->attribs.inheritable.linkage2 == lk_import)
+    if (localsp->sb->attribs.inheritable.linkage2 == lk_import)
         deref(&stdpointer, &vtabBase);
     while (entries)
     {
@@ -1965,7 +1965,7 @@ SYMBOL* findClassName(const char* name, SYMBOL* cls, BASECLASS* bc, VBASEENTRY* 
             int i;
             if (parent->tp->type == bt_typedef)
                 parent = basetype(parent->tp)->sp;
-            for (i = n - 1; i >= 0 && parent; i--, parent = parent->parentClass ? parent->parentClass : parent->parentNameSpace)
+            for (i = n - 1; i >= 0 && parent; i--, parent = parent->sb->parentClass ? parent->sb->parentClass : parent->sb->parentNameSpace)
                 if (strcmp(parent->name, clslst[i]))
                     break;
             if (i < 0 || (i == 0 && parent == nullptr && clslst[0][0] == '\0'))
@@ -1983,7 +1983,7 @@ SYMBOL* findClassName(const char* name, SYMBOL* cls, BASECLASS* bc, VBASEENTRY* 
         int i;
         if (parent->tp->type == bt_typedef)
             parent = basetype(parent->tp)->sp;
-        for (i = n - 1; i >= 0 && parent; i--, parent = parent->parentClass ? parent->parentClass : parent->parentNameSpace)
+        for (i = n - 1; i >= 0 && parent; i--, parent = parent->sb->parentClass ? parent->sb->parentClass : parent->sb->parentNameSpace)
             if (strcmp(parent->name, clslst[i]))
                 break;
         if (i < 0 || (i == 0 && parent == nullptr && clslst[0][0] == '\0'))
@@ -2002,20 +2002,20 @@ SYMBOL* findClassName(const char* name, SYMBOL* cls, BASECLASS* bc, VBASEENTRY* 
 }
 void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
 {
-    MEMBERINITIALIZERS* init = cons->memberInitializers;
+    MEMBERINITIALIZERS* init = cons->sb->memberInitializers;
     bool first = true;
     bool hasDelegate = false;
     while (init)
     {
         LEXEME* lex;
-        BASECLASS* bc = cls->baseClasses;
-        VBASEENTRY* vbase = cls->vbaseEntries;
+        BASECLASS* bc = cls->sb->baseClasses;
+        VBASEENTRY* vbase = cls->sb->vbaseEntries;
         if (!first && hasDelegate)
             error(ERR_DELEGATING_CONSTRUCTOR_ONLY_INITIALIZER);
         init->sp = search(init->name, basetype(cls->tp)->syms);
         if (init->sp && (!init->basesym || !istype(init->sp)))
         {
-            if (init->sp->storage_class == sc_typedef)
+            if (init->sp->sb->storage_class == sc_typedef)
             {
                 TYPE* tp = basetype(init->sp->tp);
                 if (isstructured(tp))
@@ -2027,7 +2027,7 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
         }
         if (init->sp && (!init->basesym || !istype(init->sp)))
         {
-            if (init->sp != cls && init->sp->storage_class != sc_member && init->sp->storage_class != sc_mutable)
+            if (init->sp != cls && init->sp->sb->storage_class != sc_member && init->sp->sb->storage_class != sc_mutable)
             {
                 errorsym(ERR_NEED_NONSTATIC_MEMBER, init->sp);
             }
@@ -2039,7 +2039,7 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
                 {
                     TEMPLATEPARAMLIST* lst = nullptr;
                     lex = GetTemplateArguments(lex, cons, init->sp, &lst);
-                    if (init->sp->templateLevel)
+                    if (init->sp->sb->templateLevel)
                     {
                         init->sp = TemplateClassInstantiate(init->sp, lst, false, sc_global);
                     }
@@ -2059,7 +2059,7 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
                             {
                                 lex = getsym();
                                 init->init = nullptr;
-                                initInsert(&init->init, init->sp->tp, intNode(en_c_i, 0), 0 /*init->sp->offset*/, false);
+                                initInsert(&init->init, init->sp->tp, intNode(en_c_i, 0), 0 /*init->sp->sb->offset*/, false);
                                 done = true;
                             }
                             else
@@ -2081,7 +2081,7 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
                 }
                 else
                 {
-                    if (MATCHKW(lex, openpa) && basetype(init->sp->tp)->sp->trivialCons)
+                    if (MATCHKW(lex, openpa) && basetype(init->sp->tp)->sp->sb->trivialCons)
                     {
                         init->init = nullptr;
                         argument_nesting++;
@@ -2115,7 +2115,7 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
                 {
                     if (sp->tp->templateParam->p->packed)
                     {
-                        MEMBERINITIALIZERS** p = &cons->memberInitializers;
+                        MEMBERINITIALIZERS** p = &cons->sb->memberInitializers;
                         FUNCTIONCALL shim;
                         lex = SetAlternateLex(init->initData);
                         shim.arguments = nullptr;
@@ -2155,7 +2155,7 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
                             SYMBOL* sp = makeID(sc_member, init->sp->tp, nullptr, init->sp->name);
                             FUNCTIONCALL shim;
                             INITIALIZER** xinit = &init->init;
-                            sp->offset = offset;
+                            sp->sb->offset = offset;
                             init->sp = sp;
                             lex = SetAlternateLex(init->initData);
                             shim.arguments = nullptr;
@@ -2189,7 +2189,7 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
             }
             else if (init->packed)
             {
-                init = expandPackedBaseClasses(cls, cons, init == cons->memberInitializers ? &cons->memberInitializers : &init, bc,
+                init = expandPackedBaseClasses(cls, cons, init == cons->sb->memberInitializers ? &cons->sb->memberInitializers : &init, bc,
                                                vbase);
                 continue;
             }
@@ -2218,7 +2218,7 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
                     {
                         TEMPLATEPARAMLIST* lst = nullptr;
                         lex = GetTemplateArguments(lex, cons, init->sp, &lst);
-                        if (init->sp->templateLevel)
+                        if (init->sp->sb->templateLevel)
                         {
                             init->sp = TemplateClassInstantiate(init->sp, lst, false, sc_global);
                         }
@@ -2229,7 +2229,7 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
                     }
                     sp = makeID(sc_member, init->sp->tp, nullptr, init->sp->name);
                     xinit = &init->init;
-                    sp->offset = offset;
+                    sp->sb->offset = offset;
                     init->sp = sp;
                     shim.arguments = nullptr;
                     getMemberInitializers(lex, cons, &shim, MATCHKW(lex, openpa) ? closepa : end, true);
@@ -2253,14 +2253,14 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
         {
             // might be a typedef?
             init->sp = finishSearch(init->name, nullptr, nullptr, false, false, false);
-            if (init->sp && init->sp->storage_class == sc_typedef)
+            if (init->sp && init->sp->sb->storage_class == sc_typedef)
             {
                 int offset = 0;
                 TYPE* tp = init->sp->tp;
                 tp = basetype(tp);
                 if (isstructured(tp))
                 {
-                    BASECLASS* bc = cls->baseClasses;
+                    BASECLASS* bc = cls->sb->baseClasses;
                     while (bc)
                     {
                         if (!comparetypes(bc->cls->tp, init->sp->tp, true) || sameTemplate(bc->cls->tp, init->sp->tp))
@@ -2278,7 +2278,7 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
                         {
                             TEMPLATEPARAMLIST* lst = nullptr;
                             lex = GetTemplateArguments(lex, cons, init->sp, &lst);
-                            if (init->sp->templateLevel)
+                            if (init->sp->sb->templateLevel)
                             {
                                 init->sp = TemplateClassInstantiate(init->sp, lst, false, sc_global);
                             }
@@ -2289,7 +2289,7 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
                         }
                         sp = makeID(sc_member, init->sp->tp, nullptr, init->sp->name);
                         xinit = &init->init;
-                        sp->offset = offset;
+                        sp->sb->offset = offset;
                         init->sp = sp;
                         shim.arguments = nullptr;
                         getMemberInitializers(lex, cons, &shim, MATCHKW(lex, openpa) ? closepa : end, true);
@@ -2327,18 +2327,18 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
 static void allocInitializers(SYMBOL* cls, SYMBOL* cons, EXPRESSION* ths)
 {
     SYMLIST* hr = basetype(cls->tp)->syms->table[0];
-    MEMBERINITIALIZERS* init = cons->memberInitializers;
+    MEMBERINITIALIZERS* init = cons->sb->memberInitializers;
     while (hr)
     {
         SYMBOL* sp = hr->p;
-        if (sp->storage_class == sc_member || sp->storage_class == sc_mutable)
+        if (sp->sb->storage_class == sc_member || sp->sb->storage_class == sc_mutable)
         {
-            sp->lastInit = sp->init;
-            if (sp->init)
+            sp->sb->lastInit = sp->sb->init;
+            if (sp->sb->init)
             {
-                sp->init = (INITIALIZER*)Alloc(sizeof(*sp->init));
-                *sp->init = *sp->lastInit;
-                sp->init->exp = unshim(sp->init->exp, ths);
+                sp->sb->init = (INITIALIZER*)Alloc(sizeof(*sp->sb->init));
+                *sp->sb->init = *sp->sb->lastInit;
+                sp->sb->init->exp = unshim(sp->sb->init->exp, ths);
             }
         }
         hr = hr->next;
@@ -2347,7 +2347,7 @@ static void allocInitializers(SYMBOL* cls, SYMBOL* cons, EXPRESSION* ths)
     {
         if (init->init)
         {
-            init->sp->init = init->init;
+            init->sp->sb->init = init->init;
             if (init->init->exp)
                 init->init->exp = unshim(init->init->exp, ths);
         }
@@ -2357,7 +2357,7 @@ static void allocInitializers(SYMBOL* cls, SYMBOL* cons, EXPRESSION* ths)
     while (hr)
     {
         SYMBOL* sp = hr->p;
-        if (!sp->init && ismember(sp))
+        if (!sp->sb->init && ismember(sp))
         {
             if (isref(sp->tp))
                 errorsym(ERR_REF_MEMBER_MUST_INITIALIZE, sp);
@@ -2374,8 +2374,8 @@ static void releaseInitializers(SYMBOL* cls, SYMBOL* cons)
     while (hr)
     {
         SYMBOL* sp = hr->p;
-        if (sp->storage_class == sc_member || sp->storage_class == sc_mutable)
-            sp->init = sp->lastInit;
+        if (sp->sb->storage_class == sc_member || sp->sb->storage_class == sc_mutable)
+            sp->sb->init = sp->sb->lastInit;
         hr = hr->next;
     }
 }
@@ -2393,10 +2393,10 @@ EXPRESSION* thunkConstructorHead(BLOCKDATA* b, SYMBOL* sym, SYMBOL* cons, HASHTA
     deref(&stdpointer, &otherptr);
     if (parseInitializers)
         allocInitializers(sym, cons, thisptr);
-    if (cons->memberInitializers && cons->memberInitializers->delegating)
+    if (cons->sb->memberInitializers && cons->sb->memberInitializers->delegating)
     {
-        genConstructorCall(b, sym, cons->memberInitializers, sym, 0, false, thisptr, otherptr, cons, true, doCopy,
-                           !cons->defaulted);
+        genConstructorCall(b, sym, cons->sb->memberInitializers, sym, 0, false, thisptr, otherptr, cons, true, doCopy,
+                           !cons->sb->defaulted);
     }
     else
     {
@@ -2407,18 +2407,18 @@ EXPRESSION* thunkConstructorHead(BLOCKDATA* b, SYMBOL* sym, SYMBOL* cons, HASHTA
             while (hr)
             {
                 SYMBOL* sp = hr->p;
-                if ((sp->storage_class == sc_member || sp->storage_class == sc_mutable) && sp->tp->type != bt_aggregate)
+                if ((sp->sb->storage_class == sc_member || sp->sb->storage_class == sc_mutable) && sp->tp->type != bt_aggregate)
                 {
-                    if (sp->init)
+                    if (sp->sb->init)
                     {
                         if (isstructured(sp->tp))
                         {
-                            genConstructorCall(b, basetype(sp->tp)->sp, cons->memberInitializers, sp, sp->offset, true, thisptr,
-                                               otherptr, cons, false, doCopy, !cons->defaulted);
+                            genConstructorCall(b, basetype(sp->tp)->sp, cons->sb->memberInitializers, sp, sp->sb->offset, true, thisptr,
+                                               otherptr, cons, false, doCopy, !cons->sb->defaulted);
                         }
                         else
                         {
-                            genConsData(b, sym, cons->memberInitializers, sp, sp->offset, thisptr, otherptr, cons, doCopy);
+                            genConsData(b, sym, cons->sb->memberInitializers, sp, sp->sb->offset, thisptr, otherptr, cons, doCopy);
                         }
                     }
                 }
@@ -2428,15 +2428,15 @@ EXPRESSION* thunkConstructorHead(BLOCKDATA* b, SYMBOL* sym, SYMBOL* cons, HASHTA
         }
         else
         {
-            if (sym->vbaseEntries)
+            if (sym->sb->vbaseEntries)
             {
                 SYMBOL* sp = makeID(sc_parameter, &stdint, nullptr, AnonymousName());
                 EXPRESSION* val = varNode(en_auto, sp);
                 int lbl = codeLabel++;
                 STATEMENT* st;
-                sp->constop = true;
-                sp->decoratedName = sp->name;
-                sp->offset = chosenAssembler->arch->retblocksize + cons->paramsize;
+                sp->sb->constop = true;
+                sp->sb->decoratedName = sp->name;
+                sp->sb->offset = chosenAssembler->arch->retblocksize + cons->sb->paramsize;
                 insert(sp, localNameSpace->valueData->syms);
 
                 deref(&stdint, &val);
@@ -2445,19 +2445,19 @@ EXPRESSION* thunkConstructorHead(BLOCKDATA* b, SYMBOL* sym, SYMBOL* cons, HASHTA
                 st->select = val;
                 st->label = lbl;
                 virtualBaseThunks(b, sym, thisptr);
-                doVirtualBases(b, sym, cons->memberInitializers, sym->vbaseEntries, thisptr, otherptr, cons, doCopy);
+                doVirtualBases(b, sym, cons->sb->memberInitializers, sym->sb->vbaseEntries, thisptr, otherptr, cons, doCopy);
                 if (hasVTab(sym))
                     dovtabThunks(b, sym, thisptr, true);
                 st = stmtNode(nullptr, b, st_label);
                 st->label = lbl;
             }
             AllocateLocalContext(nullptr, cons, codeLabel++);
-            bc = sym->baseClasses;
+            bc = sym->sb->baseClasses;
             while (bc)
             {
                 if (!bc->isvirtual)
-                    genConstructorCall(b, sym, cons->memberInitializers, bc->cls, bc->offset, false, thisptr, otherptr, cons, true,
-                                       doCopy || !cons->memberInitializers, !cons->defaulted);
+                    genConstructorCall(b, sym, cons->sb->memberInitializers, bc->cls, bc->offset, false, thisptr, otherptr, cons, true,
+                                       doCopy || !cons->sb->memberInitializers, !cons->sb->defaulted);
                 bc = bc->next;
             }
             if (hasVTab(sym))
@@ -2466,16 +2466,16 @@ EXPRESSION* thunkConstructorHead(BLOCKDATA* b, SYMBOL* sym, SYMBOL* cons, HASHTA
             while (hr)
             {
                 SYMBOL* sp = hr->p;
-                if ((sp->storage_class == sc_member || sp->storage_class == sc_mutable) && sp->tp->type != bt_aggregate)
+                if ((sp->sb->storage_class == sc_member || sp->sb->storage_class == sc_mutable) && sp->tp->type != bt_aggregate)
                 {
                     if (isstructured(sp->tp))
                     {
-                        genConstructorCall(b, basetype(sp->tp)->sp, cons->memberInitializers, sp, sp->offset, true, thisptr,
-                                           otherptr, cons, false, doCopy, !cons->defaulted);
+                        genConstructorCall(b, basetype(sp->tp)->sp, cons->sb->memberInitializers, sp, sp->sb->offset, true, thisptr,
+                                           otherptr, cons, false, doCopy, !cons->sb->defaulted);
                     }
                     else
                     {
-                        genConsData(b, sym, cons->memberInitializers, sp, sp->offset, thisptr, otherptr, cons, doCopy);
+                        genConsData(b, sym, cons->sb->memberInitializers, sp, sp->sb->offset, thisptr, otherptr, cons, doCopy);
                     }
                 }
                 hr = hr->next;
@@ -2485,7 +2485,7 @@ EXPRESSION* thunkConstructorHead(BLOCKDATA* b, SYMBOL* sym, SYMBOL* cons, HASHTA
     }
     if (parseInitializers)
         releaseInitializers(sym, cons);
-    cons->labelCount = codeLabel - INT_MIN;
+    cons->sb->labelCount = codeLabel - INT_MIN;
     codeLabel = oldCodeLabel;
     return thisptr;
 }
@@ -2502,12 +2502,12 @@ void createConstructor(SYMBOL* sp, SYMBOL* consfunc)
     thisptr = thunkConstructorHead(&b, sp, consfunc, basetype(consfunc->tp)->syms, false, true);
     st = stmtNode(nullptr, &b, st_return);
     st->select = thisptr;
-    consfunc->inlineFunc.stmt = stmtNode(nullptr, nullptr, st_block);
-    consfunc->inlineFunc.stmt->lower = b.head;
-    consfunc->inlineFunc.syms = basetype(consfunc->tp)->syms;
-    consfunc->retcount = 1;
-    consfunc->isInline = consfunc->attribs.inheritable.linkage2 != lk_export;
-    //    consfunc->inlineFunc.stmt->blockTail = b.tail;
+    consfunc->sb->inlineFunc.stmt = stmtNode(nullptr, nullptr, st_block);
+    consfunc->sb->inlineFunc.stmt->lower = b.head;
+    consfunc->sb->inlineFunc.syms = basetype(consfunc->tp)->syms;
+    consfunc->sb->retcount = 1;
+    consfunc->sb->isInline = consfunc->sb->attribs.inheritable.linkage2 != lk_export;
+    //    consfunc->sb->inlineFunc.stmt->blockTail = b.tail;
     InsertInline(consfunc);
     localNameSpace->valueData->syms = syms;
 }
@@ -2609,7 +2609,7 @@ static void genAsnCall(BLOCKDATA* b, SYMBOL* cls, SYMBOL* base, int offset, EXPR
         {
             errorsym(ERR_CANNOT_ACCESS, asn1);
         }
-        if (asn1->defaulted && !asn1->inlineFunc.stmt)
+        if (asn1->sb->defaulted && !asn1->sb->inlineFunc.stmt)
             createAssignment(base, asn1);
         params->functp = asn1->tp;
         params->sp = asn1;
@@ -2639,11 +2639,11 @@ static void thunkAssignments(BLOCKDATA* b, SYMBOL* sym, SYMBOL* asnfunc, HASHTAB
     }
     else
     {
-        if (sym->vbaseEntries)
+        if (sym->sb->vbaseEntries)
         {
-            asnVirtualBases(b, sym, sym->vbaseEntries, thisptr, other, move, isconst);
+            asnVirtualBases(b, sym, sym->sb->vbaseEntries, thisptr, other, move, isconst);
         }
-        base = sym->baseClasses;
+        base = sym->sb->baseClasses;
         while (base)
         {
             if (!base->isvirtual)
@@ -2656,21 +2656,21 @@ static void thunkAssignments(BLOCKDATA* b, SYMBOL* sym, SYMBOL* asnfunc, HASHTAB
         while (hr)
         {
             SYMBOL* sp = hr->p;
-            if ((sp->storage_class == sc_member || sp->storage_class == sc_mutable) && sp->tp->type != bt_aggregate)
+            if ((sp->sb->storage_class == sc_member || sp->sb->storage_class == sc_mutable) && sp->tp->type != bt_aggregate)
             {
                 if (isstructured(sp->tp))
                 {
-                    genAsnCall(b, sym, basetype(sp->tp)->sp, sp->offset, thisptr, other, move, isconst);
+                    genAsnCall(b, sym, basetype(sp->tp)->sp, sp->sb->offset, thisptr, other, move, isconst);
                 }
                 else
                 {
-                    genAsnData(b, sym, sp, sp->offset, thisptr, other);
+                    genAsnData(b, sym, sp, sp->sb->offset, thisptr, other);
                 }
             }
             hr = hr->next;
         }
     }
-    asnfunc->labelCount = codeLabel - INT_MIN;
+    asnfunc->sb->labelCount = codeLabel - INT_MIN;
     codeLabel = oldCodeLabel;
 }
 void createAssignment(SYMBOL* sym, SYMBOL* asnfunc)
@@ -2687,10 +2687,10 @@ void createAssignment(SYMBOL* sym, SYMBOL* asnfunc)
     syms = localNameSpace->valueData->syms;
     localNameSpace->valueData->syms = basetype(asnfunc->tp)->syms;
     thunkAssignments(&b, sym, asnfunc, basetype(asnfunc->tp)->syms, move, isConst);
-    asnfunc->inlineFunc.stmt = stmtNode(nullptr, nullptr, st_block);
-    asnfunc->inlineFunc.stmt->lower = b.head;
-    asnfunc->inlineFunc.syms = basetype(asnfunc->tp)->syms;
-    //    asnfunc->inlineFunc.stmt->blockTail = b.tail;
+    asnfunc->sb->inlineFunc.stmt = stmtNode(nullptr, nullptr, st_block);
+    asnfunc->sb->inlineFunc.stmt->lower = b.head;
+    asnfunc->sb->inlineFunc.syms = basetype(asnfunc->tp)->syms;
+    //    asnfunc->sb->inlineFunc.stmt->blockTail = b.tail;
     InsertInline(asnfunc);
     localNameSpace->valueData->syms = syms;
 }
@@ -2709,7 +2709,7 @@ static void genDestructorCall(BLOCKDATA* b, SYMBOL* sp, SYMBOL* against, EXPRESS
     deref(&stdpointer, &exp);
     exp = exprNode(en_add, exp, intNode(en_c_i, offset));
     dest = (SYMBOL*)basetype(dest->tp)->syms->table[0]->p;
-    if (dest->defaulted && !dest->inlineFunc.stmt)
+    if (dest->sb->defaulted && !dest->sb->inlineFunc.stmt)
     {
         createDestructor(sp);
     }
@@ -2732,11 +2732,11 @@ static void undoVars(BLOCKDATA* b, SYMLIST* vars, EXPRESSION* base)
         {
             SYMBOL* s = (SYMBOL*)stk.top();
             stk.pop();
-            if ((s->storage_class == sc_member || s->storage_class == sc_mutable))
+            if ((s->sb->storage_class == sc_member || s->sb->storage_class == sc_mutable))
             {
                 if (isstructured(s->tp))
                 {
-                    genDestructorCall(b, (SYMBOL*)basetype(s->tp)->sp, nullptr, base, nullptr, s->offset, true);
+                    genDestructorCall(b, (SYMBOL*)basetype(s->tp)->sp, nullptr, base, nullptr, s->sb->offset, true);
                 }
                 else if (isarray(s->tp))
                 {
@@ -2745,7 +2745,7 @@ static void undoVars(BLOCKDATA* b, SYMLIST* vars, EXPRESSION* base)
                         tp = basetype(tp)->btp;
                     tp = basetype(tp);
                     if (isstructured(tp))
-                        genDestructorCall(b, tp->sp, nullptr, base, intNode(en_c_i, s->tp->size / tp->size), s->offset, true);
+                        genDestructorCall(b, tp->sp, nullptr, base, intNode(en_c_i, s->tp->size / tp->size), s->sb->offset, true);
                 }
             }
         }
@@ -2765,23 +2765,23 @@ static void undoBases(BLOCKDATA* b, SYMBOL* against, BASECLASS* bc, EXPRESSION* 
 void thunkDestructorTail(BLOCKDATA* b, SYMBOL* sp, SYMBOL* dest, HASHTABLE* syms)
 {
     EXPRESSION* thisptr;
-    VBASEENTRY* vbe = sp->vbaseEntries;
+    VBASEENTRY* vbe = sp->sb->vbaseEntries;
     int oldCodeLabel = codeLabel;
     if (templateNestingCount)
         return;
     codeLabel = INT_MIN;
     thisptr = varNode(en_auto, (SYMBOL*)syms->table[0]->p);
     undoVars(b, basetype(sp->tp)->syms->table[0], thisptr);
-    undoBases(b, sp, sp->baseClasses, thisptr);
+    undoBases(b, sp, sp->sb->baseClasses, thisptr);
     if (vbe)
     {
         SYMBOL* sp = (SYMBOL*)syms->table[0]->next->p;
         EXPRESSION* val = varNode(en_auto, sp);
         int lbl = codeLabel++;
         STATEMENT* st;
-        sp->decoratedName = sp->name;
-        sp->offset = chosenAssembler->arch->retblocksize + getSize(bt_pointer);
-        SymbolManager::Get(sp)->offset = sp->offset;
+        sp->sb->decoratedName = sp->name;
+        sp->sb->offset = chosenAssembler->arch->retblocksize + getSize(bt_pointer);
+        SymbolManager::Get(sp)->offset = sp->sb->offset;
         deref(&stdint, &val);
         st = stmtNode(nullptr, b, st_notselect);
         optimize_for_constants(&val);
@@ -2796,7 +2796,7 @@ void thunkDestructorTail(BLOCKDATA* b, SYMBOL* sp, SYMBOL* dest, HASHTABLE* syms
         st = stmtNode(nullptr, b, st_label);
         st->label = lbl;
     }
-    dest->labelCount = codeLabel - INT_MIN;
+    dest->sb->labelCount = codeLabel - INT_MIN;
     codeLabel = oldCodeLabel;
 }
 static void createDestructor(SYMBOL* sp)
@@ -2810,12 +2810,12 @@ static void createDestructor(SYMBOL* sp)
     syms = localNameSpace->valueData->syms;
     localNameSpace->valueData->syms = basetype(dest->tp)->syms;
     thunkDestructorTail(&b, sp, dest, basetype(dest->tp)->syms);
-    dest->inlineFunc.stmt = stmtNode(nullptr, nullptr, st_block);
-    dest->inlineFunc.stmt->lower = b.head;
-    dest->inlineFunc.syms = basetype(dest->tp)->syms;
-    dest->retcount = 1;
-    dest->isInline = dest->attribs.inheritable.linkage2 != lk_export;
-    //    dest->inlineFunc.stmt->blockTail = b.tail;
+    dest->sb->inlineFunc.stmt = stmtNode(nullptr, nullptr, st_block);
+    dest->sb->inlineFunc.stmt->lower = b.head;
+    dest->sb->inlineFunc.syms = basetype(dest->tp)->syms;
+    dest->sb->retcount = 1;
+    dest->sb->isInline = dest->sb->attribs.inheritable.linkage2 != lk_export;
+    //    dest->sb->inlineFunc.stmt->blockTail = b.tail;
     InsertInline(dest);
     localNameSpace->valueData->syms = syms;
 }
@@ -2895,7 +2895,7 @@ void callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* a
     params->thistp->rootType = params->thistp;
     params->ascall = true;
     dest1 = basetype(dest->tp)->syms->table[0]->p;
-    if (!dest1 || !dest1->defaulted)
+    if (!dest1 || !dest1->sb->defaulted)
         dest1 = GetOverloadedFunction(&tp, &params->fcall, dest, params, nullptr, true, false, true, 0);
     else
         params->fcall = varNode(en_pc, dest1);
@@ -2904,12 +2904,12 @@ void callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* a
         CheckCalledException(dest1, params->thisptr);
         if (!skipAccess && dest1 &&
             !isAccessible(against, sp, dest1, theCurrentFunc,
-                          top ? (theCurrentFunc && theCurrentFunc->parentClass == sp ? ac_protected : ac_public) : ac_protected,
+                          top ? (theCurrentFunc && theCurrentFunc->sb->parentClass == sp ? ac_protected : ac_public) : ac_protected,
                           false))
         {
             errorsym(ERR_CANNOT_ACCESS, dest1);
         }
-        if (dest1 && dest1->defaulted && !dest1->inlineFunc.stmt)
+        if (dest1 && dest1->sb->defaulted && !dest1->sb->inlineFunc.stmt)
             createDestructor(sp);
         params->functp = dest1->tp;
         params->sp = dest1;
@@ -2920,7 +2920,7 @@ void callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* a
         }
         else
         {
-            if (sp->vbaseEntries)
+            if (sp->sb->vbaseEntries)
             {
                 INITLIST *x = (INITLIST*)(INITLIST*)Alloc(sizeof(INITLIST)), **p;
                 x->tp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
@@ -2932,7 +2932,7 @@ void callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* a
                 while (*p)
                     p = &(*p)->next;
                 *p = x;
-                params->sp->noinline = true;
+                params->sp->sb->noinline = true;
             }
             *exp = varNode(en_func, nullptr);
             (*exp)->v.func = params;
@@ -2943,8 +2943,8 @@ void callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* a
             (*exp)->dest = true;
             (*exp)->v.t.thisptr = params->thisptr;
             (*exp)->v.t.tp = sp->tp;
-            sp->hasDest = true;
-            if (!sp->pureDest)
+            sp->sb->hasDest = true;
+            if (!sp->sb->pureDest)
                 hasXCInfo = true;
         }
     }
@@ -2964,7 +2964,7 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
     bool initializerRef = false;
     PerformDeferredInitialization(stp, nullptr);
     sp = basetype(*tp)->sp;
-    against = top ? sp : sp->parentClass;
+    against = top ? sp : sp->sb->parentClass;
 
     if (isAssign)
         cons = search(overloadNameTab[assign - kw_new + CI_NEW], basetype(sp->tp)->syms);
@@ -2983,7 +2983,7 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
             if (!list->nested && isstructured(list->tp))
             {
                 SYMBOL* sp1 = basetype(list->tp)->sp;
-                if (!templateNestingCount && sp1->templateLevel && sp1->templateParams && !sp1->instantiated)
+                if (!templateNestingCount && sp1->sb->templateLevel && sp1->templateParams && !sp1->sb->instantiated)
                 {
                     if (!allTemplateArgsSpecified(sp1, sp1->templateParams))
                         sp1 = GetClassTemplate(sp1, sp1->templateParams->next, false);
@@ -3007,21 +3007,21 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
     {
         CheckCalledException(cons1, params->thisptr);
 
-        if (cons1->castoperator)
+        if (cons1->sb->castoperator)
         {
             FUNCTIONCALL* oparams = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
-            if (!isAccessible(cons1->parentClass, cons1->parentClass, cons1, nullptr, ac_public, false))
+            if (!isAccessible(cons1->sb->parentClass, cons1->sb->parentClass, cons1, nullptr, ac_public, false))
             {
                 errorsym(ERR_CANNOT_ACCESS, cons1);
             }
-            if (cons1->isExplicit && implicit)
+            if (cons1->sb->isExplicit && implicit)
                 error(ERR_IMPLICIT_USE_OF_EXPLICIT_CONVERSION);
             oparams->fcall = params->fcall;
             oparams->thisptr = params->arguments->exp;
             oparams->thistp = (TYPE*)Alloc(sizeof(TYPE));
             oparams->thistp->type = bt_pointer;
             oparams->thistp->size = getSize(bt_pointer);
-            oparams->thistp->btp = cons1->parentClass->tp;
+            oparams->thistp->btp = cons1->sb->parentClass->tp;
             oparams->thistp->rootType = oparams->thistp;
             oparams->functp = cons1->tp;
             oparams->sp = cons1;
@@ -3038,18 +3038,18 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
         else
         {
             if (!isAccessible(against, sp, cons1, nullptr,
-                              top ? (theCurrentFunc && theCurrentFunc->parentClass == sp ? ac_protected : ac_public) : ac_protected,
+                              top ? (theCurrentFunc && theCurrentFunc->sb->parentClass == sp ? ac_protected : ac_public) : ac_protected,
                               false))
             {
                 errorsym(ERR_CANNOT_ACCESS, cons1);
             }
-            if (cons1->isExplicit && implicit)
+            if (cons1->sb->isExplicit && implicit)
                 error(ERR_IMPLICIT_USE_OF_EXPLICIT_CONVERSION);
             {
                 SYMLIST* hr = basetype(cons1->tp)->syms->table[0];
-                if (hr->p->thisPtr)
+                if (hr->p->sb->thisPtr)
                     hr = hr->next;
-                if (!hr->next || (hr->next->p)->init)
+                if (!hr->next || (hr->next->p)->sb->init)
                 {
                     TYPE* tp = hr->p->tp;
                     if (isref(tp))
@@ -3060,9 +3060,9 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
                     if (isstructured(tp))
                     {
                         SYMBOL* sym = (basetype(tp)->sp);
-                        if (sym->parentNameSpace && !strcmp(sym->parentNameSpace->name, "std"))
+                        if (sym->sb->parentNameSpace && !strcmp(sym->sb->parentNameSpace->name, "std"))
                         {
-                            if (!strcmp(sym->name, "initializer_list") && sym->templateLevel)
+                            if (!strcmp(sym->name, "initializer_list") && sym->sb->templateLevel)
                             {
                                 initializerListTemplate = sym->tp;
                                 initializerListType = sym->templateParams->next->p->byClass.val;
@@ -3076,22 +3076,22 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
                 CreateInitializerList(initializerListTemplate, initializerListType, &params->arguments, false, initializerRef);
                 if (basetype(cons1->tp)->syms->table[0]->next->next)
                     AdjustParams(cons1, basetype(cons1->tp)->syms->table[0]->next->next, &params->arguments->next, false,
-                                 implicit && !cons1->isExplicit);
+                                 implicit && !cons1->sb->isExplicit);
             }
             else
             {
-                AdjustParams(cons1, basetype(cons1->tp)->syms->table[0], &params->arguments, false, implicit && !cons1->isExplicit);
+                AdjustParams(cons1, basetype(cons1->tp)->syms->table[0], &params->arguments, false, implicit && !cons1->sb->isExplicit);
             }
             params->functp = cons1->tp;
             params->sp = cons1;
             params->ascall = true;
-            if (cons1->defaulted && !cons1->inlineFunc.stmt)
+            if (cons1->sb->defaulted && !cons1->sb->inlineFunc.stmt)
                 createConstructor(sp, cons1);
             if (arrayElms)
             {
                 SYMBOL* dest = search(overloadNameTab[CI_DESTRUCTOR], basetype(sp->tp)->syms);
                 SYMBOL* dest1;
-                SYMBOL* against = top ? sp : sp->parentClass;
+                SYMBOL* against = top ? sp : sp->sb->parentClass;
                 TYPE* tp = nullptr;
                 FUNCTIONCALL* params = (FUNCTIONCALL*)(FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
                 if (!*exp)
@@ -3107,20 +3107,20 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
                 params->ascall = true;
                 dest1 = GetOverloadedFunction(&tp, &params->fcall, dest, params, nullptr, true, false, true, 0);
                 if (dest1 && !isAccessible(against, sp, dest1, nullptr,
-                                           top ? (theCurrentFunc && theCurrentFunc->parentClass == sp ? ac_protected : ac_public)
+                                           top ? (theCurrentFunc && theCurrentFunc->sb->parentClass == sp ? ac_protected : ac_public)
                                                : ac_protected,
                                            false))
                 {
                     errorsym(ERR_CANNOT_ACCESS, dest1);
                 }
-                if (dest1 && dest1->defaulted && !dest1->inlineFunc.stmt)
+                if (dest1 && dest1->sb->defaulted && !dest1->sb->inlineFunc.stmt)
                     createDestructor(sp);
                 makeArrayConsDest(&stp, exp, cons1, dest1, arrayElms);
                 e1 = *exp;
             }
             else
             {
-                if (sp->vbaseEntries)
+                if (sp->sb->vbaseEntries)
                 {
                     INITLIST *x = (INITLIST*)(INITLIST*)Alloc(sizeof(INITLIST)), **p;
                     x->tp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
@@ -3132,7 +3132,7 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
                     while (*p)
                         p = &(*p)->next;
                     *p = x;
-                    params->sp->noinline = true;
+                    params->sp->sb->noinline = true;
                 }
                 e1 = varNode(en_func, nullptr);
                 e1->v.func = params;
@@ -3181,7 +3181,7 @@ void PromoteConstructorArgs(SYMBOL* cons1, FUNCTIONCALL* params)
         return;
     }
     SYMLIST* hr = basetype(cons1->tp)->syms->table[0];
-    if (hr->p->thisPtr)
+    if (hr->p->sb->thisPtr)
         hr = hr->next;
     INITLIST* args = params->arguments;
     while (hr && args)

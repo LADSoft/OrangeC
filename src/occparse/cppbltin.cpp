@@ -100,7 +100,7 @@ void ParseBuiltins(void)
     {
         stdXC.syms = CreateHashTable(1);
         stdXC.sp = makeID(sc_type, &stdXC, nullptr, "$$XCTYPE");
-        stdXC.sp->decoratedName = stdXC.sp->name;
+        stdXC.sp->sb->decoratedName = stdXC.sp->name;
         stdXC.alignment = getAlign(sc_auto, &stdint);
     }
 }

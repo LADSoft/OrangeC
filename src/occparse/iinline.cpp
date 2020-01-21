@@ -66,7 +66,7 @@ static bool hasRelativeThis(EXPRESSION* thisPtr)
     }
     if (!rv)
     {
-        if (thisPtr->type == en_auto && thisPtr->v.sp->thisPtr)
+        if (thisPtr->type == en_auto && thisPtr->v.sp->sb->thisPtr)
             rv = true;
     }
     return rv;
@@ -76,7 +76,7 @@ static EXPRESSION* inlineGetThisPtr(EXPRESSION* exp)
     if (exp)
     {
 
-        if (lvalue(exp) && exp->left->type == en_auto && exp->left->v.sp->thisPtr)
+        if (lvalue(exp) && exp->left->type == en_auto && exp->left->v.sp->sb->thisPtr)
         {
             return inlinesym_thisptr[inlinesym_count - 1];
         }
@@ -97,7 +97,7 @@ static void inlineBindThis(SYMBOL* funcsp, SYMLIST* hr, EXPRESSION* thisptr)
     {
         SYMBOL* sym = hr->p;
         inlinesym_thisptr[inlinesym_count] = 0;
-        if (sym->thisPtr)
+        if (sym->sb->thisPtr)
         {
             if (thisptr)
             {
@@ -139,7 +139,7 @@ static void inlineBindArgs(SYMBOL* funcsp, SYMLIST* hr, INITLIST* args)
         SYMLIST* hr1;
         int cnt = 0;
         SYMBOL* sym = hr->p;
-        if (sym->thisPtr)
+        if (sym->sb->thisPtr)
         {
             hr = hr->next;
         }
@@ -212,7 +212,7 @@ static void inlineUnbindArgs(SYMLIST* hr)
     while (hr)
     {
         SYMBOL* sym = hr->p;
-        sym->inlineFunc.stmt = nullptr;
+        sym->sb->inlineFunc.stmt = nullptr;
         SymbolManager::Get(sym)->paramSubstitute = nullptr;
         hr = hr->next;
     }
@@ -262,7 +262,7 @@ static void inlineCopySyms(HASHTABLE* src)
         while (hr)
         {
             SYMBOL* sym = hr->p;
-            if (!sym->thisPtr && !sym->anonymous && sym->storage_class != sc_parameter && sym->storage_class != sc_localstatic)
+            if (!sym->sb->thisPtr && !sym->sb->anonymous && sym->sb->storage_class != sc_parameter && sym->sb->storage_class != sc_localstatic)
             {
                 SimpleSymbol *simpleSym = SymbolManager::Get(sym);
                 if (!simpleSym->inAllocTable)
@@ -276,7 +276,7 @@ static void inlineCopySyms(HASHTABLE* src)
         src = src->next;
     }
 }
-static bool inlineTooComplex(FUNCTIONCALL* f) { return f->sp->endLine - f->sp->startLine > 15 / (inline_nesting * 2 + 1); }
+static bool inlineTooComplex(FUNCTIONCALL* f) { return f->sp->sb->endLine - f->sp->sb->startLine > 15 / (inline_nesting * 2 + 1); }
 static bool hasaincdec(EXPRESSION* exp)
 {
     if (exp)
@@ -312,82 +312,82 @@ IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
 
     if (cparams.prm_debug)
     {
-        f->sp->dumpInlineToFile = true;
+        f->sp->sb->dumpInlineToFile = true;
         return nullptr;
     }
     /* measure of complexity */
     if (inlineTooComplex(f))
     {
-        f->sp->dumpInlineToFile = true;
+        f->sp->sb->dumpInlineToFile = true;
         return nullptr;
     }
     if (f->fcall->type != en_pc)
     {
-        f->sp->dumpInlineToFile = true;
+        f->sp->sb->dumpInlineToFile = true;
         return nullptr;
     }
-    if (f->sp->storage_class == sc_virtual)
+    if (f->sp->sb->storage_class == sc_virtual)
     {
-        f->sp->dumpInlineToFile = true;
+        f->sp->sb->dumpInlineToFile = true;
         return nullptr;
     }
     if (f->sp == theCurrentFunc)
     {
-        f->sp->dumpInlineToFile = true;
+        f->sp->sb->dumpInlineToFile = true;
         return nullptr;
     }
-    if (f->sp->canThrow)
+    if (f->sp->sb->canThrow)
     {
-        f->sp->dumpInlineToFile = true;
+        f->sp->sb->dumpInlineToFile = true;
         return nullptr;
     }
-    if (f->sp->allocaUsed)
+    if (f->sp->sb->allocaUsed)
     {
-        f->sp->dumpInlineToFile = true;
+        f->sp->sb->dumpInlineToFile = true;
         return nullptr;
     }
-    if (f->sp->templateLevel && f->sp->templateParams && !f->sp->instantiated)  // specialized)
+    if (f->sp->sb->templateLevel && f->sp->templateParams && !f->sp->sb->instantiated)  // specialized)
     {
-        f->sp->dumpInlineToFile = true;
+        f->sp->sb->dumpInlineToFile = true;
         return nullptr;
     }
-    if (!f->sp->inlineFunc.syms)
+    if (!f->sp->sb->inlineFunc.syms)
     {
-        f->sp->dumpInlineToFile = true;
+        f->sp->sb->dumpInlineToFile = true;
         return nullptr;
     }
-    if (!f->sp->inlineFunc.stmt)
+    if (!f->sp->sb->inlineFunc.stmt)
     {
-        f->sp->dumpInlineToFile = true;
+        f->sp->sb->dumpInlineToFile = true;
         return nullptr;
     }
     if (inlinesym_count >= MAX_INLINE_NESTING)
     {
-        f->sp->dumpInlineToFile = true;
+        f->sp->sb->dumpInlineToFile = true;
         return nullptr;
     }
     if (f->thisptr)
     {
-        if (f->thisptr->type == en_auto && f->thisptr->v.sp->stackblock)
+        if (f->thisptr->type == en_auto && f->thisptr->v.sp->sb->stackblock)
         {
-            f->sp->dumpInlineToFile = true;
+            f->sp->sb->dumpInlineToFile = true;
             return nullptr;
         }
     }
     if (f->returnEXP && !isref(basetype(f->sp->tp)->btp))
     {
-        f->sp->dumpInlineToFile = true;
+        f->sp->sb->dumpInlineToFile = true;
         return nullptr;
     }
     // if it has a structured return value or structured arguments we don't try to inline it
     if (isstructured(basetype(f->sp->tp)->btp))
     {
-        f->sp->dumpInlineToFile = true;
+        f->sp->sb->dumpInlineToFile = true;
         return nullptr;
     }
     if (basetype(basetype(f->sp->tp)->btp)->type == bt_memberptr)  // DAL FIXED
     {
-        f->sp->dumpInlineToFile = true;
+        f->sp->sb->dumpInlineToFile = true;
         return nullptr;
     }
     hr = basetype(f->sp->tp)->syms->table[0];
@@ -395,7 +395,7 @@ IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
     {
         if (isstructured(hr->p->tp) || basetype(hr->p->tp)->type == bt_memberptr)
         {
-            f->sp->dumpInlineToFile = true;
+            f->sp->sb->dumpInlineToFile = true;
             return nullptr;
         }
         hr = hr->next;
@@ -403,7 +403,7 @@ IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
     for (i = 0; i < inlinesym_count; i++)
         if (f->sp == inlinesym_list[i])
         {
-            f->sp->dumpInlineToFile = true;
+            f->sp->sb->dumpInlineToFile = true;
             return nullptr;
         }
     // this is here because cmdswitch uses a unique_ptr and autoincrement of a structure member together, and the resulting code gen
@@ -413,14 +413,14 @@ IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
     {
         if (hasaincdec(fargs->exp))
         {
-            f->sp->dumpInlineToFile = true;
+            f->sp->sb->dumpInlineToFile = true;
             return nullptr;
         }
         fargs = fargs->next;
     }
     inline_nesting++;
     codeLabelOffset = nextLabel - INT_MIN;
-    nextLabel += f->sp->labelCount + 10;
+    nextLabel += f->sp->sb->labelCount + 10;
     retcount = 0;
     returnImode = nullptr;
     startlab = nextLabel++;
@@ -429,13 +429,13 @@ IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags)
     inlineBindThis(funcsp, basetype(f->sp->tp)->syms->table[0], f->thisptr);
     inlineBindArgs(funcsp, basetype(f->sp->tp)->syms->table[0], f->arguments);
     inlinesym_list[inlinesym_count++] = f->sp;
-    inlineResetVars(f->sp->inlineFunc.syms, basetype(f->sp->tp)->syms->table[0]);
-    inlineCopySyms(f->sp->inlineFunc.syms);
-    genstmt(f->sp->inlineFunc.stmt->lower, f->sp);
-    if (f->sp->inlineFunc.stmt->blockTail)
+    inlineResetVars(f->sp->sb->inlineFunc.syms, basetype(f->sp->tp)->syms->table[0]);
+    inlineCopySyms(f->sp->sb->inlineFunc.syms);
+    genstmt(f->sp->sb->inlineFunc.stmt->lower, f->sp);
+    if (f->sp->sb->inlineFunc.stmt->blockTail)
     {
         gen_icode(i_functailstart, 0, 0, 0);
-        genstmt(f->sp->inlineFunc.stmt->blockTail, funcsp);
+        genstmt(f->sp->sb->inlineFunc.stmt->blockTail, funcsp);
         gen_icode(i_functailend, 0, 0, 0);
     }
     genreturn(0, f->sp, 1, 0, nullptr);

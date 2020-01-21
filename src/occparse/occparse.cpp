@@ -196,18 +196,18 @@ static void debug_dumptypedefs(NAMESPACEVALUELIST* nameSpace)
             {
 
                 SYMBOL* sym = (SYMBOL*)h->p;
-                if (sym->storage_class == sc_namespace)
+                if (sym->sb->storage_class == sc_namespace)
                 {
-                    debug_dumptypedefs(sym->nameSpaceValues);
+                    debug_dumptypedefs(sym->sb->nameSpaceValues);
                 }
-                else if (sym->storage_class == sc_typedef)
+                else if (sym->sb->storage_class == sc_typedef)
                 {
                     TYPE *tp = sym->tp;
                     while (ispointer(tp) || isref(tp))
                     {
                         tp = basetype(tp)->btp;
                     }
-                    if (!isstructured(tp) || !basetype(tp)->sp->templateLevel || basetype(tp)->sp->instantiated)
+                    if (!isstructured(tp) || !basetype(tp)->sp->sb->templateLevel || basetype(tp)->sp->sb->instantiated)
                         typedefs.push_back(SymbolManager::Get(sym));
                 }
                 h = h->next;

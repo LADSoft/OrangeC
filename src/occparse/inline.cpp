@@ -56,13 +56,13 @@ void inlineinit(void)
 }
 static bool inSearch(SYMBOL* sp)
 {
-    return didInlines.find(sp->decoratedName) != didInlines.end();
+    return didInlines.find(sp->sb->decoratedName) != didInlines.end();
     /*
-    SYMLIST** hr = GetHashLink(didInlines, sp->decoratedName);
+    SYMLIST** hr = GetHashLink(didInlines, sp->sb->decoratedName);
     while (*hr)
     {
         SYMBOL* sym = (SYMBOL*)(*hr)->p;
-        if (!strcmp(sym->decoratedName, sp->decoratedName))
+        if (!strcmp(sym->sb->decoratedName, sp->sb->decoratedName))
             return sym;
         hr = &(*hr)->next;
     }
@@ -71,12 +71,12 @@ static bool inSearch(SYMBOL* sp)
 }
 static void inInsert(SYMBOL* sym)
 {
-    didInlines.insert(sym->decoratedName);
+    didInlines.insert(sym->sb->decoratedName);
                 /*
     // assumes the symbol isn't already there...
-    SYMLIST** hr = GetHashLink(didInlines, sym->decoratedName);
+    SYMLIST** hr = GetHashLink(didInlines, sym->sb->decoratedName);
     SYMLIST* added = (SYMLIST*)Alloc(sizeof(SYMLIST));
-//    sym->mainsym = nullptr;
+//    sym->sb->mainsym = nullptr;
     added->p = (SYMBOL*)sym;
     added->next = *hr;
     *hr = added;
@@ -101,35 +101,35 @@ void dumpInlines(void)
             while (funcList)
             {
                 SYMBOL* sym = (SYMBOL*)funcList->data;
-                if (((sym->isInline && sym->dumpInlineToFile) || (SymbolManager::Test(sym) && SymbolManager::Test(sym)->genreffed)))
+                if (((sym->sb->isInline && sym->sb->dumpInlineToFile) || (SymbolManager::Test(sym) && SymbolManager::Test(sym)->genreffed)))
                 {
-                    if ((sym->parentClass && sym->parentClass->dontinstantiate && !sym->templateLevel) ||
-                        sym->attribs.inheritable.linkage2 == lk_import)
+                    if ((sym->sb->parentClass && sym->sb->parentClass->sb->dontinstantiate && !sym->sb->templateLevel) ||
+                        sym->sb->attribs.inheritable.linkage2 == lk_import)
                     {
-                        sym->dontinstantiate = true;
+                        sym->sb->dontinstantiate = true;
                     }
-                    if (!sym->didinline && !sym->dontinstantiate)
+                    if (!sym->sb->didinline && !sym->sb->dontinstantiate)
                     {
                         if (inSearch(sym))
                         {
-                            sym->didinline = true;
+                            sym->sb->didinline = true;
                         }
                         else
                         {
-                            if (isfunction(sym->tp) && !sym->inlineFunc.stmt && cparams.prm_cplusplus)
+                            if (isfunction(sym->tp) && !sym->sb->inlineFunc.stmt && cparams.prm_cplusplus)
                             {
                                 propagateTemplateDefinition(sym);
                             }
-                            if ((sym->isInline || sym->attribs.inheritable.linkage == lk_virtual) && sym->inlineFunc.stmt)
+                            if ((sym->sb->isInline || sym->sb->attribs.inheritable.linkage == lk_virtual) && sym->sb->inlineFunc.stmt)
                             {
                                 inInsert(sym);
-                                sym->noextern = true;
+                                sym->sb->noextern = true;
                                 UndoPreviousCodegen(sym);
                                 startlab = nextLabel++;
                                 retlab = nextLabel++;
                                 genfunc(sym, true);
                                 done = false;
-                                sym->didinline = true;
+                                sym->sb->didinline = true;
                             }
                         }
                     }
@@ -141,18 +141,18 @@ void dumpInlines(void)
             while (vtabList)
             {
                 SYMBOL* sym = (SYMBOL*)vtabList->data;
-                if (SymbolManager::Test(sym->vtabsp) && hasVTab(sym) && !sym->vtabsp->didinline)
+                if (SymbolManager::Test(sym->sb->vtabsp) && hasVTab(sym) && !sym->sb->vtabsp->sb->didinline)
                 {
-                    if (sym->dontinstantiate || sym->vtabsp->dontinstantiate)
+                    if (sym->sb->dontinstantiate || sym->sb->vtabsp->sb->dontinstantiate)
                     {
-                        SymbolManager::Get(sym->vtabsp)->dontinstantiate = true;
-                        sym->vtabsp->storage_class = sc_external;
-                        sym->vtabsp->attribs.inheritable.linkage = lk_c;
+                        SymbolManager::Get(sym->sb->vtabsp)->dontinstantiate = true;
+                        sym->sb->vtabsp->sb->storage_class = sc_external;
+                        sym->sb->vtabsp->sb->attribs.inheritable.linkage = lk_c;
                     }
                     else
                     {
-                        sym->vtabsp->didinline = true;
-                        sym->vtabsp->noextern = true;
+                        sym->sb->vtabsp->sb->didinline = true;
+                        sym->sb->vtabsp->sb->noextern = true;
                         dumpVTab(sym);
                         done = false;
                     }
@@ -165,16 +165,16 @@ void dumpInlines(void)
         while (dataList)
         {
             SYMBOL* sym = (SYMBOL*)dataList->data;
-            if (sym->attribs.inheritable.linkage2 != lk_import && sym->storage_class != sc_constant)
+            if (sym->sb->attribs.inheritable.linkage2 != lk_import && sym->sb->storage_class != sc_constant)
             {
-                if (sym->parentClass && sym->parentClass->parentTemplate)
+                if (sym->sb->parentClass && sym->sb->parentClass->sb->parentTemplate)
                 {
-                    SYMBOL* parentTemplate = sym->parentClass->parentTemplate;
+                    SYMBOL* parentTemplate = sym->sb->parentClass->sb->parentTemplate;
                     SYMBOL* origsym;
-                    SYMLIST* instants = parentTemplate->instantiations;
+                    SYMLIST* instants = parentTemplate->sb->instantiations;
                     while (instants)
                     {
-                        if (TemplateInstantiationMatch(instants->p, sym->parentClass))
+                        if (TemplateInstantiationMatch(instants->p, sym->sb->parentClass))
                         {
                             parentTemplate = instants->p;
                             break;
@@ -182,41 +182,41 @@ void dumpInlines(void)
                         instants = instants->next;
                     }
                     origsym = search(sym->name, parentTemplate->tp->syms);
-                    //            printf("%s\n", origsym->decoratedName);
+                    //            printf("%s\n", origsym->sb->decoratedName);
 
-                    if (!origsym || origsym->storage_class != sc_global)
+                    if (!origsym || origsym->sb->storage_class != sc_global)
                     {
-                        parentTemplate = sym->parentClass->parentTemplate;
+                        parentTemplate = sym->sb->parentClass->sb->parentTemplate;
                         origsym = search(sym->name, parentTemplate->tp->syms);
                     }
 
-                    if (sym->parentClass && sym->parentClass->dontinstantiate)
+                    if (sym->sb->parentClass && sym->sb->parentClass->sb->dontinstantiate)
                     {
-                        sym->dontinstantiate = true;
+                        sym->sb->dontinstantiate = true;
                     }
-                    if (origsym && origsym->storage_class == sc_global && !sym->didinline && !sym->dontinstantiate)
+                    if (origsym && origsym->sb->storage_class == sc_global && !sym->sb->didinline && !sym->sb->dontinstantiate)
                     {
-                        sym->didinline = true;
-                        sym->noextern = true;
-                        sym->storage_class = sc_global;
-                        sym->attribs.inheritable.linkage = lk_virtual;
-                        if (origsym->deferredCompile)
+                        sym->sb->didinline = true;
+                        sym->sb->noextern = true;
+                        sym->sb->storage_class = sc_global;
+                        sym->sb->attribs.inheritable.linkage = lk_virtual;
+                        if (origsym->sb->deferredCompile)
                         {
                             STRUCTSYM s1, s;
                             LEXEME* lex;
-                            s1.str = sym->parentClass;
+                            s1.str = sym->sb->parentClass;
                             addStructureDeclaration(&s1);
                             s.tmpl = sym->templateParams;
                             addTemplateDeclaration(&s);
-                            lex = SetAlternateLex(origsym->deferredCompile);
-                            sym->init = nullptr;
+                            lex = SetAlternateLex(origsym->sb->deferredCompile);
+                            sym->sb->init = nullptr;
                             lex = initialize(lex, nullptr, sym, sc_global, true, 0);
                             SetAlternateLex(nullptr);
                             dropStructureDeclaration();
                             dropStructureDeclaration();
                         }
                         gen_virtual(SymbolManager::Get(sym), true);
-                        if (sym->init)
+                        if (sym->sb->init)
                         {
                             if (isstructured(sym->tp) || isarray(sym->tp))
                             {
@@ -224,7 +224,7 @@ void dumpInlines(void)
                             }
                             else
                             {
-                                int s = dumpInit(sym, sym->init);
+                                int s = dumpInit(sym, sym->sb->init);
                                 if (s < sym->tp->size)
                                     genstorage(sym->tp->size - s);
                             }
@@ -238,17 +238,17 @@ void dumpInlines(void)
                 }
                 else
                 {
-                    if (!sym->didinline)
+                    if (!sym->sb->didinline)
                     {
                         if (inSearch(sym))
                         {
-                            sym->didinline = true;
+                            sym->sb->didinline = true;
                         }
                         else
                         {
                             inInsert(sym);
                             gen_virtual(SymbolManager::Get(sym), true);
-                            if (sym->init)
+                            if (sym->sb->init)
                             {
                                 if (isstructured(sym->tp) || isarray(sym->tp))
                                 {
@@ -256,7 +256,7 @@ void dumpInlines(void)
                                 }
                                 else
                                 {
-                                    int s = dumpInit(sym, sym->init);
+                                    int s = dumpInit(sym, sym->sb->init);
                                     if (s < sym->tp->size)
                                         genstorage(sym->tp->size - s);
                                 }
@@ -280,7 +280,7 @@ void dumpImportThunks(void)
     while (l)
     {
         gen_virtual(SymbolManager::Get((SYMBOL*)l->data), false);
-        gen_importThunk(SymbolManager::Get(((SYMBOL*)l->data)->mainsym));
+        gen_importThunk(SymbolManager::Get(((SYMBOL*)l->data)->sb->mainsym));
         gen_endvirtual(SymbolManager::Get((SYMBOL*)l->data));
         l = l->next;
     }
@@ -309,11 +309,11 @@ SYMBOL* getvc1Thunk(int offset)
     rv = search(name, vc1Thunks);
     if (!rv)
     {
-        rv = (SYMBOL*)Alloc(sizeof(SYMBOL));
-        rv->name = rv->decoratedName = litlate(name);
-        rv->storage_class = sc_static;
-        rv->attribs.inheritable.linkage = lk_virtual;
-        rv->offset = offset;
+        rv = SymAlloc();
+        rv->name = rv->sb->decoratedName = litlate(name);
+        rv->sb->storage_class = sc_static;
+        rv->sb->attribs.inheritable.linkage = lk_virtual;
+        rv->sb->offset = offset;
         rv->tp = &stdvoid;
         insert(rv, vc1Thunks);
     }
@@ -401,21 +401,21 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
         case en_threadlocal:
             break;
         case en_auto:
-            if (temp->v.sp->inlineFunc.stmt)
+            if (temp->v.sp->sb->inlineFunc.stmt)
             {
                 // guaranteed to be an lvalue at this point
-                temp = ((EXPRESSION*)(temp->v.sp->inlineFunc.stmt));
+                temp = ((EXPRESSION*)(temp->v.sp->sb->inlineFunc.stmt));
                 temp = inlineexpr(temp, fromlval);
                 if (fromlval)
                     *fromlval = true;
                 else if (lvalue(temp))
                     temp = temp->left;
             }
-            else if (temp->v.sp->structuredReturn)
+            else if (temp->v.sp->sb->structuredReturn)
             {
                 SYMBOL* sym = temp->v.sp;
                 int n = function_list_count;
-                while (sym && sym->structuredReturn && --n >= 0)
+                while (sym && sym->sb->structuredReturn && --n >= 0)
                 {
                     sym = function_list[n]->returnSP;
                 }
@@ -464,8 +464,8 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
             /*
             if (node->left->type == en_auto)
             {
-                memcpy(temp, (EXPRESSION *)(node->left->v.sp->inlineFunc.stmt), sizeof(EXPRESSION));
-//                temp->left = (EXPRESSION *)(node->left->v.sp->inlineFunc.stmt);
+                memcpy(temp, (EXPRESSION *)(node->left->v.sp->sb->inlineFunc.stmt), sizeof(EXPRESSION));
+//                temp->left = (EXPRESSION *)(node->left->v.sp->sb->inlineFunc.stmt);
             }
             else
             */
@@ -588,7 +588,7 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
         case en_func:
             temp->v.func = nullptr;
             fp = node->v.func;
-            if (fp->sp->attribs.inheritable.linkage == lk_virtual)
+            if (fp->sp->sb->attribs.inheritable.linkage == lk_virtual)
             {
                 // check for recursion
                 for (i = 0; i < inlinesp_count; i++)
@@ -599,7 +599,7 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
                     }
                 }
             }
-            if (fp->sp->isInline && !fp->sp->noinline && i >= inlinesp_count)
+            if (fp->sp->sb->isInline && !fp->sp->sb->noinline && i >= inlinesp_count)
             {
                 if (inlinesp_count >= MAX_INLINE_NESTING)
                 {
@@ -1057,17 +1057,17 @@ static bool sideEffects(EXPRESSION* node)
 }
 static void setExp(SYMBOL* sx, EXPRESSION* exp, STATEMENT*** stp)
 {
-    if (!sx->altered && !sx->addressTaken && !sideEffects(exp))
+    if (!sx->sb->altered && !sx->sb->addressTaken && !sideEffects(exp))
     {
         // well if the expression is too complicated it gets evaluated over and over
         // but maybe the backend can clean it up again...
-        sx->inlineFunc.stmt = (STATEMENT*)exp;
+        sx->sb->inlineFunc.stmt = (STATEMENT*)exp;
     }
     else
     {
         EXPRESSION* tnode = anonymousVar(sc_auto, sx->tp);
         deref(sx->tp, &tnode);
-        sx->inlineFunc.stmt = (STATEMENT*)tnode;
+        sx->sb->inlineFunc.stmt = (STATEMENT*)tnode;
         tnode = exprNode(en_assign, tnode, exp);
         **stp = (STATEMENT*)Alloc(sizeof(STATEMENT));
         (**stp)->type = st_expr;
@@ -1103,18 +1103,18 @@ void SetupVariables(SYMBOL* sym)
  * This copies the function parameters twice...
  */
 {
-    HASHTABLE* syms = sym->inlineFunc.syms;
+    HASHTABLE* syms = sym->sb->inlineFunc.syms;
     while (syms)
     {
         SYMLIST* hr = syms->table[0];
         while (hr)
         {
             SYMBOL* sx = hr->p;
-            if (sx->storage_class == sc_auto)
+            if (sx->sb->storage_class == sc_auto)
             {
                 EXPRESSION* ev = anonymousVar(sc_auto, sx->tp);
                 deref(sx->tp, &ev);
-                sx->inlineFunc.stmt = (STATEMENT*)ev;
+                sx->sb->inlineFunc.stmt = (STATEMENT*)ev;
             }
             hr = hr->next;
         }
@@ -1132,38 +1132,38 @@ EXPRESSION* doinline(FUNCTIONCALL* params, SYMBOL* funcsp)
 
     if (function_list_count >= MAX_INLINE_NESTING)
     {
-        params->sp->dumpInlineToFile = true;
+        params->sp->sb->dumpInlineToFile = true;
         return nullptr;
     }
     if (!isfunction(params->functp))
     {
-        params->sp->dumpInlineToFile = true;
+        params->sp->sb->dumpInlineToFile = true;
         return nullptr;
     }
-    if (!params->sp->isInline)
+    if (!params->sp->sb->isInline)
     {
-        params->sp->dumpInlineToFile = true;
+        params->sp->sb->dumpInlineToFile = true;
         return nullptr;
     }
     if (params->sp->templateParams)
     {
-        params->sp->dumpInlineToFile = true;
+        params->sp->sb->dumpInlineToFile = true;
         return nullptr;
     }
-    if (params->sp->noinline)
+    if (params->sp->sb->noinline)
     {
-        params->sp->dumpInlineToFile = true;
+        params->sp->sb->dumpInlineToFile = true;
         return nullptr;
     }
-    if (!params->sp->inlineFunc.syms)
+    if (!params->sp->sb->inlineFunc.syms)
     {
-        params->sp->dumpInlineToFile = true;
+        params->sp->sb->dumpInlineToFile = true;
         return nullptr;
     }
-    if (!params->sp->inlineFunc.stmt)
+    if (!params->sp->sb->inlineFunc.stmt)
     {
         // recursive
-        params->sp->dumpInlineToFile = true;
+        params->sp->sb->dumpInlineToFile = true;
         return nullptr;
     }
     if (!localNameSpace->valueData->syms)
@@ -1184,18 +1184,18 @@ EXPRESSION* doinline(FUNCTIONCALL* params, SYMBOL* funcsp)
 
     while (*stp)
         stp = &(*stp)->next;
-    *stp = inlinestmt(params->sp->inlineFunc.stmt);
+    *stp = inlinestmt(params->sp->sb->inlineFunc.stmt);
     newExpression = exprNode(en_stmt, nullptr, nullptr);
     newExpression->v.stmt = stmt;
 
-    if (params->sp->retcount == 1)
+    if (params->sp->sb->retcount == 1)
     {
         /* optimization for simple inline functions that only have
          * one return statement, don't save to an intermediate variable
          */
         scanReturn(stmt, basetype(params->sp->tp)->btp);
     }
-    else if (params->sp->retcount)
+    else if (params->sp->sb->retcount)
     {
         newExpression->left = newReturn(basetype(params->sp->tp)->btp);
         reduceReturns(stmt, params->sp->tp->btp, newExpression->left);
@@ -1269,9 +1269,9 @@ bool IsEmptyFunction(FUNCTIONCALL* params, SYMBOL* funcsp)
     STATEMENT* st;
     if (!isfunction(params->functp))
         return false;
-    if (!params->sp->inlineFunc.stmt)
+    if (!params->sp->sb->inlineFunc.stmt)
         return false;
-    st = params->sp->inlineFunc.stmt;
+    st = params->sp->sb->inlineFunc.stmt;
     while (st && st->type == st_expr)
     {
         st = st->next;

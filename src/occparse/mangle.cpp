@@ -115,9 +115,9 @@ char* mangleNameSpaces(char* in, SYMBOL* sym)
 {
     if (!sym)
         return in;
-    //    if (!sym || sym->value.i > 1)
+    //    if (!sym || sym->sb->value.i > 1)
     //        return in;
-    in = mangleNameSpaces(in, sym->parentNameSpace);
+    in = mangleNameSpaces(in, sym->sb->parentNameSpace);
     my_sprintf(in, "@%s", sym->name);
     return in + strlen(in);
 }
@@ -127,13 +127,13 @@ static char* mangleClasses(char* in, SYMBOL* sym)
 {
     if (!sym)
         return in;
-    if (sym->parentClass)
-        in = mangleClasses(in, sym->parentClass);
-    if (sym->castoperator)
+    if (sym->sb->parentClass)
+        in = mangleClasses(in, sym->sb->parentClass);
+    if (sym->sb->castoperator)
     {
         strcat(in, "@");
     }
-    else if (sym->templateLevel && sym->templateParams)
+    else if (sym->sb->templateLevel && sym->templateParams)
     {
         *in++ = '@';
         mangleTemplate(in, sym, sym->templateParams);
@@ -150,7 +150,7 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
     {
         if (exp->type == en_const)
         {
-            my_sprintf(buf, "%lld&", exp->v.sp->value.i);
+            my_sprintf(buf, "%lld&", exp->v.sp->sb->value.i);
         }
         else
         {
@@ -456,12 +456,12 @@ static char* mangleTemplate(char* buf, SYMBOL* sym, TEMPLATEPARAMLIST* params)
 {
     bool bySpecial = false;
     if (params && params->p->type == kw_new &&
-        ((sym->instantiated && !sym->templateLevel) || (params && params->p->bySpecialization.types)))
+        ((sym->sb->instantiated && !sym->sb->templateLevel) || (params && params->p->bySpecialization.types)))
     {
         params = params->p->bySpecialization.types;
         bySpecial = true;
     }
-    if ((sym->isConstructor || sym->isDestructor) && sym->templateLevel == sym->parentClass->templateLevel)
+    if ((sym->sb->isConstructor || sym->sb->isDestructor) && sym->sb->templateLevel == sym->sb->parentClass->sb->templateLevel)
     {
         strcpy(buf, sym->name);
         while (*buf)
@@ -504,7 +504,7 @@ static char* mangleTemplate(char* buf, SYMBOL* sym, TEMPLATEPARAMLIST* params)
                 {
                     buf = mangleType(buf, params->p->byClass.dflt, true);
                 }
-                else if (sym->instantiated && params->p->byClass.val)
+                else if (sym->sb->instantiated && params->p->byClass.val)
                 {
                     buf = mangleType(buf, params->p->byClass.val, true);
                 }
@@ -527,7 +527,7 @@ static char* mangleTemplate(char* buf, SYMBOL* sym, TEMPLATEPARAMLIST* params)
                 {
                     buf = mangleTemplate(buf, params->p->byTemplate.dflt, params->p->byTemplate.val->templateParams);
                 }
-                else if (sym->instantiated && params->p->byTemplate.val)
+                else if (sym->sb->instantiated && params->p->byTemplate.val)
                 {
                     buf = mangleTemplate(buf, params->p->byTemplate.val, params->p->byTemplate.val->templateParams);
                 }
@@ -554,7 +554,7 @@ static char* mangleTemplate(char* buf, SYMBOL* sym, TEMPLATEPARAMLIST* params)
                 else
                 {
                     buf = mangleType(buf, params->p->byNonType.tp, true);
-                    if (bySpecial || sym->instantiated)
+                    if (bySpecial || sym->sb->instantiated)
                     {
                         EXPRESSION* exp = bySpecial ? params->p->byNonType.dflt : params->p->byNonType.val;
                         buf = mangleExpression(buf, exp);
@@ -603,14 +603,18 @@ static char* getName(char* in, SYMBOL* sym)
     {
         strcpy(in, "????");
     }
+    else if (!sym->sb)
+    {
+        in = lookupName(in, sym->name);
+    }
     else
     {
         int i;
         char buf[4096], *p;
-        p = mangleClasses(buf, sym->parentClass);
+        p = mangleClasses(buf, sym->sb->parentClass);
         if (p != buf)
             *p++ = '@';
-        if (sym->templateLevel && sym->templateParams)
+        if (sym->sb->templateLevel && sym->templateParams)
         {
             p = mangleTemplate(p, sym, sym->templateParams);
         }
@@ -640,7 +644,7 @@ char* mangleType(char* in, TYPE* tp, bool first)
     {
         while (tp->type == bt_typedef)
             tp = tp->btp;
-        if (isstructured(tp) && basetype(tp)->sp->templateLevel)
+        if (isstructured(tp) && basetype(tp)->sp->sb && basetype(tp)->sp->sb->templateLevel)
         {
             {
                 if (isconst(tp))
@@ -675,7 +679,7 @@ char* mangleType(char* in, TYPE* tp, bool first)
                     if (basetype(tp)->sp && ismember(basetype(tp)->sp) && !first)
                     {
                         *in++ = 'M';
-                        in = getName(in, tp->sp->parentClass);
+                        in = getName(in, tp->sp->sb->parentClass);
                         while (*in)
                             in++;
                     }
@@ -684,7 +688,7 @@ char* mangleType(char* in, TYPE* tp, bool first)
                     while (hr)
                     {
                         SYMBOL* sym = hr->p;
-                        if (!sym->thisPtr)
+                        if (!sym->sb->thisPtr)
                             in = mangleType(in, sym->tp, true);
                         hr = hr->next;
                     }
@@ -701,7 +705,7 @@ char* mangleType(char* in, TYPE* tp, bool first)
                         while (hr)
                         {
                             SYMBOL* sym = hr->p;
-                            if (!sym->thisPtr)
+                            if (!sym->sb->thisPtr)
                                 in = mangleType(in, sym->tp, true);
                             hr = hr->next;
                         }
@@ -838,7 +842,7 @@ char* mangleType(char* in, TYPE* tp, bool first)
                     break;
                 case bt_templateselector:
                 {
-                    TEMPLATESELECTOR* s = tp->sp->templateSelector;
+                    TEMPLATESELECTOR* s = tp->sp->sb->templateSelector;
                     char* p;
                     s = s->next;
                     if (s->isTemplate)
@@ -894,15 +898,15 @@ void SetLinkerNames(SYMBOL* sym, enum e_lk linkage)
     memset(errbuf, 0, 8192);
     SYMBOL* lastParent;
     mangledNamesCount = 0;
-    if (cparams.prm_cplusplus && !sym->parentClass && !sym->parentNameSpace && sym->name[0] == 'm' && !strcmp(sym->name, "main"))
+    if (cparams.prm_cplusplus && !sym->sb->parentClass && !sym->sb->parentNameSpace && sym->name[0] == 'm' && !strcmp(sym->name, "main"))
         linkage = lk_c;
     if (linkage == lk_none || linkage == lk_cdecl)
     {
         if (cparams.prm_cplusplus || (architecture == ARCHITECTURE_MSIL))
         {
-            if (sym->storage_class != sc_label && sym->storage_class != sc_parameter && sym->storage_class != sc_namespace &&
-                sym->storage_class != sc_namespacealias && sym->storage_class != sc_ulabel &&
-                (isfunction(sym->tp) || istype(sym) || sym->parentNameSpace || sym->parentClass || sym->templateLevel))
+            if (sym->sb->storage_class != sc_label && sym->sb->storage_class != sc_parameter && sym->sb->storage_class != sc_namespace &&
+                sym->sb->storage_class != sc_namespacealias && sym->sb->storage_class != sc_ulabel &&
+                (isfunction(sym->tp) || istype(sym) || sym->sb->parentNameSpace || sym->sb->parentClass || sym->sb->templateLevel))
                 linkage = lk_cpp;
             else
                 linkage = lk_c;
@@ -943,15 +947,15 @@ void SetLinkerNames(SYMBOL* sym, enum e_lk linkage)
             break;
         case lk_c:
         default:
-            if (sym->parent)
-                if (sym->uniqueID == 0)
-                    sym->uniqueID = uniqueID++;
-            if (sym->storage_class == sc_localstatic && sym->parent)
+            if (sym->sb->parent)
+                if (sym->sb->uniqueID == 0)
+                    sym->sb->uniqueID = uniqueID++;
+            if (sym->sb->storage_class == sc_localstatic && sym->sb->parent)
             {
-                strcpy(errbuf, sym->parent->decoratedName);
+                strcpy(errbuf, sym->sb->parent->sb->decoratedName);
                 strcat(errbuf, "_");
                 strcat(errbuf, sym->name);
-                sprintf(errbuf + strlen(errbuf), "_%d", sym->uniqueID);
+                sprintf(errbuf + strlen(errbuf), "_%d", sym->sb->uniqueID);
             }
             else
             {
@@ -961,12 +965,12 @@ void SetLinkerNames(SYMBOL* sym, enum e_lk linkage)
             break;
         case lk_cpp:
             lastParent = sym;
-            while (lastParent->parentClass)
-                lastParent = lastParent->parentClass;
-            p = mangleNameSpaces(p, lastParent->parentNameSpace);
-            p = mangleClasses(p, sym->parentClass);
+            while (lastParent->sb->parentClass)
+                lastParent = lastParent->sb->parentClass;
+            p = mangleNameSpaces(p, lastParent->sb->parentNameSpace);
+            p = mangleClasses(p, sym->sb->parentClass);
             *p++ = '@';
-            if (sym->templateLevel && sym->templateParams && sym->templateParams)
+            if (sym->sb->templateLevel && sym->templateParams && sym->templateParams)
             {
                 p = mangleTemplate(p, sym, sym->templateParams);
             }
@@ -978,7 +982,7 @@ void SetLinkerNames(SYMBOL* sym, enum e_lk linkage)
             if (isfunction(sym->tp))
             {
                 *p++ = '$';
-                if (sym->castoperator)
+                if (sym->sb->castoperator)
                 {
                     int tmplCount = 0;
                     *p++ = 'o';
@@ -995,7 +999,7 @@ void SetLinkerNames(SYMBOL* sym, enum e_lk linkage)
                 else
                 {
                     p = mangleType(p, sym->tp, true);  // otherwise functions get their parameter list in the name
-                                                       //                    if (!sym->templateLevel)
+                                                       //                    if (!sym->sb->templateLevel)
                     {
                         int tmplCount = 0;
                         while (p > errbuf && (*--p != '$' || tmplCount))
@@ -1018,5 +1022,5 @@ void SetLinkerNames(SYMBOL* sym, enum e_lk linkage)
             *p = 0;
             break;
     }
-    sym->decoratedName = litlate(errbuf);
+    sym->sb->decoratedName = litlate(errbuf);
 }

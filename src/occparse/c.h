@@ -21,9 +21,9 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
  */
-
+void memfunc(const char*);
 /*      compiler header file    */
-
+#define clonesym(x, ...) (clonesym)(__func__, x, __VA_ARGS__)
 #define CI_CONSTRUCTOR 0
 #define CI_DESTRUCTOR 1
 #define CI_CAST 2
@@ -324,6 +324,7 @@ typedef struct expr
     LIST* destructors;  // for &&  and ||
     int xcInit, xcDest;
     int lockOffset;
+    int r,s,t,q;
     char bits;
     char startbit;
     int isvolatile : 1;
@@ -555,167 +556,168 @@ struct attributes
 typedef struct sym
 {
     const char* name;
-    const char* decoratedName;                /* symbol name with decorations, as used in output format */
-    struct SimpleSymbol *symRef;
-    const char *declfile, *origdeclfile;      /* file symbol was declared in */
-    int declline, origdeclline, realdeclline; /* line number symbol was declared at */
-    short declcharpos;                        /* character position symbol was declared at */
-    short declfilenum;                        /* the file number */
-    int sizeNoVirtual;                        /* size without virtual classes and thunks */
-    struct sym* parent;
-    struct sym* parentClass;
-    struct sym* parentNameSpace;
-    NAMESPACEVALUELIST* nameSpaceValues; /* for a namespace SP */
-    struct sym* vtabsp;
-    EXPRESSION* localInitGuard;
-    LINEDATA* linedata;
-    enum e_sc storage_class; /* storage class */
-    enum e_ac access;        /* c++ access rights for members */
-    int operatorId;          /* operator id, CI + kw for an operator function */
-    enum e_cm lambdaMode;
-    INLINEFUNC inlineFunc;
-    int overlayIndex; /* differentiating index when function differs only in return type from similar functions */
-#ifdef PARSER_ONLY
-    int ccEndLine;                            /* end line for code completion */
-    unsigned long long ccStructId;                   /* code completion struct id */
-    struct _ccNamespaceData* ccNamespaceData; /* namespace data for code completion */
-    int parserSet : 1;                        /* sent to parser already*/
-#endif
-    unsigned declaring : 1;             /* currently being declared */
-    unsigned compilerDeclared : 1;      /* compiler declared this */
-    unsigned hasproto : 1;              /* C/90 language prototype was encountered */
-    unsigned intagtable : 1;            /* it is in a tag table */
-    unsigned dontlist : 1;              /* it is a system include, don't put in list file */
-    unsigned allocate : 1;              /* variable is used, allocate space for it */
-    unsigned indecltable : 1;           /* global already in dump table */
-    unsigned spaceallocated : 1;        /* space has been allocated */
-    unsigned loadds : 1;                /* to load data seg (limited) */
-    unsigned farproc : 1;               /* this procedure should be terminated with retf */
-    unsigned calleenearret : 1;         /* true if callee provided a place for the return
-                 value */
-    unsigned hasunnamed : 1;            /* structure has unnamed substructs */
-    unsigned isunnamed : 1;             /* substructure is unnamed */
-    unsigned recalculateParameters : 1; /* inline func needs its parameters
-         recalculated */
-    unsigned nullsym : 1;               /* if was a callblock return which isn't used */
-    unsigned anonymous : 1;             /* if it is a generated variable */
-    unsigned inasm : 1;                 /* a way to force the local optimizer to leave autos on the stack */
-    unsigned assigned : 1;              /* value has been assigned */
-    unsigned altered : 1;
-    unsigned noextern : 1;    /* no external reference needed, it was inlined */
-    unsigned gentemplate : 1; /* template instantiation or reference generated */
-    unsigned allocaUsed : 1;
-    unsigned oldstyle : 1;         /* pointer to a names list if an old style function arg */
-    unsigned constexpression : 1;  /* declared with constexpression */
-    unsigned addressTaken : 1;     /* address taken */
-    unsigned wasUsing : 1;         /* came to this symbol table as a result of 'using' */
-    unsigned redeclared : 1;       /* symbol was declared more than once */
-    unsigned thisPtr : 1;          /*is a this pointer*/
-    unsigned structuredReturn : 1; /* is a pointer to a structure's structure pointer address for returning a value */
-    unsigned constop : 1;          /* a constructor 'top' parameter */
-    unsigned castoperator : 1;     /* a cast operator */
-    unsigned deleted : 1;          /* function was deleted */
-    unsigned defaulted : 1;        /* function was defaulted */
-    unsigned isfinal : 1;          /* class or virtual function is final */
-    unsigned isoverride : 1;       /* virtual function marked override */
-    unsigned ispure : 1;           /* pure virtual function */
-    unsigned hasvtab : 1;          /* class has a vtab */
-    unsigned isabstract : 1;       /* class is abstract */
-    unsigned accessspecified : 1;  /* class has access specifiers */
-    unsigned safefunc : 1;         /* RTL helper function with no side effects */
-    unsigned throughClass : 1;     /* last search was found through a class */
-    unsigned hasUserCons : 1;      /* has user-defined constructors */
-    unsigned trivialCons : 1;      /* constructor is trivial */ 
-    unsigned internallyGenned : 1; /* constructor declaration was made by the compiler */
-    unsigned stackblock : 1;       // stacked structure in C++ mode
-    unsigned islambda : 1;         // lambda closure struct
-    unsigned noinline : 1;         // don't inline an inline qualified function
-    unsigned didinline : 1;        // already genned an inline func for this symbol
-    unsigned hasTry : 1;           // function surrounded by try statement
-    unsigned anyTry : 1;           // function has either external or internal try statement
-                                   // or variable is used within a try statement
-    unsigned canThrow : 1;         // function throws directly
-    unsigned hasDest : 1;          // class has a destructor that is called
-    unsigned pureDest : 1;         // destructor is pure
-    unsigned isConstructor : 1;    // is a constructor
-    unsigned isDestructor : 1;     // is  adestructor
-    unsigned xtEntry : 1;          // is an exception table label
-    unsigned isExplicit : 1;       // explicit constructor or conversion function
-    unsigned specialized : 1;      // is a template specialization
-    unsigned specialized2 : 1;     // specialization of a template class nontemplate func
-    unsigned packed : 1;           // packed template param instance
-    unsigned instantiated : 1;     // instantiated template
-    unsigned instantiated2 : 1;    // instantiated template
-    unsigned dontinstantiate : 1;  // don't instantiate this template (is extern)
-    unsigned copiedTemplateFunction : 1;
-    unsigned performedStructInitialization : 1;  // function performed structured initialization
-    unsigned instantiatedInlineInClass : 1;      // function instantiated inside a class body
-    unsigned isInline;                           // : 1; /* function is a candidate for inline functionality */
-    unsigned dumpInlineToFile : 1;               /* inline function needs to be placed in the output file */
-    unsigned promotedToInline : 1;               /* function wasn't declare inline but was promoted to it */
-    unsigned temp : 1;                           // temporary boolean...
-    unsigned pushedTemplateSpecializationDefinition : 1;  // set to true if the current body for the template
-                                                          // specialization was pushed from the generalized version of the template
-    unsigned destructed : 1;                              // the c++ class instance has had a destructor generated
-    unsigned initializer_list : 1;                        // constructor with initializer_list parameter
-    unsigned va_typeof : 1;                               // MSIL: a va_typeof symbol
-    unsigned has_property_setter : 1;                     // a property has a setter
-    unsigned nonConstVariableUsed : 1;                    // a non-const variable was used or assigned to in this function's body
-    unsigned importThunk : 1;                             // an import thunk
-    unsigned postExpansion : 1;  // true if this templateselector is post expanded, e.g. replicate the template selector with each
-                                 // packed arg
-    unsigned visited : 1;        // symbol has been visited in a traversal
-    int __func__label;           /* label number for the __func__ keyword */
-    int labelCount;              /* number of code labels within a function body */
-    int offset;                  /* address offset of data in the given seg, or optimize register */
-    int vtaboffset;              /* vtab offset for virtual functions */
-    int label;                   /* label number for statics */
-    int uniqueID;                /* unique index for local statics */
-    int startLine, endLine;      /* line numbers spanning the function */
-    short paramsize;             /* Size of parameter list for stdcall functions */
-    short accessibleTemplateArgument; /* something used as a template argument was validated for
-                                       * accessibility before instantiating the template */
-    short retblockparamadjust;        /* Adjustment for retblock parameters */
-    short retcount;                   /* number of return statements in a function */
-    /* Also name for CPP overload lists */
-    /* also default for template parameters, is a TYP */
-    char* importfile;    /* import name */
-    unsigned char* uuid; /* Microsoft: GUID */
-    int uuidLabel;       /* Microsoft: Label for a GUID which has been instantiated */
-    struct sym* overloadName;
-    struct sym* typedefSym;
-    struct sym* mainsym;                            /* pointer to the global version of a copied symbol */
-    struct sym* maintemplate;                       /* pointer to the global version of a copied symbol */
-    struct _memberInitializers* memberInitializers; /* initializers for constructor */
-    STATEMENT* gotoTable;                           /* pointer to hashtable associated with goto or label */
-    /* these fields depend on storage_class */
-    struct u_val value;
-    struct _baseClass* baseClasses;
-    struct _vbaseEntry* vbaseEntries;
-    struct _vtabEntry* vtabEntries;
-    struct lexeme* deferredTemplateHeader;
-    struct lexeme* deferredCompile;
-    struct lexeme* deferredNoexcept;
+    TYPE* tp;
     struct _templateParamList* templateParams;
-    LIST* templateNameSpace;
-    LIST* staticAsserts;
-    short templateLevel;
-    struct _symlist_* specializations;
-    struct _symlist_* instantiations;
-    const char* msil;                            // MSIL path
-    struct _templateSelector* templateSelector;  // first element is the last valid sym found, second element is the template
-                                                 // parameter sym following elements are the list of pointers to names
-    struct sym* parentTemplate;                  // could be the parent of a specialization or an instantiation
-    struct init *init, *lastInit, *dest;
-    // order is important for this next, a comparison is done based on this ordering
-    // clang-format off
-    enum e_xc xcMode;
-    // clang-format on
-    struct xcept* xc;
-    LIST* friends;
-    attributes attribs;
-    /* Type declarations */
-    struct typ* tp;
+    unsigned packed : 1;           // packed template param instance
+    struct _symbody
+    {
+        const char* decoratedName;                /* symbol name with decorations, as used in output format */
+        struct SimpleSymbol *symRef;
+        const char *declfile, *origdeclfile;      /* file symbol was declared in */
+        int declline, origdeclline, realdeclline; /* line number symbol was declared at */
+        short declcharpos;                        /* character position symbol was declared at */
+        short declfilenum;                        /* the file number */
+        int sizeNoVirtual;                        /* size without virtual classes and thunks */
+        struct sym* parent;
+        struct sym* parentClass;
+        struct sym* parentNameSpace;
+        NAMESPACEVALUELIST* nameSpaceValues; /* for a namespace SP */
+        struct sym* vtabsp;
+        EXPRESSION* localInitGuard;
+        LINEDATA* linedata;
+        enum e_sc storage_class; /* storage class */
+        enum e_ac access;        /* c++ access rights for members */
+        int operatorId;          /* operator id, CI + kw for an operator function */
+        enum e_cm lambdaMode;
+        INLINEFUNC inlineFunc;
+        int overlayIndex; /* differentiating index when function differs only in return type from similar functions */
+#ifdef PARSER_ONLY
+        int ccEndLine;                            /* end line for code completion */
+        unsigned long long ccStructId;                   /* code completion struct id */
+        struct _ccNamespaceData* ccNamespaceData; /* namespace data for code completion */
+        int parserSet : 1;                        /* sent to parser already*/
+#endif
+        unsigned declaring : 1;             /* currently being declared */
+        unsigned compilerDeclared : 1;      /* compiler declared this */
+        unsigned hasproto : 1;              /* C/90 language prototype was encountered */
+        unsigned intagtable : 1;            /* it is in a tag table */
+        unsigned dontlist : 1;              /* it is a system include, don't put in list file */
+        unsigned allocate : 1;              /* variable is used, allocate space for it */
+        unsigned indecltable : 1;           /* global already in dump table */
+        unsigned spaceallocated : 1;        /* space has been allocated */
+        unsigned loadds : 1;                /* to load data seg (limited) */
+        unsigned farproc : 1;               /* this procedure should be terminated with retf */
+        unsigned calleenearret : 1;         /* true if callee provided a place for the return
+                     value */
+        unsigned hasunnamed : 1;            /* structure has unnamed substructs */
+        unsigned isunnamed : 1;             /* substructure is unnamed */
+        unsigned recalculateParameters : 1; /* inline func needs its parameters
+             recalculated */
+        unsigned nullsym : 1;               /* if was a callblock return which isn't used */
+        unsigned anonymous : 1;             /* if it is a generated variable */
+        unsigned inasm : 1;                 /* a way to force the local optimizer to leave autos on the stack */
+        unsigned assigned : 1;              /* value has been assigned */
+        unsigned altered : 1;
+        unsigned noextern : 1;    /* no external reference needed, it was inlined */
+        unsigned gentemplate : 1; /* template instantiation or reference generated */
+        unsigned allocaUsed : 1;
+        unsigned oldstyle : 1;         /* pointer to a names list if an old style function arg */
+        unsigned constexpression : 1;  /* declared with constexpression */
+        unsigned addressTaken : 1;     /* address taken */
+        unsigned wasUsing : 1;         /* came to this symbol table as a result of 'using' */
+        unsigned redeclared : 1;       /* symbol was declared more than once */
+        unsigned thisPtr : 1;          /*is a this pointer*/
+        unsigned structuredReturn : 1; /* is a pointer to a structure's structure pointer address for returning a value */
+        unsigned constop : 1;          /* a constructor 'top' parameter */
+        unsigned castoperator : 1;     /* a cast operator */
+        unsigned deleted : 1;          /* function was deleted */
+        unsigned defaulted : 1;        /* function was defaulted */
+        unsigned isfinal : 1;          /* class or virtual function is final */
+        unsigned isoverride : 1;       /* virtual function marked override */
+        unsigned ispure : 1;           /* pure virtual function */
+        unsigned hasvtab : 1;          /* class has a vtab */
+        unsigned isabstract : 1;       /* class is abstract */
+        unsigned accessspecified : 1;  /* class has access specifiers */
+        unsigned safefunc : 1;         /* RTL helper function with no side effects */
+        unsigned throughClass : 1;     /* last search was found through a class */
+        unsigned hasUserCons : 1;      /* has user-defined constructors */
+        unsigned trivialCons : 1;      /* constructor is trivial */
+        unsigned internallyGenned : 1; /* constructor declaration was made by the compiler */
+        unsigned stackblock : 1;       // stacked structure in C++ mode
+        unsigned islambda : 1;         // lambda closure struct
+        unsigned noinline : 1;         // don't inline an inline qualified function
+        unsigned didinline : 1;        // already genned an inline func for this symbol
+        unsigned hasTry : 1;           // function surrounded by try statement
+        unsigned anyTry : 1;           // function has either external or internal try statement
+                                       // or variable is used within a try statement
+        unsigned canThrow : 1;         // function throws directly
+        unsigned hasDest : 1;          // class has a destructor that is called
+        unsigned pureDest : 1;         // destructor is pure
+        unsigned isConstructor : 1;    // is a constructor
+        unsigned isDestructor : 1;     // is  adestructor
+        unsigned xtEntry : 1;          // is an exception table label
+        unsigned isExplicit : 1;       // explicit constructor or conversion function
+        unsigned specialized : 1;      // is a template specialization
+        unsigned specialized2 : 1;     // specialization of a template class nontemplate func
+        unsigned instantiated : 1;     // instantiated template
+        unsigned instantiated2 : 1;    // instantiated template
+        unsigned dontinstantiate : 1;  // don't instantiate this template (is extern)
+        unsigned copiedTemplateFunction : 1;
+        unsigned instantiatedInlineInClass : 1;      // function instantiated inside a class body
+        unsigned isInline;                           // : 1; /* function is a candidate for inline functionality */
+        unsigned dumpInlineToFile : 1;               /* inline function needs to be placed in the output file */
+        unsigned promotedToInline : 1;               /* function wasn't declare inline but was promoted to it */
+        unsigned temp : 1;                           // temporary boolean...
+        unsigned pushedTemplateSpecializationDefinition : 1;  // set to true if the current body for the template
+                                                              // specialization was pushed from the generalized version of the template
+        unsigned destructed : 1;                              // the c++ class instance has had a destructor generated
+        unsigned initializer_list : 1;                        // constructor with initializer_list parameter
+        unsigned va_typeof : 1;                               // MSIL: a va_typeof symbol
+        unsigned has_property_setter : 1;                     // a property has a setter
+        unsigned nonConstVariableUsed : 1;                    // a non-const variable was used or assigned to in this function's body
+        unsigned importThunk : 1;                             // an import thunk
+        unsigned visited : 1;        // symbol has been visited in a traversal
+        unsigned postExpansion : 1;   // template was post-expanded
+        unsigned performedStructInitialization : 1; // structure declaration was completed
+        int __func__label;           /* label number for the __func__ keyword */
+        int labelCount;              /* number of code labels within a function body */
+        int offset;                  /* address offset of data in the given seg, or optimize register */
+        int vtaboffset;              /* vtab offset for virtual functions */
+        int label;                   /* label number for statics */
+        int uniqueID;                /* unique index for local statics */
+        int startLine, endLine;      /* line numbers spanning the function */
+        short paramsize;             /* Size of parameter list for stdcall functions */
+        short accessibleTemplateArgument; /* something used as a template argument was validated for
+                                           * accessibility before instantiating the template */
+        short retblockparamadjust;        /* Adjustment for retblock parameters */
+        short retcount;                   /* number of return statements in a function */
+        /* Also name for CPP overload lists */
+        /* also default for template parameters, is a TYP */
+        char* importfile;    /* import name */
+        unsigned char* uuid; /* Microsoft: GUID */
+        int uuidLabel;       /* Microsoft: Label for a GUID which has been instantiated */
+        struct sym* overloadName;
+        struct sym* typedefSym;
+        struct sym* mainsym;                            /* pointer to the global version of a copied symbol */
+        struct sym* maintemplate;                       /* pointer to the global version of a copied symbol */
+        struct _memberInitializers* memberInitializers; /* initializers for constructor */
+        STATEMENT* gotoTable;                           /* pointer to hashtable associated with goto or label */
+        /* these fields depend on storage_class */
+        struct u_val value;
+        struct _baseClass* baseClasses;
+        struct _vbaseEntry* vbaseEntries;
+        struct _vtabEntry* vtabEntries;
+        struct lexeme* deferredCompile;
+        struct lexeme* deferredNoexcept;
+        LIST* templateNameSpace;
+        LIST* staticAsserts;
+        short templateLevel;
+        struct _symlist_* specializations;
+        struct _symlist_* instantiations;
+        const char* msil;                            // MSIL path
+        struct _templateSelector* templateSelector;  // first element is the last valid sym found, second element is the template
+                                                     // parameter sym following elements are the list of pointers to names
+        struct sym* parentTemplate;                  // could be the parent of a specialization or an instantiation
+        struct init *init, *lastInit, *dest;
+        // order is important for this next, a comparison is done based on this ordering
+        // clang-format off
+        enum e_xc xcMode;
+        // clang-format on
+        struct xcept* xc;
+        LIST* friends;
+        attributes attribs;
+        /* Type declarations */
+    } *sb;
 } SYMBOL;
 
 typedef struct __lambda
@@ -1067,6 +1069,7 @@ typedef struct lexeme
     int filenum;
     KEYWORD* kw;
     SYMBOL* typequal;
+    int r,s;
     int registered : 1;
 } LEXEME;
 

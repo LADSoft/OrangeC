@@ -249,27 +249,27 @@ static EXPRESSION* inasm_ident(void)
         /* label, put it in the symbol table */
         if ((sym = search(nm, labelSyms)) == 0 && (sym = gsearch(nm)) == 0)
         {
-            sym = (SYMBOL*)Alloc(sizeof(SYMBOL));
-            sym->storage_class = sc_ulabel;
+            sym = SymAlloc();
+            sym->sb->storage_class = sc_ulabel;
             sym->name = litlate(nm);
-            sym->declfile = sym->origdeclfile = lex->file;
-            sym->declline = sym->origdeclline = lex->line;
-            sym->realdeclline = lex->realline;
-            sym->declfilenum = lex->filenum;
-            sym->attribs.inheritable.used = true;
+            sym->sb->declfile = sym->sb->origdeclfile = lex->file;
+            sym->sb->declline = sym->sb->origdeclline = lex->line;
+            sym->sb->realdeclline = lex->realline;
+            sym->sb->declfilenum = lex->filenum;
+            sym->sb->attribs.inheritable.used = true;
             sym->tp = (TYPE*)(TYPE*)beLocalAlloc(sizeof(TYPE));
             sym->tp->type = bt_unsigned;
             sym->tp->bits = sym->tp->startbit = -1;
-            sym->offset = codeLabel++;
+            sym->sb->offset = codeLabel++;
             insert(sym, labelSyms);
-            node = intNode(en_labcon, sym->offset);
+            node = intNode(en_labcon, sym->sb->offset);
         }
         else
         {
             /* If we get here the symbol was already in the table
              */
-            sym->attribs.inheritable.used = true;
-            switch (sym->storage_class)
+            sym->sb->attribs.inheritable.used = true;
+            switch (sym->sb->storage_class)
             {
                 case sc_absolute:
                     SymbolManager::Get(sym);
@@ -297,18 +297,18 @@ static EXPRESSION* inasm_ident(void)
                 }
                 case sc_const:
                     /* constants and enums */
-                    node = intNode(en_c_i, sym->value.i);
+                    node = intNode(en_c_i, sym->sb->value.i);
                     break;
                 case sc_label:
                 case sc_ulabel:
-                    node = intNode(en_labcon, sym->offset);
+                    node = intNode(en_labcon, sym->sb->offset);
                     break;
                 case sc_auto:
                 case sc_register:
-                    sym->allocate = true;
+                    sym->sb->allocate = true;
                 case sc_parameter:
                     node = varNode(en_auto, sym);
-                    sym->inasm = true;
+                    sym->sb->inasm = true;
                     break;
                 default:
                     errorstr(ERR_INVALID_STORAGE_CLASS, "");
@@ -335,41 +335,41 @@ static EXPRESSION* inasm_label(void)
     /* label, put it in the symbol table */
     if ((sym = search(lex->value.s.a, labelSyms)) == 0)
     {
-        sym = (SYMBOL*)Alloc(sizeof(SYMBOL));
-        sym->storage_class = sc_label;
+        sym = SymAlloc();
+        sym->sb->storage_class = sc_label;
         sym->name = litlate(lex->value.s.a);
-        sym->declfile = sym->origdeclfile = lex->file;
-        sym->declline = sym->origdeclline = lex->line;
-        sym->realdeclline = lex->realline;
-        sym->declfilenum = lex->filenum;
+        sym->sb->declfile = sym->sb->origdeclfile = lex->file;
+        sym->sb->declline = sym->sb->origdeclline = lex->line;
+        sym->sb->realdeclline = lex->realline;
+        sym->sb->declfilenum = lex->filenum;
         sym->tp = (TYPE*)(TYPE*)beLocalAlloc(sizeof(TYPE));
         sym->tp->type = bt_unsigned;
         sym->tp->bits = sym->tp->startbit = -1;
-        sym->offset = codeLabel++;
+        sym->sb->offset = codeLabel++;
         SetLinkerNames(sym, lk_none);
         insert(sym, labelSyms);
     }
     else
     {
-        if (sym->storage_class == sc_label)
+        if (sym->sb->storage_class == sc_label)
         {
             errorsym(ERR_DUPLICATE_LABEL, sym);
             inasm_getsym();
             return 0;
         }
-        if (sym->storage_class != sc_ulabel)
+        if (sym->sb->storage_class != sc_ulabel)
         {
             inasm_err(ERR_LABEL_EXPECTED);
             return 0;
         }
-        sym->storage_class = sc_label;
+        sym->sb->storage_class = sc_label;
     }
     inasm_getsym();
     if (lex->type == l_asminst)
     {
         if (insdata->atype == op_reserved)
         {
-            node = intNode(en_labcon, sym->offset);
+            node = intNode(en_labcon, sym->sb->offset);
             return node;
         }
         else if (insdata->atype != op_label)
@@ -384,7 +384,7 @@ static EXPRESSION* inasm_label(void)
         return 0;
     }
     inasm_getsym();
-    node = intNode(en_labcon, sym->offset);
+    node = intNode(en_labcon, sym->sb->offset);
     return node;
 }
 

@@ -64,31 +64,31 @@ static LINEINCLUDES* mainFile;
 const char* GetSymName(SYMBOL* sp, SYMBOL* parent)
 {
     static char buf[4096];
-    if (sp->thisPtr)
+    if (sp->sb->thisPtr)
     {
         return "_this";
     }
-    else if (sp->storage_class == sc_namespace)
+    else if (sp->sb->storage_class == sc_namespace)
     {
         mangleNameSpaces(buf, sp);
     }
-    else if (sp->storage_class == sc_localstatic || sp->storage_class == sc_auto || sp->storage_class == sc_parameter)
+    else if (sp->sb->storage_class == sc_localstatic || sp->sb->storage_class == sc_auto || sp->sb->storage_class == sc_parameter)
     {
         sprintf(buf, "_%s", sp->name);
     }
-    else if (sp->decoratedName)
+    else if (sp->sb->decoratedName)
     {
         if (sp != parent && !isfunction(sp->tp))
         {
             char buf1[2048];
-            const char* p = strchr(sp->decoratedName + 1, '@');
+            const char* p = strchr(sp->sb->decoratedName + 1, '@');
             if (!p)
                 p = sp->name;
 
             sprintf(buf1, "@%s@%s", parent->name, sp->name);
             return litlate(buf1);
         }
-        return sp->decoratedName;
+        return sp->sb->decoratedName;
     }
     else
     {
@@ -104,18 +104,18 @@ static int WriteStructMembers(SYMBOL* sym, SYMBOL* parent, sqlite3_int64 struct_
         SYMLIST* hr = basetype(sym->tp)->syms->table[0];
         if (!isfunction(sym->tp))
         {
-            BASECLASS* bases = sym->baseClasses;
+            BASECLASS* bases = sym->sb->baseClasses;
             while (bases)
             {
                 order =
-                    WriteStructMembers(bases->cls, parent, struct_id, file_id, order, true, (e_ac)imin(bases->cls->access, access));
+                    WriteStructMembers(bases->cls, parent, struct_id, file_id, order, true, (e_ac)imin(bases->cls->sb->access, access));
                 bases = bases->next;
             }
         }
         while (hr)
         {
-            SYMBOL* st = (SYMBOL*)hr->p;
-            if (st->storage_class == sc_overloads)
+            SYMBOL* st = (SYMBOL*)hr->p->sb;
+            if (st->sb->storage_class == sc_overloads)
             {
                 order = WriteStructMembers(st, parent, struct_id, file_id, order, base, access);
             }
@@ -127,24 +127,24 @@ static int WriteStructMembers(SYMBOL* sym, SYMBOL* parent, sqlite3_int64 struct_
                 int rel_id = 0;
                 TYPE* tp = st->tp;
                 sqlite3_int64 id;
-                int flags = imin(st->access, access) & 15;
-                if (st->storage_class == sc_static || st->storage_class == sc_external)
+                int flags = imin(st->sb->access, access) & 15;
+                if (st->sb->storage_class == sc_static || st->sb->storage_class == sc_external)
                     flags |= 16;
                 if (ismemberdata(st))
                     flags |= 32;
-                if (st->storage_class == sc_virtual)
+                if (st->sb->storage_class == sc_virtual)
                     flags |= 64;
                 if (isfunction(st->tp))
                 {
                     flags |= 128;
-                    if (basetype(st->tp)->syms->table[0] && ((SYMBOL*)basetype(st->tp)->syms->table[0]->p)->thisPtr)
+                    if (basetype(st->tp)->syms->table[0] && ((SYMBOL*)basetype(st->tp)->syms->table[0]->p)->sb->thisPtr)
                         flags |= 2048;
                 }
                 if (base)
                     flags |= 256;
-                if (st->isConstructor)
+                if (st->sb->isConstructor)
                     flags |= 512;
-                if (st->isDestructor)
+                if (st->sb->isDestructor)
                     flags |= 1024;
                 if (isfunction(tp))
                     tp = basetype(tp)->btp;
@@ -154,7 +154,7 @@ static int WriteStructMembers(SYMBOL* sym, SYMBOL* parent, sqlite3_int64 struct_
                     tp = basetype(tp)->btp, indirectCount++;
                 if (isstructured(tp) && isstructured(basetype(tp)->sp->tp))
                 {
-                    rel_id = basetype(tp)->sp->tp->sp->ccStructId;
+                    rel_id = basetype(tp)->sp->tp->sp->sb->ccStructId;
                 }
                 type_name[0] = 0;
                 if (isstructured(tp))
@@ -194,11 +194,11 @@ static void DumpStructs(void)
     while (item)
     {
         SYMBOL* sym = (SYMBOL*)item->data;
-        if (sym->storage_class != sc_label && sym->tp && istype(sym) && isstructured(sym->tp) && (!sym->tp->btp || sym->tp->btp->type != bt_typedef))  // DAL fix
+        if (sym->sb->storage_class != sc_label && sym->tp && istype(sym) && isstructured(sym->tp) && (!sym->tp->btp || sym->tp->btp->type != bt_typedef))  // DAL fix
         {
             sqlite3_int64 struct_id;
-            if (ccWriteStructName(sym->decoratedName, &struct_id))
-                basetype(sym->tp)->sp->ccStructId = struct_id;
+            if (ccWriteStructName(sym->sb->decoratedName, &struct_id))
+                basetype(sym->tp)->sp->sb->ccStructId = struct_id;
         }
         item = item->next;
     }
@@ -206,14 +206,14 @@ static void DumpStructs(void)
     while (item)
     {
         SYMBOL* sym = (SYMBOL*)item->data;
-        if (sym->storage_class != sc_label && sym->tp && istype(sym) && isstructured(sym->tp) && sym->storage_class != sc_typedef &&
+        if (sym->sb->storage_class != sc_label && sym->tp && istype(sym) && isstructured(sym->tp) && sym->sb->storage_class != sc_typedef &&
             sym->tp->syms)
         {
-            sqlite3_int64 struct_id = basetype(sym->tp)->sp->ccStructId, file_id;
-            if (ccWriteFileName(sym->origdeclfile, &file_id))
+            sqlite3_int64 struct_id = basetype(sym->tp)->sp->sb->ccStructId, file_id;
+            if (ccWriteFileName(sym->sb->origdeclfile, &file_id))
             {
                 int order = 1;
-                WriteStructMembers(sym, sym, struct_id, file_id, order, false, sym->access);
+                WriteStructMembers(sym, sym, struct_id, file_id, order, false, sym->sb->access);
             }
         }
         item = item->next;
@@ -228,7 +228,7 @@ static void DumpSymbolType(SYMBOL* sym)
     if (sym->tp && isfunction(sym->tp))
         type = ST_FUNCTION;
     else
-        switch (sym->storage_class)
+        switch (sym->sb->storage_class)
         {
             case sc_overloads:
                 return;
@@ -271,13 +271,13 @@ static void DumpSymbolType(SYMBOL* sym)
     if (isvolatile(sym->tp))
         type |= ST_VOLATILE;
         */
-    ccWriteSymbolType(name, main_id, sym->origdeclfile ? sym->origdeclfile : (char*)"$$$", sym->origdeclline, sym->ccEndLine, type);
+    ccWriteSymbolType(name, main_id, sym->sb->origdeclfile ? sym->sb->origdeclfile : (char*)"$$$", sym->sb->origdeclline, sym->sb->ccEndLine, type);
 }
 static void DumpSymbol(SYMBOL* sym);
 static void DumpNamespace(SYMBOL* sym)
 {
     const char* symName = GetSymName(sym, sym);
-    struct _ccNamespaceData* ns = sym->ccNamespaceData;
+    struct _ccNamespaceData* ns = sym->sb->ccNamespaceData;
     while (ns)
     {
         ccWriteNameSpaceEntry(symName, main_id, ns->declfile, ns->startline, ns->endline);
@@ -287,8 +287,8 @@ static void DumpNamespace(SYMBOL* sym)
 static void DumpSymbol(SYMBOL* sym)
 {
     DumpSymbolType(sym);
-    if (sym->storage_class != sc_label && sym->tp && (!istype(sym) || sym->storage_class == sc_typedef) &&
-        sym->storage_class != sc_overloads && sym->tp->type != bt_any)
+    if (sym->sb->storage_class != sc_label && sym->tp && (!istype(sym) || sym->sb->storage_class == sc_typedef) &&
+        sym->sb->storage_class != sc_overloads && sym->tp->type != bt_any)
     {
         SYMBOL* declsym;
         char type_name[100000];
@@ -301,7 +301,7 @@ static void DumpSymbol(SYMBOL* sym)
         if (isfunction(tp))
             tp = basetype(tp)->btp;  // get rv
         type_name[0] = 0;
-        if (sym->storage_class == sc_typedef)
+        if (sym->sb->storage_class == sc_typedef)
         {
             strcpy(type_name, "typedef ");
         }
@@ -334,27 +334,27 @@ static void DumpSymbol(SYMBOL* sym)
             tp = basetype(tp)->btp, indirectCount++;
         if (isstructured(tp))
         {
-            struct_id = basetype(tp)->sp->ccStructId;
+            struct_id = basetype(tp)->sp->sb->ccStructId;
         }
         declsym = sym;
-        if (sym->parentClass)
+        if (sym->sb->parentClass)
         {
             // member vars are considered declared at the top of their class...
-            declsym = sym->parentClass;
+            declsym = sym->sb->parentClass;
         }
-        if (sym->storage_class == sc_namespace)
+        if (sym->sb->storage_class == sc_namespace)
             DumpNamespace(sym);
-        // use sym->declline here to get real function addresses
-        else if (ccWriteLineNumbers(name, litlate(type_name), sym->declfile ? sym->declfile : (char*)"$$$", indirectCount,
-                                    struct_id, main_id, sym->declline, sym->ccEndLine, sym->endLine, isfunction(sym->tp), &id))
+        // use sym->sb->declline here to get real function addresses
+        else if (ccWriteLineNumbers(name, litlate(type_name), sym->sb->declfile ? sym->sb->declfile : (char*)"$$$", indirectCount,
+                                    struct_id, main_id, sym->sb->declline, sym->sb->ccEndLine, sym->sb->endLine, isfunction(sym->tp), &id))
         {
             if (isfunction(sym->tp) && sym->tp->syms)
             {
                 int order = 1;
                 SYMLIST* hr = sym->tp->syms->table[0];
-                while (hr && ((SYMBOL*)hr->p)->storage_class == sc_parameter)
+                while (hr && ((SYMBOL*)hr->p->sb)->sb->storage_class == sc_parameter)
                 {
-                    SYMBOL* st = (SYMBOL*)hr->p;
+                    SYMBOL* st = (SYMBOL*)hr->p->sb;
                     const char* argName = GetSymName(st, st);
                     if (strstr(argName, "++"))
                         argName = " ";
@@ -393,7 +393,7 @@ static void DumpLines(void)
         SYMLIST* hr = ccHash->table[i];
         while (hr)
         {
-            LINEINCLUDES* x = (LINEINCLUDES*)hr->p;
+            LINEINCLUDES* x = (LINEINCLUDES*)hr->p->sb;
             if (!x->dataSize)
             {
                 x->lineTop = 0;
@@ -428,7 +428,7 @@ static void DumpFiles(void)
         SYMLIST* hr = ccHash->table[i];
         while (hr)
         {
-            LINEINCLUDES* l = (LINEINCLUDES*)hr->p;
+            LINEINCLUDES* l = (LINEINCLUDES*)hr->p->sb;
             ccWriteFileTime(l->name, n, &l->fileId);
             hr = hr->next;
         }
@@ -468,7 +468,7 @@ void ccSetSymbol(SYMBOL* sp)
     if (!skipThisFile)
     {
         LIST* newItem = (LIST*)Alloc(sizeof(LIST));
-        if (sp->decoratedName)
+        if (sp->sb->decoratedName)
         {
             newItem->next = symList;
             newItem->data = sp;

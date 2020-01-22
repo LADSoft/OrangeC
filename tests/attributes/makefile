@@ -9,6 +9,9 @@ TESTS := $(TESTS:.asm=.tst)
 
 all: $(TESTS)
 
+clean:
+	$(CLEAN)
+
 %.tst: %.c
 	occ /1 /c /! $< > $*.tst
 	del $*.o
@@ -24,6 +27,3 @@ testlinkage.tst: testlinkage.cpp
 	del testlinkage.o
 	fc /b testlinkage.cmpx $*
 
-clean:
-	del *.tst
-	del *.o

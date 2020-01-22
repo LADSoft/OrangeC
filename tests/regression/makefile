@@ -20,10 +20,9 @@ all: $(TESTS)
 	occ $<
 	
 %.tst: %.exe
-	$< > $*.tst
-	fc /b $*.cmpx $*.tst
+	$< > $*.out
+	fc /b $*.cmpx $*.out
 
 clean:
-	del *.tst
-	del *.o
-	del *.exe
+	$(CLEAN)
+

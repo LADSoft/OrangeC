@@ -4,6 +4,9 @@ vpath %.c ..\..\libogg-1.2.0
 
 all: ogg.l
 
+clean:
+	$(CLEAN)
+
 ogg.l: bitwise.o framing.o
 	del ogg.l 2> NUL
 	olib ogg.l bitwise.o framing.o

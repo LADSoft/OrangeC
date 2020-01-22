@@ -23,6 +23,9 @@ test: bzip2.exe parsecsv.exe label.exe delegate.exe world.exe jarjar.exe
 	delegate > delegate.out
 	fc /b delegate.cmpx delegate.out
 
+clean:
+	$(CLEAN)
+
 world.exe: world.c
 	occ /9 /! /Wcm $^
 	world > world.out

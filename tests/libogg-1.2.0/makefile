@@ -7,6 +7,9 @@ all: $(EXE)
 	framing 2> framing.out
 	fc /b framing.out framing.cmpx	
 
+clean:
+	$(CLEAN)
+
 ogg.l: bitwise.o framing.o
 	olib /! ogg.l +- bitwise.o framing.o
 

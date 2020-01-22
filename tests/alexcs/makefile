@@ -17,6 +17,9 @@ test: cs.exe
 	cs -G test.pas > q1.out
 	fc /b test.cmpx q1.out
 
+clean:
+	$(CLEAN)
+
 cs.exe: $(FILES)
 	olink /c /! /T:CON32 /mx /o$@ @&&|
 c0xpe.o $(FILES) clwin.l climp.l

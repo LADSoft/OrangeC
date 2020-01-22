@@ -1,5 +1,9 @@
 all: alltests
 
+clean:
+	$(CLEAN)
+
+
 asmcmp.exe : asmcmp.cpp
 	occ $^
 

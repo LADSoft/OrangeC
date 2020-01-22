@@ -12,6 +12,9 @@ test: inc.exe
 	output.exe < test.cmd > test.out
 	fc /b test.cmpx test.out  
 
+clean:
+	$(CLEAN)
+
 inc.exe: $(FILES)
 	olink /c /T:CON32 /mx /o$@ @&&|
 c0xpe.o $(FILES) clwin.l climp.l

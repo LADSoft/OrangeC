@@ -20,6 +20,9 @@ RFLAGS =
 
 all: $(OUT)
 
+clean:
+	$(CLEAN)
+
 
 CC = \orangec\bin\occ
 AS = d:\ccdl\bin\nasm

@@ -7,6 +7,10 @@ TESTS := $(TESTS:.asm=.tst)
 
 all: $(TESTS)
 
+clean:
+	$(CLEAN)
+
+
 %.o: %.c
 	occ -D__SIZE_TYPE__=unsigned /1 /c /! $<
 
@@ -22,8 +26,3 @@ all: $(TESTS)
 %.tst: %.exe
 	$<
 	echo %ERRORLEVEL% > $*.tst
-
-clean:
-	del *.tst
-	del *.o
-	del *.exe

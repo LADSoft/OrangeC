@@ -61,3 +61,7 @@ x264.exe: $(FILES)
 	olink /! /T:CON32 /c /m /o$@ @&&|
 c0xpe.o $(FILES) clwin.l climp.l
 |
+
+clean:
+	$(CLEAN)
+

@@ -225,7 +225,7 @@ build_script:
                       }
                       path=$env:ORIGPATH
                       cd ..\tests
-                      omake -B /DCOMPILER=OCC
+                      omake -B -j:4 /DCOMPILER=OCC
                       if ($LastExitCode -ne 0)
                       {
                           throw "error"

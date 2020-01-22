@@ -43,6 +43,7 @@ extern std::string prm_libPath;
 extern std::string prm_include;
 extern std::string prm_OutputDefFile;
 extern std::string outputFileName;
+extern std::list<std::string> inputFiles;
 
 const char* winflags[] = {
     "/T:CON32 ", "/T:GUI32 ", "/T:DLL32 ", "/T:PM ", "/T:DOS32 ", "/T:BIN ", "/T:CON32;sdpmist32.bin ", "/T:CON32;shdld32.bin ",
@@ -181,7 +182,7 @@ int RunExternalFiles()
         memset(verbosityString + 1, 'y', verbosity > sizeof(verbosityString) - 2 ? sizeof(verbosityString) - 2 : verbosity);
     }
     temp[0] = 0;
-    outputfile(outName, (const char *)objlist->data, ".exe", false);
+    outputfile(outName, inputFiles.front().c_str(), ".exe", false);
     //    p = strrchr(outName, '.');
     //    if (p && p[1] != '\\')
     //        *p = 0;

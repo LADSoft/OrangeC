@@ -182,7 +182,10 @@ int RunExternalFiles()
         memset(verbosityString + 1, 'y', verbosity > sizeof(verbosityString) - 2 ? sizeof(verbosityString) - 2 : verbosity);
     }
     temp[0] = 0;
-    outputfile(outName, inputFiles.front().c_str(), ".exe", false);
+    if (inputFiles.size())
+        outputfile(outName, inputFiles.front().c_str(), ".exe", false);
+    else
+        outputfile(outName, (const char *)objlist->data, ".exe", false);
     //    p = strrchr(outName, '.');
     //    if (p && p[1] != '\\')
     //        *p = 0;

@@ -43,6 +43,15 @@ static int globalPeak, localPeak, optPeak, tempsPeak, aliasPeak, livePeak, templ
 #define MINALLOC (128 * 1024)
 #define MALIGN (4)
 
+#ifdef __ORANGEC__
+#include <windows.h>
+#undef RtlZeroMemory
+extern VOID
+ PASCAL WINBASEAPI RtlZeroMemory(
+        PVOID Destination,
+        DWORD Length
+         );
+#endif
 //#define DEBUG
 void memfunc(const char *a)
 {
@@ -89,7 +98,13 @@ void* memAlloc(MEMBLK** arena, int size, bool clear = true)
     }
     rv = (void*)(selected->m + selected->size - selected->left);
     if (clear)
+    {
+#ifdef __ORANGEC__
+	RtlZeroMemory(rv, size);
+#else
 	memset(rv, 0, size);
+#endif
+    }
     selected->left = selected->left - ((size + MALIGN - 1) & -MALIGN);
     return rv;
 }

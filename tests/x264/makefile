@@ -54,7 +54,7 @@ FILES=\
 	occ /c /9 /! -o$@ $^
 
 test: x264.exe
-	x264 claire_qcif.y4m -o q.mkv
+	x264 claire_qcif.y4m -o q.mkv 2> test.out
 #	fc /b test.cmpx q.mkv # seems like different cpus might have slight variations in how floating point is done?
 
 x264.exe: $(FILES)

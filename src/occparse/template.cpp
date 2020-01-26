@@ -26,6 +26,7 @@
 #include "assert.h"
 #include <stack>
 #include "PreProcessor.h"
+#include <malloc.h>
 
 extern int currentErrorLine;
 extern NAMESPACEVALUELIST* localNameSpace;
@@ -2473,9 +2474,8 @@ static TEMPLATEPARAMLIST* copyParams(TEMPLATEPARAMLIST* t, bool alsoSpecializati
     }
     return t;
 }
-static SYMBOL* SynthesizeTemplate(TYPE* tp, bool alt)
+static SYMBOL* SynthesizeTemplate(TYPE* tp, SYMBOL* rvt, sym::_symbody* rvs, TYPE *tpt)
 {
-    (void)alt;
     SYMBOL* rv;
     TEMPLATEPARAMLIST *r = nullptr, **last = &r;
     TEMPLATEPARAMLIST* p = tp->sp->templateParams->p->bySpecialization.types;
@@ -2489,35 +2489,12 @@ static SYMBOL* SynthesizeTemplate(TYPE* tp, bool alt)
         last = &(*last)->next;
         p = p->next;
     }
-    while (p)
-    {
-        switch (p->p->type)
-        {
-            case kw_typename:
-                if (p->p->byClass.val->type == bt_templateparam)
-                {
-                    p->p->byClass.val = p->p->byClass.val->templateParam->p->byClass.val;
-                }
-                break;
-            case kw_template:
-                if (p->p->byTemplate.val->tp->type == bt_templateparam)
-                {
-                    p->p->byTemplate.val = SynthesizeTemplate(p->p->byTemplate.val->tp, true);
-                }
-                break;
-            case kw_int:
-                if (p->p->byNonType.tp->type == bt_templateparam)
-                {
-                    p->p->byNonType.val = p->p->byNonType.tp->templateParam->p->byNonType.val;
-                }
-                break;
-            default:
-                break;
-        }
-        p = p->next;
-    }
-    rv = clonesym(tp->sp);
-    rv->tp = (TYPE*)Alloc(sizeof(TYPE));
+    rv = rvt;
+    *rv = *tp->sp;
+    rv->sb = rvs;
+    *rv->sb = *tp->sp->sb;
+    rv->sb->symRef = nullptr;
+    rv->tp = tpt;
     *rv->tp = *tp;
     UpdateRootTypes(rv->tp);
     rv->tp->sp = rv;
@@ -6063,8 +6040,22 @@ void TemplatePartialOrdering(SYMBOL** table, int count, FUNCTIONCALL* funcparams
     }
     if (c > 1)
     {
+        int len = 0;
+        for (i = 0; i < count; i++)
+            if (table[i] && table[i]->sb->templateLevel)
+                len++;
         LIST *types = nullptr, *exprs = nullptr, *classes = nullptr;
+        TYPE** typetab = (TYPE**)_alloca(sizeof(TYPE*) * count);
+        SYMBOL *allocedSyms = (SYMBOL *)_alloca(sizeof(SYMBOL) *len);
+        sym::_symbody *allocedBodies = (sym::_symbody *)_alloca(sizeof(sym::_symbody) * len);
+        TYPE *allocedTypes = (TYPE *)_alloca(sizeof(TYPE) *len);
+        /*
         TYPE** typetab = (TYPE**)Alloc(sizeof(TYPE*) * count);
+        SYMBOL *allocedSyms = (SYMBOL *)Alloc(sizeof(SYMBOL) *len);
+        sym::_symbody *allocedBodies = (sym::_symbody *)Alloc(sizeof(sym::_symbody) * len);
+        TYPE *allocedTypes = (TYPE *)Alloc(sizeof(TYPE) *len);
+        */
+        int j = 0;
         if (save)
             saveParams(table, count);
         for (i = 0; i < count; i++)
@@ -6133,9 +6124,10 @@ void TemplatePartialOrdering(SYMBOL** table, int count, FUNCTIONCALL* funcparams
                     params = params->next;
                 }
                 if (isstructured(sym->tp))
-                    typetab[i] = SynthesizeTemplate(sym->tp, true)->tp;
+                    typetab[i] = SynthesizeTemplate(sym->tp, &allocedSyms[j], &allocedBodies[j], &allocedTypes[j])->tp;
                 else
                     typetab[i] = SynthesizeType(sym->tp, nullptr, true);
+                j++;
             }
         }
         for (i = 0; i < count - 1; i++)

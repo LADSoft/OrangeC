@@ -7,6 +7,8 @@ CLEAN = -del *.o *.exe *.out *.tst *.res 2>NUL
 export CLEAN
 
 all: $(CDIRS)
+	echo %ERRORLEVEL%
+
 clean: $(CLEANDIRS)
 
 $(CDIRS): %.dir :

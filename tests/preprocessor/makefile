@@ -42,6 +42,6 @@ clean:
 af.o : af.c
 	occ /c $^
 
-%.exe: %.c
+%.exe: %.c af.o
 	occ /T /9 $^ af.o
 	$*.exe

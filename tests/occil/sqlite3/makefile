@@ -24,6 +24,6 @@ test.exe: test.c
 	copy \orangec\bin\lsmsilcrtl.dll *.* > $(NULLDEV)
 	occil test.c /I$(ORANGEC)\src\sqlite3 /LKernel32
 
-testsqlite.exe: testsqlite.cs
+testsqlite.exe: testsqlite.cs sqlite3.dll
 	copy \orangec\bin\lsmsilcrtl.dll *.* > $(NULLDEV)
 	csc /unsafe /r:lsmsilcrtl.dll;zzz.dll;sqlite3.dll /platform:x86 testsqlite.cs 

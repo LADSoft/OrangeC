@@ -1092,7 +1092,8 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
         SetLinkerNames(spi, lk_cpp);
         self->func->tp->syms = localNameSpace->valueData->syms;
         self->funcargs = self->func->tp->syms->table[0];
-        self->func->tp->syms->table[0] = NULL;
+        self->func->tp->syms->table[0] = (SYMLIST*)Alloc(sizeof(SYMLIST));
+        self->func->tp->syms->table[0]->p = makeID(sc_parameter, &stdvoid, NULL, AnonymousName());
     }
     basetype(self->func->tp)->btp = self->functp;
     injectThisPtr(lambdas->func, basetype(lambdas->func->tp)->syms);

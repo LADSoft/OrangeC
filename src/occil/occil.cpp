@@ -166,6 +166,12 @@ void outputfile(char* buf, const char* name, const char* ext)
     else if (buf[0] == 0) // no output file specified, put the output wherever the input was...
     {
         strcpy(buf, name);
+        char *p = strrchr(buf, '\\');
+        char *q = strrchr(buf, '/');
+        if (q > p)
+            p = q;
+        if (p)
+            strcpy(buf, p + 1);
         Utils::StripExt(buf);
         Utils::AddExt(buf, ext);
     }

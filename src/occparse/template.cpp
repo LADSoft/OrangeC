@@ -28,6 +28,10 @@
 #include "PreProcessor.h"
 #include <malloc.h>
 
+#ifdef HAVE_UNISTD_H
+#define _alloca alloca
+#endif
+
 extern int currentErrorLine;
 extern NAMESPACEVALUELIST* localNameSpace;
 extern NAMESPACEVALUELIST* globalNameSpace;

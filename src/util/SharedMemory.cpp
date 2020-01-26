@@ -87,7 +87,7 @@ void SharedMemory::CloseMapping()
     }
 #endif
 }
-#ifdef _MINGW
+#ifdef _WIN32//_MINGW
 static bool acquire_context(HCRYPTPROV *ctx)
 {
     if (!CryptAcquireContext(ctx, nullptr, nullptr, PROV_RSA_FULL, 0)) {
@@ -101,7 +101,7 @@ static size_t sysrandom(void* dst, size_t dstlen)
 {
     HCRYPTPROV ctx;
     if (!acquire_context(&ctx)) {
-        return;
+        return 0;
     }
 
     BYTE* buffer = reinterpret_cast<BYTE*>(dst);
@@ -135,7 +135,7 @@ void SharedMemory::SetName()
     std::array<unsigned char, 21> rnd;
 
     std::uniform_int_distribution<int> distribution('a', 'z');
-#ifdef _MINGW
+#ifdef _WIN32 //_MINGW
     unsigned gg;
     sysrandom(&gg, sizeof(gg));
     std::mt19937 engine(gg);
@@ -143,7 +143,7 @@ void SharedMemory::SetName()
     std::random_device dev;
     std::mt19937 engine(dev());
 #endif
-    auto generator = std::bind(distribution, engine);
+    auto generator = std::bind(distribution, engine); 
 
     std::generate(rnd.begin(), rnd.end(), generator);
 

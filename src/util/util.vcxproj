@@ -126,6 +126,7 @@
     <ClCompile Include="CmdSwitch.cpp" />
     <ClCompile Include="crc.cpp" />
     <ClCompile Include="NamedPipe.cpp" />
+    <ClCompile Include="Random.cpp" />
     <ClCompile Include="SharedMemory.cpp" />
     <ClCompile Include="UTF8.cpp" />
     <ClCompile Include="UTF8Table.cpp" />

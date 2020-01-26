@@ -21,6 +21,7 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
  */
+#include "Utils.h"
 #include "SharedMemory.h"
 #include <string>
 #include <array>
@@ -87,31 +88,6 @@ void SharedMemory::CloseMapping()
     }
 #endif
 }
-#ifdef _WIN32//_MINGW
-static bool acquire_context(HCRYPTPROV *ctx)
-{
-    if (!CryptAcquireContext(ctx, nullptr, nullptr, PROV_RSA_FULL, 0)) {
-        return CryptAcquireContext(ctx, nullptr, nullptr, PROV_RSA_FULL, CRYPT_NEWKEYSET);
-    }
-    return true;
-}
-
-
-static size_t sysrandom(void* dst, size_t dstlen)
-{
-    HCRYPTPROV ctx;
-    if (!acquire_context(&ctx)) {
-        return 0;
-    }
-
-    BYTE* buffer = reinterpret_cast<BYTE*>(dst);
-    CryptGenRandom(ctx, dstlen, buffer);
-
-    CryptReleaseContext(ctx, 0);
-
-    return dstlen;
-}
-#endif
 bool SharedMemory::EnsureCommitted(int size)
 {
     return true;
@@ -134,18 +110,7 @@ void SharedMemory::SetName()
 {
     std::array<unsigned char, 21> rnd;
 
-    std::uniform_int_distribution<int> distribution('a', 'z');
-#ifdef _WIN32 //_MINGW
-    unsigned gg;
-    sysrandom(&gg, sizeof(gg));
-    std::mt19937 engine(gg);
-#else
-    std::random_device dev;
-    std::mt19937 engine(dev());
-#endif
-    auto generator = std::bind(distribution, engine); 
-
-    std::generate(rnd.begin(), rnd.end(), generator);
+    std::generate(rnd.begin(), rnd.end(), [] { return Utils::Random(26) + 'a'; });
 
     // the lssm: is an attempt to prevent the RNG from choosing someone else's name accidentally...
     name_ = "lssm:" + std::string(rnd.begin(), rnd.end());

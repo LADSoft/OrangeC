@@ -121,6 +121,9 @@ class Utils
 
     static unsigned PartialCRC32(unsigned crc, const unsigned char* data, size_t len);
     static unsigned CRC32(const unsigned char* data, size_t len) { return PartialCRC32(0, data, len); };
+
+    static unsigned Random(unsigned);
+
     static char* StrCpy(char *data, size_t len, const char* source)
     {
         strncpy(data, source, len);

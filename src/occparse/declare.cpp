@@ -5465,6 +5465,9 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                     lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3, &asFriend);
                     lex = getBeforeType(lex, funcsp, &tp1, &sp, &strSym, &nsv, inTemplate, storage_class, &linkage, &linkage2,
                                         &linkage3, asFriend, consdest, false, false);
+                    if (linkage2 == lk_import)
+                        if (storage_class == sc_global)
+                            storage_class = sc_external;
                     if (sp)
                     {
                         tp1 = AttributeFinish(sp, tp1);

@@ -455,10 +455,7 @@ int main(int argc, char* argv[])
             if (!ProcessData(p.c_str()) || !SaveFile(p.c_str()))
                 Utils::fatal("File I/O error");
         }
-        if (!cparams.prm_compileonly)
-        {
-            rv = RunExternalFiles();
-        }
+        rv = RunExternalFiles();
     }
     delete optimizerMem;
     return rv ;

@@ -169,7 +169,7 @@ int ppMain::Run(int argc, char* argv[])
         else
             outstream = &std::cout;
         while (pp.GetLine(working))
-        {
+        { 
             int last = 0;
             std::string rv;
             for (int p = 0; p < working.size(); p++)
@@ -183,7 +183,7 @@ int ppMain::Run(int argc, char* argv[])
                     last = p;
                 }
             }
-            working = rv;
+            working = rv + working.substr(last);
             if (assembly.GetValue())
             {
                 int npos = working.find_first_not_of(" \t\r\n\v");

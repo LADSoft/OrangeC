@@ -122,7 +122,7 @@ class ppInclude
     void StripAsmComment(std::string& line);
     bool CheckInclude(kw token, const std::string& line);
     bool CheckLine(kw token, const std::string& line);
-    void pushFile(const std::string& name, const std::string& decoratedName);
+    void pushFile(const std::string& name, const std::string& errname);
     bool popFile();
     std::string ParseName(const std::string& args, bool& specifiedAsSystem);
     std::string FindFile(bool specifiedAsSystem, const std::string& name);

@@ -1215,6 +1215,8 @@ std::string InstructionParser::RewriteATT(int& op, const std::string& line, int&
     case op_scas:
     case op_ins:
     case op_outs:
+        if (op == op_movs)
+            op++;
         switch (size1)
         {
         case 1:

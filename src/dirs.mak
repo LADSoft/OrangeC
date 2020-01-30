@@ -32,5 +32,5 @@ OCCIL_DIRS := netlib
 endif
 
 DIRS := sqlite3 util objlib $(OCCIL_DIRS) obrc ocpp ogrep oasm dlhex dlle dlmz dlpe dlpm olib olink \
-       oimplib omake onm orc ocl ocide occ coff2ieee help MSDNHelp
+       oimplib omake onm orc ocl occ coff2ieee help MSDNHelp
 endif

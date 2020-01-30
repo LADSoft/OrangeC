@@ -180,8 +180,8 @@ cleanDISTRIBUTE: copydir.exe restub.exe renseg.exe pepatch.exe
 ifndef NOMAKEDIR
 	-$(MKDIR) $(DISTROOT) 2> $(NULLDEV)
 #	-del /Q $(DISTROOT) 2> $(NULLDEV)
-	-$(MKDIR) $(DISTROOT)$(PATHEXT2)rule 2> $(NULLDEV)
-	-del /Q $(DISTROOT)$(PATHEXT2)rule 2> $(NULLDEV)
+#	-$(MKDIR) $(DISTROOT)$(PATHEXT2)rule 2> $(NULLDEV)
+#	-del /Q $(DISTROOT)$(PATHEXT2)rule 2> $(NULLDEV)
 	-$(MKDIR) $(DISTBIN) 2> $(NULLDEV)
 	-del /Q $(DISTBIN) 2> $(NULLDEV)
 #	-$(MKDIR) $(DISTBIN_8) 2> $(NULLDEV)

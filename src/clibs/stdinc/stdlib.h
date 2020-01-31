@@ -77,6 +77,11 @@ extern "C"
 #    endif
 #endif
 
+#undef _alloca
+#undef alloca
+#define _alloca(x) __alloca((x))
+#define alloca(x) __alloca((x))
+
 #define MB_CUR_MAX 3
 
     /* Maximum value returned by "rand" function

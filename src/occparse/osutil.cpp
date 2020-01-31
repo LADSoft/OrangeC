@@ -128,6 +128,8 @@ CmdSwitchString prm_msil_version(switchParser, 'V');
 CmdSwitchCombineString prm_architecture(switchParser, 0, 0, "architecture");
 
 CmdSwitchString prm_Winmode(switchParser, 'W');
+CmdSwitchCombineString OutputDefFile(switchParser, 0, 0, "output-def");
+CmdSwitchBool ExportAll(switchParser, 0, false, "export-all-symbols");
 
 static std::string firstFile;
 enum e_lk getDefaultLinkage() 
@@ -885,6 +887,8 @@ void ccinit(int argc, char* argv[])
         fprintf(stderr, "Compile date: " __DATE__ ", time: " __TIME__ "\n");
         exit(0);
     }
+    extern void Cleanup();
+    Utils::SetCleanup(Cleanup);
 #if defined(WIN32) || defined(MICROSOFT)
     GetModuleFileNameA(nullptr, buffer, sizeof(buffer));
 #else
@@ -965,6 +969,7 @@ void ccinit(int argc, char* argv[])
                 Utils::usage(argv[0], getUsageText());
         }
     }
+
     CmdSwitchFile internalConfig(switchParser);
     if (chosenAssembler->cfgname)
     {

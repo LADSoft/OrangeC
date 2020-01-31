@@ -74,6 +74,8 @@ void        _RTL_FUNC _IMPORT _FAR *farmalloc(size_t __size) ;
 void        _RTL_FUNC _IMPORT farfree(void _FAR *__block) ;
 #endif
 
+#undef _alloca
+#undef alloca
 #define _alloca(x) __alloca((x))
 #define alloca(x) __alloca((x))
 

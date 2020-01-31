@@ -60,6 +60,13 @@ char outFile[260];
 
 long long ParseExpression(std::string&line);
 
+#ifdef _WIN32
+extern "C"
+{
+    char* __stdcall GetModuleFileNameA(int handle, char* buf, int size);
+}
+#endif
+
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
 #endif

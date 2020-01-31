@@ -51,54 +51,22 @@ size_t mbsnrtowcs (wchar_t *restrict dst, const char **restrict src, size_t nms,
   if (!p)
     p = &__getRtlData()->mbsrtowcs_st;
 
-  if (dst == NULL)
-    len = (size_t)-1;
-
   while (used < len && p->left <= nms) {
     b = (unsigned char)*r++;
     nms--;
-    if (p->left) {
-        if ((b & 0xc0) != 0x80) {
-            errno = EILSEQ;
-            return (size_t)-1;
-        }
-        p->value <<=6;
-        p->value |= b & 0x3f;
-        if (!--p->left) {
-            if (dst)
-                *dst++ = p->value;
-            if (p->value == L'\0') {
-                *src = NULL;
-                return used;
-            }
-            used++;
-        }
-    } else {
-        if (b < 0x80) {
-	    if (!nms)
-            {
-                *src = r-1;
-                return used;
-            }
-            if (dst)
-                *dst++ = (wchar_t)b;
-            if (b == L'\0') {
-                *src = NULL;
-                return used;
-            }
-            used++;
-        } else {
-            if ((b & 0xc0) == 0x80 || b == 0xfe || b == 0xff) {
-                errno = EILSEQ ;
-                return (size_t) -1;
-            }
-            b <<= 1;
-            while (b & 0x80) {
-                p->left++ ;
-                b <<= 1;
-            }
-            p->value = b >> (p->left + 1);
-        }
+    if (p->left == 0) {
+      if (!nms)
+      {
+          *src = r-1;
+          return used;
+      }
+      if (dst)
+          *dst++ = (wchar_t)b;
+      if (b == L'\0') {
+          *src = NULL;
+          return used;
+      }
+      used++;
     }
   }
 

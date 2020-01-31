@@ -1552,6 +1552,8 @@ LEXEME* getsym(void)
         lex->realline = preProcessor->GetRealLineNo();
         eofFile = lex->file = preProcessor->GetErrFile().c_str();
         lex->filenum = preProcessor->GetFileIndex();
+        eofLine = lex->line;
+        eofFile = lex->file;
         if (lex->filenum != lastBrowseIndex)
         {
             browse_startfile(preProcessor->GetRealFile().c_str(), lex->filenum);

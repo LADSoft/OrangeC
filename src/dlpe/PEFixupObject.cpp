@@ -110,6 +110,33 @@ bool PEFixupObject::IsRel(ObjExpression* e)
         return true;
     return IsRel(e->GetLeft()) || IsRel(e->GetRight());
 }
+bool PEFixupObject::IsInternal(ObjExpression* e)
+{
+    int pos = 0, neg = 0;
+    CountSections(e, true, pos, neg);
+    return pos != 0 && pos == neg;
+}
+
+void PEFixupObject::CountSections(ObjExpression* e, bool positive, int& pos, int& neg)
+{
+    switch(e->GetOperator())
+    {
+        case ObjExpression::eAdd:
+            CountSections(e->GetLeft(), positive, pos, neg);
+            CountSections(e->GetRight(), positive, pos, neg);
+            break;
+        case ObjExpression::eSub:
+            CountSections(e->GetLeft(), positive, pos, neg);
+            CountSections(e->GetRight(), !positive, pos, neg);
+            break;
+        case ObjExpression::eSection:
+            if (positive)
+                pos++;
+            else
+                neg++;
+            break;
+    }
+}
 void PEFixupObject::LoadFixups()
 {
     for (auto it = file->SectionBegin(); it != file->SectionEnd(); ++it)
@@ -128,7 +155,7 @@ void PEFixupObject::LoadFixups()
                 {
                     if (msize != 4)
                         Utils::fatal("Invalid fixup type");
-                    if (!IsRel(fixup))
+                    if (!IsRel(fixup) && !IsInternal(fixup))
                         fixups.insert(base + ofs);
                 }
                 ofs += msize;

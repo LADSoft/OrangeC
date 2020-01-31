@@ -844,12 +844,9 @@ void AsmFile::PublicDirective()
         globals.insert(name);
     } while (GetKeyword() == kw::comma);
 }
-void AsmFile::ExternDirective()
+void AsmFile::InsertExtern(const std::string& name1)
 {
-    do
-    {
-        NextToken();
-        std::string name = GetId();
+	std::string name = name1;
         if (caseInsensitive)
         {
             name = UTF8::ToUpper(name);
@@ -869,6 +866,25 @@ void AsmFile::ExternDirective()
             label->SetExtern(true);
             numericLabels.push_back(label);
         }
+ }
+void AsmFile::ResolveAttExterns(const std::set<std::string>& externs)
+{
+    for (auto&&name : externs)
+    {
+        auto it = labels.find(name);
+        if (it == labels.end())
+        {
+            InsertExtern(name);
+        }
+    }
+}
+void AsmFile::ExternDirective()
+{
+    do
+    {
+        NextToken();
+        std::string name = GetId();
+        InsertExtern(name);
     } while (GetKeyword() == kw::comma);
 }
 void AsmFile::ImportDirective()
@@ -1460,6 +1476,8 @@ ObjFile* AsmFile::MakeFile(ObjFactory& factory, std::string& name)
     ObjFile* fi = factory.MakeFile(name);
     if (fi)
     {
+        ResolveAttExterns(InstructionParser::GetAttExterns());
+
         std::time_t x = std::time(0);
         fi->SetFileTime(*std::localtime(&x));
         ObjSourceFile* sf = factory.MakeSourceFile(ObjString(name.c_str()));
@@ -1526,6 +1544,7 @@ ObjFile* AsmFile::MakeFile(ObjFactory& factory, std::string& name)
             p->SetDllName(import.second->dll);
             fi->Add(p);
         }
+
         for (int i = 0; i < numericSections.size(); i++)
         {
             if (!numericSections[i]->MakeData(factory, [this](std::string& aa) { return Lookup(aa); },

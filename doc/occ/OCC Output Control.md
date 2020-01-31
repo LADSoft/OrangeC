@@ -69,3 +69,11 @@
  generates a win32 console program hello.exe, which will use the LSCRTL.DLL run time library.
  
  Note: when compiling files for use with the LSCRTL.DLL, one of the switches /Wdl /Wcl or /Wgl must be present to indicate to the compiler that linkage will be against that library.  Failing to use one of these switches can result in errant run-time behavior.
+
+### --output-def-file filename       output a .def file with DLL Exports
+
+ When this flag is specified, OCC directs the linker to create a .DEF file holding exports.   This switch only has meaning when creating a dll.
+
+### -- export-all-symbols
+
+ This flag is reserved for compatibility with gnu compiler/linker

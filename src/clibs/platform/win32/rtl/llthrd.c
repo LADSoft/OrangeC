@@ -49,9 +49,11 @@ void __tss_run_dtors(thrd_t thrd);
 void __mtx_remove_thrd(thrd_t thrd);
 void __cnd_remove_thrd(thrd_t thrd);
 
-extern char _TLSINITSTART[], _TLSINITEND[];
+extern void * __tlsStart, *__tlsEnd;
 
 #pragma startup thrd_init 240
+
+static int tlsoffset = __offsetof(struct __rtl_data, thread_local_data);
 
 // this func is a compiler helper... it is not visible to the optimizer so it
 // cannot muddle with any registers.  The return value is stacked back where
@@ -64,8 +66,10 @@ void _RTL_FUNC __tlsaddr(int n)
     asm push eax;
     asm push ecx;
     asm push edx;
-    struct __rtl_data* r = __getRtlData();
-    n = (int)r->thread_local_data + n;  // return value is on stack for this one...
+    __getRtlData(); // eax has pointer to thread data now
+    asm mov ecx,[tlsoffset]
+    asm mov eax,[eax + ecx]
+    asm add [esp + 16], eax
     asm pop edx;
     asm pop ecx;
     asm pop eax;
@@ -74,7 +78,7 @@ void _RTL_FUNC __tlsaddr(int n)
 static void load_local_data(void)
 {
     struct __rtl_data* r = __getRtlData();
-    int n = _TLSINITEND - _TLSINITSTART;
+    int n = __tlsEnd - __tlsStart;
     if (!n)
     {
         n = 4;
@@ -82,7 +86,7 @@ static void load_local_data(void)
     char* p = malloc(n);
     if (!p)
         abort();
-    memcpy(p, _TLSINITSTART, n);
+    memcpy(p, __tlsStart, n);
     r->thread_local_data = p;
 }
 static void thrd_init(void)

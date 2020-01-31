@@ -44,9 +44,6 @@ size_t wcsnrtombs (char *restrict dst, const wchar_t **restrict src, size_t nms,
   const wchar_t *r = *src;
   (void)p;
   
-  if (dst == NULL)
-    len = (size_t)-1;
-
   while (used < len && nms > 0) {
       wc = *r++;
       nms--;
@@ -55,41 +52,21 @@ size_t wcsnrtombs (char *restrict dst, const wchar_t **restrict src, size_t nms,
 	        *dst = '\0';
 	      *src = NULL;
     	  return used;
-      } else if (wc < 0x80) {
+      } else if (wc < 0x100) {
     	  if (dst != NULL)
-	        *dst++ = (char) wc;
-	      used++;
+	      *dst++ = (char) wc;
+	  used++;
       }
-      else if ((unsigned)wc <= 0x7ff) {
-          if (used + 2 <= len) {
-              if (dst != NULL) {
-                *dst++ = 0xc0 + (wc >> 6) ;
-                *dst++ = (wc & 0x3f) | 0x80 ;
-            }
-            used+=2;
-          } else {
-            r-- ;
-            break;
-          }
-      } else if ((unsigned)wc <= 0xffff) {
-          if (used + 3 <= len) {
-              if (dst != NULL) {
-                *dst++ = 0xe0 + (wc >> 12) ;
-                *dst++ = ((wc >> 6) & 0x3f) | 0x80 ;
-                *dst++ = (wc & 0x3f) | 0x80 ;
-            }
-            used+=3;
-          } else {
-            r--;
-            break;
-          }
-      } else {
+      else 
+      {
           errno = EILSEQ;
+          if (dst != NULL)
+              *dst = '\0';
+          *src = r - 1;
           return -1;
       }
   }
 
   *src = r;
-
   return used;
 }

@@ -3495,10 +3495,9 @@ bool ParseAttributeSpecifiers(LEXEME** lex, SYMBOL* funcsp, bool always)
                                     }
                                     else if (*lex)
                                     {
-                                        const std::unordered_map<std::string, int> occCPPStyleAttribNames = {
+                                        static const std::unordered_map<std::string, int> occCPPStyleAttribNames = {
                                             {"zstring", 23}  // non-gcc, added to support nonstring
                                         };
-
                                         std::string name = (*lex)->value.s.a;
                                         auto searchedName = occCPPStyleAttribNames.find(name);
                                         if (searchedName != occCPPStyleAttribNames.end())
@@ -3538,7 +3537,7 @@ bool ParseAttributeSpecifiers(LEXEME** lex, SYMBOL* funcsp, bool always)
                                     {
                                         // note: these are only the namespaced names listed, the __attribute__ names are unlisted here as they don't
                                         // exist in GCC and we want ours to follow theirs for actual consistency reasons.
-                                        const std::unordered_map<std::string, int> gccCPPStyleAttribNames = {
+                                        static const std::unordered_map<std::string, int> gccCPPStyleAttribNames = {
                                             {"alloc_size", 4},  // implement by ignoring one or two args
                                                                 //                    { "common", 6 }, // no args, decide whether to support
                                                                 //                    { "nocommon", 7 }, // no args, decide whether to support

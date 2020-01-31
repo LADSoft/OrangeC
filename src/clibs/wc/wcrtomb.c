@@ -52,7 +52,7 @@ size_t wcrtomb (char *restrict s, wchar_t wc, mbstate_t *restrict ps)
   if (ps == NULL)
     ps = &__getRtlData()->wcrtomb_st;
 
-  if (wc < 0x80)
+  if (wc < 0x100)
     {
       if (s != NULL)
     	*s = (char) wc;
@@ -60,23 +60,7 @@ size_t wcrtomb (char *restrict s, wchar_t wc, mbstate_t *restrict ps)
         return 0;
       return 1;
     }
-
-  if ((unsigned) wc <= 0x7ff) {
-    if (s != NULL) {
-        *s++ = 0xc0 + (wc >> 6) ;
-        *s++ = (wc & 0x3f) | 0x80 ;
-    }
-    return 2;
-  }
-  if ((unsigned) wc <= 0xffff) {
-    if (s != NULL) {
-        *s++ = 0xe0 + (wc >> 12) ;
-        *s++ = ((wc >> 6) & 0x3f) | 0x80 ;
-        *s++ = (wc & 0x3f) | 0x80 ;
-      
-    }
-    return 3;
-  }
   errno = EILSEQ;
+  *s = 0;
   return -1;
 }

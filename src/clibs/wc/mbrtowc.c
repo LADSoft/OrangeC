@@ -57,43 +57,15 @@ size_t mbrtowc (wchar_t *restrict pwc, const char *restrict s, size_t n, mbstate
   if (n <= 0)
     return (size_t)-2; 
 
+  if (pwc)
+    *pwc = (wchar_t)b;
+  return b ? 1 : 0;
+
   if (p->left == 0) {
     b = (unsigned char)*s++;
-    used++;
-    if (b < 0x80) {
-        if (pwc)
-            *pwc = (wchar_t)b;
-        return b ? 1 : 0;
-    }
-
-    if ((b & 0xc0) == 0x80 || b == 0xfe || b == 0xff) {
-        errno = EILSEQ ;
-        return (size_t) -1;
-    }
-    b <<= 1;
-    while (b & 0x80) {
-        p->left++ ;
-        b <<= 1;
-    }
-    p->value = b >> (p->left + 1);
+    if (pwc)
+      *pwc = (wchar_t)b;
+    return b ? 1 : 0;
   }
-  while (used < n) {
-      b = (unsigned char) *s++;
-      used++;
-      if ((b & 0xc0) != 0x80) {
-         errno = EILSEQ ;
-         return (size_t) -1;
-      }
-
-      p->value <<= 6;
-      p->value += b & 0x3f;
-
-      if (--p->left == 0) {
-          if (pwc != NULL)
-            *pwc = (wchar_t) p->value;
-          return p->value ? used : 0;
-      }
-  }
-
   return (size_t) -2;
 }

@@ -135,7 +135,9 @@ class AsmFile
     void AlignDirective();
     void GnuAlignDirective(bool p2);
     void PublicDirective();
+    void InsertExtern(const std::string& name);
     void ExternDirective();
+    void ResolveAttExterns(const std::set<std::string>& externs);
     void ImportDirective();
     void ExportDirective();
     void SectionDirective();

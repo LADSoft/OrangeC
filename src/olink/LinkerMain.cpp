@@ -63,6 +63,8 @@ CmdSwitchDefine LinkerMain::Defines(SwitchParser, 'D');
 CmdSwitchCombineString LinkerMain::LibPath(SwitchParser, 'L', ';');
 CmdSwitchOutput LinkerMain::OutputFile(SwitchParser, 'o', ".rel");
 CmdSwitchBool LinkerMain::Verbosity(SwitchParser, 'y');
+CmdSwitchCombineString LinkerMain::OutputDefFile(SwitchParser, 0, 0, "output-def");
+
 SwitchConfig LinkerMain::TargetConfig(SwitchParser, 'T');
 const char* LinkerMain::usageText =
     "[options] inputfiles\n"
@@ -74,6 +76,8 @@ const char* LinkerMain::usageText =
     "/r+       Relative output file       /sxxx          Read specification file\n"
     "/v or /g  Pass debug info            /y[...]        Verbose\n"
     "/!, --nologo   No logo\n"
+    "\n"
+    " --output-def filename    create a .def file for DLLs\n"
     "@xxx      Read commands from file\n"
     "\nTime: " __TIME__ "  Date: " __DATE__;
 
@@ -274,7 +278,13 @@ int LinkerMain::Run(int argc, char** argv)
         }
         else
         {
-            int rv = TargetConfig.RunApp(outputFile, Utils::AbsolutePath(debugFile), Verbosity.GetExists());
+            std::string path = modName;
+            int n = path.find_last_of(CmdFiles::DIR_SEP[0]);
+            if (n == std::string::npos)
+                path = "";
+            else
+                path.erase(n + 1);
+            int rv = TargetConfig.RunApp(path, outputFile, Utils::AbsolutePath(debugFile), Verbosity.GetExists(), OutputDefFile.GetValue());
             if (!Verbosity.GetExists())
                 _unlink(outputFile.c_str());
             return rv;

@@ -47,6 +47,13 @@
 #define USE_FLOAT
 #endif
 
+static int GETCH(FILE* stream)
+{
+    if (stream->flags & _F_BUFFEREDSTRING)
+	return fgetwc(stream);
+    int ch = fgetc(stream);
+    return ch; // this will need rework if we do locales...   
+}
 #define STP 1
 // not thread safe!
 static wchar_t *__wfil2strd (FILE *restrict fil, int width, int *restrict ch, int *restrict chars)
@@ -57,7 +64,7 @@ static wchar_t *__wfil2strd (FILE *restrict fil, int width, int *restrict ch, in
 
   if (*ch != EOF && width && (*ch == '+' || *ch == '-')) {
     *p++ = *ch;
-    *ch = fgetwc(fil);
+    *ch = GETCH(fil);
     (*chars)++;
     width--;
   }
@@ -69,14 +76,14 @@ static wchar_t *__wfil2strd (FILE *restrict fil, int width, int *restrict ch, in
         if (L"inf"[i] != (*ch | 0x20))
           return NULL;
         *p++ = *ch;
-        *ch = fgetwc(fil);
+        *ch = GETCH(fil);
         (*chars)++;
         width--;
       }
       for (i = 0; i < 5 && *ch != EOF && width; i++) {
         if (L"inity"[i] == (*ch | 0x20)) {
           *p++ = *ch;
-          *ch = fgetwc(fil);
+          *ch = GETCH(fil);
           (*chars)++;
           width--;
         }
@@ -87,7 +94,7 @@ static wchar_t *__wfil2strd (FILE *restrict fil, int width, int *restrict ch, in
           width += i;
           while (i--)
             *(--(wchar_t *)fil->curp) = *(--p);
-          *ch = fgetwc(fil);
+          *ch = GETCH(fil);
           break;
         }
       }
@@ -98,20 +105,20 @@ static wchar_t *__wfil2strd (FILE *restrict fil, int width, int *restrict ch, in
         if (L"nan"[i] != (*ch | 0x20))
           return NULL;
         *p++ = *ch;
-        *ch = fgetwc(fil);
+        *ch = GETCH(fil);
         (*chars)++;
         width--;
       }
       if (*ch == '(') {
         for (i = 0; i < 7 && *ch != EOF && width && *ch != ')'; i++) {
           *p++ = *ch;
-          *ch = fgetwc(fil);
+          *ch = GETCH(fil);
           (*chars)++;
           width--;
         }
         if (*ch == ')') {
           *p++ = *ch;
-          *ch = fgetwc(fil);
+          *ch = GETCH(fil);
           (*chars)++;
           width--;
         }
@@ -122,7 +129,7 @@ static wchar_t *__wfil2strd (FILE *restrict fil, int width, int *restrict ch, in
           width += i;
           while (i--)
             *(--(wchar_t *)fil->curp) = *(--p);
-          *ch = fgetwc(fil);
+          *ch = GETCH(fil);
         }
       }
     }
@@ -131,12 +138,12 @@ static wchar_t *__wfil2strd (FILE *restrict fil, int width, int *restrict ch, in
   }
   if (*ch != EOF && width && *ch == '0') {
     *p++ = *ch;
-    *ch = fgetwc(fil);
+    *ch = GETCH(fil);
     (*chars)++;
     width--;
     if (*ch != EOF && width && (*ch == 'x' || *ch == 'X')) {
       *p++ = *ch;
-      *ch = fgetwc(fil);
+      *ch = GETCH(fil);
       (*chars)++;
       width--;
       radix = 2;
@@ -145,59 +152,59 @@ static wchar_t *__wfil2strd (FILE *restrict fil, int width, int *restrict ch, in
   if (radix == 10)
     while (*ch != EOF && width && iswdigit(*ch)) {
       *p++ = *ch;
-      *ch = fgetwc(fil);
+      *ch = GETCH(fil);
       (*chars)++;
       width--;
     }
   else
     while (*ch != EOF && width && iswxdigit(*ch)) {
       *p++ = *ch;
-      *ch = fgetwc(fil);
+      *ch = GETCH(fil);
       (*chars)++;
       width--;
     }
   if (*ch != EOF && width && *ch == '.') {
     *p++ = *ch;
-    *ch = fgetwc (fil);
+    *ch = GETCH (fil);
     (*chars)++;
     width--;
   }
   if (radix == 10)
     while (*ch != EOF && width && iswdigit(*ch)) {
       *p++ = *ch;
-      *ch = fgetwc(fil);
+      *ch = GETCH(fil);
       (*chars)++;
       width--;
     }
   else
     while (*ch != EOF && width && iswxdigit(*ch)) {
       *p++ = *ch;
-      *ch = fgetwc(fil);
+      *ch = GETCH(fil);
       (*chars)++;
       width--;
     }
   if (*ch != EOF && width && 
       (*ch == 'e' || *ch == 'E' || *ch == 'p' || *ch == 'P')) {
     *p++ = *ch;
-    *ch = fgetwc(fil);
+    *ch = GETCH(fil);
     (*chars)++;
     width--;
     if (*ch != EOF && width && (*ch == '+' || *ch == '-')) {
       *p++ = *ch;
-      *ch = fgetwc(fil);
+      *ch = GETCH(fil);
       (*chars)++;
       width--;
     }
     if (*ch != EOF && width && iswdigit(*ch)) {
       *p++ = *ch;
-      *ch = fgetwc(fil);
+      *ch = GETCH(fil);
       (*chars)++;
       width--;
     }
     else return NULL;
     while (*ch != EOF && width && iswdigit(*ch)) {
       *p++ = *ch;
-      *ch = fgetwc(fil);
+      *ch = GETCH(fil);
       (*chars)++;
       width--;
     }
@@ -278,15 +285,34 @@ wchar_t *__wstrtoone(FILE *restrict fil, const wchar_t *restrict format, void *r
 		case 'c':
           if (width == INT_MAX) 
             width = 1;
+	  s = (wchar_t *)arg;
+          found = 0;
           while (width-- && *ch != EOF) {
-			if (!ignore) {
-               *((wchar_t *)arg)++ = (wchar_t)*ch;
-			}		
-			*ch = fgetwc(fil) ;
-			(*chars)++;
-          }
+             if (!ignore)
+               if (lc)
+               {
+                  *s++ = *ch;
+               }
+               else
+               {
+                 wchar_t buf[2];
+                 buf[0] = *ch;
+                 buf[1] = 0;
+                 char *p = buf;
+                 int n = wcsrtombs(s, &p, width+1, (mbstate_t*)fil->extended->mbstate);
+                 if (n > 0)
+                 {
+                    s = (wchar_t *)((char *)s + n);
+                 }
+               }
+	     *ch = GETCH(fil) ;
+	     (*chars)++;
+             found = 1;
+         }
          if (!ignore) {
-            (*count)++;
+            if (found)
+                (*count)++;
+
             (*argn)++;
          }     
          break ;
@@ -298,7 +324,7 @@ wchar_t *__wstrtoone(FILE *restrict fil, const wchar_t *restrict format, void *r
         case 'i':
         case 'b':
          while (*ch != EOF && iswspace(*ch)) {
-            *ch = fgetwc(fil) ;
+            *ch = GETCH(fil) ;
             (*chars)++ ;
          }
 		 switch(type)
@@ -350,11 +376,14 @@ wchar_t *__wstrtoone(FILE *restrict fil, const wchar_t *restrict format, void *r
                 else if (size == 'l')
                    *(long *)arg = c ;
                 else if (size == 'h') 
-    					*(short *)arg = (short)c;
+    		        *(short *)arg = (short)c;
                     else if (size == 'c')
-                        *(wchar_t *)arg = (wchar_t)c;
-    				else
-                   *(int *)arg = (int)c;
+                        if (lc)
+                            *(wchar_t *)arg = (wchar_t)c;
+                        else
+                            *(char *)arg = (char)c;
+    		    else
+                        *(int *)arg = (int)c;
     	    }
          break ;
 		case 'e':
@@ -375,7 +404,7 @@ wchar_t *__wstrtoone(FILE *restrict fil, const wchar_t *restrict format, void *r
                 fil1.token = FILTOK;
 				fil1.extended = &fil2;
 		         while (*ch != EOF && iswspace(*ch)) {
-		            *ch = fgetwc(fil) ;
+		            *ch = GETCH(fil) ;
 		            (*chars)++ ;
 		         }
 			 if (!iswdigit(*ch) && *ch != '-' && *ch != '+' && *ch != '.' &&
@@ -386,7 +415,7 @@ wchar_t *__wstrtoone(FILE *restrict fil, const wchar_t *restrict format, void *r
                 wcscpy(buf, p);
                 fil1.level = (wcslen(buf) + 1) * sizeof(wchar_t);
                 fil1.bsize = wcslen(buf) * sizeof(wchar_t);
-                ch1 = fgetwc(&fil1);
+                ch1 = GETCH(&fil1);
                 fval = __xwcstod(&fil1,256,&ch1,&chars1, LDBL_MAX, LDBL_MAX_EXP, LDBL_MAX_10_EXP,1);
 				if (!ignore) {
 					(*count)++;
@@ -452,7 +481,7 @@ wchar_t *__wstrtoone(FILE *restrict fil, const wchar_t *restrict format, void *r
             }
          } 
          while (type == 's' && *ch != EOF && (_sctab[*ch] & STP)) {
-            *ch = fgetwc(fil) ;
+            *ch = GETCH(fil) ;
             (*chars)++ ;
 //			found=1;
          }
@@ -461,19 +490,38 @@ wchar_t *__wstrtoone(FILE *restrict fil, const wchar_t *restrict format, void *r
          memset(&st,0,sizeof(st));
          while (*ch != EOF && !(_sctab[*ch]& STP) && (width || !skip)) {
            if (!ignore)
-             *s++ = *ch;
-           *ch = fgetwc(fil) ;
-           width--;
-           (*chars)++;
+             if (lc)
+             {
+                *s++ = *ch;
+                (*chars)++;
+                width--;
+             }
+             else
+             {
+                 wchar_t buf[2];
+                 buf[0] = *ch;
+                 buf[1] = 0;
+                 char *p = buf;
+                 int n = wcsrtombs(s, &p, width, (mbstate_t*)fil->extended->mbstate);
+                 if (n > 0)
+                 {
+                    (*chars) += n;
+                    s = (wchar_t *)((char *)s + n);
+                    width -= n;
+                 }
+             }
+           *ch = GETCH(fil) ;
 			found=1;
          }
 
          if (!ignore) {
             if (size == 'l')
                 *(wchar_t *)arg = L'\0';
+            else if (lc)
+               *s = 0;
             else
-                *s = 0;
-			if (found)
+               ((char *)s)[0] = 0;
+	    if (found)
 	           (*count) ++;
             (*argn)++;
          }
@@ -481,7 +529,7 @@ wchar_t *__wstrtoone(FILE *restrict fil, const wchar_t *restrict format, void *r
 		case '%':
             if (*ch != '%')
 					return 0;
-            *ch = fgetwc(fil) ;
+            *ch = GETCH(fil) ;
             (*chars)++;
 				break;
 		default:
@@ -493,13 +541,13 @@ wchar_t *__wstrtoone(FILE *restrict fil, const wchar_t *restrict format, void *r
 int __wscanf(FILE *fil, const wchar_t *format,void *arglist)
 {
    int i = 0, j = 0, k = 0;
-   int ch = fgetwc(fil) ;
+   int ch = GETCH(fil) ;
    if (ch == EOF) return EOF;
    while (format && *format /* && ch != EOF */) {
       while (format && *format != '%' && *format) {
         if (iswspace(*format)) {
             while (ch != EOF && iswspace(ch)) {
-               ch = fgetwc(fil) ;
+               ch = GETCH(fil) ;
                j++ ;
             }
             while (*format && iswspace(*format)) format++;
@@ -511,7 +559,7 @@ int __wscanf(FILE *fil, const wchar_t *format,void *arglist)
 //                    ungetc(ch,fil);
 //                return i;
             }
-            ch = fgetwc(fil) ;
+            ch = GETCH(fil) ;
             j++;
 		}
 	  }

@@ -290,7 +290,7 @@ void kill_labeledgoto(BLOCK* b, QUAD* head)
 
 void kill_jumpover(BLOCK* b, QUAD* head)
 /*
- * Conditionnal jumps over gotos get squashed here
+ * Conditional jumps over gotos get squashed here
  */
 {
     i_ops newtype;

@@ -28,5 +28,5 @@ DIRS := sqlite3 util objlib netlib occopt obrc ocpp ogrep oasm dlhex dlle dlmz d
 else
 
 DIRS := sqlite3 util objlib netlib occopt obrc ocpp ogrep oasm dlhex dlle dlmz dlpe dlpm olib olink \
-       oimplib omake onm orc ocl ocide occparse occpr occ occil coff2ieee help MSDNHelp
+       oimplib omake onm orc ocl occparse occpr occ occil coff2ieee help MSDNHelp
 endif

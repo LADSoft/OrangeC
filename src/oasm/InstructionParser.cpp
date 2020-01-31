@@ -167,7 +167,7 @@ bool InstructionParser::MatchesOpcode(std::string opcode)
     {
         if (opcode.size() == 6)
         {
-            if (opcode.substr(0, 4) == "movs" || opcode.substr(0, 4) == "movx")
+            if (opcode.substr(0, 4) == "movs" || opcode.substr(0, 4) == "movz")
                 if (opcode[4] == 'b' || opcode[4] == 'w' || opcode[4] == 'l')
                     if (opcode[5] == 'w' || opcode[5] == 'l' || opcode[5] == 'q')
                         return true;
@@ -199,9 +199,9 @@ std::map<std::string, int>::iterator InstructionParser::GetOpcode(const std::str
     {
         if (opcode.size() == 6)
         {
-            if (opcode.substr(0, 4) == "movs" || opcode.substr(0, 4) == "movx")
+            if (opcode.substr(0, 4) == "movs" || opcode.substr(0, 4) == "movz")
             {
-                it = opcodeTable.find(opcode.substr(0, 4));
+                it = opcodeTable.find(opcode.substr(0, 4) + "x");
                 switch (opcode[4])
                 {
                 case 'b':

@@ -46,7 +46,8 @@ CmdSwitchString dlPeMain::outputFileSwitch(SwitchParser, 'o');
 CmdSwitchString dlPeMain::DebugFile(SwitchParser, 'v');
 CmdSwitchBool dlPeMain::FlatExports(SwitchParser, 'f');
 CmdSwitchBool dlPeMain::Verbose(SwitchParser, 'y');
-
+CmdSwitchCombineString dlPeMain::OutputDefFile(SwitchParser, 0, 0, "output-def");
+ 
 int dlPeMain::osMajor = 4;
 int dlPeMain::osMinor = 0;
 int dlPeMain::userMajor = 0;
@@ -84,6 +85,8 @@ const char* dlPeMain::usageText =
     "/y             Verbose\n"
     "/V, --version  Show version and date\n"
     "/!             No logo\n"
+    "\n"
+    "--output-def filename    for DLL, output a .def file instead of a .lib\n"
     "\n"
     "Available output file types:\n"
     "   CON - Windows console (default)\n"

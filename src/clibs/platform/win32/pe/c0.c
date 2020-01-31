@@ -42,6 +42,9 @@
 #include <string.h>
 
 extern char INITSTART[], INITEND[], EXITSTART[], EXITEND[], BSSSTART[], BSSEND[];
+extern char _TLSINITSTART[], _TLSINITEND[];
+
+void* __tlsStart, *__tlsEnd;
 extern PASCAL struct defstr
 {
     int flags;
@@ -71,6 +74,8 @@ int __stdcall ___startup(HINSTANCE hInst, DWORD fdwReason, LPVOID lpvReserved)
     if (startupStruct.flags & GUI)
         _win32 = 1;
     __xceptinit(&exceptBlock);
+    __tlsStart = _TLSINITSTART;
+    __tlsEnd = _TLSINITEND;
     if (!(startupStruct.flags & DLL) || fdwReason == DLL_PROCESS_ATTACH)
     {
         if (startupStruct.flags & DLL)

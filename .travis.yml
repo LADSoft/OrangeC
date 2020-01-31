@@ -11,7 +11,7 @@ matrix:
 branches:
    only:
      - master
-     - split 
+     - split
      - coverity_scan
 
 env:

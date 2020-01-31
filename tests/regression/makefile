@@ -19,6 +19,13 @@ all: $(TESTS)
 %.exe: %.o
 	occ $<
 	
+mpfrdll.dll: mpfr.c
+	occ /Wd /ompfrdll.dll /DDLL mpfr.c
+	oimplib -C mpfrdll.l mpfrdll.dll
+
+mpfr.exe: mpfrdll.dll mpfr.c
+	occ /ompfr.exe mpfr.c -l mpfrdll.l
+
 %.tst: %.exe
 	$< > $*.out
 	fc /b $*.cmpx $*.out

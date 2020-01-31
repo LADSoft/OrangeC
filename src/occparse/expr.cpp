@@ -3500,7 +3500,6 @@ LEXEME* expression_arguments(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION*
             }
         }
     }
-
     if (basetype(*tp)->type == bt_memberptr)
     {
         memberPtr = true;
@@ -5199,8 +5198,7 @@ static LEXEME* expression_sizeof(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
     int paren = false;
     *exp = nullptr;
     lex = getsym();
-    if (cparams.prm_cplusplus && MATCHKW(lex, ellipse))
-    {
+    if (cparams.prm_cplusplus && MATCHKW(lex, ellipse))   {
         lex = getsym();
         if (MATCHKW(lex, openpa))
         {

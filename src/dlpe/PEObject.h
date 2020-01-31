@@ -190,6 +190,8 @@ class PEFixupObject : public PEObject
     // load fixups is called right off the bat because once the setup for the data objects
     // runs, the fixups will be eval'd and lose their seg-relativeness.
     bool IsRel(ObjExpression* e);
+    bool IsInternal(ObjExpression* e);
+    void CountSections(ObjExpression* e, bool positive, int& pos, int& neg);
     void LoadFixups();
     struct Block
     {

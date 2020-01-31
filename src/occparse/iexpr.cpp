@@ -493,10 +493,16 @@ IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
             EXPRESSION* node1;
             IMODE* ap2;
             case en_labcon:
-                ap1 = (IMODE*)(IMODE*)Alloc(sizeof(IMODE));
-                ap1->mode = i_direct;
-                ap1->offset = SymbolManager::Get(node->left);
-                ap1->size = siz1;
+                ap1 = make_ioffset(node);
+                if (!store)
+                {
+                    ap2 = LookupLoadTemp(nullptr, ap1);
+                    if (ap2 != ap1)
+                    {
+                        gen_icode(i_assn, ap2, ap1, nullptr);
+                        ap1 = ap2;
+                    }
+                }
                 break;
             case en_threadlocal:
                 sym = SymbolManager::Get(node->left->v.sp);

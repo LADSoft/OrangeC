@@ -64,7 +64,7 @@ Source: "C:\orangec\bin\lsmsilcrtl.dll"; DestDir: "{app}\bin\"; Flags: IgnoreVer
 ;Source: "C:\orangec\bin_8\*.*"; DestDir: "{app}\bin_8\"; Flags: IgnoreVersion;Components: main
 ;Source: "C:\orangec\bin_8\branding\*.*"; DestDir: "{app}\bin_8\branding"; Flags: IgnoreVersion;Components: main
 Source: "C:\orangec\help\*.*"; DestDir: "{app}\help\"; Flags: IgnoreVersion; Components: main
-Source: "C:\orangec\rule\*.rul"; DestDir: "{app}\rule\"; Flags: IgnoreVersion; Components: main
+;Source: "C:\orangec\rule\*.rul"; DestDir: "{app}\rule\"; Flags: IgnoreVersion; Components: main
 Source: "C:\orangec\include\*.*"; DestDir: "{app}\include\"; Flags: IgnoreVersion; Components: main
 Source: "C:\orangec\include\sys\*.*"; DestDir: "{app}\include\sys"; Flags: IgnoreVersion; Components: main
 Source: "C:\orangec\include\win32\*.*"; DestDir: "{app}\include\win32\"; Flags: IgnoreVersion; Components: main

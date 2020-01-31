@@ -33,9 +33,15 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  * 
  */
+#ifndef	_ALLOCA_H
+#define	_ALLOCA_H
 
-//#include <new.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include <stddef.h>
 
-void _RTL_FUNC operator delete[](void* __p) { free(__p); }
+#undef _alloca
+#undef alloca
+
+#define _alloca(x) __alloca((x))
+#define alloca(x) __alloca((x))
+
+#endif

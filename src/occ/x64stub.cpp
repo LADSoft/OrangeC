@@ -32,6 +32,9 @@
 #include "AsmLexer.h"
 #include <fstream>
 #include <iostream>
+
+std::set<std::string> InstructionParser::attPotentialExterns;
+
 const char* Lexer::preDataIntel =
     "%define __SECT__\n"
     "%imacro	pdata1	0+ .native\n"

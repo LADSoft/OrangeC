@@ -574,7 +574,7 @@ static struct
     {"Attribute namespace '%s' is not an attribute", ERROR},
     {"Attribute '%s' does not exist", ERROR},
     {"Attribute '%s' does not exist in attribute namespace '%s'", ERROR},
-    {"static function '%s' is used but nver defined", WARNING},
+    {"static function '%s' is used but never defined", WARNING},
 };
 
 static bool ValidateWarning(int num)

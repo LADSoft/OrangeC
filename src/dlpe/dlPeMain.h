@@ -75,8 +75,8 @@ class dlPeMain
     static CmdSwitchString DebugFile;
     static CmdSwitchBool FlatExports;
     static CmdSwitchBool Verbose;
+    static CmdSwitchCombineString OutputDefFile;
     static const char* usageText;
-
     ObjInt fileAlign;
     ObjInt objectAlign;
     ObjInt imageBase;

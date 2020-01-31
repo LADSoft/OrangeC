@@ -50,31 +50,56 @@ int _RTL_FUNC vfwprintf(FILE *restrict stream, const wchar_t *restrict format,
 		errno = _dos_errno = ENOENT;
 		return 0;
 	}
-    if (stream->extended->orient == __or_narrow) {
-        errno = EINVAL;
-        return 0;
-    }
-    stream->extended->orient = __or_wide;
+        if (stream->flags & _F_BUFFEREDSTRING)
+        {
+            if (stream->extended->orient == __or_narrow) {
+                errno = EINVAL;
+                return 0;
+            }
+            stream->extended->orient = __or_wide;
+        }
+        else
+        {
+            if (stream->extended->orient == __or_wide) {
+                errno = EINVAL;
+                return 0;
+            }
+            stream->extended->orient = __or_narrow;
+        }
 	while (*format) {
 		short *p = wcschr(format, '%');
 		if (!p)
 			p = format + wcslen(format);
 		if (p != format)
 		{
-	      	if (fwrite(format,2,p - format,stream) != p-format)
-			    return EOF;
-	        written += p-format;
-			format = p;
-		}
+                    for ( ; format < p; format ++, written++)
+                    {
+                        if (stream->flags & _F_BUFFEREDSTRING)
+                        {
+                            fputwc(*format, stream);
+                        }
+                        else
+                        {
+                            char buf[32];
+                            int n = wcrtomb(buf, *format, (mbstate_t*)stream->extended->mbstate);
+                            if (n > 0)
+                            {
+                                buf[n] = 0;
+                                if (fputs(buf, stream) < 0)
+                                    return EOF;
+                            }
+                        }
+                    }
+                }
 		if (*format == '%') {
-            if  (*(format+1)) {
-                format = __wonetostr(stream, format+1,((char **)arglist+i),&i, &written);
-            }
-			else
-			{
-                format++;
-			}
-        }
+                    if  (*(format+1)) {
+                        format = __wonetostr(stream, format+1,((char **)arglist+i),&i, &written);
+                    }
+                    else
+                    {
+                        format++;
+                    }
+               }
 	}
 	return written;
 }

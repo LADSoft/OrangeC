@@ -887,8 +887,7 @@ void ccinit(int argc, char* argv[])
         fprintf(stderr, "Compile date: " __DATE__ ", time: " __TIME__ "\n");
         exit(0);
     }
-    extern void Cleanup();
-    Utils::SetCleanup(Cleanup);
+
 #if defined(WIN32) || defined(MICROSOFT)
     GetModuleFileNameA(nullptr, buffer, sizeof(buffer));
 #else

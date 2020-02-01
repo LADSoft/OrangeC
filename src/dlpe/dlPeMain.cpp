@@ -572,10 +572,11 @@ int dlPeMain::Run(int argc, char** argv)
         {
             if (mode == DLL)
             {
+                std::string sverbose = Verbose.GetExists() ? "" : "/!";
                 std::string usesC = exportObject && exportObject->ImportsNeedUnderscore() ? "/C" : "";
                 std::string implibName = Utils::QualifiedFile(outputName.c_str(), ".l");
-		return Utils::ToolInvoke("oimplib", Verbose.GetExists() ? "" : nullptr, "%s \"%s\" \"%s\"", 
-			usesC.c_str(), implibName.c_str(), outputName.c_str());
+		return Utils::ToolInvoke("oimplib", Verbose.GetExists() ? "" : nullptr, "%s %s \"%s\" \"%s\"", 
+			usesC.c_str(), sverbose.c_str(), implibName.c_str(), outputName.c_str());
             }
             return 0;
         }

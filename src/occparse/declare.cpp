@@ -1975,6 +1975,29 @@ LEXEME* parse_declspec(LEXEME* lex, enum e_lk* linkage, enum e_lk* linkage2, enu
                         error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
                     *linkage3 = lk_noreturn;
                 }
+                else if (!strcmp(lex->value.s.a, "align"))
+                {
+                    lex = getsym();
+                    if (needkw(&lex, openpa))
+                    {
+                        TYPE* tp = nullptr;
+                        EXPRESSION* exp = nullptr;
+
+                        lex = optimized_expression(lex, nullptr, nullptr, &tp, &exp, false);
+                        if (!tp || !isint(tp))
+                            error(ERR_NEED_INTEGER_TYPE);
+                        else if (!isintconst(exp))
+                            error(ERR_CONSTANT_VALUE_EXPECTED);
+                        int align = exp->v.i;
+                        LEXEME *pos = lex;
+                        if (needkw(&lex, closepa))
+                            lex = prevsym(pos);
+                        basisAttribs.inheritable.structAlign = align;
+                        if (basisAttribs.inheritable.structAlign > 0x10000 ||
+                            (basisAttribs.inheritable.structAlign & (basisAttribs.inheritable.structAlign - 1)) != 0)
+                            error(ERR_INVALID_ALIGNMENT);
+                    }
+                }
                 else if (!strcmp(lex->value.s.a, "dllimport") || !strcmp(lex->value.s.a, "__dllimport__"))
                 {
                     if (*linkage2 != lk_none)

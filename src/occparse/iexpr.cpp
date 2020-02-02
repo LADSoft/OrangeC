@@ -2150,7 +2150,7 @@ IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         ap = ap3 = gen_expr(funcsp, f->fcall, 0, ISZ_UINT);
         if (ap->mode == i_immed && ap->offset->type == se_pc)
         {
-            if (f->sp && f->sp->sb->attribs.inheritable.linkage2 == lk_import && (architecture != ARCHITECTURE_MSIL))
+            if (f->sp && !ap->offset->sp->importThunk && !f->sp->sb->attribs.inheritable.linkage2 == lk_import && (architecture != ARCHITECTURE_MSIL))
             {
                 IMODE* ap1 = (IMODE*)(IMODE*)Alloc(sizeof(IMODE));
                 *ap1 = *ap;
@@ -2915,8 +2915,13 @@ IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size)
             rv = nullptr;
             break;
         case en_threadlocal:
-            ap1 = make_ioffset(node);
-            ap1->offset = SymbolManager::Get(node);
+        {
+            SimpleExpression *exp = SymbolManager::Get(node);
+            ap1 = (IMODE*)Alloc(sizeof(IMODE));
+            ap1->mode = i_direct;
+            ap1->offset = exp;
+            ap1->size = size;
+        }
             ap2 = LookupLoadTemp(ap1, ap1);
             if (ap1 != ap2)
                 gen_icode(i_assn, ap2, ap1, nullptr);

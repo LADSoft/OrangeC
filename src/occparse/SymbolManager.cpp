@@ -428,6 +428,7 @@ SimpleSymbol* SymbolManager::Make(struct sym* sym)
     rv->dontinstantiate = sym->sb->dontinstantiate;
     rv->noextern = sym->sb->noextern;
     rv->initialized = !!sym->sb->init;
+    rv->importThunk = sym->sb->importThunk;
 
     rv->inFunc = theCurrentFunc != nullptr;
     rv->temp = sym->sb->temp;

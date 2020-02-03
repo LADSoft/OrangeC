@@ -190,7 +190,7 @@ int RunExternalFiles()
     //    if (p && p[1] != '\\')
     //        *p = 0;
     bool first = false;
-    while (asmlist)
+    while (asmlist && !cparams.prm_asmfile)
     {
         if (cparams.prm_compileonly && outputFileName[0] && !first)
             rv = Utils::ToolInvoke("oasm.exe", verbosity?"":nullptr, "\"-o%s\" %s %s \"%s\"", outputFileName.c_str(), asm_params ? asm_params : "",
@@ -220,7 +220,7 @@ int RunExternalFiles()
             return rv;
         rclist = rclist->next;
     }
-    if (!cparams.prm_compileonly && objlist)
+    if (!cparams.prm_compileonly && !cparams.prm_asmfile && objlist)
     {
         std::string tempName;
         FILE *fil = Utils::TempName(tempName);

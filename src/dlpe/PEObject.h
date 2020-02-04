@@ -170,6 +170,9 @@ class PEExportObject : public PEObject
     std::string moduleName;
     bool flat;
     bool appliedFlat;
+protected:
+    static bool skipUnderscore;
+    class namelt;
 };
 class PEFixupObject : public PEObject
 {

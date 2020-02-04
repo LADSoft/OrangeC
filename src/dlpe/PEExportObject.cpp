@@ -35,11 +35,31 @@
 #include <iostream>
 #include <cstring>
 
-class namelt
+bool PEExportObject::skipUnderscore;
+
+class PEExportObject::namelt
 {
-  public:
-    bool operator()(const ObjExportSymbol* left, const ObjExportSymbol* right) const { return left->GetName() < right->GetName(); }
+public:
+	bool operator()(const ObjExportSymbol* left, const ObjExportSymbol* right) const {
+		if (skipUnderscore)
+		{
+			std::string sleft = left->GetName();
+			std::string sright = right->GetName();
+                        if (sleft[0] == '_')
+                            sleft = sleft.substr(1);
+                        if (sright[0] == '_')
+                            sright = sright.substr(1);
+//			sleft = sleft[0] == '_' ? sleft.substr(1) : sleft;
+//			sright = sright[0] == '_' ? sright.substr(1) : sright;
+			return sleft < sright;
+		}
+		else
+		{
+			return left->GetName() < right->GetName();
+		}
+	}
 };
+
 void PEExportObject::Setup(ObjInt& endVa, ObjInt& endPhys)
 {
     if (virtual_addr == 0)
@@ -72,6 +92,7 @@ void PEExportObject::Setup(ObjInt& endVa, ObjInt& endPhys)
     unsigned minOrd = 0xffffffff; /* max ordinal num */
     unsigned maxOrd = 0;
     unsigned count = 0;
+    skipUnderscore = flat;
     std::set<ObjExportSymbol*, namelt> names;
     for (auto it = file->ExportBegin(); it != file->ExportEnd(); ++it)
     {
@@ -100,6 +121,7 @@ void PEExportObject::Setup(ObjInt& endVa, ObjInt& endPhys)
         minOrd = 1;
         maxOrd = count + minOrd - 1;
     }
+    size = (size + 3) & ~3;
     initSize = (size += 4 * count);
     data = std::make_unique<unsigned char[]>(initSize);
     unsigned char* pdata = data.get();
@@ -138,9 +160,8 @@ void PEExportObject::Setup(ObjInt& endVa, ObjInt& endPhys)
 
     /* process non-numbered exports */
     pos = 0;
-    for (auto it = file->ExportBegin(); it != file->ExportEnd(); ++it)
+    for (auto s : names)
     {
-        ObjExportSymbol* s = (ObjExportSymbol*)(*it);
         if (!s->GetByOrdinal())
         {
             while (rvaTable[pos])

@@ -345,6 +345,9 @@ bool SaveFile(const char *name)
         if (cparams.prm_browse)
         {
             outputfile(outFile, name, ".cbr", true);
+            // have to readd the extension in case /o was specified
+            Utils::StripExt(outFile);
+            Utils::AddExt(outFile, ".cbr");
             browseFile = fopen(outFile, "wb");
             if (!browseFile)
                 return false;

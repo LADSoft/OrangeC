@@ -182,7 +182,7 @@ void browse_variable(SYMBOL* var)
 {
     char name[4096];
     BROWSEINFO* bri;
-    if (!cparams.prm_browse || var->sb->declline <= 0)
+    if (!cparams.prm_browse || !var->sb || var->sb->declline <= 0)
         return;
     if (var->sb->thisPtr)
         return;
@@ -219,7 +219,7 @@ void browse_usage(SYMBOL* var, int file)
 {
     char name[4096];
     BROWSEINFO* bri;
-    if (!cparams.prm_browse || var->sb->declline <= 0 || funcNesting > 1)
+    if (!cparams.prm_browse || !var->sb || var->sb->declline <= 0 || funcNesting > 1)
         return;
     if (var->sb->thisPtr)
         return;

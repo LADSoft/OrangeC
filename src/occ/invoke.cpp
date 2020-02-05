@@ -184,8 +184,10 @@ int RunExternalFiles()
     temp[0] = 0;
     if (inputFiles.size())
         outputfile(outName, inputFiles.front().c_str(), ".exe", false);
-    else
+    else if (objlist)
         outputfile(outName, (const char *)objlist->data, ".exe", false);
+    else
+        strcpy(outName, "");
     //    p = strrchr(outName, '.');
     //    if (p && p[1] != '\\')
     //        *p = 0;

@@ -74,7 +74,7 @@ static char usage_text[] =
     "     supported tools:  compiler, assembler, resource compiler, linker\n"
     "  /paxxx    pass switch to assembler\n"
     "  /plxxx    pass switch to linker\n"
-    "  /plxxx    pass switch to resource compiler\n"
+    "  /prxxx    pass switch to resource compiler\n"
     "   note that /lxxx passes the library on to the linker.\n"
     "\nWarning Control:\n"
     " /w      - display no warnings         /wx or /werror - display warnings as errors\n"      

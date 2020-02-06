@@ -437,7 +437,7 @@ int main(int argc, char* argv[])
         ccNewFile(buffer, true);
 #endif
         Utils::AddExt(buffer, ".C");
-        static const std::list<std::string> cppExtensions = { ".h", ".cpp", ".cxx", ".cc", ".c++" };
+        static const std::list<std::string> cppExtensions = { ".h", ".hh", ".hpp", ".hxx", ".hm", ".cpp", ".cxx", ".cc", ".c++" };
         for (auto & str : cppExtensions)
         {
             if (Utils::HasExt(buffer, str.c_str()))

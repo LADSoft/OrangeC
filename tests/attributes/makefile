@@ -24,6 +24,5 @@ clean:
 
 testlinkage.tst: testlinkage.cpp
 	-occ /1 /c /! $< > $*
-	del testlinkage.o
 	fc /b testlinkage.cmpx $*
 

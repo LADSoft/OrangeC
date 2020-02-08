@@ -34,7 +34,7 @@
 #include <Windows.h>
 #endif
 
-SharedMemory::SharedMemory(unsigned max, std::string name) : max_(max), current_(0), regionStart(0), regionHandle(nullptr)
+SharedMemory::SharedMemory(unsigned max, std::string name) : max_(max), current_(0), regionStart(0), regionHandle(nullptr), fileHandle_(nullptr)
 {
     if (!name.empty())
         name_ = name;
@@ -45,8 +45,10 @@ SharedMemory::SharedMemory(unsigned max, std::string name) : max_(max), current_
 SharedMemory::~SharedMemory()
 {
 #ifdef _WIN32
+    Flush();
     CloseMapping();
     CloseHandle(regionHandle);
+    CloseHandle(fileHandle_);
 #endif
 
 }
@@ -62,12 +64,21 @@ bool SharedMemory::Open()
 bool SharedMemory::Create()
 {
 #ifdef _WIN32
-    regionHandle = CreateFileMapping(INVALID_HANDLE_VALUE, NULL,
+    fileHandle_ = CreateFile(name_.c_str(), GENERIC_READ | GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_DELETE_ON_CLOSE, nullptr);
+    regionHandle = CreateFileMapping(fileHandle_, NULL,
         PAGE_READWRITE,
         0, max_, name_.c_str()
         );
 #endif
     return !!regionHandle;
+}
+void SharedMemory::Flush()
+{
+    if (current_)
+    {
+        FlushViewOfFile(regionStart, current_);
+        FlushFileBuffers(fileHandle_);
+    }
 }
 unsigned char* SharedMemory::GetMapping()
 {
@@ -91,10 +102,12 @@ void SharedMemory::CloseMapping()
 }
 bool SharedMemory::EnsureCommitted(int size)
 {
-    return true;
     int end = size;
     end += 4095;
     end = (end / 4096) * 4096;
+    // remove next two lines???
+    current_ = end;
+    return true;
 #ifdef _WIN32
     if (end > current_)
     {

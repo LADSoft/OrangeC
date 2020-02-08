@@ -36,12 +36,15 @@ public:
     unsigned char* GetMapping();
     void CloseMapping();
     bool EnsureCommitted(int size);
+    void Flush();
+
 private:
     void SetName();
     std::string name_;
 
     unsigned max_;
     unsigned current_;
+    void* fileHandle_;
     void* regionHandle;
     unsigned char* regionStart;
 };

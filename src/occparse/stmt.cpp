@@ -721,6 +721,7 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                     SYMBOL *sbegin = nullptr, *send = nullptr;
                     TYPE* iteratorType = nullptr;
                     TYPE* tpref = (TYPE*)Alloc(sizeof(TYPE));
+                    tpref->rootType = tpref;
                     EXPRESSION* rangeExp = anonymousVar(sc_auto, tpref);
                     SYMBOL* rangeSP = rangeExp->v.sp;
                     if (isstructured(selectTP))

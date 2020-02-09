@@ -2016,6 +2016,7 @@ void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp)
                     // cast to a regular pointer if there is no declared param
                     TYPE* tpx = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
                     tpx->type = bt_pointer;
+                    tpx->rootType = tpx;
                     tpx->size = getSize(bt_pointer);
                     tpx->btp = list->tp;
                     while (tpx->btp->vla)

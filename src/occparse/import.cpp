@@ -145,6 +145,7 @@ TYPE* Importer::TranslateType(Type* in)
                 return NULL;
             *last = (TYPE*)Alloc(sizeof(TYPE));
             (*last)->type = bt_pointer;
+            (*last)->rootType = (*last);
             (*last)->array = true;
             (*last)->msil = true;  // arrays are always MSIL when imported from an assembly
 
@@ -183,6 +184,7 @@ TYPE* Importer::TranslateType(Type* in)
         {
             TYPE* tp1 = (TYPE*)Alloc(sizeof(TYPE));
             tp1->type = bt_pointer;
+            tp1->rootType = tp1;
             tp1->size = getSize(bt_int);
             tp1->btp = rv;
             rv = tp1;
@@ -226,6 +228,7 @@ bool Importer::EnterNamespace(const Namespace* nameSpace)
     {
         TYPE* tp = (TYPE*)Alloc(sizeof(TYPE));
         tp->type = bt_void;
+        tp->rootType = tp;
         sp = makeID(sc_namespace, tp, NULL, litlate((char*)nameSpace->Name().c_str()));
         sp->sb->nameSpaceValues = (NAMESPACEVALUELIST*)Alloc(sizeof(NAMESPACEVALUELIST));
         sp->sb->nameSpaceValues->valueData = (NAMESPACEVALUEDATA*)Alloc(sizeof(NAMESPACEVALUEDATA));
@@ -509,6 +512,7 @@ bool Importer::EnterMethod(const Method* method)
             {
                 TYPE* tp1 = (TYPE*)Alloc(sizeof(TYPE));
                 tp1->type = bt_void;
+                tp1->rootType = tp1;
                 args.push_back(tp1);
                 names.push_back("$$void");
             }
@@ -520,6 +524,7 @@ bool Importer::EnterMethod(const Method* method)
                 sp1->sb->thisPtr = true;
                 sp1->tp = (TYPE*)Alloc(sizeof(TYPE));
                 sp1->tp->type = bt_pointer;
+                sp1->tp->rootType = sp1->tp;
                 sp1->tp->size = getSize(bt_int);
                 sp1->tp->btp = structures_.back()->tp;
                 sp1->sb->declfile = sp1->sb->origdeclfile = "[import]";

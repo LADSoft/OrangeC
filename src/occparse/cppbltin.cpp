@@ -69,7 +69,7 @@ static std::string cppbuiltin = "void * operator new(unsigned size); "
     "long double __rtllinkage __builtin_nansl(const char *x);"
     "}"
     ;
-TYPE stdXC = {bt_struct, XCTAB_SIZE};
+TYPE stdXC = {bt_struct, XCTAB_SIZE, 0, &stdXC};
 void ParseBuiltins(void)
 {
     LEXEME* lex;

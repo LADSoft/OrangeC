@@ -609,6 +609,7 @@ static void finishClass(void)
     tps->type = bt_pointer;
     tps->size = getSize(bt_pointer);
     tps->btp = lambdas->cls->tp;
+    tps->rootType = tps;
     self->sb->access = ac_private;
 
     if (lambdas->captureThis && lambdas->next)

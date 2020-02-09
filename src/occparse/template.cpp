@@ -2523,7 +2523,7 @@ void SynthesizeQuals(TYPE*** last, TYPE** qual, TYPE*** lastQual)
             *last = &(**last)->btp;
             p = p->btp;
         }
-        if (isref(*qual))
+        if ((*qual)->rootType && isref(*qual))
         {
             while (p && p != basetype(p))
             {
@@ -2537,7 +2537,7 @@ void SynthesizeQuals(TYPE*** last, TYPE** qual, TYPE*** lastQual)
         {
             **last = (TYPE*)Alloc(sizeof(TYPE));
             ***last = *v;
-            if (!isref(**last))
+            if (!(**last)->rootType || !isref(**last))
                 (**last)->size = sz;
             *last = &(**last)->btp;
             v = v->btp;
@@ -3028,6 +3028,7 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bo
                 {
                     rv = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
                     rv->type = bt_pointer;
+                    rv->rootType = rv;
                     rv->size = getSize(bt_pointer);
                     rv->btp = exp->v.func->functp;
                 }
@@ -3423,6 +3424,7 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                     {
                         tp = (TYPE*)Alloc(sizeof(TYPE));
                         tp->type = bt_derivedfromtemplate;
+                        tp->rootType = tp;
                         tp->btp = rv;
                         tp->size = rv->size;
                         rv = tp;
@@ -3550,6 +3552,7 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                                     }
                                     tp1 = (TYPE*)Alloc(sizeof(TYPE));
                                     tp1->type = bt_derivedfromtemplate;
+                                    tp1->rootType = tp1;
                                     tp1->btp = clone->tp;
                                     tp1->size = clone->tp->size;
                                     tp1->templateParam = clone->tp->templateParam;
@@ -3581,6 +3584,7 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                         {
                             tp1 = (TYPE*)Alloc(sizeof(TYPE));
                             tp1->type = bt_derivedfromtemplate;
+                            tp1->rootType = tp1;
                             tp1->btp = clone->tp;
                             tp1->size = clone->tp->size;
                             clone->tp = tp1;
@@ -3635,6 +3639,7 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                         }
                         tp = (TYPE*)Alloc(sizeof(TYPE));
                         tp->type = bt_derivedfromtemplate;
+                        tp->rootType = tp;
                         tp->btp = rv;
                         tp->size = rv->size;
                         rv = tp;
@@ -3693,6 +3698,7 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                         }
                         tp = (TYPE*)Alloc(sizeof(TYPE));
                         tp->type = bt_derivedfromtemplate;
+                        tp->rootType = tp;
                         tp->btp = rv;
                         tp->size = rv->size;
                         rv = tp;
@@ -3740,6 +3746,7 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                     {
                         tp = (TYPE*)Alloc(sizeof(TYPE));
                         tp->type = bt_derivedfromtemplate;
+                        tp->rootType = tp;
                         tp->btp = rv;
                         tp->rootType = tp;
                         tp->size = rv->size;
@@ -6167,6 +6174,8 @@ static bool comparePointerTypes(TYPE* tpo, TYPE* tps)
     {
         tpo = basetype(tpo);
         tps = basetype(tps);
+        if (!tpo || !tps)
+            return false;
         if (tpo->type == bt_templateparam)
             tpo = tpo->templateParam->p->byClass.dflt;
         if (tps->type == bt_templateparam)
@@ -7901,14 +7910,21 @@ static int SpecializationComplexity(TEMPLATEPARAMLIST* tpl)
         if (tpl->p->type == kw_typename)
         {
             TYPE* tp = tpl->p->byClass.dflt;
-            while (tp && tp->btp)
+            if (tpl->p->packed)
             {
-                if (tp->type != bt_typedef)
-                    count++;
-                tp = tp->btp;
+                count +=  1 + SpecializationComplexity(tpl->p->byPack.pack);
             }
-            if (tp && isstructured(tp))
-                count += 1 + SpecializationComplexity(tp->sp->templateParams);
+            else
+            {
+                while (tp && tp->btp)
+                {
+                    if (tp->type != bt_typedef)
+                        count++;
+                    tp = tp->btp;
+                }
+                if (tp && isstructured(tp))
+                    count += 1 + SpecializationComplexity(tp->sp->templateParams);
+            }
         }
         else if (tpl->p->type == kw_int)
         {

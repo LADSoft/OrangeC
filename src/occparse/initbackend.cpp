@@ -38,82 +38,49 @@ extern ARCH_ASM* chosenAssembler;
 
 
 TYPE stdobject = { bt___object, 0 };
-TYPE stdvoid = { bt_void, 0 };
-TYPE stdany = { bt_any, 1 };
-TYPE stdauto = { bt_auto, 0 };
-TYPE stdfunc = { bt_func, 0, &stdvoid };
-TYPE stdpointer = { bt_pointer, 4, &stdvoid };
-TYPE std__string = { bt___string, 4 };
-TYPE std__object = { bt___object, 4 };
-TYPE stdnullpointer = { bt_pointer, 4, &stdvoid };
-TYPE stdfloatcomplex = { bt_float_complex, 8 };
-TYPE stddoublecomplex = { bt_double_complex, 16 };
-TYPE stdlongdoublecomplex = { bt_long_double_complex, 16 };
-TYPE stdfloat = {
-    bt_float,
-    4,
-};
-TYPE stdfloatimaginary = {
-    bt_float_imaginary,
-    4,
-};
-TYPE stddouble = { bt_double, 8 };
-TYPE stddoubleimaginary = { bt_double_imaginary, 8 };
-TYPE stdlongdoubleimaginary = { bt_long_double_imaginary, 8 };
-TYPE stdlonglong = { bt_long_long, 8 };
-TYPE stdunsigned = { bt_unsigned, 4 };
-TYPE stdunative = { bt_unative, 4 };
-TYPE stdunsignedlong = {
-    bt_unsigned_long,
-    4,
-};
-TYPE stdunsignedlonglong = { bt_unsigned_long_long, 8 };
-TYPE stdconst = {
-    bt_int,
-    4,
-};
-TYPE stdchar = {
-    bt_char,
-    1,
-};
-TYPE stdchar16t = {
-    bt_char16_t,
-    2,
-};
-TYPE stdchar16tptr = { bt_pointer, 0, &stdchar16t };
-TYPE stdchar32t = {
-    bt_char32_t,
-    4,
-};
-TYPE stdchar32tptr = { bt_pointer, 0, &stdchar32t };
-TYPE stdsignedchar = {
-    bt_char,
-    1,
-};
-TYPE stdunsignedchar = {
-    bt_unsigned_char,
-    1,
-};
-TYPE stdshort = {
-    bt_short,
-    2,
-};
-TYPE stdunsignedshort = {
-    bt_unsigned_short,
-    2,
-};
-TYPE std__func__nc = { bt_pointer, 4, &stdchar };
-static TYPE std__func__c = { bt_const, 4, &stdchar };
-TYPE std__func__ = { bt_pointer, 4, &std__func__c };
-TYPE stdstring = { bt_pointer, 4, &stdchar };
-TYPE stdint = { bt_int, 4 };
-TYPE stdinative = { bt_inative, 4 };
-TYPE stdlong = { bt_long, 4 };
-TYPE stdlongdouble = { bt_long_double, 8 };
-TYPE stdbool = { bt_bool, 1 };
-TYPE stdwidechar = { bt_wchar_t, 0 };
-TYPE stdwcharptr = { bt_pointer, 0, &stdwidechar };
-TYPE stdcharptr = { bt_pointer, 0, &stdchar };
+TYPE stdvoid = { bt_void, 0, 0, &stdvoid };
+TYPE stdany = { bt_any, 1, 0, &stdany };
+TYPE stdauto = { bt_auto, 0, 0, &stdauto };
+TYPE stdfunc = { bt_func, 0, &stdvoid, &stdfunc };
+TYPE stdpointer = { bt_pointer, 4, &stdvoid, &stdpointer };
+TYPE std__string = { bt___string, 4, 0, &std__string };
+TYPE std__object = { bt___object, 4, 0, &std__object };
+TYPE stdnullpointer = { bt_pointer, 4, &stdvoid, &stdnullpointer };
+TYPE stdfloatcomplex = { bt_float_complex, 8, 0, &stdfloatcomplex };
+TYPE stddoublecomplex = { bt_double_complex, 16, 0, &stddoublecomplex };
+TYPE stdlongdoublecomplex = { bt_long_double_complex, 16,0, &stdlongdoublecomplex };
+TYPE stdfloat = { bt_float, 4, 0, &stdfloat};
+TYPE stdfloatimaginary = { bt_float_imaginary, 4, 0, &stdfloatimaginary};
+TYPE stddouble = { bt_double, 8, 0, &stddouble };
+TYPE stddoubleimaginary = { bt_double_imaginary, 8, 0, &stddoubleimaginary };
+TYPE stdlongdoubleimaginary = { bt_long_double_imaginary, 8, 0, &stdlongdoubleimaginary };
+TYPE stdlonglong = { bt_long_long, 8, 0, &stdlonglong };
+TYPE stdunsigned = { bt_unsigned, 4, 0, &stdunsigned };
+TYPE stdunative = { bt_unative, 4, 0, &stdunative };
+TYPE stdunsignedlong = { bt_unsigned_long, 4, 0, &stdunsignedlong};
+TYPE stdunsignedlonglong = { bt_unsigned_long_long, 8, 0, &stdunsignedlonglong };
+TYPE stdconst = { bt_int, 4, 0, &stdconst };
+TYPE stdchar = { bt_char, 1, 0, &stdchar };
+TYPE stdchar16t = { bt_char16_t, 2, 0, &stdchar16t };
+TYPE stdchar16tptr = { bt_pointer, 0, &stdchar16t, &stdchar16tptr };
+TYPE stdchar32t = { bt_char32_t, 4, 0, &stdchar32t };
+TYPE stdchar32tptr = { bt_pointer, 0, &stdchar32t, &stdchar32tptr };
+TYPE stdsignedchar = { bt_char, 1, 0, &stdsignedchar };
+TYPE stdunsignedchar = { bt_unsigned_char, 1, 0, &stdunsignedchar };
+TYPE stdshort = { bt_short, 2, 0, &stdshort };
+TYPE stdunsignedshort = { bt_unsigned_short, 2, 0, &stdunsignedshort };
+TYPE std__func__nc = { bt_pointer, 4, &stdchar, & std__func__nc };
+static TYPE std__func__c = { bt_const, 4, &stdchar, &stdchar };
+TYPE std__func__ = { bt_pointer, 4, &std__func__c, & std__func__ };
+TYPE stdstring = { bt_pointer, 4, &stdchar, &stdstring };
+TYPE stdint = { bt_int, 4, 0, &stdint };
+TYPE stdinative = { bt_inative, 4, 0, &stdinative };
+TYPE stdlong = { bt_long, 4, 0, &stdlong };
+TYPE stdlongdouble = { bt_long_double, 8, 0, &stdlongdouble };
+TYPE stdbool = { bt_bool, 1, 0, &stdbool };
+TYPE stdwidechar = { bt_wchar_t, 0, 0, &stdwidechar };
+TYPE stdwcharptr = { bt_pointer, 0, &stdwidechar, &stdwcharptr };
+TYPE stdcharptr = { bt_pointer, 0, &stdchar, &stdcharptr };
 
 
 int init_backend()

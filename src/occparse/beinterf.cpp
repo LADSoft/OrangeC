@@ -193,6 +193,7 @@ int getSize(enum e_bt type)
     TYPE tp;
     memset(&tp, 0, sizeof(tp));
     tp.type = type; /* other fields don't matter, we never call this for structured types*/
+    tp.rootType = &tp;
     return basesize(chosenAssembler->arch->type_sizes, &tp);
 }
 int getBaseAlign(enum e_bt type)

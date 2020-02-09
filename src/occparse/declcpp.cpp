@@ -2710,6 +2710,7 @@ LEXEME* insertNamespace(LEXEME* lex, enum e_lk linkage, enum e_sc storage_class,
                         }
                         tp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
                         tp->type = bt_void;
+                        tp->rootType = tp;
                         sym = makeID(sc_namespacealias, tp, nullptr, litlate(buf));
                         if (nameSpaceList)
                         {
@@ -2777,6 +2778,7 @@ LEXEME* insertNamespace(LEXEME* lex, enum e_lk linkage, enum e_sc storage_class,
     {
         TYPE* tp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
         tp->type = bt_void;
+        tp->rootType = tp;
         sym = makeID(sc_namespace, tp, nullptr, litlate(buf));
         sym->sb->nameSpaceValues = (NAMESPACEVALUELIST*)Alloc(sizeof(NAMESPACEVALUELIST));
         sym->sb->nameSpaceValues->valueData = (NAMESPACEVALUEDATA*)Alloc(sizeof(NAMESPACEVALUEDATA));
@@ -3083,6 +3085,7 @@ TYPE* AttributeFinish(SYMBOL* sym, TYPE* tp)
                 error(ERR_INVALID_VECTOR_SIZE);
             TYPE* tp1 = (TYPE*)Alloc(sizeof(TYPE));
             tp1->type = bt_pointer;
+            tp1->rootType = tp1;
             tp1->size = sym->sb->attribs.inheritable.vectorSize;
             tp1->array = true;
             tp1->btp = tp;

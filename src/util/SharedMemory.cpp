@@ -74,11 +74,13 @@ bool SharedMemory::Create()
 }
 void SharedMemory::Flush()
 {
+#ifdef _WIN32
     if (current_)
     {
         FlushViewOfFile(regionStart, current_);
         FlushFileBuffers(fileHandle_);
     }
+#endif
 }
 unsigned char* SharedMemory::GetMapping()
 {

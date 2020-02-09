@@ -135,14 +135,13 @@ int CmdSwitchDefine::Parse(const char* data)
         return INT_MAX;
     int str=0;
     int rv = strlen(data);
-    char name[10000], *p = name;
+    std::string name;
     if (data[0] == '"')
         str = *data++;
     if (!isalpha(*data) && *data != '_')
         return -1;
     while (*data && (isalnum(*data) || *data == '_'))
-        *p++ = *data++;
-    *p = 0;
+        name += *data++;
     if (*data && *data != '=')
     {
         return -1;
@@ -152,12 +151,11 @@ int CmdSwitchDefine::Parse(const char* data)
     if (*data == '=')
     {
         data++;
-        p = name;
+        name="";
         while (*data && *data != str)
         {
-            *p++ = *data++;
+            name += *data++;
         }
-        *p = 0;
         if (*data)
             data++;
         newDefine->value = name;

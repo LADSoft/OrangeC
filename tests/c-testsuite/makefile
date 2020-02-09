@@ -1,3 +1,7 @@
+# sadly powershell seems to have a bug and can't handle this in parallel...
+# the redirects for testing sometimes get sent to the wrong files...
+.NOTPARALLEL:
+
 FILES = \
     00001.exe \
     00002.exe \

@@ -14,7 +14,7 @@
                   IF %ERRORLEVEL% NEQ 0 (
                       goto error;
                   )
-                  path="%ORIGPATH%"
+                  set "path=%ORIGPATH%"
                   cd ..\tests
                   omake -B /Coccil /DCOMPILER=OCC
                   IF %ERRORLEVEL% NEQ 0 (
@@ -85,7 +85,7 @@
                   IF %ERRORLEVEL% NEQ 0 (
                        goto error;
                   )
-                  path="%ORIGPATH%"
+                  set "path=%ORIGPATH%"
                   cd ..\tests
                   omake -B -j:4 /DCOMPILER=OCC
                   IF %ERRORLEVEL% NEQ 0 (

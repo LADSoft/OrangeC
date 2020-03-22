@@ -36,7 +36,7 @@
 #include <deque>
 #include <functional>
 #include <map>
-
+#include <stdexcept>
 extern std::vector<SimpleSymbol*> externals;
 extern std::vector<SimpleSymbol*> globalCache;
 extern std::vector<SimpleSymbol*> typeSymbols;

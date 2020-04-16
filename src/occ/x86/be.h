@@ -286,6 +286,7 @@ typedef struct _dbgblock
 
 enum asmTypes
 {
+    pa_oasm,
     pa_nasm,
     pa_fasm,
     pa_masm,

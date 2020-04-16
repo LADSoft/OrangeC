@@ -150,11 +150,11 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
     {
         if (exp->type == en_const)
         {
-            my_sprintf(buf, "%lld&", exp->v.sp->value.i);
+            my_sprintf(buf, "%lld?", exp->v.sp->value.i);
         }
         else
         {
-            my_sprintf(buf, "%lld&", exp->v.i);
+            my_sprintf(buf, "%lld?", exp->v.i);
         }
         if (buf[0] == '-')
             buf[0] = '_';
@@ -406,7 +406,7 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
                 else
                 {
                     *buf++ = 'e';
-                    *buf++ = '&';
+                    *buf++ = '?';
                     strcpy(buf, exp->v.func->sp->name);
                     buf += strlen(buf);
                     *buf++ = '$';
@@ -419,7 +419,7 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
                 if (isfunction(exp->v.sp->tp))
                 {
                     *buf++ = 'e';
-                    *buf++ = '&';
+                    *buf++ = '?';
                     strcpy(buf, exp->v.sp->name);
                     buf += strlen(buf);
                     *buf++ = '$';
@@ -429,7 +429,7 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
                 {
                     *buf++ = 'g';
                     if (!nonpointer)
-                        *buf++ = '&';
+                        *buf++ = '?';
                     strcpy(buf, exp->v.sp->name);
                     *buf++ = '$';
                     *buf = 0;

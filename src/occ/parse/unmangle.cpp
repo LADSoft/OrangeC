@@ -205,7 +205,7 @@ char* unmangleExpression(char* dest, const char** name)
         {
             *dest++ = *(*name)++;
         }
-        (*name)++;  // past '&'
+        (*name)++;  // past '?'
     }
     else
     {
@@ -481,7 +481,7 @@ char* unmangleExpression(char* dest, const char** name)
                 break;
             }
             case 'e':
-                if (*(*name) == '&')
+                if (*(*name) == '?')
                 {
                     *dest++ = '*';
                     (*name)++;
@@ -496,7 +496,7 @@ char* unmangleExpression(char* dest, const char** name)
                 }
                 break;
             case 'g':
-                if (*(*name) == '&')
+                if (*(*name) == '?')
                 {
                     *dest++ = '*';
                     (*name)++;

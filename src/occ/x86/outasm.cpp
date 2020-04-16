@@ -99,7 +99,7 @@ void outop(const char* name)
 
 void putop(enum e_opcode op, AMODE* aps, AMODE* apd, int nooptx)
 {
-    if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
+    if (prm_assembler == pa_nasm || prm_assembler == pa_oasm || prm_assembler == pa_fasm)
     {
         skipsize = false;
         addsize = false;
@@ -368,7 +368,7 @@ void putsizedreg(const char* string, int reg, int size)
 
 void pointersize(int size)
 {
-    if ((prm_assembler == pa_nasm || prm_assembler == pa_fasm) && skipsize)
+    if ((prm_assembler == pa_nasm || prm_assembler == pa_oasm || prm_assembler == pa_fasm) && skipsize)
         return;
     if (size < 0)
         size = -size;
@@ -387,7 +387,7 @@ void pointersize(int size)
         case ISZ_IFLOAT:
             if (!uses_float)
             {
-                if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
+                if (prm_assembler == pa_nasm || prm_assembler == pa_oasm || prm_assembler == pa_fasm)
                     bePrintf("dword far ");
                 else
                     bePrintf("fword ");
@@ -418,7 +418,7 @@ void pointersize(int size)
             diag("Bad pointer");
             break;
     }
-    if (!(prm_assembler == pa_nasm || prm_assembler == pa_fasm) && size)
+    if (!(prm_assembler == pa_nasm || prm_assembler == pa_oasm || prm_assembler == pa_fasm) && size)
         bePrintf("ptr ");
 }
 
@@ -504,7 +504,7 @@ void oa_putamode(int op, int szalt, AMODE* ap)
         case am_immed:
             if (ap->length > 0 && islabeled(ap->offset))
             {
-                if (!(prm_assembler == pa_nasm || prm_assembler == pa_fasm))
+                if (!(prm_assembler == pa_nasm || prm_assembler == pa_oasm || prm_assembler == pa_fasm))
                     bePrintf("offset ");
                 else if (!nosize)
                 {
@@ -522,17 +522,17 @@ void oa_putamode(int op, int szalt, AMODE* ap)
                     }
                 }
             }
-            else if ((prm_assembler == pa_nasm) && addsize)
+            else if ((prm_assembler == pa_nasm || prm_assembler == pa_oasm) && addsize)
                 pointersize(ap->length);
             oa_putconst(op, op == op_mov ? szalt : ap->length, ap->offset, false);
             break;
         case am_direct:
             pointersize(ap->length);
-            if (!(prm_assembler == pa_nasm || prm_assembler == pa_fasm))
+            if (!(prm_assembler == pa_nasm || prm_assembler == pa_oasm || prm_assembler == pa_fasm))
                 putseg(ap->seg, true);
             beputc('[');
             oldnasm = prm_assembler;
-            if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
+            if (prm_assembler == pa_nasm || prm_assembler == pa_oasm || prm_assembler == pa_fasm)
                 putseg(ap->seg, true);
             prm_assembler = pa_nasm;
             oa_putconst(0, ap->length, ap->offset, false);
@@ -549,17 +549,17 @@ void oa_putamode(int op, int szalt, AMODE* ap)
             bePrintf("mm%d", ap->preg);
             break;
         case am_freg:
-            if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
+            if (prm_assembler == pa_nasm || prm_assembler == pa_oasm || prm_assembler == pa_fasm)
                 bePrintf("st%d", ap->preg);
             else
                 bePrintf("st(%d)", ap->preg);
             break;
         case am_indisp:
             pointersize(ap->length);
-            if (!(prm_assembler == pa_nasm || prm_assembler == pa_fasm))
+            if (!(prm_assembler == pa_nasm || prm_assembler == pa_oasm || prm_assembler == pa_fasm))
                 putseg(ap->seg, true);
             beputc('[');
-            if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
+            if (prm_assembler == pa_nasm || prm_assembler == pa_oasm || prm_assembler == pa_fasm)
                 putseg(ap->seg, true);
             putsizedreg("%s", ap->preg, ISZ_ADDR);
             if (ap->offset)
@@ -575,10 +575,10 @@ void oa_putamode(int op, int szalt, AMODE* ap)
             while (t--)
                 scale <<= 1;
             pointersize(ap->length);
-            if (!(prm_assembler == pa_nasm || prm_assembler == pa_fasm))
+            if (!(prm_assembler == pa_nasm || prm_assembler == pa_oasm || prm_assembler == pa_fasm))
                 putseg(ap->seg, true);
             beputc('[');
-            if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
+            if (prm_assembler == pa_nasm || prm_assembler == pa_oasm || prm_assembler == pa_fasm)
                 putseg(ap->seg, true);
             if (ap->preg != -1)
                 putsizedreg("%s+", ap->preg, ISZ_ADDR);
@@ -643,9 +643,10 @@ void oa_put_code(OCODE* cd)
         len2 = apd->length;
     needpointer = (len != len2) || ((!aps || aps->mode != am_dreg) && (!apd || apd->mode != am_dreg));
     putop((e_opcode)op, aps, apd, cd->noopt);
-    if ((prm_assembler == pa_nasm || prm_assembler == pa_fasm) &&
+    if ((prm_assembler == pa_nasm || prm_assembler == pa_oasm || prm_assembler == pa_fasm) &&
         (op >= op_ja && op <= op_jz && op != op_jecxz && (op != op_jmp || aps->mode == am_immed)))
     {
+/*
         if (cd->ins)
         {
             if ((((Instruction*)cd->ins)->GetBytes()[0] & 0xf0) == 0x70 || ((Instruction*)cd->ins)->GetBytes()[0] == 0xeb)
@@ -657,6 +658,7 @@ void oa_put_code(OCODE* cd)
                 bePrintf("\tnear");
             }
         }
+*/
         nosize = true;
     }
     else if (op == op_jmp && aps->mode == am_immed && aps->offset->type == en_labcon)
@@ -665,7 +667,7 @@ void oa_put_code(OCODE* cd)
         {
             if (((Instruction*)cd->ins)->GetBytes()[0] == 0xeb)
             {
-                bePrintf("\tshort");
+//                bePrintf("\tshort");
                 nosize = true;
             }
         }
@@ -1005,7 +1007,7 @@ void oa_genstorage(int nbytes)
             oa_nl();
         else
             newlabel = false;
-        if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
+        if (prm_assembler == pa_nasm || prm_assembler == pa_oasm || prm_assembler == pa_fasm)
             bePrintf("\tresb\t0%xh\n", nbytes);
         else
             bePrintf("\tdb\t0%xh DUP (?)\n", nbytes);
@@ -1060,7 +1062,7 @@ void oa_exitseg(enum e_sg seg)
 {
     if (cparams.prm_asmfile)
     {
-        if (!(prm_assembler == pa_nasm || prm_assembler == pa_fasm))
+        if (!(prm_assembler == pa_nasm || prm_assembler == pa_oasm || prm_assembler == pa_fasm))
         {
             if (seg == startupxseg)
             {
@@ -1107,7 +1109,7 @@ void oa_enterseg(enum e_sg seg)
         if (seg == codeseg)
         {
             oa_nl();
-            if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
+            if (prm_assembler == pa_nasm || prm_assembler == pa_oasm || prm_assembler == pa_fasm)
                 if (!prm_nodos)
                     bePrintf("section code\n");
                 else
@@ -1120,7 +1122,7 @@ void oa_enterseg(enum e_sg seg)
         }
         else if (seg == constseg)
         {
-            if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
+            if (prm_assembler == pa_nasm || prm_assembler == pa_oasm || prm_assembler == pa_fasm)
             {
                 if (!prm_nodos)
                     bePrintf("section const\n");
@@ -1135,7 +1137,7 @@ void oa_enterseg(enum e_sg seg)
         }
         else if (seg == stringseg)
         {
-            if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
+            if (prm_assembler == pa_nasm || prm_assembler == pa_oasm || prm_assembler == pa_fasm)
             {
                 if (!prm_nodos)
                     bePrintf("section string\n");
@@ -1150,7 +1152,7 @@ void oa_enterseg(enum e_sg seg)
         }
         else if (seg == dataseg)
         {
-            if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
+            if (prm_assembler == pa_nasm || prm_assembler == pa_oasm || prm_assembler == pa_fasm)
                 if (!prm_nodos)
                     bePrintf("section data\n");
                 else
@@ -1163,7 +1165,7 @@ void oa_enterseg(enum e_sg seg)
         }
         else if (seg == tlsseg)
         {
-            if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
+            if (prm_assembler == pa_nasm || prm_assembler == pa_oasm || prm_assembler == pa_fasm)
                 if (!prm_nodos)
                     bePrintf("section tls\n");
                 else
@@ -1176,7 +1178,7 @@ void oa_enterseg(enum e_sg seg)
         }
         else if (seg == tlssuseg)
         {
-            if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
+            if (prm_assembler == pa_nasm || prm_assembler == pa_oasm || prm_assembler == pa_fasm)
                 if (!prm_nodos)
                     bePrintf("section tlsstartup\n");
                 else
@@ -1189,7 +1191,7 @@ void oa_enterseg(enum e_sg seg)
         }
         else if (seg == tlsrdseg)
         {
-            if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
+            if (prm_assembler == pa_nasm || prm_assembler == pa_oasm || prm_assembler == pa_fasm)
                 if (!prm_nodos)
                     bePrintf("section tlsrundown\n");
                 else
@@ -1202,7 +1204,7 @@ void oa_enterseg(enum e_sg seg)
         }
         else if (seg == bssxseg)
         {
-            if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
+            if (prm_assembler == pa_nasm || prm_assembler == pa_oasm || prm_assembler == pa_fasm)
                 if (!prm_nodos)
                     bePrintf("section bss\n");
                 else
@@ -1212,7 +1214,7 @@ void oa_enterseg(enum e_sg seg)
         }
         else if (seg == startupxseg)
         {
-            if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
+            if (prm_assembler == pa_nasm || prm_assembler == pa_oasm || prm_assembler == pa_fasm)
             {
                 if (!prm_nodos)
                     bePrintf("section cstartup\n");
@@ -1227,7 +1229,7 @@ void oa_enterseg(enum e_sg seg)
         }
         else if (seg == rundownxseg)
         {
-            if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
+            if (prm_assembler == pa_nasm || prm_assembler == pa_oasm || prm_assembler == pa_fasm)
             {
                 if (!prm_nodos)
                     bePrintf("section crundown\n");
@@ -1252,7 +1254,7 @@ void oa_gen_virtual(SYMBOL* sym, int data)
     if (cparams.prm_asmfile)
     {
         oa_nl();
-        if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
+        if (prm_assembler == pa_nasm || prm_assembler == pa_oasm || prm_assembler == pa_fasm)
         {
             oa_currentSeg = noseg;
 #ifdef IEEE
@@ -1271,6 +1273,11 @@ void oa_gen_virtual(SYMBOL* sym, int data)
         }
         else
             bePrintf("@%s\tsegment virtual\n", sym->decoratedName);
+        bePrintf("\t[bits 32]\n");
+        if (prm_assembler != pa_oasm)
+        {
+            oa_globaldef(sym);
+        }
         bePrintf("%s:\n", sym->decoratedName);
     }
     outcode_start_virtual_seg(sym, data);
@@ -1280,7 +1287,7 @@ void oa_gen_endvirtual(SYMBOL* sym)
     if (cparams.prm_asmfile)
     {
         oa_nl();
-        if (!(prm_assembler == pa_nasm || prm_assembler == pa_fasm))
+        if (!(prm_assembler == pa_nasm || prm_assembler == pa_oasm || prm_assembler == pa_fasm))
         {
             bePrintf("@%s\tends\n", sym->decoratedName);
         }
@@ -1307,7 +1314,7 @@ void oa_align(int size)
     if (cparams.prm_asmfile)
     {
         oa_nl();
-        if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
+        if (prm_assembler == pa_nasm || prm_assembler == pa_oasm || prm_assembler == pa_fasm)
             /* NASM 0.91 wouldn't let me use parenthesis but this should work
              * according to the documented precedence levels
              */
@@ -1482,18 +1489,18 @@ void oa_header(const char* filename, const char* compiler_version)
     oa_nl();
     bePrintf(";File %s\n", filename);
     bePrintf(";Compiler version %s\n", compiler_version);
-    if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
+    if (prm_assembler == pa_nasm || prm_assembler == pa_oasm || prm_assembler == pa_fasm)
     {
         if (!prm_nodos)
         {
-            bePrintf("\tsection code align=%-8d class=CODE use32\n", segAligns[codeseg]);
-            bePrintf("\tsection data align=%-8d class=DATA use32\n", segAligns[dataseg]);
-            bePrintf("\tsection bss  align=%-8d class=BSS use32\n", segAligns[bssxseg]);
-            bePrintf("\tsection const  align=%-8d class=CONST use32\n", segAligns[constseg]);
-            bePrintf("\tsection string  align=%-8d class=STRING use32\n", segAligns[stringseg]);
-            bePrintf("\tsection tls  align=8 class=TLS use32\n");
-            bePrintf("\tsection cstartup align=2 class=INITDATA use32\n");
-            bePrintf("\tsection crundown align=2 class=EXITDATA use32\n");
+            bePrintf("\tsection code align=%-8d use32\n", segAligns[codeseg]);
+            bePrintf("\tsection data align=%-8d use32\n", segAligns[dataseg]);
+            bePrintf("\tsection bss  align=%-8d use32\n", segAligns[bssxseg]);
+            bePrintf("\tsection const  align=%-8d use32\n", segAligns[constseg]);
+            bePrintf("\tsection string  align=%-8d use32\n", segAligns[stringseg]);
+            bePrintf("\tsection tls  align=8 use32\n");
+            bePrintf("\tsection cstartup align=2 use32\n");
+            bePrintf("\tsection crundown align=2 use32\n");
             //            bePrintf(
             //               "\tSECTION cppinit  align=4 CLASS=CPPINIT USE32\n");
             //          bePrintf(
@@ -1520,7 +1527,7 @@ void oa_header(const char* filename, const char* compiler_version)
 }
 void oa_trailer(void)
 {
-    if (!(prm_assembler == pa_nasm || prm_assembler == pa_fasm))
+    if (!(prm_assembler == pa_nasm || prm_assembler == pa_oasm || prm_assembler == pa_fasm))
         bePrintf("\tend\n");
     beRewind();
     oa_header(asmfile, compilerversion);
@@ -1547,7 +1554,7 @@ void oa_globaldef(SYMBOL* sym)
         char buf[5000];
         beDecorateSymName(buf, sym);
         oa_nl();
-        if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
+        if (prm_assembler == pa_nasm || prm_assembler == pa_oasm || prm_assembler == pa_fasm)
             bePrintf("[global\t%s]\n", buf);
         else
             bePrintf("\tpublic\t%s\n", buf);
@@ -1563,7 +1570,7 @@ void oa_output_alias(char* name, char* alias)
     if (cparams.prm_asmfile)
     {
         oa_nl();
-        if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
+        if (prm_assembler == pa_nasm || prm_assembler == pa_oasm || prm_assembler == pa_fasm)
             bePrintf("%%define %s %s\n", name, alias);
         else
             bePrintf("%s equ\t<%s>\n", name, alias);
@@ -1579,7 +1586,7 @@ void oa_put_extern(SYMBOL* sym, int code)
         oa_nl();
         char buf[5000];
         beDecorateSymName(buf, sym);
-        if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
+        if (prm_assembler == pa_nasm || prm_assembler == pa_oasm || prm_assembler == pa_fasm)
         {
             bePrintf("[extern\t%s]\n", buf);
         }
@@ -1618,7 +1625,7 @@ void oa_put_expfunc(SYMBOL* sym)
     if (cparams.prm_asmfile)
     {
         beDecorateSymName(buf, sym);
-        if (prm_assembler == pa_nasm || prm_assembler == pa_fasm)
+        if (prm_assembler == pa_nasm || prm_assembler == pa_oasm || prm_assembler == pa_fasm)
             bePrintf("\texport %s\n", buf);
         else
             bePrintf("\tpublicdll %s\n", buf);
@@ -1631,7 +1638,7 @@ void oa_output_includelib(const char* name)
 {
     if (cparams.prm_asmfile)
     {
-        if (!(prm_assembler == pa_nasm || prm_assembler == pa_fasm))
+        if (!(prm_assembler == pa_nasm || prm_assembler == pa_oasm || prm_assembler == pa_fasm))
             bePrintf("\tincludelib %s\n", name);
     }
     else

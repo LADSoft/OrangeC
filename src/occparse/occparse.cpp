@@ -388,6 +388,7 @@ int main(int argc, char* argv[])
 #endif
 #endif
 #ifndef PARSER_ONLY
+    const char *firstFile = clist ? (const char *)clist->data : "temp";
     instructionParser = new x64Parser();
     SharedMemory* parserMem = nullptr;
     if (bePostFile.size())
@@ -566,7 +567,10 @@ int main(int argc, char* argv[])
     if (compileToFile)
     {
         //compile to file
-        strcpy(realOutFile, outputFileName.c_str());
+        if (outputFileName.empty())
+            strcpy(realOutFile, firstFile);
+        else
+            strcpy(realOutFile, outputFileName.c_str());
         Utils::StripExt(realOutFile);
         Utils::AddExt(realOutFile, ".icf");
         int size = GetOutputSize();

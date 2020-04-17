@@ -20,6 +20,8 @@ test: $(EXE)
 	minigzip -d minigzip.test.gz
 	fc /b minigzip.test.cmpx minigzip.test
     
+clean:
+	$(CLEAN)
 
 CC = c:\orangec\bin\occ
 AS = c:\orangec\bin\nasm

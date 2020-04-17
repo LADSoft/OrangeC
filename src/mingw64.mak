@@ -1,6 +1,6 @@
 # Software License Agreement
 # 
-#     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
+#     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
 # 
 #     This file is part of the Orange C Compiler package.
 # 
@@ -40,7 +40,7 @@ LLIB_DEPENDENCIES = $(notdir $(filter-out $(EXCLUDE) $(MAIN_DEPENDENCIES), $(CPP
 
 
 CC=x86_64-w64-mingw32-gcc
-CCFLAGS = -c -D__MSVCRT__ -U__STRICT_ANSI__
+CCFLAGS = -c -D__MSVCRT__ -D_MINGW -U__STRICT_ANSI__ -Wno-int-to-pointer-cast
 LINK=ld
 LFLAGS=-L$(_LIBDIR)
 

@@ -13,6 +13,11 @@ RFLAGS =
 
 all: test
 
+clean:
+	$(CLEAN)
+	$(MAKE) -Clibogg clean
+	$(MAKE) -Clib clean
+
 test: $(EXE)
 	test > test.out
 	fc /b test.cmpx test.out

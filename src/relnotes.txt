@@ -15,11 +15,34 @@ version 6.0.44:
     occ: fix rare problem in peephole optimizer that could create bad code
     occ: add /g as an alias for /v
     occ: replace the preprocessor with a newer version
-    occ: replace some under the hood utility code with the standard version used by the other tools
+    occ: replace under the hood utility code with the standard version used by the other tools
     occ: local static variables with the same name used the same name were not differentiated in memory
     occ: clean up clang warnings relating to the floating point structure
     occ: add normal method to push/pop macros
     occ: generate error if using floating point in a preprocessor expression
+    occ: fix rare problem where constant evaluation could crash optimizer
+    occ: fix some crashes on invalid input
+    occ: fix some problems zeroing structures in a function but not in a declaration.
+    occ: handle constant evaluation for complement operation correctly
+    occ: fix sizeof an array which is a function param to be sizeof(void *)
+    occ: add __attribute__((__stdcall__)) and parse for attributes in a couple of new places
+    occ: allow argument which is an array surrounded by parenthesis
+    occ: fix some preprocessor replacement issues found by c-testsuite tests
+    occ: handle cast to structured constant which is in the global space
+    occ: fix call to address which is an integer constant to generate correct code
+    occ: fix a vagary wherein switch-case statements without brackets did not compile properly
+    occ: optimize constant expressions involving and, or, and exclusive or a little better
+    occ: handle __VA_ARGS__ for empty argument lists properly
+    occ: fix problem with capturing variables declared in nested lambdas
+    occ: fix problem with not being able to declare variables in a 'default' clause
+    occ: fix problem where sometimes a type used in a template prototype would not be expanded properly
+    occ: 'main' is inaccessible to the runtime if it is prototyped
+    occ: auto type derived from array type is considered an LVALUE
+    occ: string in hook was demoted to RVALUE
+    occ: using variadic templates for a variable length argument list didn't promote arrays to pointers
+    occ: fix compiler crash when generating debug type info for a union
+    occ: fix problem where a complex constant in a CMP instruction could be optimized to zero by the peephole optimizer
+    occ: fix problem with template parameter lookup:  sometimes returned the wrong value
     occ: fix bug in peephole optimizations
     occ: allow type casts in preprocessor expressions
     occ: handle const errors a little better
@@ -29,7 +52,6 @@ version 6.0.44:
     occ: fix cast to structured constant to work in C++ mode
     occ: allow pointer qualifiers in the array specifiers of an unsized VLA
     occ: fix an argument which is an array surrounded by parenthesis to parse correctly
-    occ: add __attribute__((__stdcall__))
     occ: fix sizeof an arrary which is a function argument to be the size of a pointer.
     occ: fix various problems with code generation for c11 thread local storage type
     occ: make comparison between 'long' and 'unsigned' an unsigned comparison when sizeof(unsigned) == sizeof(long)
@@ -44,8 +66,9 @@ version 6.0.44:
     occ: fix preprocessor bug when stringizing in the middle of a long string
     occ: initializing a typdefed array of structures doesn't work...
     occ: only simple constants could be initialized in the thread local storage initialization region
+    occ: add __declspec(align(xx))
+    occ:  calling things like (imported_func)(args)  (note the parenthesis around the function call) crashed the built executable
     dlpe: don't generate fixups for the constants used in thread local storage lookups
-
     occil: fix problem with generating code that shifted by an int64 constant
     occil: fix problem with a function call in the middle of a variable arguments sequence resulting in bad code
     occil: fix problem with things like (void)((argc == 1) && myfunc()) getting optimized wrong
@@ -60,13 +83,16 @@ version 6.0.44:
     ocide, tools: add support for UTF8 and UCS2LE BOMs
     ocide: allow opening a CPJ file directly on the command line
     ocide/orc: could not click on an error and open the related RC file
+    ocide: fix code completion analyzer, fix various crashes
     occpr: (code completion analyzer) fix many crashes on invalid input
     olink: fix library search order to be more like other windows compilers
     general: started work on taking care of bugs found by static analysis
+    rtl: fix printf() and friends to work properly with long double variables
     rtl: throwing standard C++ classes such as the std::runtime wouldn't work when compiled against lscrtl.dll
     rtl: support more errno values
     rtl, tools: update to latest version of SQLITE3
     rtl: fix nl_types.h to work standalone in C code
+    rtl: in command lines, the sequence '\\"' was contracted incorrectly
     rtl: fix printf of long double type to work again
     rtl: add alloca.h
     tests: add new tests for code analyzer and preprocessor

@@ -6,6 +6,9 @@ gen.exe: gen.c
 	occ gen.c
 	gen
 
+clean:
+	$(CLEAN)
+
 %.ods: %.c
 	occpr --nologo /Q /w /z$(ORANGEC)\include $^
 %.ods: %.cpp

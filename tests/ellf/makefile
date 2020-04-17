@@ -11,5 +11,8 @@ test:   ellf.exe
 	ellf < ellf.que > q.out
 	fc /b test.cmpx q.out
 
+clean:
+	$(CLEAN)
+
 ellf.exe: $(O_DEPENDENCIES)
 	olink -oellf.exe /T:CON32 /m /c c0xpe.o $(O_DEPENDENCIES) clwin.l climp.l	

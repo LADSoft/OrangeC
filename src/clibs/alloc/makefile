@@ -1,6 +1,6 @@
 # Software License Agreement
 # 
-#     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
+#     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
 # 
 #     This file is part of the Orange C Compiler package.
 # 
@@ -36,7 +36,7 @@
 C_DEPENDENCIES = $(wildcard *.c)
 CIL_DEPENDENCIES = $(wildcard cil/*.c)
 
-EXCLUDE = lea.o farmems.o farmem.o
+EXCLUDE = malloc.o calloc.o realloc.o free.o farmems.o farmem.o
 
 all: $(DEPENDENCIES)
 

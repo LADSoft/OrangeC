@@ -27,10 +27,9 @@ mpfr.exe: mpfrdll.dll mpfr.c
 	occ /ompfr.exe mpfr.c -l mpfrdll.l
 
 %.tst: %.exe
-	$< > $*.tst
-	fc /b $*.cmpx $*.tst
+	$< > $*.out
+	fc /b $*.cmpx $*.out
 
 clean:
-	del *.tst
-	del *.o
-	del *.exe
+	$(CLEAN)
+

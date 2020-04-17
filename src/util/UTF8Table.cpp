@@ -1,27 +1,29 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
+
 #include "UTF8.h"
+#include <ctype.h>
 
 int UTF8::alpha[] = {
     0x000041, 0x000042, 0x000043, 0x000044, 0x000045, 0x000046, 0x000047, 0x000048, 0x000049, 0x00004a, 0x00004b, 0x00004c,
@@ -804,8 +806,18 @@ static bool Match(int* table, int size, int val)
         return 0;
     return 1;
 }
-bool UTF8::IsAlpha(int n) { return Match(alpha, sizeof(alpha) / sizeof(alpha[0]), n); }
-bool UTF8::IsAlnum(int n) { return Match(alnum, sizeof(alnum) / sizeof(alnum[0]), n); }
+bool UTF8::IsAlpha(int n) 
+{ 
+    if (n < 0x7f)
+        return isalpha(n);
+    return Match(alpha, sizeof(alpha) / sizeof(alpha[0]), n); 
+}
+bool UTF8::IsAlnum(int n) 
+{ 
+    if (n < 0x7f)
+        return isalnum(n);
+    return Match(alnum, sizeof(alnum) / sizeof(alnum[0]), n); 
+}
 bool UTF8::IsAlpha(const char* str)
 {
     int n = Decode(str);

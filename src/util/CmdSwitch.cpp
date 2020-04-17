@@ -1,25 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #define _CRT_SECURE_NO_WARNINGS
@@ -135,14 +135,13 @@ int CmdSwitchDefine::Parse(const char* data)
         return INT_MAX;
     int str=0;
     int rv = strlen(data);
-    char name[10000], *p = name;
+    std::string name;
     if (data[0] == '"')
         str = *data++;
     if (!isalpha(*data) && *data != '_')
         return -1;
     while (*data && (isalnum(*data) || *data == '_'))
-        *p++ = *data++;
-    *p = 0;
+        name += *data++;
     if (*data && *data != '=')
     {
         return -1;
@@ -152,12 +151,11 @@ int CmdSwitchDefine::Parse(const char* data)
     if (*data == '=')
     {
         data++;
-        p = name;
+        name="";
         while (*data && *data != str)
         {
-            *p++ = *data++;
+            name += *data++;
         }
-        *p = 0;
         if (*data)
             data++;
         newDefine->value = name;

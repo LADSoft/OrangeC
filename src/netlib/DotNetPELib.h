@@ -1,6 +1,6 @@
 /* Software License Agreement
  * 
- *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
  * 
  *     This file is part of the Orange C Compiler package.
  * 
@@ -284,15 +284,15 @@ namespace DotNetPELib
         ///** get a name for a DataContainer object, suitable for use in an ASM file
         // The main problem is there is a separator character between the first class encountered
         // and its members, which is different depending on whether it is a type or a field
-        static std::string GetName(const std::string& root, DataContainer *parent, bool type = false);
-        static std::string GetObjName(const std::string& root, DataContainer *parent);
+        static std::string GetName(const std::string& root, const DataContainer *parent, bool type = false);
+        static std::string GetObjName(const std::string& root, const DataContainer *parent);
         virtual void ObjOut(PELib &, int pass) const;
         void ObjIn(PELib &, bool definition = true);
         int Flags() const { return flags_; }
         void Flags(int flags) { flags_ = flags;  }
     protected:
-        static void ReverseNamePrefix(std::string&rv, DataContainer *parent, int &pos, bool type);
-        static std::string GetNamePrefix(DataContainer *parent, bool type);
+        static void ReverseNamePrefix(std::string&rv, const DataContainer *parent, int &pos, bool type);
+        static std::string GetNamePrefix(const DataContainer *parent, bool type);
     private:
         static const char * qualifierNames_[];
         static int afterFlags_;
@@ -603,6 +603,8 @@ namespace DotNetPELib
             instance_(true), getter_(nullptr), setter_(nullptr) { }
             ///** Set the parent container (always a class)
         void SetContainer(DataContainer *parent, bool add = true);
+        ///** Get the parent container (always a class)
+        DataContainer* GetContainer() const { return parent_; }
         ///** choose whether it is an instance member or static property
         void Instance(bool instance);
         ///** return whether it is an instance member or static property

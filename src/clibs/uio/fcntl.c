@@ -1,6 +1,6 @@
 /* Software License Agreement
  * 
- *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
  * 
  *     This file is part of the Orange C Compiler package.
  * 
@@ -157,7 +157,6 @@ static int fcntl_setlock(int __handle, struct flock *lock, int wait)
             struct flock *p = *search;
             *search = (*search)->l_next;
             free(p);
-            printf("u: %d, %d\n", start, end);
             return __ll_unlock(__uihandles[__handle], start, end);               
         }
         return -1;
@@ -185,7 +184,6 @@ static int fcntl_setlock(int __handle, struct flock *lock, int wait)
     }
     ilock->l_next = *search;
     *search = ilock;
-            printf("l: %d, %d\n", start, end);
     return __ll_lock(__uihandles[__handle], start, end, lock->l_type == F_WRLCK, wait);
 }
 int _RTL_FUNC fcntl(int __handle, int type, ...)

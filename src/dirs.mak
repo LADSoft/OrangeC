@@ -1,6 +1,6 @@
 # Software License Agreement
 # 
-#     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
+#     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
 # 
 #     This file is part of the Orange C Compiler package.
 # 
@@ -23,14 +23,10 @@
 
 ifeq "$(COMPILER)" "gcc-linux"
 
-DIRS := sqlite3 util objlib netlib obrc ocpp ogrep oasm dlhex dlle dlmz dlpe dlpm olib olink \
-       oimplib omake onm orc occ coff2ieee
+DIRS := sqlite3 util objlib netlib occopt obrc ocpp ogrep oasm dlhex dlle dlmz dlpe dlpm olib olink \
+       oimplib omake onm orc occparse occpr occ occil coff2ieee
 else
 
-ifneq "$(ORANGEC_ONLY)" "YES"
-OCCIL_DIRS := netlib
-endif
-
-DIRS := sqlite3 util objlib $(OCCIL_DIRS) obrc ocpp ogrep oasm dlhex dlle dlmz dlpe dlpm olib olink \
-       oimplib omake onm orc ocl occ coff2ieee help MSDNHelp
+DIRS := sqlite3 util objlib netlib occopt obrc ocpp ogrep oasm dlhex dlle dlmz dlpe dlpm olib olink \
+       oimplib omake onm orc ocl occparse occpr occ occil coff2ieee help MSDNHelp
 endif

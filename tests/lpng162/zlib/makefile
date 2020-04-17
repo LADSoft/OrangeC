@@ -17,6 +17,8 @@ RFLAGS = /r /!
 
 all: $(OUT)
 
+clean:
+	$(CLEAN)
 
 CCDIR = \orangec\bin
 

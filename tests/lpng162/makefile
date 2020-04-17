@@ -58,4 +58,5 @@ test: pngtest.exe
 	fc /b test.out test.cmpx
 
 clean:
-	-del $(OUT) 2> NUL
+	$(CLEAN)
+	$(MAKE) -Czlib clean

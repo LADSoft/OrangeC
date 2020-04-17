@@ -37,9 +37,12 @@ TEST_FILES = n_1.exe \
 
 all: af.o $(TEST_FILES)
 
+clean:
+	$(CLEAN)
+
 af.o : af.c
 	occ /c $^
 
-%.exe: %.c
+%.exe: %.c af.o
 	occ /T /9 $^ af.o
 	$*.exe

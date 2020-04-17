@@ -1,25 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #include "DotNetPELib.h"
@@ -46,7 +46,7 @@ void Qualifiers::ILSrcDumpAfterFlags(PELib& peLib) const
 }
 void Qualifiers::ObjOut(PELib& peLib, int pass) const { peLib.Out() << flags_; }
 void Qualifiers::ObjIn(PELib& peLib, bool definition) { flags_ = peLib.ObjInt(); }
-void Qualifiers::ReverseNamePrefix(std::string& rv, DataContainer* parent, int& pos, bool type)
+void Qualifiers::ReverseNamePrefix(std::string& rv, const DataContainer* parent, int& pos, bool type)
 {
     if (parent)
     {
@@ -69,7 +69,7 @@ void Qualifiers::ReverseNamePrefix(std::string& rv, DataContainer* parent, int& 
         pos++;
     }
 }
-std::string Qualifiers::GetNamePrefix(DataContainer* parent, bool type)
+std::string Qualifiers::GetNamePrefix(const DataContainer* parent, bool type)
 {
     std::string rv;
     if (parent)
@@ -79,7 +79,7 @@ std::string Qualifiers::GetNamePrefix(DataContainer* parent, bool type)
     }
     return rv;
 }
-std::string Qualifiers::GetName(const std::string& root, DataContainer* parent, bool type)
+std::string Qualifiers::GetName(const std::string& root, const DataContainer* parent, bool type)
 {
     std::string rv = GetNamePrefix(parent, type);
     if (rv.size())
@@ -95,7 +95,7 @@ std::string Qualifiers::GetName(const std::string& root, DataContainer* parent, 
     return rv;
 }
 
-std::string Qualifiers::GetObjName(const std::string& stem, DataContainer* parent)
+std::string Qualifiers::GetObjName(const std::string& stem, const DataContainer* parent)
 {
     int pos = 0;
     std::string rv;

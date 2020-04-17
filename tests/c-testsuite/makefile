@@ -219,3 +219,6 @@ FILES = \
 	fc $*.tst $*.c.expected
 
 all: $(FILES:.exe=.tst)
+
+clean:
+	$(CLEAN)

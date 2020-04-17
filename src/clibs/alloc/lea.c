@@ -6318,15 +6318,18 @@ History:
 #include <wchar.h>
 #include "libp.h"
 
+#define START_PAD (sizeof(DWORD) * 2)
+#define PMAG (0x12458932)
 void *malloc(size_t bytes)
 {
     char *rv;
     __ll_enter_critical();
-    rv = dlmalloc(bytes+sizeof(DWORD));
+    rv = dlmalloc(bytes+START_PAD);
     if (rv)
     {
-        *(DWORD *)rv = NULL;
-        rv += sizeof(DWORD);
+        *(DWORD *)rv = PMAG;
+        *((DWORD *)rv + 1) = bytes + START_PAD;
+        rv += START_PAD;
     }
     __ll_exit_critical();
     return rv;
@@ -6335,11 +6338,13 @@ void *calloc(size_t n, size_t size)
 {
     char *rv;
     __ll_enter_critical();
-    rv = dlcalloc(n*size+sizeof(DWORD), 1);
+    size_t bytes = n * size;
+    rv = dlcalloc(bytes+START_PAD, 1);
     if (rv)
     {
-        *(DWORD *)rv = NULL;
-        rv += sizeof(DWORD);
+        *(DWORD *)rv = PMAG;
+        *((DWORD *)rv + 1) = bytes + START_PAD;
+        rv += START_PAD;
     }
     __ll_exit_critical();
     return rv;
@@ -6350,14 +6355,19 @@ void *realloc(void *old, size_t bytes)
     if (rv)
     {
         int n = *(DWORD *)(rv - sizeof(DWORD));
-        if (n < 0)
-            rv += n-sizeof(DWORD)*2;
-        rv -= sizeof(DWORD);
+        if (n- START_PAD == bytes)
+            return old;           
+        rv -= START_PAD;
+        *(DWORD *)rv = 0;
     }                           
     __ll_enter_critical();
-    rv = dlrealloc(rv, bytes+sizeof(DWORD));
+    rv = dlrealloc(rv, bytes+START_PAD);
     if (rv)
-        rv += sizeof(DWORD);
+    {
+        *(DWORD *)rv = PMAG;
+        *((DWORD *)rv + 1) = bytes + START_PAD;
+        rv += START_PAD;
+    }
     __ll_exit_critical();
     return rv;
 }
@@ -6366,13 +6376,14 @@ void free(void *mem)
     char *rv = (char *)mem;
     if (rv)
     {
-        int n = *(DWORD *)(rv - sizeof(DWORD));
-        if (n < 0)
-            rv += n-sizeof(DWORD)*2;
-        rv -= sizeof(DWORD);
-        __ll_enter_critical();
-        dlfree(rv);
-        __ll_exit_critical();
+        rv -= START_PAD;
+        if (*(DWORD *)rv == PMAG)
+        {
+            *(DWORD *)rv = 0;
+            __ll_enter_critical();
+            dlfree(rv);
+            __ll_exit_critical();
+        }
     }
 }
 #ifndef WIN32

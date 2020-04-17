@@ -16,12 +16,14 @@ test: bzip2.exe parsecsv.exe label.exe delegate.exe world.exe jarjar.exe
 	del out.pcl
 	parsecsv
 	fc /b test.cmpx out.pcl
-	del label1.exe
 	label
 	label1 > label1.out
 	fc /b label1.cmpx label1.out
 	delegate > delegate.out
 	fc /b delegate.cmpx delegate.out
+
+clean:
+	$(CLEAN)
 
 world.exe: world.c
 	occ /9 /! /Wcm $^

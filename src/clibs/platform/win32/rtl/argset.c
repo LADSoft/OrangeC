@@ -1,6 +1,6 @@
 /* Software License Agreement
  * 
- *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
  * 
  *     This file is part of the Orange C Compiler package.
  * 
@@ -49,7 +49,7 @@ char* _passed_name;
 
 static void argset(void)
 {
-    char buf[260];
+    char buf[10000];
     char *bufp[10000], *ocl;
     char* _cmdline = _oscmd;
     int inquote = 0;
@@ -69,7 +69,7 @@ static void argset(void)
                     _cmdline++;
                     continue;
                 }
-                if (*_cmdline == '\\' && *(_cmdline + 1) == '"')
+                if (*_cmdline == '\\' && (*(_cmdline + 1) == '"' || *(_cmdline + 1) == '\\'))
                     _cmdline++;
                 buf[i++] = *_cmdline++;
             }

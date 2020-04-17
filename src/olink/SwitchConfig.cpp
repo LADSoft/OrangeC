@@ -1,40 +1,36 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #include "SwitchConfig.h"
 #include "ObjUtil.h"
 #include "ObjExpression.h"
 #include "LinkExpression.h"
+#include "Utils.h"
 #include <fstream>
 #include <cstdlib>
 #include <cctype>
 #include <cstring>
-
-#if defined(WIN32) || defined(MICROSOFT)
-#    define system(x) winsystem(x)
-extern "C" int winsystem(const char*);
-#endif
 
 ConfigData::~ConfigData() {}
 bool ConfigData::VisitAttrib(xmlNode& node, xmlAttrib* attrib, void* userData)
@@ -300,21 +296,15 @@ int SwitchConfig::RunApp(const std::string& path, const std::string& file, const
     }
     if (name.empty())
         return 0;  // nothing to do, all ok
-    std::string cmd = std::string("\"") + path + name + "\" ";
-    if (!verbose)
-        cmd = cmd + "/! ";
-    if (!debugFile.empty())
-        cmd = cmd + "\"/v" + debugFile + "\" ";
-    if (verbose)
-        cmd = cmd + "/y ";
-    cmd = cmd + flags + "\"" + file + "\"";
+    std::string sverbose = verbose ? "/y" : "/!";
+    std::string sdebug = debugFile.empty() ? "" : "\"/v" + debugFile + "\"";
+    std::string sfiles;
     for (auto name : files)
-        cmd = cmd + " \"" + name + "\"";
+        sfiles = sfiles + " \"" + name + "\"";
+    std::string outdef;
     if (!outDefFile.empty())
-        cmd = cmd + " --output-def \"" + outDefFile + "\"";
-    if (verbose)
-        std::cout << "Running App: " << cmd << std::endl;
-    return system(cmd.c_str());
+        outdef = " --output-def \"" + outDefFile + "\"";
+    return Utils::ToolInvoke(name, verbose ? "" : nullptr, "%s %s %s %s \"%s\" %s", flags.c_str(), outdef.c_str(), sverbose.c_str(), sdebug.c_str(), file.c_str(), sfiles.c_str());
 }
 bool SwitchConfig::VisitAttrib(xmlNode& node, xmlAttrib* attrib, void* userData) { return false; }
 bool SwitchConfig::VisitNode(xmlNode& node, xmlNode* child, void* userData)

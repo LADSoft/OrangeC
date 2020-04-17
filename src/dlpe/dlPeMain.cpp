@@ -1,25 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #include "dlPeMain.h"
@@ -38,11 +38,6 @@
 #include <iostream>
 #include <cstring>
 #include <cstdlib>
-
-#if defined(MICROSOFT) || defined __MINGW64__
-#    define system(x) winsystem(x)
-extern "C" int winsystem(const char*);
-#endif
 
 CmdSwitchParser dlPeMain::SwitchParser;
 CmdSwitchString dlPeMain::stubSwitch(SwitchParser, 's');
@@ -507,7 +502,6 @@ int dlPeMain::Run(int argc, char** argv)
 {
     Utils::banner(argv[0]);
     Utils::SetEnvironmentToPathParent("ORANGEC");
-    char* modName = Utils::GetModuleName();
     CmdSwitchFile internalConfig(SwitchParser);
     std::string configName = Utils::QualifiedFile(argv[0], ".cfg");
     std::fstream configTest(configName, std::ios::in);
@@ -578,24 +572,11 @@ int dlPeMain::Run(int argc, char** argv)
         {
             if (mode == DLL)
             {
-                std::string path = modName;
-                int n = path.find_last_of(CmdFiles::DIR_SEP[0]);
-                if (n == std::string::npos)
-                    path = "";
-                else
-                    path.erase(n + 1);
-                std::string usesC = exportObject && exportObject->ImportsNeedUnderscore() ? "/C " : "";
+                std::string sverbose = Verbose.GetExists() ? "" : "/!";
+                std::string usesC = exportObject && exportObject->ImportsNeedUnderscore() ? "/C" : "";
                 std::string implibName = Utils::QualifiedFile(outputName.c_str(), ".l");
-                std::string cmd = std::string("\"") + path + "oimplib" + "\" ";
-                if (!Verbose.GetExists())
-                    cmd += "/! ";
-                if (OutputDefFile.GetExists())
-                    cmd += usesC + "\"" + OutputDefFile.GetValue() + "\" \"" + outputName + "\"";
-                else
-                    cmd += usesC + "\"" + implibName + "\" \"" + outputName + "\"";
-                if (Verbose.GetExists())
-                    std::cout << "Running: " << cmd << std::endl;
-                return system(cmd.c_str());
+		return Utils::ToolInvoke("oimplib", Verbose.GetExists() ? "" : nullptr, "%s %s \"%s\" \"%s\"", 
+			usesC.c_str(), sverbose.c_str(), implibName.c_str(), outputName.c_str());
             }
             return 0;
         }

@@ -1,25 +1,25 @@
 /* Software License Agreement
- *
- *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
- *
+ * 
+ *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
+ * 
  *     This file is part of the Orange C Compiler package.
- *
+ * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *
+ * 
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- *
+ * 
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- *
+ * 
  */
 
 #define _CRT_SECURE_NO_WARNINGS
@@ -283,4 +283,59 @@ bool Utils::iequal(const std::string& a, const std::string& b, int sz)
         if (tolower(a[i]) != tolower(b[i]))
             return false;
     return true;
+}
+
+FILE* Utils::TempName(std::string &name)
+{
+    char tempFile[260];
+    tmpnam(tempFile);
+    if (tempFile[0] == '\\')
+    {
+        // fix for buggy mingw on windows
+        strcpy(tempFile, getenv("TMP"));
+        tmpnam(tempFile + strlen(tempFile));
+    }
+    FILE* fil = fopen(tempFile, "w");
+    if (!fil)
+    {
+        strcpy(tempFile, ".\\");
+        tmpnam(tempFile + strlen(tempFile));
+        fil = fopen(tempFile, "w");
+        if (!fil)
+        {
+            Utils::fatal("TMP environment variable not set or invalid");
+        }
+    }
+    name = tempFile;
+    return fil;
+}
+
+/*
+ * If no extension, add the one specified
+ */
+void Utils::AddExt(char* buffer, const char* ext)
+{
+    char* pos = strrchr(buffer, '.');
+    if (!pos || (*(pos - 1) == '.') || (*(pos + 1) == '\\'))
+        strcat(buffer, ext);
+}
+
+/*
+ * Strip extension, if it has one
+ */
+void Utils::StripExt(char* buffer)
+{
+    char* pos = strrchr(buffer, '.');
+    if (pos && (*(pos - 1) != '.'))
+        *pos = 0;
+}
+
+bool Utils::HasExt(const char* buffer, const char* ext)
+{
+    int l = strlen(buffer), l1 = strlen(ext);
+    if (l1 < l)
+    {
+        return Utils::iequal(buffer + l - l1, ext);
+    }
+    return 0;
 }

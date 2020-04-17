@@ -1,6 +1,6 @@
 # Software License Agreement
 # 
-#     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
+#     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
 # 
 #     This file is part of the Orange C Compiler package.
 # 
@@ -37,7 +37,7 @@ SHELL=cmd.exe
 
 RCFILE=lscrtl
 
-all: .\c0dll.o .\lscrtl.dll .\lscrtlil.dll
+all: .\c0dll.o .\lscrtl.dll
 
 ifneq ($(shell type makefile),)
 B = /b
@@ -52,11 +52,6 @@ DLLOBJS = $(shell dir $(B) $(DLLOBJECT)\\*.o)
 	move lscrtl.dll $(LSCRTLOBJECT)
 	olib lscrtl.l + $(DLLOBJECT)\shlguid.o + $(DLLOBJECT)\xmluuid.o
 	move lscrtl.l $(LSCRTLOBJECT)
-
-.\lscrtlil.dll: .\lscrtl.o .\c0dll.o $(RCFILE).res
-	-del $@
-	$(LINK) $(LINKFLAGS) /l /T:DLL32 -o.\lscrtlil .\lscrtl.o .\c0dll.o $(CLIBOBJECT)\srproc.o $(foreach dir, $(filter-out c0.o c0lsstartup.o, $(DLLOBJS)), $(DLLOBJECT)\$(dir)) $(SYSOBJECT)\climp.l $(RCFILE).res
-#	move lscrtlil.dll \occil\bin
 
 .\lscrtl.o: lscrtl.nas
 	$(ASM) $(ASMFLAGS) -o$@ $^

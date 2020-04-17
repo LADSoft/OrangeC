@@ -1,6 +1,6 @@
 /* Software License Agreement
  * 
- *     Copyright(C) 1994-2019 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
  * 
  *     This file is part of the Orange C Compiler package.
  * 
@@ -33,6 +33,7 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  * 
  */
+
 #ifndef	_ALLOCA_H
 #define	_ALLOCA_H
 

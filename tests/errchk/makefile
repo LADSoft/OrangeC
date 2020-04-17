@@ -7,6 +7,9 @@ TESTS := $(TESTS:.asm=.tst)
 
 all: $(TESTS)
 
+clean:
+	$(CLEAN)
+
 %.tst: %.c
 	occ /1 /c /! $< > $*.tst
 	del $*.o
@@ -18,6 +21,3 @@ all: $(TESTS)
 	fc /b $*.cmpx $*.tst
 
 
-clean:
-	del *.tst
-	del *.o

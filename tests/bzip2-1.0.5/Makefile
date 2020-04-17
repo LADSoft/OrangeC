@@ -24,6 +24,10 @@ vpath %.res $(RESDIR)
 
 all: bzip2 bzip2recover test
 
+clean:
+	$(CLEAN)
+	-del resource\*.res 2>NUL
+
 bzip2: libbz2.l bzip2.o $(RESDIR)\bzip2-res.res
 	occ /Wc /! /obzip2.exe bzip2.o $(RESDIR)\bzip2-res.res libbz2.l
 

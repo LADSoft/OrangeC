@@ -45,6 +45,12 @@
     <ClCompile Include="NamedPipe.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="SharedMemory.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Random.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CmdFiles.h">
@@ -60,6 +66,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="xml.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SharedMemory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

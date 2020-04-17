@@ -1,1 +1,1 @@
-msbuild /maxcpucount /Property:configuration=Release /Property:platform=win32
+msbuild /maxcpucount /Property:configuration=Release /Property:platform=win32 "orange c.sln"

@@ -68,7 +68,7 @@ int anonymousNotAlloc;
 SimpleSymbol* currentFunction;
 int usingEsp;
 
-bool functionHasAssembly;
+extern bool functionHasAssembly;
 
 bool InputIntermediate(SharedMemory* mem);
 void OutputIntermediate(SharedMemory* mem);

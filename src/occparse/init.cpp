@@ -4039,7 +4039,7 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_c
                     t = sym->tp;
                 if (MATCHKW(lex, assign))
                 {
-                    if (!isstructured(t))
+                    if (!isstructured(t) && !isarray(t))
                         lex = getsym(); /* past = */
                     else
                         assigned = true;

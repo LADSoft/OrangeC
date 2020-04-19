@@ -62,6 +62,7 @@ extern char infile[];
 extern int templateNestingCount;
 extern int dontRegisterTemplate;
 extern SYMBOL* theCurrentFunc;
+extern unsigned identityValue;
 
 LAMBDA* lambdas;
 
@@ -90,7 +91,7 @@ static char* LambdaName(void)
         else
             p++;
 
-        my_sprintf(lambdaQualifier, "__%s__%d", p, rand() * RAND_MAX + rand());
+        sprintf(lambdaQualifier, "__%s__%08x", p, identityValue);
         while ((p = strchr(lambdaQualifier, '.')) != 0)
             *p = '_';
     }

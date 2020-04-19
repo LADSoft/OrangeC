@@ -70,6 +70,7 @@ extern PreProcessor *preProcessor;
 extern char realOutFile[260];
 extern std::vector<SimpleSymbol*> externals;
 extern std::vector<SimpleSymbol*> globalCache;
+extern unsigned identityValue;
 
 int inDefaultParam;
 char deferralBuf[100000];
@@ -160,7 +161,7 @@ const char* AnonymousTypeName(void)
 {
     char buf[512];
     std::string name = preProcessor->GetRealFile();
-    my_sprintf(buf, "__anontype_%u_%d", Utils::CRC32((const unsigned char *)name.c_str(), name.size()),
+    sprintf(buf, "__anontype_%08x_%04d", Utils::CRC32((const unsigned char *)name.c_str(), name.size()),
                preProcessor->GetAnonymousIndex());
     return litlate(buf);
 }
@@ -196,7 +197,7 @@ SYMBOL* makeID(enum e_sc storage_class, TYPE* tp, SYMBOL* spi, const char* name)
 SYMBOL* makeUniqueID(enum e_sc storage_class, TYPE* tp, SYMBOL* spi, const char* name)
 {
     char buf[512];
-    my_sprintf(buf, "%s_%u", name, Utils::CRC32((const unsigned char *)realOutFile, strlen(realOutFile)));
+    sprintf(buf, "%s_%08x", name, identityValue);
     return makeID(storage_class, tp, spi, litlate(buf));
 }
 void addStructureDeclaration(STRUCTSYM* decl)

@@ -60,6 +60,8 @@ char outFile[260];
 
 long long ParseExpression(std::string&line);
 
+unsigned identityValue;
+
 #ifdef _WIN32
 extern "C"
 {
@@ -352,8 +354,6 @@ int main(int argc, char* argv[])
     int rv;
     bool compileToFile = false;
 
-    srand(time(0));
-
     /*   signal(SIGSEGV,internalError) ;*/
     /*   signal(SIGFPE, internalError) ;*/
 
@@ -418,6 +418,7 @@ int main(int argc, char* argv[])
     bool first = true;
     while (clist)
     {
+	identityValue = Utils::CRC32((const unsigned char *)clist->data, strlen((char *)clist->data));
 #ifndef PARSER_ONLY
         if (architecture == ARCHITECTURE_MSIL)
         {

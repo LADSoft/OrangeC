@@ -57,6 +57,7 @@ ifneq "$(wildcard $(_TARGETDIR)$(PATHEXT2)dirs.mak)" ""
 include $(_TARGETDIR)$(PATHEXT2)dirs.mak
 endif
 	
+COMPARER:= $(TREETOP)$(PATHEXT2)comparer.exe
 
 
 LIBS:= $(addsuffix .library,$(DIRS))
@@ -66,6 +67,7 @@ DISTS:= $(addsuffix .dist,$(DIRS))
 DISTS1:= $(addsuffix .dist1,$(DIRS))
 CDIRS:= $(addsuffix .dirs,$(DIRS))
 FORMATS:= $(addsuffix .format,$(DIRS))
+COMPARES:= $(addsuffix .comp,$(DIRS))
 
 ifeq "$(COMPILER)" "gcc-linux"
 NULLDEV := /dev/null
@@ -278,6 +280,18 @@ $(DISTS): %.dist : cleanDISTRIBUTE
 
 $(DISTS1): %.dist1 : $(DISTS)
 	$(MAKE) distribute -f $(_TREEROOT) -C$*
+
+compare_exe:
+ifneq "$(MAIN_FILE)" ""
+ifeq "$(NO_COMPARE)" ""
+	$(COMPARER) $(DISTBIN)\..\temp2\$(NAME).exe $(DISTBIN)\$(DISTNAME).exe
+endif
+endif
+
+compare: $(COMPARES)
+
+$(COMPARES): %.comp :
+	$(MAKE) compare_exe -f $(_TREEROOT) -C$*
 
 zip:
 ifdef WITHMSDOS

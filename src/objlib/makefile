@@ -30,6 +30,7 @@ CPP_DEPENDENCIES=$(wildcard *.cpp)
 LIB_DEPENDENCIES=util
 EXCLUDE=ObjIO test2
 H_FILES=$(wildcard *.h)
+NO_COMPARE=yes
 
 include ../redirect.mak
 

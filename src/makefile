@@ -57,6 +57,9 @@ distribute:
 	@$(MAKE) -f $(_TREEROOT) distribute_clibs
 	@$(MAKE) -f $(_TREEROOT) zip
 
+compare:
+	@$(MAKE) -f $(_TREEROOT) compare
+
 clean:  
 	@$(MAKE) -f $(_TREEROOT) clean
 

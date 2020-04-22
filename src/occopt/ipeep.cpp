@@ -451,7 +451,7 @@ static void merge_setxx(BLOCK* b, QUAD* head)
                                 break;
                             }
                         }
-                        else if (find->dc.opcode >= i_setne && find->dc.opcode <= i_setge)
+                        else if (find->dc.opcode >= i_setne && find->dc.opcode <= i_setge && (head->temps & TEMP_LEFT) && head->dc.left->offset->sp->i == tn)
                         {
                             i_ops newtype;
                             if (head->dc.opcode == i_je)

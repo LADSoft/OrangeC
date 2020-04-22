@@ -125,7 +125,7 @@ static void fixlen(AMODE* ap)
         /* the output routines require positive length field */
         if (ap->length < 0)
             ap->length = -ap->length;
-        if (cparams.prm_assembler == pa_nasm && ap->mode == am_immed && isintconst(ap->offset))
+        if ((cparams.prm_assembler == pa_nasm || cparams.prm_assembler == pa_oasm) && ap->mode == am_immed && isintconst(ap->offset))
         {
             /* for the x86, assume initially that integer constants are unsized
              * But the x86 allows signed byte constants on most math ops

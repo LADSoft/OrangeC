@@ -2763,7 +2763,7 @@ LEXEME* insertNamespace(LEXEME* lex, enum e_lk linkage, enum e_sc storage_class,
             else
                 p++;
 
-            my_sprintf(anonymousNameSpaceName, "__%s__%d", p, Utils::CRC32((unsigned char*)infile, strlen(infile)));
+            sprintf(anonymousNameSpaceName, "__%s__%08x", p, Utils::CRC32((unsigned char*)infile, strlen(infile)));
             while ((p = strchr(anonymousNameSpaceName, '.')) != 0)
                 *p = '_';
         }

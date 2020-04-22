@@ -30,15 +30,37 @@
  
   Causes OCC to generate an assembly language file in NASM format, but no object or EXE files
  
-     OCC /c hello.c
+     OCC /S hello.c
  
   generates a file hello.asm
+
+  The /S switch can be qualified with an assembler name for slightly more control over how output is generated.   Valid assembler names are:
+  
+     oasm
+     nasm
+     tasm
+     masm
+     fasm
+     generic
+
+  where 'generic' chooses generic section names like the ones used in unix.   The default assembler is oasm which is similar to nasm in most respects.
+  the generation of assembly for C++ code generation is only likely to come close to working in nasm/oasm code generation - nasm -fobj.
+
+  For example
+ 
+     OCC /Snasm hello.c
+
+  It is also possible to use generic section names with an assembler other than the 'generic' type.
+
+  For example
+ 
+     OCC /Snasm /C+X hello.c
  
 ### /s    generate intermediate assembly language file
  
   OCC will generate an executable file by compiling via assembly.  The intermediate assembly language file will remain after compilation.
  
-     OCC /c hello.c
+     OCC /s hello.c
      
   generates the files hello.asm and hello.exe.
  

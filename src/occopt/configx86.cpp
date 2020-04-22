@@ -113,6 +113,15 @@ static void chkdos(void)
         }
     }
 }
+static int initoasm(COMPILER_PARAMS* parms, ARCH_ASM* data, ARCH_DEBUG* debug)
+{
+    (void)parms;
+    (void)data;
+    (void)debug;
+    cparams.prm_assembler = pa_oasm;
+    chkdos();
+    return 1;
+}
 static int initnasm(COMPILER_PARAMS* parms, ARCH_ASM* data, ARCH_DEBUG* debug)
 {
     (void)parms;
@@ -430,6 +439,52 @@ static ARCH_GEN outputfunctions = {
 #endif
 };
 ARCH_ASM x86AssemblerInterface[] = {
+    {
+        "oasm",                         /* assembler name */
+        0,                              /* backend data (compiler ignores) */
+        "1",                            /* __STDC__HOSTED__ value "0" = embedded, "1" = hosted */
+        ".asm",                         /* extension for assembly files */
+        ".o",                           /* extension for object files, nullptr = has no object mode */
+        ".l;.lib;.a;.rc;.res;.o;.asm;.nas;.s",   /* extensions for files that should be passed to the backend*/
+        "occ",                          /* name of an environment variable to parse, or 0 */
+        "occ",                          /* name of the program, for usage */
+        "occ",                          /* name of a config file if you want to use one, or nullptr (sans extension) */
+        usage_text,                     /* pointer to usage text */
+        nullptr,// args,                           /* extra args */
+        0, //sizeof(args) / sizeof(args[0]), /* number of args */
+        nullptr,                   /* specific keywords, e.g. allow a 'bit' keyword and so forth */
+        defines,                        /* defines list to create at compile time, or null */
+        &dbgStruct[0],                  /* debug structure, or nullptr */
+        &architecture_characteristics,                  /* architecture characteristics */
+        &outputfunctions,               /* pointer to backend function linkages */
+#if 0
+        nullptr,                        /* pointer to MSIL-specific data and functions */
+#endif
+        BackendIntrinsicPrototypes,     /* pointer to extra builtin data */
+        initoasm,                       /* return 1 to proceed */
+#if 0
+        0,                              /* precompile function, or nullptr */
+        0,                              /* postcompile function, or nullptr */
+        RunExternalFiles,               /* postprocess function, or nullptr */
+        0,                              /* compiler rundown */
+        InsertOutputFileName,           /* insert the output (executable name) into the backend */
+        InsertExternalFile,             /* insert a non-compilable file in the backend list, e.g. for post processing, or nullptr */
+        parse_param,                    /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
+        parse_codegen,                  /* return 1 to eat a single char.  2 = eat rest of string.  0 = unknown */
+        0,                              /* parse a pragma directive, or null */
+        compile_start,                  /* signal start of compile on a per file basis */
+        include_start,                  /* signal switching to a new source file */
+        output_obj_file,                /* write the object file (for native object formats) */
+        outcode_file_init,              /* initialize the object file */
+        inasmini,                       /* initialize inline assembler, per file, or nullptr */
+        inasm_statement,                /* parse an assembly statement, or nullptr */
+        inlineAsmStmt,                  /* translate an assembly instruction which was inlined */
+        0,                              /* initialize intrinsic mechanism, compiler startup */
+        0,                              /* search for an intrinsic */
+        0,                              /* enter a type in the BE */
+        get_dll_linkage,                /* get dll linkage corresponding to command line switches */
+#endif
+    },
     {
         "nasm",                         /* assembler name */
         0,                              /* backend data (compiler ignores) */

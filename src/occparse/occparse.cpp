@@ -60,6 +60,8 @@ char outFile[260];
 
 long long ParseExpression(std::string&line);
 
+unsigned identityValue;
+
 #ifdef _WIN32
 extern "C"
 {
@@ -352,8 +354,6 @@ int main(int argc, char* argv[])
     int rv;
     bool compileToFile = false;
 
-    srand(time(0));
-
     /*   signal(SIGSEGV,internalError) ;*/
     /*   signal(SIGFPE, internalError) ;*/
 
@@ -388,6 +388,7 @@ int main(int argc, char* argv[])
 #endif
 #endif
 #ifndef PARSER_ONLY
+    const char *firstFile = clist ? (const char *)clist->data : "temp";
     instructionParser = new x64Parser();
     SharedMemory* parserMem = nullptr;
     if (bePostFile.size())
@@ -417,6 +418,7 @@ int main(int argc, char* argv[])
     bool first = true;
     while (clist)
     {
+	identityValue = Utils::CRC32((const unsigned char *)clist->data, strlen((char *)clist->data));
 #ifndef PARSER_ONLY
         if (architecture == ARCHITECTURE_MSIL)
         {
@@ -566,7 +568,10 @@ int main(int argc, char* argv[])
     if (compileToFile)
     {
         //compile to file
-        strcpy(realOutFile, outputFileName.c_str());
+        if (outputFileName.empty())
+            strcpy(realOutFile, firstFile);
+        else
+            strcpy(realOutFile, outputFileName.c_str());
         Utils::StripExt(realOutFile);
         Utils::AddExt(realOutFile, ".icf");
         int size = GetOutputSize();

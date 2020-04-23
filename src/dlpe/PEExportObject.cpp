@@ -22,8 +22,10 @@
  * 
  */
 
+#include "dlPeMain.h"
 #include "PEObject.h"
 #include "Utils.h"
+#include "ObjFactory.h"
 #include "ObjFile.h"
 #include "ObjSymbol.h"
 #include "ObjExpression.h"
@@ -128,7 +130,7 @@ void PEExportObject::Setup(ObjInt& endVa, ObjInt& endPhys)
     memset(pdata, 0, initSize);
     Header* header = (Header*)pdata;
 
-    header->time = time(0);
+    header->time = dlPeMain::TimeStamp();
     header->ord_base = minOrd;
     header->n_eat_entries = count;
     header->n_name_ptrs = names.size();

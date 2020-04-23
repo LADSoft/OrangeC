@@ -33,6 +33,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <ctime>
 
 class ObjFile;
 class ObjFactory;
@@ -53,6 +54,7 @@ class dlPeMain
         GUI,
         DLL
     };
+    static unsigned TimeStamp() { return (unsigned)timeStamp; }
 
   protected:
     void ReadValues();
@@ -108,5 +110,6 @@ class dlPeMain
     static int subsysMinor;
     static int subsysOverride;
     static int dllFlags;
+    static time_t timeStamp;
 };
 #endif

@@ -47,6 +47,8 @@ CmdSwitchString dlPeMain::DebugFile(SwitchParser, 'v');
 CmdSwitchBool dlPeMain::FlatExports(SwitchParser, 'f');
 CmdSwitchBool dlPeMain::Verbose(SwitchParser, 'y');
 CmdSwitchCombineString dlPeMain::OutputDefFile(SwitchParser, 0, 0, "output-def");
+
+time_t dlPeMain::timeStamp;
  
 int dlPeMain::osMajor = 4;
 int dlPeMain::osMinor = 0;
@@ -315,7 +317,7 @@ void dlPeMain::InitHeader(unsigned headerSize, ObjInt endVa)
     header.magic = PE_MAGICNUM;
     header.cpu_type = PE_INTEL386;
     /* store time/date of creation */
-    header.time = (unsigned)time(nullptr);
+    header.time = TimeStamp();
     header.nt_hdr_size = PE_OPTIONAL_HEADER_SIZE;
 
     header.flags = PE_FILE_EXECUTABLE | PE_FILE_32BIT | PE_FILE_LOCAL_SYMBOLS_STRIPPED | PE_FILE_LINE_NUMBERS_STRIPPED |
@@ -502,6 +504,11 @@ int dlPeMain::Run(int argc, char** argv)
 {
     Utils::banner(argv[0]);
     Utils::SetEnvironmentToPathParent("ORANGEC");
+    char* sde = getenv("SOURCE_DATE_EPOCH");
+    if (sde)
+        timeStamp = (time_t)strtoul(sde, nullptr, 10);
+    else
+        timeStamp = time(0);
     CmdSwitchFile internalConfig(SwitchParser);
     std::string configName = Utils::QualifiedFile(argv[0], ".cfg");
     std::fstream configTest(configName, std::ios::in);

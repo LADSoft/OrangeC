@@ -21,10 +21,11 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  * 
  */
-
+#include "dlPeMain.h"
 #include "PEObject.h"
 #include "ResourceContainer.h"
 #include "Utils.h"
+#include "ObjFactory.h"
 #include <ctime>
 #include <cstring>
 
@@ -114,7 +115,7 @@ void PEResourceObject::Setup(ObjInt& endVa, ObjInt& endPhys)
     unsigned short* name = (unsigned short*)(((char*)pdata) + dirCount * sizeof(Dir) + entryCount * sizeof(Entry));
     DataEntry* dataEntries = (DataEntry*)(((char*)name) + nameSize * 2);
     unsigned char* dataPos = (unsigned char*)(dataEntries + dataCount);
-    dir->time = time(0);
+    dir->time = dlPeMain::TimeStamp();
     dir->name_entry = resources.namedTypes.size();
     dir->ident_entry = resources.numberedTypes.size();
     Entry* types = (Entry*)(dir + 1);
@@ -131,7 +132,7 @@ void PEResourceObject::Setup(ObjInt& endVa, ObjInt& endPhys)
             *name++ = *p++;
         }
         *name++ = *p++;
-        dir->time = time(0);
+        dir->time = dlPeMain::TimeStamp();
         dir->name_entry = type.second.namedIds.size();
         dir->ident_entry = type.second.numberedIds.size();
         Entry* ids = (Entry*)(dir + 1);
@@ -148,7 +149,7 @@ void PEResourceObject::Setup(ObjInt& endVa, ObjInt& endPhys)
                 *name++ = *p++;
             }
             *name++ = *p++;
-            dir->time = time(0);
+            dir->time = dlPeMain::TimeStamp();
             dir->name_entry = 0;
             dir->ident_entry = 1;
             Entry* subtypes = (Entry*)(dir + 1);
@@ -166,7 +167,7 @@ void PEResourceObject::Setup(ObjInt& endVa, ObjInt& endPhys)
         {
             ids[j].subdir_or_data = SUBDIR | ((unsigned char*)dir - pdata);
             ids[j++].rva_or_id = number.first;
-            dir->time = time(0);
+            dir->time = dlPeMain::TimeStamp();
             dir->name_entry = 0;
             dir->ident_entry = 1;
             Entry* subtypes = (Entry*)(dir + 1);
@@ -185,7 +186,7 @@ void PEResourceObject::Setup(ObjInt& endVa, ObjInt& endPhys)
     {
         types[i].subdir_or_data = SUBDIR | (((unsigned char*)dir) - pdata);
         types[i++].rva_or_id = type.first;
-        dir->time = time(0);
+        dir->time = dlPeMain::TimeStamp();
         dir->name_entry = type.second.namedIds.size();
         dir->ident_entry = type.second.numberedIds.size();
         Entry* ids = (Entry*)(dir + 1);
@@ -202,7 +203,7 @@ void PEResourceObject::Setup(ObjInt& endVa, ObjInt& endPhys)
                 *name++ = *p++;
             }
             *name++ = *p++;
-            dir->time = time(0);
+            dir->time = dlPeMain::TimeStamp();
             dir->name_entry = 0;
             dir->ident_entry = 1;
             Entry* subtypes = (Entry*)(dir + 1);
@@ -220,7 +221,7 @@ void PEResourceObject::Setup(ObjInt& endVa, ObjInt& endPhys)
         {
             ids[j].subdir_or_data = SUBDIR | ((unsigned char*)dir - pdata);
             ids[j++].rva_or_id = number.first;
-            dir->time = time(0);
+            dir->time = dlPeMain::TimeStamp();
             dir->name_entry = 0;
             dir->ident_entry = 1;
             Entry* subtypes = (Entry*)(dir + 1);

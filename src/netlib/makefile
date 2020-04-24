@@ -31,5 +31,6 @@ CPP_DEPENDENCIES=$(wildcard *.cpp)
 H_DEPENDENCIES=$(wildcard *.h)
 LIB_DEPENDENCIES=util
 include ../redirect.mak
+NO_COMPARE=yes
 
 DISTRIBUTE: copyexe

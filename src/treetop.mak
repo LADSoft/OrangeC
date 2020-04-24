@@ -57,7 +57,7 @@ ifneq "$(wildcard $(_TARGETDIR)$(PATHEXT2)dirs.mak)" ""
 include $(_TARGETDIR)$(PATHEXT2)dirs.mak
 endif
 	
-COMPARER:= $(TREETOP)$(PATHEXT2)comparer.exe
+COMPARER:=fc /b
 
 
 LIBS:= $(addsuffix .library,$(DIRS))
@@ -284,7 +284,7 @@ $(DISTS1): %.dist1 : $(DISTS)
 compare_exe:
 ifneq "$(MAIN_FILE)" ""
 ifeq "$(NO_COMPARE)" ""
-	$(COMPARER) $(DISTBIN)\..\temp2\$(NAME).exe $(DISTBIN)\$(DISTNAME).exe
+	$(COMPARER) $(DISTBIN)\..\temp2\$(DISTNAME).exe $(DISTBIN)\$(DISTNAME).exe
 endif
 endif
 

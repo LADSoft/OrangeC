@@ -29,6 +29,16 @@
 #include <deque>
 #include <map>
 
+enum FunctionFlags
+{
+    FF_USES_SETJMP=1,
+    FF_HAS_ASSEMBLY=2
+};
+enum TempFlags
+{
+    TF_LOADTEMP=1,
+    TF_PUSHEDTOTEMP=2,
+};
 enum DataType
 {
     DT_NONE,

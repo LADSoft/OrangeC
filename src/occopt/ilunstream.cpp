@@ -727,8 +727,8 @@ static void UnstreamTemps()
         int val = UnstreamByte();
         if (temps[temp])
         {
-            temps[temp]->loadTemp = !!(val & 1);
-            temps[temp]->pushedtotemp = !!(val & 2);
+            temps[temp]->loadTemp = !!(val & TF_LOADTEMP);
+            temps[temp]->pushedtotemp = !!(val & TF_PUSHEDTOTEMP);
         }
     }
 }
@@ -764,8 +764,8 @@ static FunctionData *UnstreamFunc()
 
     fd->name = (SimpleSymbol*)UnstreamIndex();
     int flgs = UnstreamIndex();
-    fd->setjmp_used = !!(flgs & 1);
-    fd->hasAssembly = !!(flgs & 2);
+    fd->setjmp_used = !!(flgs & FF_USES_SETJMP);
+    fd->hasAssembly = !!(flgs & FF_HAS_ASSEMBLY);
     fd->blockCount = UnstreamIndex();
     fd->tempCount = UnstreamIndex();
     fd->exitBlock = UnstreamIndex();

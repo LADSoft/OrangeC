@@ -778,9 +778,9 @@ static void StreamTemps()
             StreamIndex(t->i);
             int val = 0;
             if (t->loadTemp)
-                val |= 1;
+                val |= TF_LOADTEMP;
             if (t->pushedtotemp)
-                val |= 2;
+                val |= TF_PUSHEDTOTEMP;
             StreamByte(val);
         }
     }
@@ -837,7 +837,7 @@ static void StreamFunc(FunctionData *fd)
 
 
     StreamIndex(fd->name->fileIndex);
-    StreamIndex((fd->setjmp_used ? 1 : 0) + (fd->hasAssembly ? 2 : 0));
+    StreamIndex((fd->setjmp_used ? FF_USES_SETJMP : 0) + (fd->hasAssembly ? FF_HAS_ASSEMBLY : 0));
     StreamIndex(fd->blockCount);
     StreamIndex(fd->tempCount);
     StreamIndex(fd->exitBlock);

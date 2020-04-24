@@ -24,6 +24,9 @@
 
 OLink parses the LIBRARY_PATH environment variable and adds the contents to the library search path.
 
+Output formatters such as DLPE.EXE will also check the SOURCE_DATE_EPOCH environment variable, and if it exists use the specified
+time_t value for timestamps embedded in the target program.
+
 ## Specification Files
 
  [Specification files](OLink%20Specification%20Files.md) give a flexible method for specifying how to merge sections from the various input files.  They can specify what code and data be combined together, in what order, and what the address of code and data should be.  A specification file uses three basic constructs, and each construct can be further clarified with attributes.  

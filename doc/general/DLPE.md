@@ -71,3 +71,9 @@ name.  For example:
  The **/V** switch shows version information, and the compile date
 
  The **/!** or **--nologo** switch is 'nologo'
+
+
+### Environment Variables consumed by DLPE
+
+The environment variable SOURCE_DATE_EPOCH will be checked when DLPE runs.   If it exists, it is expected to hold a 32-bit time_t value.
+Timestamps in the executable which are normally set to the current time will use this value instead.

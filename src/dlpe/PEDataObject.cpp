@@ -46,6 +46,7 @@ void PEDataObject::Setup(ObjInt& endVa, ObjInt& endPhys)
     endVa = ObjectAlign(objectAlign, endVa + size);
     endPhys = ObjectAlign(fileAlign, endPhys + initSize);
     data = std::make_unique<unsigned char[]>(initSize + importCount * 6);
+    memset(data.get(), 0, initSize + importCount * 6);
 }
 bool PEDataObject::hasPC(ObjExpression* exp)
 {

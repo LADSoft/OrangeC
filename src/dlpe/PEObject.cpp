@@ -61,8 +61,7 @@ void PEObject::Write(std::fstream& stream)
 {
     stream.write((char*)data.get(), initSize);
     int n = ObjectAlign(fileAlign, initSize) - initSize;
-    char buf[512];
-    memset(buf, 0, sizeof(buf));
+    char buf[512] = {};
     while (n > 0)
     {
         int s = sizeof(buf);

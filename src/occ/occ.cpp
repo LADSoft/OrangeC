@@ -395,6 +395,10 @@ int main(int argc, char* argv[])
     Utils::banner(argv[0]);
     Utils::SetEnvironmentToPathParent("ORANGEC");
 
+    if (!Utils::HasLocalExe("occopt") || !Utils::HasLocalExe("occparse"))
+    {
+        Utils::fatal("cannot find 'occopt.exe' or 'occparse.exe'");
+    }
     for (auto p = argv; *p; p++)
     {
         if (strstr(*p, "/y") || strstr(*p, "-y"))

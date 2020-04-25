@@ -2289,23 +2289,31 @@ void x86InternalConflict(QUAD* head)
         case i_lsl:
         case i_lsr:
         case i_asr:
-        case i_sub:
             /* make sure that when regs are allocated, the right- hand argument is in a different
              * reg than the result.  For shifts this is the count value, for divs this is the denominator
-             * for subs we do it to avoid generating neg instructions later on...
              */
             if (head->ans->offset && head->ans->offset->type == se_tempref && head->dc.right->offset &&
                 head->dc.right->offset->type == se_tempref)
             {
+                int t1 = head->ans->offset->sp->i;
+                int t2 = head->dc.right->offset->sp->i;
+                insertConflict(t1, t2);
+            }
+            break;
+        case i_sub:
+            if (head->ans->offset && head->ans->offset->type == se_tempref && head->dc.right->offset &&
+                head->dc.right->offset->type == se_tempref)
+            {
                 //can't do it for long longs in registers on this architecture, due to a dearth of registers...
-                if (head->dc.opcode != i_sub || (head->ans->size != ISZ_ULONGLONG && head->ans->size != -ISZ_ULONGLONG))
+                // not doing it for ints in general to ease register pressure
+                // need to do it for floats for this architecture...
+                if (head->ans->size >= ISZ_FLOAT)
                 {
                     int t1 = head->ans->offset->sp->i;
                     int t2 = head->dc.right->offset->sp->i;
                     insertConflict(t1, t2);
                 }
             }
-            break;
         case i_assn:
             if (head->genConflict)
             {

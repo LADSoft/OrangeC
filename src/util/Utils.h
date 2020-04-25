@@ -34,7 +34,6 @@
 #    define mysystem(x) winsystem(x)
 extern "C" int winsystem(const char*);
 #else
-#    define _access access
 #    define mysystem(x) system(x)
 #endif
 

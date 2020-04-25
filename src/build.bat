@@ -1,4 +1,7 @@
-@echo on
+@echo off
+              echo WScript.Echo(Math.floor(new Date().getTime()/1000)); > %temp%\time.js
+              for /f %%i in ('cscript //nologo %temp%\time.js') do set SOURCE_DATE_EPOCH=%%i
+              del %temp%\time.js
               copy omake.exe \orangec\temp
               call c:\orangec\appveyorversion.bat
               IF "%BUILD_PROFILE%" EQU "OCCIL" (
@@ -21,7 +24,8 @@
                       goto error;
                   )
                   cd ..\src
-                  goto success
+                  echo succeeded
+                  exit
               )
               IF "%BUILD_PROFILE%" EQU "MSDEBUGBUILD" (
                   REM  Build with Microsoft PDB files
@@ -30,7 +34,8 @@
                       goto error;
                   )
                   cd ..\src
-                  goto success
+                  echo succeeded
+                  exit
               )
               IF "%BUILD_PROFILE%" EQU "CODEANALYZER" (
                   REM  Build to test code analyzer
@@ -50,7 +55,8 @@
                       goto error;
                   )
                   cd ..\..\src
-                  goto success
+                  echo succeeded
+                  exit
               )
               IF "%BUILD_PROFILE%" NEQ "TEST" (
                   REM  Primary build for Orange C
@@ -65,13 +71,8 @@
                   IF %ERRORLEVEL% NEQ 0 (
                       goto error;
                   )
-                  c:\orangec\bin\occ /V
-                  copy omake\omake.exe \orangec\temp
-                  c:\orangec\temp\omake /DCOMPILER=OCC clean -j:4
-                  c:\orangec\temp\omake /DNOMAKEDIR /DCOMPILER=OCC /DORANGEC_ONLY=YES /DVIAASSEMBLY=%VIAASEMBLY% /DLSCRTL=%LSCRTL% /DWITHDEBUG=%WITHDEBUG% fullbuild -j:4
-                  IF %ERRORLEVEL% NEQ 0 (
-                     goto error;
-                  )
+                  mkdir c:\orangec\temp2
+                  copy c:\orangec\bin\*.exe c:\orangec\temp2
                   c:\orangec\bin\occ /V
                   copy omake\omake.exe \orangec\temp
                   c:\orangec\temp\omake /DCOMPILER=OCC clean -j:4
@@ -82,6 +83,10 @@
                   )
                   c:\orangec\temp\omake /DNOMAKEDIR /DCOMPILER=OCC /DVIAASSEMBLY=%VIAASEMBLY% /DLSCRTL=%LSCRTL% /DWITHDEBUG=%WITHDEBUG% fullbuild -j:4
 :cont
+                  IF %ERRORLEVEL% NEQ 0 (
+                      goto error;
+                  )
+                  c:\orangec\temp\omake /DCOMPILER=OCC compare
                   IF %ERRORLEVEL% NEQ 0 (
                        goto error;
                   )
@@ -96,11 +101,10 @@
                   IF %ERRORLEVEL% NEQ 0 (
                       goto error;
                   )
-                  goto success
+                  echo succeeded
+                  exit
              )
 :error
      echo failed
      goto done
-:success
-     echo succeeded
 :done

@@ -1048,13 +1048,13 @@ void putconst(SimpleExpression* offset, int color)
                     oprintf(icdFile, "T%d[%s]", (int)(sym->i), ((SimpleSymbol*)offset->right)->name);
                 else
                     oprintf(icdFile, "T%d", (int)sym->i);
-                if (registersAssigned)
+                if (registersAssigned && color != -1)
                     oprintf(icdFile, "(%s)", lookupRegName(color));
             }
             else
             {
                 oprintf(icdFile, "T%d", (offset->sp)->i);
-                if (registersAssigned)
+                if (registersAssigned && color != -1)
                     oprintf(icdFile, "(%s)", lookupRegName(color));
             }
             break;

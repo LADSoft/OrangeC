@@ -63,12 +63,12 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-void       _RTL_FUNC _IMPORT abort(void);
-void       _RTL_FUNC _IMPORT _cexit(void);
-void       _RTL_FUNC _IMPORT _c_exit(void);
-void       _RTL_FUNC _IMPORT exit(int __status);
-void       _RTL_FUNC _IMPORT _Exit(int __status);
-void       _RTL_FUNC _IMPORT _exit(int __status);
+void       _RTL_FUNC _IMPORT _NORETURN abort(void);
+void       _RTL_FUNC _IMPORT _NORETURN _cexit(void);
+void       _RTL_FUNC _IMPORT _NORETURN _c_exit(void);
+void       _RTL_FUNC _IMPORT _NORETURN exit(int __status);
+void       _RTL_FUNC _IMPORT _NORETURN _Exit(int __status);
+void       _RTL_FUNC _IMPORT _NORETURN _exit(int __status);
 
 int		   _RTL_FUNC _IMPORT cwait(int *, int, int);
 int        _RTL_FUNC _IMPORT execl(const char *ZSTR __path, const char *ZSTR __argv0,...);

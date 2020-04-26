@@ -98,6 +98,8 @@
 #        define __STD_NS_QUALIFIER
 #    endif
 
+#define _NORETURN _Noreturn
+
 /* the headers use the restrict keyword, which is not valid prior to
  * C99.  If not compiling for C99 define it as an empty macro to allow
  * compilation to procede

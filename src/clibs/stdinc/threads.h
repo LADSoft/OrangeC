@@ -103,7 +103,7 @@ extern "C"
     thrd_t _RTL_FUNC _IMPORT thrd_current(void);
     int _RTL_FUNC _IMPORT thrd_detach(thrd_t thr);
     int _RTL_FUNC _IMPORT thrd_equal(thrd_t thr0, thrd_t thr1);
-    void _RTL_FUNC _IMPORT thrd_exit(int res);
+    void _RTL_FUNC _IMPORT _NORETURN thrd_exit(int res);
     int _RTL_FUNC _IMPORT thrd_join(thrd_t thr, int* res);
     void _RTL_FUNC _IMPORT thrd_sleep(const struct timespec* duration, struct timespec* remaining);
     void _RTL_FUNC _IMPORT thrd_yield(void);

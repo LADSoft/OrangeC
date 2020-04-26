@@ -78,7 +78,7 @@ extern bool hasFuncCall;
 extern PreProcessor* preProcessor;
 extern attributes basisAttribs;
 extern bool parsingPreprocessorConstant;
-extern bool isCallExit;
+extern bool isCallNoreturnFunction;
 
 int packIndex;
 
@@ -3550,8 +3550,8 @@ LEXEME* expression_arguments(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION*
                 {
                     if (!strcmp(funcparams->sp->name, "setjmp"))
                         setjmp_used = true;
-                    if (!strcmp(funcparams->sp->name, "exit"))
-                        isCallExit = true;
+                    if (funcparams->sp->sb->attribs.inheritable.linkage3 == lk_noreturn)
+                        isCallNoreturnFunction = true;
                 }
                 TYPE* tp1 = funcparams->sp->tp;
                 if (ispointer(tp1))
@@ -7282,7 +7282,7 @@ static LEXEME* expression_hook(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp
         else if (isvoid(*tp) || ismsil(*tp))
             error(ERR_NOT_AN_ALLOWED_TYPE);
         lex = getsym();
-        isCallExit = false;
+        isCallNoreturnFunction = false;
         if (MATCHKW(lex, colon))
         {
             // replicate the selector into the 'true' value
@@ -7295,8 +7295,8 @@ static LEXEME* expression_hook(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp
         {
             lex = expression_comma(lex, funcsp, nullptr, &tph, &eph, nullptr, flags);
         }
-        bool oldCallExit = isCallExit;
-        isCallExit = false;
+        bool oldCallExit = isCallNoreturnFunction;
+        isCallNoreturnFunction = false;
         if (!tph)
         {
             *tp = nullptr;
@@ -7305,7 +7305,7 @@ static LEXEME* expression_hook(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp
         {
             lex = getsym();
             lex = expression_assign(lex, funcsp, nullptr, &tpc, &epc, nullptr, flags);
-            isCallExit &= oldCallExit;
+            isCallNoreturnFunction &= oldCallExit;
             if (!tpc)
             {
                 *tp = nullptr;

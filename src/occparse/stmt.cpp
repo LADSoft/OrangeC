@@ -51,7 +51,7 @@ extern int nextLabel;
 extern bool setjmp_used;
 extern bool functionHasAssembly;
 
-bool isCallExit;
+bool isCallNoreturnFunction;
 
 int funcNesting;
 int funcLevel;
@@ -2967,9 +2967,9 @@ LEXEME* statement(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool viacontro
             }
             else
             {
-                isCallExit = false;
+                isCallNoreturnFunction = false;
                 lex = statement_expr(lex, funcsp, parent);
-                parent->needlabel = isCallExit;
+                parent->needlabel = isCallNoreturnFunction;
             }
     }
     if (MATCHKW(lex, semicolon))

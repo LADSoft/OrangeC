@@ -122,9 +122,9 @@ extern "C"
 #if __STDC_VERSION__ >= 199901L || defined(__cplusplus)
     lldiv_t _RTL_FUNC _IMPORT lldiv(long long __numer, long long __denom);
 #endif
-    void _RTL_FUNC _IMPORT quick_exit(int __status);
-    void _RTL_FUNC _IMPORT exit(int __status);
-    void _RTL_FUNC _IMPORT _Exit(int __status);
+    void _RTL_FUNC _IMPORT _NORETURN quick_exit(int __status);
+    void _RTL_FUNC _IMPORT _NORETURN exit(int __status);
+    void _RTL_FUNC _IMPORT _NORETURN _Exit(int __status);
     void _RTL_FUNC _IMPORT _MSIL_RTL free(void* __block);
     char *ZSTR  _RTL_FUNC _IMPORT getenv(const char *ZSTR  __name);
     void* _RTL_FUNC _IMPORT lfind(const void* __key, const void* __base, size_t* __num, size_t __width,
@@ -208,7 +208,7 @@ extern unsigned char _RTL_DATA _osminor;
 #define _MAX_PATH2 (_MAX_PATH + 4)
 
     long double _RTL_FUNC _IMPORT _atold(const char *ZSTR  __s);
-    void _RTL_FUNC _IMPORT _exit(int __status);
+    void _RTL_FUNC _IMPORT _NORETURN _exit(int __status);
     char *ZSTR  _RTL_FUNC _IMPORT _fullpath(char *ZSTR , const char *ZSTR , size_t);
     char *ZSTR  _RTL_FUNC _IMPORTMM itoa(int __value, char *ZSTR  __stringValue, int __radix);
     char *ZSTR  _RTL_FUNC _IMPORTMM _itoa(int __value, char *ZSTR  __stringValue, int __radix);

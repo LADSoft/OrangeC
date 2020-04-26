@@ -98,7 +98,11 @@
 #        define __STD_NS_QUALIFIER
 #    endif
 
-#define _NORETURN _Noreturn
+#    if __STDC_VERSION__ < 199901L || defined(__cplusplus)
+#        define _NORETURN
+#    else
+#        define _NORETURN _Noreturn
+#    endif
 
 /* the headers use the restrict keyword, which is not valid prior to
  * C99.  If not compiling for C99 define it as an empty macro to allow

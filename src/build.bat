@@ -92,7 +92,8 @@
                   )
                   set "path=%ORIGPATH%"
                   cd ..\tests
-                  omake -B -j:4 /DCOMPILER=OCC
+                  rem -j4 here seems risky
+                  omake -B /DCOMPILER=OCC
                   IF %ERRORLEVEL% NEQ 0 (
                       goto error;
                   )

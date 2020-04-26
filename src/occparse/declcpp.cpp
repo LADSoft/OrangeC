@@ -3121,7 +3121,7 @@ void ParseOut__attribute__(LEXEME** lex, SYMBOL* funcsp)
         {
             if (needkw(lex, openpa))
             {
-                if (ISID(*lex))
+                if (ISID(*lex) || ISKW(*lex))
                 {
                     static const std::unordered_map<std::string, int> gccStyleAttribNames = {
                         {"alias", 1},    // 1 arg, alias name
@@ -3151,7 +3151,11 @@ void ParseOut__attribute__(LEXEME** lex, SYMBOL* funcsp)
                         {"stdcall", 25 }
                 
                     };
-                    std::string name = (*lex)->value.s.a;
+                    std::string name;
+                    if (ISID(*lex))
+                        name = (*lex)->value.s.a;
+                    else
+                        name = (*lex)->kw->name;
                     // get rid of leading and trailing "__" if they both exist
                     if (name.size() >= 5 && name.substr(0, 2) == "__" && name.substr(name.size() - 2, 2) == "__")
                         name = name.substr(2, name.size() - 4);

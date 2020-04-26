@@ -1,5 +1,5 @@
 Release notes:
-version 6.0.44:
+version 6.0.44: 4/26/2020
     project: fix bugs that would not allow compiling in VS2019
     project: add new appveyor builds for debugger and code analyzer; add 7z format to build artifacts
     project: minor changes to make files
@@ -102,7 +102,7 @@ version 6.0.44:
     rtl: localtime: adjust for DST properly
     tests: add new tests for code analyzer and preprocessor
 
-version 6.0.43: 9/8/2018
+version 6.0.43: 9/8/2019
 
     occil: add this as a first class item in the project
     occil: fix various pre-existing bugs

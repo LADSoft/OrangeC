@@ -55,6 +55,7 @@ CmdSwitchInt GrepMain::showAfter(SwitchParser, 'A', 0, 0, INT_MAX);
 CmdSwitchInt GrepMain::showBefore(SwitchParser, 'B', 0, 0, INT_MAX);
 CmdSwitchInt GrepMain::showBoth(SwitchParser, 'C', 0, 0, INT_MAX);
 CmdSwitchInt GrepMain::maxMatches(SwitchParser, 'm', INT_MAX, 0, INT_MAX);
+CmdSwitchBool GrepMain::quiet(SwitchParser, 'q');
 
 const char* GrepMain::usageText = "[-rlcnvidzwomABC?] searchstring file[s]\n";
 const char* GrepMain::helpText =
@@ -126,6 +127,10 @@ void GrepMain::SetModes(void)
 }
 void GrepMain::DisplayMatch(const std::string& fileName, int& matchCount, int lineno, const char* startpos, const char* text)
 {
+    if (quiet.GetValue())
+    {
+        return;
+    }
     if (matchCount == 0 && displayHeaderFileName.GetValue())
     {
         std::cout << "FILE: " << fileName;
@@ -252,7 +257,7 @@ int GrepMain::OneFile(RegExpContext& regexp, const std::string fileName, std::is
                 p++;
             str = p;
         }
-        if (matchCount && verboseMode.GetValue())
+        if (matchCount && verboseMode.GetValue() && !quiet.GetValue())
         {
             if (displayNonMatching.GetValue())
             {
@@ -263,7 +268,7 @@ int GrepMain::OneFile(RegExpContext& regexp, const std::string fileName, std::is
                 std::cout << matchCount << " Matching lines" << std::endl;
             }
         }
-        else if (matchCount && displayMatchCount.GetValue())
+        else if (matchCount && displayMatchCount.GetValue() && !quiet.GetValue())
         {
             std::cout << ": " << matchCount << std::endl;
         }
@@ -334,7 +339,11 @@ int GrepMain::Run(int argc, char** argv)
         }
     if (openCount == 0)
     {
-        std::cout << "Nothing to do." << std::endl;
+        if (!quiet.GetValue())
+        {
+            std::cout << "Nothing to do." << std::endl;
+        }
+        return 2;
     }
     return matchCount ? 0 : 1;
 }

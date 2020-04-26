@@ -1,4 +1,9 @@
 Release notes:
+
+version 6.0.45:
+    occ:   functions ending in a function call for a function tagged as 'noreturn' will not generate a 'needs return value' warning.
+    ogrep: add -q option to make it quiet...    
+
 version 6.0.44: 4/26/2020
     project: fix bugs that would not allow compiling in VS2019
     project: add new appveyor builds for debugger and code analyzer; add 7z format to build artifacts

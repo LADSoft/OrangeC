@@ -58,6 +58,7 @@ class GrepMain
     // not actual parameters
     static CmdSwitchBool displayFileNames;
     static CmdSwitchBool displayHeaderFileName;
+    static CmdSwitchBool quiet;
 
     static const char* usageText;
     static const char* helpText;

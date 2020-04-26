@@ -33,6 +33,7 @@
 #endif
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
+#define _access access
 #else
 #    include <io.h>
 extern "C" char* getcwd(char*, int);
@@ -256,6 +257,30 @@ std::string Utils::SearchForFile(const std::string& path, const std::string& nam
     }
     return name;
 }
+bool Utils::HasLocalExe(const std::string& exeName)
+{
+    char buf[10000];
+    strcpy(buf, GetModuleName());
+    char *p = strrchr(buf, '/');
+    char *p1 = strrchr(buf, '\\');
+    if (p1 > p)
+        p = p1;
+    else if (!p)
+        p = p1;
+    if (p)
+    {
+        p++;
+    }
+    else
+        p = buf;
+    *p = 0;
+    strcat(p, exeName.c_str());
+#ifdef WIN32
+    strcat(p, ".exe");
+#endif
+    return _access(buf, 0) == 0;
+}
+
 std::string Utils::NumberToString(int num) { return std::to_string(num); }
 std::string Utils::NumberToStringHex(int num)
 {

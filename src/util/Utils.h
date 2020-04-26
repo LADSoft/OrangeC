@@ -66,29 +66,7 @@ class Utils
     {
         fatal(format.c_str(), arg...);
     }
-    static bool HasLocalExe(const std::string& exeName)
-    {
-        char buf[10000];
-        strcpy(buf, GetModuleName());
-        char *p = strrchr(buf, '/');
-        char *p1 = strrchr(buf, '\\');
-        if (p1 > p)
-            p = p1;
-        else if (!p)
-            p = p1;
-        if (p)
-        {
-            p++;
-        }
-        else
-            p = buf;
-        *p = 0;
-        strcat(p, exeName.c_str());
-#ifdef WIN32
-        strcat(p, ".exe");
-#endif
-        return _access(buf, 0) == 0;
-    }
+    static bool HasLocalExe(const std::string& exeName);
     template <typename... Args>
     static int ToolInvoke(const std::string& exeName, const char *with, const char *fmt, const Args... arg)
     {

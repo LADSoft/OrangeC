@@ -1,5 +1,108 @@
 Release notes:
 
+Version 6.0.44.1:  4/26/2020
+* project: fix bugs that would not allow compiling in VS2019
+* project: add new appveyor builds for debugger and code analyzer; add 7z format to build artifacts
+* project: minor changes to make files
+* project: update tool help displays
+* windows installer: allow installing in a 'user' account
+* occ: fix rare problem where strength reduction could create an invalid multiply instruction
+* occ: 'char *xx[]' should be equivalent to 'char *(xx[])' (compiler treats them differently)
+* occ: fix error generated when declaring a scoped enum that had been forward declared.
+* occ: fix problem with shared expression node getting modified (could result in invalid ASM code)
+* occ: fix recursion problem in debug info, for function types that reference themselves in their argument list
+* occ: fix { somestruct a; a = { 0 }; } in C++ mode
+* occ: emit a more useful diagnostic for things like  'sizeof((int))'
+* occ: fix rare problem in peephole optimizer that could create bad code
+* occ: add /g as an alias for /v
+* occ: replace the preprocessor with a newer version
+* occ: replace under the hood utility code with the standard version used by the other tools
+* occ: local static variables with the same name used the same name were not differentiated in memory
+* occ: clean up clang warnings relating to the floating point structure
+* occ: add normal method to push/pop macros
+* occ: generate error if using floating point in a preprocessor expression
+* occ: fix rare problem where constant evaluation could crash optimizer
+* occ: fix some crashes on invalid input
+* occ: fix some problems zeroing structures in a function but not in a declaration.
+* occ: handle constant evaluation for complement operation correctly
+* occ: fix sizeof an array which is a function param to be sizeof(void *)
+* occ: add __attribute__((__stdcall__)) and parse for attributes in a couple of new places
+* occ: allow argument which is an array surrounded by parenthesis
+* occ: fix some preprocessor replacement issues found by c-testsuite tests
+* occ: handle cast to structured constant which is in the global space
+* occ: fix call to address which is an integer constant to generate correct code
+* occ: fix a vagary wherein switch-case statements without brackets did not compile properly
+* occ: optimize constant expressions involving and, or, and exclusive or a little better
+* occ: handle __VA_ARGS__ for empty argument lists properly
+* occ: fix problem with capturing variables declared in nested lambdas
+* occ: fix problem with not being able to declare variables in a 'default' clause
+* occ: fix problem where sometimes a type used in a template prototype would not be expanded properly
+* occ: 'main' is inaccessible to the runtime if it is prototyped
+* occ: auto type derived from array type is considered an LVALUE
+* occ: string in hook was demoted to RVALUE
+* occ: using variadic templates for a variable length argument list didn't promote arrays to pointers
+* occ: fix compiler crash when generating debug type info for a union
+* occ: fix problem where a complex constant in a CMP instruction could be optimized to zero by the peephole optimizer
+* occ: fix problem with template parameter lookup:  sometimes returned the wrong value
+* occ: fix bug in peephole optimizations
+* occ: allow type casts in preprocessor expressions
+* occ: handle const errors a little better
+* occ: fix problems with constant evaluation
+* occ: handle a switch-case structure that doesn't have braces for a block
+* occ: fix code generation for call to an address which is a constant value
+* occ: fix cast to structured constant to work in C++ mode
+* occ: allow pointer qualifiers in the array specifiers of an unsized VLA
+* occ: fix an argument which is an array surrounded by parenthesis to parse correctly
+* occ: fix sizeof an arrary which is a function argument to be the size of a pointer.
+* occ: fix various problems with code generation for c11 thread local storage type
+* occ: make comparison between 'long' and 'unsigned' an unsigned comparison when sizeof(unsigned) == sizeof(long)
+* occ: fix EBP based stack frame to work again
+* occ: compile .CC files as C++
+* occ: sizeof(un undefined structure) should generate an error
+* occ: error for undefined static functions is too strict.   Make it a warning, hide it if the function is unused.
+* occ: don't generate a 'function must return value' warning for functions when they end with 'exit(xxx)'
+* occ: fix 'expression has no results' error when a hook is used where one of the prongs would not generate the error.
+* occ/olink/dlpe: add switches for generating .DEF files from DLLs
+* occ: fix problem where destructors used in the array-style destructor would not work if they were in a DLL.
+* occ: fix preprocessor bug when stringizing in the middle of a long string
+* occ: initializing a typdefed array of structures doesn't work...
+* occ: only simple constants could be initialized in the thread local storage initialization region
+* occ: add __declspec(align(xx))
+* occ:  calling things like (imported_func)(args)  (note the parenthesis around the function call) crashed the built executable
+* occ: fix bug in peephole optimizer, statements like "(a == 4 != c == 4) could be generated incorrectly for complex memory accesses
+* occ: statements like : char array[256] = {} did not generate any code.
+* occ: don't use 'rand' and friends when generating compiler-generated names
+* occ: improve assembly-language output compatibility with NASM.
+* occil: fix problem with generating code that shifted by an int64 constant
+* occil: fix problem with a function call in the middle of a variable arguments sequence resulting in bad code
+* occil: fix problem with things like (void)((argc == 1) && myfunc()) getting optimized wrong
+* occil: fix crash on the following code sequence: char c = "hello"[0];
+* occil: fix problems with compiling char c = "hello"[0];
+* dlpe: don't generate fixups for the constants used in thread local storage lookups
+* dlpe: add support for SOURCE_DATE_EPOCH in the binary timestamps.
+* oasm: add 'gas' syntax
+* oasm: set default assembler word size to 32 bits
+* oasm: add gas mnemonics, operands, and directives
+* oasm: support 8 byte integers with DQ and friends (only supported floats before)
+* onm:  was broken for a while, fixed it
+* ocide, tools: add support for UTF8 and UCS2LE BOMs
+* ocide: allow opening a CPJ file directly on the command line
+* ocide/orc: could not click on an error and open the related RC file
+* ocide: fix code completion analyzer, fix various crashes
+* occpr: (code completion analyzer) fix many crashes on invalid input
+* olink: fix library search order to be more like other windows compilers
+* general: started work on taking care of bugs found by static analysis
+* rtl: fix printf() and friends to work properly with long double variables
+* rtl: throwing standard C++ classes such as the std::runtime wouldn't work when compiled against lscrtl.dll
+* rtl: support more errno values
+* rtl, tools: update to latest version of SQLITE3
+* rtl: fix nl_types.h to work standalone in C code
+* rtl: in command lines, the sequence '\\"' was contracted incorrectly
+* rtl: fix printf of long double type to work again
+* rtl: add alloca.h
+* rtl: localtime: adjust for DST properly
+* tests: add new tests for code analyzer and preprocessor
+
 version 6.0.43: 9/8/2018
 * occil: add this as a first class item in the project
 * occil: fix various pre-existing bugs
@@ -521,8 +624,8 @@ version 6.0.11:  Mar 5, 2017
 * * * * editing a source file with syntax errors.
 * ocide:*   bug in ocide caused crash when compiled with Embarcadero C++
 
-* clibs:*    improve guard against multiple frees
-* clibs:*    declare a destructor for fstream() and call close()
+* clibs:** improve guard against multiple frees
+* clibs:** declare a destructor for fstream() and call close()
 
 * build:*   builds with itself again
 * build:*   add Embarcadero C++
@@ -545,7 +648,7 @@ version 6.0.10: Feb 28, 2017
 * occ:* * fix nested anonymous unions in C++ mode
 * occ:* * fix so that microsoft object headers will compile in C++ mode
 * install:* fix so that running the IDE as part of the install works properly
-* dlpe:*    generate DLLs that don't trigger problems from antivirus programs
+* dlpe:** generate DLLs that don't trigger problems from antivirus programs
 * clibs:*   reintegrate lscrtl.dll
 * clibs:*   align malloc'd memory on 8-byte boundaries
 * clibs:*   fix chdir() to handle drive letters
@@ -732,18 +835,18 @@ version 5.61.1: 2/27/2016
 * occ:* * function<...>  didn't match a structure with a matching operator () in argument matching
 * occ:* * in c++ mode, when an untagged structure is used to define a variable,
 * * * * don't expose the variable to the linker (make it local to the file).
-* occ:* * fix problem where incomplete return statements could crash the compiler*    
+* occ:* * fix problem where incomplete return statements could crash the compiler** 
 * occ:* * improve handling of 'tuple' templates
 * occ:* * fix problem where sometimes a call through a pointer would be
 * * * * inline expanded (incorrectly)
 * occ:* * fix problem where returning a boolean by reference crashed the program
 * ocide:*   fix problem with crashing while typing in a return statement;
-* oasm:*    fix problems assembling some C++ code
+* oasm:** fix problems assembling some C++ code
 * ocide:*   clean up shutdown, fix problem where it hangs in memory after shutdown sometimes
 * ocide:*   fix build so build with self works on OCIDE
 * olink:*   update the name unmangling to match current compiler
 * omake:*   add option to keep response files
-* dlpe:*    when you specified a .def file, it wouldn't generate an output file
+* dlpe:** when you specified a .def file, it wouldn't generate an output file
 * examples:   add delegate.cpp
 * demos:*   properly compiles sqlite3 now
 
@@ -777,7 +880,7 @@ version 5.60.1: 2/6/16
 * occ:* * if a pointer to a structure was returned from a function, the copy by rvalue would be done instead of copy by lvalue
 * olink:*   virtual sections were not matched to externals in the same file, so they would be dragged
 * * * * out of a library if they existed in the library and this could cause collisions
-* oasm::*    virtual sections were sent to the object file with the wrong attributes, so link failed
+* oasm::** virtual sections were sent to the object file with the wrong attributes, so link failed
 * ocide:*   fix problem with 'flashing' gui
 * ocide:*   fix database problems: colorization and hints were broken
 * ocide:*   fix ctrl-f and ctrl-h to do the expected thing when the find/replace window has focus
@@ -943,7 +1046,7 @@ Version 5.40.1:  8/9/15
 * * * * as dead code were later processed again
 * occ:* * returning 0 from a function returning long long was broken
 * occ:* * don't allow inlining of functions with variadic parameter lists
-* oasm::*    fix problem with fixed up values not being displayed correctly in the listing file
+* oasm::** fix problem with fixed up values not being displayed correctly in the listing file
 
 version 5.39.1: 8/4/15
 
@@ -1162,7 +1265,7 @@ version 5.23.1: 1/25/2015
 * ocide: generated makefile did not work with 'include' paths
 * ocide: generated makefile can be saved in more locations than before
 * occ:   prototyping a function, then prototyping it again inside another function body
-* *    would fail with an error
+* ** would fail with an error
 * omake: quoting an existing file as a dependency results in the dependency not being resolved
 * clibs: add more to win32 headers
 

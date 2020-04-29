@@ -70,6 +70,7 @@ extern int architecture;
 extern std::string outputFileName;
 extern std::string prm_assemblerSpecifier;
 extern bool doBackendInit;
+extern std::string assemblerFileExtension;
 
 LIST* clist = 0;
 int showVersion = false;
@@ -130,6 +131,8 @@ CmdSwitchCombineString prm_architecture(switchParser, 0, 0, "architecture");
 CmdSwitchString prm_Winmode(switchParser, 'W');
 CmdSwitchCombineString OutputDefFile(switchParser, 0, 0, "output-def");
 CmdSwitchBool ExportAll(switchParser, 0, false, "export-all-symbols");
+
+CmdSwitchString AssemblerExtension(switchParser, 'a');
 
 static std::string firstFile;
 enum e_lk getDefaultLinkage() 
@@ -565,6 +568,14 @@ void ParamTransfer()
     if (prm_output_def_file.GetExists())
     {
         prm_OutputDefFile = prm_output_def_file.GetValue();
+    }
+    if (AssemblerExtension.GetExists())
+    {
+         assemblerFileExtension = "." + AssemblerExtension.GetValue();
+    }
+    else
+    {
+         assemblerFileExtension = chosenAssembler->asmext;
     }
     if (cparams.prm_debug || cparams.prm_stackalign || !cparams.prm_optimize_for_speed)
     {

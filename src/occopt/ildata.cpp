@@ -63,6 +63,7 @@ std::string prm_OutputDefFile;
 
 std::string prm_assemblerSpecifier;
 std::string outputFileName;
+std::string assemblerFileExtension;
 
 SimpleExpression* objectArray_exp;
 SimpleExpression* fltexp;

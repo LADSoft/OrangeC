@@ -60,6 +60,7 @@ extern std::string prm_OutputDefFile;
 extern std::string compilerName;
 extern std::string intermediateName;
 extern std::string backendName;
+extern std::string assemblerFileExtension;
 
 extern int exitBlock;
 extern int nextLabel;
@@ -628,6 +629,7 @@ static void StreamXParams()
         StreamString(prm_libPath);
         StreamString(prm_include);
         StreamString(outputFileName);
+        StreamString(assemblerFileExtension);
         StreamString(prm_OutputDefFile);
         StreamString(pinvoke_dll);
         StreamString(prm_snkKeyFile);

@@ -65,6 +65,7 @@ extern int fastcallAlias;
 extern FILE* outputFile;
 extern FILE* browseFile;
 extern bool assembling;
+extern std::string assemblerFileExtension;
 
 extern bool IsSymbolCharRoutine(const char *, bool);
 bool (*Tokenizer::IsSymbolChar)(const char*, bool) = IsSymbolCharRoutine;
@@ -262,7 +263,7 @@ bool ProcessData(const char *name)
     if (cparams.prm_asmfile)
     {
         char buf[260];
-        outputfile(buf, name, chosenAssembler->asmext, true);
+        outputfile(buf, name, assemblerFileExtension.c_str(), true);
         InsertExternalFile(buf, false);
         outputFile = fopen(buf, "w");
         if (!outputFile)

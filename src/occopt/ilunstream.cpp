@@ -77,7 +77,7 @@ extern std::list<std::string> libIncludes;
 extern std::list<std::string> toolArgs;
 extern std::list<std::string> prm_Using;
 extern std::map<std::string, std::string> bePragma;
-
+extern std::string assemblerFileExtension;
 extern std::string outputFileName;
 extern std::string prm_assemblerSpecifier;
 
@@ -612,6 +612,7 @@ static void UnstreamXParams()
         UnstreamString(prm_include);
         std::string temp;
         UnstreamString(outputFileName);
+        UnstreamString(assemblerFileExtension);
         UnstreamString(prm_OutputDefFile);
         UnstreamString(temp);
         pinvoke_dll = litlate(temp.c_str());

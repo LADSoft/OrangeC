@@ -63,6 +63,14 @@
      OCC /s hello.c
      
   generates the files hello.asm and hello.exe.
+
+### /a     use alternate assembly language output file extension
+
+  OCC will use the alternate extension specified, when generating assembly language output.   The extension does not need a '.'.
+
+      OCC /aS /S hello.c
+
+  generates 'hello.s' instead of 'hello.asm'.   Note that this switch does not change the assembly language output format.
  
 ### /W     set exe file type
  

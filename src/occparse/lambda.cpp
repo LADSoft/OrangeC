@@ -98,6 +98,13 @@ static char* LambdaName(void)
     my_sprintf(buf, "$$LambdaClosure%d%s", lambdaIndex++, lambdaQualifier);
     return litlate(buf);
 }
+static const char* AnonymousLambdaName(void)
+{
+    char *name = LambdaName();
+    char buf[256];
+    my_sprintf(buf, "%s_thunk", name);
+    return litlate(buf);
+}
 static void lambda_insert(SYMBOL* sym, LAMBDA* lambdas)
 {
     int align = getAlign(sc_member, sym->tp);
@@ -660,7 +667,7 @@ static EXPRESSION* createLambda(bool noinline)
     EXPRESSION *rv = NULL, **cur = &rv;
     SYMLIST* hr;
     EXPRESSION *clsThs, *parentThs;
-    SYMBOL* cls = makeID(lambdas->enclosingFunc ? sc_auto : sc_localstatic, lambdas->cls->tp, NULL, AnonymousName());
+    SYMBOL* cls = makeID(lambdas->enclosingFunc ? sc_auto : sc_localstatic, lambdas->cls->tp, NULL, lambdas->enclosingFunc ? AnonymousName() : AnonymousLambdaName());
     SetLinkerNames(cls, lk_cdecl);
     cls->sb->allocate = true;
     if (lambdas->enclosingFunc)

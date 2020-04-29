@@ -7407,6 +7407,15 @@ static LEXEME* expression_hook(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp
                     *tp = tpc;
                 }
                 *exp = exprNode(en_cond, *exp, exprNode(en_void, eph, epc));
+                // when assigning a structure to itself, need an intermediate copy
+                // this always puts it in...
+                if (cparams.prm_cplusplus && isstructured(*tp) && atp)
+                {
+                    EXPRESSION* rv = anonymousVar(sc_auto, *tp);
+                    TYPE* ctype = *tp;
+                    callConstructorParam(&ctype, &rv, *tp, *exp, true, false, false, false);
+                    *exp = rv;
+                }
             }
         }
         else

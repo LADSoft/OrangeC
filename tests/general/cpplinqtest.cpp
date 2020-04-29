@@ -20,7 +20,7 @@ auto is_prime = [](int i) -> bool
     }
 };
 
-std::vector<std::string> primes_as_strings(int n)
+auto primes_as_strings(int n)
 {
     auto primes = range(0, INT_MAX)
                >> where(is_prime)

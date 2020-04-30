@@ -54,7 +54,7 @@ static char usage_text[] =
     "+e        - dump errors to file       +i        - dump preprocessed file\n"
     "/lxxx     - include library           /oname    - specify output file name\n"
     "/pxxx     - pass command to tool      /snn      - align stack\n"
-    "+v or /g  - enable debug symbols\n    /wxxx     - warning control\n"
+    "+v or /g  - enable debug symbols      /wxxx     - warning control\n"
     "/x-       - don't include RTTI info   /y[...]   - verbosity\n"
     "/z        - set SYSTEM include path\n"
     "+A        - disable extensions        /Dxxx     - define something\n"

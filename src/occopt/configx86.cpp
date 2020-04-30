@@ -444,7 +444,7 @@ ARCH_ASM x86AssemblerInterface[] = {
         "oasm",                         /* assembler name */
         0,                              /* backend data (compiler ignores) */
         "1",                            /* __STDC__HOSTED__ value "0" = embedded, "1" = hosted */
-        ".asm",                         /* extension for assembly files */
+        ".s",                           /* extension for assembly files */
         ".o",                           /* extension for object files, nullptr = has no object mode */
         ".l;.lib;.a;.rc;.res;.o;.asm;.nas;.s",   /* extensions for files that should be passed to the backend*/
         "occ",                          /* name of an environment variable to parse, or 0 */

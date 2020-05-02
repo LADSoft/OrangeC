@@ -28,14 +28,15 @@
 #include <limits.h>
 #include "be.h"
 #include <stack>
-
-extern ARCH_ASM* chosenAssembler;
-extern SimpleExpression* fltexp;
-extern OCODE* peep_tail;
-extern int startlab, retlab;
-extern SimpleSymbol* currentFunction;
-extern std::vector<SimpleSymbol*> externals;
-extern int usingEsp;
+#include "config.h"
+#include "ildata.h"
+#include "OptUtils.h"
+#include "occ.h"
+#include "peep.h"
+#include "outasm.h"
+#include "memory.h"
+#include "symfuncs.h"
+#include "gen.h"
 
 #define MAX_ALIGNS 50
 int pushlevel = 0;

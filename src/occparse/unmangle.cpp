@@ -24,8 +24,8 @@
 
 #include "compiler.h"
 #include "Utils.h"
-
-extern char anonymousNameSpaceName[512];
+#include "declcpp.h"
+#include "OptUtils.h"
 const char* tn_void = "void";
 const char* tn_bool = "bool";
 const char* tn_char = "char";

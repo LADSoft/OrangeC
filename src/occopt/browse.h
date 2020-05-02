@@ -1,3 +1,4 @@
+#pragma once
 /* Software License Agreement
  * 
  *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
@@ -22,36 +23,16 @@
  * 
  */
 
-#ifndef _BROWSE_H
-#define _BROWSE_H
-#define BRS_DEFINE 0
-#define BRS_VARIABLE 1
-#define BRS_STARTFILE 2
-#define BRS_STARTFUNC 3
-#define BRS_ENDFUNC 4
-#define BRS_BLOCKSTART 5
-#define BRS_BLOCKEND 6
-#define BRS_PROTOTYPE 7
-#define BRS_USAGE 8
 
-#define BRF_EXTERNAL 2
-#define BRF_STATIC 1
-#define BRF_TYPE 5
-
-typedef struct browseFile
-{
-    struct browseFile* next;
-    const char* name;
-    int filenum;
-} BROWSEFILE;
-typedef struct browseInfo
-{
-    struct browseInfo* next;
-    int type;
-    const char* name;
-    int filenum;
-    int lineno;
-    int charpos;
-    int flags;
-} BROWSEINFO;
-#endif  //_BROWSE_H
+void abspath(char* name);
+void browse_init(void);
+void browsedata(BROWSEINFO* bi);
+void browsefile(BROWSEFILE* bf);
+void browse_startfunc(SYMBOL* func, int lineno);
+void browse_endfunc(SYMBOL* func, int lineno);
+void browse_startfile(const char* name, int index);
+void browse_variable(SYMBOL* var);
+void browse_usage(SYMBOL* var, int file);
+void browse_define(char* name, int lineno, int charindex);
+void browse_blockstart(int lineno);
+void browse_blockend(int lineno);

@@ -1,3 +1,4 @@
+#pragma once
 /* Software License Agreement
  * 
  *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
@@ -131,3 +132,10 @@ typedef struct _cppdata
     void (*term)();
     void (*unexpected)();
 } CPPDATA;
+
+extern HASHTABLE* rttiSyms;
+
+void rtti_init(void);
+bool equalnode(EXPRESSION* node1, EXPRESSION* node2);
+SYMBOL* RTTIDumpType(TYPE* tp);
+void XTDumpTab(SYMBOL* funcsp);

@@ -31,21 +31,22 @@
 #include "Utils.h"
 #include "PreProcessor.h"
 #include <stack>
-
-#define KWHASHSIZE 253
+#include "lex.h"
+#include "ccerr.h"
+#include "config.h"
+#include "stmt.h"
+#include "occparse.h"
+#include "template.h"
+#include "symtab.h"
+#include "constopt.h"
+#include "memory.h"
+#include "ifloatconv.h"
+#include "browse.h"
+#include "help.h"
 
 #ifndef LONGLONG_MAX
 #    define LONGLONG_MAX LONG_MAX
 #endif
-
-#define KW_HASH
-#define MAX_LOOKBACK 1024
-
-extern COMPILER_PARAMS cparams;
-extern ARCH_ASM* chosenAssembler;
-extern LINEDATA *linesHead, *linesTail;
-extern PreProcessor* preProcessor;
-extern FILE* cppFile;
 
 int eofLine;
 const char* eofFile;

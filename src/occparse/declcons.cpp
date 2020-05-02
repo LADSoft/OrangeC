@@ -25,17 +25,27 @@
 #include "compiler.h"
 #include "rtti.h"
 #include <stack>
-extern ARCH_ASM* chosenAssembler;
-extern bool hasXCInfo;
-extern int templateNestingCount;
-extern SYMBOL* theCurrentFunc;
-extern int codeLabel;
-extern const char* overloadNameTab[];
-extern NAMESPACEVALUELIST *globalNameSpace, *localNameSpace;
-extern TYPE stdpointer, stdint;
-extern bool functionCanThrow;
-extern int argument_nesting;
-
+#include "ccerr.h"
+#include "config.h"
+#include "template.h"
+#include "stmt.h"
+#include "mangle.h"
+#include "symtab.h"
+#include "initbackend.h"
+#include "expr.h"
+#include "help.h"
+#include "lex.h"
+#include "cpplookup.h"
+#include "declcpp.h"
+#include "declare.h"
+#include "constopt.h"
+#include "memory.h"
+#include "inline.h"
+#include "init.h"
+#include "beinterf.h"
+#include "types.h"
+#include "lex.h"
+#include "declcons.h"
 static void genAsnCall(BLOCKDATA* b, SYMBOL* cls, SYMBOL* base, int offset, EXPRESSION* thisptr, EXPRESSION* other, bool move,
                        bool isconst);
 static void createDestructor(SYMBOL* sp);

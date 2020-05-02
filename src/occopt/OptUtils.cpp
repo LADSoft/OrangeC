@@ -26,21 +26,21 @@
 #include <malloc.h>
 #include <string.h>
 #include <limits.h>
-#include "iexpr.h"
-#include "beinterf.h"
+#include "ioptimizer.h"
+#include "beinterfdefs.h"
 #include <stdarg.h>
 #include <map>
-
-extern ARCH_ASM *chosenAssembler;
-extern std::vector<SimpleSymbol*>temporarySymbols;
-
+#include "config.h"
+#include "ildata.h"
+#include "memory.h"
+#include "iblock.h"
 
 std::map<IMODE*, IMODE*> loadHash;
 CASTTEMPHASH* castHash[DAGSIZE];
 int tempCount;
 
-static unsigned long long shifts[sizeof(long long) * 8];
 LIST* immed_list[4091];
+static unsigned long long shifts[sizeof(long long) * 8];
 
 void constoptinit(void)
 {

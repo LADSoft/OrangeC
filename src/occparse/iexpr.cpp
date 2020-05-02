@@ -37,34 +37,26 @@
  *      this module contains all of the code generation routines
  *      for evaluating expressions and conditions.
  */
-extern COMPILER_PARAMS cparams;
-extern ARCH_ASM* chosenAssembler;
-extern int retlab;
-extern int nextLabel;
-extern SYMBOL* declclass;
-extern TYPE stdchar;
-extern QUAD *intermed_head, *intermed_tail;
-extern int lineno;
-extern SYMBOL* inlinesp_list[];
-extern int inlinesp_count;
-extern BLOCK* current;
-extern BLOCKLIST* blocktail;
-extern int catchLevel;
-extern EXPRESSION* xcexp;
-extern int consIndex;
-extern int inlinesym_count;
-extern EXPRESSION* inlinesym_thisptr[MAX_INLINE_NESTING];
-extern TYPE stdpointer;
-extern TYPE stdint;
-extern int fastcallAlias;
-extern bool setjmp_used;
-extern bool functionHasAssembly;
-extern std::map<IMODE*, IMODE*> loadHash;
-extern CASTTEMPHASH* castHash[DAGSIZE];
-extern SimpleExpression* objectArray_exp;
-extern std::vector<SimpleSymbol*> typedefs;
-extern std::vector<SimpleSymbol*> externals;
-extern std::set<SimpleSymbol *> externalSet;
+
+#include "config.h"
+#include "ccerr.h"
+#include "inline.h"
+#include "istmt.h"
+#include "declare.h"
+#include "initbackend.h"
+#include "iblock.h"
+#include "expr.h"
+#include "declcons.h":
+#include "iinline.h"
+#include "ildata.h"
+#include "stmt.h"
+#include "OptUtils.h"
+#include "help.h"
+#include "memory.h"
+#include "OptUtils.h"
+#include "ifloatconv.h"
+#include "beinterf.h"
+#include "iexpr.h"
 
 SimpleSymbol* baseThisPtr;
 

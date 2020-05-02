@@ -21,8 +21,16 @@
   <ItemGroup>
     <ClInclude Include="..\occopt\beinterf.h" />
     <ClInclude Include="be.h" />
+    <ClInclude Include="beIntrins.h" />
     <ClInclude Include="beIntrinsicProtos.h" />
     <ClInclude Include="dbgtypes.h" />
+    <ClInclude Include="gen.h" />
+    <ClInclude Include="igen.h" />
+    <ClInclude Include="invoke.h" />
+    <ClInclude Include="occ.h" />
+    <ClInclude Include="outasm.h" />
+    <ClInclude Include="outcode.h" />
+    <ClInclude Include="peep.h" />
     <ClInclude Include="winmode.h" />
     <ClInclude Include="x86regs.h" />
   </ItemGroup>
@@ -73,9 +81,6 @@
     <ClCompile Include="peep.cpp" />
     <ClCompile Include="x64Parser.cpp" />
     <ClCompile Include="x64stub.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="be.p" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\objlib\obj.vcxproj">

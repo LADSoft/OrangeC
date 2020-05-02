@@ -30,33 +30,22 @@
 #include "DotNetPELib.h"
 #include <vector>
 #include <cassert>
-using namespace DotNetPELib;
+#include "config.h"
+#include "ildata.h"
+#include "occil.h"
+#include "MsilProcess.h"
+#include "ildata.h"
+#include "msilInit.h"
+#include "MsilProcess.h"
+#include "symfuncs.h"
+#include "OptUtils.h"
+#include "using.h"
 
-extern int nextLabel;
-extern SimpleSymbol* currentFunction;
-extern PELib* peLib;
-extern int startlab, retlab;
-extern int MSILLocalOffset;
-extern SimpleExpression* objectArray_exp;
-extern MethodSignature* argsCtor;
-extern MethodSignature* argsNextArg;
-extern MethodSignature* argsUnmanaged;
-extern MethodSignature* ptrBox;
-extern MethodSignature* ptrUnbox;
-extern MethodSignature* concatStr;
-extern MethodSignature* concatObj;
-extern MethodSignature* toStr;
-extern Type* systemObject;
-extern Method* currentMethod;
-extern std::vector<Local*> localList;
-extern DataContainer* mainContainer;
-extern std::vector<SimpleSymbol*> functionVariables;
-extern std::map<SimpleSymbol*, Param*, byName> paramList;
+using namespace DotNetPELib;
 
 #define MAX_ALIGNS 50
 MethodSignature* FindPInvokeWithVarargs(std::string name, std::list<Param*>::iterator begin, std::list<Param*>::iterator end,
                                         size_t size);
-extern std::multimap<std::string, MethodSignature*> pInvokeReferences;
 
 struct swlist
 {

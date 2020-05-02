@@ -22,10 +22,13 @@
  * 
  */
 
-#include "iexpr.h"
-#include "beinterf.h"
-
-extern SimpleExpression* objectArray_exp;
+#include "ioptimizer.h"
+#include "beinterfdefs.h"
+#include "ildata.h"
+#include "OptUtils.h"
+#include "iblock.h"
+#include "ilocal.h"
+#include "memory.h"
 
 // weed out structures with nested structures or bit fields
 bool qualifiedStruct(SimpleSymbol* sp)

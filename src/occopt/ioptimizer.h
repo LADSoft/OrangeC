@@ -34,6 +34,9 @@
 #include "ctypes.h"
 #include <Floating.h>
 
+#define imax(x, y) ((x) > (y) ? (x) : (y))
+#define imin(x, y) ((x) < (y) ? (x) : (y))
+
 enum e_bt : int;
 enum e_sc : int;
 
@@ -602,4 +605,3 @@ typedef struct _casttemphash
 } CASTTEMPHASH;
 
 #include "iopt.h"
-#include "iexpr.p"

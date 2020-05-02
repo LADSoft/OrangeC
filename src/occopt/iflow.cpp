@@ -33,35 +33,27 @@
 #include <stdio.h>
 #include <malloc.h>
 #include <string.h>
-#include "iexpr.h"
-#include "beinterf.h"
-
-extern COMPILER_PARAMS cparams;
-extern int blockCount;
-extern QUAD *intermed_head, *intermed_tail;
-extern BLOCK* currentBlock;
-extern BLOCK** blockArray;
-extern int exitBlock;
-
+#include "ioptimizer.h"
+#include "beinterfdefs.h"
+#include "iflow.h"
+#include "config.h"
+#include "iblock.h"
+#include "ildata.h"
+#include "memory.h"
+#include "ilocal.h"
+#include "iflow.h"
+#include "ioptutil.h"
+#include "iloop.h"
+#include "ilive.h"
 int firstLabel;
 QUAD *criticalThunks, **criticalThunkPtr;
-
-typedef struct _edge
-{
-    struct _edge* next;
-    int first;
-    int second;
-    enum e_fgtype edgetype;
-} EDGE;
-
-#define EDGE_HASH_SIZE 256
+int walkPreorder, walkPostorder;
 
 static EDGE* edgeHash[EDGE_HASH_SIZE];
 
 static BLOCK** labels;
-int walkPreorder, walkPostorder;
 
-extern FILE* icdFile;
+
 
 void flow_init(void) {}
 /* dump the flow graph */

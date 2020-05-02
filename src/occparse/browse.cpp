@@ -5,7 +5,7 @@
  *     This file is part of the Orange C Compiler package.
  * 
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
- *     it under the terms of the GNU General Public License as published by
+ *     it under the terms of theoption GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
  * 
@@ -27,20 +27,21 @@
 #include <stdlib.h>
 #include <string.h>
 #include "compiler.h"
-#include "browse.h"
+#include "browsedefs.h"
 #include "PreProcessor.h"
+#include "config.h"
+#include "ildata.h"
+#include "stmt.h"
+#include "occparse.h"
+#include "lex.h"
+#include "memory.h"
+#include "OptUtils.h"
 #ifndef HAVE_UNISTD_H
 #    include <direct.h>
 #else
 #    include <unistd.h>
 #endif
-extern COMPILER_PARAMS cparams;
-extern int funcNesting;
-extern PreProcessor *preProcessor;
-extern int charIndex;
 
-extern std::vector<BROWSEINFO*> browseInfo;
-extern std::vector<BROWSEFILE*> browseFiles;
 static int currentFile = 0;
 
 // this function isn't very portable..

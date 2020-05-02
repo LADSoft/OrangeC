@@ -24,15 +24,19 @@
 
 #include "compiler.h"
 #include "PreProcessor.h"
-
-extern int codeLabel;
-
-extern ARCH_DEBUG* chosenDebugger;
-extern int structLevel;
-extern int templateNestingCount;
-extern TYPE stdvoid;
-extern PreProcessor* preProcessor;
-
+#include "ccerr.h"
+#include "config.h"
+#include "declare.h"
+#include "template.h"
+#include "initbackend.h"
+#include "occparse.h"
+#include "memory.h"
+#include "stmt.h"
+#include "mangle.h"
+#include "cpplookup.h"
+#include "help.h"
+#include "declcons.h"
+#include "types.h"
 NAMESPACEVALUELIST *globalNameSpace, *localNameSpace;
 HASHTABLE* labelSyms;
 

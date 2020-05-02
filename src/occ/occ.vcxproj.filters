@@ -33,6 +33,30 @@
     <ClInclude Include="..\occopt\beinterf.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="beIntrins.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="gen.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="igen.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="invoke.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="occ.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="outasm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="outcode.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="peep.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="beIntrins.cpp">
@@ -173,10 +197,5 @@
     <ClCompile Include="..\occopt\output.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="be.p">
-      <Filter>Header Files</Filter>
-    </None>
   </ItemGroup>
 </Project>

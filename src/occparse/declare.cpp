@@ -26,52 +26,36 @@
 #include <wchar.h>
 #include "Utils.h"
 #include "PreProcessor.h"
-#include "iexpr.h"
-
-/* locally declared func gloabal memory
- when redeclaring sym, make sure it gets in the global func list
-*/
-extern ARCH_ASM* chosenAssembler;
-extern ARCH_DEBUG* chosenDebugger;
-extern NAMESPACEVALUELIST *globalNameSpace, *localNameSpace;
-extern int nextLabel;
-extern enum e_kw skim_end[];
-extern enum e_kw skim_closepa[];
-extern enum e_kw skim_semi_declare[];
-extern enum e_kw skim_comma[];
-extern TYPE stdint;
-extern TYPE stdpointer;
-extern int currentErrorLine;
-extern char infile[256];
-extern char anonymousNameSpaceName[512];
-extern LIST* nameSpaceList;
-extern TYPE stdvoid;
-extern TYPE stdchar32tptr;
-extern const char* overloadNameTab[];
-extern LEXCONTEXT* context;
-extern LAMBDA* lambdas;
-extern int inTemplateBody;
-extern bool inTemplateType;
-extern int templateNestingCount;
-extern int templateHeaderCount;
-extern int instantiatingTemplate;
-extern int packIndex;
-extern int inTemplateSpecialization;
-extern int argument_nesting;
-extern int codeLabel;
-extern SYMBOL* instantiatingMemberFuncClass;
-extern bool parsingSpecializationDeclaration;
-extern int anonymousNotAlloc;
-extern LINEDATA *linesHead, *linesTail;
-extern int funcLevel;
-extern SYMBOL* theCurrentFunc;
-extern attributes basisAttribs;
-extern PreProcessor *preProcessor;
-extern char realOutFile[260];
-extern std::vector<SimpleSymbol*> externals;
-extern std::vector<SimpleSymbol*> globalCache;
-extern unsigned identityValue;
-
+#include "ioptimizer.h"
+#include "ccerr.h"
+#include "declare.h"
+#include "config.h"
+#include "symtab.h"
+#include "ildata.h"
+#include "initbackend.h"
+#include "occparse.h"
+#include "declcpp.h"
+#include "mangle.h"
+#include "lex.h"
+#include "lambda.h"
+#include "template.h"
+#include "expr.h"
+#include "stmt.h"
+#include "help.h"
+#include "memory.h"
+#include "template.h"
+#include "symtab.h"
+#include "cpplookup.h"
+#include "OptUtils.h"
+#include "constopt.h"
+#include "declcons.h"
+#include "init.h"
+#include "inline.h"
+#include "beinterf.h"
+#include "osutil.h"
+#include "types.h"
+#include "browse.h"
+#include "Property.h"
 int inDefaultParam;
 char deferralBuf[100000];
 SYMBOL* enumSyms;
@@ -85,9 +69,6 @@ LIST* openStructs;
 static int unnamed_tag_id, unnamed_id;
 static char* importFile;
 static unsigned symbolKey;
-#define CT_NONE 0
-#define CT_CONS 1
-#define CT_DEST 2
 
 static LEXEME* getStorageAndType(LEXEME* lex, SYMBOL* funcsp, SYMBOL** strSym, bool inTemplate, bool assumeType,
                                  enum e_sc* storage_class, enum e_sc* storage_class_in, ADDRESS* address, bool* blocked,

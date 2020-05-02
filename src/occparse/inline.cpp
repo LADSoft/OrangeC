@@ -24,13 +24,26 @@
 
 #include "compiler.h"
 #include <unordered_set>
-
-extern ARCH_ASM* chosenAssembler;
-extern TYPE stdint;
-extern NAMESPACEVALUELIST* localNameSpace;
-extern TYPE stdpointer, stdvoid;
-extern int startlab, retlab;
-extern LIST* importThunks;
+#include "config.h"
+#include "initbackend.h"
+#include "symtab.h"
+#include "stmt.h"
+#include "expr.h"
+#include "ccerr.h"
+#include "template.h"
+#include "declare.h"
+#include "lex.h"
+#include "constopt.h"
+#include "OptUtils.h"
+#include "help.h"
+#include "memory.h"
+#include "inasm.h"
+#include "init.h"
+#include "ildata.h"
+#include "declcons.h"
+#include "istmt.h"
+#include "declcpp.h"
+#include "inline.h"
 
 static LIST *inlineHead, *inlineTail, *inlineVTabHead, *inlineVTabTail;
 static LIST *inlineDataHead, *inlineDataTail;

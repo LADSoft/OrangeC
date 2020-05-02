@@ -19,7 +19,7 @@
  * 
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ * -
  */
 
 /*
@@ -32,16 +32,16 @@
 #include <malloc.h>
 #include <string.h>
 #include "ppPragma.h"
-#include "iexpr.h"
-#include "beinterf.h"
-
-extern COMPILER_PARAMS cparams;
-extern ARCH_ASM* chosenAssembler;
-extern TEMP_INFO** tempInfo;
-extern BLOCK** blockArray;
-extern int tempCount;
-extern int blockCount;
-
+#include "ioptimizer.h"
+#include "beinterfdefs.h"
+#include "config.h"
+#include "iblock.h"
+#include "OptUtils.h"
+#include "memory.h"
+#include "ifloatconv.h"
+#include "ilocal.h""
+#include "ioptutil.h"
+#include "iflow.h"
 static BRIGGS_SET* visited;
 static INSTRUCTIONLIST *insWorkHead, *insWorkTail, *listHolder;
 static BLOCKLIST *blockWorkHead, *blockWorkTail;

@@ -26,11 +26,10 @@
 #include <malloc.h>
 #include <string.h>
 #include <limits.h>
-#include "iexpr.h"
-#include "beinterf.h"
-
-extern ARCH_ASM* chosenAssembler;
-
+#include "ioptimizer.h"
+#include "beinterfdefs.h"
+#include "config.h"
+#include "OptUtils.h"
 
 unsigned long long CastToInt(int size, long long value)
 {

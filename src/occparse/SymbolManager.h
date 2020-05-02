@@ -103,3 +103,5 @@ private:
     static std::unordered_map<struct sym*, SimpleSymbol*> symbols;
     static std::unordered_map<std::string, SimpleSymbol*> globalSymbols;
 };
+
+void refreshBackendParams(SYMBOL* funcsp);

@@ -27,7 +27,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "db.h"
-
+#include "symtab.h"
+#include "memory.h"
 #define STRINGVERSION "121"
 
 #define DBVersion atoi(STRINGVERSION)

@@ -34,38 +34,21 @@
 #include <sstream>
 #include <iostream>
 #include "../version.h"
+#include "config.h"
+#include "ildata.h"
+#include "iblock.h"
+#include "output.h"
+#include "configx86.h"
+#include "invoke.h"
+#include "gen.h"
+#include "outasm.h"
+#include "peep.h"
+#include "outcode.h"
+#include "igen.h"
+
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
 #endif
-extern int architecture;
-extern std::list<std::string> toolArgs;
-extern std::list<std::string> backendFiles;
-extern std::vector<SimpleSymbol*> temporarySymbols;
-extern std::vector<SimpleSymbol*> functionVariables;
-extern int tempCount;
-extern int blockCount;
-extern int exitBlock;
-extern QUAD* intermed_head, *intermed_tail;
-extern std::list<std::string> inputFiles;
-extern FILE* icdFile;
-extern std::deque<BaseData*> baseData;
-extern int nextTemp;
-extern int tempBottom;
-extern BLOCK **blockArray;
-extern ARCH_ASM* chosenAssembler;
-extern SimpleExpression* objectArray_exp;
-extern std::vector<SimpleSymbol*> externals;
-extern int usingEsp;
-extern int dataAlign;
-extern int bssAlign;
-extern int constAlign;
-extern std::string outputFileName;
-extern SimpleExpression* fltexp;
-extern int fastcallAlias;
-extern FILE* outputFile;
-extern FILE* browseFile;
-extern bool assembling;
-extern std::string assemblerFileExtension;
 
 extern bool IsSymbolCharRoutine(const char *, bool);
 bool (*Tokenizer::IsSymbolChar)(const char*, bool) = IsSymbolCharRoutine;
@@ -78,7 +61,7 @@ InstructionParser* instructionParser;
 
 SimpleSymbol* currentFunction;
 
-static const char *verbosity = nullptr;
+static const char *occ_verbosity = nullptr;
 static FunctionData* lastFunc;
 
 bool InputIntermediate(SharedMemory* mem);
@@ -384,11 +367,11 @@ int InvokeParser(int argc, char**argv, SharedMemory* parserMem)
         args += std::string("\"") + curArg + "\"";
     }
 
-    return Utils::ToolInvoke("occparse", verbosity, "-! --architecture \"x86;%s\" %s", parserMem->Name().c_str(), args.c_str());
+    return Utils::ToolInvoke("occparse", occ_verbosity, "-! --architecture \"x86;%s\" %s", parserMem->Name().c_str(), args.c_str());
 }
 int InvokeOptimizer(SharedMemory* parserMem, SharedMemory* optimizerMem)
 {
-    return Utils::ToolInvoke("occopt", verbosity, "-! %s %s", parserMem->Name().c_str(), optimizerMem->Name().c_str());
+    return Utils::ToolInvoke("occopt", occ_verbosity, "-! %s %s", parserMem->Name().c_str(), optimizerMem->Name().c_str());
 }
 
 int main(int argc, char* argv[])
@@ -403,7 +386,7 @@ int main(int argc, char* argv[])
     for (auto p = argv; *p; p++)
     {
         if (strstr(*p, "/y") || strstr(*p, "-y"))
-            verbosity = "";
+            occ_verbosity = "";
     }
     auto optimizerMem = new SharedMemory(MAX_SHARED_REGION);
     optimizerMem->Create();

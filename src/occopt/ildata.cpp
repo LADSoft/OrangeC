@@ -24,12 +24,15 @@
 
 #include "ildata.h"
 #include <set>
-
-extern SimpleSymbol* currentFunction;
-extern int tempCount;
-extern int blockCount;
-extern QUAD* intermed_head;
-extern std::map<IMODE*, IMODE*> loadHash;
+#include "beinterfdefs.h"
+#include "config.h"
+#include "iblock.h"
+#include "OptUtils.h"
+#include "optmain.h"
+#include "memory.h"
+#include "ifloatconv.h"
+#include "ilocal.h"
+#include "output.h"
 
 int gentype; /* Current DC type */
 int curseg;  /* Current seg */

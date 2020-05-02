@@ -39,14 +39,11 @@
 #include <time.h>
 #include <string.h>
 #include <float.h>
-#include "ccerr.h"
 #include "Floating.h"
 #include "osutil.h"
-#include "iexpr.h"
+#include "ioptimizer.h"
 #include "c.h"
-#include "beinterf.h"
-
-#include "compiler.p"
+#include "beinterfdefs.h"
 
 #define M_LN2 0.693147180559945309417
 #define M_LN10 2.30258509299404568402

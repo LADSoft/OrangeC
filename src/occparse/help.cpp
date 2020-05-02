@@ -24,33 +24,24 @@
 
 #include "compiler.h"
 #include <stdarg.h>
-
-extern COMPILER_PARAMS cparams;
-extern ARCH_ASM* chosenAssembler;
-
-extern TYPE stdchar;
-extern TYPE stdunsignedchar;
-extern TYPE stdshort;
-extern TYPE stdunsignedshort;
-extern TYPE stdint;
-extern TYPE stdlong;
-extern TYPE stdlonglong;
-extern TYPE stdunsigned;
-extern TYPE stdunsignedlong;
-extern TYPE stdunsignedlonglong;
-extern TYPE stdfloatcomplex;
-extern TYPE stddoublecomplex;
-extern TYPE stddoubleimaginary;
-extern TYPE stdlongdoublecomplex;
-extern TYPE stdchar16t;
-extern TYPE stdchar32t;
-extern TYPE stdpointer;
-extern int nextLabel;
-extern SYMBOL* theCurrentFunc;
-extern NAMESPACEVALUELIST* localNameSpace;
-extern int inDefaultParam;
-extern LINEDATA *linesHead, *linesTail;
-extern int codeLabel;
+#include "ccerr.h"
+#include "config.h"
+#include "initbackend.h"
+#include "stmt.h"
+#include "symtab.h"
+#include "declare.h"
+#include "OptUtils.h"
+#include "expr.h"
+#include "template.h"
+#include "init.h"
+#include "mangle.h"
+#include "lex.h"
+#include "constopt.h"
+#include "memory.h"
+#include "cpplookup.h"
+#include "beinterf.h"
+#include "declcons.h"
+#include "help.h"
 
 int anonymousNotAlloc;
 

@@ -24,11 +24,13 @@
 
 #include "compiler.h"
 #include <stack>
-
-extern ARCH_ASM* chosenAssembler;
-extern SYMBOL* theCurrentFunc;
-extern const char* cpp_funcname_tab[];
-
+#include "ccerr.h"
+#include "config.h"
+#include "unmangle.h"
+#include "OptUtils.h"
+#include "help.h"
+#include "memory.h"
+#include "mangle.h"
 const char* overloadNameTab[] = {"$bctr",  "$bdtr",   "$bcast",  "$bnew",   "$bdel",   "$badd",   "$bsub",   "$bmul",    "$bdiv",
                                  "$bshl",  "$bshr",   "$bmod",   "$bequ",   "$bneq",   "$blt",    "$bleq",   "$bgt",     "$bgeq",
                                  "$basn",  "$basadd", "$bassub", "$basmul", "$basdiv", "$basmod", "$basshl", "$bsasshr", "$basand",

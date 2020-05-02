@@ -22,8 +22,8 @@
  * 
  */
 
-#include "iexpr.h"
-#include "beinterf.h"
+#include "ioptimizer.h"
+#include "beinterfdefs.h"
 #include "InstructionParser.h"
 #include "x64Instructions.h"
 #define live(mask, reg) (mask & (1 << reg))
@@ -324,5 +324,3 @@ typedef struct _attribdata
     } v;
     bool start;
 } ATTRIBDATA;
-
-#include "be.p"

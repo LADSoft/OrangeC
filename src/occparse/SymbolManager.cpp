@@ -36,12 +36,14 @@
 #include <vector>
 #include <algorithm>
 #include "PreProcessor.h"
-
-extern PreProcessor* preProcessor;
-extern SYMBOL* theCurrentFunc;
-extern std::vector<SimpleSymbol*> typeSymbols;
-extern std::vector<SimpleSymbol*> typedefs;
-extern std::set<SimpleSymbol*> definedFunctions;
+#include "ccerr.h"
+#include "ildata.h"
+#include "occparse.h"
+#include "help.h"
+#include "floatconv.h"
+#include "memory.h"
+#include "OptUtils.h"
+#include "beinterf.h"
 
 void SymbolManager::clear()
 {

@@ -33,17 +33,27 @@
 #include "compiler.h"
 #include "ppPragma.h"
 
-extern int stdpragmas;
-extern ARCH_ASM* chosenAssembler;
-extern TYPE stdvoid;
-extern bool initializingGlobalVar;
-extern STRUCTSYM* structSyms;
-extern int templateNestingCount;
+#include "config.h"
+#include "initbackend.h"
+#include "init.h"
+#include "declare.h"
+#include "template.h"
+#include "floatconv.h"
+#include "beinterf.h"
+#include "memory.h"
+#include "help.h"
+#include "expr.h"
+#include "ifloatconv.h"
+#include "constopt.h"
+#include "OptUtils.h"
+#include "symtab.h"
+#include "declcpp.h"
+#include "cpplookup.h"
 
-static EXPRESSION *asidehead, **asidetail;
 unsigned long long reint(EXPRESSION* node);
 long long mod_mask(int i);
 
+static EXPRESSION *asidehead, **asidetail;
 static unsigned long long shifts[sizeof(long long) * 8];
 static EXPRESSION* functionnesting[100];
 static int functionnestingcount = 0;

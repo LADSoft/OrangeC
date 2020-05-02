@@ -23,16 +23,16 @@
  */
 
 #include "compiler.h"
-
-extern ARCH_ASM* chosenAssembler;
-extern enum e_kw skim_end[];
-extern NAMESPACEVALUELIST *globalNameSpace, *localNameSpace;
-extern TYPE stdvoid;
-extern int startlab;
-extern int retlab;
-extern int nextLabel;
-extern int codeLabel;
-
+#include "ccerr.h"
+#include "config.h"
+#include "symtab.h"
+#include "initbackend.h"
+#include "stmt.h"
+#include "declcpp.h"
+#include "lex.h"
+#include "declare.h"
+#include "memory.h"
+#include "wseh.h"
 static void ReorderSEHRecords(STATEMENT** xtry, BLOCKDATA* parent)
 {
     STATEMENT *xfinally = nullptr, *xfault = nullptr, **pass = xtry;

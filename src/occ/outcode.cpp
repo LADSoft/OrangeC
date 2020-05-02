@@ -42,6 +42,17 @@
 #include <map>
 #include <set>
 #include <deque>
+#include "config.h"
+#include "ildata.h"
+#include "gen.h"
+#include "occ.h"
+#include "outasm.h"
+#include "output.h"
+#include "peep.h"
+#include "InstructionParser2.h"
+#include "memory.h"
+#include "outcode.h"
+
 #if 0
 #    include <new>
 void * operator new(std::size_t n) throw(std::bad_alloc)
@@ -55,24 +66,7 @@ void operator delete(void * p) throw()
 #endif
 #define FULLVERSION
 
-extern char outFile[260];
-extern ARCH_ASM* chosenAssembler;
-extern MULDIV* muldivlink;
-extern ASMNAME oplst[];
-extern enum e_sg oa_currentSeg;
-extern DBGBLOCK* DbgBlocks[];
-extern SimpleSymbol* currentFunction;
-extern int fastcallAlias;
-extern FILE *outputFile, *browseFile;
-extern char infile[];
-extern int usingEsp;
-extern AMODE *singleLabel, *doubleLabel, *zerolabel;
-extern std::vector<BROWSEINFO*> browseInfo;
-extern std::vector<BROWSEFILE*> browseFiles;
-extern std::vector<SimpleSymbol*> typedefs;
-
-
-extern InstructionParser* instructionParser;
+extern void adjustUsesESP();
 
 static Section* currentSection;
 
@@ -103,6 +97,7 @@ static int segFlags[] = {0,
 static int virtualSegFlags = ObjSection::max | ObjSection::virt;
 
 int segAligns[MAX_SEGS] = {};
+int dbgblocknum = 0;
 
 static int virtualSegmentNumber;
 static int lastIncludeNum;
@@ -142,9 +137,6 @@ static std::map<std::string, ObjSection*> objSectionsByName;
 static std::map<int, ObjSection*> objSectionsByNumber;
 
 static std::map<int, ObjSourceFile*> sourceFiles;
-
-extern void adjustUsesESP();
-int dbgblocknum = 0;
 
 static int sectofs;
 

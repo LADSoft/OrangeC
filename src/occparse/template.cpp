@@ -27,66 +27,34 @@
 #include <stack>
 #include "PreProcessor.h"
 #include <malloc.h>
+#include "ccerr.h"
+#include "symtab.h"
+#include "initbackend.h"
+#include "declare.h"
+#include "declcpp.h"
+#include "stmt.h"
+#include "expr.h"
+#include "symtab.h"
+#include "lambda.h"
+#include "occparse.h"
+#include "help.h"
+#include "cpplookup.h"
+#include "mangle.h"
+#include "lex.h"
+#include "constopt.h"
+#include "memory.h"
+#include "init.h"
+#include "rtti.h"
+#include "declcons.h"
+#include "exprcpp.h"
+#include "inline.h"
+#include "beinterf.h"
+#include "types.h"
+#include "template.h"
 
 #ifdef HAVE_UNISTD_H
 #define _alloca alloca
 #endif
-
-extern int currentErrorLine;
-extern NAMESPACEVALUELIST* localNameSpace;
-extern NAMESPACEVALUELIST* globalNameSpace;
-extern TYPE stdany;
-extern STRUCTSYM* structSyms;
-extern LIST* deferred;
-extern LIST* nameSpaceList;
-extern int inDefaultParam;
-extern LINEDATA *linesHead, *linesTail;
-extern int packIndex;
-extern int expandingParams;
-extern TYPE stdpointer;
-extern TYPE stdbool;
-extern TYPE stdchar;
-extern TYPE stdunsignedchar;
-extern TYPE stdwidechar;
-extern TYPE stdshort;
-extern TYPE stdchar16t;
-extern TYPE stdunsignedshort;
-extern TYPE stdint;
-extern TYPE stdunsigned;
-extern TYPE stdchar32t;
-extern TYPE stdlong;
-extern TYPE stdunsignedlong;
-extern TYPE stdlonglong;
-extern TYPE stdunsignedlonglong;
-extern TYPE stdfloat;
-extern TYPE stddouble;
-extern TYPE stdlongdouble;
-extern TYPE stdpointer;
-extern TYPE stdchar16t;
-extern TYPE stdpointer;  // fixme
-extern TYPE stdfloatcomplex;
-extern TYPE stddoublecomplex;
-extern TYPE stdlongdoublecomplex;
-extern TYPE stdfloatimaginary;
-extern TYPE stddoubleimaginary;
-extern TYPE stdlongdoubleimaginary;
-extern TYPE stdinative;
-extern TYPE stdunative;
-extern LIST* openStructs;
-extern int structLevel;
-extern TYPE stdnullpointer;
-extern TYPE stdvoid;
-extern TYPE std__string, std__object;
-extern int matchOverloadLevel;
-extern int codeLabel;
-extern LAMBDA* lambdas;
-extern int argument_nesting;
-extern LINEDATA *linesHead, *linesTail;
-extern int noSpecializationError;
-extern int funcLevel;
-extern enum e_kw skim_templateend[];
-extern enum e_kw skim_end[];
-extern PreProcessor* preProcessor;
 
 int dontRegisterTemplate;
 int instantiatingTemplate;

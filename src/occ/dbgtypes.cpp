@@ -32,7 +32,8 @@
 #include "ObjFactory.h"
 #include "ObjType.h"
 #include "ObjFile.h"
-
+#include "OptUtils.h"
+#include "memory.h"
 #define DEBUG_VERSION 4.0
 
 bool dbgtypes::typecompare::operator()(const SimpleType* left, const SimpleType* right) const

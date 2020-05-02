@@ -1,0 +1,70 @@
+#pragma once
+/* Software License Agreement
+ *
+ *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
+ *
+ *     This file is part of the Orange C Compiler package.
+ *
+ *     The Orange C Compiler package is free software: you can redistribute it and/or modify
+ *     it under the terms of the GNU General Public License as published by
+ *     the Free Software Foundation, either version 3 of the License, or
+ *     (at your option) any later version.
+ *
+ *     The Orange C Compiler package is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ *     contact information:
+ *         email: TouchStone222@runbox.com <David Lindauer>
+ *
+ */
+#include <map>
+#include <vector>
+
+extern int uniqueId;
+extern SimpleSymbol retblocksym;
+extern int errCount;
+extern Method* mainSym;
+extern int hasEntryPoint;
+
+extern MethodSignature* argsCtor;
+extern MethodSignature* argsNextArg;
+extern MethodSignature* argsUnmanaged;
+extern MethodSignature* ptrBox;
+extern MethodSignature* ptrUnbox;
+extern MethodSignature* concatStr;
+extern MethodSignature* concatObj;
+extern MethodSignature* toStr;
+extern Type* systemObject;
+extern Method* currentMethod;
+extern PELib* peLib;
+extern DataContainer* mainContainer;
+extern LIST *initializersHead, *initializersTail;
+extern LIST *deinitializersHead, *deinitializersTail;
+
+extern std::map<SimpleSymbol*, Value*, byName> externalMethods;
+extern std::map<SimpleSymbol*, Value*, byName> externalList;
+extern std::map<SimpleSymbol*, Value*, byName> globalMethods;
+extern std::map<SimpleSymbol*, Value*, byName> globalList;
+extern std::map<SimpleSymbol*, Value*, byLabel> staticMethods;
+extern std::map<SimpleSymbol*, Value*, byLabel> staticList;
+extern std::map<SimpleSymbol*, MethodSignature*, byName> pinvokeInstances;
+extern std::map<SimpleSymbol*, Param*, byName> paramList;
+extern std::multimap<std::string, MethodSignature*> pInvokeReferences;
+
+extern std::map<std::string, Value*> startups, rundowns, tlsstartups, tlsrundowns;
+
+extern std::map<std::string, Type*> typeList;
+extern std::map<SimpleSymbol*, Value*, byField> fieldList;
+extern std::map<std::string, MethodSignature*> arrayMethods;
+
+extern std::vector<Local*> localList;
+
+Type* FindType(const char* name, bool toErr);
+int msil_main_preprocess(char *fileName);
+void msil_end_generation(char *fileName);
+void msil_compile_start(char* name);

@@ -25,9 +25,21 @@
 
 #include "compiler.h"
 #include <stack>
-
-extern const char* overloadNameTab[];
-extern TYPE stdint;
+#include "mangle.h"
+#include "initbackend.h"
+#include "symtab.h"
+#include "cpplookup.h"
+#include "template.h"
+#include "declcpp.h"
+#include "ccerr.h"
+#include "declcons.h"
+#include "help.h"
+#include "expr.h"
+#include "declare.h"
+#include "lex.h"
+#include "beinterf.h"
+#include "types.h"
+#include "memory.h"
 
 static HASHTABLE* intrinsicHash;
 

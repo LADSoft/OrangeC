@@ -22,34 +22,39 @@
  * 
  */
 
-#include "iexpr.h"
-#include "beinterf.h"
+#include "ioptimizer.h"
+#include "beinterfdefs.h"
 #include <stdio.h>
 #include "CmdSwitch.h"
 #include "Utils.h"
+#include "config.h"
 #include "ildata.h"
 #include "SharedMemory.h"
-extern int architecture;
-extern std::vector<SimpleSymbol*> temporarySymbols;
-extern std::vector<SimpleSymbol*> functionVariables;
-extern int tempCount;
-extern int blockCount;
-extern int exitBlock;
-extern QUAD* intermed_head, *intermed_tail;
-extern std::list<std::string> inputFiles;
-extern FILE* icdFile;
-extern std::deque<BaseData*> baseData;
-extern int nextTemp;
-extern int tempBottom;
-extern BLOCK** blockArray;
-extern ARCH_ASM* chosenAssembler;
-extern SimpleExpression* objectArray_exp;
-extern SimpleExpression* fltexp;
-extern TEMP_INFO** tempInfo;
-extern int blockMax;
-extern int tempMax;
-extern std::map<IMODE*, IMODE*> loadHash;
-extern int fastcallAlias;
+#include "ildata.h"
+#include "OptUtils.h"
+#include "iblock.h"
+#include "ilocal.h"
+#include "rewritemsil.h"
+#include "rewritex86.h"
+#include "issa.h"
+#include "memory.h"
+#include "ipeep.h"
+#include "configx86.h"
+#include "configmsil.h"
+#include "ilazy.h"
+#include "iloop.h"
+#include "ilive.h"
+#include "iflow.h"
+#include "istren.h"
+#include "irc.h"
+#include "irewrite.h"
+#include "iout.h"
+#include "output.h"
+#include "iinvar.h"
+#include "ilstream.h"
+#include "iconst.h"
+#include "ialias.h"
+#include "ioptutil.h"
 
 CmdSwitchParser SwitchParser;
 CmdSwitchBool single(SwitchParser, 's', false, "single");
@@ -68,7 +73,6 @@ int anonymousNotAlloc;
 SimpleSymbol* currentFunction;
 int usingEsp;
 
-extern bool functionHasAssembly;
 
 bool InputIntermediate(SharedMemory* mem);
 void OutputIntermediate(SharedMemory* mem);

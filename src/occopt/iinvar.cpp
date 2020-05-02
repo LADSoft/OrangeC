@@ -22,14 +22,14 @@
  * 
  */
 
-#include "iexpr.h"
-#include "beinterf.h"
-
-extern BLOCK** blockArray;
-extern int blockCount;
-extern TEMP_INFO** tempInfo;
-extern int tempCount;
-extern BITINT bittab[BITINTBITS];
+#include "ioptimizer.h"
+#include "beinterfdefs.h"
+#include "iinvar.h"
+#include "iblock.h"
+#include "OptUtils.h"
+#include "ioptutil.h"
+#include "memory.h"
+#include "ilive.h"
 
 static int current;
 /* this moving of loop invariant expressions is pretty straightforward.
@@ -58,12 +58,6 @@ static int current;
  *
  * (technique borrowed from Scribble and optimized)
  */
-static struct reflist
-{
-    struct reflist* next;
-    QUAD* old;
-    QUAD* newVal;
-} * refs;
 static void EnterRef(QUAD* old, QUAD* newVal)
 {
     struct reflist* newRef = (reflist*)oAlloc(sizeof(struct reflist));

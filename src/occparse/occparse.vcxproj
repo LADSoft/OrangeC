@@ -103,6 +103,7 @@
     <ClInclude Include="..\occopt\beinterf.h" />
     <ClInclude Include="..\occopt\browse.h" />
     <ClInclude Include="..\occopt\ildata.h" />
+    <ClInclude Include="..\occopt\ioptimizer.h" />
     <ClInclude Include="..\ocpp\Errors.h" />
     <ClInclude Include="..\ocpp\Floating.h" />
     <ClInclude Include="..\ocpp\InputFile.h" />
@@ -121,19 +122,51 @@
     <ClInclude Include="..\ocpp\PreProcessor.h" />
     <ClInclude Include="..\ocpp\SymbolTable.h" />
     <ClInclude Include="..\ocpp\Token.h" />
-    <ClInclude Include="..\occopt\iexpr.h" />
     <ClInclude Include="..\occopt\iopt.h" />
     <ClInclude Include="c.h" />
     <ClInclude Include="ccerr.h" />
     <ClInclude Include="compiler.h" />
+    <ClInclude Include="config.h" />
+    <ClInclude Include="configmsil.h" />
+    <ClInclude Include="configx86.h" />
+    <ClInclude Include="constopt.h" />
+    <ClInclude Include="cppbltin.h" />
+    <ClInclude Include="cpplookup.h" />
+    <ClInclude Include="crc32.h" />
+    <ClInclude Include="debug.h" />
+    <ClInclude Include="declare.h" />
+    <ClInclude Include="declcons.h" />
+    <ClInclude Include="declcpp.h" />
+    <ClInclude Include="expr.h" />
+    <ClInclude Include="exprcpp.h" />
+    <ClInclude Include="floatconv.h" />
+    <ClInclude Include="help.h" />
+    <ClInclude Include="iexpr.h" />
+    <ClInclude Include="iinline.h" />
+    <ClInclude Include="import.h" />
+    <ClInclude Include="inasm.h" />
+    <ClInclude Include="init.h" />
+    <ClInclude Include="initbackend.h" />
+    <ClInclude Include="inline.h" />
+    <ClInclude Include="istmt.h" />
+    <ClInclude Include="lambda.h" />
+    <ClInclude Include="lex.h" />
+    <ClInclude Include="libcxx.h" />
+    <ClInclude Include="mangle.h" />
+    <ClInclude Include="memory.h" />
+    <ClInclude Include="occparse.h" />
     <ClInclude Include="osutil.h" />
     <ClInclude Include="peheader.h" />
+    <ClInclude Include="Property.h" />
     <ClInclude Include="rtti.h" />
+    <ClInclude Include="stmt.h" />
     <ClInclude Include="SymbolManager.h" />
+    <ClInclude Include="symtab.h" />
+    <ClInclude Include="template.h" />
+    <ClInclude Include="types.h" />
+    <ClInclude Include="unmangle.h" />
     <ClInclude Include="winmode.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="compiler.p" />
+    <ClInclude Include="wseh.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\netlib\DotNetPELib.vcxproj">
@@ -219,7 +252,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;ISPARSER;VSIDE;USE_LONGLONG;BORLAND;MICROSOFT;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;x64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>..\ocpp;..\oasm;..\util;..\objlib;..\netlib;..\occopt;..\xxHash</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\ocpp;..\oasm;..\util;..\objlib;..\netlib;..\occopt;..\xxHash;..\occ;..\occil</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <ConformanceMode>true</ConformanceMode>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -254,7 +287,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;ISPARSER;VSIDE;USE_LONGLONG;BORLAND;MICROSOFT;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_WARNINGS;x64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>..\ocpp;..\oasm;..\util;..\objlib;..\netlib;..\occopt;..\xxHash</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\ocpp;..\oasm;..\util;..\objlib;..\netlib;..\occopt;..\xxHash;..\occ;..\occil</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <ConformanceMode>true</ConformanceMode>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>

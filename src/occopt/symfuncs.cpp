@@ -22,16 +22,14 @@
  * 
  */
 
-#include "iexpr.h"
+#include "ioptimizer.h"
 #include <stack>
-#include "beinterf.h"
-
-
+#include "beinterfdefs.h"
+#include "config.h"
 
 std::unordered_map<unsigned long long, SimpleSymbol*> SymbolManager::symbols;
 std::unordered_map<std::string, SimpleSymbol*> SymbolManager::globalSymbols;
 
-extern COMPILER_PARAMS cparams;
 
 bool comparetypes(SimpleType* typ1, SimpleType* typ2, int exact)
 {

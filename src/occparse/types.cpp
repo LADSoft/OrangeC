@@ -23,37 +23,14 @@
  */
 
 #include "compiler.h"
-
-extern int templateNestingCount;
-extern TYPE stdvoid;
-
-extern const char* tn_void;
-extern const char* tn_bool;
-extern const char* tn_char;
-extern const char* tn_int;
-extern const char* tn_long;
-extern const char* tn_longlong;
-extern const char* tn_short;
-extern const char* tn_unsigned;
-extern const char* tn_signed;
-extern const char* tn_ellipse;
-extern const char* tn_floatimaginary;
-extern const char* tn_doubleimaginary;
-extern const char* tn_longdoubleimaginary;
-extern const char* tn_floatcomplex;
-extern const char* tn_doublecomplex;
-extern const char* tn_longdoublecomplex;
-extern const char* tn_float;
-extern const char* tn_double;
-extern const char* tn_longdouble;
-extern const char* tn_const;
-extern const char* tn_volatile;
-extern const char* tn_class;
-extern const char* tn_union;
-extern const char* tn_struct;
-extern const char* tn_wchar_t;
-extern const char* tn_char16_t;
-extern const char* tn_char32_t;
+#include "template.h"
+#include "initbackend.h"
+#include "unmangle.h"
+#include "symtab.h"
+#include "OptUtils.h"
+#include "help.h"
+#include "ccerr.h"
+#include "declcpp.h"
 
 TYPE* typenum(char* buf, TYPE* tp);
 

@@ -24,13 +24,21 @@
 
 #include "compiler.h"
 #include "rtti.h"
-
-extern COMPILER_PARAMS cparams;
-extern NAMESPACEVALUELIST* localNameSpace;
-extern const char* overloadNameTab[];
-extern TYPE stdpointer, stdvoid;
-extern int mangledNamesCount;
-
+#include "config.h"
+#include "symtab.h"
+#include "mangle.h"
+#include "initbackend.h"
+#include "expr.h"
+#include "declcpp.h"
+#include "iexpr.h"
+#include "OptUtils.h"
+#include "declare.h"
+#include "memory.h"
+#include "help.h"
+#include "beinterf.h"
+#include "ildata.h"
+#include "ccerr.h"
+#include "declcons.h"
 HASHTABLE* rttiSyms;
 
 // in enum e_bt order

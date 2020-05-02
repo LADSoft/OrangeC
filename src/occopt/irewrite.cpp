@@ -22,15 +22,15 @@
  * 
  */
 
-#include "iexpr.h"
-#include "beinterf.h"
-extern ARCH_ASM* chosenAssembler;
-extern int exitBlock, blockCount;
-extern BLOCK** blockArray;
-extern TEMP_INFO** tempInfo;
-extern int tempCount;
-extern BRIGGS_SET* globalVars;
-extern QUAD* intermed_head;
+#include "ioptimizer.h"
+#include "beinterfdefs.h"
+#include "config.h"
+#include "iblock.h"
+#include "OptUtils.h"
+#include "ilive.h"
+#include "ioptutil.h"
+#include "optmain.h"
+
 void Prealloc(int pass)
 {
     int i;

@@ -25,61 +25,34 @@
 #include "compiler.h"
 #include "rtti.h"
 #include "PreProcessor.h"
-
-extern COMPILER_PARAMS cparams;
-extern ARCH_ASM* chosenAssembler;
-extern enum e_kw skim_closepa[], skim_end[];
-extern enum e_kw skim_closebr[];
-extern enum e_kw skim_semi[];
-extern TYPE stdpointer, stdnullpointer, stdchar;
-extern TYPE stdint, stdany;
-extern TYPE stddouble;
-extern TYPE stdvoid, stdfunc;
-extern TYPE stdwcharptr;
-extern TYPE stdcharptr;
-extern TYPE stdfloatimaginary;
-extern TYPE stddoubleimaginary;
-extern TYPE stdlongdoubleimaginary;
-extern TYPE stdbool;
-extern TYPE stdunsigned;
-extern TYPE stdunsignedlong;
-extern TYPE stdlong;
-extern TYPE stdunsignedlonglong;
-extern TYPE stdlonglong;
-extern TYPE stdfloat;
-extern TYPE stdlongdouble;
-extern TYPE stdchar;
-extern TYPE stdwidechar;
-extern TYPE stdfloatcomplex;
-extern TYPE stddoublecomplex;
-extern TYPE stdlongdoublecomplex;
-extern TYPE std__func__;
-extern TYPE std__string;
-extern TYPE stdchar16tptr;
-extern TYPE stdchar32tptr;
-extern TYPE stdobject;
-extern bool setjmp_used;
-extern const char* overloadNameTab[];
-extern NAMESPACEVALUELIST* localNameSpace;
-extern LAMBDA* lambdas;
-extern int instantiatingTemplate;
-extern int currentErrorLine;
-extern int templateNestingCount;
-extern NAMESPACEVALUELIST* globalNameSpace;
-extern bool hasXCInfo;
-extern STRUCTSYM* structSyms;
-extern int anonymousNotAlloc;
-extern int expandingParams;
-extern bool functionCanThrow;
-extern SYMBOL* theCurrentFunc;
-extern int inGetUserConversion;
-extern int tryLevel;
-extern bool hasFuncCall;
-extern PreProcessor* preProcessor;
-extern attributes basisAttribs;
-extern bool parsingPreprocessorConstant;
-extern bool isCallNoreturnFunction;
-
+#include "ccerr.h"
+#include "config.h"
+#include "initbackend.h"
+#include "stmt.h"
+#include "ildata.h"
+#include "mangle.h"
+#include "declcpp.h"
+#include "lambda.h"
+#include "template.h"
+#include "symtab.h"
+#include "declare.h"
+#include "help.h"
+#include "expr.h"
+#include "cpplookup.h"
+#include "occparse.h"
+#include "lex.h"
+#include "memory.h"
+#include "init.h"
+#include "exprcpp.h"
+#include "template.h"
+#include "OptUtils.h"
+#include "constopt.h"
+#include "libcxx.h"
+#include "beinterf.h"
+#include "types.h"
+#include "declcons.h"
+#include "Property.h"
+#include "browse.h"
 int packIndex;
 
 int argument_nesting;

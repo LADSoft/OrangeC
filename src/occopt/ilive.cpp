@@ -29,17 +29,16 @@
 #include <stdio.h>
 #include <malloc.h>
 #include <string.h>
-#include "iexpr.h"
-#include "beinterf.h"
-
-extern ARCH_ASM* chosenAssembler;
-extern BITINT bittab[BITINTBITS];
-extern int blockCount;
-extern BLOCK** blockArray;
-extern QUAD* intermed_head;
-extern int tempCount;
-extern TEMP_INFO** tempInfo;
-extern int exitBlock;
+#include "ioptimizer.h"
+#include "beinterfdefs.h"
+#include "config.h"
+#include "iblock.h"
+#include "OptUtils.h"
+#include "ildata.h"
+#include "ioptutil.h"
+#include "iflow.h"
+#include "memory.h"
+#include "ilive.h"
 
 int* dfst;
 BRIGGS_SET* globalVars;

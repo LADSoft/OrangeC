@@ -27,6 +27,8 @@
 #include <string.h>
 #include <limits.h>
 #include "be.h"
+#include "peep.h"
+#include "gen.h"
 typedef bool (*BUILTIN)();
 typedef struct builtins
 {

@@ -26,11 +26,24 @@
 #include <malloc.h>
 #include <string.h>
 #include <limits.h>
-#include "iexpr.h"
-#include "beinterf.h"
+#include "ioptimizer.h"
+#include "beinterfdefs.h"
 #include <vector>
 #include <deque>
 #include <map>
+#include "irc.h"
+#include "config.h"
+#include "iblock.h"
+#include "ilazy.h"
+#include "OptUtils.h"
+#include "ildata.h"
+#include "ioptutil.h"
+#include "memory.h"
+#include "ilive.h"
+#include "optmain.h"
+#include "irewrite.h"
+#include "iconfl.h"
+#include "ilocal.h"
 #define MAX_INTERNAL_REGS 256
 
 #define REG_MAX (chosenAssembler->arch->registerCount)
@@ -53,26 +66,9 @@
  * we are done with the optimizations that require that assumption to hold so we
  * can start replacing imodes wholesale without regard for it.
  */
-extern BITINT bittab[BITINTBITS];
-extern QUAD* intermed_head;
-extern ARCH_ASM* chosenAssembler;
-extern COMPILER_PARAMS cparams;
-extern TEMP_INFO** tempInfo;
-extern int exitBlock, blockCount;
-extern BLOCK** blockArray;
-extern int tempCount;
 extern int has_double;
-extern std::vector<SimpleSymbol*> functionVariables;
-extern std::vector<SimpleSymbol*> temporarySymbols;
-extern int registersAssigned;
-extern SimpleSymbol* currentFunction;
-int maxAddr = 0;
-typedef struct _spill_
-{
-    struct _spill_* next;
-    IMODE* imode;
-    LIST* uses;
-} SPILL;
+
+int maxAddr;
 
 static int* tempStack;
 static int tempStackcount;

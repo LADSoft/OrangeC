@@ -27,7 +27,12 @@
 #include "symtypes.h"
 #include "Utils.h"
 #include "PreProcessor.h"
-#include "iexpr.h"
+#include "ioptimizer.h"
+#include "memory.h"
+#include "mangle.h"
+#include "help.h"
+#include "symtab.h"
+#include "types.h"
 extern PreProcessor* preProcessor;
 
 SimpleSymbol* currentFunction;

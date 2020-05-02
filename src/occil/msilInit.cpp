@@ -32,7 +32,10 @@
 #include "Utils.h"
 #include <unordered_map>
 #include <algorithm>
-
+#include "config.h"
+#include "ildata.h"
+#include "occil.h"
+#include "using.h"
 #define STARTUP_TYPE_STARTUP 1
 #define STARTUP_TYPE_RUNDOWN 2
 #define STARTUP_TYPE_TLS_STARTUP 3
@@ -41,16 +44,6 @@
 #include <vector>
 #include <string>
 using namespace DotNetPELib;
-
-extern SimpleSymbol* currentFunction;
-extern COMPILER_PARAMS cparams;
-extern std::vector<SimpleSymbol*> externals;
-extern std::string prm_namespace_and_class;
-extern std::vector<SimpleSymbol*> temporarySymbols;
-extern std::string prm_snkKeyFile;
-extern std::string prm_assemblyVersion;
-extern const char* pinvoke_dll;
-
 
 int uniqueId;
 SimpleSymbol retblocksym;

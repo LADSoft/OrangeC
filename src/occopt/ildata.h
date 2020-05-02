@@ -1,3 +1,4 @@
+#pragma once
 /* Software License Agreement
  * 
  *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
@@ -22,12 +23,12 @@
  * 
  */
 
-#pragma once
-#include "iexpr.h"
-#include "beinterf.h"
+#include "ioptimizer.h"
+#include "beinterfdefs.h"
 #include "../occ/winmode.h"
 #include <deque>
 #include <map>
+#include <set>
 
 enum FunctionFlags
 {
@@ -171,3 +172,110 @@ enum e_stt {
     STT_INSTRUCTION,
 
 };
+extern int gentype; /* Current DC type */
+extern int curseg;  /* Current seg */
+extern int outcol;      /* Curront col (roughly) */
+extern FILE* icdFile;
+extern std::vector<SimpleSymbol*> externals;
+extern std::vector<SimpleSymbol*> globalCache;
+extern std::vector<SimpleSymbol*> typeSymbols;
+extern std::vector<SimpleSymbol*> typedefs;
+extern std::vector<SimpleSymbol*> temporarySymbols;
+extern std::vector<SimpleSymbol*> functionVariables;
+extern std::vector<BROWSEINFO*> browseInfo;
+extern std::vector<BROWSEFILE*> browseFiles;
+extern std::set<SimpleSymbol *> externalSet;
+extern std::set<SimpleSymbol*> definedFunctions;
+
+extern std::list<std::string> inputFiles;
+extern std::list<std::string> backendFiles;
+extern std::string prm_libPath;
+extern std::string prm_include;
+extern std::list<std::string> libIncludes;
+extern std::list<std::string> toolArgs;
+extern const char* pinvoke_dll;
+extern std::string prm_snkKeyFile;
+extern std::list<std::string> prm_Using;
+extern std::string prm_assemblyVersion;
+extern std::string prm_namespace_and_class;
+extern std::map<std::string, std::string> bePragma;
+extern std::list<MsilProperty> msilProperties;
+extern std::string prm_OutputDefFile;
+
+extern std::string prm_assemblerSpecifier;
+extern std::string outputFileName;
+extern std::string assemblerFileExtension;
+
+extern SimpleExpression* objectArray_exp;
+extern SimpleExpression* fltexp;
+
+extern int exitBlock;
+extern COMPILER_PARAMS cparams;
+extern int showBanner;
+extern int verbosity;
+extern int nextLabel;
+extern bool assembling;
+extern int fastcallAlias;
+extern bool setjmp_used;
+extern bool functionHasAssembly;
+extern std::string compilerName;
+extern std::string intermediateName;
+extern std::string backendName;
+
+extern int dataAlign;
+extern int bssAlign;
+extern int constAlign;
+extern int architecture;
+
+extern int registersAssigned;
+
+extern std::deque<BaseData*> baseData;
+
+void InitIntermediate(void);
+void AddFunction(void);
+void gen_vtt(int dataOffset, SimpleSymbol* func, SimpleSymbol* name);
+void gen_importThunk(SimpleSymbol* func);
+void gen_vc1(SimpleSymbol* func);
+void gen_strlab(SimpleSymbol* sym);
+void put_label(int lab);
+void put_string_label(int lab, int type);
+void put_staticlabel(long label);
+void genfloat(FPF* val);
+void gendouble(FPF* val);
+void genlongdouble(FPF* val);
+void genbyte(long val);
+void genbool(int val);
+void genbit(SimpleSymbol* sym, int val);
+void genshort(long val);
+void genwchar_t(long val);
+void genlong(long val);
+void genlonglong(long long val);
+void genint(int val);
+void genuint16(int val);
+void genuint32(int val);
+void genenum(int val);
+void genaddress(unsigned long long address);
+void gensrref(SimpleSymbol* sym, int val, int type);
+void genref(SimpleSymbol* sym, int offset);
+void genpcref(SimpleSymbol* sym, int offset);
+void genstorage(int nbytes);
+void gen_autoref(SimpleSymbol*sym, int offset);
+void gen_labref(int n);
+void gen_labdifref(int n1, int n2);
+int wchart_cmp(LCHAR* left, LCHAR* right, int len);
+void cseg(void);
+void dseg(void);
+void tseg(void);
+void bssseg(void);
+void xconstseg(void);
+void xstringseg(void);
+void startupseg(void);
+void rundownseg(void);
+void tlsstartupseg(void);
+void tlsrundownseg(void);
+void gen_virtual(SimpleSymbol* sym, int data);
+void gen_endvirtual(SimpleSymbol* sym);
+void align(int size);
+void gen_funcref(SimpleSymbol* sym);
+void putstring(char *string, int len);
+void nl(void);

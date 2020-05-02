@@ -35,26 +35,23 @@
 #include <deque>
 #include <string>
 #include <algorithm>
+#include "import.h"
+#include "symtab.h"
+#include "declcpp.h"
+#include "initbackend.h"
+#include "occparse.h"
+#include "memory.h"
+#include "help.h"
+#include "declare.h"
+#include "mangle.h"
+#include "beinterf.h"
 
+extern DotNetPELib::PELib* peLib;
 using namespace DotNetPELib;
-extern PELib* peLib;
-extern NAMESPACEVALUELIST* globalNameSpace;
-extern LIST* nameSpaceList;
-extern TYPE stdint;
-
-#ifdef VSIDE
-void AddType(SimpleSymbol* sym, Type* type)
-{
-#ifdef ISPARSER
-#endif
-}
-#else
-void AddType(SimpleSymbol* sym, Type* type);
-#endif
 
 class Importer : public Callback
 {
-  public:
+public:
     Importer() : level_(0), inlsmsilcrtl_(0), pass_(0) {}
     virtual ~Importer() {}
 
@@ -86,7 +83,7 @@ class Importer : public Callback
             std::cout << name << std::endl;
     }
 #endif
-  protected:
+protected:
     TYPE* TranslateType(Type*);
     bool useGlobal() const { return cparams.managed_library && inlsmsilcrtl_ && structures_.size() == 1; }
     void InsertBaseClassTree(SYMBOL* sp, const Class* cls);
@@ -100,7 +97,7 @@ class Importer : public Callback
             rv += "." + name;
         return litlate(rv.c_str());
     }
-  private:
+private:
     std::deque<SYMBOL*> nameSpaces_;
     std::deque<SYMBOL*> structures_;
     std::map<std::string, SYMBOL*> cachedClasses_;
@@ -109,6 +106,17 @@ class Importer : public Callback
     bool inlsmsilcrtl_;
     static e_bt translatedTypes[];
 };
+
+#ifdef VSIDE
+void AddType(SimpleSymbol* sym, Type* type)
+{
+#ifdef ISPARSER
+#endif
+}
+#else
+void AddType(SimpleSymbol* sym, Type* type);
+#endif
+
 
 void Import()
 {

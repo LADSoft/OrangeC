@@ -22,16 +22,19 @@
  * 
  */
 
-#include "iexpr.h"
-#include "beinterf.h"
+#include "ioptimizer.h"
+#include "beinterfdefs.h"
 #include "../occ/x86regs.h"
-
-extern ARCH_ASM* chosenAssembler;
-extern int tempCount;
-extern TEMP_INFO** tempInfo;
-extern BLOCKLIST** blockArray;
-extern std::vector<SimpleSymbol*> externals;
-extern SimpleSymbol* currentFunction;
+#include "config.h"
+#include "OptUtils.h"
+#include "iblock.h"
+#include "ildata.h"
+#include "optmain.h"
+#include "configx86.h"
+#include "memory.h"
+#include "iconfl.h"
+#include "ilocal.h"
+#include "ioptutil.h"
 
 extern SimpleExpression* fltexp;
 

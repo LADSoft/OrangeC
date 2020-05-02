@@ -26,20 +26,16 @@
 #include <malloc.h>
 #include <string.h>
 #include <limits.h>
-#include "iexpr.h"
-#include "beinterf.h"
+#include "ioptimizer.h"
+#include "beinterfdefs.h"
+#include "OptUtils.h"
+#include "iblock.h"
+#include "iloop.h"
+#include "memory.h"
+#include "ilocal.h"
+#include "ilive.h"
 
 /* reshaping and loop induction strength reduction */
-
-extern FILE* icdFile;
-extern TEMP_INFO** tempInfo;
-extern int tempCount;
-extern int loopCount;
-extern LOOP** loopArray;
-extern int blockCount;
-extern BLOCK** blockArray;
-extern DAGLIST* ins_hash[DAGSIZE];
-extern DAGLIST* name_hash[DAGSIZE];
 
 static int cachedTempCount;
 
@@ -150,17 +146,17 @@ static RESHAPE_LIST* InsertExpression(IMODE* im, RESHAPE_EXPRESSION* expr, QUAD*
     *test = list;
     return list;
 }
-static bool GatherExpression(int tx, RESHAPE_EXPRESSION* expr, int flags)
+static bool GatherExpression(int tx, RESHAPE_EXPRESSION* expression, int flags)
 {
     QUAD* ins = tempInfo[tx]->instructionDefines;
-    if (ins && matchesop(ins->dc.opcode, expr->op))
+    if (ins && matchesop(ins->dc.opcode, expression->op))
     {
         if (ins->dc.opcode == i_neg || ins->dc.opcode == i_not)
         {
             /* the reason for this exemption is I don't want to deal with
              * maintaining the order of successive neg and not instructions
              */
-            if (expr->list && expr->list->flags & (RF_NEG | RF_NOT))
+            if (expression->list && expression->list->flags & (RF_NEG | RF_NOT))
                 return false;
             if ((ins->temps & TEMP_LEFT) && (ins->dc.left->mode != i_ind))
             {
@@ -171,8 +167,8 @@ static bool GatherExpression(int tx, RESHAPE_EXPRESSION* expr, int flags)
                         flags ^= RF_NEG;
                     else
                         flags ^= RF_NOT;
-                    if (inductionThisLoop(ins->block, tnum) || !GatherExpression(tnum, expr, flags))
-                        InsertExpression(ins->dc.left, expr, ins, flags);
+                    if (inductionThisLoop(ins->block, tnum) || !GatherExpression(tnum, expression, flags))
+                        InsertExpression(ins->dc.left, expression, ins, flags);
                     return true;
                 }
             }
@@ -189,10 +185,10 @@ static bool GatherExpression(int tx, RESHAPE_EXPRESSION* expr, int flags)
                     int flags1 = flags;
                     if (ins->dc.opcode == i_sub)
                         flags ^= RF_NEG;
-                    if (inductionThisLoop(ins->block, tnuml) || !GatherExpression(tnuml, expr, flags1))
-                        InsertExpression(ins->dc.left, expr, ins, flags1);
-                    if (inductionThisLoop(ins->block, tnumr) || !GatherExpression(tnumr, expr, flags))
-                        InsertExpression(ins->dc.right, expr, ins, flags);
+                    if (inductionThisLoop(ins->block, tnuml) || !GatherExpression(tnuml, expression, flags1))
+                        InsertExpression(ins->dc.left, expression, ins, flags1);
+                    if (inductionThisLoop(ins->block, tnumr) || !GatherExpression(tnumr, expression, flags))
+                        InsertExpression(ins->dc.right, expression, ins, flags);
                     return true;
                 }
             }
@@ -208,9 +204,9 @@ static bool GatherExpression(int tx, RESHAPE_EXPRESSION* expr, int flags)
                     flags ^= RF_NEG;
 
                 flags |= (ins->dc.opcode == i_lsl ? RF_SHIFT : 0);
-                InsertExpression(ins->dc.right, expr, ins, flags);
-                if (inductionThisLoop(ins->block, tnum) || !GatherExpression(tnum, expr, flags1))
-                    InsertExpression(ins->dc.left, expr, ins, flags1);
+                InsertExpression(ins->dc.right, expression, ins, flags);
+                if (inductionThisLoop(ins->block, tnum) || !GatherExpression(tnum, expression, flags1))
+                    InsertExpression(ins->dc.left, expression, ins, flags1);
                 return true;
             }
         }
@@ -224,9 +220,9 @@ static bool GatherExpression(int tx, RESHAPE_EXPRESSION* expr, int flags)
                 if (ins->dc.opcode == i_sub)
                     flags ^= RF_NEG;
                 flags |= (ins->dc.opcode == i_lsl ? RF_SHIFT : 0);
-                if (inductionThisLoop(ins->block, tnum) || !GatherExpression(tnum, expr, flags))
-                    InsertExpression(ins->dc.right, expr, ins, flags);
-                InsertExpression(ins->dc.left, expr, ins, flags1);
+                if (inductionThisLoop(ins->block, tnum) || !GatherExpression(tnum, expression, flags))
+                    InsertExpression(ins->dc.right, expression, ins, flags);
+                InsertExpression(ins->dc.left, expression, ins, flags1);
                 return true;
             }
         }

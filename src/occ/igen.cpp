@@ -31,29 +31,18 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
-#include "iexpr.h"
+#include "ioptimizer.h"
 #include "be.h"
 #include "PreProcessor.h"
 #include "CmdSwitch.h"
+#include "config.h"
+#include "OptUtils.h"
+#include "iblock.h"
+#include "occ.h"
+#include "ildata.h"
+#include "gen.h"
+#include "output.h"
 /*      variable initialization         */
-extern int tempCount;
-extern BITINT bittab[BITINTBITS];
-extern COMPILER_PARAMS cparams;
-extern ARCH_ASM* chosenAssembler;
-extern QUAD* intermed_head;
-extern int cachedTempCount;
-extern TEMP_INFO** tempInfo;
-extern LIST *localfuncs, *localdata;
-extern FILE* icdFile;
-extern int nextLabel;
-extern LIST* externals;
-extern SimpleSymbol* currentFunction;
-extern unsigned termCount;
-extern QUAD* criticalThunks;
-extern int cachedTempCount;
-extern LIST* exports;
-extern PreProcessor* preProcessor;
-extern CmdSwitchString prm_output;
 
 QUAD* currentQuad;
 

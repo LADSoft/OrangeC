@@ -30,28 +30,21 @@
 #include "Utils.h"
 #include "CmdSwitch.h"
 
+#include "config.h"
+#include "ildata.h"
+#include "occ.h"
+
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
 #endif
 
-extern bool compile_under_dos;
-
-extern COMPILER_PARAMS cparams;
-extern int showBanner;
-extern int verbosity;
-extern std::string prm_libPath;
-extern std::string prm_include;
-extern std::string prm_OutputDefFile;
-extern std::string outputFileName;
-extern std::list<std::string> inputFiles;
-
-const char* winflags[] = {
+static const char* winflags[] = {
     "/T:CON32 ", "/T:GUI32 ", "/T:DLL32 ", "/T:PM ", "/T:DOS32 ", "/T:BIN ", "/T:CON32;sdpmist32.bin ", "/T:CON32;shdld32.bin ",
 };
-const char* winc0[] = {"c0xpe.o", "c0pe.o", "c0dpe.o", "c0pm.o", "c0wat.o", "", "c0xpe.o", "c0hx.o",
+static const char* winc0[] = {"c0xpe.o", "c0pe.o", "c0dpe.o", "c0pm.o", "c0wat.o", "", "c0xpe.o", "c0hx.o",
                        "c0xls.o", "c0ls.o", "c0dls.o", "c0om.o", "c0wat.o", "", "c0xpe.o", "c0hx.o"};
 
-LIST *objlist, *asmlist, *liblist, *reslist, *rclist;
+static LIST *objlist, *asmlist, *liblist, *reslist, *rclist;
 static char *asm_params, *rc_params, *link_params;
 
 bool InsertOption(const char* name)

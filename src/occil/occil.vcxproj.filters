@@ -21,9 +21,6 @@
     <ClCompile Include="invoke.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Process.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="using.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -78,6 +75,9 @@
     <ClCompile Include="..\occopt\configmsil.cpp">
       <Filter>Resource Files</Filter>
     </ClCompile>
+    <ClCompile Include="MsilProcess.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="be.h">
@@ -95,13 +95,29 @@
     <ClInclude Include="..\occopt\iopt.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="gen.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="igen.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="invoke.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="msilInit.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="occil.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="using.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MsilProcess.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\adl\Release\adl.Build.CppClean.log" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="be.p">
-      <Filter>Header Files</Filter>
-    </None>
   </ItemGroup>
 </Project>

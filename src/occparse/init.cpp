@@ -26,55 +26,35 @@
 #include <assert.h>
 #include <limits.h>
 #include "PreProcessor.h"
-/* initializers, local... can do w/out c99 */
+#include "init.h"
+#include "ccerr.h"
+#include "config.h"
+#include "symtab.h"
+#include "initbackend.h"
+#include "stmt.h"
+#include "template.h"
+#include "declare.h"
+#include "mangle.h"
+#include "ildata.h"
+#include "occparse.h"
+#include "expr.h"
+#include "help.h"
+#include "OptUtils.h"
+#include "cpplookup.h"
+#include "exprcpp.h"
+#include "constopt.h"
+#include "declcons.h"
+#include "lex.h"
+#include "declcpp.h"
+#include "beinterf.h"
+#include "memory.h"
+#include "inline.h"
+#include "Property.h"
+#include "istmt.h"
+#include "types.h"
+#include "browse.h"
+ /* initializers, local... can do w/out c99 */
 
-extern ARCH_DEBUG* chosenDebugger;
-extern ARCH_ASM* chosenAssembler;
-
-extern enum e_kw skim_closebr[];
-extern enum e_kw skim_closepa[];
-extern enum e_kw skim_comma[];
-extern enum e_kw skim_end[];
-extern enum e_kw skim_semi[];
-extern NAMESPACEVALUELIST *globalNameSpace, *localNameSpace;
-extern TYPE stdwcharptr;
-extern TYPE stdstring;
-extern TYPE stdchar16tptr;
-extern TYPE stdchar32tptr;
-extern TYPE stdint;
-extern TYPE stdvoid;
-extern TYPE stdpointer;
-extern TYPE std__string;
-extern int startlab, retlab;
-extern bool declareAndInitialize;
-extern int instantiatingTemplate;
-extern int templateNestingCount;
-extern int codeLabel;
-extern const char* overloadNameTab[];
-extern PreProcessor* preProcessor;
-extern int dataAlign;
-extern int bssAlign;
-extern int constAlign;
-typedef struct _startups_
-{
-    struct _startups_* next;
-    char* name;
-    int prio;
-} STARTUP;
-
-typedef struct _alias_
-{
-    struct _alias_* next;
-    char* name;
-    char* alias;
-} ALIAS;
-
-typedef struct _dyninit_
-{
-    struct _dyninit_* next;
-    SYMBOL* sp;
-    INITIALIZER* init;
-} DYNAMIC_INITIALIZER;
 
 bool initializingGlobalVar;
 int ignore_global_init;

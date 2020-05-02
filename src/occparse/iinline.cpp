@@ -22,31 +22,31 @@
  * 
  */
 
-/*
- * iexpr.c
- *
- * routies to take an enode list and generate icode
- */
 #include <stdio.h>
 #include <stdlib.h>
 #include "compiler.h"
+#include "ccerr.h"
 #include "assert.h"
+#include "config.h"
+#include "istmt.h"
+#include "stmt.h"
+#include "ildata.h"
+#include "expr.h"
+#include "mangle.h"
+#include "iexpr.h"
+#include "declare.h"
+#include "help.h"
+#include "OptUtils.h"
+#include "iblock.h"
+#include "memory.h"
+#include "symtab.h"
 
-extern ARCH_ASM* chosenAssembler;
-extern IMODE* returnImode;
-extern int startlab;
-extern int retlab;
-extern int nextLabel;
-extern int codeLabelOffset;
-extern int retcount;
-extern std::vector<SimpleSymbol*> temporarySymbols;
-extern SYMBOL* theCurrentFunc;
 int inlinesym_count;
 EXPRESSION* inlinesym_thisptr[MAX_INLINE_NESTING];
-static SYMBOL* inlinesym_list[MAX_INLINE_NESTING];
 #undef MAX_INLINE_NESTING
 #define MAX_INLINE_NESTING 3
 
+static SYMBOL* inlinesym_list[MAX_INLINE_NESTING];
 static int inline_nesting;
 void iinlineInit(void)
 {

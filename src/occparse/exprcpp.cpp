@@ -25,44 +25,29 @@
 #include "compiler.h"
 #include <assert.h>
 #include "rtti.h"
-
-extern COMPILER_PARAMS cparams;
-extern ARCH_ASM* chosenAssembler;
-extern enum e_kw skim_closepa[];
-extern enum e_kw skim_closebr[];
-extern enum e_kw skim_semi[];
-extern enum e_kw skim_end[];
-extern TYPE stdpointer;
-extern TYPE stdint;
-extern TYPE stddouble;
-extern TYPE stdvoid;
-extern TYPE stdwcharptr;
-extern TYPE stdcharptr;
-extern TYPE stdfloatimaginary;
-extern TYPE stdbool;
-extern TYPE stdunsigned;
-extern TYPE stdunsignedlong;
-extern TYPE stdlong;
-extern TYPE stdunsignedlonglong;
-extern TYPE stdlonglong;
-extern TYPE stdfloat;
-extern TYPE stdlongdouble;
-extern TYPE stdchar;
-extern TYPE stdwidechar;
-extern TYPE std__func__;
-extern TYPE stdchar16tptr;
-extern TYPE stdchar32tptr;
-extern bool setjmp_used;
-extern const char* overloadNameTab[];
-extern const char* overloadXlateTab[];
-extern NAMESPACEVALUELIST *globalNameSpace, *localNameSpace;
-extern SYMBOL* enumSyms;
-extern LAMBDA* lambdas;
-extern int currentErrorLine;
-extern int templateNestingCount;
-extern bool functionCanThrow;
-extern SYMBOL* theCurrentFunc;
-extern bool hasFuncCall;
+#include "ccerr.h"
+#include "config.h"
+#include "initbackend.h"
+#include "stmt.h"
+#include "mangle.h"
+#include "symtab.h"
+#include "template.h"
+#include "lambda.h"
+#include "declare.h"
+#include "expr.h"
+#include "help.h"
+#include "types.h"
+#include "declcons.h"
+#include "declcpp.h"
+#include "constopt.h"
+#include "cpplookup.h"
+#include "init.h"
+#include "OptUtils.h"
+#include "lex.h"
+#include "beinterf.h"
+#include "Property.h"
+#include "memory.h"
+#include "exprcpp.h"
 
 /* lvaule */
 /* handling of const int */

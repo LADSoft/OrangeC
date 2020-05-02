@@ -31,16 +31,21 @@
 #include "../occ/be.h"
 #include "Instruction.h"
 #include <set>
-
-extern int codeLabel;
-extern HASHTABLE* labelSyms;
-extern int usingEsp;
-extern InstructionParser* instructionParser;
-extern SYMBOL* theCurrentFunc;
-extern std::vector<SimpleSymbol*> externals;
-extern std::set<SimpleSymbol *> externalSet;
-
-extern bool assembling;
+#include "inasm.h"
+#include "ccerr.h"
+#include "stmt.h"
+#include "ildata.h"
+#include "symtab.h"
+#include "occparse.h"
+#include "expr.h"
+#include "declare.h"
+#include "lex.h"
+#include "mangle.h"
+#include "floatconv.h"
+#include "constopt.h"
+#include "memory.h"
+#include "inline.h"
+#include "help.h"
 
 static ASMREG* regimage;
 static ASMNAME* insdata;
@@ -49,19 +54,6 @@ static LEXEME* lex;
 static SYMBOL* lastsym;
 static enum e_opcode op;
 
-#define ERR_LABEL_EXPECTED 0
-#define ERR_ILLEGAL_ADDRESS_MODE 1
-#define ERR_ADDRESS_MODE_EXPECTED 2
-#define ERR_INVALID_OPCODE 3
-#define ERR_INVALID_SIZE 4
-#define ERR_INVALID_INDEX_MODE 5
-#define ERR_INVALID_SCALE_SPECIFIER 6
-#define ERR_USE_LEA 7
-#define ERR_TOO_MANY_SEGMENTS 8
-#define ERR_SYNTAX 9
-#define ERR_UNKNOWN_OP 10
-#define ERR_BAD_OPERAND_COMBO 11
-#define ERR_INVALID_USE_OF_INSTRUCTION 12
 static const char* errors[] = {"Lable expected",
                                "Illegal address mode",
                                "Address mode expected",
@@ -77,14 +69,14 @@ static const char* errors[] = {"Lable expected",
                                "Invalid use of instruction"
 
 };
-ASMNAME directiveLst[] = {{"db", op_reserved, ISZ_UCHAR, 0},
+static ASMNAME directiveLst[] = {{"db", op_reserved, ISZ_UCHAR, 0},
                           {"dw", op_reserved, ISZ_USHORT, 0},
                           {"dd", op_reserved, ISZ_ULONG, 0},
                           {"dq", op_reserved, ISZ_ULONGLONG, 0},
                           {"dt", op_reserved, ISZ_LDOUBLE, 0},
                           {"label", op_label, 0, 0},
                           {0}};
-ASMREG reglst[] = {{"cs", am_seg, 1, ISZ_USHORT},     {"ds", am_seg, 2, ISZ_USHORT},
+static ASMREG reglst[] = {{"cs", am_seg, 1, ISZ_USHORT},     {"ds", am_seg, 2, ISZ_USHORT},
                    {"es", am_seg, 3, ISZ_USHORT},     {"fs", am_seg, 4, ISZ_USHORT},
                    {"gs", am_seg, 5, ISZ_USHORT},     {"ss", am_seg, 6, ISZ_USHORT},
                    {"al", am_dreg, 0, ISZ_UCHAR},     {"cl", am_dreg, 1, ISZ_UCHAR},
@@ -117,12 +109,6 @@ ASMREG reglst[] = {{"cs", am_seg, 1, ISZ_USHORT},     {"ds", am_seg, 2, ISZ_USHO
                    {"tbyte", am_ext, akw_tbyte, 0},   {"ptr", am_ext, akw_ptr, 0},
                    {"offset", am_ext, akw_offset, 0}, {0, 0, 0}};
 
-typedef struct
-{
-    const char* name;
-    int instruction;
-    void* data;
-} ASM_HASH_ENTRY;
 static int floating;
 static HASHTABLE* asmHash;
 void inlineAsmInit(void)

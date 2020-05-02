@@ -27,15 +27,14 @@
  */
 #include <stdio.h>
 #include <string.h>
-#include "iexpr.h"
-#include "beinterf.h"
+#include "ioptimizer.h"
+#include "beinterfdefs.h"
 #include "Utils.h"
 #include "../occ/x86regs.h"
 #include "../occ/be.h"
 #include "../occparse/winmode.h"
-
-extern COMPILER_PARAMS cparams;
-extern const char *pinvoke_dll;
+#include "config.h"
+#include "ildata.h"
 
 static char usage_text[] =
     "[options] [@response file] files\n"

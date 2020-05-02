@@ -36,31 +36,42 @@
 #include "x64Operand.h"
 #include "x64Parser.h"
 #endif
-extern COMPILER_PARAMS cparams;
-extern ARCH_DEBUG* chosenDebugger;
-extern ARCH_ASM* chosenAssembler;
-extern NAMESPACEVALUELIST* globalNameSpace;
-extern LIST* clist;
-extern int optflags;
-extern CmdSwitchCombineString prm_include;
-extern CmdSwitchCombineString prm_sysinclude;
-extern CmdSwitchCombineString prm_libpath;
-extern CmdSwitchString prm_pipe;
-extern CmdSwitchCombineString prm_output;
-extern std::list<std::string> inputFiles;
-extern std::list<std::string> libIncludes;
-extern FILE* icdFile;
-extern std::string compilerName;
-extern std::vector<SimpleSymbol*> typedefs;
-extern std::map<std::string, std::string> bePragma;
-extern std::string outputFileName;
-extern std::string bePostFile;
+#include "ccerr.h"
+#include "config.h"
+#include "declare.h"
+#include "template.h"
+#include "stmt.h"
+#include "inasm.h"
+#include "symtab.h"
+#include "osutil.h"
+#include "ildata.h"
+#include "rtti.h"
+#include "cppbltin.h"
+#include "iout.h"
+#include "memory.h"
+#include "mangle.h"
+#include "libcxx.h"
+#include "lex.h"
+#include "lambda.h"
+#include "inline.h"
+#include "init.h"
+#include "iinline.h"
+#include "iexpr.h"
+#include "help.h"
+#include "inasm.h"
+#include "expr.h"
+#include "constopt.h"
+#include "browse.h"
+#include "ilstream.h"
+#include "OptUtils.h"
+#include "istmt.h"
+int msil_main_preprocess(char *fileName);
+void msil_end_generation(char *fileName);
+void msil_compile_start(char* name);
 
-char outFile[260];
 
 long long ParseExpression(std::string&line);
 
-unsigned identityValue;
 
 #ifdef _WIN32
 extern "C"
@@ -86,6 +97,8 @@ DotNetPELib::PELib* peLib;
 #endif
 
 
+char outFile[260];
+unsigned identityValue;
 int maxBlocks, maxTemps;
 char cppfile[256];
 FILE *cppFile;
@@ -96,9 +109,9 @@ PreProcessor *preProcessor;
 
 char realOutFile[260];
 
-static int stoponerr = 0;
 
 InstructionParser* instructionParser;
+static int stoponerr = 0;
 
 COMPILER_PARAMS cparams_default = {
     25,    /* int  prm_maxerr;*/
@@ -451,7 +464,7 @@ int main(int argc, char* argv[])
         }
         if (cparams.prm_cplusplus && (architecture == ARCHITECTURE_MSIL))
             Utils::fatal("MSIL compiler does not compile C++ files at this time");
-        preProcessor = new PreProcessor(buffer, prm_include.GetValue(), prm_sysinclude.GetValue(), true, cparams.prm_trigraph, '#', cparams.prm_charisunsigned,
+        preProcessor = new PreProcessor(buffer, prm_cinclude.GetValue(), prm_sysinclude.GetValue(), true, cparams.prm_trigraph, '#', cparams.prm_charisunsigned,
             !cparams.prm_c99 && !cparams.prm_c1x && !cparams.prm_cplusplus, !cparams.prm_ansi, prm_pipe.GetValue() != "+" ? prm_pipe.GetValue() : "");
 
         if (!preProcessor->IsOpen())

@@ -31,37 +31,24 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
-#include "iexpr.h"
-#include "beinterf.h"
+#include "ioptimizer.h"
+#include "beinterfdefs.h"
 #include "CmdSwitch.h"
 #include "ildata.h"
+#include "config.h"
+#include "OptUtils.h"
+#include "iblock.h"
+#include "ilazy.h"
+#include "iflow.h"
+#include "optmain.h"
+#include "iout.h"
+#include "ioptutil.h"
+#include "output.h"
+#include "ilocal.h"
 
-/*      variable initialization         */
-extern int registersAssigned;
+ /*      variable initialization         */
 
-extern int tempCount;
-extern BITINT bittab[BITINTBITS];
-extern COMPILER_PARAMS cparams;
-extern ARCH_ASM* chosenAssembler;
-extern QUAD* intermed_head;
-extern int cachedTempCount;
-extern TEMP_INFO** tempInfo;
-extern LIST *localfuncs, *localdata;
-extern FILE* icdFile;
-extern int nextLabel;
-extern SimpleSymbol* currentFunction;
-extern unsigned termCount;
-extern QUAD* criticalThunks;
-extern int cachedTempCount;
-extern CmdSwitchString prm_output;
-extern std::vector<SimpleSymbol*> temporarySymbols;
-extern std::vector<SimpleSymbol*> functionVariables;
-extern std::deque<BaseData*> baseData;
-extern std::vector<SimpleSymbol*> externals;
 
-extern int gentype; /* Current DC type */
-extern int curseg;  /* Current seg */
-extern int outcol;      /* Curront col (roughly) */
 static char dataname[40];   /* Name of last label */
 
 static int virtual_mode;

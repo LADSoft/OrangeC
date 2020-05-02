@@ -27,7 +27,21 @@
 #include "PreProcessor.h"
 #include "Utils.h"
 #include "Errors.h"
-
+#include "ccerr.h"
+#include "config.h"
+#include "declare.h"
+#include "lex.h"
+#include "template.h"
+#include "occparse.h"
+#include "stmt.h"
+#include "symtab.h"
+#include "unmangle.h"
+#include "OptUtils.h"
+#include "memory.h"
+#include "mangle.h"
+#include "lex.h"
+#include "types.h"
+#include "help.h"
 #define ERROR 1
 #define WARNING 2
 #define TRIVIALWARNING 4
@@ -35,28 +49,9 @@
 #define ANSIWARNING 16
 #define CPLUSPLUSERROR 32
 
-extern COMPILER_PARAMS cparams; 
-extern ARCH_ASM* chosenAssembler;
-extern int instantiatingTemplate;
-extern int structLevel;
-extern PreProcessor* preProcessor;
-extern char infile[256];
-extern FILE* errFile;
-extern HASHTABLE* labelSyms;
-extern NAMESPACEVALUELIST* globalNameSpace;
-
-extern LEXCONTEXT* context;
-extern int templateNestingCount;
-extern int inDeduceArgs;
-extern int eofLine;
-extern const char* eofFile;
 
 int currentErrorLine;
 SYMBOL* theCurrentFunc;
-
-static LIST* listErrors;
-static const char* currentErrorFile;
-
 enum e_kw skim_end[] = {end, kw_none};
 enum e_kw skim_closepa[] = {closepa, semicolon, end, kw_none};
 enum e_kw skim_semi[] = {semicolon, end, kw_none};
@@ -65,6 +60,10 @@ enum e_kw skim_closebr[] = {closebr, semicolon, end, kw_none};
 enum e_kw skim_comma[] = {comma, closepa, closebr, semicolon, end, kw_none};
 enum e_kw skim_colon[] = {colon, kw_case, kw_default, semicolon, end, kw_none};
 enum e_kw skim_templateend[] = {gt, semicolon, end, kw_none};
+
+static LIST* listErrors;
+static const char* currentErrorFile;
+
 static struct
 {
     const char* name;
@@ -1304,34 +1303,6 @@ static void labelIndexes(STATEMENT* stmt, int* min, int* max)
         stmt = stmt->next;
     }
 }
-enum _vlaTypes
-{
-    v_label,
-    v_goto,
-    v_return,
-    v_branch,
-    v_vla,
-    v_declare,
-    v_blockstart,
-    v_blockend
-};
-typedef struct vlaShim
-{
-    struct vlaShim *next, *lower;
-    struct vlaShim* fwd;
-    struct vlaShim* parent;
-    LIST* backs;
-    enum _vlaTypes type;
-    STATEMENT* stmt;
-    int level;
-    int blocknum;
-    int blockindex;
-    int label;
-    int line;
-    int checkme : 1;
-    int mark : 1;
-    const char* file;
-} VLASHIM;
 static VLASHIM* mkshim(_vlaTypes type, int level, int label, STATEMENT* stmt, VLASHIM* last, VLASHIM* parent, int blocknum,
                        int blockindex)
 {

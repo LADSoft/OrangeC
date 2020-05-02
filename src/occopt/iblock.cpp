@@ -37,14 +37,16 @@
 #include <stdio.h>
 #include <malloc.h>
 #include <string.h>
-#include "iexpr.h"
-#include "beinterf.h"
+#include "ioptimizer.h"
+#include "beinterfdefs.h"
+#include "config.h"
+#include "iblock.h"
+#include "OptUtils.h"
+#include "memory.h"
+#include "ilocal.h"
 
 #define DOING_LCSE
 
-extern int codeLabelOffset;
-extern COMPILER_PARAMS cparams;
-extern ARCH_ASM* chosenAssembler;
 
 TEMP_INFO** tempInfo;
 BLOCK** blockArray;

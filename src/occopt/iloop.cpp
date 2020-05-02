@@ -26,22 +26,22 @@
 #include <malloc.h>
 #include <string.h>
 #include <limits.h>
-#include "iexpr.h"
-#include "beinterf.h"
+#include "ioptimizer.h"
+#include "beinterfdefs.h"
 #include "Utils.h"
+#include "iblock.h"
+#include "OptUtils.h"
+#include "ildata.h"
+#include "iflow.h"
+#include "memory.h"
+#include "ilocal.h"
+#include "ireshape.h"
+#include "ioptutil.h"
 
 /* Basic loop identity and data gathering
  * note: some optimizations depend on the fact that the loop numbers
  * are assigned in reverse postorder
  */
-extern BLOCK** blockArray;
-extern int blockCount;
-extern int exitBlock;
-extern FILE* icdFile;
-extern QUAD *criticalThunks, **criticalThunkPtr;
-extern TEMP_INFO** tempInfo;
-extern int tempCount;
-extern QUAD* intermed_tail;
 
 int loopCount;
 LOOP** loopArray;

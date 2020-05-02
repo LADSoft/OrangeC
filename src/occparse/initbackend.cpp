@@ -32,10 +32,9 @@
 #include "PreProcessor.h"
 #include "Utils.h"
 #include "CmdSwitch.h"
-
-extern COMPILER_PARAMS cparams;
-extern ARCH_ASM* chosenAssembler;
-
+#include "config.h"
+#include "help.h"
+#include "beinterf.h"
 
 TYPE stdobject = { bt___object, 0 };
 TYPE stdvoid = { bt_void, 0, 0, &stdvoid };

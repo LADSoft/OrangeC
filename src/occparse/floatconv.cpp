@@ -28,9 +28,8 @@
 #include <limits.h>
 #include "compiler.h"
 #include "Floating.h"
-
-extern ARCH_ASM* chosenAssembler;
-
+#include "config.h"
+#include "ifloatconv.h"
 
 /*-------------------------------------------------------------------------*/
 FPF refloat(EXPRESSION* node)

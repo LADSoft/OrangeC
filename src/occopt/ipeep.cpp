@@ -29,20 +29,16 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
-#include "iexpr.h"
-#include "beinterf.h"
-
-extern int firstLabel;
-extern int nextLabel;
-extern TEMP_INFO** tempInfo;
-extern int tempCount;
-extern BLOCK** blockArray;
-extern int blockCount;
-extern int exitBlock;
-extern BITINT bittab[BITINTBITS];
-extern QUAD* intermed_head;
-extern bool functionHasAssembly;
-extern ARCH_ASM* chosenAssembler;
+#include "ioptimizer.h"
+#include "beinterfdefs.h"
+#include "config.h"
+#include "iblock.h"
+#include "ildata.h"
+#include "iflow.h"
+#include "OptUtils.h"
+#include "ioptutil.h"
+#include "memory.h"
+#include "ilive.h"
 
 static BITINT* occursInAbnormal;
 

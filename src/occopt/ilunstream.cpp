@@ -26,10 +26,10 @@
 #include <malloc.h>
 #include <string.h>
 #include <limits.h>
-#include "iexpr.h"
-#include "beinterf.h"
+#include "ioptimizer.h"
+#include "beinterfdefs.h"
 #include "ildata.h"
-#include "iexpr.h"
+#include "ioptimizer.h"
 #include "SharedMemory.h"
 #include "../occ/winmode.h"
 #include "../occ/be.h"
@@ -37,52 +37,9 @@
 #include <functional>
 #include <map>
 #include <stdexcept>
-extern std::vector<SimpleSymbol*> externals;
-extern std::vector<SimpleSymbol*> globalCache;
-extern std::vector<SimpleSymbol*> typeSymbols;
-extern std::vector<SimpleSymbol*> typedefs;
-extern std::vector<BROWSEINFO*> browseInfo;
-extern std::vector<BROWSEFILE*> browseFiles;
-extern std::deque<BaseData*> baseData;
-extern std::list<MsilProperty> msilProperties;
-
-extern int registersAssigned;
-
-extern std::string prm_libPath;
-extern std::string prm_include;
-extern const char* pinvoke_dll;
-extern std::string prm_snkKeyFile;
-extern std::string prm_assemblyVersion;
-extern std::string prm_namespace_and_class;
-extern std::string prm_OutputDefFile;
-extern std::string compilerName;
-extern std::string intermediateName;
-extern std::string backendName;
-
-extern int exitBlock;
-extern int nextLabel;
-extern bool assembling;
-extern int fastcallAlias;
-
-extern int showBanner;
-extern int verbosity;
-extern int dataAlign;
-extern int bssAlign;
-extern int constAlign;
-extern int architecture;
-
-extern std::list<std::string> inputFiles;
-extern std::list<std::string> backendFiles;
-extern std::list<std::string> libIncludes;
-extern std::list<std::string> toolArgs;
-extern std::list<std::string> prm_Using;
-extern std::map<std::string, std::string> bePragma;
-extern std::string assemblerFileExtension;
-extern std::string outputFileName;
-extern std::string prm_assemblerSpecifier;
-
-extern BLOCK* currentBlock;
-
+#include "ildata.h"
+#include "iblock.h"
+#include "memory.h"
 static std::list<std::string> textRegion;
 static std::map <std::string, int> cachedText;
 static size_t textOffset;

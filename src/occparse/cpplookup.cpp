@@ -24,40 +24,34 @@
 
 #include "compiler.h"
 #include <stack>
+#include "ccerr.h"
+#include "cpplookup.h"
+#include "config.h"
+#include "initbackend.h"
+#include "symtab.h"
+#include "stmt.h"
+#include "declare.h"
+#include "mangle.h"
+#include "lambda.h"
+#include "template.h"
+#include "declcpp.h"
+#include "expr.h"
+#include "help.h"
+#include "unmangle.h"
+#include "types.h"
+#include "lex.h"
+#include "OptUtils.h"
+#include "memory.h"
+#include "beinterf.h"
+#include "exprcpp.h"
+#include "inline.h"
 
-extern COMPILER_PARAMS cparams;
-extern ARCH_ASM* chosenAssembler;
-extern NAMESPACEVALUELIST *globalNameSpace, *localNameSpace;
-extern HASHTABLE* labelSyms;
-extern TYPE stdint, stdpointer;
-extern SYMBOL* enumSyms;
-extern const char* overloadNameTab[];
-extern LAMBDA* lambdas;
-extern STRUCTSYM* structSyms;
-extern int currentErrorLine;
-extern int templateNestingCount;
-extern ARCH_DEBUG* chosenDebugger;
-extern int noSpecializationError;
-extern int instantiatingTemplate;
-extern bool inTemplateType;
-extern LIST* nameSpaceList;
-extern int funcLevel;
-extern int inDeduceArgs;
-extern SYMBOL* theCurrentFunc;
-extern int inTemplateHeader;
-
+int inGetUserConversion;
 
 static int insertFuncs(SYMBOL** spList, SYMBOL** spFilterList, LIST* gather, FUNCTIONCALL* args, TYPE* atp);
 
 #define DEBUG
 
-HASHTABLE* CreateHashTable(int size);
-#define F_WITHCONS 1
-#define F_INTEGER 2
-#define F_ARITHMETIC 4
-#define F_STRUCTURE 8
-#define F_POINTER 16
-#define F_CONVERSION 32
 static const int rank[] = {0, 1, 1, 1, 1, 2, 2, 3, 4, 4, 4, 4, 4, 4, 5, 5, 6, 7, 8, 8, 9};
 static SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_cvsrn* seq, SYMBOL* candidate_in,
                                  SYMBOL** userFunc, bool honorExplicit);
@@ -65,7 +59,6 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
                                SYMBOL** userFunc, bool usesInitList);
 static void WeedTemplates(SYMBOL** table, int count, FUNCTIONCALL* args, TYPE* atp);
 
-int inGetUserConversion = 0;
 
 LIST* tablesearchone(const char* name, NAMESPACEVALUELIST* ns, bool tagsOnly)
 {

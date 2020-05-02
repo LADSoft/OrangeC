@@ -28,18 +28,16 @@
 #include "be.h"
 #include "winmode.h"
 #include "Utils.h"
-
+#include "config.h"
+#include "ildata.h"
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
 #endif
 
 #define TEMPFILE "$$$OCC.TMP"
 
-extern COMPILER_PARAMS cparams;
-extern int showBanner;
-
-LIST *objlist, *reslist, *rclist;
-static char outputFileName[260];
+static LIST *objlist, *reslist, *rclist;
+static char outFileName[260];
 
 static void InsertFile(LIST** r, const char* name, const char* ext)
 {
@@ -47,11 +45,11 @@ static void InsertFile(LIST** r, const char* name, const char* ext)
     char buf[256], *newbuffer;
     LIST* lst;
     strcpy(buf, name);
-    if (!outputFileName[0])
+    if (!outFileName[0])
     {
-        strcpy(outputFileName, name);
-        Utils::StripExt(outputFileName);
-        strcat(outputFileName, cparams.prm_targettype == DLL ? ".dll" : ".exe");
+        strcpy(outFileName, name);
+        Utils::StripExt(outFileName);
+        strcat(outFileName, cparams.prm_targettype == DLL ? ".dll" : ".exe");
     }
     if (ext)
     {
@@ -116,7 +114,7 @@ int InsertExternalFile(const char* name, bool)
 
 /*-------------------------------------------------------------------------*/
 
-void InsertOutputFileName(const char* name) { strcpy(outputFileName, name); }
+void InsertOutputFileName(const char* name) { strcpy(outFileName, name); }
 
 /*-------------------------------------------------------------------------*/
 static LIST* objPosition;
@@ -129,7 +127,7 @@ void GetOutputFileName(char* name, char* path, bool obj)
             objPosition = objlist;
         if (!objPosition)
             Utils::fatal("Cannot get object file name");
-        strcpy(name, outputFileName);
+        strcpy(name, outFileName);
         p = strrchr(name, '\\');
         if (!p)
             p = name;
@@ -141,13 +139,13 @@ void GetOutputFileName(char* name, char* path, bool obj)
     else
     {
         path[0] = 0;
-        strcpy(name, outputFileName);
+        strcpy(name, outFileName);
         if (objlist && name[0] && name[strlen(name) - 1] == '\\')
         {
             strcat(name, (char*)objlist->data);
             Utils::StripExt(name);
             strcat(name, ".exe");
-            strcpy(path, outputFileName);
+            strcpy(path, outFileName);
         }
     }
 }

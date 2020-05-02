@@ -26,37 +26,32 @@
 #include <unordered_map>
 #include <stack>
 #include "Utils.h"
-extern ARCH_ASM* chosenAssembler;
-extern NAMESPACEVALUELIST *globalNameSpace, *localNameSpace;
-extern const char* overloadNameTab[];
-extern const char* overloadXlateTab[];
-extern enum e_kw skim_end[];
-extern enum e_kw skim_closepa[];
-extern enum e_kw skim_semi_declare[];
-extern enum e_kw skim_comma[];
-extern TYPE stdint;
-extern TYPE stdpointer;
-extern char infile[256];
-extern TYPE stdvoid, stdfunc;
-extern int currentErrorLine;
-extern int templateNestingCount;
-extern int instantiatingTemplate;
-extern int packIndex;
-extern int expandingParams;
-extern int dontRegisterTemplate;
-extern int inTemplateSpecialization;
-extern LIST* openStructs;
-extern int structLevel;
-extern LAMBDA* lambdas;
-extern int anonymousNotAlloc;
-extern bool functionCanThrow;
-extern LINEDATA *linesHead, *linesTail;
-extern bool inTemplateType;
-extern STRUCTSYM* structSyms;
-extern TYPE stdany;
-extern int noSpecializationError;
-extern SYMBOL* theCurrentFunc;
-
+#include "ccerr.h"
+#include "declcpp.h"
+#include "config.h"
+#include "symtab.h"
+#include "mangle.h"
+#include "initbackend.h"
+#include "occparse.h"
+#include "template.h"
+#include "declare.h"
+#include "lambda.h"
+#include "help.h"
+#include "stmt.h"
+#include "expr.h"
+#include "lex.h"
+#include "cpplookup.h"
+#include "rtti.h"
+#include "constopt.h"
+#include "OptUtils.h"
+#include "memory.h"
+#include "inline.h"
+#include "init.h"
+#include "beinterf.h"
+#include "declcons.h"
+#include "ildata.h"
+#include "types.h"
+#include "declare.h"
 attributes basisAttribs;
 
 LIST* nameSpaceList;
@@ -67,12 +62,6 @@ static LIST* deferred;
 #ifdef PARSER_ONLY
 void ccInsertUsing(SYMBOL* ns, SYMBOL* parentns, const char* file, int line);
 #endif
-typedef struct
-{
-    VTABENTRY* entry;
-    SYMBOL* func;
-    SYMBOL* name;
-} THUNK;
 
 static int dumpVTabEntries(int count, THUNK* thunks, SYMBOL* sym, VTABENTRY* entry)
 {

@@ -36,6 +36,8 @@ void memfunc(const char*);
 #define CI_DELETEA (complx + 2 + 3)
 #define CI_LIT (complx + 3 + 3)
 
+#define imax(x, y) ((x) > (y) ? (x) : (y))
+
 #define issymchar(x) (((x) >= 0) && (isalnum(x) || (x) == '_'))
 #define isstartchar(x) (((x) >= 0) && (isalpha(x) || (x) == '_'))
 
@@ -1093,7 +1095,7 @@ struct templateListData
 
 #define INCL_LEVEL_MAX 16
 
-#define MAX_INLINE_NESTING 100
+#define MAX_INLINE_NESTING 3
 
 // must match stdatomic.h
 typedef struct _atomicData

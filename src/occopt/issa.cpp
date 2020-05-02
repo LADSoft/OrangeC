@@ -25,9 +25,19 @@
 #include <stdio.h>
 #include <malloc.h>
 #include <string.h>
-#include "iexpr.h"
-#include "beinterf.h"
-
+#include "ioptimizer.h"
+#include "beinterfdefs.h"
+#include "config.h"
+#include "iblock.h"
+#include "OptUtils.h"
+#include "iloop.h"
+#include "ilive.h"
+#include "ildata.h"
+#include "ioptutil.h"
+#include "memory.h"
+#include "iconfl.h"
+#include "ilocal.h"
+#include "ialias.h"
 /* Single static assignment algorithms, see robert morgan, building an optimizing compiler
  * This isn't too intelligent as it makes a new name for each instance of an assignment,
  * remembering the old name so it can convert back for GCSE.  I gather one would
@@ -39,21 +49,6 @@
  *
  */
 
-extern ARCH_ASM* chosenAssembler;
-extern QUAD* intermed_head;
-extern int exitBlock;
-extern int tempCount;
-extern BLOCK** blockArray;
-extern int blockCount;
-extern TEMP_INFO** tempInfo;
-extern LOOP** loopArray;
-extern int loopCount;
-extern BRIGGS_SET* globalVars;
-extern DAGLIST* ins_hash[DAGSIZE];
-extern DAGLIST* name_hash[DAGSIZE];
-extern int cachedTempCount;
-extern BITINT bittab[BITINTBITS];
-extern bool functionHasAssembly;
 /* don't make this too large, we are stacking a copy... */
 static bool changed;
 static LIST* savedDag;

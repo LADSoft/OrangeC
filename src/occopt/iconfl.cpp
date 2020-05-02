@@ -26,18 +26,15 @@
 #include <malloc.h>
 #include <string.h>
 #include <limits.h>
-#include "iexpr.h"
-#include "beinterf.h"
-
-extern BITINT bittab[BITINTBITS];
-extern ARCH_ASM* chosenAssembler;
-extern COMPILER_PARAMS cparams;
-extern TEMP_INFO** tempInfo;
-extern int blockCount;
-extern int tempCount;
-extern BLOCK** blockArray;
-extern int exitBlock;
-extern int maxAddr;
+#include "ioptimizer.h"
+#include "beinterfdefs.h"
+#include "config.h"
+#include "iblock.h"
+#include "OptUtils.h"
+#include "irc.h"
+#include "optmain.h"
+#include "memory.h"
+#include "ioptutil.h"
 
 void conflictini(void) {}
 void resetConflict(void)

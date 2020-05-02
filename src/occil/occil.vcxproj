@@ -37,14 +37,21 @@
     <ClCompile Include="igen.cpp" />
     <ClCompile Include="invoke.cpp" />
     <ClCompile Include="msilInit.cpp" />
+    <ClCompile Include="MsilProcess.cpp" />
     <ClCompile Include="occil.cpp" />
-    <ClCompile Include="Process.cpp" />
     <ClCompile Include="using.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\occopt\ildata.h" />
     <ClInclude Include="..\occopt\iopt.h" />
     <ClInclude Include="be.h" />
+    <ClInclude Include="gen.h" />
+    <ClInclude Include="igen.h" />
+    <ClInclude Include="invoke.h" />
+    <ClInclude Include="msilInit.h" />
+    <ClInclude Include="MsilProcess.h" />
+    <ClInclude Include="occil.h" />
+    <ClInclude Include="using.h" />
     <ClInclude Include="winmode.h" />
     <ClInclude Include="x86regs.h" />
   </ItemGroup>
@@ -58,9 +65,6 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\adl\Release\adl.Build.CppClean.log" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="be.p" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>

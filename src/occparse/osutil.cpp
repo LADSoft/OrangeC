@@ -38,6 +38,18 @@
 #include <sstream>
 #include <iostream>
 #include "Utils.h"
+#include "ccerr.h"
+#include "config.h"
+#include "occparse.h"
+#include "ildata.h"
+#include "using.h"
+#include "configx86.h"
+#include "OptUtils.h"
+#include "configmsil.h"
+#include "initbackend.h"
+
+extern bool doBackendInit;
+
 #    include "../version.h"
 #if defined(_MSC_VER) || defined(BORLAND) || defined(__ORANGEC__)
 #    include <io.h>
@@ -50,37 +62,12 @@ extern "C"
 }
 #endif
 
-extern COMPILER_PARAMS cparams;
-extern ARCH_ASM* chosenAssembler;
 extern int diagcount;
-extern NAMESPACEVALUELIST* globalNameSpace;
-extern char infile[];
-extern PreProcessor* preProcessor;
-extern int verbosity;
-extern std::list<std::string> backendFiles;
-extern std::list<std::string> toolArgs;
-extern std::string prm_libPath;
-extern std::string prm_snkKeyFile;
-extern std::list<std::string> prm_Using;
-extern std::string prm_assemblyVersion;
-extern std::string prm_namespace_and_class;
-extern int showBanner;
-extern std::string prm_OutputDefFile;
-extern int architecture;
-extern std::string outputFileName;
-extern std::string prm_assemblerSpecifier;
-extern bool doBackendInit;
-extern std::string assemblerFileExtension;
 
 LIST* clist = 0;
 int showVersion = false;
 std::string bePostFile;
 
-struct DefValue
-{
-    std::string name;
-    bool undef;
-};
 std::deque<DefValue> defines;
 
 CmdSwitchParser switchParser;
@@ -114,7 +101,7 @@ CmdSwitchCombineString prm_tool(switchParser, 'p', ';');
 
 CmdSwitchCombineString prm_library(switchParser, 'l', ';');
 
-CmdSwitchCombineString prm_include(switchParser, 'I', ';');
+CmdSwitchCombineString prm_cinclude(switchParser, 'I', ';');
 CmdSwitchCombineString prm_sysinclude(switchParser, 'z', ';');
 CmdSwitchCombineString prm_libpath(switchParser, 'L', ';');
 CmdSwitchString prm_pipe(switchParser, 'P', ';');
@@ -835,12 +822,12 @@ void addinclude(void)
     char* string = getenv("CCINCL");
     if (string && string[0])
     {
-        prm_include.Parse(string);
+        prm_cinclude.Parse(string);
     }
     string = getenv("CPATH");
     if (string && string[0])
     {
-        prm_include.Parse(string);
+        prm_cinclude.Parse(string);
     }
 }
 

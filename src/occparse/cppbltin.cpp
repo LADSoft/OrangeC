@@ -25,8 +25,12 @@
 /* declare in select has multiple vars */
 #include "compiler.h"
 #include "rtti.h"
-extern TYPE stdint;
-extern ARCH_ASM* chosenAssembler;
+#include "config.h"
+#include "initbackend.h"
+#include "declare.h"
+#include "lex.h"
+#include "symtab.h"
+#include "beinterf.h"
 
 static std::string cppbuiltin = "void * operator new(unsigned size); "
     "void __rtllinkage * operator new[](unsigned size); " 

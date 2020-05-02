@@ -31,12 +31,8 @@
 #include "compiler.h"
 #include "PreProcessor.h"
 #include "Utils.h"
-
-extern ARCH_ASM assemblerInterface[];
-extern COMPILER_PARAMS cparams;
-extern PreProcessor* preProcessor;
-extern ARCH_ASM* chosenAssembler;
-extern ARCH_DEBUG* chosenDebugger;
+#include "config.h"
+#include "occparse.h"
 
 int needsAtomicLockFromType(TYPE* tp)
 {

@@ -25,8 +25,8 @@
 #include <stdio.h>
 #include <malloc.h>
 #include <string.h>
-#include "iexpr.h"
-#include "beinterf.h"
+#include "ioptimizer.h"
+#include "beinterfdefs.h"
 
 /* global data flow analysis is an optimal placement of all expressions
  * it is culled from:
@@ -51,27 +51,20 @@
  * expression is evaluated two or more times, the same temp variable names
  * are used in each evaluation sequence as in all the others.
  */
-extern FILE* icdFile;
-extern COMPILER_PARAMS cparams;
-extern ARCH_ASM* chosenAssembler;
-extern bool setjmp_used;
-
-extern int walkPostorder, walkPreorder;
-
-extern int exitBlock;
-extern int cachedTempCount;
-extern BITINT bittab[BITINTBITS];
-extern int blockCount;
-extern BLOCK** blockArray;
-extern TEMP_INFO** tempInfo;
-extern int tempCount;
-extern QUAD *intermed_head, *intermed_tail;
-extern int walkPostorder;
-extern BITINT* uivBytes;
-extern SimpleSymbol* currentFunction;
+#include "config.h"
+#include "ildata.h"
+#include "iflow.h"
+#include "iblock.h"
+#include "OptUtils.h"
+#include "ialias.h"
+#include "optmain.h"
+#include "ioptutil.h"
+#include "memory.h"
+#include "ilocal.h"
 unsigned short* termMap;
 unsigned short* termMapUp;
 unsigned termCount;
+
 
 static BLOCK **reverseOrder, **forwardOrder;
 static BITINT *tempBytes, *tempBytes2, *tempBytes3;

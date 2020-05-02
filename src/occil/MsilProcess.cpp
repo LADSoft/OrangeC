@@ -32,6 +32,45 @@
 #include "Utils.h"
 #include <unordered_map>
 #include <algorithm>
+#include "config.h"
+#include "msilInit.h"
+#include "occil.h"
+#include "ildata.h"
+#include "MsilProcess.h"
+#include "using.h"
+#include "invoke.h"
+#include "memory.h"
+
+// must match the definition in c.h
+enum e_lexType
+{
+    l_none,
+    l_i,
+    l_ui,
+    l_l,
+    l_ul,
+    l_ll,
+    l_ull,
+    l_f,
+    l_d,
+    l_ld,
+    l_I,
+    l_id,
+    l_kw,
+    l_astr,
+    l_wstr,
+    l_ustr,
+    l_Ustr,
+    l_u8str,
+    l_msilstr,
+    l_achr,
+    l_wchr,
+    l_uchr,
+    l_Uchr,
+    l_qualifiedname,
+    l_asminst,
+    l_asmreg
+};
 
 #define STARTUP_TYPE_STARTUP 1
 #define STARTUP_TYPE_RUNDOWN 2
@@ -42,44 +81,8 @@
 #include <string>
 using namespace DotNetPELib;
 
-extern void Import();
 BoxedType* boxedType(int isz);
 
-extern SimpleSymbol* currentFunction;
-extern COMPILER_PARAMS cparams;
-extern std::vector<SimpleSymbol*> externals;
-extern std::vector<SimpleSymbol*> globalCache;
-extern std::string prm_namespace_and_class;
-extern std::vector<SimpleSymbol*> temporarySymbols;
-extern std::string prm_snkKeyFile;
-extern std::string prm_assemblyVersion;
-extern LIST* objlist;
-extern const char* pinvoke_dll;
-
-extern MethodSignature* argsCtor;
-extern MethodSignature* argsNextArg;
-extern MethodSignature* argsUnmanaged;
-extern MethodSignature* ptrBox;
-extern MethodSignature* ptrUnbox;
-extern MethodSignature* concatStr;
-extern MethodSignature* concatObj;
-extern MethodSignature* toStr;
-extern Type* systemObject;
-extern Method* currentMethod;
-extern PELib* peLib;
-extern DataContainer* mainContainer;
-extern LIST *initializersHead, *initializersTail;
-extern LIST *deinitializersHead, *deinitializersTail;
-
-extern int uniqueId;
-extern SimpleSymbol retblocksym;
-
-extern Method* mainSym;
-
-extern int hasEntryPoint;
-extern int errCount;
-
-std::string _dll_name(const char* name);
 
 static int dataPos, dataMax;
 static Byte* dataPointer;
@@ -91,6 +94,7 @@ static SimpleSymbol* clone(SimpleSymbol* sp, bool ctype = true);
 void CacheExtern(SimpleSymbol* sp);
 void CacheGlobal(SimpleSymbol* sp);
 void CacheStatic(SimpleSymbol* sp);
+std::string _dll_name(const char* name);
 
 extern std::map<SimpleSymbol*, Value*, byName> externalMethods;
 extern std::map<SimpleSymbol*, Value*, byName> externalList;
@@ -129,7 +133,7 @@ void parse_pragma(const char* kw, const char* tag)
     }
 }
 
-const char *GetName(const DataContainer* container, std::string name = "")
+const char *GetName(const DataContainer* container, std::string name)
 {
     std::string rv = Qualifiers::GetName("", container, false);
     std::replace(rv.begin(), rv.end(), '/', '.');

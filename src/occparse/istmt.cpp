@@ -32,40 +32,33 @@
 #include <limits.h>
 #include <stdlib.h>
 #include "compiler.h"
+#include "ccerr.h"
+#include "config.h"
 #include "rtti.h"
+#include "template.h"
+#include "iblock.h"
+#include "initbackend.h"
+#include "declcpp.h"
+#include "symtab.h"
+#include "ildata.h"
+#include "OptUtils.h"
+#include "iblock.h"
+#include "stmt.h"
+#include "iinline.h"
+#include "occparse.h"
+#include "istmt.h"
+#include "iexpr.h"
+#include "expr.h"
+#include "memory.h"
+#include "declare.h"
+#include "init.h"
+#include "help.h"
+#include "beinterf.h"
+#include "inasm.h"
 
-extern int tempCount;
-extern BLOCK* currentBlock;
-extern BLOCK** blockArray;
-extern int blockMax;
-extern int virtualfuncs;
-extern TYPE stdpointer;
-extern NAMESPACEVALUELIST* globalNameSpace;
-extern int calling_inline;
-extern QUAD *intermed_head, *intermed_tail;
-extern ARCH_ASM* chosenAssembler;
-extern COMPILER_PARAMS cparams;
-extern IMODE* structret_imode;
-extern TYPE stdfunc;
-extern int blockCount, exitBlock;
-extern TEMP_INFO** tempInfo;
-extern bool functionHasAssembly;
-extern TYPE stddouble;
-extern SimpleExpression* objectArray_exp;
 #ifdef DUMP_GCSE_INFO
 extern FILE* icdFile;
 #endif
-extern BLOCK** blockArray;
-extern int maxBlocks, maxTemps;
-extern int retlab, startlab;
-extern std::vector<SimpleSymbol*> temporarySymbols;
-extern int inlinesym_count;
-extern int tempBottom, nextTemp;
-extern TYPE stdint;
-extern SimpleSymbol* baseThisPtr;
-extern SYMBOL* theCurrentFunc;
-extern std::vector<SimpleSymbol*> functionVariables;
-extern std::vector<SimpleSymbol*> globalCache;
 
 IMODE* returnImode;
 int retcount;

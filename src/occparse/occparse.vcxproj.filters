@@ -269,9 +269,6 @@
     <ClInclude Include="winmode.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\occopt\iexpr.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\occopt\iopt.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -347,10 +344,116 @@
     <ClInclude Include="..\occopt\ildata.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="compiler.p">
+    <ClInclude Include="config.h">
       <Filter>Header Files</Filter>
-    </None>
+    </ClInclude>
+    <ClInclude Include="configmsil.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="configx86.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="constopt.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cppbltin.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cpplookup.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="crc32.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="debug.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="declare.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="declcons.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="declcpp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="expr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="exprcpp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="floatconv.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="help.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="import.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inasm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="init.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="initbackend.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inline.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="iexpr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="iinline.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="istmt.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="lambda.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="lex.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="libcxx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="mangle.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="memory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="occparse.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Property.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="stmt.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="symtab.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="template.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="types.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="unmangle.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="wseh.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\occopt\ioptimizer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

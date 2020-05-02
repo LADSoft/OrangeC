@@ -23,7 +23,26 @@
  */
 
 #include "compiler.h"
-/*
+#include "ccerr.h"
+#include "template.h"
+#include "symtab.h"
+#include "mangle.h"
+#include "initbackend.h"
+#include "stmt.h"
+#include "occparse.h"
+#include "expr.h"
+#include "help.h"
+#include "lex.h"
+#include "declcpp.h"
+#include "OptUtils.h"
+#include "declare.h"
+#include "memory.h"
+#include "inline.h"
+#include "init.h"
+#include "declcons.h"
+#include "beinterf.h"
+
+ /*
 
 // this module generates code similar to the following given the declaration:
 
@@ -54,15 +73,6 @@ private:
 };
 struct aa *aa::___self;
 */
-extern NAMESPACEVALUELIST *globalNameSpace, *localNameSpace;
-extern const char* overloadNameTab[];
-extern TYPE stdpointer, stdvoid, stdauto, stdint;
-extern int nextLabel;
-extern char infile[];
-extern int templateNestingCount;
-extern int dontRegisterTemplate;
-extern SYMBOL* theCurrentFunc;
-extern unsigned identityValue;
 
 LAMBDA* lambdas;
 

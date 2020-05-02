@@ -28,16 +28,15 @@
 #include <string.h>
 #include "be.h"
 #include "Instruction.h"
-#include "beinterf.h"
+#include "beinterfdefs.h"
+#include "config.h"
+#include "occ.h"
+#include "outcode.h"
+#include "ildata.h"
+#include "output.h"
+#include "outasm.h"
+#define IEEEo
 
-#define IEEE
-
-extern ARCH_ASM* chosenAssembler;
-extern COMPILER_PARAMS cparams;
-extern int fastcallAlias;
-extern SimpleSymbol* currentFunction;
-extern int segAligns[];
-extern int usingEsp;
 int skipsize = 0;
 int addsize = 0;
 
@@ -45,14 +44,14 @@ int addsize = 0;
 
 char segregs[] = "csdsesfsgsss";
 
-static int uses_float;
 
 MULDIV* muldivlink = 0;
-static enum e_gt oa_gentype = nogen; /* Current DC type */
 enum e_sg oa_currentSeg = noseg;     /* Current seg */
-static int oa_outcol = 0;            /* Curront col (roughly) */
 int newlabel;
 int needpointer;
+static enum e_gt oa_gentype = nogen; /* Current DC type */
+static int uses_float;
+static int oa_outcol = 0;            /* Curront col (roughly) */
 static int nosize = 0;
 static int virtual_mode;
 

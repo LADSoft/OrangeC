@@ -22,9 +22,9 @@
  * 
  */
 
-#include "iexpr.h"
+#include "ioptimizer.h"
 #include "DotNetPELib.h"
-#include "beinterf.h"
+#include "beinterfdefs.h"
 #include <vector>
 /*
  *      code generation structures and constants
@@ -85,5 +85,3 @@ struct byName
 {
     bool operator()(const SimpleSymbol* left, const SimpleSymbol* right) const { return strcmp(left->name, right->name) < 0; }
 };
-
-#include "be.p"

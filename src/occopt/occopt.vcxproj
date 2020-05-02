@@ -56,14 +56,43 @@
     <ClCompile Include="symfuncs.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="iexpr.p" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="beinterf.h" />
-    <ClInclude Include="iexpr.h" />
+    <ClInclude Include="beinterfdefs.h" />
+    <ClInclude Include="config.h" />
+    <ClInclude Include="configmsil.h" />
+    <ClInclude Include="configx86.h" />
+    <ClInclude Include="ialias.h" />
+    <ClInclude Include="iblock.h" />
+    <ClInclude Include="iconfl.h" />
+    <ClInclude Include="iconst.h" />
+    <ClInclude Include="ifloatconv.h" />
+    <ClInclude Include="iflow.h" />
+    <ClInclude Include="iinvar.h" />
+    <ClInclude Include="ilazy.h" />
     <ClInclude Include="ildata.h" />
+    <ClInclude Include="ilive.h" />
+    <ClInclude Include="ilocal.h" />
+    <ClInclude Include="iloop.h" />
+    <ClInclude Include="ilstream.h" />
+    <ClInclude Include="ilunstream.h" />
     <ClInclude Include="iopt.h" />
     <ClInclude Include="ctypes.h" />
+    <ClInclude Include="ioptimizer.h" />
+    <ClInclude Include="ioptutil.h" />
+    <ClInclude Include="iout.h" />
+    <ClInclude Include="ipeep.h" />
+    <ClInclude Include="irc.h" />
+    <ClInclude Include="ireshape.h" />
+    <ClInclude Include="irewrite.h" />
+    <ClInclude Include="issa.h" />
+    <ClInclude Include="istren.h" />
+    <ClInclude Include="memory.h" />
+    <ClInclude Include="optmain.h" />
+    <ClInclude Include="OptUtils.h" />
+    <ClInclude Include="output.h" />
+    <ClInclude Include="rewritemsil.h" />
+    <ClInclude Include="rewritex86.h" />
+    <ClInclude Include="symfuncs.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\util\util.vcxproj">

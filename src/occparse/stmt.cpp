@@ -27,29 +27,40 @@
 #include <limits.h>
 #include <assert.h>
 #include "PreProcessor.h"
+#include "ccerr.h"
+#include "config.h"
+#include "initbackend.h"
+#include "symtab.h"
+#include "mangle.h"
+#include "lex.h"
+#include "occparse.h"
+#include "template.h"
+#include "rtti.h"
+#include "ildata.h"
+#include "cppbltin.h"
+#include "expr.h"
+#include "help.h"
+#include "declcons.h"
+#include "wseh.h"
+#include "cpplookup.h"
+#include "init.h"
+#include "lex.h"
+#include "declcpp.h"
+#include "constopt.h"
+#include "OptUtils.h"
+#include "using.h"
+#include "declare.h"
+#include "memory.h"
+#include "exprcpp.h"
+#include "inline.h"
+#include "inasm.h"
+#include "beinterf.h"
+#include "istmt.h"
+#include "types.h"
+#include "browse.h"
+#include "stmt.h"
 
-extern TYPE stdint;
-extern ARCH_DEBUG* chosenDebugger;
-extern ARCH_ASM* chosenAssembler;
-extern TYPE stdint, stdvoid, stdpointer;
-extern HASHTABLE* labelSyms;
-extern NAMESPACEVALUELIST *globalNameSpace, *localNameSpace;
-extern enum e_kw skim_colon[], skim_end[];
-extern enum e_kw skim_closepa[];
-extern enum e_kw skim_semi[];
-extern SYMBOL* theCurrentFunc;
-extern TYPE stdpointer;
-extern const char* overloadNameTab[];
-extern LEXCONTEXT* context;
-extern TYPE stdXC;
-extern TYPE std__string, stdbool;
-extern int currentErrorLine;
-extern PreProcessor* preProcessor;
-
-extern int templateNestingCount;
-extern int nextLabel;
-extern bool setjmp_used;
-extern bool functionHasAssembly;
+void refreshBackendParams(SYMBOL* funcsp);
 
 bool isCallNoreturnFunction;
 

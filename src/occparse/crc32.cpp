@@ -1,5 +1,28 @@
+/* Software License Agreement
+ *
+ *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
+ *
+ *     This file is part of the Orange C Compiler package.
+ *
+ *     The Orange C Compiler package is free software: you can redistribute it and/or modify
+ *     it under the terms of the GNU General Public License as published by
+ *     the Free Software Foundation, either version 3 of the License, or
+ *     (at your option) any later version.
+ *
+ *     The Orange C Compiler package is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ *     contact information:
+ *         email: TouchStone222@runbox.com <David Lindauer>
+ *
+ */
 #include <stdlib.h>
-unsigned crctab[256] = {
+static unsigned crctab[256] = {
     0xd202ef8d, 0xa505df1b, 0x3c0c8ea1, 0x4b0bbe37, 0xd56f2b94, 0xa2681b02, 0x3b614ab8, 0x4c667a2e, 0xdcd967bf, 0xabde5729,
     0x32d70693, 0x45d03605, 0xdbb4a3a6, 0xacb39330, 0x35bac28a, 0x42bdf21c, 0xcfb5ffe9, 0xb8b2cf7f, 0x21bb9ec5, 0x56bcae53,
     0xc8d83bf0, 0xbfdf0b66, 0x26d65adc, 0x51d16a4a, 0xc16e77db, 0xb669474d, 0x2f6016f7, 0x58672661, 0xc603b3c2, 0xb1048354,

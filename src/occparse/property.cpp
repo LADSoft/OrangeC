@@ -24,18 +24,22 @@
 
 #include "compiler.h"
 #include "Utils.h"
-
-extern ARCH_ASM* chosenAssembler;
-extern enum e_kw skim_end[];
-extern NAMESPACEVALUELIST* globalNameSpace;
-extern TYPE stdvoid;
-extern int startlab;
-extern int retlab;
-extern int nextLabel;
-extern TYPE stdbool, stdchar, stdunsignedchar, stdshort, stdunsignedshort, stdint, stdunsigned;
-extern TYPE stdlonglong, stdunsignedlonglong, stdinative, stdunative, stdfloat, stddouble, stdstring;
-extern TYPE std__string;
-extern std::list<MsilProperty> msilProperties;
+#include "ccerr.h"
+#include "config.h"
+#include "symtab.h"
+#include "initbackend.h"
+#include "stmt.h"
+#include "ildata.h"
+#include "expr.h"
+#include "mangle.h"
+#include "declare.h"
+#include "memory.h"
+#include "ccerr.h"
+#include "Property.h"
+#include "help.h"
+#include "lex.h"
+#include "istmt.h"
+#include "init.h"
 
 
 #ifndef PARSER_ONLY

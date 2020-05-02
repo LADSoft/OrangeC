@@ -25,18 +25,21 @@
 #include <stdio.h>
 #include <string.h>
 #include "be.h"
+#include "config.h"
+#include "gen.h"
+#include "occ.h"
+#include "OptUtils.h"
+#include "gen.h"
+#include "peep.h"
+#include "outcode.h"
+#include "outasm.h"
+#include "memory.h"
 
 /* peephole optimizations
  * well not exactly
  * the compiler actually generated risc-like instruction sequences
  * and some of the things in this module re-cisc it :)
  */
-extern COMPILER_PARAMS cparams;
-extern int regmap[REG_MAX][2];
-
-extern int usingEsp;
-extern int pushlevel;
-extern int funcstackheight;
 
 #define live(mask, reg) (mask & (1 << reg))
 

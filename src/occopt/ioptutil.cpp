@@ -26,8 +26,11 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <string.h>
-#include "iexpr.h"
-#include "beinterf.h"
+#include "ioptimizer.h"
+#include "beinterfdefs.h"
+#include "ioptutil.h"
+#include "memory.h"
+#include "ilocal.h"
 
 BITINT bittab[BITINTBITS];
 

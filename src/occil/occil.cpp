@@ -28,40 +28,23 @@
 #include <stdio.h>
 #include <string.h>
 #include "be.h"
-#include "beinterf.h"
+#include "beinterfdefs.h"
 #include "Utils.h"
 #include "winmode.h"
 #include "CmdSwitch.h"
 #include "ildata.h"
 #include "SharedMemory.h"
 #include "DotNetPELib.h"
-
-extern int architecture;
-extern std::vector<SimpleSymbol*> temporarySymbols;
-extern std::vector<SimpleSymbol*> functionVariables;
-extern int tempCount;
-extern int blockCount;
-extern int exitBlock;
-extern QUAD* intermed_head, *intermed_tail;
-extern std::list<std::string> inputFiles;
-extern FILE* icdFile;
-extern std::deque<BaseData*> baseData;
-extern int nextTemp;
-extern int tempBottom;
-extern BLOCK **blockArray;
-extern ARCH_ASM* chosenAssembler;
-extern SimpleExpression* objectArray_exp;
-extern std::string outputFileName;
-extern std::vector<SimpleSymbol*> externals;
-extern std::list<std::string> backendFiles;
-extern SimpleExpression* fltexp;
-extern int usingEsp;
-extern int fastcallAlias;
-extern PELib* peLib;
-extern FILE* outputFile;
-extern std::list<std::string> prm_Using;
-extern std::list<MsilProperty> msilProperties;
-
+#include "config.h"
+#include "ildata.h"
+#include "iblock.h"
+#include "output.h"
+#include "msilInit.h"
+#include "using.h"
+#include "igen.h"
+#include "invoke.h"
+#include "MsilProcess.h"
+#include "gen.h"
 CmdSwitchParser SwitchParser;
 CmdSwitchBool single(SwitchParser, 's', false, "single");
 
@@ -77,11 +60,11 @@ char infile[260];
 char outFile[260];
 
 int dbgblocknum;
+int usingEsp;
 
-static const char* verbosity = nullptr;
+static const char* occil_verbosity = nullptr;
 
 void regInit() { }
-int usingEsp;
 
 static const int MAX_SHARED_REGION = 240 * 1024 * 1024;
 
@@ -117,6 +100,7 @@ void ResolveMSILExterns()
                 }
                 std::map<SimpleSymbol*, Param*, byName> paramList;
                 LoadParams(sp, params, paramList);
+
                 std::vector<Type*> types;
                 for (auto v : paramList)
                 {
@@ -326,7 +310,7 @@ bool ProcessData(const char *name)
             fltexp = v->funcData->fltexp;
             fastcallAlias = v->funcData->fastcallAlias;
             currentFunction = v->funcData->name;
-            SetUsesESP(currentFunction->usesEsp);
+            //SetUsesESP(currentFunction->usesEsp);
             generate_instructions(intermed_head);
             msil_flush_peep(currentFunction, nullptr);
             currentFunction = nullptr;
@@ -405,11 +389,11 @@ int InvokeParser(int argc, char**argv, SharedMemory* parserMem)
         args += std::string("\"") + curArg + "\"";
     }
 
-    return Utils::ToolInvoke("occparse", verbosity, "-! --architecture \"msil;%s\" %s", parserMem->Name().c_str(), args.c_str());
+    return Utils::ToolInvoke("occparse", occil_verbosity, "-! --architecture \"msil;%s\" %s", parserMem->Name().c_str(), args.c_str());
 }
 int InvokeOptimizer(SharedMemory* parserMem, SharedMemory* optimizerMem)
 {
-    return Utils::ToolInvoke("occopt", verbosity, "-! %s %s", parserMem->Name().c_str(), optimizerMem->Name().c_str());
+    return Utils::ToolInvoke("occopt", occil_verbosity, "-! %s %s", parserMem->Name().c_str(), optimizerMem->Name().c_str());
 }
 
 int main(int argc, char* argv[])
@@ -425,7 +409,7 @@ int main(int argc, char* argv[])
     for (auto p = argv; *p; p++)
     {
         if (strstr(*p, "/y") || strstr(*p, "-y"))
-            verbosity = "";
+            occil_verbosity = "";
     }
     auto optimizerMem = new SharedMemory(MAX_SHARED_REGION);
     optimizerMem->Create();

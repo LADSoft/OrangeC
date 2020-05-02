@@ -29,31 +29,20 @@
 #include <stdio.h>
 #include <malloc.h>
 #include <string.h>
-#include "iexpr.h"
-#include "beinterf.h"
+#include "ioptimizer.h"
+#include "beinterfdefs.h"
+#include "config.h"
+#include "iblock.h"
+#include "OptUtils.h"
+#include "ildata.h"
+#include "optmain.h"
+#include "ioptutil.h"
+#include "memory.h"
 
-extern COMPILER_PARAMS cparams;
-extern ARCH_ASM* chosenAssembler;
-extern int blockCount;
-extern BITINT bittab[BITINTBITS];
-extern BLOCK** blockArray;
-extern QUAD* intermed_head;
-extern int tempCount;
-extern bool setjmp_used;
-extern int exitBlock;
-extern bool functionHasAssembly;
-extern std::vector<SimpleSymbol*> temporarySymbols;
-extern QUAD* intermed_tail;
-extern int anonymousNotAlloc;
-extern SimpleSymbol* currentFunction;
-
-extern TEMP_INFO** tempInfo;
 int tempSize;
 
 BRIGGS_SET* killed;
 int tempBottom, nextTemp;
-
-extern int fastcallAlias;
 
 void diag(const char *fmt, ...)
 {

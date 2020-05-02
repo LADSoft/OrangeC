@@ -26,8 +26,15 @@
 #include <malloc.h>
 #include <string.h>
 #include <limits.h>
-#include "iexpr.h"
-#include "beinterf.h"
+#include "ioptimizer.h"
+#include "beinterfdefs.h"
+#include "iblock.h"
+#include "iloop.h"
+#include "OptUtils.h"
+#include "memory.h"
+#include "ilocal.h"
+#include "ireshape.h"
+
  /* reshaping and loop induction strength reduction */
 
 /* there is some minor problems - if an induction set spans multiple loops
@@ -39,14 +46,6 @@
  * it after the loop, adds will be thrown into the loop but there will additionally
  * be a multiply before the loop to get the initial value.
  */
-extern QUAD* intermed_head;
-extern int loopCount;
-extern LOOP** loopArray;
-extern BLOCK** blockArray;
-extern int blockCount;
-extern DAGLIST* ins_hash[DAGSIZE];
-extern TEMP_INFO** tempInfo;
-extern int tempCount;
 
 static void ScanVarStrength(INSTRUCTIONLIST* l, IMODE* multiplier, int tnum, int match, ILIST* vars)
 {

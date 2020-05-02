@@ -28,15 +28,14 @@
 #include <stdio.h>
 #include <string.h>
 #include "Utils.h"
-#include "iexpr.h"
-#include "beinterf.h"
+#include "ioptimizer.h"
+#include "beinterfdefs.h"
 #include "../occ/x86regs.h"
 #include "../occ/be.h"
 #include "../occparse/winmode.h"
+#include "config.h"
+#include "irc.h"
 
-
-extern COMPILER_PARAMS cparams;
-extern ARCH_ASM *chosenAssembler;
 extern int usingEsp;
 
 bool doBackendInit = false;

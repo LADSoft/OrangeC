@@ -34,11 +34,10 @@
 #include <iostream>
 #include "Token.h"
 #include "be.h"
-extern bool assembling;
-extern int usingEsp;
-extern SimpleSymbol* currentFunction;
-extern int fastcallAlias;
-extern ARCH_ASM* chosenAssembler;
+#include "symfuncs.h"
+#include "config.h"
+#include "ildata.h"
+#include "occ.h"
 
 static const unsigned mask[32] = {
     0x1,      0x3,      0x7,       0xf,       0x1f,      0x3f,      0x7f,       0xff,       0x1ff,      0x3ff,      0x7ff,

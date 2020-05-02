@@ -26,8 +26,20 @@
 #include <malloc.h>
 #include <string.h>
 #include <limits.h>
-#include "iexpr.h"
-#include "beinterf.h"
+#include "ioptimizer.h"
+#include "beinterfdefs.h"
+#include "ialias.h"
+#include "iblock.h"
+#include "iflow.h"
+#include "iloop.h"
+#include "ilazy.h"
+#include "ildata.h"
+#include "OptUtils.h"
+#include "output.h"
+#include "iout.h"
+#include "ilocal.h"
+#include "memory.h"
+#include "ioptutil.h"
  /* This is a partial implementation of the VLLPA algorithm in
  * Practical and Accurate Low-Level Pointer Analysis
  * Bolei Guo, Matthew J. Bridges, Spyridon Triantafyllis
@@ -45,33 +57,14 @@
  * a limitation of this implementation is it does not handle block assignments
  * or structures passed by value.
  */
-extern BLOCK** blockArray;
-extern int blockCount;
-extern int exitBlock;
-extern BITINT bittab[BITINTBITS];
-extern TEMP_INFO** tempInfo;
-extern int tempCount;
-extern QUAD *intermed_head, *intermed_tail;
-extern FILE* icdFile;
-extern int walkPostorder;
-extern unsigned termCount;
-extern int loopCount;
-extern LOOP** loopArray;
-extern unsigned short *termMap, *termMapUp;
 
 int cachedTempCount;
 BITINT* uivBytes;
+BITINT* processBits;
+
 static bool changed;
 static ALIASLIST* parmList;
 static int processCount;
-BITINT* processBits;
-struct UIVHash
-{
-    struct UIVHash* next;
-    ALIASNAME* name;
-    int offset;
-    ALIASNAME* result;
-};
 
 static ALIASADDRESS* addresses[DAGSIZE];
 static ALIASNAME* mem[DAGSIZE];

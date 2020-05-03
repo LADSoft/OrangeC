@@ -28,20 +28,23 @@
 extern CmdSwitchParser SwitchParser;
 extern CmdSwitchBool single;
 
-extern const char* usageText;
-
 extern Optimizer::SimpleSymbol* currentFunction;
-
-extern char infile[260];
-extern char outFile[260];
-
-extern int dbgblocknum;
-extern int usingEsp;
 void regInit(void);
-void flush_peep(void);
-void Import(void);
 void diag(const char*fmt, ...);
-void ResolveMSILExterns(void);
-void outputfile(char* buf, const char* name, const char* ext);
-void global(Optimizer::SimpleSymbol* sym, int flags);
-int main(int argc, char* argv[]);
+void Import(void);
+namespace occmsil
+{
+    extern const char* usageText;
+
+
+    extern char infile[260];
+    extern char outFile[260];
+
+    extern int dbgblocknum;
+    extern int usingEsp;
+    void flush_peep(void);
+    void ResolveMSILExterns(void);
+    void outputfile(char* buf, const char* name, const char* ext);
+    void global(Optimizer::SimpleSymbol* sym, int flags);
+    int main(int argc, char* argv[]);
+}

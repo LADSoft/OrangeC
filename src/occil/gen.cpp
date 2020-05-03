@@ -42,7 +42,8 @@
 #include "using.h"
 
 using namespace DotNetPELib;
-
+namespace occmsil
+{ 
 #define MAX_ALIGNS 50
 MethodSignature* FindPInvokeWithVarargs(std::string name, std::list<Param*>::iterator begin, std::list<Param*>::iterator end,
                                         size_t size);
@@ -1800,3 +1801,4 @@ void asm_loadstack(Optimizer::QUAD* q) /* load the stack pointer from a var */ {
 void asm_savestack(Optimizer::QUAD* q) /* save the stack pointer to a var */ {}
 void asm_functail(Optimizer::QUAD* q, int begin, int size) /* functail start or end */ {}
 void asm_atomic(Optimizer::QUAD* q) {}
+}

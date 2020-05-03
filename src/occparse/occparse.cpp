@@ -67,6 +67,7 @@
 #include "istmt.h"
 #include "irc.h"
 
+
 void regInit()
 {
 }
@@ -74,10 +75,13 @@ int usingEsp;
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
 #endif
-int msil_main_preprocess(char *fileName);
-void msil_end_generation(char *fileName);
-void msil_compile_start(char* name);
 
+namespace occmsil
+{
+    int msil_main_preprocess(char *fileName);
+    void msil_end_generation(char *fileName);
+    void msil_compile_start(char* name);
+}
 namespace DotNetPELib
 {
     class PELib;
@@ -301,7 +305,7 @@ namespace Parser
         if (Optimizer::architecture == ARCHITECTURE_MSIL)
             if (first || (Optimizer::cparams.prm_compileonly && !Optimizer::cparams.prm_asmfile))
             {
-                msil_compile_start((char*)clist->data);
+                occmsil::msil_compile_start((char*)clist->data);
             }
         first = false;
 #endif
@@ -443,7 +447,7 @@ int main(int argc, char* argv[])
         if (Optimizer::architecture == ARCHITECTURE_MSIL)
         {
             if (first || (Optimizer::cparams.prm_compileonly && !Optimizer::cparams.prm_asmfile))
-                msil_main_preprocess((char *)clist->data);
+                occmsil::msil_main_preprocess((char *)clist->data);
         }
 #endif
         first = false;
@@ -571,7 +575,7 @@ int main(int argc, char* argv[])
 #ifndef PARSER_ONLY
         if (Optimizer::architecture == ARCHITECTURE_MSIL)
             if (Optimizer::cparams.prm_compileonly && !Optimizer::cparams.prm_asmfile)
-                msil_end_generation(nullptr);
+                occmsil::msil_end_generation(nullptr);
 #endif
         clist = clist->next;
     }
@@ -580,7 +584,7 @@ int main(int argc, char* argv[])
     if (Optimizer::architecture == ARCHITECTURE_MSIL)
         if (!Optimizer::cparams.prm_compileonly || Optimizer::cparams.prm_asmfile)
         {
-            msil_end_generation(nullptr);
+            occmsil::msil_end_generation(nullptr);
             Optimizer::OutputIntermediate(parserMem);
         }
     oFree();

@@ -29,29 +29,32 @@ class ObjFactory;
 class ObjFile;
 
 #include <map>
-
-class dbgtypes
+namespace occx86
 {
-  public:
-    dbgtypes(ObjFactory& Factory, ObjFile* FI) : factory(Factory), fi(FI) {}
-    ObjType* Put(Optimizer::SimpleType* tp, bool istypedef = false);
-    void OutputTypedef(struct Optimizer::SimpleSymbol* sym);
 
-  protected:
-    ObjType* Lookup(Optimizer::SimpleType* tp);
-    ObjType* BasicType(Optimizer::SimpleType* tp);
-    ObjType* TypeName(ObjType* val, const char* nm);
-    void StructFields(ObjType::eType sel, ObjType* val, int sz, Optimizer::SimpleSymbol* parent, Optimizer::LIST* hr);
-    void EnumFields(ObjType* val, ObjType* base, int sz, Optimizer::LIST* hr);
-    ObjType* Function(Optimizer::SimpleType* tp);
-    ObjType* ExtendedType(Optimizer::SimpleType* tp);
-
-  private:
-    struct typecompare
+    class dbgtypes
     {
-        bool operator()(const Optimizer::SimpleType* left, const Optimizer::SimpleType* right) const;
+    public:
+        dbgtypes(ObjFactory& Factory, ObjFile* FI) : factory(Factory), fi(FI) {}
+        ObjType* Put(Optimizer::SimpleType* tp, bool istypedef = false);
+        void OutputTypedef(struct Optimizer::SimpleSymbol* sym);
+
+    protected:
+        ObjType* Lookup(Optimizer::SimpleType* tp);
+        ObjType* BasicType(Optimizer::SimpleType* tp);
+        ObjType* TypeName(ObjType* val, const char* nm);
+        void StructFields(ObjType::eType sel, ObjType* val, int sz, Optimizer::SimpleSymbol* parent, Optimizer::LIST* hr);
+        void EnumFields(ObjType* val, ObjType* base, int sz, Optimizer::LIST* hr);
+        ObjType* Function(Optimizer::SimpleType* tp);
+        ObjType* ExtendedType(Optimizer::SimpleType* tp);
+
+    private:
+        struct typecompare
+        {
+            bool operator()(const Optimizer::SimpleType* left, const Optimizer::SimpleType* right) const;
+        };
+        std::map<Optimizer::SimpleType*, ObjType*, typecompare> hash;
+        ObjFactory& factory;
+        ObjFile* fi;
     };
-    std::map<Optimizer::SimpleType*, ObjType*, typecompare> hash;
-    ObjFactory& factory;
-    ObjFile* fi;
-};
+}

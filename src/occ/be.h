@@ -36,124 +36,39 @@
 /* address mode specifications */
 #define MAX_SEGS browseseg + 1
 
-enum e_lk : int;
 
-enum e_op
+namespace occx86
 {
-    op_reserved,
-    op_line,
-    op_blockstart,
-    op_blockend,
-    op_varstart,
-    op_funcstart,
-    op_funcend,
-    op_void,
-    op_comment,
-    op_label,
-    op_funclabel,
-    op_seq,
-    op_genword,
-    op_dd,
-    op_align
-};
-enum e_asmw
-{
-    akw_byte,
-    akw_word,
-    akw_dword,
-    akw_fword,
-    akw_qword,
-    akw_tbyte,
-    akw_offset,
-    akw_ptr
-};
+    enum e_lk : int;
 
-enum e_am
-{
-    am_none,
-    am_axdx,
-    am_dreg,
-    am_freg,
-    am_frfr,
-    am_cfreg,
-    am_screg,
-    am_sdreg,
-    am_streg,
-    am_mmreg,
-    am_xmmreg,
-    am_seg,
-    am_indisp,
-    am_indispscale,
-    am_fconst,
-    am_direct,
-    am_immed,
-    am_ext,
-    am_segoffs,
-    /* these MUST be in this order, and last!!! */
-    am_stackedtemp,
-    am_stackedtempaddr
-};
 
-enum fconst
-{
-    fczero,
-    fcone,
-    fcmone
-};
 
-/*      addressing mode structure       */
+    enum fconst
+    {
+        fczero,
+        fcone,
+        fcmone
+    };
 
-struct amode
-{
-    enum e_am mode;
-    char preg;
-    char sreg;
-    char tempflag;
-    char scale;
-    char length;
-    char addrlen;
-    char seg;
-#define e_default 0
-#define e_cs 1
-#define e_ds 2
-#define e_es 3
-#define e_fs 4
-#define e_gs 5
-#define e_ss 6
-    Optimizer::SimpleExpression* offset;
-    int liveRegs;
-    int keepesp : 1;
-};
+    /*      addressing mode structure       */
 
-/*      output code structure   */
 
-#ifdef __cplusplus
-struct ocode
-{
-    struct ocode *fwd, *back;
-    enum e_opcode opcode;
-    struct amode *oper1, *oper2, *oper3;
-    void* ins;
-    int size;
-    int blocknum;
-    char diag;
-    char noopt;
-};
-#endif
-/* Used for fixup gen */
-typedef struct dl
-{
-    struct dl* next;
-    char* string;
-    int offset;
-    short type;
-} DATALINK;
+    /*      output code structure   */
+
+    /* Used for fixup gen */
+    typedef struct dl
+    {
+        struct dl* next;
+        char* string;
+        int offset;
+        short type;
+    } DATALINK;
 
 #define AMODE struct amode
 #define OCODE struct ocode
 
 #define FLOAT printf("codegen-Floating point not implemented in push/pop\n");
-/* 386 register set */
+    /* 386 register set */
 #define EAX 0
 #define ECX 1
 #define EDX 2
@@ -242,12 +157,12 @@ typedef struct dl
 #define OP_STOS 64
 #define OP_REG03 65
 
-typedef struct _opcode
-{
-    short ocoperands;
-    short ocvalue;
-    short ocflags;
-} OPCODE;
+    typedef struct _opcode
+    {
+        short ocoperands;
+        short ocvalue;
+        short ocflags;
+    } OPCODE;
 
 #define OCAlwaysword 0x2000
 #define OCprefixfwait 0x1000
@@ -258,42 +173,34 @@ typedef struct _opcode
 #define OCfloatshift 4
 #define OCprocmask 0x0f
 
-typedef struct muldiv
-{
-    struct muldiv* next;
-    long value;
-    FPF floatvalue;
-    int size;
-    int label;
-} MULDIV;
+    typedef struct muldiv
+    {
+        struct muldiv* next;
+        long value;
+        FPF floatvalue;
+        int size;
+        int label;
+    } MULDIV;
 
-enum mode
-{
-    fm_label,
-    fm_symbol,
-    fm_rellabel,
-    fm_relsymbol,
-    fm_threadlocal
-};
+    enum mode
+    {
+        fm_label,
+        fm_symbol,
+        fm_rellabel,
+        fm_relsymbol,
+        fm_threadlocal
+    };
 
-typedef struct _dbgblock
-{
-    struct _dbgblock* next;
-    struct _dbgblock* parent;
-    struct _dbgblock* child;
-    Optimizer::SimpleSymbol* syms;
-    int startlab;
-    int endlab;
-} DBGBLOCK;
+    typedef struct _dbgblock
+    {
+        struct _dbgblock* next;
+        struct _dbgblock* parent;
+        struct _dbgblock* child;
+        Optimizer::SimpleSymbol* syms;
+        int startlab;
+        int endlab;
+    } DBGBLOCK;
 
-enum asmTypes : int
-{
-    pa_oasm,
-    pa_nasm,
-    pa_fasm,
-    pa_masm,
-    pa_tasm
-};
 
 #define R_EAX 0
 #define R_ECX 1
@@ -304,23 +211,122 @@ enum asmTypes : int
 #define R_CL 17
 #define R_AX 24
 #define R_CX 25
-enum e_adtype
-{
-    e_ad_linedata,
-    e_ad_blockdata,
-    e_ad_funcdata,
-    e_ad_vfuncdata,
-    e_ad_vardata
-};
-
-typedef struct _attribdata
-{
-    enum e_adtype type;
-    union
+    enum e_adtype
     {
-        Optimizer::LINEDATA* ld;
-        struct Optimizer::SimpleSymbol* sp;
-        void* section;
-    } v;
-    bool start;
-} ATTRIBDATA;
+        e_ad_linedata,
+        e_ad_blockdata,
+        e_ad_funcdata,
+        e_ad_vfuncdata,
+        e_ad_vardata
+    };
+
+    typedef struct _attribdata
+    {
+        enum e_adtype type;
+        union
+        {
+            Optimizer::LINEDATA* ld;
+            struct Optimizer::SimpleSymbol* sp;
+            void* section;
+        } v;
+        bool start;
+    } ATTRIBDATA;
+}
+
+
+enum asmTypes : int
+{
+    pa_oasm,
+    pa_nasm,
+    pa_fasm,
+    pa_masm,
+    pa_tasm
+};
+enum e_am
+{
+    am_none,
+    am_axdx,
+    am_dreg,
+    am_freg,
+    am_frfr,
+    am_cfreg,
+    am_screg,
+    am_sdreg,
+    am_streg,
+    am_mmreg,
+    am_xmmreg,
+    am_seg,
+    am_indisp,
+    am_indispscale,
+    am_fconst,
+    am_direct,
+    am_immed,
+    am_ext,
+    am_segoffs,
+    /* these MUST be in this order, and last!!! */
+    am_stackedtemp,
+    am_stackedtempaddr
+};
+enum e_op
+{
+    op_reserved,
+    op_line,
+    op_blockstart,
+    op_blockend,
+    op_varstart,
+    op_funcstart,
+    op_funcend,
+    op_void,
+    op_comment,
+    op_label,
+    op_funclabel,
+    op_seq,
+    op_genword,
+    op_dd,
+    op_align
+};
+enum e_asmw
+{
+    akw_byte,
+    akw_word,
+    akw_dword,
+    akw_fword,
+    akw_qword,
+    akw_tbyte,
+    akw_offset,
+    akw_ptr
+};
+struct amode
+{
+    enum e_am mode;
+    char preg;
+    char sreg;
+    char tempflag;
+    char scale;
+    char length;
+    char addrlen;
+    char seg;
+#define e_default 0
+#define e_cs 1
+#define e_ds 2
+#define e_es 3
+#define e_fs 4
+#define e_gs 5
+#define e_ss 6
+    Optimizer::SimpleExpression* offset;
+    int liveRegs;
+    int keepesp : 1;
+};
+#ifdef __cplusplus
+struct ocode
+{
+    struct ocode *fwd, *back;
+    enum e_opcode opcode;
+    struct amode *oper1, *oper2, *oper3;
+    void* ins;
+    int size;
+    int blocknum;
+    char diag;
+    char noopt;
+};
+#endif

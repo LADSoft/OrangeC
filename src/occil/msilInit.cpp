@@ -44,286 +44,289 @@
 #include <vector>
 #include <string>
 using namespace DotNetPELib;
-
-int uniqueId;
-Optimizer::SimpleSymbol retblocksym;
-int errCount;
-Method* mainSym;
-int hasEntryPoint;
-
-MethodSignature* argsCtor;
-MethodSignature* argsNextArg;
-MethodSignature* argsUnmanaged;
-MethodSignature* ptrBox;
-MethodSignature* ptrUnbox;
-MethodSignature* concatStr;
-MethodSignature* concatObj;
-MethodSignature* toStr;
-Type* systemObject;
-Method* currentMethod;
 PELib* peLib;
-DataContainer* mainContainer;
-Optimizer::LIST *initializersHead, *initializersTail;
-Optimizer::LIST *deinitializersHead, *deinitializersTail;
 
-std::map<Optimizer::SimpleSymbol*, Value*, byName> externalMethods;
-std::map<Optimizer::SimpleSymbol*, Value*, byName> externalList;
-std::map<Optimizer::SimpleSymbol*, Value*, byName> globalMethods;
-std::map<Optimizer::SimpleSymbol*, Value*, byName> globalList;
-std::map<Optimizer::SimpleSymbol*, Value*, byLabel> staticMethods;
-std::map<Optimizer::SimpleSymbol*, Value*, byLabel> staticList;
-std::map<Optimizer::SimpleSymbol*, MethodSignature*, byName> pinvokeInstances;
-std::map<Optimizer::SimpleSymbol*, Param*, byName> paramList;
-std::multimap<std::string, MethodSignature*> pInvokeReferences;
-
-std::map<std::string, Value*> startups, rundowns, tlsstartups, tlsrundowns;
-
-std::map<std::string, Type*> typeList;
-std::map<Optimizer::SimpleSymbol*, Value*, byField> fieldList;
-std::map<std::string, MethodSignature*> arrayMethods;
-
-std::vector<Local*> localList;
-
-static MethodSignature* FindMethodSignature(const char* name)
+namespace occmsil
 {
-    void* result;
-    if (peLib->Find(name, &result) == PELib::s_method)
-    {
-        return static_cast<Method*>(result)->Signature();
-    }
-    Utils::fatal("could not find built in method %s", name);
-    return NULL;
-}
-Type* FindType(const char* name, bool toErr)
-{
-    void* result;
-    if (peLib->Find(name, &result) == PELib::s_class)
-    {
-        return peLib->AllocateType(static_cast<Class*>(result));
-    }
-    if (toErr)
-        Utils::fatal("could not find built in type %s", name);
-    return NULL;
-}
+    int uniqueId;
+    Optimizer::SimpleSymbol retblocksym;
+    int errCount;
+    Method* mainSym;
+    int hasEntryPoint;
 
+    MethodSignature* argsCtor;
+    MethodSignature* argsNextArg;
+    MethodSignature* argsUnmanaged;
+    MethodSignature* ptrBox;
+    MethodSignature* ptrUnbox;
+    MethodSignature* concatStr;
+    MethodSignature* concatObj;
+    MethodSignature* toStr;
+    Type* systemObject;
+    Method* currentMethod;
+    DataContainer* mainContainer;
+    Optimizer::LIST *initializersHead, *initializersTail;
+    Optimizer::LIST *deinitializersHead, *deinitializersTail;
 
-static void CreateExternalCSharpReferences()
-{
-    if (Optimizer::cparams.no_default_libs)
+    std::map<Optimizer::SimpleSymbol*, Value*, byName> externalMethods;
+    std::map<Optimizer::SimpleSymbol*, Value*, byName> externalList;
+    std::map<Optimizer::SimpleSymbol*, Value*, byName> globalMethods;
+    std::map<Optimizer::SimpleSymbol*, Value*, byName> globalList;
+    std::map<Optimizer::SimpleSymbol*, Value*, byLabel> staticMethods;
+    std::map<Optimizer::SimpleSymbol*, Value*, byLabel> staticList;
+    std::map<Optimizer::SimpleSymbol*, MethodSignature*, byName> pinvokeInstances;
+    std::map<Optimizer::SimpleSymbol*, Param*, byName> paramList;
+    std::multimap<std::string, MethodSignature*> pInvokeReferences;
+
+    std::map<std::string, Value*> startups, rundowns, tlsstartups, tlsrundowns;
+
+    std::map<std::string, Type*> typeList;
+    std::map<Optimizer::SimpleSymbol*, Value*, byField> fieldList;
+    std::map<std::string, MethodSignature*> arrayMethods;
+
+    std::vector<Local*> localList;
+
+    static MethodSignature* FindMethodSignature(const char* name)
     {
-        // have to create various function signatures if not loading the library
-        Namespace* ns = nullptr;
-        if (peLib->Find("lsmsilcrtl", (void**)&ns, 0) != PELib::s_namespace)
-            Utils::fatal("namespace lsmsilcrtl does not exist");
-        Type* object = peLib->AllocateType(Type::object, 0);
-        Type* voidPtr = peLib->AllocateType(Type::Void, 1);
-        Type* objectArray = peLib->AllocateType(Type::object, 0);
-        objectArray->ArrayLevel(1);
-        Type* argstype = FindType("lsmsilcrtl.args", false);
-        Class* args = nullptr;
-        if (argstype)
+        void* result;
+        if (peLib->Find(name, &result) == PELib::s_method)
         {
-            args = static_cast<Class*>(argstype->GetClass());
+            return static_cast<Method*>(result)->Signature();
         }
-        else
+        Utils::fatal("could not find built in method %s", name);
+        return NULL;
+    }
+    Type* FindType(const char* name, bool toErr)
+    {
+        void* result;
+        if (peLib->Find(name, &result) == PELib::s_class)
         {
-            args = peLib->AllocateClass("args", Qualifiers::Public, -1, -1);
-            ns->Add(args);
-            MethodSignature* sig =
-                peLib->AllocateMethodSignature(".ctor", MethodSignature::Managed | MethodSignature::InstanceFlag, args);
-            sig->ReturnType(objectArray);
-            args->Add(peLib->AllocateMethod(sig, Qualifiers::Public));
-            sig = peLib->AllocateMethodSignature("GetNextArg", MethodSignature::Managed | MethodSignature::InstanceFlag, args);
-            sig->ReturnType(object);
-            args->Add(peLib->AllocateMethod(sig, Qualifiers::Public));
-            sig = peLib->AllocateMethodSignature("GetUnmanaged", MethodSignature::Managed | MethodSignature::InstanceFlag, args);
-            sig->ReturnType(voidPtr);
-            args->Add(peLib->AllocateMethod(sig, Qualifiers::Public));
+            return peLib->AllocateType(static_cast<Class*>(result));
         }
-        Type* pointertype = FindType("lsmsilcrtl.pointer", false);
-        Class* pointer = nullptr;
-        if (pointertype)
+        if (toErr)
+            Utils::fatal("could not find built in type %s", name);
+        return NULL;
+    }
+
+
+    static void CreateExternalCSharpReferences()
+    {
+        if (Optimizer::cparams.no_default_libs)
         {
-            pointer = static_cast<Class*>(pointertype->GetClass());
-        }
-        else
-        {
-            pointer = peLib->AllocateClass("pointer", Qualifiers::Public, -1, -1);
-            ns->Add(pointer);
-            MethodSignature* sig =
-                peLib->AllocateMethodSignature("box", MethodSignature::Managed | MethodSignature::InstanceFlag, pointer);
-            sig->ReturnType(object);
-            sig->AddParam(peLib->AllocateParam("param", voidPtr));
-            pointer->Add(peLib->AllocateMethod(sig, Qualifiers::Public | Qualifiers::Static));
-            sig = peLib->AllocateMethodSignature("unbox", MethodSignature::Managed | MethodSignature::InstanceFlag, pointer);
-            sig->ReturnType(voidPtr);
-            sig->AddParam(peLib->AllocateParam("param", object));
-            pointer->Add(peLib->AllocateMethod(sig, Qualifiers::Public | Qualifiers::Static));
-        }
-    }
-
-    argsCtor = FindMethodSignature("lsmsilcrtl.args::.ctor");
-    argsNextArg = FindMethodSignature("lsmsilcrtl.args::GetNextArg");
-    argsUnmanaged = FindMethodSignature("lsmsilcrtl.args::GetUnmanaged");
-    ptrBox = FindMethodSignature("lsmsilcrtl.pointer::box");
-    ptrUnbox = FindMethodSignature("lsmsilcrtl.pointer::unbox");
-
-    systemObject = FindType("System.Object", true);
-
-    Type stringType(Type::string, 0);
-    Type objectType(Type::object, 0);
-
-    std::vector<Type*> strArgs;
-    strArgs.push_back(&stringType);
-    strArgs.push_back(&stringType);
-    std::vector<Type*> objArgs;
-    objArgs.push_back(&objectType);
-    objArgs.push_back(&objectType);
-
-    std::vector<Type*> toStrArgs;
-    toStrArgs.push_back(&objectType);
-
-    Method* result;
-    if (peLib->Find("System.String::Concat", &result, strArgs) == PELib::s_method)
-    {
-        concatStr = result->Signature();
-    }
-    if (peLib->Find("System.String::Concat", &result, objArgs) == PELib::s_method)
-    {
-        concatObj = result->Signature();
-    }
-    if (peLib->Find("System.Convert::ToString", &result, toStrArgs) == PELib::s_method)
-    {
-        toStr = result->Signature();
-    }
-    if (!concatStr || !concatObj || !toStr)
-        Utils::fatal("could not find builtin function");
-}
-
-int msil_main_preprocess(char *fileName)
-{
-
-    PELib::CorFlags corFlags = PELib::bits32;
-    if (Optimizer::prm_namespace_and_class[0])
-        corFlags = (PELib::CorFlags)((int)corFlags | PELib::ilonly);
-    char path[260];
-    strcpy(path, fileName);
-//    GetOutputFileName(fileName, path, cparams.prm_compileonly && !cparams.prm_asmfile);
-    uniqueId = Utils::CRC32((unsigned char*)fileName, strlen(fileName));
-    char* p = strrchr(path, '.');
-    char* q = strrchr(path, '\\');
-    if (!q)
-        q = path;
-    else
-        q++;
-    if (p)
-    {
-        *p = 0;
-    }
-    bool newFile;
-    if (!peLib)
-    {
-        peLib = new PELib(q, corFlags);
-
-        if (peLib->LoadAssembly("mscorlib"))
-        {
-            Utils::fatal("could not load mscorlib.dll");
-        }
-        if (!Optimizer::cparams.no_default_libs && peLib->LoadAssembly("lsmsilcrtl"))
-        {
-            Utils::fatal("could not load lsmsilcrtl.dll");
-        }
-        _apply_global_using();
-
-        //peLib->AddUsing("System");
-        newFile = true;
-    }
-    else
-    {
-        peLib->EmptyWorkingAssembly(q);
-        newFile = false;
-    }
-//    if (p)
-//    {
-//        *p = '.';
-//    }
-    if (!Optimizer::prm_namespace_and_class.empty())
-    {
-        int npos = Optimizer::prm_namespace_and_class.find('.');
-        std::string nspace = Optimizer::prm_namespace_and_class.substr(0, npos);
-        std::string clss = Optimizer::prm_namespace_and_class.substr(npos + 1);
-        Namespace* nm = peLib->AllocateNamespace(nspace);
-        peLib->WorkingAssembly()->Add(nm);
-        Class* cls = peLib->AllocateClass(clss, Qualifiers::MainClass | Qualifiers::Public, -1, -1);
-        nm->Add(cls);
-        mainContainer = cls;
-    }
-    else
-    {
-        mainContainer = peLib->WorkingAssembly();
-    }
-    /**/
-    if (newFile)
-    {
-        int vers[4];
-        memset(vers, 0, sizeof(vers));
-        sscanf(Optimizer::prm_assemblyVersion.c_str(), "%d.%d.%d.%d", &vers[0], &vers[1], &vers[2], &vers[3]);
-        peLib->WorkingAssembly()->SetVersion(vers[0], vers[1], vers[2], vers[3]);
-        peLib->WorkingAssembly()->SNKFile(Optimizer::prm_snkKeyFile);
-
-        CreateExternalCSharpReferences();
-        retblocksym.name = "__retblock";
-    }
-    return false;
-}
-void msil_end_generation(char *fileName)
-{
-    if (Optimizer::cparams.prm_compileonly && !Optimizer::cparams.prm_asmfile)
-    {
-        Optimizer::cseg();
-        for (auto it = externalList.begin(); it != externalList.end(); ++it)
-        {
-            Field* f = static_cast<FieldName*>(it->second)->GetField();
-            f->External(true);
-            mainContainer->Add(f);
-        }
-        for (auto it = externalMethods.begin(); it != externalMethods.end(); ++it)
-        {
-            int flags = Qualifiers::ManagedFunc | Qualifiers::Public;
-            MethodSignature* s = static_cast<MethodName*>(it->second)->Signature();
-            if (!s->GetContainer()->InAssemblyRef())
+            // have to create various function signatures if not loading the library
+            Namespace* ns = nullptr;
+            if (peLib->Find("lsmsilcrtl", (void**)&ns, 0) != PELib::s_namespace)
+                Utils::fatal("namespace lsmsilcrtl does not exist");
+            Type* object = peLib->AllocateType(Type::object, 0);
+            Type* voidPtr = peLib->AllocateType(Type::Void, 1);
+            Type* objectArray = peLib->AllocateType(Type::object, 0);
+            objectArray->ArrayLevel(1);
+            Type* argstype = FindType("lsmsilcrtl.args", false);
+            Class* args = nullptr;
+            if (argstype)
             {
-                Method* m = peLib->AllocateMethod(s, flags);
-                s->External(true);
-                mainContainer->Add(m);
+                args = static_cast<Class*>(argstype->GetClass());
+            }
+            else
+            {
+                args = peLib->AllocateClass("args", Qualifiers::Public, -1, -1);
+                ns->Add(args);
+                MethodSignature* sig =
+                    peLib->AllocateMethodSignature(".ctor", MethodSignature::Managed | MethodSignature::InstanceFlag, args);
+                sig->ReturnType(objectArray);
+                args->Add(peLib->AllocateMethod(sig, Qualifiers::Public));
+                sig = peLib->AllocateMethodSignature("GetNextArg", MethodSignature::Managed | MethodSignature::InstanceFlag, args);
+                sig->ReturnType(object);
+                args->Add(peLib->AllocateMethod(sig, Qualifiers::Public));
+                sig = peLib->AllocateMethodSignature("GetUnmanaged", MethodSignature::Managed | MethodSignature::InstanceFlag, args);
+                sig->ReturnType(voidPtr);
+                args->Add(peLib->AllocateMethod(sig, Qualifiers::Public));
+            }
+            Type* pointertype = FindType("lsmsilcrtl.pointer", false);
+            Class* pointer = nullptr;
+            if (pointertype)
+            {
+                pointer = static_cast<Class*>(pointertype->GetClass());
+            }
+            else
+            {
+                pointer = peLib->AllocateClass("pointer", Qualifiers::Public, -1, -1);
+                ns->Add(pointer);
+                MethodSignature* sig =
+                    peLib->AllocateMethodSignature("box", MethodSignature::Managed | MethodSignature::InstanceFlag, pointer);
+                sig->ReturnType(object);
+                sig->AddParam(peLib->AllocateParam("param", voidPtr));
+                pointer->Add(peLib->AllocateMethod(sig, Qualifiers::Public | Qualifiers::Static));
+                sig = peLib->AllocateMethodSignature("unbox", MethodSignature::Managed | MethodSignature::InstanceFlag, pointer);
+                sig->ReturnType(voidPtr);
+                sig->AddParam(peLib->AllocateParam("param", object));
+                pointer->Add(peLib->AllocateMethod(sig, Qualifiers::Public | Qualifiers::Static));
             }
         }
-        if (fileName)
-            peLib->DumpOutputFile(fileName, PELib::object, false);
-        // needs work        delete peLib;
 
-        initializersHead = initializersTail = NULL;
-        deinitializersHead = deinitializersTail = NULL;
-        externalMethods.clear();
-        externalList.clear();
-        globalMethods.clear();
-        globalList.clear();
-        staticMethods.clear();
-        staticList.clear();
-        pinvokeInstances.clear();
-        typeList.clear();
-        fieldList.clear();
-        arrayMethods.clear();
-        pInvokeReferences.clear();
-        startups.clear();
-        rundowns.clear();
-        tlsstartups.clear();
-        tlsrundowns.clear();
+        argsCtor = FindMethodSignature("lsmsilcrtl.args::.ctor");
+        argsNextArg = FindMethodSignature("lsmsilcrtl.args::GetNextArg");
+        argsUnmanaged = FindMethodSignature("lsmsilcrtl.args::GetUnmanaged");
+        ptrBox = FindMethodSignature("lsmsilcrtl.pointer::box");
+        ptrUnbox = FindMethodSignature("lsmsilcrtl.pointer::unbox");
+
+        systemObject = FindType("System.Object", true);
+
+        Type stringType(Type::string, 0);
+        Type objectType(Type::object, 0);
+
+        std::vector<Type*> strArgs;
+        strArgs.push_back(&stringType);
+        strArgs.push_back(&stringType);
+        std::vector<Type*> objArgs;
+        objArgs.push_back(&objectType);
+        objArgs.push_back(&objectType);
+
+        std::vector<Type*> toStrArgs;
+        toStrArgs.push_back(&objectType);
+
+        Method* result;
+        if (peLib->Find("System.String::Concat", &result, strArgs) == PELib::s_method)
+        {
+            concatStr = result->Signature();
+        }
+        if (peLib->Find("System.String::Concat", &result, objArgs) == PELib::s_method)
+        {
+            concatObj = result->Signature();
+        }
+        if (peLib->Find("System.Convert::ToString", &result, toStrArgs) == PELib::s_method)
+        {
+            toStr = result->Signature();
+        }
+        if (!concatStr || !concatObj || !toStr)
+            Utils::fatal("could not find builtin function");
     }
-}
-void msil_compile_start(char* name)
-{
-    _using_init();
-    Import();
-    staticList.clear();
+
+    int msil_main_preprocess(char *fileName)
+    {
+
+        PELib::CorFlags corFlags = PELib::bits32;
+        if (Optimizer::prm_namespace_and_class[0])
+            corFlags = (PELib::CorFlags)((int)corFlags | PELib::ilonly);
+        char path[260];
+        strcpy(path, fileName);
+        //    GetOutputFileName(fileName, path, cparams.prm_compileonly && !cparams.prm_asmfile);
+        uniqueId = Utils::CRC32((unsigned char*)fileName, strlen(fileName));
+        char* p = strrchr(path, '.');
+        char* q = strrchr(path, '\\');
+        if (!q)
+            q = path;
+        else
+            q++;
+        if (p)
+        {
+            *p = 0;
+        }
+        bool newFile;
+        if (!peLib)
+        {
+            peLib = new PELib(q, corFlags);
+
+            if (peLib->LoadAssembly("mscorlib"))
+            {
+                Utils::fatal("could not load mscorlib.dll");
+            }
+            if (!Optimizer::cparams.no_default_libs && peLib->LoadAssembly("lsmsilcrtl"))
+            {
+                Utils::fatal("could not load lsmsilcrtl.dll");
+            }
+            _apply_global_using();
+
+            //peLib->AddUsing("System");
+            newFile = true;
+        }
+        else
+        {
+            peLib->EmptyWorkingAssembly(q);
+            newFile = false;
+        }
+        //    if (p)
+        //    {
+        //        *p = '.';
+        //    }
+        if (!Optimizer::prm_namespace_and_class.empty())
+        {
+            int npos = Optimizer::prm_namespace_and_class.find('.');
+            std::string nspace = Optimizer::prm_namespace_and_class.substr(0, npos);
+            std::string clss = Optimizer::prm_namespace_and_class.substr(npos + 1);
+            Namespace* nm = peLib->AllocateNamespace(nspace);
+            peLib->WorkingAssembly()->Add(nm);
+            Class* cls = peLib->AllocateClass(clss, Qualifiers::MainClass | Qualifiers::Public, -1, -1);
+            nm->Add(cls);
+            mainContainer = cls;
+        }
+        else
+        {
+            mainContainer = peLib->WorkingAssembly();
+        }
+        /**/
+        if (newFile)
+        {
+            int vers[4];
+            memset(vers, 0, sizeof(vers));
+            sscanf(Optimizer::prm_assemblyVersion.c_str(), "%d.%d.%d.%d", &vers[0], &vers[1], &vers[2], &vers[3]);
+            peLib->WorkingAssembly()->SetVersion(vers[0], vers[1], vers[2], vers[3]);
+            peLib->WorkingAssembly()->SNKFile(Optimizer::prm_snkKeyFile);
+
+            CreateExternalCSharpReferences();
+            retblocksym.name = "__retblock";
+        }
+        return false;
+    }
+    void msil_end_generation(char *fileName)
+    {
+        if (Optimizer::cparams.prm_compileonly && !Optimizer::cparams.prm_asmfile)
+        {
+            Optimizer::cseg();
+            for (auto it = externalList.begin(); it != externalList.end(); ++it)
+            {
+                Field* f = static_cast<FieldName*>(it->second)->GetField();
+                f->External(true);
+                mainContainer->Add(f);
+            }
+            for (auto it = externalMethods.begin(); it != externalMethods.end(); ++it)
+            {
+                int flags = Qualifiers::ManagedFunc | Qualifiers::Public;
+                MethodSignature* s = static_cast<MethodName*>(it->second)->Signature();
+                if (!s->GetContainer()->InAssemblyRef())
+                {
+                    Method* m = peLib->AllocateMethod(s, flags);
+                    s->External(true);
+                    mainContainer->Add(m);
+                }
+            }
+            if (fileName)
+                peLib->DumpOutputFile(fileName, PELib::object, false);
+            // needs work        delete peLib;
+
+            initializersHead = initializersTail = NULL;
+            deinitializersHead = deinitializersTail = NULL;
+            externalMethods.clear();
+            externalList.clear();
+            globalMethods.clear();
+            globalList.clear();
+            staticMethods.clear();
+            staticList.clear();
+            pinvokeInstances.clear();
+            typeList.clear();
+            fieldList.clear();
+            arrayMethods.clear();
+            pInvokeReferences.clear();
+            startups.clear();
+            rundowns.clear();
+            tlsstartups.clear();
+            tlsrundowns.clear();
+        }
+    }
+    void msil_compile_start(char* name)
+    {
+        _using_init();
+        Import();
+        staticList.clear();
+    }
 }

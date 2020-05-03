@@ -503,7 +503,7 @@ namespace Parser
                 {
                     Optimizer::prm_Using.push_back(s);
 #ifndef PARSER_ONLY
-                    _add_global_using(s.c_str());
+                    occmsil::_add_global_using(s.c_str());
 #endif
                 }
                 break;

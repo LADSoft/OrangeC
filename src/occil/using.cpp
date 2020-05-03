@@ -29,79 +29,82 @@
 #include "ildata.h"
 using namespace DotNetPELib;
 
-struct data
+namespace occmsil
 {
-    const char* name;
-    const char* dllName;
-};
-#define HASHLEN 2048
-static Optimizer::LIST* _global_using_list;
-void _using_init() {}
-bool _using_(const char* file)
-{
-    char name[260], *p;
-    strcpy(name, file);
-    p = strrchr(name, '.');
-    if (p && Utils::iequal(p, ".dll"))
-        *p = 0;
-    if (!peLib->LoadAssembly(name))
-        return true;
-    if (peLib->LoadUnmanaged(file))
+    struct data
     {
-        char* a = getenv("ORANGEC");
-        if (a)
+        const char* name;
+        const char* dllName;
+    };
+#define HASHLEN 2048
+    static Optimizer::LIST* _global_using_list;
+    void _using_init() {}
+    bool _using_(const char* file)
+    {
+        char name[260], *p;
+        strcpy(name, file);
+        p = strrchr(name, '.');
+        if (p && Utils::iequal(p, ".dll"))
+            *p = 0;
+        if (!peLib->LoadAssembly(name))
+            return true;
+        if (peLib->LoadUnmanaged(file))
         {
-            strcpy(name, a);
-            strcat(name, "\\bin\\");
-            strcat(name, file);
-            if (!peLib->LoadUnmanaged(name))
-                return true;
+            char* a = getenv("ORANGEC");
+            if (a)
+            {
+                strcpy(name, a);
+                strcat(name, "\\bin\\");
+                strcat(name, file);
+                if (!peLib->LoadUnmanaged(name))
+                    return true;
+            }
+        }
+        return false;
+    }
+    std::string _dll_name(const char* name) { return peLib->FindUnmanagedName(name); }
+    // usually from the command line
+    void _add_global_using(const char* str)
+    {
+        while (*str)
+        {
+            char buf[260], *q = buf;
+            while (*str && *str != ';')
+                *q++ = *str++;
+            *q = 0;
+            if (*str)
+                str++;
+            // using standard C allocators since this crosses multiple input files
+            Optimizer::LIST *lst = (Optimizer::LIST*)calloc(sizeof(Optimizer::LIST), 1), **find = &_global_using_list;
+            lst->data = strdup(buf);
+            while (*find)
+                find = &(*find)->next;
+            (*find) = lst;
         }
     }
-    return false;
-}
-std::string _dll_name(const char* name) { return peLib->FindUnmanagedName(name); }
-// usually from the command line
-void _add_global_using(const char* str)
-{
-    while (*str)
+    void _apply_global_using(void)
     {
-        char buf[260], *q = buf;
-        while (*str && *str != ';')
-            *q++ = *str++;
-        *q = 0;
-        if (*str)
-            str++;
-        // using standard C allocators since this crosses multiple input files
-        Optimizer::LIST *lst = (Optimizer::LIST*)calloc(sizeof(Optimizer::LIST), 1), **find = &_global_using_list;
-        lst->data = strdup(buf);
-        while (*find)
-            find = &(*find)->next;
-        (*find) = lst;
+        if (!Optimizer::cparams.managed_library)
+        {
+            char buf[256];
+            strcpy(buf, Optimizer::pinvoke_dll);
+            char* p = strrchr(buf, '.');
+            if (p)
+                *p = 0;
+            _using_(buf);
+        }
+        _using_("occmsil");
+        Optimizer::LIST* lst = _global_using_list;
+        while (lst)
+        {
+            _using_((char*)lst->data);
+            lst = lst->next;
+        }
     }
-}
-void _apply_global_using(void)
-{
-    if (!Optimizer::cparams.managed_library)
+    bool msil_managed(Optimizer::SimpleSymbol* sp)
     {
-        char buf[256];
-        strcpy(buf, Optimizer::pinvoke_dll);
-        char* p = strrchr(buf, '.');
-        if (p)
-            *p = 0;
-        _using_(buf);
+        if (sp->msil_rtl)
+            return true;
+        return !_dll_name(sp->name).size();
     }
-    _using_("occmsil");
-    Optimizer::LIST* lst = _global_using_list;
-    while (lst)
-    {
-        _using_((char*)lst->data);
-        lst = lst->next;
-    }
-}
-bool msil_managed(Optimizer::SimpleSymbol* sp)
-{
-    if (sp->msil_rtl)
-        return true;
-    return !_dll_name(sp->name).size();
 }

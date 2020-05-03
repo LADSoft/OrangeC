@@ -48,40 +48,43 @@ enum asmTypes : int
 
 using namespace DotNetPELib;
 
-struct byLabel
+namespace occmsil
 {
-    bool operator()(const Optimizer::SimpleSymbol* left, const Optimizer::SimpleSymbol* right) const
+    struct byLabel
     {
-        if (left->storage_class == Optimizer::scc_localstatic || right->storage_class == Optimizer::scc_localstatic)
+        bool operator()(const Optimizer::SimpleSymbol* left, const Optimizer::SimpleSymbol* right) const
         {
-            if (left->storage_class != right->storage_class)
-                return left->storage_class < right->storage_class;
-            return left->outputName < right->outputName;
+            if (left->storage_class == Optimizer::scc_localstatic || right->storage_class == Optimizer::scc_localstatic)
+            {
+                if (left->storage_class != right->storage_class)
+                    return left->storage_class < right->storage_class;
+                return left->outputName < right->outputName;
+            }
+            return left->label < right->label;
         }
-        return left->label < right->label;
-    }
-};
-struct byField
-{
-    bool operator()(const Optimizer::SimpleSymbol* left, const Optimizer::SimpleSymbol* right) const
+    };
+    struct byField
     {
-        int n = strcmp(left->parentClass->name, right->parentClass->name);
-        if (n < 0)
+        bool operator()(const Optimizer::SimpleSymbol* left, const Optimizer::SimpleSymbol* right) const
         {
-            return true;
+            int n = strcmp(left->parentClass->name, right->parentClass->name);
+            if (n < 0)
+            {
+                return true;
+            }
+            else if (n > 0)
+            {
+                return false;
+            }
+            else
+            {
+                return strcmp(left->name, right->name) < 0;
+            }
         }
-        else if (n > 0)
-        {
-            return false;
-        }
-        else
-        {
-            return strcmp(left->name, right->name) < 0;
-        }
-    }
-};
+    };
 
-struct byName
-{
-    bool operator()(const Optimizer::SimpleSymbol* left, const Optimizer::SimpleSymbol* right) const { return strcmp(left->name, right->name) < 0; }
-};
+    struct byName
+    {
+        bool operator()(const Optimizer::SimpleSymbol* left, const Optimizer::SimpleSymbol* right) const { return strcmp(left->name, right->name) < 0; }
+    };
+}

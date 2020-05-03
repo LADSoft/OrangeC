@@ -23,6 +23,9 @@
  *
  */
 
-bool InsertOption(const char* name);
-int InsertExternalFile(const char* name, bool primary);
-int RunExternalFiles(void);
+namespace occx86
+{
+    bool InsertOption(const char* name);
+    int InsertExternalFile(const char* name, bool primary);
+    int RunExternalFiles(void);
+}

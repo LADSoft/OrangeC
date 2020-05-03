@@ -25,46 +25,50 @@
 #include <map>
 #include <vector>
 
-extern int uniqueId;
-extern Optimizer::SimpleSymbol retblocksym;
-extern int errCount;
-extern Method* mainSym;
-extern int hasEntryPoint;
-
-extern MethodSignature* argsCtor;
-extern MethodSignature* argsNextArg;
-extern MethodSignature* argsUnmanaged;
-extern MethodSignature* ptrBox;
-extern MethodSignature* ptrUnbox;
-extern MethodSignature* concatStr;
-extern MethodSignature* concatObj;
-extern MethodSignature* toStr;
-extern Type* systemObject;
-extern Method* currentMethod;
 extern PELib* peLib;
-extern DataContainer* mainContainer;
-extern Optimizer::LIST *initializersHead, *initializersTail;
-extern Optimizer::LIST *deinitializersHead, *deinitializersTail;
 
-extern std::map<Optimizer::SimpleSymbol*, Value*, byName> externalMethods;
-extern std::map<Optimizer::SimpleSymbol*, Value*, byName> externalList;
-extern std::map<Optimizer::SimpleSymbol*, Value*, byName> globalMethods;
-extern std::map<Optimizer::SimpleSymbol*, Value*, byName> globalList;
-extern std::map<Optimizer::SimpleSymbol*, Value*, byLabel> staticMethods;
-extern std::map<Optimizer::SimpleSymbol*, Value*, byLabel> staticList;
-extern std::map<Optimizer::SimpleSymbol*, MethodSignature*, byName> pinvokeInstances;
-extern std::map<Optimizer::SimpleSymbol*, Param*, byName> paramList;
-extern std::multimap<std::string, MethodSignature*> pInvokeReferences;
+namespace occmsil
+{
+    extern int uniqueId;
+    extern Optimizer::SimpleSymbol retblocksym;
+    extern int errCount;
+    extern Method* mainSym;
+    extern int hasEntryPoint;
 
-extern std::map<std::string, Value*> startups, rundowns, tlsstartups, tlsrundowns;
+    extern MethodSignature* argsCtor;
+    extern MethodSignature* argsNextArg;
+    extern MethodSignature* argsUnmanaged;
+    extern MethodSignature* ptrBox;
+    extern MethodSignature* ptrUnbox;
+    extern MethodSignature* concatStr;
+    extern MethodSignature* concatObj;
+    extern MethodSignature* toStr;
+    extern Type* systemObject;
+    extern Method* currentMethod;
+    extern DataContainer* mainContainer;
+    extern Optimizer::LIST *initializersHead, *initializersTail;
+    extern Optimizer::LIST *deinitializersHead, *deinitializersTail;
 
-extern std::map<std::string, Type*> typeList;
-extern std::map<Optimizer::SimpleSymbol*, Value*, byField> fieldList;
-extern std::map<std::string, MethodSignature*> arrayMethods;
+    extern std::map<Optimizer::SimpleSymbol*, Value*, byName> externalMethods;
+    extern std::map<Optimizer::SimpleSymbol*, Value*, byName> externalList;
+    extern std::map<Optimizer::SimpleSymbol*, Value*, byName> globalMethods;
+    extern std::map<Optimizer::SimpleSymbol*, Value*, byName> globalList;
+    extern std::map<Optimizer::SimpleSymbol*, Value*, byLabel> staticMethods;
+    extern std::map<Optimizer::SimpleSymbol*, Value*, byLabel> staticList;
+    extern std::map<Optimizer::SimpleSymbol*, MethodSignature*, byName> pinvokeInstances;
+    extern std::map<Optimizer::SimpleSymbol*, Param*, byName> paramList;
+    extern std::multimap<std::string, MethodSignature*> pInvokeReferences;
 
-extern std::vector<Local*> localList;
+    extern std::map<std::string, Value*> startups, rundowns, tlsstartups, tlsrundowns;
 
-Type* FindType(const char* name, bool toErr);
-int msil_main_preprocess(char *fileName);
-void msil_end_generation(char *fileName);
-void msil_compile_start(char* name);
+    extern std::map<std::string, Type*> typeList;
+    extern std::map<Optimizer::SimpleSymbol*, Value*, byField> fieldList;
+    extern std::map<std::string, MethodSignature*> arrayMethods;
+
+    extern std::vector<Local*> localList;
+
+    Type* FindType(const char* name, bool toErr);
+    int msil_main_preprocess(char *fileName);
+    void msil_end_generation(char *fileName);
+    void msil_compile_start(char* name);
+}

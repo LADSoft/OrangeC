@@ -101,7 +101,7 @@ namespace Parser
     #ifdef PARSER_ONLY
         return false;
     #else
-        return msil_managed(Optimizer::SymbolManager::Get(s));
+        return occmsil::msil_managed(Optimizer::SymbolManager::Get(s));
     #endif
     }
 

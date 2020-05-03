@@ -22,16 +22,19 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
  */
-extern char outFile[260];
-extern char infile[260];
-extern int usingEsp;
-extern
-InstructionParser* instructionParser;
-
-extern Optimizer::SimpleSymbol* currentFunction;
-
-void regInit(void);
 void diag(const char*, ...);
-void outputfile(char* buf, const char* name, const char* ext, bool obj);
-void global(Optimizer::SimpleSymbol* sym, int flags);
-int main(int argc, char* argv[]);
+extern int usingEsp;
+extern Optimizer::SimpleSymbol* currentFunction;
+void regInit(void);
+
+namespace occx86
+{
+    extern char outFile[260];
+    extern char infile[260];
+    extern InstructionParser* instructionParser;
+
+
+    void outputfile(char* buf, const char* name, const char* ext, bool obj);
+    void global(Optimizer::SimpleSymbol* sym, int flags);
+    int main(int argc, char* argv[]);
+}

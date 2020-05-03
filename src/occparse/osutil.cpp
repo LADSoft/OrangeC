@@ -119,7 +119,7 @@ namespace Parser
     CmdSwitchString prm_msil_strongnamekeyfile(switchParser, 'K');
     CmdSwitchString prm_msil_namespace(switchParser, 'N');
     CmdSwitchString prm_msil_version(switchParser, 'V');
-    CmdSwitchCombineString prm_architecture(switchParser, 0, 0, "Optimizer::architecture");
+    CmdSwitchCombineString prm_architecture(switchParser, 0, 0, "architecture");
 
     CmdSwitchString prm_Winmode(switchParser, 'W');
     CmdSwitchCombineString OutputDefFile(switchParser, 0, 0, "output-def");

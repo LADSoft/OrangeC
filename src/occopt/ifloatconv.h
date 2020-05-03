@@ -22,10 +22,10 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
  */
-
-
-unsigned long long CastToInt(int size, long long value);
-FPF* IntToFloat(FPF* temp, int size, long long value);
-FPF CastToFloat(int size, FPF* value);
-FPF dorefloat(SimpleExpression* node);
-
+namespace Optimizer
+{
+    unsigned long long CastToInt(int size, long long value);
+    FPF* IntToFloat(FPF* temp, int size, long long value);
+    FPF CastToFloat(int size, FPF* value);
+    FPF dorefloat(SimpleExpression* node);
+}

@@ -22,11 +22,14 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
  */
-extern unsigned short* termMap;
-extern unsigned short* termMapUp;
-extern unsigned termCount;
+namespace Optimizer
+{
+    extern unsigned short* termMap;
+    extern unsigned short* termMapUp;
+    extern unsigned termCount;
 
-void SetunMoveableTerms(void);
-void RearrangePrecolors(void);
-void SetGlobalTerms(void);
-void GlobalOptimization(void);
+    void SetunMoveableTerms(void);
+    void RearrangePrecolors(void);
+    void SetGlobalTerms(void);
+    void GlobalOptimization(void);
+}

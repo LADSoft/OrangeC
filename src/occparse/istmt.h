@@ -22,34 +22,38 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
  */
-extern IMODE* returnImode;
-extern int retcount;
-extern int consIndex;
-extern EXPRESSION* xcexp;
-extern int catchLevel;
-extern int codeLabelOffset;
-extern SimpleSymbol* currentFunction;
+extern Optimizer::SimpleSymbol* currentFunction;
 
-void genstmtini(void);
-IMODE* imake_label(int label);
-IMODE* make_direct(int i);
-void gen_genword(STATEMENT* stmt, SYMBOL* funcsp);
-IMODE* set_symbol(const char* name, int isproc);
-IMODE* call_library(const char* lib_name, int size);
-void SubProfilerData(void);
-void count_cases(CASEDATA* cd, struct cases* cs);
-void gather_cases(CASEDATA* cd, struct cases* cs);
-int gcs_compare(void const* left, void const* right);
-void genxswitch(STATEMENT* stmt, SYMBOL* funcsp);
-void genselect(STATEMENT* stmt, SYMBOL* funcsp, bool jmptrue);
-void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, IMODE* allocaAP);
-void gen_varstart(void* exp);
-void gen_func(void* exp, int start);
-void gen_dbgblock(int start);
-void gen_asm(STATEMENT* stmt);
-void gen_asmdata(STATEMENT* stmt);
-IMODE* genstmt(STATEMENT* stmt, SYMBOL* funcsp);
-void CopyVariables(SYMBOL *funcsp);
-void genfunc(SYMBOL* funcsp, bool doOptimize);
-void genASM(STATEMENT* st);
+namespace Parser
+{
+    extern Optimizer::IMODE* returnImode;
+    extern int retcount;
+    extern int consIndex;
+    extern EXPRESSION* xcexp;
+    extern int catchLevel;
+    extern int codeLabelOffset;
 
+    void genstmtini(void);
+    Optimizer::IMODE* imake_label(int label);
+    Optimizer::IMODE* make_direct(int i);
+    void gen_genword(STATEMENT* stmt, SYMBOL* funcsp);
+    Optimizer::IMODE* set_symbol(const char* name, int isproc);
+    Optimizer::IMODE* call_library(const char* lib_name, int size);
+    void SubProfilerData(void);
+    void count_cases(CASEDATA* cd, struct cases* cs);
+    void gather_cases(CASEDATA* cd, struct cases* cs);
+    int gcs_compare(void const* left, void const* right);
+    void genxswitch(STATEMENT* stmt, SYMBOL* funcsp);
+    void genselect(STATEMENT* stmt, SYMBOL* funcsp, bool jmptrue);
+    void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, Optimizer::IMODE* allocaAP);
+    void gen_varstart(void* exp);
+    void gen_func(void* exp, int start);
+    void gen_dbgblock(int start);
+    void gen_asm(STATEMENT* stmt);
+    void gen_asmdata(STATEMENT* stmt);
+    Optimizer::IMODE* genstmt(STATEMENT* stmt, SYMBOL* funcsp);
+    void CopyVariables(SYMBOL *funcsp);
+    void genfunc(SYMBOL* funcsp, bool doOptimize);
+    void genASM(STATEMENT* st);
+
+}

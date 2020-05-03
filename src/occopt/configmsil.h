@@ -22,6 +22,9 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
  */
-extern ARCH_ASM msilAssemblerInterface[];
+namespace Optimizer
+{
+    extern ARCH_ASM msilAssemblerInterface[];
 
-void msilWinmodeSetup(const char* string);
+    void msilWinmodeSetup(const char* string);
+}

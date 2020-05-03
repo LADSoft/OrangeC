@@ -22,8 +22,11 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
  */
-extern ARCH_ASM x86AssemblerInterface[];
+namespace Optimizer
+{
+    extern ARCH_ASM x86AssemblerInterface[];
 
-void WinmodeSetup(const char* string);
-int parse_codegen(char mode, const char* string);
-void SetUsesESP(bool yes);
+    void WinmodeSetup(const char* string);
+    int parse_codegen(char mode, const char* string);
+    void SetUsesESP(bool yes);
+}

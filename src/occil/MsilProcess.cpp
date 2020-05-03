@@ -89,28 +89,28 @@ static Byte* dataPointer;
 static Field* initializingField;
 static char objFileName[260];
 
-Type* GetType(SimpleType* tp, bool commit, bool funcarg, bool pinvoke);
-static SimpleSymbol* clone(SimpleSymbol* sp, bool ctype = true);
-void CacheExtern(SimpleSymbol* sp);
-void CacheGlobal(SimpleSymbol* sp);
-void CacheStatic(SimpleSymbol* sp);
+Type* GetType(Optimizer::SimpleType* tp, bool commit, bool funcarg, bool pinvoke);
+static Optimizer::SimpleSymbol* clone(Optimizer::SimpleSymbol* sp, bool ctype = true);
+void CacheExtern(Optimizer::SimpleSymbol* sp);
+void CacheGlobal(Optimizer::SimpleSymbol* sp);
+void CacheStatic(Optimizer::SimpleSymbol* sp);
 std::string _dll_name(const char* name);
 
-extern std::map<SimpleSymbol*, Value*, byName> externalMethods;
-extern std::map<SimpleSymbol*, Value*, byName> externalList;
-extern std::map<SimpleSymbol*, Value*, byName> globalMethods;
-extern std::map<SimpleSymbol*, Value*, byName> globalList;
-extern std::map<SimpleSymbol*, Value*, byLabel> staticMethods;
-extern std::map<SimpleSymbol*, Value*, byLabel> staticList;
-extern std::map<SimpleSymbol*, MethodSignature*, byName> pinvokeInstances;
-extern std::map<SimpleSymbol*, Param*, byName> paramList;
+extern std::map<Optimizer::SimpleSymbol*, Value*, byName> externalMethods;
+extern std::map<Optimizer::SimpleSymbol*, Value*, byName> externalList;
+extern std::map<Optimizer::SimpleSymbol*, Value*, byName> globalMethods;
+extern std::map<Optimizer::SimpleSymbol*, Value*, byName> globalList;
+extern std::map<Optimizer::SimpleSymbol*, Value*, byLabel> staticMethods;
+extern std::map<Optimizer::SimpleSymbol*, Value*, byLabel> staticList;
+extern std::map<Optimizer::SimpleSymbol*, MethodSignature*, byName> pinvokeInstances;
+extern std::map<Optimizer::SimpleSymbol*, Param*, byName> paramList;
 extern std::multimap<std::string, MethodSignature*> pInvokeReferences;
 
 extern std::map<std::string, Value*> startups, rundowns, tlsstartups, tlsrundowns;
 
 extern std::vector<Local*> localList;
 extern std::map<std::string, Type*> typeList;
-extern std::map<SimpleSymbol*, Value*, byField> fieldList;
+extern std::map<Optimizer::SimpleSymbol*, Value*, byField> fieldList;
 extern std::map<std::string, MethodSignature*> arrayMethods;
 
 void parse_pragma(const char* kw, const char* tag)
@@ -182,13 +182,13 @@ MethodSignature* LookupArrayMethod(Type* tp, std::string name)
 }
 
 // weed out structures with nested structures or bit fields
-bool qualifiedStruct(SimpleSymbol* sp)
+bool qualifiedStruct(Optimizer::SimpleSymbol* sp)
 {
     //    SYMLIST *hr;
     if (!sp->tp->size)
         return false;
 #if 0
-    if (sp->tp->type == st_union)
+    if (sp->tp->type == Optimizer::st_union)
         return false;
     hr = sp->tp->syms->table[0];
     while (hr)
@@ -205,23 +205,23 @@ bool qualifiedStruct(SimpleSymbol* sp)
 #endif
     return true;
 }
-bool IsPointedStruct(SimpleType* tp)
+bool IsPointedStruct(Optimizer::SimpleType* tp)
 {
-    while (tp->type == st_pointer)
+    while (tp->type == Optimizer::st_pointer)
         tp = tp->btp;
-    return tp->type == st_struct || tp->type == st_union;
+    return tp->type == Optimizer::st_struct || tp->type == Optimizer::st_union;
 }
-Field* GetField(SimpleSymbol* sp)
+Field* GetField(Optimizer::SimpleSymbol* sp)
 {
     int flags = Qualifiers::Public | Qualifiers::Static;
-    if (sp->storage_class == scc_localstatic)
+    if (sp->storage_class ==  Optimizer::scc_localstatic)
     {
         char buf[256];
         sprintf(buf, "%s_%x", sp->outputName, uniqueId);
         Field* field = peLib->AllocateField(buf, GetType(sp->tp, true), flags);
         return field;
     }
-    else if (sp->storage_class != scc_localstatic && sp->storage_class != scc_constant && sp->storage_class != scc_static)
+    else if (sp->storage_class !=  Optimizer::scc_localstatic && sp->storage_class !=  Optimizer::scc_constant && sp->storage_class !=  Optimizer::scc_static)
     {
         Field* field = peLib->AllocateField(sp->name, GetType(sp->tp, true), flags);
         return field;
@@ -234,24 +234,24 @@ Field* GetField(SimpleSymbol* sp)
         return field;
     }
 }
-MethodSignature* GetMethodSignature(SimpleType* tp, bool pinvoke)
+MethodSignature* GetMethodSignature(Optimizer::SimpleType* tp, bool pinvoke)
 {
     int flags = pinvoke ? 0 : MethodSignature::Managed;
-    while (tp->type == st_pointer)
+    while (tp->type == Optimizer::st_pointer)
         tp = tp->btp;
-    SimpleSymbol* sp = tp->sp;
+    Optimizer::SimpleSymbol* sp = tp->sp;
     // this compiler never uses instance members, maybe when we do C++
-    LIST* hr = tp->sp->syms;
+    Optimizer::LIST* hr = tp->sp->syms;
     while (hr && hr->next)
         hr = hr->next;
-    if (hr && ((SimpleSymbol*)hr->data)->tp->type == st_ellipse)
+    if (hr && ((Optimizer::SimpleSymbol*)hr->data)->tp->type == Optimizer::st_ellipse)
     {
         flags |= MethodSignature::Vararg;
     }
     MethodSignature* rv = nullptr;
-    if (sp->storage_class != scc_localstatic && sp->storage_class != scc_constant && sp->storage_class != scc_static)
+    if (sp->storage_class !=  Optimizer::scc_localstatic && sp->storage_class !=  Optimizer::scc_constant && sp->storage_class !=  Optimizer::scc_static)
     {
-        if (sp->msil_rtl && !cparams.no_default_libs)
+        if (sp->msil_rtl && !Optimizer::cparams.no_default_libs)
         {
             char buf[1024];
             void* result;
@@ -278,7 +278,7 @@ MethodSignature* GetMethodSignature(SimpleType* tp, bool pinvoke)
         sprintf(buf, "L_%d_%x", sp->label, uniqueId);
         rv = peLib->AllocateMethodSignature(buf, flags, pinvoke ? NULL : mainContainer);
     }
-    if ((tp->btp->type == st_struct || tp->btp->type == st_union) && (sp->unmanaged || !msil_managed(sp)))
+    if ((tp->btp->type == Optimizer::st_struct || tp->btp->type == Optimizer::st_union) && (sp->unmanaged || !msil_managed(sp)))
     {
         rv->ReturnType(peLib->AllocateType(Type::Void, 1));
         Param* p = peLib->AllocateParam("__retblock", peLib->AllocateType(Type::Void, 1));
@@ -292,10 +292,10 @@ MethodSignature* GetMethodSignature(SimpleType* tp, bool pinvoke)
     hr = tp->sp->syms;
     while (hr)
     {
-        SimpleSymbol* sym = (SimpleSymbol*)hr->data;
-        if (sym->tp->type == st_void)
+        Optimizer::SimpleSymbol* sym = (Optimizer::SimpleSymbol*)hr->data;
+        if (sym->tp->type == Optimizer::st_void)
             break;
-        if (sym->tp->type == st_ellipse)
+        if (sym->tp->type == Optimizer::st_ellipse)
         {
             if (!pinvoke)
             {
@@ -334,12 +334,12 @@ MethodSignature* FindPInvokeWithVarargs(std::string name, std::list<Param*>::ite
     }
     return nullptr;
 }
-MethodSignature* GetMethodSignature(SimpleSymbol* sp)
+MethodSignature* GetMethodSignature(Optimizer::SimpleSymbol* sp)
 {
     bool pinvoke = false;
     if (sp)
         pinvoke = !msil_managed(sp);
-    std::map<SimpleSymbol*, Value*, byName>::iterator it = globalMethods.find(sp);
+    std::map<Optimizer::SimpleSymbol*, Value*, byName>::iterator it = globalMethods.find(sp);
     if (it != globalMethods.end())
     {
         return static_cast<MethodName*>(it->second)->Signature();
@@ -351,7 +351,7 @@ MethodSignature* GetMethodSignature(SimpleSymbol* sp)
     }
     if (pinvoke)
     {
-        std::map<SimpleSymbol*, MethodSignature*, byName>::iterator it1 = pinvokeInstances.find(sp);
+        std::map<Optimizer::SimpleSymbol*, MethodSignature*, byName>::iterator it1 = pinvokeInstances.find(sp);
         if (it1 != pinvokeInstances.end())
         {
             // if we get here we have a pinvoke instance.   If it isnt vararg just return it
@@ -383,22 +383,22 @@ MethodSignature* GetMethodSignature(SimpleSymbol* sp)
             }
         }
     }
-    else if (sp->tp->type != st_func)
+    else if (sp->tp->type != Optimizer::st_func)
     {
         // function pointer is here
         // we aren't caching these aggressively...
         return GetMethodSignature(sp->tp, false);
     }
-    else if (sp->storage_class == scc_external)
+    else if (sp->storage_class ==  Optimizer::scc_external)
     {
         CacheExtern(sp);
         it = externalMethods.find(sp);
         return static_cast<MethodName*>(it->second)->Signature();
     }
-    else if (sp->storage_class == scc_static)
+    else if (sp->storage_class ==  Optimizer::scc_static)
     {
         CacheStatic(sp);
-        std::map<SimpleSymbol*, Value*, byLabel>::iterator it = staticMethods.find(sp);
+        std::map<Optimizer::SimpleSymbol*, Value*, byLabel>::iterator it = staticMethods.find(sp);
         return static_cast<MethodName*>(it->second)->Signature();
     }
     else
@@ -408,7 +408,7 @@ MethodSignature* GetMethodSignature(SimpleSymbol* sp)
         return static_cast<MethodName*>(it->second)->Signature();
     }
 }
-std::string GetArrayName(SimpleType* tp)
+std::string GetArrayName(Optimizer::SimpleType* tp)
 {
     char end[512];
     end[0] = 0;
@@ -423,15 +423,15 @@ std::string GetArrayName(SimpleType* tp)
             sprintf(end + strlen(end), "[%d]", (int)tp->size);
         tp = tp->btp;
     }
-    if ((tp->type == st_struct || tp->type == st_union) || tp->type == st_enum)
+    if ((tp->type == Optimizer::st_struct || tp->type == Optimizer::st_union) || tp->type == Optimizer::st_enum)
     {
         return std::string(tp->sp->name) + end;
     }
-    else if (tp->type == st_pointer && tp->btp->type == st_func)
+    else if (tp->type == Optimizer::st_pointer && tp->btp->type == Optimizer::st_func)
     {
         return std::string("void *") + end;
     }
-    else if (tp->type == st_pointer)
+    else if (tp->type == Optimizer::st_pointer)
     {
         return std::string("void *") + end;
     }
@@ -468,7 +468,7 @@ std::string GetArrayName(SimpleType* tp)
         return typeNames[tp->sizeFromType] + end;
     }
 }
-Value* GetStructField(SimpleSymbol* sp)
+Value* GetStructField(Optimizer::SimpleSymbol* sp)
 {
     if (sp->msil)
     {
@@ -482,7 +482,7 @@ Value* GetStructField(SimpleSymbol* sp)
     it = fieldList.find(sp);
     return it->second;
 }
-void msil_create_property(SimpleSymbol* property, SimpleSymbol* getter, SimpleSymbol* setter)
+void msil_create_property(Optimizer::SimpleSymbol* property, Optimizer::SimpleSymbol* getter, Optimizer::SimpleSymbol* setter)
 {
     if (typeid(*mainContainer) == typeid(Class))
     {
@@ -498,16 +498,16 @@ void msil_create_property(SimpleSymbol* property, SimpleSymbol* getter, SimpleSy
         Utils::fatal("Cannot add property at non-class level");
     }
 }
-void AddType(SimpleSymbol* sym, Type* type) { typeList[sym->outputName] = type; }
-Type* GetType(SimpleType* tp, bool commit, bool funcarg, bool pinvoke)
+void AddType(Optimizer::SimpleSymbol* sym, Type* type) { typeList[sym->outputName] = type; }
+Type* GetType(Optimizer::SimpleType* tp, bool commit, bool funcarg, bool pinvoke)
 {
     bool byref = false;
-    if ((tp->type == st_lref || tp->type == st_rref))
+    if ((tp->type == Optimizer::st_lref || tp->type == Optimizer::st_rref))
     {
         byref = true;
         tp = tp->btp;
     }
-    if ((tp->type == st_struct || tp->type == st_union))
+    if ((tp->type == Optimizer::st_struct || tp->type == Optimizer::st_union))
     {
         Type* type = NULL;
         std::map<std::string, Type*>::iterator it = typeList.find(tp->sp->outputName);
@@ -531,7 +531,7 @@ Type* GetType(SimpleType* tp, bool commit, bool funcarg, bool pinvoke)
                 {
                     Class* newClass = peLib->AllocateClass(
                         tp->sp->name,
-                        Qualifiers::Public | (tp->type == st_union ? Qualifiers::ClassUnion : Qualifiers::ClassClass),
+                        Qualifiers::Public | (tp->type == Optimizer::st_union ? Qualifiers::ClassUnion : Qualifiers::ClassClass),
                         tp->sp->align, tp->size);
                     mainContainer->Add(newClass);
                     type = peLib->AllocateType(newClass);
@@ -557,12 +557,12 @@ Type* GetType(SimpleType* tp, bool commit, bool funcarg, bool pinvoke)
 
                     Class* cls = (Class*)type->GetClass();
                     cls->SetInstantiated();
-                    LIST* hr = tp->sp->syms;
+                    Optimizer::LIST* hr = tp->sp->syms;
                     Field* bitField = nullptr;
                     int start = 1000;
                     while (hr)
                     {
-                        SimpleSymbol* sym = (SimpleSymbol*)hr->data;
+                        Optimizer::SimpleSymbol* sym = (Optimizer::SimpleSymbol*)hr->data;
                         if (!sym->tp->bits || sym->tp->startbit < start)
                         {
                             Type* newType = GetType(sym->tp, true);
@@ -600,7 +600,7 @@ Type* GetType(SimpleType* tp, bool commit, bool funcarg, bool pinvoke)
             return peLib->AllocateType((DataContainer*)NULL);
         }
     }
-    else if (tp->type == st_enum)
+    else if (tp->type == Optimizer::st_enum)
     {
         std::map<std::string, Type*>::iterator it = typeList.find(tp->sp->outputName);
         if (it != typeList.end())
@@ -612,10 +612,10 @@ Type* GetType(SimpleType* tp, bool commit, bool funcarg, bool pinvoke)
 
             if (tp->sp->syms)
             {
-                LIST* hr = tp->sp->syms;
+                Optimizer::LIST* hr = tp->sp->syms;
                 while (hr)
                 {
-                    SimpleSymbol* sym = (SimpleSymbol*)hr->data;
+                    Optimizer::SimpleSymbol* sym = (Optimizer::SimpleSymbol*)hr->data;
                     newEnum->AddValue(*peLib, sym->name, sym->i);
                     hr = hr->next;
                 }
@@ -634,7 +634,7 @@ Type* GetType(SimpleType* tp, bool commit, bool funcarg, bool pinvoke)
     else if (tp->isarray && tp->msil)
     {
         char name[512];
-        SimpleType* base = tp;
+        Optimizer::SimpleType* base = tp;
         Type* rv;
         int count = 0;
         while (base->isarray)
@@ -651,7 +651,7 @@ Type* GetType(SimpleType* tp, bool commit, bool funcarg, bool pinvoke)
             rv = GetType(base, true);
             rv->ArrayLevel(count);
             typeList[name] = rv;
-            if ((base->type == st_struct || base->type == st_union))
+            if ((base->type == Optimizer::st_struct || base->type == Optimizer::st_union))
                 GetType(base, true);
             rv->ByRef(byref);
             return rv;
@@ -674,10 +674,10 @@ Type* GetType(SimpleType* tp, bool commit, bool funcarg, bool pinvoke)
             mainContainer->Add(newClass);
             Type* type = peLib->AllocateType(newClass);
             typeList[name] = type;
-            while (tp->type == st_pointer)
+            while (tp->type == Optimizer::st_pointer)
                 tp = tp->btp;
             // declare any structure we are referencing..
-            if ((tp->type == st_struct || tp->type == st_union))
+            if ((tp->type == Optimizer::st_struct || tp->type == Optimizer::st_union))
                 GetType(tp, true);
             type->ByRef(byref);
             return type;
@@ -687,21 +687,21 @@ Type* GetType(SimpleType* tp, bool commit, bool funcarg, bool pinvoke)
             return peLib->AllocateType((DataContainer*)NULL);
         }
     }
-    else if (tp->type == st_pointer && tp->btp->type == st_func)
+    else if (tp->type == Optimizer::st_pointer && tp->btp->type == Optimizer::st_func)
     {
         return peLib->AllocateType(Type::Void, 1);  // pointer to void
                                                     //        tp = tp->btp;
                                                     //        MethodSignature *sig = GetMethodSignature(tp, false);
                                                     //        return peLib->AllocateType(sig);
     }
-    else if (tp->type == st_pointer)
+    else if (tp->type == Optimizer::st_pointer)
     {
 
         if (pinvoke)
             return peLib->AllocateType(Type::Void, 1);  // pointer to void
-        SimpleType* tp1 = tp;
+        Optimizer::SimpleType* tp1 = tp;
         int level = 0;
-        while (tp1->type == st_pointer)
+        while (tp1->type == Optimizer::st_pointer)
         {
             if (tp1->va_list)
             {
@@ -709,7 +709,7 @@ Type* GetType(SimpleType* tp, bool commit, bool funcarg, bool pinvoke)
                 rv->PointerLevel(level);
                 return rv;
             }
-            if (tp1->type == st_pointer)
+            if (tp1->type == Optimizer::st_pointer)
                 level++;
             tp1 = tp1->btp;
             if (level > 0 && tp1->isarray)
@@ -718,7 +718,7 @@ Type* GetType(SimpleType* tp, bool commit, bool funcarg, bool pinvoke)
         // we don't currently support multiple indirections on a function pointer
         // as an independent type
         // this is a limitation of the netlib
-        if (tp1->type == st_func)
+        if (tp1->type == Optimizer::st_func)
             return peLib->AllocateType(Type::Void, 1);  // pointer to void
         Type* rv = GetType(tp1, commit);
 
@@ -731,13 +731,13 @@ Type* GetType(SimpleType* tp, bool commit, bool funcarg, bool pinvoke)
         rv->ByRef(byref);
         return rv;
     }
-    else if (tp->type == st_void)
+    else if (tp->type == Optimizer::st_void)
     {
         return peLib->AllocateType(Type::Void, 0);
     }
     else if (tp->msil)
     {
-        if (tp->type == st___string)
+        if (tp->type == Optimizer::st___string)
             return peLib->AllocateType(Type::string, 0);
         else
             return peLib->AllocateType(Type::object, 0);
@@ -777,33 +777,33 @@ Type* GetType(SimpleType* tp, bool commit, bool funcarg, bool pinvoke)
         return rv;
     }
 }
-static bool istype(SimpleSymbol* sym)
+static bool istype(Optimizer::SimpleSymbol* sym)
 {
-    return (sym->storage_class == scc_type || sym->storage_class == scc_typedef);
+    return (sym->storage_class ==  Optimizer::scc_type || sym->storage_class ==  Optimizer::scc_typedef);
 }
-void msil_oa_enter_type(SimpleSymbol* sp)
+void msil_oa_enter_type(Optimizer::SimpleSymbol* sp)
 {
-    if (!istype(sp) || sp->storage_class == scc_typedef)
+    if (!istype(sp) || sp->storage_class ==  Optimizer::scc_typedef)
     {
-        SimpleType* tp = sp->tp;
-        while (tp->type == st_pointer)
+        Optimizer::SimpleType* tp = sp->tp;
+        while (tp->type == Optimizer::st_pointer)
             tp = tp->btp;
 
-        if ((tp->type == st_struct || tp->type == st_union))
+        if ((tp->type == Optimizer::st_struct || tp->type == Optimizer::st_union))
         {
             GetType(tp, true, false, false);
         }
     }
 }
-static bool validateGlobalRef(SimpleSymbol* sp1, SimpleSymbol* sp2);
-static SimpleType* cloneType(SimpleType* tp)
+static bool validateGlobalRef(Optimizer::SimpleSymbol* sp1, Optimizer::SimpleSymbol* sp2);
+static Optimizer::SimpleType* cloneType(Optimizer::SimpleType* tp)
 {
-    SimpleType *rv = NULL, **lst = &rv;
+    Optimizer::SimpleType *rv = NULL, **lst = &rv;
     while (tp)
     {
-        *lst = (SimpleType*)peLib->AllocateBytes(sizeof(SimpleType));
+        *lst = (Optimizer::SimpleType*)peLib->AllocateBytes(sizeof(Optimizer::SimpleType));
         **lst = *tp;
-        if (tp->type == st_struct || tp->type == st_enum)
+        if (tp->type == Optimizer::st_struct || tp->type == Optimizer::st_enum)
         {
             (*lst)->sp = clone(tp->sp, false);
         }
@@ -812,10 +812,10 @@ static SimpleType* cloneType(SimpleType* tp)
     }
     return rv;
 }
-static SimpleSymbol* clone(SimpleSymbol* sp, bool ctype)
+static Optimizer::SimpleSymbol* clone(Optimizer::SimpleSymbol* sp, bool ctype)
 {
     // shallow copy
-    SimpleSymbol* rv = (SimpleSymbol*)peLib->AllocateBytes(sizeof(SimpleSymbol));
+    Optimizer::SimpleSymbol* rv = (Optimizer::SimpleSymbol*)peLib->AllocateBytes(sizeof(Optimizer::SimpleSymbol));
     *rv = *sp;
     rv->name = (char*)peLib->AllocateBytes(strlen(rv->name) + 1);
     if (ctype)
@@ -823,11 +823,11 @@ static SimpleSymbol* clone(SimpleSymbol* sp, bool ctype)
     strcpy((char*)rv->name, sp->name);
     return rv;
 }
-void CacheExtern(SimpleSymbol* sp)
+void CacheExtern(Optimizer::SimpleSymbol* sp)
 {
-    if (sp->tp->type == st_func)
+    if (sp->tp->type == Optimizer::st_func)
     {
-        std::map<SimpleSymbol*, Value*, byName>::iterator it = globalMethods.find(sp);
+        std::map<Optimizer::SimpleSymbol*, Value*, byName>::iterator it = globalMethods.find(sp);
         if (it == globalMethods.end())
         {
             it = externalMethods.find(sp);
@@ -840,7 +840,7 @@ void CacheExtern(SimpleSymbol* sp)
     }
     else
     {
-        std::map<SimpleSymbol*, Value*, byName>::iterator it = globalList.find(sp);
+        std::map<Optimizer::SimpleSymbol*, Value*, byName>::iterator it = globalList.find(sp);
         if (it != globalList.end())
         {
             validateGlobalRef(sp, it->first);
@@ -860,11 +860,11 @@ void CacheExtern(SimpleSymbol* sp)
         }
     }
 }
-void CacheGlobal(SimpleSymbol* sp)
+void CacheGlobal(Optimizer::SimpleSymbol* sp)
 {
-    if (sp->tp->type == st_func)
+    if (sp->tp->type == Optimizer::st_func)
     {
-        std::map<SimpleSymbol*, Value*, byName>::iterator it = globalMethods.find(sp);
+        std::map<Optimizer::SimpleSymbol*, Value*, byName>::iterator it = globalMethods.find(sp);
         if (it == globalMethods.end())
         {
             sp = clone(sp);
@@ -888,7 +888,7 @@ void CacheGlobal(SimpleSymbol* sp)
     }
     else
     {
-        std::map<SimpleSymbol*, Value*, byName>::iterator it = globalList.find(sp);
+        std::map<Optimizer::SimpleSymbol*, Value*, byName>::iterator it = globalList.find(sp);
         if (it != globalList.end())
         {
             printf("Error: Multiple definition of %s", sp->name);
@@ -914,11 +914,11 @@ void CacheGlobal(SimpleSymbol* sp)
         }
     }
 }
-void CacheStatic(SimpleSymbol* sp)
+void CacheStatic(Optimizer::SimpleSymbol* sp)
 {
-    if (sp->tp->type == st_func)
+    if (sp->tp->type == Optimizer::st_func)
     {
-        std::map<SimpleSymbol*, Value*, byLabel>::iterator it = staticMethods.find(sp);
+        std::map<Optimizer::SimpleSymbol*, Value*, byLabel>::iterator it = staticMethods.find(sp);
         if (it == staticMethods.end())
         {
             sp = clone(sp);
@@ -931,7 +931,7 @@ void CacheStatic(SimpleSymbol* sp)
     }
     else
     {
-        std::map<SimpleSymbol*, Value*, byLabel>::iterator it = staticList.find(sp);
+        std::map<Optimizer::SimpleSymbol*, Value*, byLabel>::iterator it = staticList.find(sp);
         if (it != staticList.end())
         {
             //            printf("Error: Multiple definition of %s", sp->name);
@@ -947,13 +947,13 @@ void CacheStatic(SimpleSymbol* sp)
 }
 Value* GetParamData(std::string name)
 {
-    SimpleSymbol sp = {0};
+    Optimizer::SimpleSymbol sp = {0};
     sp.name = (char*)name.c_str();
     return paramList.find(&sp)->second;
 }
-Value* GetLocalData(SimpleSymbol* sp)
+Value* GetLocalData(Optimizer::SimpleSymbol* sp)
 {
-    if (sp->storage_class == scc_parameter)
+    if (sp->storage_class ==  Optimizer::scc_parameter)
     {
         return paramList.find(sp)->second;
     }
@@ -962,7 +962,7 @@ Value* GetLocalData(SimpleSymbol* sp)
         return localList[sp->offset];
     }
 }
-Value* GetFieldData(SimpleSymbol* sp)
+Value* GetFieldData(Optimizer::SimpleSymbol* sp)
 {
     if (sp->msil)
     {
@@ -970,11 +970,11 @@ Value* GetFieldData(SimpleSymbol* sp)
         peLib->Find(sp->msil, &result);
         return peLib->AllocateFieldName(static_cast<Field*>(result));
     }
-    if (sp->tp->type == st_func)
+    if (sp->tp->type == Optimizer::st_func)
     {
-        if (sp->storage_class != scc_localstatic && sp->storage_class != scc_const && sp->storage_class != scc_static)
+        if (sp->storage_class !=  Optimizer::scc_localstatic && sp->storage_class !=  Optimizer::scc_const && sp->storage_class !=  Optimizer::scc_static)
         {
-            std::map<SimpleSymbol*, Value*, byName>::iterator it = globalMethods.find(sp);
+            std::map<Optimizer::SimpleSymbol*, Value*, byName>::iterator it = globalMethods.find(sp);
             if (it == globalMethods.end())
             {
                 it = externalMethods.find(sp);
@@ -985,7 +985,7 @@ Value* GetFieldData(SimpleSymbol* sp)
         }
         else
         {
-            std::map<SimpleSymbol*, Value*, byLabel>::iterator it = staticMethods.find(sp);
+            std::map<Optimizer::SimpleSymbol*, Value*, byLabel>::iterator it = staticMethods.find(sp);
             if (it != staticMethods.end())
                 return it->second;
         }
@@ -994,21 +994,21 @@ Value* GetFieldData(SimpleSymbol* sp)
     {
         switch (sp->storage_class)
         {
-            case scc_auto:
-            case scc_register:
+            case  Optimizer::scc_auto:
+            case  Optimizer::scc_register:
                 return localList[sp->offset];
-            case scc_parameter:
+            case  Optimizer::scc_parameter:
             {
-                std::map<SimpleSymbol*, Param*, byName>::iterator it = paramList.find(sp);
+                std::map<Optimizer::SimpleSymbol*, Param*, byName>::iterator it = paramList.find(sp);
                 if (it != paramList.end())
                     return it->second;
             }
             break;
-            case scc_static:
-            case scc_localstatic:
-            case scc_constant:
+            case  Optimizer::scc_static:
+            case  Optimizer::scc_localstatic:
+            case  Optimizer::scc_constant:
             {
-                std::map<SimpleSymbol*, Value*, byLabel>::iterator it = staticList.find(sp);
+                std::map<Optimizer::SimpleSymbol*, Value*, byLabel>::iterator it = staticList.find(sp);
                 if (it != staticList.end())
                     return it->second;
                 CacheStatic(sp);
@@ -1019,7 +1019,7 @@ Value* GetFieldData(SimpleSymbol* sp)
             }
             default:
             {
-                std::map<SimpleSymbol*, Value*, byName>::iterator it = globalList.find(sp);
+                std::map<Optimizer::SimpleSymbol*, Value*, byName>::iterator it = globalList.find(sp);
                 if (it != globalList.end())
                     return it->second;
                 it = externalList.find(sp);
@@ -1035,14 +1035,14 @@ Value* GetFieldData(SimpleSymbol* sp)
     }
     return NULL;
 }
-void LoadLocals(std::vector<SimpleSymbol*>& vars)
+void LoadLocals(std::vector<Optimizer::SimpleSymbol*>& vars)
 {
     localList.clear();
     int count = 0;
     bool found = false;
     for (auto sym : vars)
     {
-        if (sym->storage_class == scc_auto || sym->storage_class == scc_register)
+        if (sym->storage_class ==  Optimizer::scc_auto || sym->storage_class ==  Optimizer::scc_register)
         {
             found = true;
             break;
@@ -1051,7 +1051,7 @@ void LoadLocals(std::vector<SimpleSymbol*>& vars)
 
     if (!found)
     {
-        for (auto & sym : temporarySymbols)
+        for (auto & sym : Optimizer::temporarySymbols)
         {
             if (!sym->anonymous)
             {
@@ -1066,13 +1066,13 @@ void LoadLocals(std::vector<SimpleSymbol*>& vars)
         {
             sym->temp = false;
         }
-        for (auto sym : temporarySymbols)
+        for (auto sym : Optimizer::temporarySymbols)
         {
             sym->temp = false;
         }
         for (auto sym : vars)
         {
-            if ((sym->storage_class == scc_auto || sym->storage_class == scc_register) && !sym->temp)
+            if ((sym->storage_class ==  Optimizer::scc_auto || sym->storage_class ==  Optimizer::scc_register) && !sym->temp)
             {
                 sym->temp = true;
                 Type* type = GetType(sym->tp, true);
@@ -1082,7 +1082,7 @@ void LoadLocals(std::vector<SimpleSymbol*>& vars)
                 sym->offset = count++;
             }
         }
-        for (auto sym : temporarySymbols)
+        for (auto sym : Optimizer::temporarySymbols)
         {
             if (!sym->anonymous && !sym->temp)
             {
@@ -1096,11 +1096,11 @@ void LoadLocals(std::vector<SimpleSymbol*>& vars)
         }
     }
 }
-void LoadParams(SimpleSymbol* funcsp, std::vector<SimpleSymbol*>& vars, std::map<SimpleSymbol*, Param*, byName>& paramList)
+void LoadParams(Optimizer::SimpleSymbol* funcsp, std::vector<Optimizer::SimpleSymbol*>& vars, std::map<Optimizer::SimpleSymbol*, Param*, byName>& paramList)
 {
     int count = 0;
     paramList.clear();
-    if ((funcsp->tp->btp->type == st_struct || funcsp->tp->btp->type == st_union) && (funcsp->unmanaged || !msil_managed(funcsp)))
+    if ((funcsp->tp->btp->type == Optimizer::st_struct || funcsp->tp->btp->type == Optimizer::st_union) && (funcsp->unmanaged || !msil_managed(funcsp)))
     {
         Param* newParam = peLib->AllocateParam("__retblock", peLib->AllocateType(Type::Void, 1));
         newParam->Index(count++);
@@ -1108,17 +1108,17 @@ void LoadParams(SimpleSymbol* funcsp, std::vector<SimpleSymbol*>& vars, std::map
     }
     for (auto sym : vars)
     {
-        if (sym->tp->type == st_void)
+        if (sym->tp->type == Optimizer::st_void)
             break;
         Param* newParam;
-        if (sym->tp->type == st_ellipse)
+        if (sym->tp->type == Optimizer::st_ellipse)
         {
             Type* oa = peLib->AllocateType(Type::object, 0);
             oa->ArrayLevel(1);
             newParam = peLib->AllocateParam("__va_list__", oa);
             sym->name = "__va_list__";
         }
-        else if (sym->storage_class != scc_parameter)
+        else if (sym->storage_class !=  Optimizer::scc_parameter)
             continue;
         else
         {
@@ -1129,9 +1129,9 @@ void LoadParams(SimpleSymbol* funcsp, std::vector<SimpleSymbol*>& vars, std::map
         paramList[sym] = newParam;
     }
 }
-void msil_flush_peep(SimpleSymbol* funcsp, QUAD* list)
+void msil_flush_peep(Optimizer::SimpleSymbol* funcsp, Optimizer::QUAD* list)
 {
-    if (!(cparams.prm_compileonly && !cparams.prm_asmfile))
+    if (!(Optimizer::cparams.prm_compileonly && !Optimizer::cparams.prm_asmfile))
         try
         {
             currentMethod->Optimize(*peLib);
@@ -1147,14 +1147,14 @@ void msil_flush_peep(SimpleSymbol* funcsp, QUAD* list)
 //    Field *field = GetField(sp);
 //    mainContainer->Add(field);
 //}
-void CreateFunction(MethodSignature* sig, SimpleSymbol* sp)
+void CreateFunction(MethodSignature* sig, Optimizer::SimpleSymbol* sp)
 {
     int flags = Qualifiers::ManagedFunc;
-    if (sp->storage_class == scc_static)
+    if (sp->storage_class ==  Optimizer::scc_static)
         flags |= Qualifiers::Private;
     else
         flags |= Qualifiers::Public;
-    if (!cparams.prm_compileonly || cparams.prm_asmfile)
+    if (!Optimizer::cparams.prm_compileonly || Optimizer::cparams.prm_asmfile)
     {
         if (sp->entrypoint)
         {
@@ -1177,14 +1177,14 @@ void CreateFunction(MethodSignature* sig, SimpleSymbol* sp)
 
     auto hr = sp->syms;
     auto it = sig->begin();
-    if ((sp->tp->btp->type == st_struct || sp->tp->btp->type == st_union) && (sp->unmanaged || !msil_managed(sp)))
+    if ((sp->tp->btp->type == Optimizer::st_struct || sp->tp->btp->type == Optimizer::st_union) && (sp->unmanaged || !msil_managed(sp)))
         it++;
     while (hr && it != sig->end())
     {
-        SimpleSymbol* sym = (SimpleSymbol*)hr->data;
-        if (sym->tp->type == st_void)
+        Optimizer::SimpleSymbol* sym = (Optimizer::SimpleSymbol*)hr->data;
+        if (sym->tp->type == Optimizer::st_void)
             break;
-        if (sym->tp->type != st_ellipse)
+        if (sym->tp->type != Optimizer::st_ellipse)
         {
             (*it)->Name(sym->name);
         }
@@ -1200,7 +1200,7 @@ void ReplaceName(std::map<std::string, Value*>& list, Value* v, char* name)
     n->Signature()->SetName(name);
     list[name] = v;
 }
-void msil_oa_gensrref(SimpleSymbol* sp, int val, int type)
+void msil_oa_gensrref(Optimizer::SimpleSymbol* sp, int val, int type)
 {
     static int count = 1;
     Value* v = globalMethods[sp];
@@ -1233,25 +1233,25 @@ void msil_oa_gensrref(SimpleSymbol* sp, int val, int type)
         diag("msil_oa_startup: function not found");
     }
 }
-static bool validateGlobalRef(SimpleSymbol* sp1, SimpleSymbol* sp2)
+static bool validateGlobalRef(Optimizer::SimpleSymbol* sp1, Optimizer::SimpleSymbol* sp2)
 {
-    if (sp1->tp->type != st_func && sp2->tp->type != st_func)
+    if (sp1->tp->type != Optimizer::st_func && sp2->tp->type != Optimizer::st_func)
     {
-        SimpleType* tp = sp1->tp;
-        SimpleType* tpx = sp2->tp;
+        Optimizer::SimpleType* tp = sp1->tp;
+        Optimizer::SimpleType* tpx = sp2->tp;
         tp = tp;
-        while (tp->type == st_pointer && tpx->type == st_pointer)
+        while (tp->type == Optimizer::st_pointer && tpx->type == Optimizer::st_pointer)
         {
             if (tpx->size != 0 && tp->size != 0 && tp->size != tpx->size)
                 break;
             tp = tp->btp;
             tpx = tpx->btp;
         }
-        if (tp->type != st_pointer && tpx->type != st_pointer)
+        if (tp->type != Optimizer::st_pointer && tpx->type != Optimizer::st_pointer)
         {
             if (tp->type == tpx->type)
             {
-                if ((tp->type == st_struct || tp->type == st_union) || tp->type == st_func || tp->type == st_enum)
+                if ((tp->type == Optimizer::st_struct || tp->type == Optimizer::st_union) || tp->type == Optimizer::st_func || tp->type == Optimizer::st_enum)
                 {
                     if (!strcmp(tp->sp->name, tpx->sp->name))
                         return true;
@@ -1267,9 +1267,9 @@ static bool validateGlobalRef(SimpleSymbol* sp1, SimpleSymbol* sp2)
     }
     return false;
 }
-void msil_oa_put_extern(SimpleSymbol* sp, int code)
+void msil_oa_put_extern(Optimizer::SimpleSymbol* sp, int code)
 {
-    if (sp->tp->type == st_func)
+    if (sp->tp->type == Optimizer::st_func)
     {
         if (!msil_managed(sp))
         {
@@ -1284,13 +1284,13 @@ void msil_oa_put_extern(SimpleSymbol* sp, int code)
         CacheExtern(sp);
     }
 }
-void msil_oa_gen_strlab(SimpleSymbol* sp)
+void msil_oa_gen_strlab(Optimizer::SimpleSymbol* sp)
 /*
  *      generate a named label.
  */
 {
-    msil_oa_enterseg((e_sg)0);
-    if (sp->storage_class != scc_localstatic && sp->storage_class != scc_constant && sp->storage_class != scc_static)
+    msil_oa_enterseg((Optimizer::e_sg)0);
+    if (sp->storage_class !=  Optimizer::scc_localstatic && sp->storage_class !=  Optimizer::scc_constant && sp->storage_class !=  Optimizer::scc_static)
     {
         CacheGlobal(sp);
     }
@@ -1298,7 +1298,7 @@ void msil_oa_gen_strlab(SimpleSymbol* sp)
     {
         CacheStatic(sp);
     }
-    if (sp->tp->type == st_func)
+    if (sp->tp->type == Optimizer::st_func)
     {
         CreateFunction(GetMethodSignature(sp), sp);
     }
@@ -1336,11 +1336,11 @@ Type* GetStringType(int type)
 }
 Value* GetStringFieldData(int lab, int type)
 {
-    SimpleSymbol* sp = (SimpleSymbol*)Alloc(sizeof(SimpleSymbol));
+    Optimizer::SimpleSymbol* sp = (Optimizer::SimpleSymbol*)Alloc(sizeof(Optimizer::SimpleSymbol));
     sp->name = "$$$";
     sp->label = lab;
 
-    std::map<SimpleSymbol*, Value*, byLabel>::iterator it = staticList.find(sp);
+    std::map<Optimizer::SimpleSymbol*, Value*, byLabel>::iterator it = staticList.find(sp);
     if (it != staticList.end())
         return it->second;
 
@@ -1357,7 +1357,7 @@ Value* GetStringFieldData(int lab, int type)
 }
 void msil_oa_put_string_label(int lab, int type)
 {
-    msil_oa_enterseg((e_sg)0);
+    msil_oa_enterseg((Optimizer::e_sg)0);
 
     Field* field = static_cast<FieldName*>(GetStringFieldData(lab, type))->GetField();
 
@@ -1395,10 +1395,10 @@ void msil_oa_genstring(char* str, int len)
     {
         msil_oa_genbyte(*str++);
     }
-    msil_oa_enterseg((e_sg)0);
+    msil_oa_enterseg((Optimizer::e_sg)0);
 }
 
-void msil_oa_enterseg(e_sg segnum)
+void msil_oa_enterseg(Optimizer::e_sg segnum)
 {
     if (initializingField && dataPos)
     {
@@ -1501,7 +1501,7 @@ static void mainLocals(void)
 {
     localList.clear();
     paramList.clear();
-    if (!cparams.managed_library)
+    if (!Optimizer::cparams.managed_library)
     {
         localList.push_back(peLib->AllocateLocal("argc", peLib->AllocateType(Type::i32, 0)));
         localList.push_back(peLib->AllocateLocal("argv", peLib->AllocateType(Type::Void, 1)));
@@ -1511,9 +1511,9 @@ static void mainLocals(void)
 }
 static MethodSignature* LookupSignature(const char* name)
 {
-    static SimpleSymbol sp;
+    static Optimizer::SimpleSymbol sp;
     sp.name = name;
-    std::map<SimpleSymbol*, MethodSignature*, byName>::iterator it = pinvokeInstances.find(&sp);
+    std::map<Optimizer::SimpleSymbol*, MethodSignature*, byName>::iterator it = pinvokeInstances.find(&sp);
     if (it != pinvokeInstances.end())
         return it->second;
     return NULL;
@@ -1528,15 +1528,15 @@ static MethodSignature* LookupManagedSignature(const char* name)
 }
 static Field* LookupField(const char* name)
 {
-    static SimpleSymbol sp;
+    static Optimizer::SimpleSymbol sp;
     sp.name = name;
-    std::map<SimpleSymbol*, Value*, byName>::iterator it = globalList.find(&sp);
+    std::map<Optimizer::SimpleSymbol*, Value*, byName>::iterator it = globalList.find(&sp);
     if (it != globalList.end())
         return static_cast<FieldName*>(it->second)->GetField();
     it = externalList.find(&sp);
     if (it != externalList.end())
     {
-        SimpleSymbol* sp = it->first;
+        Optimizer::SimpleSymbol* sp = it->first;
         Value* v = it->second;
         externalList.erase(it);
         globalList[sp] = v;
@@ -1559,17 +1559,17 @@ static void mainInit(void)
 {
     std::string name = "$Main";
     int flags = Qualifiers::Private | Qualifiers::HideBySig | Qualifiers::Static | Qualifiers::CIL | Qualifiers::Managed;
-    if (cparams.prm_targettype == DLL)
+    if (Optimizer::cparams.prm_targettype == DLL)
     {
         name = ".cctor";
         flags |= Qualifiers::SpecialName | Qualifiers::RTSpecialName;
     }
     MethodSignature* signature = peLib->AllocateMethodSignature(name, MethodSignature::Managed, mainContainer);
     signature->ReturnType(peLib->AllocateType(Type::Void, 0));
-    currentMethod = peLib->AllocateMethod(signature, flags, cparams.prm_targettype != DLL);
+    currentMethod = peLib->AllocateMethod(signature, flags, Optimizer::cparams.prm_targettype != DLL);
     mainContainer->Add(currentMethod);
 
-    if (cparams.managed_library)
+    if (Optimizer::cparams.managed_library)
     {
         signature = LookupManagedSignature("__initialize_managed_library");
         currentMethod->AddInstruction(
@@ -1582,7 +1582,7 @@ static void mainInit(void)
         {
             signature = peLib->AllocateMethodSignature("__pctype_func", 0, NULL);
             signature->ReturnType(peLib->AllocateType(Type::u16, 1));
-            peLib->AddPInvokeReference(signature, pinvoke_dll, false);
+            peLib->AddPInvokeReference(signature, Optimizer::pinvoke_dll, false);
         }
         currentMethod->AddInstruction(
             peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
@@ -1601,7 +1601,7 @@ static void mainInit(void)
         {
             signature = peLib->AllocateMethodSignature("__iob_func", 0, NULL);
             signature->ReturnType(peLib->AllocateType(Type::Void, 1));
-            peLib->AddPInvokeReference(signature, pinvoke_dll, false);
+            peLib->AddPInvokeReference(signature, Optimizer::pinvoke_dll, false);
         }
         currentMethod->AddInstruction(
             peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
@@ -1644,7 +1644,7 @@ static void mainInit(void)
             peLib->AllocateInstruction(Instruction::i_stsfld, peLib->AllocateOperand(peLib->AllocateFieldName(field))));
     }
 }
-static void dumpInitializerCalls(LIST* lst)
+static void dumpInitializerCalls(Optimizer::LIST* lst)
 {
     while (lst)
     {
@@ -1661,9 +1661,9 @@ static void dumpInitializerCalls(LIST* lst)
 }
 static void dumpCallToMain(void)
 {
-    if (cparams.prm_targettype != DLL)
+    if (Optimizer::cparams.prm_targettype != DLL)
     {
-        if (cparams.managed_library)
+        if (Optimizer::cparams.managed_library)
         {
             if (mainSym)
             {
@@ -1707,7 +1707,7 @@ static void dumpCallToMain(void)
             signature->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::Void, 1)));
             signature->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::i32, 0)));
             signature->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::Void, 1)));
-            peLib->AddPInvokeReference(signature, pinvoke_dll, false);
+            peLib->AddPInvokeReference(signature, Optimizer::pinvoke_dll, false);
             currentMethod->AddInstruction(
                 peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
 
@@ -1731,7 +1731,7 @@ static void dumpCallToMain(void)
         if (!mainSym || (mainSym && mainSym->Signature()->ReturnType()->IsVoid()))
             currentMethod->AddInstruction(
                 peLib->AllocateInstruction(Instruction::i_ldc_i4, peLib->AllocateOperand((longlong)0, Operand::i32)));
-        if (cparams.managed_library)
+        if (Optimizer::cparams.managed_library)
         {
             MethodSignature* signature = LookupManagedSignature("exit");
             currentMethod->AddInstruction(
@@ -1746,7 +1746,7 @@ static void dumpCallToMain(void)
                 signature = peLib->AllocateMethodSignature("exit", 0, NULL);
                 signature->ReturnType(peLib->AllocateType(Type::Void, 0));
                 signature->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::i32, 0)));
-                peLib->AddPInvokeReference(signature, pinvoke_dll, false);
+                peLib->AddPInvokeReference(signature, Optimizer::pinvoke_dll, false);
             }
             currentMethod->AddInstruction(
                 peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
@@ -1758,16 +1758,16 @@ static void dumpGlobalFuncs() {}
 
 static void LoadDynamics()
 {
-    for (auto sym : globalCache)
+    for (auto sym : Optimizer::globalCache)
     {
         if (!strncmp(sym->name, "__DYNAMIC", 9))
         {
             if (strstr(sym->name, "STARTUP"))
             {
-                LIST* lst = (LIST*)peLib->AllocateBytes(sizeof(LIST));
-                static SimpleSymbol sp;
+                Optimizer::LIST* lst = (Optimizer::LIST*)peLib->AllocateBytes(sizeof(Optimizer::LIST));
+                static Optimizer::SimpleSymbol sp;
                 sp.name = (char*)sym->name;
-                std::map<SimpleSymbol*, Value*, byName>::iterator it = globalMethods.find(&sp);
+                std::map<Optimizer::SimpleSymbol*, Value*, byName>::iterator it = globalMethods.find(&sp);
                 MethodSignature* signature = static_cast<MethodName*>(it->second)->Signature();
                 lst->data = (void*)peLib->AllocateMethodName(signature);
                 if (initializersHead)
@@ -1777,10 +1777,10 @@ static void LoadDynamics()
             }
             else
             {
-                LIST* lst = (LIST*)peLib->AllocateBytes(sizeof(LIST));
-                static SimpleSymbol sp1;
+                Optimizer::LIST* lst = (Optimizer::LIST*)peLib->AllocateBytes(sizeof(Optimizer::LIST));
+                static Optimizer::SimpleSymbol sp1;
                 sp1.name = (char*)sym->name;
-                std::map<SimpleSymbol*, Value*, byName>::iterator it = globalMethods.find(&sp1);
+                std::map<Optimizer::SimpleSymbol*, Value*, byName>::iterator it = globalMethods.find(&sp1);
                 MethodSignature* signature = static_cast<MethodName*>(it->second)->Signature();
                 lst->data = (void*)peLib->AllocateMethodName(signature);
                 if (deinitializersHead)
@@ -1809,17 +1809,17 @@ static void AddRTLThunks()
                 mainSym->Signature()->AddParam(param);
             }
         }
-        msil_oa_enterseg((e_sg)0);
+        msil_oa_enterseg((Optimizer::e_sg)0);
         for (auto ri = startups.begin(); ri != startups.end(); ++ri)
         {
-            LIST* lst = (LIST*)peLib->AllocateBytes(sizeof(LIST));
+            Optimizer::LIST* lst = (Optimizer::LIST*)peLib->AllocateBytes(sizeof(Optimizer::LIST));
             lst->data = (void*)ri->second;
             lst->next = initializersHead;
             initializersHead = lst;
         }
         for (auto ri = rundowns.rbegin(); ri != rundowns.rend(); ++ri)
         {
-            LIST* lst = (LIST*)peLib->AllocateBytes(sizeof(LIST));
+            Optimizer::LIST* lst = (Optimizer::LIST*)peLib->AllocateBytes(sizeof(Optimizer::LIST));
             lst->data = (void*)ri->second;
             if (deinitializersHead)
                 deinitializersTail = deinitializersTail->next = lst;
@@ -1851,7 +1851,7 @@ static void AddRTLThunks()
 static bool checkExterns(void)
 {
     bool rv = false;
-    for (std::map<SimpleSymbol*, Value*, byName>::iterator it = externalMethods.begin(); it != externalMethods.end(); ++it)
+    for (std::map<Optimizer::SimpleSymbol*, Value*, byName>::iterator it = externalMethods.begin(); it != externalMethods.end(); ++it)
     {
         if (!it->first->msil_rtl)
         {
@@ -1859,7 +1859,7 @@ static bool checkExterns(void)
             rv = true;
         }
     }
-    for (std::map<SimpleSymbol*, Value*, byName>::iterator it = externalList.begin(); it != externalList.end(); ++it)
+    for (std::map<Optimizer::SimpleSymbol*, Value*, byName>::iterator it = externalList.begin(); it != externalList.end(); ++it)
     {
         const char* name = it->first->name;
         if (strcmp(name, "_pctype") && strcmp(name, "__stdin") && strcmp(name, "__stdout") && strcmp(name, "__stderr"))
@@ -1873,7 +1873,7 @@ static bool checkExterns(void)
 
 void msil_main_postprocess(bool errors)
 {
-    if (cparams.prm_compileonly && !cparams.prm_asmfile)
+    if (Optimizer::cparams.prm_compileonly && !Optimizer::cparams.prm_asmfile)
     {
         // empty
     }
@@ -1885,14 +1885,14 @@ void msil_main_postprocess(bool errors)
         Utils::StripExt(ilName);
         LoadDynamics();
         AddRTLThunks();
-        if (!errors && cparams.prm_targettype != DLL && !mainSym && !hasEntryPoint)
+        if (!errors && Optimizer::cparams.prm_targettype != DLL && !mainSym && !hasEntryPoint)
         {
             printf("Error: main not defined\n");
         }
-        errors |= checkExterns() || errCount || (cparams.prm_targettype != DLL && !mainSym && !hasEntryPoint);
+        errors |= checkExterns() || errCount || (Optimizer::cparams.prm_targettype != DLL && !mainSym && !hasEntryPoint);
         if (!errors)
         {
-            if (cparams.replacePInvoke)
+            if (Optimizer::cparams.replacePInvoke)
             {
                 PInvokeWeeder weeder(*peLib);
                 peLib->Traverse(weeder);
@@ -1900,15 +1900,15 @@ void msil_main_postprocess(bool errors)
                 peLib->Traverse(weeder);
             }
 
-            if (cparams.prm_asmfile)
+            if (Optimizer::cparams.prm_asmfile)
                 Utils::AddExt(ilName, ".il");
-            else if (cparams.prm_targettype == DLL)
+            else if (Optimizer::cparams.prm_targettype == DLL)
                 Utils::AddExt(ilName, ".dll");
             else
                 Utils::AddExt(ilName, ".exe");
             peLib->DumpOutputFile(ilName,
-                cparams.prm_asmfile ? PELib::ilasm : (cparams.prm_targettype == DLL ? PELib::pedll : PELib::peexe),
-                cparams.prm_targettype != CONSOLE);
+                Optimizer::cparams.prm_asmfile ? PELib::ilasm : (Optimizer::cparams.prm_targettype == DLL ? PELib::pedll : PELib::peexe),
+                Optimizer::cparams.prm_targettype != CONSOLE);
         }
     }
 }

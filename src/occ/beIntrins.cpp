@@ -208,7 +208,7 @@ bool handleBSWAP64()
 //
 // as always return a value in EAX
 //
-bool BackendIntrinsic(QUAD* q)
+bool BackendIntrinsic(Optimizer::QUAD* q)
 {
     const char* name = q->dc.left->offset->sp->name;
 

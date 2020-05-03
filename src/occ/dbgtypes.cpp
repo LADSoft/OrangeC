@@ -36,7 +36,7 @@
 #include "memory.h"
 #define DEBUG_VERSION 4.0
 
-bool dbgtypes::typecompare::operator()(const SimpleType* left, const SimpleType* right) const
+bool dbgtypes::typecompare::operator()(const Optimizer::SimpleType* left, const Optimizer::SimpleType* right) const
 {
     if (left->istypedef)
         if (!right->istypedef)
@@ -52,7 +52,7 @@ bool dbgtypes::typecompare::operator()(const SimpleType* left, const SimpleType*
     {
         switch (left->type)
         {
-            case st_func:
+            case Optimizer::st_func:
                 if (operator()(left->btp, right->btp))
                     return true;
                 else if (!operator()(right->btp, left->btp))
@@ -64,12 +64,12 @@ bool dbgtypes::typecompare::operator()(const SimpleType* left, const SimpleType*
                     }
                     else if (left->sp->syms && right->sp->syms && left->sp->syms && right->sp->syms)
                     {
-                        const LIST* hr1 = left->sp->syms;
-                        const LIST* hr2 = right->sp->syms;
+                        const Optimizer::LIST* hr1 = left->sp->syms;
+                        const Optimizer::LIST* hr2 = right->sp->syms;
                         while (hr1 && hr2)
                         {
-                            SimpleSymbol* sym1 = (SimpleSymbol*)hr1->data;
-                            SimpleSymbol* sym2 = (SimpleSymbol*)hr2->data;
+                            Optimizer::SimpleSymbol* sym1 = (Optimizer::SimpleSymbol*)hr1->data;
+                            Optimizer::SimpleSymbol* sym2 = (Optimizer::SimpleSymbol*)hr2->data;
                             if (operator()(sym1->tp, sym2->tp))
                                 return true;
                             else if (operator()(sym2->tp, (sym1->tp)))
@@ -82,20 +82,20 @@ bool dbgtypes::typecompare::operator()(const SimpleType* left, const SimpleType*
                     }
                 }
                 break;
-            case st_struct:
-            case st_union:
-            case st_enum:
+            case Optimizer::st_struct:
+            case Optimizer::st_union:
+            case Optimizer::st_enum:
                 if (strcmp(left->sp->name, right->sp->name) < 0)
                     return true;
                 break;
-            case st_pointer:
+            case Optimizer::st_pointer:
                 if (left->isarray && !right->isarray)
                     return true;
                 else if (left->isarray != right->isarray)
                     return false;
                 // fallthrough
-            case st_lref:
-            case st_rref:
+            case Optimizer::st_lref:
+            case Optimizer::st_rref:
                 if (operator()(left->btp, right->btp))
                     return true;
                 break;
@@ -108,12 +108,12 @@ bool dbgtypes::typecompare::operator()(const SimpleType* left, const SimpleType*
     return false;
 }
 
-ObjType* dbgtypes::Put(SimpleType* tp, bool istypedef)
+ObjType* dbgtypes::Put(Optimizer::SimpleType* tp, bool istypedef)
 {
     auto val = Lookup(tp);
     if (val)
         return val;
-    if (tp->type == st_any || tp->type == st_aggregate)
+    if (tp->type == Optimizer::st_any || tp->type == Optimizer::st_aggregate)
     {
         val = factory.MakeType((ObjType::eType)42);
     }
@@ -138,7 +138,7 @@ ObjType* dbgtypes::Put(SimpleType* tp, bool istypedef)
     return val;
 }
 
-void dbgtypes::OutputTypedef(struct SimpleSymbol* sym)
+void dbgtypes::OutputTypedef(struct Optimizer::SimpleSymbol* sym)
 {
     auto val = Put(sym->tp, true);
     const char *nm = sym->outputName;
@@ -146,7 +146,7 @@ void dbgtypes::OutputTypedef(struct SimpleSymbol* sym)
         nm++;
     fi->Add(factory.MakeType(nm, ObjType::eNone, val, val->GetIndex()));
 }
-ObjType* dbgtypes::Lookup(SimpleType* tp)
+ObjType* dbgtypes::Lookup(Optimizer::SimpleType* tp)
 {
 
     auto it = hash.find(tp);
@@ -154,7 +154,7 @@ ObjType* dbgtypes::Lookup(SimpleType* tp)
         return it->second;
     return nullptr;
 }
-ObjType* dbgtypes::BasicType(SimpleType* tp)
+ObjType* dbgtypes::BasicType(Optimizer::SimpleType* tp)
 {
     static int basicTypesUnsigned[] = {
         0, 35, 34, 48, 49, 49, 49, 50,
@@ -175,23 +175,23 @@ ObjType* dbgtypes::BasicType(SimpleType* tp)
         16, 16, 16
     };
     int n = 0;
-    SimpleType* tp1 = tp;
-    if (tp1->type <= st_void)
+    Optimizer::SimpleType* tp1 = tp;
+    if (tp1->type <= Optimizer::st_void)
     {
         int add = 0;
-        if (tp1->type == st_void)
+        if (tp1->type == Optimizer::st_void)
             n = 32;
         else
         {
-            if (tp1->type == st_pointer && !tp1->isarray && !tp1->isvla && !tp1->bits)
+            if (tp1->type == Optimizer::st_pointer && !tp1->isarray && !tp1->isvla && !tp1->bits)
             {
                 tp1 = tp1->btp;
-                if (tp1->type < st_void && tp1->type != st_pointer)
+                if (tp1->type < Optimizer::st_void && tp1->type != Optimizer::st_pointer)
                     add = pointedAddition[tp1->sizeFromType >= 0 ? tp1->sizeFromType : -tp1->sizeFromType];
             }
-            if (tp1->type == st_void) // pointer to void
+            if (tp1->type == Optimizer::st_void) // pointer to void
                 n = 33;
-            else if (tp1->type < st_pointer)
+            else if (tp1->type < Optimizer::st_pointer)
             {
                 if (tp1->sizeFromType < 0)
                     n = basicTypesSigned[-tp1->sizeFromType] + add;
@@ -211,25 +211,25 @@ ObjType* dbgtypes::TypeName(ObjType* val, const char* nm)
     fi->Add(val);
     return factory.MakeType(nm, ObjType::eNone, val, val->GetIndex());
 }
-bool istype(SimpleSymbol* sym)
+bool istype(Optimizer::SimpleSymbol* sym)
 {
-    return sym->storage_class == scc_type || sym->storage_class == scc_typedef;
+    return sym->storage_class == Optimizer::scc_type || sym->storage_class == Optimizer::scc_typedef;
 }
-void dbgtypes::StructFields(ObjType::eType sel, ObjType* val, int sz, SimpleSymbol* parent, LIST* hr)
+void dbgtypes::StructFields(ObjType::eType sel, ObjType* val, int sz, Optimizer::SimpleSymbol* parent, Optimizer::LIST* hr)
 {
     int index = val->GetIndex();
     int i = 0;
     if (parent->baseClasses)
     {
-        for (BaseList *bc = parent->baseClasses; bc; bc = bc->next)
+        for (Optimizer::BaseList *bc = parent->baseClasses; bc; bc = bc->next)
         { 
-            SimpleSymbol* sym = bc->sym;
+            Optimizer::SimpleSymbol* sym = bc->sym;
             // we are setting sym->offset here for use later in this function
             if (sym->vbase)
             {
-                SimpleType* tpl = (SimpleType*)Alloc(sizeof(SimpleType));
-                tpl->type = st_pointer;
-                tpl->size = sizeFromISZ(ISZ_ADDR);
+                Optimizer::SimpleType* tpl = (Optimizer::SimpleType*)Alloc(sizeof(Optimizer::SimpleType));
+                tpl->type = Optimizer::st_pointer;
+                tpl->size = Optimizer::sizeFromISZ(ISZ_ADDR);
                 tpl ->sizeFromType = ISZ_ADDR;
                 tpl->btp = sym->tp;
                 ObjType* base = Put(tpl);
@@ -250,8 +250,8 @@ void dbgtypes::StructFields(ObjType::eType sel, ObjType* val, int sz, SimpleSymb
     }
     while (hr)
     {
-        SimpleSymbol* sym = (SimpleSymbol *)hr->data;
-        if (!istype(sym) && sym->tp->type != st_aggregate)
+        Optimizer::SimpleSymbol* sym = (Optimizer::SimpleSymbol *)hr->data;
+        if (!istype(sym) && sym->tp->type != Optimizer::st_aggregate)
         {
             ObjType* base = Put(sym->tp);
             ObjField* field = factory.MakeField(sym->name, base, sym->offset, index);
@@ -264,13 +264,13 @@ void dbgtypes::StructFields(ObjType::eType sel, ObjType* val, int sz, SimpleSymb
         hr = hr->next;
     }
 }
-void dbgtypes::EnumFields(ObjType* val, ObjType* base, int sz, LIST* hr)
+void dbgtypes::EnumFields(ObjType* val, ObjType* base, int sz, Optimizer::LIST* hr)
 {
     int index = val->GetIndex();
     int i = 0;
     while (hr)
     {
-        SimpleSymbol* sym = (SimpleSymbol*)hr->data;
+        Optimizer::SimpleSymbol* sym = (Optimizer::SimpleSymbol*)hr->data;
         ObjField* field = factory.MakeField(sym->name, base, sym->i, index);
         val->SetConstVal(sym->i);
         val->Add(field);
@@ -281,7 +281,7 @@ void dbgtypes::EnumFields(ObjType* val, ObjType* base, int sz, LIST* hr)
         hr = hr->next;
     }
 }
-ObjType* dbgtypes::Function(SimpleType* tp)
+ObjType* dbgtypes::Function(Optimizer::SimpleType* tp)
 {
     ObjFunction* val = nullptr;
     ObjType* rv = Put(tp->btp);
@@ -289,9 +289,9 @@ ObjType* dbgtypes::Function(SimpleType* tp)
     if (tp->sp)
         switch (tp->sp->storage_class)
         {
-            case scc_virtual:
-            case scc_member:
-            case scc_mutable:
+            case Optimizer::scc_virtual:
+            case Optimizer::scc_member:
+            case Optimizer::scc_mutable:
                 v = 4;  // has a this pointer
                 break;
             default:
@@ -311,7 +311,7 @@ ObjType* dbgtypes::Function(SimpleType* tp)
     {
         v = 1;
     }
-    if (tp->btp->type == st_struct || tp->btp->type == st_union)
+    if (tp->btp->type == Optimizer::st_struct || tp->btp->type == Optimizer::st_union)
         v |= 32;  // structured return value
     val = factory.MakeFunction("", rv);
     val->SetLinkage((ObjFunction::eLinkage)v);
@@ -320,16 +320,16 @@ ObjType* dbgtypes::Function(SimpleType* tp)
     {
         for (auto hr = tp->sp->syms; hr; hr = hr->next)
         {
-            SimpleSymbol *s = (SimpleSymbol*)hr->data;
+            Optimizer::SimpleSymbol *s = (Optimizer::SimpleSymbol*)hr->data;
             val->Add(Put(s->tp));
         }
     }
     return val;
 }
-ObjType* dbgtypes::ExtendedType(SimpleType* tp)
+ObjType* dbgtypes::ExtendedType(Optimizer::SimpleType* tp)
 {
     ObjType* val = nullptr;
-    if (tp->type == st_pointer)
+    if (tp->type == Optimizer::st_pointer)
     {
         val = Put(tp->btp);
 
@@ -349,17 +349,17 @@ ObjType* dbgtypes::ExtendedType(SimpleType* tp)
             val->SetSize(tp->size);
         }
     }
-    else if (tp->type == st_lref)
+    else if (tp->type == Optimizer::st_lref)
     {
         val = Put(tp->btp);
         val = factory.MakeType(ObjType::eLRef, val);
     }
-    else if (tp->type == st_rref)
+    else if (tp->type == Optimizer::st_rref)
     {
         val = Put(tp->btp);
         val = factory.MakeType(ObjType::eRRef, val);
     }
-    else if (tp->type == st_func)
+    else if (tp->type == Optimizer::st_func)
     {
         val = Function(tp);
     }
@@ -375,15 +375,15 @@ ObjType* dbgtypes::ExtendedType(SimpleType* tp)
             val->SetStartBit(tp->startbit);
             val->SetBitCount(tp->bits);
         }
-        else if (tp->type == st_struct || tp->type == st_union)
+        else if (tp->type == Optimizer::st_struct || tp->type == Optimizer::st_union)
         {
             auto tpo = tp;
             ObjType::eType sel;
             tp = tp->sp->tp;  // find instantiated version in case of C++ struct
-            // uninstantiated templates resolve to st_i
-            if (tp->type != st_struct && tp->type != st_union)
+            // uninstantiated templates resolve to Optimizer::st_i
+            if (tp->type != Optimizer::st_struct && tp->type != Optimizer::st_union)
                 return Put(tp);
-            if (tp->type == st_union)
+            if (tp->type == Optimizer::st_union)
             {
                 sel = ObjType::eUnion;
             }
@@ -400,30 +400,30 @@ ObjType* dbgtypes::ExtendedType(SimpleType* tp)
                 StructFields(sel, val, tp->size, tp->sp, nullptr);
             val = TypeName(val, tp->sp->outputName);
         }
-        else if (tp->type == st_ellipse)
+        else if (tp->type == Optimizer::st_ellipse)
         {
             // ellipse results in no debug info
         }
-        else if (tp->type == st_memberptr)
+        else if (tp->type == Optimizer::st_memberptr)
         {
-            static SimpleType intType;
-            intType.type = st_i;
-            intType.size = sizeFromISZ(-ISZ_UINT);
+            static Optimizer::SimpleType intType;
+            intType.type = Optimizer::st_i;
+            intType.size = Optimizer::sizeFromISZ(-ISZ_UINT);
             intType.sizeFromType = -ISZ_UINT;
             val = Put(&intType);  // fixme
         }
         else                     // enum
         {
             ObjType* base;
-            if (tp->type == st_enum)
+            if (tp->type == Optimizer::st_enum)
                 if (tp->btp)
                 {
                     base = Put(tp->btp);
                 }
                 else
                 {
-                    static SimpleType voidType;
-                    voidType.type = st_void;
+                    static Optimizer::SimpleType voidType;
+                    voidType.type = Optimizer::st_void;
                     voidType.size = 0;
                     voidType.sizeFromType = 0;
                     base = Put(&voidType);

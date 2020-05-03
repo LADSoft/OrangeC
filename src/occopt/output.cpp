@@ -28,53 +28,56 @@
 #include <string.h>
 #include <stdarg.h>
 
-FILE* outputFile;
-FILE* browseFile;
-
-void oinit(void) {}
-
-/*-------------------------------------------------------------------------*/
-
-void oflush(FILE* file)
+namespace Optimizer
 {
-    fflush(file);
-    oinit();
-}
+    FILE* outputFile;
+    FILE* browseFile;
 
-/*-------------------------------------------------------------------------*/
+    void oinit(void) {}
 
-void oputc(int ch, FILE* file)
-{
+    /*-------------------------------------------------------------------------*/
 
-    if (file)
-        fputc(ch, file);
-}
+    void oflush(FILE* file)
+    {
+        fflush(file);
+        oinit();
+    }
 
-void beputc(int ch) { fputc(ch, outputFile); }
+    /*-------------------------------------------------------------------------*/
 
-/*-------------------------------------------------------------------------*/
-void owrite(const char* buf, size_t size, int n, FILE* fil)
-{
-    if (fil)
-        fwrite(buf, size, n, fil);
-}
-void beWrite(const char* buf, size_t size) { fwrite(buf, 1, size, outputFile); }
-/*-------------------------------------------------------------------------*/
-void oprintf(FILE* file, const char* format, ...)
-{
-    if (file)
+    void oputc(int ch, FILE* file)
+    {
+
+        if (file)
+            fputc(ch, file);
+    }
+
+    void beputc(int ch) { fputc(ch, outputFile); }
+
+    /*-------------------------------------------------------------------------*/
+    void owrite(const char* buf, size_t size, int n, FILE* fil)
+    {
+        if (fil)
+            fwrite(buf, size, n, fil);
+    }
+    void beWrite(const char* buf, size_t size) { fwrite(buf, 1, size, outputFile); }
+    /*-------------------------------------------------------------------------*/
+    void oprintf(FILE* file, const char* format, ...)
+    {
+        if (file)
+        {
+            va_list arg;
+            va_start(arg, format);
+            vfprintf(file, format, arg);
+            va_end(arg);
+        }
+    }
+    void bePrintf(const char* format, ...)
     {
         va_list arg;
         va_start(arg, format);
-        vfprintf(file, format, arg);
+        vfprintf(outputFile, format, arg);
         va_end(arg);
     }
+    void beRewind(void) { fseek(outputFile, 0, SEEK_SET); }
 }
-void bePrintf(const char* format, ...)
-{
-    va_list arg;
-    va_start(arg, format);
-    vfprintf(outputFile, format, arg);
-    va_end(arg);
-}
-void beRewind(void) { fseek(outputFile, 0, SEEK_SET); }

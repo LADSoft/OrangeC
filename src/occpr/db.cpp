@@ -35,6 +35,10 @@
 
 #define STRINGIZE(x) #x
 
+using namespace Parser;
+
+namespace CompletionCompiler
+{
 void ccLoadIdsFromNameTable(const char* tabname, HASHTABLE* table);
 
 typedef struct _symid
@@ -1145,3 +1149,4 @@ main(int argc, char* argv[])
     return 0;
 }
 #endif
+}

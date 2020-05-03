@@ -44,13 +44,13 @@
 #include "gen.h"
 /*      variable initialization         */
 
-QUAD* currentQuad;
+Optimizer::QUAD* currentQuad;
 
 char dataname[40];   /* Name of last label */
 
 static int newlabel;
 
-void putamode(QUAD* q, IMODE* ap);
+void putamode(Optimizer::QUAD* q, Optimizer::IMODE* ap);
 void nl(void);
 void xstringseg(void);
 
@@ -59,20 +59,20 @@ void outcodeini(void)
 {
     newlabel = false;
 }
-static void iop_nop(QUAD* q)
+static void iop_nop(Optimizer::QUAD* q)
 {
 }
-static void iop_phi(QUAD* q)
+static void iop_phi(Optimizer::QUAD* q)
 {
 }
 
-static void iop_skipcompare(QUAD* q) { }
+static void iop_skipcompare(Optimizer::QUAD* q) { }
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_asmgoto(QUAD* q) { }
+static void iop_asmgoto(Optimizer::QUAD* q) { }
 /*-------------------------------------------------------------------------*/
-static void iop_directbranch(QUAD* q)
+static void iop_directbranch(Optimizer::QUAD* q)
 {
     asm_goto(q);
 }
@@ -81,65 +81,65 @@ static void iop_directbranch(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_array(QUAD* q)
+static void iop_array(Optimizer::QUAD* q)
 {
     asm_add(q);
 }
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_arrayindex(QUAD* q)
+static void iop_arrayindex(Optimizer::QUAD* q)
 {
     asm_mul(q);
 }
 /*-------------------------------------------------------------------------*/
 
-static void iop_arraylsh(QUAD* q)
+static void iop_arraylsh(Optimizer::QUAD* q)
 {
     asm_mul(q);
 }
-static void iop_struct(QUAD* q)
+static void iop_struct(Optimizer::QUAD* q)
 {
     asm_add(q);
 }
 /*-------------------------------------------------------------------------*/
-static void iop_initblk(QUAD* q)
+static void iop_initblk(Optimizer::QUAD* q)
 {
     asm_clrblock(q);
 }
-static void iop_cpblk(QUAD* q)
+static void iop_cpblk(Optimizer::QUAD* q)
 {
     asm_assnblock(q);
 }
 /*-------------------------------------------------------------------------*/
 
-static void iop_asmcond(QUAD* q) { }
+static void iop_asmcond(Optimizer::QUAD* q) { }
 /*-------------------------------------------------------------------------*/
 
 
 /*-------------------------------------------------------------------------*/
-static void iop_dbgblock(QUAD* q)
+static void iop_dbgblock(Optimizer::QUAD* q)
 {
     asm_blockstart(q);
 }
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_dbgblockend(QUAD* q)
+static void iop_dbgblockend(Optimizer::QUAD* q)
 {
     asm_blockend(q);
 }
-static void iop_block(QUAD* q) { oprintf(icdFile, "\tBLOCK %d", q->dc.v.label + 1); }
+static void iop_block(Optimizer::QUAD* q) { Optimizer::oprintf(Optimizer::icdFile, "\tBLOCK %d", q->dc.v.label + 1); }
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_blockend(QUAD* q)
+static void iop_blockend(Optimizer::QUAD* q)
 {
 }
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_livein(QUAD* q)
+static void iop_livein(Optimizer::QUAD* q)
 {
     (void)q;
     diag("op_livein: propogated live-in node");
@@ -147,26 +147,26 @@ static void iop_livein(QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_icon(QUAD* q)
+static void iop_icon(Optimizer::QUAD* q)
 {
     asm_assn(q);
 }
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_fcon(QUAD* q)
+static void iop_fcon(Optimizer::QUAD* q)
 {
     asm_assn(q);
 }
-static void iop_imcon(QUAD* q)
+static void iop_imcon(Optimizer::QUAD* q)
 {
     asm_assn(q);
 }
-static void iop_cxcon(QUAD* q)
+static void iop_cxcon(Optimizer::QUAD* q)
 {
     asm_assn(q);
 }
-static void iop_tryblock(QUAD* q)
+static void iop_tryblock(Optimizer::QUAD* q)
 {
     (void)q;
 #ifdef XXXXX
@@ -192,59 +192,59 @@ static void iop_tryblock(QUAD* q)
     }
 #endif
 }
-static void iop_substack(QUAD* q)
+static void iop_substack(Optimizer::QUAD* q)
 {
     asm_stackalloc(q);
 }
-static void iop_functailstart(QUAD* q)
+static void iop_functailstart(Optimizer::QUAD* q)
 {
-    if (currentFunction->tp->btp->type != st_void)
+    if (currentFunction->tp->btp->type != Optimizer::st_void)
     {
-        int r = sizeFromISZ(currentFunction->tp->btp->sizeFromType);
+        int r = Optimizer::sizeFromISZ(currentFunction->tp->btp->sizeFromType);
         if (r < 0)
             r = -r;
         asm_functail(q, true, r);
     }
 }
-static void iop_functailend(QUAD* q)
+static void iop_functailend(Optimizer::QUAD* q)
 {
-    if (currentFunction->tp->btp->type != st_void)
+    if (currentFunction->tp->btp->type != Optimizer::st_void)
     {
-        int r = sizeFromISZ(currentFunction->tp->btp->sizeFromType);
+        int r = Optimizer::sizeFromISZ(currentFunction->tp->btp->sizeFromType);
         if (r < 0)
             r = -r;
         asm_functail(q, false, r);
     }
 }
-static void iop_gcsestub(QUAD* q) { }
-static void iop_atomic_fence(QUAD* q)
+static void iop_gcsestub(Optimizer::QUAD* q) { }
+static void iop_atomic_fence(Optimizer::QUAD* q)
 {
      asm_atomic(q);
 }
-static void iop_atomic_flag_fence(QUAD* q)
+static void iop_atomic_flag_fence(Optimizer::QUAD* q)
 {
     asm_atomic(q);
 }
-static void iop_atomic_flag_test_and_set(QUAD* q)
+static void iop_atomic_flag_test_and_set(Optimizer::QUAD* q)
 {
     asm_atomic(q);
 }
-static void iop_atomic_flag_clear(QUAD* q)
+static void iop_atomic_flag_clear(Optimizer::QUAD* q)
 {
     asm_atomic(q);
 }
-static void iop_cmpswp(QUAD* q)
+static void iop_cmpswp(Optimizer::QUAD* q)
 {
     asm_atomic(q);
 }
-static void iop_xchg(QUAD* q)
+static void iop_xchg(Optimizer::QUAD* q)
 {
     asm_atomic(q);
 }
 /* List of opcodes
  * This list MUST be in the same order as the op_ enums
  */
-static void (*oplst[])(QUAD* q) = {
+static void (*oplst[])(Optimizer::QUAD* q) = {
     /* NOPROTO */
     iop_nop,
     iop_phi,
@@ -353,9 +353,9 @@ static void (*oplst[])(QUAD* q) = {
     iop_initblk,
     iop_cpblk};
 
-void generate_instructions(QUAD* intermed_head)
+void generate_instructions(Optimizer::QUAD* intermed_head)
 {
-    QUAD* q = intermed_head;
+    Optimizer::QUAD* q = intermed_head;
     while (q)
     {
         (*oplst[q->dc.opcode])(q);

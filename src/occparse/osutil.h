@@ -1,3 +1,4 @@
+#pragma once
 /* Software License Agreement
  * 
  *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
@@ -22,8 +23,6 @@
  * 
  */
 
-#ifndef OSUTIL_H
-#define OSUTIL_H
 #include "CmdSwitch.h"
 
 #include <deque>
@@ -47,114 +46,115 @@
 #define ARG_NEXTNOCAT 3
 #define ARG_NOMATCH 4
 #define ARG_NOARG 5
+namespace Parser
+{ 
+    typedef struct
+    {
+        char id;
+        Optimizer::UBYTE mode;
+        void(*routine)(char, char*);
+    } CMDLIST;
 
-typedef struct
-{
-    char id;
-    UBYTE mode;
-    void (*routine)(char, char*);
-} CMDLIST;
+    /* Global HASHRECbol table is a hash table */
+    #define GLOBALHASHSIZE 8192 /*9973 */
+    #define LOCALHASHSIZE 29
 
-/* Global HASHRECbol table is a hash table */
-#define GLOBALHASHSIZE 8192 /*9973 */
-#define LOCALHASHSIZE 29
+    typedef struct _symlist_
+    {
+        struct _symlist_* next; /* next to next element in list */
+        struct sym* p;
+    } SYMLIST;
 
-typedef struct _symlist_
-{
-    struct _symlist_* next; /* next to next element in list */
-    struct sym* p;
-} SYMLIST;
+    typedef struct _hashtable_
+    {
+        struct _hashtable_ *next, *chain;
+        struct _hashtable_* fast;
+        int size;
+        int blockLevel;
+        SYMLIST** table;
 
-typedef struct _hashtable_
-{
-    struct _hashtable_ *next, *chain;
-    struct _hashtable_* fast;
-    int size;
-    int blockLevel;
-    SYMLIST** table;
+    } HASHTABLE;
 
-} HASHTABLE;
+    struct DefValue
+    {
+        std::string name;
+        bool undef;
+    };
+    enum e_lk getDefaultLinkage();
 
-enum e_lk getDefaultLinkage();
+    extern Optimizer::LIST* clist;
+    extern int showVersion;
+    extern std::string bePostFile;
 
-extern LIST* clist;
-extern int showVersion;
-extern std::string bePostFile;
+    extern std::deque<DefValue> defines;
 
-struct DefValue
-{
-    std::string name;
-    bool undef;
-};
-extern std::deque<DefValue> defines;
+    extern CmdSwitchParser switchParser;
+    extern CmdSwitchBool prm_c89;
+    extern CmdSwitchBool prm_c99;
+    extern CmdSwitchBool prm_c11;
+    extern CmdSwitchBool prm_ansi;
+    extern CmdSwitchBool prm_errfile;
+    extern CmdSwitchBool prm_cppfile;
+    extern CmdSwitchBool prm_quiet;
+    extern CmdSwitchBool prm_icdfile;
+    extern CmdSwitchBool prm_trigraph;
+    extern CmdSwitchBool prm_debug;
+    extern CmdSwitchBool prm_debug2;
+    extern CmdSwitchBool prm_makestubs;
+    extern CmdSwitchBool prm_compileonly;
+    extern CmdSwitchString prm_assemble;
+    extern CmdSwitchBool prm_xcept;
+    extern CmdSwitchBool prm_viaassembly;
+    extern CmdSwitchInt prm_stackaligns;
+    extern CmdSwitchString prm_error;
+    extern CmdSwitchString prm_define;
+    extern CmdSwitchString prm_undefine;
+    extern CmdSwitchFile prm_file;
+    extern CmdSwitchString prm_codegen;
+    extern CmdSwitchString prm_optimize;
+    extern CmdSwitchString prm_verbose;
+    extern CmdSwitchString prm_warning;
+    extern CmdSwitchCombineString prm_output;
+    extern CmdSwitchCombineString prm_tool;
 
-extern CmdSwitchParser switchParser;
-extern CmdSwitchBool prm_c89;
-extern CmdSwitchBool prm_c99;
-extern CmdSwitchBool prm_c11;
-extern CmdSwitchBool prm_ansi;
-extern CmdSwitchBool prm_errfile;
-extern CmdSwitchBool prm_cppfile;
-extern CmdSwitchBool prm_quiet;
-extern CmdSwitchBool prm_icdfile;
-extern CmdSwitchBool prm_trigraph;
-extern CmdSwitchBool prm_debug;
-extern CmdSwitchBool prm_debug2;
-extern CmdSwitchBool prm_makestubs;
-extern CmdSwitchBool prm_compileonly;
-extern CmdSwitchString prm_assemble;
-extern CmdSwitchBool prm_xcept;
-extern CmdSwitchBool prm_viaassembly;
-extern CmdSwitchInt prm_stackaligns;
-extern CmdSwitchString prm_error;
-extern CmdSwitchString prm_define;
-extern CmdSwitchString prm_undefine;
-extern CmdSwitchFile prm_file;
-extern CmdSwitchString prm_codegen;
-extern CmdSwitchString prm_optimize;
-extern CmdSwitchString prm_verbose;
-extern CmdSwitchString prm_warning;
-extern CmdSwitchCombineString prm_output;
-extern CmdSwitchCombineString prm_tool;
+    extern CmdSwitchCombineString prm_library;
 
-extern CmdSwitchCombineString prm_library;
-
-extern CmdSwitchCombineString prm_cinclude;
-extern CmdSwitchCombineString prm_sysinclude;
-extern CmdSwitchCombineString prm_libpath;
-extern CmdSwitchString prm_pipe;
-extern CmdSwitchCombineString prm_output_def_file;
-extern CmdSwitchBool prm_export_all;
+    extern CmdSwitchCombineString prm_cinclude;
+    extern CmdSwitchCombineString prm_sysinclude;
+    extern CmdSwitchCombineString prm_libpath;
+    extern CmdSwitchString prm_pipe;
+    extern CmdSwitchCombineString prm_output_def_file;
+    extern CmdSwitchBool prm_export_all;
 
 
-extern CmdSwitchBool prm_msil_noextensions;
-extern CmdSwitchString prm_msil_strongnamekeyfile;
-extern CmdSwitchString prm_msil_namespace;
-extern CmdSwitchString prm_msil_version;
-extern CmdSwitchCombineString prm_architecture;
+    extern CmdSwitchBool prm_msil_noextensions;
+    extern CmdSwitchString prm_msil_strongnamekeyfile;
+    extern CmdSwitchString prm_msil_namespace;
+    extern CmdSwitchString prm_msil_version;
+    extern CmdSwitchCombineString prm_architecture;
 
-extern CmdSwitchString prm_Winmode;
-extern CmdSwitchCombineString OutputDefFile;
-extern CmdSwitchBool ExportAll;
+    extern CmdSwitchString prm_Winmode;
+    extern CmdSwitchCombineString OutputDefFile;
+    extern CmdSwitchBool ExportAll;
 
-extern CmdSwitchString AssemblerExtension;
+    extern CmdSwitchString AssemblerExtension;
 
-extern const char* getUsageText(void);
+    extern const char* getUsageText(void);
 
-void EXEPath(char* buffer, char* filename);
-void optimize_setup(char select, const char* string);
-void codegen_setup(char select, const char* string);
-void warning_setup(char select, const char* string);
-void ParamTransfer(void);
-void setglbdefs(void);
-int insert_noncompile_file(const char*buf);
-void InsertOneFile(const char* filename, char* path, int drive);
-void InsertAnyFile(const char* filename, char* path, int drive);
-void setfile(char* buf, const char* orgbuf, const char* ext);
-void outputfile(char* buf, const char* orgbuf, const char* ext);
-void addinclude(void);
-void dumperrs(FILE* file);
-void internalError(int a);
-void ccinit(int argc, char* argv[]);
+    void EXEPath(char* buffer, char* filename);
+    void optimize_setup(char select, const char* string);
+    void codegen_setup(char select, const char* string);
+    void warning_setup(char select, const char* string);
+    void ParamTransfer(void);
+    void setglbdefs(void);
+    int insert_noncompile_file(const char*buf);
+    void InsertOneFile(const char* filename, char* path, int drive);
+    void InsertAnyFile(const char* filename, char* path, int drive);
+    void setfile(char* buf, const char* orgbuf, const char* ext);
+    void outputfile(char* buf, const char* orgbuf, const char* ext);
+    void addinclude(void);
+    void dumperrs(FILE* file);
+    void internalError(int a);
+    void ccinit(int argc, char* argv[]);
 
-#endif
+}

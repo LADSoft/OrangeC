@@ -23,11 +23,13 @@
  */
 
 #include "compiler.h"
-void displayLexeme(LEXEME* lex)
+namespace Parser
 {
-    const LCHAR* w;
-    switch (lex->type)
+    void displayLexeme(LEXEME* lex)
     {
+        const LCHAR* w;
+        switch (lex->type)
+        {
         case l_i:
             printf("int constant: " LLONG_FORMAT_SPECIFIER "\n", lex->value.i);
             break;
@@ -85,5 +87,6 @@ void displayLexeme(LEXEME* lex)
         default:
             printf("***** unknown token\n");
             break;
+        }
     }
 }

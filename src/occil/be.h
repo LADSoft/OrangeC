@@ -50,9 +50,9 @@ using namespace DotNetPELib;
 
 struct byLabel
 {
-    bool operator()(const SimpleSymbol* left, const SimpleSymbol* right) const
+    bool operator()(const Optimizer::SimpleSymbol* left, const Optimizer::SimpleSymbol* right) const
     {
-        if (left->storage_class == scc_localstatic || right->storage_class == scc_localstatic)
+        if (left->storage_class == Optimizer::scc_localstatic || right->storage_class == Optimizer::scc_localstatic)
         {
             if (left->storage_class != right->storage_class)
                 return left->storage_class < right->storage_class;
@@ -63,7 +63,7 @@ struct byLabel
 };
 struct byField
 {
-    bool operator()(const SimpleSymbol* left, const SimpleSymbol* right) const
+    bool operator()(const Optimizer::SimpleSymbol* left, const Optimizer::SimpleSymbol* right) const
     {
         int n = strcmp(left->parentClass->name, right->parentClass->name);
         if (n < 0)
@@ -83,5 +83,5 @@ struct byField
 
 struct byName
 {
-    bool operator()(const SimpleSymbol* left, const SimpleSymbol* right) const { return strcmp(left->name, right->name) < 0; }
+    bool operator()(const Optimizer::SimpleSymbol* left, const Optimizer::SimpleSymbol* right) const { return strcmp(left->name, right->name) < 0; }
 };

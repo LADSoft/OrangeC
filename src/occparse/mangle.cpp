@@ -31,146 +31,149 @@
 #include "help.h"
 #include "memory.h"
 #include "mangle.h"
-const char* overloadNameTab[] = {"$bctr",  "$bdtr",   "$bcast",  "$bnew",   "$bdel",   "$badd",   "$bsub",   "$bmul",    "$bdiv",
-                                 "$bshl",  "$bshr",   "$bmod",   "$bequ",   "$bneq",   "$blt",    "$bleq",   "$bgt",     "$bgeq",
-                                 "$basn",  "$basadd", "$bassub", "$basmul", "$basdiv", "$basmod", "$basshl", "$bsasshr", "$basand",
-                                 "$basor", "$basxor", "$binc",   "$bdec",   "$barray", "$bcall",  "$bstar",  "$barrow",  "$bcomma",
-                                 "$blor",  "$bland",  "$bnot",   "$bor",    "$band",   "$bxor",   "$bcpl",   "$bnwa",    "$bdla",
-                                 "$blit",  "$badd",   "$bsub",   "$bmul",   "$band"};
-const char* msiloverloadNameTab[] = {".ctor",
-                                     ".dtor",
-                                     ".bcast",
-                                     ".new",
-                                     ".delete",
-                                     "op_Addition",
-                                     "op_Subtraction",
-                                     "op_Multiply",
-                                     "op_Division",
-                                     "op_LeftShift",
-                                     "op_RightShift",
-                                     "op_Modulus",
-                                     "op_Equality",
-                                     "op_Inequality",
-                                     "op_LessThan",
-                                     "op_LessThanOrEqual",
-                                     "op_GreaterThan",
-                                     "op_GreaterThanOrEqual",
-                                     "$basn",
-                                     "op_AdditionAssignment",
-                                     "op_SubtractionAssignment",
-                                     "op_MultiplicationAssignment",
-                                     "op_DivisionAssignment",
-                                     "op_ModulusAssignment",
-                                     "op_LeftShiftAssignment",
-                                     "op_RightShiftAssignment",
-                                     "op_BitwiseAndAssignment",
-                                     "op_BitwiseOrAssignment",
-                                     "op_ExclusiveOrAssignment",
-                                     "$binc",
-                                     "$bdec",
-                                     "$barray",
-                                     "$bcall",
-                                     "$bstar",
-                                     "op_MemberSelection",
-                                     "op_Comma",
-                                     "op_LogicalOr",
-                                     "op_LogicalAnd",
-                                     "op_LogicalNot",
-                                     "op_BitwiseOr",
-                                     "op_BitwiseAnd",
-                                     "op_ExclusiveOr",
-                                     "op_OnesComplement",
-                                     "$bnwa",
-                                     "$bdla",
-                                     "$blit",
-                                     "op_UnaryPlus",
-                                     "op_UnaryMinus",
-                                     "op_PointerDereference",
-                                     "op_AddressOf"};
-const char* overloadXlateTab[] = {
-    0,    0,   0,    "new", "delete", "+",  "-",  "*",   "/",   "<<",    ">>",       "%",    "==", "!=", "<",  "<=", ">",
-    ">=", "=", "+=", "-=",  "*=",     "/=", "%=", "<<=", ">>=", "&=",    "|=",       "^=",   "++", "--", "[]", "()", "->*",
-    "->", ",", "||", "&&",  "!",      "|",  "&",  "^",   "~",   "new[]", "delete[]", "\"\"", "+",  "-",  "*",  "&"};
+namespace Parser
+{
+
+    const char* overloadNameTab[] = { "$bctr",  "$bdtr",   "$bcast",  "$bnew",   "$bdel",   "$badd",   "$bsub",   "$bmul",    "$bdiv",
+                                     "$bshl",  "$bshr",   "$bmod",   "$bequ",   "$bneq",   "$blt",    "$bleq",   "$bgt",     "$bgeq",
+                                     "$basn",  "$basadd", "$bassub", "$basmul", "$basdiv", "$basmod", "$basshl", "$bsasshr", "$basand",
+                                     "$basor", "$basxor", "$binc",   "$bdec",   "$barray", "$bcall",  "$bstar",  "$barrow",  "$bcomma",
+                                     "$blor",  "$bland",  "$bnot",   "$bor",    "$band",   "$bxor",   "$bcpl",   "$bnwa",    "$bdla",
+                                     "$blit",  "$badd",   "$bsub",   "$bmul",   "$band" };
+    const char* msiloverloadNameTab[] = { ".ctor",
+                                         ".dtor",
+                                         ".bcast",
+                                         ".new",
+                                         ".delete",
+                                         "op_Addition",
+                                         "op_Subtraction",
+                                         "op_Multiply",
+                                         "op_Division",
+                                         "op_LeftShift",
+                                         "op_RightShift",
+                                         "op_Modulus",
+                                         "op_Equality",
+                                         "op_Inequality",
+                                         "op_LessThan",
+                                         "op_LessThanOrEqual",
+                                         "op_GreaterThan",
+                                         "op_GreaterThanOrEqual",
+                                         "$basn",
+                                         "op_AdditionAssignment",
+                                         "op_SubtractionAssignment",
+                                         "op_MultiplicationAssignment",
+                                         "op_DivisionAssignment",
+                                         "op_ModulusAssignment",
+                                         "op_LeftShiftAssignment",
+                                         "op_RightShiftAssignment",
+                                         "op_BitwiseAndAssignment",
+                                         "op_BitwiseOrAssignment",
+                                         "op_ExclusiveOrAssignment",
+                                         "$binc",
+                                         "$bdec",
+                                         "$barray",
+                                         "$bcall",
+                                         "$bstar",
+                                         "op_MemberSelection",
+                                         "op_Comma",
+                                         "op_LogicalOr",
+                                         "op_LogicalAnd",
+                                         "op_LogicalNot",
+                                         "op_BitwiseOr",
+                                         "op_BitwiseAnd",
+                                         "op_ExclusiveOr",
+                                         "op_OnesComplement",
+                                         "$bnwa",
+                                         "$bdla",
+                                         "$blit",
+                                         "op_UnaryPlus",
+                                         "op_UnaryMinus",
+                                         "op_PointerDereference",
+                                         "op_AddressOf" };
+    const char* overloadXlateTab[] = {
+        0,    0,   0,    "new", "delete", "+",  "-",  "*",   "/",   "<<",    ">>",       "%",    "==", "!=", "<",  "<=", ">",
+        ">=", "=", "+=", "-=",  "*=",     "/=", "%=", "<<=", ">>=", "&=",    "|=",       "^=",   "++", "--", "[]", "()", "->*",
+        "->", ",", "||", "&&",  "!",      "|",  "&",  "^",   "~",   "new[]", "delete[]", "\"\"", "+",  "-",  "*",  "&" };
 #define IT_THRESHOLD 2
 #define IT_OV_THRESHOLD 2
 #define IT_SIZE (sizeof(cpp_funcname_tab) / sizeof(char*))
 
 #define MAX_MANGLE_NAME_COUNT 36
 
-static char mangledNames[MAX_MANGLE_NAME_COUNT][256];
-int mangledNamesCount;
+    static char mangledNames[MAX_MANGLE_NAME_COUNT][256];
+    int mangledNamesCount;
 
-static int declTypeIndex;
-static char* lookupName(char* in, const char* name);
-static int uniqueID;
+    static int declTypeIndex;
+    static char* lookupName(char* in, const char* name);
+    static int uniqueID;
 
-void mangleInit()
-{
-    uniqueID = 0;
-    if (architecture == ARCHITECTURE_MSIL)
+    void mangleInit()
     {
-        memcpy(overloadNameTab, msiloverloadNameTab, sizeof(msiloverloadNameTab));
-        memcpy(cpp_funcname_tab, msiloverloadNameTab, sizeof(msiloverloadNameTab));
-    }
-}
-char* mangleNameSpaces(char* in, SYMBOL* sym)
-{
-    if (!sym)
-        return in;
-    //    if (!sym || sym->sb->value.i > 1)
-    //        return in;
-    in = mangleNameSpaces(in, sym->sb->parentNameSpace);
-    my_sprintf(in, "@%s", sym->name);
-    return in + strlen(in);
-}
-static char* mangleTemplate(char* buf, SYMBOL* sym, TEMPLATEPARAMLIST* params);
-static char* getName(char* in, SYMBOL* sym);
-static char* mangleClasses(char* in, SYMBOL* sym)
-{
-    if (!sym)
-        return in;
-    if (sym->sb->parentClass)
-        in = mangleClasses(in, sym->sb->parentClass);
-    if (sym->sb->castoperator)
-    {
-        strcat(in, "@");
-    }
-    else if (sym->sb->templateLevel && sym->templateParams)
-    {
-        *in++ = '@';
-        mangleTemplate(in, sym, sym->templateParams);
-    }
-    else
-        my_sprintf(in, "@%s", sym->name);
-    return in + strlen(in);
-}
-static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
-{
-    while (castvalue(exp))
-        exp = exp->left;
-    if (isintconst(exp))
-    {
-        if (exp->type == en_const)
+        uniqueID = 0;
+        if (Optimizer::architecture == ARCHITECTURE_MSIL)
         {
-            my_sprintf(buf, "%lld?", exp->v.sp->sb->value.i);
+            memcpy(overloadNameTab, msiloverloadNameTab, sizeof(msiloverloadNameTab));
+            memcpy(cpp_funcname_tab, msiloverloadNameTab, sizeof(msiloverloadNameTab));
+        }
+    }
+    char* mangleNameSpaces(char* in, SYMBOL* sym)
+    {
+        if (!sym)
+            return in;
+        //    if (!sym || sym->sb->value.i > 1)
+        //        return in;
+        in = mangleNameSpaces(in, sym->sb->parentNameSpace);
+        Optimizer::my_sprintf(in, "@%s", sym->name);
+        return in + strlen(in);
+    }
+    static char* mangleTemplate(char* buf, SYMBOL* sym, TEMPLATEPARAMLIST* params);
+    static char* getName(char* in, SYMBOL* sym);
+    static char* mangleClasses(char* in, SYMBOL* sym)
+    {
+        if (!sym)
+            return in;
+        if (sym->sb->parentClass)
+            in = mangleClasses(in, sym->sb->parentClass);
+        if (sym->sb->castoperator)
+        {
+            strcat(in, "@");
+        }
+        else if (sym->sb->templateLevel && sym->templateParams)
+        {
+            *in++ = '@';
+            mangleTemplate(in, sym, sym->templateParams);
+        }
+        else
+            Optimizer::my_sprintf(in, "@%s", sym->name);
+        return in + strlen(in);
+    }
+    static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
+    {
+        while (castvalue(exp))
+            exp = exp->left;
+        if (isintconst(exp))
+        {
+            if (exp->type == en_const)
+            {
+                Optimizer::my_sprintf(buf, "%lld?", exp->v.sp->sb->value.i);
+            }
+            else
+            {
+                Optimizer::my_sprintf(buf, "%lld?", exp->v.i);
+            }
+            if (buf[0] == '-')
+                buf[0] = '_';
         }
         else
         {
-            my_sprintf(buf, "%lld?", exp->v.i);
-        }
-        if (buf[0] == '-')
-            buf[0] = '_';
-    }
-    else
-    {
-        bool nonpointer = false;
-        while (lvalue(exp))
-        {
-            nonpointer = true;
-            exp = exp->left;
-        }
-        switch (exp->type)
-        {
+            bool nonpointer = false;
+            while (lvalue(exp))
+            {
+                nonpointer = true;
+                exp = exp->left;
+            }
+            switch (exp->type)
+            {
             case en_nullptr:
                 *buf++ = 'n';
                 *buf = 0;
@@ -440,50 +443,50 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
             default:
                 *buf = 0;
                 break;
+            }
         }
-    }
-    buf += strlen(buf);
-    return buf;
-}
-static char* mangleExpression(char* buf, EXPRESSION* exp)
-{
-    if (exp)
-    {
-        *buf++ = '$';
-        buf = mangleExpressionInternal(buf, exp);
-    }
-    return buf;
-}
-static char* mangleTemplate(char* buf, SYMBOL* sym, TEMPLATEPARAMLIST* params)
-{
-    bool bySpecial = false;
-    if (params && params->p->type == kw_new &&
-        ((sym->sb->instantiated && !sym->sb->templateLevel) || (params && params->p->bySpecialization.types)))
-    {
-        params = params->p->bySpecialization.types;
-        bySpecial = true;
-    }
-    if ((sym->sb->isConstructor || sym->sb->isDestructor) && sym->sb->templateLevel == sym->sb->parentClass->sb->templateLevel)
-    {
-        strcpy(buf, sym->name);
-        while (*buf)
-            buf++;
-        *buf++ = '$';
-        *buf = 0;
-    }
-    else
-    {
-        *buf++ = '#';
-        strcpy(buf, sym->name);
-        strcat(buf, "$");
         buf += strlen(buf);
+        return buf;
     }
-    std::stack<TEMPLATEPARAMLIST*> tps;
-
-    while (params)
+    static char* mangleExpression(char* buf, EXPRESSION* exp)
     {
-        switch (params->p->type)
+        if (exp)
         {
+            *buf++ = '$';
+            buf = mangleExpressionInternal(buf, exp);
+        }
+        return buf;
+    }
+    static char* mangleTemplate(char* buf, SYMBOL* sym, TEMPLATEPARAMLIST* params)
+    {
+        bool bySpecial = false;
+        if (params && params->p->type == kw_new &&
+            ((sym->sb->instantiated && !sym->sb->templateLevel) || (params && params->p->bySpecialization.types)))
+        {
+            params = params->p->bySpecialization.types;
+            bySpecial = true;
+        }
+        if ((sym->sb->isConstructor || sym->sb->isDestructor) && sym->sb->templateLevel == sym->sb->parentClass->sb->templateLevel)
+        {
+            strcpy(buf, sym->name);
+            while (*buf)
+                buf++;
+            *buf++ = '$';
+            *buf = 0;
+        }
+        else
+        {
+            *buf++ = '#';
+            strcpy(buf, sym->name);
+            strcat(buf, "$");
+            buf += strlen(buf);
+        }
+        std::stack<TEMPLATEPARAMLIST*> tps;
+
+        while (params)
+        {
+            switch (params->p->type)
+            {
             case kw_typename:
                 if (params->p->packed)
                 {
@@ -569,85 +572,99 @@ static char* mangleTemplate(char* buf, SYMBOL* sym, TEMPLATEPARAMLIST* params)
                 break;
             default:
                 break;
+            }
+            params = params->next;
+            if (!params && tps.size())
+            {
+                params = tps.top();
+                tps.pop();
+            }
         }
-        params = params->next;
-        if (!params && tps.size())
-        {
-            params = tps.top();
-            tps.pop();
-        }
+        *buf++ = '~';
+        *buf = 0;
+        return buf;
     }
-    *buf++ = '~';
-    *buf = 0;
-    return buf;
-}
-static char* lookupName(char* in, const char* name)
-{
-    int i;
-    for (i = 0; i < mangledNamesCount; i++)
-        if (!strcmp(name, mangledNames[i]))
-            break;
-    if (i < mangledNamesCount)
-    {
-        my_sprintf(in, "n%c", i < 10 ? i + '0' : i - 10 + 'A');
-    }
-    else
-    {
-        if (mangledNamesCount < MAX_MANGLE_NAME_COUNT)
-            strcpy(mangledNames[mangledNamesCount++], name);
-        my_sprintf(in, "%d%s", strlen(name), name);
-    }
-    return in;
-}
-static char* getName(char* in, SYMBOL* sym)
-{
-    if (!sym)
-    {
-        strcpy(in, "????");
-    }
-    else if (!sym->sb)
-    {
-        in = lookupName(in, sym->name);
-    }
-    else
+    static char* lookupName(char* in, const char* name)
     {
         int i;
-        char buf[4096], *p;
-        p = mangleClasses(buf, sym->sb->parentClass);
-        if (p != buf)
-            *p++ = '@';
-        if (sym->sb->templateLevel && sym->templateParams)
+        for (i = 0; i < mangledNamesCount; i++)
+            if (!strcmp(name, mangledNames[i]))
+                break;
+        if (i < mangledNamesCount)
         {
-            p = mangleTemplate(p, sym, sym->templateParams);
+            Optimizer::my_sprintf(in, "n%c", i < 10 ? i + '0' : i - 10 + 'A');
         }
         else
         {
-            strcpy(p, sym->name);
+            if (mangledNamesCount < MAX_MANGLE_NAME_COUNT)
+                strcpy(mangledNames[mangledNamesCount++], name);
+            Optimizer::my_sprintf(in, "%d%s", strlen(name), name);
         }
-        in = lookupName(in, buf);
+        return in;
     }
-    while (*in)
-        in++;
-    return in;
-}
-char* mangleType(char* in, TYPE* tp, bool first)
-{
-    char nm[4096];
-    int i;
-    SYMLIST* hr;
-    if (!tp)
+    static char* getName(char* in, SYMBOL* sym)
     {
-        my_sprintf(in, "%d%s", strlen("initializer-list"), "initializer-list");
+        if (!sym)
+        {
+            strcpy(in, "????");
+        }
+        else if (!sym->sb)
+        {
+            in = lookupName(in, sym->name);
+        }
+        else
+        {
+            int i;
+            char buf[4096], *p;
+            p = mangleClasses(buf, sym->sb->parentClass);
+            if (p != buf)
+                *p++ = '@';
+            if (sym->sb->templateLevel && sym->templateParams)
+            {
+                p = mangleTemplate(p, sym, sym->templateParams);
+            }
+            else
+            {
+                strcpy(p, sym->name);
+            }
+            in = lookupName(in, buf);
+        }
         while (*in)
             in++;
         return in;
     }
-    while (tp)
+    char* mangleType(char* in, TYPE* tp, bool first)
     {
-        while (tp->type == bt_typedef)
-            tp = tp->btp;
-        if (isstructured(tp) && basetype(tp)->sp->sb && basetype(tp)->sp->sb->templateLevel)
+        char nm[4096];
+        int i;
+        SYMLIST* hr;
+        if (!tp)
         {
+            Optimizer::my_sprintf(in, "%d%s", strlen("initializer-list"), "initializer-list");
+            while (*in)
+                in++;
+            return in;
+        }
+        while (tp)
+        {
+            while (tp->type == bt_typedef)
+                tp = tp->btp;
+            if (isstructured(tp) && basetype(tp)->sp->sb && basetype(tp)->sp->sb->templateLevel)
+            {
+                {
+                    if (isconst(tp))
+                        *in++ = 'x';
+                    if (isvolatile(tp))
+                        *in++ = 'y';
+                    if (islrqual(tp))
+                        *in++ = 'r';
+                    if (isrrqual(tp))
+                        *in++ = 'R';
+                }
+                in = mangleTemplate(in, basetype(tp)->sp, basetype(tp)->sp->templateParams);
+                return in;
+            }
+            else
             {
                 if (isconst(tp))
                     *in++ = 'x';
@@ -657,25 +674,11 @@ char* mangleType(char* in, TYPE* tp, bool first)
                     *in++ = 'r';
                 if (isrrqual(tp))
                     *in++ = 'R';
-            }
-            in = mangleTemplate(in, basetype(tp)->sp, basetype(tp)->sp->templateParams);
-            return in;
-        }
-        else
-        {
-            if (isconst(tp))
-                *in++ = 'x';
-            if (isvolatile(tp))
-                *in++ = 'y';
-            if (islrqual(tp))
-                *in++ = 'r';
-            if (isrrqual(tp))
-                *in++ = 'R';
-            tp = basetype(tp);
-            if (isint(tp) && tp->btp && tp->btp->type == bt_enum)
-                tp = tp->btp;
-            switch (tp->type)
-            {
+                tp = basetype(tp);
+                if (isint(tp) && tp->btp && tp->btp->type == bt_enum)
+                    tp = tp->btp;
+                switch (tp->type)
+                {
                 case bt_func:
                 case bt_ifunc:
                     if (basetype(tp)->sp && ismember(basetype(tp)->sp) && !first)
@@ -817,7 +820,7 @@ char* mangleType(char* in, TYPE* tp, bool first)
                         }
                         else
                         {
-                            my_sprintf(in, "A%ld", tp->btp->size ? tp->size / tp->btp->size : 0);
+                            Optimizer::my_sprintf(in, "A%ld", tp->btp->size ? tp->size / tp->btp->size : 0);
                             while (*in)
                                 in++;
                         }
@@ -864,7 +867,7 @@ char* mangleType(char* in, TYPE* tp, bool first)
                     p = nm;
                     while (isdigit(*p))
                         p++;
-                    my_sprintf(in, "%d%s", strlen(p), p);
+                    Optimizer::my_sprintf(in, "%d%s", strlen(p), p);
                     while (*in)
                         in++;
                     return in;
@@ -875,7 +878,7 @@ char* mangleType(char* in, TYPE* tp, bool first)
                     // in a symbol table...
                     declTypeIndex = (declTypeIndex + 1) % 1000;
                     *in++ = 'E';
-                    my_sprintf(in, "%03d", declTypeIndex);
+                    Optimizer::my_sprintf(in, "%03d", declTypeIndex);
                     in += 3;
                     break;
                 case bt_aggregate:
@@ -887,53 +890,53 @@ char* mangleType(char* in, TYPE* tp, bool first)
                 default:
                     diag("mangleType: unknown type");
                     break;
+                }
+            }
+            tp = tp->btp;
+        }
+        *in = 0;
+        return in;
+    }
+    void SetLinkerNames(SYMBOL* sym, enum e_lk linkage)
+    {
+        char errbuf[8192], *p = errbuf;
+        memset(errbuf, 0, 8192);
+        SYMBOL* lastParent;
+        mangledNamesCount = 0;
+        if (Optimizer::cparams.prm_cplusplus && !sym->sb->parentClass && !sym->sb->parentNameSpace && sym->name[0] == 'm' && !strcmp(sym->name, "main"))
+            linkage = lk_c;
+        if (linkage == lk_none || linkage == lk_cdecl)
+        {
+            if (Optimizer::cparams.prm_cplusplus || (Optimizer::architecture == ARCHITECTURE_MSIL))
+            {
+                if (sym->sb->storage_class != sc_label && sym->sb->storage_class != sc_parameter && sym->sb->storage_class != sc_namespace &&
+                    sym->sb->storage_class != sc_namespacealias && sym->sb->storage_class != sc_ulabel &&
+                    (isfunction(sym->tp) || istype(sym) || sym->sb->parentNameSpace || sym->sb->parentClass || sym->sb->templateLevel))
+                    linkage = lk_cpp;
+                else
+                    linkage = lk_c;
+            }
+            else
+            {
+                linkage = lk_c;
             }
         }
-        tp = tp->btp;
-    }
-    *in = 0;
-    return in;
-}
-void SetLinkerNames(SYMBOL* sym, enum e_lk linkage)
-{
-    char errbuf[8192], *p = errbuf;
-    memset(errbuf, 0, 8192);
-    SYMBOL* lastParent;
-    mangledNamesCount = 0;
-    if (cparams.prm_cplusplus && !sym->sb->parentClass && !sym->sb->parentNameSpace && sym->name[0] == 'm' && !strcmp(sym->name, "main"))
-        linkage = lk_c;
-    if (linkage == lk_none || linkage == lk_cdecl)
-    {
-        if (cparams.prm_cplusplus || (architecture == ARCHITECTURE_MSIL))
+        if (linkage == lk_auto && !Optimizer::cparams.prm_cplusplus)
+            linkage = lk_c;
+        if (linkage == lk_c && !Optimizer::cparams.prm_cmangle)
+            linkage = lk_stdcall;
+        if (linkage == lk_virtual || linkage == lk_fastcall)
         {
-            if (sym->sb->storage_class != sc_label && sym->sb->storage_class != sc_parameter && sym->sb->storage_class != sc_namespace &&
-                sym->sb->storage_class != sc_namespacealias && sym->sb->storage_class != sc_ulabel &&
-                (isfunction(sym->tp) || istype(sym) || sym->sb->parentNameSpace || sym->sb->parentClass || sym->sb->templateLevel))
+            if (Optimizer::cparams.prm_cplusplus)
                 linkage = lk_cpp;
             else
                 linkage = lk_c;
         }
-        else
+        switch (linkage)
         {
-            linkage = lk_c;
-        }
-    }
-    if (linkage == lk_auto && !cparams.prm_cplusplus)
-        linkage = lk_c;
-    if (linkage == lk_c && !cparams.prm_cmangle)
-        linkage = lk_stdcall;
-    if (linkage == lk_virtual || linkage == lk_fastcall)
-    {
-        if (cparams.prm_cplusplus)
-            linkage = lk_cpp;
-        else
-            linkage = lk_c;
-    }
-    switch (linkage)
-    {
         case lk_auto:
             p = mangleClasses(p, theCurrentFunc);
-            my_sprintf(p, "@%s", sym->name);
+            Optimizer::my_sprintf(p, "@%s", sym->name);
 
             break;
         case lk_pascal:
@@ -1023,6 +1026,7 @@ void SetLinkerNames(SYMBOL* sym, enum e_lk linkage)
             }
             *p = 0;
             break;
+        }
+        sym->sb->decoratedName = litlate(errbuf);
     }
-    sym->sb->decoratedName = litlate(errbuf);
 }

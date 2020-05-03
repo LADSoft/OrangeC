@@ -23,5 +23,8 @@
  *
  */
 
-void ReadText(std::map<int, std::string>& texts);
-bool InputIntermediate(SharedMemory* inputMem);
+namespace Optimizer
+{
+    void ReadText(std::map<int, std::string>& texts);
+    bool InputIntermediate(SharedMemory* inputMem);
+}

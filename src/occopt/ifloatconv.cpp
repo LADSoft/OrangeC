@@ -31,112 +31,115 @@
 #include "config.h"
 #include "OptUtils.h"
 
-unsigned long long CastToInt(int size, long long value)
+namespace Optimizer
 {
-    int bits;
-    switch (size)
+    unsigned long long CastToInt(int size, long long value)
     {
-    case ISZ_BOOLEAN:
-        bits = 1;
-        break;
-    case -ISZ_UCHAR:
-    case ISZ_UCHAR:
-        bits = 8;
-        break;
-    default:
+        int bits;
+        switch (size)
+        {
+        case ISZ_BOOLEAN:
+            bits = 1;
+            break;
+        case -ISZ_UCHAR:
+        case ISZ_UCHAR:
+            bits = 8;
+            break;
+        default:
+            return value;
+        case ISZ_U16:
+        case ISZ_U32:
+        case -ISZ_USHORT:
+        case ISZ_USHORT:
+        case -ISZ_UINT:
+        case ISZ_UINT:
+        case -ISZ_UNATIVE:
+        case ISZ_UNATIVE:
+        case -ISZ_ULONG:
+        case ISZ_ULONG:
+        case -ISZ_ULONGLONG:
+        case ISZ_ULONGLONG:
+            bits = sizeFromISZ(size) * 8;
+            break;
+        }
+        value &= mod_mask(bits);
+        if (size < 0)
+            if (value & (((unsigned long long)1) << (bits - 1)))
+                value |= ~mod_mask(bits);
         return value;
-    case ISZ_U16:
-    case ISZ_U32:
-    case -ISZ_USHORT:
-    case ISZ_USHORT:
-    case -ISZ_UINT:
-    case ISZ_UINT:
-    case -ISZ_UNATIVE:
-    case ISZ_UNATIVE:
-    case -ISZ_ULONG:
-    case ISZ_ULONG:
-    case -ISZ_ULONGLONG:
-    case ISZ_ULONGLONG:
-        bits = sizeFromISZ(size) * 8;
-        break;
     }
-    value &= mod_mask(bits);
-    if (size < 0)
-        if (value & (((unsigned long long)1) << (bits - 1)))
-            value |= ~mod_mask(bits);
-    return value;
-}
-FPF* IntToFloat(FPF* temp, int size, long long value)
-{
-    long long t = CastToInt(size, value);
-    if (size < 0)
-        *temp = (long long)t;
-    else
-        *temp = (unsigned long long)t;
-    return temp;
-}
-
-FPF CastToFloat(int size, FPF* value)
-{
-    switch (size)
+    FPF* IntToFloat(FPF* temp, int size, long long value)
     {
-    case ISZ_FLOAT:
-    case ISZ_IFLOAT:
-        if (chosenAssembler->arch->flt_float)
-        {
-            ARCH_FLOAT* flt = chosenAssembler->arch->flt_float;
-            value->Truncate(flt->mantissa_bits, flt->exp_max, flt->exp_min);
-        }
-//        else
-//            diag("CastToFloat: architecture characteristics for 'float' not set");
-        break;
-    case ISZ_DOUBLE:
-    case ISZ_IDOUBLE:
-        if (chosenAssembler->arch->flt_dbl)
-        {
-            ARCH_FLOAT* flt = chosenAssembler->arch->flt_dbl;
-            value->Truncate(flt->mantissa_bits, flt->exp_max, flt->exp_min);
-        }
-//        else
-//            diag("CastToFloat: architecture characteristics for 'double' not set");
-        break;
-    case ISZ_LDOUBLE:
-    case ISZ_ILDOUBLE:
-        if (chosenAssembler->arch->flt_ldbl)
-        {
-            ARCH_FLOAT* flt = chosenAssembler->arch->flt_ldbl;
-            value->Truncate(flt->mantissa_bits, flt->exp_max, flt->exp_min);
-        }
-//        else
-//            diag("CastToFloat: architecture characteristics for 'long double' not set");
-        break;
+        long long t = CastToInt(size, value);
+        if (size < 0)
+            *temp = (long long)t;
+        else
+            *temp = (unsigned long long)t;
+        return temp;
     }
-    return *value;
-}
-FPF dorefloat(SimpleExpression* node)
-{
-    FPF rv;
-    FPF temp;
-    switch (node->type)
-    {
-    case se_ui:
-        rv = CastToFloat(ISZ_LDOUBLE, IntToFloat(&temp, ISZ_ULONGLONG, node->i));
-        break;
-    case se_i:
-        rv = CastToFloat(ISZ_LDOUBLE, IntToFloat(&temp, -ISZ_ULONGLONG, node->i));
-        break;
-    case se_f:
-    case se_fi:
 
-        rv = CastToFloat(ISZ_FLOAT, &node->f);
-        break;
-    case se_fc:
-        rv = CastToFloat(ISZ_FLOAT, &node->c.i);
-        rv = CastToFloat(ISZ_FLOAT, &node->c.r);
-        break;
-    default:
-        rv = 0;
-        break;
+    FPF CastToFloat(int size, FPF* value)
+    {
+        switch (size)
+        {
+        case ISZ_FLOAT:
+        case ISZ_IFLOAT:
+            if (Optimizer::chosenAssembler->arch->flt_float)
+            {
+                ARCH_FLOAT* flt = Optimizer::chosenAssembler->arch->flt_float;
+                value->Truncate(flt->mantissa_bits, flt->exp_max, flt->exp_min);
+            }
+            //        else
+            //            diag("CastToFloat: architecture characteristics for 'float' not set");
+            break;
+        case ISZ_DOUBLE:
+        case ISZ_IDOUBLE:
+            if (Optimizer::chosenAssembler->arch->flt_dbl)
+            {
+                ARCH_FLOAT* flt = Optimizer::chosenAssembler->arch->flt_dbl;
+                value->Truncate(flt->mantissa_bits, flt->exp_max, flt->exp_min);
+            }
+            //        else
+            //            diag("CastToFloat: architecture characteristics for 'double' not set");
+            break;
+        case ISZ_LDOUBLE:
+        case ISZ_ILDOUBLE:
+            if (Optimizer::chosenAssembler->arch->flt_ldbl)
+            {
+                ARCH_FLOAT* flt = Optimizer::chosenAssembler->arch->flt_ldbl;
+                value->Truncate(flt->mantissa_bits, flt->exp_max, flt->exp_min);
+            }
+            //        else
+            //            diag("CastToFloat: architecture characteristics for 'long double' not set");
+            break;
+        }
+        return *value;
     }
-    return rv;
+    FPF dorefloat(Optimizer::SimpleExpression* node)
+    {
+        FPF rv;
+        FPF temp;
+        switch (node->type)
+        {
+        case Optimizer::se_ui:
+            rv = CastToFloat(ISZ_LDOUBLE, IntToFloat(&temp, ISZ_ULONGLONG, node->i));
+            break;
+        case Optimizer::se_i:
+            rv = CastToFloat(ISZ_LDOUBLE, IntToFloat(&temp, -ISZ_ULONGLONG, node->i));
+            break;
+        case Optimizer::se_f:
+        case Optimizer::se_fi:
+
+            rv = CastToFloat(ISZ_FLOAT, &node->f);
+            break;
+        case Optimizer::se_fc:
+            rv = CastToFloat(ISZ_FLOAT, &node->c.i);
+            rv = CastToFloat(ISZ_FLOAT, &node->c.r);
+            break;
+        default:
+            rv = 0;
+            break;
+        }
+        return rv;
+    }
 }

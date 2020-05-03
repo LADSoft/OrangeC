@@ -42,4 +42,4 @@ bool handleCLZ(void);
 bool handleBSWAP16(void);
 bool handleBSWAP32(void);
 bool handleBSWAP64(void);
-bool BackendIntrinsic(QUAD* q);
+bool BackendIntrinsic(Optimizer::QUAD* q);

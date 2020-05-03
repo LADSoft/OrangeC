@@ -51,7 +51,7 @@ static int regmap[REG_MAX][2] = {
     {0, 1},  {2, 3},  {4, 5},  {6, 7},  {0, 4},  {1, 5},  {2, 6},  {3, 7},
 
 };
-static ARCH_REGDESC regNames[] = {
+static Optimizer::ARCH_REGDESC regNames[] = {
     {"EAX", 0, 0, -1, 5, {8, 9, 16, 20, 24}},
     {"ECX", 0, 1, -1, 5, {9, 10, 17, 21, 25}},
     {"EDX", 0, 2, -1, 5, {8, 10, 18, 22, 26}},
@@ -119,56 +119,56 @@ static ARCH_REGDESC regNames[] = {
 };
 
 static unsigned short unpushedDoubleDoubleRegsArray[] = {56, 57, 58, 59, 60, 61, 62, 63};
-static ARCH_REGCLASS unpushedDoubleDoubleRegs = {nullptr, 0, unpushedDoubleDoubleRegsArray};
+static Optimizer::ARCH_REGCLASS unpushedDoubleDoubleRegs = {nullptr, 0, unpushedDoubleDoubleRegsArray};
 static unsigned short unpushedDoubleFloatRegsArray[] = {40, 41, 42, 43, 44, 45, 46, 47};
-static ARCH_REGCLASS unpushedDoubleFloatRegs = {&unpushedDoubleDoubleRegs, 8, unpushedDoubleFloatRegsArray};
+static Optimizer::ARCH_REGCLASS unpushedDoubleFloatRegs = {&unpushedDoubleDoubleRegs, 8, unpushedDoubleFloatRegsArray};
 static unsigned short unpushedFDoubleRegsArray[] = {48, 49, 50, 51, 52, 53, 54, 55};
-static ARCH_REGCLASS unpushedFDoubleRegs = {&unpushedDoubleFloatRegs, 8, unpushedFDoubleRegsArray};
+static Optimizer::ARCH_REGCLASS unpushedFDoubleRegs = {&unpushedDoubleFloatRegs, 8, unpushedFDoubleRegsArray};
 static unsigned short unpushedFloatRegsArray[] = {32, 33, 34, 35, 36, 37, 38, 39};
-static ARCH_REGCLASS unpushedFloatRegs = {&unpushedFDoubleRegs, 8, unpushedFloatRegsArray};
+static Optimizer::ARCH_REGCLASS unpushedFloatRegs = {&unpushedFDoubleRegs, 8, unpushedFloatRegsArray};
 
 static unsigned short pushedDoubleDoubleRegsArray[] = {0};
-static ARCH_REGCLASS pushedDoubleDoubleRegs = {nullptr, 0, pushedDoubleDoubleRegsArray};
+static Optimizer::ARCH_REGCLASS pushedDoubleDoubleRegs = {nullptr, 0, pushedDoubleDoubleRegsArray};
 static unsigned short pushedDoubleFloatRegsArray[] = {0};
-static ARCH_REGCLASS pushedDoubleFloatRegs = {&pushedDoubleDoubleRegs, 0, pushedDoubleFloatRegsArray};
+static Optimizer::ARCH_REGCLASS pushedDoubleFloatRegs = {&pushedDoubleDoubleRegs, 0, pushedDoubleFloatRegsArray};
 static unsigned short pushedFDoubleRegsArray[] = {0};
-static ARCH_REGCLASS pushedFDoubleRegs = {&pushedDoubleFloatRegs, 0, pushedFDoubleRegsArray};
+static Optimizer::ARCH_REGCLASS pushedFDoubleRegs = {&pushedDoubleFloatRegs, 0, pushedFDoubleRegsArray};
 static unsigned short pushedFloatRegsArray[] = {0};
-static ARCH_REGCLASS pushedFloatRegs = {&pushedFDoubleRegs, 0, pushedFloatRegsArray};
+static Optimizer::ARCH_REGCLASS pushedFloatRegs = {&pushedFDoubleRegs, 0, pushedFloatRegsArray};
 
 static unsigned short pushedDoubleRegsArray[] = {11, 12, 13, 14, 15};
-static ARCH_REGCLASS pushedDoubleRegs = {&pushedFloatRegs, 3, pushedDoubleRegsArray};
+static Optimizer::ARCH_REGCLASS pushedDoubleRegs = {&pushedFloatRegs, 3, pushedDoubleRegsArray};
 static unsigned short unpushedDoubleRegsArray[] = {8, 9, 10};
-static ARCH_REGCLASS unpushedDoubleRegs = {&unpushedFloatRegs, 3, unpushedDoubleRegsArray};
+static Optimizer::ARCH_REGCLASS unpushedDoubleRegs = {&unpushedFloatRegs, 3, unpushedDoubleRegsArray};
 static unsigned short pushedDwordRegsArray[] = {3, 6, 7, 5};
-static ARCH_REGCLASS pushedDwordRegs = {&pushedDoubleRegs, 3, pushedDwordRegsArray};
+static Optimizer::ARCH_REGCLASS pushedDwordRegs = {&pushedDoubleRegs, 3, pushedDwordRegsArray};
 static unsigned short unpushedDwordRegsArray[] = {0, 1, 2};
-static ARCH_REGCLASS unpushedDwordRegs = {&unpushedDoubleRegs, 3, unpushedDwordRegsArray};
+static Optimizer::ARCH_REGCLASS unpushedDwordRegs = {&unpushedDoubleRegs, 3, unpushedDwordRegsArray};
 static unsigned short pushedWordRegsArray[] = {27, 30, 31, 29};
-static ARCH_REGCLASS pushedWordRegs = {&pushedDwordRegs, 3, pushedWordRegsArray};
+static Optimizer::ARCH_REGCLASS pushedWordRegs = {&pushedDwordRegs, 3, pushedWordRegsArray};
 static unsigned short unpushedWordRegsArray[] = {24, 25, 26};
-static ARCH_REGCLASS unpushedWordRegs = {&unpushedDwordRegs, 3, unpushedWordRegsArray};
+static Optimizer::ARCH_REGCLASS unpushedWordRegs = {&unpushedDwordRegs, 3, unpushedWordRegsArray};
 static unsigned short pushedByteRegsArray[] = {19, 23};
-static ARCH_REGCLASS pushedByteRegs = {&pushedWordRegs, 2, pushedByteRegsArray};
+static Optimizer::ARCH_REGCLASS pushedByteRegs = {&pushedWordRegs, 2, pushedByteRegsArray};
 static unsigned short unpushedByteRegsArray[] = {16, 17, 18, 20, 21, 22};
-static ARCH_REGCLASS unpushedByteRegs = {&unpushedWordRegs, 6, unpushedByteRegsArray};
+static Optimizer::ARCH_REGCLASS unpushedByteRegs = {&unpushedWordRegs, 6, unpushedByteRegsArray};
 static unsigned short allByteRegsArray[] = {16, 17, 18, 19, 20, 21, 22, 23};
-static ARCH_REGCLASS allByteRegs = {nullptr, 8, allByteRegsArray};
+static Optimizer::ARCH_REGCLASS allByteRegs = {nullptr, 8, allByteRegsArray};
 static unsigned short allWordRegsArray[] = {24, 25, 26, 27, 30, 31, 29};
-static ARCH_REGCLASS allWordRegs = {&allByteRegs, 6, allWordRegsArray};
+static Optimizer::ARCH_REGCLASS allWordRegs = {&allByteRegs, 6, allWordRegsArray};
 static unsigned short allDwordRegsArray[] = {0, 1, 2, 3, 6, 7, 5};
-static ARCH_REGCLASS allDwordRegs = {&allWordRegs, 6, allDwordRegsArray};
+static Optimizer::ARCH_REGCLASS allDwordRegs = {&allWordRegs, 6, allDwordRegsArray};
 static unsigned short allDoubleRegsArray[] = {8, 9, 10, 11, 12, 13, 14, 15};
-static ARCH_REGCLASS allDoubleRegs = {&allDwordRegs, 6, allDoubleRegsArray};
+static Optimizer::ARCH_REGCLASS allDoubleRegs = {&allDwordRegs, 6, allDoubleRegsArray};
 static unsigned short allFloatRegsArray[] = {32, 33, 34, 35, 36, 37, 38, 39};
-static ARCH_REGCLASS allFloatRegs = {&allDoubleRegs, 8, allFloatRegsArray};
+static Optimizer::ARCH_REGCLASS allFloatRegs = {&allDoubleRegs, 8, allFloatRegsArray};
 static unsigned short allFDoubleRegsArray[] = {48, 49, 50, 51, 52, 53, 54, 55};
-static ARCH_REGCLASS allFDoubleRegs = {&allFloatRegs, 8, allFDoubleRegsArray};
+static Optimizer::ARCH_REGCLASS allFDoubleRegs = {&allFloatRegs, 8, allFDoubleRegsArray};
 static unsigned short allDoubleFloatRegsArray[] = {40, 41, 42, 43, 44, 45, 46, 47};
-static ARCH_REGCLASS allDoubleFloatRegs = {&allFDoubleRegs, 8, allDoubleFloatRegsArray};
+static Optimizer::ARCH_REGCLASS allDoubleFloatRegs = {&allFDoubleRegs, 8, allDoubleFloatRegsArray};
 static unsigned short allDoubleDoubleRegsArray[] = {56, 57, 58, 59, 60, 61, 62, 63};
-static ARCH_REGCLASS allDoubleDoubleRegs = {&allDoubleFloatRegs, 8, allDoubleDoubleRegsArray};
-static ARCH_REGCLASS* regClasses[27][2] = {
+static Optimizer::ARCH_REGCLASS allDoubleDoubleRegs = {&allDoubleFloatRegs, 8, allDoubleDoubleRegsArray};
+static Optimizer::ARCH_REGCLASS* regClasses[27][2] = {
     {nullptr, nullptr},
     {nullptr, nullptr},
     {&allByteRegs, &pushedByteRegs},
@@ -197,11 +197,11 @@ static ARCH_REGCLASS* regClasses[27][2] = {
     {&allDoubleDoubleRegs, &pushedDoubleDoubleRegs},
     {&allDoubleDoubleRegs, &pushedDoubleDoubleRegs},
 };
-static ARCH_REGVERTEX pushedVertex = {&pushedByteRegs, nullptr, nullptr};
-static ARCH_REGVERTEX unpushedVertex = {&unpushedByteRegs, nullptr, nullptr};
-static ARCH_REGVERTEX regRoot = {&allDoubleDoubleRegs, &pushedVertex, &unpushedVertex};
+static Optimizer::ARCH_REGVERTEX pushedVertex = {&pushedByteRegs, nullptr, nullptr};
+static Optimizer::ARCH_REGVERTEX unpushedVertex = {&unpushedByteRegs, nullptr, nullptr};
+static Optimizer::ARCH_REGVERTEX regRoot = {&allDoubleDoubleRegs, &pushedVertex, &unpushedVertex};
 
-static ARCH_SIZING regCosts = {
+static Optimizer::ARCH_SIZING regCosts = {
     1, /*char a_bool; */
     1, /*char a_char; */
     4, /*char a_short; */
@@ -224,4 +224,4 @@ static ARCH_SIZING regCosts = {
     0,                  /*char a_lrcomplexpad; */
 };
 
-static UBYTE allocOrder[] = {1, 1};
+static Optimizer::UBYTE allocOrder[] = {1, 1};

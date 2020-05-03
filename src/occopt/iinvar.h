@@ -22,12 +22,15 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
  */
-static struct reflist
+namespace Optimizer
 {
-    struct reflist* next;
-    QUAD* old;
-    QUAD* newVal;
-} *refs;
+    static struct reflist
+    {
+        struct reflist* next;
+        QUAD* old;
+        QUAD* newVal;
+    } *refs;
 
-void ScanForInvariants(BLOCK* b);
-void MoveLoopInvariants(void);
+    void ScanForInvariants(BLOCK* b);
+    void MoveLoopInvariants(void);
+}

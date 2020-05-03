@@ -45,6 +45,7 @@
 #include "invoke.h"
 #include "MsilProcess.h"
 #include "gen.h"
+#include "ilunstream.h"
 CmdSwitchParser SwitchParser;
 CmdSwitchBool single(SwitchParser, 's', false, "single");
 
@@ -54,7 +55,7 @@ const char* usageText =
 "--single     don't open internal file list\n"
 "\nTime: " __TIME__ "  Date: " __DATE__;
 
-SimpleSymbol* currentFunction;
+Optimizer::SimpleSymbol* currentFunction;
 
 char infile[260];
 char outFile[260];
@@ -67,8 +68,6 @@ static const char* occil_verbosity = nullptr;
 void regInit() { }
 
 static const int MAX_SHARED_REGION = 240 * 1024 * 1024;
-
-bool InputIntermediate(SharedMemory* mem);
 
 void flush_peep()
 {
@@ -85,20 +84,20 @@ void diag(const char*fmt, ...)
 
 void ResolveMSILExterns()
 {
-    for (auto&& sp : externals)
+    for (auto&& sp : Optimizer::externals)
     {
         if (sp->msil)
         {
-            if (sp->tp->type == st_func)
+            if (sp->tp->type == Optimizer::st_func)
             {
-                std::vector<SimpleSymbol*> params;
+                std::vector<Optimizer::SimpleSymbol*> params;
                 for (auto v = sp->syms; v != nullptr; v = v->next)
                 {
-                    SimpleSymbol *sym = (SimpleSymbol*)v->data;
-                    if (!sym->thisPtr && sym->tp->type != st_void)
+                    Optimizer::SimpleSymbol *sym = (Optimizer::SimpleSymbol*)v->data;
+                    if (!sym->thisPtr && sym->tp->type != Optimizer::st_void)
                         params.push_back(sym);
                 }
-                std::map<SimpleSymbol*, Param*, byName> paramList;
+                std::map<Optimizer::SimpleSymbol*, Param*, byName> paramList;
                 LoadParams(sp, params, paramList);
 
                 std::vector<Type*> types;
@@ -128,17 +127,17 @@ void ResolveMSILExterns()
             }
         }
     }
-    for (auto it = externals.begin(); it != externals.end();)
+    for (auto it = Optimizer::externals.begin(); it != Optimizer::externals.end();)
     {
         if ((*it)->msil)
-            it = externals.erase(it);
+            it = Optimizer::externals.erase(it);
         else
             ++it;
     }
 }
 void outputfile(char* buf, const char* name, const char* ext)
 {
-    strcpy(buf, outputFileName.c_str());
+    strcpy(buf, Optimizer::outputFileName.c_str());
     if (buf[strlen(buf) - 1] == '\\')
     {
         // output file is a path specification rather than a file name
@@ -166,152 +165,152 @@ void outputfile(char* buf, const char* name, const char* ext)
 }
 
 
-void global(SimpleSymbol* sym, int flags)
+void global(Optimizer::SimpleSymbol* sym, int flags)
 {
 }
-void ProcessData(BaseData* v)
+void ProcessData(Optimizer::BaseData* v)
 {
     switch (v->type)
     {
-    case DT_SEG:
-        msil_oa_enterseg((e_sg)v->i);
+    case Optimizer::DT_SEG:
+        msil_oa_enterseg((Optimizer::e_sg)v->i);
         break;
-    case DT_SEGEXIT:
+    case Optimizer::DT_SEGEXIT:
         break;
-    case DT_DEFINITION:
-        if (v->symbol.sym->tp->type == st_func)
+    case Optimizer::DT_DEFINITION:
+        if (v->symbol.sym->tp->type == Optimizer::st_func)
             currentFunction = v->symbol.sym;
         msil_oa_gen_strlab(v->symbol.sym);
         global(v->symbol.sym, v->symbol.i);
-        if (v->symbol.sym->tp->type == st_func)
+        if (v->symbol.sym->tp->type == Optimizer::st_func)
             currentFunction = nullptr;
         break;
-    case DT_LABELDEFINITION:
+    case Optimizer::DT_LABELDEFINITION:
         msil_oa_put_string_label(v->i, 0);
         break;
-    case DT_RESERVE:
+    case Optimizer::DT_RESERVE:
         //msil_oa_genstorage(v->i);
         break;
-    case DT_SYM:
+    case Optimizer::DT_SYM:
         //msil_oa_genref(v->symbol.sym, v->symbol.i);
         break;
-    case DT_SRREF:
+    case Optimizer::DT_SRREF:
         msil_oa_gensrref(v->symbol.sym, v->symbol.i, 0);
         break;
-    case DT_PCREF:
+    case Optimizer::DT_PCREF:
         //msil_oa_genpcref(v->symbol.sym, v->symbol.i);
         break;
-    case DT_FUNCREF:
+    case Optimizer::DT_FUNCREF:
         gen_funcref(v->symbol.sym);
         global(v->symbol.sym, v->symbol.i);
         break;
-    case DT_LABEL:
-        gen_labref(v->i);
+    case Optimizer::DT_LABEL:
+        Optimizer::gen_labref(v->i);
         break;
-    case DT_LABDIFFREF:
-        gen_labdifref(v->diff.l1, v->diff.l2);
+    case Optimizer::DT_LABDIFFREF:
+        Optimizer::gen_labdifref(v->diff.l1, v->diff.l2);
         break;
-    case DT_STRING:
+    case Optimizer::DT_STRING:
         msil_oa_genstring(v->astring.str, v->astring.i);
         break;
-    case DT_BIT:
+    case Optimizer::DT_BIT:
         break;
-    case DT_BOOL:
+    case Optimizer::DT_BOOL:
 //        msil_oa_genint(chargen, v->i);
         break;
-    case DT_BYTE:
+    case Optimizer::DT_BYTE:
 //        msil_oa_genint(chargen, v->i);
         break;
-    case DT_USHORT:
+    case Optimizer::DT_USHORT:
 //        msil_oa_genint(shortgen, v->i);
         break;
-    case DT_UINT:
+    case Optimizer::DT_UINT:
 //        msil_oa_genint(intgen, v->i);
         break;
-    case DT_ULONG:
+    case Optimizer::DT_ULONG:
 //        msil_oa_genint(longgen, v->i);
         break;
-    case DT_ULONGLONG:
+    case Optimizer::DT_ULONGLONG:
 //        msil_oa_genint(longlonggen, v->i);
         break;
-    case DT_16:
+    case Optimizer::DT_16:
 //        msil_oa_genint(u16gen, v->i);
         break;
-    case DT_32:
+    case Optimizer::DT_32:
  //       msil_oa_genint(u32gen, v->i);
         break;
-    case DT_ENUM:
+    case Optimizer::DT_ENUM:
 //        msil_oa_genint(intgen, v->i);
         break;
-    case DT_FLOAT:
+    case Optimizer::DT_FLOAT:
 //        msil_oa_genfloat(floatgen, &v->f);
         break;
-    case DT_DOUBLE:
+    case Optimizer::DT_DOUBLE:
 //        msil_oa_genfloat(doublegen, &v->f);
         break;
-    case DT_LDOUBLE:
+    case Optimizer::DT_LDOUBLE:
 //        msil_oa_genfloat(longdoublegen, &v->f);
         break;
-    case DT_CFLOAT:
+    case Optimizer::DT_CFLOAT:
 //        msil_oa_genfloat(floatgen, &v->c.r);
 //        msil_oa_genfloat(floatgen, &v->c.i);
         break;
-    case DT_CDOUBLE:
+    case Optimizer::DT_CDOUBLE:
   //      msil_oa_genfloat(doublegen, &v->c.r);
 //        msil_oa_genfloat(doublegen, &v->c.i);
         break;
-    case DT_CLONGDOUBLE:
+    case Optimizer::DT_CLONGDOUBLE:
 //        msil_oa_genfloat(longdoublegen, &v->c.r);
 //        msil_oa_genfloat(longdoublegen, &v->c.i);
         break;
-    case DT_ADDRESS:
-        genaddress(v->i);
+    case Optimizer::DT_ADDRESS:
+        Optimizer::genaddress(v->i);
         break;
-    case DT_VIRTUAL:
+    case Optimizer::DT_VIRTUAL:
 //        msil_oa_gen_virtual(v->symbol.sym, v->symbol.i);
         break;
-    case DT_ENDVIRTUAL:
+    case Optimizer::DT_ENDVIRTUAL:
 //        msil_oa_gen_endvirtual(v->symbol.sym);
         break;
-    case DT_ALIGN:
+    case Optimizer::DT_ALIGN:
 //        msil_oa_align(v->i);
         break;
-    case DT_VTT:
+    case Optimizer::DT_VTT:
         msil_oa_gen_vtt(v->symbol.i, v->symbol.sym);
         break;
-    case DT_IMPORTTHUNK:
+    case Optimizer::DT_IMPORTTHUNK:
         msil_oa_gen_importThunk(v->symbol.sym);
         break;
-    case DT_VC1:
+    case Optimizer::DT_VC1:
         msil_oa_gen_vc1(v->symbol.sym);
         break;
-    case DT_AUTOREF:
+    case Optimizer::DT_AUTOREF:
 //        msil_oa_gen_int(0);
         break;
     }
 }
 bool ProcessData(const char *name)
 {
-    for (auto v : baseData)
+    for (auto v : Optimizer::baseData)
     {
-        if (v->type == DT_FUNC)
+        if (v->type == Optimizer::DT_FUNC)
         {
-            temporarySymbols = v->funcData->temporarySymbols;
-            functionVariables = v->funcData->variables;
+            Optimizer::temporarySymbols = v->funcData->temporarySymbols;
+            Optimizer::functionVariables = v->funcData->variables;
             //            blockCount = v->funcData->blockCount;
             //            exitBlock = v->funcData->exitBlock;
             //            tempCount = v->funcData->tempCount;
             //            functionHasAssembly = v->funcData->hasAssembly;
-            intermed_head = v->funcData->instructionList;
-            intermed_tail = intermed_head;
-            while (intermed_tail && intermed_tail->fwd)
-                intermed_tail = intermed_tail->fwd;
-            objectArray_exp = v->funcData->objectArray_exp;
-            fltexp = v->funcData->fltexp;
-            fastcallAlias = v->funcData->fastcallAlias;
+            Optimizer::intermed_head = v->funcData->instructionList;
+            Optimizer::intermed_tail = Optimizer::intermed_head;
+            while (Optimizer::intermed_tail && Optimizer::intermed_tail->fwd)
+                Optimizer::intermed_tail = Optimizer::intermed_tail->fwd;
+            Optimizer::objectArray_exp = v->funcData->objectArray_exp;
+            Optimizer::fltexp = v->funcData->fltexp;
+            Optimizer::fastcallAlias = v->funcData->fastcallAlias;
             currentFunction = v->funcData->name;
-            //SetUsesESP(currentFunction->usesEsp);
-            generate_instructions(intermed_head);
+            //Optimizer::SetUsesESP(currentFunction->usesEsp);
+            generate_instructions(Optimizer::intermed_head);
             msil_flush_peep(currentFunction, nullptr);
             currentFunction = nullptr;
         }
@@ -325,27 +324,27 @@ bool ProcessData(const char *name)
 
 bool LoadFile(SharedMemory* parserMem, std::string fileName)
 {
-    InitIntermediate();
-    bool rv = InputIntermediate(parserMem);
-    SelectBackendData();
-    oinit();
-    SelectBackendData();
+    Optimizer::InitIntermediate();
+    bool rv = Optimizer::InputIntermediate(parserMem);
+    Optimizer::SelectBackendData();
+    Optimizer::oinit();
+    Optimizer::SelectBackendData();
     if (fileName.empty())
     {
-        for (auto&& s : prm_Using)
+        for (auto&& s : Optimizer::prm_Using)
             _add_global_using(s.c_str());
     }
-    if (fileName.empty() && inputFiles.size())
+    if (fileName.empty() && Optimizer::inputFiles.size())
     {
-        if (!cparams.prm_compileonly || cparams.prm_asmfile)
+        if (!Optimizer::cparams.prm_compileonly || Optimizer::cparams.prm_asmfile)
         {
-            if (!outputFileName.empty())
-                outputfile(outFile, outputFileName.c_str(), chosenAssembler->objext);
+            if (!Optimizer::outputFileName.empty())
+                outputfile(outFile, Optimizer::outputFileName.c_str(), Optimizer::chosenAssembler->objext);
             else
-                outputfile(outFile, inputFiles.front().c_str(), chosenAssembler->objext);
+                outputfile(outFile, Optimizer::inputFiles.front().c_str(), Optimizer::chosenAssembler->objext);
             InsertExternalFile(outFile, false);
         }
-        fileName = inputFiles.front();
+        fileName = Optimizer::inputFiles.front();
     }
     msil_main_preprocess((char *)fileName.c_str());
     ResolveMSILExterns();
@@ -353,15 +352,15 @@ bool LoadFile(SharedMemory* parserMem, std::string fileName)
 }
 bool SaveFile(const char *name)
 {
-    if (cparams.prm_compileonly && !cparams.prm_asmfile)
+    if (Optimizer::cparams.prm_compileonly && !Optimizer::cparams.prm_asmfile)
     {
         strcpy(infile, name);
-        outputfile(outFile, name, chosenAssembler->objext);
+        outputfile(outFile, name, Optimizer::chosenAssembler->objext);
         InsertExternalFile(outFile, false);
-        outputFile = fopen(outFile, "wb");
-        if (!outputFile)
+        Optimizer::outputFile = fopen(outFile, "wb");
+        if (!Optimizer::outputFile)
             return false;
-        for (auto v : externals)
+        for (auto v : Optimizer::externals)
         {
             if (v)
             {
@@ -370,8 +369,8 @@ bool SaveFile(const char *name)
         }
         //        msil_oa_setalign(2, dataAlign, bssAlign, constAlign);
         msil_end_generation(outFile);
-        fclose(outputFile);
-        outputFile = nullptr;
+        fclose(Optimizer::outputFile);
+        Optimizer::outputFile = nullptr;
     }
     return true;
 }
@@ -447,19 +446,19 @@ int main(int argc, char* argv[])
         {
             Utils::fatal("internal error: could not load intermediate file");
         }
-        for (auto f : backendFiles)
+        for (auto f : Optimizer::backendFiles)
         {
             InsertExternalFile(f.c_str(), false);
 
         }
-        std::list<std::string> files = inputFiles;
+        std::list<std::string> files = Optimizer::inputFiles;
         if (files.size())
         {
             if (!ProcessData(files.front().c_str()) || !SaveFile(files.front().c_str()))
                 Utils::fatal("File I/O error");
             files.pop_front();
         }
-        if (cparams.prm_compileonly && !cparams.prm_asmfile)
+        if (Optimizer::cparams.prm_compileonly && !Optimizer::cparams.prm_asmfile)
         {
             for (auto p : files)
             {
@@ -469,7 +468,7 @@ int main(int argc, char* argv[])
                     Utils::fatal("File I/O error");
             }
         }
-        if (!cparams.prm_compileonly)
+        if (!Optimizer::cparams.prm_compileonly)
         {
             rv = RunExternalFiles();
         }

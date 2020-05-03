@@ -22,6 +22,9 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
  */
-void WriteText(void);
-int GetOutputSize(void);
-void OutputIntermediate(SharedMemory *mem);
+namespace Optimizer
+{
+    void WriteText(void);
+    int GetOutputSize(void);
+    void OutputIntermediate(SharedMemory *mem);
+}

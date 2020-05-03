@@ -24,28 +24,31 @@
  */
 #include "InstructionParser.h"
 #include "PreProcessor.h"
-extern char outFile[260];
-extern unsigned identityValue;
-extern int maxBlocks, maxTemps;
-extern char cppfile[256];
-extern FILE *cppFile;
-extern char infile[256];
 
-extern FILE *errFile;
-extern PreProcessor *preProcessor;
+namespace Parser
+{
+    extern char outFile[260];
+    extern unsigned identityValue;
+    extern int maxBlocks, maxTemps;
+    extern char cppfile[256];
+    extern FILE *cppFile;
+    extern char infile[256];
 
-extern char realOutFile[260];
+    extern FILE *errFile;
+    extern PreProcessor *preProcessor;
 
-extern InstructionParser* instructionParser;
-extern int usingEsp;
+    extern char realOutFile[260];
 
-extern COMPILER_PARAMS cparams_default;
+    extern InstructionParser* instructionParser;
+    extern int usingEsp;
+
+    extern Optimizer::COMPILER_PARAMS cparams_default;
 
 
-long long ParseExpression(std::string&line);
-void regInit(void);
-int natural_size(EXPRESSION* exp);
-void MakeStubs(void);
-void compile(bool global);
-void enter_filename(const char *name);
-int main(int argc, char* argv[]);
+    long long ParseExpression(std::string&line);
+    int natural_size(EXPRESSION* exp);
+    void MakeStubs(void);
+    void compile(bool global);
+    void enter_filename(const char *name);
+    int main(int argc, char* argv[]);
+}

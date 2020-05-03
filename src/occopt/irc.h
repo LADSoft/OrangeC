@@ -22,21 +22,24 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
  */
-extern int maxAddr;
-typedef struct _spill_
-{
-    struct _spill_* next;
-    IMODE* imode;
-    LIST* uses;
-} SPILL;
-
-void LoadSaturationBounds(void);
 void regInit(void);
-void alloc_init(void);
-void AllocateStackSpace(void);
-void FillInPrologue(QUAD* head, SimpleSymbol* funcsp);
-int SqueezeChange(int temp, int t, int delta);
-void SqueezeInit(void);
-void Precolor(void);
-void retemp(void);
-void AllocateRegisters(QUAD* head);
+namespace Optimizer
+{
+    extern int maxAddr;
+    typedef struct _spill_
+    {
+        struct _spill_* next;
+        IMODE* imode;
+        LIST* uses;
+    } SPILL;
+
+    void LoadSaturationBounds(void);
+    void alloc_init(void);
+    void AllocateStackSpace(void);
+    void FillInPrologue(QUAD* head, SimpleSymbol* funcsp);
+    int SqueezeChange(int temp, int t, int delta);
+    void SqueezeInit(void);
+    void Precolor(void);
+    void retemp(void);
+    void AllocateRegisters(QUAD* head);
+}

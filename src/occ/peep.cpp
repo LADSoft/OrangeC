@@ -34,7 +34,6 @@
 #include "outcode.h"
 #include "outasm.h"
 #include "memory.h"
-
 /* peephole optimizations
  * well not exactly
  * the compiler actually generated risc-like instruction sequences
@@ -50,13 +49,13 @@ void o_peepini(void) { peep_head = peep_tail = 0; }
 void oa_adjust_codelab(void* select, int offset)
 {
     OCODE* peep = (OCODE*)select;
-    if (peep->oper1 && peep->oper1->offset && peep->oper1->offset->type == se_labcon)
+    if (peep->oper1 && peep->oper1->offset && peep->oper1->offset->type == Optimizer::se_labcon)
         if (peep->oper1->offset->i < 0)
             peep->oper1->offset->i += offset;
-    if (peep->oper2 && peep->oper2->offset && peep->oper2->offset->type == se_labcon)
+    if (peep->oper2 && peep->oper2->offset && peep->oper2->offset->type == Optimizer::se_labcon)
         if (peep->oper2->offset->i < 0)
             peep->oper2->offset->i += offset;
-    if (peep->oper3 && peep->oper3->offset && peep->oper3->offset->type == se_labcon)
+    if (peep->oper3 && peep->oper3->offset && peep->oper3->offset->type == Optimizer::se_labcon)
         if (peep->oper3->offset->i < 0)
             peep->oper3->offset->i += offset;
 }
@@ -128,7 +127,7 @@ static void fixlen(AMODE* ap)
         /* the output routines require positive length field */
         if (ap->length < 0)
             ap->length = -ap->length;
-        if ((cparams.prm_assembler == pa_nasm || cparams.prm_assembler == pa_oasm) && ap->mode == am_immed && isintconst(ap->offset))
+        if ((Optimizer::cparams.prm_assembler == pa_nasm || Optimizer::cparams.prm_assembler == pa_oasm) && ap->mode == am_immed && isintconst(ap->offset))
         {
             /* for the x86, assume initially that integer constants are unsized
              * But the x86 allows signed byte constants on most math ops
@@ -141,13 +140,13 @@ static void fixlen(AMODE* ap)
             else
                 ap->length = ISZ_NONE;
         }
-        if (cparams.prm_useesp && (ap->mode == am_indisp || ap->mode == am_indispscale) && ap->offset)
+        if (Optimizer::cparams.prm_useesp && (ap->mode == am_indisp || ap->mode == am_indispscale) && ap->offset)
         {
             if (usingEsp)
             {
                 // this is to adjust the stack level to the current depth
                 if (ap->preg == ESP && !ap->keepesp)
-                    ap->offset = simpleExpressionNode(se_add, ap->offset, simpleIntNode(se_i, pushlevel + funcstackheight));
+                    ap->offset = simpleExpressionNode(Optimizer::se_add, ap->offset, Optimizer::simpleIntNode(Optimizer::se_i, pushlevel + funcstackheight));
             }
         }
     }
@@ -287,7 +286,7 @@ void gen_code2(int op, int len1, int len2, AMODE* ap1, AMODE* ap2)
 
 /*-------------------------------------------------------------------------*/
 
-void gen_codelab(SimpleSymbol* lab)
+void gen_codelab(Optimizer::SimpleSymbol* lab)
 /*
  *      generate a code sequence into the peep list.
  */
@@ -357,7 +356,7 @@ void oa_gen_label(int labno)
 
 /*-------------------------------------------------------------------------*/
 
-void flush_peep(SimpleSymbol* funcsp, QUAD* list)
+void flush_peep(Optimizer::SimpleSymbol* funcsp, Optimizer::QUAD* list)
 /*
  *      output all code and labels in the peep list.
  */
@@ -368,7 +367,7 @@ void flush_peep(SimpleSymbol* funcsp, QUAD* list)
     oa_peep();
     if (peep_head)
         outcode_gen(peep_head);
-    if (cparams.prm_asmfile)
+    if (Optimizer::cparams.prm_asmfile)
     {
         while (peep_head != 0)
         {
@@ -378,7 +377,7 @@ void flush_peep(SimpleSymbol* funcsp, QUAD* list)
                     oa_put_label(peep_head->oper1->offset->i);
                     break;
                 case op_funclabel:
-                    oa_gen_strlab((SimpleSymbol*)peep_head->oper1);
+                    oa_gen_strlab((Optimizer::SimpleSymbol*)peep_head->oper1);
                     break;
                 default:
                     oa_put_code(peep_head);
@@ -428,7 +427,7 @@ void peep_add(OCODE* ip)
                 if (!isintconst(ip->oper2->offset))
                     ip1->oper2->length = ISZ_UINT;
                 ip->oper2->length = ISZ_UINT;
-                ip->oper2->offset = simpleExpressionNode(se_add, ip->oper2->offset, ip1->oper2->offset);
+                ip->oper2->offset = simpleExpressionNode(Optimizer::se_add, ip->oper2->offset, ip1->oper2->offset);
                 ip->opcode = ip1->opcode;
                 remove_peep_entry(ip1);
             }
@@ -441,7 +440,7 @@ void peep_add(OCODE* ip)
                     if (!isintconst(ip->oper2->offset))
                         ip1->oper2->length = ISZ_UINT;
                     ip->oper2->length = ISZ_UINT;
-                    ip->oper2->offset = simpleExpressionNode(se_add, ip->oper2->offset, ip1->oper2->offset);
+                    ip->oper2->offset = simpleExpressionNode(Optimizer::se_add, ip->oper2->offset, ip1->oper2->offset);
                     ip->opcode = ip1->opcode;
                     remove_peep_entry(ip1);
                 }
@@ -787,7 +786,7 @@ void peep_cmp(OCODE* ip)
             }
         }
         ip1 = ip->fwd;
-        if (ip->oper1->mode == am_dreg && ip->oper2->mode == am_immed &&  ip->oper2->offset->type != se_add && ip->oper2->offset->i == 0 && ip1->opcode != op_jc &&
+        if (ip->oper1->mode == am_dreg && ip->oper2->mode == am_immed &&  ip->oper2->offset->type != Optimizer::se_add && ip->oper2->offset->i == 0 && ip1->opcode != op_jc &&
             ip1->opcode != op_jnc && ip1->opcode != op_jae && ip1->opcode != op_jbe && ip1->opcode != op_ja && ip1->opcode != op_jb)
         {
             OCODE* ip2 = ip->back;
@@ -1343,7 +1342,7 @@ void peep_lea(OCODE* ip)
         {
             if (ip1->oper2->mode == am_immed)
             {
-                ip->oper2->offset = simpleExpressionNode(se_add, ip->oper2->offset, ip1->oper2->offset);
+                ip->oper2->offset = simpleExpressionNode(Optimizer::se_add, ip->oper2->offset, ip1->oper2->offset);
                 remove_peep_entry(ip1);
             }
         }
@@ -1668,7 +1667,7 @@ void oa_peep(void)
  */
 {
     OCODE* ip;
-    if (!cparams.prm_bepeep)
+    if (!Optimizer::cparams.prm_bepeep)
         return;
     for (ip = peep_head; ip; ip = ip->fwd)
     {

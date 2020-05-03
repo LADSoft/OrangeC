@@ -45,6 +45,7 @@
 #include "peep.h"
 #include "outcode.h"
 #include "igen.h"
+#include "ilunstream.h"
 
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
@@ -59,19 +60,18 @@ int usingEsp;
 
 InstructionParser* instructionParser;
 
-SimpleSymbol* currentFunction;
+Optimizer::SimpleSymbol* currentFunction;
 
 static const char *occ_verbosity = nullptr;
-static FunctionData* lastFunc;
+static Optimizer::FunctionData* lastFunc;
 
-bool InputIntermediate(SharedMemory* mem);
 
 void regInit() { }
 
 static const int MAX_SHARED_REGION = 240 * 1024 * 1024;
 
 void diag(const char*, ...)
-{
+{       
 
 }
 
@@ -79,7 +79,7 @@ void diag(const char*, ...)
 
 void outputfile(char* buf, const char* name, const char* ext, bool obj)
 {
-    strcpy(buf, outputFileName.c_str());
+    strcpy(buf, Optimizer::outputFileName.c_str());
     if (buf[strlen(buf) - 1] == '\\')
     {
         // output file is a path specification rather than a file name
@@ -88,7 +88,7 @@ void outputfile(char* buf, const char* name, const char* ext, bool obj)
         Utils::StripExt(buf);
         Utils::AddExt(buf, ext);
     }
-    else if (buf[0] == 0 || obj && !cparams.prm_compileonly && !assembling)// no output file specified, put the output wherever the input was...
+    else if (buf[0] == 0 || obj && !Optimizer::cparams.prm_compileonly && !Optimizer::assembling)// no output file specified, put the output wherever the input was...
     {
         strcpy(buf, name);
         char *p = strrchr(buf, '\\');
@@ -109,155 +109,155 @@ void outputfile(char* buf, const char* name, const char* ext, bool obj)
 }
 
 
-void global(SimpleSymbol* sym, int flags)
+void global(Optimizer::SimpleSymbol* sym, int flags)
 {
     omf_globaldef(sym);
-    if (cparams.prm_asmfile)
+    if (Optimizer::cparams.prm_asmfile)
     {
-        if (sym->storage_class != scc_localstatic && sym->storage_class != scc_static)
-            bePrintf("[global %s]\n", sym->outputName);
+        if (sym->storage_class != Optimizer::scc_localstatic && sym->storage_class != Optimizer::scc_static)
+            Optimizer::bePrintf("[global %s]\n", sym->outputName);
     }
-    if (flags & BaseData::DF_EXPORT)
+    if (flags & Optimizer::BaseData::DF_EXPORT)
     {
         oa_put_expfunc(sym);
     }
 }
-void ProcessData(BaseData* v)
+void ProcessData(Optimizer::BaseData* v)
 {
     switch (v->type)
     {
-    case DT_SEG:
-        oa_enterseg((e_sg)v->i);
+    case Optimizer::DT_SEG:
+        oa_enterseg((Optimizer::e_sg)v->i);
         break;
-    case DT_SEGEXIT:
+    case Optimizer::DT_SEGEXIT:
         break;
-    case DT_DEFINITION:
+    case Optimizer::DT_DEFINITION:
         global(v->symbol.sym, v->symbol.i);
         oa_gen_strlab(v->symbol.sym);
         break;
-    case DT_LABELDEFINITION:
+    case Optimizer::DT_LABELDEFINITION:
         oa_put_label(v->i);
         break;
-    case DT_RESERVE:
+    case Optimizer::DT_RESERVE:
         oa_genstorage(v->i);
         break;
-    case DT_SYM:
+    case Optimizer::DT_SYM:
         oa_genref(v->symbol.sym, v->symbol.i);
         break;
-    case DT_SRREF:
+    case Optimizer::DT_SRREF:
         oa_gensrref(v->symbol.sym, v->symbol.i, 0);
         break;
-    case DT_PCREF:
+    case Optimizer::DT_PCREF:
         oa_genpcref(v->symbol.sym, v->symbol.i);
         break;
-    case DT_FUNCREF:
+    case Optimizer::DT_FUNCREF:
 //        global(v->symbol.sym, v->symbol.i);
         break;
-    case DT_LABEL:
+    case Optimizer::DT_LABEL:
         oa_gen_labref(v->i);
         break;
-    case DT_LABDIFFREF:
+    case Optimizer::DT_LABDIFFREF:
         outcode_gen_labdifref(v->diff.l1, v->diff.l2);
         break;
-    case DT_STRING:
+    case Optimizer::DT_STRING:
         oa_genstring(v->astring.str, v->astring.i);
         break;
-    case DT_BIT:
+    case Optimizer::DT_BIT:
         break;
-    case DT_BOOL:
-        oa_genint(chargen, v->i);
+    case Optimizer::DT_BOOL:
+        oa_genint(Optimizer::chargen, v->i);
         break;
-    case DT_BYTE:
-        oa_genint(chargen, v->i);
+    case Optimizer::DT_BYTE:
+        oa_genint(Optimizer::chargen, v->i);
         break;
-    case DT_USHORT:
-        oa_genint(shortgen, v->i);
+    case Optimizer::DT_USHORT:
+        oa_genint(Optimizer::shortgen, v->i);
         break;
-    case DT_UINT:
-        oa_genint(intgen, v->i);
+    case Optimizer::DT_UINT:
+        oa_genint(Optimizer::intgen, v->i);
         break;
-    case DT_ULONG:
-        oa_genint(longgen, v->i);
+    case Optimizer::DT_ULONG:
+        oa_genint(Optimizer::longgen, v->i);
         break;
-    case DT_ULONGLONG:
-        oa_genint(longlonggen, v->i);
+    case Optimizer::DT_ULONGLONG:
+        oa_genint(Optimizer::longlonggen, v->i);
         break;
-    case DT_16:
-        oa_genint(u16gen, v->i);
+    case Optimizer::DT_16:
+        oa_genint(Optimizer::u16gen, v->i);
         break;
-    case DT_32:
-        oa_genint(u32gen, v->i);
+    case Optimizer::DT_32:
+        oa_genint(Optimizer::u32gen, v->i);
         break;
-    case DT_ENUM:
-        oa_genint(intgen, v->i);
+    case Optimizer::DT_ENUM:
+        oa_genint(Optimizer::intgen, v->i);
         break;
-    case DT_FLOAT:
-        oa_genfloat(floatgen, &v->f);
+    case Optimizer::DT_FLOAT:
+        oa_genfloat(Optimizer::floatgen, &v->f);
         break;
-    case DT_DOUBLE:
-        oa_genfloat(doublegen, &v->f);
+    case Optimizer::DT_DOUBLE:
+        oa_genfloat(Optimizer::doublegen, &v->f);
         break;
-    case DT_LDOUBLE:
-        oa_genfloat(longdoublegen, &v->f);
+    case Optimizer::DT_LDOUBLE:
+        oa_genfloat(Optimizer::longdoublegen, &v->f);
         break;
-    case DT_CFLOAT:
-        oa_genfloat(floatgen, &v->c.r);
-        oa_genfloat(floatgen, &v->c.i);
+    case Optimizer::DT_CFLOAT:
+        oa_genfloat(Optimizer::floatgen, &v->c.r);
+        oa_genfloat(Optimizer::floatgen, &v->c.i);
         break;
-    case DT_CDOUBLE:
-        oa_genfloat(doublegen, &v->c.r);
-        oa_genfloat(doublegen, &v->c.i);
+    case Optimizer::DT_CDOUBLE:
+        oa_genfloat(Optimizer::doublegen, &v->c.r);
+        oa_genfloat(Optimizer::doublegen, &v->c.i);
         break;
-    case DT_CLONGDOUBLE:
-        oa_genfloat(longdoublegen, &v->c.r);
-        oa_genfloat(longdoublegen, &v->c.i);
+    case Optimizer::DT_CLONGDOUBLE:
+        oa_genfloat(Optimizer::longdoublegen, &v->c.r);
+        oa_genfloat(Optimizer::longdoublegen, &v->c.i);
         break;
-    case DT_ADDRESS:
+    case Optimizer::DT_ADDRESS:
         oa_genaddress(v->i);
         break;
-    case DT_VIRTUAL:
+    case Optimizer::DT_VIRTUAL:
         oa_gen_virtual(v->symbol.sym, v->symbol.i);
         if (v->symbol.sym->isexport)
             oa_put_expfunc(v->symbol.sym);
         break;
-    case DT_ENDVIRTUAL:
+    case Optimizer::DT_ENDVIRTUAL:
         oa_gen_endvirtual(v->symbol.sym);
         break;
-    case DT_ALIGN:
+    case Optimizer::DT_ALIGN:
         oa_align(v->i);
         break;
-    case DT_VTT:
+    case Optimizer::DT_VTT:
         oa_gen_vtt(v->symbol.i, v->symbol.sym);
         break;
-    case DT_IMPORTTHUNK:
+    case Optimizer::DT_IMPORTTHUNK:
         oa_gen_importThunk(v->symbol.sym);
         break;
-    case DT_VC1:
+    case Optimizer::DT_VC1:
         oa_gen_vc1(v->symbol.sym);
         break;
-    case DT_AUTOREF:
-        oa_genint(intgen, v->symbol.sym->offset + v->symbol.i);
+    case Optimizer::DT_AUTOREF:
+        oa_genint(Optimizer::intgen, v->symbol.sym->offset + v->symbol.i);
         break;
     break;
     }
 }
 bool ProcessData(const char *name)
 {
-    if (cparams.prm_asmfile)
+    if (Optimizer::cparams.prm_asmfile)
     {
         char buf[260];
-        outputfile(buf, name, assemblerFileExtension.c_str(), true);
+        outputfile(buf, name, Optimizer::assemblerFileExtension.c_str(), true);
         InsertExternalFile(buf, false);
-        outputFile = fopen(buf, "w");
-        if (!outputFile)
+        Optimizer::outputFile = fopen(buf, "w");
+        if (!Optimizer::outputFile)
             return false;
         oa_header(buf, "OCC Version " STRING_VERSION);
-        oa_setalign(2, dataAlign, bssAlign, constAlign);
+        oa_setalign(2, Optimizer::dataAlign, Optimizer::bssAlign, Optimizer::constAlign);
 
     }
-    for (auto v : baseData)
+    for (auto v : Optimizer::baseData)
     {
-        if (v->type == DT_FUNC)
+        if (v->type == Optimizer::DT_FUNC)
         {
             lastFunc = v->funcData;
 //            temporarySymbols = v->funcData->temporarySymbols;
@@ -266,16 +266,16 @@ bool ProcessData(const char *name)
 //            exitBlock = v->funcData->exitBlock;
 //            tempCount = v->funcData->tempCount;
 //            functionHasAssembly = v->funcData->hasAssembly;
-            intermed_head = v->funcData->instructionList;
-            intermed_tail = intermed_head;
-            while (intermed_tail && intermed_tail->fwd)
-                intermed_tail = intermed_tail->fwd;
-            objectArray_exp = v->funcData->objectArray_exp;
-            fltexp = v->funcData->fltexp;
-            fastcallAlias = v->funcData->fastcallAlias;
+            Optimizer::intermed_head = v->funcData->instructionList;
+            Optimizer::intermed_tail = Optimizer::intermed_head;
+            while (Optimizer::intermed_tail && Optimizer::intermed_tail->fwd)
+                Optimizer::intermed_tail = Optimizer::intermed_tail->fwd;
+            Optimizer::objectArray_exp = v->funcData->objectArray_exp;
+            Optimizer::fltexp = v->funcData->fltexp;
+            Optimizer::fastcallAlias = v->funcData->fastcallAlias;
             currentFunction = v->funcData->name;
-            SetUsesESP(currentFunction->usesEsp);
-            generate_instructions(intermed_head);
+            Optimizer::SetUsesESP(currentFunction->usesEsp);
+            generate_instructions(Optimizer::intermed_head);
             flush_peep(currentFunction, nullptr);
         }
         else
@@ -283,10 +283,10 @@ bool ProcessData(const char *name)
             ProcessData(v);
         }
     }
-    if (cparams.prm_asmfile)
+    if (Optimizer::cparams.prm_asmfile)
     {
         oa_end_generation();
-        for (auto v : externals)
+        for (auto v : Optimizer::externals)
         {
             if (v)
             {
@@ -298,46 +298,46 @@ bool ProcessData(const char *name)
             }
         }
         oa_trailer();
-        fclose(outputFile);
-        outputFile = nullptr;
+        fclose(Optimizer::outputFile);
+        Optimizer::outputFile = nullptr;
     }
     return true;
 }
 
 bool LoadFile(SharedMemory* optimizerMem)
 {
-    InitIntermediate();
-    bool rv = InputIntermediate(optimizerMem);
-    SelectBackendData();
+    Optimizer::InitIntermediate();
+    bool rv = Optimizer::InputIntermediate(optimizerMem);
+    Optimizer::SelectBackendData();
     dbginit();
     outcode_file_init();
-    oinit();
+    Optimizer::oinit();
     omfInit();
-    SelectBackendData();
+    Optimizer::SelectBackendData();
     return rv;
 }
 bool SaveFile(const char *name)
 {
-    if (!cparams.prm_asmfile)
+    if (!Optimizer::cparams.prm_asmfile)
     {
         strcpy(infile, name);
-        outputfile(outFile, name, chosenAssembler->objext, true);
+        outputfile(outFile, name, Optimizer::chosenAssembler->objext, true);
         InsertExternalFile(outFile, false);
-        outputFile = fopen(outFile, "wb");
-        if (!outputFile)
+        Optimizer::outputFile = fopen(outFile, "wb");
+        if (!Optimizer::outputFile)
             return false;
-        if (cparams.prm_browse)
+        if (Optimizer::cparams.prm_browse)
         {
             outputfile(outFile, name, ".cbr", true);
             // have to readd the extension in case /o was specified
             Utils::StripExt(outFile);
             Utils::AddExt(outFile, ".cbr");
-            browseFile = fopen(outFile, "wb");
-            if (!browseFile)
+            Optimizer::browseFile = fopen(outFile, "wb");
+            if (!Optimizer::browseFile)
                 return false;
         }
         oa_end_generation();
-        for (auto v : externals)
+        for (auto v : Optimizer::externals)
         {
             if (v)
             {
@@ -348,9 +348,9 @@ bool SaveFile(const char *name)
                 }
             }
         }
-        oa_setalign(2, dataAlign, bssAlign, constAlign);
+        oa_setalign(2, Optimizer::dataAlign, Optimizer::bssAlign, Optimizer::constAlign);
         output_obj_file();
-        fclose(outputFile);
+        fclose(Optimizer::outputFile);
     }
     return true;
 }
@@ -423,16 +423,16 @@ int main(int argc, char* argv[])
         {
             Utils::fatal("internal error: could not load intermediate file");
         }
-        for (auto v : toolArgs)
+        for (auto v : Optimizer::toolArgs)
         {
             InsertOption(v.c_str());
         }
-        for (auto f : backendFiles)
+        for (auto f : Optimizer::backendFiles)
         {
             InsertExternalFile(f.c_str(), false);
 
         }
-        std::list<std::string> files = inputFiles;
+        std::list<std::string> files = Optimizer::inputFiles;
         if (files.size())
         {
             if (!ProcessData(files.front().c_str()) || !SaveFile(files.front().c_str()))

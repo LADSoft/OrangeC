@@ -36,19 +36,22 @@
 #define BRF_STATIC 1
 #define BRF_TYPE 5
 
-typedef struct browseFile
+namespace Optimizer
 {
-    struct browseFile* next;
-    const char* name;
-    int filenum;
-} BROWSEFILE;
-typedef struct browseInfo
-{
-    struct browseInfo* next;
-    int type;
-    const char* name;
-    int filenum;
-    int lineno;
-    int charpos;
-    int flags;
-} BROWSEINFO;
+    typedef struct browseFile
+    {
+        struct browseFile* next;
+        const char* name;
+        int filenum;
+    } BROWSEFILE;
+    typedef struct browseInfo
+    {
+        struct browseInfo* next;
+        int type;
+        const char* name;
+        int filenum;
+        int lineno;
+        int charpos;
+        int flags;
+    } BROWSEINFO;
+}

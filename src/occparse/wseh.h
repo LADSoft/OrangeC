@@ -22,4 +22,7 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
  */
-LEXEME* statement_SEH(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent);
+namespace Parser
+{
+    LEXEME* statement_SEH(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent);
+}   

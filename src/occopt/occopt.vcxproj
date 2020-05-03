@@ -58,6 +58,7 @@
   <ItemGroup>
     <ClInclude Include="beinterf.h" />
     <ClInclude Include="beinterfdefs.h" />
+    <ClInclude Include="browsedefs.h" />
     <ClInclude Include="config.h" />
     <ClInclude Include="configmsil.h" />
     <ClInclude Include="configx86.h" />

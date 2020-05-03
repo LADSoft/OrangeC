@@ -25,7 +25,8 @@
 #include "ctypes.h"
 #include "Utils.h"
 #include <map>
-    
+#include "memory.h"
+
 static MEMBLK* globals;
 static MEMBLK* locals;
 /*static*/ MEMBLK* opts;
@@ -87,7 +88,7 @@ static MEMBLK* galloc(MEMBLK** arena, int size)
     *arena = selected;
     return selected;
 }
-void* memAlloc(MEMBLK** arena, int size, bool clear = true)
+void* memAlloc(MEMBLK** arena, int size, bool clear)
 {
 //vv[size] += size;
     MEMBLK* selected = *arena;

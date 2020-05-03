@@ -22,30 +22,33 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
  */
+namespace Parser
+{
 
-void ConsDestDeclarationErrors(SYMBOL* sp, bool notype);
-LEXEME* FindClass(LEXEME* lex, SYMBOL* funcsp, SYMBOL** sym);
-MEMBERINITIALIZERS* GetMemberInitializers(LEXEME** lex2, SYMBOL* funcsp, SYMBOL* sym);
-void SetParams(SYMBOL* cons);
-SYMBOL* insertFunc(SYMBOL* sp, SYMBOL* ovl);
-bool matchesCopy(SYMBOL* sp, bool move);
-SYMBOL* getCopyCons(SYMBOL* base, bool move);
-bool hasVTab(SYMBOL* sp);
-void createConstructorsForLambda(SYMBOL* sp);
-void createDefaultConstructors(SYMBOL* sp);
-EXPRESSION* destructLocal(EXPRESSION* exp);
-void destructBlock(EXPRESSION** exp, SYMLIST* hr, bool mainDestruct);
-SYMBOL* findClassName(const char* name, SYMBOL* cls, BASECLASS* bc, VBASEENTRY* vbase, int* offset);
-void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons);
-EXPRESSION* thunkConstructorHead(BLOCKDATA* b, SYMBOL* sym, SYMBOL* cons, HASHTABLE* syms, bool parseInitializers, bool doCopy);
-void createConstructor(SYMBOL* sp, SYMBOL* consfunc);
-void asnVirtualBases(BLOCKDATA* b, SYMBOL* sp, VBASEENTRY* vbe, EXPRESSION* thisptr, EXPRESSION* other, bool move, bool isconst);
-void createAssignment(SYMBOL* sym, SYMBOL* asnfunc);
-void thunkDestructorTail(BLOCKDATA* b, SYMBOL* sp, SYMBOL* dest, HASHTABLE* syms);
-void makeArrayConsDest(TYPE** tp, EXPRESSION** exp, SYMBOL* cons, SYMBOL* dest, EXPRESSION* count);
-void callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* arrayElms, bool top, bool pointer, bool skipAccess);
-bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool checkcopy, EXPRESSION* arrayElms, bool top,
-    bool maybeConversion, bool implicit, bool pointer, bool usesInitList, bool isAssign);
-bool callConstructorParam(TYPE** tp, EXPRESSION** exp, TYPE* paramTP, EXPRESSION* paramExp, bool top, bool maybeConversion,
-    bool implicit, bool pointer);
-void PromoteConstructorArgs(SYMBOL* cons1, FUNCTIONCALL* params);
+    void ConsDestDeclarationErrors(SYMBOL* sp, bool notype);
+    LEXEME* FindClass(LEXEME* lex, SYMBOL* funcsp, SYMBOL** sym);
+    MEMBERINITIALIZERS* GetMemberInitializers(LEXEME** lex2, SYMBOL* funcsp, SYMBOL* sym);
+    void SetParams(SYMBOL* cons);
+    SYMBOL* insertFunc(SYMBOL* sp, SYMBOL* ovl);
+    bool matchesCopy(SYMBOL* sp, bool move);
+    SYMBOL* getCopyCons(SYMBOL* base, bool move);
+    bool hasVTab(SYMBOL* sp);
+    void createConstructorsForLambda(SYMBOL* sp);
+    void createDefaultConstructors(SYMBOL* sp);
+    EXPRESSION* destructLocal(EXPRESSION* exp);
+    void destructBlock(EXPRESSION** exp, SYMLIST* hr, bool mainDestruct);
+    SYMBOL* findClassName(const char* name, SYMBOL* cls, BASECLASS* bc, VBASEENTRY* vbase, int* offset);
+    void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons);
+    EXPRESSION* thunkConstructorHead(BLOCKDATA* b, SYMBOL* sym, SYMBOL* cons, HASHTABLE* syms, bool parseInitializers, bool doCopy);
+    void createConstructor(SYMBOL* sp, SYMBOL* consfunc);
+    void asnVirtualBases(BLOCKDATA* b, SYMBOL* sp, VBASEENTRY* vbe, EXPRESSION* thisptr, EXPRESSION* other, bool move, bool isconst);
+    void createAssignment(SYMBOL* sym, SYMBOL* asnfunc);
+    void thunkDestructorTail(BLOCKDATA* b, SYMBOL* sp, SYMBOL* dest, HASHTABLE* syms);
+    void makeArrayConsDest(TYPE** tp, EXPRESSION** exp, SYMBOL* cons, SYMBOL* dest, EXPRESSION* count);
+    void callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* arrayElms, bool top, bool pointer, bool skipAccess);
+    bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool checkcopy, EXPRESSION* arrayElms, bool top,
+        bool maybeConversion, bool implicit, bool pointer, bool usesInitList, bool isAssign);
+    bool callConstructorParam(TYPE** tp, EXPRESSION** exp, TYPE* paramTP, EXPRESSION* paramExp, bool top, bool maybeConversion,
+        bool implicit, bool pointer);
+    void PromoteConstructorArgs(SYMBOL* cons1, FUNCTIONCALL* params);
+}

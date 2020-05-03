@@ -26,27 +26,30 @@
 #define DB_H
 #include "../sqlite3/sqlite3.h"
 
-void ccReset(void);
-int ccDBOpen(const char* name);
-int ccBegin(void );
-int ccEnd(void );
-int ccDBDeleteForFile( sqlite3_int64 id);
-int ccWriteName( const char* name, sqlite_int64* id, sqlite_int64 main_id);
-int ccWriteStructName( const char* name, sqlite_int64* id);
-int ccWriteFileName( const char* name, sqlite_int64* id);
-int ccWriteFileTime( const char* name, int time, sqlite_int64* id);
-int ccWriteLineNumbers( const char* symname, const char* nameoftype, const char* filename, 
-                       int indirectCount, sqlite_int64 struct_id, 
-                       sqlite3_int64 main_id, int start, int end, int altend,
-                       int flags, sqlite_int64* id);
-int ccWriteLineData(sqlite_int64 file_id, sqlite_int64 main_id, const char* data, int len, int lines);
-int ccWriteGlobalArg( sqlite_int64 line_id, sqlite_int64 main_id, const char* symname, const char* nameoftype, int* order);
-int ccWriteStructField( sqlite3_int64 name_id, const char* symname, const char* nameoftype, 
-                       int indirectCount, sqlite_int64 struct_id, 
-                       sqlite3_int64 file_id, sqlite3_int64 main_id, 
-                       int flags, int* order, sqlite_int64* id);
-int ccWriteMethodArg( sqlite_int64 struct_id, const char* nameoftype, int* order, sqlite3_int64 main_id);
-int ccWriteSymbolType( const char* symname, sqlite3_int64 file_id, const char* declFile, int startLine, int endLine, int type);
-int ccWriteNameSpaceEntry(const char* symname, sqlite_int64 file_id, const char* filename, int startline, int endline);
-int ccWriteUsingRecord(const char* symname, const char* parentname, const char* file, int line, sqlite_int64 main_id);
+namespace CompletionCompiler
+{
+    void ccReset(void);
+    int ccDBOpen(const char* name);
+    int ccBegin(void);
+    int ccEnd(void);
+    int ccDBDeleteForFile(sqlite3_int64 id);
+    int ccWriteName(const char* name, sqlite_int64* id, sqlite_int64 main_id);
+    int ccWriteStructName(const char* name, sqlite_int64* id);
+    int ccWriteFileName(const char* name, sqlite_int64* id);
+    int ccWriteFileTime(const char* name, int time, sqlite_int64* id);
+    int ccWriteLineNumbers(const char* symname, const char* nameoftype, const char* filename,
+        int indirectCount, sqlite_int64 struct_id,
+        sqlite3_int64 main_id, int start, int end, int altend,
+        int flags, sqlite_int64* id);
+    int ccWriteLineData(sqlite_int64 file_id, sqlite_int64 main_id, const char* data, int len, int lines);
+    int ccWriteGlobalArg(sqlite_int64 line_id, sqlite_int64 main_id, const char* symname, const char* nameoftype, int* order);
+    int ccWriteStructField(sqlite3_int64 name_id, const char* symname, const char* nameoftype,
+        int indirectCount, sqlite_int64 struct_id,
+        sqlite3_int64 file_id, sqlite3_int64 main_id,
+        int flags, int* order, sqlite_int64* id);
+    int ccWriteMethodArg(sqlite_int64 struct_id, const char* nameoftype, int* order, sqlite3_int64 main_id);
+    int ccWriteSymbolType(const char* symname, sqlite3_int64 file_id, const char* declFile, int startLine, int endLine, int type);
+    int ccWriteNameSpaceEntry(const char* symname, sqlite_int64 file_id, const char* filename, int startline, int endline);
+    int ccWriteUsingRecord(const char* symname, const char* parentname, const char* file, int line, sqlite_int64 main_id);
+}
 #endif //DB_H

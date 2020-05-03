@@ -22,17 +22,20 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
  */
+namespace Parser
+{
 
-void inlineinit(void);
-void dumpInlines(void);
-void dumpImportThunks(void);
-void dumpvc1Thunks(void);
-SYMBOL* getvc1Thunk(int offset);
-void InsertInline(SYMBOL* sym);
-void InsertInlineData(SYMBOL* sym);
-EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval);
-STATEMENT* inlinestmt(STATEMENT* block);
-void SetupVariables(SYMBOL* sym);
-EXPRESSION* doinline(FUNCTIONCALL* params, SYMBOL* funcsp);
-bool IsEmptyFunction(FUNCTIONCALL* params, SYMBOL* funcsp);
+    void inlineinit(void);
+    void dumpInlines(void);
+    void dumpImportThunks(void);
+    void dumpvc1Thunks(void);
+    SYMBOL* getvc1Thunk(int offset);
+    void InsertInline(SYMBOL* sym);
+    void InsertInlineData(SYMBOL* sym);
+    EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval);
+    STATEMENT* inlinestmt(STATEMENT* block);
+    void SetupVariables(SYMBOL* sym);
+    EXPRESSION* doinline(FUNCTIONCALL* params, SYMBOL* funcsp);
+    bool IsEmptyFunction(FUNCTIONCALL* params, SYMBOL* funcsp);
 
+}

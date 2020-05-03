@@ -28,6 +28,7 @@
 #include <limits.h>
 #include "be.h"
 #include <stack>
+#include "ioptimizer.h"
 #include "config.h"
 #include "ildata.h"
 #include "OptUtils.h"
@@ -37,6 +38,7 @@
 #include "memory.h"
 #include "symfuncs.h"
 #include "gen.h"
+#include "ioptutil.h"
 
 #define MAX_ALIGNS 50
 int pushlevel = 0;
@@ -50,7 +52,7 @@ static int fstackid;
 static int inframe;
 static int switch_deflab;
 static long long switch_range, switch_case_count, switch_case_max;
-static IMODE* switch_ip;
+static Optimizer::IMODE* switch_ip;
 static enum { swm_enumerate, swm_compactstart, swm_compact, swm_tree } switch_mode;
 static int switch_lastcase;
 static AMODE *switch_apl, *switch_aph;
@@ -62,11 +64,11 @@ static int switchTreePos;
 /*static int floatArea; */
 
 /* map the icode version of the regs to the processor version */
-bool BackendIntrinsic(QUAD* q);
+bool BackendIntrinsic(Optimizer::QUAD* q);
 
-SimpleExpression* copy_expression(SimpleExpression* node)
+Optimizer::SimpleExpression* copy_expression(Optimizer::SimpleExpression* node)
 {
-    SimpleExpression* rv = (SimpleExpression*)Alloc(sizeof(SimpleExpression));
+    Optimizer::SimpleExpression* rv = (Optimizer::SimpleExpression*)Alloc(sizeof(Optimizer::SimpleExpression));
     memcpy(rv, node, sizeof(*rv));
     if (rv->left)
         rv->left = copy_expression(rv->left);
@@ -90,10 +92,10 @@ AMODE* make_label(int lab)
  *      construct a reference node for an internal label number.
  */
 {
-    SimpleExpression* lnode;
+    Optimizer::SimpleExpression* lnode;
     AMODE* ap;
-    lnode = (SimpleExpression*)(SimpleExpression*)beLocalAlloc(sizeof(SimpleExpression));
-    lnode->type = se_labcon;
+    lnode = (Optimizer::SimpleExpression*)(Optimizer::SimpleExpression*)beLocalAlloc(sizeof(Optimizer::SimpleExpression));
+    lnode->type = Optimizer::se_labcon;
     lnode->i = lab;
     ap = (AMODE*)beLocalAlloc(sizeof(AMODE));
     ap->mode = am_immed;
@@ -127,7 +129,7 @@ void make_floatconst(AMODE* ap)
     if (isintconst(ap->offset))
     {
         ap->offset->f = (long long)ap->offset->i;
-        ap->offset->type = se_f;
+        ap->offset->type = Optimizer::se_f;
         size = ISZ_DOUBLE;
     }
     else
@@ -201,10 +203,10 @@ AMODE* aimmed(unsigned long long i)
  */
 {
     AMODE* ap;
-    SimpleExpression* ep;
+    Optimizer::SimpleExpression* ep;
     i &= 0xffffffffU;
-    ep = (SimpleExpression*)(SimpleExpression*)beLocalAlloc(sizeof(SimpleExpression));
-    ep->type = se_i;
+    ep = (Optimizer::SimpleExpression*)(Optimizer::SimpleExpression*)beLocalAlloc(sizeof(Optimizer::SimpleExpression));
+    ep->type = Optimizer::se_i;
     ep->i = i;
     ap = (AMODE*)beLocalAlloc(sizeof(AMODE));
     ap->mode = am_immed;
@@ -248,24 +250,24 @@ AMODE* aimmedt(long i, int size)
 }
 
 /*-------------------------------------------------------------------------*/
-bool isauto(SimpleExpression* ep)
+bool isauto(Optimizer::SimpleExpression* ep)
 {
-    if (ep->type == se_auto)
+    if (ep->type == Optimizer::se_auto)
         return true;
-    if (ep->type == se_add)
+    if (ep->type == Optimizer::se_add)
         return isauto(ep->left) || isauto(ep->right);
-    if (ep->type == se_sub)
+    if (ep->type == Optimizer::se_sub)
         return isauto(ep->left);
     return false;
 }
-AMODE* make_offset(SimpleExpression* node)
+AMODE* make_offset(Optimizer::SimpleExpression* node)
 /*
  *      make a direct reference to a node.
  */
 {
     AMODE* ap;
     ap = (AMODE*)beLocalAlloc(sizeof(AMODE));
-    if (node->type == se_tempref)
+    if (node->type == Optimizer::se_tempref)
     {
         diag("make_offset: orignode");
     }
@@ -285,8 +287,8 @@ AMODE* make_offset(SimpleExpression* node)
 AMODE* make_stack(int number)
 {
     AMODE* ap = (AMODE*)beLocalAlloc(sizeof(AMODE));
-    SimpleExpression* ep = (SimpleExpression*)(SimpleExpression*)beLocalAlloc(sizeof(SimpleExpression));
-    ep->type = se_i;
+    Optimizer::SimpleExpression* ep = (Optimizer::SimpleExpression*)(Optimizer::SimpleExpression*)beLocalAlloc(sizeof(Optimizer::SimpleExpression));
+    ep->type = Optimizer::se_i;
     ep->i = -number;
     ap->mode = am_indisp;
     ap->preg = ESP;
@@ -297,28 +299,28 @@ AMODE* make_stack(int number)
 }
 AMODE* setSymbol(const char* name)
 /*
- *      generate a call to a library routine.
+ *      generate a call to a library routine.S
  */
 {
     AMODE* result;
-    SimpleSymbol* sym = SymbolManager::Get(name);
+    Optimizer::SimpleSymbol* sym = Optimizer::SymbolManager::Get(name);
     if (sym == 0)
     {
-        LIST* l1;
-        sym = (SimpleSymbol*)Alloc(sizeof(SimpleSymbol));
-        sym->storage_class = scc_external;
+        Optimizer::LIST* l1;
+        sym = (Optimizer::SimpleSymbol*)Alloc(sizeof(Optimizer::SimpleSymbol));
+        sym->storage_class = Optimizer::scc_external;
         sym->name = sym->outputName = litlate(name);
-        sym->tp = (SimpleType*)Alloc(sizeof(SimpleType));
-        sym->tp->type = st_func;
-//        SymbolManager::Add(name, sym);
-        externals.push_back(sym);
+        sym->tp = (Optimizer::SimpleType*)Alloc(sizeof(Optimizer::SimpleType));
+        sym->tp->type = Optimizer::st_func;
+//        Optimizer::SymbolManager::Add(name, sym);
+        Optimizer::externals.push_back(sym);
     }
     result = (AMODE*)(AMODE*)Alloc(sizeof(AMODE));
-    result->offset = (SimpleExpression*)Alloc(sizeof(SimpleExpression));
-    result->offset->type = se_global;
+    result->offset = (Optimizer::SimpleExpression*)Alloc(sizeof(Optimizer::SimpleExpression));
+    result->offset->type = Optimizer::se_global;
     result->offset->sp = sym;
-    result->offset->type = se_pc;
-    if (chosenAssembler->arch->libsasimports)
+    result->offset->type = Optimizer::se_pc;
+    if (Optimizer::chosenAssembler->arch->libsasimports)
         result->mode = am_direct;
     else
         result->mode = am_immed;
@@ -332,10 +334,10 @@ static void callLibrary(const char* name, int size)
     if (size)
         gen_code(op_add, makedreg(ESP), aimmed(size));
 }
-void oa_gen_vtt(int dataOffset, SimpleSymbol* func)
+void oa_gen_vtt(int dataOffset, Optimizer::SimpleSymbol* func)
 {
-    SimpleExpression* n = (SimpleExpression*)Alloc(sizeof(SimpleExpression));
-    n->type = se_pc;
+    Optimizer::SimpleExpression* n = (Optimizer::SimpleExpression*)Alloc(sizeof(Optimizer::SimpleExpression));
+    n->type = Optimizer::se_pc;
     n->sp = func;
     AMODE* ofs = make_offset(n);
     ofs->mode = am_immed;
@@ -343,23 +345,23 @@ void oa_gen_vtt(int dataOffset, SimpleSymbol* func)
     gen_code(op_jmp, ofs, NULL);
     flush_peep(NULL, NULL);
 }
-void oa_gen_vc1(SimpleSymbol* func)
+void oa_gen_vc1(Optimizer::SimpleSymbol* func)
 {
     AMODE* ofs = makedreg(EAX);
-    ofs->offset = simpleIntNode(se_i, 0);
+    ofs->offset = simpleIntNode(Optimizer::se_i, 0);
     ofs->mode = am_indisp;
     gen_code(op_mov, makedreg(EAX), makedreg(ECX));
     gen_code(op_mov, makedreg(EAX), ofs);
-    ofs->offset = simpleIntNode(se_i, func->offset);
+    ofs->offset = simpleIntNode(Optimizer::se_i, func->offset);
     gen_code(op_jmp, ofs, NULL);
     flush_peep(NULL, NULL);
 }
-void oa_gen_importThunk(SimpleSymbol* func)
+void oa_gen_importThunk(Optimizer::SimpleSymbol* func)
 {
     AMODE* ofs = (AMODE*)Alloc(sizeof(AMODE));
     ofs->mode = am_direct;
-    ofs->offset = (SimpleExpression*)Alloc(sizeof(SimpleExpression));
-    ofs->offset->type = se_pc;
+    ofs->offset = (Optimizer::SimpleExpression*)Alloc(sizeof(Optimizer::SimpleExpression));
+    ofs->offset->type = Optimizer::se_pc;
     ofs->offset->sp = func; // was func->mainsym
     gen_code(op_jmp, ofs, NULL);
     flush_peep(NULL, NULL);
@@ -370,7 +372,7 @@ void make_complexconst(AMODE* ap, AMODE* api)
     AMODE* apt;
     if (isintconst(ap->offset))
     {
-        api->offset = simpleExpressionNode(se_f, 0, 0); /* defaults to zero. 0 */
+        api->offset = simpleExpressionNode(Optimizer::se_f, 0, 0); /* defaults to zero. 0 */
         api->offset->sp->sizeFromType = ISZ_DOUBLE;
     }
     else
@@ -380,13 +382,13 @@ void make_complexconst(AMODE* ap, AMODE* api)
             case ISZ_FLOAT:
             case ISZ_DOUBLE:
             case ISZ_LDOUBLE:
-                api->offset = simpleExpressionNode(se_f, 0, 0); /* defaults to zero. 0 */
+                api->offset = simpleExpressionNode(Optimizer::se_f, 0, 0); /* defaults to zero. 0 */
                 api->offset->sizeFromType = ap->offset->sizeFromType;
                 break;
             case ISZ_IFLOAT:
             case ISZ_IDOUBLE:
             case ISZ_ILDOUBLE:
-                api->offset = simpleExpressionNode(se_fi, 0, 0); /* defaults to zero. 0 */
+                api->offset = simpleExpressionNode(Optimizer::se_fi, 0, 0); /* defaults to zero. 0 */
                 api->offset->sizeFromType = ap->offset->sizeFromType;
                 apt = api;
                 api = ap;
@@ -395,10 +397,10 @@ void make_complexconst(AMODE* ap, AMODE* api)
             case ISZ_CFLOAT:
             case ISZ_CDOUBLE:
             case ISZ_CLDOUBLE:
-                api->offset = simpleExpressionNode(se_fi, 0, 0); /* defaults to zero. 0 */
+                api->offset = simpleExpressionNode(Optimizer::se_fi, 0, 0); /* defaults to zero. 0 */
                 api->offset->f = ap->offset->c.i;
                 api->offset->sizeFromType = ap->offset->sizeFromType;
-                ap->offset->type = se_f;
+                ap->offset->type = Optimizer::se_f;
                 ap->offset->f = ap->offset->c.r;
                 break;
             default:
@@ -433,7 +435,7 @@ void floatchs(AMODE* ap, int sz)
         op = op_xorpd;
     }
     int reg = -1;
-    if (cparams.prm_lscrtdll)
+    if (Optimizer::cparams.prm_lscrtdll)
     {
         bool pushed = false;
         if (!(ap->liveRegs & (1 << EAX)))
@@ -461,7 +463,7 @@ void floatchs(AMODE* ap, int sz)
         lbl = makedreg(reg);
         gen_code(op_mov, lbl, ap1);
         lbl->mode = am_indisp;
-        lbl->offset = simpleIntNode(se_i, 0);
+        lbl->offset = simpleIntNode(Optimizer::se_i, 0);
         lbl->length = 0;
         if (!pushed)
             reg = -1;
@@ -490,7 +492,7 @@ AMODE* floatzero(AMODE* ap)
         zerolabel = setSymbol("__fzero");
         zerolabel->mode = am_direct;
     }
-    if (cparams.prm_lscrtdll)
+    if (Optimizer::cparams.prm_lscrtdll)
     {
         int reg;
         if (!(ap->liveRegs & (1 << EAX)))
@@ -517,13 +519,13 @@ AMODE* floatzero(AMODE* ap)
         zerolabel = makedreg(reg);
         gen_code(op_mov, zerolabel, ap1);
         zerolabel->mode = am_indisp;
-        zerolabel->offset = simpleIntNode(se_i, 0);
+        zerolabel->offset = simpleIntNode(Optimizer::se_i, 0);
     }
     return zerolabel;
 }
 
-bool sameTemp(QUAD* head);
-int beRegFromTempInd(QUAD* q, IMODE* im, int which)
+bool sameTemp(Optimizer::QUAD* head);
+int beRegFromTempInd(Optimizer::QUAD* q, Optimizer::IMODE* im, int which)
 {
     if (which)
     {
@@ -542,12 +544,12 @@ int beRegFromTempInd(QUAD* q, IMODE* im, int which)
         return (q->rightColor < 0) ? 0 : q->rightColor;
     }
 }
-int beRegFromTemp(QUAD* q, IMODE* im) { return beRegFromTempInd(q, im, 0); }
-bool sameTemp(QUAD* head)
+int beRegFromTemp(Optimizer::QUAD* q, Optimizer::IMODE* im) { return beRegFromTempInd(q, im, 0); }
+bool sameTemp(Optimizer::QUAD* head)
 {
     if ((head->temps & (TEMP_LEFT | TEMP_RIGHT)) == (TEMP_LEFT | TEMP_RIGHT))
     {
-        if (head->dc.left->mode == i_direct && head->dc.right->mode == i_direct)
+        if (head->dc.left->mode == Optimizer::i_direct && head->dc.right->mode == Optimizer::i_direct)
         {
             if (head->dc.left->offset->sp->i == head->dc.right->offset->sp->i)
             {
@@ -610,23 +612,23 @@ int samereg(AMODE* ap1, AMODE* ap2)
     }
     return false;
 }
-void getAmodes(QUAD* q, enum e_opcode* op, IMODE* im, AMODE** apl, AMODE** aph)
+void getAmodes(Optimizer::QUAD* q, enum e_opcode* op, Optimizer::IMODE* im, AMODE** apl, AMODE** aph)
 {
     *op = op_mov;
     *aph = 0;
-    if (im->offset && im->offset->type == se_threadlocal)
+    if (im->offset && im->offset->type == Optimizer::se_threadlocal)
     {
         AMODE* temp = setSymbol("__TLSINITSTART");
         temp->mode = am_immed;
-        temp->offset = simpleExpressionNode(se_sub, im->offset, temp->offset);
+        temp->offset = simpleExpressionNode(Optimizer::se_sub, im->offset, temp->offset);
         gen_code(op_push, temp, 0);
         callLibrary("___tlsaddr", 0);
         *apl = (AMODE*)beLocalAlloc(sizeof(AMODE));
-        (*apl)->preg = chosenAssembler->arch->regMap[beRegFromTemp(q, q->ans)][0];
+        (*apl)->preg = Optimizer::chosenAssembler->arch->regMap[beRegFromTemp(q, q->ans)][0];
         (*apl)->mode = am_dreg;
         gen_codes(op_pop, ISZ_ADDR, (*apl), 0);
     }
-    else if (im->mode == i_ind)
+    else if (im->mode == Optimizer::i_ind)
     {
         enum e_am mode;
         if ((im->offset && im->offset2) || (im->offset2 && im->scale))
@@ -637,10 +639,10 @@ void getAmodes(QUAD* q, enum e_opcode* op, IMODE* im, AMODE** apl, AMODE** aph)
             mode = am_direct;
         *apl = (AMODE*)beLocalAlloc(sizeof(AMODE));
         {
-            int reg = chosenAssembler->arch->regMap[beRegFromTempInd(q, im, 1)][0];
+            int reg = Optimizer::chosenAssembler->arch->regMap[beRegFromTempInd(q, im, 1)][0];
             if (im->offset)
             {
-                (*apl)->preg = chosenAssembler->arch->regMap[beRegFromTemp(q, im)][0];
+                (*apl)->preg = Optimizer::chosenAssembler->arch->regMap[beRegFromTemp(q, im)][0];
                 (*apl)->sreg = im->offset2 ? reg : -1;
             }
             else if (mode == am_indisp && im->offset2)
@@ -655,7 +657,7 @@ void getAmodes(QUAD* q, enum e_opcode* op, IMODE* im, AMODE** apl, AMODE** aph)
             }
         }
         (*apl)->scale = im->scale;
-        (*apl)->offset = im->offset3 ? im->offset3 : simpleIntNode(se_i, 0);
+        (*apl)->offset = im->offset3 ? im->offset3 : simpleIntNode(Optimizer::se_i, 0);
         if (im->size < ISZ_FLOAT)
             (*apl)->length = im->size;
         if (im->offset3)
@@ -699,7 +701,7 @@ void getAmodes(QUAD* q, enum e_opcode* op, IMODE* im, AMODE** apl, AMODE** aph)
         {
             *aph = (AMODE*)beLocalAlloc(sizeof(AMODE));
             **aph = **apl;
-            (*aph)->offset = simpleExpressionNode(se_add, (*apl)->offset, simpleIntNode(se_i, imaginary_offset(im->size)));
+            (*aph)->offset = simpleExpressionNode(Optimizer::se_add, (*apl)->offset, simpleIntNode(Optimizer::se_i, imaginary_offset(im->size)));
             if ((*apl)->preg >= 0)
                 (*apl)->liveRegs |= 1 << (*apl)->preg;
             if ((*apl)->sreg >= 0)
@@ -709,14 +711,14 @@ void getAmodes(QUAD* q, enum e_opcode* op, IMODE* im, AMODE** apl, AMODE** aph)
         {
             *aph = (AMODE*)beLocalAlloc(sizeof(AMODE));
             **aph = **apl;
-            (*aph)->offset = simpleExpressionNode(se_add, (*apl)->offset, simpleIntNode(se_i, 4));
+            (*aph)->offset = simpleExpressionNode(Optimizer::se_add, (*apl)->offset, simpleIntNode(Optimizer::se_i, 4));
             if ((*apl)->preg >= 0)
                 (*apl)->liveRegs |= 1 << (*apl)->preg;
             if ((*apl)->sreg >= 0)
                 (*apl)->liveRegs |= 1 << (*apl)->sreg;
         }
     }
-    else if (im->mode == i_immed)
+    else if (im->mode == Optimizer::i_immed)
     {
         if (im->size >= ISZ_CFLOAT)
         {
@@ -805,10 +807,10 @@ void getAmodes(QUAD* q, enum e_opcode* op, IMODE* im, AMODE** apl, AMODE** aph)
             }
         }
     }
-    else if (im->mode == i_direct)
+    else if (im->mode == Optimizer::i_direct)
     {
         /*
-            if (im->offset->type == se_reg)
+            if (im->offset->type == Optimizer::se_reg)
             {
                 *apl = makedreg(im->offset->i);
             }
@@ -818,7 +820,7 @@ void getAmodes(QUAD* q, enum e_opcode* op, IMODE* im, AMODE** apl, AMODE** aph)
         {
             if (im->size >= ISZ_CFLOAT)
             {
-                if (im->offset->type == se_tempref && !im->offset->right)
+                if (im->offset->type == Optimizer::se_tempref && !im->offset->right)
                 {
                     int clr = beRegFromTemp(q, im);
                     int reg1, reg2;
@@ -829,8 +831,8 @@ void getAmodes(QUAD* q, enum e_opcode* op, IMODE* im, AMODE** apl, AMODE** aph)
                     }
                     else
                     {
-                        reg1 = chosenAssembler->arch->regMap[clr & 0xff][1];
-                        reg2 = chosenAssembler->arch->regMap[clr & 0xff][0];
+                        reg1 = Optimizer::chosenAssembler->arch->regMap[clr & 0xff][1];
+                        reg2 = Optimizer::chosenAssembler->arch->regMap[clr & 0xff][0];
                     }
                     *apl = makeSSE(reg2);
                     *aph = makeSSE(reg1);
@@ -840,14 +842,14 @@ void getAmodes(QUAD* q, enum e_opcode* op, IMODE* im, AMODE** apl, AMODE** aph)
                 {
                     *apl = make_offset(im->offset);
                     *aph = make_offset(im->offset);
-                    (*aph)->offset = simpleExpressionNode(se_add, (*aph)->offset, simpleIntNode(se_i, imaginary_offset(im->size)));
+                    (*aph)->offset = simpleExpressionNode(Optimizer::se_add, (*aph)->offset, simpleIntNode(Optimizer::se_i, imaginary_offset(im->size)));
                 }
             }
-            else if (im->offset->type == se_tempref && !im->offset->right)
+            else if (im->offset->type == Optimizer::se_tempref && !im->offset->right)
             {
                 int clr = beRegFromTemp(q, im);
                 int reg;
-                reg = chosenAssembler->arch->regMap[clr & 0xff][0];
+                reg = Optimizer::chosenAssembler->arch->regMap[clr & 0xff][0];
                 *apl = makeSSE(reg);
             }
             else
@@ -855,12 +857,12 @@ void getAmodes(QUAD* q, enum e_opcode* op, IMODE* im, AMODE** apl, AMODE** aph)
         }
         else if (im->size == ISZ_ULONGLONG || im->size == -ISZ_ULONGLONG)
         {
-            if (im->offset->type == se_tempref)
+            if (im->offset->type == Optimizer::se_tempref)
             {
                 int clr = beRegFromTemp(q, im);
                 int reg1, reg2;
-                reg1 = chosenAssembler->arch->regMap[clr & 0xff][1];
-                reg2 = chosenAssembler->arch->regMap[clr & 0xff][0];
+                reg1 = Optimizer::chosenAssembler->arch->regMap[clr & 0xff][1];
+                reg2 = Optimizer::chosenAssembler->arch->regMap[clr & 0xff][0];
                 *apl = makedreg(reg2);
                 *aph = makedreg(reg1);
                 (*apl)->liveRegs = (*aph)->liveRegs = (1 << reg1) | (1 << reg2);
@@ -869,12 +871,12 @@ void getAmodes(QUAD* q, enum e_opcode* op, IMODE* im, AMODE** apl, AMODE** aph)
             {
                 *apl = make_offset(im->offset);
                 *aph = copy_addr(*apl);
-                (*aph)->offset = simpleExpressionNode(se_add, (*aph)->offset, simpleIntNode(se_i, 4));
+                (*aph)->offset = simpleExpressionNode(Optimizer::se_add, (*aph)->offset, simpleIntNode(Optimizer::se_i, 4));
             }
         }
-        else if (im->offset->type == se_tempref)
+        else if (im->offset->type == Optimizer::se_tempref)
         {
-            int l = chosenAssembler->arch->regMap[beRegFromTemp(q, im)][0];
+            int l = Optimizer::chosenAssembler->arch->regMap[beRegFromTemp(q, im)][0];
             *apl = makedreg(l);
             if (im->size < ISZ_FLOAT)
                 (*apl)->length = im->size;
@@ -1106,23 +1108,23 @@ void gen_lshift(enum e_opcode op, AMODE* aph, AMODE* apl, AMODE* n)
         gen_code3(op, aph, apl, n);
     }
 }
-void gen_xset(QUAD* q, enum e_opcode pos, enum e_opcode neg, enum e_opcode flt)
+void gen_xset(Optimizer::QUAD* q, enum e_opcode pos, enum e_opcode neg, enum e_opcode flt)
 {
     enum e_opcode op = pos, opa;
-    IMODE* left = q->dc.left;
-    IMODE* right = q->dc.right;
+    Optimizer::IMODE* left = q->dc.left;
+    Optimizer::IMODE* right = q->dc.right;
     AMODE *apll, *aplh, *aprl, *aprh, *apal, *apah;
     bool assign = false;
     bool stacked = false;
     AMODE* altreg = nullptr;
-    if (left->mode == i_immed && left->size < ISZ_FLOAT)
+    if (left->mode == Optimizer::i_immed && left->size < ISZ_FLOAT)
     {
-        IMODE* t = right;
+        Optimizer::IMODE* t = right;
         right = left;
         left = t;
         op = neg;
     }
-    if (left->bits && right->mode == i_immed && isintconst(right->offset))
+    if (left->bits && right->mode == Optimizer::i_immed && isintconst(right->offset))
     {
         if (left->bits != 1)
             diag("gen_xset: too many bits");
@@ -1341,16 +1343,16 @@ void gen_xset(QUAD* q, enum e_opcode pos, enum e_opcode neg, enum e_opcode flt)
             gen_codes(op_and, ISZ_UINT, apal, aimmed(1));
     }
 }
-void gen_goto(QUAD* q, enum e_opcode pos, enum e_opcode neg, enum e_opcode llpos, enum e_opcode llneg, enum e_opcode llintermpos,
+void gen_goto(Optimizer::QUAD* q, enum e_opcode pos, enum e_opcode neg, enum e_opcode llpos, enum e_opcode llneg, enum e_opcode llintermpos,
               enum e_opcode llintermneg, enum e_opcode flt)
 {
     enum e_opcode sop = pos, sop1 = llpos, top = llneg, top1 = llintermpos, opa;
-    IMODE* left = q->dc.left;
-    IMODE* right = q->dc.right;
+    Optimizer::IMODE* left = q->dc.left;
+    Optimizer::IMODE* right = q->dc.right;
     AMODE *apll, *aplh, *aprl, *aprh;
-    if (left->mode == i_immed && left->size < ISZ_FLOAT)
+    if (left->mode == Optimizer::i_immed && left->size < ISZ_FLOAT)
     {
-        IMODE* t = right;
+        Optimizer::IMODE* t = right;
         right = left;
         left = t;
         if (pos != op_je && pos != op_jne)
@@ -1361,7 +1363,7 @@ void gen_goto(QUAD* q, enum e_opcode pos, enum e_opcode neg, enum e_opcode llpos
             top1 = llintermneg;
         }
     }
-    if (left->bits && right->mode == i_immed && isintconst(right->offset))
+    if (left->bits && right->mode == Optimizer::i_immed && isintconst(right->offset))
     {
         if (left->bits != 1)
             diag("gen_goto: too many bits");
@@ -1458,11 +1460,11 @@ void gen_goto(QUAD* q, enum e_opcode pos, enum e_opcode neg, enum e_opcode llpos
         }
     }
 }
-static void gen_div(QUAD* q, enum e_opcode op) /* unsigned division */
+static void gen_div(Optimizer::QUAD* q, enum e_opcode op) /* unsigned division */
 {
     enum e_opcode opa, opl, opr;
     AMODE *apal, *apah, *apll, *aplh, *aprl, *aprh;
-    int mod = q->dc.opcode == i_umod || q->dc.opcode == i_smod;
+    int mod = q->dc.opcode == Optimizer::i_umod || q->dc.opcode == Optimizer::i_smod;
     getAmodes(q, &opl, q->dc.left, &apll, &aplh);
     getAmodes(q, &opr, q->dc.right, &aprl, &aprh);
     getAmodes(q, &opa, q->ans, &apal, &apah);
@@ -1507,11 +1509,11 @@ static void gen_div(QUAD* q, enum e_opcode op) /* unsigned division */
         gen_codes(op, q->ans->size, divby, 0);
     }
 }
-static void gen_mulxh(QUAD* q, enum e_opcode op) /* unsigned division */
+static void gen_mulxh(Optimizer::QUAD* q, enum e_opcode op) /* unsigned division */
 {
     enum e_opcode opa, opl, opr;
     AMODE *apal, *apah, *apll, *aplh, *aprl, *aprh;
-    int mod = q->dc.opcode == i_umod || q->dc.opcode == i_smod;
+    int mod = q->dc.opcode == Optimizer::i_umod || q->dc.opcode == Optimizer::i_smod;
     getAmodes(q, &opl, q->dc.left, &apll, &aplh);
     getAmodes(q, &opr, q->dc.right, &aprl, &aprh);
     getAmodes(q, &opa, q->ans, &apal, &apah);
@@ -1540,7 +1542,7 @@ static void gen_mulxh(QUAD* q, enum e_opcode op) /* unsigned division */
         gen_codes(op, q->ans->size, mulby, 0);
     }
 }
-static void gen_shift(QUAD* q, enum e_opcode op, AMODE* apal, AMODE* apll, AMODE* aprl)
+static void gen_shift(Optimizer::QUAD* q, enum e_opcode op, AMODE* apal, AMODE* apll, AMODE* aprl)
 {
     AMODE* cx = makedreg(ECX);
     cx->liveRegs = q->liveRegs;
@@ -1702,7 +1704,7 @@ static void compactSwitchHeader(long long bottom)
 {
     int tablab, size;
     AMODE* ap;
-    SimpleExpression* lnode;
+    Optimizer::SimpleExpression* lnode;
     tablab = beGetLabel;
     size = switch_ip->size;
     if (size == ISZ_ULONGLONG || size == -ISZ_ULONGLONG)
@@ -1797,12 +1799,12 @@ static void compactSwitchHeader(long long bottom)
     }
 
     peep_tail->noopt = true;
-    lnode = (SimpleExpression*)(SimpleExpression*)beLocalAlloc(sizeof(SimpleExpression));
-    lnode->type = se_labcon;
+    lnode = (Optimizer::SimpleExpression*)(Optimizer::SimpleExpression*)beLocalAlloc(sizeof(Optimizer::SimpleExpression));
+    lnode->type = Optimizer::se_labcon;
     lnode->i = tablab;
     if (bottom)
     {
-        lnode = simpleExpressionNode(se_add, lnode, simpleIntNode(se_i, -bottom * 4));
+        lnode = simpleExpressionNode(Optimizer::se_add, lnode, simpleIntNode(Optimizer::se_i, -bottom * 4));
     }
     ap = (AMODE*)beLocalAlloc(sizeof(AMODE));
     ap->mode = am_indispscale;
@@ -1859,7 +1861,7 @@ int getPushMask(int i)
         i |= 8;
     return i & 0x0b;
 }
-static void llongatomicmath(e_opcode low, e_opcode high, QUAD* q)
+static void llongatomicmath(e_opcode low, e_opcode high, Optimizer::QUAD* q)
 {
     bool pushax = false, pushcx = false, pushdx = false, pushbx = false;
     bool pushsi = false, pushdi = false, pushbp = false;
@@ -1917,20 +1919,20 @@ static void llongatomicmath(e_opcode low, e_opcode high, QUAD* q)
         gen_code(op_lea, makedreg(EAX), aprl);
         aprl = makedreg(EAX);
         aprl->mode = am_indisp;
-        aprl->offset = simpleIntNode(se_i, 0);
+        aprl->offset = simpleIntNode(Optimizer::se_i, 0);
         aprh = makedreg(EAX);
         aprh->mode = am_indisp;
-        aprh->offset = simpleIntNode(se_i, 4);
+        aprh->offset = simpleIntNode(Optimizer::se_i, 4);
     }
     if (apll->mode == am_indispscale || (apll->mode == am_indisp && apll->preg != EBP && apll->preg != ESP))
     {
         gen_code(op_lea, makedreg(EBP), apll);
         apll = makedreg(EBP);
         apll->mode = am_indisp;
-        apll->offset = simpleIntNode(se_i, 0);
+        apll->offset = simpleIntNode(Optimizer::se_i, 0);
         aplh = makedreg(EBP);
         aplh->mode = am_indisp;
-        aplh->offset = simpleIntNode(se_i, 4);
+        aplh->offset = simpleIntNode(Optimizer::se_i, 4);
     }
     if (high == op_cmpxchg8b)
     {
@@ -2050,7 +2052,7 @@ static void llongatomicmath(e_opcode low, e_opcode high, QUAD* q)
         pushlevel -= 4;
     }
 }
-static void addsubatomic(e_opcode op, QUAD* q)
+static void addsubatomic(e_opcode op, Optimizer::QUAD* q)
 {
     if (((q->ans->size <= ISZ_U32 && q->ans->size != -ISZ_ULONGLONG) || q->ans->size == ISZ_ADDR) ||
         ((q->dc.left->size <= ISZ_U32 && q->dc.left->size != -ISZ_ULONGLONG) || q->dc.left->size == ISZ_ADDR) ||
@@ -2073,7 +2075,7 @@ static void addsubatomic(e_opcode op, QUAD* q)
             gen_code(op_lea, makedreg(EBP), apll);
             apll = makedreg(EBP);
             apll->mode = am_indisp;
-            apll->offset = simpleIntNode(se_i, 0);
+            apll->offset = simpleIntNode(Optimizer::se_i, 0);
         }
         if (apal->liveRegs & (1 << apal->preg))
         {
@@ -2122,7 +2124,7 @@ static void addsubatomic(e_opcode op, QUAD* q)
             llongatomicmath(op_sub, op_sbb, q);
     }
 }
-static void logicatomic(e_opcode op, QUAD* q)
+static void logicatomic(e_opcode op, Optimizer::QUAD* q)
 {
     if (((q->ans->size <= ISZ_U32 && q->ans->size != -ISZ_ULONGLONG) || q->ans->size == ISZ_ADDR) ||
         ((q->dc.left->size <= ISZ_U32 && q->dc.left->size != -ISZ_ULONGLONG) || q->dc.left->size == ISZ_ADDR) ||
@@ -2145,7 +2147,7 @@ static void logicatomic(e_opcode op, QUAD* q)
             gen_code(op_lea, makedreg(EBP), apll);
             apll = makedreg(EBP);
             apll->mode = am_indisp;
-            apll->offset = simpleIntNode(se_i, 0);
+            apll->offset = simpleIntNode(Optimizer::se_i, 0);
         }
         if (apal->liveRegs & (1 << apal->preg))
         {
@@ -2228,45 +2230,45 @@ static void logicatomic(e_opcode op, QUAD* q)
         llongatomicmath(op, op, q);
     }
 }
-void asm_line(QUAD* q) /* line number information and text */
+void asm_line(Optimizer::QUAD* q) /* line number information and text */
 {
     OCODE* newitem = (OCODE*)beLocalAlloc(sizeof(OCODE));
     newitem->opcode = (e_opcode)op_line;
     newitem->oper1 = (AMODE*)(q->dc.left); /* line data */
     add_peep(newitem);
 }
-void asm_blockstart(QUAD* q) /* line number information and text */
+void asm_blockstart(Optimizer::QUAD* q) /* line number information and text */
 {
     OCODE* newitem = (OCODE*)beLocalAlloc(sizeof(OCODE));
     newitem->opcode = (e_opcode)op_blockstart;
     add_peep(newitem);
 }
-void asm_blockend(QUAD* q) /* line number information and text */
+void asm_blockend(Optimizer::QUAD* q) /* line number information and text */
 {
     OCODE* newitem = (OCODE*)beLocalAlloc(sizeof(OCODE));
     newitem->opcode = (e_opcode)op_blockend;
     add_peep(newitem);
 }
-void asm_varstart(QUAD* q) /* line number information and text */
+void asm_varstart(Optimizer::QUAD* q) /* line number information and text */
 {
     OCODE* newitem = (OCODE*)beLocalAlloc(sizeof(OCODE));
     newitem->opcode = (e_opcode)op_varstart;
     newitem->oper1 = (AMODE*)(q->dc.left->offset->sp); /* line data */
     add_peep(newitem);
 }
-void asm_func(QUAD* q) /* line number information and text */
+void asm_func(Optimizer::QUAD* q) /* line number information and text */
 {
     OCODE* newitem = (OCODE*)beLocalAlloc(sizeof(OCODE));
     newitem->opcode = (e_opcode)(q->dc.v.label ? op_funcstart : op_funcend);
     newitem->oper1 = (AMODE*)(q->dc.left->offset->sp); /* line data */
     add_peep(newitem);
 }
-void asm_passthrough(QUAD* q) /* reserved */
+void asm_passthrough(Optimizer::QUAD* q) /* reserved */
 {
     OCODE* val = (OCODE*)q->dc.left;
     if (val->oper1 && val->oper1->mode == am_indisp && val->oper1->preg == EBP)
     {
-        SimpleSymbol* sp = varsp(val->oper1->offset);
+        Optimizer::SimpleSymbol* sp = varsp(val->oper1->offset);
         if (usingEsp)
             val->oper1->preg = ESP;
         if (sp && sp->regmode == 2)
@@ -2284,7 +2286,7 @@ void asm_passthrough(QUAD* q) /* reserved */
     }
     if (val->oper2 && val->oper2->mode == am_indisp && val->oper2->preg == EBP)
     {
-        SimpleSymbol* sp = varsp(val->oper2->offset);
+        Optimizer::SimpleSymbol* sp = varsp(val->oper2->offset);
         if (usingEsp)
             val->oper2->preg = ESP;
         if (sp && sp->regmode == 2)
@@ -2303,48 +2305,48 @@ void asm_passthrough(QUAD* q) /* reserved */
     val = gen_code(val->opcode, val->oper1, val->oper2);
     val->noopt = true;
 }
-void asm_datapassthrough(QUAD* q) /* reserved */ { (void)q; }
-void asm_label(QUAD* q) /* put a label in the code stream */
+void asm_datapassthrough(Optimizer::QUAD* q) /* reserved */ { (void)q; }
+void asm_label(Optimizer::QUAD* q) /* put a label in the code stream */
 {
     OCODE* out = (OCODE*)beLocalAlloc(sizeof(OCODE));
     out->opcode = (e_opcode)op_label;
     out->oper1 = make_label(q->dc.v.label);
     add_peep(out);
 }
-void asm_goto(QUAD* q) /* unconditional branch */
+void asm_goto(Optimizer::QUAD* q) /* unconditional branch */
 {
-    if (q->dc.opcode == i_goto)
+    if (q->dc.opcode == Optimizer::i_goto)
         gen_branch(op_jmp, q->dc.v.label);
     else /* directbranch */
     {
         AMODE* ap;
-        SimpleSymbol* sp = q->dc.left->offset->sp;
-        if (sp->storage_class == scc_temp)
+        Optimizer::SimpleSymbol* sp = q->dc.left->offset->sp;
+        if (sp->storage_class == Optimizer::scc_temp)
         {
-            ap = makedreg(chosenAssembler->arch->regMap[q->leftColor & 0xff][0]);
+            ap = makedreg(Optimizer::chosenAssembler->arch->regMap[q->leftColor & 0xff][0]);
             ap->liveRegs = q->liveRegs;
-            if (q->dc.left->mode == i_ind)
+            if (q->dc.left->mode == Optimizer::i_ind)
             {
                 ap->mode = am_indisp;
-                ap->offset = simpleIntNode(se_i, 0);
+                ap->offset = simpleIntNode(Optimizer::se_i, 0);
             }
         }
         else
         {
             ap = make_offset(q->dc.left->offset);
-            if (q->dc.left->offset->type == se_pc)
+            if (q->dc.left->offset->type == Optimizer::se_pc)
                 ap->mode = am_immed;
             ap->liveRegs = q->liveRegs;
         }
         gen_code(op_jmp, ap, 0);
     }
 }
-void asm_parm(QUAD* q) /* push a parameter*/
+void asm_parm(Optimizer::QUAD* q) /* push a parameter*/
 {
     enum e_opcode op;
     AMODE *apl, *aph;
     getAmodes(q, &op, q->dc.left, &apl, &aph);
-    if (q->dc.left->mode == i_immed)
+    if (q->dc.left->mode == Optimizer::i_immed)
     {
         if (q->dc.left->size >= ISZ_CFLOAT)
         {
@@ -2361,10 +2363,10 @@ void asm_parm(QUAD* q) /* push a parameter*/
             else
             {
                 if (sz == 8)
-                    gen_codes(op_push, ISZ_UINT, make_offset(simpleExpressionNode(se_add, aph->offset, simpleIntNode(se_i, 4))), NULL);
+                    gen_codes(op_push, ISZ_UINT, make_offset(simpleExpressionNode(Optimizer::se_add, aph->offset, simpleIntNode(Optimizer::se_i, 4))), NULL);
                 gen_codes(op_push, ISZ_UINT, aph, NULL);
                 if (sz == 8)
-                    gen_codes(op_push, ISZ_UINT, make_offset(simpleExpressionNode(se_add, apl->offset, simpleIntNode(se_i, 4))), NULL);
+                    gen_codes(op_push, ISZ_UINT, make_offset(simpleExpressionNode(Optimizer::se_add, apl->offset, simpleIntNode(Optimizer::se_i, 4))), NULL);
                 gen_codes(op_push, ISZ_UINT, apl, NULL);
             }
         }
@@ -2385,7 +2387,7 @@ void asm_parm(QUAD* q) /* push a parameter*/
             else
             {
                 if (sz == 8)
-                    gen_codes(op_push, ISZ_UINT, make_offset(simpleExpressionNode(se_add, apl->offset, simpleIntNode(se_i, 4))), NULL);
+                    gen_codes(op_push, ISZ_UINT, make_offset(simpleExpressionNode(Optimizer::se_add, apl->offset, simpleIntNode(Optimizer::se_i, 4))), NULL);
                 gen_codes(op_push, ISZ_UINT, apl, NULL);
             }
         }
@@ -2461,12 +2463,12 @@ void asm_parm(QUAD* q) /* push a parameter*/
         {
             if (q->dc.left->size == ISZ_ULONGLONG || q->dc.left->size == -ISZ_ULONGLONG)
             {
-                if (q->dc.left->mode == i_direct && q->dc.left->offset->type == se_tempref)
+                if (q->dc.left->mode == Optimizer::i_direct && q->dc.left->offset->type == Optimizer::se_tempref)
                 {
                     int clr = beRegFromTemp(q, q->dc.left);
                     int reg1, reg2;
-                    reg1 = chosenAssembler->arch->regMap[clr & 0xff][1];
-                    reg2 = chosenAssembler->arch->regMap[clr & 0xff][0];
+                    reg1 = Optimizer::chosenAssembler->arch->regMap[clr & 0xff][1];
+                    reg2 = Optimizer::chosenAssembler->arch->regMap[clr & 0xff][0];
                     gen_codes(op_push, ISZ_UINT, makedreg(reg1), 0);
                     pushlevel += 4;
                     gen_codes(op_push, ISZ_UINT, makedreg(reg2), 0);
@@ -2482,11 +2484,11 @@ void asm_parm(QUAD* q) /* push a parameter*/
             }
             else
             {
-                if (q->dc.left->mode == i_direct && q->dc.left->offset->type == se_tempref)
+                if (q->dc.left->mode == Optimizer::i_direct && q->dc.left->offset->type == Optimizer::se_tempref)
                 {
                     int l = beRegFromTemp(q, q->dc.left);
                     AMODE* pal;
-                    l = chosenAssembler->arch->regMap[l][0];
+                    l = Optimizer::chosenAssembler->arch->regMap[l][0];
                     pal = makedreg(l);
                     pal->liveRegs = q->liveRegs;
                     switch (q->dc.left->size)
@@ -2520,12 +2522,12 @@ void asm_parm(QUAD* q) /* push a parameter*/
         }
     }
 }
-void asm_parmblock(QUAD* q) /* push a block of memory */
+void asm_parmblock(Optimizer::QUAD* q) /* push a block of memory */
 {
     int n = q->dc.right->offset->i;
     AMODE *apl, *aph;
     enum e_opcode op;
-    SimpleExpression* ofs;
+    Optimizer::SimpleExpression* ofs;
 
     getAmodes(q, &op, q->dc.left, &apl, &aph);
 
@@ -2533,10 +2535,10 @@ void asm_parmblock(QUAD* q) /* push a block of memory */
     n &= 0xfffffffcU;
 
     ofs = apl->offset;
-    if (q->dc.left->mode == i_immed)
+    if (q->dc.left->mode == Optimizer::i_immed)
     {
         op = op_lea;
-        if (ofs->type == se_auto)
+        if (ofs->type == Optimizer::se_auto)
         {
             if (usingEsp)
             {
@@ -2552,12 +2554,12 @@ void asm_parmblock(QUAD* q) /* push a block of memory */
             apl->mode = am_direct;
     }
 
-    if (n <= 24 && q->dc.left->mode == i_immed)
+    if (n <= 24 && q->dc.left->mode == Optimizer::i_immed)
     {
         while (n > 0)
         {
             n -= 4;
-            apl->offset = simpleExpressionNode(se_add, ofs, simpleIntNode(se_i, n));
+            apl->offset = simpleExpressionNode(Optimizer::se_add, ofs, simpleIntNode(Optimizer::se_i, n));
             gen_codes(op_push, ISZ_UINT, apl, 0);
             pushlevel += 4;
         }
@@ -2590,7 +2592,7 @@ void asm_parmblock(QUAD* q) /* push a block of memory */
         pushlevel += n;
     }
 }
-void asm_parmadj(QUAD* q) /* adjust stack after function call */
+void asm_parmadj(Optimizer::QUAD* q) /* adjust stack after function call */
 {
     int mask;
     int i = beGetIcon(q->dc.left);
@@ -2615,16 +2617,16 @@ void asm_parmadj(QUAD* q) /* adjust stack after function call */
     for (i = 3; i >= 0; i--)
         if ((1 << i) & mask)
         {
-            gen_code(op_pop, makedreg(chosenAssembler->arch->regMap[i][0]), 0);
+            gen_code(op_pop, makedreg(Optimizer::chosenAssembler->arch->regMap[i][0]), 0);
             pushlevel -= 4;
         }
 }
-void asm_gosub(QUAD* q) /* normal gosub to an immediate label or through a var */
+void asm_gosub(Optimizer::QUAD* q) /* normal gosub to an immediate label or through a var */
 {
-    SimpleExpression* en = NULL;
+    Optimizer::SimpleExpression* en = NULL;
     enum e_opcode op;
     AMODE *apl, *aph;
-    if (!q->dc.left->offset || q->dc.left->offset->type != se_pc || !BackendIntrinsic(q))
+    if (!q->dc.left->offset || q->dc.left->offset->type != Optimizer::se_pc || !BackendIntrinsic(q))
     {
         if (q->dc.left->offset)
             en = GetSymRef(q->dc.left->offset);
@@ -2634,13 +2636,13 @@ void asm_gosub(QUAD* q) /* normal gosub to an immediate label or through a var *
             en = GetSymRef(q->dc.left->offset3);
         getAmodes(q, &op, q->dc.left, &apl, &aph);
 
-        if (q->dc.left->mode == i_immed)
+        if (q->dc.left->mode == Optimizer::i_immed)
         {
             if (isintconst(q->dc.left->offset))
             {
                 // doing call via ret here because we really need a register and we may not have one...
                 apl->length = 0;
-                int lbl = nextLabel++;
+                int lbl = beGetLabel;
                 gen_code(op_push, make_label(lbl), nullptr);
                 gen_code(op_push, apl, nullptr);
                 gen_code(op_ret, nullptr, nullptr);
@@ -2681,19 +2683,19 @@ void asm_gosub(QUAD* q) /* normal gosub to an immediate label or through a var *
         }
     }
 }
-void asm_fargosub(QUAD* q) /* far version of gosub */
+void asm_fargosub(Optimizer::QUAD* q) /* far version of gosub */
 {
     gen_code(op_push, makesegreg(CS), 0);
     asm_gosub(q);
 }
-void asm_trap(QUAD* q) /* 'trap' instruction - the arg will be an immediate # */
+void asm_trap(Optimizer::QUAD* q) /* 'trap' instruction - the arg will be an immediate # */
 {
     if (q->dc.left->offset->i == 3)
         gen_code(op_int3, 0, 0);
     else
         gen_code(op_int, aimmed(q->dc.left->offset->i), 0);
 }
-void asm_int(QUAD* q) /* 'int' instruction(QUAD *q) calls a labeled function which is an interrupt */
+void asm_int(Optimizer::QUAD* q) /* 'int' instruction(Optimizer::QUAD *q) calls a labeled function which is an interrupt */
 {
     gen_code(op_pushf, 0, 0);
     gen_code(op_push, makesegreg(CS), 0);
@@ -2702,7 +2704,7 @@ void asm_int(QUAD* q) /* 'int' instruction(QUAD *q) calls a labeled function whi
 /* left will be a constant holding the number of bytes to pop
  * e.g. the parameters will be popped in stdcall or pascal type functions
  */
-void asm_ret(QUAD* q) /* return from subroutine */
+void asm_ret(Optimizer::QUAD* q) /* return from subroutine */
 {
     if (beGetIcon(q->dc.left))
         gen_code(op_ret, aimmed(beGetIcon(q->dc.left)), 0);
@@ -2712,7 +2714,7 @@ void asm_ret(QUAD* q) /* return from subroutine */
 /* left will be a constant holding the number of bytes to pop
  * e.g. the parameters will be popped in stdcall or pascal type functions
  */
-void asm_fret(QUAD* q) /* far return from subroutine */
+void asm_fret(Optimizer::QUAD* q) /* far return from subroutine */
 {
     if (beGetIcon(q->dc.left))
         gen_code(op_retf, aimmed(beGetIcon(q->dc.left)), 0);
@@ -2724,12 +2726,12 @@ void asm_fret(QUAD* q) /* far return from subroutine */
  * for processors that char, the 'left' member will have an integer
  * value that is true for an iret or false or a fault ret
  */
-void asm_rett(QUAD* q) /* return from trap or int */
+void asm_rett(Optimizer::QUAD* q) /* return from trap or int */
 {
     (void)q;
     gen_code(op_iret, 0, 0);
 }
-void asm_add(QUAD* q) /* evaluate an addition */
+void asm_add(Optimizer::QUAD* q) /* evaluate an addition */
 {
     if (q->atomic)
     {
@@ -2981,7 +2983,7 @@ void asm_add(QUAD* q) /* evaluate an addition */
         }
     }
 }
-void asm_sub(QUAD* q) /* evaluate a subtraction */
+void asm_sub(Optimizer::QUAD* q) /* evaluate a subtraction */
 {
     if (q->atomic)
     {
@@ -3072,13 +3074,13 @@ void asm_sub(QUAD* q) /* evaluate a subtraction */
         }
     }
 }
-void asm_udiv(QUAD* q) /* unsigned division */ { gen_div(q, op_div); }
-void asm_umod(QUAD* q) /* unsigned modulous */ { gen_div(q, op_div); }
-void asm_sdiv(QUAD* q) /* signed division */ { gen_div(q, op_idiv); }
-void asm_smod(QUAD* q) /* signed modulous */ { gen_div(q, op_idiv); }
-void asm_muluh(QUAD* q) { gen_mulxh(q, op_mul); }
-void asm_mulsh(QUAD* q) { gen_mulxh(q, op_imul); }
-void asm_mul(QUAD* q) /* signed multiply */
+void asm_udiv(Optimizer::QUAD* q) /* unsigned division */ { gen_div(q, op_div); }
+void asm_umod(Optimizer::QUAD* q) /* unsigned modulous */ { gen_div(q, op_div); }
+void asm_sdiv(Optimizer::QUAD* q) /* signed division */ { gen_div(q, op_idiv); }
+void asm_smod(Optimizer::QUAD* q) /* signed modulous */ { gen_div(q, op_idiv); }
+void asm_muluh(Optimizer::QUAD* q) { gen_mulxh(q, op_mul); }
+void asm_mulsh(Optimizer::QUAD* q) { gen_mulxh(q, op_imul); }
+void asm_mul(Optimizer::QUAD* q) /* signed multiply */
 {
     enum e_opcode opa, opl, opr;
     AMODE *apal, *apah, *apll, *aplh, *aprl, *aprh;
@@ -3146,7 +3148,7 @@ void asm_mul(QUAD* q) /* signed multiply */
         }
     }
 }
-void asm_lsr(QUAD* q) /* unsigned shift right */
+void asm_lsr(Optimizer::QUAD* q) /* unsigned shift right */
 {
     enum e_opcode opa, opl, opr;
     AMODE *apal, *apah, *apll, *aplh, *aprl, *aprh;
@@ -3188,7 +3190,7 @@ void asm_lsr(QUAD* q) /* unsigned shift right */
         gen_shift(q, op_shr, apal, apll, aprl);
     }
 }
-void asm_lsl(QUAD* q) /* signed shift left */
+void asm_lsl(Optimizer::QUAD* q) /* signed shift left */
 {
     enum e_opcode opa, opl, opr;
     AMODE *apal, *apah, *apll, *aplh, *aprl, *aprh;
@@ -3230,7 +3232,7 @@ void asm_lsl(QUAD* q) /* signed shift left */
         gen_shift(q, op_shl, apal, apll, aprl);
     }
 }
-void asm_asr(QUAD* q) /* signed shift right */
+void asm_asr(Optimizer::QUAD* q) /* signed shift right */
 {
     enum e_opcode opa, opl, opr;
     AMODE *apal, *apah, *apll, *aplh, *aprl, *aprh;
@@ -3275,7 +3277,7 @@ void asm_asr(QUAD* q) /* signed shift right */
         gen_shift(q, op_sar, apal, apll, aprl);
     }
 }
-void asm_neg(QUAD* q) /* negation */
+void asm_neg(Optimizer::QUAD* q) /* negation */
 {
     enum e_opcode opa, opl;
     AMODE *apal, *apah, *apll, *aplh;
@@ -3330,7 +3332,7 @@ void asm_neg(QUAD* q) /* negation */
         gen_codes(op_neg, q->ans->size, apal, 0);
     }
 }
-void asm_not(QUAD* q) /* complement */
+void asm_not(Optimizer::QUAD* q) /* complement */
 {
     enum e_opcode opa, opl;
     AMODE *apal, *apah, *apll, *aplh;
@@ -3355,7 +3357,7 @@ void asm_not(QUAD* q) /* complement */
         gen_codes(op_not, q->ans->size, apal, 0);
     }
 }
-void asm_and(QUAD* q) /* binary and */
+void asm_and(Optimizer::QUAD* q) /* binary and */
 {
     if (q->atomic)
     {
@@ -3411,7 +3413,7 @@ void asm_and(QUAD* q) /* binary and */
         }
     }
 }
-void asm_or(QUAD* q) /* binary or */
+void asm_or(Optimizer::QUAD* q) /* binary or */
 {
     if (q->atomic)
     {
@@ -3467,7 +3469,7 @@ void asm_or(QUAD* q) /* binary or */
         }
     }
 }
-void asm_eor(QUAD* q) /* binary exclusive or */
+void asm_eor(Optimizer::QUAD* q) /* binary exclusive or */
 {
     if (q->atomic)
     {
@@ -3523,17 +3525,17 @@ void asm_eor(QUAD* q) /* binary exclusive or */
         }
     }
 }
-void asm_setne(QUAD* q) /* evaluate a = b != c */ { gen_xset(q, op_setne, op_setne, op_setne); }
-void asm_sete(QUAD* q) /* evaluate a = b == c */ { gen_xset(q, op_sete, op_sete, op_sete); }
-void asm_setc(QUAD* q) /* evaluate a = b U< c */ { gen_xset(q, op_setc, op_seta, op_setc); }
-void asm_seta(QUAD* q) /* evaluate a = b U> c */ { gen_xset(q, op_seta, op_setc, op_seta); }
-void asm_setnc(QUAD* q) /* evaluate a = b U>= c */ { gen_xset(q, op_setnc, op_setbe, op_setae); }
-void asm_setbe(QUAD* q) /* evaluate a = b U<= c */ { gen_xset(q, op_setbe, op_setnc, op_setbe); }
-void asm_setl(QUAD* q) /* evaluate a = b S< c */ { gen_xset(q, op_setl, op_setg, op_setc); }
-void asm_setg(QUAD* q) /* evaluate a = b s> c */ { gen_xset(q, op_setg, op_setl, op_seta); }
-void asm_setle(QUAD* q) /* evaluate a = b S<= c */ { gen_xset(q, op_setle, op_setge, op_setbe); }
-void asm_setge(QUAD* q) /* evaluate a = b S>= c */ { gen_xset(q, op_setge, op_setle, op_setae); }
-void asm_assn(QUAD* q) /* assignment */
+void asm_setne(Optimizer::QUAD* q) /* evaluate a = b != c */ { gen_xset(q, op_setne, op_setne, op_setne); }
+void asm_sete(Optimizer::QUAD* q) /* evaluate a = b == c */ { gen_xset(q, op_sete, op_sete, op_sete); }
+void asm_setc(Optimizer::QUAD* q) /* evaluate a = b U< c */ { gen_xset(q, op_setc, op_seta, op_setc); }
+void asm_seta(Optimizer::QUAD* q) /* evaluate a = b U> c */ { gen_xset(q, op_seta, op_setc, op_seta); }
+void asm_setnc(Optimizer::QUAD* q) /* evaluate a = b U>= c */ { gen_xset(q, op_setnc, op_setbe, op_setae); }
+void asm_setbe(Optimizer::QUAD* q) /* evaluate a = b U<= c */ { gen_xset(q, op_setbe, op_setnc, op_setbe); }
+void asm_setl(Optimizer::QUAD* q) /* evaluate a = b S< c */ { gen_xset(q, op_setl, op_setg, op_setc); }
+void asm_setg(Optimizer::QUAD* q) /* evaluate a = b s> c */ { gen_xset(q, op_setg, op_setl, op_seta); }
+void asm_setle(Optimizer::QUAD* q) /* evaluate a = b S<= c */ { gen_xset(q, op_setle, op_setge, op_setbe); }
+void asm_setge(Optimizer::QUAD* q) /* evaluate a = b S>= c */ { gen_xset(q, op_setge, op_setle, op_setae); }
+void asm_assn(Optimizer::QUAD* q) /* assignment */
 {
     AMODE *apa, *apa1, *apl = nullptr, *apl1 = nullptr;
     enum e_opcode opa, opl;
@@ -3547,14 +3549,14 @@ void asm_assn(QUAD* q) /* assignment */
     q->ans->bits = 0;
     getAmodes(q, &opa, q->ans, &apa, &apa1);
     q->ans->bits = bits;
-    if (q->dc.opcode == i_assn)
+    if (q->dc.opcode == Optimizer::i_assn)
     {
         szl = q->dc.left->size;
         if (szl < 0)
             szl = -szl;
         getAmodes(q, &opl, q->dc.left, &apl, &apl1);
     }
-    else if (q->dc.opcode == i_icon)
+    else if (q->dc.opcode == Optimizer::i_icon)
     {
         opl = op_mov;
         if (sza == ISZ_ULONGLONG)
@@ -3575,9 +3577,9 @@ void asm_assn(QUAD* q) /* assignment */
             apl = aimmed(q->dc.v.i);
         }
     }
-    else if (q->dc.opcode == i_fcon)
+    else if (q->dc.opcode == Optimizer::i_fcon)
     {
-        SimpleExpression* node = simpleExpressionNode(se_f, 0, 0);
+        Optimizer::SimpleExpression* node = simpleExpressionNode(Optimizer::se_f, 0, 0);
         node->sizeFromType = ISZ_LDOUBLE;
         node->f = q->dc.v.f;
         apl = (AMODE*)beLocalAlloc(sizeof(AMODE));
@@ -3586,7 +3588,7 @@ void asm_assn(QUAD* q) /* assignment */
     }
     else
         diag("asm_assn: unknown opcode");
-    if (sza == szl || q->dc.left->mode == i_immed)
+    if (sza == szl || q->dc.left->mode == Optimizer::i_immed)
     {
         if (q->atomic && (q->ans->size == ISZ_ULONGLONG || q->ans->size == -ISZ_ULONGLONG))
         {
@@ -3622,10 +3624,10 @@ void asm_assn(QUAD* q) /* assignment */
                 gen_code(op_lea, makedreg(EBP), apl);
                 apl = makedreg(EBP);
                 apl->mode = am_indisp;
-                apl->offset = simpleIntNode(se_i, 0);
+                apl->offset = simpleIntNode(Optimizer::se_i, 0);
                 apl1 = makedreg(EBP);
                 apl1->mode = am_indisp;
-                apl1->offset = simpleIntNode(se_i, 4);
+                apl1->offset = simpleIntNode(Optimizer::se_i, 4);
             }
             gen_code(op_mov, makedreg(EAX), apl);
             gen_code(op_mov, makedreg(EDX), apl1);
@@ -3661,15 +3663,15 @@ void asm_assn(QUAD* q) /* assignment */
         }
         else if (q->ans->retval && q->ans->size >= ISZ_FLOAT)
         {
-            if (fltexp)
+            if (Optimizer::fltexp)
             {
-                AMODE* ap = make_offset(fltexp);
+                AMODE* ap = make_offset(Optimizer::fltexp);
                 if (q->ans->size >= ISZ_CFLOAT)
                 {
                     int sz = 8;
                     if (q->ans->size == ISZ_CFLOAT)
                         sz = 4;
-                    AMODE* ap1 = make_offset(simpleExpressionNode(se_add, fltexp, simpleIntNode(se_i, sz)));
+                    AMODE* ap1 = make_offset(simpleExpressionNode(Optimizer::se_add, Optimizer::fltexp, simpleIntNode(Optimizer::se_i, sz)));
                     apa = moveFP(apa, q->ans->size, apl, q->dc.left->size);
                     apa1 = moveFP(apa1, q->ans->size, apl1, q->dc.left->size);
                     gen_code_sse(op_movss, op_movsd, q->ans->size, ap, apa);
@@ -3699,15 +3701,15 @@ void asm_assn(QUAD* q) /* assignment */
             }
             else
             {
-                if (fltexp)
+                if (Optimizer::fltexp)
                 {
-                    AMODE* ap = make_offset(fltexp);
+                    AMODE* ap = make_offset(Optimizer::fltexp);
                     if (q->ans->size >= ISZ_CFLOAT)
                     {
                         int sz = 8;
                         if (q->ans->size == ISZ_CFLOAT)
                             sz = 4;
-                        AMODE* ap1 = make_offset(simpleExpressionNode(se_add, fltexp, simpleIntNode(se_i, sz)));
+                        AMODE* ap1 = make_offset(simpleExpressionNode(Optimizer::se_add, Optimizer::fltexp, simpleIntNode(Optimizer::se_i, sz)));
                         ap1->length = ap->length = q->ans->size - ISZ_CFLOAT + ISZ_FLOAT;
                         gen_codef(op_fstp, ap, NULL);
                         gen_codef(op_fstp, ap1, NULL);
@@ -3766,7 +3768,7 @@ void asm_assn(QUAD* q) /* assignment */
             else
             {
                 gen_codes(opl, q->ans->size, apa, apl);
-                if (q->dc.opcode == i_assn && q->dc.left->bits)
+                if (q->dc.opcode == Optimizer::i_assn && q->dc.left->bits)
                 {
                     int max;
                     switch (sza)
@@ -3928,7 +3930,7 @@ void asm_assn(QUAD* q) /* assignment */
                 bit_store(apa, apl, q->ans->size, q->ans->bits, q->ans->startbit);
             else
             {
-                if (q->dc.opcode == i_assn && q->dc.left->bits)
+                if (q->dc.opcode == Optimizer::i_assn && q->dc.left->bits)
                 {
                     int max;
                     switch (szl)
@@ -4119,7 +4121,7 @@ void asm_assn(QUAD* q) /* assignment */
                             else
                             {
                                 gen_codes(op_mov, ISZ_UINT, ap, apl);
-                                if (q->dc.opcode == i_assn && q->dc.left->bits)
+                                if (q->dc.opcode == Optimizer::i_assn && q->dc.left->bits)
                                 {
                                     /* should be in a register at this point */
                                     if (apa->mode != am_dreg)
@@ -4145,7 +4147,7 @@ void asm_assn(QUAD* q) /* assignment */
                 {
                     gen_codes(op_mov, ISZ_UINT, apa, ap);
                     peep_tail->oper1->liveRegs = q->liveRegs;
-                    if (q->dc.opcode == i_assn && q->dc.left->bits)
+                    if (q->dc.opcode == Optimizer::i_assn && q->dc.left->bits)
                     {
                         int max;
                         switch (szl)
@@ -4200,12 +4202,12 @@ void asm_assn(QUAD* q) /* assignment */
         }
     }
 }
-void asm_genword(QUAD* q) /* put a byte or word into the code stream */
+void asm_genword(Optimizer::QUAD* q) /* put a byte or word into the code stream */
 {
     gen_code(op_genword, aimmed(q->dc.left->offset->i), 0);
 }
 
-void asm_coswitch(QUAD* q) /* switch characteristics */
+void asm_coswitch(Optimizer::QUAD* q) /* switch characteristics */
 {
     enum e_opcode op;
     switch_deflab = q->dc.v.label;
@@ -4243,7 +4245,7 @@ void asm_coswitch(QUAD* q) /* switch characteristics */
         memset(switchTreeBranchLabels, 0, sizeof(int) * switch_case_max);
     }
 }
-void asm_swbranch(QUAD* q) /* case characteristics */
+void asm_swbranch(Optimizer::QUAD* q) /* case characteristics */
 {
     unsigned long long swcase = q->dc.left->offset->i;
     int lab = q->dc.v.label;
@@ -4314,23 +4316,23 @@ void asm_swbranch(QUAD* q) /* case characteristics */
             break;
     }
 }
-void asm_dc(QUAD* q) /* unused */ { (void)q; }
-void asm_assnblock(QUAD* q) /* copy block of memory*/
+void asm_dc(Optimizer::QUAD* q) /* unused */ { (void)q; }
+void asm_assnblock(Optimizer::QUAD* q) /* copy block of memory*/
 {
     int n = q->ans->offset->i;
     AMODE *apl, *aph, *apal, *apah;
     enum e_opcode op, opa;
-    SimpleExpression *ofs, *ofsa;
+    Optimizer::SimpleExpression *ofs, *ofsa;
 
     getAmodes(q, &op, q->dc.right, &apl, &aph);
     getAmodes(q, &opa, q->dc.left, &apal, &apah);
 
     ofs = apl->offset;
     ofsa = apal->offset;
-    if (q->dc.right->mode == i_immed)
+    if (q->dc.right->mode == Optimizer::i_immed)
     {
         op = op_lea;
-        if (ofs->type == se_auto)
+        if (ofs->type == Optimizer::se_auto)
         {
             if (usingEsp)
             {
@@ -4345,10 +4347,10 @@ void asm_assnblock(QUAD* q) /* copy block of memory*/
         else
             apl->mode = am_direct;
     }
-    if (q->dc.left->mode == i_immed)
+    if (q->dc.left->mode == Optimizer::i_immed)
     {
         opa = op_lea;
-        if (ofsa->type == se_auto)
+        if (ofsa->type == Optimizer::se_auto)
         {
             if (usingEsp)
             {
@@ -4364,7 +4366,7 @@ void asm_assnblock(QUAD* q) /* copy block of memory*/
             apal->mode = am_direct;
     }
 
-    if (n <= 24 && (q->dc.right->mode == i_immed || apl->mode == am_dreg) && (q->dc.left->mode == i_immed || apal->mode == am_dreg))
+    if (n <= 24 && (q->dc.right->mode == Optimizer::i_immed || apl->mode == am_dreg) && (q->dc.left->mode == Optimizer::i_immed || apal->mode == am_dreg))
     {
         AMODE* ax;
         int reg = -1;
@@ -4373,23 +4375,23 @@ void asm_assnblock(QUAD* q) /* copy block of memory*/
         if (apl->mode == am_dreg)
         {
             apl->mode = am_indisp;
-            ofs = simpleIntNode(se_i, 0);
+            ofs = simpleIntNode(Optimizer::se_i, 0);
         }
         if (apal->mode == am_dreg)
         {
             apal->mode = am_indisp;
-            ofsa = simpleIntNode(se_i, 0);
+            ofsa = simpleIntNode(Optimizer::se_i, 0);
         }
         for (i = 0; i < 4; i++)
         {
-            if (chosenAssembler->arch->regMap[i][0] < 3 && !(q->liveRegs & ((unsigned long long)1 << i)))
+            if (Optimizer::chosenAssembler->arch->regMap[i][0] < 3 && !(q->liveRegs & ((unsigned long long)1 << i)))
             {
-                if ((apl->mode != am_indisp || apl->preg != chosenAssembler->arch->regMap[i][0]) &&
-                    (apl->mode != am_indispscale || (apl->preg != chosenAssembler->arch->regMap[i][0] && apl->sreg != chosenAssembler->arch->regMap[i][0])) &&
-                    (apal->mode != am_indisp || apal->preg != chosenAssembler->arch->regMap[i][0]) &&
-                    (apal->mode != am_indispscale || (apal->preg != chosenAssembler->arch->regMap[i][0] && apal->sreg != chosenAssembler->arch->regMap[i][0])))
+                if ((apl->mode != am_indisp || apl->preg != Optimizer::chosenAssembler->arch->regMap[i][0]) &&
+                    (apl->mode != am_indispscale || (apl->preg != Optimizer::chosenAssembler->arch->regMap[i][0] && apl->sreg != Optimizer::chosenAssembler->arch->regMap[i][0])) &&
+                    (apal->mode != am_indisp || apal->preg != Optimizer::chosenAssembler->arch->regMap[i][0]) &&
+                    (apal->mode != am_indispscale || (apal->preg != Optimizer::chosenAssembler->arch->regMap[i][0] && apal->sreg != Optimizer::chosenAssembler->arch->regMap[i][0])))
                 {
-                    reg = chosenAssembler->arch->regMap[i][0];
+                    reg = Optimizer::chosenAssembler->arch->regMap[i][0];
                     break;
                 }
             }
@@ -4398,12 +4400,12 @@ void asm_assnblock(QUAD* q) /* copy block of memory*/
         {
             for (i = 0; i < 6; i++)
             {
-                if ((apl->mode != am_indisp || apl->preg != chosenAssembler->arch->regMap[i][0]) &&
-                    (apal->mode != am_indispscale || (apl->preg != chosenAssembler->arch->regMap[i][0] && apl->sreg != chosenAssembler->arch->regMap[i][0])) &&
-                    (apal->mode != am_indisp || apal->preg != chosenAssembler->arch->regMap[i][0]) &&
-                    (apal->mode != am_indispscale || (apal->preg != chosenAssembler->arch->regMap[i][0] && apal->sreg != chosenAssembler->arch->regMap[i][0])))
+                if ((apl->mode != am_indisp || apl->preg != Optimizer::chosenAssembler->arch->regMap[i][0]) &&
+                    (apal->mode != am_indispscale || (apl->preg != Optimizer::chosenAssembler->arch->regMap[i][0] && apl->sreg != Optimizer::chosenAssembler->arch->regMap[i][0])) &&
+                    (apal->mode != am_indisp || apal->preg != Optimizer::chosenAssembler->arch->regMap[i][0]) &&
+                    (apal->mode != am_indispscale || (apal->preg != Optimizer::chosenAssembler->arch->regMap[i][0] && apal->sreg != Optimizer::chosenAssembler->arch->regMap[i][0])))
                 {
-                    reg = chosenAssembler->arch->regMap[i][0];
+                    reg = Optimizer::chosenAssembler->arch->regMap[i][0];
                     push = true;
                     break;
                 }
@@ -4418,16 +4420,16 @@ void asm_assnblock(QUAD* q) /* copy block of memory*/
         }
         if (n & 1)
         {
-            apl->offset = simpleExpressionNode(se_add, ofs, simpleIntNode(se_i, n - 1));
-            apal->offset = simpleExpressionNode(se_add, ofsa, simpleIntNode(se_i, n - 1));
+            apl->offset = simpleExpressionNode(Optimizer::se_add, ofs, simpleIntNode(Optimizer::se_i, n - 1));
+            apal->offset = simpleExpressionNode(Optimizer::se_add, ofsa, simpleIntNode(Optimizer::se_i, n - 1));
             gen_codes(op_mov, ISZ_UCHAR, ax, apl);
             gen_codes(op_mov, ISZ_UCHAR, apal, ax);
             n--;
         }
         if (n & 2)
         {
-            apl->offset = simpleExpressionNode(se_add, ofs, simpleIntNode(se_i, n - 2));
-            apal->offset = simpleExpressionNode(se_add, ofsa, simpleIntNode(se_i, n - 2));
+            apl->offset = simpleExpressionNode(Optimizer::se_add, ofs, simpleIntNode(Optimizer::se_i, n - 2));
+            apal->offset = simpleExpressionNode(Optimizer::se_add, ofsa, simpleIntNode(Optimizer::se_i, n - 2));
             gen_codes(op_mov, ISZ_USHORT, ax, apl);
             gen_codes(op_mov, ISZ_USHORT, apal, ax);
             n -= 2;
@@ -4436,8 +4438,8 @@ void asm_assnblock(QUAD* q) /* copy block of memory*/
         while (n > 0)
         {
             n -= 4;
-            apl->offset = simpleExpressionNode(se_add, ofs, simpleIntNode(se_i, n));
-            apal->offset = simpleExpressionNode(se_add, ofsa, simpleIntNode(se_i, n));
+            apl->offset = simpleExpressionNode(Optimizer::se_add, ofs, simpleIntNode(Optimizer::se_i, n));
+            apal->offset = simpleExpressionNode(Optimizer::se_add, ofsa, simpleIntNode(Optimizer::se_i, n));
             gen_codes(op_mov, ISZ_UINT, ax, apl);
             gen_codes(op_mov, ISZ_UINT, apal, ax);
         }
@@ -4492,24 +4494,24 @@ void asm_assnblock(QUAD* q) /* copy block of memory*/
         pushlevel -= 12;
     }
 }
-void asm_clrblock(QUAD* q) /* clear block of memory */
+void asm_clrblock(Optimizer::QUAD* q) /* clear block of memory */
 {
     int n = q->dc.right->offset->i;
     AMODE *apl, *aph;
     AMODE *aprl, *aprh;
     enum e_opcode op, opr;
-    SimpleExpression* ofs;
+    Optimizer::SimpleExpression* ofs;
 
     getAmodes(q, &opr, q->dc.right, &aprl, &aprh);
     getAmodes(q, &op, q->dc.left, &apl, &aph);
-    if (q->dc.right->mode != i_immed)
+    if (q->dc.right->mode != Optimizer::i_immed)
         n = INT_MAX;
 
     ofs = apl->offset;
-    if (q->dc.left->mode == i_immed)
+    if (q->dc.left->mode == Optimizer::i_immed)
     {
         op = op_lea;
-        if (ofs->type == se_auto)
+        if (ofs->type == Optimizer::se_auto)
         {
             if (usingEsp)
             {
@@ -4525,29 +4527,29 @@ void asm_clrblock(QUAD* q) /* clear block of memory */
             apl->mode = am_direct;
     }
 
-    if (n <= 24 && (q->dc.left->mode == i_immed || apl->mode == am_dreg))
+    if (n <= 24 && (q->dc.left->mode == Optimizer::i_immed || apl->mode == am_dreg))
     {
         if (apl->mode == am_dreg)
         {
             apl->mode = am_indisp;
-            ofs = simpleIntNode(se_i, 0);
+            ofs = simpleIntNode(Optimizer::se_i, 0);
         }
         if (n & 1)
         {
-            apl->offset = simpleExpressionNode(se_add, ofs, simpleIntNode(se_i, n - 1));
+            apl->offset = simpleExpressionNode(Optimizer::se_add, ofs, simpleIntNode(Optimizer::se_i, n - 1));
             gen_codes(op_mov, ISZ_UCHAR, apl, aimmed(0));
             n--;
         }
         if (n & 2)
         {
-            apl->offset = simpleExpressionNode(se_add, ofs, simpleIntNode(se_i, n - 2));
+            apl->offset = simpleExpressionNode(Optimizer::se_add, ofs, simpleIntNode(Optimizer::se_i, n - 2));
             gen_codes(op_mov, ISZ_USHORT, apl, aimmed(0));
             n -= 2;
         }
         while (n > 0)
         {
             n -= 4;
-            apl->offset = simpleExpressionNode(se_add, ofs, simpleIntNode(se_i, n));
+            apl->offset = simpleExpressionNode(Optimizer::se_add, ofs, simpleIntNode(Optimizer::se_i, n));
             gen_codes(op_mov, ISZ_ULONG, apl, aimmed(0));
         }
     }
@@ -4586,22 +4588,22 @@ void asm_clrblock(QUAD* q) /* clear block of memory */
         pushlevel -= 12;
     }
 }
-void asm_cmpblock(QUAD* q)
+void asm_cmpblock(Optimizer::QUAD* q)
 {
     int n = q->ans->offset->i;
     AMODE *apl, *aph, *apal, *apah;
     enum e_opcode op, opa;
-    SimpleExpression *ofs, *ofsa;
+    Optimizer::SimpleExpression *ofs, *ofsa;
 
     getAmodes(q, &op, q->dc.right, &apl, &aph);
     getAmodes(q, &opa, q->dc.left, &apal, &apah);
 
     ofs = apl->offset;
     ofsa = apal->offset;
-    if (q->dc.right->mode == i_immed)
+    if (q->dc.right->mode == Optimizer::i_immed)
     {
         op = op_lea;
-        if (ofs->type == se_auto)
+        if (ofs->type == Optimizer::se_auto)
         {
             if (usingEsp)
             {
@@ -4616,10 +4618,10 @@ void asm_cmpblock(QUAD* q)
         else
             apl->mode = am_direct;
     }
-    if (q->dc.left->mode == i_immed)
+    if (q->dc.left->mode == Optimizer::i_immed)
     {
         opa = op_lea;
-        if (ofsa->type == se_auto)
+        if (ofsa->type == Optimizer::se_auto)
         {
             if (usingEsp)
             {
@@ -4637,7 +4639,7 @@ void asm_cmpblock(QUAD* q)
 
     int labno = q->dc.v.label;
 
-    if (n <= 24 && (q->dc.right->mode == i_immed || apl->mode == am_dreg) && (q->dc.left->mode == i_immed || apal->mode == am_dreg))
+    if (n <= 24 && (q->dc.right->mode == Optimizer::i_immed || apl->mode == am_dreg) && (q->dc.left->mode == Optimizer::i_immed || apal->mode == am_dreg))
     {
         AMODE* ax;
         int reg = -1;
@@ -4646,23 +4648,23 @@ void asm_cmpblock(QUAD* q)
         if (apl->mode == am_dreg)
         {
             apl->mode = am_indisp;
-            ofs = simpleIntNode(se_i, 0);
+            ofs = simpleIntNode(Optimizer::se_i, 0);
         }
         if (apal->mode == am_dreg)
         {
             apal->mode = am_indisp;
-            ofsa = simpleIntNode(se_i, 0);
+            ofsa = simpleIntNode(Optimizer::se_i, 0);
         }
         for (i = 0; i < 4; i++)
         {
-            if (chosenAssembler->arch->regMap[i][0] < 3 && !(q->liveRegs & ((unsigned long long)1 << i)))
+            if (Optimizer::chosenAssembler->arch->regMap[i][0] < 3 && !(q->liveRegs & ((unsigned long long)1 << i)))
             {
-                if ((apl->mode != am_indisp || apl->preg != chosenAssembler->arch->regMap[i][0]) &&
-                    (apl->mode != am_indispscale || (apl->preg != chosenAssembler->arch->regMap[i][0] && apl->sreg != chosenAssembler->arch->regMap[i][0])) &&
-                    (apal->mode != am_indisp || apal->preg != chosenAssembler->arch->regMap[i][0]) &&
-                    (apal->mode != am_indispscale || (apal->preg != chosenAssembler->arch->regMap[i][0] && apal->sreg != chosenAssembler->arch->regMap[i][0])))
+                if ((apl->mode != am_indisp || apl->preg != Optimizer::chosenAssembler->arch->regMap[i][0]) &&
+                    (apl->mode != am_indispscale || (apl->preg != Optimizer::chosenAssembler->arch->regMap[i][0] && apl->sreg != Optimizer::chosenAssembler->arch->regMap[i][0])) &&
+                    (apal->mode != am_indisp || apal->preg != Optimizer::chosenAssembler->arch->regMap[i][0]) &&
+                    (apal->mode != am_indispscale || (apal->preg != Optimizer::chosenAssembler->arch->regMap[i][0] && apal->sreg != Optimizer::chosenAssembler->arch->regMap[i][0])))
                 {
-                    reg = chosenAssembler->arch->regMap[i][0];
+                    reg = Optimizer::chosenAssembler->arch->regMap[i][0];
                     break;
                 }
             }
@@ -4671,12 +4673,12 @@ void asm_cmpblock(QUAD* q)
         {
             for (i = 0; i < 6; i++)
             {
-                if ((apl->mode != am_indisp || apl->preg != chosenAssembler->arch->regMap[i][0]) &&
-                    (apal->mode != am_indispscale || (apl->preg != chosenAssembler->arch->regMap[i][0] && apl->sreg != chosenAssembler->arch->regMap[i][0])) &&
-                    (apal->mode != am_indisp || apal->preg != chosenAssembler->arch->regMap[i][0]) &&
-                    (apal->mode != am_indispscale || (apal->preg != chosenAssembler->arch->regMap[i][0] && apal->sreg != chosenAssembler->arch->regMap[i][0])))
+                if ((apl->mode != am_indisp || apl->preg != Optimizer::chosenAssembler->arch->regMap[i][0]) &&
+                    (apal->mode != am_indispscale || (apl->preg != Optimizer::chosenAssembler->arch->regMap[i][0] && apl->sreg != Optimizer::chosenAssembler->arch->regMap[i][0])) &&
+                    (apal->mode != am_indisp || apal->preg != Optimizer::chosenAssembler->arch->regMap[i][0]) &&
+                    (apal->mode != am_indispscale || (apal->preg != Optimizer::chosenAssembler->arch->regMap[i][0] && apal->sreg != Optimizer::chosenAssembler->arch->regMap[i][0])))
                 {
-                    reg = chosenAssembler->arch->regMap[i][0];
+                    reg = Optimizer::chosenAssembler->arch->regMap[i][0];
                     push = true;
                     break;
                 }
@@ -4691,8 +4693,8 @@ void asm_cmpblock(QUAD* q)
         }
         if (n & 1)
         {
-            apl->offset = simpleExpressionNode(se_add, ofs, simpleIntNode(se_i, n - 1));
-            apal->offset = simpleExpressionNode(se_add, ofsa, simpleIntNode(se_i, n - 1));
+            apl->offset = simpleExpressionNode(Optimizer::se_add, ofs, simpleIntNode(Optimizer::se_i, n - 1));
+            apal->offset = simpleExpressionNode(Optimizer::se_add, ofsa, simpleIntNode(Optimizer::se_i, n - 1));
             gen_codes(op_mov, ISZ_UCHAR, ax, apl);
             gen_codes(op_cmp, ISZ_UCHAR, apal, ax);
             gen_code(op_jne, make_label(labno), NULL);
@@ -4700,8 +4702,8 @@ void asm_cmpblock(QUAD* q)
         }
         if (n & 2)
         {
-            apl->offset = simpleExpressionNode(se_add, ofs, simpleIntNode(se_i, n - 2));
-            apal->offset = simpleExpressionNode(se_add, ofsa, simpleIntNode(se_i, n - 2));
+            apl->offset = simpleExpressionNode(Optimizer::se_add, ofs, simpleIntNode(Optimizer::se_i, n - 2));
+            apal->offset = simpleExpressionNode(Optimizer::se_add, ofsa, simpleIntNode(Optimizer::se_i, n - 2));
             gen_codes(op_mov, ISZ_USHORT, ax, apl);
             gen_codes(op_cmp, ISZ_USHORT, apal, ax);
             gen_code(op_jne, make_label(labno), NULL);
@@ -4711,8 +4713,8 @@ void asm_cmpblock(QUAD* q)
         while (n > 0)
         {
             n -= 4;
-            apl->offset = simpleExpressionNode(se_add, ofs, simpleIntNode(se_i, n));
-            apal->offset = simpleExpressionNode(se_add, ofsa, simpleIntNode(se_i, n));
+            apl->offset = simpleExpressionNode(Optimizer::se_add, ofs, simpleIntNode(Optimizer::se_i, n));
+            apal->offset = simpleExpressionNode(Optimizer::se_add, ofsa, simpleIntNode(Optimizer::se_i, n));
             gen_codes(op_mov, ISZ_UINT, ax, apl);
             gen_codes(op_cmp, ISZ_UINT, apal, ax);
             gen_code(op_jne, make_label(labno), NULL);
@@ -4777,17 +4779,17 @@ void asm_cmpblock(QUAD* q)
         pushlevel -= 12;
     }
 }
-void asm_jc(QUAD* q) /* branch if a U< b */ { gen_goto(q, op_jc, op_ja, op_jc, op_ja, op_jb, op_ja, op_jb); }
-void asm_ja(QUAD* q) /* branch if a U> b */ { gen_goto(q, op_ja, op_jc, op_ja, op_jc, op_ja, op_jb, op_ja); }
-void asm_je(QUAD* q) /* branch if a == b */ { gen_goto(q, op_je, op_jne, op_je, op_jne, op_je, op_jne, op_je); }
-void asm_jnc(QUAD* q) /* branch if a U>= b */ { gen_goto(q, op_jnc, op_jbe, op_ja, op_jc, op_jae, op_jbe, op_jae); }
-void asm_jbe(QUAD* q) /* branch if a U<= b */ { gen_goto(q, op_jbe, op_jnc, op_jc, op_ja, op_jbe, op_jnc, op_jbe); }
-void asm_jne(QUAD* q) /* branch if a != b */ { gen_goto(q, op_jne, op_je, op_jne, op_je, op_jne, op_je, op_jne); }
-void asm_jl(QUAD* q) /* branch if a S< b */ { gen_goto(q, op_jl, op_jg, op_jl, op_jg, op_jb, op_ja, op_jb); }
-void asm_jg(QUAD* q) /* branch if a S> b */ { gen_goto(q, op_jg, op_jl, op_jg, op_jl, op_ja, op_jb, op_ja); }
-void asm_jle(QUAD* q) /* branch if a S<= b */ { gen_goto(q, op_jle, op_jge, op_jl, op_jg, op_jbe, op_jae, op_jbe); }
-void asm_jge(QUAD* q) /* branch if a S>= b */ { gen_goto(q, op_jge, op_jle, op_jg, op_jl, op_jae, op_jbe, op_jae); }
-void asm_cppini(QUAD* q) /* cplusplus initialization (historic)*/ { (void)q; }
+void asm_jc(Optimizer::QUAD* q) /* branch if a U< b */ { gen_goto(q, op_jc, op_ja, op_jc, op_ja, op_jb, op_ja, op_jb); }
+void asm_ja(Optimizer::QUAD* q) /* branch if a U> b */ { gen_goto(q, op_ja, op_jc, op_ja, op_jc, op_ja, op_jb, op_ja); }
+void asm_je(Optimizer::QUAD* q) /* branch if a == b */ { gen_goto(q, op_je, op_jne, op_je, op_jne, op_je, op_jne, op_je); }
+void asm_jnc(Optimizer::QUAD* q) /* branch if a U>= b */ { gen_goto(q, op_jnc, op_jbe, op_ja, op_jc, op_jae, op_jbe, op_jae); }
+void asm_jbe(Optimizer::QUAD* q) /* branch if a U<= b */ { gen_goto(q, op_jbe, op_jnc, op_jc, op_ja, op_jbe, op_jnc, op_jbe); }
+void asm_jne(Optimizer::QUAD* q) /* branch if a != b */ { gen_goto(q, op_jne, op_je, op_jne, op_je, op_jne, op_je, op_jne); }
+void asm_jl(Optimizer::QUAD* q) /* branch if a S< b */ { gen_goto(q, op_jl, op_jg, op_jl, op_jg, op_jb, op_ja, op_jb); }
+void asm_jg(Optimizer::QUAD* q) /* branch if a S> b */ { gen_goto(q, op_jg, op_jl, op_jg, op_jl, op_ja, op_jb, op_ja); }
+void asm_jle(Optimizer::QUAD* q) /* branch if a S<= b */ { gen_goto(q, op_jle, op_jge, op_jl, op_jg, op_jbe, op_jae, op_jbe); }
+void asm_jge(Optimizer::QUAD* q) /* branch if a S>= b */ { gen_goto(q, op_jge, op_jle, op_jg, op_jl, op_jae, op_jbe, op_jae); }
+void asm_cppini(Optimizer::QUAD* q) /* cplusplus initialization (historic)*/ { (void)q; }
 /*
  * function prologue.  left has a constant which is a bit mask
  * of registers to push.  It also has a flag indicating whether frames
@@ -4795,15 +4797,15 @@ void asm_cppini(QUAD* q) /* cplusplus initialization (historic)*/ { (void)q; }
  *
  * right has the number of bytes to allocate on the stack
  */
-void asm_prologue(QUAD* q) /* function prologue */
+void asm_prologue(Optimizer::QUAD* q) /* function prologue */
 {
-    chosenAssembler->arch->retblockparamadjust = usingEsp ? 0 : 4;
-    inframe = !!(beGetIcon(q->dc.left) & FRAME_FLAG_NEEDS_FRAME) || cparams.prm_debug || cparams.prm_stackalign;
+    Optimizer::chosenAssembler->arch->retblockparamadjust = usingEsp ? 0 : 4;
+    inframe = !!(beGetIcon(q->dc.left) & FRAME_FLAG_NEEDS_FRAME) || Optimizer::cparams.prm_debug || Optimizer::cparams.prm_stackalign;
     if (inframe)
     {
         int n = beGetIcon(q->dc.right);
 
-        if (cparams.prm_stackalign && beGetIcon(q->dc.left) != 0)
+        if (Optimizer::cparams.prm_stackalign && beGetIcon(q->dc.left) != 0)
         {
             // adjust for pushed regs
             int cnt = 0;
@@ -4815,8 +4817,8 @@ void asm_prologue(QUAD* q) /* function prologue */
                     cnt += 4;
                 mask <<= 1;
             }
-            if (cnt % cparams.prm_stackalign)
-                cnt = cparams.prm_stackalign - cnt % cparams.prm_stackalign;
+            if (cnt % Optimizer::cparams.prm_stackalign)
+                cnt = Optimizer::cparams.prm_stackalign - cnt % Optimizer::cparams.prm_stackalign;
             n += cnt;
         }
         /* enter is *really* inefficient so we will not use it */
@@ -4873,7 +4875,7 @@ void asm_prologue(QUAD* q) /* function prologue */
             if (mask & compare)
             {
                 funcstackheight += 4;
-                gen_code(op_push, makedreg(chosenAssembler->arch->regMap[cnt][0]), 0);
+                gen_code(op_push, makedreg(Optimizer::chosenAssembler->arch->regMap[cnt][0]), 0);
             }
             cnt++, mask <<= 1;
         }
@@ -4882,7 +4884,7 @@ void asm_prologue(QUAD* q) /* function prologue */
 /*
  * function epilogue, left holds the mask of which registers were pushed
  */
-void asm_epilogue(QUAD* q) /* function epilogue */
+void asm_epilogue(Optimizer::QUAD* q) /* function epilogue */
 {
     if (pushlevel != 0 && usingEsp)
         diag("asm_epilogue: pushlevel not aligned");
@@ -4897,7 +4899,7 @@ void asm_epilogue(QUAD* q) /* function epilogue */
         {
             if (mask & compare)
             {
-                gen_code(op_pop, makedreg(chosenAssembler->arch->regMap[cnt][0]), 0);
+                gen_code(op_pop, makedreg(Optimizer::chosenAssembler->arch->regMap[cnt][0]), 0);
                 funcstackheight -= 4;
             }
             cnt--, mask >>= 1;
@@ -4929,10 +4931,10 @@ void asm_epilogue(QUAD* q) /* function epilogue */
 /*
  * in an interrupt handler, push the current context
  */
-void asm_pushcontext(QUAD* q) /* push register context */
+void asm_pushcontext(Optimizer::QUAD* q) /* push register context */
 {
     (void)q;
-    if (cparams.prm_farkeyword)
+    if (Optimizer::cparams.prm_farkeyword)
     {
         gen_code(op_push, makesegreg(ES), 0);
         gen_code(op_push, makesegreg(FS), 0);
@@ -4943,11 +4945,11 @@ void asm_pushcontext(QUAD* q) /* push register context */
 /*
  * in an interrupt handler, pop the current context
  */
-void asm_popcontext(QUAD* q) /* pop register context */
+void asm_popcontext(Optimizer::QUAD* q) /* pop register context */
 {
     (void)q;
     gen_code(op_popad, 0, 0);
-    if (cparams.prm_farkeyword)
+    if (Optimizer::cparams.prm_farkeyword)
     {
         gen_code(op_pop, makesegreg(GS), 0);
         gen_code(op_pop, makesegreg(FS), 0);
@@ -4957,7 +4959,7 @@ void asm_popcontext(QUAD* q) /* pop register context */
 /*
  * loads a context, e.g. for the loadds qualifier
  */
-void asm_loadcontext(QUAD* q) /* load register context (e.g. at interrupt level ) */
+void asm_loadcontext(Optimizer::QUAD* q) /* load register context (e.g. at interrupt level ) */
 {
     (void)q;
     gen_code(op_push, makesegreg(DS), 0);
@@ -4968,24 +4970,24 @@ void asm_loadcontext(QUAD* q) /* load register context (e.g. at interrupt level 
 /*
  * unloads a context, e.g. for the loadds qualifier
  */
-void asm_unloadcontext(QUAD* q) /* load register context (e.g. at interrupt level ) */
+void asm_unloadcontext(Optimizer::QUAD* q) /* load register context (e.g. at interrupt level ) */
 {
     (void)q;
     gen_code(op_pop, makesegreg(DS), 0);
 }
-void asm_tryblock(QUAD* q) /* try/catch */
+void asm_tryblock(Optimizer::QUAD* q) /* try/catch */
 {
     AMODE* ap1 = (AMODE*)beLocalAlloc(sizeof(AMODE));
     ap1->mode = am_indisp;
     if (usingEsp)
     {
         ap1->preg = ESP;
-        ap1->offset = simpleIntNode(se_i, q->dc.v.label + funcstackheight);  // ESP
+        ap1->offset = simpleIntNode(Optimizer::se_i, q->dc.v.label + funcstackheight);  // ESP
     }
     else
     {
         ap1->preg = EBP;
-        ap1->offset = simpleIntNode(se_i, q->dc.v.label);  // ESP
+        ap1->offset = simpleIntNode(Optimizer::se_i, q->dc.v.label);  // ESP
     }
 
     switch ((int)q->dc.left->offset->i)
@@ -5007,7 +5009,7 @@ void asm_tryblock(QUAD* q) /* try/catch */
             break;
     }
 }
-void asm_stackalloc(QUAD* q) /* allocate stack space - positive value = allocate(QUAD *q) negative value deallocate */
+void asm_stackalloc(Optimizer::QUAD* q) /* allocate stack space - positive value = allocate(Optimizer::QUAD *q) negative value deallocate */
 {
     enum e_opcode op;
     AMODE *apl, *aph;
@@ -5061,7 +5063,7 @@ void asm_stackalloc(QUAD* q) /* allocate stack space - positive value = allocate
         }
     }
 }
-void asm_loadstack(QUAD* q) /* load the stack pointer from a var */
+void asm_loadstack(Optimizer::QUAD* q) /* load the stack pointer from a var */
 {
     AMODE *apl, *aph;
     enum e_opcode op;
@@ -5070,7 +5072,7 @@ void asm_loadstack(QUAD* q) /* load the stack pointer from a var */
     apl->liveRegs = q->liveRegs;
     gen_codes(op_mov, ISZ_UINT, makedreg(ESP), apl);
 }
-void asm_savestack(QUAD* q) /* save the stack pointer to a var */
+void asm_savestack(Optimizer::QUAD* q) /* save the stack pointer to a var */
 {
     AMODE *apl, *aph;
     enum e_opcode op;
@@ -5079,7 +5081,7 @@ void asm_savestack(QUAD* q) /* save the stack pointer to a var */
     apl->liveRegs = q->liveRegs;
     gen_codes(op_mov, ISZ_UINT, apl, makedreg(ESP));
 }
-void asm_functail(QUAD* q, int begin, int size) /* functail start or end */
+void asm_functail(Optimizer::QUAD* q, int begin, int size) /* functail start or end */
 {
     enum e_opcode op = op_push;
     (void)q;
@@ -5098,10 +5100,10 @@ void asm_functail(QUAD* q, int begin, int size) /* functail start or end */
         gen_code(op, makedreg(EAX), 0);
     }
 }
-void asm_atomic(QUAD* q)
+void asm_atomic(Optimizer::QUAD* q)
 {
     bool pushed;
-    int needsync = q->dc.opcode != i_xchg ? q->dc.left->offset->i : 0;
+    int needsync = q->dc.opcode != Optimizer::i_xchg ? q->dc.left->offset->i : 0;
     if (needsync < 0)
         needsync = 0;
     // direct store has bit 7 set...
@@ -5114,17 +5116,17 @@ void asm_atomic(QUAD* q)
         enum e_opcode opr;
         AMODE *apal, *apah, *apll, *aplh, *aprl, *aprh;
         int lbl1, lbl2;
-        case i_atomic_fence:
-            if (needsync == mo_seq_cst + 0x80)  // in this case the value may be mo_seq_cst + 0x80 for store,
+        case Optimizer::i_atomic_fence:
+            if (needsync == Optimizer::mo_seq_cst + 0x80)  // in this case the value may be mo_seq_cst + 0x80 for store,
                                                 // for the x86 we are only genning these on stores:
             {
                 gen_code(op_mfence, NULL, NULL);
             }
             break;
-        case i_atomic_flag_fence:
+        case Optimizer::i_atomic_flag_fence:
             getAmodes(q, &opl, q->dc.right, &apll, &aplh);
             apll->mode = am_indisp;
-            apll->offset = simpleIntNode(se_i, 0);
+            apll->offset = simpleIntNode(Optimizer::se_i, 0);
             if (q->dc.left->offset->i > 0)
             {
                 lbl1 = beGetLabel;
@@ -5166,7 +5168,7 @@ void asm_atomic(QUAD* q)
                 gen_code(op_mov, apll, aimmed(0));
             }
             break;
-        case i_atomic_flag_test_and_set:
+        case Optimizer::i_atomic_flag_test_and_set:
             pushed = false;
             getAmodes(q, &opl, q->dc.right, &apll, &aplh);
             getAmodes(q, &opa, q->ans, &apal, &apah);
@@ -5179,7 +5181,7 @@ void asm_atomic(QUAD* q)
                 gen_codes(op_lea, ISZ_UINT, makedreg(EBP), apll);
                 apll = makedreg(EBP);
                 apll->mode = am_indisp;
-                apll->offset = simpleIntNode(se_i, 0);
+                apll->offset = simpleIntNode(Optimizer::se_i, 0);
             }
             gen_codes(op_mov, ISZ_UCHAR, apal, aimmed(1));
             gen_code(op_lock, NULL, NULL);
@@ -5190,15 +5192,15 @@ void asm_atomic(QUAD* q)
                 pushlevel -= 4;
             }
             break;
-        case i_atomic_flag_clear:
+        case Optimizer::i_atomic_flag_clear:
             getAmodes(q, &opl, q->dc.right, &apll, &aplh);
             gen_codes(op_mov, ISZ_UCHAR, apll, aimmed(0));
-            if (needsync == (mo_seq_cst | 0x80))
+            if (needsync == (Optimizer::mo_seq_cst | 0x80))
             {
                 gen_code(op_mfence, NULL, NULL);
             }
             break;
-        case i_xchg:
+        case Optimizer::i_xchg:
             if ((q->ans->size == ISZ_ULONGLONG || q->ans->size == -ISZ_ULONGLONG) &&
                 (q->dc.left->size == ISZ_ULONGLONG || q->dc.left->size == -ISZ_ULONGLONG) &&
                 (q->dc.right->size == ISZ_ULONGLONG || q->dc.right->size == -ISZ_ULONGLONG))
@@ -5222,7 +5224,7 @@ void asm_atomic(QUAD* q)
                     gen_code(op_lea, makedreg(EBP), apll);
                     apll = makedreg(EBP);
                     apll->mode = am_indisp;
-                    apll->offset = simpleIntNode(se_i, 0);
+                    apll->offset = simpleIntNode(Optimizer::se_i, 0);
                 }
 
                 if (aprl->mode == am_dreg)
@@ -5241,7 +5243,7 @@ void asm_atomic(QUAD* q)
                 }
             }
             break;
-        case i_cmpswp:
+        case Optimizer::i_cmpswp:
             /*
                 address == address2 ? address = value : address2 = address
                 rv         right      rv        left    right      rv
@@ -5274,10 +5276,10 @@ void asm_atomic(QUAD* q)
                         pushed = true;
                         aprl = makedreg(EBP);
                         aprl->mode = am_indisp;
-                        aprl->offset = simpleIntNode(se_i, 0);
+                        aprl->offset = simpleIntNode(Optimizer::se_i, 0);
                         aprh = makedreg(EBP);
                         aprh->mode = am_indisp;
-                        aprh->offset = simpleIntNode(se_i, 4);
+                        aprh->offset = simpleIntNode(Optimizer::se_i, 4);
                     }
                     llongatomicmath(op_xchg, op_cmpxchg8b, q);
                     int labno = beGetLabel;
@@ -5387,15 +5389,15 @@ void asm_atomic(QUAD* q)
             break;
     }
 }
-void asm_expressiontag(QUAD* q)
+void asm_expressiontag(Optimizer::QUAD* q)
 {
 
 }
-void asm_seh(QUAD* q)
+void asm_seh(Optimizer::QUAD* q)
 {
 
 }
-void asm_tag(QUAD* q)
+void asm_tag(Optimizer::QUAD* q)
 {
 
 }

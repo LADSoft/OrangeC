@@ -22,5 +22,8 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
  */
-FPF refloat(EXPRESSION* node);
-unsigned long long reint(EXPRESSION* node);
+namespace Parser
+{
+    FPF refloat(EXPRESSION* node);
+    unsigned long long reint(EXPRESSION* node);
+}

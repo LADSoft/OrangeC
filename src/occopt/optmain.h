@@ -24,20 +24,26 @@
  *
  */
 #include "CmdSwitch.h"
-extern CmdSwitchParser SwitchParser;
-extern CmdSwitchBool single;
-extern CmdSwitchBool WriteIcdFile;
-extern CmdSwitchCombineString output;
 
-extern const char* usageText;
+extern Optimizer::SimpleSymbol* currentFunction;
 
-extern int anonymousNotAlloc;
-extern SimpleSymbol* currentFunction;
-extern int usingEsp;
+namespace Optimizer
+{
 
-void InternalConflict(QUAD* head);
-void PreColor(QUAD* head);
-void examine_icode(QUAD* head);
-int PreRegAlloc(QUAD* tail, BRIGGS_SET* globalVars, BRIGGS_SET* eobGlobals, int pass);
-void Optimize(SimpleSymbol* funcsp);
-int main(int argc, char* argv[]);
+    extern CmdSwitchParser SwitchParser;
+    extern CmdSwitchBool single;
+    extern CmdSwitchBool WriteIcdFile;
+    extern CmdSwitchCombineString output;
+
+    extern const char* usageText;
+
+    extern int anonymousNotAlloc;
+    extern int usingEsp;
+
+    void InternalConflict(QUAD* head);
+    void PreColor(QUAD* head);
+    void examine_icode(QUAD* head);
+    int PreRegAlloc(QUAD* tail, BRIGGS_SET* globalVars, BRIGGS_SET* eobGlobals, int pass);
+    void Optimize(SimpleSymbol* funcsp);
+    int main(int argc, char* argv[]);
+}

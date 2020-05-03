@@ -44,7 +44,7 @@ static const char* winflags[] = {
 static const char* winc0[] = {"c0xpe.o", "c0pe.o", "c0dpe.o", "c0pm.o", "c0wat.o", "", "c0xpe.o", "c0hx.o",
                        "c0xls.o", "c0ls.o", "c0dls.o", "c0om.o", "c0wat.o", "", "c0xpe.o", "c0hx.o"};
 
-static LIST *objlist, *asmlist, *liblist, *reslist, *rclist;
+static Optimizer::LIST *objlist, *asmlist, *liblist, *reslist, *rclist;
 static char *asm_params, *rc_params, *link_params;
 
 bool InsertOption(const char* name)
@@ -73,9 +73,9 @@ bool InsertOption(const char* name)
     strcat(*p, name + 1);
     return true;
 }
-static void InsertFile(LIST** r, const char* name, const char* ext, bool primary)
+static void InsertFile(Optimizer::LIST** r, const char* name, const char* ext, bool primary)
 {
-    LIST* lst;
+    Optimizer::LIST* lst;
     char buf[256], *newbuffer;
     strcpy(buf, name);
     if (ext)
@@ -98,7 +98,7 @@ static void InsertFile(LIST** r, const char* name, const char* ext, bool primary
     /* Insert file */
     while (*r)
         r = &(*r)->next;
-    *r = (LIST*)malloc(sizeof(LIST));
+    *r = (Optimizer::LIST*)malloc(sizeof(Optimizer::LIST));
     if (!r)
         return;
     (*r)->next = 0;
@@ -149,7 +149,7 @@ int InsertExternalFile(const char* name, bool primary)
     InsertFile(&objlist, buf, ".o", primary);
 
     // compiling via assembly
-    if (cparams.prm_asmfile && !cparams.prm_compileonly)
+    if (Optimizer::cparams.prm_asmfile && !Optimizer::cparams.prm_compileonly)
     {
         InsertFile(&asmlist, buf, ".asm", primary);
     }
@@ -169,14 +169,14 @@ int RunExternalFiles()
     char verbosityString[20];
 
     memset(verbosityString, 0, sizeof(verbosityString));
-    if (verbosity > 1)
+    if (Optimizer::verbosity > 1)
     {
         verbosityString[0] = '-';
-        memset(verbosityString + 1, 'y', verbosity > sizeof(verbosityString) - 2 ? sizeof(verbosityString) - 2 : verbosity);
+        memset(verbosityString + 1, 'y', Optimizer::verbosity > sizeof(verbosityString) - 2 ? sizeof(verbosityString) - 2 : Optimizer::verbosity);
     }
     temp[0] = 0;
-    if (inputFiles.size())
-        outputfile(outName, inputFiles.front().c_str(), ".exe", false);
+    if (Optimizer::inputFiles.size())
+        outputfile(outName, Optimizer::inputFiles.front().c_str(), ".exe", false);
     else if (objlist)
         outputfile(outName, (const char *)objlist->data, ".exe", false);
     else
@@ -185,56 +185,56 @@ int RunExternalFiles()
     //    if (p && p[1] != '\\')
     //        *p = 0;
     bool first = false;
-    while (asmlist && !cparams.prm_asmfile)
+    while (asmlist && !Optimizer::cparams.prm_asmfile)
     {
-        if (cparams.prm_compileonly && outputFileName[0] && !first)
-            rv = Utils::ToolInvoke("oasm.exe", verbosity?"":nullptr, "\"-o%s\" %s %s \"%s\"", outputFileName.c_str(), asm_params ? asm_params : "",
-                    !showBanner ? "-!" : "", (char*)asmlist->data);
+        if (Optimizer::cparams.prm_compileonly && Optimizer::outputFileName[0] && !first)
+            rv = Utils::ToolInvoke("oasm.exe", Optimizer::verbosity?"":nullptr, "\"-o%s\" %s %s \"%s\"", Optimizer::outputFileName.c_str(), asm_params ? asm_params : "",
+                    !Optimizer::showBanner ? "-!" : "", (char*)asmlist->data);
         else
-            rv = Utils::ToolInvoke("oasm.exe", verbosity ? "" : nullptr, "%s %s \"%s\"", asm_params ? asm_params : "", !showBanner ? "-!" : "",
+            rv = Utils::ToolInvoke("oasm.exe", Optimizer::verbosity ? "" : nullptr, "%s %s \"%s\"", asm_params ? asm_params : "", !Optimizer::showBanner ? "-!" : "",
                     (char*)asmlist->data);
         first = true;
         if (rv)
             return rv;
         asmlist = asmlist->next;
     }
-    if (!prm_include.empty())
-        sprintf(args, "\"-i%s\"", prm_include.c_str());
+    if (!Optimizer::prm_include.empty())
+        sprintf(args, "\"-i%s\"", Optimizer::prm_include.c_str());
     else
         args[0] = 0;
     while (rclist)
     {
-        if (cparams.prm_compileonly && outputFileName[0] && !first)
-            rv = Utils::ToolInvoke("orc.exe", verbosity ? "" : nullptr, "\"-o%s\" -r %s %s %s \"%s\"", outputFileName.c_str(), rc_params ? rc_params : "",
-                    !showBanner ? "-!" : "", args, (char*)rclist->data);
+        if (Optimizer::cparams.prm_compileonly && Optimizer::outputFileName[0] && !first)
+            rv = Utils::ToolInvoke("orc.exe", Optimizer::verbosity ? "" : nullptr, "\"-o%s\" -r %s %s %s \"%s\"", Optimizer::outputFileName.c_str(), rc_params ? rc_params : "",
+                    !Optimizer::showBanner ? "-!" : "", args, (char*)rclist->data);
         else
-            rv = Utils::ToolInvoke("orc.exe", verbosity ? "" : nullptr, "-r %s %s %s \"%s\"", rc_params ? rc_params : "", !showBanner ? "-!" : "", args,
+            rv = Utils::ToolInvoke("orc.exe", Optimizer::verbosity ? "" : nullptr, "-r %s %s %s \"%s\"", rc_params ? rc_params : "", !Optimizer::showBanner ? "-!" : "", args,
                     (char*)rclist->data);
         first = true;
         if (rv)
             return rv;
         rclist = rclist->next;
     }
-    if (!cparams.prm_compileonly && !cparams.prm_asmfile && objlist)
+    if (!Optimizer::cparams.prm_compileonly && !Optimizer::cparams.prm_asmfile && objlist)
     {
         std::string tempName;
         FILE *fil = Utils::TempName(tempName);
-        if (!prm_libPath.empty())
+        if (!Optimizer::prm_libPath.empty())
         {
-            fprintf(fil, "\"/L%s\" ", prm_libPath.c_str());
+            fprintf(fil, "\"/L%s\" ", Optimizer::prm_libPath.c_str());
         }
 
-        strcpy(args, winflags[cparams.prm_targettype]);
+        strcpy(args, winflags[Optimizer::cparams.prm_targettype]);
 
-        c0 = winc0[cparams.prm_targettype + cparams.prm_lscrtdll * 8];
-        if (cparams.prm_debug)
+        c0 = winc0[Optimizer::cparams.prm_targettype + Optimizer::cparams.prm_lscrtdll * 8];
+        if (Optimizer::cparams.prm_debug)
         {
             //            strcat(args, " /DEB");
-            if (cparams.prm_targettype == DOS)
+            if (Optimizer::cparams.prm_targettype == DOS)
                 c0 = "c0pmd.o";
-            else if (cparams.prm_targettype == DOS32A)
+            else if (Optimizer::cparams.prm_targettype == DOS32A)
                 c0 = "c0watd.o";
-            if (!cparams.compile_under_dos)  // this because I don't want to vet sqlite3 under DOS at this time.
+            if (!Optimizer::cparams.compile_under_dos)  // this because I don't want to vet sqlite3 under DOS at this time.
                 strcat(args, " /v");
         }
         fprintf(fil, "  %s", c0);
@@ -249,15 +249,15 @@ int RunExternalFiles()
             fprintf(fil, " \"%s\"", (char*)liblist->data);
             liblist = liblist->next;
         }
-        if (cparams.prm_msvcrt)
+        if (Optimizer::cparams.prm_msvcrt)
             fprintf(fil, " climp.l msvcrt.l ");
-        else if (cparams.prm_lscrtdll)
+        else if (Optimizer::cparams.prm_lscrtdll)
             fprintf(fil, " climp.l lscrtl.l ");
-        else if (cparams.prm_crtdll)
+        else if (Optimizer::cparams.prm_crtdll)
             fprintf(fil, " climp.l crtdll.l ");
-        else if (cparams.prm_targettype == DOS || cparams.prm_targettype == DOS32A || cparams.prm_targettype == RAW || cparams.prm_targettype == WHXDOS)
+        else if (Optimizer::cparams.prm_targettype == DOS || Optimizer::cparams.prm_targettype == DOS32A || Optimizer::cparams.prm_targettype == RAW || Optimizer::cparams.prm_targettype == WHXDOS)
         {
-            if (cparams.prm_farkeyword)
+            if (Optimizer::cparams.prm_farkeyword)
                 fprintf(fil, " farmem");
             fprintf(fil, " cldos.l ");
         }
@@ -271,7 +271,7 @@ int RunExternalFiles()
         fclose(fil);
         char with[50000];
         with[0] = 0;
-        if (verbosity)
+        if (Optimizer::verbosity)
         {
             FILE* fil = fopen(tempName.c_str(), "r");
             if (fil)
@@ -282,18 +282,18 @@ int RunExternalFiles()
                 strcat(with, "\n");
             }
         }
-        rv = Utils::ToolInvoke("olink.exe", verbosity?with:nullptr, "%s %s %s /c+ \"/o%s\" %s %s %s @%s", link_params ? link_params : "",
-            cparams.prm_targettype == WHXDOS ? "-DOBJECTALIGN=65536" : "", !showBanner ? "-!" : "", outName, args, verbosityString, 
-            !prm_OutputDefFile.empty() ? ("--output-def \"" + prm_OutputDefFile + "\"").c_str() : "", tempName.c_str());
+        rv = Utils::ToolInvoke("olink.exe", Optimizer::verbosity?with:nullptr, "%s %s %s /c+ \"/o%s\" %s %s %s @%s", link_params ? link_params : "",
+            Optimizer::cparams.prm_targettype == WHXDOS ? "-DOBJECTALIGN=65536" : "", !Optimizer::showBanner ? "-!" : "", outName, args, verbosityString,
+            !Optimizer::prm_OutputDefFile.empty() ? ("--output-def \"" + Optimizer::prm_OutputDefFile + "\"").c_str() : "", tempName.c_str());
         unlink(tempName.c_str());
-        if (verbosity > 1)
+        if (Optimizer::verbosity > 1)
             printf("Return code: %d\n", rv);
 
         if (rv)
             return rv;
-        if (cparams.prm_targettype == WHXDOS)
+        if (Optimizer::cparams.prm_targettype == WHXDOS)
         {
-            rv = Utils::ToolInvoke("patchpe.exe", verbosity ? "" : nullptr, "%s", outputFileName.c_str());
+            rv = Utils::ToolInvoke("patchpe.exe", Optimizer::verbosity ? "" : nullptr, "%s", Optimizer::outputFileName.c_str());
             if (rv)
             {
                 printf("Could not spawn patchpe.exe\n");

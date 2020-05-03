@@ -23,16 +23,19 @@
  *
  */
 
-extern BITINT bittab[BITINTBITS];
+namespace Optimizer
+{
+    extern BITINT bittab[BITINTBITS];
 
-void BitInit(void);
-BRIGGS_SET* briggsAlloc(int size);
-BRIGGS_SET* briggsAlloct(int size);
-BRIGGS_SET* briggsAllocc(int size);
-BRIGGS_SET* briggsAllocs(int size);
-BRIGGS_SET* briggsReAlloc(BRIGGS_SET* set, int size);
-int briggsSet(BRIGGS_SET* p, int index);
-int briggsReset(BRIGGS_SET* p, int index);
-int briggsTest(BRIGGS_SET* p, int index);
-int briggsUnion(BRIGGS_SET* s1, BRIGGS_SET* s2);
-int briggsIntersect(BRIGGS_SET* s1, BRIGGS_SET* s2);
+    void BitInit(void);
+    BRIGGS_SET* briggsAlloc(int size);
+    BRIGGS_SET* briggsAlloct(int size);
+    BRIGGS_SET* briggsAllocc(int size);
+    BRIGGS_SET* briggsAllocs(int size);
+    BRIGGS_SET* briggsReAlloc(BRIGGS_SET* set, int size);
+    int briggsSet(BRIGGS_SET* p, int index);
+    int briggsReset(BRIGGS_SET* p, int index);
+    int briggsTest(BRIGGS_SET* p, int index);
+    int briggsUnion(BRIGGS_SET* s1, BRIGGS_SET* s2);
+    int briggsIntersect(BRIGGS_SET* s1, BRIGGS_SET* s2);
+}

@@ -34,11 +34,14 @@
 #include "config.h"
 #include "occparse.h"
 
-int needsAtomicLockFromType(TYPE* tp)
+namespace Parser
 {
-    ARCH_SIZING* p = chosenAssembler->arch->type_needsLock;
-    switch (basetype(tp)->type)
+
+    int needsAtomicLockFromType(TYPE* tp)
     {
+        Optimizer::ARCH_SIZING* p = Optimizer::chosenAssembler->arch->type_needsLock;
+        switch (basetype(tp)->type)
+        {
         case bt_char16_t:
             return 0;
         case bt_char32_t:
@@ -100,13 +103,13 @@ int needsAtomicLockFromType(TYPE* tp)
         case bt_union:
         default:
             return 1;
+        }
     }
-}
-static int basesize(ARCH_SIZING* p, TYPE* tp)
-{
-    tp = basetype(tp);
-    switch (tp->type)
+    static int basesize(Optimizer::ARCH_SIZING* p, TYPE* tp)
     {
+        tp = basetype(tp);
+        switch (tp->type)
+        {
         case bt_char16_t:
             return 2;
         case bt_char32_t:
@@ -182,58 +185,59 @@ static int basesize(ARCH_SIZING* p, TYPE* tp)
         default:
             /*            diag("basesize: unknown type");*/
             return 1;
+        }
     }
-}
-int getSize(enum e_bt type)
-{
-    TYPE tp;
-    memset(&tp, 0, sizeof(tp));
-    tp.type = type; /* other fields don't matter, we never call this for structured types*/
-    tp.rootType = &tp;
-    return basesize(chosenAssembler->arch->type_sizes, &tp);
-}
-int getBaseAlign(enum e_bt type)
-{
-    TYPE tp;
-    if (type == bt_auto)
-        type = bt_struct;
-    tp.type = type; /* other fields don't matter, we never call this for structured types*/
-    tp.array = tp.vla = false;
-    tp.rootType = &tp;
-    return basesize(chosenAssembler->arch->type_align, &tp);
-}
-long getautoval(long val)
-{
-    if (chosenAssembler->arch->spgrowsup)
-        return -val;
-    else
-        return val;
-}
-int funcvaluesize(int val)
-{
-    if (chosenAssembler->arch->param_offs)
-        return (chosenAssembler->arch->param_offs(val));
-    return 0;
-}
-int alignment(int sc, TYPE* tp)
-{
-    (void)sc;
-    return basesize(chosenAssembler->arch->type_align, tp);
-}
-int getAlign(int sc, TYPE* tp)
-{
-    int align = basesize(chosenAssembler->arch->type_align, tp);
-    if (sc != sc_auto)
+    int getSize(enum e_bt type)
     {
-        int pack = preProcessor->GetPack();
-        if (pack < align)
-            align = pack;
+        TYPE tp;
+        memset(&tp, 0, sizeof(tp));
+        tp.type = type; /* other fields don't matter, we never call this for structured types*/
+        tp.rootType = &tp;
+        return basesize(Optimizer::chosenAssembler->arch->type_sizes, &tp);
     }
-    if (chosenAssembler->arch->align)
-        align = chosenAssembler->arch->align(align);
-    if (isstructured(tp) && basetype(tp)->sp->sb->attribs.inheritable.structAlign > align)
-        align = basetype(tp)->sp->sb->attribs.inheritable.structAlign;
-    return align;
+    int getBaseAlign(enum e_bt type)
+    {
+        TYPE tp;
+        if (type == bt_auto)
+            type = bt_struct;
+        tp.type = type; /* other fields don't matter, we never call this for structured types*/
+        tp.array = tp.vla = false;
+        tp.rootType = &tp;
+        return basesize(Optimizer::chosenAssembler->arch->type_align, &tp);
+    }
+    long getautoval(long val)
+    {
+        if (Optimizer::chosenAssembler->arch->spgrowsup)
+            return -val;
+        else
+            return val;
+    }
+    int funcvaluesize(int val)
+    {
+        if (Optimizer::chosenAssembler->arch->param_offs)
+            return (Optimizer::chosenAssembler->arch->param_offs(val));
+        return 0;
+    }
+    int alignment(int sc, TYPE* tp)
+    {
+        (void)sc;
+        return basesize(Optimizer::chosenAssembler->arch->type_align, tp);
+    }
+    int getAlign(int sc, TYPE* tp)
+    {
+        int align = basesize(Optimizer::chosenAssembler->arch->type_align, tp);
+        if (sc != sc_auto)
+        {
+            int pack = preProcessor->GetPack();
+            if (pack < align)
+                align = pack;
+        }
+        if (Optimizer::chosenAssembler->arch->align)
+            align = Optimizer::chosenAssembler->arch->align(align);
+        if (isstructured(tp) && basetype(tp)->sp->sb->attribs.inheritable.structAlign > align)
+            align = basetype(tp)->sp->sb->attribs.inheritable.structAlign;
+        return align;
+    }
+    const char* getUsageText(void) { return Optimizer::chosenAssembler->usage_text; }
+    KEYWORD* GetProcKeywords(void) { return (KEYWORD*)Optimizer::chosenAssembler->keywords; }
 }
-const char* getUsageText(void) { return chosenAssembler->usage_text; }
-KEYWORD* GetProcKeywords(void) { return (KEYWORD*)chosenAssembler->keywords; }

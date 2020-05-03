@@ -22,35 +22,38 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
  */
-extern bool isCallNoreturnFunction;
+namespace Parser
+{
+    extern bool isCallNoreturnFunction;
 
-extern int funcNesting;
-extern int funcLevel;
-extern int tryLevel;
+    extern int funcNesting;
+    extern int funcLevel;
+    extern int tryLevel;
 
-extern bool hasFuncCall;
-extern bool hasXCInfo;
-extern int startlab, retlab;
-extern int codeLabel;
-extern bool declareAndInitialize;
-extern bool functionCanThrow;
+    extern bool hasFuncCall;
+    extern bool hasXCInfo;
+    extern int startlab, retlab;
+    extern int codeLabel;
+    extern bool declareAndInitialize;
+    extern bool functionCanThrow;
 
-extern LINEDATA *linesHead, *linesTail;
+    extern Optimizer::LINEDATA *linesHead, *linesTail;
 
-void statement_ini(bool global);
-bool msilManaged(SYMBOL* s);
-void InsertLineData(int lineno, int fileindex, const char* fname, char* line);
-void FlushLineData(const char* file, int lineno);
-STATEMENT* currentLineData(BLOCKDATA* parent, LEXEME* lex, int offset);
-STATEMENT* stmtNode(LEXEME* lex, BLOCKDATA* parent, enum e_stmt stype);
-void makeXCTab(SYMBOL* funcsp);
-LEXEME* statement_catch(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, int label, int startlab, int endlab);
-LEXEME* statement_try(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent);
-bool hasInlineAsm(void);
-LEXEME* statement_asm(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent);
-bool resolveToDeclaration(LEXEME* lex);
-LEXEME* statement(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool viacontrol);
-LEXEME* compound(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first);
-void assignParam(SYMBOL* funcsp, int* base, SYMBOL* param);
-void parseNoexcept(SYMBOL* funcsp);
-LEXEME* body(LEXEME* lex, SYMBOL* funcsp);
+    void statement_ini(bool global);
+    bool msilManaged(SYMBOL* s);
+    void InsertLineData(int lineno, int fileindex, const char* fname, char* line);
+    void FlushLineData(const char* file, int lineno);
+    STATEMENT* currentLineData(BLOCKDATA* parent, LEXEME* lex, int offset);
+    STATEMENT* stmtNode(LEXEME* lex, BLOCKDATA* parent, enum e_stmt stype);
+    void makeXCTab(SYMBOL* funcsp);
+    LEXEME* statement_catch(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, int label, int startlab, int endlab);
+    LEXEME* statement_try(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent);
+    bool hasInlineAsm(void);
+    LEXEME* statement_asm(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent);
+    bool resolveToDeclaration(LEXEME* lex);
+    LEXEME* statement(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool viacontrol);
+    LEXEME* compound(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first);
+    void assignParam(SYMBOL* funcsp, int* base, SYMBOL* param);
+    void parseNoexcept(SYMBOL* funcsp);
+    LEXEME* body(LEXEME* lex, SYMBOL* funcsp);
+}

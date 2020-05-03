@@ -22,6 +22,15 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
  */
+#include "ctypes.h"
+
+typedef struct _memblk_
+{
+    struct _memblk_* next;
+    long size;
+    long left;
+    char m[1]; /* memory area */
+} MEMBLK;
 void memfunc(const char *a);
 void mem_summary(void);
 void* memAlloc(MEMBLK** arena, int size, bool clear = true);

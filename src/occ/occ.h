@@ -28,10 +28,10 @@ extern int usingEsp;
 extern
 InstructionParser* instructionParser;
 
-extern SimpleSymbol* currentFunction;
+extern Optimizer::SimpleSymbol* currentFunction;
 
 void regInit(void);
 void diag(const char*, ...);
 void outputfile(char* buf, const char* name, const char* ext, bool obj);
-void global(SimpleSymbol* sym, int flags);
+void global(Optimizer::SimpleSymbol* sym, int flags);
 int main(int argc, char* argv[]);

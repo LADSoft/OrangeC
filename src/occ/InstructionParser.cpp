@@ -384,7 +384,7 @@ void InstructionParser::SetRegToken(int reg, int sz)
     }
     inputTokens.push_back(check[reg]);
 }
-int resolveoffset(SimpleExpression* n, int* resolved)
+int resolveoffset(Optimizer::SimpleExpression* n, int* resolved)
 {
 #ifdef ISPARSER
     return 0;
@@ -394,33 +394,33 @@ int resolveoffset(SimpleExpression* n, int* resolved)
     {
         switch (n->type)
         {
-            case se_sub:
+            case Optimizer::se_sub:
                 rv += resolveoffset(n->left, resolved);
                 rv -= resolveoffset(n->right, resolved);
                 break;
-            case se_add:
-                // case se_addstruc:
+            case Optimizer::se_add:
+                // case Optimizer::se_addstruc:
                 rv += resolveoffset(n->left, resolved);
                 rv += resolveoffset(n->right, resolved);
                 break;
-            case se_i:
-            case se_ui:
+            case Optimizer::se_i:
+            case Optimizer::se_ui:
                 rv += n->i;
                 break;
-            case se_auto:
+            case Optimizer::se_auto:
             {
                 int m = n->sp->offset;
 
                 if (!usingEsp && m > 0)
                     m += 4;
 
-                if (n->sp->storage_class == scc_parameter && fastcallAlias)
+                if (n->sp->storage_class == Optimizer::scc_parameter && Optimizer::fastcallAlias)
                 {
-                    if ((currentFunction->tp->btp->type != st_struct && currentFunction->tp->btp->type != st_union) || n->sp->offset != chosenAssembler->arch->retblocksize)
+                    if ((currentFunction->tp->btp->type != Optimizer::st_struct && currentFunction->tp->btp->type != Optimizer::st_union) || n->sp->offset != Optimizer::chosenAssembler->arch->retblocksize)
                     {
 
-                        m -= fastcallAlias * chosenAssembler->arch->parmwidth;
-                        if (m >= chosenAssembler->arch->retblocksize)
+                        m -= Optimizer::fastcallAlias * Optimizer::chosenAssembler->arch->parmwidth;
+                        if (m >= Optimizer::chosenAssembler->arch->retblocksize)
                         {
                             rv += m;
                         }
@@ -436,10 +436,10 @@ int resolveoffset(SimpleExpression* n, int* resolved)
                 }
             }
             break;
-            case se_labcon:
-            case se_global:
-            case se_pc:
-            case se_threadlocal:
+            case Optimizer::se_labcon:
+            case Optimizer::se_global:
+            case Optimizer::se_pc:
+            case Optimizer::se_threadlocal:
                 *resolved = 0;
                 break;
             default:
@@ -450,17 +450,17 @@ int resolveoffset(SimpleExpression* n, int* resolved)
     return rv;
 #endif
 }
-AsmExprNode* MakeFixup(SimpleExpression* offset)
+AsmExprNode* MakeFixup(Optimizer::SimpleExpression* offset)
 {
     int resolved = 1;
     int n = resolveoffset(offset, &resolved);
     if (!resolved)
     {
         AsmExprNode* rv;
-        if (offset->type == se_sub && offset->left->type == se_threadlocal)
+        if (offset->type == Optimizer::se_sub && offset->left->type == Optimizer::se_threadlocal)
         {
-            SimpleExpression* node = GetSymRef(offset->left);
-            SimpleExpression* node1 = GetSymRef(offset->right);
+            Optimizer::SimpleExpression* node = GetSymRef(offset->left);
+            Optimizer::SimpleExpression* node1 = GetSymRef(offset->right);
             std::string name = node->sp->outputName;
             AsmExprNode* left = new AsmExprNode(name);
             name = node1->sp->outputName;
@@ -469,9 +469,9 @@ AsmExprNode* MakeFixup(SimpleExpression* offset)
         }
         else
         {
-            SimpleExpression* node = GetSymRef(offset);
+            Optimizer::SimpleExpression* node = GetSymRef(offset);
             std::string name;
-            if (node->type == se_labcon)
+            if (node->type == Optimizer::se_labcon)
             {
                 char buf[256];
                 sprintf(buf, "L_%d", (int)node->i);
@@ -502,23 +502,23 @@ void InstructionParser::SetNumberToken(int val)
     next->val = new AsmExprNode(val);
     inputTokens.push_back(next);
 }
-AsmExprNode* MakeFixup(SimpleExpression* oper);
+AsmExprNode* MakeFixup(Optimizer::SimpleExpression* oper);
 
-bool InstructionParser::SetNumberToken(SimpleExpression* offset, int& n)
+bool InstructionParser::SetNumberToken(Optimizer::SimpleExpression* offset, int& n)
 {
     int resolved = 1;
     n = resolveoffset(offset, &resolved);
-    resolved |= assembling;
+    resolved |= Optimizer::assembling;
     if (resolved)
         SetNumberToken(n);
     return !!resolved;
 }
-void InstructionParser::SetExpressionToken(SimpleExpression* offset)
+void InstructionParser::SetExpressionToken(Optimizer::SimpleExpression* offset)
 {
     int n;
     if (!SetNumberToken(offset, n))
     {
-        SimpleExpression* exp = GetSymRef(offset);
+        Optimizer::SimpleExpression* exp = GetSymRef(offset);
         AsmExprNode* expr = MakeFixup(offset);
         InputToken* next = new InputToken;
         next->type = InputToken::NUMBER;
@@ -613,7 +613,7 @@ void InstructionParser::SetOperandTokens(amode* operand)
         case am_indisp:
             SetBracketSequence(true, operand->length, operand->seg);
             SetRegToken(operand->preg, ISZ_UINT);
-            if (operand->offset && ((operand->offset->type != se_ui && operand->offset->type != se_i) || operand->offset->i != 0))
+            if (operand->offset && ((operand->offset->type != Optimizer::se_ui && operand->offset->type != Optimizer::se_i) || operand->offset->i != 0))
             {
                 inputTokens.push_back(&Tokenplus);
                 SetExpressionToken(operand->offset);
@@ -633,7 +633,7 @@ void InstructionParser::SetOperandTokens(amode* operand)
                 inputTokens.push_back(&Tokenstar);
                 SetNumberToken(1 << operand->scale);
             }
-            if (operand->offset && ((operand->offset->type != se_ui && operand->offset->type != se_i) || operand->offset->i != 0))
+            if (operand->offset && ((operand->offset->type != Optimizer::se_ui && operand->offset->type != Optimizer::se_i) || operand->offset->i != 0))
             {
                 inputTokens.push_back(&Tokenplus);
                 SetExpressionToken(operand->offset);

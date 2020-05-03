@@ -22,46 +22,49 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
  */
-extern TEMP_INFO** tempInfo;
-extern BLOCK** blockArray;
+namespace Optimizer
+{
+    extern TEMP_INFO** tempInfo;
+    extern BLOCK** blockArray;
 
-extern QUAD *intermed_head, *intermed_tail;
-extern int blockCount;
-extern DAGLIST* ins_hash[DAGSIZE];
-extern DAGLIST* name_hash[DAGSIZE];
-extern short wasgoto;
+    extern QUAD *intermed_head, *intermed_tail;
+    extern int blockCount;
+    extern DAGLIST* ins_hash[DAGSIZE];
+    extern DAGLIST* name_hash[DAGSIZE];
+    extern short wasgoto;
 
-extern BLOCK* currentBlock;
+    extern BLOCK* currentBlock;
 
-extern int blockMax;
+    extern int blockMax;
 
-void gen_nodag(enum i_ops op, IMODE* res, IMODE* left, IMODE* right);
-int equalimode(IMODE* ap1, IMODE* ap2);
-short dhash(UBYTE* str, int len);
-QUAD* LookupNVHash(UBYTE* key, int size, DAGLIST** table);
-DAGLIST* ReplaceHash(QUAD* rv, UBYTE* key, int size, DAGLIST** table);
-void add_intermed(QUAD* newQuad);
-IMODE* liveout2(QUAD* q);
-QUAD* liveout(QUAD* node);
-int ToQuadConst(IMODE** im);
-bool usesAddress(IMODE* im);
-void flush_dag(void);
-void dag_rundown(void);
-BLOCKLIST* newBlock(void);
-void addblock(int val);
-void gen_label(int labno);
-QUAD* gen_icode_with_conflict(enum i_ops op, IMODE* res, IMODE* left, IMODE* right, bool conflicting);
-QUAD* gen_icode(enum i_ops op, IMODE* res, IMODE* left, IMODE* right);
-void gen_iiconst(IMODE* res, long long val);
-void gen_ifconst(IMODE* res, FPF val);
-void gen_igoto(enum i_ops op, long label);
-void gen_data(int val);
-void gen_icgoto(enum i_ops op, long label, IMODE* left, IMODE* right);
-QUAD* gen_igosub(enum i_ops op, IMODE* left);
-void gen_icode2(enum i_ops op, IMODE* res, IMODE* left, IMODE* right, int label);
-void gen_line(LINEDATA* data);
-void gen_nodag(enum i_ops op, IMODE* res, IMODE* left, IMODE* right);
-void RemoveFromUses(QUAD* ins, int tnum);
-void InsertUses(QUAD* ins, int tnum);
-void RemoveInstruction(QUAD* ins);
-void InsertInstruction(QUAD* before, QUAD* ins);
+    void gen_nodag(enum i_ops op, IMODE* res, IMODE* left, IMODE* right);
+    int equalimode(IMODE* ap1, IMODE* ap2);
+    short dhash(UBYTE* str, int len);
+    QUAD* LookupNVHash(UBYTE* key, int size, DAGLIST** table);
+    DAGLIST* ReplaceHash(QUAD* rv, UBYTE* key, int size, DAGLIST** table);
+    void add_intermed(QUAD* newQuad);
+    IMODE* liveout2(QUAD* q);
+    QUAD* liveout(QUAD* node);
+    int ToQuadConst(IMODE** im);
+    bool usesAddress(IMODE* im);
+    void flush_dag(void);
+    void dag_rundown(void);
+    BLOCKLIST* newBlock(void);
+    void addblock(int val);
+    void gen_label(int labno);
+    QUAD* gen_icode_with_conflict(enum i_ops op, IMODE* res, IMODE* left, IMODE* right, bool conflicting);
+    QUAD* gen_icode(enum i_ops op, IMODE* res, IMODE* left, IMODE* right);
+    void gen_iiconst(IMODE* res, long long val);
+    void gen_ifconst(IMODE* res, FPF val);
+    void gen_igoto(enum i_ops op, long label);
+    void gen_data(int val);
+    void gen_icgoto(enum i_ops op, long label, IMODE* left, IMODE* right);
+    QUAD* gen_igosub(enum i_ops op, IMODE* left);
+    void gen_icode2(enum i_ops op, IMODE* res, IMODE* left, IMODE* right, int label);
+    void gen_line(LINEDATA* data);
+    void gen_nodag(enum i_ops op, IMODE* res, IMODE* left, IMODE* right);
+    void RemoveFromUses(QUAD* ins, int tnum);
+    void InsertUses(QUAD* ins, int tnum);
+    void RemoveInstruction(QUAD* ins);
+    void InsertInstruction(QUAD* before, QUAD* ins);
+}

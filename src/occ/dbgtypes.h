@@ -34,24 +34,24 @@ class dbgtypes
 {
   public:
     dbgtypes(ObjFactory& Factory, ObjFile* FI) : factory(Factory), fi(FI) {}
-    ObjType* Put(SimpleType* tp, bool istypedef = false);
-    void OutputTypedef(struct SimpleSymbol* sym);
+    ObjType* Put(Optimizer::SimpleType* tp, bool istypedef = false);
+    void OutputTypedef(struct Optimizer::SimpleSymbol* sym);
 
   protected:
-    ObjType* Lookup(SimpleType* tp);
-    ObjType* BasicType(SimpleType* tp);
+    ObjType* Lookup(Optimizer::SimpleType* tp);
+    ObjType* BasicType(Optimizer::SimpleType* tp);
     ObjType* TypeName(ObjType* val, const char* nm);
-    void StructFields(ObjType::eType sel, ObjType* val, int sz, SimpleSymbol* parent, LIST* hr);
-    void EnumFields(ObjType* val, ObjType* base, int sz, LIST* hr);
-    ObjType* Function(SimpleType* tp);
-    ObjType* ExtendedType(SimpleType* tp);
+    void StructFields(ObjType::eType sel, ObjType* val, int sz, Optimizer::SimpleSymbol* parent, Optimizer::LIST* hr);
+    void EnumFields(ObjType* val, ObjType* base, int sz, Optimizer::LIST* hr);
+    ObjType* Function(Optimizer::SimpleType* tp);
+    ObjType* ExtendedType(Optimizer::SimpleType* tp);
 
   private:
     struct typecompare
     {
-        bool operator()(const SimpleType* left, const SimpleType* right) const;
+        bool operator()(const Optimizer::SimpleType* left, const Optimizer::SimpleType* right) const;
     };
-    std::map<SimpleType*, ObjType*, typecompare> hash;
+    std::map<Optimizer::SimpleType*, ObjType*, typecompare> hash;
     ObjFactory& factory;
     ObjFile* fi;
 };

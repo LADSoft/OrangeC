@@ -46,7 +46,7 @@
 using namespace DotNetPELib;
 
 int uniqueId;
-SimpleSymbol retblocksym;
+Optimizer::SimpleSymbol retblocksym;
 int errCount;
 Method* mainSym;
 int hasEntryPoint;
@@ -63,23 +63,23 @@ Type* systemObject;
 Method* currentMethod;
 PELib* peLib;
 DataContainer* mainContainer;
-LIST *initializersHead, *initializersTail;
-LIST *deinitializersHead, *deinitializersTail;
+Optimizer::LIST *initializersHead, *initializersTail;
+Optimizer::LIST *deinitializersHead, *deinitializersTail;
 
-std::map<SimpleSymbol*, Value*, byName> externalMethods;
-std::map<SimpleSymbol*, Value*, byName> externalList;
-std::map<SimpleSymbol*, Value*, byName> globalMethods;
-std::map<SimpleSymbol*, Value*, byName> globalList;
-std::map<SimpleSymbol*, Value*, byLabel> staticMethods;
-std::map<SimpleSymbol*, Value*, byLabel> staticList;
-std::map<SimpleSymbol*, MethodSignature*, byName> pinvokeInstances;
-std::map<SimpleSymbol*, Param*, byName> paramList;
+std::map<Optimizer::SimpleSymbol*, Value*, byName> externalMethods;
+std::map<Optimizer::SimpleSymbol*, Value*, byName> externalList;
+std::map<Optimizer::SimpleSymbol*, Value*, byName> globalMethods;
+std::map<Optimizer::SimpleSymbol*, Value*, byName> globalList;
+std::map<Optimizer::SimpleSymbol*, Value*, byLabel> staticMethods;
+std::map<Optimizer::SimpleSymbol*, Value*, byLabel> staticList;
+std::map<Optimizer::SimpleSymbol*, MethodSignature*, byName> pinvokeInstances;
+std::map<Optimizer::SimpleSymbol*, Param*, byName> paramList;
 std::multimap<std::string, MethodSignature*> pInvokeReferences;
 
 std::map<std::string, Value*> startups, rundowns, tlsstartups, tlsrundowns;
 
 std::map<std::string, Type*> typeList;
-std::map<SimpleSymbol*, Value*, byField> fieldList;
+std::map<Optimizer::SimpleSymbol*, Value*, byField> fieldList;
 std::map<std::string, MethodSignature*> arrayMethods;
 
 std::vector<Local*> localList;
@@ -109,7 +109,7 @@ Type* FindType(const char* name, bool toErr)
 
 static void CreateExternalCSharpReferences()
 {
-    if (cparams.no_default_libs)
+    if (Optimizer::cparams.no_default_libs)
     {
         // have to create various function signatures if not loading the library
         Namespace* ns = nullptr;
@@ -204,7 +204,7 @@ int msil_main_preprocess(char *fileName)
 {
 
     PELib::CorFlags corFlags = PELib::bits32;
-    if (prm_namespace_and_class[0])
+    if (Optimizer::prm_namespace_and_class[0])
         corFlags = (PELib::CorFlags)((int)corFlags | PELib::ilonly);
     char path[260];
     strcpy(path, fileName);
@@ -229,7 +229,7 @@ int msil_main_preprocess(char *fileName)
         {
             Utils::fatal("could not load mscorlib.dll");
         }
-        if (!cparams.no_default_libs && peLib->LoadAssembly("lsmsilcrtl"))
+        if (!Optimizer::cparams.no_default_libs && peLib->LoadAssembly("lsmsilcrtl"))
         {
             Utils::fatal("could not load lsmsilcrtl.dll");
         }
@@ -247,11 +247,11 @@ int msil_main_preprocess(char *fileName)
 //    {
 //        *p = '.';
 //    }
-    if (!prm_namespace_and_class.empty())
+    if (!Optimizer::prm_namespace_and_class.empty())
     {
-        int npos = prm_namespace_and_class.find('.');
-        std::string nspace = prm_namespace_and_class.substr(0, npos);
-        std::string clss = prm_namespace_and_class.substr(npos + 1);
+        int npos = Optimizer::prm_namespace_and_class.find('.');
+        std::string nspace = Optimizer::prm_namespace_and_class.substr(0, npos);
+        std::string clss = Optimizer::prm_namespace_and_class.substr(npos + 1);
         Namespace* nm = peLib->AllocateNamespace(nspace);
         peLib->WorkingAssembly()->Add(nm);
         Class* cls = peLib->AllocateClass(clss, Qualifiers::MainClass | Qualifiers::Public, -1, -1);
@@ -267,9 +267,9 @@ int msil_main_preprocess(char *fileName)
     {
         int vers[4];
         memset(vers, 0, sizeof(vers));
-        sscanf(prm_assemblyVersion.c_str(), "%d.%d.%d.%d", &vers[0], &vers[1], &vers[2], &vers[3]);
+        sscanf(Optimizer::prm_assemblyVersion.c_str(), "%d.%d.%d.%d", &vers[0], &vers[1], &vers[2], &vers[3]);
         peLib->WorkingAssembly()->SetVersion(vers[0], vers[1], vers[2], vers[3]);
-        peLib->WorkingAssembly()->SNKFile(prm_snkKeyFile);
+        peLib->WorkingAssembly()->SNKFile(Optimizer::prm_snkKeyFile);
 
         CreateExternalCSharpReferences();
         retblocksym.name = "__retblock";
@@ -278,9 +278,9 @@ int msil_main_preprocess(char *fileName)
 }
 void msil_end_generation(char *fileName)
 {
-    if (cparams.prm_compileonly && !cparams.prm_asmfile)
+    if (Optimizer::cparams.prm_compileonly && !Optimizer::cparams.prm_asmfile)
     {
-        cseg();
+        Optimizer::cseg();
         for (auto it = externalList.begin(); it != externalList.end(); ++it)
         {
             Field* f = static_cast<FieldName*>(it->second)->GetField();

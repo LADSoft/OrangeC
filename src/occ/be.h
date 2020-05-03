@@ -120,7 +120,7 @@ struct amode
 #define e_fs 4
 #define e_gs 5
 #define e_ss 6
-    SimpleExpression* offset;
+    Optimizer::SimpleExpression* offset;
     int liveRegs;
     int keepesp : 1;
 };
@@ -281,7 +281,7 @@ typedef struct _dbgblock
     struct _dbgblock* next;
     struct _dbgblock* parent;
     struct _dbgblock* child;
-    SimpleSymbol* syms;
+    Optimizer::SimpleSymbol* syms;
     int startlab;
     int endlab;
 } DBGBLOCK;
@@ -318,8 +318,8 @@ typedef struct _attribdata
     enum e_adtype type;
     union
     {
-        LINEDATA* ld;
-        struct SimpleSymbol* sp;
+        Optimizer::LINEDATA* ld;
+        struct Optimizer::SimpleSymbol* sp;
         void* section;
     } v;
     bool start;

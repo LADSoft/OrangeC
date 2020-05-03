@@ -101,7 +101,6 @@
     <ClInclude Include="..\netlib\DotNetPELib.h" />
     <ClInclude Include="..\oasm\AsmLexer.h" />
     <ClInclude Include="..\occopt\beinterf.h" />
-    <ClInclude Include="..\occopt\browse.h" />
     <ClInclude Include="..\occopt\ildata.h" />
     <ClInclude Include="..\occopt\ioptimizer.h" />
     <ClInclude Include="..\ocpp\Errors.h" />
@@ -123,6 +122,8 @@
     <ClInclude Include="..\ocpp\SymbolTable.h" />
     <ClInclude Include="..\ocpp\Token.h" />
     <ClInclude Include="..\occopt\iopt.h" />
+    <ClInclude Include="AsmExpr.h" />
+    <ClInclude Include="browse.h" />
     <ClInclude Include="c.h" />
     <ClInclude Include="ccerr.h" />
     <ClInclude Include="compiler.h" />

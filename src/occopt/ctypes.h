@@ -24,70 +24,66 @@
 
 #pragma once
 
-typedef unsigned BITINT;
+typedef unsigned LCHAR;
+
+namespace Optimizer
+{
+    typedef unsigned BITINT;
 
 #    define LLONG_FORMAT_SPECIFIER "%lld"
 
-typedef unsigned long ADDRESS;
-typedef unsigned LCHAR;
+    typedef unsigned long ADDRESS;
 
-typedef unsigned char UBYTE;
+    typedef unsigned char UBYTE;
 
-typedef struct _list_
-{
-    struct _list_* next;
-    void* data;
-} LIST;
+    typedef struct _list_
+    {
+        struct _list_* next;
+        void* data;
+    } LIST;
 
-typedef struct _ilist_
-{
-    struct _ilist_* next;
-    int data;
-} ILIST;
+    typedef struct _ilist_
+    {
+        struct _ilist_* next;
+        int data;
+    } ILIST;
 
-typedef struct _linedata
-{
-    struct _linedata *next, *stmtNext;
-    const char* line;
-    const char* file;
-    int lineno;
-    int fileindex;
-} LINEDATA;
+    typedef struct _linedata
+    {
+        struct _linedata *next, *stmtNext;
+        const char* line;
+        const char* file;
+        int lineno;
+        int fileindex;
+    } LINEDATA;
 
-typedef struct _memblk_
-{
-    struct _memblk_* next;
-    long size;
-    long left;
-    char m[1]; /* memory area */
-} MEMBLK;
+    typedef struct
+    {
+        LCHAR* str;
+        int count;
+    } SLCHAR;
 
-typedef struct
-{
-    LCHAR* str;
-    int count;
-} SLCHAR;
+    enum e_mo
+    {
+        mo_relaxed = 1,
+        mo_consume,
+        mo_acquire,
+        mo_release,
+        mo_acq_rel,
+        mo_seq_cst
+    };
 
-enum e_mo
-{
-    mo_relaxed = 1,
-    mo_consume,
-    mo_acquire,
-    mo_release,
-    mo_acq_rel,
-    mo_seq_cst
-};
+    enum e_ao
+    {
+        ao_init,
+        ao_flag_set_test,
+        ao_flag_clear,
+        ao_fence,
+        ao_load,
+        ao_store,
+        ao_modify,
+        ao_cmpswp
+    };
 
-enum e_ao
-{
-    ao_init,
-    ao_flag_set_test,
-    ao_flag_clear,
-    ao_fence,
-    ao_load,
-    ao_store,
-    ao_modify,
-    ao_cmpswp
-};
-
-#define ATOMIC_FLAG_SPACE sizeFromISZ(ISZ_UINT)
+#define ATOMIC_FLAG_SPACE Optimizer::sizeFromISZ(ISZ_UINT)
+}

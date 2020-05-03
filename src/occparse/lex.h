@@ -25,24 +25,26 @@
 #define KWHASHSIZE 253
 #define KW_HASH
 #define MAX_LOOKBACK 1024
+namespace Parser
+{
+    extern int eofLine;
+    extern const char* eofFile;
+    extern bool parsingPreprocessorConstant;
+    extern LEXCONTEXT* context;
+    extern int charIndex;
 
-extern int eofLine;
-extern const char* eofFile;
-extern bool parsingPreprocessorConstant;
-extern LEXCONTEXT* context;
-extern int charIndex;
-
-void lexini(void);
-KEYWORD* searchkw(const unsigned char** p);
-LEXEME* SkipToNextLine(void);
-LEXEME* getGTSym(LEXEME* in);
-void SkipToEol();
-bool AtEol();
-void CompilePragma(const unsigned char **linePointer);
-LEXEME* getsym(void);
-LEXEME* prevsym(LEXEME* lex);
-LEXEME* backupsym(void);
-LEXEME* SetAlternateLex(LEXEME* lexList);
-bool CompareLex(LEXEME* left, LEXEME* right);
-void SetAlternateParse(bool set, const std::string& val);
-long long ParseExpression(std::string& line);
+    void lexini(void);
+    KEYWORD* searchkw(const unsigned char** p);
+    LEXEME* SkipToNextLine(void);
+    LEXEME* getGTSym(LEXEME* in);
+    void SkipToEol();
+    bool AtEol();
+    void CompilePragma(const unsigned char **linePointer);
+    LEXEME* getsym(void);
+    LEXEME* prevsym(LEXEME* lex);
+    LEXEME* backupsym(void);
+    LEXEME* SetAlternateLex(LEXEME* lexList);
+    bool CompareLex(LEXEME* left, LEXEME* right);
+    void SetAlternateParse(bool set, const std::string& val);
+    long long ParseExpression(std::string& line);
+}

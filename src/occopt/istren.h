@@ -22,7 +22,10 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
  */
-void ReplaceOneUses(QUAD* head, IMODE** im);
-void ReplaceStrengthUses(QUAD* head);
-void ReduceStrengthAssign(QUAD* head);
-void ReduceLoopStrength(void);
+namespace Optimizer
+{
+    void ReplaceOneUses(QUAD* head, IMODE** im);
+    void ReplaceStrengthUses(QUAD* head);
+    void ReduceStrengthAssign(QUAD* head);
+    void ReduceLoopStrength(void);
+}

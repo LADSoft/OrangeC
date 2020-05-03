@@ -38,6 +38,10 @@ class Instruction;
 class Section;
 class AsmFile;
 
+namespace Optimizer
+{
+    class SimpleExpression;
+}
 struct ocode;  // compiler support
 struct expr;   // compiler support
 struct amode;  // compiler support
@@ -213,8 +217,8 @@ class InstructionParser
   protected:
     void SetRegToken(int reg, int sz);
     void SetNumberToken(int val);
-    bool SetNumberToken(struct SimpleExpression* offset, int& n);
-    void SetExpressionToken(struct SimpleExpression* offset);
+    bool SetNumberToken(struct Optimizer::SimpleExpression* offset, int& n);
+    void SetExpressionToken(struct Optimizer::SimpleExpression* offset);
     void SetSize(int sz);
     void SetBracketSequence(bool open, int sz, int seg);
     void SetOperandTokens(amode* operand);

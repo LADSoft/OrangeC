@@ -35,16 +35,19 @@
 #define ERR_UNKNOWN_OP 10
 #define ERR_BAD_OPERAND_COMBO 11
 #define ERR_INVALID_USE_OF_INSTRUCTION 12
-typedef struct
+namespace Parser
 {
-    const char* name;
-    int instruction;
-    void* data;
-} ASM_HASH_ENTRY;
+    typedef struct
+    {
+        const char* name;
+        int instruction;
+        void* data;
+    } ASM_HASH_ENTRY;
 
-void inlineAsmInit(void);
-int inasm_enterauto(EXPRESSION* node, int* reg1, int* reg2);
-enum e_opcode inasm_op(void);
-LEXEME* inlineAsm(LEXEME* inlex, BLOCKDATA* parent);
-void adjust_codelab(void* select, int offset);
-void* inlineAsmStmt(void* param);
+    void inlineAsmInit(void);
+    int inasm_enterauto(EXPRESSION* node, int* reg1, int* reg2);
+    enum e_opcode inasm_op(void);
+    LEXEME* inlineAsm(LEXEME* inlex, BLOCKDATA* parent);
+    void adjust_codelab(void* select, int offset);
+    void* inlineAsmStmt(void* param);
+}

@@ -49,6 +49,7 @@
 #include "outasm.h"
 #include "output.h"
 #include "peep.h"
+#include "ioptimizer.h"
 #include "InstructionParser2.h"
 #include "memory.h"
 #include "outcode.h"
@@ -96,41 +97,41 @@ static int segFlags[] = {0,
                          ObjSection::rom};
 static int virtualSegFlags = ObjSection::max | ObjSection::virt;
 
-int segAligns[MAX_SEGS] = {};
+int segAligns[Optimizer::MAX_SEGS] = {};
 int dbgblocknum = 0;
 
 static int virtualSegmentNumber;
 static int lastIncludeNum;
 
-static int sectionMap[MAX_SEGS];
+static int sectionMap[Optimizer::MAX_SEGS];
 static std::map<int, Label*> labelMap;
 
-static std::vector<SimpleSymbol*> autotab;
+static std::vector<Optimizer::SimpleSymbol*> autotab;
 static std::vector<Label*> strlabs;
 static std::map<std::string, Label*> lblpubs;
 static std::map<std::string, Label*> lbllabs;
 static std::map<std::string, Label*> lblExterns;
 static std::map<std::string, Label*> lblvirt;
 static std::vector<Section*> virtuals;
-static std::map<Section*, SimpleSymbol*> virtualSyms;
+static std::map<Section*, Optimizer::SimpleSymbol*> virtualSyms;
 
-static Section* sections[MAX_SEGS];
+static Section* sections[Optimizer::MAX_SEGS];
 
 static int autoCount;
 
 struct symname
 {
-    bool operator() (const SimpleSymbol* left, const SimpleSymbol* right) const { return strcmp(left->outputName, right->outputName) < 0; }
+    bool operator() (const Optimizer::SimpleSymbol* left, const Optimizer::SimpleSymbol* right) const { return strcmp(left->outputName, right->outputName) < 0; }
 };
-static std::set<SimpleSymbol*, symname> globals;
-static std::set<SimpleSymbol*, symname> externs;
-static std::map<SimpleSymbol*, int> autos;
+static std::set<Optimizer::SimpleSymbol*, symname> globals;
+static std::set<Optimizer::SimpleSymbol*, symname> externs;
+static std::map<Optimizer::SimpleSymbol*, int> autos;
 static std::vector<ObjSymbol*> autovector;
-static std::map<SimpleSymbol*, ObjSymbol*> objExterns;
-static std::map<SimpleSymbol*, ObjSymbol*> objGlobals;
+static std::map<Optimizer::SimpleSymbol*, ObjSymbol*> objExterns;
+static std::map<Optimizer::SimpleSymbol*, ObjSymbol*> objGlobals;
 
-static std::vector<SimpleSymbol*> impfuncs;
-static std::vector<SimpleSymbol*> expfuncs;
+static std::vector<Optimizer::SimpleSymbol*> impfuncs;
+static std::vector<Optimizer::SimpleSymbol*> expfuncs;
 static std::vector<std::string> includelibs;
 
 static std::map<std::string, ObjSection*> objSectionsByName;
@@ -180,7 +181,7 @@ void outcode_file_init(void)
     int i;
     instructionParser = InstructionParser::GetInstance();
     lastIncludeNum = 0;
-    virtualSegmentNumber = MAX_SEGS;
+    virtualSegmentNumber = Optimizer::MAX_SEGS;
     labelMap.clear();
     lbllabs.clear();
     lblpubs.clear();
@@ -202,8 +203,8 @@ void outcode_func_init(void)
 #define NOP 0x90
 }
 
-void omf_globaldef(SimpleSymbol* sym) { globals.insert(sym); }
-void omf_put_extern(SimpleSymbol* sym, int code)
+void omf_globaldef(Optimizer::SimpleSymbol* sym) { globals.insert(sym); }
+void omf_put_extern(Optimizer::SimpleSymbol* sym, int code)
 {
     externs.insert(sym);
     std::string name = sym->outputName;
@@ -211,8 +212,8 @@ void omf_put_extern(SimpleSymbol* sym, int code)
     l->SetExtern(true);
     lblExterns[l->GetName()] = l;
 }
-void omf_put_impfunc(SimpleSymbol* sym, const char* file) { impfuncs.push_back(sym); }
-void omf_put_expfunc(SimpleSymbol* sym) { expfuncs.push_back(sym); }
+void omf_put_impfunc(Optimizer::SimpleSymbol* sym, const char* file) { impfuncs.push_back(sym); }
+void omf_put_expfunc(Optimizer::SimpleSymbol* sym) { expfuncs.push_back(sym); }
 void omf_put_includelib(const char* name) { includelibs.push_back(name); }
 
 Label* LookupLabel(const std::string& string)
@@ -258,13 +259,13 @@ ObjSection* LookupSection(std::string& string)
 inline int GETSECT(Label* l, int sectofs)
 {
     int n = l->GetSect();
-    if (n < MAX_SEGS)
+    if (n < Optimizer::MAX_SEGS)
         return sectionMap[n];
     return n - sectofs;
 }
 static void DumpFileList(ObjFactory& f, ObjFile* fi)
 {
-    for (auto bf : browseFiles)
+    for (auto bf : Optimizer::browseFiles)
     {
         ObjSourceFile* sf = f.MakeSourceFile(ObjString(bf->name));
         sourceFiles[bf->filenum] = sf;
@@ -275,7 +276,7 @@ static void DumpFileList(ObjFactory& f, ObjFile* fi)
 void HandleDebugInfo(ObjFactory& factory, Section* sect, Instruction* ins)
 {
     int n = sect->GetSect();
-    if (n < MAX_SEGS)
+    if (n < Optimizer::MAX_SEGS)
         n = sectionMap[n];
     else
         n -= sectofs;
@@ -305,7 +306,7 @@ void HandleDebugInfo(ObjFactory& factory, Section* sect, Instruction* ins)
             {
                 Section* s = (Section*)d->v.section;
                 n = sect->GetSect();
-                if (n < MAX_SEGS)
+                if (n < Optimizer::MAX_SEGS)
                     n = sectionMap[n];
                 else
                     n -= sectofs;
@@ -343,9 +344,9 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
     {
         char buf[4096];
         dbgtypes types(factory, fi);
-        if (cparams.prm_debug)
+        if (Optimizer::cparams.prm_debug)
             DumpFileList(factory, fi);
-        for (int i = 0; i < MAX_SEGS; ++i)
+        for (int i = 0; i < Optimizer::MAX_SEGS; ++i)
         {
             sectionMap[i] = 0;
             if (sections[i])
@@ -365,23 +366,23 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
                 sectionMap[i] = sectofs++;
             }
         }
-        sectofs = MAX_SEGS - sectofs;
+        sectofs = Optimizer::MAX_SEGS - sectofs;
         for (auto v : virtuals)
         {
-            v->SetAlign(v->GetName()[2] == 'c' ? segAligns[codeseg] : segAligns[dataseg]);
+            v->SetAlign(v->GetName()[2] == 'c' ? segAligns[Optimizer::codeseg] : segAligns[Optimizer::dataseg]);
 
             ObjSection* s = v->CreateObject(factory);
             if (s)
             {
-                if (cparams.prm_debug)
+                if (Optimizer::cparams.prm_debug)
                 {
                     //destructor symbols aren't there so don't put the type...
                     auto tp = virtualSyms[v]->tp;
-                    if (tp->type != st_func || tp->sp)
+                    if (tp->type != Optimizer::st_func || tp->sp)
                         s->SetVirtualType(types.Put(tp));
                 }
                 bool cseg = s->GetName()[2] == 'c';
-                s->SetQuals((cseg ? segFlags[codeseg] : segFlags[dataseg]) + virtualSegFlags);
+                s->SetQuals((cseg ? segFlags[Optimizer::codeseg] : segFlags[Optimizer::dataseg]) + virtualSegFlags);
                 objSectionsByName[s->GetName()] = s;
                 objSectionsByNumber[s->GetIndex()] = s;
                 fi->Add(s);
@@ -390,7 +391,7 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
 
         if (objSectionsByNumber.size())
         {
-            SimpleSymbol s = {};
+            Optimizer::SimpleSymbol s = {};
             for (auto l : strlabs)
             {
                 std::string name = l->GetName();
@@ -400,7 +401,7 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
                 {
                     ObjSymbol* s1;
                     strcpy(buf, (*g)->outputName);
-                    if ((*g)->storage_class == scc_localstatic || (*g)->storage_class == scc_static)
+                    if ((*g)->storage_class == Optimizer::scc_localstatic || (*g)->storage_class == Optimizer::scc_static)
                         s1 = factory.MakeLocalSymbol(buf);
                     else
                         s1 = factory.MakePublicSymbol(buf);
@@ -408,7 +409,7 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
                     ObjExpression* right = factory.MakeExpression(l->GetOffset()->ival);
                     ObjExpression* sum = factory.MakeExpression(ObjExpression::eAdd, left, right);
                     s1->SetOffset(sum);
-                    if (cparams.prm_debug)
+                    if (Optimizer::cparams.prm_debug)
                         s1->SetBaseType(types.Put((*g)->tp));
                     fi->Add(s1);
                     l->SetObjSymbol(s1);
@@ -430,11 +431,11 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
             {
                 strcpy(buf, e->outputName);
                 ObjSymbol* s1 = factory.MakeAutoSymbol(buf);
-                if (cparams.prm_debug)
+                if (Optimizer::cparams.prm_debug)
                     s1->SetBaseType(types.Put(e->tp));
-                int resolved = 0;
-                SimpleExpression* exp = (SimpleExpression*)Alloc(sizeof(SimpleExpression));
-                exp->type = se_auto;
+                    int resolved = 0;
+                Optimizer::SimpleExpression* exp = (Optimizer::SimpleExpression*)Alloc(sizeof(Optimizer::SimpleExpression));
+                exp->type = Optimizer::se_auto;
                 exp->sp = e;
                 s1->SetOffset(new ObjExpression(resolveoffset(exp, &resolved)));
                 fi->Add(s1);
@@ -469,7 +470,7 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
                 p->SetDllName(import->importfile);
             fi->Add(p);
         }
-        for (int i = 0; i < MAX_SEGS; ++i)
+        for (int i = 0; i < Optimizer::MAX_SEGS; ++i)
         {
             if (sections[i])
             {
@@ -482,9 +483,9 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
             if (!v->MakeData(factory, LookupLabel, LookupSection, HandleDebugInfo))
                 rv = false;
         }
-        if (cparams.prm_debug)
+        if (Optimizer::cparams.prm_debug)
         {
-            for (auto v : typedefs)
+            for (auto v : Optimizer::typedefs)
             {
                 types.OutputTypedef(v);
             }
@@ -512,7 +513,7 @@ static void DumpFile(ObjFactory& f, ObjFile* fi, FILE* outputFile)
             ObjIeee i(outFile);
 
             i.SetTranslatorName(ObjString("occ"));
-            i.SetDebugInfoFlag(cparams.prm_debug && outputFile == ::outputFile);
+            i.SetDebugInfoFlag(Optimizer::cparams.prm_debug && outputFile == Optimizer::outputFile);
 
             i.Write(outputFile, fi, &f);
         }
@@ -524,7 +525,7 @@ ObjFile* MakeBrowseFile(ObjFactory& factory, std::string name)
     int sectofs = 0;
     ObjFile* fi = factory.MakeFile(name);
     DumpFileList(factory, fi);
-    for (auto bi : browseInfo)
+    for (auto bi : Optimizer::browseInfo)
     {
         ObjLineNo* lineno = factory.MakeLineNo(sourceFiles[bi->filenum], bi->lineno);
         ObjBrowseInfo* bd =
@@ -539,22 +540,22 @@ void output_obj_file(void)
     ObjFactory f(&im);
     std::string name = infile;
     ObjFile* fi = MakeFile(f, name);
-    DumpFile(f, fi, outputFile);
+    DumpFile(f, fi, Optimizer::outputFile);
 
-    if (cparams.prm_browse)
+    if (Optimizer::cparams.prm_browse)
     {
         ObjIeeeIndexManager im1;
         ObjFactory f1(&im1);
         name = infile;
         fi = MakeBrowseFile(f1, name);
-        DumpFile(f1, fi, browseFile);
+        DumpFile(f1, fi, Optimizer::browseFile);
     }
     Release();
 }
 
 void compile_start(char* name)
 {
-    LIST* newItem = (LIST*)(LIST*)beGlobalAlloc(sizeof(LIST));
+    Optimizer::LIST* newItem = (Optimizer::LIST*)(Optimizer::LIST*)beGlobalAlloc(sizeof(Optimizer::LIST));
     newItem->data = beGlobalAlloc(strlen(name) + 1);
     strcpy((char*)newItem->data, name);
 
@@ -572,7 +573,7 @@ void outcode_enterseg(int seg)
         instructionParser->Setup(sections[seg]);
     }
     currentSection = sections[seg];
-    if (oa_currentSeg == codeseg)
+    if (oa_currentSeg == Optimizer::codeseg)
         AsmExpr::SetSection(&dummySection);
     else
         AsmExpr::SetSection(currentSection);
@@ -580,7 +581,7 @@ void outcode_enterseg(int seg)
 
 void InsertInstruction(Instruction* ins)
 {
-    if (oa_currentSeg == codeseg)
+    if (oa_currentSeg == Optimizer::codeseg)
         dummySection.InsertInstruction(ins);
     else
         currentSection->InsertInstruction(ins);
@@ -599,7 +600,7 @@ static Label* GetLabel(int lbl)
     }
     return l;
 }
-void outcode_gen_strlab(SimpleSymbol* sym)
+void outcode_gen_strlab(Optimizer::SimpleSymbol* sym)
 {
     std::string name = sym->outputName;
     Label* l = new Label(name, strlabs.size(), currentSection->GetSect());
@@ -653,7 +654,7 @@ void emit(int size)
 }
 /*-------------------------------------------------------------------------*/
 
-Fixup* gen_symbol_fixup(SimpleSymbol* pub, int offset, bool PC)
+Fixup* gen_symbol_fixup(Optimizer::SimpleSymbol* pub, int offset, bool PC)
 {
     AsmExprNode* expr = new AsmExprNode(pub->outputName);
     if (offset)
@@ -676,7 +677,7 @@ Fixup* gen_label_fixup(int lab, int offset, bool PC)
     Fixup* f = new Fixup(expr, 4, !!PC, PC ? 4 : 0);
     return f;
 }
-Fixup* gen_threadlocal_fixup(SimpleSymbol* tls, SimpleSymbol* base, int offset)
+Fixup* gen_threadlocal_fixup(Optimizer::SimpleSymbol* tls, Optimizer::SimpleSymbol* base, int offset)
 {
     AsmExprNode* expr = new AsmExprNode(base->outputName);
     AsmExprNode* expr1 = new AsmExprNode(tls->outputName);
@@ -702,7 +703,7 @@ Fixup* gen_diff_fixup(int lab1, int lab2)
 void outcode_dump_muldivval(void)
 {
     MULDIV* v = muldivlink;
-    UBYTE buf[10];
+    Optimizer::UBYTE buf[10];
     while (v)
     {
         oa_align(8);
@@ -729,7 +730,7 @@ void outcode_dump_muldivval(void)
 
 /*-------------------------------------------------------------------------*/
 
-void outcode_genref(SimpleSymbol* sym, int offset)
+void outcode_genref(Optimizer::SimpleSymbol* sym, int offset)
 {
     Fixup* f = gen_symbol_fixup(sym, offset, false);
     int i = 0;
@@ -755,7 +756,7 @@ void outcode_gen_labdifref(int n1, int n2)
 
 /*-------------------------------------------------------------------------*/
 
-void outcode_gensrref(SimpleSymbol* sym, int val)
+void outcode_gensrref(Optimizer::SimpleSymbol* sym, int val)
 {
     Fixup* f = gen_symbol_fixup(sym, 0, false);
     char buf[8] = {};
@@ -772,7 +773,7 @@ void outcode_genstorage(int len) { emit(len); }
 
 void outcode_genfloat(FPF* val)
 {
-    UBYTE buf[4];
+    Optimizer::UBYTE buf[4];
     val->ToFloat(buf);
     emit(buf, 4);
 }
@@ -781,7 +782,7 @@ void outcode_genfloat(FPF* val)
 
 void outcode_gendouble(FPF* val)
 {
-    UBYTE buf[8];
+    Optimizer::UBYTE buf[8];
     val->ToDouble(buf);
     emit(buf, 8);
 }
@@ -790,7 +791,7 @@ void outcode_gendouble(FPF* val)
 
 void outcode_genlongdouble(FPF* val)
 {
-    UBYTE buf[10];
+    Optimizer::UBYTE buf[10];
     val->ToLongDouble(buf);
     emit(buf, 10);
 }
@@ -838,7 +839,7 @@ void outcode_put_label(int lab) { InsertLabel(lab); }
 
 /*-------------------------------------------------------------------------*/
 
-void outcode_start_virtual_seg(SimpleSymbol* sym, int data)
+void outcode_start_virtual_seg(Optimizer::SimpleSymbol* sym, int data)
 {
     char buf[4096];
     if (data)
@@ -860,19 +861,19 @@ void outcode_start_virtual_seg(SimpleSymbol* sym, int data)
 
 /*-------------------------------------------------------------------------*/
 
-void outcode_end_virtual_seg(SimpleSymbol* sym) { outcode_enterseg(oa_currentSeg); }
+void outcode_end_virtual_seg(Optimizer::SimpleSymbol* sym) { outcode_enterseg(oa_currentSeg); }
 
 /*-------------------------------------------------------------------------*/
 
 void InsertAttrib(ATTRIBDATA* ad) { InsertInstruction(new Instruction(ad)); }
-void InsertLine(LINEDATA* linedata)
+void InsertLine(Optimizer::LINEDATA* linedata)
 {
     ATTRIBDATA* attrib = (ATTRIBDATA*)Alloc(sizeof(ATTRIBDATA));
     attrib->type = e_ad_linedata;
     attrib->v.ld = linedata;
     InsertAttrib(attrib);
 }
-void InsertVarStart(SimpleSymbol* sym)
+void InsertVarStart(Optimizer::SimpleSymbol* sym)
 {
     if (!strstr(sym->name, "++"))
     {
@@ -885,9 +886,9 @@ void InsertVarStart(SimpleSymbol* sym)
         autotab.push_back(sym);
     }
 }
-void InsertFunc(SimpleSymbol* sym, int start)
+void InsertFunc(Optimizer::SimpleSymbol* sym, int start)
 {
-    if (oa_currentSeg == virtseg)
+    if (oa_currentSeg == Optimizer::virtseg)
     {
         ATTRIBDATA* attrib = (ATTRIBDATA*)Alloc(sizeof(ATTRIBDATA));
         attrib->type = e_ad_vfuncdata;
@@ -1000,33 +1001,33 @@ void outcode_AssembleIns(OCODE* ins)
                 InsertLabel(ins->oper1->offset->i);
                 return;
             case op_line:
-                if (cparams.prm_debug)
+                if (Optimizer::cparams.prm_debug)
                 {
-                    LINEDATA* ld = (LINEDATA*)ins->oper1;
+                    Optimizer::LINEDATA* ld = (Optimizer::LINEDATA*)ins->oper1;
                     while (ld->next)
                         ld = ld->next;
                     InsertLine(ld);
                 }
                 break;
             case op_varstart:
-                if (cparams.prm_debug)
-                    InsertVarStart((SimpleSymbol*)ins->oper1);
+                if (Optimizer::cparams.prm_debug)
+                    InsertVarStart((Optimizer::SimpleSymbol*)ins->oper1);
                 break;
             case op_blockstart:
-                if (cparams.prm_debug)
+                if (Optimizer::cparams.prm_debug)
                     InsertBlock(1);
                 break;
             case op_blockend:
-                if (cparams.prm_debug)
+                if (Optimizer::cparams.prm_debug)
                     InsertBlock(0);
                 break;
             case op_funcstart:
-                if (cparams.prm_debug)
-                    InsertFunc((SimpleSymbol*)ins->oper1, 1);
+                if (Optimizer::cparams.prm_debug)
+                    InsertFunc((Optimizer::SimpleSymbol*)ins->oper1, 1);
                 break;
             case op_funcend:
-                if (cparams.prm_debug)
-                    InsertFunc((SimpleSymbol*)ins->oper1, 0);
+                if (Optimizer::cparams.prm_debug)
+                    InsertFunc((Optimizer::SimpleSymbol*)ins->oper1, 0);
                 break;
             case op_genword:
                 outcode_genbyte(ins->oper1->offset->i);
@@ -1065,7 +1066,7 @@ void outcode_gen(OCODE* peeplist)
 
         head = head->fwd;
     }
-    if (oa_currentSeg == codeseg)
+    if (oa_currentSeg == Optimizer::codeseg)
     {
         // all this dancing around so that when compiling things into the main code segment, we don't spend an inordinate amound of
         // time in Resolve()...

@@ -22,5 +22,5 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
  */
-int resolveoffset(SimpleExpression* n, int* resolved);
-AsmExprNode* MakeFixup(SimpleExpression* offset);
+int resolveoffset(Optimizer::SimpleExpression* n, int* resolved);
+AsmExprNode* MakeFixup(Optimizer::SimpleExpression* offset);

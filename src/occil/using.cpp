@@ -35,7 +35,7 @@ struct data
     const char* dllName;
 };
 #define HASHLEN 2048
-static LIST* _global_using_list;
+static Optimizer::LIST* _global_using_list;
 void _using_init() {}
 bool _using_(const char* file)
 {
@@ -73,7 +73,7 @@ void _add_global_using(const char* str)
         if (*str)
             str++;
         // using standard C allocators since this crosses multiple input files
-        LIST *lst = (LIST*)calloc(sizeof(LIST), 1), **find = &_global_using_list;
+        Optimizer::LIST *lst = (Optimizer::LIST*)calloc(sizeof(Optimizer::LIST), 1), **find = &_global_using_list;
         lst->data = strdup(buf);
         while (*find)
             find = &(*find)->next;
@@ -82,24 +82,24 @@ void _add_global_using(const char* str)
 }
 void _apply_global_using(void)
 {
-    if (!cparams.managed_library)
+    if (!Optimizer::cparams.managed_library)
     {
         char buf[256];
-        strcpy(buf, pinvoke_dll);
+        strcpy(buf, Optimizer::pinvoke_dll);
         char* p = strrchr(buf, '.');
         if (p)
             *p = 0;
         _using_(buf);
     }
     _using_("occmsil");
-    LIST* lst = _global_using_list;
+    Optimizer::LIST* lst = _global_using_list;
     while (lst)
     {
         _using_((char*)lst->data);
         lst = lst->next;
     }
 }
-bool msil_managed(SimpleSymbol* sp)
+bool msil_managed(Optimizer::SimpleSymbol* sp)
 {
     if (sp->msil_rtl)
         return true;

@@ -36,20 +36,20 @@
 
 #define TEMPFILE "$$$OCC.TMP"
 
-static LIST *objlist, *reslist, *rclist;
+static Optimizer::LIST *objlist, *reslist, *rclist;
 static char outFileName[260];
 
-static void InsertFile(LIST** r, const char* name, const char* ext)
+static void InsertFile(Optimizer::LIST** r, const char* name, const char* ext)
 {
 
     char buf[256], *newbuffer;
-    LIST* lst;
+    Optimizer::LIST* lst;
     strcpy(buf, name);
     if (!outFileName[0])
     {
         strcpy(outFileName, name);
         Utils::StripExt(outFileName);
-        strcat(outFileName, cparams.prm_targettype == DLL ? ".dll" : ".exe");
+        strcat(outFileName, Optimizer::cparams.prm_targettype == DLL ? ".dll" : ".exe");
     }
     if (ext)
     {
@@ -71,7 +71,7 @@ static void InsertFile(LIST** r, const char* name, const char* ext)
     /* Insert file */
     while (*r)
         r = &(*r)->next;
-    *r = (LIST*)malloc(sizeof(LIST));
+    *r = (Optimizer::LIST*)malloc(sizeof(Optimizer::LIST));
     if (!r)
         return;
     (*r)->next = 0;
@@ -117,7 +117,7 @@ int InsertExternalFile(const char* name, bool)
 void InsertOutputFileName(const char* name) { strcpy(outFileName, name); }
 
 /*-------------------------------------------------------------------------*/
-static LIST* objPosition;
+static Optimizer::LIST* objPosition;
 void GetOutputFileName(char* name, char* path, bool obj)
 {
     if (obj)
@@ -168,15 +168,15 @@ int RunExternalFiles()
     Utils::AddExt(outName, ".il");
     while (rclist)
     {
-        rv = Utils::ToolInvoke("orc.exe", nullptr, " -r %s \"%s\"", !showBanner ? "-!" : "", (char *)rclist->data);
+        rv = Utils::ToolInvoke("orc.exe", nullptr, " -r %s \"%s\"", !Optimizer::showBanner ? "-!" : "", (char *)rclist->data);
         if (rv)
             return rv;
         rclist = rclist->next;
     }
     if (objlist)
     {
-        std::string sdebug = cparams.prm_debug ? "/DEBUG" : "";
-        std::string starget = cparams.prm_targettype == DLL ? "/DLL" : "";
+        std::string sdebug = Optimizer::cparams.prm_debug ? "/DEBUG" : "";
+        std::string starget = Optimizer::cparams.prm_targettype == DLL ? "/DLL" : "";
         std::string resources;
         while (reslist)
         {

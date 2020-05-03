@@ -45,7 +45,9 @@
 #include "OptUtils.h"
 #include "beinterf.h"
 
-void SymbolManager::clear()
+using namespace Parser;
+
+void Optimizer::SymbolManager::clear()
 {
     if (architecture != ARCHITECTURE_MSIL || (cparams.prm_compileonly && !cparams.prm_asmfile))
         symbols.clear(); globalSymbols.clear();
@@ -74,11 +76,11 @@ const char* beDecorateSymName(SYMBOL* sym)
     }
 }
 
-SimpleSymbol* SymbolManager::Get(struct sym *sym)
+Optimizer::SimpleSymbol* Optimizer::SymbolManager::Get(struct Parser::sym *sym)
 {
     if (sym && sym->sb)
     {
-        SimpleSymbol *rv;
+        Optimizer::SimpleSymbol *rv;
         rv = Lookup(sym);
         if (!rv)
         {
@@ -90,7 +92,7 @@ SimpleSymbol* SymbolManager::Get(struct sym *sym)
 }
 
 
-SimpleSymbol* SymbolManager::Test(struct sym* sym)
+Optimizer::SimpleSymbol* Optimizer::SymbolManager::Test(struct Parser::sym* sym)
 {
     if (sym)
     {
@@ -99,77 +101,77 @@ SimpleSymbol* SymbolManager::Test(struct sym* sym)
     return nullptr;
 }
 
-SimpleExpression* SymbolManager::Get(struct expr* e)
+Optimizer::SimpleExpression* Optimizer::SymbolManager::Get(struct Parser::expr* e)
 {
     while (e && (e->type == en_lvalue || e->type == en_not_lvalue || e->type == en_x_string || e->type == en_x_object))
         e = e->left;
-    SimpleExpression* rv = (SimpleExpression*)Alloc(sizeof(SimpleExpression));
+    Optimizer::SimpleExpression* rv = (Optimizer::SimpleExpression*)Alloc(sizeof(Optimizer::SimpleExpression));
     rv->sizeFromType = natural_size(e);
     if (e->altdata)
         rv->altData = Get((EXPRESSION*)e->altdata);
     switch (e->type)
     {
     case en_global:
-        rv->type = se_global;
+        rv->type = Optimizer::se_global;
         rv->sp = Get(e->v.sp);
         break;
     case en_auto:
-        rv->type = se_auto;
+        rv->type = Optimizer::se_auto;
         rv->sp = Get(e->v.sp);
         break;
     case en_labcon:
-        rv->type = se_labcon;
+        rv->type = Optimizer::se_labcon;
         rv->i = e->v.i;
         break;
     case en_absolute:
-        rv->type = se_absolute;
+        rv->type = Optimizer::se_absolute;
         rv->sp = Get(e->v.sp);
         break;
     case en_pc:
-        rv->type = se_pc;
+        rv->type = Optimizer::se_pc;
         rv->sp = Get(e->v.sp);
         break;
     case en_const:
-        rv->type = se_const;
+        rv->type = Optimizer::se_const;
         rv->sp = Get(e->v.sp);
         break;
     case en_threadlocal:
-        rv->type = se_threadlocal;
+        rv->type = Optimizer::se_threadlocal;
         rv->sp = Get(e->v.sp);
         break;
     case en_structelem:
-        rv->type = se_structelem;
+        rv->type = Optimizer::se_structelem;
         rv->sp = Get(e->v.sp);
         break;
 
     case en_msil_array_init:
-        rv->type = se_msil_array_init;
+        rv->type = Optimizer::se_msil_array_init;
         rv->tp = Get(e->v.tp);
         break;
     case en_msil_array_access:
-        rv->type = se_msil_array_access;
+        rv->type = Optimizer::se_msil_array_access;
         rv->msilArrayTP = Get(e->v.msilArray->tp);
         break;
 
     case en_func:
-        rv->type = se_func;
+        rv->type = Optimizer::se_func;
         rv->ascall = e->v.func->ascall;
         break;
     case en_add:
     case en_arrayadd:
     case en_structadd:
-        rv->type = se_add;
+        rv->type = Optimizer::se_add;
         rv->left = Get(e->left);
         rv->right = Get(e->right);
         break;
 
     case en_sub:
-        rv->type = se_sub;
+        rv->type = Optimizer::se_sub;
         rv->left = Get(e->left);
         rv->right = Get(e->right);
         break;
     case en_uminus:
-        rv->type = se_uminus;
+        rv->type = Optimizer::se_uminus;
         rv->left = Get(e->left);
         break;
     case en_c_bit:
@@ -179,7 +181,7 @@ SimpleExpression* SymbolManager::Get(struct expr* e)
     case en_c_i:
     case en_c_l:
     case en_c_ll:
-        rv->type = se_i;
+        rv->type = Optimizer::se_i;
         rv->i = reint(e);
         break;
     case en_c_uc:
@@ -190,31 +192,31 @@ SimpleExpression* SymbolManager::Get(struct expr* e)
     case en_c_u32:
     case en_c_ul:
     case en_c_ull:
-        rv->type = se_ui;
+        rv->type = Optimizer::se_ui;
         rv->i = reint(e);
         break;
 
     case en_c_f:
     case en_c_d:
     case en_c_ld:
-        rv->type = se_f;
+        rv->type = Optimizer::se_f;
         rv->f = refloat(e);
         break;
     case en_c_fi:
     case en_c_di:
     case en_c_ldi:
-        rv->type = se_fi;
+        rv->type = Optimizer::se_fi;
         rv->f = refloat(e);
         break;
     case en_c_fc:
     case en_c_dc:
     case en_c_ldc:
-        rv->type = se_fc;
+        rv->type = Optimizer::se_fc;
         rv->c.r = e->v.c->r;
         rv->c.i = e->v.c->i;
         break;
     case en_c_string:
-        rv->type = se_string;
+        rv->type = Optimizer::se_string;
         {
             char buf[50000], *dest = buf;
             if (e->string)
@@ -247,9 +249,9 @@ SimpleExpression* SymbolManager::Get(struct expr* e)
     }
     return rv;
 }
-SimpleType* SymbolManager::Get(struct typ *tp)
+Optimizer::SimpleType* Optimizer::SymbolManager::Get(struct Parser::typ *tp)
 {
-    SimpleType* rv = (SimpleType*)Alloc(sizeof(SimpleType));
+    Optimizer::SimpleType* rv = (Optimizer::SimpleType*)Alloc(sizeof(Optimizer::SimpleType));
     bool isConst = isconst(tp);
     bool isVolatile = isvolatile(tp);
     bool isRestrict = isrestrict(tp);
@@ -305,27 +307,27 @@ SimpleType* SymbolManager::Get(struct typ *tp)
         if (tp->type != bt_aggregate && tp->syms && tp->syms->table && rv->sp && !rv->sp->syms)
         {
             SYMLIST *list = tp->syms->table[0];
-            LIST **p = &rv->sp->syms;
+            Optimizer::LIST **p = &rv->sp->syms;
             while (list)
             {
-                *p = (LIST*)Alloc(sizeof(LIST));
+                *p = (Optimizer::LIST*)Alloc(sizeof(Optimizer::LIST));
                 (*p)->data = Get(list->p);
                 if (rv->sp->storage_class == scc_type || rv->sp->storage_class == scc_cast)
                 {
                     if (list->p->sb->storage_class == sc_static || isfunction(list->p->tp))
                     {
-                        SimpleSymbol* ns = (SimpleSymbol*)Alloc(sizeof(SimpleSymbol));
-                        *ns = *(SimpleSymbol*)(*p)->data;
+                        Optimizer::SimpleSymbol* ns = (Optimizer::SimpleSymbol*)Alloc(sizeof(Optimizer::SimpleSymbol));
+                        *ns = *(Optimizer::SimpleSymbol*)(*p)->data;
                         (*p)->data = ns;
                     }
-                    typeSymbols.push_back((SimpleSymbol*)(*p)->data);
+                    typeSymbols.push_back((Optimizer::SimpleSymbol*)(*p)->data);
                 }
                 else if (isfunction(tp))
                 {
-                    typeSymbols.push_back((SimpleSymbol*)(*p)->data);
+                    typeSymbols.push_back((Optimizer::SimpleSymbol*)(*p)->data);
                 }
-                if (((SimpleSymbol*)(*p)->data)->storage_class == scc_static || ((SimpleSymbol*)(*p)->data)->storage_class == scc_external)
-                    definedFunctions.insert((SimpleSymbol*)(*p)->data);
+                if (((Optimizer::SimpleSymbol*)(*p)->data)->storage_class == scc_static || ((Optimizer::SimpleSymbol*)(*p)->data)->storage_class == scc_external)
+                    definedFunctions.insert((Optimizer::SimpleSymbol*)(*p)->data);
                 p = &(*p)->next;
                 list = list->next;
             }
@@ -345,31 +347,34 @@ SimpleType* SymbolManager::Get(struct typ *tp)
     rv->istypedef = istypedef;
     return rv;
 }
-void refreshBackendParams(SYMBOL* funcsp)
+namespace Parser
 {
-    if (isfunction(funcsp->tp))
+    void refreshBackendParams(SYMBOL* funcsp)
     {
-        basetype(funcsp->tp)->sp = funcsp;
-        SYMLIST* hr = basetype(funcsp->tp)->syms->table[0];
-        LIST* syms = SymbolManager::Get(funcsp)->syms;
-        while (hr && syms)
+        if (isfunction(funcsp->tp))
         {
-            SimpleSymbol *sym = (SimpleSymbol*)syms->data;
-            if (hr->p->sb->thisPtr && !sym->thisPtr)
+            basetype(funcsp->tp)->sp = funcsp;
+            SYMLIST* hr = basetype(funcsp->tp)->syms->table[0];
+            Optimizer::LIST* syms = Optimizer::SymbolManager::Get(funcsp)->syms;
+            while (hr && syms)
             {
+                Optimizer::SimpleSymbol *sym = (Optimizer::SimpleSymbol*)syms->data;
+                if (hr->p->sb->thisPtr && !sym->thisPtr)
+                {
+                    hr = hr->next;
+                }
+                sym->name = hr->p->name; // update name to prototype in use...
+                sym->offset = hr->p->sb->offset;
+                Optimizer::SymbolManager::Get(hr->p)->offset = sym->offset;
                 hr = hr->next;
+                syms = syms->next;
             }
-            sym->name = hr->p->name; // update name to prototype in use...
-            sym->offset = hr->p->sb->offset;
-            SymbolManager::Get(hr->p)->offset = sym->offset;
-            hr = hr->next;
-            syms = syms->next;
         }
     }
 }
-SimpleSymbol* SymbolManager::Make(struct sym* sym)
+Optimizer::SimpleSymbol* Optimizer::SymbolManager::Make(struct Parser::sym* sym)
 {
-    SimpleSymbol* rv = (SimpleSymbol*)Alloc(sizeof(SimpleSymbol));
+    Optimizer::SimpleSymbol* rv = (Optimizer::SimpleSymbol*)Alloc(sizeof(Optimizer::SimpleSymbol));
     rv->name = sym->name;
     rv->align = sym->sb->attribs.inheritable.structAlign ? sym->sb->attribs.inheritable.structAlign
         : getAlign(sc_auto, basetype(sym->tp));
@@ -445,7 +450,7 @@ SimpleSymbol* SymbolManager::Make(struct sym* sym)
 
     return rv;
 }
-st_type SymbolManager::Get(enum e_bt type)
+Optimizer::st_type Optimizer::SymbolManager::Get(enum Parser::e_bt type)
 {
 
     switch (type)
@@ -515,7 +520,7 @@ st_type SymbolManager::Get(enum e_bt type)
 
 }
 
-e_scc_type SymbolManager::Get(enum e_sc storageClass)
+Optimizer::e_scc_type Optimizer::SymbolManager::Get(enum Parser::e_sc storageClass)
 {
     switch (storageClass)
     {
@@ -586,7 +591,7 @@ e_scc_type SymbolManager::Get(enum e_sc storageClass)
         return scc_virtual;
     }
 }
-unsigned long long SymbolManager::Key(struct sym* old)
+unsigned long long Optimizer::SymbolManager::Key(struct Parser::sym* old)
 {
     char buf[8192];
     buf[0] = 0;
@@ -607,16 +612,16 @@ unsigned long long SymbolManager::Key(struct sym* old)
     size_t key2 = hasher(aa);
     return ((unsigned long long)key << 32) | key2;
 }
-SimpleSymbol* SymbolManager::Lookup(struct sym* old)
+Optimizer::SimpleSymbol* Optimizer::SymbolManager::Lookup(struct Parser::sym* old)
 {
     if (old->sb->symRef)
         return old->sb->symRef;
-    SimpleSymbol *rv = symbols[Key(old)];
+    Optimizer::SimpleSymbol *rv = symbols[Key(old)];
     if (rv)
         old->sb->symRef = rv;
     return rv;
 }
-void SymbolManager::Add(struct sym* old, SimpleSymbol* sym)
+void Optimizer::SymbolManager::Add(struct Parser::sym* old, Optimizer::SimpleSymbol* sym)
 {
     old->sb->symRef = sym;
     symbols[Key(old)] = sym;

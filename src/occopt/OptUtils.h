@@ -23,31 +23,34 @@
  *
  */
 #include <map>
-extern std::map<IMODE*, IMODE*> loadHash;
-extern CASTTEMPHASH* castHash[DAGSIZE];
-extern int tempCount;
+namespace Optimizer
+{
+    extern std::map<IMODE*, IMODE*> loadHash;
+    extern CASTTEMPHASH* castHash[DAGSIZE];
+    extern int tempCount;
 
-extern LIST* immed_list[4091];
+    extern LIST* immed_list[4091];
 
-void constoptinit(void);
-int sizeFromISZ(int isz);
-int alignFromISZ(int isz);
-int needsAtomicLockFromISZ(int isz);
-SimpleSymbol* varsp(SimpleExpression* node);
-IMODE* make_immed(int size, long long i);
-IMODE* make_fimmed(int size, FPF f);
-IMODE* make_parmadj(long i);
-SimpleExpression* tempenode(void);
-IMODE* tempreg(int size, int mode);
-IMODE* GetLoadTemp(IMODE* dest);
-IMODE* LookupStoreTemp(IMODE* dest, IMODE* src);
-IMODE* LookupLoadTemp(IMODE* dest, IMODE* source);
-IMODE* LookupImmedTemp(IMODE* dest, IMODE* source);
-IMODE* LookupCastTemp(IMODE* im, int size);
-SimpleExpression *simpleExpressionNode(enum se_type type, SimpleExpression*left, SimpleExpression* right);
-SimpleExpression *simpleIntNode(enum se_type type, unsigned long long i);
-IMODE* indnode(IMODE* ap1, int size);
-int pwrof2(long long i);
-long long mod_mask(int i);
-void my_sprintf(char* dest, const char* fmt, ...);
-void cacheTempSymbol(SimpleSymbol* sym);
+    void constoptinit(void);
+    int sizeFromISZ(int isz);
+    int alignFromISZ(int isz);
+    int needsAtomicLockFromISZ(int isz);
+    SimpleSymbol* varsp(SimpleExpression* node);
+    IMODE* make_immed(int size, long long i);
+    IMODE* make_fimmed(int size, FPF f);
+    IMODE* make_parmadj(long i);
+    SimpleExpression* tempenode(void);
+    IMODE* tempreg(int size, int mode);
+    IMODE* GetLoadTemp(IMODE* dest);
+    IMODE* LookupStoreTemp(IMODE* dest, IMODE* src);
+    IMODE* LookupLoadTemp(IMODE* dest, IMODE* source);
+    IMODE* LookupImmedTemp(IMODE* dest, IMODE* source);
+    IMODE* LookupCastTemp(IMODE* im, int size);
+    SimpleExpression *simpleExpressionNode(enum se_type type, SimpleExpression*left, SimpleExpression* right);
+    SimpleExpression *simpleIntNode(enum se_type type, unsigned long long i);
+    IMODE* indnode(IMODE* ap1, int size);
+    int pwrof2(long long i);
+    long long mod_mask(int i);
+    void my_sprintf(char* dest, const char* fmt, ...);
+    void cacheTempSymbol(SimpleSymbol* sym);
+}

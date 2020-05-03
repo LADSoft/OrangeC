@@ -22,6 +22,9 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
  */
-extern TYPE stdXC;
+namespace Parser
+{
+    extern TYPE stdXC;
 
-void ParseBuiltins(void);
+    void ParseBuiltins(void);
+}

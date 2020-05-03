@@ -36,267 +36,270 @@
 #include "memory.h"
 #include "ioptutil.h"
 
-void conflictini(void) {}
-void resetConflict(void)
+namespace Optimizer
 {
-    int i;
-    for (i = 0; i < tempCount; i++)
+    void conflictini(void) {}
+    void resetConflict(void)
     {
-        tempInfo[i]->conflicts = callocbit(tempCount);
-        tempInfo[i]->neighbors = 0;
-    }
-}
-int findPartition(int T0)
-{
-    while (T0 != tempInfo[T0]->partition)
-        T0 = tempInfo[T0]->partition;
-    return T0;
-}
-void insertConflict(int i, int j)
-{
-    TEMP_INFO *ti, *tj;
-    int bucket;
-    i = findPartition(i);
-    j = findPartition(j);
-    if (i == j)
-        return;
-    if (isset(tempInfo[i]->conflicts, j))
-        return;
-    ti = tempInfo[i];
-    tj = tempInfo[j];
-    if (maxAddr && ti->usedAsAddress != tj->usedAsAddress)
-        return;
-    if (ti->usedAsFloat != tj->usedAsFloat)
-        return;
-    setbit(ti->conflicts, j);
-    setbit(tj->conflicts, i);
-}
-static void JoinOneList(int T0, int T1)
-{
-    int i;
-    BITINT* t0 = tempInfo[T0]->conflicts;
-    BITINT* t1 = tempInfo[T1]->conflicts;
-    return;
-    for (i = 0; i < (tempCount + BITINTBITS - 1) / BITINTBITS; i++)
-        *t1 = *t0 |= *t1;
-}
-void JoinConflictLists(int T0, int T1)
-{
-    JoinOneList(T0, T1);
-    JoinOneList(T1, T0);
-}
-bool isConflicting(int T0, int T1)
-{
-    int bucket;
-    T0 = findPartition(T0);
-    T1 = findPartition(T1);
-    if (T0 == T1)
-        return false;
-    return !!isset(tempInfo[T0]->conflicts, T1);
-}
-void CalculateConflictGraph(BRIGGS_SET* nodes, bool optimize)
-{
-    int i, j;
-    BRIGGS_SET* live = briggsAllocc(tempCount);
-    resetConflict();
-    for (i = 0; i < blockCount; i++)
-    {
-
-        if (blockArray[i])
+        int i;
+        for (i = 0; i < tempCount; i++)
         {
-            BITINT* p = blockArray[i]->liveOut;
-            QUAD* tail = blockArray[i]->tail;
-            QUAD* head = blockArray[i]->head;
-            int j, k;
-            briggsClear(live);
-            for (j = 0; j < (tempCount + BITINTBITS - 1) / BITINTBITS; j++, p++)
-                if (*p)
-                    for (k = 0; k < BITINTBITS; k++)
-                        if (*p & (1 << k))
-                        {
-                            if (!nodes || briggsTest(nodes, j * BITINTBITS + k))
-                                briggsSet(live, j * BITINTBITS + k);
-                        }
-            do
+            tempInfo[i]->conflicts = callocbit(tempCount);
+            tempInfo[i]->neighbors = 0;
+        }
+    }
+    int findPartition(int T0)
+    {
+        while (T0 != tempInfo[T0]->partition)
+            T0 = tempInfo[T0]->partition;
+        return T0;
+    }
+    void insertConflict(int i, int j)
+    {
+        TEMP_INFO *ti, *tj;
+        int bucket;
+        i = findPartition(i);
+        j = findPartition(j);
+        if (i == j)
+            return;
+        if (isset(tempInfo[i]->conflicts, j))
+            return;
+        ti = tempInfo[i];
+        tj = tempInfo[j];
+        if (maxAddr && ti->usedAsAddress != tj->usedAsAddress)
+            return;
+        if (ti->usedAsFloat != tj->usedAsFloat)
+            return;
+        setbit(ti->conflicts, j);
+        setbit(tj->conflicts, i);
+    }
+    static void JoinOneList(int T0, int T1)
+    {
+        int i;
+        BITINT* t0 = tempInfo[T0]->conflicts;
+        BITINT* t1 = tempInfo[T1]->conflicts;
+        return;
+        for (i = 0; i < (tempCount + BITINTBITS - 1) / BITINTBITS; i++)
+            *t1 = *t0 |= *t1;
+    }
+    void JoinConflictLists(int T0, int T1)
+    {
+        JoinOneList(T0, T1);
+        JoinOneList(T1, T0);
+    }
+    bool isConflicting(int T0, int T1)
+    {
+        int bucket;
+        T0 = findPartition(T0);
+        T1 = findPartition(T1);
+        if (T0 == T1)
+            return false;
+        return !!isset(tempInfo[T0]->conflicts, T1);
+    }
+    void CalculateConflictGraph(BRIGGS_SET* nodes, bool optimize)
+    {
+        int i, j;
+        BRIGGS_SET* live = briggsAllocc(tempCount);
+        resetConflict();
+        for (i = 0; i < blockCount; i++)
+        {
+
+            if (blockArray[i])
             {
-                InternalConflict(tail);
-                if (tail->dc.opcode == i_phi)
-                {
-                    PHIDATA* pd = tail->dc.v.phi;
-                    struct _phiblock* pb = pd->temps;
-                    if (!nodes || briggsTest(nodes, pd->T0))
-                    {
-                        for (j = 0; j < live->top; j++)
-                        {
-                            insertConflict(live->data[j], pd->T0);
-                        }
-                    }
-                    while (pb)
-                    {
-                        if (!nodes || briggsTest(nodes, pb->Tn))
-                        {
-                            struct _phiblock* pb2 = pd->temps;
-                            while (pb2)
+                BITINT* p = blockArray[i]->liveOut;
+                QUAD* tail = blockArray[i]->tail;
+                QUAD* head = blockArray[i]->head;
+                int j, k;
+                briggsClear(live);
+                for (j = 0; j < (tempCount + BITINTBITS - 1) / BITINTBITS; j++, p++)
+                    if (*p)
+                        for (k = 0; k < BITINTBITS; k++)
+                            if (*p & (1 << k))
                             {
-                                if (!nodes || briggsTest(nodes, pb2->Tn))
-                                {
-                                    if (briggsTest(live, pb->Tn) || briggsTest(live, pb2->Tn))
-                                        insertConflict(pb->Tn, pb2->Tn);
-                                }
-                                pb2 = pb2->next;
+                                if (!nodes || briggsTest(nodes, j * BITINTBITS + k))
+                                    briggsSet(live, j * BITINTBITS + k);
+                            }
+                do
+                {
+                    InternalConflict(tail);
+                    if (tail->dc.opcode == i_phi)
+                    {
+                        PHIDATA* pd = tail->dc.v.phi;
+                        struct _phiblock* pb = pd->temps;
+                        if (!nodes || briggsTest(nodes, pd->T0))
+                        {
+                            for (j = 0; j < live->top; j++)
+                            {
+                                insertConflict(live->data[j], pd->T0);
                             }
                         }
-                        pb = pb->next;
-                    }
-                    pb = pd->temps;
-                    while (pb)
-                    {
-                        if (!nodes || briggsTest(nodes, pb->Tn))
+                        while (pb)
                         {
-                            briggsSet(live, pb->Tn);
-                        }
-                        pb = pb->next;
-                    }
-                }
-                else if (tail->dc.opcode == i_assnblock)
-                {
-                    if (tail->dc.right->offset->type == se_tempref && tail->dc.left->offset->type == se_tempref)
-                    {
-                        insertConflict(tail->dc.right->offset->sp->i, tail->dc.left->offset->sp->i);
-                    }
-                }
-                else if (tail->dc.opcode == i_gosub)
-                {
-                    if (tail->fastcall)
-                    {
-                        QUAD* x = tail->back;
-                        while (x->dc.opcode != i_gosub && x->dc.opcode != i_block && x->dc.opcode != i_parmstack)
-                        {
-                            if (x->fastcall > 0)
+                            if (!nodes || briggsTest(nodes, pb->Tn))
                             {
-                                briggsSet(live, x->dc.left->offset->sp->i);
-                            }
-                            x = x->back;
-                        }
-                    }
-                }
-                else if (tail->temps & TEMP_ANS)
-                {
-                    if (tail->ans->mode == i_direct)
-                    {
-                        int tnum = tail->ans->offset->sp->i;
-                        int k = -1;
-                        if (!nodes || briggsTest(nodes, tnum))
-                        {
-                            if (optimize)
-                            {
-                                if (tail->dc.opcode == i_assn)
+                                struct _phiblock* pb2 = pd->temps;
+                                while (pb2)
                                 {
-                                    if ((tail->temps & (TEMP_LEFT | TEMP_ANS)) == (TEMP_LEFT | TEMP_ANS))
+                                    if (!nodes || briggsTest(nodes, pb2->Tn))
                                     {
-                                        if (tail->dc.left->mode == i_direct && tail->ans->mode == i_direct && !tail->ans->bits &&
-                                            !tail->dc.left->bits && !tail->dc.left->retval)
+                                        if (briggsTest(live, pb->Tn) || briggsTest(live, pb2->Tn))
+                                            insertConflict(pb->Tn, pb2->Tn);
+                                    }
+                                    pb2 = pb2->next;
+                                }
+                            }
+                            pb = pb->next;
+                        }
+                        pb = pd->temps;
+                        while (pb)
+                        {
+                            if (!nodes || briggsTest(nodes, pb->Tn))
+                            {
+                                briggsSet(live, pb->Tn);
+                            }
+                            pb = pb->next;
+                        }
+                    }
+                    else if (tail->dc.opcode == i_assnblock)
+                    {
+                        if (tail->dc.right->offset->type == se_tempref && tail->dc.left->offset->type == se_tempref)
+                        {
+                            insertConflict(tail->dc.right->offset->sp->i, tail->dc.left->offset->sp->i);
+                        }
+                    }
+                    else if (tail->dc.opcode == i_gosub)
+                    {
+                        if (tail->fastcall)
+                        {
+                            QUAD* x = tail->back;
+                            while (x->dc.opcode != i_gosub && x->dc.opcode != i_block && x->dc.opcode != i_parmstack)
+                            {
+                                if (x->fastcall > 0)
+                                {
+                                    briggsSet(live, x->dc.left->offset->sp->i);
+                                }
+                                x = x->back;
+                            }
+                        }
+                    }
+                    else if (tail->temps & TEMP_ANS)
+                    {
+                        if (tail->ans->mode == i_direct)
+                        {
+                            int tnum = tail->ans->offset->sp->i;
+                            int k = -1;
+                            if (!nodes || briggsTest(nodes, tnum))
+                            {
+                                if (optimize)
+                                {
+                                    if (tail->dc.opcode == i_assn)
+                                    {
+                                        if ((tail->temps & (TEMP_LEFT | TEMP_ANS)) == (TEMP_LEFT | TEMP_ANS))
                                         {
-                                            if (tail->dc.left->size == tail->ans->size)
+                                            if (tail->dc.left->mode == i_direct && tail->ans->mode == i_direct && !tail->ans->bits &&
+                                                !tail->dc.left->bits && !tail->dc.left->retval)
                                             {
-                                                if (!tail->ans->offset->sp->pushedtotemp &&
-                                                    !tail->dc.left->offset->sp->pushedtotemp)
+                                                if (tail->dc.left->size == tail->ans->size)
                                                 {
-                                                    k = tail->dc.left->offset->sp->i;
+                                                    if (!tail->ans->offset->sp->pushedtotemp &&
+                                                        !tail->dc.left->offset->sp->pushedtotemp)
+                                                    {
+                                                        k = tail->dc.left->offset->sp->i;
+                                                    }
                                                 }
                                             }
                                         }
                                     }
                                 }
-                            }
-                            briggsReset(live, tnum);
-                            // processor dependent
-                            if (tail->ans->size == ISZ_ULONGLONG || tail->ans->size == -ISZ_ULONGLONG)
-                            {
-                                if (tail->dc.left->mode == i_ind)
+                                briggsReset(live, tnum);
+                                // processor dependent
+                                if (tail->ans->size == ISZ_ULONGLONG || tail->ans->size == -ISZ_ULONGLONG)
                                 {
-                                    //                                    if (tail->dc.left->offset)
-                                    //                                        insertConflict(tnum,
-                                    //                                        tail->dc.left->offset->sp->i);
-                                    if (tail->dc.left->offset2)
-                                        insertConflict(tnum, tail->dc.left->offset2->sp->i);
+                                    if (tail->dc.left->mode == i_ind)
+                                    {
+                                        //                                    if (tail->dc.left->offset)
+                                        //                                        insertConflict(tnum,
+                                        //                                        tail->dc.left->offset->sp->i);
+                                        if (tail->dc.left->offset2)
+                                            insertConflict(tnum, tail->dc.left->offset2->sp->i);
+                                    }
+                                    if (tail->dc.right && tail->dc.right->mode == i_ind)
+                                    {
+                                        if (tail->dc.right->offset)
+                                            insertConflict(tnum, tail->dc.right->offset->sp->i);
+                                        if (tail->dc.right->offset2)
+                                            insertConflict(tnum, tail->dc.right->offset2->sp->i);
+                                    }
                                 }
-                                if (tail->dc.right && tail->dc.right->mode == i_ind)
+                                for (j = 0; j < live->top; j++)
                                 {
-                                    if (tail->dc.right->offset)
-                                        insertConflict(tnum, tail->dc.right->offset->sp->i);
-                                    if (tail->dc.right->offset2)
-                                        insertConflict(tnum, tail->dc.right->offset2->sp->i);
+                                    if (live->data[j] != k)
+                                        insertConflict(live->data[j], tnum);
                                 }
                             }
-                            for (j = 0; j < live->top; j++)
+                        }
+                        else if (tail->ans->mode == i_ind)
+                        {
+                            if (tail->ans->offset)
                             {
-                                if (live->data[j] != k)
-                                    insertConflict(live->data[j], tnum);
+                                int tnum = tail->ans->offset->sp->i;
+                                if (!nodes || briggsTest(nodes, tnum))
+                                {
+                                    briggsSet(live, tnum);
+                                }
+                            }
+                            if (tail->ans->offset2)
+                            {
+                                int tnum = tail->ans->offset2->sp->i;
+                                if (!nodes || briggsTest(nodes, tnum))
+                                {
+                                    briggsSet(live, tnum);
+                                }
                             }
                         }
                     }
-                    else if (tail->ans->mode == i_ind)
+                    if ((tail->temps & TEMP_LEFT) && !tail->dc.left->retval)
                     {
-                        if (tail->ans->offset)
+                        if (tail->dc.left->offset)
                         {
-                            int tnum = tail->ans->offset->sp->i;
+                            int tnum = tail->dc.left->offset->sp->i;
                             if (!nodes || briggsTest(nodes, tnum))
                             {
                                 briggsSet(live, tnum);
                             }
                         }
-                        if (tail->ans->offset2)
+                        if (tail->dc.left->offset2)
                         {
-                            int tnum = tail->ans->offset2->sp->i;
+                            int tnum = tail->dc.left->offset2->sp->i;
                             if (!nodes || briggsTest(nodes, tnum))
                             {
                                 briggsSet(live, tnum);
                             }
                         }
                     }
-                }
-                if ((tail->temps & TEMP_LEFT) && !tail->dc.left->retval)
-                {
-                    if (tail->dc.left->offset)
+                    if (tail->temps & TEMP_RIGHT)
                     {
-                        int tnum = tail->dc.left->offset->sp->i;
-                        if (!nodes || briggsTest(nodes, tnum))
+                        if (tail->dc.right->offset)
                         {
-                            briggsSet(live, tnum);
+                            int tnum = tail->dc.right->offset->sp->i;
+                            if (!nodes || briggsTest(nodes, tnum))
+                            {
+                                briggsSet(live, tnum);
+                            }
+                        }
+                        if (tail->dc.right->offset2)
+                        {
+                            int tnum = tail->dc.right->offset2->sp->i;
+                            if (!nodes || briggsTest(nodes, tnum))
+                            {
+                                briggsSet(live, tnum);
+                            }
                         }
                     }
-                    if (tail->dc.left->offset2)
-                    {
-                        int tnum = tail->dc.left->offset2->sp->i;
-                        if (!nodes || briggsTest(nodes, tnum))
-                        {
-                            briggsSet(live, tnum);
-                        }
-                    }
-                }
-                if (tail->temps & TEMP_RIGHT)
-                {
-                    if (tail->dc.right->offset)
-                    {
-                        int tnum = tail->dc.right->offset->sp->i;
-                        if (!nodes || briggsTest(nodes, tnum))
-                        {
-                            briggsSet(live, tnum);
-                        }
-                    }
-                    if (tail->dc.right->offset2)
-                    {
-                        int tnum = tail->dc.right->offset2->sp->i;
-                        if (!nodes || briggsTest(nodes, tnum))
-                        {
-                            briggsSet(live, tnum);
-                        }
-                    }
-                }
-                if (tail != head)
-                    tail = tail->back;
-            } while (tail != head);
+                    if (tail != head)
+                        tail = tail->back;
+                } while (tail != head);
+            }
         }
     }
 }

@@ -23,49 +23,52 @@
  *
  */
 
+namespace Parser
+{
 
-extern TYPE stdobject;
-extern TYPE stdvoid;
-extern TYPE stdany;
-extern TYPE stdauto;
-extern TYPE stdfunc;
-extern TYPE stdpointer;
-extern TYPE std__string;
-extern TYPE std__object;
-extern TYPE stdnullpointer;
-extern TYPE stdfloatcomplex;
-extern TYPE stddoublecomplex;
-extern TYPE stdlongdoublecomplex;
-extern TYPE stdfloat;
-extern TYPE stdfloatimaginary;
-extern TYPE stddouble;
-extern TYPE stddoubleimaginary;
-extern TYPE stdlongdoubleimaginary;
-extern TYPE stdlonglong;
-extern TYPE stdunsigned;
-extern TYPE stdunative;
-extern TYPE stdunsignedlong;
-extern TYPE stdunsignedlonglong;
-extern TYPE stdconst;
-extern TYPE stdchar;
-extern TYPE stdchar16t;
-extern TYPE stdchar16tptr;
-extern TYPE stdchar32t;
-extern TYPE stdchar32tptr;
-extern TYPE stdsignedchar;
-extern TYPE stdunsignedchar;
-extern TYPE stdshort;
-extern TYPE stdunsignedshort;
-extern TYPE std__func__nc;
-extern TYPE std__func__;
-extern TYPE stdstring;
-extern TYPE stdint;
-extern TYPE stdinative;
-extern TYPE stdlong;
-extern TYPE stdlongdouble;
-extern TYPE stdbool;
-extern TYPE stdwidechar;
-extern TYPE stdwcharptr;
-extern TYPE stdcharptr;
+    extern TYPE stdobject;
+    extern TYPE stdvoid;
+    extern TYPE stdany;
+    extern TYPE stdauto;
+    extern TYPE stdfunc;
+    extern TYPE stdpointer;
+    extern TYPE std__string;
+    extern TYPE std__object;
+    extern TYPE stdnullpointer;
+    extern TYPE stdfloatcomplex;
+    extern TYPE stddoublecomplex;
+    extern TYPE stdlongdoublecomplex;
+    extern TYPE stdfloat;
+    extern TYPE stdfloatimaginary;
+    extern TYPE stddouble;
+    extern TYPE stddoubleimaginary;
+    extern TYPE stdlongdoubleimaginary;
+    extern TYPE stdlonglong;
+    extern TYPE stdunsigned;
+    extern TYPE stdunative;
+    extern TYPE stdunsignedlong;
+    extern TYPE stdunsignedlonglong;
+    extern TYPE stdconst;
+    extern TYPE stdchar;
+    extern TYPE stdchar16t;
+    extern TYPE stdchar16tptr;
+    extern TYPE stdchar32t;
+    extern TYPE stdchar32tptr;
+    extern TYPE stdsignedchar;
+    extern TYPE stdunsignedchar;
+    extern TYPE stdshort;
+    extern TYPE stdunsignedshort;
+    extern TYPE std__func__nc;
+    extern TYPE std__func__;
+    extern TYPE stdstring;
+    extern TYPE stdint;
+    extern TYPE stdinative;
+    extern TYPE stdlong;
+    extern TYPE stdlongdouble;
+    extern TYPE stdbool;
+    extern TYPE stdwidechar;
+    extern TYPE stdwcharptr;
+    extern TYPE stdcharptr;
 
-int init_backend(void);
+    int init_backend(void);
+}

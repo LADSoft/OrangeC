@@ -22,13 +22,16 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
  */
-extern const char* overloadNameTab[];
-extern const char* msiloverloadNameTab[];
+namespace Parser
+{
+    extern const char* overloadNameTab[];
+    extern const char* msiloverloadNameTab[];
 
-extern const char* overloadXlateTab[];
-extern int mangledNamesCount;
+    extern const char* overloadXlateTab[];
+    extern int mangledNamesCount;
 
-void mangleInit(void);
-char* mangleNameSpaces(char* in, SYMBOL* sym);
-char* mangleType(char* in, TYPE* tp, bool first);
-void SetLinkerNames(SYMBOL* sym, enum e_lk linkage);
+    void mangleInit(void);
+    char* mangleNameSpaces(char* in, SYMBOL* sym);
+    char* mangleType(char* in, TYPE* tp, bool first);
+    void SetLinkerNames(SYMBOL* sym, enum e_lk linkage);
+}

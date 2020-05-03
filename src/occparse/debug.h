@@ -22,5 +22,7 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
  */
-
-void displayLexeme(LEXEME* lex);
+namespace Parser
+{
+    void displayLexeme(LEXEME* lex);
+}

@@ -22,6 +22,8 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
  */
-void Prealloc(int pass);
-void CalculateBackendLives(void);
-
+namespace Optimizer
+{
+    void Prealloc(int pass);
+    void CalculateBackendLives(void);
+}

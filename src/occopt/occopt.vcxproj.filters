@@ -233,5 +233,8 @@
     <ClInclude Include="beinterfdefs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="browsedefs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

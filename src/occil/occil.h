@@ -30,7 +30,7 @@ extern CmdSwitchBool single;
 
 extern const char* usageText;
 
-extern SimpleSymbol* currentFunction;
+extern Optimizer::SimpleSymbol* currentFunction;
 
 extern char infile[260];
 extern char outFile[260];
@@ -43,5 +43,5 @@ void Import(void);
 void diag(const char*fmt, ...);
 void ResolveMSILExterns(void);
 void outputfile(char* buf, const char* name, const char* ext);
-void global(SimpleSymbol* sym, int flags);
+void global(Optimizer::SimpleSymbol* sym, int flags);
 int main(int argc, char* argv[]);

@@ -22,9 +22,12 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
  */
-extern int* dfst;
-extern BRIGGS_SET* globalVars;
+namespace Optimizer
+{
+    extern int* dfst;
+    extern BRIGGS_SET* globalVars;
 
-QUAD* beforeJmp(QUAD* I, bool before);
-void removeDead(BLOCK* b);
-void liveVariables(void);
+    QUAD* beforeJmp(QUAD* I, bool before);
+    void removeDead(BLOCK* b);
+    void liveVariables(void);
+}

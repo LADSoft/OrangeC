@@ -24,12 +24,18 @@
  */
 
 
-int needsAtomicLockFromType(TYPE* tp);
-int getSize(enum e_bt type);
-int getBaseAlign(enum e_bt type);
-long getautoval(long val);
-int funcvaluesize(int val);
-int alignment(int sc, TYPE* tp);
-int getAlign(int sc, TYPE* tp);
-const char* getUsageText(void);
-KEYWORD* GetProcKeywords(void);
+namespace Parser
+{
+    void abspath(char* name);
+    void browse_init(void);
+    void browsedata(Optimizer::BROWSEINFO* bi);
+    void browsefile(Optimizer::BROWSEFILE* bf);
+    void browse_startfunc(SYMBOL* func, int lineno);
+    void browse_endfunc(SYMBOL* func, int lineno);
+    void browse_startfile(const char* name, int index);
+    void browse_variable(SYMBOL* var);
+    void browse_usage(SYMBOL* var, int file);
+    void browse_define(char* name, int lineno, int charindex);
+    void browse_blockstart(int lineno);
+    void browse_blockend(int lineno);
+}

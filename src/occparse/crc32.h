@@ -1,3 +1,4 @@
+#pragma once
 /* Software License Agreement
  *
  *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
@@ -21,6 +22,8 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
  */
-#pragma once
-unsigned PartialCRC32(unsigned crc, unsigned char* data, size_t len);
-unsigned CRC32(unsigned char* data, size_t len);
+namespace Parser
+{
+    unsigned PartialCRC32(unsigned crc, unsigned char* data, size_t len);
+    unsigned CRC32(unsigned char* data, size_t len);
+}

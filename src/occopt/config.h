@@ -22,9 +22,12 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
  */
-extern ARCH_ASM* chosenAssembler;
-extern ARCH_DEBUG* chosenDebugger;
+namespace Optimizer
+{
+    extern ARCH_ASM* chosenAssembler;
+    extern ARCH_DEBUG* chosenDebugger;
 
-extern ARCH_ASM *assemblerInterfaces[];
+    extern ARCH_ASM *assemblerInterfaces[];
 
-void SelectBackendData(void);
+    void SelectBackendData(void);
+}

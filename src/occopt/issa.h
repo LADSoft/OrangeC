@@ -22,10 +22,13 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
  */
-extern IMODE *trueName, *falseName;
+namespace Optimizer
+{
+    extern IMODE *trueName, *falseName;
 
-void SSAInit(void);
-DAGLIST** getSavedDAG(void);
-void releaseSavedDAG(DAGLIST** dag);
-void TranslateToSSA(void);
-void TranslateFromSSA(bool all);
+    void SSAInit(void);
+    DAGLIST** getSavedDAG(void);
+    void releaseSavedDAG(DAGLIST** dag);
+    void TranslateToSSA(void);
+    void TranslateFromSSA(bool all);
+}

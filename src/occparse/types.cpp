@@ -32,232 +32,234 @@
 #include "ccerr.h"
 #include "declcpp.h"
 
-TYPE* typenum(char* buf, TYPE* tp);
-
-static TYPE* replaceTemplateSelector(TYPE* tp)
+namespace Parser
 {
-    if (!templateNestingCount && tp->type == bt_templateselector && tp->sp->sb->templateSelector->next->isTemplate)
+    TYPE* typenum(char* buf, TYPE* tp);
+
+    static TYPE* replaceTemplateSelector(TYPE* tp)
     {
-        SYMBOL* sp2 = tp->sp->sb->templateSelector->next->sp;
-        if (sp2)
+        if (!templateNestingCount && tp->type == bt_templateselector && tp->sp->sb->templateSelector->next->isTemplate)
         {
-            SYMBOL* sp1 = GetClassTemplate(sp2, tp->sp->sb->templateSelector->next->templateParams, true);
-            if (sp1)
+            SYMBOL* sp2 = tp->sp->sb->templateSelector->next->sp;
+            if (sp2)
             {
-                sp1 = search(tp->sp->sb->templateSelector->next->next->name, sp1->tp->syms);
+                SYMBOL* sp1 = GetClassTemplate(sp2, tp->sp->sb->templateSelector->next->templateParams, true);
                 if (sp1)
                 {
-                    tp = sp1->tp;
+                    sp1 = search(tp->sp->sb->templateSelector->next->next->name, sp1->tp->syms);
+                    if (sp1)
+                    {
+                        tp = sp1->tp;
+                    }
                 }
             }
         }
+        return tp;
     }
-    return tp;
-}
-bool comparetypes(TYPE* typ1, TYPE* typ2, int exact)
-{
-    if (typ1->type == bt_any || typ2->type == bt_any)
-        return true;
-    while (typ1->type == bt_typedef)
-        typ1 = basetype(typ1);
-    while (typ2->type == bt_typedef)
-        typ2 = basetype(typ2);
-    typ1 = replaceTemplateSelector(typ1);
-    typ2 = replaceTemplateSelector(typ2);
-    if (typ1->type == bt_derivedfromtemplate)
-        typ1 = typ1->btp;
-    if (typ2->type == bt_derivedfromtemplate)
-        typ2 = typ2->btp;
-    while (isref(typ1))
-        typ1 = basetype(typ1)->btp;
-    while (isref(typ2))
-        typ2 = basetype(typ2)->btp;
-    while (typ1->type == bt_typedef)
-        typ1 = basetype(typ1);
-    while (typ2->type == bt_typedef)
-        typ2 = basetype(typ2);
-    if (typ1->type == bt_templateselector && typ2->type == bt_templateselector)
-        return templateselectorcompare(typ1->sp->sb->templateSelector, typ2->sp->sb->templateSelector);
-    if (typ1->type == bt_templatedecltype && typ2->type == bt_templatedecltype)
-        return templatecompareexpressions(typ1->templateDeclType, typ2->templateDeclType);
-    if (ispointer(typ1) && ispointer(typ2))
+    bool comparetypes(TYPE* typ1, TYPE* typ2, int exact)
     {
-        if (exact)
-        {
-            int arr = false;
-            int first = true;
-            while (ispointer(typ1) && ispointer(typ2))
-            {
-                if (!first && (exact == 1))
-                    if ((isconst(typ2) && !isconst(typ1)) || (isvolatile(typ2) && !isvolatile(typ1)))
-                        return false;
-                first = false;
-                typ1 = basetype(typ1);
-                typ2 = basetype(typ2);
-                if (typ1->type != typ2->type)
-                    return false;
-                if (typ1->msil != typ2->msil)
-                    return false;
-                if (arr && (typ1->array != typ2->array))
-                    return false;
-                if (arr && typ1->size != typ2->size)
-                    return false;
-                arr |= typ1->array | typ2->array;
-                typ1 = typ1->btp;
-                typ2 = typ2->btp;
-            }
-            if (exact == 1 && ((isconst(typ2) && !isconst(typ1)) || (isvolatile(typ2) && !isvolatile(typ1))))
-                return false;
-            return comparetypes(typ1, typ2, true);
-        }
-
-        else
+        if (typ1->type == bt_any || typ2->type == bt_any)
             return true;
-    }
-    typ1 = basetype(typ1);
-    typ2 = basetype(typ2);
-    if (exact && (isfunction(typ1) || isfuncptr(typ1)) && (isfunction(typ2) || isfuncptr(typ2)))
-    {
+        while (typ1->type == bt_typedef)
+            typ1 = basetype(typ1);
+        while (typ2->type == bt_typedef)
+            typ2 = basetype(typ2);
+        typ1 = replaceTemplateSelector(typ1);
+        typ2 = replaceTemplateSelector(typ2);
+        if (typ1->type == bt_derivedfromtemplate)
+            typ1 = typ1->btp;
+        if (typ2->type == bt_derivedfromtemplate)
+            typ2 = typ2->btp;
+        while (isref(typ1))
+            typ1 = basetype(typ1)->btp;
+        while (isref(typ2))
+            typ2 = basetype(typ2)->btp;
+        while (typ1->type == bt_typedef)
+            typ1 = basetype(typ1);
+        while (typ2->type == bt_typedef)
+            typ2 = basetype(typ2);
+        if (typ1->type == bt_templateselector && typ2->type == bt_templateselector)
+            return templateselectorcompare(typ1->sp->sb->templateSelector, typ2->sp->sb->templateSelector);
+        if (typ1->type == bt_templatedecltype && typ2->type == bt_templatedecltype)
+            return templatecompareexpressions(typ1->templateDeclType, typ2->templateDeclType);
+        if (ispointer(typ1) && ispointer(typ2))
+        {
+            if (exact)
+            {
+                int arr = false;
+                int first = true;
+                while (ispointer(typ1) && ispointer(typ2))
+                {
+                    if (!first && (exact == 1))
+                        if ((isconst(typ2) && !isconst(typ1)) || (isvolatile(typ2) && !isvolatile(typ1)))
+                            return false;
+                    first = false;
+                    typ1 = basetype(typ1);
+                    typ2 = basetype(typ2);
+                    if (typ1->type != typ2->type)
+                        return false;
+                    if (typ1->msil != typ2->msil)
+                        return false;
+                    if (arr && (typ1->array != typ2->array))
+                        return false;
+                    if (arr && typ1->size != typ2->size)
+                        return false;
+                    arr |= typ1->array | typ2->array;
+                    typ1 = typ1->btp;
+                    typ2 = typ2->btp;
+                }
+                if (exact == 1 && ((isconst(typ2) && !isconst(typ1)) || (isvolatile(typ2) && !isvolatile(typ1))))
+                    return false;
+                return comparetypes(typ1, typ2, true);
+            }
+
+            else
+                return true;
+        }
         typ1 = basetype(typ1);
         typ2 = basetype(typ2);
-        if (ispointer(typ1))
-            typ1 = basetype(typ1)->btp;
-        if (ispointer(typ2))
-            typ2 = basetype(typ2)->btp;
-        if (!comparetypes(typ1->btp, typ2->btp, exact))
-            return false;
-        if (!matchOverload(typ1, typ2, true))
-            return false;
-        return true;
-    }
-    if (cparams.prm_cplusplus)
-    {
-        if (typ1->scoped != typ2->scoped)
-            return false;
-        if (typ1->type == bt_enum)
+        if (exact && (isfunction(typ1) || isfuncptr(typ1)) && (isfunction(typ2) || isfuncptr(typ2)))
         {
-            if (typ2->type == bt_enum)
-                return typ1->sp == typ2->sp;
-            else
-                return isint(typ2);
+            typ1 = basetype(typ1);
+            typ2 = basetype(typ2);
+            if (ispointer(typ1))
+                typ1 = basetype(typ1)->btp;
+            if (ispointer(typ2))
+                typ2 = basetype(typ2)->btp;
+            if (!comparetypes(typ1->btp, typ2->btp, exact))
+                return false;
+            if (!matchOverload(typ1, typ2, true))
+                return false;
+            return true;
         }
-        else if (typ2->type == bt_enum)
+        if (Optimizer::cparams.prm_cplusplus)
         {
-            return isint(typ1);
-        }
-        if (typ1->type == typ2->type && typ1->type == bt_memberptr)
-        {
-            if (typ1->sp != typ2->sp)
+            if (typ1->scoped != typ2->scoped)
+                return false;
+            if (typ1->type == bt_enum)
             {
-                if (classRefCount(typ1->sp, typ2->sp) != 1)
-                    return false;
+                if (typ2->type == bt_enum)
+                    return typ1->sp == typ2->sp;
+                else
+                    return isint(typ2);
             }
-            return comparetypes(typ1->btp, typ2->btp, exact);
+            else if (typ2->type == bt_enum)
+            {
+                return isint(typ1);
+            }
+            if (typ1->type == typ2->type && typ1->type == bt_memberptr)
+            {
+                if (typ1->sp != typ2->sp)
+                {
+                    if (classRefCount(typ1->sp, typ2->sp) != 1)
+                        return false;
+                }
+                return comparetypes(typ1->btp, typ2->btp, exact);
+            }
         }
+        if (typ1->type == typ2->type && typ1->type == bt___string)
+            return true;
+        if (typ1->type == bt___object)  // object matches anything
+            return true;
+        if (typ1->type == typ2->type && (isstructured(typ1) || (exact && typ1->type == bt_enum)))
+        {
+            SYMBOL* s1 = typ1->sp;
+            SYMBOL* s2 = typ2->sp;
+            if (s1->sb && s1->sb->mainsym)
+                s1 = s1->sb->mainsym;
+            if (s2->sb && s2->sb->mainsym)
+                s2 = s2->sb->mainsym;
+            return s1 == s2;
+        }
+        if (typ1->type == typ2->type || (!exact && isarithmetic(typ2) && isarithmetic(typ1)))
+            return true;
+        if (isfunction(typ1) && isfunction(typ2) && typ1->sp->sb->attribs.inheritable.linkage == typ2->sp->sb->attribs.inheritable.linkage)
+            return true;
+        else if (!exact && ((ispointer(typ1) && (isfuncptr(typ2) || isfunction(typ2) || isint(typ2))) ||
+            (ispointer(typ2) && (isfuncptr(typ1) || isfunction(typ1) || isint(typ1)))))
+            return (true);
+        else if (typ1->type == bt_enum && isint(typ2))
+        {
+            return true;
+        }
+        else if (typ2->type == bt_enum && isint(typ1))
+        {
+            return true;
+        }
+        return false;
     }
-    if (typ1->type == typ2->type && typ1->type == bt___string)
-        return true;
-    if (typ1->type == bt___object)  // object matches anything
-        return true;
-    if (typ1->type == typ2->type && (isstructured(typ1) || (exact && typ1->type == bt_enum)))
+    bool matchingCharTypes(TYPE* typ1, TYPE* typ2)
     {
-        SYMBOL* s1 = typ1->sp;
-        SYMBOL* s2 = typ2->sp;
-        if (s1->sb && s1->sb->mainsym)
-            s1 = s1->sb->mainsym;
-        if (s2->sb && s2->sb->mainsym)
-            s2 = s2->sb->mainsym;
-        return s1 == s2;
-    }
-    if (typ1->type == typ2->type || (!exact && isarithmetic(typ2) && isarithmetic(typ1)))
-        return true;
-    if (isfunction(typ1) && isfunction(typ2) && typ1->sp->sb->attribs.inheritable.linkage == typ2->sp->sb->attribs.inheritable.linkage)
-        return true;
-    else if (!exact && ((ispointer(typ1) && (isfuncptr(typ2) || isfunction(typ2) || isint(typ2))) ||
-                        (ispointer(typ2) && (isfuncptr(typ1) || isfunction(typ1) || isint(typ1)))))
-        return (true);
-    else if (typ1->type == bt_enum && isint(typ2))
-    {
-        return true;
-    }
-    else if (typ2->type == bt_enum && isint(typ1))
-    {
-        return true;
-    }
-    return false;
-}
-bool matchingCharTypes(TYPE* typ1, TYPE* typ2)
-{
-    if (isref(typ1))
-        typ1 = basetype(typ1)->btp;
-    if (isref(typ2))
-        typ2 = basetype(typ2)->btp;
+        if (isref(typ1))
+            typ1 = basetype(typ1)->btp;
+        if (isref(typ2))
+            typ2 = basetype(typ2)->btp;
 
-    while (ispointer(typ1) && ispointer(typ2))
-    {
-        typ1 = basetype(typ1)->btp;
-        typ2 = basetype(typ2)->btp;
+        while (ispointer(typ1) && ispointer(typ2))
+        {
+            typ1 = basetype(typ1)->btp;
+            typ2 = basetype(typ2)->btp;
+        }
+        typ1 = basetype(typ1);
+        typ2 = basetype(typ2);
+        if (typ1->type == bt_char)
+        {
+            if (Optimizer::cparams.prm_charisunsigned)
+            {
+                if (typ2->type == bt_unsigned_char)
+                    return true;
+            }
+            else
+            {
+                if (typ2->type == bt_signed_char)
+                    return true;
+            }
+        }
+        else if (typ2->type == bt_char)
+        {
+            if (Optimizer::cparams.prm_charisunsigned)
+            {
+                if (typ1->type == bt_unsigned_char)
+                    return true;
+            }
+            else
+            {
+                if (typ1->type == bt_signed_char)
+                    return true;
+            }
+        }
+        else if (typ1->type == bt_unsigned_short || typ1->type == bt_wchar_t)
+            return typ2->type == bt_unsigned_short || typ2->type == bt_wchar_t;
+        return false;
     }
-    typ1 = basetype(typ1);
-    typ2 = basetype(typ2);
-    if (typ1->type == bt_char)
+    static char* putpointer(char* p, TYPE* tp)
     {
-        if (cparams.prm_charisunsigned)
-        {
-            if (typ2->type == bt_unsigned_char)
-                return true;
-        }
+        *p = 0;
+        if (tp->type == bt_far)
+            Optimizer::my_sprintf(p, "far ");
+        p = p + strlen(p);
+        if (tp->array)
+            if (tp->btp->size && (!tp->esize || tp->esize->type == en_c_i))
+            {
+                Optimizer::my_sprintf(p, "[%d]", tp->size / tp->btp->size);
+            }
+            else
+            {
+                Optimizer::my_sprintf(p, "[]");
+            }
+        else if (tp->vla)
+            Optimizer::my_sprintf(p, "[*]");
         else
-        {
-            if (typ2->type == bt_signed_char)
-                return true;
-        }
+            Optimizer::my_sprintf(p, " *");
+        return p + strlen(p);
     }
-    else if (typ2->type == bt_char)
-    {
-        if (cparams.prm_charisunsigned)
-        {
-            if (typ1->type == bt_unsigned_char)
-                return true;
-        }
-        else
-        {
-            if (typ1->type == bt_signed_char)
-                return true;
-        }
-    }
-    else if (typ1->type == bt_unsigned_short || typ1->type == bt_wchar_t)
-        return typ2->type == bt_unsigned_short || typ2->type == bt_wchar_t;
-    return false;
-}
-static char* putpointer(char* p, TYPE* tp)
-{
-    *p = 0;
-    if (tp->type == bt_far)
-        my_sprintf(p, "far ");
-    p = p + strlen(p);
-    if (tp->array)
-        if (tp->btp->size && (!tp->esize || tp->esize->type == en_c_i))
-        {
-            my_sprintf(p, "[%d]", tp->size / tp->btp->size);
-        }
-        else
-        {
-            my_sprintf(p, "[]");
-        }
-    else if (tp->vla)
-        my_sprintf(p, "[*]");
-    else
-        my_sprintf(p, " *");
-    return p + strlen(p);
-}
 
-static TYPE* enumConst(char* buf, TYPE* tp)
-{
-    while (tp && (isconst(tp) || isvolatile(tp) || isrestrict(tp) || tp->type == bt_derivedfromtemplate))
+    static TYPE* enumConst(char* buf, TYPE* tp)
     {
-        switch (tp->type)
+        while (tp && (isconst(tp) || isvolatile(tp) || isrestrict(tp) || tp->type == bt_derivedfromtemplate))
         {
+            switch (tp->type)
+            {
             case bt_lrqual:
                 strcat(buf, "& ");
                 break;
@@ -276,50 +278,50 @@ static TYPE* enumConst(char* buf, TYPE* tp)
                 break;
             default:
                 break;
+            }
+            tp = tp->btp;
         }
-        tp = tp->btp;
+        return tp;
     }
-    return tp;
-}
-void typenumptr(char* buf, TYPE* tp)
-{
-    char bf[256], *p = bf;
-    p = putpointer(p, tp);
-    tp = enumConst(buf, tp->btp);
-    if (!tp)
-        return;
-    while (ispointer(tp))
+    void typenumptr(char* buf, TYPE* tp)
     {
+        char bf[256], *p = bf;
         p = putpointer(p, tp);
         tp = enumConst(buf, tp->btp);
-        //		tp = tp->btp;
+        if (!tp)
+            return;
+        while (ispointer(tp))
+        {
+            p = putpointer(p, tp);
+            tp = enumConst(buf, tp->btp);
+            //		tp = tp->btp;
+        }
+        typenum(buf, tp);
+        strcat(buf, bf);
     }
-    typenum(buf, tp);
-    strcat(buf, bf);
-}
-void RenderExpr(char* buf, EXPRESSION* exp)
-{
-    (void)exp;
-    strcpy(buf, "decltype(...)");
-}
-TYPE* typenum(char* buf, TYPE* tp)
-{
-    SYMBOL* sym;
-    SYMLIST* hr;
-    char name[4096];
-    if (tp == nullptr)
+    void RenderExpr(char* buf, EXPRESSION* exp)
     {
-        diag("typenum - nullptr type");
-        return &stdvoid;
+        (void)exp;
+        strcpy(buf, "decltype(...)");
     }
-    if (tp->type == bt_derivedfromtemplate)
-        tp = tp->btp;
-    tp = enumConst(buf, tp);
-    if (!tp)
-        return nullptr;
-    buf += strlen(buf);
-    switch (tp->type)
+    TYPE* typenum(char* buf, TYPE* tp)
     {
+        SYMBOL* sym;
+        SYMLIST* hr;
+        char name[4096];
+        if (tp == nullptr)
+        {
+            diag("typenum - nullptr type");
+            return &stdvoid;
+        }
+        if (tp->type == bt_derivedfromtemplate)
+            tp = tp->btp;
+        tp = enumConst(buf, tp);
+        if (!tp)
+            return nullptr;
+        buf += strlen(buf);
+        switch (tp->type)
+        {
         case bt_typedef:
             strcpy(buf, tp->sp->name);
             break;
@@ -594,18 +596,19 @@ TYPE* typenum(char* buf, TYPE* tp)
             break;
         default:
             strcpy(buf, "\?\?\?");
+        }
+        return 0;
     }
-    return 0;
-}
-void typeToString(char* buf, TYPE* typ)
-{
-    *buf = 0;
-    while (typ)
+    void typeToString(char* buf, TYPE* typ)
     {
-        typ = typenum(buf, typ);
-        buf = buf + strlen(buf);
-        if (typ)
-            *buf++ = ',';
+        *buf = 0;
+        while (typ)
+        {
+            typ = typenum(buf, typ);
+            buf = buf + strlen(buf);
+            if (typ)
+                *buf++ = ',';
+        }
+        *buf = 0;
     }
-    *buf = 0;
 }

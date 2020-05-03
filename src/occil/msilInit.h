@@ -26,7 +26,7 @@
 #include <vector>
 
 extern int uniqueId;
-extern SimpleSymbol retblocksym;
+extern Optimizer::SimpleSymbol retblocksym;
 extern int errCount;
 extern Method* mainSym;
 extern int hasEntryPoint;
@@ -43,23 +43,23 @@ extern Type* systemObject;
 extern Method* currentMethod;
 extern PELib* peLib;
 extern DataContainer* mainContainer;
-extern LIST *initializersHead, *initializersTail;
-extern LIST *deinitializersHead, *deinitializersTail;
+extern Optimizer::LIST *initializersHead, *initializersTail;
+extern Optimizer::LIST *deinitializersHead, *deinitializersTail;
 
-extern std::map<SimpleSymbol*, Value*, byName> externalMethods;
-extern std::map<SimpleSymbol*, Value*, byName> externalList;
-extern std::map<SimpleSymbol*, Value*, byName> globalMethods;
-extern std::map<SimpleSymbol*, Value*, byName> globalList;
-extern std::map<SimpleSymbol*, Value*, byLabel> staticMethods;
-extern std::map<SimpleSymbol*, Value*, byLabel> staticList;
-extern std::map<SimpleSymbol*, MethodSignature*, byName> pinvokeInstances;
-extern std::map<SimpleSymbol*, Param*, byName> paramList;
+extern std::map<Optimizer::SimpleSymbol*, Value*, byName> externalMethods;
+extern std::map<Optimizer::SimpleSymbol*, Value*, byName> externalList;
+extern std::map<Optimizer::SimpleSymbol*, Value*, byName> globalMethods;
+extern std::map<Optimizer::SimpleSymbol*, Value*, byName> globalList;
+extern std::map<Optimizer::SimpleSymbol*, Value*, byLabel> staticMethods;
+extern std::map<Optimizer::SimpleSymbol*, Value*, byLabel> staticList;
+extern std::map<Optimizer::SimpleSymbol*, MethodSignature*, byName> pinvokeInstances;
+extern std::map<Optimizer::SimpleSymbol*, Param*, byName> paramList;
 extern std::multimap<std::string, MethodSignature*> pInvokeReferences;
 
 extern std::map<std::string, Value*> startups, rundowns, tlsstartups, tlsrundowns;
 
 extern std::map<std::string, Type*> typeList;
-extern std::map<SimpleSymbol*, Value*, byField> fieldList;
+extern std::map<Optimizer::SimpleSymbol*, Value*, byField> fieldList;
 extern std::map<std::string, MethodSignature*> arrayMethods;
 
 extern std::vector<Local*> localList;

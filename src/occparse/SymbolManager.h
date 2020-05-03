@@ -25,83 +25,49 @@
 #include "compiler.h"
 #include <unordered_map>
 
-bool equalnode(SimpleExpression* left, SimpleExpression *right);
-inline bool isarithmeticconst(SimpleExpression* e)
+bool equalnode(Optimizer::SimpleExpression* left, Optimizer::SimpleExpression *right);
+inline bool isarithmeticconst(Optimizer::SimpleExpression* e)
 {
     switch (e->type)
-        case se_i:
-        case se_ui:
-        case se_f:
-        case se_fc:
-        case se_fi:
+        case Optimizer::se_i:
+        case Optimizer::se_ui:
+        case Optimizer::se_f:
+        case Optimizer::se_fc:
+        case Optimizer::se_fi:
             return true;
     return false;
 }
-inline bool isintconst(SimpleExpression* e)
+inline bool isintconst(Optimizer::SimpleExpression* e)
 {
     switch (e->type)
-        case se_i:
-        case se_ui:
+        case Optimizer::se_i:
+        case Optimizer::se_ui:
             return true;
     return false;
 }
-inline bool isfloatconst(SimpleExpression* e)
+inline bool isfloatconst(Optimizer::SimpleExpression* e)
 {
     switch (e->type)
-        case se_f:
+        case Optimizer::se_f:
             return true;
     return false;
 }
-inline bool iscomplexconst(SimpleExpression* e)
+inline bool iscomplexconst(Optimizer::SimpleExpression* e)
 {
     switch (e->type)
-        case se_fc:
+        case Optimizer::se_fc:
             return true;
     return false;
 }
-inline bool isimaginaryconst(SimpleExpression* e)
+inline bool isimaginaryconst(Optimizer::SimpleExpression* e)
 {
     switch (e->type)
-        case se_fi:
+        case Optimizer::se_fi:
             return true;
     return false;
-}
-inline bool isconstaddress(SimpleExpression* exp)
-{
-    switch (exp->type)
-    {
-    case se_add:
-        return (isconstaddress(exp->left) || isintconst(exp->left)) && (isconstaddress(exp->right) || isintconst(exp->right));
-    case se_global:
-    case se_pc:
-    case se_labcon:
-        return true;
-    case se_func:
-        return !exp->ascall;
-    case se_threadlocal:
-    default:
-        return false;
-    }
 }
 
-struct ArgList
+namespace Parser
 {
-    ArgList* next;
-    SimpleType* tp;
-    SimpleExpression* exp;
-};
-struct SymbolManager
-{
-    static SimpleSymbol* Get(struct sym *sym);
-    static SimpleExpression* Get(struct expr* e);
-    static SimpleType* Get(struct typ *tp);
-    static void clear() { symbols.clear(); }
-    static SimpleSymbol* Get(const char* name);
-    static void Add(SimpleSymbol* sym);
-private:
-    static SimpleSymbol* Make(struct sym *sym);
-    static std::unordered_map<struct sym*, SimpleSymbol*> symbols;
-    static std::unordered_map<std::string, SimpleSymbol*> globalSymbols;
-};
-
-void refreshBackendParams(SYMBOL* funcsp);
+    void refreshBackendParams(SYMBOL* funcsp);
+}

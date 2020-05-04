@@ -138,7 +138,7 @@ namespace Parser
             bool rest = false;
             int pragmas = 0;
             ap = Optimizer::tempreg(size, 0);
-            gen_icode(op, ap, left, right);
+            Optimizer::gen_icode(op, ap, left, right);
             if (!left->offset->unionoffset && (!right || !right->offset->unionoffset))
                 if (!left->bits && (!right || !right->bits))
                     ReplaceHash((Optimizer::QUAD*)ap, (Optimizer::UBYTE*)Optimizer::intermed_tail, DAGCOMPARE, name_value_hash);
@@ -171,7 +171,7 @@ namespace Parser
             Optimizer::intermed_tail->cxlimited = pragmas & STD_PRAGMA_CXLIMITED;
         }
         else
-            gen_icode(op, ap, left, right);
+            Optimizer::gen_icode(op, ap, left, right);
         return ap;
     }
     int chksize(int lsize, int rsize)
@@ -271,8 +271,8 @@ namespace Parser
         Optimizer::IMODE* result1 = Optimizer::tempreg(ap->size, false);
         Optimizer::IMODE* result2 = Optimizer::tempreg(ap->size, false);
         int n = (1 << ap->bits) - 1;
-        gen_icode(ap->size < 0 ? Optimizer::i_asr : Optimizer::i_lsr, result1, ap, Optimizer::make_immed(-ISZ_UINT, ap->startbit));
-        gen_icode(Optimizer::i_and, result2, result1, Optimizer::make_immed(-ISZ_UINT, n));
+        Optimizer::gen_icode(ap->size < 0 ? Optimizer::i_asr : Optimizer::i_lsr, result1, ap, Optimizer::make_immed(-ISZ_UINT, ap->startbit));
+        Optimizer::gen_icode(Optimizer::i_and, result2, result1, Optimizer::make_immed(-ISZ_UINT, n));
         ap->bits = ap->startbit = 0;
         return result2;
     }
@@ -280,7 +280,7 @@ namespace Parser
     {
         Optimizer::IMODE* result = Optimizer::tempreg(ap->size, false);
         int n = ~(((1 << ap->bits) - 1) << ap->startbit);
-        gen_icode(Optimizer::i_and, result, ap, Optimizer::make_immed(-ISZ_UINT, n));
+        Optimizer::gen_icode(Optimizer::i_and, result, ap, Optimizer::make_immed(-ISZ_UINT, n));
         ap->bits = ap->startbit = 0;
         return result;
     }
@@ -423,14 +423,14 @@ namespace Parser
             //        if (!aa1->offset || aa1->mode != Optimizer::i_direct || aa1->offset->type != en_tempref)
             {
                 aa2 = Optimizer::tempreg(aa1->size, 0);
-                gen_icode(Optimizer::i_assn, aa2, aa1, nullptr);
+                Optimizer::gen_icode(Optimizer::i_assn, aa2, aa1, nullptr);
             }
             aa1 = (Optimizer::IMODE*)(Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
             aa1->offset = Optimizer::SymbolManager::Get(node->left->right);
             aa1->mode = Optimizer::i_direct;
             aa1->size = aa2->size;
             ap1 = LookupExpression(Optimizer::i_add, aa1->size, aa2, aa1);
-            ap1 = indnode(ap1, siz1);
+            ap1 = Optimizer::indnode(ap1, siz1);
             ap1->fieldname = true;
             ap1->vararg = aa1->offset;
             ap1->vol = node->isvolatile;
@@ -444,13 +444,13 @@ namespace Parser
         else if (node->left->type == en_add || node->left->type == en_arrayadd || node->left->type == en_structadd)
         {
             ap1 = gen_expr(funcsp, node->left, 0, ISZ_ADDR);
-            ap2 = LookupLoadTemp(nullptr, ap1);
+            ap2 = Optimizer::LookupLoadTemp(nullptr, ap1);
             if (ap2 != ap1)
             {
-                gen_icode(Optimizer::i_assn, ap2, ap1, nullptr);
+                Optimizer::gen_icode(Optimizer::i_assn, ap2, ap1, nullptr);
                 ap1 = ap2;
             }
-            ap1 = indnode(ap1, siz1);
+            ap1 = Optimizer::indnode(ap1, siz1);
             if (ap1->offset)
             {
                 ap1->vol = node->isvolatile;
@@ -461,13 +461,13 @@ namespace Parser
                  ((isarray(node->left->v.sp->tp) && !basetype(node->left->v.sp->tp)->msil) || isstructured(node->left->v.sp->tp)))
         {
             ap1 = gen_expr(funcsp, node->left, 0, ISZ_ADDR);
-            ap2 = LookupLoadTemp(nullptr, ap1);
+            ap2 = Optimizer::LookupLoadTemp(nullptr, ap1);
             if (ap2 != ap1)
             {
-                gen_icode(Optimizer::i_assn, ap2, ap1, nullptr);
+                Optimizer::gen_icode(Optimizer::i_assn, ap2, ap1, nullptr);
                 ap1 = ap2;
             }
-            ap1 = indnode(ap1, siz1);
+            ap1 = Optimizer::indnode(ap1, siz1);
         }
         else if (node->left->type == en_const)
         {
@@ -490,10 +490,10 @@ namespace Parser
                     ap1 = make_ioffset(node);
                     if (!store)
                     {
-                        ap2 = LookupLoadTemp(nullptr, ap1);
+                        ap2 = Optimizer::LookupLoadTemp(nullptr, ap1);
                         if (ap2 != ap1)
                         {
-                            gen_icode(Optimizer::i_assn, ap2, ap1, nullptr);
+                            Optimizer::gen_icode(Optimizer::i_assn, ap2, ap1, nullptr);
                             ap1 = ap2;
                         }
                     }
@@ -501,10 +501,10 @@ namespace Parser
                 case en_threadlocal:
                     sym = Optimizer::SymbolManager::Get(node->left->v.sp);
                     ap1 = make_ioffset(node);
-                    ap2 = LookupLoadTemp(ap1, ap1);
+                    ap2 = Optimizer::LookupLoadTemp(ap1, ap1);
                     if (ap1 != ap2)
-                        gen_icode(Optimizer::i_assn, ap2, ap1, nullptr);
-                    ap1 = indnode(ap2, siz1);
+                        Optimizer::gen_icode(Optimizer::i_assn, ap2, ap1, nullptr);
+                    ap1 = Optimizer::indnode(ap2, siz1);
                     sym->genreffed = true;
                     if (Optimizer::externalSet.find(sym) == Optimizer::externalSet.end())
                     {
@@ -563,10 +563,10 @@ namespace Parser
                         ap1 = make_ioffset(node);
                         if (!store)
                         {
-                            ap2 = LookupLoadTemp(nullptr, ap1);
+                            ap2 = Optimizer::LookupLoadTemp(nullptr, ap1);
                             if (ap2 != ap1)
                             {
-                                gen_icode(Optimizer::i_assn, ap2, ap1, nullptr);
+                                Optimizer::gen_icode(Optimizer::i_assn, ap2, ap1, nullptr);
                                 ap1 = ap2;
                             }
                         }
@@ -575,18 +575,18 @@ namespace Parser
                 // fall through
                 default:
                     ap1 = gen_expr(funcsp, node->left, 0, natural_size(node->left)); /* generate address */
-                    ap2 = LookupLoadTemp(nullptr, ap1);
+                    ap2 = Optimizer::LookupLoadTemp(nullptr, ap1);
                     if (ap2 != ap1)
                     {
-                        gen_icode(Optimizer::i_assn, ap2, ap1, nullptr);
-                        ap2 = indnode(ap2, siz1);
+                        Optimizer::gen_icode(Optimizer::i_assn, ap2, ap1, nullptr);
+                        ap2 = Optimizer::indnode(ap2, siz1);
                         ap2->bits = ap1->bits;
                         ap2->startbit = ap1->startbit;
                         ap1 = ap2;
                     }
                     else
                     {
-                        ap2 = indnode(ap1, siz1);
+                        ap2 = Optimizer::indnode(ap1, siz1);
                         ap2->bits = ap1->bits;
                         ap2->startbit = ap1->startbit;
                         ap1 = ap2;
@@ -596,10 +596,10 @@ namespace Parser
         }
         if (!store)
         {
-            ap2 = LookupLoadTemp(nullptr, ap1);
+            ap2 = Optimizer::LookupLoadTemp(nullptr, ap1);
             if (ap2 != ap1)
             {
-                gen_icode(Optimizer::i_assn, ap2, ap1, nullptr);
+                Optimizer::gen_icode(Optimizer::i_assn, ap2, ap1, nullptr);
                 if (ap1->bits > 0 && (Optimizer::chosenAssembler->arch->denyopts & DO_MIDDLEBITS))
                 {
                     ap2->bits = ap1->bits;
@@ -627,9 +627,9 @@ namespace Parser
         Optimizer::IMODE *ap, *ap1;
         (void)flags;
         ap1 = gen_expr(funcsp, node->left, F_VOL, size);
-        ap = LookupLoadTemp(nullptr, ap1);
+        ap = Optimizer::LookupLoadTemp(nullptr, ap1);
         if (ap1 != ap)
-            gen_icode(Optimizer::i_assn, ap, ap1, nullptr);
+            Optimizer::gen_icode(Optimizer::i_assn, ap, ap1, nullptr);
         ap = LookupExpression(op, size, ap, nullptr);
         ap->vol = node->left->isvolatile;
         ap->restricted = node->left->isrestrict;
@@ -649,20 +649,20 @@ namespace Parser
         ap = Optimizer::tempreg(natural_size(node->left), 0);
         ap->offset->sp->pushedtotemp = true;
         ap3 = gen_expr(funcsp, node->left, F_VOL | F_COMPARE, natural_size(node->left));
-        ap1 = LookupLoadTemp(nullptr, ap3);
+        ap1 = Optimizer::LookupLoadTemp(nullptr, ap3);
         if (ap1 != ap3)
-            gen_icode(Optimizer::i_assn, ap1, ap3, nullptr);
-        gen_icode(Optimizer::i_assn, ap, ap1, nullptr);
+            Optimizer::gen_icode(Optimizer::i_assn, ap1, ap3, nullptr);
+        Optimizer::gen_icode(Optimizer::i_assn, ap, ap1, nullptr);
         ap3 = gen_expr(funcsp, node->right, F_COMPARE, natural_size(node->right));
-        ap2 = LookupLoadTemp(nullptr, ap3);
+        ap2 = Optimizer::LookupLoadTemp(nullptr, ap3);
         if (ap2 != ap3)
-            gen_icode(Optimizer::i_assn, ap2, ap3, nullptr);
+            Optimizer::gen_icode(Optimizer::i_assn, ap2, ap3, nullptr);
         DumpIncDec(funcsp);
         DumpLogicalDestructors(node, funcsp);
-        gen_icgoto(Optimizer::i_jge, lab, ap, Optimizer::make_immed(ap->size, 0));
-        gen_icode(Optimizer::i_add, ap, ap, Optimizer::make_immed(ISZ_UINT, n));
+        Optimizer::gen_icgoto(Optimizer::i_jge, lab, ap, Optimizer::make_immed(ap->size, 0));
+        Optimizer::gen_icode(Optimizer::i_add, ap, ap, Optimizer::make_immed(ISZ_UINT, n));
         Optimizer::gen_label(lab);
-        gen_icode(op, ap, ap, ap2);
+        Optimizer::gen_icode(op, ap, ap, ap2);
         return ap;
     }
 
@@ -678,17 +678,17 @@ namespace Parser
         int vol, rest, pragmas;
         (void)flags;
         ap3 = gen_expr(funcsp, node->left, flags, natural_size(node->left));
-        ap1 = LookupLoadTemp(nullptr, ap3);
+        ap1 = Optimizer::LookupLoadTemp(nullptr, ap3);
         if (ap1 != ap3)
-            gen_icode(Optimizer::i_assn, ap1, ap3, nullptr);
+            Optimizer::gen_icode(Optimizer::i_assn, ap1, ap3, nullptr);
 
         if (op == Optimizer::i_lsl || op == Optimizer::i_lsr || op == Optimizer::i_asr)
             Optimizer::flush_dag();
 
         ap3 = gen_expr(funcsp, node->right, flags, natural_size(node->right));
-        ap2 = LookupLoadTemp(nullptr, ap3);
+        ap2 = Optimizer::LookupLoadTemp(nullptr, ap3);
         if (ap2 != ap3)
-            gen_icode(Optimizer::i_assn, ap2, ap3, nullptr);
+            Optimizer::gen_icode(Optimizer::i_assn, ap2, ap3, nullptr);
         if (ap1->size >= ISZ_CFLOAT || ap2->size >= ISZ_CFLOAT)
             size = imax(ap1->size, ap2->size);
         else if (ap1->size >= ISZ_IFLOAT && ap2->size < ISZ_IFLOAT)
@@ -753,11 +753,11 @@ namespace Parser
             {
                 Optimizer::IMODE *num = gen_expr(funcsp, node->left, F_VOL, size), *ap, *ap1, *ap2, *ap3, *ap4, *ap5;
                 Optimizer::QUAD* q;
-                ap1 = LookupLoadTemp(nullptr, num);
+                ap1 = Optimizer::LookupLoadTemp(nullptr, num);
                 ap = Optimizer::tempreg(n, 0);
                 if (ap1 != num)
                 {
-                    gen_icode(Optimizer::i_assn, ap1, num, nullptr);
+                    Optimizer::gen_icode(Optimizer::i_assn, ap1, num, nullptr);
                     num = ap1;
                 }
                 if (m >= oneshl32 && !(d & 1))
@@ -777,31 +777,31 @@ namespace Parser
                 {
                     if (mod)
                     {
-                        gen_icode(Optimizer::i_and, ap, num, Optimizer::make_immed(ISZ_UINT, (1 << l) - 1));
+                        Optimizer::gen_icode(Optimizer::i_and, ap, num, Optimizer::make_immed(ISZ_UINT, (1 << l) - 1));
                         return ap;
                     }
                     ap5 = Optimizer::tempreg(n, 0);
-                    gen_icode(Optimizer::i_lsr, ap5, num, Optimizer::make_immed(ISZ_UINT, l));
+                    Optimizer::gen_icode(Optimizer::i_lsr, ap5, num, Optimizer::make_immed(ISZ_UINT, l));
 
                     //                return n >> l;
                 }
                 else if (m >= oneshl32)
                 {
                     ap3 = Optimizer::tempreg(n, 0);
-                    gen_icode_with_conflict(Optimizer::i_assn, ap3, num, nullptr, true);
+                    Optimizer::gen_icode_with_conflict(Optimizer::i_assn, ap3, num, nullptr, true);
                     ap1 = Optimizer::tempreg(n, 0);
-                    gen_icode(Optimizer::i_muluh, ap1, ap3, Optimizer::make_immed(ISZ_UINT, m - oneshl32));
+                    Optimizer::gen_icode(Optimizer::i_muluh, ap1, ap3, Optimizer::make_immed(ISZ_UINT, m - oneshl32));
                     ap2 = Optimizer::tempreg(n, 0);
-                    gen_icode(Optimizer::i_sub, ap2, num, ap1);
+                    Optimizer::gen_icode(Optimizer::i_sub, ap2, num, ap1);
                     ap3 = Optimizer::tempreg(n, 0);
-                    gen_icode(Optimizer::i_lsr, ap3, ap2, Optimizer::make_immed(ISZ_UINT, 1));
+                    Optimizer::gen_icode(Optimizer::i_lsr, ap3, ap2, Optimizer::make_immed(ISZ_UINT, 1));
                     ap4 = Optimizer::tempreg(n, 0);
-                    gen_icode(Optimizer::i_add, ap4, ap1, ap3);
+                    Optimizer::gen_icode(Optimizer::i_add, ap4, ap1, ap3);
                     ap5 = Optimizer::tempreg(n, 0);
                     if (post - 1)
-                        gen_icode(Optimizer::i_lsr, ap5, ap4, Optimizer::make_immed(ISZ_UINT, post - 1));
+                        Optimizer::gen_icode(Optimizer::i_lsr, ap5, ap4, Optimizer::make_immed(ISZ_UINT, post - 1));
                     else
-                        gen_icode(Optimizer::i_assn, ap5, ap4, nullptr);
+                        Optimizer::gen_icode(Optimizer::i_assn, ap5, ap4, nullptr);
                     /*
                     unsigned t1 = ((m-oneshl32) *n) >> 32;
                     unsigned q = (n-t1)>>1;
@@ -811,23 +811,23 @@ namespace Parser
                 else
                 {
                     ap1 = Optimizer::tempreg(n, 0);
-                    gen_icode_with_conflict(Optimizer::i_assn, ap1, num, nullptr, true);
+                    Optimizer::gen_icode_with_conflict(Optimizer::i_assn, ap1, num, nullptr, true);
                     ap3 = Optimizer::tempreg(n, 0);
                     if (pre)
                     {
-                        gen_icode(Optimizer::i_lsr, ap3, ap1, Optimizer::make_immed(ISZ_UINT, pre));
+                        Optimizer::gen_icode(Optimizer::i_lsr, ap3, ap1, Optimizer::make_immed(ISZ_UINT, pre));
                     }
                     else
                     {
-                        gen_icode(Optimizer::i_assn, ap3, ap1, nullptr);
+                        Optimizer::gen_icode(Optimizer::i_assn, ap3, ap1, nullptr);
                     }
                     ap2 = Optimizer::tempreg(n, 0);
-                    gen_icode(Optimizer::i_muluh, ap2, ap3, Optimizer::make_immed(ISZ_UINT, m - oneshl32));
+                    Optimizer::gen_icode(Optimizer::i_muluh, ap2, ap3, Optimizer::make_immed(ISZ_UINT, m - oneshl32));
                     ap5 = Optimizer::tempreg(n, 0);
                     if (post)
-                        gen_icode(Optimizer::i_lsr, ap5, ap2, Optimizer::make_immed(ISZ_UINT, post));
+                        Optimizer::gen_icode(Optimizer::i_lsr, ap5, ap2, Optimizer::make_immed(ISZ_UINT, post));
                     else
-                        gen_icode(Optimizer::i_assn, ap5, ap2, nullptr);
+                        Optimizer::gen_icode(Optimizer::i_assn, ap5, ap2, nullptr);
                     /*
                     unsigned t1 = n >> pre;
                     t1 = (m * t1)>>32;
@@ -837,12 +837,12 @@ namespace Parser
                 if (mod)
                 {
                     ap2 = Optimizer::tempreg(n, 0);
-                    gen_icode(Optimizer::i_mul, ap2, ap5, Optimizer::make_immed(ISZ_UINT, d));
-                    gen_icode(Optimizer::i_sub, ap, num, ap2);
+                    Optimizer::gen_icode(Optimizer::i_mul, ap2, ap5, Optimizer::make_immed(ISZ_UINT, d));
+                    Optimizer::gen_icode(Optimizer::i_sub, ap, num, ap2);
                 }
                 else
                 {
-                    gen_icode(Optimizer::i_assn, ap, ap5, nullptr);
+                    Optimizer::gen_icode(Optimizer::i_assn, ap, ap5, nullptr);
                 }
                 return ap;
             }
@@ -862,11 +862,11 @@ namespace Parser
             {
                 Optimizer::IMODE *num = gen_expr(funcsp, node->left, F_VOL, size), *ap, *ap1, *ap2, *ap3, *ap4, *ap5 = nullptr;
                 Optimizer::QUAD* q;
-                ap1 = LookupLoadTemp(nullptr, num);
+                ap1 = Optimizer::LookupLoadTemp(nullptr, num);
                 ap = Optimizer::tempreg(n, 0);
                 if (ap1 != num)
                 {
-                    gen_icode(Optimizer::i_assn, ap1, num, nullptr);
+                    Optimizer::gen_icode(Optimizer::i_assn, ap1, num, nullptr);
                     num = ap1;
                 }
                 if (ad == 1)
@@ -876,17 +876,17 @@ namespace Parser
                 {
                     ap2 = Optimizer::tempreg(n, 0);
                     if (l > 1)
-                        gen_icode(Optimizer::i_asr, ap2, num, Optimizer::make_immed(ISZ_UINT, l - 1));
+                        Optimizer::gen_icode(Optimizer::i_asr, ap2, num, Optimizer::make_immed(ISZ_UINT, l - 1));
                     else
                     {
-                        gen_icode(Optimizer::i_assn, ap2, num, nullptr);
+                        Optimizer::gen_icode(Optimizer::i_assn, ap2, num, nullptr);
                     }
                     ap3 = Optimizer::tempreg(n, 0);
-                    gen_icode(Optimizer::i_lsr, ap3, ap2, Optimizer::make_immed(ISZ_UINT, N - l));
+                    Optimizer::gen_icode(Optimizer::i_lsr, ap3, ap2, Optimizer::make_immed(ISZ_UINT, N - l));
                     ap4 = Optimizer::tempreg(n, 0);
-                    gen_icode(Optimizer::i_add, ap4, ap3, num);
+                    Optimizer::gen_icode(Optimizer::i_add, ap4, ap3, num);
                     ap5 = Optimizer::tempreg(n, 0);
-                    gen_icode(Optimizer::i_asr, ap5, ap4, Optimizer::make_immed(ISZ_UINT, l));
+                    Optimizer::gen_icode(Optimizer::i_asr, ap5, ap4, Optimizer::make_immed(ISZ_UINT, l));
                     /*
                     q = n >> (l-1);
                     q = (unsigned)q >> (32 - l);
@@ -896,18 +896,18 @@ namespace Parser
                 else if (m < oneshl32 / 2)
                 {
                     ap3 = Optimizer::tempreg(n, 0);
-                    gen_icode_with_conflict(Optimizer::i_assn, ap3, num, nullptr, true);
+                    Optimizer::gen_icode_with_conflict(Optimizer::i_assn, ap3, num, nullptr, true);
                     ap1 = Optimizer::tempreg(n, 0);
-                    gen_icode(Optimizer::i_mulsh, ap1, ap3, Optimizer::make_immed(ISZ_UINT, m));
+                    Optimizer::gen_icode(Optimizer::i_mulsh, ap1, ap3, Optimizer::make_immed(ISZ_UINT, m));
                     ap2 = Optimizer::tempreg(n, 0);
                     if (post)
-                        gen_icode(Optimizer::i_asr, ap2, ap1, Optimizer::make_immed(ISZ_UINT, post));
+                        Optimizer::gen_icode(Optimizer::i_asr, ap2, ap1, Optimizer::make_immed(ISZ_UINT, post));
                     else
-                        gen_icode(Optimizer::i_assn, ap2, ap1, nullptr);
+                        Optimizer::gen_icode(Optimizer::i_assn, ap2, ap1, nullptr);
                     ap4 = Optimizer::tempreg(n, 0);
-                    gen_icode(Optimizer::i_asr, ap4, num, Optimizer::make_immed(ISZ_UINT, N - 1));
+                    Optimizer::gen_icode(Optimizer::i_asr, ap4, num, Optimizer::make_immed(ISZ_UINT, N - 1));
                     ap5 = Optimizer::tempreg(n, 0);
-                    gen_icode(Optimizer::i_sub, ap5, ap2, ap4);
+                    Optimizer::gen_icode(Optimizer::i_sub, ap5, ap2, ap4);
                     /*
                     q = ((LLONG)m) * n >> 32;
                     q = q >> post;
@@ -917,20 +917,20 @@ namespace Parser
                 else
                 {
                     ap3 = Optimizer::tempreg(n, 0);
-                    gen_icode_with_conflict(Optimizer::i_assn, ap3, num, nullptr, true);
+                    Optimizer::gen_icode_with_conflict(Optimizer::i_assn, ap3, num, nullptr, true);
                     ap1 = Optimizer::tempreg(n, 0);
-                    gen_icode(Optimizer::i_mulsh, ap1, ap3, Optimizer::make_immed(ISZ_UINT, m - oneshl32));
+                    Optimizer::gen_icode(Optimizer::i_mulsh, ap1, ap3, Optimizer::make_immed(ISZ_UINT, m - oneshl32));
                     ap2 = Optimizer::tempreg(n, 0);
-                    gen_icode(Optimizer::i_add, ap2, ap1, num);
+                    Optimizer::gen_icode(Optimizer::i_add, ap2, ap1, num);
                     ap4 = Optimizer::tempreg(n, 0);
                     if (post)
-                        gen_icode(Optimizer::i_asr, ap4, ap2, Optimizer::make_immed(ISZ_UINT, post));
+                        Optimizer::gen_icode(Optimizer::i_asr, ap4, ap2, Optimizer::make_immed(ISZ_UINT, post));
                     else
-                        gen_icode(Optimizer::i_assn, ap4, ap2, nullptr);
+                        Optimizer::gen_icode(Optimizer::i_assn, ap4, ap2, nullptr);
                     ap3 = Optimizer::tempreg(n, 0);
-                    gen_icode(Optimizer::i_asr, ap3, num, Optimizer::make_immed(ISZ_UINT, N - 1));
+                    Optimizer::gen_icode(Optimizer::i_asr, ap3, num, Optimizer::make_immed(ISZ_UINT, N - 1));
                     ap5 = Optimizer::tempreg(n, 0);
-                    gen_icode(Optimizer::i_sub, ap5, ap4, ap3);
+                    Optimizer::gen_icode(Optimizer::i_sub, ap5, ap4, ap3);
                     /*
                     q = ((LLONG)(m-oneshl32))*n>>32;
                     q = (n + q) >> post;
@@ -940,18 +940,18 @@ namespace Parser
                 if (d < 0)
                 {
                     ap3 = Optimizer::tempreg(n, 0);
-                    gen_icode(Optimizer::i_neg, ap3, ap5, nullptr);
+                    Optimizer::gen_icode(Optimizer::i_neg, ap3, ap5, nullptr);
                     ap5 = ap3;
                 }
                 if (mod)
                 {
                     ap3 = Optimizer::tempreg(n, 0);
-                    gen_icode(Optimizer::i_mul, ap3, ap5, Optimizer::make_immed(ISZ_UINT, d));
-                    gen_icode(Optimizer::i_sub, ap, num, ap3);
+                    Optimizer::gen_icode(Optimizer::i_mul, ap3, ap5, Optimizer::make_immed(ISZ_UINT, d));
+                    Optimizer::gen_icode(Optimizer::i_sub, ap, num, ap3);
                 }
                 else
                 {
-                    gen_icode(Optimizer::i_assn, ap, ap5, nullptr);
+                    Optimizer::gen_icode(Optimizer::i_assn, ap, ap5, nullptr);
                 }
                 return ap;
             }
@@ -974,10 +974,10 @@ namespace Parser
                 int dinv;
                 int e = 0;
                 Optimizer::IMODE *num = gen_expr(funcsp, node->left, F_VOL, ISZ_UINT), *ap, *ap1;
-                ap1 = LookupLoadTemp(nullptr, num);
+                ap1 = Optimizer::LookupLoadTemp(nullptr, num);
                 if (ap1 != num)
                 {
-                    gen_icode(Optimizer::i_assn, ap1, num, nullptr);  // DAL fixed
+                    Optimizer::gen_icode(Optimizer::i_assn, ap1, num, nullptr);  // DAL fixed
                     num = ap1;
                 }
                 while (!(d & 1))
@@ -989,9 +989,9 @@ namespace Parser
                     dinv = dis * (2 - dis * ds);
                 }
                 ap = Optimizer::tempreg(n, 0);
-                gen_icode(Optimizer::i_mul, ap, num, Optimizer::make_immed(ISZ_UINT, dinv));
+                Optimizer::gen_icode(Optimizer::i_mul, ap, num, Optimizer::make_immed(ISZ_UINT, dinv));
                 if (e)
-                    gen_icode(Optimizer::i_asr, ap, ap, Optimizer::make_immed(ISZ_UINT, e));
+                    Optimizer::gen_icode(Optimizer::i_asr, ap, ap, Optimizer::make_immed(ISZ_UINT, e));
                 return ap;
                 //            return (dinv * n) >> e;
             }
@@ -1010,13 +1010,13 @@ namespace Parser
         (void)flags;
         (void)size;
         ap3 = gen_expr(funcsp, node->left, F_VOL, ISZ_UINT);
-        ap1 = LookupLoadTemp(nullptr, ap3);
+        ap1 = Optimizer::LookupLoadTemp(nullptr, ap3);
         if (ap1 != ap3)
-            gen_icode(Optimizer::i_assn, ap1, ap3, nullptr);
+            Optimizer::gen_icode(Optimizer::i_assn, ap1, ap3, nullptr);
         ap3 = gen_expr(funcsp, node->right, F_VOL, ISZ_UINT);
-        ap2 = LookupLoadTemp(nullptr, ap3);
+        ap2 = Optimizer::LookupLoadTemp(nullptr, ap3);
         if (ap2 != ap3)
-            gen_icode(Optimizer::i_assn, ap2, ap3, nullptr);
+            Optimizer::gen_icode(Optimizer::i_assn, ap2, ap3, nullptr);
         ap = LookupExpression(Optimizer::i_mul, ISZ_UINT, ap1, ap2);
         return ap;
     }
@@ -1042,19 +1042,19 @@ namespace Parser
         ap1 = Optimizer::tempreg(natural_size(node), 0);
         ap1->offset->sp->pushedtotemp = true;  // needed to make the global opts happy
         ap3 = gen_expr(funcsp, node->left, flags, size);
-        ap2 = LookupLoadTemp(nullptr, ap3);
+        ap2 = Optimizer::LookupLoadTemp(nullptr, ap3);
         if (ap2 != ap3)
-            gen_icode(Optimizer::i_assn, ap2, ap3, nullptr);
-        gen_icode(Optimizer::i_assn, ap1, ap2, 0);
+            Optimizer::gen_icode(Optimizer::i_assn, ap2, ap3, nullptr);
+        Optimizer::gen_icode(Optimizer::i_assn, ap1, ap2, 0);
         Optimizer::intermed_tail->hook = true;
         DumpIncDec(funcsp);
-        gen_igoto(Optimizer::i_goto, end_label);
+        Optimizer::gen_igoto(Optimizer::i_goto, end_label);
         Optimizer::gen_label(false_label);
         ap3 = gen_expr(funcsp, node->right, flags, size);
-        ap2 = LookupLoadTemp(nullptr, ap3);
+        ap2 = Optimizer::LookupLoadTemp(nullptr, ap3);
         if (ap2 != ap3)
-            gen_icode(Optimizer::i_assn, ap2, ap3, nullptr);
-        gen_icode(Optimizer::i_assn, ap1, ap2, 0);
+            Optimizer::gen_icode(Optimizer::i_assn, ap2, ap3, nullptr);
+        Optimizer::gen_icode(Optimizer::i_assn, ap1, ap2, 0);
         Optimizer::intermed_tail->hook = true;
         DumpIncDec(funcsp);
         Optimizer::gen_label(end_label);
@@ -1078,12 +1078,12 @@ namespace Parser
             {
                 gen_expr(funcsp, node->left, F_STORE, ISZ_OBJECT);
                 ap2 = gen_expr(funcsp, node->right, F_OBJECT, ISZ_OBJECT);
-                gen_icode(Optimizer::i_parm, 0, ap2, 0);
+                Optimizer::gen_icode(Optimizer::i_parm, 0, ap2, 0);
                 ap1 = (Optimizer::IMODE*)(Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
                 ap1->mode = Optimizer::i_immed;
                 ap1->offset = Optimizer::SymbolManager::Get(node->left);
                 ap1->size = ap2->size;
-                gen_icode(Optimizer::i_assn, ap1, ap2, nullptr);
+                Optimizer::gen_icode(Optimizer::i_assn, ap1, ap2, nullptr);
             }
             else
             {
@@ -1099,10 +1099,10 @@ namespace Parser
                 }
                 else
                     ap3 = gen_expr(funcsp, node->right, F_VOL, ISZ_UINT);
-                ap2 = LookupLoadTemp(nullptr, ap3);
+                ap2 = Optimizer::LookupLoadTemp(nullptr, ap3);
                 if (ap2 != ap3)
-                    gen_icode(Optimizer::i_assn, ap2, ap3, nullptr);
-                gen_icode(Optimizer::i_assn, ap1, ap2, nullptr);
+                    Optimizer::gen_icode(Optimizer::i_assn, ap2, ap3, nullptr);
+                Optimizer::gen_icode(Optimizer::i_assn, ap1, ap2, nullptr);
                 Optimizer::intermed_tail->alttp = Optimizer::SymbolManager::Get((TYPE *)node->altdata);
                 Optimizer::intermed_tail->blockassign = true;
                 Optimizer::intermed_tail->oldmode = mode;
@@ -1111,15 +1111,15 @@ namespace Parser
         else
         {
             ap3 = gen_expr(funcsp, node->left, F_VOL, ISZ_UINT);
-            ap1 = LookupLoadTemp(nullptr, ap3);
+            ap1 = Optimizer::LookupLoadTemp(nullptr, ap3);
             if (ap1 != ap3)
-                gen_icode(Optimizer::i_assn, ap1, ap3, nullptr);
+                Optimizer::gen_icode(Optimizer::i_assn, ap1, ap3, nullptr);
             ap3 = gen_expr(funcsp, node->right, F_VOL, ISZ_UINT);
-            ap2 = LookupLoadTemp(nullptr, ap3);
+            ap2 = Optimizer::LookupLoadTemp(nullptr, ap3);
             if (ap2 != ap3)
-                gen_icode(Optimizer::i_assn, ap2, ap3, nullptr);
+                Optimizer::gen_icode(Optimizer::i_assn, ap2, ap3, nullptr);
             ap6 = Optimizer::make_immed(ISZ_UINT, node->size);
-            gen_icode(Optimizer::i_assnblock, ap6, ap1, ap2);
+            Optimizer::gen_icode(Optimizer::i_assnblock, ap6, ap1, ap2);
         }
         return (ap1);
     }
@@ -1136,32 +1136,32 @@ namespace Parser
         else if (node->right)
         {
             ap5 = gen_expr(funcsp, node->right, F_VOL, ISZ_UINT);
-            ap4 = LookupLoadTemp(nullptr, ap5);
+            ap4 = Optimizer::LookupLoadTemp(nullptr, ap5);
             if (ap5 != ap4)
-                gen_icode(Optimizer::i_assn, ap4, ap5, nullptr);
+                Optimizer::gen_icode(Optimizer::i_assn, ap4, ap5, nullptr);
         }
         else
         {
             return (0);
         }
         ap3 = gen_expr(funcsp, node->left, F_VOL, ISZ_UINT);
-        ap1 = LookupLoadTemp(nullptr, ap3);
+        ap1 = Optimizer::LookupLoadTemp(nullptr, ap3);
         if (ap1 != ap3)
-            gen_icode(Optimizer::i_assn, ap1, ap3, nullptr);
+            Optimizer::gen_icode(Optimizer::i_assn, ap1, ap3, nullptr);
         if (Optimizer::architecture == ARCHITECTURE_MSIL)
         {
             ap6 = Optimizer::make_immed(ISZ_UINT, 0);
-            ap7 = LookupLoadTemp(nullptr, ap6);
+            ap7 = Optimizer::LookupLoadTemp(nullptr, ap6);
             if (ap7 != ap6)
-                gen_icode(Optimizer::i_assn, ap7, ap6, nullptr);
+                Optimizer::gen_icode(Optimizer::i_assn, ap7, ap6, nullptr);
             ap8 = (Optimizer::IMODE*)(Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
             memcpy(ap8, ap7, sizeof(Optimizer::IMODE));
             ap8->mode = Optimizer::i_ind;
-            gen_icode(Optimizer::i_clrblock, ap8, ap1, ap4);
+            Optimizer::gen_icode(Optimizer::i_clrblock, ap8, ap1, ap4);
         }
         else
         {
-            gen_icode(Optimizer::i_clrblock, nullptr, ap1, ap4);
+            Optimizer::gen_icode(Optimizer::i_clrblock, nullptr, ap1, ap4);
         }
         return (ap1);
     }
@@ -1172,33 +1172,33 @@ namespace Parser
     {
         Optimizer::IMODE *ap1, *ap3, *ap4, *ap5, *ap6, *ap7, *ap8;
         ap6 = gen_expr(funcsp, node->left->left, F_VOL, ISZ_UINT);
-        ap7 = LookupLoadTemp(nullptr, ap6);
+        ap7 = Optimizer::LookupLoadTemp(nullptr, ap6);
         if (ap7 != ap6)
-            gen_icode(Optimizer::i_assn, ap7, ap6, nullptr);
+            Optimizer::gen_icode(Optimizer::i_assn, ap7, ap6, nullptr);
         ap8 = (Optimizer::IMODE*)(Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
         memcpy(ap8, ap7, sizeof(Optimizer::IMODE));
         ap8->mode = Optimizer::i_ind;
         ap3 = gen_expr(funcsp, node->left->right, F_VOL, ISZ_UINT);
-        ap1 = LookupLoadTemp(nullptr, ap3);
+        ap1 = Optimizer::LookupLoadTemp(nullptr, ap3);
         if (ap1 != ap3)
-            gen_icode(Optimizer::i_assn, ap1, ap3, nullptr);
+            Optimizer::gen_icode(Optimizer::i_assn, ap1, ap3, nullptr);
         ap5 = gen_expr(funcsp, node->right, F_VOL, ISZ_UINT);
-        ap4 = LookupLoadTemp(nullptr, ap5);
+        ap4 = Optimizer::LookupLoadTemp(nullptr, ap5);
         if (ap5 != ap4)
-            gen_icode(Optimizer::i_assn, ap4, ap5, nullptr);
+            Optimizer::gen_icode(Optimizer::i_assn, ap4, ap5, nullptr);
         if (cp)
-            gen_icode(Optimizer::i__cpblk, ap8, ap1, ap4);
+            Optimizer::gen_icode(Optimizer::i__cpblk, ap8, ap1, ap4);
         else
-            gen_icode(Optimizer::i__initblk, ap8, ap1, ap4);
+            Optimizer::gen_icode(Optimizer::i__initblk, ap8, ap1, ap4);
         Optimizer::intermed_tail->alwayslive = true;
 
         if (!(flags & F_NOVALUE))
         {
 
             ap6 = gen_expr(funcsp, node->left->left, F_VOL, ISZ_UINT);
-            ap7 = LookupLoadTemp(nullptr, ap6);
+            ap7 = Optimizer::LookupLoadTemp(nullptr, ap6);
             if (ap7 != ap6)
-                gen_icode(Optimizer::i_assn, ap7, ap6, nullptr);
+                Optimizer::gen_icode(Optimizer::i_assn, ap7, ap6, nullptr);
         }
         return (ap7);
     }
@@ -1213,8 +1213,8 @@ namespace Parser
         if (n1 && n2)
         {
             Optimizer::IMODE* ap = Optimizer::tempreg(-ISZ_UINT, 0);
-            gen_icode(Optimizer::i_assn, ap, Optimizer::make_immed(-ISZ_UINT, n1 / n2), nullptr);
-            gen_icode(Optimizer::i_parm, 0, ap, 0);
+            Optimizer::gen_icode(Optimizer::i_assn, ap, Optimizer::make_immed(-ISZ_UINT, n1 / n2), nullptr);
+            Optimizer::gen_icode(Optimizer::i_parm, 0, ap, 0);
         }
         else
         {
@@ -1223,7 +1223,7 @@ namespace Parser
                 ap = gen_expr(funcsp, basetype(tp)->esize, 0, -ISZ_UINT);
             else
                 ap = Optimizer::make_immed(-ISZ_UINT, 1);  // not really creating something, but give it a size so we can proceed.
-            gen_icode(Optimizer::i_parm, 0, ap, 0);
+            Optimizer::gen_icode(Optimizer::i_parm, 0, ap, 0);
         }
         PushArrayLimits(funcsp, basetype(tp)->btp);
     }
@@ -1252,7 +1252,7 @@ namespace Parser
             ap2->mode = Optimizer::i_immed;
             ap2->offset = Optimizer::SymbolManager::Get(node->right);
             ap2->size = ap1->size;
-            gen_icode(Optimizer::i_assn, ap1, ap2, nullptr);
+            Optimizer::gen_icode(Optimizer::i_assn, ap1, ap2, nullptr);
         }
         else if (node->left->type == en_msil_array_access)
         {
@@ -1261,12 +1261,12 @@ namespace Parser
                 base = basetype(base)->btp;
             gen_expr(funcsp, node->left, (flags & ~F_NOVALUE) | F_STORE, sizeFromType(base));
             ap2 = gen_expr(funcsp, node->right, (flags & ~F_NOVALUE), sizeFromType(base));
-            // gen_icode(Optimizer::i_parm, 0, ap2, 0);
+            // Optimizer::gen_icode(Optimizer::i_parm, 0, ap2, 0);
             ap1 = (Optimizer::IMODE*)(Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
             ap1->mode = Optimizer::i_immed;
             ap1->offset = Optimizer::SymbolManager::Get(node->left);
             ap1->size = ap2->size;
-            gen_icode(Optimizer::i_assn, ap1, ap2, nullptr);
+            Optimizer::gen_icode(Optimizer::i_assn, ap1, ap2, nullptr);
         }
         else
         {
@@ -1281,13 +1281,13 @@ namespace Parser
                     m = ap1->bits;
                     ap1->bits = ap1->startbit = 0;
                     ap3 = gen_expr(funcsp, node->left, (flags & ~F_NOVALUE) | F_STORE, natural_size(node->left));
-                    ap4 = LookupLoadTemp(ap3, ap3);
+                    ap4 = Optimizer::LookupLoadTemp(ap3, ap3);
                     if (ap4 != ap3)
                     {
                         ap4->bits = ap3->bits;
                         ap4->startbit = ap3->startbit;
                         ap3->bits = ap3->startbit = 0;
-                        gen_icode(Optimizer::i_assn, ap4, ap3, nullptr);
+                        Optimizer::gen_icode(Optimizer::i_assn, ap4, ap3, nullptr);
                     }
                     ap3 = gen_bit_mask(ap4);
                 }
@@ -1319,49 +1319,49 @@ namespace Parser
                             break;
                     }
                 }
-                ap4 = LookupLoadTemp(ap2, ap2);
+                ap4 = Optimizer::LookupLoadTemp(ap2, ap2);
                 if (ap4 != ap2)
-                    gen_icode(Optimizer::i_assn, ap4, ap2, nullptr);
+                    Optimizer::gen_icode(Optimizer::i_assn, ap4, ap2, nullptr);
                 if (ap3)
                 {
-                    gen_icode(Optimizer::i_and, ap4, ap4, Optimizer::make_immed(-ISZ_UINT, (1 << m) - 1));
+                    Optimizer::gen_icode(Optimizer::i_and, ap4, ap4, Optimizer::make_immed(-ISZ_UINT, (1 << m) - 1));
                     if (n)
-                        gen_icode(Optimizer::i_lsl, ap4, ap4, Optimizer::make_immed(-ISZ_UINT, n));
-                    gen_icode(Optimizer::i_or, ap4, ap3, ap4);
+                        Optimizer::gen_icode(Optimizer::i_lsl, ap4, ap4, Optimizer::make_immed(-ISZ_UINT, n));
+                    Optimizer::gen_icode(Optimizer::i_or, ap4, ap3, ap4);
                 }
             }
             else
             {
                 ap2 = gen_expr(funcsp, node->right, flags & ~F_NOVALUE, natural_size(node->left));
-                ap4 = LookupLoadTemp(ap2, ap2);
+                ap4 = Optimizer::LookupLoadTemp(ap2, ap2);
                 if (ap4 != ap2)
-                    gen_icode(Optimizer::i_assn, ap4, ap2, nullptr);
+                    Optimizer::gen_icode(Optimizer::i_assn, ap4, ap2, nullptr);
                 ap1 = gen_expr(funcsp, node->left, (flags & ~F_NOVALUE) | F_STORE, natural_size(node->left));
             }
             ap1->vol = ap2->vol;
             ap2->restricted = ap4->restricted;
             ap1->offset->pragmas = ap4->offset->pragmas;
-            gen_icode(Optimizer::i_assn, ap1, ap4, nullptr);
+            Optimizer::gen_icode(Optimizer::i_assn, ap1, ap4, nullptr);
             /*
             if (ap1->mode != Optimizer::i_direct || ap1->offset->type != en_tempref)
             {
                 ap3 = Optimizer::tempreg(ap4->size, false);
-                gen_icode(Optimizer::i_assn, ap3, ap4, nullptr);
+                Optimizer::gen_icode(Optimizer::i_assn, ap3, ap4, nullptr);
                 ap4 = ap3;
             }
-            ap3 = LookupStoreTemp(ap1, ap1);
+            ap3 = Optimizer::LookupStoreTemp(ap1, ap1);
             if (ap3 != ap1)
             {
-                gen_icode(Optimizer::i_assn, ap3, ap4, nullptr);
-                gen_icode(Optimizer::i_assn, ap1, ap3, nullptr);
+                Optimizer::gen_icode(Optimizer::i_assn, ap3, ap4, nullptr);
+                Optimizer::gen_icode(Optimizer::i_assn, ap1, ap3, nullptr);
             }
             else
-                gen_icode(Optimizer::i_assn, ap1, ap4, nullptr);
+                Optimizer::gen_icode(Optimizer::i_assn, ap1, ap4, nullptr);
             */
         }
         if (node->left->isatomic)
         {
-            gen_icode(Optimizer::i_atomic_fence, nullptr, Optimizer::make_immed(ISZ_UINT, Optimizer::mo_seq_cst | 0x80), nullptr);
+            Optimizer::gen_icode(Optimizer::i_atomic_fence, nullptr, Optimizer::make_immed(ISZ_UINT, Optimizer::mo_seq_cst | 0x80), nullptr);
         }
         if (!(flags & F_NOVALUE) && (Optimizer::chosenAssembler->arch->preferopts & OPT_REVERSESTORE) && ap1->mode == Optimizer::i_ind)
         {
@@ -1399,51 +1399,51 @@ namespace Parser
                 m = ap6->bits;
                 ap6->bits = ap6->startbit = 0;
                 ap7 = gen_expr(funcsp, node->left, (flags & ~F_NOVALUE) | F_STORE, natural_size(node->left));
-                ap4 = LookupLoadTemp(ap7, ap7);
+                ap4 = Optimizer::LookupLoadTemp(ap7, ap7);
                 if (ap4 != ap7)
                 {
                     ap4->bits = ap7->bits;
                     ap4->startbit = ap7->startbit;
                     ap7->bits = ap7->startbit = 0;
-                    gen_icode(Optimizer::i_assn, ap4, ap7, nullptr);
+                    Optimizer::gen_icode(Optimizer::i_assn, ap4, ap7, nullptr);
                 }
                 ap7 = gen_bit_mask(ap4);
             }
             ap1 = gen_expr(funcsp, RemoveAutoIncDec(node->left), 0, siz1);
-            ap5 = LookupLoadTemp(ap1, ap1);
+            ap5 = Optimizer::LookupLoadTemp(ap1, ap1);
             if (ap5 != ap1)
-                gen_icode(Optimizer::i_assn, ap5, ap1, nullptr);
+                Optimizer::gen_icode(Optimizer::i_assn, ap5, ap1, nullptr);
             ap2 = gen_expr(funcsp, node->right, 0, siz1);
             ap2 = LookupExpression(op, siz1, ap5, ap2);
             if (ap7)
             {
-                gen_icode(Optimizer::i_and, ap2, ap2, Optimizer::make_immed(-ISZ_UINT, (1 << m) - 1));
+                Optimizer::gen_icode(Optimizer::i_and, ap2, ap2, Optimizer::make_immed(-ISZ_UINT, (1 << m) - 1));
                 if (n)
-                    gen_icode(Optimizer::i_lsl, ap2, ap2, Optimizer::make_immed(-ISZ_UINT, n));
-                gen_icode(Optimizer::i_or, ap2, ap7, ap2);
+                    Optimizer::gen_icode(Optimizer::i_lsl, ap2, ap2, Optimizer::make_immed(-ISZ_UINT, n));
+                Optimizer::gen_icode(Optimizer::i_or, ap2, ap7, ap2);
             }
-            ap4 = LookupStoreTemp(ap6, ap6);
+            ap4 = Optimizer::LookupStoreTemp(ap6, ap6);
             if (ap4 != ap6)
             {
-                gen_icode(Optimizer::i_assn, ap4, ap2, nullptr);
-                gen_icode(Optimizer::i_assn, ap6, ap4, nullptr);
+                Optimizer::gen_icode(Optimizer::i_assn, ap4, ap2, nullptr);
+                Optimizer::gen_icode(Optimizer::i_assn, ap6, ap4, nullptr);
             }
             else
-                gen_icode(Optimizer::i_assn, ap6, ap2, nullptr);
+                Optimizer::gen_icode(Optimizer::i_assn, ap6, ap2, nullptr);
             return nullptr;
         }
         else if (flags & F_COMPARE)
         {
             ap1 = gen_expr(funcsp, RemoveAutoIncDec(node->left), 0, siz1);
-            ap5 = LookupLoadTemp(ap1, ap1);
+            ap5 = Optimizer::LookupLoadTemp(ap1, ap1);
             if (ap1 != ap5)
-                gen_icode(Optimizer::i_assn, ap5, ap1, nullptr);
+                Optimizer::gen_icode(Optimizer::i_assn, ap5, ap1, nullptr);
             if (Optimizer::architecture == ARCHITECTURE_MSIL)
             {
                 ap3 = gen_expr(funcsp, RemoveAutoIncDec(node->left), 0, siz1);
-                ap5 = LookupLoadTemp(ap3, ap3);
+                ap5 = Optimizer::LookupLoadTemp(ap3, ap3);
                 if (ap5 != ap3)
-                    gen_icode(Optimizer::i_assn, ap5, ap3, nullptr);
+                    Optimizer::gen_icode(Optimizer::i_assn, ap5, ap3, nullptr);
                 ap3 = ap1;
             }
             ncnode = node->left;
@@ -1456,51 +1456,51 @@ namespace Parser
                 m = ap6->bits;
                 ap6->bits = ap6->startbit = 0;
                 ap7 = gen_expr(funcsp, node->left, (flags & ~F_NOVALUE) | F_STORE, natural_size(node->left));
-                ap4 = LookupLoadTemp(ap7, ap7);
+                ap4 = Optimizer::LookupLoadTemp(ap7, ap7);
                 if (ap4 != ap7)
                 {
                     ap4->bits = ap7->bits;
                     ap4->startbit = ap7->startbit;
                     ap7->bits = ap7->startbit = 0;
-                    gen_icode(Optimizer::i_assn, ap4, ap7, nullptr);
+                    Optimizer::gen_icode(Optimizer::i_assn, ap4, ap7, nullptr);
                 }
                 ap7 = gen_bit_mask(ap4);
             }
             if (!(Optimizer::architecture == ARCHITECTURE_MSIL))
             {
                 ap3 = Optimizer::tempreg(siz1, 0);
-                gen_icode(Optimizer::i_assn, ap3, ap5, nullptr);
+                Optimizer::gen_icode(Optimizer::i_assn, ap3, ap5, nullptr);
                 Optimizer::intermed_tail->needsOCP = true;
             }
             ap1 = gen_expr(funcsp, RemoveAutoIncDec(node->left), 0, siz1);
-            ap5 = LookupLoadTemp(ap1, ap1);
+            ap5 = Optimizer::LookupLoadTemp(ap1, ap1);
             if (ap5 != ap1)
-                gen_icode(Optimizer::i_assn, ap5, ap1, nullptr);
+                Optimizer::gen_icode(Optimizer::i_assn, ap5, ap1, nullptr);
             ap2 = gen_expr(funcsp, node->right, 0, siz1);
             ap2 = LookupExpression(op, siz1, ap5, ap2);
             if (ap7)
             {
-                gen_icode(Optimizer::i_and, ap2, ap2, Optimizer::make_immed(-ISZ_UINT, (1 << m) - 1));
+                Optimizer::gen_icode(Optimizer::i_and, ap2, ap2, Optimizer::make_immed(-ISZ_UINT, (1 << m) - 1));
                 if (n)
-                    gen_icode(Optimizer::i_lsl, ap2, ap2, Optimizer::make_immed(-ISZ_UINT, n));
-                gen_icode(Optimizer::i_or, ap2, ap7, ap2);
+                    Optimizer::gen_icode(Optimizer::i_lsl, ap2, ap2, Optimizer::make_immed(-ISZ_UINT, n));
+                Optimizer::gen_icode(Optimizer::i_or, ap2, ap7, ap2);
             }
-            ap4 = LookupStoreTemp(ap6, ap6);
+            ap4 = Optimizer::LookupStoreTemp(ap6, ap6);
             if (ap4 != ap6)
             {
-                gen_icode(Optimizer::i_assn, ap4, ap2, nullptr);
-                gen_icode(Optimizer::i_assn, ap6, ap4, nullptr);
+                Optimizer::gen_icode(Optimizer::i_assn, ap4, ap2, nullptr);
+                Optimizer::gen_icode(Optimizer::i_assn, ap6, ap4, nullptr);
             }
             else
-                gen_icode(Optimizer::i_assn, ap6, ap2, nullptr);
+                Optimizer::gen_icode(Optimizer::i_assn, ap6, ap2, nullptr);
             return ap3;
         }
         else
         {
             ap1 = gen_expr(funcsp, RemoveAutoIncDec(node->left), 0, siz1);
-            ap5 = LookupLoadTemp(ap1, ap1);
+            ap5 = Optimizer::LookupLoadTemp(ap1, ap1);
             if (ap5 != ap1)
-                gen_icode(Optimizer::i_assn, ap5, ap1, nullptr);
+                Optimizer::gen_icode(Optimizer::i_assn, ap5, ap1, nullptr);
             l = (Optimizer::LIST*)Alloc(sizeof(Optimizer::LIST));
             l->data = (void*)node;
             if (!incdecList)
@@ -1578,7 +1578,7 @@ namespace Parser
                 rv = exp->v.sp->tp->size;
                 if (rv % Optimizer::chosenAssembler->arch->stackalign)
                     rv = rv + Optimizer::chosenAssembler->arch->stackalign - rv % Optimizer::chosenAssembler->arch->stackalign;
-                gen_icode(Optimizer::i_parmstack, ap = Optimizer::tempreg(ISZ_ADDR, 0), Optimizer::make_immed(ISZ_UINT, rv), nullptr);
+                Optimizer::gen_icode(Optimizer::i_parmstack, ap = Optimizer::tempreg(ISZ_ADDR, 0), Optimizer::make_immed(ISZ_UINT, rv), nullptr);
                 Optimizer::intermed_tail->vararg = vararg;
                 Optimizer::SymbolManager::Get(exp->v.sp)->imvalue = ap;
                 gen_expr(funcsp, ep, 0, ISZ_UINT);
@@ -1587,12 +1587,12 @@ namespace Parser
             {
                 temp = natural_size(ep);
                 ap3 = gen_expr(funcsp, ep, 0, temp);
-                ap = LookupLoadTemp(nullptr, ap3);
+                ap = Optimizer::LookupLoadTemp(nullptr, ap3);
                 if (ap != ap3)
-                    gen_icode(Optimizer::i_assn, ap, ap3, nullptr);
+                    Optimizer::gen_icode(Optimizer::i_assn, ap, ap3, nullptr);
                 if (ap->size == ISZ_NONE)
                     ap->size = temp;
-                gen_nodag(Optimizer::i_parm, 0, ap, 0);
+                Optimizer::gen_nodag(Optimizer::i_parm, 0, ap, 0);
                 Optimizer::intermed_tail->vararg = vararg;
                 Optimizer::intermed_tail->valist = valist && valist->type == en_l_p;
                 rv = Optimizer::sizeFromISZ(ap->size);
@@ -1616,7 +1616,7 @@ namespace Parser
                     break;
                 case en_imode:
                     ap = (Optimizer::IMODE*)ep->left;
-                    gen_nodag(Optimizer::i_parm, 0, ap, 0);
+                    Optimizer::gen_nodag(Optimizer::i_parm, 0, ap, 0);
                     Optimizer::intermed_tail->vararg = vararg;
                     Optimizer::intermed_tail->valist = valist && valist->type == en_l_p;
                     rv = Optimizer::sizeFromISZ(ap->size);
@@ -1631,12 +1631,12 @@ namespace Parser
                         ap3 = gen_expr(funcsp, ep, flags, temp);
                     if (ap3->bits > 0)
                         ap3 = gen_bit_load(ap3);
-                    ap = LookupLoadTemp(nullptr, ap3);
+                    ap = Optimizer::LookupLoadTemp(nullptr, ap3);
                     if (ap != ap3)
-                        gen_icode(Optimizer::i_assn, ap, ap3, nullptr);
+                        Optimizer::gen_icode(Optimizer::i_assn, ap, ap3, nullptr);
                     if (ap->size == ISZ_NONE)
                         ap->size = temp;
-                    gen_nodag(Optimizer::i_parm, 0, ap, 0);
+                    Optimizer::gen_nodag(Optimizer::i_parm, 0, ap, 0);
                     Optimizer::intermed_tail->vararg = vararg;
                     Optimizer::intermed_tail->valist = valist && valist->type == en_l_p;
                     rv = Optimizer::sizeFromISZ(ap->size);
@@ -1672,12 +1672,12 @@ namespace Parser
                     ap3 = ap;
                     ap3->mode = Optimizer::i_direct;
                 }
-                ap = LookupLoadTemp(nullptr, ap3);
+                ap = Optimizer::LookupLoadTemp(nullptr, ap3);
                 if (ap != ap3)
-                    gen_icode(Optimizer::i_assn, ap, ap3, nullptr);
+                    Optimizer::gen_icode(Optimizer::i_assn, ap, ap3, nullptr);
                 break;
         }
-        gen_nodag(Optimizer::i_parmblock, 0, ap, Optimizer::make_immed(ISZ_UINT, sz));
+        Optimizer::gen_nodag(Optimizer::i_parmblock, 0, ap, Optimizer::make_immed(ISZ_UINT, sz));
         Optimizer::intermed_tail->alttp = Optimizer::SymbolManager::Get(tp);
         Optimizer::intermed_tail->vararg = vararg;
         Optimizer::intermed_tail->valist = valist && valist->type == en_l_p;
@@ -1737,8 +1737,8 @@ namespace Parser
                 {
                     Optimizer::IMODE *ap4 = Optimizer::tempreg(-ISZ_UINT, 0), *ap3 = gen_expr(funcsp, exp1, 0, -ISZ_UINT);
                     ap3->size = ISZ_OBJECT;  // only time we will set the OBJECT size for an int constant is if it is to be an LDNULL
-                    gen_icode(Optimizer::i_assn, ap4, ap3, nullptr);
-                    gen_nodag(Optimizer::i_parm, 0, ap3, 0);
+                    Optimizer::gen_icode(Optimizer::i_assn, ap4, ap3, nullptr);
+                    Optimizer::gen_nodag(Optimizer::i_parm, 0, ap3, 0);
                     rv = 1;
                 }
                 else
@@ -1768,7 +1768,7 @@ namespace Parser
                 rv = ths->v.sp->tp->size;
                 if (rv % Optimizer::chosenAssembler->arch->stackalign)
                     rv = rv + Optimizer::chosenAssembler->arch->stackalign - rv % Optimizer::chosenAssembler->arch->stackalign;
-                gen_icode(Optimizer::i_parmstack, ap = Optimizer::tempreg(ISZ_ADDR, 0), Optimizer::make_immed(ISZ_UINT, rv), nullptr);
+                Optimizer::gen_icode(Optimizer::i_parmstack, ap = Optimizer::tempreg(ISZ_ADDR, 0), Optimizer::make_immed(ISZ_UINT, rv), nullptr);
                 Optimizer::intermed_tail->vararg = a->vararg;
                 Optimizer::SymbolManager::Get(ths->v.sp)->imvalue = ap;
                 gen_expr(funcsp, a->exp, 0, ISZ_UINT);
@@ -1776,7 +1776,7 @@ namespace Parser
             else
             {
                 Optimizer::IMODE* ap = gen_expr(funcsp, a->exp, 0, ISZ_ADDR);
-                gen_nodag(Optimizer::i_parm, 0, ap, 0);
+                Optimizer::gen_nodag(Optimizer::i_parm, 0, ap, 0);
                 Optimizer::intermed_tail->vararg = a->vararg;
                 Optimizer::intermed_tail->valist = a->valist ? (a->exp && a->exp->type == en_l_p) : 0;
                 rv = a->tp->size;
@@ -1853,7 +1853,7 @@ namespace Parser
         /* trap call */
         (void)funcsp;
         (void)flags;
-        gen_igosub(Optimizer::i_trap, Optimizer::make_immed(ISZ_UINT, node->v.i));
+        Optimizer::gen_igosub(Optimizer::i_trap, Optimizer::make_immed(ISZ_UINT, node->v.i));
         return 0;
     }
     Optimizer::IMODE* gen_stmt_from_expr(SYMBOL* funcsp, EXPRESSION* node, int flags)
@@ -2048,7 +2048,7 @@ namespace Parser
                 adjust += n;
                 push_nesting += n;
                 // make an instruction for adjustment.
-                gen_icode(Optimizer::i_substack, nullptr, Optimizer::make_immed(ISZ_UINT, n), nullptr);
+                Optimizer::gen_icode(Optimizer::i_substack, nullptr, Optimizer::make_immed(ISZ_UINT, n), nullptr);
             }
         }
         int cdeclare = stackblockOfs;
@@ -2071,19 +2071,19 @@ namespace Parser
                 int rv = exp->v.sp->tp->size;
                 if (rv % Optimizer::chosenAssembler->arch->stackalign)
                     rv = rv + Optimizer::chosenAssembler->arch->stackalign - rv % Optimizer::chosenAssembler->arch->stackalign;
-                gen_icode(Optimizer::i_parmstack, ap = Optimizer::tempreg(ISZ_ADDR, 0), Optimizer::make_immed(ISZ_UINT, rv), nullptr);
+                Optimizer::gen_icode(Optimizer::i_parmstack, ap = Optimizer::tempreg(ISZ_ADDR, 0), Optimizer::make_immed(ISZ_UINT, rv), nullptr);
                 Optimizer::SimpleSymbol* sym = Optimizer::SymbolManager::Get(exp->v.sp);
                 sym->imvalue = ap;
                 sym->offset = -rv + stackblockOfs;
-                cacheTempSymbol(Optimizer::SymbolManager::Get(exp->v.sp));
+                Optimizer::cacheTempSymbol(Optimizer::SymbolManager::Get(exp->v.sp));
                 genCdeclArgs(f->arguments, funcsp);
                 ap3 = gen_expr(funcsp, exp, 0, ISZ_UINT);
-                ap = LookupLoadTemp(nullptr, ap3);
+                ap = Optimizer::LookupLoadTemp(nullptr, ap3);
                 if (ap != ap3)
-                    gen_icode(Optimizer::i_assn, ap, ap3, nullptr);
+                    Optimizer::gen_icode(Optimizer::i_assn, ap, ap3, nullptr);
                 if (ap->size == ISZ_NONE)
                     ap->size = ISZ_ADDR;
-                gen_nodag(Optimizer::i_parm, 0, ap, 0);
+                Optimizer::gen_nodag(Optimizer::i_parm, 0, ap, 0);
             }
             else if (Optimizer::chosenAssembler->arch->preferopts & OPT_REVERSEPARAM)
             {
@@ -2122,7 +2122,7 @@ namespace Parser
                 }
             }
         }
-        gen_icode(Optimizer::i_tag, nullptr, nullptr, nullptr);
+        Optimizer::gen_icode(Optimizer::i_tag, nullptr, nullptr, nullptr);
         Optimizer::intermed_tail->beforeGosub = true;
         Optimizer::intermed_tail->ignoreMe = true;
         /* named function */
@@ -2134,7 +2134,7 @@ namespace Parser
                 xcexp->right->v.i = f->callLab;
                 gen_expr(funcsp, xcexp, F_NOVALUE, ISZ_ADDR);
             }
-            gosub = gen_igosub(node->type == en_intcall ? Optimizer::i_int : Optimizer::i_gosub, ap);
+            gosub = Optimizer::gen_igosub(node->type == en_intcall ? Optimizer::i_int : Optimizer::i_gosub, ap);
         }
         else
         {
@@ -2156,7 +2156,7 @@ namespace Parser
             else if (f->sp && f->sp->sb->attribs.inheritable.linkage2 == lk_import && f->sp->sb->storage_class != sc_virtual)
             {
                 Optimizer::IMODE* ap1 = ap;
-                gen_icode(Optimizer::i_assn, ap = Optimizer::tempreg(ISZ_ADDR, 0), ap1, 0);
+                Optimizer::gen_icode(Optimizer::i_assn, ap = Optimizer::tempreg(ISZ_ADDR, 0), ap1, 0);
                 ap1 = (Optimizer::IMODE*)(Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
                 *ap1 = *ap;
                 ap1->retval = false;
@@ -2169,7 +2169,7 @@ namespace Parser
                 xcexp->right->v.i = f->callLab;
                 gen_expr(funcsp, xcexp, F_NOVALUE, ISZ_ADDR);
             }
-            gosub = gen_igosub(type, ap);
+            gosub = Optimizer::gen_igosub(type, ap);
         }
         if (Optimizer::architecture == ARCHITECTURE_MSIL)
         {
@@ -2227,7 +2227,7 @@ namespace Parser
             }
             if (f->returnEXP && !managed)
                 n++;
-            gen_nodag(Optimizer::i_parmadj, 0, Optimizer::make_parmadj(n), Optimizer::make_parmadj(!isvoid(basetype(f->functp)->btp)));
+            Optimizer::gen_nodag(Optimizer::i_parmadj, 0, Optimizer::make_parmadj(n), Optimizer::make_parmadj(!isvoid(basetype(f->functp)->btp)));
         }
         else
         {
@@ -2238,9 +2238,9 @@ namespace Parser
             if (adjust2 < 0)
                 adjust2 = 0;
             if (f->sp->sb->attribs.inheritable.linkage != lk_stdcall && f->sp->sb->attribs.inheritable.linkage != lk_pascal)
-                gen_nodag(Optimizer::i_parmadj, 0, Optimizer::make_parmadj(adjust), Optimizer::make_parmadj(adjust));
+                Optimizer::gen_nodag(Optimizer::i_parmadj, 0, Optimizer::make_parmadj(adjust), Optimizer::make_parmadj(adjust));
             else
-                gen_nodag(Optimizer::i_parmadj, 0, Optimizer::make_parmadj(adjust2), Optimizer::make_parmadj(adjust));
+                Optimizer::gen_nodag(Optimizer::i_parmadj, 0, Optimizer::make_parmadj(adjust2), Optimizer::make_parmadj(adjust));
         }
 
         push_nesting -= adjust;
@@ -2264,7 +2264,7 @@ namespace Parser
                 }
                 ap = Optimizer::tempreg(ISZ_OBJECT, 0);
                 ap->retval = true;
-                gen_icode(Optimizer::i_assn, ap1, ap, 0);
+                Optimizer::gen_icode(Optimizer::i_assn, ap1, ap, 0);
                 ap = ap1;
             }
             else
@@ -2291,7 +2291,7 @@ namespace Parser
             ap1->offset->sp->tp = Optimizer::SymbolManager::Get(basetype(basetype(f->functp)->btp));
             ap = Optimizer::tempreg(ISZ_OBJECT, 0);
             ap->retval = true;
-            gen_icode(Optimizer::i_assn, ap1, ap, 0);
+            Optimizer::gen_icode(Optimizer::i_assn, ap1, ap, 0);
             ap = ap1;
         }
         else if (!(flags & F_NOVALUE) && isfunction(f->functp) && !isvoid(basetype(f->functp)->btp))
@@ -2303,14 +2303,14 @@ namespace Parser
                 int siz1 = sizeFromType(basetype(f->functp)->btp);
                 ap1 = Optimizer::tempreg(siz1, 0);
                 ap1->retval = true;
-                gen_icode(Optimizer::i_assn, ap = Optimizer::tempreg(siz1, 0), ap1, 0);
+                Optimizer::gen_icode(Optimizer::i_assn, ap = Optimizer::tempreg(siz1, 0), ap1, 0);
             }
             else
             {
                 Optimizer::IMODE* ap1;
                 ap1 = Optimizer::tempreg(ISZ_ADDR, 0);
                 ap1->retval = true;
-                gen_icode(Optimizer::i_assn, ap = Optimizer::tempreg(ISZ_ADDR, 0), ap1, 0);
+                Optimizer::gen_icode(Optimizer::i_assn, ap = Optimizer::tempreg(ISZ_ADDR, 0), ap1, 0);
             }
         }
         else
@@ -2321,7 +2321,7 @@ namespace Parser
         if (has_arg_destructors(f->arguments))
         {
             Optimizer::IMODE* ap1 = Optimizer::tempreg(ap->size, 0);
-            gen_icode(Optimizer::i_assn, ap1, ap, nullptr);
+            Optimizer::gen_icode(Optimizer::i_assn, ap1, ap, nullptr);
             ap = ap1;
         }
         gen_arg_destructors(funcsp, f->arguments);
@@ -2342,9 +2342,9 @@ namespace Parser
                 left = Optimizer::make_immed(ISZ_ADDR, ad->memoryOrder1->v.i);
                 barrier = Optimizer::tempreg(ISZ_ADDR, 0);
                 right = Optimizer::make_immed(ISZ_ADDR, ad->tp->size - ATOMIC_FLAG_SPACE);
-                gen_icode(Optimizer::i_add, barrier, addr, right);
+                Optimizer::gen_icode(Optimizer::i_add, barrier, addr, right);
             }
-            gen_icode(Optimizer::i_atomic_flag_fence, nullptr, left, barrier);
+            Optimizer::gen_icode(Optimizer::i_atomic_flag_fence, nullptr, left, barrier);
             return barrier;
         }
         else
@@ -2357,7 +2357,7 @@ namespace Parser
             {
                 left = Optimizer::make_immed(ISZ_UINT, ad->memoryOrder1->v.i);
             }
-            gen_icode(Optimizer::i_atomic_fence, nullptr, left, nullptr);
+            Optimizer::gen_icode(Optimizer::i_atomic_fence, nullptr, left, nullptr);
             return (Optimizer::IMODE*)-1;
         }
     }
@@ -2374,15 +2374,15 @@ namespace Parser
             case Optimizer::ao_init:
                 sz = sizeFromType(node->v.ad->tp);
                 av = gen_expr(funcsp, node->v.ad->address, 0, ISZ_ADDR);
-                left = indnode(av, sz);
+                left = Optimizer::indnode(av, sz);
                 right = gen_expr(funcsp, node->v.ad->value, 0, sz);
-                gen_icode(Optimizer::i_assn, left, right, nullptr);
+                Optimizer::gen_icode(Optimizer::i_assn, left, right, nullptr);
                 if (needsAtomicLockFromType(node->v.ad->tp))
                 {
                     Optimizer::IMODE* temp = Optimizer::tempreg(ISZ_ADDR, 0);
-                    gen_icode(Optimizer::i_add, temp, av, Optimizer::make_immed(ISZ_UINT, node->v.ad->tp->size - ATOMIC_FLAG_SPACE));
-                    temp = indnode(temp, ISZ_UINT);
-                    gen_icode(Optimizer::i_atomic_flag_clear, nullptr, Optimizer::make_immed(ISZ_UINT, Optimizer::mo_relaxed), temp);
+                    Optimizer::gen_icode(Optimizer::i_add, temp, av, Optimizer::make_immed(ISZ_UINT, node->v.ad->tp->size - ATOMIC_FLAG_SPACE));
+                    temp = Optimizer::indnode(temp, ISZ_UINT);
+                    Optimizer::gen_icode(Optimizer::i_atomic_flag_clear, nullptr, Optimizer::make_immed(ISZ_UINT, Optimizer::mo_relaxed), temp);
                 }
                 rv = right;
                 break;
@@ -2390,39 +2390,39 @@ namespace Parser
                 left = gen_expr(funcsp, node->v.ad->memoryOrder1, 0, ISZ_UINT);
                 right = gen_expr(funcsp, node->v.ad->flg, F_STORE, ISZ_UINT);
                 rv = Optimizer::tempreg(ISZ_UINT, 0);
-                gen_icode(Optimizer::i_atomic_flag_test_and_set, rv, left, right);
+                Optimizer::gen_icode(Optimizer::i_atomic_flag_test_and_set, rv, left, right);
                 Optimizer::intermed_tail->alwayslive = true;
                 break;
             case Optimizer::ao_flag_clear:
                 left = gen_expr(funcsp, node->v.ad->memoryOrder1, 0, ISZ_UINT);
                 right = gen_expr(funcsp, node->v.ad->flg, F_STORE, ISZ_UINT);
-                gen_icode(Optimizer::i_atomic_flag_clear, nullptr, left, right);
+                Optimizer::gen_icode(Optimizer::i_atomic_flag_clear, nullptr, left, right);
                 break;
             case Optimizer::ao_fence:
                 left = gen_expr(funcsp, node->v.ad->memoryOrder1, 0, ISZ_UINT);
-                gen_icode(Optimizer::i_atomic_fence, nullptr, left, nullptr);
+                Optimizer::gen_icode(Optimizer::i_atomic_fence, nullptr, left, nullptr);
                 break;
             case Optimizer::ao_load:
                 av = gen_expr(funcsp, node->v.ad->address, 0, ISZ_ADDR);
                 if (isstructured(node->v.ad->tp))
                 {
                     left = gen_expr(funcsp, node->v.ad->memoryOrder1, 0, ISZ_UINT);
-                    gen_icode(Optimizer::i_atomic_fence, nullptr, left, nullptr);
+                    Optimizer::gen_icode(Optimizer::i_atomic_fence, nullptr, left, nullptr);
                     EXPRESSION* exp = anonymousVar(sc_auto, node->v.ad->tp);
                     rv = (Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
                     rv->mode = Optimizer::i_immed;
                     rv->size = ISZ_ADDR;
                     rv->offset = Optimizer::SymbolManager::Get(exp);
                     barrier = gen_atomic_barrier(funcsp, node->v.ad, av, 0);
-                    gen_icode(Optimizer::i_assnblock, Optimizer::make_immed(ISZ_UINT, node->v.ad->tp->btp->size), rv, av);
+                    Optimizer::gen_icode(Optimizer::i_assnblock, Optimizer::make_immed(ISZ_UINT, node->v.ad->tp->btp->size), rv, av);
                     gen_atomic_barrier(funcsp, node->v.ad, av, barrier);
                 }
                 else
                 {
-                    left = indnode(av, sizeFromType(node->v.ad->tp));
+                    left = Optimizer::indnode(av, sizeFromType(node->v.ad->tp));
                     rv = Optimizer::tempreg(sizeFromType(node->v.ad->tp), 0);
                     barrier = gen_atomic_barrier(funcsp, node->v.ad, av, 0);
-                    gen_icode(Optimizer::i_assn, rv, left, nullptr);
+                    Optimizer::gen_icode(Optimizer::i_assn, rv, left, nullptr);
                     Optimizer::intermed_tail->atomic = true;
                     Optimizer::intermed_tail->alwayslive = true;
                     gen_atomic_barrier(funcsp, node->v.ad, av, barrier);
@@ -2432,10 +2432,10 @@ namespace Parser
                 if (isstructured(node->v.ad->tp))
                 {
                     left = gen_expr(funcsp, node->v.ad->memoryOrder1, 0, ISZ_UINT);
-                    gen_icode(Optimizer::i_atomic_fence, nullptr, left, nullptr);
+                    Optimizer::gen_icode(Optimizer::i_atomic_fence, nullptr, left, nullptr);
                     right = gen_expr(funcsp, node->v.ad->value, F_STORE, ISZ_ADDR);
                     av = gen_expr(funcsp, node->v.ad->address, 0, ISZ_ADDR);
-                    gen_icode(Optimizer::i_assnblock, Optimizer::make_immed(ISZ_UINT, node->v.ad->tp->btp->size), av, right);
+                    Optimizer::gen_icode(Optimizer::i_assnblock, Optimizer::make_immed(ISZ_UINT, node->v.ad->tp->btp->size), av, right);
                     rv = right;
                     barrier = gen_atomic_barrier(funcsp, node->v.ad, av, 0);
                     gen_atomic_barrier(funcsp, node->v.ad, av, barrier);
@@ -2445,8 +2445,8 @@ namespace Parser
                     sz = sizeFromType(node->v.ad->tp);
                     right = gen_expr(funcsp, node->v.ad->value, 0, sz);
                     av = gen_expr(funcsp, node->v.ad->address, 0, ISZ_ADDR);
-                    left = indnode(av, sz);
-                    gen_icode(Optimizer::i_assn, left, right, nullptr);
+                    left = Optimizer::indnode(av, sz);
+                    Optimizer::gen_icode(Optimizer::i_assn, left, right, nullptr);
                     barrier = gen_atomic_barrier(funcsp, node->v.ad, av, 0);
                     gen_atomic_barrier(funcsp, node->v.ad, av, barrier);
                     rv = right;
@@ -2456,7 +2456,7 @@ namespace Parser
                 if (isstructured(node->v.ad->tp))
                 {
                     left = gen_expr(funcsp, node->v.ad->memoryOrder1, 0, ISZ_UINT);
-                    gen_icode(Optimizer::i_atomic_fence, nullptr, left, nullptr);
+                    Optimizer::gen_icode(Optimizer::i_atomic_fence, nullptr, left, nullptr);
                     // presumed xchg
                     av = gen_expr(funcsp, node->v.ad->address, 0, ISZ_ADDR);
                     right = gen_expr(funcsp, node->v.ad->value, F_STORE, ISZ_ADDR);
@@ -2466,8 +2466,8 @@ namespace Parser
                     rv->mode = Optimizer::i_immed;
                     rv->size = ISZ_ADDR;
                     rv->offset = Optimizer::SymbolManager::Get(exp);
-                    gen_icode(Optimizer::i_assnblock, Optimizer::make_immed(ISZ_UINT, node->v.ad->tp->btp->size), rv, av);
-                    gen_icode(Optimizer::i_assnblock, Optimizer::make_immed(ISZ_UINT, node->v.ad->tp->btp->size), av, right);
+                    Optimizer::gen_icode(Optimizer::i_assnblock, Optimizer::make_immed(ISZ_UINT, node->v.ad->tp->btp->size), rv, av);
+                    Optimizer::gen_icode(Optimizer::i_assnblock, Optimizer::make_immed(ISZ_UINT, node->v.ad->tp->btp->size), av, right);
                     gen_atomic_barrier(funcsp, node->v.ad, av, barrier);
                 }
                 else
@@ -2496,28 +2496,28 @@ namespace Parser
                     }
                     sz = sizeFromType(node->v.ad->tp);
                     av = gen_expr(funcsp, node->v.ad->address, 0, ISZ_ADDR);
-                    left = indnode(av, sz);
+                    left = Optimizer::indnode(av, sz);
                     right = gen_expr(funcsp, node->v.ad->value, F_STORE, sz);
                     barrier = gen_atomic_barrier(funcsp, node->v.ad, av, 0);
                     rv = Optimizer::tempreg(sz, 0);
                     if (needsAtomicLockFromType(node->v.ad->tp))
                     {
                         Optimizer::IMODE* tv = Optimizer::tempreg(sz, 0);
-                        gen_icode(Optimizer::i_assn, rv, left, nullptr);
+                        Optimizer::gen_icode(Optimizer::i_assn, rv, left, nullptr);
                         if (op == Optimizer::i_xchg)
                         {
-                            gen_icode(Optimizer::i_assn, tv, right, nullptr);
+                            Optimizer::gen_icode(Optimizer::i_assn, tv, right, nullptr);
                         }
                         else
                         {
-                            gen_icode(Optimizer::i_assn, tv, rv, nullptr);
-                            gen_icode(op, tv, tv, right);
+                            Optimizer::gen_icode(Optimizer::i_assn, tv, rv, nullptr);
+                            Optimizer::gen_icode(op, tv, tv, right);
                         }
-                        gen_icode(Optimizer::i_assn, left, tv, nullptr);
+                        Optimizer::gen_icode(Optimizer::i_assn, left, tv, nullptr);
                     }
                     else
                     {
-                        gen_icode(op, rv, left, right);
+                        Optimizer::gen_icode(op, rv, left, right);
                         Optimizer::intermed_tail->atomic = true;
                         Optimizer::intermed_tail->alwayslive = true;
                     }
@@ -2526,7 +2526,7 @@ namespace Parser
                 break;
             case Optimizer::ao_cmpswp:
                 left = gen_expr(funcsp, node->v.ad->memoryOrder1, 0, ISZ_UINT);
-                gen_icode(Optimizer::i_atomic_fence, nullptr, left, nullptr);
+                Optimizer::gen_icode(Optimizer::i_atomic_fence, nullptr, left, nullptr);
                 if (isstructured(node->v.ad->tp))
                 {
 
@@ -2534,32 +2534,32 @@ namespace Parser
                     right = gen_expr(funcsp, node->v.ad->third, 0, ISZ_ADDR);
                     barrier = gen_atomic_barrier(funcsp, node->v.ad, av, 0);
                     rv = Optimizer::tempreg(ISZ_UINT, 0);
-                    gen_icode(Optimizer::i_assn, rv, Optimizer::make_immed(ISZ_UINT, 0), nullptr);
+                    Optimizer::gen_icode(Optimizer::i_assn, rv, Optimizer::make_immed(ISZ_UINT, 0), nullptr);
                     int labno = Optimizer::nextLabel++, labno2 = Optimizer::nextLabel++;
-                    gen_icgoto(Optimizer::i_cmpblock, labno, right, av);
+                    Optimizer::gen_icgoto(Optimizer::i_cmpblock, labno, right, av);
                     Optimizer::QUAD* q = Optimizer::intermed_tail;
                     while (q->dc.opcode != Optimizer::i_cmpblock)
                         q = q->back;
                     q->ans = Optimizer::make_immed(ISZ_UINT, node->v.ad->tp->btp->size);
                     left = gen_expr(funcsp, node->v.ad->value, F_VOL, ISZ_ADDR);
-                    gen_icode(Optimizer::i_assnblock, Optimizer::make_immed(ISZ_UINT, node->v.ad->tp->btp->size), av, left);
-                    gen_icode(Optimizer::i_assn, rv, Optimizer::make_immed(ISZ_UINT, 1), nullptr);
-                    gen_igoto(Optimizer::i_goto, labno2);
+                    Optimizer::gen_icode(Optimizer::i_assnblock, Optimizer::make_immed(ISZ_UINT, node->v.ad->tp->btp->size), av, left);
+                    Optimizer::gen_icode(Optimizer::i_assn, rv, Optimizer::make_immed(ISZ_UINT, 1), nullptr);
+                    Optimizer::gen_igoto(Optimizer::i_goto, labno2);
                     Optimizer::gen_label(labno);
-                    gen_icode(Optimizer::i_assnblock, Optimizer::make_immed(ISZ_UINT, node->v.ad->tp->btp->size), right, av);
-                    gen_icode(Optimizer::i_assn, rv, Optimizer::make_immed(ISZ_UINT, 0), nullptr);
+                    Optimizer::gen_icode(Optimizer::i_assnblock, Optimizer::make_immed(ISZ_UINT, node->v.ad->tp->btp->size), right, av);
+                    Optimizer::gen_icode(Optimizer::i_assn, rv, Optimizer::make_immed(ISZ_UINT, 0), nullptr);
                     Optimizer::gen_label(labno2);
                     gen_atomic_barrier(funcsp, node->v.ad, av, barrier);
                 }
                 else
                 {
                     left = gen_expr(funcsp, node->v.ad->memoryOrder1, 0, ISZ_UINT);
-                    gen_icode(Optimizer::i_atomic_fence, nullptr, left, nullptr);
+                    Optimizer::gen_icode(Optimizer::i_atomic_fence, nullptr, left, nullptr);
                     sz = sizeFromType(node->v.ad->tp);
                     av = gen_expr(funcsp, node->v.ad->address, 0, ISZ_ADDR);
-                    left = indnode(av, sz);
+                    left = Optimizer::indnode(av, sz);
                     right = gen_expr(funcsp, node->v.ad->third, 0, ISZ_ADDR);
-                    right = indnode(right, sz);
+                    right = Optimizer::indnode(right, sz);
                     rv = gen_expr(funcsp, node->v.ad->value, F_VOL, sz);
                     barrier = gen_atomic_barrier(funcsp, node->v.ad, av, 0);
                     if (needsAtomicLockFromType(node->v.ad->tp))
@@ -2567,31 +2567,31 @@ namespace Parser
                         Optimizer::IMODE* temp = Optimizer::tempreg(sz, 0);
                         Optimizer::IMODE* asnfrom = rv;
                         rv = Optimizer::tempreg(ISZ_UINT, 0);
-                        gen_icode(Optimizer::i_assn, temp, left, nullptr);
+                        Optimizer::gen_icode(Optimizer::i_assn, temp, left, nullptr);
                         int lbno = Optimizer::nextLabel++, lbno2 = Optimizer::nextLabel++;
                         ;
-                        gen_icode(Optimizer::i_sete, rv, temp, right);
-                        gen_icgoto(Optimizer::i_je, lbno, rv, Optimizer::make_immed(ISZ_UINT, 0));
-                        gen_icode(Optimizer::i_assn, temp, asnfrom, nullptr);
-                        gen_icode(Optimizer::i_assn, left, temp, nullptr);
-                        gen_igoto(Optimizer::i_goto, lbno2);
+                        Optimizer::gen_icode(Optimizer::i_sete, rv, temp, right);
+                        Optimizer::gen_icgoto(Optimizer::i_je, lbno, rv, Optimizer::make_immed(ISZ_UINT, 0));
+                        Optimizer::gen_icode(Optimizer::i_assn, temp, asnfrom, nullptr);
+                        Optimizer::gen_icode(Optimizer::i_assn, left, temp, nullptr);
+                        Optimizer::gen_igoto(Optimizer::i_goto, lbno2);
                         Optimizer::gen_label(lbno);
-                        gen_icode(Optimizer::i_assn, right, temp, nullptr);
+                        Optimizer::gen_icode(Optimizer::i_assn, right, temp, nullptr);
                         Optimizer::gen_label(lbno2);
                     }
                     else
                     {
-                        gen_icode(Optimizer::i_cmpswp, left, rv, right);
+                        Optimizer::gen_icode(Optimizer::i_cmpswp, left, rv, right);
                         rv = Optimizer::tempreg(ISZ_UINT, 0);
                         rv->retval = true;
                         av = Optimizer::tempreg(ISZ_UINT, 0);
-                        gen_icode(Optimizer::i_assn, av, rv, nullptr);
+                        Optimizer::gen_icode(Optimizer::i_assn, av, rv, nullptr);
                         rv = av;
                     }
                     gen_atomic_barrier(funcsp, node->v.ad, av, barrier);
                 }
                 left = gen_expr(funcsp, node->v.ad->memoryOrder2, 0, ISZ_UINT);
-                gen_icode(Optimizer::i_atomic_fence, nullptr, left, nullptr);
+                Optimizer::gen_icode(Optimizer::i_atomic_fence, nullptr, left, nullptr);
                 break;
         }
         return rv;
@@ -2632,11 +2632,11 @@ namespace Parser
                 {
                     q = gen_expr(funcsp, node, 0, ISZ_ADDR);
                     barrier = Optimizer::tempreg(ISZ_ADDR, 0);
-                    gen_icode(Optimizer::i_add, barrier, q, Optimizer::make_immed(ISZ_UINT, n));
+                    Optimizer::gen_icode(Optimizer::i_add, barrier, q, Optimizer::make_immed(ISZ_UINT, n));
                 }
                 if (!cur)
                 {
-                    gen_icode(Optimizer::i_atomic_flag_fence, nullptr, Optimizer::make_immed(ISZ_UINT, start ? afImmed : -afImmed), barrier);
+                    Optimizer::gen_icode(Optimizer::i_atomic_flag_fence, nullptr, Optimizer::make_immed(ISZ_UINT, start ? afImmed : -afImmed), barrier);
                 }
                 if (start)
                 {
@@ -2648,7 +2648,7 @@ namespace Parser
             }
             else
             {
-                gen_icode(Optimizer::i_atomic_fence, nullptr, Optimizer::make_immed(ISZ_UINT, start ? afImmed : -afImmed), nullptr);
+                Optimizer::gen_icode(Optimizer::i_atomic_fence, nullptr, Optimizer::make_immed(ISZ_UINT, start ? afImmed : -afImmed), nullptr);
                 barrier = (Optimizer::IMODE*)-1;
             }
         }
@@ -2704,7 +2704,7 @@ namespace Parser
                     case en__initblk:
                         break;
                     default:
-                        gen_nodag(Optimizer::i_expressiontag, 0, 0, 0);
+                        Optimizer::gen_nodag(Optimizer::i_expressiontag, 0, 0, 0);
                         Optimizer::intermed_tail->dc.v.label = 1;
                         Optimizer::intermed_tail->ignoreMe = true;
                         break;
@@ -2715,9 +2715,9 @@ namespace Parser
         {
             case en_shiftby:
                 ap3 = gen_expr(funcsp, node->left, flags, size);
-                ap1 = LookupLoadTemp(nullptr, ap3);
+                ap1 = Optimizer::LookupLoadTemp(nullptr, ap3);
                 if (ap1 != ap3)
-                    gen_icode(Optimizer::i_assn, ap1, ap3, nullptr);
+                    Optimizer::gen_icode(Optimizer::i_assn, ap1, ap3, nullptr);
                 rv = ap1;
                 break;
             case en_x_wc:
@@ -2816,9 +2816,9 @@ namespace Parser
                 siz1 = ISZ_ADDR;
             castjoin:
                 ap3 = gen_expr(funcsp, node->left, flags & ~F_NOVALUE, natural_size(node->left));
-                ap1 = LookupLoadTemp(nullptr, ap3);
+                ap1 = Optimizer::LookupLoadTemp(nullptr, ap3);
                 if (ap1 != ap3)
-                    gen_icode(Optimizer::i_assn, ap1, ap3, nullptr);
+                    Optimizer::gen_icode(Optimizer::i_assn, ap1, ap3, nullptr);
                 if (ap1->mode == Optimizer::i_immed)
                 {
                     if (isintconst(ap1->offset))
@@ -2842,9 +2842,9 @@ namespace Parser
                     ap2 = ap1;
                 else
                 {
-                    ap2 = LookupCastTemp(ap1, siz1);
-                    gen_icode(Optimizer::i_assn, ap2, ap1, nullptr);
-                    //                gen_icode(Optimizer::i_assn, ap2 = Optimizer::tempreg(siz1, 0), ap1, 0);
+                    ap2 = Optimizer::LookupCastTemp(ap1, siz1);
+                    Optimizer::gen_icode(Optimizer::i_assn, ap2, ap1, nullptr);
+                    //                Optimizer::gen_icode(Optimizer::i_assn, ap2 = Optimizer::tempreg(siz1, 0), ap1, 0);
                 }
                 if (ap2->offset)
                 {
@@ -2858,11 +2858,11 @@ namespace Parser
                 int i;
                 ap1 = gen_expr(funcsp, node->v.msilArray->base, 0, ISZ_ADDR);
                 ap1->msilObject = true;
-                gen_icode(Optimizer::i_parm, 0, ap1, 0);
+                Optimizer::gen_icode(Optimizer::i_parm, 0, ap1, 0);
                 for (i = 0; i < node->v.msilArray->count; i++)
                 {
                     ap1 = gen_expr(funcsp, node->v.msilArray->indices[i], 0, ISZ_ADDR);
-                    gen_icode(Optimizer::i_parm, 0, ap1, 0);
+                    Optimizer::gen_icode(Optimizer::i_parm, 0, ap1, 0);
                 }
                 if (!(flags & F_STORE))
                 {
@@ -2874,7 +2874,7 @@ namespace Parser
                     ap1->size = rv->size;
                     ap1->mode = Optimizer::i_immed;
                     ap1->offset = Optimizer::SymbolManager::Get(node);
-                    gen_icode(Optimizer::i_assn, rv, ap1, nullptr);
+                    Optimizer::gen_icode(Optimizer::i_assn, rv, ap1, nullptr);
                 }
                 else
                 {
@@ -2884,12 +2884,12 @@ namespace Parser
             }
             case en_substack:
                 ap1 = gen_expr(funcsp, node->left, 0, ISZ_UINT);
-                gen_icode(Optimizer::i_substack, ap2 = Optimizer::tempreg(ISZ_ADDR, 0), ap1, nullptr);
+                Optimizer::gen_icode(Optimizer::i_substack, ap2 = Optimizer::tempreg(ISZ_ADDR, 0), ap1, nullptr);
                 rv = ap2;
                 break;
             case en_alloca:
                 ap1 = gen_expr(funcsp, node->left, 0, ISZ_UINT);
-                gen_icode(Optimizer::i_substack, ap2 = Optimizer::tempreg(ISZ_ADDR, 0), ap1, nullptr);
+                Optimizer::gen_icode(Optimizer::i_substack, ap2 = Optimizer::tempreg(ISZ_ADDR, 0), ap1, nullptr);
                 rv = ap2;
                 break;
             case en__initblk:
@@ -2900,12 +2900,12 @@ namespace Parser
                 break;
             case en_loadstack:
                 ap1 = gen_expr(funcsp, node->left, 0, ISZ_ADDR);
-                gen_icode(Optimizer::i_loadstack, 0, ap1, 0);
+                Optimizer::gen_icode(Optimizer::i_loadstack, 0, ap1, 0);
                 rv = nullptr;
                 break;
             case en_savestack:
                 ap1 = gen_expr(funcsp, node->left, 0, ISZ_ADDR);
-                gen_icode(Optimizer::i_savestack, 0, ap1, 0);
+                Optimizer::gen_icode(Optimizer::i_savestack, 0, ap1, 0);
                 rv = nullptr;
                 break;
             case en_threadlocal:
@@ -2916,9 +2916,9 @@ namespace Parser
                 ap1->offset = exp;
                 ap1->size = size;
             }
-                ap2 = LookupLoadTemp(ap1, ap1);
+                ap2 = Optimizer::LookupLoadTemp(ap1, ap1);
                 if (ap1 != ap2)
-                    gen_icode(Optimizer::i_assn, ap2, ap1, nullptr);
+                    Optimizer::gen_icode(Optimizer::i_assn, ap2, ap1, nullptr);
                 rv = ap2;
                 sym = ap1->offset->sp;
                 sym->genreffed = true;
@@ -2969,10 +2969,10 @@ namespace Parser
                 }
                 if (isarray(node->v.sp->tp) && basetype(node->v.sp->tp)->msil && !store)
                     ap1->msilObject = true;
-                ap2 = LookupImmedTemp(ap1, ap1);
+                ap2 = Optimizer::LookupImmedTemp(ap1, ap1);
                 if (ap1 != ap2)
                 {
-                    gen_icode(Optimizer::i_assn, ap2, ap1, nullptr);
+                    Optimizer::gen_icode(Optimizer::i_assn, ap2, ap1, nullptr);
                     ap1 = ap2;
                 }
                 rv = ap1; /* return reg */
@@ -2984,10 +2984,10 @@ namespace Parser
                 ap1->offset = Optimizer::SymbolManager::Get(node);
                 ap1->mode = Optimizer::i_immed;
                 ap1->size = size;
-                ap2 = LookupImmedTemp(ap1, ap1);
+                ap2 = Optimizer::LookupImmedTemp(ap1, ap1);
                 if (ap1 != ap2)
                 {
-                    gen_icode(Optimizer::i_assn, ap2, ap1, nullptr);
+                    Optimizer::gen_icode(Optimizer::i_assn, ap2, ap1, nullptr);
                     ap1 = ap2;
                 }
                 rv = ap1; /* return reg */
@@ -3014,10 +3014,10 @@ namespace Parser
                     ap1->offset->type = Optimizer::se_i;
                 }
                 ap1->offset->unionoffset = node->unionoffset;
-                ap2 = LookupImmedTemp(ap1, ap1);
+                ap2 = Optimizer::LookupImmedTemp(ap1, ap1);
                 if (ap1 != ap2)
                 {
-                    gen_icode(Optimizer::i_assn, ap2, ap1, nullptr);
+                    Optimizer::gen_icode(Optimizer::i_assn, ap2, ap1, nullptr);
                     ap1 = ap2;
                 }
                 rv = ap1;
@@ -3043,10 +3043,10 @@ namespace Parser
                     ap1->offset->type = Optimizer::se_ui;
                 }
                 ap1->offset->unionoffset = node->unionoffset;
-                ap2 = LookupImmedTemp(ap1, ap1);
+                ap2 = Optimizer::LookupImmedTemp(ap1, ap1);
                 if (ap1 != ap2)
                 {
-                    gen_icode(Optimizer::i_assn, ap2, ap1, nullptr);
+                    Optimizer::gen_icode(Optimizer::i_assn, ap2, ap1, nullptr);
                     ap1 = ap2;
                 }
                 rv = ap1;
@@ -3071,10 +3071,10 @@ namespace Parser
                     ap1 = Optimizer::make_immed(size, a);
                 }
                 ap1->offset->type = Optimizer::se_f;
-                ap2 = LookupImmedTemp(ap1, ap1);
+                ap2 = Optimizer::LookupImmedTemp(ap1, ap1);
                 if (ap1 != ap2)
                 {
-                    gen_icode(Optimizer::i_assn, ap2, ap1, nullptr);
+                    Optimizer::gen_icode(Optimizer::i_assn, ap2, ap1, nullptr);
                     ap1 = ap2;
                 }
                 rv = ap1;
@@ -3092,10 +3092,10 @@ namespace Parser
                     ap1 = Optimizer::make_immed(size, a);
                 }
                 ap1->offset->type = Optimizer::se_fi;
-                ap2 = LookupImmedTemp(ap1, ap1);
+                ap2 = Optimizer::LookupImmedTemp(ap1, ap1);
                 if (ap1 != ap2)
                 {
-                    gen_icode(Optimizer::i_assn, ap2, ap1, nullptr);
+                    Optimizer::gen_icode(Optimizer::i_assn, ap2, ap1, nullptr);
                     ap1 = ap2;
                 }
                 rv = ap1;
@@ -3120,10 +3120,10 @@ namespace Parser
                     default:
                         break;
                 }
-                ap2 = LookupImmedTemp(ap1, ap1);
+                ap2 = Optimizer::LookupImmedTemp(ap1, ap1);
                 if (ap1 != ap2)
                 {
-                    gen_icode(Optimizer::i_assn, ap2, ap1, nullptr);
+                    Optimizer::gen_icode(Optimizer::i_assn, ap2, ap1, nullptr);
                     ap1 = ap2;
                 }
                 rv = ap1;
@@ -3170,9 +3170,9 @@ namespace Parser
             case en_bits:
                 size = natural_size(node->left);
                 ap3 = gen_expr(funcsp, node->left, 0, size);
-                ap1 = LookupLoadTemp(nullptr, ap3);
+                ap1 = Optimizer::LookupLoadTemp(nullptr, ap3);
                 if (ap1 != ap3)
-                    gen_icode(Optimizer::i_assn, ap1, ap3, nullptr);
+                    Optimizer::gen_icode(Optimizer::i_assn, ap1, ap3, nullptr);
                 ap1 = make_bf(node, ap1, size);
                 rv = ap1;
                 break;
@@ -3328,7 +3328,7 @@ namespace Parser
                     //                if (!aa1->offset || aa1->mode != Optimizer::i_direct || aa1->offset->type != en_tempref)
                     {
                         aa2 = Optimizer::tempreg(aa1->size, 0);
-                        gen_icode(Optimizer::i_assn, aa2, aa1, nullptr);
+                        Optimizer::gen_icode(Optimizer::i_assn, aa2, aa1, nullptr);
                     }
                     aa1 = (Optimizer::IMODE*)(Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
                     aa1->offset = Optimizer::SymbolManager::Get(node->right);
@@ -3353,9 +3353,9 @@ namespace Parser
                 gen_void(node->left->right, funcsp);
                 Optimizer::gen_label(lab0);
                 ap3 = gen_expr(funcsp, node->right, 0, ISZ_UINT);
-                ap1 = LookupLoadTemp(nullptr, ap3);
+                ap1 = Optimizer::LookupLoadTemp(nullptr, ap3);
                 if (ap1 != ap3)
-                    gen_icode(Optimizer::i_assn, ap1, ap3, nullptr);
+                    Optimizer::gen_icode(Optimizer::i_assn, ap1, ap3, nullptr);
                 rv = ap1;
                 break;
             case en_trapcall:
@@ -3405,7 +3405,7 @@ namespace Parser
                     case en__initblk:
                         break;
                     default:
-                        gen_nodag(Optimizer::i_expressiontag, 0, 0, 0);
+                        Optimizer::gen_nodag(Optimizer::i_expressiontag, 0, 0, 0);
                         Optimizer::intermed_tail->dc.v.label = 0;
                         Optimizer::intermed_tail->ignoreMe = true;
                         break;
@@ -3716,14 +3716,14 @@ namespace Parser
             ap3 = gen_expr(funcsp, node->left, F_COMPARE | F_OBJECT, size);
         else
             ap3 = gen_expr(funcsp, node->right, F_COMPARE | F_OBJECT, size);
-        ap2 = LookupLoadTemp(nullptr, ap3);
+        ap2 = Optimizer::LookupLoadTemp(nullptr, ap3);
         if (ap2 != ap3)
         {
             //        if (node->right->isatomic)
             //        {
             //            barrier = doatomicFence(funcsp, nullptr, node->right, nullptr);
             //        }
-            gen_icode(Optimizer::i_assn, ap2, ap3, nullptr);
+            Optimizer::gen_icode(Optimizer::i_assn, ap2, ap3, nullptr);
             //        if (node->right->isatomic)
             //        {
             //            doatomicFence(funcsp, nullptr, node->right, barrier);
@@ -3733,14 +3733,14 @@ namespace Parser
             ap3 = gen_expr(funcsp, node->right, F_COMPARE, size);
         else
             ap3 = gen_expr(funcsp, node->left, F_COMPARE, size);
-        ap1 = LookupLoadTemp(nullptr, ap3);
+        ap1 = Optimizer::LookupLoadTemp(nullptr, ap3);
         if (ap1 != ap3)
         {
             //        if (node->left->isatomic)
             //        {
             //            barrier = doatomicFence(funcsp, nullptr, node->left, nullptr);
             //        }
-            gen_icode(Optimizer::i_assn, ap1, ap3, nullptr);
+            Optimizer::gen_icode(Optimizer::i_assn, ap1, ap3, nullptr);
             //        if (node->left->isatomic)
             //        {
             //            doatomicFence(funcsp, nullptr, node->left, barrier);
@@ -3752,22 +3752,22 @@ namespace Parser
             if (ap1->mode != Optimizer::i_immed)
             {
                 ap3 = Optimizer::tempreg(ap1->size, 0);
-                gen_icode(Optimizer::i_assn, ap3, ap1, nullptr);
+                Optimizer::gen_icode(Optimizer::i_assn, ap3, ap1, nullptr);
                 ap1 = ap3;
             }
             if (ap2->mode != Optimizer::i_immed)
             {
                 ap3 = Optimizer::tempreg(ap2->size, 0);
-                gen_icode(Optimizer::i_assn, ap3, ap2, nullptr);
+                Optimizer::gen_icode(Optimizer::i_assn, ap3, ap2, nullptr);
                 ap2 = ap3;
             }
             DumpIncDec(funcsp);
             DumpLogicalDestructors(node, funcsp);
         }
         if (Optimizer::chosenAssembler->arch->preferopts & OPT_REVERSESTORE)
-            gen_icgoto(btype, label, ap2, ap1);
+            Optimizer::gen_icgoto(btype, label, ap2, ap1);
         else
-            gen_icgoto(btype, label, ap1, ap2);
+            Optimizer::gen_icgoto(btype, label, ap1, ap2);
     }
 
     /*-------------------------------------------------------------------------*/
@@ -3783,15 +3783,15 @@ namespace Parser
         else
             size = siz0;
         ap3 = gen_expr(funcsp, node->left, 0, size);
-        ap1 = LookupLoadTemp(nullptr, ap3);
+        ap1 = Optimizer::LookupLoadTemp(nullptr, ap3);
         if (ap1 != ap3)
-            gen_icode(Optimizer::i_assn, ap1, ap3, nullptr);
+            Optimizer::gen_icode(Optimizer::i_assn, ap1, ap3, nullptr);
         ap3 = gen_expr(funcsp, node->right, 0, size);
-        ap2 = LookupLoadTemp(nullptr, ap3);
+        ap2 = Optimizer::LookupLoadTemp(nullptr, ap3);
         if (ap2 != ap3)
-            gen_icode(Optimizer::i_assn, ap2, ap3, nullptr);
+            Optimizer::gen_icode(Optimizer::i_assn, ap2, ap3, nullptr);
         ap3 = Optimizer::tempreg(ISZ_UINT, 0);
-        gen_icode(btype, ap3, ap1, ap2);
+        Optimizer::gen_icode(btype, ap3, ap1, ap2);
 
         return ap3;
     }
@@ -3803,12 +3803,12 @@ namespace Parser
         Optimizer::IMODE *ap1, *ap2, *ap3;
         int size = natural_size(node);
         ap3 = gen_expr(funcsp, node->left, 0, size);
-        ap1 = LookupLoadTemp(nullptr, ap3);
+        ap1 = Optimizer::LookupLoadTemp(nullptr, ap3);
         if (ap1 != ap3)
-            gen_icode(Optimizer::i_assn, ap1, ap3, nullptr);
+            Optimizer::gen_icode(Optimizer::i_assn, ap1, ap3, nullptr);
         ap2 = Optimizer::make_immed(ap1->size, 0);
         ap3 = Optimizer::tempreg(ISZ_UINT, 0);
-        gen_icode(Optimizer::i_sete, ap3, ap2, ap1);
+        Optimizer::gen_icode(Optimizer::i_sete, ap3, ap2, ap1);
         return ap3;
     }
 
@@ -3863,12 +3863,12 @@ namespace Parser
                 lab1 = Optimizer::nextLabel++;
                 truejp(node, funcsp, lab0);
                 ap3 = Optimizer::make_immed(ISZ_UINT, 0);
-                gen_icode(Optimizer::i_assn, ap1, ap3, nullptr);
+                Optimizer::gen_icode(Optimizer::i_assn, ap1, ap3, nullptr);
                 Optimizer::intermed_tail->hook = true;
-                gen_igoto(Optimizer::i_goto, lab1);
+                Optimizer::gen_igoto(Optimizer::i_goto, lab1);
                 Optimizer::gen_label(lab0);
                 ap3 = Optimizer::make_immed(ISZ_UINT, 1);
-                gen_icode(Optimizer::i_assn, ap1, ap3, nullptr);
+                Optimizer::gen_icode(Optimizer::i_assn, ap1, ap3, nullptr);
                 Optimizer::intermed_tail->hook = true;
                 Optimizer::gen_label(lab1);
                 break;
@@ -3896,11 +3896,11 @@ namespace Parser
             ap1->offset->sp->pushedtotemp = true;  // don't lazily optimize this temp...
             lab1 = Optimizer::nextLabel++, lab2 = Optimizer::nextLabel++;
             truejp(node, funcsp, lab1);
-            gen_iiconst(ap1, 0);
+            Optimizer::gen_iiconst(ap1, 0);
             Optimizer::intermed_tail->hook = true;
-            gen_igoto(Optimizer::i_goto, lab2);
+            Optimizer::gen_igoto(Optimizer::i_goto, lab2);
             Optimizer::gen_label(lab1);
-            gen_iiconst(ap1, 1);
+            Optimizer::gen_iiconst(ap1, 1);
             Optimizer::intermed_tail->hook = true;
             Optimizer::gen_label(lab2);
         }
@@ -3972,23 +3972,23 @@ namespace Parser
                 siz2 = getSize(bt_int);
                 ap2 = gen_expr(funcsp, node->left, 0, ISZ_UINT);
                 ap3 = Optimizer::tempreg(ISZ_UINT, 0);
-                gen_icode(Optimizer::i_assn, ap3, ap2, 0);
+                Optimizer::gen_icode(Optimizer::i_assn, ap3, ap2, 0);
                 ap2 = gen_expr(funcsp, node->right, 0, ISZ_UINT);
                 ap1 = Optimizer::tempreg(ISZ_UINT, 0);
-                gen_icode(Optimizer::i_assn, ap1, ap2, 0);
+                Optimizer::gen_icode(Optimizer::i_assn, ap1, ap2, 0);
                 DumpIncDec(funcsp);
                 DumpLogicalDestructors(node, funcsp);
                 for (i = 0; i < siz1 / siz2 - 1; i++)
                 {
-                    ap4 = indnode(ap3, ap3->size);
-                    ap2 = indnode(ap1, ap1->size);
-                    gen_icgoto(Optimizer::i_jne, lab0, ap4, ap2);
-                    gen_icode(Optimizer::i_add, ap3, ap3, Optimizer::make_immed(ap3->size, siz2));
-                    gen_icode(Optimizer::i_add, ap1, ap1, Optimizer::make_immed(ap3->size, siz2));
+                    ap4 = Optimizer::indnode(ap3, ap3->size);
+                    ap2 = Optimizer::indnode(ap1, ap1->size);
+                    Optimizer::gen_icgoto(Optimizer::i_jne, lab0, ap4, ap2);
+                    Optimizer::gen_icode(Optimizer::i_add, ap3, ap3, Optimizer::make_immed(ap3->size, siz2));
+                    Optimizer::gen_icode(Optimizer::i_add, ap1, ap1, Optimizer::make_immed(ap3->size, siz2));
                 }
-                ap4 = indnode(ap3, ap3->size);
-                ap2 = indnode(ap1, ap1->size);
-                gen_icgoto(Optimizer::i_je, label, ap4, ap2);
+                ap4 = Optimizer::indnode(ap3, ap3->size);
+                ap2 = Optimizer::indnode(ap1, ap1->size);
+                Optimizer::gen_icgoto(Optimizer::i_je, label, ap4, ap2);
                 Optimizer::gen_label(lab0);
                 break;
             case en_mp_as_bool:
@@ -3996,26 +3996,26 @@ namespace Parser
                 siz2 = getSize(bt_int);
                 ap2 = gen_expr(funcsp, node->left, F_ADDR, ISZ_UINT);
                 ap3 = Optimizer::tempreg(ISZ_UINT, 0);
-                gen_icode(Optimizer::i_assn, ap3, ap2, 0);
+                Optimizer::gen_icode(Optimizer::i_assn, ap3, ap2, 0);
                 DumpIncDec(funcsp);
                 DumpLogicalDestructors(node, funcsp);
                 for (i = 0; i < siz1 / siz2; i++)
                 {
-                    ap2 = indnode(ap3, ap3->size);
-                    gen_icgoto(Optimizer::i_jne, label, ap2, Optimizer::make_immed(ap3->size, 0));
+                    ap2 = Optimizer::indnode(ap3, ap3->size);
+                    Optimizer::gen_icgoto(Optimizer::i_jne, label, ap2, Optimizer::make_immed(ap3->size, 0));
                     if (i < siz1 / siz2 - 1)
-                        gen_icode(Optimizer::i_add, ap3, ap3, Optimizer::make_immed(ap3->size, siz2));
+                        Optimizer::gen_icode(Optimizer::i_add, ap3, ap3, Optimizer::make_immed(ap3->size, siz2));
                 }
                 break;
             default:
                 siz1 = natural_size(node);
                 ap3 = gen_expr(funcsp, node, F_COMPARE, siz1);
-                ap1 = LookupLoadTemp(nullptr, ap3);
+                ap1 = Optimizer::LookupLoadTemp(nullptr, ap3);
                 if (ap1 != ap3)
-                    gen_icode(Optimizer::i_assn, ap1, ap3, nullptr);
+                    Optimizer::gen_icode(Optimizer::i_assn, ap1, ap3, nullptr);
                 DumpIncDec(funcsp);
                 DumpLogicalDestructors(node, funcsp);
-                gen_icgoto(Optimizer::i_jne, label, ap1, Optimizer::make_immed(ap1->size, 0));
+                Optimizer::gen_icgoto(Optimizer::i_jne, label, ap1, Optimizer::make_immed(ap1->size, 0));
                 break;
         }
     }
@@ -4084,21 +4084,21 @@ namespace Parser
                 siz2 = getSize(bt_int);
                 ap2 = gen_expr(funcsp, node->left, 0, ISZ_UINT);
                 ap3 = Optimizer::tempreg(ISZ_UINT, 0);
-                gen_icode(Optimizer::i_assn, ap3, ap2, 0);
+                Optimizer::gen_icode(Optimizer::i_assn, ap3, ap2, 0);
                 ap2 = gen_expr(funcsp, node->right, 0, ISZ_UINT);
                 ap1 = Optimizer::tempreg(ISZ_UINT, 0);
-                gen_icode(Optimizer::i_assn, ap1, ap2, 0);
+                Optimizer::gen_icode(Optimizer::i_assn, ap1, ap2, 0);
                 DumpIncDec(funcsp);
                 DumpLogicalDestructors(node, funcsp);
                 for (i = 0; i < siz1 / siz2; i++)
                 {
-                    ap4 = indnode(ap3, ap3->size);
-                    ap2 = indnode(ap1, ap1->size);
-                    gen_icgoto(Optimizer::i_jne, label, ap4, ap2);
+                    ap4 = Optimizer::indnode(ap3, ap3->size);
+                    ap2 = Optimizer::indnode(ap1, ap1->size);
+                    Optimizer::gen_icgoto(Optimizer::i_jne, label, ap4, ap2);
                     if (i < siz1 / siz2 - 1)
                     {
-                        gen_icode(Optimizer::i_add, ap3, ap3, Optimizer::make_immed(ap3->size, siz2));
-                        gen_icode(Optimizer::i_add, ap1, ap1, Optimizer::make_immed(ap3->size, siz2));
+                        Optimizer::gen_icode(Optimizer::i_add, ap3, ap3, Optimizer::make_immed(ap3->size, siz2));
+                        Optimizer::gen_icode(Optimizer::i_add, ap1, ap1, Optimizer::make_immed(ap3->size, siz2));
                     }
                 }
                 break;
@@ -4108,27 +4108,27 @@ namespace Parser
                 siz2 = getSize(bt_int);
                 ap2 = gen_expr(funcsp, node->left, F_ADDR, ISZ_UINT);
                 ap3 = Optimizer::tempreg(ISZ_UINT, 0);
-                gen_icode(Optimizer::i_assn, ap3, ap2, 0);
+                Optimizer::gen_icode(Optimizer::i_assn, ap3, ap2, 0);
                 DumpIncDec(funcsp);
                 DumpLogicalDestructors(node, funcsp);
                 for (i = 0; i < siz1 / siz2 - 1; i++)
                 {
-                    ap2 = indnode(ap3, ap3->size);
-                    gen_icgoto(Optimizer::i_jne, lab0, ap2, Optimizer::make_immed(ap3->size, 0));
-                    gen_icode(Optimizer::i_add, ap3, ap3, Optimizer::make_immed(ap3->size, siz2));
+                    ap2 = Optimizer::indnode(ap3, ap3->size);
+                    Optimizer::gen_icgoto(Optimizer::i_jne, lab0, ap2, Optimizer::make_immed(ap3->size, 0));
+                    Optimizer::gen_icode(Optimizer::i_add, ap3, ap3, Optimizer::make_immed(ap3->size, siz2));
                 }
-                gen_icgoto(Optimizer::i_je, label, ap2, Optimizer::make_immed(ap3->size, 0));
+                Optimizer::gen_icgoto(Optimizer::i_je, label, ap2, Optimizer::make_immed(ap3->size, 0));
                 Optimizer::gen_label(lab0);
                 break;
             default:
                 siz1 = natural_size(node);
                 ap3 = gen_expr(funcsp, node, F_COMPARE, siz1);
-                ap = LookupLoadTemp(nullptr, ap3);
+                ap = Optimizer::LookupLoadTemp(nullptr, ap3);
                 if (ap != ap3)
-                    gen_icode(Optimizer::i_assn, ap, ap3, nullptr);
+                    Optimizer::gen_icode(Optimizer::i_assn, ap, ap3, nullptr);
                 DumpIncDec(funcsp);
                 DumpLogicalDestructors(node, funcsp);
-                gen_icgoto(Optimizer::i_je, label, ap, Optimizer::make_immed(ap->size, 0));
+                Optimizer::gen_icgoto(Optimizer::i_je, label, ap, Optimizer::make_immed(ap->size, 0));
                 break;
         }
     }

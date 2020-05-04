@@ -118,13 +118,13 @@ namespace Parser
                     inlinesym_thisptr[inlinesym_count] = dest;
                     idest = gen_expr(funcsp, dest, F_STORE, natural_size(dest));
                     src = gen_expr(funcsp, thisptr, 0, natural_size(thisptr));
-                    ap1 = LookupLoadTemp(nullptr, src);
+                    ap1 = Optimizer::LookupLoadTemp(nullptr, src);
                     if (ap1 != src)
                     {
-                        gen_icode(Optimizer::i_assn, ap1, src, nullptr);
+                        Optimizer::gen_icode(Optimizer::i_assn, ap1, src, nullptr);
                         src = ap1;
                     }
-                    gen_icode(Optimizer::i_assn, idest, src, nullptr);
+                    Optimizer::gen_icode(Optimizer::i_assn, idest, src, nullptr);
                 }
             }
             else if (inlinesym_count)
@@ -181,13 +181,13 @@ namespace Parser
                     Optimizer::SymbolManager::Get(sym)->paramSubstitute = dest;
                     idest = gen_expr(funcsp, dest, F_STORE, natural_size(dest));
                     src = gen_expr(funcsp, args->exp, 0, natural_size(args->exp));
-                    ap1 = LookupLoadTemp(nullptr, src);
+                    ap1 = Optimizer::LookupLoadTemp(nullptr, src);
                     if (ap1 != src)
                     {
-                        gen_icode(Optimizer::i_assn, ap1, src, nullptr);
+                        Optimizer::gen_icode(Optimizer::i_assn, ap1, src, nullptr);
                         src = ap1;
                     }
-                    gen_icode(Optimizer::i_assn, idest, src, nullptr);
+                    Optimizer::gen_icode(Optimizer::i_assn, idest, src, nullptr);
                 }
                 args = args->next;
                 hr = hr->next;
@@ -436,9 +436,9 @@ namespace Parser
         genstmt(f->sp->sb->inlineFunc.stmt->lower, f->sp);
         if (f->sp->sb->inlineFunc.stmt->blockTail)
         {
-            gen_icode(Optimizer::i_functailstart, 0, 0, 0);
+            Optimizer::gen_icode(Optimizer::i_functailstart, 0, 0, 0);
             genstmt(f->sp->sb->inlineFunc.stmt->blockTail, funcsp);
-            gen_icode(Optimizer::i_functailend, 0, 0, 0);
+            Optimizer::gen_icode(Optimizer::i_functailend, 0, 0, 0);
         }
         genreturn(0, f->sp, 1, 0, nullptr);
         ap3 = returnImode;

@@ -139,7 +139,7 @@ namespace Parser
                         thunks[count].name = localsp = makeID(sc_static, &stdfunc, nullptr, litlate(buf));
                         localsp->sb->decoratedName = localsp->name;
                         localsp->sb->attribs.inheritable.linkage = lk_virtual;
-                        genref(Optimizer::SymbolManager::Get(localsp), 0);
+                        Optimizer::genref(Optimizer::SymbolManager::Get(localsp), 0);
                         InsertInline(localsp);
                         count++;
                     }
@@ -149,11 +149,11 @@ namespace Parser
                         {
                             EXPRESSION* exp = varNode(en_pc, vf->func);
                             thunkForImportTable(&exp);
-                            genref(Optimizer::SymbolManager::Get(exp->v.sp), 0);
+                            Optimizer::genref(Optimizer::SymbolManager::Get(exp->v.sp), 0);
                         }
                         else
                         {
-                            genref(Optimizer::SymbolManager::Get(vf->func), 0);
+                            Optimizer::genref(Optimizer::SymbolManager::Get(vf->func), 0);
                         }
                     }
                     vf = vf->next;
@@ -175,13 +175,13 @@ namespace Parser
         int count = 0;
 
         Optimizer::dseg();
-        gen_virtual(Optimizer::SymbolManager::Get(sym->sb->vtabsp), true);
+        Optimizer::gen_virtual(Optimizer::SymbolManager::Get(sym->sb->vtabsp), true);
         if (xtSym)
-            genref(Optimizer::SymbolManager::Get(xtSym), 0);
+            Optimizer::genref(Optimizer::SymbolManager::Get(xtSym), 0);
         else
             Optimizer::genaddress(0);
         count = dumpVTabEntries(count, thunks, sym, sym->sb->vtabEntries);
-        gen_endvirtual(Optimizer::SymbolManager::Get(sym->sb->vtabsp));
+        Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(sym->sb->vtabsp));
 
         if (count)
         {
@@ -189,9 +189,9 @@ namespace Parser
             Optimizer::cseg();
             for (i = 0; i < count; i++)
             {
-                gen_virtual(Optimizer::SymbolManager::Get(thunks[i].name), false);
-                gen_vtt(-(int)thunks[i].entry->dataOffset, Optimizer::SymbolManager::Get(thunks[i].func), Optimizer::SymbolManager::Get(thunks[i].name));
-                gen_endvirtual(Optimizer::SymbolManager::Get(thunks[i].name));
+                Optimizer::gen_virtual(Optimizer::SymbolManager::Get(thunks[i].name), false);
+                Optimizer::gen_vtt(-(int)thunks[i].entry->dataOffset, Optimizer::SymbolManager::Get(thunks[i].func), Optimizer::SymbolManager::Get(thunks[i].name));
+                Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(thunks[i].name));
             }
         }
     #endif

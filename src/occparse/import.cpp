@@ -117,7 +117,7 @@ namespace Parser
 #endif
     }
 #else
-    void AddType(SimpleSymbol* sym, Type* type);
+    void AddType(Optimizer::SimpleSymbol* sym, Type* type);
 #endif
 
 }

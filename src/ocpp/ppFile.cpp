@@ -25,6 +25,7 @@
 #include "ppFile.h"
 bool ppFile::GetLine(std::string& line)
 {
+    instr = 0;
     line = "";
     while (true)
     {
@@ -72,7 +73,6 @@ bool ppFile::GetLine(std::string& line)
 int ppFile::StripComment(char* line)
 {
     char *s = line, *e = s;
-    char instr = 0;
     while (*e)
     {
         if (!instr)

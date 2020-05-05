@@ -46,6 +46,7 @@ public:
         errlineno(0),
         decoratedName(cache(GetErrorName(fullname, Name))),
         inComment(false),
+        instr(false),
         commentLine(0),
         endedWithoutEOL(false),
         streamid(-1),
@@ -95,6 +96,7 @@ public:
 
   protected:
     bool inComment;
+    char instr;
     int commentLine;
     int lineno;
     int errlineno;

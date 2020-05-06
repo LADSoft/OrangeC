@@ -3588,7 +3588,7 @@ namespace Parser
         int oldCodeLabel = codeLabel;
         int oldMatchReturnTypes = matchReturnTypes;
         bool oldHasFuncCall = hasFuncCall;
-        NAMESPACEVALUELIST *oldGlobal = globalNameSpace;
+        Optimizer::LIST *oldGlobal = globalNameSpace->valueData->usingDirectives;
         hasFuncCall = false;
         funcNesting++;
         funcLevel++;
@@ -3711,7 +3711,7 @@ namespace Parser
     #endif
         handleInlines(funcsp);
 
-        globalNameSpace = oldGlobal;
+        globalNameSpace->valueData->usingDirectives = oldGlobal;
         hasFuncCall = oldHasFuncCall;
         declareAndInitialize = oldDeclareAndInitialize;
         theCurrentFunc = oldtheCurrentFunc;

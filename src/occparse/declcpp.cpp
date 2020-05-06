@@ -2902,12 +2902,14 @@ namespace Parser
                         {
                             Optimizer::LIST* l = (Optimizer::LIST*)Alloc(sizeof(Optimizer::LIST));
                             l->data = sp;
+                            /*
                             if (storage_class == sc_auto)
                             {
                                 l->next = localNameSpace->valueData->usingDirectives;
                                 localNameSpace->valueData->usingDirectives = l;
                             }
                             else
+                            */
                             {
                                 l->next = globalNameSpace->valueData->usingDirectives;
                                 globalNameSpace->valueData->usingDirectives = l;

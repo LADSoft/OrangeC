@@ -22,8 +22,8 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
  */
-void * operator new(std::size_t n) throw(std::bad_alloc);
-void operator delete(void * p) throw();
+//void * operator new(std::size_t n) throw(std::bad_alloc);
+//void operator delete(void * p) throw();
 namespace occx86
 {
     extern int segAligns[Optimizer::MAX_SEGS];

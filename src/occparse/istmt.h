@@ -40,8 +40,6 @@ namespace Parser
     Optimizer::IMODE* set_symbol(const char* name, int isproc);
     Optimizer::IMODE* call_library(const char* lib_name, int size);
     void SubProfilerData(void);
-    void count_cases(CASEDATA* cd, struct cases* cs);
-    void gather_cases(CASEDATA* cd, struct cases* cs);
     int gcs_compare(void const* left, void const* right);
     void genxswitch(STATEMENT* stmt, SYMBOL* funcsp);
     void genselect(STATEMENT* stmt, SYMBOL* funcsp, bool jmptrue);

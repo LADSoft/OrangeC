@@ -231,7 +231,7 @@ namespace Parser
                                 dropStructureDeclaration();
                                 dropStructureDeclaration();
                             }
-                            gen_virtual(Optimizer::SymbolManager::Get(sym), true);
+                            Optimizer::gen_virtual(Optimizer::SymbolManager::Get(sym), true);
                             if (sym->sb->init)
                             {
                                 if (isstructured(sym->tp) || isarray(sym->tp))
@@ -249,7 +249,7 @@ namespace Parser
                             {
                                 Optimizer::genstorage(basetype(sym->tp)->size);
                             }
-                            gen_endvirtual(Optimizer::SymbolManager::Get(sym));
+                            Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(sym));
                         }
                     }
                     else
@@ -263,7 +263,7 @@ namespace Parser
                             else
                             {
                                 inInsert(sym);
-                                gen_virtual(Optimizer::SymbolManager::Get(sym), true);
+                                Optimizer::gen_virtual(Optimizer::SymbolManager::Get(sym), true);
                                 if (sym->sb->init)
                                 {
                                     if (isstructured(sym->tp) || isarray(sym->tp))
@@ -279,7 +279,7 @@ namespace Parser
                                 }
                                 else
                                     Optimizer::genstorage(basetype(sym->tp)->size);
-                                gen_endvirtual(Optimizer::SymbolManager::Get(sym));
+                                Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(sym));
                             }
                         }
                     }
@@ -295,9 +295,9 @@ namespace Parser
         Optimizer::LIST* l = importThunks;
         while (l)
         {
-            gen_virtual(Optimizer::SymbolManager::Get((SYMBOL*)l->data), false);
-            gen_importThunk(Optimizer::SymbolManager::Get(((SYMBOL*)l->data)->sb->mainsym));
-            gen_endvirtual(Optimizer::SymbolManager::Get((SYMBOL*)l->data));
+            Optimizer::gen_virtual(Optimizer::SymbolManager::Get((SYMBOL*)l->data), false);
+            Optimizer::gen_importThunk(Optimizer::SymbolManager::Get(((SYMBOL*)l->data)->sb->mainsym));
+            Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get((SYMBOL*)l->data));
             l = l->next;
         }
     #endif
@@ -310,9 +310,9 @@ namespace Parser
         hr = vc1Thunks->table[0];
         while (hr)
         {
-            gen_virtual(Optimizer::SymbolManager::Get(hr->p), false);
-            gen_vc1(Optimizer::SymbolManager::Get(hr->p));
-            gen_endvirtual(Optimizer::SymbolManager::Get(hr->p));
+            Optimizer::gen_virtual(Optimizer::SymbolManager::Get(hr->p), false);
+            Optimizer::gen_vc1(Optimizer::SymbolManager::Get(hr->p));
+            Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(hr->p));
             hr = hr->next;
         }
     #endif

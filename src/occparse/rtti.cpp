@@ -284,10 +284,10 @@ namespace Parser
         }
 
         Optimizer::cseg();
-        gen_virtual(Optimizer::SymbolManager::Get(xtSym), false);
+        Optimizer::gen_virtual(Optimizer::SymbolManager::Get(xtSym), false);
         if (sym)
         {
-            genref(Optimizer::SymbolManager::Get(sym), 0);
+            Optimizer::genref(Optimizer::SymbolManager::Get(sym), 0);
         }
         else
         {
@@ -390,8 +390,8 @@ namespace Parser
                         char name[4096];
                         RTTIGetName(name, tp);
                         xtSym = search(name, rttiSyms);
-                        genint(flags);
-                        genref(xtSym , 0);
+                        Optimizer::genint(flags);
+                        Optimizer::genref(xtSym , 0);
                         genint(member->sb->offset);
                     }
                     */
@@ -406,28 +406,28 @@ namespace Parser
         RTTIDumpHeader(xtSym, tp, XD_CL_PRIMARY);
         DumpEnclosedStructs(tp, false);
         Optimizer::genint(0);
-        gen_endvirtual(Optimizer::SymbolManager::Get(xtSym));
+        Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(xtSym));
     }
     static void RTTIDumpArray(SYMBOL* xtSym, TYPE* tp)
     {
         RTTIDumpHeader(xtSym, tp, XD_ARRAY | getSize(bt_int));
         Optimizer::genint(tp->size / (tp->btp->size));
-        gen_endvirtual(Optimizer::SymbolManager::Get(xtSym));
+        Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(xtSym));
     }
     static void RTTIDumpPointer(SYMBOL* xtSym, TYPE* tp)
     {
         RTTIDumpHeader(xtSym, tp, XD_POINTER);
-        gen_endvirtual(Optimizer::SymbolManager::Get(xtSym));
+        Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(xtSym));
     }
     static void RTTIDumpRef(SYMBOL* xtSym, TYPE* tp)
     {
         RTTIDumpHeader(xtSym, tp, XD_REF);
-        gen_endvirtual(Optimizer::SymbolManager::Get(xtSym));
+        Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(xtSym));
     }
     static void RTTIDumpArithmetic(SYMBOL* xtSym, TYPE* tp)
     {
         RTTIDumpHeader(xtSym, tp, 0);
-        gen_endvirtual(Optimizer::SymbolManager::Get(xtSym));
+        Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(xtSym));
     }
 #endif
     SYMBOL* RTTIDumpType(TYPE* tp)
@@ -820,7 +820,7 @@ namespace Parser
             xcSym->sb->attribs.inheritable.linkage = lk_virtual;
             xcSym->sb->decoratedName = xcSym->name;
             Optimizer::cseg();
-            gen_virtual(Optimizer::SymbolManager::Get(xcSym), false);
+            Optimizer::gen_virtual(Optimizer::SymbolManager::Get(xcSym), false);
             switch (funcsp->sb->xcMode)
             {
             case xc_none:
@@ -835,14 +835,14 @@ namespace Parser
                 Optimizer::genint(XD_DYNAMICXC);
                 for (i = 0; i < count; i++)
                 {
-                    genref(Optimizer::SymbolManager::Get(list[i]), 0);
+                    Optimizer::genref(Optimizer::SymbolManager::Get(list[i]), 0);
                 }
                 Optimizer::genint(0);
                 break;
             case xc_unspecified:
                 break;
             }
-            gen_endvirtual(Optimizer::SymbolManager::Get(xcSym));
+            Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(xcSym));
         }
         return xcSym;
     }
@@ -931,16 +931,16 @@ namespace Parser
                 p = p->next;
             }
             throwSym = DumpXCSpecifiers(funcsp);
-            gen_virtual(Optimizer::SymbolManager::Get(funcsp->sb->xc->xclab), false);
+            Optimizer::gen_virtual(Optimizer::SymbolManager::Get(funcsp->sb->xc->xclab), false);
             if (throwSym)
             {
-                genref(Optimizer::SymbolManager::Get(throwSym), 0);
+                Optimizer::genref(Optimizer::SymbolManager::Get(throwSym), 0);
             }
             else
             {
                 Optimizer::genaddress(0);
             }
-            gen_autoref(Optimizer::SymbolManager::Get(funcsp->sb->xc->xctab), 0);
+            Optimizer::gen_autoref(Optimizer::SymbolManager::Get(funcsp->sb->xc->xctab), 0);
             //        genint(funcsp->sb->xc->xctab->sb->offset);
             p = list;
             while (p)
@@ -950,7 +950,7 @@ namespace Parser
                     Optimizer::genint(XD_CL_TRYBLOCK);
                     if (p->xtSym)
                     {
-                        genref(Optimizer::SymbolManager::Get(p->xtSym), 0);
+                        Optimizer::genref(Optimizer::SymbolManager::Get(p->xtSym), 0);
                     }
                     else
                     {
@@ -1003,7 +1003,7 @@ namespace Parser
                 p = p->next;
             }
             Optimizer::genint(0);
-            gen_endvirtual(Optimizer::SymbolManager::Get(funcsp->sb->xc->xclab));
+            Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(funcsp->sb->xc->xclab));
         }
     }
 #endif

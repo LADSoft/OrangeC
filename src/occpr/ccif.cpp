@@ -36,6 +36,8 @@
 
 using namespace Parser;
 
+Optimizer::SimpleSymbol* currentFunction;
+
 namespace Parser
 {
     extern PreProcessor* preProcessor;
@@ -44,7 +46,6 @@ namespace Parser
 namespace CompletionCompiler
 {
 
-    Optimizer::SimpleSymbol* currentFunction;
 
     typedef struct
     {

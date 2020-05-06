@@ -233,7 +233,7 @@ namespace Parser
                 else
                 {
                     s = search(starts.first.c_str(), s->tp->syms);
-                    gensrref(Optimizer::SymbolManager::Get(s), starts.second->prio, STARTUP_TYPE_STARTUP);
+                    Optimizer::gensrref(Optimizer::SymbolManager::Get(s), starts.second->prio, STARTUP_TYPE_STARTUP);
                     s->sb->attribs.inheritable.used = true;
                 }
             }
@@ -254,7 +254,7 @@ namespace Parser
                 else
                 {
                     s = search(starts.first.c_str(), s->tp->syms);
-                    gensrref(Optimizer::SymbolManager::Get(s), starts.second->prio, STARTUP_TYPE_RUNDOWN);
+                    Optimizer::gensrref(Optimizer::SymbolManager::Get(s), starts.second->prio, STARTUP_TYPE_RUNDOWN);
                     s->sb->attribs.inheritable.used = true;
                 }
             }
@@ -421,7 +421,7 @@ namespace Parser
                     Optimizer::startupseg();
                 else
                     Optimizer::rundownseg();
-                gensrref(Optimizer::SymbolManager::Get(funcsp), 32 + preProcessor->GetCppPrio(), startupType);
+                Optimizer::gensrref(Optimizer::SymbolManager::Get(funcsp), 32 + preProcessor->GetCppPrio(), startupType);
             }
         }
     #endif
@@ -530,7 +530,7 @@ namespace Parser
             genfunc(funcsp, true);
             startlab = retlab = 0;
             Optimizer::tlsstartupseg();
-            gensrref(Optimizer::SymbolManager::Get(funcsp), 32, STARTUP_TYPE_TLS_STARTUP);
+            Optimizer::gensrref(Optimizer::SymbolManager::Get(funcsp), 32, STARTUP_TYPE_TLS_STARTUP);
         }
     #endif
     }
@@ -598,7 +598,7 @@ namespace Parser
             genfunc(funcsp, true);
             startlab = retlab = 0;
             Optimizer::tlsrundownseg();
-            gensrref(Optimizer::SymbolManager::Get(funcsp), 32, STARTUP_TYPE_TLS_RUNDOWN);
+            Optimizer::gensrref(Optimizer::SymbolManager::Get(funcsp), 32, STARTUP_TYPE_TLS_RUNDOWN);
         }
     #endif
     }
@@ -649,7 +649,7 @@ namespace Parser
                     genned = getvc1Thunk(sym->sb->vtaboffset);
                 else
                     genned = sym;
-                genref(Optimizer::SymbolManager::Get(genned), 0);
+                Optimizer::genref(Optimizer::SymbolManager::Get(genned), 0);
                 if (exp->type == en_add)
                 {
                     if (exp->left->type == en_l_p)

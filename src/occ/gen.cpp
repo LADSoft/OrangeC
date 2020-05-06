@@ -350,11 +350,11 @@ namespace occx86
     void oa_gen_vc1(Optimizer::SimpleSymbol* func)
     {
         AMODE* ofs = makedreg(EAX);
-        ofs->offset = simpleIntNode(Optimizer::se_i, 0);
+        ofs->offset = Optimizer::simpleIntNode(Optimizer::se_i, 0);
         ofs->mode = am_indisp;
         gen_code(op_mov, makedreg(EAX), makedreg(ECX));
         gen_code(op_mov, makedreg(EAX), ofs);
-        ofs->offset = simpleIntNode(Optimizer::se_i, func->offset);
+        ofs->offset = Optimizer::simpleIntNode(Optimizer::se_i, func->offset);
         gen_code(op_jmp, ofs, NULL);
         flush_peep(NULL, NULL);
     }
@@ -374,7 +374,7 @@ namespace occx86
         AMODE* apt;
         if (isintconst(ap->offset))
         {
-            api->offset = simpleExpressionNode(Optimizer::se_f, 0, 0); /* defaults to zero. 0 */
+            api->offset = Optimizer::simpleExpressionNode(Optimizer::se_f, 0, 0); /* defaults to zero. 0 */
             api->offset->sp->sizeFromType = ISZ_DOUBLE;
         }
         else
@@ -384,13 +384,13 @@ namespace occx86
                 case ISZ_FLOAT:
                 case ISZ_DOUBLE:
                 case ISZ_LDOUBLE:
-                    api->offset = simpleExpressionNode(Optimizer::se_f, 0, 0); /* defaults to zero. 0 */
+                    api->offset = Optimizer::simpleExpressionNode(Optimizer::se_f, 0, 0); /* defaults to zero. 0 */
                     api->offset->sizeFromType = ap->offset->sizeFromType;
                     break;
                 case ISZ_IFLOAT:
                 case ISZ_IDOUBLE:
                 case ISZ_ILDOUBLE:
-                    api->offset = simpleExpressionNode(Optimizer::se_fi, 0, 0); /* defaults to zero. 0 */
+                    api->offset = Optimizer::simpleExpressionNode(Optimizer::se_fi, 0, 0); /* defaults to zero. 0 */
                     api->offset->sizeFromType = ap->offset->sizeFromType;
                     apt = api;
                     api = ap;
@@ -399,7 +399,7 @@ namespace occx86
                 case ISZ_CFLOAT:
                 case ISZ_CDOUBLE:
                 case ISZ_CLDOUBLE:
-                    api->offset = simpleExpressionNode(Optimizer::se_fi, 0, 0); /* defaults to zero. 0 */
+                    api->offset = Optimizer::simpleExpressionNode(Optimizer::se_fi, 0, 0); /* defaults to zero. 0 */
                     api->offset->f = ap->offset->c.i;
                     api->offset->sizeFromType = ap->offset->sizeFromType;
                     ap->offset->type = Optimizer::se_f;
@@ -465,7 +465,7 @@ namespace occx86
             lbl = makedreg(reg);
             gen_code(op_mov, lbl, ap1);
             lbl->mode = am_indisp;
-            lbl->offset = simpleIntNode(Optimizer::se_i, 0);
+            lbl->offset = Optimizer::simpleIntNode(Optimizer::se_i, 0);
             lbl->length = 0;
             if (!pushed)
                 reg = -1;
@@ -521,7 +521,7 @@ namespace occx86
             zerolabel = makedreg(reg);
             gen_code(op_mov, zerolabel, ap1);
             zerolabel->mode = am_indisp;
-            zerolabel->offset = simpleIntNode(Optimizer::se_i, 0);
+            zerolabel->offset = Optimizer::simpleIntNode(Optimizer::se_i, 0);
         }
         return zerolabel;
     }
@@ -622,7 +622,7 @@ namespace occx86
         {
             AMODE* temp = setSymbol("__TLSINITSTART");
             temp->mode = am_immed;
-            temp->offset = simpleExpressionNode(Optimizer::se_sub, im->offset, temp->offset);
+            temp->offset = Optimizer::simpleExpressionNode(Optimizer::se_sub, im->offset, temp->offset);
             gen_code(op_push, temp, 0);
             callLibrary("___tlsaddr", 0);
             *apl = (AMODE*)beLocalAlloc(sizeof(AMODE));
@@ -659,7 +659,7 @@ namespace occx86
                 }
             }
             (*apl)->scale = im->scale;
-            (*apl)->offset = im->offset3 ? im->offset3 : simpleIntNode(Optimizer::se_i, 0);
+            (*apl)->offset = im->offset3 ? im->offset3 : Optimizer::simpleIntNode(Optimizer::se_i, 0);
             if (im->size < ISZ_FLOAT)
                 (*apl)->length = im->size;
             if (im->offset3)
@@ -703,7 +703,7 @@ namespace occx86
             {
                 *aph = (AMODE*)beLocalAlloc(sizeof(AMODE));
                 **aph = **apl;
-                (*aph)->offset = simpleExpressionNode(Optimizer::se_add, (*apl)->offset, simpleIntNode(Optimizer::se_i, imaginary_offset(im->size)));
+                (*aph)->offset = Optimizer::simpleExpressionNode(Optimizer::se_add, (*apl)->offset, Optimizer::simpleIntNode(Optimizer::se_i, imaginary_offset(im->size)));
                 if ((*apl)->preg >= 0)
                     (*apl)->liveRegs |= 1 << (*apl)->preg;
                 if ((*apl)->sreg >= 0)
@@ -713,7 +713,7 @@ namespace occx86
             {
                 *aph = (AMODE*)beLocalAlloc(sizeof(AMODE));
                 **aph = **apl;
-                (*aph)->offset = simpleExpressionNode(Optimizer::se_add, (*apl)->offset, simpleIntNode(Optimizer::se_i, 4));
+                (*aph)->offset = Optimizer::simpleExpressionNode(Optimizer::se_add, (*apl)->offset, Optimizer::simpleIntNode(Optimizer::se_i, 4));
                 if ((*apl)->preg >= 0)
                     (*apl)->liveRegs |= 1 << (*apl)->preg;
                 if ((*apl)->sreg >= 0)
@@ -844,7 +844,7 @@ namespace occx86
                     {
                         *apl = make_offset(im->offset);
                         *aph = make_offset(im->offset);
-                        (*aph)->offset = simpleExpressionNode(Optimizer::se_add, (*aph)->offset, simpleIntNode(Optimizer::se_i, imaginary_offset(im->size)));
+                        (*aph)->offset = Optimizer::simpleExpressionNode(Optimizer::se_add, (*aph)->offset, Optimizer::simpleIntNode(Optimizer::se_i, imaginary_offset(im->size)));
                     }
                 }
                 else if (im->offset->type == Optimizer::se_tempref && !im->offset->right)
@@ -873,7 +873,7 @@ namespace occx86
                 {
                     *apl = make_offset(im->offset);
                     *aph = copy_addr(*apl);
-                    (*aph)->offset = simpleExpressionNode(Optimizer::se_add, (*aph)->offset, simpleIntNode(Optimizer::se_i, 4));
+                    (*aph)->offset = Optimizer::simpleExpressionNode(Optimizer::se_add, (*aph)->offset, Optimizer::simpleIntNode(Optimizer::se_i, 4));
                 }
             }
             else if (im->offset->type == Optimizer::se_tempref)
@@ -1806,7 +1806,7 @@ namespace occx86
         lnode->i = tablab;
         if (bottom)
         {
-            lnode = simpleExpressionNode(Optimizer::se_add, lnode, simpleIntNode(Optimizer::se_i, -bottom * 4));
+            lnode = Optimizer::simpleExpressionNode(Optimizer::se_add, lnode, Optimizer::simpleIntNode(Optimizer::se_i, -bottom * 4));
         }
         ap = (AMODE*)beLocalAlloc(sizeof(AMODE));
         ap->mode = am_indispscale;
@@ -1921,20 +1921,20 @@ namespace occx86
             gen_code(op_lea, makedreg(EAX), aprl);
             aprl = makedreg(EAX);
             aprl->mode = am_indisp;
-            aprl->offset = simpleIntNode(Optimizer::se_i, 0);
+            aprl->offset = Optimizer::simpleIntNode(Optimizer::se_i, 0);
             aprh = makedreg(EAX);
             aprh->mode = am_indisp;
-            aprh->offset = simpleIntNode(Optimizer::se_i, 4);
+            aprh->offset = Optimizer::simpleIntNode(Optimizer::se_i, 4);
         }
         if (apll->mode == am_indispscale || (apll->mode == am_indisp && apll->preg != EBP && apll->preg != ESP))
         {
             gen_code(op_lea, makedreg(EBP), apll);
             apll = makedreg(EBP);
             apll->mode = am_indisp;
-            apll->offset = simpleIntNode(Optimizer::se_i, 0);
+            apll->offset = Optimizer::simpleIntNode(Optimizer::se_i, 0);
             aplh = makedreg(EBP);
             aplh->mode = am_indisp;
-            aplh->offset = simpleIntNode(Optimizer::se_i, 4);
+            aplh->offset = Optimizer::simpleIntNode(Optimizer::se_i, 4);
         }
         if (high == op_cmpxchg8b)
         {
@@ -2077,7 +2077,7 @@ namespace occx86
                 gen_code(op_lea, makedreg(EBP), apll);
                 apll = makedreg(EBP);
                 apll->mode = am_indisp;
-                apll->offset = simpleIntNode(Optimizer::se_i, 0);
+                apll->offset = Optimizer::simpleIntNode(Optimizer::se_i, 0);
             }
             if (apal->liveRegs & (1 << apal->preg))
             {
@@ -2149,7 +2149,7 @@ namespace occx86
                 gen_code(op_lea, makedreg(EBP), apll);
                 apll = makedreg(EBP);
                 apll->mode = am_indisp;
-                apll->offset = simpleIntNode(Optimizer::se_i, 0);
+                apll->offset = Optimizer::simpleIntNode(Optimizer::se_i, 0);
             }
             if (apal->liveRegs & (1 << apal->preg))
             {
@@ -2330,7 +2330,7 @@ namespace occx86
                 if (q->dc.left->mode == Optimizer::i_ind)
                 {
                     ap->mode = am_indisp;
-                    ap->offset = simpleIntNode(Optimizer::se_i, 0);
+                    ap->offset = Optimizer::simpleIntNode(Optimizer::se_i, 0);
                 }
             }
             else
@@ -2365,10 +2365,10 @@ namespace occx86
                 else
                 {
                     if (sz == 8)
-                        gen_codes(op_push, ISZ_UINT, make_offset(simpleExpressionNode(Optimizer::se_add, aph->offset, simpleIntNode(Optimizer::se_i, 4))), NULL);
+                        gen_codes(op_push, ISZ_UINT, make_offset(Optimizer::simpleExpressionNode(Optimizer::se_add, aph->offset, Optimizer::simpleIntNode(Optimizer::se_i, 4))), NULL);
                     gen_codes(op_push, ISZ_UINT, aph, NULL);
                     if (sz == 8)
-                        gen_codes(op_push, ISZ_UINT, make_offset(simpleExpressionNode(Optimizer::se_add, apl->offset, simpleIntNode(Optimizer::se_i, 4))), NULL);
+                        gen_codes(op_push, ISZ_UINT, make_offset(Optimizer::simpleExpressionNode(Optimizer::se_add, apl->offset, Optimizer::simpleIntNode(Optimizer::se_i, 4))), NULL);
                     gen_codes(op_push, ISZ_UINT, apl, NULL);
                 }
             }
@@ -2389,7 +2389,7 @@ namespace occx86
                 else
                 {
                     if (sz == 8)
-                        gen_codes(op_push, ISZ_UINT, make_offset(simpleExpressionNode(Optimizer::se_add, apl->offset, simpleIntNode(Optimizer::se_i, 4))), NULL);
+                        gen_codes(op_push, ISZ_UINT, make_offset(Optimizer::simpleExpressionNode(Optimizer::se_add, apl->offset, Optimizer::simpleIntNode(Optimizer::se_i, 4))), NULL);
                     gen_codes(op_push, ISZ_UINT, apl, NULL);
                 }
             }
@@ -2561,7 +2561,7 @@ namespace occx86
             while (n > 0)
             {
                 n -= 4;
-                apl->offset = simpleExpressionNode(Optimizer::se_add, ofs, simpleIntNode(Optimizer::se_i, n));
+                apl->offset = Optimizer::simpleExpressionNode(Optimizer::se_add, ofs, Optimizer::simpleIntNode(Optimizer::se_i, n));
                 gen_codes(op_push, ISZ_UINT, apl, 0);
                 pushlevel += 4;
             }
@@ -3581,7 +3581,7 @@ namespace occx86
         }
         else if (q->dc.opcode == Optimizer::i_fcon)
         {
-            Optimizer::SimpleExpression* node = simpleExpressionNode(Optimizer::se_f, 0, 0);
+            Optimizer::SimpleExpression* node = Optimizer::simpleExpressionNode(Optimizer::se_f, 0, 0);
             node->sizeFromType = ISZ_LDOUBLE;
             node->f = q->dc.v.f;
             apl = (AMODE*)beLocalAlloc(sizeof(AMODE));
@@ -3626,10 +3626,10 @@ namespace occx86
                     gen_code(op_lea, makedreg(EBP), apl);
                     apl = makedreg(EBP);
                     apl->mode = am_indisp;
-                    apl->offset = simpleIntNode(Optimizer::se_i, 0);
+                    apl->offset = Optimizer::simpleIntNode(Optimizer::se_i, 0);
                     apl1 = makedreg(EBP);
                     apl1->mode = am_indisp;
-                    apl1->offset = simpleIntNode(Optimizer::se_i, 4);
+                    apl1->offset = Optimizer::simpleIntNode(Optimizer::se_i, 4);
                 }
                 gen_code(op_mov, makedreg(EAX), apl);
                 gen_code(op_mov, makedreg(EDX), apl1);
@@ -3673,7 +3673,7 @@ namespace occx86
                         int sz = 8;
                         if (q->ans->size == ISZ_CFLOAT)
                             sz = 4;
-                        AMODE* ap1 = make_offset(simpleExpressionNode(Optimizer::se_add, Optimizer::fltexp, simpleIntNode(Optimizer::se_i, sz)));
+                        AMODE* ap1 = make_offset(Optimizer::simpleExpressionNode(Optimizer::se_add, Optimizer::fltexp, Optimizer::simpleIntNode(Optimizer::se_i, sz)));
                         apa = moveFP(apa, q->ans->size, apl, q->dc.left->size);
                         apa1 = moveFP(apa1, q->ans->size, apl1, q->dc.left->size);
                         gen_code_sse(op_movss, op_movsd, q->ans->size, ap, apa);
@@ -3711,7 +3711,7 @@ namespace occx86
                             int sz = 8;
                             if (q->ans->size == ISZ_CFLOAT)
                                 sz = 4;
-                            AMODE* ap1 = make_offset(simpleExpressionNode(Optimizer::se_add, Optimizer::fltexp, simpleIntNode(Optimizer::se_i, sz)));
+                            AMODE* ap1 = make_offset(Optimizer::simpleExpressionNode(Optimizer::se_add, Optimizer::fltexp, Optimizer::simpleIntNode(Optimizer::se_i, sz)));
                             ap1->length = ap->length = q->ans->size - ISZ_CFLOAT + ISZ_FLOAT;
                             gen_codef(op_fstp, ap, NULL);
                             gen_codef(op_fstp, ap1, NULL);
@@ -4377,12 +4377,12 @@ namespace occx86
             if (apl->mode == am_dreg)
             {
                 apl->mode = am_indisp;
-                ofs = simpleIntNode(Optimizer::se_i, 0);
+                ofs = Optimizer::simpleIntNode(Optimizer::se_i, 0);
             }
             if (apal->mode == am_dreg)
             {
                 apal->mode = am_indisp;
-                ofsa = simpleIntNode(Optimizer::se_i, 0);
+                ofsa = Optimizer::simpleIntNode(Optimizer::se_i, 0);
             }
             for (i = 0; i < 4; i++)
             {
@@ -4422,16 +4422,16 @@ namespace occx86
             }
             if (n & 1)
             {
-                apl->offset = simpleExpressionNode(Optimizer::se_add, ofs, simpleIntNode(Optimizer::se_i, n - 1));
-                apal->offset = simpleExpressionNode(Optimizer::se_add, ofsa, simpleIntNode(Optimizer::se_i, n - 1));
+                apl->offset = Optimizer::simpleExpressionNode(Optimizer::se_add, ofs, Optimizer::simpleIntNode(Optimizer::se_i, n - 1));
+                apal->offset = Optimizer::simpleExpressionNode(Optimizer::se_add, ofsa, Optimizer::simpleIntNode(Optimizer::se_i, n - 1));
                 gen_codes(op_mov, ISZ_UCHAR, ax, apl);
                 gen_codes(op_mov, ISZ_UCHAR, apal, ax);
                 n--;
             }
             if (n & 2)
             {
-                apl->offset = simpleExpressionNode(Optimizer::se_add, ofs, simpleIntNode(Optimizer::se_i, n - 2));
-                apal->offset = simpleExpressionNode(Optimizer::se_add, ofsa, simpleIntNode(Optimizer::se_i, n - 2));
+                apl->offset = Optimizer::simpleExpressionNode(Optimizer::se_add, ofs, Optimizer::simpleIntNode(Optimizer::se_i, n - 2));
+                apal->offset = Optimizer::simpleExpressionNode(Optimizer::se_add, ofsa, Optimizer::simpleIntNode(Optimizer::se_i, n - 2));
                 gen_codes(op_mov, ISZ_USHORT, ax, apl);
                 gen_codes(op_mov, ISZ_USHORT, apal, ax);
                 n -= 2;
@@ -4440,8 +4440,8 @@ namespace occx86
             while (n > 0)
             {
                 n -= 4;
-                apl->offset = simpleExpressionNode(Optimizer::se_add, ofs, simpleIntNode(Optimizer::se_i, n));
-                apal->offset = simpleExpressionNode(Optimizer::se_add, ofsa, simpleIntNode(Optimizer::se_i, n));
+                apl->offset = Optimizer::simpleExpressionNode(Optimizer::se_add, ofs, Optimizer::simpleIntNode(Optimizer::se_i, n));
+                apal->offset = Optimizer::simpleExpressionNode(Optimizer::se_add, ofsa, Optimizer::simpleIntNode(Optimizer::se_i, n));
                 gen_codes(op_mov, ISZ_UINT, ax, apl);
                 gen_codes(op_mov, ISZ_UINT, apal, ax);
             }
@@ -4534,24 +4534,24 @@ namespace occx86
             if (apl->mode == am_dreg)
             {
                 apl->mode = am_indisp;
-                ofs = simpleIntNode(Optimizer::se_i, 0);
+                ofs = Optimizer::simpleIntNode(Optimizer::se_i, 0);
             }
             if (n & 1)
             {
-                apl->offset = simpleExpressionNode(Optimizer::se_add, ofs, simpleIntNode(Optimizer::se_i, n - 1));
+                apl->offset = Optimizer::simpleExpressionNode(Optimizer::se_add, ofs, Optimizer::simpleIntNode(Optimizer::se_i, n - 1));
                 gen_codes(op_mov, ISZ_UCHAR, apl, aimmed(0));
                 n--;
             }
             if (n & 2)
             {
-                apl->offset = simpleExpressionNode(Optimizer::se_add, ofs, simpleIntNode(Optimizer::se_i, n - 2));
+                apl->offset = Optimizer::simpleExpressionNode(Optimizer::se_add, ofs, Optimizer::simpleIntNode(Optimizer::se_i, n - 2));
                 gen_codes(op_mov, ISZ_USHORT, apl, aimmed(0));
                 n -= 2;
             }
             while (n > 0)
             {
                 n -= 4;
-                apl->offset = simpleExpressionNode(Optimizer::se_add, ofs, simpleIntNode(Optimizer::se_i, n));
+                apl->offset = Optimizer::simpleExpressionNode(Optimizer::se_add, ofs, Optimizer::simpleIntNode(Optimizer::se_i, n));
                 gen_codes(op_mov, ISZ_ULONG, apl, aimmed(0));
             }
         }
@@ -4650,12 +4650,12 @@ namespace occx86
             if (apl->mode == am_dreg)
             {
                 apl->mode = am_indisp;
-                ofs = simpleIntNode(Optimizer::se_i, 0);
+                ofs = Optimizer::simpleIntNode(Optimizer::se_i, 0);
             }
             if (apal->mode == am_dreg)
             {
                 apal->mode = am_indisp;
-                ofsa = simpleIntNode(Optimizer::se_i, 0);
+                ofsa = Optimizer::simpleIntNode(Optimizer::se_i, 0);
             }
             for (i = 0; i < 4; i++)
             {
@@ -4695,8 +4695,8 @@ namespace occx86
             }
             if (n & 1)
             {
-                apl->offset = simpleExpressionNode(Optimizer::se_add, ofs, simpleIntNode(Optimizer::se_i, n - 1));
-                apal->offset = simpleExpressionNode(Optimizer::se_add, ofsa, simpleIntNode(Optimizer::se_i, n - 1));
+                apl->offset = Optimizer::simpleExpressionNode(Optimizer::se_add, ofs, Optimizer::simpleIntNode(Optimizer::se_i, n - 1));
+                apal->offset = Optimizer::simpleExpressionNode(Optimizer::se_add, ofsa, Optimizer::simpleIntNode(Optimizer::se_i, n - 1));
                 gen_codes(op_mov, ISZ_UCHAR, ax, apl);
                 gen_codes(op_cmp, ISZ_UCHAR, apal, ax);
                 gen_code(op_jne, make_label(labno), NULL);
@@ -4704,8 +4704,8 @@ namespace occx86
             }
             if (n & 2)
             {
-                apl->offset = simpleExpressionNode(Optimizer::se_add, ofs, simpleIntNode(Optimizer::se_i, n - 2));
-                apal->offset = simpleExpressionNode(Optimizer::se_add, ofsa, simpleIntNode(Optimizer::se_i, n - 2));
+                apl->offset = Optimizer::simpleExpressionNode(Optimizer::se_add, ofs, Optimizer::simpleIntNode(Optimizer::se_i, n - 2));
+                apal->offset = Optimizer::simpleExpressionNode(Optimizer::se_add, ofsa, Optimizer::simpleIntNode(Optimizer::se_i, n - 2));
                 gen_codes(op_mov, ISZ_USHORT, ax, apl);
                 gen_codes(op_cmp, ISZ_USHORT, apal, ax);
                 gen_code(op_jne, make_label(labno), NULL);
@@ -4715,8 +4715,8 @@ namespace occx86
             while (n > 0)
             {
                 n -= 4;
-                apl->offset = simpleExpressionNode(Optimizer::se_add, ofs, simpleIntNode(Optimizer::se_i, n));
-                apal->offset = simpleExpressionNode(Optimizer::se_add, ofsa, simpleIntNode(Optimizer::se_i, n));
+                apl->offset = Optimizer::simpleExpressionNode(Optimizer::se_add, ofs, Optimizer::simpleIntNode(Optimizer::se_i, n));
+                apal->offset = Optimizer::simpleExpressionNode(Optimizer::se_add, ofsa, Optimizer::simpleIntNode(Optimizer::se_i, n));
                 gen_codes(op_mov, ISZ_UINT, ax, apl);
                 gen_codes(op_cmp, ISZ_UINT, apal, ax);
                 gen_code(op_jne, make_label(labno), NULL);
@@ -4984,12 +4984,12 @@ namespace occx86
         if (usingEsp)
         {
             ap1->preg = ESP;
-            ap1->offset = simpleIntNode(Optimizer::se_i, q->dc.v.label + funcstackheight);  // ESP
+            ap1->offset = Optimizer::simpleIntNode(Optimizer::se_i, q->dc.v.label + funcstackheight);  // ESP
         }
         else
         {
             ap1->preg = EBP;
-            ap1->offset = simpleIntNode(Optimizer::se_i, q->dc.v.label);  // ESP
+            ap1->offset = Optimizer::simpleIntNode(Optimizer::se_i, q->dc.v.label);  // ESP
         }
 
         switch ((int)q->dc.left->offset->i)
@@ -5128,7 +5128,7 @@ namespace occx86
             case Optimizer::i_atomic_flag_fence:
                 getAmodes(q, &opl, q->dc.right, &apll, &aplh);
                 apll->mode = am_indisp;
-                apll->offset = simpleIntNode(Optimizer::se_i, 0);
+                apll->offset = Optimizer::simpleIntNode(Optimizer::se_i, 0);
                 if (q->dc.left->offset->i > 0)
                 {
                     lbl1 = beGetLabel;
@@ -5183,7 +5183,7 @@ namespace occx86
                     gen_codes(op_lea, ISZ_UINT, makedreg(EBP), apll);
                     apll = makedreg(EBP);
                     apll->mode = am_indisp;
-                    apll->offset = simpleIntNode(Optimizer::se_i, 0);
+                    apll->offset = Optimizer::simpleIntNode(Optimizer::se_i, 0);
                 }
                 gen_codes(op_mov, ISZ_UCHAR, apal, aimmed(1));
                 gen_code(op_lock, NULL, NULL);
@@ -5226,7 +5226,7 @@ namespace occx86
                         gen_code(op_lea, makedreg(EBP), apll);
                         apll = makedreg(EBP);
                         apll->mode = am_indisp;
-                        apll->offset = simpleIntNode(Optimizer::se_i, 0);
+                        apll->offset = Optimizer::simpleIntNode(Optimizer::se_i, 0);
                     }
 
                     if (aprl->mode == am_dreg)
@@ -5278,10 +5278,10 @@ namespace occx86
                             pushed = true;
                             aprl = makedreg(EBP);
                             aprl->mode = am_indisp;
-                            aprl->offset = simpleIntNode(Optimizer::se_i, 0);
+                            aprl->offset = Optimizer::simpleIntNode(Optimizer::se_i, 0);
                             aprh = makedreg(EBP);
                             aprh->mode = am_indisp;
-                            aprh->offset = simpleIntNode(Optimizer::se_i, 4);
+                            aprh->offset = Optimizer::simpleIntNode(Optimizer::se_i, 4);
                         }
                         llongatomicmath(op_xchg, op_cmpxchg8b, q);
                         int labno = beGetLabel;

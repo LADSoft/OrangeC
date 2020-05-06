@@ -80,6 +80,8 @@ namespace Parser
         std::string name;
         bool undef;
     };
+    enum e_lk : int;
+
     enum e_lk getDefaultLinkage();
 
     extern Optimizer::LIST* clist;

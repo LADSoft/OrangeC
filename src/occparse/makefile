@@ -25,7 +25,7 @@ include ../pathext2.mak
 
 NAME=occparse
 MAIN_FILE=occparse.cpp
-INCLUDES=..$(PATHEXT2)util ..$(PATHEXT2)ocpp ..$(PATHEXT2)occopt ..$(PATHEXT2)occ ..$(PATHEXT2)objlib ..$(PATHEXT2)netlib ..$(PATHEXT2)oasm
+INCLUDES=..$(PATHEXT2)util ..$(PATHEXT2)ocpp ..$(PATHEXT2)occopt ..$(PATHEXT2)occ ..$(PATHEXT2)occil ..$(PATHEXT2)objlib ..$(PATHEXT2)netlib ..$(PATHEXT2)oasm
 CPP_DEPENDENCIES=$(wildcard *.cpp)
 LIB_DEPENDENCIES=occ ocpplib oasm occopt util objlib occil netlib 
 ifeq "$(COMPILER)" "MINGW64"

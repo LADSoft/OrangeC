@@ -38,7 +38,10 @@ namespace Parser
 #define CI_DELETEA (complx + 2 + 3)
 #define CI_LIT (complx + 3 + 3)
 
+#ifndef imax
 #define imax(x, y) ((x) > (y) ? (x) : (y))
+#define imin(x, y) ((x) < (y) ? (x) : (y))
+#endif
 
 #define issymchar(x) (((x) >= 0) && (isalnum(x) || (x) == '_'))
 #define isstartchar(x) (((x) >= 0) && (isalpha(x) || (x) == '_'))

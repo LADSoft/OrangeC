@@ -46,7 +46,6 @@ namespace Parser
 
     void inlineAsmInit(void);
     int inasm_enterauto(EXPRESSION* node, int* reg1, int* reg2);
-    enum e_opcode inasm_op(void);
     LEXEME* inlineAsm(LEXEME* inlex, BLOCKDATA* parent);
     void adjust_codelab(void* select, int offset);
     void* inlineAsmStmt(void* param);

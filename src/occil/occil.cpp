@@ -204,7 +204,7 @@ namespace occmsil
             //msil_oa_genpcref(v->symbol.sym, v->symbol.i);
             break;
         case Optimizer::DT_FUNCREF:
-            gen_funcref(v->symbol.sym);
+            Optimizer::gen_funcref(v->symbol.sym);
             global(v->symbol.sym, v->symbol.i);
             break;
         case Optimizer::DT_LABEL:

@@ -121,7 +121,7 @@ namespace Parser
          */
     {
         (void)funcsp;
-        gen_icode(Optimizer::i_genword, 0, Optimizer::make_immed(ISZ_UINT, (int)stmt->select->v.i), 0);
+        Optimizer::gen_icode(Optimizer::i_genword, 0, Optimizer::make_immed(ISZ_UINT, (int)stmt->select->v.i), 0);
     }
 
     /*-------------------------------------------------------------------------*/
@@ -177,8 +177,8 @@ namespace Parser
     {
         Optimizer::IMODE* result;
         result = set_symbol(lib_name, 1);
-        gen_icode(Optimizer::i_gosub, 0, result, 0);
-        gen_icode(Optimizer::i_parmadj, 0, Optimizer::make_parmadj(size), Optimizer::make_parmadj(size));
+        Optimizer::gen_icode(Optimizer::i_gosub, 0, result, 0);
+        Optimizer::gen_icode(Optimizer::i_parmadj, 0, Optimizer::make_parmadj(size), Optimizer::make_parmadj(size));
         result = Optimizer::tempreg(ISZ_UINT, 0);
         result->retval = true;
         return result;
@@ -204,7 +204,7 @@ namespace Parser
             string->suffix = nullptr;
             stringlit(string);
             plabel = string->label;
-            gen_icode(Optimizer::i_parm, 0, imake_label(plabel), 0);
+            Optimizer::gen_icode(Optimizer::i_parm, 0, imake_label(plabel), 0);
             call_library("__profile_in", getSize(bt_pointer));
         }
     }
@@ -215,7 +215,7 @@ namespace Parser
     {
         if (Optimizer::cparams.prm_profiler)
         {
-            gen_icode(Optimizer::i_parm, 0, imake_label(plabel), 0);
+            Optimizer::gen_icode(Optimizer::i_parm, 0, imake_label(plabel), 0);
             call_library("__profile_out", getSize(bt_pointer));
         }
     }
@@ -286,7 +286,7 @@ namespace Parser
         count_cases(stmt->cases, &cs);
         cs.top++;
         ap3 = gen_expr(funcsp, stmt->select, F_VOL | F_SWITCHVALUE, ISZ_UINT);
-        ap = LookupLoadTemp(nullptr, ap3);
+        ap = Optimizer::LookupLoadTemp(nullptr, ap3);
         if (ap != ap3)
         {
             Optimizer::IMODE* barrier;
@@ -294,7 +294,7 @@ namespace Parser
             //        {
             //            barrier = doatomicFence(funcsp, nullptr, stmt->select, nullptr);
             //        }
-            gen_icode(Optimizer::i_assn, ap, ap3, nullptr);
+            Optimizer::gen_icode(Optimizer::i_assn, ap, ap3, nullptr);
             //        if (stmt->select->isatomic)
             //        {
             //            doatomicFence(funcsp, nullptr, stmt->select, barrier);
@@ -304,27 +304,27 @@ namespace Parser
         {
             EXPRESSION* en = anonymousVar(sc_auto, &stdint);
             en->v.sp->sb->anonymous = false;
-            cacheTempSymbol(Optimizer::SymbolManager::Get(en->v.sp));
+            Optimizer::cacheTempSymbol(Optimizer::SymbolManager::Get(en->v.sp));
             if (ap->size != -ISZ_UINT)
             {
                 ap3 = Optimizer::tempreg(-ISZ_UINT, 0);
-                gen_icode(Optimizer::i_assn, ap3, ap, nullptr);
+                Optimizer::gen_icode(Optimizer::i_assn, ap3, ap, nullptr);
                 ap = ap3;
             }
             ap3 = (Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
             ap3->mode = Optimizer::i_direct;
             ap3->offset = Optimizer::SymbolManager::Get(en);
             ap3->size = -ISZ_UINT;
-            gen_icode(Optimizer::i_assn, ap3, ap, nullptr);
+            Optimizer::gen_icode(Optimizer::i_assn, ap3, ap, nullptr);
             ap = ap3;
         }
-        gen_icode2(Optimizer::i_coswitch, Optimizer::make_immed(ISZ_UINT, cs.count), ap, Optimizer::make_immed(ISZ_UINT, cs.top - cs.bottom),
+        Optimizer::gen_icode2(Optimizer::i_coswitch, Optimizer::make_immed(ISZ_UINT, cs.count), ap, Optimizer::make_immed(ISZ_UINT, cs.top - cs.bottom),
             stmt->label + codeLabelOffset);
         gather_cases(stmt->cases, &cs);
         qsort(cs.ptrs, cs.count, sizeof(cs.ptrs[0]), gcs_compare);
         for (i = 0; i < cs.count; i++)
         {
-            gen_icode2(Optimizer::i_swbranch, 0, Optimizer::make_immed(ISZ_UINT, cs.ptrs[i].id), 0, cs.ptrs[i].label);
+            Optimizer::gen_icode2(Optimizer::i_swbranch, 0, Optimizer::make_immed(ISZ_UINT, cs.ptrs[i].id), 0, cs.ptrs[i].label);
         }
         breaklab = oldbreak;
     }
@@ -359,7 +359,7 @@ namespace Parser
         gen_expr(funcsp, xcexp, F_NOVALUE, ISZ_ADDR);
         Optimizer::gen_label(endLab);
         /* not using gen_igoto because it will make a new block */
-        gen_icode(Optimizer::i_goto, nullptr, nullptr, nullptr);
+        Optimizer::gen_icode(Optimizer::i_goto, nullptr, nullptr, nullptr);
         Optimizer::intermed_tail->dc.v.label = transferLab;
         tryStart = stmt->tryStart;
         tryEnd = stmt->tryEnd;
@@ -375,7 +375,7 @@ namespace Parser
         genstmt(lower, funcsp);
         catchLevel--;
         /* not using gen_igoto because it will make a new block */
-        gen_icode(Optimizer::i_goto, nullptr, nullptr, nullptr);
+        Optimizer::gen_icode(Optimizer::i_goto, nullptr, nullptr, nullptr);
         Optimizer::intermed_tail->dc.v.label = transferLab;
         tryStart = oldtryStart;
         tryEnd = oldtryEnd;
@@ -416,12 +416,12 @@ namespace Parser
                 Optimizer::gen_label(label);
                 return stmt;
             }
-            gen_icode(Optimizer::i_seh, nullptr, left, nullptr);
+            Optimizer::gen_icode(Optimizer::i_seh, nullptr, left, nullptr);
             Optimizer::intermed_tail->alwayslive = true;
             Optimizer::intermed_tail->sehMode = mode | 0x80;
             Optimizer::intermed_tail->dc.v.label = label;
             genstmt(stmt->lower, funcsp);
-            gen_icode(Optimizer::i_seh, nullptr, left, nullptr);
+            Optimizer::gen_icode(Optimizer::i_seh, nullptr, left, nullptr);
             Optimizer::intermed_tail->sehMode = mode;
             Optimizer::intermed_tail->dc.v.label = label;
             stmt = stmt->next;
@@ -491,7 +491,7 @@ namespace Parser
                 else
                     ap3 = gen_expr(funcsp, stmt->select, 0, size);
                 DumpIncDec(funcsp);
-                ap = LookupLoadTemp(nullptr, ap3);
+                ap = Optimizer::LookupLoadTemp(nullptr, ap3);
                 if (ap != ap3)
                 {
                     Optimizer::IMODE* barrier;
@@ -499,7 +499,7 @@ namespace Parser
                     //                {
                     //                    barrier = doatomicFence(funcsp, nullptr, stmt->select, nullptr);
                     //                }
-                    gen_icode(Optimizer::i_assn, ap, ap3, nullptr);
+                    Optimizer::gen_icode(Optimizer::i_assn, ap, ap3, nullptr);
                     //                if (stmt->select->isatomic)
                     //                {
                     //                    doatomicFence(funcsp, nullptr, stmt->select, barrier);
@@ -529,7 +529,7 @@ namespace Parser
                 else
                     returnImode = ap1;
             }
-            gen_icode(Optimizer::i_assn, ap1, ap, 0);
+            Optimizer::gen_icode(Optimizer::i_assn, ap1, ap, 0);
         }
         /* create the return or a branch to the return
          * return is put at end of function...
@@ -550,26 +550,26 @@ namespace Parser
                 {
                     if (allocaAP && (Optimizer::architecture != ARCHITECTURE_MSIL))
                     {
-                        gen_icode(Optimizer::i_loadstack, 0, allocaAP, 0);
+                        Optimizer::gen_icode(Optimizer::i_loadstack, 0, allocaAP, 0);
                     }
                     /*			if (funcsp->sb->loadds && funcsp->sb->farproc)
-                                    gen_icode(Optimizer::i_unloadcontext,0,0,0);
+                                    Optimizer::gen_icode(Optimizer::i_unloadcontext,0,0,0);
                     */
                     if (Optimizer::cparams.prm_xcept && funcsp->sb->xc && funcsp->sb->xc->xcRundownFunc)
                         gen_expr(funcsp, funcsp->sb->xc->xcRundownFunc, F_NOVALUE, ISZ_UINT);
                     SubProfilerData();
-                    gen_icode(Optimizer::i_epilogue, 0, 0, 0);
+                    Optimizer::gen_icode(Optimizer::i_epilogue, 0, 0, 0);
                     if (funcsp->sb->attribs.inheritable.linkage == lk_interrupt || funcsp->sb->attribs.inheritable.linkage == lk_fault)
                     {
                         /*				if (funcsp->sb->loadds)
-                                            gen_icode(Optimizer::i_unloadcontext,0,0,0);
+                                            Optimizer::gen_icode(Optimizer::i_unloadcontext,0,0,0);
                         */
-                        gen_icode(Optimizer::i_popcontext, 0, 0, 0);
-                        gen_icode(Optimizer::i_rett, 0, Optimizer::make_immed(ISZ_UINT, funcsp->sb->attribs.inheritable.linkage == lk_interrupt), 0);
+                        Optimizer::gen_icode(Optimizer::i_popcontext, 0, 0, 0);
+                        Optimizer::gen_icode(Optimizer::i_rett, 0, Optimizer::make_immed(ISZ_UINT, funcsp->sb->attribs.inheritable.linkage == lk_interrupt), 0);
                     }
                     else
                     {
-                        gen_icode(Optimizer::i_ret, 0, Optimizer::make_immed(ISZ_UINT, retsize), nullptr);
+                        Optimizer::gen_icode(Optimizer::i_ret, 0, Optimizer::make_immed(ISZ_UINT, retsize), nullptr);
                     }
                 }
             }
@@ -577,7 +577,7 @@ namespace Parser
         else
         {
             /* not using gen_igoto because it will make a new block */
-            gen_icode(Optimizer::i_goto, nullptr, nullptr, nullptr);
+            Optimizer::gen_icode(Optimizer::i_goto, nullptr, nullptr, nullptr);
             Optimizer::intermed_tail->dc.v.label = retlab;
             retcount++;
         }
@@ -591,7 +591,7 @@ namespace Parser
             ap->mode = Optimizer::i_immed;
             ap->offset = Optimizer::SymbolManager::Get((expr*)exp);
             ap->size = ISZ_ADDR;
-            gen_icode(Optimizer::i_varstart, 0, ap, 0);
+            Optimizer::gen_icode(Optimizer::i_varstart, 0, ap, 0);
         }
     }
     void gen_func(void* exp, int start)
@@ -600,9 +600,9 @@ namespace Parser
         ap->mode = Optimizer::i_immed;
         ap->offset = Optimizer::SymbolManager::Get((expr*)exp);
         ap->size = ISZ_ADDR;
-        gen_icode(Optimizer::i_func, 0, ap, 0)->dc.v.label = start;
+        Optimizer::gen_icode(Optimizer::i_func, 0, ap, 0)->dc.v.label = start;
     }
-    void gen_dbgblock(int start) { gen_icode(start ? Optimizer::i_dbgblock : Optimizer::i_dbgblockend, 0, 0, 0); }
+    void gen_dbgblock(int start) { Optimizer::gen_icode(start ? Optimizer::i_dbgblock : Optimizer::i_dbgblockend, 0, 0, 0); }
 
     void gen_asm(STATEMENT* stmt)
         /*
@@ -664,13 +664,13 @@ namespace Parser
                 {
                     gen_expr(funcsp, last->destexp, F_NOVALUE, ISZ_ADDR);
                 }
-                gen_igoto(Optimizer::i_goto, (int)stmt->label + codeLabelOffset);
+                Optimizer::gen_igoto(Optimizer::i_goto, (int)stmt->label + codeLabelOffset);
                 break;
             case st_asmgoto:
-                gen_igoto(Optimizer::i_asmgoto, (int)stmt->label + codeLabelOffset);
+                Optimizer::gen_igoto(Optimizer::i_asmgoto, (int)stmt->label + codeLabelOffset);
                 break;
             case st_asmcond:
-                gen_igoto(Optimizer::i_asmcond, (int)stmt->label + codeLabelOffset);
+                Optimizer::gen_igoto(Optimizer::i_asmcond, (int)stmt->label + codeLabelOffset);
                 break;
             case st_try:
                 gen_try(funcsp, stmt, stmt->label + codeLabelOffset, stmt->endlabel + codeLabelOffset,
@@ -830,9 +830,9 @@ namespace Parser
                     Optimizer::IMODE* dp = Optimizer::tempreg(ISZ_DOUBLE, 0);
                     Optimizer::IMODE* fp = Optimizer::tempreg(ISZ_FLOAT, 0);
                     /* oldstyle float gets promoted from double */
-                    gen_icode(Optimizer::i_assn, dp, right, 0);
-                    gen_icode(Optimizer::i_assn, fp, dp, 0);
-                    gen_icode(Optimizer::i_assn, simpleSym->imvalue, fp, 0);
+                    Optimizer::gen_icode(Optimizer::i_assn, dp, right, 0);
+                    Optimizer::gen_icode(Optimizer::i_assn, fp, dp, 0);
+                    Optimizer::gen_icode(Optimizer::i_assn, simpleSym->imvalue, fp, 0);
                 }
             }
             hr = hr->next;
@@ -926,21 +926,21 @@ namespace Parser
         if (funcsp->sb->attribs.inheritable.linkage == lk_virtual || tmpl)
         {
             funcsp->sb->attribs.inheritable.linkage = lk_virtual;
-            gen_virtual(Optimizer::SymbolManager::Get(funcsp), false);
+            Optimizer::gen_virtual(Optimizer::SymbolManager::Get(funcsp), false);
         }
         else
         {
-            gen_funcref(Optimizer::SymbolManager::Get(funcsp));
-            gen_strlab(Optimizer::SymbolManager::Get(funcsp)); /* name of function */
+            Optimizer::gen_funcref(Optimizer::SymbolManager::Get(funcsp));
+            Optimizer::gen_strlab(Optimizer::SymbolManager::Get(funcsp)); /* name of function */
         }
         Optimizer::addblock(-1);
         if (funcsp->sb->attribs.inheritable.linkage == lk_interrupt || funcsp->sb->attribs.inheritable.linkage == lk_fault)
         {
-            gen_icode(Optimizer::i_pushcontext, 0, 0, 0);
+            Optimizer::gen_icode(Optimizer::i_pushcontext, 0, 0, 0);
             /*		if (funcsp->sb->loadds) */
-            /*	        gen_icode(Optimizer::i_loadcontext, 0,0,0); */
+            /*	        Optimizer::gen_icode(Optimizer::i_loadcontext, 0,0,0); */
         }
-        gen_icode(Optimizer::i_prologue, 0, 0, 0);
+        Optimizer::gen_icode(Optimizer::i_prologue, 0, 0, 0);
         if (Optimizer::cparams.prm_debug)
         {
             if (basetype(funcsp->tp)->syms->table[0] && ((SYMBOL*)basetype(funcsp->tp)->syms->table[0]->p)->sb->thisPtr)
@@ -965,22 +965,22 @@ namespace Parser
             Optimizer::gen_label(funcsp->sb->xc->xcInitLab + codeLabelOffset);
         }
         /*    if (funcsp->sb->loadds && funcsp->sb->farproc) */
-        /*	        gen_icode(Optimizer::i_loadcontext, 0,0,0); */
+        /*	        Optimizer::gen_icode(Optimizer::i_loadcontext, 0,0,0); */
         AllocateLocalContext(nullptr, funcsp, Optimizer::nextLabel++);
         if (funcsp->sb->allocaUsed && (Optimizer::architecture != ARCHITECTURE_MSIL))
         {
             EXPRESSION* allocaExp = anonymousVar(sc_auto, &stdpointer);
             allocaAP = gen_expr(funcsp, allocaExp, 0, ISZ_ADDR);
-            gen_icode(Optimizer::i_savestack, 0, allocaAP, 0);
+            Optimizer::gen_icode(Optimizer::i_savestack, 0, allocaAP, 0);
         }
         /* Generate the icode */
         /* LCSE is done while code is generated */
         genstmt(funcsp->sb->inlineFunc.stmt->lower, funcsp);
         if (funcsp->sb->inlineFunc.stmt->blockTail)
         {
-            gen_icode(Optimizer::i_functailstart, 0, 0, 0);
+            Optimizer::gen_icode(Optimizer::i_functailstart, 0, 0, 0);
             genstmt(funcsp->sb->inlineFunc.stmt->blockTail, funcsp);
-            gen_icode(Optimizer::i_functailend, 0, 0, 0);
+            Optimizer::gen_icode(Optimizer::i_functailend, 0, 0, 0);
         }
         genreturn(0, funcsp, 1, 0, allocaAP);
         gen_func(funcexp, 0);
@@ -998,7 +998,7 @@ namespace Parser
         //    post_function_gen(currentFunction, Optimizer::intermed_head);
         Optimizer::AddFunction();
         if (funcsp->sb->attribs.inheritable.linkage == lk_virtual || tmpl)
-            gen_endvirtual(Optimizer::SymbolManager::Get(funcsp));
+            Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(funcsp));
         AllocateLocalContext(nullptr, funcsp, Optimizer::nextLabel);
         funcsp->sb->retblockparamadjust = Optimizer::chosenAssembler->arch->retblockparamadjust;
         XTDumpTab(funcsp);

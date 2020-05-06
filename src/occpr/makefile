@@ -25,7 +25,7 @@ include ../pathext2.mak
 
 NAME=occpr
 MAIN_FILE=occparse.cpp
-INCLUDES=..$(PATHEXT2)util ..$(PATHEXT2)ocpp ..$(PATHEXT2)occparse ..$(PATHEXT2)occopt ..$(PATHEXT2)objlib ..$(PATHEXT2)netlib ..$(PATHEXT2)oasm
+INCLUDES=..$(PATHEXT2)util ..$(PATHEXT2)ocpp ..$(PATHEXT2)occparse ..$(PATHEXT2)occopt ..$(PATHEXT2)occil ..$(PATHEXT2)objlib ..$(PATHEXT2)netlib ..$(PATHEXT2)oasm
 CPP_DEPENDENCIES=$(wildcard *.cpp) \
      beinterf.cpp \
      browse.cpp \

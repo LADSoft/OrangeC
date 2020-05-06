@@ -67,8 +67,6 @@ namespace Parser
     Optimizer::LIST* nameSpaceList;
     char anonymousNameSpaceName[512];
 
-    static Optimizer::LIST* deferred;
-
 
     static int dumpVTabEntries(int count, THUNK* thunks, SYMBOL* sym, VTABENTRY* entry)
     {

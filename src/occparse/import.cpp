@@ -48,9 +48,10 @@
 
 extern DotNetPELib::PELib* peLib;
 
+using namespace DotNetPELib;
+
 namespace Parser
 {
-    using namespace DotNetPELib;
 
     class Importer : public Callback
     {
@@ -116,11 +117,16 @@ namespace Parser
 #ifdef ISPARSER
 #endif
     }
-#else
+#endif
+}
+#ifndef VSIDE
+namespace occmsil
+{
     void AddType(Optimizer::SimpleSymbol* sym, Type* type);
+}
+using namespace occmsil;
 #endif
 
-}
     void Import()
     {
         using namespace Parser;

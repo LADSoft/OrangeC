@@ -93,7 +93,7 @@ namespace occx86
             Utils::StripExt(buf);
             Utils::AddExt(buf, ext);
         }
-        else if (buf[0] == 0 || obj && !Optimizer::cparams.prm_compileonly && !Optimizer::assembling)// no output file specified, put the output wherever the input was...
+        else if (buf[0] == 0 || (obj && !Optimizer::cparams.prm_compileonly && !Optimizer::assembling))// no output file specified, put the output wherever the input was...
         {
             strcpy(buf, name);
             char *p = strrchr(buf, '\\');

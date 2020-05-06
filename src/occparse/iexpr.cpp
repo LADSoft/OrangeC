@@ -46,7 +46,7 @@
 #include "initbackend.h"
 #include "iblock.h"
 #include "expr.h"
-#include "declcons.h":
+#include "declcons.h"
 #include "iinline.h"
 #include "ildata.h"
 #include "stmt.h"
@@ -2144,6 +2144,7 @@ namespace Parser
             ap = ap3 = gen_expr(funcsp, f->fcall, 0, ISZ_UINT);
             if (ap->mode == Optimizer::i_immed && ap->offset->type == Optimizer::se_pc)
             {
+/*
                 if (f->sp && !ap->offset->sp->importThunk && !f->sp->sb->attribs.inheritable.linkage2 == lk_import && (Optimizer::architecture != ARCHITECTURE_MSIL))
                 {
                     Optimizer::IMODE* ap1 = (Optimizer::IMODE*)(Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
@@ -2152,6 +2153,7 @@ namespace Parser
                     ap = ap1;
                     ap->mode = Optimizer::i_direct;
                 }
+*/
             }
             else if (f->sp && f->sp->sb->attribs.inheritable.linkage2 == lk_import && f->sp->sb->storage_class != sc_virtual)
             {

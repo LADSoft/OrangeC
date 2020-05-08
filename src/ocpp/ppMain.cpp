@@ -239,6 +239,7 @@ int ppMain::Run(int argc, char* argv[])
                     }
                 }
             }
+            (*outstream) << "#line " << pp.GetErrLineNo() << " \"" << pp.GetErrFile() << "\"" << std::endl;
             (*outstream) << working << std::endl;
         }
         if (outstream != &std::cout)

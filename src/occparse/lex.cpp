@@ -1470,6 +1470,7 @@ namespace Parser
              * int a = -FFLUSH;
              * won't compile correctly from a file that has been generated from here
              */
+            fprintf(cppFile, "#line %d \"%s\"\n", preProcessor->GetErrLineNo(), preProcessor->GetErrFile().c_str());
             while (*p)
             {
                 if (*p != ppDefine::MACRO_PLACEHOLDER)

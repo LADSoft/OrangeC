@@ -2,6 +2,16 @@ Release notes:
 
 version 6.0.45:
     occ:   functions ending in a function call for a function tagged as 'noreturn' will not generate a 'needs return value' warning.
+    occ:   fix bug where destructs called after an if statement could be called at the wrong time.
+    occ:   implement better error diagnostics (not used yet)
+    occ:   fix bug where 'using namespace xxx;' was used inside a function might not work properly
+    occ:   comment marker inside a preprocessor continuation for a string wasn't ignored
+    occ:   change default extension for generated assembly language files to .S
+    occ:   add /a switch for specifying extension of assembly language files
+    occ:   fix bug where lambdas generated at global scope created invalid assembly language output (object files were fine)
+    occ:   when assigning a string or other struct to itself with a hook, invalid code was generated.
+    occ:   attribute names which are keywords are now compiled correctly
+    occ/ocpp:  add #line statements to the preprocessed output
     ogrep: add -q option to make it quiet...    
 
 version 6.0.44: 4/26/2020

@@ -1204,7 +1204,7 @@ int ppDefine::Process(std::string& line, bool leavePlaceholder)
     int sv = 0;
     std::deque<Definition*> definitions;
     tokenPositions.clear();
-    int rvi = ReplaceSegment(line, 0, line.size(), sv, true, definitions, &tokenPositions);
+    int rvi = ReplaceSegment(line, 0, line.size(), sv, true, definitions, asmpp ? nullptr : &tokenPositions);
     if (rvi == INT_MIN + 1)
         return rvi;
     std::string rv;
@@ -1246,7 +1246,8 @@ int ppDefine::Process(std::string& line, bool leavePlaceholder)
             while ((!current || p < current->newEnd) && (line[p] == REPLACED_TOKENIZING || (!leavePlaceholder&& line[p] == MACRO_PLACEHOLDER) || line[p] == REPLACED_ALREADY))
                 p++;
             last = p;
-            current->newEnd -= p - pos;
+            if (current)
+                current->newEnd -= p - pos;
             offset += p - pos;
         }
     }

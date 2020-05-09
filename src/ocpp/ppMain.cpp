@@ -30,6 +30,7 @@
 #include <cstdlib>
 #include <algorithm>
 
+//#define TESTANNOTATE
 CmdSwitchParser ppMain::SwitchParser;
 CmdSwitchBool ppMain::assembly(SwitchParser, 'a', false);
 CmdSwitchBool ppMain::disableExtensions(SwitchParser, 'A', false);
@@ -65,6 +66,46 @@ int main(int argc, char* argv[])
         return 1;
     }
 }
+#ifdef TESTANNOTATE
+static void PutCharInfo(std::ostream* outStream, const std::string& line, const std::deque<ppDefine::TokenPos>& positions, bool origLine)
+{
+    int pos = 0;
+    (*outStream) << line << std::endl;
+    for (auto&& position : positions)
+    {
+        int start, end;
+        if (origLine)
+        {
+            start = position.origStart;
+            end = position.origEnd;
+        }
+        else
+        {
+            start = position.newStart;
+            end = position.newEnd;
+        }
+        while (pos++ < start)
+        {
+            (*outStream) << " ";
+        }
+        if (end == start + 1)
+            (*outStream) << "!";
+        else
+	{
+            (*outStream) << "^";
+            while (pos++ < end -1)
+                (*outStream) << "-";
+            (*outStream) << "^";       
+	}
+    }
+    (*outStream) << std::endl;
+}
+static void TestCharInfo(std::ostream* outStream, PreProcessor &pp, std::string & line)
+{
+     PutCharInfo(outStream, pp.GetOrigLine(), pp.TokenPositions(), true);
+     PutCharInfo(outStream, line, pp.TokenPositions(), false);	
+}
+#endif
 int ppMain::Run(int argc, char* argv[])
 {
     Utils::banner(argv[0]);
@@ -172,6 +213,9 @@ int ppMain::Run(int argc, char* argv[])
         while (pp.GetLine(working))
         { 
             int last = 0;
+#ifdef TESTANNOTATE
+            TestCharInfo(outstream, pp, working);
+#endif
             working.erase(std::remove(working.begin(), working.end(), ppDefine::MACRO_PLACEHOLDER), working.end());
             if (assembly.GetValue())
             {

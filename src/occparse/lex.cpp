@@ -44,6 +44,8 @@
 #include "browse.h"
 #include "help.h"
 
+//#define TESTANNOTATE
+
 namespace Parser
 {
     #ifndef LONGLONG_MAX
@@ -1460,6 +1462,49 @@ namespace Parser
         else
             error(ERR_NEEDSTRING);
     }
+    void DumpAnnotatedLine(FILE *fil, const std::string&line, const std::deque<std::pair<int, int>> positions)
+    {
+        int pos = 0;
+        // print the line
+        for (int i=0; i < line.size(); i++)
+        {
+            if (line[i] != ppDefine::MACRO_PLACEHOLDER)
+                fputc(line[i], fil);
+        }
+        fputc('\n', fil);
+        // print the annotations
+        for (auto&& position : positions)
+        {
+            int start = position.first;
+            int end = position.second;
+            while (pos < start)
+            {
+                if (line[pos++] != ppDefine::MACRO_PLACEHOLDER)
+                {
+                    fputc(' ', fil);
+                }
+            }
+            int count = 0;
+            for (int i= start; i < end; i++)
+            {
+                if (line[i] != ppDefine::MACRO_PLACEHOLDER)
+                    count++;
+            }
+            pos += end - start;
+            if (count >  0)
+            {
+                fputc('^', fil);
+                if (count != 1)
+                {
+                    for (int i=0; i < count-2; i++)
+                        fputc('-', fil);
+                    fputc('^', fil);
+                }                
+            }
+
+	}
+        fputc('\n', fil);
+    }
     static void DumpPreprocessedLine()
     {
         if (cppFile)
@@ -1483,7 +1528,9 @@ namespace Parser
     }
     LEXEME* getsym(void)
     {
+        static std::deque<std::pair<int, int>> annotations;
         static LEXEME* last;
+        static const char *origLine = "";
         LEXEME* lex;
         KEYWORD* kw;
         enum e_lexType tp;
@@ -1537,6 +1584,11 @@ namespace Parser
             {
                 if (*linePointer == 0)
                 {
+#ifdef TESTANNOTATE
+                    DumpAnnotatedLine(stdout, std::string(origLine), annotations);
+                    annotations.clear();
+                    origLine = "";
+#endif
                     if (parseStack.size() || !preProcessor->GetLine(currentLine))
                     {
                         if (lex->prev)
@@ -1550,6 +1602,10 @@ namespace Parser
                 }
                 while (isspace(*linePointer) || *linePointer == ppDefine::MACRO_PLACEHOLDER)
                     linePointer++;
+                if (*linePointer != 0)
+                {
+                    origLine = litlate(preProcessor->GetOrigLine().c_str());
+                }
             } while (*linePointer== 0);
             charIndex = lex->charindex = linePointer - (const unsigned char*)currentLine.c_str();
             eofLine = lex->line = preProcessor->GetErrLineNo();
@@ -1563,6 +1619,9 @@ namespace Parser
                 browse_startfile(preProcessor->GetRealFile().c_str(), lex->filenum);
                 lastBrowseIndex = lex->filenum;
             }
+
+            int start = linePointer - (const unsigned char*)currentLine.c_str();
+
             if ((cval = getChar(&linePointer, &tp)) != INT_MIN)
             {
                 if (tp == l_achr && !Optimizer::cparams.prm_charisunsigned && !(cval & 0xffffff00))
@@ -1660,10 +1719,53 @@ namespace Parser
             {
                 contin = true;
             }
+            if (!contin)
+            {
+                int end = linePointer - (const unsigned char*)currentLine.c_str();
+
+                int count = 0;
+                int trailer = 0;
+                bool done = false;
+                for (auto&& p : preProcessor->TokenPositions())
+                {
+                    if (start >= p.newEnd)
+                    {
+                        trailer = p.newEnd - p.origEnd;
+                    }
+                    else if (start < p.newStart)
+                    {
+                         start -= trailer;
+                         end -= trailer;
+                         done = true;
+                         break;
+                    }
+                    else
+                    {
+                         start = p.origStart-(count*2);
+                         end = p.origEnd-count*2;
+                         done = true;
+                         break;
+                    }
+                    count ++;
+                }
+                if (!done)
+                {
+                     start -= trailer;
+                     end -= trailer;
+                }  
+                lex->charindex = start;
+                lex->charindexend = end;
+                lex->linestr = origLine;               
+#ifdef TESTANNOTATE
+                printf("%d %d\n", start, end);
+                annotations.push_back(std::pair<int, int>(start, end));
+#endif
+            }
         } while (contin);
         if (linesHead)
         {
             lex->linedata = linesHead;
+printf("%s\n", lex->linedata);
         }
         return last = lex;
     }

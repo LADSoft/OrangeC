@@ -57,7 +57,9 @@ class PreProcessor
 
     void InitHash();
     bool GetLine(std::string& line);
+    const std::string& GetOrigLine() { return origLine; }
     const std::string& GetErrFile() { return include.GetErrFile(); }
+    const std::deque<ppDefine::TokenPos>& TokenPositions() { return define.TokenPositions();  }
     int GetErrLineNo() { return include.GetErrLineNo(); }
     const std::string& GetRealFile() { return include.GetRealFile(); }
     int GetRealLineNo() { return include.GetRealLineNo(); }
@@ -109,6 +111,7 @@ class PreProcessor
     KeywordHash hash;
     int lineno;
     std::string preData;
+    std::string origLine;
 };
 
 #endif

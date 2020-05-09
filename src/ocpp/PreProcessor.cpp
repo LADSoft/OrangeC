@@ -175,6 +175,7 @@ bool PreProcessor::GetLine(std::string& line)
             return false;
         if (!last.empty())
             line = last + " " + line;
+        origLine = line;
 preprocess:
         size_t n = line.find_first_not_of(" \n\t\v\r");
         if (n != std::string::npos)

@@ -747,7 +747,7 @@ void ppDefine::SetupAlreadyReplaced(std::string& macro)
         }
     }
 }
-int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr, bool eol, std::deque<Definition*>& definitions)
+int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr, bool eol, std::deque<Definition*>& definitions, std::deque<TokenPos>* positions)
 {
     std::string name;
     int waiting = 0;
@@ -757,23 +757,33 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr, b
     int size;
     int p;
     int insize, rv1;
+    int origPos = begin;
     for (p = begin; p < end;)
     {
         int q = p;
         if (!waiting && (line[p] == '"' || line[p] == '\'') && NotSlashed(line, p))
         {
             waiting = line[p++];
+            origPos++;
         }
         else if (waiting)
         {
             if (line[p] == waiting && NotSlashed(line, p))
                 waiting = 0;
             p++;
+            origPos++;
         }
         else if (Tokenizer::IsSymbolChar(line.c_str() + p, true) &&
                  (p == begin || line[p - 1] == '$' || !Tokenizer::IsSymbolChar(line.c_str() + p - 1, false)))
         {
+            TokenPos tokenPos;
+            tokenPos.origStart = origPos;
+            tokenPos.newStart = q;
+            int origStart = origPos;
             name = defid(line, q, p);
+            origPos += p - q;
+            tokenPos.origEnd = origPos;
+            tokenPos.newEnd = q;
             Symbol* sym = symtab.Lookup(name);
             Definition* d = static_cast<Definition*>(sym);
             bool tokenized = false;
@@ -855,7 +865,7 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr, b
                             args.push_back(temp);
                             expandedargs.push_back(temp);
                             int sv;
-                            rv = ReplaceSegment(expandedargs[count], 0, expandedargs[count].size(), sv, p == line.size(), definitions);
+                            rv = ReplaceSegment(expandedargs[count], 0, expandedargs[count].size(), sv, p == line.size(), definitions, nullptr);
                             if (rv < -MACRO_REPLACE_SIZE)
                             {
                                 return rv;
@@ -946,7 +956,8 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr, b
                 end += insize;
                 p += insize;
                 insize = 0;
-                rv = ReplaceSegment(line, q, p, p, false, definitions);
+                tokenPos.newEnd += rv1;
+                rv = ReplaceSegment(line, q, p, p, false, definitions, nullptr);
                 if (!tokenized)
                 {
                     if (definitions.size())
@@ -957,8 +968,11 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr, b
                 {
                     return rv;
                 }
+                tokenPos.newEnd += rv;
                 end += rv;
                 insize = 0;
+                if (positions)
+                    positions->push_back(tokenPos);
             }
             else
             {
@@ -969,12 +983,16 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr, b
                     end += insize;
                     p += insize;
                     insize = 0;
+                    tokenPos.newEnd += n;
+                    if (positions)
+                        positions->push_back(tokenPos);
                 }
             }
         }
         else
         {
             p++;
+            origPos++;
         }
     }
     pptr = p;
@@ -1185,24 +1203,61 @@ int ppDefine::Process(std::string& line, bool leavePlaceholder)
     }
     int sv = 0;
     std::deque<Definition*> definitions;
-    int rvi = ReplaceSegment(line, 0, line.size(), sv, true, definitions);
+    tokenPositions.clear();
+    int rvi = ReplaceSegment(line, 0, line.size(), sv, true, definitions, &tokenPositions);
     if (rvi == INT_MIN + 1)
         return rvi;
     std::string rv;
     int p, last = 0;
+    int offset = 0;
+    TokenPos* current = nullptr, *next = nullptr;
+    auto it = tokenPositions.begin();
+    if (it != tokenPositions.end())
+    {
+        current = &(*it);
+        ++it;
+        if (it != tokenPositions.end())
+        {
+            next = &(*it);
+        }
+    }
     for (p = 0; p < line.size(); p++)
     {
+        if (next && p >= next->newStart)
+        {
+            next->newStart -= offset;
+            next->newEnd -= offset;
+            current = next;
+            ++it;
+            if (it == tokenPositions.end())
+            {
+                next = nullptr;
+            }
+            else
+            {
+                next = &(*it);
+            }
+        }
         if (line[p] == REPLACED_TOKENIZING || (!leavePlaceholder && line[p] == MACRO_PLACEHOLDER) || line[p] == REPLACED_ALREADY)
         {
+            int pos = p;
             if (p != last)
                 rv += line.substr(last, p - last);
-            while (line[p] == REPLACED_TOKENIZING || (!leavePlaceholder&& line[p] == MACRO_PLACEHOLDER) || line[p] == REPLACED_ALREADY)
+            while ((!current || p < current->newEnd) && (line[p] == REPLACED_TOKENIZING || (!leavePlaceholder&& line[p] == MACRO_PLACEHOLDER) || line[p] == REPLACED_ALREADY))
                 p++;
             last = p;
+            current->newEnd -= p - pos;
+            offset += p - pos;
         }
     }
     if (last != p)
         rv += line.substr(last, p - last);
+    while (it != tokenPositions.end())
+    {
+        it->newStart -= offset;
+        it->newEnd -= offset;
+        it = ++it;
+    }
     line = rv;
     if (asmpp)
     {

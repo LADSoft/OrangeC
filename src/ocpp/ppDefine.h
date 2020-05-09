@@ -46,6 +46,14 @@ class ppMacro;
 class ppDefine
 {
   public:
+    class TokenPos 
+    {
+    public:
+        short origStart;
+        short origEnd;
+        short newStart;
+        short newEnd;
+    };
     class Definition : public Symbol
     {
       public:
@@ -145,11 +153,12 @@ class ppDefine
     bool ReplaceArgs(std::string& macro, const DefinitionArgList& oldargs, const DefinitionArgList& newArgs,
                      const DefinitionArgList& expandedargs, const std::string varargs);
     void SetupAlreadyReplaced(std::string& macro);
-    int ReplaceSegment(std::string& line, int begin, int end, int& pptr, bool eol, std::deque<Definition*>& definitions);
+    int ReplaceSegment(std::string& line, int begin, int end, int& pptr, bool eol, std::deque<Definition*>& definitions, std::deque<TokenPos>* positions);
     void SyntaxError(const std::string& name);
     void ParseAsmSubstitutions(std::string& line);
     void ReplaceAsmMacros(std::string& line);
 
+    const std::deque<TokenPos>& TokenPositions() const { return tokenPositions; }
   private:
     SymbolTable symtab;
     ppInclude* include;
@@ -157,6 +166,7 @@ class ppDefine
     std::string dateiso;
     std::string time;
     std::map<std::string, std::stack<Definition*>> macroStacks;
+    std::deque<TokenPos> tokenPositions;
     static KeywordHash defTokens;
     bool c89;
     ppExpr expr;

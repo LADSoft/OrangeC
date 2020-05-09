@@ -1067,10 +1067,12 @@ namespace Parser
         char* litaslit;
         char* suffix;
         const char* file;
+        const char* linestr;
         Optimizer::LINEDATA* linedata;
         int line;
         int realline;
         int charindex;
+        int charindexend;
         int filenum;
         KEYWORD* kw;
         SYMBOL* typequal;

@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #define _CRT_SECURE_NO_WARNINGS
@@ -57,7 +57,7 @@ bool ppInclude::CheckInclude(kw token, const std::string& args)
         int npos = line1.find_first_not_of(" \t\v");
         if (npos != std::string::npos && line1[npos] != '"' && line1[npos] != '<')
             define->Process(line1);
-        bool specifiedAsSystem= false;
+        bool specifiedAsSystem = false;
         std::string name = ParseName(line1, specifiedAsSystem);
         name = FindFile(specifiedAsSystem, name);
         pushFile(name, line1);
@@ -108,8 +108,10 @@ void ppInclude::pushFile(const std::string& name, const std::string& errname)
             files.push_front(std::move(current));
             current = nullptr;
         }
-        // this next line and the support code have been carefully crafted so that GetRealFile() should return a reference to the cached object.
-        current = std::make_unique<ppFile>(fullname, trigraphs, extendedComment, name, define, *ctx, unsignedchar, c89, asmpp, piper);
+        // this next line and the support code have been carefully crafted so that GetRealFile() should return a reference to the
+        // cached object.
+        current =
+            std::make_unique<ppFile>(fullname, trigraphs, extendedComment, name, define, *ctx, unsignedchar, c89, asmpp, piper);
         // if (current)
         if (!current->Open())
         {
@@ -221,7 +223,6 @@ std::string ppInclude::FindFile(bool specifiedAsSystem, const std::string& name)
     if (rv.empty() && !specifiedAsSystem)
         rv = SrchPath(true, name, sysSrchPath);
 
-
     return rv;
 }
 
@@ -241,7 +242,7 @@ std::string ppInclude::SrchPath(bool system, const std::string& name, const std:
         FILE* fil = fopen(buf, "rb");
         if (fil)
         {
-            if (searchPath == ".") // clean up for current directory searches
+            if (searchPath == ".")  // clean up for current directory searches
                 strcpy(buf, buf + 2);
             if (!system)
             {

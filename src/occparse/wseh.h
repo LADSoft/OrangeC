@@ -24,5 +24,5 @@
  */
 namespace Parser
 {
-    LEXEME* statement_SEH(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent);
-}   
+LEXEME* statement_SEH(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent);
+}

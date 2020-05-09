@@ -24,8 +24,8 @@
  */
 namespace Optimizer
 {
-    void ReplaceOneUses(QUAD* head, IMODE** im);
-    void ReplaceStrengthUses(QUAD* head);
-    void ReduceStrengthAssign(QUAD* head);
-    void ReduceLoopStrength(void);
-}
+void ReplaceOneUses(QUAD* head, IMODE** im);
+void ReplaceStrengthUses(QUAD* head);
+void ReduceStrengthAssign(QUAD* head);
+void ReduceLoopStrength(void);
+}  // namespace Optimizer

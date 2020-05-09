@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <stdio.h>
@@ -43,7 +43,7 @@
 
 using namespace DotNetPELib;
 namespace occmsil
-{ 
+{
 #define MAX_ALIGNS 50
 MethodSignature* FindPInvokeWithVarargs(std::string name, std::list<Param*>::iterator begin, std::list<Param*>::iterator end,
                                         size_t size);
@@ -255,8 +255,7 @@ Operand* getOperand(Optimizer::IMODE* oper)
                         Instruction::i_ldelem_r8, Instruction::i_ldelem,    Instruction::i_ldelem};
                     if (instructions[tp->GetBasicType()] == Instruction::i_ldelem)
                     {
-                        operand = peLib->AllocateOperand(
-                            peLib->AllocateValue("", GetType(oper->offset->msilArrayTP->btp, true)));
+                        operand = peLib->AllocateOperand(peLib->AllocateValue("", GetType(oper->offset->msilArrayTP->btp, true)));
                     }
                     gen_code(instructions[tp->GetBasicType()], operand);
                     decrement_stack();
@@ -305,7 +304,8 @@ Operand* getOperand(Optimizer::IMODE* oper)
                 }
                 if (sp)
                 {
-                    if (sp->storage_class == Optimizer::scc_auto || sp->storage_class == Optimizer::scc_register || sp->storage_class == Optimizer::scc_parameter)
+                    if (sp->storage_class == Optimizer::scc_auto || sp->storage_class == Optimizer::scc_register ||
+                        sp->storage_class == Optimizer::scc_parameter)
                     {
                         rv = peLib->AllocateOperand(GetLocalData(sp));
                     }
@@ -612,7 +612,7 @@ void gen_load(Optimizer::IMODE* im, Operand* dest, bool retval)
             {
                 if (offset->sp->isproperty)
                 {
-                    void *result;
+                    void* result;
                     peLib->Find(offset->sp->msil, &result);
                     Property* p = static_cast<Property*>(result);
                     p->CallGet(*peLib, currentMethod);
@@ -719,7 +719,7 @@ void gen_store(Optimizer::IMODE* im, Operand* dest)
             {
                 if (offset->sp->isproperty)
                 {
-                    void *result;
+                    void* result;
                     peLib->Find(offset->sp->msil, &result);
                     Property* p = static_cast<Property*>(result);
                     p->CallSet(*peLib, currentMethod);
@@ -927,7 +927,8 @@ void asm_tag(Optimizer::QUAD* q)
                         if (find->nullvararg)
                             gen_code(Instruction::i_ldnull, NULL);
                         else
-                            gen_code(Instruction::i_ldloc, peLib->AllocateOperand(localList[Optimizer::objectArray_exp->sp->offset]));
+                            gen_code(Instruction::i_ldloc,
+                                     peLib->AllocateOperand(localList[Optimizer::objectArray_exp->sp->offset]));
                     }
                 }
             }
@@ -1369,8 +1370,7 @@ void asm_assn(Optimizer::QUAD* q) /* assignment */
                 Instruction::i_stelem_r8, Instruction::i_stelem,    Instruction::i_stelem};
             if (instructions[tp->GetBasicType()] == Instruction::i_stelem)
             {
-                operand =
-                    peLib->AllocateOperand(peLib->AllocateValue("", GetType(q->ans->offset->msilArrayTP->btp, true)));
+                operand = peLib->AllocateOperand(peLib->AllocateValue("", GetType(q->ans->offset->msilArrayTP->btp, true)));
             }
             gen_code(instructions[tp->GetBasicType()], operand);
             decrement_stack();
@@ -1407,8 +1407,10 @@ void asm_assn(Optimizer::QUAD* q) /* assignment */
                 decrement_stack();
         }
     }
-    else if (q->dc.left && q->dc.left->mode == Optimizer::i_immed && (q->dc.left->size == ISZ_OBJECT || q->dc.left->size == ISZ_STRING) &&
-             ((q->dc.left->offset->type == Optimizer::se_i || q->dc.left->offset->type == Optimizer::se_ui)&& q->dc.left->offset->i == 0))
+    else if (q->dc.left && q->dc.left->mode == Optimizer::i_immed &&
+             (q->dc.left->size == ISZ_OBJECT || q->dc.left->size == ISZ_STRING) &&
+             ((q->dc.left->offset->type == Optimizer::se_i || q->dc.left->offset->type == Optimizer::se_ui) &&
+              q->dc.left->offset->i == 0))
     {
         gen_code(Instruction::i_ldnull, NULL);
         increment_stack();
@@ -1437,7 +1439,7 @@ void asm_assn(Optimizer::QUAD* q) /* assignment */
             GetType(tp, true, false, false);
             if (tp->sp->msil)
             {
-                void *result;
+                void* result;
                 peLib->Find(tp->sp->msil, &result);
                 Class* c = static_cast<Class*>(result);
                 if (c->Flags().Flags() & Qualifiers::Value)
@@ -1646,7 +1648,9 @@ void asm_jc(Optimizer::QUAD* q) /* branch if a U< b */ { gen_branch(Instruction:
 void asm_ja(Optimizer::QUAD* q) /* branch if a U> b */ { gen_branch(Instruction::i_bgt_un, q->dc.v.label, true); }
 void asm_je(Optimizer::QUAD* q) /* branch if a == b */
 {
-    if (q->dc.right->mode == Optimizer::i_immed && ((q->dc.right->offset->type == Optimizer::se_i || q->dc.right->offset->type == Optimizer::se_ui) && q->dc.right->offset->i == 0))
+    if (q->dc.right->mode == Optimizer::i_immed &&
+        ((q->dc.right->offset->type == Optimizer::se_i || q->dc.right->offset->type == Optimizer::se_ui) &&
+         q->dc.right->offset->i == 0))
         gen_branch(Instruction::i_brfalse, q->dc.v.label, true);
     else
         gen_branch(Instruction::i_beq, q->dc.v.label, true);
@@ -1655,7 +1659,9 @@ void asm_jnc(Optimizer::QUAD* q) /* branch if a U>= b */ { gen_branch(Instructio
 void asm_jbe(Optimizer::QUAD* q) /* branch if a U<= b */ { gen_branch(Instruction::i_ble_un, q->dc.v.label, true); }
 void asm_jne(Optimizer::QUAD* q) /* branch if a != b */
 {
-    if (q->dc.right->mode == Optimizer::i_immed && ((q->dc.right->offset->type == Optimizer::se_i || q->dc.right->offset->type == Optimizer::se_ui) && q->dc.right->offset->i == 0))
+    if (q->dc.right->mode == Optimizer::i_immed &&
+        ((q->dc.right->offset->type == Optimizer::se_i || q->dc.right->offset->type == Optimizer::se_ui) &&
+         q->dc.right->offset->i == 0))
         gen_branch(Instruction::i_brtrue, q->dc.v.label, true);
     else
         gen_branch(Instruction::i_bne_un, q->dc.v.label, true);
@@ -1795,9 +1801,12 @@ void asm_seh(Optimizer::QUAD* q) /* windows seh */
         currentMethod->AddInstruction(i);
     }
 }
-void asm_stackalloc(Optimizer::QUAD* q) /* allocate stack space - positive value = allocate(Optimizer::QUAD *q) negative value deallocate */ {}
+void asm_stackalloc(
+    Optimizer::QUAD* q) /* allocate stack space - positive value = allocate(Optimizer::QUAD *q) negative value deallocate */
+{
+}
 void asm_loadstack(Optimizer::QUAD* q) /* load the stack pointer from a var */ {}
 void asm_savestack(Optimizer::QUAD* q) /* save the stack pointer to a var */ {}
 void asm_functail(Optimizer::QUAD* q, int begin, int size) /* functail start or end */ {}
 void asm_atomic(Optimizer::QUAD* q) {}
-}
+}  // namespace occmsil

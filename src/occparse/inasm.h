@@ -37,16 +37,16 @@
 #define ERR_INVALID_USE_OF_INSTRUCTION 12
 namespace Parser
 {
-    typedef struct
-    {
-        const char* name;
-        int instruction;
-        void* data;
-    } ASM_HASH_ENTRY;
+typedef struct
+{
+    const char* name;
+    int instruction;
+    void* data;
+} ASM_HASH_ENTRY;
 
-    void inlineAsmInit(void);
-    int inasm_enterauto(EXPRESSION* node, int* reg1, int* reg2);
-    LEXEME* inlineAsm(LEXEME* inlex, BLOCKDATA* parent);
-    void adjust_codelab(void* select, int offset);
-    void* inlineAsmStmt(void* param);
-}
+void inlineAsmInit(void);
+int inasm_enterauto(EXPRESSION* node, int* reg1, int* reg2);
+LEXEME* inlineAsm(LEXEME* inlex, BLOCKDATA* parent);
+void adjust_codelab(void* select, int offset);
+void* inlineAsmStmt(void* param);
+}  // namespace Parser

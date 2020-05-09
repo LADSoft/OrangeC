@@ -24,7 +24,7 @@
  */
 namespace Optimizer
 {
-    void WriteText(void);
-    int GetOutputSize(void);
-    void OutputIntermediate(SharedMemory *mem);
-}
+void WriteText(void);
+int GetOutputSize(void);
+void OutputIntermediate(SharedMemory* mem);
+}  // namespace Optimizer

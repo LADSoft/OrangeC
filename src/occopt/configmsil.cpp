@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 /*
@@ -38,184 +38,184 @@
 
 namespace Optimizer
 {
-    static char usage_text[] =
-        "[options] [@response file] files\n"
-        "\n"
-        "/1        - C1x mode                  /8        - c89 mode\n"
-        "/9        - C99 mode                  /c        - compile only\n"
-        "-d        - don't allow extensions    +e        - dump errors to file\n"
-        "+i        - dump preprocessed file    +l        - dump listing file\n"
-        "/oname    - specify output file name\n"
-        "+A        - disable extensions        /Dxxx     - define something\n"
-        "/E[+]nn   - max number of errors      /Ipath    - specify include path\n"
-        "/Kfile    - set strong name key       /Lxxx     - set dlls to import from\n"
-        "/M        - generate make stubs       /Nns.cls  - set namespace and class\n"
-        "/O-       - disable optimizations     /P        - replace PInvokes\n"
-        "+Q        - quiet mode                /T        - translate trigraphs\n"
-        "/Vx.x.x.x - set assembly version      /!        - No logo\n"
-        "--version - show version info\n"
-        "\nCodegen parameters: (/C[+][-][params])\n"
-        "  +d   - display diagnostics          -b        - no BSS\n"
-        "  -l   - no C source in ASM file      -m        -  no leading underscores\n"
-        "  +u   - 'char' type is unsigned\n"
-        "\nWarning Control:\n"
-        " /w      - display no warnings         /wx or /werror - display warnings as errors\n"
-        " /woxxx  - only display warning once   /wexxx         - display warning xxx as error\n"
-        " /wdxxx  - disable warning xxx         /wxxx          - enable warning xxx\n"
-        "\n--architecture <architecture>\n"
-        "    x86 - x86 code       msil - managed code\n"
-        "\nCommand line behavior has changed.  Use environment var OCC_LEGACY_OPTIONS for old behavior\n\n"
-        "Time: " __TIME__ "  Date: " __DATE__;
+static char usage_text[] =
+    "[options] [@response file] files\n"
+    "\n"
+    "/1        - C1x mode                  /8        - c89 mode\n"
+    "/9        - C99 mode                  /c        - compile only\n"
+    "-d        - don't allow extensions    +e        - dump errors to file\n"
+    "+i        - dump preprocessed file    +l        - dump listing file\n"
+    "/oname    - specify output file name\n"
+    "+A        - disable extensions        /Dxxx     - define something\n"
+    "/E[+]nn   - max number of errors      /Ipath    - specify include path\n"
+    "/Kfile    - set strong name key       /Lxxx     - set dlls to import from\n"
+    "/M        - generate make stubs       /Nns.cls  - set namespace and class\n"
+    "/O-       - disable optimizations     /P        - replace PInvokes\n"
+    "+Q        - quiet mode                /T        - translate trigraphs\n"
+    "/Vx.x.x.x - set assembly version      /!        - No logo\n"
+    "--version - show version info\n"
+    "\nCodegen parameters: (/C[+][-][params])\n"
+    "  +d   - display diagnostics          -b        - no BSS\n"
+    "  -l   - no C source in ASM file      -m        -  no leading underscores\n"
+    "  +u   - 'char' type is unsigned\n"
+    "\nWarning Control:\n"
+    " /w      - display no warnings         /wx or /werror - display warnings as errors\n"
+    " /woxxx  - only display warning once   /wexxx         - display warning xxx as error\n"
+    " /wdxxx  - disable warning xxx         /wxxx          - enable warning xxx\n"
+    "\n--architecture <architecture>\n"
+    "    x86 - x86 code       msil - managed code\n"
+    "\nCommand line behavior has changed.  Use environment var OCC_LEGACY_OPTIONS for old behavior\n\n"
+    "Time: " __TIME__ "  Date: " __DATE__;
 
-    char msil_bltins[] =
-        " void exit(int); "
-        "void __getmainargs(void *,void *,void*,int, void *); "
-        "void *__iob_func(); "
-        "unsigned short *__pctype_func(); "
-        "int *_errno(); "
-        "void *__OCCMSIL_GetProcThunkToManaged(void *proc, void *pdata); "
-        "void *__OCCMSIL_GetProcThunkToUnmanaged(void *proc); "
-        "void *__va_start__(); "
-        "void *__va_arg__(void *, ...); ";
+char msil_bltins[] =
+    " void exit(int); "
+    "void __getmainargs(void *,void *,void*,int, void *); "
+    "void *__iob_func(); "
+    "unsigned short *__pctype_func(); "
+    "int *_errno(); "
+    "void *__OCCMSIL_GetProcThunkToManaged(void *proc, void *pdata); "
+    "void *__OCCMSIL_GetProcThunkToUnmanaged(void *proc); "
+    "void *__va_start__(); "
+    "void *__va_arg__(void *, ...); ";
 
-    static int initnasm(COMPILER_PARAMS* parms, ARCH_ASM* data, ARCH_DEBUG* debug)
-    {
-        (void)parms;
-        (void)data;
-        (void)debug;
-        cparams.prm_assembler = pa_nasm;
-        return 1;
-    }
+static int initnasm(COMPILER_PARAMS* parms, ARCH_ASM* data, ARCH_DEBUG* debug)
+{
+    (void)parms;
+    (void)data;
+    (void)debug;
+    cparams.prm_assembler = pa_nasm;
+    return 1;
+}
 
-    static ARCH_DEFINES defines[] = {
-        /* must come first in this order */
-        {"__WIN32__", "1", true, true},
-        {"__LSCRTL_DLL", "1", false, true},
-        {"__DOS__", "1", false, true},
-        {"_WIN32", "1", true, true},
-        {"__MSVCRT_DLL", "1", false, true},
-        {"__CRTDLL_DLL", "1", false, true},
-        {"__RAW_IMAGE__", "1", false, true},
-        {"__MANAGED__", "1", false, true},
-        /* end ordered */
-        {"__MSIL__", "1", true, true},
-        {"__386__", "1", true, true},
-        {"__i386__", "1", true, true},
-        {"_i386_", "1", true, true},
-        {"__i386", "1", true, true},
-        {0},
-    };
-    static ARCH_SIZING sizes = {
-        1,  /*char a_bool;*/
-        1,  /*char a_char;*/
-        2,  /*char a_short;*/
-        2,  /*char a_wchar_t;*/
-        4,  /*char a_enum;*/
-        4,  /*char a_int;*/
-        4,  /*char a_long;*/
-        8,  /*char a_longlong;*/
-        4,  /*char a_addr;*/
-        8,  /*char a_farptr;*/
-        2,  /*char a_farseg;*/
-        12, /*char a_memberptr;    */
-        0,
-        /* char a_struct;  */ /* alignment only */
-        4,                    /*char a_float;*/
-        8,                    /*char a_double;*/
-        8,                    /*char a_longdouble;*/
-        0,                    /*char a_fcomplexpad;*/
-        0,                    /*char a_rcomplexpad;*/
-        2,                    /*char a_lrcomplexpad;*/
-    };
-    static ARCH_SIZING alignments = {
-        1, /*char a_bool;*/
-        1, /*char a_char;*/
-        2, /*char a_short;*/
-        2, /*char a_wchar_t;*/
-        4, /*char a_enum;*/
-        4, /*char a_int;*/
-        4, /*char a_long;*/
-        8, /*char a_longlong;*/
-        4, /*char a_addr;*/
-        4, /*char a_farptr;*/
-        2, /*char a_farseg;*/
-        4, /*char a_memberptr;    */
-        0, /*char a_struct;  alignment only */
-        /* imaginary same as real */
-        4, /*char a_float;*/
-        8, /*char a_double;*/
-        8, /*char a_longdouble;*/
-    };
-    static ARCH_SIZING locks = {
-        0, /*char a_bool; */
-        0, /*char a_char; */
-        0, /*char a_short; */
-        0, /*char a_wchar_t; */
-        0, /*char a_enum; */
-        0, /*char a_int; */
-        0, /*char a_long; */
-        1, /*char a_longlong; */
-        0, /*char a_addr; */
-        1, /*char a_farptr; */
-        1, /*char a_farseg; */
-        1, /*char a_memberptr; */
-        1,
-        /*char a_struct; */ /* alignment only */
-        1,                  /*char a_float; */
-        1,                  /*char a_double; */
-        1,                  /*char a_longdouble; */
-        1,                  /*char a_fcomplexpad; */
-        1,                  /*char a_rcomplexpad; */
-        1,                  /*char a_lrcomplexpad; */
-    };
-    static ARCH_FLOAT aflt = { -126, 126, 128, 24 };
-    static ARCH_FLOAT adbl = { -1022, 1022, 1024, 53 };
-    static ARCH_FLOAT aldbl = { -1022, 1022, 1024, 53 };
-    static ARCH_PEEP peeps[] = { 0 };
-    static ARCH_CHARACTERISTICS architecture_characteristics = {
-        &alignments, /* alignments */
-        0,           /* custom alignment routine */
-        &sizes,      /* sizes */
-        &locks,      /* atomic locks */
-        0,           /* routine is called in case parameters less than paramwidth need offsets */
-        ISZ_ULONG,   /* size compatible to an integer */
-        ISZ_ULONG,   /* size compatible to an address */
-        8,           /* default packing level */
-        8,           /* alignment of malloc() out of RTL */
-        /* floating point characteristics not fully implemented */
-        &aflt,                                                               /* characteristics of 'float' keyword */
-        &adbl,                                                               /* characteristics of 'double' keyword */
-        &aldbl,                                                              /* characteristics of 'long double' keyword */
-        0,                                                                   /* future floating type */
-        REG_MAX,                                                             /* register count */
-        &regNames[0],                                                        /* defines registers */
-        1,                                                                   /* register trees count */
-        &regRoot, (ARCH_REGCLASS**)regClasses, &regCosts, allocOrder, nullptr, peeps, /* defines peephole information */
-        0,                                                                   /* Max number of regs considered for fastcall */
-        0,                                                                   /* register list for regs used in fastcall */
+static ARCH_DEFINES defines[] = {
+    /* must come first in this order */
+    {"__WIN32__", "1", true, true},
+    {"__LSCRTL_DLL", "1", false, true},
+    {"__DOS__", "1", false, true},
+    {"_WIN32", "1", true, true},
+    {"__MSVCRT_DLL", "1", false, true},
+    {"__CRTDLL_DLL", "1", false, true},
+    {"__RAW_IMAGE__", "1", false, true},
+    {"__MANAGED__", "1", false, true},
+    /* end ordered */
+    {"__MSIL__", "1", true, true},
+    {"__386__", "1", true, true},
+    {"__i386__", "1", true, true},
+    {"_i386_", "1", true, true},
+    {"__i386", "1", true, true},
+    {0},
+};
+static ARCH_SIZING sizes = {
+    1,  /*char a_bool;*/
+    1,  /*char a_char;*/
+    2,  /*char a_short;*/
+    2,  /*char a_wchar_t;*/
+    4,  /*char a_enum;*/
+    4,  /*char a_int;*/
+    4,  /*char a_long;*/
+    8,  /*char a_longlong;*/
+    4,  /*char a_addr;*/
+    8,  /*char a_farptr;*/
+    2,  /*char a_farseg;*/
+    12, /*char a_memberptr;    */
+    0,
+    /* char a_struct;  */ /* alignment only */
+    4,                    /*char a_float;*/
+    8,                    /*char a_double;*/
+    8,                    /*char a_longdouble;*/
+    0,                    /*char a_fcomplexpad;*/
+    0,                    /*char a_rcomplexpad;*/
+    2,                    /*char a_lrcomplexpad;*/
+};
+static ARCH_SIZING alignments = {
+    1, /*char a_bool;*/
+    1, /*char a_char;*/
+    2, /*char a_short;*/
+    2, /*char a_wchar_t;*/
+    4, /*char a_enum;*/
+    4, /*char a_int;*/
+    4, /*char a_long;*/
+    8, /*char a_longlong;*/
+    4, /*char a_addr;*/
+    4, /*char a_farptr;*/
+    2, /*char a_farseg;*/
+    4, /*char a_memberptr;    */
+    0, /*char a_struct;  alignment only */
+    /* imaginary same as real */
+    4, /*char a_float;*/
+    8, /*char a_double;*/
+    8, /*char a_longdouble;*/
+};
+static ARCH_SIZING locks = {
+    0, /*char a_bool; */
+    0, /*char a_char; */
+    0, /*char a_short; */
+    0, /*char a_wchar_t; */
+    0, /*char a_enum; */
+    0, /*char a_int; */
+    0, /*char a_long; */
+    1, /*char a_longlong; */
+    0, /*char a_addr; */
+    1, /*char a_farptr; */
+    1, /*char a_farseg; */
+    1, /*char a_memberptr; */
+    1,
+    /*char a_struct; */ /* alignment only */
+    1,                  /*char a_float; */
+    1,                  /*char a_double; */
+    1,                  /*char a_longdouble; */
+    1,                  /*char a_fcomplexpad; */
+    1,                  /*char a_rcomplexpad; */
+    1,                  /*char a_lrcomplexpad; */
+};
+static ARCH_FLOAT aflt = {-126, 126, 128, 24};
+static ARCH_FLOAT adbl = {-1022, 1022, 1024, 53};
+static ARCH_FLOAT aldbl = {-1022, 1022, 1024, 53};
+static ARCH_PEEP peeps[] = {0};
+static ARCH_CHARACTERISTICS architecture_characteristics = {
+    &alignments, /* alignments */
+    0,           /* custom alignment routine */
+    &sizes,      /* sizes */
+    &locks,      /* atomic locks */
+    0,           /* routine is called in case parameters less than paramwidth need offsets */
+    ISZ_ULONG,   /* size compatible to an integer */
+    ISZ_ULONG,   /* size compatible to an address */
+    8,           /* default packing level */
+    8,           /* alignment of malloc() out of RTL */
+    /* floating point characteristics not fully implemented */
+    &aflt,                                                                        /* characteristics of 'float' keyword */
+    &adbl,                                                                        /* characteristics of 'double' keyword */
+    &aldbl,                                                                       /* characteristics of 'long double' keyword */
+    0,                                                                            /* future floating type */
+    REG_MAX,                                                                      /* register count */
+    &regNames[0],                                                                 /* defines registers */
+    1,                                                                            /* register trees count */
+    &regRoot, (ARCH_REGCLASS**)regClasses, &regCosts, allocOrder, nullptr, peeps, /* defines peephole information */
+    0,                                                                            /* Max number of regs considered for fastcall */
+    0,                                                                            /* register list for regs used in fastcall */
 
-        OPT_REVERSESTORE | OPT_REVERSEPARAM | OPT_ARGSTRUCTREF | OPT_EXPANDSWITCH | OPT_THUNKRETVAL, /* preferred optimizations */
-        DO_NOGLOBAL | DO_NOLOCAL | DO_NOREGALLOC | DO_NOADDRESSINIT | DO_NOPARMADJSIZE | DO_NOLOADSTACK | DO_NOENTRYIF |
-            DO_NOOPTCONVERSION | DO_NOINLINE | DO_UNIQUEIND | DO_NOFASTDIV | DO_NODEADPUSHTOTEMP | DO_MIDDLEBITS | DO_NOBRANCHTOBRANCH,
-        /* optimizations we don't want */
-        EO_RETURNASERR,    /* error options */
-        false,             /* true if has floating point regs */
-        0,                 /* floating point modes, not honored currently */
-        ABM_USESIZE,       /* bool is determined by sizing above */
-        ARM_FUNCTIONSCOPE, /* register allocation across entire function */
-        8,                 /* number of bits in a MAU.  values other than 8 not supported */
-        false,             /* little endian */
-        false,             /* normal bit allocation*/
-        false,             /* locals in stack memory*/
-        false,             /* stack pointer grows down */
-        false,             /* preallocate locals */
-        8,                 /* size of a return block on stack (e.g. function ret addr & frame ptr) */
-        4,                 /* minimium width/ padding of passed parameters in maus */
-        4,                 /* minimum stack alignment */
-        false,             /* library functions should bes genned as import calls */
-    };
+    OPT_REVERSESTORE | OPT_REVERSEPARAM | OPT_ARGSTRUCTREF | OPT_EXPANDSWITCH | OPT_THUNKRETVAL, /* preferred optimizations */
+    DO_NOGLOBAL | DO_NOLOCAL | DO_NOREGALLOC | DO_NOADDRESSINIT | DO_NOPARMADJSIZE | DO_NOLOADSTACK | DO_NOENTRYIF |
+        DO_NOOPTCONVERSION | DO_NOINLINE | DO_UNIQUEIND | DO_NOFASTDIV | DO_NODEADPUSHTOTEMP | DO_MIDDLEBITS | DO_NOBRANCHTOBRANCH,
+    /* optimizations we don't want */
+    EO_RETURNASERR,    /* error options */
+    false,             /* true if has floating point regs */
+    0,                 /* floating point modes, not honored currently */
+    ABM_USESIZE,       /* bool is determined by sizing above */
+    ARM_FUNCTIONSCOPE, /* register allocation across entire function */
+    8,                 /* number of bits in a MAU.  values other than 8 not supported */
+    false,             /* little endian */
+    false,             /* normal bit allocation*/
+    false,             /* locals in stack memory*/
+    false,             /* stack pointer grows down */
+    false,             /* preallocate locals */
+    8,                 /* size of a return block on stack (e.g. function ret addr & frame ptr) */
+    4,                 /* minimium width/ padding of passed parameters in maus */
+    4,                 /* minimum stack alignment */
+    false,             /* library functions should bes genned as import calls */
+};
 
-    static ARCH_DEBUG dbgStruct[1];
+static ARCH_DEBUG dbgStruct[1];
 #if 0
     = { {
                                   "LS",         /* name of debug format */
@@ -234,8 +234,8 @@ namespace Optimizer
 
     };
 #endif
-    static ARCH_GEN outputfunctions = {
-    #if 0
+static ARCH_GEN outputfunctions = {
+#if 0
         NULL,                /* generate assembly language header */
         NULL,                /* generate assembly language trailer */
         NULL,                /* adjust an assembly language statement for the relative code labels */
@@ -358,34 +358,34 @@ namespace Optimizer
         asm_savestack,       /* save the stack pointer to a var */
         asm_seh,             /* seh */
         asm_functail,        /* function tail (e.g. destructor) start/end */
-    #endif
-    };
+#endif
+};
 
-    ARCH_ASM msilAssemblerInterface[] = {
-        {
-            "ilasm",                        /* assembler name */
-            0,                              /* backend data (compiler ignores) */
-            "1",                            /* __STDC__HOSTED__ value "0" = embedded, "1" = hosted */
-            ".il",                          /* extension for assembly files */
-            ".ilo",                         /* extension for object files, NULL = has no object mode */
-            ".rc;.res;.ilo",                /* extensions for files that should be passed to the backend*/
-            "occil",                        /* name of an environment variable to parse, or 0 */
-            "occil",                        /* name of the program, for usage */
-            "occil",                        /* name of a config file if you want to use one, or NULL (sans extension) */
-            usage_text,                     /* pointer to usage text */
-            nullptr,//args,                           /* extra args */
-            0,//sizeof(args) / sizeof(args[0]), /* number of args */
-            0,//prockeywords,                   /* specific keywords, e.g. allow a 'bit' keyword and so forth */
-            defines,                        /* defines list to create at compile time, or null */
-            &dbgStruct[0],                  /* debug structure, or NULL */
-            &architecture_characteristics,                  /* architecture characteristics */
-            &outputfunctions,               /* pointer to backend function linkages */
-    #if 0
+ARCH_ASM msilAssemblerInterface[] = {
+    {
+        "ilasm",         /* assembler name */
+        0,               /* backend data (compiler ignores) */
+        "1",             /* __STDC__HOSTED__ value "0" = embedded, "1" = hosted */
+        ".il",           /* extension for assembly files */
+        ".ilo",          /* extension for object files, NULL = has no object mode */
+        ".rc;.res;.ilo", /* extensions for files that should be passed to the backend*/
+        "occil",         /* name of an environment variable to parse, or 0 */
+        "occil",         /* name of the program, for usage */
+        "occil",         /* name of a config file if you want to use one, or NULL (sans extension) */
+        usage_text,      /* pointer to usage text */
+        nullptr,         // args,                           /* extra args */
+        0,               // sizeof(args) / sizeof(args[0]), /* number of args */
+        0,               // prockeywords,                   /* specific keywords, e.g. allow a 'bit' keyword and so forth */
+        defines,         /* defines list to create at compile time, or null */
+        &dbgStruct[0],   /* debug structure, or NULL */
+        &architecture_characteristics, /* architecture characteristics */
+        &outputfunctions,              /* pointer to backend function linkages */
+#if 0
             & msilData,                      /* pointer to MSIL-specific data and functions */
-    #endif
-            msil_bltins,                    /* pointer to extra builtin data */
-            initnasm,                       /* return 1 to proceed */
-    #if 0
+#endif
+        msil_bltins, /* pointer to extra builtin data */
+        initnasm,    /* return 1 to proceed */
+#if 0
             oa_main_preprocess,             /* precompile function, or NULL */
             oa_main_postprocess,            /* postcompile function, or NULL */
             RunExternalFiles,               /* postprocess function, or NULL */
@@ -405,14 +405,14 @@ namespace Optimizer
             0,                              /* initialize intrinsic mechanism, compiler startup */
             0,                              /* search for an intrinsic */
             oa_enter_type,                  /* enter a type in the BE */
-    #endif
-        },
-        {0} };
+#endif
+    },
+    {0}};
 
-    void msilWinmodeSetup(const char* string)
+void msilWinmodeSetup(const char* string)
+{
+    switch (string[0])
     {
-        switch (string[0])
-        {
         case 'd':
             cparams.prm_targettype = DLL;
             defines[0].respect = true;
@@ -437,27 +437,27 @@ namespace Optimizer
         default:
             Utils::fatal("Invalid executable type");
             break;
-        }
-        if (string[1] == 'l')
-        {
-            defines[1].respect = true;
-            defines[4].respect = false;
-            pinvoke_dll = "lscrtl.dll";
-        }
-        else if (string[1] == 'm')
-        {
-            defines[1].respect = false;
-            defines[4].respect = true;
-            pinvoke_dll = "msvcrt.dll";
-        }
-        else if (string[1] == 'M')
-        {
-            cparams.managed_library = true;
-            defines[4].respect = false;
-            defines[7].respect = true;
-        }
-        if (string[2] == 'n')
-            cparams.no_default_libs = true;
     }
-
+    if (string[1] == 'l')
+    {
+        defines[1].respect = true;
+        defines[4].respect = false;
+        pinvoke_dll = "lscrtl.dll";
+    }
+    else if (string[1] == 'm')
+    {
+        defines[1].respect = false;
+        defines[4].respect = true;
+        pinvoke_dll = "msvcrt.dll";
+    }
+    else if (string[1] == 'M')
+    {
+        cparams.managed_library = true;
+        defines[4].respect = false;
+        defines[7].respect = true;
+    }
+    if (string[2] == 'n')
+        cparams.no_default_libs = true;
 }
+
+}  // namespace Optimizer

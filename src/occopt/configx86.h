@@ -24,9 +24,9 @@
  */
 namespace Optimizer
 {
-    extern ARCH_ASM x86AssemblerInterface[];
+extern ARCH_ASM x86AssemblerInterface[];
 
-    void WinmodeSetup(const char* string);
-    int parse_codegen(char mode, const char* string);
-    void SetUsesESP(bool yes);
-}
+void WinmodeSetup(const char* string);
+int parse_codegen(char mode, const char* string);
+void SetUsesESP(bool yes);
+}  // namespace Optimizer

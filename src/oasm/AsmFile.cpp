@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "AsmFile.h"
@@ -372,7 +372,7 @@ void AsmFile::DoDQ()
         f->SetFileName(errFile);
         f->SetErrorLine(errLine);
         fixups.push_back(f);
-        *((unsigned long long *)(buf + size)) = 0;
+        *((unsigned long long*)(buf + size)) = 0;
         size += 8;
     } while (GetKeyword() == kw::comma);
     Instruction* ins = new Instruction((unsigned char*)buf, size, true);
@@ -649,16 +649,16 @@ void AsmFile::UnknownDirective()
     {
         std::wstring str = GetString();
         std::string dir;
-        for (int i=0; i < str.size(); i++)
+        for (int i = 0; i < str.size(); i++)
             dir += str[i] & 255;
         if (!noGASdirectivewarning)
-           Errors::Warning("Unimplemented directive: " + dir);
+            Errors::Warning("Unimplemented directive: " + dir);
     }
     else
     {
         if (!noGASdirectivewarning)
             Errors::Warning("Unimplemented directive");
-    }       
+    }
 }
 void AsmFile::AlignDirective()
 {
@@ -691,7 +691,7 @@ void AsmFile::GnuAlignDirective(bool p2)
     if (!IsNumber())
         throw new std::runtime_error("Width expected");
     int width = GetValue();
-    NextToken(); // past comma
+    NextToken();  // past comma
     if (width > 4)
         width = 4;
     if (!IsNumber())
@@ -846,30 +846,30 @@ void AsmFile::PublicDirective()
 }
 void AsmFile::InsertExtern(const std::string& name1)
 {
-	std::string name = name1;
-        if (caseInsensitive)
+    std::string name = name1;
+    if (caseInsensitive)
+    {
+        name = UTF8::ToUpper(name);
+    }
+    externs.insert(name);
+    if (labels.find(name) != labels.end() && !labels[name]->IsExtern())
+    {
+        throw new std::runtime_error(std::string("Label '") + name + "' already exists.");
+    }
+    else
+    {
+        if (labels.find(name) == labels.end())
         {
-            name = UTF8::ToUpper(name);
+            labels[name] = std::make_unique<Label>(name, labels.size(), sections.size() - 1);
         }
-        externs.insert(name);
-        if (labels.find(name) != labels.end() && !labels[name]->IsExtern())
-        {
-            throw new std::runtime_error(std::string("Label '") + name + "' already exists.");
-        }
-        else
-        {
-            if (labels.find(name) == labels.end())
-            {
-                labels[name] = std::make_unique<Label>(name, labels.size(), sections.size() - 1);
-            }
-            Label* label = labels[name].get();
-            label->SetExtern(true);
-            numericLabels.push_back(label);
-        }
- }
+        Label* label = labels[name].get();
+        label->SetExtern(true);
+        numericLabels.push_back(label);
+    }
+}
 void AsmFile::ResolveAttExterns(const std::set<std::string>& externs)
 {
-    for (auto&&name : externs)
+    for (auto&& name : externs)
     {
         auto it = labels.find(name);
         if (it == labels.end())
@@ -996,7 +996,7 @@ void AsmFile::SingleDirective()
         num = GetNumber();
         if (num->GetType() == AsmExprNode::IVAL)
         {
-            num->fval = num->ival;	
+            num->fval = num->ival;
             num->SetType(AsmExprNode::FVAL);
         }
 
@@ -1036,7 +1036,7 @@ void AsmFile::DoubleDirective()
         num = GetNumber();
         if (num->GetType() == AsmExprNode::IVAL)
         {
-            num->fval = num->ival;	
+            num->fval = num->ival;
             num->SetType(AsmExprNode::FVAL);
         }
         Fixup* f = new Fixup(num, 8, false, 0);
@@ -1070,25 +1070,22 @@ void AsmFile::SetDirective()
     DoLabel(name, lineno);
     EquDirective();
 }
-void AsmFile::AbortDirective()
-{
-    exit(1);
-}
+void AsmFile::AbortDirective() { exit(1); }
 void AsmFile::ErrorDirective()
 {
     NextToken();
     if (IsString())
     {
-         std::wstring str = GetString();
-         int len = str.size();
-         std::string err;
-         for (int i=0; i < str.size(); i++)
-             err += (char)str[i];
-         Errors::Error(err);
+        std::wstring str = GetString();
+        int len = str.size();
+        std::string err;
+        for (int i = 0; i < str.size(); i++)
+            err += (char)str[i];
+        Errors::Error(err);
     }
     else
     {
-	Errors::Error(".err directive");
+        Errors::Error(".err directive");
     }
 }
 void AsmFile::WarningDirective()
@@ -1096,16 +1093,16 @@ void AsmFile::WarningDirective()
     NextToken();
     if (IsString())
     {
-         std::wstring str = GetString();
-         int len = str.size();
-         std::string err;
-         for (int i=0; i < str.size(); i++)
-             err += (char)str[i];
-         Errors::Warning(err);
+        std::wstring str = GetString();
+        int len = str.size();
+        std::string err;
+        for (int i = 0; i < str.size(); i++)
+            err += (char)str[i];
+        Errors::Warning(err);
     }
     else
     {
-	Errors::Warning("");
+        Errors::Warning("");
     }
 }
 void AsmFile::FailDirective()
@@ -1169,9 +1166,9 @@ void AsmFile::FillDirective()
     {
         unsigned char val[8];
         memset(val, 0, sizeof(val));
-        *(unsigned *)val = value;
-        unsigned char *buf = (unsigned char *)calloc(repeat, size);
-        for (int i=0; i < repeat; i++)
+        *(unsigned*)val = value;
+        unsigned char* buf = (unsigned char*)calloc(repeat, size);
+        for (int i = 0; i < repeat; i++)
         {
             memcpy(buf + i * size, val, size);
         }
@@ -1214,7 +1211,7 @@ void AsmFile::SpaceDirective()
     }
     if (repeat)
     {
-        unsigned char *buf = (unsigned char *)calloc(1, repeat);
+        unsigned char* buf = (unsigned char*)calloc(1, repeat);
         memset(buf, value, repeat);
         Instruction* ins = new Instruction((unsigned char*)buf, repeat, true);
         if (lineno >= 0)
@@ -1230,7 +1227,7 @@ void AsmFile::NopsDirective()
     int lineno = preProcessor.GetMainLineNo();
     NeedSection();
     int repeat = GetValue();
-    int value = 0x90; // processor specific
+    int value = 0x90;  // processor specific
     if (GetKeyword() == kw::comma)
     {
         NextToken();
@@ -1241,7 +1238,7 @@ void AsmFile::NopsDirective()
     }
     if (repeat)
     {
-        unsigned char *buf = (unsigned char *)calloc(1, repeat);
+        unsigned char* buf = (unsigned char*)calloc(1, repeat);
         memset(buf, value, repeat);
         Instruction* ins = new Instruction((unsigned char*)buf, repeat, true);
         if (lineno >= 0)
@@ -1290,7 +1287,7 @@ void AsmFile::SubsectionDirective()
 {
     NextToken();
     if (!IsNumber())
-         throw new std::runtime_error("Expected subsection id");
+        throw new std::runtime_error("Expected subsection id");
     SetSubsection(currentSection, GetValue());
 }
 void AsmFile::PushsectionDirective()
@@ -1304,7 +1301,7 @@ void AsmFile::PushsectionDirective()
     {
         NextToken();
         if (!IsNumber())
-           throw new std::runtime_error("Expected subsection id");
+            throw new std::runtime_error("Expected subsection id");
         subsection = GetValue();
         while (GetKeyword() == kw::comma)
         {
@@ -1344,7 +1341,7 @@ void AsmFile::TextDirective()
     NextToken();
     int subsection = 0;
     if (IsNumber())
-	subsection = GetValue();
+        subsection = GetValue();
     std::string name = "code";
     if (sections[name] == nullptr)
     {
@@ -1367,7 +1364,7 @@ void AsmFile::DataDirective()
     NextToken();
     int subsection = 0;
     if (IsNumber())
-	subsection = GetValue();
+        subsection = GetValue();
     std::string name = "data";
     if (sections[name] == nullptr)
     {
@@ -1397,7 +1394,7 @@ void AsmFile::PrintDirective()
     std::wstring str = GetString();
 
     std::string p;
-    for (int i=0; i < str.size(); i++)
+    for (int i = 0; i < str.size(); i++)
         p += str[i] & 255;
     std::cout << p << std::endl;
 }
@@ -1666,7 +1663,7 @@ void AsmFile::SetSubsection(Section* sect, int sid)
     sid &= 0x1fff;
     sect->SetSubsection(sid);
 }
-void AsmFile::PushSection(const std::string&name, int sid)
+void AsmFile::PushSection(const std::string& name, int sid)
 {
     auto it = sections.find(name);
     if (it == sections.end())
@@ -1696,4 +1693,3 @@ void AsmFile::SwapSections()
         SetSubsection(currentSection, hold.subsection);
     }
 }
-

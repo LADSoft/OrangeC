@@ -25,8 +25,8 @@
 
 namespace Parser
 {
-    void msilCreateProperty(SYMBOL* s1, SYMBOL* s2, SYMBOL* s3);
-    LEXEME* initialize_property(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_class_in, bool asExpression, int flags);
-    TYPE* find_boxed_type(TYPE* in);
-    TYPE* find_unboxed_type(TYPE* in);
-}
+void msilCreateProperty(SYMBOL* s1, SYMBOL* s2, SYMBOL* s3);
+LEXEME* initialize_property(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_class_in, bool asExpression, int flags);
+TYPE* find_boxed_type(TYPE* in);
+TYPE* find_unboxed_type(TYPE* in);
+}  // namespace Parser

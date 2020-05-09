@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #define _CRT_SECURE_NO_WARNINGS
@@ -32,7 +32,13 @@
 #include <cstdlib>
 #include <cstring>
 
-CmdSwitchBase::CmdSwitchBase(CmdSwitchParser& parser, char SwitchChar, std::string LongName) : exists(false), switchChar(SwitchChar), longName(LongName) { parser += this; }
+CmdSwitchBase::CmdSwitchBase(CmdSwitchParser& parser, char SwitchChar, std::string LongName) :
+    exists(false),
+    switchChar(SwitchChar),
+    longName(LongName)
+{
+    parser += this;
+}
 int CmdSwitchBool::Parse(const char* data)
 {
     if (data[0] != '-')
@@ -133,7 +139,7 @@ int CmdSwitchDefine::Parse(const char* data)
 {
     if (!data[0])
         return INT_MAX;
-    int str=0;
+    int str = 0;
     int rv = strlen(data);
     std::string name;
     if (data[0] == '"')
@@ -151,7 +157,7 @@ int CmdSwitchDefine::Parse(const char* data)
     if (*data == '=')
     {
         data++;
-        name="";
+        name = "";
         while (*data && *data != str)
         {
             name += *data++;
@@ -266,14 +272,14 @@ char* CmdSwitchFile::GetStr(char* data)
     argv[argc++] = x;
     return data;
 }
-CmdSwitchBase* CmdSwitchParser::Find(const char *name, bool useLongName)
+CmdSwitchBase* CmdSwitchParser::Find(const char* name, bool useLongName)
 {
 
     if (useLongName)
     {
         std::string bigmatch = "";
         int max = strlen(name);
-        const char *s = strchr(name,'=');
+        const char* s = strchr(name, '=');
         if (!s)
             s = strchr(name, ',');
         if (s && s - name < max)
@@ -295,7 +301,6 @@ CmdSwitchBase* CmdSwitchParser::Find(const char *name, bool useLongName)
         if (bigmatch.size())
         {
             std::cerr << "   Did you mean '--" << bigmatch << "'?" << std::endl;
-
         }
     }
     else
@@ -323,23 +328,24 @@ bool CmdSwitchParser::Parse(int* argc, char* argv[])
             memmove(argv, argv + 1, (*argc + 1 - i) * sizeof(char*));
             (*argc)--;
         }
-        else if ((argv[0][0] == '-' || argv[0][0] == '/' || (argv[0][0] == '+' && argv[0][1] != '-')) && argv[0][1] && (argv[0][1] != '-' || argv[0][2]))
+        else if ((argv[0][0] == '-' || argv[0][0] == '/' || (argv[0][0] == '+' && argv[0][1] != '-')) && argv[0][1] &&
+                 (argv[0][1] != '-' || argv[0][2]))
         {
-            const char *data = &argv[0][0];
+            const char* data = &argv[0][0];
             bool longName = data[1] == '-';
             data += 1 + longName;
             bool shifted = false;
             while (data[0] && !shifted)
             {
-                CmdSwitchBase *b;
+                CmdSwitchBase* b;
                 if (longName)
                 {
                     b = Find(data, true);
-                    const char *p = strchr(data, '=');
+                    const char* p = strchr(data, '=');
                     if (!p)
                         p = strchr(data, ',');
                     if (p)
-                        data = p+1;
+                        data = p + 1;
                     else
                         data += strlen(data);
                 }
@@ -418,7 +424,7 @@ void CmdSwitchParser::ScanEnv(char* output, const char* string)
     *output = 0;
 }
 
-bool CmdSwitchParser::Parse(const std::string &val, int *argc, char *argv[])
+bool CmdSwitchParser::Parse(const std::string& val, int* argc, char* argv[])
 {
     char output[1024], *string = output;
     int rv, i;
@@ -444,5 +450,4 @@ bool CmdSwitchParser::Parse(const std::string &val, int *argc, char *argv[])
     }
     argv[*argc] = nullptr;
     return Parse(argc, argv);
-
 }

@@ -24,42 +24,43 @@
  */
 namespace occmsil
 {
-    extern BoxedType* boxedType(int isz);
+extern BoxedType* boxedType(int isz);
 
-    void parse_pragma(const char* kw, const char* tag);
-    const char *GetName(const DataContainer* container, std::string name = "");
-    MethodSignature* LookupArrayMethod(Type* tp, std::string name);
-    bool qualifiedStruct(Optimizer::SimpleSymbol* sp);
-    bool IsPointedStruct(Optimizer::SimpleType* tp);
-    Field* GetField(Optimizer::SimpleSymbol* sp);
-    MethodSignature* GetMethodSignature(Optimizer::SimpleType* tp, bool pinvoke);
-    MethodSignature* FindPInvokeWithVarargs(std::string name, std::list<Param*>::iterator vbegin, std::list<Param*>::iterator vend,
-        size_t size);
-    MethodSignature* GetMethodSignature(Optimizer::SimpleSymbol* sp);
-    std::string GetArrayName(Optimizer::SimpleType* tp);
-    Value* GetStructField(Optimizer::SimpleSymbol* sp);
-    void msil_create_property(Optimizer::SimpleSymbol* property, Optimizer::SimpleSymbol* getter, Optimizer::SimpleSymbol* setter);
-    Type* GetType(Optimizer::SimpleType* tp, bool commit, bool funcarg = false, bool pinvoke = false);
-    void msil_oa_enter_type(Optimizer::SimpleSymbol* sp);
-    void CacheExtern(Optimizer::SimpleSymbol* sp);
-    void CacheGlobal(Optimizer::SimpleSymbol* sp);
-    void CacheStatic(Optimizer::SimpleSymbol* sp);
-    Value* GetParamData(std::string name);
-    Value* GetLocalData(Optimizer::SimpleSymbol* sp);
-    Value* GetFieldData(Optimizer::SimpleSymbol* sp);
-    void LoadLocals(std::vector<Optimizer::SimpleSymbol*>& vars);
-    void LoadParams(Optimizer::SimpleSymbol* funcsp, std::vector<Optimizer::SimpleSymbol*>& vars, std::map<Optimizer::SimpleSymbol*, Param*, byName>& paramList);
-    void msil_flush_peep(Optimizer::SimpleSymbol* funcsp, Optimizer::QUAD* list);
-    void CreateFunction(MethodSignature* sig, Optimizer::SimpleSymbol* sp);
-    void ReplaceName(std::map<std::string, Value*>& list, Value* v, char* name);
-    void msil_oa_gensrref(Optimizer::SimpleSymbol* sp, int val, int type);
-    void msil_oa_put_extern(Optimizer::SimpleSymbol* sp, int code);
-    void msil_oa_gen_strlab(Optimizer::SimpleSymbol* sp);
-    Type* GetStringType(int type);
-    Value* GetStringFieldData(int lab, int type);
-    void msil_oa_put_string_label(int lab, int type);
-    void msil_oa_genbyte(int bt);
-    void msil_oa_genstring(char* str, int len);
-    void msil_oa_enterseg(Optimizer::e_sg segnum);
-    void msil_main_postprocess(bool errors);
-}
+void parse_pragma(const char* kw, const char* tag);
+const char* GetName(const DataContainer* container, std::string name = "");
+MethodSignature* LookupArrayMethod(Type* tp, std::string name);
+bool qualifiedStruct(Optimizer::SimpleSymbol* sp);
+bool IsPointedStruct(Optimizer::SimpleType* tp);
+Field* GetField(Optimizer::SimpleSymbol* sp);
+MethodSignature* GetMethodSignature(Optimizer::SimpleType* tp, bool pinvoke);
+MethodSignature* FindPInvokeWithVarargs(std::string name, std::list<Param*>::iterator vbegin, std::list<Param*>::iterator vend,
+                                        size_t size);
+MethodSignature* GetMethodSignature(Optimizer::SimpleSymbol* sp);
+std::string GetArrayName(Optimizer::SimpleType* tp);
+Value* GetStructField(Optimizer::SimpleSymbol* sp);
+void msil_create_property(Optimizer::SimpleSymbol* property, Optimizer::SimpleSymbol* getter, Optimizer::SimpleSymbol* setter);
+Type* GetType(Optimizer::SimpleType* tp, bool commit, bool funcarg = false, bool pinvoke = false);
+void msil_oa_enter_type(Optimizer::SimpleSymbol* sp);
+void CacheExtern(Optimizer::SimpleSymbol* sp);
+void CacheGlobal(Optimizer::SimpleSymbol* sp);
+void CacheStatic(Optimizer::SimpleSymbol* sp);
+Value* GetParamData(std::string name);
+Value* GetLocalData(Optimizer::SimpleSymbol* sp);
+Value* GetFieldData(Optimizer::SimpleSymbol* sp);
+void LoadLocals(std::vector<Optimizer::SimpleSymbol*>& vars);
+void LoadParams(Optimizer::SimpleSymbol* funcsp, std::vector<Optimizer::SimpleSymbol*>& vars,
+                std::map<Optimizer::SimpleSymbol*, Param*, byName>& paramList);
+void msil_flush_peep(Optimizer::SimpleSymbol* funcsp, Optimizer::QUAD* list);
+void CreateFunction(MethodSignature* sig, Optimizer::SimpleSymbol* sp);
+void ReplaceName(std::map<std::string, Value*>& list, Value* v, char* name);
+void msil_oa_gensrref(Optimizer::SimpleSymbol* sp, int val, int type);
+void msil_oa_put_extern(Optimizer::SimpleSymbol* sp, int code);
+void msil_oa_gen_strlab(Optimizer::SimpleSymbol* sp);
+Type* GetStringType(int type);
+Value* GetStringFieldData(int lab, int type);
+void msil_oa_put_string_label(int lab, int type);
+void msil_oa_genbyte(int bt);
+void msil_oa_genstring(char* str, int len);
+void msil_oa_enterseg(Optimizer::e_sg segnum);
+void msil_main_postprocess(bool errors);
+}  // namespace occmsil

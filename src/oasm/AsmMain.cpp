@@ -1,28 +1,28 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
-//https://www.ibm.com/developerworks/library/l-gas-nasm/index.html
+// https://www.ibm.com/developerworks/library/l-gas-nasm/index.html
 #include "AsmMain.h"
 #include "AsmFile.h"
 
@@ -39,7 +39,7 @@
 #    include <io.h>
 #endif
 
-extern bool IsSymbolCharRoutine(const char *, bool);
+extern bool IsSymbolCharRoutine(const char*, bool);
 bool (*Tokenizer::IsSymbolChar)(const char*, bool) = IsSymbolCharRoutine;
 
 CmdSwitchParser AsmMain::SwitchParser;
@@ -53,7 +53,7 @@ CmdSwitchCombineString AsmMain::includePath(SwitchParser, 'I', ';', "include-pat
 CmdSwitchBool AsmMain::BinaryOutput(SwitchParser, 'b', false, "binary");
 CmdSwitchBool AsmMain::Intel(SwitchParser, '\0', false, "intel");
 CmdSwitchBool AsmMain::GAS(SwitchParser, '\0', false, "gas");
-CmdSwitchInt AsmMain::ProcessorMode(SwitchParser, 's', 32,0,100,"processor-mode");
+CmdSwitchInt AsmMain::ProcessorMode(SwitchParser, 's', 32, 0, 100, "processor-mode");
 CmdSwitchBool AsmMain::WarningsAsErrors(SwitchParser, '\0', false, "warningsaserrors");
 CmdSwitchBool AsmMain::NoGasDirectiveWarning(SwitchParser, '\0', false, "nogasdirectivewarning");
 const char* AsmMain::usageText =
@@ -62,7 +62,7 @@ const char* AsmMain::usageText =
     "  @filename                          Use response file\n"
     "  /b, --binary                       Use binary output\n"
     "  /e, --preprocess-only              Preprocess only\n"
-    "  /i, --case-insensitive             Case Insensitive Labels\n"   
+    "  /i, --case-insensitive             Case Insensitive Labels\n"
     "  /l[m], --listing                   Listing file [macro expansions]\n"
     "  /oxxx, --output-file               Set output file name\n"
     "  /s:xxx, --processor-mode           Set processor mode (16,32,64)\n"
@@ -240,7 +240,8 @@ int AsmMain::Run(int argc, char* argv[])
         else
         {
             Listing listing;
-            AsmFile asmFile(pp, CaseInsensitive.GetValue(), BinaryOutput.GetValue(), listing, GAS.GetValue(), NoGasDirectiveWarning.GetValue());
+            AsmFile asmFile(pp, CaseInsensitive.GetValue(), BinaryOutput.GetValue(), listing, GAS.GetValue(),
+                            NoGasDirectiveWarning.GetValue());
             if (asmFile.Read())
             {
                 if (!asmFile.Write(outName, inName) || Errors::GetErrorCount())

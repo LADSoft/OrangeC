@@ -24,5 +24,5 @@
  */
 namespace Parser
 {
-    void displayLexeme(LEXEME* lex);
+void displayLexeme(LEXEME* lex);
 }

@@ -24,13 +24,13 @@
  */
 namespace Optimizer
 {
-    static struct reflist
-    {
-        struct reflist* next;
-        QUAD* old;
-        QUAD* newVal;
-    } *refs;
+static struct reflist
+{
+    struct reflist* next;
+    QUAD* old;
+    QUAD* newVal;
+} * refs;
 
-    void ScanForInvariants(BLOCK* b);
-    void MoveLoopInvariants(void);
-}
+void ScanForInvariants(BLOCK* b);
+void MoveLoopInvariants(void);
+}  // namespace Optimizer

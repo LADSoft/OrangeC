@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "ioptimizer.h"
@@ -36,39 +36,35 @@
 /* address mode specifications */
 #define MAX_SEGS browseseg + 1
 
-
 namespace occx86
 {
-    enum e_lk : int;
+enum e_lk : int;
 
+enum fconst
+{
+    fczero,
+    fcone,
+    fcmone
+};
 
+/*      addressing mode structure       */
 
-    enum fconst
-    {
-        fczero,
-        fcone,
-        fcmone
-    };
+/*      output code structure   */
 
-    /*      addressing mode structure       */
-
-
-    /*      output code structure   */
-
-    /* Used for fixup gen */
-    typedef struct dl
-    {
-        struct dl* next;
-        char* string;
-        int offset;
-        short type;
-    } DATALINK;
+/* Used for fixup gen */
+typedef struct dl
+{
+    struct dl* next;
+    char* string;
+    int offset;
+    short type;
+} DATALINK;
 
 #define AMODE struct amode
 #define OCODE struct ocode
 
 #define FLOAT printf("codegen-Floating point not implemented in push/pop\n");
-    /* 386 register set */
+/* 386 register set */
 #define EAX 0
 #define ECX 1
 #define EDX 2
@@ -157,12 +153,12 @@ namespace occx86
 #define OP_STOS 64
 #define OP_REG03 65
 
-    typedef struct _opcode
-    {
-        short ocoperands;
-        short ocvalue;
-        short ocflags;
-    } OPCODE;
+typedef struct _opcode
+{
+    short ocoperands;
+    short ocvalue;
+    short ocflags;
+} OPCODE;
 
 #define OCAlwaysword 0x2000
 #define OCprefixfwait 0x1000
@@ -173,34 +169,33 @@ namespace occx86
 #define OCfloatshift 4
 #define OCprocmask 0x0f
 
-    typedef struct muldiv
-    {
-        struct muldiv* next;
-        long value;
-        FPF floatvalue;
-        int size;
-        int label;
-    } MULDIV;
+typedef struct muldiv
+{
+    struct muldiv* next;
+    long value;
+    FPF floatvalue;
+    int size;
+    int label;
+} MULDIV;
 
-    enum mode
-    {
-        fm_label,
-        fm_symbol,
-        fm_rellabel,
-        fm_relsymbol,
-        fm_threadlocal
-    };
+enum mode
+{
+    fm_label,
+    fm_symbol,
+    fm_rellabel,
+    fm_relsymbol,
+    fm_threadlocal
+};
 
-    typedef struct _dbgblock
-    {
-        struct _dbgblock* next;
-        struct _dbgblock* parent;
-        struct _dbgblock* child;
-        Optimizer::SimpleSymbol* syms;
-        int startlab;
-        int endlab;
-    } DBGBLOCK;
-
+typedef struct _dbgblock
+{
+    struct _dbgblock* next;
+    struct _dbgblock* parent;
+    struct _dbgblock* child;
+    Optimizer::SimpleSymbol* syms;
+    int startlab;
+    int endlab;
+} DBGBLOCK;
 
 #define R_EAX 0
 #define R_ECX 1
@@ -211,28 +206,27 @@ namespace occx86
 #define R_CL 17
 #define R_AX 24
 #define R_CX 25
-    enum e_adtype
-    {
-        e_ad_linedata,
-        e_ad_blockdata,
-        e_ad_funcdata,
-        e_ad_vfuncdata,
-        e_ad_vardata
-    };
+enum e_adtype
+{
+    e_ad_linedata,
+    e_ad_blockdata,
+    e_ad_funcdata,
+    e_ad_vfuncdata,
+    e_ad_vardata
+};
 
-    typedef struct _attribdata
+typedef struct _attribdata
+{
+    enum e_adtype type;
+    union
     {
-        enum e_adtype type;
-        union
-        {
-            Optimizer::LINEDATA* ld;
-            struct Optimizer::SimpleSymbol* sp;
-            void* section;
-        } v;
-        bool start;
-    } ATTRIBDATA;
-}
-
+        Optimizer::LINEDATA* ld;
+        struct Optimizer::SimpleSymbol* sp;
+        void* section;
+    } v;
+    bool start;
+} ATTRIBDATA;
+}  // namespace occx86
 
 enum asmTypes : int
 {

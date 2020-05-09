@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #define _CRT_SECURE_NO_WARNINGS
@@ -33,12 +33,11 @@
 #endif
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
-#define _access access
+#    define _access access
 #else
 #    include <io.h>
 extern "C" char* getcwd(char*, int);
 #endif
-
 
 #include "Utils.h"
 #include "CmdFiles.h"
@@ -169,9 +168,9 @@ std::string Utils::AbsolutePath(const std::string& name)
         char buf[MAX_PATH];
         GetCurrentDirectoryA(sizeof(buf), buf);
         if (name[1] == ':')
-            rv = name.substr(0,2) + (buf +2) + CmdFiles::DIR_SEP + name.substr(2);
+            rv = name.substr(0, 2) + (buf + 2) + CmdFiles::DIR_SEP + name.substr(2);
         else if (name[0] == CmdFiles::DIR_SEP[0])
-            rv = std::string(buf).substr(0,2) + name;
+            rv = std::string(buf).substr(0, 2) + name;
         else
             rv = std::string(buf) + CmdFiles::DIR_SEP + name;
     }
@@ -261,8 +260,8 @@ bool Utils::HasLocalExe(const std::string& exeName)
 {
     char buf[10000];
     strcpy(buf, GetModuleName());
-    char *p = strrchr(buf, '/');
-    char *p1 = strrchr(buf, '\\');
+    char* p = strrchr(buf, '/');
+    char* p1 = strrchr(buf, '\\');
     if (p1 > p)
         p = p1;
     else if (!p)
@@ -310,7 +309,7 @@ bool Utils::iequal(const std::string& a, const std::string& b, int sz)
     return true;
 }
 
-FILE* Utils::TempName(std::string &name)
+FILE* Utils::TempName(std::string& name)
 {
     char tempFile[260];
     tmpnam(tempFile);

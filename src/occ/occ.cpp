@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <stdio.h>
@@ -51,86 +51,79 @@
 #    include <unistd.h>
 #endif
 
-extern bool IsSymbolCharRoutine(const char *, bool);
+extern bool IsSymbolCharRoutine(const char*, bool);
 bool (*Tokenizer::IsSymbolChar)(const char*, bool) = IsSymbolCharRoutine;
 
 int usingEsp;
 Optimizer::SimpleSymbol* currentFunction;
 
-void diag(const char*, ...)
-{
-
-}
-void regInit() { }
+void diag(const char*, ...) {}
+void regInit() {}
 
 namespace occx86
 {
 
-    char outFile[260];
-    char infile[260];
+char outFile[260];
+char infile[260];
 
-    InstructionParser* instructionParser;
+InstructionParser* instructionParser;
 
+static const char* occ_verbosity = nullptr;
+static Optimizer::FunctionData* lastFunc;
 
-    static const char *occ_verbosity = nullptr;
-    static Optimizer::FunctionData* lastFunc;
+static const int MAX_SHARED_REGION = 240 * 1024 * 1024;
 
+/*-------------------------------------------------------------------------*/
 
-
-    static const int MAX_SHARED_REGION = 240 * 1024 * 1024;
-
-
-    /*-------------------------------------------------------------------------*/
-
-    void outputfile(char* buf, const char* name, const char* ext, bool obj)
+void outputfile(char* buf, const char* name, const char* ext, bool obj)
+{
+    strcpy(buf, Optimizer::outputFileName.c_str());
+    if (buf[strlen(buf) - 1] == '\\')
     {
-        strcpy(buf, Optimizer::outputFileName.c_str());
-        if (buf[strlen(buf) - 1] == '\\')
-        {
-            // output file is a path specification rather than a file name
-            // just add our name and ext
-            strcat(buf, name);
-            Utils::StripExt(buf);
-            Utils::AddExt(buf, ext);
-        }
-        else if (buf[0] == 0 || (obj && !Optimizer::cparams.prm_compileonly && !Optimizer::assembling))// no output file specified, put the output wherever the input was...
-        {
-            strcpy(buf, name);
-            char *p = strrchr(buf, '\\');
-            char *q = strrchr(buf, '/');
-            if (q > p)
-                p = q;
-            if (p)
-                strcpy(buf, p + 1);
-            Utils::StripExt(buf);
-            Utils::AddExt(buf, ext);
-        }
-        else
-        {
-            // use specified output file name
-            if (obj)
-                Utils::AddExt(buf, ext);
-        }
+        // output file is a path specification rather than a file name
+        // just add our name and ext
+        strcat(buf, name);
+        Utils::StripExt(buf);
+        Utils::AddExt(buf, ext);
     }
-
-
-    void global(Optimizer::SimpleSymbol* sym, int flags)
+    else if (buf[0] == 0 || (obj && !Optimizer::cparams.prm_compileonly &&
+                             !Optimizer::assembling))  // no output file specified, put the output wherever the input was...
     {
-        omf_globaldef(sym);
-        if (Optimizer::cparams.prm_asmfile)
-        {
-            if (sym->storage_class != Optimizer::scc_localstatic && sym->storage_class != Optimizer::scc_static)
-                Optimizer::bePrintf("[global %s]\n", sym->outputName);
-        }
-        if (flags & Optimizer::BaseData::DF_EXPORT)
-        {
-            oa_put_expfunc(sym);
-        }
+        strcpy(buf, name);
+        char* p = strrchr(buf, '\\');
+        char* q = strrchr(buf, '/');
+        if (q > p)
+            p = q;
+        if (p)
+            strcpy(buf, p + 1);
+        Utils::StripExt(buf);
+        Utils::AddExt(buf, ext);
     }
-    void ProcessData(Optimizer::BaseData* v)
+    else
     {
-        switch (v->type)
-        {
+        // use specified output file name
+        if (obj)
+            Utils::AddExt(buf, ext);
+    }
+}
+
+void global(Optimizer::SimpleSymbol* sym, int flags)
+{
+    omf_globaldef(sym);
+    if (Optimizer::cparams.prm_asmfile)
+    {
+        if (sym->storage_class != Optimizer::scc_localstatic && sym->storage_class != Optimizer::scc_static)
+            Optimizer::bePrintf("[global %s]\n", sym->outputName);
+    }
+    if (flags & Optimizer::BaseData::DF_EXPORT)
+    {
+        oa_put_expfunc(sym);
+    }
+}
+void ProcessData(Optimizer::BaseData* v)
+{
+    switch (v->type)
+    {
         case Optimizer::DT_SEG:
             oa_enterseg((Optimizer::e_sg)v->i);
             break;
@@ -244,141 +237,140 @@ namespace occx86
             oa_genint(Optimizer::intgen, v->symbol.sym->offset + v->symbol.i);
             break;
             break;
-        }
-    }
-    bool ProcessData(const char *name)
-    {
-        if (Optimizer::cparams.prm_asmfile)
-        {
-            char buf[260];
-            outputfile(buf, name, Optimizer::assemblerFileExtension.c_str(), true);
-            InsertExternalFile(buf, false);
-            Optimizer::outputFile = fopen(buf, "w");
-            if (!Optimizer::outputFile)
-                return false;
-            oa_header(buf, "OCC Version " STRING_VERSION);
-            oa_setalign(2, Optimizer::dataAlign, Optimizer::bssAlign, Optimizer::constAlign);
-
-        }
-        for (auto v : Optimizer::baseData)
-        {
-            if (v->type == Optimizer::DT_FUNC)
-            {
-                lastFunc = v->funcData;
-                //            temporarySymbols = v->funcData->temporarySymbols;
-                //            functionVariables = v->funcData->variables;
-                //            blockCount = v->funcData->blockCount;
-                //            exitBlock = v->funcData->exitBlock;
-                //            tempCount = v->funcData->tempCount;
-                //            functionHasAssembly = v->funcData->hasAssembly;
-                Optimizer::intermed_head = v->funcData->instructionList;
-                Optimizer::intermed_tail = Optimizer::intermed_head;
-                while (Optimizer::intermed_tail && Optimizer::intermed_tail->fwd)
-                    Optimizer::intermed_tail = Optimizer::intermed_tail->fwd;
-                Optimizer::objectArray_exp = v->funcData->objectArray_exp;
-                Optimizer::fltexp = v->funcData->fltexp;
-                Optimizer::fastcallAlias = v->funcData->fastcallAlias;
-                currentFunction = v->funcData->name;
-                Optimizer::SetUsesESP(currentFunction->usesEsp);
-                generate_instructions(Optimizer::intermed_head);
-                flush_peep(currentFunction, nullptr);
-            }
-            else
-            {
-                ProcessData(v);
-            }
-        }
-        if (Optimizer::cparams.prm_asmfile)
-        {
-            oa_end_generation();
-            for (auto v : Optimizer::externals)
-            {
-                if (v)
-                {
-                    oa_put_extern(v, 0);
-                    if (v->isimport)
-                    {
-                        oa_put_impfunc(v, v->importfile);
-                    }
-                }
-            }
-            oa_trailer();
-            fclose(Optimizer::outputFile);
-            Optimizer::outputFile = nullptr;
-        }
-        return true;
-    }
-
-    bool LoadFile(SharedMemory* optimizerMem)
-    {
-        Optimizer::InitIntermediate();
-        bool rv = Optimizer::InputIntermediate(optimizerMem);
-        Optimizer::SelectBackendData();
-        dbginit();
-        outcode_file_init();
-        Optimizer::oinit();
-        omfInit();
-        Optimizer::SelectBackendData();
-        return rv;
-    }
-    bool SaveFile(const char *name)
-    {
-        if (!Optimizer::cparams.prm_asmfile)
-        {
-            strcpy(infile, name);
-            outputfile(outFile, name, Optimizer::chosenAssembler->objext, true);
-            InsertExternalFile(outFile, false);
-            Optimizer::outputFile = fopen(outFile, "wb");
-            if (!Optimizer::outputFile)
-                return false;
-            if (Optimizer::cparams.prm_browse)
-            {
-                outputfile(outFile, name, ".cbr", true);
-                // have to readd the extension in case /o was specified
-                Utils::StripExt(outFile);
-                Utils::AddExt(outFile, ".cbr");
-                Optimizer::browseFile = fopen(outFile, "wb");
-                if (!Optimizer::browseFile)
-                    return false;
-            }
-            oa_end_generation();
-            for (auto v : Optimizer::externals)
-            {
-                if (v)
-                {
-                    oa_put_extern(v, 0);
-                    if (v->isimport)
-                    {
-                        oa_put_impfunc(v, v->importfile);
-                    }
-                }
-            }
-            oa_setalign(2, Optimizer::dataAlign, Optimizer::bssAlign, Optimizer::constAlign);
-            output_obj_file();
-            fclose(Optimizer::outputFile);
-        }
-        return true;
-    }
-    int InvokeParser(int argc, char**argv, SharedMemory* parserMem)
-    {
-        std::string args;
-        for (int i = 1; i < argc; i++)
-        {
-            if (args.size())
-                args += " ";
-            std::string curArg = argv[i];
-            if (curArg[curArg.size() - 1] == '\\')
-                curArg += "\\";
-            args += std::string("\"") + curArg + "\"";
-        }
-
-        return Utils::ToolInvoke("occparse", occ_verbosity, "-! --architecture \"x86;%s\" %s", parserMem->Name().c_str(), args.c_str());
-    }
-    int InvokeOptimizer(SharedMemory* parserMem, SharedMemory* optimizerMem)
-    {
-        return Utils::ToolInvoke("occopt", occ_verbosity, "-! %s %s", parserMem->Name().c_str(), optimizerMem->Name().c_str());
     }
 }
+bool ProcessData(const char* name)
+{
+    if (Optimizer::cparams.prm_asmfile)
+    {
+        char buf[260];
+        outputfile(buf, name, Optimizer::assemblerFileExtension.c_str(), true);
+        InsertExternalFile(buf, false);
+        Optimizer::outputFile = fopen(buf, "w");
+        if (!Optimizer::outputFile)
+            return false;
+        oa_header(buf, "OCC Version " STRING_VERSION);
+        oa_setalign(2, Optimizer::dataAlign, Optimizer::bssAlign, Optimizer::constAlign);
+    }
+    for (auto v : Optimizer::baseData)
+    {
+        if (v->type == Optimizer::DT_FUNC)
+        {
+            lastFunc = v->funcData;
+            //            temporarySymbols = v->funcData->temporarySymbols;
+            //            functionVariables = v->funcData->variables;
+            //            blockCount = v->funcData->blockCount;
+            //            exitBlock = v->funcData->exitBlock;
+            //            tempCount = v->funcData->tempCount;
+            //            functionHasAssembly = v->funcData->hasAssembly;
+            Optimizer::intermed_head = v->funcData->instructionList;
+            Optimizer::intermed_tail = Optimizer::intermed_head;
+            while (Optimizer::intermed_tail && Optimizer::intermed_tail->fwd)
+                Optimizer::intermed_tail = Optimizer::intermed_tail->fwd;
+            Optimizer::objectArray_exp = v->funcData->objectArray_exp;
+            Optimizer::fltexp = v->funcData->fltexp;
+            Optimizer::fastcallAlias = v->funcData->fastcallAlias;
+            currentFunction = v->funcData->name;
+            Optimizer::SetUsesESP(currentFunction->usesEsp);
+            generate_instructions(Optimizer::intermed_head);
+            flush_peep(currentFunction, nullptr);
+        }
+        else
+        {
+            ProcessData(v);
+        }
+    }
+    if (Optimizer::cparams.prm_asmfile)
+    {
+        oa_end_generation();
+        for (auto v : Optimizer::externals)
+        {
+            if (v)
+            {
+                oa_put_extern(v, 0);
+                if (v->isimport)
+                {
+                    oa_put_impfunc(v, v->importfile);
+                }
+            }
+        }
+        oa_trailer();
+        fclose(Optimizer::outputFile);
+        Optimizer::outputFile = nullptr;
+    }
+    return true;
+}
+
+bool LoadFile(SharedMemory* optimizerMem)
+{
+    Optimizer::InitIntermediate();
+    bool rv = Optimizer::InputIntermediate(optimizerMem);
+    Optimizer::SelectBackendData();
+    dbginit();
+    outcode_file_init();
+    Optimizer::oinit();
+    omfInit();
+    Optimizer::SelectBackendData();
+    return rv;
+}
+bool SaveFile(const char* name)
+{
+    if (!Optimizer::cparams.prm_asmfile)
+    {
+        strcpy(infile, name);
+        outputfile(outFile, name, Optimizer::chosenAssembler->objext, true);
+        InsertExternalFile(outFile, false);
+        Optimizer::outputFile = fopen(outFile, "wb");
+        if (!Optimizer::outputFile)
+            return false;
+        if (Optimizer::cparams.prm_browse)
+        {
+            outputfile(outFile, name, ".cbr", true);
+            // have to readd the extension in case /o was specified
+            Utils::StripExt(outFile);
+            Utils::AddExt(outFile, ".cbr");
+            Optimizer::browseFile = fopen(outFile, "wb");
+            if (!Optimizer::browseFile)
+                return false;
+        }
+        oa_end_generation();
+        for (auto v : Optimizer::externals)
+        {
+            if (v)
+            {
+                oa_put_extern(v, 0);
+                if (v->isimport)
+                {
+                    oa_put_impfunc(v, v->importfile);
+                }
+            }
+        }
+        oa_setalign(2, Optimizer::dataAlign, Optimizer::bssAlign, Optimizer::constAlign);
+        output_obj_file();
+        fclose(Optimizer::outputFile);
+    }
+    return true;
+}
+int InvokeParser(int argc, char** argv, SharedMemory* parserMem)
+{
+    std::string args;
+    for (int i = 1; i < argc; i++)
+    {
+        if (args.size())
+            args += " ";
+        std::string curArg = argv[i];
+        if (curArg[curArg.size() - 1] == '\\')
+            curArg += "\\";
+        args += std::string("\"") + curArg + "\"";
+    }
+
+    return Utils::ToolInvoke("occparse", occ_verbosity, "-! --architecture \"x86;%s\" %s", parserMem->Name().c_str(), args.c_str());
+}
+int InvokeOptimizer(SharedMemory* parserMem, SharedMemory* optimizerMem)
+{
+    return Utils::ToolInvoke("occopt", occ_verbosity, "-! %s %s", parserMem->Name().c_str(), optimizerMem->Name().c_str());
+}
+}  // namespace occx86
 int main(int argc, char* argv[])
 {
     using namespace occx86;
@@ -414,7 +406,6 @@ int main(int argc, char* argv[])
         {
             Utils::fatal("cannot open input file");
         }
-
     }
     else
     {
@@ -436,7 +427,6 @@ int main(int argc, char* argv[])
         for (auto f : Optimizer::backendFiles)
         {
             InsertExternalFile(f.c_str(), false);
-
         }
         std::list<std::string> files = Optimizer::inputFiles;
         if (files.size())

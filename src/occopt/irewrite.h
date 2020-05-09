@@ -24,6 +24,6 @@
  */
 namespace Optimizer
 {
-    void Prealloc(int pass);
-    void CalculateBackendLives(void);
-}
+void Prealloc(int pass);
+void CalculateBackendLives(void);
+}  // namespace Optimizer

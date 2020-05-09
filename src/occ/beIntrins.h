@@ -24,25 +24,25 @@
  */
 namespace occx86
 {
-    void promoteToBoolean(AMODE* addr);
-    bool handleBSR(void);
-    bool handleBSF(void);
-    bool handleINB(void);
-    bool handleINW(void);
-    bool handleIND(void);
-    bool handleOUTB(void);
-    bool handleOUTW(void);
-    bool handleOUTD(void);
-    bool handleROTL8(void);
-    bool handleROTL16(void);
-    bool handleROTR8(void);
-    bool handleROTR16(void);
-    bool handleROTL(void);
-    bool handleROTR(void);
-    bool handleCTZ(void);
-    bool handleCLZ(void);
-    bool handleBSWAP16(void);
-    bool handleBSWAP32(void);
-    bool handleBSWAP64(void);
-    bool BackendIntrinsic(Optimizer::QUAD* q);
-}
+void promoteToBoolean(AMODE* addr);
+bool handleBSR(void);
+bool handleBSF(void);
+bool handleINB(void);
+bool handleINW(void);
+bool handleIND(void);
+bool handleOUTB(void);
+bool handleOUTW(void);
+bool handleOUTD(void);
+bool handleROTL8(void);
+bool handleROTL16(void);
+bool handleROTR8(void);
+bool handleROTR16(void);
+bool handleROTL(void);
+bool handleROTR(void);
+bool handleCTZ(void);
+bool handleCLZ(void);
+bool handleBSWAP16(void);
+bool handleBSWAP32(void);
+bool handleBSWAP64(void);
+bool BackendIntrinsic(Optimizer::QUAD* q);
+}  // namespace occx86

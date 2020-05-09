@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #ifndef Section_h
@@ -58,7 +58,11 @@ class Section
     Instruction* InsertLabel(Label* label);
     void pop_back();
     std::vector<std::unique_ptr<Instruction>>& GetInstructions() { return instructions; }
-    void ClearInstructions() { instructions.clear(); labels.clear();  }
+    void ClearInstructions()
+    {
+        instructions.clear();
+        labels.clear();
+    }
     int GetSect() { return sect; }
     ObjSection* GetObjectSection() { return objectSection; }
     std::string GetName() { return name; }
@@ -71,9 +75,9 @@ class Section
 
     static void NoShowError() { dontShowError = true; }
     int GetSubsection() const { return subSection; }
-    void SetSubsection(int sid) 
-    { 
-        subSection = sid; 
+    void SetSubsection(int sid)
+    {
+        subSection = sid;
         if (sid != 0)
         {
             if (subsections[sid] == nullptr)
@@ -81,6 +85,7 @@ class Section
         }
     }
     void MergeSubsections();
+
   protected:
     ObjExpression* ConvertExpression(AsmExprNode* node, std::function<Label*(std::string&)> Lookup,
                                      std::function<ObjSection*(std::string&)> SectLookup, ObjFactory& factory);

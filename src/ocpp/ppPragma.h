@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #ifndef ppPragma_h
@@ -155,9 +155,9 @@ class CXLimitedRange
     CXLimitedRange() { list.push(false); }
 
   private:
-      std::stack<int> marks;
-      static CXLimitedRange* instance;
-      std::stack<bool> list;
+    std::stack<int> marks;
+    static CXLimitedRange* instance;
+    std::stack<bool> list;
 };
 class FPContract
 {
@@ -197,9 +197,9 @@ class FPContract
     FPContract() { list.push(true); }
 
   private:
-      std::stack<int> marks;
-      static FPContract* instance;
-      std::stack<bool> list;
+    std::stack<int> marks;
+    static FPContract* instance;
+    std::stack<bool> list;
 };
 class Libraries
 {
@@ -217,11 +217,9 @@ class Libraries
     LibraryIterator end() { return list.end(); }
     std::string& GetName(LibraryIterator it) { return (*it); }
     std::list<std::string>& Get() { return list; }
-    void Clear()
-    {
-        list.clear();
-    }
-protected:
+    void Clear() { list.clear(); }
+
+  protected:
     Libraries() {}
 
   private:
@@ -244,11 +242,8 @@ class Aliases
     AliasIterator end() { return list.end(); }
     std::string GetName(AliasIterator it) { return it->second; }
     std::string GetAlias(AliasIterator it) { return it->first; }
-    void Clear()
-    {
-        list.clear();
-    }
-    const char *Lookup(const char *name)
+    void Clear() { list.clear(); }
+    const char* Lookup(const char* name)
     {
         std::string finder = name;
         auto it = list.find(name);
@@ -256,6 +251,7 @@ class Aliases
             return it->second.c_str();
         return nullptr;
     }
+
   protected:
     Aliases() {}
 
@@ -289,10 +285,7 @@ class Startups
     int GetPriority(StartupIterator it) { return it->second->prio; }
     bool IsStartup(StartupIterator it) { return it->second->startup; }
     std::map<std::string, std::unique_ptr<Properties>>& GetStartups() { return list; }
-    void Clear()
-    {
-        list.clear();
-    }
+    void Clear() { list.clear(); }
 
   protected:
     Startups() {}
@@ -340,10 +333,7 @@ class Once
         time_t filetime;
         unsigned crc;
     };
-    void Clear()
-    {
-        items.clear();
-    }
+    void Clear() { items.clear(); }
 
     static Once* instance;
     std::set<OnceItem> items;
@@ -351,7 +341,7 @@ class Once
 };
 class Warning
 {
-public:
+  public:
     static Warning* Instance()
     {
         if (!instance)
@@ -375,18 +365,17 @@ public:
         for (auto&& f : flags)
             f.second = 0;
     }
-    void Push()
-    {
-        stack.push(flags);
-    }
+    void Push() { stack.push(flags); }
     void Pop()
     {
         flags = stack.top();
         stack.pop();
     }
-protected:
-    Warning() { };
-private:
+
+  protected:
+    Warning(){};
+
+  private:
     static Warning* instance;
     std::map<int, int> flags;
     std::stack<std::map<int, int>> stack;
@@ -394,7 +383,7 @@ private:
 class ppPragma
 {
   public:
-    ppPragma(ppInclude* Include, ppDefine *Define) : cppprio(0), ignoreGlobalInit(false) 
+    ppPragma(ppInclude* Include, ppDefine* Define) : cppprio(0), ignoreGlobalInit(false)
     {
         Packing::Instance()->Clear();
         FenvAccess::Instance()->Clear();
@@ -413,12 +402,9 @@ class ppPragma
     int CppPrio() { return cppprio; }
     std::list<std::string>& IncludeLibs() { return Libraries::Instance()->Get(); }
     std::map<std::string, std::unique_ptr<Startups::Properties>>& GetStartups() { return Startups::Instance()->GetStartups(); }
-    const char *LookupAlias(const char *name) const { return Aliases::Instance()->Lookup(name); }
+    const char* LookupAlias(const char* name) const { return Aliases::Instance()->Lookup(name); }
 
-    void SetPragmaCatchall(std::function<void(const std::string&, const std::string&)> callback)
-    {
-        catchAll = callback;
-    }
+    void SetPragmaCatchall(std::function<void(const std::string&, const std::string&)> callback) { catchAll = callback; }
     void Mark()
     {
         FenvAccess::Instance()->Mark();
@@ -446,8 +432,9 @@ class ppPragma
     void HandleOnce(Tokenizer& tk);
     void HandleIgnoreGlobalInit(Tokenizer& tk);
     void HandlePushPopMacro(Tokenizer& tk, bool push);
+
   private:
-    ppDefine *define;
+    ppDefine* define;
     int cppprio;
     bool ignoreGlobalInit;
     std::function<void(const std::string&, const std::string&)> catchAll;

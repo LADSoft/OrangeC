@@ -24,10 +24,10 @@
  */
 namespace Parser
 {
-    bool comparetypes(TYPE* typ1, TYPE* typ2, int exact);
-    bool matchingCharTypes(TYPE* typ1, TYPE* typ2);
-    void typenumptr(char* buf, TYPE* tp);
-    void RenderExpr(char* buf, EXPRESSION* exp);
-    TYPE* typenum(char* buf, TYPE* tp);
-    void typeToString(char* buf, TYPE* typ);
-}
+bool comparetypes(TYPE* typ1, TYPE* typ2, int exact);
+bool matchingCharTypes(TYPE* typ1, TYPE* typ2);
+void typenumptr(char* buf, TYPE* tp);
+void RenderExpr(char* buf, EXPRESSION* exp);
+TYPE* typenum(char* buf, TYPE* tp);
+void typeToString(char* buf, TYPE* typ);
+}  // namespace Parser

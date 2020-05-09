@@ -24,16 +24,16 @@
  */
 namespace Optimizer
 {
-    extern FILE* outputFile;
-    extern FILE* browseFile;
+extern FILE* outputFile;
+extern FILE* browseFile;
 
-    void oinit(void);
-    void oflush(FILE* file);
-    void oputc(int ch, FILE* file);
-    void beputc(int ch);
-    void owrite(const char* buf, size_t size, int n, FILE* fil);
-    void beWrite(const char* buf, size_t size);
-    void oprintf(FILE* file, const char* format, ...);
-    void bePrintf(const char* format, ...);
-    void beRewind(void);
-}
+void oinit(void);
+void oflush(FILE* file);
+void oputc(int ch, FILE* file);
+void beputc(int ch);
+void owrite(const char* buf, size_t size, int n, FILE* fil);
+void beWrite(const char* buf, size_t size);
+void oprintf(FILE* file, const char* format, ...);
+void bePrintf(const char* format, ...);
+void beRewind(void);
+}  // namespace Optimizer

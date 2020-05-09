@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "NetLinkMain.h"
@@ -40,17 +40,18 @@ CmdSwitchBool NetLinkMain::CManaged(SwitchParser, 'M');
 CmdSwitchBool NetLinkMain::NoDefaultlibs(SwitchParser, 'n');
 CmdSwitchBool NetLinkMain::WeedPInvokes(SwitchParser, 'P');
 
-const char *NetLinkMain::usageText = "[options] inputfiles\n"
-        "\n"
-        "/L         generate library          /S         generate .IL file\n"
-        "/g         WIN32 GUI application     /kxxx      set strong name key\n"
-        "/n         no default libs           /oxxx      specify assembly name\n"
-        "/vx.x.x.x  set assembly version      /M         managed mode\n"
-        "/P         replace pinvokes\n"
-        "@xxx       Read commands from file\n"
-        "\nTime: " __TIME__ "  Date: " __DATE__;
+const char* NetLinkMain::usageText =
+    "[options] inputfiles\n"
+    "\n"
+    "/L         generate library          /S         generate .IL file\n"
+    "/g         WIN32 GUI application     /kxxx      set strong name key\n"
+    "/n         no default libs           /oxxx      specify assembly name\n"
+    "/vx.x.x.x  set assembly version      /M         managed mode\n"
+    "/P         replace pinvokes\n"
+    "@xxx       Read commands from file\n"
+    "\nTime: " __TIME__ "  Date: " __DATE__;
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
     NetLinkMain linker;
     try
@@ -66,7 +67,7 @@ int main(int argc, char **argv)
         return 1;
     }
 }
-const std::string &NetLinkMain::GetAssemblyName(CmdFiles &files)
+const std::string& NetLinkMain::GetAssemblyName(CmdFiles& files)
 {
     std::string rv;
     static std::string assemblyName;
@@ -97,7 +98,7 @@ const std::string &NetLinkMain::GetAssemblyName(CmdFiles &files)
     }
     return assemblyName;
 }
-const std::string &NetLinkMain::GetOutputFile(CmdFiles &files)
+const std::string& NetLinkMain::GetOutputFile(CmdFiles& files)
 {
     std::string rv;
     static std::string outputFile;
@@ -113,10 +114,11 @@ const std::string &NetLinkMain::GetOutputFile(CmdFiles &files)
         std::cout << "Nothing to do." << std::endl;
         exit(1);
     }
-    outputFile = Utils::QualifiedFile(outputFile.c_str(), AssemblyFile.GetValue() ? ".il" : LibraryFile.GetValue() ? ".dll" : ".exe");
+    outputFile =
+        Utils::QualifiedFile(outputFile.c_str(), AssemblyFile.GetValue() ? ".il" : LibraryFile.GetValue() ? ".dll" : ".exe");
     return outputFile;
 }
-bool NetLinkMain::LoadImage(CmdFiles &files)
+bool NetLinkMain::LoadImage(CmdFiles& files)
 {
     bool rv = true;
     for (CmdFiles::FileNameIterator it = files.FileNameBegin(); it != files.FileNameEnd(); ++it)
@@ -144,14 +146,12 @@ bool NetLinkMain::LoadImage(CmdFiles &files)
 }
 class Validator : public Callback
 {
-public:
-    Validator(DataContainer *Parent) : parent(Parent), error(false) { }
-    bool Failed() 
-    {
-        return error;
-    }
-private:
-    virtual bool EnterMethod(const Method *method) override
+  public:
+    Validator(DataContainer* Parent) : parent(Parent), error(false) {}
+    bool Failed() { return error; }
+
+  private:
+    virtual bool EnterMethod(const Method* method) override
     {
         if (method->Signature()->External())
         {
@@ -163,7 +163,7 @@ private:
         }
         return true;
     };
-    virtual bool EnterField(const Field *field) override
+    virtual bool EnterField(const Field* field) override
     {
         if (field->External())
         {
@@ -185,25 +185,22 @@ private:
     {
         std::cout << "Error: duplicate public '" << name.c_str() << "'" << std::endl;
         error = true;
-
     }
-    DataContainer *parent;
+    DataContainer* parent;
     bool error;
 };
 class Optimizer : public Callback
 {
-public:
-    Optimizer(PELib &PELib) : peLib(PELib), error(false) { }
-    bool Failed()
-    {
-        return error;
-    }
-private:
-    virtual bool EnterMethod(const Method *method) override
+  public:
+    Optimizer(PELib& PELib) : peLib(PELib), error(false) {}
+    bool Failed() { return error; }
+
+  private:
+    virtual bool EnterMethod(const Method* method) override
     {
         try
         {
-            const_cast<Method *>(method)->Optimize(peLib);
+            const_cast<Method*>(method)->Optimize(peLib);
         }
         catch (PELibError exc)
         {
@@ -212,43 +209,37 @@ private:
         }
         return true;
     };
-    PELib &peLib;
+    PELib& peLib;
     bool error;
 };
 class PInvokeWeeder : public Callback
 {
-public:
-    PInvokeWeeder(PELib &PELib) : peLib(PELib), scanning(true)
-    {
-
-    }
-    void SetOptimize()
-    {
-        scanning = false;
-    }
-    virtual bool EnterMethod(const Method *method) override
+  public:
+    PInvokeWeeder(PELib& PELib) : peLib(PELib), scanning(true) {}
+    void SetOptimize() { scanning = false; }
+    virtual bool EnterMethod(const Method* method) override
     {
         if (scanning)
         {
-            for (auto ins : *static_cast<CodeContainer *>(const_cast<Method *>(method)))
+            for (auto ins : *static_cast<CodeContainer*>(const_cast<Method*>(method)))
             {
-                Operand *op = ins->GetOperand();
+                Operand* op = ins->GetOperand();
                 if (op)
                 {
-                    Value *v = op->GetValue();
+                    Value* v = op->GetValue();
                     if (v)
                     {
                         if (typeid(*v) == typeid(MethodName))
                         {
-                            MethodSignature *ms = static_cast<MethodName *>(v)->Signature();
-                            if (!(ms->Flags() & MethodSignature::Managed)) // pinvoke
+                            MethodSignature* ms = static_cast<MethodName*>(v)->Signature();
+                            if (!(ms->Flags() & MethodSignature::Managed))  // pinvoke
                             {
-                                pinvokeCounters[ms->Name()] ++;
+                                pinvokeCounters[ms->Name()]++;
                                 for (auto m : method->GetContainer()->Methods())
                                 {
-                                    if (static_cast<Method *>(m)->Signature()->Name() == ms->Name())
+                                    if (static_cast<Method*>(m)->Signature()->Name() == ms->Name())
                                     {
-                                        pinvokeCounters[ms->Name()] --;
+                                        pinvokeCounters[ms->Name()]--;
                                         break;
                                     }
                                 }
@@ -260,26 +251,27 @@ public:
         }
         else
         {
-            for (auto ins : *static_cast<CodeContainer *>(const_cast<Method *>(method)))
+            for (auto ins : *static_cast<CodeContainer*>(const_cast<Method*>(method)))
             {
-                Operand *op = ins->GetOperand();
+                Operand* op = ins->GetOperand();
                 if (op)
                 {
-                    Value *v = op->GetValue();
+                    Value* v = op->GetValue();
                     if (v)
                     {
                         if (typeid(*v) == typeid(MethodName))
                         {
-                            MethodSignature *ms = static_cast<MethodName *>(v)->Signature();
-                            if (!ms->Flags() && MethodSignature::Managed) // pinvoke
+                            MethodSignature* ms = static_cast<MethodName*>(v)->Signature();
+                            if (!ms->Flags() && MethodSignature::Managed)  // pinvoke
                             {
                                 if (pinvokeCounters[ms->Name()] == 0)
                                 {
                                     for (auto m : method->GetContainer()->Methods())
                                     {
-                                        if (static_cast<Method *>(m)->Signature()->Name() == ms->Name())
+                                        if (static_cast<Method*>(m)->Signature()->Name() == ms->Name())
                                         {
-                                            ins->SetOperand(peLib.AllocateOperand(peLib.AllocateMethodName(static_cast<Method *>(m)->Signature())));
+                                            ins->SetOperand(peLib.AllocateOperand(
+                                                peLib.AllocateMethodName(static_cast<Method*>(m)->Signature())));
                                             break;
                                         }
                                     }
@@ -299,8 +291,9 @@ public:
         }
         return true;
     };
-private:
-    PELib &peLib;
+
+  private:
+    PELib& peLib;
     bool scanning;
     std::map<std::string, int> pinvokeCounters;
 };
@@ -320,10 +313,11 @@ bool NetLinkMain::Validate()
         peLib->Traverse(optimizer);
     return !validator.Failed() && !optimizer.Failed();
 }
-MethodSignature *NetLinkMain::LookupSignature(const char * name)
+MethodSignature* NetLinkMain::LookupSignature(const char* name)
 {
-    Method *result;
-    PELib::eFindType rv = peLib->Find(const_cast<char *>((namespaceAndClass + name).c_str()), &result, std::vector<Type *> { }, nullptr, false);
+    Method* result;
+    PELib::eFindType rv =
+        peLib->Find(const_cast<char*>((namespaceAndClass + name).c_str()), &result, std::vector<Type*>{}, nullptr, false);
     if (rv == PELib::s_method)
     {
         return result->Signature();
@@ -334,32 +328,31 @@ MethodSignature *NetLinkMain::LookupSignature(const char * name)
         return result->Signature();
     }
     return NULL;
-
 }
-MethodSignature *NetLinkMain::LookupManagedSignature(const char *name)
+MethodSignature* NetLinkMain::LookupManagedSignature(const char* name)
 {
-    Method *rv = nullptr;
-    peLib->Find(std::string("lsmsilcrtl.rtl::") + name, &rv, std::vector<Type *> {}, nullptr, false);
+    Method* rv = nullptr;
+    peLib->Find(std::string("lsmsilcrtl.rtl::") + name, &rv, std::vector<Type*>{}, nullptr, false);
     if (rv)
         return rv->Signature();
     return nullptr;
 }
-Field *NetLinkMain::LookupField(const char *name)
+Field* NetLinkMain::LookupField(const char* name)
 {
-    void *result;
-    PELib::eFindType rv = peLib->Find(const_cast<char *>((namespaceAndClass + name).c_str()), &result);
+    void* result;
+    PELib::eFindType rv = peLib->Find(const_cast<char*>((namespaceAndClass + name).c_str()), &result);
     if (rv == PELib::s_field)
     {
-        return static_cast<Field *>(result);
+        return static_cast<Field*>(result);
     }
     return NULL;
 }
-Field *NetLinkMain::LookupManagedField(const char *name)
+Field* NetLinkMain::LookupManagedField(const char* name)
 {
-    void *rv = nullptr;
+    void* rv = nullptr;
     if (peLib->Find(std::string("lsmsilcrtl.rtl::") + name, &rv, nullptr) == PELib::s_field)
     {
-        return static_cast<Field *>(rv);
+        return static_cast<Field*>(rv);
     }
     return nullptr;
 }
@@ -383,7 +376,7 @@ void NetLinkMain::MainInit(void)
         name = ".cctor";
         flags |= Qualifiers::SpecialName | Qualifiers::RTSpecialName;
     }
-    MethodSignature *signature = peLib->AllocateMethodSignature(name, MethodSignature::Managed, mainContainer);
+    MethodSignature* signature = peLib->AllocateMethodSignature(name, MethodSignature::Managed, mainContainer);
     signature->ReturnType(peLib->AllocateType(Type::Void, 0));
     currentMethod = peLib->AllocateMethod(signature, flags, !LibraryFile.GetValue());
     mainContainer->Add(currentMethod);
@@ -391,7 +384,8 @@ void NetLinkMain::MainInit(void)
     if (CManaged.GetValue())
     {
         signature = LookupManagedSignature("__initialize_managed_library");
-        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
+        currentMethod->AddInstruction(
+            peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
     }
     else
     {
@@ -402,9 +396,10 @@ void NetLinkMain::MainInit(void)
             signature->ReturnType(peLib->AllocateType(Type::u16, 1));
             peLib->AddPInvokeReference(signature, "msvcrt.dll", false);
         }
-        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
+        currentMethod->AddInstruction(
+            peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
 
-        Field *field = LookupField("_pctype");
+        Field* field = LookupField("_pctype");
         if (!field)
         {
             field = peLib->AllocateField("_pctype", peLib->AllocateType(Type::u16, 1), Qualifiers::Public | Qualifiers::Static);
@@ -414,7 +409,8 @@ void NetLinkMain::MainInit(void)
         {
             field->External(false);
         }
-        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_stsfld, peLib->AllocateOperand(peLib->AllocateFieldName(field))));
+        currentMethod->AddInstruction(
+            peLib->AllocateInstruction(Instruction::i_stsfld, peLib->AllocateOperand(peLib->AllocateFieldName(field))));
 
         signature = LookupSignature("__iob_func");
         if (!signature)
@@ -423,7 +419,8 @@ void NetLinkMain::MainInit(void)
             signature->ReturnType(peLib->AllocateType(Type::Void, 1));
             peLib->AddPInvokeReference(signature, "msvcrt.dll", false);
         }
-        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
+        currentMethod->AddInstruction(
+            peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
 
         currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_dup));
         field = LookupField("__stdin");
@@ -436,10 +433,12 @@ void NetLinkMain::MainInit(void)
         {
             field->External(false);
         }
-        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_stsfld, peLib->AllocateOperand(peLib->AllocateFieldName(field))));
+        currentMethod->AddInstruction(
+            peLib->AllocateInstruction(Instruction::i_stsfld, peLib->AllocateOperand(peLib->AllocateFieldName(field))));
 
         currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_dup));
-        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldc_i4, peLib->AllocateOperand((longlong)32, Operand::any)));
+        currentMethod->AddInstruction(
+            peLib->AllocateInstruction(Instruction::i_ldc_i4, peLib->AllocateOperand((longlong)32, Operand::any)));
         currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_add));
 
         field = LookupField("__stdout");
@@ -452,9 +451,11 @@ void NetLinkMain::MainInit(void)
         {
             field->External(false);
         }
-        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_stsfld, peLib->AllocateOperand(peLib->AllocateFieldName(field))));
+        currentMethod->AddInstruction(
+            peLib->AllocateInstruction(Instruction::i_stsfld, peLib->AllocateOperand(peLib->AllocateFieldName(field))));
 
-        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldc_i4, peLib->AllocateOperand((longlong)64, Operand::any)));
+        currentMethod->AddInstruction(
+            peLib->AllocateInstruction(Instruction::i_ldc_i4, peLib->AllocateOperand((longlong)64, Operand::any)));
         currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_add));
 
         field = LookupField("__stderr");
@@ -467,13 +468,15 @@ void NetLinkMain::MainInit(void)
         {
             field->External(false);
         }
-        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_stsfld, peLib->AllocateOperand(peLib->AllocateFieldName(field))));
+        currentMethod->AddInstruction(
+            peLib->AllocateInstruction(Instruction::i_stsfld, peLib->AllocateOperand(peLib->AllocateFieldName(field))));
     }
 }
-void NetLinkMain::dumpInitializerCalls(std::list<MethodSignature *> &lst)
+void NetLinkMain::dumpInitializerCalls(std::list<MethodSignature*>& lst)
 {
     for (auto signature : lst)
-        currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
+        currentMethod->AddInstruction(
+            peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
 }
 void NetLinkMain::dumpCallToMain(void)
 {
@@ -485,28 +488,38 @@ void NetLinkMain::dumpCallToMain(void)
             {
                 int n = mainSym->ParamCount();
                 if (n >= 1)
-                    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldsfld, peLib->AllocateOperand(peLib->AllocateFieldName(LookupManagedField("__argc"))))); // load argc
+                    currentMethod->AddInstruction(peLib->AllocateInstruction(
+                        Instruction::i_ldsfld,
+                        peLib->AllocateOperand(peLib->AllocateFieldName(LookupManagedField("__argc")))));  // load argc
                 if (n >= 2)
-                    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldsfld, peLib->AllocateOperand(peLib->AllocateFieldName(LookupManagedField("__argv"))))); // load argcv
+                    currentMethod->AddInstruction(peLib->AllocateInstruction(
+                        Instruction::i_ldsfld,
+                        peLib->AllocateOperand(peLib->AllocateFieldName(LookupManagedField("__argv")))));  // load argcv
                 if (n >= 3)
-                    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldsfld, peLib->AllocateOperand(peLib->AllocateFieldName(LookupManagedField("__env"))))); // load env
+                    currentMethod->AddInstruction(peLib->AllocateInstruction(
+                        Instruction::i_ldsfld,
+                        peLib->AllocateOperand(peLib->AllocateFieldName(LookupManagedField("__env")))));  // load env
                 for (int i = 3; i < n; i++)
-                    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldnull, NULL)); // load a spare arg
-                MethodSignature *signature = peLib->AllocateMethodSignature("main", MethodSignature::Managed, mainContainer);
-                currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(mainSym))));
+                    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldnull, NULL));  // load a spare arg
+                MethodSignature* signature = peLib->AllocateMethodSignature("main", MethodSignature::Managed, mainContainer);
+                currentMethod->AddInstruction(
+                    peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(mainSym))));
             }
-
         }
         else
         {
-            currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldloca, peLib->AllocateOperand(localList[0]))); // load argc
-            currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldloca, peLib->AllocateOperand(localList[1]))); // load argcv
-            currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldloca, peLib->AllocateOperand(localList[2]))); // load environ
-            currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldc_i4, peLib->AllocateOperand((longlong)0, Operand::i32)));
-            currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldloca, peLib->AllocateOperand(localList[3]))); // load newmode
+            currentMethod->AddInstruction(
+                peLib->AllocateInstruction(Instruction::i_ldloca, peLib->AllocateOperand(localList[0])));  // load argc
+            currentMethod->AddInstruction(
+                peLib->AllocateInstruction(Instruction::i_ldloca, peLib->AllocateOperand(localList[1])));  // load argcv
+            currentMethod->AddInstruction(
+                peLib->AllocateInstruction(Instruction::i_ldloca, peLib->AllocateOperand(localList[2])));  // load environ
+            currentMethod->AddInstruction(
+                peLib->AllocateInstruction(Instruction::i_ldc_i4, peLib->AllocateOperand((longlong)0, Operand::i32)));
+            currentMethod->AddInstruction(
+                peLib->AllocateInstruction(Instruction::i_ldloca, peLib->AllocateOperand(localList[3])));  // load newmode
 
-
-            MethodSignature *signature = peLib->AllocateMethodSignature("__getmainargs", 0, NULL);
+            MethodSignature* signature = peLib->AllocateMethodSignature("__getmainargs", 0, NULL);
             signature->ReturnType(peLib->AllocateType(Type::Void, 0));
             signature->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::Void, 1)));
             signature->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::Void, 1)));
@@ -514,33 +527,39 @@ void NetLinkMain::dumpCallToMain(void)
             signature->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::i32, 0)));
             signature->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::Void, 1)));
             peLib->AddPInvokeReference(signature, "msvcrt.dll", false);
-            currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
+            currentMethod->AddInstruction(
+                peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
             if (mainSym)
             {
                 int n = mainSym->ParamCount();
                 if (n >= 1)
-                    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldloc, peLib->AllocateOperand(localList[0]))); // load argc0
+                    currentMethod->AddInstruction(
+                        peLib->AllocateInstruction(Instruction::i_ldloc, peLib->AllocateOperand(localList[0])));  // load argc0
                 if (n >= 2)
-                    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldloc, peLib->AllocateOperand(localList[1]))); // load argcv
+                    currentMethod->AddInstruction(
+                        peLib->AllocateInstruction(Instruction::i_ldloc, peLib->AllocateOperand(localList[1])));  // load argcv
                 for (int i = 2; i < n; i++)
-                    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldnull, NULL)); // load a spare arg
+                    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldnull, NULL));  // load a spare arg
                 signature = peLib->AllocateMethodSignature("main", MethodSignature::Managed, mainContainer);
-                currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(mainSym))));
+                currentMethod->AddInstruction(
+                    peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(mainSym))));
             }
         }
         dumpInitializerCalls(destructors);
         dumpInitializerCalls(rundowns);
 
         if (!mainSym || (mainSym && mainSym->ReturnType()->IsVoid()))
-            currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_ldc_i4, peLib->AllocateOperand((longlong)0, Operand::i32)));
+            currentMethod->AddInstruction(
+                peLib->AllocateInstruction(Instruction::i_ldc_i4, peLib->AllocateOperand((longlong)0, Operand::i32)));
         if (CManaged.GetValue())
         {
-            MethodSignature *signature = LookupManagedSignature("exit");
-            currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
+            MethodSignature* signature = LookupManagedSignature("exit");
+            currentMethod->AddInstruction(
+                peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
         }
         else
         {
-            MethodSignature *signature = LookupSignature("exit");
+            MethodSignature* signature = LookupSignature("exit");
             if (!signature)
             {
 
@@ -549,26 +568,25 @@ void NetLinkMain::dumpCallToMain(void)
                 signature->AddParam(peLib->AllocateParam("", peLib->AllocateType(Type::i32, 0)));
                 peLib->AddPInvokeReference(signature, "msvcrt.dll", false);
             }
-            currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
+            currentMethod->AddInstruction(
+                peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
         }
     }
 }
-void NetLinkMain::dumpGlobalFuncs()
-{
-}
+void NetLinkMain::dumpGlobalFuncs() {}
 
-bool NetLinkMain::EnterNamespace(const Namespace *nmspc)
+bool NetLinkMain::EnterNamespace(const Namespace* nmspc)
 {
     if (!mainNameSpace)
         if (!nmspc->InAssemblyRef())
             mainNameSpace = nmspc;
     return true;
 }
-bool NetLinkMain::EnterClass(const Class *cls)
+bool NetLinkMain::EnterClass(const Class* cls)
 {
     if (!mainClass)
     {
-        DataContainer *dc = const_cast<Class *>(cls)->Parent();
+        DataContainer* dc = const_cast<Class*>(cls)->Parent();
         if (dc == mainNameSpace)
         {
             mainClass = cls;
@@ -577,7 +595,7 @@ bool NetLinkMain::EnterClass(const Class *cls)
     }
     return true;
 }
-bool NetLinkMain::EnterMethod(const Method *method)
+bool NetLinkMain::EnterMethod(const Method* method)
 {
     // this may be is broken, it needs to do it in the order the source files were encountered...
     if (!strncmp(method->Signature()->Name().c_str(), "__DYNAMIC", 9))
@@ -602,12 +620,12 @@ bool NetLinkMain::EnterMethod(const Method *method)
 }
 bool NetLinkMain::AddRTLThunks()
 {
-    Param *param;
+    Param* param;
     peLib->Traverse(*this);
     if (!hasEntryPoint)
     {
         if (mainClass)
-            mainContainer = const_cast<DataContainer*>(static_cast<const DataContainer *>(mainClass));
+            mainContainer = const_cast<DataContainer*>(static_cast<const DataContainer*>(mainClass));
         else
             mainContainer = peLib->WorkingAssembly();
         mainSym = LookupSignature("main");
@@ -653,14 +671,16 @@ bool NetLinkMain::AddRTLThunks()
     }
     return true;
 }
-bool NetLinkMain::CreateExecutable(CmdFiles &files)
+bool NetLinkMain::CreateExecutable(CmdFiles& files)
 {
-    return peLib->DumpOutputFile(GetOutputFile(files).c_str(), AssemblyFile.GetValue() ? PELib::ilasm : LibraryFile.GetValue() ? PELib::pedll : PELib::peexe, GUIApp.GetValue());
+    return peLib->DumpOutputFile(GetOutputFile(files).c_str(),
+                                 AssemblyFile.GetValue() ? PELib::ilasm : LibraryFile.GetValue() ? PELib::pedll : PELib::peexe,
+                                 GUIApp.GetValue());
 }
-int NetLinkMain::Run(int argc, char **argv)
+int NetLinkMain::Run(int argc, char** argv)
 {
     Utils::banner(argv[0]);
-    char *modName = Utils::GetModuleName();
+    char* modName = Utils::GetModuleName();
     CmdSwitchFile internalConfig(SwitchParser);
     std::string configName = Utils::QualifiedFile(argv[0], ".cfg");
     std::fstream configTest(configName.c_str(), std::ios::in);
@@ -677,17 +697,18 @@ int NetLinkMain::Run(int argc, char **argv)
     CmdFiles files(argv + 1);
     if (File.GetValue())
         files.Add(File.GetValue() + 1);
-    peLib = new PELib(GetAssemblyName(files), PELib::bits32); // ilonly set by dotnetpelib 
+    peLib = new PELib(GetAssemblyName(files), PELib::bits32);  // ilonly set by dotnetpelib
     if (CManaged.GetValue() && !NoDefaultlibs.GetValue())
         if (peLib->LoadAssembly("lsmsilcrtl", 0, 0, 0, 0))
         {
             std::cout << "Cannot load assembly lsmsilcrtl";
             return 1;
         }
-    int assemblyVersion[4] = { 0 };
+    int assemblyVersion[4] = {0};
     if (AssemblyVersion.GetValue().size())
     {
-        if (sscanf(AssemblyVersion.GetValue().c_str(), "%d.%d.%d.%d", &assemblyVersion[0], &assemblyVersion[1], &assemblyVersion[2], &assemblyVersion[3]) != 4)
+        if (sscanf(AssemblyVersion.GetValue().c_str(), "%d.%d.%d.%d", &assemblyVersion[0], &assemblyVersion[1], &assemblyVersion[2],
+                   &assemblyVersion[3]) != 4)
         {
             std::cout << "Invalid assembly version string" << std::endl;
             delete peLib;

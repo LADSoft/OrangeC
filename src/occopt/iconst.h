@@ -25,10 +25,10 @@
 
 namespace Optimizer
 {
-    IMODE* intconst(long long val);
-    void badconst(void);
-    long long calmask(int i);
-    QUAD* ReCast(int size, QUAD* in, QUAD* newMode);
-    void ConstantFold(QUAD* d, bool reflow);
-    void ConstantFlow(void);
-}
+IMODE* intconst(long long val);
+void badconst(void);
+long long calmask(int i);
+QUAD* ReCast(int size, QUAD* in, QUAD* newMode);
+void ConstantFold(QUAD* d, bool reflow);
+void ConstantFlow(void);
+}  // namespace Optimizer

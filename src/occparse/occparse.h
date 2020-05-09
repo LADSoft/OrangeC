@@ -27,28 +27,27 @@
 
 namespace Parser
 {
-    extern char outFile[260];
-    extern unsigned identityValue;
-    extern int maxBlocks, maxTemps;
-    extern char cppfile[256];
-    extern FILE *cppFile;
-    extern char infile[256];
+extern char outFile[260];
+extern unsigned identityValue;
+extern int maxBlocks, maxTemps;
+extern char cppfile[256];
+extern FILE* cppFile;
+extern char infile[256];
 
-    extern FILE *errFile;
-    extern PreProcessor *preProcessor;
+extern FILE* errFile;
+extern PreProcessor* preProcessor;
 
-    extern char realOutFile[260];
+extern char realOutFile[260];
 
-    extern InstructionParser* instructionParser;
-    extern int usingEsp;
+extern InstructionParser* instructionParser;
+extern int usingEsp;
 
-    extern Optimizer::COMPILER_PARAMS cparams_default;
+extern Optimizer::COMPILER_PARAMS cparams_default;
 
-
-    long long ParseExpression(std::string&line);
-    int natural_size(EXPRESSION* exp);
-    void MakeStubs(void);
-    void compile(bool global);
-    void enter_filename(const char *name);
-    int main(int argc, char* argv[]);
-}
+long long ParseExpression(std::string& line);
+int natural_size(EXPRESSION* exp);
+void MakeStubs(void);
+void compile(bool global);
+void enter_filename(const char* name);
+int main(int argc, char* argv[]);
+}  // namespace Parser

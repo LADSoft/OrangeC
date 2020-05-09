@@ -1,30 +1,30 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 namespace Parser
 {
-    /*      compiler header file    */
+/*      compiler header file    */
 #define clonesym(x) (clonesym)(x, true)
 #define clonesymfalse(x) (clonesym)(x, false)
 #define CI_CONSTRUCTOR 0
@@ -38,8 +38,8 @@ namespace Parser
 #define CI_LIT (complx + 3 + 3)
 
 #ifndef imax
-#define imax(x, y) ((x) > (y) ? (x) : (y))
-#define imin(x, y) ((x) < (y) ? (x) : (y))
+#    define imax(x, y) ((x) > (y) ? (x) : (y))
+#    define imin(x, y) ((x) < (y) ? (x) : (y))
 #endif
 
 #define issymchar(x) (((x) >= 0) && (isalnum(x) || (x) == '_'))
@@ -64,8 +64,8 @@ namespace Parser
 #define __isstructured(x) ((x)->type == bt_class || (x)->type == bt_struct || (x)->type == bt_union)
 #define isstructured(x) (__isstructured(basetype(x)))
 
-    /* keywords and symbols */
-    // clang-format off
+/* keywords and symbols */
+// clang-format off
     enum e_kw
     {
         /* first comes all the C++ overloadable operators */
@@ -118,9 +118,9 @@ namespace Parser
         kw_dr4, kw_dr5, kw_dr6, kw_dr7, kw_tr0, kw_tr1, kw_tr2, kw_tr3, kw_tr4,
         kw_tr5, kw_tr6, kw_tr7, eol, kw_none
     };
-    // clang-format on
+// clang-format on
 
-    // clang-format off
+// clang-format off
     enum ovcl
     {
         ovcl_unary_numeric, ovcl_unary_numericptr, ovcl_unary_int,
@@ -130,15 +130,15 @@ namespace Parser
         ovcl_assign_any, ovcl_assign_numericptr, ovcl_assign_numeric, ovcl_assign_int,
         ovcl_pointsto, ovcl_openbr, ovcl_openpa, ovcl_comma
     };
-    // clang-format on
+// clang-format on
 
-    typedef struct
-    {
-        FPF r;
-        FPF i;
-    } _COMPLEX_S;
+typedef struct
+{
+    FPF r;
+    FPF i;
+} _COMPLEX_S;
 
-    // clang-format off
+// clang-format off
     enum e_node
     {
 
@@ -172,10 +172,10 @@ namespace Parser
         en_literalclass, en_templateparam, en_templateselector, en_packedempty, en_sizeofellipse,
         en_type
     };
-    // clang-format on
+// clang-format on
 
-    /*      statement node descriptions     */
-    // clang-format off
+/*      statement node descriptions     */
+// clang-format off
     enum e_stmt
     {
         st_line, st_nop, st_expr, st_declare, st_goto, st_asmgoto, st_asmcond,
@@ -184,10 +184,10 @@ namespace Parser
         st__genword, st_passthrough, st_datapassthrough, st_abs, st_label,
         st___try, st___catch, st___finally, st___fault
     };
-    // clang-format on
+// clang-format on
 
-    /* storage classes */
-    // clang-format off
+/* storage classes */
+// clang-format off
     enum e_sc : int
     {
         sc_none, sc_static, sc_localstatic, sc_auto, sc_register, sc_global, sc_external, sc_templateparam,
@@ -196,10 +196,10 @@ namespace Parser
         sc_friendlist, sc_const, sc_tconst, sc_classmember, sc_constexpr,
         sc_memberreg, sc_namespace, sc_namespacealias, sc_temp, sc_virtual
     };
-    // clang-format on
+// clang-format on
 
-    /* basic types */
-    // clang-format off
+/* basic types */
+// clang-format off
     enum e_bt : int
     {
         /* keep this ordering and dont insert anything before the end of the
@@ -223,17 +223,17 @@ namespace Parser
         /* last */
         bt_none
     };
-    // clang-format on
+// clang-format on
 
-    // clang-format off
+// clang-format off
     enum e_lk : int {
         lk_none, lk_cdecl, lk_pascal, lk_stdcall, lk_fastcall, lk_c, lk_cpp,
         lk_interrupt, lk_fault, lk_inline, lk_virtual, lk_noreturn, lk_threadlocal,
         lk_import, lk_export, lk_auto, lk_msil_rtl, lk_unmanaged, lk_property, lk_entrypoint
     };
-    // clang-format on
+// clang-format on
 
-    // clang-format off
+// clang-format off
     enum e_ac
     {
         ac_private,
@@ -241,9 +241,9 @@ namespace Parser
         ac_public,
         ac_none
     };
-    // clang-format on
+// clang-format on
 
-    // clang-format off
+// clang-format off
     enum e_cvsrn
     {
         // tier 1
@@ -272,7 +272,7 @@ namespace Parser
         CV_AMBIGUOUS,
         CV_NONE,
     };
-    // clang-format on
+// clang-format on
 
 #define _F_AMPERSAND 1
 #define _F_PACKABLE 2
@@ -292,670 +292,671 @@ namespace Parser
 
 #define _F_NOCHECKAUTO 0x80
 
-    typedef struct expr
+typedef struct expr
+{
+    struct expr *left, *right;
+    enum e_node type;
+    int pragmas;
+    long size; /* For block moves */
+    void* altdata;
+    struct
     {
-        struct expr *left, *right;
-        enum e_node type;
-        int pragmas;
-        long size; /* For block moves */
-        void* altdata;
-        struct
+        union
         {
-            union
+            long long i;
+            FPF* f;
+            _COMPLEX_S* c;
+            struct sym* sp;   /* sym will be defined later */
+            const char* name; /* name during base class processing */
+            struct functioncall* func;
+            struct _atomicData* ad;
+            struct stmt* stmt;
+            struct Optimizer::_imode_* imode;
+            struct _msilarray* msilArray;
+            HASHTABLE* syms;
+            struct typ* tp;
+            struct
             {
-                long long i;
-                FPF *f;
-                _COMPLEX_S *c;
-                struct sym* sp;   /* sym will be defined later */
-                const char* name; /* name during base class processing */
-                struct functioncall* func;
-                struct _atomicData* ad;
-                struct stmt* stmt;
-                struct Optimizer::_imode_* imode;
-                struct _msilarray* msilArray;
-                HASHTABLE* syms;
+                struct expr* thisptr;
                 struct typ* tp;
-                struct
-                {
-                    struct expr* thisptr;
-                    struct typ* tp;
-                } t;
-            };
-            struct _templateParamList* templateParam;
-            struct _templateSelector* templateSelector;
-        } v;
-        struct _string* string;
-        Optimizer::LIST* destructors;  // for &&  and ||
-        int xcInit, xcDest;
-        int lockOffset;
-        int r, s, t, q;
-        char bits;
-        char startbit;
-        int isvolatile : 1;
-        int isrestrict : 1;
-        int isatomic : 1;
-        int atomicinit : 1;
-        int unionoffset : 1;
-        int isfunc : 1;
-        int dest : 1;  // for thisref
-        int noexprerr : 1;
-    } EXPRESSION;
-
-    typedef struct _msilarray
-    {
-        int count;
-        int max;
-        struct typ* tp;
-        EXPRESSION* base;
-        EXPRESSION* indices[1];  // expands
-    } MSIL_ARRAY;
-
-    typedef struct
-    {
-        const char* name;  // must be first as it will go in a hashtable
-        EXPRESSION* exp;
-        struct sym* sp;
-    } CONSTEXPRSYM;
-
-    typedef struct casedata
-    {
-        struct casedata* next;
-        long long val;
-        int label;
-        const char* file;
-        int line;
-    } CASEDATA;
-
-    struct u_val
-    {
-        union
-        {
-            long long i;  /* int val */
-            unsigned long long u; /* unsigned val */
-            union
-            {
-                const char* a; /* string val */
-                const LCHAR* w;
-            } s;
-            struct _defstruct* defs; /* macro definition */
-            FPF *f; /* float val */
-            _COMPLEX_S *c;
+            } t;
         };
-    };
-    typedef struct typ
-    {
-        enum e_bt type;        /* the type */
-        long size;             /* total size of type */
-        struct typ* btp;       /* pointer to next type (pointers & arrays */
-        struct typ* rootType;  /* pointer to base type of sequence */
-        int used : 1;          /* type has actually been used in a declaration or cast or expression */
-        int array : 1;         /* not a dereferenceable pointer */
-        int msil : 1;          /* allocate as an MSIL array */
-        int vla : 1;           /* varriable length array */
-        int unsized : 1;       /* type doesn't need a size */
-        int hasbits : 1;       /* type is a bit type */
-        int anonymousbits : 1; /* type is a bit type without a name */
-        int scoped : 1;        /* c++ scoped enumeration */
-        int fixed : 1;         /* c++ fixed enumeration */
-        int nullptrType : 1;   /* c++: std::nullptr */
-        int templateTop : 1;
-        int templateConst : 1;
-        int templateVol : 1;
-        int enumConst : 1; /* is an enumeration constant */
-        int lref : 1;
-        int rref : 1;
-        int decltypeauto : 1;
-        int decltypeautoextended : 1;
-        int stringconst : 1;
-        char bits;      /* -1 for not a bit val, else bit field len */
-        char startbit;  /* start of bit field */
-        struct sym* sp; /* pointer to a symbol which describes the type */
-        /* local symbol tables */
-        HASHTABLE* syms; /* Symbol table for structs & functions */
-        HASHTABLE* tags; /* Symbol table for nested types*/
         struct _templateParamList* templateParam;
-        int alignment;                /* alignment pref for this structure/class/union   */
-        EXPRESSION* esize;            /* enode version of size */
-        struct typ* etype;            /* type of size field  when size isn't constant */
-        int vlaindex;                 /* index into the vararray */
-        EXPRESSION* templateDeclType; /* for bt_templatedecltype, used in templates */
-    } TYPE;
+        struct _templateSelector* templateSelector;
+    } v;
+    struct _string* string;
+    Optimizer::LIST* destructors;  // for &&  and ||
+    int xcInit, xcDest;
+    int lockOffset;
+    int r, s, t, q;
+    char bits;
+    char startbit;
+    int isvolatile : 1;
+    int isrestrict : 1;
+    int isatomic : 1;
+    int atomicinit : 1;
+    int unionoffset : 1;
+    int isfunc : 1;
+    int dest : 1;  // for thisref
+    int noexprerr : 1;
+} EXPRESSION;
 
-    typedef struct stmt
+typedef struct _msilarray
+{
+    int count;
+    int max;
+    struct typ* tp;
+    EXPRESSION* base;
+    EXPRESSION* indices[1];  // expands
+} MSIL_ARRAY;
+
+typedef struct
+{
+    const char* name;  // must be first as it will go in a hashtable
+    EXPRESSION* exp;
+    struct sym* sp;
+} CONSTEXPRSYM;
+
+typedef struct casedata
+{
+    struct casedata* next;
+    long long val;
+    int label;
+    const char* file;
+    int line;
+} CASEDATA;
+
+struct u_val
+{
+    union
     {
-        struct stmt* next;
-        struct stmt* lower;
-        struct stmt* blockTail;
-        enum e_stmt type;
-        EXPRESSION* select;
-        EXPRESSION* destexp;
-        Optimizer::LINEDATA* lineData;
+        long long i;          /* int val */
+        unsigned long long u; /* unsigned val */
         union
         {
-            TYPE* tp;
-            CASEDATA* cases;
-            struct blockdata* parent;
-        };
-        struct sym* sp;
-        int charpos;
-        int line;
-        const char* file;
-        int label;
-        int endlabel;
-        int breaklabel;  // also the label at the end of the try block
-        int altlabel;
-        int tryStart;
-        int tryEnd;
-        int hasvla : 1;
-        int hasdeclare : 1;
-        int purelabel : 1;
-        int explicitGoto : 1;
-    } STATEMENT;
+            const char* a; /* string val */
+            const LCHAR* w;
+        } s;
+        struct _defstruct* defs; /* macro definition */
+        FPF* f;                  /* float val */
+        _COMPLEX_S* c;
+    };
+};
+typedef struct typ
+{
+    enum e_bt type;        /* the type */
+    long size;             /* total size of type */
+    struct typ* btp;       /* pointer to next type (pointers & arrays */
+    struct typ* rootType;  /* pointer to base type of sequence */
+    int used : 1;          /* type has actually been used in a declaration or cast or expression */
+    int array : 1;         /* not a dereferenceable pointer */
+    int msil : 1;          /* allocate as an MSIL array */
+    int vla : 1;           /* varriable length array */
+    int unsized : 1;       /* type doesn't need a size */
+    int hasbits : 1;       /* type is a bit type */
+    int anonymousbits : 1; /* type is a bit type without a name */
+    int scoped : 1;        /* c++ scoped enumeration */
+    int fixed : 1;         /* c++ fixed enumeration */
+    int nullptrType : 1;   /* c++: std::nullptr */
+    int templateTop : 1;
+    int templateConst : 1;
+    int templateVol : 1;
+    int enumConst : 1; /* is an enumeration constant */
+    int lref : 1;
+    int rref : 1;
+    int decltypeauto : 1;
+    int decltypeautoextended : 1;
+    int stringconst : 1;
+    char bits;      /* -1 for not a bit val, else bit field len */
+    char startbit;  /* start of bit field */
+    struct sym* sp; /* pointer to a symbol which describes the type */
+    /* local symbol tables */
+    HASHTABLE* syms; /* Symbol table for structs & functions */
+    HASHTABLE* tags; /* Symbol table for nested types*/
+    struct _templateParamList* templateParam;
+    int alignment;                /* alignment pref for this structure/class/union   */
+    EXPRESSION* esize;            /* enode version of size */
+    struct typ* etype;            /* type of size field  when size isn't constant */
+    int vlaindex;                 /* index into the vararray */
+    EXPRESSION* templateDeclType; /* for bt_templatedecltype, used in templates */
+} TYPE;
 
-    typedef struct blockdata
+typedef struct stmt
+{
+    struct stmt* next;
+    struct stmt* lower;
+    struct stmt* blockTail;
+    enum e_stmt type;
+    EXPRESSION* select;
+    EXPRESSION* destexp;
+    Optimizer::LINEDATA* lineData;
+    union
     {
-        struct blockdata* next;
-        struct blockdata* caseDestruct;
-        enum e_kw type;
+        TYPE* tp;
         CASEDATA* cases;
-        STATEMENT *head, *tail;
-        STATEMENT* blockTail;
-        HASHTABLE* table;
-        int breaklabel;
-        int continuelabel;
-        int defaultlabel;
-        int needlabel : 1;
-        int hasbreak : 1;
-        int hassemi : 1;
-        int nosemi : 1; /* ok to skip semi */
-    } BLOCKDATA;
+        struct blockdata* parent;
+    };
+    struct sym* sp;
+    int charpos;
+    int line;
+    const char* file;
+    int label;
+    int endlabel;
+    int breaklabel;  // also the label at the end of the try block
+    int altlabel;
+    int tryStart;
+    int tryEnd;
+    int hasvla : 1;
+    int hasdeclare : 1;
+    int purelabel : 1;
+    int explicitGoto : 1;
+} STATEMENT;
 
-    typedef struct init
-    {
-        struct init* next;
-        int offset;
-        TYPE* basetp;
-        struct sym* fieldsp;
-        int fieldoffs;
-        EXPRESSION* exp;
-        int tag; /* sequence number */
-        int noassign : 1;
-    } INITIALIZER;
+typedef struct blockdata
+{
+    struct blockdata* next;
+    struct blockdata* caseDestruct;
+    enum e_kw type;
+    CASEDATA* cases;
+    STATEMENT *head, *tail;
+    STATEMENT* blockTail;
+    HASHTABLE* table;
+    int breaklabel;
+    int continuelabel;
+    int defaultlabel;
+    int needlabel : 1;
+    int hasbreak : 1;
+    int hassemi : 1;
+    int nosemi : 1; /* ok to skip semi */
+} BLOCKDATA;
 
-    typedef struct ifunc
-    {
-        STATEMENT* stmt;
-        HASHTABLE* syms;
-        HASHTABLE* tags;
-    } INLINEFUNC;
+typedef struct init
+{
+    struct init* next;
+    int offset;
+    TYPE* basetp;
+    struct sym* fieldsp;
+    int fieldoffs;
+    EXPRESSION* exp;
+    int tag; /* sequence number */
+    int noassign : 1;
+} INITIALIZER;
 
-    typedef struct
-    {
-        HASHTABLE* syms;
-        HASHTABLE* tags;
-        Optimizer::LIST* usingDirectives;
-        Optimizer::LIST* inlineDirectives;
-        struct sym* origname;
-        struct sym* name;
+typedef struct ifunc
+{
+    STATEMENT* stmt;
+    HASHTABLE* syms;
+    HASHTABLE* tags;
+} INLINEFUNC;
 
-    } NAMESPACEVALUEDATA;
-    typedef struct __nsv
-    {
-        struct __nsv* next;
-        NAMESPACEVALUEDATA* valueData;
-    } NAMESPACEVALUELIST;
+typedef struct
+{
+    HASHTABLE* syms;
+    HASHTABLE* tags;
+    Optimizer::LIST* usingDirectives;
+    Optimizer::LIST* inlineDirectives;
+    struct sym* origname;
+    struct sym* name;
+
+} NAMESPACEVALUEDATA;
+typedef struct __nsv
+{
+    struct __nsv* next;
+    NAMESPACEVALUEDATA* valueData;
+} NAMESPACEVALUELIST;
 
 #ifdef PARSER_ONLY
-    struct _ccNamespaceData
-    {
-        struct _ccNamespaceData* next;
-        const char* declfile;
-        int startline;
-        int endline;
-    };
+struct _ccNamespaceData
+{
+    struct _ccNamespaceData* next;
+    const char* declfile;
+    int startline;
+    int endline;
+};
 #endif
-    // clang-format off
+// clang-format off
     enum e_cm { cmNone, cmValue, cmRef, cmThis, cmExplicitValue };
-    // clang-format on
+// clang-format on
 
-    // order is important for this next, a comparison is done based on this ordering
-    // clang-format off
+// order is important for this next, a comparison is done based on this ordering
+// clang-format off
     enum e_xc { xc_unspecified, xc_all, xc_dynamic, xc_none };
-    // clang-format on
-    struct xcept
-    {
-        Optimizer::LIST* xcDynamic;           // list of types, the exception specification when dynamic
-        int xcInitLab, xcDestLab;  // for auto vars
-        struct sym* xctab;
-        struct sym* xclab;
-        EXPRESSION* xcInitializeFunc;
-        EXPRESSION* xcRundownFunc;
-    };
+// clang-format on
+struct xcept
+{
+    Optimizer::LIST* xcDynamic;  // list of types, the exception specification when dynamic
+    int xcInitLab, xcDestLab;    // for auto vars
+    struct sym* xctab;
+    struct sym* xclab;
+    EXPRESSION* xcInitializeFunc;
+    EXPRESSION* xcRundownFunc;
+};
 
-    struct attributes
+struct attributes
+{
+    struct
     {
-        struct
-        {
-            int structAlign;        /* alignment of structures/ unions */
-            int warnAlign;          /* if nz, warn if not aligned */
-            unsigned vectorSize;    /* total size of a vectored attribute */
-            enum e_lk linkage;      /* stdcall */
-            enum e_lk linkage2;     /* export, import, msil */
-            enum e_lk linkage3;     /* used here for noreturn */
-            struct sym* cleanup;    /* cleanup function */
-            bool packed;            /* True if to reset alignment to 1 */
-            bool alignedAttribute;  /* True if alignment came from gcc aligned attribute */
-            unsigned used : 1;      /* value has been fetched */
-            unsigned nonstring : 1; /* value is not a zero terminated string */
-            unsigned zstring : 1;   // (argument) was tagged as a zero terminated string
-        } inheritable;
-        struct
-        {
-            const char* deprecationText;  // C++ declaration was deprecated
-            const char* alias;            // link-time alias
-            struct sym* copyFrom;         // symbol to copy attributes from
-        } uninheritable;
-    };
-    /* symbols */
-    typedef struct sym
+        int structAlign;        /* alignment of structures/ unions */
+        int warnAlign;          /* if nz, warn if not aligned */
+        unsigned vectorSize;    /* total size of a vectored attribute */
+        enum e_lk linkage;      /* stdcall */
+        enum e_lk linkage2;     /* export, import, msil */
+        enum e_lk linkage3;     /* used here for noreturn */
+        struct sym* cleanup;    /* cleanup function */
+        bool packed;            /* True if to reset alignment to 1 */
+        bool alignedAttribute;  /* True if alignment came from gcc aligned attribute */
+        unsigned used : 1;      /* value has been fetched */
+        unsigned nonstring : 1; /* value is not a zero terminated string */
+        unsigned zstring : 1;   // (argument) was tagged as a zero terminated string
+    } inheritable;
+    struct
     {
-        const char* name;
-        TYPE* tp;
-        struct _templateParamList* templateParams;
-        unsigned packed : 1;           // packed template param instance
-        struct _symbody
-        {
-            const char* decoratedName;                /* symbol name with decorations, as used in output format */
-            struct Optimizer::SimpleSymbol *symRef;
-            const char *declfile, *origdeclfile;      /* file symbol was declared in */
-            int declline, origdeclline, realdeclline; /* line number symbol was declared at */
-            short declcharpos;                        /* character position symbol was declared at */
-            short declfilenum;                        /* the file number */
-            int sizeNoVirtual;                        /* size without virtual classes and thunks */
-            struct sym* parent;
-            struct sym* parentClass;
-            struct sym* parentNameSpace;
-            NAMESPACEVALUELIST* nameSpaceValues; /* for a namespace SP */
-            struct sym* vtabsp;
-            EXPRESSION* localInitGuard;
-            Optimizer::LINEDATA* linedata;
-            enum e_sc storage_class; /* storage class */
-            enum e_ac access;        /* c++ access rights for members */
-            int operatorId;          /* operator id, CI + kw for an operator function */
-            enum e_cm lambdaMode;
-            INLINEFUNC inlineFunc;
-            int overlayIndex; /* differentiating index when function differs only in return type from similar functions */
+        const char* deprecationText;  // C++ declaration was deprecated
+        const char* alias;            // link-time alias
+        struct sym* copyFrom;         // symbol to copy attributes from
+    } uninheritable;
+};
+/* symbols */
+typedef struct sym
+{
+    const char* name;
+    TYPE* tp;
+    struct _templateParamList* templateParams;
+    unsigned packed : 1;  // packed template param instance
+    struct _symbody
+    {
+        const char* decoratedName; /* symbol name with decorations, as used in output format */
+        struct Optimizer::SimpleSymbol* symRef;
+        const char *declfile, *origdeclfile;      /* file symbol was declared in */
+        int declline, origdeclline, realdeclline; /* line number symbol was declared at */
+        short declcharpos;                        /* character position symbol was declared at */
+        short declfilenum;                        /* the file number */
+        int sizeNoVirtual;                        /* size without virtual classes and thunks */
+        struct sym* parent;
+        struct sym* parentClass;
+        struct sym* parentNameSpace;
+        NAMESPACEVALUELIST* nameSpaceValues; /* for a namespace SP */
+        struct sym* vtabsp;
+        EXPRESSION* localInitGuard;
+        Optimizer::LINEDATA* linedata;
+        enum e_sc storage_class; /* storage class */
+        enum e_ac access;        /* c++ access rights for members */
+        int operatorId;          /* operator id, CI + kw for an operator function */
+        enum e_cm lambdaMode;
+        INLINEFUNC inlineFunc;
+        int overlayIndex; /* differentiating index when function differs only in return type from similar functions */
 #ifdef PARSER_ONLY
-            int ccEndLine;                            /* end line for code completion */
-            unsigned long long ccStructId;                   /* code completion struct id */
-            struct _ccNamespaceData* ccNamespaceData; /* namespace data for code completion */
-            int parserSet : 1;                        /* sent to parser already*/
+        int ccEndLine;                            /* end line for code completion */
+        unsigned long long ccStructId;            /* code completion struct id */
+        struct _ccNamespaceData* ccNamespaceData; /* namespace data for code completion */
+        int parserSet : 1;                        /* sent to parser already*/
 #endif
-            unsigned declaring : 1;             /* currently being declared */
-            unsigned compilerDeclared : 1;      /* compiler declared this */
-            unsigned hasproto : 1;              /* C/90 language prototype was encountered */
-            unsigned intagtable : 1;            /* it is in a tag table */
-            unsigned dontlist : 1;              /* it is a system include, don't put in list file */
-            unsigned allocate : 1;              /* variable is used, allocate space for it */
-            unsigned indecltable : 1;           /* global already in dump table */
-            unsigned spaceallocated : 1;        /* space has been allocated */
-            unsigned loadds : 1;                /* to load data seg (limited) */
-            unsigned farproc : 1;               /* this procedure should be terminated with retf */
-            unsigned calleenearret : 1;         /* true if callee provided a place for the return
-                         value */
-            unsigned hasunnamed : 1;            /* structure has unnamed substructs */
-            unsigned isunnamed : 1;             /* substructure is unnamed */
-            unsigned recalculateParameters : 1; /* inline func needs its parameters
-                 recalculated */
-            unsigned nullsym : 1;               /* if was a callblock return which isn't used */
-            unsigned anonymous : 1;             /* if it is a generated variable */
-            unsigned inasm : 1;                 /* a way to force the local optimizer to leave autos on the stack */
-            unsigned assigned : 1;              /* value has been assigned */
-            unsigned altered : 1;
-            unsigned noextern : 1;    /* no external reference needed, it was inlined */
-            unsigned gentemplate : 1; /* template instantiation or reference generated */
-            unsigned allocaUsed : 1;
-            unsigned oldstyle : 1;         /* pointer to a names list if an old style function arg */
-            unsigned constexpression : 1;  /* declared with constexpression */
-            unsigned addressTaken : 1;     /* address taken */
-            unsigned wasUsing : 1;         /* came to this symbol table as a result of 'using' */
-            unsigned redeclared : 1;       /* symbol was declared more than once */
-            unsigned thisPtr : 1;          /*is a this pointer*/
-            unsigned structuredReturn : 1; /* is a pointer to a structure's structure pointer address for returning a value */
-            unsigned constop : 1;          /* a constructor 'top' parameter */
-            unsigned castoperator : 1;     /* a cast operator */
-            unsigned deleted : 1;          /* function was deleted */
-            unsigned defaulted : 1;        /* function was defaulted */
-            unsigned isfinal : 1;          /* class or virtual function is final */
-            unsigned isoverride : 1;       /* virtual function marked override */
-            unsigned ispure : 1;           /* pure virtual function */
-            unsigned hasvtab : 1;          /* class has a vtab */
-            unsigned isabstract : 1;       /* class is abstract */
-            unsigned accessspecified : 1;  /* class has access specifiers */
-            unsigned safefunc : 1;         /* RTL helper function with no side effects */
-            unsigned throughClass : 1;     /* last search was found through a class */
-            unsigned hasUserCons : 1;      /* has user-defined constructors */
-            unsigned trivialCons : 1;      /* constructor is trivial */
-            unsigned internallyGenned : 1; /* constructor declaration was made by the compiler */
-            unsigned stackblock : 1;       // stacked structure in C++ mode
-            unsigned islambda : 1;         // lambda closure struct
-            unsigned noinline : 1;         // don't inline an inline qualified function
-            unsigned didinline : 1;        // already genned an inline func for this symbol
-            unsigned hasTry : 1;           // function surrounded by try statement
-            unsigned anyTry : 1;           // function has either external or internal try statement
-                                           // or variable is used within a try statement
-            unsigned canThrow : 1;         // function throws directly
-            unsigned hasDest : 1;          // class has a destructor that is called
-            unsigned pureDest : 1;         // destructor is pure
-            unsigned isConstructor : 1;    // is a constructor
-            unsigned isDestructor : 1;     // is  adestructor
-            unsigned xtEntry : 1;          // is an exception table label
-            unsigned isExplicit : 1;       // explicit constructor or conversion function
-            unsigned specialized : 1;      // is a template specialization
-            unsigned specialized2 : 1;     // specialization of a template class nontemplate func
-            unsigned instantiated : 1;     // instantiated template
-            unsigned instantiated2 : 1;    // instantiated template
-            unsigned dontinstantiate : 1;  // don't instantiate this template (is extern)
-            unsigned copiedTemplateFunction : 1;
-            unsigned instantiatedInlineInClass : 1;      // function instantiated inside a class body
-            unsigned isInline;                           // : 1; /* function is a candidate for inline functionality */
-            unsigned dumpInlineToFile : 1;               /* inline function needs to be placed in the output file */
-            unsigned promotedToInline : 1;               /* function wasn't declare inline but was promoted to it */
-            unsigned temp : 1;                           // temporary boolean...
-            unsigned pushedTemplateSpecializationDefinition : 1;  // set to true if the current body for the template
-                                                                  // specialization was pushed from the generalized version of the template
-            unsigned destructed : 1;                              // the c++ class instance has had a destructor generated
-            unsigned initializer_list : 1;                        // constructor with initializer_list parameter
-            unsigned va_typeof : 1;                               // MSIL: a va_typeof symbol
-            unsigned has_property_setter : 1;                     // a property has a setter
-            unsigned nonConstVariableUsed : 1;                    // a non-const variable was used or assigned to in this function's body
-            unsigned importThunk : 1;                             // an import thunk
-            unsigned visited : 1;        // symbol has been visited in a traversal
-            unsigned postExpansion : 1;   // template was post-expanded
-            unsigned performedStructInitialization : 1; // structure declaration was completed
-            int __func__label;           /* label number for the __func__ keyword */
-            int labelCount;              /* number of code labels within a function body */
-            int offset;                  /* address offset of data in the given seg, or optimize register */
-            int vtaboffset;              /* vtab offset for virtual functions */
-            int label;                   /* label number for statics */
-            int uniqueID;                /* unique index for local statics */
-            int startLine, endLine;      /* line numbers spanning the function */
-            short paramsize;             /* Size of parameter list for stdcall functions */
-            short accessibleTemplateArgument; /* something used as a template argument was validated for
-                                               * accessibility before instantiating the template */
-            short retblockparamadjust;        /* Adjustment for retblock parameters */
-            short retcount;                   /* number of return statements in a function */
-            /* Also name for CPP overload lists */
-            /* also default for template parameters, is a TYP */
-            char* importfile;    /* import name */
-            unsigned char* uuid; /* Microsoft: GUID */
-            int uuidLabel;       /* Microsoft: Label for a GUID which has been instantiated */
-            struct sym* overloadName;
-            struct sym* typedefSym;
-            struct sym* mainsym;                            /* pointer to the global version of a copied symbol */
-            struct sym* maintemplate;                       /* pointer to the global version of a copied symbol */
-            struct _memberInitializers* memberInitializers; /* initializers for constructor */
-            STATEMENT* gotoTable;                           /* pointer to hashtable associated with goto or label */
-            /* these fields depend on storage_class */
-            struct u_val value;
-            struct _baseClass* baseClasses;
-            struct _vbaseEntry* vbaseEntries;
-            struct _vtabEntry* vtabEntries;
-            struct lexeme* deferredCompile;
-            struct lexeme* deferredNoexcept;
-            Optimizer::LIST* templateNameSpace;
-            Optimizer::LIST* staticAsserts;
-            short templateLevel;
-            struct _symlist_* specializations;
-            struct _symlist_* instantiations;
-            const char* msil;                            // MSIL path
-            struct _templateSelector* templateSelector;  // first element is the last valid sym found, second element is the template
-                                                         // parameter sym following elements are the list of pointers to names
-            struct sym* parentTemplate;                  // could be the parent of a specialization or an instantiation
-            struct init *init, *lastInit, *dest;
-            // order is important for this next, a comparison is done based on this ordering
-            // clang-format off
+        unsigned declaring : 1;             /* currently being declared */
+        unsigned compilerDeclared : 1;      /* compiler declared this */
+        unsigned hasproto : 1;              /* C/90 language prototype was encountered */
+        unsigned intagtable : 1;            /* it is in a tag table */
+        unsigned dontlist : 1;              /* it is a system include, don't put in list file */
+        unsigned allocate : 1;              /* variable is used, allocate space for it */
+        unsigned indecltable : 1;           /* global already in dump table */
+        unsigned spaceallocated : 1;        /* space has been allocated */
+        unsigned loadds : 1;                /* to load data seg (limited) */
+        unsigned farproc : 1;               /* this procedure should be terminated with retf */
+        unsigned calleenearret : 1;         /* true if callee provided a place for the return
+                     value */
+        unsigned hasunnamed : 1;            /* structure has unnamed substructs */
+        unsigned isunnamed : 1;             /* substructure is unnamed */
+        unsigned recalculateParameters : 1; /* inline func needs its parameters
+             recalculated */
+        unsigned nullsym : 1;               /* if was a callblock return which isn't used */
+        unsigned anonymous : 1;             /* if it is a generated variable */
+        unsigned inasm : 1;                 /* a way to force the local optimizer to leave autos on the stack */
+        unsigned assigned : 1;              /* value has been assigned */
+        unsigned altered : 1;
+        unsigned noextern : 1;    /* no external reference needed, it was inlined */
+        unsigned gentemplate : 1; /* template instantiation or reference generated */
+        unsigned allocaUsed : 1;
+        unsigned oldstyle : 1;         /* pointer to a names list if an old style function arg */
+        unsigned constexpression : 1;  /* declared with constexpression */
+        unsigned addressTaken : 1;     /* address taken */
+        unsigned wasUsing : 1;         /* came to this symbol table as a result of 'using' */
+        unsigned redeclared : 1;       /* symbol was declared more than once */
+        unsigned thisPtr : 1;          /*is a this pointer*/
+        unsigned structuredReturn : 1; /* is a pointer to a structure's structure pointer address for returning a value */
+        unsigned constop : 1;          /* a constructor 'top' parameter */
+        unsigned castoperator : 1;     /* a cast operator */
+        unsigned deleted : 1;          /* function was deleted */
+        unsigned defaulted : 1;        /* function was defaulted */
+        unsigned isfinal : 1;          /* class or virtual function is final */
+        unsigned isoverride : 1;       /* virtual function marked override */
+        unsigned ispure : 1;           /* pure virtual function */
+        unsigned hasvtab : 1;          /* class has a vtab */
+        unsigned isabstract : 1;       /* class is abstract */
+        unsigned accessspecified : 1;  /* class has access specifiers */
+        unsigned safefunc : 1;         /* RTL helper function with no side effects */
+        unsigned throughClass : 1;     /* last search was found through a class */
+        unsigned hasUserCons : 1;      /* has user-defined constructors */
+        unsigned trivialCons : 1;      /* constructor is trivial */
+        unsigned internallyGenned : 1; /* constructor declaration was made by the compiler */
+        unsigned stackblock : 1;       // stacked structure in C++ mode
+        unsigned islambda : 1;         // lambda closure struct
+        unsigned noinline : 1;         // don't inline an inline qualified function
+        unsigned didinline : 1;        // already genned an inline func for this symbol
+        unsigned hasTry : 1;           // function surrounded by try statement
+        unsigned anyTry : 1;           // function has either external or internal try statement
+                                       // or variable is used within a try statement
+        unsigned canThrow : 1;         // function throws directly
+        unsigned hasDest : 1;          // class has a destructor that is called
+        unsigned pureDest : 1;         // destructor is pure
+        unsigned isConstructor : 1;    // is a constructor
+        unsigned isDestructor : 1;     // is  adestructor
+        unsigned xtEntry : 1;          // is an exception table label
+        unsigned isExplicit : 1;       // explicit constructor or conversion function
+        unsigned specialized : 1;      // is a template specialization
+        unsigned specialized2 : 1;     // specialization of a template class nontemplate func
+        unsigned instantiated : 1;     // instantiated template
+        unsigned instantiated2 : 1;    // instantiated template
+        unsigned dontinstantiate : 1;  // don't instantiate this template (is extern)
+        unsigned copiedTemplateFunction : 1;
+        unsigned instantiatedInlineInClass : 1;  // function instantiated inside a class body
+        unsigned isInline;                       // : 1; /* function is a candidate for inline functionality */
+        unsigned dumpInlineToFile : 1;           /* inline function needs to be placed in the output file */
+        unsigned promotedToInline : 1;           /* function wasn't declare inline but was promoted to it */
+        unsigned temp : 1;                       // temporary boolean...
+        unsigned
+            pushedTemplateSpecializationDefinition : 1;  // set to true if the current body for the template
+                                                         // specialization was pushed from the generalized version of the template
+        unsigned destructed : 1;                         // the c++ class instance has had a destructor generated
+        unsigned initializer_list : 1;                   // constructor with initializer_list parameter
+        unsigned va_typeof : 1;                          // MSIL: a va_typeof symbol
+        unsigned has_property_setter : 1;                // a property has a setter
+        unsigned nonConstVariableUsed : 1;               // a non-const variable was used or assigned to in this function's body
+        unsigned importThunk : 1;                        // an import thunk
+        unsigned visited : 1;                            // symbol has been visited in a traversal
+        unsigned postExpansion : 1;                      // template was post-expanded
+        unsigned performedStructInitialization : 1;      // structure declaration was completed
+        int __func__label;                               /* label number for the __func__ keyword */
+        int labelCount;                                  /* number of code labels within a function body */
+        int offset;                                      /* address offset of data in the given seg, or optimize register */
+        int vtaboffset;                                  /* vtab offset for virtual functions */
+        int label;                                       /* label number for statics */
+        int uniqueID;                                    /* unique index for local statics */
+        int startLine, endLine;                          /* line numbers spanning the function */
+        short paramsize;                                 /* Size of parameter list for stdcall functions */
+        short accessibleTemplateArgument;                /* something used as a template argument was validated for
+                                                          * accessibility before instantiating the template */
+        short retblockparamadjust;                       /* Adjustment for retblock parameters */
+        short retcount;                                  /* number of return statements in a function */
+        /* Also name for CPP overload lists */
+        /* also default for template parameters, is a TYP */
+        char* importfile;    /* import name */
+        unsigned char* uuid; /* Microsoft: GUID */
+        int uuidLabel;       /* Microsoft: Label for a GUID which has been instantiated */
+        struct sym* overloadName;
+        struct sym* typedefSym;
+        struct sym* mainsym;                            /* pointer to the global version of a copied symbol */
+        struct sym* maintemplate;                       /* pointer to the global version of a copied symbol */
+        struct _memberInitializers* memberInitializers; /* initializers for constructor */
+        STATEMENT* gotoTable;                           /* pointer to hashtable associated with goto or label */
+        /* these fields depend on storage_class */
+        struct u_val value;
+        struct _baseClass* baseClasses;
+        struct _vbaseEntry* vbaseEntries;
+        struct _vtabEntry* vtabEntries;
+        struct lexeme* deferredCompile;
+        struct lexeme* deferredNoexcept;
+        Optimizer::LIST* templateNameSpace;
+        Optimizer::LIST* staticAsserts;
+        short templateLevel;
+        struct _symlist_* specializations;
+        struct _symlist_* instantiations;
+        const char* msil;                            // MSIL path
+        struct _templateSelector* templateSelector;  // first element is the last valid sym found, second element is the template
+                                                     // parameter sym following elements are the list of pointers to names
+        struct sym* parentTemplate;                  // could be the parent of a specialization or an instantiation
+        struct init *init, *lastInit, *dest;
+        // order is important for this next, a comparison is done based on this ordering
+        // clang-format off
             enum e_xc xcMode;
-            // clang-format on
-            struct xcept* xc;
-            Optimizer::LIST* friends;
-            attributes attribs;
-            /* Type declarations */
-        } *sb;
-    } SYMBOL;
+        // clang-format on
+        struct xcept* xc;
+        Optimizer::LIST* friends;
+        attributes attribs;
+        /* Type declarations */
+    } * sb;
+} SYMBOL;
 
-    typedef struct __lambda
-    {
-        struct __lambda *prev, *next;
-        enum e_cm captureMode;
-        HASHTABLE* captured;
-        SYMBOL* cls;
-        SYMBOL* func;
-        SYMBOL* lthis;
-        TYPE* functp;
-        SYMLIST* funcargs;
-        SYMBOL* enclosingFunc;
-        HASHTABLE* oldSyms;
-        HASHTABLE* oldTags;
-        TYPE* rv;
-        int index;
-        int isMutable : 1;
-        int captureThis : 1;
-        int templateFunctions : 1;
-    } LAMBDA;
+typedef struct __lambda
+{
+    struct __lambda *prev, *next;
+    enum e_cm captureMode;
+    HASHTABLE* captured;
+    SYMBOL* cls;
+    SYMBOL* func;
+    SYMBOL* lthis;
+    TYPE* functp;
+    SYMLIST* funcargs;
+    SYMBOL* enclosingFunc;
+    HASHTABLE* oldSyms;
+    HASHTABLE* oldTags;
+    TYPE* rv;
+    int index;
+    int isMutable : 1;
+    int captureThis : 1;
+    int templateFunctions : 1;
+} LAMBDA;
 
-    typedef struct __lambdasp
-    {
-        const char* name;
-        SYMBOL* sp;
-        SYMBOL* parent;
-        LAMBDA* enclosing;
-    } LAMBDASP;
+typedef struct __lambdasp
+{
+    const char* name;
+    SYMBOL* sp;
+    SYMBOL* parent;
+    LAMBDA* enclosing;
+} LAMBDASP;
 
-    typedef struct _memberInitializers
-    {
-        struct _memberInitializers* next;
-        const char* name;
-        SYMBOL* sp;
-        SYMBOL* basesym;
-        INITIALIZER* init;
-        int line;
-        const char* file;
-        struct lexeme* initData;
-        int packed : 1;
-        int delegating : 1;
-    } MEMBERINITIALIZERS;
+typedef struct _memberInitializers
+{
+    struct _memberInitializers* next;
+    const char* name;
+    SYMBOL* sp;
+    SYMBOL* basesym;
+    INITIALIZER* init;
+    int line;
+    const char* file;
+    struct lexeme* initData;
+    int packed : 1;
+    int delegating : 1;
+} MEMBERINITIALIZERS;
 
-    typedef struct _baseClass
-    {
-        struct _baseClass* next;
-        SYMBOL* cls;
-        enum e_ac accessLevel;
-        unsigned offset;
-        int isvirtual : 1;
-        int top : 1;
-    } BASECLASS;
-    typedef struct _virtualFunc
-    {
-        struct _virtualFunc* next;
-        SYMBOL* func;
-    } VIRTUALFUNC;
-    typedef struct _vtabEntry
-    {
-        struct _vtabEntry* next;
-        struct _vtabEntry* children;
-        struct _virtualFunc* virtuals;
-        SYMBOL* cls;
-        unsigned dataOffset;
-        unsigned vtabOffset;
-        bool isvirtual;
-        bool isdead;
-    } VTABENTRY;
-    typedef struct _vbaseEntry
-    {
-        struct _vbaseEntry* next;
-        SYMBOL* cls;
-        bool alloc;
-        unsigned pointerOffset;
-        unsigned structOffset;
-    } VBASEENTRY;
+typedef struct _baseClass
+{
+    struct _baseClass* next;
+    SYMBOL* cls;
+    enum e_ac accessLevel;
+    unsigned offset;
+    int isvirtual : 1;
+    int top : 1;
+} BASECLASS;
+typedef struct _virtualFunc
+{
+    struct _virtualFunc* next;
+    SYMBOL* func;
+} VIRTUALFUNC;
+typedef struct _vtabEntry
+{
+    struct _vtabEntry* next;
+    struct _vtabEntry* children;
+    struct _virtualFunc* virtuals;
+    SYMBOL* cls;
+    unsigned dataOffset;
+    unsigned vtabOffset;
+    bool isvirtual;
+    bool isdead;
+} VTABENTRY;
+typedef struct _vbaseEntry
+{
+    struct _vbaseEntry* next;
+    SYMBOL* cls;
+    bool alloc;
+    unsigned pointerOffset;
+    unsigned structOffset;
+} VBASEENTRY;
 
-    typedef struct _templateParam
+typedef struct _templateParam
+{
+    // kw_class = class or namespace
+    // kw_int = nontype
+    // kw_template = template parameter
+    // kw_new = specialization
+    // first in the list is always the specialization specifier
+    enum e_kw type;
+    int index : 8;
+    int packed : 1;
+    int usedAsUnpacked : 1;
+    int initialized : 1;
+    int lref : 1;
+    int rref : 1;
+    int resolved : 1;  // packed template has already been resolved.
+    SYMBOL* packsym;
+    void* hold; /* value held during partial template ordering */
+    Optimizer::LIST* stack;
+    union
     {
-        // kw_class = class or namespace
-        // kw_int = nontype
-        // kw_template = template parameter
-        // kw_new = specialization
-        // first in the list is always the specialization specifier
-        enum e_kw type;
-        int index : 8;
-        int packed : 1;
-        int usedAsUnpacked : 1;
-        int initialized : 1;
-        int lref : 1;
-        int rref : 1;
-        int resolved : 1;  // packed template has already been resolved.
-        SYMBOL* packsym;
-        void* hold; /* value held during partial template ordering */
-        Optimizer::LIST* stack;
-        union
+        // the dflt & val fields must be in the same place for each item
+        struct
         {
-            // the dflt & val fields must be in the same place for each item
-            struct
-            {
-                SYMBOL* dflt;
-                SYMBOL* val;
-                struct lexeme* txtdflt;
-                Optimizer::LIST* txtargs;
-                SYMBOL* temp;
-                struct _templateParamList* args;
-                struct _templateParamList* orig;
-            } byTemplate;
-            struct
-            {
-                TYPE* dflt;
-                TYPE* val;
-                struct lexeme* txtdflt;
-                Optimizer::LIST* txtargs;
-                TYPE* temp;
-            } byClass;
-            struct
-            {
-                EXPRESSION* dflt;
-                EXPRESSION* val;
-                struct lexeme* txtdflt;
-                Optimizer::LIST* txtargs;
-                EXPRESSION* temp;
-                TYPE* tp;
-            } byNonType;
-            struct
-            {
-                struct _templateParamList* types;
-                struct _templateParamList* next;
-            } bySpecialization;
-            struct
-            {
-                struct _templateParamList* pack;
-            } byPack;
-            struct
-            {
-                struct _templateParamList* args;
-            } byDeferred;
-        };
-    } TEMPLATEPARAM;
-
-    typedef struct _templateParamList
-    {
-        struct _templateParamList* next;
-        SYMBOL* argsym;
-        TEMPLATEPARAM* p;
-    } TEMPLATEPARAMLIST;
-
-    typedef struct _templateSelector
-    {
-        struct _templateSelector* next;
-        union
+            SYMBOL* dflt;
+            SYMBOL* val;
+            struct lexeme* txtdflt;
+            Optimizer::LIST* txtargs;
+            SYMBOL* temp;
+            struct _templateParamList* args;
+            struct _templateParamList* orig;
+        } byTemplate;
+        struct
         {
-            SYMBOL* sp;
-            const char* name;
-        };
-        TEMPLATEPARAMLIST* templateParams;
-        int isTemplate : 1;
-    } TEMPLATESELECTOR;
+            TYPE* dflt;
+            TYPE* val;
+            struct lexeme* txtdflt;
+            Optimizer::LIST* txtargs;
+            TYPE* temp;
+        } byClass;
+        struct
+        {
+            EXPRESSION* dflt;
+            EXPRESSION* val;
+            struct lexeme* txtdflt;
+            Optimizer::LIST* txtargs;
+            EXPRESSION* temp;
+            TYPE* tp;
+        } byNonType;
+        struct
+        {
+            struct _templateParamList* types;
+            struct _templateParamList* next;
+        } bySpecialization;
+        struct
+        {
+            struct _templateParamList* pack;
+        } byPack;
+        struct
+        {
+            struct _templateParamList* args;
+        } byDeferred;
+    };
+} TEMPLATEPARAM;
 
-    typedef struct _structSym
-    {
-        struct _structSym* next;
-        SYMBOL* str;
-        TEMPLATEPARAMLIST* tmpl;
-    } STRUCTSYM;
-    typedef struct initlist
-    {
-        struct initlist* next;
-        TYPE* tp;
-        EXPRESSION* exp;
-        EXPRESSION* dest;
-        struct initlist* nested;
-        int byRef : 1;
-        int packed : 1;
-        int vararg : 1;
-        int valist : 1;
-    } INITLIST;
+typedef struct _templateParamList
+{
+    struct _templateParamList* next;
+    SYMBOL* argsym;
+    TEMPLATEPARAM* p;
+} TEMPLATEPARAMLIST;
 
-    typedef struct functioncall
+typedef struct _templateSelector
+{
+    struct _templateSelector* next;
+    union
     {
         SYMBOL* sp;
-        TYPE* functp;
-        EXPRESSION* fcall;
-        INITLIST* arguments;
-        SYMBOL* returnSP;
-        EXPRESSION* returnEXP;
-        EXPRESSION* thisptr;
-        TYPE* thistp;
-        TEMPLATEPARAMLIST* templateParams;
-        int callLab;
-        int novtab : 1;
-        int ascall : 1;
-        int astemplate : 1;
-        int noobject : 1;
-        int asaddress : 1;
-        int vararg : 1;
-    } FUNCTIONCALL;
+        const char* name;
+    };
+    TEMPLATEPARAMLIST* templateParams;
+    int isTemplate : 1;
+} TEMPLATESELECTOR;
+
+typedef struct _structSym
+{
+    struct _structSym* next;
+    SYMBOL* str;
+    TEMPLATEPARAMLIST* tmpl;
+} STRUCTSYM;
+typedef struct initlist
+{
+    struct initlist* next;
+    TYPE* tp;
+    EXPRESSION* exp;
+    EXPRESSION* dest;
+    struct initlist* nested;
+    int byRef : 1;
+    int packed : 1;
+    int vararg : 1;
+    int valist : 1;
+} INITLIST;
+
+typedef struct functioncall
+{
+    SYMBOL* sp;
+    TYPE* functp;
+    EXPRESSION* fcall;
+    INITLIST* arguments;
+    SYMBOL* returnSP;
+    EXPRESSION* returnEXP;
+    EXPRESSION* thisptr;
+    TYPE* thistp;
+    TEMPLATEPARAMLIST* templateParams;
+    int callLab;
+    int novtab : 1;
+    int ascall : 1;
+    int astemplate : 1;
+    int noobject : 1;
+    int asaddress : 1;
+    int vararg : 1;
+} FUNCTIONCALL;
 
 #define MAX_STRLEN 16384
 #define MAX_STLP1 (MAX_STRLEN + 1)
 
-    /* error list */
-    struct errl
-    {
-        struct errl* next;
-        int errornumber;
-        void* data;
-    };
+/* error list */
+struct errl
+{
+    struct errl* next;
+    int errornumber;
+    void* data;
+};
 
-    /* used for error skimming */
+/* used for error skimming */
 #define BALANCE struct balance
 #define BAL_PAREN 0
 #define BAL_BRACKET 1
 #define BAL_BEGIN 2
 #define ERRORS struct errl
 
-    struct balance
-    {
-        struct balance* back;
-        short type;
-        short count;
-    };
+struct balance
+{
+    struct balance* back;
+    short type;
+    short count;
+};
 
-    // clang-format off
+// clang-format off
     enum _matchFlags
     {
         KW_NONE = 0, KW_CPLUSPLUS = 1, KW_INLINEASM = 2, KW_NONANSI = 4, KW_C99 = 8,
         KW_C1X = 16, KW_ASSEMBLER = 32, KW_MSIL = 64,
         KW_386 = 128, KW_68K = 256, KW_ALL = 0x40000000
     };
-    // clang-format on
-    // clang-format off
+// clang-format on
+// clang-format off
 
     enum _tokenTypes
     {
@@ -993,129 +994,131 @@ namespace Parser
         TT_DECLARE = 0x80000000UL,
         TT_UNKNOWN = 0
     };
-    // clang-format on
+// clang-format on
 
-    typedef struct kwblk
-    {
-        const char* name;
-        int len;
-        enum e_kw key;
-        unsigned matchFlags;
-        unsigned tokenTypes;
-        /*    ASMNAME *data; */
-    } KEYWORD;
+typedef struct kwblk
+{
+    const char* name;
+    int len;
+    enum e_kw key;
+    unsigned matchFlags;
+    unsigned tokenTypes;
+    /*    ASMNAME *data; */
+} KEYWORD;
 
 #define MATCHTYPE(lex, tp) (lex && (lex)->type == (tp))
 #define ISID(lex) (lex && (lex)->type == l_id)
 #define ISKW(lex) (lex && (lex)->type == l_kw)
 #define MATCHKW(lex, keyWord) (ISKW(lex) && ((lex)->kw->key == keyWord))
-#define KWTYPE(lex, types) \
-    (ISKW(lex) &&          \
-     (((lex)->kw->key == kw_auto ? (Optimizer::cparams.prm_cplusplus ? TT_BASETYPE : TT_STORAGE_CLASS) : (lex)->kw->tokenTypes) & (types)))
+#define KWTYPE(lex, types)                                                                                                        \
+    (ISKW(lex) &&                                                                                                                 \
+     (((lex)->kw->key == kw_auto ? (Optimizer::cparams.prm_cplusplus ? TT_BASETYPE : TT_STORAGE_CLASS) : (lex)->kw->tokenTypes) & \
+      (types)))
 #define KW(lex) (ISKW(lex) ? (lex)->kw->key : kw_none)
 
-    enum e_lexType
-    {
-        l_none,
-        l_i,
-        l_ui,
-        l_l,
-        l_ul,
-        l_ll,
-        l_ull,
-        l_f,
-        l_d,
-        l_ld,
-        l_I,
-        l_id,
-        l_kw,
-        l_astr,
-        l_wstr,
-        l_ustr,
-        l_Ustr,
-        l_u8str,
-        l_msilstr,
-        l_achr,
-        l_wchr,
-        l_uchr,
-        l_Uchr,
-        l_qualifiedname,
-        l_asminst,
-        l_asmreg
-    };
+enum e_lexType
+{
+    l_none,
+    l_i,
+    l_ui,
+    l_l,
+    l_ul,
+    l_ll,
+    l_ull,
+    l_f,
+    l_d,
+    l_ld,
+    l_I,
+    l_id,
+    l_kw,
+    l_astr,
+    l_wstr,
+    l_ustr,
+    l_Ustr,
+    l_u8str,
+    l_msilstr,
+    l_achr,
+    l_wchr,
+    l_uchr,
+    l_Uchr,
+    l_qualifiedname,
+    l_asminst,
+    l_asmreg
+};
 
+typedef struct _string
+{
+    struct _string* next;
+    enum e_lexType strtype;
+    int size;
+    int label;
+    int refCount;
+    char* suffix;
+    Optimizer::SLCHAR** pointers;
+} STRING;
 
-    typedef struct _string
-    {
-        struct _string* next;
-        enum e_lexType strtype;
-        int size;
-        int label;
-        int refCount;
-        char* suffix;
-        Optimizer::SLCHAR** pointers;
-    } STRING;
-
-    typedef struct lexeme
-    {
-        struct lexeme *next, *prev;
-        // clang-format off
+typedef struct lexeme
+{
+    struct lexeme *next, *prev;
+    // clang-format off
         enum e_lexType type;
-        // clang-format on
-        struct u_val value;
-        char* litaslit;
-        char* suffix;
-        const char* file;
-        const char* linestr;
-        Optimizer::LINEDATA* linedata;
-        int line;
-        int realline;
-        int charindex;
-        int charindexend;
-        int filenum;
-        KEYWORD* kw;
-        SYMBOL* typequal;
-        int r, s;
-        int registered : 1;
-    } LEXEME;
+    // clang-format on
+    struct u_val value;
+    char* litaslit;
+    char* suffix;
+    const char* file;
+    const char* linestr;
+    Optimizer::LINEDATA* linedata;
+    int line;
+    int realline;
+    int charindex;
+    int charindexend;
+    int filenum;
+    KEYWORD* kw;
+    SYMBOL* typequal;
+    int r, s;
+    int registered : 1;
+} LEXEME;
 
-    typedef struct lexContext
-    {
-        struct lexContext* next;
-        LEXEME* cur;
-        LEXEME* last;
-    } LEXCONTEXT;
+typedef struct lexContext
+{
+    struct lexContext* next;
+    LEXEME* cur;
+    LEXEME* last;
+} LEXCONTEXT;
 
-    struct templateListData
-    {
-        TEMPLATEPARAMLIST* args;  // list of templateparam lists
-        TEMPLATEPARAMLIST **ptail, **plast;
-        LEXEME *head, *tail;
-        LEXEME *bodyHead, *bodyTail;
-        SYMBOL* sp;
-    };
+struct templateListData
+{
+    TEMPLATEPARAMLIST* args;  // list of templateparam lists
+    TEMPLATEPARAMLIST **ptail, **plast;
+    LEXEME *head, *tail;
+    LEXEME *bodyHead, *bodyTail;
+    SYMBOL* sp;
+};
 
 #define INCL_LEVEL_MAX 16
 
 #define MAX_INLINE_NESTING 3
 
-    // must match stdatomic.h
-    typedef struct _atomicData
-    {
-        enum Optimizer::e_ao atomicOp;
-        EXPRESSION* memoryOrder1;
-        EXPRESSION* memoryOrder2;
-        EXPRESSION* flg;
-        EXPRESSION* address;
-        EXPRESSION* value;
-        EXPRESSION* third;
-        TYPE* tp;
-    } ATOMICDATA;
-}
+// must match stdatomic.h
+typedef struct _atomicData
+{
+    enum Optimizer::e_ao atomicOp;
+    EXPRESSION* memoryOrder1;
+    EXPRESSION* memoryOrder2;
+    EXPRESSION* flg;
+    EXPRESSION* address;
+    EXPRESSION* value;
+    EXPRESSION* third;
+    TYPE* tp;
+} ATOMICDATA;
+}  // namespace Parser
 
-#define SET_GLOBAL(val, index) bool oldgf##index; SetGlobalFlag(val, oldgf##index);
+#define SET_GLOBAL(val, index) \
+    bool oldgf##index;         \
+    SetGlobalFlag(val, oldgf##index);
 #define RELEASE_GLOBAL(index) ReleaseGlobalFlag(oldgf##index);
 #define GET_GLOBAL GetGlobalFlag();
-    void SetGlobalFlag(bool flag, bool &old);
-    void ReleaseGlobalFlag(bool old);
-    bool GetGlobalFlag();
+void SetGlobalFlag(bool flag, bool& old);
+void ReleaseGlobalFlag(bool old);
+bool GetGlobalFlag();

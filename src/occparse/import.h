@@ -25,7 +25,7 @@
 namespace Parser
 {
 #ifndef ISPARSER
-    void AddType(SimpleSymbol* sym, Type* type);
+void AddType(SimpleSymbol* sym, Type* type);
 #endif
-    void Import(void);
-}
+void Import(void);
+}  // namespace Parser

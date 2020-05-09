@@ -25,13 +25,13 @@
 namespace Parser
 {
 
-    long long MaxOut(enum e_bt size, long long value);
-    void dooper(EXPRESSION** node, int mode);
-    void addaside(EXPRESSION* node);
-    int opt0(EXPRESSION** node);
-    void enswap(EXPRESSION** one, EXPRESSION** two);
-    int fold_const(EXPRESSION* node);
-    int typedconsts(EXPRESSION* node1);
-    void optimize_for_constants(EXPRESSION** expr);
-    LEXEME* optimized_expression(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** expr, bool commaallowed);
-}
+long long MaxOut(enum e_bt size, long long value);
+void dooper(EXPRESSION** node, int mode);
+void addaside(EXPRESSION* node);
+int opt0(EXPRESSION** node);
+void enswap(EXPRESSION** one, EXPRESSION** two);
+int fold_const(EXPRESSION* node);
+int typedconsts(EXPRESSION* node1);
+void optimize_for_constants(EXPRESSION** expr);
+LEXEME* optimized_expression(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** expr, bool commaallowed);
+}  // namespace Parser

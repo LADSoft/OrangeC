@@ -24,7 +24,7 @@
  */
 namespace Optimizer
 {
-    extern ARCH_ASM msilAssemblerInterface[];
+extern ARCH_ASM msilAssemblerInterface[];
 
-    void msilWinmodeSetup(const char* string);
-}
+void msilWinmodeSetup(const char* string);
+}  // namespace Optimizer

@@ -30,21 +30,20 @@ extern CmdSwitchBool single;
 
 extern Optimizer::SimpleSymbol* currentFunction;
 void regInit(void);
-void diag(const char*fmt, ...);
+void diag(const char* fmt, ...);
 void Import(void);
 namespace occmsil
 {
-    extern const char* usageText;
+extern const char* usageText;
 
+extern char infile[260];
+extern char outFile[260];
 
-    extern char infile[260];
-    extern char outFile[260];
-
-    extern int dbgblocknum;
-    extern int usingEsp;
-    void flush_peep(void);
-    void ResolveMSILExterns(void);
-    void outputfile(char* buf, const char* name, const char* ext);
-    void global(Optimizer::SimpleSymbol* sym, int flags);
-    int main(int argc, char* argv[]);
-}
+extern int dbgblocknum;
+extern int usingEsp;
+void flush_peep(void);
+void ResolveMSILExterns(void);
+void outputfile(char* buf, const char* name, const char* ext);
+void global(Optimizer::SimpleSymbol* sym, int flags);
+int main(int argc, char* argv[]);
+}  // namespace occmsil

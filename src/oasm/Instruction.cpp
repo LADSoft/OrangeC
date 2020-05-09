@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "Instruction.h"
@@ -30,17 +30,7 @@
 
 bool Instruction::bigEndian;
 
-Instruction::Instruction(Label* lbl) :
-    label(lbl),
-    type(LABEL),
-    altdata(nullptr),
-    pos(0),
-    fpos(0),
-    size(0),
-    offs(0),
-    repeat(1)
-{
-}
+Instruction::Instruction(Label* lbl) : label(lbl), type(LABEL), altdata(nullptr), pos(0), fpos(0), size(0), offs(0), repeat(1) {}
 Instruction::Instruction(void* dataIn, int Size, bool isData) :
     type(isData ? DATA : CODE),
     label(nullptr),
@@ -53,17 +43,7 @@ Instruction::Instruction(void* dataIn, int Size, bool isData) :
     data(LoadData(!isData, (unsigned char*)dataIn, Size))
 {
 }
-Instruction::Instruction(int aln) :
-    type(ALIGN),
-    label(nullptr),
-    altdata(nullptr),
-    pos(0),
-    fpos(0),
-    size(aln),
-    offs(0),
-    repeat(1)
-{
-}
+Instruction::Instruction(int aln) : type(ALIGN), label(nullptr), altdata(nullptr), pos(0), fpos(0), size(aln), offs(0), repeat(1) {}
 Instruction::Instruction(int Repeat, int Size) :
     type(RESERVE),
     label(nullptr),
@@ -77,17 +57,7 @@ Instruction::Instruction(int Repeat, int Size) :
 {
     memset(data.get(), 0, size);
 }
-Instruction::Instruction(void* data) :
-    type(ALT),
-    label(nullptr),
-    altdata(data),
-    pos(0),
-    fpos(0),
-    size(0),
-    offs(0),
-    repeat(1)
-{
-}
+Instruction::Instruction(void* data) : type(ALT), label(nullptr), altdata(data), pos(0), fpos(0), size(0), offs(0), repeat(1) {}
 
 Instruction::~Instruction() {}
 std::unique_ptr<unsigned char[]> Instruction::LoadData(bool isCode, unsigned char* data, size_t size)
@@ -151,35 +121,35 @@ int Instruction::GetNext(Fixup& fixup, unsigned char* buf)
             return 0;
         switch (fillWidth)
         {
-	case 1:
-        default:
-            memset(buf, fill, sz);
-            break;
-        case 2:
-            for (int i=0; i < sz; i+= 2)
-                *(unsigned short *)(buf + i) = fill;
-            if (sz & 1)
-            {
-                buf[sz-1] = fill;
-            }
-            break;
-        case 4:
-            for (int i=0; i < sz; i+= 4)
-                *(unsigned *)(buf + i) = fill;
-            switch (sz & 3)
-            {
-                case 1:
-                  *(unsigned short *)(sz-3) = fill;
-                  *(unsigned char *)(sz-1) = fill >> 16;
-                  break;
-                case 2:
-                  *(unsigned short *)(sz-2) = fill;
-                  break;
-                case 3:
-                  *(unsigned char *)(sz-1) = fill;
-                  break;
-            }
-            break;
+            case 1:
+            default:
+                memset(buf, fill, sz);
+                break;
+            case 2:
+                for (int i = 0; i < sz; i += 2)
+                    *(unsigned short*)(buf + i) = fill;
+                if (sz & 1)
+                {
+                    buf[sz - 1] = fill;
+                }
+                break;
+            case 4:
+                for (int i = 0; i < sz; i += 4)
+                    *(unsigned*)(buf + i) = fill;
+                switch (sz & 3)
+                {
+                    case 1:
+                        *(unsigned short*)(sz - 3) = fill;
+                        *(unsigned char*)(sz - 1) = fill >> 16;
+                        break;
+                    case 2:
+                        *(unsigned short*)(sz - 2) = fill;
+                        break;
+                    case 3:
+                        *(unsigned char*)(sz - 1) = fill;
+                        break;
+                }
+                break;
         }
         pos += sz;
         return sz;

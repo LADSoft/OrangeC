@@ -24,6 +24,6 @@
  */
 namespace Parser
 {
-    unsigned PartialCRC32(unsigned crc, unsigned char* data, size_t len);
-    unsigned CRC32(unsigned char* data, size_t len);
-}
+unsigned PartialCRC32(unsigned crc, unsigned char* data, size_t len);
+unsigned CRC32(unsigned char* data, size_t len);
+}  // namespace Parser

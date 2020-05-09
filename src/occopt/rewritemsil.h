@@ -24,7 +24,7 @@
  */
 namespace Optimizer
 {
-    bool qualifiedStruct(SimpleSymbol* sp);
-    QUAD* leftInsertionPos(QUAD* head, IMODE* im);
-    int msil_examine_icode(QUAD* head);
-}
+bool qualifiedStruct(SimpleSymbol* sp);
+QUAD* leftInsertionPos(QUAD* head, IMODE* im);
+int msil_examine_icode(QUAD* head);
+}  // namespace Optimizer

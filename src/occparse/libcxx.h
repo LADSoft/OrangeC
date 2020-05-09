@@ -25,6 +25,6 @@
 
 namespace Parser
 {
-    void libcxx_init(void);
-    bool parseBuiltInTypelistFunc(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
-}
+void libcxx_init(void);
+bool parseBuiltInTypelistFunc(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESSION** exp);
+}  // namespace Parser

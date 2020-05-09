@@ -24,11 +24,11 @@
  */
 namespace Optimizer
 {
-    void conflictini(void);
-    void resetConflict(void);
-    int findPartition(int T0);
-    void insertConflict(int i, int j);
-    void JoinConflictLists(int T0, int T1);
-    bool isConflicting(int T0, int T1);
-    void CalculateConflictGraph(BRIGGS_SET* nodes, bool optimize);
-}
+void conflictini(void);
+void resetConflict(void);
+int findPartition(int T0);
+void insertConflict(int i, int j);
+void JoinConflictLists(int T0, int T1);
+bool isConflicting(int T0, int T1);
+void CalculateConflictGraph(BRIGGS_SET* nodes, bool optimize);
+}  // namespace Optimizer

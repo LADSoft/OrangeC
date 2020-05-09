@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "ppExpr.h"
@@ -29,13 +29,14 @@
 #include "ppkw.h"
 
 KeywordHash ppExpr::hash = {
-    {"(", kw::openpa}, {")", kw::closepa}, {"+", kw::plus},       {"-", kw::minus},       {"!", kw::lnot}, {"~", kw::bcompl}, {"*", kw::star},
-    {"/", kw::divide}, {"%", kw::mod},     {"<<", kw::leftshift}, {">>", kw::rightshift}, {">", kw::gt},   {"<", kw::lt},     {">=", kw::geq},
-    {"<=", kw::leq},   {"==", kw::eq},     {"!=", kw::ne},        {"|", kw::bor},         {"&", kw::band}, {"^", kw::bxor},   {"||", kw::lor},
-    {"&&", kw::land},  {"?", kw::hook},    {":", kw::colon},      {",", kw::comma},
+    {"(", kw::openpa},      {")", kw::closepa}, {"+", kw::plus},   {"-", kw::minus}, {"!", kw::lnot},
+    {"~", kw::bcompl},      {"*", kw::star},    {"/", kw::divide}, {"%", kw::mod},   {"<<", kw::leftshift},
+    {">>", kw::rightshift}, {">", kw::gt},      {"<", kw::lt},     {">=", kw::geq},  {"<=", kw::leq},
+    {"==", kw::eq},         {"!=", kw::ne},     {"|", kw::bor},    {"&", kw::band},  {"^", kw::bxor},
+    {"||", kw::lor},        {"&&", kw::land},   {"?", kw::hook},   {":", kw::colon}, {",", kw::comma},
 };
 
-ppExpr::CompilerExpression *ppExpr::expressionHandler;
+ppExpr::CompilerExpression* ppExpr::expressionHandler;
 
 ppInclude* ppExpr::include;
 
@@ -62,7 +63,7 @@ PPINT ppExpr::Eval(std::string& line, bool fromConditional)
     return rv;
 }
 
-PPINT ppExpr::primary(std::string& line, bool &isunsigned)
+PPINT ppExpr::primary(std::string& line, bool& isunsigned)
 {
     PPINT rv = 0;
     if (token->GetKeyword() == kw::openpa)
@@ -165,12 +166,11 @@ PPINT ppExpr::primary(std::string& line, bool &isunsigned)
         Token::Type t = token->GetNumericType();
         switch (t)
         {
-        case Token::t_unsignedint:
-        case Token::t_unsignedlongint:
-        case Token::t_unsignedlonglongint:
-            isunsigned = true;
-            break;
-
+            case Token::t_unsignedint:
+            case Token::t_unsignedlongint:
+            case Token::t_unsignedlonglongint:
+                isunsigned = true;
+                break;
         }
         token = tokenizer->Next();
     }
@@ -185,7 +185,7 @@ PPINT ppExpr::primary(std::string& line, bool &isunsigned)
     }
     return rv;
 }
-PPINT ppExpr::unary(std::string& line, bool &isunsigned)
+PPINT ppExpr::unary(std::string& line, bool& isunsigned)
 {
     if (!token->IsEnd())
     {
@@ -222,7 +222,7 @@ PPINT ppExpr::unary(std::string& line, bool &isunsigned)
     Errors::Error("Syntax error in constant expression");
     return 0;
 }
-PPINT ppExpr::multiply(std::string& line, bool &isunsigned)
+PPINT ppExpr::multiply(std::string& line, bool& isunsigned)
 {
     PPINT val1 = unary(line, isunsigned);
     kw keyWord = token->GetKeyword();
@@ -272,7 +272,7 @@ PPINT ppExpr::multiply(std::string& line, bool &isunsigned)
     }
     return val1;
 }
-PPINT ppExpr::add(std::string& line, bool &isunsigned)
+PPINT ppExpr::add(std::string& line, bool& isunsigned)
 {
     PPINT val1 = multiply(line, isunsigned);
     kw keyWord = token->GetKeyword();
@@ -296,7 +296,7 @@ PPINT ppExpr::add(std::string& line, bool &isunsigned)
     }
     return val1;
 }
-PPINT ppExpr::shift(std::string& line, bool &isunsigned)
+PPINT ppExpr::shift(std::string& line, bool& isunsigned)
 {
     PPINT val1 = add(line, isunsigned);
     kw keyWord = token->GetKeyword();
@@ -321,7 +321,7 @@ PPINT ppExpr::shift(std::string& line, bool &isunsigned)
     }
     return val1;
 }
-PPINT ppExpr::relation(std::string& line, bool &isunsigned)
+PPINT ppExpr::relation(std::string& line, bool& isunsigned)
 {
     PPINT val1 = shift(line, isunsigned);
     kw keyWord = token->GetKeyword();
@@ -363,7 +363,7 @@ PPINT ppExpr::relation(std::string& line, bool &isunsigned)
     }
     return val1;
 }
-PPINT ppExpr::equal(std::string& line, bool &isunsigned)
+PPINT ppExpr::equal(std::string& line, bool& isunsigned)
 {
     PPINT val1 = relation(line, isunsigned);
     kw keyWord = token->GetKeyword();
@@ -387,7 +387,7 @@ PPINT ppExpr::equal(std::string& line, bool &isunsigned)
     }
     return val1;
 }
-PPINT ppExpr::and_(std::string& line, bool &isunsigned)
+PPINT ppExpr::and_(std::string& line, bool& isunsigned)
 {
     PPINT val1 = equal(line, isunsigned);
     while (!token->IsEnd() && token->GetKeyword() == kw::band)
@@ -401,7 +401,7 @@ PPINT ppExpr::and_(std::string& line, bool &isunsigned)
     }
     return val1;
 }
-PPINT ppExpr::xor_(std::string& line, bool &isunsigned)
+PPINT ppExpr::xor_(std::string& line, bool& isunsigned)
 {
     PPINT val1 = and_(line, isunsigned);
     while (!token->IsEnd() && token->GetKeyword() == kw::bxor)
@@ -415,7 +415,7 @@ PPINT ppExpr::xor_(std::string& line, bool &isunsigned)
     }
     return val1;
 }
-PPINT ppExpr::or_(std::string& line, bool &isunsigned)
+PPINT ppExpr::or_(std::string& line, bool& isunsigned)
 {
     PPINT val1 = xor_(line, isunsigned);
     while (!token->IsEnd() && token->GetKeyword() == kw::bor)
@@ -429,7 +429,7 @@ PPINT ppExpr::or_(std::string& line, bool &isunsigned)
     }
     return val1;
 }
-PPINT ppExpr::logicaland(std::string& line, bool &isunsigned)
+PPINT ppExpr::logicaland(std::string& line, bool& isunsigned)
 {
     PPINT val1 = or_(line, isunsigned);
     while (!token->IsEnd() && token->GetKeyword() == kw::land)
@@ -443,7 +443,7 @@ PPINT ppExpr::logicaland(std::string& line, bool &isunsigned)
     }
     return val1;
 }
-PPINT ppExpr::logicalor(std::string& line, bool &isunsigned)
+PPINT ppExpr::logicalor(std::string& line, bool& isunsigned)
 {
     PPINT val1 = logicaland(line, isunsigned);
     while (!token->IsEnd() && token->GetKeyword() == kw::lor)
@@ -457,7 +457,7 @@ PPINT ppExpr::logicalor(std::string& line, bool &isunsigned)
     }
     return val1;
 }
-PPINT ppExpr::conditional(std::string& line, bool &isunsigned)
+PPINT ppExpr::conditional(std::string& line, bool& isunsigned)
 {
     bool test = false;
     PPINT val1 = logicalor(line, test);
@@ -495,7 +495,7 @@ PPINT ppExpr::conditional(std::string& line, bool &isunsigned)
     }
     return val1;
 }
-PPINT ppExpr::comma_(std::string& line, bool &isunsigned)
+PPINT ppExpr::comma_(std::string& line, bool& isunsigned)
 {
     PPINT rv = 0;
     rv = conditional(line, isunsigned);

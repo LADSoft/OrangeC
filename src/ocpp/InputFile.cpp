@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "InputFile.h"
@@ -54,7 +54,7 @@ bool InputFile::Open()
         streamid = 0;
     }
     else
-        streamid = open(name->c_str(), 0); // readonly
+        streamid = open(name->c_str(), 0);  // readonly
     if (streamid >= 0)
         CheckUTF8BOM();
     return streamid >= 0;
@@ -113,7 +113,7 @@ std::string InputFile::GetErrorName(bool full, const std::string& name)
     }
 #endif
 }
-bool InputFile::ReadString(char *s, int len)
+bool InputFile::ReadString(char* s, int len)
 {
     char* olds = s;
     if (streamid < 0)
@@ -129,7 +129,7 @@ bool InputFile::ReadString(char *s, int len)
             int ch;
             if (ucs2BOM)
             {
-                ch = *((unsigned short *)bufPtr);
+                ch = *((unsigned short*)bufPtr);
                 bufPtr += 2;
                 inputLen -= 2;
             }
@@ -194,8 +194,8 @@ bool InputFile::ReadLine(char* line)
 }
 void InputFile::CheckUTF8BOM()
 {
-    static unsigned char BOM[] = { 0xef, 0xbb, 0xbf };
-    static unsigned char BOM2[] = { 0xff, 0xfe }; // only LE version at this time...
+    static unsigned char BOM[] = {0xef, 0xbb, 0xbf};
+    static unsigned char BOM2[] = {0xff, 0xfe};  // only LE version at this time...
     unsigned char buf[4];
     int l;
     if (4 == (l = read(streamid, buf, 4)))
@@ -203,17 +203,17 @@ void InputFile::CheckUTF8BOM()
         utf8BOM = !memcmp(BOM, buf, 3);
         if (utf8BOM)
         {
-           buf[0] = buf[3];
-           l = 1;
+            buf[0] = buf[3];
+            l = 1;
         }
         else
         {
             ucs2BOM = !memcmp(BOM2, buf, 2);
             if (ucs2BOM)
             {
-               buf[0] = buf[2];
-               buf[1] = buf[3];
-               l = 2;
+                buf[0] = buf[2];
+                buf[1] = buf[3];
+                l = 2;
             }
         }
     }

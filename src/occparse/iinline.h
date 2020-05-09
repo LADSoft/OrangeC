@@ -25,9 +25,9 @@
 namespace Parser
 {
 
-    extern int inlinesym_count;
-    extern EXPRESSION* inlinesym_thisptr[MAX_INLINE_NESTING];
+extern int inlinesym_count;
+extern EXPRESSION* inlinesym_thisptr[MAX_INLINE_NESTING];
 
-    void iinlineInit(void);
-    Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags);
-}
+void iinlineInit(void);
+Optimizer::IMODE* gen_inline(SYMBOL* funcsp, EXPRESSION* node, int flags);
+}  // namespace Parser

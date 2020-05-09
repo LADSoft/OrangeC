@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "InstructionParser.h"
@@ -129,9 +129,9 @@ bool InstructionParser::SetNumber(int tokenPos, int oldVal, int newVal)
     }
     return rv;
 }
-void InstructionParser::SetATT(bool att) 
-{ 
-    attSyntax = att; 
+void InstructionParser::SetATT(bool att)
+{
+    attSyntax = att;
     if (attSyntax)
     {
         opcodeTable["cbtw"] = opcodeTable["cbw"];
@@ -179,12 +179,12 @@ bool InstructionParser::MatchesOpcode(std::string opcode)
             {
                 switch (ch)
                 {
-                case 'b':
-                case 'w':
-                case 'l':
-                case 's':
-                case 't':
-                    return true;
+                    case 'b':
+                    case 'w':
+                    case 'l':
+                    case 's':
+                    case 't':
+                        return true;
                 }
             }
         }
@@ -204,31 +204,31 @@ std::map<std::string, int>::iterator InstructionParser::GetOpcode(const std::str
                 it = opcodeTable.find(opcode.substr(0, 4) + "x");
                 switch (opcode[4])
                 {
-                case 'b':
-                    size1 = 1;
-                    break;
-                case 'w':
-                    size1 = 2;
-                    break;
-                case 'l':
-                    size1 = 4;
-                    break;
-                default:
-                    return opcodeTable.end();
+                    case 'b':
+                        size1 = 1;
+                        break;
+                    case 'w':
+                        size1 = 2;
+                        break;
+                    case 'l':
+                        size1 = 4;
+                        break;
+                    default:
+                        return opcodeTable.end();
                 }
                 switch (opcode[5])
                 {
-                case 'w':
-                    size2 = 2;
-                    break;
-                case 'l':
-                    size2 = 4;
-                    break;
-                case 'q':
-                    size2 = 8;
-                    break;
-                default:
-                    return opcodeTable.end();
+                    case 'w':
+                        size2 = 2;
+                        break;
+                    case 'l':
+                        size2 = 4;
+                        break;
+                    case 'q':
+                        size2 = 8;
+                        break;
+                    default:
+                        return opcodeTable.end();
                 }
                 if (size2 <= size1)
                     return opcodeTable.end();
@@ -241,26 +241,26 @@ std::map<std::string, int>::iterator InstructionParser::GetOpcode(const std::str
 
             switch (ch)
             {
-            case 'b':
-                size1 = 1;
-                break;
-            case 'w':
-                size1 = 2;
-                break;
-            case 'l':
-                size1 = 4;
-                break;
-            case 'q':
-                size1 = 8;
-                break;
-            case 's':
-                size1 = -4;
-                break;
-            case 't':
-                size1 = -10;
-                break;
-            default:
-                return opcodeTable.end();
+                case 'b':
+                    size1 = 1;
+                    break;
+                case 'w':
+                    size1 = 2;
+                    break;
+                case 'l':
+                    size1 = 4;
+                    break;
+                case 'q':
+                    size1 = 8;
+                    break;
+                case 's':
+                    size1 = -4;
+                    break;
+                case 't':
+                    size1 = -10;
+                    break;
+                default:
+                    return opcodeTable.end();
             }
         }
     }
@@ -722,12 +722,12 @@ void InstructionParser::Split(const std::string& line, std::vector<std::string>&
             parens--;
         else if (line[i] == ',' && !parens)
         {
-            splt.push_back(line.substr(start, i-start));
+            splt.push_back(line.substr(start, i - start));
             start = i + 1;
         }
     }
     if (i > start)
-        splt.push_back(line.substr(start, i-start));
+        splt.push_back(line.substr(start, i - start));
     for (i = 0; i < splt.size(); i++)
     {
         int npos = splt[i].find_first_not_of("\t\v \r\n");

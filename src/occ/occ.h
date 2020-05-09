@@ -29,12 +29,11 @@ void regInit(void);
 
 namespace occx86
 {
-    extern char outFile[260];
-    extern char infile[260];
-    extern InstructionParser* instructionParser;
+extern char outFile[260];
+extern char infile[260];
+extern InstructionParser* instructionParser;
 
-
-    void outputfile(char* buf, const char* name, const char* ext, bool obj);
-    void global(Optimizer::SimpleSymbol* sym, int flags);
-    int main(int argc, char* argv[]);
-}
+void outputfile(char* buf, const char* name, const char* ext, bool obj);
+void global(Optimizer::SimpleSymbol* sym, int flags);
+int main(int argc, char* argv[]);
+}  // namespace occx86

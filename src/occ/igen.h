@@ -24,10 +24,10 @@
  */
 namespace occx86
 {
-    extern Optimizer::QUAD* currentQuad;
+extern Optimizer::QUAD* currentQuad;
 
-    extern char dataname[40];   /* Name of last label */
+extern char dataname[40]; /* Name of last label */
 
-    void outcodeini(void);
-    void generate_instructions(Optimizer::QUAD* intermed_head);
-}
+void outcodeini(void);
+void generate_instructions(Optimizer::QUAD* intermed_head);
+}  // namespace occx86

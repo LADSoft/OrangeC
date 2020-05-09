@@ -24,6 +24,6 @@
  */
 namespace Parser
 {
-    FPF refloat(EXPRESSION* node);
-    unsigned long long reint(EXPRESSION* node);
-}
+FPF refloat(EXPRESSION* node);
+unsigned long long reint(EXPRESSION* node);
+}  // namespace Parser

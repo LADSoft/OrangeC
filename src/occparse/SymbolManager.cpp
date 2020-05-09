@@ -1,32 +1,32 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 /*
-  * iexpr.c
-  *
-  * routies to take an enode list and generate icode
-  */
+ * iexpr.c
+ *
+ * routies to take an enode list and generate icode
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include "compiler.h"
@@ -50,7 +50,8 @@ using namespace Parser;
 void Optimizer::SymbolManager::clear()
 {
     if (architecture != ARCHITECTURE_MSIL || (cparams.prm_compileonly && !cparams.prm_asmfile))
-        symbols.clear(); globalSymbols.clear();
+        symbols.clear();
+    globalSymbols.clear();
 }
 
 const char* beDecorateSymName(SYMBOL* sym)
@@ -67,7 +68,7 @@ const char* beDecorateSymName(SYMBOL* sym)
             return litlate(q);
         else if (sym->sb->compilerDeclared || sym->tp->type == bt_templateparam || sym->tp->type == bt_templateselector)
         {
-	    return litlate(sym->name);
+            return litlate(sym->name);
         }
         else
         {
@@ -76,11 +77,11 @@ const char* beDecorateSymName(SYMBOL* sym)
     }
 }
 
-Optimizer::SimpleSymbol* Optimizer::SymbolManager::Get(struct Parser::sym *sym)
+Optimizer::SimpleSymbol* Optimizer::SymbolManager::Get(struct Parser::sym* sym)
 {
     if (sym && sym->sb)
     {
-        Optimizer::SimpleSymbol *rv;
+        Optimizer::SimpleSymbol* rv;
         rv = Lookup(sym);
         if (!rv)
         {
@@ -90,7 +91,6 @@ Optimizer::SimpleSymbol* Optimizer::SymbolManager::Get(struct Parser::sym *sym)
     }
     return nullptr;
 }
-
 
 Optimizer::SimpleSymbol* Optimizer::SymbolManager::Test(struct Parser::sym* sym)
 {
@@ -111,145 +111,145 @@ Optimizer::SimpleExpression* Optimizer::SymbolManager::Get(struct Parser::expr* 
         rv->altData = Get((EXPRESSION*)e->altdata);
     switch (e->type)
     {
-    case en_global:
-        rv->type = Optimizer::se_global;
-        rv->sp = Get(e->v.sp);
-        break;
-    case en_auto:
-        rv->type = Optimizer::se_auto;
-        rv->sp = Get(e->v.sp);
-        break;
-    case en_labcon:
-        rv->type = Optimizer::se_labcon;
-        rv->i = e->v.i;
-        break;
-    case en_absolute:
-        rv->type = Optimizer::se_absolute;
-        rv->sp = Get(e->v.sp);
-        break;
-    case en_pc:
-        rv->type = Optimizer::se_pc;
-        rv->sp = Get(e->v.sp);
-        break;
-    case en_const:
-        rv->type = Optimizer::se_const;
-        rv->sp = Get(e->v.sp);
-        break;
-    case en_threadlocal:
-        rv->type = Optimizer::se_threadlocal;
-        rv->sp = Get(e->v.sp);
-        break;
-    case en_structelem:
-        rv->type = Optimizer::se_structelem;
-        rv->sp = Get(e->v.sp);
-        break;
+        case en_global:
+            rv->type = Optimizer::se_global;
+            rv->sp = Get(e->v.sp);
+            break;
+        case en_auto:
+            rv->type = Optimizer::se_auto;
+            rv->sp = Get(e->v.sp);
+            break;
+        case en_labcon:
+            rv->type = Optimizer::se_labcon;
+            rv->i = e->v.i;
+            break;
+        case en_absolute:
+            rv->type = Optimizer::se_absolute;
+            rv->sp = Get(e->v.sp);
+            break;
+        case en_pc:
+            rv->type = Optimizer::se_pc;
+            rv->sp = Get(e->v.sp);
+            break;
+        case en_const:
+            rv->type = Optimizer::se_const;
+            rv->sp = Get(e->v.sp);
+            break;
+        case en_threadlocal:
+            rv->type = Optimizer::se_threadlocal;
+            rv->sp = Get(e->v.sp);
+            break;
+        case en_structelem:
+            rv->type = Optimizer::se_structelem;
+            rv->sp = Get(e->v.sp);
+            break;
 
-    case en_msil_array_init:
-        rv->type = Optimizer::se_msil_array_init;
-        rv->tp = Get(e->v.tp);
-        break;
-    case en_msil_array_access:
-        rv->type = Optimizer::se_msil_array_access;
-        rv->msilArrayTP = Get(e->v.msilArray->tp);
-        break;
+        case en_msil_array_init:
+            rv->type = Optimizer::se_msil_array_init;
+            rv->tp = Get(e->v.tp);
+            break;
+        case en_msil_array_access:
+            rv->type = Optimizer::se_msil_array_access;
+            rv->msilArrayTP = Get(e->v.msilArray->tp);
+            break;
 
-    case en_func:
-        rv->type = Optimizer::se_func;
-        rv->ascall = e->v.func->ascall;
-        break;
-    case en_add:
-    case en_arrayadd:
-    case en_structadd:
-        rv->type = Optimizer::se_add;
-        rv->left = Get(e->left);
-        rv->right = Get(e->right);
-        break;
+        case en_func:
+            rv->type = Optimizer::se_func;
+            rv->ascall = e->v.func->ascall;
+            break;
+        case en_add:
+        case en_arrayadd:
+        case en_structadd:
+            rv->type = Optimizer::se_add;
+            rv->left = Get(e->left);
+            rv->right = Get(e->right);
+            break;
 
-    case en_sub:
-        rv->type = Optimizer::se_sub;
-        rv->left = Get(e->left);
-        rv->right = Get(e->right);
-        break;
-    case en_uminus:
-        rv->type = Optimizer::se_uminus;
-        rv->left = Get(e->left);
-        break;
-    case en_c_bit:
-    case en_c_bool:
-    case en_c_c:
-    case en_c_s:
-    case en_c_i:
-    case en_c_l:
-    case en_c_ll:
-        rv->type = Optimizer::se_i;
-        rv->i = reint(e);
-        break;
-    case en_c_uc:
-    case en_c_wc:
-    case en_c_u16:
-    case en_c_us:
-    case en_c_ui:
-    case en_c_u32:
-    case en_c_ul:
-    case en_c_ull:
-        rv->type = Optimizer::se_ui;
-        rv->i = reint(e);
-        break;
+        case en_sub:
+            rv->type = Optimizer::se_sub;
+            rv->left = Get(e->left);
+            rv->right = Get(e->right);
+            break;
+        case en_uminus:
+            rv->type = Optimizer::se_uminus;
+            rv->left = Get(e->left);
+            break;
+        case en_c_bit:
+        case en_c_bool:
+        case en_c_c:
+        case en_c_s:
+        case en_c_i:
+        case en_c_l:
+        case en_c_ll:
+            rv->type = Optimizer::se_i;
+            rv->i = reint(e);
+            break;
+        case en_c_uc:
+        case en_c_wc:
+        case en_c_u16:
+        case en_c_us:
+        case en_c_ui:
+        case en_c_u32:
+        case en_c_ul:
+        case en_c_ull:
+            rv->type = Optimizer::se_ui;
+            rv->i = reint(e);
+            break;
 
-    case en_c_f:
-    case en_c_d:
-    case en_c_ld:
-        rv->type = Optimizer::se_f;
-        rv->f = refloat(e);
-        break;
-    case en_c_fi:
-    case en_c_di:
-    case en_c_ldi:
-        rv->type = Optimizer::se_fi;
-        rv->f = refloat(e);
-        break;
-    case en_c_fc:
-    case en_c_dc:
-    case en_c_ldc:
-        rv->type = Optimizer::se_fc;
-        rv->c.r = e->v.c->r;
-        rv->c.i = e->v.c->i;
-        break;
-    case en_c_string:
-        rv->type = Optimizer::se_string;
-        {
-            char buf[50000], *dest = buf;
-            if (e->string)
+        case en_c_f:
+        case en_c_d:
+        case en_c_ld:
+            rv->type = Optimizer::se_f;
+            rv->f = refloat(e);
+            break;
+        case en_c_fi:
+        case en_c_di:
+        case en_c_ldi:
+            rv->type = Optimizer::se_fi;
+            rv->f = refloat(e);
+            break;
+        case en_c_fc:
+        case en_c_dc:
+        case en_c_ldc:
+            rv->type = Optimizer::se_fc;
+            rv->c.r = e->v.c->r;
+            rv->c.i = e->v.c->i;
+            break;
+        case en_c_string:
+            rv->type = Optimizer::se_string;
             {
-                int i;
-                bool done = false;
-                for (i = 0; i < e->string->size && !done; i++)
+                char buf[50000], *dest = buf;
+                if (e->string)
                 {
-                    SLCHAR* s = e->string->pointers[i];
-                    int j;
-                    for (j = 0; j < s->count; j++)
+                    int i;
+                    bool done = false;
+                    for (i = 0; i < e->string->size && !done; i++)
                     {
-                        *dest++ = s->str[j];
-                        if (dest - buf >= sizeof(buf) - 1)
+                        SLCHAR* s = e->string->pointers[i];
+                        int j;
+                        for (j = 0; j < s->count; j++)
                         {
-                            done = true;
-                            break;
+                            *dest++ = s->str[j];
+                            if (dest - buf >= sizeof(buf) - 1)
+                            {
+                                done = true;
+                                break;
+                            }
                         }
                     }
                 }
+                rv->astring.str = (char*)Alloc(dest - buf);
+                memcpy(rv->astring.str, buf, dest - buf);
+                rv->astring.len = dest - buf;
             }
-            rv->astring.str = (char *)Alloc(dest - buf);
-            memcpy(rv->astring.str, buf, dest - buf);
-            rv->astring.len = dest - buf;
-        }
-        break;
-    default:
-        diag("unknown node in Get(EXPRESSION*)");
-        break;
+            break;
+        default:
+            diag("unknown node in Get(EXPRESSION*)");
+            break;
     }
     return rv;
 }
-Optimizer::SimpleType* Optimizer::SymbolManager::Get(struct Parser::typ *tp)
+Optimizer::SimpleType* Optimizer::SymbolManager::Get(struct Parser::typ* tp)
 {
     Optimizer::SimpleType* rv = (Optimizer::SimpleType*)Alloc(sizeof(Optimizer::SimpleType));
     bool isConst = isconst(tp);
@@ -266,7 +266,8 @@ Optimizer::SimpleType* Optimizer::SymbolManager::Get(struct Parser::typ *tp)
             istypedef = true;
         tp = tp->btp;
     }
-    if ((isstructured(tp) && basetype(tp)->sp->sb->templateLevel && !basetype(tp)->sp->sb->instantiated) || basetype(tp)->type == bt_auto)
+    if ((isstructured(tp) && basetype(tp)->sp->sb->templateLevel && !basetype(tp)->sp->sb->instantiated) ||
+        basetype(tp)->type == bt_auto)
     {
         rv->type = st_i;
         rv->size = getSize(bt_int);
@@ -297,7 +298,8 @@ Optimizer::SimpleType* Optimizer::SymbolManager::Get(struct Parser::typ *tp)
             if (rv->type == st_func && rv->sp && rv->sp->tp && rv->sp->tp->type == st_func)
                 definedFunctions.insert(rv->sp);
             // have to put static member functions in the type table as well...
-            if (rv->sp->storage_class == scc_type || rv->sp->storage_class == scc_parameter || (rv->sp->storage_class == scc_cast && rv->sp->tp))
+            if (rv->sp->storage_class == scc_type || rv->sp->storage_class == scc_parameter ||
+                (rv->sp->storage_class == scc_cast && rv->sp->tp))
             {
                 typeSymbols.push_back(rv->sp);
             }
@@ -306,8 +308,8 @@ Optimizer::SimpleType* Optimizer::SymbolManager::Get(struct Parser::typ *tp)
         }
         if (tp->type != bt_aggregate && tp->syms && tp->syms->table && rv->sp && !rv->sp->syms)
         {
-            SYMLIST *list = tp->syms->table[0];
-            Optimizer::LIST **p = &rv->sp->syms;
+            SYMLIST* list = tp->syms->table[0];
+            Optimizer::LIST** p = &rv->sp->syms;
             while (list)
             {
                 *p = (Optimizer::LIST*)Alloc(sizeof(Optimizer::LIST));
@@ -326,13 +328,12 @@ Optimizer::SimpleType* Optimizer::SymbolManager::Get(struct Parser::typ *tp)
                 {
                     typeSymbols.push_back((Optimizer::SimpleSymbol*)(*p)->data);
                 }
-                if (((Optimizer::SimpleSymbol*)(*p)->data)->storage_class == scc_static || ((Optimizer::SimpleSymbol*)(*p)->data)->storage_class == scc_external)
+                if (((Optimizer::SimpleSymbol*)(*p)->data)->storage_class == scc_static ||
+                    ((Optimizer::SimpleSymbol*)(*p)->data)->storage_class == scc_external)
                     definedFunctions.insert((Optimizer::SimpleSymbol*)(*p)->data);
                 p = &(*p)->next;
                 list = list->next;
             }
-
-
         }
         if (tp->btp)
             rv->btp = Get(tp->btp);
@@ -349,35 +350,35 @@ Optimizer::SimpleType* Optimizer::SymbolManager::Get(struct Parser::typ *tp)
 }
 namespace Parser
 {
-    void refreshBackendParams(SYMBOL* funcsp)
+void refreshBackendParams(SYMBOL* funcsp)
+{
+    if (isfunction(funcsp->tp))
     {
-        if (isfunction(funcsp->tp))
+        basetype(funcsp->tp)->sp = funcsp;
+        SYMLIST* hr = basetype(funcsp->tp)->syms->table[0];
+        Optimizer::LIST* syms = Optimizer::SymbolManager::Get(funcsp)->syms;
+        while (hr && syms)
         {
-            basetype(funcsp->tp)->sp = funcsp;
-            SYMLIST* hr = basetype(funcsp->tp)->syms->table[0];
-            Optimizer::LIST* syms = Optimizer::SymbolManager::Get(funcsp)->syms;
-            while (hr && syms)
+            Optimizer::SimpleSymbol* sym = (Optimizer::SimpleSymbol*)syms->data;
+            if (hr->p->sb->thisPtr && !sym->thisPtr)
             {
-                Optimizer::SimpleSymbol *sym = (Optimizer::SimpleSymbol*)syms->data;
-                if (hr->p->sb->thisPtr && !sym->thisPtr)
-                {
-                    hr = hr->next;
-                }
-                sym->name = hr->p->name; // update name to prototype in use...
-                sym->offset = hr->p->sb->offset;
-                Optimizer::SymbolManager::Get(hr->p)->offset = sym->offset;
                 hr = hr->next;
-                syms = syms->next;
             }
+            sym->name = hr->p->name;  // update name to prototype in use...
+            sym->offset = hr->p->sb->offset;
+            Optimizer::SymbolManager::Get(hr->p)->offset = sym->offset;
+            hr = hr->next;
+            syms = syms->next;
         }
     }
 }
+}  // namespace Parser
 Optimizer::SimpleSymbol* Optimizer::SymbolManager::Make(struct Parser::sym* sym)
 {
     Optimizer::SimpleSymbol* rv = (Optimizer::SimpleSymbol*)Alloc(sizeof(Optimizer::SimpleSymbol));
     rv->name = sym->name;
-    rv->align = sym->sb->attribs.inheritable.structAlign ? sym->sb->attribs.inheritable.structAlign
-        : getAlign(sc_auto, basetype(sym->tp));
+    rv->align =
+        sym->sb->attribs.inheritable.structAlign ? sym->sb->attribs.inheritable.structAlign : getAlign(sc_auto, basetype(sym->tp));
     rv->size = basetype(sym->tp)->size;
     rv->importfile = sym->sb->importfile;
     if (sym->sb->parentNameSpace)
@@ -390,8 +391,8 @@ Optimizer::SimpleSymbol* Optimizer::SymbolManager::Make(struct Parser::sym* sym)
     else
         rv->sizeFromType = ISZ_ADDR;
     rv->offset = sym->sb->offset;
-    BaseList **p = &rv->baseClasses;
-    BASECLASS *src = sym->sb->baseClasses;
+    BaseList** p = &rv->baseClasses;
+    BASECLASS* src = sym->sb->baseClasses;
     while (src)
     {
         *p = (BaseList*)Alloc(sizeof(BaseList));
@@ -455,140 +456,139 @@ Optimizer::st_type Optimizer::SymbolManager::Get(enum Parser::e_bt type)
 
     switch (type)
     {
-    case bt_char:
-    case bt_bool:
-    case bt_short:
-    case bt_int:
-    case bt_long:
-    case bt_long_long:
-    case bt_inative:
-        return st_i;
-    case bt_unsigned_char:
-    case bt_unsigned_short:
-    case bt_char16_t:
-    case bt_wchar_t:
-    case bt_unsigned:
-    case bt_unsigned_long:
-    case bt_unsigned_long_long:
-    case bt_char32_t:
-    case bt_unative:
-        return st_ui;
-    case bt_float:
-    case bt_double:
-    case bt_long_double:
-        return st_f;
-    case bt_float_imaginary:
-    case bt_double_imaginary:
-    case bt_long_double_imaginary:
-        return st_fi;
-    case bt_float_complex:
-    case bt_double_complex:
-    case bt_long_double_complex:
-        return st_fc;
-    case bt_pointer:
-        return st_pointer;
-    case bt_void:
-        return st_void;
-    case bt___string:
-        return st___string;
-    case bt___object:
-        return st___object;
-    case bt_func:
-    case bt_ifunc:
-        return st_func;
-    case bt_lref:
-        return st_lref;
-    case bt_rref:
-        return st_rref;
-    case bt_struct:
-    case bt_class:
-        return st_struct;
-    case bt_union:
-        return st_union;
-    case bt_enum:
-        return st_enum;
-    case bt_memberptr:
-        return st_memberptr;
-    case bt_aggregate:
-        return st_aggregate;
-    case bt_ellipse:
-        return st_ellipse;
-    case bt_any:
-    default:
-        return st_any;
+        case bt_char:
+        case bt_bool:
+        case bt_short:
+        case bt_int:
+        case bt_long:
+        case bt_long_long:
+        case bt_inative:
+            return st_i;
+        case bt_unsigned_char:
+        case bt_unsigned_short:
+        case bt_char16_t:
+        case bt_wchar_t:
+        case bt_unsigned:
+        case bt_unsigned_long:
+        case bt_unsigned_long_long:
+        case bt_char32_t:
+        case bt_unative:
+            return st_ui;
+        case bt_float:
+        case bt_double:
+        case bt_long_double:
+            return st_f;
+        case bt_float_imaginary:
+        case bt_double_imaginary:
+        case bt_long_double_imaginary:
+            return st_fi;
+        case bt_float_complex:
+        case bt_double_complex:
+        case bt_long_double_complex:
+            return st_fc;
+        case bt_pointer:
+            return st_pointer;
+        case bt_void:
+            return st_void;
+        case bt___string:
+            return st___string;
+        case bt___object:
+            return st___object;
+        case bt_func:
+        case bt_ifunc:
+            return st_func;
+        case bt_lref:
+            return st_lref;
+        case bt_rref:
+            return st_rref;
+        case bt_struct:
+        case bt_class:
+            return st_struct;
+        case bt_union:
+            return st_union;
+        case bt_enum:
+            return st_enum;
+        case bt_memberptr:
+            return st_memberptr;
+        case bt_aggregate:
+            return st_aggregate;
+        case bt_ellipse:
+            return st_ellipse;
+        case bt_any:
+        default:
+            return st_any;
     }
-
 }
 
 Optimizer::e_scc_type Optimizer::SymbolManager::Get(enum Parser::e_sc storageClass)
 {
     switch (storageClass)
     {
-    default:
-    case sc_none:
-        return scc_none;
-    case sc_static:
-        return scc_static;
-    case sc_localstatic:
-        return scc_localstatic;
-    case sc_auto:
-        return scc_auto;
-    case sc_register:
-        return scc_register;
-    case sc_global:
-        return scc_global;
-    case sc_external:
-        return scc_external;
-    case sc_templateparam:
-        return scc_templateparam;
-    case sc_parameter:
-        return scc_parameter;
-    case sc_catchvar:
-        return scc_catchvar;
-    case sc_type:
-        return scc_type;
-    case sc_typedef:
-        return scc_typedef;
-    case sc_member:
-        return scc_member;
-    case sc_mutable:
-        return scc_mutable;
-    case sc_cast:
-        return scc_cast;
-    case sc_defunc:
-        return scc_defunc;
-    case sc_label:
-        return scc_label;
-    case sc_ulabel:
-        return scc_ulabel;
-    case sc_overloads:
-        return scc_overloads;
-    case sc_constant:
-        return scc_constant;
-    case sc_enumconstant:
-        return scc_enumconstant;
-    case sc_absolute:
-        return scc_absolute;
-    case sc_friendlist:
-        return scc_friendlist;
-    case sc_const:
-        return scc_const;
-    case sc_tconst:
-        return scc_tconst;
-    case sc_classmember:
-        return scc_classmember;
-    case sc_constexpr:
-        return scc_constexpr;
-    case sc_memberreg:
-        return scc_memberreg;
-    case sc_namespace:
-        return scc_namespace;
-    case sc_namespacealias:
-        return scc_namespacealias;
-    case sc_temp:
-        return scc_temp;
-    case sc_virtual:
-        return scc_virtual;
+        default:
+        case sc_none:
+            return scc_none;
+        case sc_static:
+            return scc_static;
+        case sc_localstatic:
+            return scc_localstatic;
+        case sc_auto:
+            return scc_auto;
+        case sc_register:
+            return scc_register;
+        case sc_global:
+            return scc_global;
+        case sc_external:
+            return scc_external;
+        case sc_templateparam:
+            return scc_templateparam;
+        case sc_parameter:
+            return scc_parameter;
+        case sc_catchvar:
+            return scc_catchvar;
+        case sc_type:
+            return scc_type;
+        case sc_typedef:
+            return scc_typedef;
+        case sc_member:
+            return scc_member;
+        case sc_mutable:
+            return scc_mutable;
+        case sc_cast:
+            return scc_cast;
+        case sc_defunc:
+            return scc_defunc;
+        case sc_label:
+            return scc_label;
+        case sc_ulabel:
+            return scc_ulabel;
+        case sc_overloads:
+            return scc_overloads;
+        case sc_constant:
+            return scc_constant;
+        case sc_enumconstant:
+            return scc_enumconstant;
+        case sc_absolute:
+            return scc_absolute;
+        case sc_friendlist:
+            return scc_friendlist;
+        case sc_const:
+            return scc_const;
+        case sc_tconst:
+            return scc_tconst;
+        case sc_classmember:
+            return scc_classmember;
+        case sc_constexpr:
+            return scc_constexpr;
+        case sc_memberreg:
+            return scc_memberreg;
+        case sc_namespace:
+            return scc_namespace;
+        case sc_namespacealias:
+            return scc_namespacealias;
+        case sc_temp:
+            return scc_temp;
+        case sc_virtual:
+            return scc_virtual;
     }
 }
 unsigned long long Optimizer::SymbolManager::Key(struct Parser::sym* old)
@@ -616,7 +616,7 @@ Optimizer::SimpleSymbol* Optimizer::SymbolManager::Lookup(struct Parser::sym* ol
 {
     if (old->sb->symRef)
         return old->sb->symRef;
-    Optimizer::SimpleSymbol *rv = symbols[Key(old)];
+    Optimizer::SimpleSymbol* rv = symbols[Key(old)];
     if (rv)
         old->sb->symRef = rv;
     return rv;
@@ -627,17 +627,16 @@ void Optimizer::SymbolManager::Add(struct Parser::sym* old, Optimizer::SimpleSym
     symbols[Key(old)] = sym;
     switch (sym->storage_class)
     {
-    case scc_member:
-        if (sym->tp->type != st_func)
+        case scc_member:
+            if (sym->tp->type != st_func)
+                break;
+            // fallthrough
+        case scc_global:
+        case scc_static:
+        case scc_localstatic:
+        case scc_external:
+        case scc_virtual:
+            globalSymbols[sym->outputName] = sym;
             break;
-        // fallthrough
-    case scc_global:
-    case scc_static:
-    case scc_localstatic:
-    case scc_external:
-    case scc_virtual:
-        globalSymbols[sym->outputName] = sym;
-        break;
     }
-
 }

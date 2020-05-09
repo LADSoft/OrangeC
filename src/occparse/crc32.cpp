@@ -24,7 +24,7 @@
 #include <stdlib.h>
 namespace Parser
 {
-    static unsigned crctab[256] = {
+static unsigned crctab[256] = {
     0xd202ef8d, 0xa505df1b, 0x3c0c8ea1, 0x4b0bbe37, 0xd56f2b94, 0xa2681b02, 0x3b614ab8, 0x4c667a2e, 0xdcd967bf, 0xabde5729,
     0x32d70693, 0x45d03605, 0xdbb4a3a6, 0xacb39330, 0x35bac28a, 0x42bdf21c, 0xcfb5ffe9, 0xb8b2cf7f, 0x21bb9ec5, 0x56bcae53,
     0xc8d83bf0, 0xbfdf0b66, 0x26d65adc, 0x51d16a4a, 0xc16e77db, 0xb669474d, 0x2f6016f7, 0x58672661, 0xc603b3c2, 0xb1048354,
@@ -51,14 +51,14 @@ namespace Parser
     0x9b6ba8c0, 0xec6c9856, 0x7cd385c7, 0x0bd4b551, 0x92dde4eb, 0xe5dad47d, 0x7bbe41de, 0x0cb97148, 0x95b020f2, 0xe2b71064,
     0x6fbf1d91, 0x18b82d07, 0x81b17cbd, 0xf6b64c2b, 0x68d2d988, 0x1fd5e91e, 0x86dcb8a4, 0xf1db8832, 0x616495a3, 0x1663a535,
     0x8f6af48f, 0xf86dc419, 0x660951ba, 0x110e612c, 0x88073096, 0xff000000,
-    };
+};
 
-    unsigned PartialCRC32(unsigned crc, unsigned char* data, size_t len)
-    {
-        size_t i;
-        for (i = 0; i < len; ++i)
-            crc = crctab[(unsigned char)crc ^ data[i]] ^ crc >> 8;
-        return crc;
-    }
-    unsigned CRC32(unsigned char* data, size_t len) { return PartialCRC32(0, data, len); }
+unsigned PartialCRC32(unsigned crc, unsigned char* data, size_t len)
+{
+    size_t i;
+    for (i = 0; i < len; ++i)
+        crc = crctab[(unsigned char)crc ^ data[i]] ^ crc >> 8;
+    return crc;
 }
+unsigned CRC32(unsigned char* data, size_t len) { return PartialCRC32(0, data, len); }
+}  // namespace Parser

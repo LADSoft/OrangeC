@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #ifndef CMDSWITCH_H
@@ -58,7 +58,11 @@ class CmdSwitchBase
 class CmdSwitchBool : public CmdSwitchBase
 {
   public:
-    CmdSwitchBool(CmdSwitchParser& parser, char SwitchChar, bool State = false, std::string LongName = "") : CmdSwitchBase(parser, SwitchChar, LongName), value(State) {}
+    CmdSwitchBool(CmdSwitchParser& parser, char SwitchChar, bool State = false, std::string LongName = "") :
+        CmdSwitchBase(parser, SwitchChar, LongName),
+        value(State)
+    {
+    }
     CmdSwitchBool(const CmdSwitchBool& orig) = default;
     virtual int Parse(const char* data) override;
     bool GetValue() const { return value; }
@@ -70,7 +74,8 @@ class CmdSwitchBool : public CmdSwitchBase
 class CmdSwitchInt : public CmdSwitchBase
 {
   public:
-    CmdSwitchInt(CmdSwitchParser& parser, char SwitchChar, int Value = 0, int LowLimit = 0, int HiLimit = INT_MAX, std::string LongName = "") :
+    CmdSwitchInt(CmdSwitchParser& parser, char SwitchChar, int Value = 0, int LowLimit = 0, int HiLimit = INT_MAX,
+                 std::string LongName = "") :
         CmdSwitchBase(parser, SwitchChar, LongName),
         value(Value),
         lowLimit(LowLimit),
@@ -91,7 +96,8 @@ class CmdSwitchInt : public CmdSwitchBase
 class CmdSwitchHex : public CmdSwitchBase
 {
   public:
-    CmdSwitchHex(CmdSwitchParser& parser, char SwitchChar, int Value = 0, int LowLimit = 0, int HiLimit = INT_MAX, std::string LongName = "") :
+    CmdSwitchHex(CmdSwitchParser& parser, char SwitchChar, int Value = 0, int LowLimit = 0, int HiLimit = INT_MAX,
+                 std::string LongName = "") :
         CmdSwitchBase(parser, SwitchChar, LongName),
         value(Value),
         lowLimit(LowLimit),
@@ -165,9 +171,10 @@ class CmdSwitchCombo : public CmdSwitchString
 class CmdSwitchOutput : public CmdSwitchCombineString
 {
   public:
-    CmdSwitchOutput(CmdSwitchParser& parser, char SwitchChar, const char* Extension, bool concat = false, std::string LongName = "") :
+    CmdSwitchOutput(CmdSwitchParser& parser, char SwitchChar, const char* Extension, bool concat = false,
+                    std::string LongName = "") :
         CmdSwitchCombineString(parser, SwitchChar, concat, LongName),
-        extension(Extension) 
+        extension(Extension)
     {
     }
     CmdSwitchOutput(const CmdSwitchOutput& orig) = default;
@@ -179,7 +186,10 @@ class CmdSwitchOutput : public CmdSwitchCombineString
 class CmdSwitchDefine : public CmdSwitchBase
 {
   public:
-    CmdSwitchDefine(CmdSwitchParser& parser, char SwitchChar, std::string LongName = "") : CmdSwitchBase(parser, SwitchChar, LongName) {}
+    CmdSwitchDefine(CmdSwitchParser& parser, char SwitchChar, std::string LongName = "") :
+        CmdSwitchBase(parser, SwitchChar, LongName)
+    {
+    }
     CmdSwitchDefine(const CmdSwitchDefine& orig) = default;
     virtual ~CmdSwitchDefine();
     virtual int Parse(const char* data) override;
@@ -203,14 +213,14 @@ class CmdSwitchDefine : public CmdSwitchBase
 class CmdSwitchFile : public CmdSwitchString
 {
   public:
-      CmdSwitchFile(CmdSwitchParser& parser, char SwitchChar, std::string LongName = "") :
-          CmdSwitchString(parser, SwitchChar, '\0', LongName),
+    CmdSwitchFile(CmdSwitchParser& parser, char SwitchChar, std::string LongName = "") :
+        CmdSwitchString(parser, SwitchChar, '\0', LongName),
         Parser(&parser),
         argc(0),
         argv(nullptr)
     {
     }
-    CmdSwitchFile(CmdSwitchParser &parser) : CmdSwitchString(), Parser(&parser), argc(0), argv(nullptr) { }
+    CmdSwitchFile(CmdSwitchParser& parser) : CmdSwitchString(), Parser(&parser), argc(0), argv(nullptr) {}
 
     virtual int Parse(const char* data) override;
 
@@ -232,7 +242,7 @@ class CmdSwitchParser
     CmdSwitchParser() : nologo(*this, '!', false, "nologo") {}
     ~CmdSwitchParser() {}
 
-    bool Parse(const std::string &v, int* argc, char* argv[]);
+    bool Parse(const std::string& v, int* argc, char* argv[]);
 
     bool Parse(int* argc, char* argv[]);
 
@@ -242,10 +252,10 @@ class CmdSwitchParser
         return *this;
     }
 
-    CmdSwitchBase *Find(const char *sw, bool useLongName);
+    CmdSwitchBase* Find(const char* sw, bool useLongName);
 
   protected:
-      void ScanEnv(char* output, const char* string);
+    void ScanEnv(char* output, const char* string);
 
   private:
     std::set<CmdSwitchBase*> switches;

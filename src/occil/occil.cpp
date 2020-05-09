@@ -1,30 +1,30 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 /*
-  * C configuration when we are using ICODE code generator output
-  */
+ * C configuration when we are using ICODE code generator output
+ */
 #include <stdio.h>
 #include <string.h>
 #include "be.h"
@@ -49,132 +49,117 @@
 
 Optimizer::SimpleSymbol* currentFunction;
 int usingEsp;
-void regInit() { }
-void diag(const char*fmt, ...)
-{
-
-}
-void Import()
-{
-
-}
+void regInit() {}
+void diag(const char* fmt, ...) {}
+void Import() {}
 namespace occmsil
 {
-    CmdSwitchParser SwitchParser;
-    CmdSwitchBool single(SwitchParser, 's', false, "single");
+CmdSwitchParser SwitchParser;
+CmdSwitchBool single(SwitchParser, 's', false, "single");
 
-    const char* usageText =
-        "[options] inputfile\n"
-        "\n"
-        "--single     don't open internal file list\n"
-        "\nTime: " __TIME__ "  Date: " __DATE__;
+const char* usageText =
+    "[options] inputfile\n"
+    "\n"
+    "--single     don't open internal file list\n"
+    "\nTime: " __TIME__ "  Date: " __DATE__;
 
+char infile[260];
+char outFile[260];
 
-    char infile[260];
-    char outFile[260];
+int dbgblocknum;
 
-    int dbgblocknum;
+static const char* occil_verbosity = nullptr;
 
-    static const char* occil_verbosity = nullptr;
+static const int MAX_SHARED_REGION = 240 * 1024 * 1024;
 
+void flush_peep() {}
 
-    static const int MAX_SHARED_REGION = 240 * 1024 * 1024;
-
-    void flush_peep()
+void ResolveMSILExterns()
+{
+    for (auto&& sp : Optimizer::externals)
     {
-
-    }
-
-    void ResolveMSILExterns()
-    {
-        for (auto&& sp : Optimizer::externals)
+        if (sp->msil)
         {
-            if (sp->msil)
+            if (sp->tp->type == Optimizer::st_func)
             {
-                if (sp->tp->type == Optimizer::st_func)
+                std::vector<Optimizer::SimpleSymbol*> params;
+                for (auto v = sp->syms; v != nullptr; v = v->next)
                 {
-                    std::vector<Optimizer::SimpleSymbol*> params;
-                    for (auto v = sp->syms; v != nullptr; v = v->next)
-                    {
-                        Optimizer::SimpleSymbol *sym = (Optimizer::SimpleSymbol*)v->data;
-                        if (!sym->thisPtr && sym->tp->type != Optimizer::st_void)
-                            params.push_back(sym);
-                    }
-                    std::map<Optimizer::SimpleSymbol*, Param*, byName> paramList;
-                    LoadParams(sp, params, paramList);
-
-                    std::vector<Type*> types;
-                    for (auto v : paramList)
-                    {
-                        types.push_back(v.second->GetType());
-                    }
-                    Method* rv = nullptr;
-                    peLib->Find(sp->msil, &rv, types, nullptr, true);
-                    if (rv)
-                        sp->msil = (const char *)rv;
-                    else
-                        sp->msil = nullptr; // error!!!!!!!
+                    Optimizer::SimpleSymbol* sym = (Optimizer::SimpleSymbol*)v->data;
+                    if (!sym->thisPtr && sym->tp->type != Optimizer::st_void)
+                        params.push_back(sym);
                 }
-                else // field
-                {
-                    void* rv = nullptr;
-                    if (peLib->Find(sp->msil, &rv, nullptr) == PELib::s_field)
-                    {
-                        sp->msil = (const char *)rv;
-                    }
-                    else
-                    {
-                        sp->msil = nullptr; ////   errror!!!!!!!
-                    }
+                std::map<Optimizer::SimpleSymbol*, Param*, byName> paramList;
+                LoadParams(sp, params, paramList);
 
+                std::vector<Type*> types;
+                for (auto v : paramList)
+                {
+                    types.push_back(v.second->GetType());
+                }
+                Method* rv = nullptr;
+                peLib->Find(sp->msil, &rv, types, nullptr, true);
+                if (rv)
+                    sp->msil = (const char*)rv;
+                else
+                    sp->msil = nullptr;  // error!!!!!!!
+            }
+            else  // field
+            {
+                void* rv = nullptr;
+                if (peLib->Find(sp->msil, &rv, nullptr) == PELib::s_field)
+                {
+                    sp->msil = (const char*)rv;
+                }
+                else
+                {
+                    sp->msil = nullptr;  ////   errror!!!!!!!
                 }
             }
         }
-        for (auto it = Optimizer::externals.begin(); it != Optimizer::externals.end();)
-        {
-            if ((*it)->msil)
-                it = Optimizer::externals.erase(it);
-            else
-                ++it;
-        }
     }
-    void outputfile(char* buf, const char* name, const char* ext)
+    for (auto it = Optimizer::externals.begin(); it != Optimizer::externals.end();)
     {
-        strcpy(buf, Optimizer::outputFileName.c_str());
-        if (buf[strlen(buf) - 1] == '\\')
-        {
-            // output file is a path specification rather than a file name
-            // just add our name and ext
-            strcat(buf, name);
-            Utils::StripExt(buf);
-            Utils::AddExt(buf, ext);
-        }
-        else if (buf[0] == 0) // no output file specified, put the output wherever the input was...
-        {
-            strcpy(buf, name);
-            char *p = strrchr(buf, '\\');
-            char *q = strrchr(buf, '/');
-            if (q > p)
-                p = q;
-            if (p)
-                strcpy(buf, p + 1);
-            Utils::StripExt(buf);
-            Utils::AddExt(buf, ext);
-        }
+        if ((*it)->msil)
+            it = Optimizer::externals.erase(it);
         else
-        {
-            // use specified output file name
-        }
+            ++it;
     }
-
-
-    void global(Optimizer::SimpleSymbol* sym, int flags)
+}
+void outputfile(char* buf, const char* name, const char* ext)
+{
+    strcpy(buf, Optimizer::outputFileName.c_str());
+    if (buf[strlen(buf) - 1] == '\\')
     {
+        // output file is a path specification rather than a file name
+        // just add our name and ext
+        strcat(buf, name);
+        Utils::StripExt(buf);
+        Utils::AddExt(buf, ext);
     }
-    void ProcessData(Optimizer::BaseData* v)
+    else if (buf[0] == 0)  // no output file specified, put the output wherever the input was...
     {
-        switch (v->type)
-        {
+        strcpy(buf, name);
+        char* p = strrchr(buf, '\\');
+        char* q = strrchr(buf, '/');
+        if (q > p)
+            p = q;
+        if (p)
+            strcpy(buf, p + 1);
+        Utils::StripExt(buf);
+        Utils::AddExt(buf, ext);
+    }
+    else
+    {
+        // use specified output file name
+    }
+}
+
+void global(Optimizer::SimpleSymbol* sym, int flags) {}
+void ProcessData(Optimizer::BaseData* v)
+{
+    switch (v->type)
+    {
         case Optimizer::DT_SEG:
             msil_oa_enterseg((Optimizer::e_sg)v->i);
             break;
@@ -192,16 +177,16 @@ namespace occmsil
             msil_oa_put_string_label(v->i, 0);
             break;
         case Optimizer::DT_RESERVE:
-            //msil_oa_genstorage(v->i);
+            // msil_oa_genstorage(v->i);
             break;
         case Optimizer::DT_SYM:
-            //msil_oa_genref(v->symbol.sym, v->symbol.i);
+            // msil_oa_genref(v->symbol.sym, v->symbol.i);
             break;
         case Optimizer::DT_SRREF:
             msil_oa_gensrref(v->symbol.sym, v->symbol.i, 0);
             break;
         case Optimizer::DT_PCREF:
-            //msil_oa_genpcref(v->symbol.sym, v->symbol.i);
+            // msil_oa_genpcref(v->symbol.sym, v->symbol.i);
             break;
         case Optimizer::DT_FUNCREF:
             Optimizer::gen_funcref(v->symbol.sym);
@@ -260,7 +245,7 @@ namespace occmsil
             break;
         case Optimizer::DT_CDOUBLE:
             //      msil_oa_genfloat(doublegen, &v->c.r);
-          //        msil_oa_genfloat(doublegen, &v->c.i);
+            //        msil_oa_genfloat(doublegen, &v->c.i);
             break;
         case Optimizer::DT_CLONGDOUBLE:
             //        msil_oa_genfloat(longdoublegen, &v->c.r);
@@ -290,114 +275,115 @@ namespace occmsil
         case Optimizer::DT_AUTOREF:
             //        msil_oa_gen_int(0);
             break;
-        }
-    }
-    bool ProcessData(const char *name)
-    {
-        for (auto v : Optimizer::baseData)
-        {
-            if (v->type == Optimizer::DT_FUNC)
-            {
-                Optimizer::temporarySymbols = v->funcData->temporarySymbols;
-                Optimizer::functionVariables = v->funcData->variables;
-                //            blockCount = v->funcData->blockCount;
-                //            exitBlock = v->funcData->exitBlock;
-                //            tempCount = v->funcData->tempCount;
-                //            functionHasAssembly = v->funcData->hasAssembly;
-                Optimizer::intermed_head = v->funcData->instructionList;
-                Optimizer::intermed_tail = Optimizer::intermed_head;
-                while (Optimizer::intermed_tail && Optimizer::intermed_tail->fwd)
-                    Optimizer::intermed_tail = Optimizer::intermed_tail->fwd;
-                Optimizer::objectArray_exp = v->funcData->objectArray_exp;
-                Optimizer::fltexp = v->funcData->fltexp;
-                Optimizer::fastcallAlias = v->funcData->fastcallAlias;
-                currentFunction = v->funcData->name;
-                //Optimizer::SetUsesESP(currentFunction->usesEsp);
-                generate_instructions(Optimizer::intermed_head);
-                msil_flush_peep(currentFunction, nullptr);
-                currentFunction = nullptr;
-            }
-            else
-            {
-                ProcessData(v);
-            }
-        }
-        return true;
-    }
-
-    bool LoadFile(SharedMemory* parserMem, std::string fileName)
-    {
-        Optimizer::InitIntermediate();
-        bool rv = Optimizer::InputIntermediate(parserMem);
-        Optimizer::SelectBackendData();
-        Optimizer::oinit();
-        Optimizer::SelectBackendData();
-        if (fileName.empty())
-        {
-            for (auto&& s : Optimizer::prm_Using)
-                _add_global_using(s.c_str());
-        }
-        if (fileName.empty() && Optimizer::inputFiles.size())
-        {
-            if (!Optimizer::cparams.prm_compileonly || Optimizer::cparams.prm_asmfile)
-            {
-                if (!Optimizer::outputFileName.empty())
-                    outputfile(outFile, Optimizer::outputFileName.c_str(), Optimizer::chosenAssembler->objext);
-                else
-                    outputfile(outFile, Optimizer::inputFiles.front().c_str(), Optimizer::chosenAssembler->objext);
-                InsertExternalFile(outFile, false);
-            }
-            fileName = Optimizer::inputFiles.front();
-        }
-        msil_main_preprocess((char *)fileName.c_str());
-        ResolveMSILExterns();
-        return rv;
-    }
-    bool SaveFile(const char *name)
-    {
-        if (Optimizer::cparams.prm_compileonly && !Optimizer::cparams.prm_asmfile)
-        {
-            strcpy(infile, name);
-            outputfile(outFile, name, Optimizer::chosenAssembler->objext);
-            InsertExternalFile(outFile, false);
-            Optimizer::outputFile = fopen(outFile, "wb");
-            if (!Optimizer::outputFile)
-                return false;
-            for (auto v : Optimizer::externals)
-            {
-                if (v)
-                {
-                    msil_oa_put_extern(v, 0);
-                }
-            }
-            //        msil_oa_setalign(2, dataAlign, bssAlign, constAlign);
-            msil_end_generation(outFile);
-            fclose(Optimizer::outputFile);
-            Optimizer::outputFile = nullptr;
-        }
-        return true;
-    }
-
-    int InvokeParser(int argc, char**argv, SharedMemory* parserMem)
-    {
-        std::string args;
-        for (int i = 1; i < argc; i++)
-        {
-            if (args.size())
-                args += " ";
-            std::string curArg = argv[i];
-            if (curArg[curArg.size() - 1] == '\\')
-                curArg += "\\";
-            args += std::string("\"") + curArg + "\"";
-        }
-
-        return Utils::ToolInvoke("occparse", occil_verbosity, "-! --architecture \"msil;%s\" %s", parserMem->Name().c_str(), args.c_str());
-    }
-    int InvokeOptimizer(SharedMemory* parserMem, SharedMemory* optimizerMem)
-    {
-        return Utils::ToolInvoke("occopt", occil_verbosity, "-! %s %s", parserMem->Name().c_str(), optimizerMem->Name().c_str());
     }
 }
+bool ProcessData(const char* name)
+{
+    for (auto v : Optimizer::baseData)
+    {
+        if (v->type == Optimizer::DT_FUNC)
+        {
+            Optimizer::temporarySymbols = v->funcData->temporarySymbols;
+            Optimizer::functionVariables = v->funcData->variables;
+            //            blockCount = v->funcData->blockCount;
+            //            exitBlock = v->funcData->exitBlock;
+            //            tempCount = v->funcData->tempCount;
+            //            functionHasAssembly = v->funcData->hasAssembly;
+            Optimizer::intermed_head = v->funcData->instructionList;
+            Optimizer::intermed_tail = Optimizer::intermed_head;
+            while (Optimizer::intermed_tail && Optimizer::intermed_tail->fwd)
+                Optimizer::intermed_tail = Optimizer::intermed_tail->fwd;
+            Optimizer::objectArray_exp = v->funcData->objectArray_exp;
+            Optimizer::fltexp = v->funcData->fltexp;
+            Optimizer::fastcallAlias = v->funcData->fastcallAlias;
+            currentFunction = v->funcData->name;
+            // Optimizer::SetUsesESP(currentFunction->usesEsp);
+            generate_instructions(Optimizer::intermed_head);
+            msil_flush_peep(currentFunction, nullptr);
+            currentFunction = nullptr;
+        }
+        else
+        {
+            ProcessData(v);
+        }
+    }
+    return true;
+}
+
+bool LoadFile(SharedMemory* parserMem, std::string fileName)
+{
+    Optimizer::InitIntermediate();
+    bool rv = Optimizer::InputIntermediate(parserMem);
+    Optimizer::SelectBackendData();
+    Optimizer::oinit();
+    Optimizer::SelectBackendData();
+    if (fileName.empty())
+    {
+        for (auto&& s : Optimizer::prm_Using)
+            _add_global_using(s.c_str());
+    }
+    if (fileName.empty() && Optimizer::inputFiles.size())
+    {
+        if (!Optimizer::cparams.prm_compileonly || Optimizer::cparams.prm_asmfile)
+        {
+            if (!Optimizer::outputFileName.empty())
+                outputfile(outFile, Optimizer::outputFileName.c_str(), Optimizer::chosenAssembler->objext);
+            else
+                outputfile(outFile, Optimizer::inputFiles.front().c_str(), Optimizer::chosenAssembler->objext);
+            InsertExternalFile(outFile, false);
+        }
+        fileName = Optimizer::inputFiles.front();
+    }
+    msil_main_preprocess((char*)fileName.c_str());
+    ResolveMSILExterns();
+    return rv;
+}
+bool SaveFile(const char* name)
+{
+    if (Optimizer::cparams.prm_compileonly && !Optimizer::cparams.prm_asmfile)
+    {
+        strcpy(infile, name);
+        outputfile(outFile, name, Optimizer::chosenAssembler->objext);
+        InsertExternalFile(outFile, false);
+        Optimizer::outputFile = fopen(outFile, "wb");
+        if (!Optimizer::outputFile)
+            return false;
+        for (auto v : Optimizer::externals)
+        {
+            if (v)
+            {
+                msil_oa_put_extern(v, 0);
+            }
+        }
+        //        msil_oa_setalign(2, dataAlign, bssAlign, constAlign);
+        msil_end_generation(outFile);
+        fclose(Optimizer::outputFile);
+        Optimizer::outputFile = nullptr;
+    }
+    return true;
+}
+
+int InvokeParser(int argc, char** argv, SharedMemory* parserMem)
+{
+    std::string args;
+    for (int i = 1; i < argc; i++)
+    {
+        if (args.size())
+            args += " ";
+        std::string curArg = argv[i];
+        if (curArg[curArg.size() - 1] == '\\')
+            curArg += "\\";
+        args += std::string("\"") + curArg + "\"";
+    }
+
+    return Utils::ToolInvoke("occparse", occil_verbosity, "-! --architecture \"msil;%s\" %s", parserMem->Name().c_str(),
+                             args.c_str());
+}
+int InvokeOptimizer(SharedMemory* parserMem, SharedMemory* optimizerMem)
+{
+    return Utils::ToolInvoke("occopt", occil_verbosity, "-! %s %s", parserMem->Name().c_str(), optimizerMem->Name().c_str());
+}
+}  // namespace occmsil
 int main(int argc, char* argv[])
 {
     using namespace occmsil;
@@ -434,7 +420,6 @@ int main(int argc, char* argv[])
         {
             Utils::fatal("cannot open input file");
         }
-         
     }
     else
     {
@@ -453,7 +438,6 @@ int main(int argc, char* argv[])
         for (auto f : Optimizer::backendFiles)
         {
             InsertExternalFile(f.c_str(), false);
-
         }
         std::list<std::string> files = Optimizer::inputFiles;
         if (files.size())

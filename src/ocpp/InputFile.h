@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #ifndef InputFile_h
@@ -35,12 +35,12 @@ class PipeArbitrator;
 
 class InputFile
 {
-public:
+  public:
     enum
     {
         LINE_WIDTH = 65536
     };
-    InputFile(bool fullname, const std::string& Name, PipeArbitrator &Piper) :
+    InputFile(bool fullname, const std::string& Name, PipeArbitrator& Piper) :
         name(cache(Name)),
         lineno(0),
         errlineno(0),
@@ -82,7 +82,7 @@ public:
     virtual int StripComment(char* line) { return strlen(line); }
     bool ReadLine(char* line);
     void CheckUTF8BOM();
-    bool ReadString(char *line, int width);
+    bool ReadString(char* line, int width);
     const std::string* cache(const std::string& name)
     {
         auto it = fileNameCache.find(name);
@@ -103,10 +103,11 @@ public:
     bool utf8BOM;  // just cache whether it exists, we don't actually use it at this point though.
                    // input files are assumed to be UTF8 anyway...
     bool ucs2BOM;
+
   private:
     int inputLen;
     char inputBuffer[32000];
-    char *bufPtr;
+    char* bufPtr;
     int streamid;
     const std::string* name;
     const std::string* decoratedName;

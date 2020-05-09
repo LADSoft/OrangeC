@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #define _CRT_SECURE_NO_WARNINGS
@@ -49,7 +49,7 @@ ppDefine::Definition& ppDefine::Definition::operator=(const ppDefine::Definition
     undefined = old.undefined;
     permanent = old.permanent;
     elipses = old.elipses;
-    varargs = old.varargs; 
+    varargs = old.varargs;
     preprocessing = old.preprocessing;
     value = old.value;
     if (old.argList)
@@ -66,7 +66,7 @@ ppDefine::Definition::Definition(const Definition& old) : Symbol(old.GetName())
     undefined = old.undefined;
     permanent = old.permanent;
     elipses = old.elipses;
-    varargs = old.varargs; 
+    varargs = old.varargs;
     preprocessing = old.preprocessing;
     value = old.value;
     if (old.argList)
@@ -209,21 +209,25 @@ ppDefine::Definition* ppDefine::Define(const std::string& name, std::string& val
                     failed = true;
                     break;
                 }
-            const char *p = old->GetValue().c_str();
-            const char *q = d->GetValue().c_str();
+            const char* p = old->GetValue().c_str();
+            const char* q = d->GetValue().c_str();
             while (*p && *q)
             {
                 if (isspace(*p) && isspace(*q))
                 {
-                    while (isspace(*p)) p++;
-                    while (isspace(*q)) q++;
+                    while (isspace(*p))
+                        p++;
+                    while (isspace(*q))
+                        q++;
                 }
                 if (*p != *q)
                     break;
                 p++, q++;
             }
-            while (isspace(*p)) p++;
-            while (isspace(*q)) q++;
+            while (isspace(*p))
+                p++;
+            while (isspace(*q))
+                q++;
             if (*p || *q)
             {
                 failed = true;
@@ -232,7 +236,7 @@ ppDefine::Definition* ppDefine::Define(const std::string& name, std::string& val
         if (failed)
         {
             auto it = macroStacks.find(d->GetName());
-            if (it == macroStacks.end()) // only give the error if never been involved in a push
+            if (it == macroStacks.end())  // only give the error if never been involved in a push
                 old->DefinedWarning("macro redefinition changes value");
         }
         symtab.Remove(old);
@@ -497,7 +501,7 @@ void ppDefine::Stringize(std::string& macro)
         else if (macro[pos] == '#' && (pos == 0 || macro[pos - 1] != '#') &&
                  (pos == macro.size() - 1 || macro[pos + 1] != '#')) /* # ## # */
         {
-            repl += macro.substr(last, pos-last);
+            repl += macro.substr(last, pos - last);
 
             pos++;
             for (; pos < macro.size() && isspace(macro[pos]); ++pos)
@@ -747,7 +751,8 @@ void ppDefine::SetupAlreadyReplaced(std::string& macro)
         }
     }
 }
-int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr, bool eol, std::deque<Definition*>& definitions, std::deque<TokenPos>* positions)
+int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr, bool eol, std::deque<Definition*>& definitions,
+                             std::deque<TokenPos>* positions)
 {
     std::string name;
     int waiting = 0;
@@ -865,7 +870,8 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr, b
                             args.push_back(temp);
                             expandedargs.push_back(temp);
                             int sv;
-                            rv = ReplaceSegment(expandedargs[count], 0, expandedargs[count].size(), sv, p == line.size(), definitions, nullptr);
+                            rv = ReplaceSegment(expandedargs[count], 0, expandedargs[count].size(), sv, p == line.size(),
+                                                definitions, nullptr);
                             if (rv < -MACRO_REPLACE_SIZE)
                             {
                                 return rv;
@@ -928,7 +934,6 @@ int ppDefine::ReplaceSegment(std::string& line, int begin, int end, int& pptr, b
                         for (auto&& d : definitions)
                             d->SetPreprocessing(false);
                         definitions.clear();
-
                     }
                 }
                 else
@@ -1210,7 +1215,7 @@ int ppDefine::Process(std::string& line, bool leavePlaceholder)
     std::string rv;
     int p, last = 0;
     int offset = 0;
-    TokenPos* current = nullptr, *next = nullptr;
+    TokenPos *current = nullptr, *next = nullptr;
     auto it = tokenPositions.begin();
     if (it != tokenPositions.end())
     {
@@ -1243,7 +1248,9 @@ int ppDefine::Process(std::string& line, bool leavePlaceholder)
             int pos = p;
             if (p != last)
                 rv += line.substr(last, p - last);
-            while ((!current || p <= current->newEnd) && (line[p] == REPLACED_TOKENIZING || (!leavePlaceholder&& line[p] == MACRO_PLACEHOLDER) || line[p] == REPLACED_ALREADY))
+            while ((!current || p <= current->newEnd) &&
+                   (line[p] == REPLACED_TOKENIZING || (!leavePlaceholder && line[p] == MACRO_PLACEHOLDER) ||
+                    line[p] == REPLACED_ALREADY))
                 p++;
             last = p;
             if (current)
@@ -1268,10 +1275,10 @@ int ppDefine::Process(std::string& line, bool leavePlaceholder)
 }
 void ppDefine::PushPopMacro(std::string name, bool push)
 {
-    Definition *d = Lookup(name);
+    Definition* d = Lookup(name);
     if (push)
     {
-        Definition *pushval = new Definition(*d);
+        Definition* pushval = new Definition(*d);
         macroStacks[name].push(pushval);
     }
     else
@@ -1279,7 +1286,7 @@ void ppDefine::PushPopMacro(std::string name, bool push)
         auto it = macroStacks.find(name);
         if (it != macroStacks.end() && it->second.size())
         {
-            Definition *popval = it->second.top();
+            Definition* popval = it->second.top();
             it->second.pop();
             *d = *popval;
             delete popval;

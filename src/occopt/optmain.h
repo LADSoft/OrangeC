@@ -30,20 +30,20 @@ extern Optimizer::SimpleSymbol* currentFunction;
 namespace Optimizer
 {
 
-    extern CmdSwitchParser SwitchParser;
-    extern CmdSwitchBool single;
-    extern CmdSwitchBool WriteIcdFile;
-    extern CmdSwitchCombineString output;
+extern CmdSwitchParser SwitchParser;
+extern CmdSwitchBool single;
+extern CmdSwitchBool WriteIcdFile;
+extern CmdSwitchCombineString output;
 
-    extern const char* usageText;
+extern const char* usageText;
 
-    extern int anonymousNotAlloc;
-    extern int usingEsp;
+extern int anonymousNotAlloc;
+extern int usingEsp;
 
-    void InternalConflict(QUAD* head);
-    void PreColor(QUAD* head);
-    void examine_icode(QUAD* head);
-    int PreRegAlloc(QUAD* tail, BRIGGS_SET* globalVars, BRIGGS_SET* eobGlobals, int pass);
-    void Optimize(SimpleSymbol* funcsp);
-    int main(int argc, char* argv[]);
-}
+void InternalConflict(QUAD* head);
+void PreColor(QUAD* head);
+void examine_icode(QUAD* head);
+int PreRegAlloc(QUAD* tail, BRIGGS_SET* globalVars, BRIGGS_SET* eobGlobals, int pass);
+void Optimize(SimpleSymbol* funcsp);
+int main(int argc, char* argv[]);
+}  // namespace Optimizer

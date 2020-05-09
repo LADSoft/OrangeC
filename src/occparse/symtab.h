@@ -25,28 +25,28 @@
 
 namespace Parser
 {
-    extern NAMESPACEVALUELIST *globalNameSpace, *localNameSpace;
-    extern HASHTABLE* labelSyms;
+extern NAMESPACEVALUELIST *globalNameSpace, *localNameSpace;
+extern HASHTABLE* labelSyms;
 
-    extern HASHTABLE* CreateHashTable(int size);
-    extern int matchOverloadLevel;
+extern HASHTABLE* CreateHashTable(int size);
+extern int matchOverloadLevel;
 
-    HASHTABLE* CreateHashTable(int size);
-    void syminit(void);
-    HASHTABLE* CreateHashTable(int size);
-    void AllocateLocalContext(BLOCKDATA* block, SYMBOL* sym, int label);
-    void TagSyms(HASHTABLE* syms);
-    void FreeLocalContext(BLOCKDATA* block, SYMBOL* sym, int label);
-    SYMLIST** GetHashLink(HASHTABLE* t, const char* string);
-    SYMLIST* AddName(SYMBOL* item, HASHTABLE* table);
-    SYMLIST* AddOverloadName(SYMBOL* item, HASHTABLE* table);
-    SYMLIST** LookupName(const char* name, HASHTABLE* table);
-    SYMBOL* search(const char* name, HASHTABLE* table);
-    bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly);
-    SYMBOL* searchOverloads(SYMBOL* sym, HASHTABLE* table);
-    SYMBOL* gsearch(const char* name);
-    SYMBOL* tsearch(const char* name);
-    void baseinsert(SYMBOL* in, HASHTABLE* table);
-    void insert(SYMBOL* in, HASHTABLE* table);
-    void insertOverload(SYMBOL* in, HASHTABLE* table);
-}
+HASHTABLE* CreateHashTable(int size);
+void syminit(void);
+HASHTABLE* CreateHashTable(int size);
+void AllocateLocalContext(BLOCKDATA* block, SYMBOL* sym, int label);
+void TagSyms(HASHTABLE* syms);
+void FreeLocalContext(BLOCKDATA* block, SYMBOL* sym, int label);
+SYMLIST** GetHashLink(HASHTABLE* t, const char* string);
+SYMLIST* AddName(SYMBOL* item, HASHTABLE* table);
+SYMLIST* AddOverloadName(SYMBOL* item, HASHTABLE* table);
+SYMLIST** LookupName(const char* name, HASHTABLE* table);
+SYMBOL* search(const char* name, HASHTABLE* table);
+bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly);
+SYMBOL* searchOverloads(SYMBOL* sym, HASHTABLE* table);
+SYMBOL* gsearch(const char* name);
+SYMBOL* tsearch(const char* name);
+void baseinsert(SYMBOL* in, HASHTABLE* table);
+void insert(SYMBOL* in, HASHTABLE* table);
+void insertOverload(SYMBOL* in, HASHTABLE* table);
+}  // namespace Parser

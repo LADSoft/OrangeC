@@ -24,11 +24,11 @@
  */
 namespace Optimizer
 {
-    void ioutini(void);
-    void putconst(SimpleExpression* offset, int color);
-    void putlen(int l);
-    void putamode(QUAD* q, IMODE* ap);
-    void put_code(QUAD* q);
-    const char* lookupRegName(int regnum);
-    void OutputIcdFile(void);
-}
+void ioutini(void);
+void putconst(SimpleExpression* offset, int color);
+void putlen(int l);
+void putamode(QUAD* q, IMODE* ap);
+void put_code(QUAD* q);
+const char* lookupRegName(int regnum);
+void OutputIcdFile(void);
+}  // namespace Optimizer

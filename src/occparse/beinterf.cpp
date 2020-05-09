@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 /*
@@ -37,11 +37,11 @@
 namespace Parser
 {
 
-    int needsAtomicLockFromType(TYPE* tp)
+int needsAtomicLockFromType(TYPE* tp)
+{
+    Optimizer::ARCH_SIZING* p = Optimizer::chosenAssembler->arch->type_needsLock;
+    switch (basetype(tp)->type)
     {
-        Optimizer::ARCH_SIZING* p = Optimizer::chosenAssembler->arch->type_needsLock;
-        switch (basetype(tp)->type)
-        {
         case bt_char16_t:
             return 0;
         case bt_char32_t:
@@ -103,13 +103,13 @@ namespace Parser
         case bt_union:
         default:
             return 1;
-        }
     }
-    static int basesize(Optimizer::ARCH_SIZING* p, TYPE* tp)
+}
+static int basesize(Optimizer::ARCH_SIZING* p, TYPE* tp)
+{
+    tp = basetype(tp);
+    switch (tp->type)
     {
-        tp = basetype(tp);
-        switch (tp->type)
-        {
         case bt_char16_t:
             return 2;
         case bt_char32_t:
@@ -185,59 +185,59 @@ namespace Parser
         default:
             /*            diag("basesize: unknown type");*/
             return 1;
-        }
     }
-    int getSize(enum e_bt type)
-    {
-        TYPE tp;
-        memset(&tp, 0, sizeof(tp));
-        tp.type = type; /* other fields don't matter, we never call this for structured types*/
-        tp.rootType = &tp;
-        return basesize(Optimizer::chosenAssembler->arch->type_sizes, &tp);
-    }
-    int getBaseAlign(enum e_bt type)
-    {
-        TYPE tp;
-        if (type == bt_auto)
-            type = bt_struct;
-        tp.type = type; /* other fields don't matter, we never call this for structured types*/
-        tp.array = tp.vla = false;
-        tp.rootType = &tp;
-        return basesize(Optimizer::chosenAssembler->arch->type_align, &tp);
-    }
-    long getautoval(long val)
-    {
-        if (Optimizer::chosenAssembler->arch->spgrowsup)
-            return -val;
-        else
-            return val;
-    }
-    int funcvaluesize(int val)
-    {
-        if (Optimizer::chosenAssembler->arch->param_offs)
-            return (Optimizer::chosenAssembler->arch->param_offs(val));
-        return 0;
-    }
-    int alignment(int sc, TYPE* tp)
-    {
-        (void)sc;
-        return basesize(Optimizer::chosenAssembler->arch->type_align, tp);
-    }
-    int getAlign(int sc, TYPE* tp)
-    {
-        int align = basesize(Optimizer::chosenAssembler->arch->type_align, tp);
-        if (sc != sc_auto)
-        {
-            int pack = preProcessor->GetPack();
-            if (pack < align)
-                align = pack;
-        }
-        if (Optimizer::chosenAssembler->arch->align)
-            align = Optimizer::chosenAssembler->arch->align(align);
-        if (isstructured(tp) && basetype(tp)->sp->sb->attribs.inheritable.structAlign > align)
-            align = basetype(tp)->sp->sb->attribs.inheritable.structAlign;
-        return align;
-    }
-    const char* getUsageText(void) { return Optimizer::chosenAssembler->usage_text; }
-    KEYWORD* GetProcKeywords(void) { return (KEYWORD*)Optimizer::chosenAssembler->keywords; }
 }
+int getSize(enum e_bt type)
+{
+    TYPE tp;
+    memset(&tp, 0, sizeof(tp));
+    tp.type = type; /* other fields don't matter, we never call this for structured types*/
+    tp.rootType = &tp;
+    return basesize(Optimizer::chosenAssembler->arch->type_sizes, &tp);
+}
+int getBaseAlign(enum e_bt type)
+{
+    TYPE tp;
+    if (type == bt_auto)
+        type = bt_struct;
+    tp.type = type; /* other fields don't matter, we never call this for structured types*/
+    tp.array = tp.vla = false;
+    tp.rootType = &tp;
+    return basesize(Optimizer::chosenAssembler->arch->type_align, &tp);
+}
+long getautoval(long val)
+{
+    if (Optimizer::chosenAssembler->arch->spgrowsup)
+        return -val;
+    else
+        return val;
+}
+int funcvaluesize(int val)
+{
+    if (Optimizer::chosenAssembler->arch->param_offs)
+        return (Optimizer::chosenAssembler->arch->param_offs(val));
+    return 0;
+}
+int alignment(int sc, TYPE* tp)
+{
+    (void)sc;
+    return basesize(Optimizer::chosenAssembler->arch->type_align, tp);
+}
+int getAlign(int sc, TYPE* tp)
+{
+    int align = basesize(Optimizer::chosenAssembler->arch->type_align, tp);
+    if (sc != sc_auto)
+    {
+        int pack = preProcessor->GetPack();
+        if (pack < align)
+            align = pack;
+    }
+    if (Optimizer::chosenAssembler->arch->align)
+        align = Optimizer::chosenAssembler->arch->align(align);
+    if (isstructured(tp) && basetype(tp)->sp->sb->attribs.inheritable.structAlign > align)
+        align = basetype(tp)->sp->sb->attribs.inheritable.structAlign;
+    return align;
+}
+const char* getUsageText(void) { return Optimizer::chosenAssembler->usage_text; }
+KEYWORD* GetProcKeywords(void) { return (KEYWORD*)Optimizer::chosenAssembler->keywords; }
+}  // namespace Parser

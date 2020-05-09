@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include "Instruction.h"
@@ -346,13 +346,13 @@ const char* Lexer::preDataGas =
     "%endmacro\n"
     "%macro .fill 0+ .native\n"
     "    [fill %1]\n"
-    "%endmacro\n"   
+    "%endmacro\n"
     "%macro .rept 1 .native\n"
     "    %rep %1\n"
-    "%endmacro\n"   
+    "%endmacro\n"
     "%macro .endr 0 .native\n"
     "    %endrep\n"
-    "%endmacro\n" 
+    "%endmacro\n"
     "%macro	.dc.a	0+ .native\n"
     "	[dd %1]\n"
     "%endmacro\n"
@@ -485,9 +485,9 @@ const char* Lexer::preDataGas =
     "%macro    .type 0+ .native\n"
     "%endmacro\n"
     "%macro .func 0+ .native\n"
-    "%endmacro\n"   
+    "%endmacro\n"
     "%macro .endfunc 0 .native\n"
-    "%endmacro\n"   
+    "%endmacro\n"
     "%macro .weak 0+ .nolist\n"
     "    [unknowndirective \".weak\"]\n"
     "%endmacro\n"
@@ -671,8 +671,8 @@ const char* Lexer::preDataGas =
     "%endmacro\n"
     "%macro .list 0+ .nolist\n"
     "%endmacro\n"
-//    "%macro .nolist 0+ .nolist\n"
-//    "%endmacro\n"
+    //    "%macro .nolist 0+ .nolist\n"
+    //    "%endmacro\n"
     "%macro .psize 0+ .nolist\n"
     "%endmacro\n"
     "%macro .loc_mark_labels 0+ .nolist\n"
@@ -690,15 +690,13 @@ const char* Lexer::preDataGas =
     "%macro .stabs 0+ .nolist\n"
     "%endmacro\n"
     "%macro .val 0+ .nolist\n"
-    "%endmacro\n"
-;
+    "%endmacro\n";
 
 int InstructionParser::processorMode = 32;
 
 bool IsSymbolCharRoutine(const char* data, bool startOnly);
 
-
-void Instruction::RepRemoveCancellations(AsmExprNode *exp, bool commit, int &count, Section *sect[], bool sign[], bool plus)
+void Instruction::RepRemoveCancellations(AsmExprNode* exp, bool commit, int& count, Section* sect[], bool sign[], bool plus)
 {
     if (exp->GetType() == AsmExprNode::LABEL)
     {
@@ -904,9 +902,9 @@ void Instruction::Optimize(Section* sect, int pc, bool last)
                     {
                         fixup->SetResolved();
                         if (n == 32)
-                           *(unsigned *)(pdata + p) = expr->ival;
+                            *(unsigned*)(pdata + p) = expr->ival;
                         else
-                           *(unsigned long long *)(pdata + p) = expr->ival;
+                            *(unsigned long long*)(pdata + p) = expr->ival;
                     }
                     else
                     {
@@ -981,20 +979,20 @@ std::string InstructionParser::RewriteATTArg(const std::string& line)
         int npos = line.find_first_of("(", i);
         if (npos == std::string::npos)
         {
-            name = line. substr(i, npos - i);
+            name = line.substr(i, npos - i);
             if (!name.empty())
             {
                 attPotentialExterns.insert(name);
             }
             return "[" + seg + name + "]";
         }
-        name = line. substr(i, npos - i);
+        name = line.substr(i, npos - i);
         if (!name.empty())
         {
             attPotentialExterns.insert(name);
         }
         std::string primary, secondary, times;
-        i = npos+1;
+        i = npos + 1;
         for (; i < line.size(); i++)
             if (!isspace(line[i]))
                 break;
@@ -1008,57 +1006,56 @@ std::string InstructionParser::RewriteATTArg(const std::string& line)
 
             switch (splt.size())
             {
-            case 1:
-                if (splt[0] != "" && splt[0][0] == '%')
-                {
-                    primary = splt[0].substr(1);
-                    break;
-                }
-                // error
-                return line;
-            case 2:
-                if (splt[0] == "")
-                {
-                    if (splt[1] == "1")
+                case 1:
+                    if (splt[0] != "" && splt[0][0] == '%')
                     {
-                        return "[" + seg + name + "]";
-                    }
-                }
-                else if (splt[0][0] == '%')
-                {
-                    primary = splt[0].substr(1);
-                    if (splt[1] != "" && splt[1][0] == '%')
-                    {
-                        secondary = splt[1].substr(1);
+                        primary = splt[0].substr(1);
                         break;
                     }
-                }
-                // error
-                return line;
-            case 3:
-                if (splt[0] != "")
-                {
-                    if (splt[0][0] == '%')
+                    // error
+                    return line;
+                case 2:
+                    if (splt[0] == "")
+                    {
+                        if (splt[1] == "1")
+                        {
+                            return "[" + seg + name + "]";
+                        }
+                    }
+                    else if (splt[0][0] == '%')
+                    {
                         primary = splt[0].substr(1);
-                    else
-                        return "[" + seg + name + line.substr(i) + "]";
-                }
-                if (splt[1] != "")
-                {
-                    if (splt[1][0] == '%')
-                        secondary = splt[1].substr(1);
-                    else
-                        return "[" + seg + name + line.substr(i) + "]";
-                }
-                if (splt[2] != "")
-                {
-                    times = splt[2];
-                }
-                break;
-            default:
-                // error
-                return line;
-
+                        if (splt[1] != "" && splt[1][0] == '%')
+                        {
+                            secondary = splt[1].substr(1);
+                            break;
+                        }
+                    }
+                    // error
+                    return line;
+                case 3:
+                    if (splt[0] != "")
+                    {
+                        if (splt[0][0] == '%')
+                            primary = splt[0].substr(1);
+                        else
+                            return "[" + seg + name + line.substr(i) + "]";
+                    }
+                    if (splt[1] != "")
+                    {
+                        if (splt[1][0] == '%')
+                            secondary = splt[1].substr(1);
+                        else
+                            return "[" + seg + name + line.substr(i) + "]";
+                    }
+                    if (splt[2] != "")
+                    {
+                        times = splt[2];
+                    }
+                    break;
+                default:
+                    // error
+                    return line;
             }
             if (secondary.size())
             {
@@ -1084,32 +1081,32 @@ std::string InstructionParser::RewriteATTArg(const std::string& line)
 }
 void InstructionParser::PreprendSize(std::string& val, int sz)
 {
-    const char *str = "";
+    const char* str = "";
     switch (sz)
     {
-    case 1:
-        str = "byte ";
-        break;
-    case 2:
-        str = "word ";
-        break;
-    case 4:
-    case -4:
-        str = "dword ";
-        break;
-    case 8:
-    case -8:
-        str = "qword ";
-        break;
-    case -10:
-        str = "tword ";
-        break;
+        case 1:
+            str = "byte ";
+            break;
+        case 2:
+            str = "word ";
+            break;
+        case 4:
+        case -4:
+            str = "dword ";
+            break;
+        case 8:
+        case -8:
+            str = "qword ";
+            break;
+        case -10:
+            str = "tword ";
+            break;
     }
     val = std::string(str) + val;
 }
 
-std::string InstructionParser::ParsePreInstruction(const std::string& op, bool doParse) 
-{ 
+std::string InstructionParser::ParsePreInstruction(const std::string& op, bool doParse)
+{
     std::string parse = op;
     while (true)
     {
@@ -1121,127 +1118,127 @@ std::string InstructionParser::ParsePreInstruction(const std::string& op, bool d
         npos = parse.find_first_of("}");
         if (npos == std::string::npos)
             break;
-        Errors::Warning("Unknown qualifier " +  parse.substr(0, npos+1));
+        Errors::Warning("Unknown qualifier " + parse.substr(0, npos + 1));
 
         parse = parse.substr(npos + 1);
     }
-    return parse; 
+    return parse;
 }
 
 std::string InstructionParser::RewriteATT(int& op, const std::string& line, int& size1, int& size2)
 {
     switch (op)
     {
-    case op_call:
-    case op_jmp:
-    {
-        int npos = line.find_first_not_of("\t\v \r\n");
-        if (npos != std::string::npos)
-            if (line[npos] == '*')
-            {
-                if (line.find_first_of("%") != std::string::npos)
+        case op_call:
+        case op_jmp:
+        {
+            int npos = line.find_first_not_of("\t\v \r\n");
+            if (npos != std::string::npos)
+                if (line[npos] == '*')
                 {
-                    return "[" + RewriteATTArg(line.substr(npos + 1)) + "]";
-                }
-                else
-                {
-                    std::string name = line.substr(npos + 1);
-                    if (!name.empty())
+                    if (line.find_first_of("%") != std::string::npos)
                     {
-                        attPotentialExterns.insert(name);
+                        return "[" + RewriteATTArg(line.substr(npos + 1)) + "]";
                     }
-                    return "[" + name + "]";
+                    else
+                    {
+                        std::string name = line.substr(npos + 1);
+                        if (!name.empty())
+                        {
+                            attPotentialExterns.insert(name);
+                        }
+                        return "[" + name + "]";
+                    }
                 }
+            if (!line.empty())
+            {
+                attPotentialExterns.insert(line);
             }
-        if (!line.empty())
-        {
-            attPotentialExterns.insert(line);
+            return line;
         }
-        return line;
-    }
-    case 10000://lcall
-        op = op_call;
-        if (!line.empty())
-        {
-            attPotentialExterns.insert(line);
-        }
-        return "far [" + line + "]";
-    case 10001://ljmp
-        op = op_jmp;
-        if (!line.empty())
-        {
-            attPotentialExterns.insert(line);
-        }
-        return "far [" + line + "]";
-    case op_ja:
-    case op_jae:
-    case op_jb:
-    case op_jbe:
-    case op_jc:
-    case op_jcxz:
-    case op_jecxz:
-    case op_je:
-    case op_jg:
-    case op_jge:
-    case op_jl:
-    case op_jle:
-    case op_jna:
-    case op_jnae:
-    case op_jnb:
-    case op_jnbe:
-    case op_jnc:
-    case op_jne:
-    case op_jng:
-    case op_jnge:
-    case op_jnl:
-    case op_jnle:
-    case op_jno:
-    case op_jnp:
-    case op_jns:
-    case op_jnz:
-    case op_jo:
-    case op_jp:
-    case op_jpe:
-    case op_jpo:
-    case op_js:
-    case op_jz:
-        if (!line.empty())
-        {
-            attPotentialExterns.insert(line);
-        }
-        return line;
-    case op_lods:
-    case op_stos:
-    case op_movs:
-    case op_cmps:
-    case op_scas:
-    case op_ins:
-    case op_outs:
-        if (op == op_movs)
-            op++;
-        switch (size1)
-        {
-        case 1:
-            op += 1;
+        case 10000:  // lcall
+            op = op_call;
+            if (!line.empty())
+            {
+                attPotentialExterns.insert(line);
+            }
+            return "far [" + line + "]";
+        case 10001:  // ljmp
+            op = op_jmp;
+            if (!line.empty())
+            {
+                attPotentialExterns.insert(line);
+            }
+            return "far [" + line + "]";
+        case op_ja:
+        case op_jae:
+        case op_jb:
+        case op_jbe:
+        case op_jc:
+        case op_jcxz:
+        case op_jecxz:
+        case op_je:
+        case op_jg:
+        case op_jge:
+        case op_jl:
+        case op_jle:
+        case op_jna:
+        case op_jnae:
+        case op_jnb:
+        case op_jnbe:
+        case op_jnc:
+        case op_jne:
+        case op_jng:
+        case op_jnge:
+        case op_jnl:
+        case op_jnle:
+        case op_jno:
+        case op_jnp:
+        case op_jns:
+        case op_jnz:
+        case op_jo:
+        case op_jp:
+        case op_jpe:
+        case op_jpo:
+        case op_js:
+        case op_jz:
+            if (!line.empty())
+            {
+                attPotentialExterns.insert(line);
+            }
+            return line;
+        case op_lods:
+        case op_stos:
+        case op_movs:
+        case op_cmps:
+        case op_scas:
+        case op_ins:
+        case op_outs:
+            if (op == op_movs)
+                op++;
+            switch (size1)
+            {
+                case 1:
+                    op += 1;
+                    break;
+                case 2:
+                    op += 2;
+                    break;
+                case 4:
+                case -4:
+                    op += 3;
+                    break;
+                case 8:
+                case -8:
+                    op += 4;
+                    break;
+            }
+            return line;
+        case op_push:
+        case op_pop:
+            if (size1 == 0)
+                size1 = processorMode / 8;
             break;
-        case 2:
-            op += 2;
-            break;
-        case 4:
-        case -4:
-            op += 3;
-            break;
-        case 8:
-        case -8:
-            op += 4;
-            break;
-        }
-        return line;
-    case op_push:
-    case op_pop:
-        if (size1 == 0)
-             size1 = processorMode/8;
-        break;
     }
     std::vector<std::string> splt, splt2;
     // split arguments out into multiple strings
@@ -1251,7 +1248,7 @@ std::string InstructionParser::RewriteATT(int& op, const std::string& line, int&
     {
         splt2.push_back(RewriteATTArg(s));
     }
-    if (size1 == 4) // 'l'
+    if (size1 == 4)  // 'l'
     {
         if (op >= op_f2xm1 && op <= op_fyl2xp1)
         {
@@ -1271,7 +1268,7 @@ std::string InstructionParser::RewriteATT(int& op, const std::string& line, int&
                 PreprendSize(splt2[0], size1);
         }
         // the other combination has a destination which MUST BE a reg so we don't consider it.
-        else 
+        else
         {
             if (splt2[1].find_first_of("[") != std::string::npos)
                 if (splt[0].find_first_of("%") == std::string::npos)
@@ -1287,30 +1284,30 @@ std::string InstructionParser::RewriteATT(int& op, const std::string& line, int&
         {
             switch (op)
             {
-            case op_fsub:
-                op = op_fsubr;
-                break;
-            case op_fsubp:
-                op = op_fsubrp;
-                break;
-            case op_fsubr:
-                op = op_fsub;
-                break;
-            case op_fsubrp:
-                op = op_fsubp;
-                break;
-            case op_fdiv:
-                op = op_fdivr;
-                break;
-            case op_fdivp:
-                op = op_fdivrp;
-                break;
-            case op_fdivr:
-                op = op_fdiv;
-                break;
-            case op_fdivrp:
-                op = op_fdivp;
-                break;
+                case op_fsub:
+                    op = op_fsubr;
+                    break;
+                case op_fsubp:
+                    op = op_fsubrp;
+                    break;
+                case op_fsubr:
+                    op = op_fsub;
+                    break;
+                case op_fsubrp:
+                    op = op_fsubp;
+                    break;
+                case op_fdiv:
+                    op = op_fdivr;
+                    break;
+                case op_fdivp:
+                    op = op_fdivrp;
+                    break;
+                case op_fdivr:
+                    op = op_fdiv;
+                    break;
+                case op_fdivrp:
+                    op = op_fdivp;
+                    break;
             }
         }
     }
@@ -1326,10 +1323,10 @@ std::string InstructionParser::RewriteATT(int& op, const std::string& line, int&
             case op_rcr:
             case op_rol:
             case op_ror:
-               splt2.push_back("");
-               splt2[1] = splt2[0];
-               splt2[0] = "1";
-               break;
+                splt2.push_back("");
+                splt2[1] = splt2[0];
+                splt2[0] = "1";
+                break;
         }
     }
     std::string rv;

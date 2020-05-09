@@ -24,9 +24,9 @@
  */
 namespace Parser
 {
-    extern LAMBDA* lambdas;
+extern LAMBDA* lambdas;
 
-    void lambda_init(void);
-    SYMBOL* lambda_capture(SYMBOL* sym, enum e_cm mode, bool isExplicit);
-    LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, int flags);
-}
+void lambda_init(void);
+SYMBOL* lambda_capture(SYMBOL* sym, enum e_cm mode, bool isExplicit);
+LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, int flags);
+}  // namespace Parser

@@ -31,7 +31,7 @@ typedef struct _memblk_
     long left;
     char m[1]; /* memory area */
 } MEMBLK;
-void memfunc(const char *a);
+void memfunc(const char* a);
 void mem_summary(void);
 void* memAlloc(MEMBLK** arena, int size, bool clear = true);
 void memFree(MEMBLK** arena, int* peak);
@@ -51,7 +51,7 @@ void* cAlloc(int size);
 void cFree(void);
 void* sAlloc(int size);
 void sFree(void);
-void SetGlobalFlag(bool flag, bool &old);
+void SetGlobalFlag(bool flag, bool& old);
 void ReleaseGlobalFlag(bool old);
 bool GetGlobalFlag(void);
 char* litlate(const char* name);

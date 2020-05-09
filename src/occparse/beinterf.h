@@ -24,13 +24,13 @@
  */
 namespace Parser
 {
-    int needsAtomicLockFromType(TYPE* tp);
-    int getSize(enum e_bt type);
-    int getBaseAlign(enum e_bt type);
-    long getautoval(long val);
-    int funcvaluesize(int val);
-    int alignment(int sc, TYPE* tp);
-    int getAlign(int sc, TYPE* tp);
-    const char* getUsageText(void);
-    KEYWORD* GetProcKeywords(void);
-}
+int needsAtomicLockFromType(TYPE* tp);
+int getSize(enum e_bt type);
+int getBaseAlign(enum e_bt type);
+long getautoval(long val);
+int funcvaluesize(int val);
+int alignment(int sc, TYPE* tp);
+int getAlign(int sc, TYPE* tp);
+const char* getUsageText(void);
+KEYWORD* GetProcKeywords(void);
+}  // namespace Parser

@@ -23,20 +23,20 @@
  *
  */
 
-void diag(const char *fmt, ...);
+void diag(const char* fmt, ...);
 
 namespace Optimizer
 {
-    extern int tempSize;
+extern int tempSize;
 
-    extern BRIGGS_SET* killed;
-    extern int tempBottom, nextTemp;
+extern BRIGGS_SET* killed;
+extern int tempBottom, nextTemp;
 
-    SimpleExpression* anonymousVar(enum e_scc_type storage_class, SimpleType* tp);
-    IMODE* InitTempOpt(int size1, int size2);
-    void insertDefines(QUAD* head, BLOCK* b, int tnum);
-    void insertUses(QUAD* head, int dest);
-    void definesInfo(void);
-    void usesInfo(void);
-    void gatherLocalInfo(std::vector<SimpleSymbol*>& functionVariables);
-}
+SimpleExpression* anonymousVar(enum e_scc_type storage_class, SimpleType* tp);
+IMODE* InitTempOpt(int size1, int size2);
+void insertDefines(QUAD* head, BLOCK* b, int tnum);
+void insertUses(QUAD* head, int dest);
+void definesInfo(void);
+void usesInfo(void);
+void gatherLocalInfo(std::vector<SimpleSymbol*>& functionVariables);
+}  // namespace Optimizer

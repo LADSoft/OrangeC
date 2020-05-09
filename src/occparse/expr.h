@@ -24,37 +24,37 @@
  */
 namespace Parser
 {
-    extern int packIndex;
+extern int packIndex;
 
-    extern int argument_nesting;
+extern int argument_nesting;
 
-    extern Optimizer::LIST* importThunks;
+extern Optimizer::LIST* importThunks;
 
-    void expr_init(void);
-    void thunkForImportTable(EXPRESSION** exp);
-    void ValidateMSILFuncPtr(TYPE* dest, TYPE* src, EXPRESSION** exp);
-    EXPRESSION* exprNode(enum e_node type, EXPRESSION* left, EXPRESSION* right);
-    EXPRESSION* varNode(enum e_node type, SYMBOL* sym);
-    EXPRESSION* typeNode(TYPE* tp);
-    EXPRESSION* intNode(enum e_node type, long long val);
-    void checkauto(TYPE* tp1, int err);
-    void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp);
-    LEXEME* getInitList(LEXEME* lex, SYMBOL* funcsp, INITLIST** owner);
-    LEXEME* getArgs(LEXEME* lex, SYMBOL* funcsp, FUNCTIONCALL* funcparams, enum e_kw finish, bool allowPack, int flags);
-    LEXEME* getMemberInitializers(LEXEME* lex, SYMBOL* funcsp, FUNCTIONCALL* funcparams, enum e_kw finish, bool allowPack);
-    EXPRESSION* DerivedToBase(TYPE* tpn, TYPE* tpo, EXPRESSION* exp, int flags);
-    bool cloneTempStmt(STATEMENT** block, SYMBOL** found, SYMBOL** replace);
-    void CreateInitializerList(TYPE* initializerListTemplate, TYPE* initializerListType, INITLIST** lptr, bool operands, bool asref);
-    void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, bool implicit);
-    LEXEME* expression_arguments(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, int flags);
-    LEXEME* expression_unary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, bool* ismutable, int flags);
-    LEXEME* expression_cast(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, bool* ismutable, int flags);
-    void GetLogicalDestructors(EXPRESSION* top, EXPRESSION* cur);
-    LEXEME* expression_throw(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp);
-    LEXEME* expression_assign(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, bool* ismutable, int flags);
-    LEXEME* expression_comma(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, bool* ismutable, int flags);
-    LEXEME* expression_no_comma(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, bool* ismutable, int flags);
-    LEXEME* expression_no_check(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, int flags);
-    LEXEME* expression(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, int flags);
+void expr_init(void);
+void thunkForImportTable(EXPRESSION** exp);
+void ValidateMSILFuncPtr(TYPE* dest, TYPE* src, EXPRESSION** exp);
+EXPRESSION* exprNode(enum e_node type, EXPRESSION* left, EXPRESSION* right);
+EXPRESSION* varNode(enum e_node type, SYMBOL* sym);
+EXPRESSION* typeNode(TYPE* tp);
+EXPRESSION* intNode(enum e_node type, long long val);
+void checkauto(TYPE* tp1, int err);
+void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp);
+LEXEME* getInitList(LEXEME* lex, SYMBOL* funcsp, INITLIST** owner);
+LEXEME* getArgs(LEXEME* lex, SYMBOL* funcsp, FUNCTIONCALL* funcparams, enum e_kw finish, bool allowPack, int flags);
+LEXEME* getMemberInitializers(LEXEME* lex, SYMBOL* funcsp, FUNCTIONCALL* funcparams, enum e_kw finish, bool allowPack);
+EXPRESSION* DerivedToBase(TYPE* tpn, TYPE* tpo, EXPRESSION* exp, int flags);
+bool cloneTempStmt(STATEMENT** block, SYMBOL** found, SYMBOL** replace);
+void CreateInitializerList(TYPE* initializerListTemplate, TYPE* initializerListType, INITLIST** lptr, bool operands, bool asref);
+void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, bool implicit);
+LEXEME* expression_arguments(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, int flags);
+LEXEME* expression_unary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, bool* ismutable, int flags);
+LEXEME* expression_cast(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, bool* ismutable, int flags);
+void GetLogicalDestructors(EXPRESSION* top, EXPRESSION* cur);
+LEXEME* expression_throw(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp);
+LEXEME* expression_assign(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, bool* ismutable, int flags);
+LEXEME* expression_comma(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, bool* ismutable, int flags);
+LEXEME* expression_no_comma(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, bool* ismutable, int flags);
+LEXEME* expression_no_check(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, int flags);
+LEXEME* expression(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** exp, int flags);
 
-}
+}  // namespace Parser

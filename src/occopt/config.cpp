@@ -28,22 +28,21 @@
 #include "configx86.h"
 #include "ildata.h"
 
-
 namespace Optimizer
 {
-    ARCH_ASM* chosenAssembler;
-    ARCH_DEBUG* chosenDebugger;
+ARCH_ASM* chosenAssembler;
+ARCH_DEBUG* chosenDebugger;
 
-    enum asmTypes : int;
+enum asmTypes : int;
 
-    ARCH_ASM *assemblerInterfaces[] = { x86AssemblerInterface, msilAssemblerInterface };
+ARCH_ASM* assemblerInterfaces[] = {x86AssemblerInterface, msilAssemblerInterface};
 
-    static ARCH_ASM *assemblerInterface;
+static ARCH_ASM* assemblerInterface;
 
-    void SelectBackendData()
+void SelectBackendData()
+{
+    switch (architecture)
     {
-        switch (architecture)
-        {
         case ARCHITECTURE_MSIL:
             assemblerInterface = msilAssemblerInterface;
             break;
@@ -51,48 +50,48 @@ namespace Optimizer
             assemblerInterface = x86AssemblerInterface;
             break;
         default:
-            return; // failure
-        }
-        char assembler[100], debugger[100];
-        int i, rv;
-        assembler[0] = debugger[0] = 0;
-        if (cparams.prm_asmfile)
+            return;  // failure
+    }
+    char assembler[100], debugger[100];
+    int i, rv;
+    assembler[0] = debugger[0] = 0;
+    if (cparams.prm_asmfile)
+    {
+        const char* p = prm_assemblerSpecifier.c_str();
+        char* q = assembler;
+        cparams.prm_compileonly = true;
+        while (*p && !isspace(*p) && *p != ';')
+            *q++ = *p++;
+        *q = 0;
+        if (*p == ';')
         {
-            const char *p = prm_assemblerSpecifier.c_str();
-            char* q = assembler;
-            cparams.prm_compileonly = true;
-            while (*p && !isspace(*p) && *p != ';')
+            q = debugger;
+            p++;
+            while (*p && !isspace(*p))
                 *q++ = *p++;
             *q = 0;
-            if (*p == ';')
-            {
-                q = debugger;
-                p++;
-                while (*p && !isspace(*p))
-                    *q++ = *p++;
-                *q = 0;
-            }
         }
-        if (assembler[0])
-        {
-            ARCH_ASM* a = assemblerInterface;
-            while (a->name)
-            {
-                if (!strcmp(a->name, assembler))
-                {
-                    Optimizer::chosenAssembler = a;
-                    break;
-                }
-                a++;
-            }
-            if (!a->name)
-                Utils::fatal("Chosen assembler format '%s' not found", assembler);
-        }
-        else
-        {
-            Optimizer::chosenAssembler = assemblerInterface;
-        }
-        if (Optimizer::chosenAssembler->init)
-            Optimizer::chosenAssembler->init(&cparams, Optimizer::chosenAssembler, chosenDebugger);
     }
+    if (assembler[0])
+    {
+        ARCH_ASM* a = assemblerInterface;
+        while (a->name)
+        {
+            if (!strcmp(a->name, assembler))
+            {
+                Optimizer::chosenAssembler = a;
+                break;
+            }
+            a++;
+        }
+        if (!a->name)
+            Utils::fatal("Chosen assembler format '%s' not found", assembler);
+    }
+    else
+    {
+        Optimizer::chosenAssembler = assemblerInterface;
+    }
+    if (Optimizer::chosenAssembler->init)
+        Optimizer::chosenAssembler->init(&cparams, Optimizer::chosenAssembler, chosenDebugger);
 }
+}  // namespace Optimizer

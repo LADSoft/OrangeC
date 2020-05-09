@@ -1,25 +1,25 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #define _CRT_SECURE_NO_WARNINGS
@@ -175,18 +175,19 @@ void ppPragma::HandleWarning(Tokenizer& tk)
     else
     {
         p++;
-        while(*p)
+        while (*p)
         {
-            while (isspace(*p)) p++;
-            if (!strnicmp(p, "push",4))
+            while (isspace(*p))
+                p++;
+            if (!strnicmp(p, "push", 4))
             {
                 Warning::Instance()->Push();
                 p += 4;
             }
-            else if (!strnicmp(p, "pop",3))
+            else if (!strnicmp(p, "pop", 3))
             {
                 Warning::Instance()->Pop();
-                p+= 3;
+                p += 3;
             }
             else
             {
@@ -205,20 +206,23 @@ void ppPragma::HandleWarning(Tokenizer& tk)
                 {
                     break;
                 }
-                while (isspace(*p)) p++;
+                while (isspace(*p))
+                    p++;
                 if (*p++ == ':')
                 {
-                    while (isspace(*p)) p++;
+                    while (isspace(*p))
+                        p++;
                     while (isdigit(*p))
                     {
                         int w = 0;
                         while (isdigit(*p))
-                            w = w * 10 + ((*p++)-'0') ;
+                            w = w * 10 + ((*p++) - '0');
                         if (enable)
                             Warning::Instance()->ClearFlag(w, Warning::Disable);
                         else
                             Warning::Instance()->SetFlag(w, Warning::Disable);
-                        while (isspace(*p)) p++;
+                        while (isspace(*p))
+                            p++;
                     }
                 }
                 else
@@ -226,10 +230,11 @@ void ppPragma::HandleWarning(Tokenizer& tk)
                     break;
                 }
             }
-            while (isspace(*p)) p++;
+            while (isspace(*p))
+                p++;
             if (*p++ != ',')
                 break;
-       }
+        }
     }
 }
 void ppPragma::HandleSR(Tokenizer& tk, bool startup)
@@ -324,7 +329,7 @@ void ppPragma::HandleLibrary(Tokenizer& tk)
 }
 void ppPragma::HandleAlias(Tokenizer& tk)
 {
-   const Token* name = tk.Next();
+    const Token* name = tk.Next();
     if (name && name->IsIdentifier())
     {
         std::string id = name->GetId();
@@ -350,34 +355,38 @@ void ppPragma::HandleIgnoreGlobalInit(Tokenizer& tk)
     const Token* name = tk.Next();
     if (name && name->IsNumeric())
     {
-         ignoreGlobalInit = !!name->GetInteger();
+        ignoreGlobalInit = !!name->GetInteger();
     }
 }
 
 void ppPragma::HandlePushPopMacro(Tokenizer& tk, bool push)
 {
-   int n = 0;
-   std::string cache = tk.GetString();
-   const char *p = cache.c_str();
-   while (isspace(*p)) p++;
-   if (*p++ == '(')
-   {
-       while (isspace(*p)) p++;
-       if (*p++ == '"')
-       {
-           const char *start = p;
-           while(isalnum(*p) || *p == '_') p++;
-           const char *end = p;
-           if (*p++ == '"')
-           {
-               while (isspace(*p)) p++;
-               if (*p == ')')
-               {
-                   define->PushPopMacro(std::string(start, end - start), push);
-               }
-           }
-       }
-   }
+    int n = 0;
+    std::string cache = tk.GetString();
+    const char* p = cache.c_str();
+    while (isspace(*p))
+        p++;
+    if (*p++ == '(')
+    {
+        while (isspace(*p))
+            p++;
+        if (*p++ == '"')
+        {
+            const char* start = p;
+            while (isalnum(*p) || *p == '_')
+                p++;
+            const char* end = p;
+            if (*p++ == '"')
+            {
+                while (isspace(*p))
+                    p++;
+                if (*p == ')')
+                {
+                    define->PushPopMacro(std::string(start, end - start), push);
+                }
+            }
+        }
+    }
 }
 
 int ppPragma::StdPragmas()

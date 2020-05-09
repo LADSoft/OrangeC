@@ -68,7 +68,6 @@ namespace Parser
     }
 #endif
 
-    extern int diagcount;
 
     Optimizer::LIST* clist = 0;
     int showVersion = false;

@@ -36,8 +36,6 @@ static MEMBLK* live;
 static MEMBLK* templates;
 static MEMBLK* conflicts;
 
-static std::map<int, unsigned> vv;
-static std::map<std::string, unsigned> xx;
 static bool globalFlag=true;
 static int globalPeak, localPeak, optPeak, tempsPeak, aliasPeak, livePeak, templatePeak, conflictPeak;
 
@@ -54,10 +52,6 @@ extern VOID
          );
 #endif
 //#define DEBUG
-void memfunc(const char *a)
-{
-//    xx[a]++;
-}
 void mem_summary(void)
 {
     printf("Memory used:\n");
@@ -70,10 +64,6 @@ void mem_summary(void)
     printf("\tLive peak %dK\n", (livePeak + 1023) / 1024);
     printf("\tConflict peak %dK\n", (conflictPeak + 1023) / 1024);
     globalPeak = localPeak = optPeak = tempsPeak = aliasPeak = livePeak = conflictPeak = 0;
-for (auto v : vv)
-	printf("%d, %d\n", v.first, v.second);
-for (auto v : xx)
-    printf("%s, %d\n", v.first.c_str(), v.second);
 }
 static MEMBLK* galloc(MEMBLK** arena, int size)
 {
@@ -90,7 +80,6 @@ static MEMBLK* galloc(MEMBLK** arena, int size)
 }
 void* memAlloc(MEMBLK** arena, int size, bool clear)
 {
-//vv[size] += size;
     MEMBLK* selected = *arena;
     void* rv;
     if (!selected || selected->left < size)

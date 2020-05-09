@@ -73,7 +73,7 @@ namespace Parser
     bool fittedConst(TYPE* tp, EXPRESSION* exp);
     bool isarithmeticconst(EXPRESSION* exp);
     bool isconstaddress(EXPRESSION* exp);
-    SYMBOL* (clonesym)(const char *func, SYMBOL* sym_in, bool full);
+    SYMBOL* (clonesym)(SYMBOL* sym_in, bool full);
     e_bt btmax(e_bt left, e_bt right);
     TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool minimizeInt, TYPE* atp);
     EXPRESSION* RemoveAutoIncDec(EXPRESSION* exp);

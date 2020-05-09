@@ -97,23 +97,6 @@ namespace occmsil
     void CacheStatic(Optimizer::SimpleSymbol* sp);
     std::string _dll_name(const char* name);
 
-    extern std::map<Optimizer::SimpleSymbol*, Value*, byName> externalMethods;
-    extern std::map<Optimizer::SimpleSymbol*, Value*, byName> externalList;
-    extern std::map<Optimizer::SimpleSymbol*, Value*, byName> globalMethods;
-    extern std::map<Optimizer::SimpleSymbol*, Value*, byName> globalList;
-    extern std::map<Optimizer::SimpleSymbol*, Value*, byLabel> staticMethods;
-    extern std::map<Optimizer::SimpleSymbol*, Value*, byLabel> staticList;
-    extern std::map<Optimizer::SimpleSymbol*, MethodSignature*, byName> pinvokeInstances;
-    extern std::map<Optimizer::SimpleSymbol*, Param*, byName> paramList;
-    extern std::multimap<std::string, MethodSignature*> pInvokeReferences;
-
-    extern std::map<std::string, Value*> startups, rundowns, tlsstartups, tlsrundowns;
-
-    extern std::vector<Local*> localList;
-    extern std::map<std::string, Type*> typeList;
-    extern std::map<Optimizer::SimpleSymbol*, Value*, byField> fieldList;
-    extern std::map<std::string, MethodSignature*> arrayMethods;
-
     void parse_pragma(const char* kw, const char* tag)
     {
         if (Utils::iequal(kw, "netlib"))

@@ -562,6 +562,7 @@ namespace Parser
         const char* file;
     } VLASHIM;
 
+    extern int diagcount;
     extern int currentErrorLine;
     extern SYMBOL* theCurrentFunc;
     extern enum e_kw skim_end[];

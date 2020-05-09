@@ -53,7 +53,6 @@ struct swlist
     struct swlist* next;
     int lab;
 };
-extern int uniqueId;
 
 static int fstackid;
 static int inframe;

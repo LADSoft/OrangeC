@@ -37,6 +37,8 @@
 #include "help.h"
 #include "declcons.h"
 #include "types.h"
+#include "lex.h"
+
 #ifdef PARSER_ONLY
 namespace CompletionCompiler
 {
@@ -54,11 +56,6 @@ namespace Parser
     int matchOverloadLevel;
 
     static Optimizer::LIST* usingDirectives;
-
-#ifdef PARSER_ONLY
-    extern HASHTABLE* kwhash;
-    extern HASHTABLE* labelSyms;
-#endif
 
     void syminit(void)
     {

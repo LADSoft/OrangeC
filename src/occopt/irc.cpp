@@ -66,7 +66,6 @@
  * we are done with the optimizations that require that assumption to hold so we
  * can start replacing imodes wholesale without regard for it.
  */
-extern int has_double;
 
 namespace Optimizer
 {

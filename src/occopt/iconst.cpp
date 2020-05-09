@@ -1880,7 +1880,6 @@ namespace Optimizer
         }
     }
     /* propagate constants as far as possible, and remove dead blocks */
-    extern QUAD* intermed_head;
     void ConstantFlow(void)
     {
         int i;

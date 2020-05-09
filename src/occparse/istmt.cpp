@@ -60,9 +60,6 @@ Optimizer::SimpleSymbol* currentFunction;
 
 namespace Parser
 {
-#ifdef DUMP_GCSE_INFO
-    extern FILE* icdFile;
-#endif
 
     Optimizer::IMODE* returnImode;
     int retcount;

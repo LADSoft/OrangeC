@@ -43,8 +43,6 @@
 #include "declcons.h"
 #include "help.h"
 
-extern void memfunc(const char *);
-
 namespace Parser
 {
 
@@ -1775,7 +1773,7 @@ bool ismember(SYMBOL* sym)
                 return false;
         }
     }
-    SYMBOL* (clonesym)(const char *func, SYMBOL* sym_in, bool full)
+    SYMBOL* (clonesym)(SYMBOL* sym_in, bool full)
     {
         SYMBOL* rv= (SYMBOL*)nzAlloc(sizeof(SYMBOL));
         *rv = *sym_in;
@@ -1783,7 +1781,6 @@ bool ismember(SYMBOL* sym)
         {
             if (full)
             {
-                memfunc(func);
                 rv->sb = (sym::_symbody*)nzAlloc(sizeof(sym::_symbody));
                 *rv->sb = *sym_in->sb;
             }

@@ -1765,7 +1765,6 @@ namespace Parser
         if (linesHead)
         {
             lex->linedata = linesHead;
-printf("%s\n", lex->linedata);
         }
         return last = lex;
     }

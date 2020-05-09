@@ -1282,8 +1282,6 @@ namespace Optimizer
     }
 
     /*-------------------------------------------------------------------------*/
-    extern BLOCK** blockArray;
-    extern int blockCount;
     void put_code(Optimizer::QUAD* q)
     /*
      *      output a generic instruction.

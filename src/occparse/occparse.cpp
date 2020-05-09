@@ -87,8 +87,9 @@ namespace DotNetPELib
     class PELib;
 }
 #ifdef PARSER_ONLY
-    DotNetPELib::PELib* peLib;
+DotNetPELib::PELib* peLib;
 #endif
+
 #ifdef PARSER_ONLY
 namespace CompletionCompiler
 {

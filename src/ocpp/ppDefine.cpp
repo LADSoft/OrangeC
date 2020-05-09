@@ -1243,7 +1243,7 @@ int ppDefine::Process(std::string& line, bool leavePlaceholder)
             int pos = p;
             if (p != last)
                 rv += line.substr(last, p - last);
-            while ((!current || p < current->newEnd) && (line[p] == REPLACED_TOKENIZING || (!leavePlaceholder&& line[p] == MACRO_PLACEHOLDER) || line[p] == REPLACED_ALREADY))
+            while ((!current || p <= current->newEnd) && (line[p] == REPLACED_TOKENIZING || (!leavePlaceholder&& line[p] == MACRO_PLACEHOLDER) || line[p] == REPLACED_ALREADY))
                 p++;
             last = p;
             if (current)

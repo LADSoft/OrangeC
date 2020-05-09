@@ -7103,6 +7103,9 @@ namespace Parser
     {
         if (!cur || cur->type == en_land || cur->type == en_lor || cur->type == en_cond)
             return;
+        // nots are genned with a branch, so, get past them...
+        while (top->type == en_not)
+            top = top->left;
         if (cur->type == en_func)
         {
             INITLIST* args = cur->v.func->arguments;
@@ -7114,6 +7117,21 @@ namespace Parser
             if (cur->v.func->returnSP)
             {
                 SYMBOL* sym = cur->v.func->returnSP;
+                if (!sym->sb->destructed && sym->sb->dest && sym->sb->dest->exp)
+                {
+                    Optimizer::LIST* listitem;
+                    sym->sb->destructed = true;
+                    listitem = (Optimizer::LIST*)(Optimizer::LIST*)Alloc(sizeof(Optimizer::LIST));
+                    listitem->data = sym->sb->dest->exp;
+                    listitem->next = top->destructors;
+                    top->destructors = listitem;
+                }
+            }
+            else if (cur->v.func->sp->sb->isConstructor)
+            {
+                // it is going to be a local symbol if we get here...
+                EXPRESSION *exp = cur->v.func->thisptr;
+                SYMBOL *sym = exp->v.sp;
                 if (!sym->sb->destructed && sym->sb->dest && sym->sb->dest->exp)
                 {
                     Optimizer::LIST* listitem;

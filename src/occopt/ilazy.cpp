@@ -968,7 +968,7 @@ static void HandleRO(QUAD* after, int tn)
             }
             after = after->back;
 
-        } while (!after->OCP && after->dc.opcode != i_label);
+        } while (!after->OCP && after->dc.opcode != i_label && after->dc.opcode != i_tag);
 }
 static void MoveExpressions(void)
 {

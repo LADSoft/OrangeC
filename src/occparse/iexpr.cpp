@@ -771,8 +771,9 @@ Optimizer::IMODE* gen_udivide(SYMBOL* funcsp, EXPRESSION* node, int flags, int s
                 }
                 ChooseMultiplier(d >> pre, N - pre, &m, &post, &ld);
             }
+
             if (d == 1)
-                return num;
+               return mod ? Optimizer::make_immed(ISZ_UINT, 0) : num;
             else if (d == 1 << l)
             {
                 if (mod)
@@ -871,8 +872,14 @@ Optimizer::IMODE* gen_sdivide(SYMBOL* funcsp, EXPRESSION* node, int flags, int s
                 num = ap1;
             }
             if (ad == 1)
-                ap = num;
+               return mod ? Optimizer::make_immed(ISZ_UINT, 0) : num;
             //                q = ad;
+            else if (d == (1 << l) && !mod)
+            {
+                ap2 = Optimizer::tempreg(n, 0);
+                Optimizer::gen_icode(Optimizer::i_asr, ap2, num, Optimizer::make_immed(ISZ_UINT, l));
+                return ap2;
+            }
             else if (ad == 1 << l)
             {
                 ap2 = Optimizer::tempreg(n, 0);

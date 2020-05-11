@@ -1654,6 +1654,12 @@ int opt0(EXPRESSION** node)
                 default:
                     break;
                 case 7:
+                    if (ep->right->v.i == 1)
+                    {
+                        ep->v.i = 0;
+                        ep->type = en_c_i;
+                    }
+                    break;
                 case 1:
                 case 2:
                 case 3:

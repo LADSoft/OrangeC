@@ -1408,8 +1408,6 @@ void gen_goto(Optimizer::QUAD* q, enum e_opcode pos, enum e_opcode neg, enum e_o
 
         getAmodes(q, &opa, right, &aprl, &aprh);
         getAmodes(q, &opa, left, &apll, &aplh);
-        getAmodes(q, &opa, right, &aprl, &aprh);
-        getAmodes(q, &opa, left, &apll, &aplh);
         if (flt == op_je || flt == op_jne)
         {
             gen_code_sse(op_ucomiss, op_ucomisd, left->size, apll, aprl);

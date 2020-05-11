@@ -773,7 +773,7 @@ Optimizer::IMODE* gen_udivide(SYMBOL* funcsp, EXPRESSION* node, int flags, int s
             }
 
             if (d == 1)
-               return mod ? Optimizer::make_immed(ISZ_UINT, 0) : num;
+               return num;
             else if (m >= oneshl32)
             {
                 ap3 = Optimizer::tempreg(n, 0);
@@ -860,7 +860,7 @@ Optimizer::IMODE* gen_sdivide(SYMBOL* funcsp, EXPRESSION* node, int flags, int s
                 num = ap1;
             }
             if (ad == 1)
-               return mod ? Optimizer::make_immed(ISZ_UINT, 0) : num;
+               ap = num;
             //                q = ad;
             else if (ad == 1 << l)
             {

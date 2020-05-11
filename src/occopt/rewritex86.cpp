@@ -1702,10 +1702,10 @@ int x86_examine_icode(QUAD* head)
                         head->dc.opcode = i_setge;
                         break;
                     case i_jge:
-                        head->dc.opcode = i_jl;
+                        head->dc.opcode = i_jle;
                         break;
                     case i_jg:
-                        head->dc.opcode = i_jle;
+                        head->dc.opcode = i_jl;
                         break;
                     default:
                         doWorking = false;

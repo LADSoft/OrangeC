@@ -8,6 +8,10 @@ void test(double d)
 		printf("1");
 	else
 		printf("0");
+	if (d != d)
+		printf("1");
+	else
+		printf("0");
 	if (3.0 < d)
 		printf("1");
 	else
@@ -17,6 +21,7 @@ void test(double d)
 	else
 		printf("0");
 	printf("%d", d == d);
+	printf("%d", d != d);
 	printf("%d", 3.0 < d);
 	printf("%d\n", 3.0 > d);
 }

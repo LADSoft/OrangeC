@@ -1688,6 +1688,57 @@ int x86_examine_icode(QUAD* head)
                         changed = true;
                     }
                 }
+                else
+                {
+                    bool doWorking = true;
+                    // floating point compares on this architecture require to use setae/seta, otherwise the C flag may be set for a nan.
+                    // if it is one of the other values swap the regs and the type
+                    switch (head->dc.opcode)
+                    {
+                    case i_setle:
+                        head->dc.opcode = i_setg;
+                        break;
+                    case i_setl:
+                        head->dc.opcode = i_setge;
+                        break;
+                    case i_jge:
+                        head->dc.opcode = i_jl;
+                        break;
+                    case i_jg:
+                        head->dc.opcode = i_jle;
+                        break;
+                    default:
+                        doWorking = false;
+                        break;
+                    }
+                    if (doWorking)
+                    {
+                        IMODE *temp = head->dc.left;
+                        head->dc.left = head->dc.right;
+                        head->dc.right = temp;
+                        int flags = head->temps & TEMP_ANS;
+                        if (head->temps & TEMP_LEFT)
+                            flags |= TEMP_RIGHT;
+                        if (head->temps & TEMP_RIGHT)
+                            flags |= TEMP_LEFT;
+                        head->temps = flags;
+                    }
+                    if (head->dc.left->mode != i_direct || head->dc.left->offset->type != se_tempref)
+                    {
+                        IMODE* temp;
+                        QUAD* q;
+                        temp = AllocateTemp(head->dc.left->size);
+                        //						tempInfo[tempCount-1] = temp->offset;
+                        q = (QUAD*)beLocalAlloc(sizeof(QUAD));
+                        q->dc.opcode = i_assn;
+                        q->ans = temp;
+                        q->dc.left = head->dc.left;
+                        head->dc.left = temp;
+                        head->temps |= TEMP_LEFT;
+                        InsertInstruction(head->back, q);
+                        changed = true;
+                    }
+                }
                 break;
             case i_sub:
                 if (head->dc.left->mode == i_immed && (head->dc.left->offset->type == se_auto))

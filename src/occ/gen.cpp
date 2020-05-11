@@ -1171,38 +1171,38 @@ void gen_xset(Optimizer::QUAD* q, enum e_opcode pos, enum e_opcode neg, enum e_o
     {
         getAmodes(q, &opa, right, &aprl, &aprh);
         getAmodes(q, &opa, left, &apll, &aplh);
-        if (apll->mode == am_xmmreg)
+        if (flt == op_sete || flt == op_setne)
+        {
             gen_code_sse(op_ucomiss, op_ucomisd, left->size, apll, aprl);
-        else
-            gen_code_sse(op_ucomiss, op_ucomisd, left->size, aprl, apll);
-        getAmodes(q, &opa, q->ans, &apal, &apah);
-        if (apll->mode == am_xmmreg)
-        {
+            getAmodes(q, &opa, q->ans, &apal, &apah);
+            if (flt == op_sete)
+                flt = op_setnp;
+            else
+                flt = op_setp;
+            if ((apal->mode != am_dreg || apal->preg != EAX) && live(apll->liveRegs, EAX))
+                gen_code(op_push, makedreg(EAX), nullptr);
+            gen_code(op_lahf, nullptr, nullptr);
+            // if the 'parity' and 'zero' flags are the same, they are not equal
+            // otherwise the zero flag will be set so they are equal
+            gen_codes(op_test, ISZ_UCHAR, makedreg(AH), aimmed(0x44));
+            if ((apal->mode != am_dreg || apal->preg != EAX) && live(apll->liveRegs, EAX))
+                gen_code(op_pop, makedreg(EAX), nullptr);
             gen_codes(flt, ISZ_UCHAR, apal, 0);
+            gen_codes(op_and, ISZ_UINT, apal, aimmed(1));
+            return;
         }
         else
         {
-            switch (flt)
-            {
-                case op_setc:
-                    flt = op_seta;
-                    break;
-                case op_seta:
-                    flt = op_setc;
-                    break;
-                case op_setbe:
-                    flt = op_setae;
-                    break;
-                case op_setae:
-                    flt = op_setbe;
-                    break;
-                default:
-                    break;
-            }
+            // have to use seta/setae throughout, because
+            // it is the only way to get a valid state from the carry flag
+            // (nans will set it)
+            // setae/seta are selected in rewritex86 module
+            gen_code_sse(op_comiss, op_comisd, left->size, apll, aprl);
+            getAmodes(q, &opa, q->ans, &apal, &apah);
             gen_codes(flt, ISZ_UCHAR, apal, 0);
+            gen_codes(op_and, ISZ_UINT, apal, aimmed(1));
+            return;
         }
-        gen_codes(op_and, ISZ_UINT, apal, aimmed(1));
-        return;
     }
     getAmodes(q, &opa, left, &apll, &aplh);
     getAmodes(q, &opa, right, &aprl, &aprh);
@@ -1408,31 +1408,33 @@ void gen_goto(Optimizer::QUAD* q, enum e_opcode pos, enum e_opcode neg, enum e_o
 
         getAmodes(q, &opa, right, &aprl, &aprh);
         getAmodes(q, &opa, left, &apll, &aplh);
-        if (apll->mode == am_xmmreg)
+        getAmodes(q, &opa, right, &aprl, &aprh);
+        getAmodes(q, &opa, left, &apll, &aplh);
+        if (flt == op_je || flt == op_jne)
         {
             gen_code_sse(op_ucomiss, op_ucomisd, left->size, apll, aprl);
+            if (flt == op_je)
+                flt = op_jnp;
+            else
+                flt = op_jp;
+            if (live(apll->liveRegs, EAX))
+                gen_code(op_push, makedreg(EAX), nullptr);
+            gen_code(op_lahf, nullptr, nullptr);
+            // if the 'parity' and 'zero' flags are the same, they are not equal
+            // otherwise the zero flag will be set so they are equal
+            gen_codes(op_test, ISZ_UCHAR, makedreg(AH), aimmed(0x44));
+            if (live(apll->liveRegs, EAX))
+                gen_code(op_pop, makedreg(EAX), nullptr);
             gen_branch(flt, q->dc.v.label);
+            return;
         }
         else
         {
-            gen_code_sse(op_ucomiss, op_ucomisd, left->size, aprl, apll);
-            switch (flt)
-            {
-                case op_jb:
-                    flt = op_ja;
-                    break;
-                case op_ja:
-                    flt = op_jb;
-                    break;
-                case op_jae:
-                    flt = op_jbe;
-                    break;
-                case op_jbe:
-                    flt = op_jae;
-                    break;
-                default:
-                    break;
-            }
+            // have to use jb/jbe throughout, because
+            // it is the only way to get a valid state from the carry flag
+            // (nans will set it)
+            // jbe/jb are selected in rewritex86 module
+            gen_code_sse(op_comiss, op_comisd, left->size, apll, aprl);
             gen_branch(flt, q->dc.v.label);
         }
     }
@@ -5294,6 +5296,7 @@ void asm_atomic(Optimizer::QUAD* q)
                                         true            false
                 rm32       eax        rm32      reg     eax        rm32
             
+
 
 
 

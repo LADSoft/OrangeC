@@ -79,6 +79,10 @@ typedef struct dl
 #define CL 1
 #define DL 2
 #define BL 3
+#define AH 4
+#define CH 5
+#define DH 6
+#define BH 7
 #define CS 1
 #define DS 2
 #define ES 3

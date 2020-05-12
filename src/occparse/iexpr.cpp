@@ -774,6 +774,18 @@ Optimizer::IMODE* gen_udivide(SYMBOL* funcsp, EXPRESSION* node, int flags, int s
 
             if (d == 1)
                return num;
+            else if (d == 1 << l)
+            {
+                if (mod)
+                {
+                    gen_icode(Optimizer::i_and, ap, num, Optimizer::make_immed(ISZ_UINT, (1 << l) - 1));
+                    return ap;
+                }
+                ap5 = Optimizer::tempreg(n, 0);
+                gen_icode(Optimizer::i_lsr, ap5, num, Optimizer::make_immed(ISZ_UINT, l));
+
+                //                return n >> l;
+            }
             else if (m >= oneshl32)
             {
                 ap3 = Optimizer::tempreg(n, 0);
@@ -860,7 +872,11 @@ Optimizer::IMODE* gen_sdivide(SYMBOL* funcsp, EXPRESSION* node, int flags, int s
                 num = ap1;
             }
             if (ad == 1)
-               ap = num;
+            {
+                if (d< 0)
+                   gen_icode(Optimizer::i_neg, num, nullptr, nullptr);
+                return num;
+            }
             //                q = ad;
             else if (ad == 1 << l)
             {

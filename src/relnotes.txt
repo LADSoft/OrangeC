@@ -11,6 +11,11 @@ version 6.0.45:
     occ:   fix bug where lambdas generated at global scope created invalid assembly language output (object files were fine)
     occ:   when assigning a string or other struct to itself with a hook, invalid code was generated.
     occ:   attribute names which are keywords are now compiled correctly
+    occ:   i*i could be evaluated incorrectly due to a bug in the backend
+    occ:   fix bug in global optimizer: under rare conditions it could generate bad code.
+    occ:   fix comparison involving NANs to return false (!= returns true)
+    occ:   fix definition of FLT_MAX, DBL_MAX, LDBL_MAX to be correct
+    occ:   fix i%1 to return 0 instead of i, fix bugs and improve code generation for i%# where # is 1 or a power of 2
     occ/ocpp:  add #line statements to the preprocessed output
     ogrep: add -q option to make it quiet...    
 

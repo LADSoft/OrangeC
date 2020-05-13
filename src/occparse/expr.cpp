@@ -1468,7 +1468,9 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
                         sp3 = sp3->sb->mainsym;
                     if (sp4 && sp4->sb->mainsym)
                         sp4 = sp4->sb->mainsym;
-                    
+                    
+
+
 
 
 
@@ -8202,6 +8204,42 @@ LEXEME* expression_assign(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
                     *exp = exprNode(en_assign, dest, *exp);
                 }
             }
+        }
+        /* now if there is a cast on the LHS move it to the RHS */
+        EXPRESSION *expl = (*exp)->left;
+        if (castvalue(expl))
+        {
+            auto exp2 = expl;
+            auto exp3 = expl;
+            while (castvalue(exp2))
+            {
+                /* cast on the lhs isn't sign-extended */
+                switch (exp2->type)
+                {
+                case en_x_c:
+                    exp2->type = en_x_uc;
+                    break;
+                case en_x_s:
+                    exp2->type = en_x_us;
+                    break;
+                case en_x_i:
+                    exp2->type = en_x_ui;
+                    break;
+                case en_x_l:
+                    exp2->type = en_x_ul;
+                    break;
+                case en_x_ll:
+                    exp2->type = en_x_ull;
+                    break;
+
+                }
+                if (castvalue(exp2->left))
+                    exp3 = exp2->left;
+                exp2 = exp2->left;
+            }
+            (*exp)->left = exp2;
+            exp3->left = (*exp)->right;
+            (*exp)->right = exp3;
         }
     }
     if ((*exp)->type == en_pc || ((*exp)->type == en_func && !(*exp)->v.func->ascall))

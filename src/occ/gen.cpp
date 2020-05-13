@@ -3154,7 +3154,7 @@ void asm_mul(Optimizer::QUAD* q) /* signed multiply */
         }
         else
         {
-            if (samereg(apal, aprl) || apll->mode == am_immed)
+            if (apll->mode == am_immed)
             {
                 liveQualify(apal, apal, 0);
                 gen_codes(op_mov, q->ans->size, apal, aprl);
@@ -3163,11 +3163,16 @@ void asm_mul(Optimizer::QUAD* q) /* signed multiply */
             else
             {
                 liveQualify(apal, apal, 0);
-                gen_codes(op_mov, q->ans->size, apal, apll);
-                if (samereg(apll, aprl))
-                    gen_codes(op_imul, q->ans->size, apal, apal);
+                if (samereg(apal, aprl))
+                {
+                    gen_codes(op_mov, q->ans->size, apal, aprl);
+                    gen_codes(op_imul, q->ans->size, apal, apll);
+                }
                 else
+                {
+                    gen_codes(op_mov, q->ans->size, apal, apll);
                     gen_codes(op_imul, q->ans->size, apal, aprl);
+                }
             }
         }
     }

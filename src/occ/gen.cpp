@@ -3163,7 +3163,12 @@ void asm_mul(Optimizer::QUAD* q) /* signed multiply */
             else
             {
                 liveQualify(apal, apal, 0);
-                if (samereg(apal, aprl))
+                if (equal_address(apll, aprl))
+                {
+                    gen_codes(op_mov, q->ans->size, apal, apll);
+                    gen_codes(op_imul, q->ans->size, apal, apal);
+                }
+                else if (samereg(apal, aprl))
                 {
                     gen_codes(op_mov, q->ans->size, apal, aprl);
                     gen_codes(op_imul, q->ans->size, apal, apll);

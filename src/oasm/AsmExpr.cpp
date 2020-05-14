@@ -503,7 +503,7 @@ AsmExprNode* AsmExpr::Eval(AsmExprNode* n, int pc)
             }
             break;
     }
-    if (rv->GetLeft())
+    if (rv && rv->GetLeft())
     {
         rv->SetLeft(xleft.release());
         rv->SetRight(xright.release());
@@ -638,7 +638,6 @@ AsmExprNode* AsmExpr::primary()
     else
     {
         throw new std::runtime_error("Constant value expected");
-        rv = new AsmExprNode(0);
     }
     return rv;
 }

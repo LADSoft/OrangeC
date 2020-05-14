@@ -29,7 +29,7 @@
 LinkExpressionSymbol::~LinkExpressionSymbol() {}
 
 std::set<LinkExpressionSymbol*, leltcompare> LinkExpression::symbols;
-LinkExpression::LinkExpression(const LinkExpression& exp)
+LinkExpression::LinkExpression(const LinkExpression& exp) : unresolvedSection(nullptr)
 {
     op = exp.op;
     value = exp.value;
@@ -46,16 +46,24 @@ LinkExpression::LinkExpression(const LinkExpression& exp)
 }
 LinkExpression::LinkExpression(int section, ObjInt base, ObjInt offs) :
     op(eAdd),
+
     left(new LinkExpression()),
     right(new LinkExpression(offs)),
     symbolName(""),
     value(0),
-    sect(0)
+    sect(0),
+    unresolvedSection(nullptr)
 {
     left->op = eSection;
     left->value = base;
     left->sect = section;
 }
+LinkExpression::~LinkExpression()
+{
+     delete left;
+     delete right;
+}
+
 LinkExpression* LinkExpression::Eval(int section, int base, ObjInt offset)
 {
     if (left)

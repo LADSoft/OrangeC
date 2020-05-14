@@ -30,6 +30,11 @@
 #include "CmdFiles.h"
 #include <iostream>
 #include <cstring>
+#ifdef HAVE_UNISTD_H
+#    include <unistd.h>
+#else
+#    include <io.h>
+#endif
 
 void LibFiles::Add(ObjFile& obj)
 {
@@ -94,8 +99,17 @@ void LibFiles::Extract(FILE* stream, const ObjString& Name)
                 FILE* ostr = fopen(Name.c_str(), "wb");
                 if (ostr != nullptr)
                 {
-                    WriteData(ostr, p, (*it)->name);
-                    fclose(ostr);
+                    if (!WriteData(ostr, p, (*it)->name))
+                    {
+              
+                        std::cout << "Warning: Module '" << Name << "' not extracted, could not write output file" << std::endl;
+                        fclose(ostr);
+                        _unlink(Name.c_str());
+                    }
+                    else
+                    {
+                        fclose(ostr);
+                    }
                 }
                 else
                 {
@@ -155,14 +169,14 @@ void LibFiles::Replace(const ObjString& Name)
     }
     Add(Name);
 }
-void LibFiles::WriteData(FILE* stream, ObjFile* file, const ObjString& name)
+bool LibFiles::WriteData(FILE* stream, ObjFile* file, const ObjString& name)
 {
     ObjIeeeIndexManager im1;
     ObjFactory fact1(&im1);
     ObjIeee ieee(name.c_str());
-    ieee.Write(stream, file, &fact1);
+    return ieee.Write(stream, file, &fact1);
 }
-void LibFiles::WriteNames(FILE* stream)
+bool LibFiles::WriteNames(FILE* stream)
 {
     for (auto it = FileBegin(); it != FileEnd(); ++it)
     {
@@ -177,24 +191,30 @@ void LibFiles::WriteNames(FILE* stream)
             q++;
         else
             q = p;
-        fwrite(q, strlen(q) + 1, 1, stream);
+        if (fwrite(q, strlen(q) + 1, 1, stream) != 1)
+            return false;
     }
+    return true;
 }
-void LibFiles::WriteOffsets(FILE* stream)
+bool LibFiles::WriteOffsets(FILE* stream)
 {
     for (auto it = FileBegin(); it != FileEnd(); ++it)
     {
         ObjInt ofs = (*it)->offset;
-        fwrite(&ofs, 4, 1, stream);
+        if (fwrite(&ofs, 4, 1, stream) != 1)
+            return false;
     }
+    return true;
 }
-void LibFiles::Align(FILE* stream, int align)
+bool LibFiles::Align(FILE* stream, int align)
 {
     char buf[LibManager::ALIGN];
     memset(buf, 0, align);
     int n = ftell(stream);
     if (n % align)
-        fwrite(buf, align - n % align, 1, stream);
+        if (fwrite(buf, align - n % align, 1, stream) != 1)
+            return false;
+    return true;
 }
 bool LibFiles::ReadFiles(FILE* stream, ObjFactory* factory)
 {
@@ -211,7 +231,8 @@ bool LibFiles::ReadFiles(FILE* stream, ObjFactory* factory)
             {
                 if ((*itn)->offset)
                 {
-                    fseek(stream, (*itn)->offset, SEEK_SET);
+                    if (fseek(stream, (*itn)->offset, SEEK_SET))
+                        return false;
                     (*itn)->data = ReadData(stream, (*itn)->name, factory);
                     if (!(*itn)->data)
                     {
@@ -252,13 +273,16 @@ bool LibFiles::ReadFiles(FILE* stream, ObjFactory* factory)
     }
     return rv;
 }
-void LibFiles::WriteFiles(FILE* stream, ObjInt align)
+bool LibFiles::WriteFiles(FILE* stream, ObjInt align)
 {
     int i = 0;
     for (auto it = FileBegin(); it != FileEnd(); ++it)
     {
-        Align(stream, align);
+        if (!Align(stream, align))
+            return false;
         (*it)->offset = ftell(stream);
-        WriteData(stream, (*it)->data, (*it)->name);
+        if (!WriteData(stream, (*it)->data, (*it)->name))
+            return false;
     }
+    return true;
 }

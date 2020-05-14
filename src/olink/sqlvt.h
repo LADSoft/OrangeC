@@ -20,7 +20,7 @@ struct sql3_vt_cursor
 class SQL3VirtualTable
 {
   public:
-    SQL3VirtualTable() : running(false) {}
+    SQL3VirtualTable() : db(nullptr), running(false) {}
     virtual ~SQL3VirtualTable() { Stop(); }
 
     int Start(sqlite3* db);

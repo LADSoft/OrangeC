@@ -58,7 +58,7 @@ void PrintFormatter::Print(SymbolTable& symbols)
         else if (radix[0] == 'o')
             rad = 8;
     }
-    double aa = maxOffs / rad / rad / rad / rad;
+    double aa = (int)(maxOffs / rad / rad / rad / rad);
     maxOffs = 4;
     while (aa >= rad)
     {

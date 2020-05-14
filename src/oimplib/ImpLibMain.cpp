@@ -40,7 +40,19 @@
 int main(int argc, char** argv)
 {
     ImpLibMain librarian;
-    return librarian.Run(argc, argv);
+    try
+    {
+        return librarian.Run(argc, argv);
+    }
+    catch (std::runtime_error e)
+    {
+        std::cout << e.what() << std::endl;
+    }
+    catch (std::ios_base::failure)
+    {
+        Utils::fatal("Fatal Error...");
+    }
+    return 1;
 }
 
 CmdSwitchParser ImpLibMain::SwitchParser;
@@ -252,11 +264,11 @@ int ImpLibMain::HandleDefFile(const std::string& outputFile, int argc, char** ar
 }
 ObjFile* ImpLibMain::DefFileToObjFile(DefFile& def)
 {
-    ObjectData* od = new ObjectData;
+    objectData.push_back(std::make_unique<ObjectData>());
     ObjFile* obj = new ObjFile(def.GetLibraryName());
     for (auto it = def.ExportBegin(); it != def.ExportEnd(); ++it)
     {
-        ObjImportSymbol* p = od->factory.MakeImportSymbol(
+        ObjImportSymbol* p = objectData.back()->factory.MakeImportSymbol(
             (CDLLSwitch.GetValue() && (*it)->id.find('@') == std::string::npos ? "_" : "") + (*it)->id);
         p->SetExternalName((*it)->entry);
         p->SetByOrdinal((*it)->byOrd);
@@ -271,17 +283,17 @@ ObjFile* ImpLibMain::DefFileToObjFile(DefFile& def)
 }
 ObjFile* ImpLibMain::DllFileToObjFile(DLLExportReader& dll)
 {
+    objectData.push_back(std::make_unique<ObjectData>());
     std::string name = dll.GetName();
     int npos = name.find_last_of('\\');
     if (npos == std::string::npos)
         npos = name.find_last_of('/');
     if (npos != std::string::npos)
         name.erase(0, npos + 1);
-    ObjectData* od = new ObjectData;
     ObjFile* obj = new ObjFile(name);
     for (auto& exp : dll)
     {
-        ObjImportSymbol* p = od->factory.MakeImportSymbol(
+        ObjImportSymbol* p = objectData.back()->factory.MakeImportSymbol(
             (CDLLSwitch.GetValue() && exp->name.find("@") == std::string::npos ? "_" : "") + exp->name);
         p->SetExternalName(exp->name);
         p->SetByOrdinal(exp->byOrd);
@@ -294,23 +306,24 @@ ObjFile* ImpLibMain::DllFileToObjFile(DLLExportReader& dll)
 int ImpLibMain::HandleObjFile(const std::string& outputFile, int argc, char** argv)
 {
     bool def;
-    ObjFile* obj = nullptr;
+    std::unique_ptr<ObjFile> obj;
     std::string inputFile = GetInputFile(argc, argv, def);
     if (inputFile == "")
         return 1;
+
     if (def)
     {
         DefFile defFile(inputFile, CDLLSwitch.GetValue());
         if (!defFile.Read())
             return 1;
-        obj = DefFileToObjFile(defFile);
+        obj.reset(DefFileToObjFile(defFile));
     }
     else
     {
         DLLExportReader dllFile(inputFile);
         if (dllFile.Read())
             return 1;
-        obj = DllFileToObjFile(dllFile);
+        obj.reset(DllFileToObjFile(dllFile));
     }
     ObjIeeeIndexManager im1;
     ObjFactory fact1(&im1);
@@ -318,7 +331,7 @@ int ImpLibMain::HandleObjFile(const std::string& outputFile, int argc, char** ar
     FILE* stream = fopen(outputFile.c_str(), "wb");
     if (stream != nullptr)
     {
-        ieee.Write(stream, obj, &fact1);
+        ieee.Write(stream, obj.get(), &fact1);
         fclose(stream);
         return 0;
     }

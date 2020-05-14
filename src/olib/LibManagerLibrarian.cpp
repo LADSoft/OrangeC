@@ -43,31 +43,43 @@ int LibManager::SaveLibrary()
     {
         return CANNOT_CREATE;
     }
-    fwrite(&header, sizeof(header), 1, ostr);
-    Align(ostr, 16);
+    if (fwrite(&header, sizeof(header), 1, ostr) != 1)
+        return CANNOT_WRITE;
+    if (!Align(ostr, 16))
+        return CANNOT_WRITE;
     header.namesOffset = ftell(ostr);
-    files.WriteNames(ostr);
-    Align(ostr);
+    if (!files.WriteNames(ostr))
+        return CANNOT_WRITE;
+    if (!Align(ostr))
+        return CANNOT_WRITE;
     header.filesOffset = ftell(ostr);
-    files.WriteFiles(ostr, ALIGN);
-    Align(ostr);
+    if (!files.WriteFiles(ostr, ALIGN))
+        return CANNOT_WRITE;
+    if (!Align(ostr))
+        return CANNOT_WRITE;
     header.offsetsOffset = ftell(ostr);
-    files.WriteOffsets(ostr);
-    Align(ostr);
+    if (!files.WriteOffsets(ostr))
+        return CANNOT_WRITE;
+    if (!Align(ostr))
+        return CANNOT_WRITE;
     header.dictionaryOffset = ftell(ostr);
     header.dictionaryBlocks = 0;
-    dictionary.Write(ostr);
-    fseek(ostr, 0, SEEK_SET);
-    fwrite(&header, sizeof(header), 1, ostr);
-    int rv = ferror(ostr) ? CANNOT_WRITE : SUCCESS;
+    if (!dictionary.Write(ostr))
+        return CANNOT_WRITE;
+    if (fseek(ostr, 0, SEEK_SET))
+        return CANNOT_WRITE;
+    if (fwrite(&header, sizeof(header), 1, ostr) != 1)
+        return CANNOT_WRITE;
     fclose(ostr);
-    return rv;
+    return SUCCESS;
 }
-void LibManager::Align(FILE* ostr, ObjInt align)
+bool LibManager::Align(FILE* ostr, ObjInt align)
 {
     char buf[ALIGN];
     memset(buf, 0, align);
     int n = ftell(ostr);
     if (n % align)
-        fwrite(buf, align - (n % align), 1, ostr);
+        if (fwrite(buf, align - (n % align), 1, ostr) != 1)
+            return false;
+    return true;
 }

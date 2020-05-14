@@ -39,6 +39,7 @@
 
 std::fstream& LinkMap::Address(std::fstream& stream, ObjInt base, ObjInt offset, int group)
 {
+    std::ios_base::fmtflags f( stream.flags() );
     switch (mode)
     {
         default:
@@ -54,6 +55,7 @@ std::fstream& LinkMap::Address(std::fstream& stream, ObjInt base, ObjInt offset,
                    << std::hex << (offset + (base & 15));
             break;
     }
+    stream.flags( f );
     return stream;
 }
 ObjInt LinkMap::PublicBase(ObjExpression* exp, int& group)

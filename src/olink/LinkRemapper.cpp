@@ -128,7 +128,6 @@ bool LinkRemapper::OptimizeRight(ObjExpression* exp, ObjExpression* right)
             {
                 rv = true;
                 delete right;
-                right = new ObjExpression(0);
             }
             break;
         default:

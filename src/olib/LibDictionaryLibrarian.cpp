@@ -86,18 +86,24 @@ void LibDictionary::InsertInDictionary(const char* name, int index)
         id = UTF8::ToUpper(id);
     dictionary[id] = index;
 }
-void LibDictionary::Write(FILE* stream)
+bool LibDictionary::Write(FILE* stream)
 {
     char sig[4] = {'1', '0', 0, 0};
-    fwrite(&sig[0], 4, 1, stream);
+    if (fwrite(&sig[0], 4, 1, stream) != 1)
+        return false;
     for (auto d : dictionary)
     {
         short len = d.first.size();
-        fwrite(&len, sizeof(len), 1, stream);
-        fwrite(d.first.c_str(), len, 1, stream);
+        if (fwrite(&len, sizeof(len), 1, stream) != 1)
+            return false;
+        if (fwrite(d.first.c_str(), len, 1, stream) != 1)
+            return false;
         ObjInt fileNum = d.second;
-        fwrite(&fileNum, sizeof(fileNum), 1, stream);
+        if (fwrite(&fileNum, sizeof(fileNum), 1, stream) != 1)
+            return false;
     }
     short eof = 0;
-    fwrite(&eof, sizeof(eof), 1, stream);
+    if (fwrite(&eof, sizeof(eof), 1, stream) != 1)
+            return false;
+    return true;
 }

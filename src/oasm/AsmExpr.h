@@ -117,8 +117,8 @@ class AsmExprNode
 class AsmExpr
 {
   public:
-    AsmExpr() : define(nullptr) {}
-    AsmExpr(ppDefine* Define) : define(Define) {}
+    AsmExpr() : define(nullptr), token(nullptr) {}
+    AsmExpr(ppDefine* Define) : define(Define), token(nullptr) {}
     ~AsmExpr() {}
     AsmExprNode* Build(std::string& line);
     static void ReInit();

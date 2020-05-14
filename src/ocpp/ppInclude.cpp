@@ -243,7 +243,7 @@ std::string ppInclude::SrchPath(bool system, const std::string& name, const std:
         if (fil)
         {
             if (searchPath == ".")  // clean up for current directory searches
-                strcpy(buf, buf + 2);
+                memmove(buf, buf + 2, strlen(buf)+1);
             if (!system)
             {
                 if (userIncludes.find(buf) == userIncludes.end())

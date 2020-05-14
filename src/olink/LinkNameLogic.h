@@ -38,7 +38,7 @@ class LinkNameLogic
   protected:
     struct ParseItem
     {
-        ParseItem() : left(nullptr), right(nullptr) {}
+        ParseItem() : left(nullptr), right(nullptr), mode(eName) {}
         enum Mode
         {
             eNot,

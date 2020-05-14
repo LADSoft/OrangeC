@@ -71,7 +71,10 @@ class AsmFile
         currentLabel(nullptr),
         listing(List),
         attSyntax(GAS),
-        noGASdirectivewarning(NoGASdirectivewarning)
+        noGASdirectivewarning(NoGASdirectivewarning),
+        absoluteValue(0),
+        thisLabel(nullptr),
+        bigEndian(false)
 
     {
         parser = InstructionParser::GetInstance();

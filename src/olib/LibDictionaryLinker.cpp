@@ -54,13 +54,16 @@ ObjInt LibDictionary::Lookup(FILE* stream, ObjInt dictionaryOffset, ObjInt dicti
 {
     if (dictionary.empty())
     {
-        fseek(stream, 0, SEEK_END);
+        if (fseek(stream, 0, SEEK_END))
+            return -1;
         int end = ftell(stream);
         int size = end - dictionaryOffset;
         std::unique_ptr<ObjByte[]> buf = std::make_unique<ObjByte[]>(size);
         ObjByte* q = buf.get();
-        fseek(stream, dictionaryOffset, SEEK_SET);
-        fread(q, size, 1, stream);
+        if (fseek(stream, dictionaryOffset, SEEK_SET))
+            return -1;
+        if (fread(q, size, 1, stream) != 1)
+            return -1;
         char sig[4] = {'1', '0', 0, 0}, sig1[4];
         if (!memcmp(sig, q, 4))
         {

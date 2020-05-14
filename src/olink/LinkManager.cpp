@@ -77,7 +77,7 @@ void LinkManager::AddObject(const ObjString& name)
 {
     if (!objectFiles.Add(name))
     {
-        if (!name.find_first_of('*') && !name.find_first_of('?'))
+        if (name.find_first_of('*') == std::string::npos && name.find_first_of('?') == std::string::npos)
             LinkError("Object file " + name + " does not exist");
     }
 }
@@ -666,7 +666,7 @@ bool LinkManager::ParsePartitions()
 
     LinkExpression* value = new LinkExpression(externals.size());
     LinkExpressionSymbol* esym = new LinkExpressionSymbol("IMPORTCOUNT", value);
-    LinkExpression::EnterSymbol(esym);
+    (void)LinkExpression::EnterSymbol(esym);
     while (!done)
     {
         if (specification.Matches(LinkTokenizer::eSymbol))
@@ -806,11 +806,14 @@ void LinkManager::AddGlobalsForVirtuals(ObjFile* file)
         {
             ObjSymbol* s = v->GetSymbol();
             LinkExpressionSymbol* sym = LinkExpression::FindSymbol(s->GetName());
-            ObjExpression* exp = new ObjExpression(ObjExpression::eAdd, new ObjExpression(sym->GetValue()->GetUnresolvedSection()),
-                                                   new ObjExpression(sym->GetValue()->GetUnresolvedSection()->GetBase()));
-            s->SetIndex(index++);
-            s->SetOffset(exp);
-            file->Add(s);
+            if (sym)
+            {
+                ObjExpression* exp = new ObjExpression(ObjExpression::eAdd, new ObjExpression(sym->GetValue()->GetUnresolvedSection()),
+                                                       new ObjExpression(sym->GetValue()->GetUnresolvedSection()->GetBase()));
+                s->SetIndex(index++);
+                s->SetOffset(exp);
+                file->Add(s);
+            }
         }
     }
 }
@@ -855,6 +858,7 @@ void LinkManager::CreateOutputFile()
             ioBase->Write(ofile, file, factory);
             fclose(ofile);
         }
+        delete file;
     }
 }
 void LinkManager::Link()

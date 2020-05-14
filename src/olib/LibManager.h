@@ -92,17 +92,23 @@ class LibManager
     };
 
   protected:
-    void Align(FILE* ostr, ObjInt align = ALIGN);
+    bool Align(FILE* ostr, ObjInt align = ALIGN);
     void InitHeader();
-    void WriteHeader()
+    bool WriteHeader()
     {
-        fseek(stream, 0, SEEK_SET);
-        fwrite((char*)&header, sizeof(header), 1, stream);
+        if (!fseek(stream, 0, SEEK_SET))
+            return false;
+        if (fwrite((char*)&header, sizeof(header), 1, stream) != 1)
+            return false;
+        return true;
     }
-    void ReadHeader()
+    bool ReadHeader()
     {
-        fseek(stream, 0, SEEK_SET);
-        fread((char*)&header, sizeof(header), 1, stream);
+        if (!fseek(stream, 0, SEEK_SET))
+            return false;
+        if (fread((char*)&header, sizeof(header), 1, stream) != 1)
+            return false;
+        return true;
     }
 
   private:

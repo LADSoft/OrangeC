@@ -130,7 +130,7 @@ class Lexer
 {
   public:
     Lexer(PreProcessor& PP, bool GAS);
-    ~Lexer() {}
+    ~Lexer() { delete tokenizer; }
 
     void SetAsmFile(AsmFile* th) { asmFile = th; }
     std::string GetRestOfLine(bool reset = true);

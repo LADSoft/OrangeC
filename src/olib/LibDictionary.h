@@ -59,7 +59,7 @@ class LibDictionary
     LibDictionary(bool CaseSensitive = true) : caseSensitive(CaseSensitive) { DictCompare::caseSensitive = CaseSensitive; }
     ~LibDictionary() {}
     ObjInt Lookup(FILE* stream, ObjInt dictOffset, ObjInt dictPages, const ObjString& str);
-    void Write(FILE* stream);
+    bool Write(FILE* stream);
     void CreateDictionary(LibFiles& files);
     void Clear() { dictionary.clear(); }
 

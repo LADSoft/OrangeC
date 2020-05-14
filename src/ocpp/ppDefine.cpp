@@ -1276,20 +1276,23 @@ int ppDefine::Process(std::string& line, bool leavePlaceholder)
 void ppDefine::PushPopMacro(std::string name, bool push)
 {
     Definition* d = Lookup(name);
-    if (push)
+    if (d)
     {
-        Definition* pushval = new Definition(*d);
-        macroStacks[name].push(pushval);
-    }
-    else
-    {
-        auto it = macroStacks.find(name);
-        if (it != macroStacks.end() && it->second.size())
+        if (push)
         {
-            Definition* popval = it->second.top();
-            it->second.pop();
-            *d = *popval;
-            delete popval;
+            Definition* pushval = new Definition(*d);
+            macroStacks[name].push(pushval);
+        }
+        else
+        {
+            auto it = macroStacks.find(name);
+            if (it != macroStacks.end() && it->second.size())
+            {
+                Definition* popval = it->second.top();
+                it->second.pop();
+                *d = *popval;
+                delete popval;
+            }
         }
     }
 }

@@ -129,6 +129,7 @@ bool CmdFiles::Add(const std::string& name, bool recurseDirs)
         if (name.find_first_of('*') == std::string::npos && name.find_first_of('?') == std::string::npos)
         {
             names.push_back(name);
+            rv = true;
         }
     }
     return rv;

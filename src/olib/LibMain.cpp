@@ -36,7 +36,15 @@
 int main(int argc, char** argv)
 {
     LibMain librarian;
-    return librarian.Run(argc, argv);
+    try
+    {
+        return librarian.Run(argc, argv);
+    }
+    catch (std::ios_base::failure)
+    {
+        Utils::fatal("Fatal Error...");
+    }
+    return 1;
 }
 
 CmdSwitchParser LibMain::SwitchParser;
@@ -141,7 +149,7 @@ int LibMain::Run(int argc, char** argv)
     if (!strcmp(argv[1], "cru"))
     {
         mode = REPLACE;
-        memcpy(argv + 1, argv + 2, (argc - 1) * sizeof(char*));
+        memmove(argv + 1, argv + 2, (argc - 1) * sizeof(char*));
         --argc;
     }
     ObjString outputFile = OutputFile.GetValue();

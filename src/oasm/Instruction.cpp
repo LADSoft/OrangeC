@@ -30,20 +30,22 @@
 
 bool Instruction::bigEndian;
 
-Instruction::Instruction(Label* lbl) : label(lbl), type(LABEL), altdata(nullptr), pos(0), fpos(0), size(0), offs(0), repeat(1) {}
+Instruction::Instruction(Label* lbl) : label(lbl), type(LABEL), altdata(nullptr), pos(0), fpos(0), size(0), offs(0), repeat(1), xrepeat(1), lost(false) {}
 Instruction::Instruction(void* dataIn, int Size, bool isData) :
     type(isData ? DATA : CODE),
     label(nullptr),
     pos(0),
     fpos(0),
     repeat(1),
+    xrepeat(1),
     size(Size),
     offs(0),
     lost(false),
-    data(LoadData(!isData, (unsigned char*)dataIn, Size))
+    data(LoadData(!isData, (unsigned char*)dataIn, Size)),
+    altdata(nullptr)
 {
 }
-Instruction::Instruction(int aln) : type(ALIGN), label(nullptr), altdata(nullptr), pos(0), fpos(0), size(aln), offs(0), repeat(1) {}
+Instruction::Instruction(int aln) : type(ALIGN), label(nullptr), altdata(nullptr), pos(0), fpos(0), size(aln), offs(0), repeat(1), xrepeat(1), lost(false) {}
 Instruction::Instruction(int Repeat, int Size) :
     type(RESERVE),
     label(nullptr),
@@ -52,12 +54,14 @@ Instruction::Instruction(int Repeat, int Size) :
     fpos(0),
     size(Size),
     repeat(Repeat),
+    xrepeat(Repeat),
     offs(0),
-    data(std::make_unique<unsigned char[]>(Size))
+    data(std::make_unique<unsigned char[]>(Size)),
+    lost(false)
 {
     memset(data.get(), 0, size);
 }
-Instruction::Instruction(void* data) : type(ALT), label(nullptr), altdata(data), pos(0), fpos(0), size(0), offs(0), repeat(1) {}
+Instruction::Instruction(void* data) : type(ALT), label(nullptr), altdata(data), pos(0), fpos(0), size(0), offs(0), repeat(1), xrepeat(1), lost(false) {}
 
 Instruction::~Instruction() {}
 std::unique_ptr<unsigned char[]> Instruction::LoadData(bool isCode, unsigned char* data, size_t size)

@@ -75,7 +75,19 @@ const char* nmMain::usageText =
 int main(int argc, char** argv)
 {
     nmMain downloader;
-    return downloader.Run(argc, argv);
+    try
+    {
+        return downloader.Run(argc, argv);
+    }
+    catch (std::runtime_error e)
+    {
+       std::cout << e.what() << std::endl;
+    }
+    catch (std::ios_base::failure)
+    {
+        Utils::fatal("Fatal Error...");
+    }
+    return 1;
 }
 int nmMain::Run(int argc, char** argv)
 {

@@ -33,14 +33,20 @@ void LibManager::InitHeader()
 bool LibManager::LoadLibrary()
 {
     memset(&header, 0, sizeof(header));
-    fseek(stream, 0, SEEK_SET);
-    fread((char*)&header, sizeof(header), 1, stream);
+    if (fseek(stream, 0, SEEK_SET))
+        return false;
+    if (fread((char*)&header, sizeof(header), 1, stream) != 1)
+        return false;
     if (header.sig != LibHeader::LIB_SIG)
         return false;
-    fseek(stream, header.namesOffset, SEEK_SET);
-    files.ReadNames(stream, header.filesInModule);
-    fseek(stream, header.offsetsOffset, SEEK_SET);
-    files.ReadOffsets(stream, header.filesInModule);
+    if (fseek(stream, header.namesOffset, SEEK_SET))
+        return false;
+    if (!files.ReadNames(stream, header.filesInModule))
+        return false;
+    if (fseek(stream, header.offsetsOffset, SEEK_SET))
+        return false;
+    if (!files.ReadOffsets(stream, header.filesInModule))
+        return false;
     return true;
 }
 ObjInt LibManager::Lookup(const ObjString& name)

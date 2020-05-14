@@ -46,7 +46,18 @@
 int main(int argc, char** argv)
 {
     LinkerMain linker;
-    return linker.Run(argc, argv);
+    try
+    {
+        return linker.Run(argc, argv);
+    }
+    catch (std::bad_exception e)
+    {
+    }
+    catch (std::ios_base::failure)
+    {
+    }
+    Utils::fatal("Fatal Error...");
+    return 1;
 }
 
 CmdSwitchParser LinkerMain::SwitchParser;

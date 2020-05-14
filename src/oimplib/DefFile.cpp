@@ -283,7 +283,6 @@ void DefFile::ReadExports()
                     {
                         oneExport->module = line;
                         tokenizer.Reset("");
-                        token = nullptr;
                     }
                     tokenizer.Next();
                 }

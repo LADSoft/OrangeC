@@ -746,6 +746,8 @@ void Instruction::RepRemoveCancellations(AsmExprNode* exp, bool commit, int& cou
 void Instruction::Optimize(Section* sect, int pc, bool last)
 {
     unsigned char* pdata = data.get();
+    if (!pdata)
+        return;
     if (pdata && size >= 3 && pdata[0] == 0x0f && pdata[1] == 0x0f && (pdata[2] == 0x9a || pdata[2] == 0xea))
     {
         if (fixups.size() != 1)
@@ -935,7 +937,9 @@ void Instruction::Optimize(Section* sect, int pc, bool last)
 }
 std::string InstructionParser::RewriteATTArg(const std::string& line)
 {
-    int i = line.find_first_not_of("\t\v \r\n");
+    size_t i = line.find_first_not_of("\t\v \r\n");
+    if (i == std::string::npos)
+         return "";
     std::string seg;
     if (line[i] == '%')
     {

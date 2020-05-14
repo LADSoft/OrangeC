@@ -64,7 +64,7 @@ class LinkMap
   private:
     struct MapSymbolData
     {
-        MapSymbolData(LinkSymbolData* Sym, ObjInt Abs, ObjInt Base, int Group) : sym(Sym), base(Base), abs(Abs), group(Group) {}
+        MapSymbolData(LinkSymbolData* Sym, ObjInt Abs, ObjInt Base, int Group) : sym(Sym), base(Base), abs(Abs), group(Group), used(false) {}
         LinkSymbolData* sym;
         ObjInt base;
         ObjInt abs;

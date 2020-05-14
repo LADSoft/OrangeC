@@ -432,8 +432,12 @@ void AsmFile::ReserveDirective(int n)
     if (num <= 0)
         throw new std::runtime_error("Invalid reserve size");
     Instruction* ins = new Instruction(num, n);
+    bool added = false;
     if (lineno >= 0)
+    {
         listing.Add(ins, lineno, preProcessor.InMacro());
+        added = true;
+    }
     if (inAbsolute)
     {
         absoluteValue += n * num;
@@ -449,7 +453,10 @@ void AsmFile::ReserveDirective(int n)
             ins->Add(f);
         }
         currentSection->InsertInstruction(ins);
+        added = true;
     }
+    if (!added)
+        delete ins;
 }
 void AsmFile::EquDirective()
 {
@@ -472,7 +479,7 @@ void AsmFile::EquDirective()
     thisLabel->SetSect(-1);
     if (lineno >= 0)
         listing.Add(thisLabel, lineno, preProcessor.InMacro());
-    if (!inAbsolute)
+    if (currentSection && !inAbsolute)
         currentSection->pop_back();
     AsmExpr::SetEqu(thisLabel->GetName(), num.release());
 }
@@ -1167,7 +1174,7 @@ void AsmFile::FillDirective()
         unsigned char val[8];
         memset(val, 0, sizeof(val));
         *(unsigned*)val = value;
-        unsigned char* buf = (unsigned char*)calloc(repeat, size);
+        unsigned char* buf = new unsigned char[repeat * size];
         for (int i = 0; i < repeat; i++)
         {
             memcpy(buf + i * size, val, size);
@@ -1211,9 +1218,9 @@ void AsmFile::SpaceDirective()
     }
     if (repeat)
     {
-        unsigned char* buf = (unsigned char*)calloc(1, repeat);
+        unsigned char* buf = new unsigned char[repeat];
         memset(buf, value, repeat);
-        Instruction* ins = new Instruction((unsigned char*)buf, repeat, true);
+        Instruction* ins = new Instruction(buf, repeat, true);
         if (lineno >= 0)
             listing.Add(ins, lineno, preProcessor.InMacro());
         currentSection->InsertInstruction(ins);
@@ -1238,9 +1245,9 @@ void AsmFile::NopsDirective()
     }
     if (repeat)
     {
-        unsigned char* buf = (unsigned char*)calloc(1, repeat);
+        unsigned char* buf = new unsigned char[repeat];
         memset(buf, value, repeat);
-        Instruction* ins = new Instruction((unsigned char*)buf, repeat, true);
+        Instruction* ins = new Instruction(buf, repeat, true);
         if (lineno >= 0)
             listing.Add(ins, lineno, preProcessor.InMacro());
         currentSection->InsertInstruction(ins);

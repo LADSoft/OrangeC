@@ -61,10 +61,15 @@ int main(int argc, char* argv[])
     {
         return preproc.Run(argc, argv);
     }
+    catch (std::runtime_error e)
+    {
+        std::cout << e.what() << std::endl;
+    }
     catch (std::ios_base::failure)
     {
-        return 1;
+        Utils::fatal("Fatal Error...");
     }
+    return 1;
 }
 #ifdef TESTANNOTATE
 static void PutCharInfo(std::ostream* outStream, const std::string& line, const std::deque<ppDefine::TokenPos>& positions,

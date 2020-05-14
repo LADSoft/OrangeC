@@ -262,7 +262,6 @@ LinkTokenizer::eTokenType LinkTokenizer::NextToken()
                 return token;
             }
         }
-        str = data.c_str();
     }
     token = eUnknown;
     return token;

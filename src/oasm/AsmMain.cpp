@@ -80,7 +80,19 @@ const char* AsmMain::usageText =
 int main(int argc, char* argv[])
 {
     AsmMain rc;
-    return rc.Run(argc, argv);
+    try
+    {
+        return rc.Run(argc, argv);
+    }
+    catch (std::runtime_error e)
+    {
+        std::cout << e.what() << std::endl;
+    }
+    catch (std::ios_base::failure)
+    {
+        Utils::fatal("Fatal Error...");
+    }
+    return 1;
 }
 void AsmMain::CheckAssign(std::string& line, PreProcessor& pp)
 {

@@ -54,11 +54,11 @@ class LibFiles
 
     size_t size() { return files.size(); }
     bool ReadNames(FILE* stream, int count);
-    void WriteNames(FILE* stream);
-    void ReadOffsets(FILE* stream, int count);
-    void WriteOffsets(FILE* stream);
+    bool WriteNames(FILE* stream);
+    bool ReadOffsets(FILE* stream, int count);
+    bool WriteOffsets(FILE* stream);
     bool ReadFiles(FILE* stream, ObjFactory* factory);
-    void WriteFiles(FILE* stream, ObjInt align);
+    bool WriteFiles(FILE* stream, ObjInt align);
 
     ObjFile* LoadModule(FILE* stream, ObjInt FileIndex, ObjFactory* factory);
 
@@ -68,8 +68,8 @@ class LibFiles
 
   protected:
     ObjFile* ReadData(FILE* stream, const ObjString& name, ObjFactory* factory);
-    void WriteData(FILE* stream, ObjFile* file, const ObjString& name);
-    void Align(FILE* stream, ObjInt align);
+    bool WriteData(FILE* stream, ObjFile* file, const ObjString& name);
+    bool Align(FILE* stream, ObjInt align);
 
   private:
     std::deque<std::unique_ptr<FileDescriptor>> files;

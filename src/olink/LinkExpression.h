@@ -55,18 +55,20 @@ class LinkExpression
     // clang-format off
         enum eOperator { eValue, ePC, eSymbol, eUnresolvedSection, eSection, eAdd, eSub, eMul, eDiv, eNeg, eCpl };
     // clang-format on
-    LinkExpression() : op(eValue), left(nullptr), right(nullptr), symbolName(""), value(0), sect(0) {}
-    LinkExpression(eOperator Op) : op(Op), left(nullptr), right(nullptr), symbolName(""), value(0) {}
-    LinkExpression(ObjInt Value) : op(eValue), left(nullptr), right(nullptr), symbolName(""), value(Value) {}
+    LinkExpression() : op(eValue), left(nullptr), right(nullptr), symbolName(""), value(0), sect(0), unresolvedSection(nullptr) {}
+    LinkExpression(eOperator Op) : op(Op), left(nullptr), right(nullptr), symbolName(""), value(0), sect(0), unresolvedSection(nullptr) {}
+    LinkExpression(ObjInt Value) : op(eValue), left(nullptr), right(nullptr), symbolName(""), value(Value), sect(0), unresolvedSection(nullptr) {}
     LinkExpression(int section, ObjInt base, ObjInt offs);
-    LinkExpression(const ObjString& SymbolName) : op(eSymbol), left(nullptr), right(nullptr), symbolName(SymbolName), value(0) {}
-    LinkExpression(eOperator Op, LinkExpression* Left) : op(Op), left(Left), right(nullptr), symbolName(""), value(0) {}
+    LinkExpression(const ObjString& SymbolName) : op(eSymbol), left(nullptr), right(nullptr), symbolName(SymbolName), value(0), sect(0), unresolvedSection(nullptr) {}
+    LinkExpression(eOperator Op, LinkExpression* Left) : op(Op), left(Left), right(nullptr), symbolName(""), value(0), sect(0), unresolvedSection(nullptr) {}
     LinkExpression(eOperator Op, LinkExpression* Left, LinkExpression* Right) :
         op(Op),
         left(Left),
         right(Right),
         symbolName(""),
-        value(0)
+        value(0),
+        sect(0),
+        unresolvedSection(nullptr)
     {
     }
     LinkExpression(const LinkExpression& exp);
@@ -75,9 +77,11 @@ class LinkExpression
         unresolvedSection(Unresolved),
         left(nullptr),
         right(nullptr),
-        value(0)
+        value(0),
+        sect(0)
     {
     }
+    ~LinkExpression();
     eOperator GetOperator() { return op; }
     ObjSection* GetUnresolvedSection() { return unresolvedSection; }
     LinkExpression* GetLeft() { return left; }

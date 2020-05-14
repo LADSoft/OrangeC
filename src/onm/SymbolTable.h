@@ -54,7 +54,13 @@ class Symbol
         Undefined,
         ObjFileSpecific
     };
-    Symbol() {}
+    Symbol() :
+        fileName(""),
+        symbolName(""),
+        offset(0),
+        type(Undefined	)
+    {
+    }
     Symbol(std::string file, std::string name, ObjInt Offset, SymbolType Type) :
         fileName(file),
         symbolName(name),

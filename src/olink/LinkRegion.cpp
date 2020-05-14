@@ -416,6 +416,8 @@ ObjInt LinkRegion::ArrangeOverlayed(LinkManager* manager, NamedSection* data, Ob
             curFile = item.file;
         }
     }
+    if (!curSection)
+        return 0;
     for (auto item : data->sections)
     {
         ObjSection* sect = item.section;
@@ -451,9 +453,7 @@ ObjInt LinkRegion::ArrangeOverlayed(LinkManager* manager, NamedSection* data, Ob
             }
         }
     }
-    if (curSection)
-        return curSection->GetAbsSize();
-    return 0;
+    return curSection->GetAbsSize();
 }
 ObjInt LinkRegion::ArrangeSections(LinkManager* manager)
 {
@@ -574,9 +574,12 @@ ObjInt LinkRegion::ArrangeSections(LinkManager* manager)
     }
     if (attribs.GetRoundSize())
     {
-        size = size + attribs.GetRoundSize() - 1;
-        size = size / attribs.GetRoundSize();
-        size = size * attribs.GetRoundSize();
+        int rs = attribs.GetRoundSize();
+        if (rs < 1)
+            rs = 1;
+        size = size + rs - 1;
+        size = size / rs;
+        size = size * rs;
     }
     if (attribs.GetSize() && size > attribs.GetSize())
         LinkManager::LinkError("Region " + QualifiedRegionName() + " overflowed region size");
@@ -599,9 +602,12 @@ ObjInt LinkRegion::PlaceRegion(LinkManager* manager, LinkAttribs& partitionAttri
 
     if (attribs.GetAlign())
     {
-        alignAdjust = base % attribs.GetAlign();
+        int al = attribs.GetAlign();
+        if (al < 1)
+            al = 1;
+        alignAdjust = base % al;
         if (alignAdjust)
-            alignAdjust = attribs.GetAlign() - alignAdjust;
+            alignAdjust = al - alignAdjust;
     }
     if (!attribs.GetAddressSpecified())
     {
@@ -619,9 +625,12 @@ ObjInt LinkRegion::PlaceRegion(LinkManager* manager, LinkAttribs& partitionAttri
 
     if (attribs.GetRoundSize())
     {
-        size = size + attribs.GetRoundSize() - 1;
-        size = size / attribs.GetRoundSize();
-        size = size * attribs.GetRoundSize();
+        int rs = attribs.GetRoundSize();
+        if (rs < 1)
+            rs = 1;
+        size = size + rs - 1;
+        size = size / rs;
+        size = size * rs;
     }
     if (attribs.GetMaxSize())
         if (size > attribs.GetMaxSize())

@@ -155,7 +155,6 @@ void SymbolTable::Load(CmdFiles& files)
                 ObjFactory factory(&im1);
                 ObjIeee ieee((*it).c_str(), true);
                 ObjFile* f = ieee.Read(stream, ObjIeee::eAll, &factory);
-                fclose(stream);
                 if (!f)
                 {
                     std::cout << "'" << (*it) << "' is not an object file or library, not loading" << std::endl;

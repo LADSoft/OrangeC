@@ -106,7 +106,7 @@ void ConfigData::AddDefine(LinkManager& linker, const std::string& name, const s
     int n = std::stoi(value, nullptr, 0);
     LinkExpression* lexp = new LinkExpression(n);
     LinkExpressionSymbol* lsym = new LinkExpressionSymbol(name, lexp);
-    LinkExpression::EnterSymbol(lsym, true);
+    (void)LinkExpression::EnterSymbol(lsym, true);
 }
 void ConfigData::SetDefines(LinkManager& linker)
 {

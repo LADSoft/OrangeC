@@ -133,7 +133,17 @@ class InputToken
 class InstructionParser
 {
   public:
-    InstructionParser() : asmexpr(nullptr) {}
+    InstructionParser() : 
+        asmexpr(nullptr),
+        eol(false),
+        id(0),
+        val(nullptr),
+        tokenPos(0),
+        numeric(nullptr),
+        attSyntax(false)
+    {
+    }
+
 
     static InstructionParser* GetInstance();
 

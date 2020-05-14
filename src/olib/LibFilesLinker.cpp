@@ -39,29 +39,34 @@ bool LibFiles::ReadNames(FILE* stream, int count)
 {
     for (int i = 0; i < count; i++)
     {
-        char c = ' ';
+        int c;
         char buf[260], *p = buf;
+        int n = 0;
         do
         {
+            if (++n > 259)
+                return false;
             c = fgetc(stream);
-            //            if (stream.fail())
-            //                return false;
-            *p++ = c;
+            if (c < 0)
+                return false;
+            *p++ = (char)c;
         } while (c != 0);
         ObjString name = buf;
         files.push_back(std::make_unique<FileDescriptor>(name));
     }
     return true;
 }
-void LibFiles::ReadOffsets(FILE* stream, int count)
+bool LibFiles::ReadOffsets(FILE* stream, int count)
 {
     assert(count == files.size());
     for (auto it = FileBegin(); it != FileEnd(); ++it)
     {
         unsigned ofs;
-        fread(&ofs, 4, 1, stream);
+        if (fread(&ofs, 4, 1, stream) != 1)
+            return false;
         (*it)->offset = ofs;
     }
+    return true;
 }
 ObjFile* LibFiles::LoadModule(FILE* stream, ObjInt FileIndex, ObjFactory* factory)
 {
@@ -70,6 +75,7 @@ ObjFile* LibFiles::LoadModule(FILE* stream, ObjInt FileIndex, ObjFactory* factor
     auto& a = files[FileIndex];
     if (!a->offset)
         return nullptr;
-    fseek(stream, a->offset, SEEK_SET);
+    if (fseek(stream, a->offset, SEEK_SET))
+        return nullptr;
     return ReadData(stream, a->name, factory);
 }

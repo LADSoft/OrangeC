@@ -583,7 +583,7 @@ bool InstructionParser::CheckRegs(AsmExprNode* val)
         if (val->GetLeft())
             rv &= CheckRegs(val->GetLeft());
         if (val->GetRight())
-            rv &= CheckRegs(val->GetLeft());
+            rv &= CheckRegs(val->GetRight());
     }
     return rv;
 }

@@ -41,7 +41,7 @@ class Fixup;
 class Section
 {
   public:
-    Section(std::string Name, int Sect) : name(Name), sect(Sect), align(1), pc(0), isVirtual(false)
+    Section(std::string Name, int Sect) : name(Name), sect(Sect), align(1), pc(0), isVirtual(false), instructionPos(0), objectSection(nullptr)
     {
         memset(beValues, 0, sizeof(beValues));
     }

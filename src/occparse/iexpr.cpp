@@ -778,11 +778,11 @@ Optimizer::IMODE* gen_udivide(SYMBOL* funcsp, EXPRESSION* node, int flags, int s
             {
                 if (mod)
                 {
-                    gen_icode(Optimizer::i_and, ap, num, Optimizer::make_immed(ISZ_UINT, (1 << l) - 1));
+                    Optimizer::gen_icode(Optimizer::i_and, ap, num, Optimizer::make_immed(ISZ_UINT, (1 << l) - 1));
                     return ap;
                 }
                 ap5 = Optimizer::tempreg(n, 0);
-                gen_icode(Optimizer::i_lsr, ap5, num, Optimizer::make_immed(ISZ_UINT, l));
+                Optimizer::gen_icode(Optimizer::i_lsr, ap5, num, Optimizer::make_immed(ISZ_UINT, l));
 
                 //                return n >> l;
             }
@@ -874,7 +874,7 @@ Optimizer::IMODE* gen_sdivide(SYMBOL* funcsp, EXPRESSION* node, int flags, int s
             if (ad == 1)
             {
                 if (d< 0)
-                   gen_icode(Optimizer::i_neg, num, nullptr, nullptr);
+                   Optimizer::gen_icode(Optimizer::i_neg, num, nullptr, nullptr);
                 return num;
             }
             //                q = ad;

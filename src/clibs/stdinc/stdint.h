@@ -81,8 +81,8 @@ typedef unsigned __int64 uint_fast64_t;
 typedef int32_t intptr_t;
 typedef uint32_t uintptr_t;
 
-typedef int32_t intmax_t;
-typedef uint32_t uintmax_t;
+typedef int64_t intmax_t;
+typedef uint64_t uintmax_t;
 
 #if !defined(__cplusplus) || defined(__STDC_LIMIT_MACROS)
 
@@ -133,9 +133,9 @@ typedef uint32_t uintmax_t;
 #    define INTPTR_MAX INT32_MAX
 #    define UINTPTR_MAX UINT32_MAX
 
-#    define INTMAX_MIN INT32_MIN
-#    define INTMAX_MAX INT32_MAX
-#    define UINTMAX_MAX UINT32_MAX
+#    define INTMAX_MIN INT64_MIN
+#    define INTMAX_MAX INT64_MAX
+#    define UINTMAX_MAX UINT64_MAX
 
 #    define PTRDIFF_MIN INT32_MIN
 #    define PTRDIFF_MAX INT32_MAX

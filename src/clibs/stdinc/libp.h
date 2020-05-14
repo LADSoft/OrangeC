@@ -59,6 +59,7 @@ extern "C"
 #endif
 
 #define OUR_CPP_EXC_CODE 0xEEFABCD
+#define OUR_C_EXC_CODE 0xEEFABCE
 
 #define _DTA_BUF_DEFAULT 8192 /* must be a power of two <= 64K */
 

@@ -48,6 +48,8 @@ extern int _win32;
 extern char** _argv;
 extern DWORD __unaligned_stacktop;
 extern HINSTANCE __hInstance;
+extern unsigned _isDLL;
+
 typedef void CALLBACK trace_func(char* text, char* filename, PCONTEXT p, void* hInstance, void* stacktop);
 
 static int* _xceptblkptr;
@@ -170,10 +172,17 @@ LONG ___xceptionhandle(PEXCEPTION_RECORD p, void* record, PCONTEXT context, void
             break;
         case EXCEPTION_STACK_OVERFLOW:
             break;
+        case OUR_C_EXC_CODE:
+        {
+            signum = p->ExceptionInformation[0];
+            code = p->ExceptionInformation[1];
+            addr = p->ExceptionInformation[2];
+        }
     }
+
     xxctxt = context;
     if (signum != -1)
-        if (!__raise(signum, code, addr))
+        if (!_isDLL && !__raise(signum, code, addr))
             return 0;  // continue execution
 
     return 1;  // continue search

@@ -50,6 +50,7 @@
 extern void __ll_sigsegv(int) ;
 extern PCONTEXT xxctxt;
 extern void regdump(char *text, PCONTEXT p);
+extern unsigned _isDLL;
 
 int _abterm=0;
 
@@ -128,6 +129,18 @@ static int raiseinternal(int sig, int source, int code, void* address)
                 return 1;
 	}
         temp = __sigtab[sig];
+        if (_isDLL && temp.sa_handler == __defsigtab[sig].sa_handler)
+        {
+            // if this is a DLL and we have the default handler
+            // try to send the signal to the main program in the process
+            ULONG_PTR params[3];
+            params[0] = (ULONG_PTR)sig;
+            params[1] = (ULONG_PTR)code;
+            params[2] = (ULONG_PTR)address;
+            // note that if the main program isn't compiled with orange c, it will trigger the unfiltered exception handler            
+            // and probably abort
+            RaiseException(OUR_C_EXC_CODE, EXCEPTION_CONTINUABLE, 3, (DWORD*)&params[0]);
+        }
         if (!(temp.sa_flags & SA_SIGINFO))
 	{
              if (temp.sa_handler == SIG_ERR)

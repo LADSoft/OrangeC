@@ -563,7 +563,7 @@ FPF FPF::Divide(const FPF& x, const FPF& y)
         case INFINITY_ZERO:
         case INFINITY_SUBNORMAL:
         case INFINITY_NORMAL:
-            dest.SetInfinity(0);
+            dest.SetInfinity(x.sign ^ y.sign);
             break;
 
         case NAN_ZERO:
@@ -595,7 +595,7 @@ FPF FPF::Divide(const FPF& x, const FPF& y)
             }
             if (y.IsMantissaZero())
             {
-                dest.SetInfinity(0);
+                dest.SetInfinity(x.sign ^ y.sign);
                 break;
             }
             dest.type = x.type;

@@ -16,9 +16,10 @@ version 6.0.45:
     occ:   fix comparison involving NANs to return false (!= returns true)
     occ:   fix definition of FLT_MAX, DBL_MAX, LDBL_MAX to be correct
     occ:   fix i%1 to return 0 instead of i, fix bugs and improve code generation for i%# where # is 1 or a power of 2
+    occ:   when calculating compile-time constants, -1.0/0.0 incorrectly resulted in +infinity (was good when calculated at runtime)
     occ/ocpp:  add #line statements to the preprocessed output
     ogrep: add -q option to make it quiet...    
-
+    rtl:   fix the definitions of intmax_t and uintmax_t to match LIMITS.H limits for 32-bits.
 version 6.0.44: 4/26/2020
     project: fix bugs that would not allow compiling in VS2019
     project: add new appveyor builds for debugger and code analyzer; add 7z format to build artifacts

@@ -37,9 +37,11 @@ bool LibManager::LoadLibrary()
         return false;
     if (fread((char*)&header, sizeof(header), 1, stream) != 1)
     {
-        memset(&header, 0, sizeof(header));
         return false;
     }
+    // attempt to shut up coverity
+    if (feof(stream))
+        return false;
     if (header.sig != LibHeader::LIB_SIG)
         return false;
     if (fseek(stream, header.namesOffset, SEEK_SET))

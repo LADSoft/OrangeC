@@ -23,7 +23,7 @@ env:
 before_install:
   - export CC=gcc-7 
   - export CXX=g++-7
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then echo -n | openssl s_client -connect https://scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca- ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca- ; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then chmod u+x ./travis-configure ; fi
   - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then choco install innosetup          ; fi
 

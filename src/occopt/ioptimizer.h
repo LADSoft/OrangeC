@@ -598,6 +598,7 @@ typedef struct quad
     char precolored;
     char moved;
     char livein;
+    char ROBoundary;
 } QUAD;
 
 #define TEMP_ANS 1

@@ -152,7 +152,6 @@ static void EnterGlobal(QUAD* head)
     head->RO = aallocbit(termCount);
     head->uses = aallocbit(termCount);
     head->transparent = aallocbit(termCount);
-    head->ROBoundary = true;
     setmap(head->transparent, true);
 }
 static void GatherGlobals(void)
@@ -969,7 +968,7 @@ static void HandleRO(QUAD* after, int tn)
             }
             after = after->back;
 
-        } while (!after->ROBoundary); 
+        } while (!after->OCP && after->dc.opcode != i_tag); 
 }
 static void MoveExpressions(void)
 {
@@ -1125,13 +1124,6 @@ void SetGlobalTerms(void)
 void GlobalOptimization(void)
 {
     QUAD *head = intermed_head;
-    // the conditional in HandleRO takes up a lot of time so we preset this
-    while (head)
-    {
-        if (head->dc.opcode == i_label || head->dc.opcode == i_tag)
-            head->ROBoundary = true;
-        head = head->fwd;
-    }
     int i;
     PadBlocks();
     forwardOrder = (BLOCK**)oAlloc(sizeof(BLOCK*) * blockCount);

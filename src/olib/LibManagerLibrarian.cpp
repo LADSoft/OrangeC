@@ -44,32 +44,65 @@ int LibManager::SaveLibrary()
         return CANNOT_CREATE;
     }
     if (fwrite(&header, sizeof(header), 1, ostr) != 1)
+    {
+        fclose(ostr);
         return CANNOT_WRITE;
+    }
     if (!Align(ostr, 16))
+    {
+        fclose(ostr);
         return CANNOT_WRITE;
+    }
     header.namesOffset = ftell(ostr);
     if (!files.WriteNames(ostr))
+    {
+        fclose(ostr);
         return CANNOT_WRITE;
+    }
     if (!Align(ostr))
+    {
+        fclose(ostr);
         return CANNOT_WRITE;
+    }
     header.filesOffset = ftell(ostr);
     if (!files.WriteFiles(ostr, ALIGN))
+    {
+        fclose(ostr);
         return CANNOT_WRITE;
+    }
     if (!Align(ostr))
+    {
+        fclose(ostr);
         return CANNOT_WRITE;
+    }
     header.offsetsOffset = ftell(ostr);
     if (!files.WriteOffsets(ostr))
+    {
+        fclose(ostr);
         return CANNOT_WRITE;
+    }
     if (!Align(ostr))
+    {
+        fclose(ostr);
         return CANNOT_WRITE;
+    }
     header.dictionaryOffset = ftell(ostr);
     header.dictionaryBlocks = 0;
     if (!dictionary.Write(ostr))
+    {
+        fclose(ostr);
         return CANNOT_WRITE;
+    }
     if (fseek(ostr, 0, SEEK_SET))
+    {
+        fclose(ostr);
         return CANNOT_WRITE;
+    }
     if (fwrite(&header, sizeof(header), 1, ostr) != 1)
+    {
+        fclose(ostr);
         return CANNOT_WRITE;
+    }
     fclose(ostr);
     return SUCCESS;
 }

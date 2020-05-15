@@ -36,7 +36,10 @@ bool LibManager::LoadLibrary()
     if (fseek(stream, 0, SEEK_SET))
         return false;
     if (fread((char*)&header, sizeof(header), 1, stream) != 1)
+    {
+        memset(&header, 0, sizeof(header));
         return false;
+    }
     if (header.sig != LibHeader::LIB_SIG)
         return false;
     if (fseek(stream, header.namesOffset, SEEK_SET))

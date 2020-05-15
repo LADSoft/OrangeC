@@ -156,7 +156,7 @@ int LibMain::Run(int argc, char** argv)
     if (outputFile.empty())
     {
         outputFile = argv[1];
-        memcpy(argv + 1, argv + 2, (argc - 1) * sizeof(char*));
+        memmove(argv + 1, argv + 2, (argc - 1) * sizeof(char*));
         --argc;
     }
     // setup

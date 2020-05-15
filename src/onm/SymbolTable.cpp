@@ -149,7 +149,6 @@ void SymbolTable::Load(CmdFiles& files)
         {
             if (!librarian.LoadLibrary())
             {
-                librarian.Close();
                 FILE* stream = fopen((*it).c_str(), "r");
                 ObjIeeeIndexManager im1;
                 ObjFactory factory(&im1);

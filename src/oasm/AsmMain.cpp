@@ -84,9 +84,9 @@ int main(int argc, char* argv[])
     {
         return rc.Run(argc, argv);
     }
-    catch (std::runtime_error e)
+    catch (std::runtime_error* e)
     {
-        std::cout << e.what() << std::endl;
+        std::cout << e->what() << std::endl;
     }
     catch (std::ios_base::failure)
     {

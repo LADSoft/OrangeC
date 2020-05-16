@@ -203,6 +203,7 @@ KEYWORD keywords[] = {
     {"_TR6", 4, kw_tr6, KW_NONANSI | KW_386, TT_VAR},
     {"_TR7", 4, kw_tr7, KW_NONANSI | KW_386, TT_VAR},
     {"__I", 3, kw___I, 0, TT_VAR},
+    {"__alignof", 9, kw_alignof, KW_CPLUSPLUS, TT_UNARY | TT_OPERATOR},
     {"__alloca", 8, kw_alloca, KW_NONANSI | KW_ALL, TT_OPERATOR | TT_UNARY},
     {"__atomic_cmpswp", 15, kw_atomic_cmpswp, 0, TT_VAR},
     {"__atomic_fence", 14, kw_atomic_fence, 0, TT_VAR},

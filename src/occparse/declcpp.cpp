@@ -2959,6 +2959,7 @@ LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc st
                     tp = &stdint;
                 checkauto(tp, ERR_AUTO_NOT_ALLOWED_IN_USING_STATEMENT);
                 sp = makeID(sc_typedef, tp, nullptr, litlate(idsym->value.s.a));
+                sp->sb->cpp14using = true;
                 if (inTemplate)
                 {
                     TYPE* tp1 = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));

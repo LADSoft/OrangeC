@@ -674,6 +674,7 @@ typedef struct sym
         unsigned visited : 1;                            // symbol has been visited in a traversal
         unsigned postExpansion : 1;                      // template was post-expanded
         unsigned performedStructInitialization : 1;      // structure declaration was completed
+        unsigned cpp14using : 1;                         // using = statement in c++
         int __func__label;                               /* label number for the __func__ keyword */
         int labelCount;                                  /* number of code labels within a function body */
         int offset;                                      /* address offset of data in the given seg, or optimize register */

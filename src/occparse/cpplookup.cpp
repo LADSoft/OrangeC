@@ -372,7 +372,7 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
                         sp = namespacesearch(buf, nssym, qualified, tagsOnly);
                     }
                 }
-                if (sp && sp->sb && sp->sb->storage_class == sc_typedef)
+                if (sp && sp->sb && sp->sb->storage_class == sc_typedef && !sp->sb->cpp14using)
                 {
                     SYMBOL* typedefSym = sp;
                     istypedef = true;

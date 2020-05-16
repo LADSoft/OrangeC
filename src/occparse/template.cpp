@@ -342,11 +342,28 @@ bool exactMatchOnTemplateParams(TEMPLATEPARAMLIST* old, TEMPLATEPARAMLIST* sym)
     {
         if (old->p->type != sym->p->type)
             break;
-        if (old->p->packed && sym->p->packed)
+        if (sym->p->packed)
         {
-            if (sym->p->byPack.pack)
-                if (!exactMatchOnTemplateParams(old->p->byPack.pack, sym->p->byPack.pack))
-                    return false;
+            if (old->p->packed)
+            {
+                if (sym->p->byPack.pack)
+                    if (!exactMatchOnTemplateParams(old->p->byPack.pack, sym->p->byPack.pack))
+                        return false;
+            }
+            else if (sym->p->byPack.pack)
+            {
+                while (old)
+                {
+                    if (old->p->type != sym->p->type)
+                        return false;
+                    old = old->next;
+                }
+                return !sym->next;
+            }
+            else
+            {
+                return !sym->next;
+            }
         }
         else if (old->p->type == kw_template)
         {
@@ -2287,8 +2304,9 @@ static bool matchArg(TEMPLATEPARAMLIST* param, TEMPLATEPARAMLIST* arg)
     }
     else if (param->p->type == kw_template)
     {
-        if (!exactMatchOnTemplateParams(param->p->byTemplate.args, arg->p->byTemplate.dflt->templateParams->next))
-            return false;
+        if (arg->p->byTemplate.dflt)
+            if (!exactMatchOnTemplateParams(param->p->byTemplate.args, arg->p->byTemplate.dflt->templateParams->next))
+                return false;
     }
     return true;
 }

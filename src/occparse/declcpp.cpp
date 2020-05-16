@@ -1198,8 +1198,30 @@ LEXEME* baseClasses(LEXEME* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac defa
                 }
                 bcsym = nullptr;
             }
-            else if (bcsym && bcsym->sb && bcsym->sb->templateLevel)
+            else if (bcsym && (bcsym->sb && bcsym->sb->templateLevel || bcsym->tp->type == bt_templateparam && bcsym->tp->templateParam->p->type == kw_template))
             {
+                if (bcsym->tp->type == bt_templateparam)
+                {
+                    auto v = bcsym->tp->templateParam->p->byTemplate.val;
+                    if (v)
+                    {
+                        bcsym = v;
+                    }
+                    else
+                    {
+                        TEMPLATEPARAMLIST* lst = nullptr;
+                        SYMBOL* sp1;
+                        inTemplateSpecialization++;
+                        lex = GetTemplateArguments(lex, funcsp, bcsym, &lst);
+                        inTemplateSpecialization--;
+                        currentAccess = defaultAccess;
+                        isvirtual = false;
+                        done = !MATCHKW(lex, comma);
+                        if (!done)
+                            lex = getsym();
+                        goto endloop;
+                    }
+                }
                 if (bcsym->sb->storage_class == sc_typedef)
                 {
                     if (MATCHKW(lex, lt))
@@ -1476,6 +1498,7 @@ LEXEME* baseClasses(LEXEME* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac defa
                     dropStructureDeclaration();
                     return lex;
             }
+endloop:
         if (!done)
             ParseAttributeSpecifiers(&lex, funcsp, true);
     } while (!done);

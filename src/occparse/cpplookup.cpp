@@ -3935,7 +3935,7 @@ static bool getFuncConversions(SYMBOL* sym, FUNCTIONCALL* f, TYPE* atp, SYMBOL* 
                                             seq, sym, userFunc ? &userFunc[n] : nullptr, true);
                     }
                 }
-                else if (a && a->nested)
+                else if (a && (a->nested || (!a->tp && ! a->exp)))
                 {
                     getInitListConversion(basetype(tp), a->nested, nullptr, &m, seq, sym, userFunc ? &userFunc[n] : nullptr);
                 }

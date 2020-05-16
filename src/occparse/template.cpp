@@ -5258,7 +5258,7 @@ static bool TemplateDeduceArgList(SYMLIST* funcArgs, SYMLIST* templateArgs, INIT
                     funcArgs = funcArgs->next;
             }
         }
-        else if (symArgs->nested && funcArgs)
+        else if ((symArgs->nested || (!symArgs->tp && !symArgs->exp)) && funcArgs)
         {
             symArgs = symArgs->next;
             if (funcArgs)

@@ -2683,7 +2683,7 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                         TYPE* ctype = sp->tp;
                         EXPRESSION* dexp = thisptr;
                         p->exp = thisptr;
-                        callConstructorParam(&ctype, &p->exp, pinit->tp, pinit->exp, true, true, implicit, false);
+                        callConstructorParam(&ctype, &p->exp, pinit ? pinit->tp : nullptr, pinit? pinit->exp : nullptr, true, true, implicit, false);
                         if (!isref(sym->tp))
                         {
                             sp->sb->stackblock = true;
@@ -3287,8 +3287,6 @@ LEXEME* expression_arguments(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION*
         parseBuiltInTypelistFunc(&lex, funcsp, funcparams->sp, tp, exp))
         return lex;
 
-    if (lex->line == 2838)
-        printf("hi");
     if (lex)
     {
         lex = getArgs(lex, funcsp, funcparams, closepa, true, flags);
@@ -3593,7 +3591,7 @@ LEXEME* expression_arguments(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION*
                 lptr = &funcparams->arguments;
                 while (*lptr)
                 {
-                    if (isstructured((*lptr)->tp) && (*lptr)->exp)
+                    if ((*lptr)->tp && isstructured((*lptr)->tp) && (*lptr)->exp)
                     {
                         EXPRESSION* exp = (*lptr)->exp;
                         if (exp->type == en_not_lvalue)

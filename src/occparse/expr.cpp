@@ -469,7 +469,7 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                 case kw_template:
                     lex = prevsym(placeholder);
                     *tp = nullptr;
-                    if ((flags & (_F_SIZEOF | _F_PACKABLE)) == (_F_SIZEOF | _F_PACKABLE))
+                    if (flags & (_F_SIZEOF | _F_PACKABLE))
                     {
                         *exp = varNode(en_templateparam, sym);
                         *tp = sym->tp;
@@ -3287,6 +3287,8 @@ LEXEME* expression_arguments(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION*
         parseBuiltInTypelistFunc(&lex, funcsp, funcparams->sp, tp, exp))
         return lex;
 
+    if (lex->line == 2838)
+        printf("hi");
     if (lex)
     {
         lex = getArgs(lex, funcsp, funcparams, closepa, true, flags);

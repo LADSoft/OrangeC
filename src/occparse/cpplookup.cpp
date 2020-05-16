@@ -4204,7 +4204,6 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
         atp = basetype(atp)->btp;
     if (atp && !isfunction(atp))
         atp = nullptr;
-
     if (args && args->thisptr)
     {
         SYMBOL* spt = basetype(basetype(args->thistp)->btp)->sp;

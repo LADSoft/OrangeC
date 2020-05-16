@@ -3490,9 +3490,28 @@ bool ParseAttributeSpecifiers(LEXEME** lex, SYMBOL* funcsp, bool always)
                         *lex = optimized_expression(*lex, funcsp, nullptr, &tp, &exp, false);
                         if (!tp || !isint(tp))
                             error(ERR_NEED_INTEGER_TYPE);
-                        else if (!isintconst(exp))
-                            error(ERR_CONSTANT_VALUE_EXPECTED);
-                        align = exp->v.i;
+                        else
+                        {
+                            if (!isintconst(exp))
+                            {
+                                align = 1;
+                                if (exp->type != en_templateparam)
+                                {
+                                    error(ERR_CONSTANT_VALUE_EXPECTED);
+                                }
+                                else if (exp->v.templateParam && exp->v.templateParam->p->byNonType.val)
+                                {
+                                    exp = exp->v.templateParam->p->byNonType.val;
+                                    if (!isintconst(exp))
+                                        error(ERR_CONSTANT_VALUE_EXPECTED);
+                                    align = exp->v.i;
+                                }
+                            }
+                            else
+                            {
+                                align = exp->v.i;
+                            }
+                        }
                     }
                     needkw(lex, closepa);
                     basisAttribs.inheritable.structAlign = align;

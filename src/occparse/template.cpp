@@ -1017,8 +1017,10 @@ bool constructedInt(LEXEME* lex, SYMBOL* funcsp)
     }
     if (cont)
     {
+        noSpecializationError++;
         lex = getBasicType(lex, funcsp, &tp, nullptr, false, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3,
                            ac_public, &notype, &defd, nullptr, nullptr, false, false);
+        noSpecializationError--;
         lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3, nullptr);
         if (isint(tp))
         {

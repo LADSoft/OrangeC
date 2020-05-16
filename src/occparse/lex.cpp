@@ -1421,6 +1421,15 @@ bool AtEol()
         p++;
     return *p == 0;
 }
+static void ReplaceStringInString(std::string& string, const std::string& val, const std::string& replace)
+{
+    size_t n = string.find(val);
+    while (n != std::string::npos)
+    {
+        string.replace(n, val.size(), replace);
+        n = string.find(val);
+    }
+}
 void CompilePragma(const unsigned char** linePointer)
 {
     int err;
@@ -1434,11 +1443,20 @@ void CompilePragma(const unsigned char** linePointer)
         err = -1;
         if (**linePointer == '"')
         {
-            linePointer++;
-            const char* p = (const char*)*linePointer;
-            while (**linePointer && **linePointer != '"')
-                (*linePointer)++;
+            (*linePointer)++;
+            const char *p = (const char *)*linePointer;
+            while (**linePointer)
+                if (**linePointer == '\\' && (*(*linePointer + 1) == '\\' || *(*linePointer + 1) == '"'))
+                    (*linePointer) += 2;
+                else
+                    if (**linePointer != '"')
+                        (*linePointer)++;
+                    else
+                        break;            
+
             std::string toCompile(p, *linePointer - (const unsigned char*)p);
+            ReplaceStringInString(toCompile, "\\\"", "\"");
+            ReplaceStringInString(toCompile, "\\\\", "\\");
             preProcessor->CompilePragma(toCompile);
             if (**linePointer)
                 (*linePointer)++;

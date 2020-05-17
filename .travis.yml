@@ -15,7 +15,6 @@ before_install:
   - yes | sudo apt-get install -y g++-7
   - yes | sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 60 --slave /usr/bin/g++ g++ /usr/bin/g++-7 
   - yes | sudo update-alternatives --config gcc
-  - cov-configure -gcc
   - gcc --version
   - g++ --version  
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca- ; fi

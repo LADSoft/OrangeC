@@ -25,7 +25,7 @@ language: c
 compiler:
  - gcc
 
-script: if [ "${COVERITY_SCAN_BRANCH}" != 1 ]; then make -f ./travis.mak; fi
+script: if [ "${COVERITY_SCAN_BRANCH}" != 1 ]; then make -f ./travis.mak; else cat /home/travis/build/LADSoft/OrangeC/cov-int/scm_log.txt; fi
 
 addons:
   coverity_scan:
@@ -34,5 +34,5 @@ addons:
       description: "Orange C compiler"
     notification_email: touchstone222@runbox.com
     build_command_prepend: ./travis-configure
-    build_command: make -f ./travis.mak & cat /home/travis/build/LADSoft/OrangeC/cov-int/scm_log.txt
+    build_command: make -f ./travis.mak
     branch_pattern: coverity_scan

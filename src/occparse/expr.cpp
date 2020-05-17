@@ -398,8 +398,6 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
     LEXEME* placeholder = lex;
     if (ismutable)
         *ismutable = false;
-    if (lex->line == 4219)
-        printf("hi");
     if (Optimizer::cparams.prm_cplusplus ||
         ((Optimizer::architecture == ARCHITECTURE_MSIL) && Optimizer::cparams.msilAllowExtensions))
     {
@@ -471,7 +469,7 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                 case kw_template:
                     lex = prevsym(placeholder);
                     *tp = nullptr;
-                    if (flags & (_F_SIZEOF | _F_PACKABLE))
+                    if ((flags & (_F_SIZEOF | _F_PACKABLE))== (_F_SIZEOF | _F_PACKABLE))
                     {
                         *exp = varNode(en_templateparam, sym);
                         *tp = sym->tp;
@@ -3209,6 +3207,8 @@ LEXEME* expression_arguments(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION*
     bool initializerRef = false;
     bool addedThisPointer = false;
     bool memberPtr = false;
+    if (lex && lex->line == 322 && strstr(lex->file, "ostream"))
+        printf("hi");
     if (exp_in->type != en_func || isfuncptr(*tp) || isstructured(*tp))
     {
         TYPE* tpx = *tp;

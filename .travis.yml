@@ -17,6 +17,7 @@ before_install:
   - yes | sudo update-alternatives --config gcc
   - gcc --version
   - g++ --version  
+  - export COVERITY_UNSUPPORTED_COMPILER_INVOCATION=1 # needed because we need -fpermissive compiler switch  
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca- ; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then chmod u+x ./travis-configure ; fi
   - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then choco install innosetup          ; fi
@@ -25,7 +26,7 @@ language: c
 compiler:
  - gcc
 
-script: if [ "${COVERITY_SCAN_BRANCH}" != 1 ]; then make -f ./travis.mak; fi
+script: if [ "${COVERITY_SCAN_BRANCH}" != 1 ]; then make -f ./travis.mak; else cat /home/travis/build/LADSoft/OrangeC/cov-int/build-log.txt; fi
 
 addons:
   coverity_scan:

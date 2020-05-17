@@ -48,10 +48,6 @@ int main(int argc, char** argv)
     {
         std::cout << e.what() << std::endl;
     }
-    catch (std::ios_base::failure)
-    {
-        Utils::fatal("Fatal Error...");
-    }
     return 1;
 }
 

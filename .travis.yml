@@ -26,7 +26,7 @@ language: c
 compiler:
  - gcc
 
-script: if [ "${COVERITY_SCAN_BRANCH}" != 1 ]; then make -f ./travis.mak; else cat /home/travis/build/LADSoft/OrangeC/cov-int/build-log.txt; fi
+script: if [ "${COVERITY_SCAN_BRANCH}" != 1 ]; then make -f ./travis.mak; fi
 
 addons:
   coverity_scan:

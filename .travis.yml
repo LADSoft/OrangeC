@@ -10,7 +10,7 @@ env:
    - secure: "OiJqgvpFf9+brmpw3tTaYHtNZkSBJopSDeyHF7VuonIU7fQVM/F74c/rgATlEtY+bU6RN/K/wzQhloK4JZi8Kfd3aSoRk026psEbiXrd/tOL8nT+K36FZRV6oTXVum1LfzSY3wLy1UFTC2Hpat6vtx/jOesXew+iRf9WGDSDKYiBKV7WTgUeg0ZQlBTll7k0tYkeI6WMvFYs2F5/41IInTSUbzRMH/rnmUQjZdr/ILN4XEWvf4dZId4IzJHjJ/sru/plO4b81soL0wrTlwQNPClv43UmT+mbTF0t+wWs0OXeyDkFlyWfOGGwIknpDhTsWTlN/pK+mTMbNaGMnKtwKbMWEHEIcwA+Rs9AgsZKb35kggtffI49VtVE/8t7K0NPrjFfqODezFLBARI3ID7KGvJUtm5ZU7s8bPl+k8RWWB9tq1w2Dnuvdgn6eVXMukYTrkt9khXGENyemcZUwRwRjFdb5fAirEiSu2HttJUPG9cZSZb3FShwTdk9uOkmjWBB0uI5Y7oepllzIGnj1c3MG7SxNoqc5Useh6J+UgFYdVji9PqmbkvgZ1VutyAiOmJ1nfumPKdw4PKvURxAIfo1As2ve2aU4dok+t1bjqV5WRsnpY2pT5qB1JBI9tC2ZdlPLyTLShpTC4sSqfWba9e+uM2gyk0DI90383jaWa3X/oE="
 
 before_install:
-  - sudo apt-get -y install g++-7
+  - sudo apt-get -y install gcc-7.0
   - export CC=gcc-7 
   - export CXX=g++-7
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca- ; fi

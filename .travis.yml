@@ -2,7 +2,7 @@ branches:
    only:
      - master
      - coverity_scan
-
+     - test
 env:
   global:
    # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
@@ -13,8 +13,10 @@ before_install:
   - yes | sudo add-apt-repository ppa:ubuntu-toolchain-r/test 
   - yes | sudo apt-get update 
   - yes | sudo apt-get install -y gcc-7
-  - export CC=gcc-7 
-  - export CXX=g++-7
+  - yes | sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 60 --slave /usr/bin/g++ g++ /usr/bin/g++-7 
+  - yes | sudo update-alternatives --config gcc
+  - gcc --version
+  - g++ --version  
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca- ; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then chmod u+x ./travis-configure ; fi
   - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then choco install innosetup          ; fi

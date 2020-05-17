@@ -1,1 +1,1 @@
-  cov-configure -gcc
+  cov-configure -g++

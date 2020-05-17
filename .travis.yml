@@ -34,5 +34,5 @@ addons:
       description: "Orange C compiler"
     notification_email: touchstone222@runbox.com
     build_command_prepend: ./travis-configure
-    build_command: make -f ./travis.mak
+    build_command: make -f ./travis.mak & cat /home/travis/build/LADSoft/OrangeC/cov-int/scm_log.txt
     branch_pattern: coverity_scan

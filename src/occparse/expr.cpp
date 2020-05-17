@@ -3207,8 +3207,6 @@ LEXEME* expression_arguments(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION*
     bool initializerRef = false;
     bool addedThisPointer = false;
     bool memberPtr = false;
-    if (lex && lex->line == 322 && strstr(lex->file, "ostream"))
-        printf("hi");
     if (exp_in->type != en_func || isfuncptr(*tp) || isstructured(*tp))
     {
         TYPE* tpx = *tp;
@@ -3317,8 +3315,8 @@ LEXEME* expression_arguments(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION*
             tl = tl->next;
         }
     }
-//    if (*tp)
-//        getFunctionSP(tp);
+    if (*tp)
+        getFunctionSP(tp);
     if ((*exp)->type == en_funcret)
     {
         (*exp)->v.func = funcparams;

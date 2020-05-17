@@ -694,7 +694,7 @@ LEXEME* expression_func_type_cast(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRES
                 callConstructor(&ctype, exp, funcparams, false, nullptr, true, true, false, false, false, false);
                 PromoteConstructorArgs(funcparams->sp, funcparams);
                 callDestructor(basetype(*tp)->sp, nullptr, &exp1, nullptr, true, false, false);
-                if (Optimizer::architecture == ARCHITECTURE_MSIL)
+                    if (Optimizer::architecture == ARCHITECTURE_MSIL)
                     *exp = exprNode(en_void, *exp, exp2);
                 initInsert(&sym->sb->dest, *tp, exp1, 0, true);
                 //                if (flags & _F_SIZEOF)

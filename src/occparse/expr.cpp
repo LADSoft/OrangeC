@@ -398,6 +398,8 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
     LEXEME* placeholder = lex;
     if (ismutable)
         *ismutable = false;
+    if (lex->line == 4219)
+        printf("hi");
     if (Optimizer::cparams.prm_cplusplus ||
         ((Optimizer::architecture == ARCHITECTURE_MSIL) && Optimizer::cparams.msilAllowExtensions))
     {
@@ -3254,6 +3256,15 @@ LEXEME* expression_arguments(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION*
         }
         else
         {
+            if (tpx->type == bt_templateparam)
+            {
+                if (tpx->templateParam->p->type == kw_typename && tpx->templateParam->p->byClass.val)
+                {
+                    tpx = tpx->templateParam->p->byClass.val;
+                    if (tpx->sp && tpx->sp->sb->storage_class == sc_typedef)
+                        tpx = tpx->btp;
+                }
+            }
             if (ispointer(tpx))
                 tpx = basetype(tpx)->btp;
             sym = basetype(tpx)->sp;
@@ -3306,8 +3317,8 @@ LEXEME* expression_arguments(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION*
             tl = tl->next;
         }
     }
-    if (*tp)
-        getFunctionSP(tp);
+//    if (*tp)
+//        getFunctionSP(tp);
     if ((*exp)->type == en_funcret)
     {
         (*exp)->v.func = funcparams;
@@ -5136,7 +5147,7 @@ static EXPRESSION* nodeSizeof(TYPE* tp, EXPRESSION* exp, int flags)
         exp = nullptr;
         if (isstructured(tp))
         {
-            if (basetype(tp)->size == 0)
+            if (basetype(tp)->size == 0 && !templateNestingCount)
                 errorsym(ERR_UNSIZED_TYPE, basetype(tp)->sp);
             if (basetype(tp)->syms)
             {

@@ -1,4 +1,4 @@
-branches:
+branches: 
    only:
      - master
      - coverity_scan

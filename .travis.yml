@@ -1,28 +1,22 @@
-matrix:
-  include:
-    - os: linux
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-7
-
-branches:
+branches: 
    only:
      - master
-     - split
      - coverity_scan
-
+     - test
 env:
   global:
    # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
    #   via the "travis encrypt" command using the project repo's public key
-   - secure: "L5Z1gufQ8H8TEoTpmyYU+jfhawo8LfuWf0sVJNaN/k3A4ZmgPvx2Op32NLoN+QPHGCe6pcN6P09z1ch5pOdXhlFaSrivHvbzuFSYix1GJWCyr5WTnzeFioFQ1BxVmL01idIuoNUgj0vP0ALO42Jz4buL/rlKqFocdNhJowzFW4i+pgayqrKS0QI/1W3GC9oAVUz5jltZD1bDB5quSfSI9GXarWa3crlQ938nnpUozSQYzi6pnHxRVwSHDjWAasWgoADJ4CyFJtYrUeg0N5zwHTLh/gTuCY/FT4/NuevN2UL+i5ITPyeqdHJxfVAsUT2OeA1DD7PLn2qUpygzy0CX0vK0nZTwai6lpUIXWzwjL/e5wlRtmtILmY5nNiAom98oBzE/EbJeGYyX1yfQUTr+lqy7yXkLhSWCMwPwSe+V7TP3Wnn/2kuT6qDAHmDw1UPtjQhXoYnkStZUuJ/AJsP8P7/WsxmNKNPMmESy9V+f3dYZEYxyGgoVVnL+GpAxkLM++qY0fgmWVpGE+GQRaaorVJPbVFFUSgoxDWMXYCm7Ln0UQyeo+n4lpp9GsXpQPUvVtKJHzU/NWJh6yzHPu7XPtmA2NOW1nvNDHpLX4OppV7YvY3PGkTGr1QVn61H/Rxu0PI4WZgZS12Y24Wg5wq3Tjf/U3m+fIK4+XyQznOrmIx8="
+   - secure: "OiJqgvpFf9+brmpw3tTaYHtNZkSBJopSDeyHF7VuonIU7fQVM/F74c/rgATlEtY+bU6RN/K/wzQhloK4JZi8Kfd3aSoRk026psEbiXrd/tOL8nT+K36FZRV6oTXVum1LfzSY3wLy1UFTC2Hpat6vtx/jOesXew+iRf9WGDSDKYiBKV7WTgUeg0ZQlBTll7k0tYkeI6WMvFYs2F5/41IInTSUbzRMH/rnmUQjZdr/ILN4XEWvf4dZId4IzJHjJ/sru/plO4b81soL0wrTlwQNPClv43UmT+mbTF0t+wWs0OXeyDkFlyWfOGGwIknpDhTsWTlN/pK+mTMbNaGMnKtwKbMWEHEIcwA+Rs9AgsZKb35kggtffI49VtVE/8t7K0NPrjFfqODezFLBARI3ID7KGvJUtm5ZU7s8bPl+k8RWWB9tq1w2Dnuvdgn6eVXMukYTrkt9khXGENyemcZUwRwRjFdb5fAirEiSu2HttJUPG9cZSZb3FShwTdk9uOkmjWBB0uI5Y7oepllzIGnj1c3MG7SxNoqc5Useh6J+UgFYdVji9PqmbkvgZ1VutyAiOmJ1nfumPKdw4PKvURxAIfo1As2ve2aU4dok+t1bjqV5WRsnpY2pT5qB1JBI9tC2ZdlPLyTLShpTC4sSqfWba9e+uM2gyk0DI90383jaWa3X/oE="
 
 before_install:
-  - export CC=gcc-7 
-  - export CXX=g++-7
+  - yes | sudo add-apt-repository ppa:ubuntu-toolchain-r/test 
+  - yes | sudo apt-get update 
+  - yes | sudo apt-get install -y g++-7
+  - yes | sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 60 --slave /usr/bin/g++ g++ /usr/bin/g++-7 
+  - yes | sudo update-alternatives --config gcc
+  - gcc --version
+  - g++ --version  
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca- ; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then chmod u+x ./travis-configure ; fi
   - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then choco install innosetup          ; fi

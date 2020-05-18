@@ -1,5 +1,25 @@
 Release notes:
 
+version 6.0.45: 5/18/2020
+* occ:   functions ending in a function call for a function tagged as 'noreturn' will not generate a 'needs return value' warning.
+* occ:   fix bug where destructs called after an if statement could be called at the wrong time.
+* occ:   implement better error diagnostics (not used yet)
+* occ:   fix bug where 'using namespace xxx;' was used inside a function might not work properly
+* occ:   comment marker inside a preprocessor continuation for a string wasn't ignored
+* occ:   change default extension for generated assembly language files to .S
+* occ:   add /a switch for specifying extension of assembly language files
+* occ:   fix bug where lambdas generated at global scope created invalid assembly language output (object files were fine)
+* occ:   when assigning a string or other struct to itself with a hook, invalid code was generated.
+* occ:   attribute names which are keywords are now compiled correctly
+* occ:   i*i could be evaluated incorrectly due to a bug in the backend
+* occ:   fix bug in global optimizer: under rare conditions it could generate bad code.
+* occ:   fix comparison involving NANs to return false (!= returns true)
+* occ:   fix definition of FLT_MAX, DBL_MAX, LDBL_MAX to be correct
+* occ:   fix i%1 to return 0 instead of i, fix bugs and improve code generation for i%# where # is 1 or a power of 2
+* occ:   when calculating compile-time constants, -1.0/0.0 incorrectly resulted in +infinity (was good when calculated at runtime)
+* occ/ocpp:  add #line statements to the preprocessed output
+* ogrep: add -q option to make it quiet...* 
+
 Version 6.0.44.1:  4/26/2020
 * project: fix bugs that would not allow compiling in VS2019
 * project: add new appveyor builds for debugger and code analyzer; add 7z format to build artifacts

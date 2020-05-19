@@ -71,4 +71,12 @@ typedef long pid_t;
 typedef long pthread_t;
 typedef long pthread_attr_t;
 
+typedef unsigned char u_int8_t;
+typedef unsigned short u_int16_t;
+typedef unsigned u_int32_t;
+
+typedef unsigned long int ulong;
+typedef unsigned short int ushort;
+typedef unsigned int uint;
+
 #endif /* __TYPES_H */

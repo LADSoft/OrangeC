@@ -17,6 +17,7 @@ version 6.0.45:
     occ:   fix definition of FLT_MAX, DBL_MAX, LDBL_MAX to be correct
     occ:   fix i%1 to return 0 instead of i, fix bugs and improve code generation for i%# where # is 1 or a power of 2
     occ:   when calculating compile-time constants, -1.0/0.0 incorrectly resulted in +infinity (was good when calculated at runtime)
+    occ:   fix problem where negation was casted to int after the negation; same for complement
     occ/ocpp:  add #line statements to the preprocessed output
     ogrep: add -q option to make it quiet...    
 

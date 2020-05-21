@@ -5823,7 +5823,6 @@ LEXEME* expression_unary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPR
                 else
                 {
                     castToArithmetic(false, tp, exp, kw, nullptr, true);
-                    *exp = exprNode(en_uminus, *exp, nullptr);
                     if (isstructured(*tp))
                         error(ERR_ILL_STRUCTURE_OPERATION);
                     else if (isvoid(*tp) || ismsil(*tp))
@@ -5836,13 +5835,19 @@ LEXEME* expression_unary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPR
                         error(ERR_ILL_POINTER_OPERATION);
                     else if (atp && basetype(atp)->type < bt_int)
                     {
+                        *exp = exprNode(en_uminus, *exp, nullptr);
                         cast(atp, exp);
                         *tp = atp;
                     }
                     else if (basetype(*tp)->type < bt_int)
                     {
                         cast(&stdint, exp);
+                        *exp = exprNode(en_uminus, *exp, nullptr);
                         *tp = &stdint;
+                    }
+                    else
+                    {
+                        *exp = exprNode(en_uminus, *exp, nullptr);
                     }
                 }
             }
@@ -5920,7 +5925,6 @@ LEXEME* expression_unary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPR
                 else
                 {
                     castToArithmetic(true, tp, exp, kw, nullptr, true);
-                    *exp = exprNode(en_compl, *exp, nullptr);
                     if (isstructured(*tp))
                         error(ERR_ILL_STRUCTURE_OPERATION);
                     else if (iscomplex(*tp))
@@ -5937,16 +5941,19 @@ LEXEME* expression_unary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPR
                         error(ERR_SCOPED_TYPE_MISMATCH);
                     else if (atp && basetype(atp)->type < bt_int)
                     {
+                        *exp = exprNode(en_compl, *exp, nullptr);
                         cast(atp, exp);
                         *tp = atp;
                     }
                     else if (basetype(*tp)->type < bt_int)
                     {
                         cast(&stdint, exp);
+                        *exp = exprNode(en_compl, *exp, nullptr);
                         *tp = &stdint;
                     }
                     else
                     {
+                        *exp = exprNode(en_compl, *exp, nullptr);
                         cast(basetype(*tp), exp);
                     }
                 }

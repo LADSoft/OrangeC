@@ -195,13 +195,27 @@ bool IsPointedStruct(Optimizer::SimpleType* tp)
         tp = tp->btp;
     return tp->type == Optimizer::st_struct || tp->type == Optimizer::st_union;
 }
+static const char *fieldname(const char *name)
+{
+    if (name[0] == '_')
+    {
+        return name + 1;
+    }
+    else if (name[0] == '@')
+    {
+        const char *p = strchr(name, '_');
+        if (p)
+            return p + 1;
+    }
+    return name;
+}
 Field* GetField(Optimizer::SimpleSymbol* sp)
 {
     int flags = Qualifiers::Public | Qualifiers::Static;
-    if (sp->storage_class == Optimizer::scc_localstatic)
+    if (sp->storage_class == Optimizer::scc_localstatic || sp->storage_class == Optimizer::scc_static)
     {
         char buf[256];
-        sprintf(buf, "%s_%x", sp->outputName, uniqueId);
+        sprintf(buf, "%s_%x", fieldname(sp->outputName), uniqueId);
         Field* field = peLib->AllocateField(buf, GetType(sp->tp, true), flags);
         return field;
     }
@@ -219,6 +233,26 @@ Field* GetField(Optimizer::SimpleSymbol* sp)
         return field;
     }
 }
+static const char *methodname(const char *name)
+{
+    if (name[0] =='_')
+    {
+        return name + 1;
+    }
+    else if (name[0] == '@')
+    {
+        static char rv[512];
+        char *p = rv;
+        name ++;
+        while (*name && *name != '$')
+        {
+             *p++ = *name++;
+        }
+        *p = 0;
+        return rv;
+    }
+    return name;
+}
 MethodSignature* GetMethodSignature(Optimizer::SimpleType* tp, bool pinvoke)
 {
     int flags = pinvoke ? 0 : MethodSignature::Managed;
@@ -234,7 +268,13 @@ MethodSignature* GetMethodSignature(Optimizer::SimpleType* tp, bool pinvoke)
         flags |= MethodSignature::Vararg;
     }
     MethodSignature* rv = nullptr;
-    if (sp->storage_class != Optimizer::scc_localstatic && sp->storage_class != Optimizer::scc_constant &&
+    if (sp->storage_class == Optimizer::scc_static)
+    {
+        char buf[256];
+        sprintf(buf, "%s_%x", methodname(sp->outputName), uniqueId);
+        rv = peLib->AllocateMethodSignature(buf, flags, pinvoke ? NULL : mainContainer);
+    }
+    else if (sp->storage_class != Optimizer::scc_localstatic && sp->storage_class != Optimizer::scc_constant &&
         sp->storage_class != Optimizer::scc_static)
     {
         if (sp->msil_rtl && !Optimizer::cparams.no_default_libs)

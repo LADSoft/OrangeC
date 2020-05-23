@@ -54,10 +54,15 @@ int SignatureGenerator::objectBase;
 size_t SignatureGenerator::EmbedType(int* buf, int offset, Type* tp)
 {
     int rv = 0;
+    if (tp->Pinned())
+        buf[offset + rv++] = ELEMENT_TYPE_PINNED;
+
     if (tp->ByRef())
         buf[offset + rv++] = ELEMENT_TYPE_BYREF;
+
     for (int i = 0; i < tp->PointerLevel(); i++)
         buf[offset + rv++] = ELEMENT_TYPE_PTR;
+
     if (tp->ArrayLevel())
     {
         if (tp->ArrayLevel() == 1)
@@ -402,6 +407,13 @@ Type* SignatureGenerator::GetType(PELib& lib, AssemblyDef& assembly, PEReader& r
     Type* rv = NULL;
     int pointerLevel = 0;
     int arrayLevel = 0;
+    int pinned = false;
+    if (data[start] == ELEMENT_TYPE_PINNED)
+    {
+        pinned = true;
+        start++;
+        len--;
+    }
     while (data[start] == ELEMENT_TYPE_PTR)
     {
         pointerLevel++;
@@ -475,7 +487,10 @@ Type* SignatureGenerator::GetType(PELib& lib, AssemblyDef& assembly, PEReader& r
             break;
     }
     if (rv)
+    {
         rv->ArrayLevel(arrayLevel);
+        rv->Pinned(pinned);
+    }
     return rv;
 }
 Byte* SignatureGenerator::ConvertToBlob(int* buf, int size, size_t& sz)

@@ -125,6 +125,8 @@ bool Type::ILSrcDump(PELib& peLib) const
         peLib.Out() << " *";
     if (byRef_)
         peLib.Out() << "&";
+    if (pinned_)
+        peLib.Out() << " pinned";
     return true;
 }
 void Type::ObjOut(PELib& peLib, int pass) const

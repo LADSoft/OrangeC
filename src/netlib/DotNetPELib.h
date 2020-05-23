@@ -664,6 +664,7 @@ namespace DotNetPELib
         void pack(int pk) { pack_ = pk; }
         ///** set the structure size
         void size(int sz) { size_ = sz; }
+        int size() { return size_; }
         ///**set the class we are extending from, if this is unset
         // a system class will be chosen based on whether or not the class is a valuetype
         // this may be unset when reading in an assembly, in that case ExtendsName may give the name of a class which is being extended from
@@ -1322,14 +1323,14 @@ namespace DotNetPELib
             /* below this is various CIL types*/
             Void, Bool, Char, i8, u8, i16, u16, i32, u32, i64, u64, inative, unative, r32, r64, object, string
         };
-        Type(BasicType Tp, int PointerLevel) : tp_(Tp), pointerLevel_(PointerLevel), arrayLevel_(0), byRef_(false), typeRef_(nullptr), methodRef_(nullptr), peIndex_(0)
+        Type(BasicType Tp, int PointerLevel) : tp_(Tp), pointerLevel_(PointerLevel), arrayLevel_(0), byRef_(false), typeRef_(nullptr), methodRef_(nullptr), peIndex_(0), pinned_(false)
         {
         }
-        Type(DataContainer *clsref) : tp_(cls), pointerLevel_(0), arrayLevel_(0), byRef_(false), typeRef_(clsref), methodRef_(nullptr), peIndex_(0)
+        Type(DataContainer *clsref) : tp_(cls), pointerLevel_(0), arrayLevel_(0), byRef_(false), typeRef_(clsref), methodRef_(nullptr), peIndex_(0), pinned_(false)
         {
         }
         Type(MethodSignature *methodref) : tp_(method), pointerLevel_(0), arrayLevel_(0), byRef_(false), typeRef_(nullptr),
-            methodRef_(methodref), peIndex_(0)
+            methodRef_(methodref), peIndex_(0), pinned_(false)
         {
         }
         ///** Get the type of the Type object
@@ -1363,7 +1364,10 @@ namespace DotNetPELib
         size_t PEIndex() const { return peIndex_; }
         virtual void ObjOut(PELib &, int pass) const;
         static Type *ObjIn(PELib &);
+        bool Pinned() { return pinned_; }
+        void Pinned(bool pinned) { pinned_ = pinned; }
     protected:
+        bool pinned_;
         int pointerLevel_;
         bool byRef_;
         int  arrayLevel_;

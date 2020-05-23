@@ -641,6 +641,9 @@ static void PostDominators(void)
 {
     int w, i;
     domCount = 0;
+    for (i = 0; i < blockCount; i++)
+        if (blockArray[i])
+            blockArray[i]->dfstOrder = 0;
     WalkFlowgraph(blockArray[exitBlock], domNumber, false);
     vectorData = (_tarjan**)tAlloc(sizeof(struct _tarjan*) * (domCount + 1));
     for (i = 0; i <= domCount; i++)
@@ -655,7 +658,7 @@ static void PostDominators(void)
         int p = vectorData[w]->parent;
         int j;
         struct _tarjan* v = vectorData[w];
-        BLOCKLIST* bl = v->preds;
+        BLOCKLIST* bl = v->succs;
         while (bl)
         {
             int u = domEval(bl->block->dfstOrder);

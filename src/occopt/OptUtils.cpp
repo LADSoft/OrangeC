@@ -586,6 +586,8 @@ int pwrof2(long long i)
  *      return which power of two i is or -1.
  */
 {
+    if (Optimizer::chosenAssembler->arch->denyopts & DO_NOMULTOSHIFT)
+        return -1;
     if (i > 1)
     {
         int top = sizeof(shifts) / sizeof(long long);

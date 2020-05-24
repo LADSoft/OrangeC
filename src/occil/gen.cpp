@@ -1304,35 +1304,35 @@ void asm_sete(Optimizer::QUAD* q) /* evaluate a = b == c */
 }
 void asm_setc(Optimizer::QUAD* q) /* evaluate a = b U< c */
 {
-    set_xxx(Instruction::i_blt_un);
+    set_xxx(Instruction::i_blt);
 }
 void asm_seta(Optimizer::QUAD* q) /* evaluate a = b U> c */
 {
-    set_xxx(Instruction::i_bgt_un);
+    set_xxx(Instruction::i_bgt);
 }
 void asm_setnc(Optimizer::QUAD* q) /* evaluate a = b U>= c */
 {
-    set_xxx(Instruction::i_bge_un);
+    set_xxx(Instruction::i_bge);
 }
 void asm_setbe(Optimizer::QUAD* q) /* evaluate a = b U<= c */
 {
-    set_xxx(Instruction::i_ble_un);
+    set_xxx(Instruction::i_ble);
 }
 void asm_setl(Optimizer::QUAD* q) /* evaluate a = b S< c */
 {
-    set_xxx(Instruction::i_blt_un);
+    set_xxx(Instruction::i_blt);
 }
 void asm_setg(Optimizer::QUAD* q) /* evaluate a = b s> c */
 {
-    set_xxx(Instruction::i_bgt_un);
+    set_xxx(Instruction::i_bgt);
 }
 void asm_setle(Optimizer::QUAD* q) /* evaluate a = b S<= c */
 {
-    set_xxx(Instruction::i_ble_un);
+    set_xxx(Instruction::i_ble);
 }
 void asm_setge(Optimizer::QUAD* q) /* evaluate a = b S>= c */
 {
-    set_xxx(Instruction::i_bge_un);
+    set_xxx(Instruction::i_bge);
 }
 void asm_assn(Optimizer::QUAD* q) /* assignment */
 {

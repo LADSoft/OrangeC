@@ -1359,7 +1359,7 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                     if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.prm_c99)
                     {
                         addedBlock++;
-                        AllocateLocalContext(parent, funcsp, codeLabel++);
+                        AllocateLocalContext(forstmt, funcsp, codeLabel++);
                     }
                     do
                     {

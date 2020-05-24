@@ -394,6 +394,15 @@ static void callDynamic(const char* name, int startupType, int index, STATEMENT*
 #ifndef PARSER_ONLY
     if (st)
     {
+        STATEMENT* stbegin = stmtNode(nullptr, nullptr, st_dbgblock);
+        stbegin->label = 1;
+        STATEMENT* stend = stmtNode(nullptr, nullptr, st_dbgblock);
+        stend->label = 0;
+        stbegin->next = st;
+        st = stbegin;
+        while (stbegin->next)
+            stbegin = stbegin->next;
+        stbegin->next = stend;
         char fullName[512];
         Optimizer::my_sprintf(fullName, "%s_%d", name, index);
         SYMBOL* funcsp;

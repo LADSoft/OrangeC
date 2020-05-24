@@ -42,6 +42,7 @@
     <ClCompile Include="ioptutil.cpp" />
     <ClCompile Include="iout.cpp" />
     <ClCompile Include="ipeep.cpp" />
+    <ClCompile Include="ipinning.cpp" />
     <ClCompile Include="irc.cpp" />
     <ClCompile Include="ireshape.cpp" />
     <ClCompile Include="irewrite.cpp" />

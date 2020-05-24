@@ -56,8 +56,8 @@ static char usage_text[] =
     "--version - show version info\n"
     "\nCodegen parameters: (/C[+][-][params])\n"
     "  +d   - display diagnostics          -b        - no BSS\n"
-    "  -l   - no C source in ASM file      -m        -  no leading underscores\n"
-    "  +u   - 'char' type is unsigned\n"
+    "  -f   -generated pinned addresses    -l   - no C source in ASM file\n"
+    "  -m        -  no leading underscores +u   - 'char' type is unsigned\n"
     "\nWarning Control:\n"
     " /w      - display no warnings         /wx or /werror - display warnings as errors\n"
     " /woxxx  - only display warning once   /wexxx         - display warning xxx as error\n"
@@ -409,6 +409,14 @@ ARCH_ASM msilAssemblerInterface[] = {
     },
     {0}};
 
+int parse_msil_codegen(bool v, const char *string)
+{
+    if (string[0] == 'f')
+        pinning = v;
+    else
+        return 0;
+    return 1;
+}
 void msilWinmodeSetup(const char* string)
 {
     switch (string[0])

@@ -36,6 +36,7 @@
 
 namespace Optimizer
 {
+bool pinning;
 int gentype; /* Current DC type */
 int curseg;  /* Current seg */
 int outcol;  /* Curront col (roughly) */

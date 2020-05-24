@@ -819,7 +819,7 @@ void gen_convert(Operand* dest, Optimizer::IMODE* im, int sz)
             op = Instruction::i_conv_i8;
             break;
         case ISZ_ADDR:
-            op = Instruction::i_conv_u4;
+            op = Instruction::i_conv_u;
             break;
         /* */
         case ISZ_FLOAT:

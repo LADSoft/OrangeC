@@ -225,6 +225,8 @@ static int parseCodegen(bool v, const char* string)
     {
         case ARCHITECTURE_X86:
             return Optimizer::parse_codegen(v, string);
+        case ARCHITECTURE_MSIL:
+            return Optimizer::parse_msil_codegen(v, string);
         default:
             break;
     }
@@ -915,10 +917,10 @@ void ccinit(int argc, char* argv[])
     /* parse the environment and command line */
     int ecnt = 0;
     char* eargs[200];
+    bool need_usage = false;
     if (!switchParser.Parse(&argc, argv) || (argc == 1 && prm_file.GetCount() <= 1 && ecnt <= 1))
     {
-        init_backend();
-        Utils::usage(argv[0], getUsageText());
+        need_usage = true;
     }
     /* initialize back end */
     if (prm_assemble.GetExists())
@@ -953,6 +955,11 @@ void ccinit(int argc, char* argv[])
     }
     if (!init_backend())
         Utils::fatal("Could not initialize back end");
+
+    if (need_usage)
+    {
+        Utils::usage(argv[0], getUsageText());
+    }
 
     if (Optimizer::chosenAssembler->envname)
     {

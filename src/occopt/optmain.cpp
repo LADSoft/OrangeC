@@ -55,6 +55,8 @@
 #include "iconst.h"
 #include "ialias.h"
 #include "ioptutil.h"
+#include "ipinning.h"
+
 int usingEsp;
 
 Optimizer::SimpleSymbol* currentFunction;
@@ -297,6 +299,10 @@ void Optimize(SimpleSymbol* funcsp)
         CalculateBackendLives();
     }
     sFree();
+    if (pinning)
+    {
+        RewriteForPinning();
+    }
     peep_icode(true); /* we do branche opts last to not interfere with other opts */
                       // printf("optimzation done\n");
 }

@@ -125,6 +125,7 @@ struct SimpleType
             unsigned isvolatile : 1;
             unsigned isrestrict : 1;
             unsigned istypedef : 1;
+            unsigned pinned : 1;
         };
         unsigned flags;
     };

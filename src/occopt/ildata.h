@@ -174,6 +174,7 @@ enum e_stt
     STT_INSTRUCTION,
 
 };
+extern bool pinning;
 extern int gentype; /* Current DC type */
 extern int curseg;  /* Current seg */
 extern int outcol;  /* Curront col (roughly) */

@@ -22,10 +22,8 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
  */
+
 namespace Optimizer
 {
-extern ARCH_ASM msilAssemblerInterface[];
-
-int parse_msil_codegen(bool v, const char *string);
-void msilWinmodeSetup(const char* string);
-}  // namespace Optimizer
+void RewriteForPinning();
+}

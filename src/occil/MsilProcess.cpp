@@ -89,6 +89,7 @@ static int dataPos, dataMax;
 static Byte* dataPointer;
 static Field* initializingField;
 static char objFileName[260];
+static std::map<Field*, Byte*> stringInitializers;
 
 Type* GetType(Optimizer::SimpleType* tp, bool commit, bool funcarg, bool pinvoke);
 static Optimizer::SimpleSymbol* clone(Optimizer::SimpleSymbol* sp, bool ctype = true);
@@ -197,15 +198,30 @@ bool IsPointedStruct(Optimizer::SimpleType* tp)
 }
 static const char *fieldname(const char *name)
 {
-    if (name[0] == '_')
+    static char buff[512];
+    Utils::StrCpy(buff, name);
+    if (buff[0] == '_')
     {
-        return name + 1;
+        return buff + 1;
     }
     else if (name[0] == '@')
     {
-        const char *p = strchr(name, '_');
+        const char *p = strchr(buff, '_');
+
         if (p)
-            return p + 1;
+        {
+            memmove(buff, p + 1, strlen(p + 1) + 1);
+        }
+        p = strchr(buff, '$');
+        if (p)	
+        {
+             const char *q = strchr(p, '_');
+             if (q)
+             {
+                   memmove((void *)p, q, strlen(q)+1);
+             }
+        }
+        return buff;
     }
     return name;
 }
@@ -442,11 +458,11 @@ std::string GetArrayName(Optimizer::SimpleType* tp)
     while (tp->isarray)
     {
         if (tp->isvla)
-            strcat(end, "[vla]");
+            strcat(end, "_vla");
         else if (tp->size == 0)
-            strcat(end, "[]");
+            strcat(end, "_empty");
         else
-            sprintf(end + strlen(end), "[%d]", (int)tp->size);
+            sprintf(end + strlen(end), "_%d", (int)tp->size);
         tp = tp->btp;
     }
     if ((tp->type == Optimizer::st_struct || tp->type == Optimizer::st_union) || tp->type == Optimizer::st_enum)
@@ -455,11 +471,11 @@ std::string GetArrayName(Optimizer::SimpleType* tp)
     }
     else if (tp->type == Optimizer::st_pointer && tp->btp->type == Optimizer::st_func)
     {
-        return std::string("void *") + end;
+        return std::string("void_ptr") + end;
     }
     else if (tp->type == Optimizer::st_pointer)
     {
-        return std::string("void *") + end;
+        return std::string("void_ptr") + end;
     }
     else
     {
@@ -515,7 +531,8 @@ void AddType(Optimizer::SimpleSymbol* sym, Type* type) { typeList[sym->outputNam
 Type* GetType(Optimizer::SimpleType* tp, bool commit, bool funcarg, bool pinvoke)
 {
     bool byref = false;
-    if ((tp->type == Optimizer::st_lref || tp->type == Optimizer::st_rref))
+    bool pinned = tp->pinned;
+    if ((tp->type == Optimizer::st_lref || tp->type == Optimizer::st_rref || tp->pinned))
     {
         byref = true;
         tp = tp->btp;
@@ -605,6 +622,7 @@ Type* GetType(Optimizer::SimpleType* tp, bool commit, bool funcarg, bool pinvoke
                 }
             }
             type->ByRef(byref);
+            type->Pinned(pinned);
             return type;
         }
         else
@@ -636,6 +654,7 @@ Type* GetType(Optimizer::SimpleType* tp, bool commit, bool funcarg, bool pinvoke
             // this is because pinvokes with enums doesn't work...
             Type* type = peLib->AllocateType(Type::i32, 0);
             typeList[tp->sp->outputName] = type;
+            type->Pinned(pinned);
             return type;
         }
         else
@@ -666,6 +685,7 @@ Type* GetType(Optimizer::SimpleType* tp, bool commit, bool funcarg, bool pinvoke
             if ((base->type == Optimizer::st_struct || base->type == Optimizer::st_union))
                 GetType(base, true);
             rv->ByRef(byref);
+            rv->Pinned(pinned);
             return rv;
         }
         else
@@ -692,6 +712,7 @@ Type* GetType(Optimizer::SimpleType* tp, bool commit, bool funcarg, bool pinvoke
             if ((tp->type == Optimizer::st_struct || tp->type == Optimizer::st_union))
                 GetType(tp, true);
             type->ByRef(byref);
+            type->Pinned(pinned);
             return type;
         }
         else
@@ -701,10 +722,12 @@ Type* GetType(Optimizer::SimpleType* tp, bool commit, bool funcarg, bool pinvoke
     }
     else if (tp->type == Optimizer::st_pointer && tp->btp->type == Optimizer::st_func)
     {
-        return peLib->AllocateType(Type::Void, 1);  // pointer to void
+        Type *type =  peLib->AllocateType(Type::Void, 1);  // pointer to void
                                                     //        tp = tp->btp;
                                                     //        MethodSignature *sig = GetMethodSignature(tp, false);
                                                     //        return peLib->AllocateType(sig);
+        type->Pinned(pinned);
+        return type;
     }
     else if (tp->type == Optimizer::st_pointer)
     {
@@ -741,6 +764,7 @@ Type* GetType(Optimizer::SimpleType* tp, bool commit, bool funcarg, bool pinvoke
         }
         rv->PointerLevel(level);
         rv->ByRef(byref);
+        rv->Pinned(pinned);
         return rv;
     }
     else if (tp->type == Optimizer::st_void)
@@ -749,10 +773,13 @@ Type* GetType(Optimizer::SimpleType* tp, bool commit, bool funcarg, bool pinvoke
     }
     else if (tp->msil)
     {
+        Type* type;
         if (tp->type == Optimizer::st___string)
-            return peLib->AllocateType(Type::string, 0);
+            type = peLib->AllocateType(Type::string, 0);
         else
-            return peLib->AllocateType(Type::object, 0);
+            type = peLib->AllocateType(Type::object, 0);
+        type->Pinned(pinned);
+        return type;
     }
     else
     {
@@ -767,6 +794,7 @@ Type* GetType(Optimizer::SimpleType* tp, bool commit, bool funcarg, bool pinvoke
         };
         Type* rv = peLib->AllocateType(typeNames[tp->sizeFromType], 0);
         rv->ByRef(byref);
+        rv->Pinned(pinned);
         return rv;
     }
 }
@@ -1305,7 +1333,7 @@ void msil_oa_gen_strlab(Optimizer::SimpleSymbol* sp)
     //        CreateField(sp);
     //    }
 }
-Type* GetStringType(int type)
+Type* GetStringType(int lab, int type)
 {
 
     std::string name;
@@ -1313,14 +1341,24 @@ Type* GetStringType(int type)
     {
         case l_ustr:
         case l_astr:
-            name = "int8[]";
+            name = "int8_";
             break;
         case l_Ustr:
-            name = "int32[]";
+            name = "int32_";
             break;
         case l_wstr:
-            name = "int16[]";
+            name = "int16_";
             break;
+    }
+    if (Optimizer::pinning)
+    {
+        char buf[256];
+        sprintf(buf,"L_%d_%x", lab, uniqueId);
+        name += buf;
+    }
+    else
+    {
+        name += "_empty";
     }
     std::map<std::string, Type*>::iterator it = typeList.find(name);
     if (it != typeList.end())
@@ -1345,7 +1383,7 @@ Value* GetStringFieldData(int lab, int type)
     char buf[256];
     sprintf(buf, "L_%d_%x", lab, uniqueId);
     Field* field =
-        peLib->AllocateField(buf, GetStringType(type), Qualifiers::ClassField | Qualifiers::Private | Qualifiers::Static);
+        peLib->AllocateField(buf, GetStringType(lab, type), Qualifiers::ClassField | Qualifiers::Private | Qualifiers::Static);
     mainContainer->Add(field);
     sp = clone(sp);
     Value* v = peLib->AllocateFieldName(field);
@@ -1404,7 +1442,15 @@ void msil_oa_enterseg(Optimizer::e_sg segnum)
         // need a terminating zero which has been elided because we don't do anything else
         Byte* v = peLib->AllocateBytes(dataPos);
         memcpy(v, dataPointer, dataPos);
-        initializingField->AddInitializer(v, dataPos);
+        if (Optimizer::pinning)
+        {
+            ((Class*)initializingField->FieldType()->GetClass())->size(dataPos);
+            stringInitializers[initializingField] = v;
+        }
+        else
+        {
+            initializingField->AddInitializer(v, dataPos);
+        }
     }
     initializingField = NULL;
     dataPos = 0;
@@ -1555,7 +1601,7 @@ static Field* LookupManagedField(const char* name)
 }
 static void mainInit(void)
 {
-    std::string name = "$Main";
+    std::string name = "Main";
     int flags = Qualifiers::Private | Qualifiers::HideBySig | Qualifiers::Static | Qualifiers::CIL | Qualifiers::Managed;
     if (Optimizer::cparams.prm_targettype == DLL)
     {
@@ -1642,8 +1688,84 @@ static void mainInit(void)
             peLib->AllocateInstruction(Instruction::i_stsfld, peLib->AllocateOperand(peLib->AllocateFieldName(field))));
     }
 }
+static void InitializeByte(Local* var, int pos, int data)
+{
+    currentMethod->AddInstruction(
+        peLib->AllocateInstruction(Instruction::i_ldloc, peLib->AllocateOperand(var)));
+    currentMethod->AddInstruction(
+        peLib->AllocateInstruction(Instruction::i_ldc_i4, peLib->AllocateOperand((longlong)pos, Operand::any)));
+    currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_add));
+    currentMethod->AddInstruction(
+        peLib->AllocateInstruction(Instruction::i_ldc_i4, peLib->AllocateOperand((longlong)data, Operand::any)));
+    currentMethod->AddInstruction(
+        peLib->AllocateInstruction(Instruction::i_stind_i1, nullptr));
+
+}
+static void InitializeString(Local*pinned, Local* var, Field *field, Byte* data)
+{
+    currentMethod->AddInstruction(
+        peLib->AllocateInstruction(Instruction::i_ldsflda, peLib->AllocateOperand(peLib->AllocateFieldName(field))));
+    currentMethod->AddInstruction(
+        peLib->AllocateInstruction(Instruction::i_stloc, peLib->AllocateOperand(pinned)));
+    currentMethod->AddInstruction(
+        peLib->AllocateInstruction(Instruction::i_ldloc, peLib->AllocateOperand(pinned)));
+    currentMethod->AddInstruction(
+        peLib->AllocateInstruction(Instruction::i_conv_u, nullptr));
+    currentMethod->AddInstruction(
+        peLib->AllocateInstruction(Instruction::i_stloc, peLib->AllocateOperand(var)));
+    currentMethod->AddInstruction(
+        peLib->AllocateInstruction(Instruction::i_nop, nullptr));
+ //   currentMethod->AddInstruction(
+//        peLib->AllocateInstruction(Instruction::i_ldloc, peLib->AllocateOperand(var)));
+    for (int i = 0; i < ((Class*)field->FieldType()->GetClass())->size(); i++)
+    {
+        InitializeByte(var, i, data[i]);
+    }
+    currentMethod->AddInstruction(
+        peLib->AllocateInstruction(Instruction::i_nop, nullptr));
+    currentMethod->AddInstruction(
+        peLib->AllocateInstruction(Instruction::i_ldc_i4, peLib->AllocateOperand((longlong)0, Operand::any)));
+    currentMethod->AddInstruction(
+        peLib->AllocateInstruction(Instruction::i_conv_u, nullptr));
+    currentMethod->AddInstruction(
+        peLib->AllocateInstruction(Instruction::i_stloc, peLib->AllocateOperand(pinned)));
+}
+static void CreateStringFunction(MethodSignature* signature)
+{
+    auto oldCurrent = currentMethod;
+    currentMethod = peLib->AllocateMethod(signature, Qualifiers::ManagedFunc | Qualifiers::Private, false);
+    mainContainer->Add(currentMethod);
+    auto tpv = peLib->AllocateType(Type::i8, 0);
+    tpv->PointerLevel(1);
+    auto var = peLib->AllocateLocal("var", tpv);
+    var->Index(0);
+    currentMethod->AddLocal(var);
+    auto tp = peLib->AllocateType(Type::i8, 0);
+    tp->ByRef(true);
+    tp->Pinned(true);
+    auto pinnedvar = peLib->AllocateLocal("pinned", tp);
+    int count = 1;
+    pinnedvar->Index(count++);
+    currentMethod->AddLocal(pinnedvar);
+    for (auto v : stringInitializers)
+    {
+        InitializeString(pinnedvar, var, v.first, v.second);
+    }
+    currentMethod->AddInstruction(
+        peLib->AllocateInstruction(Instruction::i_ret, nullptr));
+    currentMethod->Optimize(*peLib);
+    currentMethod = oldCurrent;
+}
 static void dumpInitializerCalls(Optimizer::LIST* lst)
 {
+    if (Optimizer::pinning && lst == initializersHead)
+    {
+        auto signature = peLib->AllocateMethodSignature("StringInit", MethodSignature::Managed, mainContainer);
+        signature->ReturnType(peLib->AllocateType(Type::Void, 0));
+        currentMethod->AddInstruction(peLib->AllocateInstruction(
+                    Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
+        CreateStringFunction(signature);
+    }
     while (lst)
     {
         MethodName* m = static_cast<MethodName*>(lst->data);
@@ -1840,7 +1962,7 @@ static void AddRTLThunks()
         }
         catch (PELibError exc)
         {
-            std::cout << "Optimizer error: ( $Main ) " << exc.what() << std::endl;
+            std::cout << "Optimizer error: ( Main ) " << exc.what() << std::endl;
         }
 
         dumpGlobalFuncs();

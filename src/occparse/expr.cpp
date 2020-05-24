@@ -5833,7 +5833,7 @@ LEXEME* expression_unary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPR
                         error(ERR_SCOPED_TYPE_MISMATCH);
                     else if (ispointer(*tp))
                         error(ERR_ILL_POINTER_OPERATION);
-                    else if (atp && basetype(atp)->type < bt_int)
+                    else if (atp && basetype(atp)->type < bt_int && Optimizer::architecture != ARCHITECTURE_MSIL)
                     {
                         *exp = exprNode(en_uminus, *exp, nullptr);
                         cast(atp, exp);
@@ -5939,7 +5939,7 @@ LEXEME* expression_unary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPR
                         error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
                     else if (basetype(*tp)->scoped)
                         error(ERR_SCOPED_TYPE_MISMATCH);
-                    else if (atp && basetype(atp)->type < bt_int)
+                    else if (atp && basetype(atp)->type < bt_int && Optimizer::architecture != ARCHITECTURE_MSIL)
                     {
                         *exp = exprNode(en_compl, *exp, nullptr);
                         cast(atp, exp);

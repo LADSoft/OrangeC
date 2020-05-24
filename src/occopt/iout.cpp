@@ -389,6 +389,12 @@ static void iop_cpblk(Optimizer::QUAD* q)
     oputc('\t', icdFile);
     oprintf(icdFile, "cpblk");
 }
+static void iop_initobj(Optimizer::QUAD* q)
+{
+    oputc('\t', icdFile);
+    oprintf(icdFile, "INITOBJ ");
+    putamode(q, q->dc.left);
+}
 /*-------------------------------------------------------------------------*/
 
 static void iop_asmcond(Optimizer::QUAD* q) { oprintf(icdFile, "\tASMCOND\tL_%d:PC", q->dc.v.label); }
@@ -814,7 +820,8 @@ static void (*oplst[])(Optimizer::QUAD* q) = {
     iop_tag,
     iop_seh,
     iop_initblk,
-    iop_cpblk};
+    iop_cpblk,
+    iop_initobj};
 /*-------------------------------------------------------------------------*/
 
 /*-------------------------------------------------------------------------*/

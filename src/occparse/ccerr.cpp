@@ -2003,6 +2003,7 @@ void assignmentUsages(EXPRESSION* node, bool first)
         case en_templateselector:
         case en_packedempty:
         case en_sizeofellipse:
+        case en__initobj:
             break;
         default:
             diag("assignmentUsages");
@@ -2217,6 +2218,7 @@ static int checkDefaultExpression(EXPRESSION* node)
         case en_stmt:
         case en_templateparam:
         case en_templateselector:
+        case en__initobj:
             break;
         default:
             diag("rv |= checkDefaultExpression");

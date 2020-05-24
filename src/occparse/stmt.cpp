@@ -2405,6 +2405,7 @@ static bool checkNoEffect(EXPRESSION* exp)
         case en_void:
         case en__initblk:
         case en__cpblk:
+        case en__initobj:
             return false;
             break;
         case en_not_lvalue:

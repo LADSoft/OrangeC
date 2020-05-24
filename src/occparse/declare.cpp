@@ -56,6 +56,7 @@
 #include "types.h"
 #include "browse.h"
 #include "Property.h"
+#include "ildata.h"
 
 namespace Parser
 {
@@ -6725,6 +6726,12 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                                         st = stmtNode(hold, block, st_expr);
                                         st->select =
                                             convertInitToExpression(sp->tp, sp, nullptr, funcsp, sp->sb->init, nullptr, false);
+                                    }
+                                    else if ((isarray(sp->tp) || isstructured(sp->tp)) && Optimizer::architecture == ARCHITECTURE_MSIL)
+                                    {
+                                        STATEMENT* st;
+                                        st = stmtNode(hold, block, st_expr);
+                                        st->select = exprNode(en__initobj, varNode(en_auto, sp), nullptr);
                                     }
                                 }
                             }

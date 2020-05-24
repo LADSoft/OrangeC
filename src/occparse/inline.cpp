@@ -591,6 +591,7 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
         case en_argnopush:
         case en_thisref:
         case en_funcret:
+        case en__initobj:
             temp->left = inlineexpr(node->left, nullptr);
             break;
         case en_atomic:
@@ -997,6 +998,7 @@ static bool sideEffects(EXPRESSION* node)
         case en_trapcall:
         case en__initblk:
         case en__cpblk:
+        case en__initobj:
             rv = true;
             break;
         case en_add:

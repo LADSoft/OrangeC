@@ -103,7 +103,7 @@ int msil_examine_icode(QUAD* head)
             head->dc.opcode != i_line && head->dc.opcode != i_passthrough && head->dc.opcode != i_func &&
             head->dc.opcode != i_gosub && head->dc.opcode != i_parmadj && head->dc.opcode != i_ret &&
             head->dc.opcode != i_varstart && head->dc.opcode != i_parmblock && head->dc.opcode != i_coswitch &&
-            head->dc.opcode != i_swbranch && head->dc.opcode != i_expressiontag)
+            head->dc.opcode != i_swbranch && head->dc.opcode != i_expressiontag && head->dc.opcode != i__initobj)
         {
             if (head->dc.opcode == i_muluh || head->dc.opcode == i_mulsh)
             {

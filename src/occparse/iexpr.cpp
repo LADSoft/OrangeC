@@ -57,6 +57,7 @@
 #include "ifloatconv.h"
 #include "beinterf.h"
 #include "iexpr.h"
+#include "ioptimizer.h"
 
 namespace Parser
 {
@@ -306,6 +307,7 @@ Optimizer::IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
         case en_savestack:
         case en__initblk:
         case en__cpblk:
+        case en__initobj:
             siz1 = ISZ_ADDR;
             break;
         case en_l_bool:
@@ -1207,6 +1209,20 @@ Optimizer::IMODE* gen_cpinitblock(EXPRESSION* node, SYMBOL* funcsp, bool cp, int
             Optimizer::gen_icode(Optimizer::i_assn, ap7, ap6, nullptr);
     }
     return (ap7);
+}
+
+Optimizer::IMODE* gen_cpinitobj(EXPRESSION* node, SYMBOL* funcsp, bool cp, int flags)
+{
+    Optimizer::IMODE* ap = gen_expr(funcsp, node->left, 0, ISZ_UINT);
+    Optimizer::IMODE* ap1 = LookupLoadTemp(nullptr, ap);
+    gen_icode(Optimizer::i_assn, ap1, ap, nullptr);
+    Optimizer::intermed_tail->alwayslive = true;
+    ap = (Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+    ap->mode = Optimizer::i_immed;
+    ap->offset = Optimizer::SymbolManager::Get(node->left);
+    ap->size = ISZ_UINT;
+    gen_icode(Optimizer::i__initobj, nullptr, ap, nullptr);
+    return nullptr;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -2722,6 +2738,7 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
                 case en_void:
                 case en__cpblk:
                 case en__initblk:
+                case en__initobj:
                     break;
                 default:
                     Optimizer::gen_nodag(Optimizer::i_expressiontag, 0, 0, 0);
@@ -2917,6 +2934,9 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
             break;
         case en__cpblk:
             rv = gen_cpinitblock(node, funcsp, true, flags);
+            break;
+        case en__initobj:
+            rv = gen_cpinitobj(node, funcsp, true, flags);
             break;
         case en_loadstack:
             ap1 = gen_expr(funcsp, node->left, 0, ISZ_ADDR);
@@ -3423,6 +3443,7 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
                 case en_void:
                 case en__cpblk:
                 case en__initblk:
+                case en__initobj:
                     break;
                 default:
                     Optimizer::gen_nodag(Optimizer::i_expressiontag, 0, 0, 0);
@@ -3492,6 +3513,7 @@ int natural_size(EXPRESSION* node)
             return ISZ_ADDR;
         case en__initblk:
         case en__cpblk:
+        case en__initobj:
             return ISZ_NONE;
         case en_bits:
         case en_shiftby:

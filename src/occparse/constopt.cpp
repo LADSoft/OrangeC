@@ -2120,6 +2120,7 @@ int opt0(EXPRESSION** node)
         case en_lvalue:
         case en_thisref:
         case en_funcret:
+        case en__initobj:
             rv |= opt0(&(ep->left));
             break;
         case en_func:
@@ -2684,6 +2685,7 @@ int fold_const(EXPRESSION* node)
         case en_argnopush:
         case en_not_lvalue:
         case en_lvalue:
+        case en__initobj:
             rv |= fold_const(node->left);
             break;
         case en_funcret:
@@ -2888,6 +2890,7 @@ int typedconsts(EXPRESSION* node1)
         case en_thisref:
         case en_literalclass:
         case en_funcret:
+        case en__initobj:
             rv |= typedconsts(node1->left);
             break;
         case en_func:

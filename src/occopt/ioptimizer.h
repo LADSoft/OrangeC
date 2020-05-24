@@ -429,7 +429,7 @@ struct ArgList
         i_tryblock, i_substack, i_parmstack, i_loadstack, i_savestack, i_functailstart, i_functailend,
         i_gcsestub, i_expressiontag, i_tag, i_seh,
         /* msil */
-        i__initblk, i__cpblk,
+        i__initblk, i__cpblk, i__initobj,
         /* Dag- specific stuff */
         i_var, i_const, i_ptr, i_labcon,
         /* end marker */

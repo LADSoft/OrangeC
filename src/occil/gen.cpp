@@ -996,6 +996,18 @@ void unbox(int isz)
     if (op1)
         gen_code(Instruction::i_unbox, op1);
 }
+void set_xxx(Instruction::iop ins)
+{
+	int lab1 = beGetLabel;
+	int lab2 = beGetLabel;
+        gen_branch(ins, lab1, true);
+        gen_code(Instruction::i_ldc_i4_0, nullptr);
+        gen_branch(Instruction::i_br, lab2, true);
+        msil_oa_gen_label(lab1);
+        gen_code(Instruction::i_ldc_i4_1, nullptr);
+        msil_oa_gen_label(lab2);
+        increment_stack();
+}
 // this implementation won't handle varag functions nested in other varargs...
 void asm_parm(Optimizer::QUAD* q) /* push a parameter*/
 {
@@ -1284,73 +1296,43 @@ void asm_eor(Optimizer::QUAD* q) /* binary exclusive or */
 }
 void asm_setne(Optimizer::QUAD* q) /* evaluate a = b != c */
 {
-    gen_code(Instruction::i_ceq, NULL);
-    gen_code(Instruction::i_ldc_i4_1, NULL);
-    gen_code(Instruction::i_xor, NULL);
-    increment_stack();
-    decrement_stack();
-    decrement_stack();
+    set_xxx(Instruction::i_bne_un);
 }
 void asm_sete(Optimizer::QUAD* q) /* evaluate a = b == c */
 {
-    gen_code(Instruction::i_ceq, NULL);
-    decrement_stack();
+    set_xxx(Instruction::i_beq);
 }
 void asm_setc(Optimizer::QUAD* q) /* evaluate a = b U< c */
 {
-    gen_code(Instruction::i_clt_un, NULL);
-    decrement_stack();
+    set_xxx(Instruction::i_blt_un);
 }
 void asm_seta(Optimizer::QUAD* q) /* evaluate a = b U> c */
 {
-    gen_code(Instruction::i_cgt_un, NULL);
-    decrement_stack();
+    set_xxx(Instruction::i_bgt_un);
 }
 void asm_setnc(Optimizer::QUAD* q) /* evaluate a = b U>= c */
 {
-    gen_code(Instruction::i_clt_un, NULL);
-    gen_code(Instruction::i_ldc_i4_1, NULL);
-    gen_code(Instruction::i_xor, NULL);
-    increment_stack();
-    decrement_stack();
-    decrement_stack();
+    set_xxx(Instruction::i_bge_un);
 }
 void asm_setbe(Optimizer::QUAD* q) /* evaluate a = b U<= c */
 {
-    gen_code(Instruction::i_cgt_un, NULL);
-    gen_code(Instruction::i_ldc_i4_1, NULL);
-    gen_code(Instruction::i_xor, NULL);
-    increment_stack();
-    decrement_stack();
-    decrement_stack();
+    set_xxx(Instruction::i_ble_un);
 }
 void asm_setl(Optimizer::QUAD* q) /* evaluate a = b S< c */
 {
-    gen_code(Instruction::i_clt, NULL);
-    decrement_stack();
+    set_xxx(Instruction::i_blt_un);
 }
 void asm_setg(Optimizer::QUAD* q) /* evaluate a = b s> c */
 {
-    gen_code(Instruction::i_cgt, NULL);
-    decrement_stack();
+    set_xxx(Instruction::i_bgt_un);
 }
 void asm_setle(Optimizer::QUAD* q) /* evaluate a = b S<= c */
 {
-    gen_code(Instruction::i_cgt, NULL);
-    gen_code(Instruction::i_ldc_i4_1, NULL);
-    gen_code(Instruction::i_xor, NULL);
-    increment_stack();
-    decrement_stack();
-    decrement_stack();
+    set_xxx(Instruction::i_ble_un);
 }
 void asm_setge(Optimizer::QUAD* q) /* evaluate a = b S>= c */
 {
-    gen_code(Instruction::i_clt, NULL);
-    gen_code(Instruction::i_ldc_i4_1, NULL);
-    gen_code(Instruction::i_xor, NULL);
-    increment_stack();
-    decrement_stack();
-    decrement_stack();
+    set_xxx(Instruction::i_bge_un);
 }
 void asm_assn(Optimizer::QUAD* q) /* assignment */
 {
@@ -1640,6 +1622,12 @@ void asm_clrblock(Optimizer::QUAD* q) /* clear block of memory */
     decrement_stack();
     decrement_stack();
 }
+void asm_initobj(Optimizer::QUAD* q)
+{
+    auto operand = peLib->AllocateOperand(peLib->AllocateValue("", GetType(q->dc.left->offset->sp->tp, true)));
+    gen_code(Instruction::i_initobj, operand);
+    decrement_stack();
+}
 void asm_cmpblock(Optimizer::QUAD* q)
 {
     assert(0);  // atomic support not implemented
@@ -1651,9 +1639,15 @@ void asm_je(Optimizer::QUAD* q) /* branch if a == b */
     if (q->dc.right->mode == Optimizer::i_immed &&
         ((q->dc.right->offset->type == Optimizer::se_i || q->dc.right->offset->type == Optimizer::se_ui) &&
          q->dc.right->offset->i == 0))
+    {
+        if (q->dc.left->size == ISZ_ADDR)
+            gen_code(Instruction::i_conv_u, nullptr);
         gen_branch(Instruction::i_brfalse, q->dc.v.label, true);
+    }
     else
+    {
         gen_branch(Instruction::i_beq, q->dc.v.label, true);
+    }
 }
 void asm_jnc(Optimizer::QUAD* q) /* branch if a U>= b */ { gen_branch(Instruction::i_bge_un, q->dc.v.label, true); }
 void asm_jbe(Optimizer::QUAD* q) /* branch if a U<= b */ { gen_branch(Instruction::i_ble_un, q->dc.v.label, true); }
@@ -1662,9 +1656,15 @@ void asm_jne(Optimizer::QUAD* q) /* branch if a != b */
     if (q->dc.right->mode == Optimizer::i_immed &&
         ((q->dc.right->offset->type == Optimizer::se_i || q->dc.right->offset->type == Optimizer::se_ui) &&
          q->dc.right->offset->i == 0))
+    {
+        if (q->dc.left->size == ISZ_ADDR)
+            gen_code(Instruction::i_conv_u, nullptr);
         gen_branch(Instruction::i_brtrue, q->dc.v.label, true);
+    }
     else
+    {
         gen_branch(Instruction::i_bne_un, q->dc.v.label, true);
+    }
 }
 void asm_jl(Optimizer::QUAD* q) /* branch if a S< b */ { gen_branch(Instruction::i_blt, q->dc.v.label, true); }
 void asm_jg(Optimizer::QUAD* q) /* branch if a S> b */ { gen_branch(Instruction::i_bgt, q->dc.v.label, true); }

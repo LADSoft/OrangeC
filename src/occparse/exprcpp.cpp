@@ -2117,6 +2117,7 @@ static bool noexceptExpression(EXPRESSION* node)
         case en_alloca:
         case en_loadstack:
         case en_savestack:
+        case en__initobj:
             rv = noexceptExpression(node->left);
             break;
         case en_assign:

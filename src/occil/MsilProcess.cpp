@@ -1756,9 +1756,9 @@ static void CreateStringFunction(MethodSignature* signature)
     currentMethod->Optimize(*peLib);
     currentMethod = oldCurrent;
 }
-static void dumpInitializerCalls(Optimizer::LIST* lst)
+static void dumpInitializerCalls(Optimizer::LIST* lst, bool initting)
 {
-    if (Optimizer::pinning && lst == initializersHead)
+    if (Optimizer::pinning && initting)
     {
         auto signature = peLib->AllocateMethodSignature("StringInit", MethodSignature::Managed, mainContainer);
         signature->ReturnType(peLib->AllocateType(Type::Void, 0));
@@ -1847,7 +1847,7 @@ static void dumpCallToMain(void)
                     Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(mainSym->Signature()))));
             }
         }
-        dumpInitializerCalls(deinitializersHead);
+        dumpInitializerCalls(deinitializersHead, false);
         if (!mainSym || (mainSym && mainSym->Signature()->ReturnType()->IsVoid()))
             currentMethod->AddInstruction(
                 peLib->AllocateInstruction(Instruction::i_ldc_i4, peLib->AllocateOperand((longlong)0, Operand::i32)));
@@ -1948,7 +1948,7 @@ static void AddRTLThunks()
         }
 
         mainInit();
-        dumpInitializerCalls(initializersHead);
+        dumpInitializerCalls(initializersHead, true);
         mainLocals();
         dumpCallToMain();
 

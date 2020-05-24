@@ -229,6 +229,7 @@ typedef struct
 #define DO_NODEADPUSHTOTEMP 2048
 #define DO_MIDDLEBITS 4096
 #define DO_NOBRANCHTOBRANCH 8192
+#define DO_NOMULTOSHIFT 16384
 
     int erropts; /* error options */
 #define EO_RETURNASERR 1

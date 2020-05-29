@@ -268,6 +268,9 @@ static Optimizer::SimpleExpression* UnstreamExpression()
                 case se_msil_array_init:
                     rv->tp = UnstreamType();
                     break;
+                case Optimizer::se_typeref:
+                    rv->tp = UnstreamType();
+                    break;
                 case se_string:
                 {
                     std::string val;
@@ -958,6 +961,9 @@ static void ResolveExpression(Optimizer::SimpleExpression* exp, std::map<int, st
                 exp->sp = SymbolName(exp->sp, &typeSymbols);
                 break;
             case se_msil_array_init:
+                ResolveType(exp->tp, texts, typeSymbols);
+                break;
+            case se_typeref:
                 ResolveType(exp->tp, texts, typeSymbols);
                 break;
         }

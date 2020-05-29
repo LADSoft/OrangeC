@@ -80,6 +80,17 @@ bool Type::ILSrcDump(PELib& peLib) const
 {
     if (tp_ == cls)
     {
+        if (showType_)
+        {
+            if (typeRef_->Flags().Flags() & Qualifiers::Value)
+            {
+                peLib.Out() << " valuetype ";
+            }
+            else
+            {
+                peLib.Out() << " class ";
+            }
+        }
         std::string name = Qualifiers::GetName("", typeRef_, true);
         if (name[0] != '[')
         {
@@ -220,7 +231,23 @@ size_t Type::Render(PELib& peLib, Byte* result)
             }
             else
             {
-                *(int*)result = typeRef_->PEIndex() | (tTypeDef << 24);
+                if (showType_)
+                {
+                    if (!peIndex_)
+                    {
+                        size_t sz;
+                        Byte* sig = SignatureGenerator::TypeSig(this, sz);
+                        size_t signature = peLib.PEOut().HashBlob(sig, sz);
+                        delete[] sig;
+                        TypeSpecTableEntry* table = new TypeSpecTableEntry(signature);
+                        peIndex_ = peLib.PEOut().AddTableEntry(table);
+                    }
+                    *(int*)result = peIndex_ | (tTypeSpec << 24);
+                }
+                else
+                {
+                    *(int*)result = typeRef_->PEIndex() | (tTypeDef << 24);
+                }
             }
             return 4;
             break;

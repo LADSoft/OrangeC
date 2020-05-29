@@ -3776,6 +3776,7 @@ bool IsConstantExpression(EXPRESSION* node, bool allowParams, bool allowFunc)
         case en_lvalue:
         case en_funcret:
         case en__initobj:
+        case en__sizeof:
             rv = IsConstantExpression(node->left, allowParams, allowFunc);
             break;
         case en_func:

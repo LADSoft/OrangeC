@@ -58,7 +58,7 @@ void xstringseg(void);
 
 /* Init module */
 void outcodeini(void) { newlabel = false; }
-static void iop_nop(Optimizer::QUAD* q) {}
+static void iop_nop(Optimizer::QUAD* q) { asm_nop(q); }
 static void iop_phi(Optimizer::QUAD* q) {}
 
 static void iop_skipcompare(Optimizer::QUAD* q) {}
@@ -86,6 +86,7 @@ static void iop_struct(Optimizer::QUAD* q) { asm_add(q); }
 static void iop_initblk(Optimizer::QUAD* q) { asm_clrblock(q); }
 static void iop_cpblk(Optimizer::QUAD* q) { asm_assnblock(q); }
 static void iop_initobj(Optimizer::QUAD* q) { asm_initobj(q); }
+static void iop_sizeof(Optimizer::QUAD* q) { asm_sizeof(q); }
 /*-------------------------------------------------------------------------*/
 
 static void iop_asmcond(Optimizer::QUAD* q) {}
@@ -285,7 +286,9 @@ static void (*oplst[])(Optimizer::QUAD* q) = {
     asm_seh,
     iop_initblk,
     iop_cpblk,
-    iop_initobj};
+    iop_initobj,
+    iop_sizeof
+};
 
 void generate_instructions(Optimizer::QUAD* intermed_head)
 {

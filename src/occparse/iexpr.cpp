@@ -308,6 +308,7 @@ Optimizer::IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
         case en__initblk:
         case en__cpblk:
         case en__initobj:
+        case en__sizeof:
             siz1 = ISZ_ADDR;
             break;
         case en_l_bool:
@@ -460,7 +461,7 @@ Optimizer::IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
     }
     else if ((Optimizer::chosenAssembler->arch->denyopts & DO_UNIQUEIND) &&
              (node->left->type == en_global || node->left->type == en_auto) &&
-             ((isarray(node->left->v.sp->tp) && !basetype(node->left->v.sp->tp)->msil) || isstructured(node->left->v.sp->tp)))
+             ((isarray(node->left->v.sp->tp) && node->left->v.sp->sb->storage_class != sc_parameter && !basetype(node->left->v.sp->tp)->msil) || isstructured(node->left->v.sp->tp)))
     {
         ap1 = gen_expr(funcsp, node->left, 0, ISZ_ADDR);
         ap2 = Optimizer::LookupLoadTemp(nullptr, ap1);
@@ -1225,6 +1226,16 @@ Optimizer::IMODE* gen_cpinitobj(EXPRESSION* node, SYMBOL* funcsp, bool cp, int f
     return nullptr;
 }
 
+Optimizer::IMODE* gen_cpsizeof(EXPRESSION* node, SYMBOL* funcsp, bool cp, int flags)
+{
+    Optimizer::IMODE* ap1 = Optimizer::tempreg(-ISZ_UINT, false);
+    Optimizer::IMODE* ap = (Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+    ap->mode = Optimizer::i_immed;
+    ap->offset = Optimizer::SymbolManager::Get(node->left);
+    ap->size = ISZ_UINT;
+    gen_icode(Optimizer::i__sizeof, ap1, ap, nullptr);
+    return ap1;
+}
 /*-------------------------------------------------------------------------*/
 static void PushArrayLimits(SYMBOL* funcsp, TYPE* tp)
 {
@@ -1436,7 +1447,7 @@ Optimizer::IMODE* gen_aincdec(SYMBOL* funcsp, EXPRESSION* node, int flags, int s
         ap5 = Optimizer::LookupLoadTemp(ap1, ap1);
         if (ap5 != ap1)
             Optimizer::gen_icode(Optimizer::i_assn, ap5, ap1, nullptr);
-        ap2 = gen_expr(funcsp, node->right, 0, siz1);
+        ap2 = gen_expr(funcsp, node->right, 0, siz1 == ISZ_ADDR ? ISZ_UINT : siz1);
         ap2 = LookupExpression(op, siz1, ap5, ap2);
         if (ap7)
         {
@@ -1499,7 +1510,7 @@ Optimizer::IMODE* gen_aincdec(SYMBOL* funcsp, EXPRESSION* node, int flags, int s
         ap5 = Optimizer::LookupLoadTemp(ap1, ap1);
         if (ap5 != ap1)
             Optimizer::gen_icode(Optimizer::i_assn, ap5, ap1, nullptr);
-        ap2 = gen_expr(funcsp, node->right, 0, siz1);
+        ap2 = gen_expr(funcsp, node->right, 0, siz1 == ISZ_ADDR ? ISZ_UINT : siz1);
         ap2 = LookupExpression(op, siz1, ap5, ap2);
         if (ap7)
         {
@@ -2739,7 +2750,6 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
                 case en__cpblk:
                 case en__initblk:
                 case en__initobj:
-                    break;
                 default:
                     Optimizer::gen_nodag(Optimizer::i_expressiontag, 0, 0, 0);
                     Optimizer::intermed_tail->dc.v.label = 1;
@@ -2937,6 +2947,9 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
             break;
         case en__initobj:
             rv = gen_cpinitobj(node, funcsp, true, flags);
+            break;
+        case en__sizeof:
+            rv = gen_cpsizeof(node, funcsp, true, flags);
             break;
         case en_loadstack:
             ap1 = gen_expr(funcsp, node->left, 0, ISZ_ADDR);
@@ -3514,6 +3527,7 @@ int natural_size(EXPRESSION* node)
         case en__initblk:
         case en__cpblk:
         case en__initobj:
+        case en_type:
             return ISZ_NONE;
         case en_bits:
         case en_shiftby:
@@ -3554,6 +3568,7 @@ int natural_size(EXPRESSION* node)
         case en_l_i:
         case en_x_i:
         case en_structelem:
+        case en__sizeof:
             return -ISZ_UINT;
         case en_c_ul:
         case en_l_ul:
@@ -3771,6 +3786,12 @@ void gen_compare(EXPRESSION* node, SYMBOL* funcsp, Optimizer::i_ops btype, int l
         //            doatomicFence(funcsp, nullptr, node->right, barrier);
         //        }
     }
+    if (Optimizer::architecture == ARCHITECTURE_MSIL && ap2->size == ISZ_ADDR)
+    {
+        ap3 = Optimizer::tempreg(-ISZ_UINT, 0);
+        Optimizer::gen_icode(Optimizer::i_assn, ap3, ap2, nullptr);
+        ap2 = ap3;
+    }
     if (Optimizer::chosenAssembler->arch->preferopts & OPT_REVERSESTORE)
         ap3 = gen_expr(funcsp, node->right, F_COMPARE, size);
     else
@@ -3787,6 +3808,12 @@ void gen_compare(EXPRESSION* node, SYMBOL* funcsp, Optimizer::i_ops btype, int l
         //        {
         //            doatomicFence(funcsp, nullptr, node->left, barrier);
         //        }
+    }
+    if (Optimizer::architecture == ARCHITECTURE_MSIL && ap1->size == ISZ_ADDR)
+    {
+        ap3 = Optimizer::tempreg(-ISZ_UINT, 0);
+        Optimizer::gen_icode(Optimizer::i_assn, ap3, ap1, nullptr);
+        ap1 = ap3;
     }
     if (incdecList)
     {
@@ -3828,10 +3855,22 @@ Optimizer::IMODE* gen_set(EXPRESSION* node, SYMBOL* funcsp, Optimizer::i_ops bty
     ap1 = Optimizer::LookupLoadTemp(nullptr, ap3);
     if (ap1 != ap3)
         Optimizer::gen_icode(Optimizer::i_assn, ap1, ap3, nullptr);
+    if (Optimizer::architecture == ARCHITECTURE_MSIL && ap1->size == ISZ_ADDR)
+    {
+        ap3 = Optimizer::tempreg(-ISZ_UINT, 0);
+        Optimizer::gen_icode(Optimizer::i_assn, ap3, ap1, nullptr);
+        ap1 = ap3;
+    }
     ap3 = gen_expr(funcsp, node->right, 0, size);
     ap2 = Optimizer::LookupLoadTemp(nullptr, ap3);
     if (ap2 != ap3)
         Optimizer::gen_icode(Optimizer::i_assn, ap2, ap3, nullptr);
+    if (Optimizer::architecture == ARCHITECTURE_MSIL && ap2->size == ISZ_ADDR)
+    {
+        ap3 = Optimizer::tempreg(-ISZ_UINT, 0);
+        Optimizer::gen_icode(Optimizer::i_assn, ap3, ap2, nullptr);
+        ap2 = ap3;
+    }
     ap3 = Optimizer::tempreg(ISZ_UINT, 0);
     Optimizer::gen_icode(btype, ap3, ap1, ap2);
 

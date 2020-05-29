@@ -393,7 +393,7 @@ void load_ind(Optimizer::IMODE* im)
                     if (test->Name() == ptrUnbox->Name())
                         return;
             }
-            op = Instruction::i_ldind_u4;
+            op = Instruction::i_ldind_i;
             break;
         }
         /* */
@@ -456,7 +456,7 @@ void store_ind(Optimizer::IMODE* im)
             op = Instruction::i_stind_i8;
             break;
         case ISZ_ADDR:
-            op = Instruction::i_stind_i4;
+            op = Instruction::i_stind_i;
             break;
         /* */
         case ISZ_FLOAT:
@@ -785,6 +785,7 @@ void gen_convert(Operand* dest, Optimizer::IMODE* im, int sz)
     {
         case ISZ_UNATIVE:
             op = Instruction::i_conv_u;
+            break;
         case -ISZ_UNATIVE:
             op = Instruction::i_conv_i;
             break;
@@ -1628,6 +1629,14 @@ void asm_initobj(Optimizer::QUAD* q)
     gen_code(Instruction::i_initobj, operand);
     decrement_stack();
 }
+void asm_sizeof(Optimizer::QUAD* q)
+{
+    auto type = GetType(q->dc.left->offset->tp, true);
+    type->ShowType();
+    auto operand = peLib->AllocateOperand(peLib->AllocateValue("", type));
+    gen_code(Instruction::i_sizeof, operand);
+    increment_stack();
+}
 void asm_cmpblock(Optimizer::QUAD* q)
 {
     assert(0);  // atomic support not implemented
@@ -1640,8 +1649,7 @@ void asm_je(Optimizer::QUAD* q) /* branch if a == b */
         ((q->dc.right->offset->type == Optimizer::se_i || q->dc.right->offset->type == Optimizer::se_ui) &&
          q->dc.right->offset->i == 0))
     {
-        if (q->dc.left->size == ISZ_ADDR)
-            gen_code(Instruction::i_conv_u, nullptr);
+        gen_code(Instruction::i_conv_i4, nullptr);
         gen_branch(Instruction::i_brfalse, q->dc.v.label, true);
     }
     else
@@ -1657,8 +1665,7 @@ void asm_jne(Optimizer::QUAD* q) /* branch if a != b */
         ((q->dc.right->offset->type == Optimizer::se_i || q->dc.right->offset->type == Optimizer::se_ui) &&
          q->dc.right->offset->i == 0))
     {
-        if (q->dc.left->size == ISZ_ADDR)
-            gen_code(Instruction::i_conv_u, nullptr);
+        gen_code(Instruction::i_conv_i4, nullptr);
         gen_branch(Instruction::i_brtrue, q->dc.v.label, true);
     }
     else
@@ -1809,4 +1816,8 @@ void asm_loadstack(Optimizer::QUAD* q) /* load the stack pointer from a var */ {
 void asm_savestack(Optimizer::QUAD* q) /* save the stack pointer to a var */ {}
 void asm_functail(Optimizer::QUAD* q, int begin, int size) /* functail start or end */ {}
 void asm_atomic(Optimizer::QUAD* q) {}
+void asm_nop(Optimizer::QUAD* q)
+{
+    gen_code(Instruction::i_nop, 0);
+}
 }  // namespace occmsil

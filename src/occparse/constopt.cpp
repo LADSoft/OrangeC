@@ -1441,8 +1441,11 @@ int opt0(EXPRESSION** node)
                         val = ep->left->v.i;
                         if (val == 0)
                         {
-                            addaside(ep->right);
-                            *node = ep->left;
+                            if (ep->right->type != en__sizeof)
+                            {
+                                addaside(ep->right);
+                                *node = ep->left;
+                            }
                         }
                         else if (val == 1)
                             *node = ep->right;
@@ -2121,6 +2124,7 @@ int opt0(EXPRESSION** node)
         case en_thisref:
         case en_funcret:
         case en__initobj:
+        case en__sizeof:
             rv |= opt0(&(ep->left));
             break;
         case en_func:
@@ -2686,6 +2690,7 @@ int fold_const(EXPRESSION* node)
         case en_not_lvalue:
         case en_lvalue:
         case en__initobj:
+        case en__sizeof:
             rv |= fold_const(node->left);
             break;
         case en_funcret:
@@ -2891,6 +2896,7 @@ int typedconsts(EXPRESSION* node1)
         case en_literalclass:
         case en_funcret:
         case en__initobj:
+        case en__sizeof:
             rv |= typedconsts(node1->left);
             break;
         case en_func:
@@ -3414,7 +3420,10 @@ void optimize_for_constants(EXPRESSION** expr)
     }
     asidehead = oldasidehead;
     asidetail = oldasidetail;
-    rebalance(*expr);
+    if (Optimizer::architecture != ARCHITECTURE_MSIL)
+    {
+        rebalance(*expr);
+    }
 }
 LEXEME* optimized_expression(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** expr, bool commaallowed)
 {

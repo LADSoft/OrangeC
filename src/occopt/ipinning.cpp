@@ -46,9 +46,27 @@
 
 extern Optimizer::SimpleSymbol* currentFunction;
 
-
+// this implementation is lacking in that if you have a structure which has a structure which has an array field
+// it won't be taken care of...
+//
 namespace Optimizer
 {
+void Register(QUAD* head, IMODE* im, std::string name, std::map<std::string, std::deque<QUAD*>>& map, std::map<std::string, std::deque<QUAD*>>& automap)
+{
+    switch (im->offset->type)
+    {
+    case se_auto:
+        automap[name].push_back(head);
+        break;
+    case se_global:
+    case se_pc:
+    case se_threadlocal:
+    case se_labcon:
+    case se_structelem:
+        map[name].push_back(head);
+        break;
+    }
+}
 static void LoadAddresses(std::map<std::string, std::deque<QUAD*>>& map, std::map<std::string, std::deque<QUAD*>>& automap)
 {
     QUAD *head = intermed_head;
@@ -60,21 +78,33 @@ static void LoadAddresses(std::map<std::string, std::deque<QUAD*>>& map, std::ma
             {
                 switch (head->dc.left->offset->type)
                 {
-                    case se_auto:
-                        automap[head->dc.left->offset->sp->outputName].push_back(head);
-                        break;
-                    case se_global:
-                    case se_pc:
-                    case se_threadlocal:
-                        map[head->dc.left->offset->sp->outputName].push_back(head);
-                        break;
-                    case se_labcon:
+                case se_auto:
+                case se_global:
+                case se_pc:
+                case se_threadlocal:
+                case se_labcon:
+                {
+                    std::string name;
+                    if (head->dc.left->offset->type == se_labcon)
                     {
                         char buf[256];
                         sprintf(buf, "%d", head->dc.left->offset->i);
-                        map[buf].push_back(head);
-                        break;
+                        name = buf;
                     }
+                    else
+                    {
+                        name = head->dc.left->offset->sp->outputName;
+                    }
+                    if (head->fwd->dc.opcode == i_add && head->fwd->dc.right->offset->type == se_structelem)
+                    {
+                        name = name + head->fwd->dc.right->offset->sp->outputName;
+                        Register(head->fwd, head->fwd->dc.right, name, map, automap);
+                    }
+                    else
+                    {
+                        Register(head, head->dc.left, name, map, automap);
+                    }
+                }
                 }
             }
         }
@@ -246,7 +276,17 @@ static IMODE* pinnedVar(SimpleType* tp)
 }
 static void InsertInitialLoad(QUAD* begin, std::deque<QUAD*>& addresses, IMODE*&managed, IMODE*&unmanaged)
 {
-    IMODE *left = addresses.front()->dc.left;
+    while (begin->fwd->dc.opcode == i_label || begin->fwd->dc.opcode == i_line || begin->fwd->dc.opcode == i_blockend || begin->fwd->dc.opcode == i_block)
+        begin = begin->fwd;
+    IMODE *left;
+    if (addresses.front()->dc.opcode == i_add)
+    {
+        left = addresses.front()->back->dc.left;
+    }
+    else
+    {
+        left = addresses.front()->dc.left;
+    }
     SimpleType *tp;
     tp = (SimpleType*)Alloc(sizeof(SimpleType));
     tp->btp = (SimpleType*)Alloc(sizeof(SimpleType));
@@ -269,41 +309,57 @@ static void InsertInitialLoad(QUAD* begin, std::deque<QUAD*>& addresses, IMODE*&
     }
     IMODE *ans = pinnedVar(tp);
     ans->size = left->size;
+    IMODE* ans2 = (IMODE*)Alloc(sizeof(IMODE));
+    *ans2 = *ans;
+    ans2->size = ISZ_UINT;
+    managed = ans;
+    unmanaged = ans2;
+
+
+    if (addresses.front()->dc.opcode == i_add)
+    {
+        // address of something global points to
+        QUAD *one = (QUAD *)Alloc(sizeof(QUAD));
+        *one = *addresses.front()->back;
+        InsertInstruction(begin, one);
+        begin = begin->fwd;
+        QUAD *two = (QUAD *)Alloc(sizeof(QUAD));
+        *two = *addresses.front();
+        InsertInstruction(begin, two);
+        begin = begin->fwd;
+        left = two->ans;
+    }
     QUAD *move = (QUAD*)Alloc(sizeof(QUAD));
     move->ans = ans;
     move->dc.left = left;
     move->dc.opcode = i_assn;
     InsertInstruction(begin, move);
-    IMODE* ans2 = (IMODE*) Alloc(sizeof(IMODE));
-    *ans2 = *ans;
-    ans2->size = ISZ_UINT;
-    managed = ans;
-    unmanaged = ans2;
+    begin = begin->fwd;
 }
 static void ReplaceLoads(IMODE* managed, IMODE* unmanaged, std::deque<QUAD*>& addresses)
 {
     for (auto a : addresses)
     {
-        a->dc.left = unmanaged;
+        if (a->dc.opcode == i_add)
+        {
+            a->back->dc.left = unmanaged;
+            a->back->ans = a->ans;
+            RemoveInstruction(a);
+        }
+        else
+        {
+            a->dc.left = unmanaged;
+        }
+
     }
-}
-static QUAD* WadeToEndOfDbgBlock(QUAD *head)
-{
-    QUAD* orig = head;
-    int count = 1;
-    while (head)
-    {
-        if (head->dc.opcode == i_dbgblock)
-            count++;
-        else if (head->dc.opcode == i_dbgblockend)
-            if (!--count)
-               return head;
-        head = head->fwd;
-    }
-    return orig;
 }
 static void InsertFinalThunk(IMODE* managed, QUAD* end)
 {
+    // in case of a return statement...
+    while (end->back->dc.opcode == i_dbgblock || end->back->dc.opcode == i_line)
+        end = end->back;
+    if (end->back->dc.opcode == i_goto)
+        end = end->back;
     QUAD* load = (QUAD*)Alloc(sizeof(QUAD));
     load->ans = InitTempOpt(ISZ_UINT, ISZ_UINT);
     load->dc.left = make_immed(ISZ_UINT, 0);
@@ -327,6 +383,8 @@ void RewriteForPinning()
         LoadDebugBlocks(blocks);
         for (auto a : addresses)
         {
+            // address of a global variable
+            QUAD* ins;
             int begin = FindDominatingInstruction(a.second);
             int end = FindPostDominatingInstruction(a.second);
             std::pair<QUAD*, QUAD*> pair = FindDebugBlock(begin, end, blocks);
@@ -342,7 +400,11 @@ void RewriteForPinning()
         {
             for (auto s : a.second)
             {
-                s->dc.left->size = ISZ_UINT;
+                // this force a conv.u
+                if (s->dc.opcode == i_assn)
+                    s->dc.left->size = ISZ_UINT;
+                else
+                    s->dc.right->size = ISZ_UINT;
             }
         }
     }

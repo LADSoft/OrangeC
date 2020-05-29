@@ -787,10 +787,10 @@ Type* GetType(Optimizer::SimpleType* tp, bool commit, bool funcarg, bool pinvoke
             {-ISZ_UCHAR, Type::i8},        {ISZ_UCHAR, Type::u8},        {-ISZ_USHORT, Type::i16},   {ISZ_USHORT, Type::u16},
             {ISZ_WCHAR, Type::u16},        {ISZ_U16, Type::u16},         {-ISZ_UINT, Type::i32},     {ISZ_UINT, Type::u32},
             {-ISZ_UNATIVE, Type::inative}, {ISZ_UNATIVE, Type::unative}, {-ISZ_ULONG, Type::i32},    {ISZ_ULONG, Type::u32},
-            {ISZ_U32, Type::u32},          {-ISZ_ULONGLONG, Type::i64},  {ISZ_ULONGLONG, Type::u64}, {ISZ_STRING, Type::string},
-            {ISZ_OBJECT, Type::object},    {ISZ_FLOAT, Type::r32},       {ISZ_DOUBLE, Type::r64},    {ISZ_LDOUBLE, Type::r64},
-            {ISZ_IFLOAT, Type::r32},       {ISZ_IDOUBLE, Type::r64},     {ISZ_ILDOUBLE, Type::r64},  {ISZ_CFLOAT, Type::r32},
-            {ISZ_CDOUBLE, Type::r64},      {ISZ_CLDOUBLE, Type::r64},
+            {ISZ_U32, Type::u32},          {-ISZ_ULONGLONG, Type::i64},  {ISZ_ULONGLONG, Type::u64}, {ISZ_ADDR, Type::unative}, 
+            {ISZ_STRING, Type::string},    {ISZ_OBJECT, Type::object},    {ISZ_FLOAT, Type::r32},       {ISZ_DOUBLE, Type::r64},    
+            {ISZ_LDOUBLE, Type::r64},      {ISZ_IFLOAT, Type::r32},       {ISZ_IDOUBLE, Type::r64},     {ISZ_ILDOUBLE, Type::r64},  
+            {ISZ_CFLOAT, Type::r32}, {ISZ_CDOUBLE, Type::r64},      {ISZ_CLDOUBLE, Type::r64},
         };
         Type* rv = peLib->AllocateType(typeNames[tp->sizeFromType], 0);
         rv->ByRef(byref);
@@ -1649,7 +1649,8 @@ static void mainInit(void)
         }
         currentMethod->AddInstruction(
             peLib->AllocateInstruction(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
-
+        currentMethod->AddInstruction(
+            peLib->AllocateInstruction(Instruction::i_conv_u4, nullptr));
         currentMethod->AddInstruction(peLib->AllocateInstruction(Instruction::i_dup));
         field = LookupField("__stdin");
         if (!field)
@@ -1673,6 +1674,7 @@ static void mainInit(void)
         }
         currentMethod->AddInstruction(
             peLib->AllocateInstruction(Instruction::i_stsfld, peLib->AllocateOperand(peLib->AllocateFieldName(field))));
+
 
         currentMethod->AddInstruction(
             peLib->AllocateInstruction(Instruction::i_ldc_i4, peLib->AllocateOperand((longlong)64, Operand::any)));

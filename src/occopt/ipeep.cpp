@@ -597,7 +597,8 @@ static bool peep(BLOCK* b, bool branches)
                 }
                 break;
             case i_nop: /* just kill it */
-                RemoveInstruction(head);
+                if (!head->alwayslive)
+                    RemoveInstruction(head);
                 break;
             case i_assn:
                 rv = peep_assn(b, head);

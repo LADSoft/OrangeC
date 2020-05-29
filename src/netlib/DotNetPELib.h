@@ -1323,14 +1323,14 @@ namespace DotNetPELib
             /* below this is various CIL types*/
             Void, Bool, Char, i8, u8, i16, u16, i32, u32, i64, u64, inative, unative, r32, r64, object, string
         };
-        Type(BasicType Tp, int PointerLevel) : tp_(Tp), pointerLevel_(PointerLevel), arrayLevel_(0), byRef_(false), typeRef_(nullptr), methodRef_(nullptr), peIndex_(0), pinned_(false)
+        Type(BasicType Tp, int PointerLevel) : tp_(Tp), pointerLevel_(PointerLevel), arrayLevel_(0), byRef_(false), typeRef_(nullptr), methodRef_(nullptr), peIndex_(0), pinned_(false), showType_(false)
         {
         }
-        Type(DataContainer *clsref) : tp_(cls), pointerLevel_(0), arrayLevel_(0), byRef_(false), typeRef_(clsref), methodRef_(nullptr), peIndex_(0), pinned_(false)
+        Type(DataContainer *clsref) : tp_(cls), pointerLevel_(0), arrayLevel_(0), byRef_(false), typeRef_(clsref), methodRef_(nullptr), peIndex_(0), pinned_(false), showType_(false)
         {
         }
         Type(MethodSignature *methodref) : tp_(method), pointerLevel_(0), arrayLevel_(0), byRef_(false), typeRef_(nullptr),
-            methodRef_(methodref), peIndex_(0), pinned_(false)
+            methodRef_(methodref), peIndex_(0), pinned_(false), showType_(false)
         {
         }
         ///** Get the type of the Type object
@@ -1341,7 +1341,8 @@ namespace DotNetPELib
         DataContainer *GetClass() const { return typeRef_; }
         ///** Get the signature reference for method type objects
         MethodSignature *GetMethod() const { return methodRef_; }
- 
+
+        void ShowType() { showType_ = true; } 
         void ArrayLevel(int arrayLevel) { arrayLevel_ = arrayLevel;  }
         int ArrayLevel() const { return arrayLevel_;  }
         ///** Pointer indirection count
@@ -1375,6 +1376,7 @@ namespace DotNetPELib
         DataContainer *typeRef_;
         MethodSignature *methodRef_;
         size_t peIndex_;
+        bool showType_;
     private:
         static const char *typeNames_[];
     };

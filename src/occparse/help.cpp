@@ -1975,9 +1975,9 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
             tp = tp1;
         else
             tp = tp2;
-        if (tp->type != tp1->type && exp1)
+        if (tp->type != tp1->type && exp1 && tp2->type != bt_pointer)
             cast(tp, exp1);
-        if (tp->type != tp2->type && exp1)
+        if (tp->type != tp2->type && exp1 && tp1->type != bt_pointer)
             cast(tp, exp2);
         return tp;
     }

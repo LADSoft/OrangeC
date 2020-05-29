@@ -1466,10 +1466,13 @@ static LEXEME* statement_if(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                 if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.prm_c99)
                 {
                     FreeLocalContext(parent, funcsp, codeLabel++);
-                    AllocateLocalContext(parent, funcsp, codeLabel++);
                 }
                 st = stmtNode(lex, parent, st_goto);
                 st->label = elsebr;
+                if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.prm_c99)
+                {
+                    AllocateLocalContext(parent, funcsp, codeLabel++);
+                }
                 if (Optimizer::cparams.prm_optimize_for_speed || Optimizer::cparams.prm_optimize_for_size)
                 {
                     st2 = sti;
@@ -2406,6 +2409,7 @@ static bool checkNoEffect(EXPRESSION* exp)
         case en__initblk:
         case en__cpblk:
         case en__initobj:
+        case en__sizeof:
             return false;
             break;
         case en_not_lvalue:

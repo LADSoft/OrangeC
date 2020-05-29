@@ -274,7 +274,8 @@ enum se_type
     se_tempref,
     se_msil_array_init,
     se_msil_array_access,
-    se_string
+    se_string,
+    se_typeref
 };
 struct SimpleString
 {
@@ -429,7 +430,7 @@ struct ArgList
         i_tryblock, i_substack, i_parmstack, i_loadstack, i_savestack, i_functailstart, i_functailend,
         i_gcsestub, i_expressiontag, i_tag, i_seh,
         /* msil */
-        i__initblk, i__cpblk, i__initobj,
+        i__initblk, i__cpblk, i__initobj, i__sizeof,
         /* Dag- specific stuff */
         i_var, i_const, i_ptr, i_labcon,
         /* end marker */

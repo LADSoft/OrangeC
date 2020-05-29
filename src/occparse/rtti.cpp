@@ -633,6 +633,7 @@ static void XCExpression(EXPRESSION* node, XCLIST*** listPtr)
         case en_loadstack:
         case en_savestack:
         case en__initobj:
+        case en__sizeof:
             XCExpression(node->left, listPtr);
             break;
         case en_assign:

@@ -243,6 +243,10 @@ Optimizer::SimpleExpression* Optimizer::SymbolManager::Get(struct Parser::expr* 
                 rv->astring.len = dest - buf;
             }
             break;
+        case en_type:
+            rv->type = Optimizer::se_typeref;
+            rv->tp = Get(e->v.tp);
+            break;
         default:
             diag("unknown node in Get(EXPRESSION*)");
             break;

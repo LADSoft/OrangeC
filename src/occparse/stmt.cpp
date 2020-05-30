@@ -3136,8 +3136,23 @@ LEXEME* compound(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
     if (parent->type == kw_switch)
     {
         if (st != blockstmt->tail)
-            /* kinda naive... */
-            error(ERR_INITIALIZATION_MAY_BE_BYPASSED);
+        {
+            /* kinda naive other than this one check for msil... */
+            bool toErr = false;
+            st = blockstmt->tail;
+            while (st)
+            {
+                if (st->select->type != en__initobj && st->type != st_varstart)
+                {
+                    toErr = true;
+                }
+                st = st->next;
+            }
+            if (toErr)
+            {
+                error(ERR_INITIALIZATION_MAY_BE_BYPASSED);
+            }
+        }
     }
     currentLineData(blockstmt, lex, -1);
     blockstmt->nosemi = true; /* in case it is an empty body */

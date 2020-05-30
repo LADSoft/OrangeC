@@ -462,7 +462,7 @@ std::string GetArrayName(Optimizer::SimpleType* tp)
         else if (tp->size == 0)
             strcat(end, "_empty");
         else
-            sprintf(end + strlen(end), "_%d", (int)tp->size);
+            sprintf(end + strlen(end), "_array_%d", (int)tp->size);
         tp = tp->btp;
     }
     if ((tp->type == Optimizer::st_struct || tp->type == Optimizer::st_union) || tp->type == Optimizer::st_enum)

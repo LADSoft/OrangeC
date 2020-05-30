@@ -48,19 +48,19 @@ bool Type::Matches(Type* right)
     if (tp_ == cls && typeRef_ != right->typeRef_)
     {
         int n1, n2;
-        n1 = typeRef_->Name().find("[]");
-        n2 = right->typeRef_->Name().find("[]");
+        n1 = typeRef_->Name().find("_empty");
+        n2 = right->typeRef_->Name().find("_empty");
         if (n1 != std::string::npos || n2 != std::string::npos)
         {
             bool transfer = false;
             if (n1 == std::string::npos)
             {
-                n1 = typeRef_->Name().find('[');
+                n1 = typeRef_->Name().find("_array_");
             }
             else
             {
                 transfer = true;
-                n2 = right->typeRef_->Name().find('[');
+                n2 = right->typeRef_->Name().find("_array_");
             }
             if (n1 != n2)
                 return false;
@@ -142,7 +142,7 @@ bool Type::ILSrcDump(PELib& peLib) const
 }
 void Type::ObjOut(PELib& peLib, int pass) const
 {
-    peLib.Out() << std::endl << "$tb" << tp_ << "," << byRef_ << "," << arrayLevel_ << "," << pointerLevel_;
+    peLib.Out() << std::endl << "$tb" << tp_ << "," << byRef_ << "," << arrayLevel_ << "," << pointerLevel_ << "," << pinned_ << "," << showType_;
     if (tp_ == cls)
     {
         typeRef_->ObjOut(peLib, -1);
@@ -179,6 +179,14 @@ Type* Type::ObjIn(PELib& peLib)
         if (ch != ',')
             peLib.ObjError(oe_syntax);
         int pointerLevel = peLib.ObjInt();
+        ch = peLib.ObjChar();
+        if (ch != ',')
+            peLib.ObjError(oe_syntax);
+        int pinned = peLib.ObjInt();
+        ch = peLib.ObjChar();
+        if (ch != ',')
+            peLib.ObjError(oe_syntax);
+        int showType = peLib.ObjInt();
         Type* rv = nullptr;
         if (tp == cls)
         {
@@ -206,6 +214,9 @@ Type* Type::ObjIn(PELib& peLib)
         {
             rv = peLib.AllocateType(tp, 0);
         }
+        if (showType)
+            rv->ShowType();
+        rv->Pinned(pinned);
         rv->PointerLevel(pointerLevel);
         rv->ArrayLevel(arrayLevel);
         rv->ByRef(byRef);

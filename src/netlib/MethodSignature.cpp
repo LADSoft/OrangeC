@@ -52,7 +52,7 @@ bool MethodSignature::Matches(std::vector<Type*> args)
             {
                 return false;
             }
-            if (tpa->PointerLevel() != tpp->PointerLevel() || tpa->ArrayLevel() != tpp->ArrayLevel())
+            if ((tpa->PointerLevel() != tpp->PointerLevel() && tpp->PointerLevel() != 1 && tpp->GetBasicType() != Type::Void) || tpa->ArrayLevel() != tpp->ArrayLevel())
                 return false;
             if (n < params.size() - 1)
                 n++, ++it;

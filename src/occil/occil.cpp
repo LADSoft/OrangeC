@@ -189,8 +189,8 @@ void ProcessData(Optimizer::BaseData* v)
             // msil_oa_genpcref(v->symbol.sym, v->symbol.i);
             break;
         case Optimizer::DT_FUNCREF:
-            Optimizer::gen_funcref(v->symbol.sym);
-            global(v->symbol.sym, v->symbol.i);
+            //Optimizer::gen_funcref(v->symbol.sym);
+            //global(v->symbol.sym, v->symbol.i);
             break;
         case Optimizer::DT_LABEL:
             Optimizer::gen_labref(v->i);

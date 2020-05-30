@@ -3403,6 +3403,20 @@ static void rebalance(EXPRESSION* ep)
             break;
     }
 }
+void RemoveSizeofOperators(EXPRESSION *constant)
+{
+    if (constant->left)
+        RemoveSizeofOperators(constant->left);
+    if (constant->right)
+        RemoveSizeofOperators(constant->right);
+    if (constant->type == en__sizeof)
+    {
+        TYPE *tp = constant->left->v.tp;
+        constant->type = en_c_ui;
+        constant->left = nullptr;
+        constant->v.i = tp->size;
+    }
+}
 void optimize_for_constants(EXPRESSION** expr)
 {
     int rv = true, count = 8;
@@ -3420,7 +3434,7 @@ void optimize_for_constants(EXPRESSION** expr)
     }
     asidehead = oldasidehead;
     asidetail = oldasidetail;
-    if (Optimizer::architecture != ARCHITECTURE_MSIL)
+//    if (Optimizer::architecture != ARCHITECTURE_MSIL)
     {
         rebalance(*expr);
     }

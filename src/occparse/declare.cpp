@@ -3131,8 +3131,15 @@ static LEXEME* getArrayType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, enum e_sc st
     }
     else if (!MATCHKW(lex, closebr))
     {
-
-        lex = optimized_expression(lex, funcsp, nullptr, &tpc, &constant, false);
+        lex = expression_no_comma(lex, funcsp, nullptr, &tpc, &constant, nullptr, 0);
+        if (tpc)
+        {
+            if (Optimizer::architecture == ARCHITECTURE_MSIL)
+            {
+                RemoveSizeofOperators(constant);
+            }
+            optimize_for_constants(&constant);
+        }
         lex = getPointerQualifiers(lex, quals, true);
         if (!tpc)
         {
@@ -6729,9 +6736,25 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                                     }
                                     else if ((isarray(sp->tp) || isstructured(sp->tp)) && Optimizer::architecture == ARCHITECTURE_MSIL)
                                     {
-                                        STATEMENT* st;
-                                        st = stmtNode(hold, block, st_expr);
-                                        st->select = exprNode(en__initobj, varNode(en_auto, sp), nullptr);
+                                        if (sp->sb->storage_class != sc_localstatic)
+                                        {
+                                            STATEMENT* st;
+                                            if (block->next->type == kw_switch)
+                                            {
+                                                // have to put initializations before the switch not in the switch body they cannot be accesed in the switch body
+                                                STATEMENT **bd = &block->next->next->head;
+                                                while ((*bd)->next)
+                                                    bd = &(*bd)->next;
+                                                st = stmtNode(hold, nullptr, st_expr);
+                                                st->next = *bd;
+                                                *bd = st;
+                                            }
+                                            else
+                                            {
+                                                st = stmtNode(hold, block, st_expr);
+                                            }
+                                            st->select = exprNode(en__initobj, varNode(en_auto, sp), nullptr);
+                                        }
                                     }
                                 }
                             }

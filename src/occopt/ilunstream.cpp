@@ -945,7 +945,15 @@ static void ResolveExpression(Optimizer::SimpleExpression* exp, std::map<int, st
         switch (exp->type)
         {
             case se_auto:
-                ResolveSymbol(exp->sp, texts, current->variables);
+                if ((int)exp->sp & 0x40000000)
+                {
+                    exp->sp = ((SimpleSymbol*)((int)exp->sp & ~0x40000000));
+                    ResolveSymbol(exp->sp, texts, globalCache);
+                }
+                else
+                {
+                    ResolveSymbol(exp->sp, texts, current->variables);
+                }
                 break;
             case se_const:
             case se_absolute:

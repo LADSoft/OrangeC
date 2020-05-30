@@ -480,6 +480,10 @@ static void dumpDynamicInitializers(void)
             STATEMENT* opt = stmt;
             while (opt)
             {
+                if (Optimizer::architecture == ARCHITECTURE_MSIL)
+                {
+                    RemoveSizeofOperators(opt->select);
+                }
                 optimize_for_constants(&opt->select);  // DAL fix
                 opt = opt->next;
             }
@@ -526,6 +530,10 @@ static void dumpTLSInitializers(void)
             stmt = stmtNode(nullptr, nullptr, st_expr);
             exp = convertInitToExpression(TLSInitializers->init->basetp, TLSInitializers->sp, nullptr, nullptr,
                                           TLSInitializers->init, nullptr, false);
+            if (Optimizer::architecture == ARCHITECTURE_MSIL)
+            {
+                RemoveSizeofOperators(exp);
+            }
             optimize_for_constants(&exp);
             stmt->select = exp;
             stmt->next = st;
@@ -555,6 +563,10 @@ static void dumpDynamicDestructors(void)
         EXPRESSION* exp = convertInitToExpression(dynamicDestructors->init->basetp, dynamicDestructors->sp, nullptr, nullptr,
                                                   dynamicDestructors->init, nullptr, true);
         *stp = stmtNode(nullptr, nullptr, st_expr);
+        if (Optimizer::architecture == ARCHITECTURE_MSIL)
+        {
+            RemoveSizeofOperators(exp);
+        }
         optimize_for_constants(&exp);
         (*stp)->select = exp;
         stp = &(*stp)->next;
@@ -595,6 +607,10 @@ static void dumpTLSDestructors(void)
             EXPRESSION* exp = convertInitToExpression(TLSDestructors->init->basetp, TLSDestructors->sp, nullptr, nullptr,
                                                       TLSDestructors->init, nullptr, true);
             *stp = stmtNode(nullptr, nullptr, st_expr);
+            if (Optimizer::architecture == ARCHITECTURE_MSIL)
+            {
+                RemoveSizeofOperators(exp);
+            }
             optimize_for_constants(&exp);
             (*stp)->select = exp;
             stp = &(*stp)->next;
@@ -651,6 +667,10 @@ int dumpMemberPtr(SYMBOL* sym, TYPE* membertp, bool make_label)
         memset(&expx, 0, sizeof(expx));
         expx.type = en_c_i;
         exp = baseClassOffset(sym->sb->parentClass, basetype(membertp)->sp, &expx);
+        if (Optimizer::architecture == ARCHITECTURE_MSIL)
+        {
+            RemoveSizeofOperators(exp);
+        }
         optimize_for_constants(&exp);
         if (isfunction(sym->tp))
         {
@@ -1234,6 +1254,10 @@ static LEXEME* init_expression(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp
         lex = expression_no_comma(lex, funcsp, atp, tp, expr, nullptr, 0);
     if (*tp && (isvoid(*tp) || ismsil(*tp)))
         error(ERR_NOT_AN_ALLOWED_TYPE);
+    if (Optimizer::architecture == ARCHITECTURE_MSIL)
+    {
+        RemoveSizeofOperators(*expr);
+    }
     optimize_for_constants(expr);
     if (*tp)
     {
@@ -1325,6 +1349,10 @@ static LEXEME* initialize_bool_type(LEXEME* lex, SYMBOL* funcsp, int offset, enu
             if (!comparetypes(itype, tp, true))
             {
                 cast(itype, &exp);
+                if (Optimizer::architecture == ARCHITECTURE_MSIL)
+                {
+                    RemoveSizeofOperators(exp);
+                }
                 optimize_for_constants(&exp);
             }
         }
@@ -1432,6 +1460,10 @@ static LEXEME* initialize_arithmetic_type(LEXEME* lex, SYMBOL* funcsp, int offse
                             }
                         }
                     cast(itype, &exp);
+                    if (Optimizer::architecture == ARCHITECTURE_MSIL)
+                    {
+                        RemoveSizeofOperators(exp);
+                    }
                     optimize_for_constants(&exp);
                 }
             }
@@ -1880,6 +1912,10 @@ static LEXEME* initialize_reference_type(LEXEME* lex, SYMBOL* funcsp, int offset
     lex = expression_no_comma(lex, funcsp, nullptr, &tp, &exp, nullptr, flags);
     if (tp)
     {
+        if (Optimizer::architecture == ARCHITECTURE_MSIL)
+        {
+            RemoveSizeofOperators(exp);
+        }
         optimize_for_constants(&exp);
     }
     if (!tp)

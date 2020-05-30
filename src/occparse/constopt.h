@@ -32,6 +32,7 @@ int opt0(EXPRESSION** node);
 void enswap(EXPRESSION** one, EXPRESSION** two);
 int fold_const(EXPRESSION* node);
 int typedconsts(EXPRESSION* node1);
+void RemoveSizeofOperators(EXPRESSION *constant);
 void optimize_for_constants(EXPRESSION** expr);
 LEXEME* optimized_expression(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** expr, bool commaallowed);
 }  // namespace Parser

@@ -8,7 +8,7 @@
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- *n_bracket
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -2038,7 +2038,8 @@ void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp)
                 }
                 else if (ispointer(list->tp))
                 {
-                    if (Optimizer::architecture == ARCHITECTURE_MSIL)
+                
+                    if (Optimizer::architecture == ARCHITECTURE_MSIL && (list->exp->type != en_auto || !list->exp->v.sp->sb->va_typeof) && list->exp->type != en_global && list->exp->type != en_pc && !params->vararg)
                         cast(&stdint, &list->exp);
                 }
                 if (dest && list && list->tp && basetype(dest)->type != bt_memberptr && !comparetypes(dest, list->tp, true))

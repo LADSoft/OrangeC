@@ -43,7 +43,7 @@
 #include "ifloatconv.h"
 #include "browse.h"
 #include "help.h"
-
+#include "expr.h"
 //#define TESTANNOTATE
 
 namespace Parser
@@ -1900,7 +1900,15 @@ long long ParseExpression(std::string& line)
     SetAlternateParse(true, line);
     LEXEME* lex = getsym();
     parsingPreprocessorConstant = true;
-    lex = optimized_expression(lex, nullptr, nullptr, &tp, &exp, false);
+    lex = expression_no_comma(lex, nullptr, nullptr, &tp, &exp, nullptr, 0);
+    if (tp)
+    {
+        if (Optimizer::architecture == ARCHITECTURE_MSIL)
+        {
+            RemoveSizeofOperators(exp);
+        }
+        optimize_for_constants(&exp);
+    }
     parsingPreprocessorConstant = false;
     if (!tp || !exp || !isintconst(exp))
     {

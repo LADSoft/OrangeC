@@ -255,6 +255,7 @@ Optimizer::SimpleExpression* Optimizer::SymbolManager::Get(struct Parser::expr* 
 }
 Optimizer::SimpleType* Optimizer::SymbolManager::Get(struct Parser::typ* tp)
 {
+    int i = 0;
     Optimizer::SimpleType* rv = (Optimizer::SimpleType*)Alloc(sizeof(Optimizer::SimpleType));
     bool isConst = isconst(tp);
     bool isVolatile = isvolatile(tp);

@@ -556,7 +556,6 @@ void gen_funcref(Optimizer::SimpleSymbol* sym)
 {
     auto v = AddData(DT_FUNCREF);
     v->symbol.sym = sym;
-
     if (sym->storage_class == scc_global ||
         ((sym->storage_class == scc_member || sym->storage_class == scc_virtual) && sym->hasInlineFunc))
         v->symbol.i |= BaseData::DF_GLOBAL;

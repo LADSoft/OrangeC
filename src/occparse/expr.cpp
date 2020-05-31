@@ -2039,7 +2039,7 @@ void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp)
                 else if (ispointer(list->tp))
                 {
                 
-                    if (Optimizer::architecture == ARCHITECTURE_MSIL && (list->exp->type != en_auto || !list->exp->v.sp->sb->va_typeof) && list->exp->type != en_global && list->exp->type != en_pc && !params->vararg)
+                    if (Optimizer::architecture == ARCHITECTURE_MSIL && (list->exp->type != en_auto || !list->exp->v.sp->sb->va_typeof) && !params->vararg)
                         cast(&stdint, &list->exp);
                 }
                 if (dest && list && list->tp && basetype(dest)->type != bt_memberptr && !comparetypes(dest, list->tp, true))

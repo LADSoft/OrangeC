@@ -450,7 +450,7 @@ MethodSignature* GetMethodSignature(Optimizer::SimpleSymbol* sp)
         return static_cast<MethodName*>(it->second)->Signature();
     }
 }
-std::string GetArrayName(Optimizer::SimpleType* tp)
+std::string GetArrayName(Optimizer::SimpleType* tp, bool byRef, bool pinned)
 {
     char end[512];
     end[0] = 0;
@@ -465,6 +465,10 @@ std::string GetArrayName(Optimizer::SimpleType* tp)
             sprintf(end + strlen(end), "_array_%d", (int)tp->size);
         tp = tp->btp;
     }
+    if (byRef)
+        strcat(end, "_br");
+    if (pinned)
+        strcat(end, "_pin");
     if ((tp->type == Optimizer::st_struct || tp->type == Optimizer::st_union) || tp->type == Optimizer::st_enum)
     {
         return std::string(tp->sp->name) + end;
@@ -695,9 +699,9 @@ Type* GetType(Optimizer::SimpleType* tp, bool commit, bool funcarg, bool pinvoke
     }
     else if (tp->isarray && !funcarg)
     {
-        std::string name = GetArrayName(tp);
+        std::string name = GetArrayName(tp, byref, pinned);
         std::map<std::string, Type*>::iterator it = typeList.find(name);
-        if (it != typeList.end())
+        if (it != typeList.end() )
             return it->second;
         if (commit)
         {
@@ -1732,10 +1736,10 @@ static void InitializeString(Local*pinned, Local* var, Field *field, Byte* data)
     currentMethod->AddInstruction(
         peLib->AllocateInstruction(Instruction::i_stloc, peLib->AllocateOperand(pinned)));
 }
-static void CreateStringFunction(MethodSignature* signature)
+void CreateStringFunction(MethodSignature* signature)
 {
     auto oldCurrent = currentMethod;
-    currentMethod = peLib->AllocateMethod(signature, Qualifiers::ManagedFunc | Qualifiers::Private, false);
+    currentMethod = peLib->AllocateMethod(signature, Qualifiers::ManagedFunc | Qualifiers::Public, false);
     mainContainer->Add(currentMethod);
     auto tpv = peLib->AllocateType(Type::i8, 0);
     tpv->PointerLevel(1);
@@ -1762,10 +1766,13 @@ static void dumpInitializerCalls(Optimizer::LIST* lst, bool initting)
 {
     if (Optimizer::pinning && initting)
     {
-        auto signature = peLib->AllocateMethodSignature("StringInit", MethodSignature::Managed, mainContainer);
+        char buf[256];
+        sprintf(buf, "string_init_%x", uniqueId);
+        std::string name = buf;
+        auto signature = peLib->AllocateMethodSignature(name, MethodSignature::Managed, mainContainer);
         signature->ReturnType(peLib->AllocateType(Type::Void, 0));
         currentMethod->AddInstruction(peLib->AllocateInstruction(
-                    Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
+            Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
         CreateStringFunction(signature);
     }
     while (lst)
@@ -1998,7 +2005,7 @@ void msil_main_postprocess(bool errors)
 {
     if (Optimizer::cparams.prm_compileonly && !Optimizer::cparams.prm_asmfile)
     {
-        // empty
+        // Empty
     }
     else
     {

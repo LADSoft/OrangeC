@@ -81,7 +81,7 @@ Optimizer::LINEDATA *linesHead, *linesTail;
 
 static int matchReturnTypes;
 static int endline;
-
+static int caseLevel = 0;
 static LEXEME* autodeclare(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, BLOCKDATA* parent, int asExpression);
 
 static BLOCKDATA* caseDestructBlock;
@@ -93,6 +93,7 @@ void statement_ini(bool global)
     funcNesting = 0;
     funcLevel = 0;
     caseDestructBlock = nullptr;
+    caseLevel = 0;
     matchReturnTypes = false;
     tryLevel = 0;
 }
@@ -385,6 +386,22 @@ static void thunkGotoDestructors(EXPRESSION** exp, BLOCKDATA* gotoTab, BLOCKDATA
     }
 }
 static void InSwitch() {}
+static void StartOfCaseGroup(SYMBOL *funcsp, BLOCKDATA* parent)
+{
+    caseLevel++;
+    STATEMENT *st = stmtNode(nullptr, parent, st_dbgblock);
+    st->label = 1;
+
+}
+static void EndOfCaseGroup(SYMBOL *funcsp, BLOCKDATA * parent)
+{
+    if (caseLevel)
+    {
+        caseLevel--;
+        STATEMENT *st = stmtNode(nullptr, parent, st_dbgblock);
+        st->label = 0;
+    }
+}
 static void HandleStartOfCase(BLOCKDATA* parent)
 {
     // this is a little buggy in that it doesn't check to see if we are already in a switch
@@ -2257,6 +2274,7 @@ static LEXEME* statement_switch(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
             st->select = select;
             st->breaklabel = switchstmt->breaklabel;
             lex = statement(lex, funcsp, switchstmt, true);
+            EndOfCaseGroup(funcsp, parent);
             st->cases = switchstmt->cases;
             st->label = switchstmt->defaultlabel;
             if (st->label != -1 && switchstmt->needlabel && !switchstmt->hasbreak)
@@ -2345,7 +2363,7 @@ static LEXEME* statement_while(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
             if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.prm_c99)
             {
                 addedBlock++;
-                AllocateLocalContext(parent, funcsp, codeLabel++);
+                AllocateLocalContext(whilestmt, funcsp, codeLabel++);
             }
             do
             {
@@ -2886,6 +2904,7 @@ LEXEME* statement(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool viacontro
             parent->nosemi = true;
             break;
         case kw_case:
+            EndOfCaseGroup(funcsp, parent);
             while (KW(lex) == kw_case)
             {
                 if (Optimizer::cparams.prm_cplusplus)
@@ -2894,16 +2913,19 @@ LEXEME* statement(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool viacontro
                 if (Optimizer::cparams.prm_cplusplus)
                     HandleStartOfCase(parent);
             }
+            StartOfCaseGroup(funcsp, parent);
             lex = statement(lex, funcsp, parent, false);
             parent->nosemi = true;
             return lex;
             break;
         case kw_default:
+            EndOfCaseGroup(funcsp, parent);
             if (Optimizer::cparams.prm_cplusplus)
                 HandleEndOfCase(parent);
             lex = statement_default(lex, funcsp, parent);
             if (Optimizer::cparams.prm_cplusplus)
                 HandleStartOfCase(parent);
+            StartOfCaseGroup(funcsp, parent);
             lex = statement(lex, funcsp, parent, false);
             parent->nosemi = true;
             return lex;

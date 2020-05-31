@@ -609,6 +609,8 @@ bool NetLinkMain::EnterMethod(const Method* method)
         startups.push_back(method->Signature());
     else if (!strncmp(method->Signature()->Name().c_str(), "$$RUNDOWN", 9))
         rundowns.push_back(method->Signature());
+    else if (!strncmp(method->Signature()->Name().c_str(), "string_init_", 12))
+        stringinitializers.push_back(method->Signature());
 
     if (method->HasEntryPoint())
     {
@@ -648,6 +650,7 @@ bool NetLinkMain::AddRTLThunks()
         rundowns.reverse();
 
         MainInit();
+        dumpInitializerCalls(stringinitializers);
         dumpInitializerCalls(startups);
         dumpInitializerCalls(initializers);
         MainLocals();

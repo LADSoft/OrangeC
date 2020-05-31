@@ -1857,28 +1857,6 @@ static void removeForward(BLOCK* start)
     }
     /*	diag("can't find branch");	 */
 }
-static void removeBlock(BLOCK* block)
-{
-    QUAD* head = block->head;
-    while (head)
-    {
-        switch (head->dc.opcode)
-        {
-            case i_label:
-            case i_line:
-            case i_block:
-                break;
-            default:
-                RemoveInstruction(head);
-                head = head->back;
-                break;
-        }
-        if (head == block->tail)
-            head = nullptr;
-        else
-            head = head->fwd;
-    }
-}
 /* propagate constants as far as possible, and remove dead blocks */
 void ConstantFlow(void)
 {

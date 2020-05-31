@@ -15,8 +15,7 @@
  *     GNU General Public License for more details.
  *
  *     You should have received a copy of the GNU General Public License
- *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.pin *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
@@ -214,7 +213,7 @@ void Optimize(SimpleSymbol* funcsp)
         // printf("const\n");
         if (optflags & OPT_CONSTANT)
         {
-            ConstantFlow(); /* propagate constants */
+            //ConstantFlow(); /* propagate constants */
             RemoveInfiniteThunks();
             //			RemoveCriticalThunks();
             doms_only(false);

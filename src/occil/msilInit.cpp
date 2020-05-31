@@ -36,6 +36,7 @@
 #include "ildata.h"
 #include "occil.h"
 #include "using.h"
+#include "MsilProcess.h"
 #define STARTUP_TYPE_STARTUP 1
 #define STARTUP_TYPE_RUNDOWN 2
 #define STARTUP_TYPE_TLS_STARTUP 3
@@ -281,6 +282,17 @@ void msil_end_generation(char* fileName)
 {
     if (Optimizer::cparams.prm_compileonly && !Optimizer::cparams.prm_asmfile)
     {
+#ifndef ISPARSER
+        if (Optimizer::pinning)
+        {
+            char buf[256];
+            sprintf(buf, "string_init_%x", uniqueId);
+            std::string name = buf;
+            auto signature = peLib->AllocateMethodSignature(name, MethodSignature::Managed, mainContainer);
+            signature->ReturnType(peLib->AllocateType(Type::Void, 0));
+            CreateStringFunction(signature);
+        }
+#endif
         Optimizer::cseg();
         for (auto it = externalList.begin(); it != externalList.end(); ++it)
         {

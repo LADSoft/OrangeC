@@ -337,6 +337,30 @@ static void MoveLabelsToExit(BLOCK* b)
         head = next;
     }
 }
+static void removeBlock(BLOCK* block)
+{
+    QUAD* head = block->head;
+    while (head)
+    {
+        switch (head->dc.opcode)
+        {
+        case i_label:
+        case i_line:
+        case i_block:
+        case i_dbgblock:
+        case i_dbgblockend:
+            break;
+        default:
+            RemoveInstruction(head);
+            head = head->back;
+            break;
+        }
+        if (head == block->tail)
+            head = nullptr;
+        else
+            head = head->fwd;
+    }
+}
 static void removeDeadBlocks(BRIGGS_SET* brs, BLOCK* back, BLOCK* b)
 {
     if (b->temp)
@@ -382,8 +406,9 @@ static void removeDeadBlocks(BRIGGS_SET* brs, BLOCK* back, BLOCK* b)
         }
         if (cparams.prm_cplusplus)
             MoveLabelsToExit(b);
-        b->head->fwd = b->tail->fwd;
-        b->tail->fwd->back = b->head;
+        removeBlock(b);
+//        b->head->fwd = b->tail->fwd;
+//        b->tail->fwd->back = b->head;
         b->tail = b->head;
         b->succ = b->pred = nullptr;
         b->dead = true;

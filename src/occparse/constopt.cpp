@@ -3403,6 +3403,32 @@ static void rebalance(EXPRESSION* ep)
             break;
     }
 }
+bool msilConstant(EXPRESSION *exp)
+{
+    if (Optimizer::architecture == ARCHITECTURE_MSIL)
+    {
+        while (castvalue(exp))
+            exp = exp->left;
+        if (exp->type == en__sizeof)
+            return true;
+        if (exp->left && !msilConstant(exp->left))
+            return false;
+        if (exp->right && !msilConstant(exp->right))
+            return false;
+        switch (exp->type)
+        {
+            case en_add:
+            case en_mul:
+            case en_umul:
+            case en_div:
+            case en_udiv:
+                return true;
+            default:
+                return isarithmeticconst(exp);
+        }
+    }
+    return false;
+}
 void RemoveSizeofOperators(EXPRESSION *constant)
 {
     if (constant->left)
@@ -3434,7 +3460,7 @@ void optimize_for_constants(EXPRESSION** expr)
     }
     asidehead = oldasidehead;
     asidetail = oldasidetail;
-//    if (Optimizer::architecture != ARCHITECTURE_MSIL)
+    if (Optimizer::architecture != ARCHITECTURE_MSIL)
     {
         rebalance(*expr);
     }

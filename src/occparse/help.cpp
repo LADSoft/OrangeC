@@ -1609,7 +1609,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
         }
         else
         {
-            EXPRESSION* guard = anonymousVar(sc_static, &stdint);
+            EXPRESSION* guard = anonymousVar(sc_localstatic, &stdint);
             insertInitSym(guard->v.sp);
             deref(&stdpointer, &guard);
             optimize_for_constants(&rv);

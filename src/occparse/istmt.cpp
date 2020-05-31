@@ -559,7 +559,7 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, Optimi
                 {
                     ap1 = Optimizer::tempreg(returnSym->size, 0);
                     ap1->retval = true;
-                    gen_icode(Optimizer::i_assn, ap1, returnSym, nullptr);
+                    Optimizer::gen_icode(Optimizer::i_assn, ap1, returnSym, nullptr);
                 }
                 Optimizer::gen_icode(Optimizer::i_epilogue, 0, 0, 0);
                 if (funcsp->sb->attribs.inheritable.linkage == lk_interrupt || funcsp->sb->attribs.inheritable.linkage == lk_fault)
@@ -588,7 +588,7 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, Optimi
                 ap1 = Optimizer::tempreg(returnSym->size, 0);
                 ap1->retval = true;
             }
-            gen_icode(Optimizer::i_assn, returnSym, ap1, nullptr);
+            Optimizer::gen_icode(Optimizer::i_assn, returnSym, ap1, nullptr);
         }
         /* not using gen_igoto because it will make a new block */
         Optimizer::gen_icode(Optimizer::i_goto, nullptr, nullptr, nullptr);

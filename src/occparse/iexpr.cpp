@@ -1215,14 +1215,14 @@ Optimizer::IMODE* gen_cpinitblock(EXPRESSION* node, SYMBOL* funcsp, bool cp, int
 Optimizer::IMODE* gen_cpinitobj(EXPRESSION* node, SYMBOL* funcsp, bool cp, int flags)
 {
     Optimizer::IMODE* ap = gen_expr(funcsp, node->left, 0, ISZ_UINT);
-    Optimizer::IMODE* ap1 = LookupLoadTemp(nullptr, ap);
-    gen_icode(Optimizer::i_assn, ap1, ap, nullptr);
+    Optimizer::IMODE* ap1 = Optimizer::LookupLoadTemp(nullptr, ap);
+    Optimizer::gen_icode(Optimizer::i_assn, ap1, ap, nullptr);
     Optimizer::intermed_tail->alwayslive = true;
     ap = (Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
     ap->mode = Optimizer::i_immed;
     ap->offset = Optimizer::SymbolManager::Get(node->left);
     ap->size = ISZ_UINT;
-    gen_icode(Optimizer::i__initobj, nullptr, ap, nullptr);
+    Optimizer::gen_icode(Optimizer::i__initobj, nullptr, ap, nullptr);
     return nullptr;
 }
 
@@ -1233,7 +1233,7 @@ Optimizer::IMODE* gen_cpsizeof(EXPRESSION* node, SYMBOL* funcsp, bool cp, int fl
     ap->mode = Optimizer::i_immed;
     ap->offset = Optimizer::SymbolManager::Get(node->left);
     ap->size = ISZ_UINT;
-    gen_icode(Optimizer::i__sizeof, ap1, ap, nullptr);
+    Optimizer::gen_icode(Optimizer::i__sizeof, ap1, ap, nullptr);
     return ap1;
 }
 /*-------------------------------------------------------------------------*/

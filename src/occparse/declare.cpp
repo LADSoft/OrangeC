@@ -6504,6 +6504,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                             {
                                 if (!sp->sb->label)
                                     sp->sb->label = Optimizer::nextLabel++;
+                                sp->sb->uniqueID = fileIndex;
                             }
 
                             if (/*templateNestingCount &&*/ nameSpaceList)

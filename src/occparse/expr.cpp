@@ -4891,7 +4891,10 @@ static LEXEME* expression_primary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE**
                         funcsp->sb->__func__label = string->label;
                     }
                     else
+                    {
                         *exp = intNode(en_labcon, funcsp->sb->__func__label);
+                        (*exp)->altdata = intNode(en_c_i, l_astr);
+                    }
                     lex = getsym();
                     break;
                 case kw__uuidof:

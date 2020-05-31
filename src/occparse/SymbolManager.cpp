@@ -606,6 +606,10 @@ unsigned long long Optimizer::SymbolManager::Key(struct Parser::sym* old)
         my_sprintf(buf + strlen(buf), "%d", old->sb->uniqueID);
     }
     strcat(buf, old->sb->decoratedName ? old->sb->decoratedName : old->name);
+    if (old->sb->storage_class == sc_static && !old->sb->parent)
+    {
+        my_sprintf(buf + strlen(buf), "%d", old->sb->uniqueID);
+    }
     if (old->sb->storage_class == sc_type)
         strcat(buf, "#");
     if (old->sb->attribs.inheritable.linkage == lk_stdcall)

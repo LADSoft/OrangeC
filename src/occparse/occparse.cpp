@@ -111,6 +111,7 @@ int maxBlocks, maxTemps;
 char cppfile[256];
 FILE* cppFile;
 char infile[256];
+int fileIndex;
 
 FILE* errFile;
 PreProcessor* preProcessor;
@@ -259,6 +260,7 @@ void MakeStubs(void)
 }
 void compile(bool global)
 {
+    fileIndex++;
     SET_GLOBAL(true, 1);
     LEXEME* lex = nullptr;
     Optimizer::SymbolManager::clear();

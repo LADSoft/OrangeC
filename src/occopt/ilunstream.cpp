@@ -556,7 +556,8 @@ static void UnstreamXParams()
         bssAlign = UnstreamIndex();
         constAlign = UnstreamIndex();
         nextLabel = UnstreamIndex();
-        pinning = !!UnstreamIndex(); 
+        pinning = !!UnstreamIndex();
+        msilstrings = !!UnstreamIndex();
         registersAssigned = UnstreamIndex();
         UnstreamString(prm_assemblerSpecifier);
         UnstreamString(prm_libPath);

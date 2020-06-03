@@ -153,14 +153,10 @@ static void CreateExternalCSharpReferences()
             pointer = peLib->AllocateClass("pointer", Qualifiers::Public, -1, -1);
             ns->Add(pointer);
             MethodSignature* sig =
-                peLib->AllocateMethodSignature("box", MethodSignature::Managed | MethodSignature::InstanceFlag, pointer);
-            sig->ReturnType(object);
-            sig->AddParam(peLib->AllocateParam("param", voidPtr));
-            pointer->Add(peLib->AllocateMethod(sig, Qualifiers::Public | Qualifiers::Static));
-            sig = peLib->AllocateMethodSignature("unbox", MethodSignature::Managed | MethodSignature::InstanceFlag, pointer);
-            sig->ReturnType(voidPtr);
-            sig->AddParam(peLib->AllocateParam("param", object));
-            pointer->Add(peLib->AllocateMethod(sig, Qualifiers::Public | Qualifiers::Static));
+                peLib->AllocateMethodSignature("ToPointer", MethodSignature::Managed | MethodSignature::InstanceFlag, pointer);
+            Type *rt = peLib->AllocateType(Type::i8, 1);
+            sig->ReturnType(rt);
+            sig->AddParam(peLib->AllocateParam("param", peLib->AllocateType(Type::string, 0)));
         }
     }
 

@@ -53,6 +53,8 @@
 #include "declcons.h"
 #include "Property.h"
 #include "browse.h"
+#include "ildata.h"
+
 namespace Parser
 {
 int packIndex;
@@ -1621,6 +1623,24 @@ static void LookupSingleAggregate(TYPE* tp, EXPRESSION** exp)
         //            error(ERR_FUNCTION_CALL_NEEDS_ARGUMENT_LIST);
     }
 }
+static EXPRESSION* MsilRebalanceArray(EXPRESSION* in)
+{
+    /* sizeof operators will already be present */
+    if (in->type == en_add && in->right->type == en_umul && in->right->right->type == en__sizeof)
+    {
+        if (in->left->type == en_add && in->left->right->type == en_umul && in->left->right->right->type == en__sizeof)
+        {
+            if (comparetypes(in->right->right->left->v.tp, in->left->right->right->left->v.tp, 0))
+            {
+                EXPRESSION* temp = exprNode(en_add, in->left->right->left, in->right->left);
+                temp = exprNode(en_umul, temp, in->right->right);
+                in->left = in->left->left;
+                in->right = temp;
+            }
+        }
+    }
+    return in;
+}
 static LEXEME* expression_bracket(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, int flags)
 {
     TYPE* tp2 = nullptr;
@@ -1727,16 +1747,35 @@ static LEXEME* expression_bracket(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRES
                     if (isstructured(*tp))
                         *tp = PerformDeferredInitialization(*tp, funcsp);
                     cast(&stdint, &expr2);
-                    if (!isarray(*tp) && Optimizer::architecture == ARCHITECTURE_MSIL)
+                    if (Optimizer::architecture == ARCHITECTURE_MSIL)
                     {
-                        auto exp3 = exprNode(en__sizeof, typeNode(*tp), nullptr);
-                        exp1 = exprNode(en_umul, expr2, exp3);
+                        if (!isarray(*tp))
+                        {
+                            auto exp3 = exprNode(en__sizeof, typeNode(*tp), nullptr);
+                            exp1 = exprNode(en_umul, expr2, exp3);
+                        }
+                        else
+                        {
+                            TYPE *tp1 = *tp;
+                            int n = tp1->size;
+                            while (isarray(tp1))
+                                tp1 = tp1->btp;
+                            n = n / tp1->size;
+                            auto exp3 = exprNode(en__sizeof, typeNode(tp1), nullptr);
+                            auto exp4 = intNode(en_c_i, n);
+                            expr2 = exprNode(en_umul, expr2, exp4);
+                            exp1 = exprNode(en_umul, expr2, exp3);
+                        }
                     }
                     else
                     {
                         exp1 = exprNode(en_umul, expr2, intNode(en_c_i, (*tp)->size));
                     }
                     *exp = exprNode(en_add, *exp, exp1);
+                    if (Optimizer::architecture == ARCHITECTURE_MSIL)
+                    {
+                        *exp = MsilRebalanceArray(*exp);
+                    }
                 }
                 if (!(*tp)->array && !(*tp)->vla)
                     deref(*tp, exp);
@@ -1766,17 +1805,36 @@ static LEXEME* expression_bracket(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRES
                 {
                     EXPRESSION* exp1 = nullptr;
                     *tp = basetype(tp2)->btp;
-                    cast(&stdint, exp);
-                    if (!isarray(*tp) && Optimizer::architecture == ARCHITECTURE_MSIL)
+                    if (Optimizer::architecture == ARCHITECTURE_MSIL)
                     {
-                        auto exp3 = exprNode(en__sizeof, typeNode(*tp), nullptr);
-                        exp1 = exprNode(en_umul, *exp, exp3);
+                        cast(&stdint, exp);
+                        if (!isarray(*tp))
+                        {
+                            auto exp3 = exprNode(en__sizeof, typeNode(*tp), nullptr);
+                            exp1 = exprNode(en_umul, *exp, exp3);
+                        }
+                        else
+                        {
+                            TYPE *tp1 = *tp;
+                            int n = tp1->size;
+                            while (isarray(tp1))
+                                tp1 = tp1->btp;
+                            n = n / tp1->size;
+                            auto exp3 = exprNode(en__sizeof, typeNode(tp1), nullptr);
+                            auto exp4 = intNode(en_c_i, n);
+                            expr2 = exprNode(en_umul, *exp, exp4);
+                            exp1 = exprNode(en_umul, *exp, exp3);
+                        }
                     }
                     else
                     {
                         exp1 = exprNode(en_umul, *exp, intNode(en_c_i, (*tp)->size));
                     }
                     *exp = exprNode(en_add, expr2, exp1);
+                    if (Optimizer::architecture == ARCHITECTURE_MSIL)
+                    {
+                        *exp = MsilRebalanceArray(*exp);
+                    }
                 }
                 if (!(*tp)->array && !(*tp)->vla)
                     deref(*tp, exp);
@@ -4872,7 +4930,7 @@ static LEXEME* expression_primary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE**
                     break;
                 case kw___func__:
                     *tp = &std__func__;
-                    if (!funcsp->sb->__func__label)
+                    if (!funcsp->sb->__func__label || Optimizer::msilstrings)
                     {
                         LCHAR buf[256], *q = buf;
                         const char* p = funcsp->name;

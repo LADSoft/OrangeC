@@ -50,6 +50,7 @@ extern int ignore_global_init;
 
 void init_init(void);
 EXPRESSION* stringlit(STRING* s);
+EXPRESSION *ConvertToMSILString(EXPRESSION *val);
 int genstring(STRING* str);
 void dumpLits(void);
 void dumpStartups(void);

@@ -3411,6 +3411,11 @@ bool msilConstant(EXPRESSION *exp)
             exp = exp->left;
         if (exp->type == en__sizeof)
             return true;
+        if (exp->type == en_func)
+        {
+            if (exp->v.func->arguments && !exp->v.func->arguments->next && !strcmp(exp->v.func->sp->name, "ToPointer"))
+                return true;
+        }
         if (exp->left && !msilConstant(exp->left))
             return false;
         if (exp->right && !msilConstant(exp->right))

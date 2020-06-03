@@ -38,26 +38,27 @@
 
 namespace Optimizer
 {
-static char usage_text[] =
-    "[options] [@response file] files\n"
-    "\n"
-    "/1        - C1x mode                  /8        - c89 mode\n"
-    "/9        - C99 mode                  /c        - compile only\n"
-    "-d        - don't allow extensions    +e        - dump errors to file\n"
-    "+i        - dump preprocessed file    +l        - dump listing file\n"
-    "/oname    - specify output file name\n"
-    "+A        - disable extensions        /Dxxx     - define something\n"
-    "/E[+]nn   - max number of errors      /Ipath    - specify include path\n"
-    "/Kfile    - set strong name key       /Lxxx     - set dlls to import from\n"
-    "/M        - generate make stubs       /Nns.cls  - set namespace and class\n"
-    "/O-       - disable optimizations     /P        - replace PInvokes\n"
-    "+Q        - quiet mode                /T        - translate trigraphs\n"
-    "/Vx.x.x.x - set assembly version      /!        - No logo\n"
-    "--version - show version info\n"
-    "\nCodegen parameters: (/C[+][-][params])\n"
-    "  +d   - display diagnostics          -b        - no BSS\n"
-    "  -f   -generated pinned addresses    -l   - no C source in ASM file\n"
-    "  -m        -  no leading underscores +u   - 'char' type is unsigned\n"
+    static char usage_text[] =
+        "[options] [@response file] files\n"
+        "\n"
+        "/1        - C1x mode                  /8        - c89 mode\n"
+        "/9        - C99 mode                  /c        - compile only\n"
+        "-d        - don't allow extensions    +e        - dump errors to file\n"
+        "+i        - dump preprocessed file    +l        - dump listing file\n"
+        "/oname    - specify output file name\n"
+        "+A        - disable extensions        /Dxxx     - define something\n"
+        "/E[+]nn   - max number of errors      /Ipath    - specify include path\n"
+        "/Kfile    - set strong name key       /Lxxx     - set dlls to import from\n"
+        "/M        - generate make stubs       /Nns.cls  - set namespace and class\n"
+        "/O-       - disable optimizations     /P        - replace PInvokes\n"
+        "+Q        - quiet mode                /T        - translate trigraphs\n"
+        "/Vx.x.x.x - set assembly version      /!        - No logo\n"
+        "--version - show version info\n"
+        "\nCodegen parameters: (/C[+][-][params])\n"
+        "  +d   - display diagnostics          -b        - no BSS\n"
+        "  +f   - generated pinned addresses   -l        - no C source in ASM file\n"
+        "  -m   - no leading underscores       +s        - use native string literals\n"
+        "  +u   - 'char' type is unsigned\n"
     "\nWarning Control:\n"
     " /w      - display no warnings         /wx or /werror - display warnings as errors\n"
     " /woxxx  - only display warning once   /wexxx         - display warning xxx as error\n"
@@ -411,8 +412,12 @@ ARCH_ASM msilAssemblerInterface[] = {
 
 int parse_msil_codegen(bool v, const char *string)
 {
+    if (string[0] == ';')
+        return 1;
     if (string[0] == 'f')
         pinning = v;
+    else if (string[0] == 's')
+        msilstrings = v;
     else
         return 0;
     return 1;

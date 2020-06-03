@@ -65,7 +65,7 @@ static DYNAMIC_INITIALIZER *dynamicDestructors, *TLSDestructors;
 static Optimizer::LIST *symListHead, *symListTail;
 static int inittag = 0;
 static STRING* strtab;
-
+static SYMBOL *msilToString;
 LEXEME* initType(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_sc sc, INITIALIZER** init, INITIALIZER** dest, TYPE* itype,
                  SYMBOL* sym, bool arrayMember, int flags);
 
@@ -75,6 +75,58 @@ void init_init(void)
     dynamicInitializers = TLSInitializers = nullptr;
     dynamicDestructors = TLSDestructors = nullptr;
     initializingGlobalVar = false;
+    msilToString = nullptr;
+}
+
+static SYMBOL * LookupMsilToString()
+{
+    if (!msilToString)
+    {
+        SYMBOL *sym = namespacesearch("lsmsilcrtl", globalNameSpace, false, false);
+        if (sym && sym->sb->storage_class == sc_namespace)
+        {
+            sym = namespacesearch("CString", sym->sb->nameSpaceValues, true, false);
+            if (sym && isstructured(sym->tp))
+            {
+                sym = search("ToPointer", basetype(sym->tp)->syms);
+                if (sym)
+                {
+                    auto hr = sym->tp->syms->table[0];
+                    while (hr)
+                    {
+                        if (hr->p->sb->storage_class == sc_static)
+                        {
+                            msilToString = hr->p;
+                            break;
+                        }
+                        hr = hr->next;
+                    }
+                }
+            }
+        }
+        if (!msilToString)
+        {
+            Utils::fatal("internal error");
+        }
+    }
+    return msilToString;
+}
+EXPRESSION *ConvertToMSILString(EXPRESSION *val)
+{
+    val->type = en_c_string;
+    SYMBOL *var = LookupMsilToString();
+    
+    FUNCTIONCALL *fp = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
+    fp->functp = var->tp;
+    fp->sp = var;
+    fp->fcall = varNode(en_global, var);
+    fp->arguments = (INITLIST*)Alloc(sizeof(INITLIST));
+    fp->arguments->exp = val;
+    fp->arguments->tp = &std__string;
+    fp->ascall = true;
+    EXPRESSION* rv = exprNode(en_func, nullptr, nullptr);
+    rv->v.func = fp;
+    return rv;
 }
 EXPRESSION* stringlit(STRING* s)
 /*
@@ -108,6 +160,10 @@ EXPRESSION* stringlit(STRING* s)
                     rv->size = s->size;
                     rv->altdata = intNode(en_c_i, s->strtype);
                     lp->refCount++;
+                    if (Optimizer::msilstrings)
+                    {
+                        rv = ConvertToMSILString(rv);
+                    }
                     return rv;
                 }
             }
@@ -122,6 +178,10 @@ EXPRESSION* stringlit(STRING* s)
     rv->size = s->size;
     rv->altdata = intNode(en_c_i, s->strtype);
     s->refCount++;
+    if (Optimizer::msilstrings)
+    {
+        rv = ConvertToMSILString(rv);
+    }
     return rv;
 }
 

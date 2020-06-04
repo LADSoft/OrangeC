@@ -296,7 +296,7 @@ asmError InstructionParser::GetInstruction(OCODE* ins, Instruction*& newIns, std
                     break;
                 default:
                     if (ins->opcode >= op_ja && ins->opcode <= op_jz)
-                        if (ins->opcode != op_jmp || ins->oper1->mode != am_dreg)
+                        if (ins->opcode != op_jmp || ins->oper1->mode == am_immed)
                             ins->oper1->length = 0;
                     if (ins->opcode == op_ret && ins->oper1)
                         ins->oper1->length = 0;

@@ -307,7 +307,7 @@ bool Method::PEDump(PELib& peLib)
         delete[] sig;
 
         table = new MethodDefTableEntry(rendering_, implFlags, MFlags, nameIndex, methodSignature, paramIndex);
-        prototype_->SetPEIndex(peLib.PEOut().AddTableEntry(table));
+        prototype_->PEIndex(peLib.PEOut().AddTableEntry(table));
         int i = 1;
         size_t lastParamIndex = 0;
         for (auto it = prototype_->begin(); it != prototype_->end(); ++it)

@@ -1,3 +1,8 @@
+Version 3.03:
+	add support for explicit types (for sizeof)
+	add support for pinning
+	add support for generics
+
 Version 3.02:
 	fix problems parsing and generating properties
 	allow 'find' functions to find constructors

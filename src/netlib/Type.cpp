@@ -28,11 +28,11 @@
 namespace DotNetPELib
 {
 
-const char* Type::typeNames_[] = {"",        "",        "void",   "bool",       "char",
+const char* Type::typeNames_[] = {"",        "",        "", "", "void",   "bool",       "char",
                                   "int8",    "uint8",   "int16",  "uint16",     "int32",
                                   "uint32",  "int64",   "uint64", "native int", "native unsigned int",
                                   "float32", "float64", "object", "string"};
-const char* BoxedType::typeNames_[] = {"",        "",       "",       "Bool",   "Char",  "SByte",  "Byte",
+const char* BoxedType::typeNames_[] = {"",        "",       "",       "", "", "Bool",   "Char",  "SByte",  "Byte",
                                        "Int16",   "UInt16", "Int32",  "UInt32", "Int64", "UInt64", "IntPtr",
                                        "UIntPtr", "Single", "Double", "Object", "String"};
 bool Type::Matches(Type* right)
@@ -94,18 +94,30 @@ bool Type::ILSrcDump(PELib& peLib) const
         std::string name = Qualifiers::GetName("", typeRef_, true);
         if (name[0] != '[')
         {
-            name = "'" + name + "'";
+            peLib.Out() << "'" << name << "'";
+            static_cast<Class*>(typeRef_)->AdornGenerics(peLib);
         }
         else
         {
             int npos = name.find_first_of("]");
             if (npos != std::string::npos && npos != name.size() - 1)
             {
-                name = name.substr(0, npos + 1) + "'" + name.substr(npos + 1) + "'";
+                peLib.Out() << name.substr(0, npos + 1) + "'" + name.substr(npos + 1) + "'";
+                static_cast<Class*>(typeRef_)->AdornGenerics(peLib);
+            }
+            else
+            {
+                peLib.Out() << "'" << name << "'";
             }
         }
-
-        peLib.Out() << name;
+    }
+    else if (tp_ == var)
+    {
+        peLib.Out() << "!" << VarNum();
+    }
+    else if (tp_ == mvar)
+    {
+        peLib.Out() << "!" << VarNum();
     }
     else if (tp_ == method)
     {
@@ -190,6 +202,7 @@ Type* Type::ObjIn(PELib& peLib)
         Type* rv = nullptr;
         if (tp == cls)
         {
+            std::deque<Type*> generics;
             DataContainer* typeref = nullptr;
             if (peLib.ObjBegin() == 'c')
             {
@@ -203,7 +216,6 @@ Type* Type::ObjIn(PELib& peLib)
             {
                 peLib.ObjError(oe_syntax);
             }
-            rv = peLib.AllocateType(typeref);
         }
         else if (tp == method)
         {

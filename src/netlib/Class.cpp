@@ -26,6 +26,8 @@
 #include "PEFile.h"
 #include <typeinfo>
 #include <climits>
+#include <sstream>
+
 namespace DotNetPELib
 {
 
@@ -35,6 +37,7 @@ bool Class::ILSrcDump(PELib& peLib) const
     if (extendsFrom_)
     {
         peLib.Out() << " extends " << Qualifiers::GetName("", extendsFrom_);
+        extendsFrom_->AdornGenerics(peLib);
     }
     peLib.Out() << " {";
     if (pack_ > 0 || size_ > 0)
@@ -95,7 +98,34 @@ int Class::TransferFlags() const
 }
 bool Class::PEDump(PELib& peLib)
 {
-    if (InAssemblyRef())
+    if (generic_.size() && generic_.front()->GetBasicType() != Type::var)
+    {
+        if (!peIndex_)
+        {
+            if (!genericParent_->PEIndex())
+                genericParent_->PEDump(peLib);
+            if (generic_.size())
+            {
+                for (auto g : generic_)
+                {
+                    if (g->GetBasicType() == Type::cls && g->PEIndex() == 0)
+                    {
+                        size_t val;
+                        g->Render(peLib, (Byte*)&val);
+                        g->PEIndex(val);
+                    }
+                }
+            }
+            size_t sz;
+            Type type(this);
+            Byte* sig = SignatureGenerator::TypeSig(&type, sz);
+            size_t signature = peLib.PEOut().HashBlob(sig, sz);
+            delete[] sig;
+            TypeSpecTableEntry* table = new TypeSpecTableEntry(signature);
+            peIndex_ = peLib.PEOut().AddTableEntry(table);
+        }
+    }
+    else if (InAssemblyRef())
     {
         if (!peIndex_)
         {
@@ -168,6 +198,19 @@ bool Class::PEDump(PELib& peLib)
             for (auto p : properties_)
                 p->PEDump(peLib);
         }
+        if (generic_.size())
+        {
+            TypeOrMethodDef owner(TypeOrMethodDef::TypeDef, peIndex_);
+            for (int i = 0; i < generic_.size(); i++)
+            {
+                std::string name;
+                name += (char)(i / 26 + 'A');
+                name += (char)(i % 26 + 'A');
+                size_t namestr = peLib.PEOut().HashString(name);
+                table = new GenericParamTableEntry(i, 0, owner, namestr);
+                peLib.PEOut().AddTableEntry(table);
+            }
+        }
     }
     return true;
 }
@@ -180,6 +223,7 @@ void Class::ILSrcDumpClassHeader(PELib& peLib) const
     flags_.ILSrcDumpBeforeFlags(peLib);
     flags_.ILSrcDumpAfterFlags(peLib);
     peLib.Out() << " '" << name_ << "'";
+    AdornGenerics(peLib, true);
 }
 void Class::ObjOut(PELib& peLib, int pass) const
 {
@@ -198,6 +242,15 @@ void Class::ObjOut(PELib& peLib, int pass) const
         {
             for (auto p : properties_)
                 p->ObjOut(peLib, pass);
+            if (generic_.size())
+            {
+                peLib.Out() << "$gb" << generic_.size() << ",";
+                for (auto g : generic_)
+                {
+                    g->ObjOut(peLib, pass);
+                }
+                peLib.Out() << "$ge" << generic_.size() << ",";
+            }
         }
         peLib.Out() << std::endl << "$ce";
     }
@@ -260,6 +313,20 @@ Class* Class::ObjIn(PELib& peLib, bool definition)
             peLib.ObjError(oe_noclass);
         }
         if (peLib.ObjEnd() != 'c')
+            peLib.ObjError(oe_syntax);
+    }
+    if (peLib.ObjBegin() == 'g')
+    {
+        int count = peLib.ObjInt();
+        int ch = peLib.ObjChar();
+        if (ch != ',')
+            peLib.ObjError(oe_syntax);
+        for (int i = 0; i < count; i++)
+        {
+            Type*current = peLib.AllocateType(Type::i8, 0);
+            rv->Generic().push_back(current);
+        }
+        if (peLib.ObjEnd() != 'g')
             peLib.ObjError(oe_syntax);
     }
     return rv;
@@ -379,5 +446,28 @@ bool Class::Traverse(Callback& callback) const
         if (!callback.EnterProperty(property))
             return false;
     return true;
+}
+void Class::AdornGenerics(PELib &peLib, bool names) const
+{
+    if (generic_.size())
+    {
+        int count = 0;
+        peLib.Out() << "<";
+        for (auto&& type : generic_)
+        {
+            if (names && type->GetBasicType() == Type::var)
+            {
+                peLib.Out() << (char)(type->VarNum() / 26 + 'A') << (char)(type->VarNum() % 26 + 'A');
+            }
+            else
+            {
+                type->ILSrcDump(peLib);
+            }
+            if (count++ != generic_.size()-1)
+                peLib.Out() << ",";
+            else
+                peLib.Out() << ">";
+        }
+    }
 }
 }  // namespace DotNetPELib

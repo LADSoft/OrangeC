@@ -145,7 +145,8 @@ namespace DotNetPELib
     {
     public:
         DestructorBase() { }
-        DestructorBase(const DestructorBase &);
+        DestructorBase(const DestructorBase &) { }
+        DestructorBase& operator=(const DestructorBase &) { }
         virtual ~DestructorBase() { }
     };
 
@@ -441,6 +442,7 @@ namespace DotNetPELib
         void SetInstantiated() { instantiated_ = true; }
         ///** The immediate parent
         DataContainer *Parent() const { return parent_; }
+        void Parent(DataContainer* parent) { parent_ = parent; }
         ///** The inner namespace parent
         size_t ParentNamespace(PELib &peLib) const;
         ///** The closest parent class
@@ -484,6 +486,7 @@ namespace DotNetPELib
         std::string name_;
         bool instantiated_;
         size_t peIndex_; // generic index into a table or stream
+        bool assemblyRef_;
     };
     ///** class to hold custom attributes.  only parses them at this point, so that
     // you can retrieve attributes from .net assemblies if you want to.  if you
@@ -575,6 +578,7 @@ namespace DotNetPELib
         Namespace(const std::string& Name) : DataContainer(Name, Qualifiers(0))
         {
         }
+
         ///** Get the full namespace name including all parents
         std::string ReverseName(DataContainer *child);
         virtual bool ILSrcDump(PELib &) const override;
@@ -657,9 +661,11 @@ namespace DotNetPELib
     {
     public:
         Class(const std::string& Name, Qualifiers Flags, int Pack, int Size) : DataContainer(Name, Flags),
-            pack_(Pack), size_(Size), extendsFrom_(nullptr), external_(false)
+            pack_(Pack), size_(Size), extendsFrom_(nullptr), external_(false), genericParent_(nullptr)
         {
         }
+        Class(const Class&) = default;
+        Class& operator=(const Class&) = default;
         ///** set the structure packing
         void pack(int pk) { pack_ = pk; }
         ///** set the structure size
@@ -686,10 +692,15 @@ namespace DotNetPELib
             }
         }
         using DataContainer::Add;
+        void GenericParent(Class* cls) { genericParent_ = cls; }
+        Class* GenericParent() const { return genericParent_; }
         ///** Traverse the declaration tree
         virtual bool Traverse(Callback &callback) const override;
         ///** return the list of properties
         const std::vector<Property *>& Properties() const { return properties_;  }
+        ///** return the list of generics
+        std::deque<Type*>& Generic() { return generic_; }
+        const std::deque<Type*>& Generic() const { return generic_; }
         ///** root for Load assembly from file
         void Load(PELib &lib, AssemblyDef &assembly, PEReader &reader, size_t index, int startField, int endField, int startMethod, int endMethod, int startSemantics, int endSemantics);
         virtual bool ILSrcDump(PELib &) const override;
@@ -697,7 +708,7 @@ namespace DotNetPELib
         void ILSrcDumpClassHeader(PELib &) const;
         virtual void ObjOut(PELib &, int pass) const override;
         static Class *ObjIn(PELib &, bool definition = true);
-
+        void AdornGenerics(PELib&, bool names=false ) const;
     protected:
         int TransferFlags() const;
         int pack_;
@@ -706,6 +717,8 @@ namespace DotNetPELib
         std::string extendsName_;
         std::vector<Property *>properties_;
         bool external_;
+        std::deque<Type*> generic_;
+        Class* genericParent_;
     };
     ///** A method with code
     // CIL instructions are added with the 'Add' member of code container
@@ -818,6 +831,7 @@ namespace DotNetPELib
         size_t ExplicitOffset() const { return explicitOffset_; }
         ///** Index in the fielddef table
         size_t PEIndex() const { return peIndex_; }
+        void PEIndex(size_t val) { peIndex_ = val; }
 
         // internal functions
         bool InAssemblyRef() const { return parent_->InAssemblyRef(); }
@@ -1194,9 +1208,12 @@ namespace DotNetPELib
     public:
         enum { Vararg = 1, Managed = 2, InstanceFlag = 4, VirtualFlag = 8 };
         MethodSignature(const std::string& Name, int Flags, DataContainer *Container) : container_(Container), name_(Name), flags_(Flags), returnType_(nullptr), ref_(false), 
-                peIndex_(0), peIndexCallSite_(0), peIndexType_(0), methodParent_(nullptr), arrayObject_(nullptr), external_(false), definitions_(0)
+                peIndex_(0), peIndexCallSite_(0), peIndexType_(0), methodParent_(nullptr), arrayObject_(nullptr), external_(false), definitions_(0), genericParamCount_(0)
         {
         }
+        MethodSignature(const MethodSignature&) = default;
+        MethodSignature& operator=(const MethodSignature&) = default;
+
         ///** Get return type
         Type *ReturnType() const { return returnType_; }
         ///** Set return type
@@ -1233,6 +1250,9 @@ namespace DotNetPELib
         void SetName(const std::string& Name) { name_ = Name; }
         ///** Set Array object
         void ArrayObject(Type *tp) { arrayObject_ = tp; }
+        ///** Get/Set generic param count
+        void GenericParamCount(int count) { genericParamCount_ = count; }
+        int GenericParamCount() const { return genericParamCount_; }
         // iterate through parameters
         typedef std::list<Param *>::iterator iterator;
         iterator begin() { return params.begin(); }
@@ -1284,9 +1304,9 @@ namespace DotNetPELib
         bool Matches(std::vector<Type *> args);
         // various indexes into metadata tables
         size_t PEIndex() const { return peIndex_; }
+        void PEIndex(size_t val) { peIndex_ = val;  }
         size_t PEIndexCallSite() const { return peIndexCallSite_; }
         size_t PEIndexType() const { return peIndexType_; }
-        void SetPEIndex(size_t index) { peIndex_ = index; }
 
         // Load a signature
         void Load(PELib &lib, AssemblyDef &assembly, PEReader &reader, int start, int end);
@@ -1310,6 +1330,7 @@ namespace DotNetPELib
         size_t peIndex_, peIndexCallSite_, peIndexType_;
         bool external_;
         size_t definitions_;
+        int genericParamCount_;
     };
     ///** the type of a field or value
     class Type : public DestructorBase
@@ -1320,17 +1341,25 @@ namespace DotNetPELib
             cls,
             ///** type is a reference to a method signature
             method,
+            ///** type is a generic variable
+            var,
+            ///** type is a generic method param
+            mvar,
             /* below this is various CIL types*/
             Void, Bool, Char, i8, u8, i16, u16, i32, u32, i64, u64, inative, unative, r32, r64, object, string
         };
-        Type(BasicType Tp, int PointerLevel) : tp_(Tp), pointerLevel_(PointerLevel), arrayLevel_(0), byRef_(false), typeRef_(nullptr), methodRef_(nullptr), peIndex_(0), pinned_(false), showType_(false)
+        Type(BasicType Tp, int PointerLevel) : tp_(Tp), arrayLevel_(0), byRef_(false), typeRef_(nullptr), methodRef_(nullptr), peIndex_(0), pinned_(false), showType_(false)
         {
+            if (Tp == var || Tp == mvar)
+                varnum_ = PointerLevel;
+            else
+                pointerLevel_ = PointerLevel;
         }
-        Type(DataContainer *clsref) : tp_(cls), pointerLevel_(0), arrayLevel_(0), byRef_(false), typeRef_(clsref), methodRef_(nullptr), peIndex_(0), pinned_(false), showType_(false)
+        Type(DataContainer *clsref) : tp_(cls), pointerLevel_(0), arrayLevel_(0), byRef_(false), typeRef_(clsref), methodRef_(nullptr), peIndex_(0), pinned_(false), showType_(false), varnum_(0)
         {
         }
         Type(MethodSignature *methodref) : tp_(method), pointerLevel_(0), arrayLevel_(0), byRef_(false), typeRef_(nullptr),
-            methodRef_(methodref), peIndex_(0), pinned_(false), showType_(false)
+            methodRef_(methodref), peIndex_(0), pinned_(false), showType_(false), varnum_(0)
         {
         }
         ///** Get the type of the Type object
@@ -1341,6 +1370,7 @@ namespace DotNetPELib
         DataContainer *GetClass() const { return typeRef_; }
         ///** Get the signature reference for method type objects
         MethodSignature *GetMethod() const { return methodRef_; }
+        ///** Get the generic type container
 
         void ShowType() { showType_ = true; } 
         void ArrayLevel(int arrayLevel) { arrayLevel_ = arrayLevel;  }
@@ -1349,6 +1379,10 @@ namespace DotNetPELib
         void PointerLevel(int n) { pointerLevel_ = n; }
         ///** Pointer indirection count
         int PointerLevel() const { return pointerLevel_; }
+        ///** Generic variable number
+        void VarNum(int n) { varnum_ = n; }
+        ///** Generic variable number
+        int VarNum() const { return varnum_; }
 
         ///** ByRef flag
         void ByRef(bool val) { byRef_ = val; }
@@ -1363,6 +1397,7 @@ namespace DotNetPELib
         virtual size_t Render(PELib &, Byte *);
         bool IsVoid() { return tp_ == Void && pointerLevel_ == 0; }
         size_t PEIndex() const { return peIndex_; }
+        void PEIndex(size_t val) { peIndex_ = val; }
         virtual void ObjOut(PELib &, int pass) const;
         static Type *ObjIn(PELib &);
         bool Pinned() { return pinned_; }
@@ -1370,6 +1405,7 @@ namespace DotNetPELib
     protected:
         bool pinned_;
         int pointerLevel_;
+        int varnum_;
         bool byRef_;
         int  arrayLevel_;
         BasicType tp_;
@@ -1429,6 +1465,7 @@ namespace DotNetPELib
         AssemblyDef *AllocateAssemblyDef(const std::string& Name, bool External, Byte *KeyToken = 0);
         Namespace *AllocateNamespace(const std::string& Name);
         Class *AllocateClass(const std::string& Name, Qualifiers Flags, int Pack, int Size);
+        Class *AllocateClass(const Class* cls);
         Method *AllocateMethod(MethodSignature *Prototype, Qualifiers flags, bool entry = false);
         Field *AllocateField(const std::string& Name, Type *tp, Qualifiers Flags);
         Property *AllocateProperty();
@@ -1455,6 +1492,7 @@ namespace DotNetPELib
         FieldName *AllocateFieldName(Field *F);
         MethodName *AllocateMethodName(MethodSignature *M);
         MethodSignature *AllocateMethodSignature(const std::string& Name, int Flags, DataContainer *Container);
+        MethodSignature *AllocateMethodSignature(const MethodSignature* sig);
         Type *AllocateType(Type::BasicType Tp, int PointerLevel);
         Type *AllocateType(DataContainer *clsref);
         Type *AllocateType(MethodSignature *methodref);
@@ -1573,7 +1611,8 @@ namespace DotNetPELib
         char ObjChar();
         void ObjBack() { objInputPos_ -= 3; }
         void ObjError(int);
-        std::fstream &Out() const { return *outputStream_; }
+        std::iostream &Out() const { return *outputStream_; }
+        void Out(std::iostream &stream) { outputStream_ = &stream; }
         PEWriter &PEOut() const { return *peWriter_; }
         std::map<size_t, size_t> moduleRefs;
         void PushContainer(DataContainer *container) { containerStack_.push_back(container); }
@@ -1590,7 +1629,7 @@ namespace DotNetPELib
         std::map<std::string, Method *>pInvokeSignatures_;
         std::multimap<std::string, MethodSignature *> pInvokeReferences_;
         std::string assemblyName_;
-        std::fstream *outputStream_;
+        std::iostream *outputStream_;
         std::fstream *inputStream_;
         std::string fileName_;
     	std::map<std::string, std::string> unmanagedRoutines_;

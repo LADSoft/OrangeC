@@ -41,6 +41,10 @@ bool MethodSignature::Matches(std::vector<Type*> args)
             {
                 return false;
             }
+            else if (tpp->GetBasicType() == Type::mvar)
+            {
+                // nothing to do, it matches...
+            }
             else if (tpa->GetBasicType() == tpp->GetBasicType())
             {
                 // this may need to deal with boxed types a little better
@@ -101,9 +105,26 @@ bool MethodSignature::ILSrcDump(PELib& peLib, bool names, bool asType, bool PInv
             peLib.Out() << "::'" << name_ << "'(";
         }
         else if (names)
+        {
             peLib.Out() << "'" << name_ << "'(";
+        }
         else
-            peLib.Out() << Qualifiers::GetName(name_, container_) << "(";
+        {
+            if (container_ && typeid(*container_) == typeid(Class) && static_cast<Class*>(container_)->Generic().size())
+            {
+                if (container_->Flags().Flags() & Qualifiers::Value)
+                    peLib.Out() << "valuetype ";
+                else
+                    peLib.Out() << "class ";
+                peLib.Out() << Qualifiers::GetName("", container_);
+                static_cast<Class*>(container_)->AdornGenerics(peLib);
+                peLib.Out() << "::'" << name_ << "'(";
+            }
+            else
+            {
+                peLib.Out() << Qualifiers::GetName(name_, container_) << "(";
+            }
+        }
     }
     else
     {
@@ -119,7 +140,7 @@ bool MethodSignature::ILSrcDump(PELib& peLib, bool names, bool asType, bool PInv
                 peLib.Out() << "class ";
         }
         (*it)->GetType()->ILSrcDump(peLib);
-        if (names)
+        if (names && (*it)->GetType()->GetBasicType() != Type::var)
             (*it)->ILSrcDump(peLib);
         ++it;
         if (it != params.end())
@@ -162,6 +183,7 @@ void MethodSignature::ObjOut(PELib& peLib, int pass) const
         peLib.Out() << std::endl << "$sb" << peLib.FormatName(name_);
         peLib.Out() << external_ << ",";
         peLib.Out() << flags_ << ",";
+        peLib.Out() << genericParamCount_ << ",";
     }
     returnType_->ObjOut(peLib, pass);
     for (auto p : params)
@@ -187,6 +209,7 @@ MethodSignature* MethodSignature::ObjIn(PELib& peLib, Method** found, bool defin
     int external;
     char ch;
     int flags = 0;
+    int genericParamCount = 0;
     Type* returnType;
     if (definition)
     {
@@ -195,6 +218,10 @@ MethodSignature* MethodSignature::ObjIn(PELib& peLib, Method** found, bool defin
         if (ch != ',')
             peLib.ObjError(oe_syntax);
         flags = peLib.ObjInt();
+        ch = peLib.ObjChar();
+        if (ch != ',')
+            peLib.ObjError(oe_syntax);
+        genericParamCount = peLib.ObjInt();
         ch = peLib.ObjChar();
         if (ch != ',')
             peLib.ObjError(oe_syntax);
@@ -309,12 +336,14 @@ MethodSignature* MethodSignature::ObjIn(PELib& peLib, Method** found, bool defin
             if (!rv->ReturnType()->Matches(returnType))
                 peLib.ObjError(oe_typemismatch);
         }
+        rv->GenericParamCount(genericParamCount);
         if (!external)
             rv->Definition();
     }
     else if (!name.size())
     {
         rv = peLib.AllocateMethodSignature(name, flags, peLib.GetContainer());
+        rv->GenericParamCount(genericParamCount);
         rv->ReturnType(returnType);
         for (auto p : args)
             rv->AddParam(p);
@@ -341,7 +370,22 @@ void MethodSignature::ILSignatureDump(PELib& peLib)
 {
     returnType_->ILSrcDump(peLib);
     peLib.Out() << " ";
-    peLib.Out() << Qualifiers::GetName(name_, container_) << "(";
+    if (typeid(*container_) == typeid(Class) && static_cast<Class*>(container_)->Generic().size())
+    {
+        if (container_->Flags().Flags() & Qualifiers::Value)
+            peLib.Out() << "valuetype ";
+        else
+            peLib.Out() << "class ";
+        peLib.Out() << Qualifiers::GetName("", container_);
+        static_cast<Class*>(container_)->AdornGenerics(peLib);
+        peLib.Out() << "::'" << name_ << "'(";
+    }
+    else
+    {
+        peLib.Out() << Qualifiers::GetName(name_, container_);
+
+    }
+    peLib.Out() << "(";
     for (std::list<Param*>::const_iterator it = params.begin(); it != params.end();)
     {
         if ((*it)->GetType()->GetBasicType() == Type::cls)
@@ -381,7 +425,12 @@ bool MethodSignature::PEDump(PELib& peLib, bool asType)
             size_t methodSignature = peLib.PEOut().HashBlob(sig, sz);
             delete[] sig;
             size_t function = peLib.PEOut().HashString(name_);
-            MemberRefParent memberRef(MemberRefParent::TypeRef, container_->PEIndex());
+            Class* cls = nullptr;
+            if (typeid(*container_) == typeid(Class))
+            {
+                cls = static_cast<Class*>(container_);
+            }
+            MemberRefParent memberRef(cls && cls->Generic().size() ? MemberRefParent::TypeSpec : MemberRefParent::TypeRef, container_->PEIndex());
             TableEntryBase* table = new MemberRefTableEntry(memberRef, function, methodSignature);
             peIndexCallSite_ = peLib.PEOut().AddTableEntry(table);
         }
@@ -425,7 +474,17 @@ bool MethodSignature::PEDump(PELib& peLib, bool asType)
         }
         else
         {
-            parent = container_ ? container_->ParentClass(peLib) : 0;
+            if (!container_->PEIndex())
+                container_->PEDump(peLib);
+            parent = container_->PEIndex();
+            if (typeid(*container_) == typeid(Class))
+            {
+                Class* cls = static_cast<Class*>(container_);
+                if (cls->Generic().size() && cls->Generic().front()->GetBasicType() != Type::var)
+                {
+                    methodreftype = MemberRefParent::TypeSpec;
+                }
+            }
         }
         MemberRefParent memberRef(methodreftype, parent);
         Byte* sig = SignatureGenerator::MethodRefSig(this, sz);

@@ -67,6 +67,7 @@ extern std::map<std::string, MethodSignature*> arrayMethods;
 
 extern std::vector<Local*> localList;
 
+MethodSignature* FindMethodSignature(const char* name);
 Type* FindType(const char* name, bool toErr);
 int msil_main_preprocess(char* fileName);
 void msil_end_generation(char* fileName);

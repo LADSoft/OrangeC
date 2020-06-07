@@ -80,7 +80,6 @@ static void LoadAddresses(std::map<std::string, std::deque<QUAD*>>& map, std::ma
                 {
                 case se_auto:
                 case se_global:
-                case se_pc:
                 case se_threadlocal:
                 case se_labcon:
                 {

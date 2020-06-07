@@ -147,6 +147,10 @@ e_bt Importer::translatedTypes[] = {
     bt_void,
     ///** type is a reference to a method signature
     bt_void,
+    ///** type is a var
+    bt_void,
+    ///** type is an mvar
+    bt_void,
     /* below this is various CIL types*/
     bt_void, bt_bool, bt_wchar_t, bt_char, bt_unsigned_char, bt_short, bt_unsigned_short, bt_int, bt_unsigned, bt_long_long,
     bt_unsigned_long_long, bt_inative, bt_unative, bt_float, bt_double, bt___object, bt___string

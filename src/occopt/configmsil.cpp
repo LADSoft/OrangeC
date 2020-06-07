@@ -55,10 +55,10 @@ namespace Optimizer
         "/Vx.x.x.x - set assembly version      /!        - No logo\n"
         "--version - show version info\n"
         "\nCodegen parameters: (/C[+][-][params])\n"
-        "  +d   - display diagnostics          -b        - no BSS\n"
-        "  +f   - generated pinned addresses   -l        - no C source in ASM file\n"
-        "  -m   - no leading underscores       +s        - use native string literals\n"
-        "  +u   - 'char' type is unsigned\n"
+        "  +a   - action for func ptr          +d   - display diagnostics\n"
+        "  -b   - no BSS                       +f   - generated pinned addresses\n"
+        "  -l   - no C source in ASM file      -m   - no leading underscores\n"
+        "  +s   - use native string literals   +u   - 'char' type is unsigned\n"
     "\nWarning Control:\n"
     " /w      - display no warnings         /wx or /werror - display warnings as errors\n"
     " /woxxx  - only display warning once   /wexxx         - display warning xxx as error\n"
@@ -418,6 +418,8 @@ int parse_msil_codegen(bool v, const char *string)
         pinning = v;
     else if (string[0] == 's')
         msilstrings = v;
+    else if (string[0] == 'a')
+        actionforfuncptr = v;
     else
         return 0;
     return 1;

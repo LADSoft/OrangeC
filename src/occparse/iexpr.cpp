@@ -2016,11 +2016,11 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
  */
 {
     int fastcallSize = 0;
-    Optimizer::IMODE* ap3;
+    Optimizer::IMODE* ap3 = nullptr;
     FUNCTIONCALL* f = node->v.func;
     bool managed = false;
     Optimizer::IMODE* stobj = nullptr;
-    Optimizer::IMODE* ap;
+    Optimizer::IMODE* ap = nullptr;
     int adjust = 0;
     int adjust2 = 0;
     Optimizer::QUAD* gosub = nullptr;
@@ -2090,6 +2090,12 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
             Optimizer::gen_icode(Optimizer::i_substack, nullptr, Optimizer::make_immed(ISZ_UINT, n), nullptr);
         }
     }
+
+    if (Optimizer::actionforfuncptr)
+    {
+        ap = ap3 = gen_expr(funcsp, f->fcall, 0, ISZ_UINT);
+    }
+
     int cdeclare = stackblockOfs;
     if (f->sp->sb->attribs.inheritable.linkage == lk_pascal)
     {
@@ -2181,7 +2187,10 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         enum Optimizer::i_ops type = Optimizer::i_gosub;
         if (node->type == en_intcall)
             type = Optimizer::i_int;
-        ap = ap3 = gen_expr(funcsp, f->fcall, 0, ISZ_UINT);
+        if (!Optimizer::actionforfuncptr)
+        {
+            ap = ap3 = gen_expr(funcsp, f->fcall, 0, ISZ_UINT);
+        }
         if (ap->mode == Optimizer::i_immed && ap->offset->type == Optimizer::se_pc)
         {
             /*

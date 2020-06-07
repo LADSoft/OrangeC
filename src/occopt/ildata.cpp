@@ -38,6 +38,7 @@ namespace Optimizer
 {
 bool pinning;
 bool msilstrings;
+bool actionforfuncptr;
 int gentype; /* Current DC type */
 int curseg;  /* Current seg */
 int outcol;  /* Curront col (roughly) */

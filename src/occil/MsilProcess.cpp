@@ -40,6 +40,7 @@
 #include "using.h"
 #include "invoke.h"
 #include "memory.h"
+#include "Action.h"
 
 // must match the definition in c.h
 enum e_lexType
@@ -475,7 +476,7 @@ std::string GetArrayName(Optimizer::SimpleType* tp, bool byRef, bool pinned)
     }
     else if (tp->type == Optimizer::st_pointer && tp->btp->type == Optimizer::st_func)
     {
-        return std::string("void_ptr") + end;
+        return std::string("func_ptr") + end;
     }
     else if (tp->type == Optimizer::st_pointer)
     {
@@ -726,10 +727,15 @@ Type* GetType(Optimizer::SimpleType* tp, bool commit, bool funcarg, bool pinvoke
     }
     else if (tp->type == Optimizer::st_pointer && tp->btp->type == Optimizer::st_func)
     {
-        Type *type =  peLib->AllocateType(Type::Void, 1);  // pointer to void
-                                                    //        tp = tp->btp;
-                                                    //        MethodSignature *sig = GetMethodSignature(tp, false);
-                                                    //        return peLib->AllocateType(sig);
+        Type *type;
+        if (Optimizer::actionforfuncptr)
+        {
+            type = LookupActionType(tp->btp);
+        }
+        else 
+        {
+            type =  peLib->AllocateType(Type::Void, 1);  // pointer to void
+        }
         type->Pinned(pinned);
         return type;
     }

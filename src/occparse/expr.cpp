@@ -1716,7 +1716,7 @@ static LEXEME* expression_bracket(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRES
                 *tp = PerformDeferredInitialization(*tp, funcsp);
                 return lex;
             }
-            else if (ispointer(*tp))
+            else if (ispointer(*tp) && !isfuncptr(*tp))
             {
                 if (!isint(tp2) && basetype(tp2)->type != bt_enum)
                 {
@@ -1780,7 +1780,7 @@ static LEXEME* expression_bracket(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRES
                 if (!(*tp)->array && !(*tp)->vla)
                     deref(*tp, exp);
             }
-            else if (ispointer(tp2))
+            else if (ispointer(tp2) && !isfuncptr(tp2))
             {
                 if (!isint(*tp))
                 {

@@ -87,7 +87,7 @@ std::map<std::string, MethodSignature*> arrayMethods;
 
 std::vector<Local*> localList;
 
-static MethodSignature* FindMethodSignature(const char* name)
+MethodSignature* FindMethodSignature(const char* name)
 {
     void* result;
     if (peLib->Find(name, &result) == PELib::s_method)

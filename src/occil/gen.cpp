@@ -40,6 +40,7 @@
 #include "symfuncs.h"
 #include "OptUtils.h"
 #include "using.h"
+#include "Action.h"
 
 using namespace DotNetPELib;
 namespace occmsil
@@ -671,7 +672,16 @@ void gen_load(Optimizer::IMODE* im, Operand* dest, bool retval)
             }
             else if (typeid(*dest->GetValue()) == typeid(MethodName))
             {
+                if (Optimizer::actionforfuncptr)
+                {
+                    gen_code(Instruction::i_ldnull, nullptr);
+                }
                 gen_code(Instruction::i_ldftn, dest);
+                if (Optimizer::actionforfuncptr)
+                {
+                    Operand *operand = LookupActionCtor(im->offset->sp->tp);
+                    gen_code(Instruction::i_newobj, operand);
+                }
                 increment_stack();
             }
             else  // fieldname
@@ -1146,10 +1156,22 @@ void asm_gosub(Optimizer::QUAD* q) /* normal gosub to an immediate label or thro
     }
     else
     {
-        bool virt = false;
-        Operand* ap = getCallOperand(q, virt);
-        gen_code(Instruction::i_calli, ap);
-        decrement_stack();
+        if (Optimizer::actionforfuncptr)
+        {
+            Operand* ap = LookupActionInvoker(q->altsp->tp);
+            gen_code(Instruction::i_callvirt, ap);
+            if (q->altsp->tp->btp->type == Optimizer::st_void)
+            {
+                decrement_stack();
+            }
+        }
+        else
+        {
+            bool virt = false;
+            Operand* ap = getCallOperand(q, virt);
+            gen_code(Instruction::i_calli, ap);
+            decrement_stack();
+        }
     }
     if (q->novalue == -3)
     {

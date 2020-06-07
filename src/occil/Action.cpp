@@ -79,7 +79,12 @@ namespace occmsil
     {
         if (type->type != Optimizer::st_void)
         {
-            Type* val = GetType(type, true);
+             
+            Type* val;
+            if (type->type == Optimizer::st_pointer)
+                val = intPtr;
+            else
+                val = GetType(type, true);
             static_cast<Class*>(rv->GetClass())->Generic().push_back(val);
         }
     }

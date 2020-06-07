@@ -81,8 +81,6 @@ Optimizer::SimpleSymbol* Optimizer::SymbolManager::Get(struct Parser::sym* sym)
 {
     if (sym && sym->sb)
     {
-        if (strstr(sym->name, "anontemp37"))
-            printf("hi");
         Optimizer::SimpleSymbol* rv;
         rv = Lookup(sym);
         if (!rv)
@@ -111,9 +109,6 @@ Optimizer::SimpleExpression* Optimizer::SymbolManager::Get(struct Parser::expr* 
     rv->sizeFromType = natural_size(e);
     if (e->altdata)
         rv->altData = Get((EXPRESSION*)e->altdata);
-    if (e->type == en_global || e->type == en_auto)
-        if (strstr(e->v.sp->name, "anontemp37"))
-            printf("hi");
     switch (e->type)
     {
         case en_global:

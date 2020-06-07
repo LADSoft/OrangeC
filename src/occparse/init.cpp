@@ -75,7 +75,6 @@ void init_init(void)
     dynamicInitializers = TLSInitializers = nullptr;
     dynamicDestructors = TLSDestructors = nullptr;
     initializingGlobalVar = false;
-    msilToString = nullptr;
 }
 
 static SYMBOL * LookupMsilToString()

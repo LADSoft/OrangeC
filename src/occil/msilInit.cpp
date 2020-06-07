@@ -63,7 +63,12 @@ MethodSignature* ptrUnbox;
 MethodSignature* concatStr;
 MethodSignature* concatObj;
 MethodSignature* toStr;
+MethodSignature* toInt;
+MethodSignature* toVoidStar;
+
 Type* systemObject;
+Type* intPtr;
+
 Method* currentMethod;
 DataContainer* mainContainer;
 Optimizer::LIST *initializersHead, *initializersTail;
@@ -97,6 +102,20 @@ MethodSignature* FindMethodSignature(const char* name)
     Utils::fatal("could not find built in method %s", name);
     return NULL;
 }
+
+
+MethodSignature* FindMethodSignature(const char* name, std::vector<Type*>& typeList, Type* rv = nullptr)
+{
+    Method* result;
+    if (peLib->Find(name, &result, typeList, rv) == PELib::s_method)
+    {
+        return result->Signature();
+    }
+    Utils::fatal("could not find built in method %s", name);
+    return NULL;
+}
+
+
 Type* FindType(const char* name, bool toErr)
 {
     void* result;
@@ -165,6 +184,13 @@ static void CreateExternalCSharpReferences()
     argsUnmanaged = FindMethodSignature("lsmsilcrtl.args::GetUnmanaged");
     ptrBox = FindMethodSignature("lsmsilcrtl.pointer::box");
     ptrUnbox = FindMethodSignature("lsmsilcrtl.pointer::unbox");
+    intPtr = peLib->AllocateType(Type::inative, 0);
+
+    Type* voidStar = peLib->AllocateType(Type::Void, 1);
+    std::vector<Type* > params = {voidStar}; 
+    toInt = FindMethodSignature("System.IntPtr.op_Explicit", params);
+    params = {intPtr}; 
+    toVoidStar = FindMethodSignature("System.IntPtr.op_Explicit", params, voidStar);
 
     systemObject = FindType("System.Object", true);
 

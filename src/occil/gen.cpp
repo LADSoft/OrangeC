@@ -41,6 +41,7 @@
 #include "OptUtils.h"
 #include "using.h"
 #include "Action.h"
+#include "Utils.h"
 
 using namespace DotNetPELib;
 namespace occmsil
@@ -864,6 +865,20 @@ void gen_convert(Operand* dest, Optimizer::IMODE* im, int sz)
             gen_code(Instruction::i_call, ap);
             return;
         }
+        case ISZ_TOINT:
+        {
+            MethodSignature* sig = toInt;
+            Operand* ap = peLib->AllocateOperand(peLib->AllocateMethodName(sig));
+            gen_code(Instruction::i_call, ap);
+            return;
+        }
+        case ISZ_TOVOIDSTAR:
+        {
+            MethodSignature* sig = toVoidStar;
+            Operand* ap = peLib->AllocateOperand(peLib->AllocateMethodName(sig));
+            gen_code(Instruction::i_call, ap);
+            return;
+        }
     }
     gen_code(op, NULL);
 }
@@ -987,6 +1002,10 @@ BoxedType* boxedType(int isz)
         n = Type::object;  // to support newarr object[]
     else if (isz == ISZ_STRING)
         n = Type::string;
+    else if (isz == ISZ_TOINT)
+        n = Type::inative;
+    else if (isz = ISZ_TOVOIDSTAR)
+        n = Type::inative;
     else
         n = isz < 0 ? mnames[-isz] : names[isz];
     return peLib->AllocateBoxedType(n);

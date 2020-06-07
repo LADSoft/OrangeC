@@ -111,6 +111,31 @@ SimpleExpression* anonymousVar(enum e_scc_type storage_class, SimpleType* tp)
     rve->sp = rv;
     return rve;
 }
+static void MoveLastToPosition(QUAD *bl1)
+{
+    QUAD* q = intermed_tail;
+    q->back->fwd = nullptr;
+    intermed_tail = q->back;
+    q->block = bl1->block;
+    q->fwd = bl1->fwd;
+    q->back = bl1;
+    q->fwd->back = q;
+    q->back->fwd = q;
+}
+static IMODE* localVar(SimpleType* tp)
+{
+    SimpleExpression* exp = anonymousVar(scc_auto, tp);
+    SimpleSymbol* sym = exp->sp;
+    exp->sizeFromType = tp->sizeFromType;
+    sym->sizeFromType = tp->sizeFromType;
+    sym->anonymous = false;
+    IMODE* ap = (IMODE*)(IMODE*)Alloc(sizeof(IMODE));
+    sym->imvalue = ap;
+    ap->offset = exp;
+    ap->mode = i_direct;
+    ap->size = exp->sizeFromType;
+    return ap;
+}
 static void renameOneSym(SimpleSymbol* sym, int structret)
 {
     SimpleType* tp;
@@ -192,6 +217,28 @@ static void renameOneSym(SimpleSymbol* sym, int structret)
             }
             else
             {
+/*
+                if (Optimizer::actionforfuncptr)
+                {
+                    QUAD* q;
+                    QUAD* bl1 = blockArray[1]->head;
+                    while (bl1->fwd->dc.opcode == i_line || bl1->fwd->dc.opcode == i_label)
+                        bl1 = bl1->fwd;
+                    IMODE* temp = tempreg(ISZ_TOVOIDSTAR, 0);
+                    gen_icode(i_assn, temp, sym->imvalue, nullptr);
+                    MoveLastToPosition(bl1);
+                    bl1 = bl1->fwd;
+                    IMODE*temp1 = (IMODE*)Alloc(sizeof(IMODE));
+                    *temp1 = *temp;
+                    temp1->size = ISZ_ADDR;
+
+                    IMODE* local = localVar(sym->tp);
+                    gen_icode(i_assn, local, temp1, nullptr);
+                    MoveLastToPosition(bl1);
+
+                    sym->imvalue = local;
+                }
+*/
                 parmName = (IMODE*)(IMODE*)Alloc(sizeof(IMODE));
                 *parmName = *sym->imvalue;
             }
@@ -233,14 +280,7 @@ static void renameOneSym(SimpleSymbol* sym, int structret)
                 intermed_tail->fastcall =
                     -(sym->offset - chosenAssembler->arch->retblocksize) / chosenAssembler->arch->parmwidth - 1 + structret;
             }
-            q = intermed_tail;
-            q->back->fwd = nullptr;
-            intermed_tail = q->back;
-            q->block = bl1->block;
-            q->fwd = bl1->fwd;
-            q->back = bl1;
-            q->fwd->back = q;
-            q->back->fwd = q;
+            MoveLastToPosition(bl1);
         }
     }
 }

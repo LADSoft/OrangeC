@@ -288,7 +288,7 @@ MethodSignature* GetMethodSignature(Optimizer::SimpleType* tp, bool pinvoke)
     if (sp->storage_class == Optimizer::scc_static)
     {
         char buf[256];
-        sprintf(buf, "%s_%x", methodname(sp->outputName), uniqueId);
+        sprintf(buf, "%s_L_%d_%x", methodname(sp->outputName), sp->label, uniqueId);
         rv = peLib->AllocateMethodSignature(buf, flags, pinvoke ? NULL : mainContainer);
     }
     else if (sp->storage_class != Optimizer::scc_localstatic && sp->storage_class != Optimizer::scc_constant &&
@@ -349,7 +349,16 @@ MethodSignature* GetMethodSignature(Optimizer::SimpleType* tp, bool pinvoke)
             }
             break;
         }
-        rv->AddParam(peLib->AllocateParam(sym->name, GetType(sym->tp, true, true, pinvoke)));
+        Type * type;
+        if (Optimizer::actionforfuncptr && sym->tp->type == Optimizer::st_pointer)
+        {
+            type = intPtr;
+        }
+        else
+        {
+            type = GetType(sym->tp, true, true, pinvoke);
+        }
+        rv->AddParam(peLib->AllocateParam(sym->name, type));
         hr = hr->next;
     }
     return rv;
@@ -1940,7 +1949,7 @@ static void AddRTLThunks()
             }
             if (mainSym->Signature()->ParamCount() < 2)
             {
-                param = peLib->AllocateParam("argv", peLib->AllocateType(Type::Void, 1));
+                param = peLib->AllocateParam("argv", Optimizer::actionforfuncptr ? peLib->AllocateType(Type::inative, 0): peLib->AllocateType(Type::Void, 1));
                 mainSym->Signature()->AddParam(param);
             }
         }

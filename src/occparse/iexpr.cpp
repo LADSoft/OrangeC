@@ -1578,7 +1578,7 @@ static EXPRESSION* getFunc(EXPRESSION* exp)
     }
     return rv;
 }
-int push_param(EXPRESSION* ep, SYMBOL* funcsp, bool vararg, EXPRESSION* valist, int flags)
+int push_param(EXPRESSION* ep, SYMBOL* funcsp, bool vararg, EXPRESSION* valist, TYPE *argtp, int flags)
 /*
  *      push the operand expression onto the stack.
  */
@@ -1644,7 +1644,7 @@ int push_param(EXPRESSION* ep, SYMBOL* funcsp, bool vararg, EXPRESSION* valist, 
                     gen_expr(funcsp, ep->left, 0, ISZ_UINT);
                     ep = ep->right;
                 }
-                push_param(ep, funcsp, vararg, valist, flags);
+                push_param(ep, funcsp, vararg, valist, argtp, flags);
                 break;
             case en_argnopush:
                 gen_expr(funcsp, ep->left, 0, ISZ_UINT);
@@ -1671,6 +1671,21 @@ int push_param(EXPRESSION* ep, SYMBOL* funcsp, bool vararg, EXPRESSION* valist, 
                     Optimizer::gen_icode(Optimizer::i_assn, ap, ap3, nullptr);
                 if (ap->size == ISZ_NONE)
                     ap->size = temp;
+                if (Optimizer::actionforfuncptr && ispointer(argtp))
+                {
+                    if (lvalue(exp1))
+                    {
+                        exp1 = exp1->left;
+                    }        
+                    if (exp1->type != en_auto || exp1->v.sp->sb->storage_class != sc_parameter)
+                    {
+                        // convert void star to int
+                        Optimizer::IMODE* temp = Optimizer::tempreg(ISZ_TOINT, 0);
+                        Optimizer::gen_icode(Optimizer::i_assn, temp, ap, nullptr);
+                        ap = temp;
+                    }
+                }
+
                 Optimizer::gen_nodag(Optimizer::i_parm, 0, ap, 0);
                 Optimizer::intermed_tail->vararg = vararg;
                 Optimizer::intermed_tail->valist = valist && valist->type == en_l_p;
@@ -1779,7 +1794,7 @@ static int gen_parm(INITLIST* a, SYMBOL* funcsp)
             }
             else
             {
-                rv = push_param(a->exp, funcsp, a->vararg, a->valist ? a->exp : nullptr, F_OBJECT);
+                rv = push_param(a->exp, funcsp, a->vararg, a->valist ? a->exp : nullptr, a->tp, F_OBJECT);
             }
         }
         else
@@ -1821,7 +1836,7 @@ static int gen_parm(INITLIST* a, SYMBOL* funcsp)
     }
     else
     {
-        rv = push_param(a->exp, funcsp, a->vararg, a->valist ? a->exp : nullptr, 0);
+        rv = push_param(a->exp, funcsp, a->vararg, a->valist ? a->exp : nullptr, a->tp, 0);
     }
     DumpIncDec(funcsp);
     push_nesting += rv;
@@ -2102,7 +2117,7 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         if (isstructured(basetype(f->functp)->btp) || basetype(basetype(f->functp)->btp)->type == bt_memberptr)
         {
             if (f->returnEXP)
-                push_param(f->returnEXP, funcsp, false, nullptr, F_OBJECT);
+                push_param(f->returnEXP, funcsp, false, nullptr, f->returnSP->tp, F_OBJECT);
         }
         genPascalArgs(f->arguments, funcsp);
     }
@@ -2136,11 +2151,11 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
             if (isstructured(basetype(f->functp)->btp) || basetype(basetype(f->functp)->btp)->type == bt_memberptr)
             {
                 if (f->returnEXP && !managed)
-                    push_param(f->returnEXP, funcsp, false, nullptr, 0);
+                    push_param(f->returnEXP, funcsp, false, nullptr, f->returnSP->tp, 0);
             }
             if (f->thisptr)
             {
-                push_param(f->thisptr, funcsp, false, nullptr, F_OBJECT);
+                push_param(f->thisptr, funcsp, false, nullptr, f->thistp, F_OBJECT);
             }
             genPascalArgs(f->arguments, funcsp);
         }
@@ -2149,7 +2164,7 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
             genCdeclArgs(f->arguments, funcsp);
             if (f->thisptr)
             {
-                push_param(f->thisptr, funcsp, false, nullptr, F_OBJECT);
+                push_param(f->thisptr, funcsp, false, nullptr, f->thistp, F_OBJECT);
             }
         }
         if (f->callLab == -1)
@@ -2164,7 +2179,7 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
                 (isstructured(basetype(f->functp)->btp) || basetype(basetype(f->functp)->btp)->type == bt_memberptr))
             {
                 if (f->returnEXP && !managed)
-                    push_param(f->returnEXP, funcsp, false, nullptr, 0);
+                    push_param(f->returnEXP, funcsp, false, nullptr, f->returnSP->tp, 0);
             }
         }
     }

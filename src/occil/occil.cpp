@@ -98,7 +98,7 @@ void ResolveMSILExterns()
                     types.push_back(v.second->GetType());
                 }
                 Method* rv = nullptr;
-                peLib->Find(sp->msil, &rv, types, nullptr, true);
+                peLib->Find(sp->msil, &rv, types, nullptr, nullptr, true);
                 if (rv)
                     sp->msil = (const char*)rv;
                 else

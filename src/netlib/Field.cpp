@@ -91,7 +91,7 @@ bool Field::ILSrcDump(PELib& peLib) const
         peLib.Out() << " ";
         type_->ILSrcDump(peLib);
     }
-    peLib.Out() << name_;
+    peLib.Out() << " '" << name_ << "'";
     switch (mode_)
     {
         case None:

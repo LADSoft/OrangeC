@@ -297,6 +297,20 @@ Class* Class::ObjIn(PELib& peLib, bool definition)
         while (peLib.ObjBegin() == 'P')
             c->Add(Property::ObjIn(peLib), false);
         peLib.PopContainer();
+        if (peLib.ObjBegin() == 'g')
+        {
+            int count = peLib.ObjInt();
+            int ch = peLib.ObjChar();
+            if (ch != ',')
+                peLib.ObjError(oe_syntax);
+            for (int i = 0; i < count; i++)
+            {
+                Type*current = peLib.AllocateType(Type::i8, 0);
+                rv->Generic().push_back(current);
+            }
+            if (peLib.ObjEnd() != 'g')
+                peLib.ObjError(oe_syntax);
+        }
         if (peLib.ObjEnd(false) != 'c')
             peLib.ObjError(oe_syntax);
     }
@@ -313,20 +327,6 @@ Class* Class::ObjIn(PELib& peLib, bool definition)
             peLib.ObjError(oe_noclass);
         }
         if (peLib.ObjEnd() != 'c')
-            peLib.ObjError(oe_syntax);
-    }
-    if (peLib.ObjBegin() == 'g')
-    {
-        int count = peLib.ObjInt();
-        int ch = peLib.ObjChar();
-        if (ch != ',')
-            peLib.ObjError(oe_syntax);
-        for (int i = 0; i < count; i++)
-        {
-            Type*current = peLib.AllocateType(Type::i8, 0);
-            rv->Generic().push_back(current);
-        }
-        if (peLib.ObjEnd() != 'g')
             peLib.ObjError(oe_syntax);
     }
     return rv;

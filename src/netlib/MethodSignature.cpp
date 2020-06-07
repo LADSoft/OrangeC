@@ -27,6 +27,31 @@
 #include <stdio.h>
 namespace DotNetPELib
 {
+bool MethodSignature::MatchesType(Type *tpa, Type *tpp)
+{
+    if (!tpp)
+    {
+        return false;
+    }
+    else if (tpp->GetBasicType() == Type::mvar)
+    {
+        // nothing to do, it matches...
+    }
+    else if (tpa->GetBasicType() == tpp->GetBasicType())
+    {
+        // this may need to deal with boxed types a little better
+        if (tpa->GetBasicType() == Type::cls)
+            if (tpa->GetClass() != tpp->GetClass())
+                return false;
+    }
+    else
+    {
+        return false;
+    }
+    if ((tpa->PointerLevel() != tpp->PointerLevel() && tpp->PointerLevel() != 1 && tpp->GetBasicType() != Type::Void) || tpa->ArrayLevel() != tpp->ArrayLevel())
+        return false;
+    return true;
+}
 bool MethodSignature::Matches(std::vector<Type*> args)
 {
     // this is only designed for managed functions...
@@ -37,26 +62,7 @@ bool MethodSignature::Matches(std::vector<Type*> args)
         {
             Type* tpa = args[i];
             Type* tpp = (*it)->GetType();
-            if (!tpp)
-            {
-                return false;
-            }
-            else if (tpp->GetBasicType() == Type::mvar)
-            {
-                // nothing to do, it matches...
-            }
-            else if (tpa->GetBasicType() == tpp->GetBasicType())
-            {
-                // this may need to deal with boxed types a little better
-                if (tpa->GetBasicType() == Type::cls)
-                    if (tpa->GetClass() != tpp->GetClass())
-                        return false;
-            }
-            else
-            {
-                return false;
-            }
-            if ((tpa->PointerLevel() != tpp->PointerLevel() && tpp->PointerLevel() != 1 && tpp->GetBasicType() != Type::Void) || tpa->ArrayLevel() != tpp->ArrayLevel())
+            if (!MatchesType(tpa, tpp))
                 return false;
             if (n < params.size() - 1)
                 n++, ++it;

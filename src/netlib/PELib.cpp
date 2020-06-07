@@ -301,7 +301,7 @@ PELib::eFindType PELib::Find(std::string path, void** result, AssemblyDef* assem
     }
     return s_notFound;
 }
-PELib::eFindType PELib::Find(std::string path, Method** result, std::vector<Type*> args, AssemblyDef* assembly, bool matchArgs)
+PELib::eFindType PELib::Find(std::string path, Method** result, std::vector<Type*> args, Type *rv, AssemblyDef* assembly, bool matchArgs)
 {
     if (path.size() && path[0] == '[')
     {
@@ -362,7 +362,7 @@ PELib::eFindType PELib::Find(std::string path, Method** result, std::vector<Type
     {
         for (auto it = foundMethod.begin(); it != foundMethod.end();)
         {
-            if (!(*it)->Signature()->Matches(args))
+            if (!(*it)->Signature()->Matches(args) || (rv && !(*it)->Signature()->MatchesType((*it)->Signature()->ReturnType(), rv)))
                 it = foundMethod.erase(it);
             else
                 ++it;

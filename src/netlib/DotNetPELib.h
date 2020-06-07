@@ -1301,6 +1301,7 @@ namespace DotNetPELib
         ///** get definition count
         size_t Definitions() const { return definitions_/2; }
 
+        bool MatchesType(Type *tpa, Type *tpp);
         bool Matches(std::vector<Type *> args);
         // various indexes into metadata tables
         size_t PEIndex() const { return peIndex_; }
@@ -1590,7 +1591,7 @@ namespace DotNetPELib
         eFindType Find(std::string path, void **result, AssemblyDef *assembly = nullptr);
 
         ///** find a method, with overload matching
-        eFindType Find(std::string path, Method **result, std::vector<Type *> args, AssemblyDef *assembly = nullptr, bool matchArgs = true);
+        eFindType Find(std::string path, Method **result, std::vector<Type *> args, Type* rv = nullptr, AssemblyDef *assembly = nullptr, bool matchArgs = true);
 
         ///** Traverse the declaration tree
         void Traverse(Callback &callback) const;

@@ -189,7 +189,8 @@ static void CreateExternalCSharpReferences()
     Type* voidStar = peLib->AllocateType(Type::Void, 1);
     std::vector<Type* > params = {voidStar}; 
     toInt = FindMethodSignature("System.IntPtr.op_Explicit", params);
-    params = {intPtr}; 
+    params.clear();
+    params.push_back(intPtr);
     toVoidStar = FindMethodSignature("System.IntPtr.op_Explicit", params, voidStar);
 
     systemObject = FindType("System.Object", true);

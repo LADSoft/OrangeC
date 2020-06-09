@@ -1400,7 +1400,7 @@ Value* GetStringFieldData(int lab, int type)
         return it->second;
 
     char buf[256];
-    sprintf(buf, "L_%d_%x", lab, uniqueId);
+    sprintf(buf, "L_S_%d_%x", lab, uniqueId);
     Field* field =
         peLib->AllocateField(buf, GetStringType(lab, type), Qualifiers::ClassField | Qualifiers::Private | Qualifiers::Static);
     mainContainer->Add(field);

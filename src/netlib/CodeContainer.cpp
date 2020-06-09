@@ -354,7 +354,7 @@ void CodeContainer::OptimizeLDARG(PELib& peLib)
                                 {
                                     instruction->OpCode(Instruction::i_ldarg_s);
                                 }
-                                if (instruction->GetOperand()->OperandType() == Operand::t_value && instruction->GetOperand()->GetValue()->GetType()->GetBasicType() == Type::mvar)
+                                if (instruction->GetOperand()->OperandType() == Operand::t_value && instruction->GetOperand()->GetValue()->GetType() && instruction->GetOperand()->GetValue()->GetType()->GetBasicType() == Type::mvar)
                                 {
                                     instruction->SetOperand(peLib.AllocateOperand(index, Operand::i32));
                                 }
@@ -365,7 +365,7 @@ void CodeContainer::OptimizeLDARG(PELib& peLib)
                             {
                                 instruction->OpCode(Instruction::i_ldarga_s);
                             }
-                            if (instruction->GetOperand()->OperandType() == Operand::t_value && instruction->GetOperand()->GetValue()->GetType()->GetBasicType() == Type::mvar)
+                            if (instruction->GetOperand()->OperandType() == Operand::t_value && instruction->GetOperand()->GetValue()->GetType() && instruction->GetOperand()->GetValue()->GetType()->GetBasicType() == Type::mvar)
                             {
                                 instruction->SetOperand(peLib.AllocateOperand(index, Operand::i32));
                             }
@@ -375,7 +375,7 @@ void CodeContainer::OptimizeLDARG(PELib& peLib)
                             {
                                 instruction->OpCode(Instruction::i_starg_s);
                             }
-                            if (instruction->GetOperand()->OperandType() == Operand::t_value && instruction->GetOperand()->GetValue()->GetType()->GetBasicType() == Type::mvar)
+                            if (instruction->GetOperand()->OperandType() == Operand::t_value && instruction->GetOperand()->GetValue()->GetType() && instruction->GetOperand()->GetValue()->GetType()->GetBasicType() == Type::mvar)
                             {
                                 instruction->SetOperand(peLib.AllocateOperand(index, Operand::i32));
                             }

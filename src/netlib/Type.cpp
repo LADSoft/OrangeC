@@ -216,6 +216,7 @@ Type* Type::ObjIn(PELib& peLib)
             {
                 peLib.ObjError(oe_syntax);
             }
+            rv = peLib.AllocateType(typeref);
         }
         else if (tp == method)
         {

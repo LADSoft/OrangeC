@@ -7,4 +7,4 @@ comp.tst: comp.exe
 	fc /b decode.tst szip.c
 
 comp.exe:
-	occil comp.c /oszip.exe /C+f	
+	occil comp.c /DMY_UNSIGNED_TYPES /oszip.exe /C+f	

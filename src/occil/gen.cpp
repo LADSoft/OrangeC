@@ -1004,7 +1004,7 @@ BoxedType* boxedType(int isz)
         n = Type::string;
     else if (isz == ISZ_TOINT)
         n = Type::inative;
-    else if (isz = ISZ_TOVOIDSTAR)
+    else if (isz == ISZ_TOVOIDSTAR)
         n = Type::inative;
     else
         n = isz < 0 ? mnames[-isz] : names[isz];

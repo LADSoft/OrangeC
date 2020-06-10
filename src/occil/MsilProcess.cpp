@@ -1584,7 +1584,7 @@ static MethodSignature* LookupSignature(const char* name)
 static MethodSignature* LookupManagedSignature(const char* name)
 {
     Method* rv = nullptr;
-    peLib->Find(std::string("lsmsilcrtl.rtl::") + name, &rv, std::vector<Type*>{}, nullptr, false);
+    peLib->Find(std::string("lsmsilcrtl.rtl::") + name, &rv, std::vector<Type*>{}, nullptr, nullptr, false);
     if (rv)
         return rv->Signature();
     return nullptr;

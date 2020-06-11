@@ -721,7 +721,6 @@ static FunctionData* UnstreamFunc()
     UnstreamSymbolList(fd->variables);
     UnstreamSymbolList(fd->temporarySymbols);
     UnstreamIModes(*fd);
-    fd->objectArray_exp = UnstreamExpression();
     fd->fltexp = UnstreamExpression();
     fd->instructionList = UnstreamInstructions(*fd);
     UnstreamTemps();
@@ -1125,7 +1124,6 @@ static void ResolveFunction(FunctionData* fd, std::map<int, std::string>& texts)
     }
     for (auto q = fd->instructionList; q; q = q->fwd)
         ResolveInstruction(q, texts);
-    ResolveExpression(fd->objectArray_exp, texts);
     ResolveExpression(fd->fltexp, texts);
     lastFunction = current;
     current = nullptr;

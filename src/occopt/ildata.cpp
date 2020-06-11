@@ -73,7 +73,6 @@ std::string prm_assemblerSpecifier;
 std::string outputFileName;
 std::string assemblerFileExtension;
 
-Optimizer::SimpleExpression* objectArray_exp;
 Optimizer::SimpleExpression* fltexp;
 
 int exitBlock;
@@ -141,7 +140,6 @@ void AddFunction()
 #ifndef PARSER_ONLY
     FunctionData* data = new FunctionData;
     data->name = currentFunction;
-    data->objectArray_exp = objectArray_exp;
     data->fltexp = fltexp;
     data->temporarySymbols = temporarySymbols;
     data->variables = functionVariables;

@@ -337,7 +337,6 @@ void ProcessFunctions()
             intermed_tail = intermed_head;
             while (intermed_tail && intermed_tail->fwd)
                 intermed_tail = intermed_tail->fwd;
-            objectArray_exp = v->funcData->objectArray_exp;
             fltexp = v->funcData->fltexp;
             currentFunction = v->funcData->name;
             loadHash = v->funcData->loadHash;

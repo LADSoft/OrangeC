@@ -327,7 +327,7 @@ Operand* getOperand(Optimizer::IMODE* oper)
                 }
                 else if (oper->offset->type != Optimizer::se_tempref)
                 {
-                    if (oper->offset == Optimizer::objectArray_exp)
+                    if (oper->offset->type == Optimizer::se_auto && oper->offset->sp->msilObjectArray)
                     {
                         Type* oa = peLib->AllocateType(Type::object, 0);
                         oa->ArrayLevel(1);
@@ -937,29 +937,6 @@ void asm_expressiontag(Optimizer::QUAD* q)
 }
 void asm_tag(Optimizer::QUAD* q)
 {
-    if (q->beforeGosub)
-    {
-        Optimizer::QUAD* find = q;
-        while (find && find->dc.opcode != Optimizer::i_gosub)
-            find = find->fwd;
-        if (find)
-        {
-            if (find->altvararg)
-            {
-                if (msil_managed(find->altsp) || find->dc.left->mode != Optimizer::i_immed)
-                {
-                    if (strcmp(find->altsp->name, "__va_arg__"))
-                    {
-                        if (find->nullvararg)
-                            gen_code(Instruction::i_ldnull, NULL);
-                        else
-                            gen_code(Instruction::i_ldloc,
-                                     peLib->AllocateOperand(localList[Optimizer::objectArray_exp->sp->offset]));
-                    }
-                }
-            }
-        }
-    }
 }
 void asm_line(Optimizer::QUAD* q) /* line number information and text */
 {
@@ -1445,7 +1422,7 @@ void asm_assn(Optimizer::QUAD* q) /* assignment */
         // don't generate if it is a placeholder ind...
         if (q->ans->mode == Optimizer::i_direct && !(q->temps & TEMP_ANS) && q->ans->offset->type == Optimizer::se_auto)
         {
-            if (Optimizer::objectArray_exp && q->ans->offset->sp == Optimizer::objectArray_exp->sp)
+            if (q->ans->offset->sp->msilObjectArray)
             {
                 // assign to object array, call the ctor here
                 // count is already on the stack

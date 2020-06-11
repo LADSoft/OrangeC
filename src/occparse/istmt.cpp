@@ -936,7 +936,6 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     Optimizer::exitBlock = 0;
     consIndex = 0;
     retcount = 0;
-    Optimizer::objectArray_exp = nullptr;
     oldCurrentFunc = theCurrentFunc;
     theCurrentFunc = funcsp;
     iexpr_func_init();

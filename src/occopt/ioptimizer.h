@@ -221,6 +221,7 @@ struct SimpleSymbol
             unsigned usesEsp : 1;
             unsigned addressTaken : 1;
             unsigned genreffed : 1;
+            unsigned msilObjectArray : 1;
         };
         unsigned long long flags;
     };
@@ -564,7 +565,6 @@ typedef struct quad
     {
         struct
         {
-            int altvararg : 1;  // for MSIL
             int valist : 1;     /* argument is a valist that needs translation */
             int denormal : 1;
             int isvolatile : 1;
@@ -584,12 +584,11 @@ typedef struct quad
             int ignoreMe : 1;
             int genConflict : 1; /* assignment node the ans conflicts with left */
             int hook : 1;        /* one of the two assigns for a hook, used in diagnostic generation */
-            int vararg : 1;      /* a param passed as a vararg */
-            int varargPrev : 1;  /* right before the vararg is genned */
             int beforeGosub : 1;
             int nullvararg : 1;
             int blockassign : 1;
             int atomic : 1; /* atomic instruction */
+            int vararg : 1; // msil
         };
         unsigned flags;
     };

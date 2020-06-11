@@ -802,7 +802,6 @@ static void StreamFunc(FunctionData* fd)
     StreamSymbolList(fd->variables);
     StreamSymbolList(fd->temporarySymbols);
     StreamIModes(fd);
-    StreamExpression(fd->objectArray_exp);
     StreamExpression(fd->fltexp);
     StreamInstructions(fd->instructionList);
     StreamTemps();

@@ -58,6 +58,7 @@
 #include "beinterf.h"
 #include "iexpr.h"
 #include "ioptimizer.h"
+#include "using.h"
 
 namespace Parser
 {
@@ -1578,7 +1579,7 @@ static EXPRESSION* getFunc(EXPRESSION* exp)
     }
     return rv;
 }
-int push_param(EXPRESSION* ep, SYMBOL* funcsp, bool vararg, EXPRESSION* valist, TYPE *argtp, int flags)
+int push_param(EXPRESSION* ep, SYMBOL* funcsp, EXPRESSION* valist, TYPE *argtp, int flags)
 /*
  *      push the operand expression onto the stack.
  */
@@ -1614,7 +1615,6 @@ int push_param(EXPRESSION* ep, SYMBOL* funcsp, bool vararg, EXPRESSION* valist, 
                 rv = rv + Optimizer::chosenAssembler->arch->stackalign - rv % Optimizer::chosenAssembler->arch->stackalign;
             Optimizer::gen_icode(Optimizer::i_parmstack, ap = Optimizer::tempreg(ISZ_ADDR, 0), Optimizer::make_immed(ISZ_UINT, rv),
                                  nullptr);
-            Optimizer::intermed_tail->vararg = vararg;
             Optimizer::SymbolManager::Get(exp->v.sp)->imvalue = ap;
             gen_expr(funcsp, ep, 0, ISZ_UINT);
         }
@@ -1628,7 +1628,6 @@ int push_param(EXPRESSION* ep, SYMBOL* funcsp, bool vararg, EXPRESSION* valist, 
             if (ap->size == ISZ_NONE)
                 ap->size = temp;
             Optimizer::gen_nodag(Optimizer::i_parm, 0, ap, 0);
-            Optimizer::intermed_tail->vararg = vararg;
             Optimizer::intermed_tail->valist = valist && valist->type == en_l_p;
             rv = Optimizer::sizeFromISZ(ap->size);
         }
@@ -1644,7 +1643,7 @@ int push_param(EXPRESSION* ep, SYMBOL* funcsp, bool vararg, EXPRESSION* valist, 
                     gen_expr(funcsp, ep->left, 0, ISZ_UINT);
                     ep = ep->right;
                 }
-                push_param(ep, funcsp, vararg, valist, argtp, flags);
+                push_param(ep, funcsp, valist, argtp, flags);
                 break;
             case en_argnopush:
                 gen_expr(funcsp, ep->left, 0, ISZ_UINT);
@@ -1652,7 +1651,6 @@ int push_param(EXPRESSION* ep, SYMBOL* funcsp, bool vararg, EXPRESSION* valist, 
             case en_imode:
                 ap = (Optimizer::IMODE*)ep->left;
                 Optimizer::gen_nodag(Optimizer::i_parm, 0, ap, 0);
-                Optimizer::intermed_tail->vararg = vararg;
                 Optimizer::intermed_tail->valist = valist && valist->type == en_l_p;
                 rv = Optimizer::sizeFromISZ(ap->size);
                 break;
@@ -1687,7 +1685,6 @@ int push_param(EXPRESSION* ep, SYMBOL* funcsp, bool vararg, EXPRESSION* valist, 
                 }
 
                 Optimizer::gen_nodag(Optimizer::i_parm, 0, ap, 0);
-                Optimizer::intermed_tail->vararg = vararg;
                 Optimizer::intermed_tail->valist = valist && valist->type == en_l_p;
                 rv = Optimizer::sizeFromISZ(ap->size);
                 break;
@@ -1700,7 +1697,7 @@ int push_param(EXPRESSION* ep, SYMBOL* funcsp, bool vararg, EXPRESSION* valist, 
 
 /*-------------------------------------------------------------------------*/
 
-static int push_stackblock(TYPE* tp, EXPRESSION* ep, SYMBOL* funcsp, int sz, bool vararg, EXPRESSION* valist)
+static int push_stackblock(TYPE* tp, EXPRESSION* ep, SYMBOL* funcsp, int sz, EXPRESSION* valist)
 /*
  * Push a structure on the stack
  */
@@ -1729,7 +1726,6 @@ static int push_stackblock(TYPE* tp, EXPRESSION* ep, SYMBOL* funcsp, int sz, boo
     }
     Optimizer::gen_nodag(Optimizer::i_parmblock, 0, ap, Optimizer::make_immed(ISZ_UINT, sz));
     Optimizer::intermed_tail->alttp = Optimizer::SymbolManager::Get(tp);
-    Optimizer::intermed_tail->vararg = vararg;
     Optimizer::intermed_tail->valist = valist && valist->type == en_l_p;
     if (sz % Optimizer::chosenAssembler->arch->stackalign)
         sz = sz + Optimizer::chosenAssembler->arch->stackalign - sz % Optimizer::chosenAssembler->arch->stackalign;
@@ -1745,31 +1741,19 @@ static int gen_parm(INITLIST* a, SYMBOL* funcsp)
  */
 {
     int rv;
-    if (a->vararg && (Optimizer::architecture == ARCHITECTURE_MSIL))
+    if (Optimizer::architecture == ARCHITECTURE_MSIL)
     {
-        if (!Optimizer::objectArray_exp)
-        {
-            TYPE* tp = (TYPE*)Alloc(sizeof(TYPE));
-            tp->type = bt_pointer;
-            tp->size = 0;
-            tp->array = tp->msil = true;
-            tp->rootType = tp;
-            tp->btp = (TYPE*)Alloc(sizeof(TYPE));
-            tp->btp->type = bt___object;
-            tp->btp->size = getSize(bt_pointer);
-            tp->btp->rootType = tp->btp;
-            Optimizer::objectArray_exp = Optimizer::SymbolManager::Get(anonymousVar(sc_auto, tp));
-            Optimizer::cacheTempSymbol(Optimizer::objectArray_exp->sp);
-            Optimizer::objectArray_exp->sp->anonymous = false;
-        }
-        Optimizer::intermed_tail->varargPrev = true;
+        // varargs set up initially
+        if (a->vararg)
+            return 0;
     }
+
     if (ispointer(a->tp) || isref(a->tp))
     {
         TYPE* btp = basetype(a->tp);
         if (btp->vla || basetype(btp->btp)->vla)
         {
-            rv = push_stackblock(a->tp, a->exp->left, funcsp, a->tp->size, a->vararg, a->valist ? a->exp : nullptr);
+            rv = push_stackblock(a->tp, a->exp->left, funcsp, a->tp->size, a->valist ? a->exp : nullptr);
             DumpIncDec(funcsp);
             push_nesting += rv;
             return rv;
@@ -1794,17 +1778,17 @@ static int gen_parm(INITLIST* a, SYMBOL* funcsp)
             }
             else
             {
-                rv = push_param(a->exp, funcsp, a->vararg, a->valist ? a->exp : nullptr, a->tp, F_OBJECT);
+                rv = push_param(a->exp, funcsp, a->valist ? a->exp : nullptr, a->tp, F_OBJECT);
             }
         }
         else
         {
-            rv = push_stackblock(a->tp, a->exp->left, funcsp, a->exp->size, a->vararg, a->valist ? a->exp : nullptr);
+            rv = push_stackblock(a->tp, a->exp->left, funcsp, a->exp->size, a->valist ? a->exp : nullptr);
         }
     }
     else if (a->exp->type == en_stackblock)
     {
-        rv = push_stackblock(a->tp, a->exp->left, funcsp, a->tp->size, a->vararg, a->valist ? a->exp : nullptr);
+        rv = push_stackblock(a->tp, a->exp->left, funcsp, a->tp->size, a->valist ? a->exp : nullptr);
     }
     else if (isstructured(a->tp) && a->exp->type == en_thisref)  // constructor
     {
@@ -1821,7 +1805,6 @@ static int gen_parm(INITLIST* a, SYMBOL* funcsp)
                 rv = rv + Optimizer::chosenAssembler->arch->stackalign - rv % Optimizer::chosenAssembler->arch->stackalign;
             Optimizer::gen_icode(Optimizer::i_parmstack, ap = Optimizer::tempreg(ISZ_ADDR, 0), Optimizer::make_immed(ISZ_UINT, rv),
                                  nullptr);
-            Optimizer::intermed_tail->vararg = a->vararg;
             Optimizer::SymbolManager::Get(ths->v.sp)->imvalue = ap;
             gen_expr(funcsp, a->exp, 0, ISZ_UINT);
         }
@@ -1829,14 +1812,13 @@ static int gen_parm(INITLIST* a, SYMBOL* funcsp)
         {
             Optimizer::IMODE* ap = gen_expr(funcsp, a->exp, 0, ISZ_ADDR);
             Optimizer::gen_nodag(Optimizer::i_parm, 0, ap, 0);
-            Optimizer::intermed_tail->vararg = a->vararg;
             Optimizer::intermed_tail->valist = a->valist ? (a->exp && a->exp->type == en_l_p) : 0;
             rv = a->tp->size;
         }
     }
     else
     {
-        rv = push_param(a->exp, funcsp, a->vararg, a->valist ? a->exp : nullptr, a->tp, 0);
+        rv = push_param(a->exp, funcsp, a->valist ? a->exp : nullptr, a->tp, 0);
     }
     DumpIncDec(funcsp);
     push_nesting += rv;
@@ -2024,6 +2006,76 @@ static int MarkFastcall(SYMBOL* sym, TYPE* functp, bool thisptr)
     }
     return 0;
 }
+Optimizer::SimpleExpression *CreateMsilVarargs(SYMBOL* funcsp, FUNCTIONCALL* f)
+{
+    Optimizer::SimpleExpression* rv = nullptr;
+ 
+    if (f->vararg)
+    {
+        int count = 0;
+        INITLIST *a = f->arguments;
+        for ( ; a ; a = a->next)
+        {
+            if (a->vararg) 
+                count ++;
+        }  
+        if (count)
+        {
+            TYPE* tp = (TYPE*)Alloc(sizeof(TYPE));
+            tp->type = bt_pointer;
+            tp->size = 0;
+            tp->array = tp->msil = true;
+            tp->rootType = tp;
+            tp->btp = (TYPE*)Alloc(sizeof(TYPE));
+            tp->btp->type = bt___object;
+            tp->btp->size = getSize(bt_pointer);
+            tp->btp->rootType = tp->btp;
+            rv = Optimizer::SymbolManager::Get(anonymousVar(sc_auto, tp));
+            Optimizer::cacheTempSymbol(rv->sp);
+            rv->sp->anonymous = false;
+            rv->sp->msilObjectArray = true;
+
+            // this is for the initialization of the object array
+            Optimizer::QUAD* q2 = (Optimizer::QUAD*)Alloc(sizeof(Optimizer::QUAD));
+            Optimizer::QUAD* q3 = (Optimizer::QUAD*)Alloc(sizeof(Optimizer::QUAD));
+            Optimizer::IMODE* ap4 = Optimizer::tempreg(ISZ_ADDR, 0);
+            Optimizer::IMODE* ap5;
+            Optimizer::IMODE* ap6 = (Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+            ap6->offset = rv;
+            ap6->mode = Optimizer::i_direct;
+            ap6->size = ISZ_ADDR;
+            ap5 = Optimizer::make_immed(-ISZ_UINT, count);
+            Optimizer::gen_icode(Optimizer::i_assn, ap4, ap5, nullptr);
+            Optimizer::gen_icode(Optimizer::i_assn, ap6, ap4, nullptr);
+
+            int parmIndex = 0;
+            for (a = f->arguments; a ; a = a->next)
+            {
+                if (a->vararg)
+                {
+                    Optimizer::IMODE* ap = Optimizer::tempreg(ISZ_ADDR, 0);
+                    Optimizer::IMODE* ap2 = Optimizer::tempreg(-ISZ_UINT, 0);
+                    Optimizer::IMODE* ap3 = Optimizer::make_immed(-ISZ_UINT, parmIndex++);
+                    Optimizer::IMODE* ap8;
+                    Optimizer::gen_icode(Optimizer::i_assn, ap, ap6, nullptr);
+                    Optimizer::intermed_tail->alwayslive = true;
+                    Optimizer::gen_icode(Optimizer::i_assn, ap2, ap3, nullptr);
+                    Optimizer::intermed_tail->alwayslive = true;
+                    Optimizer::IMODE* ap1 = gen_expr(funcsp, a->exp, 0, natural_size(a->exp));
+                    ap8 = Optimizer::LookupLoadTemp(nullptr, ap1);
+                    if (ap8 != ap1)
+                    {
+                        Optimizer::gen_icode(Optimizer::i_assn, ap8, ap1, nullptr);
+                        ap1 = ap8;
+                    }
+                    Optimizer::gen_icode(Optimizer::i_parm, nullptr, ap1, nullptr);
+                    Optimizer::intermed_tail->vararg = true;
+                }
+            }
+        }
+    }
+    return rv;
+}
 Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
 /*
  *      generate a function call node and return the address mode
@@ -2039,6 +2091,7 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
     int adjust = 0;
     int adjust2 = 0;
     Optimizer::QUAD* gosub = nullptr;
+    Optimizer::SimpleExpression *varargarray = nullptr;
     if (!f->ascall)
     {
         return gen_expr(funcsp, f->fcall, 0, ISZ_ADDR);
@@ -2117,7 +2170,7 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         if (isstructured(basetype(f->functp)->btp) || basetype(basetype(f->functp)->btp)->type == bt_memberptr)
         {
             if (f->returnEXP)
-                push_param(f->returnEXP, funcsp, false, nullptr, f->returnSP->tp, F_OBJECT);
+                push_param(f->returnEXP, funcsp, nullptr, f->returnSP->tp, F_OBJECT);
         }
         genPascalArgs(f->arguments, funcsp);
     }
@@ -2148,23 +2201,44 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         }
         else if (Optimizer::chosenAssembler->arch->preferopts & OPT_REVERSEPARAM)
         {
+            if (Optimizer::architecture == ARCHITECTURE_MSIL)
+                varargarray = CreateMsilVarargs(funcsp, f);
             if (isstructured(basetype(f->functp)->btp) || basetype(basetype(f->functp)->btp)->type == bt_memberptr)
             {
                 if (f->returnEXP && !managed)
-                    push_param(f->returnEXP, funcsp, false, nullptr, f->returnSP->tp, 0);
+                    push_param(f->returnEXP, funcsp, nullptr, f->returnSP->tp, 0);
             }
             if (f->thisptr)
             {
-                push_param(f->thisptr, funcsp, false, nullptr, f->thistp, F_OBJECT);
+                push_param(f->thisptr, funcsp, nullptr, f->thistp, F_OBJECT);
             }
             genPascalArgs(f->arguments, funcsp);
+            if (f->vararg && strcmp(f->sp->name, "__va_arg__"))
+            {
+                if (varargarray)
+                {
+                    Optimizer::IMODE* ap2 = Optimizer::tempreg(ISZ_ADDR, 0);
+                    Optimizer::IMODE* ap3 = (Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+                    ap3->size = ISZ_ADDR;
+                    ap3->mode = Optimizer::i_direct;
+                    ap3->offset = varargarray;
+                    Optimizer::gen_icode(Optimizer::i_assn, ap2, ap3, nullptr);
+                    Optimizer::gen_icode(Optimizer::i_parm, nullptr, ap2, nullptr);
+                }
+                else
+                {
+                    Optimizer::IMODE* ap3 = Optimizer::make_immed(ISZ_OBJECT, 0);  // LDNULL
+                    ap3->size = ISZ_ADDR;
+                    Optimizer::gen_icode(Optimizer::i_parm, nullptr, ap3, nullptr);
+                }
+            }
         }
         else
         {
             genCdeclArgs(f->arguments, funcsp);
             if (f->thisptr)
             {
-                push_param(f->thisptr, funcsp, false, nullptr, f->thistp, F_OBJECT);
+                push_param(f->thisptr, funcsp, nullptr, f->thistp, F_OBJECT);
             }
         }
         if (f->callLab == -1)
@@ -2179,7 +2253,7 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
                 (isstructured(basetype(f->functp)->btp) || basetype(basetype(f->functp)->btp)->type == bt_memberptr))
             {
                 if (f->returnEXP && !managed)
-                    push_param(f->returnEXP, funcsp, false, nullptr, f->returnSP->tp, 0);
+                    push_param(f->returnEXP, funcsp, nullptr, f->returnSP->tp, 0);
             }
         }
     }
@@ -2243,7 +2317,6 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         bool vaarg = false;
         if (f->sp->name[0] == '_' && !strcmp(f->sp->name, "__va_arg__"))
             vaarg = true;
-        gosub->altvararg = f->vararg;
         Optimizer::ArgList** p = &gosub->altargs;
         INITLIST* il = f->arguments;
         while (il)

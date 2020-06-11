@@ -267,7 +267,6 @@ bool ProcessData(const char* name)
             Optimizer::intermed_tail = Optimizer::intermed_head;
             while (Optimizer::intermed_tail && Optimizer::intermed_tail->fwd)
                 Optimizer::intermed_tail = Optimizer::intermed_tail->fwd;
-            Optimizer::objectArray_exp = v->funcData->objectArray_exp;
             Optimizer::fltexp = v->funcData->fltexp;
             Optimizer::fastcallAlias = v->funcData->fastcallAlias;
             currentFunction = v->funcData->name;

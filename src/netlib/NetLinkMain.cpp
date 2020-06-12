@@ -317,7 +317,7 @@ MethodSignature* NetLinkMain::LookupSignature(const char* name)
 {
     Method* result;
     PELib::eFindType rv =
-        peLib->Find(const_cast<char*>((namespaceAndClass + name).c_str()), &result, std::vector<Type*>{}, nullptr, false);
+        peLib->Find(const_cast<char*>((namespaceAndClass + name).c_str()), &result, std::vector<Type*>{}, nullptr, nullptr, false);
     if (rv == PELib::s_method)
     {
         return result->Signature();
@@ -332,7 +332,7 @@ MethodSignature* NetLinkMain::LookupSignature(const char* name)
 MethodSignature* NetLinkMain::LookupManagedSignature(const char* name)
 {
     Method* rv = nullptr;
-    peLib->Find(std::string("lsmsilcrtl.rtl::") + name, &rv, std::vector<Type*>{}, nullptr, false);
+    peLib->Find(std::string("lsmsilcrtl.rtl::") + name, &rv, std::vector<Type*>{}, nullptr, nullptr, false);
     if (rv)
         return rv->Signature();
     return nullptr;

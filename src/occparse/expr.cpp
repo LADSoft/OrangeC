@@ -1890,6 +1890,14 @@ void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp)
         {
             TYPE* dest = nullptr;
             SYMBOL* decl = nullptr;
+            if (list && Optimizer::actionforfuncptr)
+            {
+                if (isfunction(list->tp))
+                    if (!msilManaged(params->sp))
+                    {
+                        errorsym(ERR_MSIL_PASSING_FUNCTION_PTRS_WITH_ACTION_NOT_SUPPORTED, params->sp);
+                    }
+            }
             if (!hr || hr->p->tp->type != bt_any)
             {
                 argnum++;

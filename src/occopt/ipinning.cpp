@@ -303,8 +303,16 @@ static void InsertInitialLoad(QUAD* begin, std::deque<QUAD*>& addresses, IMODE*&
     else
     {
         tp->btp = left->offset->sp->tp;
-        if (tp->btp->isarray)
+        while (tp->btp->isarray)
             tp->btp = tp->btp->btp;
+        while (tp->btp->type == st_pointer)
+        {
+            SimpleType* tp1 = (SimpleType*)Alloc(sizeof(SimpleType));
+            *tp1 = *tp->btp;
+            tp1->type = st_lref;
+            tp->btp = tp1;
+            tp = tp->btp;
+        }
     }
     IMODE *ans = pinnedVar(tp);
     ans->size = left->size;

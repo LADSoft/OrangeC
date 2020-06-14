@@ -1584,7 +1584,7 @@ static MethodSignature* LookupSignature(const char* name)
 static MethodSignature* LookupManagedSignature(const char* name)
 {
     Method* rv = nullptr;
-    peLib->Find(std::string("lsmsilcrtl.rtl::") + name, &rv, std::vector<Type*>{}, nullptr, nullptr, false);
+    peLib->Find(std::string("lsmsilcrtl.rtl::") + name, &rv, std::vector<Type*>{}, nullptr, nullptr, nullptr, false);
     if (rv)
         return rv->Signature();
     return nullptr;
@@ -1612,7 +1612,7 @@ static Field* LookupField(const char* name)
 static Field* LookupManagedField(const char* name)
 {
     void* rv = nullptr;
-    if (peLib->Find(std::string("lsmsilcrtl.rtl::") + name, &rv, nullptr) == PELib::s_field)
+    if (peLib->Find(std::string("lsmsilcrtl.rtl::") + name, &rv) == PELib::s_field)
     {
         return static_cast<Field*>(rv);
     }

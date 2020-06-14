@@ -83,7 +83,7 @@ static void iop_arrayindex(Optimizer::QUAD* q) { asm_mul(q); }
 static void iop_arraylsh(Optimizer::QUAD* q) { asm_mul(q); }
 static void iop_struct(Optimizer::QUAD* q) { asm_add(q); }
 /*-------------------------------------------------------------------------*/
-static void iop_initblk(Optimizer::QUAD* q) { asm_clrblock(q); }
+static void iop_initblk(Optimizer::QUAD* q) { asm_initblock(q); }
 static void iop_cpblk(Optimizer::QUAD* q) { asm_assnblock(q); }
 static void iop_initobj(Optimizer::QUAD* q) { asm_initobj(q); }
 static void iop_sizeof(Optimizer::QUAD* q) { asm_sizeof(q); }

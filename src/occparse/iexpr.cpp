@@ -1138,42 +1138,45 @@ Optimizer::IMODE* gen_clearblock(EXPRESSION* node, SYMBOL* funcsp)
  * Generate code to copy one structure to another
  */
 {
-    Optimizer::IMODE *ap1, *ap3, *ap4, *ap5, *ap6, *ap7, *ap8;
-    if (node->size)
-    {
-        ap4 = Optimizer::make_immed(ISZ_UINT, node->size);
-    }
-    else if (node->right)
-    {
-        ap5 = gen_expr(funcsp, node->right, F_VOL, ISZ_UINT);
-        ap4 = Optimizer::LookupLoadTemp(nullptr, ap5);
-        if (ap5 != ap4)
-            Optimizer::gen_icode(Optimizer::i_assn, ap4, ap5, nullptr);
-    }
-    else
-    {
-        return (0);
-    }
-    ap3 = gen_expr(funcsp, node->left, F_VOL, ISZ_UINT);
-    ap1 = Optimizer::LookupLoadTemp(nullptr, ap3);
-    if (ap1 != ap3)
-        Optimizer::gen_icode(Optimizer::i_assn, ap1, ap3, nullptr);
     if (Optimizer::architecture == ARCHITECTURE_MSIL)
     {
-        ap6 = Optimizer::make_immed(ISZ_UINT, 0);
-        ap7 = Optimizer::LookupLoadTemp(nullptr, ap6);
-        if (ap7 != ap6)
-            Optimizer::gen_icode(Optimizer::i_assn, ap7, ap6, nullptr);
-        ap8 = (Optimizer::IMODE*)(Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
-        memcpy(ap8, ap7, sizeof(Optimizer::IMODE));
-        ap8->mode = Optimizer::i_ind;
-        Optimizer::gen_icode(Optimizer::i_clrblock, ap8, ap1, ap4);
+        // clrblock only generated for AUTO vars, should be safe to use initobj this way.
+        Optimizer::IMODE* ap = gen_expr(funcsp, node->left, 0, ISZ_UINT);
+        Optimizer::IMODE* ap1 = Optimizer::LookupLoadTemp(nullptr, ap);
+        Optimizer::gen_icode(Optimizer::i_assn, ap1, ap, nullptr);
+        Optimizer::intermed_tail->alwayslive = true;
+        ap = (Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+        ap->mode = Optimizer::i_immed;
+        ap->offset = Optimizer::SymbolManager::Get(node->left);
+        ap->size = ISZ_UINT;
+        Optimizer::gen_icode(Optimizer::i__initobj, nullptr, ap, nullptr);
+        return ap1;
     }
     else
     {
+        Optimizer::IMODE *ap1, *ap3, *ap4, *ap5, *ap6, *ap7, *ap8;
+        if (node->size)
+        {
+            ap4 = Optimizer::make_immed(ISZ_UINT, node->size);
+        }
+        else if (node->right)
+        {
+            ap5 = gen_expr(funcsp, node->right, F_VOL, ISZ_UINT);
+            ap4 = Optimizer::LookupLoadTemp(nullptr, ap5);
+            if (ap5 != ap4)
+                Optimizer::gen_icode(Optimizer::i_assn, ap4, ap5, nullptr);
+        }
+        else
+        {
+            return (0);
+        }
+        ap3 = gen_expr(funcsp, node->left, F_VOL, ISZ_UINT);
+        ap1 = Optimizer::LookupLoadTemp(nullptr, ap3);
+        if (ap1 != ap3)
+            Optimizer::gen_icode(Optimizer::i_assn, ap1, ap3, nullptr);
         Optimizer::gen_icode(Optimizer::i_clrblock, nullptr, ap1, ap4);
+        return (ap1);
     }
-    return (ap1);
 }
 Optimizer::IMODE* gen_cpinitblock(EXPRESSION* node, SYMBOL* funcsp, bool cp, int flags)
 /*

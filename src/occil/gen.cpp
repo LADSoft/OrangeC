@@ -42,6 +42,7 @@
 #include "using.h"
 #include "Action.h"
 #include "Utils.h"
+#include "gen.h"
 
 using namespace DotNetPELib;
 namespace occmsil
@@ -1634,6 +1635,10 @@ void asm_assnblock(Optimizer::QUAD* q) /* copy block of memory*/
     decrement_stack();
 }
 void asm_clrblock(Optimizer::QUAD* q) /* clear block of memory */
+{
+    asm_initobj(q);
+}
+void asm_initblock(Optimizer::QUAD* q) /* clear block of memory */
 {
     // the 'value' field is loaded by examine_icode...
     gen_code(Instruction::i_initblk, 0);

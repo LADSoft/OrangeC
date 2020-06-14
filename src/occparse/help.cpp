@@ -1555,7 +1555,10 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                 }
                 else if ((Optimizer::architecture == ARCHITECTURE_MSIL) && init->fieldsp)
                 {
-                    exps = exprNode(en_add, exps, intNode(en_c_i, init->fieldoffs));
+                    if (init->fieldoffs)
+                    {
+                        exps = exprNode(en_add, exps, intNode(en_c_i, init->fieldoffs));
+                    }
                     exps = exprNode(en_structadd, exps, varNode(en_structelem, init->fieldsp));
                 }
                 else if (init->offset ||

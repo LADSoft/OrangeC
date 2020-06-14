@@ -104,6 +104,7 @@ void asm_swbranch(Optimizer::QUAD* q);
 void asm_dc(Optimizer::QUAD* q);
 void asm_assnblock(Optimizer::QUAD* q);
 void asm_clrblock(Optimizer::QUAD* q);
+void asm_initblock(Optimizer::QUAD* q);
 void asm_initobj(Optimizer::QUAD* q);
 void asm_sizeof(Optimizer::QUAD* q);
 void asm_cmpblock(Optimizer::QUAD* q);

@@ -1210,7 +1210,7 @@ namespace DotNetPELib
     public:
         enum { Vararg = 1, Managed = 2, InstanceFlag = 4, VirtualFlag = 8 };
         MethodSignature(const std::string& Name, int Flags, DataContainer *Container) : container_(Container), name_(Name), flags_(Flags), returnType_(nullptr), ref_(false), 
-                peIndex_(0), peIndexCallSite_(0), peIndexType_(0), methodParent_(nullptr), arrayObject_(nullptr), external_(false), definitions_(0), genericParamCount_(0)
+                peIndex_(0), peIndexCallSite_(0), peIndexType_(0), methodParent_(nullptr), arrayObject_(nullptr), external_(false), definitions_(0), genericParent_(nullptr), genericParamCount_(0)
         {
         }
         MethodSignature(const MethodSignature&) = default;
@@ -1252,13 +1252,16 @@ namespace DotNetPELib
         void SetName(const std::string& Name) { name_ = Name; }
         ///** Set Array object
         void ArrayObject(Type *tp) { arrayObject_ = tp; }
-        ///** Get/Set generic param count
-        void GenericParamCount(int count) { genericParamCount_ = count; }
-        int GenericParamCount() const { return genericParamCount_; }
         // iterate through parameters
         typedef std::list<Param *>::iterator iterator;
         iterator begin() { return params.begin(); }
         iterator end() { return params.end(); }
+
+        void GenericParent(MethodSignature* sig) { genericParent_ = sig; }
+        MethodSignature* GenericParent() const { return genericParent_; }
+        ///** return the list of generics
+        std::deque<Type*>& Generic() { return generic_; }
+        const std::deque<Type*>& Generic() const { return generic_; }
 
         // iterate through vararg parameters
         typedef std::list<Param *>::iterator viterator;
@@ -1302,7 +1305,8 @@ namespace DotNetPELib
         void Definition() { definitions_++; }
         ///** get definition count
         size_t Definitions() const { return definitions_/2; }
-
+        size_t GenericParamCount() const { return genericParamCount_; }
+        void GenericParamCount(int count) { genericParamCount_ = count; }
         bool MatchesType(Type *tpa, Type *tpp);
         bool Matches(std::vector<Type *> args);
         // various indexes into metadata tables
@@ -1321,6 +1325,8 @@ namespace DotNetPELib
         virtual bool PEDump(PELib &, bool asType);
         virtual void ObjOut(PELib &, int pass) const;
         static MethodSignature *ObjIn(PELib &, Method **found, bool definition = true);
+        std::string AdornGenerics(PELib& peLib, bool names = false) const;
+
     protected:
         MethodSignature *methodParent_;
         DataContainer *container_;
@@ -1333,6 +1339,8 @@ namespace DotNetPELib
         size_t peIndex_, peIndexCallSite_, peIndexType_;
         bool external_;
         size_t definitions_;
+        std::deque<Type*> generic_;
+        MethodSignature* genericParent_;
         int genericParamCount_;
     };
     ///** the type of a field or value

@@ -261,7 +261,7 @@ namespace DotNetPELib {
     public:
         static Byte *MethodDefSig(MethodSignature *signature, size_t &sz);
         static Byte *MethodRefSig(MethodSignature *signature, size_t &sz);
-        //Byte *MethodSpecSig(Method *method);
+        static Byte *MethodSpecSig(MethodSignature *signature, size_t &sz);
         static Byte *PropertySig(Property *property, size_t &sz);
         static Byte *FieldSig(Field *field, size_t &sz);
         //Byte *PropertySig(Property *property);

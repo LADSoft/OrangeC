@@ -646,6 +646,18 @@ Byte* SignatureGenerator::MethodRefSig(MethodSignature* method, size_t& sz)
     }
     return ConvertToBlob(workArea, size, sz);
 }
+Byte *SignatureGenerator::MethodSpecSig(MethodSignature *signature, size_t &sz)
+{
+    int size = 0;
+    workArea[size++] = 0x0a; // generic
+    workArea[size++] = signature->Generic().size();
+    for (auto g : signature->Generic())
+    {
+       size += EmbedType(workArea, size, g);
+    }
+    return ConvertToBlob(workArea, size, sz);
+}
+
 Byte* SignatureGenerator::FieldSig(Field* field, size_t& sz)
 {
     int size = 0;

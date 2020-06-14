@@ -219,6 +219,8 @@ size_t MethodName::Render(PELib& peLib, int opcode, int operandType, Byte* resul
             signature_->PEDump(peLib, false);
         if (signature_->PEIndex())
             *(DWord*)result = signature_->PEIndex() | (tMethodDef << 24);
+        else if (signature_->Generic().size())
+            *(DWord*)result = signature_->PEIndexCallSite() | (tMethodSpec << 24);
         else
             *(DWord*)result = signature_->PEIndexCallSite() | (tMemberRef << 24);
     }

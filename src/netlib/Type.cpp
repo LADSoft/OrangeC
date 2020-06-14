@@ -117,7 +117,7 @@ bool Type::ILSrcDump(PELib& peLib) const
     }
     else if (tp_ == mvar)
     {
-        peLib.Out() << "!" << VarNum();
+        peLib.Out() << "!!" << VarNum();
     }
     else if (tp_ == method)
     {

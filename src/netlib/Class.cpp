@@ -397,7 +397,7 @@ void Class::Load(PELib& lib, AssemblyDef& assembly, PEReader& reader, size_t cls
             MethodSignature* sig = lib.AllocateMethodSignature((char*)buf, MethodSignature::Managed, this);
             SignatureGenerator::TypeFromMethodRef(lib, assembly, reader, sig, entry->signatureIndex_.index_);
             if (entry->flags_ & MethodDefTableEntry::Virtual)
-                sig->Virtual(true);
+               entry->flags_ |= Qualifiers::Virtual;       
             Method* method = lib.AllocateMethod(sig, entry->flags_, false);
             Add(method);
             sigs.push_back(sig);
@@ -483,7 +483,9 @@ std::string Class::AdornGenerics(PELib& peLib, bool names) const
             }
             else
             {
-                type->ILSrcDump(peLib);
+                Type tp = *type;
+                tp.ShowType();
+                tp.ILSrcDump(peLib);
             }
             if (count++ != generic_.size()-1)
                 rv << ",";

@@ -523,6 +523,10 @@ bool MethodSignature::PEDump(PELib& peLib, bool asType)
         size_t sz;
         size_t function = peLib.PEOut().HashString(name_);
         size_t parent;
+        if (returnType_ && returnType_->GetBasicType() == Type::cls)
+        {
+            returnType_->GetClass()->PEDump(peLib);
+        }
         if (arrayObject_)
         {
             methodreftype = MemberRefParent::TypeSpec;
@@ -585,7 +589,9 @@ std::string MethodSignature::AdornGenerics(PELib& peLib, bool names) const
             }
             else
             {
-                type->ILSrcDump(peLib);
+                Type tp = *type;
+                tp.ShowType();
+                tp.ILSrcDump(peLib);
             }
             if (count++ != generic_.size() - 1)
                 rv << ",";

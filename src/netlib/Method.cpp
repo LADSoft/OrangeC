@@ -227,6 +227,10 @@ bool Method::PEDump(PELib& peLib)
         size_t methodSignature = 0;
         Byte* sig = nullptr;
         TableEntryBase* table;
+        if (prototype_->ReturnType() && prototype_->ReturnType()->GetBasicType() == Type::cls)
+        {
+            prototype_->ReturnType()->GetClass()->PEDump(peLib);
+        }
         if (prototype_->ParamCount())
         {
             // assign an index to any params...
@@ -267,7 +271,7 @@ bool Method::PEDump(PELib& peLib)
         Instruction* last = nullptr;
         if (instructions_.size())
             last = instructions_.back();
-        rendering_ = new PEMethod(hasSEH_, (entryPoint_ ? PEMethod::EntryPoint : 0) | (invokeMode_ == CIL ? PEMethod::CIL : 0),
+        rendering_ = new PEMethod(hasSEH_, (entryPoint_ ? PEMethod::EntryPoint : 0) | (invokeMode_ == CIL && !(flags_.Flags() & Qualifiers::Runtime) ? PEMethod::CIL : 0),
                                   peLib.PEOut().NextTableIndex(tMethodDef), maxStack_, varList_.size(),
                                   last ? last->Offset() + last->InstructionSize() : 0,
                                   methodSignature ? methodSignature | (tStandaloneSig << 24) : 0);
@@ -279,6 +283,8 @@ bool Method::PEDump(PELib& peLib)
         int MFlags = 0;
         if (flags_.Flags() & Qualifiers::CIL)
             implFlags |= MethodDefTableEntry::IL;
+        else if (flags_.Flags() & Qualifiers::Runtime)
+            implFlags |= MethodDefTableEntry::Runtime;
         if (flags_.Flags() & Qualifiers::Managed)
             implFlags |= MethodDefTableEntry::Managed;
         if (flags_.Flags() & Qualifiers::PreserveSig)
@@ -287,6 +293,10 @@ bool Method::PEDump(PELib& peLib)
             MFlags |= MethodDefTableEntry::Public;
         else if (flags_.Flags() & Qualifiers::Private)
             MFlags |= MethodDefTableEntry::Private;
+        if (flags_.Flags() & Qualifiers::Virtual)
+            MFlags |= MethodDefTableEntry::Virtual;
+        if (flags_.Flags() & Qualifiers::NewSlot)
+            MFlags |= MethodDefTableEntry::NewSlot;
         if (flags_.Flags() & Qualifiers::Static)
             MFlags |= MethodDefTableEntry::Static;
         if (flags_.Flags() & Qualifiers::SpecialName)

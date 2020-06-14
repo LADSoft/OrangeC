@@ -472,7 +472,7 @@ void PEWriter::CalculateObjects(PELib& peLib)
         }
         else
         {
-            method->rva_ = lastRVA;
+            method->rva_ = 0;
         }
     }
     if (currentRVA % 4)

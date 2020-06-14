@@ -43,10 +43,10 @@ const char* Qualifiers::qualifierNames_[] = {"public",
                                              "rtspecialname",
                                              "cil",
                                              "managed",
+                                             "runtime",
                                              "",
-                                             "",
-                                             "",
-                                             "",
+                                             "virtual",
+                                             "newslot",
                                              "",
                                              "",
                                              "",
@@ -57,7 +57,7 @@ const char* Qualifiers::qualifierNames_[] = {"public",
                                              "",
                                              "",
                                              ""};
-int Qualifiers::afterFlags_ = Qualifiers::PreserveSig | Qualifiers::CIL | Qualifiers::Managed;
+int Qualifiers::afterFlags_ = Qualifiers::PreserveSig | Qualifiers::CIL | Qualifiers::Managed | Qualifiers::Runtime;
 void Qualifiers::ILSrcDumpBeforeFlags(PELib& peLib) const
 {
     int n = ~afterFlags_ & flags_;

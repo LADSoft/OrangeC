@@ -248,7 +248,10 @@ namespace DotNetPELib
             SpecialName = 0x4000,
             RTSpecialName = 0x8000,
             CIL = 0x10000,
-            Managed = 0x20000
+            Managed = 0x20000,
+            Runtime = 0x40000,
+            Virtual = 0x100000, // sealed
+            NewSlot = 0x200000 // value
         };
         enum
         {
@@ -1208,7 +1211,7 @@ namespace DotNetPELib
     class MethodSignature : public DestructorBase
     {
     public:
-        enum { Vararg = 1, Managed = 2, InstanceFlag = 4, VirtualFlag = 8 };
+        enum { Vararg = 1, Managed = 2, InstanceFlag = 4 };
         MethodSignature(const std::string& Name, int Flags, DataContainer *Container) : container_(Container), name_(Name), flags_(Flags), returnType_(nullptr), ref_(false), 
                 peIndex_(0), peIndexCallSite_(0), peIndexType_(0), methodParent_(nullptr), arrayObject_(nullptr), external_(false), definitions_(0), genericParent_(nullptr), genericParamCount_(0)
         {
@@ -1279,15 +1282,6 @@ namespace DotNetPELib
         bool Instance() const { return !!(flags_ & InstanceFlag); }
 
         // make it virtual
-        void Virtual(bool virt) {
-            if (virt)
-            {
-                flags_ |= VirtualFlag;
-            }
-            else
-                flags_ &= ~VirtualFlag;
-        }
-        bool Virtual() const { return !!(flags_ & VirtualFlag); }
         ///** make it a vararg signature
         void SetVarargFlag() { flags_ |= Vararg; }
 

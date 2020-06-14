@@ -40,7 +40,6 @@
 #include "using.h"
 #include "invoke.h"
 #include "memory.h"
-#include "Action.h"
 
 // must match the definition in c.h
 enum e_lexType
@@ -349,15 +348,7 @@ MethodSignature* GetMethodSignature(Optimizer::SimpleType* tp, bool pinvoke)
             }
             break;
         }
-        Type * type;
-        if (Optimizer::actionforfuncptr && sym->tp->type == Optimizer::st_pointer)
-        {
-            type = intPtr;
-        }
-        else
-        {
-            type = GetType(sym->tp, true, true, pinvoke);
-        }
+        Type * type = GetType(sym->tp, true, true, pinvoke);
         rv->AddParam(peLib->AllocateParam(sym->name, type));
         hr = hr->next;
     }
@@ -736,15 +727,7 @@ Type* GetType(Optimizer::SimpleType* tp, bool commit, bool funcarg, bool pinvoke
     }
     else if (tp->type == Optimizer::st_pointer && tp->btp->type == Optimizer::st_func)
     {
-        Type *type;
-        if (Optimizer::actionforfuncptr)
-        {
-            type = LookupActionType(tp->btp);
-        }
-        else 
-        {
-            type =  peLib->AllocateType(Type::Void, 1);  // pointer to void
-        }
+        Type *type =  peLib->AllocateType(Type::Void, 1);  // pointer to void
         type->Pinned(pinned);
         return type;
     }
@@ -1949,7 +1932,7 @@ static void AddRTLThunks()
             }
             if (mainSym->Signature()->ParamCount() < 2)
             {
-                param = peLib->AllocateParam("argv", Optimizer::actionforfuncptr ? peLib->AllocateType(Type::inative, 0): peLib->AllocateType(Type::Void, 1));
+                param = peLib->AllocateParam("argv", peLib->AllocateType(Type::Void, 1));
                 mainSym->Signature()->AddParam(param);
             }
         }

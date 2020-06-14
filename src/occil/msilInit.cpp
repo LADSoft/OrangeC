@@ -65,6 +65,10 @@ MethodSignature* concatObj;
 MethodSignature* toStr;
 MethodSignature* toInt;
 MethodSignature* toVoidStar;
+MethodSignature* delegateInvoker;
+MethodSignature* delegateAllocator;
+MethodSignature* delegateFreer;
+Class* multicastDelegate;
 
 Type* systemObject;
 Type* intPtr;
@@ -186,6 +190,17 @@ static void CreateExternalCSharpReferences()
     ptrUnbox = FindMethodSignature("lsmsilcrtl.pointer::unbox");
     intPtr = peLib->AllocateType(Type::inative, 0);
 
+    if (Optimizer::delegateforfuncptr)
+    {
+        delegateInvoker = peLib->AllocateMethodSignature("__OCCMSIL_Redirect",MethodSignature::Vararg, nullptr);
+        delegateInvoker->ReturnType(peLib->AllocateType(Type::Void, 1));
+        delegateInvoker->AddParam(peLib->AllocateParam("func", peLib->AllocateType(Type::Void, 1)));
+        delegateInvoker->AddParam(peLib->AllocateParam("func", peLib->AllocateType(Type::i32, 0)));
+        peLib->AddPInvokeReference(delegateInvoker,"occmsil.dll", true);
+        delegateAllocator = FindMethodSignature("lsmsilcrtl.MethodPtr::Allocate");
+        delegateFreer = FindMethodSignature("lsmsilcrtl.MethodPtr::Free");
+	    multicastDelegate = static_cast<Class*>(FindType("System.MulticastDelegate", true)->GetClass());
+    }
     Type* voidStar = peLib->AllocateType(Type::Void, 1);
     std::vector<Type* > params = {voidStar}; 
     toInt = FindMethodSignature("System.IntPtr.op_Explicit", params);

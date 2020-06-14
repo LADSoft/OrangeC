@@ -24,7 +24,6 @@
  */
 namespace occmsil
 {
-    Type* LookupActionType(Optimizer::SimpleType* type);
-    Operand* LookupActionCtor(Optimizer::SimpleType* type);
-    Operand* LookupActionInvoker(Optimizer::SimpleType* type);
+    Operand* GetDelegateAllocator(Optimizer::SimpleType* tp, Operand*& ctor);
+    Operand* GetDelegateInvoker(Optimizer::SimpleSymbol* sp);
 }  // namespace occmsil

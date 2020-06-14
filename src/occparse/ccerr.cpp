@@ -576,8 +576,6 @@ static struct
     {"Attribute '%s' does not exist", ERROR},
     {"Attribute '%s' does not exist in attribute namespace '%s'", ERROR},
     {"static function '%s' is declared but never defined", TRIVIALWARNING},
-    {"Array of function pointers not supported when generating System.Action references", ERROR},
-    {"Passing a function pointer to native function '%s' not supported when generating System.Action references", ERROR},
 };
 
 static bool ValidateWarning(int num)

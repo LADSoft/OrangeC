@@ -55,7 +55,7 @@ namespace Optimizer
         "/Vx.x.x.x - set assembly version      /!        - No logo\n"
         "--version - show version info\n"
         "\nCodegen parameters: (/C[+][-][params])\n"
-        "  +a   - action for func ptr          +d   - display diagnostics\n"
+        "  +a   - use delegate for func ptr    +d   - display diagnostics\n"
         "  -b   - no BSS                       +f   - generated pinned addresses\n"
         "  -l   - no C source in ASM file      -m   - no leading underscores\n"
         "  +s   - use native string literals   +u   - 'char' type is unsigned\n"
@@ -419,7 +419,7 @@ int parse_msil_codegen(bool v, const char *string)
     else if (string[0] == 's')
         msilstrings = v;
     else if (string[0] == 'a')
-        actionforfuncptr = v;
+        delegateforfuncptr = v;
     else
         return 0;
     return 1;

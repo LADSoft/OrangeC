@@ -518,7 +518,7 @@ bool Importer::EnterMethod(const Method* method)
         {
             SYMBOL* sp = SymAlloc();
             sp->name = litlate((char*)method->Signature()->Name().c_str());
-            if (method->Signature()->Flags() & MethodSignature::VirtualFlag)
+            if (method->Signature()->Flags() & Qualifiers::Virtual)
                 sp->sb->storage_class = sc_virtual;
             else if (!(method->Signature()->Flags() & MethodSignature::InstanceFlag))
                 sp->sb->storage_class = sc_static;

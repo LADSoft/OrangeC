@@ -175,7 +175,7 @@ enum e_stt
 };
 extern bool pinning;
 extern bool msilstrings;
-extern bool actionforfuncptr;
+extern bool delegateforfuncptr;
 extern int gentype; /* Current DC type */
 extern int curseg;  /* Current seg */
 extern int outcol;  /* Curront col (roughly) */

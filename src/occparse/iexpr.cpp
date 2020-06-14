@@ -1672,20 +1672,6 @@ int push_param(EXPRESSION* ep, SYMBOL* funcsp, EXPRESSION* valist, TYPE *argtp, 
                     Optimizer::gen_icode(Optimizer::i_assn, ap, ap3, nullptr);
                 if (ap->size == ISZ_NONE)
                     ap->size = temp;
-                if (Optimizer::actionforfuncptr && ispointer(argtp))
-                {
-                    if (lvalue(exp1))
-                    {
-                        exp1 = exp1->left;
-                    }        
-                    if (exp1->type != en_auto || exp1->v.sp->sb->storage_class != sc_parameter)
-                    {
-                        // convert void star to int
-                        Optimizer::IMODE* temp = Optimizer::tempreg(ISZ_TOINT, 0);
-                        Optimizer::gen_icode(Optimizer::i_assn, temp, ap, nullptr);
-                        ap = temp;
-                    }
-                }
 
                 Optimizer::gen_nodag(Optimizer::i_parm, 0, ap, 0);
                 Optimizer::intermed_tail->valist = valist && valist->type == en_l_p;
@@ -2162,12 +2148,18 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         }
     }
 
-    if (Optimizer::actionforfuncptr)
-    {
-        ap = ap3 = gen_expr(funcsp, f->fcall, 0, ISZ_UINT);
-    }
-
     int cdeclare = stackblockOfs;
+    if (Optimizer::delegateforfuncptr)
+    {
+        Optimizer::IMODE* ap10;
+
+        ap = ap3 = gen_expr(funcsp, f->fcall, 0, ISZ_UINT);
+        if (ap->mode != Optimizer::i_immed)
+        {
+            Optimizer::gen_icode(Optimizer::i_assn, ap10 = Optimizer::tempreg(-ISZ_UINT, 0), Optimizer::make_immed(-ISZ_UINT, adjust), nullptr);
+            Optimizer::gen_icode(Optimizer::i_parm, nullptr, ap10, nullptr);
+        }
+    }
     if (f->sp->sb->attribs.inheritable.linkage == lk_pascal)
     {
         if (isstructured(basetype(f->functp)->btp) || basetype(basetype(f->functp)->btp)->type == bt_memberptr)
@@ -2279,7 +2271,7 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         enum Optimizer::i_ops type = Optimizer::i_gosub;
         if (node->type == en_intcall)
             type = Optimizer::i_int;
-        if (!Optimizer::actionforfuncptr)
+        if (!Optimizer::delegateforfuncptr)
         {
             ap = ap3 = gen_expr(funcsp, f->fcall, 0, ISZ_UINT);
         }

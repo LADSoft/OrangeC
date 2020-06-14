@@ -3117,13 +3117,6 @@ static LEXEME* getArrayType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, enum e_sc st
     TYPE* typein = *tp;
     bool unsized = false;
     bool empty = false;
-    if (Optimizer::actionforfuncptr)
-    {
-        if (isfuncptr(*tp))
-        {
-            error(ERR_MSIL_ARRAY_FUNCTION_PTRS_NOT_SUPPORTED);
-        }
-    }
     lex = getsym(); /* past '[' */
     *tp = PerformDeferredInitialization(*tp, funcsp);
     lex = getPointerQualifiers(lex, quals, true);

@@ -36,11 +36,11 @@
 #include "MsilProcess.h"
 #include "ildata.h"
 #include "msilInit.h"
-#include "MsilProcess.h"
 #include "symfuncs.h"
 #include "OptUtils.h"
 #include "using.h"
-#include "Action.h"
+#include "ioptimizer.h"
+#include "Delegate.h"
 #include "Utils.h"
 #include "gen.h"
 
@@ -674,15 +674,17 @@ void gen_load(Optimizer::IMODE* im, Operand* dest, bool retval)
             }
             else if (typeid(*dest->GetValue()) == typeid(MethodName))
             {
-                if (Optimizer::actionforfuncptr)
+                if (Optimizer::delegateforfuncptr)
                 {
                     gen_code(Instruction::i_ldnull, nullptr);
                 }
                 gen_code(Instruction::i_ldftn, dest);
-                if (Optimizer::actionforfuncptr)
+                if (Optimizer::delegateforfuncptr)
                 {
-                    Operand *operand = LookupActionCtor(im->offset->sp->tp);
-                    gen_code(Instruction::i_newobj, operand);
+                    Operand *ctor;
+                    Operand *operand = GetDelegateAllocator(im->offset->sp->tp, ctor);
+                    gen_code(Instruction::i_newobj, ctor);
+                    gen_code(Instruction::i_call, operand);
                 }
                 increment_stack();
             }
@@ -1153,14 +1155,13 @@ void asm_gosub(Optimizer::QUAD* q) /* normal gosub to an immediate label or thro
     }
     else
     {
-        if (Optimizer::actionforfuncptr)
+        if (Optimizer::delegateforfuncptr)
         {
-            Operand* ap = LookupActionInvoker(q->altsp->tp);
-            gen_code(Instruction::i_callvirt, ap);
-            if (q->altsp->tp->btp->type == Optimizer::st_void)
-            {
-                decrement_stack();
-            }
+            gen_code(Instruction::i_call, GetDelegateInvoker(q->altsp));
+            if (q->altsp->tp->btp->btp->type == Optimizer::st_void)
+                gen_code(Instruction::i_pop, nullptr);
+            else if (q->altsp->tp->btp->btp->type != Optimizer::st_pointer)
+                gen_convert(nullptr, q->dc.left, q->altsp->tp->btp->btp->sizeFromType);
         }
         else
         {
@@ -1481,6 +1482,27 @@ void asm_assn(Optimizer::QUAD* q) /* assignment */
         }
     }
     ap = getOperand(q->ans);
+    if (Optimizer::delegateforfuncptr)
+    {
+        Optimizer::SimpleExpression* en = GetSymRef(q->ans->offset);
+        Optimizer::SimpleSymbol* sp = NULL;
+        if (en && en->type != Optimizer::se_labcon)
+        {
+            sp = en->sp;
+        }
+        else if (q->ans->offset->type == Optimizer::se_tempref)
+        {
+            sp = (Optimizer::SimpleSymbol*)q->ans->offset->right;
+        }
+        if (sp)
+        {
+            if (sp->tp->type == Optimizer::st_pointer && sp->tp->btp->type == Optimizer::st_func)
+            {
+                gen_load(q->ans, ap, q->ans->retval);
+                gen_code(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(delegateFreer)));                
+            }
+        }
+    }
     gen_store(q->ans, ap);
     if (q->ans->retval)
         returnCount++;

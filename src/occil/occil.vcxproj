@@ -33,7 +33,7 @@
     <ClCompile Include="..\occopt\symfuncs.cpp" />
     <ClCompile Include="..\ocpp\Floating.cpp" />
     <ClCompile Include="..\util\winsystem.c" />
-    <ClCompile Include="Action.cpp" />
+    <ClCompile Include="Delegate.cpp" />
     <ClCompile Include="gen.cpp" />
     <ClCompile Include="igen.cpp" />
     <ClCompile Include="invoke.cpp" />
@@ -45,8 +45,8 @@
   <ItemGroup>
     <ClInclude Include="..\occopt\ildata.h" />
     <ClInclude Include="..\occopt\iopt.h" />
-    <ClInclude Include="Action.h" />
     <ClInclude Include="be.h" />
+    <ClInclude Include="Delegate.h" />
     <ClInclude Include="gen.h" />
     <ClInclude Include="igen.h" />
     <ClInclude Include="invoke.h" />

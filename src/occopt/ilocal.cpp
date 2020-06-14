@@ -217,28 +217,6 @@ static void renameOneSym(SimpleSymbol* sym, int structret)
             }
             else
             {
-/*
-                if (Optimizer::actionforfuncptr)
-                {
-                    QUAD* q;
-                    QUAD* bl1 = blockArray[1]->head;
-                    while (bl1->fwd->dc.opcode == i_line || bl1->fwd->dc.opcode == i_label)
-                        bl1 = bl1->fwd;
-                    IMODE* temp = tempreg(ISZ_TOVOIDSTAR, 0);
-                    gen_icode(i_assn, temp, sym->imvalue, nullptr);
-                    MoveLastToPosition(bl1);
-                    bl1 = bl1->fwd;
-                    IMODE*temp1 = (IMODE*)Alloc(sizeof(IMODE));
-                    *temp1 = *temp;
-                    temp1->size = ISZ_ADDR;
-
-                    IMODE* local = localVar(sym->tp);
-                    gen_icode(i_assn, local, temp1, nullptr);
-                    MoveLastToPosition(bl1);
-
-                    sym->imvalue = local;
-                }
-*/
                 parmName = (IMODE*)(IMODE*)Alloc(sizeof(IMODE));
                 *parmName = *sym->imvalue;
             }

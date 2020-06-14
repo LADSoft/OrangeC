@@ -38,8 +38,9 @@
         email: TouchStone222@runbox.com <David Lindauer>
 */
 using System;
-using System.Text;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Text;
 namespace lsmsilcrtl
 {
     public static unsafe class rtl
@@ -121,6 +122,29 @@ namespace lsmsilcrtl
             return ((IntPtr)obj).ToPointer();
         }
     }
+    public static unsafe class MethodPtr
+    {
+        static Dictionary<IntPtr, GCHandle> container = new Dictionary<IntPtr, GCHandle>();
+
+        public static unsafe void* Allocate<T>(T b) where T : System.Delegate
+        {
+            T bb1 = (T)b.Clone();
+
+            GCHandle gch = GCHandle.Alloc(bb1);
+            void *rv = (void*)Marshal.GetFunctionPointerForDelegate<T>(bb1);
+            container.Add((IntPtr)rv, gch);
+            return rv;                            
+        }
+        public static unsafe void Free(void *p)
+        {
+            if (container.ContainsKey((IntPtr)p))
+            {
+                container[(IntPtr)p].Free();
+                container.Remove((IntPtr)p);
+            }
+        }
+    }
+
     public unsafe class args
     {
         public args(Object[] n) { _ptr = n; index = 0; }

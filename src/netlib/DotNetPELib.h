@@ -420,7 +420,7 @@ namespace DotNetPELib
             {
                 item->parent_ = this;
                 children_.push_back(item);
-                sortedChildren_[item->name_] = item;
+                sortedChildren_[item->name_].push_back(item);
             }
         }
         ///** Add a code container
@@ -458,9 +458,9 @@ namespace DotNetPELib
         ///** metatable index in the PE file for this data container
         void PEIndex(size_t index) { peIndex_ = index; }
         ///* find a sub-container
-        DataContainer *FindContainer(const std::string& name) { return sortedChildren_[name]; }
+        DataContainer *FindContainer(const std::string& name, std::deque<Type*>* generics = nullptr);
         ///** Find a sub- container
-        DataContainer *FindContainer(std::vector<std::string>& split, size_t &n);
+        DataContainer *FindContainer(std::vector<std::string>& split, size_t &n, std::deque<Type*>* generics = nullptr, bool method = false);
         const std::list<Field *>&Fields() const { return fields_; }
         const std::list<CodeContainer *>&Methods() const { return methods_; }
         ///** Traverse the declaration tree
@@ -476,10 +476,11 @@ namespace DotNetPELib
         // sometimes we want to traverse upwards in the tree
         void Render(PELib&);
         void BaseTypes(int &types) const;
+        void Clear() { children_.clear(); methods_.clear(); sortedChildren_.clear(); fields_.clear(); }
     protected:
         std::list<DataContainer *> children_;
         std::list<CodeContainer *> methods_;
-        std::map<std::string, DataContainer *> sortedChildren_;
+        std::map<std::string, std::deque<DataContainer *>> sortedChildren_;
         std::list<Field *> fields_;
         DataContainer *parent_;
         Qualifiers flags_;
@@ -708,7 +709,8 @@ namespace DotNetPELib
         void ILSrcDumpClassHeader(PELib &) const;
         virtual void ObjOut(PELib &, int pass) const override;
         static Class *ObjIn(PELib &, bool definition = true);
-        void AdornGenerics(PELib&, bool names=false ) const;
+        std::string AdornGenerics(PELib& peLib, bool names = false) const;
+        bool MatchesGeneric(std::deque<Type*>* generics) const;
     protected:
         int TransferFlags() const;
         int pack_;
@@ -1588,10 +1590,10 @@ namespace DotNetPELib
         bool AddUsing(const std::string& path);
 
         ///** find something, return value tells what type of object was found
-        eFindType Find(std::string path, void **result, AssemblyDef *assembly = nullptr);
+        eFindType Find(std::string path, void **result, std::deque<Type*>* generics = nullptr, AssemblyDef *assembly = nullptr);
 
         ///** find a method, with overload matching
-        eFindType Find(std::string path, Method **result, std::vector<Type *> args, Type* rv = nullptr, AssemblyDef *assembly = nullptr, bool matchArgs = true);
+        eFindType Find(std::string path, Method **result, std::vector<Type *> args, Type* rv = nullptr, std::deque<Type*>* generics = nullptr, AssemblyDef *assembly = nullptr, bool matchArgs = true);
 
         ///** Traverse the declaration tree
         void Traverse(Callback &callback) const;
@@ -1611,6 +1613,7 @@ namespace DotNetPELib
         char ObjEnd(bool next = true);
         char ObjChar();
         void ObjBack() { objInputPos_ -= 3; }
+        void ObjReset() { objInputPos_ = objInputCache_; }
         void ObjError(int);
         std::iostream &Out() const { return *outputStream_; }
         void Out(std::iostream &stream) { outputStream_ = &stream; }
@@ -1621,6 +1624,7 @@ namespace DotNetPELib
         void PopContainer() { containerStack_.pop_back(); }
         void SetCodeContainer(CodeContainer *container) { codeContainer_ = container; }
         CodeContainer *GetCodeContainer() const { return codeContainer_; }
+        Class* FindOrCreateGeneric(std::string name, std::deque<Type*>& generics);
     protected:
         void SplitPath(std::vector<std::string> & split, std::string path);
         bool ILSrcDumpHeader();

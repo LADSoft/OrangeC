@@ -95,7 +95,7 @@ bool Type::ILSrcDump(PELib& peLib) const
         if (name[0] != '[')
         {
             peLib.Out() << "'" << name << "'";
-            static_cast<Class*>(typeRef_)->AdornGenerics(peLib);
+            peLib.Out() << static_cast<Class*>(typeRef_)->AdornGenerics(peLib);
         }
         else
         {
@@ -103,7 +103,7 @@ bool Type::ILSrcDump(PELib& peLib) const
             if (npos != std::string::npos && npos != name.size() - 1)
             {
                 peLib.Out() << name.substr(0, npos + 1) + "'" + name.substr(npos + 1) + "'";
-                static_cast<Class*>(typeRef_)->AdornGenerics(peLib);
+                peLib.Out() << static_cast<Class*>(typeRef_)->AdornGenerics(peLib);
             }
             else
             {
@@ -316,7 +316,7 @@ size_t BoxedType::Render(PELib& peLib, Byte* result)
         size_t name = peLib.PEOut().HashString(typeNames_[tp_]);
         AssemblyDef* assembly = peLib.MSCorLibAssembly();
         void* result = nullptr;
-        peLib.Find(std::string("System.") + typeNames_[tp_], &result, assembly);
+        peLib.Find(std::string("System.") + typeNames_[tp_], &result, nullptr, assembly);
         if (result)
         {
             static_cast<Class*>(result)->PEDump(peLib);

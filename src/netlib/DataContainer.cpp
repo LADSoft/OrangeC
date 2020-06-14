@@ -71,13 +71,36 @@ size_t DataContainer::ParentAssembly(PELib& peLib) const
         static_cast<AssemblyDef*>(current)->PEDump(peLib);
     return current->PEIndex();
 }
-DataContainer* DataContainer::FindContainer(std::vector<std::string>& split, size_t& n)
+DataContainer *DataContainer::FindContainer(const std::string& name, std::deque<Type*>* generics)
+{
+    if (!generics)
+    {
+        if (sortedChildren_[name].size() > 0)
+            return sortedChildren_[name].front();
+    }
+    else
+    {
+        for (auto f : sortedChildren_[name])
+        {
+            if (typeid(*f) == typeid(Class))
+            {
+                if (static_cast<Class*>(f)->MatchesGeneric(generics))
+                    return f;
+            }
+        }
+    }
+    return nullptr;
+}
+DataContainer* DataContainer::FindContainer(std::vector<std::string>& split, size_t& n, std::deque<Type*>* generics, bool method)
 {
     n = 0;
+    int count = 1;
+    if (method)
+        count++;
     DataContainer *current = this, *rv = current;
     for (int i = 0; i < split.size(); i++)
     {
-        current = current->FindContainer(split[i]);
+        current = current->FindContainer(split[i],  i == split.size() - count ? generics : nullptr);
         if (!current)
             break;
         rv = current;

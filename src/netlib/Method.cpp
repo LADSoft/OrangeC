@@ -348,7 +348,7 @@ bool Method::PEDump(PELib& peLib)
                 size_t ctor_index = 0;
                 AssemblyDef* assembly = peLib.MSCorLibAssembly();
                 void* result = nullptr;
-                peLib.Find("System.ParamArrayAttribute::.ctor", &result, assembly);
+                peLib.Find("System.ParamArrayAttribute::.ctor", &result, nullptr, assembly);
                 if (result)
                 {
                     static_cast<Method*>(result)->PEDump(peLib);

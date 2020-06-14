@@ -33,7 +33,7 @@ bool MethodSignature::MatchesType(Type *tpa, Type *tpp)
     {
         return false;
     }
-    else if (tpp->GetBasicType() == Type::mvar)
+    else if (tpp->GetBasicType() == Type::var)
     {
         // nothing to do, it matches...
     }
@@ -123,7 +123,7 @@ bool MethodSignature::ILSrcDump(PELib& peLib, bool names, bool asType, bool PInv
                 else
                     peLib.Out() << "class ";
                 peLib.Out() << Qualifiers::GetName("", container_);
-                static_cast<Class*>(container_)->AdornGenerics(peLib);
+                peLib.Out() << static_cast<Class*>(container_)->AdornGenerics(peLib);
                 peLib.Out() << "::'" << name_ << "'(";
             }
             else
@@ -182,15 +182,26 @@ void MethodSignature::ObjOut(PELib& peLib, int pass) const
             peLib.Out() << std::endl << "$sb" << peLib.FormatName(Qualifiers::GetObjName(name_, container_));
         else
             peLib.Out() << std::endl << "$sb" << peLib.FormatName(name_);
+        if (container_ && typeid(*container_) == typeid(Class) && static_cast<Class*>(container_)->Generic().size())
+        {
+            Class* cls = static_cast<Class*>(container_);
+            peLib.Out() << std::endl << "$gb" << cls->Generic().size();
+            cls->GenericParent()->ObjOut(peLib, pass);
+            for (auto t : cls->Generic())
+            {
+                t->ObjOut(peLib, pass);
+            }
+            peLib.Out() << std::endl << "$ge";
+        }
     }
     else
     {
         // as a definition...
         peLib.Out() << std::endl << "$sb" << peLib.FormatName(name_);
         peLib.Out() << external_ << ",";
-        peLib.Out() << flags_ << ",";
-        peLib.Out() << genericParamCount_ << ",";
     }
+    peLib.Out() << flags_ << ",";
+    peLib.Out() << genericParamCount_ << ",";
     returnType_->ObjOut(peLib, pass);
     for (auto p : params)
     {
@@ -216,6 +227,8 @@ MethodSignature* MethodSignature::ObjIn(PELib& peLib, Method** found, bool defin
     char ch;
     int flags = 0;
     int genericParamCount = 0;
+    Class* genericParent;
+    std::deque<Type*> generics;
     Type* returnType;
     if (definition)
     {
@@ -223,15 +236,33 @@ MethodSignature* MethodSignature::ObjIn(PELib& peLib, Method** found, bool defin
         ch = peLib.ObjChar();
         if (ch != ',')
             peLib.ObjError(oe_syntax);
-        flags = peLib.ObjInt();
-        ch = peLib.ObjChar();
-        if (ch != ',')
-            peLib.ObjError(oe_syntax);
-        genericParamCount = peLib.ObjInt();
-        ch = peLib.ObjChar();
-        if (ch != ',')
-            peLib.ObjError(oe_syntax);
     }
+    else
+    {
+        if (peLib.ObjBegin() == 'g')
+        {
+            int n = peLib.ObjInt();
+            if (peLib.ObjBegin() != 'c')
+                peLib.ObjError(oe_syntax);
+            genericParent = Class::ObjIn(peLib, false);
+            for (int i = 0; i < n; i++)
+                generics.push_back(Type::ObjIn(peLib));
+            if (peLib.ObjEnd() != 'g')
+                peLib.ObjError(oe_syntax);
+        }
+        else
+        {
+            peLib.ObjReset();
+        }
+    }
+    flags = peLib.ObjInt();
+    ch = peLib.ObjChar();
+    if (ch != ',')
+        peLib.ObjError(oe_syntax);
+    genericParamCount = peLib.ObjInt();
+    ch = peLib.ObjChar();
+    if (ch != ',')
+        peLib.ObjError(oe_syntax);
     returnType = Type::ObjIn(peLib);
     std::vector<Param*> args, vargs;
     while (peLib.ObjBegin() == 'p')
@@ -358,8 +389,13 @@ MethodSignature* MethodSignature::ObjIn(PELib& peLib, Method** found, bool defin
     }
     else
     {
+        int n = name.find(':');
+        if (generics.size() && n != std::string::npos)
+        {
+            (void)peLib.FindOrCreateGeneric(name.substr(0, n), generics);
+        }
         Method* m;
-        if (peLib.Find(name, &m, targs) == PELib::s_method)
+        if (peLib.Find(name, &m, targs, nullptr, generics.size() ? &generics : nullptr) == PELib::s_method)
         {
             rv = m->Signature();
             if (found)
@@ -383,7 +419,7 @@ void MethodSignature::ILSignatureDump(PELib& peLib)
         else
             peLib.Out() << "class ";
         peLib.Out() << Qualifiers::GetName("", container_);
-        static_cast<Class*>(container_)->AdornGenerics(peLib);
+        peLib.Out() << static_cast<Class*>(container_)->AdornGenerics(peLib);
         peLib.Out() << "::'" << name_ << "'(";
     }
     else

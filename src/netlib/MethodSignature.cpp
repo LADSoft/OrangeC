@@ -456,7 +456,10 @@ bool MethodSignature::PEDump(PELib& peLib, bool asType)
             container_->PEDump(peLib);
             if (returnType_ && returnType_->GetBasicType() == Type::cls)
             {
-                returnType_->GetClass()->PEDump(peLib);
+                if (returnType_->GetClass()->InAssemblyRef())
+                {
+                    returnType_->GetClass()->PEDump(peLib);
+                }
             }
             for (auto param : params)
             {
@@ -525,7 +528,10 @@ bool MethodSignature::PEDump(PELib& peLib, bool asType)
         size_t parent;
         if (returnType_ && returnType_->GetBasicType() == Type::cls)
         {
-            returnType_->GetClass()->PEDump(peLib);
+            if (returnType_->GetClass()->InAssemblyRef())
+            {
+                returnType_->GetClass()->PEDump(peLib);
+            }
         }
         if (arrayObject_)
         {

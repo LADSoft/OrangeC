@@ -229,7 +229,10 @@ bool Method::PEDump(PELib& peLib)
         TableEntryBase* table;
         if (prototype_->ReturnType() && prototype_->ReturnType()->GetBasicType() == Type::cls)
         {
-            prototype_->ReturnType()->GetClass()->PEDump(peLib);
+            if (prototype_->ReturnType()->GetClass()->InAssemblyRef())
+            {
+                prototype_->ReturnType()->GetClass()->PEDump(peLib);
+            }
         }
         if (prototype_->ParamCount())
         {

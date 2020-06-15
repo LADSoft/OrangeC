@@ -39,7 +39,7 @@
 namespace occmsil
 {
     int funcindex = 1;
-    std::map<Optimizer::SimpleSymbol*, Operand*> funcMap;
+    std::map<Optimizer::SimpleSymbol*, std::pair<Operand*, Operand*>> funcMap;
     static Class* GetDelegateClass(char* name, Optimizer::LIST* syms, Optimizer::SimpleType* returntp, Operand*& ctor)
     {
         Class *cls = peLib->AllocateClass(name, Qualifiers::Private | Qualifiers::Ansi | Qualifiers::Sealed, -1, -1);
@@ -91,7 +91,9 @@ namespace occmsil
     }
     Operand* GetDelegateAllocator(Optimizer::SimpleType* tp, Operand*& ctor)
     {
-        Operand *rv = funcMap[tp->sp];
+        auto pair = funcMap[tp->sp];
+        Operand *rv = pair.first;
+        ctor = pair.second;
         if (!rv)
         {
             char buf[256];
@@ -102,7 +104,7 @@ namespace occmsil
             newsig->GenericParent(delegateAllocator);
             newsig->Generic().push_back(peLib->AllocateType(cls));
             rv = peLib->AllocateOperand(peLib->AllocateMethodName(newsig));
-            funcMap[tp->sp] = rv;
+            funcMap[tp->sp] = std::pair<Operand *, Operand*>(rv, ctor);
         }
         return rv;
     }

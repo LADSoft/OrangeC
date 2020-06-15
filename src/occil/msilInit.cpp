@@ -192,7 +192,7 @@ static void CreateExternalCSharpReferences()
 
     if (Optimizer::delegateforfuncptr)
     {
-        delegateInvoker = peLib->AllocateMethodSignature("__OCCMSIL_Redirect",MethodSignature::Vararg, nullptr);
+        delegateInvoker = peLib->AllocateMethodSignature("__OCCMSIL_Invoke",MethodSignature::Vararg, nullptr);
         delegateInvoker->ReturnType(peLib->AllocateType(Type::Void, 1));
         delegateInvoker->AddParam(peLib->AllocateParam("func", peLib->AllocateType(Type::Void, 1)));
         delegateInvoker->AddParam(peLib->AllocateParam("func", peLib->AllocateType(Type::i32, 0)));

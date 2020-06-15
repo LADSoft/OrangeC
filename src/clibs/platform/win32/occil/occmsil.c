@@ -209,7 +209,7 @@ void *__OCCMSIL_GetProcThunkToUnmanaged(void *proc)
     return NULL;
  }
 __declspec(dllexport) 
-void * __OCCMSIL_Redirect(void *proc, int paramsize, ...)
+void * __OCCMSIL_Invoke(void *proc, int paramsize, ...)
 {
 	asm {
 		mov edx,[esp + 4] // proc

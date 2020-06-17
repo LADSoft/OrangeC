@@ -62,6 +62,6 @@ void msil_oa_put_string_label(int lab, int type);
 void msil_oa_genbyte(int bt);
 void msil_oa_genstring(char* str, int len);
 void msil_oa_enterseg(Optimizer::e_sg segnum);
-void CreateStringFunction(MethodSignature* signature);
+void CreateStringFunction();
 void msil_main_postprocess(bool errors);
 }  // namespace occmsil

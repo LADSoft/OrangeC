@@ -323,12 +323,7 @@ void msil_end_generation(char* fileName)
 #ifndef ISPARSER
         if (Optimizer::pinning)
         {
-            char buf[256];
-            sprintf(buf, "string_init_%x", uniqueId);
-            std::string name = buf;
-            auto signature = peLib->AllocateMethodSignature(name, MethodSignature::Managed, mainContainer);
-            signature->ReturnType(peLib->AllocateType(Type::Void, 0));
-            CreateStringFunction(signature);
+            CreateStringFunction();
         }
 #endif
         Optimizer::cseg();

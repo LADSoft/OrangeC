@@ -2134,7 +2134,7 @@ static void unwrap_desc(AGGREGATE_DESCRIPTOR** descin, AGGREGATE_DESCRIPTOR** ca
                         if (ismember(sym))
                         {
                             (*dest)->fieldsp = sym;
-                            (*dest)->fieldoffs = (*descin)->offset;
+                            (*dest)->fieldoffs = intNode(en_c_i, (*descin)->offset);
                         }
                         dest = &(*dest)->next;
                     }
@@ -3124,7 +3124,18 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
                     if (ismember(fieldsp))
                     {
                         (*next)->fieldsp = fieldsp;
-                        (*next)->fieldoffs = desc->offset;
+                        if (isarray(itype) && Optimizer::architecture == ARCHITECTURE_MSIL)
+                        {
+                            TYPE *btp = itype;
+                            while (isarray(btp))
+                                btp = btp->btp;
+                            int n = desc->offset / btp->size;
+                            (*next)->fieldoffs = exprNode(en_umul, intNode(en_c_i, n), exprNode(en__sizeof, typeNode(btp), nullptr));
+                        }
+                        else
+                        {
+                            (*next)->fieldoffs = intNode(en_c_i, desc->offset);
+                        }
                     }
                 }
             }
@@ -3154,7 +3165,7 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
                                     if (ismember(fieldsp))
                                     {
                                         (*next)->fieldsp = fieldsp;
-                                        (*next)->fieldoffs = desc->offset;
+                                        (*next)->fieldoffs = intNode(en_c_i, desc->offset);
                                     }
                                 }
                             }

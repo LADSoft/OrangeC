@@ -882,6 +882,7 @@ void ReadText(std::map<int, std::string>& texts)
             int len = UnstreamIndex();
             std::string val;
             val.resize(len, 0);
+
             for (auto&& c : val)
                 c = UnstreamByte();
             texts[i] = val;
@@ -891,7 +892,7 @@ void ReadText(std::map<int, std::string>& texts)
 }
 static Optimizer::SimpleSymbol* SymbolName(Optimizer::SimpleSymbol* selection, std::vector<Optimizer::SimpleSymbol*>* table)
 {
-    // symbol index was multiplied by two and the low bit was set
+    // symbol index was multiplied by two and the low bit was setst
     int index = ((int)selection - 1) / 2;
     if (index > 0)
     {
@@ -999,7 +1000,6 @@ static void ResolveExpression(Optimizer::SimpleExpression* exp, std::map<int, st
         {
             ResolveExpression(exp->right, texts);
         }
-        ResolveExpression(exp->altData, texts);
     }
 }
 static void ResolveAssemblyInstruction(OCODE* c, std::map<int, std::string>& texts)

@@ -702,9 +702,17 @@ void gen_load(Optimizer::IMODE* im, Operand* dest, bool retval)
                     bool address =
                         t->GetBasicType() == Type::cls && (t->GetClass()->Flags().Flags() & Qualifiers::Value) && !t->ArrayLevel();
                     if (im->mode == Optimizer::i_immed && (!im->msilObject || address) && !retval)
+                    {
                         gen_code(Instruction::i_ldflda, dest);
+                        if (Optimizer::pinning)
+                        {
+                            gen_code(Instruction::i_conv_u, nullptr);
+                        }
+                    }
                     else
+                    {
                         gen_code(Instruction::i_ldfld, dest);
+                    }
                 }
                 else
                 {

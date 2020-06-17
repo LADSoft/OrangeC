@@ -1459,7 +1459,18 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                             EXPRESSION* right = init->exp;
                             if (!isstructured(btp))
                             {
-                                EXPRESSION* asn = exprNode(en_add, expsym, intNode(en_c_i, init->offset));
+                                EXPRESSION* asn;
+                                if (Optimizer::architecture == ARCHITECTURE_MSIL)
+                                {
+                                    int n = init->offset/btp->size;
+                                    asn = exprNode(en__sizeof, typeNode(btp), nullptr);
+                                    EXPRESSION* exp4 = intNode(en_c_i, n);
+                                    asn = exprNode(en_umul, exp4, asn);
+                                }
+                                else
+                                {
+                                     asn = exprNode(en_add, expsym, intNode(en_c_i, init->offset));
+                                }
                                 deref(init->basetp, &asn);
                                 cast(init->basetp, &right);
                                 right = exprNode(en_assign, asn, right);
@@ -1557,7 +1568,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                 {
                     if (init->fieldoffs)
                     {
-                        exps = exprNode(en_add, exps, intNode(en_c_i, init->fieldoffs));
+                        exps = exprNode(en_add, exps, init->fieldoffs);
                     }
                     exps = exprNode(en_structadd, exps, varNode(en_structelem, init->fieldsp));
                 }

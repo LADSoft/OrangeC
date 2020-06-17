@@ -1395,12 +1395,15 @@ Value* GetStringFieldData(int lab, int type)
 }
 void msil_oa_put_string_label(int lab, int type)
 {
-    msil_oa_enterseg((Optimizer::e_sg)0);
+    if (!Optimizer::msilstrings)
+    {
+        msil_oa_enterseg((Optimizer::e_sg)0);
 
-    Field* field = static_cast<FieldName*>(GetStringFieldData(lab, type))->GetField();
+        Field* field = static_cast<FieldName*>(GetStringFieldData(lab, type))->GetField();
 
-    initializingField = field;
-    dataPos = 0;
+        initializingField = field;
+        dataPos = 0;
+    }
 }
 /*-------------------------------------------------------------------------*/
 // we should only get here for strings...
@@ -1734,44 +1737,48 @@ static void InitializeString(Local*pinned, Local* var, Field *field, Byte* data)
     currentMethod->AddInstruction(
         peLib->AllocateInstruction(Instruction::i_stloc, peLib->AllocateOperand(pinned)));
 }
-void CreateStringFunction(MethodSignature* signature)
+void CreateStringFunction()
 {
-    auto oldCurrent = currentMethod;
-    currentMethod = peLib->AllocateMethod(signature, Qualifiers::ManagedFunc | Qualifiers::Public, false);
-    mainContainer->Add(currentMethod);
-    auto tpv = peLib->AllocateType(Type::i8, 0);
-    tpv->PointerLevel(1);
-    auto var = peLib->AllocateLocal("var", tpv);
-    var->Index(0);
-    currentMethod->AddLocal(var);
-    auto tp = peLib->AllocateType(Type::i8, 0);
-    tp->ByRef(true);
-    tp->Pinned(true);
-    auto pinnedvar = peLib->AllocateLocal("pinned", tp);
-    int count = 1;
-    pinnedvar->Index(count++);
-    currentMethod->AddLocal(pinnedvar);
-    for (auto v : stringInitializers)
-    {
-        InitializeString(pinnedvar, var, v.first, v.second);
-    }
-    currentMethod->AddInstruction(
-        peLib->AllocateInstruction(Instruction::i_ret, nullptr));
-    currentMethod->Optimize(*peLib);
-    currentMethod = oldCurrent;
-}
-static void dumpInitializerCalls(Optimizer::LIST* lst, bool initting)
-{
-    if (Optimizer::pinning && initting)
+    auto it = stringInitializers.begin(); 
+    for (int counter = 0; it != stringInitializers.end(); counter++)
     {
         char buf[256];
-        sprintf(buf, "string_init_%x", uniqueId);
+        sprintf(buf, "string_init_%d_%x", counter, uniqueId);
         std::string name = buf;
         auto signature = peLib->AllocateMethodSignature(name, MethodSignature::Managed, mainContainer);
         signature->ReturnType(peLib->AllocateType(Type::Void, 0));
         currentMethod->AddInstruction(peLib->AllocateInstruction(
             Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(signature))));
-        CreateStringFunction(signature);
+
+        auto oldCurrent = currentMethod;
+        currentMethod = peLib->AllocateMethod(signature, Qualifiers::ManagedFunc | Qualifiers::Public, false);
+        mainContainer->Add(currentMethod);
+        auto tpv = peLib->AllocateType(Type::i8, 0);
+        tpv->PointerLevel(1);
+        auto var = peLib->AllocateLocal("var", tpv);
+        var->Index(0);
+        currentMethod->AddLocal(var);
+        auto tp = peLib->AllocateType(Type::i8, 0);
+        tp->ByRef(true);
+        tp->Pinned(true);
+        auto pinnedvar = peLib->AllocateLocal("pinned", tp);
+        pinnedvar->Index(1);
+        currentMethod->AddLocal(pinnedvar);
+        for (int innerCount =0; innerCount < 100 && it != stringInitializers.end(); innerCount++, ++it)
+        {
+            InitializeString(pinnedvar, var, it->first, it->second);
+        }
+        currentMethod->AddInstruction(
+            peLib->AllocateInstruction(Instruction::i_ret, nullptr));
+        currentMethod->Optimize(*peLib);
+        currentMethod = oldCurrent;
+    }
+}
+static void dumpInitializerCalls(Optimizer::LIST* lst, bool initting)
+{
+    if (Optimizer::pinning && initting)
+    {
+        CreateStringFunction();
     }
     while (lst)
     {

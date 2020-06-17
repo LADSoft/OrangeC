@@ -243,7 +243,7 @@ static std::pair<QUAD*, QUAD*> FindDebugBlock(int begin, int end, std::deque<std
     int spread = INT_MAX;
     for (auto&& block : blocks)
     { 
-        if (block.first->index <= begin && block.second->index >= end)
+        if (block.first->index <= begin && block.second->index >= end-1)
         {
             int spread1 = block.second->index - block.first->index;
             if (spread1 < spread)
@@ -379,7 +379,42 @@ static void InsertFinalThunk(IMODE* managed, QUAD* end)
     InsertInstruction(load, store);
 }
 
-
+static bool Matches(std::deque<QUAD*> &group, QUAD* current)
+{
+    for (auto g : group)
+    {
+        for (int i = current->block->blocknum; i; i = blockArray[i]->idom)
+        {
+            if (i == g->block->blocknum)
+                return true;
+        }
+    }
+    return false;
+}
+static std::deque<std::deque<QUAD*>> Sort(std::deque<QUAD*>& addresses)
+{
+    std::deque<std::deque<QUAD*>> aa;
+    for (auto a : addresses)
+    {
+        bool found = false;
+        for (auto&& b : aa)
+        {
+             found = Matches(b, a);
+             if (found)
+             {
+                 b.push_back(a);
+                 break;
+             }
+        }
+        if (!found)
+        {
+            std::deque<QUAD*> hold;
+            hold.push_back(a);
+            aa.push_back(hold);
+        }
+    }
+    return aa;
+}
 void RewriteForPinning()
 {
     std::map<std::string, std::deque<QUAD*>> addresses, autos;
@@ -388,17 +423,21 @@ void RewriteForPinning()
     {
         std::deque<std::pair<QUAD*, QUAD*>> blocks;
         LoadDebugBlocks(blocks);
-        for (auto a : addresses)
+        for (auto b : addresses)
         {
             // address of a global variable
             QUAD* ins;
-            int begin = FindDominatingInstruction(a.second);
-            int end = FindPostDominatingInstruction(a.second);
-            std::pair<QUAD*, QUAD*> pair = FindDebugBlock(begin, end, blocks);
-            IMODE* managed, *unmanaged;
-            InsertInitialLoad(pair.first, a.second, managed, unmanaged);
-            ReplaceLoads(managed, unmanaged, a.second);
-            InsertFinalThunk(managed, pair.second);
+            std::deque<std::deque<QUAD*>> aa = Sort(b.second);
+            for (auto&& a : aa)
+            {
+                int begin = FindDominatingInstruction(a);
+                int end = FindPostDominatingInstruction(a);
+                std::pair<QUAD*, QUAD*> pair = FindDebugBlock(begin, end, blocks);
+                IMODE* managed, *unmanaged;
+                InsertInitialLoad(pair.first, a, managed, unmanaged);
+                ReplaceLoads(managed, unmanaged, a);
+                InsertFinalThunk(managed, pair.second);
+             }
         }
     }
     if (autos.size())

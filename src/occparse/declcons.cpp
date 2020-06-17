@@ -1570,7 +1570,7 @@ void destructBlock(EXPRESSION** exp, SYMLIST* hr, bool mainDestruct)
                     EXPRESSION* iexp = getThisNode(sp);
                     //                    iexp = exprNode(en_add, iexp, intNode(en_c_i,
                     //                    Optimizer::chosenAssembler->arch->retblocksize));
-                    callDestructor(basetype(sp->tp)->sp, nullptr, &iexp, nullptr, true, false, false);
+                    callDestructor(basetype(sp->tp)->sp, nullptr, &iexp, nullptr, true, false, false, true);
                     optimize_for_constants(&iexp);
                     if (*exp)
                     {
@@ -1825,16 +1825,9 @@ static void virtualBaseThunks(BLOCKDATA* b, SYMBOL* sp, EXPRESSION* thisptr)
         st->select = first;
     }
 }
-static void dovtabThunks(BLOCKDATA* b, SYMBOL* sym, EXPRESSION* thisptr, bool isvirtual)
+static void HandleEntries(EXPRESSION **pos, VTABENTRY* entries, EXPRESSION* thisptr, EXPRESSION* vtabBase, bool isvirtual)
 {
-    VTABENTRY* entries = sym->sb->vtabEntries;
-    EXPRESSION *first = nullptr, **pos = &first;
-    STATEMENT* st;
-    SYMBOL* localsp;
-    localsp = sym->sb->vtabsp;
-    EXPRESSION* vtabBase = varNode(en_global, localsp);
-    if (localsp->sb->attribs.inheritable.linkage2 == lk_import)
-        deref(&stdpointer, &vtabBase);
+    VTABENTRY* children = entries->children;
     while (entries)
     {
         if (!entries->isdead && entries->isvirtual == isvirtual && hasVTab(entries->cls))
@@ -1857,6 +1850,22 @@ static void dovtabThunks(BLOCKDATA* b, SYMBOL* sym, EXPRESSION* thisptr, bool is
         }
         entries = entries->next;
     }
+    if (children)
+    {
+        HandleEntries(pos, children, thisptr, vtabBase, isvirtual);
+    }
+}
+static void dovtabThunks(BLOCKDATA* b, SYMBOL* sym, EXPRESSION* thisptr, bool isvirtual)
+{
+    VTABENTRY* entries = sym->sb->vtabEntries;
+    EXPRESSION *first = nullptr;
+    STATEMENT* st;
+    SYMBOL* localsp;
+    localsp = sym->sb->vtabsp;
+    EXPRESSION* vtabBase = varNode(en_global, localsp);
+    if (localsp->sb->attribs.inheritable.linkage2 == lk_import)
+        deref(&stdpointer, &vtabBase);
+    HandleEntries(&first, entries,thisptr, vtabBase, isvirtual);
     if (first)
     {
         st = stmtNode(nullptr, b, st_expr);
@@ -2729,7 +2738,7 @@ static void genDestructorCall(BLOCKDATA* b, SYMBOL* sp, SYMBOL* against, EXPRESS
     {
         createDestructor(sp);
     }
-    callDestructor(sp, against, &exp, arrayElms, top, true, false);
+    callDestructor(sp, against, &exp, arrayElms, top, true, false, true);
     st = stmtNode(nullptr, b, st_expr);
     optimize_for_constants(&exp);
     st->select = exp;
@@ -2882,7 +2891,7 @@ void makeArrayConsDest(TYPE** tp, EXPRESSION** exp, SYMBOL* cons, SYMBOL* dest, 
         (*exp)->v.func = params;
     }
 }
-void callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* arrayElms, bool top, bool pointer, bool skipAccess)
+void callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* arrayElms, bool top, bool pointer, bool skipAccess, bool novtab)
 {
     SYMBOL* dest;
     SYMBOL* dest1;
@@ -2912,7 +2921,17 @@ void callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* a
     params->ascall = true;
     dest1 = basetype(dest->tp)->syms->table[0]->p;
     if (!dest1 || !dest1->sb->defaulted)
+    {
         dest1 = GetOverloadedFunction(&tp, &params->fcall, dest, params, nullptr, true, false, true, 0);
+        if (!novtab && dest1 && dest1->sb->storage_class == sc_virtual)
+        {
+            auto exp_in = params->thisptr;
+            deref(&stdpointer, &exp_in);
+            exp_in = exprNode(en_add, exp_in, intNode(en_c_i, dest1->sb->vtaboffset));
+            deref(&stdpointer, &exp_in);
+            params->fcall = exp_in;
+        }
+    }
     else
         params->fcall = varNode(en_pc, dest1);
     if (dest1)

@@ -831,7 +831,7 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                         fcb.returnSP = fcb.returnEXP->v.sp;
                                         exp = fcb.returnEXP;
                                         dest = nullptr;
-                                        callDestructor(fcb.returnSP, nullptr, &exp, nullptr, true, false, false);
+                                        callDestructor(fcb.returnSP, nullptr, &exp, nullptr, true, false, false, true);
                                         initInsert(&dest, iteratorType, exp, 0, true);
                                         fcb.returnSP->sb->dest = dest;
 
@@ -839,7 +839,7 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                         fce.returnSP = fcb.returnEXP->v.sp;
                                         exp = fce.returnEXP;
                                         dest = nullptr;
-                                        callDestructor(fce.returnSP, nullptr, &exp, nullptr, true, false, false);
+                                        callDestructor(fce.returnSP, nullptr, &exp, nullptr, true, false, false, true);
                                         initInsert(&dest, iteratorType, exp, 0, true);
                                         fce.returnSP->sb->dest = dest;
                                     }
@@ -929,7 +929,7 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                             fcb.returnSP = fcb.returnEXP->v.sp;
                                             exp = fcb.returnEXP;
                                             dest = nullptr;
-                                            callDestructor(fcb.returnSP, nullptr, &exp, nullptr, true, false, false);
+                                            callDestructor(fcb.returnSP, nullptr, &exp, nullptr, true, false, false, true);
                                             initInsert(&dest, iteratorType, exp, 0, true);
                                             fcb.returnSP->sb->dest = dest;
 
@@ -937,7 +937,7 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                             fce.returnSP = fcb.returnEXP->v.sp;
                                             exp = fce.returnEXP;
                                             dest = nullptr;
-                                            callDestructor(fce.returnSP, nullptr, &exp, nullptr, true, false, false);
+                                            callDestructor(fce.returnSP, nullptr, &exp, nullptr, true, false, false, true);
                                             initInsert(&dest, iteratorType, exp, 0, true);
                                             fce.returnSP->sb->dest = dest;
                                         }
@@ -1094,7 +1094,7 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                 callConstructor(&ctype, &decl, funcparams, false, 0, true, false, true, false, false, false);
                                 st->select = decl;
                                 declDest = declExp;
-                                callDestructor(declSP, nullptr, &declDest, nullptr, true, false, false);
+                                callDestructor(declSP, nullptr, &declDest, nullptr, true, false, false, true);
                             }
                             else if (isarray(selectTP))
                             {
@@ -1139,7 +1139,7 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                     callConstructor(&ctype, &decl, funcparams, false, 0, true, false, true, false, false, false);
                                     st->select = decl;
                                     declDest = declExp;
-                                    callDestructor(declSP, nullptr, &declDest, nullptr, true, false, false);
+                                    callDestructor(declSP, nullptr, &declDest, nullptr, true, false, false, true);
                                 }
                             }
                             else if (!insertOperatorFunc(ovcl_unary_prefix, star, funcsp, &starType, &st->select, nullptr, nullptr,
@@ -1186,7 +1186,7 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                     callConstructor(&ctype, &decl, funcparams, false, 0, true, false, true, false, false, false);
                                     st->select = decl;
                                     declDest = declExp;
-                                    callDestructor(declSP, nullptr, &declDest, nullptr, true, false, false);
+                                    callDestructor(declSP, nullptr, &declDest, nullptr, true, false, false, true);
                                 }
                             }
                         }
@@ -1236,7 +1236,7 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                     st->select->v.func->returnEXP = anonymousVar(sc_auto, ppType);
                                     st->select->v.func->returnSP = st->select->v.func->returnEXP->v.sp;
                                     declDest = st->select->v.func->returnEXP;
-                                    callDestructor(st->select->v.func->returnSP, nullptr, &declDest, nullptr, true, false, false);
+                                    callDestructor(st->select->v.func->returnSP, nullptr, &declDest, nullptr, true, false, false, true);
                                     st = stmtNode(lex, forstmt, st_expr);
                                     st->select = declDest;
                                 }
@@ -2473,7 +2473,7 @@ static LEXEME* statement_expr(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
             {
                 INITIALIZER* init = nullptr;
                 EXPRESSION* exp = select->v.func->returnEXP;
-                callDestructor(basetype(tp)->sp, nullptr, &exp, nullptr, true, false, false);
+                callDestructor(basetype(tp)->sp, nullptr, &exp, nullptr, true, false, false, true);
                 initInsert(&init, sym->tp, exp, 0, false);
                 sym->sb->dest = init;
             }

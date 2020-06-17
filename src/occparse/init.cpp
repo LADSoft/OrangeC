@@ -2898,13 +2898,13 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
             exp = baseexp;
             if (sc != sc_auto && sc != sc_parameter && sc != sc_member && sc != sc_mutable && !arrayMember)
             {
-                callDestructor(basetype(itype)->sp, nullptr, &exp, nullptr, true, false, false);
+                callDestructor(basetype(itype)->sp, nullptr, &exp, nullptr, true, false, false, true);
                 initInsert(&it, itype, exp, offset, true);
                 insertDynamicDestructor(base, it);
             }
             else if (dest)
             {
-                callDestructor(basetype(itype)->sp, nullptr, &exp, nullptr, true, false, false);
+                callDestructor(basetype(itype)->sp, nullptr, &exp, nullptr, true, false, false, true);
                 initInsert(&it, itype, exp, offset, true);
                 *dest = it;
             }
@@ -3302,14 +3302,14 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
                 }
                 if (sc != sc_auto && sc != sc_parameter && sc != sc_member && sc != sc_mutable)
                 {
-                    callDestructor(btp->sp, nullptr, &exp, sz, true, false, false);
+                    callDestructor(btp->sp, nullptr, &exp, sz, true, false, false, true);
                     initInsert(push, tn, exp, last, false);
                     insertDynamicDestructor(base, first);
                     *dest = nullptr;
                 }
                 else if (dest)
                 {
-                    callDestructor(btp->sp, nullptr, &exp, sz, true, false, false);
+                    callDestructor(btp->sp, nullptr, &exp, sz, true, false, false, true);
                     initInsert(push, tn, exp, last, false);
                     *dest = first;
                 }
@@ -3411,13 +3411,13 @@ static LEXEME* initialize_auto(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_s
             if (sym->sb->storage_class != sc_auto && sym->sb->storage_class != sc_parameter &&
                 sym->sb->storage_class != sc_member && sym->sb->storage_class != sc_mutable)
             {
-                callDestructor(sym, nullptr, &expl, nullptr, true, false, false);
+                callDestructor(sym, nullptr, &expl, nullptr, true, false, false, true);
                 initInsert(&dest, sym->tp, expl, offset, true);
                 insertDynamicDestructor(sym, dest);
             }
             else if (dest)
             {
-                callDestructor(sym, nullptr, &expl, nullptr, true, false, false);
+                callDestructor(sym, nullptr, &expl, nullptr, true, false, false, true);
                 initInsert(&dest, sym->tp, expl, offset, true);
                 sym->sb->dest = dest;
             }
@@ -4213,7 +4213,7 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_c
                     sym->sb->init = it;
                 }
                 exp = baseexp;
-                callDestructor(z->sp, nullptr, &exp, sz, true, false, false);
+                callDestructor(z->sp, nullptr, &exp, sz, true, false, false, true);
                 initInsert(&init, z, exp, 0, true);
                 if (storage_class_in != sc_auto && storage_class_in != sc_parameter && storage_class_in != sc_member &&
                     storage_class_in != sc_mutable)

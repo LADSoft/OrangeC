@@ -1156,7 +1156,7 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
             SYMBOL* sp2 = search(overloadNameTab[CI_DESTRUCTOR], (basetype(*tp)->sp)->tp->syms);
             if (sp2)
             {
-                callDestructor(basetype(*tp)->sp, nullptr, exp, nullptr, true, false, false);
+                callDestructor(basetype(*tp)->sp, nullptr, exp, nullptr, true, false, false, !points);
             }
             if (needkw(&lex, openpa))
                 needkw(&lex, closepa);
@@ -2535,7 +2535,7 @@ void CreateInitializerList(TYPE* initializerListTemplate, TYPE* initializerListT
         {
             EXPRESSION* exp = data;
             EXPRESSION* elms = intNode(en_c_i, count);
-            callDestructor(initializerListType->sp, nullptr, &exp, elms, true, false, false);
+            callDestructor(initializerListType->sp, nullptr, &exp, elms, true, false, false, true);
             initInsert(&data->v.sp->sb->dest, tp, exp, 0, false);
         }
         for (i = 0; i < count; i++, lptr = &(*lptr)->next)
@@ -2772,7 +2772,7 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                         }
                         else
                         {
-                            callDestructor(stype->sp, nullptr, &dexp, nullptr, true, false, false);
+                            callDestructor(stype->sp, nullptr, &dexp, nullptr, true, false, false, true);
                             if (dexp)
                                 p->dest = dexp;
                         }
@@ -3785,7 +3785,7 @@ LEXEME* expression_arguments(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION*
                             exp_in->v.t.tp = funcparams->returnSP->tp;
 
                             expx = funcparams->returnEXP;
-                            callDestructor(basetype(funcparams->returnSP->tp)->sp, nullptr, &expx, nullptr, true, false, true);
+                            callDestructor(basetype(funcparams->returnSP->tp)->sp, nullptr, &expx, nullptr, true, false, true, true);
                             initInsert(&funcparams->returnSP->sb->dest, funcparams->returnSP->tp, expx, 0, true);
                         }
                     }
@@ -7785,7 +7785,7 @@ LEXEME* expression_assign(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
             if (asndest)
             {
                 SYMBOL* sym = anonymousVar(sc_auto, tp1)->v.sp;
-                callDestructor(sym, nullptr, &asndest, nullptr, true, false, false);
+                callDestructor(sym, nullptr, &asndest, nullptr, true, false, false, true);
                 initInsert(&sym->sb->dest, tp1, asndest, 0, true);
             }
 

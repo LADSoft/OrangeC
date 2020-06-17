@@ -1,5 +1,13 @@
 Release notes:
 
+version 6.0.46:
+    occ: fix assembly language jmp [eax] to not truncate the register to word size
+    occ: fix bug in sign extension of negated unsigned short
+    occil: various improvements to allow generated code to be decompiled
+    occil: add runtime support for function pointer via delegate
+    netlib: add support for generic classes and functions
+    netlib: add support for pinning
+    netlib: various small improvements
 version 6.0.45:
     occ:   functions ending in a function call for a function tagged as 'noreturn' will not generate a 'needs return value' warning.
     occ:   fix bug where destructs called after an if statement could be called at the wrong time.

@@ -4239,6 +4239,14 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_c
             }
         }
     }
+    if (Optimizer::initializeScalars && !sym->sb->init && (isarithmetic(sym->tp) || ispointer(sym->tp)) && sym->sb->storage_class != sc_typedef&& sym->sb->storage_class != sc_member && sym->sb->storage_class != sc_mutable)
+    {
+        EXPRESSION* exp = intNode(en_c_i, 0);
+        cast(sym->tp, &exp);
+        optimize_for_constants(&exp);
+        initInsert(&sym->sb->init, sym->tp, exp, 0, false);
+        sym->sb->assigned = true;
+    }
     if (isautotype(sym->tp) && !MATCHKW(lex, colon))
     {
         errorsym(ERR_AUTO_NEEDS_INITIALIZATION, sym);

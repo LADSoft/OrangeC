@@ -587,6 +587,7 @@ static void StreamXParams()
         StreamIndex(pinning);
         StreamIndex(msilstrings);
         StreamIndex(delegateforfuncptr);
+        StreamIndex(initializeScalars);
         StreamIndex(registersAssigned);
         StreamString(prm_assemblerSpecifier);
         StreamString(prm_libPath);

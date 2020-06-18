@@ -57,8 +57,9 @@ namespace Optimizer
         "\nCodegen parameters: (/C[+][-][params])\n"
         "  +a   - use delegate for func ptr    +d   - display diagnostics\n"
         "  -b   - no BSS                       +f   - generated pinned addresses\n"
-        "  -l   - no C source in ASM file      -m   - no leading underscores\n"
-        "  +s   - use native string literals   +u   - 'char' type is unsigned\n"
+        "  +I   - initialize scalars           -l   - no C source in ASM file\n"
+        "  -m   - no leading underscores       +s   - use native string literals\n"
+        "  +u   - 'char' type is unsigned\n"
     "\nWarning Control:\n"
     " /w      - display no warnings         /wx or /werror - display warnings as errors\n"
     " /woxxx  - only display warning once   /wexxx         - display warning xxx as error\n"
@@ -420,6 +421,8 @@ int parse_msil_codegen(bool v, const char *string)
         msilstrings = v;
     else if (string[0] == 'a')
         delegateforfuncptr = v;
+    else if (string[0] == 'I')
+        initializeScalars = v;
     else
         return 0;
     return 1;

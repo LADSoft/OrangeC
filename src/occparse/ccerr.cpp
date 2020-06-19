@@ -1693,7 +1693,7 @@ void findUnusedStatics(NAMESPACEVALUELIST* nameSpace)
                         while (hr1)
                         {
                             SYMBOL* sp1 = (SYMBOL*)hr1->p;
-                            if (sp1->sb->isInline && !sp1->sb->inlineFunc.stmt && !sp1->sb->templateLevel)
+                            if (sp1->sb->isInline && !sp1->sb->inlineFunc.stmt && !sp1->sb->deferredCompile && !sp1->sb->templateLevel)
                             {
                                 errorsym(ERR_UNDEFINED_IDENTIFIER, sp1);
                             }

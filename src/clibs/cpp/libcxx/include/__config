@@ -234,7 +234,7 @@
 # ifdef _LIBCPP_MSVC
 #  define _LIBCPP_INLINE_VISIBILITY __forceinline
 # elif defined(__ORANGEC__)
-#  define _LIBCPP_INLINE_VISIBILITY
+#  define _LIBCPP_INLINE_VISIBILITY inline
 # else // MinGW GCC and Clang
 #  define _LIBCPP_INLINE_VISIBILITY __attribute__ ((__always_inline__))
 # endif

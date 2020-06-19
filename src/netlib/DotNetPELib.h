@@ -574,6 +574,8 @@ namespace DotNetPELib
         int major_, minor_, build_, revision_;
         bool loaded_;
         CustomAttributeContainer customAttributes_;
+        std::map<std::string, Namespace *> namespaceCache;
+        std::map<std::string, Class *> classCache;
     };
     ///** a namespace
     class Namespace : public DataContainer

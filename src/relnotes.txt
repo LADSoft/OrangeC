@@ -3,6 +3,8 @@ Release notes:
 version 6.0.46:
     occ: fix assembly language jmp [eax] to not truncate the register to word size
     occ: fix bug in sign extension of negated unsigned short
+    occ: fix bug with not calling virtual destructors properly
+    occ: fix bug with *(double*)aa = value sometimes not working properly, where 'aa' is a long long
     occil: various improvements to allow generated code to be decompiled
     occil: add runtime support for function pointer via delegate
     netlib: add support for generic classes and functions

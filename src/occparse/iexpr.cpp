@@ -59,6 +59,7 @@
 #include "iexpr.h"
 #include "ioptimizer.h"
 #include "using.h"
+#include "template.h"
 
 namespace Parser
 {
@@ -412,8 +413,22 @@ Optimizer::IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
         default:
             siz1 = ISZ_UINT;
     }
+    EXPRESSION *esym = GetSymRef(node->left);
+    if (esym && !isstructured(esym->v.sp->tp) && siz1 != sizeFromType(esym->v.sp->tp))
+    {
+        // natural size of the symbol isn't the same as the size we are saving/loading
+        // we can't do the simple dereference here
+        ap1 = gen_expr(funcsp, node->left, 0, ISZ_ADDR);
+        ap2 = Optimizer::LookupLoadTemp(nullptr, ap1);
+        if (ap2 != ap1)
+        {
+            Optimizer::gen_icode(Optimizer::i_assn, ap2, ap1, nullptr);
+            ap1 = ap2;
+        }
+        ap1 = Optimizer::indnode(ap1, siz1);
+    }
     /* deref for add nodes */
-    if ((Optimizer::architecture == ARCHITECTURE_MSIL) &&
+    else if ((Optimizer::architecture == ARCHITECTURE_MSIL) &&
         (node->left->type == en_bits || (node->left->type == en_structadd && node->left->right->type == en_structelem)))
     {
         // prepare for the MSIL ldfld instruction

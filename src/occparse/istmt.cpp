@@ -137,11 +137,14 @@ Optimizer::IMODE* set_symbol(const char* name, int isproc)
         sym = SymAlloc();
         sym->sb->storage_class = sc_external;
         sym->name = sym->sb->decoratedName = litlate(name);
-        Optimizer::SymbolManager::Get(sym);
         sym->tp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
         sym->tp->type = isproc ? bt_func : bt_int;
         sym->sb->safefunc = true;
         insert(sym, globalNameSpace->valueData->syms);
+        auto osym = Optimizer::SymbolManager::Get(sym);
+        osym->genreffed = true;
+        Optimizer::externalSet.insert(osym);
+        Optimizer::externals.push_back(osym);
     }
     else
     {

@@ -4241,8 +4241,6 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_c
     }
     if (Optimizer::initializeScalars && !sym->sb->anonymous && !sym->sb->init && (isarithmetic(sym->tp) || (ispointer(sym->tp) && !isarray(sym->tp))) && sym->sb->storage_class == sc_auto)
     {
-        if (strstr(sym->name, "anon"))
-            printf("hi");
         EXPRESSION* exp = intNode(en_c_i, 0);
         cast(sym->tp, &exp);
         optimize_for_constants(&exp);

@@ -414,7 +414,7 @@ Optimizer::IMODE* gen_deref(EXPRESSION* node, SYMBOL* funcsp, int flags)
             siz1 = ISZ_UINT;
     }
     EXPRESSION *esym = GetSymRef(node->left);
-    if (esym && !isstructured(esym->v.sp->tp) && siz1 != sizeFromType(esym->v.sp->tp))
+    if (Optimizer::architecture != ARCHITECTURE_MSIL && esym && esym->type != en_labcon && !isstructured(esym->v.sp->tp) && siz1 != sizeFromType(esym->v.sp->tp))
     {
         // natural size of the symbol isn't the same as the size we are saving/loading
         // we can't do the simple dereference here

@@ -2205,13 +2205,20 @@ static LEXEME* TemplateArg(LEXEME* lex, SYMBOL* funcsp, TEMPLATEPARAMLIST* arg, 
             lex = getBasicType(lex, funcsp, &tp, nullptr, false, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3,
                                ac_public, &notype, &defd, nullptr, nullptr, false, true);
             lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3, nullptr);
+            // get type qualifiers
+            if (!ISID(lex) && !MATCHKW(lex, ellipse))
+            {
+                lex = getBeforeType(lex, funcsp, &tp, &sp, nullptr, nullptr, false, sc_cast, &linkage, &linkage2, &linkage3, false,
+                    false, true, false); /* fixme at file scope init */
+            }
             if (MATCHKW(lex, ellipse))
             {
                 arg->p->packed = true;
                 lex = getsym();
             }
+            // get the name
             lex = getBeforeType(lex, funcsp, &tp, &sp, nullptr, nullptr, false, sc_cast, &linkage, &linkage2, &linkage3, false,
-                                false, false, false); /* fixme at file scope init */
+                false, false, false); /* fixme at file scope init */
             sizeQualifiers(tp);
             if (!tp || notype)
             {
@@ -3339,6 +3346,7 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                     if (sp)
                         sp = TemplateClassInstantiateInternal(sp, current, false);
                     current = tp->sp->sb->templateSelector->next->templateParams;
+                    int max = count;
                     count = 0;
                     while (current)
                     {
@@ -3346,7 +3354,7 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                             current = current->p->byPack.pack;
                         if (current)
                         {
-                            current->p->byClass.dflt = defaults[count++];
+                            current->p->byClass.dflt = count >= max ? nullptr : defaults[count++];
                             current = current->next;
                         }
                     }
@@ -8055,13 +8063,19 @@ static SYMBOL* FindTemplateSelector(TEMPLATESELECTOR* tso)
             {
                 if (current->p->type == kw_typename)
                 {
-                    current->p->byClass.dflt = types.front();
-                    types.pop_front();
+                    if (types.size())
+                    {
+                        current->p->byClass.dflt = types.front();
+                        types.pop_front();
+                    }
                 }
                 else if (current->p->type == kw_int)
                 {
-                    current->p->byNonType.dflt = expressions.front();
-                    expressions.pop_front();
+                    if (expressions.size())
+                    {
+                        current->p->byNonType.dflt = expressions.front();
+                        expressions.pop_front();
+                    }
                 }
                 current = current->next;
             }
@@ -8328,7 +8342,7 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
     SYMBOL *found1 = nullptr, *found2 = nullptr;
     SYMBOL **spList, **origList;
     TEMPLATEPARAMLIST* search = args;
-    int count;
+    int count = 0;
     SYMLIST* l;
 
     noErr |= matchOverloadLevel;
@@ -8549,7 +8563,15 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
             *found1->templateParams->p = *sym->templateParams->p;
             if (args)
             {
+                auto next = sym->templateParams->next;
                 found1->templateParams->next = args;
+                while (args->next && next)
+                {
+                    next = next->next;
+                    args = args->next;
+                }
+                if (next && next->next && next->next->p->byClass.txtdflt)
+                    args->next = next->next;
                 copySyms(found1, sym);
             }
             else

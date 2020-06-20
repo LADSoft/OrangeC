@@ -3470,7 +3470,14 @@ LEXEME* initType(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_sc sc, INITIALI
         {
             tp = basetype(ts->tp)->templateParam->p->byClass.val;
             if (!tp)
-                return nullptr;
+            {
+                if (templateNestingCount)
+                {
+                    lex = getsym();
+                    errskim(&lex, skim_closepa);
+                }
+                return lex;
+            }
             sym = tp->sp;
         }
         else if (basetype(ts->tp)->templateParam->p->type == kw_delete)

@@ -557,248 +557,256 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                     *exp = varNode(en_templateparam, sym);
                 }
             }
-            else
+            else if (sym->sb)
+            {
                 switch (sym->sb->storage_class)
                 {
-                    case sc_mutable:
-                        if (ismutable)
-                            *ismutable = true;
-                    case sc_member:
-                        /*
-                        if (flags & _F_SIZEOF)
+                case sc_mutable:
+                    if (ismutable)
+                        *ismutable = true;
+                case sc_member:
+                    /*
+                    if (flags & _F_SIZEOF)
+                    {
+                        *exp = intNode(en_c_i, 0);
+                    }
+                    else
+                    */
+                    if (Optimizer::cparams.prm_cplusplus && (flags & _F_AMPERSAND) && strSym)
+                    {
+                        *exp = getMemberPtr(sym, strSym, tp, funcsp);
+                    }
+                    else
+                    {
+                        *exp = getMemberNode(sym, strSym, tp, funcsp);
+                    }
+                    break;
+                case sc_type:
+                case sc_typedef:
+                    lex = prevsym(placeholder);
+                    *tp = nullptr;
+                    lex = expression_func_type_cast(lex, funcsp, tp, exp, flags);
+                    if (!*exp)
+                        *exp = intNode(en_c_i, 0);
+                    return lex;
+                case sc_overloads:
+                    hr = basetype(sym->tp)->syms->table[0];
+                    funcparams = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
+                    if (Optimizer::cparams.prm_cplusplus && MATCHKW(lex, lt))
+                    {
+                        lex = GetTemplateArguments(lex, funcsp, sym, &funcparams->templateParams);
+                        funcparams->astemplate = true;
+                    }
+                    if (hr->next || Optimizer::cparams.prm_cplusplus)
+                    {
+                        funcparams->ascall = MATCHKW(lex, openpa);
+                        funcparams->sp = sym;
+                    }
+                    else
+                    {
+                        // we only get here for C language, sadly we have to do
+                        // argument based lookup in C++...
+                        funcparams->sp = hr->p;
+                        funcparams->sp->sb->attribs.inheritable.used = true;
+                        funcparams->fcall = varNode(en_pc, funcparams->sp);
+                        if (!MATCHKW(lex, openpa))
+                            funcparams->sp->sb->dumpInlineToFile = funcparams->sp->sb->isInline;
+                    }
+                    funcparams->functp = funcparams->sp->tp;
+                    *tp = funcparams->sp->tp;
+                    funcparams->asaddress = !!(flags & _F_AMPERSAND);
+                    if (Optimizer::cparams.prm_cplusplus && ismember(basetype(*tp)->sp) && !MATCHKW(lex, openpa))
+                    {
+                        EXPRESSION* exp1 = (EXPRESSION*)Alloc(sizeof(EXPRESSION));
+                        exp1->type = en_memberptr;
+                        exp1->left = *exp;
+                        exp1->v.sp = funcparams->sp;
+                        *exp = exp1;
+                        getMemberPtr(sym, strSym, tp, funcsp);
+                    }
+                    else
+                    {
+                        *exp = varNode(en_func, nullptr);
+                        (*exp)->v.func = funcparams;
+                    }
+                    break;
+                case sc_catchvar:
+                    makeXCTab(funcsp);
+                    *exp = varNode(en_auto, funcsp->sb->xc->xctab);
+                    *exp = exprNode(en_add, *exp, intNode(en_c_i, XCTAB_INSTANCE_OFS));
+                    deref(&stdpointer, exp);
+                    break;
+                case sc_enumconstant:
+                    *exp = intNode(en_c_i, sym->sb->value.i);
+                    break;
+                case sc_constant:
+                    *exp = varNode(en_const, sym);
+                    break;
+                case sc_auto:
+                case sc_register: /* register variables are treated as
+                                   * auto variables in this compiler
+                                   * of course the usage restraints of the
+                                   * register keyword are enforced elsewhere
+                                   */
+                    *exp = varNode(en_auto, sym);
+                    sym->sb->anyTry |= tryLevel != 0;
+                    break;
+                case sc_parameter:
+                    //                   tagNonConst(funcsp, sym->tp);
+                    if (sym->packed)
+                    {
+                        if (!(flags & _F_PACKABLE))
+                            error(ERR_PACK_SPECIFIER_MUST_BE_USED_IN_ARGUMENT);
+                        if (packIndex >= 0)
                         {
-                            *exp = intNode(en_c_i, 0);
-                        }
-                        else
-                        */
-                        if (Optimizer::cparams.prm_cplusplus && (flags & _F_AMPERSAND) && strSym)
-                        {
-                            *exp = getMemberPtr(sym, strSym, tp, funcsp);
-                        }
-                        else
-                        {
-                            *exp = getMemberNode(sym, strSym, tp, funcsp);
-                        }
-                        break;
-                    case sc_type:
-                    case sc_typedef:
-                        lex = prevsym(placeholder);
-                        *tp = nullptr;
-                        lex = expression_func_type_cast(lex, funcsp, tp, exp, flags);
-                        if (!*exp)
-                            *exp = intNode(en_c_i, 0);
-                        return lex;
-                    case sc_overloads:
-                        hr = basetype(sym->tp)->syms->table[0];
-                        funcparams = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
-                        if (Optimizer::cparams.prm_cplusplus && MATCHKW(lex, lt))
-                        {
-                            lex = GetTemplateArguments(lex, funcsp, sym, &funcparams->templateParams);
-                            funcparams->astemplate = true;
-                        }
-                        if (hr->next || Optimizer::cparams.prm_cplusplus)
-                        {
-                            funcparams->ascall = MATCHKW(lex, openpa);
-                            funcparams->sp = sym;
-                        }
-                        else
-                        {
-                            // we only get here for C language, sadly we have to do
-                            // argument based lookup in C++...
-                            funcparams->sp = hr->p;
-                            funcparams->sp->sb->attribs.inheritable.used = true;
-                            funcparams->fcall = varNode(en_pc, funcparams->sp);
-                            if (!MATCHKW(lex, openpa))
-                                funcparams->sp->sb->dumpInlineToFile = funcparams->sp->sb->isInline;
-                        }
-                        funcparams->functp = funcparams->sp->tp;
-                        *tp = funcparams->sp->tp;
-                        funcparams->asaddress = !!(flags & _F_AMPERSAND);
-                        if (Optimizer::cparams.prm_cplusplus && ismember(basetype(*tp)->sp) && !MATCHKW(lex, openpa))
-                        {
-                            EXPRESSION* exp1 = (EXPRESSION*)Alloc(sizeof(EXPRESSION));
-                            exp1->type = en_memberptr;
-                            exp1->left = *exp;
-                            exp1->v.sp = funcparams->sp;
-                            *exp = exp1;
-                            getMemberPtr(sym, strSym, tp, funcsp);
-                        }
-                        else
-                        {
-                            *exp = varNode(en_func, nullptr);
-                            (*exp)->v.func = funcparams;
-                        }
-                        break;
-                    case sc_catchvar:
-                        makeXCTab(funcsp);
-                        *exp = varNode(en_auto, funcsp->sb->xc->xctab);
-                        *exp = exprNode(en_add, *exp, intNode(en_c_i, XCTAB_INSTANCE_OFS));
-                        deref(&stdpointer, exp);
-                        break;
-                    case sc_enumconstant:
-                        *exp = intNode(en_c_i, sym->sb->value.i);
-                        break;
-                    case sc_constant:
-                        *exp = varNode(en_const, sym);
-                        break;
-                    case sc_auto:
-                    case sc_register: /* register variables are treated as
-                                       * auto variables in this compiler
-                                       * of course the usage restraints of the
-                                       * register keyword are enforced elsewhere
-                                       */
-                        *exp = varNode(en_auto, sym);
-                        sym->sb->anyTry |= tryLevel != 0;
-                        break;
-                    case sc_parameter:
-                        //                   tagNonConst(funcsp, sym->tp);
-                        if (sym->packed)
-                        {
-                            if (!(flags & _F_PACKABLE))
-                                error(ERR_PACK_SPECIFIER_MUST_BE_USED_IN_ARGUMENT);
-                            if (packIndex >= 0)
+                            TYPE* tp1 = sym->tp;
+                            TEMPLATEPARAMLIST* templateParam;
+                            int i;
+                            while (ispointer(tp1) || isref(tp1))
+                                tp1 = basetype(tp1)->btp;
+                            tp1 = basetype(tp1);
+                            if (tp1->type == bt_templateparam)
                             {
-                                TYPE* tp1 = sym->tp;
-                                TEMPLATEPARAMLIST* templateParam;
-                                int i;
-                                while (ispointer(tp1) || isref(tp1))
-                                    tp1 = basetype(tp1)->btp;
-                                tp1 = basetype(tp1);
-                                if (tp1->type == bt_templateparam)
+                                templateParam = tp1->templateParam->p->byPack.pack;
+                                for (i = 0; i < packIndex && templateParam; i++)
+                                    templateParam = templateParam->next;
+                                if (templateParam)
                                 {
-                                    templateParam = tp1->templateParam->p->byPack.pack;
-                                    for (i = 0; i < packIndex && templateParam; i++)
-                                        templateParam = templateParam->next;
-                                    if (templateParam)
-                                    {
-                                        sym = templateParam->p->packsym;
-                                        *tp = sym->tp;
-                                        *exp = varNode(en_auto, sym);
-                                    }
-                                    else
-                                    {
-                                        *exp = intNode(en_packedempty, 0);
-                                    }
+                                    sym = templateParam->p->packsym;
+                                    *tp = sym->tp;
+                                    *exp = varNode(en_auto, sym);
                                 }
                                 else
                                 {
-                                    SYMLIST* found = nullptr;
-                                    HASHTABLE* tables = localNameSpace->valueData->syms;
-                                    while (tables && !found)
-                                    {
-                                        SYMLIST* hr = tables->table[0];
-                                        while (hr && !found)
-                                        {
-                                            if (hr->p == sym)
-                                                found = hr;
-                                            hr = hr->next;
-                                        }
-                                        tables = tables->next;
-                                    }
-                                    if (found)
-                                    {
-                                        int i;
-                                        for (i = 0; found && i < packIndex; i++)
-                                            found = found->next;
-                                        if (found)
-                                        {
-                                            sym = found->p;
-                                        }
-                                        *exp = varNode(en_auto, sym);
-                                        *tp = sym->tp;
-                                    }
-                                    else
-                                    {
-                                        *exp = intNode(en_packedempty, 0);
-                                    }
+                                    *exp = intNode(en_packedempty, 0);
                                 }
                             }
                             else
                             {
-                                *exp = varNode(en_auto, sym);
+                                SYMLIST* found = nullptr;
+                                HASHTABLE* tables = localNameSpace->valueData->syms;
+                                while (tables && !found)
+                                {
+                                    SYMLIST* hr = tables->table[0];
+                                    while (hr && !found)
+                                    {
+                                        if (hr->p == sym)
+                                            found = hr;
+                                        hr = hr->next;
+                                    }
+                                    tables = tables->next;
+                                }
+                                if (found)
+                                {
+                                    int i;
+                                    for (i = 0; found && i < packIndex; i++)
+                                        found = found->next;
+                                    if (found)
+                                    {
+                                        sym = found->p;
+                                    }
+                                    *exp = varNode(en_auto, sym);
+                                    *tp = sym->tp;
+                                }
+                                else
+                                {
+                                    *exp = intNode(en_packedempty, 0);
+                                }
                             }
                         }
                         else
                         {
                             *exp = varNode(en_auto, sym);
                         }
-                        /* derefereance parameters which are declared as arrays */
-                        {
-                            TYPE* tpa = basetype(sym->tp);
-                            if (isref(tpa))
-                                tpa = basetype(tpa->btp);
-                            if (tpa->array)
-                                deref(&stdpointer, exp);
-                        }
-                        sym->sb->anyTry |= tryLevel != 0;
-                        break;
-
-                    case sc_localstatic:
-                        tagNonConst(funcsp, sym->tp);
-                        if (funcsp && funcsp->sb->isInline)
-                        {
-                            if (funcsp->sb->promotedToInline || Optimizer::cparams.prm_cplusplus)
-                            {
-                                funcsp->sb->isInline = funcsp->sb->dumpInlineToFile = funcsp->sb->promotedToInline = false;
-                            }
-                        }
-                        if (sym->sb->attribs.inheritable.linkage3 == lk_threadlocal)
-                        {
-                            funcsp->sb->nonConstVariableUsed = true;
-                            *exp = varNode(en_threadlocal, sym);
-                        }
-                        else
-                        {
-                            *exp = varNode(en_global, sym);
-                        }
-                        sym->sb->attribs.inheritable.used = true;
-                        break;
-                    case sc_absolute:
-                        funcsp->sb->nonConstVariableUsed = true;
-                        *exp = varNode(en_absolute, sym);
-                        break;
-                    case sc_static:
-                        sym->sb->attribs.inheritable.used = true;
-                    case sc_global:
-                    case sc_external:
-                        tagNonConst(funcsp, sym->tp);
-                        if (strSym)
-                        {
-                            SYMBOL* tpl = sym;
-                            while (tpl)
-                            {
-                                if (tpl->sb->templateLevel)
-                                    break;
-                                tpl = tpl->sb->parentClass;
-                            }
-                            if (tpl && tpl->sb->instantiated)
-                            {
-                                TemplateDataInstantiate(sym, false, false);
-                            }
-                        }
-                        if (sym->sb->parentClass && !isExpressionAccessible(nullptr, sym, funcsp, nullptr, false))
-                            errorsym(ERR_CANNOT_ACCESS, sym);
-                        if (sym->sb->attribs.inheritable.linkage3 == lk_threadlocal)
-                            *exp = varNode(en_threadlocal, sym);
-                        else
-                            *exp = varNode(en_global, sym);
-                        if (sym->sb->attribs.inheritable.linkage2 == lk_import)
-                        {
-                            //                        *exp = exprNode(en_add, *exp, intNode(en_c_i, 2));
-                            //                        deref(&stdpointer, exp);
+                    }
+                    else
+                    {
+                        *exp = varNode(en_auto, sym);
+                    }
+                    /* derefereance parameters which are declared as arrays */
+                    {
+                        TYPE* tpa = basetype(sym->tp);
+                        if (isref(tpa))
+                            tpa = basetype(tpa->btp);
+                        if (tpa->array)
                             deref(&stdpointer, exp);
+                    }
+                    sym->sb->anyTry |= tryLevel != 0;
+                    break;
+
+                case sc_localstatic:
+                    tagNonConst(funcsp, sym->tp);
+                    if (funcsp && funcsp->sb->isInline)
+                    {
+                        if (funcsp->sb->promotedToInline || Optimizer::cparams.prm_cplusplus)
+                        {
+                            funcsp->sb->isInline = funcsp->sb->dumpInlineToFile = funcsp->sb->promotedToInline = false;
                         }
-                        break;
-                    case sc_namespace:
-                    case sc_namespacealias:
-                        errorsym(ERR_INVALID_USE_OF_NAMESPACE, sym);
-                        *exp = intNode(en_c_i, 1);
-                        break;
-                    default:
-                        error(ERR_IDENTIFIER_EXPECTED);
-                        *exp = intNode(en_c_i, 1);
-                        break;
+                    }
+                    if (sym->sb->attribs.inheritable.linkage3 == lk_threadlocal)
+                    {
+                        funcsp->sb->nonConstVariableUsed = true;
+                        *exp = varNode(en_threadlocal, sym);
+                    }
+                    else
+                    {
+                        *exp = varNode(en_global, sym);
+                    }
+                    sym->sb->attribs.inheritable.used = true;
+                    break;
+                case sc_absolute:
+                    funcsp->sb->nonConstVariableUsed = true;
+                    *exp = varNode(en_absolute, sym);
+                    break;
+                case sc_static:
+                    sym->sb->attribs.inheritable.used = true;
+                case sc_global:
+                case sc_external:
+                    tagNonConst(funcsp, sym->tp);
+                    if (strSym)
+                    {
+                        SYMBOL* tpl = sym;
+                        while (tpl)
+                        {
+                            if (tpl->sb->templateLevel)
+                                break;
+                            tpl = tpl->sb->parentClass;
+                        }
+                        if (tpl && tpl->sb->instantiated)
+                        {
+                            TemplateDataInstantiate(sym, false, false);
+                        }
+                    }
+                    if (sym->sb->parentClass && !isExpressionAccessible(nullptr, sym, funcsp, nullptr, false))
+                        errorsym(ERR_CANNOT_ACCESS, sym);
+                    if (sym->sb->attribs.inheritable.linkage3 == lk_threadlocal)
+                        *exp = varNode(en_threadlocal, sym);
+                    else
+                        *exp = varNode(en_global, sym);
+                    if (sym->sb->attribs.inheritable.linkage2 == lk_import)
+                    {
+                        //                        *exp = exprNode(en_add, *exp, intNode(en_c_i, 2));
+                        //                        deref(&stdpointer, exp);
+                        deref(&stdpointer, exp);
+                    }
+                    break;
+                case sc_namespace:
+                case sc_namespacealias:
+                    errorsym(ERR_INVALID_USE_OF_NAMESPACE, sym);
+                    *exp = intNode(en_c_i, 1);
+                    break;
+                default:
+                    error(ERR_IDENTIFIER_EXPECTED);
+                    *exp = intNode(en_c_i, 1);
+                    break;
                 }
+            }
+            else
+            {
+                if (!templateNestingCount)
+                    error(ERR_IDENTIFIER_EXPECTED);
+                *exp = intNode(en_c_i, 1);
+            }
         }
         sym->tp->used = true;
         if (sym->sb && sym->sb->templateLevel && istype(sym))
@@ -851,7 +859,7 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                     **tp = *tp1;
                     UpdateRootTypes(*tp);
                 }
-                if (sym->sb->storage_class != sc_overloads)
+                if (sym->sb && sym->sb->storage_class != sc_overloads)
                 {
                     if (!isstructured(*tp) && basetype(*tp)->type != bt_memberptr && !isfunction(*tp) &&
                         sym->sb->storage_class != sc_constant && sym->sb->storage_class != sc_enumconstant &&

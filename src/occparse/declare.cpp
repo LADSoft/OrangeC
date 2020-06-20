@@ -958,6 +958,7 @@ static LEXEME* structbody(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_ac cur
 
     if (Optimizer::cparams.prm_cplusplus)
     {
+        createDefaultConstructors(sp);
         calculateStructAbstractness(sp, sp);
         calculateVirtualBaseOffsets(sp);  // undefined in local context
         calculateVTabEntries(sp, sp, &sp->sb->vtabEntries, 0);
@@ -986,8 +987,6 @@ static LEXEME* structbody(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_ac cur
     {
         sp->sb->trivialCons = true;
     }
-    if (Optimizer::cparams.prm_cplusplus)
-        createDefaultConstructors(sp);
     resolveAnonymousUnions(sp);
     makeFastTable(sp);
     if (Optimizer::cparams.prm_cplusplus)

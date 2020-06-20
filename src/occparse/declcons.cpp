@@ -299,6 +299,22 @@ SYMBOL* insertFunc(SYMBOL* sp, SYMBOL* ovl)
     SetParams(ovl);
     return ovl;
 }
+static bool BaseWithVirtualDestructor(SYMBOL *sp)
+{
+    BASECLASS* b = sp->sb->baseClasses;
+    while (b)
+    {
+        SYMBOL* dest = search(overloadNameTab[CI_DESTRUCTOR], b->cls->tp->syms);
+        if (dest)
+        {
+            dest = dest->tp->syms->table[0]->p;
+	    if (dest->sb->storage_class == sc_virtual)
+                return true;
+        }
+        b= b->next;
+    }
+    return false;
+}
 static SYMBOL* declareDestructor(SYMBOL* sp)
 {
     SYMBOL* rv;
@@ -313,7 +329,7 @@ static SYMBOL* declareDestructor(SYMBOL* sp)
     tp->btp->type = bt_void;
     tp->rootType = tp;
     tp->btp->rootType = tp->btp;
-    func = makeID(sc_member, tp, nullptr, overloadNameTab[CI_DESTRUCTOR]);
+    func = makeID(BaseWithVirtualDestructor(sp) ? sc_virtual : sc_member, tp, nullptr, overloadNameTab[CI_DESTRUCTOR]);
     func->sb->xcMode = xc_none;
     func->sb->attribs.inheritable.linkage2 = sp->sb->attribs.inheritable.linkage2;
     tp->syms = CreateHashTable(1);
@@ -2920,7 +2936,7 @@ void callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* a
     params->thistp->rootType = params->thistp;
     params->ascall = true;
     dest1 = basetype(dest->tp)->syms->table[0]->p;
-    if (!dest1 || !dest1->sb->defaulted)
+    if (!dest1 || !dest1->sb->defaulted || dest1->sb->storage_class == sc_virtual)
     {
         dest1 = GetOverloadedFunction(&tp, &params->fcall, dest, params, nullptr, true, false, true, 0);
         if (!novtab && dest1 && dest1->sb->storage_class == sc_virtual)

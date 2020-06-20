@@ -1620,7 +1620,7 @@ namespace DotNetPELib
         void ObjReset() { objInputPos_ = objInputCache_; }
         void ObjError(int);
         std::iostream &Out() const { return *outputStream_; }
-        void Out(std::iostream &stream) { outputStream_ = &stream; }
+        void Swap(std::unique_ptr<std::iostream>& stream) { outputStream_.swap(stream); }
         PEWriter &PEOut() const { return *peWriter_; }
         std::map<size_t, size_t> moduleRefs;
         void PushContainer(DataContainer *container) { containerStack_.push_back(container); }
@@ -1638,7 +1638,7 @@ namespace DotNetPELib
         std::map<std::string, Method *>pInvokeSignatures_;
         std::multimap<std::string, MethodSignature *> pInvokeReferences_;
         std::string assemblyName_;
-        std::iostream *outputStream_;
+        std::unique_ptr<std::iostream> outputStream_;
         std::fstream *inputStream_;
         std::string fileName_;
     	std::map<std::string, std::string> unmanagedRoutines_;

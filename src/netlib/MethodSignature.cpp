@@ -579,19 +579,19 @@ void MethodSignature::Load(PELib& lib, AssemblyDef& assembly, PEReader& reader, 
 }
 std::string MethodSignature::AdornGenerics(PELib& peLib, bool names) const
 {
-    std::iostream* hold = &peLib.Out();
-    std::stringstream rv;
-    peLib.Out(rv);
+    std::stringstream *rv = new std::stringstream;
+    std::unique_ptr<std::iostream> hold(rv);
+    peLib.Swap(hold);
     if (generic_.size())
     {
         int count = 0;
-        rv << "<";
+        peLib.Out() << "<";
         for (auto&& type : generic_)
         {
             if (names && type->GetBasicType() == Type::var)
             {
-                rv << (char)(type->VarNum() / 26 + 'A');
-                rv << (char)(type->VarNum() % 26 + 'A');
+                peLib.Out() << (char)(type->VarNum() / 26 + 'A');
+                peLib.Out() << (char)(type->VarNum() % 26 + 'A');
             }
             else
             {
@@ -600,12 +600,12 @@ std::string MethodSignature::AdornGenerics(PELib& peLib, bool names) const
                 tp.ILSrcDump(peLib);
             }
             if (count++ != generic_.size() - 1)
-                rv << ",";
+                peLib.Out() << ",";
             else
-                rv << ">";
+                peLib.Out() << ">";
         }
     }
-    peLib.Out(*hold);
-    return rv.str();
+    peLib.Swap(hold);
+    return rv->str();
 }
 }  // namespace DotNetPELib

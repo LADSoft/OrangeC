@@ -34,6 +34,7 @@
 #include <fstream>
 #include <stdexcept>
 #include <string.h>
+#include <memory>
 // reference changelog.txt to see what the changes are
 //
 #define DOTNETPELIB_VERSION "3.01"

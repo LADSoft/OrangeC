@@ -227,6 +227,13 @@ bool Method::PEDump(PELib& peLib)
         size_t methodSignature = 0;
         Byte* sig = nullptr;
         TableEntryBase* table;
+        if (prototype_->ReturnType() && prototype_->ReturnType()->GetBasicType() == Type::cls)
+        {
+            if (prototype_->ReturnType()->GetClass()->InAssemblyRef())
+            {
+                prototype_->ReturnType()->GetClass()->PEDump(peLib);
+            }
+        }
         if (prototype_->ParamCount())
         {
             // assign an index to any params...
@@ -267,7 +274,7 @@ bool Method::PEDump(PELib& peLib)
         Instruction* last = nullptr;
         if (instructions_.size())
             last = instructions_.back();
-        rendering_ = new PEMethod(hasSEH_, (entryPoint_ ? PEMethod::EntryPoint : 0) | (invokeMode_ == CIL ? PEMethod::CIL : 0),
+        rendering_ = new PEMethod(hasSEH_, (entryPoint_ ? PEMethod::EntryPoint : 0) | (invokeMode_ == CIL && !(flags_.Flags() & Qualifiers::Runtime) ? PEMethod::CIL : 0),
                                   peLib.PEOut().NextTableIndex(tMethodDef), maxStack_, varList_.size(),
                                   last ? last->Offset() + last->InstructionSize() : 0,
                                   methodSignature ? methodSignature | (tStandaloneSig << 24) : 0);
@@ -279,6 +286,8 @@ bool Method::PEDump(PELib& peLib)
         int MFlags = 0;
         if (flags_.Flags() & Qualifiers::CIL)
             implFlags |= MethodDefTableEntry::IL;
+        else if (flags_.Flags() & Qualifiers::Runtime)
+            implFlags |= MethodDefTableEntry::Runtime;
         if (flags_.Flags() & Qualifiers::Managed)
             implFlags |= MethodDefTableEntry::Managed;
         if (flags_.Flags() & Qualifiers::PreserveSig)
@@ -287,6 +296,10 @@ bool Method::PEDump(PELib& peLib)
             MFlags |= MethodDefTableEntry::Public;
         else if (flags_.Flags() & Qualifiers::Private)
             MFlags |= MethodDefTableEntry::Private;
+        if (flags_.Flags() & Qualifiers::Virtual)
+            MFlags |= MethodDefTableEntry::Virtual;
+        if (flags_.Flags() & Qualifiers::NewSlot)
+            MFlags |= MethodDefTableEntry::NewSlot;
         if (flags_.Flags() & Qualifiers::Static)
             MFlags |= MethodDefTableEntry::Static;
         if (flags_.Flags() & Qualifiers::SpecialName)
@@ -307,7 +320,7 @@ bool Method::PEDump(PELib& peLib)
         delete[] sig;
 
         table = new MethodDefTableEntry(rendering_, implFlags, MFlags, nameIndex, methodSignature, paramIndex);
-        prototype_->SetPEIndex(peLib.PEOut().AddTableEntry(table));
+        prototype_->PEIndex(peLib.PEOut().AddTableEntry(table));
         int i = 1;
         size_t lastParamIndex = 0;
         for (auto it = prototype_->begin(); it != prototype_->end(); ++it)
@@ -348,7 +361,7 @@ bool Method::PEDump(PELib& peLib)
                 size_t ctor_index = 0;
                 AssemblyDef* assembly = peLib.MSCorLibAssembly();
                 void* result = nullptr;
-                peLib.Find("System.ParamArrayAttribute::.ctor", &result, assembly);
+                peLib.Find("System.ParamArrayAttribute::.ctor", &result, nullptr, assembly);
                 if (result)
                 {
                     static_cast<Method*>(result)->PEDump(peLib);

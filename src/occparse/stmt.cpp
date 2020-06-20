@@ -81,7 +81,7 @@ Optimizer::LINEDATA *linesHead, *linesTail;
 
 static int matchReturnTypes;
 static int endline;
-
+static int caseLevel = 0;
 static LEXEME* autodeclare(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, BLOCKDATA* parent, int asExpression);
 
 static BLOCKDATA* caseDestructBlock;
@@ -93,6 +93,7 @@ void statement_ini(bool global)
     funcNesting = 0;
     funcLevel = 0;
     caseDestructBlock = nullptr;
+    caseLevel = 0;
     matchReturnTypes = false;
     tryLevel = 0;
 }
@@ -385,6 +386,22 @@ static void thunkGotoDestructors(EXPRESSION** exp, BLOCKDATA* gotoTab, BLOCKDATA
     }
 }
 static void InSwitch() {}
+static void StartOfCaseGroup(SYMBOL *funcsp, BLOCKDATA* parent)
+{
+    caseLevel++;
+    STATEMENT *st = stmtNode(nullptr, parent, st_dbgblock);
+    st->label = 1;
+
+}
+static void EndOfCaseGroup(SYMBOL *funcsp, BLOCKDATA * parent)
+{
+    if (caseLevel)
+    {
+        caseLevel--;
+        STATEMENT *st = stmtNode(nullptr, parent, st_dbgblock);
+        st->label = 0;
+    }
+}
 static void HandleStartOfCase(BLOCKDATA* parent)
 {
     // this is a little buggy in that it doesn't check to see if we are already in a switch
@@ -814,7 +831,7 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                         fcb.returnSP = fcb.returnEXP->v.sp;
                                         exp = fcb.returnEXP;
                                         dest = nullptr;
-                                        callDestructor(fcb.returnSP, nullptr, &exp, nullptr, true, false, false);
+                                        callDestructor(fcb.returnSP, nullptr, &exp, nullptr, true, false, false, true);
                                         initInsert(&dest, iteratorType, exp, 0, true);
                                         fcb.returnSP->sb->dest = dest;
 
@@ -822,7 +839,7 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                         fce.returnSP = fcb.returnEXP->v.sp;
                                         exp = fce.returnEXP;
                                         dest = nullptr;
-                                        callDestructor(fce.returnSP, nullptr, &exp, nullptr, true, false, false);
+                                        callDestructor(fce.returnSP, nullptr, &exp, nullptr, true, false, false, true);
                                         initInsert(&dest, iteratorType, exp, 0, true);
                                         fce.returnSP->sb->dest = dest;
                                     }
@@ -912,7 +929,7 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                             fcb.returnSP = fcb.returnEXP->v.sp;
                                             exp = fcb.returnEXP;
                                             dest = nullptr;
-                                            callDestructor(fcb.returnSP, nullptr, &exp, nullptr, true, false, false);
+                                            callDestructor(fcb.returnSP, nullptr, &exp, nullptr, true, false, false, true);
                                             initInsert(&dest, iteratorType, exp, 0, true);
                                             fcb.returnSP->sb->dest = dest;
 
@@ -920,7 +937,7 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                             fce.returnSP = fcb.returnEXP->v.sp;
                                             exp = fce.returnEXP;
                                             dest = nullptr;
-                                            callDestructor(fce.returnSP, nullptr, &exp, nullptr, true, false, false);
+                                            callDestructor(fce.returnSP, nullptr, &exp, nullptr, true, false, false, true);
                                             initInsert(&dest, iteratorType, exp, 0, true);
                                             fce.returnSP->sb->dest = dest;
                                         }
@@ -1077,7 +1094,7 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                 callConstructor(&ctype, &decl, funcparams, false, 0, true, false, true, false, false, false);
                                 st->select = decl;
                                 declDest = declExp;
-                                callDestructor(declSP, nullptr, &declDest, nullptr, true, false, false);
+                                callDestructor(declSP, nullptr, &declDest, nullptr, true, false, false, true);
                             }
                             else if (isarray(selectTP))
                             {
@@ -1122,7 +1139,7 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                     callConstructor(&ctype, &decl, funcparams, false, 0, true, false, true, false, false, false);
                                     st->select = decl;
                                     declDest = declExp;
-                                    callDestructor(declSP, nullptr, &declDest, nullptr, true, false, false);
+                                    callDestructor(declSP, nullptr, &declDest, nullptr, true, false, false, true);
                                 }
                             }
                             else if (!insertOperatorFunc(ovcl_unary_prefix, star, funcsp, &starType, &st->select, nullptr, nullptr,
@@ -1169,7 +1186,7 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                     callConstructor(&ctype, &decl, funcparams, false, 0, true, false, true, false, false, false);
                                     st->select = decl;
                                     declDest = declExp;
-                                    callDestructor(declSP, nullptr, &declDest, nullptr, true, false, false);
+                                    callDestructor(declSP, nullptr, &declDest, nullptr, true, false, false, true);
                                 }
                             }
                         }
@@ -1219,7 +1236,7 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                     st->select->v.func->returnEXP = anonymousVar(sc_auto, ppType);
                                     st->select->v.func->returnSP = st->select->v.func->returnEXP->v.sp;
                                     declDest = st->select->v.func->returnEXP;
-                                    callDestructor(st->select->v.func->returnSP, nullptr, &declDest, nullptr, true, false, false);
+                                    callDestructor(st->select->v.func->returnSP, nullptr, &declDest, nullptr, true, false, false, true);
                                     st = stmtNode(lex, forstmt, st_expr);
                                     st->select = declDest;
                                 }
@@ -1359,7 +1376,7 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                     if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.prm_c99)
                     {
                         addedBlock++;
-                        AllocateLocalContext(parent, funcsp, codeLabel++);
+                        AllocateLocalContext(forstmt, funcsp, codeLabel++);
                     }
                     do
                     {
@@ -1466,10 +1483,13 @@ static LEXEME* statement_if(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                 if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.prm_c99)
                 {
                     FreeLocalContext(parent, funcsp, codeLabel++);
-                    AllocateLocalContext(parent, funcsp, codeLabel++);
                 }
                 st = stmtNode(lex, parent, st_goto);
                 st->label = elsebr;
+                if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.prm_c99)
+                {
+                    AllocateLocalContext(parent, funcsp, codeLabel++);
+                }
                 if (Optimizer::cparams.prm_optimize_for_speed || Optimizer::cparams.prm_optimize_for_size)
                 {
                     st2 = sti;
@@ -2254,6 +2274,7 @@ static LEXEME* statement_switch(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
             st->select = select;
             st->breaklabel = switchstmt->breaklabel;
             lex = statement(lex, funcsp, switchstmt, true);
+            EndOfCaseGroup(funcsp, parent);
             st->cases = switchstmt->cases;
             st->label = switchstmt->defaultlabel;
             if (st->label != -1 && switchstmt->needlabel && !switchstmt->hasbreak)
@@ -2342,7 +2363,7 @@ static LEXEME* statement_while(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
             if (Optimizer::cparams.prm_cplusplus || Optimizer::cparams.prm_c99)
             {
                 addedBlock++;
-                AllocateLocalContext(parent, funcsp, codeLabel++);
+                AllocateLocalContext(whilestmt, funcsp, codeLabel++);
             }
             do
             {
@@ -2405,6 +2426,8 @@ static bool checkNoEffect(EXPRESSION* exp)
         case en_void:
         case en__initblk:
         case en__cpblk:
+        case en__initobj:
+        case en__sizeof:
             return false;
             break;
         case en_not_lvalue:
@@ -2450,7 +2473,7 @@ static LEXEME* statement_expr(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
             {
                 INITIALIZER* init = nullptr;
                 EXPRESSION* exp = select->v.func->returnEXP;
-                callDestructor(basetype(tp)->sp, nullptr, &exp, nullptr, true, false, false);
+                callDestructor(basetype(tp)->sp, nullptr, &exp, nullptr, true, false, false, true);
                 initInsert(&init, sym->tp, exp, 0, false);
                 sym->sb->dest = init;
             }
@@ -2881,6 +2904,7 @@ LEXEME* statement(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool viacontro
             parent->nosemi = true;
             break;
         case kw_case:
+            EndOfCaseGroup(funcsp, parent);
             while (KW(lex) == kw_case)
             {
                 if (Optimizer::cparams.prm_cplusplus)
@@ -2889,16 +2913,19 @@ LEXEME* statement(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool viacontro
                 if (Optimizer::cparams.prm_cplusplus)
                     HandleStartOfCase(parent);
             }
+            StartOfCaseGroup(funcsp, parent);
             lex = statement(lex, funcsp, parent, false);
             parent->nosemi = true;
             return lex;
             break;
         case kw_default:
+            EndOfCaseGroup(funcsp, parent);
             if (Optimizer::cparams.prm_cplusplus)
                 HandleEndOfCase(parent);
             lex = statement_default(lex, funcsp, parent);
             if (Optimizer::cparams.prm_cplusplus)
                 HandleStartOfCase(parent);
+            StartOfCaseGroup(funcsp, parent);
             lex = statement(lex, funcsp, parent, false);
             parent->nosemi = true;
             return lex;
@@ -3131,8 +3158,23 @@ LEXEME* compound(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
     if (parent->type == kw_switch)
     {
         if (st != blockstmt->tail)
-            /* kinda naive... */
-            error(ERR_INITIALIZATION_MAY_BE_BYPASSED);
+        {
+            /* kinda naive other than this one check for msil... */
+            bool toErr = false;
+            st = blockstmt->tail;
+            while (st)
+            {
+                if (st->select->type != en__initobj && st->type != st_varstart)
+                {
+                    toErr = true;
+                }
+                st = st->next;
+            }
+            if (toErr)
+            {
+                error(ERR_INITIALIZATION_MAY_BE_BYPASSED);
+            }
+        }
     }
     currentLineData(blockstmt, lex, -1);
     blockstmt->nosemi = true; /* in case it is an empty body */

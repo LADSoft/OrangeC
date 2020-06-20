@@ -36,6 +36,10 @@
 
 namespace Optimizer
 {
+bool pinning;
+bool msilstrings;
+bool delegateforfuncptr;
+bool initializeScalars;
 int gentype; /* Current DC type */
 int curseg;  /* Current seg */
 int outcol;  /* Curront col (roughly) */
@@ -70,7 +74,6 @@ std::string prm_assemblerSpecifier;
 std::string outputFileName;
 std::string assemblerFileExtension;
 
-Optimizer::SimpleExpression* objectArray_exp;
 Optimizer::SimpleExpression* fltexp;
 
 int exitBlock;
@@ -138,7 +141,6 @@ void AddFunction()
 #ifndef PARSER_ONLY
     FunctionData* data = new FunctionData;
     data->name = currentFunction;
-    data->objectArray_exp = objectArray_exp;
     data->fltexp = fltexp;
     data->temporarySymbols = temporarySymbols;
     data->variables = functionVariables;
@@ -555,7 +557,6 @@ void gen_funcref(Optimizer::SimpleSymbol* sym)
 {
     auto v = AddData(DT_FUNCREF);
     v->symbol.sym = sym;
-
     if (sym->storage_class == scc_global ||
         ((sym->storage_class == scc_member || sym->storage_class == scc_virtual) && sym->hasInlineFunc))
         v->symbol.i |= BaseData::DF_GLOBAL;

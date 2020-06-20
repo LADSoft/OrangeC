@@ -243,6 +243,10 @@ Optimizer::SimpleExpression* Optimizer::SymbolManager::Get(struct Parser::expr* 
                 rv->astring.len = dest - buf;
             }
             break;
+        case en_type:
+            rv->type = Optimizer::se_typeref;
+            rv->tp = Get(e->v.tp);
+            break;
         default:
             diag("unknown node in Get(EXPRESSION*)");
             break;
@@ -251,6 +255,7 @@ Optimizer::SimpleExpression* Optimizer::SymbolManager::Get(struct Parser::expr* 
 }
 Optimizer::SimpleType* Optimizer::SymbolManager::Get(struct Parser::typ* tp)
 {
+    int i = 0;
     Optimizer::SimpleType* rv = (Optimizer::SimpleType*)Alloc(sizeof(Optimizer::SimpleType));
     bool isConst = isconst(tp);
     bool isVolatile = isvolatile(tp);
@@ -601,6 +606,10 @@ unsigned long long Optimizer::SymbolManager::Key(struct Parser::sym* old)
         my_sprintf(buf + strlen(buf), "%d", old->sb->uniqueID);
     }
     strcat(buf, old->sb->decoratedName ? old->sb->decoratedName : old->name);
+    if (old->sb->storage_class == sc_static && !old->sb->parent)
+    {
+        my_sprintf(buf + strlen(buf), "%d", old->sb->uniqueID);
+    }
     if (old->sb->storage_class == sc_type)
         strcat(buf, "#");
     if (old->sb->attribs.inheritable.linkage == lk_stdcall)

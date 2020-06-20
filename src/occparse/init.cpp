@@ -65,7 +65,7 @@ static DYNAMIC_INITIALIZER *dynamicDestructors, *TLSDestructors;
 static Optimizer::LIST *symListHead, *symListTail;
 static int inittag = 0;
 static STRING* strtab;
-
+static SYMBOL *msilToString;
 LEXEME* initType(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_sc sc, INITIALIZER** init, INITIALIZER** dest, TYPE* itype,
                  SYMBOL* sym, bool arrayMember, int flags);
 
@@ -75,6 +75,57 @@ void init_init(void)
     dynamicInitializers = TLSInitializers = nullptr;
     dynamicDestructors = TLSDestructors = nullptr;
     initializingGlobalVar = false;
+}
+
+static SYMBOL * LookupMsilToString()
+{
+    if (!msilToString)
+    {
+        SYMBOL *sym = namespacesearch("lsmsilcrtl", globalNameSpace, false, false);
+        if (sym && sym->sb->storage_class == sc_namespace)
+        {
+            sym = namespacesearch("CString", sym->sb->nameSpaceValues, true, false);
+            if (sym && isstructured(sym->tp))
+            {
+                sym = search("ToPointer", basetype(sym->tp)->syms);
+                if (sym)
+                {
+                    auto hr = sym->tp->syms->table[0];
+                    while (hr)
+                    {
+                        if (hr->p->sb->storage_class == sc_static)
+                        {
+                            msilToString = hr->p;
+                            break;
+                        }
+                        hr = hr->next;
+                    }
+                }
+            }
+        }
+        if (!msilToString)
+        {
+            Utils::fatal("internal error");
+        }
+    }
+    return msilToString;
+}
+EXPRESSION *ConvertToMSILString(EXPRESSION *val)
+{
+    val->type = en_c_string;
+    SYMBOL *var = LookupMsilToString();
+    
+    FUNCTIONCALL *fp = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
+    fp->functp = var->tp;
+    fp->sp = var;
+    fp->fcall = varNode(en_global, var);
+    fp->arguments = (INITLIST*)Alloc(sizeof(INITLIST));
+    fp->arguments->exp = val;
+    fp->arguments->tp = &std__string;
+    fp->ascall = true;
+    EXPRESSION* rv = exprNode(en_func, nullptr, nullptr);
+    rv->v.func = fp;
+    return rv;
 }
 EXPRESSION* stringlit(STRING* s)
 /*
@@ -108,6 +159,10 @@ EXPRESSION* stringlit(STRING* s)
                     rv->size = s->size;
                     rv->altdata = intNode(en_c_i, s->strtype);
                     lp->refCount++;
+                    if (Optimizer::msilstrings)
+                    {
+                        rv = ConvertToMSILString(rv);
+                    }
                     return rv;
                 }
             }
@@ -122,6 +177,10 @@ EXPRESSION* stringlit(STRING* s)
     rv->size = s->size;
     rv->altdata = intNode(en_c_i, s->strtype);
     s->refCount++;
+    if (Optimizer::msilstrings)
+    {
+        rv = ConvertToMSILString(rv);
+    }
     return rv;
 }
 
@@ -135,7 +194,7 @@ int genstring(STRING* str)
         int size = 1;
         int i;
         bool instring = false;
-        char buf[81], *dest = buf;
+        char buf[10000], *dest = buf;
         for (i = 0; i < str->size; i++)
         {
             LCHAR* p = str->pointers[i]->str;
@@ -394,6 +453,15 @@ static void callDynamic(const char* name, int startupType, int index, STATEMENT*
 #ifndef PARSER_ONLY
     if (st)
     {
+        STATEMENT* stbegin = stmtNode(nullptr, nullptr, st_dbgblock);
+        stbegin->label = 1;
+        STATEMENT* stend = stmtNode(nullptr, nullptr, st_dbgblock);
+        stend->label = 0;
+        stbegin->next = st;
+        st = stbegin;
+        while (stbegin->next)
+            stbegin = stbegin->next;
+        stbegin->next = stend;
         char fullName[512];
         Optimizer::my_sprintf(fullName, "%s_%d", name, index);
         SYMBOL* funcsp;
@@ -1307,7 +1375,7 @@ static LEXEME* initialize_bool_type(LEXEME* lex, SYMBOL* funcsp, int offset, enu
             {
                 if (isstructured(tp))
                     error(ERR_ILL_STRUCTURE_ASSIGNMENT);
-                else if (!isarithmeticconst(exp))
+                else if (!isarithmeticconst(exp) && !msilConstant(exp))
                     error(ERR_CONSTANT_VALUE_EXPECTED);
             }
             /*	exp = exprNode(en_not, exp, nullptr);
@@ -1381,7 +1449,7 @@ static LEXEME* initialize_arithmetic_type(LEXEME* lex, SYMBOL* funcsp, int offse
                 else if (ispointer(tp))
                     error(ERR_NONPORTABLE_POINTER_CONVERSION);
                 else if ((!isarithmetic(tp) && basetype(tp)->type != bt_enum) ||
-                         (sc != sc_auto && sc != sc_register && !isarithmeticconst(exp) && !Optimizer::cparams.prm_cplusplus))
+                         (sc != sc_auto && sc != sc_register && !isarithmeticconst(exp) && !msilConstant(exp) && !Optimizer::cparams.prm_cplusplus))
                     error(ERR_CONSTANT_VALUE_EXPECTED);
                 else
                     checkscope(tp, itype);
@@ -1507,7 +1575,7 @@ static LEXEME* initialize_pointer_type(LEXEME* lex, SYMBOL* funcsp, int offset, 
             EXPRESSION* exp2 = exp;
             while (exp2->type == en_void && exp2->right)
                 exp2 = exp2->right;
-            if (!isarithmeticconst(exp2) && !isconstaddress(exp2) && !Optimizer::cparams.prm_cplusplus)
+            if (!isarithmeticconst(exp2) && !isconstaddress(exp2) && !msilConstant(exp2) && !Optimizer::cparams.prm_cplusplus)
                 error(ERR_NEED_CONSTANT_OR_ADDRESS);
         }
         if (tp)
@@ -2066,7 +2134,7 @@ static void unwrap_desc(AGGREGATE_DESCRIPTOR** descin, AGGREGATE_DESCRIPTOR** ca
                         if (ismember(sym))
                         {
                             (*dest)->fieldsp = sym;
-                            (*dest)->fieldoffs = (*descin)->offset;
+                            (*dest)->fieldoffs = intNode(en_c_i, (*descin)->offset);
                         }
                         dest = &(*dest)->next;
                     }
@@ -2156,7 +2224,7 @@ static bool designator(LEXEME** lex, SYMBOL* funcsp, AGGREGATE_DESCRIPTOR** desc
                     error(ERR_EXPRESSION_SYNTAX);
                 else if (!isint(tp))
                     error(ERR_NEED_INTEGER_TYPE);
-                else if (!isarithmeticconst(enode) && !Optimizer::cparams.prm_cplusplus)
+                else if (!isarithmeticconst(enode) && !msilConstant(enode) && !Optimizer::cparams.prm_cplusplus)
                     error(ERR_CONSTANT_VALUE_EXPECTED);
                 else if (isstructured((*desc)->tp) || !basetype((*desc)->tp)->array)
                     error(ERR_ARRAY_EXPECTED);
@@ -2830,13 +2898,13 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
             exp = baseexp;
             if (sc != sc_auto && sc != sc_parameter && sc != sc_member && sc != sc_mutable && !arrayMember)
             {
-                callDestructor(basetype(itype)->sp, nullptr, &exp, nullptr, true, false, false);
+                callDestructor(basetype(itype)->sp, nullptr, &exp, nullptr, true, false, false, true);
                 initInsert(&it, itype, exp, offset, true);
                 insertDynamicDestructor(base, it);
             }
             else if (dest)
             {
-                callDestructor(basetype(itype)->sp, nullptr, &exp, nullptr, true, false, false);
+                callDestructor(basetype(itype)->sp, nullptr, &exp, nullptr, true, false, false, true);
                 initInsert(&it, itype, exp, offset, true);
                 *dest = it;
             }
@@ -3056,7 +3124,18 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
                     if (ismember(fieldsp))
                     {
                         (*next)->fieldsp = fieldsp;
-                        (*next)->fieldoffs = desc->offset;
+                        if (isarray(itype) && Optimizer::architecture == ARCHITECTURE_MSIL)
+                        {
+                            TYPE *btp = itype;
+                            while (isarray(btp))
+                                btp = btp->btp;
+                            int n = desc->offset / btp->size;
+                            (*next)->fieldoffs = exprNode(en_umul, intNode(en_c_i, n), exprNode(en__sizeof, typeNode(btp), nullptr));
+                        }
+                        else
+                        {
+                            (*next)->fieldoffs = intNode(en_c_i, desc->offset);
+                        }
                     }
                 }
             }
@@ -3086,7 +3165,7 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
                                     if (ismember(fieldsp))
                                     {
                                         (*next)->fieldsp = fieldsp;
-                                        (*next)->fieldoffs = desc->offset;
+                                        (*next)->fieldoffs = intNode(en_c_i, desc->offset);
                                     }
                                 }
                             }
@@ -3223,14 +3302,14 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
                 }
                 if (sc != sc_auto && sc != sc_parameter && sc != sc_member && sc != sc_mutable)
                 {
-                    callDestructor(btp->sp, nullptr, &exp, sz, true, false, false);
+                    callDestructor(btp->sp, nullptr, &exp, sz, true, false, false, true);
                     initInsert(push, tn, exp, last, false);
                     insertDynamicDestructor(base, first);
                     *dest = nullptr;
                 }
                 else if (dest)
                 {
-                    callDestructor(btp->sp, nullptr, &exp, sz, true, false, false);
+                    callDestructor(btp->sp, nullptr, &exp, sz, true, false, false, true);
                     initInsert(push, tn, exp, last, false);
                     *dest = first;
                 }
@@ -3332,13 +3411,13 @@ static LEXEME* initialize_auto(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_s
             if (sym->sb->storage_class != sc_auto && sym->sb->storage_class != sc_parameter &&
                 sym->sb->storage_class != sc_member && sym->sb->storage_class != sc_mutable)
             {
-                callDestructor(sym, nullptr, &expl, nullptr, true, false, false);
+                callDestructor(sym, nullptr, &expl, nullptr, true, false, false, true);
                 initInsert(&dest, sym->tp, expl, offset, true);
                 insertDynamicDestructor(sym, dest);
             }
             else if (dest)
             {
-                callDestructor(sym, nullptr, &expl, nullptr, true, false, false);
+                callDestructor(sym, nullptr, &expl, nullptr, true, false, false, true);
                 initInsert(&dest, sym->tp, expl, offset, true);
                 sym->sb->dest = dest;
             }
@@ -3766,6 +3845,7 @@ bool IsConstantExpression(EXPRESSION* node, bool allowParams, bool allowFunc)
         case en_thisref:
         case en_lvalue:
         case en_funcret:
+        case en__initobj:
             rv = IsConstantExpression(node->left, allowParams, allowFunc);
             break;
         case en_func:
@@ -3773,6 +3853,9 @@ bool IsConstantExpression(EXPRESSION* node, bool allowParams, bool allowFunc)
             break;
         case en_stmt:
             rv = false;
+            break;
+        case en__sizeof:
+            rv = true;
             break;
         default:
             rv = false;
@@ -4130,7 +4213,7 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_c
                     sym->sb->init = it;
                 }
                 exp = baseexp;
-                callDestructor(z->sp, nullptr, &exp, sz, true, false, false);
+                callDestructor(z->sp, nullptr, &exp, sz, true, false, false, true);
                 initInsert(&init, z, exp, 0, true);
                 if (storage_class_in != sc_auto && storage_class_in != sc_parameter && storage_class_in != sc_member &&
                     storage_class_in != sc_mutable)
@@ -4155,6 +4238,14 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_c
                 }
             }
         }
+    }
+    if (Optimizer::initializeScalars && !sym->sb->anonymous && !sym->sb->init && (isarithmetic(sym->tp) || (ispointer(sym->tp) && !isarray(sym->tp))) && sym->sb->storage_class == sc_auto)
+    {
+        EXPRESSION* exp = intNode(en_c_i, 0);
+        cast(sym->tp, &exp);
+        optimize_for_constants(&exp);
+        initInsert(&sym->sb->init, sym->tp, exp, 0, false);
+        sym->sb->assigned = true;
     }
     if (isautotype(sym->tp) && !MATCHKW(lex, colon))
     {

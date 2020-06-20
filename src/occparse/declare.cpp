@@ -56,6 +56,7 @@
 #include "types.h"
 #include "browse.h"
 #include "Property.h"
+#include "ildata.h"
 
 namespace Parser
 {
@@ -957,6 +958,7 @@ static LEXEME* structbody(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_ac cur
 
     if (Optimizer::cparams.prm_cplusplus)
     {
+        createDefaultConstructors(sp);
         calculateStructAbstractness(sp, sp);
         calculateVirtualBaseOffsets(sp);  // undefined in local context
         calculateVTabEntries(sp, sp, &sp->sb->vtabEntries, 0);
@@ -985,8 +987,6 @@ static LEXEME* structbody(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_ac cur
     {
         sp->sb->trivialCons = true;
     }
-    if (Optimizer::cparams.prm_cplusplus)
-        createDefaultConstructors(sp);
     resolveAnonymousUnions(sp);
     makeFastTable(sp);
     if (Optimizer::cparams.prm_cplusplus)
@@ -3130,8 +3130,15 @@ static LEXEME* getArrayType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, enum e_sc st
     }
     else if (!MATCHKW(lex, closebr))
     {
-
-        lex = optimized_expression(lex, funcsp, nullptr, &tpc, &constant, false);
+        lex = expression_no_comma(lex, funcsp, nullptr, &tpc, &constant, nullptr, 0);
+        if (tpc)
+        {
+            if (Optimizer::architecture == ARCHITECTURE_MSIL)
+            {
+                RemoveSizeofOperators(constant);
+            }
+            optimize_for_constants(&constant);
+        }
         lex = getPointerQualifiers(lex, quals, true);
         if (!tpc)
         {
@@ -6496,6 +6503,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                             {
                                 if (!sp->sb->label)
                                     sp->sb->label = Optimizer::nextLabel++;
+                                sp->sb->uniqueID = fileIndex;
                             }
 
                             if (/*templateNestingCount &&*/ nameSpaceList)
@@ -6725,6 +6733,28 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                                         st = stmtNode(hold, block, st_expr);
                                         st->select =
                                             convertInitToExpression(sp->tp, sp, nullptr, funcsp, sp->sb->init, nullptr, false);
+                                    }
+                                    else if ((isarray(sp->tp) || isstructured(sp->tp)) && Optimizer::architecture == ARCHITECTURE_MSIL)
+                                    {
+                                        if (sp->sb->storage_class != sc_localstatic)
+                                        {
+                                            STATEMENT* st;
+                                            if (block->next->type == kw_switch)
+                                            {
+                                                // have to put initializations before the switch not in the switch body they cannot be accesed in the switch body
+                                                STATEMENT **bd = &block->next->next->head;
+                                                while ((*bd)->next)
+                                                    bd = &(*bd)->next;
+                                                st = stmtNode(hold, nullptr, st_expr);
+                                                st->next = *bd;
+                                                *bd = st;
+                                            }
+                                            else
+                                            {
+                                                st = stmtNode(hold, block, st_expr);
+                                            }
+                                            st->select = exprNode(en__initobj, varNode(en_auto, sp), nullptr);
+                                        }
                                     }
                                 }
                             }

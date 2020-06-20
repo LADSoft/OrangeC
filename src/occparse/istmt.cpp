@@ -74,6 +74,7 @@ static int breaklab;
 static int contlab;
 static int tryStart, tryEnd;
 static int plabel;
+static Optimizer::IMODE *returnSym;
 
 Optimizer::IMODE* genstmt(STATEMENT* stmt, SYMBOL* funcsp);
 
@@ -136,11 +137,14 @@ Optimizer::IMODE* set_symbol(const char* name, int isproc)
         sym = SymAlloc();
         sym->sb->storage_class = sc_external;
         sym->name = sym->sb->decoratedName = litlate(name);
-        Optimizer::SymbolManager::Get(sym);
         sym->tp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
         sym->tp->type = isproc ? bt_func : bt_int;
         sym->sb->safefunc = true;
         insert(sym, globalNameSpace->valueData->syms);
+        auto osym = Optimizer::SymbolManager::Get(sym);
+        osym->genreffed = true;
+        Optimizer::externalSet.insert(osym);
+        Optimizer::externals.push_back(osym);
     }
     else
     {
@@ -432,7 +436,7 @@ static STATEMENT* gen___try(SYMBOL* funcsp, STATEMENT* stmt)
  */
 void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, Optimizer::IMODE* allocaAP)
 {
-    Optimizer::IMODE *ap = nullptr, *ap1, *ap3;
+    Optimizer::IMODE *ap = nullptr, *ap1 = nullptr, *ap3;
     EXPRESSION ep;
     int size;
     /* returns a value? */
@@ -554,6 +558,12 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, Optimi
                 if (Optimizer::cparams.prm_xcept && funcsp->sb->xc && funcsp->sb->xc->xcRundownFunc)
                     gen_expr(funcsp, funcsp->sb->xc->xcRundownFunc, F_NOVALUE, ISZ_UINT);
                 SubProfilerData();
+                if (returnSym)
+                {
+                    ap1 = Optimizer::tempreg(returnSym->size, 0);
+                    ap1->retval = true;
+                    Optimizer::gen_icode(Optimizer::i_assn, ap1, returnSym, nullptr);
+                }
                 Optimizer::gen_icode(Optimizer::i_epilogue, 0, 0, 0);
                 if (funcsp->sb->attribs.inheritable.linkage == lk_interrupt || funcsp->sb->attribs.inheritable.linkage == lk_fault)
                 {
@@ -574,6 +584,15 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, Optimi
     }
     else
     {
+        if (returnSym)
+        {
+            if (!ap1)
+            {
+                ap1 = Optimizer::tempreg(returnSym->size, 0);
+                ap1->retval = true;
+            }
+            Optimizer::gen_icode(Optimizer::i_assn, returnSym, ap1, nullptr);
+        }
         /* not using gen_igoto because it will make a new block */
         Optimizer::gen_icode(Optimizer::i_goto, nullptr, nullptr, nullptr);
         Optimizer::intermed_tail->dc.v.label = retlab;
@@ -860,6 +879,27 @@ void CopyVariables(SYMBOL* funcsp)
         }
     }
 }
+static void SetReturnSym(SYMBOL *funcsp)
+{
+    if (Optimizer::architecture == ARCHITECTURE_MSIL && !isvoid(basetype(funcsp->tp)->btp))
+    {
+        auto exp = anonymousVar(sc_auto, basetype(funcsp->tp)->btp);
+        auto sym = exp->v.sp;
+        sym->sb->anonymous = false;
+        Optimizer::IMODE* ap = (Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+        auto sym2 = Optimizer::SymbolManager::Get(sym);
+        sym2->imvalue = ap;
+        ap->offset = Optimizer::SymbolManager::Get(exp);
+        ap->offset->sizeFromType = sym2->tp->sizeFromType;
+        ap->mode = Optimizer::i_direct;
+        ap->size = sym2->tp->sizeFromType;
+        returnSym = ap;
+    }
+    else
+    {
+        returnSym = nullptr;
+    }
+}
 void genfunc(SYMBOL* funcsp, bool doOptimize)
 /*
  *      generate a function body and dump the icode
@@ -874,6 +914,8 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     SYMLIST* hr;
     if (TotalErrors())
         return;
+
+    SetReturnSym(funcsp);
     oldCurrentFunction = currentFunction;
     currentFunction = Optimizer::SymbolManager::Get(funcsp);
     currentFunction->initialized = true;
@@ -897,7 +939,6 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     Optimizer::exitBlock = 0;
     consIndex = 0;
     retcount = 0;
-    Optimizer::objectArray_exp = nullptr;
     oldCurrentFunc = theCurrentFunc;
     theCurrentFunc = funcsp;
     iexpr_func_init();

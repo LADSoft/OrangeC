@@ -36,10 +36,13 @@
 #include "MsilProcess.h"
 #include "ildata.h"
 #include "msilInit.h"
-#include "MsilProcess.h"
 #include "symfuncs.h"
 #include "OptUtils.h"
 #include "using.h"
+#include "ioptimizer.h"
+#include "Delegate.h"
+#include "Utils.h"
+#include "gen.h"
 
 using namespace DotNetPELib;
 namespace occmsil
@@ -325,7 +328,7 @@ Operand* getOperand(Optimizer::IMODE* oper)
                 }
                 else if (oper->offset->type != Optimizer::se_tempref)
                 {
-                    if (oper->offset == Optimizer::objectArray_exp)
+                    if (oper->offset->type == Optimizer::se_auto && oper->offset->sp->msilObjectArray)
                     {
                         Type* oa = peLib->AllocateType(Type::object, 0);
                         oa->ArrayLevel(1);
@@ -393,7 +396,7 @@ void load_ind(Optimizer::IMODE* im)
                     if (test->Name() == ptrUnbox->Name())
                         return;
             }
-            op = Instruction::i_ldind_u4;
+            op = Instruction::i_ldind_i;
             break;
         }
         /* */
@@ -456,7 +459,7 @@ void store_ind(Optimizer::IMODE* im)
             op = Instruction::i_stind_i8;
             break;
         case ISZ_ADDR:
-            op = Instruction::i_stind_i4;
+            op = Instruction::i_stind_i;
             break;
         /* */
         case ISZ_FLOAT:
@@ -671,7 +674,18 @@ void gen_load(Optimizer::IMODE* im, Operand* dest, bool retval)
             }
             else if (typeid(*dest->GetValue()) == typeid(MethodName))
             {
+                if (Optimizer::delegateforfuncptr)
+                {
+                    gen_code(Instruction::i_ldnull, nullptr);
+                }
                 gen_code(Instruction::i_ldftn, dest);
+                if (Optimizer::delegateforfuncptr)
+                {
+                    Operand *ctor;
+                    Operand *operand = GetDelegateAllocator(im->offset->sp->tp, ctor);
+                    gen_code(Instruction::i_newobj, ctor);
+                    gen_code(Instruction::i_call, operand);
+                }
                 increment_stack();
             }
             else  // fieldname
@@ -688,9 +702,17 @@ void gen_load(Optimizer::IMODE* im, Operand* dest, bool retval)
                     bool address =
                         t->GetBasicType() == Type::cls && (t->GetClass()->Flags().Flags() & Qualifiers::Value) && !t->ArrayLevel();
                     if (im->mode == Optimizer::i_immed && (!im->msilObject || address) && !retval)
+                    {
                         gen_code(Instruction::i_ldflda, dest);
+                        if (Optimizer::pinning)
+                        {
+                            gen_code(Instruction::i_conv_u, nullptr);
+                        }
+                    }
                     else
+                    {
                         gen_code(Instruction::i_ldfld, dest);
+                    }
                 }
                 else
                 {
@@ -785,6 +807,7 @@ void gen_convert(Operand* dest, Optimizer::IMODE* im, int sz)
     {
         case ISZ_UNATIVE:
             op = Instruction::i_conv_u;
+            break;
         case -ISZ_UNATIVE:
             op = Instruction::i_conv_i;
             break;
@@ -819,7 +842,7 @@ void gen_convert(Operand* dest, Optimizer::IMODE* im, int sz)
             op = Instruction::i_conv_i8;
             break;
         case ISZ_ADDR:
-            op = Instruction::i_conv_u4;
+            op = Instruction::i_conv_u;
             break;
         /* */
         case ISZ_FLOAT:
@@ -849,6 +872,20 @@ void gen_convert(Operand* dest, Optimizer::IMODE* im, int sz)
         {
             box(im);
             MethodSignature* sig = toStr;
+            Operand* ap = peLib->AllocateOperand(peLib->AllocateMethodName(sig));
+            gen_code(Instruction::i_call, ap);
+            return;
+        }
+        case ISZ_TOINT:
+        {
+            MethodSignature* sig = toInt;
+            Operand* ap = peLib->AllocateOperand(peLib->AllocateMethodName(sig));
+            gen_code(Instruction::i_call, ap);
+            return;
+        }
+        case ISZ_TOVOIDSTAR:
+        {
+            MethodSignature* sig = toVoidStar;
             Operand* ap = peLib->AllocateOperand(peLib->AllocateMethodName(sig));
             gen_code(Instruction::i_call, ap);
             return;
@@ -911,29 +948,6 @@ void asm_expressiontag(Optimizer::QUAD* q)
 }
 void asm_tag(Optimizer::QUAD* q)
 {
-    if (q->beforeGosub)
-    {
-        Optimizer::QUAD* find = q;
-        while (find && find->dc.opcode != Optimizer::i_gosub)
-            find = find->fwd;
-        if (find)
-        {
-            if (find->altvararg)
-            {
-                if (msil_managed(find->altsp) || find->dc.left->mode != Optimizer::i_immed)
-                {
-                    if (strcmp(find->altsp->name, "__va_arg__"))
-                    {
-                        if (find->nullvararg)
-                            gen_code(Instruction::i_ldnull, NULL);
-                        else
-                            gen_code(Instruction::i_ldloc,
-                                     peLib->AllocateOperand(localList[Optimizer::objectArray_exp->sp->offset]));
-                    }
-                }
-            }
-        }
-    }
 }
 void asm_line(Optimizer::QUAD* q) /* line number information and text */
 {
@@ -976,6 +990,10 @@ BoxedType* boxedType(int isz)
         n = Type::object;  // to support newarr object[]
     else if (isz == ISZ_STRING)
         n = Type::string;
+    else if (isz == ISZ_TOINT)
+        n = Type::inative;
+    else if (isz == ISZ_TOVOIDSTAR)
+        n = Type::inative;
     else
         n = isz < 0 ? mnames[-isz] : names[isz];
     return peLib->AllocateBoxedType(n);
@@ -995,6 +1013,18 @@ void unbox(int isz)
     Operand* op1 = peLib->AllocateOperand(peLib->AllocateValue("", peLib->AllocateType(n, 0)));
     if (op1)
         gen_code(Instruction::i_unbox, op1);
+}
+void set_xxx(Instruction::iop ins)
+{
+	int lab1 = beGetLabel;
+	int lab2 = beGetLabel;
+        gen_branch(ins, lab1, true);
+        gen_code(Instruction::i_ldc_i4_0, nullptr);
+        gen_branch(Instruction::i_br, lab2, true);
+        msil_oa_gen_label(lab1);
+        gen_code(Instruction::i_ldc_i4_1, nullptr);
+        msil_oa_gen_label(lab2);
+        increment_stack();
 }
 // this implementation won't handle varag functions nested in other varargs...
 void asm_parm(Optimizer::QUAD* q) /* push a parameter*/
@@ -1133,10 +1163,21 @@ void asm_gosub(Optimizer::QUAD* q) /* normal gosub to an immediate label or thro
     }
     else
     {
-        bool virt = false;
-        Operand* ap = getCallOperand(q, virt);
-        gen_code(Instruction::i_calli, ap);
-        decrement_stack();
+        if (Optimizer::delegateforfuncptr)
+        {
+            gen_code(Instruction::i_call, GetDelegateInvoker(q->altsp));
+            if (q->altsp->tp->btp->btp->type == Optimizer::st_void)
+                gen_code(Instruction::i_pop, nullptr);
+            else if (q->altsp->tp->btp->btp->type != Optimizer::st_pointer)
+                gen_convert(nullptr, q->dc.left, q->altsp->tp->btp->btp->sizeFromType);
+        }
+        else
+        {
+            bool virt = false;
+            Operand* ap = getCallOperand(q, virt);
+            gen_code(Instruction::i_calli, ap);
+            decrement_stack();
+        }
     }
     if (q->novalue == -3)
     {
@@ -1284,73 +1325,43 @@ void asm_eor(Optimizer::QUAD* q) /* binary exclusive or */
 }
 void asm_setne(Optimizer::QUAD* q) /* evaluate a = b != c */
 {
-    gen_code(Instruction::i_ceq, NULL);
-    gen_code(Instruction::i_ldc_i4_1, NULL);
-    gen_code(Instruction::i_xor, NULL);
-    increment_stack();
-    decrement_stack();
-    decrement_stack();
+    set_xxx(Instruction::i_bne_un);
 }
 void asm_sete(Optimizer::QUAD* q) /* evaluate a = b == c */
 {
-    gen_code(Instruction::i_ceq, NULL);
-    decrement_stack();
+    set_xxx(Instruction::i_beq);
 }
 void asm_setc(Optimizer::QUAD* q) /* evaluate a = b U< c */
 {
-    gen_code(Instruction::i_clt_un, NULL);
-    decrement_stack();
+    set_xxx(Instruction::i_blt);
 }
 void asm_seta(Optimizer::QUAD* q) /* evaluate a = b U> c */
 {
-    gen_code(Instruction::i_cgt_un, NULL);
-    decrement_stack();
+    set_xxx(Instruction::i_bgt);
 }
 void asm_setnc(Optimizer::QUAD* q) /* evaluate a = b U>= c */
 {
-    gen_code(Instruction::i_clt_un, NULL);
-    gen_code(Instruction::i_ldc_i4_1, NULL);
-    gen_code(Instruction::i_xor, NULL);
-    increment_stack();
-    decrement_stack();
-    decrement_stack();
+    set_xxx(Instruction::i_bge);
 }
 void asm_setbe(Optimizer::QUAD* q) /* evaluate a = b U<= c */
 {
-    gen_code(Instruction::i_cgt_un, NULL);
-    gen_code(Instruction::i_ldc_i4_1, NULL);
-    gen_code(Instruction::i_xor, NULL);
-    increment_stack();
-    decrement_stack();
-    decrement_stack();
+    set_xxx(Instruction::i_ble);
 }
 void asm_setl(Optimizer::QUAD* q) /* evaluate a = b S< c */
 {
-    gen_code(Instruction::i_clt, NULL);
-    decrement_stack();
+    set_xxx(Instruction::i_blt);
 }
 void asm_setg(Optimizer::QUAD* q) /* evaluate a = b s> c */
 {
-    gen_code(Instruction::i_cgt, NULL);
-    decrement_stack();
+    set_xxx(Instruction::i_bgt);
 }
 void asm_setle(Optimizer::QUAD* q) /* evaluate a = b S<= c */
 {
-    gen_code(Instruction::i_cgt, NULL);
-    gen_code(Instruction::i_ldc_i4_1, NULL);
-    gen_code(Instruction::i_xor, NULL);
-    increment_stack();
-    decrement_stack();
-    decrement_stack();
+    set_xxx(Instruction::i_ble);
 }
 void asm_setge(Optimizer::QUAD* q) /* evaluate a = b S>= c */
 {
-    gen_code(Instruction::i_clt, NULL);
-    gen_code(Instruction::i_ldc_i4_1, NULL);
-    gen_code(Instruction::i_xor, NULL);
-    increment_stack();
-    decrement_stack();
-    decrement_stack();
+    set_xxx(Instruction::i_bge);
 }
 void asm_assn(Optimizer::QUAD* q) /* assignment */
 {
@@ -1421,7 +1432,7 @@ void asm_assn(Optimizer::QUAD* q) /* assignment */
         // don't generate if it is a placeholder ind...
         if (q->ans->mode == Optimizer::i_direct && !(q->temps & TEMP_ANS) && q->ans->offset->type == Optimizer::se_auto)
         {
-            if (Optimizer::objectArray_exp && q->ans->offset->sp == Optimizer::objectArray_exp->sp)
+            if (q->ans->offset->sp->msilObjectArray)
             {
                 // assign to object array, call the ctor here
                 // count is already on the stack
@@ -1479,6 +1490,27 @@ void asm_assn(Optimizer::QUAD* q) /* assignment */
         }
     }
     ap = getOperand(q->ans);
+    if (Optimizer::delegateforfuncptr)
+    {
+        Optimizer::SimpleExpression* en = GetSymRef(q->ans->offset);
+        Optimizer::SimpleSymbol* sp = NULL;
+        if (en && en->type != Optimizer::se_labcon)
+        {
+            sp = en->sp;
+        }
+        else if (q->ans->offset->type == Optimizer::se_tempref)
+        {
+            sp = (Optimizer::SimpleSymbol*)q->ans->offset->right;
+        }
+        if (sp)
+        {
+            if (sp->tp->type == Optimizer::st_pointer && sp->tp->btp->type == Optimizer::st_func)
+            {
+                gen_load(q->ans, ap, q->ans->retval);
+                gen_code(Instruction::i_call, peLib->AllocateOperand(peLib->AllocateMethodName(delegateFreer)));                
+            }
+        }
+    }
     gen_store(q->ans, ap);
     if (q->ans->retval)
         returnCount++;
@@ -1634,11 +1666,29 @@ void asm_assnblock(Optimizer::QUAD* q) /* copy block of memory*/
 }
 void asm_clrblock(Optimizer::QUAD* q) /* clear block of memory */
 {
+    asm_initobj(q);
+}
+void asm_initblock(Optimizer::QUAD* q) /* clear block of memory */
+{
     // the 'value' field is loaded by examine_icode...
     gen_code(Instruction::i_initblk, 0);
     decrement_stack();
     decrement_stack();
     decrement_stack();
+}
+void asm_initobj(Optimizer::QUAD* q)
+{
+    auto operand = peLib->AllocateOperand(peLib->AllocateValue("", GetType(q->dc.left->offset->sp->tp, true)));
+    gen_code(Instruction::i_initobj, operand);
+    decrement_stack();
+}
+void asm_sizeof(Optimizer::QUAD* q)
+{
+    auto type = GetType(q->dc.left->offset->tp, true);
+    type->ShowType();
+    auto operand = peLib->AllocateOperand(peLib->AllocateValue("", type));
+    gen_code(Instruction::i_sizeof, operand);
+    increment_stack();
 }
 void asm_cmpblock(Optimizer::QUAD* q)
 {
@@ -1651,9 +1701,14 @@ void asm_je(Optimizer::QUAD* q) /* branch if a == b */
     if (q->dc.right->mode == Optimizer::i_immed &&
         ((q->dc.right->offset->type == Optimizer::se_i || q->dc.right->offset->type == Optimizer::se_ui) &&
          q->dc.right->offset->i == 0))
+    {
+        gen_code(Instruction::i_conv_i4, nullptr);
         gen_branch(Instruction::i_brfalse, q->dc.v.label, true);
+    }
     else
+    {
         gen_branch(Instruction::i_beq, q->dc.v.label, true);
+    }
 }
 void asm_jnc(Optimizer::QUAD* q) /* branch if a U>= b */ { gen_branch(Instruction::i_bge_un, q->dc.v.label, true); }
 void asm_jbe(Optimizer::QUAD* q) /* branch if a U<= b */ { gen_branch(Instruction::i_ble_un, q->dc.v.label, true); }
@@ -1662,9 +1717,14 @@ void asm_jne(Optimizer::QUAD* q) /* branch if a != b */
     if (q->dc.right->mode == Optimizer::i_immed &&
         ((q->dc.right->offset->type == Optimizer::se_i || q->dc.right->offset->type == Optimizer::se_ui) &&
          q->dc.right->offset->i == 0))
+    {
+        gen_code(Instruction::i_conv_i4, nullptr);
         gen_branch(Instruction::i_brtrue, q->dc.v.label, true);
+    }
     else
+    {
         gen_branch(Instruction::i_bne_un, q->dc.v.label, true);
+    }
 }
 void asm_jl(Optimizer::QUAD* q) /* branch if a S< b */ { gen_branch(Instruction::i_blt, q->dc.v.label, true); }
 void asm_jg(Optimizer::QUAD* q) /* branch if a S> b */ { gen_branch(Instruction::i_bgt, q->dc.v.label, true); }
@@ -1809,4 +1869,8 @@ void asm_loadstack(Optimizer::QUAD* q) /* load the stack pointer from a var */ {
 void asm_savestack(Optimizer::QUAD* q) /* save the stack pointer to a var */ {}
 void asm_functail(Optimizer::QUAD* q, int begin, int size) /* functail start or end */ {}
 void asm_atomic(Optimizer::QUAD* q) {}
+void asm_nop(Optimizer::QUAD* q)
+{
+    gen_code(Instruction::i_nop, 0);
+}
 }  // namespace occmsil

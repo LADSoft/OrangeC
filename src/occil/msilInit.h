@@ -43,7 +43,14 @@ extern MethodSignature* ptrUnbox;
 extern MethodSignature* concatStr;
 extern MethodSignature* concatObj;
 extern MethodSignature* toStr;
+extern MethodSignature* toInt;
+extern MethodSignature* toVoidStar;
+extern MethodSignature* delegateInvoker;
+extern MethodSignature* delegateAllocator;
+extern MethodSignature* delegateFreer;
+extern Class* multicastDelegate;
 extern Type* systemObject;
+extern Type* intPtr;
 extern Method* currentMethod;
 extern DataContainer* mainContainer;
 extern Optimizer::LIST *initializersHead, *initializersTail;
@@ -67,6 +74,7 @@ extern std::map<std::string, MethodSignature*> arrayMethods;
 
 extern std::vector<Local*> localList;
 
+MethodSignature* FindMethodSignature(const char* name);
 Type* FindType(const char* name, bool toErr);
 int msil_main_preprocess(char* fileName);
 void msil_end_generation(char* fileName);

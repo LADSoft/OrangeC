@@ -22,7 +22,7 @@
     <ProjectGuid>{BBFCD994-01E6-4F10-8B3C-8D4A190434A4}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>test</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -151,9 +151,6 @@
   <ItemGroup>
     <ProjectReference Include="..\DotNetPELib.vcxproj">
       <Project>{9e09e239-7370-4cbc-a82e-40dbcc0947f3}</Project>
-    </ProjectReference>
-    <ProjectReference Include="testcsc.csproj">
-      <Project>{5be35f88-e1cb-4aaf-acc9-5227b5143b17}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

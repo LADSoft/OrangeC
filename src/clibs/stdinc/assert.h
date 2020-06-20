@@ -56,7 +56,7 @@ extern "C"
 #    endif
 
 #    undef assert
-#    if !defined(NDEBUG) && (!defined(__MSIL_) || defined(__MANAGED__))
+#    if !defined(NDEBUG) && (!defined(__MSIL__) || defined(__MANAGED__))
 #        if __STDC_VERSION__ >= 199901L
 #            define assert(p) ((p) ? (void)0 : (void)__assertfail("Assertion failed", __FILE__, __LINE__, __func__, #            p))
 #        else

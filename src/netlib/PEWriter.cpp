@@ -52,7 +52,7 @@ DotNetMetaHeader* PEWriter::metaHeader_ = &metaHeader1;
 DWord PEWriter::cildata_rva_;
 Byte PEWriter::defaultUS_[8] = {0, 3, 0x20, 0, 0};
 
-size_t PEMethod::Write(size_t sizes[MaxTables + ExtraIndexes], std::fstream& out) const
+size_t PEMethod::Write(size_t sizes[MaxTables + ExtraIndexes], std::iostream& out) const
 {
     Byte dest[512];
     int n;
@@ -472,7 +472,7 @@ void PEWriter::CalculateObjects(PELib& peLib)
         }
         else
         {
-            method->rva_ = lastRVA;
+            method->rva_ = 0;
         }
     }
     if (currentRVA % 4)
@@ -685,7 +685,7 @@ void PEWriter::HashPartOfFile(SHA1Context& context, size_t offset, size_t len)
         sz += l;
     }
 }
-bool PEWriter::WriteFile(PELib& peLib, std::fstream& out)
+bool PEWriter::WriteFile(PELib& peLib, std::iostream& out)
 {
     outputFile_ = &out;
     if (!entryPoint_ && !DLL_)

@@ -528,7 +528,6 @@
 #define ERR_ATTRIBUTE_DOES_NOT_EXIST 502
 #define ERR_ATTRIBUTE_DOES_NOT_EXIST_IN_NAMESPACE 503
 #define ERR_STATIC_FUNCTION_USED_BUT_NOT_DEFINED 504
-
 void diag(const char* fmt, ...);
 
 namespace Parser

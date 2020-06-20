@@ -86,7 +86,6 @@ enum DataType
 struct FunctionData
 {
     Optimizer::SimpleSymbol* name;
-    Optimizer::SimpleExpression* objectArray_exp;
     Optimizer::SimpleExpression* fltexp;
     std::vector<Optimizer::SimpleSymbol*> temporarySymbols;
     std::vector<Optimizer::SimpleSymbol*> variables;
@@ -174,6 +173,10 @@ enum e_stt
     STT_INSTRUCTION,
 
 };
+extern bool pinning;
+extern bool msilstrings;
+extern bool delegateforfuncptr;
+extern bool initializeScalars;
 extern int gentype; /* Current DC type */
 extern int curseg;  /* Current seg */
 extern int outcol;  /* Curront col (roughly) */
@@ -208,7 +211,6 @@ extern std::string prm_assemblerSpecifier;
 extern std::string outputFileName;
 extern std::string assemblerFileExtension;
 
-extern Optimizer::SimpleExpression* objectArray_exp;
 extern Optimizer::SimpleExpression* fltexp;
 
 extern int exitBlock;

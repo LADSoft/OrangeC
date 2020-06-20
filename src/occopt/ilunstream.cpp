@@ -268,6 +268,9 @@ static Optimizer::SimpleExpression* UnstreamExpression()
                 case se_msil_array_init:
                     rv->tp = UnstreamType();
                     break;
+                case Optimizer::se_typeref:
+                    rv->tp = UnstreamType();
+                    break;
                 case se_string:
                 {
                     std::string val;
@@ -553,6 +556,10 @@ static void UnstreamXParams()
         bssAlign = UnstreamIndex();
         constAlign = UnstreamIndex();
         nextLabel = UnstreamIndex();
+        pinning = !!UnstreamIndex();
+        msilstrings = !!UnstreamIndex();
+        delegateforfuncptr = !!UnstreamIndex();
+        initializeScalars = !!UnstreamIndex();
         registersAssigned = UnstreamIndex();
         UnstreamString(prm_assemblerSpecifier);
         UnstreamString(prm_libPath);
@@ -715,7 +722,6 @@ static FunctionData* UnstreamFunc()
     UnstreamSymbolList(fd->variables);
     UnstreamSymbolList(fd->temporarySymbols);
     UnstreamIModes(*fd);
-    fd->objectArray_exp = UnstreamExpression();
     fd->fltexp = UnstreamExpression();
     fd->instructionList = UnstreamInstructions(*fd);
     UnstreamTemps();
@@ -877,6 +883,7 @@ void ReadText(std::map<int, std::string>& texts)
             int len = UnstreamIndex();
             std::string val;
             val.resize(len, 0);
+
             for (auto&& c : val)
                 c = UnstreamByte();
             texts[i] = val;
@@ -886,7 +893,7 @@ void ReadText(std::map<int, std::string>& texts)
 }
 static Optimizer::SimpleSymbol* SymbolName(Optimizer::SimpleSymbol* selection, std::vector<Optimizer::SimpleSymbol*>* table)
 {
-    // symbol index was multiplied by two and the low bit was set
+    // symbol index was multiplied by two and the low bit was setst
     int index = ((int)selection - 1) / 2;
     if (index > 0)
     {
@@ -941,7 +948,15 @@ static void ResolveExpression(Optimizer::SimpleExpression* exp, std::map<int, st
         switch (exp->type)
         {
             case se_auto:
-                ResolveSymbol(exp->sp, texts, current->variables);
+                if ((int)exp->sp & 0x40000000)
+                {
+                    exp->sp = ((SimpleSymbol*)((int)exp->sp & ~0x40000000));
+                    ResolveSymbol(exp->sp, texts, globalCache);
+                }
+                else
+                {
+                    ResolveSymbol(exp->sp, texts, current->variables);
+                }
                 break;
             case se_const:
             case se_absolute:
@@ -957,6 +972,9 @@ static void ResolveExpression(Optimizer::SimpleExpression* exp, std::map<int, st
                 exp->sp = SymbolName(exp->sp, &typeSymbols);
                 break;
             case se_msil_array_init:
+                ResolveType(exp->tp, texts, typeSymbols);
+                break;
+            case se_typeref:
                 ResolveType(exp->tp, texts, typeSymbols);
                 break;
         }
@@ -983,7 +1001,6 @@ static void ResolveExpression(Optimizer::SimpleExpression* exp, std::map<int, st
         {
             ResolveExpression(exp->right, texts);
         }
-        ResolveExpression(exp->altData, texts);
     }
 }
 static void ResolveAssemblyInstruction(OCODE* c, std::map<int, std::string>& texts)
@@ -1108,7 +1125,6 @@ static void ResolveFunction(FunctionData* fd, std::map<int, std::string>& texts)
     }
     for (auto q = fd->instructionList; q; q = q->fwd)
         ResolveInstruction(q, texts);
-    ResolveExpression(fd->objectArray_exp, texts);
     ResolveExpression(fd->fltexp, texts);
     lastFunction = current;
     current = nullptr;

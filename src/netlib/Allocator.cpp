@@ -45,6 +45,12 @@ Class* Allocator::AllocateClass(const std::string& Name, Qualifiers Flags, int P
     new (rv) Class(Name, Flags, Pack, Size);
     return static_cast<Class*>(rv);
 }
+Class* Allocator::AllocateClass(const Class* cls)
+{
+    void* rv = BaseAlloc(sizeof(Class));
+    new (rv) Class(*cls);
+    return static_cast<Class*>(rv);
+}
 Method* Allocator::AllocateMethod(MethodSignature* Prototype, Qualifiers flags, bool entry)
 {
     void* rv = BaseAlloc(sizeof(Method));
@@ -164,6 +170,12 @@ MethodSignature* Allocator::AllocateMethodSignature(const std::string& Name, int
 {
     void* rv = BaseAlloc(sizeof(MethodSignature));
     new (rv) MethodSignature(Name, Flags, Container);
+    return static_cast<MethodSignature*>(rv);
+}
+MethodSignature* Allocator::AllocateMethodSignature(const MethodSignature* sig)
+{
+    void* rv = BaseAlloc(sizeof(MethodSignature));
+    new (rv) MethodSignature(*sig);
     return static_cast<MethodSignature*>(rv);
 }
 Type* Allocator::AllocateType(Type::BasicType Tp, int PointerLevel)

@@ -6,13 +6,16 @@ endif
 
 CURFILES = $(wildcard *.c)
 
-all: cc386 sqlite3 local
+all: cc386 sqlite3 szip local 
 
 cc386:
 	$(MAKE) -Ccc386
 
 sqlite3:
 	$(MAKE) -Csqlite3
+
+szip:
+	$(MAKE) -Cszip
 
 msil:
 	$(MAKE) -Cmsil

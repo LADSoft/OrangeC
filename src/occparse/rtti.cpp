@@ -264,7 +264,7 @@ static void RTTIDumpHeader(SYMBOL* xtSym, TYPE* tp, int flags)
             if (!sym->sb->inlineFunc.stmt && !sym->sb->deferredCompile)
             {
                 EXPRESSION* exp = intNode(en_c_i, 0);
-                callDestructor(basetype(tp)->sp, nullptr, &exp, nullptr, true, false, true);
+                callDestructor(basetype(tp)->sp, nullptr, &exp, nullptr, true, false, true, true);
                 if (exp && exp->left)
                     sym = exp->left->v.func->sp;
             }
@@ -632,6 +632,8 @@ static void XCExpression(EXPRESSION* node, XCLIST*** listPtr)
         case en_alloca:
         case en_loadstack:
         case en_savestack:
+        case en__initobj:
+        case en__sizeof:
             XCExpression(node->left, listPtr);
             break;
         case en_assign:

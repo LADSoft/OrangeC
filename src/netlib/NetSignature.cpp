@@ -31,6 +31,8 @@ int SignatureGenerator::workArea[400 * 1024];
 
 int SignatureGenerator::basicTypes[] = {0,
                                         0,
+                                        0,
+                                        0,
                                         ELEMENT_TYPE_VOID,
                                         ELEMENT_TYPE_bool,
                                         ELEMENT_TYPE_CHAR,
@@ -54,10 +56,15 @@ int SignatureGenerator::objectBase;
 size_t SignatureGenerator::EmbedType(int* buf, int offset, Type* tp)
 {
     int rv = 0;
+    if (tp->Pinned())
+        buf[offset + rv++] = ELEMENT_TYPE_PINNED;
+
     if (tp->ByRef())
         buf[offset + rv++] = ELEMENT_TYPE_BYREF;
+
     for (int i = 0; i < tp->PointerLevel(); i++)
         buf[offset + rv++] = ELEMENT_TYPE_PTR;
+
     if (tp->ArrayLevel())
     {
         if (tp->ArrayLevel() == 1)
@@ -74,10 +81,25 @@ size_t SignatureGenerator::EmbedType(int* buf, int offset, Type* tp)
         case Type::object:
             buf[offset + rv++] = ELEMENT_TYPE_OBJECT;
             break;
+        case Type::mvar:
+            buf[offset + rv++] = ELEMENT_TYPE_MVAR;
+            buf[offset + rv++] = tp->VarNum();
+            break;
+        case Type::var:
+            buf[offset + rv++] = ELEMENT_TYPE_VAR;
+            buf[offset + rv++] = tp->VarNum();
+            break;
         case Type::cls:
         {
-            Class* cls = (Class*)tp->GetClass();
-            if (cls->Flags().Flags() & Qualifiers::Value)
+            Class* cls = static_cast<Class*>(tp->GetClass());
+            Class* cls1 = cls;
+            if (cls->Generic().size())
+            {
+                buf[offset + rv++] = ELEMENT_TYPE_GENERICINST;
+                // the parent is expected to be the main class for the generic.
+                cls1 = cls->GenericParent();
+            }
+            if (cls1->Flags().Flags() & Qualifiers::Value)
             {
                 buf[offset + rv++] = ELEMENT_TYPE_VALUETYPE;
             }
@@ -85,13 +107,21 @@ size_t SignatureGenerator::EmbedType(int* buf, int offset, Type* tp)
             {
                 buf[offset + rv++] = ELEMENT_TYPE_CLASS;
             }
-            if (cls->InAssemblyRef())
+            if (cls1->InAssemblyRef())
             {
-                buf[offset + rv++] = (cls->PEIndex() << 2) | TypeDefOrRef::TypeRef;
+                buf[offset + rv++] = (cls1->PEIndex() << 2) | TypeDefOrRef::TypeRef;
             }
             else
             {
-                buf[offset + rv++] = (cls->PEIndex() << 2) | TypeDefOrRef::TypeDef;
+                buf[offset + rv++] = (cls1->PEIndex() << 2) | TypeDefOrRef::TypeDef;
+            }
+            if (cls->Generic().size())
+            {
+                buf[offset + rv++] = cls->Generic().size();
+                for (auto type : cls->Generic())
+                {
+                    rv += EmbedType(buf, offset + rv, type);
+                }
             }
             break;
         }
@@ -299,7 +329,13 @@ Type* SignatureGenerator::TypeFromTypeRef(PELib& lib, AssemblyDef& assembly, PER
     }
     else if (tag == TypeDefOrRef::TypeSpec)
     {
-        printf("%s\n", "type from type spec");
+        TypeSpecTableEntry* entry1 = static_cast<TypeSpecTableEntry*>(reader.Table(tTypeSpec)[index - 1]);
+        size_t blobIndex = entry1->signatureIndex_.index_;
+        Byte buf[10000];
+        size_t start = 0;
+        size_t n = reader.ReadFromBlob(buf, sizeof(buf), blobIndex);
+        rv = GetType(lib, assembly, reader, buf, start, n);
+        return rv;
     }
     return rv;
 }
@@ -308,8 +344,6 @@ Type* SignatureGenerator::BasicType(PELib& lib, int typeIndex, int pointerLevel)
     Type::BasicType type = Type::Void;
     switch (typeIndex)
     {
-        case ELEMENT_TYPE_VAR:
-        case ELEMENT_TYPE_GENERICINST:
         case ELEMENT_TYPE_END:
             return nullptr;
         case ELEMENT_TYPE_VOID:
@@ -363,6 +397,12 @@ Type* SignatureGenerator::BasicType(PELib& lib, int typeIndex, int pointerLevel)
         case ELEMENT_TYPE_OBJECT:
             type = Type::object;
             break;
+        case ELEMENT_TYPE_MVAR:
+            type = Type::mvar;
+            break;
+        case ELEMENT_TYPE_VAR:
+            type = Type::var;
+            break;
         default:
             printf("Unknown type %x\n", typeIndex);
             break;
@@ -378,8 +418,10 @@ void SignatureGenerator::TypeFromMethod(PELib& lib, AssemblyDef& assembly, PERea
         len--;
         if (flag & 0x10)
         {
-            // has generic params, we don't process any further;
-            return;
+            // generic
+            int argcount = data[start++];
+            method->GenericParamCount(argcount);
+            len--;
         }
         if (flag & 0x20)
             method->Instance(true);
@@ -402,6 +444,14 @@ Type* SignatureGenerator::GetType(PELib& lib, AssemblyDef& assembly, PEReader& r
     Type* rv = NULL;
     int pointerLevel = 0;
     int arrayLevel = 0;
+    int pinned = false;
+    if (data[start] == ELEMENT_TYPE_PINNED)
+    {
+        pinned = true;
+
+        start++;
+        len--;
+    }
     while (data[start] == ELEMENT_TYPE_PTR)
     {
         pointerLevel++;
@@ -439,6 +489,12 @@ Type* SignatureGenerator::GetType(PELib& lib, AssemblyDef& assembly, PEReader& r
             start++, len--;
         }
     }
+    bool hasGeneric = false;
+    if (data[start] == ELEMENT_TYPE_GENERICINST)
+    {
+        hasGeneric = true;
+        start++, len--;
+    }
     switch (data[start])
     {
         size_t index;
@@ -461,7 +517,32 @@ Type* SignatureGenerator::GetType(PELib& lib, AssemblyDef& assembly, PEReader& r
             start++, len--;
             index = LoadIndex(data, start, len);
             rv = TypeFromTypeRef(lib, assembly, reader, index, pointerLevel);
+            if (hasGeneric)
+            {
+                int n = data[start];
+                start++;
+                len--;
+                if (len == 0)
+                    return nullptr;
+                for (int i=0; i < n; i++)
+                {
+                    Class *cls = static_cast<Class*>(rv->GetClass());
+                    GetType(lib, assembly, reader, data, start, len);       
+                    //                    cls->Generic().push_back(GetType(lib, assembly, reader, data, start, len));       
+                }
+            }
             break;
+        case ELEMENT_TYPE_VAR:
+            start++, len--;
+            index = LoadIndex(data, start, len);
+            rv = BasicType(lib, ELEMENT_TYPE_VAR, index);
+            break;
+        case ELEMENT_TYPE_MVAR:
+            start++, len--;
+            index = LoadIndex(data, start, len);
+            rv = BasicType(lib, ELEMENT_TYPE_MVAR, index);
+            break;
+        break;
         case ELEMENT_TYPE_FNPTR:
             start++, len--;
             sig = lib.AllocateMethodSignature("$$unknown", MethodSignature::Managed, nullptr);
@@ -475,7 +556,10 @@ Type* SignatureGenerator::GetType(PELib& lib, AssemblyDef& assembly, PEReader& r
             break;
     }
     if (rv)
+    {
         rv->ArrayLevel(arrayLevel);
+        rv->Pinned(pinned);
+    }
     return rv;
 }
 Byte* SignatureGenerator::ConvertToBlob(int* buf, int size, size_t& sz)
@@ -523,7 +607,13 @@ size_t SignatureGenerator::CoreMethod(MethodSignature* method, int paramCount, i
         flag |= 0x20;
     if ((method->Flags() & MethodSignature::Vararg) && !(method->Flags() & MethodSignature::Managed))
         flag |= 5;
+    if (method->GenericParamCount())
+        flag |= 0x10;
     workArea[size++] = flag;
+    if (method->GenericParamCount())
+    {
+        workArea[size++] = method->GenericParamCount();
+    }
     workArea[size++] = paramCount;
     size += EmbedType(workArea, size, method->ReturnType());
     for (auto it = method->begin(); it != method->end(); ++it)
@@ -556,6 +646,18 @@ Byte* SignatureGenerator::MethodRefSig(MethodSignature* method, size_t& sz)
     }
     return ConvertToBlob(workArea, size, sz);
 }
+Byte *SignatureGenerator::MethodSpecSig(MethodSignature *signature, size_t &sz)
+{
+    int size = 0;
+    workArea[size++] = 0x0a; // generic
+    workArea[size++] = signature->Generic().size();
+    for (auto g : signature->Generic())
+    {
+       size += EmbedType(workArea, size, g);
+    }
+    return ConvertToBlob(workArea, size, sz);
+}
+
 Byte* SignatureGenerator::FieldSig(Field* field, size_t& sz)
 {
     int size = 0;

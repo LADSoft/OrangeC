@@ -41,7 +41,7 @@ occmsil.dll:
 	move occmsil.dll $(SYSOBJECT)
 
 lsmsilcrtl.dll:
-	csc /unsafe /keyfile:lsmsilcrtl\occil.snk /t:library lsmsilcrtl\lsmsilcrtl.cs lsmsilcrtl\properties\assemblyinfo.cs
+	csc /unsafe /langversion:7.3 /keyfile:lsmsilcrtl\occil.snk /t:library lsmsilcrtl\lsmsilcrtl.cs lsmsilcrtl\properties\assemblyinfo.cs
 	move lsmsilcrtl.dll $(SYSOBJECT)
 
 DISTRIBUTE:

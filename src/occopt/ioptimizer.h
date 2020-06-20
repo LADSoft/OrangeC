@@ -125,6 +125,7 @@ struct SimpleType
             unsigned isvolatile : 1;
             unsigned isrestrict : 1;
             unsigned istypedef : 1;
+            unsigned pinned : 1;
         };
         unsigned flags;
     };
@@ -220,6 +221,7 @@ struct SimpleSymbol
             unsigned usesEsp : 1;
             unsigned addressTaken : 1;
             unsigned genreffed : 1;
+            unsigned msilObjectArray : 1;
         };
         unsigned long long flags;
     };
@@ -273,7 +275,8 @@ enum se_type
     se_tempref,
     se_msil_array_init,
     se_msil_array_access,
-    se_string
+    se_string,
+    se_typeref
 };
 struct SimpleString
 {
@@ -428,7 +431,7 @@ struct ArgList
         i_tryblock, i_substack, i_parmstack, i_loadstack, i_savestack, i_functailstart, i_functailend,
         i_gcsestub, i_expressiontag, i_tag, i_seh,
         /* msil */
-        i__initblk, i__cpblk,
+        i__initblk, i__cpblk, i__initobj, i__sizeof,
         /* Dag- specific stuff */
         i_var, i_const, i_ptr, i_labcon,
         /* end marker */
@@ -562,7 +565,6 @@ typedef struct quad
     {
         struct
         {
-            int altvararg : 1;  // for MSIL
             int valist : 1;     /* argument is a valist that needs translation */
             int denormal : 1;
             int isvolatile : 1;
@@ -582,12 +584,11 @@ typedef struct quad
             int ignoreMe : 1;
             int genConflict : 1; /* assignment node the ans conflicts with left */
             int hook : 1;        /* one of the two assigns for a hook, used in diagnostic generation */
-            int vararg : 1;      /* a param passed as a vararg */
-            int varargPrev : 1;  /* right before the vararg is genned */
             int beforeGosub : 1;
             int nullvararg : 1;
             int blockassign : 1;
             int atomic : 1; /* atomic instruction */
+            int vararg : 1; // msil
         };
         unsigned flags;
     };

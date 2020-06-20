@@ -1,3 +1,12 @@
+Version 3.03:
+	add support for explicit types (for sizeof)
+	add support for pinning
+	add support for generic classes and allow find functions to match by generic arguments
+        add minimal support for generic functions (find not updated)
+        add qualifiers for virtual/newslot
+        add qualifier for runtime functions
+        remove old 'virtual' functions
+
 Version 3.02:
 	fix problems parsing and generating properties
 	allow 'find' functions to find constructors

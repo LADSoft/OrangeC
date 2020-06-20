@@ -104,6 +104,9 @@ void asm_swbranch(Optimizer::QUAD* q);
 void asm_dc(Optimizer::QUAD* q);
 void asm_assnblock(Optimizer::QUAD* q);
 void asm_clrblock(Optimizer::QUAD* q);
+void asm_initblock(Optimizer::QUAD* q);
+void asm_initobj(Optimizer::QUAD* q);
+void asm_sizeof(Optimizer::QUAD* q);
 void asm_cmpblock(Optimizer::QUAD* q);
 void asm_jc(Optimizer::QUAD* q);
 void asm_ja(Optimizer::QUAD* q);
@@ -129,5 +132,5 @@ void asm_loadstack(Optimizer::QUAD* q);
 void asm_savestack(Optimizer::QUAD* q);
 void asm_functail(Optimizer::QUAD* q, int begin, int size);
 void asm_atomic(Optimizer::QUAD* q);
-
+void asm_nop(Optimizer::QUAD* q);
 }  // namespace occmsil

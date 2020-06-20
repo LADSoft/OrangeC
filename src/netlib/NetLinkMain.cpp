@@ -317,7 +317,7 @@ MethodSignature* NetLinkMain::LookupSignature(const char* name)
 {
     Method* result;
     PELib::eFindType rv =
-        peLib->Find(const_cast<char*>((namespaceAndClass + name).c_str()), &result, std::vector<Type*>{}, nullptr, false);
+        peLib->Find(const_cast<char*>((namespaceAndClass + name).c_str()), &result, std::vector<Type*>{}, nullptr, nullptr, nullptr, false);
     if (rv == PELib::s_method)
     {
         return result->Signature();
@@ -332,7 +332,7 @@ MethodSignature* NetLinkMain::LookupSignature(const char* name)
 MethodSignature* NetLinkMain::LookupManagedSignature(const char* name)
 {
     Method* rv = nullptr;
-    peLib->Find(std::string("lsmsilcrtl.rtl::") + name, &rv, std::vector<Type*>{}, nullptr, false);
+    peLib->Find(std::string("lsmsilcrtl.rtl::") + name, &rv, std::vector<Type*>{}, nullptr, nullptr, nullptr, false);
     if (rv)
         return rv->Signature();
     return nullptr;
@@ -350,7 +350,7 @@ Field* NetLinkMain::LookupField(const char* name)
 Field* NetLinkMain::LookupManagedField(const char* name)
 {
     void* rv = nullptr;
-    if (peLib->Find(std::string("lsmsilcrtl.rtl::") + name, &rv, nullptr) == PELib::s_field)
+    if (peLib->Find(std::string("lsmsilcrtl.rtl::") + name, &rv) == PELib::s_field)
     {
         return static_cast<Field*>(rv);
     }
@@ -609,6 +609,8 @@ bool NetLinkMain::EnterMethod(const Method* method)
         startups.push_back(method->Signature());
     else if (!strncmp(method->Signature()->Name().c_str(), "$$RUNDOWN", 9))
         rundowns.push_back(method->Signature());
+    else if (!strncmp(method->Signature()->Name().c_str(), "string_init_", 12))
+        stringinitializers.push_back(method->Signature());
 
     if (method->HasEntryPoint())
     {
@@ -648,6 +650,7 @@ bool NetLinkMain::AddRTLThunks()
         rundowns.reverse();
 
         MainInit();
+        dumpInitializerCalls(stringinitializers);
         dumpInitializerCalls(startups);
         dumpInitializerCalls(initializers);
         MainLocals();
@@ -730,8 +733,8 @@ int NetLinkMain::Run(int argc, char** argv)
     }
     if (!Validate())
     {
-        delete peLib;
-        return 1;
+//        delete peLib;
+//        return 1;
     }
     if (!CreateExecutable(files))
     {

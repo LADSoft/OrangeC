@@ -1441,8 +1441,11 @@ int opt0(EXPRESSION** node)
                         val = ep->left->v.i;
                         if (val == 0)
                         {
-                            addaside(ep->right);
-                            *node = ep->left;
+                            if (ep->right->type != en__sizeof)
+                            {
+                                addaside(ep->right);
+                                *node = ep->left;
+                            }
                         }
                         else if (val == 1)
                             *node = ep->right;
@@ -2120,6 +2123,8 @@ int opt0(EXPRESSION** node)
         case en_lvalue:
         case en_thisref:
         case en_funcret:
+        case en__initobj:
+        case en__sizeof:
             rv |= opt0(&(ep->left));
             break;
         case en_func:
@@ -2684,6 +2689,8 @@ int fold_const(EXPRESSION* node)
         case en_argnopush:
         case en_not_lvalue:
         case en_lvalue:
+        case en__initobj:
+        case en__sizeof:
             rv |= fold_const(node->left);
             break;
         case en_funcret:
@@ -2888,6 +2895,8 @@ int typedconsts(EXPRESSION* node1)
         case en_thisref:
         case en_literalclass:
         case en_funcret:
+        case en__initobj:
+        case en__sizeof:
             rv |= typedconsts(node1->left);
             break;
         case en_func:
@@ -3394,6 +3403,51 @@ static void rebalance(EXPRESSION* ep)
             break;
     }
 }
+bool msilConstant(EXPRESSION *exp)
+{
+    if (Optimizer::architecture == ARCHITECTURE_MSIL)
+    {
+        while (castvalue(exp))
+            exp = exp->left;
+        if (exp->type == en__sizeof)
+            return true;
+        if (exp->type == en_func)
+        {
+            if (exp->v.func->arguments && !exp->v.func->arguments->next && !strcmp(exp->v.func->sp->name, "ToPointer"))
+                return true;
+        }
+        if (exp->left && !msilConstant(exp->left))
+            return false;
+        if (exp->right && !msilConstant(exp->right))
+            return false;
+        switch (exp->type)
+        {
+            case en_add:
+            case en_mul:
+            case en_umul:
+            case en_div:
+            case en_udiv:
+                return true;
+            default:
+                return isarithmeticconst(exp);
+        }
+    }
+    return false;
+}
+void RemoveSizeofOperators(EXPRESSION *constant)
+{
+    if (constant->left)
+        RemoveSizeofOperators(constant->left);
+    if (constant->right)
+        RemoveSizeofOperators(constant->right);
+    if (constant->type == en__sizeof)
+    {
+        TYPE *tp = constant->left->v.tp;
+        constant->type = en_c_ui;
+        constant->left = nullptr;
+        constant->v.i = tp->size;
+    }
+}
 void optimize_for_constants(EXPRESSION** expr)
 {
     int rv = true, count = 8;
@@ -3411,7 +3465,10 @@ void optimize_for_constants(EXPRESSION** expr)
     }
     asidehead = oldasidehead;
     asidetail = oldasidetail;
-    rebalance(*expr);
+    if (Optimizer::architecture != ARCHITECTURE_MSIL)
+    {
+        rebalance(*expr);
+    }
 }
 LEXEME* optimized_expression(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSION** expr, bool commaallowed)
 {

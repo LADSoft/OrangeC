@@ -28,11 +28,11 @@
 namespace DotNetPELib
 {
 
-const char* Type::typeNames_[] = {"",        "",        "void",   "bool",       "char",
+const char* Type::typeNames_[] = {"",        "",        "", "", "void",   "bool",       "char",
                                   "int8",    "uint8",   "int16",  "uint16",     "int32",
                                   "uint32",  "int64",   "uint64", "native int", "native unsigned int",
                                   "float32", "float64", "object", "string"};
-const char* BoxedType::typeNames_[] = {"",        "",       "",       "Bool",   "Char",  "SByte",  "Byte",
+const char* BoxedType::typeNames_[] = {"",        "",       "",       "", "", "Bool",   "Char",  "SByte",  "Byte",
                                        "Int16",   "UInt16", "Int32",  "UInt32", "Int64", "UInt64", "IntPtr",
                                        "UIntPtr", "Single", "Double", "Object", "String"};
 bool Type::Matches(Type* right)
@@ -48,19 +48,19 @@ bool Type::Matches(Type* right)
     if (tp_ == cls && typeRef_ != right->typeRef_)
     {
         int n1, n2;
-        n1 = typeRef_->Name().find("[]");
-        n2 = right->typeRef_->Name().find("[]");
+        n1 = typeRef_->Name().find("_empty");
+        n2 = right->typeRef_->Name().find("_empty");
         if (n1 != std::string::npos || n2 != std::string::npos)
         {
             bool transfer = false;
             if (n1 == std::string::npos)
             {
-                n1 = typeRef_->Name().find('[');
+                n1 = typeRef_->Name().find("_array_");
             }
             else
             {
                 transfer = true;
-                n2 = right->typeRef_->Name().find('[');
+                n2 = right->typeRef_->Name().find("_array_");
             }
             if (n1 != n2)
                 return false;
@@ -80,21 +80,44 @@ bool Type::ILSrcDump(PELib& peLib) const
 {
     if (tp_ == cls)
     {
+        if (showType_)
+        {
+            if (typeRef_->Flags().Flags() & Qualifiers::Value)
+            {
+                peLib.Out() << " valuetype ";
+            }
+            else
+            {
+                peLib.Out() << " class ";
+            }
+        }
         std::string name = Qualifiers::GetName("", typeRef_, true);
         if (name[0] != '[')
         {
-            name = "'" + name + "'";
+            peLib.Out() << "'" << name << "'";
+            peLib.Out() << static_cast<Class*>(typeRef_)->AdornGenerics(peLib);
         }
         else
         {
             int npos = name.find_first_of("]");
             if (npos != std::string::npos && npos != name.size() - 1)
             {
-                name = name.substr(0, npos + 1) + "'" + name.substr(npos + 1) + "'";
+                peLib.Out() << name.substr(0, npos + 1) + "'" + name.substr(npos + 1) + "'";
+                peLib.Out() << static_cast<Class*>(typeRef_)->AdornGenerics(peLib);
+            }
+            else
+            {
+                peLib.Out() << "'" << name << "'";
             }
         }
-
-        peLib.Out() << name;
+    }
+    else if (tp_ == var)
+    {
+        peLib.Out() << "!" << VarNum();
+    }
+    else if (tp_ == mvar)
+    {
+        peLib.Out() << "!!" << VarNum();
     }
     else if (tp_ == method)
     {
@@ -125,11 +148,13 @@ bool Type::ILSrcDump(PELib& peLib) const
         peLib.Out() << " *";
     if (byRef_)
         peLib.Out() << "&";
+    if (pinned_)
+        peLib.Out() << " pinned";
     return true;
 }
 void Type::ObjOut(PELib& peLib, int pass) const
 {
-    peLib.Out() << std::endl << "$tb" << tp_ << "," << byRef_ << "," << arrayLevel_ << "," << pointerLevel_;
+    peLib.Out() << std::endl << "$tb" << tp_ << "," << byRef_ << "," << arrayLevel_ << "," << pointerLevel_ << "," << pinned_ << "," << showType_;
     if (tp_ == cls)
     {
         typeRef_->ObjOut(peLib, -1);
@@ -166,9 +191,18 @@ Type* Type::ObjIn(PELib& peLib)
         if (ch != ',')
             peLib.ObjError(oe_syntax);
         int pointerLevel = peLib.ObjInt();
+        ch = peLib.ObjChar();
+        if (ch != ',')
+            peLib.ObjError(oe_syntax);
+        int pinned = peLib.ObjInt();
+        ch = peLib.ObjChar();
+        if (ch != ',')
+            peLib.ObjError(oe_syntax);
+        int showType = peLib.ObjInt();
         Type* rv = nullptr;
         if (tp == cls)
         {
+            std::deque<Type*> generics;
             DataContainer* typeref = nullptr;
             if (peLib.ObjBegin() == 'c')
             {
@@ -193,6 +227,9 @@ Type* Type::ObjIn(PELib& peLib)
         {
             rv = peLib.AllocateType(tp, 0);
         }
+        if (showType)
+            rv->ShowType();
+        rv->Pinned(pinned);
         rv->PointerLevel(pointerLevel);
         rv->ArrayLevel(arrayLevel);
         rv->ByRef(byRef);
@@ -218,7 +255,23 @@ size_t Type::Render(PELib& peLib, Byte* result)
             }
             else
             {
-                *(int*)result = typeRef_->PEIndex() | (tTypeDef << 24);
+                if (showType_)
+                {
+                    if (!peIndex_)
+                    {
+                        size_t sz;
+                        Byte* sig = SignatureGenerator::TypeSig(this, sz);
+                        size_t signature = peLib.PEOut().HashBlob(sig, sz);
+                        delete[] sig;
+                        TypeSpecTableEntry* table = new TypeSpecTableEntry(signature);
+                        peIndex_ = peLib.PEOut().AddTableEntry(table);
+                    }
+                    *(int*)result = peIndex_ | (tTypeSpec << 24);
+                }
+                else
+                {
+                    *(int*)result = typeRef_->PEIndex() | (tTypeDef << 24);
+                }
             }
             return 4;
             break;
@@ -263,7 +316,7 @@ size_t BoxedType::Render(PELib& peLib, Byte* result)
         size_t name = peLib.PEOut().HashString(typeNames_[tp_]);
         AssemblyDef* assembly = peLib.MSCorLibAssembly();
         void* result = nullptr;
-        peLib.Find(std::string("System.") + typeNames_[tp_], &result, assembly);
+        peLib.Find(std::string("System.") + typeNames_[tp_], &result, nullptr, assembly);
         if (result)
         {
             static_cast<Class*>(result)->PEDump(peLib);

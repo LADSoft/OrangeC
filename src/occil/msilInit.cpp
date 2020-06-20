@@ -36,6 +36,7 @@
 #include "ildata.h"
 #include "occil.h"
 #include "using.h"
+#include "MsilProcess.h"
 #define STARTUP_TYPE_STARTUP 1
 #define STARTUP_TYPE_RUNDOWN 2
 #define STARTUP_TYPE_TLS_STARTUP 3
@@ -62,7 +63,16 @@ MethodSignature* ptrUnbox;
 MethodSignature* concatStr;
 MethodSignature* concatObj;
 MethodSignature* toStr;
+MethodSignature* toInt;
+MethodSignature* toVoidStar;
+MethodSignature* delegateInvoker;
+MethodSignature* delegateAllocator;
+MethodSignature* delegateFreer;
+Class* multicastDelegate;
+
 Type* systemObject;
+Type* intPtr;
+
 Method* currentMethod;
 DataContainer* mainContainer;
 Optimizer::LIST *initializersHead, *initializersTail;
@@ -86,7 +96,7 @@ std::map<std::string, MethodSignature*> arrayMethods;
 
 std::vector<Local*> localList;
 
-static MethodSignature* FindMethodSignature(const char* name)
+MethodSignature* FindMethodSignature(const char* name)
 {
     void* result;
     if (peLib->Find(name, &result) == PELib::s_method)
@@ -96,6 +106,20 @@ static MethodSignature* FindMethodSignature(const char* name)
     Utils::fatal("could not find built in method %s", name);
     return NULL;
 }
+
+
+MethodSignature* FindMethodSignature(const char* name, std::vector<Type*>& typeList, Type* rv = nullptr)
+{
+    Method* result;
+    if (peLib->Find(name, &result, typeList, rv) == PELib::s_method)
+    {
+        return result->Signature();
+    }
+    Utils::fatal("could not find built in method %s", name);
+    return NULL;
+}
+
+
 Type* FindType(const char* name, bool toErr)
 {
     void* result;
@@ -152,14 +176,10 @@ static void CreateExternalCSharpReferences()
             pointer = peLib->AllocateClass("pointer", Qualifiers::Public, -1, -1);
             ns->Add(pointer);
             MethodSignature* sig =
-                peLib->AllocateMethodSignature("box", MethodSignature::Managed | MethodSignature::InstanceFlag, pointer);
-            sig->ReturnType(object);
-            sig->AddParam(peLib->AllocateParam("param", voidPtr));
-            pointer->Add(peLib->AllocateMethod(sig, Qualifiers::Public | Qualifiers::Static));
-            sig = peLib->AllocateMethodSignature("unbox", MethodSignature::Managed | MethodSignature::InstanceFlag, pointer);
-            sig->ReturnType(voidPtr);
-            sig->AddParam(peLib->AllocateParam("param", object));
-            pointer->Add(peLib->AllocateMethod(sig, Qualifiers::Public | Qualifiers::Static));
+                peLib->AllocateMethodSignature("ToPointer", MethodSignature::Managed | MethodSignature::InstanceFlag, pointer);
+            Type *rt = peLib->AllocateType(Type::i8, 1);
+            sig->ReturnType(rt);
+            sig->AddParam(peLib->AllocateParam("param", peLib->AllocateType(Type::string, 0)));
         }
     }
 
@@ -168,6 +188,25 @@ static void CreateExternalCSharpReferences()
     argsUnmanaged = FindMethodSignature("lsmsilcrtl.args::GetUnmanaged");
     ptrBox = FindMethodSignature("lsmsilcrtl.pointer::box");
     ptrUnbox = FindMethodSignature("lsmsilcrtl.pointer::unbox");
+    intPtr = peLib->AllocateType(Type::inative, 0);
+
+    if (Optimizer::delegateforfuncptr)
+    {
+        delegateInvoker = peLib->AllocateMethodSignature("__OCCMSIL_Invoke",MethodSignature::Vararg, nullptr);
+        delegateInvoker->ReturnType(peLib->AllocateType(Type::Void, 1));
+        delegateInvoker->AddParam(peLib->AllocateParam("func", peLib->AllocateType(Type::Void, 1)));
+        delegateInvoker->AddParam(peLib->AllocateParam("func", peLib->AllocateType(Type::i32, 0)));
+        peLib->AddPInvokeReference(delegateInvoker,"occmsil.dll", true);
+        delegateAllocator = FindMethodSignature("lsmsilcrtl.MethodPtr::Allocate");
+        delegateFreer = FindMethodSignature("lsmsilcrtl.MethodPtr::Free");
+	    multicastDelegate = static_cast<Class*>(FindType("System.MulticastDelegate", true)->GetClass());
+    }
+    Type* voidStar = peLib->AllocateType(Type::Void, 1);
+    std::vector<Type* > params = {voidStar}; 
+    toInt = FindMethodSignature("System.IntPtr.op_Explicit", params);
+    params.clear();
+    params.push_back(intPtr);
+    toVoidStar = FindMethodSignature("System.IntPtr.op_Explicit", params, voidStar);
 
     systemObject = FindType("System.Object", true);
 
@@ -281,6 +320,12 @@ void msil_end_generation(char* fileName)
 {
     if (Optimizer::cparams.prm_compileonly && !Optimizer::cparams.prm_asmfile)
     {
+#ifndef ISPARSER
+        if (Optimizer::pinning)
+        {
+            CreateStringFunction();
+        }
+#endif
         Optimizer::cseg();
         for (auto it = externalList.begin(); it != externalList.end(); ++it)
         {

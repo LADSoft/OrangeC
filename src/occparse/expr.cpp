@@ -53,6 +53,8 @@
 #include "declcons.h"
 #include "Property.h"
 #include "browse.h"
+#include "ildata.h"
+
 namespace Parser
 {
 int packIndex;
@@ -1154,7 +1156,7 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
             SYMBOL* sp2 = search(overloadNameTab[CI_DESTRUCTOR], (basetype(*tp)->sp)->tp->syms);
             if (sp2)
             {
-                callDestructor(basetype(*tp)->sp, nullptr, exp, nullptr, true, false, false);
+                callDestructor(basetype(*tp)->sp, nullptr, exp, nullptr, true, false, false, !points);
             }
             if (needkw(&lex, openpa))
                 needkw(&lex, closepa);
@@ -1520,8 +1522,10 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
                     else
                     {
                         EXPRESSION* offset;
-                        if ((Optimizer::architecture == ARCHITECTURE_MSIL) && !isarray(sp2->tp))
+                        if (Optimizer::architecture == ARCHITECTURE_MSIL)
+                        {
                             offset = varNode(en_structelem, sp2);  // prepare for the MSIL ldflda instruction
+                        }
                         else
                             offset = intNode(en_c_i, sp2->sb->offset);
                         if (!typein2 && sp2->sb->parentClass != basetype(typ2)->sp)
@@ -1619,6 +1623,24 @@ static void LookupSingleAggregate(TYPE* tp, EXPRESSION** exp)
         //            error(ERR_FUNCTION_CALL_NEEDS_ARGUMENT_LIST);
     }
 }
+static EXPRESSION* MsilRebalanceArray(EXPRESSION* in)
+{
+    /* sizeof operators will already be present */
+    if (in->type == en_add && in->right->type == en_umul && in->right->right->type == en__sizeof)
+    {
+        if (in->left->type == en_add && in->left->right->type == en_umul && in->left->right->right->type == en__sizeof)
+        {
+            if (comparetypes(in->right->right->left->v.tp, in->left->right->right->left->v.tp, 0))
+            {
+                EXPRESSION* temp = exprNode(en_add, in->left->right->left, in->right->left);
+                temp = exprNode(en_umul, temp, in->right->right);
+                in->left = in->left->left;
+                in->right = temp;
+            }
+        }
+    }
+    return in;
+}
 static LEXEME* expression_bracket(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, int flags)
 {
     TYPE* tp2 = nullptr;
@@ -1694,7 +1716,7 @@ static LEXEME* expression_bracket(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRES
                 *tp = PerformDeferredInitialization(*tp, funcsp);
                 return lex;
             }
-            else if (ispointer(*tp))
+            else if (ispointer(*tp) && !isfuncptr(*tp))
             {
                 if (!isint(tp2) && basetype(tp2)->type != bt_enum)
                 {
@@ -1725,13 +1747,40 @@ static LEXEME* expression_bracket(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRES
                     if (isstructured(*tp))
                         *tp = PerformDeferredInitialization(*tp, funcsp);
                     cast(&stdint, &expr2);
-                    exp1 = exprNode(en_umul, expr2, intNode(en_c_i, (*tp)->size));
+                    if (Optimizer::architecture == ARCHITECTURE_MSIL)
+                    {
+                        if (!isarray(*tp))
+                        {
+                            auto exp3 = exprNode(en__sizeof, typeNode(*tp), nullptr);
+                            exp1 = exprNode(en_umul, expr2, exp3);
+                        }
+                        else
+                        {
+                            TYPE *tp1 = *tp;
+                            int n = tp1->size;
+                            while (isarray(tp1))
+                                tp1 = tp1->btp;
+                            n = n / tp1->size;
+                            auto exp3 = exprNode(en__sizeof, typeNode(tp1), nullptr);
+                            auto exp4 = intNode(en_c_i, n);
+                            expr2 = exprNode(en_umul, expr2, exp4);
+                            exp1 = exprNode(en_umul, expr2, exp3);
+                        }
+                    }
+                    else
+                    {
+                        exp1 = exprNode(en_umul, expr2, intNode(en_c_i, (*tp)->size));
+                    }
                     *exp = exprNode(en_add, *exp, exp1);
+                    if (Optimizer::architecture == ARCHITECTURE_MSIL)
+                    {
+                        *exp = MsilRebalanceArray(*exp);
+                    }
                 }
                 if (!(*tp)->array && !(*tp)->vla)
                     deref(*tp, exp);
             }
-            else if (ispointer(tp2))
+            else if (ispointer(tp2) && !isfuncptr(tp2))
             {
                 if (!isint(*tp))
                 {
@@ -1756,9 +1805,36 @@ static LEXEME* expression_bracket(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRES
                 {
                     EXPRESSION* exp1 = nullptr;
                     *tp = basetype(tp2)->btp;
-                    cast(&stdint, exp);
-                    exp1 = exprNode(en_umul, *exp, intNode(en_c_i, (*tp)->size));
+                    if (Optimizer::architecture == ARCHITECTURE_MSIL)
+                    {
+                        cast(&stdint, exp);
+                        if (!isarray(*tp))
+                        {
+                            auto exp3 = exprNode(en__sizeof, typeNode(*tp), nullptr);
+                            exp1 = exprNode(en_umul, *exp, exp3);
+                        }
+                        else
+                        {
+                            TYPE *tp1 = *tp;
+                            int n = tp1->size;
+                            while (isarray(tp1))
+                                tp1 = tp1->btp;
+                            n = n / tp1->size;
+                            auto exp3 = exprNode(en__sizeof, typeNode(tp1), nullptr);
+                            auto exp4 = intNode(en_c_i, n);
+                            expr2 = exprNode(en_umul, *exp, exp4);
+                            exp1 = exprNode(en_umul, *exp, exp3);
+                        }
+                    }
+                    else
+                    {
+                        exp1 = exprNode(en_umul, *exp, intNode(en_c_i, (*tp)->size));
+                    }
                     *exp = exprNode(en_add, expr2, exp1);
+                    if (Optimizer::architecture == ARCHITECTURE_MSIL)
+                    {
+                        *exp = MsilRebalanceArray(*exp);
+                    }
                 }
                 if (!(*tp)->array && !(*tp)->vla)
                     deref(*tp, exp);
@@ -2017,6 +2093,12 @@ void checkArgs(FUNCTIONCALL* params, SYMBOL* funcsp)
                         dest = &stddouble;
                     else if (!(Optimizer::architecture == ARCHITECTURE_MSIL))
                         cast(list->tp, &list->exp);
+                }
+                else if (ispointer(list->tp))
+                {
+                
+                    if (Optimizer::architecture == ARCHITECTURE_MSIL && (list->exp->type != en_auto || !list->exp->v.sp->sb->va_typeof) && !params->vararg)
+                        cast(&stdint, &list->exp);
                 }
                 if (dest && list && list->tp && basetype(dest)->type != bt_memberptr && !comparetypes(dest, list->tp, true))
                 {
@@ -2453,7 +2535,7 @@ void CreateInitializerList(TYPE* initializerListTemplate, TYPE* initializerListT
         {
             EXPRESSION* exp = data;
             EXPRESSION* elms = intNode(en_c_i, count);
-            callDestructor(initializerListType->sp, nullptr, &exp, elms, true, false, false);
+            callDestructor(initializerListType->sp, nullptr, &exp, elms, true, false, false, true);
             initInsert(&data->v.sp->sb->dest, tp, exp, 0, false);
         }
         for (i = 0; i < count; i++, lptr = &(*lptr)->next)
@@ -2690,7 +2772,7 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                         }
                         else
                         {
-                            callDestructor(stype->sp, nullptr, &dexp, nullptr, true, false, false);
+                            callDestructor(stype->sp, nullptr, &dexp, nullptr, true, false, false, true);
                             if (dexp)
                                 p->dest = dexp;
                         }
@@ -3712,7 +3794,7 @@ LEXEME* expression_arguments(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION*
                             exp_in->v.t.tp = funcparams->returnSP->tp;
 
                             expx = funcparams->returnEXP;
-                            callDestructor(basetype(funcparams->returnSP->tp)->sp, nullptr, &expx, nullptr, true, false, true);
+                            callDestructor(basetype(funcparams->returnSP->tp)->sp, nullptr, &expx, nullptr, true, false, true, true);
                             initInsert(&funcparams->returnSP->sb->dest, funcparams->returnSP->tp, expx, 0, true);
                         }
                     }
@@ -4857,7 +4939,7 @@ static LEXEME* expression_primary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE**
                     break;
                 case kw___func__:
                     *tp = &std__func__;
-                    if (!funcsp->sb->__func__label)
+                    if (!funcsp->sb->__func__label || Optimizer::msilstrings)
                     {
                         LCHAR buf[256], *q = buf;
                         const char* p = funcsp->name;
@@ -4876,7 +4958,10 @@ static LEXEME* expression_primary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE**
                         funcsp->sb->__func__label = string->label;
                     }
                     else
+                    {
                         *exp = intNode(en_labcon, funcsp->sb->__func__label);
+                        (*exp)->altdata = intNode(en_c_i, l_astr);
+                    }
                     lex = getsym();
                     break;
                 case kw__uuidof:
@@ -5139,6 +5224,10 @@ static EXPRESSION* nodeSizeof(TYPE* tp, EXPRESSION* exp, int flags)
             tp = basetype(tp)->btp;
         }
         exp = exprNode(en_mul, exp, intNode(en_c_i, tp->size));
+    }
+    else if (!isarray(tp) && Optimizer::architecture == ARCHITECTURE_MSIL)
+    {
+        exp = exprNode(en__sizeof, typeNode(tp), nullptr);
     }
     else
     {
@@ -5744,7 +5833,10 @@ static LEXEME* expression_postfix(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE**
                         }
                         else
                         {
-                            cast(*tp, &exp1);
+                            if (ispointer(*tp))
+                                cast(&stdint, &exp1);
+                            else
+                                cast(*tp, &exp1);
                             *exp = exprNode(kw == autoinc ? en_autoinc : en_autodec, *exp, exp1);
                         }
                         if (exp3)
@@ -5832,7 +5924,6 @@ LEXEME* expression_unary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPR
                 else
                 {
                     castToArithmetic(false, tp, exp, kw, nullptr, true);
-                    *exp = exprNode(en_uminus, *exp, nullptr);
                     if (isstructured(*tp))
                         error(ERR_ILL_STRUCTURE_OPERATION);
                     else if (isvoid(*tp) || ismsil(*tp))
@@ -5845,13 +5936,19 @@ LEXEME* expression_unary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPR
                         error(ERR_ILL_POINTER_OPERATION);
                     else if (atp && basetype(atp)->type < bt_int)
                     {
+                        *exp = exprNode(en_uminus, *exp, nullptr);
                         cast(atp, exp);
                         *tp = atp;
                     }
                     else if (basetype(*tp)->type < bt_int)
                     {
                         cast(&stdint, exp);
+                        *exp = exprNode(en_uminus, *exp, nullptr);
                         *tp = &stdint;
+                    }
+                    else
+                    {
+                        *exp = exprNode(en_uminus, *exp, nullptr);
                     }
                 }
             }
@@ -5929,7 +6026,6 @@ LEXEME* expression_unary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPR
                 else
                 {
                     castToArithmetic(true, tp, exp, kw, nullptr, true);
-                    *exp = exprNode(en_compl, *exp, nullptr);
                     if (isstructured(*tp))
                         error(ERR_ILL_STRUCTURE_OPERATION);
                     else if (iscomplex(*tp))
@@ -5946,16 +6042,19 @@ LEXEME* expression_unary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPR
                         error(ERR_SCOPED_TYPE_MISMATCH);
                     else if (atp && basetype(atp)->type < bt_int)
                     {
+                        *exp = exprNode(en_compl, *exp, nullptr);
                         cast(atp, exp);
                         *tp = atp;
                     }
                     else if (basetype(*tp)->type < bt_int)
                     {
                         cast(&stdint, exp);
+                        *exp = exprNode(en_compl, *exp, nullptr);
                         *tp = &stdint;
                     }
                     else
                     {
+                        *exp = exprNode(en_compl, *exp, nullptr);
                         cast(basetype(*tp), exp);
                     }
                 }
@@ -6646,12 +6745,21 @@ static LEXEME* expression_add(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
             }
             if (ispointer(tp1))
             {
+                if (Optimizer::architecture == ARCHITECTURE_MSIL)
+                {
+                    cast(&stdint, exp);
+                    cast(&stdint, &exp1);
+                }
                 *exp = exprNode(en_sub, *exp, exp1);
                 *exp = exprNode(en_arraydiv, *exp, ns);
                 *tp = &stdint; /* ptrdiff_t */
             }
             else
             {
+                if (Optimizer::architecture == ARCHITECTURE_MSIL)
+                {
+                    cast(&stdint, exp);
+                }
                 /*				*tp = tp1 = destSize(*tp, tp1, exp, &exp1, false, nullptr); */
                 if (basetype(tp1)->type < bt_int)
                     cast(&stdint, &exp1);
@@ -6673,6 +6781,10 @@ static LEXEME* expression_add(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                 ns = nodeSizeof(basetype(tp1)->btp, *exp);
             }
             /*			*tp = tp1 = destSize(*tp, tp1, exp, &exp1, false, nullptr); */
+            if (Optimizer::architecture == ARCHITECTURE_MSIL)
+            {
+                cast(&stdint, &exp1);
+            }
             if (basetype(*tp)->type < bt_int)
                 cast(&stdint, exp);
             *exp = exprNode(en_umul, *exp, ns);
@@ -7682,7 +7794,7 @@ LEXEME* expression_assign(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
             if (asndest)
             {
                 SYMBOL* sym = anonymousVar(sc_auto, tp1)->v.sp;
-                callDestructor(sym, nullptr, &asndest, nullptr, true, false, false);
+                callDestructor(sym, nullptr, &asndest, nullptr, true, false, false, true);
                 initInsert(&sym->sb->dest, tp1, asndest, 0, true);
             }
 
@@ -7811,12 +7923,12 @@ LEXEME* expression_assign(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
                             {
                                 if (Optimizer::cparams.prm_cplusplus)
                                     error(ERR_ARITHMETIC_WITH_VOID_STAR);
-                                cast(&stdcharptr, &exp1);
+                                cast(&stdint, &exp1);
                                 ns = nodeSizeof(&stdchar, exp1);
                             }
                             else
                             {
-                                cast((*tp), &exp1);
+                                cast(&stdint, &exp1);
                                 ns = nodeSizeof(basetype(*tp)->btp, exp1);
                             }
                             exp1 = exprNode(en_umul, exp1, ns);
@@ -7849,12 +7961,12 @@ LEXEME* expression_assign(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
                         {
                             if (Optimizer::cparams.prm_cplusplus)
                                 error(ERR_ARITHMETIC_WITH_VOID_STAR);
-                            cast(&stdcharptr, &exp1);
+                            cast(&stdint, &exp1);
                             ns = nodeSizeof(&stdchar, exp1);
                         }
                         else
                         {
-                            cast((*tp), &exp1);
+                            cast(&stdint, &exp1);
                             ns = nodeSizeof(basetype(*tp)->btp, exp1);
                         }
                         exp1 = exprNode(en_umul, exp1, ns);

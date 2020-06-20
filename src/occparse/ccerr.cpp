@@ -1693,7 +1693,7 @@ void findUnusedStatics(NAMESPACEVALUELIST* nameSpace)
                         while (hr1)
                         {
                             SYMBOL* sp1 = (SYMBOL*)hr1->p;
-                            if (sp1->sb->isInline && !sp1->sb->inlineFunc.stmt && !sp1->sb->templateLevel)
+                            if (sp1->sb->isInline && !sp1->sb->inlineFunc.stmt && !sp1->sb->deferredCompile && !sp1->sb->templateLevel)
                             {
                                 errorsym(ERR_UNDEFINED_IDENTIFIER, sp1);
                             }
@@ -2003,6 +2003,8 @@ void assignmentUsages(EXPRESSION* node, bool first)
         case en_templateselector:
         case en_packedempty:
         case en_sizeofellipse:
+        case en__initobj:
+        case en__sizeof:
             break;
         default:
             diag("assignmentUsages");
@@ -2217,6 +2219,8 @@ static int checkDefaultExpression(EXPRESSION* node)
         case en_stmt:
         case en_templateparam:
         case en_templateselector:
+        case en__initobj:
+        case en__sizeof:
             break;
         default:
             diag("rv |= checkDefaultExpression");

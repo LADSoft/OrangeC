@@ -33,6 +33,7 @@ extern int maxBlocks, maxTemps;
 extern char cppfile[256];
 extern FILE* cppFile;
 extern char infile[256];
+extern int fileIndex;
 
 extern FILE* errFile;
 extern PreProcessor* preProcessor;

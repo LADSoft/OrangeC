@@ -82,28 +82,15 @@ QUAD* leftInsertionPos(QUAD* head, IMODE* im)
 
 int msil_examine_icode(QUAD* head)
 {
-    int parmIndex = 0;
-    IMODE* fillinvararg = NULL;
     while (head)
     {
-        if (head->dc.opcode == i_gosub)
-        {
-            if (head->altvararg)
-            {
-                if (fillinvararg)
-                    fillinvararg->offset->i = parmIndex;
-                if (!parmIndex)
-                    head->nullvararg = true;
-                fillinvararg = NULL;
-                parmIndex = 0;
-            }
-        }
         if (head->dc.opcode != i_block && head->dc.opcode != i_blockend && head->dc.opcode != i_dbgblock &&
             head->dc.opcode != i_dbgblockend && head->dc.opcode != i_var && head->dc.opcode != i_label &&
             head->dc.opcode != i_line && head->dc.opcode != i_passthrough && head->dc.opcode != i_func &&
             head->dc.opcode != i_gosub && head->dc.opcode != i_parmadj && head->dc.opcode != i_ret &&
             head->dc.opcode != i_varstart && head->dc.opcode != i_parmblock && head->dc.opcode != i_coswitch &&
-            head->dc.opcode != i_swbranch && head->dc.opcode != i_expressiontag)
+            head->dc.opcode != i_swbranch && head->dc.opcode != i_expressiontag && head->dc.opcode != i__initobj &&
+            head->dc.opcode != i__sizeof)
         {
             if (head->dc.opcode == i_muluh || head->dc.opcode == i_mulsh)
             {
@@ -178,63 +165,6 @@ int msil_examine_icode(QUAD* head)
                         InsertInstruction(head->back, q);
                     }
                 }
-            }
-            if (head->vararg)
-            {
-                // handle varargs... this won't work in the case of nested vararg funcs
-                QUAD* q = (QUAD*)Alloc(sizeof(QUAD));
-                QUAD* q1 = (QUAD*)Alloc(sizeof(QUAD));
-                IMODE* ap = InitTempOpt(ISZ_ADDR, ISZ_ADDR);
-                IMODE* ap1 = (IMODE*)Alloc(sizeof(IMODE));
-                IMODE* ap2 = InitTempOpt(-ISZ_UINT, -ISZ_UINT);
-                IMODE* ap3 = make_immed(-ISZ_UINT, parmIndex++);
-                QUAD* prev = head;
-                ap1->offset = objectArray_exp;
-                ap1->mode = i_direct;
-                ap1->size = ISZ_ADDR;
-                while (prev->back && !prev->back->varargPrev)
-                    prev = prev->back;
-                if (parmIndex - 1 == 0)
-                {
-                    // this is for the initialization of the object array
-                    QUAD* q2 = (QUAD*)Alloc(sizeof(QUAD));
-                    QUAD* q3 = (QUAD*)Alloc(sizeof(QUAD));
-                    IMODE* ap4 = InitTempOpt(ISZ_ADDR, ISZ_ADDR);
-                    IMODE* ap5 = (IMODE*)Alloc(sizeof(IMODE));
-                    IMODE* ap6 = (IMODE*)Alloc(sizeof(IMODE));
-                    ap6->offset = objectArray_exp;
-                    ap6->mode = i_direct;
-                    ap6->size = ISZ_ADDR;
-                    ap5->mode = i_immed;
-                    ap5->size = ISZ_UINT;
-                    ap5->offset = simpleIntNode(se_i, 0);
-                    fillinvararg = ap5;
-                    q2->dc.opcode = i_assn;
-                    q2->ans = ap4;
-                    q2->dc.left = ap5;
-                    q2->temps = TEMP_ANS;
-                    q3->dc.opcode = i_assn;
-                    q3->ans = ap6;
-                    q3->dc.left = ap4;
-                    q3->temps = TEMP_LEFT;
-                    InsertInstruction(prev->back, q2);
-                    InsertInstruction(prev->back, q3);
-                }
-                // this is to load this param into the object array
-                // it inserts the params need by the stelem.ref
-                // the stelem.ref and any boxing are done later...
-                q->dc.opcode = i_assn;
-                q->ans = ap;
-                q->dc.left = ap1;
-                q->temps = TEMP_ANS;
-                q->alwayslive = true;
-                q1->dc.opcode = i_assn;
-                q1->ans = ap2;
-                q1->dc.left = ap3;
-                q1->temps = TEMP_ANS;
-                q1->alwayslive = true;
-                InsertInstruction(prev->back, q);
-                InsertInstruction(prev->back, q1);
             }
         }
         head = head->fwd;

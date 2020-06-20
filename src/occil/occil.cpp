@@ -98,7 +98,7 @@ void ResolveMSILExterns()
                     types.push_back(v.second->GetType());
                 }
                 Method* rv = nullptr;
-                peLib->Find(sp->msil, &rv, types, nullptr, true);
+                peLib->Find(sp->msil, &rv, types, nullptr, nullptr, nullptr, true);
                 if (rv)
                     sp->msil = (const char*)rv;
                 else
@@ -107,7 +107,7 @@ void ResolveMSILExterns()
             else  // field
             {
                 void* rv = nullptr;
-                if (peLib->Find(sp->msil, &rv, nullptr) == PELib::s_field)
+                if (peLib->Find(sp->msil, &rv) == PELib::s_field)
                 {
                     sp->msil = (const char*)rv;
                 }
@@ -189,8 +189,8 @@ void ProcessData(Optimizer::BaseData* v)
             // msil_oa_genpcref(v->symbol.sym, v->symbol.i);
             break;
         case Optimizer::DT_FUNCREF:
-            Optimizer::gen_funcref(v->symbol.sym);
-            global(v->symbol.sym, v->symbol.i);
+            //Optimizer::gen_funcref(v->symbol.sym);
+            //global(v->symbol.sym, v->symbol.i);
             break;
         case Optimizer::DT_LABEL:
             Optimizer::gen_labref(v->i);
@@ -293,7 +293,6 @@ bool ProcessData(const char* name)
             Optimizer::intermed_tail = Optimizer::intermed_head;
             while (Optimizer::intermed_tail && Optimizer::intermed_tail->fwd)
                 Optimizer::intermed_tail = Optimizer::intermed_tail->fwd;
-            Optimizer::objectArray_exp = v->funcData->objectArray_exp;
             Optimizer::fltexp = v->funcData->fltexp;
             Optimizer::fastcallAlias = v->funcData->fastcallAlias;
             currentFunction = v->funcData->name;

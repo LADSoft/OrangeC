@@ -77,6 +77,7 @@ private:
     DotNetPELib::DataContainer *mainContainer;
     std::list<DotNetPELib::MethodSignature *> initializers, startups;
     std::list<DotNetPELib::MethodSignature *> destructors, rundowns;
+    std::list<DotNetPELib::MethodSignature *> stringinitializers;
 
     std::string namespaceAndClass;
     bool hasEntryPoint;

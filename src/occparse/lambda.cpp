@@ -699,7 +699,7 @@ static EXPRESSION* createLambda(bool noinline)
     {
         INITIALIZER* init = NULL;
         EXPRESSION* exp = clsThs;
-        callDestructor(cls, NULL, &exp, NULL, true, false, false);
+        callDestructor(cls, NULL, &exp, NULL, true, false, false, true);
         initInsert(&init, cls->tp, exp, 0, true);
         if (cls->sb->storage_class != sc_auto)
         {

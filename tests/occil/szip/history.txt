@@ -1,0 +1,39 @@
+June  2, 1997 MS  release of version 1.00
+June  9, 1997 MS  release 1.01 minor bugfix in compression; sometimes
+                  got last byte wrong.  Format unchanged
+July 22, 1997 MS  1.02: decompression has no more hash-table overflows
+                  and is faster. I also rearranged modules.
+                  Other compiler. Format unchanged
+July 29, 1997 MS  1.03 UUPS - a little pice of byte order dependent
+                  code made it into 1.02 decode, which caused lots of
+                  failures. Didn't do testing on PC.
+                  Also added an alpha test (sunzip_f) for new fast
+                  decode method. Format unchanged.
+Aug  10, 1997 MS  1.04 Bugfix in fast decompression; distributing fast
+                  decompression; first linux distribution
+Sept 23, 1997 MS  1.05X inofficial release, will not be further supported
+                  demonstrates command line options
+Sept 28, 1997 MS  1.05Xa bugfix in recordsize.
+Oct  31, 1997 MS  1.05Xd some parameters added, revived old code for
+                  order 4
+Nov  18, 1997 MS  1.05Xe bugfix when compressing large random files,
+                  different compiler options.
+Feb-Jun  1998 MS  1.10 introduces a new, incompatible fileformat:
+                  Header (SZ\012\004). Restart after each block for
+                  error tolerance. Changed entropy coder. Support
+                  for unlimited order (-o0). Complete rewrite of the
+                  probability estimation.
+                  The compressed format produced by this version can
+                  be processed faster than the old one; even through
+                  this program version does a lot of unnecessary and
+                  inefficient things it is as fast as the old one.
+Aug      1998 MS  New format again to fix a bug in szip 1.10 and to
+                  use a new model (cache) for encoding the model used.
+Sep      1999 MS  1.12 for some operating systems - uses macros instead of
+                  functions for IO
+Mar      2000 MS  keeps memory allocated across blocks to avoid some
+                  memory managements that will not allow a working set
+                  greater than the memory currently used. (1.12a)
+Oct      2000 MS  removed some compiler warning and signed/unsigned
+                  implicit pointer casting. (1.12)
+MS: Michael Schindler, michael@compressconsult.com

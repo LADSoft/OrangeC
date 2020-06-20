@@ -96,11 +96,7 @@ static struct hash *GetThunkRecord(void *proc, int n)
     }
     return NULL;
 }
-#ifdef __ORANGEC__
-__export
-#else
 __declspec(dllexport) 
-#endif
 void * __OCCMSIL_GetProcThunkToManaged(void *proc, unsigned char *pdata)
  {
 	static struct thunk1 {       /* must be <= 16 bytes, not sure if this is an MSIL limitation or not */
@@ -184,11 +180,7 @@ void * __OCCMSIL_GetProcThunkToManaged(void *proc, unsigned char *pdata)
     }
     return NULL;
  }
-#ifdef __ORANGEC__
-__export
-#else
 __declspec(dllexport) 
-#endif
 void *__OCCMSIL_GetProcThunkToUnmanaged(void *proc)
  {
 	static struct thunk {       /* must be <= 16 bytes, not sure if this is an MSIL limitation or not */
@@ -216,6 +208,20 @@ void *__OCCMSIL_GetProcThunkToUnmanaged(void *proc)
     }
     return NULL;
  }
+__declspec(dllexport) 
+void * __OCCMSIL_Invoke(void *proc, int paramsize, ...)
+{
+	asm {
+		mov edx,[esp + 4] // proc
+                mov ecx,[esp + 8] // paramsize
+lp:
+		mov eax,[esp + 12 + ecx -4 ]
+                mov [esp + 4 + ecx - 4], eax
+                sub ecx, 4
+		jg lp
+                jmp edx		
+	}
+}
  /*
  __declspec(dllexport) void _stdcall testfunc(void *a)
  {

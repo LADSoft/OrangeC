@@ -825,29 +825,35 @@ void oa_genstring(char* str, int len)
     if (Optimizer::cparams.prm_asmfile)
     {
         int nlen = len;
-        while (nlen--)
-            if (*str >= ' ' && *str < 0x7f && *str != '\'' && *str != '\"')
+        while (nlen)
+        {
+            for (int i = 0; i < 80 && nlen; i++, nlen--)
             {
-                if (!instring)
+                if (*str >= ' ' && *str < 0x7f && *str != '\'' && *str != '\"')
                 {
-                    oa_gentype = Optimizer::nogen;
-                    oa_nl();
-                    Optimizer::bePrintf("\tdb\t\"");
-                    instring = true;
+                    if (!instring)
+                    {
+                        oa_gentype = Optimizer::nogen;
+                        oa_nl();
+                        Optimizer::bePrintf("\tdb\t\"");
+                        instring = true;
+                    }
+                    Optimizer::bePrintf("%c", *str++);
                 }
-                Optimizer::bePrintf("%c", *str++);
-            }
-            else
-            {
-                if (instring)
+                else
                 {
-                    Optimizer::bePrintf("\"\n");
-                    instring = false;
+                    if (instring)
+                    {
+                        Optimizer::bePrintf("\"\n");
+                        instring = false;
+                    }
+                    oa_genint(Optimizer::chargen, *str++);
                 }
-                oa_genint(Optimizer::chargen, *str++);
             }
-        if (instring)
-            Optimizer::bePrintf("\"\n");
+            if (instring)
+                Optimizer::bePrintf("\"\n");
+            instring = false;
+        }
     }
     else
         outcode_genstring(str, len);

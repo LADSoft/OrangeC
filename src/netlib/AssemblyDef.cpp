@@ -120,6 +120,11 @@ Namespace* AssemblyDef::InsertNameSpaces(PELib& lib, std::map<std::string, Names
 }
 Namespace* AssemblyDef::InsertNameSpaces(PELib& lib, Namespace* nameSpace, std::string name)
 {
+    auto it = namespaceCache.find(name);
+    if (it != namespaceCache.end())
+    {
+        return it->second;
+    }
     std::string in = name;
     size_t n = name.find_last_of(".");
     if (n != std::string::npos)
@@ -156,6 +161,7 @@ Namespace* AssemblyDef::InsertNameSpaces(PELib& lib, Namespace* nameSpace, std::
             Add(rv);
         }
         nameSpace = rv;
+        namespaceCache[in] = nameSpace;
     }
     return nameSpace;
 }
@@ -192,8 +198,17 @@ Class* AssemblyDef::InsertClasses(PELib& lib, Namespace* nameSpace, Class* cls, 
 }
 Class* AssemblyDef::LookupClass(PELib& lib, const std::string& nameSpaceName, const std::string& name)
 {
+    auto in = nameSpaceName + "::" + name;
+    auto it = classCache.find(in);
+    if (it != classCache.end())
+    {
+        return it->second;
+    }
+
     Namespace* nameSpace = InsertNameSpaces(lib, nullptr, nameSpaceName);
-    return InsertClasses(lib, nameSpace, nullptr, name);
+    auto rv = InsertClasses(lib, nameSpace, nullptr, name);
+    classCache[in] = rv;
+    return rv;
 }
 void AssemblyDef::SetPublicKey(PEReader& reader, size_t index)
 {

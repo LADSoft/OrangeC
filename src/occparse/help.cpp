@@ -1459,7 +1459,18 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                             EXPRESSION* right = init->exp;
                             if (!isstructured(btp))
                             {
-                                EXPRESSION* asn = exprNode(en_add, expsym, intNode(en_c_i, init->offset));
+                                EXPRESSION* asn;
+                                if (Optimizer::architecture == ARCHITECTURE_MSIL)
+                                {
+                                    int n = init->offset/btp->size;
+                                    asn = exprNode(en__sizeof, typeNode(btp), nullptr);
+                                    EXPRESSION* exp4 = intNode(en_c_i, n);
+                                    asn = exprNode(en_umul, exp4, asn);
+                                }
+                                else
+                                {
+                                     asn = exprNode(en_add, expsym, intNode(en_c_i, init->offset));
+                                }
                                 deref(init->basetp, &asn);
                                 cast(init->basetp, &right);
                                 right = exprNode(en_assign, asn, right);
@@ -1555,7 +1566,10 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                 }
                 else if ((Optimizer::architecture == ARCHITECTURE_MSIL) && init->fieldsp)
                 {
-                    exps = exprNode(en_add, exps, intNode(en_c_i, init->fieldoffs));
+                    if (init->fieldoffs)
+                    {
+                        exps = exprNode(en_add, exps, init->fieldoffs);
+                    }
                     exps = exprNode(en_structadd, exps, varNode(en_structelem, init->fieldsp));
                 }
                 else if (init->offset ||
@@ -1609,7 +1623,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
         }
         else
         {
-            EXPRESSION* guard = anonymousVar(sc_static, &stdint);
+            EXPRESSION* guard = anonymousVar(sc_localstatic, &stdint);
             insertInitSym(guard->v.sp);
             deref(&stdpointer, &guard);
             optimize_for_constants(&rv);
@@ -1975,9 +1989,9 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
             tp = tp1;
         else
             tp = tp2;
-        if (tp->type != tp1->type && exp1)
+        if (tp->type != tp1->type && exp1 && tp2->type != bt_pointer)
             cast(tp, exp1);
-        if (tp->type != tp2->type && exp1)
+        if (tp->type != tp2->type && exp1 && tp1->type != bt_pointer)
             cast(tp, exp2);
         return tp;
     }

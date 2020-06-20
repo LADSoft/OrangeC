@@ -479,7 +479,7 @@ bool cppCast(TYPE* src, TYPE** tp, EXPRESSION** exp)
                     SYMBOL* av = ev->v.sp;
                     params->returnEXP = ev;
                     params->returnSP = sym;
-                    callDestructor(basetype(*tp)->sp, nullptr, &ev, nullptr, true, false, false);
+                    callDestructor(basetype(*tp)->sp, nullptr, &ev, nullptr, true, false, false, true);
                     initInsert(&av->sb->dest, *tp, ev, 0, true);
                 }
                 e1 = varNode(en_func, nullptr);
@@ -693,8 +693,8 @@ LEXEME* expression_func_type_cast(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRES
                 sym = exp1->v.sp;
                 callConstructor(&ctype, exp, funcparams, false, nullptr, true, true, false, false, false, false);
                 PromoteConstructorArgs(funcparams->sp, funcparams);
-                callDestructor(basetype(*tp)->sp, nullptr, &exp1, nullptr, true, false, false);
-                    if (Optimizer::architecture == ARCHITECTURE_MSIL)
+                callDestructor(basetype(*tp)->sp, nullptr, &exp1, nullptr, true, false, false, true);
+                if (Optimizer::architecture == ARCHITECTURE_MSIL)
                     *exp = exprNode(en_void, *exp, exp2);
                 initInsert(&sym->sb->dest, *tp, exp1, 0, true);
                 //                if (flags & _F_SIZEOF)
@@ -1939,7 +1939,7 @@ LEXEME* expression_delete(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** e
     in = exp2 = *exp = var;
     if (basetype(*tp)->btp && isstructured(basetype(*tp)->btp))
     {
-        callDestructor(basetype(basetype(*tp)->btp)->sp, nullptr, exp, exp1, true, true, false);
+        callDestructor(basetype(basetype(*tp)->btp)->sp, nullptr, exp, exp1, true, true, false, false);
     }
     exp1 = exp2;
     if (!global)
@@ -2117,6 +2117,8 @@ static bool noexceptExpression(EXPRESSION* node)
         case en_alloca:
         case en_loadstack:
         case en_savestack:
+        case en__initobj:
+        case en__sizeof:
             rv = noexceptExpression(node->left);
             break;
         case en_assign:

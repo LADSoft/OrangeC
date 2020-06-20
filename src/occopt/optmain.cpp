@@ -15,8 +15,7 @@
  *     GNU General Public License for more details.
  *
  *     You should have received a copy of the GNU General Public License
- *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *
+ *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.pin *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
@@ -55,6 +54,8 @@
 #include "iconst.h"
 #include "ialias.h"
 #include "ioptutil.h"
+#include "ipinning.h"
+
 int usingEsp;
 
 Optimizer::SimpleSymbol* currentFunction;
@@ -212,7 +213,7 @@ void Optimize(SimpleSymbol* funcsp)
         // printf("const\n");
         if (optflags & OPT_CONSTANT)
         {
-            ConstantFlow(); /* propagate constants */
+            //ConstantFlow(); /* propagate constants */
             RemoveInfiniteThunks();
             //			RemoveCriticalThunks();
             doms_only(false);
@@ -297,6 +298,10 @@ void Optimize(SimpleSymbol* funcsp)
         CalculateBackendLives();
     }
     sFree();
+    if (pinning)
+    {
+        RewriteForPinning();
+    }
     peep_icode(true); /* we do branche opts last to not interfere with other opts */
                       // printf("optimzation done\n");
 }
@@ -332,7 +337,6 @@ void ProcessFunctions()
             intermed_tail = intermed_head;
             while (intermed_tail && intermed_tail->fwd)
                 intermed_tail = intermed_tail->fwd;
-            objectArray_exp = v->funcData->objectArray_exp;
             fltexp = v->funcData->fltexp;
             currentFunction = v->funcData->name;
             loadHash = v->funcData->loadHash;

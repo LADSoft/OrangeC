@@ -278,9 +278,14 @@ static void StreamExpression(SimpleExpression* exp)
                     StreamFloatValue(exp->c.r);
                     StreamFloatValue(exp->c.i);
                     break;
+                case Optimizer::se_auto:
+                    if (exp->sp->storage_class == scc_localstatic)
+                    {
+                        StreamIndex(exp->sp->fileIndex | 0x40000000);
+                        break;
+                    }
                 case Optimizer::se_const:
                 case Optimizer::se_absolute:
-                case Optimizer::se_auto:
                 case Optimizer::se_global:
                 case Optimizer::se_threadlocal:
                 case Optimizer::se_pc:
@@ -298,6 +303,9 @@ static void StreamExpression(SimpleExpression* exp)
                 case Optimizer::se_msil_array_access:
                     StreamType(exp->msilArrayTP);
                     break;
+                case Optimizer::se_typeref:
+                     StreamType(exp->tp);
+                     break;
                 case Optimizer::se_msil_array_init:
                     StreamType(exp->tp);
                     break;
@@ -576,6 +584,10 @@ static void StreamXParams()
         StreamIndex(bssAlign);
         StreamIndex(constAlign);
         StreamIndex(nextLabel);
+        StreamIndex(pinning);
+        StreamIndex(msilstrings);
+        StreamIndex(delegateforfuncptr);
+        StreamIndex(initializeScalars);
         StreamIndex(registersAssigned);
         StreamString(prm_assemblerSpecifier);
         StreamString(prm_libPath);
@@ -778,8 +790,10 @@ static void StreamFunc(FunctionData* fd)
         s->fileIndex = 2 * i++ + 1;
     }
     for (auto s : fd->temporarySymbols)
-        s->fileIndex = 2 * i++ + 1;
-
+    {
+        if (s->storage_class != scc_localstatic)
+            s->fileIndex = 2 * i++ + 1;
+    }
     StreamIndex(fd->name->fileIndex);
     StreamIndex((fd->setjmp_used ? FF_USES_SETJMP : 0) + (fd->hasAssembly ? FF_HAS_ASSEMBLY : 0));
     StreamIndex(fd->blockCount);
@@ -789,7 +803,6 @@ static void StreamFunc(FunctionData* fd)
     StreamSymbolList(fd->variables);
     StreamSymbolList(fd->temporarySymbols);
     StreamIModes(fd);
-    StreamExpression(fd->objectArray_exp);
     StreamExpression(fd->fltexp);
     StreamInstructions(fd->instructionList);
     StreamTemps();

@@ -152,9 +152,9 @@ int  lame_set_stream_binary_mode ( FILE* const fp )
 
 off_t  lame_get_file_size ( const char* const filename )
 {
-    struct stat       sb;
+    struct _stat       sb;
 
-    if ( 0 == stat ( filename, &sb ) )
+    if ( 0 == _stat ( filename, &sb ) )
         return sb.st_size;
     return (off_t) -1;
 }

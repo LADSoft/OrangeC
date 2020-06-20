@@ -194,7 +194,7 @@ int genstring(STRING* str)
         int size = 1;
         int i;
         bool instring = false;
-        char buf[81], *dest = buf;
+        char buf[10000], *dest = buf;
         for (i = 0; i < str->size; i++)
         {
             LCHAR* p = str->pointers[i]->str;

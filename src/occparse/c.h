@@ -548,6 +548,7 @@ struct attributes
         unsigned used : 1;      /* value has been fetched */
         unsigned nonstring : 1; /* value is not a zero terminated string */
         unsigned zstring : 1;   // (argument) was tagged as a zero terminated string
+        unsigned isInline : 1;  /* function is inlined */
     } inheritable;
     struct
     {
@@ -658,7 +659,6 @@ typedef struct sym
         unsigned dontinstantiate : 1;  // don't instantiate this template (is extern)
         unsigned copiedTemplateFunction : 1;
         unsigned instantiatedInlineInClass : 1;  // function instantiated inside a class body
-        unsigned isInline;                       // : 1; /* function is a candidate for inline functionality */
         unsigned dumpInlineToFile : 1;           /* inline function needs to be placed in the output file */
         unsigned promotedToInline : 1;           /* function wasn't declare inline but was promoted to it */
         unsigned temp : 1;                       // temporary boolean...

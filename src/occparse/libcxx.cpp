@@ -114,7 +114,7 @@ static LEXEME* getTypeList(LEXEME* lex, SYMBOL* funcsp, INITLIST** lptr)
     {
         TYPE* tp = nullptr;
         lex = getsym(); /* past ( or , */
-        lex = get_type_id(lex, &tp, funcsp, sc_cast, false, true);
+        lex = get_type_id(lex, &tp, funcsp, sc_cast, false, true, false);
         if (!tp)
             break;
         if (basetype(tp)->type != bt_templateparam)

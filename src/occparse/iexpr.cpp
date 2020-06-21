@@ -2101,7 +2101,7 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
         return gen_expr(funcsp, f->fcall, 0, ISZ_ADDR);
     }
 
-    if (f->sp->sb->isInline)
+    if (f->sp->sb->attribs.inheritable.isInline)
     {
         if (f->sp->sb->noinline)
         {

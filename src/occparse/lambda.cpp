@@ -419,7 +419,7 @@ static SYMBOL* createPtrToCaller(SYMBOL* self)
     basetype(args)->btp = basetype(lambdas->func->tp)->btp;
     func->sb->parentClass = lambdas->cls;
     func->sb->attribs.inheritable.linkage = lk_cdecl;
-    func->sb->isInline = true;
+    func->sb->attribs.inheritable.isInline = true;
     func->sb->storage_class = sc_static;
     func->sb->access = ac_private;
 
@@ -525,7 +525,7 @@ static void createConverter(SYMBOL* self)
     func->tp->syms = CreateHashTable(1);
     func->sb->parentClass = lambdas->cls;
     func->sb->attribs.inheritable.linkage = lk_virtual;
-    func->sb->isInline = true;
+    func->sb->attribs.inheritable.isInline = true;
     func->sb->storage_class = sc_member;
     func->sb->castoperator = true;
     func->tp->syms = CreateHashTable(1);
@@ -1087,7 +1087,7 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
         if (MATCHKW(lex, pointsto))
         {
             lex = getsym();
-            lex = get_type_id(lex, &self->functp, funcsp, sc_cast, false, true);
+            lex = get_type_id(lex, &self->functp, funcsp, sc_cast, false, true, false);
             if (!self->functp)
             {
                 error(ERR_TYPE_NAME_EXPECTED);
@@ -1122,7 +1122,7 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
     lambdas->func->tp->btp = self->functp;
     lambdas->func->tp->rootType = lambdas->func->tp;
     lambdas->func->sb->attribs.inheritable.linkage = lk_virtual;
-    lambdas->func->sb->isInline = true;
+    lambdas->func->sb->attribs.inheritable.isInline = true;
     lambdas->templateFunctions = lambda_get_template_state(lambdas->func);
     ssl.str = self->cls;
     ssl.tmpl = NULL;

@@ -400,7 +400,7 @@ static void checkIncompleteArray(TYPE* tp, const char* errorfile, int errorline)
         hr = hr->next;
     }
 }
-LEXEME* get_type_id(LEXEME* lex, TYPE** tp, SYMBOL* funcsp, enum e_sc storage_class, bool beforeOnly, bool toErr)
+LEXEME* get_type_id(LEXEME* lex, TYPE** tp, SYMBOL* funcsp, enum e_sc storage_class, bool beforeOnly, bool toErr, bool inUsing)
 {
     enum e_lk linkage = lk_none, linkage2 = lk_none, linkage3 = lk_none;
     bool defd = false;
@@ -411,7 +411,7 @@ LEXEME* get_type_id(LEXEME* lex, TYPE** tp, SYMBOL* funcsp, enum e_sc storage_cl
 
     lex = getQualifiers(lex, tp, &linkage, &linkage2, &linkage3, nullptr);
     lex = getBasicType(lex, funcsp, tp, nullptr, false, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3, ac_public,
-                       &notype, &defd, nullptr, nullptr, false, false);
+                       &notype, &defd, nullptr, nullptr, false, false, inUsing);
     lex = getQualifiers(lex, tp, &linkage, &linkage2, &linkage3, nullptr);
     lex = getBeforeType(lex, funcsp, tp, &sp, nullptr, nullptr, false, storage_class, &linkage, &linkage2, &linkage3, false, false,
                         beforeOnly, false); /* fixme at file scope init */
@@ -1614,7 +1614,7 @@ static LEXEME* declenum(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, enum e_sc storag
     if (Optimizer::cparams.prm_cplusplus && KW(lex) == colon)
     {
         lex = getsym();
-        lex = get_type_id(lex, &fixedType, funcsp, sc_cast, false, true);
+        lex = get_type_id(lex, &fixedType, funcsp, sc_cast, false, true, false);
         if (!fixedType || !isint(fixedType))
         {
             error(ERR_NEED_INTEGER_TYPE);
@@ -2175,7 +2175,7 @@ static bool isPointer(LEXEME* lex)
 }
 LEXEME* getBasicType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** strSym_out, bool inTemplate, enum e_sc storage_class,
                      enum e_lk* linkage_in, enum e_lk* linkage2_in, enum e_lk* linkage3_in, enum e_ac access, bool* notype,
-                     bool* defd, int* consdest, bool* templateArg, bool isTypedef, bool templateErr)
+                     bool* defd, int* consdest, bool* templateArg, bool isTypedef, bool templateErr, bool inUsing)
 {
     enum e_bt type = bt_none;
     TYPE* tn = nullptr;
@@ -2558,7 +2558,7 @@ LEXEME* getBasicType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** strSym_out
                 if (needkw(&lex, openpa))
                 {
                     tn = nullptr;
-                    lex = get_type_id(lex, &tn, funcsp, sc_cast, false, true);
+                    lex = get_type_id(lex, &tn, funcsp, sc_cast, false, true, false);
                     if (tn)
                     {
                         TYPE *tq = (TYPE*)Alloc(sizeof(TYPE)), *tz;
@@ -2631,7 +2631,7 @@ founddecltype:
             if (sp && (istype(sp) || (sp->sb && ((sp->sb->storage_class == sc_type && inTemplate) ||
                                                  (sp->sb->storage_class == sc_typedef && sp->sb->templateLevel)))))
             {
-                if (sp->sb && sp->sb->attribs.uninheritable.deprecationText)
+                if (sp->sb && sp->sb->attribs.uninheritable.deprecationText && !isstructured(sp->tp))
                     deprecateMessage(sp);
                 lex = getsym();
                 if (sp->sb && sp->sb->storage_class == sc_typedef && sp->sb->templateLevel)
@@ -2643,7 +2643,7 @@ founddecltype:
                         SYMBOL* sp1;
                         lex = GetTemplateArguments(lex, funcsp, nullptr, &lst);
                         sp1 = GetTypedefSpecialization(sp, lst);
-                        if (sp1)
+                        if (sp1 && !inUsing)
                         {
                             sp = sp1;
                             if (isstructured(sp->tp))
@@ -2975,7 +2975,7 @@ founddecltype:
             }
             else if (isTypedef)
             {
-                if (!templateNestingCount)
+                if (!templateNestingCount && !typeName)
                 {
                     error(ERR_TYPE_NAME_EXPECTED);
                 }
@@ -4063,7 +4063,7 @@ LEXEME* getExceptionSpecifiers(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_s
                         lex = getsym();
                         if (!MATCHKW(lex, closepa))
                         {
-                            lex = get_type_id(lex, &tp, funcsp, sc_cast, false, true);
+                            lex = get_type_id(lex, &tp, funcsp, sc_cast, false, true, false);
                             if (!tp)
                             {
                                 error(ERR_TYPE_NAME_EXPECTED);
@@ -4251,7 +4251,7 @@ static LEXEME* getAfterType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** sp,
                                 funcLevel++;
                                 lex = getsym();
                                 ParseAttributeSpecifiers(&lex, funcsp, true);
-                                lex = get_type_id(lex, &tpx, funcsp, sc_cast, false, true);
+                                lex = get_type_id(lex, &tpx, funcsp, sc_cast, false, true, false);
                                 if (tpx)
                                 {
                                     if (!isautotype(basetype(*tp)->btp))
@@ -5191,7 +5191,7 @@ static LEXEME* getStorageAndType(LEXEME* lex, SYMBOL* funcsp, SYMBOL** strSym, b
             {
                 foundType = true;
                 lex = getBasicType(lex, funcsp, tp, strSym, inTemplate, *storage_class_in, linkage, linkage2, linkage3, access,
-                                   notype, defd, consdest, templateArg, *storage_class == sc_typedef, true);
+                                   notype, defd, consdest, templateArg, *storage_class == sc_typedef, true, false);
             }
             if (*linkage3 == lk_threadlocal && *storage_class == sc_member)
                 *storage_class = sc_static;
@@ -5204,7 +5204,7 @@ static LEXEME* getStorageAndType(LEXEME* lex, SYMBOL* funcsp, SYMBOL** strSym, b
         {
             foundType = true;
             lex = getBasicType(lex, funcsp, tp, strSym, inTemplate, *storage_class_in, linkage, linkage2, linkage3, access, notype,
-                               defd, consdest, templateArg, *storage_class == sc_typedef, true);
+                               defd, consdest, templateArg, *storage_class == sc_typedef, true, false);
             if (*linkage3 == lk_threadlocal && *storage_class == sc_member)
                 *storage_class = sc_static;
         }
@@ -5531,7 +5531,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                     {
                         if (MATCHKW(lex, colon) || MATCHKW(lex, begin) || MATCHKW(lex, kw_try))
                         {
-                            sp->sb->isInline = true;
+                            sp->sb->attribs.inheritable.isInline = true;
                         }
                     }
                     if (linkage == lk_inline)
@@ -5541,7 +5541,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                         else
                             linkage = lk_none;
                         if (sp)
-                            sp->sb->isInline = true;
+                            sp->sb->attribs.inheritable.isInline = true;
                     }
                     else if (!Optimizer::cparams.prm_profiler && Optimizer::cparams.prm_optimize_for_speed && isfunction(tp1) &&
                              storage_class_in != sc_member && storage_class_in != sc_mutable)
@@ -5552,7 +5552,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                             {
                                 if (strcmp(sp->name, "main") != 0)
                                 {
-                                    sp->sb->isInline = sp->sb->dumpInlineToFile = sp->sb->promotedToInline = true;
+                                    sp->sb->attribs.inheritable.isInline = sp->sb->dumpInlineToFile = sp->sb->promotedToInline = true;
                                 }
                             }
                         }
@@ -5916,7 +5916,17 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                                     if (!sym || !sameNameSpace(sp->sb->parentNameSpace, sym->sb->parentNameSpace))
                                         preverrorsym(ERR_CONFLICTS_WITH, sp, spi->sb->declfile, spi->sb->declline);
                                 if (sym && sym->templateParams && (!sp->templateParams || sp->templateParams->next) &&
-                                    !exactMatchOnTemplateParams(sym->templateParams, sp->templateParams))
+                                    (!exactMatchOnTemplateParams(sym->templateParams, sp->templateParams) || ([](TEMPLATEPARAMLIST* a, TEMPLATEPARAMLIST* b) 
+                                        {
+                                            while (a && b)
+                                            {
+                                                if (a->p->byClass.txtdflt && b->p->byClass.txtdflt)
+                                                    return true;
+                                                a = a->next;
+                                                b = b->next;
+                                            }
+                                            return false;
+                                        })(sym->templateParams, sp->templateParams)))
                                     sym = nullptr;
                             }
                             if (sym && Optimizer::cparams.prm_cplusplus)
@@ -5928,7 +5938,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                                       sp->sb->attribs.inheritable.linkage != lk_virtual) ||
                                      (sym->sb->attribs.inheritable.linkage != lk_cdecl &&
                                       sym->sb->attribs.inheritable.linkage != lk_virtual)) &&
-                                    !sp->sb->isInline && !sym->sb->isInline)
+                                    !sp->sb->attribs.inheritable.isInline && !sym->sb->attribs.inheritable.isInline)
                                 {
                                     preverrorsym(ERR_LINKAGE_MISMATCH_IN_FUNC_OVERLOAD, spi, spi->sb->declfile, spi->sb->declline);
                                 }
@@ -5940,7 +5950,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                                         checkReturn = false;
                                 }
                             }
-                            if (inTemplate)
+                            if (0 && inTemplate) // DAL look to remove
                                 if (!sym)
                                 {
                                     // a specialization
@@ -6026,7 +6036,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                                 sp->sb->storage_class = sc_global;
                         }
                         if ((!spi || (spi->sb->storage_class != sc_member && spi->sb->storage_class != sc_mutable)) &&
-                            sp->sb->storage_class == sc_global && sp->sb->isInline && !sp->sb->promotedToInline)
+                            sp->sb->storage_class == sc_global && sp->sb->attribs.inheritable.isInline && !sp->sb->promotedToInline)
                         {
                             if (spi && spi->sb->storage_class == sc_external)
                                 sp->sb->dumpInlineToFile = true;
@@ -6165,7 +6175,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                                                     spi->sb->storage_class = sc_global;
                                                 }
                                             }
-                                            else if (spi->sb->isInline && basetype(spi->tp)->type == bt_ifunc)
+                                            else if (spi->sb->attribs.inheritable.isInline && basetype(spi->tp)->type == bt_ifunc)
                                             {
                                                 spi->sb->storage_class = sc_global;
                                             }
@@ -6272,7 +6282,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                             spi->sb->memberInitializers = sp->sb->memberInitializers;
                             spi->sb->hasTry = sp->sb->hasTry;
 
-                            spi->sb->isInline |= sp->sb->isInline;
+                            spi->sb->attribs.inheritable.isInline |= sp->sb->attribs.inheritable.isInline;
                             spi->sb->dumpInlineToFile |= sp->sb->dumpInlineToFile;
                             spi->sb->promotedToInline |= sp->sb->promotedToInline;
 
@@ -6451,7 +6461,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                     }
                     UpdateRootTypes(tp1);
                     sizeQualifiers(tp1);
-                    if (sp->sb->isInline)
+                    if (sp->sb->attribs.inheritable.isInline)
                     {
                         if (!isfunction(sp->tp))
                             error(ERR_INLINE_NOT_ALLOWED);
@@ -6573,7 +6583,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                                 }
                                 if (sp->sb->constexpression)
                                 {
-                                    sp->sb->isInline = true;
+                                    sp->sb->attribs.inheritable.isInline = true;
                                     if (sp->sb->nonConstVariableUsed)
                                         errorsym(ERR_CONSTANT_FUNCTION_EXPECTED, sp);
                                 }
@@ -6785,7 +6795,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                         // fixme don't check if in parent class...
                         if (!globalNameSpace->next)
                         {
-                            if (sp->sb->isInline)
+                            if (sp->sb->attribs.inheritable.isInline)
                             {
                                 error(ERR_MAIN_CANNOT_BE_INLINE_FUNC);
                             }

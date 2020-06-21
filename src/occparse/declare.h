@@ -53,7 +53,7 @@ SYMBOL* getStructureDeclaration(void);
 void InsertSymbol(SYMBOL* sp, enum e_sc storage_class, enum e_lk linkage, bool allowDups);
 LEXEME* tagsearch(LEXEME* lex, char* name, SYMBOL** rsp, HASHTABLE** table, SYMBOL** strSym_out, NAMESPACEVALUELIST** nsv_out,
                   enum e_sc storage_class);
-LEXEME* get_type_id(LEXEME* lex, TYPE** tp, SYMBOL* funcsp, enum e_sc storage_class, bool beforeOnly, bool toErr);
+LEXEME* get_type_id(LEXEME* lex, TYPE** tp, SYMBOL* funcsp, enum e_sc storage_class, bool beforeOnly, bool toErr, bool inUsing);
 SYMBOL* calculateStructAbstractness(SYMBOL* top, SYMBOL* sp);
 void calculateStructOffsets(SYMBOL* sp);
 void resolveAnonymousUnions(SYMBOL* sp);
@@ -67,7 +67,7 @@ LEXEME* getBeforeType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMB
                       bool asFriend, int consdest, bool beforeOnly, bool funcptr);
 LEXEME* getBasicType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** strSym_out, bool inTemplate, enum e_sc storage_class,
                      enum e_lk* linkage_in, enum e_lk* linkage2_in, enum e_lk* linkage3_in, enum e_ac access, bool* notype,
-                     bool* defd, int* consdest, bool* templateArg, bool isTypedef, bool templateErr);
+                     bool* defd, int* consdest, bool* templateArg, bool isTypedef, bool templateErr, bool inUsing);
 void injectThisPtr(SYMBOL* sp, HASHTABLE* syms);
 bool intcmp(TYPE* t1, TYPE* t2);
 LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp, bool inTemplate, enum e_sc storage_class);

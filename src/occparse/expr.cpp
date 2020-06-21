@@ -610,7 +610,7 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                         funcparams->sp->sb->attribs.inheritable.used = true;
                         funcparams->fcall = varNode(en_pc, funcparams->sp);
                         if (!MATCHKW(lex, openpa))
-                            funcparams->sp->sb->dumpInlineToFile = funcparams->sp->sb->isInline;
+                            funcparams->sp->sb->dumpInlineToFile = funcparams->sp->sb->attribs.inheritable.isInline;
                     }
                     funcparams->functp = funcparams->sp->tp;
                     *tp = funcparams->sp->tp;
@@ -736,11 +736,11 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
 
                 case sc_localstatic:
                     tagNonConst(funcsp, sym->tp);
-                    if (funcsp && funcsp->sb->isInline)
+                    if (funcsp && funcsp->sb->attribs.inheritable.isInline)
                     {
                         if (funcsp->sb->promotedToInline || Optimizer::cparams.prm_cplusplus)
                         {
-                            funcsp->sb->isInline = funcsp->sb->dumpInlineToFile = funcsp->sb->promotedToInline = false;
+                            funcsp->sb->attribs.inheritable.isInline = funcsp->sb->dumpInlineToFile = funcsp->sb->promotedToInline = false;
                         }
                     }
                     if (sym->sb->attribs.inheritable.linkage3 == lk_threadlocal)
@@ -918,6 +918,13 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                 TEMPLATEPARAMLIST* current = nullptr;
                 lex = GetTemplateArguments(lex, funcsp, nullptr, &current);
             }
+            return lex;
+        }
+        if (strSym && basetype(strSym->tp)->type == bt_templatedecltype)
+        {
+            *tp = &stdany;
+            *exp = intNode(en_c_i, 0);
+            lex = getsym();
             return lex;
         }
         if (ISID(lex))
@@ -1148,7 +1155,7 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
         TYPE* tp1 = nullptr;
         lex = getsym();
         lex = getBasicType(lex, funcsp, &tp1, nullptr, false, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd,
-                           nullptr, nullptr, false, true);
+                           nullptr, nullptr, false, true, false);
         if (!tp1)
         {
             error(ERR_TYPE_NAME_EXPECTED);
@@ -1187,7 +1194,7 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
             bool notype = false;
             TYPE* tp1 = nullptr;
             lex = getBasicType(lex, funcsp, &tp1, nullptr, false, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype,
-                               &defd, nullptr, nullptr, false, true);
+                               &defd, nullptr, nullptr, false, true, false);
             if (!tp1)
             {
                 error(ERR_TYPE_NAME_EXPECTED);
@@ -1212,7 +1219,7 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
                     lex = getsym();
                     tp1 = nullptr;
                     lex = getBasicType(lex, funcsp, &tp1, nullptr, false, sc_auto, &linkage, &linkage2, &linkage3, ac_public,
-                                       &notype, &defd, nullptr, nullptr, false, true);
+                                       &notype, &defd, nullptr, nullptr, false, true, false);
                     if (!tp1)
                     {
                         error(ERR_TYPE_NAME_EXPECTED);
@@ -1354,7 +1361,8 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
             }
             if (!sp2)
             {
-                errorNotMember(basetype(*tp)->sp, nullptr, lex->value.s.a);
+                if (!templateNestingCount || !basetype(*tp)->sp->sb->templateLevel)
+                    errorNotMember(basetype(*tp)->sp, nullptr, lex->value.s.a);
                 lex = getsym();
                 while (ISID(lex))
                 {
@@ -1847,7 +1855,7 @@ static LEXEME* expression_bracket(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRES
                 if (!(*tp)->array && !(*tp)->vla)
                     deref(*tp, exp);
             }
-            else
+            else if (!templateNestingCount || basetype(*tp)->type != bt_templateselector)
             {
                 error(ERR_DEREF);
             }
@@ -4178,7 +4186,7 @@ static LEXEME* expression_generic(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRES
                 }
                 else
                 {
-                    lex = get_type_id(lex, &next->selector, funcsp, sc_cast, false, true);
+                    lex = get_type_id(lex, &next->selector, funcsp, sc_cast, false, true, false);
                     if (!next->selector)
                     {
                         error(ERR_GENERIC_MISSING_TYPE);
@@ -5006,7 +5014,7 @@ static LEXEME* expression_primary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE**
                         if (startOfType(lex, false))
                         {
                             SYMBOL* sym;
-                            lex = get_type_id(lex, tp, funcsp, sc_cast, false, true);
+                            lex = get_type_id(lex, tp, funcsp, sc_cast, false, true, false);
                             (*tp)->used = true;
                             needkw(&lex, closepa);
                             // don't enter in table, this is purely so we can cache the type info
@@ -5371,7 +5379,7 @@ static LEXEME* expression_sizeof(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
         else
         {
             LEXEME* prev = lex;
-            lex = get_type_id(lex, tp, funcsp, sc_cast, Optimizer::cparams.prm_cplusplus, true);
+            lex = get_type_id(lex, tp, funcsp, sc_cast, Optimizer::cparams.prm_cplusplus, true, false);
             if (Optimizer::cparams.prm_cplusplus && MATCHKW(lex, openpa))
             {
                 lex = prevsym(prev);
@@ -5423,7 +5431,7 @@ static LEXEME* expression_alignof(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRES
     lex = getsym();
     if (needkw(&lex, openpa))
     {
-        lex = get_type_id(lex, tp, funcsp, sc_cast, false, true);
+        lex = get_type_id(lex, tp, funcsp, sc_cast, false, true, false);
         needkw(&lex, closepa);
         if (MATCHKW(lex, ellipse))
         {
@@ -6209,7 +6217,7 @@ LEXEME* expression_cast(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRE
             if (!Optimizer::cparams.prm_cplusplus || resolveToDeclaration(lex))
             {
                 bool done = false;
-                lex = get_type_id(lex, tp, funcsp, sc_cast, false, true);
+                lex = get_type_id(lex, tp, funcsp, sc_cast, false, true, false);
                 if (!*tp)
                 {
                     error(ERR_TYPE_NAME_EXPECTED);

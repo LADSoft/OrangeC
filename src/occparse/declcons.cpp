@@ -1383,7 +1383,7 @@ static void shimDefaultConstructor(SYMBOL* sp, SYMBOL* cons)
             consfunc->sb->inlineFunc.stmt->lower = b.head;
             consfunc->sb->inlineFunc.syms = basetype(consfunc->tp)->syms;
             consfunc->sb->retcount = 1;
-            consfunc->sb->isInline = consfunc->sb->attribs.inheritable.linkage2 != lk_export;
+            consfunc->sb->attribs.inheritable.isInline = consfunc->sb->attribs.inheritable.linkage2 != lk_export;
             InsertInline(consfunc);
             // now get rid of the first default arg
             // leave others so the old constructor can be considered
@@ -2547,7 +2547,7 @@ void createConstructor(SYMBOL* sp, SYMBOL* consfunc)
     consfunc->sb->inlineFunc.stmt->lower = b.head;
     consfunc->sb->inlineFunc.syms = basetype(consfunc->tp)->syms;
     consfunc->sb->retcount = 1;
-    consfunc->sb->isInline = consfunc->sb->attribs.inheritable.linkage2 != lk_export;
+    consfunc->sb->attribs.inheritable.isInline = consfunc->sb->attribs.inheritable.linkage2 != lk_export;
     //    consfunc->sb->inlineFunc.stmt->blockTail = b.tail;
     InsertInline(consfunc);
     localNameSpace->valueData->syms = syms;
@@ -2855,7 +2855,7 @@ static void createDestructor(SYMBOL* sp)
     dest->sb->inlineFunc.stmt->lower = b.head;
     dest->sb->inlineFunc.syms = basetype(dest->tp)->syms;
     dest->sb->retcount = 1;
-    dest->sb->isInline = dest->sb->attribs.inheritable.linkage2 != lk_export;
+    dest->sb->attribs.inheritable.isInline = dest->sb->attribs.inheritable.linkage2 != lk_export;
     //    dest->sb->inlineFunc.stmt->blockTail = b.tail;
     InsertInline(dest);
     localNameSpace->valueData->syms = syms;

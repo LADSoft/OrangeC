@@ -115,7 +115,7 @@ void dumpInlines(void)
             while (funcList)
             {
                 SYMBOL* sym = (SYMBOL*)funcList->data;
-                if (((sym->sb->isInline && sym->sb->dumpInlineToFile) ||
+                if (((sym->sb->attribs.inheritable.isInline && sym->sb->dumpInlineToFile) ||
                      (Optimizer::SymbolManager::Test(sym) && Optimizer::SymbolManager::Test(sym)->genreffed)))
                 {
                     if ((sym->sb->parentClass && sym->sb->parentClass->sb->dontinstantiate && !sym->sb->templateLevel) ||
@@ -135,7 +135,7 @@ void dumpInlines(void)
                             {
                                 propagateTemplateDefinition(sym);
                             }
-                            if ((sym->sb->isInline || sym->sb->attribs.inheritable.linkage == lk_virtual) &&
+                            if ((sym->sb->attribs.inheritable.isInline || sym->sb->attribs.inheritable.linkage == lk_virtual) &&
                                 sym->sb->inlineFunc.stmt)
                             {
                                 inInsert(sym);
@@ -617,7 +617,7 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
                     }
                 }
             }
-            if (fp->sp->sb->isInline && !fp->sp->sb->noinline && i >= inlinesp_count)
+            if (fp->sp->sb->attribs.inheritable.isInline && !fp->sp->sb->noinline && i >= inlinesp_count)
             {
                 if (inlinesp_count >= MAX_INLINE_NESTING)
                 {
@@ -1160,7 +1160,7 @@ EXPRESSION* doinline(FUNCTIONCALL* params, SYMBOL* funcsp)
         params->sp->sb->dumpInlineToFile = true;
         return nullptr;
     }
-    if (!params->sp->sb->isInline)
+    if (!params->sp->sb->attribs.inheritable.isInline)
     {
         params->sp->sb->dumpInlineToFile = true;
         return nullptr;

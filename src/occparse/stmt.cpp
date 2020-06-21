@@ -3520,7 +3520,7 @@ static int inlineStatementCount(STATEMENT* block)
 static void handleInlines(SYMBOL* funcsp)
 {
     /* so it will get instantiated as a virtual function */
-    if (!funcsp->sb->isInline)
+    if (!funcsp->sb->attribs.inheritable.isInline)
         return;
     if (Optimizer::cparams.prm_c99)
         funcsp->sb->attribs.inheritable.used = true;
@@ -3696,12 +3696,12 @@ LEXEME* body(LEXEME* lex, SYMBOL* funcsp)
         funcsp->sb->inlineFunc.stmt->lower = block->head;
         funcsp->sb->inlineFunc.stmt->blockTail = block->blockTail;
         funcsp->sb->declaring = false;
-        if (funcsp->sb->isInline && (Optimizer::functionHasAssembly || funcsp->sb->attribs.inheritable.linkage2 == lk_export))
-            funcsp->sb->isInline = funcsp->sb->dumpInlineToFile = funcsp->sb->promotedToInline = false;
+        if (funcsp->sb->attribs.inheritable.isInline && (Optimizer::functionHasAssembly || funcsp->sb->attribs.inheritable.linkage2 == lk_export))
+            funcsp->sb->attribs.inheritable.isInline = funcsp->sb->dumpInlineToFile = funcsp->sb->promotedToInline = false;
         if (!Optimizer::cparams.prm_allowinline)
-            funcsp->sb->isInline = funcsp->sb->dumpInlineToFile = funcsp->sb->promotedToInline = false;
+            funcsp->sb->attribs.inheritable.isInline = funcsp->sb->dumpInlineToFile = funcsp->sb->promotedToInline = false;
         // if it is variadic don't allow it to be inline
-        if (funcsp->sb->isInline)
+        if (funcsp->sb->attribs.inheritable.isInline)
         {
             SYMLIST* hr = basetype(funcsp->tp)->syms->table[0];
             if (hr)
@@ -3709,12 +3709,12 @@ LEXEME* body(LEXEME* lex, SYMBOL* funcsp)
                 while (hr->next)
                     hr = hr->next;
                 if (hr->p->tp->type == bt_ellipse)
-                    funcsp->sb->isInline = funcsp->sb->dumpInlineToFile = funcsp->sb->promotedToInline = false;
+                    funcsp->sb->attribs.inheritable.isInline = funcsp->sb->dumpInlineToFile = funcsp->sb->promotedToInline = false;
             }
         }
-        if (funcsp->sb->attribs.inheritable.linkage == lk_virtual || funcsp->sb->isInline)
+        if (funcsp->sb->attribs.inheritable.linkage == lk_virtual || funcsp->sb->attribs.inheritable.isInline)
         {
-            if (funcsp->sb->isInline)
+            if (funcsp->sb->attribs.inheritable.isInline)
                 funcsp->sb->attribs.inheritable.linkage2 = lk_none;
             InsertInline(funcsp);
             if (!Optimizer::cparams.prm_cplusplus && funcsp->sb->storage_class != sc_static)

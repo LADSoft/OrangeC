@@ -2204,8 +2204,10 @@ int opt0(EXPRESSION** node)
             if (!templateNestingCount && (*node)->v.sp->tp->templateParam->p->type == kw_int)
             {
                 SYMBOL* sym = (*node)->v.sp;
-                TEMPLATEPARAMLIST* found = nullptr;
+                TEMPLATEPARAMLIST* found = (*node)->v.sp->tp->templateParam;
                 STRUCTSYM* search = structSyms;
+                if (!found || !found->p->byNonType.val)
+                    found = nullptr;
                 while (search && !found)
                 {
                     if (search->tmpl)

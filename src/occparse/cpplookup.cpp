@@ -659,6 +659,8 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
                             errorstr(ERR_QUALIFIER_NOT_A_CLASS_OR_NAMESPACE, buf);
                     }
                     lex = prevsym(placeholder);
+                    strSym = sp;
+                    qualified = true;
                     break;
                 }
             }
@@ -1130,7 +1132,7 @@ LEXEME* getIdName(LEXEME* lex, SYMBOL* funcsp, char* buf, int* ov, TYPE** castTy
         {
             TYPE* tp = nullptr;
             noSpecializationError++;
-            lex = get_type_id(lex, &tp, funcsp, sc_cast, true, true);
+            lex = get_type_id(lex, &tp, funcsp, sc_cast, true, true, false);
             noSpecializationError--;
             if (!tp)
             {

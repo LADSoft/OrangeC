@@ -1140,7 +1140,7 @@ LEXEME* baseClasses(LEXEME* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac defa
         if (MATCHKW(lex, kw_decltype))
         {
             TYPE* tp = nullptr;
-            lex = get_type_id(lex, &tp, funcsp, sc_type, true, true);
+            lex = get_type_id(lex, &tp, funcsp, sc_type, true, true, false);
             if (!tp)
             {
                 error(ERR_TYPE_NAME_EXPECTED);
@@ -1242,6 +1242,15 @@ LEXEME* baseClasses(LEXEME* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac defa
                                 bcsym->tp = SynthesizeType(bcsym->tp, nullptr, false);
                             //                            if (isstructured(bcsym->tp))
                             //                                bcsym = basetype(bcsym->tp)->sp;
+                            if (templateNestingCount && bcsym->tp->type == bt_any)
+                            {
+                                currentAccess = defaultAccess;
+                                isvirtual = false;
+                                done = !MATCHKW(lex, comma);
+                                if (!done)
+                                    lex = getsym();
+                                continue;
+                            }
                         }
                     }
                     else
@@ -2977,7 +2986,7 @@ LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc st
                 TYPE* tp = nullptr;
                 SYMBOL* sp;
                 lex = getsym();
-                lex = get_type_id(lex, &tp, nullptr, sc_cast, false, true);
+                lex = get_type_id(lex, &tp, nullptr, sc_cast, false, true, true);
                 if (!tp)
                     tp = &stdint;
                 checkauto(tp, ERR_AUTO_NOT_ALLOWED_IN_USING_STATEMENT);
@@ -3179,7 +3188,8 @@ void ParseOut__attribute__(LEXEME** lex, SYMBOL* funcsp)
                         //                    { "shared", 22 },
                         {"zstring", 23},  // non-gcc, added to support nonstring
                         {"noreturn", 24},
-                        {"stdcall", 25}
+                        {"stdcall", 25},
+                        {"always_inline", 26} // we don't really force inline this is still just a suggestion.   in practice the types of functions that get flagged with this will likely always be inlined anyway
 
                     };
                     std::string name;
@@ -3400,6 +3410,9 @@ void ParseOut__attribute__(LEXEME** lex, SYMBOL* funcsp)
                                     error(ERR_TOO_MANY_LINKAGE_SPECIFIERS);
                                 basisAttribs.inheritable.linkage = lk_stdcall;
                                 break;
+                            case 26: // always inline
+                                basisAttribs.inheritable.isInline = lk_stdcall;
+                                break;
                         }
                     }
                 }
@@ -3438,7 +3451,7 @@ bool ParseAttributeSpecifiers(LEXEME** lex, SYMBOL* funcsp, bool always)
                     if (startOfType(*lex, false))
                     {
                         TYPE* tp = nullptr;
-                        *lex = get_type_id(*lex, &tp, funcsp, sc_cast, false, true);
+                        *lex = get_type_id(*lex, &tp, funcsp, sc_cast, false, true, false);
 
                         if (!tp)
                         {

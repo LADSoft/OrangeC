@@ -619,10 +619,12 @@ LEXEME* expression_func_type_cast(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRES
     {
         *tp = nullptr;
         lex = getBasicType(lex, funcsp, tp, nullptr, false, sc_auto, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd,
-                           &consdest, nullptr, false, true);
+                           &consdest, nullptr, false, true, false);
         if (isstructured(*tp) && !(*tp)->size && (!templateNestingCount || !basetype(*tp)->sp->sb->templateLevel))
         {
-            errorsym(ERR_STRUCT_NOT_DEFINED, basetype(*tp)->sp);
+            (*tp) = basetype(*tp)->sp->tp;
+            if (!(*tp)->size)
+                errorsym(ERR_STRUCT_NOT_DEFINED, basetype(*tp)->sp);
         }
     }
     if (!MATCHKW(lex, openpa))
@@ -1163,7 +1165,7 @@ LEXEME* GetCastInfo(LEXEME* lex, SYMBOL* funcsp, TYPE** newType, TYPE** oldType,
     *oldType = nullptr;
     if (needkw(&lex, lt))
     {
-        lex = get_type_id(lex, newType, funcsp, sc_cast, false, true);
+        lex = get_type_id(lex, newType, funcsp, sc_cast, false, true, false);
         if (!*newType)
         {
             error(ERR_TYPE_NAME_EXPECTED);
@@ -1200,7 +1202,7 @@ LEXEME* expression_typeid(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** e
         bool byType = false;
         if (startOfType(lex, false))
         {
-            lex = get_type_id(lex, tp, funcsp, sc_cast, false, true);
+            lex = get_type_id(lex, tp, funcsp, sc_cast, false, true, false);
             byType = true;
         }
         else
@@ -1605,7 +1607,7 @@ LEXEME* expression_new(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp,
         if (startOfType(lex, false))
         {
             // type in parenthesis
-            lex = get_type_id(lex, tp, funcsp, sc_cast, false, true);
+            lex = get_type_id(lex, tp, funcsp, sc_cast, false, true, false);
             needkw(&lex, closepa);
         }
         else
@@ -1621,13 +1623,13 @@ LEXEME* expression_new(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp,
         {
             // type in parenthesis
             lex = getsym();
-            lex = get_type_id(lex, tp, funcsp, sc_cast, false, true);
+            lex = get_type_id(lex, tp, funcsp, sc_cast, false, true, false);
             needkw(&lex, closepa);
         }
         else
         {
             // new type id
-            lex = get_type_id(lex, tp, funcsp, sc_auto, true, true);
+            lex = get_type_id(lex, tp, funcsp, sc_auto, true, true, false);
             if (MATCHKW(lex, openbr))
             {
                 TYPE* tp1 = nullptr;

@@ -3964,6 +3964,9 @@ void RecalculateVariableTemplateInitializers(INITIALIZER** in, INITIALIZER*** ou
 }
 LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_class_in, bool asExpression, int flags)
 {
+    auto sp = basetype(sym->tp)->sp;
+    if (sp && isstructured(sp->tp) && sp->sb && sp->sb->attribs.uninheritable.deprecationText)
+        deprecateMessage(basetype(sym->tp)->sp);
     TYPE* tp;
     bool initialized = MATCHKW(lex, assign) || MATCHKW(lex, begin) || MATCHKW(lex, openpa);
     inittag = 0;
@@ -4005,11 +4008,11 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_c
         default:
             break;
     }
-    if (funcsp && funcsp->sb->isInline && sym->sb->storage_class == sc_static)
+    if (funcsp && funcsp->sb->attribs.inheritable.isInline && sym->sb->storage_class == sc_static)
     {
         if (Optimizer::cparams.prm_cplusplus)
         {
-            sym->sb->isInline = true;
+            sym->sb->attribs.inheritable.isInline = true;
         }
         else
         {
@@ -4340,7 +4343,7 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_c
             }
             else
             {
-                if (sym->sb->init->exp && isintconst(sym->sb->init->exp) && (isint(sym->tp) || basetype(sym->tp)->type == bt_enum))
+                if ((sym->sb->init->exp && isintconst(sym->sb->init->exp) && (isint(sym->tp) || basetype(sym->tp)->type == bt_enum)))
                 {
                     if (sym->sb->storage_class != sc_static && !Optimizer::cparams.prm_cplusplus && !funcsp)
                         insertInitSym(sym);
@@ -4351,7 +4354,7 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_c
                 }
             }
         }
-        else if (sym->sb->init && sym->sb->init->exp && (isint(sym->tp) || basetype(sym->tp)->type == bt_enum))
+        else if (sym->sb->init && sym->sb->init->exp && (sym->sb->constexpression || isint(sym->tp) || basetype(sym->tp)->type == bt_enum))
         {
             if (sym->sb->storage_class != sc_static && !Optimizer::cparams.prm_cplusplus && !funcsp)
                 insertInitSym(sym);

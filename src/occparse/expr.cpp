@@ -1508,8 +1508,13 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
                     {
                         enum e_ac access = ac_public;
                         SYMBOL* ssp = getStructureDeclaration();
-                        if (ssp == basetype(typ2)->sp)
-                            access = ac_protected;
+                        while (ssp)
+                        {
+                            if (ssp == basetype(typ2)->sp)
+                                access = ac_protected;
+                            ssp = ssp->sb->parentClass;
+                        }
+                        ssp = getStructureDeclaration();
                         if (!isAccessible(basetype(typ2)->sp, basetype(typ2)->sp, sp2, funcsp, access, false))
                         {
                             errorsym(ERR_CANNOT_ACCESS, sp2);

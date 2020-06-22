@@ -579,8 +579,7 @@ void MethodSignature::Load(PELib& lib, AssemblyDef& assembly, PEReader& reader, 
 }
 std::string MethodSignature::AdornGenerics(PELib& peLib, bool names) const
 {
-    std::stringstream *rv = new std::stringstream;
-    std::unique_ptr<std::iostream> hold(rv);
+    std::unique_ptr<std::iostream> hold = std::make_unique<std::stringstream>();
     peLib.Swap(hold);
     if (generic_.size())
     {
@@ -606,6 +605,6 @@ std::string MethodSignature::AdornGenerics(PELib& peLib, bool names) const
         }
     }
     peLib.Swap(hold);
-    return rv->str();
+    return static_cast<std::stringstream&>(*hold).str();
 }
 }  // namespace DotNetPELib

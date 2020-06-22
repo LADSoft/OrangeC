@@ -58,9 +58,8 @@ AssemblyDef* PELib::EmptyWorkingAssembly(const std::string& AssemblyName)
 bool PELib::DumpOutputFile(const std::string& file, OutputMode mode, bool gui)
 {
     bool rv;
-    auto fstrm = new std::fstream(file.c_str(), std::ios::in | std::ios::out | std::ios::trunc |
+    outputStream_ = std::make_unique<std::fstream>(file.c_str(), std::ios::in | std::ios::out | std::ios::trunc |
                                                        (mode == ilasm || mode == object ? std::ios::in : std::ios::binary));
-    outputStream_.reset(fstrm);
     switch (mode)
     {
         case ilasm:
@@ -79,7 +78,7 @@ bool PELib::DumpOutputFile(const std::string& file, OutputMode mode, bool gui)
             rv = false;
             break;
     }
-    fstrm->close();
+    static_cast<std::fstream&>(*outputStream_).close();
     return rv;
 }
 void PELib::AddExternalAssembly(const std::string& assemblyName, Byte* publicKeyToken)

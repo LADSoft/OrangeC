@@ -467,8 +467,7 @@ bool Class::Traverse(Callback& callback) const
 }
 std::string Class::AdornGenerics(PELib& peLib, bool names) const
 {
-    std::stringstream *rv = new std::stringstream;
-    std::unique_ptr<std::iostream> hold(rv);
+    std::unique_ptr<std::iostream> hold = std::make_unique<std::stringstream>();
     peLib.Swap(hold);
     if (generic_.size())
     {
@@ -494,7 +493,7 @@ std::string Class::AdornGenerics(PELib& peLib, bool names) const
         }
     }
     peLib.Swap(hold);
-    return rv->str();
+    return static_cast<std::stringstream&>(*hold).str();
 }
 bool Class::MatchesGeneric(std::deque<Type*>* generics) const
 {

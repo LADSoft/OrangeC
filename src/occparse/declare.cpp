@@ -4855,7 +4855,7 @@ LEXEME* getBeforeType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMB
                     ((Optimizer::architecture == ARCHITECTURE_MSIL) && Optimizer::cparams.msilAllowExtensions &&
                      storage_class == sc_parameter && KW(lex) == andx))
                 {
-                    if (*tp && isref(*tp) && !instantiatingTemplate)
+                    if (*tp && isref(*tp) && !instantiatingTemplate && !templateNestingCount)
                     {
                         error(ERR_NO_REF_POINTER_REF);
                     }
@@ -4877,12 +4877,12 @@ LEXEME* getBeforeType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMB
                     lex = getQualifiers(lex, tp, linkage, linkage2, linkage3, nullptr);
                     lex = getBeforeType(lex, funcsp, tp, spi, strSym, nsv, inTemplate, storage_class, linkage, linkage2, linkage3,
                                         asFriend, false, beforeOnly, false);
-                    if (storage_class != sc_typedef && !isfunction(*tp))
+                    if (storage_class != sc_typedef && !isfunction(*tp) && !templateNestingCount && !instantiatingTemplate)
                     {
                         tp2 = *tp;
                         while (tp2 && tp2->type != bt_lref && tp2->type != bt_rref)
                         {
-                            if (tp2->type == bt_const || tp2->type == bt_volatile)
+                            if ((tp2->type == bt_const || tp2->type == bt_volatile))
                             {
                                 error(ERR_REF_NO_QUALIFIERS);
                                 break;

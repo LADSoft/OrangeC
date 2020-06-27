@@ -1481,30 +1481,6 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
                             TemplateDataInstantiate(sp2, false, false);
                         }
                     }
-                    /*
-                    if (sp3 && sp3->sb->mainsym)
-                        sp3 = sp3->sb->mainsym;
-                    if (sp4 && sp4->sb->mainsym)
-                        sp4 = sp4->sb->mainsym;
-                    
-
-
-
-
-
-
-
-
-
-
-
-
-
-                    if (sp3 && sp4 && sp3 != sp4 && classRefCount(sp3, sp4) != 1)
-                    {
-                        errorsym2(ERR_NOT_UNAMBIGUOUS_BASE, sp3, sp4);
-                    }
-                    */
                     {
                         enum e_ac access = ac_public;
                         SYMBOL* ssp = getStructureDeclaration();
@@ -7880,7 +7856,8 @@ LEXEME* expression_assign(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
         symRef = (Optimizer::architecture == ARCHITECTURE_MSIL) ? temp : nullptr;
         LookupSingleAggregate(tp1, &exp1);
 
-        if (isconstraw(*tp, true) && !localMutable && (!temp || temp->v.sp->sb->storage_class != sc_parameter || !isarray(*tp)))
+        if (isconstraw(*tp, true) && !localMutable && (!temp || temp->v.sp->sb->storage_class != sc_parameter || !isarray(*tp))
+            && ((*exp)->type != en_func || !isconstraw(basetype((*exp)->v.func->sp->tp)->btp, true)))
             error(ERR_CANNOT_MODIFY_CONST_OBJECT);
         else if (isvoid(*tp) || isvoid(tp1) || (*tp)->type == bt_aggregate)
             error(ERR_NOT_AN_ALLOWED_TYPE);

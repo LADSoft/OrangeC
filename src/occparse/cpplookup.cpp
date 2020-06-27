@@ -320,7 +320,11 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
                         TEMPLATEPARAMLIST* params = sp->tp->templateParam;
                         if (params->p->type == kw_typename)
                         {
-                            if (params->p->byClass.val)
+                            if (params->p->packed)
+                            {
+                                params = params->p->byPack.pack;
+                            }
+                            if (params && params->p->byClass.val)
                             {
                                 sp = basetype(params->p->byClass.val)->sp;
                                 dependentType = params->p->byClass.val;
@@ -508,7 +512,7 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
                 }
                 if (hasTemplateArgs)
                 {
-                    deferred = inTemplateHeader;
+                    deferred = inTemplateHeader || parsingSpecializationDeclaration;
                     if (currentsp)
                     {
                         sp = currentsp;

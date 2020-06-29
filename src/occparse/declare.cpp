@@ -2988,7 +2988,7 @@ founddecltype:
             }
             else if (Optimizer::cparams.prm_cplusplus)
             {
-                if (typeName)
+                if (typeName || ISID(lex))
                 {
                     tn = (TYPE*)Alloc(sizeof(TYPE));
                     tn->type = bt_any;
@@ -5424,6 +5424,16 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
             bool asFriend = false;
             int consdest = CT_NONE;
 
+            if (lex->line == 1019 && lex->filenum == 40)
+                printf("hi");
+            if (lex->line == 1822 && strstr(lex->file, "memory"))
+                printf("hi");
+            if (lex->line == 991 && lex->filenum == 40)
+                printf("hi");
+            if (lex->line == 706 && lex->filenum == 40)
+                printf("hi");
+            if (lex->line == 679 && lex->filenum == 40)
+                printf("hi");
             lex = getStorageAndType(lex, funcsp, &strSym, inTemplate, false, &storage_class, &storage_class_in, &address, &blocked,
                                     &isExplicit, &constexpression, &tp, &linkage, &linkage2, &linkage3, access, &notype, &defd,
                                     &consdest, &templateArg, &asFriend);

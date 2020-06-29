@@ -3647,6 +3647,10 @@ bool IsConstantExpression(EXPRESSION* node, bool allowParams, bool allowFunc)
         return rv;
     switch (node->type)
     {
+        case en_dot:
+        case en_pointsto:
+            rv = false;
+            break;
         case en_const:
             rv = true;
             break;

@@ -584,6 +584,9 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
         case en_mp_compare:
         case en__initblk:
         case en__cpblk:
+        case en_dot:
+        case en_pointsto:
+                break;
             /*		case en_array: */
             temp->right = inlineexpr(node->right, nullptr);
         case en_mp_as_bool:
@@ -1044,6 +1047,9 @@ static bool sideEffects(EXPRESSION* node)
         case en_stackblock:
         case en_blockassign:
         case en_mp_compare:
+        case en_dot:
+        case en_pointsto:
+                break;
             /*		case en_array: */
             rv = sideEffects(node->right);
         case en_mp_as_bool:

@@ -607,6 +607,8 @@ EXPRESSION* substitute_params_for_function(FUNCTIONCALL* funcparams, HASHTABLE* 
 }
 LEXEME* expression_func_type_cast(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, int flags)
 {
+    if (lex->line == 1122 && lex->filenum == 6)
+        printf("hi");
     enum e_lk linkage = lk_none, linkage2 = lk_none, linkage3 = lk_none;
     bool defd = false;
     int consdest = false;
@@ -2173,6 +2175,8 @@ static bool noexceptExpression(EXPRESSION* node)
         case en_stackblock:
         case en_blockassign:
         case en_mp_compare:
+        case en_dot:
+        case en_pointsto:
             /*		case en_array: */
             rv = noexceptExpression(node->right) && noexceptExpression(node->left);
             break;

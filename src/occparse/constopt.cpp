@@ -49,6 +49,7 @@
 #include "declcpp.h"
 #include "cpplookup.h"
 #include "beinterf.h"
+#include "exprcpp.h"
 
 namespace Parser
 {
@@ -223,6 +224,8 @@ static bool hasFloats(EXPRESSION* node)
         case en_lor:
         case en_void:
         case en_voidnz:
+        case en_dot:
+        case en_pointsto:
             return (hasFloats(node->left) || hasFloats(node->right));
         case en_cond:
             return hasFloats(node->right);
@@ -2127,6 +2130,93 @@ int opt0(EXPRESSION** node)
         case en__sizeof:
             rv |= opt0(&(ep->left));
             break;
+        case en_dot:
+        case en_pointsto:
+        if (!templateNestingCount)
+        {
+            EXPRESSION *newExpr = ep->left;
+            EXPRESSION *next = ep->right;
+            TYPE* tp = LookupTypeFromExpression(ep->left, nullptr, false);
+            while (ep->type == en_dot || ep->type == en_pointsto)
+            {
+                rv |= opt0(&(ep->right));
+                rv |= opt0(&(ep->left));
+                if (ep->type == en_pointsto)
+                {
+                    if (!ispointer(tp))
+                        break;
+                    tp = basetype(tp->btp);
+                    deref(&stdpointer, &newExpr);
+                }
+                if (!isstructured(tp))
+                    break;
+                if (next->type == en_dot || next->type == en_pointsto)
+                {
+                    next = next->left;
+                }
+                STRUCTSYM s;
+                s.str = basetype(tp)->sp;
+                addStructureDeclaration(&s);
+                if (next->type == en_func)
+                {
+                    TYPE *ctype = tp;
+                    SYMBOL *sym = classsearch(next->v.func->sp->name, false, false);
+                    if (!sym)
+                    {
+                        dropStructureDeclaration();
+                        break;
+                    }
+                    FUNCTIONCALL *func = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
+                    *func = *next->v.func;
+                    func->sp = sym;
+                    TYPE *thistp = (TYPE*)Alloc(sizeof(TYPE));
+                    thistp->type = bt_pointer;
+                    thistp->size = getSize(bt_pointer);
+                    thistp->btp = tp;
+                    func->thistp = thistp;
+                    func->thisptr = newExpr;
+                    sym =
+                        GetOverloadedFunction(&ctype, &func->fcall, sym, func, nullptr, true, false, true, 0);
+                    if (!sym)
+                    {
+                        dropStructureDeclaration();
+                        break;
+                    }
+                    EXPRESSION* temp = varNode(en_func, sym);
+                    temp->v.func = next->v.func;
+                    temp = exprNode(en_thisref, temp, nullptr);
+                    temp->v.t.thisptr = newExpr;
+                    temp->v.t.tp = tp;
+                    newExpr = temp;
+                    tp = basetype(sym->tp)->btp;
+                }
+                else
+                {
+                    SYMBOL *sym = classsearch(GetSymRef(next)->v.sp->name, false, false);
+                    if (!sym)
+                    {
+                        dropStructureDeclaration();
+                        break;
+                    }
+                    EXPRESSION *temp = intNode(en_c_i, 0);
+                    if (sym->sb->parentClass != basetype(tp)->sp)
+                    {
+                        temp = baseClassOffset(basetype(tp)->sp, sym->sb->parentClass, temp);
+                    }
+                    newExpr = exprNode(en_structadd, newExpr, temp);
+                    if (!isstructured(sym->tp))
+                        deref(sym->tp, &newExpr);
+                    tp = sym->tp;
+                }
+                dropStructureDeclaration();
+                ep = ep->right;
+            }
+            if (ep->type == en_dot || ep->type == en_pointsto)
+                rv = false;
+            else
+                *node = newExpr;
+        }
+        break;
         case en_func:
             rv |= opt0(&((*node)->v.func->fcall));
             if ((*node)->v.func->thisptr)
@@ -2686,6 +2776,8 @@ int fold_const(EXPRESSION* node)
         case en_mp_compare:
         case en__initblk:
         case en__cpblk:
+        case en_dot:
+        case en_pointsto:       
             rv |= fold_const(node->right);
         case en_blockclear:
         case en_argnopush:
@@ -2885,6 +2977,8 @@ int typedconsts(EXPRESSION* node1)
         case en_mp_compare:
         case en__initblk:
         case en__cpblk:
+        case en_dot:
+        case en_pointsto:
             rv |= typedconsts(node1->right);
         case en_trapcall:
         case en_shiftby:

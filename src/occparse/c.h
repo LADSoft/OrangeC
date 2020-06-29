@@ -170,7 +170,7 @@ typedef struct
         en_imode, en_x_p, en_substack, en_alloca, en__cpblk, en__initblk, en__initobj,  en__sizeof,
         en_loadstack, en_savestack, en_stmt, en_atomic, en_placeholder, en_thisshim, en_thisref,
         en_literalclass, en_templateparam, en_templateselector, en_packedempty, en_sizeofellipse,
-        en_type
+        en_type, en_pointsto, en_dot
     };
 // clang-format on
 

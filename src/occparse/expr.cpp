@@ -1234,6 +1234,26 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
             }
             *tp = &stdvoid;
         }
+        else if (templateNestingCount && Optimizer::cparams.prm_cplusplus)
+        {
+            *exp = exprNode(points ? en_pointsto : en_dot, *exp, nullptr);
+            EXPRESSION **ptr = &(*exp)->right;
+            while (ISID(lex) || MATCHKW(lex, kw_operator))
+            {
+                TYPE* tp = nullptr;
+                EXPRESSION* exp = nullptr;
+                lex = expression_pm(lex, funcsp, nullptr, &tp, ptr, nullptr, 0);
+                if (!MATCHKW(lex, pointsto) && !MATCHKW(lex, dot))
+                    break;
+                *ptr = exprNode(MATCHKW(lex, pointsto) ? en_pointsto : en_dot, *ptr, nullptr);
+                ptr = &(*ptr)->right;
+                lex = getsym();
+            }
+            if (!*ptr)
+            {
+                *ptr = intNode(en_c_i, 0);
+            }
+        }
         else
         {
             if (points)

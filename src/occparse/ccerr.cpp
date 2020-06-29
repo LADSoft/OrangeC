@@ -1963,6 +1963,8 @@ void assignmentUsages(EXPRESSION* node, bool first)
         case en_stackblock:
         case en_blockassign:
         case en_mp_compare:
+        case en_dot:
+        case en_pointsto:
             /*		case en_array: */
             assignmentUsages(node->left, false);
             assignmentUsages(node->right, false);
@@ -2138,6 +2140,8 @@ static int checkDefaultExpression(EXPRESSION* node)
         case en_assign:
         case en__initblk:
         case en__cpblk:
+        case en_dot:
+        case en_pointsto:
             rv |= checkDefaultExpression(node->right);
             rv |= checkDefaultExpression(node->left);
             break;

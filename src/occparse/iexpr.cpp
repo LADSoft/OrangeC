@@ -60,6 +60,7 @@
 #include "ioptimizer.h"
 #include "using.h"
 #include "template.h"
+#include "constopt.h"
 
 namespace Parser
 {
@@ -2867,6 +2868,17 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
     }
     switch (node->type)
     {
+        case en_dot:
+        case en_pointsto:
+            // usually this would be found in a template argument list, but just in case...
+            optimize_for_constants(&node);
+            if (node->type == en_dot || node->type == en_pointsto)
+            {
+                 node = intNode(en_c_i, 0);
+                 diag("gen_expr: member reference not valid");
+            }
+            rv = gen_expr(funcsp, node, flags, size);
+            break;
         case en_shiftby:
             ap3 = gen_expr(funcsp, node->left, flags, size);
             ap1 = Optimizer::LookupLoadTemp(nullptr, ap3);
@@ -3602,6 +3614,9 @@ int natural_size(EXPRESSION* node)
     }
     switch (node->type)
     {
+        case en_pointsto:
+        case en_dot:
+            return natural_size(node->right);
         case en_thisshim:
             return ISZ_ADDR;
         case en_msil_array_access:

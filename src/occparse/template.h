@@ -85,6 +85,8 @@ void SetTemplateNamespace(SYMBOL* sym);
 int PushTemplateNamespace(SYMBOL* sym);
 void PopTemplateNamespace(int n);
 void SwapMainTemplateArgs(SYMBOL* cls);
+bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* dest, TEMPLATEPARAMLIST* src,
+                                     TEMPLATEPARAMLIST* enclosing);
 SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, TEMPLATEPARAMLIST* args, bool isExtern);
 SYMBOL* TemplateClassInstantiate(SYMBOL* sym, TEMPLATEPARAMLIST* args, bool isExtern, enum e_sc storage_class);
 void TemplateDataInstantiate(SYMBOL* sym, bool warning, bool isExtern);

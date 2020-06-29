@@ -687,6 +687,9 @@ static void XCExpression(EXPRESSION* node, XCLIST*** listPtr)
         case en_stackblock:
         case en_blockassign:
         case en_mp_compare:
+        case en_dot:
+        case en_pointsto:
+                break;
             /*		case en_array: */
             XCExpression(node->right, listPtr);
         case en_mp_as_bool:

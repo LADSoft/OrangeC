@@ -3097,6 +3097,31 @@ static void insertXCInfo(SYMBOL* funcsp)
         }
     }
 }
+static bool isvoidreturntype(TYPE *tp, SYMBOL* funcsp)
+{
+    if (isvoid(tp))
+        return true;
+    if (tp->type == bt_templateparam)
+    {
+        if (tp->templateParam->p->byClass.val)
+            return isvoid(tp->templateParam->p->byClass.val);
+        if (tp->templateParam->p->byClass.dflt)
+        {
+            TEMPLATEPARAMLIST param = *tp->templateParam;
+            param.next = nullptr;
+            if (TemplateParseDefaultArgs(funcsp, &param, tp->templateParam, tp->templateParam))
+            {
+                if (param.p->byClass.val)
+                {
+                    tp = param.p->byClass.val;
+                    return isvoid(tp);
+                }
+            }
+
+        }
+    }
+    return false;
+}
 LEXEME* compound(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
 {
     BLOCKDATA* blockstmt = (BLOCKDATA*)Alloc(sizeof(BLOCKDATA));
@@ -3252,7 +3277,7 @@ LEXEME* compound(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
     if (Optimizer::cparams.prm_cplusplus)
         HandleEndOfSwitchBlock(blockstmt);
     FreeLocalContext(blockstmt, funcsp, codeLabel++);
-    if (first && !blockstmt->needlabel && !isvoid(basetype(funcsp->tp)->btp) && basetype(funcsp->tp)->btp->type != bt_auto &&
+    if (first && !blockstmt->needlabel && !isvoidreturntype(basetype(funcsp->tp)->btp, funcsp) && basetype(funcsp->tp)->btp->type != bt_auto &&
         !funcsp->sb->isConstructor)
     {
         if (funcsp->sb->attribs.inheritable.linkage3 == lk_noreturn)
@@ -3571,7 +3596,6 @@ static void handleInlines(SYMBOL* funcsp)
         }
     }
 }
-static int count8;
 void parseNoexcept(SYMBOL* funcsp)
 {
     if (funcsp->sb->deferredNoexcept)

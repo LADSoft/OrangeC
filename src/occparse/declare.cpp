@@ -2641,7 +2641,7 @@ founddecltype:
                         // throwaway
                         TEMPLATEPARAMLIST* lst = nullptr;
                         SYMBOL* sp1;
-                        lex = GetTemplateArguments(lex, funcsp, nullptr, &lst);
+                        lex = GetTemplateArguments(lex, funcsp, sp, &lst);
                         sp1 = GetTypedefSpecialization(sp, lst);
                         if (sp1 && !inUsing)
                         {
@@ -2850,6 +2850,10 @@ founddecltype:
                         if (sp->sb->templateLevel)
                         {
                             TEMPLATEPARAMLIST* lst = nullptr;
+                            if (templateNestingCount)
+                                tn = sp->tp;
+                            else
+                                tn = nullptr;
                             if (MATCHKW(lex, lt))
                             {
                                 if (sp->sb->parentTemplate)
@@ -2875,7 +2879,6 @@ founddecltype:
                                         errorsym(ERR_NEED_SPECIALIZATION_PARAMETERS, sp);
                                 }
                             }
-                            tn = nullptr;
                             if (sp)
                                 tn = sp->tp;
                         }
@@ -5424,16 +5427,6 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
             bool asFriend = false;
             int consdest = CT_NONE;
 
-            if (lex->line == 1019 && lex->filenum == 40)
-                printf("hi");
-            if (lex->line == 1822 && strstr(lex->file, "memory"))
-                printf("hi");
-            if (lex->line == 991 && lex->filenum == 40)
-                printf("hi");
-            if (lex->line == 706 && lex->filenum == 40)
-                printf("hi");
-            if (lex->line == 679 && lex->filenum == 40)
-                printf("hi");
             lex = getStorageAndType(lex, funcsp, &strSym, inTemplate, false, &storage_class, &storage_class_in, &address, &blocked,
                                     &isExplicit, &constexpression, &tp, &linkage, &linkage2, &linkage3, access, &notype, &defd,
                                     &consdest, &templateArg, &asFriend);

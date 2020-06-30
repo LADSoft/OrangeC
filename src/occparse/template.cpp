@@ -7532,7 +7532,14 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* unspecialize
                             max = max->next;
                     }
                     if (params->next)
+                    {
                         params = params->next;
+                    }
+                    else if (0 && initial)
+                    {
+                        rv = nullptr;
+                        break;
+                    }
                     if (initial && tis.size())
                     {
                         rv = nullptr;
@@ -9138,98 +9145,6 @@ static TEMPLATEPARAMLIST* SpecifyPackedInt(TEMPLATEPARAMLIST* arg, TEMPLATEPARAM
     }
     return arg;
 }
-static bool SpecifyAllTemplateArgs_unused(SYMBOL* sym, TEMPLATEPARAMLIST* args, TEMPLATEPARAMLIST* orig)
-
-{
-    TEMPLATEPARAMLIST* spl = sym->templateParams->next;
-    while (args)
-    {
-        if (!args->p->byClass.val)
-        {
-            switch (args->p->type)
-            {
-                case kw_typename:
-                    if (args->p->packed)
-                    {
-                        args->p->byPack.pack = spl->p->byPack.pack;
-                    }
-                    else if (args->p->byClass.dflt->type == bt_templateparam)
-                    {
-                        TEMPLATEPARAMLIST* srch = sym->templateParams->next;
-                        while (srch)
-                        {
-                            if (srch->argsym &&
-                                !strcmp(srch->argsym->name, args->p->byClass.dflt->templateParam->argsym->name))  // DAL fixed
-                            {
-                                args->p->byClass.val = srch->p->byClass.val;
-                                break;
-                            }
-                            srch = srch->next;
-                        }
-                    }
-                    else
-                    {
-                        args->p->byClass.val = args->p->byClass.dflt;
-                    }
-                    break;
-                case kw_int:
-                    if (args->p->packed)
-                    {
-                        args->p->byPack.pack =
-                            SpecifyPackedInt(spl->argsym->templateParams, spl->p->byPack.pack, orig);  // DAL fixed
-                    }
-                    else if (args->p->byNonType.dflt->type == en_templateparam)
-                    {
-                        TEMPLATEPARAMLIST* srch = sym->templateParams->next;
-                        while (srch)
-                        {
-                            if (srch->argsym && !strcmp(srch->argsym->name, args->p->byNonType.dflt->v.sp->name))
-                            {
-                                args->p->byClass.val = srch->p->byClass.val;
-                                break;
-                            }
-                            srch = srch->next;
-                        }
-                    }
-                    else
-                    {
-                        args->p->byNonType.val = args->p->byNonType.dflt;
-                    }
-                    break;
-                case kw_template:
-                    if (args->p->byTemplate.dflt->sb->templateLevel)
-                    {
-                        TEMPLATEPARAMLIST* srch = sym->templateParams->next;
-                        while (srch)
-                        {
-                            if (srch->argsym && !strcmp(srch->argsym->name, args->p->byTemplate.dflt->name))
-                            {
-                                args->p->byTemplate.val = srch->p->byTemplate.val;
-                                break;
-                            }
-                            srch = srch->next;
-                        }
-                    }
-                    else
-                    {
-                        args->p->byTemplate.val = args->p->byTemplate.dflt;
-                    }
-                    break;
-                default:
-                    break;
-            }
-        }
-        if (!args->p->packed)
-        {
-            SpecifyArg(sym, args, nullptr, nullptr);
-        }
-        if (spl)
-            spl = spl->next;
-        args = args->next;
-        orig = orig->next;
-    }
-    return true;
-}
 static TEMPLATEPARAMLIST* GetUsingArgs(SYMBOL* sp, TEMPLATEPARAMLIST* find, TEMPLATEPARAMLIST* orig)
 {
     TEMPLATEPARAMLIST *args1 = nullptr, **last = &args1;
@@ -9325,18 +9240,18 @@ SYMBOL* GetTypedefSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args)
         }
         if (isstructured(*tpi) && basetype(*tpi)->sp->sb->templateLevel)
         {
-            SYMBOL* sym;
-            TEMPLATEPARAMLIST* args1 = GetUsingArgs(sp, args, basetype(*tpi)->sp->templateParams);
+            SYMBOL* sym = basetype(*tpi)->sp;
+            TEMPLATEPARAMLIST *args1 = GetUsingArgs(sp, args, found1->templateParams);
             auto tpl = args1;
             while (tpl)
             {
                 tpl->p->byClass.dflt = tpl->p->byClass.val;
                 tpl = tpl->next;
             }
-            sym = GetClassTemplate(basetype(*tpi)->sp, args1->next, true);
+            sym = GetClassTemplate(sym, args1->next, true);
             if (sym)
             {
-                *tpi = TemplateClassInstantiateInternal(sym, args1, false)->tp;
+                (*tpi)->sp = TemplateClassInstantiateInternal(sym, args1->next, false);
             }
         }
     }

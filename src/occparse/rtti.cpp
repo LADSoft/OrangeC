@@ -263,10 +263,19 @@ static void RTTIDumpHeader(SYMBOL* xtSym, TYPE* tp, int flags)
         {
             if (!sym->sb->inlineFunc.stmt && !sym->sb->deferredCompile)
             {
-                EXPRESSION* exp = intNode(en_c_i, 0);
-                callDestructor(basetype(tp)->sp, nullptr, &exp, nullptr, true, false, true, true);
-                if (exp && exp->left)
-                    sym = exp->left->v.func->sp;
+                // if it is deleted we just won't call it...
+                // still need the xt table entry though...
+                if (basetype(sym->tp)->syms->table[0]->p && basetype(sym->tp)->syms->table[0]->p->sb->deleted)
+                {
+                    sym = nullptr;
+                }
+                else
+                {
+                    EXPRESSION* exp = intNode(en_c_i, 0);
+                    callDestructor(basetype(tp)->sp, nullptr, &exp, nullptr, true, false, true, true);
+                    if (exp && exp->left)
+                        sym = exp->left->v.func->sp;
+                }
             }
             else
             {
@@ -653,8 +662,6 @@ static void XCExpression(EXPRESSION* node, XCLIST*** listPtr)
         case en_arraylsh:
         case en_rsh:
         case en_rshd:
-        case en_void:
-        case en_voidnz:
             /*        case en_dvoid: */
         case en_arraymul:
         case en_arrayadd:
@@ -690,6 +697,8 @@ static void XCExpression(EXPRESSION* node, XCLIST*** listPtr)
         case en_dot:
         case en_pointsto:
                 break;
+        case en_void:
+        case en_voidnz:
             /*		case en_array: */
             XCExpression(node->right, listPtr);
         case en_mp_as_bool:

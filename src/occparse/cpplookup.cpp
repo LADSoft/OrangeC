@@ -444,6 +444,30 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
                     lex = getsym();
                     finalPos = lex;
                 }
+                if (sp && sp->sb->cpp14using && !sp->sb->templateLevel && isstructured(sp->tp))
+                {
+                    istypedef = true;
+                    sp = basetype(sp->tp)->sp;
+                }
+                else if (sp && sp->sb && sp->tp->type == bt_typedef)
+                {
+                    istypedef = true;
+                    if (sp->tp->btp->type == bt_typedef)
+                    {
+                        sp = sp->tp->btp->sp;
+                    }
+                    else if (isstructured(sp->tp->btp))
+                    {
+                        sp = basetype(sp->tp->btp)->sp;
+                    }
+                    else
+                    {
+                        SYMBOL* sp1 = clonesym(sp);
+                        sp1->sb->mainsym = sp;
+                        sp1->tp = sp->tp->btp;
+                        sp = sp1;
+                    }
+                }
             }
             if (!templateSelector)
             {

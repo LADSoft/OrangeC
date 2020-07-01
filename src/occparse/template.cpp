@@ -80,6 +80,7 @@ static TEMPLATEPARAMLIST* copyParams(TEMPLATEPARAMLIST* t, bool alsoSpecializati
 static bool valFromDefault(TEMPLATEPARAMLIST* params, bool usesParams, INITLIST** args);
 static int pushContext(SYMBOL* cls, bool all);
 static TEMPLATEPARAMLIST* ResolveTemplateSelectors(SYMBOL* sp, TEMPLATEPARAMLIST* args);
+static TEMPLATEPARAMLIST* GetUsingArgs(SYMBOL* sp, TEMPLATEPARAMLIST* find, TEMPLATEPARAMLIST* orig, bool copy);
 
 void templateInit(void)
 {
@@ -1039,6 +1040,8 @@ bool constructedInt(LEXEME* lex, SYMBOL* funcsp)
 }
 LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLATEPARAMLIST** lst)
 {
+    if (templ && !strcmp(templ->name, "__all_dummy"))
+        printf("hi");
     TEMPLATEPARAMLIST* orig = nullptr;
     bool first = true;
     TYPE* tp = nullptr;
@@ -1395,7 +1398,6 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
                         if (!skip)
                         {
                             lex = expression_no_comma(lex, funcsp, nullptr, &tp, &exp, nullptr, _F_INTEMPLATEPARAMS);
-                            optimize_for_constants(&exp);
                             if (tp && tp->type == bt_templateparam)
                             {
                                 lst = expandArgs(lst, start, funcsp, tp->templateParam, false);
@@ -1407,7 +1409,6 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
                     else
                     {
                         lex = expression_no_comma(lex, funcsp, nullptr, &tp, &exp, nullptr, _F_INTEMPLATEPARAMS);
-                        optimize_for_constants(&exp);
                         if (!tp)
                         {
                             error(ERR_EXPRESSION_SYNTAX);
@@ -1479,6 +1480,7 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
                                         expression_assign(lex, funcsp, nullptr, &tp, &exp, nullptr, _F_PACKABLE);
                                         if (exp)
                                         {
+                                            optimize_for_constants(&exp);
                                             while (exp->type == en_void && exp->right)
                                                 exp = exp->right;
                                         }
@@ -1504,6 +1506,7 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
                         {
                             if (exp)
                             {
+                                optimize_for_constants(&exp);
                                 while (exp->type == en_void && exp->right)
                                     exp = exp->right;
                             }
@@ -7874,6 +7877,8 @@ static bool checkArgSpecified(TEMPLATEPARAMLIST* args)
             if (args->p->byNonType.val && !isarithmeticconst(args->p->byNonType.val))
             {
                 EXPRESSION* exp = copy_expression(args->p->byNonType.val);
+                while (exp->type == en_void)
+                    exp = exp->right;
                 optimize_for_constants(&exp);
                 if (!isarithmeticconst(exp))
                 {
@@ -8476,6 +8481,7 @@ static TEMPLATEPARAMLIST* ResolveTemplateSelectors(SYMBOL* sp, TEMPLATEPARAMLIST
                     (*last)->p = (TEMPLATEPARAM*)(TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
                     *(*last)->p = *locate->p;
                     (*last)->p->byNonType.dflt = copy_expression(locate->p->byNonType.dflt);
+                    (*last)->argsym = locate->argsym;
                     FixIntSelectors(&(*last)->p->byNonType.dflt);
                     optimize_for_constants(&(*last)->p->byNonType.dflt);
                 }
@@ -9019,8 +9025,7 @@ SYMBOL* GetVariableTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args)
     restoreParams(spList, n);
     return found1;
 }
-static TEMPLATEPARAMLIST* GetUsingArgs(SYMBOL* sp, TEMPLATEPARAMLIST* find, TEMPLATEPARAMLIST* orig);
-static TYPE* SpecifyArgType(SYMBOL* sym, TYPE* tp, TEMPLATEPARAMLIST* inargs, TEMPLATEPARAMLIST* orig)
+static TYPE* SpecifyArgType(SYMBOL* sym, TYPE* tp, TEMPLATEPARAMLIST *current, TEMPLATEPARAMLIST* inargs, TEMPLATEPARAMLIST* orig)
 {
     TYPE *rv = nullptr, **last = &rv;
     while (tp)
@@ -9038,13 +9043,13 @@ static TYPE* SpecifyArgType(SYMBOL* sym, TYPE* tp, TEMPLATEPARAMLIST* inargs, TE
     {
         SYMLIST* hr;
         SYMBOL* sym = basetype(tp)->sp = clonesym(basetype(tp)->sp);
-        basetype(tp)->btp = SpecifyArgType(sym, basetype(tp)->btp, inargs, nullptr);
+        basetype(tp)->btp = SpecifyArgType(sym, basetype(tp)->btp, current, inargs, nullptr);
         if (sym->tp->syms)
         {
             hr = sym->tp->syms->table[0];
             while (hr)
             {
-                hr->p->tp = SpecifyArgType(sym, hr->p->tp, inargs, nullptr);
+                hr->p->tp = SpecifyArgType(sym, hr->p->tp, current, inargs, nullptr);
                 hr = hr->next;
             }
         }
@@ -9057,8 +9062,33 @@ static TYPE* SpecifyArgType(SYMBOL* sym, TYPE* tp, TEMPLATEPARAMLIST* inargs, TE
                 orig = basetype(tp)->sp->templateParams;
             else
                 orig = orig->p->byClass.dflt->sp->templateParams;
-            TEMPLATEPARAMLIST* args = GetUsingArgs(sym, inargs, orig);
-            basetype(tp)->sp = GetClassTemplate(basetype(tp)->sp, args->next, true);
+            auto args1 = GetUsingArgs(basetype(tp)->sp, inargs, orig->next, true);
+            auto tpl = args1;
+            std::stack<TEMPLATEPARAMLIST*> stk;
+            while (tpl)
+            {
+                if (tpl->p->packed)
+                {
+                    if (tpl->p->byPack.pack)
+                    {
+                        stk.push(tpl->next);
+                        tpl = tpl->p->byPack.pack;
+                    }
+                    else
+                    {
+                        tpl = tpl->next;
+                    }
+                    continue;
+                }
+                tpl->p->byClass.dflt = tpl->p->byClass.val;
+                tpl = tpl->next;
+                while (!tpl && !stk.empty())
+                {
+                    tpl = stk.top();
+                    stk.pop();
+                }
+            }
+            basetype(tp)->sp = GetClassTemplate(basetype(tp)->sp, args1, true);
         }
     }
     else if (basetype(tp)->type == bt_templateparam)
@@ -9073,8 +9103,8 @@ static TYPE* SpecifyArgType(SYMBOL* sym, TYPE* tp, TEMPLATEPARAMLIST* inargs, TE
     else if (basetype(tp)->type == bt_memberptr)
     {
         basetype(tp)->sp = clonesym(basetype(tp)->sp);
-        basetype(tp)->sp->tp = SpecifyArgType(sym, basetype(tp)->sp->tp, inargs, nullptr);
-        basetype(tp)->btp = SpecifyArgType(sym, basetype(tp)->btp, inargs, nullptr);
+        basetype(tp)->sp->tp = SpecifyArgType(sym, basetype(tp)->sp->tp, current, inargs, nullptr);
+        basetype(tp)->btp = SpecifyArgType(sym, basetype(tp)->btp, current, inargs, nullptr);
     }
     return rv;
 }
@@ -9086,11 +9116,11 @@ static void SpecifyArg(SYMBOL* sym, TEMPLATEPARAMLIST* current, TEMPLATEPARAMLIS
             break;
         case kw_template:
         {
-            current->p->byTemplate.args = GetUsingArgs(sym, args, orig->p->byTemplate.args);
+            current->p->byTemplate.args = GetUsingArgs(sym, args, orig->p->byTemplate.args, false);
         }
         case kw_typename:
         {
-            current->p->byClass.val = SpecifyArgType(sym, current->p->byClass.val, args, orig);
+            current->p->byClass.val = SpecifyArgType(sym, current->p->byClass.val, current, args, orig);
         }
         default:
             break;
@@ -9128,7 +9158,7 @@ static TEMPLATEPARAMLIST* SpecifyPackedInt(TEMPLATEPARAMLIST* arg, TEMPLATEPARAM
             TEMPLATEPARAMLIST* old = *x;
             *x = nullptr;
 
-            EXPRESSION* exp = orig->p->byPack.pack->p->byNonType.dflt;
+            EXPRESSION* exp = orig->p->byPack.pack->p->byNonType.val;
             for (TEMPLATEPARAMLIST* test = inargs->p->byPack.pack; test; test = test->next)
             {
                 *x = (TEMPLATEPARAMLIST*)Alloc(sizeof(TEMPLATEPARAMLIST));
@@ -9145,7 +9175,7 @@ static TEMPLATEPARAMLIST* SpecifyPackedInt(TEMPLATEPARAMLIST* arg, TEMPLATEPARAM
     }
     return arg;
 }
-static TEMPLATEPARAMLIST* GetUsingArgs(SYMBOL* sp, TEMPLATEPARAMLIST* find, TEMPLATEPARAMLIST* orig)
+static TEMPLATEPARAMLIST* GetUsingArgs(SYMBOL* sp, TEMPLATEPARAMLIST* find, TEMPLATEPARAMLIST* orig, bool copy)
 {
     TEMPLATEPARAMLIST *args1 = nullptr, **last = &args1;
     TEMPLATEPARAMLIST* temp = orig;
@@ -9155,12 +9185,23 @@ static TEMPLATEPARAMLIST* GetUsingArgs(SYMBOL* sp, TEMPLATEPARAMLIST* find, TEMP
         (*last)->argsym = temp->argsym;
         (*last)->p = (TEMPLATEPARAM*)(TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
         *(*last)->p = *(temp->p);
-        (*last)->p->byClass.val = temp->p->byClass.dflt;
+        if (!(*last)->p->packed)
+        {
+            (*last)->p->byClass.val = temp->p->byClass.dflt;
+        }
         if ((*last)->argsym)
         {
-            for (TEMPLATEPARAMLIST* test = find; test; test = test->next)
+            for (TEMPLATEPARAMLIST* test = find->next; test; test = test->next)
             {
-                if (test->argsym && !strcmp(test->argsym->name, (*last)->argsym->name))
+                if (copy)
+                {
+                    if ((*last)->p->packed)
+                        (*last)->p->byPack.pack = test->p->byPack.pack;
+                    else
+                        (*last)->p->byClass.val = test->p->byClass.val;
+                    (*last)->argsym = test->argsym;
+                }
+                else if (test->argsym && !strcmp(test->argsym->name, (*last)->argsym->name))
                 {
                     if ((*last)->p->packed)
                         (*last)->p->byPack.pack = test->p->byPack.pack;
@@ -9188,20 +9229,22 @@ static TEMPLATEPARAMLIST* GetUsingArgs(SYMBOL* sp, TEMPLATEPARAMLIST* find, TEMP
         temp = temp->next;
         last = &(*last)->next;
     }
-    TEMPLATEPARAMLIST* x = orig->next;
-    for (TEMPLATEPARAMLIST* temp = args1->next; temp && x; temp = temp->next, x = x->next)
+    TEMPLATEPARAMLIST* x = orig;
+    TEMPLATEPARAMLIST* f = find->next;
+    for (TEMPLATEPARAMLIST* temp = args1; temp && x && f; temp = temp->next, x = x->next, f = f->next)
     {
-        SpecifyPackedInt(temp, x, find);
+        SpecifyPackedInt(temp, x, f);
     }
-    x = orig->next;
-    for (TEMPLATEPARAMLIST* temp = args1->next; temp && x; temp = temp->next, x = x->next)
+    x = orig = orig;
+    for (TEMPLATEPARAMLIST* temp = args1; temp && x; temp = temp->next, x = x->next)
     {
         SpecifyArg(sp, temp, find, x);
     }
-
+    args1 = ResolveTemplateSelectors(sp, args1);
+    args1 = ResolveDeclType(sp, args1);
     return args1;
 }
-SYMBOL* GetTypedefSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args)
+SYMBOL* GetTypedefSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool nested)
 {
     SYMBOL* found1 = sp;
     TYPE** tpi;
@@ -9222,14 +9265,72 @@ SYMBOL* GetTypedefSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args)
         }
         if ((*tpi)->type == bt_typedef && (*tpi)->sp->sb->templateLevel)
         {
-            TEMPLATEPARAMLIST* args1 = (*tpi)->sp->templateParams->next;
-            while (args1)
+            TYPE* defaults[200];
+            int count = 0;
+            auto tpl = (*tpi)->sp->templateParams->next;
+            std::stack<TEMPLATEPARAMLIST*> stk;
+            while (tpl)
             {
-                args1->p->byClass.dflt = args1->p->byClass.val;
-                args1 = args1->next;
+                if (tpl->p->byClass.val && isstructured(tpl->p->byClass.val) && basetype(tpl->p->byClass.val)->sp->templateParams)
+                {
+                    defaults[count++] = tpl->p->byClass.val;
+                    stk.push(tpl->next);
+                    tpl = basetype(tpl->p->byClass.val)->sp->templateParams->next;
+                    continue;
+                }
+                if (tpl->p->packed)
+                {
+                    stk.push(tpl->next);
+                    tpl = tpl->p->byPack.pack;
+                    continue;
+
+                }
+                defaults[count++] = tpl->p->byClass.val;
+                tpl = tpl->next;
+                while (!tpl && !stk.empty())
+                {
+                    tpl = stk.top();
+                    stk.pop();
+                }
             }
-            args1 = GetUsingArgs((*tpi)->sp, found1->templateParams, (*tpi)->sp->templateParams->next);
-            return GetTypedefSpecialization(sp->tp->btp->sp, args1);
+            tpl = (*tpi)->sp->templateParams->next;
+            while (tpl)
+            {
+                if (tpl->p->type == kw_int && tpl->p->byNonType.val)
+                    optimize_for_constants(&tpl->p->byNonType.val);
+                tpl->p->byClass.dflt = tpl->p->byClass.val;
+                tpl = tpl->next;
+            }
+            auto args1 = GetUsingArgs((*tpi)->sp, found1->templateParams, (*tpi)->sp->templateParams->next, false);
+            auto rv = GetTypedefSpecialization(sp->tp->btp->sp, args1, true);
+            int max = count;
+            count = 0;
+            tpl = (*tpi)->sp->templateParams->next;
+            while (tpl)
+            {
+                if (tpl->p->byClass.val && isstructured(tpl->p->byClass.val) && basetype(tpl->p->byClass.val)->sp->templateParams)
+                {
+                    tpl->p->byClass.val = defaults[count++];
+                    stk.push(tpl->next);
+                    tpl = basetype(tpl->p->byClass.val)->sp->templateParams->next;
+                    continue;
+                }
+                if (tpl->p->packed)
+                {
+                    stk.push(tpl->next);
+                    tpl = tpl->p->byPack.pack;
+                    continue;
+
+                }
+                tpl->p->byClass.val = defaults[count++];
+                tpl = tpl->next;
+                while (!tpl && !stk.empty())
+                {
+                    tpl = stk.top();
+                    stk.pop();
+                }
+            }
+            return rv;
         }
         while (isref(*tpi) || ispointer(*tpi))
         {
@@ -9241,7 +9342,16 @@ SYMBOL* GetTypedefSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args)
         if (isstructured(*tpi) && basetype(*tpi)->sp->sb->templateLevel)
         {
             SYMBOL* sym = basetype(*tpi)->sp;
-            TEMPLATEPARAMLIST *args1 = GetUsingArgs(sp, args, found1->templateParams);
+            if (!nested)
+            {
+                auto tpl = basetype(*tpi)->sp->templateParams;
+                while (tpl)
+                {
+                    tpl->p->byClass.dflt = tpl->p->byClass.val;
+                    tpl = tpl->next;
+                }
+            }
+            TEMPLATEPARAMLIST *args1 = GetUsingArgs(basetype(*tpi)->sp, args, basetype(*tpi)->sp->templateParams, false);
             auto tpl = args1;
             while (tpl)
             {
@@ -9251,6 +9361,9 @@ SYMBOL* GetTypedefSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args)
             sym = GetClassTemplate(sym, args1->next, true);
             if (sym)
             {
+                TYPE* tp1 = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
+                *tp1 = *(*tpi);
+                *tpi = tp1;
                 (*tpi)->sp = TemplateClassInstantiateInternal(sym, args1->next, false);
             }
         }

@@ -1232,7 +1232,7 @@ LEXEME* baseClasses(LEXEME* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac defa
                         inTemplateSpecialization++;
                         lex = GetTemplateArguments(lex, funcsp, bcsym, &lst);
                         inTemplateSpecialization--;
-                        sp1 = GetTypedefSpecialization(bcsym, lst);
+                        sp1 = GetTypedefSpecialization(bcsym, lst, false);
                         if (sp1)
                         {
                             bcsym = sp1;

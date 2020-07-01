@@ -2642,8 +2642,8 @@ founddecltype:
                         TEMPLATEPARAMLIST* lst = nullptr;
                         SYMBOL* sp1;
                         lex = GetTemplateArguments(lex, funcsp, sp, &lst);
-                        sp1 = GetTypedefSpecialization(sp, lst);
-                        if (sp1 && !inUsing)
+                        sp1 = GetTypedefSpecialization(sp, lst, false);
+                        if (sp1 && (!inUsing || !templateNestingCount))
                         {
                             sp = sp1;
                             if (isstructured(sp->tp))

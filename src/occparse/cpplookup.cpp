@@ -444,7 +444,7 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
                     lex = getsym();
                     finalPos = lex;
                 }
-                if (sp && sp->sb->cpp14using && !sp->sb->templateLevel && isstructured(sp->tp))
+                if (sp && sp->sb && sp->sb->cpp14using && !sp->sb->templateLevel && isstructured(sp->tp))
                 {
                     istypedef = true;
                     sp = basetype(sp->tp)->sp;

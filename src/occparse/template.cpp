@@ -1040,8 +1040,6 @@ bool constructedInt(LEXEME* lex, SYMBOL* funcsp)
 }
 LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLATEPARAMLIST** lst)
 {
-    if (templ && !strcmp(templ->name, "__all_dummy"))
-        printf("hi");
     TEMPLATEPARAMLIST* orig = nullptr;
     bool first = true;
     TYPE* tp = nullptr;
@@ -6145,8 +6143,8 @@ int TemplatePartialDeduceArgsFromType(SYMBOL* syml, SYMBOL* symr, TYPE* tpl, TYP
         else
             */
         {
-            TEMPLATEPARAMLIST* l = syml->templateParams->next;
-            TEMPLATEPARAMLIST* r = symr->templateParams->next;
+            TEMPLATEPARAMLIST* l = syml->templateParams->p->bySpecialization.types ? syml->templateParams->p->bySpecialization.types : syml->templateParams->next;
+            TEMPLATEPARAMLIST* r = symr->templateParams->p->bySpecialization.types ? symr->templateParams->p->bySpecialization.types : symr->templateParams->next;
             int i;
             n = 0;
             while (l && r)
@@ -7703,7 +7701,7 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* unspecialize
                 tis.pop();
             }
         }
-        if (initial && max)
+        if (initial && (max || !spsyms))
             rv = nullptr;
         if (spsyms)
         {

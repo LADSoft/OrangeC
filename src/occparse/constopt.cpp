@@ -2291,7 +2291,7 @@ int opt0(EXPRESSION** node)
             }
             break;
         case en_templateparam:
-            if (!templateNestingCount && (*node)->v.sp->tp->templateParam->p->type == kw_int)
+            if ((!templateNestingCount  || instantiatingTemplate) && (*node)->v.sp->tp->templateParam->p->type == kw_int)
             {
                 SYMBOL* sym = (*node)->v.sp;
                 TEMPLATEPARAMLIST* found = (*node)->v.sp->tp->templateParam;

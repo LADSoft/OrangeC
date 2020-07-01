@@ -282,7 +282,7 @@ static void RTTIDumpHeader(SYMBOL* xtSym, TYPE* tp, int flags)
                 sym = (SYMBOL*)basetype(sym->tp)->syms->table[0]->p;
             }
             Optimizer::SymbolManager::Get(sym);
-            if (sym->sb->attribs.inheritable.linkage2 == lk_import)
+            if (sym && sym->sb->attribs.inheritable.linkage2 == lk_import)
             {
                 EXPRESSION* exp = varNode(en_pc, sym);
                 thunkForImportTable(&exp);

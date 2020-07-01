@@ -2857,6 +2857,86 @@ static INITLIST* ExpandArguments(EXPRESSION* exp)
     }
     return exp->v.func->arguments;
 }
+static void PushPopDefaults(std::deque<TYPE*>& defaults, TEMPLATEPARAMLIST* tpl, bool dflt, bool push)
+{
+    std::stack<TEMPLATEPARAMLIST*> stk;
+    while (tpl)
+    {
+        if (tpl->p->byClass.val && isstructured(tpl->p->byClass.val) && basetype(tpl->p->byClass.val)->sp->templateParams)
+        {
+            if (push)
+            {
+                defaults.push_back(dflt ? tpl->p->byClass.dflt : tpl->p->byClass.val);
+            }
+            else if (defaults.size())
+            {
+                if (dflt)
+                {
+                    tpl->p->byClass.dflt = defaults.front();                           
+                }
+                else
+                {
+                    tpl->p->byClass.val = defaults.front();
+                }
+                defaults.pop_front();
+            }
+            else
+            {
+                if (dflt)
+                {
+                    tpl->p->byClass.dflt = nullptr;
+                }
+                else
+                {
+                    tpl->p->byClass.val = nullptr;
+                }
+            }
+            stk.push(tpl->next);
+            tpl = basetype(tpl->p->byClass.val)->sp->templateParams->next;
+            continue;
+        }
+        if (tpl->p->packed)
+        {
+            stk.push(tpl->next);
+            tpl = tpl->p->byPack.pack;
+            continue;
+
+        }
+        if (push)
+        {
+            defaults.push_back(dflt ? tpl->p->byClass.dflt : tpl->p->byClass.val);
+        }
+        else if (defaults.size())
+        {
+            if (dflt)
+            {
+                tpl->p->byClass.dflt = defaults.front();
+            }
+            else
+            {
+                tpl->p->byClass.val = defaults.front();
+            }
+            defaults.pop_front();
+        }
+        else
+        {
+            if (dflt)
+            {
+                tpl->p->byClass.dflt = nullptr;
+            }
+            else
+            {
+                tpl->p->byClass.val = nullptr;
+            }
+        }
+        tpl = tpl->next;
+        while (!tpl && !stk.empty())
+        {
+            tpl = stk.top();
+            stk.pop();
+        }
+    }
+}
 TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bool alt)
 {
     EXPRESSION* funcList[100];
@@ -3118,14 +3198,13 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bo
             }
             else
             {
-                TYPE* defaults[200];
-                int count = 0;
+                std::deque<TYPE*> defaults;
                 TYPE* tp1 = nullptr;
                 SYMBOL* sp;
                 TEMPLATEPARAMLIST* tpl = exp->v.func->templateParams;
                 while (tpl)
                 {
-                    defaults[count++] = tpl->p->byClass.dflt;
+                    defaults.push_back(tpl->p->byClass.dflt);
                     if (tpl->p->byClass.val)
                     {
                         tpl->p->byClass.dflt = tpl->p->byClass.val;
@@ -3137,7 +3216,8 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bo
                 count = 0;
                 while (tpl)
                 {
-                    tpl->p->byClass.dflt = defaults[count++];
+                    tpl->p->byClass.dflt = defaults.front();
+                    defaults.pop_front();
                     tpl = tpl->next;
                 }
                 if (sp)
@@ -3357,9 +3437,10 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                 {
                     TEMPLATEPARAMLIST* current = tp->sp->sb->templateSelector->next->templateParams;
                     TEMPLATEPARAMLIST* symtp = ts->templateParams->next;
-                    TYPE* defaults[200];
-                    int count = 0;
+                    std::deque<TYPE*> defaults;
                     std::stack<TEMPLATEPARAMLIST*> tps;
+                    PushPopDefaults(defaults, current, true, true);
+                    bool failed = false;
                     while (current)
                     {
                         if (current->p->packed)
@@ -3369,34 +3450,13 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                         }
                         if (current)
                         {
-                            defaults[count++] = current->p->byClass.dflt;
                             if (current->p->type == kw_typename && current->p->byClass.dflt)
                             {
                                 current->p->byClass.dflt = SynthesizeType(current->p->byClass.dflt, enclosing, alt);
                                 if (!current->p->byClass.dflt || current->p->byClass.dflt->type == bt_any)
                                 {
-                                    int i = 0;
-                                    current = tp->sp->sb->templateSelector->next->templateParams;
-                                    std::stack<TEMPLATEPARAMLIST*> tps;
-                                    while (count--)
-                                    {
-                                        if (current->p->packed)
-                                        {
-                                            tps.push(current->next);
-                                            current = current->p->byPack.pack;
-                                        }
-                                        if (current)
-                                        {
-                                            current->p->byClass.dflt = defaults[i++];
-                                            current = current->next;
-                                        }
-                                        if (!current && tps.size())
-                                        {
-                                            current = tps.top();
-                                            tps.pop();
-                                        }
-                                    }
-                                    return &stdany;
+                                    failed = true;
+                                    break;
                                 }
                             }
                             else if (current->p->type == kw_int)
@@ -3427,22 +3487,16 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                         }
                     }
                     current = tp->sp->sb->templateSelector->next->templateParams;
+                    if (failed)
+                    {
+                        PushPopDefaults(defaults, current, true, false);
+                        return &stdany;
+                    }
                     sp = GetClassTemplate(ts, current, true);
                     if (sp)
                         sp = TemplateClassInstantiateInternal(sp, current, false);
                     current = tp->sp->sb->templateSelector->next->templateParams;
-                    int max = count;
-                    count = 0;
-                    while (current)
-                    {
-                        if (current->p->packed)
-                            current = current->p->byPack.pack;
-                        if (current)
-                        {
-                            current->p->byClass.dflt = count >= max ? nullptr : defaults[count++];
-                            current = current->next;
-                        }
-                    }
+                    PushPopDefaults(defaults, current, true, false);
                     if (sp)
                         tp = sp->tp;
                     else
@@ -9265,35 +9319,9 @@ SYMBOL* GetTypedefSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool neste
         }
         if ((*tpi)->type == bt_typedef && (*tpi)->sp->sb->templateLevel)
         {
-            TYPE* defaults[200];
-            int count = 0;
+            std::deque<TYPE*> defaults;
             auto tpl = (*tpi)->sp->templateParams->next;
-            std::stack<TEMPLATEPARAMLIST*> stk;
-            while (tpl)
-            {
-                if (tpl->p->byClass.val && isstructured(tpl->p->byClass.val) && basetype(tpl->p->byClass.val)->sp->templateParams)
-                {
-                    defaults[count++] = tpl->p->byClass.val;
-                    stk.push(tpl->next);
-                    tpl = basetype(tpl->p->byClass.val)->sp->templateParams->next;
-                    continue;
-                }
-                if (tpl->p->packed)
-                {
-                    stk.push(tpl->next);
-                    tpl = tpl->p->byPack.pack;
-                    continue;
-
-                }
-                defaults[count++] = tpl->p->byClass.val;
-                tpl = tpl->next;
-                while (!tpl && !stk.empty())
-                {
-                    tpl = stk.top();
-                    stk.pop();
-                }
-            }
-            tpl = (*tpi)->sp->templateParams->next;
+            PushPopDefaults(defaults, tpl, false, true);
             while (tpl)
             {
                 if (tpl->p->type == kw_int && tpl->p->byNonType.val)
@@ -9303,33 +9331,8 @@ SYMBOL* GetTypedefSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool neste
             }
             auto args1 = GetUsingArgs((*tpi)->sp, found1->templateParams, (*tpi)->sp->templateParams->next, false);
             auto rv = GetTypedefSpecialization(sp->tp->btp->sp, args1, true);
-            int max = count;
-            count = 0;
             tpl = (*tpi)->sp->templateParams->next;
-            while (tpl)
-            {
-                if (tpl->p->byClass.val && isstructured(tpl->p->byClass.val) && basetype(tpl->p->byClass.val)->sp->templateParams)
-                {
-                    tpl->p->byClass.val = defaults[count++];
-                    stk.push(tpl->next);
-                    tpl = basetype(tpl->p->byClass.val)->sp->templateParams->next;
-                    continue;
-                }
-                if (tpl->p->packed)
-                {
-                    stk.push(tpl->next);
-                    tpl = tpl->p->byPack.pack;
-                    continue;
-
-                }
-                tpl->p->byClass.val = defaults[count++];
-                tpl = tpl->next;
-                while (!tpl && !stk.empty())
-                {
-                    tpl = stk.top();
-                    stk.pop();
-                }
-            }
+            PushPopDefaults(defaults, tpl, false, false);
             return rv;
         }
         while (isref(*tpi) || ispointer(*tpi))

@@ -8104,41 +8104,6 @@ void DuplicateTemplateParamList(TEMPLATEPARAMLIST** pptr)
     }
 }
 
-/*
-static void ChooseShorterParamList(SYMBOL** spList, int n)
-{
-    int counts[1000];
-    int counts1[1000];
-    int z = INT_MAX, z1 = INT_MAX, i;
-    for (i = 0; i < n; i++)
-    {
-        if (spList[i])
-        {
-            int c = 0;
-            TEMPLATEPARAMLIST* tpl = spList[i]->templateParams->next;
-            while (tpl)
-                c++, tpl = tpl->next;
-            counts[i] = c;
-            if (c < z)
-                z = c;
-            c = 0;
-            tpl = spList[i]->templateParams->p->bySpecialization.types;
-            while (tpl)
-                c++, tpl = tpl->next;
-            counts1[i] = c;
-            if (c < z1)
-                z1 = c;
-        }
-        else
-        {
-            counts[i] = INT_MAX;
-        }
-    }
-    for (i = 0; i < n; i++)
-        if (counts[i] != z || counts1[i] != z1)
-            spList[i] = nullptr;
-}
-*/
 static bool constOnly(SYMBOL** spList, SYMBOL** origList, int n)
 {
     int i;
@@ -8703,10 +8668,11 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
                 count1++;
         if (count1 > 1)
             TemplatePartialOrdering(spList, n, nullptr, nullptr, true, false);
-        count1 = 0;
-        for (i = 0; i < n; i++)
-            if (spList[i])
-                count1++;
+            count1 = 0;
+            for (i = 0; i < n; i++)
+                if (spList[i])
+                   count1++;
+        }
         if (count1 > 1 || (count1 == 1 && match0 && constOnly(spList, origList, n)))
         {
             for (i = 0; i < n; i++)
@@ -8717,20 +8683,20 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
                 }
             }
             TemplateConstMatching(spList, n, args);
+            count1 = 0;
+            for (i = 0; i < n; i++)
+                if (spList[i])
+                    count1++;
         }
-        count1 = 0;
-        for (i = 0; i < n; i++)
-            if (spList[i])
-                count1++;
         if (count1 > 1)
         {
             spList[0] = 0;
             TemplateConstOrdering(spList, n, args);
+            count1 = 0;
+            for (i = 0; i < n; i++)
+                if (spList[i])
+                    count1++;
         }
-        count1 = 0;
-        for (i = 0; i < n; i++)
-            if (spList[i])
-                count1++;
         if (count1 > 1 && templateNestingCount)
         {
             // if it is going to be ambiguous but we are gathering a template, just choose the first one
@@ -8739,23 +8705,15 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
                     break;
             for (i = i + 1; i < n; i++)
                 spList[i] = 0;
+            count1 = 0;
+            for (i = 0; i < n; i++)
+                if (spList[i])
+                    count1++;
         }
-        count1 = 0;
-        for (i = 0; i < n; i++)
-            if (spList[i])
-                count1++;
         if (count1 > 1)
         {
             ChooseMoreSpecialized(spList, n);
         }
-        /*
-        count1 = 0;
-        for (i = 0; i < n; i++)
-            if (spList[i])
-                count1++;
-        if (count1 > 1)
-            ChooseShorterParamList(spList, n);
-         */
     }
     for (i = 0; i < n && !found1; i++)
     {

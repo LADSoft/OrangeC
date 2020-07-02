@@ -3642,6 +3642,7 @@ void parseNoexcept(SYMBOL* funcsp)
 }
 LEXEME* body(LEXEME* lex, SYMBOL* funcsp)
 {
+    int oldNestingCount = templateNestingCount;
     int n1;
     bool oldsetjmp_used = Optimizer::setjmp_used;
     bool oldfunctionHasAssembly = Optimizer::functionHasAssembly;
@@ -3669,7 +3670,8 @@ LEXEME* body(LEXEME* lex, SYMBOL* funcsp)
     declareAndInitialize = false;
     block->type = funcsp->sb->hasTry ? kw_try : begin;
     theCurrentFunc = funcsp;
-
+    if (inTemplateHeader)
+        templateNestingCount--;
     checkUndefinedStructures(funcsp);
     parseNoexcept(funcsp);
     FlushLineData(funcsp->sb->declfile, funcsp->sb->realdeclline);
@@ -3793,6 +3795,7 @@ LEXEME* body(LEXEME* lex, SYMBOL* funcsp)
     matchReturnTypes = oldMatchReturnTypes;
     funcLevel--;
     funcNesting--;
+    templateNestingCount = oldNestingCount;
     return lex;
 }
 }  // namespace Parser

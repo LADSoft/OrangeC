@@ -2218,7 +2218,7 @@ int opt0(EXPRESSION** node)
         }
         break;
         case en_func:
-            rv |= opt0(&((*node)->v.func->fcall));
+            //rv |= opt0(&((*node)->v.func->fcall));
             if ((*node)->v.func->thisptr)
                 rv |= opt0(&((*node)->v.func->thisptr));
             return rv;
@@ -2241,7 +2241,7 @@ int opt0(EXPRESSION** node)
             }
             break;
         case en_templateselector:
-            if (!templateNestingCount)
+           if (!templateNestingCount)
             {
                 TEMPLATESELECTOR* tsl = (*node)->v.templateSelector;
                 SYMBOL* ts = tsl->next->sp;
@@ -2250,7 +2250,14 @@ int opt0(EXPRESSION** node)
                 if (tsl->next->isTemplate)
                 {
                     TEMPLATEPARAMLIST* current = SolidifyTemplateParams(tsl->next->templateParams);
-                    sym = GetClassTemplate(ts, current, true);
+                    if (ts->sb->storage_class == sc_typedef)
+                    {
+                        sym = GetTypedefSpecialization(sym, current, false);
+                    }
+                    else
+                    {
+                        sym = GetClassTemplate(ts, current, true);
+                    }
                 }
                 if (sym && sym->tp->type == bt_templateselector)
                 {
@@ -2798,39 +2805,72 @@ int fold_const(EXPRESSION* node)
                 *node = *node->left;
             break;
         case en_func:
-            if (node->v.func->sp && node->v.func->sp->sb->constexpression && node->v.func->sp->sb->inlineFunc.stmt)
+            if (node->v.func->sp && node->v.func->sp->sb->constexpression)
             {
-                int i;
-                STATEMENT* stmt = node->v.func->sp->sb->inlineFunc.stmt;
-                while (stmt && stmt->type == st_expr)
-                    stmt = stmt->next;
-                if (stmt && stmt->type == st_block && stmt->lower)
+                SYMBOL* found1 = node->v.func->sp;
+                if (!node->v.func->sp->sb->inlineFunc.stmt && node->v.func->sp->sb->deferredCompile)
                 {
-                    STATEMENT* st = stmt->lower;
-                    while (st->type == st_varstart)
-                        st = st->next;
-                    if (st->type == st_block && !st->next)
+                    if (found1->sb->templateLevel && (found1->templateParams || found1->sb->isDestructor))
                     {
-                        st = st->lower;
-                        while (st->type == st_line || st->type == st_dbgblock || st->type == st_label)
-                            st = st->next;
-                        if (st->type == st_expr || st->type == st_return)
+                        found1 = found1->sb->mainsym;
+                        if (found1->sb->castoperator)
                         {
-                            if (st->select)
+                            found1 = detemplate(found1, nullptr, basetype(node->v.func->thistp)->btp);
+                        }
+                        else
+                        {
+                            found1 = detemplate(found1, node->v.func, nullptr);
+                        }
+                    }
+                    if (found1->sb->templateLevel && !templateNestingCount && node->v.func->templateParams)
+                    {
+                        found1 = TemplateFunctionInstantiate(found1, false, false);
+                    }
+                    else
+                    {
+                        if (found1->templateParams)
+                            instantiatingTemplate++;
+                        deferredCompileOne(found1);
+                        if (found1->templateParams)
+                            instantiatingTemplate--;
+                    }
+                }
+                if (found1->sb->inlineFunc.stmt)
+                {
+                    int i;
+                    STATEMENT* stmt = found1->sb->inlineFunc.stmt;
+                    while (stmt && stmt->type == st_expr)
+                        stmt = stmt->next;
+                    if (stmt && stmt->type == st_block && stmt->lower)
+                    {
+                        STATEMENT* st = stmt->lower;
+                        while (st->type == st_varstart)
+                            st = st->next;
+                        if (st->type == st_block && !st->next)
+                        {
+                            st = st->lower;
+                            while (st->type == st_line || st->type == st_dbgblock || st->type == st_label)
+                                st = st->next;
+                            if (st->type == st_expr || st->type == st_return)
                             {
-                                for (i = 0; i < functionnestingcount; i++)
-                                    if (functionnesting[i] == st->select)
-                                        break;
-                                if (i >= functionnestingcount)
+                                if (st->select)
                                 {
-                                    functionnesting[functionnestingcount++] = st->select;
-                                    // optimize_for_constants(&st->select);
-                                    functionnestingcount--;
-                                    if (IsConstantExpression(st->select, false, false))
+                                    for (i = 0; i < functionnestingcount; i++)
+                                        if (functionnesting[i] == st->select)
+                                            break;
+                                    if (i >= functionnestingcount)
                                     {
-                                        *node = *st->select;
-                                        node->noexprerr = true;
-                                        rv = true;
+                                        functionnesting[functionnestingcount++] = st->select;
+                                        bool optimizeConstants = !node->v.func->arguments;
+                                        if (optimizeConstants)
+                                            optimize_for_constants(&st->select);
+                                        functionnestingcount--;
+                                        if (IsConstantExpression(st->select, false, false))
+                                        {
+                                            *node = *st->select;
+                                            node->noexprerr = true;
+                                            rv = true;
+                                        }
                                     }
                                 }
                             }

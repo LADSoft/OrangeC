@@ -3292,6 +3292,74 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
         lptr = &(*lptr)->next;
     }
 }
+static TEMPLATEPARAMLIST *LiftTemplateParams(TEMPLATEPARAMLIST* tpl)
+{
+    TEMPLATEPARAMLIST *rv = nullptr, **last = &rv;
+    while (tpl)
+    {
+        *last = (TEMPLATEPARAMLIST*)Alloc(sizeof(TEMPLATEPARAMLIST));
+        (*last)->argsym = tpl->argsym;
+        (*last)->p = (TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
+        *(*last)->p = *tpl->p;
+        TEMPLATEPARAMLIST* temp = tpl;
+        if (tpl->p->type == kw_typename && tpl->p->byClass.dflt && basetype(tpl->p->byClass.dflt)->type == bt_templateparam)
+        {
+            (*last)->p = (TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
+            temp = basetype(tpl->p->byClass.dflt)->templateParam;
+            *(*last)->p = *temp->p;
+            (*last)->argsym = temp->argsym;
+        }
+        else if (tpl->p->type == kw_int && tpl->p->byNonType.dflt && tpl->p->byNonType.dflt->type == en_templateparam)
+        {
+            (*last)->p = (TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
+            temp = tpl->p->byNonType.dflt->v.sp->tp->templateParam;
+            *(*last)->p = *temp->p;
+            (*last)->argsym = temp->argsym;
+        }
+        if ((*last)->argsym)
+        {
+            STRUCTSYM* s = structSyms;
+            TEMPLATEPARAMLIST* rv = nullptr;
+            while (s && !rv)
+            {
+                if (s->tmpl)
+                {
+                    TEMPLATEPARAMLIST *tpl1 = s->tmpl;
+                    while (tpl1 && !rv)
+                    {
+                        if (tpl1->argsym && !strcmp(tpl1->argsym->name, (*last)->argsym->name))
+                            rv = tpl1;
+                        tpl1 = tpl1->next;
+                    }
+                }
+                s = s->next;
+            }
+            if (rv)
+            {
+                if ((*last)->p->packed)
+                {
+                    (*last)->p->byPack.pack = nullptr;
+                    TEMPLATEPARAMLIST**next = &(*last)->p->byPack.pack;
+                    for (auto tpl2 = rv->p->byPack.pack; tpl2; tpl2 = tpl2->next)
+                    {
+                        (*next) = (TEMPLATEPARAMLIST*)Alloc(sizeof(TEMPLATEPARAMLIST));
+                        (*next)->p = (TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
+                        (*next)->p->type = (*last)->p->type;
+                        (*next)->p->byClass.dflt = tpl2->p->byClass.val;
+                        next = &(*next)->next;
+                    }
+                }
+                else
+                {
+                    (*last)->p->byClass.dflt = rv->p->byClass.val;
+                }
+            }
+        }
+        last = &(*last)->next;
+        tpl = tpl->next;
+    }
+    return rv;
+}
 LEXEME* expression_arguments(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp, int flags)
 {
     TYPE* tp_cpp = *tp;
@@ -3310,6 +3378,7 @@ LEXEME* expression_arguments(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION*
     {
         TYPE* tpx = *tp;
         SYMBOL* sym;
+        funcparams = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
         if (exp_in->type == en_templateselector)
         {
             TEMPLATESELECTOR* tsl = exp_in->v.templateSelector;
@@ -3345,6 +3414,11 @@ LEXEME* expression_arguments(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION*
                         if (sp == (SYMBOL*)-1)
                             sp = nullptr;
                     }
+                    if (!find->next && sp)
+                    {
+                        funcparams->astemplate = find->isTemplate;
+                        funcparams->templateParams = LiftTemplateParams(find->templateParams);
+                    }
                     find = find->next;
                 }
                 if (!find)
@@ -3366,7 +3440,6 @@ LEXEME* expression_arguments(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION*
                 tpx = basetype(tpx)->btp;
             sym = basetype(tpx)->sp;
         }
-        funcparams = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
         if (sym)
         {
             funcparams->sp = sym;
@@ -3520,38 +3593,38 @@ LEXEME* expression_arguments(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION*
                         }
                         else if (classRefCount(sym->sb->parentClass, funcsp->sb->parentClass) != 1)
                         {
-                            errorsym2(ERR_NOT_UNAMBIGUOUS_BASE, sym->sb->parentClass, funcsp->sb->parentClass);
+                        errorsym2(ERR_NOT_UNAMBIGUOUS_BASE, sym->sb->parentClass, funcsp->sb->parentClass);
                         }
                         else if (funcsp->sb->storage_class == sc_member || funcsp->sb->storage_class == sc_virtual)
                         {
-                            TYPE** cur;
-                            funcparams->thisptr = varNode(en_auto, (SYMBOL*)basetype(funcsp->tp)->syms->table[0]->p);
-                            deref(&stdpointer, &funcparams->thisptr);
-                            funcparams->thisptr =
-                                DerivedToBase(sym->sb->parentClass->tp, basetype(funcparams->thisptr->left->v.sp->tp)->btp,
-                                              funcparams->thisptr, _F_VALIDPOINTER);
-                            funcparams->thistp = (TYPE*)Alloc(sizeof(TYPE));
-                            cur = &funcparams->thistp->btp;
-                            funcparams->thistp->type = bt_pointer;
-                            funcparams->thistp->size = getSize(bt_pointer);
-                            if (isconst(sym->tp))
-                            {
-                                (*cur) = (TYPE*)Alloc(sizeof(TYPE));
-                                (*cur)->type = bt_const;
-                                (*cur)->size = sym->sb->parentClass->tp->size;
-                                cur = &(*cur)->btp;
-                            }
-                            if (isvolatile(sym->tp))
-                            {
-                                (*cur) = (TYPE*)Alloc(sizeof(TYPE));
-                                (*cur)->type = bt_volatile;
-                                (*cur)->size = sym->sb->parentClass->tp->size;
-                                cur = &(*cur)->btp;
-                            }
-                            *cur = sym->sb->parentClass->tp;
-                            UpdateRootTypes(funcparams->thistp->btp);
-                            cppCast(((SYMBOL*)basetype(funcsp->tp)->syms->table[0]->p)->tp, &funcparams->thistp,
-                                    &funcparams->thisptr);
+                        TYPE** cur;
+                        funcparams->thisptr = varNode(en_auto, (SYMBOL*)basetype(funcsp->tp)->syms->table[0]->p);
+                        deref(&stdpointer, &funcparams->thisptr);
+                        funcparams->thisptr =
+                            DerivedToBase(sym->sb->parentClass->tp, basetype(funcparams->thisptr->left->v.sp->tp)->btp,
+                                funcparams->thisptr, _F_VALIDPOINTER);
+                        funcparams->thistp = (TYPE*)Alloc(sizeof(TYPE));
+                        cur = &funcparams->thistp->btp;
+                        funcparams->thistp->type = bt_pointer;
+                        funcparams->thistp->size = getSize(bt_pointer);
+                        if (isconst(sym->tp))
+                        {
+                            (*cur) = (TYPE*)Alloc(sizeof(TYPE));
+                            (*cur)->type = bt_const;
+                            (*cur)->size = sym->sb->parentClass->tp->size;
+                            cur = &(*cur)->btp;
+                        }
+                        if (isvolatile(sym->tp))
+                        {
+                            (*cur) = (TYPE*)Alloc(sizeof(TYPE));
+                            (*cur)->type = bt_volatile;
+                            (*cur)->size = sym->sb->parentClass->tp->size;
+                            cur = &(*cur)->btp;
+                        }
+                        *cur = sym->sb->parentClass->tp;
+                        UpdateRootTypes(funcparams->thistp->btp);
+                        cppCast(((SYMBOL*)basetype(funcsp->tp)->syms->table[0]->p)->tp, &funcparams->thistp,
+                            &funcparams->thisptr);
                         }
                     }
                 }
@@ -3559,12 +3632,12 @@ LEXEME* expression_arguments(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION*
         }
         else
         {
-            operands = !ismember(funcparams->sp) && funcparams->thisptr && !addedThisPointer;
+        operands = !ismember(funcparams->sp) && funcparams->thisptr && !addedThisPointer;
+        if (!isExpressionAccessible(funcparams->thistp ? basetype(basetype(funcparams->thistp)->btp)->sp : nullptr,
+            funcparams->sp, funcsp, funcparams->thisptr, false))
             if (!isExpressionAccessible(funcparams->thistp ? basetype(basetype(funcparams->thistp)->btp)->sp : nullptr,
-                                        funcparams->sp, funcsp, funcparams->thisptr, false))
-                if (!isExpressionAccessible(funcparams->thistp ? basetype(basetype(funcparams->thistp)->btp)->sp : nullptr,
-                                            funcparams->sp, funcsp, funcparams->thisptr, false))
-                    errorsym(ERR_CANNOT_ACCESS, funcparams->sp);
+                funcparams->sp, funcsp, funcparams->thisptr, false))
+                errorsym(ERR_CANNOT_ACCESS, funcparams->sp);
         }
         if (sym)
         {
@@ -3573,12 +3646,12 @@ LEXEME* expression_arguments(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION*
             if (hasThisPtr)
             {
                 test = isExpressionAccessible(basetype(basetype(funcparams->thistp)->btp)->sp, sym, funcsp, funcparams->thisptr,
-                                              false);
+                    false);
             }
             else
             {
                 test = isExpressionAccessible(funcparams->thistp ? basetype(basetype(funcparams->thistp)->btp)->sp : nullptr, sym,
-                                              funcsp, funcparams->thisptr, false);
+                    funcsp, funcparams->thisptr, false);
             }
             if (!test)
             {

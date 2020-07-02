@@ -1562,9 +1562,16 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
                                 checkUnpackedExpression(exp);
                                 *lst = (TEMPLATEPARAMLIST*)Alloc(sizeof(TEMPLATEPARAMLIST));
                                 (*lst)->p = (TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
-                                (*lst)->p->type = kw_int;
-                                (*lst)->p->byNonType.dflt = exp;
-                                (*lst)->p->byNonType.tp = tp;
+                                if (exp->type == en_templateparam && exp->v.sp->tp->templateParam->p->byClass.dflt)
+                                {
+                                    *(*lst)->p = *exp->v.sp->tp->templateParam->p;
+                                }
+                                else
+                                {
+                                    (*lst)->p->type = kw_int;
+                                    (*lst)->p->byNonType.dflt = exp;
+                                    (*lst)->p->byNonType.tp = tp;
+                                }
                                 lst = &(*lst)->next;
                             }
                         }
@@ -2307,6 +2314,19 @@ static LEXEME* TemplateArg(LEXEME* lex, SYMBOL* funcsp, TEMPLATEPARAMLIST* arg, 
                         if (!arg->p->byNonType.txtdflt)
                         {
                             error(ERR_IDENTIFIER_EXPECTED);
+                        }
+                        else
+                        {
+                            TYPE* tp = nullptr;
+                            EXPRESSION *exp = nullptr;
+                            LEXEME* lex = SetAlternateLex(arg->p->byNonType.txtdflt);
+                            lex = expression_no_comma(lex, nullptr, nullptr, &tp, &exp, nullptr, 0);
+                            SetAlternateLex(nullptr);
+                            if (tp && isintconst(exp))
+                            {
+                                arg->p->byNonType.dflt = exp;
+//                                arg->p->byNonType.txtdflt = nullptr;
+                            }
                         }
                     }
                 }
@@ -6462,7 +6482,7 @@ static bool TemplateInstantiationMatchInternal(TEMPLATEPARAMLIST* porig, TEMPLAT
                         if (!templatecomparetypes(porig->p->byNonType.tp, psym->p->byNonType.tp, true))
                             return false;
                         //#ifndef PARSER_ONLY
-                        if (xsym && !equalTemplateIntNode((EXPRESSION*)xorig, (EXPRESSION*)xsym))
+                        if (xsym && xorig && !equalTemplateIntNode((EXPRESSION*)xorig, (EXPRESSION*)xsym))
                             return false;
                         //#endif
                     }
@@ -7686,7 +7706,7 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* unspecialize
                                 {
                                     exp = copy_expression(exp);
                                     optimize_for_constants(&exp);
-                                }
+                                }                                   
                                 if (exp && params->p->byNonType.dflt && params->p->byNonType.dflt->type != en_templateparam &&
                                     !equalTemplateIntNode(params->p->byNonType.dflt, exp))
                                     rv = nullptr;
@@ -7735,7 +7755,7 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* unspecialize
                 break;
             primary = primary->next;
         }
-        if ((!templateNestingCount || instantiatingTemplate) && (inTemplateArgs < 1 || !primary))
+        if ((!templateNestingCount || instantiatingTemplate || (inTemplateHeader && templateNestingCount == 1)) && (inTemplateArgs < 1 || !primary))
         {
             primary = spsyms ? spsyms : nparams->next;
             if (!TemplateParseDefaultArgs(sp, origParams, primary, primary))
@@ -9313,7 +9333,7 @@ SYMBOL* GetTypedefSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool neste
 {
     SYMBOL* found1 = sp;
     TYPE** tpi;
-
+    args = ResolveTemplateSelectors(sp, args);
     found1 = ValidateClassTemplate(sp, sp->templateParams->next, args);
     if (!found1)
         return sp;

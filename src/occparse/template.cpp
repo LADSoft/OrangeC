@@ -8667,6 +8667,7 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
             if (spList[i])
                 count1++;
         if (count1 > 1)
+        {
             TemplatePartialOrdering(spList, n, nullptr, nullptr, true, false);
             count1 = 0;
             for (i = 0; i < n; i++)

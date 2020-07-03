@@ -33,6 +33,8 @@ extern bool parsingPreprocessorConstant;
 extern LEXCONTEXT* context;
 extern int charIndex;
 extern HASHTABLE* kwhash;
+extern LEXEME* currentLex;
+
 void lexini(void);
 KEYWORD* searchkw(const unsigned char** p);
 LEXEME* SkipToNextLine(void);

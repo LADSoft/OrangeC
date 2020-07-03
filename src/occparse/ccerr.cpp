@@ -48,6 +48,7 @@
 #define ANSIERROR 8
 #define ANSIWARNING 16
 #define CPLUSPLUSERROR 32
+#define NOTE 64
 
 namespace Parser
 {
@@ -65,6 +66,8 @@ enum e_kw skim_templateend[] = {gt, semicolon, end, kw_none};
 
 static Optimizer::LIST* listErrors;
 static const char* currentErrorFile;
+static std::deque<std::tuple<const char*, int, SYMBOL*>> instantiationList;
+static bool disabledWarning;
 
 static struct
 {
@@ -576,8 +579,40 @@ static struct
     {"Attribute '%s' does not exist", ERROR},
     {"Attribute '%s' does not exist in attribute namespace '%s'", ERROR},
     {"static function '%s' is declared but never defined", TRIVIALWARNING},
+    {"Referenced in instantiation of '%s'", NOTE},
+    {"Referenced from source line", NOTE },
 };
-
+void EnterInstantiation(SYMBOL *sym)
+{
+    int line;
+    const char *file;
+    if (currentLex)
+    {
+        file = currentLex->file;
+        line = currentLex->line;
+    }
+    else
+    {
+        file = preProcessor->GetErrFile().c_str();
+        line = preProcessor->GetErrLineNo();
+    }
+    instantiationList.push_front(std::tuple<const char *, int, SYMBOL*>(file, line, sym));
+}
+void LeaveInstantiation()
+{
+    instantiationList.pop_front();
+}
+static void DumpInstantiations()
+{
+    for (auto i : instantiationList)
+    {
+        errorsym(ERR_REFERENCED_IN_INSTANTIATION, std::get<2>(i), std::get<1>(i), std::get<0>(i));
+    }
+    if (!instantiationList.empty())
+    {
+        printerr(ERR_REFERENCED_FROM_CODE_AT_LINE, preProcessor->GetErrFile().c_str(), preProcessor->GetErrLineNo());
+    }
+}
 static bool ValidateWarning(int num)
 {
     if (num && num < sizeof(errors) / sizeof(errors[0]))
@@ -649,6 +684,9 @@ void errorinit(void)
 {
     total_errors = diagcount = 0;
     currentErrorFile = nullptr;
+    currentLex = nullptr;
+    disabledWarning = false;
+    instantiationList.clear();
 }
 
 static char kwtosym(enum e_kw kw)
@@ -753,6 +791,19 @@ static bool ignoreErrtemplateNestingCount(int err)
 }
 bool printerrinternal(int err, const char* file, int line, va_list args)
 {
+    if (!file)
+    {
+        if (currentLex)
+        {
+            file = currentLex->file;
+            line = currentLex->line;
+        }
+        else
+        {
+            file = preProcessor->GetErrFile().c_str();
+            line = preProcessor->GetErrLineNo();
+        }
+    }
     char buf[2048];
     char infunc[2048];
     const char* listerr;
@@ -779,9 +830,12 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
     }
     if (TotalErrors() > Optimizer::cparams.prm_maxerr)
         return false;
-    if (!alwaysErr(err) && currentErrorFile && !strcmp(currentErrorFile, preProcessor->GetRealFile().c_str()) &&
+    if (!(errors[err].level & NOTE) && !alwaysErr(err) && currentErrorFile && !strcmp(currentErrorFile, preProcessor->GetRealFile().c_str()) &&
         preProcessor->GetRealLineNo() == currentErrorLine)
+    {
+        disabledWarning = true;
         return false;
+    }
     if (err >= sizeof(errors) / sizeof(errors[0]))
     {
         Optimizer::my_sprintf(buf, "Error %d", err);
@@ -790,7 +844,17 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
     {
         vsprintf(buf, errors[err].name, args);
     }
-    if (IsReturnErr(err) || (errors[err].level & ERROR) || (Optimizer::cparams.prm_ansi && (errors[err].level & ANSIERROR)) ||
+    if (errors[err].level & NOTE)
+    {
+        if (!disabledWarning)
+        {
+            if (!Optimizer::cparams.prm_quiet)
+                printf("note:        ", err);
+            if (Optimizer::cparams.prm_errfile)
+                fprintf(errFile, "note:   ");
+        }
+    }
+    else if (IsReturnErr(err) || (errors[err].level & ERROR) || (Optimizer::cparams.prm_ansi && (errors[err].level & ANSIERROR)) ||
         (Optimizer::cparams.prm_cplusplus && (errors[err].level & CPLUSPLUSERROR)))
     {
         if (!Optimizer::cparams.prm_quiet)
@@ -801,14 +865,17 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
         total_errors++;
         currentErrorFile = preProcessor->GetRealFile().c_str();
         currentErrorLine = preProcessor->GetRealLineNo();
+        disabledWarning = false;
     }
     else
     {
+        disabledWarning = true;
         if (Warning::Instance()->IsSet(err, Warning::Disable))
             return false;
         if (Warning::Instance()->IsSet(err, Warning::OnlyOnce))
             if (Warning::Instance()->IsSet(err, Warning::Emitted))
                 return false;
+        disabledWarning = false;
         Warning::Instance()->SetFlag(err, Warning::Emitted);
         if (Warning::Instance()->IsSet(err, Warning::AsError))
         {
@@ -831,7 +898,7 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
             listerr = "WARNING";
         }
     }
-    if (theCurrentFunc && err != ERR_TOO_MANY_ERRORS && err != ERR_PREVIOUS && err != ERR_TEMPLATE_INSTANTIATION_STARTED_IN)
+    if (0 && !(errors[err].level & NOTE) && theCurrentFunc && err != ERR_TOO_MANY_ERRORS && err != ERR_PREVIOUS && err != ERR_TEMPLATE_INSTANTIATION_STARTED_IN)
     {
         strcpy(infunc, " in function ");
         unmangle(infunc + strlen(infunc), theCurrentFunc->sb->decoratedName);
@@ -851,7 +918,10 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
         exit(1);
 #endif
     }
-
+    if (!(errors[err].level & NOTE))
+    {
+        DumpInstantiations();
+    }
     return true;
 }
 int printerr(int err, const char* file, int line, ...)
@@ -863,16 +933,16 @@ int printerr(int err, const char* file, int line, ...)
     va_end(arg);
     if (instantiatingTemplate && canprint)
     {
-        printerrinternal(ERR_TEMPLATE_INSTANTIATION_STARTED_IN, preProcessor->GetErrFile().c_str(), preProcessor->GetErrLineNo(),
+        printerrinternal(ERR_TEMPLATE_INSTANTIATION_STARTED_IN, nullptr, 0,
                          nullptr);
     }
     return canprint;
 }
-void pperror(int err, int data) { printerr(err, preProcessor->GetErrFile().c_str(), preProcessor->GetErrLineNo(), data); }
-void pperrorstr(int err, const char* str) { printerr(err, preProcessor->GetErrFile().c_str(), preProcessor->GetErrLineNo(), str); }
+void pperror(int err, int data) { printerr(err, nullptr, 0, data); }
+void pperrorstr(int err, const char* str) { printerr(err, nullptr, 0, str); }
 void preverror(int err, const char* name, const char* origFile, int origLine)
 {
-    if (printerr(err, preProcessor->GetErrFile().c_str(), preProcessor->GetErrLineNo(), name))
+    if (printerr(err, nullptr, 0, name))
         if (origFile && origLine)
             printerr(ERR_PREVIOUS, origFile, origLine, name);
 }
@@ -884,7 +954,7 @@ void preverrorsym(int err, SYMBOL* sp, const char* origFile, int origLine)
         preverror(err, buf, origFile, origLine);
 }
 void errorat(int err, const char* name, const char* file, int line) { printerr(err, file, line, name); }
-void errorcurrent(int err) { printerr(err, preProcessor->GetErrFile().c_str(), preProcessor->GetErrLineNo()); }
+void errorcurrent(int err) { printerr(err, nullptr, 0); }
 void getns(char* buf, SYMBOL* nssym)
 {
     if (nssym->sb->parentNameSpace)
@@ -953,21 +1023,21 @@ void errorqualified(int err, SYMBOL* strSym, NAMESPACEVALUELIST* nsv, const char
     strcat(buf, "'");
     if (strSym && !strSym->tp->syms)
         strcat(buf, " because the type is not defined");
-    printerr(err, preProcessor->GetErrFile().c_str(), preProcessor->GetErrLineNo(), buf);
+    printerr(err, nullptr, 0, buf);
 }
 void errorNotMember(SYMBOL* strSym, NAMESPACEVALUELIST* nsv, const char* name)
 {
     errorqualified(ERR_NAME_IS_NOT_A_MEMBER_OF_NAME, strSym, nsv, name);
 }
-void error(int err) { printerr(err, preProcessor->GetErrFile().c_str(), preProcessor->GetErrLineNo()); }
-void errorint(int err, int val) { printerr(err, preProcessor->GetErrFile().c_str(), preProcessor->GetErrLineNo(), val); }
+void error(int err) { printerr(err, nullptr, 0); }
+void errorint(int err, int val) { printerr(err, nullptr, 0, val); }
 void errorstr(int err, const char* val)
 {
-    printerr(err, preProcessor->GetErrFile().c_str(), preProcessor->GetErrLineNo(), (char*)val);
+    printerr(err, nullptr, 0, (char*)val);
 }
 void errorstr2(int err, const char* val, const char* two)
 {
-    printerr(err, preProcessor->GetErrFile().c_str(), preProcessor->GetErrLineNo(), (char*)val, (char*)two);
+    printerr(err, nullptr, 0, (char*)val, (char*)two);
 }
 void errorsym(int err, SYMBOL* sym)
 {
@@ -984,7 +1054,7 @@ void errorsym(int err, SYMBOL* sym)
     {
         strcpy(buf, sym->name);
     }
-    printerr(err, preProcessor->GetErrFile().c_str(), preProcessor->GetErrLineNo(), buf);
+    printerr(err, nullptr, 0, buf);
 }
 void errorsym(int err, SYMBOL* sym, int line, const char* file)
 {
@@ -1001,20 +1071,20 @@ void errorsym2(int err, SYMBOL* sym1, SYMBOL* sym2)
     char one[2048], two[2048];
     unmangle(one, sym1->sb->decoratedName);
     unmangle(two, sym2->sb->decoratedName);
-    printerr(err, preProcessor->GetErrFile().c_str(), preProcessor->GetErrLineNo(), one, two);
+    printerr(err, nullptr, 0, one, two);
 }
 void errorstrsym(int err, const char* name, SYMBOL* sym2)
 {
     char two[2048];
     unmangle(two, sym2->sb->decoratedName);
-    printerr(err, preProcessor->GetErrFile().c_str(), preProcessor->GetErrLineNo(), name, two);
+    printerr(err, nullptr, 0, name, two);
 }
 void errorstringtype(int err, char* str, TYPE* tp1)
 {
     char tpb1[4096];
     memset(tpb1, 0, sizeof(tpb1));
     typeToString(tpb1, tp1);
-    printerr(err, preProcessor->GetErrFile().c_str(), preProcessor->GetErrLineNo(), str, tpb1);
+    printerr(err, nullptr, 0, str, tpb1);
 }
 
 void errortype(int err, TYPE* tp1, TYPE* tp2)
@@ -1025,7 +1095,7 @@ void errortype(int err, TYPE* tp1, TYPE* tp2)
     typeToString(tpb1, tp1);
     if (tp2)
         typeToString(tpb2, tp2);
-    printerr(err, preProcessor->GetErrFile().c_str(), preProcessor->GetErrLineNo(), tpb1, tpb2);
+    printerr(err, nullptr, 0, tpb1, tpb2);
 }
 void errorabstract(int error, SYMBOL* sp)
 {
@@ -1049,7 +1119,7 @@ void errorarg(int err, int argnum, SYMBOL* declsp, SYMBOL* funcsp)
     }
     unmangle(buf, funcsp->sb->decoratedName);
     currentErrorLine = 0;
-    printerr(err, preProcessor->GetErrFile().c_str(), preProcessor->GetErrLineNo(), argbuf, buf);
+    printerr(err, nullptr, 0, argbuf, buf);
 }
 static BALANCE* newbalance(LEXEME* lex, BALANCE* bal)
 {

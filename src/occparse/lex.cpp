@@ -59,6 +59,7 @@ bool parsingPreprocessorConstant;
 LEXCONTEXT* context;
 
 int charIndex;
+LEXEME* currentLex;
 
 static LEXEME* pool;
 static unsigned long long llminus1;
@@ -1573,6 +1574,7 @@ LEXEME* getsym(void)
             while (linesTail && linesTail->next)
                 linesTail = linesTail->next;
         }
+        currentLex = rv;
         return rv;
     }
     else if (context->next)
@@ -1783,6 +1785,7 @@ LEXEME* getsym(void)
     {
         lex->linedata = linesHead;
     }
+    currentLex = lex;
     return last = lex;
 }
 LEXEME* prevsym(LEXEME* lex)

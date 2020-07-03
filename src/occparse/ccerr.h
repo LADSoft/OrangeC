@@ -528,6 +528,9 @@
 #define ERR_ATTRIBUTE_DOES_NOT_EXIST 502
 #define ERR_ATTRIBUTE_DOES_NOT_EXIST_IN_NAMESPACE 503
 #define ERR_STATIC_FUNCTION_USED_BUT_NOT_DEFINED 504
+#define ERR_REFERENCED_IN_INSTANTIATION 505
+#define ERR_REFERENCED_FROM_CODE_AT_LINE 506
+
 void diag(const char* fmt, ...);
 
 namespace Parser
@@ -619,4 +622,6 @@ void checkUnused(HASHTABLE* syms);
 void findUnusedStatics(NAMESPACEVALUELIST* nameSpace);
 void assignmentUsages(EXPRESSION* node, bool first);
 void checkDefaultArguments(SYMBOL* spi);
+void EnterInstantiation(SYMBOL *sp);
+void LeaveInstantiation();
 }  // namespace Parser

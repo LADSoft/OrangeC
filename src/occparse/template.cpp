@@ -6927,6 +6927,7 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, TEMPLATEPARAMLIST* args, b
             lex = sym->sb->parentTemplate->sb->deferredCompile;
         if (lex)
         {
+            EnterInstantiation(sym);
             int oldHeaderCount = templateHeaderCount;
             Optimizer::LIST* oldDeferred = deferred;
             bool defd = false;
@@ -7024,6 +7025,7 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, TEMPLATEPARAMLIST* args, b
             while (pushCount--)
                 dropStructureDeclaration();
             SwapMainTemplateArgs(cls);
+            LeaveInstantiation();
         }
         else
         {
@@ -7162,6 +7164,7 @@ SYMBOL* TemplateFunctionInstantiate(SYMBOL* sym, bool warning, bool isExtern)
         lex = sym->sb->deferredCompile;
         if (lex)
         {
+            EnterInstantiation(sym);
             Optimizer::LINEDATA* oldLinesHead = linesHead;
             Optimizer::LINEDATA* oldLinesTail = linesTail;
             int oldHeaderCount = templateHeaderCount;
@@ -7218,6 +7221,7 @@ SYMBOL* TemplateFunctionInstantiate(SYMBOL* sym, bool warning, bool isExtern)
             instantiatingTemplate--;
             instantiatingFunction--;
             expandingParams = oldExpandingParams;
+            LeaveInstantiation();
         }
         else
         {

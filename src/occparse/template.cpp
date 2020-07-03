@@ -3249,26 +3249,20 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bo
             }
             else
             {
-                std::deque<TYPE*> defaults;
                 TYPE* tp1 = nullptr;
                 SYMBOL* sp;
                 TEMPLATEPARAMLIST* tpl = exp->v.func->templateParams;
                 while (tpl)
                 {
-                    defaults.push_back(tpl->p->byClass.dflt);
-                    if (tpl->p->byClass.val)
-                    {
-                        tpl->p->byClass.dflt = tpl->p->byClass.val;
-                    }
+                    tpl->p->byClass.dflt = tpl->p->byClass.val;
                     tpl = tpl->next;
                 }
                 sp = GetOverloadedFunction(&tp1, &exp1, exp->v.func->sp, exp->v.func, nullptr, false, false, false, 0);
                 tpl = exp->v.func->templateParams;
-                count = 0;
                 while (tpl)
                 {
-                    tpl->p->byClass.dflt = defaults.front();
-                    defaults.pop_front();
+                    if (tpl->p->type != kw_new)
+                        tpl->p->byClass.dflt = nullptr;
                     tpl = tpl->next;
                 }
                 if (sp)
@@ -3283,7 +3277,7 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bo
             while (count && rv)
             {
                 TYPE* rve = rv;
-                exp = funcList[--count]->left;
+                exp = funcList[--count];
                 while (isref(rve))
                     rve = basetype(rve)->btp;
                 if (isfuncptr(rve))
@@ -3314,7 +3308,7 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bo
                     rv = rve;
                     //                    exp->v.func->sp = basetype(rve)->sp;
                     //                   exp->v.func->functp = exp->v.func->sp->tp;
-                    if (!exp->v.func)// || !insertOperatorParams(nullptr, &rv, &exp1, exp->v.func, 0))
+                    if (!exp->v.func || !insertOperatorParams(nullptr, &rv, &exp1, exp->v.func, 0))
                         rv = &stdvoid;
                     if (isconst(rve))
                     {

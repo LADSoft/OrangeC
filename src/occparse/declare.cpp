@@ -2896,9 +2896,9 @@ founddecltype:
                                 }
                                 errorsym(ERR_NOT_A_TEMPLATE, sp);
                             }
-//                            if (sp->tp->type == bt_typedef)
-//                                tn = basetype(sp->tp);
-//                            else
+                            if (sp->tp->type == bt_typedef)
+                                tn = basetype(sp->tp);
+                            else
                                 tn = sp->tp;
                             if (!templateNestingCount && isstructured(tn) && basetype(tn)->sp->sb->templateLevel &&
                                 !basetype(tn)->sp->sb->instantiated)

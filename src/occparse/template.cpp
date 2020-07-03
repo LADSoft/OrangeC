@@ -3823,7 +3823,7 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                         *last = (TYPE*)Alloc(sizeof(TYPE));
                         **last = *type;
                         (*last)->templateTop = true;
-                        while (tx)
+                        while (0 && tx)
                         {
                             if (tx->type == bt_const)
                             {
@@ -4640,10 +4640,13 @@ static TYPE* FixConsts(TYPE* P, TYPE* A)
             }
             P = P->btp;
         }
+        bool foundconst = false;
+        bool foundvol = false;
         while (A != basetype(A))
         {
             if (A->type == bt_const && !isconst(Pb))
             {
+                foundconst = true;
                 *last = (TYPE*)Alloc(sizeof(TYPE));
                 **last = *A;
                 last = &(*last)->btp;
@@ -8123,7 +8126,10 @@ void TemplateArgsAdd(TEMPLATEPARAMLIST* current, TEMPLATEPARAMLIST* dflt, TEMPLA
     {
         if (!base->p->byClass.val && base->argsym && dflt->argsym && !strcmp(base->argsym->name, dflt->argsym->name))
         {
-            base->p->byClass.val = current->p->byClass.val;
+            if (base->p->packed)
+                base->p->byPack.pack = current->p->byPack.pack;
+            else
+                base->p->byClass.val = current->p->byClass.val;
         }
     }
 }
@@ -8134,11 +8140,14 @@ void TemplateArgsTemplateAdd(TEMPLATEPARAMLIST* current, TEMPLATEPARAMLIST* spec
     {
         if (!tpb->p->byTemplate.val && tpb->argsym && current->p->byTemplate.val && !strcmp(tpb->argsym->name, current->p->byTemplate.dflt->name))
         {
-            base->p->byTemplate.val = current->p->byTemplate.val;
+            if (tpb->p->packed)
+                tpb->p->byPack.pack = current->p->byPack.pack;
+            else
+                tpb->p->byTemplate.val = current->p->byTemplate.val;
         }
     }
     // now move any arguments...
-    auto tpl = current->p->byTemplate.args;
+    auto tpl = current->p->byTemplate.val->templateParams;
     auto spl = special->p->byTemplate.args;
     while (tpl && spl)
     {

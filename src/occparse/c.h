@@ -848,6 +848,7 @@ typedef struct _templateParam
             struct lexeme* txtdflt;
             Optimizer::LIST* txtargs;
             EXPRESSION* temp;
+            struct lexeme* txttype;
             TYPE* tp;
         } byNonType;
         struct

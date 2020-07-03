@@ -528,11 +528,14 @@ static char* mangleTemplate(char* buf, SYMBOL* sym, TEMPLATEPARAMLIST* params)
             case kw_template:
                 if (params->p->packed)
                     *buf++ = 'e';
+                /*
                 if (bySpecial && params->p->byTemplate.dflt && params->p->byTemplate.val)
                 {
                     buf = mangleTemplate(buf, params->p->byTemplate.dflt, params->p->byTemplate.val->templateParams);
                 }
-                else if (sym->sb->instantiated && params->p->byTemplate.val)
+                else 
+                */
+                if (sym->sb->instantiated && params->p->byTemplate.val)
                 {
                     buf = mangleTemplate(buf, params->p->byTemplate.val, params->p->byTemplate.val->templateParams);
                 }

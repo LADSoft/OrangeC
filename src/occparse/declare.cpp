@@ -410,7 +410,7 @@ LEXEME* get_type_id(LEXEME* lex, TYPE** tp, SYMBOL* funcsp, enum e_sc storage_cl
     *tp = nullptr;
 
     lex = getQualifiers(lex, tp, &linkage, &linkage2, &linkage3, nullptr);
-    lex = getBasicType(lex, funcsp, tp, nullptr, false, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3, ac_public,
+        lex = getBasicType(lex, funcsp, tp, nullptr, false, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3, ac_public,
                        &notype, &defd, nullptr, nullptr, false, false, inUsing);
     lex = getQualifiers(lex, tp, &linkage, &linkage2, &linkage3, nullptr);
     lex = getBeforeType(lex, funcsp, tp, &sp, nullptr, nullptr, false, storage_class, &linkage, &linkage2, &linkage3, false, false,
@@ -2745,10 +2745,12 @@ founddecltype:
                                                 if (sp && sp->tp->type == bt_templateparam)
                                                 {
                                                     (*tnew)->p = sp->tp->templateParam->p;
+                                                    (*tnew)->argsym = sp->tp->templateParam->argsym;
                                                 }
                                                 else
                                                 {
                                                     (*tnew)->p = lst->p;
+                                                    (*tnew)->argsym = lst->argsym;
                                                 }
                                                 lst = lst->next;
                                             }
@@ -2894,7 +2896,10 @@ founddecltype:
                                 }
                                 errorsym(ERR_NOT_A_TEMPLATE, sp);
                             }
-                            tn = sp->tp;
+//                            if (sp->tp->type == bt_typedef)
+//                                tn = basetype(sp->tp);
+//                            else
+                                tn = sp->tp;
                             if (!templateNestingCount && isstructured(tn) && basetype(tn)->sp->sb->templateLevel &&
                                 !basetype(tn)->sp->sb->instantiated)
                             {

@@ -2979,6 +2979,10 @@ LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc st
         if (!isTypename && ISID(lex))
         {
             LEXEME* idsym = lex;
+            if (!strcmp(idsym->value.s.a, "_Maker"))
+                printf("hi");
+            if (!strcmp(idsym->value.s.a, "__apply_quals"))
+                printf("hi");
             lex = getsym();
             ParseAttributeSpecifiers(&lex, nullptr, true);
             if (MATCHKW(lex, assign))

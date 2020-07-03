@@ -67,7 +67,7 @@ enum e_kw skim_templateend[] = {gt, semicolon, end, kw_none};
 static Optimizer::LIST* listErrors;
 static const char* currentErrorFile;
 static std::deque<std::tuple<const char*, int, SYMBOL*>> instantiationList;
-static bool disabledWarning;
+static bool disabledNote;
 
 static struct
 {
@@ -685,7 +685,7 @@ void errorinit(void)
     total_errors = diagcount = 0;
     currentErrorFile = nullptr;
     currentLex = nullptr;
-    disabledWarning = false;
+    disabledNote = false;
     instantiationList.clear();
 }
 
@@ -833,7 +833,7 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
     if (!(errors[err].level & NOTE) && !alwaysErr(err) && currentErrorFile && !strcmp(currentErrorFile, preProcessor->GetRealFile().c_str()) &&
         preProcessor->GetRealLineNo() == currentErrorLine)
     {
-        disabledWarning = true;
+        disabledNote = true;
         return false;
     }
     if (err >= sizeof(errors) / sizeof(errors[0]))
@@ -846,7 +846,7 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
     }
     if (errors[err].level & NOTE)
     {
-        if (!disabledWarning)
+        if (!disabledNote)
         {
             if (!Optimizer::cparams.prm_quiet)
                 printf("note:        ", err);
@@ -865,17 +865,17 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
         total_errors++;
         currentErrorFile = preProcessor->GetRealFile().c_str();
         currentErrorLine = preProcessor->GetRealLineNo();
-        disabledWarning = false;
+        disabledNote = false;
     }
     else
     {
-        disabledWarning = true;
+        disabledNote = true;
         if (Warning::Instance()->IsSet(err, Warning::Disable))
             return false;
         if (Warning::Instance()->IsSet(err, Warning::OnlyOnce))
             if (Warning::Instance()->IsSet(err, Warning::Emitted))
                 return false;
-        disabledWarning = false;
+        disabledNote = false;
         Warning::Instance()->SetFlag(err, Warning::Emitted);
         if (Warning::Instance()->IsSet(err, Warning::AsError))
         {

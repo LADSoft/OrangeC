@@ -326,20 +326,12 @@ bool ismsil(TYPE* tp)
     tp = basetype(tp);
     return tp->type == bt___string || tp->type == bt___object;
 }
-bool isconstraw(const TYPE* tp, bool useTemplate)
+bool isconstraw(const TYPE* tp)
 {
     bool done = false;
     bool rv = false;
     while (!done && tp)
     {
-        if (useTemplate)
-        {
-            if (tp->templateConst)
-            {
-                rv = true;
-                done = true;
-            }
-        }
         switch (tp->type)
         {
             case bt_restrict:
@@ -367,7 +359,7 @@ bool isconstraw(const TYPE* tp, bool useTemplate)
     }
     return rv;
 }
-bool isconst(const TYPE* tp) { return isconstraw(tp, false); }
+bool isconst(const TYPE* tp) { return isconstraw(tp); }
 bool isvolatile(const TYPE* tp)
 {
     while (tp)

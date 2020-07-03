@@ -41,7 +41,7 @@ bool iscomplex(TYPE* tp);
 bool isimaginary(TYPE* tp);
 bool isarithmetic(TYPE* tp);
 bool ismsil(TYPE* tp);
-bool isconstraw(const TYPE* tp, bool useTemplate);
+bool isconstraw(const TYPE* tp);
 bool isconst(const TYPE* tp);
 bool isvolatile(const TYPE* tp);
 bool islrqual(TYPE* tp);

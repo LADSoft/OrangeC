@@ -1821,8 +1821,6 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     TYPE* returntype = nullptr;
     EXPRESSION* destexp = nullptr;
 
-    if (lex->line == 1376 && lex->filenum == 46)
-        printf("hi");
     if (funcsp->sb->attribs.inheritable.linkage3 == lk_noreturn)
         error(ERR_NORETURN);
     funcsp->sb->retcount++;

@@ -3251,10 +3251,17 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bo
             {
                 TYPE* tp1 = nullptr;
                 SYMBOL* sp;
+                std::deque<TYPE*> defaults;
                 TEMPLATEPARAMLIST* tpl = exp->v.func->templateParams;
                 while (tpl)
                 {
-                    tpl->p->byClass.dflt = tpl->p->byClass.val;
+                    if (tpl->p->type != kw_new)
+                    {
+                        defaults.push_back(tpl->p->byClass.dflt);
+                        defaults.push_back(tpl->p->byClass.val);
+                        if (tpl->p->byClass.val)
+                            tpl->p->byClass.dflt = tpl->p->byClass.val;
+                    }
                     tpl = tpl->next;
                 }
                 sp = GetOverloadedFunction(&tp1, &exp1, exp->v.func->sp, exp->v.func, nullptr, false, false, false, 0);
@@ -3262,7 +3269,12 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bo
                 while (tpl)
                 {
                     if (tpl->p->type != kw_new)
-                        tpl->p->byClass.dflt = nullptr;
+                    {
+                        tpl->p->byClass.dflt = defaults.front();
+                        defaults.pop_front();
+                        tpl->p->byClass.val = defaults.front();
+                        defaults.pop_front();
+                    }
                     tpl = tpl->next;
                 }
                 if (sp)
@@ -3274,7 +3286,7 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bo
                     rv = nullptr;
                 }
             }
-            while (count && rv)
+            while (count > 1 && rv)
             {
                 TYPE* rve = rv;
                 exp = funcList[--count];
@@ -3817,19 +3829,6 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                         *last = (TYPE*)Alloc(sizeof(TYPE));
                         **last = *type;
                         (*last)->templateTop = true;
-                        while (0 && tx)
-                        {
-                            if (tx->type == bt_const)
-                            {
-                                (*last)->templateConst = true;
-                                ++count;
-                                if (((int)(*last) & 0xfff) == 0xd50)
-                                    printf("hi");
-                            }
-                            if (tx->type == bt_volatile)
-                                (*last)->templateVol = true;
-                            tx = tx->btp;
-                        }
                         tp = (TYPE*)Alloc(sizeof(TYPE));
                         tp->type = bt_derivedfromtemplate;
                         tp->rootType = tp;
@@ -3877,18 +3876,9 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                     TYPE* type = alt ? tpa->p->byTemplate.temp->tp : tpa->p->byTemplate.val->tp;
                     if (type)
                     {
-                        TYPE* tx = qual;
                         *last = (TYPE*)Alloc(sizeof(TYPE));
                         **last = *type;
                         (*last)->templateTop = true;
-                        while (tx)
-                        {
-                            if (tx->type == bt_const)
-                                (*last)->templateConst = true;
-                            if (tx->type == bt_volatile)
-                                (*last)->templateVol = true;
-                            tx = tx->btp;
-                        }
                         tp = (TYPE*)Alloc(sizeof(TYPE));
                         tp->type = bt_derivedfromtemplate;
                         tp->rootType = tp;
@@ -9437,8 +9427,6 @@ static TEMPLATEPARAMLIST* GetUsingArgs(SYMBOL* sp, TEMPLATEPARAMLIST* find, TEMP
 }
 SYMBOL* GetTypedefSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool nested)
 {
-    if (!strcmp(sp->name, "_Maker"))
-        printf("hi");
     SYMBOL* found1 = sp;
     TYPE** tpi;
     args = ResolveTemplateSelectors(sp, args);

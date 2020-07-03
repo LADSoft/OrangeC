@@ -399,8 +399,6 @@ typedef struct typ
     int fixed : 1;         /* c++ fixed enumeration */
     int nullptrType : 1;   /* c++: std::nullptr */
     int templateTop : 1;
-    int templateConst : 1;
-    int templateVol : 1;
     int enumConst : 1; /* is an enumeration constant */
     int lref : 1;
     int rref : 1;

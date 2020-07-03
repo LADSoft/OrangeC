@@ -5861,7 +5861,7 @@ static LEXEME* expression_postfix(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE**
                 else
                 {
                     castToArithmetic(false, tp, exp, kw, nullptr, true);
-                    if (isconstraw(*tp, true) && !localMutable)
+                    if (isconstraw(*tp) && !localMutable)
                         error(ERR_CANNOT_MODIFY_CONST_OBJECT);
                     else if (isstructured(*tp))
                         error(ERR_ILL_STRUCTURE_OPERATION);
@@ -6167,7 +6167,7 @@ LEXEME* expression_unary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPR
                         error(ERR_ILL_STRUCTURE_OPERATION);
                     else if (iscomplex(*tp))
                         error(ERR_ILL_USE_OF_COMPLEX);
-                    else if (isconstraw(*tp, true) && !localMutable)
+                    else if (isconstraw(*tp) && !localMutable)
                         error(ERR_CANNOT_MODIFY_CONST_OBJECT);
                     else if (isvoid(*tp) || (*tp)->type == bt_aggregate || ismsil(*tp))
                         error(ERR_NOT_AN_ALLOWED_TYPE);
@@ -7949,8 +7949,8 @@ LEXEME* expression_assign(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
         symRef = (Optimizer::architecture == ARCHITECTURE_MSIL) ? temp : nullptr;
         LookupSingleAggregate(tp1, &exp1);
 
-        if (isconstraw(*tp, true) && !localMutable && (!temp || temp->v.sp->sb->storage_class != sc_parameter || !isarray(*tp))
-            && ((*exp)->type != en_func || !isconstraw(basetype((*exp)->v.func->sp->tp)->btp, true)))
+        if (isconstraw(*tp) && !localMutable && (!temp || temp->v.sp->sb->storage_class != sc_parameter || !isarray(*tp))
+            && ((*exp)->type != en_func || !isconstraw(basetype((*exp)->v.func->sp->tp)->btp)))
             error(ERR_CANNOT_MODIFY_CONST_OBJECT);
         else if (isvoid(*tp) || isvoid(tp1) || (*tp)->type == bt_aggregate)
             error(ERR_NOT_AN_ALLOWED_TYPE);

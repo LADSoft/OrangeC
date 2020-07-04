@@ -79,7 +79,7 @@ static LEXEME* TemplateArg(LEXEME* lex, SYMBOL* funcsp, TEMPLATEPARAMLIST* arg, 
 static TEMPLATEPARAMLIST* copyParams(TEMPLATEPARAMLIST* t, bool alsoSpecializations);
 static bool valFromDefault(TEMPLATEPARAMLIST* params, bool usesParams, INITLIST** args);
 static int pushContext(SYMBOL* cls, bool all);
-static TEMPLATEPARAMLIST* ResolveTemplateSelectors(SYMBOL* sp, TEMPLATEPARAMLIST* args);
+static TEMPLATEPARAMLIST* ResolveTemplateSelectors(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool byVal);
 static TEMPLATEPARAMLIST* GetUsingArgs(SYMBOL* sp, TEMPLATEPARAMLIST* find, TEMPLATEPARAMLIST* orig);
 
 void templateInit(void)
@@ -1044,12 +1044,15 @@ bool constructedInt(LEXEME* lex, SYMBOL* funcsp)
 }
 LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLATEPARAMLIST** lst)
 {
-
+    if (templ && !strcmp(templ->name, "__all_default_constructible"))
+        printf("hi");
     if (templ && !strcmp(templ->name, "__make_tuple_types"))
         printf("hi");
     if (templ && !strcmp(templ->name, "__make_tuple_indices"))
         printf("hi");
     if (templ && !strcmp(templ->name, "__apply_quals"))
+        printf("hi");
+    if (templ && !strcmp(templ->name, "__apply"))
         printf("hi");
     TEMPLATEPARAMLIST* orig = nullptr;
     bool first = true;
@@ -7748,7 +7751,7 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* unspecialize
                     {
                         TEMPLATEPARAMLIST* next = params->next;
                         params->next = nullptr;
-                        auto temp = ResolveTemplateSelectors(sp, params);
+                        auto temp = ResolveTemplateSelectors(sp, params, false);
                         params->p->byClass.val = temp->p->byClass.dflt;
                         params->next = next;
                     }
@@ -7817,7 +7820,7 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* unspecialize
                 {
                     TEMPLATEPARAMLIST* next = primary->next;
                     primary->next = nullptr;
-                    auto temp = ResolveTemplateSelectors(sp, primary);
+                    auto temp = ResolveTemplateSelectors(sp, primary, false);
                     if (primary->p->byClass.dflt != temp->p->byClass.dflt)
                     {
                         primary->p->byClass.val = temp->p->byClass.dflt;
@@ -8108,12 +8111,30 @@ void TemplateArgsAdd(TEMPLATEPARAMLIST* current, TEMPLATEPARAMLIST* dflt, TEMPLA
 {
     for (; base; base = base->next)
     {
-        if (!base->p->byClass.val && base->argsym && dflt->argsym && !strcmp(base->argsym->name, dflt->argsym->name))
+        if ((base->p->packed || !base->p->byClass.val) && base->argsym && dflt->argsym && !strcmp(base->argsym->name, dflt->argsym->name))
         {
-            if (base->p->packed)
-                base->p->byPack.pack = current->p->byPack.pack;
-            else
-                base->p->byClass.val = current->p->byClass.val;
+            if (base->p->packed == current->p->packed)
+            {
+                if (base->p->packed)
+                    base->p->byPack.pack = current->p->byPack.pack;
+                else
+                    base->p->byClass.val = current->p->byClass.val;
+            }
+            else if (!current->p->packed && current->p->byClass.val)
+            {
+                if (base->p->byPack.pack)
+                {
+                    base->p->byPack.pack->p->byClass.val = current->p->byClass.val;
+                    base->p->byPack.pack->next = nullptr;
+                }
+                else
+                {
+                    base->p->byPack.pack = (TEMPLATEPARAMLIST*)Alloc(sizeof(TEMPLATEPARAMLIST));
+                    base->p->byPack.pack->p = (TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
+                    *base->p->byPack.pack->p = *current->p;
+                    base->p->byPack.pack->next = nullptr;
+                }
+            }
         }
     }
 }
@@ -8165,7 +8186,7 @@ void TemplateArgsScan(TEMPLATEPARAMLIST* current, TEMPLATEPARAMLIST* base)
         else if (current->p->type == kw_typename)
         {
             if (current->p->byClass.val)
-                if (isstructured(current->p->byClass.dflt))
+                if (current->p->byClass.dflt && isstructured(current->p->byClass.dflt))
                 {
                     auto tpv = basetype(current->p->byClass.dflt)->sp->templateParams;
                     for (auto tpl = basetype(current->p->byClass.val)->sp->templateParams; tpl && tpv; tpl = tpl->next, tpv = tpv->next)
@@ -8200,7 +8221,7 @@ void TemplateArgsCopy(TEMPLATEPARAMLIST *base)
                 break;
             p = p->next;
         }
-        if (p)
+        if (1 || p)
         {
             TemplateArgsScan(base->p->bySpecialization.types, base);
         }
@@ -8541,7 +8562,7 @@ static void FixIntSelectors(EXPRESSION** exp)
         */
     }
 }
-static TEMPLATEPARAMLIST* ResolveTemplateSelectors(SYMBOL* sp, TEMPLATEPARAMLIST* args)
+static TEMPLATEPARAMLIST* ResolveTemplateSelectors(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool byVal)
 {
     TEMPLATEPARAMLIST* locate = args;
     std::stack<TEMPLATEPARAMLIST*> tls;
@@ -8614,8 +8635,16 @@ static TEMPLATEPARAMLIST* ResolveTemplateSelectors(SYMBOL* sp, TEMPLATEPARAMLIST
                                 (*last)->p = (TEMPLATEPARAM*)(TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
                                 *(*last)->p = *locate->p;
                                 (*last)->argsym = locate->argsym;
-                                tx = &(*last)->p->byClass.dflt;
-                                tp = locate->p->byClass.dflt;
+                                if (byVal)
+                                {
+                                    tx = &(*last)->p->byClass.val;
+                                    tp = locate->p->byClass.val;
+                                }
+                                else
+                                {
+                                    tx = &(*last)->p->byClass.dflt;
+                                    tp = locate->p->byClass.dflt;
+                                }
                                 while (tp->type != bt_templateselector)
                                 {
                                     *tx = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
@@ -8765,8 +8794,8 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
     SYMLIST* l;
 
     noErr |= matchOverloadLevel;
-    args = ResolveTemplateSelectors(sp, args);
     args = ResolveDeclType(sp, args);
+    args = ResolveTemplateSelectors(sp, args, false);
 
     if (sp->sb->parentTemplate && sp)
         sp = sp->sb->parentTemplate;
@@ -9421,15 +9450,15 @@ static TEMPLATEPARAMLIST* GetUsingArgs(SYMBOL* sp, TEMPLATEPARAMLIST* find, TEMP
     {
         SpecifyArg(sp, temp, find, x);
     }
-    args1 = ResolveTemplateSelectors(sp, args1);
     args1 = ResolveDeclType(sp, args1);
+    args1 = ResolveTemplateSelectors(sp, args1, true);
     return args1;
 }
 SYMBOL* GetTypedefSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool nested)
 {
     SYMBOL* found1 = sp;
     TYPE** tpi;
-    args = ResolveTemplateSelectors(sp, args);
+    args = ResolveTemplateSelectors(sp, args, false);
     found1 = ValidateClassTemplate(sp, sp->templateParams->next, args);
     if (!found1)
         return sp;

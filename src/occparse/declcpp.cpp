@@ -2983,6 +2983,12 @@ LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc st
                 printf("hi");
             if (!strcmp(idsym->value.s.a, "__apply_quals"))
                 printf("hi");
+            if (!strcmp(idsym->value.s.a, "__all"))
+                printf("hi");
+            if (!strcmp(idsym->value.s.a, "_IsSame"))
+                printf("hi");
+            if (!strcmp(idsym->value.s.a, "_BoolConstant"))
+                printf("hi");
             lex = getsym();
             ParseAttributeSpecifiers(&lex, nullptr, true);
             if (MATCHKW(lex, assign))

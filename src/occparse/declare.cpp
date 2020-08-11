@@ -2643,13 +2643,16 @@ founddecltype:
                         SYMBOL* sp1;
                         lex = GetTemplateArguments(lex, funcsp, sp, &lst);
                         sp1 = GetTypedefSpecialization(sp, lst, false);
-                        if (sp1 && (!inUsing || !templateNestingCount))
+                        if (sp1)
                         {
                             sp = sp1;
-                            if (isstructured(sp->tp))
-                                sp->tp = PerformDeferredInitialization(sp->tp, funcsp);
-                            else
-                                sp->tp = SynthesizeType(sp->tp, nullptr, false);
+                            if (!inUsing || !templateNestingCount)
+                            {
+                                if (isstructured(sp->tp))
+                                    sp->tp = PerformDeferredInitialization(sp->tp, funcsp);
+                                else
+                                    sp->tp = SynthesizeType(sp->tp, nullptr, false);
+                            }
                         }
                         tn = sp->tp;
                         foundsomething = true;

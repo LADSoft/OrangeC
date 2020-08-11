@@ -510,7 +510,7 @@ static struct
     {"'Class' template parameter expected", ERROR},
     {"Structured type expected", ERROR},
     {"Packed template parameter not allowed here", ERROR},
-    {"In template instantiation started here", WARNING},
+    {"In template instantiation started here", NOTE},
     {"Invalid use of type '%s'", ERROR},
     {"Requires template<> header", ERROR},
     {"Mutable member '%s' must be non-const", ERROR},
@@ -580,7 +580,6 @@ static struct
     {"Attribute '%s' does not exist in attribute namespace '%s'", ERROR},
     {"static function '%s' is declared but never defined", TRIVIALWARNING},
     {"Referenced in instantiation of '%s'", NOTE},
-    {"Referenced from source line", NOTE },
 };
 void EnterInstantiation(SYMBOL *sym)
 {
@@ -610,7 +609,7 @@ static void DumpInstantiations()
     }
     if (!instantiationList.empty())
     {
-        printerr(ERR_REFERENCED_FROM_CODE_AT_LINE, preProcessor->GetErrFile().c_str(), preProcessor->GetErrLineNo());
+        printerr(ERR_TEMPLATE_INSTANTIATION_STARTED_IN, preProcessor->GetErrFile().c_str(), preProcessor->GetErrLineNo());
     }
 }
 static bool ValidateWarning(int num)
@@ -931,11 +930,6 @@ int printerr(int err, const char* file, int line, ...)
     va_start(arg, line);
     canprint = printerrinternal(err, file, line, arg);
     va_end(arg);
-    if (instantiatingTemplate && canprint)
-    {
-        printerrinternal(ERR_TEMPLATE_INSTANTIATION_STARTED_IN, nullptr, 0,
-                         nullptr);
-    }
     return canprint;
 }
 void pperror(int err, int data) { printerr(err, nullptr, 0, data); }

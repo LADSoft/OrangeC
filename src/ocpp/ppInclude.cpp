@@ -51,7 +51,6 @@ bool ppInclude::Check(kw token, const std::string& args)
 
 bool ppInclude::CheckInclude(kw token, const std::string& args)
 {
-    printf("Entering CheckInclude\n");
     if (token == kw::INCLUDE)
     {
         std::string line1 = args;
@@ -251,14 +250,11 @@ std::string ppInclude::FindFile(bool specifiedAsSystem, const std::string& name,
 
 std::string ppInclude::SrchPath(bool system, const std::string& name, const std::string& searchPath, bool skipFirst)
 {
-    printf("Skip first bool value: %i\n", (int)skipFirst);
     const char* path = searchPath.c_str();
-    printf("Search Path: %s\n", searchPath.c_str());
     char buf[260];
     bool firstSkipped = false;
     do
     {
-        printf("First skipped for some reason is bad with stuff for no reason: %i\n", (int)firstSkipped);
         path = RetrievePath(buf, path);
         AddName(buf, name);
 
@@ -267,11 +263,8 @@ std::string ppInclude::SrchPath(bool system, const std::string& name, const std:
             *p = CmdFiles::DIR_SEP[0];
         }
         FILE* fil = fopen(buf, "rb");
-        printf("Pointer for file is nullptr if this is 1: %i\nThe file name is: %s\n", (int)(fil == nullptr), buf);
         if (fil && (skipFirst && !firstSkipped))
         {
-            printf("Made it into firstSkipped change\n");
-            printf("The path variable: %s\n", path);
             firstSkipped = true;
             fclose(fil);
             continue;
@@ -295,7 +288,6 @@ std::string ppInclude::SrchPath(bool system, const std::string& name, const std:
 }
 const char* ppInclude::RetrievePath(char* buf, const char* path)
 {
-    printf("The RetrievePath is: %s\n", path);
     while (*path && *path != ';')
     {
         *buf++ = *path++;

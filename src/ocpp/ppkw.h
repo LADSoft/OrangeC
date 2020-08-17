@@ -57,6 +57,7 @@ enum class kw
     ERROR,
     LINE,
     INCLUDE,
+    INCLUDE_NEXT,
     IF,
     ELIF,
     IFDEF,
@@ -102,6 +103,6 @@ enum class kw
     IDEFINE,
     IASSIGN,
     IMACRO,
-    WARNING,
+    WARNING
 
 };

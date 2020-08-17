@@ -119,6 +119,7 @@ class ppInclude
     void Drop() { current->Drop(); }
     void Release() { current->Release(); }
     bool has_include(const std::string& args);
+    bool has_include_next(const std::string& args);
     void ForceEOF() { forcedEOF = true; }
     std::set<std::string>& GetUserIncludes() { return userIncludes; }
 
@@ -138,8 +139,8 @@ class ppInclude
     void pushFile(const std::string& name, const std::string& errname);
     bool popFile();
     std::string ParseName(const std::string& args, bool& specifiedAsSystem);
-    std::string FindFile(bool specifiedAsSystem, const std::string& name);
-    std::string SrchPath(bool system, const std::string& name, const std::string& searchPath);
+    std::string FindFile(bool specifiedAsSystem, const std::string& name, bool skipFirst);
+    std::string SrchPath(bool system, const std::string& name, const std::string& searchPath, bool skipFirst);
     const char* RetrievePath(char* buf, const char* path);
     void AddName(char* buf, const std::string& name);
 

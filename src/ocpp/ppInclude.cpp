@@ -51,6 +51,7 @@ bool ppInclude::Check(kw token, const std::string& args)
 
 bool ppInclude::CheckInclude(kw token, const std::string& args)
 {
+    printf("Entering CheckInclude\n");
     if (token == kw::INCLUDE)
     {
         std::string line1 = args;
@@ -59,18 +60,40 @@ bool ppInclude::CheckInclude(kw token, const std::string& args)
             define->Process(line1);
         bool specifiedAsSystem = false;
         std::string name = ParseName(line1, specifiedAsSystem);
-        name = FindFile(specifiedAsSystem, name);
+        name = FindFile(specifiedAsSystem, name, false);
+        pushFile(name, line1);
+        return true;
+    }
+    else if (token == kw::INCLUDE_NEXT)
+    {
+        std::string line1 = args;
+        int npos = line1.find_first_not_of(" \t\v");
+        if (npos != std::string::npos && line1[npos] != '"' && line1[npos] != '<')
+            define->Process(line1);
+        bool specifiedAsSystem = false;
+        std::string name = ParseName(line1, specifiedAsSystem);
+        printf("Include next section\n");
+        name = FindFile(specifiedAsSystem, name, true);
         pushFile(name, line1);
         return true;
     }
     return false;
+}
+bool ppInclude::has_include_next(const std::string& args)
+{
+    printf("Bro ok: %s", args.c_str());
+    std::string line1 = args;
+    bool specifiedAsSystem = false;
+    std::string name = ParseName(line1, specifiedAsSystem);
+    name = FindFile(specifiedAsSystem, name, true);
+    return !name.empty();
 }
 bool ppInclude::has_include(const std::string& args)
 {
     std::string line1 = args;
     bool specifiedAsSystem = false;
     std::string name = ParseName(line1, specifiedAsSystem);
-    name = FindFile(specifiedAsSystem, name);
+    name = FindFile(specifiedAsSystem, name, false);
     return !name.empty();
 }
 bool ppInclude::CheckLine(kw token, const std::string& args)
@@ -188,12 +211,12 @@ std::string ppInclude::ParseName(const std::string& args, bool& specifiedAsSyste
 // search in local directory next
 // search the user include path next
 // if didn't already search system path do it now
-std::string ppInclude::FindFile(bool specifiedAsSystem, const std::string& name)
+std::string ppInclude::FindFile(bool specifiedAsSystem, const std::string& name, bool skipFirst)
 {
     std::string rv;
     // search in system search path first, if they specified it with <>
     if (specifiedAsSystem)
-        rv = SrchPath(true, name, sysSrchPath);
+        rv = SrchPath(true, name, sysSrchPath, skipFirst);
     // if not there get the file path of the last included file, and search there
     if (rv.empty())
     {
@@ -204,7 +227,7 @@ std::string ppInclude::FindFile(bool specifiedAsSystem, const std::string& name)
         if (npos != std::string::npos)
         {
             rv = rv.substr(0, npos);
-            rv = SrchPath(false, name, rv);
+            rv = SrchPath(false, name, rv, skipFirst);
         }
         else
         {
@@ -214,24 +237,28 @@ std::string ppInclude::FindFile(bool specifiedAsSystem, const std::string& name)
     // if not there search in local directory
     if (rv.empty())
     {
-        rv = SrchPath(false, name, ".");
+        rv = SrchPath(false, name, ".", skipFirst);
     }
     // if not there search on user search path
     if (rv.empty())
-        rv = SrchPath(false, name, srchPath);
+        rv = SrchPath(false, name, srchPath, skipFirst);
     // if not there and we haven't searched the system search path, do it now
     if (rv.empty() && !specifiedAsSystem)
-        rv = SrchPath(true, name, sysSrchPath);
+        rv = SrchPath(true, name, sysSrchPath, skipFirst);
 
     return rv;
 }
 
-std::string ppInclude::SrchPath(bool system, const std::string& name, const std::string& searchPath)
+std::string ppInclude::SrchPath(bool system, const std::string& name, const std::string& searchPath, bool skipFirst)
 {
+    printf("Skip first bool value: %i\n", (int)skipFirst);
     const char* path = searchPath.c_str();
+    printf("Search Path: %s\n", searchPath.c_str());
     char buf[260];
+    bool firstSkipped = false;
     do
     {
+        printf("First skipped for some reason is bad with stuff for no reason: %i\n", (int)firstSkipped);
         path = RetrievePath(buf, path);
         AddName(buf, name);
 
@@ -240,7 +267,16 @@ std::string ppInclude::SrchPath(bool system, const std::string& name, const std:
             *p = CmdFiles::DIR_SEP[0];
         }
         FILE* fil = fopen(buf, "rb");
-        if (fil)
+        printf("Pointer for file is nullptr if this is 1: %i\nThe file name is: %s\n", (int)(fil == nullptr), buf);
+        if (fil && (skipFirst && !firstSkipped))
+        {
+            printf("Made it into firstSkipped change\n");
+            printf("The path variable: %s\n", path);
+            firstSkipped = true;
+            fclose(fil);
+            continue;
+        }
+        else if (fil)
         {
             if (searchPath == ".")  // clean up for current directory searches
                 memmove(buf, buf + 2, strlen(buf)+1);
@@ -259,6 +295,7 @@ std::string ppInclude::SrchPath(bool system, const std::string& name, const std:
 }
 const char* ppInclude::RetrievePath(char* buf, const char* path)
 {
+    printf("The RetrievePath is: %s\n", path);
     while (*path && *path != ';')
     {
         *buf++ = *path++;

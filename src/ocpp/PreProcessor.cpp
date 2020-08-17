@@ -38,6 +38,7 @@ void PreProcessor::InitHash()
     hash["warning"] = kw::WARNING;
     hash["line"] = kw::LINE;
     hash["include"] = kw::INCLUDE;
+    hash["include_next"] = kw::INCLUDE_NEXT;
     hash["if"] = kw::IF;
     hash["elif"] = kw::ELIF;
     hash["ifdef"] = kw::IFDEF;

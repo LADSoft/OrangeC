@@ -71,7 +71,6 @@ bool ppInclude::CheckInclude(kw token, const std::string& args)
             define->Process(line1);
         bool specifiedAsSystem = false;
         std::string name = ParseName(line1, specifiedAsSystem);
-        printf("Include next section\n");
         name = FindFile(specifiedAsSystem, name, true);
         pushFile(name, line1);
         return true;

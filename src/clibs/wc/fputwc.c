@@ -152,6 +152,13 @@ int _RTL_FUNC __fputwc(int c, FILE *stream)
 }
 wint_t _RTL_FUNC fputwc(wchar_t c, FILE *stream)
 {
+     flockfile(stream);
+     int rv = fputwc_unlocked(c, stream);
+     funlockfile(stream);
+     return rv;
+}
+wint_t _RTL_FUNC fputwc_unlocked(wchar_t c, FILE *stream)
+{
 	int rv;
 	if (stream->token != FILTOK) {
         errno = _dos_errno = ENOENT;
@@ -204,4 +211,18 @@ wint_t _RTL_FUNC (putwc)(wchar_t c, FILE *stream)
 wint_t _RTL_FUNC (putwchar)(wchar_t c)
 {
 	return fputwc(c,stdout);
+}
+
+
+wint_t _RTL_FUNC _fputwc_unlocked(wchar_t c, FILE *stream)
+{
+	return fputwc_unlocked(c,stream);
+}
+wint_t _RTL_FUNC (putwc_unlocked)(wchar_t c, FILE *stream)
+{
+	return fputwc_unlocked(c,stream);
+}
+wint_t _RTL_FUNC (putwchar_unlocked)(wchar_t c)
+{
+	return fputwc_unlocked(c,stdout);
 }

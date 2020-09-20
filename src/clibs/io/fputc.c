@@ -44,6 +44,13 @@
 #include "libp.h"
 int _RTL_FUNC fputc(int c, FILE *stream)
 {
+    flockfile(stream);
+    int rv = fputc_unlocked(c, stream);
+    funlockfile(stream);
+    return rv;
+}
+int _RTL_FUNC fputc_unlocked(int c, FILE *stream)
+{
     int rv;
     if (stream->token != FILTOK) {
         errno= _dos_errno = ENOENT;
@@ -153,4 +160,27 @@ int _RTL_FUNC fputchar(int c)
 int _RTL_FUNC _fputchar(int c)
 {
     return fputc(c,stdout);
+}
+
+int _RTL_FUNC _fputc_unlocked(int c, FILE *stream)
+{
+    return fputc_unlocked(c,stream);
+}
+#undef putc_unlocked
+#undef putchar_unlocked
+int _RTL_FUNC putc_unlocked(const int c, FILE *stream)
+{
+    return fputc_unlocked(c,stream);
+}
+int _RTL_FUNC putchar_unlocked(const int c)
+{
+    return fputc_unlocked(c,stdout);
+}
+int _RTL_FUNC fputchar_unlocked(int c)
+{
+    return fputc_unlocked(c,stdout);
+}
+int _RTL_FUNC _fputchar_unlocked(int c)
+{
+    return fputc_unlocked(c,stdout);
 }

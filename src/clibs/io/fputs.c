@@ -48,6 +48,13 @@
 #undef putc
 int _RTL_FUNC fputs(const char *restrict string, FILE *restrict stream)
 {
+    flockfile(stream);
+    int rv = fputs_unlocked(string, stream);
+    funlockfile(stream);
+    return rv;
+}
+int _RTL_FUNC fputs_unlocked(const char *restrict string, FILE *restrict stream)
+{
     int rv, l = strlen(string);
     if (stream->token != FILTOK) {
         errno = _dos_errno = ENOENT;

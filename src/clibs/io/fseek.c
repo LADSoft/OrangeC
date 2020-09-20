@@ -46,6 +46,13 @@
 
 int _RTL_FUNC fseek (FILE *stream, long offset, int origin)
 {
+    flockfile(stream);
+    int rv = fseek_unlocked(stream, offset, origin);
+    funlockfile(stream);
+    return rv;
+}
+int _RTL_FUNC fseek_unlocked (FILE *stream, long offset, int origin)
+{
     if (stream->token != FILTOK) {
         errno = ENOENT;
         return EOF;

@@ -34,60 +34,41 @@
  * 
  */
 
-#include <stdarg.h>
-#include <string.h>
-#include <time.h>
+#include <stdio.h>
 #include <errno.h>
+#include <time.h>
+#include <stdlib.h>
+#include <string.h>
 #include <locale.h>
 #include <wchar.h>
+#include <io.h>
+#include <fcntl.h>
+#include <share.h>
+#include <sys\stat.h>
 #include "libp.h"
 
-int _RTL_FUNC vfprintf(FILE *restrict stream, const char *restrict format, 
-        va_list arglist)
+void flockfile(FILE *stream)
 {
-    flockfile(stream);
-    int rv = vfprintf_unlocked(stream, format, arglist);
-    funlockfile(stream);
-    return rv;
+    if (stream->token != FILTOK) {
+        errno = _dos_errno = ENOENT;
+        return;
+    }
+    __ll_mtxTake(stream->extended->lock, -1);
 }
-int _RTL_FUNC vfprintf_unlocked(FILE *restrict stream, const char *restrict format, 
-        va_list arglist)
+int ftrylockfile(FILE *stream)
 {
-    int written=0;
-    int i = 0;
     if (stream->token != FILTOK) {
         errno = _dos_errno = ENOENT;
         return 0;
     }
-    if (stream->extended->orient == __or_wide) {
-        errno = EINVAL;
-        return 0;
-    }
-    stream->extended->orient = __or_narrow;
-    while (*format) {
-        char *p = strchr(format, '%');
-        if (!p)
-            p = format + strlen(format);
-        if (p != format)
-        {
-              if (fwrite(format,1,p - format,stream) != p-format)
-                return EOF;
-            written += p-format;
-            format = p;
-        }
-        if (*format == '%') {
-            if  (*(format+1)) {
-                format = __onetostr(stream, format+1,((char **)arglist+i),&i, &written);
-            }
-            else
-            {
-                format++;
-            }
-        }
-    }
-    return written;
+    return __ll_mtxTake(stream->extended->lock, 0);
 }
-int _RTL_FUNC fprintf(FILE *restrict stream, const char *restrict format, ...)
+void funlockfile(FILE *stream)
 {
-    return vfprintf(stream,format,((char *)&format+sizeof(char *)));
+    if (stream->token != FILTOK) {
+        errno = _dos_errno = ENOENT;
+        return;
+    }
+    __ll_mtxRelease(stream->extended->lock);
 }
+

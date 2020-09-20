@@ -42,6 +42,13 @@
 
 int _RTL_FUNC fputws(const wchar_t *string, FILE *stream)
 {
+    flockfile(stream);
+    int rv = fputws_unlocked(string , stream);
+    funlockfile(stream);
+    return rv;
+}
+int _RTL_FUNC fputws_unlocked(const wchar_t *string, FILE *stream)
+{
 	int rv;
 	if (stream->token != FILTOK)
 		return WEOF;

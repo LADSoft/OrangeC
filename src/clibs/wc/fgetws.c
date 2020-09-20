@@ -44,6 +44,14 @@
 
 wchar_t *_RTL_FUNC fgetws(wchar_t *restrict buf, int num, FILE *restrict stream)
 {
+    flockfile(stream);
+    int rv = fgetws_unlocked(buf, num, stream);
+    funlockfile(stream);
+    return rv;
+}
+
+wchar_t *_RTL_FUNC fgetws_unlocked(wchar_t *restrict buf, int num, FILE *restrict stream)
+{
     int i = 0,rv;
     if (stream->token != FILTOK) {
         errno = _dos_errno = ENOENT;

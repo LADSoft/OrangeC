@@ -132,6 +132,13 @@ int _RTL_FUNC __wgetc(FILE *stream)
 }
 wint_t _RTL_FUNC fgetwc(FILE *stream)
 {
+    flockfile(stream);
+    wint_t rv = fgetwc_unlocked(stream);
+    funlockfile(stream);
+    return rv;
+}
+wint_t _RTL_FUNC fgetwc_unlocked(FILE *stream)
+{
 	int rv;
 	if (stream->token != FILTOK) {
 		errno = _dos_errno = ENOENT;
@@ -186,4 +193,17 @@ wint_t _RTL_FUNC (getwc)(FILE *stream)
 wint_t _RTL_FUNC (getwchar)(void)
 {
 	return fgetwc(stdin);
+}
+
+wint_t _RTL_FUNC _fgetwc_unlocked(FILE *stream)
+{
+	return fgetwc_unlocked(stream);
+}
+wint_t _RTL_FUNC (getwc_unlocked)(FILE *stream)
+{
+	return fgetwc_unlocked(stream);
+}
+wint_t _RTL_FUNC (getwchar_unlocked)(void)
+{
+	return fgetwc_unlocked(stdin);
 }

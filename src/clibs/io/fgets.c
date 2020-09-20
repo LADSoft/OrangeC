@@ -44,6 +44,13 @@ int __readbuf(FILE *stream);
 
 char *_RTL_FUNC fgets(char *restrict buf, int num, FILE *restrict stream)
 {
+    flockfile(stream);
+    char* rv = fgets_unlocked(buf, num, stream);
+    funlockfile(stream);
+    return rv;
+}
+char *_RTL_FUNC fgets_unlocked(char *restrict buf, int num, FILE *restrict stream)
+{
     int i = 0,rv = 0;
     if (stream->token != FILTOK) {
         errno = _dos_errno = ENOENT;

@@ -132,9 +132,17 @@ int _RTL_FUNC fgetc(FILE *stream)
             if (fflush(stream))
                 return EOF;
         }
+        if (stream->flags & _F_BUFFEREDSTRING)
+        {
+            if (stream->flags & _F_OUT)
+                stream->level = - stream->level;              
+        }
+        else
+        {
+            stream->level = 0;
+        }
         stream->flags &= ~_F_OUT;
         stream->flags |= _F_IN;
-        stream->level = 0;
     }
     if (stream->flags & _F_UNGETC) {
         rv = stream->hold;

@@ -165,6 +165,7 @@ extern "C"
     size_t _RTL_FUNC wcsftime(wchar_t* restrict __str, size_t __maxsize, const wchar_t* restrict __format,
                               const struct tm* restrict __t);
 
+    FILE* _RTL_FUNC open_wmemstream(wchar_t **ptr, size_t *sizeloc);
     int _RTL_FUNC fwprintf(FILE* restrict __stream, const wchar_t* restrict __format, ...);
     int _RTL_FUNC fwscanf(FILE* restrict __stream, const wchar_t* restrict __format, ...);
 #if defined(__MSIL__) && defined(__MANAGED__)

@@ -66,7 +66,11 @@ typedef struct __file__
     unsigned char* curp;   /* Current active pointer     */
     struct __file2
     {
-        char* name; /* filename */
+	unsigned flags2;
+	union {
+        	char* name; /* filename */
+		void* dynamicBuffer[2];
+	};
         enum
         {
             __or_unspecified,
@@ -141,11 +145,14 @@ extern "C"
 #define _F_IN 0x0080            /* Data is incoming      */
 #define _F_OUT 0x0100           /* Data is outgoing      */
 #define _F_TERM 0x0200          /* File is a terminal    */
-#define _F_APPEND 0x400         /* Need to ignore seeks  */
+#define _F_APPEND 0x400         /* Need to ignore seek */
 #define _F_BUFFEREDSTRING 0x800 /* it is not an actual file */
 #define _F_XEOF 0x1000          /* EOF is pending based on CTRL-Z in buffered input */
 #define _F_VBUF 0x2000          /* true if setvbut allowed */
 #define _F_UNGETC 0x4000        /* character was cached with ungetc */
+
+#define _F2_DYNAMICBUFFER 1 
+#define _F2_WCHAR 2
 /* End-of-file constant definition
  */
 #define EOF (-1) /* End of file indicator */
@@ -202,6 +209,8 @@ extern "C"
     int _RTL_FUNC _IMPORT fileno(FILE*);
     int _RTL_FUNC _IMPORT _fileno(FILE*);
     FILE* _RTL_FUNC _IMPORT fopen(const char *ZSTR  __path, const char *ZSTR  __mode);
+    FILE* _RTL_FUNC fmemopen(void *buf, size_t size, const char *mode);
+    FILE* _RTL_FUNC open_memstream(char **ptr, size_t *sizeloc);
     int _RTL_FUNC _IMPORT fprintf(FILE* restrict __stream, const char *ZSTR  restrict __format, ...);
     int _RTL_FUNC _IMPORT fputc(int __c, FILE* __stream);
     int _RTL_FUNC _IMPORT fputs(const char *ZSTR  __s, FILE* __stream);

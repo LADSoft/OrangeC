@@ -47,7 +47,7 @@ int _RTL_FUNC __fputwc(int c, FILE *stream)
 		if (stream->level < 0)
 		{
 			++stream->level;
-			*stream->curp++ = (unsigned char)(c);
+			*stream->curp++ = (unsigned char)(c & 0xff);
 		}
 		if (!(stream->flags & _F_BUFFEREDSTRING))
 		{
@@ -59,6 +59,25 @@ int _RTL_FUNC __fputwc(int c, FILE *stream)
 				stream->curp = stream->buffer;
 	        }
 		}
+                if (stream->extended->flags2 & _F2_DYNAMICBUFFER)
+                {
+                    if (stream->level >= 0)
+                    {
+                        void *p = realloc(stream->buffer, stream->bsize *2);
+                        if (p)
+                        {
+                            stream->curp = p + (stream->curp - stream->buffer);
+                            stream->buffer = p;
+                            stream->level -= stream->bsize;
+                            stream->bsize *= 2;
+                        }
+                    }
+                }
+                else if ((stream->flags & _F_BUFFEREDSTRING) && stream->level >= 0)
+                {
+                    stream->flags |= _F_EOF;
+                    return EOF;
+                }
 		if (stream->level < 0)
 		{
 			++stream->level;
@@ -74,6 +93,25 @@ int _RTL_FUNC __fputwc(int c, FILE *stream)
 				stream->curp = stream->buffer;
 	        }
 		}
+                if (stream->extended->flags2 & _F2_DYNAMICBUFFER)
+                {
+                    if (stream->level >= 0)
+                    {
+                        void *p = realloc(stream->buffer, stream->bsize *2);
+                        if (p)
+                        {
+                            stream->curp = p + (stream->curp - stream->buffer);
+                            stream->buffer = p;
+                            stream->level -= stream->bsize;
+                            stream->bsize *= 2;
+                        }
+                    }
+                }
+                else if ((stream->flags & _F_BUFFEREDSTRING) && stream->level >= 0)
+                {
+                    stream->flags |= _F_EOF;
+                    return EOF;
+                }
 	}		
 	else {
         char cl;
@@ -138,13 +176,20 @@ wint_t _RTL_FUNC fputwc(wchar_t c, FILE *stream)
 		goto join;
 	}
 	else {
-		if (!(stream->flags & _F_OUT)) {
+            if (!(stream->flags & _F_OUT)) {
 join:
-			stream->flags &= ~_F_IN;
-			stream->flags |= _F_OUT;
-			stream->level = -stream->bsize;
-			stream->curp = stream->buffer;
-		}
+                if (stream->flags & _F_BUFFEREDSTRING)
+                {
+                    if (stream->flags & _F_IN)
+                        stream->level = - stream->level;              
+                }
+                else
+                {
+                stream->level = -stream->bsize;
+                }
+                stream->flags &= ~_F_IN;
+                stream->flags |= _F_OUT;
+            }
 	}
 	return __fputwc(c,stream);
 }

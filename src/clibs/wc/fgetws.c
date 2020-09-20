@@ -67,9 +67,17 @@ wchar_t *_RTL_FUNC fgetws(wchar_t *restrict buf, int num, FILE *restrict stream)
             if (fflush(stream))
                 return 0;
         }
+        if (stream->flags & _F_BUFFEREDSTRING)
+        {
+            if (stream->flags & _F_OUT)
+                stream->level = - stream->level;              
+        }
+        else
+        {
+                stream->level = stream->bsize;
+        }
         stream->flags &= ~_F_OUT;
         stream->flags |= _F_IN;
-        stream->level = 0;
     }
     if (stream->flags & _F_EOF)
         return 0;

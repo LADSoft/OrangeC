@@ -158,9 +158,17 @@ wint_t _RTL_FUNC fgetwc(FILE *stream)
 			if (fflush(stream))
 				return 0;
 		}
-		stream->flags &= ~_F_OUT;
-		stream->flags |= _F_IN;
-		stream->level = 0;
+            if (stream->flags & _F_BUFFEREDSTRING)
+            {
+                if (stream->flags & _F_OUT)
+                    stream->level = - stream->level;              
+            }
+            else
+            {
+                stream->level = stream->bsize;
+            }
+            stream->flags &= ~_F_OUT;
+            stream->flags |= _F_IN;
 	}
     do {
         rv = __wgetc(stream);

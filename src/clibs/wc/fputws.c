@@ -42,6 +42,13 @@
 
 int _RTL_FUNC fputws(const wchar_t *string, FILE *stream)
 {
+    flockfile(stream);
+    int rv = fputws_unlocked(string , stream);
+    funlockfile(stream);
+    return rv;
+}
+int _RTL_FUNC fputws_unlocked(const wchar_t *string, FILE *stream)
+{
 	int rv;
 	if (stream->token != FILTOK)
 		return WEOF;
@@ -64,13 +71,20 @@ int _RTL_FUNC fputws(const wchar_t *string, FILE *stream)
 		goto join;
 	}
 	else {
-		if (!(stream->flags & _F_OUT)) {
+            if (!(stream->flags & _F_OUT)) {
 join:
-			stream->flags &= ~_F_IN;
-			stream->flags |= _F_OUT;
-			stream->level = -stream->bsize;
-			stream->curp = stream->buffer;
-		}
+                if (stream->flags & _F_BUFFEREDSTRING)
+                {
+                    if (stream->flags & _F_IN)
+                        stream->level = - stream->level;              
+                }
+                else
+                {
+                stream->level = -stream->bsize;
+                }
+                stream->flags &= ~_F_IN;
+                stream->flags |= _F_OUT;
+            }
 	}
     while (*string)
         if (__fputwc(*string++,stream) == WEOF)

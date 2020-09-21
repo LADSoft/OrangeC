@@ -38,7 +38,13 @@
 #include <errno.h>
 
 void __uio_clearerr(int __handle);
-void _RTL_FUNC clearerr(FILE *stream)
+void _RTL_FUNC clearerr(FILE* stream)
+{
+     flockfile(stream);
+     (clearerr_unlocked)(stream);
+     funlockfile(stream);
+}
+void _RTL_FUNC clearerr_unlocked(FILE *stream)
 {
     if (stream->token == FILTOK)
     {
@@ -47,7 +53,14 @@ void _RTL_FUNC clearerr(FILE *stream)
     }
 //  errno = _dos_errno = 0;
 }
-int _RTL_FUNC (feof)(FILE *stream)
+int _RTL_FUNC (feof)(FILE* stream)
+{
+     flockfile(stream);
+     int rv = (feof_unlocked)(stream);
+     funlockfile(stream);
+     return rv;
+}
+int _RTL_FUNC (feof_unlocked)(FILE *stream)
 {
     if (stream->token == FILTOK) 
     {
@@ -55,7 +68,14 @@ int _RTL_FUNC (feof)(FILE *stream)
     }
     return _F_EOF;
 }
-int _RTL_FUNC (ferror)(FILE *stream)
+int _RTL_FUNC (ferror)(FILE* stream)
+{
+     flockfile(stream);
+     int rv = (ferror_unlocked)(stream);
+     funlockfile(stream);
+     return rv;
+}
+int _RTL_FUNC (ferror_unlocked)(FILE *stream)
 {
     if (stream->token == FILTOK) 
     {

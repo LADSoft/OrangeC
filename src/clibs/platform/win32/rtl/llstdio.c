@@ -40,6 +40,7 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include <locale.h>
+#include <threads.h>
 #include "libp.h"
 
 extern int __maxfiles;
@@ -67,5 +68,8 @@ void __ll_init(void)
     _pstreams[0] = &_istreams[0];
     _pstreams[1] = &_istreams[1];
     _pstreams[2] = &_istreams[2];
+    _pstreams[0]->extended->lock = __ll_mtxAlloc();
+    _pstreams[1]->extended->lock = __ll_mtxAlloc();
+    _pstreams[2]->extended->lock = __ll_mtxAlloc();
     __maxfiles = 3;
 }

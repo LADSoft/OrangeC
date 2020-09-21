@@ -40,9 +40,16 @@
 #include <locale.h>
 #include <wchar.h>
 #include <io.h>
+#include <stdio.h>
 #include "libp.h"
-
 int _RTL_FUNC fputc(int c, FILE *stream)
+{
+    flockfile(stream);
+    int rv = fputc_unlocked(c, stream);
+    funlockfile(stream);
+    return rv;
+}
+int _RTL_FUNC fputc_unlocked(int c, FILE *stream)
 {
     int rv;
     if (stream->token != FILTOK) {
@@ -70,10 +77,18 @@ int _RTL_FUNC fputc(int c, FILE *stream)
     else {
         if (!(stream->flags & _F_OUT)) {
 join:
+            if (stream->flags & _F_BUFFEREDSTRING)
+            {
+                if (stream->flags & _F_IN)
+                    stream->level = - stream->level;              
+            }
+            else
+            {
+                stream->level = -stream->bsize;
+                stream->curp = stream->buffer;
+            }
             stream->flags &= ~_F_IN;
             stream->flags |= _F_OUT;
-            stream->level = -stream->bsize;
-            stream->curp = stream->buffer;
         }
     }
     if (stream->buffer) {
@@ -92,6 +107,25 @@ join:
                 stream->level = -stream->bsize;
                 stream->curp = stream->buffer;
             }
+        }
+        if (stream->extended->flags2 & _F2_DYNAMICBUFFER)
+        {
+            if (stream->level >= 0)
+            {
+                void *p = realloc(stream->buffer, stream->bsize *2);
+                if (p)
+                {
+                    stream->curp = p + (stream->curp - stream->buffer);
+                    stream->buffer = p;
+                    stream->level -= stream->bsize;
+                    stream->bsize *= 2;
+                }
+            }
+        }
+        else if ((stream->flags & _F_BUFFEREDSTRING) && stream->level >= 0)
+        {
+            stream->flags |= _F_EOF;
+            return EOF;
         }
     }		
     else {
@@ -126,4 +160,27 @@ int _RTL_FUNC fputchar(int c)
 int _RTL_FUNC _fputchar(int c)
 {
     return fputc(c,stdout);
+}
+
+int _RTL_FUNC _fputc_unlocked(int c, FILE *stream)
+{
+    return fputc_unlocked(c,stream);
+}
+#undef putc_unlocked
+#undef putchar_unlocked
+int _RTL_FUNC putc_unlocked(const int c, FILE *stream)
+{
+    return fputc_unlocked(c,stream);
+}
+int _RTL_FUNC putchar_unlocked(const int c)
+{
+    return fputc_unlocked(c,stdout);
+}
+int _RTL_FUNC fputchar_unlocked(int c)
+{
+    return fputc_unlocked(c,stdout);
+}
+int _RTL_FUNC _fputchar_unlocked(int c)
+{
+    return fputc_unlocked(c,stdout);
 }

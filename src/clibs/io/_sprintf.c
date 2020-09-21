@@ -69,8 +69,8 @@ int fextractdouble(double fmant, int *fexp, int *fsign, unsigned char *buf)
 #endif
 
 #define NUM_SIZE 100
-#define PUTCH(x)  fputc(x, __stream)
-#define PUTSTR(x) fputs(x, __stream)
+#define PUTCH(x)  fputc_unlocked(x, __stream)
+#define PUTSTR(x) fputs_unlocked(x, __stream)
 
 int fnd(unsigned char *buf, int index)
 {

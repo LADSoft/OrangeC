@@ -58,7 +58,7 @@ static char *__fil2strd (FILE *restrict fil, int width, int *restrict ch, int *r
 
   if (*ch != EOF && width && (*ch == '+' || *ch == '-')) {
     *p++ = *ch;
-    *ch = fgetc(fil);
+    *ch = fgetc_unlocked(fil);
     (*chars)++;
     width--;
   }
@@ -70,14 +70,14 @@ static char *__fil2strd (FILE *restrict fil, int width, int *restrict ch, int *r
         if ("inf"[i] != (*ch | 0x20))
           return NULL;
         *p++ = *ch;
-        *ch = fgetc(fil);
+        *ch = fgetc_unlocked(fil);
         (*chars)++;
         width--;
       }
       for (i = 0; i < 5 && *ch != EOF && width; i++) {
         if ("inity"[i] == (*ch | 0x20)) {
           *p++ = *ch;
-          *ch = fgetc(fil);
+          *ch = fgetc_unlocked(fil);
           (*chars)++;
           width--;
         }
@@ -88,7 +88,7 @@ static char *__fil2strd (FILE *restrict fil, int width, int *restrict ch, int *r
           width += i;
           while (i--)
             *(--fil->curp) = *(--p);
-          *ch = fgetc(fil);
+          *ch = fgetc_unlocked(fil);
           break;
         }
       }
@@ -99,20 +99,20 @@ static char *__fil2strd (FILE *restrict fil, int width, int *restrict ch, int *r
         if ("nan"[i] != (*ch | 0x20))
           return NULL;
         *p++ = *ch;
-        *ch = fgetc(fil);
+        *ch = fgetc_unlocked(fil);
         (*chars)++;
         width--;
       }
       if (*ch == '(') {
         for (i = 0; i < 7 && *ch != EOF && width && *ch != ')'; i++) {
           *p++ = *ch;
-          *ch = fgetc(fil);
+          *ch = fgetc_unlocked(fil);
           (*chars)++;
           width--;
         }
         if (*ch == ')') {
           *p++ = *ch;
-          *ch = fgetc(fil);
+          *ch = fgetc_unlocked(fil);
           (*chars)++;
           width--;
         }
@@ -123,7 +123,7 @@ static char *__fil2strd (FILE *restrict fil, int width, int *restrict ch, int *r
           width += i;
           while (i--)
             *(--fil->curp) = *(--p);
-          *ch = fgetc(fil);
+          *ch = fgetc_unlocked(fil);
         }
       }
     }
@@ -132,12 +132,12 @@ static char *__fil2strd (FILE *restrict fil, int width, int *restrict ch, int *r
   }
   if (*ch != EOF && width && *ch == '0') {
     *p++ = *ch;
-    *ch = fgetc(fil);
+    *ch = fgetc_unlocked(fil);
     (*chars)++;
     width--;
     if (*ch != EOF && width && (*ch == 'x' || *ch == 'X')) {
       *p++ = *ch;
-      *ch = fgetc(fil);
+      *ch = fgetc_unlocked(fil);
       (*chars)++;
       width--;
       radix = 2;
@@ -146,59 +146,59 @@ static char *__fil2strd (FILE *restrict fil, int width, int *restrict ch, int *r
   if (radix == 10)
     while (*ch != EOF && width && isdigit(*ch)) {
       *p++ = *ch;
-      *ch = fgetc(fil);
+      *ch = fgetc_unlocked(fil);
       (*chars)++;
       width--;
     }
   else
     while (*ch != EOF && width && isxdigit(*ch)) {
       *p++ = *ch;
-      *ch = fgetc(fil);
+      *ch = fgetc_unlocked(fil);
       (*chars)++;
       width--;
     }
   if (*ch != EOF && width && *ch == '.') {
     *p++ = *ch;
-    *ch = fgetc (fil);
+    *ch = fgetc_unlocked (fil);
     (*chars)++;
     width--;
   }
   if (radix == 10)
     while (*ch != EOF && width && isdigit(*ch)) {
       *p++ = *ch;
-      *ch = fgetc(fil);
+      *ch = fgetc_unlocked(fil);
       (*chars)++;
       width--;
     }
   else
     while (*ch != EOF && width && isxdigit(*ch)) {
       *p++ = *ch;
-      *ch = fgetc(fil);
+      *ch = fgetc_unlocked(fil);
       (*chars)++;
       width--;
     }
   if (*ch != EOF && width && 
       (*ch == 'e' || *ch == 'E' || *ch == 'p' || *ch == 'P')) {
     *p++ = *ch;
-    *ch = fgetc(fil);
+    *ch = fgetc_unlocked(fil);
     (*chars)++;
     width--;
     if (*ch != EOF && width && (*ch == '+' || *ch == '-')) {
       *p++ = *ch;
-      *ch = fgetc(fil);
+      *ch = fgetc_unlocked(fil);
       (*chars)++;
       width--;
     }
     if (*ch != EOF && width && isdigit(*ch)) {
       *p++ = *ch;
-      *ch = fgetc(fil);
+      *ch = fgetc_unlocked(fil);
       (*chars)++;
       width--;
     }
     else return NULL;
     while (*ch != EOF && width && isdigit(*ch)) {
       *p++ = *ch;
-      *ch = fgetc(fil);
+      *ch = fgetc_unlocked(fil);
       (*chars)++;
       width--;
     }
@@ -290,7 +290,7 @@ char *__strtoone(FILE *restrict fil, const char *restrict format, void *restrict
                     }
                     (*chars)++ ;
                     if (width)
-        				*ch = fgetc(fil) ;
+        				*ch = fgetc_unlocked(fil) ;
                     else
                         *ch = EOF;
                 }
@@ -303,7 +303,7 @@ char *__strtoone(FILE *restrict fil, const char *restrict format, void *restrict
                    *((char *)arg)++ = (char)*ch;
 				}	
                 if (width)
-    				*ch = fgetc(fil) ;
+    				*ch = fgetc_unlocked(fil) ;
                 else
                     *ch = EOF;
 				(*chars)++;
@@ -322,7 +322,7 @@ char *__strtoone(FILE *restrict fil, const char *restrict format, void *restrict
         case 'i':
         case 'b':
          while (*ch != EOF && isspace(*ch)) {
-            *ch = fgetc(fil) ;
+            *ch = fgetc_unlocked(fil) ;
             (*chars)++ ;
          }
 		 switch(type)
@@ -399,7 +399,7 @@ char *__strtoone(FILE *restrict fil, const char *restrict format, void *restrict
                 fil1.token = FILTOK;
 				fil1.extended = &fil2;
 		         while (*ch != EOF && isspace(*ch)) {
-		            *ch = fgetc(fil) ;
+		            *ch = fgetc_unlocked(fil) ;
 		            (*chars)++ ;
 		         }
 			 if (!isdigit(*ch) && *ch != '-' && *ch != '+' && *ch != '.' &&
@@ -410,7 +410,7 @@ char *__strtoone(FILE *restrict fil, const char *restrict format, void *restrict
                 strcpy (buf, p);
                 fil1.level = strlen(buf) + 1;
                 fil1.bsize = strlen(buf);
-                ch1 = fgetc(&fil1);
+                ch1 = fgetc_unlocked(&fil1);
                 fval = __xstrtod(&fil1,256,&ch1,&chars1, LDBL_MAX, LDBL_MAX_EXP, LDBL_MAX_10_EXP,1);
 				if (!ignore) {
 					(*count)++;
@@ -476,7 +476,7 @@ char *__strtoone(FILE *restrict fil, const char *restrict format, void *restrict
             }
          } 
          while (type == 's' && *ch != EOF && (_sctab[*ch] & STP)) {
-            *ch = fgetc(fil) ;
+            *ch = fgetc_unlocked(fil) ;
             (*chars)++ ;
 //			found=1;
          }
@@ -495,11 +495,11 @@ char *__strtoone(FILE *restrict fil, const char *restrict format, void *restrict
                     width--;
                     (*chars)++;
 					found=1;
-                    *ch = fgetc(fil);
+                    *ch = fgetc_unlocked(fil);
             } else {
                if (!ignore)
                  *s++ = *ch;
-               *ch = fgetc(fil) ;
+               *ch = fgetc_unlocked(fil) ;
                width--;
                (*chars)++;
 				found=1;
@@ -519,7 +519,7 @@ char *__strtoone(FILE *restrict fil, const char *restrict format, void *restrict
 		case '%':
             if (*ch != '%')
 					return 0;
-            *ch = fgetc(fil) ;
+            *ch = fgetc_unlocked(fil) ;
             (*chars)++;
 				break;
 		default:
@@ -530,14 +530,21 @@ char *__strtoone(FILE *restrict fil, const char *restrict format, void *restrict
 
 int __scanf(FILE *restrict fil, const char *restrict format,void *restrict arglist)
 {
+    flockfile(fil);
+    int rv = __scanf_unlocked(fil, format, arglist);
+    funlockfile(fil);
+    return rv;
+}
+int __scanf_unlocked(FILE *restrict fil, const char *restrict format,void *restrict arglist)
+{
    int i = 0, j = 0, k = 0;
-   int ch = fgetc(fil) ;
+   int ch = fgetc_unlocked(fil) ;
    if (ch == EOF) return EOF;
    while (format && *format) {
       while (format && *format != '%' && *format) {
         if (isspace(*format)) {
             while (ch != EOF && isspace(ch)) {
-               ch = fgetc(fil) ;
+               ch = fgetc_unlocked(fil) ;
                j++ ;
             }
             while (*format && isspace(*format)) format++;
@@ -546,7 +553,7 @@ int __scanf(FILE *restrict fil, const char *restrict format,void *restrict argli
             if (*format++ != ch) {
                 goto __scanf_end;
             }
-            ch = fgetc(fil) ;
+            ch = fgetc_unlocked(fil) ;
             j++;
 		}
 	  }

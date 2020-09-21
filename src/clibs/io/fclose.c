@@ -107,6 +107,7 @@ int __basefclose(FILE *stream,int release)
         if (fname)
             free(fname);
         if (release) {
+            __ll_mtxFree(stream->extended->lock);
             free(stream->extended);
             if (stream->flags & _F_BUF)
                 free(stream->buffer);

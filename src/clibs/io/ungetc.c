@@ -36,8 +36,16 @@
 
 #include <stdio.h>
 #include <errno.h>
+int _RTL_FUNC (ungetc_unlocked)(int c, FILE *stream);
 
 int _RTL_FUNC (ungetc)(int c, FILE *stream)
+{
+    flockfile(stream);
+    int rv = (ungetc_unlocked)(c, stream);
+    funlockfile(stream);
+    return rv;
+}
+int _RTL_FUNC (ungetc_unlocked)(int c, FILE *stream)
 {
 	if (stream->token != FILTOK) {
 		errno = _dos_errno = ENOENT;

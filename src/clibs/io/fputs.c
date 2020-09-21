@@ -48,6 +48,13 @@
 #undef putc
 int _RTL_FUNC fputs(const char *restrict string, FILE *restrict stream)
 {
+    flockfile(stream);
+    int rv = fputs_unlocked(string, stream);
+    funlockfile(stream);
+    return rv;
+}
+int _RTL_FUNC fputs_unlocked(const char *restrict string, FILE *restrict stream)
+{
     int rv, l = strlen(string);
     if (stream->token != FILTOK) {
         errno = _dos_errno = ENOENT;
@@ -74,10 +81,18 @@ int _RTL_FUNC fputs(const char *restrict string, FILE *restrict stream)
     else {
         if (!(stream->flags & _F_OUT)) {
 join:
+            if (stream->flags & _F_BUFFEREDSTRING)
+            {
+                if (stream->flags & _F_IN)
+                    stream->level = - stream->level;              
+            }
+            else
+            {
+                stream->level = -stream->bsize;
+                stream->curp = stream->buffer;
+            }
             stream->flags &= ~_F_IN;
             stream->flags |= _F_OUT;
-            stream->level = -stream->bsize;
-            stream->curp = stream->buffer;
         }
     }
     if (stream->buffer) {
@@ -100,6 +115,26 @@ join:
                 stream->curp = stream->buffer;
                 pos = stream->curp ;
             }
+
+            if (stream->extended->flags2 & _F2_DYNAMICBUFFER)
+            {
+                if (stream->level >= 0)
+                {
+                    void *p = realloc(stream->buffer, stream->bsize *2);
+                    if (p)
+                    {
+                        stream->curp = p + (stream->curp - stream->buffer);
+                        stream->buffer = p;
+                        stream->level -= stream->bsize;
+                        stream->bsize *= 2;
+                    }
+                }
+            }
+            else if ((stream->flags & _F_BUFFEREDSTRING) && stream->level >= 0)
+            {
+                stream->flags |= _F_EOF;
+                return EOF;
+            }
         }
         if (!(stream->flags & _F_BUFFEREDSTRING) && (stream->flags & _F_LBUF)) {
             while (pos != stream->curp) {
@@ -113,6 +148,25 @@ join:
                     break ;
                 }
             }
+        }
+        if (stream->extended->flags2 & _F2_DYNAMICBUFFER)
+        {
+            if (stream->level >= 0)
+            {
+                void *p = realloc(stream->buffer, stream->bsize *2);
+                if (p)
+                {
+                    stream->curp = p + (stream->curp - stream->buffer);
+                    stream->buffer = p;
+                    stream->level -= stream->bsize;
+                    stream->bsize *= 2;
+                }
+            }
+        }
+        else if ((stream->flags & _F_BUFFEREDSTRING) && stream->level >= 0)
+        {
+            stream->flags |= _F_EOF;
+            return EOF;
         }
     }		
     else {

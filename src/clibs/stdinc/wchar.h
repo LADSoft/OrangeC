@@ -165,6 +165,7 @@ extern "C"
     size_t _RTL_FUNC wcsftime(wchar_t* restrict __str, size_t __maxsize, const wchar_t* restrict __format,
                               const struct tm* restrict __t);
 
+    FILE* _RTL_FUNC open_wmemstream(wchar_t **ptr, size_t *sizeloc);
     int _RTL_FUNC fwprintf(FILE* restrict __stream, const wchar_t* restrict __format, ...);
     int _RTL_FUNC fwscanf(FILE* restrict __stream, const wchar_t* restrict __format, ...);
 #if defined(__MSIL__) && defined(__MANAGED__)
@@ -204,6 +205,15 @@ int _RTL_FUNC vswprintf(wchar_t* restrict s, size_t n, const wchar_t* restrict _
     wint_t _RTL_FUNC putwchar(wchar_t __c);
     wint_t _RTL_FUNC ungetwc(wint_t c, FILE* __stream);
     int fwide(FILE* __stream, int __mode);
+
+    wint_t _RTL_FUNC getwc_unlocked(FILE *stream);
+    wint_t _RTL_FUNC getwchar_unlocked(void);
+    wint_t _RTL_FUNC fgetwc_unlocked(FILE *stream);
+    wint_t _RTL_FUNC fputwc_unlocked(wchar_t wc, FILE *stream);
+    wint_t _RTL_FUNC putwc_unlocked(wchar_t wc, FILE *stream);
+    wint_t _RTL_FUNC putwchar_unlocked(wchar_t wc);
+    wchar_t *_RTL_FUNC fgetws_unlocked(wchar_t *ws, int n, FILE *stream);
+    int _RTL_FUNC fputws_unlocked(const wchar_t *ws, FILE *stream);
 
 #ifdef __cplusplus
 };

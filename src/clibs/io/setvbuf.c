@@ -52,7 +52,6 @@ int _RTL_FUNC setvbuf(FILE *restrict stream, char *restrict buf, int mode, size_
     }
     if (fflush(stream))
     {
-        stream->flags |= _F_VBUF;
         return 1;
     }
     stream->flags |= _F_VBUF;

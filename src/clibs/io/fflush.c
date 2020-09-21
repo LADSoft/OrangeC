@@ -60,6 +60,56 @@ static int __flushone(FILE *stream)
     int rv = 0, lvl;
     if (stream->token == FILTOK) {
         stream->flags &= ~_F_VBUF;
+        if (stream->flags & _F_BUFFEREDSTRING)
+        {
+            if (!(stream->flags & _F_BIN))
+            {
+                if (stream->extended->flags2 & _F2_DYNAMICBUFFER)
+                {
+                    if (stream->curp - stream->buffer >= stream->bsize-2)
+                    {
+                        char *p= realloc(stream->buffer, stream->bsize * 2);
+                        if (p)
+                        {
+                            stream->level += stream->flags & _F_OUT ? -stream->bsize : stream->bsize;
+                            stream->curp = p + (stream->curp - stream->buffer);
+                            stream->buffer = p;
+                            stream->bsize *= 2;
+                        }
+                    }
+                }
+                if (stream->extended->flags2 & _F2_WCHAR)
+                {
+                    if (stream->curp - stream->buffer >= stream->bsize-2)
+                        *(wchar_t*)stream->curp = 0;
+                }
+                else
+                {
+                    if (stream->curp - stream->buffer >= stream->bsize-1)
+                        *stream->curp = 0;
+                }
+
+            }
+            stream->hold = 0;
+            stream->flags &= ~(_F_UNGETC);
+            if (stream->extended->flags2 & _F2_DYNAMICBUFFER)
+            {
+                 if (stream->extended->dynamicBuffer[0])
+                     *(void **)stream->extended->dynamicBuffer[0] = stream->buffer;
+                 int size = 0;
+                 if (stream->extended->flags2 & _F2_WCHAR)
+                 {
+                     for (size = 0; size < stream->bsize && ((wchar_t*)stream->buffer)[size] != 0; size++);
+                 }
+                 else
+                 {
+                     for (size = 0; size < stream->bsize && stream->buffer[size] != 0; size++);
+                 }
+                 if (stream->extended->dynamicBuffer[1])
+                     *(int *)stream->extended->dynamicBuffer[1] = size;
+            }
+            return rv; 
+        }
         if (stream->buffer)
             if (stream->flags & _F_OUT) {
                 rv = write(fileno(stream),stream->buffer,stream->bsize + stream->level);
@@ -99,6 +149,13 @@ static int __flushone(FILE *stream)
    }
 }
 int _RTL_FUNC fflush(FILE *stream)
+{
+    flockfile(stream);
+    int rv = fflush_unlocked(stream);
+    funlockfile(stream);
+    return rv;
+}
+int _RTL_FUNC fflush_unlocked(FILE *stream)
 {
     int rv=0;
     if (stream) {

@@ -44,6 +44,14 @@
 int _RTL_FUNC vfwprintf(FILE *restrict stream, const wchar_t *restrict format, 
         va_list arglist)
 {
+    flockfile(stream);
+    int rv = vfwprintf_unlocked(stream, format, arglist);
+    funlockfile(stream);
+    return rv;
+}
+int _RTL_FUNC vfwprintf_unlocked(FILE *restrict stream, const wchar_t *restrict format, 
+        va_list arglist)
+{
 	int written=0;
 	int i = 0;
 	if (stream->token != FILTOK) {

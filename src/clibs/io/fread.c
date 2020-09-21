@@ -41,6 +41,14 @@ int __getmode(int __handle);
 size_t _RTL_FUNC fread(void *restrict buf, size_t size, size_t count,
                 FILE *restrict stream)
 {
+    flockfile(stream);
+    size_t rv = fread_unlocked(buf, size, count, stream);
+    funlockfile(stream);
+    return rv;
+}
+size_t _RTL_FUNC fread_unlocked(void *restrict buf, size_t size, size_t count,
+                FILE *restrict stream)
+{
     int i = 0,rv, num = size * count;
     char *out = (char *)buf ;
     int binary;
@@ -63,9 +71,17 @@ size_t _RTL_FUNC fread(void *restrict buf, size_t size, size_t count,
             if (fflush(stream))
                 return 0;
         }
+        if (stream->flags & _F_BUFFEREDSTRING)
+        {
+            if (stream->flags & _F_OUT)
+                stream->level = - stream->level;              
+        }
+        else
+        {
+            stream->level = 0;
+        }
         stream->flags &= ~_F_OUT;
         stream->flags |= _F_IN;
-        stream->level = 0;
     }
     if (stream->flags & _F_EOF)
        if (isatty(fileno(stream)))

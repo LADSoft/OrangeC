@@ -48,6 +48,13 @@ int __getmode(int __handle);
 
 int _RTL_FUNC fgetpos(FILE *restrict stream, fpos_t *restrict pos)
 {
+    flockfile(stream);
+    int rv = fgetpos_unlocked(stream, pos);
+    funlockfile(stream);
+    return rv;
+}
+int _RTL_FUNC fgetpos_unlocked(FILE *restrict stream, fpos_t *restrict pos)
+{
     if (stream->token == FILTOK) {
         long curpos;
         stream->flags &= ~_F_VBUF;

@@ -48,6 +48,14 @@
 size_t _RTL_FUNC fwrite(void *restrict buf, size_t size, size_t count, 
             FILE *restrict stream)
 {
+    flockfile(stream);
+    size_t rv = fwrite_unlocked(buf, size, count, stream);
+    funlockfile(stream);
+    return rv;
+}
+size_t _RTL_FUNC fwrite_unlocked(void *restrict buf, size_t size, size_t count, 
+            FILE *restrict stream)
+{
     int rv, l = count * size, i=0;
     char *out = (char *)buf ;
     if (l == 0)
@@ -74,10 +82,18 @@ size_t _RTL_FUNC fwrite(void *restrict buf, size_t size, size_t count,
     else {
         if (!(stream->flags & _F_OUT)) {
 join:
+            if (stream->flags & _F_BUFFEREDSTRING)
+            {
+                if (stream->flags & _F_IN)
+                    stream->level = - stream->level;              
+            }
+            else
+            {
+                stream->level = -stream->bsize;
+                stream->curp = stream->buffer;
+            }
             stream->flags &= ~_F_IN;
             stream->flags |= _F_OUT;
-            stream->level = -stream->bsize;
-            stream->curp = stream->buffer;
         }
     }
     if (stream->buffer && stream->bsize) {

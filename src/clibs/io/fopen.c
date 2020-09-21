@@ -45,8 +45,8 @@
 #include <fcntl.h>
 #include <share.h>
 #include <sys\stat.h>
+#include <threads.h>
 #include "libp.h"
-
 extern FILE *_pstreams[_NFILE_];
 extern int __maxfiles;
 
@@ -139,6 +139,7 @@ FILE *__basefopen(const char *restrict name, const char *restrict mode,
     			return 0;
             }
             memset(file->extended, 0, sizeof(file->extended));
+            file->extended->lock = __ll_mtxAlloc();
         }
             
 	file->flags = 0;
@@ -247,6 +248,22 @@ FILE *_RTL_FUNC _fdopen(int handle, const char *restrict mode)
 }
 int _RTL_FUNC (fileno)(FILE *stream)
 {
+    flockfile(stream);
+    int rv = (fileno_unlocked)(stream);
+    funlockfile(stream);
+    return rv;
+}
+int _RTL_FUNC (fileno_unlocked)(FILE *stream)
+{
+	if (stream->token != FILTOK)
+	{
+		errno = ENOENT;
+		return -1;
+	}
+	return stream->fd;
+}
+int _RTL_FUNC (_fileno_unlocked)(FILE *stream)
+{
 	if (stream->token != FILTOK)
 	{
 		errno = ENOENT;
@@ -256,12 +273,10 @@ int _RTL_FUNC (fileno)(FILE *stream)
 }
 int _RTL_FUNC (_fileno)(FILE *stream)
 {
-	if (stream->token != FILTOK)
-	{
-		errno = ENOENT;
-		return -1;
-	}
-	return stream->fd;
+    flockfile(stream);
+    int rv = (_fileno_unlocked)(stream);
+    funlockfile(stream);
+    return rv;
 }
 FILE *_RTL_FUNC _fsopen(const char *name, const char *mode, int share)
 {

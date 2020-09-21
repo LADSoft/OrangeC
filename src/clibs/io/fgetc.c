@@ -102,6 +102,13 @@ int __readbuf(FILE *stream)
 }
 int _RTL_FUNC fgetc(FILE *stream)
 {
+     flockfile(stream);
+     int rv = fgetc_unlocked(stream);
+     funlockfile(stream);
+     return rv;
+}
+int _RTL_FUNC fgetc_unlocked(FILE *stream)
+{
     int rv;
     int binary;
     if (stream->token != FILTOK) {
@@ -132,9 +139,17 @@ int _RTL_FUNC fgetc(FILE *stream)
             if (fflush(stream))
                 return EOF;
         }
+        if (stream->flags & _F_BUFFEREDSTRING)
+        {
+            if (stream->flags & _F_OUT)
+                stream->level = - stream->level;              
+        }
+        else
+        {
+            stream->level = 0;
+        }
         stream->flags &= ~_F_OUT;
         stream->flags |= _F_IN;
-        stream->level = 0;
     }
     if (stream->flags & _F_UNGETC) {
         rv = stream->hold;
@@ -176,4 +191,25 @@ int _RTL_FUNC fgetchar(void)
 int _RTL_FUNC _fgetchar(void)
 {
     return fgetc(stdin);
+}
+
+int _RTL_FUNC _fgetc_unlocked(FILE *stream)
+{
+    return fgetc_unlocked(stream);
+}
+int _RTL_FUNC (getc_unlocked)(FILE *stream)
+{
+    return fgetc_unlocked(stream);
+}
+int _RTL_FUNC (getchar_unlocked)(void)
+{
+    return fgetc_unlocked(stdin);
+}
+int _RTL_FUNC fgetchar_unlocked(void)
+{
+    return fgetc_unlocked(stdin);
+}
+int _RTL_FUNC _fgetchar_unlocked(void)
+{
+    return fgetc_unlocked(stdin);
 }

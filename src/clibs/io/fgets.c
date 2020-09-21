@@ -44,6 +44,13 @@ int __readbuf(FILE *stream);
 
 char *_RTL_FUNC fgets(char *restrict buf, int num, FILE *restrict stream)
 {
+    flockfile(stream);
+    char* rv = fgets_unlocked(buf, num, stream);
+    funlockfile(stream);
+    return rv;
+}
+char *_RTL_FUNC fgets_unlocked(char *restrict buf, int num, FILE *restrict stream)
+{
     int i = 0,rv = 0;
     if (stream->token != FILTOK) {
         errno = _dos_errno = ENOENT;
@@ -67,9 +74,17 @@ char *_RTL_FUNC fgets(char *restrict buf, int num, FILE *restrict stream)
             if (fflush(stream))
                 return 0;
         }
+        if (stream->flags & _F_BUFFEREDSTRING)
+        {
+            if (stream->flags & _F_OUT)
+                stream->level = - stream->level;              
+        }
+        else
+        {
+            stream->level = 0;
+        }
         stream->flags &= ~_F_OUT;
         stream->flags |= _F_IN;
-        stream->level = 0;
     }
     if (stream->flags & _F_EOF)
        if (isatty(fileno(stream)))

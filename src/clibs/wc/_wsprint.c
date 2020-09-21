@@ -57,7 +57,7 @@ static inline void PUTCH(wchar_t x, FILE* stream)
 {
      if (stream->flags & _F_BUFFEREDSTRING)
      {
-         fputwc(x, stream);
+         fputwc_unlocked(x, stream);
      }
      else
      {
@@ -66,7 +66,7 @@ static inline void PUTCH(wchar_t x, FILE* stream)
          if (n > 0)
          {
              buf[n] = '\0';
-             fputs(buf, stream);
+             fputs_unlocked(buf, stream);
          }
      }
 }

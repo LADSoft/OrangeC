@@ -50,8 +50,8 @@
 static int GETCH(FILE* stream)
 {
     if (stream->flags & _F_BUFFEREDSTRING)
-	return fgetwc(stream);
-    int ch = fgetc(stream);
+	return fgetwc_unlocked(stream);
+    int ch = fgetc_unlocked(stream);
     return ch; // this will need rework if we do locales...   
 }
 #define STP 1
@@ -539,6 +539,13 @@ wchar_t *__wstrtoone(FILE *restrict fil, const wchar_t *restrict format, void *r
 }
 
 int __wscanf(FILE *fil, const wchar_t *format,void *arglist)
+{
+    flockfile(fil);
+    int rv = __wscanf_unlocked(fil, format, arglist);
+    funlockfile(fil);
+    return rv;
+}
+int __wscanf_unlocked(FILE *fil, const wchar_t *format,void *arglist)
 {
    int i = 0, j = 0, k = 0;
    int ch = GETCH(fil) ;

@@ -41,15 +41,84 @@
 #include <wchar.h>
 #include <io.h>
 #include <string.h>
+#include <stdio.h>
 #include "libp.h"
 
 int _RTL_FUNC fseek (FILE *stream, long offset, int origin)
+{
+    flockfile(stream);
+    int rv = fseek_unlocked(stream, offset, origin);
+    funlockfile(stream);
+    return rv;
+}
+int _RTL_FUNC fseek_unlocked (FILE *stream, long offset, int origin)
 {
     if (stream->token != FILTOK) {
         errno = ENOENT;
         return EOF;
     }
     stream->flags &= ~_F_VBUF;
+    if (stream->flags & _F_BUFFEREDSTRING)
+    {
+        int end;
+        for (end=0; end < stream->bsize; end++)
+            if (stream->buffer[end] == 0)
+                break;
+        int n;
+        switch (origin) {
+            case SEEK_CUR:
+                n = stream->curp - stream->buffer;
+                break;
+            case SEEK_SET:
+                n = 0;
+                break;
+            case SEEK_END:
+                if (stream->flags & _F_BIN)
+                {
+                    n = stream->bsize;
+                }
+                else
+                {
+                    n = end;
+                }
+                break;
+            default:
+                return EOF;
+        }
+        int n1 = n + offset;
+        if (n1 < 0)
+            return EOF;
+        if (n1 >= stream->bsize)
+        {
+            if (!(stream->extended->flags2 & _F2_DYNAMICBUFFER))
+            {
+                return EOF;
+            }
+            unsigned newSize = stream->bsize;
+            while (newSize < n1)
+                newSize *= 2;
+            void *p = realloc(stream->buffer, newSize);
+            if (p)
+            {
+                stream->curp = p + (stream->curp - stream->buffer);
+                stream->buffer = p;
+                stream->bsize = newSize;
+            }
+        }
+        for (int i=end; i < n1; i++)
+            stream->buffer[i] = 0;
+        stream->level = stream->flags & _F_OUT ? -stream->bsize + n1 : stream->bsize - n1;
+        if (stream->flags & _F_OUT)
+            stream->level -= stream->bsize;
+        stream->curp = stream->buffer + n1;
+        stream->flags &= ~_F_UNGETC;
+        stream->hold = 0;
+        memset(stream->extended->mbstate,0,sizeof(stream->extended->mbstate));
+        stream->flags &= ~(_F_EOF | _F_XEOF) ;            
+        if (origin == SEEK_END && offset >= 0 && !(stream->extended->flags2 & _F2_DYNAMICBUFFER))
+            stream->flags |= _F_EOF | _F_XEOF;
+        return 0;
+    }
     switch (origin) {
         case SEEK_CUR:
         case SEEK_SET:

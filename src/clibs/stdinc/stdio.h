@@ -66,7 +66,6 @@ typedef struct __file__
     unsigned char* curp;   /* Current active pointer     */
     struct __file2
     {
-        char* name; /* filename */
         enum
         {
             __or_unspecified,
@@ -74,6 +73,12 @@ typedef struct __file__
             __or_wide
         } orient;       /* stream orientation */
         int mbstate[2]; /* space for mbstate_t structure */
+	unsigned flags2;
+	union {
+        	char* name; /* filename */
+		void* dynamicBuffer[2];
+	};
+        long long lock;
     } * extended;
 } FILE; /* This is the FILE object    */
 #pragma pack()
@@ -141,11 +146,14 @@ extern "C"
 #define _F_IN 0x0080            /* Data is incoming      */
 #define _F_OUT 0x0100           /* Data is outgoing      */
 #define _F_TERM 0x0200          /* File is a terminal    */
-#define _F_APPEND 0x400         /* Need to ignore seeks  */
+#define _F_APPEND 0x400         /* Need to ignore seek */
 #define _F_BUFFEREDSTRING 0x800 /* it is not an actual file */
 #define _F_XEOF 0x1000          /* EOF is pending based on CTRL-Z in buffered input */
 #define _F_VBUF 0x2000          /* true if setvbut allowed */
 #define _F_UNGETC 0x4000        /* character was cached with ungetc */
+
+#define _F2_DYNAMICBUFFER 1 
+#define _F2_WCHAR 2
 /* End-of-file constant definition
  */
 #define EOF (-1) /* End of file indicator */
@@ -202,6 +210,8 @@ extern "C"
     int _RTL_FUNC _IMPORT fileno(FILE*);
     int _RTL_FUNC _IMPORT _fileno(FILE*);
     FILE* _RTL_FUNC _IMPORT fopen(const char *ZSTR  __path, const char *ZSTR  __mode);
+    FILE* _RTL_FUNC _IMPORT fmemopen(void *buf, size_t size, const char *mode);
+    FILE* _RTL_FUNC _IMPORT open_memstream(char **ptr, size_t *sizeloc);
     int _RTL_FUNC _IMPORT fprintf(FILE* restrict __stream, const char *ZSTR  restrict __format, ...);
     int _RTL_FUNC _IMPORT fputc(int __c, FILE* __stream);
     int _RTL_FUNC _IMPORT fputs(const char *ZSTR  __s, FILE* __stream);
@@ -271,6 +281,30 @@ extern "C"
     int _RTL_FUNC _IMPORT rmtmp(void);
     int _RTL_FUNC _IMPORT _rmtmp(void);
     char *ZSTR  _RTL_FUNC _IMPORT _strerror(const char *ZSTR  __s);
+
+    void _RTL_FUNC _IMPORT flockfile(FILE *filehandle);
+    int _RTL_FUNC _IMPORT ftrylockfile(FILE *filehandle);
+    void _RTL_FUNC _IMPORT funlockfile(FILE *filehandle);
+
+    int _RTL_FUNC _IMPORT getc_unlocked(FILE *stream);
+    int _RTL_FUNC _IMPORT getchar_unlocked(void);
+    int _RTL_FUNC _IMPORT putc_unlocked(int c, FILE *stream);
+    int _RTL_FUNC _IMPORT putchar_unlocked(int c);
+
+    void _RTL_FUNC _IMPORT clearerr_unlocked(FILE *stream);
+    int _RTL_FUNC _IMPORT feof_unlocked(FILE *stream);
+    int _RTL_FUNC _IMPORT ferror_unlocked(FILE *stream);
+    int _RTL_FUNC _IMPORT fileno_unlocked(FILE *stream);
+    int _RTL_FUNC _IMPORT fflush_unlocked(FILE *stream);
+    int _RTL_FUNC _IMPORT fgetc_unlocked(FILE *stream);
+    int _RTL_FUNC _IMPORT fputc_unlocked(int c, FILE *stream);
+    size_t _RTL_FUNC _IMPORT fread_unlocked(void *ptr, size_t size, size_t n,
+                          FILE *stream);
+    size_t _RTL_FUNC _IMPORT fwrite_unlocked(const void *ptr, size_t size, size_t n,
+                          FILE *stream);
+
+    char* _RTL_FUNC _IMPORT fgets_unlocked(char *s, int n, FILE *stream);
+    int _RTL_FUNC _IMPORT fputs_unlocked(const char *s, FILE *stream);
 
 #if !defined(__CRTDLL_DLL) && !defined(__MSVCRT_DLL) && !defined(__MSIL__)
 #    define fileno(f) ((f)->fd)

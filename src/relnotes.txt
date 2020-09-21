@@ -14,6 +14,9 @@ version 6.0.46:
     netlib: add support for pinning
     netlib: various small improvements
     netlib: cache namespaces and classes while loading to speed up the load
+    rtl: add flockfile and friends
+    rtl: add fmemopen and friends
+
 version 6.0.45:
     occ:   functions ending in a function call for a function tagged as 'noreturn' will not generate a 'needs return value' warning.
     occ:   fix bug where destructs called after an if statement could be called at the wrong time.

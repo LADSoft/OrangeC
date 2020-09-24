@@ -92,6 +92,8 @@ static char usage_text[] =
     "\n"
     " --output-def-file filename      output a .def file instead of a .lib file for DLLs\n"
     " --export-all-symbols            reserved\n"
+    " -link                           reserved\n"
+    " -dll                            compile as DLL (same as /Wd)\n"
     "\n--architecture <architecture>\n"
     "    x86 - x86 code       msil - managed code\n"
     "\nCommand line behavior has changed.  Use environment var OCC_LEGACY_OPTIONS for old behavior\n\n"

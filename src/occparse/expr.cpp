@@ -413,7 +413,7 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
     {
 
         SYMLIST* hr;
-        browse_usage(sym, lex->filenum);
+        browse_usage(sym, lex->linedata->fileindex);
         *tp = sym->tp;
         lex = getsym();
         if (sym->sb && sym->sb->attribs.uninheritable.deprecationText)
@@ -919,10 +919,10 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
         sym = SymAlloc();
         sym->name = name;
         sym->sb->attribs.inheritable.used = true;
-        sym->sb->declfile = sym->sb->origdeclfile = lex->file;
-        sym->sb->declline = sym->sb->origdeclline = lex->line;
+        sym->sb->declfile = sym->sb->origdeclfile = lex->linedata->file;
+        sym->sb->declline = sym->sb->origdeclline = lex->linedata->lineno;
         sym->sb->realdeclline = lex->realline;
-        sym->sb->declfilenum = lex->filenum;
+        sym->sb->declfilenum = lex->linedata->fileindex;
         lex = getsym();
         if (MATCHKW(lex, openpa))
         {
@@ -1363,7 +1363,7 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
                 TYPE* typ2 = typein;
                 if (sp2->sb->attribs.uninheritable.deprecationText)
                     deprecateMessage(sp2);
-                browse_usage(sp2, lex->filenum);
+                browse_usage(sp2, lex->linedata->fileindex);
                 if (ispointer(typ2))
                     typ2 = basetype(typ2)->btp;
                 (*exp)->isatomic = false;
@@ -3067,7 +3067,8 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                     // handle base class conversion
                     TYPE* tpb = basetype(sym->tp)->btp;
                     TYPE* tpd = basetype(p->tp)->btp;
-                    if (Optimizer::cparams.prm_cplusplus && !isconst(basetype(sym->tp)->btp) && basetype(p->tp)->stringconst)
+
+                    if (Optimizer::cparams.prm_cplusplus && basetype(p->tp)->stringconst && !isconst(basetype(sym->tp)->btp))
                         error(ERR_INVALID_CHARACTER_STRING_CONVERSION);
                     if (!comparetypes(basetype(tpb), basetype(tpd), true))
                     {
@@ -3469,7 +3470,7 @@ LEXEME* expression_arguments(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION*
             {
                 sym->sb->attribs.inheritable.used = true;
                 if (sym->sb->decoratedName[0] == '@' && lex)
-                    browse_usage(sym, lex->filenum);
+                    browse_usage(sym, lex->linedata->fileindex);
                 if (funcparams->astemplate && sym->sb->templateLevel && !sym->sb->specialized)
                 {
                     TEMPLATEPARAMLIST* tpln = funcparams->templateParams;
@@ -8005,7 +8006,7 @@ LEXEME* expression_assign(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
                         }
                         else if (ispointer(basetype(tp1)) || tp1->type == bt_any)
                         {
-                            if (Optimizer::cparams.prm_cplusplus && !isconst(basetype(*tp)->btp) && basetype(tp1)->stringconst)
+                            if (Optimizer::cparams.prm_cplusplus && basetype(tp1)->stringconst && !isconst(basetype(*tp)->btp))
                                 error(ERR_INVALID_CHARACTER_STRING_CONVERSION);
 
                             while (tp1->type == bt_any && tp1->btp)

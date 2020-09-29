@@ -1603,7 +1603,7 @@ static LEXEME* initialize_pointer_type(LEXEME* lex, SYMBOL* funcsp, int offset, 
             {
                 errortype(ERR_CANNOT_CONVERT_TYPE, tp, itype);
             }
-            if (Optimizer::cparams.prm_cplusplus && !isconst(basetype(itype)->btp) && string)
+            if (Optimizer::cparams.prm_cplusplus  && string && !isconst(basetype(itype)->btp))
                 error(ERR_INVALID_CHARACTER_STRING_CONVERSION);
 
             if (isarray(tp) && (tp)->msil)
@@ -4054,7 +4054,20 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_c
                 if (!MATCHKW(lex, begin) && !MATCHKW(lex, openbr))
                 {
                     lex = expression_no_check(lex, funcsp, nullptr, &tp1, &exp1, _F_TYPETEST);
-                    if (tp1)
+                    if (tp1 && tp1->stringconst)
+                    {
+                        TYPE* itp = (TYPE*)Alloc(sizeof(TYPE));
+                        itp->type = bt_pointer;
+                        itp->size = getSize(bt_pointer);
+                        itp->btp = (TYPE*)Alloc(sizeof(TYPE));
+                        itp->btp->type = bt_const;
+                        itp->btp->size = tp1->btp->size;
+                        itp->btp->btp = tp1->btp;
+                        tp1 = itp;
+                        UpdateRootTypes(tp1);
+                        sym->tp = tp1;
+                    }
+                    else if (tp1)
                     {
                         if (isarray(tp1))
                         {

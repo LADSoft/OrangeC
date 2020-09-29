@@ -44,7 +44,7 @@
 #include "browse.h"
 #include "help.h"
 #include "expr.h"
-//#define TESTANNOTATE
+#define TESTANNOTATE
 
 namespace Parser
 {
@@ -1472,10 +1472,16 @@ void DumpAnnotatedLine(FILE* fil, const std::string& line, const std::deque<std:
     }
     fputc('\n', fil);
     // print the annotations
+    int lastStart = -1;
+    int lastEnd = -1;
     for (auto&& position : positions)
     {
         int start = position.first;
         int end = position.second;
+        if (start == lastStart && end == lastEnd)
+            continue;
+        lastStart = start;
+        lastEnd = end;
         while (pos < start)
         {
             if (line[pos++] != ppDefine::MACRO_PLACEHOLDER)
@@ -1735,7 +1741,8 @@ LEXEME* getsym(void)
             if (valid && tokenIterator != preProcessor->TokenPositions().end())
             {
                 auto p = *tokenIterator;
-                if (start < p.newStart)
+                int oldend = end;
+                if (start <= p.newStart)
                 {
                     start -= trailer;
                     end -= trailer;
@@ -1745,9 +1752,9 @@ LEXEME* getsym(void)
                     trailer = p.newEnd - p.origEnd;
                     start = p.origStart;
                     end = p.origEnd;
-                    
-                    ++tokenIterator;
                 }
+                if (oldend >= p.newEnd)
+                    ++ tokenIterator;
             }
             else
             {

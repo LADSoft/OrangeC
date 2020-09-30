@@ -1562,8 +1562,8 @@ LEXEME* getsym(void)
         {
             linesHead = rv->linedata;
             linesTail = linesHead;
-            while (linesTail && linesTail->next)
-                linesTail = linesTail->next;
+//            while (linesTail && linesTail->next)
+//                linesTail = linesTail->next;
         }
         return rv;
     }

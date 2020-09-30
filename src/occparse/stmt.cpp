@@ -137,8 +137,8 @@ STATEMENT* currentLineData(BLOCKDATA* parent, LEXEME* lex, int offset)
     const char* file;
     if (!lex)
         return nullptr;
-    lineno = lex->realline + offset;
-    file = lex->linedata->file;
+    lineno = lex->linedata->lineno + offset;
+    file = lex->errfile;
     while (*p && (strcmp((*p)->file, file) != 0 || lineno >= (*p)->lineno))
     {
         p = &(*p)->next;
@@ -159,8 +159,8 @@ STATEMENT* stmtNode(LEXEME* lex, BLOCKDATA* parent, enum e_stmt stype)
         lex = context->cur ? context->cur->prev : context->last;
     st->type = stype;
     st->charpos = 0;
-    st->line = lex->linedata->lineno;
-    st->file = lex->linedata->file;
+    st->line = lex->errline;
+    st->file = lex->errfile;
     st->parent = parent;
     if (parent)
     {
@@ -501,8 +501,8 @@ static LEXEME* statement_case(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
     else if (isintconst(exp))
     {
         CASEDATA **cases = &switchstmt->cases, *data;
-        const char* fname = lex->linedata->file;
-        int line = lex->linedata->lineno;
+        const char* fname = lex->errfile;
+        int line = lex->errline;
         val = exp->v.i;
         /* need error: lost conversion on case value */
         while (*cases)
@@ -1615,9 +1615,9 @@ static LEXEME* statement_goto(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
         if (!spx)
         {
             spx = makeID(sc_ulabel, nullptr, nullptr, litlate(lex->value.s.a));
-            spx->sb->declfile = spx->sb->origdeclfile = lex->linedata->file;
-            spx->sb->declline = spx->sb->origdeclline = lex->linedata->lineno;
-            spx->sb->realdeclline = lex->realline;
+            spx->sb->declfile = spx->sb->origdeclfile = lex->errfile;
+            spx->sb->declline = spx->sb->origdeclline = lex->errline;
+            spx->sb->realdeclline = lex->linedata->lineno;
             spx->sb->declfilenum = lex->linedata->fileindex;
             SetLinkerNames(spx, lk_none);
             spx->sb->offset = codeLabel++;
@@ -3103,7 +3103,7 @@ LEXEME* compound(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
     preProcessor->MarkStdPragma();
     STATEMENT* st;
     EXPRESSION* thisptr = nullptr;
-    browse_blockstart(lex->linedata->lineno);
+    browse_blockstart(lex->errline);
     blockstmt->next = parent;
     blockstmt->type = begin;
     blockstmt->needlabel = parent->needlabel;
@@ -3193,14 +3193,14 @@ LEXEME* compound(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool first)
     }
     if (first)
     {
-        browse_endfunc(funcsp, funcsp->sb->endLine = lex ? lex->linedata->lineno : endline);
+        browse_endfunc(funcsp, funcsp->sb->endLine = lex ? lex->errline : endline);
     }
     if (!lex)
     {
         needkw(&lex, end);
         return lex;
     }
-    browse_blockend(endline = lex->linedata->lineno);
+    browse_blockend(endline = lex->errline);
     currentLineData(blockstmt, lex, -!first);
     if (parent->type == begin || parent->type == kw_switch || parent->type == kw_try || parent->type == kw_catch ||
         parent->type == kw_do)
@@ -3658,7 +3658,7 @@ LEXEME* body(LEXEME* lex, SYMBOL* funcsp)
     funcsp->sb->declaring = true;
     labelSyms = CreateHashTable(1);
     assignParameterSizes(lex, funcsp, block);
-    funcsp->sb->startLine = lex->linedata->lineno;
+    funcsp->sb->startLine = lex->errline;
     lex = compound(lex, funcsp, block, true);
     if (isstructured(basetype(funcsp->tp)->btp))
         assignParameterSizes(lex, funcsp, block);

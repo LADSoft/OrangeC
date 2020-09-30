@@ -240,9 +240,9 @@ static EXPRESSION* inasm_ident(void)
             sym = SymAlloc();
             sym->sb->storage_class = sc_ulabel;
             sym->name = litlate(nm);
-            sym->sb->declfile = sym->sb->origdeclfile = lex->linedata->file;
-            sym->sb->declline = sym->sb->origdeclline = lex->linedata->lineno;
-            sym->sb->realdeclline = lex->realline;
+            sym->sb->declfile = sym->sb->origdeclfile = lex->errfile;
+            sym->sb->declline = sym->sb->origdeclline = lex->errline;
+            sym->sb->realdeclline = lex->linedata->lineno;
             sym->sb->declfilenum = lex->linedata->fileindex;
             sym->sb->attribs.inheritable.used = true;
             sym->tp = (TYPE*)(TYPE*)beLocalAlloc(sizeof(TYPE));
@@ -326,9 +326,9 @@ static EXPRESSION* inasm_label(void)
         sym = SymAlloc();
         sym->sb->storage_class = sc_label;
         sym->name = litlate(lex->value.s.a);
-        sym->sb->declfile = sym->sb->origdeclfile = lex->linedata->file;
-        sym->sb->declline = sym->sb->origdeclline = lex->linedata->lineno;
-        sym->sb->realdeclline = lex->realline;
+        sym->sb->declfile = sym->sb->origdeclfile = lex->errfile;
+        sym->sb->declline = sym->sb->origdeclline = lex->errline;
+        sym->sb->realdeclline = lex->linedata->lineno;
         sym->sb->declfilenum = lex->linedata->fileindex;
         sym->tp = (TYPE*)(TYPE*)beLocalAlloc(sizeof(TYPE));
         sym->tp->type = bt_unsigned;

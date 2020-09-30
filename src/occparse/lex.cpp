@@ -1628,9 +1628,8 @@ LEXEME* getsym(void)
             }
         } while (*linePointer == 0);
         charIndex = lex->charindex = linePointer - (const unsigned char*)currentLine.c_str();
-        eofLine = preProcessor->GetErrLineNo();
-        lex->realline = preProcessor->GetRealLineNo();
-        eofFile = preProcessor->GetErrFile().c_str();
+        eofLine = lex->errline = preProcessor->GetErrLineNo();
+        eofFile = lex->errfile = preProcessor->GetErrFile().c_str();
         int fileIndex = preProcessor->GetFileIndex();
         if (fileIndex != lastBrowseIndex)
         {

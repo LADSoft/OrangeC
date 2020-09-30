@@ -919,9 +919,9 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
         sym = SymAlloc();
         sym->name = name;
         sym->sb->attribs.inheritable.used = true;
-        sym->sb->declfile = sym->sb->origdeclfile = lex->linedata->file;
-        sym->sb->declline = sym->sb->origdeclline = lex->linedata->lineno;
-        sym->sb->realdeclline = lex->realline;
+        sym->sb->declfile = sym->sb->origdeclfile = lex->errfile;
+        sym->sb->declline = sym->sb->origdeclline = lex->errline;
+        sym->sb->realdeclline = lex->linedata->lineno;
         sym->sb->declfilenum = lex->linedata->fileindex;
         lex = getsym();
         if (MATCHKW(lex, openpa))

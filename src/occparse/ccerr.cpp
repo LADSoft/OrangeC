@@ -764,8 +764,8 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
         if (context)
         {
             LEXEME* lex = context->cur ? context->cur->prev : context->last;
-            line = lex->linedata->lineno;
-            file = lex->linedata->file;
+            line = lex->errline;
+            file = lex->errfile;
         }
         else
         {

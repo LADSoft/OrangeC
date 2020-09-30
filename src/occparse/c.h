@@ -1067,7 +1067,8 @@ typedef struct lexeme
     char* litaslit;
     char* suffix;
     Optimizer::LINEDATA* linedata;
-    int realline;
+    int errline;
+    const char *errfile;
     int charindex;
     int charindexend;
     int filenum;

@@ -164,9 +164,9 @@ SYMBOL* makeID(enum e_sc storage_class, TYPE* tp, SYMBOL* spi, const char* name)
     sp->tp = tp;
     if (lex)
     {
-        sp->sb->declfile = sp->sb->origdeclfile = lex->linedata->file;
-        sp->sb->declline = sp->sb->origdeclline = lex->linedata->lineno;
-        sp->sb->realdeclline = lex->realline;
+        sp->sb->declfile = sp->sb->origdeclfile = lex->errfile;
+        sp->sb->declline = sp->sb->origdeclline = lex->errline;
+        sp->sb->realdeclline = lex->linedata->lineno;
         sp->sb->declfilenum = lex->linedata->fileindex;
     }
     if (spi)
@@ -926,7 +926,7 @@ static LEXEME* structbody(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_ac cur
     addStructureDeclaration(&sl);
     while (lex && KW(lex) != end)
     {
-        FlushLineData(lex->linedata->file, lex->realline);
+        FlushLineData(lex->errfile, lex->linedata->lineno);
         switch (KW(lex))
         {
             case kw_private:
@@ -1140,8 +1140,8 @@ static LEXEME* declstruct(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, bool inTemplat
     SYMBOL* strSym;
     enum e_ac defaultAccess;
     bool addedNew = false;
-    int declline = lex->linedata->lineno;
-    int realdeclline = lex->realline;
+    int declline = lex->errline;
+    int realdeclline = lex->linedata->lineno;
     bool anonymous = false;
     unsigned char* uuid;
     enum e_lk linkage1 = lk_none, linkage2 = lk_none, linkage3 = lk_none;
@@ -1244,7 +1244,7 @@ static LEXEME* declstruct(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, bool inTemplat
         sp->sb->declcharpos = charindex;
         sp->sb->declline = sp->sb->origdeclline = declline;
         sp->sb->realdeclline = realdeclline;
-        sp->sb->declfile = sp->sb->origdeclfile = lex->linedata->file;
+        sp->sb->declfile = sp->sb->origdeclfile = lex->errfile;
         sp->sb->declfilenum = lex->linedata->fileindex;
         if ((storage_class == sc_member || storage_class == sc_mutable) &&
             (MATCHKW(lex, begin) || MATCHKW(lex, colon) || MATCHKW(lex, kw_try) || MATCHKW(lex, semicolon)))
@@ -1438,9 +1438,9 @@ static LEXEME* enumbody(LEXEME* lex, SYMBOL* funcsp, SYMBOL* spi, enum e_sc stor
                 sp = makeID(sc_enumconstant, tp, 0, litlate(lex->value.s.a));
                 sp->name = sp->sb->decoratedName = litlate(lex->value.s.a);
                 sp->sb->declcharpos = lex->charindex;
-                sp->sb->declline = sp->sb->origdeclline = lex->linedata->lineno;
-                sp->sb->realdeclline = lex->realline;
-                sp->sb->declfile = sp->sb->origdeclfile = lex->linedata->file;
+                sp->sb->declline = sp->sb->origdeclline = lex->errline;
+                sp->sb->realdeclline = lex->linedata->lineno;
+                sp->sb->declfile = sp->sb->origdeclfile = lex->errfile;
                 sp->sb->declfilenum = lex->linedata->fileindex;
                 sp->sb->parentClass = spi->sb->parentClass;
                 sp->sb->access = access;
@@ -1575,8 +1575,8 @@ static LEXEME* declenum(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, enum e_sc storag
     SYMBOL* sp;
     NAMESPACEVALUELIST* nsv;
     SYMBOL* strSym;
-    int declline = lex->linedata->lineno;
-    int realdeclline = lex->realline;
+    int declline = lex->errline;
+    int realdeclline = lex->linedata->lineno;
     bool anonymous = false;
     enum e_lk linkage1 = lk_none, linkage2 = lk_none, linkage3 = lk_none;
     *defd = false;
@@ -1664,7 +1664,7 @@ static LEXEME* declenum(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, enum e_sc storag
         sp->sb->declcharpos = charindex;
         sp->sb->declline = sp->sb->origdeclline = declline;
         sp->sb->realdeclline = realdeclline;
-        sp->sb->declfile = sp->sb->origdeclfile = lex->linedata->file;
+        sp->sb->declfile = sp->sb->origdeclfile = lex->errfile;
         sp->sb->declfilenum = lex->linedata->fileindex;
         if (storage_class == sc_member || storage_class == sc_mutable)
             sp->sb->parentClass = getStructureDeclaration();
@@ -3218,7 +3218,7 @@ static LEXEME* getArrayType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, enum e_sc st
         }
         if (typein && isstructured(typein))
         {
-            checkIncompleteArray(typein, lex->linedata->file, lex->linedata->lineno);
+            checkIncompleteArray(typein, lex->errfile, lex->errline);
         }
     }
     else
@@ -5359,8 +5359,8 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
             bool linked;
 #ifdef PARSER_ONLY
             struct _ccNamespaceData nsData;
-            nsData.declfile = lex->linedata->file;
-            nsData.startline = lex->linedata->lineno;
+            nsData.declfile = lex->errfile;
+            nsData.startline = lex->errline;
 #endif
             if (storage_class_in == sc_member || storage_class_in == sc_mutable)
                 error(ERR_NAMESPACE_NO_STRUCT);
@@ -5380,7 +5380,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                 }
 #ifdef PARSER_ONLY
                 if (lex)
-                    nsData.endline = lex->linedata->lineno;
+                    nsData.endline = lex->errline;
 #endif
                 needkw(&lex, end);
                 if (linked)

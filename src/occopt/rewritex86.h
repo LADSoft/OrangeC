@@ -27,6 +27,7 @@ namespace Optimizer
 extern int uses_substack;
 void insert_parm(QUAD* head, QUAD* q);
 void insert_nullparmadj(QUAD* head, int v);
+void x86FastcallColor(QUAD *head);
 void x86PreColor(QUAD* head);
 void ProcessOneInd(SimpleExpression* match, SimpleExpression** ofs1, SimpleExpression** ofs2, SimpleExpression** ofs3, int* scale);
 void ProcessInd(SimpleExpression** ofs1, SimpleExpression** ofs2, SimpleExpression** ofs3, int* scale);

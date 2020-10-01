@@ -121,7 +121,7 @@ static void rvColor(IMODE* ip)
     tempInfo[n]->enode->sp->regmode = 2;
     tempInfo[n]->precolored = true;
 }
-void x86PreColor(QUAD* head) /* precolor an instruction */
+void x86FastcallColor(QUAD *head)
 {
     if (head->fastcall && head->dc.opcode != i_gosub)
     {
@@ -169,7 +169,10 @@ void x86PreColor(QUAD* head) /* precolor an instruction */
             }
         }
     }
-    else if (head->dc.opcode == i_sdiv || head->dc.opcode == i_udiv)
+}
+void x86PreColor(QUAD* head) /* precolor an instruction */
+{
+    if (head->dc.opcode == i_sdiv || head->dc.opcode == i_udiv)
     {
         if (head->temps & TEMP_ANS)
         {

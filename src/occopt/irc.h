@@ -39,7 +39,8 @@ void AllocateStackSpace(void);
 void FillInPrologue(QUAD* head, SimpleSymbol* funcsp);
 int SqueezeChange(int temp, int t, int delta);
 void SqueezeInit(void);
-void Precolor(void);
+void Precolor(bool optimized);
+void Fastcallcolor(void);
 void retemp(void);
 void AllocateRegisters(QUAD* head);
 }  // namespace Optimizer

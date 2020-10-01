@@ -1066,11 +1066,9 @@ typedef struct lexeme
     struct u_val value;
     char* litaslit;
     char* suffix;
-    const char* file;
-    const char* linestr;
     Optimizer::LINEDATA* linedata;
-    int line;
-    int realline;
+    int errline;
+    const char *errfile;
     int charindex;
     int charindexend;
     int filenum;

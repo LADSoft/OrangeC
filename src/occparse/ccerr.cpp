@@ -587,8 +587,8 @@ void EnterInstantiation(SYMBOL *sym)
     const char *file;
     if (currentLex)
     {
-        file = currentLex->file;
-        line = currentLex->line;
+        file = currentLex->errfile;
+        line = currentLex->errline;
     }
     else
     {
@@ -794,8 +794,8 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
     {
         if (currentLex)
         {
-            file = currentLex->file;
-            line = currentLex->line;
+            file = currentLex->errfile;
+            line = currentLex->errline;
         }
         else
         {
@@ -814,8 +814,8 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
         if (context)
         {
             LEXEME* lex = context->cur ? context->cur->prev : context->last;
-            line = lex->line;
-            file = lex->file;
+            line = lex->errline;
+            file = lex->errfile;
         }
         else
         {

@@ -83,6 +83,7 @@ TYPE stdXC = {bt_struct, XCTAB_SIZE, 0, &stdXC};
 void ParseBuiltins(void)
 {
     LEXEME* lex;
+
     if (Optimizer::cparams.prm_cplusplus)
     {
         SetAlternateParse(true, cppbuiltin);

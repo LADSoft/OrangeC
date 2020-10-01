@@ -123,6 +123,9 @@ CmdSwitchBool ExportAll(switchParser, 0, false, "export-all-symbols");
 
 CmdSwitchString AssemblerExtension(switchParser, 'a');
 
+CmdSwitchString prmLink(switchParser, 0, 0, "link");
+CmdSwitchString prmDll(switchParser, 0, 0, "dll");
+
 static std::string firstFile;
 enum e_lk getDefaultLinkage()
 {
@@ -519,6 +522,18 @@ void ParamTransfer()
                 break;
             case ARCHITECTURE_X86:
                 Optimizer::WinmodeSetup(prm_Winmode.GetValue().c_str());
+                break;
+        }
+    }
+    if (prmDll.GetExists())
+    {
+        switch (Optimizer::architecture)
+        {
+            case ARCHITECTURE_MSIL:
+                Optimizer::msilWinmodeSetup("d");
+                break;
+            case ARCHITECTURE_X86:
+                Optimizer::WinmodeSetup("d");
                 break;
         }
     }

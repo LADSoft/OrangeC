@@ -2952,8 +2952,8 @@ LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc st
                         }
 #ifdef PARSER_ONLY
                         if (lex)
-                            CompletionCompiler::ccInsertUsing(sp, nameSpaceList ? (SYMBOL*)nameSpaceList->data : nullptr, lex->file,
-                                                              lex->line);
+                            CompletionCompiler::ccInsertUsing(sp, nameSpaceList ? (SYMBOL*)nameSpaceList->data : nullptr, lex->errfile,
+                                                              lex->errline);
 #endif
                     }
                 }

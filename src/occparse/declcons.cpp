@@ -117,8 +117,8 @@ MEMBERINITIALIZERS* GetMemberInitializers(LEXEME** lex2, SYMBOL* funcsp, SYMBOL*
             LEXEME** mylex;
             char name[1024];
             *cur = (MEMBERINITIALIZERS*)Alloc(sizeof(MEMBERINITIALIZERS));
-            (*cur)->line = lex->line;
-            (*cur)->file = lex->file;
+            (*cur)->line = lex->errline;
+            (*cur)->file = lex->errfile;
             mylex = &(*cur)->initData;
             name[0] = 0;
             if (ISID(lex))

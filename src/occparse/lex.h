@@ -27,6 +27,7 @@
 #define MAX_LOOKBACK 1024
 namespace Parser
 {
+extern Optimizer::LINEDATA nullLineData;
 extern int eofLine;
 extern const char* eofFile;
 extern bool parsingPreprocessorConstant;

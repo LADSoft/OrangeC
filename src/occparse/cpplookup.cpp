@@ -1649,7 +1649,11 @@ static Optimizer::LIST* searchOneArg(SYMBOL* sym, Optimizer::LIST* in, TYPE* tp)
     if (ispointer(tp) || isref(tp))
         return searchOneArg(sym, in, basetype(tp)->btp);
     if (isarithmetic(tp))
+    {
+        if (tp->btp && tp->btp->type == bt_enum)
+            return searchNS(sym, tp->btp->sp->sb->parentNameSpace, in);
         return in;
+    }
     if (isstructured(tp))
         return structuredArg(sym, in, tp);
     if (basetype(tp)->type == bt_enum)

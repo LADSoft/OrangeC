@@ -42,6 +42,7 @@ extern int usingEsp;
 
 void InternalConflict(QUAD* head);
 void PreColor(QUAD* head);
+void FastcallColor(QUAD* head);
 void examine_icode(QUAD* head);
 int PreRegAlloc(QUAD* tail, BRIGGS_SET* globalVars, BRIGGS_SET* eobGlobals, int pass);
 void Optimize(SimpleSymbol* funcsp);

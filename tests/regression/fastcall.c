@@ -5,6 +5,7 @@ struct nn
 
 int __fastcall zz(int r, int s, struct nn z)
 {
+    return 0;
 }
 void kk()
 {

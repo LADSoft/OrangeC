@@ -104,6 +104,17 @@ void PreColor(QUAD* head)
             break;
     }
 }
+void FastcallColor(QUAD *head)
+{
+    switch (architecture)
+    {
+        case ARCHITECTURE_MSIL:
+            break;
+        case ARCHITECTURE_X86:
+            x86FastcallColor(head);
+            break;
+    }
+}
 void examine_icode(QUAD* head)
 {
     switch (architecture)
@@ -205,7 +216,7 @@ void Optimize(SimpleSymbol* funcsp)
     gatherLocalInfo(functionVariables);
     if ((cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size) && !functionHasAssembly)
     {
-        Precolor();
+        Precolor(true);
         RearrangePrecolors();
         // printf("ssa\n");
         TranslateToSSA();
@@ -255,6 +266,9 @@ void Optimize(SimpleSymbol* funcsp)
     }
     else
     {
+        Precolor(false);
+        RearrangePrecolors();
+
         RemoveCriticalThunks();
         RemoveInfiniteThunks();
     }

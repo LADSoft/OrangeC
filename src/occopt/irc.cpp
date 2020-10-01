@@ -2198,7 +2198,7 @@ static void CalculateNesting(void)
         if (blockArray[i])
             blockArray[i]->spillCost = LoopNesting(blockArray[i]->loopParent);
 }
-void Precolor(void)
+void Precolor(bool optimized)
 {
     QUAD* head = intermed_head;
     int i;
@@ -2213,6 +2213,7 @@ void Precolor(void)
     {
         if (head->dc.opcode != i_block && !head->ignoreMe && head->dc.opcode != i_label && head->dc.opcode != i_expressiontag)
         {
+            FastcallColor(head);
             PreColor(head);
         }
         head = head->fwd;
@@ -2334,7 +2335,7 @@ void AllocateRegisters(QUAD* head)
     accesses = 0;
     Prealloc(3);
     CalculateNesting();
-    Precolor();
+    Precolor(cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size);
     while (true)
     {
 

@@ -179,20 +179,15 @@ extern "C" void __unload_local_data(void)
 }
 static void thrd_init(void)
 {
-DWORD temp;
     LocalAllocAllocator<Registered> RegisteredAllocator;
     LocalAllocAllocator<Handles> HandlesAllocator;
-WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), "1\n", 2, &temp, 0);
 
     registered = RegisteredAllocator.allocate(1);
     RegisteredAllocator.construct(registered);
     handles = HandlesAllocator.allocate(1);
     HandlesAllocator.construct(handles);
-WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), "2\n", 2, &temp, 0);
     __threadTlsAlloc(false);	
-WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), "3\n", 2, &temp, 0);
     __load_local_data();  // main thread
-WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), "4\n", 2, &temp, 0);
 }
 
 static void thrd_end(void)

@@ -68,28 +68,19 @@ extern "C" void __threadrundown(void)
 }
 extern "C" struct __rtl_data* __threadTlsAlloc(int cs)
 {
-DWORD temp;
-WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), "A\n", 2, &temp, 0);
     struct __rtl_data* rv = DataAllocator.allocate(1);
     if (!rv)
     {
-WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), "B\n", 2, &temp, 0);
         fprintf(stderr, "out of memory");
         abort();
     }
-WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), "C\n", 2, &temp, 0);
     DataAllocator.construct(rv);
-WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), "D\n", 2, &temp, 0);
     TlsSetValue(__rtlTlsIndex, (void*)rv);
-WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), "e\n", 2, &temp, 0);
     if (cs)
         __ll_enter_critical();
-WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), "f\n", 2, &temp, 0);
     RtlDataSet->insert(rv);
-WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), "g\n", 2, &temp, 0);
     if (cs)
         __ll_exit_critical();
-WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), "h\n", 2, &temp, 0);
     return rv;
 }
 extern "C" void __threadTlsFree(int cs)

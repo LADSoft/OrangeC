@@ -4,7 +4,7 @@ DEPENDENCIES := $(filter-out $(EXCLUDE), $(FILES))
 TESTS := $(DEPENDENCIES:.cpp=.tst)
 TESTS := $(TESTS:.c=.tst)
 TESTS := $(TESTS:.asm=.tst)
-
+TESTS := $(TESTS) fastcall1.tst
 all: $(TESTS)
 
 %.o: %.c
@@ -25,6 +25,9 @@ mpfrdll.dll: mpfr.c
 
 mpfr.exe: mpfrdll.dll mpfr.c
 	occ /ompfr.exe mpfr.c -l mpfrdll.l
+
+fastcall1.exe: fastcall.c
+	occ /ofastcall1.exe /O- fastcall.c
 
 %.tst: %.exe
 	$< > $*.out

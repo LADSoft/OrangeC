@@ -42,72 +42,90 @@
 #include <wchar.h>
 #include <locale.h>
 #include "libp.h"
+#include "LocalAlloc.h"
+#include <set>
+#include <stdio.h>
 
 static int __rtlTlsIndex;
-static struct __rtl_data* rd;
 
-void __threadinit(void) { __rtlTlsIndex = TlsAlloc(); }
-void __threadrundown(void) { TlsFree(__rtlTlsIndex); }
-struct __rtl_data* __threadTlsAlloc(int cs)
+static LocalAllocAllocator<__rtl_data> DataAllocator;
+
+static LocalAllocAllocator<std::set<__rtl_data*, std::less<__rtl_data*>, LocalAllocAllocator<__rtl_data*>>> SetAllocator;
+
+static std::set<__rtl_data*, std::less<__rtl_data*>, LocalAllocAllocator<__rtl_data*>> *RtlDataSet;
+
+extern "C" void __threadinit(void) 
+{ 
+    RtlDataSet = SetAllocator.allocate(1);
+    SetAllocator.construct(RtlDataSet);
+    __rtlTlsIndex = TlsAlloc(); 
+}
+extern "C" void __threadrundown(void) 
+{ 
+    TlsFree(__rtlTlsIndex);
+    SetAllocator.destroy(RtlDataSet);
+    SetAllocator.deallocate(RtlDataSet,1);
+}
+extern "C" struct __rtl_data* __threadTlsAlloc(int cs)
 {
-    HLOCAL data = LocalAlloc(LPTR, sizeof(struct __rtl_data));
-    struct __rtl_data* rv;
-    if (!data)
+DWORD temp;
+WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), "A\n", 2, &temp, 0);
+    struct __rtl_data* rv = DataAllocator.allocate(1);
+    if (!rv)
     {
-        printf(stderr, "out of memory");
+WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), "B\n", 2, &temp, 0);
+        fprintf(stderr, "out of memory");
         abort();
     }
-    rv = LocalLock(data);
-    rv->handle = (void*)data;
+WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), "C\n", 2, &temp, 0);
+    DataAllocator.construct(rv);
+WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), "D\n", 2, &temp, 0);
     TlsSetValue(__rtlTlsIndex, (void*)rv);
+WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), "e\n", 2, &temp, 0);
     if (cs)
         __ll_enter_critical();
-    rv->link = rd;
-    rd = rv;
+WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), "f\n", 2, &temp, 0);
+    RtlDataSet->insert(rv);
+WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), "g\n", 2, &temp, 0);
     if (cs)
         __ll_exit_critical();
+WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), "h\n", 2, &temp, 0);
     return rv;
 }
-void __threadTlsFree(int cs)
+extern "C" void __threadTlsFree(int cs)
 {
-    struct __rtl_data *rv = TlsGetValue(__rtlTlsIndex), **list = &rd;
+    struct __rtl_data *rv = (struct __rtl_data*)TlsGetValue(__rtlTlsIndex);
     if (rv)
     {
-        HLOCAL handle;
-        handle = rv->handle;
         if (cs)
             __ll_enter_critical();
-        while (*list)
+        auto data = RtlDataSet->find(rv);
+        if (data != RtlDataSet->end())
         {
-            if (*list == rv)
-            {
-                *list = (*list)->link;
-                break;
-            }
-            list = &(*list)->link;
+            __rtl_data *temp = *data;
+            RtlDataSet->erase(data);
+            DataAllocator.destroy(temp);
+            DataAllocator.deallocate(temp,1);
         }
         if (cs)
             __ll_exit_critical();
-        LocalUnlock(handle);
-        LocalFree(handle);
     }
     TlsSetValue(__rtlTlsIndex, 0);
 }
-void __threadTlsFreeAll(void)
+extern "C" void __threadTlsFreeAll(void)
 {
-    while (rd)
+    for (auto t : *RtlDataSet)
     {
-        struct __rtl_data* next = rd->link;
-        HLOCAL handle = rd->handle;
-        LocalUnlock(handle);
-        LocalFree(handle);
-        rd = next;
+        DataAllocator.destroy(t);
+        DataAllocator.deallocate(t,1);
     }
+    RtlDataSet->clear();
 }
-struct __rtl_data* __getRtlData(void)
+extern "C" struct __rtl_data* __getRtlData(void)
 {
     struct __rtl_data* rv = (struct __rtl_data*)TlsGetValue(__rtlTlsIndex);
     if (!rv)
         rv = __threadTlsAlloc(TRUE);
     return rv;
 }
+

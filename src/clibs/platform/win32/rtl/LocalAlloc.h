@@ -33,41 +33,53 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  * 
  */
+// this is here because the threading stuff has to be up and running before the memory management stuff is
+// but we have to allocate things in the threading stuff
+#include <windows.h>
 
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <time.h>
-#include <locale.h>
-#include <wchar.h>
-#include "libp.h"
-
-char ___realloc_stub = 0;
-
-void* _RTL_FUNC realloc(void* buf, size_t size)
+template <class T>
+class LocalAllocAllocator
 {
-    if (size == 0)
-    {
-        free(buf);
-        return &___realloc_stub;
-    }
-    int oldsize, newsize = size;
-    char* ptr;
-    newsize += 7; /* must be the same as in malloc for comparison purposes */
-    newsize &= MALLOC_MASK;
-    if (buf)
-        oldsize = (((FREELIST*)buf) - 1)->size - sizeof(FREELIST);
-    else
-        oldsize = (size_t)-1;
-    if (oldsize == newsize)
-        return buf;
-    ptr = malloc(newsize);
-    if (ptr && buf)
-    { /* borland C allows buf to be zero... */
-        if (oldsize > size)
-            oldsize = size;
-        memcpy(ptr, buf, oldsize);
-        free(buf);
-    }
-    return ptr;
-}
+public:
+  typedef size_t    size_type;
+  typedef ptrdiff_t difference_type;
+  typedef T*        pointer;
+  typedef const T*  const_pointer;
+  typedef T&        reference;
+  typedef const T&  const_reference;
+  typedef T         value_type;
+
+  LocalAllocAllocator() {}
+  LocalAllocAllocator(const LocalAllocAllocator&) {}
+
+
+
+  pointer   allocate(size_type n, const void * = 0) {
+              return (T*) LocalAlloc(LMEM_FIXED, n * sizeof(T));
+            }
+  
+  void      deallocate(void* p, size_type) {
+              if (p) {
+                LocalFree(p);
+              } 
+            }
+
+  pointer           address(reference x) const { return &x; }
+  const_pointer     address(const_reference x) const { return &x; }
+  LocalAllocAllocator<T>&  operator=(const LocalAllocAllocator&) { return *this; }
+  template <class ... Args>
+  void              construct(pointer p, Args&& ... args) 
+                    { new ((T*) p) T(std::forward<Args>(args)...); }
+  void              destroy(pointer p) { p->~T(); }
+
+  size_type         max_size() const { return size_t(-1); }
+
+  template <class U>
+  struct rebind { typedef LocalAllocAllocator<U> other; };
+
+  template <class U>
+  LocalAllocAllocator(const LocalAllocAllocator<U>&) {}
+
+  template <class U>
+  LocalAllocAllocator& operator=(const LocalAllocAllocator<U>&) { return *this; }
+};

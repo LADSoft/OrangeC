@@ -36,12 +36,6 @@
 C_DEPENDENCIES = $(wildcard *.c)
 CIL_DEPENDENCIES = $(wildcard cil/*.c)
 
-EXCLUDE = malloc.o calloc.o realloc.o free.o farmems.o farmem.o
+EXCLUDE = farmems.o farmem.o malloc.o thunk.o
 
 all: $(DEPENDENCIES)
-
-doslea.obj: lea.c
-	$(CC) /c $(CFLAGS) /DMSDOS $(BUILDING_DLL) -o$@ $^
-winlea.obj: lea.c
-	$(CC) /c $(CFLAGS) /DWIN32 $(BUILDING_DLL) -o$@ $^
-

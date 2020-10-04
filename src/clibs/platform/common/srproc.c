@@ -35,6 +35,7 @@
  */
 
 #include <stddef.h>
+//#define TEST
 
 #pragma pack(1)
 typedef struct
@@ -43,6 +44,23 @@ typedef struct
     unsigned char prio;
     void (*func)();
 } SRDATA;
+#ifdef TEST
+#include <windows.h>
+#define todigit(x) ((x) + '0' + ((x) > 9 ? 7 : 0))
+void writenum(unsigned int x)
+{
+	char data[256], *buf = data;
+	for (int i=28; i >=0; i-=4)
+	{
+             int n = (x >> i) & 0xf;
+             *buf++ = todigit(n);
+	}
+        *buf++ = '\n';
+       
+        DWORD temp;
+        WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), data, buf - data, &temp, 0);	
+}
+#endif
 void __srproc(SRDATA* start, SRDATA* end)
 {
     SRDATA* pos;
@@ -66,6 +84,10 @@ void __srproc(SRDATA* start, SRDATA* end)
         if (cur)
         {
             cur->flag = 1;
+#ifdef TEST
+            writenum((int)cur->func);
+            writenum(cur->prio);
+#endif
             (*cur->func)();
         }
         else

@@ -41,6 +41,15 @@ extern void _import _exit(int);
 #include <windows.h>
 #include <setjmp.h>
 #include <string.h>
+#include <errno.h>
+#include <windows.h>
+#include <process.h>
+#include <time.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <wchar.h>
+#include <locale.h>
+#include <libp.h>
 
 extern char INITSTART[], INITEND[], EXITSTART[], EXITEND[], BSSSTART[], BSSEND[];
 extern char _TLSINITSTART[], _TLSINITEND[];
@@ -50,6 +59,19 @@ extern __import char** _environ;
 extern __import char* _oscmd;
 extern __import char* _osenv;
 static unsigned dllexists = 0;
+
+#pragma startup init 253
+#pragma rundown destroy 3
+
+static void init(void)
+{
+    __thrdRegisterModule(GetModuleHandle(0), _TLSINITSTART, _TLSINITEND);
+}
+static void destroy(void)
+{
+    __thrdUnregisterModule(GetModuleHandle(0));
+}
+
 static void _dorundown(void);
 // in the follow, the args are ONLY valid for DLLs
 int __stdcall DllEntryPoint(HINSTANCE hInst, DWORD fdwReason, LPVOID lpvReserved);
@@ -104,6 +126,7 @@ int __stdcall ___lscrtl_startup(HINSTANCE hInst, DWORD fdwReason, LPVOID lpvRese
     if ((flags & DLL) && fdwReason == DLL_PROCESS_DETACH)
     {
         __srproc(EXITSTART, EXITEND);
+        
     }
     rv--;
     if (!(flags & DLL))

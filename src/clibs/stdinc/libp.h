@@ -125,11 +125,19 @@ extern "C"
 
 /* threads */
 #ifdef __THREADS_H
+#ifdef __cplusplus
+extern "C"
+{
+#endif
     int __ll_thrdstart(struct ithrd** thr, thrd_start_t* func, void* arglist);
     void __ll_thrdexit(unsigned retval);
     void __ll_thrdsleep(unsigned ms);
+    void _RTL_FUNC _IMPORT __thrdRegisterModule(void* module, void *tlsStart, void *tlsEnd);
+    void _RTL_FUNC _IMPORT __thrdUnregisterModule(void* module);
+#ifdef __cplusplus
+}
 #endif
-
+#endif
     /* stat */
     int __ll_stat(int handle, void* __statbuf);
     int __ll_namedstat(const char* name, void* __statbuf);
@@ -148,7 +156,7 @@ extern "C"
     struct __rtl_data
     {
         struct __rtldata* link;
-        void* handle;
+        void* reserved; // unused
         void* threadhand;
         char tmpfilnam[32];
         char setlocaledescriptor[256];
@@ -280,9 +288,17 @@ struct ithrd
 };
 // int __ll_thrdstart(struct ithrd **thr, thrd_start_t *func, void *arglist );
 // int __ll_thrdexit(int res);
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 int __ll_thrdexitcode(struct ithrd* thrd, int* rv);
 int __ll_thrdwait(struct ithrd* thrd);
 int __ll_thrd_detach(struct ithrd* thrd);
 struct ithrd* __ll_thrdcurrent(void);
 // int __ll_thrdsleep(int ms);
+#ifdef __cplusplus
+}
+#endif
 #pragma pack()

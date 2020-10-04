@@ -40,11 +40,19 @@
 #include <windows.h>
 #include <setjmp.h>
 #include <string.h>
+#include <errno.h>
+#include <windows.h>
+#include <process.h>
+#include <time.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <wchar.h>
+#include <locale.h>
+#include "libp.h"
 
 extern char INITSTART[], INITEND[], EXITSTART[], EXITEND[], BSSSTART[], BSSEND[];
 extern char _TLSINITSTART[], _TLSINITEND[];
 
-void* __tlsStart, *__tlsEnd;
 extern PASCAL struct defstr
 {
     int flags;
@@ -64,6 +72,21 @@ unsigned _isDLL;
 static int jumped;
 void PASCAL __xceptinit(int* block);
 void PASCAL __xceptrundown(void);
+
+
+
+#pragma startup init 253
+#pragma rundown destroy 3
+
+static void init(void)
+{
+    __thrdRegisterModule(__hInstance, _TLSINITSTART, _TLSINITEND);
+}
+static void destroy(void)
+{
+    __thrdUnregisterModule(__hInstance);
+}
+
 // in the follow, the args are ONLY valid for DLLs
 int __stdcall ___startup(HINSTANCE hInst, DWORD fdwReason, LPVOID lpvReserved)
 {
@@ -74,8 +97,6 @@ int __stdcall ___startup(HINSTANCE hInst, DWORD fdwReason, LPVOID lpvReserved)
     if (startupStruct.flags & GUI)
         _win32 = 1;
     __xceptinit(&exceptBlock);
-    __tlsStart = _TLSINITSTART;
-    __tlsEnd = _TLSINITEND;
     if (!(startupStruct.flags & DLL) || fdwReason == DLL_PROCESS_ATTACH)
     {
         if (startupStruct.flags & DLL)

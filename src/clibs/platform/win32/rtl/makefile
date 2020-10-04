@@ -52,7 +52,7 @@ proftmw.o: proftmw.c
 vsconio.o: vsconio.c
 	$(CC) /! /c $(STDINCLUDE) $(CFLAGS) /DVSDLL -o$(OBJECT)\$@ $^
 
-llthrd.o: llthrd.c
+llthrd.o: llthrd.cpp
 	$(CC) /! /c /C+E $(STDINCLUDE) $(BUILDING_DLL) /9 -o$(OBJECT)\$@ $^
 
 DISTRIBUTE:

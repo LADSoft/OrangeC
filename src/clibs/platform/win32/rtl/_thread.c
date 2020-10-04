@@ -42,7 +42,22 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include <locale.h>
+#include <threads.h>
 #include "libp.h"
+
+void __load_local_data();
+void __unload_local_data();
+void rpmalloc_thread_initialize();
+void rpmalloc_thread_finalize();
+extern HANDLE
+ PASCAL WINBASEAPI CreateThreadExternal(
+	     LPSECURITY_ATTRIBUTES lpThreadAttributes,
+	     DWORD dwStackSize,
+	     LPTHREAD_START_ROUTINE lpStartAddress,
+	     LPVOID lpParameter,
+	     DWORD dwCreationFlags,
+	     LPDWORD lpThreadId
+	     );
 
 struct __threads
 {
@@ -57,6 +72,10 @@ void _RTL_FUNC _endthread(void)
     HANDLE handle = __getRtlData()->threadhand;
     if (handle)
         CloseHandle(handle);
+    __ll_enter_critical();
+    rpmalloc_thread_finalize();
+    __unload_local_data();
+    __ll_exit_critical();
     __threadTlsFree(TRUE);
     ExitThread(0);
 }
@@ -65,6 +84,10 @@ void _RTL_FUNC _endthreadex(unsigned retval)
     HANDLE handle = __getRtlData()->threadhand;
     if (handle)
         CloseHandle(handle);
+    __ll_enter_critical();
+    rpmalloc_thread_finalize();
+    __unload_local_data();
+    __ll_exit_critical();
     __threadTlsFree(TRUE);
     ExitThread(retval);
 }
@@ -73,8 +96,11 @@ static int WINAPI __threadstart(struct __threads* h)
 {
     struct __threads th;
     struct __rtl_data* r = __getRtlData();  // allocate the local storage
+    r->thrd_id = 0;
     __ll_enter_critical();
+    __load_local_data();
     __ll_exit_critical();
+    rpmalloc_thread_initialize();
     th = *h;
     LocalUnlock(h->memhand);
     LocalFree(th.memhand);
@@ -108,7 +134,7 @@ uintptr_t _RTL_FUNC _beginthread(void(__cdecl* start_address)(void*), unsigned s
     mem->arglist = arglist;
     mem->startmode = 0;
     __ll_enter_critical();
-    mem->handle = CreateThread(0, stack_size, (LPTHREAD_START_ROUTINE)__threadstart, mem, 0, &rv);
+    mem->handle = CreateThreadExternal(0, stack_size, (LPTHREAD_START_ROUTINE)__threadstart, mem, 0, &rv);
     __ll_exit_critical();
     if (mem->handle == NULL)
     {
@@ -135,13 +161,45 @@ uintptr_t _RTL_FUNC _beginthreadex(void* security, unsigned stack_size, unsigned
     mem->arglist = arglist;
     mem->startmode = 1;
     __ll_enter_critical();
-    mem->handle = CreateThread(security, stack_size, (LPTHREAD_START_ROUTINE)__threadstart, mem, initflag, thrdaddr);
+    mem->handle = CreateThreadExternal(security, stack_size, (LPTHREAD_START_ROUTINE)__threadstart, mem, initflag, thrdaddr);
     __ll_exit_critical();
     if (mem->handle == NULL)
     {
-        int err = GetLastError();
         errno = EAGAIN;
         return 0;
     }
     return mem->handle;
 }
+HANDLE _RTL_FUNC CreateThread(
+	     LPSECURITY_ATTRIBUTES lpThreadAttributes,
+	     DWORD dwStackSize,
+	     LPTHREAD_START_ROUTINE lpStartAddress,
+	     LPVOID lpParameter,
+	     DWORD dwCreationFlags,
+	     LPDWORD lpThreadId
+	     )
+{
+    DWORD rv;
+    struct __threads* mem;
+    HLOCAL mhand = LocalAlloc(LPTR, sizeof(struct __threads));
+    if (!mhand)
+    {
+        errno = EAGAIN;
+        return 0;
+    }
+    mem = LocalLock(mhand);
+    mem->memhand = mhand;
+    mem->start = lpStartAddress;
+    mem->arglist = lpParameter;
+    mem->startmode = 1;
+    __ll_enter_critical();
+    mem->handle = CreateThreadExternal(lpThreadAttributes, dwStackSize, (LPTHREAD_START_ROUTINE)__threadstart, mem, dwCreationFlags, lpThreadId);
+    __ll_exit_critical();
+    if (mem->handle == NULL)
+    {
+        errno = EAGAIN;
+        return 0;
+    }
+    return mem->handle;
+}
+

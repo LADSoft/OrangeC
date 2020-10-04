@@ -48,7 +48,8 @@
 void __tss_run_dtors(thrd_t thrd);
 void __mtx_remove_thrd(thrd_t thrd);
 void __cnd_remove_thrd(thrd_t thrd);
-
+void rpmalloc_thread_initilaize(void);
+void rpmalloc_thread_finalize(void);
 extern char _TLSINITSTART[], _TLSINITEND[];
 
 #pragma startup thrd_init 240
@@ -99,6 +100,7 @@ void __ll_thrdexit(unsigned retval)
                                 // it also allows us to free the local storage immediately
                                 // which is good because once the thread exits we don't have access to that
     __ll_enter_critical();
+    rpmalloc_thread_finalize();
     free(r->thread_local_data);
     if (p && p->detach)
     {
@@ -119,6 +121,7 @@ static int WINAPI thrdstart(struct ithrd *h)
     struct __rtl_data *r = __getRtlData(); // allocate the local storage
     r->thrd_id = h;
     load_local_data();
+    rpmalloc_thread_initialize();
     rv = ((unsigned (*)(void *))h->start)(h->arglist);
     __ll_thrdexit(rv);
     return 0;
@@ -133,7 +136,7 @@ int __ll_thrdstart(struct ithrd **thr, thrd_start_t *func, void *arglist )
         mem->start = func ;
         mem->arglist = arglist;
         __ll_enter_critical();
-        mem->handle = CreateThread(0,0,(LPTHREAD_START_ROUTINE)thrdstart,mem,0,&id);
+        mem->handle = CreateThreadExternal(0,0,(LPTHREAD_START_ROUTINE)thrdstart,mem,0,&id);
         __ll_exit_critical();
         if (mem->handle != NULL) {
             *thr = mem;

@@ -40,11 +40,18 @@
 #include <windows.h>
 #include <setjmp.h>
 #include <string.h>
+#include <errno.h>
+#include <windows.h>
+#include <process.h>
+#include <time.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <wchar.h>
+#include <locale.h>
+#include "libp.h"
 
 extern char INITSTART[], INITEND[], EXITSTART[], EXITEND[], BSSSTART[], BSSEND[];
 extern char _TLSINITSTART[], _TLSINITEND[];
-
-void *__tlsStart, *__tlsEnd;
 
 extern int _argc;
 extern char **_argv;
@@ -60,22 +67,31 @@ unsigned _isDLL = 1;
 void (*userRundown)();
 void PASCAL __xceptinit(int *block);
 void PASCAL __xceptrundown(void);
+
+#pragma startup init 253
+#pragma rundown destroy 3
+
+static void init(void)
+{
+    __thrdRegisterModule(__hInstance, _TLSINITSTART, _TLSINITEND);
+}
+static void destroy(void)
+{
+    __thrdUnregisterModule(__hInstance);
+}
+
+
 // in the follow, the args are ONLY valid for DLLs
 int __stdcall ___startup(HINSTANCE hInst, DWORD fdwReason, LPVOID lpvReserved)
 {
     __hInstance = hInst;
     switch (fdwReason) {
         case DLL_PROCESS_ATTACH:
-            __threadinit();
         case DLL_THREAD_ATTACH:
-            __threadTlsAlloc(FALSE);
             break;
         case DLL_PROCESS_DETACH:
-            __threadTlsFreeAll();
-            __threadrundown();
             break;
         case DLL_THREAD_DETACH:
-            __threadTlsFree(FALSE);
             break;
     }
     return TRUE;
@@ -85,8 +101,6 @@ void __export __stdcall ___lsdllinit(void *tlsStart, void *tlsEnd, DWORD flags, 
     static int Flags ;
     static int rv;
     memset(BSSSTART, 0, BSSEND - BSSSTART); // for DLL second load cleanup
-    __tlsStart = tlsStart;
-    __tlsEnd = tlsEnd;
     Flags = flags;
     if (flags & GUI)
         _win32 = 1;
@@ -110,6 +124,7 @@ void __export __stdcall ___lsdllinit(void *tlsStart, void *tlsEnd, DWORD flags, 
     _oscmd = GetCommandLine();		
     __hInstance = GetModuleHandle(0);
     _llfpinit();
+    __threadinit();
     __srproc(INITSTART, INITEND);
 }
 void __export __getmainargs(int **pargc, char ***pargv, char ***penviron, int flags, void **newmode)

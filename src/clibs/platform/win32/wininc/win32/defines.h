@@ -428,6 +428,7 @@
 #define MEM_FREE        (65536)
 #define MEM_RESERVE     (8192)
 #define MEM_IMAGE       (16777216)
+#define MEM_LARGE_PAGES (536870912)
 #define MEM_MAPPED      (262144)
 #define MEM_PRIVATE     (131072)
 #define MEM_DECOMMIT    (16384)

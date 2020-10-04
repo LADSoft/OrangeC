@@ -43,7 +43,7 @@
 
 static CRITICAL_SECTION critical;
 
-#pragma startup startcritical 254
+#pragma startup startcritical 255
 
 static void startcritical(void) { InitializeCriticalSection(&critical); }
 #pragma rundown stopcritical 1

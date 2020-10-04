@@ -60,6 +60,7 @@ extern WINBOOL  PASCAL WINBASEAPI AccessCheck(
 		    LPBOOL  AccessStatus
 		    );
 */
+
 extern LONG PASCAL WINBASEAPI InterlockedCompareExchange (
     PLONG Destination,
     LONG ExChange,
@@ -84,6 +85,11 @@ extern LONG
 
 extern LONG PASCAL WINBASEAPI InterlockedExchangeAdd(LPLONG,LONG);
 
+#ifdef _WIN32
+#define InterlockedCompareExchangePointer(Destination, ExChange, Comperand) ((PVOID)InterlockedCompareExchange((PLONG)Destination, (LONG)ExChange, (LONG)Comperand))
+
+#define InterlockedExchangePointer(Destination, ExChange) ((PVOID)InterlockedExchange((PLONG)Destination, (LONG)ExChange))
+#endif
 extern int  PASCAL WINBASEAPI AddFontMemResourceEx(PVOID, DWORD, PVOID , DWORD*);
 extern int  PASCAL WINBASEAPI RemoveFontMemResourceEx( HANDLE);
 
@@ -361,6 +367,8 @@ extern DWORD
 	       DWORD dwLength
 	       );
 
+extern SIZE_T 
+ PASCAL WINBASEAPI GetLargePageMinimum();
 
 extern HANDLE
  PASCAL WINBASEAPI HeapCreate(
@@ -545,7 +553,7 @@ extern LPTOP_LEVEL_EXCEPTION_FILTER
 
 
 extern HANDLE
- PASCAL WINBASEAPI CreateThread(
+  /*PASCAL WINBASEAPI*/ CreateThread(
 	     LPSECURITY_ATTRIBUTES lpThreadAttributes,
 	     DWORD dwStackSize,
 	     LPTHREAD_START_ROUTINE lpStartAddress,

@@ -39,7 +39,7 @@ static MEMBLK* conflicts;
 static bool globalFlag = true;
 static int globalPeak, localPeak, optPeak, tempsPeak, aliasPeak, livePeak, templatePeak, conflictPeak;
 
-#define MINALLOC (128 * 1024)
+#define MINALLOC (16 * 1024)
 #define MALIGN (4)
 
 #ifdef __ORANGEC__
@@ -67,7 +67,9 @@ static MEMBLK* galloc(MEMBLK** arena, int size)
     int allocsize = size <= MINALLOC ? MINALLOC : (size + (MINALLOC - 1)) & -MINALLOC;
     selected = (MEMBLK*)malloc(allocsize + sizeof(MEMBLK) - 1);
     if (!selected)
+    {
         Utils::fatal("out of memory");
+    }
     selected->size = allocsize;
     selected->left = selected->size;
     selected->next = *arena;

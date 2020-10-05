@@ -74,7 +74,7 @@ extern "C" struct __rtl_data* __threadTlsAlloc(int cs)
         fprintf(stderr, "out of memory");
         abort();
     }
-    DataAllocator.construct(rv);
+    memset(rv, 0, sizeof(rv));
     TlsSetValue(__rtlTlsIndex, (void*)rv);
     if (cs)
         __ll_enter_critical();
@@ -95,7 +95,6 @@ extern "C" void __threadTlsFree(int cs)
         {
             __rtl_data *temp = *data;
             RtlDataSet->erase(data);
-            DataAllocator.destroy(temp);
             DataAllocator.deallocate(temp,1);
         }
         if (cs)
@@ -107,7 +106,6 @@ extern "C" void __threadTlsFreeAll(void)
 {
     for (auto t : *RtlDataSet)
     {
-        DataAllocator.destroy(t);
         DataAllocator.deallocate(t,1);
     }
     RtlDataSet->clear();

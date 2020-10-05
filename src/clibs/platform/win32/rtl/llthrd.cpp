@@ -222,12 +222,12 @@ extern "C" void __thrdUnregisterModule(HANDLE module)
          registered->erase(module);
          for (auto&& h : *handles)
          {
-              auto it1 = h.second. find(module);
+              auto it1 = h.second.find(module);
               if (it1 != h.second.end())
               {
                   // this is buggy, doesn't run dtors...
                   auto data = (*it1).second;
-                  h.second.erase(it1);
+                  h.second.erase(module);
                   LocalFree(data);
               }
          }

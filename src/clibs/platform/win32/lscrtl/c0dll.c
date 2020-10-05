@@ -50,6 +50,9 @@
 #include <locale.h>
 #include "libp.h"
 
+BOOL __stdcall GetModuleHandleExW(DWORD dwFlags, LPCTSTR lpModuleName, HMODULE* phModule);
+#define GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS 4
+
 extern char INITSTART[], INITEND[], EXITSTART[], EXITEND[], BSSSTART[], BSSEND[];
 extern char _TLSINITSTART[], _TLSINITEND[];
 
@@ -73,11 +76,21 @@ void PASCAL __xceptrundown(void);
 
 static void init(void)
 {
-    __thrdRegisterModule(__hInstance, _TLSINITSTART, _TLSINITEND);
+    HANDLE handle;
+    int eip;
+    asm mov eax, [ebp+4]
+    asm mov [eip],eax
+    GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCSTR)eip, &handle); 
+    __thrdRegisterModule(handle, _TLSINITSTART, _TLSINITEND);
 }
 static void destroy(void)
 {
-    __thrdUnregisterModule(__hInstance);
+    HANDLE handle;
+    int eip;
+    asm mov eax, [ebp+4]
+    asm mov [eip],eax
+    GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCSTR)eip, &handle); 
+    __thrdUnregisterModule(handle);
 }
 
 

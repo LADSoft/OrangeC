@@ -57,7 +57,7 @@ DLLOBJS = $(shell dir $(B) $(DLLOBJECT)\\*.o)
 	$(ASM) $(ASMFLAGS) -o$@ $^
 
 .\c0dll.o: c0dll.c
-	$(CC) /c $(CFLAGS) $(STDINCLUDE) -o$@ $^
+	$(CC) /c /C-E $(CFLAGS) $(STDINCLUDE) -o$@ $^
 
 $(RCFILE).res: $(RCFILE).rc ..\..\..\..\version.h
 	orc -i..\wininc $(RCFILE).rc

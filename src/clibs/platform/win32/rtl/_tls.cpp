@@ -74,7 +74,7 @@ extern "C" struct __rtl_data* __threadTlsAlloc(int cs)
         fprintf(stderr, "out of memory");
         abort();
     }
-    memset(rv, 0, sizeof(rv));
+    memset(rv, 0, sizeof(*rv));
     TlsSetValue(__rtlTlsIndex, (void*)rv);
     if (cs)
         __ll_enter_critical();
@@ -114,7 +114,9 @@ extern "C" struct __rtl_data* __getRtlData(void)
 {
     struct __rtl_data* rv = (struct __rtl_data*)TlsGetValue(__rtlTlsIndex);
     if (!rv)
+    {
         rv = __threadTlsAlloc(TRUE);
+    }
     return rv;
 }
 

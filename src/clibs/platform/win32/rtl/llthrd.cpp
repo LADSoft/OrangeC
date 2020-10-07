@@ -54,20 +54,12 @@ void __mtx_remove_thrd(thrd_t thrd);
 void __cnd_remove_thrd(thrd_t thrd);
 void rpmalloc_thread_initialize();
 void rpmalloc_thread_finalize();
-HANDLE
- PASCAL WINBASEAPI CreateThreadExternal(
-	     LPSECURITY_ATTRIBUTES lpThreadAttributes,
-	     DWORD dwStackSize,
-	     LPTHREAD_START_ROUTINE lpStartAddress,
-	     LPVOID lpParameter,
-	     DWORD dwCreationFlags,
-	     LPDWORD lpThreadId
-	     );
 BOOL __stdcall GetModuleHandleExW(DWORD dwFlags, LPCTSTR lpModuleName, HMODULE* phModule);
 #define GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS 4
 extern void *__hInstance;
 }
 
+extern "C" void __load_local_data(void);
 
 typedef std::map<HANDLE, std::pair<void*, void*>, std::less<HANDLE>, LocalAllocAllocator<std::pair<HANDLE, std::pair<void*, void*>>>> Registered;
 
@@ -84,6 +76,12 @@ static Handles *handles;
 static PASCAL unsigned char * __getTlsData(int eip, int thread)
 {
     struct __rtl_data* r = __getRtlData();
+    if (!r->thread_local_data)
+    {
+        __ll_enter_critical();
+        __load_local_data();
+        __ll_exit_critical();
+    }
     HANDLE hModule;
     HandleMap *map = (HandleMap *)r->thread_local_data;
     if (map->size() == 1)
@@ -93,6 +91,7 @@ static PASCAL unsigned char * __getTlsData(int eip, int thread)
     }
     if (GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCSTR)eip, &hModule))
     {
+
          auto it = map->find(hModule);
          if (it != map->end())
          {
@@ -200,7 +199,7 @@ static void thrd_end(void)
     HandlesAllocator.destroy(handles);
     HandlesAllocator.deallocate(handles, 1);
 }
-extern "C" void __thrdRegisterModule(HANDLE module, void *tlsStart, void *tlsEnd)
+extern "C" void _RTL_FUNC __thrdRegisterModule(HANDLE module, void *tlsStart, void *tlsEnd)
 {
     __ll_enter_critical();
     if (registered->find(module) == registered->end())
@@ -213,7 +212,7 @@ extern "C" void __thrdRegisterModule(HANDLE module, void *tlsStart, void *tlsEnd
     }
     __ll_exit_critical();
 }
-extern "C" void __thrdUnregisterModule(HANDLE module)
+extern "C" void _RTL_FUNC __thrdUnregisterModule(HANDLE module)
 {
     __ll_enter_critical();
     auto it = registered->find(module);
@@ -251,7 +250,6 @@ extern "C" void __ll_thrdexit(unsigned retval)
         p->sig = 0;
         free(p);
     }
-    rpmalloc_thread_finalize();
     __unload_local_data();
     __ll_exit_critical();
     __threadTlsFree(TRUE);
@@ -263,10 +261,6 @@ static int WINAPI thrdstart(struct ithrd* h)
     int rv;
     struct __rtl_data* r = __getRtlData();  // allocate the local storage
     r->thrd_id = h;
-    __ll_enter_critical();
-    __load_local_data();
-    __ll_exit_critical();
-    rpmalloc_thread_initialize();
     SetEvent((HANDLE)h->stevent);
     rv = ((unsigned (*)(void*))h->start)(h->arglist);
     __ll_thrdexit(rv);
@@ -284,7 +278,7 @@ extern "C" int __ll_thrdstart(struct ithrd** thr, thrd_start_t* func, void* argl
         mem->start = func;
         mem->arglist = arglist;
         mem->stevent = (void*)CreateEvent(0, 0, 0, 0);
-        mem->handle = CreateThreadExternal(0, 0, (LPTHREAD_START_ROUTINE)thrdstart, mem, 0, &id);
+        mem->handle = CreateThread(0, 0, (LPTHREAD_START_ROUTINE)thrdstart, mem, 0, &id);
         if (mem->handle != NULL)
         {
             WaitForSingleObject((HANDLE)mem->stevent, INFINITE);

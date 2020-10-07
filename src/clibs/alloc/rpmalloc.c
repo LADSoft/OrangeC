@@ -663,6 +663,7 @@ static pthread_key_t _memory_thread_heap;
 #    define TLS_MODEL
 #  elif defined( __ORANGEC__)
 #    define TLS_MODEL
+#    define _Thread_local
 #  else
 #    define TLS_MODEL __attribute__((tls_model("initial-exec")))
 #    if !defined(__clang__) && defined(__GNUC__)
@@ -700,7 +701,7 @@ static inline uintptr_t
 get_thread_id(void) {
 #if defined (__ORANGEC__)
 	uintptr_t tid;
-        asm mov eax, fs:[0x18]
+        asm mov eax, 456;//fs:[0x18]
         asm mov [tid], eax
         return tid;
 #elif defined(_WIN32)

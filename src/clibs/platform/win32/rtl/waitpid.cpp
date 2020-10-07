@@ -43,17 +43,6 @@
 #include <map>
 static HANDLE hjob;
 static HANDLE end;
-extern "C" {
-extern HANDLE
- PASCAL WINBASEAPI CreateThreadExternal(
-	     LPSECURITY_ATTRIBUTES lpThreadAttributes,
-	     DWORD dwStackSize,
-	     LPTHREAD_START_ROUTINE lpStartAddress,
-	     LPVOID lpParameter,
-	     DWORD dwCreationFlags,
-	     LPDWORD lpThreadId
-	     );
-}
 CRITICAL_SECTION critical;
 typedef enum _JOBOBJECTINFOCLASS {
     JobObjectBasicAccountingInformation = 1,
@@ -219,7 +208,7 @@ static void init()
 {
  	end = CreateEvent(nullptr, FALSE, FALSE, nullptr);
         DWORD id;
-        CloseHandle(CreateThreadExternal(nullptr, 0, (LPTHREAD_START_ROUTINE)refresh, nullptr, 0, &id));
+        CloseHandle(CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)refresh, nullptr, 0, &id));
 }
 static void rundown()
 {

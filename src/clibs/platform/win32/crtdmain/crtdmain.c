@@ -65,6 +65,13 @@ FILE _RTL_DATA* __stdprn;
 unsigned short _RTL_DATA const* _pctype;
 extern _import unsigned short _ctype[];
 
+void __thrdRegisterModule(HANDLE module, void *tlsStart, void *tlsEnd)
+{
+}
+void __thrdUnregisterModule(HANDLE module)
+{
+}
+
 void __crtexit(int n) { exit(n); }
 static int PASCAL _xceptionhandle(PEXCEPTION_RECORD er, void* frame, PCONTEXT context, void* dispatchercontext)
 {

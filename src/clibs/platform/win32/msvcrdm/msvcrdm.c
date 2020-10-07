@@ -64,6 +64,13 @@ FILE* __stderr;
 FILE* __stdaux;
 FILE* __stdprn;
 
+void __thrdRegisterModule(HANDLE module, void *tlsStart, void *tlsEnd)
+{
+}
+void __thrdUnregisterModule(HANDLE module)
+{
+}
+
 void __crtexit(int n) { exit(n); }
 LONG ___xceptionhandle(PEXCEPTION_RECORD er, void* frame, PCONTEXT context, void* dispatchercontext)
 {

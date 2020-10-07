@@ -420,7 +420,7 @@ EXPORTS
 	CreateTapePartition	CreateTapePartition
 	_CreateThread@24	CreateThread
 	__imp__CreateThread@24	CreateThread
-	CreateThreadExternal	CreateThread
+	CreateThread	CreateThread
 	_CreateThreadpool@4	CreateThreadpool
 	__imp__CreateThreadpool@4	CreateThreadpool
 	CreateThreadpool	CreateThreadpool

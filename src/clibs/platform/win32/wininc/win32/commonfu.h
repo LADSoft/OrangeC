@@ -553,7 +553,7 @@ extern LPTOP_LEVEL_EXCEPTION_FILTER
 
 
 extern HANDLE
-  /*PASCAL WINBASEAPI*/ CreateThread(
+  PASCAL WINBASEAPI CreateThread(
 	     LPSECURITY_ATTRIBUTES lpThreadAttributes,
 	     DWORD dwStackSize,
 	     LPTHREAD_START_ROUTINE lpStartAddress,

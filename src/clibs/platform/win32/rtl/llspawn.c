@@ -85,8 +85,7 @@ int __ll_spawn(char* file, char* parms, char** env, int mode)
     char buf[1000], *block = createenviron(env);
     memset(&si, 0, sizeof(si));
     si.cb = sizeof(STARTUPINFO);
-    si.dwFlags = STARTF_USESTDHANDLES | (STARTF_USESHOWWINDOW * (mode == P_DETACH));
-    si.wShowWindow = SW_HIDE;
+    si.dwFlags = STARTF_USESTDHANDLES;
     si.hStdInput = (HANDLE)__uiohandle(fileno(stdin));
     si.hStdOutput = (HANDLE)__uiohandle(fileno(stdout));
     si.hStdError = (HANDLE)__uiohandle(fileno(stderr));

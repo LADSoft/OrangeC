@@ -71,6 +71,7 @@ class Utils
     static int ToolInvoke(const std::string& exeName, const char* with, const char* fmt, const Args... arg)
     {
         char buf[10000];
+        memset(buf, 0, sizeof(buf));
         buf[0] = '"';
         strcpy(buf + 1, GetModuleName());
         char* p = strrchr(buf, '/');
@@ -84,7 +85,9 @@ class Utils
             p++;
         }
         else
-            p = buf;
+        {
+            p = buf+1;
+        }
         *p = 0;
         strcat(p, exeName.c_str());
         strcat(p, "\" ");

@@ -31,13 +31,13 @@
 #include "ildata.h"
 #include "../occ/winmode.h"
 #include "../occ/be.h"
+#include "Utils.h"
 #include "SharedMemory.h"
 #include <deque>
 #include <functional>
 #include <map>
 #include <set>
 #include "ildata.h"
-
 namespace Optimizer
 {
 static std::list<std::string> textRegion;
@@ -74,8 +74,6 @@ inline static void resize(int size)
     {
         outputSize += WRITE_INCREMENT;
         sharedRegion->EnsureCommitted(outputSize);
-        sharedRegion->CloseMapping();
-        streamPointer = sharedRegion->GetMapping();
     }
 }
 inline static void StreamByte(int value)
@@ -1010,6 +1008,8 @@ void OutputIntermediate(SharedMemory* mem)
 {
     sharedRegion = mem;
     streamPointer = sharedRegion->GetMapping();
+    if (!streamPointer)
+        Utils::fatal("OutputIntermediate: could not map the shared region");
     textRegion.clear();
     textOffset = 1;
     cachedText.clear();

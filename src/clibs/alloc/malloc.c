@@ -118,8 +118,8 @@ extern void __ll_enter_critical();
 extern void __ll_exit_critical();
 extern inline RPMALLOC_RESTRICT void* RPMALLOC_CDECL malloc(size_t size) { __ll_enter_critical(); void * rv = PAD(rpaligned_alloc(8, size+8));__ll_exit_critical(); return rv; }
 extern inline RPMALLOC_RESTRICT void* RPMALLOC_CDECL calloc(size_t count, size_t size) { __ll_enter_critical();void * rv = PAD(rpaligned_calloc(8, count, size+8));__ll_exit_critical(); return rv; }
-extern inline RPMALLOC_RESTRICT void* RPMALLOC_CDECL realloc(void* ptr, size_t size) { __ll_enter_critical();void * rv = PAD(rprealloc(ptr, size+8));__ll_exit_critical(); return rv; }
-extern inline void* RPMALLOC_CDECL reallocf(void* ptr, size_t size) { __ll_enter_critical();void * rv = PAD(rprealloc(ptr, size+8));__ll_exit_critical(); return rv; }
+extern inline RPMALLOC_RESTRICT void* RPMALLOC_CDECL realloc(void* ptr, size_t size) { __ll_enter_critical();void * rv = PAD(rprealloc(CHECK(ptr), size+8));__ll_exit_critical(); return rv; }
+extern inline void* RPMALLOC_CDECL reallocf(void* ptr, size_t size) { __ll_enter_critical();void * rv = PAD(rprealloc(CHECK(ptr), size+8));__ll_exit_critical(); return rv; }
 extern inline void* RPMALLOC_CDECL aligned_alloc(size_t alignment, size_t size) { __ll_enter_critical();void * rv = PAD2(rpaligned_alloc(alignment, size+alignment+8), alignment);__ll_exit_critical(); return rv; }
 //extern inline void* RPMALLOC_CDECL memalign(size_t alignment, size_t size) { return rpmemalign(alignment, size); }
 //extern inline int RPMALLOC_CDECL posix_memalign(void** memptr, size_t alignment, size_t size) { return rpposix_memalign(memptr, alignment, size); }

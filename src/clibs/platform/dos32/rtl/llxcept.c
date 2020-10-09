@@ -67,26 +67,26 @@ int _breakflag;
 #pragma NOSTACKFRAME
 void __clearxcept(void)
 {
-        asm push eax
-        asm push ebp
-        asm test cs:[__pm308],1
-        asm jz stackswitch
-        asm mov ax,ss
-        asm cmp ax,cs:[pmodess]
-        asm jnz stackswitch
+        __asm push eax
+        __asm push ebp
+        __asm test cs:[__pm308],1
+        __asm jz stackswitch
+        __asm mov ax,ss
+        __asm cmp ax,cs:[pmodess]
+        __asm jnz stackswitch
         // if we get here it is plain DOS, tran's PMODE 3.08
         // tran's pmode does not have exception support, and
         // the exception is installed as an interrupt, and this
         // is handled specially
-        asm pop ebp
-        asm pop eax
-        asm jmp done
+        __asm pop ebp
+        __asm pop eax
+        __asm jmp done
 stackswitch:
 
-        asm push ds
-        asm lea ebp,[esp + 16]
-        asm mov ds,[ebp + 8 + 16 + 4]
-        asm push ecx
+        __asm push ds
+        __asm lea ebp,[esp + 16]
+        __asm mov ds,[ebp + 8 + 16 + 4]
+        __asm push ecx
         // we have to handle PMODE/W differently
         // because its exception mechanism is non-conformant
         // basically for pmode/w there will be an interrupt frame 
@@ -95,52 +95,52 @@ stackswitch:
         // address in the exception frame we have pmodew.  pmodew
         // will ignore changes to the exception frame so we have to
         // go to the interrupt frame to make changes...
-        asm mov cx,ss
-        asm mov ax,ds
-        asm cmp ax,cx
-        asm mov eax,[ebp + 8 + 16]
-        asm jnz notpmw
-        asm mov ecx,[eax - 8]
-        asm cmp ecx,[ebp + 8 + 8]
-        asm jnz notpmw
-        asm mov ecx,[eax - 12]
-        asm cmp ecx,[ebp + 8 + 4]
-        asm jnz notpmw
+        __asm mov cx,ss
+        __asm mov ax,ds
+        __asm cmp ax,cx
+        __asm mov eax,[ebp + 8 + 16]
+        __asm jnz notpmw
+        __asm mov ecx,[eax - 8]
+        __asm cmp ecx,[ebp + 8 + 8]
+        __asm jnz notpmw
+        __asm mov ecx,[eax - 12]
+        __asm cmp ecx,[ebp + 8 + 4]
+        __asm jnz notpmw
         // if we get here it is pmode/w
-        asm and word [eax - 4], 0xfeff
-        asm mov [eax - 12], resync
-        asm mov ax,[pmodecs]
-        asm mov [eax - 8],ax
+        __asm and word [eax - 4], 0xfeff
+        __asm mov [eax - 12], resync
+        __asm mov ax,[pmodecs]
+        __asm mov [eax - 8],ax
 notpmw:
-        asm mov eax,[ebp - 4]
-        asm mov [xceptretval],eax 
-        asm add ebp, 8
-        asm mov eax,[ebp]
-        asm mov [xceptxcept],eax 
-        asm mov eax,[ebp+4]
-        asm mov [xceptip],eax 
-        asm mov eax,[ebp+8]
-        asm mov [xceptcs],eax 
-        asm mov eax,[ebp+12]
-        asm mov [xceptflags],eax
+        __asm mov eax,[ebp - 4]
+        __asm mov [xceptretval],eax 
+        __asm add ebp, 8
+        __asm mov eax,[ebp]
+        __asm mov [xceptxcept],eax 
+        __asm mov eax,[ebp+4]
+        __asm mov [xceptip],eax 
+        __asm mov eax,[ebp+8]
+        __asm mov [xceptcs],eax 
+        __asm mov eax,[ebp+12]
+        __asm mov [xceptflags],eax
         
-        asm and word [ebp + 12], 0xfeff
-        asm mov [ebp +4], resync
-        asm mov ax,[pmodecs]
-        asm mov [ebp + 8],ax
-        asm pop ecx
-        asm pop ds
-        asm pop ebp
-        asm pop eax
-        asm add esp,4
-        asm retf
+        __asm and word [ebp + 12], 0xfeff
+        __asm mov [ebp +4], resync
+        __asm mov ax,[pmodecs]
+        __asm mov [ebp + 8],ax
+        __asm pop ecx
+        __asm pop ds
+        __asm pop ebp
+        __asm pop eax
+        __asm add esp,4
+        __asm retf
 resync:
-        asm push [xceptflags]
-        asm push [xceptcs]
-        asm push [xceptip]
-        asm push [xceptxcept]
-        asm push [xceptretval]
-        asm mov [winxcept], 1
+        __asm push [xceptflags]
+        __asm push [xceptcs]
+        __asm push [xceptip]
+        __asm push [xceptxcept]
+        __asm push [xceptretval]
+        __asm mov [winxcept], 1
 done:
         return;
 }
@@ -149,17 +149,17 @@ done:
 #pragma NOSTACKFRAME
 static void raise12(void)
 {
-  asm mov ax,ss
-    asm mov cx,ds
-    asm cmp ax,cx
-    asm jz  restack
-    asm mov ecx,[_stacktop]
-    asm mov dword ptr [esp + 12 + 12],ecx
+  __asm mov ax,ss
+    __asm mov cx,ds
+    __asm cmp ax,cx
+    __asm jz  restack
+    __asm mov ecx,[_stacktop]
+    __asm mov dword ptr [esp + 12 + 12],ecx
         __clearxcept();
-    asm jmp join
+    __asm jmp join
 restack:
-    asm mov esp,[_stacktop]
-    asm sti
+    __asm mov esp,[_stacktop]
+    __asm sti
 join:
     printf("Stack overflow, use larger stack");
     exit(EXIT_FAILURE);
@@ -170,26 +170,26 @@ static void raise3(void)
 {
         __clearxcept();
         if (winxcept)
-            asm add esp,4;
-        asm retf;
+            __asm add esp,4;
+        __asm retf;
 }
 #pragma NOSTACKFRAME
 static void raise6(void)
 {
         __clearxcept();
-      asm pushad
-      asm push ds
-      asm push es
-        asm mov	ds,cs:[pmodeds]
-        asm mov	es,cs:[pmodeds]
-      asm sti
+      __asm pushad
+      __asm push ds
+      __asm push es
+        __asm mov	ds,cs:[pmodeds]
+        __asm mov	es,cs:[pmodeds]
+      __asm sti
       raise(SIGILL) ;
-      asm pop es
-      asm pop ds
-      asm popad
+      __asm pop es
+      __asm pop ds
+      __asm popad
         if (winxcept)
-            asm add esp,4;
-        asm retf;
+            __asm add esp,4;
+        __asm retf;
 }
 
 void __ll_sigsegv(int a)
@@ -208,58 +208,58 @@ void __ll_sigsegv(int a)
 static void raise13(void)
 {
         __clearxcept();
-        asm mov ss:[dssave],ds
-        asm mov ss:[essave],es
-        asm mov	ds,cs:[pmodeds]
-        asm mov	es,cs:[pmodeds]
-        asm mov [axsave],eax
-        asm mov [bxsave],ebx
-        asm mov [cxsave],ecx
-        asm mov [dxsave],edx
-        asm mov [sisave],esi
-        asm mov [disave],edi
-        asm mov [bpsave],ebp
-        asm mov [spsave],esp
-        asm mov [sssave],ss
-        asm mov [fssave],fs
-        asm mov [gssave],gs
-        asm pop eax
-        asm pop eax
-        asm mov [ipsave],eax
-        asm pop eax
-        asm mov [cssave],ax
-        asm pop eax
-        asm mov [flagssave],eax
-      asm pushad
-      asm push ds
-      asm push es
-        asm sti;
+        __asm mov ss:[dssave],ds
+        __asm mov ss:[essave],es
+        __asm mov	ds,cs:[pmodeds]
+        __asm mov	es,cs:[pmodeds]
+        __asm mov [axsave],eax
+        __asm mov [bxsave],ebx
+        __asm mov [cxsave],ecx
+        __asm mov [dxsave],edx
+        __asm mov [sisave],esi
+        __asm mov [disave],edi
+        __asm mov [bpsave],ebp
+        __asm mov [spsave],esp
+        __asm mov [sssave],ss
+        __asm mov [fssave],fs
+        __asm mov [gssave],gs
+        __asm pop eax
+        __asm pop eax
+        __asm mov [ipsave],eax
+        __asm pop eax
+        __asm mov [cssave],ax
+        __asm pop eax
+        __asm mov [flagssave],eax
+      __asm pushad
+      __asm push ds
+      __asm push es
+        __asm sti;
       raise(SIGSEGV) ;
-      asm pop es
-      asm pop ds
-      asm popad
+      __asm pop es
+      __asm pop ds
+      __asm popad
         if (winxcept)
-            asm add esp,4;
-        asm retf;
+            __asm add esp,4;
+        __asm retf;
 }
 
 #pragma NOSTACKFRAME
 static void div0(void)
 {
         __clearxcept();
-      asm pushad
-      asm push ds
-      asm push es
-        asm mov	ds,cs:[pmodeds]
-        asm mov	es,cs:[pmodeds]
-      asm sti
+      __asm pushad
+      __asm push ds
+      __asm push es
+        __asm mov	ds,cs:[pmodeds]
+        __asm mov	es,cs:[pmodeds]
+      __asm sti
       raise(SIGFPE) ;
-      asm pop es
-      asm pop ds
-      asm popad
+      __asm pop es
+      __asm pop ds
+      __asm popad
         if (winxcept)
-            asm add esp,4;
-        asm retf;
+            __asm add esp,4;
+        __asm retf;
 }
 #pragma regopt daf
 /* __________________________________________________________________________
@@ -280,57 +280,57 @@ void raisecb(void)
 #pragma NOSTACKFRAME
 static void intcb(void)
 {
-   asm push ds
-   asm mov ds,cs:[pmodeds]
-   asm or dword [_breakflag],2
+   __asm push ds
+   __asm mov ds,cs:[pmodeds]
+   __asm or dword [_breakflag],2
 
-  asm pop ds
-  asm iretd
+  __asm pop ds
+  __asm iretd
 }
 #pragma NOSTACKFRAME
 static void int23(void)
 {
-   asm push ds
-   asm mov ds,cs:[pmodeds]
-   asm or dword [_breakflag],1
+   __asm push ds
+   __asm mov ds,cs:[pmodeds]
+   __asm or dword [_breakflag],1
 
-  asm pop ds
-  asm iretd
+  __asm pop ds
+  __asm iretd
 }
 void  __lockregion(void *start, void *end)
 {
     SELECTOR sel;
     int len = (int)end - (int)start;
     int base ;
-    asm mov [sel],cs
+    __asm mov [sel],cs
     
     dpmi_get_sel_base(&base,sel);
     base += (int)start;
-    asm mov esi,[len]
-    asm mov ebx,[base]
-    asm mov ecx,ebx
-    asm shr ebx,16
-    asm mov edi,esi
-    asm shr esi,16
-    asm mov eax,0x600
-    asm int 0x31
+    __asm mov esi,[len]
+    __asm mov ebx,[base]
+    __asm mov ecx,ebx
+    __asm shr ebx,16
+    __asm mov edi,esi
+    __asm shr esi,16
+    __asm mov eax,0x600
+    __asm int 0x31
 }
 int __setxcept(int num, void *address)
 {
   SELECTOR sel;
-    asm mov [sel],cs
+    __asm mov [sel],cs
 
     return dpmi_set_protected_except(num,sel,(ULONG) address) ;
 }
 static void llsignal(void)
 {
     SELECTOR sel;
-    asm mov [sel],cs // this local variable is to workaround some issue with
+    __asm mov [sel],cs // this local variable is to workaround some issue with
                         // the extender under virtualbox/freedos 
                         // just having it force the stack frame fixes the issue...
-      asm mov [pmodecs],cs
-        asm mov	[pmodeds],ds
-        asm mov [pmodess],ss
+      __asm mov [pmodecs],cs
+        __asm mov	[pmodeds],ds
+        __asm mov [pmodess],ss
 
 //        __setxcept(3,raise3);
         __setxcept(12,raise12);

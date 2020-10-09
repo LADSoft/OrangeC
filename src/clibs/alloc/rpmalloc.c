@@ -700,10 +700,7 @@ get_thread_heap(void) {
 static inline uintptr_t
 get_thread_id(void) {
 #if defined (__ORANGEC__)
-	uintptr_t tid;
-        asm mov eax, 456;//fs:[0x18]
-        asm mov [tid], eax
-        return tid;
+        return 456;
 #elif defined(_WIN32)
 	return (uintptr_t)((void*)NtCurrentTeb());
 #elif defined(__GNUC__) || defined(__clang__)

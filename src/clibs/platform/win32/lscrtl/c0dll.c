@@ -78,8 +78,8 @@ static void init(void)
 {
     HANDLE handle;
     int eip;
-    asm mov eax, [ebp+4]
-    asm mov [eip],eax
+    __asm mov eax, [ebp+4]
+    __asm mov [eip],eax
     GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCSTR)eip, &handle); 
     __thrdRegisterModule(handle, _TLSINITSTART, _TLSINITEND);
 }
@@ -87,8 +87,8 @@ static void destroy(void)
 {
     HANDLE handle;
     int eip;
-    asm mov eax, [ebp+4]
-    asm mov [eip],eax
+    __asm mov eax, [ebp+4]
+    __asm mov [eip],eax
     GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCSTR)eip, &handle); 
     __thrdUnregisterModule(handle);
 }

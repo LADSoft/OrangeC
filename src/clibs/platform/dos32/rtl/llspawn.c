@@ -151,7 +151,7 @@ int __ll_spawn(char *file, char *parms, char **env, int mode)
       __doscall(0x4d,&regs);
       return regs.b.al;
    } else {
-      asm mov word [_DSS],ds
+      __asm mov word [_DSS],ds
       spawnblock32.oenv = block ;
       spawnblock32.senv = _DSS ;
       spawnblock32.ocomtail = parms1 ;
@@ -160,7 +160,7 @@ int __ll_spawn(char *file, char *parms, char **env, int mode)
       spawnblock32.sfcb1 = _DSS ;
       spawnblock32.ofcb2 = fcbstring ;
       spawnblock32.sfcb2 = _DSS ;
-      asm {
+      __asm {
          mov ax,0x4b00
          push ebx
          lea ebx,dword [spawnblock32]
@@ -173,7 +173,7 @@ int __ll_spawn(char *file, char *parms, char **env, int mode)
       }
       free(block) ;
       if (rv != -1) {
-          asm {
+          __asm {
               mov ax,0x4d00
             int 0x21
             mov byte [rv], al

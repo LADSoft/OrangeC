@@ -112,16 +112,16 @@ static void *GetTlsData = __getTlsData;
 #if !defined(__MSIL__)
 extern "C" void _RTL_FUNC __tlsaddr(int n)
 {
-    asm push eax;
-    asm push ecx;
-    asm push edx;
-    asm push fs:[0x18]
-    asm push [esp + 16] // eip
-    asm call [GetTlsData]; // eax has pointer to thread data now
-    asm add [esp + 16], eax // stacked parameter which is the offset in the tls region
-    asm pop edx;
-    asm pop ecx;
-    asm pop eax;
+    __asm push eax;
+    __asm push ecx;
+    __asm push edx;
+    __asm push fs:[0x18]
+    __asm push [esp + 16] // eip
+    __asm call [GetTlsData]; // eax has pointer to thread data now
+    __asm add [esp + 16], eax // stacked parameter which is the offset in the tls region
+    __asm pop edx;
+    __asm pop ecx;
+    __asm pop eax;
 }
 #endif
 
@@ -165,15 +165,15 @@ static void RemoveLocalData(int thread)
 extern "C" void __load_local_data(void)
 {
      int tid;
-     asm mov eax,fs:[0x18] // currentteb
-     asm mov [tid], eax
+     __asm mov eax,fs:[0x18] // currentteb
+     __asm mov [tid], eax
      AddLocalData(tid);
 }
 extern "C" void __unload_local_data(void)
 {
      int tid;
-     asm mov eax,fs:[0x18] // currentteb
-     asm mov [tid], eax
+     __asm mov eax,fs:[0x18] // currentteb
+     __asm mov [tid], eax
      RemoveLocalData(tid);
 }
 static void thrd_init(void)

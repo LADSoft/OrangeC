@@ -80,9 +80,9 @@ static void sigill(int aa)
 static void sigfp(int aa)
 {
 //   unsigned short bb;
-//   asm fnstsw word [bb];
+//   __asm fnstsw word [bb];
    fenv_t env;
-   asm fnstenv [env];
+   __asm fnstenv [env];
 //   fprintf(stderr,"\nfloating point or divide by zero exception") ;
 //   fprintf(stderr," %04X",bb);
    if (env.statusWord)

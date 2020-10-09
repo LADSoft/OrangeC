@@ -53,40 +53,40 @@ unsigned int _RTL_DATA _default87 = 0x133F;
 unsigned _RTL_FUNC _status87(void)
 {
     unsigned short work;
-    asm fnstsw[work];
-    asm fwait;
+    __asm fnstsw[work];
+    __asm fwait;
     return work;
 }
 unsigned _RTL_FUNC _clear87(void)
 {
     unsigned short work;
-    asm fnstsw[work];
-    asm fwait;
-    asm fnclex;
+    __asm fnstsw[work];
+    __asm fwait;
+    __asm fnclex;
     return work;
 }
 unsigned _RTL_FUNC _control87(unsigned mask1, unsigned mask2)
 {
     unsigned short work;
-    asm fstcw[work];
+    __asm fstcw[work];
     mask1 &= mask2;
     mask2 = ~mask2;
-    asm fwait;
+    __asm fwait;
     work &= mask2;
     work |= mask1;
-    asm fldcw[work];
+    __asm fldcw[work];
     return work;
 }
 
 void _RTL_FUNC _fpreset(void)
 {
-    asm finit;
+    __asm finit;
     _control87(_default87, 0x1fff);
 }
 void __stdcall __llfpinit(void)
 {
     _fpreset();
-    asm fnstenv[dfltenv];
+    __asm fnstenv[dfltenv];
     _fpreset();
 }
 
@@ -96,14 +96,14 @@ static void SSEInit(void)
     char *p = getenv("HDPMI");
     if (p)
     {
-        asm mov eax,cr0
-        asm and eax, 0xfffffffb // clear CR0.EM
-        asm or eax, 2 // set CR0.MP
-        asm mov cr0,eax
-        asm mov eax,cr4
-        asm or eax, 512 // set OSFXSR
-        asm or eax, 1024 // set OSXMMXCPT
-        asm mov cr4,eax
+        __asm mov eax,cr0
+        __asm and eax, 0xfffffffb // clear CR0.EM
+        __asm or eax, 2 // set CR0.MP
+        __asm mov cr0,eax
+        __asm mov eax,cr4
+        __asm or eax, 512 // set OSFXSR
+        __asm or eax, 1024 // set OSXMMXCPT
+        __asm mov cr4,eax
     }
 
 }

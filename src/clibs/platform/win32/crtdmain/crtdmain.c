@@ -128,11 +128,11 @@ void PASCAL __xceptinit(int* block)
 {
     extern void __GetMainArgs(void*, void*, void*, int);
     _xceptblkptr = block;
-    asm mov eax, [block];
-    asm mov[eax + 4], offset _xceptionhandle;
-    asm mov ecx, fs : [0];
-    asm mov[eax], ecx;
-    asm mov fs : [0], eax;
+    __asm mov eax, [block];
+    __asm mov[eax + 4], offset _xceptionhandle;
+    __asm mov ecx, fs : [0];
+    __asm mov[eax], ecx;
+    __asm mov fs : [0], eax;
 
     // crt startup
     __stdin = __getStream(0);
@@ -147,11 +147,11 @@ void PASCAL __xceptinit(int* block)
 }
 void PASCAL __xceptrundown(void)
 {
-    asm mov eax, [_xceptblkptr];
-    asm cmp eax, fs : [0];
-    asm jnz nounset;
-    asm mov eax, [eax];
-    asm mov fs : [0], eax;
+    __asm mov eax, [_xceptblkptr];
+    __asm cmp eax, fs : [0];
+    __asm jnz nounset;
+    __asm mov eax, [eax];
+    __asm mov fs : [0], eax;
 nounset:
     return;
 }

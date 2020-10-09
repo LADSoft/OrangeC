@@ -73,7 +73,7 @@ static void sigill(int aa)
 static void sigfp(int aa)
 {
 //    unsigned short bb;
-//    asm fnstsw word [bb];
+//    __asm fnstsw word [bb];
    fprintf(stderr,"\nfloating point or divide by zero exception") ;
 //   fprintf(stderr," %04x\n",bb);
    fflush(stderr);

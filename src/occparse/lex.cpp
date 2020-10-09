@@ -206,6 +206,7 @@ KEYWORD keywords[] = {
     {"_TR7", 4, kw_tr7, KW_NONANSI | KW_386, TT_VAR},
     {"__I", 3, kw___I, 0, TT_VAR},
     {"__alloca", 8, kw_alloca, KW_NONANSI | KW_ALL, TT_OPERATOR | TT_UNARY},
+    {"__asm", 5, kw_asm, KW_NONANSI | KW_ALL, TT_CONTROL},
     {"__atomic_cmpswp", 15, kw_atomic_cmpswp, 0, TT_VAR},
     {"__atomic_fence", 14, kw_atomic_fence, 0, TT_VAR},
     {"__atomic_flag_test_set", 22, kw_atomic_flag_test_set, 0, TT_VAR},

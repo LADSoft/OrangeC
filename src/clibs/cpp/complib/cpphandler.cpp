@@ -311,8 +311,8 @@ void _RTL_FUNC _RethrowException(void* r)
 {
     XCTAB* record = (XCTAB*)r;
     ULONG_PTR params[1];
-    asm mov eax, [record];
-    asm mov [fs:0], eax;
+    __asm mov eax, [record];
+    __asm mov [fs:0], eax;
     if (!(record->flags & CAUGHT))
         __call_terminate();
     uninstantiate(record, record->throwninstance);
@@ -323,8 +323,8 @@ void _RTL_FUNC _CatchCleanup(void* r)
 {
     XCTAB* record = (XCTAB*)r;
     ULONG_PTR params[1];
-    asm mov eax, [record];
-    asm mov [fs:0], eax;
+    __asm mov eax, [record];
+    __asm mov [fs:0], eax;
     if (!(record->flags & CAUGHT))
         __call_terminate();
     ___xcflags = record->flags = 0;

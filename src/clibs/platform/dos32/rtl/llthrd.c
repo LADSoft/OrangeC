@@ -62,14 +62,14 @@ extern char _TLSINITSTART[], _TLSINITEND[];
 #if !defined(__MSIL__)
 void _RTL_FUNC __tlsaddr(int n)
 {
-    asm push eax
-    asm push ecx
-    asm push edx
+    __asm push eax
+    __asm push ecx
+    __asm push edx
     struct __rtl_data *r = __getRtlData();
     n = (int) r->thread_local_data + n; // return value is on stack for this one...
-    asm pop edx
-    asm pop ecx
-    asm pop eax
+    __asm pop edx
+    __asm pop ecx
+    __asm pop eax
 }
 #endif
 static void load_local_data(void)

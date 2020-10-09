@@ -74,26 +74,26 @@ static void get_progname(char *buf)
     /* get path */
 
     /* find file name, assumes DOS 3... */
-    asm push edi
-    asm push es
-    asm mov ecx,-1
-    asm sub edi,edi
-   asm mov es,[__envseg]
-    asm sub al,al
+    __asm push edi
+    __asm push es
+    __asm mov ecx,-1
+    __asm sub edi,edi
+   __asm mov es,[__envseg]
+    __asm sub al,al
 lp:
-    asm repnz scasb
-    asm cmp es:[edi],al
-    asm jnz lp
-    asm add edi,3
-    asm movzx edx,byte ptr es:[edi+1]
-    asm mov [pos],edi
-    asm mov [sel],es
-    asm mov ecx,-1
-    asm repnz scasb
-    asm not ecx
-    asm mov [len],ecx
-    asm pop es
-    asm pop edi
+    __asm repnz scasb
+    __asm cmp es:[edi],al
+    __asm jnz lp
+    __asm add edi,3
+    __asm movzx edx,byte ptr es:[edi+1]
+    __asm mov [pos],edi
+    __asm mov [sel],es
+    __asm mov ecx,-1
+    __asm repnz scasb
+    __asm not ecx
+    __asm mov [len],ecx
+    __asm pop es
+    __asm pop edi
     if (_EDX == ':')
         dpmi_copy_to_ds(buf,sel,(ULONG) pos,len);
     else

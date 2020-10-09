@@ -530,68 +530,68 @@ char* _RTL_FUNC getpass(const char* __prompt)
 int _RTL_FUNC ungetch(int __ch) { ungetchar = __ch; }
 unsigned char _RTL_FUNC inportb(unsigned __portid)
 {
-    asm mov edx, [__portid];
-    asm in al, dx;
-    asm movzx eax, al;
+    __asm mov edx, [__portid];
+    __asm in al, dx;
+    __asm movzx eax, al;
     return _EAX;
 }
 unsigned _RTL_FUNC inport(unsigned __portid)
 {
-    asm mov edx, [__portid];
-    asm in ax, dx;
-    asm movzx eax, ax;
+    __asm mov edx, [__portid];
+    __asm in ax, dx;
+    __asm movzx eax, ax;
     return _EAX;
 }
 unsigned _RTL_FUNC inportd(unsigned __portid)
 {
-    asm mov edx, [__portid];
-    asm in eax, dx;
+    __asm mov edx, [__portid];
+    __asm in eax, dx;
     return _EAX;
 }
 int _RTL_FUNC inp(unsigned __portid)
 {
-    asm mov edx, [__portid];
-    asm in ax, dx;
-    asm movsx eax, ax;
+    __asm mov edx, [__portid];
+    __asm in ax, dx;
+    __asm movsx eax, ax;
     return _EAX;
 }
 unsigned _RTL_FUNC inpw(unsigned __portid)
 {
-    asm mov edx, [__portid];
-    asm in ax, dx;
-    asm movzx eax, ax;
+    __asm mov edx, [__portid];
+    __asm in ax, dx;
+    __asm movzx eax, ax;
     return _EAX;
 }
 void _RTL_FUNC outportb(unsigned __portid, unsigned char __value)
 {
-    asm mov edx, [__portid];
-    asm mov al, [__value];
-    asm out dx, al;
+    __asm mov edx, [__portid];
+    __asm mov al, [__value];
+    __asm out dx, al;
 }
 void _RTL_FUNC outport(unsigned __portid, unsigned __value)
 {
-    asm mov edx, [__portid];
-    asm mov ax, word ptr[__value];
-    asm out dx, ax;
+    __asm mov edx, [__portid];
+    __asm mov ax, word ptr[__value];
+    __asm out dx, ax;
 }
 void _RTL_FUNC outportd(unsigned __portid, unsigned __value)
 {
-    asm mov edx, [__portid];
-    asm mov eax, dword ptr[__value];
-    asm out dx, eax;
+    __asm mov edx, [__portid];
+    __asm mov eax, dword ptr[__value];
+    __asm out dx, eax;
 }
 int _RTL_FUNC outp(unsigned __portid, int __value)
 {
-    asm mov edx, [__portid];
-    asm mov al, byte ptr[__value];
-    asm out dx, al;
+    __asm mov edx, [__portid];
+    __asm mov al, byte ptr[__value];
+    __asm out dx, al;
     return __value;
 }
 unsigned _RTL_FUNC outpw(unsigned __portid, unsigned __value)
 {
-    asm mov edx, [__portid];
-    asm mov ax, word ptr[__value];
-    asm out dx, ax;
+    __asm mov edx, [__portid];
+    __asm mov ax, word ptr[__value];
+    __asm out dx, ax;
     return __value;
 }
 #ifdef XXXXX

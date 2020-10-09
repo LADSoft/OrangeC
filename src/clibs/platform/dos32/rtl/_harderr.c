@@ -47,25 +47,25 @@ static _interrupt newError()
     unsigned dev;
     unsigned dos;
     unsigned *hdr;
-    asm mov [dev],edi
-    asm mov [dos],eax
-    asm mov eax,[ebp + 12]
-    asm shl eax,4
-    asm add eax,esi
-    asm mov [hdr],eax
-    asm push ds
-    asm push es
-    asm mov ds,cs:[holdds]
-    asm mov es,cs:[holdds]
+    __asm mov [dev],edi
+    __asm mov [dos],eax
+    __asm mov eax,[ebp + 12]
+    __asm shl eax,4
+    __asm add eax,esi
+    __asm mov [hdr],eax
+    __asm push ds
+    __asm push es
+    __asm mov ds,cs:[holdds]
+    __asm mov es,cs:[holdds]
     dev &= 0xff;
     dos &= 0xffff;
     hardret = _HARDERR_FAIL;
     if (harderr_ptr)
         harderr_ptr(dev, dos, hdr);
-    asm pop es
-    asm pop ds
-    asm mov eax,[hardret]
-    asm mov [ebp + 32],eax
+    __asm pop es
+    __asm pop ds
+    __asm mov eax,[hardret]
+    __asm mov [ebp + 32],eax
 }
 void     _RTL_FUNC  _harderr(void (*__fptr)()) //unsigned __deverr,
                             //unsigned __doserr, unsigned *__hdr))
@@ -76,10 +76,10 @@ void     _RTL_FUNC  _harderr(void (*__fptr)()) //unsigned __deverr,
         if (!harderr_ptr)
         {
             UWORD cssel;
-            asm mov ax,cs
-            asm mov [cssel],ax
-            asm mov ax,ds
-            asm mov [holdds],ax
+            __asm mov ax,cs
+            __asm mov [cssel],ax
+            __asm mov ax,ds
+            __asm mov [holdds],ax
             dpmi_get_protected_interrupt(((unsigned char *)&critLast + 4), &critLast, 0x24) ;
             dpmi_set_protected_interrupt(0x24,cssel,(ULONG)newError) ;
         }

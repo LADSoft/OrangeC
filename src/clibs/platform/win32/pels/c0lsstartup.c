@@ -70,8 +70,8 @@ static void init(void)
 {
     HANDLE handle;
     int eip;
-    asm mov eax, [ebp+4]
-    asm mov [eip],eax
+    __asm mov eax, [ebp+4]
+    __asm mov [eip],eax
     GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCSTR)eip, &handle); 
     __thrdRegisterModule(handle, _TLSINITSTART, _TLSINITEND);
 }
@@ -79,8 +79,8 @@ static void destroy(void)
 {
     HANDLE handle;
     int eip;
-    asm mov eax, [ebp+4]
-    asm mov [eip],eax
+    __asm mov eax, [ebp+4]
+    __asm mov [eip],eax
     GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCSTR)eip, &handle); 
     __thrdUnregisterModule(handle);
 }
@@ -97,7 +97,7 @@ int __stdcall ___lscrtl_startup(HINSTANCE hInst, DWORD fdwReason, LPVOID lpvRese
     unsigned exceptBlock[2];
     char quote;
     char* cmd;
-    asm mov[flags], edx;
+    __asm mov[flags], edx;
     quote = 0;
     if (!(flags & DLL) || fdwReason == DLL_PROCESS_ATTACH)
     {

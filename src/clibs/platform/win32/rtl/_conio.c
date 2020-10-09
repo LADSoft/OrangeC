@@ -66,8 +66,8 @@ unsigned short _RTL_FUNC _inpw(unsigned short port)
 }
 unsigned long _RTL_FUNC _inpd(unsigned short port)
 {
-    asm mov dx,[port];
-    asm in	eax,dx;
+    __asm mov dx,[port];
+    __asm in	eax,dx;
     return _EAX;
 }
 int 		 _RTL_FUNC _kbhit(void)
@@ -84,9 +84,9 @@ unsigned short _RTL_FUNC _outpw(unsigned short port , unsigned short val)
 }
 unsigned long _RTL_FUNC _outpd(unsigned short port , unsigned long val)
 {
-    asm mov dx,[port];
-    asm mov eax,dword ptr [val];
-    asm out dx,eax;
+    __asm mov dx,[port];
+    __asm mov eax,dword ptr [val];
+    __asm out dx,eax;
     return val;
 }
 int			 _RTL_FUNC _putch(int ch)

@@ -39,7 +39,7 @@
 ULONG __aliasRealAddress(ULONG address)
 {
     SELECTOR sel;
-    asm mov [sel],ds
+    __asm mov [sel],ds
     
     dpmi_get_sel_base(&address, sel);
     return address;

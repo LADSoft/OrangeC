@@ -189,7 +189,7 @@ LONG ___xceptionhandle(PEXCEPTION_RECORD p, void* record, PCONTEXT context, void
 }
 void PASCAL __xceptinit(int* block)
 {
-    asm {
+    __asm {
 		mov		eax,[block]
 		mov		[eax+4],___xceptionhandle
 		mov		ecx,fs:[0]
@@ -200,7 +200,7 @@ void PASCAL __xceptinit(int* block)
 }
 void PASCAL __xceptrundown(void)
 {
-    asm {
+    __asm {
 		mov	eax,fs:[0]
 		cmp	eax,___xceptionhandle  // C++ frames should be unloaded by now
 		jnz	none  // this is a sanity check

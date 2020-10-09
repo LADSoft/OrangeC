@@ -48,69 +48,69 @@ extern short __envseg;
 int __ll_getenv(char *buf, int id)
 {
     int answer;
-    asm push esi
-    asm push edi
-    asm push ebx
-    asm push es
-    asm cld
-   asm mov es,[__envseg]
-    asm mov edx,[ebp+8]
-    asm or edx,edx
-    asm jz lbl_count
-    asm mov edx,[ebp+12]
-    asm sub	eax,eax			/* set up for scan */
-    asm mov edi,eax
-    asm mov ecx,-1
-    asm test 	byte ptr es:[edi],0xff
-    asm jz	lbl_errenv
+    __asm push esi
+    __asm push edi
+    __asm push ebx
+    __asm push es
+    __asm cld
+   __asm mov es,[__envseg]
+    __asm mov edx,[ebp+8]
+    __asm or edx,edx
+    __asm jz lbl_count
+    __asm mov edx,[ebp+12]
+    __asm sub	eax,eax			/* set up for scan */
+    __asm mov edi,eax
+    __asm mov ecx,-1
+    __asm test 	byte ptr es:[edi],0xff
+    __asm jz	lbl_errenv
 lbl_lp1:
-    asm dec edx
-    asm jz	lbl_gotenv
-    asm repnz	scasb			/* scan for end of environment */
-    asm test	byte ptr es:[edi],0xff
-    asm jnz 	lbl_lp1
-    asm jmp	lbl_errenv
+    __asm dec edx
+    __asm jz	lbl_gotenv
+    __asm repnz	scasb			/* scan for end of environment */
+    __asm test	byte ptr es:[edi],0xff
+    __asm jnz 	lbl_lp1
+    __asm jmp	lbl_errenv
 lbl_gotenv:
-    asm mov	esi,[ebp+8]
-    asm xchg	esi,edi
-    asm cli
-    asm push	ds
-    asm push	ds
-    asm push	es
-    asm pop	ds
-    asm pop	es
+    __asm mov	esi,[ebp+8]
+    __asm xchg	esi,edi
+    __asm cli
+    __asm push	ds
+    __asm push	ds
+    __asm push	es
+    __asm pop	ds
+    __asm pop	es
 lbl_mvlp:
-    asm lodsb
-    asm stosb
-    asm or al,al
-    asm jnz lbl_mvlp
-    asm pop ds
-    asm sti
-    asm sub eax,eax
-    asm inc eax
-    asm jmp	lbl_exit
+    __asm lodsb
+    __asm stosb
+    __asm or al,al
+    __asm jnz lbl_mvlp
+    __asm pop ds
+    __asm sti
+    __asm sub eax,eax
+    __asm inc eax
+    __asm jmp	lbl_exit
 lbl_errenv:
-    asm sub	eax,eax
-    asm jmp	lbl_exit
+    __asm sub	eax,eax
+    __asm jmp	lbl_exit
     
 
 lbl_count:
-    asm sub	eax,eax			/* set up for scan */
-    asm mov 	edi,eax
-    asm mov 	ecx,-1
-    asm mov edx,eax
+    __asm sub	eax,eax			/* set up for scan */
+    __asm mov 	edi,eax
+    __asm mov 	ecx,-1
+    __asm mov edx,eax
 lbl_lp:
-    asm inc edx
-    asm repnz	scasb			/* scan for end of environment */
-    asm test	byte ptr es:[edi],0xff
-    asm jnz 	lbl_lp
+    __asm inc edx
+    __asm repnz	scasb			/* scan for end of environment */
+    __asm test	byte ptr es:[edi],0xff
+    __asm jnz 	lbl_lp
 lbl_noenv:
-    asm mov eax,edx
+    __asm mov eax,edx
 lbl_exit:
-    asm pop es
-    asm pop ebx
-    asm pop edi
-    asm pop esi
-    asm mov [answer],eax
+    __asm pop es
+    __asm pop ebx
+    __asm pop edi
+    __asm pop esi
+    __asm mov [answer],eax
     return answer;
 }	

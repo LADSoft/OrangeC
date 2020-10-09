@@ -21,7 +21,7 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
  */
-
+#include <windows.h>
 #include <stdio.h>
 #include <malloc.h>
 #include <string.h>
@@ -1009,7 +1009,7 @@ void OutputIntermediate(SharedMemory* mem)
     sharedRegion = mem;
     streamPointer = sharedRegion->GetMapping();
     if (!streamPointer)
-        Utils::fatal("OutputIntermediate: could not map the shared region");
+        Utils::fatal("OutputIntermediate: could not map the shared region, error=%d", GetLastError());
     textRegion.clear();
     textOffset = 1;
     cachedText.clear();

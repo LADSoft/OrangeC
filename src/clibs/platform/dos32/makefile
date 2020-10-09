@@ -40,6 +40,10 @@ export SHELL
 
 $(eval $(ALLDIRS))
 
+format:
+	$(MAKE) -Cle format
+	$(MAKE) -Crtl format
+
 DISTRIBUTE:
 	$(MAKE) -Cle DISTRIBUTE
 	$(MAKE) -Cpm DISTRIBUTE

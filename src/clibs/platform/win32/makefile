@@ -61,6 +61,16 @@ else
 	$(MAKE) -Cpels
 endif
 
+format:
+	$(MAKE) -Clsdbghelper format
+	$(MAKE) -Coccil format
+	$(MAKE) -Cpe format
+	$(MAKE) -Cmsvcrdm format
+	$(MAKE) -Ccrtdmain format
+	$(MAKE) -Clscrtl format
+	$(MAKE) -Cpels format
+	$(MAKE) -Cwininc format
+
 DISTRIBUTE:
 	$(MAKE) -Cpe DISTRIBUTE
 	$(MAKE) -Cpels DISTRIBUTE

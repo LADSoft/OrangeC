@@ -33,11 +33,15 @@
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
 
+H_FILES = $(wildcard *.h)
+C_DEPENDENCIES = $(wildcard *.c)
+
 SHELL=cmd.exe
 
 RCFILE=lscrtl
 
 all: .\c0dll.o .\lscrtl.dll
+$(eval $(FORMATTER))
 
 ifneq ($(shell type makefile),)
 B = /b

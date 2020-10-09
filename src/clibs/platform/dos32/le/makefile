@@ -35,10 +35,13 @@
 
 SHELL=cmd.exe
 
-C_DEPENDENCIES = $(wildcard *.c)
 C_FLAGS=/O-E
 ASM_DEPENDENCIES = $(wildcard c0*.nas) c0watd.o c0hxd.o
+C_DEPENDENCIES = $(wildcard *.c)
+H_FILES = $(wildcard *.h)
+
 all: $(DEPENDENCIES)
+$(eval $(FORMATTER))
 
 c0.o: c0.c
 	$(CC) /c $(STDINCLUDE) $(CFLAGS) /s16 -o$(DOSOBJECT)\$@ $^

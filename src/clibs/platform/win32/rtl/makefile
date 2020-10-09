@@ -34,6 +34,7 @@
 # 
 
 ASM_DEPENDENCIES = $(wildcard 386/*.nas)
+H_FILES = $(wildcard *.h)
 C_DEPENDENCIES = $(wildcard *.c)
 CPP_DEPENDENCIES = $(wildcard *.cpp)
 
@@ -42,6 +43,7 @@ EXCLUDE = profilew.o proftmw.o profile.o
 endif
 
 all: $(DEPENDENCIES)
+$(FORMATTER)
 
 profilew.o: profilew.c
 	$(CC) /! /c $(STDINCLUDE) /9 -o$(OBJECT)\$@ $^

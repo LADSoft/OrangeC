@@ -33,10 +33,7 @@
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
 
-ASM_DEPENDENCIES = $(wildcard 386/*.nas)
-C_DEPENDENCIES = $(wildcard *.c)
-CIL_DEPENDENCIES = $(wildcard *.c) $(wildcard cil/*.c)
 H_FILES=$(wildcard *.h)
 
-all: $(DEPENDENCIES)
-format: # we don't format anything in this directory as it is code from others
+format: $(FORMAT_DEPENDENCIES)
+	$(MAKE) /Csys

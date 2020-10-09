@@ -37,7 +37,11 @@ SHELL=cmd.exe
 
 EXCLUDE := $(EXCLUDE) msvcrt.l
 
+H_FILES = $(wildcard *.h)
+C_DEPENDENCIES = $(wildcard *.c)
+
 all: $(DEPENDENCIES) msvcrt.l
+$(eval $(FORMATTER))
 
 .\msvcrdm.o: msvcrdm.c
 	$(CC) /c $(CFLAGS) $(STDINCLUDE) -o$@ $^

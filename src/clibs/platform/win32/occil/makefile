@@ -32,8 +32,11 @@
 #     contact information:
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
+H_FILES = $(wildcard *.h)
+C_DEPENDENCIES = $(wildcard *.c)
 
 all:    lsmsilcrtl.dll occmsil.dll
+$(eval $(FORMATTER))
 
 occmsil.dll:
 	-del occmsil.dll

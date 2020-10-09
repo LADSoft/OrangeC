@@ -35,11 +35,12 @@
 
 SHELL=cmd.exe
 
+H_FILES = $(wildcard *.h)
 C_DEPENDENCIES = $(wildcard *.c)
 ASM_DEPENDENCIES = $(wildcard c0*.nas)
-all: $(DEPENDENCIES)
 
 all: $(DEPENDENCIES) dfstb32.exe
+$(eval $(FORMATTER))
 
 c0.o: c0.c
 	$(CC) $(STDINCLUDE) /c $(CFLAGS) /s16 -o$(WINOBJECT)\$@ $^

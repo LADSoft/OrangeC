@@ -32,10 +32,11 @@
 #     contact information:
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
-
 C_DEPENDENCIES = $(wildcard *.c)
 CIL_DEPENDENCIES = $(wildcard cil/*.c)
+H_FILES=$(wildcard *.h)
 
 EXCLUDE = farmems.o farmem.o malloc.o thunk.o
 
 all: $(DEPENDENCIES)
+format: # we don't format anything in this directory because it is code off the web

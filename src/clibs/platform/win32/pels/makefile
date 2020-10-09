@@ -35,10 +35,12 @@
 
 SHELL=cmd.exe
 
+H_FILES = $(wildcard *.h)
 C_DEPENDENCIES = $(wildcard *.c)
 ASM_DEPENDENCIES = $(wildcard c0*.nas)
 
 all: $(DEPENDENCIES) mklib
+$(eval $(FORMATTER))
 
 mklib: c0lsstartup.o
 	$(LIB) $(LIBFLAGS) $(LSCRTLOBJECT)\lscrtl.l +- .\c0lsstartup.o $(CLIBOBJECT)\srproc.o $(WINOBJECT)\dllmain.o

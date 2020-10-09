@@ -36,8 +36,10 @@
 SHELL=cmd.exe
 
 C_DEPENDENCIES = $(wildcard *.c)
+H_FILES = $(wildcard *.h)
 
 all: $(DEPENDENCIES)
+$(eval $(FORMATTER))
 
 srproc.o: srproc.c
 	$(CC) /c $(STDINCLUDE) $(CFLAGS) /s16 -o$(CLIBOBJECT)\$@ $^

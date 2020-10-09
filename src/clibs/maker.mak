@@ -83,6 +83,19 @@ CXXFLAGS := $(CCFLAGS)
 %.ilo: %.c
 	occil -N$(OCCIL_CLASS) /1 /c /WcMn $(CILCFLAGS) $(STDINCLUDE) -o$(CILOBJECT)\$@ $(subst /,\,$^)
 
+%.xcppf: %.cpp
+	clang-format -style=file $< > $@
+	copy $@ $<
+
+%.xcf: %.c
+	clang-format -style=file $< > $@
+	copy $@ $<
+
+%.xhf: %.h
+	clang-format -style=file $< > $@
+	copy $@ $<
+
+
 C_deps = $(notdir $(C_DEPENDENCIES:.c=.o))
 ASM_deps = $(notdir $(ASM_DEPENDENCIES:.nas=.o))
 CPP_deps = $(notdir $(CPP_DEPENDENCIES:.cpp=.o))
@@ -90,11 +103,15 @@ ifdef LSMSILCRTL
 CIL_DEPS = $(notdir $(CIL_DEPENDENCIES:.c=.ilo))
 endif
 DEPENDENCIES = $(filter-out $(EXCLUDE), $(C_deps) $(ASM_deps) $(CPP_deps) $(CIL_DEPS))
+FORMAT_DEPENDENCIES=$(H_FILES:.h=.xhf) $(CPP_DEPENDENCIES:.cpp=.xcppf) $(C_DEPENDENCIES:.c=.xcf)
 
 define SUFFIXDIRS =
         $(foreach dir, $(1), $(dir)$(2))
 endef
 
+define FORMATTER =
+format: $$(FORMAT_DEPENDENCIES)
+endef
 
 define ALLDIRS =
 C_DIRS = $$(call SUFFIXDIRS,$(DIRS),.dirs)

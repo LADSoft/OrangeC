@@ -1,4 +1,4 @@
-/* 
+/*
    prmsg.h
 
    Base definitions
@@ -11,7 +11,7 @@
    modify it under the terms of the GNU Library General Public
    License as published by the Free Software Foundation; either
    version 2 of the License, or (at your option) any later version.
-   
+
    This library is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
@@ -19,16 +19,16 @@
 
    If you are interested in a warranty or support for this source code,
    contact Scott Christley <scottc@net-community.com> for more information.
-   
+
    You should have received a copy of the GNU Library General Public
    License along with this library; see the file COPYING.LIB.
-   If not, write to the Free Software Foundation, 
+   If not, write to the Free Software Foundation,
    59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 
    -----------
    DAL 2003 - this file modified extensively for my compiler.  New
    definitionswnwn added as well.
-*/ 
+*/
 #define PSM_ADDPAGE (1127)
 #define PSM_APPLY (1134)
 #define PSM_CANCELTOCLOSE (1131)
@@ -64,15 +64,15 @@
 #define PSM_UNCHANGED (1133)
 
 #ifdef UNICODE
-#define PSM_SETFINISHTEXT PSM_SETFINISHTEXTW
-#define PSM_SETHEADERSUBTITLE PSM_SETHEADERSUBTITLEW
-#define PSM_SETHEADERTITLE PSM_SETHEADERTITLEW
-#define PSM_SETTITLE PSM_SETTITLEW
+#    define PSM_SETFINISHTEXT PSM_SETFINISHTEXTW
+#    define PSM_SETHEADERSUBTITLE PSM_SETHEADERSUBTITLEW
+#    define PSM_SETHEADERTITLE PSM_SETHEADERTITLEW
+#    define PSM_SETTITLE PSM_SETTITLEW
 #else
-#define PSM_SETFINISHTEXT PSM_SETFINISHTEXTA
-#define PSM_SETHEADERSUBTITLE PSM_SETHEADERSUBTITLEA
-#define PSM_SETHEADERTITLE PSM_SETHEADERTITLEA
-#define PSM_SETTITLE PSM_SETTITLEA
+#    define PSM_SETFINISHTEXT PSM_SETFINISHTEXTA
+#    define PSM_SETHEADERSUBTITLE PSM_SETHEADERSUBTITLEA
+#    define PSM_SETHEADERTITLE PSM_SETHEADERTITLEA
+#    define PSM_SETTITLE PSM_SETTITLEA
 #endif
 
 #define PSN_APPLY (-202)

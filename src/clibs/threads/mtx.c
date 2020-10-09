@@ -12,79 +12,78 @@
 #include <stdlib.h>
 #include "libp.h"
 
-extern int __thrd_rel_delay(const struct timespec *xt);
+extern int __thrd_rel_delay(const struct timespec* xt);
 
-typedef struct _tlist {
-    struct _tlist *next;
+typedef struct _tlist
+{
+    struct _tlist* next;
     thrd_t thrd;
-} tlist ;
+} tlist;
 
-#define MTX_SIG 0x58544d5e // "_MTX"
+#define MTX_SIG 0x58544d5e  // "_MTX"
 typedef struct
 {
     int sig;
     int mode;
-    tlist *owners;
+    tlist* owners;
     long long handle;
 } imtx;
 struct mlist
 {
-    struct mlist *next;
+    struct mlist* next;
     mtx_t mtx;
-} *mtxs;
+} * mtxs;
 static void remove_thrd(mtx_t mtx, thrd_t thrd)
 {
-   tlist **cur = &(((imtx *)mtx)->owners);
-   while (*cur)
-   {       
-       if (thrd == (*cur)->thrd)
-       {
-           tlist *toremove = *cur;
-           *cur = (*cur)->next;
-           free(toremove);
-       }
-       else
-       {
-           cur = &(*cur)->next;
-       }
-   }
+    tlist** cur = &(((imtx*)mtx)->owners);
+    while (*cur)
+    {
+        if (thrd == (*cur)->thrd)
+        {
+            tlist* toremove = *cur;
+            *cur = (*cur)->next;
+            free(toremove);
+        }
+        else
+        {
+            cur = &(*cur)->next;
+        }
+    }
 }
 void __mtx_remove_thrd(thrd_t thrd)
 {
-    struct mlist *cur = mtxs;
+    struct mlist* cur = mtxs;
     while (cur)
     {
         remove_thrd(cur->mtx, thrd);
         cur = cur->next;
     }
 }
-int __mtxThisThread(mtx_t *mtx)
+int __mtxThisThread(mtx_t* mtx)
 {
-    imtx *p = (imtx *)*mtx;
+    imtx* p = (imtx*)*mtx;
     __ll_enter_critical();
     if (p->sig == MTX_SIG)
     {
         if (p->owners && p->owners->thrd == __getRtlData()->thrd_id)
         {
-             __ll_exit_critical();
+            __ll_exit_critical();
             return thrd_success;
         }
         __ll_exit_critical();
         return thrd_busy;
-    
-        
     }
     __ll_exit_critical();
     return thrd_error;
 }
-void    _RTL_FUNC mtx_destroy(mtx_t *mtx)
+void _RTL_FUNC mtx_destroy(mtx_t* mtx)
 {
-    imtx *p = (imtx *)*mtx;
+    imtx* p = (imtx*)*mtx;
     __ll_enter_critical();
     if (p->sig == MTX_SIG)
     {
-        struct mlist **mcur = &mtxs;
-        struct mlist *tofree = NULL;
+        struct mlist** mcur = &mtxs;
+        struct mlist* tofree = NULL;
         while (*mcur)
         {
             if ((*mcur)->mtx == mtx)
@@ -97,24 +96,24 @@ void    _RTL_FUNC mtx_destroy(mtx_t *mtx)
         }
         if (tofree)
             free(tofree);
-        tlist *cur = p->owners;
+        tlist* cur = p->owners;
         while (cur)
         {
-            tlist *next = cur->next;
+            tlist* next = cur->next;
             free(cur);
             cur = next;
         }
         __ll_mtxFree(p->handle);
         p->sig = 0;
-        
+
         free(p);
     }
     __ll_exit_critical();
 }
-int     _RTL_FUNC mtx_init(mtx_t *mtx, int type)
+int _RTL_FUNC mtx_init(mtx_t* mtx, int type)
 {
-    imtx *p = calloc(1, sizeof(imtx));
-    struct mlist *x = calloc(1, sizeof(struct mlist));
+    imtx* p = calloc(1, sizeof(imtx));
+    struct mlist* x = calloc(1, sizeof(struct mlist));
     if (p && x)
     {
         if ((p->handle = __ll_mtxAlloc()) != 0)
@@ -125,7 +124,7 @@ int     _RTL_FUNC mtx_init(mtx_t *mtx, int type)
             x->mtx = (mtx_t)p;
             x->next = mtxs;
             mtxs = x;
-            return thrd_success;    
+            return thrd_success;
         }
         free(p);
         free(x);
@@ -135,10 +134,10 @@ int     _RTL_FUNC mtx_init(mtx_t *mtx, int type)
     free(x);
     return thrd_nomem;
 }
-static int isAvailable(imtx *mtx)
+static int isAvailable(imtx* mtx)
 {
-    thrd_t *me = (thrd_t *)__getRtlData()->thrd_id;
-    tlist *cur = mtx->owners;
+    thrd_t* me = (thrd_t*)__getRtlData()->thrd_id;
+    tlist* cur = mtx->owners;
     if (!(mtx->mode & mtx_recursive))
     {
         while (cur)
@@ -150,18 +149,18 @@ static int isAvailable(imtx *mtx)
     }
     return 1;
 }
-int     _RTL_FUNC mtx_timedlock(mtx_t *mtx, const struct timespec *xt)
+int _RTL_FUNC mtx_timedlock(mtx_t* mtx, const struct timespec* xt)
 {
-    imtx *p = (imtx *)*mtx;
+    imtx* p = (imtx*)*mtx;
     __ll_enter_critical();
-    if (p->sig == MTX_SIG && (xt == (void *)-1 || (xt != (void *)-1 && (p->mode == mtx_try || xt != NULL && p->mode == mtx_timed))))
+    if (p->sig == MTX_SIG && (xt == (void*)-1 || (xt != (void*)-1 && (p->mode == mtx_try || xt != NULL && p->mode == mtx_timed))))
     {
         if (isAvailable(p))
         {
             int t;
             if (xt == NULL)
                 t = 0;
-            else if (xt == (void *)-1)
+            else if (xt == (void*)-1)
                 t = -1;
             else
             {
@@ -172,7 +171,7 @@ int     _RTL_FUNC mtx_timedlock(mtx_t *mtx, const struct timespec *xt)
                     return thrd_error;
                 }
             }
-            tlist *x = calloc(1, sizeof(tlist));
+            tlist* x = calloc(1, sizeof(tlist));
             if (x)
             {
                 __ll_exit_critical();
@@ -189,7 +188,7 @@ int     _RTL_FUNC mtx_timedlock(mtx_t *mtx, const struct timespec *xt)
                             return thrd_success;
                         }
                         free(x);
-                         __ll_exit_critical();
+                        __ll_exit_critical();
                         return thrd_error;
                     case 0:
                         __ll_enter_critical();
@@ -201,7 +200,6 @@ int     _RTL_FUNC mtx_timedlock(mtx_t *mtx, const struct timespec *xt)
                                 return thrd_busy;
                             else
                                 return thrd_timeout;
-                            
                         }
                         __ll_exit_critical();
                         // fall through
@@ -219,29 +217,23 @@ int     _RTL_FUNC mtx_timedlock(mtx_t *mtx, const struct timespec *xt)
     __ll_exit_critical();
     return thrd_error;
 }
-int     _RTL_FUNC mtx_lock(mtx_t *mtx)
+int _RTL_FUNC mtx_lock(mtx_t* mtx) { return mtx_timedlock(mtx, (void*)-1); }
+int _RTL_FUNC mtx_trylock(mtx_t* mtx) { return mtx_timedlock(mtx, 0); }
+int _RTL_FUNC mtx_unlock(mtx_t* mtx)
 {
-    return mtx_timedlock(mtx, (void *)-1);
-}
-int     _RTL_FUNC mtx_trylock(mtx_t *mtx)
-{
-    return mtx_timedlock(mtx, 0);
-}
-int     _RTL_FUNC mtx_unlock(mtx_t *mtx)
-{
-    imtx *p = (imtx *)*mtx;
+    imtx* p = (imtx*)*mtx;
     __ll_enter_critical();
     if (p->sig == MTX_SIG)
     {
-       if (p->owners && p->owners->thrd == __getRtlData()->thrd_id)
-       {
-           tlist *x = p->owners;
-           p->owners = p->owners->next;
-           free(x);
-           __ll_exit_critical();
-           __ll_mtxRelease(p->handle);
-           return thrd_success;
-       }
+        if (p->owners && p->owners->thrd == __getRtlData()->thrd_id)
+        {
+            tlist* x = p->owners;
+            p->owners = p->owners->next;
+            free(x);
+            __ll_exit_critical();
+            __ll_mtxRelease(p->handle);
+            return thrd_success;
+        }
     }
     __ll_exit_critical();
     return thrd_error;

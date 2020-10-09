@@ -70,6 +70,7 @@ format:
 	$(MAKE) -Clscrtl format
 	$(MAKE) -Cpels format
 	$(MAKE) -Cwininc format
+	$(MAKE) -Crtl format
 
 DISTRIBUTE:
 	$(MAKE) -Cpe DISTRIBUTE

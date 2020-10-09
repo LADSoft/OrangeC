@@ -496,8 +496,8 @@ __declspec(dllexport) void CALLBACK StackTrace(char* text, char* prog, PCONTEXT 
     if (regs->Eip < 0x80000000)
     {
         sprintf(buf + strlen(buf), "\n\nCS:EIP  ");
-        for (int i=0; i < 16; i++)
-            sprintf(buf + strlen(buf), "%02X ", ((unsigned char *)regs->Eip)[i]);
+        for (int i = 0; i < 16; i++)
+            sprintf(buf + strlen(buf), "%02X ", ((unsigned char*)regs->Eip)[i]);
     }
     sprintf(buf + strlen(buf), "\n");
 

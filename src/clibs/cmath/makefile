@@ -39,4 +39,4 @@ CIL_DEPENDENCIES = $(wildcard cil/*.c)
 H_FILES=$(wildcard *.h)
 
 all: $(DEPENDENCIES)
-$(eval $(FORMATTER))
+format: # don't format this, external code

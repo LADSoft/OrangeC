@@ -2,33 +2,33 @@
 
 typedef enum tagTextMode
 {
-    TM_PLAINTEXT			= 1,
-    TM_RICHTEXT				= 2,
-    TM_SINGLELEVELUNDO		= 4,
-    TM_MULTILEVELUNDO		= 8,
-    TM_SINGLECODEPAGE		= 16,
-    TM_MULTICODEPAGE		= 32
+    TM_PLAINTEXT = 1,
+    TM_RICHTEXT = 2,
+    TM_SINGLELEVELUNDO = 4,
+    TM_MULTILEVELUNDO = 8,
+    TM_SINGLECODEPAGE = 16,
+    TM_MULTICODEPAGE = 32
 } TEXTMODE;
 
-typedef LONG (*EDITWORDBREAKPROCEX)(char *pchText, LONG cchText, BYTE bCharSet, INT action);
+typedef LONG (*EDITWORDBREAKPROCEX)(char* pchText, LONG cchText, BYTE bCharSet, INT action);
 
 typedef struct _charformat
 {
-    UINT		cbSize;
-    DWORD		dwMask;
-    DWORD		dwEffects;
-    LONG		yHeight;
-    LONG		yOffset;
-    COLORREF	crTextColor;
-    BYTE		bCharSet;
-    BYTE		bPitchAndFamily;
-    BCHAR		szFaceName[LF_FACESIZE];
+    UINT cbSize;
+    DWORD dwMask;
+    DWORD dwEffects;
+    LONG yHeight;
+    LONG yOffset;
+    COLORREF crTextColor;
+    BYTE bCharSet;
+    BYTE bPitchAndFamily;
+    BCHAR szFaceName[LF_FACESIZE];
 } CHARFORMAT;
 
 typedef struct _charrange
 {
-    LONG	cpMin;
-    LONG	cpMax;
+    LONG cpMin;
+    LONG cpMax;
 } CHARRANGE;
 
 typedef struct _textrange
@@ -37,15 +37,14 @@ typedef struct _textrange
     LPTSTR lpstrText;
 } TEXTRANGE;
 
-typedef DWORD (CALLBACK *EDITSTREAMCALLBACK)(DWORD_PTR dwCookie, LPBYTE pbBuff, LONG cb, LONG *pcb);
+typedef DWORD(CALLBACK* EDITSTREAMCALLBACK)(DWORD_PTR dwCookie, LPBYTE pbBuff, LONG cb, LONG* pcb);
 
 typedef struct _editstream
 {
     DWORD_PTR dwCookie;
-    DWORD	  dwError;
+    DWORD dwError;
     EDITSTREAMCALLBACK pfnCallback;
 } EDITSTREAM;
-
 
 typedef struct _findtext
 {
@@ -53,14 +52,12 @@ typedef struct _findtext
     LPCTSTR lpstrText;
 } FINDTEXT;
 
-
 typedef struct _findtextex
 {
     CHARRANGE chrg;
-    LPCTSTR	  lpstrText;
+    LPCTSTR lpstrText;
     CHARRANGE chrgText;
 } FINDTEXTEX;
-
 
 typedef struct _formatrange
 {
@@ -73,79 +70,78 @@ typedef struct _formatrange
 
 typedef struct _paraformat
 {
-    UINT	cbSize;
-    DWORD	dwMask;
-    WORD	wNumbering;
-    WORD	wEffects;
-    LONG	dxStartIndent;
-    LONG	dxRightIndent;
-    LONG	dxOffset;
-    WORD	wAlignment;
-    SHORT	cTabCount;
-    LONG	rgxTabs[MAX_TAB_STOPS];
+    UINT cbSize;
+    DWORD dwMask;
+    WORD wNumbering;
+    WORD wEffects;
+    LONG dxStartIndent;
+    LONG dxRightIndent;
+    LONG dxOffset;
+    WORD wAlignment;
+    SHORT cTabCount;
+    LONG rgxTabs[MAX_TAB_STOPS];
 } PARAFORMAT;
 
 typedef struct _charformat2
 {
-    UINT		cbSize;
-    DWORD		dwMask;
-    DWORD		dwEffects;
-    LONG		yHeight;
-    LONG		yOffset;			
-    COLORREF	crTextColor;
-    BYTE		bCharSet;
-    BYTE		bPitchAndFamily;
-    BCHAR		szFaceName[LF_FACESIZE];
-    WORD		wWeight;			
-    SHORT		sSpacing;			
-    COLORREF	crBackColor;		
-    LCID		lcid;				
-    DWORD		dwReserved;			
-    SHORT		sStyle;				
-    WORD		wKerning;			
-    BYTE		bUnderlineType;		
-    BYTE		bAnimation;			
-    BYTE		bRevAuthor;			
-    BYTE		bReserved1;
+    UINT cbSize;
+    DWORD dwMask;
+    DWORD dwEffects;
+    LONG yHeight;
+    LONG yOffset;
+    COLORREF crTextColor;
+    BYTE bCharSet;
+    BYTE bPitchAndFamily;
+    BCHAR szFaceName[LF_FACESIZE];
+    WORD wWeight;
+    SHORT sSpacing;
+    COLORREF crBackColor;
+    LCID lcid;
+    DWORD dwReserved;
+    SHORT sStyle;
+    WORD wKerning;
+    BYTE bUnderlineType;
+    BYTE bAnimation;
+    BYTE bRevAuthor;
+    BYTE bReserved1;
 } CHARFORMAT2;
 
-#define CHARFORMATDELTA		(sizeof(CHARFORMAT2) - sizeof(CHARFORMAT))
-
+#define CHARFORMATDELTA (sizeof(CHARFORMAT2) - sizeof(CHARFORMAT))
 
 typedef struct _paraformat2
 {
-    UINT	cbSize;
-    DWORD	dwMask;
-    WORD	wNumbering;
-    WORD	wReserved;
-    LONG	dxStartIndent;
-    LONG	dxRightIndent;
-    LONG	dxOffset;
-    WORD	wAlignment;
-    SHORT	cTabCount;
-    LONG	rgxTabs[MAX_TAB_STOPS];
-     LONG	dySpaceBefore;			
-    LONG	dySpaceAfter;			
-    LONG	dyLineSpacing;			
-    SHORT	sStyle;					
-    BYTE	bLineSpacingRule;		
-    BYTE	bOutlineLevel;			
-    WORD	wShadingWeight;			
-    WORD	wShadingStyle;			
-    WORD	wNumberingStart;		
-    WORD	wNumberingStyle;		
-    WORD	wNumberingTab;			
-    WORD	wBorderSpace;			
-    WORD	wBorderWidth;			
-    WORD	wBorders;				
+    UINT cbSize;
+    DWORD dwMask;
+    WORD wNumbering;
+    WORD wReserved;
+    LONG dxStartIndent;
+    LONG dxRightIndent;
+    LONG dxOffset;
+    WORD wAlignment;
+    SHORT cTabCount;
+    LONG rgxTabs[MAX_TAB_STOPS];
+    LONG dySpaceBefore;
+    LONG dySpaceAfter;
+    LONG dyLineSpacing;
+    SHORT sStyle;
+    BYTE bLineSpacingRule;
+    BYTE bOutlineLevel;
+    WORD wShadingWeight;
+    WORD wShadingStyle;
+    WORD wNumberingStart;
+    WORD wNumberingStyle;
+    WORD wNumberingTab;
+    WORD wBorderSpace;
+    WORD wBorderWidth;
+    WORD wBorders;
 } PARAFORMAT2;
 
 typedef struct _msgfilter
 {
-    NMHDR	nmhdr;
-    UINT	msg;
-    WPARAM	wParam;
-    LPARAM	lParam;
+    NMHDR nmhdr;
+    UINT msg;
+    WPARAM wParam;
+    LPARAM lParam;
 } MSGFILTER;
 
 typedef struct _reqresize
@@ -197,7 +193,7 @@ typedef struct _objectpositions
 {
     NMHDR nmhdr;
     LONG cObjectCount;
-    LONG *pcpPositions;
+    LONG* pcpPositions;
 } OBJECTPOSITIONS;
 
 typedef struct _enlink
@@ -218,8 +214,8 @@ typedef struct _encorrecttext
 
 typedef struct _punctuation
 {
-    UINT	iSize;
-    LPSTR	szPunctuation;
+    UINT iSize;
+    LPSTR szPunctuation;
 } PUNCTUATION;
 
 typedef struct _compcolor
@@ -227,51 +223,50 @@ typedef struct _compcolor
     COLORREF crText;
     COLORREF crBackground;
     DWORD dwEffects;
-}COMPCOLOR;
+} COMPCOLOR;
 
 typedef struct _repastespecial
 {
-    DWORD		dwAspect;
-    DWORD_PTR	dwParam;
+    DWORD dwAspect;
+    DWORD_PTR dwParam;
 } REPASTESPECIAL;
 
 typedef enum _undonameid
 {
-    UID_UNKNOWN     = 0,
-    UID_TYPING		= 1,
-    UID_DELETE 		= 2,
-    UID_DRAGDROP	= 3,
-    UID_CUT			= 4,
-    UID_PASTE		= 5
+    UID_UNKNOWN = 0,
+    UID_TYPING = 1,
+    UID_DELETE = 2,
+    UID_DRAGDROP = 3,
+    UID_CUT = 4,
+    UID_PASTE = 5
 } UNDONAMEID;
 
 typedef struct _settextex
 {
-    DWORD	flags;
-    UINT	codepage;
+    DWORD flags;
+    UINT codepage;
 } SETTEXTEX;
 
 typedef struct _gettextex
 {
-    DWORD	cb;
-    DWORD	flags;
-    UINT	codepage;
-    LPCSTR	lpDefaultChar;
-    LPBOOL	lpUsedDefChar;
+    DWORD cb;
+    DWORD flags;
+    UINT codepage;
+    LPCSTR lpDefaultChar;
+    LPBOOL lpUsedDefChar;
 } GETTEXTEX;
 
 typedef struct _gettextlengthex
 {
-    DWORD	flags;			
-    UINT	codepage;		
+    DWORD flags;
+    UINT codepage;
 } GETTEXTLENGTHEX;
-    
 
 typedef struct _bidioptions
 {
-    UINT	cbSize;
-    WORD	wMask;
-    WORD	wEffects; 
+    UINT cbSize;
+    WORD wMask;
+    WORD wEffects;
 } BIDIOPTIONS;
 
 #pragma pack()

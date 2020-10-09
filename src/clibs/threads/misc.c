@@ -10,7 +10,7 @@
 #include <sys\timeb.h>
 #include "libp.h"
 
-void    _RTL_FUNC call_once(once_flag *flag, void (*func)(void))
+void _RTL_FUNC call_once(once_flag* flag, void (*func)(void))
 {
     __ll_enter_critical();
     if (!flag->called)
@@ -24,7 +24,7 @@ void    _RTL_FUNC call_once(once_flag *flag, void (*func)(void))
         __ll_exit_critical();
     }
 }
-int     _RTL_FUNC timespec_get(struct timespec *xt, int base)
+int _RTL_FUNC timespec_get(struct timespec* xt, int base)
 {
     if (base == TIME_UTC)
     {
@@ -34,5 +34,5 @@ int     _RTL_FUNC timespec_get(struct timespec *xt, int base)
         xt->sec = tb.time;
         return base;
     }
-    return 0; // error
+    return 0;  // error
 }

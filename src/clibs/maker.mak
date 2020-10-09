@@ -103,7 +103,7 @@ ifdef LSMSILCRTL
 CIL_DEPS = $(notdir $(CIL_DEPENDENCIES:.c=.ilo))
 endif
 DEPENDENCIES = $(filter-out $(EXCLUDE), $(C_deps) $(ASM_deps) $(CPP_deps) $(CIL_DEPS))
-FORMAT_DEPENDENCIES=$(H_FILES:.h=.xhf) $(CPP_DEPENDENCIES:.cpp=.xcppf) $(C_DEPENDENCIES:.c=.xcf)
+FORMAT_DEPENDENCIES= $(filter-out $(FORMAT_EXCLUDE), $(H_FILES:.h=.xhf) $(CPP_DEPENDENCIES:.cpp=.xcppf) $(C_DEPENDENCIES:.c=.xcf))
 
 define SUFFIXDIRS =
         $(foreach dir, $(1), $(dir)$(2))

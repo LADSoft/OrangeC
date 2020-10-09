@@ -1,22 +1,22 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     As a special exception, if other files instantiate templates or
  *     use macros or inline functions from this file, or you compile
  *     this file and link it with other works to produce a work based
@@ -24,14 +24,14 @@
  *     work to be covered by the GNU General Public License. However
  *     the source code for this file must still be made available in
  *     accordance with section (3) of the GNU General Public License.
- *     
+ *
  *     This exception does not invalidate any other reasons why a work
  *     based on this file might be covered by the GNU General Public
  *     License.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 unsigned char __envlocale[] = {
@@ -270,5 +270,4 @@ unsigned char __envlocale[] = {
     "\xFE\xD0\xFE\x9E\x8A\x3F\x74\xB0\x7B\xE3\x0F\xED\x97\xF8\x43\x12"
     "\x7F\x48\x24\xFA\x72\xEF\xD1\x12\x8B\x3F\xC4\x8E\x78\xF1\x87\xB8"
     "\x4D\x30\xFE\x90\xCA\x76\xA0\xED\xBB\xD4\x95\x07\x90\xDA\x9E\xC3"
-    "\x13\xDB\xEB\xF8\x27\x05\x52\xFB\x8B\x44\x2B\xB0\xDC\x80\xF4\x7F"
-};
+    "\x13\xDB\xEB\xF8\x27\x05\x52\xFB\x8B\x44\x2B\xB0\xDC\x80\xF4\x7F"};

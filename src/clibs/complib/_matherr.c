@@ -1,22 +1,22 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     As a special exception, if other files instantiate templates or
  *     use macros or inline functions from this file, or you compile
  *     this file and link it with other works to produce a work based
@@ -24,50 +24,51 @@
  *     work to be covered by the GNU General Public License. However
  *     the source code for this file must still be made available in
  *     accordance with section (3) of the GNU General Public License.
- *     
+ *
  *     This exception does not invalidate any other reasons why a work
  *     based on this file might be covered by the GNU General Public
  *     License.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <math.h>
 #include <stdio.h>
-#define INFINITY             (0x1P+127F)
-#define NAN                  (0x1P8+127F) /* QUIET NAN */
-long double _stdcall ___matherr(const char *name, _mexcep errl)
+#define INFINITY (0x1P+127F)
+#define NAN (0x1P8 + 127F) /* QUIET NAN */
+long double _stdcall ___matherr(const char* name, _mexcep errl)
 {
     long double rv = INFINITY;
-    char *type = "Unknown";
+    char* type = "Unknown";
     int val = 0;
-    switch(errl) {
+    switch (errl)
+    {
         case DOMAIN:
-            type = "DOMAIN" ;
-            break ;
+            type = "DOMAIN";
+            break;
         case OVERFLOW:
-            type = "OVERFLOW" ;
+            type = "OVERFLOW";
             break;
         case UNDERFLOW:
             val = 1;
             rv = 0;
-            type = "UNDERFLOW" ;
+            type = "UNDERFLOW";
             break;
         case SING:
-            type = "SINGULARITY" ;
+            type = "SINGULARITY";
             rv = INFINITY;
-            break ;
+            break;
         case TLOSS:
             val = 1;
-            type = "LOSS OF PRECISION" ; /* inexact */
-            break ;
+            type = "LOSS OF PRECISION"; /* inexact */
+            break;
         case STACKFAULT:
-            type = "STACK FAULT" ; /* stack overflow */
+            type = "STACK FAULT"; /* stack overflow */
             break;
     }
-//    if (!_matherr(val))
-        printf("%s: %s error\n",name,type);
+    //    if (!_matherr(val))
+    printf("%s: %s error\n", name, type);
     return rv;
 }

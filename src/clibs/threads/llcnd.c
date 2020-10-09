@@ -1,14 +1,8 @@
 #include <windows.h>
 #include <limits.h>
 
-void __ll_cndFree(long long handle)
-{
-    CloseHandle((HANDLE)handle);    
-}
-long long __ll_cndAlloc(void)
-{
-    return (long long)CreateSemaphore(NULL, 0, INT_MAX, NULL);
-}
+void __ll_cndFree(long long handle) { CloseHandle((HANDLE)handle); }
+long long __ll_cndAlloc(void) { return (long long)CreateSemaphore(NULL, 0, INT_MAX, NULL); }
 int __ll_cndWait(long long handle, unsigned ms)
 {
     switch (WaitForSingleObject((HANDLE)handle, ms == (unsigned)-1 ? INFINITE : ms))

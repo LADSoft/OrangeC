@@ -1,23 +1,23 @@
 #ifndef _RICHEDIT_VER
-#define _RICHEDIT_VER	0x0300
+#    define _RICHEDIT_VER 0x0300
 #endif
 
-#define CF_RTF 			TEXT("Rich Text Format")
-#define CF_RTFNOOBJS 	TEXT("Rich Text Format Without Objects")
-#define CF_RETEXTOBJ 	TEXT("RichEdit Text and Objects")
+#define CF_RTF TEXT("Rich Text Format")
+#define CF_RTFNOOBJS TEXT("Rich Text Format Without Objects")
+#define CF_RETEXTOBJ TEXT("RichEdit Text and Objects")
 
 #define RICHEDIT_CLASS10A "RICHEDIT"
 #define RICHEDIT_CLASSA "RichEdit20A"
 #define RICHEDIT_CLASSW L"RichEdit20W"
 
-#if (_RICHEDIT_VER >= 0x0200 )
-#ifdef UNICODE
-#define RICHEDIT_CLASS		RICHEDIT_CLASSW
+#if (_RICHEDIT_VER >= 0x0200)
+#    ifdef UNICODE
+#        define RICHEDIT_CLASS RICHEDIT_CLASSW
+#    else
+#        define RICHEDIT_CLASS RICHEDIT_CLASSA
+#    endif
 #else
-#define RICHEDIT_CLASS		RICHEDIT_CLASSA
-#endif
-#else
-#define RICHEDIT_CLASS		RICHEDIT_CLASS10A
+#    define RICHEDIT_CLASS RICHEDIT_CLASS10A
 #endif
 
 #define BOE_CONTEXTALIGNMENT (16)
@@ -53,9 +53,9 @@
 #define CFE_UNDERLINE (4)
 
 #define CFM_ALL (CFM_EFFECTS | CFM_SIZE | CFM_FACE | CFM_OFFSET | CFM_CHARSET)
-#define CFM_ALL2	 (CFM_ALL | CFM_EFFECTS2 | CFM_BACKCOLOR | CFM_LCID \
-                    | CFM_UNDERLINETYPE | CFM_WEIGHT | CFM_REVAUTHOR \
-                    | CFM_SPACING | CFM_KERNING | CFM_STYLE | CFM_ANIMATION)
+#define CFM_ALL2                                                                                                        \
+    (CFM_ALL | CFM_EFFECTS2 | CFM_BACKCOLOR | CFM_LCID | CFM_UNDERLINETYPE | CFM_WEIGHT | CFM_REVAUTHOR | CFM_SPACING | \
+     CFM_KERNING | CFM_STYLE | CFM_ANIMATION)
 #define CFM_ALLCAPS (128)
 #define CFM_ANIMATION (262144)
 #define CFM_BACKCOLOR (67108864)
@@ -63,12 +63,10 @@
 #define CFM_CHARSET (134217728)
 #define CFM_COLOR (1073741824)
 #define CFM_DISABLED (8192)
-#define CFM_EFFECTS (CFM_BOLD | CFM_ITALIC | CFM_UNDERLINE | CFM_COLOR | \
-                     CFM_STRIKEOUT | CFE_PROTECTED | CFM_LINK)
-#define	CFM_EFFECTS2 (CFM_EFFECTS | CFM_DISABLED | CFM_SMALLCAPS | CFM_ALLCAPS \
-                    | CFM_HIDDEN  | CFM_OUTLINE | CFM_SHADOW | CFM_EMBOSS \
-                    | CFM_IMPRINT | CFM_DISABLED | CFM_REVISED \
-                    | CFM_SUBSCRIPT | CFM_SUPERSCRIPT | CFM_BACKCOLOR)
+#define CFM_EFFECTS (CFM_BOLD | CFM_ITALIC | CFM_UNDERLINE | CFM_COLOR | CFM_STRIKEOUT | CFE_PROTECTED | CFM_LINK)
+#define CFM_EFFECTS2                                                                                                               \
+    (CFM_EFFECTS | CFM_DISABLED | CFM_SMALLCAPS | CFM_ALLCAPS | CFM_HIDDEN | CFM_OUTLINE | CFM_SHADOW | CFM_EMBOSS | CFM_IMPRINT | \
+     CFM_DISABLED | CFM_REVISED | CFM_SUBSCRIPT | CFM_SUPERSCRIPT | CFM_BACKCOLOR)
 #define CFM_EMBOSS (2048)
 #define CFM_FACE (536870912)
 #define CFM_HIDDEN (256)
@@ -136,8 +134,8 @@
 #define EM_CANPASTE (1074)
 #define EM_CANREDO (1109)
 #ifndef EM_POSFROMCHAR
-#define EM_POSFROMCHAR (1062)
-#define EM_CHARFROMPOS (1063)
+#    define EM_POSFROMCHAR (1062)
+#    define EM_CHARFROMPOS (1063)
 #endif
 #define EM_CONVPOSITION (1132)
 #define EM_DISPLAYBAND (1075)
@@ -162,7 +160,7 @@
 #define EM_GETIMEOPTIONS (1131)
 #define EM_GETLANGOPTIONS (1145)
 #ifndef EM_GETLIMITTEXT
-#define EM_GETLIMITTEXT (1061)
+#    define EM_GETLIMITTEXT (1061)
 #endif
 #define EM_GETOLEINTERFACE (1084)
 #define EM_GETOPTIONS (1102)
@@ -187,7 +185,7 @@
 #define EM_REDO (1108)
 #define EM_REQUESTRESIZE (1089)
 #ifndef EM_SCROLLCARET
-#define EM_SCROLLCARET (1073)
+#    define EM_SCROLLCARET (1073)
 #endif
 #define EM_SELECTIONTYPE (1090)
 #define EM_SETBIDIOPTIONS (1224)
@@ -257,9 +255,9 @@
 
 #define ES_DISABLENOSCROLL (8192)
 #if (_RICHEDIT_VER >= 200)
-#define ES_EX_NOCALLOLEINIT (0)
+#    define ES_EX_NOCALLOLEINIT (0)
 #else
-#define ES_EX_NOCALLOLEINIT	(16777216)
+#    define ES_EX_NOCALLOLEINIT (16777216)
 #endif
 #define ES_NOIME (524288)
 #define ES_NOOLEDRAGDROP (8)
@@ -328,34 +326,32 @@
 #define PFA_RIGHT (2)
 #define PFA_SNAP_GRID (8)
 
-#define PFE_BOX (PFM_BOX	>> 16)
-#define PFE_COLLAPSED (PFM_COLLAPSED	>> 16)
-#define PFE_DONOTHYPHEN (PFM_DONOTHYPHEN >> 16) 
-#define PFE_KEEP (PFM_KEEP	>> 16) 
-#define PFE_KEEPNEXT (PFM_KEEPNEXT	>> 16) 
-#define PFE_NOLINENUMBER (PFM_NOLINENUMBER	>> 16) 
-#define PFE_NOWIDOWCONTROL (PFM_NOWIDOWCONTROL	>> 16) 
-#define PFE_OUTLINELEVEL (PFM_OUTLINELEVEL	>> 16) 
-#define PFE_PAGEBREAKBEFORE (PFM_PAGEBREAKBEFORE >> 16) 
-#define PFE_RTLPARA (PFM_RTLPARA	>> 16)
-#define PFE_SIDEBYSIDE (PFM_SIDEBYSIDE	>> 16) 
+#define PFE_BOX (PFM_BOX >> 16)
+#define PFE_COLLAPSED (PFM_COLLAPSED >> 16)
+#define PFE_DONOTHYPHEN (PFM_DONOTHYPHEN >> 16)
+#define PFE_KEEP (PFM_KEEP >> 16)
+#define PFE_KEEPNEXT (PFM_KEEPNEXT >> 16)
+#define PFE_NOLINENUMBER (PFM_NOLINENUMBER >> 16)
+#define PFE_NOWIDOWCONTROL (PFM_NOWIDOWCONTROL >> 16)
+#define PFE_OUTLINELEVEL (PFM_OUTLINELEVEL >> 16)
+#define PFE_PAGEBREAKBEFORE (PFM_PAGEBREAKBEFORE >> 16)
+#define PFE_RTLPARA (PFM_RTLPARA >> 16)
+#define PFE_SIDEBYSIDE (PFM_SIDEBYSIDE >> 16)
 #define PFE_TABLE (16384)
 
 #define PFM_ALIGNMENT (8)
-#define	PFM_ALL (PFM_STARTINDENT | PFM_RIGHTINDENT | PFM_OFFSET	| \
-                 PFM_ALIGNMENT   | PFM_TABSTOPS    | PFM_NUMBERING | \
-                 PFM_OFFSETINDENT| PFM_RTLPARA)
-#define PFM_ALL2	(PFM_ALL | PFM_EFFECTS | PFM_SPACEBEFORE | PFM_SPACEAFTER \
-                    | PFM_LINESPACING | PFM_STYLE | PFM_SHADING | PFM_BORDER \
-                    | PFM_NUMBERINGTAB | PFM_NUMBERINGSTART | PFM_NUMBERINGSTYLE)
+#define PFM_ALL \
+    (PFM_STARTINDENT | PFM_RIGHTINDENT | PFM_OFFSET | PFM_ALIGNMENT | PFM_TABSTOPS | PFM_NUMBERING | PFM_OFFSETINDENT | PFM_RTLPARA)
+#define PFM_ALL2                                                                                                         \
+    (PFM_ALL | PFM_EFFECTS | PFM_SPACEBEFORE | PFM_SPACEAFTER | PFM_LINESPACING | PFM_STYLE | PFM_SHADING | PFM_BORDER | \
+     PFM_NUMBERINGTAB | PFM_NUMBERINGSTART | PFM_NUMBERINGSTYLE)
 #define PFM_BORDER (2048)
 #define PFM_BOX (67108864)
 #define PFM_COLLAPSED (16777216)
 #define PFM_DONOTHYPHEN (4194304)
-#define PFM_EFFECTS (PFM_RTLPARA | PFM_KEEP | PFM_KEEPNEXT | PFM_TABLE \
-                    | PFM_PAGEBREAKBEFORE | PFM_NOLINENUMBER  \
-                    | PFM_NOWIDOWCONTROL | PFM_DONOTHYPHEN | PFM_SIDEBYSIDE \
-                    | PFM_TABLE)
+#define PFM_EFFECTS                                                                                                    \
+    (PFM_RTLPARA | PFM_KEEP | PFM_KEEPNEXT | PFM_TABLE | PFM_PAGEBREAKBEFORE | PFM_NOLINENUMBER | PFM_NOWIDOWCONTROL | \
+     PFM_DONOTHYPHEN | PFM_SIDEBYSIDE | PFM_TABLE)
 #define PFM_KEEP (131072)
 #define PFM_KEEPNEXT (262144)
 #define PFM_LINESPACING (256)
@@ -470,25 +466,25 @@
 #define WB_RIGHTBREAK (7)
 
 #ifndef WCH_EMBEDDING
-#define WCH_EMBEDDING WCHAR 65532
+#    define WCH_EMBEDDING WCHAR 65532
 #endif
 
 #ifndef WM_CONTEXTMENU
-#define WM_CONTEXTMENU (123)
+#    define WM_CONTEXTMENU (123)
 #endif
 #ifndef WM_NOTIFY
-#define WM_NOTIFY (78)
-#ifndef RC_INVOKED
+#    define WM_NOTIFY (78)
+#    ifndef RC_INVOKED
 typedef struct _nmhdr
 {
-    HWND	hwndFrom;
-    UINT	idFrom;
-    UINT	code;
+    HWND hwndFrom;
+    UINT idFrom;
+    UINT code;
 } NMHDR;
-#endif
+#    endif
 #endif
 #ifndef WM_PRINTCLIENT
-#define WM_PRINTCLIENT (792)
+#    define WM_PRINTCLIENT (792)
 #endif
 
 #define cchTextLimitDefault (32767)
@@ -498,5 +494,3 @@ typedef struct _nmhdr
 #define wReserved wEffects
 
 #define yHeightCharPtsMost (1638)
-
-

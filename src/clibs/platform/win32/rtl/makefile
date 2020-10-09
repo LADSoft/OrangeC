@@ -37,13 +37,14 @@ ASM_DEPENDENCIES = $(wildcard 386/*.nas)
 H_FILES = $(wildcard *.h)
 C_DEPENDENCIES = $(wildcard *.c)
 CPP_DEPENDENCIES = $(wildcard *.cpp)
+FORMAT_EXCLUDE = llfpstub.xcf
 
 ifdef BUILDING_DLL
 EXCLUDE = profilew.o proftmw.o profile.o
 endif
 
 all: $(DEPENDENCIES)
-$(FORMATTER)
+$(eval $(FORMATTER))
 
 profilew.o: profilew.c
 	$(CC) /! /c $(STDINCLUDE) /9 -o$(OBJECT)\$@ $^

@@ -11,62 +11,63 @@
 #include <stdlib.h>
 #include "libp.h"
 
-extern int __mtxThisThread(mtx_t *mtx);
-extern int __thrd_rel_delay(const struct timespec *xt);
+extern int __mtxThisThread(mtx_t* mtx);
+extern int __thrd_rel_delay(const struct timespec* xt);
 
-typedef struct _tlist {
-    struct _tlist *next;
+typedef struct _tlist
+{
+    struct _tlist* next;
     thrd_t thrd;
-} tlist ;
+} tlist;
 
-#define CND_SIG 0x444e435e // "_CND"
+#define CND_SIG 0x444e435e  // "_CND"
 typedef struct
 {
     int sig;
-    tlist *waiting;
-    tlist *tail;
+    tlist* waiting;
+    tlist* tail;
     long long handle;
 } icnd;
 
 struct clist
 {
-    struct clist *next;
+    struct clist* next;
     cnd_t cnd;
-} *conds;
+} * conds;
 static void remove_thrd(cnd_t cnd, thrd_t thrd)
 {
-   tlist **cur = &((icnd *)cnd)->waiting;
-   while (*cur)
-   {       
-       if (thrd == (*cur)->thrd)
-       {
-           tlist *toremove = *cur;
-           *cur = (*cur)->next;
-           free(toremove);
-       }
-       else
-       {
-           cur = &(*cur)->next;
-       }
-   }
+    tlist** cur = &((icnd*)cnd)->waiting;
+    while (*cur)
+    {
+        if (thrd == (*cur)->thrd)
+        {
+            tlist* toremove = *cur;
+            *cur = (*cur)->next;
+            free(toremove);
+        }
+        else
+        {
+            cur = &(*cur)->next;
+        }
+    }
 }
 void __cnd_remove_thrd(thrd_t thrd)
 {
-    struct clist *cur = conds;
+    struct clist* cur = conds;
     while (cur)
     {
         remove_thrd(cur->cnd, thrd);
         cur = cur->next;
     }
 }
-void    _RTL_FUNC cnd_destroy(cnd_t *cnd)
+void _RTL_FUNC cnd_destroy(cnd_t* cnd)
 {
-    icnd *p = (icnd *)*cnd;
+    icnd* p = (icnd*)*cnd;
     __ll_enter_critical();
     if (p->sig == CND_SIG)
     {
-        struct clist **ccur = &conds;
-        struct clist *tofree = NULL;
+        struct clist** ccur = &conds;
+        struct clist* tofree = NULL;
         while (*ccur)
         {
             if ((*ccur)->cnd == cnd)
@@ -79,24 +80,24 @@ void    _RTL_FUNC cnd_destroy(cnd_t *cnd)
         }
         if (tofree)
             free(tofree);
-        tlist *cur = p->waiting;
+        tlist* cur = p->waiting;
         while (cur)
         {
-            tlist *next = cur->next;
+            tlist* next = cur->next;
             free(cur);
             cur = next;
         }
         __ll_cndFree(p->handle);
         p->sig = 0;
-        
+
         free(p);
     }
     __ll_exit_critical();
 }
-int     _RTL_FUNC cnd_init(cnd_t *cnd)
+int _RTL_FUNC cnd_init(cnd_t* cnd)
 {
-    icnd *p = calloc(1, sizeof(icnd));
-    struct clist *x = calloc(1, sizeof(struct clist));
+    icnd* p = calloc(1, sizeof(icnd));
+    struct clist* x = calloc(1, sizeof(struct clist));
     if (p && x)
     {
         if ((p->handle = __ll_cndAlloc()) != 0)
@@ -106,7 +107,7 @@ int     _RTL_FUNC cnd_init(cnd_t *cnd)
             x->cnd = (cnd_t)p;
             x->next = conds;
             conds = x;
-            return thrd_success;    
+            return thrd_success;
         }
         free(p);
         free(x);
@@ -116,33 +117,31 @@ int     _RTL_FUNC cnd_init(cnd_t *cnd)
     free(x);
     return thrd_nomem;
 }
-int     _RTL_FUNC cnd_broadcast(cnd_t *cond)
+int _RTL_FUNC cnd_broadcast(cnd_t* cond)
 {
-    icnd *p = (icnd *)*cond;
+    icnd* p = (icnd*)*cond;
     __ll_enter_critical();
     if (p->sig == CND_SIG)
     {
         int i;
-        tlist *cur = p->waiting;
-        for (i=0; cur; i++) 
+        tlist* cur = p->waiting;
+        for (i = 0; cur; i++)
         {
             cur = cur->next;
         }
         if (i)
         {
-            __ll_cndSignal(p->handle, i);                
-            
+            __ll_cndSignal(p->handle, i);
         }
         __ll_exit_critical();
         return thrd_success;
-        
     }
     __ll_exit_critical();
     return thrd_error;
 }
-int     _RTL_FUNC cnd_signal(cnd_t *cond)
+int _RTL_FUNC cnd_signal(cnd_t* cond)
 {
-    icnd *p = (icnd *)*cond;
+    icnd* p = (icnd*)*cond;
     __ll_enter_critical();
     if (p->sig == CND_SIG)
     {
@@ -153,26 +152,26 @@ int     _RTL_FUNC cnd_signal(cnd_t *cond)
     __ll_exit_critical();
     return thrd_error;
 }
-int     _RTL_FUNC cnd_timedwait(cnd_t *cond, mtx_t *mtx, const struct timespec *xt)
+int _RTL_FUNC cnd_timedwait(cnd_t* cond, mtx_t* mtx, const struct timespec* xt)
 {
-    icnd *p = (icnd *)*cond;
+    icnd* p = (icnd*)*cond;
     __ll_enter_critical();
     if (p->sig == CND_SIG)
     {
         if (mtx_unlock(mtx) == thrd_success)
         {
-            tlist *x = calloc(1, sizeof(tlist));
+            tlist* x = calloc(1, sizeof(tlist));
             if (x)
             {
-                int rv ;
-                int t ;
+                int rv;
+                int t;
                 x->thrd = __getRtlData()->thrd_id;
                 if (p->waiting)
                     p->tail = p->tail->next = x;
                 else
                     p->waiting = p->tail = x;
-                
-                if (xt == (void *)-1)
+
+                if (xt == (void*)-1)
                     t = -1;
                 else
                 {
@@ -185,12 +184,12 @@ int     _RTL_FUNC cnd_timedwait(cnd_t *cond, mtx_t *mtx, const struct timespec *
                     }
                 }
                 __ll_exit_critical();
-                rv = __ll_cndWait(p->handle, t) ;
+                rv = __ll_cndWait(p->handle, t);
                 rv = rv == 1 ? thrd_success : rv == 0 ? thrd_timeout : thrd_error;
                 __ll_enter_critical();
                 if (p->sig == CND_SIG)
                 {
-                    tlist **cur = &p->waiting;
+                    tlist** cur = &p->waiting;
                     while (*cur)
                     {
                         if (*cur == x)
@@ -199,7 +198,7 @@ int     _RTL_FUNC cnd_timedwait(cnd_t *cond, mtx_t *mtx, const struct timespec *
                             break;
                         }
                         cur = &(*cur)->next;
-                    }                
+                    }
                     free(x);
                 }
                 else
@@ -218,14 +217,14 @@ int     _RTL_FUNC cnd_timedwait(cnd_t *cond, mtx_t *mtx, const struct timespec *
     __ll_exit_critical();
     return thrd_error;
 }
-int     _RTL_FUNC cnd_wait(cnd_t *cond, mtx_t *mtx)
+int _RTL_FUNC cnd_wait(cnd_t* cond, mtx_t* mtx)
 {
-    switch(__mtxThisThread(mtx))
+    switch (__mtxThisThread(mtx))
     {
         default:
             return thrd_error;
         case thrd_success:
-            return cnd_timedwait(cond, mtx, (struct timespec *)-1);
+            return cnd_timedwait(cond, mtx, (struct timespec*)-1);
         case thrd_busy:
             abort();
             // never gets here

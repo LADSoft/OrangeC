@@ -1,4 +1,4 @@
-/* 
+/*
    cddef.h
 
    Base definitions
@@ -11,7 +11,7 @@
    modify it under the terms of the GNU Library General Public
    License as published by the Free Software Foundation; either
    version 2 of the License, or (at your option) any later version.
-   
+
    This library is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
@@ -19,16 +19,16 @@
 
    If you are interested in a warranty or support for this source code,
    contact Scott Christley <scottc@net-community.com> for more information.
-   
+
    You should have received a copy of the GNU Library General Public
    License along with this library; see the file COPYING.LIB.
-   If not, write to the Free Software Foundation, 
+   If not, write to the Free Software Foundation,
    59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 
    -----------
    DAL 2003 - this file modified extensively for my compiler.  New
    definitionswnwn added as well.
-*/ 
+*/
 #define COLOROKSTRINGA "commdlg_ColorOK"
 #define COLOROKSTRINGW L"commdlg_ColorOK"
 
@@ -235,66 +235,66 @@
 #define WM_PSD_PAGESETUPDLG (1024)
 #define WM_PSD_YAFULLPAGERECT (1030)
 
-#define CDERR_DIALOGFAILURE   (65535)
+#define CDERR_DIALOGFAILURE (65535)
 
-#define CDERR_GENERALCODES     (0)
-#define CDERR_STRUCTSIZE       (1)
-#define CDERR_INITIALIZATION   (2)
-#define CDERR_NOTEMPLATE       (3)
-#define CDERR_NOHINSTANCE      (4)
-#define CDERR_LOADSTRFAILURE   (5)
-#define CDERR_FINDRESFAILURE   (6)
-#define CDERR_LOADRESFAILURE   (7)
-#define CDERR_LOCKRESFAILURE   (8)
-#define CDERR_MEMALLOCFAILURE  (9)
-#define CDERR_MEMLOCKFAILURE   (10)
-#define CDERR_NOHOOK           (11)
-#define CDERR_REGISTERMSGFAIL  (12)
+#define CDERR_GENERALCODES (0)
+#define CDERR_STRUCTSIZE (1)
+#define CDERR_INITIALIZATION (2)
+#define CDERR_NOTEMPLATE (3)
+#define CDERR_NOHINSTANCE (4)
+#define CDERR_LOADSTRFAILURE (5)
+#define CDERR_FINDRESFAILURE (6)
+#define CDERR_LOADRESFAILURE (7)
+#define CDERR_LOCKRESFAILURE (8)
+#define CDERR_MEMALLOCFAILURE (9)
+#define CDERR_MEMLOCKFAILURE (10)
+#define CDERR_NOHOOK (11)
+#define CDERR_REGISTERMSGFAIL (12)
 
-#define PDERR_PRINTERCODES     (4096)
-#define PDERR_SETUPFAILURE     (4097)
-#define PDERR_PARSEFAILURE     (4098)
-#define PDERR_RETDEFFAILURE    (4099)
-#define PDERR_LOADDRVFAILURE   (4100)
-#define PDERR_GETDEVMODEFAIL   (4101)
-#define PDERR_INITFAILURE      (4102)
-#define PDERR_NODEVICES        (4103)
-#define PDERR_NODEFAULTPRN     (4104)
-#define PDERR_DNDMMISMATCH     (4105)
-#define PDERR_CREATEICFAILURE  (4106)
-#define PDERR_PRINTERNOTFOUND  (4107)
+#define PDERR_PRINTERCODES (4096)
+#define PDERR_SETUPFAILURE (4097)
+#define PDERR_PARSEFAILURE (4098)
+#define PDERR_RETDEFFAILURE (4099)
+#define PDERR_LOADDRVFAILURE (4100)
+#define PDERR_GETDEVMODEFAIL (4101)
+#define PDERR_INITFAILURE (4102)
+#define PDERR_NODEVICES (4103)
+#define PDERR_NODEFAULTPRN (4104)
+#define PDERR_DNDMMISMATCH (4105)
+#define PDERR_CREATEICFAILURE (4106)
+#define PDERR_PRINTERNOTFOUND (4107)
 #define PDERR_DEFAULTDIFFERENT (4108)
 
-#define CFERR_CHOOSEFONTCODES  (8192)
-#define CFERR_NOFONTS          (8193)
-#define CFERR_MAXLESSTHANMIN   (8194)
+#define CFERR_CHOOSEFONTCODES (8192)
+#define CFERR_NOFONTS (8193)
+#define CFERR_MAXLESSTHANMIN (8194)
 
-#define FNERR_FILENAMECODES    (12288)
-#define FNERR_SUBCLASSFAILURE  (12289)
-#define FNERR_INVALIDFILENAME  (12290)
-#define FNERR_BUFFERTOOSMALL   (12291)
+#define FNERR_FILENAMECODES (12288)
+#define FNERR_SUBCLASSFAILURE (12289)
+#define FNERR_INVALIDFILENAME (12290)
+#define FNERR_BUFFERTOOSMALL (12291)
 
 #define FRERR_FINDREPLACECODES (16384)
 #define FRERR_BUFFERLENGTHZERO (16385)
 
 #define CCERR_CHOOSECOLORCODES (20480)
 
-#define _INC_COMMDLG 
+#define _INC_COMMDLG
 
 #ifdef UNICODE
-#define COLOROKSTRING COLOROKSTRINGW
-#define FILEOKSTRING FILEOKSTRINGW
-#define FINDMSGSTRING FINDMSGSTRINGW
-#define HELPMSGSTRING HELPMSGSTRINGW
-#define LBSELCHSTRING LBSELCHSTRINGW
-#define SETRGBSTRING SETRGBSTRINGW
-#define SHAREVISTRING SHAREVISTRINGW
+#    define COLOROKSTRING COLOROKSTRINGW
+#    define FILEOKSTRING FILEOKSTRINGW
+#    define FINDMSGSTRING FINDMSGSTRINGW
+#    define HELPMSGSTRING HELPMSGSTRINGW
+#    define LBSELCHSTRING LBSELCHSTRINGW
+#    define SETRGBSTRING SETRGBSTRINGW
+#    define SHAREVISTRING SHAREVISTRINGW
 #else
-#define COLOROKSTRING COLOROKSTRINGA
-#define FILEOKSTRING FILEOKSTRINGA
-#define FINDMSGSTRING FINDMSGSTRINGA
-#define HELPMSGSTRING HELPMSGSTRINGA
-#define LBSELCHSTRING LBSELCHSTRINGA
-#define SETRGBSTRING SETRGBSTRINGA
-#define SHAREVISTRING SHAREVISTRINGA
+#    define COLOROKSTRING COLOROKSTRINGA
+#    define FILEOKSTRING FILEOKSTRINGA
+#    define FINDMSGSTRING FINDMSGSTRINGA
+#    define HELPMSGSTRING HELPMSGSTRINGA
+#    define LBSELCHSTRING LBSELCHSTRINGA
+#    define SETRGBSTRING SETRGBSTRINGA
+#    define SHAREVISTRING SHAREVISTRINGA
 #endif

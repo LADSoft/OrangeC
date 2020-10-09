@@ -1,4 +1,4 @@
-/* 
+/*
    Errors.h
 
    Windows32 API error codes
@@ -13,7 +13,7 @@
    modify it under the terms of the GNU Library General Public
    License as published by the Free Software Foundation; either
    version 2 of the License, or (at your option) any later version.
-   
+
    This library is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
@@ -21,23 +21,24 @@
 
    If you are interested in a warranty or support for this source code,
    contact Scott Christley <scottc@net-community.com> for more information.
-   
+
    You should have received a copy of the GNU Library General Public
    License along with this library; see the file COPYING.LIB.
-   If not, write to the Free Software Foundation, 
+   If not, write to the Free Software Foundation,
    59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 
    -----------
    DAL 2003 - this file modified extensively for my compiler.  New
    definitionswnwn added as well.
 
-*/ 
+*/
 
 #ifndef _GNU_H_WINDOWS32_ERROR
 #define _GNU_H_WINDOWS32_ERROR
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif /* __cplusplus */
 
 #define SEVERITY_SUCCESS 0
@@ -52,22 +53,22 @@ extern "C" {
 #define FACILITY_DISPATCH 2
 
 #define SUCCEEDED(Status) ((HRESULT)(Status) >= 0)
-#define FAILED(Status) ((HRESULT)(Status)<0)
+#define FAILED(Status) ((HRESULT)(Status) < 0)
 #define IS_ERROR(Status) ((unsigned long)(Status) >> 31 == SEVERITY_ERROR)
 #define HRESULT_CODE(r) ((r)&0xFFFF)
 #define SCODE_CODE(c) ((c)&0xFFFF)
-#define HRESULT_FACILITY(r) (((r)>>16)&0x1fff)
-#define SCODE_FACILITY(c) (((c)>>16)&0x1fff)
-#define HRESULT_SEVERITY(r) (((r)>>31)&0x1)
-#define SCODE_SEVERITY(c) (((c)>>31)&0x1)
-#define MAKE_HRESULT(s,f,c) ((HRESULT)(((unsigned long)(s)<<31)|((unsigned long)(f)<<16)|((unsigned long)(c))))
-#define MAKE_SCODE(s,f,c) ((SCODE)(((unsigned long)(s)<<31)|((unsigned long)(f)<<16)|((unsigned long)(c))) )
+#define HRESULT_FACILITY(r) (((r) >> 16) & 0x1fff)
+#define SCODE_FACILITY(c) (((c) >> 16) & 0x1fff)
+#define HRESULT_SEVERITY(r) (((r) >> 31) & 0x1)
+#define SCODE_SEVERITY(c) (((c) >> 31) & 0x1)
+#define MAKE_HRESULT(s, f, c) ((HRESULT)(((unsigned long)(s) << 31) | ((unsigned long)(f) << 16) | ((unsigned long)(c))))
+#define MAKE_SCODE(s, f, c) ((SCODE)(((unsigned long)(s) << 31) | ((unsigned long)(f) << 16) | ((unsigned long)(c))))
 #define FACILITY_NT_BIT 0x10000000
-#define HRESULT_FROM_WIN32(x) (x?((HRESULT)(((x)&0x0000FFFF)|(FACILITY_WIN32<<16)|0x80000000)):0)
-#define HRESULT_FROM_NT(x) ((HRESULT)((x)|FACILITY_NT_BIT))
-#define GetScode(hr) ((SCODE) (hr))
-#define ResultFromScode(sc) ((HRESULT) (sc))
-#define PropagateResult(hrPrevious, scBase) ((HRESULT) scBase)
+#define HRESULT_FROM_WIN32(x) (x ? ((HRESULT)(((x)&0x0000FFFF) | (FACILITY_WIN32 << 16) | 0x80000000)) : 0)
+#define HRESULT_FROM_NT(x) ((HRESULT)((x) | FACILITY_NT_BIT))
+#define GetScode(hr) ((SCODE)(hr))
+#define ResultFromScode(sc) ((HRESULT)(sc))
+#define PropagateResult(hrPrevious, scBase) ((HRESULT)scBase)
 
 #define NOERROR S_OK
 #define E_UNEXPECTED ((HRESULT)0x8000FFFFL)
@@ -84,16 +85,16 @@ extern "C" {
 #define S_OK ((HRESULT)0x00000000L)
 #define S_FALSE ((HRESULT)0x00000001L)
 
-/* Numerical order */
+    /* Numerical order */
 
-#define LZERROR_UNKNOWNALG             (-8)
-#define LZERROR_BADVALUE               (-7)
-#define LZERROR_GLOBLOCK               (-6)
-#define LZERROR_GLOBALLOC              (-5)
-#define LZERROR_WRITE                  (-4)
-#define LZERROR_READ                   (-3)
-#define LZERROR_BADOUTHANDLE           (-2)
-#define LZERROR_BADINHANDLE            (-1)
+#define LZERROR_UNKNOWNALG (-8)
+#define LZERROR_BADVALUE (-7)
+#define LZERROR_GLOBLOCK (-6)
+#define LZERROR_GLOBALLOC (-5)
+#define LZERROR_WRITE (-4)
+#define LZERROR_READ (-3)
+#define LZERROR_BADOUTHANDLE (-2)
+#define LZERROR_BADINHANDLE (-1)
 
 #define ERROR_SUCCESS 0L
 #define NO_ERROR 0L
@@ -274,7 +275,7 @@ extern "C" {
 #define ERROR_INVALID_EA_NAME 254L
 #define ERROR_EA_LIST_INCONSISTENT 255L
 #ifndef WAIT_TIMEOUT /* also in winbase.h */
-#define WAIT_TIMEOUT 258L
+#    define WAIT_TIMEOUT 258L
 #endif
 #define ERROR_NO_MORE_ITEMS 259L
 #define ERROR_CANNOT_COPY 266L

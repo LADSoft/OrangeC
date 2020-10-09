@@ -1,4 +1,4 @@
-/* 
+/*
    ccdef.h
 
    Base definitions
@@ -11,7 +11,7 @@
    modify it under the terms of the GNU Library General Public
    License as published by the Free Software Foundation; either
    version 2 of the License, or (at your option) any later version.
-   
+
    This library is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
@@ -19,23 +19,23 @@
 
    If you are interested in a warranty or support for this source code,
    contact Scott Christley <scottc@net-community.com> for more information.
-   
+
    You should have received a copy of the GNU Library General Public
    License along with this library; see the file COPYING.LIB.
-   If not, write to the Free Software Foundation, 
+   If not, write to the Free Software Foundation,
    59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 
    -----------
    DAL 2003 - this file modified extensively for my compiler.  New
    definitionswnwn added as well.
-*/ 
+*/
 
-#define LPSTR_TEXTCALLBACKW   ((LPWSTR)-1L)
-#define LPSTR_TEXTCALLBACKA	((LPSTR)-1L)
+#define LPSTR_TEXTCALLBACKW ((LPWSTR)-1L)
+#define LPSTR_TEXTCALLBACKA ((LPSTR)-1L)
 #ifdef UNICODE
-#define LPSTR_TEXTCALLBACK LPSTR_TEXTCALLBACKW
+#    define LPSTR_TEXTCALLBACK LPSTR_TEXTCALLBACKW
 #else
-#define LPSTR_TEXTCALLBACK LPSTR_TEXTCALLBACKA
+#    define LPSTR_TEXTCALLBACK LPSTR_TEXTCALLBACKA
 #endif /* UNICODE */
 
 #define ANIMATE_CLASSA "SysAnimate32"
@@ -45,9 +45,9 @@
 #define DATETIMEPICK_CLASSW L"SysDateTimePick32"
 
 #ifdef UNICODE
-#define DRAGLISTMSGSTRING L"commctrl_DragListMsg"
+#    define DRAGLISTMSGSTRING L"commctrl_DragListMsg"
 #else
-#define DRAGLISTMSGSTRING "commctrl_DragListMsg"
+#    define DRAGLISTMSGSTRING "commctrl_DragListMsg"
 #endif
 
 #define HOTKEY_CLASSA "msctls_hotkey32"
@@ -102,41 +102,41 @@
 #define WC_TREEVIEWW L"SysTreeView32"
 
 #ifdef UNICODE
-#define ANIMATE_CLASS ANIMATE_CLASSW
-#define DATETIMEPICK_CLASS DATETIMEPICK_CLASSW
-#define HOTKEY_CLASS HOTKEY_CLASSW
-#define MONTHCAL_CLASS MONTHCAL_CLASSW
-#define PROGRESS_CLASS PROGRESS_CLASSW
-#define TOOLBARCLASSNAME TOOLBARCLASSNAMEW
-#define TOOLTIPS_CLASS TOOLTIPS_CLASSW
-#define TRACKBAR_CLASS TRACKBAR_CLASSW
-#define UPDOWN_CLASS UPDOWN_CLASSW
-#define WC_COMBOBOXEX WC_COMBOBOXEXW
-#define WC_HEADER WC_HEADERW
-#define WC_IPADDRESS WC_IPADDRESSW
-#define WC_LISTVIEW WC_LISTVIEWW
-#define WC_NATIVEFONTCTL WC_NATIVEFONTCTLW
-#define WC_PAGESCROLLER WC_PAGESCROLLERW
-#define WC_TABCONTROL WC_TABCONTROLW
-#define WC_TREEVIEW WC_TREEVIEWW
+#    define ANIMATE_CLASS ANIMATE_CLASSW
+#    define DATETIMEPICK_CLASS DATETIMEPICK_CLASSW
+#    define HOTKEY_CLASS HOTKEY_CLASSW
+#    define MONTHCAL_CLASS MONTHCAL_CLASSW
+#    define PROGRESS_CLASS PROGRESS_CLASSW
+#    define TOOLBARCLASSNAME TOOLBARCLASSNAMEW
+#    define TOOLTIPS_CLASS TOOLTIPS_CLASSW
+#    define TRACKBAR_CLASS TRACKBAR_CLASSW
+#    define UPDOWN_CLASS UPDOWN_CLASSW
+#    define WC_COMBOBOXEX WC_COMBOBOXEXW
+#    define WC_HEADER WC_HEADERW
+#    define WC_IPADDRESS WC_IPADDRESSW
+#    define WC_LISTVIEW WC_LISTVIEWW
+#    define WC_NATIVEFONTCTL WC_NATIVEFONTCTLW
+#    define WC_PAGESCROLLER WC_PAGESCROLLERW
+#    define WC_TABCONTROL WC_TABCONTROLW
+#    define WC_TREEVIEW WC_TREEVIEWW
 #else
-#define ANIMATE_CLASS ANIMATE_CLASSA
-#define DATETIMEPICK_CLASS DATETIMEPICK_CLASSA
-#define HOTKEY_CLASS HOTKEY_CLASSA
-#define MONTHCAL_CLASS MONTHCAL_CLASSA
-#define PROGRESS_CLASS PROGRESS_CLASSA
-#define TOOLBARCLASSNAME TOOLBARCLASSNAMEA
-#define TOOLTIPS_CLASS TOOLTIPS_CLASSA
-#define TRACKBAR_CLASS TRACKBAR_CLASSA
-#define UPDOWN_CLASS UPDOWN_CLASSA
-#define WC_COMBOBOXEX WC_COMBOBOXEXA
-#define WC_HEADER WC_HEADERA
-#define WC_IPADDRESS WC_IPADDRESSA
-#define WC_LISTVIEW WC_LISTVIEWA
-#define WC_NATIVEFONTCTL WC_NATIVEFONTCTLA
-#define WC_PAGESCROLLER WC_PAGESCROLLERA
-#define WC_TABCONTROL WC_TABCONTROLA
-#define WC_TREEVIEW WC_TREEVIEWA
+#    define ANIMATE_CLASS ANIMATE_CLASSA
+#    define DATETIMEPICK_CLASS DATETIMEPICK_CLASSA
+#    define HOTKEY_CLASS HOTKEY_CLASSA
+#    define MONTHCAL_CLASS MONTHCAL_CLASSA
+#    define PROGRESS_CLASS PROGRESS_CLASSA
+#    define TOOLBARCLASSNAME TOOLBARCLASSNAMEA
+#    define TOOLTIPS_CLASS TOOLTIPS_CLASSA
+#    define TRACKBAR_CLASS TRACKBAR_CLASSA
+#    define UPDOWN_CLASS UPDOWN_CLASSA
+#    define WC_COMBOBOXEX WC_COMBOBOXEXA
+#    define WC_HEADER WC_HEADERA
+#    define WC_IPADDRESS WC_IPADDRESSA
+#    define WC_LISTVIEW WC_LISTVIEWA
+#    define WC_NATIVEFONTCTL WC_NATIVEFONTCTLA
+#    define WC_PAGESCROLLER WC_PAGESCROLLERA
+#    define WC_TABCONTROL WC_TABCONTROLA
+#    define WC_TREEVIEW WC_TREEVIEWA
 #endif
 
 #define ACN_START (1)
@@ -318,7 +318,7 @@
 #define HICF_RESELECT (64)
 #define HICF_TOGGLEDROPDOWN (256)
 
-#define HINST_COMMCTRL ((HINSTANCE) -1)
+#define HINST_COMMCTRL ((HINSTANCE)-1)
 
 #define HIST_ADDTOFAVORITES (3)
 #define HIST_BACK (0)
@@ -641,7 +641,6 @@
 #define RBS_VARHEIGHT (512)
 #define RBS_VARHEIGHT (512)
 #define RBS_VERTICALGRIPPER (16384)
-
 
 #define SBARS_SIZEGRIP (256)
 #define SBARS_TOOLTIPS (2048)

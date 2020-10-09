@@ -40,9 +40,7 @@ export SHELL
 
 $(eval $(ALLDIRS))
 
-format:
-	$(MAKE) -Cle format
-	$(MAKE) -Crtl format
+format: # not formatting dos stuff
 
 DISTRIBUTE:
 	$(MAKE) -Cle DISTRIBUTE

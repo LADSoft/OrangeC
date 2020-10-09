@@ -45,96 +45,91 @@
  * [TYM]	posix_typed_mem_open()
  */
 
-#ifndef	_SYS_MMAN_H_
+#ifndef _SYS_MMAN_H_
 #define _SYS_MMAN_H_
-
 
 #include <sys/types.h>
 #ifndef __DEFS_H__
-#include <_defs.h>
+#    include <_defs.h>
 #endif
-
-
-
 
 /*
  * Protections are chosen from these bits, or-ed together
  */
-#define	PROT_NONE	0x00	/* [MC2] no permissions */
-#define	PROT_READ	0x01	/* [MC2] pages can be read */
-#define	PROT_WRITE	0x02	/* [MC2] pages can be written */
-#define	PROT_EXEC	0x04	/* [MC2] pages can be executed */
+#define PROT_NONE 0x00  /* [MC2] no permissions */
+#define PROT_READ 0x01  /* [MC2] pages can be read */
+#define PROT_WRITE 0x02 /* [MC2] pages can be written */
+#define PROT_EXEC 0x04  /* [MC2] pages can be executed */
 
 /*
  * Flags contain sharing type and options.
  * Sharing types; choose one.
  */
-#define	MAP_SHARED	0x0001		/* [MF|SHM] share changes */
-#define	MAP_PRIVATE	0x0002		/* [MF|SHM] changes are private */
+#define MAP_SHARED 0x0001  /* [MF|SHM] share changes */
+#define MAP_PRIVATE 0x0002 /* [MF|SHM] changes are private */
 
 /*
  * Other flags
  */
-#define	MAP_FIXED	 0x0010	/* [MF|SHM] interpret addr exactly */
+#define MAP_FIXED 0x0010 /* [MF|SHM] interpret addr exactly */
 
 /*
  * Process memory locking
  */
-#define MCL_CURRENT	0x0001	/* [ML] Lock only current memory */
-#define MCL_FUTURE	0x0002	/* [ML] Lock all future memory as well */
+#define MCL_CURRENT 0x0001 /* [ML] Lock only current memory */
+#define MCL_FUTURE 0x0002  /* [ML] Lock all future memory as well */
 
 /*
  * Error return from mmap()
  */
-#define MAP_FAILED	((void *)-1)	/* [MF|SHM] mmap failed */
+#define MAP_FAILED ((void*)-1) /* [MF|SHM] mmap failed */
 
 /*
  * msync() flags
  */
-#define MS_ASYNC	0x0001	/* [MF|SIO] return immediately */
-#define MS_INVALIDATE	0x0002	/* [MF|SIO] invalidate all cached data */
-#define	MS_SYNC		0x0010	/* [MF|SIO] msync synchronously */
+#define MS_ASYNC 0x0001      /* [MF|SIO] return immediately */
+#define MS_INVALIDATE 0x0002 /* [MF|SIO] invalidate all cached data */
+#define MS_SYNC 0x0010       /* [MF|SIO] msync synchronously */
 
 /*
  * Advice to madvise
  */
-#define	POSIX_MADV_NORMAL	0	/* [MC1] no further special treatment */
-#define	POSIX_MADV_RANDOM	1	/* [MC1] expect random page refs */
-#define	POSIX_MADV_SEQUENTIAL	2	/* [MC1] expect sequential page refs */
-#define	POSIX_MADV_WILLNEED	3	/* [MC1] will need these pages */
-#define	POSIX_MADV_DONTNEED	4	/* [MC1] dont need these pages */
+#define POSIX_MADV_NORMAL 0     /* [MC1] no further special treatment */
+#define POSIX_MADV_RANDOM 1     /* [MC1] expect random page refs */
+#define POSIX_MADV_SEQUENTIAL 2 /* [MC1] expect sequential page refs */
+#define POSIX_MADV_WILLNEED 3   /* [MC1] will need these pages */
+#define POSIX_MADV_DONTNEED 4   /* [MC1] dont need these pages */
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-/* [ML] */
-int	_RTL_FUNC _IMPORT mlockall(int);
-int	_RTL_FUNC _IMPORT munlockall(void);
-/* [MR] */
-int	_RTL_FUNC _IMPORT mlock(const void *, size_t);
+    /* [ML] */
+    int _RTL_FUNC _IMPORT mlockall(int);
+    int _RTL_FUNC _IMPORT munlockall(void);
+    /* [MR] */
+    int _RTL_FUNC _IMPORT mlock(const void*, size_t);
 #ifndef _MMAP
-#define	_MMAP
-/* [MC3]*/
-void _RTL_FUNC _IMPORT *	mmap(void *, size_t, int, int, int, off_t);
+#    define _MMAP
+    /* [MC3]*/
+    void _RTL_FUNC _IMPORT* mmap(void*, size_t, int, int, int, off_t);
 #endif
-/* [MPR] */
-int	_RTL_FUNC _IMPORT mprotect(void *, size_t, int);
-/* [MF|SIO] */
-int	_RTL_FUNC _IMPORT msync(void *, size_t, int);
-/* [MR] */
-int	_RTL_FUNC _IMPORT munlock(const void *, size_t);
-/* [MC3]*/
-int	_RTL_FUNC _IMPORT munmap(void *, size_t);
-/* [SHM] */
-int	_RTL_FUNC _IMPORT shm_open(const char *, int, ...);
-int	_RTL_FUNC _IMPORT shm_unlink(const char *);
-/* [ADV] */
-int	_RTL_FUNC _IMPORT posix_madvise(void *, size_t, int);
+    /* [MPR] */
+    int _RTL_FUNC _IMPORT mprotect(void*, size_t, int);
+    /* [MF|SIO] */
+    int _RTL_FUNC _IMPORT msync(void*, size_t, int);
+    /* [MR] */
+    int _RTL_FUNC _IMPORT munlock(const void*, size_t);
+    /* [MC3]*/
+    int _RTL_FUNC _IMPORT munmap(void*, size_t);
+    /* [SHM] */
+    int _RTL_FUNC _IMPORT shm_open(const char*, int, ...);
+    int _RTL_FUNC _IMPORT shm_unlink(const char*);
+    /* [ADV] */
+    int _RTL_FUNC _IMPORT posix_madvise(void*, size_t, int);
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* !_SYS_MMAN_H_ */
-

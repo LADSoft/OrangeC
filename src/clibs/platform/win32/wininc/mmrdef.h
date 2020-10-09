@@ -1,4 +1,4 @@
-/* 
+/*
    mmrdef.h
 
    Base definitions
@@ -11,7 +11,7 @@
    modify it under the terms of the GNU Library General Public
    License as published by the Free Software Foundation; either
    version 2 of the License, or (at your option) any later version.
-   
+
    This library is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
@@ -19,16 +19,16 @@
 
    If you are interested in a warranty or support for this source code,
    contact Scott Christley <scottc@net-community.com> for more information.
-   
+
    You should have received a copy of the GNU Library General Public
    License along with this library; see the file COPYING.LIB.
-   If not, write to the Free Software Foundation, 
+   If not, write to the Free Software Foundation,
    59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 
    -----------
    DAL 2003 - this file modified extensively for my compiler.  New
    definitionswnwn added as well.
-*/ 
+*/
 #define ACM_MPEG_COPYRIGHT (2)
 #define ACM_MPEG_DUALCHANNEL (4)
 #define ACM_MPEG_ID_MPEG1 (16)
@@ -44,16 +44,16 @@
 
 #define AVIIF_CONTROLFRAME (512)
 
-#define BICOMP_CREATIVEYUV mmioFOURCC ('c', 'y', 'u', 'v')
-#define BICOMP_IBMPHOTOMOTION mmioFOURCC ('P', 'H', 'M', 'O')
-#define BICOMP_IBMULTIMOTION mmioFOURCC ('U', 'L', 'T', 'I')
+#define BICOMP_CREATIVEYUV mmioFOURCC('c', 'y', 'u', 'v')
+#define BICOMP_IBMPHOTOMOTION mmioFOURCC('P', 'H', 'M', 'O')
+#define BICOMP_IBMULTIMOTION mmioFOURCC('U', 'L', 'T', 'I')
 
 #define BI_BITFIELDS (3L)
 
-#define FOURCC_RDSP mmioFOURCC ('R', 'D', 'S', 'P')
+#define FOURCC_RDSP mmioFOURCC('R', 'D', 'S', 'P')
 
-#define ICTYPE_AUDIO mmioFOURCC ('a', 'u', 'd', 'c')
-#define ICTYPE_VIDEO mmioFOURCC ('v', 'i', 'd', 'c')
+#define ICTYPE_AUDIO mmioFOURCC('a', 'u', 'd', 'c')
+#define ICTYPE_VIDEO mmioFOURCC('v', 'i', 'd', 'c')
 
 #define JIFMK_00 (65280)
 #define JIFMK_APP0 (65504)
@@ -115,7 +115,7 @@
 #define JIFMK_SOS (65498)
 #define JIFMK_TEM (65281)
 
-#define JPEG_DIB mmioFOURCC ('J','P','E','G')
+#define JPEG_DIB mmioFOURCC('J', 'P', 'E', 'G')
 #define JPEG_PROCESS_BASELINE (0)
 #define JPEG_RGB (3)
 #define JPEG_Y (1)
@@ -125,7 +125,7 @@
 #define MIXERCONTROL_CONTROLTYPE_SRS_ONOFF MIXERCONTROL_CONTROLTYPE_BOOLEAN + 7
 #define MIXERCONTROL_CONTROLTYPE_SRS_SYNTHSELECT MIXERCONTROL_CONTROLTYPE_BOOLEAN + 8
 
-#define MJPG_DIB mmioFOURCC ('M','J','P','G')
+#define MJPG_DIB mmioFOURCC('M', 'J', 'P', 'G')
 
 #define MM_ADLIB (9)
 #define MM_ANTEX (31)
@@ -167,13 +167,13 @@
 #define MM_CANOPUS (49)
 #define MM_CAT (41)
 #define MM_CAT_WAVEOUT (1)
-#define MM_CDPC_AUX MM_MEDIAVISION_CDPC+7
-#define MM_CDPC_MIDIIN MM_MEDIAVISION_CDPC+2
-#define MM_CDPC_MIDIOUT MM_MEDIAVISION_CDPC+1
-#define MM_CDPC_MIXER MM_MEDIAVISION_CDPC+6
-#define MM_CDPC_SYNTH MM_MEDIAVISION_CDPC+3
-#define MM_CDPC_WAVEIN MM_MEDIAVISION_CDPC+5
-#define MM_CDPC_WAVEOUT MM_MEDIAVISION_CDPC+4
+#define MM_CDPC_AUX MM_MEDIAVISION_CDPC + 7
+#define MM_CDPC_MIDIIN MM_MEDIAVISION_CDPC + 2
+#define MM_CDPC_MIDIOUT MM_MEDIAVISION_CDPC + 1
+#define MM_CDPC_MIXER MM_MEDIAVISION_CDPC + 6
+#define MM_CDPC_SYNTH MM_MEDIAVISION_CDPC + 3
+#define MM_CDPC_WAVEIN MM_MEDIAVISION_CDPC + 5
+#define MM_CDPC_WAVEOUT MM_MEDIAVISION_CDPC + 4
 #define MM_COMPUSIC (89)
 #define MM_COMPUTER_FRIENDS (45)
 #define MM_CONTROLRES (84)
@@ -429,20 +429,20 @@
 #define MM_PROAUD_16_SYNTH MM_MEDIAVISION_PROAUDIO_19
 #define MM_PROAUD_16_WAVEIN MM_MEDIAVISION_PROAUDIO_21
 #define MM_PROAUD_16_WAVEOUT MM_MEDIAVISION_PROAUDIO_20
-#define MM_PROAUD_AUX MM_MEDIAVISION_PROAUDIO+7
-#define MM_PROAUD_MIDIIN MM_MEDIAVISION_PROAUDIO+2
-#define MM_PROAUD_MIDIOUT MM_MEDIAVISION_PROAUDIO+1
-#define MM_PROAUD_MIXER MM_MEDIAVISION_PROAUDIO+6
-#define MM_PROAUD_PLUS_AUX MM_MEDIAVISION_PROAUDIO_PLUS+7
-#define MM_PROAUD_PLUS_MIDIIN MM_MEDIAVISION_PROAUDIO_PLUS+2
-#define MM_PROAUD_PLUS_MIDIOUT MM_MEDIAVISION_PROAUDIO_PLUS+1
-#define MM_PROAUD_PLUS_MIXER MM_MEDIAVISION_PROAUDIO_PLUS+6
-#define MM_PROAUD_PLUS_SYNTH MM_MEDIAVISION_PROAUDIO_PLUS+3
-#define MM_PROAUD_PLUS_WAVEIN MM_MEDIAVISION_PROAUDIO_PLUS+5
-#define MM_PROAUD_PLUS_WAVEOUT MM_MEDIAVISION_PROAUDIO_PLUS+4
-#define MM_PROAUD_SYNTH MM_MEDIAVISION_PROAUDIO+3
-#define MM_PROAUD_WAVEIN MM_MEDIAVISION_PROAUDIO+5
-#define MM_PROAUD_WAVEOUT MM_MEDIAVISION_PROAUDIO+4
+#define MM_PROAUD_AUX MM_MEDIAVISION_PROAUDIO + 7
+#define MM_PROAUD_MIDIIN MM_MEDIAVISION_PROAUDIO + 2
+#define MM_PROAUD_MIDIOUT MM_MEDIAVISION_PROAUDIO + 1
+#define MM_PROAUD_MIXER MM_MEDIAVISION_PROAUDIO + 6
+#define MM_PROAUD_PLUS_AUX MM_MEDIAVISION_PROAUDIO_PLUS + 7
+#define MM_PROAUD_PLUS_MIDIIN MM_MEDIAVISION_PROAUDIO_PLUS + 2
+#define MM_PROAUD_PLUS_MIDIOUT MM_MEDIAVISION_PROAUDIO_PLUS + 1
+#define MM_PROAUD_PLUS_MIXER MM_MEDIAVISION_PROAUDIO_PLUS + 6
+#define MM_PROAUD_PLUS_SYNTH MM_MEDIAVISION_PROAUDIO_PLUS + 3
+#define MM_PROAUD_PLUS_WAVEIN MM_MEDIAVISION_PROAUDIO_PLUS + 5
+#define MM_PROAUD_PLUS_WAVEOUT MM_MEDIAVISION_PROAUDIO_PLUS + 4
+#define MM_PROAUD_SYNTH MM_MEDIAVISION_PROAUDIO + 3
+#define MM_PROAUD_WAVEIN MM_MEDIAVISION_PROAUDIO + 5
+#define MM_PROAUD_WAVEOUT MM_MEDIAVISION_PROAUDIO + 4
 #define MM_ROLAND (24)
 #define MM_ROLAND_MPU401_MIDIIN (16)
 #define MM_ROLAND_MPU401_MIDIOUT (15)
@@ -498,13 +498,13 @@
 #define MM_TANDY_VISBIOSSYNTH (3)
 #define MM_TANDY_VISWAVEIN (1)
 #define MM_TANDY_VISWAVEOUT (2)
-#define MM_THUNDER_AUX MM_MEDIAVISION_THUNDER+7
-#define MM_THUNDER_SYNTH MM_MEDIAVISION_THUNDER+3
-#define MM_THUNDER_WAVEIN MM_MEDIAVISION_THUNDER+5
-#define MM_THUNDER_WAVEOUT MM_MEDIAVISION_THUNDER+4
-#define MM_TPORT_SYNTH MM_MEDIAVISION_TPORT+3
-#define MM_TPORT_WAVEIN MM_MEDIAVISION_TPORT+2
-#define MM_TPORT_WAVEOUT MM_MEDIAVISION_TPORT+1
+#define MM_THUNDER_AUX MM_MEDIAVISION_THUNDER + 7
+#define MM_THUNDER_SYNTH MM_MEDIAVISION_THUNDER + 3
+#define MM_THUNDER_WAVEIN MM_MEDIAVISION_THUNDER + 5
+#define MM_THUNDER_WAVEOUT MM_MEDIAVISION_THUNDER + 4
+#define MM_TPORT_SYNTH MM_MEDIAVISION_TPORT + 3
+#define MM_TPORT_WAVEIN MM_MEDIAVISION_TPORT + 2
+#define MM_TPORT_WAVEOUT MM_MEDIAVISION_TPORT + 1
 #define MM_TRUEVISION (51)
 #define MM_TRUEVISION_WAVEIN1 (1)
 #define MM_TRUEVISION_WAVEOUT1 (2)
@@ -563,49 +563,49 @@
 
 #define QUERYDIBSUPPORT (3073)
 
-#define RIFFCPPO mmioFOURCC ('C','P','P','O')
-#define RIFFCPPO_byte mmioFOURCC ('b','y','t','e')
-#define RIFFCPPO_char mmioFOURCC ('c','h','a','r')
-#define RIFFCPPO_clsi mmioFOURCC ('c','l','s','i')
-#define RIFFCPPO_clsr mmioFOURCC ('c','l','s','r')
-#define RIFFCPPO_dbl mmioFOURCC ('d','b','l',' ')
-#define RIFFCPPO_dwrd mmioFOURCC ('d','w','r','d')
-#define RIFFCPPO_flt mmioFOURCC ('f','l','t',' ')
-#define RIFFCPPO_int mmioFOURCC ('i','n','t',' ')
-#define RIFFCPPO_long mmioFOURCC ('l','o','n','g')
-#define RIFFCPPO_mbr mmioFOURCC ('m','b','r',' ')
-#define RIFFCPPO_obji mmioFOURCC ('o','b','j','i')
-#define RIFFCPPO_objr mmioFOURCC ('o','b','j','r')
-#define RIFFCPPO_str mmioFOURCC ('s','t','r',' ')
-#define RIFFCPPO_word mmioFOURCC ('w','o','r','d')
+#define RIFFCPPO mmioFOURCC('C', 'P', 'P', 'O')
+#define RIFFCPPO_byte mmioFOURCC('b', 'y', 't', 'e')
+#define RIFFCPPO_char mmioFOURCC('c', 'h', 'a', 'r')
+#define RIFFCPPO_clsi mmioFOURCC('c', 'l', 's', 'i')
+#define RIFFCPPO_clsr mmioFOURCC('c', 'l', 's', 'r')
+#define RIFFCPPO_dbl mmioFOURCC('d', 'b', 'l', ' ')
+#define RIFFCPPO_dwrd mmioFOURCC('d', 'w', 'r', 'd')
+#define RIFFCPPO_flt mmioFOURCC('f', 'l', 't', ' ')
+#define RIFFCPPO_int mmioFOURCC('i', 'n', 't', ' ')
+#define RIFFCPPO_long mmioFOURCC('l', 'o', 'n', 'g')
+#define RIFFCPPO_mbr mmioFOURCC('m', 'b', 'r', ' ')
+#define RIFFCPPO_obji mmioFOURCC('o', 'b', 'j', 'i')
+#define RIFFCPPO_objr mmioFOURCC('o', 'b', 'j', 'r')
+#define RIFFCPPO_str mmioFOURCC('s', 't', 'r', ' ')
+#define RIFFCPPO_word mmioFOURCC('w', 'o', 'r', 'd')
 
-#define RIFFINFO_IARL mmioFOURCC ('I', 'A', 'R', 'L')
-#define RIFFINFO_IART mmioFOURCC ('I', 'A', 'R', 'T')
-#define RIFFINFO_ICMS mmioFOURCC ('I', 'C', 'M', 'S')
-#define RIFFINFO_ICMT mmioFOURCC ('I', 'C', 'M', 'T')
-#define RIFFINFO_ICOP mmioFOURCC ('I', 'C', 'O', 'P')
-#define RIFFINFO_ICRD mmioFOURCC ('I', 'C', 'R', 'D')
-#define RIFFINFO_ICRP mmioFOURCC ('I', 'C', 'R', 'P')
-#define RIFFINFO_IDIM mmioFOURCC ('I', 'D', 'I', 'M')
-#define RIFFINFO_IDIT mmioFOURCC ('I', 'D', 'I', 'T')
-#define RIFFINFO_IDPI mmioFOURCC ('I', 'D', 'P', 'I')
-#define RIFFINFO_IENG mmioFOURCC ('I', 'E', 'N', 'G')
-#define RIFFINFO_IGNR mmioFOURCC ('I', 'G', 'N', 'R')
-#define RIFFINFO_IKEY mmioFOURCC ('I', 'K', 'E', 'Y')
-#define RIFFINFO_ILGT mmioFOURCC ('I', 'L', 'G', 'T')
-#define RIFFINFO_IMED mmioFOURCC ('I', 'M', 'E', 'D')
-#define RIFFINFO_INAM mmioFOURCC ('I', 'N', 'A', 'M')
-#define RIFFINFO_IPLT mmioFOURCC ('I', 'P', 'L', 'T')
-#define RIFFINFO_IPRD mmioFOURCC ('I', 'P', 'R', 'D')
-#define RIFFINFO_ISBJ mmioFOURCC ('I', 'S', 'B', 'J')
-#define RIFFINFO_ISFT mmioFOURCC ('I', 'S', 'F', 'T')
-#define RIFFINFO_ISHP mmioFOURCC ('I', 'S', 'H', 'P')
-#define RIFFINFO_ISMP mmioFOURCC ('I', 'S', 'M', 'P')
-#define RIFFINFO_ISRC mmioFOURCC ('I', 'S', 'R', 'C')
-#define RIFFINFO_ISRF mmioFOURCC ('I', 'S', 'R', 'F')
-#define RIFFINFO_ITCH mmioFOURCC ('I', 'T', 'C', 'H')
+#define RIFFINFO_IARL mmioFOURCC('I', 'A', 'R', 'L')
+#define RIFFINFO_IART mmioFOURCC('I', 'A', 'R', 'T')
+#define RIFFINFO_ICMS mmioFOURCC('I', 'C', 'M', 'S')
+#define RIFFINFO_ICMT mmioFOURCC('I', 'C', 'M', 'T')
+#define RIFFINFO_ICOP mmioFOURCC('I', 'C', 'O', 'P')
+#define RIFFINFO_ICRD mmioFOURCC('I', 'C', 'R', 'D')
+#define RIFFINFO_ICRP mmioFOURCC('I', 'C', 'R', 'P')
+#define RIFFINFO_IDIM mmioFOURCC('I', 'D', 'I', 'M')
+#define RIFFINFO_IDIT mmioFOURCC('I', 'D', 'I', 'T')
+#define RIFFINFO_IDPI mmioFOURCC('I', 'D', 'P', 'I')
+#define RIFFINFO_IENG mmioFOURCC('I', 'E', 'N', 'G')
+#define RIFFINFO_IGNR mmioFOURCC('I', 'G', 'N', 'R')
+#define RIFFINFO_IKEY mmioFOURCC('I', 'K', 'E', 'Y')
+#define RIFFINFO_ILGT mmioFOURCC('I', 'L', 'G', 'T')
+#define RIFFINFO_IMED mmioFOURCC('I', 'M', 'E', 'D')
+#define RIFFINFO_INAM mmioFOURCC('I', 'N', 'A', 'M')
+#define RIFFINFO_IPLT mmioFOURCC('I', 'P', 'L', 'T')
+#define RIFFINFO_IPRD mmioFOURCC('I', 'P', 'R', 'D')
+#define RIFFINFO_ISBJ mmioFOURCC('I', 'S', 'B', 'J')
+#define RIFFINFO_ISFT mmioFOURCC('I', 'S', 'F', 'T')
+#define RIFFINFO_ISHP mmioFOURCC('I', 'S', 'H', 'P')
+#define RIFFINFO_ISMP mmioFOURCC('I', 'S', 'M', 'P')
+#define RIFFINFO_ISRC mmioFOURCC('I', 'S', 'R', 'C')
+#define RIFFINFO_ISRF mmioFOURCC('I', 'S', 'R', 'F')
+#define RIFFINFO_ITCH mmioFOURCC('I', 'T', 'C', 'H')
 
-#define RIFFWAVE_inst mmioFOURCC ('i','n','s','t')
+#define RIFFWAVE_inst mmioFOURCC('i', 'n', 's', 't')
 
 #define WAVE_FILTER_DEVELOPMENT (65535)
 #define WAVE_FILTER_ECHO (2)

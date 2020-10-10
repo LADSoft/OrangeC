@@ -117,8 +117,13 @@ int _RTL_FUNC mtx_timedlock(mtx_t* mtx, const struct timespec* xt)
 {
     imtx* p = (imtx*)*mtx;
     __ll_enter_critical();
-    if (p->sig == MTX_SIG && (xt == (void*)-1 || (xt != (void*)-1 && (p->mode == mtx_try || xt != NULL && p->mode == mtx_timed))))
+    if (p->sig == MTX_SIG && (xt == (void*)-1 || (xt != (void*)-1 && ((p->mode & ~mtx_recursive) == mtx_try || xt != NULL && (p->mode & ~mtx_recursive) == mtx_timed))))
     {
+        if (!(p->mode & mtx_recursive) && p->owner && p->owner == __ll_thrdcurrent())
+        {
+            __ll_exit_critical();
+            return thrd_busy;
+        }
         int t;
         if (xt == NULL)
             t = 0;

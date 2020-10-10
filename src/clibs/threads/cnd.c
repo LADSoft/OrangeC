@@ -165,7 +165,7 @@ int _RTL_FUNC cnd_timedwait(cnd_t* cond, mtx_t* mtx, const struct timespec* xt)
             {
                 int rv;
                 int t;
-                x->thrd = __getRtlData()->thrd_id;
+                x->thrd = __ll_thrdcurrent();
                 if (p->waiting)
                     p->tail = p->tail->next = x;
                 else

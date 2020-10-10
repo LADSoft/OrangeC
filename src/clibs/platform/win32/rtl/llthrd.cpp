@@ -47,6 +47,10 @@
 #include "LocalAlloc.h"
 #include <map>
 
+// note that some of the threading structures are dynamically added if thrd_create() isn't called directly
+// for example you use createthread or _beginthread
+// in the createthread case, such data will never get deallocated so there will be a memory leak.
+
 extern "C"
 {
     void __tss_run_dtors(thrd_t thrd);
@@ -270,7 +274,16 @@ static int WINAPI thrdstart(struct ithrd* h)
     __ll_thrdexit(rv);
     return 0;
 }
-
+extern "C" struct ithrd* __ll_thrdcurrent(void)
+{
+    struct __rtl_data* r = __getRtlData();  // allocate the local storage
+    if (!r->thrd_id)
+    {
+        struct ithrd* mem = (struct ithrd*)calloc(1, sizeof(struct ithrd));
+        r->thrd_id = mem;
+    }
+    return r->thrd_id;
+}
 extern "C" int __ll_thrdstart(struct ithrd** thr, thrd_start_t* func, void* arglist)
 {
     DWORD id;
@@ -304,12 +317,6 @@ extern "C" int __ll_thrdwait(struct ithrd* thrd)
     if (WaitForSingleObject(thrd->handle, INFINITE) == WAIT_OBJECT_0)
         return thrd_success;
     return thrd_error;
-}
-
-extern "C" struct ithrd* __ll_thrdcurrent(void)
-{
-    struct __rtl_data* r = __getRtlData();  // allocate the local storage
-    return r->thrd_id;
 }
 
 extern "C" int __ll_thrdexitcode(struct ithrd* thrd, int* rv)

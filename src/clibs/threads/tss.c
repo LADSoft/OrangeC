@@ -23,13 +23,13 @@ struct itss
 };
 static int insert_tss(tss_t key)
 {
-    struct ithrd* t = (struct ithrd*)__getRtlData()->thrd_id;
+    struct ithrd* t = (struct ithrd*)__ll_thrdcurrent();
     if (t)  // main thread doesn't get TSS
     {
         struct itsslst* p = calloc(1, sizeof(struct itsslst));
         if (p)
         {
-            struct ithrd* t = (struct ithrd*)__getRtlData()->thrd_id;
+            struct ithrd* t = (struct ithrd*)__ll_thrdcurrent();
             p->tss = (void*)key;
             __ll_enter_critical();
             p->next = t->tsslst;

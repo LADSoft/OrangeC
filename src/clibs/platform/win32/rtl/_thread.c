@@ -63,7 +63,20 @@ void _RTL_FUNC _endthread(void)
     HANDLE handle = __getRtlData()->threadhand;
     if (handle)
         CloseHandle(handle);
+    struct __rtl_data* r = __getRtlData();  // allocate the local storage
+    struct ithrd* p = (struct ithrd*)r->thrd_id;
+    __tss_run_dtors((thrd_t)p);  // do this immediately on exit in case the thread
+                                 // languishes waiting for a detatch.
+                                 // it also allows us to free the local storage immediately
+                                 // which is good because once the thread exits we don't have access to that
     __ll_enter_critical();
+    if (p && p->detach)
+    {
+        __mtx_remove_thrd((thrd_t)p);
+        __cnd_remove_thrd((thrd_t)p);
+        p->sig = 0;
+        free(p);
+    }
     __unload_local_data();
     __ll_exit_critical();
     __threadTlsFree(TRUE);
@@ -74,7 +87,20 @@ void _RTL_FUNC _endthreadex(unsigned retval)
     HANDLE handle = __getRtlData()->threadhand;
     if (handle)
         CloseHandle(handle);
+    struct __rtl_data* r = __getRtlData();  // allocate the local storage
+    struct ithrd* p = (struct ithrd*)r->thrd_id;
+    __tss_run_dtors((thrd_t)p);  // do this immediately on exit in case the thread
+                                 // languishes waiting for a detatch.
+                                 // it also allows us to free the local storage immediately
+                                 // which is good because once the thread exits we don't have access to that
     __ll_enter_critical();
+    if (p && p->detach)
+    {
+        __mtx_remove_thrd((thrd_t)p);
+        __cnd_remove_thrd((thrd_t)p);
+        p->sig = 0;
+        free(p);
+    }
     __unload_local_data();
     __ll_exit_critical();
     __threadTlsFree(TRUE);

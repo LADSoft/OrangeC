@@ -423,7 +423,6 @@ int main(int argc, char* argv[])
     {
         parserMem = new SharedMemory(240 * 1024 * 1024);
         parserMem->Create();
-        parserMem->GetMapping();
         compileToFile = true;
     }
 
@@ -595,11 +594,10 @@ int main(int argc, char* argv[])
         Utils::StripExt(realOutFile);
         Utils::AddExt(realOutFile, ".icf");
         int size = Optimizer::GetOutputSize();
-        void* p = parserMem->GetMapping();
         FILE* fil = fopen(realOutFile, "wb");
         if (!fil)
             Utils::fatal("could not open output file");
-        fwrite(p, size, 1, fil);
+        Optimizer::WriteMappingFile(parserMem, fil);
         fclose(fil);
     }
     delete parserMem;

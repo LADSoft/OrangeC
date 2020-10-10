@@ -34,8 +34,9 @@
 #    include <Windows.h>
 #endif
 
-SharedMemory::SharedMemory(unsigned max, std::string name) :
+SharedMemory::SharedMemory(unsigned max, std::string name, unsigned window) :
     max_(max),
+    windowSize_(window),
     current_(0),
     regionStart(0),
     regionHandle(nullptr),
@@ -84,15 +85,16 @@ void SharedMemory::Flush()
     }
 #endif
 }
-unsigned char* SharedMemory::GetMapping()
+unsigned char* SharedMemory::GetMapping(unsigned pos)
 {
 #ifdef _WIN32
-    if (!regionStart)
-    {
-        regionStart = (unsigned char*)MapViewOfFile(regionHandle, FILE_MAP_ALL_ACCESS, 0, 0, max_);
-    }
+    regionBase_ = pos & -4096;
+    CloseMapping();
+    regionStart = (unsigned char*)MapViewOfFile(regionHandle, FILE_MAP_ALL_ACCESS, 0, regionBase_, ViewWindowSize()*2);
+    if (regionStart)
+        return regionStart - regionBase_;
+    return 0;
 #endif
-    return regionStart;
 }
 void SharedMemory::CloseMapping()
 {
@@ -115,8 +117,13 @@ bool SharedMemory::EnsureCommitted(int size)
 #ifdef _WIN32
     if (end > current_)
     {
-        if (!VirtualAlloc(regionStart + current_, end - current_, MEM_COMMIT, PAGE_READWRITE))
+        unsigned char *temp = (unsigned char*)MapViewOfFile(regionHandle, FILE_MAP_ALL_ACCESS, 0, current_, end-current_);
+        if (!VirtualAlloc(temp, end - current_, MEM_COMMIT, PAGE_READWRITE))
+        {
+            UnmapViewOfFile(temp);
             return false;
+        }
+        UnmapViewOfFile(temp);
         current_ = end;
     }
     return true;

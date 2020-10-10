@@ -393,12 +393,7 @@ int main(int argc, char* argv[])
         FILE* fil = fopen(argv[1], "rb");
         if (fil)
         {
-            fseek(fil, 0, SEEK_END);
-            long size = ftell(fil);
-            fseek(fil, 0, SEEK_SET);
-            optimizerMem->GetMapping();
-            optimizerMem->EnsureCommitted(size);
-            fread(optimizerMem->GetMapping(), 1, size, fil);
+            Optimizer::ReadMappingFile(optimizerMem, fil);
             fclose(fil);
         }
         else

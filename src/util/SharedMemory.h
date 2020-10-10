@@ -21,19 +21,18 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
  */
-
 #include <string>
 class SharedMemory
 {
   public:
-    SharedMemory(unsigned max, std::string name = "");
+    SharedMemory(unsigned max, std::string name = "", unsigned window = 1024*1024);
     ~SharedMemory();
 
     bool Open();
     bool Create();
-
+    unsigned ViewWindowSize() const { return windowSize_; }
     std::string Name() { return name_; }
-    unsigned char* GetMapping();
+    unsigned char* GetMapping(unsigned pos = 0);
     void CloseMapping();
     bool EnsureCommitted(int size);
     void Flush();
@@ -43,8 +42,10 @@ class SharedMemory
     std::string name_;
 
     unsigned max_;
+    unsigned windowSize_;
     unsigned current_;
     void* fileHandle_;
+    unsigned regionBase_;
     void* regionHandle;
     unsigned char* regionStart;
 };

@@ -51,6 +51,7 @@
 #include "output.h"
 #include "iinvar.h"
 #include "ilstream.h"
+#include "ilunstream.h"
 #include "iconst.h"
 #include "ialias.h"
 #include "ioptutil.h"
@@ -432,17 +433,12 @@ int main(int argc, char* argv[])
         FILE* fil = fopen(argv[1], "rb");
         if (fil)
         {
-            fseek(fil, 0, SEEK_END);
-            long size = ftell(fil);
-            fseek(fil, 0, SEEK_SET);
             parserMem = new SharedMemory(MAX_SHARED_REGION);
             parserMem->Create();
-            parserMem->GetMapping();
-            parserMem->EnsureCommitted(size);
-            fread(parserMem->GetMapping(), 1, size, fil);
+            Optimizer::ReadMappingFile(parserMem, fil);
+            fclose(fil);
             optimizerMem = new SharedMemory(MAX_SHARED_REGION);
             optimizerMem->Create();
-            fclose(fil);
         }
         else
         {
@@ -483,12 +479,10 @@ int main(int argc, char* argv[])
     if (fileMode)
     {
         // compile to file
-        int size = GetOutputSize();
-        void* p = optimizerMem->GetMapping();
         FILE* fil = fopen(outputFile.c_str(), "wb");
         if (!fil)
             Utils::fatal("could not open output file");
-        fwrite(p, size, 1, fil);
+        Optimizer::WriteMappingFile(optimizerMem, fil);
         fclose(fil);
     }
     delete parserMem;

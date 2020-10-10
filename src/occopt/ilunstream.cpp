@@ -1200,9 +1200,7 @@ static void ResolveNames(std::map<int, std::string>& texts)
 bool InputIntermediate(SharedMemory* inputMem)
 {
     FPF temp;  // force init
-    streamPointer = inputMem->GetMapping();
     shared = inputMem;
-    top = shared->ViewWindowSize();
     currentBlock = nullptr;
     texts.clear();
     texts[0] = "";

@@ -50,6 +50,7 @@ endef
 
 C_CLIBS:= $(call SUFFIXDIRS,$(DIRS),.clibs)
 C_DLLS:= $(call SUFFIXDIRS,$(DLLDIRS),.dlls)
+C_FORMAT= $(call SUFFIXDIRS,$(DIRS),.formats)
 
 MAKEFILES := $(MAKEFILES) $(subst /,\,$(realpath maker.mak))
 export MAKEFILES
@@ -112,6 +113,9 @@ $(C_DLLS) : %.dlls : mkdir
 $(C_CLIBS) : %.clibs : $(C_DLLS)
 	$(MAKE) -C$* --eval="OBJECT=$(CLIBOBJECT)"
 
+$(C_FORMAT) : %.formats :
+	$(MAKE) -C$* format
+
 platform: $(C_CLIBS)
 	$(MAKE) -Cplatform --eval="OBJECT=$(CLIBOBJECT)"
 
@@ -126,7 +130,9 @@ mkapps: mklibs
 
 BUILDING_DLL = BUILDING_DLL=-D__BUILDING_LSCRTL_DLL
 
-
+FORMAT: $(C_FORMAT)
+	$(MAKE) -Cstdinc format
+	$(MAKE) -Cplatform format
 
 ifdef DISTMAKE
 	 	include $(DISTMAKE)

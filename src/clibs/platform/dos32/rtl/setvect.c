@@ -42,8 +42,8 @@ _vectorType _RTL_FUNC setvect(int _num, _vectorType _vect)
    SELECTOR cseg ;
    ULONG offset ;
    dpmi_get_protected_interrupt(&cseg, &offset, _num) ;
-   asm mov ax,cs
-   asm mov [cseg],ax
+   __asm mov ax,cs
+   __asm mov [cseg],ax
    dpmi_set_protected_interrupt(_num,cseg,(ULONG)_vect) ;
    return (_vectorType)offset ;
 }

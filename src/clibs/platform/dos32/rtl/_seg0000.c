@@ -42,7 +42,7 @@ SELECTOR _RTL_DATA __seg0000 ;
 
 static void __init(void)
 {
-   asm {
+   __asm {
       mov   ax,2
       mov   bx,0x0000
       int   0x31

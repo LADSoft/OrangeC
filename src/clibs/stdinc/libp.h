@@ -1,22 +1,22 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     As a special exception, if other files instantiate templates or
  *     use macros or inline functions from this file, or you compile
  *     this file and link it with other works to produce a work based
@@ -24,14 +24,14 @@
  *     work to be covered by the GNU General Public License. However
  *     the source code for this file must still be made available in
  *     accordance with section (3) of the GNU General Public License.
- *     
+ *
  *     This exception does not invalidate any other reasons why a work
  *     based on this file might be covered by the GNU General Public
  *     License.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 /* The prototypes in this file which start with __ll are OS dependent
@@ -95,8 +95,8 @@ extern "C"
     int __ll_remove(const char* __name);
     int __ll_rmdir(const char* name);
 
-    /* malloc stuff */
-    #define MALLOC_MASK 0xfffffff8
+/* malloc stuff */
+#define MALLOC_MASK 0xfffffff8
     void* __ll_malloc(size_t __size);
     void __ll_free(void* __blk);
 
@@ -125,11 +125,19 @@ extern "C"
 
 /* threads */
 #ifdef __THREADS_H
-    int __ll_thrdstart(struct ithrd** thr, thrd_start_t* func, void* arglist);
-    void __ll_thrdexit(unsigned retval);
-    void __ll_thrdsleep(unsigned ms);
+#    ifdef __cplusplus
+    extern "C"
+    {
+#    endif
+        int __ll_thrdstart(struct ithrd** thr, thrd_start_t* func, void* arglist);
+        void __ll_thrdexit(unsigned retval);
+        void __ll_thrdsleep(unsigned ms);
+        void _RTL_FUNC _IMPORT __thrdRegisterModule(void* module, void* tlsStart, void* tlsEnd);
+        void _RTL_FUNC _IMPORT __thrdUnregisterModule(void* module);
+#    ifdef __cplusplus
+    }
+#    endif
 #endif
-
     /* stat */
     int __ll_stat(int handle, void* __statbuf);
     int __ll_namedstat(const char* name, void* __statbuf);
@@ -148,7 +156,7 @@ extern "C"
     struct __rtl_data
     {
         struct __rtldata* link;
-        void* handle;
+        void* reserved;  // unused
         void* threadhand;
         char tmpfilnam[32];
         char setlocaledescriptor[256];
@@ -280,9 +288,17 @@ struct ithrd
 };
 // int __ll_thrdstart(struct ithrd **thr, thrd_start_t *func, void *arglist );
 // int __ll_thrdexit(int res);
-int __ll_thrdexitcode(struct ithrd* thrd, int* rv);
-int __ll_thrdwait(struct ithrd* thrd);
-int __ll_thrd_detach(struct ithrd* thrd);
-struct ithrd* __ll_thrdcurrent(void);
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+    int __ll_thrdexitcode(struct ithrd* thrd, int* rv);
+    int __ll_thrdwait(struct ithrd* thrd);
+    int __ll_thrd_detach(struct ithrd* thrd);
+    struct ithrd* __ll_thrdcurrent(void);
 // int __ll_thrdsleep(int ms);
+#ifdef __cplusplus
+}
+#endif
 #pragma pack()

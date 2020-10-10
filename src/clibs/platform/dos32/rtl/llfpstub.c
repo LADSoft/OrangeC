@@ -62,13 +62,13 @@ int hasfloat = 0; /* used by DOS debugger */
 static void _interrupt raise75(void)
 {
     DPMI_REGS regs;
-    asm cli
-      asm push ds
-      asm push es
-        asm mov	ds,cs:[pmodeds]
-        asm mov	es,cs:[pmodeds]
+    __asm cli
+      __asm push ds
+      __asm push es
+        __asm mov	ds,cs:[pmodeds]
+        __asm mov	es,cs:[pmodeds]
 
-      asm sti
+      __asm sti
       // Have to call the original interrupt, there is more to
       // acknowledging the FPU interrupt than just acknowledging the PIC
       //
@@ -78,93 +78,93 @@ static void _interrupt raise75(void)
       regs.h.cs = oldint75[1];
       dpmi_simulate_proc_int_frame(&regs);
       raise(SIGFPE) ;
-      asm cli
-      asm pop es
-      asm pop ds
+      __asm cli
+      __asm pop es
+      __asm pop ds
 }
 static void raise7(void)
 {
         __clearxcept();
-      asm pushad
-      asm push ds
-      asm push es
-        asm mov	ds,cs:[pmodeds]
-        asm mov	es,cs:[pmodeds]
-        asm mov al,0x65
-        asm out 0xa0,al
-        asm mov al,0x62
-        asm out 0xa0,al
-      asm sti
+      __asm pushad
+      __asm push ds
+      __asm push es
+        __asm mov	ds,cs:[pmodeds]
+        __asm mov	es,cs:[pmodeds]
+        __asm mov al,0x65
+        __asm out 0xa0,al
+        __asm mov al,0x62
+        __asm out 0xa0,al
+      __asm sti
       raise(SIGFPE) ;
-      asm pop es
-      asm pop ds
-      asm popad
+      __asm pop es
+      __asm pop ds
+      __asm popad
         if (winxcept)
-            asm add esp,4;
-        asm retf;
+            __asm add esp,4;
+        __asm retf;
 }
 
 short _RTL_FUNC _status87(void)
 {
    short work ;
-   asm fnstsw [work] ;
-   asm fwait ;
+   __asm fnstsw [work] ;
+   __asm fwait ;
    return work ;
 }
 short _RTL_FUNC _clear87(void)
 {
     short work ;
-    asm fnstsw	[work ];
-   asm fwait ;
-    asm fnclex
+    __asm fnstsw	[work ];
+   __asm fwait ;
+    __asm fnclex
     return work ;
 }
 void _RTL_FUNC _control87(int mask1, int mask2)
 {
     short work ;
-    asm fstcw [work];
+    __asm fstcw [work];
     mask1 &= mask2;
     mask2 = ~mask2;
-    asm fwait
+    __asm fwait
     work &= mask2;
     work = mask1 |= work ;
-    asm fldcw [work]
+    __asm fldcw [work]
 }
 void _RTL_FUNC _fpreset(void)
 {
-   asm finit ;
+   __asm finit ;
    _control87(_default87,0x1fff) ;
 }
 int __temp;
 static void llfprundown(void)
 {
-    asm fninit
+    __asm fninit
 }
 static void llfpini(void)
 {
     short work;
     SELECTOR sel ;
     ULONG base,linear;
-    asm mov [sel],cs
+    __asm mov [sel],cs
     work = 0x4567;
 
     // enable SSE2
-    asm mov eax,cr0
-    asm and eax, 0xfffffffb // clear CR0.EM
-    asm or eax, 2 // set CR0.MP
-    asm mov cr0,eax
-    asm mov eax,cr4
-    asm or eax, 512 // set OSFXSR
-    asm or eax, 1024 // set OSXMMXCPT
-    asm mov cr4,eax
+    __asm mov eax,cr0
+    __asm and eax, 0xfffffffb // clear CR0.EM
+    __asm or eax, 2 // set CR0.MP
+    __asm mov cr0,eax
+    __asm mov eax,cr4
+    __asm or eax, 512 // set OSFXSR
+    __asm or eax, 1024 // set OSXMMXCPT
+    __asm mov cr4,eax
     //
-  asm fninit
-  asm fnstsw [work]
+  __asm fninit
+  __asm fnstsw [work]
   dpmi_get_real_interrupt((UWORD *)&oldint75[1],(UWORD *)&oldint75[0],0x75); 
     if (work == 0) {
         /* have fpu coprocessor */
         _fpreset();
-        asm fnstenv [dfltenv]
+        __asm fnstenv [dfltenv]
         _fpreset();
         dpmi_set_protected_interrupt(0x75,sel,(ULONG)raise75);
         hasfloat = 1;        
@@ -176,14 +176,14 @@ static void llfpini(void)
     }
     
 // lock the region to prevent page faults under windows
-    asm push esi
-    asm mov ecx,[linear]
-    asm mov esi,100000
-    asm mov dx,cx
-    asm shr ecx,16
-    asm mov di,si
-    asm shr esi,16
-    asm mov eax,0x600
-    asm int 0x31
-    asm pop esi
+    __asm push esi
+    __asm mov ecx,[linear]
+    __asm mov esi,100000
+    __asm mov dx,cx
+    __asm shr ecx,16
+    __asm mov di,si
+    __asm shr esi,16
+    __asm mov eax,0x600
+    __asm int 0x31
+    __asm pop esi
 }

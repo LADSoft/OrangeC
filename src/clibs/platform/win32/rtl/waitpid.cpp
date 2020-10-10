@@ -1,22 +1,22 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     As a special exception, if other files instantiate templates or
  *     use macros or inline functions from this file, or you compile
  *     this file and link it with other works to produce a work based
@@ -24,14 +24,14 @@
  *     work to be covered by the GNU General Public License. However
  *     the source code for this file must still be made available in
  *     accordance with section (3) of the GNU General Public License.
- *     
+ *
  *     This exception does not invalidate any other reasons why a work
  *     based on this file might be covered by the GNU General Public
  *     License.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <windows.h>
@@ -43,9 +43,9 @@
 #include <map>
 static HANDLE hjob;
 static HANDLE end;
-
 CRITICAL_SECTION critical;
-typedef enum _JOBOBJECTINFOCLASS {
+typedef enum _JOBOBJECTINFOCLASS
+{
     JobObjectBasicAccountingInformation = 1,
     JobObjectBasicLimitInformation,
     JobObjectBasicProcessIdList,
@@ -56,93 +56,56 @@ typedef enum _JOBOBJECTINFOCLASS {
     JobObjectBasicAndIoAccountingInformation,
     JobObjectExtendedLimitInformation,
     MaxJobObjectInfoClass
-    } JOBOBJECTINFOCLASS;
+} JOBOBJECTINFOCLASS;
 
 WINBASEAPI
 HANDLE
 WINAPI
-CreateJobObjectA(
-    LPSECURITY_ATTRIBUTES lpJobAttributes,
-    LPCSTR lpName
-    );
+CreateJobObjectA(LPSECURITY_ATTRIBUTES lpJobAttributes, LPCSTR lpName);
 WINBASEAPI
 HANDLE
 WINAPI
-CreateJobObjectW(
-    LPSECURITY_ATTRIBUTES lpJobAttributes,
-    LPCWSTR lpName
-    );
+CreateJobObjectW(LPSECURITY_ATTRIBUTES lpJobAttributes, LPCWSTR lpName);
 #ifdef UNICODE
-#define CreateJobObject  CreateJobObjectW
+#    define CreateJobObject CreateJobObjectW
 #else
-#define CreateJobObject  CreateJobObjectA
-#endif // !UNICODE
+#    define CreateJobObject CreateJobObjectA
+#endif  // !UNICODE
 
 WINBASEAPI
 HANDLE
 WINAPI
-OpenJobObjectA(
-    DWORD dwDesiredAccess,
-    BOOL bInheritHandle,
-    LPCSTR lpName
-    );
+OpenJobObjectA(DWORD dwDesiredAccess, BOOL bInheritHandle, LPCSTR lpName);
 WINBASEAPI
 HANDLE
 WINAPI
-OpenJobObjectW(
-    DWORD dwDesiredAccess,
-    BOOL bInheritHandle,
-    LPCWSTR lpName
-    );
+OpenJobObjectW(DWORD dwDesiredAccess, BOOL bInheritHandle, LPCWSTR lpName);
 #ifdef UNICODE
-#define OpenJobObject  OpenJobObjectW
+#    define OpenJobObject OpenJobObjectW
 #else
-#define OpenJobObject  OpenJobObjectA
-#endif // !UNICODE
+#    define OpenJobObject OpenJobObjectA
+#endif  // !UNICODE
 
 WINBASEAPI
-BOOL
-WINAPI
-AssignProcessToJobObject(
-    HANDLE hJob,
-    HANDLE hProcess
-    );
+BOOL WINAPI AssignProcessToJobObject(HANDLE hJob, HANDLE hProcess);
 
 WINBASEAPI
-BOOL
-WINAPI
-TerminateJobObject(
-    HANDLE hJob,
-    UINT uExitCode
-    );
+BOOL WINAPI TerminateJobObject(HANDLE hJob, UINT uExitCode);
 
 WINBASEAPI
-BOOL
-WINAPI
-QueryInformationJobObject(
-    HANDLE hJob,
-    JOBOBJECTINFOCLASS JobObjectInformationClass,
-    LPVOID lpJobObjectInformation,
-    DWORD cbJobObjectInformationLength,
-    LPDWORD lpReturnLength
-    );
+BOOL WINAPI QueryInformationJobObject(HANDLE hJob, JOBOBJECTINFOCLASS JobObjectInformationClass, LPVOID lpJobObjectInformation,
+                                      DWORD cbJobObjectInformationLength, LPDWORD lpReturnLength);
 
 WINBASEAPI
-BOOL
-WINAPI
-SetInformationJobObject(
-    HANDLE hJob,
-    JOBOBJECTINFOCLASS JobObjectInformationClass,
-    LPVOID lpJobObjectInformation,
-    DWORD cbJobObjectInformationLength
-    );
+BOOL WINAPI SetInformationJobObject(HANDLE hJob, JOBOBJECTINFOCLASS JobObjectInformationClass, LPVOID lpJobObjectInformation,
+                                    DWORD cbJobObjectInformationLength);
 
-typedef struct _JOBOBJECT_BASIC_PROCESS_ID_LIST {
+typedef struct _JOBOBJECT_BASIC_PROCESS_ID_LIST
+{
     DWORD NumberOfAssignedProcesses;
     DWORD NumberOfProcessIdsInList;
     ULONG_PTR ProcessIdList[1024];
 } JOBOBJECT_BASIC_PROCESS_ID_LIST, *PJOBOBJECT_BASIC_PROCESS_ID_LIST;
-
 
 static std::map<DWORD, HANDLE> pidList;
 #pragma startup init 224
@@ -179,7 +142,7 @@ static void Load(void)
 
     if (QueryInformationJobObject(hjob, JobObjectBasicProcessIdList, &pids, sizeof(pids), NULL))
     {
-        for (int i=0; i < pids.NumberOfProcessIdsInList; i++)
+        for (int i = 0; i < pids.NumberOfProcessIdsInList; i++)
         {
             if (pids.ProcessIdList[i] != GetCurrentProcessId())
             {
@@ -189,14 +152,14 @@ static void Load(void)
     }
 }
 
-static int CALLBACK refresh(void *)
+static int CALLBACK refresh(void*)
 {
     InitializeCriticalSection(&critical);
     hjob = CreateJobObject(NULL, NULL);
     AssignProcessToJobObject(hjob, OpenProcess(PROCESS_ALL_ACCESS, FALSE, GetCurrentProcessId()));
     while (WaitForSingleObject(end, 500) == WAIT_TIMEOUT)
     {
-	Load();
+        Load();
         Sleep(500);
     }
     CloseHandle(end);
@@ -207,24 +170,21 @@ static int CALLBACK refresh(void *)
 }
 static void init()
 {
- 	end = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-        DWORD id;
-        CloseHandle(CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)refresh, nullptr, 0, &id));
+    end = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+    DWORD id;
+    CloseHandle(CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)refresh, nullptr, 0, &id));
 }
-static void rundown()
-{
-    SetEvent(end);
-}
+static void rundown() { SetEvent(end); }
 
-static BOOLEAN GetChildren(pid_t pid, pid_t **pids, HANDLE** list, size_t *count)
+static BOOLEAN GetChildren(pid_t pid, pid_t** pids, HANDLE** list, size_t* count)
 {
     BOOLEAN rv = 0;
     EnterCriticalSection(&critical);
     if (pidList.size())
     {
         *count = 0;
-        *list = (HANDLE *)calloc(pidList.size(), sizeof(HANDLE));
-        *pids = (pid_t *)calloc(pidList.size(), sizeof(pid_t));
+        *list = (HANDLE*)calloc(pidList.size(), sizeof(HANDLE));
+        *pids = (pid_t*)calloc(pidList.size(), sizeof(pid_t));
         for (auto v : pidList)
         {
             (*pids)[*count] = v.first;
@@ -236,17 +196,16 @@ static BOOLEAN GetChildren(pid_t pid, pid_t **pids, HANDLE** list, size_t *count
     return rv;
 }
 
-typedef LONG WINAPI QueryFunc(HANDLE ProcessHandle, ULONG ProcessInformationClass,
-       PVOID ProcessInformation, ULONG ProcessInformationLength, PULONG ReturnLength);
+typedef LONG WINAPI QueryFunc(HANDLE ProcessHandle, ULONG ProcessInformationClass, PVOID ProcessInformation,
+                              ULONG ProcessInformationLength, PULONG ReturnLength);
 
-
-static pid_t waithandler (pid_t pid, int *status, int options)
+static pid_t waithandler(pid_t pid, int* status, int options)
 {
     HANDLE process = NULL;
     pid_t ret = -1;
-    size_t count=0;
-    HANDLE *handle_list;
-    pid_t *pid_list;
+    size_t count = 0;
+    HANDLE* handle_list;
+    pid_t* pid_list;
     Load();
     if (GetCurrentProcessId() == pid)
     {
@@ -254,7 +213,7 @@ static pid_t waithandler (pid_t pid, int *status, int options)
             *status = -1;
         goto fin;
     }
-    if (pid >0 || pid < - 10)
+    if (pid > 0 || pid < -10)
     {
         EnterCriticalSection(&critical);
         auto it = pidList.find(pid);
@@ -266,10 +225,10 @@ static pid_t waithandler (pid_t pid, int *status, int options)
         else
         {
             LeaveCriticalSection(&critical);
-            process = OpenProcess (SYNCHRONIZE | PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
-            if (!process && GetLastError () == ERROR_ACCESS_DENIED) 
+            process = OpenProcess(SYNCHRONIZE | PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
+            if (!process && GetLastError() == ERROR_ACCESS_DENIED)
             {
-                process = OpenProcess (SYNCHRONIZE, FALSE, pid);
+                process = OpenProcess(SYNCHRONIZE, FALSE, pid);
                 if (!process)
                 {
                     if (status)
@@ -292,11 +251,11 @@ static pid_t waithandler (pid_t pid, int *status, int options)
                 break;
             case WAIT_OBJECT_0:
             {
-                    DWORD val=-1;
-                    GetExitCodeProcess(process, &val);
-                    ret = pid;
-                    if (status)
-                        *status = val;
+                DWORD val = -1;
+                GetExitCodeProcess(process, &val);
+                ret = pid;
+                if (status)
+                    *status = val;
             }
             break;
         }
@@ -304,39 +263,39 @@ static pid_t waithandler (pid_t pid, int *status, int options)
     }
     else
     {
- 
-    if (GetChildren(pid, &pid_list, &handle_list, &count))
-    {
-        unsigned n;
-        switch ((n = WaitForMultipleObjects(count, handle_list, FALSE, (options & WNOHANG) ? 0 : INFINITE)))
+
+        if (GetChildren(pid, &pid_list, &handle_list, &count))
         {
-            case WAIT_TIMEOUT:
-                if (status)
-                    *status = -1;
-                ret = 0;
-                break;
-            case WAIT_FAILED:
-                if (status)
-                    *status = -1;
-                break;
-            default:
-                if (n >= WAIT_OBJECT_0 && n < WAIT_OBJECT_0 + count)
-                {
-                    DWORD val=-1;
-                    GetExitCodeProcess(handle_list[n - WAIT_OBJECT_0], &val);
-                    ret = pid_list[n - WAIT_OBJECT_0];
-                    if (status)
-                        *status = val;
-                    RemovePid(ret);
-                }
-                else
-                {
+            unsigned n;
+            switch ((n = WaitForMultipleObjects(count, handle_list, FALSE, (options & WNOHANG) ? 0 : INFINITE)))
+            {
+                case WAIT_TIMEOUT:
                     if (status)
                         *status = -1;
-                }
-                break;
+                    ret = 0;
+                    break;
+                case WAIT_FAILED:
+                    if (status)
+                        *status = -1;
+                    break;
+                default:
+                    if (n >= WAIT_OBJECT_0 && n < WAIT_OBJECT_0 + count)
+                    {
+                        DWORD val = -1;
+                        GetExitCodeProcess(handle_list[n - WAIT_OBJECT_0], &val);
+                        ret = pid_list[n - WAIT_OBJECT_0];
+                        if (status)
+                            *status = val;
+                        RemovePid(ret);
+                    }
+                    else
+                    {
+                        if (status)
+                            *status = -1;
+                    }
+                    break;
+            }
         }
-    }
     }
 fin:
     if (count)
@@ -344,15 +303,9 @@ fin:
         free(handle_list);
         free(pid_list);
     }
-	return ret;
+    return ret;
 }
 
-pid_t _RTL_FUNC wait(int *status)
-{
-    return waithandler(-1, status, 0);
-}
+pid_t _RTL_FUNC wait(int* status) { return waithandler(-1, status, 0); }
 
-pid_t	 _RTL_FUNC waitpid (pid_t pid, int *status, int options)
-{
-    return waithandler(pid, status, options);
-}
+pid_t _RTL_FUNC waitpid(pid_t pid, int* status, int options) { return waithandler(pid, status, options); }

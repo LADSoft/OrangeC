@@ -1,7 +1,7 @@
 #ifndef _RPCNTERR_H
 #define _RPCNTERR_H
-#if __GNUC__ >=3
-#pragma GCC system_header
+#if __GNUC__ >= 3
+#    pragma GCC system_header
 #endif
 
 #define RPC_S_OK ERROR_SUCCESS

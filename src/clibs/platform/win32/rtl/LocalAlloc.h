@@ -1,22 +1,22 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     As a special exception, if other files instantiate templates or
  *     use macros or inline functions from this file, or you compile
  *     this file and link it with other works to produce a work based
@@ -24,50 +24,70 @@
  *     work to be covered by the GNU General Public License. However
  *     the source code for this file must still be made available in
  *     accordance with section (3) of the GNU General Public License.
- *     
+ *
  *     This exception does not invalidate any other reasons why a work
  *     based on this file might be covered by the GNU General Public
  *     License.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
+// this is here because the threading stuff has to be up and running before the memory management stuff is
+// but we have to allocate things in the threading stuff
+#include <windows.h>
 
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <time.h>
-#include <locale.h>
-#include <wchar.h>
-#include "libp.h"
-
-char ___realloc_stub = 0;
-
-void* _RTL_FUNC realloc(void* buf, size_t size)
+template <class T>
+class LocalAllocAllocator
 {
-    if (size == 0)
+  public:
+    typedef size_t size_type;
+    typedef ptrdiff_t difference_type;
+    typedef T* pointer;
+    typedef const T* const_pointer;
+    typedef T& reference;
+    typedef const T& const_reference;
+    typedef T value_type;
+
+    LocalAllocAllocator() {}
+    LocalAllocAllocator(const LocalAllocAllocator&) {}
+
+    pointer allocate(size_type n, const void* = 0) { return (T*)LocalAlloc(LMEM_FIXED, n * sizeof(T)); }
+
+    void deallocate(void* p, size_type)
     {
-        free(buf);
-        return &___realloc_stub;
+        if (p)
+        {
+            LocalFree(p);
+        }
     }
-    int oldsize, newsize = size;
-    char* ptr;
-    newsize += 7; /* must be the same as in malloc for comparison purposes */
-    newsize &= MALLOC_MASK;
-    if (buf)
-        oldsize = (((FREELIST*)buf) - 1)->size - sizeof(FREELIST);
-    else
-        oldsize = (size_t)-1;
-    if (oldsize == newsize)
-        return buf;
-    ptr = malloc(newsize);
-    if (ptr && buf)
-    { /* borland C allows buf to be zero... */
-        if (oldsize > size)
-            oldsize = size;
-        memcpy(ptr, buf, oldsize);
-        free(buf);
+
+    pointer address(reference x) const { return &x; }
+    const_pointer address(const_reference x) const { return &x; }
+    LocalAllocAllocator<T>& operator=(const LocalAllocAllocator&) { return *this; }
+    template <class... Args>
+    void construct(pointer p, Args&&... args)
+    {
+        new ((T*)p) T(std::forward<Args>(args)...);
     }
-    return ptr;
-}
+    void destroy(pointer p) { p->~T(); }
+
+    size_type max_size() const { return size_t(-1); }
+
+    template <class U>
+    struct rebind
+    {
+        typedef LocalAllocAllocator<U> other;
+    };
+
+    template <class U>
+    LocalAllocAllocator(const LocalAllocAllocator<U>&)
+    {
+    }
+
+    template <class U>
+    LocalAllocAllocator& operator=(const LocalAllocAllocator<U>&)
+    {
+        return *this;
+    }
+};

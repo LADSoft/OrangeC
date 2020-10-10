@@ -36,8 +36,11 @@
 SHELL=cmd.exe
 
 EXCLUDE = $(EXCLUDE) crtdll.l
+H_FILES = $(wildcard *.h)
+C_DEPENDENCIES = $(wildcard *.c)
 
 all: crtdll.l
+$(eval $(FORMATTER))
 
 .\crtdmain.o: crtdmain.c
 	$(CC) /c $(CFLAGS) $(STDINCLUDE) -o$@ $^

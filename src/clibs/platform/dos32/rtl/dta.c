@@ -48,7 +48,7 @@ extern int __dtabuflen ;
 UWORD __dtaseg;
 static SELECTOR __dtasel;
 
-#pragma startup initdta 253
+#pragma startup initdta 252
 #pragma rundown freedta 3
 
 static void initdta(void)

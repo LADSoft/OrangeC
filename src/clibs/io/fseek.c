@@ -1,22 +1,22 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     As a special exception, if other files instantiate templates or
  *     use macros or inline functions from this file, or you compile
  *     this file and link it with other works to produce a work based
@@ -24,14 +24,14 @@
  *     work to be covered by the GNU General Public License. However
  *     the source code for this file must still be made available in
  *     accordance with section (3) of the GNU General Public License.
- *     
+ *
  *     This exception does not invalidate any other reasons why a work
  *     based on this file might be covered by the GNU General Public
  *     License.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <stdio.h>
@@ -44,16 +44,17 @@
 #include <stdio.h>
 #include "libp.h"
 
-int _RTL_FUNC fseek (FILE *stream, long offset, int origin)
+int _RTL_FUNC fseek(FILE* stream, long offset, int origin)
 {
     flockfile(stream);
     int rv = fseek_unlocked(stream, offset, origin);
     funlockfile(stream);
     return rv;
 }
-int _RTL_FUNC fseek_unlocked (FILE *stream, long offset, int origin)
+int _RTL_FUNC fseek_unlocked(FILE* stream, long offset, int origin)
 {
-    if (stream->token != FILTOK) {
+    if (stream->token != FILTOK)
+    {
         errno = ENOENT;
         return EOF;
     }
@@ -61,11 +62,12 @@ int _RTL_FUNC fseek_unlocked (FILE *stream, long offset, int origin)
     if (stream->flags & _F_BUFFEREDSTRING)
     {
         int end;
-        for (end=0; end < stream->bsize; end++)
+        for (end = 0; end < stream->bsize; end++)
             if (stream->buffer[end] == 0)
                 break;
         int n;
-        switch (origin) {
+        switch (origin)
+        {
             case SEEK_CUR:
                 n = stream->curp - stream->buffer;
                 break;
@@ -97,7 +99,7 @@ int _RTL_FUNC fseek_unlocked (FILE *stream, long offset, int origin)
             unsigned newSize = stream->bsize;
             while (newSize < n1)
                 newSize *= 2;
-            void *p = realloc(stream->buffer, newSize);
+            void* p = realloc(stream->buffer, newSize);
             if (p)
             {
                 stream->curp = p + (stream->curp - stream->buffer);
@@ -105,7 +107,7 @@ int _RTL_FUNC fseek_unlocked (FILE *stream, long offset, int origin)
                 stream->bsize = newSize;
             }
         }
-        for (int i=end; i < n1; i++)
+        for (int i = end; i < n1; i++)
             stream->buffer[i] = 0;
         stream->level = stream->flags & _F_OUT ? -stream->bsize + n1 : stream->bsize - n1;
         if (stream->flags & _F_OUT)
@@ -113,13 +115,14 @@ int _RTL_FUNC fseek_unlocked (FILE *stream, long offset, int origin)
         stream->curp = stream->buffer + n1;
         stream->flags &= ~_F_UNGETC;
         stream->hold = 0;
-        memset(stream->extended->mbstate,0,sizeof(stream->extended->mbstate));
-        stream->flags &= ~(_F_EOF | _F_XEOF) ;            
+        memset(stream->extended->mbstate, 0, sizeof(stream->extended->mbstate));
+        stream->flags &= ~(_F_EOF | _F_XEOF);
         if (origin == SEEK_END && offset >= 0 && !(stream->extended->flags2 & _F2_DYNAMICBUFFER))
             stream->flags |= _F_EOF | _F_XEOF;
         return 0;
     }
-    switch (origin) {
+    switch (origin)
+    {
         case SEEK_CUR:
         case SEEK_SET:
         case SEEK_END:
@@ -129,14 +132,15 @@ int _RTL_FUNC fseek_unlocked (FILE *stream, long offset, int origin)
             {
                 return EOF;
             }
-            if (lseek(fileno(stream),offset,origin) < 0) {
+            if (lseek(fileno(stream), offset, origin) < 0)
+            {
                 stream->flags |= _F_ERR;
                 errno = EIO;
                 return EOF;
             }
-            memset(stream->extended->mbstate,0,sizeof(stream->extended->mbstate));
+            memset(stream->extended->mbstate, 0, sizeof(stream->extended->mbstate));
             stream->level = 0;
-            stream->flags &= ~(_F_EOF | _F_XEOF | _F_IN | _F_OUT) ;            
+            stream->flags &= ~(_F_EOF | _F_XEOF | _F_IN | _F_OUT);
             if (origin == SEEK_END && offset >= 0)
                 stream->flags |= _F_EOF | _F_XEOF;
             __uio_clearerr(fileno(stream));

@@ -35,9 +35,11 @@
 
 ASM_DEPENDENCIES = $(wildcard 386\*.nas)
 C_DEPENDENCIES = $(wildcard *.c)
+H_FILES = $(wildcard *.h)
 C_FLAGS=/C-E #forces stack frames for this part of the RTL
 
 all: $(DEPENDENCIES)
+$(eval $(FORMATTER))
 
 profile.o: profile.c
 	$(CC) /c $(STDINCLUDE) -o$(OBJECT)\$@F $^

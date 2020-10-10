@@ -1,22 +1,22 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     As a special exception, if other files instantiate templates or
  *     use macros or inline functions from this file, or you compile
  *     this file and link it with other works to produce a work based
@@ -24,14 +24,14 @@
  *     work to be covered by the GNU General Public License. However
  *     the source code for this file must still be made available in
  *     accordance with section (3) of the GNU General Public License.
- *     
+ *
  *     This exception does not invalidate any other reasons why a work
  *     based on this file might be covered by the GNU General Public
  *     License.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #define GUI 1
@@ -40,11 +40,19 @@
 #include <windows.h>
 #include <setjmp.h>
 #include <string.h>
+#include <errno.h>
+#include <windows.h>
+#include <process.h>
+#include <time.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <wchar.h>
+#include <locale.h>
+#include "libp.h"
 
 extern char INITSTART[], INITEND[], EXITSTART[], EXITEND[], BSSSTART[], BSSEND[];
 extern char _TLSINITSTART[], _TLSINITEND[];
 
-void* __tlsStart, *__tlsEnd;
 extern PASCAL struct defstr
 {
     int flags;
@@ -64,6 +72,13 @@ unsigned _isDLL;
 static int jumped;
 void PASCAL __xceptinit(int* block);
 void PASCAL __xceptrundown(void);
+
+#pragma startup init 253
+#pragma rundown destroy 3
+
+static void init(void) { __thrdRegisterModule(__hInstance, _TLSINITSTART, _TLSINITEND); }
+static void destroy(void) { __thrdUnregisterModule(__hInstance); }
+
 // in the follow, the args are ONLY valid for DLLs
 int __stdcall ___startup(HINSTANCE hInst, DWORD fdwReason, LPVOID lpvReserved)
 {
@@ -74,8 +89,6 @@ int __stdcall ___startup(HINSTANCE hInst, DWORD fdwReason, LPVOID lpvReserved)
     if (startupStruct.flags & GUI)
         _win32 = 1;
     __xceptinit(&exceptBlock);
-    __tlsStart = _TLSINITSTART;
-    __tlsEnd = _TLSINITEND;
     if (!(startupStruct.flags & DLL) || fdwReason == DLL_PROCESS_ATTACH)
     {
         if (startupStruct.flags & DLL)

@@ -45,3 +45,7 @@ else
 	$(MAKE) -Clibcxx/src
 endif
 endif
+
+format:
+	$(MAKE) -CCOMPLIB format
+	$(MAKE) -CLIBEXTRA format

@@ -1,22 +1,22 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     As a special exception, if other files instantiate templates or
  *     use macros or inline functions from this file, or you compile
  *     this file and link it with other works to produce a work based
@@ -24,14 +24,14 @@
  *     work to be covered by the GNU General Public License. However
  *     the source code for this file must still be made available in
  *     accordance with section (3) of the GNU General Public License.
- *     
+ *
  *     This exception does not invalidate any other reasons why a work
  *     based on this file might be covered by the GNU General Public
  *     License.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 extern void _import exit(int);
@@ -63,6 +63,9 @@ FILE* __stdout;
 FILE* __stderr;
 FILE* __stdaux;
 FILE* __stdprn;
+
+void __thrdRegisterModule(HANDLE module, void* tlsStart, void* tlsEnd) {}
+void __thrdUnregisterModule(HANDLE module) {}
 
 void __crtexit(int n) { exit(n); }
 LONG ___xceptionhandle(PEXCEPTION_RECORD er, void* frame, PCONTEXT context, void* dispatchercontext)
@@ -121,11 +124,11 @@ void PASCAL __xceptinit(int* block)
 {
     int newmode = 0;
     _xceptblkptr = block;
-    asm mov eax, [block];
-    asm mov[eax + 4], offset ___xceptionhandle;
-    asm mov ecx, fs : [0];
-    asm mov[eax], ecx;
-    asm mov fs : [0], eax;
+    __asm mov eax, [block];
+    __asm mov[eax + 4], offset ___xceptionhandle;
+    __asm mov ecx, fs : [0];
+    __asm mov[eax], ecx;
+    __asm mov fs : [0], eax;
 
     // msvcrdm startup
     __stdin = __getStream(0);
@@ -137,11 +140,11 @@ void PASCAL __xceptinit(int* block)
 }
 void PASCAL __xceptrundown(void)
 {
-    asm mov eax, [_xceptblkptr];
-    asm cmp eax, fs : [0];
-    asm jnz nounset;
-    asm mov eax, [eax];
-    asm mov fs : [0], eax;
+    __asm mov eax, [_xceptblkptr];
+    __asm cmp eax, fs : [0];
+    __asm jnz nounset;
+    __asm mov eax, [eax];
+    __asm mov fs : [0], eax;
 nounset:
     return;
 }

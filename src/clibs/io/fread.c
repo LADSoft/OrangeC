@@ -1,4 +1,4 @@
-/* 
+/*
    Copyright 1994-2003 Free Software Foundation, Inc.
 
    This library is free software; you can redistribute it and/or
@@ -13,7 +13,7 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with this library; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307
    USA
 
    You may contact the author at:
@@ -38,43 +38,45 @@
 
 int __getmode(int __handle);
 
-size_t _RTL_FUNC fread(void *restrict buf, size_t size, size_t count,
-                FILE *restrict stream)
+size_t _RTL_FUNC fread(void* restrict buf, size_t size, size_t count, FILE* restrict stream)
 {
     flockfile(stream);
     size_t rv = fread_unlocked(buf, size, count, stream);
     funlockfile(stream);
     return rv;
 }
-size_t _RTL_FUNC fread_unlocked(void *restrict buf, size_t size, size_t count,
-                FILE *restrict stream)
+size_t _RTL_FUNC fread_unlocked(void* restrict buf, size_t size, size_t count, FILE* restrict stream)
 {
-    int i = 0,rv, num = size * count;
-    char *out = (char *)buf ;
+    int i = 0, rv, num = size * count;
+    char* out = (char*)buf;
     int binary;
-    if (stream->token != FILTOK) {
+    if (stream->token != FILTOK)
+    {
         errno = _dos_errno = ENOENT;
         return 0;
     }
     if (num == 0)
         return 0;
     stream->flags &= ~_F_VBUF;
-    if (!(stream->flags & _F_READ)) {
+    if (!(stream->flags & _F_READ))
+    {
         stream->flags |= _F_ERR;
         errno = EFAULT;
         return 0;
     }
     if (stream == stdin)
         fflush(stdout);
-   if (!(stream->flags & _F_IN)) {
-        if (stream->flags & _F_OUT) {
+    if (!(stream->flags & _F_IN))
+    {
+        if (stream->flags & _F_OUT)
+        {
             if (fflush(stream))
                 return 0;
         }
         if (stream->flags & _F_BUFFEREDSTRING)
         {
             if (stream->flags & _F_OUT)
-                stream->level = - stream->level;              
+                stream->level = -stream->level;
         }
         else
         {
@@ -84,31 +86,35 @@ size_t _RTL_FUNC fread_unlocked(void *restrict buf, size_t size, size_t count,
         stream->flags |= _F_IN;
     }
     if (stream->flags & _F_EOF)
-       if (isatty(fileno(stream)))
-           stream->flags &= ~(_F_XEOF | _F_EOF);
-       else
-           return 0;
+        if (isatty(fileno(stream)))
+            stream->flags &= ~(_F_XEOF | _F_EOF);
+        else
+            return 0;
     if (num == 0)
-        return 0 ;
-    if (stream->flags & _F_UNGETC) {
-        out[i++] = stream->hold ;
+        return 0;
+    if (stream->flags & _F_UNGETC)
+    {
+        out[i++] = stream->hold;
         stream->hold = 0;
-        stream->flags &= ~ _F_UNGETC;
+        stream->flags &= ~_F_UNGETC;
     }
     binary = ((__getmode(fileno(stream)) & O_BINARY) || (stream->flags & _F_BUFFEREDSTRING));
-    for (;i < num;) {
-        if (--stream->level <= 0) {
-          if (stream->flags & _F_BUFFEREDSTRING) {
-             stream->flags |= _F_EOF ;
-             break ;
-          }
+    for (; i < num;)
+    {
+        if (--stream->level <= 0)
+        {
+            if (stream->flags & _F_BUFFEREDSTRING)
+            {
+                stream->flags |= _F_EOF;
+                break;
+            }
             rv = __readbuf(stream);
             if (rv)
-                break ;
+                break;
         }
-        rv = *stream->curp++ ;
+        rv = *stream->curp++;
         if (binary || rv != '\r')
-            out[i++] = rv ;
+            out[i++] = rv;
     }
-    return i / size ;
+    return i / size;
 }

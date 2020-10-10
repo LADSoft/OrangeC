@@ -50,10 +50,10 @@ extern int main();
 extern void __stdcall monitor_init();
 static void Lock()
 {
-    asm mov ecx, CODESTART
-    asm mov esi, BSSEND
-    asm sub esi, ecx
-    asm {
+    __asm mov ecx, CODESTART
+    __asm mov esi, BSSEND
+    __asm sub esi, ecx
+    __asm {
         mov cx,bx
         shr ebx,16
         mov di,si
@@ -64,10 +64,10 @@ static void Lock()
 }
 static void UnLock()
 {
-    asm mov ecx, CODESTART
-    asm mov esi, BSSEND
-    asm sub esi, ecx
-    asm {
+    __asm mov ecx, CODESTART
+    __asm mov esi, BSSEND
+    __asm sub esi, ecx
+    __asm {
         mov cx,bx
         shr ebx,16
         mov di,si
@@ -79,7 +79,7 @@ static void UnLock()
 int __startup()
 {
     int rv;
-    asm	mov	[__pm308],edx
+    __asm	mov	[__pm308],edx
     Lock();
     memset(BSSSTART, 0, BSSEND-BSSSTART);
     __srproc(INITSTART, INITEND);

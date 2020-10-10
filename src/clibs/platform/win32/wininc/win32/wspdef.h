@@ -1,4 +1,4 @@
-/* 
+/*
    wspdef.h
 
    Base definitions
@@ -11,7 +11,7 @@
    modify it under the terms of the GNU Library General Public
    License as published by the Free Software Foundation; either
    version 2 of the License, or (at your option) any later version.
-   
+
    This library is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
@@ -19,16 +19,16 @@
 
    If you are interested in a warranty or support for this source code,
    contact Scott Christley <scottc@net-community.com> for more information.
-   
+
    You should have received a copy of the GNU Library General Public
    License along with this library; see the file COPYING.LIB.
-   If not, write to the Free Software Foundation, 
+   If not, write to the Free Software Foundation,
    59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 
    -----------
    DAL 2003 - this file modified extensively for my compiler.  New
    definitionswnwn added as well.
-*/ 
+*/
 #define SPLDS_ASSET_NUMBER TEXT("assetNumber")
 #define SPLDS_BYTES_PER_MINUTE TEXT("bytesPerMinute")
 #define SPLDS_DESCRIPTION TEXT("description")
@@ -131,17 +131,13 @@
 #define FORM_PRINTER (2)
 #define FORM_USER (0)
 
-#define JOB_ALL_ACCESS         (STANDARD_RIGHTS_REQUIRED    |\
-                                JOB_ACCESS_ADMINISTER)
+#define JOB_ALL_ACCESS (STANDARD_RIGHTS_REQUIRED | JOB_ACCESS_ADMINISTER)
 
-#define JOB_READ               (STANDARD_RIGHTS_READ        |\
-                                JOB_ACCESS_ADMINISTER)
+#define JOB_READ (STANDARD_RIGHTS_READ | JOB_ACCESS_ADMINISTER)
 
-#define JOB_WRITE              (STANDARD_RIGHTS_WRITE       |\
-                                JOB_ACCESS_ADMINISTER)
+#define JOB_WRITE (STANDARD_RIGHTS_WRITE | JOB_ACCESS_ADMINISTER)
 
-#define JOB_EXECUTE            (STANDARD_RIGHTS_EXECUTE     |\
-                                JOB_ACCESS_ADMINISTER)
+#define JOB_EXECUTE (STANDARD_RIGHTS_EXECUTE | JOB_ACCESS_ADMINISTER)
 
 #define JOB_ACCESS_ADMINISTER (16)
 #define JOB_CONTROL_CANCEL (3)
@@ -215,18 +211,13 @@
 #define PORT_TYPE_REDIRECTED (4)
 #define PORT_TYPE_WRITE (1)
 
-#define PRINTER_ALL_ACCESS    (STANDARD_RIGHTS_REQUIRED     |\
-                               PRINTER_ACCESS_ADMINISTER    |\
-                               PRINTER_ACCESS_USE)
+#define PRINTER_ALL_ACCESS (STANDARD_RIGHTS_REQUIRED | PRINTER_ACCESS_ADMINISTER | PRINTER_ACCESS_USE)
 
-#define PRINTER_READ          (STANDARD_RIGHTS_READ         |\
-                               PRINTER_ACCESS_USE)
+#define PRINTER_READ (STANDARD_RIGHTS_READ | PRINTER_ACCESS_USE)
 
-#define PRINTER_WRITE         (STANDARD_RIGHTS_WRITE        |\
-                               PRINTER_ACCESS_USE)
+#define PRINTER_WRITE (STANDARD_RIGHTS_WRITE | PRINTER_ACCESS_USE)
 
-#define PRINTER_EXECUTE       (STANDARD_RIGHTS_EXECUTE      |\
-                               PRINTER_ACCESS_USE)
+#define PRINTER_EXECUTE (STANDARD_RIGHTS_EXECUTE | PRINTER_ACCESS_USE)
 
 #define PRINTER_ACCESS_ADMINISTER (4)
 #define PRINTER_ACCESS_USE (8)
@@ -358,20 +349,13 @@
 
 #define SERVER_ACCESS_ADMINISTER (1)
 #define SERVER_ACCESS_ENUMERATE (2)
-#define SERVER_ALL_ACCESS    (STANDARD_RIGHTS_REQUIRED      |\
-                              SERVER_ACCESS_ADMINISTER      |\
-                              SERVER_ACCESS_ENUMERATE)
+#define SERVER_ALL_ACCESS (STANDARD_RIGHTS_REQUIRED | SERVER_ACCESS_ADMINISTER | SERVER_ACCESS_ENUMERATE)
 
-#define SERVER_READ          (STANDARD_RIGHTS_READ          |\
-                              SERVER_ACCESS_ENUMERATE)
+#define SERVER_READ (STANDARD_RIGHTS_READ | SERVER_ACCESS_ENUMERATE)
 
-#define SERVER_WRITE         (STANDARD_RIGHTS_WRITE         |\
-                              SERVER_ACCESS_ADMINISTER      |\
-                              SERVER_ACCESS_ENUMERATE)
+#define SERVER_WRITE (STANDARD_RIGHTS_WRITE | SERVER_ACCESS_ADMINISTER | SERVER_ACCESS_ENUMERATE)
 
-#define SERVER_EXECUTE       (STANDARD_RIGHTS_EXECUTE       |\
-                              SERVER_ACCESS_ENUMERATE)
+#define SERVER_EXECUTE (STANDARD_RIGHTS_EXECUTE | SERVER_ACCESS_ENUMERATE)
 
 #define SPOOL_FILE_PERSISTENT (1)
 #define SPOOL_FILE_TEMPORARY (2)
-

@@ -41,6 +41,11 @@ all:
 	$(MAKE) -CDOS32 --eval="OBJECT=$(DOSOBJECT)"
 	$(MAKE) -CCIL32
 
+format:
+	$(MAKE) -CCOMMON format
+	$(MAKE) -CWIN32 format
+	$(MAKE) -CDOS32 format
+
 DISTRIBUTE:
 	$(MAKE) -CCOMMON DISTRIBUTE
 	$(MAKE) -CWIN32 DISTRIBUTE

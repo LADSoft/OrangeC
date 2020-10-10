@@ -27,4 +27,5 @@ namespace Optimizer
 void WriteText(void);
 int GetOutputSize(void);
 void OutputIntermediate(SharedMemory* mem);
+void WriteMappingFile(SharedMemory* mem, FILE* fil);
 }  // namespace Optimizer

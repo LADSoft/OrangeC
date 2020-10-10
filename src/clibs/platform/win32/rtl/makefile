@@ -34,14 +34,17 @@
 # 
 
 ASM_DEPENDENCIES = $(wildcard 386/*.nas)
+H_FILES = $(wildcard *.h)
 C_DEPENDENCIES = $(wildcard *.c)
 CPP_DEPENDENCIES = $(wildcard *.cpp)
+FORMAT_EXCLUDE = llfpstub.xcf
 
 ifdef BUILDING_DLL
 EXCLUDE = profilew.o proftmw.o profile.o
 endif
 
 all: $(DEPENDENCIES)
+$(eval $(FORMATTER))
 
 profilew.o: profilew.c
 	$(CC) /! /c $(STDINCLUDE) /9 -o$(OBJECT)\$@ $^
@@ -52,7 +55,7 @@ proftmw.o: proftmw.c
 vsconio.o: vsconio.c
 	$(CC) /! /c $(STDINCLUDE) $(CFLAGS) /DVSDLL -o$(OBJECT)\$@ $^
 
-llthrd.o: llthrd.c
+llthrd.o: llthrd.cpp
 	$(CC) /! /c /C+E $(STDINCLUDE) $(BUILDING_DLL) /9 -o$(OBJECT)\$@ $^
 
 DISTRIBUTE:

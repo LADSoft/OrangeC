@@ -1,22 +1,22 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     As a special exception, if other files instantiate templates or
  *     use macros or inline functions from this file, or you compile
  *     this file and link it with other works to produce a work based
@@ -24,14 +24,14 @@
  *     work to be covered by the GNU General Public License. However
  *     the source code for this file must still be made available in
  *     accordance with section (3) of the GNU General Public License.
- *     
+ *
  *     This exception does not invalidate any other reasons why a work
  *     based on this file might be covered by the GNU General Public
  *     License.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 /*  math.h
@@ -133,14 +133,14 @@ extern "C"
     struct _exception
     {
         int type;
-        char *  name;
+        char* name;
         double arg1, arg2, retval;
     };
 
     struct _exceptionl
     {
         int type;
-        char *  name;
+        char* name;
         long double arg1, arg2, retval;
     };
 
@@ -155,9 +155,9 @@ extern "C"
     int _RTL_FUNC _IMPORTMM __fpclassifyl(long double __x);
 
 #if __STDC_VERSION__ >= 199901L || defined(__cplusplus)
-    float _RTL_FUNC _IMPORTMM nanf(const char *ZSTR  tagp);
-    double _RTL_FUNC _IMPORTMM nan(const char *ZSTR  tagp);
-    long double _RTL_FUNC _IMPORTMM nanl(const char *ZSTR  tagp);
+    float _RTL_FUNC _IMPORTMM nanf(const char* ZSTR tagp);
+    double _RTL_FUNC _IMPORTMM nan(const char* ZSTR tagp);
+    long double _RTL_FUNC _IMPORTMM nanl(const char* ZSTR tagp);
 
     int _RTL_FUNC _IMPORTMM signbitf(float __x);
     int _RTL_FUNC _IMPORTMM signbit(double __x);
@@ -397,10 +397,10 @@ extern "C"
 #    endif
 #endif
 
-    double _RTL_FUNC _IMPORT atof(const char *ZSTR  __s);
+    double _RTL_FUNC _IMPORT atof(const char* ZSTR __s);
     int _matherrl(struct _exceptionl* __e);
 
-    long double _RTL_FUNC _IMPORT _atold(const char *ZSTR  __s);
+    long double _RTL_FUNC _IMPORT _atold(const char* ZSTR __s);
 #ifdef __cplusplus
 };
 #endif

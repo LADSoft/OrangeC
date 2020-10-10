@@ -62,27 +62,27 @@ static void conio_init(void)
     unsigned char atr;
     int pos;
     SELECTOR sel;
-    asm mov [sel],ds
+    __asm mov [sel],ds
     dpmi_get_alias_descriptor(&realdata, sel);
     dpmi_set_sel_base(realdata,0x0);
     dpmi_set_sel_limit(realdata,0xF0000);
-    asm push fs
-    asm mov fs,[realdata]
-    asm mov al,fs:[0x449]
-    asm mov [mode],al
-    asm mov ax,fs:[0x450]
-    asm mov [curs],ax
-    asm pop fs
+    __asm push fs
+    __asm mov fs,[realdata]
+    __asm mov al,fs:[0x449]
+    __asm mov [mode],al
+    __asm mov ax,fs:[0x450]
+    __asm mov [curs],ax
+    __asm pop fs
     textini(mode);
     the_info.curx = curs & 0xff;
     the_info.cury = curs >> 8;
    pos = screenbase + the_info.screenwidth * the_info.screenheight * 2 - 1;
-    asm push fs;
-    asm mov fs,[realdata];
-    asm mov ecx,[pos];
-    asm mov al,fs:[ecx]
-    asm mov [atr],al
-  asm pop fs
+    __asm push fs;
+    __asm mov fs,[realdata];
+    __asm mov ecx,[pos];
+    __asm mov al,fs:[ecx]
+    __asm mov [atr],al
+  __asm pop fs
     the_info.normattr = the_info.attribute = atr;
         
     
@@ -186,102 +186,102 @@ static void biosmode(int mode )
 }
 unsigned char _RTL_FUNC    inportb( unsigned __portid )
 {
-    asm  mov edx,[__portid];
-    asm  in al,dx;
-    asm  movzx eax,al;
+    __asm  mov edx,[__portid];
+    __asm  in al,dx;
+    __asm  movzx eax,al;
     return _EAX;
 }
 unsigned _RTL_FUNC         inport ( unsigned __portid )
 {
-    asm  mov edx,[__portid];
-    asm  in ax,dx;
-    asm  movzx eax,ax;
+    __asm  mov edx,[__portid];
+    __asm  in ax,dx;
+    __asm  movzx eax,ax;
     return _EAX;
 }
 unsigned _RTL_FUNC         inportd ( unsigned __portid )
 {
-    asm  mov edx,[__portid];
-    asm  in eax,dx;
+    __asm  mov edx,[__portid];
+    __asm  in eax,dx;
     return _EAX;
 }
 int _RTL_FUNC              inp( unsigned __portid )
 {
-    asm  mov edx,[__portid];
-    asm  in ax,dx;
-    asm  movsx eax,ax;
+    __asm  mov edx,[__portid];
+    __asm  in ax,dx;
+    __asm  movsx eax,ax;
     return _EAX;
 }
 unsigned _RTL_FUNC         inpw( unsigned __portid )
 {
-    asm  mov edx,[__portid];
-    asm  in ax,dx;
-    asm  movzx eax,ax;
+    __asm  mov edx,[__portid];
+    __asm  in ax,dx;
+    __asm  movzx eax,ax;
     return _EAX;
 }
 void _RTL_FUNC             outportb( unsigned __portid, unsigned char __value )
 {
-    asm mov edx,[__portid];
-    asm mov al,[__value];
-    asm out dx,al;
+    __asm mov edx,[__portid];
+    __asm mov al,[__value];
+    __asm out dx,al;
 }
 void _RTL_FUNC             outport ( unsigned __portid, unsigned __value )
 {
-    asm mov edx,[__portid];
-    asm mov ax,word ptr [__value];
-    asm out dx,ax;
+    __asm mov edx,[__portid];
+    __asm mov ax,word ptr [__value];
+    __asm out dx,ax;
 }
 void _RTL_FUNC             outportd ( unsigned __portid, unsigned __value )
 {
-    asm mov edx,[__portid];
-    asm mov eax,dword ptr [__value];
-    asm out dx,eax;
+    __asm mov edx,[__portid];
+    __asm mov eax,dword ptr [__value];
+    __asm out dx,eax;
 }
 int _RTL_FUNC              outp( unsigned __portid, int __value )
 {
-    asm mov edx,[__portid];
-    asm mov al,byte ptr [__value];
-    asm out dx,al;
+    __asm mov edx,[__portid];
+    __asm mov al,byte ptr [__value];
+    __asm out dx,al;
     return __value;
 }
 unsigned _RTL_FUNC         outpw( unsigned __portid, unsigned __value )
 {
-    asm mov edx,[__portid];
-    asm mov ax,word ptr [__value];
-    asm out dx,ax;
+    __asm mov edx,[__portid];
+    __asm mov ax,word ptr [__value];
+    __asm out dx,ax;
     return __value;
 }
 static void putthechar(int x, int y, int chr)
 {
     int pos = (y *the_info.screenwidth + x)*2 + screenbase;
     short value = (the_info.attribute << 8) + chr;
-    asm push fs;
-    asm mov ax,[realdata];
-    asm mov fs,ax;
-    asm mov ecx,[pos];
-  asm mov ax,[value];
-    asm mov word ptr fs:[ecx],ax;
-    asm pop fs;
+    __asm push fs;
+    __asm mov ax,[realdata];
+    __asm mov fs,ax;
+    __asm mov ecx,[pos];
+  __asm mov ax,[value];
+    __asm mov word ptr fs:[ecx],ax;
+    __asm pop fs;
 }
 static void scrollup (int ytop)
 {
     int y,x;
     int p1,p2;
-    asm push fs;
-    asm mov ax,[realdata];
-    asm mov fs,ax;
+    __asm push fs;
+    __asm mov ax,[realdata];
+    __asm mov fs,ax;
     for (y=ytop+1+the_info.wintop; y <the_info.winbottom; y++) {
         p1 = screenbase + (y* the_info.screenwidth + the_info.winleft)*2;
         p2 = p1 + the_info.screenwidth*2;
         for (x=the_info.winleft; x < the_info.winright; x++) {
-            asm mov eax,[p1];
-            asm mov ecx,[p2];
-            asm mov dx,word ptr fs:[ecx];
-            asm mov word ptr fs:[eax],dx;
+            __asm mov eax,[p1];
+            __asm mov ecx,[p2];
+            __asm mov dx,word ptr fs:[ecx];
+            __asm mov word ptr fs:[eax],dx;
             p1+=2;
             p2+=2;
         }
     }
-    asm pop fs
+    __asm pop fs
     y = the_info.attribute;
     the_info.attribute = the_info.normattr;
     for (x=the_info.winleft; x < the_info.winright; x++)
@@ -292,22 +292,22 @@ static void scrolldown (int ytop)
 {
     int y,x;
     int p1,p2;
-    asm push fs;
-    asm mov ax,[realdata];
-    asm mov fs,ax;
+    __asm push fs;
+    __asm mov ax,[realdata];
+    __asm mov fs,ax;
     for (y = the_info.winbottom-1; y>ytop+the_info.wintop; y--) {
         p1 = (y* the_info.screenwidth + the_info.winleft)*2 + screenbase;
         p2 = p1 - the_info.screenwidth*2;
         for (x=the_info.winleft; x < the_info.winright; x++) {
-            asm mov eax,[p1];
-            asm mov ecx,[p2];
-            asm mov dx,word ptr fs:[ecx];
-            asm mov word ptr fs:[eax],dx;
+            __asm mov eax,[p1];
+            __asm mov ecx,[p2];
+            __asm mov dx,word ptr fs:[ecx];
+            __asm mov word ptr fs:[eax],dx;
             p1+=2;
             p2+=2;
         }
     }
-    asm pop fs;
+    __asm pop fs;
     for (x=the_info.winleft; x < the_info.winright; x++)
         putthechar(x,ytop - the_info.wintop,' ');
 }
@@ -407,22 +407,22 @@ int _RTL_FUNC          gettext( int __left, int __top,
     __top += the_info.wintop;
     __right += the_info.winleft;
     __bottom += the_info.wintop;
-    asm push fs
-    asm mov fs,[realdata]
+    __asm push fs
+    __asm mov fs,[realdata]
     for (y=__top; y < __bottom; y++) {
         int pos;
         short value;
         pos = (y *the_info.screenwidth + __left)*2 + screenbase;
         for (x= __left; x < __right; x++) {
-            asm mov ecx,[pos];
-            asm inc [pos];
-            asm inc [pos];
-            asm mov ax,word ptr fs:[ecx];
-                asm mov [value],ax;
+            __asm mov ecx,[pos];
+            __asm inc [pos];
+            __asm inc [pos];
+            __asm mov ax,word ptr fs:[ecx];
+                __asm mov [value],ax;
             *q++ = value;
         }
     }
-    asm pop fs;
+    __asm pop fs;
 }
 void _RTL_FUNC         gettextinfo (struct text_info *__r )
 {
@@ -457,22 +457,22 @@ int _RTL_FUNC          puttext( int __left, int __top,
     __top += the_info.wintop;
     __right += the_info.winleft;
     __bottom += the_info.wintop;
-    asm push fs;
-    asm mov fs,[realdata]
+    __asm push fs;
+    __asm mov fs,[realdata]
     for (y=__top; y < __bottom; y++) {
         int pos;
         short value;
         pos = (y *the_info.screenwidth + __left)*2 + screenbase;
         for (x= __left; x < __right; x++) {
             value = *q++;
-            asm mov ecx,[pos]
-            asm inc [pos]
-            asm inc [pos]
-                asm mov ax,[value]
-            asm mov word ptr fs:[ecx],ax
+            __asm mov ecx,[pos]
+            __asm inc [pos]
+            __asm inc [pos]
+                __asm mov ax,[value]
+            __asm mov word ptr fs:[ecx],ax
         }
     }
-    asm pop fs
+    __asm pop fs
 }
 void _RTL_FUNC         textattr( int __newattr )
 {

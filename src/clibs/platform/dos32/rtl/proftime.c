@@ -50,14 +50,14 @@ unsigned int _elapsed_time(void)
 {
     int thisread;
 
-    asm sub eax,eax
+    __asm sub eax,eax
 
-    asm mov al,0x36
-    asm out 0x43,al
+    __asm mov al,0x36
+    __asm out 0x43,al
 
-  asm in al,0x40
-    asm xchg al,ah
-    asm in al,0x40
-  asm xchg al,ah
-    asm not ax
+  __asm in al,0x40
+    __asm xchg al,ah
+    __asm in al,0x40
+  __asm xchg al,ah
+    __asm not ax
 }

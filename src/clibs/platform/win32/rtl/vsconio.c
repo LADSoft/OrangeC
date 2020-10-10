@@ -1,22 +1,22 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     As a special exception, if other files instantiate templates or
  *     use macros or inline functions from this file, or you compile
  *     this file and link it with other works to produce a work based
@@ -24,14 +24,14 @@
  *     work to be covered by the GNU General Public License. However
  *     the source code for this file must still be made available in
  *     accordance with section (3) of the GNU General Public License.
- *     
+ *
  *     This exception does not invalidate any other reasons why a work
  *     based on this file might be covered by the GNU General Public
  *     License.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 #include <windows.h>
@@ -530,68 +530,68 @@ char* _RTL_FUNC getpass(const char* __prompt)
 int _RTL_FUNC ungetch(int __ch) { ungetchar = __ch; }
 unsigned char _RTL_FUNC inportb(unsigned __portid)
 {
-    asm mov edx, [__portid];
-    asm in al, dx;
-    asm movzx eax, al;
+    __asm mov edx, [__portid];
+    __asm in al, dx;
+    __asm movzx eax, al;
     return _EAX;
 }
 unsigned _RTL_FUNC inport(unsigned __portid)
 {
-    asm mov edx, [__portid];
-    asm in ax, dx;
-    asm movzx eax, ax;
+    __asm mov edx, [__portid];
+    __asm in ax, dx;
+    __asm movzx eax, ax;
     return _EAX;
 }
 unsigned _RTL_FUNC inportd(unsigned __portid)
 {
-    asm mov edx, [__portid];
-    asm in eax, dx;
+    __asm mov edx, [__portid];
+    __asm in eax, dx;
     return _EAX;
 }
 int _RTL_FUNC inp(unsigned __portid)
 {
-    asm mov edx, [__portid];
-    asm in ax, dx;
-    asm movsx eax, ax;
+    __asm mov edx, [__portid];
+    __asm in ax, dx;
+    __asm movsx eax, ax;
     return _EAX;
 }
 unsigned _RTL_FUNC inpw(unsigned __portid)
 {
-    asm mov edx, [__portid];
-    asm in ax, dx;
-    asm movzx eax, ax;
+    __asm mov edx, [__portid];
+    __asm in ax, dx;
+    __asm movzx eax, ax;
     return _EAX;
 }
 void _RTL_FUNC outportb(unsigned __portid, unsigned char __value)
 {
-    asm mov edx, [__portid];
-    asm mov al, [__value];
-    asm out dx, al;
+    __asm mov edx, [__portid];
+    __asm mov al, [__value];
+    __asm out dx, al;
 }
 void _RTL_FUNC outport(unsigned __portid, unsigned __value)
 {
-    asm mov edx, [__portid];
-    asm mov ax, word ptr[__value];
-    asm out dx, ax;
+    __asm mov edx, [__portid];
+    __asm mov ax, word ptr[__value];
+    __asm out dx, ax;
 }
 void _RTL_FUNC outportd(unsigned __portid, unsigned __value)
 {
-    asm mov edx, [__portid];
-    asm mov eax, dword ptr[__value];
-    asm out dx, eax;
+    __asm mov edx, [__portid];
+    __asm mov eax, dword ptr[__value];
+    __asm out dx, eax;
 }
 int _RTL_FUNC outp(unsigned __portid, int __value)
 {
-    asm mov edx, [__portid];
-    asm mov al, byte ptr[__value];
-    asm out dx, al;
+    __asm mov edx, [__portid];
+    __asm mov al, byte ptr[__value];
+    __asm out dx, al;
     return __value;
 }
 unsigned _RTL_FUNC outpw(unsigned __portid, unsigned __value)
 {
-    asm mov edx, [__portid];
-    asm mov ax, word ptr[__value];
-    asm out dx, ax;
+    __asm mov edx, [__portid];
+    __asm mov ax, word ptr[__value];
+    __asm out dx, ax;
     return __value;
 }
 #ifdef XXXXX

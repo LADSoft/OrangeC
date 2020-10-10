@@ -137,19 +137,16 @@ STATEMENT* currentLineData(BLOCKDATA* parent, LEXEME* lex, int offset)
     const char* file;
     if (!lex)
         return nullptr;
-    lineno = lex->linedata->lineno + offset;
+    lineno = lex->linedata->lineno + offset + 1;
     file = lex->errfile;
     while (*p && (strcmp((*p)->file, file) != 0 || lineno >= (*p)->lineno))
     {
+        rv = stmtNode(lex, parent, st_line);
+        rv->lineData = *p;
         p = &(*p)->next;
     }
     linesHead = *p;
     *p = nullptr;
-    if (ld)
-    {
-        rv = stmtNode(lex, parent, st_line);
-        rv->lineData = ld;
-    }
     return rv;
 }
 STATEMENT* stmtNode(LEXEME* lex, BLOCKDATA* parent, enum e_stmt stype)

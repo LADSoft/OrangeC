@@ -1,22 +1,22 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     As a special exception, if other files instantiate templates or
  *     use macros or inline functions from this file, or you compile
  *     this file and link it with other works to produce a work based
@@ -24,14 +24,14 @@
  *     work to be covered by the GNU General Public License. However
  *     the source code for this file must still be made available in
  *     accordance with section (3) of the GNU General Public License.
- *     
+ *
  *     This exception does not invalidate any other reasons why a work
  *     based on this file might be covered by the GNU General Public
  *     License.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 /*  io.h
@@ -107,11 +107,11 @@ extern "C"
 #define W_OK 2
 #define R_OK 4
 
-    int _RTL_FUNC _IMPORT access(const char *ZSTR  __path, int __amode);
-    int _RTL_FUNC _IMPORT chmod(const char *ZSTR  __path, int __amode);
+    int _RTL_FUNC _IMPORT access(const char* ZSTR __path, int __amode);
+    int _RTL_FUNC _IMPORT chmod(const char* ZSTR __path, int __amode);
     int _RTL_FUNC _IMPORT chsize(int __handle, long __size);
     int _RTL_FUNC _IMPORT close(int __handle);
-    int _RTL_FUNC _IMPORT creat(const char *ZSTR  __path, int __amode);
+    int _RTL_FUNC _IMPORT creat(const char* ZSTR __path, int __amode);
     int _RTL_FUNC _IMPORT dup(int __handle);
     int _RTL_FUNC _IMPORT dup2(int __oldhandle, int __newhandle);
     int _RTL_FUNC _IMPORT eof(int __handle);
@@ -122,49 +122,49 @@ extern "C"
     int _RTL_FUNC _IMPORT lock(int __handle, long __offset, long __length);
     int _RTL_FUNC _IMPORT locking(int __handle, int __mode, long __length);
     long _RTL_FUNC _IMPORT lseek(int __handle, long __offset, int __fromwhere);
-    char *ZSTR  _RTL_FUNC _IMPORT mktemp(char *ZSTR  __template);
-    int _RTL_FUNC _IMPORT mkstemp(char *ZSTR  __template);
-    int _RTL_FUNC _IMPORT open(const char *ZSTR  __path, int __access, ... /*unsigned mode*/);
+    char* ZSTR _RTL_FUNC _IMPORT mktemp(char* ZSTR __template);
+    int _RTL_FUNC _IMPORT mkstemp(char* ZSTR __template);
+    int _RTL_FUNC _IMPORT open(const char* ZSTR __path, int __access, ... /*unsigned mode*/);
     int _RTL_FUNC _IMPORT read(int __handle, void* __buf, unsigned __len);
-    int _RTL_FUNC _IMPORT remove(const char *ZSTR  __path);
-    int _RTL_FUNC _IMPORT rename(const char *ZSTR  __oldname, const char *ZSTR  __newname);
+    int _RTL_FUNC _IMPORT remove(const char* ZSTR __path);
+    int _RTL_FUNC _IMPORT rename(const char* ZSTR __oldname, const char* ZSTR __newname);
     int _RTL_FUNC _IMPORT setftime(int __handle, struct ftime* __ftimep);
     int _RTL_FUNC _IMPORT setmode(int __handle, int __amode);
 
-    int _RTL_FUNC _IMPORT sopen(const char *ZSTR  __path, int __access, int __shflag, ... /* unsigned mode */);
-    int _RTL_FUNC _IMPORT rmdir(const char *ZSTR  __path);
+    int _RTL_FUNC _IMPORT sopen(const char* ZSTR __path, int __access, int __shflag, ... /* unsigned mode */);
+    int _RTL_FUNC _IMPORT rmdir(const char* ZSTR __path);
     long _RTL_FUNC _IMPORT tell(int __handle);
     int _RTL_FUNC _IMPORT umask(int perm);
-    int _RTL_FUNC _IMPORT unlink(const char *ZSTR  __path);
+    int _RTL_FUNC _IMPORT unlink(const char* ZSTR __path);
     int _RTL_FUNC _IMPORT unlock(int __handle, long __offset, long __length);
     int _RTL_FUNC _IMPORT write(int __handle, const void* __buf, unsigned __len);
 
     long _RTL_FUNC _IMPORT _get_osfhandle(int __handle);
     int _RTL_FUNC _IMPORT _open_osfhandle(long __osfhandle, int __oflag);
 
-    int _RTL_FUNC _IMPORT _access(const char *ZSTR , int);
-    int _RTL_FUNC _IMPORT _chmod(const char *ZSTR , int);
+    int _RTL_FUNC _IMPORT _access(const char* ZSTR, int);
+    int _RTL_FUNC _IMPORT _chmod(const char* ZSTR, int);
     int _RTL_FUNC _IMPORT _chsize(int, long);
     int _RTL_FUNC _IMPORT _close(int);
-    int _RTL_FUNC _IMPORT _creat(const char *ZSTR , int);
+    int _RTL_FUNC _IMPORT _creat(const char* ZSTR, int);
     int _RTL_FUNC _IMPORT _dup(int);
     int _RTL_FUNC _IMPORT _dup2(int, int);
     int _RTL_FUNC _IMPORT _eof(int);
     long _RTL_FUNC _IMPORT _filelength(int);
-    long _RTL_FUNC _IMPORT _findfirst(const char *ZSTR , struct _finddata_t*);
+    long _RTL_FUNC _IMPORT _findfirst(const char* ZSTR, struct _finddata_t*);
     int _RTL_FUNC _IMPORT _findnext(long, struct _finddata_t*);
     int _RTL_FUNC _IMPORT _findclose(long);
     int _RTL_FUNC _IMPORT _isatty(int);
     int _RTL_FUNC _IMPORT _locking(int, int, long);
     long _RTL_FUNC _IMPORT _lseek(int, long, int);
-    char *ZSTR  _RTL_FUNC _IMPORT _mktemp(char *ZSTR );
-    int _RTL_FUNC _IMPORT _open(const char *ZSTR , int, ...);
+    char* ZSTR _RTL_FUNC _IMPORT _mktemp(char* ZSTR);
+    int _RTL_FUNC _IMPORT _open(const char* ZSTR, int, ...);
     int _RTL_FUNC _IMPORT _read(int, void*, unsigned int);
     int _RTL_FUNC _IMPORT _setmode(int, int);
-    int _RTL_FUNC _IMPORT _sopen(const char *ZSTR , int, int, ...);
+    int _RTL_FUNC _IMPORT _sopen(const char* ZSTR, int, int, ...);
     long _RTL_FUNC _IMPORT _tell(int);
     int _RTL_FUNC _IMPORT _umask(int perm);
-    int _RTL_FUNC _IMPORT _unlink(const char *ZSTR );
+    int _RTL_FUNC _IMPORT _unlink(const char* ZSTR);
     int _RTL_FUNC _IMPORT _write(int, const void*, unsigned int);
 
 #ifdef __cplusplus

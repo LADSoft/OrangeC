@@ -1,22 +1,22 @@
 /* Software License Agreement
- * 
+ *
  *     Copyright(C) 1994-2020 David Lindauer, (LADSoft)
- * 
+ *
  *     This file is part of the Orange C Compiler package.
- * 
+ *
  *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
- * 
+ *
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *     GNU General Public License for more details.
- * 
+ *
  *     You should have received a copy of the GNU General Public License
  *     along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *     As a special exception, if other files instantiate templates or
  *     use macros or inline functions from this file, or you compile
  *     this file and link it with other works to produce a work based
@@ -24,14 +24,14 @@
  *     work to be covered by the GNU General Public License. However
  *     the source code for this file must still be made available in
  *     accordance with section (3) of the GNU General Public License.
- *     
+ *
  *     This exception does not invalidate any other reasons why a work
  *     based on this file might be covered by the GNU General Public
  *     License.
- * 
+ *
  *     contact information:
  *         email: TouchStone222@runbox.com <David Lindauer>
- * 
+ *
  */
 
 /*  regex.h
@@ -44,11 +44,12 @@
 #define __REGEX_H
 
 #ifndef __STDDEF_H
-#include <stddef.h>
+#    include <stddef.h>
 #endif
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 #define REG_EXTENDED 1
@@ -58,7 +59,6 @@ extern "C" {
 
 #define REG_NOTBOL 1
 #define REG_NOTEOL 2
-
 
 #define REG_NOMATCH 1
 #define REG_BADPAT 2
@@ -75,28 +75,29 @@ extern "C" {
 #define REG_ESPACE 13
 #define REG_BADRPT 14
 
-typedef struct _regex {
-    size_t    re_nsub;
-    void     *re_innerctx;
-} regex_t;
+    typedef struct _regex
+    {
+        size_t re_nsub;
+        void* re_innerctx;
+    } regex_t;
 
-typedef int regoff_t;
+    typedef int regoff_t;
 
-typedef struct _regmatch {
-    regoff_t    rm_so;
-    regoff_t    rm_eo;
-} regmatch_t;
+    typedef struct _regmatch
+    {
+        regoff_t rm_so;
+        regoff_t rm_eo;
+    } regmatch_t;
 
-int    _RTL_FUNC regcomp(regex_t *, const char *ZSTR , int);
-int    _RTL_FUNC regexec(regex_t *, const char *ZSTR , size_t, regmatch_t[], int);
-size_t _RTL_FUNC regerror(int, const regex_t *, char *ZSTR , size_t);
-void   _RTL_FUNC regfree(regex_t *);
+    int _RTL_FUNC regcomp(regex_t*, const char* ZSTR, int);
+    int _RTL_FUNC regexec(regex_t*, const char* ZSTR, size_t, regmatch_t[], int);
+    size_t _RTL_FUNC regerror(int, const regex_t*, char* ZSTR, size_t);
+    void _RTL_FUNC regfree(regex_t*);
 
 #ifdef __cplusplus
-} ;
+};
 #endif
-
 
 #pragma pack()
 
-#endif  /* __REGEX_H */
+#endif /* __REGEX_H */

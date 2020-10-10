@@ -45,8 +45,7 @@ int winsystem(char* cmd)
     memset(&stProcessInfo, 0, sizeof(PROCESS_INFORMATION));
 
     stStartInfo.cb = sizeof(STARTUPINFO);
-    stStartInfo.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
-    stStartInfo.wShowWindow = SW_HIDE;
+    stStartInfo.dwFlags = STARTF_USESTDHANDLES;
     stStartInfo.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
     stStartInfo.hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
     stStartInfo.hStdError = GetStdHandle(STD_ERROR_HANDLE);

@@ -47,8 +47,7 @@ int __ll_system(char* string, int in, int out)
     memset(&stProcessInfo, 0, sizeof(PROCESS_INFORMATION));
 
     stStartInfo.cb = sizeof(STARTUPINFO);
-    stStartInfo.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
-    stStartInfo.wShowWindow = SW_HIDE;
+    stStartInfo.dwFlags = STARTF_USESTDHANDLES;
     stStartInfo.hStdInput = _get_osfhandle(in);
     stStartInfo.hStdOutput = _get_osfhandle(out);
     stStartInfo.hStdError = GetStdHandle(STD_ERROR_HANDLE);

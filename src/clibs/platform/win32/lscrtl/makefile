@@ -33,11 +33,15 @@
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
 
+H_FILES = $(wildcard *.h)
+C_DEPENDENCIES = $(wildcard *.c)
+
 SHELL=cmd.exe
 
 RCFILE=lscrtl
 
 all: .\c0dll.o .\lscrtl.dll
+$(eval $(FORMATTER))
 
 ifneq ($(shell type makefile),)
 B = /b
@@ -57,7 +61,7 @@ DLLOBJS = $(shell dir $(B) $(DLLOBJECT)\\*.o)
 	$(ASM) $(ASMFLAGS) -o$@ $^
 
 .\c0dll.o: c0dll.c
-	$(CC) /c $(CFLAGS) $(STDINCLUDE) -o$@ $^
+	$(CC) /c /C-E $(CFLAGS) $(STDINCLUDE) -o$@ $^
 
 $(RCFILE).res: $(RCFILE).rc ..\..\..\..\version.h
 	orc -i..\wininc $(RCFILE).rc

@@ -36,7 +36,11 @@
 SHELL=cmd.exe
 OBJECT=.\\
 
+H_FILES = $(wildcard *.h)
+C_DEPENDENCIES = $(wildcard *.c)
+
 all: .\lsdbghelper.dll
+$(eval $(FORMATTER))
 
 vpath %.c $(ORANGEC)\src\sqlite3
 

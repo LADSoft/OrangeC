@@ -27,4 +27,5 @@ namespace Optimizer
 {
 void ReadText(std::map<int, std::string>& texts);
 bool InputIntermediate(SharedMemory* inputMem);
+void ReadMappingFile(SharedMemory* mem, FILE* fil);
 }  // namespace Optimizer

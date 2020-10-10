@@ -39,16 +39,16 @@
 void _RTL_FUNC _segread(struct SREGS *__segp)
 {
     unsigned short sel;
-    asm mov [sel],es
+    __asm mov [sel],es
    __segp->es = sel ;
-    asm mov [sel],fs
+    __asm mov [sel],fs
    __segp->fs = sel ;
-    asm mov [sel],gs
+    __asm mov [sel],gs
    __segp->gs = sel ;
-    asm mov [sel],cs
+    __asm mov [sel],cs
    __segp->cs = sel ;
-    asm mov [sel],ds
+    __asm mov [sel],ds
    __segp->ds = sel ;
-    asm mov [sel],ss
+    __asm mov [sel],ss
    __segp->ss = sel ;
 }

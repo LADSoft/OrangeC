@@ -21,7 +21,7 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
  */
-
+#include <windows.h>
 #include <stdio.h>
 #include <malloc.h>
 #include <string.h>
@@ -31,13 +31,13 @@
 #include "ildata.h"
 #include "../occ/winmode.h"
 #include "../occ/be.h"
+#include "Utils.h"
 #include "SharedMemory.h"
 #include <deque>
 #include <functional>
 #include <map>
 #include <set>
 #include "ildata.h"
-
 namespace Optimizer
 {
 static std::list<std::string> textRegion;
@@ -52,9 +52,7 @@ static SharedMemory* sharedRegion;
 static int outputPos;
 static int outputSize;
 static unsigned char* streamPointer;
-
-static const int WRITE_INCREMENT = 256 * 1024;
-
+ 
 static size_t TextName(const std::string& name)
 {
     if (name[0] == 0)
@@ -68,14 +66,13 @@ static size_t TextName(const std::string& name)
     cachedText[name] = rv;
     return rv;
 }
-inline static void resize(int size)
+static void resize(int size)
 {
     if (outputPos + size > outputSize)
     {
-        outputSize += WRITE_INCREMENT;
+        outputSize += sharedRegion->ViewWindowSize();
         sharedRegion->EnsureCommitted(outputSize);
-        sharedRegion->CloseMapping();
-        streamPointer = sharedRegion->GetMapping();
+        streamPointer = sharedRegion->GetMapping(outputPos);
     }
 }
 inline static void StreamByte(int value)
@@ -1009,7 +1006,6 @@ int GetOutputSize() { return outputPos; }
 void OutputIntermediate(SharedMemory* mem)
 {
     sharedRegion = mem;
-    streamPointer = sharedRegion->GetMapping();
     textRegion.clear();
     textOffset = 1;
     cachedText.clear();
@@ -1025,5 +1021,20 @@ void OutputIntermediate(SharedMemory* mem)
     StreamMSILProperties();
     StreamData();
     WriteText();
+}
+void WriteMappingFile(SharedMemory* mem, FILE* fil)
+{
+     int pos = 0;
+     unsigned char *p = mem->GetMapping();
+     while(outputPos > 0)
+     {
+          int n = mem->ViewWindowSize();
+          if (outputPos < n)
+              n = outputPos;
+          fwrite(p + pos, n, 1, fil);
+          pos += n;
+          outputPos -= n;
+          p = mem->GetMapping(pos);
+     }
 }
 }  // namespace Optimizer

@@ -50,6 +50,9 @@ static std::map<int, std::string> texts;
 static std::vector<Optimizer::SimpleSymbol*> temps;
 
 static unsigned char* streamPointer;
+static SharedMemory* shared;
+static unsigned top;
+
 static int
     inputPos;  // it is not intended we ever reset this, as multiple files could be streamed one after the other and we are going to
 // read them in order
@@ -58,7 +61,15 @@ inline void dothrow()
     std::runtime_error e("");
     throw e;
 }
-inline static int UnstreamByte() { return streamPointer[inputPos++]; }
+inline static int UnstreamByte() 
+{
+        if (inputPos >= top)
+        {
+            top += shared->ViewWindowSize();
+            streamPointer = shared->GetMapping(inputPos);
+        }
+	return streamPointer[inputPos++]; 
+}
 inline static void UnstreamBlockType(int blockType, bool end)
 {
     int n = UnstreamByte();
@@ -105,6 +116,11 @@ static void UnstreamStringList(std::list<std::string>& list)
 }
 static void UnstreamBuffer(void* buf, int len)
 {
+    if (inputPos + len >= top)
+    {
+        top += shared->ViewWindowSize();
+        streamPointer = shared->GetMapping(inputPos);
+    }
     memcpy(buf, &streamPointer[inputPos], len);
     inputPos += len;
 }
@@ -1184,7 +1200,7 @@ static void ResolveNames(std::map<int, std::string>& texts)
 bool InputIntermediate(SharedMemory* inputMem)
 {
     FPF temp;  // force init
-    streamPointer = inputMem->GetMapping();
+    shared = inputMem;
     currentBlock = nullptr;
     texts.clear();
     texts[0] = "";
@@ -1208,5 +1224,25 @@ bool InputIntermediate(SharedMemory* inputMem)
     {
         return false;
     }
+}
+void ReadMappingFile(SharedMemory* mem, FILE* fil)
+{
+     int pos = 0;
+     fseek(fil, 0, SEEK_END);
+     int end = ftell(fil);
+     fseek(fil, 0, SEEK_SET);
+     unsigned char *p = mem->GetMapping();
+     mem->EnsureCommitted(end);
+     while(end > 0)
+     {
+
+          int n = mem->ViewWindowSize();
+          if (n > end)
+               n = end;
+          fread(p + pos, n, 1, fil);
+          pos += n;
+          end -= n;
+          p = mem->GetMapping(pos);
+     }
 }
 }  // namespace Optimizer

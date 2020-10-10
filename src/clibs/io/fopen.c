@@ -146,7 +146,6 @@ FILE* __basefopen(const char* restrict name, const char* restrict mode, FILE* re
         memset(file->extended, 0, sizeof(file->extended));
         file->extended->lock = __ll_mtxAlloc();
     }
-
     file->flags = 0;
     if (append)
         flags |= _F_APPEND;

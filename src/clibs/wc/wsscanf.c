@@ -55,7 +55,7 @@ int _RTL_FUNC vswscanf(wchar_t* restrict buf, const wchar_t* restrict format, va
     fil.buffer = fil.curp = buf;
     fil.token = FILTOK;
     fil.extended = &fil2;
-    return __wscanf(&fil, format, list);
+    return __wscanf_unlocked(&fil, format, list);
 }
 int _RTL_FUNC swscanf(wchar_t* restrict buf, const wchar_t* restrict format, ...)
 {

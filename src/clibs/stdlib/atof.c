@@ -81,7 +81,7 @@ static unsigned floating_nan = 0x7fc00000;
 
 #define nextchar          \
     {                     \
-        *ch = fgetc(fil); \
+        *ch = fgetc_unlocked(fil); \
         (*chars)++;       \
         if (!count)       \
             return val;   \
@@ -409,7 +409,7 @@ static long double __strtod(const char* buf, char** endptr, int width, long doub
     fil.buffer = fil.curp = buf;
     fil.token = FILTOK;
     fil.extended = &fil2;
-    ch = fgetc(&fil);
+    ch = fgetc_unlocked(&fil);
     rv = __xstrtod(&fil, width, &ch, &chars, max, exp2, exp10, full);
     if (endptr)
     {

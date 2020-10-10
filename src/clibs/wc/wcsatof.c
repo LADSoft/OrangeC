@@ -54,7 +54,7 @@ static unsigned floating_nan = 0x7fc00000;
 
 #define nextchar           \
     {                      \
-        *ch = fgetwc(fil); \
+        *ch = fgetwc_unlocked(fil); \
         (*chars)++;        \
         if (!count)        \
             return val;    \
@@ -375,7 +375,7 @@ static long double __wcstod(const wchar_t* buf, wchar_t** endptr, int width, lon
     fil.buffer = fil.curp = buf;
     fil.token = FILTOK;
     fil.extended = &fil2;
-    ch = fgetwc(&fil);
+    ch = fgetwc_unlocked(&fil);
     rv = __xwcstod(&fil, width, &ch, &chars, max, exp2, exp10, full);
     if (endptr)
     {

@@ -71,7 +71,7 @@ int _RTL_FUNC vfprintf_unlocked(FILE* restrict stream, const char* restrict form
             p = format + strlen(format);
         if (p != format)
         {
-            if (fwrite(format, 1, p - format, stream) != p - format)
+            if (fwrite_unlocked(format, 1, p - format, stream) != p - format)
                 return EOF;
             written += p - format;
             format = p;
@@ -93,4 +93,8 @@ int _RTL_FUNC vfprintf_unlocked(FILE* restrict stream, const char* restrict form
 int _RTL_FUNC fprintf(FILE* restrict stream, const char* restrict format, ...)
 {
     return vfprintf(stream, format, ((char*)&format + sizeof(char*)));
+}
+int _RTL_FUNC fprintf_unlocked(FILE* restrict stream, const char* restrict format, ...)
+{
+    return vfprintf_unlocked(stream, format, ((char*)&format + sizeof(char*)));
 }

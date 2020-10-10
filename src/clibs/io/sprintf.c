@@ -55,7 +55,7 @@ int _RTL_FUNC vsnprintf(char* restrict buf, size_t n, const char* restrict forma
     fil.buffer = fil.curp = buffer;
     fil.token = FILTOK;
     fil.extended = &fil2;
-    written = vfprintf(&fil, format, arglist);
+    written = vfprintf_unlocked(&fil, format, arglist);
     if (buf && n)
     {
         int copied = imin(written, n - 1);

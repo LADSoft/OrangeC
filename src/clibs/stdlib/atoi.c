@@ -46,7 +46,7 @@
 
 #define nextchar          \
     {                     \
-        *ch = fgetc(fil); \
+        *ch = fgetc_unlocked(fil); \
         (*chars)++;       \
         if (!count)       \
             return val;   \
@@ -180,7 +180,7 @@ static LLONG_TYPE __xstrtol(const char* buf, int width, char** endptr, int radix
     fil.buffer = fil.curp = buf;
     fil.token = FILTOK;
     fil.extended = &fil2;
-    ch = fgetc(&fil);
+    ch = fgetc_unlocked(&fil);
     rv = __xstrtoimax(&fil, width, &ch, &chars, radix, max, full, errmode);
     if (endptr)
     {

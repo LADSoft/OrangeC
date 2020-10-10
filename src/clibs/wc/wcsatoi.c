@@ -46,7 +46,7 @@
 
 #define nextchar           \
     {                      \
-        *ch = fgetwc(fil); \
+        *ch = fgetwc_unlocked(fil); \
         (*chars)++;        \
         if (!count)        \
             return val;    \
@@ -181,7 +181,7 @@ static LLONG_TYPE __xwcstol(const wchar_t* buf, int width, wchar_t** endptr, int
     fil.buffer = fil.curp = buf;
     fil.token = FILTOK;
     fil.extended = &fil2;
-    ch = fgetwc(&fil);
+    ch = fgetwc_unlocked(&fil);
     rv = __xwcstoimax(&fil, width, &ch, &chars, radix, max, full, errmode);
     if (endptr)
     {

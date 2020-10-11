@@ -8,7 +8,6 @@
               del %temp%\time.js
               copy omake.exe \orangec\temp
               call c:\orangec\appveyorversion.bat
-              type c:\orangec\src\version.h
               IF "%BUILD_PROFILE%" EQU "OCCIL" (
                   REM  alternate build with OCCIL
                   c:\orangec\temp\omake /DCOMPILER=CLANG fullbuild -j:2
@@ -22,7 +21,6 @@
                   IF %ERRORLEVEL% NEQ 0 (
                       goto error;
                   )
-                  set "path=%ORIGPATH%"
                   cd ..\tests
                   omake -B /Coccil /DCOMPILER=OCC
                   IF %ERRORLEVEL% NEQ 0 (
@@ -95,7 +93,6 @@
                   IF %ERRORLEVEL% NEQ 0 (
                        goto error;
                   )
-                  set "path=%ORIGPATH%"
                   cd ..\tests
                   rem -j4 here seems risky
                   omake -B /DCOMPILER=OCC

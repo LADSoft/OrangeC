@@ -61,16 +61,16 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then git clone https://github.com/c-testsuite/c-testsuite.git ; fi
   - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then cp c-testsuite/tests/single-exec/*.* tests/c-testsuite > /dev/null ; fi
   - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then 7z x src/cc386.zip /c/ ; fi
-  - export ORIGPATH=$PATH
-  - export ORANGEC=c:\ORANGEC
-  - export LADSOFT_DEV=c:\cc386
-  - export APPVEYOR_BUILD_VERSION=6.0.45.$TRAVIS_BUILD_NUMBER
 
 language: c
 compiler:
  - gcc
 
 script: 
+  - export ORANGEC=c:\ORANGEC
+  - export ORIGPATH=$(ORANGEC)\src
+  - export LADSOFT_DEV=c:\cc386
+  - export APPVEYOR_BUILD_VERSION=6.0.45.$TRAVIS_BUILD_NUMBER
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then if [ "${COVERITY_SCAN_BRANCH}" != 1 ]; then make -f ./travis.mak; fi ; fi
   - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then mingw32-make -f ./travis.mak; fi
 

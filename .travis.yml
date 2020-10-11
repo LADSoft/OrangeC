@@ -67,10 +67,10 @@ compiler:
  - gcc
 
 script: 
-  - export ORANGEC=c:/orangec
-  - export ORIGPATH=$(ORANGEC)\src
-  - export LADSOFT_DEV=c:/cc386
-  - export PATH=$(ORANGEC)/bin;$(PATH);C:/Program Files (x86)/Inno Setup 6
+  - export ORANGEC=c:\\orangec
+  - export ORIGPATH=$ORANGEC\\src
+  - export LADSOFT_DEV=c:\\cc386
+  - export PATH=$ORANGEC\\bin;$PATH;c:\\Program Files (x86)\\Inno Setup 6
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then if [ "${COVERITY_SCAN_BRANCH}" != 1 ]; then make -f ./travis.mak; fi ; fi
   - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then mingw32-make -f ./travis.mak; fi
 

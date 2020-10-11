@@ -9,5 +9,5 @@ all:
         move src /c/orangec
         cd /c/orangec/src
         PATH=$PATH:/c/orangec/bin:/c/program files/7-zip:/c/program files (x86)/inno setup 6
-	omake fullbuild
+	$(ComSpec) -C build.bat
 endif

@@ -2850,6 +2850,22 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
                         funcparams->arguments = (INITLIST*)Alloc(sizeof(INITLIST));
                         funcparams->arguments->tp = tp1;
                         funcparams->arguments->exp = exp1;
+                        if (exp1->type == en_thisref && exp1->left->type == en_func)
+                        {
+                            if (exp1->left->v.func->returnEXP)
+                            {
+                                if (isstructured(tp1) && comparetypes(itype, tp1, 0))
+                                {
+                                    if (!basetype(tp1)->sp->sb->templateLevel || sameTemplate(itype, tp1))
+                                    {
+                                        exp1->left->v.func->returnSP->sb->destructed = true;
+                                        exp1->left->v.func->returnEXP = exp;
+                                        constructed = true;
+                                        exp = exp1;
+                                     }
+                                }
+                            }
+                        }
                     }
                 }
             }

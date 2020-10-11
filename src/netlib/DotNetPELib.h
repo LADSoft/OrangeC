@@ -147,7 +147,7 @@ namespace DotNetPELib
     public:
         DestructorBase() { }
         DestructorBase(const DestructorBase &) { }
-        DestructorBase& operator=(const DestructorBase &) { }
+        DestructorBase& operator=(const DestructorBase &) { return *this; }
         virtual ~DestructorBase() { }
     };
 

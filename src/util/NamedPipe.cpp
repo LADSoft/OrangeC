@@ -23,6 +23,7 @@
  */
 
 #include "Utils.h"
+#include <cstdio>
 #include <stdlib.h>
 #ifndef HAVE_UNISTD_H
 #    include <windows.h>
@@ -40,7 +41,7 @@ bool Utils::NamedPipe(int* fds, const std::string& pipeName)
     int n = GetLastError();
     if (handle != INVALID_HANDLE_VALUE)
     {
-        *fds = _open_osfhandle((long)handle, O_RDWR);
+        *fds = _open_osfhandle((long)(intptr_t)handle, O_RDWR);
         return true;
     }
 #endif

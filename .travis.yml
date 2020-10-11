@@ -1,4 +1,4 @@
-branches: 
+-branches: 
    only:
      - master
      - coverity_scan
@@ -67,6 +67,7 @@ compiler:
  - gcc
 
 script: 
+  - export APPVEYOR_BUILD_VERSION=6.0.45.$TRAVIS_BUILD_NUMBER
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then if [ "${COVERITY_SCAN_BRANCH}" != 1 ]; then make -f ./travis.mak; fi ; fi
   - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then mingw32-make -f ./travis.mak; fi
 

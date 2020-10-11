@@ -8,6 +8,8 @@
               del %temp%\time.js
               copy omake.exe \orangec\temp
               call c:\orangec\appveyorversion.bat
+              type c:\orangec\src\version.h
+              exit 0
               IF "%BUILD_PROFILE%" EQU "OCCIL" (
                   REM  alternate build with OCCIL
                   c:\orangec\temp\omake /DCOMPILER=CLANG fullbuild -j:2

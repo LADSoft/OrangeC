@@ -110,3 +110,4 @@
      echo failed
      goto done
 :done
+     if (%TRAVIS_OS_NAME% NEQ "") ( exit %ERRORLEVEL% )

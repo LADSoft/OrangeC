@@ -4,8 +4,12 @@ export COMPILER:=gcc-linux
 all:
 	make -C src -f ./makefile
 else
-export PATH:=$(PATH);c:\orangec\bin;c:\program files7-zip;c:\program files (x86)\inno setup 6
 export ComSpec=c:\windows\system32\cmd.exe
+export ORANGEC=c:\orangec
+export ORIGPATH=$(ORANGEC)\src
+export LADSOFT_DEV=c:\cc386
+export APPVEYOR_BUILD_VERSION=6.0.45.$TRAVIS_BUILD_NUMBER
+export PATH=$(ORANGEC)\bin;%PATH%;;C:\Program Files (x86)\Inno Setup 6
 all:
 	mkdir /c/orangec
 	mkdir /c/orangec/temp

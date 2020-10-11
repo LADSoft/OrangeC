@@ -53,7 +53,7 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then yes | sudo update-alternatives --config gcc ; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then gcc --version ; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then g++ --version   ; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export COVERITY_UNSUPPORTED_COMPILER_INVOCATION=1 # needed because we need -fpermissive compiler switch  
+  - export COVERITY_UNSUPPORTED_COMPILER_INVOCATION=1 # needed because we need -fpermissive compiler switch  
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca- ; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then chmod u+x ./travis-configure ; fi
   - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then choco install innosetup          ; fi

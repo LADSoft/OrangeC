@@ -59,7 +59,7 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then chmod u+x ./travis-configure ; fi
   - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then choco install innosetup          ; fi
   - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then git clone https://github.com/c-testsuite/c-testsuite.git ; fi
-  - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then copy c-testsuite\tests\single-exec tests\c-testsuite > /dev/null ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then cp c-testsuite\tests\single-exec\*.* tests\c-testsuite > /dev/null ; fi
   - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then 7z x src\cc386.zip c:\ ; fi
   - export ORIGPATH=$PATH
   - export ORANGEC=c:\ORANGEC

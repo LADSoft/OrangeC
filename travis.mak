@@ -6,7 +6,6 @@ all:
 else
 export PATH:=$(PATH);c:\orangec\bin;c:\program files7-zip;c:\program files (x86)\inno setup 6
 export ComSpec=c:\windows\system32\cmd.exe
-export APPVEYOR_BUILD_VERSION=6.0.45.$(TRAVIS_BUILDNUMBER)
 all:
 	mkdir /c/orangec
 	mkdir /c/orangec/temp

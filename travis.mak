@@ -8,7 +8,11 @@ export PATH:=$(PATH);c:\orangec\bin;c:\program files7-zip;c:\program files (x86)
 export ComSpec=c:\windows\system32\cmd.exe
 export APPVEYOR_VERSION=6.0.45.$(TRAVIS_BUILDNUMBER)
 all:
-	cd ..
-	mv orangec /c/    
+	mkdir /c/orangec
+	mv doc /c/orangec
+	mv license /c/orangec
+	mv src /c/orangec
+	mv tests /c/orangec
+	mv *.* /c/orangec  
 	$(ComSpec) /C c:\orangec\src\build.bat
 endif

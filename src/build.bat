@@ -1,3 +1,7 @@
+@echo off
+     if (%TRAVIS_OS_NAME% NEQ "") (
+        call "C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\Common7\Tools\VsDevCmd.bat"
+     )
               cd c:\orangec\src
               echo WScript.Echo(Math.floor(new Date().getTime()/1000)); > %temp%\time.js
               for /f %%i in ('cscript //nologo %temp%\time.js') do set SOURCE_DATE_EPOCH=%%i

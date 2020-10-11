@@ -1,7 +1,3 @@
-os:
-    - linux
-    - windows
-
 branches: 
    only:
      - master
@@ -10,6 +6,8 @@ branches:
 
 jobs:
     include:
+        - name: "Gcc/Linux"
+          os: linux
         - name: "MINGW64 THEN WITH STATIC LIB"
           os: windows
           env: BUILD_PROFILE=MINGW64

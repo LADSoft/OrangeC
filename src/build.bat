@@ -1,8 +1,7 @@
 @echo off
-     echo orangec=%ORANGEC%
-     echo path=%PATH%
      if (%TRAVIS_OS_NAME% NEQ "") (
         call "C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\Common7\Tools\VsDevCmd.bat"
+	 PATH=$(ORANGEC);$(PATH);c:\Program Files (x86)\Inno Setup 6
      )
               cd c:\orangec\src
               echo WScript.Echo(Math.floor(new Date().getTime()/1000)); > %temp%\time.js

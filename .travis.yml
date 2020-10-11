@@ -62,7 +62,8 @@ compiler:
 
 script: 
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then if [ "${COVERITY_SCAN_BRANCH}" != 1 ]; then make -f ./travis.mak; fi ; fi
-  - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then if [ "${BUILD_PROFILE}" != "" ]; then mingw32-make -f ./travis.mak; fi ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then source ./run_command_and_apply_environment_differences.sh "call vcvars64_vs2017.bat" ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then mingw32-make -f ./travis.mak; fi
 
 addons:
   coverity_scan:

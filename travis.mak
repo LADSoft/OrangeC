@@ -9,6 +9,7 @@ export ComSpec=c:\windows\system32\cmd.exe
 export APPVEYOR_VERSION=6.0.45.$(TRAVIS_BUILDNUMBER)
 all:
 	mkdir /c/orangec
+	mkdir /c/orangec/temp
 	mv doc /c/orangec
 	mv license /c/orangec
 	mv src /c/orangec

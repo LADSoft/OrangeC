@@ -1,7 +1,7 @@
 @echo off
 echo path=%PATH%
      if (%TRAVIS_OS_NAME% NEQ "") (
-	PATH=%ORANGEC%;%PATH%;c:\Program Files (x86)\Inno Setup 6
+	set PATH=%ORANGEC%;%PATH%;c:\Program Files (x86)\Inno Setup 6
         call "C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\Common7\Tools\VsDevCmd.bat"
      )
 echo path=%PATH%

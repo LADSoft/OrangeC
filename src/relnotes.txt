@@ -1,6 +1,8 @@
 Release notes:
 
 version 6.0.46:
+    various projects: fix various GCC warnings
+    various projects: add a diagnostic when an output file cannot be opened or created
     occ: fix assembly language jmp [eax] to not truncate the register to word size
     occ: fix bug in sign extension of negated unsigned short
     occ: fix bug with not calling virtual destructors properly
@@ -8,14 +10,29 @@ version 6.0.46:
     occ: fix bug with *(double*)aa = value sometimes not working properly, where 'aa' is a long long
     occ: fix the code that enables the profiler
     occ: enable 'inline' in the c++ headers (speedup applications)
+    occ: fix argument type lookup to work with enumeration constant in namespace
+    occ: add -LINK and -DLL command line switches (for autoconfig support)
+    occ: some internal optimizations in the source code
+    occ: fix fastcall calling convention to work with optimized code
+    occ: rewrite shared memory mapping handling to use less resources
+    occ: add __asm keyword (still supports 'asm')
+    occ: fix a case where there could be a crash if a structure is undefined
+    occ: destructor for union should not automatically delete objects defined in the union
+    occ: elide copy constructor references in certain initializations
+    occ: fix formatting on assembly language output files
     occil: various improvements to allow generated code to be decompiled
     occil: add runtime support for function pointer via delegate
+    utilites: some code cleanup
     netlib: add support for generic classes and functions
     netlib: add support for pinning
     netlib: various small improvements
     netlib: cache namespaces and classes while loading to speed up the load
     rtl: add flockfile and friends
     rtl: add fmemopen and friends
+    rtl: add rpmalloc allocator and remove lea allocator
+    rtl: rename 'asm' keyword to '__asm' throughout
+    rtl: update makefiles for clang-format and format most of the runtime library
+    rtl: fix various issues with C11 threading and mutexes
 
 version 6.0.45:
     occ:   functions ending in a function call for a function tagged as 'noreturn' will not generate a 'needs return value' warning.

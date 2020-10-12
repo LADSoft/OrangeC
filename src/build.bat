@@ -1,5 +1,3 @@
-	clang --version
-	x86_64-w64-mingw32-gcc --version
 @echo off
 
      if (%TRAVIS_OS_NAME% NEQ "") (

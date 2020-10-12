@@ -1,4 +1,4 @@
-@echo off
+
 echo path=%PATH%
      if (%TRAVIS_OS_NAME% NEQ "") (
 	set PATH=%ORANGEC%;%PATH%;c:\Program Files (x86)\Inno Setup 6

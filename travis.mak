@@ -5,8 +5,8 @@ all:
 	make -C src -f ./makefile
 else
 export ComSpec=c:\windows\system32\cmd.exe
+export PATH=$(ORANGEC);$(PATH);c:\Program Files (x86)\Inno Setup 6
 all:
-	echo path222=$(PATH)
 	mkdir /c/orangec
 	mkdir /c/orangec/temp
 	mv doc /c/orangec

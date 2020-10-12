@@ -1,10 +1,8 @@
 
 echo path=%PATH%
      if (%TRAVIS_OS_NAME% NEQ "") (
-	set PATH=%ORANGEC%;%PATH%;c:\Program Files (x86)\Inno Setup 6
         call "C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\Common7\Tools\VsDevCmd.bat"
      )
-echo path=%PATH%
               cd c:\orangec\src
               echo WScript.Echo(Math.floor(new Date().getTime()/1000)); > %temp%\time.js
               for /f %%i in ('cscript //nologo %temp%\time.js') do set SOURCE_DATE_EPOCH=%%i

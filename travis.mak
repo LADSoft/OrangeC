@@ -5,7 +5,7 @@ all:
 	make -C src -f ./makefile
 else
 export ComSpec=c:\windows\system32\cmd.exe
-export PATH:=$(ORANGEC);$(PATH);c:\Program Files (x86)\Inno Setup 6
+export PATH:=$(ORANGEC)\bin;$(PATH);c:\Program Files (x86)\Inno Setup 6
 all:
 	mkdir /c/orangec
 	mkdir /c/orangec/temp

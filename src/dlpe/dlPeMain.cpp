@@ -589,5 +589,9 @@ int dlPeMain::Run(int argc, char** argv)
         }
         return 1;
     }
+    else
+    {
+        Utils::fatal("Cannot open '%s' for write", outputName.c_str());
+    }
     return 1;
 }

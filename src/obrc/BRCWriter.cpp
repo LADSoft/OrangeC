@@ -25,6 +25,7 @@
 #include "BRCDictionary.h"
 #include "BRCWriter.h"
 #include "ObjBrowseInfo.h"
+#include "Utils.h"
 #include <cstdio>
 #include <algorithm>
 #include <cstring>
@@ -658,6 +659,10 @@ bool BRCWriter::write()
                                 ok = true;
         //        if (!End())
         ok = false;
+    }
+    else
+    {
+        Utils::fatal("Cannot open database '%s' for write", outputFile.c_str());
     }
     if (dbPointer)
         sqlite3_close(dbPointer);

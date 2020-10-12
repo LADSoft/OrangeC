@@ -149,5 +149,9 @@ int dlMzMain::Run(int argc, char** argv)
         data->Write(out);
         return !!out.fail();
     }
+    else
+    {
+        Utils::fatal("Cannot open '%s' for write", outputName.c_str());
+    }
     return 1;
 }

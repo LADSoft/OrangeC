@@ -847,7 +847,10 @@ void LinkManager::CreateOutputFile()
                     if (!debugFile.empty())
                     {
                         LinkDebugFile df(debugFile, file, this->virtualSections, this->parentSections);
-                        df.CreateOutput();
+                        if (!df.CreateOutput())
+                        {
+                            Utils::fatal("Cannot open database '%s' for write", debugFile.c_str());
+                        }
                     }
                 }
             }
@@ -857,6 +860,10 @@ void LinkManager::CreateOutputFile()
             }
             ioBase->Write(ofile, file, factory);
             fclose(ofile);
+        }
+        else
+        {
+            Utils::fatal("Cannot open '%s' for write", outputFile.c_str());
         }
         delete file;
     }

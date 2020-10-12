@@ -446,8 +446,10 @@ int main(int argc, char* argv[])
             {
                 if (!LoadFile(optimizerMem, p))
                     Utils::fatal("internal error: could not load intermediate file");
-                if (!ProcessData(p.c_str()) || !SaveFile(p.c_str()))
+                if (!ProcessData(p.c_str()))
                     Utils::fatal("File I/O error");
+                if (!SaveFile(p.c_str()))
+                    Utils::fatal("Cannot open '%s' for write", outFile);
             }
         }
         if (!Optimizer::cparams.prm_compileonly)

@@ -481,7 +481,7 @@ int main(int argc, char* argv[])
         // compile to file
         FILE* fil = fopen(outputFile.c_str(), "wb");
         if (!fil)
-            Utils::fatal("could not open output file");
+            Utils::fatal("Cannot open '%s' for write", outputFile.c_str());
         Optimizer::WriteMappingFile(optimizerMem, fil);
         fclose(fil);
     }

@@ -134,6 +134,8 @@ int Coff2ieeeMain::Run(int argc, char** argv)
                 il.SetTranslatorName("Coff2ieee");
                 il.SetDebugInfoFlag(false);
                 FILE* c = fopen(outputName.c_str(), "w");
+                if (!c)
+                    Utils::fatal("Cannot open '%s' for write", outputName.c_str());
                 il.Write(c, file, &factory);
                 fclose(c);
                 return 0;

@@ -237,7 +237,7 @@ int AsmMain::Run(int argc, char* argv[])
             std::fstream out(working.c_str(), std::ios::out);
             if (!out.is_open())
             {
-                Utils::fatal(std::string(std::string("Could not open ") + working.c_str() + " for write.").c_str());
+                 Utils::fatal("Cannot open '%s' for write", working.c_str());
             }
             else
             {

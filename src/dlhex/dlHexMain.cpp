@@ -319,5 +319,9 @@ int dlHexMain::Run(int argc, char** argv)
         out.close();
         return !!out.fail();
     }
+    else
+    {
+         Utils::fatal("Cannot open '%s' for write", outputName.c_str());
+    }
     return 1;
 }

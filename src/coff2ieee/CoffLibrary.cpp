@@ -259,6 +259,8 @@ bool CoffLibrary::SaveLibrary(std::string name)
     // can't do more reading
     header.filesInModule = files.size();
     FILE* ostr = fopen(name.c_str(), "wb");
+    if (!ostr)
+        Utils::fatal("Cannot open '%s' for write", name.c_str());
     fwrite(&header, sizeof(header), 1, ostr);
     Align(ostr, 16);
     header.namesOffset = ftell(ostr);

@@ -21,7 +21,6 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
  */
-#include <windows.h>
 #include <stdio.h>
 #include <malloc.h>
 #include <string.h>

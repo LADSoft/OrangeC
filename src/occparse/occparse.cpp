@@ -521,7 +521,7 @@ int main(int argc, char* argv[])
                     fclose(errFile);
                     delete preProcessor;
                     fclose(cppFile);
-                    Utils::fatal("Cannot open error file %s", buffer);
+                    Utils::fatal("Cannot open icd file %s", buffer);
                 }
                 setvbuf(Optimizer::icdFile, 0, _IOFBF, 32768);
             }
@@ -596,7 +596,7 @@ int main(int argc, char* argv[])
         int size = Optimizer::GetOutputSize();
         FILE* fil = fopen(realOutFile, "wb");
         if (!fil)
-            Utils::fatal("could not open output file");
+            Utils::fatal("Cannot open '%s' for write", realOutFile);
         Optimizer::WriteMappingFile(parserMem, fil);
         fclose(fil);
     }

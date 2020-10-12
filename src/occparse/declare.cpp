@@ -6678,7 +6678,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                                 (Optimizer::architecture == ARCHITECTURE_MSIL))
                                 sp->sb->label = Optimizer::nextLabel++;
                             if (Optimizer::cparams.prm_cplusplus && sp->sb->storage_class != sc_type &&
-                                sp->sb->storage_class != sc_typedef && structLevel && (!instantiatingTemplate) &&
+                                sp->sb->storage_class != sc_typedef && structLevel && (!instantiatingTemplate) && !funcsp &&
                                 (MATCHKW(lex, assign) || MATCHKW(lex, begin)))
                             {
                                 if ((MATCHKW(lex, assign) || MATCHKW(lex, begin)) && storage_class_in == sc_member &&

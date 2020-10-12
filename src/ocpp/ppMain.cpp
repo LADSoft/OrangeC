@@ -209,9 +209,15 @@ int ppMain::Run(int argc, char* argv[])
 
         std::ostream* outstream = nullptr;
         if (!working.empty())
+        {
             outstream = new std::fstream(working, std::ios::out);
+            if (!outstream->good())
+                Utils::fatal("Cannot open '%s' for write", working.c_str());
+        }
         else
+        {
             outstream = &std::cout;
+        }
         while (pp.GetLine(working))
         {
             int last = 0;

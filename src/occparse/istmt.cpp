@@ -27,6 +27,7 @@
  *
  * change the statement list to icode
  */
+#include <cstdint>
 #include <stdio.h>
 #include <string.h>
 #include <limits.h>
@@ -774,7 +775,7 @@ static DATA* buckets[32];
 static void StoreInBucket(Optimizer::IMODE* mem, Optimizer::IMODE* addr)
 {
     DATA* lst;
-    int bucket = (int)mem;
+    int bucket = (int)(intptr_t)mem;
     bucket = (bucket >> 16) ^ (bucket >> 8) ^ (bucket >> 2);
     bucket %= 32;
     lst = buckets[bucket];
@@ -797,7 +798,7 @@ static void StoreInBucket(Optimizer::IMODE* mem, Optimizer::IMODE* addr)
 static Optimizer::IMODE* GetBucket(Optimizer::IMODE* mem)
 {
     DATA* lst;
-    int bucket = (int)mem;
+    int bucket = (int)(intptr_t)mem;
     bucket = (bucket >> 16) ^ (bucket >> 8) ^ (bucket >> 2);
     bucket %= 32;
     lst = buckets[bucket];

@@ -1940,39 +1940,55 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                     else
                     */
                     {
-                        bool nonconst = funcsp->sb->nonConstVariableUsed;
-                        funcparams->arguments = (INITLIST*)Alloc(sizeof(INITLIST));
-                        funcparams->arguments->tp = tp1;
-                        funcparams->arguments->exp = exp1;
-                        oldrref = basetype(tp1)->rref;
-                        oldlref = basetype(tp1)->lref;
-                        basetype(tp1)->rref = exp1->type == en_auto && exp1->v.sp->sb->storage_class != sc_parameter;
                         EXPRESSION* exptemp = exp1;
                         if (exptemp->type == en_thisref)
                             exptemp = exptemp->left;
                         if (exptemp->type == en_func && isfunction(exptemp->v.func->sp->tp) &&
-                            basetype(basetype(exptemp->v.func->sp->tp)->btp)->type != bt_lref)
-                            basetype(tp1)->rref = true;
-                        basetype(tp1)->lref = !basetype(tp1)->rref;
-                        maybeConversion = false;
-                        returntype = tp;
-                        implicit = true;
-                        callConstructor(&ctype, &en, funcparams, false, nullptr, true, maybeConversion, false, false, false, false);
-                        funcsp->sb->nonConstVariableUsed = nonconst;
-                        returnexp = en;
-                        basetype(tp1)->rref = oldrref;
-                        basetype(tp1)->lref = oldlref;
-                        if (funcparams->sp && matchesCopy(funcparams->sp, true))
+                            exptemp->v.func->thisptr && comparetypes(tp, basetype(exptemp->v.func->thistp)->btp, 0) &&
+                            (!basetype(tp)->sp->sb->templateLevel || sameTemplate(tp, basetype(exptemp->v.func->thistp)->btp)) &&
+                            exptemp->v.func->thisptr->type == en_auto &&
+                            exptemp->v.func->thisptr->v.sp->sb->anonymous)
                         {
-                            switch (exp1->type)
+                            exptemp->v.func->thisptr->v.sp->sb->destructed = true;
+                            exptemp->v.func->thisptr = en;
+                            returntype = tp;
+                            returnexp = exp1;
+                            maybeConversion = false;
+                            implicit = true;
+                        }
+                        else
+                        {
+                            bool nonconst = funcsp->sb->nonConstVariableUsed;
+                            funcparams->arguments = (INITLIST*)Alloc(sizeof(INITLIST));
+                            funcparams->arguments->tp = tp1;
+                            funcparams->arguments->exp = exp1;
+                            oldrref = basetype(tp1)->rref;
+                            oldlref = basetype(tp1)->lref;
+                            basetype(tp1)->rref = exp1->type == en_auto && exp1->v.sp->sb->storage_class != sc_parameter;
+                            if (exptemp->type == en_func && isfunction(exptemp->v.func->sp->tp) &&
+                                basetype(basetype(exptemp->v.func->sp->tp)->btp)->type != bt_lref)
+                                basetype(tp1)->rref = true;
+                            basetype(tp1)->lref = !basetype(tp1)->rref;
+                            maybeConversion = false;
+                            returntype = tp;
+                            implicit = true;
+                            callConstructor(&ctype, &en, funcparams, false, nullptr, true, maybeConversion, false, false, false, false);
+                            funcsp->sb->nonConstVariableUsed = nonconst;
+                            returnexp = en;
+                            basetype(tp1)->rref = oldrref;
+                            basetype(tp1)->lref = oldlref;
+                            if (funcparams->sp && matchesCopy(funcparams->sp, true))
                             {
-                                case en_global:
-                                case en_auto:
-                                case en_threadlocal:
-                                    exp1->v.sp->sb->dest = nullptr;
-                                    break;
-                                default:
-                                    break;
+                                switch (exp1->type)
+                                {
+                                    case en_global:
+                                    case en_auto:
+                                    case en_threadlocal:
+                                        exp1->v.sp->sb->dest = nullptr;
+                                        break;
+                                    default:
+                                        break;
+                                }
                             }
                         }
                     }

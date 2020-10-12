@@ -2805,40 +2805,43 @@ static void undoBases(BLOCKDATA* b, SYMBOL* against, BASECLASS* bc, EXPRESSION* 
 }
 void thunkDestructorTail(BLOCKDATA* b, SYMBOL* sp, SYMBOL* dest, HASHTABLE* syms)
 {
-    EXPRESSION* thisptr;
-    VBASEENTRY* vbe = sp->sb->vbaseEntries;
-    int oldCodeLabel = codeLabel;
-    if (templateNestingCount)
-        return;
-    codeLabel = INT_MIN;
-    thisptr = varNode(en_auto, (SYMBOL*)syms->table[0]->p);
-    undoVars(b, basetype(sp->tp)->syms->table[0], thisptr);
-    undoBases(b, sp, sp->sb->baseClasses, thisptr);
-    if (vbe)
+    if (sp->tp->type != bt_union)
     {
-        SYMBOL* sp = (SYMBOL*)syms->table[0]->next->p;
-        EXPRESSION* val = varNode(en_auto, sp);
-        int lbl = codeLabel++;
-        STATEMENT* st;
-        sp->sb->decoratedName = sp->name;
-        sp->sb->offset = Optimizer::chosenAssembler->arch->retblocksize + getSize(bt_pointer);
-        Optimizer::SymbolManager::Get(sp)->offset = sp->sb->offset;
-        deref(&stdint, &val);
-        st = stmtNode(nullptr, b, st_notselect);
-        optimize_for_constants(&val);
-        st->select = val;
-        st->label = lbl;
-        while (vbe)
+        EXPRESSION* thisptr;
+        VBASEENTRY* vbe = sp->sb->vbaseEntries;
+        int oldCodeLabel = codeLabel;
+        if (templateNestingCount)
+            return;
+        codeLabel = INT_MIN;
+        thisptr = varNode(en_auto, (SYMBOL*)syms->table[0]->p);
+        undoVars(b, basetype(sp->tp)->syms->table[0], thisptr);
+        undoBases(b, sp, sp->sb->baseClasses, thisptr);
+        if (vbe)
         {
-            if (vbe->alloc)
-                genDestructorCall(b, vbe->cls, sp, thisptr, nullptr, vbe->structOffset, false);
-            vbe = vbe->next;
+            SYMBOL* sp = (SYMBOL*)syms->table[0]->next->p;
+            EXPRESSION* val = varNode(en_auto, sp);
+            int lbl = codeLabel++;
+            STATEMENT* st;
+            sp->sb->decoratedName = sp->name;
+            sp->sb->offset = Optimizer::chosenAssembler->arch->retblocksize + getSize(bt_pointer);
+            Optimizer::SymbolManager::Get(sp)->offset = sp->sb->offset;
+            deref(&stdint, &val);
+            st = stmtNode(nullptr, b, st_notselect);
+            optimize_for_constants(&val);
+            st->select = val;
+            st->label = lbl;
+            while (vbe)
+            {
+                if (vbe->alloc)
+                    genDestructorCall(b, vbe->cls, sp, thisptr, nullptr, vbe->structOffset, false);
+                vbe = vbe->next;
+            }
+            st = stmtNode(nullptr, b, st_label);
+            st->label = lbl;
         }
-        st = stmtNode(nullptr, b, st_label);
-        st->label = lbl;
+        dest->sb->labelCount = codeLabel - INT_MIN;
+        codeLabel = oldCodeLabel;
     }
-    dest->sb->labelCount = codeLabel - INT_MIN;
-    codeLabel = oldCodeLabel;
 }
 static void createDestructor(SYMBOL* sp)
 {

@@ -655,47 +655,50 @@ static bool is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** t
                     INITLIST* temp;
                     EXPRESSION* cexp = nullptr;
                     SYMBOL* cons = search(overloadNameTab[CI_CONSTRUCTOR], basetype(tp2)->syms);
-                    funcparams.thisptr = intNode(en_c_i, 0);
-                    funcparams.thistp = (TYPE*)Alloc(sizeof(TYPE));
-                    funcparams.thistp->type = bt_pointer;
-                    funcparams.thistp->btp = basetype(tp2);
-                    funcparams.thistp->rootType = funcparams.thistp;
-                    funcparams.thistp->size = getSize(bt_pointer);
-                    funcparams.ascall = true;
-                    funcparams.arguments = funcparams.arguments->next;
-                    temp = funcparams.arguments;
-                    while (temp)
+                    if (cons)
                     {
-                        holdl[i] = temp->tp->lref;
-                        holdr[i] = temp->tp->rref;
-                        if (!temp->tp->rref && basetype(temp->tp)->type != bt_rref)  // DAL FIXED
+                        funcparams.thisptr = intNode(en_c_i, 0);
+                        funcparams.thistp = (TYPE*)Alloc(sizeof(TYPE));
+                        funcparams.thistp->type = bt_pointer;
+                        funcparams.thistp->btp = basetype(tp2);
+                        funcparams.thistp->rootType = funcparams.thistp;
+                        funcparams.thistp->size = getSize(bt_pointer);
+                        funcparams.ascall = true;
+                        funcparams.arguments = funcparams.arguments->next;
+                        temp = funcparams.arguments;
+                        while (temp)
                         {
-                            temp->tp->lref = true;
+                            holdl[i] = temp->tp->lref;
+                            holdr[i] = temp->tp->rref;
+                            if (!temp->tp->rref && basetype(temp->tp)->type != bt_rref)  // DAL FIXED
+                            {
+                                temp->tp->lref = true;
+                            }
+                            temp = temp->next;
                         }
-                        temp = temp->next;
-                    }
-                    std::stack<SYMBOL*> stk;
-                    for (auto spl = cons->tp->syms->table[0]; spl; spl = spl->next)
-                    {
-                        if (spl->p->templateParams)
+                        std::stack<SYMBOL*> stk;
+                        for (auto spl = cons->tp->syms->table[0]; spl; spl = spl->next)
                         {
-                            stk.push(spl->p);
-                            PushPopTemplateArgs(spl->p, true);
+                            if (spl->p->templateParams)
+                            {
+                                stk.push(spl->p);
+                                PushPopTemplateArgs(spl->p, true);
+                            }
                         }
-                    }
-                    rv = GetOverloadedFunction(tp, &funcparams.fcall, cons, &funcparams, nullptr, false, false, false, _F_SIZEOF) !=
-                         nullptr;
-                    while (stk.size())
-                    {
-                        PushPopTemplateArgs(stk.top(), false);
-                        stk.pop();
-                    }
-                    temp = funcparams.arguments;
-                    while (temp)
-                    {
-                        temp->tp->lref = holdl[i];
-                        temp->tp->rref = holdr[i];
-                        temp = temp->next;
+                        rv = GetOverloadedFunction(tp, &funcparams.fcall, cons, &funcparams, nullptr, false, false, false, _F_SIZEOF) !=
+                            nullptr;
+                        while (stk.size())
+                        {
+                            PushPopTemplateArgs(stk.top(), false);
+                            stk.pop();
+                        }
+                        temp = funcparams.arguments;
+                        while (temp)
+                        {
+                            temp->tp->lref = holdl[i];
+                            temp->tp->rref = holdr[i];
+                            temp = temp->next;
+                        }
                     }
                 }
             }

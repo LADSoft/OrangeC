@@ -2080,7 +2080,7 @@ void assignmentUsages(EXPRESSION* node, bool first)
 static int checkDefaultExpression(EXPRESSION* node)
 {
     FUNCTIONCALL* fp;
-    bool rv = false;
+    int rv = false;
     if (node == 0)
         return 0;
     switch (node->type)

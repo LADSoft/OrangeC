@@ -21,7 +21,7 @@
  *         email: TouchStone222@runbox.com <David Lindauer>
  *
  */
-
+#include <cstdint>
 #include <stdio.h>
 #include <malloc.h>
 #include <string.h>
@@ -910,7 +910,7 @@ void ReadText(std::map<int, std::string>& texts)
 static Optimizer::SimpleSymbol* SymbolName(Optimizer::SimpleSymbol* selection, std::vector<Optimizer::SimpleSymbol*>* table)
 {
     // symbol index was multiplied by two and the low bit was setst
-    int index = ((int)selection - 1) / 2;
+    int index = ((int)(intptr_t)selection - 1) / 2;
     if (index > 0)
     {
         index--;
@@ -940,17 +940,17 @@ static void ResolveType(Optimizer::SimpleType* tp, std::map<int, std::string>& t
     bool ispointer = false;
     while (tp)
     {
-        if ((int)tp->sp & 1)
+        if ((int)(intptr_t)tp->sp & 1)
         {
-            if ((int)tp->sp & 0x20000000)
+            if ((int)(intptr_t)tp->sp & 0x20000000)
             {
-                tp->sp = (Optimizer::SimpleSymbol*)((int)tp->sp & 0x1fffffff);
+                tp->sp = (Optimizer::SimpleSymbol*)((int)(intptr_t)tp->sp & 0x1fffffff);
                 ResolveSymbol(tp->sp, texts, current->variables);
             }
             else
             {
-                bool param = !!((int)tp->sp & 0x40000000);
-                tp->sp = (Optimizer::SimpleSymbol*)((int)tp->sp & 0x3fffffff);
+                bool param = !!((int)(intptr_t)tp->sp & 0x40000000);
+                tp->sp = (Optimizer::SimpleSymbol*)((int)(intptr_t)tp->sp & 0x3fffffff);
                 ResolveSymbol(tp->sp, texts, tp->type == st_func && !param ? globalCache : typeSymbols);
             }
         }
@@ -964,9 +964,9 @@ static void ResolveExpression(Optimizer::SimpleExpression* exp, std::map<int, st
         switch (exp->type)
         {
             case se_auto:
-                if ((int)exp->sp & 0x40000000)
+                if ((int)(intptr_t)exp->sp & 0x40000000)
                 {
-                    exp->sp = ((SimpleSymbol*)((int)exp->sp & ~0x40000000));
+                    exp->sp = ((SimpleSymbol*)((int)(intptr_t)exp->sp & ~0x40000000));
                     ResolveSymbol(exp->sp, texts, globalCache);
                 }
                 else
@@ -1000,10 +1000,10 @@ static void ResolveExpression(Optimizer::SimpleExpression* exp, std::map<int, st
             if (exp->right)
             {
                 Optimizer::SimpleSymbol* sym = (Optimizer::SimpleSymbol*)exp->right;
-                int n = (int)(exp->right);
+                int n = (int)(intptr_t)(exp->right);
                 if (n & 0x40000000)
                 {
-                    sym = (Optimizer::SimpleSymbol*)((int)exp->right & 0x3fffffff);
+                    sym = (Optimizer::SimpleSymbol*)((int)(intptr_t)exp->right & 0x3fffffff);
                     ResolveSymbol(sym, texts, globalCache);
                 }
                 else
@@ -1046,7 +1046,7 @@ static void ResolveInstruction(Optimizer::QUAD* q, std::map<int, std::string>& t
             auto ld = (LINEDATA*)q->dc.left;
             while (ld)
             {
-                ld->line = texts[(int)ld->line].c_str();
+                ld->line = texts[(int)(intptr_t)ld->line].c_str();
                 ld = ld->next;
             }
             break;
@@ -1056,14 +1056,14 @@ static void ResolveInstruction(Optimizer::QUAD* q, std::map<int, std::string>& t
     }
     if (q->altsp)
     {
-        if ((int)q->altsp & 0x40000000)
+        if ((int)(intptr_t)q->altsp & 0x40000000)
         {
-            q->altsp = (Optimizer::SimpleSymbol*)((int)q->altsp & 0x3fffffff);
+            q->altsp = (Optimizer::SimpleSymbol*)((int)(intptr_t)q->altsp & 0x3fffffff);
             ResolveSymbol(q->altsp, texts, typeSymbols);
         }
-        else if ((int)q->altsp & 0x20000000)
+        else if ((int)(intptr_t)q->altsp & 0x20000000)
         {
-            q->altsp = (Optimizer::SimpleSymbol*)((int)q->altsp & 0x1fffffff);
+            q->altsp = (Optimizer::SimpleSymbol*)((int)(intptr_t)q->altsp & 0x1fffffff);
             ResolveSymbol(q->altsp, texts, current->variables);
         }
         else
@@ -1096,7 +1096,7 @@ static void ResolveSymbol(Optimizer::SimpleSymbol*& sym, std::map<int, std::stri
     if (sym != nullptr)
     {
         // low bit set means this is an index not a symbol
-        if ((int)sym & 1)
+        if ((int)(intptr_t)sym & 1)
             sym = SymbolName(sym, &table);
         if (sym->visited)
             return;
@@ -1114,12 +1114,12 @@ static void ResolveSymbol(Optimizer::SimpleSymbol*& sym, std::map<int, std::stri
         }
         ResolveType(sym->tp, texts, typeSymbols);
 
-        sym->name = texts[(int)sym->name].c_str();
-        sym->outputName = texts[(int)sym->outputName].c_str();
-        sym->importfile = texts[(int)sym->importfile].c_str();
-        sym->namespaceName = texts[(int)sym->namespaceName].c_str();
+        sym->name = texts[(int)(intptr_t)sym->name].c_str();
+        sym->outputName = texts[(int)(intptr_t)sym->outputName].c_str();
+        sym->importfile = texts[(int)(intptr_t)sym->importfile].c_str();
+        sym->namespaceName = texts[(int)(intptr_t)sym->namespaceName].c_str();
         if (sym->msil)
-            sym->msil = texts[(int)sym->msil].c_str();
+            sym->msil = texts[(int)(intptr_t)sym->msil].c_str();
     }
 }
 static void ResolveFunction(FunctionData* fd, std::map<int, std::string>& texts)
@@ -1184,11 +1184,11 @@ static void ResolveNames(std::map<int, std::string>& texts)
     }
     for (auto b : browseFiles)
     {
-        b->name = texts[(int)b->name].c_str();
+        b->name = texts[(int)(intptr_t)b->name].c_str();
     }
     for (auto b : browseInfo)
     {
-        b->name = texts[(int)b->name].c_str();
+        b->name = texts[(int)(intptr_t)b->name].c_str();
     }
     for (auto&& v : msilProperties)
     {

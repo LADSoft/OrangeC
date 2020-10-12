@@ -73,7 +73,7 @@ static int returnCount;
 static int hookCount;
 static int stackpos = 0;
 
-static void box(Optimizer::IMODE* im);
+void box(Optimizer::IMODE* im);
 
 void include_start(char* name, int num) {}
 

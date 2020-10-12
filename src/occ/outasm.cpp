@@ -36,6 +36,7 @@
 #include "output.h"
 #include "outasm.h"
 #include "memory.h"
+#include "stdarg.h"
 #define IEEE
 
 namespace occx86
@@ -53,20 +54,52 @@ int newlabel;
 int needpointer;
 static enum Optimizer::e_gt oa_gentype = Optimizer::nogen; /* Current DC type */
 static int uses_float;
-static int oa_outcol = 0; /* Curront col (roughly) */
 static int nosize = 0;
 static int virtual_mode;
-
+static int linepos;
 /* Init module */
 void oa_ini(void)
 {
+    linepos = 0;
     oa_gentype = Optimizer::nogen;
     oa_currentSeg = Optimizer::noseg;
-    oa_outcol = 0;
     newlabel = false;
     muldivlink = 0;
 }
+static void ColumnPosition(int n)
+{
+    if (n <= linepos)
+    {
+       Optimizer::beputc(' ');
+       linepos++;
+    }
+    else
+    {
+        char buf[100];
+        memset(buf, ' ',  n - linepos);
+        buf[n - linepos] = 0;
+        Optimizer::bePrintf("%s", buf);
+        linepos += n - linepos;
+    }
+}
+static void AsmOutput(const char *fmt, ...)
+{
+    char buf[10000], *p = buf, *q;
+    va_list lst;
+    va_start(lst, fmt);
+    vsprintf(buf, fmt, lst);
+    va_end(lst);
 
+    while ((q = strrchr(p, '\n')) != 0)
+    {
+        linepos = 0;
+        q++;
+        p = q;
+    }
+    int len = strlen(p);
+    linepos += len;
+    Optimizer::bePrintf("%s", buf);
+}
 /*-------------------------------------------------------------------------*/
 
 void oa_nl(void)
@@ -76,10 +109,9 @@ void oa_nl(void)
 {
     if (Optimizer::cparams.prm_asmfile)
     {
-        if (oa_outcol > 0)
+        if (linepos > 0)
         {
-            Optimizer::beputc('\n');
-            oa_outcol = 0;
+            Optimizer::bePrintf("\n");
             oa_gentype = Optimizer::nogen;
         }
     }
@@ -89,9 +121,12 @@ void oa_nl(void)
  */
 void outop(const char* name)
 {
-    Optimizer::beputc('\t');
-    while (*name)
+     ColumnPosition(8);
+     while (*name)
+     {
         Optimizer::beputc(*name++);
+        linepos++;
+     }
 }
 
 /*-------------------------------------------------------------------------*/
@@ -219,12 +254,12 @@ void oa_putconst(int op, int sz, Optimizer::SimpleExpression* offset, bool doSig
             if (doSign)
             {
                 if ((int)offset->sp->offset < 0)
-                    Optimizer::bePrintf("-0%lxh", -offset->sp->offset);
+                    AsmOutput("-0%lxh", -offset->sp->offset);
                 else
-                    Optimizer::bePrintf("+0%lxh", m);
+                    AsmOutput("+0%lxh", m);
             }
             else
-                Optimizer::bePrintf("0%lxh", m);
+                AsmOutput("0%lxh", m);
 
             break;
         case Optimizer::se_i:
@@ -235,6 +270,7 @@ void oa_putconst(int op, int sz, Optimizer::SimpleExpression* offset, bool doSig
                 if (offset->i == 0)
                     break;
                 Optimizer::beputc('+');
+                linepos++;
             }
             {
                 int n = offset->i;
@@ -245,33 +281,45 @@ void oa_putconst(int op, int sz, Optimizer::SimpleExpression* offset, bool doSig
                     if (sz == ISZ_USHORT || sz == -ISZ_USHORT)
                         n &= 0xffff;
                 }
-                Optimizer::bePrintf("0%xh", n);
+                AsmOutput("0%xh", n);
             }
             break;
         case Optimizer::se_fc:
             if (doSign)
+            {
                 Optimizer::beputc('+');
-            Optimizer::bePrintf("%s,%s", ((std::string)offset->c.r).c_str(), ((std::string)offset->c.i).c_str());
+                linepos++;
+            }
+            AsmOutput("%s,%s", ((std::string)offset->c.r).c_str(), ((std::string)offset->c.i).c_str());
             break;
         case Optimizer::se_f:
         case Optimizer::se_fi:
             if (doSign)
+            {
                 Optimizer::beputc('+');
-            Optimizer::bePrintf("%s", ((std::string)offset->f).c_str());
+                linepos++;
+            }
+            AsmOutput("%s", ((std::string)offset->f).c_str());
             break;
         case Optimizer::se_labcon:
             if (doSign)
+            {
                 Optimizer::beputc('+');
-            Optimizer::bePrintf("L_%d", offset->i);
+                linepos++;
+            }
+            AsmOutput("L_%d", offset->i);
             break;
         case Optimizer::se_pc:
         case Optimizer::se_global:
         case Optimizer::se_threadlocal:
             if (doSign)
+            {
                 Optimizer::beputc('+');
+                linepos++;
+            }
             sym = offset->sp;
             strcpy(buf, sym->outputName);
-            Optimizer::bePrintf("%s", buf);
+            AsmOutput("%s", buf);
             break;
         case Optimizer::se_add:
             oa_putconst(0, ISZ_ADDR, offset->left, doSign);
@@ -279,11 +327,11 @@ void oa_putconst(int op, int sz, Optimizer::SimpleExpression* offset, bool doSig
             break;
         case Optimizer::se_sub:
             oa_putconst(0, ISZ_ADDR, offset->left, doSign);
-            Optimizer::bePrintf("-");
+            AsmOutput("-");
             oa_putconst(0, ISZ_ADDR, offset->right, false);
             break;
         case Optimizer::se_uminus:
-            Optimizer::bePrintf("-");
+            AsmOutput("-");
             oa_putconst(0, ISZ_ADDR, offset->left, false);
             break;
         default:
@@ -337,13 +385,13 @@ void putsizedreg(const char* string, int reg, int size)
     if (size < 0)
         size = -size;
     if (size == ISZ_UINT || size == ISZ_ULONG || size == ISZ_ADDR || size == ISZ_U32)
-        Optimizer::bePrintf(string, longregs[reg]);
+        AsmOutput(string, longregs[reg]);
     else if (size == ISZ_BOOLEAN || size == ISZ_UCHAR)
     {
-        Optimizer::bePrintf(string, byteregs[reg]);
+        AsmOutput(string, byteregs[reg]);
     }
     else
-        Optimizer::bePrintf(string, wordregs[reg]);
+        AsmOutput(string, wordregs[reg]);
 }
 
 /*-------------------------------------------------------------------------*/
@@ -365,7 +413,7 @@ void pointersize(int size)
         case ISZ_ULONGLONG:
         case ISZ_DOUBLE:
         case ISZ_IDOUBLE:
-            Optimizer::bePrintf("qword ");
+            AsmOutput("qword ");
             break;
         case ISZ_FLOAT:
         case ISZ_IFLOAT:
@@ -373,31 +421,31 @@ void pointersize(int size)
             {
                 if (Optimizer::cparams.prm_assembler == pa_nasm || Optimizer::cparams.prm_assembler == pa_oasm ||
                     Optimizer::cparams.prm_assembler == pa_fasm)
-                    Optimizer::bePrintf("dword far ");
+                    AsmOutput("dword far ");
                 else
-                    Optimizer::bePrintf("fword ");
+                    AsmOutput("fword ");
                 break;
             }
         case ISZ_U32:
         case ISZ_UINT:
         case ISZ_ULONG:
         case ISZ_ADDR:
-            Optimizer::bePrintf("dword ");
+            AsmOutput("dword ");
             break;
         case ISZ_U16:
         case ISZ_USHORT:
         case ISZ_WCHAR:
-            Optimizer::bePrintf("word ");
+            AsmOutput("word ");
             break;
         case ISZ_BOOLEAN:
         case ISZ_UCHAR:
-            Optimizer::bePrintf("byte ");
+            AsmOutput("byte ");
             break;
         case ISZ_NONE:
             /* for NASM with certain FP ops */
             break;
         case ISZ_FARPTR:
-            Optimizer::bePrintf("far ");
+            AsmOutput("far ");
             break;
         default:
             diag("Bad pointer");
@@ -406,7 +454,7 @@ void pointersize(int size)
     if (!(Optimizer::cparams.prm_assembler == pa_nasm || Optimizer::cparams.prm_assembler == pa_oasm ||
           Optimizer::cparams.prm_assembler == pa_fasm) &&
         size)
-        Optimizer::bePrintf("ptr ");
+        AsmOutput("ptr ");
 }
 
 /*-------------------------------------------------------------------------*/
@@ -419,8 +467,12 @@ void putseg(int seg, int usecolon)
     seg <<= 1;
     Optimizer::beputc(segregs[seg]);
     Optimizer::beputc(segregs[seg + 1]);
+    linepos += 2;
     if (usecolon)
+    {
         Optimizer::beputc(':');
+        linepos++;
+    }
 }
 
 /*-------------------------------------------------------------------------*/
@@ -468,33 +520,33 @@ void oa_putamode(int op, int szalt, AMODE* ap)
             putseg(ap->seg, 0);
             break;
         case am_screg:
-            Optimizer::bePrintf("cr%d", ap->preg);
+            AsmOutput("cr%d", ap->preg);
             break;
         case am_sdreg:
-            Optimizer::bePrintf("dr%d", ap->preg);
+            AsmOutput("dr%d", ap->preg);
             break;
         case am_streg:
-            Optimizer::bePrintf("tr%d", ap->preg);
+            AsmOutput("tr%d", ap->preg);
             break;
         case am_immed:
             if (ap->length > 0 && islabeled(ap->offset))
             {
                 if (!(Optimizer::cparams.prm_assembler == pa_nasm || Optimizer::cparams.prm_assembler == pa_oasm ||
                       Optimizer::cparams.prm_assembler == pa_fasm))
-                    Optimizer::bePrintf("offset ");
+                    AsmOutput("offset ");
                 else if (!nosize)
                 {
                     if (ap->length == -ISZ_UCHAR || ap->length == ISZ_UCHAR)
                     {
-                        Optimizer::bePrintf("byte ");
+                        AsmOutput("byte ");
                     }
                     else if (ap->length == -ISZ_USHORT || ap->length == ISZ_USHORT)
                     {
-                        Optimizer::bePrintf("word ");
+                        AsmOutput("word ");
                     }
                     else
                     {
-                        Optimizer::bePrintf("dword ");
+                        AsmOutput("dword ");
                     }
                 }
             }
@@ -508,6 +560,7 @@ void oa_putamode(int op, int szalt, AMODE* ap)
                   Optimizer::cparams.prm_assembler == pa_fasm))
                 putseg(ap->seg, true);
             Optimizer::beputc('[');
+            linepos++;
             oldnasm = Optimizer::cparams.prm_assembler;
             if (Optimizer::cparams.prm_assembler == pa_nasm || Optimizer::cparams.prm_assembler == pa_oasm ||
                 Optimizer::cparams.prm_assembler == pa_fasm)
@@ -515,23 +568,24 @@ void oa_putamode(int op, int szalt, AMODE* ap)
             Optimizer::cparams.prm_assembler = pa_nasm;
             oa_putconst(0, ap->length, ap->offset, false);
             Optimizer::beputc(']');
+            linepos++;
             Optimizer::cparams.prm_assembler = oldnasm;
             break;
         case am_dreg:
             putsizedreg("%s", ap->preg, ap->length);
             break;
         case am_xmmreg:
-            Optimizer::bePrintf("xmm%d", ap->preg);
+            AsmOutput("xmm%d", ap->preg);
             break;
         case am_mmreg:
-            Optimizer::bePrintf("mm%d", ap->preg);
+            AsmOutput("mm%d", ap->preg);
             break;
         case am_freg:
             if (Optimizer::cparams.prm_assembler == pa_nasm || Optimizer::cparams.prm_assembler == pa_oasm ||
                 Optimizer::cparams.prm_assembler == pa_fasm)
-                Optimizer::bePrintf("st%d", ap->preg);
+                AsmOutput("st%d", ap->preg);
             else
-                Optimizer::bePrintf("st(%d)", ap->preg);
+                AsmOutput("st(%d)", ap->preg);
             break;
         case am_indisp:
             pointersize(ap->length);
@@ -539,6 +593,7 @@ void oa_putamode(int op, int szalt, AMODE* ap)
                   Optimizer::cparams.prm_assembler == pa_fasm))
                 putseg(ap->seg, true);
             Optimizer::beputc('[');
+            linepos++;
             if (Optimizer::cparams.prm_assembler == pa_nasm || Optimizer::cparams.prm_assembler == pa_oasm ||
                 Optimizer::cparams.prm_assembler == pa_fasm)
                 putseg(ap->seg, true);
@@ -548,6 +603,7 @@ void oa_putamode(int op, int szalt, AMODE* ap)
                 oa_putconst(0, ap->length, ap->offset, true);
             }
             Optimizer::beputc(']');
+            linepos++;
             break;
         case am_indispscale:
         {
@@ -560,6 +616,7 @@ void oa_putamode(int op, int szalt, AMODE* ap)
                   Optimizer::cparams.prm_assembler == pa_fasm))
                 putseg(ap->seg, true);
             Optimizer::beputc('[');
+            linepos++;
             if (Optimizer::cparams.prm_assembler == pa_nasm || Optimizer::cparams.prm_assembler == pa_oasm ||
                 Optimizer::cparams.prm_assembler == pa_fasm)
                 putseg(ap->seg, true);
@@ -567,12 +624,13 @@ void oa_putamode(int op, int szalt, AMODE* ap)
                 putsizedreg("%s+", ap->preg, ISZ_ADDR);
             putsizedreg("%s", ap->sreg, ISZ_ADDR);
             if (scale != 1)
-                Optimizer::bePrintf("*%d", scale);
+                AsmOutput("*%d", scale);
             if (ap->offset)
             {
                 oa_putconst(0, ap->length, ap->offset, true);
             }
             Optimizer::beputc(']');
+            linepos++;
         }
         break;
         default:
@@ -601,7 +659,9 @@ void oa_put_code(OCODE* cd)
         oa_nl();
         while (ld)
         {
-            Optimizer::bePrintf("; Line %d:\t%s\n", ld->lineno, ld->line);
+            AsmOutput("; Line %d:", ld->lineno);
+            ColumnPosition(8);
+            AsmOutput("%s\n", ld->line);
             ld = ld->next;
         }
         return;
@@ -610,7 +670,7 @@ void oa_put_code(OCODE* cd)
     {
         if (!Optimizer::cparams.prm_lines)
             return;
-        Optimizer::bePrintf("%s", aps);
+        AsmOutput("%s", aps);
         return;
     }
     else if (op == op_align)
@@ -635,11 +695,13 @@ void oa_put_code(OCODE* cd)
                 {
                     if ((((Instruction*)cd->ins)->GetBytes()[0] & 0xf0) == 0x70 || ((Instruction*)cd->ins)->GetBytes()[0] == 0xeb)
                     {
-                        Optimizer::bePrintf("\tshort");
+                        ColumnPosition(16);
+                        AsmOutput("short");
                     }
                     else
                     {
-                        Optimizer::bePrintf("\tnear");
+                        ColumnPosition(16);
+                        AsmOutput("near");
                     }
                 }
         */
@@ -651,7 +713,6 @@ void oa_put_code(OCODE* cd)
         {
             if (((Instruction*)cd->ins)->GetBytes()[0] == 0xeb)
             {
-                //                Optimizer::bePrintf("\tshort");
                 nosize = true;
             }
         }
@@ -670,7 +731,8 @@ void oa_put_code(OCODE* cd)
     if (aps != 0)
     {
         int separator;
-        Optimizer::bePrintf("\t");
+
+        ColumnPosition(16);
         if ((op == op_jmp || op == op_call) && aps && apd)
         {
             separator = ':';
@@ -686,15 +748,17 @@ void oa_put_code(OCODE* cd)
         if (apd != 0)
         {
             Optimizer::beputc(separator);
+            linepos++;
             oa_putamode(op, aps->length, apd);
         }
         if (ap3 != 0)
         {
             Optimizer::beputc(separator);
+            linepos++;
             oa_putamode(op, aps->length, ap3);
         }
     }
-    Optimizer::bePrintf("\n");
+    AsmOutput("\n");
 }
 
 /*-------------------------------------------------------------------------*/
@@ -711,11 +775,10 @@ void oa_gen_strlab(Optimizer::SimpleSymbol* sym)
         if (oa_currentSeg == Optimizer::dataseg || oa_currentSeg == Optimizer::bssxseg)
         {
             newlabel = true;
-            Optimizer::bePrintf("\n%s", buf);
-            oa_outcol = strlen(buf) + 1;
+            AsmOutput("\n%s", buf);
         }
         else
-            Optimizer::bePrintf("%s:\n", buf);
+            AsmOutput("%s:\n", buf);
     }
     outcode_gen_strlab(sym);
 }
@@ -733,11 +796,10 @@ void oa_put_label(int lab)
         if (oa_currentSeg == Optimizer::dataseg || oa_currentSeg == Optimizer::bssxseg)
         {
             newlabel = true;
-            Optimizer::bePrintf("\nL_%ld", lab);
-            oa_outcol = 8;
-        }
+            AsmOutput("\nL_%ld", lab);
+}
         else
-            Optimizer::bePrintf("L_%ld:\n", lab);
+            AsmOutput("L_%ld:\n", lab);
     }
     else
         outcode_put_label(lab);
@@ -763,17 +825,23 @@ void oa_genfloat(enum Optimizer::e_gt type, FPF* val)
                     Optimizer::UBYTE dta[4];
                     int i;
                     val->ToFloat(dta);
-                    Optimizer::bePrintf("\tdb\t");
+                    ColumnPosition(8);
+                    AsmOutput("db");
+                    ColumnPosition(16);
                     for (i = 0; i < 4; i++)
                     {
-                        Optimizer::bePrintf("0%02XH", dta[i]);
+                        AsmOutput("0%02XH", dta[i]);
                         if (i != 3)
-                            Optimizer::bePrintf(", ");
+                            AsmOutput(", ");
                     }
                     Optimizer::beputc('\n');
+                    linepos = 0;
                 }
                 else
-                    Optimizer::bePrintf("\tdd\t%s\n", buf);
+                    ColumnPosition(8);
+                    AsmOutput("dd");
+                    ColumnPosition(16);
+                    AsmOutput("%s\n", buf);
                 break;
             case Optimizer::doublegen:
             case Optimizer::longdoublegen:
@@ -782,17 +850,25 @@ void oa_genfloat(enum Optimizer::e_gt type, FPF* val)
                     Optimizer::UBYTE dta[8];
                     int i;
                     val->ToDouble(dta);
-                    Optimizer::bePrintf("\tdb\t");
+                    ColumnPosition(8);
+                    AsmOutput("db");
+                    ColumnPosition(16);
                     for (i = 0; i < 8; i++)
                     {
-                        Optimizer::bePrintf("0%02XH", dta[i]);
+                        AsmOutput("0%02XH", dta[i]);
                         if (i != 7)
-                            Optimizer::bePrintf(", ");
+                            AsmOutput(", ");
                     }
                     Optimizer::beputc('\n');
+                    linepos = 0;
                 }
                 else
-                    Optimizer::bePrintf("\tdq\t%s\n", buf);
+                {
+                    ColumnPosition(8);
+                    AsmOutput("dq");
+                    ColumnPosition(16);
+                    AsmOutput("%s\n", buf);
+                }
                 break;
             default:
                 diag("floatgen - invalid type");
@@ -835,23 +911,26 @@ void oa_genstring(char* str, int len)
                     {
                         oa_gentype = Optimizer::nogen;
                         oa_nl();
-                        Optimizer::bePrintf("\tdb\t\"");
+                        ColumnPosition(8);
+                        AsmOutput("db");
+                        ColumnPosition(8);
+                        AsmOutput("\"");
                         instring = true;
                     }
-                    Optimizer::bePrintf("%c", *str++);
+                    AsmOutput("%c", *str++);
                 }
                 else
                 {
                     if (instring)
                     {
-                        Optimizer::bePrintf("\"\n");
+                        AsmOutput("\"\n");
                         instring = false;
                     }
                     oa_genint(Optimizer::chargen, *str++);
                 }
             }
             if (instring)
-                Optimizer::bePrintf("\"\n");
+                AsmOutput("\"\n");
             instring = false;
         }
     }
@@ -868,27 +947,42 @@ void oa_genint(enum Optimizer::e_gt type, long long val)
         switch (type)
         {
             case Optimizer::chargen:
-                Optimizer::bePrintf("\tdb\t0%xh\n", val & 0x00ff);
+                ColumnPosition(8);
+                AsmOutput("db");
+                ColumnPosition(16);
+                AsmOutput("0%xh\n", val & 0x00ff);
                 break;
             case Optimizer::shortgen:
             case Optimizer::u16gen:
-                Optimizer::bePrintf("\tdw\t0%xh\n", val & 0x0ffff);
+                ColumnPosition(8);
+                AsmOutput("dw");
+                ColumnPosition(16);
+                AsmOutput("0%xh\n", val & 0x0ffff);
                 break;
             case Optimizer::longgen:
             case Optimizer::enumgen:
             case Optimizer::intgen:
             case Optimizer::u32gen:
-                Optimizer::bePrintf("\tdd\t0%lxh\n", val);
+                ColumnPosition(8);
+                AsmOutput("dd");
+                ColumnPosition(16);
+                AsmOutput("0%lxh\n", val);
                 break;
             case Optimizer::longlonggen:
+                ColumnPosition(8);
+                AsmOutput("dd");
+                ColumnPosition(16);
 #ifndef USE_LONGLONG
-                Optimizer::bePrintf("\tdd\t0%lxh,0%lxh\n", val, val < 0 ? -1 : 0);
+                AsmOutput("0%lxh,0%lxh\n", val, val < 0 ? -1 : 0);
 #else
-                Optimizer::bePrintf("\tdd\t0%lxh,0%lxh\n", val, val >> 32);
+                AsmOutput("0%lxh,0%lxh\n", val, val >> 32);
 #endif
                 break;
             case Optimizer::wchar_tgen:
-                Optimizer::bePrintf("\tdw\t0%lxh\n", val);
+                ColumnPosition(8);
+                AsmOutput("d2");
+                ColumnPosition(16);
+                AsmOutput("0%lxh\n", val);
                 break;
             default:
                 diag("genint - unknown type");
@@ -934,8 +1028,14 @@ void oa_gensrref(Optimizer::SimpleSymbol* sym, int val, int type)
     {
         strcpy(buf, sym->outputName);
         oa_nl();
-        Optimizer::bePrintf("\tdb\t0,%d\n", val);
-        Optimizer::bePrintf("\tdd\t%s\n", buf);
+        ColumnPosition(8);
+        AsmOutput("db");
+        ColumnPosition(16);
+        AsmOutput("0,%d\n", val);
+        ColumnPosition(8);
+        AsmOutput("dd");
+        ColumnPosition(16);
+        AsmOutput("%s\n", buf);
         oa_gentype = Optimizer::srrefgen;
     }
     else
@@ -968,7 +1068,10 @@ void oa_genref(Optimizer::SimpleSymbol* sym, int offset)
                 oa_nl();
             else
                 newlabel = false;
-            Optimizer::bePrintf("\tdd\t%s\n", buf1);
+            ColumnPosition(8);
+            AsmOutput("dd");
+            ColumnPosition(16);
+            AsmOutput("%s\n", buf1);
             oa_gentype = Optimizer::longgen;
         }
     }
@@ -1001,9 +1104,19 @@ void oa_genstorage(int nbytes)
             newlabel = false;
         if (Optimizer::cparams.prm_assembler == pa_nasm || Optimizer::cparams.prm_assembler == pa_oasm ||
             Optimizer::cparams.prm_assembler == pa_fasm)
-            Optimizer::bePrintf("\tresb\t0%xh\n", nbytes);
+        {
+            ColumnPosition(8);
+            AsmOutput("resb");
+            ColumnPosition(16);
+            AsmOutput("0%xh\n", nbytes);
+        }        
         else
-            Optimizer::bePrintf("\tdb\t0%xh DUP (?)\n", nbytes);
+        {
+            ColumnPosition(8);
+            AsmOutput("db");
+            ColumnPosition(16);
+            AsmOutput("0%xh DUP (?)\n", nbytes);
+        }
         oa_gentype = Optimizer::nogen;
     }
     else
@@ -1024,7 +1137,10 @@ void oa_gen_labref(int n)
             oa_nl();
         else
             newlabel = false;
-        Optimizer::bePrintf("\tdd\tL_%d\n", n);
+        ColumnPosition(8);
+        AsmOutput("dd");
+        ColumnPosition(16);
+        AsmOutput("L_%d\n", n);
         oa_gentype = Optimizer::longgen;
     }
     else
@@ -1041,7 +1157,10 @@ void oa_gen_labdifref(int n1, int n2)
             oa_nl();
         else
             newlabel = false;
-        Optimizer::bePrintf("\tdd\tL_%d-L_%d\n", n1, n2);
+        ColumnPosition(8);
+        AsmOutput("dd");
+        ColumnPosition(16);
+        AsmOutput("L_%d-L_%d\n", n1, n2);
         oa_gentype = Optimizer::longgen;
     }
     else
@@ -1060,31 +1179,52 @@ void oa_exitseg(enum Optimizer::e_sg seg)
         {
             if (seg == Optimizer::startupxseg)
             {
-                Optimizer::bePrintf("cstartup\tENDS\n");
+                ColumnPosition(8);
+                AsmOutput("cstartup");
+                ColumnPosition(16);
+                AsmOutput("ENDS\n");
             }
             else if (seg == Optimizer::rundownxseg)
             {
-                Optimizer::bePrintf("crundown\tENDS\n");
+                ColumnPosition(8);
+                AsmOutput("crundown");
+                ColumnPosition(16);
+                AsmOutput("ENDS\n");
             }
             else if (seg == Optimizer::constseg)
             {
-                Optimizer::bePrintf("_CONST\tENDS\n");
+                ColumnPosition(8);
+                AsmOutput("_CONST");
+                ColumnPosition(16);
+                AsmOutput("ENDS\n");
             }
             else if (seg == Optimizer::stringseg)
             {
-                Optimizer::bePrintf("_STRING\tENDS\n");
+                ColumnPosition(8);
+                AsmOutput("_STRING");
+                ColumnPosition(16);
+                AsmOutput("ENDS\n");
             }
             else if (seg == Optimizer::tlsseg)
             {
-                Optimizer::bePrintf("_TLS\tENDS\n");
+                ColumnPosition(8);
+                AsmOutput("_TLS");
+                ColumnPosition(16);
+                AsmOutput("ENDS\n");
             }
             else if (seg == Optimizer::tlssuseg)
             {
-                Optimizer::bePrintf("tlsstartup\tENDS\n");
+                ColumnPosition(8);
+                AsmOutput("tlsstartup");
+                ColumnPosition(16);
+                AsmOutput("ENDS\n");
             }
             else if (seg == Optimizer::tlsrdseg)
             {
-                Optimizer::bePrintf("tlsrundown\tENDS\n");
+                ColumnPosition(8);
+                AsmOutput("tlsrundown");
+                ColumnPosition(16);
+                AsmOutput("ENDS\n");
             }
         }
         oa_nl();
@@ -1106,14 +1246,17 @@ void oa_enterseg(enum Optimizer::e_sg seg)
             if (Optimizer::cparams.prm_assembler == pa_nasm || Optimizer::cparams.prm_assembler == pa_oasm ||
                 Optimizer::cparams.prm_assembler == pa_fasm)
                 if (!Optimizer::cparams.prm_nodos)
-                    Optimizer::bePrintf("section code\n");
+                    AsmOutput("section code\n");
                 else
                 {
-                    Optimizer::bePrintf("section .text\n");
-                    Optimizer::bePrintf("[bits 32]\n");
+                    AsmOutput("section .text\n");
+                    AsmOutput("[bits 32]\n");
                 }
             else
-                Optimizer::bePrintf("\t.code\n");
+            {
+                ColumnPosition(8);
+                AsmOutput(".code");
+            }
         }
         else if (seg == Optimizer::constseg)
         {
@@ -1121,15 +1264,20 @@ void oa_enterseg(enum Optimizer::e_sg seg)
                 Optimizer::cparams.prm_assembler == pa_fasm)
             {
                 if (!Optimizer::cparams.prm_nodos)
-                    Optimizer::bePrintf("section const\n");
+                    AsmOutput("section const\n");
                 else
                 {
-                    Optimizer::bePrintf("section .text\n");
-                    Optimizer::bePrintf("[bits 32]\n");
+                    AsmOutput("section .text\n");
+                    AsmOutput("[bits 32]\n");
                 }
             }
             else
-                Optimizer::bePrintf("_CONST\tsegment use32 public dword \042CONST\042\n");
+            {
+                ColumnPosition(8);
+                AsmOutput("_CONST");
+                ColumnPosition(16);
+                AsmOutput("segment use32 public dword \042CONST\042\n");
+            }
         }
         else if (seg == Optimizer::stringseg)
         {
@@ -1137,82 +1285,108 @@ void oa_enterseg(enum Optimizer::e_sg seg)
                 Optimizer::cparams.prm_assembler == pa_fasm)
             {
                 if (!Optimizer::cparams.prm_nodos)
-                    Optimizer::bePrintf("section string\n");
+                    AsmOutput("section string\n");
                 else
                 {
-                    Optimizer::bePrintf("section .data\n");
-                    Optimizer::bePrintf("[bits 32]\n");
+                    AsmOutput("section .data\n");
+                    AsmOutput("[bits 32]\n");
                 }
             }
             else
-                Optimizer::bePrintf("_STRING\tsegment use32 public dword \042STRING\042\n");
+            {
+                ColumnPosition(8);
+                AsmOutput("_STRING");
+                ColumnPosition(16);
+                AsmOutput("segment use32 public dword \042STRING\042\n");
+             }
         }
         else if (seg == Optimizer::dataseg)
         {
             if (Optimizer::cparams.prm_assembler == pa_nasm || Optimizer::cparams.prm_assembler == pa_oasm ||
                 Optimizer::cparams.prm_assembler == pa_fasm)
                 if (!Optimizer::cparams.prm_nodos)
-                    Optimizer::bePrintf("section data\n");
+                    AsmOutput("section data\n");
                 else
                 {
-                    Optimizer::bePrintf("section .data\n");
-                    Optimizer::bePrintf("[bits 32]\n");
+                    AsmOutput("section .data\n");
+                    AsmOutput("[bits 32]\n");
                 }
             else
-                Optimizer::bePrintf("\t.DATA\n");
+            {
+                ColumnPosition(8);
+                AsmOutput(".DATA\n");
+             }
         }
         else if (seg == Optimizer::tlsseg)
         {
             if (Optimizer::cparams.prm_assembler == pa_nasm || Optimizer::cparams.prm_assembler == pa_oasm ||
                 Optimizer::cparams.prm_assembler == pa_fasm)
                 if (!Optimizer::cparams.prm_nodos)
-                    Optimizer::bePrintf("section tls\n");
+                    AsmOutput("section tls\n");
                 else
                 {
-                    Optimizer::bePrintf("section .data\n");
-                    Optimizer::bePrintf("[bits 32]\n");
+                    AsmOutput("section .data\n");
+                    AsmOutput("[bits 32]\n");
                 }
             else
-                Optimizer::bePrintf("_TLS\tsegment use32 public dword \042TLS\042\n");
+            {
+                ColumnPosition(8);
+                AsmOutput("_TLS");
+                ColumnPosition(16);
+                AsmOutput("segment use32 public dword \042TLS\042\n");
+            }
         }
         else if (seg == Optimizer::tlssuseg)
         {
             if (Optimizer::cparams.prm_assembler == pa_nasm || Optimizer::cparams.prm_assembler == pa_oasm ||
                 Optimizer::cparams.prm_assembler == pa_fasm)
                 if (!Optimizer::cparams.prm_nodos)
-                    Optimizer::bePrintf("section tlsstartup\n");
+                    AsmOutput("section tlsstartup\n");
                 else
                 {
-                    Optimizer::bePrintf("section .data\n");
-                    Optimizer::bePrintf("[bits 32]\n");
+                    AsmOutput("section .data\n");
+                    AsmOutput("[bits 32]\n");
                 }
             else
-                Optimizer::bePrintf("_TLS\tsegment use32 public dword \042TLS\042\n");
+            {
+                ColumnPosition(8);
+                AsmOutput("_TLS");
+                ColumnPosition(16);
+                AsmOutput("segment use32 public dword \042TLS\042\n");
+            }
         }
         else if (seg == Optimizer::tlsrdseg)
         {
             if (Optimizer::cparams.prm_assembler == pa_nasm || Optimizer::cparams.prm_assembler == pa_oasm ||
                 Optimizer::cparams.prm_assembler == pa_fasm)
                 if (!Optimizer::cparams.prm_nodos)
-                    Optimizer::bePrintf("section tlsrundown\n");
+                    AsmOutput("section tlsrundown\n");
                 else
                 {
-                    Optimizer::bePrintf("section .data\n");
-                    Optimizer::bePrintf("[bits 32]\n");
+                    AsmOutput("section .data\n");
+                    AsmOutput("[bits 32]\n");
                 }
             else
-                Optimizer::bePrintf("_TLS\tsegment use32 public dword \042TLS\042\n");
+            {
+                ColumnPosition(8);
+                AsmOutput("_TLS");
+                ColumnPosition(16);
+                AsmOutput("segment use32 public dword \042TLS\042\n");
+            }
         }
         else if (seg == Optimizer::bssxseg)
         {
             if (Optimizer::cparams.prm_assembler == pa_nasm || Optimizer::cparams.prm_assembler == pa_oasm ||
                 Optimizer::cparams.prm_assembler == pa_fasm)
                 if (!Optimizer::cparams.prm_nodos)
-                    Optimizer::bePrintf("section bss\n");
+                    AsmOutput("section bss\n");
                 else
-                    Optimizer::bePrintf("section .bss\n");
+                    AsmOutput("section .bss\n");
             else
-                Optimizer::bePrintf("\t.data?\n");
+            {
+                ColumnPosition(8);
+                AsmOutput(".data?\n");
+             }
         }
         else if (seg == Optimizer::startupxseg)
         {
@@ -1220,15 +1394,20 @@ void oa_enterseg(enum Optimizer::e_sg seg)
                 Optimizer::cparams.prm_assembler == pa_fasm)
             {
                 if (!Optimizer::cparams.prm_nodos)
-                    Optimizer::bePrintf("section cstartup\n");
+                    AsmOutput("section cstartup\n");
                 else
                 {
-                    Optimizer::bePrintf("section .text\n");
-                    Optimizer::bePrintf("[bits 32]\n");
+                    AsmOutput("section .text\n");
+                    AsmOutput("[bits 32]\n");
                 }
             }
             else
-                Optimizer::bePrintf("cstartup\tsegment use32 public dword \042INITDATA\042\n");
+            {
+                ColumnPosition(8);
+                AsmOutput("cstartup");
+                ColumnPosition(16);
+                AsmOutput("segment use32 public dword \042INITDATA\042\n");
+            }
         }
         else if (seg == Optimizer::rundownxseg)
         {
@@ -1236,15 +1415,20 @@ void oa_enterseg(enum Optimizer::e_sg seg)
                 Optimizer::cparams.prm_assembler == pa_fasm)
             {
                 if (!Optimizer::cparams.prm_nodos)
-                    Optimizer::bePrintf("section crundown\n");
+                    AsmOutput("section crundown\n");
                 else
                 {
-                    Optimizer::bePrintf("section .text\n");
-                    Optimizer::bePrintf("[bits 32]\n");
+                    AsmOutput("section .text\n");
+                    AsmOutput("[bits 32]\n");
                 }
             }
             else
-                Optimizer::bePrintf("crundown\tsegment use32 public dword \042EXITDATA\042\n");
+            {
+                ColumnPosition(8);
+                AsmOutput("crundown");
+                ColumnPosition(16);
+                AsmOutput("segment use32 public dword \042EXITDATA\042\n");
+            }
         }
     }
 }
@@ -1262,28 +1446,34 @@ void oa_gen_virtual(Optimizer::SimpleSymbol* sym, int data)
             Optimizer::cparams.prm_assembler == pa_fasm)
         {
             oa_currentSeg = Optimizer::noseg;
+            ColumnPosition(8);
 #ifdef IEEE
             if (sym->outputName[0] == '@')
                 if (virtual_mode)
-                    Optimizer::bePrintf("\tsection vsd%s virtual\n", sym->outputName);
+                    AsmOutput("section vsd%s virtual\n", sym->outputName);
                 else
-                    Optimizer::bePrintf("\tsection vsc%s virtual\n", sym->outputName);
+                    AsmOutput("section vsc%s virtual\n", sym->outputName);
             else if (virtual_mode)
-                Optimizer::bePrintf("\tsection vsd@%s virtual\n", sym->outputName);
+                AsmOutput("section vsd@%s virtual\n", sym->outputName);
             else
-                Optimizer::bePrintf("\tsection vsc@%s virtual\n", sym->outputName);
+                AsmOutput("section vsc@%s virtual\n", sym->outputName);
 #else
-            Optimizer::bePrintf("\tSECTION @%s VIRTUAL\n", sym->outputName);
+            AsmOutput("SECTION @%s VIRTUAL\n", sym->outputName);
 #endif
         }
         else
-            Optimizer::bePrintf("@%s\tsegment virtual\n", sym->outputName);
-        Optimizer::bePrintf("\t[bits 32]\n");
+        {
+            AsmOutput("@%s", sym->outputName);
+            ColumnPosition(8);
+            AsmOutput("segment virtual\n");
+        }
+        ColumnPosition(8);
+        AsmOutput("[bits 32]\n");
         if (Optimizer::cparams.prm_assembler != pa_oasm)
         {
             oa_globaldef(sym);
         }
-        Optimizer::bePrintf("%s:\n", sym->outputName);
+        AsmOutput("%s:\n", sym->outputName);
     }
     outcode_start_virtual_seg(sym, data);
 }
@@ -1295,7 +1485,9 @@ void oa_gen_endvirtual(Optimizer::SimpleSymbol* sym)
         if (!(Optimizer::cparams.prm_assembler == pa_nasm || Optimizer::cparams.prm_assembler == pa_oasm ||
               Optimizer::cparams.prm_assembler == pa_fasm))
         {
-            Optimizer::bePrintf("@%s\tends\n", sym->outputName);
+            AsmOutput("@%s", sym->outputName);
+            ColumnPosition(8);
+            AsmOutput("ends\n");
         }
         else if (virtual_mode)
             oa_enterseg(Optimizer::dataseg);
@@ -1320,14 +1512,21 @@ void oa_align(int size)
     if (Optimizer::cparams.prm_asmfile)
     {
         oa_nl();
+        ColumnPosition(8);
         if (Optimizer::cparams.prm_assembler == pa_nasm || Optimizer::cparams.prm_assembler == pa_oasm ||
             Optimizer::cparams.prm_assembler == pa_fasm)
             /* NASM 0.91 wouldn't let me use parenthesis but this should work
              * according to the documented precedence levels
              */
-            Optimizer::bePrintf("\ttimes $$-$ & %d nop\n", size - 1);
+        {
+            AsmOutput("times $$-$ & %d nop\n", size - 1);
+        }
         else
-            Optimizer::bePrintf("\talign\t%d\n", size);
+        {
+            AsmOutput("align");
+            ColumnPosition(8);
+            AsmOutput("%d\n", size);
+         }
     }
     else
     {
@@ -1419,7 +1618,7 @@ void dump_muldivval(void)
     oa_enterseg(Optimizer::constseg);
     if (Optimizer::cparams.prm_asmfile)
     {
-        Optimizer::bePrintf("\n");
+        AsmOutput("\n");
         if (muldivlink)
         {
             tag = true;
@@ -1429,8 +1628,13 @@ void dump_muldivval(void)
             oa_align(8);
             if (muldivlink->label)
                 oa_put_label(muldivlink->label);
+            ColumnPosition(8);
             if (muldivlink->size == ISZ_NONE)
-                Optimizer::bePrintf("\tdd\t0%xh\n", muldivlink->value);
+            {
+                AsmOutput("dd");
+                ColumnPosition(16);
+                AsmOutput("0%xh\n", muldivlink->value);
+            }
             else
             {
                 char buf[256];
@@ -1455,19 +1659,20 @@ void dump_muldivval(void)
                         len = 8;
                         break;
                 }
-                Optimizer::bePrintf("\tdb\t");
+                AsmOutput("db");
+                ColumnPosition(16);
                 for (i = 0; i < len; i++)
                 {
-                    Optimizer::bePrintf("0%02XH", data[i]);
+                    AsmOutput("0%02XH", data[i]);
                     if (i != len - 1)
-                        Optimizer::bePrintf(",");
+                        AsmOutput(",");
                 }
-                Optimizer::bePrintf("\n");
+                AsmOutput("\n");
             }
             muldivlink = muldivlink->next;
         }
         if (tag)
-            Optimizer::bePrintf("\n");
+            AsmOutput("\n");
     }
     else
         outcode_dump_muldivval();
@@ -1481,50 +1686,71 @@ void oa_header(const char* filename, const char* compiler_version)
     strcpy(asmfile, filename);
     strcpy(compilerversion, compiler_version);
     oa_nl();
-    Optimizer::bePrintf(";File %s\n", filename);
-    Optimizer::bePrintf(";Compiler version %s\n", compiler_version);
+    AsmOutput(";File %s\n", filename);
+    AsmOutput(";Compiler version %s\n", compiler_version);
     if (Optimizer::cparams.prm_assembler == pa_nasm || Optimizer::cparams.prm_assembler == pa_oasm ||
         Optimizer::cparams.prm_assembler == pa_fasm)
     {
         if (!Optimizer::cparams.prm_nodos)
         {
-            Optimizer::bePrintf("\tsection code align=%-8d use32\n", segAligns[Optimizer::codeseg]);
-            Optimizer::bePrintf("\tsection data align=%-8d use32\n", segAligns[Optimizer::dataseg]);
-            Optimizer::bePrintf("\tsection bss  align=%-8d use32\n", segAligns[Optimizer::bssxseg]);
-            Optimizer::bePrintf("\tsection const  align=%-8d use32\n", segAligns[Optimizer::constseg]);
-            Optimizer::bePrintf("\tsection string  align=%-8d use32\n", segAligns[Optimizer::stringseg]);
-            Optimizer::bePrintf("\tsection tls  align=8 use32\n");
-            Optimizer::bePrintf("\tsection cstartup align=2 use32\n");
-            Optimizer::bePrintf("\tsection crundown align=2 use32\n");
-            //            Optimizer::bePrintf(
-            //               "\tSECTION cppinit  align=4 CLASS=CPPINIT USE32\n");
-            //          Optimizer::bePrintf(
-            //             "\tSECTION cppexit  align=4 CLASS=CPPEXIT USE32\n");
-            //        Optimizer::bePrintf( "\tGROUP DGROUP _DATA _BSS _CONST _STRING\n\n");
+            ColumnPosition(8);
+            AsmOutput("section code align=%-8d use32\n", segAligns[Optimizer::codeseg]);
+            ColumnPosition(8);
+            AsmOutput("section data align=%-8d use32\n", segAligns[Optimizer::dataseg]);
+            ColumnPosition(8);
+            AsmOutput("section bss  align=%-8d use32\n", segAligns[Optimizer::bssxseg]);
+            ColumnPosition(8);
+            AsmOutput("section const  align=%-8d use32\n", segAligns[Optimizer::constseg]);
+            ColumnPosition(8);
+            AsmOutput("section string  align=%-8d use32\n", segAligns[Optimizer::stringseg]);
+            ColumnPosition(8);
+            AsmOutput("section tls  align=8 use32\n");
+            ColumnPosition(8);
+            AsmOutput("section cstartup align=2 use32\n");
+            ColumnPosition(8);
+            AsmOutput("section crundown align=2 use32\n");
         }
         else
         {
-            Optimizer::bePrintf("\tsection .text\n");
-            Optimizer::bePrintf("\tsection .data\n");
-            Optimizer::bePrintf("\tsection .bss\n");
+            ColumnPosition(8);
+            AsmOutput("section .text\n");
+            ColumnPosition(8);
+            AsmOutput("section .data\n");
+            ColumnPosition(8);
+            AsmOutput("section .bss\n");
         }
     }
     else
     {
-        Optimizer::bePrintf("\ttitle\t'%s'\n", filename);
+        ColumnPosition(8);
+        AsmOutput("title");
+        ColumnPosition(16);
+        AsmOutput("'%s'\n", filename);
+        ColumnPosition(8);
+        AsmOutput(".486p\n");
+        ColumnPosition(8);
         if (Optimizer::cparams.prm_flat)
-            Optimizer::bePrintf("\t.486p\n\t.model flat\n\n");
+        {
+            AsmOutput(".model flat\n\n");
+        }
         else if (Optimizer::cparams.prm_assembler == pa_masm)
-            Optimizer::bePrintf("\t.486p\n\t.model small\n\n");
+        {
+            AsmOutput(".model small\n\n");
+        }
         else
-            Optimizer::bePrintf("\t.486p\n\t.model use32 small\n\n");
+        {
+            AsmOutput(".model use32 small\n\n");
+        } 
     }
 }
 void oa_trailer(void)
 {
     if (!(Optimizer::cparams.prm_assembler == pa_nasm || Optimizer::cparams.prm_assembler == pa_oasm ||
           Optimizer::cparams.prm_assembler == pa_fasm))
-        Optimizer::bePrintf("\tend\n");
+    {
+        ColumnPosition(8);
+        AsmOutput("end\n");
+    }
     Optimizer::beRewind();
     oa_header(asmfile, compilerversion);
 }
@@ -1552,9 +1778,18 @@ void oa_globaldef(Optimizer::SimpleSymbol* sym)
         oa_nl();
         if (Optimizer::cparams.prm_assembler == pa_nasm || Optimizer::cparams.prm_assembler == pa_oasm ||
             Optimizer::cparams.prm_assembler == pa_fasm)
-            Optimizer::bePrintf("[global\t%s]\n", buf);
+        {
+            AsmOutput("[global");
+            ColumnPosition(8);
+            AsmOutput("%s]\n", buf);
+        }
         else
-            Optimizer::bePrintf("\tpublic\t%s\n", buf);
+        {
+            ColumnPosition(8);
+            AsmOutput("public");
+            ColumnPosition(16);
+            AsmOutput("%s\n", buf);
+         }
     }
     else
         omf_globaldef(sym);
@@ -1569,9 +1804,15 @@ void oa_output_alias(char* name, char* alias)
         oa_nl();
         if (Optimizer::cparams.prm_assembler == pa_nasm || Optimizer::cparams.prm_assembler == pa_oasm ||
             Optimizer::cparams.prm_assembler == pa_fasm)
-            Optimizer::bePrintf("%%define %s %s\n", name, alias);
+        {
+            AsmOutput("%%define %s %s\n", name, alias);
+        }
         else
-            Optimizer::bePrintf("%s equ\t<%s>\n", name, alias);
+        {
+            AsmOutput("%s equ", name);
+            ColumnPosition(8);
+            AsmOutput("<%s>\n", alias);
+        }
     }
 }
 
@@ -1587,14 +1828,19 @@ void oa_put_extern(Optimizer::SimpleSymbol* sym, int code)
         if (Optimizer::cparams.prm_assembler == pa_nasm || Optimizer::cparams.prm_assembler == pa_oasm ||
             Optimizer::cparams.prm_assembler == pa_fasm)
         {
-            Optimizer::bePrintf("[extern\t%s]\n", buf);
+            AsmOutput("[extern");
+            ColumnPosition(8);
+            AsmOutput("%s]\n", buf);
         }
         else
         {
+            ColumnPosition(8);
+            AsmOutput("extrn");
+            ColumnPosition(16);
             if (code)
-                Optimizer::bePrintf("\textrn\t%s:proc\n", buf);
+                AsmOutput("%s:proc\n", buf);
             else
-                Optimizer::bePrintf("\textrn\t%s:byte\n", buf);
+                AsmOutput("%s:byte\n", buf);
         }
     }
     else
@@ -1608,7 +1854,8 @@ void oa_put_impfunc(Optimizer::SimpleSymbol* sym, const char* file)
     {
         char buf[5000];
         strcpy(buf, sym->outputName);
-        Optimizer::bePrintf("\timport %s %s\n", buf, file);
+        ColumnPosition(8);
+        AsmOutput("import %s %s\n", buf, file);
     }
     else
     {
@@ -1624,11 +1871,12 @@ void oa_put_expfunc(Optimizer::SimpleSymbol* sym)
     if (Optimizer::cparams.prm_asmfile)
     {
         strcpy(buf, sym->outputName);
+        ColumnPosition(8);
         if (Optimizer::cparams.prm_assembler == pa_nasm || Optimizer::cparams.prm_assembler == pa_oasm ||
             Optimizer::cparams.prm_assembler == pa_fasm)
-            Optimizer::bePrintf("\texport %s\n", buf);
+            AsmOutput("export %s\n", buf);
         else
-            Optimizer::bePrintf("\tpublicdll %s\n", buf);
+            AsmOutput("publicdll %s\n", buf);
     }
     else
         omf_put_expfunc(sym);
@@ -1640,7 +1888,10 @@ void oa_output_includelib(const char* name)
     {
         if (!(Optimizer::cparams.prm_assembler == pa_nasm || Optimizer::cparams.prm_assembler == pa_oasm ||
               Optimizer::cparams.prm_assembler == pa_fasm))
-            Optimizer::bePrintf("\tincludelib %s\n", name);
+        {
+            ColumnPosition(8);
+            AsmOutput("includelib %s\n", name);
+        }
     }
     else
         omf_put_includelib(name);

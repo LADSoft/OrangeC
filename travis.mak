@@ -6,6 +6,7 @@ all:
 else
 export ComSpec=c:\windows\system32\cmd.exe
 all:
+	echo path222=$(PATH)
 	mkdir /c/orangec
 	mkdir /c/orangec/temp
 	mv doc /c/orangec

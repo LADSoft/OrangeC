@@ -74,13 +74,12 @@ int IeeeMain::Run(int argc, char** argv)
                     ObjIeeeAscii input_obj(othername.c_str());
                     ObjIeeeBinary output_obj(othername.c_str());
                     ObjFile* finput_obj = input_obj.Read(fil, ObjIeee::eAll, &factory);
-                    if (fil)
+                    if (finput_obj)
                     {
                         if (!output_obj.Write(outfile, finput_obj, &factory))
                         {
                            Utils::fatal("Cannot write %s", othername.c_str());
                         }
-                        delete finput_obj;
                     }
                     else
                     {
@@ -114,13 +113,12 @@ int IeeeMain::Run(int argc, char** argv)
                     ObjIeeeBinary input_obj((*it).c_str());
                     ObjIeeeAscii output_obj((*it).c_str());
                     ObjFile* finput_obj = input_obj.Read(fil, ObjIeee::eAll, &factory);
-                    if (fil)
+                    if (finput_obj)
                     {
                         if (!output_obj.Write(outfile, finput_obj, &factory))
                         {
                            Utils::fatal("Cannot write %s", othername.c_str());
                         }
-                        delete finput_obj;
                     }
                     else
                     {

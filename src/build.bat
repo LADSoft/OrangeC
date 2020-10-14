@@ -1,24 +1,41 @@
+x86_64-w64-mingw32-gcc --version
+set
 @echo off
-
+     set PARALLEL=2
      if (%TRAVIS_OS_NAME% NEQ "") (
         call "C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\Common7\Tools\VsDevCmd.bat"
+        set PARALLEL=8
+     )
+     if (%ORANGEC_HOME% NEQ "") (
+         del /Q ..\bin\*.*
+         del /Q ..\lib\*.*
+         del /Q ..\include\*.*
+         del /Q ..\include\win32\*.*
+         del /Q ..\include\sys\*.*
+         omake -DCOMPILER=MS clean -j:8
+         omake -DCOMPILER=CLANG clean -j:8
+         omake -DCOMPILER=MINGW64 clean -j:8
+         set BUILD_PROFILE=MS
+         set PARALLEL=8
      )
               cd c:\orangec\src
               echo WScript.Echo(Math.floor(new Date().getTime()/1000)); > %temp%\time.js
               for /f %%i in ('cscript //nologo %temp%\time.js') do set SOURCE_DATE_EPOCH=%%i
               del %temp%\time.js
               copy omake.exe \orangec\temp
+     if (%ORANGEC_HOME% EQU "") (
               call c:\orangec\appveyorversion.bat
+     )
               IF "%BUILD_PROFILE%" EQU "OCCIL" (
                   REM  alternate build with OCCIL
-                  c:\orangec\temp\omake /DCOMPILER=CLANG fullbuild -j:1
+                  c:\orangec\temp\omake /DCOMPILER=CLANG fullbuild -j:%PARALLEL%
                   IF %ERRORLEVEL% NEQ 0 (
                       goto error;
                   )
                   c:\orangec\bin\occ /V
                   copy omake\omake.exe \orangec\temp
-                  c:\orangec\temp\omake /DCOMPILER=OCC clean -j:1
-                  c:\orangec\temp\omake /DNOMAKEDIR /DCOMPILER=OCC /DVIAASSEMBLY=%VIAASSEMBLY% /DLSCRTL=%LSCRTL% /DWITHDEBUG=%WITHDEBUG% fullbuild -j:1
+                  c:\orangec\temp\omake /DCOMPILER=OCC clean -j:%PARALLEL%
+                  c:\orangec\temp\omake /DNOMAKEDIR /DCOMPILER=OCC /DVIAASSEMBLY=%VIAASSEMBLY% /DLSCRTL=%LSCRTL% /DWITHDEBUG=%WITHDEBUG% fullbuild -j:%PARALLEL%
                   IF %ERRORLEVEL% NEQ 0 (
                       goto error;
                   )
@@ -64,14 +81,14 @@
               )
               IF "%BUILD_PROFILE%" NEQ "TEST" (
                   REM  Primary build for Orange C
-                  c:\orangec\temp\omake /DCOMPILER=%BUILD_PROFILE% /DORANGEC_ONLY=YES fullbuild -j:1
+                  c:\orangec\temp\omake /DCOMPILER=%BUILD_PROFILE% /DORANGEC_ONLY=YES fullbuild -j:%PARALLEL%
                   IF %ERRORLEVEL% NEQ 0 (
                       goto error;
                   )
                   c:\orangec\bin\occ /V
                   copy omake\omake.exe \orangec\temp
-                  c:\orangec\temp\omake /DCOMPILER=OCC clean -j:1
-                  c:\orangec\temp\omake /DNOMAKEDIR /DCOMPILER=OCC /DORANGEC_ONLY=YES /DVIAASSEMBLY=%VIAASSEMBLY% /DLSCRTL=%LSCRTL% /DWITHDEBUG=%WITHDEBUG% fullbuild -j:1
+                  c:\orangec\temp\omake /DCOMPILER=OCC clean -j:%PARALLEL%
+                  c:\orangec\temp\omake /DNOMAKEDIR /DCOMPILER=OCC /DORANGEC_ONLY=YES /DVIAASSEMBLY=%VIAASSEMBLY% /DLSCRTL=%LSCRTL% /DWITHDEBUG=%WITHDEBUG% fullbuild -j:%PARALLEL%
                   IF %ERRORLEVEL% NEQ 0 (
                       goto error;
                   )
@@ -79,13 +96,13 @@
                   copy c:\orangec\bin\*.exe c:\orangec\temp2
                   c:\orangec\bin\occ /V
                   copy omake\omake.exe \orangec\temp
-                  c:\orangec\temp\omake /DCOMPILER=OCC clean -j:1
+                  c:\orangec\temp\omake /DCOMPILER=OCC clean -j:%PARALLEL%
                   REM  in this last one we add in OCCIL so it will be in the install packages...
                   IF "%WITHDEBUG%" EQU "" (
-                      c:\orangec\temp\omake /DNOMAKEDIR /DCOMPILER=OCC /DVIAASSEMBLY=%VIAASSEMBLY% /DLSCRTL=%LSCRTL% /DWITHDEBUG=%WITHDEBUG% /DWITHMSDOS fullbuild -j:1
+                      c:\orangec\temp\omake /DNOMAKEDIR /DCOMPILER=OCC /DVIAASSEMBLY=%VIAASSEMBLY% /DLSCRTL=%LSCRTL% /DWITHDEBUG=%WITHDEBUG% /DWITHMSDOS fullbuild -j:%PARALLEL%
                       goto cont
                   )
-                  c:\orangec\temp\omake /DNOMAKEDIR /DCOMPILER=OCC /DVIAASSEMBLY=%VIAASSEMBLY% /DLSCRTL=%LSCRTL% /DWITHDEBUG=%WITHDEBUG% fullbuild -j:1
+                  c:\orangec\temp\omake /DNOMAKEDIR /DCOMPILER=OCC /DVIAASSEMBLY=%VIAASSEMBLY% /DLSCRTL=%LSCRTL% /DWITHDEBUG=%WITHDEBUG% fullbuild -j:%PARALLEL%
 :cont
                   IF %ERRORLEVEL% NEQ 0 (
                       goto error;
@@ -95,7 +112,7 @@
                        goto error;
                   )
                   cd ..\tests
-                  omake -B -j:1 /DCOMPILER=OCC
+                  omake -B /DCOMPILER=OCC
                   IF %ERRORLEVEL% NEQ 0 (
                       goto error;
                   )

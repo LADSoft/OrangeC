@@ -724,14 +724,3 @@ void ObjIeeeAscii::RenderCS()
     RenderString(ObjUtil::ToHex(cs & 127, 2) + ".");
     endl();
 }
-void ObjIeeeIndexManager::ResetIndexes()
-{
-    Section = 0;
-    Public = 0;
-    Local = 0;
-    External = 0;
-    Type = eDerivedTypeBase;
-    File = 0;
-    Auto = 0;
-    Reg = 0;
-}

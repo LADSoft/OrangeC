@@ -1,5 +1,3 @@
-x86_64-w64-mingw32-gcc --version
-set
 @echo off
      set PARALLEL=2
      if (%TRAVIS_OS_NAME% NEQ "") (

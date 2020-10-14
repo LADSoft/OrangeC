@@ -644,10 +644,12 @@ FPF FPF::Divide(const FPF& x, const FPF& y)
 void FPF::FromLongLong(long long myllong)
 {
     u16f myword; /* Used to hold converted stuff */
+    unsigned long long temp = (unsigned long long) myllong;
     if (myllong < 0L)
     {
         sign = 1;
-        myllong = -myllong;
+        if (myllong != LLONG_MIN)
+            temp = (unsigned long long)-myllong;
     }
     else
     {

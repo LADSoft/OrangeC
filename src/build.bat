@@ -11,14 +11,14 @@
               call c:\orangec\appveyorversion.bat
               IF "%BUILD_PROFILE%" EQU "OCCIL" (
                   REM  alternate build with OCCIL
-                  c:\orangec\temp\omake /DCOMPILER=CLANG fullbuild -j:2
+                  c:\orangec\temp\omake /DCOMPILER=CLANG fullbuild -j:1
                   IF %ERRORLEVEL% NEQ 0 (
                       goto error;
                   )
                   c:\orangec\bin\occ /V
                   copy omake\omake.exe \orangec\temp
-                  c:\orangec\temp\omake /DCOMPILER=OCC clean -j:2
-                  c:\orangec\temp\omake /DNOMAKEDIR /DCOMPILER=OCC /DVIAASSEMBLY=%VIAASSEMBLY% /DLSCRTL=%LSCRTL% /DWITHDEBUG=%WITHDEBUG% fullbuild -j:2
+                  c:\orangec\temp\omake /DCOMPILER=OCC clean -j:1
+                  c:\orangec\temp\omake /DNOMAKEDIR /DCOMPILER=OCC /DVIAASSEMBLY=%VIAASSEMBLY% /DLSCRTL=%LSCRTL% /DWITHDEBUG=%WITHDEBUG% fullbuild -j:1
                   IF %ERRORLEVEL% NEQ 0 (
                       goto error;
                   )
@@ -64,14 +64,14 @@
               )
               IF "%BUILD_PROFILE%" NEQ "TEST" (
                   REM  Primary build for Orange C
-                  c:\orangec\temp\omake /DCOMPILER=%BUILD_PROFILE% /DORANGEC_ONLY=YES fullbuild -j:2
+                  c:\orangec\temp\omake /DCOMPILER=%BUILD_PROFILE% /DORANGEC_ONLY=YES fullbuild -j:1
                   IF %ERRORLEVEL% NEQ 0 (
                       goto error;
                   )
                   c:\orangec\bin\occ /V
                   copy omake\omake.exe \orangec\temp
-                  c:\orangec\temp\omake /DCOMPILER=OCC clean -j:2
-                  c:\orangec\temp\omake /DNOMAKEDIR /DCOMPILER=OCC /DORANGEC_ONLY=YES /DVIAASSEMBLY=%VIAASSEMBLY% /DLSCRTL=%LSCRTL% /DWITHDEBUG=%WITHDEBUG% fullbuild -j:2
+                  c:\orangec\temp\omake /DCOMPILER=OCC clean -j:1
+                  c:\orangec\temp\omake /DNOMAKEDIR /DCOMPILER=OCC /DORANGEC_ONLY=YES /DVIAASSEMBLY=%VIAASSEMBLY% /DLSCRTL=%LSCRTL% /DWITHDEBUG=%WITHDEBUG% fullbuild -j:1
                   IF %ERRORLEVEL% NEQ 0 (
                       goto error;
                   )
@@ -79,13 +79,13 @@
                   copy c:\orangec\bin\*.exe c:\orangec\temp2
                   c:\orangec\bin\occ /V
                   copy omake\omake.exe \orangec\temp
-                  c:\orangec\temp\omake /DCOMPILER=OCC clean -j:2
+                  c:\orangec\temp\omake /DCOMPILER=OCC clean -j:1
                   REM  in this last one we add in OCCIL so it will be in the install packages...
                   IF "%WITHDEBUG%" EQU "" (
-                      c:\orangec\temp\omake /DNOMAKEDIR /DCOMPILER=OCC /DVIAASSEMBLY=%VIAASSEMBLY% /DLSCRTL=%LSCRTL% /DWITHDEBUG=%WITHDEBUG% /DWITHMSDOS fullbuild -j:2
+                      c:\orangec\temp\omake /DNOMAKEDIR /DCOMPILER=OCC /DVIAASSEMBLY=%VIAASSEMBLY% /DLSCRTL=%LSCRTL% /DWITHDEBUG=%WITHDEBUG% /DWITHMSDOS fullbuild -j:1
                       goto cont
                   )
-                  c:\orangec\temp\omake /DNOMAKEDIR /DCOMPILER=OCC /DVIAASSEMBLY=%VIAASSEMBLY% /DLSCRTL=%LSCRTL% /DWITHDEBUG=%WITHDEBUG% fullbuild -j:2
+                  c:\orangec\temp\omake /DNOMAKEDIR /DCOMPILER=OCC /DVIAASSEMBLY=%VIAASSEMBLY% /DLSCRTL=%LSCRTL% /DWITHDEBUG=%WITHDEBUG% fullbuild -j:1
 :cont
                   IF %ERRORLEVEL% NEQ 0 (
                       goto error;
@@ -95,8 +95,7 @@
                        goto error;
                   )
                   cd ..\tests
-                  rem -j4 here seems risky
-                  omake -B /DCOMPILER=OCC
+                  omake -B -j:1 /DCOMPILER=OCC
                   IF %ERRORLEVEL% NEQ 0 (
                       goto error;
                   )

@@ -125,14 +125,14 @@ class ObjIeeeBinary : public ObjIOBase
         if (n != pos)
             ThrowSyntax(buffer, eAll);
     }
-    unsigned GetByte(const ObjByte* buffer, int* pos) { return buffer[(*pos)++]; }
-    unsigned GetWord(const ObjByte* buffer, int* pos)
+    static unsigned GetByte(const ObjByte* buffer, int* pos) { return buffer[(*pos)++]; }
+    static unsigned GetWord(const ObjByte* buffer, int* pos)
     {
         unsigned rv = buffer[(*pos)++];
         rv += buffer[(*pos)++] << 8;
         return rv;
     }
-    unsigned GetDWord(const ObjByte* buffer, int* pos)
+    static unsigned GetDWord(const ObjByte* buffer, int* pos)
     {
         unsigned rv = buffer[(*pos)++];
         rv += buffer[(*pos)++] << 8;
@@ -188,7 +188,7 @@ class ObjIeeeBinary : public ObjIOBase
     typedef std::vector<ObjSection*> SectionMap;
     typedef std::vector<ObjSourceFile*> FileMap;
 
-    void bufferup(const char* data, int len);
+    void bufferup(const ObjByte* data, int len);
     void flush()
     {
         fwrite(ioBuffer, ioBufferLen, 1, sfile);
@@ -208,7 +208,7 @@ class ObjIeeeBinary : public ObjIOBase
     void WriteTrailer();
     void RenderCS();
     ObjString ToString(const ObjString strng);
-    int GetTypeIndex(ObjType* Type);
+    static int GetTypeIndex(ObjType* Type);
     ObjString GetSymbolName(const ObjByte* buffer, int* index);
     ObjString ToTime(struct tm time);
     void RenderFunction(ObjFunction* Function);
@@ -264,7 +264,7 @@ class ObjIeeeBinary : public ObjIOBase
     SectionMap sections;
     FileMap files;
     ObjSection* currentDataSection;
-    ObjMemory::DebugTagContainer* currentTags;
+    std::unique_ptr<ObjMemory::DebugTagContainer> currentTags;
     ObjByte* ioBuffer;
     size_t ioBufferLen;
     size_t ioBufferPos;

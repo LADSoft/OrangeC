@@ -4,7 +4,6 @@ set
      set PARALLEL=2
      if (%TRAVIS_OS_NAME% NEQ "") (
         call "C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\Common7\Tools\VsDevCmd.bat"
-        set PARALLEL=8
      )
      if (%ORANGEC_HOME% NEQ "") (
          del /Q ..\bin\*.*

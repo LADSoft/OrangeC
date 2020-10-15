@@ -31,7 +31,6 @@
 #include <cctype>
 #include <cstdio>
 #include <algorithm>
-void DebugThrowHook() {}
 ObjIeeeAscii::ParseData ObjIeeeAscii::parseData[] = {
     ObjIeeeAscii::ParseData("LD", &ObjIeeeAscii::Data),
     ObjIeeeAscii::ParseData("LR", &ObjIeeeAscii::Fixup),
@@ -1290,7 +1289,6 @@ bool ObjIeeeAscii::ModuleStart(const char* buffer, eParseType ParseType)
     translator[i - 2] = '\0';
     if (buffer[i++] != ',')
         ThrowSyntax(buffer, ParseType);
-
     ObjString fileName = ParseString(buffer, &i);
     CheckTerm(buffer + i);
 

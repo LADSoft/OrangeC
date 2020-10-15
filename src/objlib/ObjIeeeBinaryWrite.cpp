@@ -93,7 +93,8 @@ void ObjIeeeBinary::RenderMessageInternal(ObjByte *buf, va_list arg)
             case ESTRING:
             {
                 std::string xx = va_arg(arg, ObjString);
-                *p++ = xx.length();
+                *p++ = (xx.length() & 0xff);
+                *p++ = (xx.length() >> 8);
                 for (int i=0; i < xx.length(); i++)
                     *p++ = xx[i];
                 break;
@@ -127,7 +128,7 @@ void ObjIeeeBinary::RenderMessageInternal(ObjByte *buf, va_list arg)
 }
 ObjByte *ObjIeeeBinary::StartMessage(eCommands msg, ...)
 {
-    static ObjByte buf[4096];
+    static ObjByte buf[20000];
     ObjByte *p = buf;
     *p++ = msg;
     *p++ = 3;

@@ -175,7 +175,6 @@ class ObjIeeeBinary : public ObjIOBase
         (void)buffer;
         (void)ParseType;
         SyntaxError e(lineno);
-        DebugThrowHook();
         throw e;
         return false;
     }
@@ -417,7 +416,6 @@ class ObjIeeeAscii : public ObjIOBase
         (void)buffer;
         (void)ParseType;
         SyntaxError e(lineno);
-        DebugThrowHook();
         throw e;
         return false;
     }

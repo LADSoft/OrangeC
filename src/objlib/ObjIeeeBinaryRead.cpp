@@ -33,7 +33,8 @@
 ObjString ObjIeeeBinary::ParseString(const ObjByte *buffer, int *pos)
 {
     int len = buffer[(*pos)++];
-    char name[256];
+    len += buffer[(*pos)++] << 8;
+    char name[4096];
     memcpy(name, buffer + *pos, len);
     name[len] = '\0';
     *pos += len;

@@ -60,7 +60,7 @@ int IeeeMain::Run(int argc, char** argv)
 
     for (auto it = files.FileNameBegin(); it != files.FileNameEnd(); ++it)
     {
-        if ((*it).find(".oa"))
+        if ((*it).find(".oa") != std::string::npos)
         {
             FILE *fil = fopen((*it).c_str(), "r");
             if (fil)
@@ -68,7 +68,7 @@ int IeeeMain::Run(int argc, char** argv)
                 std::string othername = (*it).substr(0, (*it).size() - 1);
                 ObjIeeeIndexManager index_manager;
                 ObjFactory factory(&index_manager);
-                FILE* outfile = fopen(othername.c_str(), "w");
+                FILE* outfile = fopen(othername.c_str(), "wb");
                 if (outfile)
                 {
                     ObjIeeeAscii input_obj(othername.c_str());
@@ -76,6 +76,7 @@ int IeeeMain::Run(int argc, char** argv)
                     ObjFile* finput_obj = input_obj.Read(fil, ObjIeee::eAll, &factory);
                     if (finput_obj)
                     {
+                        output_obj.SetTranslatorName(input_obj.GetTranslatorName());
                         if (!output_obj.Write(outfile, finput_obj, &factory))
                         {
                            Utils::fatal("Cannot write %s", othername.c_str());
@@ -99,12 +100,12 @@ int IeeeMain::Run(int argc, char** argv)
                 rv = 1;
             }
         }
-        else if ((*it).find(".o"))
+        else if ((*it).find(".o") != std::string::npos)
         {
             FILE *fil = fopen((*it).c_str(), "rb");
             if (fil)
             {
-                std::string othername = (*it) + "o";
+                std::string othername = (*it) + "a";
                 ObjIeeeIndexManager index_manager;
                 ObjFactory factory(&index_manager);
                 FILE* outfile = fopen(othername.c_str(), "w");
@@ -115,6 +116,7 @@ int IeeeMain::Run(int argc, char** argv)
                     ObjFile* finput_obj = input_obj.Read(fil, ObjIeee::eAll, &factory);
                     if (finput_obj)
                     {
+                        output_obj.SetTranslatorName(input_obj.GetTranslatorName());
                         if (!output_obj.Write(outfile, finput_obj, &factory))
                         {
                            Utils::fatal("Cannot write %s", othername.c_str());

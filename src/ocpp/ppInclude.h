@@ -27,7 +27,6 @@
 
 #include <list>
 #include <string>
-
 #include "ppExpr.h"
 #include "ppFile.h"
 #include "PipeArbitrator.h"
@@ -38,132 +37,134 @@ class ppCtx;
 
 class ppInclude
 {
-  public:
-    ppInclude(bool Fullname, bool Trigraph, bool extended, bool isunsignedchar, bool C89, const std::string& SrchPth,
-              const std::string& SysSrchPth, bool Asmpp, const std::string& pipeName) :
-        unsignedchar(isunsignedchar),
-        c89(C89),
-        trigraphs(Trigraph),
-        asmpp(Asmpp),
-        define(nullptr),
-        ctx(nullptr),
-        extendedComment(extended || !C89),
-        fullname(Fullname),
-        current(nullptr),
-        expr(unsignedchar),
-        forcedEOF(false),
-        nextIndex(0),
-        piper(pipeName)
-    {
-        ppExpr::SetInclude(this);
-        srchPath = SrchPth;
-        sysSrchPath = SysSrchPth;
-    }
+public:
+	ppInclude(bool Fullname, bool Trigraph, bool extended, bool isunsignedchar, bool C89, const std::string& SrchPth,
+		const std::string& SysSrchPth, bool Asmpp, const std::string& pipeName) :
+		unsignedchar(isunsignedchar),
+		c89(C89),
+		trigraphs(Trigraph),
+		asmpp(Asmpp),
+		define(nullptr),
+		ctx(nullptr),
+		extendedComment(extended || !C89),
+		fullname(Fullname),
+		current(nullptr),
+		expr(unsignedchar),
+		forcedEOF(false),
+		nextIndex(0),
+		piper(pipeName)
+	{
+		ppExpr::SetInclude(this);
+		srchPath = SrchPth;
+		sysSrchPath = SysSrchPth;
+	}
 
-    ~ppInclude();
-    void SetParams(const std::string& Name, ppDefine* Define, ppCtx* Ctx)
-    {
-        define = Define;
-        ctx = Ctx;
-        expr.SetParams(define);
-        pushFile(Name, Name);
-    }
-    bool Check(kw token, const std::string& line);
-    bool IsOpen() const
-    {
-        if (current)
-            return current->IsOpen();
-        else
-            return false;
-    }
-    int GetErrLineNo()
-    {
-        if (current)
-            return current->GetErrorLine();
-        return 0;
-    }
-    const std::string& GetErrFile()
-    {
-        if (current)
-            return current->GetErrorFile();
-        return dummy;
-    }
-    int GetRealLineNo()
-    {
-        if (current)
-            return current->GetRealLine();
-        return 0;
-    }
-    const std::string& GetRealFile()
-    {
-        if (current)
-            return current->GetRealFile();
-        return dummy;
-    }
-    bool GetLine(std::string& line, int& lineno);
-    bool Skipping()
-    {
-        if (current)
-            return current->Skipping();
-        return false;
-    }
-    int GetFileIndex() const
-    {
-        if (current)
-            return current->GetIndex();
-        return false;
-    }
-    void IncludeFile(const std::string& name) { pushFile(name, name); }
-    void SetInProc(const std::string& name) { inProc = name; }
-    void Mark() { current->Mark(); }
-    void Drop() { current->Drop(); }
-    void Release() { current->Release(); }
-    bool has_include(const std::string& args);
-    void ForceEOF() { forcedEOF = true; }
-    std::set<std::string>& GetUserIncludes() { return userIncludes; }
+	~ppInclude();
+	void SetParams(const std::string& Name, ppDefine* Define, ppCtx* Ctx)
+	{
+		define = Define;
+		ctx = Ctx;
+		expr.SetParams(define);
+		pushFile(Name, Name);
+	}
+	bool Check(kw token, const std::string& line);
+	bool IsOpen() const
+	{
+		if (current)
+			return current->IsOpen();
+		else
+			return false;
+	}
+	int GetErrLineNo()
+	{
+		if (current)
+			return current->GetErrorLine();
+		return 0;
+	}
+	const std::string& GetErrFile()
+	{
+		if (current)
+			return current->GetErrorFile();
+		return dummy;
+	}
+	int GetRealLineNo()
+	{
+		if (current)
+			return current->GetRealLine();
+		return 0;
+	}
+	const std::string& GetRealFile()
+	{
+		if (current)
+			return current->GetRealFile();
+		return dummy;
+	}
+	bool GetLine(std::string& line, int& lineno);
+	bool Skipping()
+	{
+		if (current)
+			return current->Skipping();
+		return false;
+	}
+	int GetFileIndex() const
+	{
+		if (current)
+			return current->GetIndex();
+		return false;
+	}
+	void IncludeFile(const std::string& name) { pushFile(name, name); }
+	void SetInProc(const std::string& name) { inProc = name; }
+	void Mark() { current->Mark(); }
+	void Drop() { current->Drop(); }
+	void Release() { current->Release(); }
+	bool has_include(const std::string& args);
+	bool has_include_next(const std::string& args);
+	void ForceEOF() { forcedEOF = true; }
+	std::set<std::string>& GetUserIncludes() { return userIncludes; }
 
-    static void SetCommentChar(char ch) { commentChar = ch; }
-    int AnonymousIndex() const
-    {
-        if (current)
-            return current->AnonymousIndex();
-        else
-            return 1;
-    }
+	static void SetCommentChar(char ch) { commentChar = ch; }
+	int AnonymousIndex() const
+	{
+		if (current)
+			return current->AnonymousIndex();
+		else
+			return 1;
+	}
 
-  protected:
-    void StripAsmComment(std::string& line);
-    bool CheckInclude(kw token, const std::string& line);
-    bool CheckLine(kw token, const std::string& line);
-    void pushFile(const std::string& name, const std::string& errname);
-    bool popFile();
-    std::string ParseName(const std::string& args, bool& specifiedAsSystem);
-    std::string FindFile(bool specifiedAsSystem, const std::string& name);
-    std::string SrchPath(bool system, const std::string& name, const std::string& searchPath);
-    const char* RetrievePath(char* buf, const char* path);
-    void AddName(char* buf, const std::string& name);
+protected:
+	void StripAsmComment(std::string& line);
+	bool CheckInclude(kw token, const std::string& line);
+	bool CheckLine(kw token, const std::string& line);
+	void pushFile(const std::string& name, const std::string& errname, int dirs_traversed = 0);
+	bool popFile();
+	std::string ParseName(const std::string& args, bool& specifiedAsSystem);
+	// Put a throwaway value in dirs_skipped here unless you need to use it for #include_next shenanigans with pushFile
+	std::string FindFile(bool specifiedAsSystem, const std::string& name, bool skipFirst, int& dirs_skipped);
+	std::string SrchPath(bool system, const std::string& name, const std::string& searchPath, bool skipUntilDepth, int& filesSkipped);
+	const char* RetrievePath(char* buf, const char* path);
+	void AddName(char* buf, const std::string& name);
 
-  private:
-    static bool system;
-    std::list<std::unique_ptr<ppFile>> files;
-    std::set<std::string> userIncludes;
-    std::unique_ptr<ppFile> current;
-    std::map<std::string, int> fileMap;
-    ppDefine* define;
-    bool unsignedchar;
-    bool c89;
-    bool trigraphs;
-    bool extendedComment;
-    bool fullname;
-    ppExpr expr;
-    static std::string srchPath, sysSrchPath;
-    ppCtx* ctx;
-    std::string inProc;
-    bool asmpp;
-    bool forcedEOF;
-    std::string dummy;
-    int nextIndex;
-    PipeArbitrator piper;
-    static char commentChar;
+private:
+	static bool system;
+	std::list<std::unique_ptr<ppFile>> files;
+	std::set<std::string> userIncludes;
+	std::unique_ptr<ppFile> current;
+	std::map<std::string, int> fileMap;
+	ppDefine* define;
+	bool unsignedchar;
+	bool c89;
+	bool trigraphs;
+	bool extendedComment;
+	bool fullname;
+	ppExpr expr;
+	static std::string srchPath, sysSrchPath;
+	ppCtx* ctx;
+	std::string inProc;
+	bool asmpp;
+	bool forcedEOF;
+	std::string dummy;
+	int nextIndex;
+	PipeArbitrator piper;
+	static char commentChar;
 };
 #endif

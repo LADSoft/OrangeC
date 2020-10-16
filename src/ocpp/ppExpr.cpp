@@ -148,6 +148,35 @@ PPINT ppExpr::primary(std::string& line, bool& isunsigned)
                 }
             }
         }
+        else if (token->GetId() == "__has_include_next")
+        {
+            token = tokenizer->Next();
+            if (!token->IsEnd())
+            {
+                if (token->GetKeyword() == kw::openpa)
+                {
+                    std::string line = tokenizer->GetString();
+                    int n = line.find(")");
+                    if (n == std::string::npos)
+                    {
+                        Errors::Error("Expected ')'");
+                    }
+                    else
+                    {
+                        std::string arg = line.substr(0, n);
+                        define->Process(arg);
+
+                        rv = include->has_include_next(arg);
+                        tokenizer->SetString(line.substr(n + 1));
+                        token = tokenizer->Next();
+                    }
+                }
+                else
+                {
+                    Errors::Error("Expected '('");
+                }
+            }
+        }
         else
         {
             rv = 0;

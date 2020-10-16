@@ -276,11 +276,6 @@ void ObjIeeeBinary::RenderFunction(ObjFunction *Function)
 }
 void ObjIeeeBinary::RenderType(ObjType *Type)
 {
-    if (Type->GetType() < ObjType::eVoid && Type->GetName().size())
-    {
-        RenderMessage(ecNAME, embed('T'), EDWORD, Type->GetIndex(),
-                      ESTRING, Type->GetName(), NULL);
-    }
     switch(Type->GetType())
     {
         case ObjType::ePointer:
@@ -326,6 +321,11 @@ void ObjIeeeBinary::RenderType(ObjType *Type)
                           EDWORD, GetTypeIndex(Type->GetBaseType()),
                           EDWORD, GetTypeIndex(Type->GetIndexType()), NULL);
             break;
+    }
+    if (Type->GetType() < ObjType::eVoid && Type->GetName().size())
+    {
+        RenderMessage(ecNAME, embed('T'), EDWORD, Type->GetIndex(),
+            ESTRING, Type->GetName(), NULL);
     }
 }
 void ObjIeeeBinary::RenderSymbol(ObjSymbol *Symbol)
@@ -384,6 +384,13 @@ void ObjIeeeBinary::RenderSection(ObjSection *Section)
                         EDWORD, Section->GetAlignment(), NULL);
     RenderMessage(ecAS, embed('S'), EDWORD, Section->GetIndex(),
                               embed('V'), EDWORD, Section->GetMemoryManager().GetSize(), embed(0x1b), NULL);
+    if (Section->GetVirtualType())
+    {
+        int n = Section->GetVirtualType()->GetIndex();
+        if (n < ObjType::eReservedTop + 1)
+            n = Section->GetVirtualType()->GetType();
+        RenderMessage(ecAT, embed('R'), EDWORD, Section->GetIndex(), EDWORD, n, NULL);
+    }
     if (Section->GetQuals() & ObjSection::absolute)
     {
         RenderMessage(ecAS, embed('L'), EDWORD, Section->GetIndex(),
@@ -412,8 +419,13 @@ void ObjIeeeBinary::RenderDebugTag(ObjDebugTag *Tag)
             break;
         case ObjDebugTag::eFunctionStart:
         case ObjDebugTag::eFunctionEnd:
-            RenderComment(eFunctionStart, embed(GetSymbolName(Tag->GetSymbol())),
+            RenderComment(Tag->GetType() == ObjDebugTag::eFunctionStart ? eFunctionStart : eFunctionEnd, embed(GetSymbolName(Tag->GetSymbol())),
                           EDWORD, Tag->GetSymbol()->GetIndex(), NULL);
+            break;
+        case ObjDebugTag::eVirtualFunctionStart:
+        case ObjDebugTag::eVirtualFunctionEnd:
+            RenderComment(Tag->GetType() == ObjDebugTag::eVirtualFunctionStart ? eFunctionStart : eFunctionEnd, embed('R'),
+                          EDWORD, Tag->GetSection()->GetIndex(), NULL);
             break;
         case ObjDebugTag::eLineNo:
             RenderComment(eLineNo, 

@@ -412,6 +412,7 @@ void ObjIeeeBinary::DefinePointer(ObjType::eType, int index, const ObjByte *buff
     {
         if (type->GetType() != ObjType::eNone)
             ThrowSyntax(buffer, eAll);
+        type->SetIndex(index);
         type->SetType(ObjType::ePointer);
         type->SetBaseType(base);
     }
@@ -444,6 +445,7 @@ void ObjIeeeBinary::DefineBitField(int index, const ObjByte *buffer, int *pos)
     {
         if (type->GetType() != ObjType::eNone)
             ThrowSyntax(buffer, eAll);
+        type->SetIndex(index);
         type->SetType(ObjType::eBitField);
         type->SetBaseType(base);
     }
@@ -474,6 +476,7 @@ void ObjIeeeBinary::DefineTypeDef(int index, const ObjByte *buffer, int *pos)
     {
         if (type->GetType() != ObjType::eNone)
             ThrowSyntax(buffer, eAll);
+        type->SetIndex(index);
         type->SetType(ObjType::eTypeDef);
         type->SetBaseType(base);
     }
@@ -524,6 +527,7 @@ void ObjIeeeBinary::DefineArray(ObjType::eType definer, int index, const ObjByte
     {
         if (type->GetType() != ObjType::eNone)
             ThrowSyntax(buffer, eAll);
+        type->SetIndex(index);
         type->SetType(definer);
         type->SetBaseType(baseType);
     }
@@ -592,6 +596,7 @@ void ObjIeeeBinary::DefineStruct(ObjType::eType stype, int index, const ObjByte 
     {
         if (type->GetType() != ObjType::eNone)
             ThrowSyntax(buffer, eAll);
+        type->SetIndex(index);
         type->SetType(stype);
         type->SetIndex(index);
     }
@@ -721,6 +726,28 @@ bool ObjIeeeBinary::TypeSpec(const ObjByte *buffer, eParseType ParseType)
             CheckTerm(buffer, pos);
             break;
         }
+        case 'R':
+        {
+            ObjSection* sect = GetSection(index);
+            if (!sect)
+            {
+                ThrowSyntax(buffer, eAll);
+            }
+            index = GetDWord(buffer, &pos);
+            CheckTerm(buffer, pos);
+            ObjType* type;
+            /* won't get a 'special' type deriving type here */
+            if (index < ObjType::eReservedTop)
+                type = factory->MakeType((ObjType::eType)index);
+            else
+                type = GetType(index);
+            if (!type)
+            {
+                ThrowSyntax(buffer, ParseType);
+            }
+            sect->SetVirtualType(type);
+        }
+        break;
         default:
             ThrowSyntax(buffer, ParseType);
             break;
@@ -750,6 +777,11 @@ bool ObjIeeeBinary::Comment(const ObjByte *buffer, eParseType ParseType)
             ParseString(buffer, &pos);
             break;
         case eBrowsePass:
+            if (currentTags && currentDataSection)
+            {
+                currentDataSection->Add(std::move(currentTags));
+                currentTags = std::make_unique<ObjMemory::DebugTagContainer>();
+            }
             if (ParseType == eBrowse)
                 return true;
             ParseString(buffer, &pos);
@@ -904,11 +936,23 @@ bool ObjIeeeBinary::Comment(const ObjByte *buffer, eParseType ParseType)
         case eFunctionEnd:
             int ch = GetByte(buffer, &pos);
             int index = GetDWord(buffer, &pos);
-            ObjSymbol *sym = FindSymbol(ch, index);
-            if (!sym)
-                ThrowSyntax(buffer, ParseType);
-            ObjDebugTag *tag = factory->MakeDebugTag(sym, cnum == eFunctionStart);
-            currentTags->push_back(tag);
+            if (ch == 'R')
+            {
+                ObjSection* sect = GetSection(index);
+                if (!sect)
+                    ThrowSyntax(buffer, ParseType);
+                ObjDebugTag* tag = factory->MakeDebugTag(sect, cnum == eFunctionStart);
+                currentTags->push_back(tag);
+
+            }
+            else
+            {
+                ObjSymbol *sym = FindSymbol(ch, index);
+                if (!sym)
+                    ThrowSyntax(buffer, ParseType);
+                ObjDebugTag *tag = factory->MakeDebugTag(sym, cnum == eFunctionStart);
+                currentTags->push_back(tag);
+            }
             break;
     }
     CheckTerm(buffer, pos);
@@ -1014,6 +1058,11 @@ bool ObjIeeeBinary::SectionDataHeader(const ObjByte *buffer, eParseType ParseTyp
     ObjSection *sect = GetSection(index);
     if (!sect)
         ThrowSyntax(buffer, ParseType);
+    if (currentTags && currentDataSection)
+    {
+        currentDataSection->Add(std::move(currentTags));
+        currentTags = std::make_unique<ObjMemory::DebugTagContainer>();
+    }
     currentDataSection = sect;
     return false;
 }

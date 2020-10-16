@@ -158,12 +158,6 @@ void ObjIeeeAscii::RenderFunction(ObjFunction* Function)
 }
 void ObjIeeeAscii::RenderType(ObjType* Type)
 {
-    if (Type->GetType() < ObjType::eVoid && !Type->GetName().empty())
-    {
-        RenderString("NT" + ObjUtil::ToHex(Type->GetIndex()));
-        RenderString("," + ToString(Type->GetName()) + ".");
-        endl();
-    }
     switch (Type->GetType())
     {
         case ObjType::ePointer:
@@ -218,6 +212,12 @@ void ObjIeeeAscii::RenderType(ObjType* Type)
             break;
         default:
             break;
+    }
+    if (Type->GetType() < ObjType::eVoid && !Type->GetName().empty())
+    {
+        RenderString("NT" + ObjUtil::ToHex(Type->GetIndex()));
+        RenderString("," + ToString(Type->GetName()) + ".");
+        endl();
     }
 }
 void ObjIeeeAscii::RenderSymbol(ObjSymbol* Symbol)

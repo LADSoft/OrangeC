@@ -837,6 +837,11 @@ bool ObjIeeeAscii::Comment(const char* buffer, eParseType ParseType)
                 return true;
             break;
         case eBrowsePass:
+            if (currentTags && currentDataSection)
+            {
+                currentDataSection->Add(std::move(currentTags));
+                currentTags = std::make_unique<ObjMemory::DebugTagContainer>();
+            }
             if (ParseType == eBrowse)
                 return true;
             break;
@@ -1289,6 +1294,7 @@ bool ObjIeeeAscii::ModuleStart(const char* buffer, eParseType ParseType)
     translator[i - 2] = '\0';
     if (buffer[i++] != ',')
         ThrowSyntax(buffer, ParseType);
+
     ObjString fileName = ParseString(buffer, &i);
     CheckTerm(buffer + i);
 

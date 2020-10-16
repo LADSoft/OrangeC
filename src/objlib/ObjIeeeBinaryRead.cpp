@@ -32,8 +32,8 @@
 
 ObjString ObjIeeeBinary::ParseString(const ObjByte *buffer, int *pos)
 {
-    int len = buffer[(*pos)++];
-    len += buffer[(*pos)++] << 8;
+    int len = buffer[(*pos)++] << 8;
+    len += buffer[(*pos)++];
     char name[4096];
     memcpy(name, buffer + *pos, len);
     name[len] = '\0';
@@ -55,7 +55,7 @@ void ObjIeeeBinary::ParseTime(const ObjByte *buffer, std::tm &tms, int *pos)
 ObjString ObjIeeeBinary::GetSymbolName(const ObjByte *buffer, int *index)
 {
     int pos = 3 + 1;
-    *index = GetDWord(buffer, &pos);
+    *index = GetIndex(buffer, &pos);
     ObjString rv = ParseString(buffer, &pos);
     CheckTerm(buffer, pos);
     if (!GetCaseSensitiveFlag())
@@ -111,7 +111,7 @@ ObjExpression *ObjIeeeBinary::GetExpression(const ObjByte *buffer, int *pos)
             case 'N':
             case 'X':
             {
-                int index = GetDWord(buffer, pos);
+                int index = GetIndex(buffer, pos);
                 ObjSymbol *sym = FindSymbol(ch, index);
                 if (!sym)
                     ThrowSyntax(buffer, eAll);
@@ -121,7 +121,7 @@ ObjExpression *ObjIeeeBinary::GetExpression(const ObjByte *buffer, int *pos)
             }
             case 'R':
             {
-                int index = GetDWord(buffer, pos);
+                int index = GetIndex(buffer, pos);
                 ObjSection *sect = GetSection(index);
                 if (!sect)
                     ThrowSyntax(buffer, eAll);
@@ -258,7 +258,7 @@ void ObjIeeeBinary::getline(ObjByte *buf, size_t size)
         memset(buf,0,3);
         return;
     }
-    int len = buf[1] + (buf[2] << 8);
+    int len = (buf[1] << 8) + buf[2];
     if (len > BUFFERSIZE)
         ThrowSyntax(buf, eAll);
     fread(buf+3, 1, len-3, sfile);
@@ -347,7 +347,7 @@ bool ObjIeeeBinary::GetOffset(const ObjByte *buffer, eParseType ParseType)
     char ch = GetByte(buffer, &pos);
     int index = 0;
     if (ch != 'G')
-        index = GetDWord(buffer, &pos);
+        index = GetIndex(buffer, &pos);
     ObjExpression *exp = GetExpression(buffer, &pos);
     CheckTerm(buffer, pos);
     switch(ch)
@@ -386,7 +386,7 @@ void ObjIeeeBinary::DefinePointer(ObjType::eType, int index, const ObjByte *buff
 {
     ObjType *base;
     int sz = GetDWord(buffer, pos);
-    int old = GetDWord(buffer, pos);
+    int old = GetIndex(buffer, pos);
     /* shouldn't get 'special' types here */
     if (old <= ObjType::eReservedTop)
         base = factory->MakeType((ObjType::eType)old);
@@ -418,7 +418,7 @@ void ObjIeeeBinary::DefineBitField(int index, const ObjByte *buffer, int *pos)
 {
 //		ATT$,T3,sz,TB,bitno,bits.
     int sz = GetByte(buffer, pos);
-    int old = GetDWord(buffer, pos);
+    int old = GetIndex(buffer, pos);
     int startBit = GetByte(buffer, pos);
     int bitCount = GetByte(buffer, pos);
     ObjType *base;
@@ -452,7 +452,7 @@ void ObjIeeeBinary::DefineBitField(int index, const ObjByte *buffer, int *pos)
 void ObjIeeeBinary::DefineTypeDef(int index, const ObjByte *buffer, int *pos)
 {
     ObjType *base;
-    int old = GetDWord(buffer, pos);
+    int old = GetIndex(buffer, pos);
     if (old <= ObjType::eReservedTop)
         base = factory->MakeType((ObjType::eType)old);
     else
@@ -480,7 +480,7 @@ void ObjIeeeBinary::DefineTypeDef(int index, const ObjByte *buffer, int *pos)
 void ObjIeeeBinary::DefineArray(ObjType::eType definer, int index, const ObjByte *buffer, int *pos)
 {
     int sz = GetDWord(buffer, pos);
-    int baseIndex = GetDWord(buffer, pos);
+    int baseIndex = GetIndex(buffer, pos);
 
     ObjType *baseType;
     if (baseIndex <= ObjType::eReservedTop)
@@ -493,7 +493,7 @@ void ObjIeeeBinary::DefineArray(ObjType::eType definer, int index, const ObjByte
         PutType(baseIndex, baseType);
     }
         
-    int indexIndex = GetDWord(buffer, pos);
+    int indexIndex = GetIndex(buffer, pos);
 
     ObjType *indexType ;
     if (indexIndex <= ObjType::eReservedTop)
@@ -534,7 +534,7 @@ void ObjIeeeBinary::DefineArray(ObjType::eType definer, int index, const ObjByte
 }
 void ObjIeeeBinary::DefineFunction(int index, const ObjByte *buffer, int *pos)
 {
-    int rvIndex = GetDWord(buffer, pos);
+    int rvIndex = GetIndex(buffer, pos);
     
     ObjType *rvType ;
     if (rvIndex <= ObjType::eReservedTop)
@@ -557,10 +557,10 @@ void ObjIeeeBinary::DefineFunction(int index, const ObjByte *buffer, int *pos)
     }
     ObjFunction *function = factory->MakeFunction(name, rvType, index);
     function->SetLinkage(linkage);
-    int len = buffer[1] + (buffer[2] << 8);
+    int len = (buffer[1] << 8) + buffer[2];
     while (*pos < len)
     {
-        int argIndex = GetDWord(buffer, pos);
+        int argIndex = GetIndex(buffer, pos);
         ObjType *argType;
         if (argIndex <= ObjType::eReservedTop)
             argType = factory->MakeType((ObjType::eType)argIndex);
@@ -595,12 +595,12 @@ void ObjIeeeBinary::DefineStruct(ObjType::eType stype, int index, const ObjByte 
     {
         type->SetSize(GetDWord(buffer, pos));
     }
-    int len = buffer[1] + (buffer[2] << 8);
+    int len = (buffer[1] << 8) + buffer[2];
     while (*pos < len)
     {
         int val;
         ObjString fieldName;
-        int fieldTypeIndex = GetDWord(buffer, pos);
+        int fieldTypeIndex = GetIndex(buffer, pos);
         ObjType *fieldTypeBase ;
         if (fieldTypeIndex <= ObjType::eReservedTop)
             fieldTypeBase = factory->MakeType((ObjType::eType)fieldTypeIndex, 0);
@@ -637,7 +637,7 @@ void ObjIeeeBinary::DefineStruct(ObjType::eType stype, int index, const ObjByte 
 }
 void ObjIeeeBinary::DefineType(int index, const ObjByte *buffer, int *pos)
 {
-    int definer = GetDWord(buffer, pos);
+    int definer = GetIndex(buffer, pos);
     if (definer >= (int)ObjType::eVoid || index <= (int)ObjType::eReservedTop)
         ThrowSyntax(buffer, eAll);
     switch((ObjType::eType)definer)
@@ -674,7 +674,7 @@ bool ObjIeeeBinary::TypeName(const ObjByte *buffer, eParseType parseType)
     if (!file)
         ThrowSyntax(buffer, parseType);
     int pos = 4;
-    int index = GetDWord(buffer, &pos);
+    int index = GetIndex(buffer, &pos);
     ObjString name = ParseString(buffer, &pos);
     CheckTerm(buffer, pos);
     ObjType *type = GetType(index);
@@ -692,7 +692,7 @@ bool ObjIeeeBinary::TypeSpec(const ObjByte *buffer, eParseType ParseType)
         ThrowSyntax(buffer, ParseType);
     int pos = 3;
     char ch = GetByte(buffer, &pos);
-    int index = GetDWord(buffer, &pos);
+    int index = GetIndex(buffer, &pos);
     switch (ch)
     {
         case 'A':
@@ -702,7 +702,7 @@ bool ObjIeeeBinary::TypeSpec(const ObjByte *buffer, eParseType ParseType)
         case 'I':
         {
             ObjSymbol *symbol = FindSymbol(ch, index);
-            index = GetDWord(buffer, &pos);
+            index = GetIndex(buffer, &pos);
             CheckTerm(buffer, pos);
             ObjType *type;
             /* won't get a 'special' type deriving type here */
@@ -728,7 +728,7 @@ bool ObjIeeeBinary::TypeSpec(const ObjByte *buffer, eParseType ParseType)
             {
                 ThrowSyntax(buffer, eAll);
             }
-            index = GetDWord(buffer, &pos);
+            index = GetIndex(buffer, &pos);
             CheckTerm(buffer, pos);
             ObjType* type;
             /* won't get a 'special' type deriving type here */
@@ -811,7 +811,7 @@ bool ObjIeeeBinary::Comment(const ObjByte *buffer, eParseType ParseType)
             else
                 externalName = ParseString(buffer, &pos);
             ObjString moduleName;
-            int len = buffer[1] + (buffer[2] << 8);
+            int len = (buffer[1] << 8) + buffer[2];
             if (pos < len)
             {
                 moduleName = ParseString(buffer, &pos);
@@ -863,7 +863,7 @@ bool ObjIeeeBinary::Comment(const ObjByte *buffer, eParseType ParseType)
         }
         case eSourceFile:
         {
-            int index = GetDWord(buffer, &pos);
+            int index = GetIndex(buffer, &pos);
             ObjString name = ParseString(buffer, &pos);
             std::tm time;
             ParseTime(buffer, time, &pos);
@@ -876,7 +876,7 @@ bool ObjIeeeBinary::Comment(const ObjByte *buffer, eParseType ParseType)
         {
             ObjBrowseInfo::eType type;
             ObjBrowseInfo::eQual qual;
-            type = (ObjBrowseInfo::eType)GetDWord(buffer, &pos);
+            type = (ObjBrowseInfo::eType)GetIndex(buffer, &pos);
             qual = (ObjBrowseInfo::eQual)GetDWord(buffer, &pos);
             int filenum = GetDWord(buffer, &pos);
             int lineno = GetDWord(buffer, &pos);
@@ -892,7 +892,7 @@ bool ObjIeeeBinary::Comment(const ObjByte *buffer, eParseType ParseType)
         }
         case eLineNo:
         {
-            int index = GetDWord(buffer, &pos);
+            int index = GetIndex(buffer, &pos);
             int line = GetDWord(buffer, &pos);
             ObjSourceFile *file = files[index];
             if (!file)
@@ -905,7 +905,7 @@ bool ObjIeeeBinary::Comment(const ObjByte *buffer, eParseType ParseType)
         case eVar:
         {
             int ch = GetByte(buffer, &pos);
-            int index = GetDWord(buffer, &pos);
+            int index = GetIndex(buffer, &pos);
             ObjSymbol *sym = FindSymbol(ch, index);
             if (!sym)
                 ThrowSyntax(buffer, ParseType);
@@ -930,7 +930,7 @@ bool ObjIeeeBinary::Comment(const ObjByte *buffer, eParseType ParseType)
         case eFunctionStart:
         case eFunctionEnd:
             int ch = GetByte(buffer, &pos);
-            int index = GetDWord(buffer, &pos);
+            int index = GetIndex(buffer, &pos);
             if (ch == 'R')
             {
                 ObjSection* sect = GetSection(index);
@@ -1020,7 +1020,7 @@ bool ObjIeeeBinary::SectionAttributes(const ObjByte *buffer, eParseType ParseTyp
     if (!file)
         ThrowSyntax(buffer, ParseType);
     int pos = 3;
-    int index = GetDWord(buffer, &pos);
+    int index = GetIndex(buffer, &pos);
     ObjInt quals = GetDWord(buffer, &pos);
     ObjString name = ParseString(buffer, &pos);
     CheckTerm(buffer, pos);
@@ -1034,7 +1034,7 @@ bool ObjIeeeBinary::SectionAlignment(const ObjByte *buffer, eParseType ParseType
     if (!file)
         ThrowSyntax(buffer, ParseType);
     int pos = 3;
-    int index = GetDWord(buffer, &pos);
+    int index = GetIndex(buffer, &pos);
     int align = GetDWord(buffer, &pos);
     CheckTerm(buffer, pos);
     ObjSection *sect = GetSection(index);
@@ -1048,7 +1048,7 @@ bool ObjIeeeBinary::SectionDataHeader(const ObjByte *buffer, eParseType ParseTyp
     if (!file)
         ThrowSyntax(buffer, ParseType);
     int pos = 3;
-    int index = GetDWord(buffer, &pos);
+    int index = GetIndex(buffer, &pos);
     CheckTerm(buffer, pos);
     ObjSection *sect = GetSection(index);
     if (!sect)
@@ -1065,7 +1065,7 @@ bool ObjIeeeBinary::Data(const ObjByte *buffer, eParseType ParseType)
 {
     if (!file || currentDataSection == nullptr)
         ThrowSyntax(buffer, ParseType);
-    int n = buffer[1] + (buffer[2] << 8);
+    int n = (buffer[1] << 8) + buffer[2];
     ObjMemory *mem = factory->MakeData(const_cast<ObjByte *>(buffer) + 3, n-3);
     // no need to check the termination as we consume everything */
     mem->SetDebugTags(std::move(currentTags));
@@ -1128,8 +1128,8 @@ bool ObjIeeeBinary::ModuleAttributes(const ObjByte *buffer, eParseType ParseType
     if (!file)
         ThrowSyntax(buffer, ParseType);
     int pos = 3;
-    int bitsPerMau = GetWord(buffer, &pos);
-    int maus = GetWord(buffer, &pos);
+    int bitsPerMau = GetByte(buffer, &pos);
+    int maus = GetByte(buffer, &pos);
     int ch = GetByte(buffer, &pos);
     bool bigEndian = ch == 'M';
     if (ch != 'M' && ch != 'L')

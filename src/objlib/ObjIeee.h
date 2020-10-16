@@ -57,9 +57,10 @@ class ObjIeeeBinary : public ObjIOBase
         EBYTE = 1,
         EWORD = 2,
         EDWORD = 3,
-        EBUF = 4,
-        ESTRING = 5,
-        EEXPR = 6,
+        EINDEX = 4,
+        EBUF = 5,
+        ESTRING = 6,
+        EEXPR = 7,
         EEMBEDDED = 0x80000000
     };
 
@@ -79,6 +80,13 @@ class ObjIeeeBinary : public ObjIOBase
         factory = Factory;
         file = nullptr;
         return HandleRead(ParseType);
+    }
+    virtual bool BinaryWrite(FILE* fil, ObjFile* File, ObjFactory* Factory)
+    {
+        sfile = fil;
+        factory = Factory;
+        file = File;
+        return BinaryWrite();
     }
 
   protected:
@@ -110,6 +118,7 @@ class ObjIeeeBinary : public ObjIOBase
     void RenderMessage(eCommands msg, ...);
     void RenderComment(eCommentType tp, ...);
     bool HandleWrite();
+    bool BinaryWrite();
     ObjFile* HandleRead(eParseType Type);
 
     void GatherCS(const ObjByte* cstr);
@@ -121,23 +130,40 @@ class ObjIeeeBinary : public ObjIOBase
     ObjExpression* GetExpression(const ObjByte* buffer, int* pos);
     void CheckTerm(const ObjByte* buffer, int pos)
     {
-        int n = buffer[1] + (buffer[2] << 8);
+        int n = (buffer[1] << 8) + buffer[2];
         if (n != pos)
             ThrowSyntax(buffer, eAll);
     }
     static unsigned GetByte(const ObjByte* buffer, int* pos) { return buffer[(*pos)++]; }
     static unsigned GetWord(const ObjByte* buffer, int* pos)
     {
-        unsigned rv = buffer[(*pos)++];
-        rv += buffer[(*pos)++] << 8;
+        unsigned rv = buffer[(*pos)++] << 8;
+        rv += buffer[(*pos)++];
         return rv;
     }
     static unsigned GetDWord(const ObjByte* buffer, int* pos)
     {
-        unsigned rv = buffer[(*pos)++];
-        rv += buffer[(*pos)++] << 8;
+        unsigned rv = buffer[(*pos)++] << 24;
         rv += buffer[(*pos)++] << 16;
-        rv += buffer[(*pos)++] << 24;
+        rv += buffer[(*pos)++] << 8;
+        rv += buffer[(*pos)++] << 0;
+        return rv;
+    }
+    static unsigned GetIndex(const ObjByte* buffer, int* pos)
+    {
+        unsigned rv;
+        if (buffer[*pos] & 0x80)
+        {
+            rv = (buffer[(*pos)++] & 0x7f) << 8 ;
+            rv += buffer[(*pos)++] << 0;
+
+        }
+        else
+        {
+            rv = buffer[(*pos)++] << 16;
+            rv += buffer[(*pos)++] << 8;
+            rv += buffer[(*pos)++] << 0;
+        }
         return rv;
     }
     unsigned embed(int x) { return x | EEMBEDDED; }
@@ -219,6 +245,7 @@ class ObjIeeeBinary : public ObjIOBase
     void RenderSection(ObjSection* Section);
     void RenderDebugTag(ObjDebugTag* Tag);
     void RenderMemory(ObjMemoryManager* Memory);
+    void RenderMemoryBinary(ObjMemoryManager* Memory);
     void RenderBrowseInfo(ObjBrowseInfo* Memory);
     void RenderExpression(ObjByte* buf, ObjExpression* Expression);
     void PutSymbol(SymbolMap& map, int index, ObjSymbol* sym);
@@ -521,10 +548,10 @@ class ObjIeeeAscii : public ObjIOBase
     int lineno;
     static char lineend[2];
 };
-class ObjIeee : public ObjIeeeAscii
+class ObjIeee : public ObjIeeeBinary
 {
   public:
-    ObjIeee(const ObjString Name, bool CaseSensitive = true) : ObjIeeeAscii(Name, CaseSensitive) {}
+    ObjIeee(const ObjString Name, bool CaseSensitive = true) : ObjIeeeBinary(Name, CaseSensitive) {}
     virtual ~ObjIeee() {}
 };
 class ObjIeeeIndexManager : public ObjIndexManager

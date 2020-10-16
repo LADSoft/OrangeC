@@ -77,6 +77,7 @@ int IeeeMain::Run(int argc, char** argv)
                     if (finput_obj)
                     {
                         output_obj.SetTranslatorName(input_obj.GetTranslatorName());
+                        output_obj.SetStartAddress(finput_obj, input_obj.GetStartAddress());
                         if (!output_obj.Write(outfile, finput_obj, &factory))
                         {
                            Utils::fatal("Cannot write %s", othername.c_str());
@@ -117,6 +118,7 @@ int IeeeMain::Run(int argc, char** argv)
                     if (finput_obj)
                     {
                         output_obj.SetTranslatorName(input_obj.GetTranslatorName());
+                        output_obj.SetStartAddress(finput_obj, input_obj.GetStartAddress());
                         if (!output_obj.Write(outfile, finput_obj, &factory))
                         {
                            Utils::fatal("Cannot write %s", othername.c_str());

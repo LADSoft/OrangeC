@@ -3,6 +3,7 @@ Release notes:
 version 6.0.46:
     various projects: fix various GCC warnings
     various projects: add a diagnostic when an output file cannot be opened or created
+    various projects: convert ieee format to binary
     occ: fix assembly language jmp [eax] to not truncate the register to word size
     occ: fix bug in sign extension of negated unsigned short
     occ: fix bug with not calling virtual destructors properly
@@ -20,8 +21,10 @@ version 6.0.46:
     occ: destructor for union should not automatically delete objects defined in the union
     occ: elide copy constructor references in certain initializations
     occ: fix formatting on assembly language output files
+    occ: fix bug that prevented occ from working when compiled with CLANG version 10 or greater
     occil: various improvements to allow generated code to be decompiled
     occil: add runtime support for function pointer via delegate
+    ieeeconvert: new project for converting binary object files to more readable ascii format
     utilites: some code cleanup
     netlib: add support for generic classes and functions
     netlib: add support for pinning

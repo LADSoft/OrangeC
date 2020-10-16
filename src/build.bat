@@ -1,9 +1,9 @@
 @echo off
      set PARALLEL=2
-     if (%TRAVIS_OS_NAME% NEQ "") (
+     if "%TRAVIS_OS_NAME%" NEQ "" (
         call "C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\Common7\Tools\VsDevCmd.bat"
      )
-     if (%ORANGEC_HOME% NEQ "") (
+     if "%ORANGEC_HOME%" NEQ "" (
          del /Q ..\bin\*.*
          del /Q ..\lib\*.*
          del /Q ..\include\*.*
@@ -12,7 +12,7 @@
          omake -DCOMPILER=MS clean -j:8
          omake -DCOMPILER=CLANG clean -j:8
          omake -DCOMPILER=MINGW64 clean -j:8
-         set BUILD_PROFILE=MS
+         set BUILD_PROFILE=CLANG
          set PARALLEL=8
      )
               cd c:\orangec\src
@@ -20,7 +20,7 @@
               for /f %%i in ('cscript //nologo %temp%\time.js') do set SOURCE_DATE_EPOCH=%%i
               del %temp%\time.js
               copy omake.exe \orangec\temp
-     if (%ORANGEC_HOME% EQU "") (
+     if "%ORANGEC_HOME%" EQU "" (
               call c:\orangec\appveyorversion.bat
      )
               IF "%BUILD_PROFILE%" EQU "OCCIL" (
@@ -108,7 +108,7 @@
                   IF %ERRORLEVEL% NEQ 0 (
                        goto error;
                   )
-                  if (%TRAVIS_OS_NAME% EQU "") (
+                  if "%TRAVIS_OS_NAME%" EQU "" (
                       cd ..\tests
                       omake -B /DCOMPILER=OCC
                       IF %ERRORLEVEL% NEQ 0 (
@@ -127,4 +127,4 @@
      echo failed
      goto done
 :done
-     if (%TRAVIS_OS_NAME% NEQ "") ( exit %ERRORLEVEL% )
+     if "%TRAVIS_OS_NAME%" NEQ "" ( exit %ERRORLEVEL% )

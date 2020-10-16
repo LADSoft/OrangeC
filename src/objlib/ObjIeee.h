@@ -190,7 +190,7 @@ class ObjIeeeBinary : public ObjIOBase
     void bufferup(const ObjByte* data, int len);
     void flush()
     {
-        fwrite(ioBuffer, ioBufferLen, 1, sfile);
+        fwrite(ioBuffer.get(), ioBufferLen, 1, sfile);
         ioBufferLen = 0;
         fflush(sfile);
     }
@@ -264,7 +264,7 @@ class ObjIeeeBinary : public ObjIOBase
     FileMap files;
     ObjSection* currentDataSection;
     std::unique_ptr<ObjMemory::DebugTagContainer> currentTags;
-    ObjByte* ioBuffer;
+    std::unique_ptr<char[]> ioBuffer;
     size_t ioBufferLen;
     size_t ioBufferPos;
     int lineno;

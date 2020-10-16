@@ -75,7 +75,7 @@ ObjString ObjIeeeBinary::GetSymbolName(const ObjByte *buffer, int *index)
 }
 ObjSymbol *ObjIeeeBinary::FindSymbol(char ch, int index)
 {
-    ObjSymbol *sym = NULL;
+    ObjSymbol *sym = nullptr;
     switch(ch)
     {
         case 'A':
@@ -182,7 +182,7 @@ ObjExpression *ObjIeeeBinary::GetExpression(const ObjByte *buffer, int *pos)
                 break;
         }
     }
-    ObjExpression *rv = NULL;
+    ObjExpression *rv = nullptr;
     if (stack.empty())
         ThrowSyntax(buffer, eAll);
     while (!stack.empty())
@@ -268,13 +268,9 @@ ObjFile *ObjIeeeBinary::HandleRead(eParseType ParseType)
     bool done = false;
     ioBufferLen = 0;
     ioBufferPos = 0;
-    ioBuffer = new ObjByte[BUFFERSIZE];
-    if (!ioBuffer)
-    {
-        return NULL;
-    }
+    ioBuffer = std::make_unique<char[]>(BUFFERSIZE);
     ResetCS();
-    file = NULL;
+    file = nullptr;
     currentTags = std::make_unique<ObjMemory::DebugTagContainer>();
     publics.clear();
     locals.clear();
@@ -284,7 +280,7 @@ ObjFile *ObjIeeeBinary::HandleRead(eParseType ParseType)
     types.clear();
     sections.clear();
     files.clear();
-    currentDataSection = NULL;
+    currentDataSection = nullptr;
     while (!done)
     {
         ObjByte inBuf[10000];
@@ -296,17 +292,13 @@ ObjFile *ObjIeeeBinary::HandleRead(eParseType ParseType)
         }
         catch (BadCS &e)
         {
-            if (ioBuffer)
-                delete [] ioBuffer;
-            ioBuffer = NULL;
-            return NULL;
+            ioBuffer = nullptr;
+            return nullptr;
         }
         catch (SyntaxError &e)
         {
-            if (ioBuffer)
-                delete [] ioBuffer;
-            ioBuffer = NULL;
-            return NULL;
+            ioBuffer = nullptr;
+            return nullptr;
         }		
     }
     for (int i=0; i < publics.size(); i++)
@@ -343,9 +335,8 @@ ObjFile *ObjIeeeBinary::HandleRead(eParseType ParseType)
     files.clear();
     factory->GetIndexManager()->LoadIndexes(file);
     currentTags.release();
-    if (ioBuffer)
-        delete [] ioBuffer;
-    ioBuffer = NULL;
+    ioBuffer = std::make_unique<char[]>(BUFFERSIZE);
+    ioBuffer = nullptr;
     return file;
 }
 bool ObjIeeeBinary::GetOffset(const ObjByte *buffer, eParseType ParseType)
@@ -617,8 +608,12 @@ void ObjIeeeBinary::DefineStruct(ObjType::eType stype, int index, const ObjByte 
             fieldTypeBase = GetType(fieldTypeIndex);
         if (!fieldTypeBase)
         {
-            fieldTypeBase = factory->MakeType((ObjType::eType)ObjType::eNone, 0);
+            fieldTypeBase = factory->MakeType((ObjType::eType)ObjType::eNone, fieldTypeIndex);
             PutType(fieldTypeIndex, fieldTypeBase);
+        }
+        else
+        {
+            fieldTypeBase->SetIndex(fieldTypeIndex);
         }
                 
         if (!fieldTypeBase)
@@ -1068,7 +1063,7 @@ bool ObjIeeeBinary::SectionDataHeader(const ObjByte *buffer, eParseType ParseTyp
 }
 bool ObjIeeeBinary::Data(const ObjByte *buffer, eParseType ParseType)
 {
-    if (!file || currentDataSection == NULL)
+    if (!file || currentDataSection == nullptr)
         ThrowSyntax(buffer, ParseType);
     int n = buffer[1] + (buffer[2] << 8);
     ObjMemory *mem = factory->MakeData(const_cast<ObjByte *>(buffer) + 3, n-3);
@@ -1080,7 +1075,7 @@ bool ObjIeeeBinary::Data(const ObjByte *buffer, eParseType ParseType)
 }
 bool ObjIeeeBinary::EnumeratedData(const ObjByte *buffer, eParseType ParseType)
 {
-    if (!file || currentDataSection == NULL)
+    if (!file || currentDataSection == nullptr)
         ThrowSyntax(buffer, ParseType);
     int pos = 3;
     ObjInt size = GetDWord(buffer, &pos);
@@ -1094,7 +1089,7 @@ bool ObjIeeeBinary::EnumeratedData(const ObjByte *buffer, eParseType ParseType)
 }
 bool ObjIeeeBinary::Fixup(const ObjByte *buffer, eParseType ParseType)
 {
-    if (!file || currentDataSection == NULL)
+    if (!file || currentDataSection == nullptr)
         ThrowSyntax(buffer, ParseType);
     int pos = 3;
     ObjExpression *exp = GetExpression(buffer, &pos);

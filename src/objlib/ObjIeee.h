@@ -112,11 +112,11 @@ class ObjIeeeBinary : public ObjIOBase
         int lineNo;
     };
     void RenderMessageInternal(ObjByte* buf, va_list arg);
-    ObjByte* StartMessage(eCommands msg, ...);
+    ObjByte* StartMessage(int msg, ...);
     void ContinueMessage(ObjByte* buf, ...);
     void RenderMessage(const ObjByte* buf);
-    void RenderMessage(eCommands msg, ...);
-    void RenderComment(eCommentType tp, ...);
+    void RenderMessage(int msg, ...);
+    void RenderComment(int tp, ...);
     bool HandleWrite();
     bool BinaryWrite();
     ObjFile* HandleRead(eParseType Type);

@@ -66,7 +66,7 @@ void ObjIeeeBinary::RenderMessageInternal(ObjByte *buf, va_list arg)
 {
     ObjByte *p = buf + (buf[1] << 8) + buf[2];
     int n;
-    while (n = va_arg(arg, int))
+    while ((n = va_arg(arg, int)))
     {
         if (n & EEMBEDDED)
         {
@@ -106,11 +106,12 @@ void ObjIeeeBinary::RenderMessageInternal(ObjByte *buf, va_list arg)
                 break;
             case ESTRING:
             {
-                std::string xx = va_arg(arg, ObjString);
-                *p++ = (xx.length() >> 8)  & 0xff;
-                *p++ = xx.length() & 0xff;
-                for (int i=0; i < xx.length(); i++)
-                    *p++ = xx[i];
+                
+                const char* xx = va_arg(arg, const char*);
+                int n = strlen(xx);
+                *p++ = (n >> 8)  & 0xff;
+                *p++ = n & 0xff;
+                while (*xx) *p++ = (char)*xx++;
                 break;
             }
             case EBUF:
@@ -140,7 +141,7 @@ void ObjIeeeBinary::RenderMessageInternal(ObjByte *buf, va_list arg)
     }
     
 }
-ObjByte *ObjIeeeBinary::StartMessage(eCommands msg, ...)
+ObjByte *ObjIeeeBinary::StartMessage(int msg, ...)
 {
     static ObjByte buf[20000];
     ObjByte *p = buf;
@@ -160,7 +161,7 @@ void ObjIeeeBinary::ContinueMessage(ObjByte *buf, ...)
     RenderMessageInternal(buf, arg);
     va_end(arg);
 }
-void ObjIeeeBinary::RenderMessage(eCommands msg, ...)
+void ObjIeeeBinary::RenderMessage(int msg, ...)
 {
     static ObjByte buf[4096];
     ObjByte *p = buf;
@@ -173,7 +174,7 @@ void ObjIeeeBinary::RenderMessage(eCommands msg, ...)
     va_end(arg);
     RenderMessage(buf);
 }
-void ObjIeeeBinary::RenderComment(eCommentType tp, ...)
+void ObjIeeeBinary::RenderComment(int tp, ...)
 {
     static ObjByte buf[4096];
     ObjByte *p = buf;
@@ -226,7 +227,7 @@ ObjString ObjIeeeBinary::ToTime(std::tm tms)
 }
 void ObjIeeeBinary::RenderFile(ObjSourceFile *File)
 {
-    RenderComment(eSourceFile, EINDEX, File->GetIndex(), ESTRING, File->GetName(), ESTRING, ToTime(File->GetFileTime()), nullptr);
+    RenderComment(eSourceFile, EINDEX, File->GetIndex(), ESTRING, File->GetName().c_str(), ESTRING, ToTime(File->GetFileTime()).c_str(), nullptr);
 }
 int ObjIeeeBinary::GetTypeIndex(ObjType *Type)
 {
@@ -263,7 +264,7 @@ void ObjIeeeBinary::RenderStructure(ObjType *Type)
         {
             ObjField *currentField = fields[n-1-j];
             ContinueMessage(buf,  EINDEX, GetTypeIndex(currentField->GetBase()),
-                            ESTRING, currentField->GetName(), 
+                            ESTRING, currentField->GetName().c_str(), 
                             EDWORD, currentField->GetConstVal(), nullptr);
         }
         if (lastIndex != -1)
@@ -339,7 +340,7 @@ void ObjIeeeBinary::RenderType(ObjType *Type)
     if (Type->GetType() < ObjType::eVoid && Type->GetName().size())
     {
         RenderMessage(ecNAME, embed('T'), EINDEX, Type->GetIndex(),
-            ESTRING, Type->GetName(), nullptr);
+            ESTRING, Type->GetName().c_str(), nullptr);
     }
 }
 void ObjIeeeBinary::RenderSymbol(ObjSymbol *Symbol)
@@ -347,33 +348,33 @@ void ObjIeeeBinary::RenderSymbol(ObjSymbol *Symbol)
     if (Symbol->GetType() == ObjSymbol::eDefinition)
     {
         ObjDefinitionSymbol *dsym = static_cast<ObjDefinitionSymbol *>(Symbol);
-        RenderComment(eDefinition, ESTRING, dsym->GetName(), EDWORD, dsym->GetValue(), nullptr);
+        RenderComment(eDefinition, ESTRING, dsym->GetName().c_str(), EDWORD, dsym->GetValue(), nullptr);
     }
     else if (Symbol->GetType() == ObjSymbol::eImport)
     {
         ObjImportSymbol *isym = static_cast<ObjImportSymbol *>(Symbol);
         if (isym->GetByOrdinal())
-            RenderComment(eImport, embed('O'), ESTRING, isym->GetName(), 
-                          EDWORD, isym->GetOrdinal(), ESTRING, isym->GetDllName(), nullptr);
+            RenderComment(eImport, embed('O'), ESTRING, isym->GetName().c_str(), 
+                          EDWORD, isym->GetOrdinal(), ESTRING, isym->GetDllName().c_str(), nullptr);
         else
-            RenderComment(eImport, embed('N'), ESTRING, isym->GetName(), 
-                          ESTRING, isym->GetExternalName(), ESTRING, isym->GetDllName(), nullptr);
+            RenderComment(eImport, embed('N'), ESTRING, isym->GetName().c_str(), 
+                          ESTRING, isym->GetExternalName().c_str(), ESTRING, isym->GetDllName().c_str(), nullptr);
     }
     else if (Symbol->GetType() == ObjSymbol::eExport)
     {
         ObjString data;
         ObjExportSymbol *esym = static_cast<ObjExportSymbol *>(Symbol);
         if (esym->GetByOrdinal())
-            RenderComment(eExport, embed('O'), ESTRING, esym->GetName(), 
-                          EDWORD, esym->GetOrdinal(), ESTRING, esym->GetDllName(), nullptr);
+            RenderComment(eExport, embed('O'), ESTRING, esym->GetName().c_str(), 
+                          EDWORD, esym->GetOrdinal(), ESTRING, esym->GetDllName().c_str(), nullptr);
         else
-            RenderComment(eExport, embed('N'), ESTRING, esym->GetName(), 
-                          ESTRING, esym->GetExternalName(), ESTRING, esym->GetDllName(), nullptr);
+            RenderComment(eExport, embed('N'), ESTRING, esym->GetName().c_str(), 
+                          ESTRING, esym->GetExternalName().c_str(), ESTRING, esym->GetDllName().c_str(), nullptr);
     }
     else if (Symbol->GetType() != ObjSymbol::eLabel)
     {
         RenderMessage(ecNAME, embed(GetSymbolName(Symbol)), EINDEX, Symbol->GetIndex(), 
-                      ESTRING, Symbol->GetName(), nullptr);
+                      ESTRING, Symbol->GetName().c_str(), nullptr);
         if (Symbol->GetOffset())
         {
            RenderMessage(ecAS, embed(GetSymbolName(Symbol)), EINDEX, Symbol->GetIndex(),
@@ -392,7 +393,7 @@ void ObjIeeeBinary::RenderSection(ObjSection *Section)
     // this assums a section number < 160... otherwise it could be an attrib
     RenderMessage(ecST, EINDEX, Section->GetIndex(),
                   EDWORD, Section->GetQuals(), 
-                  ESTRING, Section->GetName(), nullptr);
+                  ESTRING, Section->GetName().c_str(), nullptr);
 
     RenderMessage(ecSA, EINDEX, Section->GetIndex(),
                         EDWORD, Section->GetAlignment(), nullptr);
@@ -429,7 +430,7 @@ void ObjIeeeBinary::RenderDebugTag(ObjDebugTag *Tag)
         case ObjDebugTag::eBlockEnd:
             RenderComment(Tag->GetType() == ObjDebugTag::eBlockStart ?
                                  eBlockStart : eBlockEnd,
-                                 ESTRING, ObjString(""), nullptr);
+                                 ESTRING, "", nullptr);
             break;
         case ObjDebugTag::eFunctionStart:
         case ObjDebugTag::eFunctionEnd:
@@ -543,7 +544,7 @@ void ObjIeeeBinary::RenderBrowseInfo(ObjBrowseInfo *BrowseInfo)
                   EINDEX, BrowseInfo->GetLineNo()->GetFile()->GetIndex(),
                   EDWORD, BrowseInfo->GetLineNo()->GetLineNumber(),
                   EWORD, BrowseInfo->GetCharPos(),
-                  ESTRING, BrowseInfo->GetData(), nullptr);
+                  ESTRING, BrowseInfo->GetData().c_str(), nullptr);
 }
 void ObjIeeeBinary::RenderExpression(ObjByte *buf, ObjExpression *Expression)
 {
@@ -619,7 +620,7 @@ bool ObjIeeeBinary::HandleWrite()
     RenderCS();
     ResetCS();
     WriteFiles();
-    RenderComment(eMakePass, ESTRING, ObjString("Make Pass Separator"), nullptr);
+    RenderComment(eMakePass, ESTRING, "Make Pass Separator", nullptr);
     RenderCS();
     ResetCS();
     WriteTypes();
@@ -632,11 +633,11 @@ bool ObjIeeeBinary::HandleWrite()
     WriteStartAddress();
     RenderCS();
     ResetCS();
-    RenderComment(eLinkPass, ESTRING, ObjString("Link Pass Separator"), nullptr);
+    RenderComment(eLinkPass, ESTRING, "Link Pass Separator", nullptr);
     WriteSections();
     RenderCS();
     ResetCS();
-    RenderComment(eBrowsePass, ESTRING, ObjString("Browse Pass Separator"), nullptr);
+    RenderComment(eBrowsePass, ESTRING, "Browse Pass Separator", nullptr);
     WriteBrowseInfo();
     RenderCS();
     ResetCS();
@@ -647,17 +648,17 @@ bool ObjIeeeBinary::HandleWrite()
 }
 void ObjIeeeBinary::WriteHeader()
 {
-    RenderMessage(ecMB, ESTRING, translatorName, ESTRING, file->GetName(), nullptr);
+    RenderMessage(ecMB, ESTRING, translatorName.c_str(), ESTRING, file->GetName().c_str(), nullptr);
     RenderMessage(ecAD, EBYTE, GetBitsPerMAU(), EBYTE, GetMAUS(),
                   EBYTE, embed(GetFile()->GetBigEndian() ? 'M' : 'L'), nullptr);
-    RenderMessage(ecDT, ESTRING, ToTime(file->GetFileTime()), nullptr);
+    RenderMessage(ecDT, ESTRING, ToTime(file->GetFileTime()).c_str(), nullptr);
     if (file->GetInputFile())
     {
         RenderFile(file->GetInputFile());
     }
     if (absolute)
     {
-        RenderComment(eAbsolute, ESTRING, ObjString("Link Pass Separator"), nullptr);
+        RenderComment(eAbsolute, ESTRING, "Link Pass Separator", nullptr);
     }
 }
 void ObjIeeeBinary::WriteFiles()

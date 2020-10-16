@@ -12,7 +12,7 @@
          omake -DCOMPILER=MS clean -j:8
          omake -DCOMPILER=CLANG clean -j:8
          omake -DCOMPILER=MINGW64 clean -j:8
-         set BUILD_PROFILE=CLANG
+         set BUILD_PROFILE=MS
          set PARALLEL=8
      )
               cd c:\orangec\src
@@ -43,7 +43,7 @@
                   )
                   cd ..\src
                   echo succeeded
-                  exit
+                  goto done
               )
               IF "%BUILD_PROFILE%" EQU "MSDEBUGBUILD" (
                   REM  Build with Microsoft PDB files
@@ -53,7 +53,7 @@
                   )
                   cd ..\src
                   echo succeeded
-                  exit
+                  goto done
               )
               IF "%BUILD_PROFILE%" EQU "CODEANALYZER" (
                   REM  Build to test code analyzer
@@ -74,7 +74,7 @@
                   )
                   cd ..\..\src
                   echo succeeded
-                  exit
+                  goto done
               )
               IF "%BUILD_PROFILE%" NEQ "TEST" (
                   REM  Primary build for Orange C
@@ -121,7 +121,7 @@
                       )
                   )
                   echo succeeded
-                  exit
+                  goto done
              )
 :error
      echo failed

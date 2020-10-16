@@ -648,7 +648,8 @@ void FPF::FromLongLong(long long myllong)
     if (myllong < 0L)
     {
         sign = 1;
-        temp = (unsigned long long)-myllong;
+        if (myllong != LLONG_MIN)
+            temp = (unsigned long long)-myllong;
     }
     else
     {

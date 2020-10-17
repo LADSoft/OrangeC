@@ -43,7 +43,7 @@
 #include <stdlib.h>
 #include <memory.h>
 
-int _RTL_FUNC         mkdir( const char  *__path )
+int _RTL_FUNC         _mkdir( const char  *__path )
 {
     DPMI_REGS regs;
     SELECTOR sel,para;
@@ -65,7 +65,10 @@ int _RTL_FUNC         mkdir( const char  *__path )
     }
     return 0;
 }
-int _RTL_FUNC         _mkdir( const char  *__path )
+int _RTL_FUNC         mkdir( const char  *__path, int __amode )
 {
-    return mkdir(__path);
+    int rv = _mkdir(__path);
+    if (!rv)
+        return __ll_chmod(__path, __amode);
+    return 0;
 }

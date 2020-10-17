@@ -108,7 +108,6 @@ extern "C"
 #define R_OK 4
 
     int _RTL_FUNC _IMPORT access(const char* ZSTR __path, int __amode);
-    int _RTL_FUNC _IMPORT chmod(const char* ZSTR __path, int __amode);
     int _RTL_FUNC _IMPORT chsize(int __handle, long __size);
     int _RTL_FUNC _IMPORT close(int __handle);
     int _RTL_FUNC _IMPORT creat(const char* ZSTR __path, int __amode);

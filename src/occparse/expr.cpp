@@ -1749,6 +1749,7 @@ static LEXEME* expression_bracket(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRES
                     cast(&stdint, &expr2);
                     if (Optimizer::architecture == ARCHITECTURE_MSIL)
                     {
+                        cast(&stdinative, &expr2);
                         if (!isarray(*tp))
                         {
                             auto exp3 = exprNode(en__sizeof, typeNode(*tp), nullptr);
@@ -1807,7 +1808,7 @@ static LEXEME* expression_bracket(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRES
                     *tp = basetype(tp2)->btp;
                     if (Optimizer::architecture == ARCHITECTURE_MSIL)
                     {
-                        cast(&stdint, exp);
+                        cast(&stdinative, exp);
                         if (!isarray(*tp))
                         {
                             auto exp3 = exprNode(en__sizeof, typeNode(*tp), nullptr);
@@ -6739,8 +6740,8 @@ static LEXEME* expression_add(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
             {
                 if (Optimizer::architecture == ARCHITECTURE_MSIL)
                 {
-                    cast(&stdint, exp);
-                    cast(&stdint, &exp1);
+                    cast(&stdinative, exp);
+                    cast(&stdinative, &exp1);
                 }
                 *exp = exprNode(en_sub, *exp, exp1);
                 *exp = exprNode(en_arraydiv, *exp, ns);
@@ -6750,7 +6751,7 @@ static LEXEME* expression_add(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
             {
                 if (Optimizer::architecture == ARCHITECTURE_MSIL)
                 {
-                    cast(&stdint, exp);
+                    cast(&stdinative, exp);
                 }
                 /*				*tp = tp1 = destSize(*tp, tp1, exp, &exp1, false, nullptr); */
                 if (basetype(tp1)->type < bt_int)
@@ -6775,7 +6776,7 @@ static LEXEME* expression_add(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
             /*			*tp = tp1 = destSize(*tp, tp1, exp, &exp1, false, nullptr); */
             if (Optimizer::architecture == ARCHITECTURE_MSIL)
             {
-                cast(&stdint, &exp1);
+                cast(&stdinative, &exp1);
             }
             if (basetype(*tp)->type < bt_int)
                 cast(&stdint, exp);

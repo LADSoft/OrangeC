@@ -29,6 +29,7 @@
 #include <deque>
 #include <stdarg.h>
 #include <assert.h>
+#include <limits.h>
 
 inline int min(int x,int y)
 {

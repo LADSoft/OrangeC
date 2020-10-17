@@ -644,10 +644,12 @@ FPF FPF::Divide(const FPF& x, const FPF& y)
 void FPF::FromLongLong(long long myllong)
 {
     u16f myword; /* Used to hold converted stuff */
+    unsigned long long temp = (unsigned long long) myllong;
     if (myllong < 0L)
     {
         sign = 1;
-        myllong = -myllong;
+        if (myllong != LLONG_MIN)
+            temp = (unsigned long long)-myllong;
     }
     else
     {
@@ -669,14 +671,14 @@ void FPF::FromLongLong(long long myllong)
     {
         exp = 64;
 #ifdef LLONG_MAX
-        myword = (u16f)((myllong >> 48) & 0xFFFFL);
+        myword = (u16f)((temp >> 48) & 0xFFFFL);
         mantissa[0] = myword;
-        myword = (u16f)((myllong >> 32) & 0xFFFFL);
+        myword = (u16f)((temp >> 32) & 0xFFFFL);
         mantissa[1] = myword;
 #endif
-        myword = (u16f)((myllong >> 16) & 0xFFFFL);
+        myword = (u16f)((temp >> 16) & 0xFFFFL);
         mantissa[2] = myword;
-        myword = (u16f)(myllong & 0xFFFFL);
+        myword = (u16f)(temp & 0xFFFFL);
         mantissa[3] = myword;
         Normalize();
     }

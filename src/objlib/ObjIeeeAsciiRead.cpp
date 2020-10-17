@@ -31,7 +31,6 @@
 #include <cctype>
 #include <cstdio>
 #include <algorithm>
-void DebugThrowHook() {}
 ObjIeeeAscii::ParseData ObjIeeeAscii::parseData[] = {
     ObjIeeeAscii::ParseData("LD", &ObjIeeeAscii::Data),
     ObjIeeeAscii::ParseData("LR", &ObjIeeeAscii::Fixup),
@@ -838,6 +837,11 @@ bool ObjIeeeAscii::Comment(const char* buffer, eParseType ParseType)
                 return true;
             break;
         case eBrowsePass:
+            if (currentTags && currentDataSection)
+            {
+                currentDataSection->Add(std::move(currentTags));
+                currentTags = std::make_unique<ObjMemory::DebugTagContainer>();
+            }
             if (ParseType == eBrowse)
                 return true;
             break;

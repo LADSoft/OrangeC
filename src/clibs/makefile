@@ -181,6 +181,18 @@ clean:
 	-del /Q $(DLLOBJECT) 2> NUL
 	-del /Q $(CILOBJECT) 2> NUL
 	-del /Q $(CLIBOBJECT) 2> NUL
+	-del /Q platform\win32\crtdmain\*.o 2>NULL
+	-del /Q platform\win32\lscrtl\*.o 2>NULL
+	-del /Q platform\win32\lsdbghelper\*.o 2>NULL
+	-del /Q platform\win32\msvcrdm\*.o 2>NULL
+	-del /Q platform\win32\occil\*.o 2>NULL
+	-del /Q platform\win32\pe\*.o 2>NULL
+	-del /Q platform\win32\pels\*.o 2>NULL
+	-del /Q platform\win32\rtl\*.o 2>NULL
+	-del /Q platform\dos32\debug\*.o 2>NULL
+	-del /Q platform\dos32\le\*.o 2>NULL
+	-del /Q platform\dos32\pm\*.o 2>NULL
+	-del /Q platform\dos32\rtl\*.o 2>NULL
 	-rmdir $(DOSOBJECT) 2> NUL
 	-rmdir $(WINOBJECT) 2> NUL
 	-rmdir $(SYSOBJECT) 2> NUL

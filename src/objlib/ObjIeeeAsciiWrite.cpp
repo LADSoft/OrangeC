@@ -158,12 +158,6 @@ void ObjIeeeAscii::RenderFunction(ObjFunction* Function)
 }
 void ObjIeeeAscii::RenderType(ObjType* Type)
 {
-    if (Type->GetType() < ObjType::eVoid && !Type->GetName().empty())
-    {
-        RenderString("NT" + ObjUtil::ToHex(Type->GetIndex()));
-        RenderString("," + ToString(Type->GetName()) + ".");
-        endl();
-    }
     switch (Type->GetType())
     {
         case ObjType::ePointer:
@@ -218,6 +212,12 @@ void ObjIeeeAscii::RenderType(ObjType* Type)
             break;
         default:
             break;
+    }
+    if (Type->GetType() < ObjType::eVoid && !Type->GetName().empty())
+    {
+        RenderString("NT" + ObjUtil::ToHex(Type->GetIndex()));
+        RenderString("," + ToString(Type->GetName()) + ".");
+        endl();
     }
 }
 void ObjIeeeAscii::RenderSymbol(ObjSymbol* Symbol)
@@ -723,15 +723,4 @@ void ObjIeeeAscii::RenderCS()
     RenderCstr("CS");
     RenderString(ObjUtil::ToHex(cs & 127, 2) + ".");
     endl();
-}
-void ObjIeeeIndexManager::ResetIndexes()
-{
-    Section = 0;
-    Public = 0;
-    Local = 0;
-    External = 0;
-    Type = eDerivedTypeBase;
-    File = 0;
-    Auto = 0;
-    Reg = 0;
 }

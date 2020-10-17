@@ -467,9 +467,9 @@ std::string GetArrayName(Optimizer::SimpleType* tp, bool byRef, bool pinned)
         tp = tp->btp;
     }
     if (byRef)
-        strcat(end, "_br");
+        strcat(end, "\xfe_br");
     if (pinned)
-        strcat(end, "_pin");
+        strcat(end, "\xfe_pin");
     if ((tp->type == Optimizer::st_struct || tp->type == Optimizer::st_union) || tp->type == Optimizer::st_enum)
     {
         return std::string(tp->sp->name) + end;
@@ -706,16 +706,31 @@ Type* GetType(Optimizer::SimpleType* tp, bool commit, bool funcarg, bool pinvoke
             return it->second;
         if (commit)
         {
-            Class* newClass =
-                peLib->AllocateClass(name, Qualifiers::Public | Qualifiers::ClassClass, -1, tp->size == 0 ? 1 : tp->size);
-            mainContainer->Add(newClass);
-            Type* type = peLib->AllocateType(newClass);
+            std::string name1 = name;
+            int n = name1.find_first_of('\xfe');
+            if (n != std::string::npos)
+                name1 = name1.substr(0, n);
+            it = typeList.find(name1);
+            Class *cls;
+            Type *type;
+            if (it == typeList.end())
+            {
+                cls = peLib->AllocateClass(name1, Qualifiers::Public | Qualifiers::ClassClass, -1, tp->size == 0 ? 1 : tp->size);
+                mainContainer->Add(cls);
+                // declare any structure we are referencing..
+                while (tp->type == Optimizer::st_pointer)
+                    tp = tp->btp;
+                if ((tp->type == Optimizer::st_struct || tp->type == Optimizer::st_union))
+                    GetType(tp, true);
+                type = peLib->AllocateType(cls);
+                typeList[name1] = type;
+            }
+            else
+            {
+                cls = (Class *)it->second->GetClass();
+                type = peLib->AllocateType(cls);
+            }
             typeList[name] = type;
-            while (tp->type == Optimizer::st_pointer)
-                tp = tp->btp;
-            // declare any structure we are referencing..
-            if ((tp->type == Optimizer::st_struct || tp->type == Optimizer::st_union))
-                GetType(tp, true);
             type->ByRef(byref);
             type->Pinned(pinned);
             return type;
@@ -789,7 +804,7 @@ Type* GetType(Optimizer::SimpleType* tp, bool commit, bool funcarg, bool pinvoke
             {-ISZ_UCHAR, Type::i8},        {ISZ_UCHAR, Type::u8},        {-ISZ_USHORT, Type::i16},   {ISZ_USHORT, Type::u16},
             {ISZ_WCHAR, Type::u16},        {ISZ_U16, Type::u16},         {-ISZ_UINT, Type::i32},     {ISZ_UINT, Type::u32},
             {-ISZ_UNATIVE, Type::inative}, {ISZ_UNATIVE, Type::unative}, {-ISZ_ULONG, Type::i32},    {ISZ_ULONG, Type::u32},
-            {ISZ_U32, Type::u32},          {-ISZ_ULONGLONG, Type::i64},  {ISZ_ULONGLONG, Type::u64}, {ISZ_ADDR, Type::unative}, 
+            {ISZ_U32, Type::u32},          {-ISZ_ULONGLONG, Type::i64},  {ISZ_ULONGLONG, Type::u64}, {ISZ_ADDR, Type::inative}, 
             {ISZ_STRING, Type::string},    {ISZ_OBJECT, Type::object},    {ISZ_FLOAT, Type::r32},       {ISZ_DOUBLE, Type::r64},    
             {ISZ_LDOUBLE, Type::r64},      {ISZ_IFLOAT, Type::r32},       {ISZ_IDOUBLE, Type::r64},     {ISZ_ILDOUBLE, Type::r64},  
             {ISZ_CFLOAT, Type::r32}, {ISZ_CDOUBLE, Type::r64},      {ISZ_CLDOUBLE, Type::r64},

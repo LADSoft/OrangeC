@@ -8,6 +8,36 @@ jobs:
     include:
         - name: "Gcc/Linux"
           os: linux
+#        - name: "MINGW64 THEN WITH STATIC LIB"
+#          os: windows
+#          env: BUILD_PROFILE=MINGW64
+#        - name: "CLANG THEN WITH STATIC LIB"
+#          os: windows
+#          env: BUILD_PROFILE=CLANG
+#        - name: "MSVC THEN WITH STATIC LIB"
+#          os: windows
+#          env: BUILD_PROFILE=MS
+#        - name: "MSVC THEN WITH LSCRTL"
+#          os: windows
+#          env: BUILD_PROFILE=MS
+#               LSCRTL=YES
+#        - name: "MSVC THEN VIA ASSEMBLY"
+#          os: windows
+#          env: BUILD_PROFILE=MS
+#               VIAASSEMBLY=YES
+#        - name: "MSVC THEN WITH DEBUG"
+#          os: windows
+#          env: BUILD_PROFILE=MS
+#               WITHDEBUG=YES
+#        - name: "CODE ANALYZER TEST"
+#          os: windows
+#          env: BUILD_PROFILE=CODEANALYZER
+#        - name: "MSIL COMPILER"
+#          os: windows
+#          env: BUILD_PROFILE=OCCIL
+#        - name: "MS WITH PDB"
+#          os: windows
+#          env: BUILD_PROFILE=MSDEBUGBUILD
 
 env:
   global:

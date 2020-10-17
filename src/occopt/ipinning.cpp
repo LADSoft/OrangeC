@@ -277,23 +277,21 @@ static void InsertInitialLoad(QUAD* begin, std::deque<QUAD*>& addresses, IMODE*&
 {
     while (begin->fwd->dc.opcode == i_label || begin->fwd->dc.opcode == i_line || begin->fwd->dc.opcode == i_blockend || begin->fwd->dc.opcode == i_block)
         begin = begin->fwd;
-    IMODE *left;
+    IMODE *exp;
     if (addresses.front()->dc.opcode == i_add)
     {
-        left = addresses.front()->back->dc.left;
+        exp = addresses.front()->dc.right;
     }
     else
     {
-        left = addresses.front()->dc.left;
+        exp = addresses.front()->dc.left;
     }
     SimpleType *tp;
-    tp = (SimpleType*)Alloc(sizeof(SimpleType));
-    tp->btp = (SimpleType*)Alloc(sizeof(SimpleType));
     tp = (SimpleType*)Alloc(sizeof(SimpleType));
     tp->type = st_lref;
     tp->size = sizeFromISZ(ISZ_ADDR);
     tp->sizeFromType = ISZ_ADDR;
-    if (left->offset->type == se_labcon)
+    if (exp->offset->type == se_labcon)
     {
         tp->btp = (SimpleType*)Alloc(sizeof(SimpleType));
         tp->btp->type = st_i;
@@ -302,9 +300,10 @@ static void InsertInitialLoad(QUAD* begin, std::deque<QUAD*>& addresses, IMODE*&
     }
     else
     {
-        tp->btp = left->offset->sp->tp;
-        while (tp->btp->isarray)
+        tp->btp = exp->offset->sp->tp;
+        if (tp->btp->isarray)
             tp->btp = tp->btp->btp;
+        /*
         while (tp->btp->type == st_pointer)
         {
             SimpleType* tp1 = (SimpleType*)Alloc(sizeof(SimpleType));
@@ -313,9 +312,10 @@ static void InsertInitialLoad(QUAD* begin, std::deque<QUAD*>& addresses, IMODE*&
             tp->btp = tp1;
             tp = tp->btp;
         }
+        */
     }
     IMODE *ans = pinnedVar(tp);
-    ans->size = left->size;
+    ans->size = exp->size;
     IMODE* ans2 = (IMODE*)Alloc(sizeof(IMODE));
     *ans2 = *ans;
     ans2->size = ISZ_UINT;
@@ -334,11 +334,11 @@ static void InsertInitialLoad(QUAD* begin, std::deque<QUAD*>& addresses, IMODE*&
         *two = *addresses.front();
         InsertInstruction(begin, two);
         begin = begin->fwd;
-        left = two->ans;
+        exp = two->ans;
     }
     QUAD *move = (QUAD*)Alloc(sizeof(QUAD));
     move->ans = ans;
-    move->dc.left = left;
+    move->dc.left = exp;
     move->dc.opcode = i_assn;
     InsertInstruction(begin, move);
     begin = begin->fwd;

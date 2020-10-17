@@ -83,7 +83,6 @@ extern "C"
 #define MAXFILE 256
 #define MAXEXT 256
 
-    int _RTL_FUNC _IMPORT chdir(const char* __path);
     int _RTL_FUNC _IMPORT findfirst(const char* __path, struct ffblk* __ffblk, int __attrib);
     int _RTL_FUNC _IMPORT findnext(struct ffblk* __ffblk);
     void _RTL_FUNC _IMPORT fnmerge(char* __path, const char* __drive, const char* __dir, const char* __name, const char* __ext);
@@ -91,9 +90,7 @@ extern "C"
     int _RTL_FUNC _IMPORT getcurdir(int __drive, char* __directory);
     char* _RTL_FUNC _IMPORT getcwd(char* __buf, int __buflen);
     int _RTL_FUNC _IMPORT getdisk(void);
-    int _RTL_FUNC _IMPORT mkdir(const char* __path);
     char* _RTL_FUNC _IMPORT mktemp(char* __template);
-    int _RTL_FUNC _IMPORT rmdir(const char* __path);
     char* _RTL_FUNC _IMPORT searchpath(const char* __file);
     int _RTL_FUNC _IMPORT setdisk(int __drive);
 

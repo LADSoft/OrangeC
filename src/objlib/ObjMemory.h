@@ -116,8 +116,9 @@ class ObjMemoryManager : public ObjWrapper
     }
     void Add(std::unique_ptr<ObjMemory::DebugTagContainer> Tags)
     {
-        if (memory.size())
-            memory[memory.size() - 1]->SetDebugTags(std::move(Tags));
+        auto om = new ObjMemory((ObjByte*)nullptr, 0);
+        om->SetDebugTags(std::move(Tags));
+        memory.push_back(om);
     }
     void ResolveSymbols(ObjFactory* Factory, ObjSection* Section);
     typedef MemoryContainer::iterator MemoryIterator;

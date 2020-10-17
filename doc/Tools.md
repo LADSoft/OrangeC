@@ -31,7 +31,7 @@
 * [OGrep](ogrep/OGrep.md) looks for regular expressions within source code files.
 * [OMake](omake/OMake.md) is a make utility similar to GNU make.
 * [onm](general/onm.md) dumps the symbols from object files
-
+* [ieeeconvert](general/ieeeconvert.md) convert object files between binary and ascii formats
 
 ## WIN32 Specific tools
  

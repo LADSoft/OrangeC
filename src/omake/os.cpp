@@ -43,6 +43,7 @@
 #    ifndef _SH_DENYNO
 #        define _SH_DENYNO 0
 #    endif
+#    define chdir _chdir
 #endif
 #include <string.h>
 #undef WriteConsole
@@ -60,6 +61,7 @@
 #include <random>
 #include <array>
 #include <functional>
+#include <sys/stat.h>
 //#include <mutex>
 #include "semaphores.h"
 //#define DEBUG

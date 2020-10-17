@@ -59,10 +59,7 @@ extern "C"
     int _RTL_FUNC _IMPORT _getdrive(void);
     unsigned long _RTL_FUNC _IMPORT _getdrives(void);
 
-    int _RTL_FUNC _IMPORT chdir(const char* ZSTR);
     char* ZSTR _RTL_FUNC _IMPORT getcwd(char* ZSTR, int);
-    int _RTL_FUNC _IMPORT mkdir(const char* ZSTR);
-    int _RTL_FUNC _IMPORT rmdir(const char* ZSTR);
 
     int _RTL_FUNC _IMPORT _chdir(const char* ZSTR);
     char* ZSTR _RTL_FUNC _IMPORT _getcwd(char* ZSTR, int);

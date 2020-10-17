@@ -27,17 +27,16 @@
 #include <stdio.h>
 #include <sstream>
 #include <deque>
-#include <stdarg>
+#include <stdarg.h>
 #include <assert.h>
+#include <limits.h>
 
-inline int min(int x,int y)
+template <typename T>
+inline constexpr int min(T x, T y)
 {
-    if (x < y) 
-        return x;
-    else
-        return y;
+    return x < y ? x : y;
 }
-void ObjIeeeBinary::bufferup(const char *data, int len)
+void ObjIeeeBinary::bufferup(const ObjByte *data, int len)
 {
     if (len + ioBufferLen > BUFFERSIZE)
     {
@@ -49,24 +48,21 @@ void ObjIeeeBinary::bufferup(const char *data, int len)
     }
     else
     {
-        memcpy(ioBuffer + ioBufferLen, data, len);
+        memcpy(ioBuffer.get()+ ioBufferLen, data, len);
         ioBufferLen += len;
     }
 }
 void ObjIeeeBinary::RenderMessage(const ObjByte *buf)
 {
     GatherCS(buf);
-    int l = buf[1] + (buf[2] << 8);
+    int l = (buf[1] << 8) + buf[2];
     bufferup(buf, l);
-}
-void vv()
-{
 }
 void ObjIeeeBinary::RenderMessageInternal(ObjByte *buf, va_list arg)
 {
-    ObjByte *p = buf + (buf[1]) + (buf[2] << 8);
+    ObjByte *p = buf + (buf[1] << 8) + buf[2];
     int n;
-    while (n = va_arg(arg, int))
+    while ((n = va_arg(arg, int)))
     {
         if (n & EEMBEDDED)
         {
@@ -80,22 +76,38 @@ void ObjIeeeBinary::RenderMessageInternal(ObjByte *buf, va_list arg)
                 break;
             case EWORD:
                 n = va_arg(arg, int);
-                *p++ = n & 0xff;
                 *p++ = (n >> 8) & 0xff;
+                *p++ = (n >> 0) & 0xff;
                 break;
             case EDWORD:
                 n = va_arg(arg, int);
-                *p++ = n & 0xff;
-                *p++ = (n >> 8) & 0xff;
-                *p++ = (n >> 16) & 0xff;
                 *p++ = (n >> 24) & 0xff;
+                *p++ = (n >> 16) & 0xff;
+                *p++ = (n >> 8) & 0xff;
+                *p++ = (n >> 0) & 0xff;
+                break;
+            case EINDEX:
+                n = va_arg(arg, int);
+                if (n <= SHRT_MAX)
+                {
+                    *p++ = (n >> 8) | 0x80;
+                    *p++ = n & 0xff;
+                }
+                else
+                {
+                    *p++ = (n >> 16) & 0xff;
+                    *p++ = (n >> 8) & 0xff;
+                    *p++ = (n >> 0) & 0xff;
+                }
                 break;
             case ESTRING:
             {
-                std::string xx = va_arg(arg, ObjString);
-                *p++ = xx.length();
-                for (int i=0; i < xx.length(); i++)
-                    *p++ = xx[i];
+                
+                const char* xx = va_arg(arg, const char*);
+                int n = strlen(xx);
+                *p++ = (n >> 8)  & 0xff;
+                *p++ = n & 0xff;
+                while (*xx) *p++ = (char)*xx++;
                 break;
             }
             case EBUF:
@@ -108,11 +120,10 @@ void ObjIeeeBinary::RenderMessageInternal(ObjByte *buf, va_list arg)
                 break;
             case EEXPR:
             {
-                vv();
                 ObjExpression *exp = va_arg(arg, ObjExpression *);   
                 RenderExpression(buf, exp);
-                ContinueMessage(buf, embed(0x1b), NULL);
-                p = buf + (buf[1]) + (buf[2] << 8);
+                ContinueMessage(buf, embed(0x1b), nullptr);
+                p = buf + (buf[1] << 8) + buf[2];
                 break;
             }
             default:
@@ -120,18 +131,18 @@ void ObjIeeeBinary::RenderMessageInternal(ObjByte *buf, va_list arg)
                 break;
         }
         int len = p - buf;
-        buf[1] = len & 0xff;
-        buf[2] = (len >> 8) & 0xff;
+        buf[1] = (len >> 8) & 0xff;
+        buf[2] = len & 0xff;
     }
     
 }
-ObjByte *ObjIeeeBinary::StartMessage(eCommands msg, ...)
+ObjByte *ObjIeeeBinary::StartMessage(int msg, ...)
 {
-    static ObjByte buf[4096];
+    static ObjByte buf[20000];
     ObjByte *p = buf;
     *p++ = msg;
-    *p++ = 3;
     *p++ = 0;
+    *p++ = 3;
     va_list arg;
     va_start(arg, msg);
     RenderMessageInternal(buf, arg);
@@ -145,28 +156,28 @@ void ObjIeeeBinary::ContinueMessage(ObjByte *buf, ...)
     RenderMessageInternal(buf, arg);
     va_end(arg);
 }
-void ObjIeeeBinary::RenderMessage(eCommands msg, ...)
+void ObjIeeeBinary::RenderMessage(int msg, ...)
 {
     static ObjByte buf[4096];
     ObjByte *p = buf;
     *p++ = msg;
-    *p++ = 3;
     *p++ = 0;
+    *p++ = 3;
     va_list arg;
     va_start(arg, msg);
     RenderMessageInternal(buf, arg);
     va_end(arg);
     RenderMessage(buf);
 }
-void ObjIeeeBinary::RenderComment(eCommentType tp, ...)
+void ObjIeeeBinary::RenderComment(int tp, ...)
 {
     static ObjByte buf[4096];
     ObjByte *p = buf;
     *p++ = ecCO;
-    *p++ = 5;
     *p++ = 0;
-    *p++ = tp & 0xff;
+    *p++ = 5;
     *p++ = (tp >> 8) & 0xff;
+    *p++ = tp & 0xff;
     va_list arg;
     va_start(arg, tp);
     RenderMessageInternal(buf, arg);
@@ -211,7 +222,7 @@ ObjString ObjIeeeBinary::ToTime(std::tm tms)
 }
 void ObjIeeeBinary::RenderFile(ObjSourceFile *File)
 {
-    RenderComment(eSourceFile, EDWORD, File->GetIndex(), ESTRING, File->GetName(), ESTRING, ToTime(File->GetFileTime()), NULL);
+    RenderComment(eSourceFile, EINDEX, File->GetIndex(), ESTRING, File->GetName().c_str(), ESTRING, ToTime(File->GetFileTime()).c_str(), nullptr);
 }
 int ObjIeeeBinary::GetTypeIndex(ObjType *Type)
 {
@@ -231,67 +242,72 @@ void ObjIeeeBinary::RenderStructure(ObjType *Type)
     int lastIndex = -1;
     while (fields.size())
     {
-        unsigned n = min(MaxPerLine, (int)fields.size());
+        ObjByte* buf;
+        int bottom;
         int index;
+        ObjField* current = fields.front();
+        for (bottom = 1; bottom < fields.size(); bottom++)
+        {
+            if (fields[bottom]->GetTypeIndex() != current->GetTypeIndex())
+                break;
+        }
         // the problem with this is if they output the file twice
         // the types won't match
-        ObjByte *buf;
-        if (n == fields.size())
+        if (fields.size() - bottom == 0)
         {
-            buf = StartMessage(ecAT, embed('T'), EDWORD, index = Type->GetIndex(), EDWORD, Type->GetType(), EDWORD, Type->GetSize(), NULL);
+            buf = StartMessage(ecAT, embed('T'), EINDEX, index = Type->GetIndex(), EINDEX, Type->GetType(), EDWORD, Type->GetSize(), nullptr);
         }
         else
         {
-            buf = StartMessage(ecAT, embed('T'), EDWORD, index = GetFactory()->GetIndexManager()->NextType(), EDWORD, ObjType::eField, NULL);
+            buf = StartMessage(ecAT, embed('T'), EINDEX, index = current->GetTypeIndex(), EINDEX, ObjType::eField, nullptr);
         }
-        for (unsigned j=0; j < n; j++)
+        for (unsigned j = 0; j < bottom; j++)
         {
-            ObjField *currentField = fields[n-1-j];
-            ContinueMessage(buf,  EDWORD, GetTypeIndex(currentField->GetBase()),
-                            ESTRING, currentField->GetName(), 
-                            EDWORD, currentField->GetConstVal(), NULL);
+            ObjField* currentField = fields[bottom - j - 1];
+            ContinueMessage(buf, EINDEX, GetTypeIndex(currentField->GetBase()),
+                ESTRING, currentField->GetName().c_str(),
+                EDWORD, currentField->GetConstVal(), nullptr);
         }
         if (lastIndex != -1)
-            ContinueMessage(buf, EDWORD, lastIndex, NULL); 
-        lastIndex = index;
+        {
+            ContinueMessage(buf, EINDEX, lastIndex, nullptr);
+        }
         RenderMessage(buf);
-        for (unsigned j=0; j < n; j++)
+        lastIndex = index;
+        for (unsigned j = 0; j < bottom; j++)
             fields.pop_front();
     }
 }
 void ObjIeeeBinary::RenderFunction(ObjFunction *Function)
 {
-    ObjByte*buf = StartMessage(ecAT, embed('T'), EDWORD, GetTypeIndex(static_cast<ObjType *>(Function)),
-                             EDWORD, ObjType::eFunction, EDWORD, GetTypeIndex(Function->GetReturnType()),
-                             EDWORD, Function->GetLinkage(), NULL);
+    ObjByte*buf = StartMessage(ecAT, embed('T'), EINDEX, GetTypeIndex(static_cast<ObjType *>(Function)),
+                             EINDEX, ObjType::eFunction, EINDEX, GetTypeIndex(Function->GetReturnType()),
+                             EDWORD, Function->GetLinkage(), nullptr);
     // assuming a reasonable number of parameters
     // parameters are TYPES
     for (ObjFunction::ParameterIterator it = Function->ParameterBegin();
          it != Function->ParameterEnd(); ++it)
     {
-        ContinueMessage(buf, EDWORD, GetTypeIndex(*it), NULL);
+        ContinueMessage(buf, EINDEX, GetTypeIndex(*it), nullptr);
     }
     RenderMessage(buf);
 }
 void ObjIeeeBinary::RenderType(ObjType *Type)
 {
-    if (Type->GetType() < ObjType::eVoid && Type->GetName().size())
-    {
-        RenderMessage(ecNAME, embed('T'), EDWORD, Type->GetIndex(),
-                      ESTRING, Type->GetName(), NULL);
-    }
     switch(Type->GetType())
     {
         case ObjType::ePointer:
-            RenderMessage(ecAT, embed('T'), EDWORD, GetTypeIndex(Type),
-                          EDWORD, ObjType::ePointer,
+        case ObjType::eLRef:
+        case ObjType::eRRef:
+            RenderMessage(ecAT, embed('T'), EINDEX, GetTypeIndex(Type),
+                          EINDEX, ObjType::ePointer,
                           EDWORD, Type->GetSize(),
-                          EDWORD, GetTypeIndex(Type->GetBaseType()), NULL);
+                          EINDEX, GetTypeIndex(Type->GetBaseType()), nullptr);
             break;
         case ObjType::eTypeDef:
-            RenderMessage(ecAT, embed('T'), EDWORD, GetTypeIndex(Type),
-                          EDWORD, ObjType::eTypeDef,
-                          EDWORD, GetTypeIndex(Type->GetBaseType()), NULL);
+            RenderMessage(ecAT, embed('T'), EINDEX, GetTypeIndex(Type),
+                EINDEX, ObjType::eTypeDef,
+                EINDEX, GetTypeIndex(Type->GetBaseType()), nullptr);
             break;
         case ObjType::eFunction:
             RenderFunction(static_cast<ObjFunction *>(Type));
@@ -302,29 +318,34 @@ void ObjIeeeBinary::RenderType(ObjType *Type)
             RenderStructure(Type);
             break;
         case ObjType::eBitField:
-            RenderMessage(ecAT, embed('T'), EDWORD, GetTypeIndex(Type),
-                          EDWORD, ObjType::eBitField,
+            RenderMessage(ecAT, embed('T'), EINDEX, GetTypeIndex(Type),
+                          EINDEX, ObjType::eBitField,
                           EBYTE, Type->GetSize(),
-                          EDWORD, GetTypeIndex(Type->GetBaseType()),
+                          EINDEX, GetTypeIndex(Type->GetBaseType()),
                           EBYTE, Type->GetStartBit(),
-                          EBYTE, Type->GetBitCount(), NULL);
+                          EBYTE, Type->GetBitCount(), nullptr);
             break;
         case ObjType::eArray:
-            RenderMessage(ecAT, embed('T'), EDWORD, GetTypeIndex(Type),
-                          EDWORD, Type->GetType(),
+            RenderMessage(ecAT, embed('T'), EINDEX, GetTypeIndex(Type),
+                          EINDEX, Type->GetType(),
                           EDWORD, Type->GetSize(),
-                          EDWORD, GetTypeIndex(Type->GetBaseType()),
-                          EDWORD, GetTypeIndex(Type->GetIndexType()),
+                          EINDEX, GetTypeIndex(Type->GetBaseType()),
+                          EINDEX, GetTypeIndex(Type->GetIndexType()),
                           EDWORD, Type->GetBase(),
-                          EDWORD, Type->GetTop(), NULL);
+                          EDWORD, Type->GetTop(), nullptr);
             break;
         case ObjType::eVla:
-            RenderMessage(ecAT, embed('T'), EDWORD, GetTypeIndex(Type),
-                          EDWORD, Type->GetType(),
+            RenderMessage(ecAT, embed('T'), EINDEX, GetTypeIndex(Type),
+                          EINDEX, Type->GetType(),
                           EDWORD, Type->GetSize(),
-                          EDWORD, GetTypeIndex(Type->GetBaseType()),
-                          EDWORD, GetTypeIndex(Type->GetIndexType()), NULL);
+                          EINDEX, GetTypeIndex(Type->GetBaseType()),
+                          EINDEX, GetTypeIndex(Type->GetIndexType()), nullptr);
             break;
+    }
+    if (Type->GetType() < ObjType::eVoid && Type->GetName().size())
+    {
+        RenderMessage(ecNAME, embed('T'), EINDEX, Type->GetIndex(),
+            ESTRING, Type->GetName().c_str(), nullptr);
     }
 }
 void ObjIeeeBinary::RenderSymbol(ObjSymbol *Symbol)
@@ -332,42 +353,42 @@ void ObjIeeeBinary::RenderSymbol(ObjSymbol *Symbol)
     if (Symbol->GetType() == ObjSymbol::eDefinition)
     {
         ObjDefinitionSymbol *dsym = static_cast<ObjDefinitionSymbol *>(Symbol);
-        RenderComment(eDefinition, ESTRING, dsym->GetName(), EDWORD, dsym->GetValue(), NULL);
+        RenderComment(eDefinition, ESTRING, dsym->GetName().c_str(), EDWORD, dsym->GetValue(), nullptr);
     }
     else if (Symbol->GetType() == ObjSymbol::eImport)
     {
         ObjImportSymbol *isym = static_cast<ObjImportSymbol *>(Symbol);
         if (isym->GetByOrdinal())
-            RenderComment(eImport, embed('O'), ESTRING, isym->GetName(), 
-                          EDWORD, isym->GetOrdinal(), ESTRING, isym->GetDllName(), NULL);
+            RenderComment(eImport, embed('O'), ESTRING, isym->GetName().c_str(), 
+                          EDWORD, isym->GetOrdinal(), ESTRING, isym->GetDllName().c_str(), nullptr);
         else
-            RenderComment(eImport, embed('N'), ESTRING, isym->GetName(), 
-                          ESTRING, isym->GetExternalName(), ESTRING, isym->GetDllName(), NULL);
+            RenderComment(eImport, embed('N'), ESTRING, isym->GetName().c_str(), 
+                          ESTRING, isym->GetExternalName().c_str(), ESTRING, isym->GetDllName().c_str(), nullptr);
     }
     else if (Symbol->GetType() == ObjSymbol::eExport)
     {
         ObjString data;
         ObjExportSymbol *esym = static_cast<ObjExportSymbol *>(Symbol);
         if (esym->GetByOrdinal())
-            RenderComment(eExport, embed('O'), ESTRING, esym->GetName(), 
-                          EDWORD, esym->GetOrdinal(), ESTRING, esym->GetDllName(), NULL);
+            RenderComment(eExport, embed('O'), ESTRING, esym->GetName().c_str(), 
+                          EDWORD, esym->GetOrdinal(), ESTRING, esym->GetDllName().c_str(), nullptr);
         else
-            RenderComment(eExport, embed('N'), ESTRING, esym->GetName(), 
-                          ESTRING, esym->GetExternalName(), ESTRING, esym->GetDllName(), NULL);
+            RenderComment(eExport, embed('N'), ESTRING, esym->GetName().c_str(), 
+                          ESTRING, esym->GetExternalName().c_str(), ESTRING, esym->GetDllName().c_str(), nullptr);
     }
     else if (Symbol->GetType() != ObjSymbol::eLabel)
     {
-        RenderMessage(ecNAME, embed(GetSymbolName(Symbol)), EDWORD, Symbol->GetIndex(), 
-                      ESTRING, Symbol->GetName(), NULL);
+        RenderMessage(ecNAME, embed(GetSymbolName(Symbol)), EINDEX, Symbol->GetIndex(), 
+                      ESTRING, Symbol->GetName().c_str(), nullptr);
         if (Symbol->GetOffset())
         {
-           RenderMessage(ecAS, embed(GetSymbolName(Symbol)), EDWORD, Symbol->GetIndex(), 
-                         EEXPR, Symbol->GetOffset(), NULL);
+           RenderMessage(ecAS, embed(GetSymbolName(Symbol)), EINDEX, Symbol->GetIndex(),
+                         EEXPR, Symbol->GetOffset(), nullptr);
         }
         if (GetDebugInfoFlag() && Symbol->GetBaseType())
         {
-            RenderMessage(ecAT, embed(GetSymbolName(Symbol)), EDWORD, Symbol->GetIndex(), 
-                         EDWORD, GetTypeIndex(Symbol->GetBaseType()), NULL);
+            RenderMessage(ecAT, embed(GetSymbolName(Symbol)), EINDEX, Symbol->GetIndex(),
+                          EINDEX, GetTypeIndex(Symbol->GetBaseType()), nullptr);
         }
     }
 }
@@ -375,18 +396,25 @@ void ObjIeeeBinary::RenderSection(ObjSection *Section)
 {
     // This is actually the section header information
     // this assums a section number < 160... otherwise it could be an attrib
-    RenderMessage(ecST, EDWORD, Section->GetIndex(), 
+    RenderMessage(ecST, EINDEX, Section->GetIndex(),
                   EDWORD, Section->GetQuals(), 
-                  ESTRING, Section->GetName(), NULL);
+                  ESTRING, Section->GetName().c_str(), nullptr);
 
-    RenderMessage(ecSA, EDWORD, Section->GetIndex(),
-                        EDWORD, Section->GetAlignment(), NULL);
-    RenderMessage(ecAS, embed('S'), EDWORD, Section->GetIndex(),
-                              embed('V'), EDWORD, Section->GetMemoryManager().GetSize(), embed(0x1b), NULL);
+    RenderMessage(ecSA, EINDEX, Section->GetIndex(),
+                        EDWORD, Section->GetAlignment(), nullptr);
+    RenderMessage(ecAS, embed('S'), EINDEX, Section->GetIndex(),
+                              embed('V'), EDWORD, Section->GetMemoryManager().GetSize(), embed(0x1b), nullptr);
+    if (Section->GetVirtualType())
+    {
+        int n = Section->GetVirtualType()->GetIndex();
+        if (n < ObjType::eReservedTop + 1)
+            n = Section->GetVirtualType()->GetType();
+        RenderMessage(ecAT, embed('R'), EINDEX, Section->GetIndex(), EINDEX, n, nullptr);
+    }
     if (Section->GetQuals() & ObjSection::absolute)
     {
-        RenderMessage(ecAS, embed('L'), EDWORD, Section->GetIndex(),
-                              embed('V'), EDWORD, Section->GetMemoryManager().GetBase(), embed(0x1b), NULL);
+        RenderMessage(ecAS, embed('L'), EINDEX, Section->GetIndex(),
+                              embed('V'), EDWORD, Section->GetMemoryManager().GetBase(), embed(0x1b), nullptr);
     }
 }
 void ObjIeeeBinary::RenderDebugTag(ObjDebugTag *Tag)
@@ -400,24 +428,29 @@ void ObjIeeeBinary::RenderDebugTag(ObjDebugTag *Tag)
                 Tag->GetSymbol()->GetType() != ObjSymbol::eExternal)
             {
                 RenderComment(eVar, embed(GetSymbolName(Tag->GetSymbol())),
-                              EDWORD, Tag->GetSymbol()->GetIndex(), NULL);
+                    EINDEX, Tag->GetSymbol()->GetIndex(), nullptr);
             }
             break;
         case ObjDebugTag::eBlockStart:
         case ObjDebugTag::eBlockEnd:
             RenderComment(Tag->GetType() == ObjDebugTag::eBlockStart ?
                                  eBlockStart : eBlockEnd,
-                                 ESTRING, ObjString(""), NULL);
+                                 ESTRING, "", nullptr);
             break;
         case ObjDebugTag::eFunctionStart:
         case ObjDebugTag::eFunctionEnd:
-            RenderComment(eFunctionStart, embed(GetSymbolName(Tag->GetSymbol())),
-                          EDWORD, Tag->GetSymbol()->GetIndex(), NULL);
+            RenderComment(Tag->GetType() == ObjDebugTag::eFunctionStart ? eFunctionStart : eFunctionEnd, embed(GetSymbolName(Tag->GetSymbol())),
+                EINDEX, Tag->GetSymbol()->GetIndex(), nullptr);
+            break;
+        case ObjDebugTag::eVirtualFunctionStart:
+        case ObjDebugTag::eVirtualFunctionEnd:
+            RenderComment(Tag->GetType() == ObjDebugTag::eVirtualFunctionStart ? eFunctionStart : eFunctionEnd, embed('R'),
+                EINDEX, Tag->GetSection()->GetIndex(), nullptr);
             break;
         case ObjDebugTag::eLineNo:
             RenderComment(eLineNo, 
-                          EDWORD, Tag->GetLineNo()->GetFile()->GetIndex(),
-                          EDWORD, Tag->GetLineNo()->GetLineNumber(), NULL);
+                EINDEX, Tag->GetLineNo()->GetFile()->GetIndex(),
+                EDWORD, Tag->GetLineNo()->GetLineNumber(), nullptr);
             break;
         default:
             break;
@@ -439,9 +472,9 @@ void ObjIeeeBinary::RenderMemory(ObjMemoryManager *Memory)
             || memory->GetFixup())
         {
             if (n)
-                RenderMessage(ecLD, EBUF, scratch, n, NULL);
+                RenderMessage(ecLD, EBUF, scratch, n, nullptr);
             n = 0;
-            if (GetDebugInfoFlag())
+            if (GetDebugInfoFlag() && memory->HasDebugTags())
             {
                 ObjMemory::DebugTagIterator it;
                 for (it = memory->DebugTagBegin(); it != memory->DebugTagEnd(); ++it)
@@ -451,16 +484,16 @@ void ObjIeeeBinary::RenderMemory(ObjMemoryManager *Memory)
             }
             if (memory->GetFixup())
             {
-                RenderMessage(ecLR, EEXPR, memory->GetFixup(), EBYTE, memory->GetSize(), NULL);
+                RenderMessage(ecLR, EEXPR, memory->GetFixup(), EBYTE, memory->GetSize(), nullptr);
             }
         }
         if (memory->IsEnumerated())
         {
             if (n)
-                RenderMessage(ecLD, EBUF, scratch, n, NULL);
+                RenderMessage(ecLD, EBUF, scratch, n, nullptr);
             n = 0;
             RenderMessage(ecLE, EDWORD, memory->GetSize(),
-                          EBYTE, memory->GetFill(), NULL);
+                          EBYTE, memory->GetFill(), nullptr);
         }
         else if (memory->GetData())
         {
@@ -470,25 +503,53 @@ void ObjIeeeBinary::RenderMemory(ObjMemoryManager *Memory)
                 scratch[n++] = *p++;
                 if (n >= 256)
                 {
-                    RenderMessage(ecLD, EBUF, scratch, n, NULL);
+                    RenderMessage(ecLD, EBUF, scratch, n, nullptr);
                     n = 0;
                 }
             }
         }
     }
     if (n)
-        RenderMessage(ecLD, EBUF, scratch, n, NULL);
+        RenderMessage(ecLD, EBUF, scratch, n, nullptr);
     n = 0;
+}
+void ObjIeeeBinary::RenderMemoryBinary(ObjMemoryManager* Memory)
+{
+    ObjByte scratch[256];
+    for (auto itmem = Memory->MemoryBegin(); itmem != Memory->MemoryEnd(); ++itmem)
+    {
+        ObjMemory* memory = (*itmem);
+        if (memory->GetFixup())
+        {
+            *(unsigned*)scratch = memory->GetFixup()->Eval(0);
+            bufferup(scratch, memory->GetSize());
+        }
+        if (memory->IsEnumerated())
+        {
+            memset(scratch, memory->GetFill(), sizeof(scratch));
+            int len = memory->GetSize();
+            while (len > sizeof(scratch))
+            {
+                bufferup(scratch, sizeof(scratch));
+                len -= sizeof(scratch);
+            }
+            bufferup(scratch, len);
+        }
+        else if (memory->GetData())
+        {
+            bufferup((ObjByte*)memory->GetData(), memory->GetSize());
+        }
+    }
 }
 void ObjIeeeBinary::RenderBrowseInfo(ObjBrowseInfo *BrowseInfo)
 {
     RenderComment(eBrowseInfo,
-                  EDWORD, BrowseInfo->GetType(),
+                  EINDEX, BrowseInfo->GetType(),
                   EDWORD, BrowseInfo->GetQual(),
-                  EDWORD, BrowseInfo->GetLineNo()->GetFile()->GetIndex(),
+                  EINDEX, BrowseInfo->GetLineNo()->GetFile()->GetIndex(),
                   EDWORD, BrowseInfo->GetLineNo()->GetLineNumber(),
                   EWORD, BrowseInfo->GetCharPos(),
-                  ESTRING, BrowseInfo->GetData(), NULL);
+                  ESTRING, BrowseInfo->GetData().c_str(), nullptr);
 }
 void ObjIeeeBinary::RenderExpression(ObjByte *buf, ObjExpression *Expression)
 {
@@ -501,27 +562,27 @@ void ObjIeeeBinary::RenderExpression(ObjByte *buf, ObjExpression *Expression)
             RenderExpression(buf, Expression->GetRight());
             break;
         case ObjExpression::eValue:
-            ContinueMessage(buf, embed('V'), EDWORD, Expression->GetValue(), NULL);
+            ContinueMessage(buf, embed('V'), EDWORD, Expression->GetValue(), nullptr);
             break;
         case ObjExpression::eAdd:
             RenderExpression(buf, Expression->GetLeft());
             RenderExpression(buf, Expression->GetRight());
-            ContinueMessage(buf, embed('+'), NULL);
+            ContinueMessage(buf, embed('+'), nullptr);
             break;
         case ObjExpression::eSub:
             RenderExpression(buf, Expression->GetLeft());
             RenderExpression(buf, Expression->GetRight());
-            ContinueMessage(buf, embed('-'), NULL);
+            ContinueMessage(buf, embed('-'), nullptr);
             break;
         case ObjExpression::eMul:
             RenderExpression(buf, Expression->GetLeft());
             RenderExpression(buf, Expression->GetRight());
-            ContinueMessage(buf, embed('*'), NULL);
+            ContinueMessage(buf, embed('*'), nullptr);
             break;
         case ObjExpression::eDiv:
             RenderExpression(buf, Expression->GetLeft());
             RenderExpression(buf, Expression->GetRight());
-            ContinueMessage(buf, embed('/'), NULL);
+            ContinueMessage(buf, embed('/'), nullptr);
             break;
         case ObjExpression::eExpression:
             RenderExpression(buf, Expression->GetLeft()) ;
@@ -531,7 +592,7 @@ void ObjIeeeBinary::RenderExpression(ObjByte *buf, ObjExpression *Expression)
             {
                 // externals get embedded in the expression
                 ContinueMessage(buf, embed('X'), 
-                                EDWORD, Expression->GetSymbol()->GetIndex(), NULL);
+                                EINDEX, Expression->GetSymbol()->GetIndex(), nullptr);
             }
             else
             {
@@ -542,70 +603,67 @@ void ObjIeeeBinary::RenderExpression(ObjByte *buf, ObjExpression *Expression)
             break;
         case ObjExpression::eSection:
             ContinueMessage(buf, embed('R'), 
-                            EDWORD, Expression->GetSection()->GetIndex(), NULL);
+                            EINDEX, Expression->GetSection()->GetIndex(), nullptr);
             break;
         case ObjExpression::ePC:
-            ContinueMessage(buf, embed('P'),  NULL);
+            ContinueMessage(buf, embed('P'),  nullptr);
             break;
     }
 }
 void ObjIeeeBinary::GatherCS(const ObjByte *msg)
 {
-    int len = msg[1] + (msg[2] << 8);
+    int len = (msg[1] << 8) + msg[2];
     for (int i=0; i < len; i++)
         cs += msg[i];
 }
 bool ObjIeeeBinary::HandleWrite()
 {
     ioBufferLen = 0;
-    ioBuffer = new char [BUFFERSIZE];
-    if (!ioBuffer)
-        return false;
+    ioBuffer = std::make_unique<char[]>(BUFFERSIZE);
     ResetCS();
     WriteHeader();
     RenderCS();
     ResetCS();
     WriteFiles();
-    RenderComment(eMakePass, ESTRING, ObjString("Make Pass Separator"), NULL);
+    RenderComment(eMakePass, ESTRING, "Make Pass Separator", nullptr);
     RenderCS();
     ResetCS();
-    WriteSectionHeaders();	
+    WriteTypes();
     RenderCS();
     ResetCS();
-    WriteTypes();	
+    WriteSectionHeaders();
     RenderCS();
     ResetCS();
-    WriteSymbols();	
+    WriteSymbols();
     WriteStartAddress();
     RenderCS();
     ResetCS();
-    RenderComment(eLinkPass, ESTRING, ObjString("Link Pass Separator"), NULL);
-    WriteSections();	
+    RenderComment(eLinkPass, ESTRING, "Link Pass Separator", nullptr);
+    WriteSections();
     RenderCS();
     ResetCS();
-    RenderComment(eBrowsePass, ESTRING, ObjString("Browse Pass Separator"), NULL);
-    WriteBrowseInfo();	
+    RenderComment(eBrowsePass, ESTRING, "Browse Pass Separator", nullptr);
+    WriteBrowseInfo();
     RenderCS();
     ResetCS();
     WriteTrailer();
     flush();
-    delete [] ioBuffer;
-    ioBuffer = NULL;
+    ioBuffer = nullptr;
     return true;
 }
 void ObjIeeeBinary::WriteHeader()
 {
-    RenderMessage(ecMB, ESTRING, translatorName, ESTRING, file->GetName(), NULL);
-    RenderMessage(ecAD, EWORD, GetBitsPerMAU(), EWORD, GetMAUS(),
-                  EBYTE, embed(GetFile()->GetBigEndian() ? 'M' : 'L'), NULL);
-    RenderMessage(ecDT, ESTRING, ToTime(file->GetFileTime()), NULL);
+    RenderMessage(ecMB, ESTRING, translatorName.c_str(), ESTRING, file->GetName().c_str(), nullptr);
+    RenderMessage(ecAD, EBYTE, GetBitsPerMAU(), EBYTE, GetMAUS(),
+                  EBYTE, embed(GetFile()->GetBigEndian() ? 'M' : 'L'), nullptr);
+    RenderMessage(ecDT, ESTRING, ToTime(file->GetFileTime()).c_str(), nullptr);
     if (file->GetInputFile())
     {
         RenderFile(file->GetInputFile());
     }
     if (absolute)
     {
-        RenderComment(eAbsolute, ESTRING, ObjString("Link Pass Separator"), NULL);
+        RenderComment(eAbsolute, ESTRING, "Link Pass Separator", nullptr);
     }
 }
 void ObjIeeeBinary::WriteFiles()
@@ -666,7 +724,7 @@ void ObjIeeeBinary::WriteStartAddress()
 {
     if (startAddress)
     {
-        RenderMessage(ecAS, embed('G'), embed('V'), EDWORD, startAddress, embed(0x1b), NULL);
+        RenderMessage(ecAS, embed('G'), EEXPR, startAddress, nullptr);
     }
 }
 void ObjIeeeBinary::WriteSections()
@@ -674,9 +732,20 @@ void ObjIeeeBinary::WriteSections()
     for (ObjFile::SectionIterator it = file->SectionBegin();
              it != file->SectionEnd(); ++it)
     {	
-        RenderMessage(ecSB, EDWORD, (*it)->GetIndex(), NULL);
+        RenderMessage(ecSB, EINDEX, (*it)->GetIndex(), nullptr);
         RenderMemory(&(*it)->GetMemoryManager());
     }
+}
+bool ObjIeeeBinary::BinaryWrite()
+{
+    ioBuffer = std::make_unique<char[]>(BUFFERSIZE);
+    for (auto it = file->SectionBegin(); it != file->SectionEnd(); ++it)
+    {
+        RenderMemoryBinary(&(*it)->GetMemoryManager());
+    }
+    flush();
+    ioBuffer = nullptr;
+    return true;
 }
 void ObjIeeeBinary::WriteBrowseInfo()
 {
@@ -688,12 +757,12 @@ void ObjIeeeBinary::WriteBrowseInfo()
 }
 void ObjIeeeBinary::WriteTrailer()
 {
-    RenderMessage(ecME, NULL);
+    RenderMessage(ecME, nullptr);
 }
 void ObjIeeeBinary::RenderCS()
 {
     // the CS is part of the checksum, but the number and '.' are not.
-    RenderMessage(ecCS, EBYTE, cs + ecCS, NULL);
+    RenderMessage(ecCS, EBYTE, cs + ecCS, nullptr);
 }
 void ObjIeeeIndexManager::ResetIndexes()
 {

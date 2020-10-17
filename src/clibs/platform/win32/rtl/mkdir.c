@@ -43,7 +43,7 @@
 #include <stdlib.h>
 #include <memory.h>
 
-int _RTL_FUNC mkdir(const char* __path)
+int _RTL_FUNC _mkdir(const char* __path)
 {
     if (!CreateDirectory(__path, 0))
     {
@@ -52,4 +52,10 @@ int _RTL_FUNC mkdir(const char* __path)
     }
     return 0;
 }
-int _RTL_FUNC _mkdir(const char* __path) { return mkdir(__path); }
+int _RTL_FUNC mkdir(const char* __path, int __amode) 
+{ 
+    int rv = _mkdir(__path); 
+    if (!rv)
+        return __ll_chmod(__path, __amode);
+    return rv;
+}

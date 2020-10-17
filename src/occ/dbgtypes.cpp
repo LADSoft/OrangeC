@@ -241,7 +241,8 @@ void dbgtypes::StructFields(ObjType::eType sel, ObjType* val, int sz, Optimizer:
     while (hr)
     {
         Optimizer::SimpleSymbol* sym = (Optimizer::SimpleSymbol*)hr->data;
-        if (!istype(sym) && sym->tp->type != Optimizer::st_aggregate)
+        // this bears looking at, not sure why parameters are in this list
+        if (!istype(sym) && sym->tp->type != Optimizer::st_aggregate && sym->storage_class != Optimizer::scc_parameter)
         {
             ObjType* base = Put(sym->tp);
             ObjField* field = factory.MakeField(sym->name, base, sym->offset, index);

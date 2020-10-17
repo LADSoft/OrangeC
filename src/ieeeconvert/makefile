@@ -21,12 +21,15 @@
 #         email: TouchStone222@runbox.com <David Lindauer>
 # 
 
-ifeq "$(COMPILER)" "gcc-linux"
+include ../pathext2.mak
 
-DIRS := sqlite3 util objlib netlib occopt obrc ocpp ogrep oasm dlhex dlle dlmz dlpe dlpm olib olink \
-       oimplib omake onm orc occparse occpr occ occil coff2ieee ieeeconvert
-else
+NAME=ieeeconvert
+MAIN_FILE=IeeeMain.cpp
+INCLUDES=..$(PATHEXT2)util ..$(PATHEXT2)objlib
+CPP_DEPENDENCIES=$(wildcard *.cpp)
+LIB_DEPENDENCIES=util objlib
+H_FILES=$(wildcard *.h)
 
-DIRS := sqlite3 util objlib netlib occopt obrc ocpp ogrep oasm dlhex dlle dlmz dlpe dlpm olib olink \
-       oimplib omake onm orc ocl occparse occpr occ occil coff2ieee ieeeconvert help MSDNHelp
-endif
+include ../redirect.mak
+
+DISTRIBUTE: copyexe

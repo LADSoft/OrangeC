@@ -4,7 +4,7 @@
  * 
  *     This file is part of the Orange C Compiler package.
  * 
- *     The Orange C Compiler package is free software: you can redistribute it and/or Re
+ *     The Orange C Compiler package is free software: you can redistribute it and/or modify
  *     it under the terms of the GNU General Public License as published by
  *     the Free Software Foundation, either version 3 of the License, or
  *     (at your option) any later version.
@@ -31,12 +31,10 @@
 #include <assert.h>
 #include <limits.h>
 
-inline int min(int x,int y)
+template <typename T>
+inline constexpr int min(T x, T y)
 {
-    if (x < y) 
-        return x;
-    else
-        return y;
+    return x < y ? x : y;
 }
 void ObjIeeeBinary::bufferup(const ObjByte *data, int len)
 {
@@ -59,9 +57,6 @@ void ObjIeeeBinary::RenderMessage(const ObjByte *buf)
     GatherCS(buf);
     int l = (buf[1] << 8) + buf[2];
     bufferup(buf, l);
-}
-void vv()
-{
 }
 void ObjIeeeBinary::RenderMessageInternal(ObjByte *buf, va_list arg)
 {
@@ -125,7 +120,6 @@ void ObjIeeeBinary::RenderMessageInternal(ObjByte *buf, va_list arg)
                 break;
             case EEXPR:
             {
-                vv();
                 ObjExpression *exp = va_arg(arg, ObjExpression *);   
                 RenderExpression(buf, exp);
                 ContinueMessage(buf, embed(0x1b), nullptr);
@@ -248,31 +242,39 @@ void ObjIeeeBinary::RenderStructure(ObjType *Type)
     int lastIndex = -1;
     while (fields.size())
     {
-        unsigned n = min(MaxPerLine, (int)fields.size());
+        ObjByte* buf;
+        int bottom;
         int index;
+        ObjField* current = fields.front();
+        for (bottom = 1; bottom < fields.size(); bottom++)
+        {
+            if (fields[bottom]->GetTypeIndex() != current->GetTypeIndex())
+                break;
+        }
         // the problem with this is if they output the file twice
         // the types won't match
-        ObjByte *buf;
-        if (n == fields.size())
+        if (fields.size() - bottom == 0)
         {
             buf = StartMessage(ecAT, embed('T'), EINDEX, index = Type->GetIndex(), EINDEX, Type->GetType(), EDWORD, Type->GetSize(), nullptr);
         }
         else
         {
-            buf = StartMessage(ecAT, embed('T'), EINDEX, index = GetFactory()->GetIndexManager()->NextType(), EINDEX, ObjType::eField, nullptr);
+            buf = StartMessage(ecAT, embed('T'), EINDEX, index = current->GetTypeIndex(), EINDEX, ObjType::eField, nullptr);
         }
-        for (unsigned j=0; j < n; j++)
+        for (unsigned j = 0; j < bottom; j++)
         {
-            ObjField *currentField = fields[n-1-j];
-            ContinueMessage(buf,  EINDEX, GetTypeIndex(currentField->GetBase()),
-                            ESTRING, currentField->GetName().c_str(), 
-                            EDWORD, currentField->GetConstVal(), nullptr);
+            ObjField* currentField = fields[bottom - j - 1];
+            ContinueMessage(buf, EINDEX, GetTypeIndex(currentField->GetBase()),
+                ESTRING, currentField->GetName().c_str(),
+                EDWORD, currentField->GetConstVal(), nullptr);
         }
         if (lastIndex != -1)
-            ContinueMessage(buf, EINDEX, lastIndex, nullptr); 
-        lastIndex = index;
+        {
+            ContinueMessage(buf, EINDEX, lastIndex, nullptr);
+        }
         RenderMessage(buf);
-        for (unsigned j=0; j < n; j++)
+        lastIndex = index;
+        for (unsigned j = 0; j < bottom; j++)
             fields.pop_front();
     }
 }
@@ -295,6 +297,8 @@ void ObjIeeeBinary::RenderType(ObjType *Type)
     switch(Type->GetType())
     {
         case ObjType::ePointer:
+        case ObjType::eLRef:
+        case ObjType::eRRef:
             RenderMessage(ecAT, embed('T'), EINDEX, GetTypeIndex(Type),
                           EINDEX, ObjType::ePointer,
                           EDWORD, Type->GetSize(),

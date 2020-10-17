@@ -470,7 +470,7 @@ void ObjIeeeBinary::RenderMemory(ObjMemoryManager *Memory)
             if (n)
                 RenderMessage(ecLD, EBUF, scratch, n, nullptr);
             n = 0;
-            if (GetDebugInfoFlag())
+            if (GetDebugInfoFlag() && memory->HasDebugTags())
             {
                 ObjMemory::DebugTagIterator it;
                 for (it = memory->DebugTagBegin(); it != memory->DebugTagEnd(); ++it)

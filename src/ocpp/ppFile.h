@@ -36,36 +36,38 @@ class ppCtx;
 class ppFile : public InputFile
 {
 
-  public:
-    ppFile(bool fullname, bool Trigraph, bool extended, const std::string& Name, ppDefine* define, ppCtx& Ctx, bool isunsignedchar,
-           bool c89, bool asmpp, PipeArbitrator& piper) :
-        InputFile(fullname, Name, piper),
-        trigraphs(Trigraph),
-        extendedComment(extended),
-        cond(isunsignedchar, c89, extended, asmpp),
-        ctx(Ctx),
-        anonymousIndex(1)
-    {
-        cond.SetParams(define, &ctx);
-    }
-    virtual ~ppFile() {}
-    virtual bool GetLine(std::string& line);
-    bool Check(kw token, const std::string& line, int lineno) { return cond.Check(token, line, lineno); }
-    bool Skipping() { return cond.Skipping(); }
-    void Mark() { cond.Mark(); }
-    void Drop() { cond.Drop(); }
-    void Release() { cond.Release(); }
-    int AnonymousIndex() { return anonymousIndex++; }
+public:
+	ppFile(bool fullname, bool Trigraph, bool extended, const std::string& Name, ppDefine* define, ppCtx& Ctx, bool isunsignedchar,
+		bool c89, bool asmpp, PipeArbitrator& piper, int directories_travelled = 0) :
+		InputFile(fullname, Name, piper),
+		trigraphs(Trigraph),
+		extendedComment(extended),
+		cond(isunsignedchar, c89, extended, asmpp),
+		ctx(Ctx),
+		anonymousIndex(1),
+		directoriesTraversed(directories_travelled)
+	{
+		cond.SetParams(define, &ctx);
+	}
+	virtual ~ppFile() {}
+	virtual bool GetLine(std::string& line);
+	bool Check(kw token, const std::string& line, int lineno) { return cond.Check(token, line, lineno); }
+	bool Skipping() { return cond.Skipping(); }
+	void Mark() { cond.Mark(); }
+	void Drop() { cond.Drop(); }
+	void Release() { cond.Release(); }
+	int AnonymousIndex() { return anonymousIndex++; }
+	int getDirsTravelled() { return directoriesTraversed; }
+protected:
+	virtual int StripComment(char* line);
+	void StripTrigraphs(char* line);
 
-  protected:
-    virtual int StripComment(char* line);
-    void StripTrigraphs(char* line);
-
-  private:
-    bool trigraphs;
-    bool extendedComment;
-    ppCond cond;
-    ppCtx& ctx;
-    int anonymousIndex;
+private:
+	bool trigraphs;
+	bool extendedComment;
+	ppCond cond;
+	ppCtx& ctx;
+	int anonymousIndex;
+	int directoriesTraversed = 0;
 };
 #endif

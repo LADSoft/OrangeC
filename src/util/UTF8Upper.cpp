@@ -170,6 +170,8 @@ int UTF8::ToUpper(int val)
             bottom = mid;
         }
     }
+    if (bottom < 0)
+        bottom = 0;
     if (upper[bottom][0] != val)
         return val;
     return upper[bottom][1];

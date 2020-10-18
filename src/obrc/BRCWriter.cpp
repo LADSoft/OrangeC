@@ -649,7 +649,6 @@ bool BRCWriter::write()
     if (ok)
     {
         ok = false;
-        //        if (Begin())
         if (WriteFileList())
             if (WriteDictionary(syms))
                 if (WriteMapping(syms))
@@ -657,8 +656,6 @@ bool BRCWriter::write()
                         if (WriteUsageData(syms))
                             if (WriteJumpTable(syms))
                                 ok = true;
-        //        if (!End())
-        ok = false;
     }
     else
     {

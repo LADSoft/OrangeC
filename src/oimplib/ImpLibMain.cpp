@@ -48,6 +48,10 @@ int main(int argc, char** argv)
     {
         std::cout << e.what() << std::endl;
     }
+    catch (ObjIeeeBinary::SyntaxError e)
+    {
+       std::cout << e.what() << std::endl;
+    }
     return 1;
 }
 

@@ -50,7 +50,9 @@ Maker::Maker(bool Silent, bool DisplayOnly, bool IgnoreResults, bool Touch, Outp
     keepResponseFiles(KeepResponseFiles),
     newFiles(NewFiles),
     oldFiles(OldFiles),
-    outputType(Type)
+    outputType(Type),
+    lowResolutionTime(false),
+    dependsNesting(0)
 {
     Variable* v = VariableContainer::Instance()->Lookup("SHELL");
     std::string shtest = v->GetValue();
@@ -69,9 +71,9 @@ void Maker::SetFirstGoal(const std::string& name)
                         if (name != ".LOW_RESOLUTION_TIME" && name != ".NOTPARALLEL")
                             if (name != ".ONESHELL" && name != ".POSIX")
                                 if (name != ".RECURSIVE" && name != ".MAIN")
-                                    if (name == ".BEGIN" || name == ".END" || name != ".INCLUDES" || name != ".INTERRUPT" ||
-                                        name != ".LIBS" || name != ".MAKEFILEDEPS" || name != ".MAKEFLAGS" || name != ".MFLAGS" ||
-                                        name != ".NOTPARALLEL" || name != ".ORDER" || name != ".SHELL" || name != ".WARN")
+                                    if (name != ".BEGIN" && name != ".END" && name != ".INCLUDES" && name != ".INTERRUPT" &&
+                                        name != ".LIBS" && name != ".MAKEFILEDEPS" && name != ".MAKEFLAGS" && name != ".MFLAGS" &&
+                                        name != ".NOTPARALLEL" && name != ".ORDER" && name != ".SHELL" && name != ".WARN")
                                         firstGoal = name;
     }
 }
@@ -513,7 +515,7 @@ bool Maker::SearchImplicitRules(const std::string& goal, const std::string& pref
     {
         if (rule->GetTarget() != "%" || !rule->GetDoubleColon())
         {
-            unsigned n;
+            size_t n;
             if (rule->GetTarget() != "%" || (n = name.find_last_of(".")) == std::string::npos || n == name.size() - 1 ||
                 name[n + 1] == '/' || name[n + 1] == '\\')
             {
@@ -549,6 +551,7 @@ void Maker::EnterSuffixTerminals()
                     ruleList = new RuleList(target);
                     Rule* rule = new Rule(target, "", "", nullptr, "<implicitbuild>", 1);
                     ruleList->Add(rule);
+                    *RuleContainer::Instance() += ruleList;
                 }
             }
         }

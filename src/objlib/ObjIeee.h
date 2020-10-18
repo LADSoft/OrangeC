@@ -88,14 +88,6 @@ class ObjIeeeBinary : public ObjIOBase
         file = File;
         return BinaryWrite();
     }
-
-  protected:
-    class BadCS : public std::domain_error
-    {
-      public:
-        BadCS() : std::domain_error("Bad Checksum") {}
-        virtual ~BadCS() noexcept {};
-    };
     class SyntaxError : public std::domain_error
     {
       public:
@@ -110,6 +102,14 @@ class ObjIeeeBinary : public ObjIOBase
 
       private:
         int lineNo;
+    };
+
+  protected:
+    class BadCS : public std::domain_error
+    {
+      public:
+        BadCS() : std::domain_error("Bad Checksum") {}
+        virtual ~BadCS() noexcept {};
     };
     void RenderMessageInternal(ObjByte* buf, va_list arg);
     ObjByte* StartMessage(int msg, ...);

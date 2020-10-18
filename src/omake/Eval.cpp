@@ -268,12 +268,12 @@ std::string Eval::ParseMacroLine(const std::string& in)
             if (n == 1 || n == 2)
             {
                 rv += ExpandMacro(in.substr(m + 1, n));
-                n = m += 1 + n;
+                n = m + 1 + n;
             }
             else if (n != std::string::npos)
             {
                 rv += ExpandMacro(in.substr(m + 2, n - 2));
-                n = m += n + 1;
+                n = m + n + 1;
             }
             m = in.find_first_of('$', n);
         }
@@ -582,7 +582,7 @@ std::string Eval::ExpandMacro(const std::string& name)
     if (!extra.empty())
     {
         int m = extra.find_first_not_of(' ');
-        if (extra[m] != ':')
+        if (m < 0 || extra[m] != ':')
         {
             error("Invalid macro qualifier");
         }

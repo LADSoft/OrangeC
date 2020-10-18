@@ -49,8 +49,8 @@ void LibFiles::Add(ObjFile& obj)
 }
 void LibFiles::Add(const ObjString& Name)
 {
-    unsigned npos = Name.find_last_of(CmdFiles::DIR_SEP);
-    unsigned npos1 = Name.find_last_of('/');
+    size_t npos = Name.find_last_of(CmdFiles::DIR_SEP);
+    size_t npos1 = Name.find_last_of('/');
     if (npos != std::string::npos && npos1 != std::string::npos && npos1 > npos)
         npos = npos1;
     std::string internalName = Name;
@@ -66,7 +66,7 @@ void LibFiles::Add(const ObjString& Name)
 }
 void LibFiles::Remove(const ObjString& Name)
 {
-    unsigned npos = Name.find_last_of(CmdFiles::DIR_SEP);
+    size_t npos = Name.find_last_of(CmdFiles::DIR_SEP);
     std::string internalName = Name;
     if (npos != std::string::npos)
         internalName = Name.substr(npos + 1);
@@ -82,7 +82,7 @@ void LibFiles::Remove(const ObjString& Name)
 }
 void LibFiles::Extract(FILE* stream, const ObjString& Name)
 {
-    unsigned npos = Name.find_last_of(CmdFiles::DIR_SEP);
+    size_t npos = Name.find_last_of(CmdFiles::DIR_SEP);
     std::string internalName = Name;
     if (npos != std::string::npos)
         internalName = Name.substr(npos + 1);
@@ -128,7 +128,7 @@ void LibFiles::Extract(FILE* stream, const ObjString& Name)
 void LibFiles::Replace(ObjFile& obj)
 {
     std::string Name = obj.GetName();
-    unsigned npos = Name.find_last_of(CmdFiles::DIR_SEP);
+    size_t npos = Name.find_last_of(CmdFiles::DIR_SEP);
     std::string internalName = Name;
     if (npos != std::string::npos)
         internalName = Name.substr(npos + 1);
@@ -150,7 +150,7 @@ void LibFiles::Replace(ObjFile& obj)
 }
 void LibFiles::Replace(const ObjString& Name)
 {
-    unsigned npos = Name.find_last_of(CmdFiles::DIR_SEP);
+    size_t npos = Name.find_last_of(CmdFiles::DIR_SEP);
     std::string internalName = Name;
     if (npos != std::string::npos)
         internalName = Name.substr(npos + 1);

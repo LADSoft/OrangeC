@@ -40,7 +40,8 @@ SharedMemory::SharedMemory(unsigned max, std::string name, unsigned window) :
     current_(0),
     regionStart(0),
     regionHandle(nullptr),
-    fileHandle_(nullptr)
+    fileHandle_(nullptr),
+    regionBase_(0)
 {
     if (!name.empty())
         name_ = name;
@@ -93,8 +94,8 @@ unsigned char* SharedMemory::GetMapping(unsigned pos)
     regionStart = (unsigned char*)MapViewOfFile(regionHandle, FILE_MAP_ALL_ACCESS, 0, regionBase_, ViewWindowSize()*2);
     if (regionStart)
         return regionStart - regionBase_;
-    return 0;
 #endif
+    return 0;
 }
 void SharedMemory::CloseMapping()
 {

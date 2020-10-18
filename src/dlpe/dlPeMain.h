@@ -34,6 +34,7 @@
 #include <vector>
 #include <memory>
 #include <ctime>
+#include <cstring>
 
 class ObjFile;
 class ObjFactory;
@@ -43,7 +44,7 @@ class PEExportObject;
 class dlPeMain
 {
   public:
-    dlPeMain() : mode(CONSOLE), exportObject(nullptr) {}
+    dlPeMain() : mode(CONSOLE), exportObject(nullptr), startAddress(0) { memset(&header, 0, sizeof(header)); }
     ~dlPeMain() {}
 
     int Run(int argc, char** argv);

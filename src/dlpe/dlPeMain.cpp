@@ -99,7 +99,14 @@ const char* dlPeMain::usageText =
 int main(int argc, char** argv)
 {
     dlPeMain downloader;
-    return downloader.Run(argc, argv);
+    try
+    {
+        return downloader.Run(argc, argv);
+    }
+    catch (ObjIeeeBinary::SyntaxError e)
+    {
+       std::cout << e.what() << std::endl;
+    }
 }
 void dlPeMain::ParseOutResourceFiles(int* argc, char** argv)
 {

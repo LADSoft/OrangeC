@@ -49,7 +49,14 @@ const char* dlPmMain::usageText =
 int main(int argc, char** argv)
 {
     dlPmMain downloader;
-    return downloader.Run(argc, argv);
+    try
+    {
+        return downloader.Run(argc, argv);
+    }
+    catch (ObjIeeeBinary::SyntaxError e)
+    {
+       std::cout << e.what() << std::endl;
+    }
 }
 dlPmMain::~dlPmMain() {}
 void dlPmMain::GetSectionNames(std::vector<std::string>& names, ObjFile* file)

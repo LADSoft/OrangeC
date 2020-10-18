@@ -56,6 +56,10 @@ int main(int argc, char** argv)
     catch (std::ios_base::failure)
     {
     }
+    catch (ObjIeeeBinary::SyntaxError e)
+    {
+       std::cout << e.what() << std::endl;
+    }
     Utils::fatal("Fatal Error...");
     return 1;
 }

@@ -383,7 +383,7 @@ void RegExpContext::Parse(const char* exp, bool regular, bool CaseSensitive, boo
     }
     if (regular)
     {
-        RegExpMatch* lastMatch = nullptr;
+        RegExpMatch* lastMatch;
         while (!invalid && *exp)
         {
             std::unique_ptr<RegExpMatch> currentMatch;
@@ -537,9 +537,9 @@ void RegExpContext::Parse(const char* exp, bool regular, bool CaseSensitive, boo
                         invalid = true;
                     break;
             }
+            lastMatch = currentMatch.get();
             if (currentMatch)
                 matches.push_back(std::move(currentMatch));
-            lastMatch = currentMatch.get();
         }
     }
     else

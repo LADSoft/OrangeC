@@ -41,7 +41,10 @@ class Depends
         ordered(false),
         isSecondary(false),
         rule(nullptr),
-        ruleList(nullptr)
+        ruleList(nullptr),
+        silent(false),
+        displayOnly(false),
+        ignoreResults(false)
     {
     }
     ~Depends();

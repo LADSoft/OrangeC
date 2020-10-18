@@ -184,6 +184,7 @@ void GrepMain::DisplayMatch(const std::string& fileName, int& matchCount, int li
         }
     }
     matchCount++;
+    std::cout.clear();
 }
 void GrepMain::FindLine(const std::string fileName, int& matchCount, int& matchLine, char** matchPos, char* startpos, char* curpos,
                         bool matched)

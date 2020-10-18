@@ -40,7 +40,8 @@ SymData::SymData(std::string& Name) :
     globalCount(0),
     argCount(0),
     localCount(0),
-    fileOffs(0)
+    fileOffs(0),
+    index(0)
 {
 }
 
@@ -117,7 +118,7 @@ ObjInt BRCLoader::InsertVariable(ObjBrowseInfo& p, bool func)
     {
         InsertBlockData(name, ldata);
     }
-    return ldata->line;
+    return p.GetLine()->GetLineNumber();
 }
 
 //-------------------------------------------------------------------------

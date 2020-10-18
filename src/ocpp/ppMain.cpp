@@ -39,6 +39,7 @@ CmdSwitchBool ppMain::trigraphs(SwitchParser, 'T', false);
 CmdSwitchDefine ppMain::defines(SwitchParser, 'D');
 CmdSwitchDefine ppMain::undefines(SwitchParser, 'U');
 CmdSwitchString ppMain::includePath(SwitchParser, 'I', ';');
+CmdSwitchString ppMain::sysIncludePath(SwitchParser, 'z', ';');
 CmdSwitchString ppMain::errorMax(SwitchParser, 'E');
 CmdSwitchFile ppMain::File(SwitchParser, '@');
 CmdSwitchString ppMain::outputPath(SwitchParser, 'o');
@@ -51,7 +52,7 @@ const char* ppMain::usageText =
     "/E[+]nn        - Max number of errors      /Ipath  - Specify include path\n"
     "/T             - translate trigraphs       /Uxxx   - Undefine something\n"
     "/V, --version  - Show version and date     /!,--nologo - No logo\n"
-    "/o             - set output file\n"
+    "/oxxx          - set output file           /zxxx   - set system path\n"
     "Time: " __TIME__ "  Date: " __DATE__;
 
 int main(int argc, char* argv[])
@@ -133,16 +134,11 @@ int ppMain::Run(int argc, char* argv[])
     std::string srchPth;
     if (!includePath.GetValue().empty())
     {
-        size_t n = includePath.GetValue().find_first_of(';');
-        if (n == std::string::npos)
-        {
-            sysSrchPth = includePath.GetValue();
-        }
-        else
-        {
-            sysSrchPth = includePath.GetValue().substr(0, n);
-            srchPth = includePath.GetValue().substr(n + 1);
-        }
+        srchPth = includePath.GetValue();
+    }
+    if (!sysIncludePath.GetValue().empty())
+    {
+        sysSrchPth = sysIncludePath.GetValue();
     }
     Tokenizer::SetAnsi(disableExtensions.GetValue());
     Tokenizer::SetC99(c99Mode.GetValue());

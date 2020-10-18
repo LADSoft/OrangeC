@@ -41,6 +41,7 @@ class ppMain
     static CmdSwitchDefine defines;
     static CmdSwitchDefine undefines;
     static CmdSwitchString includePath;
+    static CmdSwitchString sysIncludePath;
     static CmdSwitchString errorMax;
     static CmdSwitchFile File;
     static CmdSwitchString outputPath;

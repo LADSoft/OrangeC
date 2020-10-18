@@ -56,7 +56,7 @@ class Tiny : public OutFile
 class Real : public OutFile
 {
   public:
-    Real() : OutFile() {}
+    Real() : OutFile() { memset(&header, 0, sizeof(header)); }
     virtual bool ReadSections(ObjFile* file, ObjExpression* start);
     virtual bool Write(std::fstream& stream);
 

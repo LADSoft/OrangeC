@@ -42,7 +42,7 @@ class LEObject
         HeaderSize = 6 * 4
     };
 
-    LEObject(ObjSection* Sect) : sect(Sect) { InitFlags(); }
+    LEObject(ObjSection* Sect) : sect(Sect), pageOffs(0) { InitFlags(); }
     virtual ~LEObject() {}
     void Setup(unsigned& offs);
     void InitFlags();

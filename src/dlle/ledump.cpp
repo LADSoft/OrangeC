@@ -185,7 +185,7 @@ void dump_le(std::fstream& file, int hdrOfs, LEHeader& leh)
         }
     }
 
-    delete pt;
+    delete [] pt;
 }
 void dump_lx(std::fstream& file, int hdrOfs, LEHeader& leh)
 {
@@ -256,7 +256,7 @@ void dump_lx(std::fstream& file, int hdrOfs, LEHeader& leh)
         }
     }
 
-    delete pt;
+    delete [] spt;
 }
 int main(int argc, char** argv)
 {

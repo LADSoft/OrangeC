@@ -38,6 +38,7 @@ class CoffFile
   public:
     CoffFile(std::string Name) : name(Name), inputFile(nullptr), sections(nullptr), symbols(nullptr), strings(nullptr), libOffset(0)
     {
+        memset(&header, 0, sizeof(header));
     }
     CoffFile(std::fstream* in, ObjInt offset) :
         name(""),
@@ -47,6 +48,7 @@ class CoffFile
         strings(nullptr),
         libOffset(offset)
     {
+        memset(&header, 0, sizeof(header));
     }
     virtual ~CoffFile();
 

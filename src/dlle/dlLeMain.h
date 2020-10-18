@@ -42,7 +42,13 @@ class ResidentNameTable;
 class dlLeMain
 {
   public:
-    dlLeMain() : mode(eLe), rnt(nullptr) {}
+    dlLeMain() : 
+        mode(eLe), 
+        rnt(nullptr),
+        factory(nullptr),
+        file(nullptr),
+        startAddress(0) 
+    { memset(&header, 0, sizeof(header)); }
     ~dlLeMain() {}
 
     int Run(int argc, char** argv);

@@ -80,7 +80,11 @@ class Spawner
         tempNum(1),
         done(false),
         lineLength(1024 * 1024),
-        outputType(o_none)
+        outputType(o_none),
+        commands(nullptr),
+        ruleList(nullptr),
+        rule(nullptr),
+        retVal(1)
     {
     }
     ~Spawner() {}

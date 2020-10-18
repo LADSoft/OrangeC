@@ -37,7 +37,14 @@
 int main(int argc, char** argv)
 {
     BRCMain librarian;
-    return librarian.Run(argc, argv);
+    try
+    {
+        return librarian.Run(argc, argv);
+    }
+    catch (ObjIeeeBinary::SyntaxError e)
+    {
+       std::cout << e.what() << std::endl;
+    }
 }
 
 CmdSwitchParser BRCMain::SwitchParser;

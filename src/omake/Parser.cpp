@@ -907,9 +907,9 @@ bool Parser::ConditionalArgument(std::string& line)
     bool rv = true;
     size_t s = line.find_first_not_of(' ');
     size_t e = line.find_last_not_of(' ');
-    if (line[s] == '\'' || line[s] == '"')
+    if (s >= 0 && (line[s] == '\'' || line[s] == '"'))
     {
-        if (e == s || line[e] != line[s])
+        if (e < 0 || e == s || line[e] != line[s])
 
         {
             Eval::error("Invalid string constant in conditional");
@@ -940,7 +940,7 @@ bool Parser::ParseCond(const std::string& line, bool eq)
         if (line[n] == '(')
         {
             int m = line.find_last_not_of(' ');
-            if (line[m] == ')')
+            if (m >= 0 && line[m] == ')')
             {
                 if (!Eval::TwoArgs(line.substr(n + 1, m - 1 - n), left, right))
                 {
@@ -965,7 +965,7 @@ bool Parser::ParseCond(const std::string& line, bool eq)
             {
                 left = line.substr(n + 1, m - 1);
                 n = line.find_first_not_of(' ', m + 1);
-                if (line[n] == '"' || line[n] == '\'')
+                if (n >= 0 && (line[n] == '"' || line[n] == '\''))
                 {
                     m = line.find_first_of(line[n], n + 1);
                     if (m == std::string::npos)

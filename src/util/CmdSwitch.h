@@ -255,7 +255,7 @@ class CmdSwitchParser
     CmdSwitchBase* Find(const char* sw, bool useLongName, bool toErr);
 
   protected:
-    void ScanEnv(char* output, const char* string);
+    void ScanEnv(char* output, size_t len, const char* string);
 
   private:
     std::set<CmdSwitchBase*> switches;

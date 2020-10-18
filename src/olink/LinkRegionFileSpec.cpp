@@ -64,7 +64,7 @@ bool LinkRegionFileSpecContainer::Matches(const ObjString& Spec)
                     {
                         if ((*it)->GetType() != LinkRegionFileSpec::eSpan)
                             return false;
-                        unsigned pos = working.find((*it)->GetSpan());
+                        size_t pos = working.find((*it)->GetSpan());
                         if (pos == ObjString::npos)
                             return false;
                         working = working.substr(pos + (*it)->GetSpan().size());

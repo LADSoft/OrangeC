@@ -146,7 +146,7 @@ class PEImportObject : public PEObject
 class PEExportObject : public PEObject
 {
   public:
-    PEExportObject(const std::string& name, bool Flat) : PEObject(".edata"), moduleName(name), flat(Flat)
+    PEExportObject(const std::string& name, bool Flat) : PEObject(".edata"), moduleName(name), flat(Flat), appliedFlat(false)
     {
         SetFlags(WINF_INITDATA | WINF_READABLE | WINF_NEG_FLAGS);
     }

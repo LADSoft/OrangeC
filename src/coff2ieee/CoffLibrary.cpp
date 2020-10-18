@@ -22,6 +22,7 @@
  *
  */
 
+#include "Utils.h"
 #include "CoffLibrary.h"
 #include "CoffFile.h"
 #include "ObjIeee.h"
@@ -215,7 +216,8 @@ bool CoffLibrary::ConvertImportMods()
                     break;
                 case 2:  // strip leading char
                     if (buf[0] == '@' || buf[0] == '?' || buf[0] == '_')
-                        strcpy(buf, buf + 1);
+                        memmove(buf, buf+1, strlen(buf+1) + 1);
+                        Utils::StrCpy(buf, buf + 1);
                     break;
                 case 3:  // undecorate
                 {
@@ -223,7 +225,7 @@ bool CoffLibrary::ConvertImportMods()
                     if (p)
                         *p = 0;
                     if (buf[0] == '@' || buf[0] == '?' || buf[0] == '_')
-                        strcpy(buf, buf + 1);
+                        memmove(buf, buf+1, strlen(buf+1) + 1);
                 }
                 break;
             }

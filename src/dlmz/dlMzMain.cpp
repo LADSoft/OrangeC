@@ -55,7 +55,14 @@ const char* dlMzMain::usageText =
 int main(int argc, char** argv)
 {
     dlMzMain downloader;
-    return downloader.Run(argc, argv);
+    try
+    {
+        return downloader.Run(argc, argv);
+    }
+    catch (ObjIeeeBinary::SyntaxError e)
+    {
+       std::cout << e.what() << std::endl;
+    }
 }
 
 bool dlMzMain::GetMode()

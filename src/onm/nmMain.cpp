@@ -29,6 +29,7 @@
 #include "SymbolTable.h"
 #include "Sorter.h"
 #include "PrintFormatter.h"
+#include "ObjIeee.h"
 #include <cstring>
 
 CmdSwitchParser nmMain::SwitchParser;
@@ -83,6 +84,11 @@ int main(int argc, char** argv)
     {
        std::cout << e.what() << std::endl;
     }
+    catch (ObjIeeeBinary::SyntaxError e)
+    {
+       std::cout << e.what() << std::endl;
+    }
+
     return 1;
 }
 int nmMain::Run(int argc, char** argv)

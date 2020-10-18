@@ -251,7 +251,7 @@ char* CmdSwitchFile::GetStr(char* data)
                 int len2 = strlen(env);
                 if (len > len2)
                 {
-                    strcpy(p + len2, p + len);
+                    Utils::StrCpy(p + len2, sizeof(buf) - (p + len2 - buf), p + len);
                 }
                 else if (len < len2)
                 {
@@ -261,14 +261,14 @@ char* CmdSwitchFile::GetStr(char* data)
             }
             else
             {
-                strcpy(p, q + 1);
+                Utils::StrCpy(p, sizeof(buf)-(p-buf), q + 1);
             }
         }
         else
             break;
     }
     char* x = new char[strlen(buf) + 1];
-    strcpy(x, buf);
+    Utils::StrCpy(x, strlen(buf) + 1, buf);
     argv[argc++] = x;
     return data;
 }
@@ -405,7 +405,7 @@ bool CmdSwitchParser::Parse(int* argc, char* argv[])
     }
     return true;
 }
-void CmdSwitchParser::ScanEnv(char* output, const char* string)
+void CmdSwitchParser::ScanEnv(char* output, size_t len, const char* string)
 {
     char name[256], *p;
     while (*string)
@@ -422,7 +422,7 @@ void CmdSwitchParser::ScanEnv(char* output, const char* string)
             p = getenv(name);
             if (p)
             {
-                strcpy(output, p);
+                Utils::StrCpy(output, len, p);
                 output += strlen(output);
             }
         }
@@ -438,7 +438,7 @@ bool CmdSwitchParser::Parse(const std::string& val, int* argc, char* argv[])
     int rv, i;
     if (val.size() == 0)
         return true;
-    ScanEnv(output, val.c_str());
+    ScanEnv(output, sizeof(output), val.c_str());
     while (1)
     {
         int quoted = ' ';
@@ -448,10 +448,13 @@ bool CmdSwitchParser::Parse(const std::string& val, int* argc, char* argv[])
             break;
         if (*string == '\"')
             quoted = *string++;
-        argv[(*argc)++] = string;
+        char *temp = string;
         while (*string && *string != quoted)
             string++;
-        if (!*string)
+        bool done = *string == 0;
+        *string = 0;
+        argv[(*argc)++] = strdup(temp);
+        if (done)
             break;
         *string = 0;
         string++;

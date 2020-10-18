@@ -51,6 +51,7 @@
 #include <cstdio>
 #include <ctime>
 #include <string>
+#include "Utils.h"
 #include "Variable.h"
 #include "MakeMain.h"
 #include "Eval.h"
@@ -234,7 +235,8 @@ void OS::JobInit()
     if (MakeMain::printDir.GetValue() && jobName == "\t")
     {
         char tempfile[260];
-        tempnam(tempfile, "hi");
+        tempfile[0] = 0;
+        char *temp = tempnam(tempfile, "hi");
         if (tempfile[1] == ':')
         {
             char* p = strrchr(tempfile, '\\');
@@ -249,7 +251,7 @@ void OS::JobInit()
             if (p && p[0])
             {
                 char q(0);
-                strcpy(tempfile, p);
+                Utils::StrCpy(tempfile, p);
                 p = tempfile;
                 while (*p)
                 {
@@ -268,16 +270,16 @@ void OS::JobInit()
         }
         if (tempfile[0] == 0)
 #ifdef HAVE_UNISTD_H
-            strcpy(tempfile, "./");
+            Utils::StrCpy(tempfile, "./");
 #else
-            strcpy(tempfile, ".\\");
+            Utils::StrCpy(tempfile, ".\\");
 #endif
-        strcat(tempfile, (name + ".flg").c_str());
+        Utils::StrCpy(tempfile, (name + ".flg").c_str());
 
         int fil = -1;
         if (first)
         {
-            fil = open(tempfile, _SH_DENYNO | O_CREAT);
+            fil = open(tempfile, _SH_DENYNO | O_CREAT, 0x1f);
         }
         else
         {
@@ -292,7 +294,8 @@ void OS::JobInit()
             lockf(fil, F_LOCK, 4);
 #endif
             if (!first)
-                read(fil, (char*)&count, 4);
+                if (read(fil, (char*)&count, 4) != 4)
+                    count = 0;
             count++;
             lseek(fil, 0, SEEK_SET);
             write(fil, (char*)&count, 4);
@@ -306,6 +309,7 @@ void OS::JobInit()
             sprintf(buf, "%d> ", count);
             jobName = buf;
         }
+        free(temp);
     }
 }
 void OS::JobRundown()

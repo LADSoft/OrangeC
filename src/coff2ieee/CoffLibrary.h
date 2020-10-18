@@ -43,7 +43,13 @@
 
 struct Module
 {
-    Module() : factory(&indexManager) {}
+    Module() : 
+        factory(&indexManager),
+        fileOffset(0),
+        import(false),
+        ignore(false),
+        file(nullptr)
+    {}
     std::set<std::string> aliases;
     ObjInt fileOffset;
     CoffLinkerMemberHeader header;
@@ -58,7 +64,8 @@ struct Module
 class CoffLibrary
 {
   public:
-    CoffLibrary(std::string Name) : name(Name), inputFile(nullptr), importFile(nullptr), importFactory(&importIndexManager) {}
+    CoffLibrary(std::string Name) : name(Name), inputFile(nullptr), importFile(nullptr), importFactory(&importIndexManager) 
+        { memset(&header, 0, sizeof(header)); }
     virtual ~CoffLibrary();
 
     bool Load();

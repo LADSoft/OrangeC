@@ -36,7 +36,7 @@ class OutFile;
 class dlMzMain
 {
   public:
-    dlMzMain() {}
+    dlMzMain() : mode(UNKNOWN), file(nullptr) {}
     ~dlMzMain() {}
 
     int Run(int argc, char** argv);

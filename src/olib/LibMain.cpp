@@ -44,6 +44,10 @@ int main(int argc, char** argv)
     {
         Utils::fatal("Fatal Error...");
     }
+    catch (ObjIeeeBinary::SyntaxError e)
+    {
+       std::cout << e.what() << std::endl;
+    }
     return 1;
 }
 

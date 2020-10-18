@@ -169,7 +169,8 @@ class RegExpContext
         caseSensitive(true),
         m_so(0),
         m_eo(0),
-        invalid(false)
+        invalid(false),
+        beginning(nullptr)
     {
         matchStackTop = 0;
         Parse(exp, regular, caseSensitive, matchesWord);

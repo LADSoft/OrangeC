@@ -32,7 +32,7 @@
 class MakeMain
 {
   public:
-    MakeMain() : restarts(0), outputType(o_none) {}
+    MakeMain() : restarts(0), outputType(o_none), argcx(0) {}
     int Run(int argc, char** argv);
 
     template <class... Args>

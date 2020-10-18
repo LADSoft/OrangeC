@@ -108,21 +108,21 @@ bool Include::Parse(const std::string& name, bool ignoreOk, bool MakeFiles)
             in.seekg(0);
             if (!in.fail())
             {
-                char* text = new char[len + 1];
-                in.read(text, len);
-                text[len] = 0;
+                std::unique_ptr<char> text(new char[len + 1]);
+                in.read(text.get(), len);
+                text.get()[len] = 0;
                 in.close();
-                char *p = text, *q = p;
+                char *p = text.get(), *q = p;
                 while (*p)
                     if (*p != '\r')
                         *q++ = *p++;
                     else
                         p++;
                 *q = 0;
-                len = strlen(text);
+                len = strlen(text.get());
                 if (!in.fail())
                 {
-                    Parser p(std::string(text), name, 1);
+                    Parser p(std::string(text.get()), name, 1);
                     if (MakeFiles)
                         p.SetIgnoreFirstGoal();
                     rv = p.Parse();

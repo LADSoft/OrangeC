@@ -26,7 +26,7 @@ class Semaphore
     bool null = true;
 
   public:
-    Semaphore() : null(true) {}
+    Semaphore() : null(true), handle(nullptr), named(false) {}
     Semaphore(int value) : named(false)
     {
         semaphore_type sem;

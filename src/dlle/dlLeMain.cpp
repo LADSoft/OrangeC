@@ -64,7 +64,14 @@ const char* dlLeMain::usageText =
 int main(int argc, char** argv)
 {
     dlLeMain downloader;
-    return downloader.Run(argc, argv);
+    try
+    {
+        return downloader.Run(argc, argv);
+    }
+    catch (ObjIeeeBinary::SyntaxError e)
+    {
+       std::cout << e.what() << std::endl;
+    }
 }
 bool dlLeMain::GetMode()
 {
@@ -120,7 +127,7 @@ bool dlLeMain::ReadSections(const std::string& path, const std::string& exeName)
         for (auto it = file->SectionBegin(); it != file->SectionEnd(); ++it)
         {
             LEObject* p = new LEObject(*it);
-            objects.push_back(p);
+            objects.push_back(p);	
             (*it)->ResolveSymbols(factory);
         }
         fixups = new LEFixup(*file, objects, mode == eLx);
@@ -206,7 +213,7 @@ void dlLeMain::InitHeader()
     if (mode == eLe)
     {
         header.resident_name_table_offset = header.object_page_table_offset + objectPages->GetSize();
-        header.resident_name_table_entries = header.resident_name_table_offset + rnt->GetEntrySize();
+        header.resident_name_table_entries = header.resident_name_table_offset + (rnt ? rnt->GetEntrySize() : 0);
         header.loader_section_size += rnt->GetSize();
     }
     header.fixup_page_table_offset = header.object_page_table_offset + header.loader_section_size;

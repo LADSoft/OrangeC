@@ -43,7 +43,14 @@ class dlPmMain
     };
 
   public:
-    dlPmMain() {}
+    dlPmMain() : stubSize(0),
+        memSize(0),
+        initSize(0),
+        uninitBase(0),
+        uninitSize(0),
+        startAddress(0),
+        file(nullptr)
+    {}
     ~dlPmMain();
 
     int Run(int argc, char** argv);

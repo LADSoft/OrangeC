@@ -285,7 +285,7 @@ void MakeMain::LoadEnvironment()
         origin = Variable::o_environ_override;
     else
         origin = Variable::o_environ;
-    for (int i = 0; env[i]; i++)
+    for (int i = 0; env && env[i]; i++)
     {
         std::string name = env[i];
         size_t n = name.find_first_of('=', 1);
@@ -349,6 +349,7 @@ void MakeMain::ShowRule(RuleList* ruleList)
             std::cout << " := ";
         std::cout << it->second->GetValue() << std::endl;
     }
+    std::cout.clear();
 }
 void MakeMain::ShowDatabase()
 {
@@ -372,6 +373,7 @@ void MakeMain::ShowDatabase()
     {
         ShowRule((*it).get());
     }
+    std::cout.clear();
 }
 void MakeMain::SetTreePath(std::string& files)
 {

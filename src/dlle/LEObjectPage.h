@@ -33,7 +33,7 @@ class LEObject;
 class ObjectPage
 {
   public:
-    ObjectPage(std::deque<LEObject*> Objects) : objects(Objects), data(nullptr) {}
+    ObjectPage(std::deque<LEObject*> Objects) : objects(Objects), data(nullptr), pages(0), size(0) {}
     virtual ~ObjectPage() {}
     virtual void Setup() = 0;
     void Write(std::fstream& stream);

@@ -61,7 +61,14 @@ const char* dlHexMain::usageText =
 int main(int argc, char** argv)
 {
     dlHexMain downloader;
-    return downloader.Run(argc, argv);
+    try
+    {
+        return downloader.Run(argc, argv);
+    }
+    catch (ObjIeeeBinary::SyntaxError e)
+    {
+       std::cout << e.what() << std::endl;
+    }
 }
 void dlHexMain::GetSectionNames(std::vector<std::string>& names, ObjFile* file)
 {

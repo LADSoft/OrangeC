@@ -374,6 +374,8 @@ ObjFile* CoffFile::ConvertToObject(std::string outputName, ObjFactory& factory)
                         inputFile->read((char*)data, sections[i].SizeOfRawData - offset);
                         if (inputFile->fail())
                         {
+                            delete[] data;
+                            delete fil;
                             return nullptr;
                         }
                         ObjMemory* newMem = new ObjMemory(data, sections[i].SizeOfRawData - offset);

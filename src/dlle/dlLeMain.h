@@ -32,6 +32,7 @@
 #include "CmdSwitch.h"
 #include "LEHeader.h"
 #include <memory>
+#include <cstring>
 class ObjFile;
 class ObjFactory;
 class LEObject;
@@ -42,7 +43,13 @@ class ResidentNameTable;
 class dlLeMain
 {
   public:
-    dlLeMain() : mode(eLe), rnt(nullptr) {}
+    dlLeMain() : 
+        mode(eLe), 
+        rnt(nullptr),
+        factory(nullptr),
+        file(nullptr),
+        startAddress(0) 
+    { memset(&header, 0, sizeof(header)); }
     ~dlLeMain() {}
 
     int Run(int argc, char** argv);

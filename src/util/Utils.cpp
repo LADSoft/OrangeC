@@ -51,7 +51,7 @@ void (*Utils::cleanup)();
 char* Utils::ShortName(const char* v)
 {
     static char prog_name[260], *short_name, *extension;
-    strcpy(prog_name, v);
+    StrCpy(prog_name, v);
     short_name = strrchr(prog_name, '\\');
     if (short_name == nullptr)
         short_name = strrchr(prog_name, '/');
@@ -105,9 +105,9 @@ char* Utils::GetModuleName()
     GetModuleFileNameA(nullptr, buf, sizeof(buf));
 #else
 #    ifdef HAVE_UNISTD_H
-    strcpy(buf, "unknown");
+    StrCpy(buf, "unknown");
 #    else
-    strcpy(buf, __argv[0]);
+    StrCpy(buf, __argv[0]);
 #    endif
 #endif
     return buf;
@@ -117,7 +117,7 @@ void Utils::SetEnvironmentToPathParent(const char* name)
     if (!getenv(name))
     {
         char buf[512];
-        strcpy(buf, GetModuleName());
+        StrCpy(buf, GetModuleName());
         char* p = strrchr(buf, '\\');
         if (p)
         {
@@ -126,10 +126,11 @@ void Utils::SetEnvironmentToPathParent(const char* name)
             if (p)
             {
                 *p = 0;
-                char* buf1 = (char*)calloc(1, strlen(name) + strlen(buf) + 2);
-                strcpy(buf1, name);
-                strcat(buf1, "=");
-                strcat(buf1, buf);
+                int len = strlen(name) + strlen(buf) + 2;
+                char* buf1 = (char*)calloc(1, len);
+                StrCpy(buf1, len, name);
+                StrCat(buf1, len, "=");
+                StrCat(buf1, len, buf);
                 putenv(buf1);
             }
         }
@@ -180,11 +181,11 @@ std::string Utils::AbsolutePath(const std::string& name)
 std::string Utils::QualifiedFile(const char* path, const char* ext)
 {
     char buf[260];
-    strcpy(buf, path);
+    Utils::StrCpy(buf, path);
     char* p = strrchr(buf, '.');
     if (!p || p[-1] == '.' || p[1] == '\\')
         p = buf + strlen(buf);
-    strcpy(p, ext);
+    Utils::StrCpy(p, sizeof(buf) - (p - buf), ext);
     return std::string(buf);
 }
 char* Utils::FullQualify(char* string)
@@ -193,7 +194,7 @@ char* Utils::FullQualify(char* string)
     if (string[0] == '\\')
     {
         getcwd(buf, 265);
-        strcpy(buf + 2, string);
+        Utils::StrCpy(buf + 2, sizeof(buf)-2, string);
         return buf;
     }
     else if (string[1] != ':')
@@ -214,7 +215,7 @@ char* Utils::FullQualify(char* string)
         }
         p++;
         *p++ = '\\';
-        strcpy(p, q);
+        Utils::StrCpy(p, sizeof(buf) - (p-buf), q);
         return buf;
     }
     return string;
@@ -316,13 +317,16 @@ FILE* Utils::TempName(std::string& name)
     if (tempFile[0] == '\\')
     {
         // fix for buggy mingw on windows
-        strcpy(tempFile, getenv("TMP"));
+        char *p = getenv("TMP");
+        if (!p)
+            p = "";
+        StrCpy(tempFile, p);
         tmpnam(tempFile + strlen(tempFile));
     }
     FILE* fil = fopen(tempFile, "w");
     if (!fil)
     {
-        strcpy(tempFile, ".\\");
+        StrCpy(tempFile, ".\\");
         tmpnam(tempFile + strlen(tempFile));
         fil = fopen(tempFile, "w");
         if (!fil)

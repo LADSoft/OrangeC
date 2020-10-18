@@ -34,7 +34,7 @@ class BRCLoader;
 class BRCWriter
 {
   public:
-    BRCWriter(std::string OutputFile, BRCLoader& Loader) : outputFile(OutputFile), loader(Loader) {}
+    BRCWriter(std::string OutputFile, BRCLoader& Loader) : outputFile(OutputFile), loader(Loader), fileListCount(0), dbPointer(nullptr) {}
     ~BRCWriter();
 
     bool write();

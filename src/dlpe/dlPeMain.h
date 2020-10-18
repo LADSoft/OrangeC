@@ -34,6 +34,7 @@
 #include <vector>
 #include <memory>
 #include <ctime>
+#include <cstring>
 
 class ObjFile;
 class ObjFactory;

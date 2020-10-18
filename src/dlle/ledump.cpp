@@ -256,7 +256,7 @@ void dump_lx(std::fstream& file, int hdrOfs, LEHeader& leh)
         }
     }
 
-    delete [] spt;
+    delete [] pt;
 }
 int main(int argc, char** argv)
 {

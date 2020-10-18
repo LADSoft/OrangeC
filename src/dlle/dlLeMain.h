@@ -32,6 +32,7 @@
 #include "CmdSwitch.h"
 #include "LEHeader.h"
 #include <memory>
+#include <cstring>
 class ObjFile;
 class ObjFactory;
 class LEObject;

@@ -32,7 +32,11 @@
 class ObjSourceFile : public ObjWrapper
 {
   public:
-    ObjSourceFile(ObjString Name, ObjInt Index) : name(Name), index(Index) { RetrieveFileTime(name); }
+    ObjSourceFile(ObjString Name, ObjInt Index) : name(Name), index(Index) 
+    {
+        memset(&fileTime, 0, sizeof(fileTime)); 
+        RetrieveFileTime(name); 
+    }
     virtual ~ObjSourceFile() {}
     ObjString& GetName() { return name; }
     void SetName(ObjString Name) { name = Name; }

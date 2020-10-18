@@ -392,6 +392,8 @@ ObjFile* CoffFile::ConvertToObject(std::string outputName, ObjFactory& factory)
                             inputFile->read((char*)data, n);
                             if (inputFile->fail())
                             {
+                                delete[] data;
+                                delete fil;
                                 return nullptr;
                             }
                             ObjMemory* newMem = new ObjMemory(data, n);
@@ -400,6 +402,7 @@ ObjFile* CoffFile::ConvertToObject(std::string outputName, ObjFactory& factory)
                         inputFile->read((char*)&fixupOffset, sizeof(unsigned));
                         if (inputFile->fail())
                         {
+                            delete fil;
                             return nullptr;
                         }
                         switch (relocPointer->Type)
@@ -458,6 +461,7 @@ ObjFile* CoffFile::ConvertToObject(std::string outputName, ObjFactory& factory)
                                 break;
                             default:
                                 std::cout << "Invalid relocation" << std::endl;
+                                delete fil;
                                 return nullptr;
                         }
 

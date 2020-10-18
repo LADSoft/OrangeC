@@ -217,7 +217,6 @@ bool CoffLibrary::ConvertImportMods()
                 case 2:  // strip leading char
                     if (buf[0] == '@' || buf[0] == '?' || buf[0] == '_')
                         memmove(buf, buf+1, strlen(buf+1) + 1);
-                        Utils::StrCpy(buf, buf + 1);
                     break;
                 case 3:  // undecorate
                 {

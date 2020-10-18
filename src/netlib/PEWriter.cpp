@@ -1048,8 +1048,8 @@ bool PEWriter::WriteVersionInfo(PELib& peLib) const
     align(4);
     put(L"Translation", sizeof(L"Language"));
     align(4);
-    DWord n = language_ << 16;
-    put(&n, sizeof(n));
+    size_t n = language_ << 16;
+    put(&n, sizeof(DWord));
 
     std::string nn = peLib.FileName();
     n = nn.find_last_of("\\");

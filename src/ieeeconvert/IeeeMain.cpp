@@ -40,7 +40,14 @@ const char* IeeeMain::helpText =
 int main(int argc, char** argv)
 {
     IeeeMain ieeeMain;
-    return ieeeMain.Run(argc, argv);
+    try
+    {
+        return ieeeMain.Run(argc, argv);
+    }
+    catch (ObjIeeeBinary::SyntaxError e)
+    {
+       std::cout << e.what() << std::endl;
+    }
 }
 void IeeeMain::usage(const char* prog_name, const char* text, int retcode)
 {

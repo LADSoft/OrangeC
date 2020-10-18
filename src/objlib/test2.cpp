@@ -44,12 +44,19 @@
 
 int main()
 {
+    try
+    {
+        ObjIeeeIndexManager im1;
+        ObjFactory fact1(&im1);
+        FILE* b = fopen("bzip2.o", "r");
+        FILE* c = fopen("q.o", "w");
+        ObjIeee i1("hi");
+        ObjFile* fi1 = i1.Read(b, ObjIeee::eAll, &fact1);
+        i1.Write(c, fi1, &fact1);
+    }
+    catch (ObjIeeeBinary::SyntaxError e)
+    {
+       std::cout << e.what() << std::endl;
+    }
 
-    ObjIeeeIndexManager im1;
-    ObjFactory fact1(&im1);
-    FILE* b = fopen("bzip2.o", "r");
-    FILE* c = fopen("q.o", "w");
-    ObjIeee i1("hi");
-    ObjFile* fi1 = i1.Read(b, ObjIeee::eAll, &fact1);
-    i1.Write(c, fi1, &fact1);
 }

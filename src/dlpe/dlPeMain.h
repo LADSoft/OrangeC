@@ -44,7 +44,22 @@ class PEExportObject;
 class dlPeMain
 {
   public:
-    dlPeMain() : mode(CONSOLE), exportObject(nullptr), startAddress(0) { memset(&header, 0, sizeof(header)); }
+    dlPeMain() : 
+        mode(CONSOLE), 
+        exportObject(nullptr), 
+        startAddress(0),
+        fileAlign(0),
+        objectAlign(0),
+        imageBase(0),
+        importThunkVA(0),
+        importCount(0),
+        heapCommit(0),
+        heapSize(0),
+        stackCommit(0),
+        stackSize(0),
+        file(nullptr),
+        stubSize(0)
+    { memset(&header, 0, sizeof(header)); }
     ~dlPeMain() {}
 
     int Run(int argc, char** argv);

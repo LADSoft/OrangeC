@@ -65,7 +65,16 @@ class ObjIeeeBinary : public ObjIOBase
     };
 
   public:
-    ObjIeeeBinary(const ObjString Name, bool CaseSensitive = true) : ObjIOBase(Name, CaseSensitive), ioBufferLen(0), ioBuffer(0) {}
+    ObjIeeeBinary(const ObjString Name, bool CaseSensitive = true) : 
+        ObjIOBase(Name, CaseSensitive), ioBufferLen(0), ioBuffer(0),
+        file(nullptr),
+        factory(nullptr),
+        sfile(nullptr),
+        cs(0),
+        currentDataSection(nullptr),
+        ioBufferPos(0),
+        lineno(0)
+        {}
     virtual ~ObjIeeeBinary() {}
     virtual bool Write(FILE* fil, ObjFile* File, ObjFactory* Factory)
     {

@@ -483,7 +483,7 @@ bool MethodSignature::PEDump(PELib& peLib, bool asType)
             {
                 size_t function = peLib.PEOut().HashString(name_);
                 Class* cls = nullptr;
-                if (typeid(*container_) == typeid(Class))
+                if (container_ && typeid(*container_) == typeid(Class))
                 {
                     cls = static_cast<Class*>(container_);
                 }
@@ -540,7 +540,7 @@ bool MethodSignature::PEDump(PELib& peLib, bool asType)
             arrayObject_->Render(peLib, buf);
             parent = arrayObject_->PEIndex();
         }
-        else
+        else if (container)
         {
             if (!container_->PEIndex())
                 container_->PEDump(peLib);
@@ -553,6 +553,10 @@ bool MethodSignature::PEDump(PELib& peLib, bool asType)
                     methodreftype = MemberRefParent::TypeSpec;
                 }
             }
+        }
+        else
+        {
+            return false;
         }
         MemberRefParent memberRef(methodreftype, parent);
         Byte* sig = SignatureGenerator::MethodRefSig(this, sz);

@@ -214,7 +214,7 @@ void dlLeMain::InitHeader()
     {
         header.resident_name_table_offset = header.object_page_table_offset + objectPages->GetSize();
         header.resident_name_table_entries = header.resident_name_table_offset + (rnt ? rnt->GetEntrySize() : 0);
-        header.loader_section_size += rnt->GetSize();
+        header.loader_section_size += rnt ? rnt->GetSize() : 0;
     }
     header.fixup_page_table_offset = header.object_page_table_offset + header.loader_section_size;
     header.fixup_record_table_offset = header.fixup_page_table_offset + fixups->GetIndexTableSize();

@@ -45,6 +45,7 @@ void ObjIeeeBinary::ParseTime(const ObjByte *buffer, std::tm &tms, int *pos)
     ObjString str = ParseString(buffer, pos);
     const char *p = str.c_str();
     int xx = 0;
+    memset(&tms, 0, sizeof(tms));
     tms.tm_year = ObjUtil::FromDecimal(p, &xx, 4) - 1900;
     tms.tm_mon = ObjUtil::FromDecimal(p, &xx, 2) - 1;
     tms.tm_mday = ObjUtil::FromDecimal(p, &xx, 2);
@@ -261,7 +262,8 @@ void ObjIeeeBinary::getline(ObjByte *buf, size_t size)
     int len = (buf[1] << 8) + buf[2];
     if (len > BUFFERSIZE)
         ThrowSyntax(buf, eAll);
-    fread(buf+3, 1, len-3, sfile);
+    if (fread(buf+3, 1, len-3, sfile) != len - 3)
+        ThrowSyntax(buf, eAll);
 }
 ObjFile *ObjIeeeBinary::HandleRead(eParseType ParseType)
 {
@@ -712,7 +714,8 @@ bool ObjIeeeBinary::TypeSpec(const ObjByte *buffer, eParseType ParseType)
                 type = GetType(index);
             if (!type)
                 ThrowSyntax(buffer, ParseType);
-            symbol->SetBaseType(type);	
+            else
+                symbol->SetBaseType(type);	
             break;
         }
         case 'T':

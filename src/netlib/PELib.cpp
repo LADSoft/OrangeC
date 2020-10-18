@@ -179,7 +179,7 @@ PELib::eFindType PELib::Find(std::string path, void **result, std::deque<Type*>*
 {
     if (path.size() && path[0] == '[')
     {
-        int npos = path.find(']');
+        size_t npos = path.find(']');
         if (npos != std::string::npos)
         {
             std::string assemblyName = path.substr(1, npos - 1);
@@ -335,7 +335,7 @@ PELib::eFindType PELib::Find(std::string path, Method **result, std::vector<Type
 {
     if (path.size() && path[0] == '[')
     {
-        int npos = path.find(']');
+        size_t npos = path.find(']');
         if (npos != std::string::npos)
         {
             std::string assemblyName = path.substr(1, npos - 1);
@@ -825,7 +825,7 @@ int PELib::LoadUnmanaged(const std::string& name)
     if (reader.Read())
     {
         std::string unmanagedDllName = reader.Name();
-        unsigned npos = unmanagedDllName.find_last_of(DIR_SEP);
+        size_t npos = unmanagedDllName.find_last_of(DIR_SEP);
         if (npos != std::string::npos && npos != unmanagedDllName.size() - 1)
         {
             unmanagedDllName = unmanagedDllName.substr(npos + 1);

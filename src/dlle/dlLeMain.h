@@ -48,7 +48,11 @@ class dlLeMain
         rnt(nullptr),
         factory(nullptr),
         file(nullptr),
-        startAddress(0) 
+        startAddress(0),
+        stackSize(0),
+        fixups(0),
+        objectPages(0),
+        stubSize(0)
     { memset(&header, 0, sizeof(header)); }
     ~dlLeMain() {}
 

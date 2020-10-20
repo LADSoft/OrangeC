@@ -540,7 +540,7 @@ bool MethodSignature::PEDump(PELib& peLib, bool asType)
             arrayObject_->Render(peLib, buf);
             parent = arrayObject_->PEIndex();
         }
-        else if (container)
+        else if (container_)
         {
             if (!container_->PEIndex())
                 container_->PEDump(peLib);

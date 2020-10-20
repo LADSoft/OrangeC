@@ -2252,7 +2252,7 @@ int opt0(EXPRESSION** node)
                     TEMPLATEPARAMLIST* current = SolidifyTemplateParams(tsl->next->templateParams);
                     if (ts->sb->storage_class == sc_typedef)
                     {
-                        sym = GetTypedefSpecialization(sym, current, false);
+                        sym = GetTypedefSpecialization(sym, current);
                     }
                     else
                     {

@@ -299,6 +299,10 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
         else
         {
             lex = getIdName(lex, nullptr, buf, &ovdummy, nullptr);
+            if (!strcmp(buf, "f"))
+            {
+                printf("hi");
+            }
             lex = getsym();
             bool hasTemplateArgs = false;
             bool deferred = false;
@@ -571,7 +575,7 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
                                 if (sp->sb->mainsym && sp->sb->mainsym->sb->storage_class == sc_typedef &&
                                     sp->sb->mainsym->sb->templateLevel)
                                 {
-                                    SYMBOL* sp1 = GetTypedefSpecialization(sp->sb->mainsym, current, false);
+                                    SYMBOL* sp1 = GetTypedefSpecialization(sp->sb->mainsym, current);
                                     if (sp1 && sp1->sb->instantiated)
                                     {
                                         sp = sp1;
@@ -604,7 +608,7 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
                                     SYMBOL* sp1 = sp;
                                     if (sp->sb->storage_class == sc_typedef)
                                     {
-                                        sp = GetTypedefSpecialization(sp, current, false);
+                                        sp = GetTypedefSpecialization(sp, current);
                                         if (isstructured(sp->tp))
                                             sp = basetype(sp->tp)->sp;
                                     }
@@ -2679,7 +2683,7 @@ static SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* ex
                                                     srch->p->byClass.dflt = srch->p->byClass.val;
                                                     srch = srch->next;
                                                 }
-                                                spf = GetTypedefSpecialization(spf, args, false);
+                                                spf = GetTypedefSpecialization(spf, args);
                                                 spf->tp = SynthesizeType(spf->tp, nullptr, false);
                                                 getSingleConversion(basetype(candidate->tp)->btp, spf->tp, lref ? nullptr : &exp,
                                                                     &n3, seq3 + n2, candidate, nullptr, true);

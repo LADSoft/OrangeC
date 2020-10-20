@@ -1232,7 +1232,7 @@ LEXEME* baseClasses(LEXEME* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac defa
                         inTemplateSpecialization++;
                         lex = GetTemplateArguments(lex, funcsp, bcsym, &lst);
                         inTemplateSpecialization--;
-                        sp1 = GetTypedefSpecialization(bcsym, lst, false);
+                        sp1 = GetTypedefSpecialization(bcsym, lst);
                         if (sp1)
                         {
                             bcsym = sp1;
@@ -2996,24 +2996,45 @@ LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc st
                 TYPE* tp = nullptr;
                 SYMBOL* sp;
                 lex = getsym();
-                lex = get_type_id(lex, &tp, nullptr, sc_cast, false, true, true);
+                TEMPLATEPARAMLIST *lst = nullptr;
+                if (inTemplate && (ISID(lex) || MATCHKW(lex, classsel)))
+                {
+                    SYMBOL *sym = nullptr;
+                    NAMESPACEVALUELIST *ns =nullptr;
+                    bool throughClass = false;
+                    lex = id_expression(lex, nullptr, &sym, nullptr, nullptr, nullptr, false, false, nullptr);
+                    if (sym)
+                    {
+                        tp = sym->tp;
+                        lex = getsym();
+                        if (MATCHKW(lex, lt))
+                        { 
+                            lex = GetTemplateArguments(lex, nullptr, sym, &lst);
+                        }
+                    }
+                }
+                else
+                {
+                    lex = get_type_id(lex, &tp, nullptr, sc_cast, false, true, true);
+                }
                 if (!tp)
                 {
                     tp = &stdint;
                 }
                 checkauto(tp, ERR_AUTO_NOT_ALLOWED_IN_USING_STATEMENT);
                 sp = makeID(sc_typedef, tp, nullptr, litlate(idsym->value.s.a));
-                sp->sb->cpp14using = true;
+                TYPE* tp1 = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
+                tp1->type = bt_typedef;
+                tp1->btp = tp;
+                tp1->sp = sp;
+                UpdateRootTypes(tp1);
+                sp->tp = tp1;
                 if (inTemplate)
                 {
-                    TYPE* tp1 = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
-                    tp1->type = bt_typedef;
-                    tp1->btp = tp;
-                    tp1->sp = sp;
-                    UpdateRootTypes(tp1);
-                    sp->tp = tp1;
                     sp->sb->templateLevel = templateNestingCount;
                     sp->templateParams = TemplateGetParams(sp);
+                    if (isstructured(tp))
+                        sp->sb->cpp14using = lst;
                 }
                 if (storage_class == sc_member)
                     sp->sb->parentClass = getStructureDeclaration();

@@ -85,6 +85,7 @@ void SetTemplateNamespace(SYMBOL* sym);
 int PushTemplateNamespace(SYMBOL* sym);
 void PopTemplateNamespace(int n);
 void SwapMainTemplateArgs(SYMBOL* cls);
+TEMPLATEPARAMLIST* copyParams(TEMPLATEPARAMLIST* t, bool alsoSpecializations);
 bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* dest, TEMPLATEPARAMLIST* src,
                                      TEMPLATEPARAMLIST* enclosing);
 SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, TEMPLATEPARAMLIST* args, bool isExtern);
@@ -96,7 +97,7 @@ void DuplicateTemplateParamList(TEMPLATEPARAMLIST** pptr);
 SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr);
 SYMBOL* GetVariableTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args);
 TYPE *CloneUsingSyms(TYPE *sp);
-SYMBOL* GetTypedefSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool nested);
+SYMBOL* GetTypedefSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args);
 void DoInstantiateTemplateFunction(TYPE* tp, SYMBOL** sp, NAMESPACEVALUELIST* nsv, SYMBOL* strSym,
                                    TEMPLATEPARAMLIST* templateParams, bool isExtern);
 bool TemplateFullySpecialized(SYMBOL* sp);

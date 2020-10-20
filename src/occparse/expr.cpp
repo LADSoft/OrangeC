@@ -411,7 +411,6 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
     }
     if (sym)
     {
-
         SYMLIST* hr;
         browse_usage(sym, lex->linedata->fileindex);
         *tp = sym->tp;
@@ -1038,6 +1037,7 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                 {
                     // no error if there are packed templates and we aren't parsing them
                     bool found = false;
+                    /*
                     if (!expandingParams)
                     {
                         SYMBOL* spx = strSym;
@@ -1053,9 +1053,25 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                             spx = spx->sb->parentClass;
                         }
                     }
+                    */
                     if (!found)
                     {
-                        errorstr(ERR_UNDEFINED_IDENTIFIER, name);
+                        char buf[4000];
+                        buf[0] = 0;
+                        LEXEME *find = placeholder;
+                        while (lex != find)
+                        {
+                            if (ISKW(find))
+                            {
+                                strcat(buf, find->kw->name);
+                            }
+                            else if (ISID(find))
+                            {
+                                strcat(buf, find->value.s.a);
+                            }
+                            find = find->next;
+                        }
+                        errorstr(ERR_UNDEFINED_IDENTIFIER, buf);
                         if (sym->sb->storage_class != sc_overloads &&
                             (localNameSpace->valueData->syms || sym->sb->storage_class != sc_auto))
                             InsertSymbol(sym, sym->sb->storage_class, lk_none, false);

@@ -1232,7 +1232,7 @@ LEXEME* baseClasses(LEXEME* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac defa
                         inTemplateSpecialization++;
                         lex = GetTemplateArguments(lex, funcsp, bcsym, &lst);
                         inTemplateSpecialization--;
-                        sp1 = GetTypedefSpecialization(bcsym, lst);
+                        sp1 = GetTypeAliasSpecialization(bcsym, lst);
                         if (sp1)
                         {
                             bcsym = sp1;
@@ -2997,6 +2997,8 @@ LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc st
                 SYMBOL* sp;
                 lex = getsym();
                 TEMPLATEPARAMLIST *lst = nullptr;
+                if (MATCHKW(lex, kw_typename))
+                    lex = getsym();
                 if (inTemplate && (ISID(lex) || MATCHKW(lex, classsel)))
                 {
                     SYMBOL *sym = nullptr;
@@ -3034,7 +3036,7 @@ LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc st
                     sp->sb->templateLevel = templateNestingCount;
                     sp->templateParams = TemplateGetParams(sp);
                     if (isstructured(tp))
-                        sp->sb->cpp14using = lst;
+                        sp->sb->typeAlias = lst;
                 }
                 if (storage_class == sc_member)
                     sp->sb->parentClass = getStructureDeclaration();

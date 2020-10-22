@@ -580,6 +580,7 @@ static struct
     {"Attribute '%s' does not exist in attribute namespace '%s'", ERROR},
     {"static function '%s' is declared but never defined", TRIVIALWARNING},
     {"Referenced in instantiation of '%s'", NOTE},
+    {"typedef templates not allowed", ERROR},
 };
 void EnterInstantiation(SYMBOL *sym)
 {

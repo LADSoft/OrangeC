@@ -705,7 +705,7 @@ typedef struct sym
         Optimizer::LIST* templateNameSpace;
         Optimizer::LIST* staticAsserts;
         short templateLevel;
-        struct _templateParamList *cpp14using;
+        struct _templateParamList *typeAlias;
         struct _symlist_* specializations;
         struct _symlist_* instantiations;
         const char* msil;                            // MSIL path

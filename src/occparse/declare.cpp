@@ -2642,7 +2642,7 @@ founddecltype:
                         TEMPLATEPARAMLIST* lst = nullptr;
                         SYMBOL* sp1;
                         lex = GetTemplateArguments(lex, funcsp, sp, &lst);
-                        sp1 = GetTypedefSpecialization(sp, lst);
+                        sp1 = GetTypeAliasSpecialization(sp, lst);
                         if (sp1)
                         {
                             sp = sp1;

@@ -299,7 +299,7 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
         else
         {
             lex = getIdName(lex, nullptr, buf, &ovdummy, nullptr);
-            if (!strcmp(buf, "f"))
+            if (!strcmp(buf, "Z"))
             {
                 printf("hi");
             }

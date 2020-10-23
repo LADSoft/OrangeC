@@ -3001,10 +3001,10 @@ LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc st
                     lex = getsym();
                 if (inTemplate && (ISID(lex) || MATCHKW(lex, classsel)))
                 {
-                    SYMBOL *sym = nullptr;
+                    SYMBOL *sym = nullptr, *strsym = nullptr;
                     NAMESPACEVALUELIST *ns =nullptr;
                     bool throughClass = false;
-                    lex = id_expression(lex, nullptr, &sym, nullptr, nullptr, nullptr, false, false, nullptr);
+                    lex = id_expression(lex, nullptr, &sym, &strsym, nullptr, nullptr, false, false, nullptr);
                     if (sym)
                     {
                         tp = sym->tp;
@@ -3012,6 +3012,15 @@ LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc st
                         if (MATCHKW(lex, lt))
                         { 
                             lex = GetTemplateArguments(lex, nullptr, sym, &lst);
+                        }
+                    }
+                    else if (strsym && strsym->tp->type == bt_templateselector)
+                    {
+                        tp = strsym->tp;
+                        lex = getsym();
+                        if (MATCHKW(lex, lt))
+                        {
+                            lex = GetTemplateArguments(lex, strsym->tp->sp->sb->templateSelector->next->sp, sym, &lst);
                         }
                     }
                 }

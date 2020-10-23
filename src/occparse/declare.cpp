@@ -921,6 +921,8 @@ static LEXEME* structbody(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_ac cur
         openStructs = lst;
         lst->data = sp;
     }
+    if (!strcmp(sp->name, "Z"))
+        printf("hi");
     lex = getsym();
     sl.str = sp;
     addStructureDeclaration(&sl);
@@ -6576,7 +6578,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                                         sp->sb->linedata = startStmt->lineData;
                                     lex = getDeferredData(lex, &sp->sb->deferredCompile, true);
                                     InsertInline(sp);
-                                    if (sp->sb->parentClass &&
+                                    if (sp->sb->parentClass && !templateNestingCount &&
                                         (sp->sb->storage_class == sc_virtual || sp->sb->storage_class == sc_global))
                                     {
                                         if (sp->templateParams && !sp->templateParams->next)

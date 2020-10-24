@@ -2769,45 +2769,61 @@ static TYPE* SynthesizeStructure(TYPE* tp_in, TEMPLATEPARAMLIST* enclosing)
         {
             if (!allTemplateArgsSpecified(sp, sp->templateParams->next))
             {
-                TEMPLATEPARAMLIST *params = nullptr, **pt = &params, *search = sp->templateParams->next;
-                while (search)
+                TEMPLATEPARAMLIST *l = sp->templateParams->next;
+                while (l)
                 {
-                    if (search->p->type == kw_typename)
+                    if (l->p->byClass.txtdflt && !l->p->byClass.val)
+                        break;
+                    l = l->next;
+                }
+                if (l && !TemplateParseDefaultArgs(sp, l, l, l))
+                    return nullptr;
+                if (!allTemplateArgsSpecified(sp, sp->templateParams->next))
+                {
+                    TEMPLATEPARAMLIST *params = nullptr, **pt = &params, *search = sp->templateParams->next;
+                    while (search)
                     {
-                        if (search->p->byClass.dflt && search->p->byClass.dflt->type == bt_templateselector &&
-                            search->p->byClass.dflt->sp->sb->postExpansion)
+                        if (search->p->type == kw_typename)
                         {
-                            auto temp = search->p->byClass.dflt->sp->sb->templateSelector->next->templateParams;
-                            // this may needs some work with recursing templateselectors inside templateselectors...
-                            search->p->byClass.dflt->sp->sb->templateSelector->next->templateParams =
-                                paramsToDefault(search->p->byClass.dflt->sp->sb->templateSelector->next->templateParams);
-                            pt = expandTemplateSelector(pt, enclosing, search->p->byClass.dflt);
-                            search->p->byClass.dflt->sp->sb->templateSelector->next->templateParams = temp;
-                        }
-                        else if (search->p->byClass.dflt && (search->p->byClass.dflt)->type == bt_memberptr)
-                        {
-                            *pt = (TEMPLATEPARAMLIST*)Alloc(sizeof(TEMPLATEPARAMLIST));
-                            (*pt)->p = (TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
-                            *(*pt)->p = *search->p;
-                            (*pt)->p->byClass.dflt = SynthesizeType(search->p->byClass.dflt, enclosing, false);
-                            pt = &(*pt)->next;
+                            if (search->p->byClass.dflt && search->p->byClass.dflt->type == bt_templateselector &&
+                                search->p->byClass.dflt->sp->sb->postExpansion)
+                            {
+                                auto temp = search->p->byClass.dflt->sp->sb->templateSelector->next->templateParams;
+                                // this may needs some work with recursing templateselectors inside templateselectors...
+                                search->p->byClass.dflt->sp->sb->templateSelector->next->templateParams =
+                                    paramsToDefault(search->p->byClass.dflt->sp->sb->templateSelector->next->templateParams);
+                                pt = expandTemplateSelector(pt, enclosing, search->p->byClass.dflt);
+                                search->p->byClass.dflt->sp->sb->templateSelector->next->templateParams = temp;
+                            }
+                            else if (search->p->byClass.dflt && (search->p->byClass.dflt)->type == bt_memberptr)
+                            {
+                                *pt = (TEMPLATEPARAMLIST*)Alloc(sizeof(TEMPLATEPARAMLIST));
+                                (*pt)->p = (TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
+                                *(*pt)->p = *search->p;
+                                (*pt)->p->byClass.dflt = SynthesizeType(search->p->byClass.dflt, enclosing, false);
+                                pt = &(*pt)->next;
+                            }
+                            else
+                            {
+                                pt = addStructParam(pt, search, enclosing);
+                                if (!pt)
+                                    return nullptr;
+                            }
                         }
                         else
                         {
-                            pt = addStructParam(pt, search, enclosing);
-                            if (!pt)
-                                return nullptr;
+                            *pt = (TEMPLATEPARAMLIST*)Alloc(sizeof(TEMPLATEPARAMLIST));
+                            (*pt)->p = search->p;
+                            pt = &(*pt)->next;
                         }
+                        search = search->next;
                     }
-                    else
-                    {
-                        *pt = (TEMPLATEPARAMLIST*)Alloc(sizeof(TEMPLATEPARAMLIST));
-                        (*pt)->p = search->p;
-                        pt = &(*pt)->next;
-                    }
-                    search = search->next;
+                    sp = GetClassTemplate(sp, params, false);
                 }
-                sp = GetClassTemplate(sp, params, false);
+                else
+                {
+                    sp = GetClassTemplate(sp, sp->templateParams, false);
+                }
             }
             else
             {
@@ -7189,7 +7205,9 @@ SYMBOL* TemplateFunctionInstantiate(SYMBOL* sym, bool warning, bool isExtern)
                 }
             }
             templateHeaderCount = 0;
+            // compile the body of the function
             lex = body(lex, sym);
+
             Optimizer::SymbolManager::Get(sym)->xc = false;
             templateHeaderCount = oldHeaderCount;
             lex = sym->sb->deferredCompile;
@@ -10340,8 +10358,7 @@ LEXEME* TemplateDeclaration(LEXEME* lex, SYMBOL* funcsp, enum e_ac access, enum 
                     lex = GetTemplateArguments(lex, funcsp, cls, &templateParams);
                     instance = GetClassTemplate(cls, templateParams, false);
                     if (instance)
-                    {
-                        MarkDllLinkage(instance, linkage2);
+                    {MarkDllLinkage(instance, linkage2);
                         if (!isExtern)
                         {
                             instance->sb->dontinstantiate = false;

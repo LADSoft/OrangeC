@@ -2989,8 +2989,6 @@ LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc st
                 TEMPLATEPARAMLIST *lst = nullptr;
                 if (MATCHKW(lex, kw_typename))
                     lex = getsym();
-                if (!strcmp(idsym->value.s.a, "rebind_alloc"))
-                    printf("hi");
                 if (inTemplate && (ISID(lex) || MATCHKW(lex, classsel)))
                 {
                     SYMBOL *sym = nullptr, *strsym = nullptr;

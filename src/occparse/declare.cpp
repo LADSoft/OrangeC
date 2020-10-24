@@ -2173,17 +2173,10 @@ static bool isPointer(LEXEME* lex)
         }
     return false;
 }
-    int count1 = 0;
 LEXEME* getBasicType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** strSym_out, bool inTemplate, enum e_sc storage_class,
                      enum e_lk* linkage_in, enum e_lk* linkage2_in, enum e_lk* linkage3_in, enum e_ac access, bool* notype,
                      bool* defd, int* consdest, bool* templateArg, bool isTypedef, bool templateErr, bool inUsing)
 {
-    if (lex && strstr(lex->errfile, "memory") && lex->errline == 1166)
-    {
-        count1++;
-        if (count1 == 37)
-            printf("hi");
-    }
     enum e_bt type = bt_none;
     TYPE* tn = nullptr;
     TYPE* quals = nullptr;

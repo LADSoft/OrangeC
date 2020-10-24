@@ -8820,19 +8820,8 @@ TEMPLATEPARAMLIST * ResolveDeclType(SYMBOL* sp, TEMPLATEPARAMLIST* args)
     }
     return rv;
 }
-int count2 = 0;
 SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
 {
-    if (!strcmp(sp->name, "__has_rebind_other"))
-    {
-        printf("hi");
-    }
-    if (!strcmp(sp->name, "__allocator_traits_rebind"))
-    {
-        count2++;
-        if (count2 == 27)
-            printf("hi");
-    }
     int n = 1, i = 0;
     TEMPLATEPARAMLIST* unspecialized = sp->templateParams->next;
     SYMBOL *found1 = nullptr, *found2 = nullptr;
@@ -9578,8 +9567,6 @@ TEMPLATEPARAMLIST* GetTypeAliasArgs(SYMBOL* sp, TEMPLATEPARAMLIST* args, TEMPLAT
 }
 SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args)
 {
-    if (!strcmp(sp->name, "rebind_alloc") && templateNestingCount == 0)
-        printf("hi");
     if (reflectUsingType)
         return sp;
     SYMBOL* rv;
@@ -9694,10 +9681,6 @@ SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args)
     if (sp->sb->parentClass && sp->sb->parentClass->templateParams)
     {
         dropStructureDeclaration();
-    }
-    if (rv->tp->type == bt_templateparam)
-    {
-        printf("hi");
     }
     return rv;
 }

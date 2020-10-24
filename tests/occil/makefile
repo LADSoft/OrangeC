@@ -66,3 +66,9 @@ determinante.exe: determinante.c
 	occil /9 $< /LKernel32 /LUser32 /LGDI32
 	$* > $*.txt
 	fc /b $*.txt $*.cmpx
+
+clean:
+	del *.exe
+	$(MAKE) -Ccc386 clean
+	$(MAKE) -Csqlite3 clean
+	$(MAKE) -Cszip clean

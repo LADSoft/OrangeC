@@ -8,3 +8,6 @@ comp.tst: comp.exe
 
 comp.exe:
 	occil comp.c /DMY_UNSIGNED_TYPES /oszip.exe /C+f	
+
+clean:
+	del *.exe

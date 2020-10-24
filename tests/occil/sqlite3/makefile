@@ -27,3 +27,7 @@ test.exe: test.c sqlite3.dll
 testsqlite.exe: testsqlite.cs sqlite3.dll
 	-copy \orangec\bin\lsmsilcrtl.dll *.* > $(NULLDEV)
 	csc /unsafe /r:lsmsilcrtl.dll;zzz.dll;sqlite3.dll /platform:x86 testsqlite.cs 
+
+clean:
+	del *.exe
+	del sqlite3.dll

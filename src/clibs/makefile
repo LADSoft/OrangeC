@@ -183,9 +183,11 @@ clean:
 	-del /Q $(CLIBOBJECT) 2> NUL
 	-del /Q platform\win32\crtdmain\*.o 2>NULL
 	-del /Q platform\win32\lscrtl\*.o 2>NULL
+	-del /Q platform\win32\lscrtl\*.dll 2>NULL
 	-del /Q platform\win32\lsdbghelper\*.o 2>NULL
 	-del /Q platform\win32\msvcrdm\*.o 2>NULL
 	-del /Q platform\win32\occil\*.o 2>NULL
+	-del /Q platform\win32\occil\*.dll 2>NULL
 	-del /Q platform\win32\pe\*.o 2>NULL
 	-del /Q platform\win32\pels\*.o 2>NULL
 	-del /Q platform\win32\rtl\*.o 2>NULL

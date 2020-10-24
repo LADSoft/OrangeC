@@ -1062,8 +1062,6 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
     // entered with lex set to the opening <
     inTemplateArgs++;
     lex = getsym();
-    if (MATCHKW(lex, kw_sizeof))
-        printf("hi");
     if (!MATCHKW(lex, rightshift) && !MATCHKW(lex, gt))
     {
         do
@@ -5530,12 +5528,12 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* dest, TEMPL
             }
             SwapDefaultNames(enclosing, src->p->byClass.txtargs);
             n = PushTemplateNamespace(declareSym);
-            if (primaryList && primaryList->p->byClass.txtdflt && primaryList->p->byClass.txtdflt == src->p->byClass.txtdflt)
+            if ( 0 && primaryList && primaryList->p->byClass.txtdflt && primaryList->p->byClass.txtdflt == src->p->byClass.txtdflt)
             {
                 if (!primaryDefaultList)
                 {
                     TEMPLATEPARAMLIST** lst = &primaryDefaultList;
-                    TEMPLATEPARAMLIST* one = declareSym->sb->parentTemplate->templateParams->next;
+                    TEMPLATEPARAMLIST* one = declareSym->sb->parent->templateParams->next;
                     TEMPLATEPARAMLIST* two = declareSym->templateParams->p->bySpecialization.types;
                     while (one && two)
                     {
@@ -7709,6 +7707,28 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* unspecialize
                             break;
                         }
                     }
+                    else if (initial->p->type == kw_template && params->p->type == kw_typename)
+                    {
+                        void* dflt;
+                        dflt = initial->p->byTemplate.val;
+                        if (!dflt)
+                            dflt = initial->p->byTemplate.dflt;
+                        if (dflt)
+                        {
+                            params->p->byClass.val = ((SYMBOL*)dflt)->tp;
+                            params->p->initialized = true;
+                            params = params->next;
+                            primary = primary->next;
+                            initial = initial->next;
+                            if (max)
+                                max = max->next;
+                        }
+                        else
+                        {
+                            rv = nullptr;
+                            break;
+                        }
+                    }
                     else
                     {
                         rv = nullptr;
@@ -8800,8 +8820,19 @@ TEMPLATEPARAMLIST * ResolveDeclType(SYMBOL* sp, TEMPLATEPARAMLIST* args)
     }
     return rv;
 }
+int count2 = 0;
 SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
 {
+    if (!strcmp(sp->name, "__has_rebind_other"))
+    {
+        printf("hi");
+    }
+    if (!strcmp(sp->name, "__allocator_traits_rebind"))
+    {
+        count2++;
+        if (count2 == 27)
+            printf("hi");
+    }
     int n = 1, i = 0;
     TEMPLATEPARAMLIST* unspecialized = sp->templateParams->next;
     SYMBOL *found1 = nullptr, *found2 = nullptr;
@@ -9547,10 +9578,18 @@ TEMPLATEPARAMLIST* GetTypeAliasArgs(SYMBOL* sp, TEMPLATEPARAMLIST* args, TEMPLAT
 }
 SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args)
 {
+    if (!strcmp(sp->name, "rebind_alloc") && templateNestingCount == 0)
+        printf("hi");
     if (reflectUsingType)
         return sp;
     SYMBOL* rv;
     // if we get here we have a templated typedef
+    STRUCTSYM t1;
+    if (sp->sb->parentClass && sp->sb->parentClass->templateParams)
+    {
+        t1.tmpl = sp->sb->parentClass->templateParams;
+        addTemplateDeclaration(&t1);
+    }
     STRUCTSYM t;
     t.tmpl = args;
     addTemplateDeclaration(&t);
@@ -9571,12 +9610,16 @@ SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args)
             {
                 *x = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
                 **x = *tpl;
-                if (tpl->p->type != kw_new && tpl->argsym)
+                if (tpl->p->type != kw_new && tpl->argsym && !tpl->p->byClass.dflt)
                 {
                     const char *name = tpl->argsym->name;
                     if (tpl->p->type == kw_int && tpl->p->byNonType.dflt && tpl->p->byNonType.dflt->type == en_templateparam)
                     {
                         name = tpl->p->byNonType.dflt->v.sp->name;
+                    }
+                    else if (tpl->p->type == kw_typename && tpl->p->byClass.dflt && basetype(tpl->p->byClass.dflt)->type == bt_templateparam)
+                    {
+                        name = basetype(tpl->p->byClass.dflt)->templateParam->argsym->name;
                     }
                     STRUCTSYM* s = structSyms;
                     TEMPLATEPARAMLIST* rv = nullptr;
@@ -9618,13 +9661,28 @@ SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args)
         TEMPLATEPARAMLIST *orig = sp->templateParams->next;
         rv = clonesym(sp);
         rv->tp = rv->tp->btp;
-        if (rv->tp->type == bt_templateparam)
+        TYPE **tp = &rv->tp;
+        while (ispointer(*tp) || isref(*tp))
+        {
+            TYPE *tp1 = *tp;
+            *tp = (TYPE*)Alloc(sizeof(TYPE));
+            **tp = *tp1;
+            tp = &(*tp)->btp;
+        }
+        while (*tp != basetype(*tp))
+        {
+            TYPE *tp1 = *tp;
+            *tp = (TYPE*)Alloc(sizeof(TYPE));
+            **tp = *tp1;
+            tp = &(*tp)->btp;
+        }
+        if ((*tp)->type == bt_templateparam)
         {
             while (args && orig)
             {
-                if (args->p->type == kw_typename && strcmp(rv->tp->templateParam->argsym->name, orig->argsym->name) == 0)
+                if (args->p->type == kw_typename && strcmp((*tp)->templateParam->argsym->name, orig->argsym->name) == 0)
                 {
-                    rv->tp = args->p->byClass.dflt;
+                    *tp = args->p->byClass.dflt;
                     break;
                 }
                 args = args->next;
@@ -9633,6 +9691,14 @@ SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args)
         }
     }
     dropStructureDeclaration();
+    if (sp->sb->parentClass && sp->sb->parentClass->templateParams)
+    {
+        dropStructureDeclaration();
+    }
+    if (rv->tp->type == bt_templateparam)
+    {
+        printf("hi");
+    }
     return rv;
 }
 void DoInstantiateTemplateFunction(TYPE* tp, SYMBOL** sp, NAMESPACEVALUELIST* nsv, SYMBOL* strSym,

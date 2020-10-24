@@ -299,10 +299,6 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
         else
         {
             lex = getIdName(lex, nullptr, buf, &ovdummy, nullptr);
-            if (!strcmp(buf, "Z"))
-            {
-                printf("hi");
-            }
             lex = getsym();
             bool hasTemplateArgs = false;
             bool deferred = false;
@@ -618,7 +614,7 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
                                     }
                                     if (!sp)
                                     {
-                                        if (templateNestingCount)
+                                        if (templateNestingCount || noSpecializationError)
                                         {
                                             sp = sp1;
                                         }
@@ -4402,8 +4398,6 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                 icsList = (enum e_cvsrn**)Alloc(sizeof(enum e_cvsrn*) * n);
                 lenList = (int**)Alloc(sizeof(int*) * n);
                 funcList = (SYMBOL***)Alloc(sizeof(SYMBOL**) * n);
-                if (!strcmp(sp->name, "$bctr") && !strcmp(sp->sb->parentClass->name, "tuple"))
-                    printf("hi");
                 n = insertFuncs(spList, spFilterList, gather, args, atp);
                 if (n != 1 || (spList[0] && !spList[0]->sb->isDestructor && !spList[0]->sb->specialized2))
                 {

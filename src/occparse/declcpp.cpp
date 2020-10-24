@@ -2979,16 +2979,6 @@ LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc st
         if (!isTypename && ISID(lex))
         {
             LEXEME* idsym = lex;
-            if (!strcmp(idsym->value.s.a, "_Maker"))
-                printf("hi");
-            if (!strcmp(idsym->value.s.a, "__apply_quals"))
-                printf("hi");
-            if (!strcmp(idsym->value.s.a, "__all"))
-                printf("hi");
-            if (!strcmp(idsym->value.s.a, "_IsSame"))
-                printf("hi");
-            if (!strcmp(idsym->value.s.a, "_BoolConstant"))
-                printf("hi");
             lex = getsym();
             ParseAttributeSpecifiers(&lex, nullptr, true);
             if (MATCHKW(lex, assign))
@@ -2999,6 +2989,8 @@ LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc st
                 TEMPLATEPARAMLIST *lst = nullptr;
                 if (MATCHKW(lex, kw_typename))
                     lex = getsym();
+                if (!strcmp(idsym->value.s.a, "rebind_alloc"))
+                    printf("hi");
                 if (inTemplate && (ISID(lex) || MATCHKW(lex, classsel)))
                 {
                     SYMBOL *sym = nullptr, *strsym = nullptr;
@@ -3023,6 +3015,14 @@ LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc st
                             lex = GetTemplateArguments(lex, strsym->tp->sp->sb->templateSelector->next->sp, sym, &lst);
                         }
                     }
+                    enum e_lk linkage = lk_none, linkage2 = lk_none, linkage3 = lk_none;
+                    bool defd = false;
+                    SYMBOL* sp = nullptr;
+                    bool notype = false;
+                    bool oldTemplateType = inTemplateType;
+
+                    lex = getBeforeType(lex, nullptr, &tp, &sp, nullptr, nullptr, false, storage_class, &linkage, &linkage2, &linkage3, false, false,
+                        true, false); /* fixme at file scope init */
                 }
                 else
                 {
@@ -3044,7 +3044,7 @@ LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc st
                 {
                     sp->sb->templateLevel = templateNestingCount;
                     sp->templateParams = TemplateGetParams(sp);
-                    if (isstructured(tp))
+                    if (isstructured(tp) || tp->type == bt_templateselector)
                         sp->sb->typeAlias = lst;
                 }
                 if (storage_class == sc_member)

@@ -2900,9 +2900,14 @@ founddecltype:
                                 errorsym(ERR_NOT_A_TEMPLATE, sp);
                             }
                             if (sp->tp->type == bt_typedef)
-                                tn = basetype(sp->tp);
-                            else
+                            {
                                 tn = sp->tp;
+                                while (tn != basetype(sp->tp) && tn->type != bt_va_list) tn = tn->btp;
+                            }
+                            else
+                            {
+                                tn = sp->tp;
+                            }
                             if (!templateNestingCount && isstructured(tn) && basetype(tn)->sp->sb->templateLevel &&
                                 !basetype(tn)->sp->sb->instantiated)
                             {

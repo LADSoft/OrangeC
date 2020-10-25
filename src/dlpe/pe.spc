@@ -12,7 +12,7 @@ partition {
 	region {} importThunks [align = 4, size = IMPORTCOUNT * 6 ];
 	CODESIZE = $ - CODEBASE;
   } .text;
-} pt1 [addr=IMAGEBASE + OBJECTALIGN];
+} pt1 [addr=IMAGEBASE + OBJECTALIGN, fill = 0x90];
 
 partition {
   overlay {

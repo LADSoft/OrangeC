@@ -9531,7 +9531,12 @@ TEMPLATEPARAMLIST* GetTypeAliasArgs(SYMBOL* sp, TEMPLATEPARAMLIST* args, TEMPLAT
             {
                 if (test->argsym && !strcmp(test->argsym->name, (*last)->argsym->name))
                 {
-                    if ((*last)->p->packed)
+                    if (!args2)
+                    {
+                        if (!test->p->packed)
+                            Utils::fatal("internal error");
+                    }
+                    else if ((*last)->p->packed)
                     {
                         if (args2->p->packed)
                         {
@@ -9553,7 +9558,10 @@ TEMPLATEPARAMLIST* GetTypeAliasArgs(SYMBOL* sp, TEMPLATEPARAMLIST* args, TEMPLAT
                         (*last)->p->byClass.dflt = args2->p->byClass.dflt;
                     }
                 }
-                args2 = args2->next;
+                if (args2)
+                {
+                    args2 = args2->next;
+                }
             }
         }
         temp = temp->next;
@@ -9615,16 +9623,12 @@ SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args)
             {
                 *x = (TEMPLATEPARAMLIST *)Alloc(sizeof(TEMPLATEPARAMLIST));
                 **x = *tpl;
-                if (tpl->p->type != kw_new && tpl->argsym && !tpl->p->byClass.dflt)
+                if (tpl->p->type != kw_new && tpl->argsym && (tpl->p->type == kw_int || !tpl->p->byClass.dflt))
                 {
                     const char *name = tpl->argsym->name;
                     if (tpl->p->type == kw_int && tpl->p->byNonType.dflt && tpl->p->byNonType.dflt->type == en_templateparam)
                     {
                         name = tpl->p->byNonType.dflt->v.sp->name;
-                    }
-                    else if (tpl->p->type == kw_typename && tpl->p->byClass.dflt && basetype(tpl->p->byClass.dflt)->type == bt_templateparam)
-                    {
-                        name = basetype(tpl->p->byClass.dflt)->templateParam->argsym->name;
                     }
                     STRUCTSYM* s = structSyms;
                     TEMPLATEPARAMLIST* rv = nullptr;

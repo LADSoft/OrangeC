@@ -1317,6 +1317,8 @@ static LEXEME* declstruct(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, bool inTemplat
                     TEMPLATEPARAMLIST* templateParams = TemplateGetParams(sp);
                     inTemplateSpecialization++;
                     parsingSpecializationDeclaration = true;
+                    if (lex->errline == 38 && strstr(lex->errfile, "__tuple"))
+                        printf("hi");
                     lex = GetTemplateArguments(lex, funcsp, nullptr, &templateParams->p->bySpecialization.types);
                     parsingSpecializationDeclaration = false;
                     inTemplateSpecialization--;
@@ -2646,7 +2648,7 @@ founddecltype:
                         if (sp1)
                         {
                             sp = sp1;
-                            if (!inUsing || !templateNestingCount)
+                            if (/*!inUsing || */!templateNestingCount)
                             {
                                 if (isstructured(sp->tp))
                                     sp->tp = PerformDeferredInitialization(sp->tp, funcsp);

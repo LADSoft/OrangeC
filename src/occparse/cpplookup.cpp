@@ -1316,8 +1316,8 @@ LEXEME* id_expression(LEXEME* lex, SYMBOL* funcsp, SYMBOL** sym, SYMBOL** strSym
             *nsv = ns;
         else
             *nsv = nullptr;
-    else if (!*sym)
-        prevsym(placeholder);
+    else if (!*sym && (!encloser || encloser->tp->type != bt_templateselector))
+        lex = prevsym(placeholder);
     if (!*sym && idname)
     {
         strcpy(idname, buf);

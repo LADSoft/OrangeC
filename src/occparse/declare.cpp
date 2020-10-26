@@ -1317,8 +1317,6 @@ static LEXEME* declstruct(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, bool inTemplat
                     TEMPLATEPARAMLIST* templateParams = TemplateGetParams(sp);
                     inTemplateSpecialization++;
                     parsingSpecializationDeclaration = true;
-                    if (lex->errline == 38 && strstr(lex->errfile, "__tuple"))
-                        printf("hi");
                     lex = GetTemplateArguments(lex, funcsp, nullptr, &templateParams->p->bySpecialization.types);
                     parsingSpecializationDeclaration = false;
                     inTemplateSpecialization--;
@@ -6013,6 +6011,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                                     }
                                     spi = nullptr;
                                 }
+                            /* end what to remove */
                             if (sym && sym->sb->templateLevel != sp->sb->templateLevel &&
                                 (sym->sb->templateLevel || !sp->sb->templateLevel || sp->templateParams->next) &&
                                 (!strSym || !strSym->sb->templateLevel || sym->sb->templateLevel != sp->sb->templateLevel + 1))

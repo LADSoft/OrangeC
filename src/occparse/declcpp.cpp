@@ -3042,7 +3042,7 @@ LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc st
                 {
                     sp->sb->templateLevel = templateNestingCount;
                     sp->templateParams = TemplateGetParams(sp);
-                    if (isstructured(tp) || tp->type == bt_templateselector)
+                    if (isstructured(tp) || basetype(tp)->type == bt_templateselector)
                         sp->sb->typeAlias = lst;
                 }
                 if (storage_class == sc_member)

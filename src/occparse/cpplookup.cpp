@@ -298,6 +298,7 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
         }
         else
         {
+            SYMBOL* sp_orig;
             lex = getIdName(lex, nullptr, buf, &ovdummy, nullptr);
             lex = getsym();
             bool hasTemplateArgs = false;
@@ -405,6 +406,7 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
                         }
                     }
                 }
+                sp_orig = sp;
             }
             else
             {
@@ -444,6 +446,7 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
                     lex = getsym();
                     finalPos = lex;
                 }
+                sp_orig = sp;
                 if (sp && sp->sb && sp->sb->typeAlias && !sp->sb->templateLevel && isstructured(sp->tp))
                 {
                     istypedef = true;
@@ -467,6 +470,7 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
                         sp1->tp = sp->tp->btp;
                         sp = sp1;
                     }
+                    sp_orig = sp;
                 }
             }
             if (!templateSelector)
@@ -488,7 +492,7 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
                         hasTemplateArgs = true;
                         if (MATCHKW(lex, lt))
                         {
-                            lex = GetTemplateArguments(lex, nullptr, sp, &current);
+                            lex = GetTemplateArguments(lex, nullptr, sp_orig, &current);
                         }
                         else if (MATCHKW(lex, classsel))
                         {

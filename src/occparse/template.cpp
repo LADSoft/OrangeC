@@ -2720,40 +2720,49 @@ static TEMPLATEPARAMLIST* paramsToDefault(TEMPLATEPARAMLIST* templateParams)
 static TEMPLATEPARAMLIST** addStructParam(TEMPLATEPARAMLIST** pt, TEMPLATEPARAMLIST* search, TEMPLATEPARAMLIST* enclosing)
 {
     TEMPLATEPARAMLIST* find = enclosing->next;
-    if (!search->argsym || (search->p->byClass.dflt && !search->p->byClass.val))
+    if (!search->p->byClass.val)
     {
-        if (!search->p->byClass.dflt)
-            return nullptr;
-        *pt = (TEMPLATEPARAMLIST*)Alloc(sizeof(TEMPLATEPARAMLIST));
-        (*pt)->p = (TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
-        *(*pt)->p = *search->p;
-        if (!templateNestingCount || instantiatingTemplate)
-            (*pt)->p->byClass.dflt = SynthesizeType((*pt)->p->byClass.dflt, enclosing, false);
+        if (!search->argsym || search->p->byClass.dflt)
+        {
+            if (!search->p->byClass.dflt)
+                return nullptr;
+            *pt = (TEMPLATEPARAMLIST*)Alloc(sizeof(TEMPLATEPARAMLIST));
+            (*pt)->p = (TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
+            *(*pt)->p = *search->p;
+            if (!templateNestingCount || instantiatingTemplate)
+                (*pt)->p->byClass.dflt = SynthesizeType((*pt)->p->byClass.dflt, enclosing, false);
+        }
+        else
+        {
+            while (find && strcmp(search->argsym->name, find->argsym->name) != 0)
+            {
+                find = find->next;
+            }
+            if (!find)
+            {
+                SYMBOL* sym = nullptr;
+                STRUCTSYM* s = structSyms;
+                while (s && !sym)
+                {
+                    if (s->tmpl)
+                        sym = templatesearch(search->argsym->name, s->tmpl);
+                    s = s->next;
+                }
+                if (!sym)
+                    return nullptr;
+                if (sym->tp->type != bt_templateparam || sym->tp->templateParam->p->type != kw_typename)
+                    return nullptr;
+                find = sym->tp->templateParam;
+            }
+            *pt = (TEMPLATEPARAMLIST*)Alloc(sizeof(TEMPLATEPARAMLIST));
+            (*pt)->p = find->p;
+        }
     }
     else
     {
-        while (find && strcmp(search->argsym->name, find->argsym->name) != 0)
-        {
-            find = find->next;
-        }
-        if (!find)
-        {
-            SYMBOL* sym = nullptr;
-            STRUCTSYM* s = structSyms;
-            while (s && !sym)
-            {
-                if (s->tmpl)
-                    sym = templatesearch(search->argsym->name, s->tmpl);
-                s = s->next;
-            }
-            if (!sym)
-                return nullptr;
-            if (sym->tp->type != bt_templateparam || sym->tp->templateParam->p->type != kw_typename)
-                return nullptr;
-            find = sym->tp->templateParam;
-        }
         *pt = (TEMPLATEPARAMLIST*)Alloc(sizeof(TEMPLATEPARAMLIST));
-        (*pt)->p = find->p;
+        (*pt)->p = (TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
+        *(*pt)->p = *search->p;
     }
     return &(*pt)->next;
 }
@@ -3006,6 +3015,8 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bo
                     tp = basetype(tp)->btp;
                 s.str = basetype(tp)->sp;
                 addStructureDeclaration(&s);
+                while (next->type == en_funcret)
+                    next = next->left;
                 if (next->type == en_func)
                 {
                     TYPE *ctype = tp;

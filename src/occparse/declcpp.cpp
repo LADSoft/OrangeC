@@ -2980,6 +2980,9 @@ LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc st
         {
             LEXEME* idsym = lex;
             lex = getsym();
+            attributes oldAttribs = basisAttribs;
+
+            basisAttribs = { 0 };
             ParseAttributeSpecifiers(&lex, nullptr, true);
             if (MATCHKW(lex, assign))
             {
@@ -3032,6 +3035,7 @@ LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc st
                 }
                 checkauto(tp, ERR_AUTO_NOT_ALLOWED_IN_USING_STATEMENT);
                 sp = makeID(sc_typedef, tp, nullptr, litlate(idsym->value.s.a));
+                sp->sb->attribs = basisAttribs;
                 TYPE* tp1 = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
                 tp1->type = bt_typedef;
                 tp1->btp = tp;
@@ -3051,12 +3055,14 @@ LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc st
                 InsertSymbol(sp, storage_class, lk_cdecl, false);
                 if (sp_out)
                     *sp_out = sp;
+                basisAttribs = oldAttribs;
                 return lex;
             }
             else
             {
                 lex = backupsym();
             }
+            basisAttribs = oldAttribs;
         }
         lex = nestedSearch(lex, &sp, nullptr, nullptr, nullptr, nullptr, false, sc_global, true, false);
         if (sp)

@@ -2778,15 +2778,18 @@ static TYPE* SynthesizeStructure(TYPE* tp_in, TEMPLATEPARAMLIST* enclosing)
         {
             if (!allTemplateArgsSpecified(sp, sp->templateParams->next))
             {
-                TEMPLATEPARAMLIST *l = sp->templateParams->next;
-                while (l)
+                if (!templateNestingCount)
                 {
-                    if (l->p->byClass.txtdflt && !l->p->byClass.val)
-                        break;
-                    l = l->next;
+                    TEMPLATEPARAMLIST *l = sp->templateParams->next;
+                    while (l)
+                    {
+                        if (l->p->byClass.txtdflt && !l->p->byClass.val)
+                            break;
+                        l = l->next;
+                    }
+                    if (l && !TemplateParseDefaultArgs(sp, l, l, l))
+                        return nullptr;
                 }
-                if (l && !TemplateParseDefaultArgs(sp, l, l, l))
-                    return nullptr;
                 if (!allTemplateArgsSpecified(sp, sp->templateParams->next))
                 {
                     TEMPLATEPARAMLIST *params = nullptr, **pt = &params, *search = sp->templateParams->next;

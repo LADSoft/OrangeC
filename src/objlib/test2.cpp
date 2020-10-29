@@ -41,6 +41,7 @@
 #endif
 #include <cstdio>
 #include <iomanip>
+#include <iostream>
 
 int main()
 {

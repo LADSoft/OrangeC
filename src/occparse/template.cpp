@@ -3501,7 +3501,7 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                 {
                     bool contin = false;
                     TEMPLATESELECTOR* find = rvs->next;
-                    if (rvs->isTemplate)
+                    if (rvs->isTemplate && ts->templateParams)
                     {
                         TEMPLATEPARAMLIST* current = rvs->templateParams;
                         TEMPLATEPARAMLIST* symtp = ts->templateParams->next;
@@ -5558,12 +5558,12 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* dest, TEMPL
             }
             SwapDefaultNames(enclosing, src->p->byClass.txtargs);
             n = PushTemplateNamespace(declareSym);
-            if ( 0 && primaryList && primaryList->p->byClass.txtdflt && primaryList->p->byClass.txtdflt == src->p->byClass.txtdflt)
+            if (primaryList && primaryList->p->byClass.txtdflt && primaryList->p->byClass.txtdflt == src->p->byClass.txtdflt)
             {
                 if (!primaryDefaultList)
                 {
                     TEMPLATEPARAMLIST** lst = &primaryDefaultList;
-                    TEMPLATEPARAMLIST* one = declareSym->sb->parent->templateParams->next;
+                    TEMPLATEPARAMLIST* one = declareSym->sb->parentTemplate->templateParams->next;
                     TEMPLATEPARAMLIST* two = declareSym->templateParams->p->bySpecialization.types;
                     while (one && two)
                     {
@@ -8285,7 +8285,7 @@ void TemplateArgsCopy(TEMPLATEPARAMLIST *base)
                 break;
             p = p->next;
         }
-        if (1 || p)
+        if (p)
         {
             TemplateArgsScan(base->p->bySpecialization.types, base);
         }

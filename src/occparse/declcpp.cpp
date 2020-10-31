@@ -1165,7 +1165,7 @@ LEXEME* baseClasses(LEXEME* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac defa
             name[0] = 0;
             if (ISID(lex))
                 strcpy(name, lex->value.s.a);
-            bcsym = nullptr;
+            bcsym = nullptr;    
             lex = nestedSearch(lex, &bcsym, nullptr, nullptr, nullptr, nullptr, false, sc_global, false, false);
             if (bcsym && bcsym->sb && bcsym->sb->storage_class == sc_typedef)
             {
@@ -3857,26 +3857,32 @@ static bool constArgValid(TYPE* tp)
         if (sym1 && !((SYMBOL*)sym1->tp->syms->table[0]->p)->sb->defaulted)
             return false;
         sym1 = search(overloadNameTab[CI_CONSTRUCTOR], tp->syms);
-        cpy = getCopyCons(sym, false);
-        mv = getCopyCons(sym, true);
-        hr = sym1->tp->syms->table[0];
-        while (hr)
+        if (sym1)
         {
-            sym1 = hr->p;
-            if (sym1 != cpy && sym1 != mv && isConstexprConstructor(sym1))
-                break;
-            hr = hr->next;
+            cpy = getCopyCons(sym, false);
+            mv = getCopyCons(sym, true);
+            hr = sym1->tp->syms->table[0];
+            while (hr)
+            {
+                sym1 = hr->p;
+                if (sym1 != cpy && sym1 != mv && isConstexprConstructor(sym1))
+                    break;
+                hr = hr->next;
+            }
+            if (!hr)
+                return false;
         }
-        if (!hr)
-            return false;
-        hr = tp->syms->table[0];
-        while (hr)
+        if (tp->syms)
         {
-            sym1 = hr->p;
-            if (sym1->sb->storage_class == sc_member && !isfunction(sym1->tp))
-                if (!constArgValid(sym1->tp))
-                    return false;
-            hr = hr->next;
+            hr = tp->syms->table[0];
+            while (hr)
+            {
+                sym1 = hr->p;
+                if (sym1->sb->storage_class == sc_member && !isfunction(sym1->tp))
+                    if (!constArgValid(sym1->tp))
+                        return false;
+                hr = hr->next;
+            }
         }
         bc = sym->sb->baseClasses;
         while (bc)

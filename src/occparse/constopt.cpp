@@ -2241,7 +2241,7 @@ int opt0(EXPRESSION** node)
             }
             break;
         case en_templateselector:
-           if (!templateNestingCount)
+           if (!templateNestingCount || instantiatingTemplate)
             {
                 TEMPLATESELECTOR* tsl = (*node)->v.templateSelector;
                 SYMBOL* ts = tsl->next->sp;

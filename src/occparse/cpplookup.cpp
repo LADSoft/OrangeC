@@ -300,8 +300,6 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
         {
             SYMBOL* sp_orig;
             lex = getIdName(lex, nullptr, buf, &ovdummy, nullptr);
-            if (lex->errline == 1117 && strstr(lex->errfile, "type_traits"))
-                printf("hi");
             lex = getsym();
             bool hasTemplateArgs = false;
             bool deferred = false;

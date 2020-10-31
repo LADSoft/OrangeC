@@ -410,7 +410,7 @@ LEXEME* get_type_id(LEXEME* lex, TYPE** tp, SYMBOL* funcsp, enum e_sc storage_cl
     *tp = nullptr;
 
     lex = getQualifiers(lex, tp, &linkage, &linkage2, &linkage3, nullptr);
-        lex = getBasicType(lex, funcsp, tp, nullptr, false, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3, ac_public,
+    lex = getBasicType(lex, funcsp, tp, nullptr, false, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3, ac_public,
                        &notype, &defd, nullptr, nullptr, false, false, inUsing);
     lex = getQualifiers(lex, tp, &linkage, &linkage2, &linkage3, nullptr);
     lex = getBeforeType(lex, funcsp, tp, &sp, nullptr, nullptr, false, storage_class, &linkage, &linkage2, &linkage3, false, false,
@@ -921,7 +921,7 @@ static LEXEME* structbody(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_ac cur
         openStructs = lst;
         lst->data = sp;
     }
-    lex = getsym();
+    lex = getsym(); 
     sl.str = sp;
     addStructureDeclaration(&sl);
     while (lex && KW(lex) != end)
@@ -2688,7 +2688,7 @@ founddecltype:
                                     tpy->btp = tpx;
                                     tn = SynthesizeType(*tp, tpx->templateParam, false);
                                     *tp = nullptr;
-                                }
+                                }   
                                 if (inTemplate)
                                 {
                                     if (MATCHKW(lex, lt))

@@ -8852,21 +8852,8 @@ TEMPLATEPARAMLIST * ResolveDeclType(SYMBOL* sp, TEMPLATEPARAMLIST* args)
     }
     return rv;
 }
-static int count1;
 SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
 {
-    if (!strcmp(sp->name, "__add_lvalue_reference_impl"))
-    {
-        count1++;
-        if (count1 >= 17)
-            printf("hi");
-    }
-    if (!strcmp(sp->name, ""))
-    {
-        count1++;
-        if (count1 >= 17)
-            printf("hi");
-    }
     int n = 1, i = 0;
     TEMPLATEPARAMLIST* unspecialized = sp->templateParams->next;
     SYMBOL *found1 = nullptr, *found2 = nullptr;
@@ -9397,6 +9384,31 @@ static TEMPLATEPARAMLIST* TypeAliasSearch(const char* name, TEMPLATEPARAMLIST* a
     return nullptr;
 }
 
+bool ReplaceIntAliasParams(EXPRESSION**exp)
+{
+    bool rv = false;
+    if ((*exp)->left)
+        rv |= ReplaceIntAliasParams(&(*exp)->left);
+    if ((*exp)->right)
+        rv |= ReplaceIntAliasParams(&(*exp)->right);
+    if ((*exp)->type == en_templateparam)
+    {
+        const char *name = (*exp)->v.sp->name;
+        STRUCTSYM* s = structSyms;
+        TEMPLATEPARAMLIST* found = nullptr;
+        while (s && !found)
+        {
+            found = TypeAliasSearch(name, s->tmpl);
+            s = s->next;
+        }
+        if (found)
+        {
+            *exp = found->p->byNonType.dflt;
+        }
+        rv = true;
+    }
+    return rv;
+}
 void SpecifyTemplateSelector(TEMPLATESELECTOR** rvs, TEMPLATESELECTOR* old, bool expression = false)
 {
         while (old)
@@ -9427,7 +9439,12 @@ void SpecifyTemplateSelector(TEMPLATESELECTOR** rvs, TEMPLATESELECTOR* old, bool
                     **x = *tpl;
                     if (tpl->p->type != kw_new)
                     {
-                        if (expression || (tpl->p->type != kw_new && tpl->argsym && (tpl->p->type == kw_int || !tpl->p->byClass.dflt)))
+                        bool replaced = false;
+                        if (!expression && tpl->p->type == kw_int && tpl->p->byNonType.dflt)
+                        {
+                            replaced = ReplaceIntAliasParams(&tpl->p->byNonType.dflt);
+                        }
+                        if (!replaced && (expression || (tpl->p->type != kw_new && tpl->argsym && (tpl->p->type == kw_int || !tpl->p->byClass.dflt))))
                         {
                             const char *name = tpl->argsym->name;
                             if (!expression && tpl->p->type == kw_int && tpl->p->byNonType.dflt && tpl->p->byNonType.dflt->type == en_templateparam)
@@ -9444,15 +9461,6 @@ void SpecifyTemplateSelector(TEMPLATESELECTOR** rvs, TEMPLATESELECTOR* old, bool
                             if (rv)
                             {
                                 (*x)->p = rv->p;
-                                if (0 && expression && (*x)->p->type == kw_typename && (*x)->p->byClass.dflt && isstructured((*x)->p->byClass.dflt))
-                                {
-                                    SYMBOL *sp = basetype((*x)->p->byClass.dflt)->sp;
-                                    sp = GetAliasClassTemplate(sp, (*rvs)->templateParams);
-                                    if (sp)
-                                    {
-                                        (*x)->p->byClass.dflt = sp->tp;
-                                    }
-                                }
                             }
                         }
                     }
@@ -9539,7 +9547,9 @@ static TYPE* SpecifyArgType(SYMBOL* sym, TYPE* tp, TEMPLATEPARAMLIST* orig, TEMP
                 x = &(*x)->next;
                 tpl = tpl->next;
             }
-            basetype(tp)->sp = GetAliasClassTemplate(basetype(tp)->sp, args);
+            SYMBOL* sp1 = GetAliasClassTemplate(basetype(tp)->sp, args);
+            if (sp1)
+                basetype(tp)->sp = sp1;
         }
     }
     return rv;
@@ -9627,7 +9637,7 @@ TEMPLATEPARAMLIST* GetTypeAliasArgs(SYMBOL* sp, TEMPLATEPARAMLIST* args, TEMPLAT
         temp = temp->next;
         last = &(*last)->next;
     }
-    if (!templateNestingCount)
+    if (!templateNestingCount || instantiatingTemplate)
     {
         temp = args1;
         while (temp)

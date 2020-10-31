@@ -400,8 +400,6 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
     LEXEME* placeholder = lex;
     if (ismutable)
         *ismutable = false;
-    if (ISID(lex) && !strcmp(lex->value.s.a, "is_copy_assignable"))
-        printf("hi");
     if (Optimizer::cparams.prm_cplusplus ||
         ((Optimizer::architecture == ARCHITECTURE_MSIL) && Optimizer::cparams.msilAllowExtensions))
     {

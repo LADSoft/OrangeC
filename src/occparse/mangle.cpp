@@ -454,7 +454,7 @@ static char* mangleExpression(char* buf, EXPRESSION* exp)
 {
     if (exp)
     {
-        *buf++ = '$';
+        *buf++ = '?';
         buf = mangleExpressionInternal(buf, exp);
     }
     return buf;

@@ -804,8 +804,8 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
             line = preProcessor->GetErrLineNo();
         }
     }
-    char buf[2048];
-    char infunc[2048];
+    char buf[10000];
+    char infunc[10000];
     const char* listerr;
     char nameb[265], *name = nameb;
     if (Optimizer::cparams.prm_makestubs || inDeduceArgs || (templateNestingCount && ignoreErrtemplateNestingCount(err)))
@@ -943,7 +943,7 @@ void preverror(int err, const char* name, const char* origFile, int origLine)
 }
 void preverrorsym(int err, SYMBOL* sp, const char* origFile, int origLine)
 {
-    char buf[2048];
+    char buf[10000];
     unmangle(buf, sp->sb->decoratedName);
     if (origFile && origLine)
         preverror(err, buf, origFile, origLine);
@@ -976,9 +976,9 @@ void getcls(char* buf, SYMBOL* clssym)
 void errorqualified(int err, SYMBOL* strSym, NAMESPACEVALUELIST* nsv, const char* name)
 {
     char buf[4096];
-    char unopped[2048];
+    char unopped[10000];
     const char* last = "typename";
-    char lastb[2048];
+    char lastb[10000];
     memset(buf, 0, sizeof(buf));
     if (strSym)
     {
@@ -1036,7 +1036,7 @@ void errorstr2(int err, const char* val, const char* two)
 }
 void errorsym(int err, SYMBOL* sym)
 {
-    char buf[2048];
+    char buf[5000];
     if (sym->sb)
     {
         if (!sym->sb->decoratedName)
@@ -1053,7 +1053,7 @@ void errorsym(int err, SYMBOL* sym)
 }
 void errorsym(int err, SYMBOL* sym, int line, const char* file)
 {
-    char buf[2048];
+    char buf[10000];
     if (!sym->sb->decoratedName)
     {
         SetLinkerNames(sym, lk_cdecl);
@@ -1063,14 +1063,14 @@ void errorsym(int err, SYMBOL* sym, int line, const char* file)
 }
 void errorsym2(int err, SYMBOL* sym1, SYMBOL* sym2)
 {
-    char one[2048], two[2048];
+    char one[10000], two[10000];
     unmangle(one, sym1->sb->decoratedName);
     unmangle(two, sym2->sb->decoratedName);
     printerr(err, nullptr, 0, one, two);
 }
 void errorstrsym(int err, const char* name, SYMBOL* sym2)
 {
-    char two[2048];
+    char two[10000];
     unmangle(two, sym2->sb->decoratedName);
     printerr(err, nullptr, 0, name, two);
 }
@@ -1104,8 +1104,8 @@ void errorabstract(int error, SYMBOL* sp)
 }
 void errorarg(int err, int argnum, SYMBOL* declsp, SYMBOL* funcsp)
 {
-    char argbuf[2048];
-    char buf[2048];
+    char argbuf[10000];
+    char buf[10000];
     if (declsp->sb->anonymous)
         Optimizer::my_sprintf(argbuf, "%d", argnum);
     else

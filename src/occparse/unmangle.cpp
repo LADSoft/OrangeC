@@ -560,6 +560,12 @@ static const char* unmangTemplate(char* buf, const char* name, const char* last)
                             strcpy(tname, "...");
                             name++;
                         }
+                        if (*name == '~')
+                        {
+                            strcpy(buf, tname);
+                            buf += strlen(buf)+2;
+                            break;
+                        }
                         name = unmang1(tname + strlen(tname), name, last, false);
                         if (*name == '$')
                         {

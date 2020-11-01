@@ -75,6 +75,7 @@ const char* xlate_tab[] = {
 static const char* unmangcpptype(char* buf, const char* name, const char* last);
 const char* unmang1(char* buf, const char* name, const char* last, bool tof);
 static const char* unmangTemplate(char* buf, const char* name, const char* last);
+char* unmangle(char* val, const char* name);
 
 #define MAX_MANGLE_NAME_COUNT 36
 static int manglenamecount = -1;
@@ -198,16 +199,34 @@ char* unmangleExpression(char* dest, const char** name)
 {
     if (isdigit(*(*name)) || *(*name) == '_')
     {
+        int n = 0;
+        bool minus = false;
         if (*(*name) == '_')
         {
-            *dest++ = '-';
+            minus = true;
             (*name)++;
         }
         while (isdigit(*(*name)))
         {
-            *dest++ = *(*name)++;
+            n *= 10;
+            n += *(*name)++ - '0';
         }
-        (*name)++;  // past '?'
+        if (**name == '?')
+        {
+            (*name)++;
+            if (minus)
+                *dest++ = '-';
+            Optimizer::my_sprintf(dest, "%d", n);
+        }
+        else
+        {
+            char buf[5000];
+            memcpy(buf, *name, n);
+            buf[n] = 0;
+            unmangle(dest, buf);
+            *name += n;
+        }
+        return dest + strlen(dest);
     }
     else
     {
@@ -560,18 +579,15 @@ static const char* unmangTemplate(char* buf, const char* name, const char* last)
                             strcpy(tname, "...");
                             name++;
                         }
-                        if (*name == '~')
+                        if (*name != '~')
                         {
-                            strcpy(buf, tname);
-                            buf += strlen(buf)+2;
-                            break;
-                        }
-                        name = unmang1(tname + strlen(tname), name, last, false);
-                        if (*name == '$')
-                        {
-                            name++;
-                            strcat(tname, "=");
-                            unmangleExpression(tname + strlen(tname), &name);
+                            name = unmang1(tname + strlen(tname), name, last, false);
+                            if (*name == '$')
+                            {
+                                name++;
+                                strcat(tname, "=");
+                                unmangleExpression(tname + strlen(tname), &name);
+}
                         }
                         strcpy(buf, tname);
                         buf += strlen(buf);
@@ -1105,16 +1121,25 @@ char* unmangle(char* val, const char* name)
             }
             else if (*name == '$')
             {
-                *buf = 0;
+                // discard the template params if they are there
                 if (name[1] == 'b' || name[1] == 'o')
                 {
                     name = unmang_intrins(buf, name, last);
+                    buf += strlen(buf);
                 }
-                else
+                else if (*(name + 1) == 'q')
                 {
+                    *buf = 0;
                     name = unmang1(buf, name + 1, last, true);
+                    buf += strlen(buf);
                 }
-                buf += strlen(buf);
+                else 
+                {
+                    name++;
+                    char temp[4000];
+                    while (*name && *name != '$')
+                        name = unmang1(temp, name, last, true);
+                }
             }
             else if (*name == '@')
             {

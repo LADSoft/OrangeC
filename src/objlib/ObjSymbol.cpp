@@ -92,7 +92,7 @@ static char manglenames[MAX_MANGLE_NAME_COUNT][512];
 
 const char* unmang_intrins(char* buf, const char* name, const char* last)
 {
-    char cur[4096], *p = cur, *q;
+    char cur[4096], *p = cur;
     int i;
     *p++ = *name++;  // past the '$'
     while (*name != '@' && *name != '$' && *name)
@@ -109,26 +109,26 @@ const char* unmang_intrins(char* buf, const char* name, const char* last)
         {
             switch (i)
             {
-                case 2:  // cast op
-                    strcpy(buf, "operator ");
-                    if (*name == '$')
-                    {
-                        buf += strlen(buf);
-                        name = unmang1(buf, name + 2, last, false);
-                    }
-                    break;
-                case 1:  // delete
-                    *buf++ = '~';
-                    // fallthrough
-                case 0:  // new
+            case 2:  // cast op
+                strcpy(buf, "operator ");
+                if (*name == '$')
                 {
-                    const char* p = last;
-                    char* q = buf;
-                    while (*p && *p != ':')
-                        *q++ = *p++;
-                    *q = 0;
+                    buf += strlen(buf);
+                    name = unmang1(buf, name + 2, last, false);
                 }
                 break;
+            case 1:  // delete
+                *buf++ = '~';
+                // fallthrough
+            case 0:  // new
+            {
+                const char* p = last;
+                char* q = buf;
+                while (*p && *p != ':')
+                    *q++ = *p++;
+                *q = 0;
+            }
+            break;
             }
         }
         else
@@ -208,267 +208,213 @@ char* unmangleExpression(char* dest, const char** name)
 {
     if (isdigit(*(*name)) || *(*name) == '_')
     {
+        int n = 0;
+        bool minus = false;
         if (*(*name) == '_')
         {
-            *dest++ = '-';
+            minus = true;
             (*name)++;
         }
         while (isdigit(*(*name)))
         {
-            *dest++ = *(*name)++;
+            n *= 10;
+            n += *(*name)++ - '0';
         }
-        (*name)++;  // past '?'
+        if (**name == '?')
+        {
+            (*name)++;
+            if (minus)
+                *dest++ = '-';
+            sprintf(dest, "%d", n);
+        }
+        else
+        {
+            char buf[5000];
+            memcpy(buf, *name, n);
+            buf[n] = 0;
+            unmangle(dest, buf);
+            *name += n;
+        }
+        return dest + strlen(dest);
     }
     else
     {
         switch (*(*name)++)
         {
-            case 'n':
-                strcpy(dest, "nullptr");
-                break;
-            case 'p':
-                dest = unmangleExpression(dest, name);
+        case 'n':
+            strcpy(dest, "nullptr");
+            break;
+        case 'p':
+            dest = unmangleExpression(dest, name);
+            *dest++ = '+';
+            dest = unmangleExpression(dest, name);
+            break;
+        case 's':
+            dest = unmangleExpression(dest, name);
+            *dest++ = '-';
+            dest = unmangleExpression(dest, name);
+            break;
+        case 'u':
+            *dest++ = '-';
+            dest = unmangleExpression(dest, name);
+            break;
+        case 'i':
+        {
+            char next = *(*name)++;
+            dest = unmangleExpression(dest, name);
+            if (next == 'p')
+            {
                 *dest++ = '+';
-                dest = unmangleExpression(dest, name);
-                break;
-            case 's':
-                dest = unmangleExpression(dest, name);
-                *dest++ = '-';
-                dest = unmangleExpression(dest, name);
-                break;
-            case 'u':
-                *dest++ = '-';
-                dest = unmangleExpression(dest, name);
-                break;
-            case 'i':
+                *dest++ = '+';
+            }
+            else
             {
-                char next = *(*name)++;
-                dest = unmangleExpression(dest, name);
-                if (next == 'p')
-                {
-                    *dest++ = '+';
-                    *dest++ = '+';
-                }
-                else
-                {
-                    *dest++ = '-';
-                    *dest++ = '-';
-                }
+                *dest++ = '-';
+                *dest++ = '-';
+            }
+            break;
+        }
+        case 'm':
+            dest = unmangleExpression(dest, name);
+            *dest++ = '*';
+            dest = unmangleExpression(dest, name);
+            break;
+        case 'o':
+            dest = unmangleExpression(dest, name);
+            *dest++ = '%';
+            dest = unmangleExpression(dest, name);
+            break;
+        case 'd':
+            dest = unmangleExpression(dest, name);
+            *dest++ = '/';
+            dest = unmangleExpression(dest, name);
+            break;
+        case 'h':
+        {
+            char next = *(*name)++;
+            dest = unmangleExpression(dest, name);
+            if (next == 'l')
+            {
+                *dest++ = '<';
+                *dest++ = '<';
+            }
+            else
+            {
+                *dest++ = '>';
+                *dest++ = '>';
+            }
+            dest = unmangleExpression(dest, name);
+            break;
+        }
+        case 'C':
+            dest = unmangleExpression(dest, name);
+            *dest++ = '?';
+            dest = unmangleExpression(dest, name);
+            *dest++ = ':';
+            dest = unmangleExpression(dest, name);
+            break;
+        case 'c':
+        {
+            char next = *(*name)++, next1 = 0;
+            if (next != 'e' && next != 'n')
+            {
+                next1 = *(*name)++;
+            }
+            dest = unmangleExpression(dest, name);
+            switch (next)
+            {
+            case 'e':
+                *dest++ = '=';
+                *dest++ = '=';
+                break;
+            case 'n':
+                *dest++ = '!';
+                *dest++ = '=';
+                break;
+            case 'g':
+                *dest++ = '>';
+                if (next1 == 'e')
+                    *dest++ = '=';
+                break;
+            case 'l':
+                *dest++ = '<';
+                if (next1 == 'e')
+                    *dest++ = '=';
                 break;
             }
-            case 'm':
-                dest = unmangleExpression(dest, name);
-                *dest++ = '*';
-                dest = unmangleExpression(dest, name);
-                break;
-            case 'o':
-                dest = unmangleExpression(dest, name);
-                *dest++ = '%';
-                dest = unmangleExpression(dest, name);
-                break;
-            case 'd':
-                dest = unmangleExpression(dest, name);
-                *dest++ = '/';
-                dest = unmangleExpression(dest, name);
-                break;
-            case 'h':
+            dest = unmangleExpression(dest, name);
+            break;
+        }
+        case 'b':
+        {
+            char next = *(*name)++;
+            if (next == 'n')
             {
-                char next = *(*name)++;
+                *dest++ = '~';
                 dest = unmangleExpression(dest, name);
-                if (next == 'l')
-                {
-                    *dest++ = '<';
-                    *dest++ = '<';
-                }
-                else
-                {
-                    *dest++ = '>';
-                    *dest++ = '>';
-                }
-                dest = unmangleExpression(dest, name);
-                break;
             }
-            case 'C':
-                dest = unmangleExpression(dest, name);
-                *dest++ = '?';
-                dest = unmangleExpression(dest, name);
-                *dest++ = ':';
-                dest = unmangleExpression(dest, name);
-                break;
-            case 'c':
+            else
             {
-                char next = *(*name)++, next1 = 0;
-                if (next != 'e' && next != 'n')
-                {
-                    next1 = *(*name)++;
-                }
                 dest = unmangleExpression(dest, name);
                 switch (next)
                 {
-                    case 'e':
-                        *dest++ = '=';
-                        *dest++ = '=';
-                        break;
-                    case 'n':
-                        *dest++ = '!';
-                        *dest++ = '=';
-                        break;
-                    case 'g':
-                        *dest++ = '>';
-                        if (next1 == 'e')
-                            *dest++ = '=';
-                        break;
-                    case 'l':
-                        *dest++ = '<';
-                        if (next1 == 'e')
-                            *dest++ = '=';
-                        break;
+                case 'a':
+                    *dest++ = '&';
+                    break;
+                case 'o':
+                    *dest++ = '|';
+                    break;
+                case 'x':
+                    *dest++ = '^';
+                    break;
                 }
                 dest = unmangleExpression(dest, name);
-                break;
-            }
-            case 'b':
-            {
-                char next = *(*name)++;
-                if (next == 'n')
-                {
-                    *dest++ = '~';
-                    dest = unmangleExpression(dest, name);
-                }
-                else
-                {
-                    dest = unmangleExpression(dest, name);
-                    switch (next)
-                    {
-                        case 'a':
-                            *dest++ = '&';
-                            break;
-                        case 'o':
-                            *dest++ = '|';
-                            break;
-                        case 'x':
-                            *dest++ = '^';
-                            break;
-                    }
-                    dest = unmangleExpression(dest, name);
-                }
-                break;
-            }
-            case 'l':
-            {
-                char next = *(*name)++;
-                if (next == 'n')
-                {
-                    *dest++ = '!';
-                    dest = unmangleExpression(dest, name);
-                }
-                else
-                {
-                    dest = unmangleExpression(dest, name);
-                    switch (next)
-                    {
-                        case 'a':
-                            *dest++ = '&';
-                            *dest++ = '&';
-                            break;
-                        case 'o':
-                            *dest++ = '|';
-                            *dest++ = '|';
-                            break;
-                    }
-                    dest = unmangleExpression(dest, name);
-                }
-                break;
-            }
-            case 't':
-            {
-                char next = *(*name)++;
-                if (next == 's')
-                {
-                    int v;
-                    if (*(*name) == '#')
-                    {
-                        (*name) = unmangTemplate(dest, *name, "");
-                        dest += strlen(dest);
-                    }
-                    else if (isdigit(*(*name)))
-                    {
-                        v = *(*name)++ - '0';
-                        while (isdigit(*(*name)))
-                            v = v * 10 + *(*name)++ - '0';
-                        strncpy(dest, *name, v);
-                        (*name) += v;
-                        dest += strlen(dest);
-                    }
-                    else if (*(*name) == 'n')
-                    {
-                        (*name)++;
-                        v = *(*name)++ - '0';
-                        if (v > 9)
-                            v -= 7;
-                        strcpy(dest, manglenames[v]);
-                        dest += strlen(dest);
-                    }
-                    while (*(*name) == 't')
-                    {
-                        (*name)++;
-                        *dest++ = ':';
-                        *dest++ = ':';
-                        if (isdigit(*(*name)))
-                        {
-                            v = *(*name)++ - '0';
-                            while (isdigit(*(*name)))
-                                v = v * 10 + *(*name)++ - '0';
-                            strncpy(dest, *name, v);
-                            (*name) += v;
-                            dest += strlen(dest);
-                        }
-                        else if (*(*name) == 'n')
-                        {
-                            (*name)++;
-                            v = *(*name)++ - '0';
-                            if (v > 9)
-                                v -= 7;
-                            strcpy(dest, manglenames[v]);
-                            dest += strlen(dest);
-                        }
-                    }
-                }
-                else
-                {
-                    int v;
-                    (*name)++;
-                    if (isdigit(*(*name)))
-                    {
-                        v = *(*name)++ - '0';
-                        while (isdigit(*(*name)))
-                            v = v * 10 + *(*name)++ - '0';
-                        strncpy(dest, *name, v);
-                        (*name) += v;
-                        dest += strlen(dest);
-                    }
-                    else if (*(*name) == 'n')
-                    {
-                        (*name)++;
-                        v = *(*name)++ - '0';
-                        if (v > 9)
-                            v -= 7;
-                        strcpy(dest, manglenames[v]);
-                        dest += strlen(dest);
-                    }
-                }
             }
             break;
-            case 'f':
+        }
+        case 'l':
+        {
+            char next = *(*name)++;
+            if (next == 'n')
+            {
+                *dest++ = '!';
+                dest = unmangleExpression(dest, name);
+            }
+            else
+            {
+                dest = unmangleExpression(dest, name);
+                switch (next)
+                {
+                case 'a':
+                    *dest++ = '&';
+                    *dest++ = '&';
+                    break;
+                case 'o':
+                    *dest++ = '|';
+                    *dest++ = '|';
+                    break;
+                }
+                dest = unmangleExpression(dest, name);
+            }
+            break;
+        }
+        case 't':
+        {
+            char next = *(*name)++;
+            if (next == 's')
             {
                 int v;
-                if (isdigit(*(*name)))
+                if (*(*name) == '#')
                 {
-
+                    (*name) = unmangTemplate(dest, (*name), "");
+                    dest += strlen(dest);
+                }
+                else if (isdigit(*(*name)))
+                {
                     v = *(*name)++ - '0';
                     while (isdigit(*(*name)))
                         v = v * 10 + *(*name)++ - '0';
-                    strncpy(dest, *name, v);
+                    strncpy(dest, (*name), v);
                     (*name) += v;
                     dest += strlen(dest);
                 }
@@ -481,44 +427,117 @@ char* unmangleExpression(char* dest, const char** name)
                     strcpy(dest, manglenames[v]);
                     dest += strlen(dest);
                 }
-                *dest++ = '(';
-                while (*(*name) == 'f')
+                while (*(*name) == 't')
                 {
                     (*name)++;
-                    dest = unmangleExpression(dest, name);
+                    *dest++ = ':';
+                    *dest++ = ':';
+                    if (isdigit(*(*name)))
+                    {
+                        v = *(*name)++ - '0';
+                        while (isdigit(*(*name)))
+                            v = v * 10 + *(*name)++ - '0';
+                        strncpy(dest, (*name), v);
+                        dest[v] = 0;
+                        (*name) += v;
+                        dest += strlen(dest);
+                    }
+                    else if (*(*name) == 'n')
+                    {
+                        (*name)++;
+                        v = *(*name)++ - '0';
+                        if (v > 9)
+                            v -= 7;
+                        strcpy(dest, manglenames[v]);
+                        dest += strlen(dest);
+                    }
                 }
-                *dest++ = ')';
-                *dest = 0;
-                break;
             }
-            case 'e':
-                if (*(*name) == '?')
+            else
+            {
+                int v;
+                (*name)++;
+                if (isdigit(*(*name)))
                 {
-                    *dest++ = '*';
-                    (*name)++;
+                    v = *(*name)++ - '0';
+                    while (isdigit(*(*name)))
+                        v = v * 10 + *(*name)++ - '0';
+                    strncpy(dest, (*name), v);
+                    (*name) += v;
+                    dest += strlen(dest);
                 }
-                while (*(*name) && *(*name) != '$')
-                    *dest++ = *(*name)++;
-                if (*(*name))
-                {
-                    char bft[4096];
-                    (*name)++;
-                    unmang1(bft, (*name), "", false);
-                }
-                break;
-            case 'g':
-                if (*(*name) == '?')
-                {
-                    *dest++ = '*';
-                    (*name)++;
-                }
-                while (*(*name) && *(*name) != '$')
-                    *dest++ = *(*name)++;
-                if (*(*name))
+                else if (*(*name) == 'n')
                 {
                     (*name)++;
+                    v = *(*name)++ - '0';
+                    if (v > 9)
+                        v -= 7;
+                    strcpy(dest, manglenames[v]);
+                    dest += strlen(dest);
                 }
-                break;
+            }
+            break;
+        }
+        case 'f':
+        {
+            int v;
+            if (isdigit(*(*name)))
+            {
+
+                v = *(*name)++ - '0';
+                while (isdigit(*(*name)))
+                    v = v * 10 + *(*name)++ - '0';
+                strncpy(dest, (*name), v);
+                (*name) += v;
+                dest += strlen(dest);
+            }
+            else if (*(*name) == 'n')
+            {
+                (*name)++;
+                v = *(*name)++ - '0';
+                if (v > 9)
+                    v -= 7;
+                strcpy(dest, manglenames[v]);
+                dest += strlen(dest);
+            }
+            *dest++ = '(';
+            while (*(*name) == 'f')
+            {
+                (*name)++;
+                dest = unmangleExpression(dest, name);
+            }
+            *dest++ = ')';
+            *dest = 0;
+            break;
+        }
+        case 'e':
+            if (*(*name) == '?')
+            {
+                *dest++ = '*';
+                (*name)++;
+            }
+            while (*(*name) && *(*name) != '$')
+                *dest++ = *(*name)++;
+            if (*(*name))
+            {
+                char bft[4096];
+                (*name)++;
+                unmang1(bft, (*name), "", false);
+            }
+            break;
+        case 'g':
+            if (*(*name) == '?')
+            {
+                *dest++ = '*';
+                (*name)++;
+            }
+            while (*(*name) && *(*name) != '$')
+                *dest++ = *(*name)++;
+            if (*(*name))
+            {
+                (*name)++;
+            }
+            break;
         }
     }
     *dest = 0;
@@ -562,24 +581,22 @@ static const char* unmangTemplate(char* buf, const char* name, const char* last)
                     {
                         char tname[10000];
                         *buf = 0;
+                        memset(tname, 0, sizeof(tname));
                         tname[0] = 0;
                         if (*name == 'e')
                         {
                             strcpy(tname, "...");
                             name++;
                         }
-                        if (*name == '~')
+                        if (*name != '~')
                         {
-                            strcpy(buf, tname);
-                            buf += strlen(buf)+2;
-                            break;
-                        }
-                        name = unmang1(tname + strlen(tname), name, last, false);
-                        if (*name == '$')
-                        {
-                            name++;
-                            strcat(tname, "=");
-                            unmangleExpression(tname + strlen(tname), &name);
+                            name = unmang1(tname + strlen(tname), name, last, false);
+                            if (*name == '$')
+                            {
+                                name++;
+                                strcat(tname, "=");
+                                unmangleExpression(tname + strlen(tname), &name);
+                            }
                         }
                         strcpy(buf, tname);
                         buf += strlen(buf);
@@ -629,10 +646,9 @@ const char* unmang1(char* buf, const char* name, const char* last, bool tof)
             strcat(buf, tn_volatile);
     }
 
-start:
     if (isdigit(*name))
     {
-        const char* s = buf;
+        char* s = buf;
         v = *name++ - '0';
         while (isdigit(*name))
             v = v * 10 + *name++ - '0';
@@ -640,7 +656,7 @@ start:
             name++, v--;
         if (v < 0 || v > 200)
             return unmang1(buf, name, last, tof);  // out of sequence, recover
-        while (*name && v > 0)
+        while (v > 0)
         {
             const char* newname;
             if (name[0] == '#')
@@ -656,6 +672,7 @@ start:
                 {
                     *buf++ = *name++;
                     *buf++ = *name++;
+                    *buf = 0;
                     v -= 2;
                 }
                 else
@@ -687,361 +704,374 @@ start:
     else
         switch (*name++)
         {
-            case '$':
-                p = buf1;
-                if (*name == 't')
-                {
-                    name = unmangcpptype(buf, name, last);
-                }
-                else if (isdigit(*name))
-                {
-                    *p++ = '(';
-                    while (*name && *name != '$')
-                    {
-                        *p++ = *name++;
-                    }
-                    if (*name)
-                        name++;
-                    *p++ = ')';
-                    *p = 0;
-                }
-                else if (*name == 's')
-                {
-                    name++;
-                    *p++ = '(';
-                    *p++ = '"';
-                    while (*name && *name != '$')
-                    {
-                        *p++ = *name++;
-                    }
-                    if (*name)
-                        name++;
-                    *p++ = '"';
-                    *p++ = ')';
-                    *p = 0;
-                }
-                break;
-            case 'Q':
-            case 'q':
-                p = buf1;
-                if (!tof)
-                {
-                    *p++ = '(';
-                    *p++ = '*';
-                    *p++ = ')';
-                }
+        case '$':
+            p = buf1;
+            if (*name == 't')
+            {
+                name = unmangcpptype(buf, name, last);
+            }
+            else if (isdigit(*name))
+            {
                 *p++ = '(';
-                *p = 0;
-                if (*name == 'v')
+                while (*name && *name != '$')
                 {
-                    // special case for func with void argument
+                    *p++ = *name++;
+                }
+                if (*name)
+                    name++;
+                *p++ = ')';
+                *p = 0;
+            }
+            else if (*name == 's')
+            {
+                name++;
+                *p++ = '(';
+                *p++ = '"';
+                while (*name && *name != '$')
+                {
+                    *p++ = *name++;
+                }
+                if (*name)
+                    name++;
+                *p++ = '"';
+                *p++ = ')';
+                *p = 0;
+            }
+            break;
+        case 'Q':
+        case 'q':
+            p = buf1;
+            if (!tof)
+            {
+                *p++ = '(';
+                *p++ = '*';
+                *p++ = ')';
+            }
+            *p++ = '(';
+            *p = 0;
+            if (*name == 'v')
+            {
+                // special case for func with void argument
+                *p++ = ',';
+                *p++ = ' ';
+                *p = 0;
+                name++;
+            }
+            else
+            {
+                while (*name && *name != '$')
+                {
+                    if (*name == '#')
+                    {
+                        name = unmangTemplate(p, name, last);
+                    }
+                    else
+                    {
+                        name = unmang1(p, name, last, false);
+                    }
+                    p += strlen(p);
                     *p++ = ',';
                     *p++ = ' ';
                     *p = 0;
-                    name++;
+                }
+            }
+            if (*name == '$')
+                name++;
+            if (p >= buf1 + 2)
+                p -= 2;
+            *p = 0;
+            if (*name)
+            {
+                // discard return value
+                buf2[0] = 0;
+                name = unmang1(buf2, name, last, false);
+            }
+            strcpy(buf, buf1);
+            strcat(buf, ")");
+            if (cconst)
+                strcat(buf, tn_const);
+            if (cvol)
+                strcat(buf, tn_volatile);
+            if (clrqual)
+                strcat(buf, "& ");
+            if (crrqual)
+                strcat(buf, "&& ");
+            buf += strlen(buf);
+            break;
+        case 'h':
+            strcpy(buf, tn_char16_t);
+            buf += strlen(buf);
+            break;
+        case 'H':
+            strcpy(buf, tn_char32_t);
+            buf += strlen(buf);
+            break;
+        case 'S':
+            strcpy(buf, tn_signed);
+            buf = buf + 7;
+            if (*name++ == 'c')
+                strcpy(buf, tn_char);
+            break;
+        case 'u':
+            strcpy(buf, "unsigned ");
+            buf = buf + 9;
+            if (*name == 'N')
+            {
+                strcpy(buf, "unative");
+            }
+            else
+                switch (*name++)
+                {
+                case 'i':
+                    strcpy(buf, tn_int);
+                    break;
+                case 'l':
+                    strcpy(buf, tn_long);
+                    break;
+                case 'L':
+                    strcpy(buf, tn_longlong);
+                    break;
+                case 's':
+                    strcpy(buf, tn_short);
+                    break;
+                case 'c':
+                    strcpy(buf, tn_char);
+                    break;
+                case 'N':
+                    strcpy(buf, "native int");
+                    break;
+                }
+            break;
+        case 'M':
+            buf2[0] = 0;
+            if (*name == '#')
+            {
+                name = unmangTemplate(buf2, name, last);
+                p = buf2;
+            }
+            else if (*name == 'n')
+            {
+                name++;
+                v = *name++ - '0';
+                if (v > 9)
+                    v -= 7;
+                strcpy(buf2, manglenames[v]);
+                p = buf2 + strlen(buf2);
+            }
+            else
+            {
+                v = *name++ - '0';
+                while (isdigit(*name))
+                    v = v * 10 + *name++ - '0';
+                p = buf3;
+                while (v--)
+                {
+                    if (*name == '@')
+                    {
+                        name++;
+                        *p++ = ':';
+                        *p++ = ':';
+                    }
+                    else
+                        *p++ = *name++;
+                    *p = 0;
+                }
+                if (manglenamecount < MAX_MANGLE_NAME_COUNT)
+                    Utils::StrCpy(manglenames[manglenamecount++], buf2);
+                if (buf3[0] == '#')
+                {
+                    unmangTemplate(buf2, buf3, last);
                 }
                 else
                 {
-                    while (*name && *name != '$')
-                    {
-                        if (*name == '#')
-                        {
-                            name = unmangTemplate(p, name, last);
-                        }
-                        else
-                        {
-                            name = unmang1(p, name, last, false);
-                        }
-                        p += strlen(p);
-                        *p++ = ',';
-                        *p++ = ' ';
-                        *p = 0;
-                    }
+                    strcpy(buf2, buf3);
                 }
-                if (*name == '$')
-                    name++;
-                if (p >= buf1 + 2)
-                    p -= 2;
-                *p = 0;
-                if (*name)
-                {
-                    // discard return value
-                    buf2[0] = 0;
-                    name = unmang1(buf2, name, last, false);
-                }
-                strcpy(buf, buf1);
-                strcat(buf, ")");
+                p = buf2 + strlen(buf2);
+            }
+
+            strcpy(p, "::*");
+            buf3[0] = 0;
+            if (name[0] == 'q')
+            {
+                name = unmang1(buf3, name, last, true);
+            }
+            buf1[0] = 0;
+            if (name[0] == '$')
+            {
+                name = unmang1(buf1, ++name, last, false);
+            }
+            if (buf3[0])
+            {
+                sprintf(buf, "%s((%s)%s)", buf1, buf2, buf3);
+            }
+            else
+            {
+                sprintf(buf, "%s %s", buf1, buf2);
+            }
+            break;
+        case 'n':
+            v = *name++ - '0';
+            if (v > 9)
+                v -= 7;
+            strcpy(buf, manglenames[v]);
+            break;
+        case 'v':
+            strcpy(buf, tn_void);
+            break;
+        case 'F':
+            strcpy(buf, tn_floatcomplex);
+            break;
+        case 'D':
+            strcpy(buf, tn_doublecomplex);
+            break;
+        case 'G':
+            strcpy(buf, tn_longdoublecomplex);
+            break;
+        case 'f':
+            strcpy(buf, tn_float);
+            break;
+        case 'd':
+            strcpy(buf, tn_double);
+            break;
+        case 'g':
+            strcpy(buf, tn_longdouble);
+            break;
+        case 'i':
+            strcpy(buf, tn_int);
+            break;
+        case 'N':
+            strcpy(buf, "native int");
+            break;
+        case 'l':
+            strcpy(buf, tn_long);
+            break;
+        case 'L':
+            strcpy(buf, tn_longlong);
+            break;
+        case 's':
+            strcpy(buf, tn_short);
+            break;
+        case 'c':
+            strcpy(buf, tn_char);
+            break;
+        case 'C':
+            strcpy(buf, tn_wchar_t);
+            break;
+        case 'p':
+        case 'P':
+            if (*name == 'q' || *name == 'Q')
+            {
+                strcpy(buf, "(*");
                 if (cconst)
                     strcat(buf, tn_const);
                 if (cvol)
                     strcat(buf, tn_volatile);
+                strcat(buf, ")");
+                buf += strlen(buf);
+                name = unmang1(buf, name, last, false);
                 if (clrqual)
                     strcat(buf, "& ");
                 if (crrqual)
                     strcat(buf, "&& ");
-                buf += strlen(buf);
-                break;
-            case 'h':
-                strcpy(buf, tn_char16_t);
-                buf += strlen(buf);
-                break;
-            case 'H':
-                strcpy(buf, tn_char32_t);
-                buf += strlen(buf);
-                break;
-            case 'S':
-                strcpy(buf, tn_signed);
-                buf = buf + 7;
-                if (*name++ == 'c')
-                    strcpy(buf, tn_char);
-                break;
-            case 'u':
-                strcpy(buf, "unsigned ");
-                buf = buf + 9;
-                switch (*name++)
-                {
-                    case 'i':
-                        strcpy(buf, tn_int);
-                        break;
-                    case 'l':
-                        strcpy(buf, tn_long);
-                        break;
-                    case 'L':
-                        strcpy(buf, tn_longlong);
-                        break;
-                    case 's':
-                        strcpy(buf, tn_short);
-                        break;
-                    case 'c':
-                        strcpy(buf, tn_char);
-                        break;
-                }
-                break;
-            case 'M':
-                buf2[0] = 0;
-                if (*name == '#')
-                {
-                    name = unmangTemplate(buf2, name, last);
-                    p = buf2;
-                }
-                else if (*name == 'n')
-                {
-                    name++;
-                    v = *name++ - '0';
-                    if (v > 9)
-                        v -= 7;
-                    strcpy(buf2, manglenames[v]);
-                    p = buf2 + strlen(buf2);
-                }
-                else
-                {
-                    v = *name++ - '0';
-                    while (isdigit(*name))
-                        v = v * 10 + *name++ - '0';
-                    p = buf3;
-                    while (v--)
-                    {
-                        if (*name == '@')
-                        {
-                            name++;
-                            *p++ = ':';
-                            *p++ = ':';
-                        }
-                        else
-                            *p++ = *name++;
-                        *p = 0;
-                    }
-                    if (manglenamecount < MAX_MANGLE_NAME_COUNT)
-                        Utils::StrCpy(manglenames[manglenamecount++], buf2);
-                    if (buf3[0] == '#')
-                    {
-                        unmangTemplate(buf2, buf3, last);
-                    }
-                    else
-                    {
-                        strcpy(buf2, buf3);
-                    }
-                    p = buf2 + strlen(buf2);
-                }
-
-                strcpy(p, "::*");
-                buf3[0] = 0;
-                if (name[0] == 'q')
-                {
-                    name = unmang1(buf3, name, last, true);
-                }
-                buf1[0] = 0;
-                if (name[0] == '$')
-                {
-                    name = unmang1(buf1, ++name, last, false);
-                }
-                if (buf3[0])
-                {
-                    sprintf(buf, "%s((%s)%s)", buf1, buf2, buf3);
-                }
-                else
-                {
-                    sprintf(buf, "%s %s", buf1, buf2);
-                }
-                break;
-            case 'n':
-                v = *name++ - '0';
-                if (v > 9)
-                    v -= 7;
-                strcpy(buf, manglenames[v]);
-                break;
-            case 'v':
-                strcpy(buf, tn_void);
-                break;
-            case 'F':
-                strcpy(buf, tn_floatcomplex);
-                break;
-            case 'D':
-                strcpy(buf, tn_doublecomplex);
-                break;
-            case 'G':
-                strcpy(buf, tn_longdoublecomplex);
-                break;
-            case 'f':
-                strcpy(buf, tn_float);
-                break;
-            case 'd':
-                strcpy(buf, tn_double);
-                break;
-            case 'g':
-                strcpy(buf, tn_longdouble);
-                break;
-            case 'i':
-                strcpy(buf, tn_int);
-                break;
-            case 'l':
-                strcpy(buf, tn_long);
-                break;
-            case 'L':
-                strcpy(buf, tn_longlong);
-                break;
-            case 's':
-                strcpy(buf, tn_short);
-                break;
-            case 'c':
-                strcpy(buf, tn_char);
-                break;
-            case 'C':
-                strcpy(buf, tn_wchar_t);
-                break;
-            case 'p':
-            case 'P':
-                if (*name == 'q' || *name == 'Q')
-                {
-                    strcpy(buf, "(*");
-                    if (cconst)
-                        strcat(buf, tn_const);
-                    if (cvol)
-                        strcat(buf, tn_volatile);
-                    strcat(buf, ")");
-                    buf += strlen(buf);
-                    name = unmang1(buf, name, last, false);
-                    if (clrqual)
-                        strcat(buf, "& ");
-                    if (crrqual)
-                        strcat(buf, "&& ");
-                    buf = buf + strlen(buf);
-                }
-                else
-                {
-                    name--;
-                    name -= cvol + cconst;
-                    name = unmangptr(buf, name, last);
-                    buf = buf + strlen(buf);
-                }
-                break;
-            case 'R':
-                while (*name == 'x' || *name == 'y')
-                {
-                    if (*name == 'y')
-                        cvol++;
-                    if (*name == 'x')
-                        cconst++;
-                    if (*name == 'r')
-                        clrqual++;
-                    if (*name == 'R')
-                        crrqual++;
-                    name++;
-                }
-                if (cconst)
-                {
-                    strcat(buf, tn_const);
-                }
-                if (cvol)
-                {
-                    strcat(buf, tn_volatile);
-                }
                 buf = buf + strlen(buf);
-                if (*name == '#')
-                {
-                    name = unmangTemplate(buf, name, last);
-                }
-                else
-                {
-                    name = unmang1(buf, name, last, false);
-                }
+            }
+            else
+            {
+                name--;
+                name -= cvol + cconst;
+                name = unmangptr(buf, name, last);
                 buf = buf + strlen(buf);
-                *buf++ = '&';
-                *buf++ = '&';
-                *buf = 0;
-                break;
-            case 'r':
-                while (*name == 'x' || *name == 'y')
-                {
-                    if (*name == 'y')
-                        cvol++;
-                    if (*name == 'x')
-                        cconst++;
-                    if (*name == 'r')
-                        clrqual++;
-                    if (*name == 'R')
-                        crrqual++;
-                    name++;
-                }
-                if (cconst)
-                {
-                    strcat(buf, tn_const);
-                }
-                if (cvol)
-                {
-                    strcat(buf, tn_volatile);
-                }
-                buf = buf + strlen(buf);
-                if (*name == '#')
-                {
-                    name = unmangTemplate(buf, name, last);
-                }
-                else
-                {
-                    name = unmang1(buf, name, last, false);
-                }
-                buf = buf + strlen(buf);
-                *buf++ = '&';
-                *buf = 0;
-                break;
-            case 'e':
-                strcpy(buf, tn_ellipse);
-                break;
-            case 'E':
-                name += 3;
-                strcpy(buf, "decltype(...) ");
-                break;
-            case '#':
-                buf += strlen(buf);
-                name = unmangTemplate(buf, name - 1, last);
-                break;
+            }
+            break;
+        case 'R':
+            while (*name == 'x' || *name == 'y')
+            {
+                if (*name == 'y')
+                    cvol++;
+                if (*name == 'x')
+                    cconst++;
+                if (*name == 'r')
+                    clrqual++;
+                if (*name == 'R')
+                    crrqual++;
+                name++;
+            }
+            if (cconst)
+            {
+                strcat(buf, tn_const);
+            }
+            if (cvol)
+            {
+                strcat(buf, tn_volatile);
+            }
+            buf = buf + strlen(buf);
+            if (*name == '#')
+            {
+                name = unmangTemplate(buf, name, last);
+            }
+            else
+            {
+                name = unmang1(buf, name, last, false);
+            }
+            buf = buf + strlen(buf);
+            *buf++ = '&';
+            *buf++ = '&';
+            *buf = 0;
+            break;
+        case 'r':
+            while (*name == 'x' || *name == 'y')
+            {
+                if (*name == 'y')
+                    cvol++;
+                if (*name == 'x')
+                    cconst++;
+                if (*name == 'r')
+                    clrqual++;
+                if (*name == 'R')
+                    crrqual++;
+                name++;
+            }
+            if (cconst)
+            {
+                strcat(buf, tn_const);
+            }
+            if (cvol)
+            {
+                strcat(buf, tn_volatile);
+            }
+            buf = buf + strlen(buf);
+            if (*name == '#')
+            {
+                name = unmangTemplate(buf, name, last);
+            }
+            else
+            {
+                name = unmang1(buf, name, last, false);
+            }
+            buf = buf + strlen(buf);
+            *buf++ = '&';
+            *buf = 0;
+            break;
+        case 'e':
+            strcpy(buf, tn_ellipse);
+            break;
+        case 'E':
+            name += 3;
+            strcpy(buf, "decltype(...) ");
+            break;
+        case '#':
+            buf += strlen(buf);
+            name = unmangTemplate(buf, name - 1, last);
+            break;
+        case 'a':
+            strcpy(buf, "auto");
+            break;
         }
     return name;
 }
 
 static const char* unmangcpptype(char* buf, const char* name, const char* last)
 {
-    int i;
     *buf++ = '<';
     while (*name && *name != '$' && *name != '@' && *name != '#')
     {
@@ -1100,16 +1130,25 @@ const char* unmangle(char* val, const char* name)
             }
             else if (*name == '$')
             {
-                *buf = 0;
+                // discard the template params if they are there
                 if (name[1] == 'b' || name[1] == 'o')
                 {
                     name = unmang_intrins(buf, name, last);
+                    buf += strlen(buf);
+                }
+                else if (*(name + 1) == 'q')
+                {
+                    *buf = 0;
+                    name = unmang1(buf, name + 1, last, true);
+                    buf += strlen(buf);
                 }
                 else
                 {
-                    name = unmang1(buf, name + 1, last, true);
+                    name++;
+                    char temp[4000];
+                    while (*name && *name != '$')
+                        name = unmang1(temp, name, last, true);
                 }
-                buf += strlen(buf);
             }
             else if (*name == '@')
             {

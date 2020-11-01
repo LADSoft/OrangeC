@@ -634,6 +634,7 @@ LEXEME* expression_func_type_cast(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRES
             INITIALIZER *init = nullptr, *dest = nullptr;
             SYMBOL* sym = nullptr;
             sym = anonymousVar(sc_auto, *tp)->v.sp;
+
             lex = initType(lex, funcsp, 0, sc_auto, &init, &dest, *tp, sym, false, flags);
             *exp = convertInitToExpression(*tp, sym, nullptr, funcsp, init, nullptr, false);
             if (sym)
@@ -2188,6 +2189,7 @@ static bool noexceptExpression(EXPRESSION* node)
             rv = noexceptExpression(node->left);
             break;
         case en_atomic:
+        case en_construct:
             break;
         case en_func:
             fp = node->v.func;

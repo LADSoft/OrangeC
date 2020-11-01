@@ -37,6 +37,8 @@ extern int noSpecializationError;
 extern Optimizer::LIST* deferred;
 extern int structLevel;
 extern Optimizer::LIST* openStructs;
+extern int parsingTrailingReturn;
+
 
 void declare_init(void);
 void InsertGlobal(SYMBOL* sp);

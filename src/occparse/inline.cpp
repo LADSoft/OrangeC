@@ -586,6 +586,7 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
         case en__cpblk:
         case en_dot:
         case en_pointsto:
+        case en_construct:
                 break;
             /*		case en_array: */
             temp->right = inlineexpr(node->right, nullptr);
@@ -915,6 +916,7 @@ static bool sideEffects(EXPRESSION* node)
         case en_const:
         case en_auto:
         case en__sizeof:
+        case en_construct:
             rv = false;
             break;
         case en_l_sp:

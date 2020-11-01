@@ -3711,6 +3711,7 @@ bool IsConstantExpression(EXPRESSION* node, bool allowParams, bool allowFunc)
             rv = true;
             break;
         case en_auto:
+        case en_construct:
             rv = false;
             break;
         case en_l_sp:

@@ -396,11 +396,12 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
                 *buf = 0;
                 break;
             case en_func:
+            {
                 if (exp->v.func->ascall)
                 {
                     INITLIST* args = exp->v.func->arguments;
                     *buf++ = 'f';
-                    buf = lookupName(buf, exp->v.func->sp->name);
+                    buf = getName(buf, exp->v.func->sp);
                     while (args)
                     {
                         *buf++ = 'f';
@@ -412,12 +413,13 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
                 {
                     *buf++ = 'e';
                     *buf++ = '?';
-                    strcpy(buf, exp->v.func->sp->name);
+                    buf = getName(buf, exp->v.func->sp);
                     buf += strlen(buf);
                     *buf++ = '$';
                     buf = mangleType(buf, exp->v.func->sp->tp, true);
                 }
                 break;
+            }
             case en_pc:
             case en_global:
             case en_const:
@@ -466,7 +468,13 @@ static char* mangleTemplate(char* buf, SYMBOL* sym, TEMPLATEPARAMLIST* params)
         params = params->p->bySpecialization.types;
         bySpecial = true;
     }
-    if ((sym->sb->isConstructor || sym->sb->isDestructor) && sym->sb->templateLevel == sym->sb->parentClass->sb->templateLevel)
+    if (sym->tp->type == bt_templateparam && sym->tp->templateParam->p->type == kw_template)
+    {
+        auto sp = sym->tp->templateParam->p->byTemplate.val;
+        if (sp)
+            sym = sp;
+    }
+    if (sym->sb && (sym->sb->isConstructor || sym->sb->isDestructor) && sym->sb->templateLevel == sym->sb->parentClass->sb->templateLevel)
     {
         strcpy(buf, sym->name);
         while (*buf)

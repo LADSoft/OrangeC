@@ -50,7 +50,7 @@
 #include "cpplookup.h"
 #include "beinterf.h"
 #include "exprcpp.h"
-
+#include "lex.h"
 namespace Parser
 {
 unsigned long long reint(EXPRESSION* node);
@@ -1208,6 +1208,8 @@ int opt0(EXPRESSION** node)
         return false;
     switch (ep->type)
     {
+        case en_construct:
+            break;
         case en_l_sp:
         case en_l_fp:
         case en_l_bool:
@@ -2247,6 +2249,14 @@ int opt0(EXPRESSION** node)
                 SYMBOL* ts = tsl->next->sp;
                 SYMBOL* sym = ts;
                 TEMPLATESELECTOR* find = tsl->next->next;
+                if (ts->tp->type == bt_templateparam)
+                {
+                    if (ts->tp->templateParam->p->type != kw_template)
+                        break;
+                    ts = ts->tp->templateParam->p->byTemplate.val;
+                    if (!ts)
+                        break;
+                }
                 if (tsl->next->isTemplate)
                 {
                     TEMPLATEPARAMLIST* current = SolidifyTemplateParams(tsl->next->templateParams);
@@ -2804,6 +2814,25 @@ int fold_const(EXPRESSION* node)
             if (node->left->type != en_func && node->left->type != en_funcret)
                 *node = *node->left;
             break;
+        case en_construct:
+        {
+            node->v.construct.tp = SynthesizeType(node->v.construct.tp, nullptr, false);
+            LEXEME* lex = SetAlternateLex(node->v.construct.deferred);
+            if (isarithmetic(node->v.construct.tp))
+            {
+                INITIALIZER* init = nullptr, *dest = nullptr;
+                lex = initType(lex, nullptr, 0, sc_auto, &init, &dest, node->v.construct.tp, nullptr, false, 0);
+                if (init)
+                    *node = *init->exp;
+            }
+            else
+            {
+                EXPRESSION *exp = anonymousVar(sc_auto, node->v.construct.tp);
+                lex = initType(lex, nullptr, 0, sc_auto, &exp->v.sp->sb->init, &exp->v.sp->sb->dest, node->v.construct.tp, exp->v.sp, false, 0);
+            }
+            SetAlternateLex(nullptr);
+        }
+            break;
         case en_func:
             if (node->v.func->sp && node->v.func->sp->sb->constexpression)
             {
@@ -2824,7 +2853,10 @@ int fold_const(EXPRESSION* node)
                     }
                     if (found1->sb->templateLevel && !templateNestingCount && node->v.func->templateParams)
                     {
+                        int pushCount = pushContext(found1, false);
                         found1 = TemplateFunctionInstantiate(found1, false, false);
+                        while (pushCount--)
+                            dropStructureDeclaration();
                     }
                     else
                     {

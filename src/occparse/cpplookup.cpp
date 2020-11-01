@@ -540,7 +540,7 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
                 }
                 if (hasTemplateArgs)
                 {
-                    deferred = inTemplateHeader || parsingSpecializationDeclaration;
+                    deferred = inTemplateHeader || parsingSpecializationDeclaration || parsingTrailingReturn;
                     if (currentsp)
                     {
                         sp = currentsp;
@@ -1731,6 +1731,7 @@ static bool ismem(EXPRESSION* exp)
         case en_pc:
         case en_auto:
         case en_threadlocal:
+        case en_construct:
             return true;
         case en_thisref:
             exp = exp->left;

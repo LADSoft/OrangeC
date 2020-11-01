@@ -70,6 +70,7 @@ int noSpecializationError;
 Optimizer::LIST* deferred;
 int structLevel;
 Optimizer::LIST* openStructs;
+int parsingTrailingReturn;
 
 static int unnamed_tag_id, unnamed_id;
 static char* importFile;
@@ -2642,18 +2643,31 @@ founddecltype:
                         TEMPLATEPARAMLIST* lst = nullptr;
                         SYMBOL* sp1;
                         lex = GetTemplateArguments(lex, funcsp, sp, &lst);
-                        sp1 = GetTypeAliasSpecialization(sp, lst);
-                        if (sp1)
+                        if (!parsingTrailingReturn)
                         {
-                            sp = sp1;
-                            if (/*!inUsing || */!templateNestingCount)
+                            sp1 = GetTypeAliasSpecialization(sp, lst);
+                            if (sp1)
                             {
-                                if (isstructured(sp->tp))
-                                    sp->tp = PerformDeferredInitialization(sp->tp, funcsp);
-                                else
-                                    sp->tp = SynthesizeType(sp->tp, nullptr, false);
+                                sp = sp1;
+                                if (/*!inUsing || */!templateNestingCount)
+                                {
+                                    if (isstructured(sp->tp))
+                                        sp->tp = PerformDeferredInitialization(sp->tp, funcsp);
+                                    else
+                                        sp->tp = SynthesizeType(sp->tp, nullptr, false);
+                                }
                             }
                         }
+                        else
+                        {
+                            sp = clonesym(sp);
+                            TYPE *tp1 = (TYPE*)Alloc(sizeof(TYPE));
+                            *tp1 = *sp->tp;
+                            sp->tp = tp1;
+                            sp->tp->sp = sp;
+                            sp->templateParams = lst;
+                        }
+
                         tn = sp->tp;
                         foundsomething = true;
                     }
@@ -4267,7 +4281,9 @@ static LEXEME* getAfterType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** sp,
                                 funcLevel++;
                                 lex = getsym();
                                 ParseAttributeSpecifiers(&lex, funcsp, true);
+                                parsingTrailingReturn = true;
                                 lex = get_type_id(lex, &tpx, funcsp, sc_cast, false, true, false);
+                                parsingTrailingReturn = false;
                                 if (tpx)
                                 {
                                     if (!isautotype(basetype(*tp)->btp))

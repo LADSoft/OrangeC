@@ -58,6 +58,7 @@ bool hasPackedExpression(EXPRESSION* exp, bool useAuto);
 void checkPackedExpression(EXPRESSION* exp);
 void checkUnpackedExpression(EXPRESSION* exp);
 void GatherPackedVars(int* count, SYMBOL** arg, EXPRESSION* packedExp);
+void ReplicatePackedExpression(EXPRESSION* pattern, int count, SYMBOL** arg, TEMPLATEPARAMLIST** dest);
 int CountPacks(TEMPLATEPARAMLIST* packs);
 INITLIST** expandPackedInitList(INITLIST** lptr, SYMBOL* funcsp, LEXEME* start, EXPRESSION* packedExp);
 MEMBERINITIALIZERS* expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, MEMBERINITIALIZERS** init, BASECLASS* bc,

@@ -3792,8 +3792,20 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                                         {
                                             *btp = nullptr;
                                             last1 = &clone->tp;
+                                            TYPE *old = nullptr, **temp = &old;
+                                            TYPE *next1 = qual1;
+                                            while (next1)
+                                            {
+                                                *temp = (TYPE*)Alloc(sizeof(TYPE));
+                                                **temp = *next1;
+                                                temp = &(*temp)->btp;
+                                                next1 = next1->btp;
+                                            }
                                             SynthesizeQuals(&last1, &qual1, &lastQual1);
                                             *btp = next;
+                                            qual1 = old;
+                                            btp = &qual1;
+                                            while (*btp) btp = &(*btp)->btp;
                                         }
                                     }
                                     tp1 = (TYPE*)Alloc(sizeof(TYPE));
@@ -5770,6 +5782,10 @@ void PushPopTemplateArgs(SYMBOL* func, bool push)
 }
 SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
 {
+    if (!strcmp(sym->name, "$bctr"))
+        if (!strcmp(sym->sb->parentClass->name, "tuple"))
+            if (strstr(sym->sb->decoratedName, "implicit"))
+                printf("hi");
     TEMPLATEPARAMLIST* nparams = sym->templateParams;
     TYPE* thistp = args->thistp;
     INITLIST* arguments = args->arguments;

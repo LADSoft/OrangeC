@@ -59,7 +59,9 @@ extern "C"
 #endif
 
 #if __STDC_VERSION__ >= 199901L
+#ifndef RC_INVOKED
     int* _RTL_FUNC _IMPORT __GetSignGam(void);
+#endif
 
 #    define signgam (*__GetSignGam())
 
@@ -67,6 +69,7 @@ extern "C"
 
 #ifndef __cplusplus
 #    if defined(__STDC_VERSION__) && __STDC_VERSION__ < 199901L
+#ifndef RC_INVOKED
     struct complex /* as used by "_cabs" function */
     {
         double x, y;
@@ -76,7 +79,7 @@ extern "C"
     {
         long double x, y;
     };
-
+#endif
 #        define cabs(z) (hypot((z).x, (z).y))
 #        define cabsl(z) (hypotl((z).x, (z).y))
 #        define _cabsl cabsl
@@ -84,6 +87,7 @@ extern "C"
 
 #    endif
 #endif
+#ifndef RC_INVOKED
     typedef enum
     {
         DOMAIN = 1, /* argument domain error -- log (-1)        */
@@ -94,6 +98,7 @@ extern "C"
         PLOSS,      /* partial loss of signif. -- not used      */
         STACKFAULT  /* floating point unit stack overflow       */
     } _mexcep;
+#endif
 
 /* Constants rounded for 21 decimals. */
 #define M_E 2.71828182845904523536
@@ -127,6 +132,8 @@ extern "C"
 #define EDOM 33   /* Math argument */
 #define ERANGE 34 /* Result too large */
 
+#ifndef RC_INVOKED
+
     typedef float float_t;
     typedef double double_t;
 
@@ -143,6 +150,7 @@ extern "C"
         char* name;
         long double arg1, arg2, retval;
     };
+#endif
 
 /* positive infinities (x86) */
 #define HUGE_VAL 0x1P+1024
@@ -150,6 +158,7 @@ extern "C"
 #define HUGE_VALL 0x1P+16384L
 #define _LHUGE_VAL HUGE_VALL
 
+#ifndef RC_INVOKED
     int _RTL_FUNC _IMPORTMM __fpclassifyf(float __x);
     int _RTL_FUNC _IMPORTMM __fpclassify(double __x);
     int _RTL_FUNC _IMPORTMM __fpclassifyl(long double __x);
@@ -163,6 +172,7 @@ extern "C"
     int _RTL_FUNC _IMPORTMM signbit(double __x);
     int _RTL_FUNC _IMPORTMM signbitl(long double __x);
     int _RTL_FUNC _IMPORTMM __nancompare(long double __x, long double __y, int type);
+#endif
 
 #    define fpclassify(x) \
         ((sizeof(x) == sizeof(float)) ? __fpclassifyf(x) : (sizeof(x) == sizeof(double)) ? __fpclassify(x) : __fpclassifyl(x))
@@ -182,6 +192,7 @@ extern "C"
 #    define isunordered(x, y) __nancompare((x), (y), 0)
 
 #endif
+#ifndef RC_INVOKED
     int _RTL_FUNC finitef(float x);
     int _RTL_FUNC finite(double x);
     int _RTL_FUNC finitel(long double x);
@@ -401,6 +412,7 @@ extern "C"
     int _matherrl(struct _exceptionl* __e);
 
     long double _RTL_FUNC _IMPORT _atold(const char* ZSTR __s);
+#endif
 #ifdef __cplusplus
 };
 #endif

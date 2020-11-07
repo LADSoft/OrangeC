@@ -46,10 +46,12 @@ extern "C"
 {
 #endif
 
+#ifndef RC_INVOKED
 #ifdef __MSIL__
     typedef void* __va_list__ va_list;
 #else
 typedef void* va_list;
+#endif
 #endif
 #ifdef __cplusplus
 };

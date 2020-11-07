@@ -50,7 +50,9 @@ extern "C"
 {
 #    endif
 
+#ifndef RC_INVOKED
     void _RTL_FUNC _IMPORT __assertfail(const char* __who, const char* __file, int __line, const char* __func, const char* __msg);
+#endif
 #    ifdef __cplusplus
 };
 #    endif

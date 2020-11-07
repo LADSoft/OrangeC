@@ -286,6 +286,8 @@ extern "C"
 #    define _vtprintf vprintf
 #    define _vstprintf vsprintf
 
+#ifndef RC_INVOKED
+
 #    ifndef __TCHAR_DEFINED
 typedef char _TCHAR;
 typedef signed char _TSCHAR;
@@ -294,7 +296,7 @@ typedef char _TXCHAR;
 typedef int _TINT;
 #        define __TCHAR_DEFINED
 #    endif
-
+#endif
 #    define _TEOF EOF
 #    define __T(x) x
 

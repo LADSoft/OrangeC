@@ -12,6 +12,7 @@
 
 #define MB_CUR_MAX_L(a) MB_CUR_MAX
 
+#ifndef RC_INVOKED
 #ifdef __cplusplus
 extern "C"
 {
@@ -154,6 +155,8 @@ extern "C"
     inline struct lconv* localeconv_l(locale_t larg) { return localeconv(); }
 #ifdef __cplusplus
 }
+#endif
+
 #endif
 
 #endif

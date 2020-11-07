@@ -52,6 +52,7 @@ extern "C"
 {
 #endif
 
+#ifndef RC_INVOKED
     int _RTL_INTRINS _IMPORT bcmp(const void*, const void*, size_t);
 
     void _RTL_INTRINS _IMPORT bcopy(const void*, void*, size_t);
@@ -126,7 +127,7 @@ extern "C"
     int _RTL_FUNC _IMPORT _strncmpi(const char* ZSTR, const char* ZSTR, size_t);
     char* _RTL_FUNC _IMPORT _strlwr(char* ZSTR);
     char* _RTL_FUNC _IMPORT _strupr(char* ZSTR);
-
+#endif
 #if defined(__USELOCALES__)
 #    define strupr _lstrupr
 #    define strlwr _lstrlwr

@@ -45,6 +45,7 @@
 extern "C"
 {
 #endif
+#ifndef RC_INVOKED
     void* _RTL_FUNC _IMPORT bsearch(const void* __key, const void* __base, size_t __nelem, size_t __width,
                                     int (*fcmp)(const void*, const void*));
     void* _RTL_FUNC _IMPORT lfind(const void* __key, const void* __base, size_t* __num, size_t __width,
@@ -55,7 +56,7 @@ extern "C"
 
     void* _RTL_FUNC _IMPORT _lfind(const void*, const void*, unsigned int*, unsigned int, int (*)(const void*, const void*));
     void* _RTL_FUNC _IMPORT _lsearch(const void*, void*, unsigned int*, unsigned int, int (*)(const void*, const void*));
-
+#endif
 #ifdef __cplusplus
 }
 #endif

@@ -43,6 +43,7 @@
 #if !defined(__TYPES_H)
 #    define __TYPES_H
 
+#ifndef RC_INVOKED
 #    ifndef _SIZE_T
 #        define _SIZE_T
 #        define _USING_TYPES_H_SIZE_T
@@ -80,5 +81,6 @@ typedef unsigned long int ulong;
 typedef unsigned short int ushort;
 typedef unsigned int uint;
 #    endif
+#endif
 
 #endif /* __TYPES_H */

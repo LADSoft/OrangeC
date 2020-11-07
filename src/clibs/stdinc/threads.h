@@ -51,6 +51,7 @@ extern "C"
     }
 #define TSS_DTOR_ITERATIONS 20
 
+#ifndef RC_INVOKED
     typedef void* _THAND;
     typedef _THAND* cnd_t;
     typedef _THAND* thrd_t;
@@ -112,6 +113,7 @@ extern "C"
     void _RTL_FUNC _IMPORT tss_delete(tss_t key);
     void* _RTL_FUNC _IMPORT tss_get(tss_t key);
     int _RTL_FUNC _IMPORT tss_set(tss_t key, void* val);
+#endif
 
 #ifdef __cplusplus
 }

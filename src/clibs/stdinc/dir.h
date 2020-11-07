@@ -64,6 +64,7 @@ extern "C"
 {
 #endif
 
+#ifndef RC_INVOKED
 #ifndef _FFBLK_DEF
 #    define _FFBLK_DEF
     struct ffblk
@@ -77,12 +78,14 @@ extern "C"
         char ff_uu[256];
     };
 #endif
+#endif
 
 #define MAXPATH 260
 #define MAXDIR 256
 #define MAXFILE 256
 #define MAXEXT 256
 
+#ifndef  RC_INVOKED
     int _RTL_FUNC _IMPORT findfirst(const char* __path, struct ffblk* __ffblk, int __attrib);
     int _RTL_FUNC _IMPORT findnext(struct ffblk* __ffblk);
     void _RTL_FUNC _IMPORT fnmerge(char* __path, const char* __drive, const char* __dir, const char* __name, const char* __ext);
@@ -98,6 +101,7 @@ extern "C"
     char* ZSTR _RTL_FUNC _IMPORT _getcwd(char* ZSTR, int);
     int _RTL_FUNC _IMPORT _mkdir(const char* ZSTR);
     int _RTL_FUNC _IMPORT _rmdir(const char* ZSTR);
+#endif
 
 #ifdef __cplusplus
 };

@@ -46,6 +46,7 @@
 #endif
 
 /* these are actually defined in stddef.h, replicated here for reference */
+#ifndef RC_INVOKED
 #ifndef _WCTYPE_T_DEFINED
 typedef unsigned int wctype_t;
 #    define _WCTYPE_T_DEFINED
@@ -57,7 +58,7 @@ typedef unsigned int wint_t;
 #endif
 
 typedef const wchar_t* wctrans_t;
-
+#endif
 #ifndef WEOF
 #    define WEOF (wint_t)(-1)
 #endif
@@ -79,6 +80,8 @@ typedef const wchar_t* wctrans_t;
 #    define _IS_GRAPH (_IS_ALNUM | _IS_HEX | _IS_PUN)
 #    define _IS_PRINT (_IS_GRAPH | _IS_BLK)
 #endif
+
+#ifndef RC_INVOKED
 
 #ifdef __cplusplus
 extern "C"
@@ -114,6 +117,8 @@ extern "C"
 #ifdef __cplusplus
 };
 #endif
+#endif
+
 #ifndef __NO_WCTYPE
 #    define iswalnum(wc) iswctype((wc), _IS_ALNUM)
 #    define iswalpha(wc) iswctype((wc), _IS_ALPHA)

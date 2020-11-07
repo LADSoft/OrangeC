@@ -55,9 +55,11 @@
 extern "C"
 {
 #endif
+#ifndef RC_INVOKED
 #ifndef _FMODE_EXT
 #    define _FMODE_EXT
     extern int _RTL_DATA _fmode;
+#endif
 #endif
     /* The first three can only be set by open */
 
@@ -143,6 +145,7 @@ extern "C"
 #define POSIX_FADV_DONTNEED 4  // The application expects that it will not access the specified data in the near future.
 #define POSIX_FADV_NOREUSE 5   // The application expects to access the specified data once and then not reuse it thereafter.
 
+#ifndef RC_INVOKED
     struct flock
     {
         struct flock* l_next;
@@ -161,6 +164,7 @@ extern "C"
 
 #ifdef __cplusplus
 };
+#endif
 #endif
 
 #endif /* __FCNTL_H */

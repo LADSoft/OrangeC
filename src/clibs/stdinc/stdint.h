@@ -41,6 +41,7 @@
 #    include <stddef.h>
 #endif
 
+#ifndef RC_INVOKED
 typedef char int8_t;
 typedef unsigned char uint8_t;
 typedef char int_least8_t;
@@ -84,6 +85,7 @@ typedef uint32_t uintptr_t;
 typedef int64_t intmax_t;
 typedef uint64_t uintmax_t;
 
+#endif
 #if !defined(__cplusplus) || defined(__STDC_LIMIT_MACROS)
 
 #    define INT8_MIN -128

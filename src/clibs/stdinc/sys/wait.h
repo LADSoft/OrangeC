@@ -66,8 +66,10 @@ extern "C"
 #    define WSTOPSIG(x) (0)
 #    define WIFCONTINUED(x) (0)
 
+#ifndef RC_INVOKED
     pid_t _RTL_FUNC wait(int*);
     pid_t _RTL_FUNC waitpid(pid_t, int*, int);
+#endif
 
 #    ifdef __cplusplus
 };
@@ -75,7 +77,3 @@ extern "C"
 
 #    pragma pack()
 #endif /* __WAIT_H */
-#if defined(__cplusplus) && !defined(__USING_CNAMES__) && !defined(__WAIT_H_USING_LIST)
-using __STD_NS_QUALIFIER wait;
-using __STD_NS_QUALIFIER waitpid;
-#endif

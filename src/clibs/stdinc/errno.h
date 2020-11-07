@@ -144,6 +144,7 @@
 #    define EWOULDBLOCK 140
 #endif  // _CRT_NO_POSIX_ERROR_CODES
 
+#ifndef RC_INVOKED
 #ifdef __cplusplus
 extern "C"
 {
@@ -181,6 +182,7 @@ extern char _RTL_DATA* _sys_errlist[];
 
 #ifdef __cplusplus
 };
+#endif
 #endif
 
 #endif /* errno.h */

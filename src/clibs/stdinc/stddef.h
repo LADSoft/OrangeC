@@ -58,6 +58,7 @@ typedef decltype(nullptr) nullptr_t;
 typedef long double max_align_t;
 #endif
 
+#ifndef RC_INVOKED
 #ifndef _PTRDIFF_T
 #    define _PTRDIFF_T
 typedef int ptrdiff_t;
@@ -75,6 +76,7 @@ typedef int ssize_t;
 typedef unsigned short wchar_t;
 #    endif
 #endif
+#endif
 /*
 #ifndef FAR
 #define FAR _FAR
@@ -88,6 +90,7 @@ typedef unsigned short wchar_t;
 #    define offsetof(s_name, m_name) (size_t) __offsetof(s_name, m_name)
 #endif
 
+#ifndef RC_INVOKED
 #ifndef _WCTYPE_T_DEFINED
 typedef unsigned int wctype_t;
 #    define _WCTYPE_T_DEFINED
@@ -96,6 +99,7 @@ typedef unsigned int wctype_t;
 #ifndef _WINT_T_DEFINED
 #    define _WINT_T_DEFINED
 typedef unsigned int wint_t;
+#endif
 #endif
 
 #endif /* __STDDEF_H */

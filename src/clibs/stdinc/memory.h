@@ -47,6 +47,7 @@
 #        include <stddef.h>
 #    endif
 
+#ifndef RC_INVOKED
 #    ifdef __cplusplus
 extern "C"
 {
@@ -67,5 +68,5 @@ extern "C"
 #    ifdef __cplusplus
 };
 #    endif
-
+#endif
 #endif /* __MEM_H */

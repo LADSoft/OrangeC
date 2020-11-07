@@ -54,6 +54,7 @@
 #    include <stdint.h>
 #endif
 
+#ifndef RC_INVOKED
 typedef enum memory_order
 {
     memory_order_relaxed = 1,
@@ -63,6 +64,7 @@ typedef enum memory_order
     memory_order_acq_rel,
     memory_order_seq_cst
 } memory_order;
+#endif
 
 #define ATOMIC_BOOL_LOCK_FREE 1
 #define ATOMIC_CHAR_LOCK_FREE 1
@@ -75,11 +77,12 @@ typedef enum memory_order
 #define ATOMIC_LLONG_LOCK_FREE 1
 #define ATOMIC_POINTER_LOCK_FREE 1
 
+#ifndef RC_INVOKED
 typedef struct atomic_flag
 {
     unsigned char __f__;
 } atomic_flag;
-
+#endif
 #define atomic_is_lock_free(A) \
     _Generic(A, \
     struct atomic_flag: 1, \
@@ -119,6 +122,8 @@ typedef struct atomic_flag
     }
 #define ATOMIC_VAR_INIT(x) __atomic_var_init(x)
 
+#ifndef RC_INVOKED
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -130,7 +135,7 @@ extern "C"
     unsigned char _RTL_FUNC atomic_flag_test_and_set_explicit(atomic_flag*, int);
     void _RTL_FUNC atomic_flag_clear(atomic_flag*);
     void _RTL_FUNC atomic_flag_clear_explicit(atomic_flag*, int);
-
+#endif
 #ifdef __cplusplus
 }
 #endif
@@ -145,6 +150,7 @@ extern "C"
 
 #define __ATOMIC_TYPE__(__x__, __y__) typedef _Atomic(__x__) __y__;
 
+#ifndef RC_INVOKED
 __ATOMIC_TYPE__(unsigned char, atomic_bool);
 __ATOMIC_TYPE__(void*, atomic_address);
 __ATOMIC_TYPE__(char, atomic_char);
@@ -183,7 +189,7 @@ __ATOMIC_TYPE__(size_t, atomic_size_t);
 __ATOMIC_TYPE__(ptrdiff_t, atomic_ptrdiff_t);
 __ATOMIC_TYPE__(intmax_t, atomic_intmax_t);
 __ATOMIC_TYPE__(uintmax_t, atomic_uintmax_t);
-
+#endif
 #define kill_dependency(y) __kill_dependency(y)
 
 #define atomic_init(__a__, __v__) __atomic_var_init(__v__, __a__)

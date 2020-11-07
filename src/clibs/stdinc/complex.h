@@ -58,6 +58,7 @@
 
 #ifdef __cplusplus
 
+#ifndef RC_INVOKED
 extern "C"
 {
 #endif
@@ -152,5 +153,6 @@ extern "C"
 
 #ifdef __cplusplus
 };
+#endif
 #endif
 #endif /* __COMPLEX_H */

@@ -321,6 +321,7 @@
 
 #endif
 
+#ifndef RC_INVOKED
 typedef struct
 {
     intmax_t quot;
@@ -344,6 +345,7 @@ extern "C"
 
 #ifdef __cplusplus
 }
+#endif
 #endif
 
 #endif

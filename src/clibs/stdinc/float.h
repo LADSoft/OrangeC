@@ -142,10 +142,12 @@ extern "C"
 {
 #endif
 
+#ifndef RC_INVOKED
     unsigned int _RTL_FUNC _IMPORT _clear87(void);
     unsigned int _RTL_FUNC _IMPORT _control87(unsigned int __newcw, unsigned int __mask);
     void _RTL_FUNC _IMPORT _fpreset(void);
     unsigned int _RTL_FUNC _IMPORT _status87(void);
+#endif
 
 #define _controlfp(__a, __b) _control87((__a), ((__b) & (~EM_DENORMAL)))
 #define _statusfp _status87
@@ -190,8 +192,10 @@ extern "C"
     /* use affine infinity, mask underflow and precision exceptions */
 
 #define CW_DEFAULT _default87
-    extern unsigned int _RTL_DATA _default87;
 
+#ifndef RC_INVOKED
+    extern unsigned int _RTL_DATA _default87;
+#endif
 /*
     SIGFPE signal error types (for integer & float exceptions).
 */

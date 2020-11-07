@@ -60,15 +60,18 @@
  *
  * already declared in stddef.h, declared here for reference
  */
+#ifndef RC_INVOKED
 #ifndef _WINT_T_DEFINED
 #    define _WINT_T_DEFINED
 typedef unsigned int wint_t;
 #endif
-
+#endif
 #ifdef __cplusplus
 extern "C"
 {
 #endif
+
+#ifndef RC_INVOKED
 
 #ifndef _MBSTATE_T_DEFINED
 #    define _MBSTATE_T_DEFINED
@@ -80,7 +83,7 @@ extern "C"
 #endif
 
     struct tm;
-
+#endif
 #define WCHAR_MIN ((wchar_t)0)
 #define WCHAR_MAX ((wchar_t)(~WCHAR_MIN))
 
@@ -88,6 +91,7 @@ extern "C"
 #    define WEOF (wint_t)(-1)
 #endif
 
+#ifndef RC_INVOKED
     wchar_t* _RTL_FUNC wcscpy(wchar_t* restrict __dest, const wchar_t* restrict __src);
     wchar_t* _RTL_FUNC wcsncpy(wchar_t* restrict __dest, const wchar_t* restrict __src, size_t __n);
 
@@ -214,6 +218,7 @@ int _RTL_FUNC vswprintf(wchar_t* restrict s, size_t n, const wchar_t* restrict _
     wint_t _RTL_FUNC putwchar_unlocked(wchar_t wc);
     wchar_t* _RTL_FUNC fgetws_unlocked(wchar_t* ws, int n, FILE* stream);
     int _RTL_FUNC fputws_unlocked(const wchar_t* ws, FILE* stream);
+#endif
 
 #ifdef __cplusplus
 };

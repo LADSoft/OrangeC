@@ -36,6 +36,7 @@
 
 #pragma pack(1)
 
+#ifndef RC_INVOKED
 typedef struct
 {
     char* qualname;
@@ -187,5 +188,5 @@ struct collstr
 
 extern void* __locale_data[LC_LAST + 1];
 unsigned char __nextWeight(struct collstr* db);
-
+#endif
 #pragma pack()

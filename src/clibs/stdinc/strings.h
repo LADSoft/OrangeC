@@ -52,6 +52,7 @@ extern "C"
 {
 #endif
 
+#ifndef RC_INVOKED
     int _RTL_INTRINS _IMPORT bcmp(const void*, const void*, size_t);
 
     void _RTL_INTRINS _IMPORT bcopy(const void*, void*, size_t);
@@ -67,7 +68,7 @@ extern "C"
     int _RTL_INTRINS _IMPORT strcasecmp(const char* ZSTR, const char* ZSTR);
 
     int _RTL_INTRINS _IMPORT strncasecmp(const char* ZSTR, const char* ZSTR, size_t);
-
+#endif
 /*
 #define 	bzero(s,n) memset(s,0,n)
 #define 	bcopy(src,dest,n) memmove(dest,src,n)

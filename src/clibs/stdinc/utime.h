@@ -48,18 +48,21 @@ extern "C"
 #    include <stddef.h>
 #endif
 
+#ifndef RC_INVOKED
     struct _utimbuf
     {
         long actime;  /* Access time */
         long modtime; /* Modification time */
     };
-
+#endif
 #define utimbuf _utimbuf
 
+#ifndef RC_INVOKED
     int _RTL_FUNC _IMPORT utime(const char* ZSTR, struct utimbuf*);
     int _RTL_FUNC _IMPORT _utime(const char* ZSTR, struct _utimbuf*);
     int _RTL_FUNC _IMPORT _futime(int, struct _utimbuf*);
     int _RTL_FUNC _IMPORT _wutime(const wchar_t*, struct _utimbuf*);
+#endif
 
 #ifdef __cplusplus
 }

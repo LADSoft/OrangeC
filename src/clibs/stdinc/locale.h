@@ -64,13 +64,17 @@
 #define LC_TIME_MASK (1 << LC_TIME)
 #define LC_ALL_MASK (LC_COLLATE_MASK | LC_CTYPE_MASK | LC_MESSAGES_MASK | LC_MONETARY_MASK | LC_NUMERIC_MASK | LC_TIME_MASK)
 
+#ifndef RC_INVOKED
+
 typedef void* locale_t;
+#endif
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
+#ifndef RC_INVOKED
     struct lconv
     {
 
@@ -104,6 +108,7 @@ extern "C"
     char* _RTL_FUNC _IMPORT _lsetlocale(int __category, const char* ZSTR __locale);
     struct lconv* _RTL_FUNC _IMPORT localeconv(void);
     struct lconv* _RTL_FUNC _IMPORT _llocaleconv(void);
+#endif
 
 #ifdef __USELOCALES__
 #    define setlocale _lsetlocale

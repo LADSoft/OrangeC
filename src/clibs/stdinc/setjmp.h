@@ -53,6 +53,7 @@
 extern "C"
 {
 #endif
+#ifndef RC_INVOKED
 
     typedef struct __jmp_buf
     {
@@ -93,6 +94,7 @@ extern "C"
     void _RTL_FUNC _IMPORT longjmp(jmp_buf __jmpb, int __retval);
     int _RTL_FUNC _IMPORT setjmp(jmp_buf __jmpb);
     int _RTL_FUNC _IMPORT _setjmp(jmp_buf __jmpb);
+#endif
 
 #define setjmp(__jmpb) setjmp(__jmpb)
 #define _setjmp(__jmpb) setjmp(__jmpb);

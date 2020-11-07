@@ -41,6 +41,7 @@
 #    include <_defs.h>
 #endif
 
+#ifndef RC_INVOKED
 #ifndef _TIMEVAL_DEFINED
 #    define _TIMEVAL_DEFINED
 struct timeval
@@ -65,5 +66,6 @@ extern "C"
 
 #ifdef __cplusplus
 }
+#endif
 #endif
 #endif

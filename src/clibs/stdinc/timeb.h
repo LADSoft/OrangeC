@@ -54,6 +54,7 @@ extern "C"
 {
 #    endif
 
+#ifndef RC_INVOKED
     struct timeb
     {
         long time;
@@ -72,6 +73,7 @@ extern "C"
 
     void _RTL_FUNC _IMPORT _ftime(struct _timeb*);
     void _RTL_FUNC _IMPORT ftime(struct timeb*);
+#endif
 #    ifdef __cplusplus
 };
 #    endif

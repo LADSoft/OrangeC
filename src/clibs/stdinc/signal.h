@@ -53,9 +53,11 @@ extern "C"
 {
 #endif
 
+#ifndef RC_INVOKED
     typedef int sig_atomic_t; /* Atomic entity type (ANSI) */
 
     typedef void (*sighandler_t)(int);
+#endif
 
 #define SIG_DFL ((sighandler_t)0)  /* Default action   */
 #define SIG_IGN ((sighandler_t)1)  /* Ignore action    */
@@ -73,8 +75,10 @@ extern "C"
 #define SIGUSR3 20  /* User-defined signal 3 */
 #define SIGBREAK 21 /* Control-Break interrupt */
 
+#ifndef RC_INVOKED
     int _RTL_FUNC _IMPORT raise(int __sig);
     sighandler_t _RTL_FUNC _IMPORT signal(int __sig, sighandler_t __func);
+#endif
 
 #define NSIG 23 /* highest defined signal no. + 1 */
 
@@ -135,6 +139,7 @@ extern "C"
 #define POLL_PRI 4
 #define POLL_HUP 5
 
+#ifndef RC_INVOKED
     typedef unsigned sigval_t;
     typedef unsigned sigset_t;  // there are a max of 23 signals in this implementation
 
@@ -191,11 +196,13 @@ extern "C"
         int sa_flags;
         void (*sa_restorer)(void);
     };
+#endif
 
 #define SIGEV_NONE 0
 #define SIGEV_SIGNAL 1
 #define SIGEV_THREAD 2
 
+#ifndef RC_INVOKED
     struct sigevent
     {
         int segev_notify;
@@ -251,6 +258,7 @@ extern "C"
     int    sigwait(const sigset_t *restrict, int *restrict);
     int    sigwaitinfo(const sigset_t *restrict, siginfo_t *restrict);
     */
+#endif
 
 #ifdef __cplusplus
 };

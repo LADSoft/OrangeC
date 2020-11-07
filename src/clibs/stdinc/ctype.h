@@ -51,9 +51,9 @@
 extern "C"
 {
 #endif
-
+#ifndef RC_INVOKED
     extern unsigned short const _IMPORT _RTL_DATA* _pctype;
-
+#endif
     /* character classes */
 
 #ifndef _IS_CONSTANTS
@@ -85,6 +85,7 @@ extern "C"
 #define _LOWER _IS_LOW
 #define _HEX _IS_HEX
 
+#ifndef RC_INVOKED
     int _RTL_FUNC _IMPORT isalnum(int __c);
     int _RTL_FUNC _IMPORT isalpha(int __c);
     int _RTL_FUNC _IMPORT isblank(int __c);
@@ -110,6 +111,7 @@ extern "C"
     int _RTL_FUNC _IMPORT _isctype(int, int);
     int _RTL_FUNC _IMPORT __iscsymf(int);
     int _RTL_FUNC _IMPORT __iscsym(int);
+#endif
 #ifdef __cplusplus
 };
 #endif

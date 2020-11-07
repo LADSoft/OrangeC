@@ -48,6 +48,7 @@ extern "C"
 {
 #endif
 
+#ifndef RC_INVOKED
 #ifndef _DIV_T
 #    define _DIV_T
     typedef struct
@@ -76,7 +77,7 @@ extern "C"
     } lldiv_t;
 #    endif
 #endif
-
+#endif
 #undef _alloca
 #undef alloca
 #define _alloca(x) __alloca((x))
@@ -92,6 +93,7 @@ extern "C"
 #define EXIT_SUCCESS 0
 #define EXIT_FAILURE 1
 
+#ifndef RC_INVOKED
     typedef void (*atexit_t)(void);
 
     void _RTL_FUNC _IMPORT abort(void);
@@ -189,6 +191,7 @@ extern int _RTL_DATA _fmode;
 extern unsigned char _RTL_DATA _osmajor;
 extern unsigned char _RTL_DATA _osminor;
 #endif
+#endif
 
     /* Constants for MSC pathname functions */
 
@@ -207,6 +210,7 @@ extern unsigned char _RTL_DATA _osminor;
 #endif
 #define _MAX_PATH2 (_MAX_PATH + 4)
 
+#ifndef RC_INVOKED
     long double _RTL_FUNC _IMPORT _atold(const char* ZSTR __s);
     void _RTL_FUNC _IMPORT _NORETURN _exit(int __status);
     char* ZSTR _RTL_FUNC _IMPORT _fullpath(char* ZSTR, const char* ZSTR, size_t);
@@ -277,6 +281,7 @@ extern unsigned char _RTL_DATA _osminor;
 int* _RTL_FUNC _IMPORT __GetErrno(void);
 #endif
     int* _RTL_FUNC _IMPORT __GetDosErrno(void);
+#endif
 
 #ifndef __cplusplus
 #    if defined(__MSIL__)
@@ -287,6 +292,7 @@ int* _RTL_FUNC _IMPORT __GetErrno(void);
 #    define _dos_errno (*__GetDosErrno())
 #endif
 #define sys_nerr _sys_nerr
+#ifndef RC_INVOKED
 #if defined(__LSCRTL_DLL)
     extern int _IMPORT _sys_nerr;
 #else
@@ -309,9 +315,10 @@ extern char _RTL_DATA** __argv;
 #endif
 
     void _RTL_FUNC _IMPORT perror(const char* ZSTR __s);
-
+#endif
 #if defined(__cplusplus)
 
+#ifndef RC_INVOKED
 #    ifndef _TIME_T
 #        define _TIME_T
     typedef long time_t;
@@ -321,6 +328,7 @@ extern char _RTL_DATA** __argv;
 
     inline void _RTL_FUNC _IMPORT randomize(void) { srand((unsigned)time(NULL)); }
     inline int _RTL_FUNC _IMPORT random(int num) { return ((rand() * (num)) / (RAND_MAX + 1)); }
+#endif
 
 /* must include the C++ header to get min and max defs */
 #else /* __cplusplus */

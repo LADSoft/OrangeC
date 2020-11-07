@@ -52,12 +52,16 @@
 #        include <sys/types.h>
 #    endif
 
+#ifndef RC_INVOKED
+
 #    ifndef __cplusplus
 #        ifndef _WCHAR_T_DEFINED
 typedef unsigned short wchar_t;
 #            define _WCHAR_T_DEFINED
 #        endif
 #    endif
+
+#endif
 
 /* Traditional names for bits in st_mode.
  */
@@ -110,6 +114,7 @@ extern "C"
 {
 #    endif
 
+#ifndef RC_INVOKED
     struct stat
     {
         dev_t st_dev;
@@ -124,7 +129,7 @@ extern "C"
         time_t st_mtime;
         time_t st_ctime;
     };
-
+#endif
 /* Define MS compatible names
  */
 #    define _S_IFMT S_IFMT
@@ -137,6 +142,7 @@ extern "C"
 #    define _S_IWRITE S_IWRITE
 #    define _S_IEXEC S_IEXEC
 
+#ifndef RC_INVOKED
     struct _stat
     {
 #    ifdef __CRTDLL_DLL
@@ -174,6 +180,7 @@ extern "C"
 #    if !defined(__STDC__)
     int _RTL_FUNC _IMPORT stat(const char* ZSTR __path, struct stat* __statbuf);
 #    endif /* __STDC__ */
+#endif
 
 #    ifdef __cplusplus
 };

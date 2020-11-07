@@ -53,6 +53,7 @@
 #    include <stdarg.h>
 #endif
 
+#ifndef RC_INVOKED
 #pragma pack(4)
 typedef struct __file__
 {
@@ -117,6 +118,7 @@ extern FILE _RTL_DATA* __stderr;
 extern FILE _RTL_DATA* __stdaux;
 extern FILE _RTL_DATA* __stdprn;
 #endif
+#endif
 
 #define stdin __stdin
 #define stdout __stdout
@@ -129,7 +131,9 @@ extern "C"
 {
 #endif
 
+#ifndef RC_INVOKED
     typedef long fpos_t;
+#endif
 
 #define FILTOK 0x444c
 #define STACKPAD 512
@@ -193,15 +197,17 @@ extern "C"
     /* Standard I/O predefined streams
      */
 #ifndef _NFILE_EXT
+#ifndef RC_INVOKED
 #    define _NFILE_EXT
     extern unsigned _RTL_DATA _nfile;
-#endif
     FILE* _RTL_FUNC _IMPORT __getStream(int stream);
-
+#endif
+#endif
 #define _IOFBF 1
 #define _IOLBF 2
 #define _IONBF 4
 
+#ifndef RC_INVOKED
     void _RTL_FUNC _IMPORT clearerr(FILE* __stream);
     int _RTL_FUNC _IMPORT fclose(FILE* __stream);
     int _RTL_FUNC _IMPORT fflush(FILE* __stream);
@@ -306,7 +312,7 @@ extern "C"
 
     char* _RTL_FUNC _IMPORT fgets_unlocked(char* s, int n, FILE* stream);
     int _RTL_FUNC _IMPORT fputs_unlocked(const char* s, FILE* stream);
-
+#endif
 #if !defined(__CRTDLL_DLL) && !defined(__MSVCRT_DLL) && !defined(__MSIL__)
 #    define fileno(f) ((f)->fd)
 #    define _fileno(f) ((f)->fd)
@@ -314,9 +320,10 @@ extern "C"
 #if defined(__MSIL__)
 #    define fileno(f) _fileno(f)
 #endif
+#ifndef RC_INVOKED
     int _RTL_FUNC _IMPORT _fgetc(FILE* __stream);          /* used by getc() macro */
     int _RTL_FUNC _IMPORT _fputc(int __c, FILE* __stream); /* used by putc() macro */
-
+#endif
 #ifdef __cplusplus
 };
 #endif

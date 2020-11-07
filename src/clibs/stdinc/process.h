@@ -60,6 +60,7 @@
 #define WAIT_CHILD 0
 #define WAIT_GRANDCHILD 1
 
+#ifndef RC_INVOKED
 #ifdef __cplusplus
 extern "C"
 {
@@ -124,6 +125,7 @@ extern "C"
 
 #ifdef __cplusplus
 };
+#endif
 #endif
 
 #endif /* __PROCESS_H */

@@ -47,7 +47,7 @@
 extern "C"
 {
 #endif
-
+#ifndef RC_INVOKED
     typedef struct
     {
         unsigned short excInvalid : 1;
@@ -76,6 +76,7 @@ extern "C"
         unsigned short fCS2;
         unsigned short __null5;
     } fenv_t;
+#endif
 
 #define FE_DIVBYZERO 0x0004
 #define FE_INEXACT 0x0020
@@ -93,10 +94,13 @@ extern "C"
 #define FE_TOWARDZERO 3
 #define FE_UPWARD 2
 
+#ifndef RC_INVOKED
     extern fenv_t* const __fe_default_env;
+#endif
 
 #define FE_DFL_ENV (__fe_default_env)
 
+#ifndef RC_INVOKED
     int feclearexcept(int __excepts);
     int fegetexceptflag(fexcept_t* __flagp, int __excepts);
     int feraiseexcept(int __excepts);
@@ -108,6 +112,7 @@ extern "C"
     int feholdexcept(fenv_t* __envp);
     int fesetenv(const fenv_t* __envp);
     int feupdateenv(const fenv_t* __envp);
+#endif
 
 #ifdef __cplusplus
 }

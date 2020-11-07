@@ -75,6 +75,7 @@ extern "C"
 #define REG_ESPACE 13
 #define REG_BADRPT 14
 
+#ifndef RC_INVOKED
     typedef struct _regex
     {
         size_t re_nsub;
@@ -93,6 +94,7 @@ extern "C"
     int _RTL_FUNC regexec(regex_t*, const char* ZSTR, size_t, regmatch_t[], int);
     size_t _RTL_FUNC regerror(int, const regex_t*, char* ZSTR, size_t);
     void _RTL_FUNC regfree(regex_t*);
+#endif
 
 #ifdef __cplusplus
 };

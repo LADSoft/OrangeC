@@ -52,7 +52,8 @@ extern "C"
 {
 #    endif
 
-    struct text_info
+#ifndef RC_INVOKED
+	    struct text_info
     {
         unsigned char winleft;
         unsigned char wintop;
@@ -66,7 +67,6 @@ extern "C"
         unsigned char curx;
         unsigned char cury;
     };
-
 #    if !defined(__COLORS)
 #        define __COLORS
 
@@ -91,9 +91,11 @@ extern "C"
     };
 
 #    endif
+#endif
 
 #    define BLINK 128 /* blink bit */
 
+#ifndef RC_INVOKED
     enum text_modes
     {
         LASTMODE = -1,
@@ -165,6 +167,7 @@ extern "C"
     int _RTL_FUNC _IMPORT _putch(int);
     int _RTL_FUNC _IMPORT _ungetch(int);
 
+#endif
 #    ifdef __cplusplus
 }
 #    endif

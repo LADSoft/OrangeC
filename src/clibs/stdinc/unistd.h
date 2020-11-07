@@ -48,6 +48,7 @@
 extern "C"
 {
 #endif
+#ifndef RC_INVOKED
     int _RTL_FUNC _IMPORT sysconf(int);
 
     int _RTL_FUNC _IMPORT fsync(int fd);
@@ -57,6 +58,7 @@ extern "C"
 
     int _RTL_FUNC _IMPORT getpid(void);
     int _RTL_FUNC _IMPORT getppid(void);
+#endif
 
 #ifdef __cplusplus
 }

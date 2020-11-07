@@ -54,6 +54,8 @@ extern "C"
 {
 #endif
 
+
+#ifndef RC_INVOKED
 #ifndef _TIME_T
 #    define _TIME_T
     typedef long time_t;
@@ -64,12 +66,15 @@ extern "C"
     typedef long clock_t;
 #endif
 
+#endif
+
 #define CLOCKS_PER_SEC 1000
 #define CLK_TCK 1000
 
 #define TZNAME "Eastern Standard Time"
 #define GMT_OFFS 7
 
+#ifndef RC_INVOKED
     struct tm
     {
         int tm_sec;
@@ -113,6 +118,7 @@ extern "C"
 
     unsigned _RTL_FUNC _IMPORT _getsystime(struct tm*);
     unsigned _RTL_FUNC _IMPORT _setsystime(struct tm*, unsigned);
+#endif
 
 #ifdef __cplusplus
 };

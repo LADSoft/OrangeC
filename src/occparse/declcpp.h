@@ -57,6 +57,7 @@ std::stack<EXPRESSION*> iterateToPostOrder(EXPRESSION* exp);
 bool hasPackedExpression(EXPRESSION* exp, bool useAuto);
 void checkPackedExpression(EXPRESSION* exp);
 void checkUnpackedExpression(EXPRESSION* exp);
+void GatherPackedTypes(int* count, SYMBOL** arg, TYPE* tp);
 void GatherPackedVars(int* count, SYMBOL** arg, EXPRESSION* packedExp);
 void ReplicatePackedExpression(EXPRESSION* pattern, int count, SYMBOL** arg, TEMPLATEPARAMLIST** dest);
 int CountPacks(TEMPLATEPARAMLIST* packs);

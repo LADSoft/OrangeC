@@ -264,10 +264,23 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
             if (!tp || (!isstructured(tp) && tp->type != bt_templatedecltype) || !MATCHKW(lex, classsel))
                 break;
             lex = getsym();
-            sp = basetype(tp)->sp;
-            if (sp)
-                sp->tp = PerformDeferredInitialization(sp->tp, nullptr);
-            strSym = sp;
+            if (tp->type == bt_templatedecltype)
+            {
+                *last = (TEMPLATESELECTOR*)(TEMPLATESELECTOR*)Alloc(sizeof(TEMPLATESELECTOR));
+                (*last)->sp = strSym;
+                last = &(*last)->next;
+                *last = (TEMPLATESELECTOR*)(TEMPLATESELECTOR*)Alloc(sizeof(TEMPLATESELECTOR));
+                (*last)->tp = tp;
+                (*last)->isDeclType = true;
+                last = &(*last)->next;
+            }
+            else
+            {
+                sp = basetype(tp)->sp;
+                if (sp)
+                    sp->tp = PerformDeferredInitialization(sp->tp, nullptr);
+                strSym = sp;
+            }
             if (!qualified)
                 nssym = nullptr;
             finalPos = lex;
@@ -540,7 +553,7 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
                 }
                 if (hasTemplateArgs)
                 {
-                    deferred = inTemplateHeader || parsingSpecializationDeclaration || parsingTrailingReturn;
+                    deferred = inTemplateHeader || parsingSpecializationDeclaration || parsingTrailingReturnOrUsing;
                     if (currentsp)
                     {
                         sp = currentsp;

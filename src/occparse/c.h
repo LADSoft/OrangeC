@@ -820,6 +820,7 @@ typedef struct _templateParam
     int lref : 1;
     int rref : 1;
     int resolved : 1;  // packed template has already been resolved.
+    int elipsis : 1; // elipsis found after this item...
     SYMBOL* packsym;
     void* hold; /* value held during partial template ordering */
     Optimizer::LIST* stack;
@@ -884,9 +885,11 @@ typedef struct _templateSelector
     {
         SYMBOL* sp;
         const char* name;
+        TYPE* tp;
     };
     TEMPLATEPARAMLIST* templateParams;
     int isTemplate : 1;
+    int isDeclType : 1;
 } TEMPLATESELECTOR;
 
 typedef struct _structSym

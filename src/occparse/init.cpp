@@ -3469,7 +3469,13 @@ LEXEME* initType(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_sc sc, INITIALI
         SYMBOL* ts = tp->sp->sb->templateSelector->next->sp;
         SYMBOL* sym = nullptr;
         TEMPLATESELECTOR* find = tp->sp->sb->templateSelector->next->next;
-        if (tp->sp->sb->templateSelector->next->isTemplate)
+        if (tp->sp->sb->templateSelector->next->isDeclType)
+        {
+            TYPE *tp1 = TemplateLookupTypeFromDeclType(tp->sp->sb->templateSelector->next->tp);
+            if (tp1 && isstructured(tp1))
+                sym = basetype(tp1)->sp;
+        }
+        else if (tp->sp->sb->templateSelector->next->isTemplate)
         {
             if (ts->tp->type == bt_templateparam && ts->tp->templateParam->p->byTemplate.val == nullptr)
             {

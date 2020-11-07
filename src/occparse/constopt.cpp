@@ -2249,32 +2249,43 @@ int opt0(EXPRESSION** node)
                 SYMBOL* ts = tsl->next->sp;
                 SYMBOL* sym = ts;
                 TEMPLATESELECTOR* find = tsl->next->next;
-                if (ts->tp->type == bt_templateparam)
+                if (tsl->next->isDeclType)
                 {
-                    if (ts->tp->templateParam->p->type != kw_template)
-                        break;
-                    ts = ts->tp->templateParam->p->byTemplate.val;
-                    if (!ts)
-                        break;
-                }
-                if (tsl->next->isTemplate)
-                {
-                    TEMPLATEPARAMLIST* current = SolidifyTemplateParams(tsl->next->templateParams);
-                    if (ts->sb->storage_class == sc_typedef)
-                    {
-                        sym = GetTypeAliasSpecialization(sym, current);
-                    }
-                    else
-                    {
-                        sym = GetClassTemplate(ts, current, true);
-                    }
-                }
-                if (sym && sym->tp->type == bt_templateselector)
-                {
-                    TYPE* tp = sym->tp;
-                    tp = SynthesizeType(tp, nullptr, false);
+                    TYPE *tp = TemplateLookupTypeFromDeclType(tsl->next->tp);
                     if (tp && isstructured(tp))
                         sym = basetype(tp)->sp;
+                    else
+                        sym = nullptr;
+                }
+                else
+                {
+                    if (ts->tp->type == bt_templateparam)
+                    {
+                        if (ts->tp->templateParam->p->type != kw_template)
+                            break;
+                        ts = ts->tp->templateParam->p->byTemplate.val;
+                        if (!ts)
+                            break;
+                    }
+                    if (tsl->next->isTemplate)
+                    {
+                        TEMPLATEPARAMLIST* current = SolidifyTemplateParams(tsl->next->templateParams);
+                        if (ts->sb->storage_class == sc_typedef)
+                        {
+                            sym = GetTypeAliasSpecialization(sym, current);
+                        }
+                        else
+                        {
+                            sym = GetClassTemplate(ts, current, true);
+                        }
+                    }
+                    if (sym && sym->tp->type == bt_templateselector)
+                    {
+                        TYPE* tp = sym->tp;
+                        tp = SynthesizeType(tp, nullptr, false);
+                        if (tp && isstructured(tp))
+                            sym = basetype(tp)->sp;
+                    }
                 }
                 if (sym)
                 {

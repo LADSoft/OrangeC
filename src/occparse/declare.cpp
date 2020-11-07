@@ -70,7 +70,7 @@ int noSpecializationError;
 Optimizer::LIST* deferred;
 int structLevel;
 Optimizer::LIST* openStructs;
-int parsingTrailingReturn;
+int parsingTrailingReturnOrUsing;
 
 static int unnamed_tag_id, unnamed_id;
 static char* importFile;
@@ -2643,7 +2643,7 @@ founddecltype:
                         TEMPLATEPARAMLIST* lst = nullptr;
                         SYMBOL* sp1;
                         lex = GetTemplateArguments(lex, funcsp, sp, &lst);
-                        if (!parsingTrailingReturn)
+                        if (!parsingTrailingReturnOrUsing)
                         {
                             sp1 = GetTypeAliasSpecialization(sp, lst);
                             if (sp1)
@@ -4281,9 +4281,9 @@ static LEXEME* getAfterType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** sp,
                                 funcLevel++;
                                 lex = getsym();
                                 ParseAttributeSpecifiers(&lex, funcsp, true);
-                                parsingTrailingReturn = true;
+                                parsingTrailingReturnOrUsing = true;
                                 lex = get_type_id(lex, &tpx, funcsp, sc_cast, false, true, false);
-                                parsingTrailingReturn = false;
+                                parsingTrailingReturnOrUsing = false;
                                 if (tpx)
                                 {
                                     if (!isautotype(basetype(*tp)->btp))

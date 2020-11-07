@@ -41,15 +41,26 @@ static TYPE* replaceTemplateSelector(TYPE* tp)
     if (!templateNestingCount && tp->type == bt_templateselector && tp->sp->sb->templateSelector->next->isTemplate)
     {
         SYMBOL* sp2 = tp->sp->sb->templateSelector->next->sp;
-        if (sp2)
+        if (tp->sp->sb->templateSelector->next->isDeclType)
         {
-            SYMBOL* sp1 = GetClassTemplate(sp2, tp->sp->sb->templateSelector->next->templateParams, true);
-            if (sp1)
+            TYPE* tp1 = TemplateLookupTypeFromDeclType(tp->sp->sb->templateSelector->next->tp);
+            if (tp1 && isstructured(tp1))
+                sp2 = basetype(tp1)->sp;
+            else
+                sp2 = nullptr;
+        }
+        else
+        {
+            if (sp2)
             {
-                sp1 = search(tp->sp->sb->templateSelector->next->next->name, sp1->tp->syms);
+                SYMBOL* sp1 = GetClassTemplate(sp2, tp->sp->sb->templateSelector->next->templateParams, true);
                 if (sp1)
                 {
-                    tp = sp1->tp;
+                    sp1 = search(tp->sp->sb->templateSelector->next->next->name, sp1->tp->syms);
+                    if (sp1)
+                    {
+                        tp = sp1->tp;
+                    }
                 }
             }
         }

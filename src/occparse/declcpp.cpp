@@ -1802,9 +1802,13 @@ void GatherPackedTypes(int* count, SYMBOL** arg, TYPE* tp)
 {
     if (tp)
     {
-        if (tp->type == bt_templateselector)
+        if (tp->type == bt_typedef && tp->sp->templateParams)
         {
-            auto tsl = tp->sp->sb->templateSelector->next;
+            GatherTemplateParams(count, arg, tp->sp->templateParams);
+        }
+        else if (basetype(tp)->type == bt_templateselector)
+        {
+            auto tsl = basetype(tp)->sp->sb->templateSelector->next;
             while (tsl)
             {
                 if (tsl->templateParams)
@@ -3236,13 +3240,23 @@ LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc st
             ParseAttributeSpecifiers(&lex, nullptr, true);
             if (MATCHKW(lex, assign))
             {
+                if (strstr(lex->errfile, "__tuple") && lex->errline == 373)
+                    printf("hi");
+                if (strstr(lex->errfile, "__tuple") && lex->errline == 350)
+                    printf("hi");
+                if (strstr(lex->errfile, "__tuple") && lex->errline == 271)
+                    printf("hi");
                 TYPE* tp = nullptr;
                 SYMBOL* sp;
                 lex = getsym();
                 TEMPLATEPARAMLIST *lst = nullptr;
+                bool pulledtypename = false;
                 if (MATCHKW(lex, kw_typename))
+                {
+                    pulledtypename = true;
                     lex = getsym();
-                if (inTemplate && (ISID(lex) || MATCHKW(lex, classsel)))
+                }
+                if (inTemplate && (ISID(lex) || MATCHKW(lex, classsel) || MATCHKW(lex, kw_typename)))
                 {
                     SYMBOL *sym = nullptr, *strsym = nullptr;
                     NAMESPACEVALUELIST *ns =nullptr;
@@ -3254,7 +3268,9 @@ LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc st
                         lex = getsym();
                         if (MATCHKW(lex, lt))
                         { 
+                            parsingTrailingReturnOrUsing = true;
                             lex = GetTemplateArguments(lex, nullptr, sym, &lst);
+                            parsingTrailingReturnOrUsing = false;
                         }
                     }
                     else if (strsym && strsym->tp->type == bt_templateselector)
@@ -3263,7 +3279,9 @@ LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc st
                         lex = getsym();
                         if (MATCHKW(lex, lt))
                         {
+                            parsingTrailingReturnOrUsing = true;
                             lex = GetTemplateArguments(lex, strsym->tp->sp->sb->templateSelector->next->sp, sym, &lst);
+                            parsingTrailingReturnOrUsing = false;
                         }
                     }
                     enum e_lk linkage = lk_none, linkage2 = lk_none, linkage3 = lk_none;
@@ -3277,6 +3295,8 @@ LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc st
                 }
                 else
                 {
+                    if (pulledtypename)
+                        lex = backupsym();
                     lex = get_type_id(lex, &tp, nullptr, sc_cast, false, true, true);
                 }
                 if (!tp)
@@ -3299,6 +3319,10 @@ LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc st
                     sp->templateParams = TemplateGetParams(sp);
                     if (isstructured(tp) || basetype(tp)->type == bt_templateselector)
                         sp->sb->typeAlias = lst;
+                }
+                else if (!templateNestingCount)
+                {
+                    sp->tp = PerformDeferredInitialization(sp->tp, nullptr);
                 }
                 if (storage_class == sc_member)
                     sp->sb->parentClass = getStructureDeclaration();

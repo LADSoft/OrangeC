@@ -475,6 +475,14 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
                             TEMPLATESELECTOR* tpl = basetype(tpn)->sp->sb->templateSelector->next;
                             SYMBOL* sym = tpl->sp;
                             TEMPLATESELECTOR* find = tpl->next;
+                            if (tpl->isDeclType)
+                            {
+                                TYPE *tp1 = TemplateLookupTypeFromDeclType(tpl->tp);
+                                if (tp1 && isstructured(tp1))
+                                    sym = basetype(tp1)->sp;
+                                else
+                                    sym = nullptr;
+                            }
                             while (sym && find)
                             {
                                 SYMBOL* fsp;

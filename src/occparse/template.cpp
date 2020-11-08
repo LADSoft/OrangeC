@@ -9952,15 +9952,8 @@ static TYPE* SpecifyArgType(SYMBOL* sym, TYPE* tp, TEMPLATEPARAM* tpt, TEMPLATEP
                     x = &(*x)->next;
                     tpl = tpl->next;
                 }
-                SYMBOL* sp1;
-                if (tp->type == bt_typedef && tp->sp->sb->typeAlias)
-                {
-                    sp1 = GetAliasClassTemplate(tp->sp, args1->next);
-                }
-                else
-                {
-                    sp1 = GetClassTemplate(basetype(tp)->sp, args1->next, true);
-                }
+                tp->sp->templateParams = args1;
+                SYMBOL* sp1 = GetAliasClassTemplate(basetype(tp)->sp, args);
                 if (sp1)
                     if (i < 0)
                         basetype(tp)->sp = sp1;

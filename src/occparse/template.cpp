@@ -8983,6 +8983,8 @@ TEMPLATEPARAMLIST * ResolveDeclType(SYMBOL* sp, TEMPLATEPARAMLIST* args)
 }
 SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
 {
+    if (!strcmp(sp->name, "__indexer"))
+        printf("hi");
     int n = 1, i = 0;
     TEMPLATEPARAMLIST* unspecialized = sp->templateParams->next;
     SYMBOL *found1 = nullptr, *found2 = nullptr;
@@ -9549,7 +9551,7 @@ static EXPRESSION* SpecifyArgInt(SYMBOL* sym, EXPRESSION* exp, TEMPLATEPARAMLIST
                     auto p = rv->p->byPack.pack;
                     for (int i = 0; i < packIndex && p; i++, p = p->next);
                     if (p)
-                        exp = p->p->byNonType.dflt;
+                        exp = p->p->byNonType.val ? p->p->byNonType.val : p->p->byNonType.dflt;
                 }
                 else
                 {
@@ -9567,7 +9569,7 @@ static EXPRESSION* SpecifyArgInt(SYMBOL* sym, EXPRESSION* exp, TEMPLATEPARAMLIST
                         auto p = rv->p->byPack.pack;
                         for (int i = 0; i < packIndex && p; i++, p = p->next);
                         if (p)
-                            dflt = rv->p->byClass.dflt;
+                            dflt = rv->p->byClass.val ? rv->p->byClass.val : rv->p->byClass.dflt;
                         else
                             dflt = nullptr;
                     }
@@ -9772,6 +9774,11 @@ static TYPE* SpecifyArgType(SYMBOL* sym, TYPE* tp, TEMPLATEPARAM* tpt, TEMPLATEP
                     if (tpl)
                         *(*tpr)->p = *tpl->p;
                 }
+                else if ((*tpr)->p->ellipsis)
+                {
+                    *(*tpr)->p = *(*tpr)->p->byPack.pack->p;
+                    SpecifyOneArg(sym, (*tpr), args, origTemplate, origUsing);
+                }
                 else
                 {
                     for (auto t = (*tpr)->p->byPack.pack; t; t = t->next)
@@ -9889,10 +9896,10 @@ static TYPE* SpecifyArgType(SYMBOL* sym, TYPE* tp, TEMPLATEPARAM* tpt, TEMPLATEP
                 x = &(*x)->next;
                 tpl = tpl->next;
             }
-//            basetype(tp)->sp->templateParams = args1;
             SYMBOL* sp1 = GetClassTemplate(basetype(tp)->sp, args1->next, true);
             if (sp1)
             {
+                sp1->tp = PerformDeferredInitialization(sp1->tp, nullptr);
                 std::stack<TEMPLATEPARAMLIST*> tas;
                 for (auto a = sp1->templateParams->next; a; )
                 {
@@ -9920,10 +9927,10 @@ static TYPE* SpecifyArgType(SYMBOL* sym, TYPE* tp, TEMPLATEPARAM* tpt, TEMPLATEP
     }
     else if (basetype(tp)->type == bt_templateselector)
     {
-        TYPE* tp1 = tp;
         TEMPLATEPARAMLIST **tplp = nullptr;
+        basetype(tp)->sp = clonesym(basetype(tp)->sp);
         TEMPLATESELECTOR **rvs = &basetype(tp)->sp->sb->templateSelector;
-        TEMPLATESELECTOR* old = basetype(tp1)->sp->sb->templateSelector;
+        TEMPLATESELECTOR* old = *rvs;
         *rvs = nullptr;
         while (old)
         {
@@ -9934,7 +9941,9 @@ static TYPE* SpecifyArgType(SYMBOL* sym, TYPE* tp, TEMPLATEPARAM* tpt, TEMPLATEP
                 (*rvs)->tp = (TYPE*)Alloc(sizeof(TYPE));
                 *(*rvs)->tp = *old->tp;
                 (*rvs)->tp->templateDeclType = SpecifyArgInt(sym, (*rvs)->tp->templateDeclType, orig, args, origTemplate, origUsing);
-                (*rvs)->tp = TemplateLookupTypeFromDeclType((*rvs)->tp);
+                auto tp1 = TemplateLookupTypeFromDeclType((*rvs)->tp);
+                (*rvs)->isDeclType = false;
+                (*rvs)->sp = makeID(sc_auto, tp1, nullptr, AnonymousName());
             }
             else
             {
@@ -9956,6 +9965,11 @@ static TYPE* SpecifyArgType(SYMBOL* sym, TYPE* tp, TEMPLATEPARAM* tpt, TEMPLATEP
                             if (tpl)
                                 *(*tpr)->p = *tpl->p;
                         }
+                        else if ((*tpr)->p->ellipsis)
+                        {
+                            *(*tpr)->p = *(*tpr)->p->byPack.pack->p;
+                            SpecifyOneArg(sym, (*tpr), args, origTemplate, origUsing);
+                        }
                         else
                         {
                             for (auto t = (*tpr)->p->byPack.pack; t; t = t->next)
@@ -9974,6 +9988,7 @@ static TYPE* SpecifyArgType(SYMBOL* sym, TYPE* tp, TEMPLATEPARAM* tpt, TEMPLATEP
             rvs = &(*rvs)->next;
             old = old->next;
         }
+        rv = SynthesizeType(rv, nullptr, false);
     }
     return rv;
 }
@@ -10023,27 +10038,35 @@ static void SpecifyOneArg(SYMBOL* sym, TEMPLATEPARAMLIST* temp, TEMPLATEPARAMLIS
         {
         case kw_int:
         {
-            temp->p->byNonType.dflt = SpecifyArgInt(sym, temp->p->byNonType.dflt ? temp->p->byNonType.dflt : temp->p->byNonType.val, temp, args, origTemplate, origUsing);
-            optimize_for_constants(&temp->p->byNonType.dflt);
-            while (temp->p->byNonType.dflt->type == en_void && temp->p->byNonType.dflt->right)
-                temp->p->byNonType.dflt = temp->p->byNonType.dflt->right;
-
+            auto rv = SpecifyArgInt(sym, temp->p->byNonType.dflt ? temp->p->byNonType.dflt : temp->p->byNonType.val, temp, args, origTemplate, origUsing);
+            if (rv)
+            {
+                optimize_for_constants(&rv);
+                while (rv->type == en_void && rv->right)
+                    rv = rv->right;
+            }
             if (i >= 0)
-                hold[i] = temp->p->byNonType.dflt;
+                hold[i] = rv;
+            else
+                temp->p->byNonType.dflt = rv;
             break;
         }
         case kw_template:
         {
-            temp->p->byTemplate.args = GetTypeAliasArgs(sym, args, origUsing->p->byTemplate.args, origUsing);
+            auto rv = GetTypeAliasArgs(sym, args, origUsing->p->byTemplate.args, origUsing);
             if (i >= 0)
-                hold[i] = temp->p->byTemplate.args;
+                hold[i] = rv;
+            else
+                temp->p->byTemplate.args = rv;
             break;
         }
         case kw_typename:
         {
-            temp->p->byClass.dflt = SpecifyArgType(sym, temp->p->byClass.dflt ? temp->p->byClass.dflt : temp->p->byClass.val, temp->p, temp, args, origTemplate, origUsing);
+            auto rv = SpecifyArgType(sym, temp->p->byClass.dflt ? temp->p->byClass.dflt : temp->p->byClass.val, temp->p, temp, args, origTemplate, origUsing);
             if (i >= 0)
-                hold[i] = temp->p->byClass.dflt;
+                hold[i] = rv;
+            else
+                temp->p->byClass.dflt = rv;
             break;
         }
         default:
@@ -10152,13 +10175,13 @@ TEMPLATEPARAMLIST* GetTypeAliasArgs(SYMBOL* sp, TEMPLATEPARAMLIST* args, TEMPLAT
             temp = temp->next;
         }
     }
-    args = ResolveDeclType(sp, args);
-    args = ResolveTemplateSelectors(sp, args, false);
+    args1 = ResolveDeclType(sp, args1);
+    args1 = ResolveTemplateSelectors(sp, args1, false);
     return args1;
 }
 SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args)
 {
-    if (!strcmp(sp->name, "__all") && !templateNestingCount)
+    if (!strcmp(sp->name, "__apply_quals") && !templateNestingCount)
         printf("hi");
     if (reflectUsingType)
         return sp;

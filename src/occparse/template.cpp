@@ -1047,8 +1047,6 @@ bool constructedInt(LEXEME* lex, SYMBOL* funcsp)
 }
 LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLATEPARAMLIST** lst)
 {
-    if (templ && !strcmp(templ->name, "__all_dummy"))
-        printf("hi");
     TEMPLATEPARAMLIST* orig = nullptr;
     bool first = true;
     TYPE* tp = nullptr;
@@ -8983,7 +8981,11 @@ TEMPLATEPARAMLIST * ResolveDeclType(SYMBOL* sp, TEMPLATEPARAMLIST* args)
 }
 SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
 {
-    if (!strcmp(sp->name, "__indexer"))
+    if (!strcmp(sp->name, "__tuple_constructible"))
+        printf("hi");
+    if (!strcmp(sp->name, "__tuple_convertible"))
+        printf("hi");
+    if (!strcmp(sp->name, "__all_default_constructible"))
         printf("hi");
     int n = 1, i = 0;
     TEMPLATEPARAMLIST* unspecialized = sp->templateParams->next;
@@ -10098,6 +10100,29 @@ static void SpecifyOneArg(SYMBOL* sym, TEMPLATEPARAMLIST* temp, TEMPLATEPARAMLIS
 }
 TEMPLATEPARAMLIST* GetTypeAliasArgs(SYMBOL* sp, TEMPLATEPARAMLIST* args, TEMPLATEPARAMLIST* origTemplate, TEMPLATEPARAMLIST* origUsing)
 {
+    TEMPLATEPARAMLIST **tplp = &args, *tpl = origTemplate->next;
+    while (*tplp && tpl)
+    {
+        tpl->p->byClass.val = (*tplp)->p->byClass.dflt;
+        tplp = &(*tplp)->next;
+        tpl = tpl->next;
+    }
+    while (tpl)
+    {
+        *tplp = (TEMPLATEPARAMLIST*)Alloc(sizeof(TEMPLATEPARAMLIST));
+        (*tplp)->p = (TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
+        *(*tplp)->p = *tpl->p;
+        tplp = &(*tplp)->next;
+        tpl = tpl->next;
+    }
+    if (!templateNestingCount && !TemplateParseDefaultArgs(sp, sp->templateParams->next, sp->templateParams->next, sp->templateParams->next))
+    {
+        TemplateParseDefaultArgs(sp, args, args, args);
+        return args;
+    }
+    for (tpl = origTemplate->next, tplp = &args; tpl; tpl = tpl->next, tplp = &(*tplp)->next)
+        if (tpl->p->byClass.val)
+            (*tplp)->p->byClass.dflt = tpl->p->byClass.val;
     TEMPLATEPARAMLIST *args1 = nullptr, **last = &args1;
     TEMPLATEPARAMLIST* temp = origUsing;
     while (temp)
@@ -10181,7 +10206,11 @@ TEMPLATEPARAMLIST* GetTypeAliasArgs(SYMBOL* sp, TEMPLATEPARAMLIST* args, TEMPLAT
 }
 SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args)
 {
-    if (!strcmp(sp->name, "__apply_quals") && !templateNestingCount)
+    if (!strcmp(sp->name, "__all"))
+        printf("hi");
+    if (!strcmp(sp->name, "__constructible"))
+        printf("hi");
+    if (!strcmp(sp->name, "__convertible"))
         printf("hi");
     if (reflectUsingType)
         return sp;
@@ -10787,6 +10816,8 @@ static void DoInstantiate(SYMBOL* strSym, SYMBOL* sym, TYPE* tp, NAMESPACEVALUEL
 }
 LEXEME* TemplateDeclaration(LEXEME* lex, SYMBOL* funcsp, enum e_ac access, enum e_sc storage_class, bool isExtern)
 {
+    if (lex->errline == 691 && strstr(lex->errfile, "tuple"))
+        printf("hi");
     HASHTABLE* oldSyms = localNameSpace->valueData->syms;
     lex = getsym();
     localNameSpace->valueData->syms = nullptr;

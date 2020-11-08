@@ -4411,6 +4411,8 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                     if (*hr && ismember(((SYMBOL*)(*hr)->p)))
                         argCount++;
                 }
+                if (!strcmp(sp->name, "__enable_implicit"))
+                    printf("hi");
                 spList = (SYMBOL**)(SYMBOL**)Alloc(sizeof(SYMBOL*) * n);
                 spFilterList = (SYMBOL**)(SYMBOL**)Alloc(sizeof(SYMBOL*) * n);
                 icsList = (enum e_cvsrn**)Alloc(sizeof(enum e_cvsrn*) * n);
@@ -4591,6 +4593,8 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                     CollapseReferences(basetype(found1->tp)->btp);
                     if (found1->sb->templateLevel && !templateNestingCount && found1->templateParams)
                     {
+                        if (!strcmp(sp->name, "__enable_implicit"))
+                            printf("hi");
                         found1 = TemplateFunctionInstantiate(found1, false, false);
                     }
                     else

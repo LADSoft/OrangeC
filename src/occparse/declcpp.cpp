@@ -3240,12 +3240,6 @@ LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc st
             ParseAttributeSpecifiers(&lex, nullptr, true);
             if (MATCHKW(lex, assign))
             {
-                if (strstr(lex->errfile, "__tuple") && lex->errline == 373)
-                    printf("hi");
-                if (strstr(lex->errfile, "__tuple") && lex->errline == 350)
-                    printf("hi");
-                if (strstr(lex->errfile, "__tuple") && lex->errline == 271)
-                    printf("hi");
                 TYPE* tp = nullptr;
                 SYMBOL* sp;
                 lex = getsym();

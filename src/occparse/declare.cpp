@@ -5900,6 +5900,9 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                             }
                             else
                             {
+                                if (!strcmp(sp->name, "$bctr") && lex->errline == 707)
+                                    if (!strcmp(sp->sb->parentClass->name, "tuple"))
+                                        printf("hi");
                                 SYMLIST** p;
                                 if ((storage_class_in == sc_auto || storage_class_in == sc_parameter) &&
                                     storage_class != sc_external && !isfunction(sp->tp))

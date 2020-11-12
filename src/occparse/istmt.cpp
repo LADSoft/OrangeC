@@ -518,7 +518,7 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, Optimi
     {
         gen_expr(funcsp, stmt->destexp, F_NOVALUE, ISZ_ADDR);
     }
-    if (ap)
+    if (ap && (inlinesym_count || !isvoid(basetype(funcsp->tp)->btp)))
     {
         if (returnImode)
             ap1 = returnImode;
@@ -559,7 +559,7 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, Optimi
                 if (Optimizer::cparams.prm_xcept && funcsp->sb->xc && funcsp->sb->xc->xcRundownFunc)
                     gen_expr(funcsp, funcsp->sb->xc->xcRundownFunc, F_NOVALUE, ISZ_UINT);
                 SubProfilerData();
-                if (returnSym)
+                if (returnSym && !isvoid(basetype(funcsp->tp)->btp))
                 {
                     ap1 = Optimizer::tempreg(returnSym->size, 0);
                     ap1->retval = true;

@@ -316,11 +316,8 @@ static void InsertInitialLoad(QUAD* begin, std::deque<QUAD*>& addresses, IMODE*&
     }
     IMODE *ans = pinnedVar(tp);
     ans->size = exp->size;
-    IMODE* ans2 = (IMODE*)Alloc(sizeof(IMODE));
-    *ans2 = *ans;
-    ans2->size = ISZ_UINT;
     managed = ans;
-    unmanaged = ans2;
+    unmanaged = ans;
 
 
     if (addresses.front()->dc.opcode == i_add)
@@ -368,8 +365,8 @@ static void InsertFinalThunk(IMODE* managed, QUAD* end)
     if (end->back->dc.opcode == i_goto)
         end = end->back;
     QUAD* load = (QUAD*)Alloc(sizeof(QUAD));
-    load->ans = InitTempOpt(ISZ_UINT, ISZ_UINT);
-    load->dc.left = make_immed(ISZ_UINT, 0);
+    load->ans = InitTempOpt(ISZ_ADDR, ISZ_ADDR);
+    load->dc.left = make_immed(ISZ_ADDR, 0);
     load->dc.opcode = i_assn;
     QUAD* store = (QUAD*)Alloc(sizeof(QUAD));
     store->ans = managed;
@@ -438,20 +435,6 @@ void RewriteForPinning()
                 ReplaceLoads(managed, unmanaged, a);
                 InsertFinalThunk(managed, pair.second);
              }
-        }
-    }
-    if (autos.size())
-    {
-        for (auto a : autos)
-        {
-            for (auto s : a.second)
-            {
-                // this force a conv.u
-                if (s->dc.opcode == i_assn)
-                    s->dc.left->size = ISZ_UINT;
-                else
-                    s->dc.right->size = ISZ_UINT;
-            }
         }
     }
 }

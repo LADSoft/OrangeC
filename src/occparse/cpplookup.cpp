@@ -4072,13 +4072,13 @@ static void WeedTemplates(SYMBOL** table, int count, FUNCTIONCALL* args, TYPE* a
     {
         TemplatePartialOrdering(table, count, args, atp, false, true);
         // now we out nonspecializations if specializations are present
-        int j = 0;
-        for (int i=0; i < count; i++)
+        int i;
+        for (i=0; i < count; i++)
         {
             if (table[i] && table[i]->sb->specialized)
-                j++;
+                break;
         }
-        if (j)
+        if (i < count)
         {
             for (int i=0; i < count; i++)
             {

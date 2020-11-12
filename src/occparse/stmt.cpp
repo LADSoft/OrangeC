@@ -1018,21 +1018,27 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                         if (isstructured(selectTP) && isstructured(iteratorType) && ibegin->type == en_func &&
                             iend->type == en_func)
                         {
-                            eBegin = ibegin->v.func->returnEXP;
-                            eEnd = iend->v.func->returnEXP;
                             st = stmtNode(lex, forstmt, st_expr);
                             st->select = ibegin;
                             st = stmtNode(lex, forstmt, st_expr);
                             st->select = iend;
+                            eBegin = ibegin->v.func->returnEXP;
+                            eEnd = iend->v.func->returnEXP;
+                            /*
+                            st = stmtNode(lex, forstmt, st_expr);
+                            st->select = exprNode(en_assign, eBegin, ibegin->v.func->returnEXP);
+                            st = stmtNode(lex, forstmt, st_expr);
+                            st->select = exprNode(en_assign, eEnd, iend->v.func->returnEXP);
+                            */
                         }
                         else
                         {
-                            SYMBOL* sBegin;
-                            SYMBOL* sEnd;
-                            eBegin = anonymousVar(sc_auto, iteratorType);
-                            eEnd = anonymousVar(sc_auto, iteratorType);
-                            sBegin = eBegin->v.sp;
-                            sEnd = eEnd->v.sp;
+                            TYPE *tpx = (TYPE*)Alloc(sizeof(TYPE));
+                            tpx->type = bt_pointer;
+                            tpx->size = getSize(bt_pointer);
+                            tpx->btp = iteratorType;
+                            eBegin = anonymousVar(sc_auto, tpx);
+                            eEnd = anonymousVar(sc_auto, tpx);
                             deref(&stdpointer, &eBegin);
                             deref(&stdpointer, &eEnd);
                             st = stmtNode(lex, forstmt, st_expr);

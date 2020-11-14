@@ -501,7 +501,7 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
                 else if (sp)
                 {
                     if (sp->sb && sp->sb->templateLevel && (!sp->sb->instantiated || MATCHKW(lex, lt)))
-                    {   
+                    {
                         hasTemplateArgs = true;
                         if (MATCHKW(lex, lt))
                         {

@@ -1536,15 +1536,18 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
                                 expandingParams--;
                                 packIndex = oldPack;
                             }
-                            while (*tpl && (*tpl)->next)
+                            if (*tpl)
                             {
-                                tpl = &(*tpl)->next;
-                            }
-                            (*tpl)->p->ellipsis = true;
-                            if ((*tpl)->p->packed)
-                            {
-                                for (auto tpl1 = (*tpl)->p->byPack.pack; tpl1; tpl1 = tpl1->next)
-                                    tpl1->p->ellipsis = true;
+                                while (*tpl && (*tpl)->next)
+                                {
+                                    tpl = &(*tpl)->next;
+                                }
+                                (*tpl)->p->ellipsis = true;
+                                if ((*tpl)->p->packed)
+                                {
+                                    for (auto tpl1 = (*tpl)->p->byPack.pack; tpl1; tpl1 = tpl1->next)
+                                        tpl1->p->ellipsis = true;
+                                }
                             }
                         }
                         else
@@ -9157,7 +9160,7 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
     if (!strcmp(sp->name, "is_constructible"))
         printf("hi");
     if (!strcmp(sp->name, "__tuple_constructible"))
-        printf("hi");
+         printf("hi");
     if (!strcmp(sp->name, "__tuple_convertible"))
         printf("hi");
     if (!strcmp(sp->name, "__all_default_constructible"))
@@ -9171,8 +9174,6 @@ SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
     SYMLIST* l;
 
     noErr |= matchOverloadLevel;
-//    ResolveDeclTypes(sp, args);
-//    ResolveTemplateSelectors(sp, args, false);
     ResolveClassTemplateArgs(sp, args);
 
     if (sp->sb->parentTemplate && sp)
@@ -9649,7 +9650,7 @@ void SearchAlias(const char *name, TEMPLATEPARAMLIST *x, SYMBOL* sym, TEMPLATEPA
             x->p->byPack.pack = (TEMPLATEPARAMLIST*)Alloc(sizeof(TEMPLATEPARAMLIST));
             x->p->byPack.pack->p = rv->p;
         }
-        else if (x->p->packed && packIndex >= 0 && !x->p->ellipsis)
+        else if (rv->p->packed && packIndex >= 0 && !x->p->ellipsis)
         {
             TEMPLATEPARAMLIST *tpl = rv->p->byPack.pack;
             for (int i = 0; i < packIndex && tpl; tpl = tpl->next);
@@ -9908,6 +9909,7 @@ static EXPRESSION* SpecifyArgInt(SYMBOL* sym, EXPRESSION* exp, TEMPLATEPARAMLIST
             *exp1 = *exp;
             exp = exp1;
             exp->v.construct.tp = SpecifyArgType(sym, exp->v.construct.tp, nullptr, orig, args, origTemplate, origUsing);
+            optimize_for_constants(&exp);
         }
         else if (exp->left || exp->right)
         {
@@ -10157,6 +10159,7 @@ static TYPE* SpecifyArgType(SYMBOL* sym, TYPE* tp, TEMPLATEPARAM* tpt, TEMPLATEP
                         SpecifyOneArg(sym, (*tpr), args, origTemplate, origUsing);
                     }
                     temp = temp->next;
+                    tpr = &(*tpr)->next;
                 }
             }
             rvs = &(*rvs)->next;

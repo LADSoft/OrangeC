@@ -70,6 +70,7 @@ int catchLevel;
 int codeLabelOffset;
 
 static Optimizer::LIST* mpthunklist;
+static std::map<int, int> retLabs;
 
 static int breaklab;
 static int contlab;
@@ -542,7 +543,34 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, Optimi
         {
             retsize = funcsp->sb->paramsize;
         }
-        Optimizer::gen_label(retlab);
+        if (!inlinesym_count || retLabs[retlab] >= 2)
+        {
+            // main function or multiple returns, label is needed
+            Optimizer::gen_label(retlab);
+        }
+        else if (retLabs[retlab] == 1)
+        {
+            // only one return statement, label isn't needed
+            // and get rid of the goto as well...
+            Optimizer::QUAD *find = Optimizer::intermed_tail;
+            Optimizer::BLOCK* b = find->block;
+            while (b == find->block && (find->dc.opcode == Optimizer::i_line || find->ignoreMe))
+                find = find->back;
+            if (b == find->block && find->dc.opcode == Optimizer::i_goto && find->dc.v.label == retlab)
+            {
+                find->dc.opcode = Optimizer::i_nop;
+                find->dc.v.label = 0;
+            }
+            else
+            {
+                // might fall off the end without a return statement...
+                Optimizer::gen_label(retlab);
+            }
+        }
+        else
+        {
+            Optimizer::gen_label(retlab);
+        }
         Optimizer::intermed_tail->retcount = retcount;
         if (!noepilogue)
         {
@@ -597,6 +625,7 @@ void genreturn(STATEMENT* stmt, SYMBOL* funcsp, int flag, int noepilogue, Optimi
         /* not using gen_igoto because it will make a new block */
         Optimizer::gen_icode(Optimizer::i_goto, nullptr, nullptr, nullptr);
         Optimizer::intermed_tail->dc.v.label = retlab;
+        retLabs[retlab]++;
         retcount++;
     }
 }
@@ -906,6 +935,7 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
  *      generate a function body and dump the icode
  */
 {
+    retLabs.clear();
     Optimizer::IMODE* oldReturnImode = returnImode;
     Optimizer::IMODE* allocaAP = nullptr;
     SYMBOL* oldCurrentFunc;

@@ -9155,16 +9155,6 @@ static void copySyms(SYMBOL* found1, SYMBOL* sym)
 }
 SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
 {
-    if (!strcmp(sp->name, "__all_dummy"))
-        printf("hi");
-    if (!strcmp(sp->name, "is_constructible"))
-        printf("hi");
-    if (!strcmp(sp->name, "__tuple_constructible"))
-         printf("hi");
-    if (!strcmp(sp->name, "__tuple_convertible"))
-        printf("hi");
-    if (!strcmp(sp->name, "__all_default_constructible"))
-        printf("hi");
     int n = 1, i = 0;
     TEMPLATEPARAMLIST* unspecialized = sp->templateParams->next;
     SYMBOL *found1 = nullptr, *found2 = nullptr;
@@ -10385,12 +10375,6 @@ TEMPLATEPARAMLIST* GetTypeAliasArgs(SYMBOL* sp, TEMPLATEPARAMLIST* args, TEMPLAT
 }
 SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args)
 {
-    if (!strcmp(sp->name, "__all"))
-        printf("hi");
-    if (!strcmp(sp->name, "__constructible"))
-        printf("hi");
-    if (!strcmp(sp->name, "__convertible"))
-        printf("hi");
     if (reflectUsingType)
         return sp;
     SYMBOL* rv;
@@ -10995,8 +10979,6 @@ static void DoInstantiate(SYMBOL* strSym, SYMBOL* sym, TYPE* tp, NAMESPACEVALUEL
 }
 LEXEME* TemplateDeclaration(LEXEME* lex, SYMBOL* funcsp, enum e_ac access, enum e_sc storage_class, bool isExtern)
 {
-    if (lex->errline == 691 && strstr(lex->errfile, "tuple"))
-        printf("hi");
     HASHTABLE* oldSyms = localNameSpace->valueData->syms;
     lex = getsym();
     localNameSpace->valueData->syms = nullptr;

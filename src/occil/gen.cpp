@@ -704,10 +704,6 @@ void gen_load(Optimizer::IMODE* im, Operand* dest, bool retval)
                     if (im->mode == Optimizer::i_immed && (!im->msilObject || address) && !retval)
                     {
                         gen_code(Instruction::i_ldflda, dest);
-                        if (Optimizer::pinning)
-                        {
-                            gen_code(Instruction::i_conv_u, nullptr);
-                        }
                     }
                     else
                     {

@@ -160,9 +160,23 @@ static int __flushone(FILE* stream)
 }
 int _RTL_FUNC fflush(FILE* stream)
 {
-    flockfile(stream);
-    int rv = fflush_unlocked(stream);
-    funlockfile(stream);
+    int rv = 0;
+    if (stream)
+    {
+        flockfile(stream);
+        rv = __flushone(stream);
+        funlockfile(stream);
+    }
+    else
+    {
+        int i;
+        for (i = 0; i < __maxfiles; i++)
+        {
+            flockfile(_pstreams[i]);
+            rv |= __flushone(_pstreams[i]);
+            funlockfile(_pstreams[i]);
+        }
+    }
     return rv;
 }
 int _RTL_FUNC fflush_unlocked(FILE* stream)

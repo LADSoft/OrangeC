@@ -4119,6 +4119,21 @@ static void WeedTemplates(SYMBOL** table, int count, FUNCTIONCALL* args, TYPE* a
     else
     {
         TemplatePartialOrdering(table, count, args, atp, false, true);
+        // now we out nonspecializations if specializations are present
+        int i;
+        for (i=0; i < count; i++)
+        {
+            if (table[i] && table[i]->sb->specialized)
+                break;
+        }
+        if (i < count)
+        {
+            for (int i=0; i < count; i++)
+            {
+                if (table[i] && !table[i]->sb->specialized)
+                    table[i] = 0;            
+            }
+        }
     }
 }
 SYMBOL* GetOverloadedTemplate(SYMBOL* sp, FUNCTIONCALL* args)

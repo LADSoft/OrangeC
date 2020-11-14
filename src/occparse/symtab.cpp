@@ -508,6 +508,10 @@ bool matchOverload(TYPE* tnew, TYPE* told, bool argsOnly)
                     {
                         return templatecompareexpressions(tpn->templateDeclType, tps->templateDeclType);
                     }
+                    else if ((tpn->type == bt_templateparam || tps->type == bt_templateparam) && tpn->type != tps->type)
+                    {
+                        return false;
+                    }
                     return true;
                 }
                 if (tpn->type == bt_templateselector && tps->type == bt_templateselector)

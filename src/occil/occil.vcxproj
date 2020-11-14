@@ -61,6 +61,12 @@
     <ProjectReference Include="..\netlib\DotNetPELib.vcxproj">
       <Project>{9e09e239-7370-4cbc-a82e-40dbcc0947f3}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\occopt\occopt.vcxproj">
+      <Project>{3c58e290-51e1-4163-9842-e804e3920be5}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\occparse\occparse.vcxproj">
+      <Project>{6f4a4182-7acb-4c9f-934b-394768e49574}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\util\util.vcxproj">
       <Project>{72430015-06c0-42a2-b9ec-d0e5e2eae83d}</Project>
     </ProjectReference>

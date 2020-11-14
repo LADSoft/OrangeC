@@ -56,9 +56,8 @@
 #define CMPLXF(x, y) ((float complex)((float)(x) + _Imaginary_I * (float)(y)))
 #define CMPLXL(x, y) ((long double complex)((long double)(x) + _Imaginary_I * (long double)(y)))
 
-#ifdef __cplusplus
-
 #ifndef RC_INVOKED
+#ifdef __cplusplus
 extern "C"
 {
 #endif

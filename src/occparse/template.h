@@ -36,6 +36,7 @@ extern bool inTemplateType;
 extern int inTemplateHeader;
 extern SYMBOL* instantiatingMemberFuncClass;
 extern bool reflectUsingType;
+extern struct templateListData* currents;
 
 void templateInit(void);
 EXPRESSION* GetSymRef(EXPRESSION* n);

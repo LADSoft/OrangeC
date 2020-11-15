@@ -3614,6 +3614,8 @@ int natural_size(EXPRESSION* node)
     }
     switch (node->type)
     {
+        case en_sizeofellipse:
+            return ISZ_UINT;
         case en_pointsto:
         case en_dot:
             return natural_size(node->right);

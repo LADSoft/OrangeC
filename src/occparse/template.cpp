@@ -141,15 +141,18 @@ EXPRESSION* GetSymRef(EXPRESSION* n)
 }
 bool equalTemplateIntNode(EXPRESSION* exp1, EXPRESSION* exp2)
 {
-    //#ifdef PARSER_ONLY
-    //    return true;
-    //#else
-    if (equalnode(exp1, exp2))
-        return true;
-    if (isintconst(exp1) && isintconst(exp2) && exp1->v.i == exp2->v.i)
-        return true;
+    if (exp1->type == en_templateparam)
+        exp1 = exp1->v.sp->tp->templateParam->p->byNonType.val;
+    if (exp2->type == en_templateparam)
+        exp2 = exp2->v.sp->tp->templateParam->p->byNonType.val;
+    if (exp1 && exp2)
+    {
+        if (equalnode(exp1, exp2))
+            return true;
+        if (isintconst(exp1) && isintconst(exp2) && exp1->v.i == exp2->v.i)
+            return true;
+    }
     return false;
-    //#endif
 }
 bool templatecompareexpressions(EXPRESSION* exp1, EXPRESSION* exp2)
 {
@@ -1922,7 +1925,7 @@ static bool matchTemplatedType(TYPE* old, TYPE* sym, bool strict)
     }
 }
 SYMBOL* SynthesizeResult(SYMBOL* sym, TEMPLATEPARAMLIST* params);
-static bool ValidateArgsSpecified(TEMPLATEPARAMLIST* params, SYMBOL* func, INITLIST* args);
+static SYMBOL* ValidateArgsSpecified(TEMPLATEPARAMLIST* params, SYMBOL* func, INITLIST* args, TEMPLATEPARAMLIST* nparams);
 static void saveParams(SYMBOL** table, int count)
 {
     int i;
@@ -4522,8 +4525,11 @@ static bool DeduceFromTemplates(TYPE* P, TYPE* A, bool change, bool byClass)
                         //    #endif
                     }
                     exp = change ? &to->p->byNonType.val : &to->p->byNonType.temp;
-                    if (!*exp)
-                        *exp = TA->p->byNonType.val;
+//                    if (!*exp)
+                    *exp = TA->p->byNonType.val;
+                    if (to->p->byNonType.dflt && to->p->byNonType.val &&
+                        !equalTemplateIntNode(to->p->byNonType.dflt, *exp))
+                        return false;
                     break;
                 }
                 default:
@@ -5388,7 +5394,7 @@ static bool checkNonTypeTypes(TEMPLATEPARAMLIST* params, TEMPLATEPARAMLIST* encl
     }
     return true;
 }
-static bool ValidateArgsSpecified(TEMPLATEPARAMLIST* params, SYMBOL* func, INITLIST* args)
+static SYMBOL* ValidateArgsSpecified(TEMPLATEPARAMLIST* params, SYMBOL* func, INITLIST* args, TEMPLATEPARAMLIST* nparams)
 {
     bool usesParams = !!args;
     INITLIST* check = args;
@@ -5398,12 +5404,12 @@ static bool ValidateArgsSpecified(TEMPLATEPARAMLIST* params, SYMBOL* func, INITL
     if (!valFromDefault(params, usesParams, &args))
     {
         inDefaultParam--;
-        return false;
+        return nullptr;
     }
     if (!checkNonTypeTypes(params, params))
     {
         inDefaultParam--;
-        return false;
+        return nullptr;
     }
 
     while (params)
@@ -5412,14 +5418,14 @@ static bool ValidateArgsSpecified(TEMPLATEPARAMLIST* params, SYMBOL* func, INITL
             if (!params->p->packed && !params->p->byClass.val)
             {
                 inDefaultParam--;
-                return false;
+                return nullptr;
             }
         params = params->next;
     }
     if (hr && hr->p->tp->type == bt_void)
     {
         inDefaultParam--;
-        return true;
+        return SynthesizeResult(func, nparams);
     }
     if (hr)
     {
@@ -5446,7 +5452,7 @@ static bool ValidateArgsSpecified(TEMPLATEPARAMLIST* params, SYMBOL* func, INITL
             if (func->sb->parentClass)
                 dropStructureDeclaration();
             inDefaultParam--;
-            return false;
+            return nullptr;
         }
         while (hr)
         {
@@ -5466,7 +5472,7 @@ static bool ValidateArgsSpecified(TEMPLATEPARAMLIST* params, SYMBOL* func, INITL
                     if (func->sb->parentClass)
                         dropStructureDeclaration();
                     inDefaultParam--;
-                    return false;
+                    return nullptr;
                 }
             }
             hr = hr->next;
@@ -5478,7 +5484,7 @@ static bool ValidateArgsSpecified(TEMPLATEPARAMLIST* params, SYMBOL* func, INITL
     s.tmpl = func->templateParams;
     addTemplateDeclaration(&s);
     //    if (!ValidArg(basetype(func->tp)->btp))
-    //        return false;
+    //        return nullptr;
     hr = basetype(func->tp)->syms->table[0];
     while (hr)  // && (!usesParams || check))
     {
@@ -5486,21 +5492,37 @@ static bool ValidateArgsSpecified(TEMPLATEPARAMLIST* params, SYMBOL* func, INITL
         {
             dropStructureDeclaration();
             inDefaultParam--;
-            return false;
+            return nullptr;
         }
         if (check)
             check = check->next;
         hr = hr->next;
     }
+    if (isstructured(basetype(func->tp)->btp))
+    {
+        TEMPLATEPARAMLIST* params = basetype(basetype(func->tp)->btp)->sp->templateParams;
+        if (params)
+        {
+            TEMPLATEPARAMLIST* special =
+                params->p->bySpecialization.types ? params->p->bySpecialization.types : params->next;
+            while (special)
+            {
+                TransferClassTemplates(func->templateParams->next, func->templateParams->next, special);
+                special = special->next;
+            }
+        }
+    }
+    SYMBOL* rv = SynthesizeResult(func, nparams);
+    rv->sb->maintemplate = func;
     if (!ValidArg(basetype(func->tp)->btp))
     {
         dropStructureDeclaration();
         inDefaultParam--;
-        return false;
+        return nullptr;
     }
     dropStructureDeclaration();
     inDefaultParam--;
-    return true;
+    return rv;
 }
 static bool TemplateDeduceFromArg(TYPE* orig, TYPE* sym, EXPRESSION* exp, bool byClass, bool allowSelectors)
 {
@@ -6106,24 +6128,8 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
         params = nparams->next;
 
         if (TemplateParseDefaultArgs(sym, params, params, params) &&
-            ValidateArgsSpecified(sym->templateParams->next, sym, arguments))
+            (rv = ValidateArgsSpecified(sym->templateParams->next, sym, arguments, nparams)))
         {
-            if (isstructured(basetype(sym->tp)->btp))
-            {
-                TEMPLATEPARAMLIST* params = basetype(basetype(sym->tp)->btp)->sp->templateParams;
-                if (params)
-                {
-                    TEMPLATEPARAMLIST* special =
-                        params->p->bySpecialization.types ? params->p->bySpecialization.types : params->next;
-                    while (special)
-                    {
-                        TransferClassTemplates(sym->templateParams->next, sym->templateParams->next, special);
-                        special = special->next;
-                    }
-                }
-            }
-            rv = SynthesizeResult(sym, nparams);
-            rv->sb->maintemplate = sym;
             return rv;
         }
         return nullptr;
@@ -6144,9 +6150,10 @@ SYMBOL* TemplateDeduceWithoutArgs(SYMBOL* sym)
 {
     TEMPLATEPARAMLIST* nparams = sym->templateParams;
     TEMPLATEPARAMLIST* params = nparams->next;
-    if (TemplateParseDefaultArgs(sym, params, params, params) && ValidateArgsSpecified(sym->templateParams->next, sym, nullptr))
+    SYMBOL* rv;
+    if (TemplateParseDefaultArgs(sym, params, params, params) && (rv = ValidateArgsSpecified(sym->templateParams->next, sym, nullptr, nparams)))
     {
-        return SynthesizeResult(sym, nparams);
+        return rv;
     }
     return nullptr;
 }
@@ -6226,11 +6233,12 @@ SYMBOL* TemplateDeduceArgsFromType(SYMBOL* sym, TYPE* tp)
         TemplateDeduceFromType(basetype(sym->tp)->btp, basetype(tp)->btp);
         if (nparams)
         {
+            SYMBOL* rv;
             params = nparams->next;
             if (TemplateParseDefaultArgs(sym, params, params, params) &&
-                ValidateArgsSpecified(sym->templateParams->next, sym, nullptr))
+                (rv = ValidateArgsSpecified(sym->templateParams->next, sym, nullptr, nparams)))
             {
-                return SynthesizeResult(sym, nparams);
+                return rv;
             }
         }
     }
@@ -7646,10 +7654,7 @@ static void TransferClassTemplates(TEMPLATEPARAMLIST* dflt, TEMPLATEPARAMLIST* v
             params->p->byPack.pack = find->p->byPack.pack;
         }
     }
-    else if (val->p->packed)
-    {
-    }
-    else if (val->p->type == kw_typename && val->p->byClass.dflt && val->p->byClass.val && isstructured(val->p->byClass.dflt) &&
+    else if (!val->p->packed && val->p->type == kw_typename && val->p->byClass.dflt && val->p->byClass.val && isstructured(val->p->byClass.dflt) &&
         isstructured(val->p->byClass.val))
     {
         TEMPLATEPARAMLIST* tpdflt = basetype(val->p->byClass.dflt)->sp->templateParams;
@@ -7661,7 +7666,7 @@ static void TransferClassTemplates(TEMPLATEPARAMLIST* dflt, TEMPLATEPARAMLIST* v
             tpval = tpval->next;
         }
     }
-    else if (val->p->type == kw_typename && val->p->byClass.dflt && val->p->byClass.val && isfunction(val->p->byClass.dflt) &&
+    else if (!val->p->packed && val->p->type == kw_typename && val->p->byClass.dflt && val->p->byClass.val && isfunction(val->p->byClass.dflt) &&
              isfunction(val->p->byClass.val))
     {
         SYMLIST *hrd, *hrv;
@@ -9686,13 +9691,22 @@ void SearchAlias(const char *name, TEMPLATEPARAMLIST *x, SYMBOL* sym, TEMPLATEPA
             SpecifyOneArg(sym, x, args, origTemplate, origUsing);
     }
 }
+static TYPE* SpecifyArgType(SYMBOL* sym, TYPE* tp, TEMPLATEPARAM* tpt, TEMPLATEPARAMLIST* orig, TEMPLATEPARAMLIST* args, TEMPLATEPARAMLIST* origTemplate, TEMPLATEPARAMLIST* origUsing);
 void SpecifyTemplateSelector(TEMPLATESELECTOR** rvs, TEMPLATESELECTOR* old, bool expression, SYMBOL* sym, TEMPLATEPARAMLIST* args, TEMPLATEPARAMLIST* origTemplate, TEMPLATEPARAMLIST* origUsing)
 {
         while (old)
         {
             (*rvs) = (TEMPLATESELECTOR*)Alloc(sizeof(TEMPLATESELECTOR));
             *(*rvs) = *old;
-            if (old->isTemplate)
+            if (old->isDeclType)
+            {
+                if (!templateNestingCount)
+                {
+                    TYPE* basetp = old->tp;
+                    (*rvs)->tp = SpecifyArgType(basetp->sp, basetp, nullptr, nullptr, args, origTemplate, origUsing);
+                }
+            }
+            else if (old->isTemplate)
             {
                 TEMPLATEPARAMLIST *tpl = nullptr;
                 TEMPLATEPARAMLIST **x = nullptr;
@@ -9739,7 +9753,6 @@ void SpecifyTemplateSelector(TEMPLATESELECTOR** rvs, TEMPLATESELECTOR* old, bool
             rvs = &(*rvs)->next;
         }
 }
-static TYPE* SpecifyArgType(SYMBOL* sym, TYPE* tp, TEMPLATEPARAM* tpt, TEMPLATEPARAMLIST* orig, TEMPLATEPARAMLIST* args, TEMPLATEPARAMLIST* origTemplate, TEMPLATEPARAMLIST* origUsing);
 static EXPRESSION* SpecifyArgInt(SYMBOL* sym, EXPRESSION* exp, TEMPLATEPARAMLIST* orig, TEMPLATEPARAMLIST* args, TEMPLATEPARAMLIST* origTemplate, TEMPLATEPARAMLIST* origUsing)
 {
     if (exp)
@@ -9789,7 +9802,7 @@ static EXPRESSION* SpecifyArgInt(SYMBOL* sym, EXPRESSION* exp, TEMPLATEPARAMLIST
                             // typename, allocate space for a type and initialize it...
                             if (isstructured(dflt))
                             {
-                                EXPRESSION* dexp = nullptr;
+                                EXPRESSION* dexp = exp;
                                 EXPRESSION* var = anonymousVar(sc_auto, dflt);
                                 TYPE* ctype = dflt;
                                 callConstructorParam(&ctype, &exp, nullptr, nullptr, true, true, true, false);

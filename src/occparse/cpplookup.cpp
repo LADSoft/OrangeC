@@ -532,7 +532,7 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
                     hasTemplateArgs = true;
                     if (MATCHKW(lex, lt))
                     {
-                        lex = GetTemplateArguments(lex, nullptr, sp, &current);
+                         lex = GetTemplateArguments(lex, nullptr, sp, &current);
                     }
                     else if (MATCHKW(lex, classsel))
                     {
@@ -4628,8 +4628,6 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                 {
                     CollapseReferences(basetype(found1->tp)->btp);
                 }
-                if (!strcmp(found1->name, "__at_index"))
-                    printf("hi");
                 if (isautotype(basetype(found1->tp)->btp))
                     errorsym(ERR_AUTO_FUNCTION_RETURN_TYPE_NOT_DEFINED, found1);
             }

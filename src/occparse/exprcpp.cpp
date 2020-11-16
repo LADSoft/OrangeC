@@ -766,7 +766,7 @@ LEXEME* expression_func_type_cast(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRES
                         {
                             error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
                         }
-                        else
+                        else if (!templateNestingCount)
                         {
                             cast(*tp, exp);
                         }

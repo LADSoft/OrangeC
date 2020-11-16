@@ -8737,6 +8737,7 @@ static SYMBOL* FindTemplateSelector(TEMPLATESELECTOR* tso)
     }
     return nullptr;
 }
+int count3 = 0;
 static void FixIntSelectors(EXPRESSION** exp)
 {
     if ((*exp)->left)
@@ -8775,13 +8776,19 @@ static void FixIntSelectors(EXPRESSION** exp)
         {
             if (current->p->type == kw_typename)
             {
-                current->p->byClass.dflt = types.front();
-                types.pop_front();
+                if (!types.empty())
+                {
+                    current->p->byClass.dflt = types.front();
+                    types.pop_front();
+                }
             }
             else if (current->p->type == kw_int)
             {
-                current->p->byNonType.dflt = expressions.front();
-                expressions.pop_front();
+                if (!expressions.empty())
+                {
+                    current->p->byNonType.dflt = expressions.front();
+                    expressions.pop_front();
+                }
             }
             current = current->next;
         }
@@ -10310,11 +10317,8 @@ static void SpecifyOneArg(SYMBOL* sym, TEMPLATEPARAMLIST* temp, TEMPLATEPARAMLIS
         temp->p->packed = true;
     }
 }
-int count3 = 0;
 static bool ParseTypeAliasDefaults(SYMBOL* sp, TEMPLATEPARAMLIST* args, TEMPLATEPARAMLIST* origTemplate, TEMPLATEPARAMLIST* origUsing)
 {
-    if (++count3 == 0x116)
-        printf("hi");
     TEMPLATEPARAMLIST* tpl2, *tpl3;
     for (tpl2 = origTemplate, tpl3 = args; tpl2; tpl2 = tpl2->next, tpl3 = tpl3?tpl3->next: nullptr)
         if ((!tpl3 || !tpl3->p->byClass.dflt) && tpl2->p->byClass.txtdflt)

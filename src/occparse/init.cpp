@@ -1922,6 +1922,7 @@ static EXPRESSION* ConvertInitToRef(EXPRESSION* exp, TYPE* tp, TYPE* boundTP, en
     }
     return exp;
 }
+static int count3;
 static LEXEME* initialize_reference_type(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_sc sc, TYPE* itype, INITIALIZER** init,
                                          int flags, SYMBOL* sym)
 {

@@ -3075,6 +3075,9 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                         // make numeric temp and perform cast
                         p->exp = createTemporary(sym->tp, p->exp);
                     }
+                    if (!isref(p->tp) &&
+                        ((isconst(p->tp) && !isconst(basetype(sym->tp)->btp)) || (isvolatile(p->tp) && !isvolatile(basetype(sym->tp)->btp))))
+                        error(ERR_REF_INITIALIZATION_DISCARDS_QUALIFIERS);
                     p->tp = sym->tp;
                 }
                 else if (isstructured(p->tp))

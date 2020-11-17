@@ -582,21 +582,9 @@ static struct
     {"Referenced in instantiation of '%s'", NOTE},
     {"typedef templates not allowed", ERROR},
 };
-void EnterInstantiation(SYMBOL *sym)
+void EnterInstantiation(LEXEME* lex, SYMBOL *sym)
 {
-    int line;
-    const char *file;
-    if (currentLex)
-    {
-        file = currentLex->errfile;
-        line = currentLex->errline;
-    }
-    else
-    {
-        file = preProcessor->GetErrFile().c_str();
-        line = preProcessor->GetErrLineNo();
-    }
-    instantiationList.push_front(std::tuple<const char *, int, SYMBOL*>(file, line, sym));
+    instantiationList.push_front(std::tuple<const char *, int, SYMBOL*>(lex->errfile, lex->errline, sym));
 }
 void LeaveInstantiation()
 {

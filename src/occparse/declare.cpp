@@ -2916,7 +2916,7 @@ founddecltype:
                             if (sp->tp->type == bt_typedef)
                             {
                                 tn = sp->tp;
-                                while (tn != basetype(tn) && tn->type != bt_va_list) tn = tn->btp;
+//                                while (tn != basetype(tn) && tn->type != bt_va_list) tn = tn->btp;
                             }
                             else
                             {

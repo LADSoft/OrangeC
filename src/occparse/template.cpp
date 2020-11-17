@@ -7096,7 +7096,7 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, TEMPLATEPARAMLIST* args, b
             lex = sym->sb->parentTemplate->sb->deferredCompile;
         if (lex)
         {
-            EnterInstantiation(sym);
+            EnterInstantiation(lex, sym);
             int oldHeaderCount = templateHeaderCount;
             Optimizer::LIST* oldDeferred = deferred;
             bool defd = false;
@@ -7333,7 +7333,7 @@ SYMBOL* TemplateFunctionInstantiate(SYMBOL* sym, bool warning, bool isExtern)
         lex = sym->sb->deferredCompile;
         if (lex)
         {
-            EnterInstantiation(sym);
+            EnterInstantiation(lex, sym);
             Optimizer::LINEDATA* oldLinesHead = linesHead;
             Optimizer::LINEDATA* oldLinesTail = linesTail;
             int oldHeaderCount = templateHeaderCount;
@@ -8737,7 +8737,6 @@ static SYMBOL* FindTemplateSelector(TEMPLATESELECTOR* tso)
     }
     return nullptr;
 }
-int count3 = 0;
 static void FixIntSelectors(EXPRESSION** exp)
 {
     if ((*exp)->left)

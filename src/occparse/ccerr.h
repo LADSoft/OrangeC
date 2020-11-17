@@ -622,6 +622,6 @@ void checkUnused(HASHTABLE* syms);
 void findUnusedStatics(NAMESPACEVALUELIST* nameSpace);
 void assignmentUsages(EXPRESSION* node, bool first);
 void checkDefaultArguments(SYMBOL* spi);
-void EnterInstantiation(SYMBOL *sp);
+void EnterInstantiation(LEXEME* lex, SYMBOL *sp);
 void LeaveInstantiation();
 }  // namespace Parser

@@ -3103,6 +3103,17 @@ bool sameTemplate(TYPE* P, TYPE* A)
     }
     return false;
 }
+void GetRefs(TYPE* tpa, EXPRESSION* expa, bool& lref, bool& rref)
+{
+    lref = ((basetype(tpa)->type == bt_lref || (isstructured(tpa) && (!expa || expa->type != en_not_lvalue)) ||
+        (expa && (lvalue(expa) || isarithmeticconst(expa)))) &&
+        (!expa || (expa->type != en_func && expa->type != en_thisref)) && !tpa->rref) ||
+        tpa->lref;
+    rref = ((basetype(tpa)->type == bt_rref || (isstructured(tpa) && expa && expa->type == en_not_lvalue) ||
+        (expa && !lvalue(expa) && !ismem(expa))) &&
+        !lref && !tpa->lref) ||
+        tpa->rref;
+}
 void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_cvsrn* seq, SYMBOL* candidate, SYMBOL** userFunc,
                          bool allowUser)
 {
@@ -3128,24 +3139,7 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_
         seq[(*n)++] = CV_NONE;
         return;
     }
-    lref = ((basetype(tpa)->type == bt_lref || (isstructured(tpa) && (!expa || expa->type != en_not_lvalue)) ||
-             (expa && (lvalue(expa) || isarithmeticconst(expa)))) &&
-            (!expa || (expa->type != en_func && expa->type != en_thisref)) && !tpa->rref) ||
-           tpa->lref;
-    rref = ((basetype(tpa)->type == bt_rref || (isstructured(tpa) && expa && expa->type == en_not_lvalue) ||
-             (expa && !lvalue(expa) && !ismem(expa))) &&
-            !lref && !tpa->lref) ||
-           tpa->rref;
-    /*
-        lref = (basetype(tpa)->type == bt_lref || isstructured(tpa) && (!expa || expa->type != en_not_lvalue) ||
-                expa && (lvalue(expa) || isarithmeticconst(expa))) &&
-                   (!expa || expa->type != en_func && expa->type != en_thisref) && !tpa->rref ||
-               tpa->lref;*
-        rref = (basetype(tpa)->type == bt_rref || (isstructured(tpa) && expa && expa->type == en_not_lvalue) ||
-                expa && !lvalue(expa) && !ismem(expa)) &&
-                   !lref && !tpa->lref ||
-               tpa->rref;
-    */
+    GetRefs(tpa, exp, lref, rref);
     if (exp && exp->type == en_thisref)
         exp = exp->left;
     if (exp && exp->type == en_func)

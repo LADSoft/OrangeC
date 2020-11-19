@@ -526,7 +526,7 @@ bool isunion(TYPE* tp)
         return tp->type == bt_union;
     return false;
 }
-void DeduceAuto(TYPE** pat, TYPE* nt)
+void DeduceAuto(TYPE** pat, TYPE* nt, EXPRESSION* exp)
 {
     TYPE* in = nt;
     if (isautotype(*pat))
@@ -535,16 +535,36 @@ void DeduceAuto(TYPE** pat, TYPE* nt)
         bool err = false;
         if (isref(*pat))
         {
-            if ((*pat)->type == bt_rref)
+            if ((*pat)->type == bt_rref && !isconst((*pat)->btp) && !isvolatile((*pat)->btp))
             {
                 // forwarding?  unadorned rref!
-                if (!nt->rref && basetype(nt)->type != bt_rref)
+                if (!nt->rref && basetype(nt)->type != bt_rref && !isarithmeticconst(exp))
                 {
+                    // lref
                     *pat = (TYPE*)Alloc(sizeof(TYPE));
                     (*pat)->type = bt_lref;
                     (*pat)->size = getSize(bt_pointer);
                     (*pat)->rootType = (*pat);
                     TYPE* t = basetype(nt);
+                    if (isref(t))
+                        t = t->btp;
+                    (*pat)->btp = t;
+                    return;
+                }
+                else
+                {
+                    // rref, get rid of qualifiers and return an rref
+                    TYPE *tp1;
+                    if (nt->type == bt_rref)
+                        tp1 = basetype(nt->btp);
+                    else
+                        tp1 = basetype(nt);
+                    // rref
+                    *pat = (TYPE*)Alloc(sizeof(TYPE));
+                    (*pat)->type = bt_rref;
+                    (*pat)->size = getSize(bt_pointer);
+                    (*pat)->rootType = (*pat);
+                    TYPE* t = tp1;
                     if (isref(t))
                         t = t->btp;
                     (*pat)->btp = t;

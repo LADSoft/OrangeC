@@ -52,7 +52,7 @@ bool isvoid(TYPE* tp);
 bool isvoidptr(TYPE* tp);
 bool isarray(TYPE* tp);
 bool isunion(TYPE* tp);
-void DeduceAuto(TYPE** pat, TYPE* nt);
+void DeduceAuto(TYPE** pat, TYPE* nt, EXPRESSION* exp);
 SYMBOL* getFunctionSP(TYPE** tp);
 LEXEME* concatStringsInternal(LEXEME* lex, STRING** str, int* elems);
 LEXEME* concatStrings(LEXEME* lex, EXPRESSION** expr, enum e_lexType* tp, int* elems);

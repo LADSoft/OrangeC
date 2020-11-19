@@ -4326,13 +4326,13 @@ void CollapseReferences(TYPE* tp_in)
             if (tp1->btp == basetype(tp1->btp))
             {
                 tp1->btp = tp1->btp->btp;
-                UpdateRootTypes(tp_in);
             }
             else
             {
                 tp1 = tp1->btp;
             }
         }
+        UpdateRootTypes(tp_in);
     }
 }
 }  // namespace Parser

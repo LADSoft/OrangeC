@@ -1569,7 +1569,7 @@ static LEXEME* initialize_pointer_type(LEXEME* lex, SYMBOL* funcsp, int offset, 
             string = true;
         }
         castToPointer(&tp, &exp, (enum e_kw) - 1, itype);
-        DeduceAuto(&itype, tp);
+        DeduceAuto(&itype, tp, exp);
         if (sc != sc_auto && sc != sc_register)
         {
             EXPRESSION* exp2 = exp;
@@ -1947,8 +1947,8 @@ static LEXEME* initialize_reference_type(LEXEME* lex, SYMBOL* funcsp, int offset
     if (tp)
     {
         ResolveTemplateVariable(&tp, &exp, basetype(itype)->btp, nullptr);
-        DeduceAuto(&itype, tp);
-        DeduceAuto(&sym->tp, tp);
+        DeduceAuto(&itype, tp, exp);
+        DeduceAuto(&sym->tp, tp, exp);
         UpdateRootTypes(itype);
         UpdateRootTypes(sym->tp);
         if (!isref(tp) &&

@@ -1077,7 +1077,7 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                         st = stmtNode(lex, forstmt, st_expr);
                         if (!isstructured(selectTP))
                         {
-                            DeduceAuto(&declSP->tp, selectTP);
+                            DeduceAuto(&declSP->tp, selectTP, declExp);
                             if (ispointer(selectTP) && ispointer(declSP->tp))
                                 declSP->tp = basetype(declSP->tp)->btp;
                             UpdateRootTypes(declSP->tp);
@@ -1115,7 +1115,7 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                             st->select = eBegin;
                             if (ispointer(iteratorType))
                             {
-                                DeduceAuto(&declSP->tp, basetype(iteratorType)->btp);
+                                DeduceAuto(&declSP->tp, basetype(iteratorType)->btp, declExp);
                                 UpdateRootTypes(declSP->tp);
                                 if (!comparetypes(declSP->tp, basetype(iteratorType)->btp, true))
                                 {
@@ -1157,7 +1157,7 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                 {
                                     ref = true;
                                 }
-                                DeduceAuto(&declSP->tp, starType);
+                                DeduceAuto(&declSP->tp, starType, declExp);
                                 UpdateRootTypes(declSP->tp);
                                 if (!comparetypes(declSP->tp, starType, true) &&
                                     (!isarithmetic(declSP->tp) || !isarithmetic(starType)))
@@ -1850,7 +1850,7 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
             lex = prevsym(current);
             while (tp1->type == bt_typedef)
                 tp1 = tp1->btp;
-            DeduceAuto(&basetype(funcsp->tp)->btp, tp1);
+            DeduceAuto(&basetype(funcsp->tp)->btp, tp1, exp1);
             tp = basetype(funcsp->tp)->btp;
             UpdateRootTypes(funcsp->tp);
             SetLinkerNames(funcsp, funcsp->sb->attribs.inheritable.linkage);

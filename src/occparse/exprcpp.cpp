@@ -1781,7 +1781,7 @@ LEXEME* expression_new(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp,
                 else
                 {
                     exp1 = initializers->arguments->exp;
-                    DeduceAuto(tp, initializers->arguments->tp);
+                    DeduceAuto(tp, initializers->arguments->tp, exp1);
                     UpdateRootTypes(*tp);
                     if (exp1 && val)
                     {

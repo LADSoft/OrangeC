@@ -615,6 +615,7 @@ static const char* unmangTemplate(char* buf, const char* name, const char* last)
 /* Argument unmangling for C++ */
 const char* unmang1(char* buf, const char* name, const char* last, bool tof)
 {
+    buf[0] = 0;
     int v;
     int cvol = 0, cconst = 0, clrqual = 0, crrqual = 0;
     char buf1[10000], *p, buf2[10000], buf3[1000];

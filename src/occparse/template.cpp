@@ -5480,10 +5480,8 @@ static SYMBOL* ValidateArgsSpecified(TEMPLATEPARAMLIST* params, SYMBOL* func, IN
     }
     s.tmpl = func->templateParams;
     addTemplateDeclaration(&s);
-    //    if (!ValidArg(basetype(func->tp)->btp))
-    //        return nullptr;
     hr = basetype(func->tp)->syms->table[0];
-    while (hr)  // && (!usesParams || check))
+    while (hr)
     {
         if (!ValidArg(hr->p->tp))
         {
@@ -5528,9 +5526,9 @@ static TYPE* GetForwardType(TYPE* A, EXPRESSION *exp)
     GetRefs(A, exp, lref, rref);
     if (rref)
     {
-        //rvalue to rref, result is unreferenced
+        //rvalue to rref, remove reference...
         if (isref(A))
-            basetype(A)->btp;
+            A = basetype(A)->btp;
     }
     else
     {
@@ -5557,9 +5555,12 @@ static bool TemplateDeduceFromArg(TYPE* orig, TYPE* sym, EXPRESSION* exp, bool a
     P = RemoveCVQuals(P);
     if (isref(P))
     {
-        if (basetype(P)->type == bt_rref)
+        int type = basetype(P)->type;
+        P = basetype(P)->btp;
+        if (isref(A) && basetype(A)->type != type)
+            return false;
+        if (type == bt_rref)
         {
-            P = basetype(P)->btp;
             if (exp && !isconst(P) && !isvolatile(P))
             {
                 // unadorned rref in arg, forwarding...
@@ -5570,7 +5571,6 @@ static bool TemplateDeduceFromArg(TYPE* orig, TYPE* sym, EXPRESSION* exp, bool a
         }
         else 
         { 
-            P = basetype(P)->btp;
             if (isref(A))
                 A = basetype(A)->btp;
         }
@@ -6113,35 +6113,35 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
             bool rv = TemplateDeduceArgList(basetype(sym->tp)->syms->table[0], templateArgs, symArgs, false);
             if (!rv)
             {
-                params = nparams->next;
+                if (!allTemplateArgsSpecified(sym, nparams->next))
+                    return nullptr;
+/*                params = nparams->next;
                 while (params)
                 {
                     if (params->p->packed && !params->p->byPack.pack)
                         return nullptr;
                     params = params->next;
                 }
+ */
             }
-            //            else
+            SYMLIST* hr = basetype(sym->tp)->syms->table[0];
+            while (hr)
             {
-                SYMLIST* hr = basetype(sym->tp)->syms->table[0];
-                while (hr)
-                {
-                    SYMBOL* sp = hr->p;
-                    TYPE* tp = sp->tp;
-                    while (isref(tp) || ispointer(tp))
-                        tp = basetype(tp)->btp;
+                SYMBOL* sp = hr->p;
+                TYPE* tp = sp->tp;
+                while (isref(tp) || ispointer(tp))
+                    tp = basetype(tp)->btp;
 
-                    if (isstructured(tp) && basetype(tp)->sp->templateParams)
-                    {
-                        TEMPLATEPARAMLIST* params = basetype(tp)->sp->templateParams;
-                        TEMPLATEPARAMLIST* special =
-                            params->p->bySpecialization.types ? params->p->bySpecialization.types : params->next;
-                        if (special)
-                            for (auto tpl = sym->templateParams->next; tpl; tpl = tpl->next)
-                                TransferClassTemplates(special, special, tpl);
-                    }
-                    hr = hr->next;
+                if (isstructured(tp) && basetype(tp)->sp->templateParams)
+                {
+                    TEMPLATEPARAMLIST* params = basetype(tp)->sp->templateParams;
+                    TEMPLATEPARAMLIST* special =
+                        params->p->bySpecialization.types ? params->p->bySpecialization.types : params->next;
+                    if (special)
+                        for (auto tpl = sym->templateParams->next; tpl; tpl = tpl->next)
+                            TransferClassTemplates(special, special, tpl);
                 }
+                hr = hr->next;
             }
         }
         // set up default values for non-deduced and non-initialized args

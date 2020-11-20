@@ -2245,6 +2245,7 @@ void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons)
                     if (!first)
                         error(ERR_DELEGATING_CONSTRUCTOR_ONLY_INITIALIZER);
                     hasDelegate = true;
+                    cons->sb->delegated = true;
                 }
                 if (!init->sp)
                     init->sp = findClassName(init->name, cls, bc, vbase, &offset);
@@ -2394,18 +2395,21 @@ static void allocInitializers(SYMBOL* cls, SYMBOL* cons, EXPRESSION* ths)
         }
         init = init->next;
     }
-    hr = basetype(cls->tp)->syms->table[0];
-    while (hr)
+    if (!cons->sb->delegated)
     {
-        SYMBOL* sp = hr->p;
-        if (!sp->sb->init && ismember(sp))
+        hr = basetype(cls->tp)->syms->table[0];
+        while (hr)
         {
-            if (isref(sp->tp))
-                errorsym(ERR_REF_MEMBER_MUST_INITIALIZE, sp);
-            else if (isconst(sp->tp))
-                errorsym(ERR_CONSTANT_MEMBER_MUST_BE_INITIALIZED, sp);
+            SYMBOL* sp = hr->p;
+            if (!sp->sb->init && ismember(sp))
+            {
+                if (isref(sp->tp))
+                    errorsym(ERR_REF_MEMBER_MUST_INITIALIZE, sp);
+                else if (isconst(sp->tp))
+                    errorsym(ERR_CONSTANT_MEMBER_MUST_BE_INITIALIZED, sp);
+            }
+            hr = hr->next;
         }
-        hr = hr->next;
     }
 }
 static void releaseInitializers(SYMBOL* cls, SYMBOL* cons)

@@ -665,8 +665,7 @@ typedef struct sym
         unsigned dumpInlineToFile : 1;           /* inline function needs to be placed in the output file */
         unsigned promotedToInline : 1;           /* function wasn't declare inline but was promoted to it */
         unsigned temp : 1;                       // temporary boolean...
-        unsigned
-            pushedTemplateSpecializationDefinition : 1;  // set to true if the current body for the template
+        unsigned pushedTemplateSpecializationDefinition : 1;  // set to true if the current body for the template
                                                          // specialization was pushed from the generalized version of the template
         unsigned destructed : 1;                         // the c++ class instance has had a destructor generated
         unsigned initializer_list : 1;                   // constructor with initializer_list parameter
@@ -677,6 +676,7 @@ typedef struct sym
         unsigned visited : 1;                            // symbol has been visited in a traversal
         unsigned postExpansion : 1;                      // template was post-expanded
         unsigned performedStructInitialization : 1;      // structure declaration was completed
+        unsigned delegated : 1;                          // construct is delegated to another constructor
         int __func__label;                               /* label number for the __func__ keyword */
         int labelCount;                                  /* number of code labels within a function body */
         int offset;                                      /* address offset of data in the given seg, or optimize register */

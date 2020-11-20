@@ -3096,11 +3096,11 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
         else
         {
             if (!isAccessible(against, sp, cons1, nullptr,
-                              top ? (theCurrentFunc && theCurrentFunc->sb->parentClass == sp ? ac_protected : ac_public)
-                                  : ac_protected,
+                              top ? (theCurrentFunc && theCurrentFunc->sb->parentClass == sp ? ac_private : ac_public)
+                                  : ac_private,
                               false))
             {
-                errorsym(ERR_CANNOT_ACCESS, cons1);
+                    errorsym(ERR_CANNOT_ACCESS, cons1);
             }
             if (cons1->sb->isExplicit && implicit)
                 error(ERR_IMPLICIT_USE_OF_EXPLICIT_CONVERSION);

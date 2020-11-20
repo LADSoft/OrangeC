@@ -3871,37 +3871,23 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                                     {
                                         clone->tp->templateParam = sp->tp->templateParam;
                                     }
-                                    if (qual1)
+                                    TYPE *current = nullptr, **last = &current;
+                                    for (auto tpx = qual1; tpx != *btp; tpx = tpx->btp)
                                     {
-                                        if (btp != &qual1->btp || qual1->type != bt_rref ||
-                                            basetype(clone->tp)->type != bt_lref)  // unadorrned rref = forwarding
-                                        {
-                                            *btp = nullptr;
-                                            last1 = &clone->tp;
-                                            TYPE *old = nullptr, **temp = &old;
-                                            TYPE *next1 = qual1;
-                                            while (next1)
-                                            {
-                                                *temp = (TYPE*)Alloc(sizeof(TYPE));
-                                                **temp = *next1;
-                                                temp = &(*temp)->btp;
-                                                next1 = next1->btp;
-                                            }
-                                            SynthesizeQuals(&last1, &qual1, &lastQual1);
-                                            *btp = next;
-                                            qual1 = old;
-                                            btp = &qual1;
-                                            while (*btp) btp = &(*btp)->btp;
-                                        }
+                                        *last = (TYPE*)Alloc(sizeof(TYPE));
+                                        *(*last) = *tpx;
+                                        last = &(*last)->btp;
                                     }
+                                    *last = clone->tp;
                                     tp1 = (TYPE*)Alloc(sizeof(TYPE));
                                     tp1->type = bt_derivedfromtemplate;
                                     tp1->rootType = tp1;
-                                    tp1->btp = clone->tp;
+                                    tp1->btp = current;
                                     tp1->size = clone->tp->size;
                                     tp1->templateParam = clone->tp->templateParam;
                                     clone->tp = tp1;
                                     UpdateRootTypes(tp1);
+                                    CollapseReferences(clone->tp);
                                     templateParams->p->packsym = clone;
                                     insert(clone, func->syms);
                                     first = false;
@@ -3913,6 +3899,7 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                             {
                                 SYMBOL* clone = clonesym(sp);
                                 clone->tp = SynthesizeType(&stdany, enclosing, alt);
+                                CollapseReferences(clone->tp);
                                 clone->tp->templateParam = sp->tp->templateParam;
                                 insert(clone, func->syms);
                             }
@@ -3928,12 +3915,13 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                         {
                             tp1 = (TYPE*)Alloc(sizeof(TYPE));
                             tp1->type = bt_derivedfromtemplate;
-                            tp1->rootType = tp1;
+                            tp1->rootType = tp1 ;
                             tp1->btp = clone->tp;
                             tp1->size = clone->tp->size;
                             clone->tp = tp1;
                             UpdateRootTypes(tp1);
                         }
+                        CollapseReferences(clone->tp);
                     }
                     hr = hr->next;
                 }
@@ -4211,7 +4199,7 @@ SYMBOL* SynthesizeResult(SYMBOL* sym, TEMPLATEPARAMLIST* params)
     dropStructureDeclaration();
     return rsv;
 }
-static TYPE* removeTLQuals(TYPE* A) { return basetype(A); }
+static TYPE* RemoveCVQuals(TYPE* A) { return basetype(A); }
 static TYPE* rewriteNonRef(TYPE* A)
 {
     if (isarray(A))
@@ -4235,7 +4223,7 @@ static TYPE* rewriteNonRef(TYPE* A)
         x->rootType = x;
         return x;
     }
-    return removeTLQuals(A);
+    return A;
 }
 static bool hastemplate(EXPRESSION* exp)
 {
@@ -4926,8 +4914,8 @@ static bool Deduce(TYPE* P, TYPE* A, bool change, bool byClass, bool allowSelect
                 return true;
             case bt_templatedecltype:
                 return false;
-            case bt_lref:
             case bt_rref:
+            case bt_lref:
             case bt_restrict:
             case bt_far:
             case bt_near:
@@ -5533,42 +5521,65 @@ static SYMBOL* ValidateArgsSpecified(TEMPLATEPARAMLIST* params, SYMBOL* func, IN
     inDefaultParam--;
     return rv;
 }
-static bool TemplateDeduceFromArg(TYPE* orig, TYPE* sym, EXPRESSION* exp, bool byClass, bool allowSelectors)
+static TYPE* GetForwardType(TYPE* A, EXPRESSION *exp)
+{
+    bool lref = false;
+    bool rref = false;
+    GetRefs(A, exp, lref, rref);
+    if (rref)
+    {
+        //rvalue to rref, result is unreferenced
+        if (isref(A))
+            basetype(A)->btp;
+    }
+    else
+    {
+        // lvalue to rref, result is lvalue&...
+        if (basetype(A)->type != bt_lref)
+        {
+            TYPE *tp2 = (TYPE*)Alloc(sizeof(TYPE));
+            tp2->type = bt_lref;
+            tp2->size = getSize(bt_pointer);
+            tp2->btp = A;
+            tp2->rootType = tp2;
+            A = tp2;
+        }
+    }
+    return A;
+}
+static bool TemplateDeduceFromArg(TYPE* orig, TYPE* sym, EXPRESSION* exp, bool allowSelectors)
 {
     TYPE *P = orig, *A = sym;
     if (!isref(P))
     {
         A = rewriteNonRef(A);
     }
-    P = removeTLQuals(P);
+    P = RemoveCVQuals(P);
     if (isref(P))
     {
-        P = basetype(P)->btp;
-        if (isref(A))
-            A = basetype(A)->btp;
-    }
-
-    if (basetype(orig)->type == bt_rref)
-    {
-        if (!isconst(orig) && !isvolatile(orig) && P->type == bt_templateparam)
+        if (basetype(P)->type == bt_rref)
         {
-            if (/*lvalue(exp) ||*/ (basetype(sym)->type == bt_lref && !basetype(sym)->rref))
+            P = basetype(P)->btp;
+            if (exp && !isconst(P) && !isvolatile(P))
             {
-                // special case: if the deduced type for an rref is an lref it is a forwarding instance
-                TYPE* x = (TYPE*)Alloc(sizeof(TYPE));
-                if (isref(A))
-                    A = basetype(A)->btp;
-                x->type = bt_lref;
-                x->size = getSize(bt_pointer);
-                x->btp = A;
-                x->rootType = x;
-                P->templateParam->p->byClass.val = x;
-                return true;
+                // unadorned rref in arg, forwarding...
+                A = GetForwardType(A, exp);
             }
+            else if (isref(A))
+                A = basetype(A)->btp;
+        }
+        else 
+        { 
+            P = basetype(P)->btp;
+            if (isref(A))
+                A = basetype(A)->btp;
         }
     }
-    if (Deduce(P, A, true, byClass, allowSelectors))
+
+    if (Deduce(P, A, true, false, allowSelectors))
+    {
         return true;
+    }
     if (isfuncptr(P) || (isref(P) && isfunction(basetype(P)->btp)))
     {
         if (exp->type == en_func)
@@ -5590,7 +5601,7 @@ static bool TemplateDeduceFromArg(TYPE* orig, TYPE* sym, EXPRESSION* exp, bool b
                 {
                     SYMBOL* sym = hr->p;
                     clearoutDeduction(P);
-                    if (Deduce(P->btp, sym->tp, false, byClass, allowSelectors))
+                    if (Deduce(P->btp, sym->tp, false, false, allowSelectors))
                     {
                         if (candidate)
                             return false;
@@ -5600,7 +5611,7 @@ static bool TemplateDeduceFromArg(TYPE* orig, TYPE* sym, EXPRESSION* exp, bool b
                     hr = hr->next;
                 }
                 if (candidate)
-                    return Deduce(P, candidate->tp, true, byClass, allowSelectors);
+                    return Deduce(P, candidate->tp, true, false, allowSelectors);
             }
         }
     }
@@ -5628,7 +5639,7 @@ static bool TemplateDeduceArgList(SYMLIST* funcArgs, SYMLIST* templateArgs, INIT
                 TEMPLATEPARAMLIST* params = sp->tp->templateParam->p->byPack.pack;
                 while (params && symArgs)
                 {
-                    if (!TemplateDeduceFromArg(params->p->byClass.val, symArgs->tp, symArgs->exp, false, allowSelectors))
+                    if (!TemplateDeduceFromArg(params->p->byClass.val, symArgs->tp, symArgs->exp, allowSelectors))
                     {
                         rv = false;
                     }
@@ -5653,7 +5664,7 @@ static bool TemplateDeduceArgList(SYMLIST* funcArgs, SYMLIST* templateArgs, INIT
         }
         else
         {
-            if (!TemplateDeduceFromArg(sp->tp, symArgs->tp, symArgs->exp, false, allowSelectors))
+            if (!TemplateDeduceFromArg(sp->tp, symArgs->tp, symArgs->exp, allowSelectors))
                 rv = false;
             symArgs = symArgs->next;
             if (funcArgs)
@@ -5901,6 +5912,7 @@ void PushPopTemplateArgs(SYMBOL* func, bool push)
 }
 SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
 {
+
     TEMPLATEPARAMLIST* nparams = sym->templateParams;
     TYPE* thistp = args->thistp;
     INITLIST* arguments = args->arguments;
@@ -6041,7 +6053,7 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
                     break;
                 if (!params || !params->p->byClass.dflt)
                 {
-                    if (TemplateDeduceFromArg(sp->tp, symArgs->tp, symArgs->exp, false, false))
+                    if (TemplateDeduceFromArg(sp->tp, symArgs->tp, symArgs->exp, false))
                     {
                         if (isstructured(sp->tp) && basetype(sp->tp)->sp->templateParams)
                         {
@@ -6062,8 +6074,20 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
                 SYMBOL* sp = (SYMBOL*)templateArgs->p;
                 TYPE* tp = sp->tp;
                 TEMPLATEPARAMLIST* base;
+                bool forward = false;
                 if (isref(tp))
-                    tp = basetype(tp)->btp;
+                {
+                    if (basetype(tp)->type == bt_rref)
+                    {
+                        tp = basetype(tp)->btp;
+                        if (!isconst(tp) && !isvolatile(tp))
+                            forward = true;
+                    }
+                    else
+                    {
+                        tp = basetype(tp)->btp;
+                    }
+                }
                 base = basetype(tp)->templateParam;
                 if (base && base->p->type == kw_typename)
                 {
@@ -6073,23 +6097,10 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
                         *p = (TEMPLATEPARAMLIST*)Alloc(sizeof(TEMPLATEPARAMLIST));
                         (*p)->p = (TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
                         (*p)->p->type = kw_typename;
-                        if (sp->tp->type == bt_rref && !symArgs->tp->rref &&
-                            basetype(symArgs->tp)->type != bt_rref)  // unqualifed rref, candidate for forwarding
+                        (*p)->p->byClass.val = rewriteNonRef(symArgs->tp);
+                        if (forward && !templateNestingCount)
                         {
-
-                            TYPE* x = (TYPE*)Alloc(sizeof(TYPE));
-                            x->type = bt_lref;
-                            x->size = getSize(bt_pointer);
-                            TYPE* t = symArgs->tp;
-                            if (isref(t))
-                                t = basetype(t)->btp;
-                            x->btp = t;
-                            x->rootType = x;
-                            (*p)->p->byClass.val = x;
-                        }
-                        else
-                        {
-                            (*p)->p->byClass.val = rewriteNonRef(symArgs->tp);
+                            (*p)->p->byClass.val = GetForwardType((*p)->p->byClass.val, symArgs->exp);
                         }
                         p = &(*p)->next;
                         symArgs = symArgs->next;
@@ -6175,7 +6186,7 @@ static bool TemplateDeduceFromConversionType(TYPE* orig, TYPE* tp)
     {
         P = rewriteNonRef(P);
     }
-    A = removeTLQuals(A);
+    A = RemoveCVQuals(A);
     if (TemplateDeduceFromType(P, A))
         return true;
     if (ispointer(P))
@@ -6271,8 +6282,8 @@ int TemplatePartialDeduceFromType(TYPE* orig, TYPE* sym, bool byClass)
         if (a && !p)
             which = 1;
     }
-    A = removeTLQuals(A);
-    P = removeTLQuals(P);
+    A = RemoveCVQuals(A);
+    P = RemoveCVQuals(P);
     if (!Deduce(P, A, true, byClass, false))
         return 0;
     return which;

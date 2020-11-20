@@ -2862,23 +2862,26 @@ int fold_const(EXPRESSION* node)
                             found1 = detemplate(found1, node->v.func, nullptr);
                         }
                     }
-                    if (found1->sb->templateLevel && !templateNestingCount && node->v.func->templateParams)
+                    if (found1)
                     {
-                        int pushCount = pushContext(found1, false);
-                        found1 = TemplateFunctionInstantiate(found1, false, false);
-                        while (pushCount--)
-                            dropStructureDeclaration();
-                    }
-                    else
-                    {
-                        if (found1->templateParams)
-                            instantiatingTemplate++;
-                        deferredCompileOne(found1);
-                        if (found1->templateParams)
-                            instantiatingTemplate--;
+                        if (found1->sb->templateLevel && !templateNestingCount && node->v.func->templateParams)
+                        {
+                            int pushCount = pushContext(found1, false);
+                            found1 = TemplateFunctionInstantiate(found1, false, false);
+                            while (pushCount--)
+                                dropStructureDeclaration();
+                        }
+                        else
+                        {
+                            if (found1->templateParams)
+                                instantiatingTemplate++;
+                            deferredCompileOne(found1);
+                            if (found1->templateParams)
+                                instantiatingTemplate--;
+                        }
                     }
                 }
-                if (found1->sb->inlineFunc.stmt)
+                if (found1 && found1->sb->inlineFunc.stmt)
                 {
                     int i;
                     STATEMENT* stmt = found1->sb->inlineFunc.stmt;

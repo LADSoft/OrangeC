@@ -651,6 +651,7 @@ const char* unmang1(char* buf, const char* name, const char* last, bool tof)
 
     if (isdigit(*name))
     {
+        buf += strlen(buf);
         char* s = buf;
         v = *name++ - '0';
         while (isdigit(*name))
@@ -913,6 +914,7 @@ const char* unmang1(char* buf, const char* name, const char* last, bool tof)
             }
             break;
         case 'n':
+            buf += strlen(buf);
             v = *name++ - '0';
             if (v > 9)
                 v -= 7;

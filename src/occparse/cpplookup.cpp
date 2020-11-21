@@ -4476,6 +4476,7 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                     if (*hr && ismember(((SYMBOL*)(*hr)->p)))
                         argCount++;
                 }
+
                 spList = (SYMBOL**)(SYMBOL**)Alloc(sizeof(SYMBOL*) * n);
                 spFilterList = (SYMBOL**)(SYMBOL**)Alloc(sizeof(SYMBOL*) * n);
                 icsList = (enum e_cvsrn**)Alloc(sizeof(enum e_cvsrn*) * n);

@@ -2233,7 +2233,7 @@ int opt0(EXPRESSION** node)
             rv |= opt0(&((*node)->v.ad->value));
             return rv;
         case en_sizeofellipse:
-            if (!templateNestingCount)
+            if (!templateNestingCount || instantiatingTemplate)
             {
                 int n = 0;
                 TEMPLATEPARAMLIST* tpl = (*node)->v.templateParam->p->byPack.pack;

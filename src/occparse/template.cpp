@@ -507,6 +507,7 @@ static TEMPLATEPARAMLIST* mergeTemplateDefaults(TEMPLATEPARAMLIST* old, TEMPLATE
                 else if (!sym->p->byNonType.txtdflt)
                 {
                     sym->p->byNonType.txtdflt = old->p->byNonType.txtdflt;
+                    sym->p->byNonType.txttype = old->p->byNonType.txttype;
                     sym->p->byNonType.txtargs = old->p->byNonType.txtargs;
                 }
                 break;
@@ -638,6 +639,7 @@ TEMPLATEPARAMLIST* TemplateMatching(LEXEME* lex, TEMPLATEPARAMLIST* old, TEMPLAT
                 {
                     transfer->p->byClass.txtdflt = old->p->byClass.txtdflt;
                     transfer->p->byClass.txtargs = old->p->byClass.txtargs;
+                    transfer->p->byNonType.txttype = old->p->byNonType.txttype;
                 }
                 transfer = transfer->next;
                 old = old->next;
@@ -2284,23 +2286,6 @@ static LEXEME* TemplateArg(LEXEME* lex, SYMBOL* funcsp, TEMPLATEPARAMLIST* arg, 
             lex = getBasicType(lex, funcsp, &tp, nullptr, false, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3,
                                ac_public, &notype, &defd, nullptr, nullptr, false, true, false);
             lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3, nullptr);
-            if (tp->type == bt_any)
-            {
-                LEXEME *end = current;
-                LEXEME **cur = &txttype;
-                end = lex;
-                // if the type didn't resolve, we want to cache it then evaluate it later...
-                while (current && current != end)
-                {
-                    *cur = (LEXEME*)Alloc(sizeof(LEXEME));
-                    **cur = *current;
-                    (*cur)->next = nullptr;
-                    if (ISID(current))
-                        (*cur)->value.s.a = litlate((*cur)->value.s.a);
-                    current = current->next;
-                    cur = &(*cur)->next;
-                }
-            }
             // get type qualifiers
             if (!ISID(lex) && !MATCHKW(lex, ellipse))
             {
@@ -2374,6 +2359,22 @@ static LEXEME* TemplateArg(LEXEME* lex, SYMBOL* funcsp, TEMPLATEPARAMLIST* arg, 
                     tp = tp1;
                 }
                 arg->p->byNonType.tp = tp;
+                if (!isint(tp) && !ispointer(tp))
+                {
+                    LEXEME *end = lex;
+                    LEXEME **cur = &txttype;
+                    // if the type didn't resolve, we want to cache it then evaluate it later...
+                    while (current && current != end)
+                    {
+                        *cur = (LEXEME*)Alloc(sizeof(LEXEME));
+                        **cur = *current;
+                        (*cur)->next = nullptr;
+                        if (ISID(current))
+                            (*cur)->value.s.a = litlate((*cur)->value.s.a);
+                        current = current->next;
+                        cur = &(*cur)->next;
+                    }
+                }
                 arg->p->byNonType.txttype = txttype;
                 if (basetype(tp)->type != bt_templateparam && basetype(tp)->type != bt_templateselector &&
                     basetype(tp)->type != bt_enum && !isint(tp) && !ispointer(tp) && basetype(tp)->type != bt_lref &&
@@ -2403,7 +2404,6 @@ static LEXEME* TemplateArg(LEXEME* lex, SYMBOL* funcsp, TEMPLATEPARAMLIST* arg, 
                             if (tp && isintconst(exp))
                             {
                                 arg->p->byNonType.dflt = exp;
-//                                arg->p->byNonType.txtdflt = nullptr;
                             }
                         }
                     }
@@ -3872,12 +3872,14 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                                         clone->tp->templateParam = sp->tp->templateParam;
                                     }
                                     TYPE *current = nullptr, **last = &current;
-                                    for (auto tpx = qual1; tpx != *btp; tpx = tpx->btp)
-                                    {
-                                        *last = (TYPE*)Alloc(sizeof(TYPE));
-                                        *(*last) = *tpx;
-                                        last = &(*last)->btp;
-                                    }
+                                    if (qual1 && btp)
+
+                                        for (auto tpx = qual1; tpx != *btp; tpx = tpx->btp)
+                                        {
+                                            *last = (TYPE*)Alloc(sizeof(TYPE));
+                                            *(*last) = *tpx;
+                                            last = &(*last)->btp;
+                                        }
                                     *last = clone->tp;
                                     tp1 = (TYPE*)Alloc(sizeof(TYPE));
                                     tp1->type = bt_derivedfromtemplate;
@@ -5762,6 +5764,7 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* dest, TEMPL
             }
             dest->p->byClass.txtdflt = src->p->byClass.txtdflt;
             dest->p->byClass.txtargs = src->p->byClass.txtargs;
+            dest->p->byNonType.txttype = src->p->byNonType.txttype;
             lex = SetAlternateLex(src->p->byClass.txtdflt);
             switch (dest->p->type)
             {
@@ -5938,6 +5941,7 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
             dest->p->byNonType.val = src->p->byNonType.val;
             dest->p->byNonType.txtdflt = src->p->byNonType.txtdflt;
             dest->p->byNonType.txtargs = src->p->byNonType.txtargs;
+            dest->p->byNonType.txttype = src->p->byNonType.txttype;
             dest->p->byNonType.temp = src->p->byNonType.temp;
             dest->p->byNonType.tp = src->p->byNonType.tp;
             src = src->next;

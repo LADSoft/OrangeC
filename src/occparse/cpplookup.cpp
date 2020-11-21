@@ -239,12 +239,19 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
     bool hasTemplate = false;
     TEMPLATEPARAMLIST* templateParamAsTemplate = nullptr;
     TYPE* dependentType = nullptr;
+    bool typeName = false;
+    bool pastClassSel = false;
 
     if (sym)
         *sym = nullptr;
     if (ns)
         *ns = nullptr;
 
+    if (MATCHKW(lex, kw_typename))
+    {
+        typeName = true;
+        lex = getsym();
+    }
     if (MATCHKW(lex, classsel))
     {
         while (nssym->next)
@@ -644,6 +651,9 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
                 }
                 if (sp && !deferred)
                     sp->tp = PerformDeferredInitialization(sp->tp, nullptr);
+                if (sp && (!sp->sb || (sp->sb->storage_class != sc_namespace && !sp->sb->templateLevel &&
+                    (!isstructured(sp->tp) || !sp->sb->instantiated || sp->sb->attribs.inheritable.linkage != lk_virtual))))
+                    pastClassSel = true;
                 lex = getsym();
                 finalPos = lex;
                 if (deferred)
@@ -719,6 +729,20 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
             lex = getsym();
         }
         qualified = true;
+    }
+    if (pastClassSel && !typeName && !hasTemplate && isType)
+    {
+        char buf[2000];
+        buf[0] = 0;
+        while (placeholder != finalPos->next)
+        {
+            if (ISKW(placeholder))
+                Optimizer::my_sprintf(buf + strlen(buf), "%s", placeholder->kw->name);
+            else if (ISID(placeholder))
+                Optimizer::my_sprintf(buf + strlen(buf), "%s", placeholder->value.s.a);
+            placeholder = placeholder->next;
+        }
+        errorstr(ERR_DEPENDENT_TYPE_NEEDS_TYPENAME, buf);
     }
     lex = prevsym(finalPos);
     if (templateSelector)

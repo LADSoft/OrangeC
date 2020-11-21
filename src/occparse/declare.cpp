@@ -2615,12 +2615,11 @@ founddecltype:
         if (MATCHKW(lex, kw_typename))
         {
             typeName = true;
-            //            foundsomething = true;
-            lex = getsym();
+         //   lex = getsym();
         }
         if (iscomplex || imaginary)
             error(ERR_MISSING_TYPE_SPECIFIER);
-        else if (ISID(lex) || MATCHKW(lex, classsel) || MATCHKW(lex, complx) || MATCHKW(lex, kw_decltype))
+        else if (ISID(lex) || MATCHKW(lex, classsel) || MATCHKW(lex, complx) || MATCHKW(lex, kw_decltype) || MATCHKW(lex, kw_typename))
         {
             NAMESPACEVALUELIST* nsv = nullptr;
             SYMBOL* strSym = nullptr;

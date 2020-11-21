@@ -581,6 +581,7 @@ static struct
     {"static function '%s' is declared but never defined", TRIVIALWARNING},
     {"Referenced in instantiation of '%s'", NOTE},
     {"typedef templates not allowed", ERROR},
+    {"Missing 'typename' in front of dependent type '%s'", ERROR },
 };
 void EnterInstantiation(LEXEME* lex, SYMBOL *sym)
 {

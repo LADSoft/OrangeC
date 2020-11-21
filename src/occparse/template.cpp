@@ -69,6 +69,7 @@ int inDeduceArgs;
 bool parsingSpecializationDeclaration;
 bool inTemplateType;
 bool reflectUsingType;
+bool noTypeNameError;
 int inTemplateHeader;
 SYMBOL* instantiatingMemberFuncClass;
 static int instantiatingFunction;
@@ -2283,8 +2284,10 @@ static LEXEME* TemplateArg(LEXEME* lex, SYMBOL* funcsp, TEMPLATEPARAMLIST* arg, 
             tp = nullptr;
             sp = nullptr;
             lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3, nullptr);
+            noTypeNameError = true;
             lex = getBasicType(lex, funcsp, &tp, nullptr, false, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3,
                                ac_public, &notype, &defd, nullptr, nullptr, false, true, false);
+            noTypeNameError = false;
             lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3, nullptr);
             // get type qualifiers
             if (!ISID(lex) && !MATCHKW(lex, ellipse))
@@ -5813,7 +5816,9 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* dest, TEMPL
                         lex = SetAlternateLex(src->p->byNonType.txttype);
                         openStructs = nullptr;
                         structLevel = 0;
+                        noTypeNameError = true;
                         lex = expression_no_comma(lex, nullptr, nullptr, &tp1, &exp1, nullptr, _F_INTEMPLATEPARAMS);
+                        noTypeNameError = false;
                         openStructs = oldOpenStructs;
                         structLevel = oldStructLevel;
                         SetAlternateLex(nullptr);

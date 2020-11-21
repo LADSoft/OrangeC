@@ -651,8 +651,8 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
                 }
                 if (sp && !deferred)
                     sp->tp = PerformDeferredInitialization(sp->tp, nullptr);
-                if (sp && (!sp->sb || (sp->sb->storage_class != sc_namespace && !sp->sb->templateLevel &&
-                    (!isstructured(sp->tp) || !sp->sb->instantiated || sp->sb->attribs.inheritable.linkage != lk_virtual))))
+                if (sp && (!sp->sb || (sp->sb->storage_class != sc_namespace && (!isstructured(sp->tp) 
+                   || (sp->templateParams && (!sp->sb->instantiated || sp->sb->attribs.inheritable.linkage != lk_virtual))))))
                     pastClassSel = true;
                 lex = getsym();
                 finalPos = lex;
@@ -730,10 +730,11 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
         }
         qualified = true;
     }
-    if (pastClassSel && !typeName && !hasTemplate && isType)
+    if (pastClassSel && !typeName && !hasTemplate && isType && !noTypeNameError)
     {
         char buf[2000];
         buf[0] = 0;
+
         while (placeholder != finalPos->next)
         {
             if (ISKW(placeholder))
@@ -742,6 +743,7 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
                 Optimizer::my_sprintf(buf + strlen(buf), "%s", placeholder->value.s.a);
             placeholder = placeholder->next;
         }
+
         errorstr(ERR_DEPENDENT_TYPE_NEEDS_TYPENAME, buf);
     }
     lex = prevsym(finalPos);

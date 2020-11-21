@@ -762,7 +762,7 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
             *sym = strSym;
 
         if (ns)
-            if (nssym && nssym->valueData->name)
+            if (nssym)
                 *ns = nssym;
             else
                 *ns = nullptr;

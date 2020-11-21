@@ -45,6 +45,7 @@
 #include "beinterf.h"
 #include "exprcpp.h"
 #include "inline.h"
+#include "iexpr.h"
 
 namespace Parser
 {
@@ -1736,6 +1737,55 @@ enum e_ct
     user,
     ellipses
 };
+static bool ismath(EXPRESSION* exp)
+{
+    switch (exp->type)
+    {
+    case en_uminus:
+    case en_compl:
+    case en_not:
+    case en_shiftby:
+    case en_autoinc:
+    case en_autodec:
+    case en_add:
+    case en_sub:
+    case en_lsh:
+    case en_arraylsh:
+    case en_rsh:
+    case en_rshd:
+    case en_arraymul:
+    case en_arrayadd:
+    case en_arraydiv:
+    case en_structadd:
+    case en_mul:
+    case en_div:
+    case en_umul:
+    case en_udiv:
+    case en_umod:
+    case en_ursh:
+    case en_mod:
+    case en_and:
+    case en_or:
+    case en_xor:
+    case en_lor:
+    case en_land:
+    case en_eq:
+    case en_ne:
+    case en_gt:
+    case en_ge:
+    case en_lt:
+    case en_le:
+    case en_ugt:
+    case en_uge:
+    case en_ult:
+    case en_ule:
+    case en_cond:
+        return true;
+    default:
+        return false;
+    }
+
+}
 static bool ismem(EXPRESSION* exp)
 {
     switch (exp->type)
@@ -3110,7 +3160,7 @@ void GetRefs(TYPE* tpa, EXPRESSION* expa, bool& lref, bool& rref)
         (!expa || (expa->type != en_func && expa->type != en_thisref)) && !tpa->rref) ||
         tpa->lref;
     rref = ((basetype(tpa)->type == bt_rref || (isstructured(tpa) && expa && expa->type == en_not_lvalue) ||
-        (expa && !lvalue(expa) && !ismem(expa))) &&
+        (expa && !lvalue(expa) && !ismem(expa) && !ismath(expa) && !castvalue(expa))) &&
         !lref && !tpa->lref) ||
         tpa->rref;
 }
@@ -3222,9 +3272,15 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_
         else if (tpp->type == bt_lref && rref && !lref)
         {
             // rvalue to lvalue ref not allowed unless the lvalue is a function
-            seq[(*n)++] = CV_LVALUETORVALUE;  // CV_NONE;
-            if (isconst(tppp) && !isvolatile(tppp))
-                seq[(*n)++] = CV_QUALS;
+            if (exp && exp->type == en_func)
+            {
+                if (isconst(tppp) && !isvolatile(tppp))
+                    seq[(*n)++] = CV_QUALS;
+            }
+            else
+            {
+                seq[(*n)++] = CV_NONE;
+            }
         }
         tpa = basetype(tpa);
         if (isstructured(tpa))

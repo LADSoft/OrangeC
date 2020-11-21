@@ -3565,6 +3565,7 @@ LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp,
                 TYPE* tp2;
                 spi = nullptr;
                 tp1 = nullptr;
+
                 lex = getStorageAndType(lex, funcsp, nullptr, false, true, &storage_class, &storage_class, &address, &blocked,
                                         nullptr, &constexpression, &tp1, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd,
                                         nullptr, nullptr, nullptr);
@@ -3647,9 +3648,22 @@ LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp,
                                 while (templateParams)
                                 {
                                     SYMBOL* clone = clonesym(spi);
-                                    clone->tp = (TYPE*)Alloc(sizeof(TYPE));
-                                    *clone->tp = *templateParams->p->byClass.val;
+                                    TYPE *tpx = clone->tp, **last = &clone->tp;
+
+                                    while (tpx)
+                                    {
+                                        *last = (TYPE*)Alloc(sizeof(TYPE));
+                                        if (tpx->type == bt_templateparam)
+                                        {
+                                            tpx = templateParams->p->byClass.val;
+                                        }
+                                        **last = *tpx;
+                                        last = &(*last)->btp;
+                                        tpx = tpx->btp;
+                                    }
+        
                                     UpdateRootTypes(clone->tp);
+                                    CollapseReferences(clone->tp);
                                     SetLinkerNames(clone, lk_none);
                                     sizeQualifiers(clone->tp);
                                     if (!first)

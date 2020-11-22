@@ -2914,7 +2914,7 @@ founddecltype:
                             }
                             if (sp->tp->type == bt_typedef)
                             {
-                                tn = sp->tp;
+                                tn = PerformDeferredInitialization(sp->tp, funcsp);
                                 if (!Optimizer::cparams.prm_cplusplus)
                                     while (tn != basetype(tn) && tn->type != bt_va_list) tn = tn->btp;
                             }

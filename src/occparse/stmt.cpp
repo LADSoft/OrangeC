@@ -3619,6 +3619,7 @@ void parseNoexcept(SYMBOL* funcsp)
 {
     if (funcsp->sb->deferredNoexcept)
     {
+        LEXEME* lex = SetAlternateLex(funcsp->sb->deferredNoexcept);
         STRUCTSYM s, t;
         if (funcsp->sb->parentClass)
         {
@@ -3628,7 +3629,6 @@ void parseNoexcept(SYMBOL* funcsp)
             if (t.tmpl)
                 addTemplateDeclaration(&t);
         }
-        LEXEME* lex = SetAlternateLex(funcsp->sb->deferredNoexcept);
         SYMLIST* hr = basetype(funcsp->tp)->syms->table[0];
         TYPE* tp = nullptr;
         EXPRESSION* exp = nullptr;

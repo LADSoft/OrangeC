@@ -640,7 +640,8 @@ TEMPLATEPARAMLIST* TemplateMatching(LEXEME* lex, TEMPLATEPARAMLIST* old, TEMPLAT
                 {
                     transfer->p->byClass.txtdflt = old->p->byClass.txtdflt;
                     transfer->p->byClass.txtargs = old->p->byClass.txtargs;
-                    transfer->p->byNonType.txttype = old->p->byNonType.txttype;
+                    if (transfer->p->type == kw_int)
+                        transfer->p->byNonType.txttype = old->p->byNonType.txttype;
                 }
                 transfer = transfer->next;
                 old = old->next;
@@ -7857,7 +7858,7 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* unspecialize
             {
                 if (params->p->packed)
                 {
-                    while (initial && !initial->p->packed && params->p->type == initial->p->type)
+                    while (initial && (!initial->p->packed || !params->next) && params->p->type == initial->p->type)
                     {
                         TEMPLATEPARAMLIST* test = initial;
                         void* dflt;
@@ -7881,6 +7882,16 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* unspecialize
                             params->p->initialized = true;
                         }
                         initial = initial->next;
+                        if (!initial && !params->next && !tis.empty())
+                        {
+                            initial = tis.top();
+                            tis.pop();
+                            if (initial && initial->p->packed)
+                            {
+                                tis.push(initial->next);
+                                initial = initial->p->byPack.pack;
+                            }
+                        }
                         if (max)
                             max = max->next;
                     }
@@ -9659,13 +9670,14 @@ SYMBOL* GetVariableTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args)
     return found1;
 }
 
-bool ReplaceIntAliasParams(EXPRESSION**exp)
+void SpecifyTemplateSelector(TEMPLATESELECTOR** rvs, TEMPLATESELECTOR* old, bool expression, SYMBOL* sym, TEMPLATEPARAMLIST* args, TEMPLATEPARAMLIST* origTemplate, TEMPLATEPARAMLIST* origUsing);
+bool ReplaceIntAliasParams(EXPRESSION**exp, SYMBOL* sym, TEMPLATEPARAMLIST* args, TEMPLATEPARAMLIST* origTemplate, TEMPLATEPARAMLIST* origUsing)
 {
     bool rv = false;
     if ((*exp)->left)
-        rv |= ReplaceIntAliasParams(&(*exp)->left);
+        rv |= ReplaceIntAliasParams(&(*exp)->left, sym, args, origTemplate, origUsing);
     if ((*exp)->right)
-        rv |= ReplaceIntAliasParams(&(*exp)->right);
+        rv |= ReplaceIntAliasParams(&(*exp)->right, sym, args, origTemplate, origUsing);
     else if ((*exp)->type == en_templateparam)
     {
         const char *name = (*exp)->v.sp->name;
@@ -9681,6 +9693,10 @@ bool ReplaceIntAliasParams(EXPRESSION**exp)
             *exp = found->p->byNonType.dflt;
         }
         rv = true;
+    }
+    else if ((*exp)->type == en_templateselector)
+    {
+        SpecifyTemplateSelector(&(*exp)->v.templateSelector, (*exp)->v.templateSelector, true, sym, args, origTemplate, origUsing);
     }
     return rv;
 }
@@ -9768,7 +9784,7 @@ void SpecifyTemplateSelector(TEMPLATESELECTOR** rvs, TEMPLATESELECTOR* old, bool
                         bool replaced = false;
                         if (!expression && tpl->p->type == kw_int && tpl->p->byNonType.dflt)
                         {
-                            replaced = ReplaceIntAliasParams(&tpl->p->byNonType.dflt);
+                            replaced = ReplaceIntAliasParams(&(*x)->p->byNonType.dflt, sym, args, origTemplate, origUsing);
                         }
                         if (!replaced && tpl->argsym && (expression || (tpl->p->type == kw_int || !tpl->p->byClass.dflt)))
                         {
@@ -10507,6 +10523,8 @@ TEMPLATEPARAMLIST* GetTypeAliasArgs(SYMBOL* sp, TEMPLATEPARAMLIST* args, TEMPLAT
 }
 SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args)
 {
+    if (!strcmp(sp->name, "_EnableIfDeleterConstructible"))
+        printf("hi");
     if (reflectUsingType)
         return sp;
     SYMBOL* rv;

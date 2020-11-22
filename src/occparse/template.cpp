@@ -9115,17 +9115,24 @@ static TEMPLATEPARAMLIST* ResolveConstructor(SYMBOL* sym, TEMPLATEPARAMLIST *tpl
     }
     return rv;
 }
-static TEMPLATEPARAMLIST* TypeAliasSearch(const char* name, TEMPLATEPARAMLIST* arg)
+static TEMPLATEPARAMLIST* TypeAliasSearch(const char* name)
 {
-    while (arg)
+    STRUCTSYM* s = structSyms;
+    TEMPLATEPARAMLIST* rv = nullptr;
+    while (s && !rv)
     {
-        if (arg->argsym && !strcmp(arg->argsym->name, name))
+        TEMPLATEPARAMLIST *arg = s->tmpl;
+        while (arg && !rv)
         {
-            return arg;
+            if (arg->argsym && !strcmp(arg->argsym->name, name))
+            {
+                rv = arg;
+            }
+            arg = arg->next;
         }
-        arg = arg->next;
+        s = s->next;
     }
-    return nullptr;
+    return rv;
 }
 TEMPLATEPARAMLIST* ResolveClassTemplateArgs(SYMBOL* sp, TEMPLATEPARAMLIST* args)
 {
@@ -9164,13 +9171,7 @@ TEMPLATEPARAMLIST* ResolveClassTemplateArgs(SYMBOL* sp, TEMPLATEPARAMLIST* args)
             {
                 for (int i = 0; i < count; i++)
                 {
-                    STRUCTSYM* s = structSyms;
-                    TEMPLATEPARAMLIST* rv = nullptr;
-                    while (s && !rv)
-                    {
-                        rv = TypeAliasSearch(syms[i]->name, s->tmpl);
-                        s = s->next;
-                    }
+                    TEMPLATEPARAMLIST* rv = TypeAliasSearch(syms[i]->name);
                     if (rv && rv->p->packed)
                     {
                         int n1 = CountPacks(rv->p->byPack.pack);
@@ -9681,13 +9682,7 @@ bool ReplaceIntAliasParams(EXPRESSION**exp, SYMBOL* sym, TEMPLATEPARAMLIST* args
     else if ((*exp)->type == en_templateparam)
     {
         const char *name = (*exp)->v.sp->name;
-        STRUCTSYM* s = structSyms;
-        TEMPLATEPARAMLIST* found = nullptr;
-        while (s && !found)
-        {
-            found = TypeAliasSearch(name, s->tmpl);
-            s = s->next;
-        }
+        TEMPLATEPARAMLIST* found = TypeAliasSearch(name);
         if (found)
         {
             *exp = found->p->byNonType.dflt;
@@ -9703,13 +9698,7 @@ bool ReplaceIntAliasParams(EXPRESSION**exp, SYMBOL* sym, TEMPLATEPARAMLIST* args
 static void SpecifyOneArg(SYMBOL* sym, TEMPLATEPARAMLIST* temp, TEMPLATEPARAMLIST* args, TEMPLATEPARAMLIST* origTemplate, TEMPLATEPARAMLIST *origUsing);
 void SearchAlias(const char *name, TEMPLATEPARAMLIST *x, SYMBOL* sym, TEMPLATEPARAMLIST* args, TEMPLATEPARAMLIST* origTemplate, TEMPLATEPARAMLIST* origUsing)
 {
-    STRUCTSYM* s = structSyms;
-    TEMPLATEPARAMLIST* rv = nullptr;
-    while (s && !rv)
-    {
-        rv = TypeAliasSearch(name, s->tmpl);
-        s = s->next;
-    }
+    TEMPLATEPARAMLIST* rv = TypeAliasSearch(name);
     if (rv)
     {
         if (x->p->packed && !rv->p->packed)
@@ -9810,13 +9799,7 @@ static EXPRESSION* SpecifyArgInt(SYMBOL* sym, EXPRESSION* exp, TEMPLATEPARAMLIST
     {
         if (exp->type == en_templateparam)
         {
-            STRUCTSYM* s = structSyms;
-            TEMPLATEPARAMLIST* rv = nullptr;
-            while (s && !rv)
-            {
-                rv = TypeAliasSearch(exp->v.sp->tp->templateParam->argsym->name, s->tmpl);
-                s = s->next;
-            }
+            TEMPLATEPARAMLIST* rv = TypeAliasSearch(exp->v.sp->tp->templateParam->argsym->name);
             if (rv)
             {
                 if (rv->p->type == kw_int)
@@ -9898,13 +9881,7 @@ static EXPRESSION* SpecifyArgInt(SYMBOL* sym, EXPRESSION* exp, TEMPLATEPARAMLIST
         {
             if (packIndex >= 0)
             {
-                STRUCTSYM* s = structSyms;
-                TEMPLATEPARAMLIST* rv = nullptr;
-                while (s && !rv)
-                {
-                    rv = TypeAliasSearch(exp->v.sp->name, s->tmpl);
-                    s = s->next;
-                }
+                TEMPLATEPARAMLIST* rv = TypeAliasSearch(exp->v.sp->name);
                 if (rv && rv->p->packed)
                 {
                     auto tpl = rv->p->byPack.pack;
@@ -10062,13 +10039,7 @@ static TYPE* SpecifyArgType(SYMBOL* sym, TYPE* tp, TEMPLATEPARAM* tpt, TEMPLATEP
     }
     if (tp->type == bt_templateparam)
     {
-        STRUCTSYM* s = structSyms;
-        TEMPLATEPARAMLIST* rv = nullptr;
-        while (s && !rv)
-        {
-            rv = TypeAliasSearch(tp->templateParam->argsym->name, s->tmpl);
-            s = s->next;
-        }
+        TEMPLATEPARAMLIST* rv = TypeAliasSearch(tp->templateParam->argsym->name);
         if (rv)
         {
             TEMPLATEPARAMLIST *tpl = (TEMPLATEPARAMLIST*)Alloc(sizeof(TEMPLATEPARAMLIST));
@@ -10262,13 +10233,7 @@ static void SpecifyOneArg(SYMBOL* sym, TEMPLATEPARAMLIST* temp, TEMPLATEPARAMLIS
         }
         for (int i = 0; i < count; i++)
         {
-            STRUCTSYM* s = structSyms;
-            TEMPLATEPARAMLIST* rv = nullptr;
-            while (s && !rv)
-            {
-                rv = TypeAliasSearch(syms[i]->name, s->tmpl);
-                s = s->next;
-            }
+            TEMPLATEPARAMLIST* rv = TypeAliasSearch(syms[i]->name);
             if (rv && rv->p->packed)
             {
                 int n1 = CountPacks(rv->p->byPack.pack);

@@ -4691,7 +4691,11 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                         {
                             if (found1->templateParams)
                                 instantiatingTemplate++;
+                            if (found1->sb->templateLevel || (found1->sb->parentClass && found1->sb->parentClass->sb->templateLevel))
+                                EnterInstantiation(nullptr, found1);
                             deferredCompileOne(found1);
+                            if (found1->sb->templateLevel || (found1->sb->parentClass && found1->sb->parentClass->sb->templateLevel))
+                                LeaveInstantiation();
                             if (found1->templateParams)
                                 instantiatingTemplate--;
                         }

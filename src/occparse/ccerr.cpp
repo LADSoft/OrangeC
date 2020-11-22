@@ -585,7 +585,14 @@ static struct
 };
 void EnterInstantiation(LEXEME* lex, SYMBOL *sym)
 {
-    instantiationList.push_front(std::tuple<const char *, int, SYMBOL*>(lex->errfile, lex->errline, sym));
+    if (lex)
+    {
+        instantiationList.push_front(std::tuple<const char *, int, SYMBOL*>(lex->errfile, lex->errline, sym));
+    }
+    else
+    {
+        instantiationList.push_front(std::tuple<const char *, int, SYMBOL*>(sym->sb->declfile, sym->sb->declline, sym));
+    }
 }
 void LeaveInstantiation()
 {

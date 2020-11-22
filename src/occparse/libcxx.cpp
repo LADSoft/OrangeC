@@ -643,8 +643,6 @@ static bool is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** t
             }
             else if (isstructured(tp2))
             {
-                if (strstr(basetype(tp2)->sp->name, "__tree_node_destructor"))
-                    printf("hi");
                 if (funcparams.arguments->next && isstructured(funcparams.arguments->next->tp) &&
                     (comparetypes(tp2, funcparams.arguments->next->tp, true) || sameTemplate(tp2, funcparams.arguments->next->tp)))
                 {

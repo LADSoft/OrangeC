@@ -1443,6 +1443,8 @@ static LEXEME* initialize_arithmetic_type(LEXEME* lex, SYMBOL* funcsp, int offse
                 {
                     castToArithmetic(false, &tp, &exp, (enum e_kw) - 1, itype, true);
                 }
+                if (isfunction(tp))
+                    tp = basetype(tp)->btp;
                 if (isstructured(tp))
                 {
                     error(ERR_ILL_STRUCTURE_ASSIGNMENT);

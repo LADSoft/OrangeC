@@ -3255,7 +3255,7 @@ LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc st
                     SYMBOL *sym = nullptr, *strsym = nullptr;
                     NAMESPACEVALUELIST *ns =nullptr;
                     bool throughClass = false;
-                    parsingTrailingReturnOrUsing = true;
+                    parsingTrailingReturnOrUsing++;
                     lex = id_expression(lex, nullptr, &sym, &strsym, nullptr, nullptr, false, false, nullptr);
                     if (sym)
                     {
@@ -3275,7 +3275,7 @@ LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc st
                             lex = GetTemplateArguments(lex, strsym->tp->sp->sb->templateSelector->next->sp, sym, &lst);
                         }
                     }
-                    parsingTrailingReturnOrUsing = false;
+                    parsingTrailingReturnOrUsing--;
                     enum e_lk linkage = lk_none, linkage2 = lk_none, linkage3 = lk_none;
                     bool defd = false;
                     SYMBOL* sp = nullptr;

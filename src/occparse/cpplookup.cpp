@@ -3285,7 +3285,7 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_
         else if (tpp->type == bt_lref && rref && !lref)
         {
             // rvalue to lvalue ref not allowed unless the lvalue is a function or const
-            if (!isfunction(basetype(tpp)->btp))
+            if (!isfunction(basetype(tpp)->btp) && basetype(tpp)->btp->type != bt_aggregate)
             {
                 if (!isconst(tppp))
                     seq[(*n)++] = CV_NONE;

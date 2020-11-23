@@ -3565,11 +3565,11 @@ LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp,
                 spi = nullptr;
                 tp1 = nullptr;
 
-                noTypeNameError = true;
+                noTypeNameError++;
                 lex = getStorageAndType(lex, funcsp, nullptr, false, true, &storage_class, &storage_class, &address, &blocked,
                                         nullptr, &constexpression, &tp1, &linkage, &linkage2, &linkage3, ac_public, &notype, &defd,
                                         nullptr, nullptr, nullptr);
-                noTypeNameError = false;
+                noTypeNameError--;
                 if (!basetype(tp1))
                     error(ERR_TYPE_NAME_EXPECTED);
                 else if (isautotype(tp1) && !lambdas)

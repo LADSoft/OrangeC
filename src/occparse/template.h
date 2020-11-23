@@ -34,7 +34,7 @@ extern int inDeduceArgs;
 extern bool parsingSpecializationDeclaration;
 extern bool inTemplateType;
 extern int inTemplateHeader;
-extern bool noTypeNameError;
+extern int noTypeNameError;
 extern SYMBOL* instantiatingMemberFuncClass;
 extern bool reflectUsingType;
 extern struct templateListData* currents;

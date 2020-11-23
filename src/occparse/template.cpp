@@ -69,7 +69,7 @@ int inDeduceArgs;
 bool parsingSpecializationDeclaration;
 bool inTemplateType;
 bool reflectUsingType;
-bool noTypeNameError;
+int noTypeNameError;
 int inTemplateHeader;
 SYMBOL* instantiatingMemberFuncClass;
 static int instantiatingFunction;
@@ -1058,6 +1058,8 @@ bool constructedInt(LEXEME* lex, SYMBOL* funcsp)
 }
 LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLATEPARAMLIST** lst)
 {
+    int oldnoTn = noTypeNameError;
+    noTypeNameError = 0;
     TEMPLATEPARAMLIST* orig = nullptr;
     bool first = true;
     TYPE* tp = nullptr;
@@ -1085,7 +1087,9 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
             {
                 LEXEME* start = lex;
                 noSpecializationError++;
+                noTypeNameError++;
                 lex = get_type_id(lex, &tp, funcsp, sc_parameter, false, true, false);
+                noTypeNameError--;
                 noSpecializationError--;
                 if (!tp)
                     tp = &stdint;
@@ -1670,6 +1674,7 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
         }
     }
     inTemplateArgs--;
+    noTypeNameError = oldnoTn;
     return lex;
 }
 static bool sameTemplateSpecialization(TYPE* P, TYPE* A)
@@ -2288,10 +2293,10 @@ static LEXEME* TemplateArg(LEXEME* lex, SYMBOL* funcsp, TEMPLATEPARAMLIST* arg, 
             tp = nullptr;
             sp = nullptr;
             lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3, nullptr);
-            noTypeNameError = true;
+            noTypeNameError++;
             lex = getBasicType(lex, funcsp, &tp, nullptr, false, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3,
                                ac_public, &notype, &defd, nullptr, nullptr, false, true, false);
-            noTypeNameError = false;
+            noTypeNameError--;
             lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3, nullptr);
             // get type qualifiers
             if (!ISID(lex) && !MATCHKW(lex, ellipse))
@@ -5560,6 +5565,7 @@ static bool TemplateDeduceFromArg(TYPE* orig, TYPE* sym, EXPRESSION* exp, bool a
     if (!isref(P))
     {
         A = rewriteNonRef(A);
+        A = RemoveCVQuals(A);
     }
     P = RemoveCVQuals(P);
     if (isref(P))
@@ -5820,10 +5826,9 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* dest, TEMPL
                         lex = SetAlternateLex(src->p->byNonType.txttype);
                         openStructs = nullptr;
                         structLevel = 0;
-                        noTypeNameError = true;
-//                        lex = expression_no_comma(lex, nullptr, nullptr, &tp1, &exp1, nullptr, _F_INTEMPLATEPARAMS);
+                        noTypeNameError++;
                         lex = get_type_id(lex, &tp1, nullptr, sc_parameter, true, false, false);
-                        noTypeNameError = false;
+                        noTypeNameError--;
                         openStructs = oldOpenStructs;
                         structLevel = oldStructLevel;
                         SetAlternateLex(nullptr);

@@ -754,7 +754,7 @@ static EXPRESSION* createLambda(bool noinline)
                     TYPE* ctp = capture->tp;
                     if (isstructured(ctp))
                     {
-                        if (!callConstructorParam(&ctp, &en1, sp->tp, sp->sb->init->exp, true, false, true, false))
+                        if (!callConstructorParam(&ctp, &en1, sp->tp, sp->sb->init->exp, true, false, true, false, true))
                             errorsym(ERR_NO_APPROPRIATE_CONSTRUCTOR, lsp->sp);
                         en = en1;
                     }
@@ -805,7 +805,7 @@ static EXPRESSION* createLambda(bool noinline)
                     }
                     if (isstructured(ctp))
                     {
-                        if (!callConstructorParam(&ctp, &en1, ctp, en, true, false, true, false))
+                        if (!callConstructorParam(&ctp, &en1, ctp, en, true, false, true, false, true))
                             errorsym(ERR_NO_APPROPRIATE_CONSTRUCTOR, lsp->sp);
                         en = en1;
                     }

@@ -5821,7 +5821,8 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* dest, TEMPL
                         openStructs = nullptr;
                         structLevel = 0;
                         noTypeNameError = true;
-                        lex = get_type_id(lex, &tp1, nullptr, sc_parameter, false, true, false);
+//                        lex = expression_no_comma(lex, nullptr, nullptr, &tp1, &exp1, nullptr, _F_INTEMPLATEPARAMS);
+                        lex = get_type_id(lex, &tp1, nullptr, sc_parameter, true, false, false);
                         noTypeNameError = false;
                         openStructs = oldOpenStructs;
                         structLevel = oldStructLevel;
@@ -9856,7 +9857,7 @@ static EXPRESSION* SpecifyArgInt(SYMBOL* sym, EXPRESSION* exp, TEMPLATEPARAMLIST
                                 EXPRESSION* dexp = exp;
                                 EXPRESSION* var = anonymousVar(sc_auto, dflt);
                                 TYPE* ctype = dflt;
-                                callConstructorParam(&ctype, &exp, nullptr, nullptr, true, true, true, false);
+                                callConstructorParam(&ctype, &exp, nullptr, nullptr, true, true, true, false, true);
                                 callDestructor(var->v.sp, nullptr, &dexp, nullptr, true, false, false, true);
                                 if (dexp)
                                 {

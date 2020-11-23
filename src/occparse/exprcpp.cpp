@@ -694,7 +694,7 @@ LEXEME* expression_func_type_cast(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRES
                 EXPRESSION* exp2;
                 exp2 = exp1 = *exp = anonymousVar(sc_auto, unboxed ? unboxed : basetype(*tp)->sp->tp);
                 sym = exp1->v.sp;
-                callConstructor(&ctype, exp, funcparams, false, nullptr, true, true, false, false, false, false);
+                callConstructor(&ctype, exp, funcparams, false, nullptr, true, true, false, false, false, false, true);
                 PromoteConstructorArgs(funcparams->sp, funcparams);
                 callDestructor(basetype(*tp)->sp, nullptr, &exp1, nullptr, true, false, false, true);
                 if (Optimizer::architecture == ARCHITECTURE_MSIL)
@@ -1762,7 +1762,7 @@ LEXEME* expression_new(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp,
             {
                 *exp = val;
                 tpf = *tp;
-                callConstructor(&tpf, exp, initializers, false, arrSize, true, false, false, true, false, false);
+                callConstructor(&tpf, exp, initializers, false, arrSize, true, false, false, true, false, false, true);
                 PromoteConstructorArgs(initializers->sp, initializers);
             }
         }
@@ -1862,7 +1862,7 @@ LEXEME* expression_new(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp,
                         exp1 = exprNode(en_add, exp1, intNode(en_c_i, it->offset));
                     }
                     tpf = *tp;
-                    callConstructor(&tpf, &exp1, nullptr, false, arrSize, true, false, false, true, false, false);
+                    callConstructor(&tpf, &exp1, nullptr, false, arrSize, true, false, false, true, false, false, true);
                     *exp = *exp ? exprNode(en_void, *exp, exp1) : exp1;
                 }
             }
@@ -1875,7 +1875,7 @@ LEXEME* expression_new(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION** exp,
             // call default constructor
             *exp = val;
             tpf = *tp;
-            callConstructor(&tpf, exp, nullptr, false, arrSize, true, false, false, true, false, false);
+            callConstructor(&tpf, exp, nullptr, false, arrSize, true, false, false, true, false, false, true);
         }
     }
     tpf = (TYPE*)Alloc(sizeof(TYPE));

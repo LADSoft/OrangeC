@@ -2589,7 +2589,7 @@ void CreateInitializerList(TYPE* initializerListTemplate, TYPE* initializerListT
                     arg->next = nullptr;
                 }
 
-                callConstructor(&ctype, &cdest, params, false, nullptr, true, false, false, false, _F_INITLIST, false);
+                callConstructor(&ctype, &cdest, params, false, nullptr, true, false, false, false, _F_INITLIST, false, true);
                 node = cdest;
             }
             else
@@ -2799,7 +2799,7 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                         TYPE* ctype = sp->tp;
                         EXPRESSION* dexp = thisptr;
                         p->exp = thisptr;
-                        callConstructorParam(&ctype, &p->exp, pinit ? pinit->tp : nullptr, pinit? pinit->exp : nullptr, true, true, implicit, false);
+                        callConstructorParam(&ctype, &p->exp, pinit ? pinit->tp : nullptr, pinit? pinit->exp : nullptr, true, true, implicit, false, true);
                         if (!isref(sym->tp))
                         {
                             sp->sb->stackblock = true;
@@ -2903,7 +2903,7 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                         consexp = varNode(en_auto, esp);
                         paramexp = temp->v.func->returnEXP ? temp->v.func->returnEXP : p->exp;
                         paramexp = DerivedToBase(sym->tp, tpx, paramexp, _F_VALIDPOINTER);
-                        callConstructorParam(&ctype, &consexp, sym->tp, paramexp, true, true, implicit, false);
+                        callConstructorParam(&ctype, &consexp, sym->tp, paramexp, true, true, implicit, false, true);
                         if (paramexp != p->exp)
                             p->exp = exprNode(en_void, p->exp, consexp);
                         else
@@ -2915,7 +2915,7 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                         EXPRESSION* consexp = anonymousVar(sc_auto, ctype);  // sc_parameter to push it...
                         SYMBOL* esp = consexp->v.sp;
                         esp->sb->stackblock = true;
-                        callConstructorParam(&ctype, &consexp, p->tp, p->exp, true, true, implicit, false);
+                        callConstructorParam(&ctype, &consexp, p->tp, p->exp, true, true, implicit, false, true);
                         p->exp = consexp;
                     }
                     p->tp = sym->tp;
@@ -2941,7 +2941,7 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                             TYPE* ctype = basetype(sym->tp)->btp;
                             EXPRESSION* paramexp = p->exp;
                             p->exp = consexp;
-                            callConstructorParam(&ctype, &p->exp, basetype(p->tp), paramexp, true, true, false, false);
+                            callConstructorParam(&ctype, &p->exp, basetype(p->tp), paramexp, true, true, false, false, true);
                             if (p->exp->type == en_func)
                             {
                                 SYMBOL* spx = p->exp->v.func->sp;
@@ -3232,7 +3232,7 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                         TYPE* ctype = find_boxed_type(basetype(sym->tp));
                         EXPRESSION *exp1, *exp2;
                         exp1 = exp2 = anonymousVar(sc_auto, &std__string);
-                        callConstructorParam(&ctype, &exp2, p->tp, p->exp, true, true, false, false);
+                        callConstructorParam(&ctype, &exp2, p->tp, p->exp, true, true, false, false, true);
                         exp2 = exprNode(en_l_string, exp2, nullptr);
                         p->exp = exp2;
                         p->tp = &std__string;
@@ -3249,7 +3249,7 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                             TYPE* ctype = find_boxed_type(&std__string);
                             EXPRESSION *exp1, *exp2;
                             exp1 = exp2 = anonymousVar(sc_auto, &std__string);
-                            callConstructorParam(&ctype, &exp2, p->tp, p->exp, true, true, false, false);
+                            callConstructorParam(&ctype, &exp2, p->tp, p->exp, true, true, false, false, true);
                             exp2 = exprNode(en_l_string, exp2, nullptr);
                             p->exp = exp2;
                             p->tp = &std__string;
@@ -7567,7 +7567,7 @@ static LEXEME* expression_hook(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp
                     {
                         EXPRESSION* rv = eph;
                         TYPE* ctype = tph;
-                        callConstructorParam(&ctype, &rv, tpc, epc, true, false, false, false);
+                        callConstructorParam(&ctype, &rv, tpc, epc, true, false, false, false, true);
                         epc = rv;
                         tpc = tph;
                     }
@@ -7575,7 +7575,7 @@ static LEXEME* expression_hook(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp
                     {
                         EXPRESSION* rv = epc;
                         TYPE* ctype = tpc;
-                        callConstructorParam(&ctype, &rv, tph, eph, true, false, false, false);
+                        callConstructorParam(&ctype, &rv, tph, eph, true, false, false, false, true);
                         eph = rv;
                         tph = tpc;
                     }
@@ -7648,7 +7648,7 @@ static LEXEME* expression_hook(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp
                 {
                     EXPRESSION* rv = anonymousVar(sc_auto, *tp);
                     TYPE* ctype = *tp;
-                    callConstructorParam(&ctype, &rv, *tp, *exp, true, false, false, false);
+                    callConstructorParam(&ctype, &rv, *tp, *exp, true, false, false, false, true);
                     *exp = rv;
                 }
             }

@@ -1422,7 +1422,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                     else if ((Optimizer::cparams.prm_cplusplus) && !basetype(init->basetp)->sp->sb->trivialCons)
                     {
                         TYPE* ctype = init->basetp;
-                        callConstructorParam(&ctype, &expsym, ctype, exp2, true, false, false, false);
+                        callConstructorParam(&ctype, &expsym, ctype, exp2, true, false, false, false, true);
                         exp = expsym;
                     }
                     else
@@ -1510,7 +1510,7 @@ EXPRESSION* convertInitToExpression(TYPE* tp, SYMBOL* sym, EXPRESSION* expsym, S
                                 !init->basetp->sp->sb->trivialCons)
                             {
                                 TYPE* ctype = init->basetp;
-                                callConstructorParam(&ctype, &expsym, ctype, exp, true, false, false, false);
+                                callConstructorParam(&ctype, &expsym, ctype, exp, true, false, false, false, true);
                                 exp = expsym;
                             }
                             else

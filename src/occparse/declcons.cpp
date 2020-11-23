@@ -1687,7 +1687,7 @@ static void genConstructorCall(BLOCKDATA* b, SYMBOL* cls, MEMBERINITIALIZERS* mi
         {
             if (useDefault)
             {
-                if (!callConstructor(&ctype, &exp, nullptr, false, nullptr, top, false, false, false, false, false))
+                if (!callConstructor(&ctype, &exp, nullptr, false, nullptr, top, false, false, false, false, false, true))
                     errorsym(ERR_NO_DEFAULT_CONSTRUCTOR, member);
             }
             else
@@ -1717,7 +1717,7 @@ static void genConstructorCall(BLOCKDATA* b, SYMBOL* cls, MEMBERINITIALIZERS* mi
                     //                tp = member->tp;
                 }
                 //			member->tp->lref = true;
-                if (!callConstructorParam(&ctype, &exp, tp, other, top, false, false, false))
+                if (!callConstructorParam(&ctype, &exp, tp, other, top, false, false, false, true))
                     errorsym(ERR_NO_APPROPRIATE_CONSTRUCTOR, member);
                 //			member->tp->lref = false;
             }
@@ -1726,7 +1726,7 @@ static void genConstructorCall(BLOCKDATA* b, SYMBOL* cls, MEMBERINITIALIZERS* mi
         {
             if (useDefault)
             {
-                if (!callConstructor(&ctype, &exp, nullptr, false, nullptr, top, false, false, false, false, false))
+                if (!callConstructor(&ctype, &exp, nullptr, false, nullptr, top, false, false, false, false, false, true))
                     errorsym(ERR_NO_DEFAULT_CONSTRUCTOR, member);
             }
             else
@@ -1756,7 +1756,7 @@ static void genConstructorCall(BLOCKDATA* b, SYMBOL* cls, MEMBERINITIALIZERS* mi
                     //                tp = member->tp;
                 }
                 //			member->tp->rref = true;
-                if (!callConstructorParam(&ctype, &exp, tp, other, top, false, false, false))
+                if (!callConstructorParam(&ctype, &exp, tp, other, top, false, false, false, true))
                     errorsym(ERR_NO_APPROPRIATE_CONSTRUCTOR, member);
                 //			member->tp->rref = false;
             }
@@ -1792,7 +1792,7 @@ static void genConstructorCall(BLOCKDATA* b, SYMBOL* cls, MEMBERINITIALIZERS* mi
                     args = &(*args)->next;
                     init = init->next;
                 }
-                if (!callConstructor(&ctype, &exp, funcparams, false, nullptr, top, false, false, false, false, false))
+                if (!callConstructor(&ctype, &exp, funcparams, false, nullptr, top, false, false, false, false, false, true))
                     errorsym(ERR_NO_DEFAULT_CONSTRUCTOR, member);
                 // previously, callConstructor can return false here, meaning that funcparams->sp is null
                 // This used to create a nullptr dereference in PromoteConstructorArgs
@@ -1801,7 +1801,7 @@ static void genConstructorCall(BLOCKDATA* b, SYMBOL* cls, MEMBERINITIALIZERS* mi
             }
             else
             {
-                if (!callConstructor(&ctype, &exp, nullptr, false, nullptr, top, false, false, false, false, false))
+                if (!callConstructor(&ctype, &exp, nullptr, false, nullptr, top, false, false, false, false, false, true))
                     errorsym(ERR_NO_DEFAULT_CONSTRUCTOR, member);
             }
             matchesCopy(parentCons, false);
@@ -3008,7 +3008,7 @@ void callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* a
     }
 }
 bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool checkcopy, EXPRESSION* arrayElms, bool top,
-                     bool maybeConversion, bool implicit, bool pointer, bool usesInitList, bool isAssign)
+                     bool maybeConversion, bool implicit, bool pointer, bool usesInitList, bool isAssign, bool toErr)
 {
     (void)checkcopy;
     TYPE* stp = *tp;
@@ -3059,7 +3059,7 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
     params->thistp->rootType = params->thistp;
     params->thistp->size = getSize(bt_pointer);
     params->ascall = true;
-    cons1 = GetOverloadedFunction(tp, &params->fcall, cons, params, nullptr, true, maybeConversion, true, usesInitList);
+    cons1 = GetOverloadedFunction(tp, &params->fcall, cons, params, nullptr, toErr, maybeConversion, true, usesInitList);
 
     if (cons1 && isfunction(cons1->tp))
     {
@@ -3223,7 +3223,7 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
     return false;
 }
 bool callConstructorParam(TYPE** tp, EXPRESSION** exp, TYPE* paramTP, EXPRESSION* paramExp, bool top, bool maybeConversion,
-                          bool implicit, bool pointer)
+                          bool implicit, bool pointer, bool toErr)
 {
     FUNCTIONCALL* params = (FUNCTIONCALL*)(FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
     if (paramTP && paramExp)
@@ -3232,7 +3232,7 @@ bool callConstructorParam(TYPE** tp, EXPRESSION** exp, TYPE* paramTP, EXPRESSION
         params->arguments->tp = paramTP;
         params->arguments->exp = paramExp;
     }
-    return callConstructor(tp, exp, params, false, nullptr, top, maybeConversion, implicit, pointer, false, false);
+    return callConstructor(tp, exp, params, false, nullptr, top, maybeConversion, implicit, pointer, false, false, toErr);
 }
 
 void PromoteConstructorArgs(SYMBOL* cons1, FUNCTIONCALL* params)

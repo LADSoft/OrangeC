@@ -956,7 +956,7 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                             funcparams->arguments = (INITLIST*)Alloc(sizeof(INITLIST));
                                             *funcparams->arguments = *fc->arguments;
                                             callConstructor(&ctype, &consexp, funcparams, false, 0, true, false, true, false, false,
-                                                            false);
+                                                            false, true);
                                             fc->arguments->exp = consexp;
                                         }
                                         else
@@ -987,7 +987,7 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                             funcparams->arguments = (INITLIST*)Alloc(sizeof(INITLIST));
                                             *funcparams->arguments = *fc->arguments;
                                             callConstructor(&ctype, &consexp, funcparams, false, 0, true, false, true, false, false,
-                                                            false);
+                                                            false, true);
                                             fc->arguments->exp = consexp;
                                         }
                                         else
@@ -1094,7 +1094,7 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                 funcparams->arguments = args;
                                 args->tp = declSP->tp;
                                 args->exp = eBegin;
-                                callConstructor(&ctype, &decl, funcparams, false, 0, true, false, true, false, false, false);
+                                callConstructor(&ctype, &decl, funcparams, false, 0, true, false, true, false, false, false, true);
                                 st->select = decl;
                                 declDest = declExp;
                                 callDestructor(declSP, nullptr, &declDest, nullptr, true, false, false, true);
@@ -1139,7 +1139,7 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                     funcparams->arguments = args;
                                     args->tp = declSP->tp;
                                     args->exp = eBegin;
-                                    callConstructor(&ctype, &decl, funcparams, false, 0, true, false, true, false, false, false);
+                                    callConstructor(&ctype, &decl, funcparams, false, 0, true, false, true, false, false, false, true);
                                     st->select = decl;
                                     declDest = declExp;
                                     callDestructor(declSP, nullptr, &declDest, nullptr, true, false, false, true);
@@ -1186,7 +1186,7 @@ static LEXEME* statement_for(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                                     funcparams->arguments = args;
                                     args->tp = declSP->tp;
                                     args->exp = st->select;
-                                    callConstructor(&ctype, &decl, funcparams, false, 0, true, false, true, false, false, false);
+                                    callConstructor(&ctype, &decl, funcparams, false, 0, true, false, true, false, false, false, true);
                                     st->select = decl;
                                     declDest = declExp;
                                     callDestructor(declSP, nullptr, &declDest, nullptr, true, false, false, true);
@@ -1917,86 +1917,66 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                         }
                         optimize_for_constants(&exp1);
                     }
-                    /*
-                    exp2 = exp1;
-                    if (exp2->type == en_thisref)
-                        exp2 = exp2->left;
-                    if (exp2->type == en_func)
-                        if (exp2->v.func->sp->sb->isConstructor)
-                            exp3 = baseNode(exp2->v.func->thisptr);
-                        else if (exp2->v.func->returnEXP)
-                            exp3 = baseNode(exp2->v.func->returnEXP);
-                    if (exp2->type == en_func && exp3 && exp3->type == en_auto && exp3->v.sp->sb->anonymous &&
-                        (exp2->v.func->sp->sb->isConstructor && comparetypes(basetype(exp2->v.func->thistp)->btp, tp1, true) ||
-                         !exp2->v.func->sp->sb->isConstructor && exp2->v.func->returnSP && comparetypes(exp2->v.func->returnSP->tp,
-                    tp1, true)))
+                    EXPRESSION* exptemp = exp1;
+                    if (exptemp->type == en_thisref)
+                        exptemp = exptemp->left;
+                    if (exptemp->type == en_func && isfunction(exptemp->v.func->sp->tp) &&
+                        exptemp->v.func->thisptr && comparetypes(tp, basetype(exptemp->v.func->thistp)->btp, 0) &&
+                        (!basetype(tp)->sp->sb->templateLevel || sameTemplate(tp, basetype(exptemp->v.func->thistp)->btp)) &&
+                        exptemp->v.func->thisptr->type == en_auto &&
+                        exptemp->v.func->thisptr->v.sp->sb->anonymous)
                     {
-                        // either a constructor for the return type or function returning the return type
-                        if (exp2->v.func->sp->sb->isConstructor)
-                        {
-                            exp2->v.func->thisptr = en;
-                        }
-                        else
-                        {
-                            exp2->v.func->returnEXP = en;
-                        }
+                        exptemp->v.func->thisptr->v.sp->sb->destructed = true;
+                        exptemp->v.func->thisptr = en;
                         returntype = tp;
                         returnexp = exp1;
+                        maybeConversion = false;
+                        implicit = true;
                     }
                     else
-                    */
                     {
-                        EXPRESSION* exptemp = exp1;
-                        if (exptemp->type == en_thisref)
-                            exptemp = exptemp->left;
+                        bool nonconst = funcsp->sb->nonConstVariableUsed;
+                        funcparams->arguments = (INITLIST*)Alloc(sizeof(INITLIST));
+                        funcparams->arguments->tp = tp1;
+                        funcparams->arguments->exp = exp1;
+                        oldrref = basetype(tp1)->rref;
+                        oldlref = basetype(tp1)->lref;
+                        basetype(tp1)->rref = exp1->type == en_auto && exp1->v.sp->sb->storage_class != sc_parameter;
                         if (exptemp->type == en_func && isfunction(exptemp->v.func->sp->tp) &&
-                            exptemp->v.func->thisptr && comparetypes(tp, basetype(exptemp->v.func->thistp)->btp, 0) &&
-                            (!basetype(tp)->sp->sb->templateLevel || sameTemplate(tp, basetype(exptemp->v.func->thistp)->btp)) &&
-                            exptemp->v.func->thisptr->type == en_auto &&
-                            exptemp->v.func->thisptr->v.sp->sb->anonymous)
+                            basetype(basetype(exptemp->v.func->sp->tp)->btp)->type != bt_lref)
+                            basetype(tp1)->rref = true;
+                        basetype(tp1)->lref = !basetype(tp1)->rref;
+                        maybeConversion = false;
+                        returntype = tp;
+                        implicit = true;
+                        // try the rref constructor first
+                        if (callConstructor(&ctype, &en, funcparams, false, nullptr, true, maybeConversion, false, false, false, false, false))
                         {
-                            exptemp->v.func->thisptr->v.sp->sb->destructed = true;
-                            exptemp->v.func->thisptr = en;
-                            returntype = tp;
-                            returnexp = exp1;
-                            maybeConversion = false;
-                            implicit = true;
-                        }
-                        else
-                        {
-                            bool nonconst = funcsp->sb->nonConstVariableUsed;
-                            funcparams->arguments = (INITLIST*)Alloc(sizeof(INITLIST));
-                            funcparams->arguments->tp = tp1;
-                            funcparams->arguments->exp = exp1;
-                            oldrref = basetype(tp1)->rref;
-                            oldlref = basetype(tp1)->lref;
-                            basetype(tp1)->rref = exp1->type == en_auto && exp1->v.sp->sb->storage_class != sc_parameter && !isstructured(tp1);
-                            if (exptemp->type == en_func && isfunction(exptemp->v.func->sp->tp) &&
-                                basetype(basetype(exptemp->v.func->sp->tp)->btp)->type != bt_lref)
-                                basetype(tp1)->rref = true;
-                            basetype(tp1)->lref = !basetype(tp1)->rref;
-                            maybeConversion = false;
-                            returntype = tp;
-                            implicit = true;
-                            callConstructor(&ctype, &en, funcparams, false, nullptr, true, maybeConversion, false, false, false, false);
-                            funcsp->sb->nonConstVariableUsed = nonconst;
-                            returnexp = en;
-                            basetype(tp1)->rref = oldrref;
-                            basetype(tp1)->lref = oldlref;
                             if (funcparams->sp && matchesCopy(funcparams->sp, true))
                             {
                                 switch (exp1->type)
                                 {
-                                    case en_global:
-                                    case en_auto:
-                                    case en_threadlocal:
-                                        exp1->v.sp->sb->dest = nullptr;
-                                        break;
-                                    default:
-                                        break;
+                                case en_global:
+                                case en_auto:
+                                case en_threadlocal:
+                                    exp1->v.sp->sb->dest = nullptr;
+                                    break;
+                                default:
+                                    break;
                                 }
                             }
                         }
+                        else
+                        {
+                            // not there try an lref version of the constructor
+                            basetype(tp1)->rref = false;
+                            basetype(tp1)->lref = true;
+                            callConstructor(&ctype, &en, funcparams, false, nullptr, true, maybeConversion, false, false, false, false, true);
+                        }
+                        basetype(tp1)->rref = oldrref;
+                        basetype(tp1)->lref = oldlref;
+                        funcsp->sb->nonConstVariableUsed = nonconst;
+                        returnexp = en;
                     }
                 }
             }

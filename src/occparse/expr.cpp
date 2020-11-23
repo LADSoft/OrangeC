@@ -1422,6 +1422,11 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
                 lex = getsym();
                 sp2->sb->attribs.inheritable.used = true;
                 *tp = sp2->tp;
+                if (isref(*tp))
+                {
+                    deref(*tp, exp);
+                    *tp = basetype(*tp)->btp;
+                }
                 tpb = basetype(*tp);
                 if (sp2->sb->storage_class == sc_overloads)
                 {

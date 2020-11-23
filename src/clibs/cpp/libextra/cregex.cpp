@@ -168,7 +168,7 @@ extern "C" int _RTL_FUNC regexec(regex_t* re, const char* str, size_t nmatch, re
 extern "C" size_t _RTL_FUNC regerror(int err, const regex_t* re, char* errbuf, size_t errbuf_size)
 {
     iregex* inner = (iregex*)re->re_innerctx;
-    char* p = "Invalid error.";
+    const char* p = "Invalid error.";
     if (err >= 0 && err < sizeof(errlist) / sizeof(errlist[0]))
         p = errlist[err];
     if (errbuf_size)

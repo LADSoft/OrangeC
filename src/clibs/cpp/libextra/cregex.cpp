@@ -37,7 +37,7 @@
 #include <regex>
 #include <regex.h>
 
-static char* errlist[] = {
+static const char* errlist[] = {
     "Successful Match.",
     "Not Matched.",
     "A regular expression was invalid.",

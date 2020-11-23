@@ -72,7 +72,7 @@ static struct _ihash
 
 } defaults[] = {
     {"__is_abstract", is_abstract},
-    {"__is_baOptimizer::se_of", is_base_of},
+    {"__is_base_of", is_base_of},
     {"__is_class", is_class},
     {"__is_constructible", is_constructible},
     {"__is_convertible_to", is_convertible_to},
@@ -666,6 +666,7 @@ static bool is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** t
                         funcparams.ascall = true;
                         funcparams.arguments = funcparams.arguments->next;
                         temp = funcparams.arguments;
+                        i = 0;
                         while (temp)
                         {
                             holdl[i] = temp->tp->lref;
@@ -674,6 +675,7 @@ static bool is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** t
                             {
                                 temp->tp->lref = true;
                             }
+                            i++;
                             temp = temp->next;
                         }
                         std::stack<SYMBOL*> stk;
@@ -693,11 +695,13 @@ static bool is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** t
                             stk.pop();
                         }
                         temp = funcparams.arguments;
+                        i = 0;
                         while (temp)
                         {
                             temp->tp->lref = holdl[i];
                             temp->tp->rref = holdr[i];
                             temp = temp->next;
+                            i++;
                         }
                     }
                 }

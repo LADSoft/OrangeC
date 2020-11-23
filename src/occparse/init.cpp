@@ -3023,6 +3023,9 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
                     tp1 = itype;
                     if (funcparams->arguments && !isref(funcparams->arguments->tp))
                     {
+                        TYPE *tpx = (TYPE*)Alloc(sizeof(TYPE));
+                        *tpx = *funcparams->arguments->tp;
+                        funcparams->arguments->tp = tpx;
                         funcparams->arguments->tp->lref = true;
                         funcparams->arguments->tp->rref = false;
                     }

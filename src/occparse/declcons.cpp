@@ -1737,6 +1737,7 @@ static void genConstructorCall(BLOCKDATA* b, SYMBOL* cls, MEMBERINITIALIZERS* mi
                     other = exprNode(en_not_lvalue, other, nullptr);
                 if (isconst(((SYMBOL*)basetype(parentCons->tp)->syms->table[0]->next->p)->tp->btp))
                 {
+                    tp = (TYPE*)Alloc(sizeof(TYPE));
                     tp->type = bt_const;
                     tp->size = basetype(member->tp)->size;
                     //                tp->btp = member->tp;
@@ -1755,10 +1756,8 @@ static void genConstructorCall(BLOCKDATA* b, SYMBOL* cls, MEMBERINITIALIZERS* mi
                     tp->lref = false;
                     //                tp = member->tp;
                 }
-                //			member->tp->rref = true;
                 if (!callConstructorParam(&ctype, &exp, tp, other, top, false, false, false, true))
                     errorsym(ERR_NO_APPROPRIATE_CONSTRUCTOR, member);
-                //			member->tp->rref = false;
             }
         }
         else
@@ -2612,7 +2611,7 @@ static void genAsnCall(BLOCKDATA* b, SYMBOL* cls, SYMBOL* base, int offset, EXPR
     }
     else
     {
-        tp = base->tp;
+        *tp = *base->tp;
     }
     if (move)
     {

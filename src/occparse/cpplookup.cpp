@@ -2430,35 +2430,6 @@ static void SelectBestFunc(SYMBOL** spList, enum e_cvsrn** icsList, int** lenLis
                                                         funcparams->thisptr, funcList ? funcList[i][k] : nullptr,
                                                         funcList ? funcList[j][k] : nullptr, lenl, lenr, false);
                         }
-                        /*
-                        else if (k == 1 && funcparams && funcparams->thisptr)
-                        {
-                            TYPE *tpl, *tpr;
-                            if (spList[i]->sb->castoperator)
-                            {
-                                tpl = ((SYMBOL*sym)(hrl->p))->tp;
-                                hrl = hrl->next;
-                            }
-                            else
-                            {
-                                tpl = toThis(basetype(spList[i]->tp)->btp);
-                            }
-                            if (spList[j]->sb->castoperator)
-                            {
-                                tpr = ((SYMBOL*sym)(hrr->p))->tp;
-                                hrr = hrr->next;
-                            }
-                            else
-                            {
-                                tpr = toThis(basetype(spList[j]->tp)->btp);
-                            }
-                            arr[k] = compareConversions(spList[i], spList[j], seql, seqr, tpl, tpr,
-                                                        args ? args->tp : 0 , args ? args->exp : 0,
-                                                        funcList ? funcList[i][k] : nullptr,
-                                                        funcList ? funcList[j][k] : nullptr,
-                                                        lenl, lenr, false);
-                        }
-                        */
                         else
                         {
                             TYPE* tpl = hrl ? (hrl->p)->tp : nullptr;
@@ -3284,7 +3255,13 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_
             }
         }
         if ((isconst(tpax) != isconst(tppp)) || (isvolatile(tpax) != isvolatile(tppp)))
+        {
             seq[(*n)++] = CV_QUALS;
+        }
+        if ((isconst(tpa) &&! isconst(tppp)) || (isvolatile(tpa) &&! isvolatile(tppp)))
+        {
+            seq[(*n)++] = CV_NONE;
+        }
         if (lref && !rref && tpp->type == bt_rref)
             seq[(*n)++] = CV_LVALUETORVALUE;
         if (tpp->type == bt_rref && lref && !isfunction(tpa) && !isfuncptr(tpa) && (expa && !isarithmeticconst(expa)))
@@ -3297,16 +3274,14 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_
         }
         else if (tpp->type == bt_lref && rref && !lref)
         {
-            // rvalue to lvalue ref not allowed unless the lvalue is a function
-            if (exp && exp->type == en_func)
+            // rvalue to lvalue ref not allowed unless the lvalue is a function or const
+            if (!isfunction(basetype(tpp)->btp))
             {
-                if (isconst(tppp) && !isvolatile(tppp))
-                    seq[(*n)++] = CV_QUALS;
+                if (!isconst(tppp))
+                    seq[(*n)++] = CV_NONE;
             }
-            else
-            {
-                seq[(*n)++] = CV_NONE;
-            }
+            if (isconst(tppp) && !isvolatile(tppp))
+                seq[(*n)++] = CV_QUALS;
         }
         tpa = basetype(tpa);
         if (isstructured(tpa))

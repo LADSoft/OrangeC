@@ -1623,6 +1623,7 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
         if (points && ispointer(typein))
             typein = basetype(typein)->btp;
 
+/*
         if (isconst(typein) && !isconst(*tp))
         {
             TYPE* p = (TYPE*)Alloc(sizeof(TYPE));
@@ -1641,6 +1642,7 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
             p->size = p->btp->size;
             (*tp) = p;
         }
+*/
     }
     return lex;
 }

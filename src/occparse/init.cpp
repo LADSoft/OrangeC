@@ -1326,6 +1326,7 @@ static LEXEME* init_expression(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp
                 if (!shim)
                 {
                     *expr = intNode(en_c_i, 0);
+                    *tp = &stdint;
                 }
                 else
                 {

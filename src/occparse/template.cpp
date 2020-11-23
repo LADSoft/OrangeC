@@ -805,7 +805,10 @@ TEMPLATEPARAMLIST** expandArgs(TEMPLATEPARAMLIST** lst, LEXEME* start, SYMBOL* f
         lst = &(*lst)->next;
         return lst;
     }
+    auto tpls = select->next;
+    select->next = nullptr;
     GetPackedTypes(arg, &count, select);
+    select->next = tpls;
     expandingParams++;
     if (count)
     {
@@ -1138,7 +1141,7 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
                                 error(ERR_PACK_SPECIFIER_REQUIRES_PACKED_TEMPLATE_PARAMETER);
                         }
                         else if (tp->type == bt_templateparam)
-                        {
+                        {   
                             lst = expandArgs(lst, start, funcsp, tp->templateParam, true);
                         }
                         else if (tp->type == bt_templateselector)
@@ -9781,8 +9784,22 @@ void SpecifyTemplateSelector(TEMPLATESELECTOR** rvs, TEMPLATESELECTOR* old, bool
                             if (!expression && tpl->p->type == kw_int && tpl->p->byNonType.dflt && tpl->p->byNonType.dflt->type == en_templateparam)
                             {
                                 name = tpl->p->byNonType.dflt->v.sp->name;
+                                SearchAlias(name, *x, sym, args, origTemplate, origUsing);
                             }
-                            SearchAlias(name, *x, sym, args, origTemplate, origUsing);
+                            else if (expression && tpl->p->type == kw_int && (*x)->p->byNonType.dflt)
+                            {
+                                if (!IsConstantExpression((*x)->p->byNonType.dflt, false, false))
+                                    SearchAlias(name, *x, sym, args, origTemplate, origUsing);
+                            }
+                            else if ((*x)->p->type == kw_typename && (*x)->p->byClass.dflt)
+                            {
+                                if (!isstructured((*x)->p->byClass.dflt) || (basetype((*x)->p->byClass.dflt)->sp->sb->templateLevel && !(*x)->p->byClass.dflt->size))
+                                    SearchAlias(name, *x, sym, args, origTemplate, origUsing);
+                            }
+                            else
+                            {
+                                SearchAlias(name, *x, sym, args, origTemplate, origUsing);
+                            }
                         }
                     }
                     tpl = tpl->next;
@@ -10488,8 +10505,6 @@ TEMPLATEPARAMLIST* GetTypeAliasArgs(SYMBOL* sp, TEMPLATEPARAMLIST* args, TEMPLAT
 }
 SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args)
 {
-    if (!strcmp(sp->name, "_EnableIfDeleterConstructible"))
-        printf("hi");
     if (reflectUsingType)
         return sp;
     SYMBOL* rv;

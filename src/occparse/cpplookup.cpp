@@ -2049,6 +2049,16 @@ static int compareConversions(SYMBOL* spLeft, SYMBOL* spRight, enum e_cvsrn* seq
             }
             else
             {
+                if (isref(tl) && isref(tr))
+                {
+                    // rref is better than const lref
+                    int refl = basetype(tl)->type;
+                    int refr = basetype(tr)->type;
+                    if (refl == bt_rref && refr == bt_lref && isconst(basetype(tr)->btp))
+                        return 1;
+                    if (refr == bt_rref && refl == bt_lref && isconst(basetype(tl)->btp))
+                        return -1;
+                }
                 if (isref(ta))
                     ta = basetype(ta)->btp;
                 if (isref(tl))

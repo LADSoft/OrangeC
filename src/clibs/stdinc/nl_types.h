@@ -147,7 +147,7 @@ extern "C"
         return mbsnrtowcs(__dst, __src, nms, __len, __ps);
     }
 
-    inline size_t strftime_l(char* ZSTR restrict __s, size_t __maxsize, char* ZSTR restrict __fmt, const struct tm* restrict __t,
+    inline size_t strftime_l(char* ZSTR restrict __s, size_t __maxsize, const char* ZSTR restrict __fmt, const struct tm* restrict __t,
                              locale_t larg)
     {
         return strftime(__s, __maxsize, __fmt, __t);

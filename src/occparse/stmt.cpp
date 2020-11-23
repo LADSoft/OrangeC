@@ -1970,7 +1970,7 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                             funcparams->arguments->exp = exp1;
                             oldrref = basetype(tp1)->rref;
                             oldlref = basetype(tp1)->lref;
-                            basetype(tp1)->rref = exp1->type == en_auto && exp1->v.sp->sb->storage_class != sc_parameter;
+                            basetype(tp1)->rref = exp1->type == en_auto && exp1->v.sp->sb->storage_class != sc_parameter && !isstructured(tp1);
                             if (exptemp->type == en_func && isfunction(exptemp->v.func->sp->tp) &&
                                 basetype(basetype(exptemp->v.func->sp->tp)->btp)->type != bt_lref)
                                 basetype(tp1)->rref = true;

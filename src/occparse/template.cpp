@@ -5821,7 +5821,7 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* dest, TEMPL
                         openStructs = nullptr;
                         structLevel = 0;
                         noTypeNameError = true;
-                        lex = expression_no_comma(lex, nullptr, nullptr, &tp1, &exp1, nullptr, _F_INTEMPLATEPARAMS);
+                        lex = get_type_id(lex, &tp1, nullptr, sc_parameter, false, true, false);
                         noTypeNameError = false;
                         openStructs = oldOpenStructs;
                         structLevel = oldStructLevel;

@@ -1821,6 +1821,7 @@ static bool ismem(EXPRESSION* exp)
         case en_auto:
         case en_threadlocal:
         case en_construct:
+        case en_labcon:
             return true;
         case en_thisref:
             exp = exp->left;
@@ -4664,6 +4665,10 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                         while ((*tp1)->rootType != *tp1)
                             tp1 = &(*tp1)->btp;
                         *tp1 = (*tp1)->sp->tp;
+                    }
+                    for (auto hr = basetype(found1->tp)->syms->table[0]; hr; hr = hr->next)
+                    {
+                        CollapseReferences(hr->p->tp);
                     }
                     CollapseReferences(basetype(found1->tp)->btp);
                     if (found1->sb->templateLevel && !templateNestingCount && found1->templateParams)

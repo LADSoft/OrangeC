@@ -3785,9 +3785,13 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                 if (qual == nullptr && tp->btp->type == bt_templateparam && tp->btp->templateParam->p->byClass.val &&
                     tp->btp->templateParam->p->byClass.val->type == bt_lref)
                 {
+                    *last = (TYPE*)Alloc(sizeof(TYPE));
+                    **last = *tp;
+                    last = &(*last)->btp;
                     TYPE* tp1 = tp->btp->templateParam->p->byClass.val;
                     tp->btp->templateParam->p->byClass.val = basetype(tp1)->btp;
                     tp = tp1;
+                    break;
                 }
                 // fall through
             case bt_lref:
@@ -3901,7 +3905,6 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                                     tp1->templateParam = clone->tp->templateParam;
                                     clone->tp = tp1;
                                     UpdateRootTypes(tp1);
-                                    CollapseReferences(clone->tp);
                                     templateParams->p->packsym = clone;
                                     insert(clone, func->syms);
                                     first = false;
@@ -3913,7 +3916,6 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                             {
                                 SYMBOL* clone = clonesym(sp);
                                 clone->tp = SynthesizeType(&stdany, enclosing, alt);
-                                CollapseReferences(clone->tp);
                                 clone->tp->templateParam = sp->tp->templateParam;
                                 insert(clone, func->syms);
                             }
@@ -3935,7 +3937,6 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                             clone->tp = tp1;
                             UpdateRootTypes(tp1);
                         }
-                        CollapseReferences(clone->tp);
                     }
                     hr = hr->next;
                 }

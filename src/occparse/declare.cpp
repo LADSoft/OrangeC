@@ -4297,8 +4297,6 @@ static LEXEME* getAfterType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** sp,
                                 funcLevel++;
                                 lex = getsym();
                                 ParseAttributeSpecifiers(&lex, funcsp, true);
-                                if (*sp && !strcmp((*sp)->name, "__invoke"))
-                                    printf("hi");
                                 parsingTrailingReturnOrUsing++;
                                 lex = get_type_id(lex, &tpx, funcsp, sc_cast, false, true, false);
                                 parsingTrailingReturnOrUsing--;

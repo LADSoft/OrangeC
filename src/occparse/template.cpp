@@ -3361,7 +3361,7 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bo
                     tpl = tpl->next;
                 }
                 sp = GetOverloadedFunction(&tp1, &exp1, exp->v.func->sp, exp->v.func, nullptr, false, false, false, 0);
-                tpl = exp->v.func->templateParams;
+                tpl = exp->v.func->templateParams;  
                 while (tpl)
                 {
                     if (tpl->p->type != kw_new)
@@ -5521,7 +5521,78 @@ static SYMBOL* ValidateArgsSpecified(TEMPLATEPARAMLIST* params, SYMBOL* func, IN
             }
         }
     }
+    std::vector<char> hold;
+    std::stack<TEMPLATEPARAMLIST*> tas;
+    for (auto tpl = nparams; tpl; tpl = tpl->next)
+    {
+        if (tpl->p->packed)
+        {
+            tas.push(tpl);
+            tpl = tpl->p->byPack.pack;
+        }
+        if (tpl)
+        {
+            if (tpl->p->type == kw_typename)
+            {
+                if (tpl->p->byClass.val)
+                {
+                    hold.push_back(tpl->p->byClass.val->lref);
+                    hold.push_back(tpl->p->byClass.val->rref);
+                    tpl->p->byClass.val->lref = false;
+                    tpl->p->byClass.val->rref = false;
+                }
+            }
+            else if (tpl->p->type == kw_int)
+            {
+                if (tpl->p->byClass.val)
+                {
+                    hold.push_back(tpl->p->byNonType.tp->lref);
+                    hold.push_back(tpl->p->byNonType.tp->rref);
+                    tpl->p->byNonType.tp->lref = false;
+                    tpl->p->byNonType.tp->rref = false;
+                }
+            }
+        }
+        if (!tpl && !tas.empty())
+        {
+            tpl = tas.top();
+            tas.pop();
+        }
+    }
     SYMBOL* rv = SynthesizeResult(func, nparams);
+    int i = 0;
+    for (auto tpl = nparams; tpl; tpl = tpl->next)
+    {
+        if (tpl->p->packed)
+        {
+            tas.push(tpl);
+            tpl = tpl->p->byPack.pack;
+        }
+        if (tpl)
+        {
+            if (tpl->p->type == kw_typename)
+            {
+                if (tpl->p->byClass.val)
+                {
+                    tpl->p->byClass.val->lref = hold[i++];
+                    tpl->p->byClass.val->rref = hold[i++];
+                }
+            }
+            else if (tpl->p->type == kw_int)
+            {
+                if (tpl->p->byClass.val)
+                {
+                    tpl->p->byNonType.tp->lref = hold[i++];
+                    tpl->p->byNonType.tp->rref = hold[i++];
+                }
+            }
+        }
+        if (!tpl && !tas.empty())
+        {
+            tpl = tas.top();
+            tas.pop();
+        }
+    }
     rv->sb->maintemplate = func;
     if (!ValidArg(basetype(func->tp)->btp))
     {

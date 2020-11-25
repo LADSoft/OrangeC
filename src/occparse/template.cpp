@@ -3782,11 +3782,8 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                     tp->btp->templateParam->p->byClass.val->type == bt_lref)
                 {
                     TYPE* tp1 = tp->btp->templateParam->p->byClass.val;
-                    tp->btp->templateParam->p->byClass.val = basetype(tp1);
-                    *last = (TYPE*)Alloc(sizeof(TYPE));
-                    **last = *basetype(tp1);
-                    tp = (*last)->btp;
-                    last = &(*last)->btp;
+                    tp->btp->templateParam->p->byClass.val = basetype(tp1)->btp;
+                    tp = basetype(tp1);
                     break;
                 }
                 // fallthrough

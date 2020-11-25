@@ -1134,8 +1134,6 @@ static bool isMoveConstructorDeleted(SYMBOL* sp)
         TYPE* m;
         if (sp1->sb->storage_class == sc_member || sp1->sb->storage_class == sc_mutable)
         {
-            if (basetype(sp1->tp)->type == bt_rref)
-                return true;
             if (isstructured(sp1->tp))
             {
                 TYPE* tp = basetype(sp1->tp);
@@ -1267,7 +1265,9 @@ static bool conditionallyDeleteCopyConstructor(SYMBOL* func, bool move)
         SYMBOL* sp = hr->p;
         if (sp->sb->defaulted && matchesCopy(sp, move))
         {
-            if (isCopyConstructorDeleted(sp->sb->parentClass))
+            if (move && isMoveConstructorDeleted(sp->sb->parentClass))
+                sp->sb->deleted = true;
+            else if (!move && isCopyConstructorDeleted(sp->sb->parentClass))
                 sp->sb->deleted = true;
         }
         hr = hr->next;
@@ -1282,7 +1282,9 @@ static bool conditionallyDeleteCopyAssignment(SYMBOL* func, bool move)
         SYMBOL* sp = hr->p;
         if (sp->sb->defaulted && matchesCopy(sp, move))
         {
-            if (isCopyAssignmentDeleted(sp->sb->parentClass))
+            if (move && isMoveAssignmentDeleted(sp->sb->parentClass))
+                sp->sb->deleted = true;
+            else if (!move && isCopyAssignmentDeleted(sp->sb->parentClass))
                 sp->sb->deleted = true;
         }
         hr = hr->next;

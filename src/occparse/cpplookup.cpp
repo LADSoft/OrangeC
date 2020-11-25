@@ -3159,7 +3159,32 @@ bool sameTemplate(TYPE* P, TYPE* A)
 }
 void GetRefs(TYPE* tpa, EXPRESSION* expa, bool& lref, bool& rref)
 {
-    bool cons = false;
+    bool func = false;
+    bool notlval = false;
+    if (expa)
+    {
+        if (isstructured(tpa))
+        {
+            // function call as an argument can result in an rref
+            EXPRESSION *expb = expa;
+            if (expb->type == en_thisref)
+                expb = expb->left;
+            if (expb->type == en_func && expb->v.func->sp)
+                if (isfunction(expb->v.func->sp->tp))
+                {
+                    func = !isref(basetype(expb->v.func->sp->tp)->btp);
+                }
+            if (expa->type == en_not_lvalue)
+                notlval = true;
+        }
+    }
+    lref = (basetype(tpa)->type == bt_lref || tpa->lref || (isstructured(tpa) && !notlval && !func) ||
+        (expa && (lvalue(expa) || isarithmeticconst(expa)))) && !tpa->rref;
+    rref = (basetype(tpa)->type == bt_rref || tpa->rref || notlval || func ||
+        (expa && !lvalue(expa) && !ismem(expa) && !ismath(expa) && !castvalue(expa))) &&
+        !lref && !tpa->lref;
+/*
+bool cons = false;
     if (isstructured(tpa) && expa && expa->type == en_thisref)
         if (expa->left->v.func->sp)
             if ((expa->left->v.func->sp->tp->type == bt_aggregate && expa->left->v.func->sp->tp->syms->table[0]->p->sb->isConstructor) ||
@@ -3172,6 +3197,7 @@ void GetRefs(TYPE* tpa, EXPRESSION* expa, bool& lref, bool& rref)
         (expa && !lvalue(expa) && !ismem(expa) && !ismath(expa) && !castvalue(expa))) &&
         !lref && !tpa->lref) ||
         tpa->rref;
+        */
 }
 void getSingleConversionWrapped(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_cvsrn* seq, SYMBOL* candidate, SYMBOL** userFunc,
     bool allowUser)

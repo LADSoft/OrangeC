@@ -2539,7 +2539,6 @@ TEMPLATEPARAMLIST* copyParams(TEMPLATEPARAMLIST* t, bool alsoSpecializations)
             sp = (*last)->argsym;
             if (sp)
             {
-//                sp = clonesym(sp);
                 sp->tp = (TYPE*)Alloc(sizeof(TYPE));
                 sp->tp->type = bt_templateparam;
                 sp->tp->templateParam = *last;
@@ -3390,7 +3389,6 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bo
                     rve = basetype(rve)->btp;
                 if (isfuncptr(rve))
                 {
-                    //                    rv = rve;
                     rv = basetype(basetype(rve)->btp)->btp;
                     if (isconst(rve))
                     {
@@ -3414,8 +3412,6 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bo
                         exp->v.func->arguments = ExpandArguments(exp);
                     }
                     rv = rve;
-                    //                    exp->v.func->sp = basetype(rve)->sp;
-                    //                   exp->v.func->functp = exp->v.func->sp->tp;
                     if (!exp->v.func || !insertOperatorParams(nullptr, &rv, &exp1, exp->v.func, 0))
                         rv = &stdvoid;
                     if (isconst(rve))
@@ -3785,15 +3781,15 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                 if (qual == nullptr && tp->btp->type == bt_templateparam && tp->btp->templateParam->p->byClass.val &&
                     tp->btp->templateParam->p->byClass.val->type == bt_lref)
                 {
-                    *last = (TYPE*)Alloc(sizeof(TYPE));
-                    **last = *tp;
-                    last = &(*last)->btp;
                     TYPE* tp1 = tp->btp->templateParam->p->byClass.val;
-                    tp->btp->templateParam->p->byClass.val = basetype(tp1)->btp;
-                    tp = tp1;
+                    tp->btp->templateParam->p->byClass.val = basetype(tp1);
+                    *last = (TYPE*)Alloc(sizeof(TYPE));
+                    **last = *basetype(tp1);
+                    tp = (*last)->btp;
+                    last = &(*last)->btp;
                     break;
                 }
-                // fall through
+                // fallthrough
             case bt_lref:
                 *last = (TYPE*)Alloc(sizeof(TYPE));
                 **last = *tp;
@@ -4530,14 +4526,8 @@ static bool DeduceFromTemplates(TYPE* P, TYPE* A, bool change, bool byClass)
                     EXPRESSION** exp;
                     if (TAo->p->bySpecialization.types)
                     {
-                        //    #ifndef PARSER_ONLY
-                        //                        if (TA->p->byNonType.dflt && !equalTemplateIntNode(TA->p->byNonType.dflt,
-                        //                        TA->p->byNonType.val))
-                        //                            return false;
-                        //    #endif
                     }
                     exp = change ? &to->p->byNonType.val : &to->p->byNonType.temp;
-//                    if (!*exp)
                     *exp = TA->p->byNonType.val;
                     if (to->p->byNonType.dflt && to->p->byNonType.val &&
                         !equalTemplateIntNode(to->p->byNonType.dflt, *exp))
@@ -4628,15 +4618,6 @@ static bool DeduceFromTemplates(TYPE* P, TYPE* A, bool change, bool byClass)
                             }
                             case kw_int:
                             {
-                                if (TAo->p->bySpecialization.types)
-                                {
-                                    //                #ifndef PARSER_ONLY
-                                    //                                    if (TA->p->byNonType.dflt &&
-                                    //                                    !equalTemplateIntNode(TA->p->byNonType.dflt,
-                                    //                                    TA->p->byNonType.val))
-                                    //                                        return false;
-                                    //                #endif
-                                }
                                 break;
                             }
                             default:
@@ -4883,16 +4864,20 @@ static bool Deduce(TYPE* P, TYPE* A, bool change, bool byClass, bool allowSelect
     {
         TYPE* Ab = basetype(A);
         TYPE* Pb = basetype(P);
+        if (isref(Ab))
+            Ab = basetype(Ab->btp);
         if (isstructured(Pb) && Pb->sp->sb->templateLevel && Pb->sp->sb->attribs.inheritable.linkage != lk_virtual &&
             isstructured(Ab))
         {
-            if (DeduceFromTemplates(P, A, change, byClass))
+            if (DeduceFromTemplates(P, Ab, change, byClass))
                 return true;
             else
-                return DeduceFromBaseTemplates(P, basetype(A)->sp, change, byClass);
+                return DeduceFromBaseTemplates(P, basetype(Ab)->sp, change, byClass);
         }
         if (Pb->type == bt_memberptr)
-            return DeduceFromMemberPointer(P, A, change, byClass);
+            return DeduceFromMemberPointer(P, Ab, change, byClass);
+        Ab = basetype(A);
+        Pb = basetype(P);
         if (Pb->type == bt_enum)
         {
             if (Ab->type == bt_enum && Ab->sp == Pb->sp)
@@ -5644,8 +5629,6 @@ static bool TemplateDeduceFromArg(TYPE* orig, TYPE* sym, EXPRESSION* exp, bool a
     {
         int type = basetype(P)->type;
         P = basetype(P)->btp;
-        if (isref(A) && basetype(A)->type != type)
-            return false;
         if (type == bt_rref)
         {
             if (exp && !isconst(P) && !isvolatile(P))
@@ -6002,7 +5985,6 @@ void PushPopTemplateArgs(SYMBOL* func, bool push)
 }
 SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
 {
-
     TEMPLATEPARAMLIST* nparams = sym->templateParams;
     TYPE* thistp = args->thistp;
     INITLIST* arguments = args->arguments;
@@ -6753,8 +6735,6 @@ static bool TemplateInstantiationMatchInternal(TEMPLATEPARAMLIST* porig, TEMPLAT
                     {
                         TYPE* torig = (TYPE*)xorig;
                         TYPE* tsym = (TYPE*)xsym;
-                        //                        if (tsym->type == bt_templateparam)
-                        //                            tsym = tsym->templateParam->p->byClass.val;
                         if (isref(torig) != isref(tsym))
                             return false;
                         if (basetype(torig)->array != basetype(tsym)->array)
@@ -7079,10 +7059,6 @@ static void SetTemplateArgAccess(SYMBOL* sym, bool accessible)
 {
     if (accessible)
     {
-        //        if (!instantiatingTemplate && !isExpressionAccessible(theCurrentFunc ? theCurrentFunc->sb->parentClass : nullptr,
-        //        sym, theCurrentFunc, nullptr, false))
-        //            errorsym(ERR_CANNOT_ACCESS, sym);
-
         sym->sb->accessibleTemplateArgument++;
     }
     else
@@ -7297,10 +7273,6 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, TEMPLATEPARAMLIST* args, b
                 dropStructureDeclaration();
             SwapMainTemplateArgs(cls);
             LeaveInstantiation();
-        }
-        else
-        {
-            //            errorsym(ERR_TEMPLATE_CANT_INSTANTIATE_NOT_DEFINED, sym->sb->parentTemplate);
         }
     }
     return cls;
@@ -7996,7 +7968,6 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* unspecialize
                             dflt = initial->p->byClass.dflt;
                         if (dflt && isstructured((TYPE*)dflt))
                         {
-                         //   if (!exactMatchOnTemplateParams(basetype((TYPE*)dflt)->sp->templateParams->next, params->p->byTemplate.args)
                             if (!DeduceTemplateParam(params, nullptr,
                                 (TYPE*)dflt, true))
                             {
@@ -9966,7 +9937,6 @@ static EXPRESSION* SpecifyArgInt(SYMBOL* sym, EXPRESSION* exp, TEMPLATEPARAMLIST
         else if (exp->type == en_templateselector)
         {
             TEMPLATESELECTOR *old = exp->v.templateSelector;
-            //        if (old->next->isTemplate)
             {
                 SpecifyTemplateSelector(&exp->v.templateSelector, exp->v.templateSelector, true, sym, args, origTemplate, origUsing);
             }
@@ -10896,9 +10866,6 @@ void propagateTemplateDefinition(SYMBOL* sym)
                     while (hr)
                     {
                         SYMBOL* cur = hr->p;
-                        //                        if (sym->sb->maintemplate && !strcmp(sym->sb->maintemplate->sb->decoratedName,
-                        //                        cur->sb->decoratedName) && cur->sb->parentClass && cur->sb->deferredCompile)// &&
-                        //                        matchTemplateFunc(cur, sym))
                         if (sym && sym->sb->origdeclline == cur->sb->origdeclline &&
                             !strcmp(sym->sb->origdeclfile, cur->sb->origdeclfile) && cur->sb->deferredCompile)
                         {
@@ -10966,7 +10933,6 @@ void propagateTemplateDefinition(SYMBOL* sym)
                     SYMBOL* cur = hr->p;
                     if (sym && sym->sb->declline == cur->sb->declline && !strcmp(sym->sb->declfile, cur->sb->declfile) &&
                         cur->sb->deferredCompile)
-                    //                    if (cur->sb->templateLevel && cur->sb->deferredCompile && matchTemplateFunc(cur, sym))
                     {
                         sym->sb->deferredCompile = cur->sb->deferredCompile;
                         cur->sb->pushedTemplateSpecializationDefinition = 1;
@@ -10992,7 +10958,6 @@ void propagateTemplateDefinition(SYMBOL* sym)
                                 if (t.tmpl)
                                     addTemplateDeclaration(&t);
                             }
-                            //                                    TemplateFunctionInstantiate(cur, false, false);
                             deferredCompileOne(sym);
                             if (t.tmpl)
                                 dropStructureDeclaration();

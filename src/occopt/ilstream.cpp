@@ -191,10 +191,6 @@ static void StreamType(SimpleType* type)
             StreamIndex(type->startbit);
             if (type->sp && type->type != st_any)
             {
-                //                if (type->sp->fileIndex == 0 && type->sp->typeIndex == 0)
-                //                {
-                //                    printf("hi");
-                //                }
 
                 if (type->sp->storage_class == scc_auto || type->sp->storage_class == scc_register)
                 {
@@ -286,8 +282,6 @@ static void StreamExpression(SimpleExpression* exp)
                 case Optimizer::se_threadlocal:
                 case Optimizer::se_pc:
                 case Optimizer::se_structelem:
-                    //                if (exp->sp->fileIndex == 0)
-                    //                    printf("hi");
                     StreamIndex(exp->sp->fileIndex);
                     break;
                 case Optimizer::se_labcon:
@@ -495,8 +489,6 @@ static void StreamInstruction(QUAD* q)
                 StreamIndex(0);
             if (q->altsp)
             {
-                //                if (q->altsp->fileIndex == 0)
-                //                    printf("hi");
                 if (q->altsp->storage_class == scc_auto ||
                     (q->altsp->storage_class == scc_parameter && q->altsp->fileIndex != q->altsp->typeIndex) ||
                     q->altsp->storage_class == scc_register)

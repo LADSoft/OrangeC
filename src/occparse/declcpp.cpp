@@ -1240,8 +1240,6 @@ LEXEME* baseClasses(LEXEME* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac defa
                                 bcsym->tp = PerformDeferredInitialization(bcsym->tp, funcsp);
                             else
                                 bcsym->tp = SynthesizeType(bcsym->tp, nullptr, false);
-                            //                            if (isstructured(bcsym->tp))
-                            //                                bcsym = basetype(bcsym->tp)->sp;
                             if (templateNestingCount && bcsym->tp->type == bt_any)
                             {
                                 currentAccess = defaultAccess;
@@ -1359,7 +1357,6 @@ LEXEME* baseClasses(LEXEME* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac defa
                                             failed = true;
                                     }
                                     dest = dest->next;
-                                    //                                    src = src->next;
                                 }
                                 if (failed)
                                 {
@@ -3349,8 +3346,6 @@ LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc st
                         if (ssp && ismember(sp1))
                             sp1->sb->parentClass = ssp;
                         sp1->sb->mainsym = sp;
-                        // while (sp1->sb->mainsym->sb->mainsym)
-                        //    sp1->sb->mainsym = sp1->sb->mainsym->sb->mainsym;
                         sp1->sb->access = access;
                         InsertSymbol(sp1, storage_class, sp1->sb->attribs.inheritable.linkage, true);
                         InsertInline(sp1);
@@ -4333,6 +4328,12 @@ void CollapseReferences(TYPE* tp_in)
             }
         }
         UpdateRootTypes(tp_in);
+    }
+    else if (count == 1 && isvoid(basetype(tp_in)->btp))
+    {
+        // get rid of rrefs to void...
+        *tp_in = stdvoid;
+        tp_in->rootType = tp_in;
     }
 }
 }  // namespace Parser

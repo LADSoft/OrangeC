@@ -891,8 +891,6 @@ SYMBOL* classsearch(const char* name, bool tagsOnly, bool toErr)
                     break;
                 }
             }
-            //            if (!rv && cls->templateParams)
-            //                rv = templatesearch(name, cls->templateParams);
             cls = cls->sb->parentClass;
         }
     }
@@ -2240,6 +2238,16 @@ static int compareConversions(SYMBOL* spLeft, SYMBOL* spRight, enum e_cvsrn* seq
     }
     else if (xl == user)
     {
+        if (isref(ltype) && isref(rtype))
+        {
+            // rref is better than const lref
+            int refl = basetype(ltype)->type;
+            int refr = basetype(rtype)->type;
+            if (refl == bt_rref && refr == bt_lref && isconst(basetype(rtype)->btp))
+                return -1;
+            if (refr == bt_rref && refl == bt_lref && isconst(basetype(ltype)->btp))
+                return 1;
+        }
         int l = 0, r = 0, llvr = 0, rlvr = 0;
         if (seql[l] == CV_DERIVEDFROMBASE && seqr[r] == CV_DERIVEDFROMBASE)
         {
@@ -2620,7 +2628,7 @@ static SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* ex
             funcparams.ascall = true;
             funcparams.thisptr = expa;
             funcparams.thistp = &thistp;
-            thistp.btp = tpa;
+            thistp.btp = tpp;
             thistp.rootType = &thistp;
             thistp.type = bt_pointer;
             thistp.size = getSize(bt_pointer);
@@ -2868,10 +2876,6 @@ static SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* ex
             if (found1)
             {
                 if (!found2)
-                //                {
-                //                     errorsym2(ERR_AMBIGUITY_BETWEEN, found1, found2);
-                //                }
-                //               else
                 {
                     if (honorExplicit && found1->sb->isExplicit)
                     {
@@ -2879,7 +2883,6 @@ static SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* ex
                     }
                     if (seq)
                     {
-                        //                        seq[*n++]= CV_USER;
                         int l = lenList[m][0] + 1;  // + lenList[m][1];
                         memcpy(&seq[*n], &icsList[m][0], l * sizeof(enum e_cvsrn));
                         *n += l;
@@ -3118,14 +3121,7 @@ bool sameTemplate(TYPE* P, TYPE* A)
                         break;
                     if ((PAd || PA->p->byClass.val) && (PLd || PL->p->byClass.val) && !templatecomparetypes(pa, pl, true))
                     {
-                        //                        if ((basetype(pa)->type == bt_enum && isint(pl)) || (basetype(pl)->type == bt_enum
-                        //                        && isint(pa)))
-                        //                        {
-                        //                        }
-                        //                        else
-                        {
-                            break;
-                        }
+                        break;
                     }
                 }
                 else if (PL->p->type == kw_template)
@@ -3163,14 +3159,30 @@ bool sameTemplate(TYPE* P, TYPE* A)
 }
 void GetRefs(TYPE* tpa, EXPRESSION* expa, bool& lref, bool& rref)
 {
-    lref = ((basetype(tpa)->type == bt_lref || (isstructured(tpa) && (!expa || expa->type != en_not_lvalue)) ||
-        (expa && (lvalue(expa) || isarithmeticconst(expa)))) &&
-        (!expa || (expa->type != en_func && expa->type != en_thisref)) && !tpa->rref) ||
+    bool cons = false;
+    if (isstructured(tpa) && expa && expa->type == en_thisref)
+        if (expa->left->v.func->sp)
+            if ((expa->left->v.func->sp->tp->type == bt_aggregate && expa->left->v.func->sp->tp->syms->table[0]->p->sb->isConstructor) ||
+                expa->left->v.func->sp->sb->isConstructor)
+                cons = true;
+    lref = ((basetype(tpa)->type == bt_lref || (isstructured(tpa) && (!expa || (expa->type != en_not_lvalue && !cons))) ||
+        (expa && (lvalue(expa) || isarithmeticconst(expa)))) && !tpa->rref) ||
         tpa->lref;
-    rref = ((basetype(tpa)->type == bt_rref || (isstructured(tpa) && expa && expa->type == en_not_lvalue) ||
+    rref = ((basetype(tpa)->type == bt_rref || (isstructured(tpa) && expa && (expa->type == en_not_lvalue || cons)) ||
         (expa && !lvalue(expa) && !ismem(expa) && !ismath(expa) && !castvalue(expa))) &&
         !lref && !tpa->lref) ||
         tpa->rref;
+}
+void getSingleConversionWrapped(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_cvsrn* seq, SYMBOL* candidate, SYMBOL** userFunc,
+    bool allowUser)
+{
+    int rref = tpa->rref;
+    int lref = tpa->lref;
+    tpa->rref = false;
+    tpa->lref = false;
+    getSingleConversion(tpp, tpa, expa, n, seq, candidate, userFunc, allowUser);
+    tpa->rref = rref;
+    tpa->lref = lref;
 }
 void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_cvsrn* seq, SYMBOL* candidate, SYMBOL** userFunc,
                          bool allowUser)
@@ -3271,11 +3283,12 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_
         }
         if ((isconst(tpa) &&! isconst(tppp)) || (isvolatile(tpa) &&! isvolatile(tppp)))
         {
-            seq[(*n)++] = CV_NONE;
+            if (tpp->type != bt_rref)
+                seq[(*n)++] = CV_NONE;
         }
         if (lref && !rref && tpp->type == bt_rref)
             seq[(*n)++] = CV_LVALUETORVALUE;
-        if (tpp->type == bt_rref && lref && !isfunction(tpa) && !isfuncptr(tpa) && (expa && !isarithmeticconst(expa)))
+        if (tpp->type == bt_rref && lref && !isfunction(tpa) && !isfuncptr(tpa) && !ispointer(tpa) && (expa && !isarithmeticconst(expa)))
         {
             // lvalue to rvalue ref not allowed unless the lvalue is nonvolatile and const
             if (!isDerivedFromTemplate(tppx) && (!isconst(tpax) || isvolatile(tpax)))
@@ -3360,7 +3373,7 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_
         else
         {
             if (allowUser)
-                getSingleConversion(tppp, tpa, expa, n, seq, candidate, userFunc, allowUser);
+                getSingleConversionWrapped(tppp, tpa, expa, n, seq, candidate, userFunc, allowUser);
             else
                 seq[(*n)++] = CV_NONE;
         }
@@ -3423,7 +3436,7 @@ void getSingleConversion(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_
             if (basetype(tpa)->nullptrType || (expa && isconstzero(tpa, expa)))
                 seq[(*n)++] = CV_POINTERCONVERSION;
             else if (isarray(tpa) && basetype(tpa)->msil)
-                getSingleConversion(basetype(tpp)->btp, basetype(tpa)->btp, nullptr, n, seq, candidate, userFunc, allowUser);
+                getSingleConversionWrapped(basetype(tpp)->btp, basetype(tpa)->btp, nullptr, n, seq, candidate, userFunc, allowUser);
             else
                 seq[(*n)++] = CV_NONE;
         }
@@ -4255,8 +4268,6 @@ SYMBOL* GetOverloadedTemplate(SYMBOL* sp, FUNCTIONCALL* args)
     }
     if (!found1 || found2)
     {
-        //        if (!templateNestingCount)
-        //            errorsym(ERR_NO_TEMPLATE_MATCHES, sp);
         return nullptr;
     }
     return found1;
@@ -4287,9 +4298,7 @@ static int insertFuncs(SYMBOL** spList, SYMBOL** spFilterList, Optimizer::LIST* 
             int i;
             SYMBOL* sym = (SYMBOL*)(*hr)->p;
             for (i = 0; i < n; i++)
-                if (spFilterList[i] == sym || spFilterList[i]->sb->mainsym == sym || spFilterList[i] == sym->sb->mainsym)  //||
-                    //                    (matchOverload(sym->tp, spFilterList[i]->tp, false) && sym->sb->overlayIndex ==
-                    //                    spFilterList[i]->sb->overlayIndex))
+                if (spFilterList[i] == sym || spFilterList[i]->sb->mainsym == sym || spFilterList[i] == sym->sb->mainsym)
                     break;
             if (i >= n && (!args || !args->astemplate || sym->sb->templateLevel) &&
                 (!sym->sb->instantiated || sym->sb->specialized2 || sym->sb->isDestructor))

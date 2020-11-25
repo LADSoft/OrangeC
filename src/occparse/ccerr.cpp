@@ -717,7 +717,6 @@ static bool IsReturnErr(int err)
 {
     switch (err)
     {
-            //        case ERR_FUNCTION_SHOULD_RETURN_VALUE:
         case ERR_CALL_FUNCTION_NO_PROTO:
         case ERR_RETURN_MUST_RETURN_VALUE:
         case ERR_RETURN_NO_VALUE:
@@ -1005,7 +1004,6 @@ void errorqualified(int err, SYMBOL* strSym, NAMESPACEVALUELIST* nsv, const char
     if (strSym)
     {
         typeToString(buf + strlen(buf), strSym->tp);
-        //        getcls(buf, strSym);
     }
     else if (nsv)
     {

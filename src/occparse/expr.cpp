@@ -651,7 +651,6 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                     sym->sb->anyTry |= tryLevel != 0;
                     break;
                 case sc_parameter:
-                    //                   tagNonConst(funcsp, sym->tp);
                     if (sym->packed)
                     {
                         if (!(flags & _F_PACKABLE))
@@ -784,8 +783,6 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                         *exp = varNode(en_global, sym);
                     if (sym->sb->attribs.inheritable.linkage2 == lk_import)
                     {
-                        //                        *exp = exprNode(en_add, *exp, intNode(en_c_i, 2));
-                        //                        deref(&stdpointer, exp);
                         deref(&stdpointer, exp);
                     }
                     break;
@@ -1659,8 +1656,6 @@ static void LookupSingleAggregate(TYPE* tp, EXPRESSION** exp)
         *exp = varNode(en_pc, hr->p);
         if (hr->next)
             errorsym(ERR_OVERLOADED_FUNCTION_AMBIGUOUS, tp->sp);
-        //        else // commented out because of std::endl
-        //            error(ERR_FUNCTION_CALL_NEEDS_ARGUMENT_LIST);
     }
 }
 static EXPRESSION* MsilRebalanceArray(EXPRESSION* in)
@@ -3861,6 +3856,10 @@ LEXEME* expression_arguments(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION*
                     }
                     else if (ispointer(*tp) && (*tp)->array)
                     {
+                        TYPE* tp1 = *tp;
+                        *tp = (TYPE*)Alloc(sizeof(TYPE));
+                        **tp = *tp1;
+                        UpdateRootTypes(*tp);
                         (*tp)->lref = true;
                         (*tp)->rref = false;
                     }
@@ -5417,7 +5416,6 @@ static LEXEME* expression_sizeof(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
             lex = variableName(lex, funcsp, nullptr, tp, &exp1, nullptr, _F_PACKABLE | _F_SIZEOF);
             if (!exp1 || !exp1->v.sp->tp->templateParam || !exp1->v.sp->tp->templateParam->p->packed)
             {
-                //                error(ERR_SIZEOFELLIPSE_NEEDS_TEMPLATE_PACK);
                 *tp = &stdunsigned;
                 *exp = intNode(en_c_i, 1);
             }
@@ -6425,8 +6423,6 @@ LEXEME* expression_cast(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRE
                     {
                         LEXEME* lastSym = lex;
                         lex = expression_cast(lex, funcsp, nullptr, &throwaway, exp, ismutable, flags);
-                        //                if ((*exp)->type == en_func)
-                        //                    *exp = (*exp)->v.func->fcall;
                         if (throwaway)
                         {
                             if ((*exp)->type == en_pc || ((*exp)->type == en_func && !(*exp)->v.func->ascall))

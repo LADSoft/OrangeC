@@ -3172,7 +3172,7 @@ void GetRefs(TYPE* tpa, EXPRESSION* expa, bool& lref, bool& rref)
             if (expb->type == en_func && expb->v.func->sp)
                 if (isfunction(expb->v.func->sp->tp))
                 {
-                    func = !isref(basetype(expb->v.func->sp->tp)->btp);
+                    func = !isref(basetype(expb->v.func->sp->tp)->btp) || basetype(expb->v.func->sp->tp)->sp->sb->isConstructor;
                 }
             if (expa->type == en_not_lvalue)
                 notlval = true;

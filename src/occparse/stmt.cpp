@@ -3715,7 +3715,7 @@ LEXEME* body(LEXEME* lex, SYMBOL* funcsp)
     }
     funcsp->sb->labelCount = codeLabel - INT_MIN;
     n1 = codeLabel;
-    if (!funcsp->sb->templateLevel || funcsp->sb->instantiated || funcsp->sb->instantiated2)
+    if (!funcsp->sb->templateLevel || funcsp->sb->instantiated)
     {
         funcsp->sb->inlineFunc.stmt = stmtNode(lex, nullptr, st_block);
         funcsp->sb->inlineFunc.stmt->lower = block->head;

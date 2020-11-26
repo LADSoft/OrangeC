@@ -2979,6 +2979,9 @@ static INITLIST* ExpandArguments(EXPRESSION* exp)
                     call->arguments = rv1;
                     call->templateParams->p->byClass.val = call->templateParams->p->byClass.dflt = rv1->tp;
                     rv1->tp = LookupTypeFromExpression(arguments->exp, nullptr, false);
+                    if (rv1->tp == nullptr)
+                        rv1->tp = &stdany;
+                    rv1->exp = arguments->exp;
                     *ptr = rv1;
                     ptr = &(*ptr)->next;
                     scan = scan->next;
@@ -3158,6 +3161,9 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bo
         case en_threadlocal:
         {
             TYPE* rv = exp->v.sp->tp;
+            if (rv->type == bt_templateparam || (isref(rv) && basetype(rv->btp)->type == bt_templateparam))
+                rv = SynthesizeType(rv, nullptr, false);
+            /*
             if (!isstructured(rv))
             {
                 TYPE *tp1 = (TYPE*)Alloc(sizeof(TYPE));
@@ -3166,6 +3172,7 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bo
                 tp1->btp = rv;
                 rv = tp1;
             }
+            */
             return rv;
         }
         case en_x_label:
@@ -3358,6 +3365,11 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bo
                             tpl->p->byClass.dflt = tpl->p->byClass.val;
                     }
                     tpl = tpl->next;
+                }
+                if (exp->v.func->arguments && isstructured(exp->v.func->arguments->tp))
+                {
+                    if (strstr(basetype(exp->v.func->arguments->tp)->sp->name, "merse"))
+                        printf("hi");
                 }
                 sp = GetOverloadedFunction(&tp1, &exp1, exp->v.func->sp, exp->v.func, nullptr, false, false, false, 0);
                 tpl = exp->v.func->templateParams;  
@@ -3782,7 +3794,6 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                     tp->btp->templateParam->p->byClass.val->type == bt_lref)
                 {
                     TYPE* tp1 = tp->btp->templateParam->p->byClass.val;
-                    tp->btp->templateParam->p->byClass.val = basetype(tp1)->btp;
                     tp = basetype(tp1);
                     break;
                 }
@@ -6613,6 +6624,8 @@ void TemplatePartialOrdering(SYMBOL** table, int count, FUNCTIONCALL* funcparams
                     typetab[i] = SynthesizeTemplate(sym->tp, &allocedSyms[j], &allocedBodies[j], &allocedTypes[j])->tp;
                 else
                     typetab[i] = SynthesizeType(sym->tp, nullptr, true);
+                if (typetab[i]->type == bt_any)
+                    table[i] = nullptr;
                 j++;
             }
         }

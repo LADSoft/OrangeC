@@ -1419,11 +1419,6 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
                 lex = getsym();
                 sp2->sb->attribs.inheritable.used = true;
                 *tp = sp2->tp;
-                if (isref(*tp))
-                {
-                    deref(*tp, exp);
-                    *tp = basetype(*tp)->btp;
-                }
                 tpb = basetype(*tp);
                 if (sp2->sb->storage_class == sc_overloads)
                 {
@@ -1568,6 +1563,11 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
                             *exp = baseClassOffset(sp2->sb->parentClass, basetype(typ2)->sp, *exp);
                         }
                         *exp = exprNode(en_structadd, *exp, offset);
+                        if (isref(*tp))
+                        {
+                            deref(*tp, exp);
+                            *tp = basetype(*tp)->btp;
+                        }
                         if (typein2)
                             deref(typein2, exp);
                         if (sp3)
@@ -1593,11 +1593,6 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
                     }
                     if (sp2->sb->storage_class != sc_constant && sp2->sb->storage_class != sc_enumconstant)
                     {
-                        if (isref(*tp))
-                        {
-                            if (!isstructured(basetype(*tp)->btp))
-                                deref(*tp, exp);
-                        }
                         deref(*tp, exp);
                     }
                     if (sp2->sb->storage_class != sc_enumconstant)

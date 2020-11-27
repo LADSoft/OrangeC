@@ -3179,9 +3179,9 @@ void GetRefs(TYPE* tpa, EXPRESSION* expa, bool& lref, bool& rref)
         }
     }
     lref = (basetype(tpa)->type == bt_lref || tpa->lref || (isstructured(tpa) && !notlval && !func) ||
-        (expa && (lvalue(expa) || isarithmeticconst(expa)))) && !tpa->rref;
+        (expa && lvalue(expa))) && !tpa->rref;
     rref = (basetype(tpa)->type == bt_rref || tpa->rref || notlval || func ||
-        (expa && !lvalue(expa) && !ismem(expa) && !ismath(expa) && !castvalue(expa))) &&
+        (expa && (isarithmeticconst(expa) || !lvalue(expa) && !ismem(expa) && !ismath(expa) && !castvalue(expa)))) &&
         !lref && !tpa->lref;
 }
 void getSingleConversionWrapped(TYPE* tpp, TYPE* tpa, EXPRESSION* expa, int* n, enum e_cvsrn* seq, SYMBOL* candidate, SYMBOL** userFunc,

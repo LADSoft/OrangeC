@@ -2673,7 +2673,7 @@ founddecltype:
                     else
                     {
                         if (!noSpecializationError && !instantiatingTemplate)
-                            errorsym(ERR_NEED_SPECIALIZATION_PARAMETERS, sp);
+                            errorsym(ERR_NEED_TEMPLATE_ARGUMENTS, sp);
                         tn = sp->tp;
                     }
                 }
@@ -2779,7 +2779,7 @@ founddecltype:
                                 else
                                 {
                                     if (!noSpecializationError && !instantiatingTemplate)
-                                        errorsym(ERR_NEED_SPECIALIZATION_PARAMETERS, sp);
+                                        errorsym(ERR_NEED_TEMPLATE_ARGUMENTS, sp);
                                     tn = sp->tp;
                                 }
                             }
@@ -2894,7 +2894,7 @@ founddecltype:
                                         instantiatingMemberFuncClass->sb->parentClass == sp->sb->parentClass)
                                         sp = instantiatingMemberFuncClass;
                                     else
-                                        errorsym(ERR_NEED_SPECIALIZATION_PARAMETERS, sp);
+                                        errorsym(ERR_NEED_TEMPLATE_ARGUMENTS, sp);
                                 }
                             }
                             if (sp)

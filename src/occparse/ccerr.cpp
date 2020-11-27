@@ -488,7 +488,7 @@ static struct
     {"Incorrect arguments passed to template '%s'", ERROR},
     {"Cannot instantiate template '%s' because it is not defined", ERROR},
     {"Cannot generate template specialization from '%s'", ERROR},
-    {"Cannot use template '%s' without specifying specialization parameters", ERROR},
+    {"Cannot use template '%s' without specifying template arguments", ERROR},
     {"Invalid template parameter", ERROR},
     {"Body has already been defined for function '%s'", ERROR},
     {"Invalid explicit specialization of '%s'", ERROR},
@@ -582,6 +582,7 @@ static struct
     {"Referenced in instantiation of '%s'", NOTE},
     {"typedef templates not allowed", ERROR},
     {"Missing 'typename' in front of dependent type '%s'", ERROR },
+    {"'typename' only used for dependent types", WARNING },
 };
 void EnterInstantiation(LEXEME* lex, SYMBOL *sym)
 {

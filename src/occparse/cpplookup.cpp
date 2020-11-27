@@ -308,7 +308,7 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
                 }
                 else if (MATCHKW(lex, classsel))
                 {
-                    errorstr(ERR_NEED_SPECIALIZATION_PARAMETERS, buf);
+                    errorstr(ERR_NEED_TEMPLATE_ARGUMENTS, buf);
                 }
             }
             last = &(*last)->next;
@@ -458,7 +458,7 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
                         }
                         else if (MATCHKW(lex, classsel))
                         {
-                            errorstr(ERR_NEED_SPECIALIZATION_PARAMETERS, buf);
+                            errorstr(ERR_NEED_TEMPLATE_ARGUMENTS, buf);
                         }
                     }
                     last = &(*last)->next;
@@ -519,7 +519,7 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
                         {
                             currentsp = sp;
                             if (!istypedef && !noSpecializationError)  // && !instantiatingTemplate)
-                                errorsym(ERR_NEED_SPECIALIZATION_PARAMETERS, sp);
+                                errorsym(ERR_NEED_TEMPLATE_ARGUMENTS, sp);
                         }
                         if (!MATCHKW(lex, classsel))
                             break;
@@ -546,7 +546,7 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
                     {
                         currentsp = sp;
                         if (!istypedef && !noSpecializationError)  // && !instantiatingTemplate)
-                            errorsym(ERR_NEED_SPECIALIZATION_PARAMETERS, sp);
+                            errorsym(ERR_NEED_TEMPLATE_ARGUMENTS, sp);
                     }
                     if (!MATCHKW(lex, classsel))
                         break;
@@ -745,6 +745,11 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
         }
 
         errorstr(ERR_DEPENDENT_TYPE_NEEDS_TYPENAME, buf);
+    }
+    if ((!pastClassSel || !isType) && typeName)
+    {
+        error(ERR_NO_TYPENAME_HERE);
+         
     }
     lex = prevsym(finalPos);
     if (templateSelector)
@@ -4659,6 +4664,8 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
             }
             if (found1)
             {
+                if (!strcmp(found1->name, "nn"))
+                    printf("hi");
                 if (found1->sb->attribs.uninheritable.deprecationText)
                     deprecateMessage(found1);
                 if (!(flags & _F_SIZEOF))

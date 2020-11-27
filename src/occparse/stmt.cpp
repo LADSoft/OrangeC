@@ -1901,6 +1901,12 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                     TYPE* tp1 = nullptr;
                     lex = expression_no_comma(lex, funcsp, nullptr, &tp1, &exp1, nullptr, 0);
                     MatchReturnTypes(funcsp, tp, tp1);
+                    if (!tp1)
+                    {
+                        tp1 = &stdint;
+                        exp1 = intNode(en_c_i, 0);
+                        error(ERR_IDENTIFIER_EXPECTED);
+                    }
                     if (tp1 && isstructured(tp1))
                     {
                         if (sameTemplate(tp, tp1))

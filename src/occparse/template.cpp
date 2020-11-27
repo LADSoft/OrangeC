@@ -1087,9 +1087,7 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
             {
                 LEXEME* start = lex;
                 noSpecializationError++;
-                noTypeNameError++;
                 lex = get_type_id(lex, &tp, funcsp, sc_parameter, false, true, false);
-                noTypeNameError--;
                 noSpecializationError--;
                 if (!tp)
                     tp = &stdint;
@@ -5993,6 +5991,8 @@ void PushPopTemplateArgs(SYMBOL* func, bool push)
 }
 SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
 {
+    if (!strcmp(sym->name, "nn"))
+        printf("hi");
     TEMPLATEPARAMLIST* nparams = sym->templateParams;
     TYPE* thistp = args->thistp;
     INITLIST* arguments = args->arguments;
@@ -9290,6 +9290,8 @@ static void copySyms(SYMBOL* found1, SYMBOL* sym)
 }
 SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
 {
+    if (!strcmp(sp->name, "rr"))
+        printf("hi");
     int n = 1, i = 0;
     TEMPLATEPARAMLIST* unspecialized = sp->templateParams->next;
     SYMBOL *found1 = nullptr, *found2 = nullptr;

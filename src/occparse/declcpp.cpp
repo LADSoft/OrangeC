@@ -1254,7 +1254,7 @@ LEXEME* baseClasses(LEXEME* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac defa
                     else
                     {
                         if (!noSpecializationError && !instantiatingTemplate)
-                            errorsym(ERR_NEED_SPECIALIZATION_PARAMETERS, bcsym);
+                            errorsym(ERR_NEED_TEMPLATE_ARGUMENTS, bcsym);
                     }
                 }
                 else
@@ -2340,7 +2340,7 @@ MEMBERINITIALIZERS* expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, MEMBERI
         else
         {
             lex = SetAlternateLex(nullptr);
-            error(ERR_NEED_SPECIALIZATION_PARAMETERS);
+            error(ERR_NEED_TEMPLATE_ARGUMENTS);
         }
     }
     return *init;
@@ -3261,6 +3261,10 @@ LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc st
                         if (MATCHKW(lex, lt))
                         { 
                             lex = GetTemplateArguments(lex, nullptr, sym, &lst);
+                        }
+                        else
+                        {
+                            errorsym (ERR_NEED_TEMPLATE_ARGUMENTS, sym);
                         }
                     }
                     else if (strsym && strsym->tp->type == bt_templateselector)

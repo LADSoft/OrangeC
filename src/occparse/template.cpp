@@ -827,9 +827,7 @@ TEMPLATEPARAMLIST** expandArgs(TEMPLATEPARAMLIST** lst, LEXEME* start, SYMBOL* f
             LEXEME* lex = SetAlternateLex(start);
             TYPE* tp;
             packIndex = i;
-            noSpecializationError++;
             lex = get_type_id(lex, &tp, funcsp, sc_parameter, false, true, false);
-            noSpecializationError--;
             SetAlternateLex(nullptr);
             if (tp)
             {
@@ -1040,10 +1038,8 @@ bool constructedInt(LEXEME* lex, SYMBOL* funcsp)
     }
     if (cont)
     {
-        noSpecializationError++;
         lex = getBasicType(lex, funcsp, &tp, nullptr, false, funcsp ? sc_auto : sc_global, &linkage, &linkage2, &linkage3,
                            ac_public, &notype, &defd, nullptr, nullptr, false, false, false);
-        noSpecializationError--;
         lex = getQualifiers(lex, &tp, &linkage, &linkage2, &linkage3, nullptr);
         if (isint(tp))
         {
@@ -1086,9 +1082,7 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
                 (!orig && startOfType(lex, true) && !constructedInt(lex, funcsp)))&& !MATCHKW(lex, kw_sizeof)))
             {
                 LEXEME* start = lex;
-                noSpecializationError++;
                 lex = get_type_id(lex, &tp, funcsp, sc_parameter, false, true, false);
-                noSpecializationError--;
                 if (!tp)
                     tp = &stdint;
                 else if (tp && !templateNestingCount)

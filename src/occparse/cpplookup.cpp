@@ -308,7 +308,7 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
                 }
                 else if (MATCHKW(lex, classsel))
                 {
-                    errorstr(ERR_NEED_TEMPLATE_ARGUMENTS, buf);
+                    SpecializationError(buf);
                 }
             }
             last = &(*last)->next;
@@ -518,8 +518,7 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
                         else if (MATCHKW(lex, classsel))
                         {
                             currentsp = sp;
-                            if (!istypedef && !noSpecializationError)  // && !instantiatingTemplate)
-                                errorsym(ERR_NEED_TEMPLATE_ARGUMENTS, sp);
+                            SpecializationError(sp);
                         }
                         if (!MATCHKW(lex, classsel))
                             break;
@@ -545,8 +544,7 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
                     else if (MATCHKW(lex, classsel))
                     {
                         currentsp = sp;
-                        if (!istypedef && !noSpecializationError)  // && !instantiatingTemplate)
-                            errorsym(ERR_NEED_TEMPLATE_ARGUMENTS, sp);
+                        SpecializationError(sp);
                     }
                     if (!MATCHKW(lex, classsel))
                         break;
@@ -639,7 +637,7 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
                                     }
                                     if (!sp)
                                     {
-                                        if (templateNestingCount || noSpecializationError)
+                                        if (templateNestingCount)// || noSpecializationError)
                                         {
                                             sp = sp1;
                                         }
@@ -1206,9 +1204,7 @@ LEXEME* getIdName(LEXEME* lex, SYMBOL* funcsp, char* buf, int* ov, TYPE** castTy
         else if (ISID(lex) || startOfType(lex, false))  // potential cast operator
         {
             TYPE* tp = nullptr;
-            noSpecializationError++;
             lex = get_type_id(lex, &tp, funcsp, sc_cast, true, true, false);
-            noSpecializationError--;
             if (!tp)
             {
                 errorstr(ERR_INVALID_AS_OPERATOR, "");

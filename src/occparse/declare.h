@@ -33,7 +33,6 @@ extern char deferralBuf[100000];
 extern SYMBOL* enumSyms;
 extern STRUCTSYM* structSyms;
 extern int expandingParams;
-extern int noSpecializationError;
 extern Optimizer::LIST* deferred;
 extern int structLevel;
 extern Optimizer::LIST* openStructs;

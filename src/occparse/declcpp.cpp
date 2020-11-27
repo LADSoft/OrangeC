@@ -67,6 +67,22 @@ attributes basisAttribs;
 Optimizer::LIST* nameSpaceList;
 char anonymousNameSpaceName[512];
 
+static bool MustSpecialize(const char *name)
+{
+    auto ss = getStructureDeclaration();
+    return !ss || strcmp(ss->name, name) != 0;
+}
+void SpecializationError(char* str)
+{
+    if (MustSpecialize(str))
+        errorstr(ERR_NEED_TEMPLATE_ARGUMENTS, str);
+}
+
+void SpecializationError(SYMBOL* sym)
+{
+    if (MustSpecialize(sym->name))
+        errorsym(ERR_NEED_TEMPLATE_ARGUMENTS, sym);
+}
 static int dumpVTabEntries(int count, THUNK* thunks, SYMBOL* sym, VTABENTRY* entry)
 {
 #ifndef PARSER_ONLY
@@ -1253,8 +1269,7 @@ LEXEME* baseClasses(LEXEME* lex, SYMBOL* funcsp, SYMBOL* declsym, enum e_ac defa
                     }
                     else
                     {
-                        if (!noSpecializationError && !instantiatingTemplate)
-                            errorsym(ERR_NEED_TEMPLATE_ARGUMENTS, bcsym);
+                        SpecializationError(bcsym);
                     }
                 }
                 else
@@ -2340,7 +2355,7 @@ MEMBERINITIALIZERS* expandPackedBaseClasses(SYMBOL* cls, SYMBOL* funcsp, MEMBERI
         else
         {
             lex = SetAlternateLex(nullptr);
-            error(ERR_NEED_TEMPLATE_ARGUMENTS);
+            SpecializationError((char *)nullptr);
         }
     }
     return *init;
@@ -3264,7 +3279,7 @@ LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc st
                         }
                         else
                         {
-                            errorsym (ERR_NEED_TEMPLATE_ARGUMENTS, sym);
+                            SpecializationError(sym);
                         }
                     }
                     else if (strsym && strsym->tp->type == bt_templateselector)

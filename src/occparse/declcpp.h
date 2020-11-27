@@ -38,6 +38,8 @@ typedef struct
     SYMBOL* name;
 } THUNK;
 
+void SpecializationError(char* str);
+void SpecializationError(SYMBOL* sym);
 void dumpVTab(SYMBOL* sym);
 void internalClassRefCount(SYMBOL* base, SYMBOL* derived, int* vcount, int* ccount, bool isVirtual);
 int classRefCount(SYMBOL* base, SYMBOL* derived);

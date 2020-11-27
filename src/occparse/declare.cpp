@@ -66,7 +66,6 @@ char deferralBuf[100000];
 SYMBOL* enumSyms;
 STRUCTSYM* structSyms;
 int expandingParams;
-int noSpecializationError;
 Optimizer::LIST* deferred;
 int structLevel;
 Optimizer::LIST* openStructs;
@@ -89,7 +88,6 @@ void declare_init(void)
     structSyms = nullptr;
     nameSpaceList = nullptr;
     anonymousNameSpaceName[0] = 0;
-    noSpecializationError = 0;
     deferred = nullptr;
     structLevel = 0;
     inDefaultParam = 0;
@@ -1071,8 +1069,6 @@ LEXEME* innerDeclStruct(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, bool inTemplate
             if (!MATCHKW(lex, begin))
                 errorint(ERR_NEEDY, '{');
         }
-    if (inTemplate && templateNestingCount == 1)
-        noSpecializationError++;
     if (KW(lex) == begin)
     {
         sp->sb->isfinal = isfinal;
@@ -1082,7 +1078,6 @@ LEXEME* innerDeclStruct(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, bool inTemplate
     if (inTemplate && templateNestingCount == 1)
     {
         inTemplateBody--;
-        noSpecializationError--;
         TemplateGetDeferred(sp);
     }
     sp->sb->declaring = false;
@@ -2672,8 +2667,7 @@ founddecltype:
                     }
                     else
                     {
-                        if (!noSpecializationError && !instantiatingTemplate)
-                            errorsym(ERR_NEED_TEMPLATE_ARGUMENTS, sp);
+                        SpecializationError(sp);
                         tn = sp->tp;
                     }
                 }
@@ -2778,8 +2772,7 @@ founddecltype:
                                 }
                                 else
                                 {
-                                    if (!noSpecializationError && !instantiatingTemplate)
-                                        errorsym(ERR_NEED_TEMPLATE_ARGUMENTS, sp);
+                                    SpecializationError(sp);
                                     tn = sp->tp;
                                 }
                             }
@@ -2887,14 +2880,13 @@ founddecltype:
                             }
                             else
                             {
-                                if (!noSpecializationError && !instantiatingTemplate &&
-                                    (!sp->sb->mainsym || (sp->sb->mainsym != strSym && sp->sb->mainsym != ssp)))
+                                if (!sp->sb->mainsym || (sp->sb->mainsym != strSym && sp->sb->mainsym != ssp))
                                 {
                                     if (instantiatingMemberFuncClass &&
                                         instantiatingMemberFuncClass->sb->parentClass == sp->sb->parentClass)
                                         sp = instantiatingMemberFuncClass;
                                     else
-                                        errorsym(ERR_NEED_TEMPLATE_ARGUMENTS, sp);
+                                        SpecializationError(sp);
                                 }
                             }
                             if (sp)
@@ -3520,8 +3512,6 @@ LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp,
 
     basisAttribs = {0};
     ParseAttributeSpecifiers(&lex, funcsp, true);
-    if (inTemplate && templateNestingCount == 1)
-        noSpecializationError++;
     if (startOfType(lex, true))
     {
         sp->sb->hasproto = true;
@@ -3587,8 +3577,6 @@ LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp,
                             // will do initialization later...
                         }
                         localNameSpace->valueData->syms = locals;
-                        if (inTemplate && templateNestingCount == 1)
-                            noSpecializationError--;
                         lex = prevsym(placeholder);
                         return lex;
                     }
@@ -4077,8 +4065,6 @@ LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp,
     ParseAttributeSpecifiers(&lex, funcsp, true);
     if (voiderror)
         error(ERR_VOID_ONLY_PARAMETER);
-    if (inTemplate && templateNestingCount == 1)
-        noSpecializationError--;
     return lex;
 }
 LEXEME* getExceptionSpecifiers(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_sc storage_class)
@@ -4291,8 +4277,6 @@ static LEXEME* getAfterType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** sp,
                             {
                                 TYPE* tpx = nullptr;
                                 HASHTABLE* locals = localNameSpace->valueData->syms;
-                                if (inTemplate && templateNestingCount == 1)
-                                    noSpecializationError++;
                                 localNameSpace->valueData->syms = basetype(*tp)->syms;
                                 funcLevel++;
                                 lex = getsym();
@@ -4341,8 +4325,6 @@ static LEXEME* getAfterType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** sp,
                                 }
                                 localNameSpace->valueData->syms = locals;
                                 funcLevel--;
-                                if (inTemplate && templateNestingCount == 1)
-                                    noSpecializationError--;
                             }
                         }
                     }
@@ -5844,10 +5826,6 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                                 sp->sb->memberInitializers = GetMemberInitializers(&lex, funcsp, sp);
                             }
                         }
-                        if (inTemplate && templateNestingCount == 1)
-                        {
-                            noSpecializationError++;
-                        }
                         if (storage_class == sc_absolute)
                             sp->sb->value.i = address;
                         if ((!Optimizer::cparams.prm_cplusplus || !getStructureDeclaration()) && !istype(sp) &&
@@ -6451,7 +6429,6 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                         if (inTemplate && templateNestingCount == 1)
                         {
                             inTemplateBody--;
-                            noSpecializationError--;
                         }
                     }
                     if (sp)
@@ -6518,7 +6495,6 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                     if (inTemplate && templateNestingCount == 1)
                     {
                         inTemplateBody++;
-                        noSpecializationError++;
                     }
 
                     if (lex)
@@ -6836,7 +6812,6 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                     if (inTemplate && templateNestingCount == 1)
                     {
                         inTemplateBody--;
-                        noSpecializationError--;
                         TemplateGetDeferred(sp);
                     }
                     if (!strcmp(sp->name, "main") && !sp->sb->parentClass)

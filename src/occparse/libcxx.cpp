@@ -574,7 +574,24 @@ static bool is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** t
         {
             TYPE* tpf = tp2;
             if (isref(tp2))
+            {
                 tp2 = basetype(tp2)->btp;
+                if (funcparams.arguments->next && !funcparams.arguments->next->next)
+                {
+                    TYPE* tpy = funcparams.arguments->next->tp;
+                    if (isref(tpy))
+                    {
+                        tpy = basetype(tpy)->btp;
+                        if (isconst(tpy) && !isconst(tp2) || isvolatile(tpy) && !isvolatile(tp2))
+                        {
+                            rv = false;
+                            *exp = intNode(en_c_i, rv);
+                            *tp = &stdint;
+                            return true;
+                        }
+                    }
+                }
+            }
             if (isfunction(tp2))
             {
                 if (funcparams.arguments->next && !funcparams.arguments->next->next)

@@ -4318,14 +4318,8 @@ void CollapseReferences(TYPE* tp_in)
         tp1 = basetype(tp1);
         while (basetype(tp1->btp) && isref(tp1->btp))
         {
-            if (tp1->btp == basetype(tp1->btp))
-            {
-                tp1->btp = tp1->btp->btp;
-            }
-            else
-            {
-                tp1 = tp1->btp;
-            }
+            // yes we intend to get rid of top-level CV qualifiers, reference collapsing demands it.
+            tp1->btp = tp1->btp->btp;
         }
         UpdateRootTypes(tp_in);
     }

@@ -1915,7 +1915,7 @@ static EXPRESSION* ConvertInitToRef(EXPRESSION* exp, TYPE* tp, TYPE* boundTP, en
             if (!isarithmeticconst(exp) && exp->type != en_thisref && exp->type != en_func &&
                 basetype(basetype(tp)->btp)->type != bt_memberptr && !boundTP->rref)
                 errortype(ERR_REF_INIT_TYPE_CANNOT_BE_BOUND, tp, boundTP);
-            if (sc != sc_parameter)
+            if (sc != sc_parameter && !boundTP->rref && !boundTP->lref)
                 exp = createTemporary(tp, exp);
         }
         while (castvalue(exp))

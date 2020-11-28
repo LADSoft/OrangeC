@@ -27,6 +27,7 @@
 
 #include <ctime>
 #include <cstdlib>
+#include <cstring>
 #include "ObjIndexManager.h"
 
 class ObjSourceFile : public ObjWrapper

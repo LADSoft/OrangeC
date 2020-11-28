@@ -317,7 +317,7 @@ FILE* Utils::TempName(std::string& name)
     if (tempFile[0] == '\\')
     {
         // fix for buggy mingw on windows
-        char *p = getenv("TMP");
+        const char *p = getenv("TMP");
         if (!p)
             p = "";
         StrCpy(tempFile, p);

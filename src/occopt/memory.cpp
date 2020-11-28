@@ -153,7 +153,7 @@ bool GetGlobalFlag(void) { return globalFlag; }
 char* litlate(const char* name)
 {
     int l;
-    char* rv = (char*)nzAlloc((l = strlen(name)) + 1);
+    char* rv = nzAllocate<char>((l = strlen(name)) + 1);
     strcpy(rv, name);
     return rv;
 }
@@ -164,7 +164,7 @@ LCHAR* wlitlate(const LCHAR* name)
     LCHAR* rv;
     while (*p)
         p++, count++;
-    rv = (LCHAR*)nzAlloc((count + 1) * sizeof(LCHAR));
+    rv = nzAllocate<LCHAR>(count + 1);
     p = name;
     count = 0;
     while (*p)

@@ -149,8 +149,8 @@ const char* AnonymousTypeName(void)
 }
 SYMBOL* SymAlloc()
 {
-    SYMBOL* sp = (SYMBOL*)Alloc(sizeof(SYMBOL));
-    sp->sb = (sym::_symbody*)Alloc(sizeof(sym::_symbody));
+    SYMBOL* sp = Allocate<SYMBOL>();
+    sp->sb = Allocate<sym::_symbody>();
     return sp;
 }
 SYMBOL* makeID(enum e_sc storage_class, TYPE* tp, SYMBOL* spi, const char* name)
@@ -237,7 +237,7 @@ void InsertSymbol(SYMBOL* sp, enum e_sc storage_class, enum e_lk linkage, bool a
                 funcs = (SYMBOL*)(*hr)->p;
             if (!funcs)
             {
-                TYPE* tp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
+                TYPE* tp = Allocate<TYPE>();
                 tp->type = bt_aggregate;
                 tp->rootType = tp;
                 funcs = makeID(sc_overloads, tp, 0, name);
@@ -276,7 +276,7 @@ void InsertSymbol(SYMBOL* sp, enum e_sc storage_class, enum e_lk linkage, bool a
                     if (!*hr1)
                     {
                         sp->sb->overlayIndex = n;
-                        *hr1 = (SYMLIST*)Alloc(sizeof(SYMLIST));
+                        *hr1 = Allocate<SYMLIST>();
                         (*hr1)->p = (SYMBOL*)sp;
                     }
                 }
@@ -852,7 +852,7 @@ static void baseFinishDeclareStruct(SYMBOL* funcsp)
     SYMBOL** syms;
     while (lst)
         n++, lst = lst->next;
-    syms = (SYMBOL**)(SYMBOL**)Alloc(sizeof(SYMBOL*) * n);
+    syms = Allocate<SYMBOL*>(n);
     n = 0;
     lst = openStructs;
     openStructs = nullptr;
@@ -916,7 +916,7 @@ static LEXEME* structbody(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_ac cur
     (void)funcsp;
     if (Optimizer::cparams.prm_cplusplus)
     {
-        Optimizer::LIST* lst = (Optimizer::LIST*)Alloc(sizeof(Optimizer::LIST));
+        Optimizer::LIST* lst = Allocate<Optimizer::LIST>();
         lst->next = openStructs;
         openStructs = lst;
         lst->data = sp;
@@ -1090,7 +1090,7 @@ static unsigned char* ParseUUID(LEXEME** lex)
     if (MATCHKW(*lex, kw__uuid))
     {
         unsigned vals[16];
-        unsigned char* rv = (unsigned char*)Alloc(16);
+        unsigned char* rv = Allocate<unsigned char>(16);
         *lex = getsym();
         needkw(lex, openpa);
         if ((*lex)->type == l_astr)
@@ -1233,7 +1233,7 @@ static LEXEME* declstruct(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, bool inTemplat
             sp->name = litlate(newName);
         sp->sb->anonymous = anonymous;
         sp->sb->storage_class = sc_type;
-        sp->tp = (TYPE*)Alloc(sizeof(TYPE));
+        sp->tp = Allocate<TYPE>();
         sp->tp->type = type;
         sp->tp->rootType = sp->tp;
         sp->tp->sp = sp;
@@ -1414,7 +1414,7 @@ static LEXEME* enumbody(LEXEME* lex, SYMBOL* funcsp, SYMBOL* spi, enum e_sc stor
                 TYPE* tp;
                 if (Optimizer::cparams.prm_cplusplus)
                 {
-                    tp = (TYPE*)Alloc(sizeof(TYPE));
+                    tp = Allocate<TYPE>();
                     if (fixedType)
                         *tp = *fixedType;
                     else
@@ -1427,7 +1427,7 @@ static LEXEME* enumbody(LEXEME* lex, SYMBOL* funcsp, SYMBOL* spi, enum e_sc stor
                 }
                 else
                 {
-                    tp = (TYPE*)Alloc(sizeof(TYPE));
+                    tp = Allocate<TYPE>();
                     tp->type = bt_int;
                     tp->size = getSize(bt_int);
                     tp->rootType = tp;
@@ -1640,7 +1640,7 @@ static LEXEME* declenum(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, enum e_sc storag
         sp->sb->access = access;
         sp->sb->anonymous = anonymous;
         sp->sb->storage_class = sc_type;
-        sp->tp = (TYPE*)Alloc(sizeof(TYPE));
+        sp->tp = Allocate<TYPE>();
         sp->tp->type = bt_enum;
         sp->tp->rootType = sp->tp;
         if (fixedType)
@@ -1650,7 +1650,7 @@ static LEXEME* declenum(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, enum e_sc storag
         }
         else
         {
-            sp->tp->btp = (TYPE*)Alloc(sizeof(TYPE));
+            sp->tp->btp = Allocate<TYPE>();
             sp->tp->btp->type = bt_int;
             sp->tp->btp->size = getSize(bt_int);
             sp->tp->btp->rootType = sp->tp->btp;
@@ -1884,7 +1884,7 @@ static LEXEME* getPointerQualifiers(LEXEME* lex, TYPE** tp, bool allowstatic)
             lex = getsym();
             continue;
         }
-        tpn = (TYPE*)Alloc(sizeof(TYPE));
+        tpn = Allocate<TYPE>();
         if (*tp)
             tpn->size = (*tp)->size;
         switch (KW(lex))
@@ -2111,7 +2111,7 @@ static LEXEME* getLinkageQualifiers(LEXEME* lex, enum e_lk* linkage, enum e_lk* 
                     if (lex->type == l_astr)
                     {
                         int i, len = ((Optimizer::SLCHAR*)lex->value.s.w)->count;
-                        importFile = (char*)Alloc(len + 1);
+                        importFile = Allocate<char>(len + 1);
                         for (i = 0; i < len; i++)
                             importFile[i] = (char)((Optimizer::SLCHAR*)lex->value.s.w)->str[i];
                         lex = getsym();
@@ -2558,7 +2558,7 @@ LEXEME* getBasicType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** strSym_out
                     lex = get_type_id(lex, &tn, funcsp, sc_cast, false, true, false);
                     if (tn)
                     {
-                        TYPE *tq = (TYPE*)Alloc(sizeof(TYPE)), *tz;
+                        TYPE *tq = Allocate<TYPE>(), *tz;
                         tq->type = bt_atomic;
                         tq->btp = quals;
                         tq->rootType = tq;
@@ -2656,7 +2656,7 @@ founddecltype:
                         else
                         {
                             sp = clonesym(sp);
-                            TYPE *tp1 = (TYPE*)Alloc(sizeof(TYPE));
+                            TYPE *tp1 = Allocate<TYPE>();
                             *tp1 = *sp->tp;
                             sp->tp = tp1;
                             sp->tp->sp = sp;
@@ -2727,21 +2727,21 @@ founddecltype:
                                     {
                                         TEMPLATEPARAMLIST *told, **tnew;
                                         sp1 = clonesym(sp);
-                                        sp1->tp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
+                                        sp1->tp = Allocate<TYPE>();
                                         *sp1->tp = *sp->tp;
                                         sp1->tp->rootType = sp1->tp;
                                         sp1->tp->sp = sp1;
                                         sp1->tp->templateParam =
-                                            (TEMPLATEPARAMLIST*)(TEMPLATEPARAMLIST*)Alloc(sizeof(TEMPLATEPARAMLIST));
+                                            Allocate<TEMPLATEPARAMLIST>();
                                         sp1->tp->templateParam->next = sp->tp->templateParam->next;
-                                        sp1->tp->templateParam->p = (TEMPLATEPARAM*)(TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
+                                        sp1->tp->templateParam->p = Allocate<TEMPLATEPARAM>();
                                         *sp1->tp->templateParam->p = *sp->tp->templateParam->p;
                                         tnew = &sp1->tp->templateParam->p->byTemplate.args;
                                         told = *tnew;
                                         sp1->tp->templateParam->p->byTemplate.orig = sp->tp->templateParam;
                                         while (told && lst)
                                         {
-                                            *tnew = (TEMPLATEPARAMLIST*)(TEMPLATEPARAMLIST*)Alloc(sizeof(TEMPLATEPARAMLIST));
+                                            *tnew = Allocate<TEMPLATEPARAMLIST>();
                                             if (told->p->type == kw_new)
                                             {
                                                 (*tnew)->p = told->p;
@@ -3002,7 +3002,7 @@ founddecltype:
                 {
                     error(ERR_TYPE_NAME_EXPECTED);
                 }
-                tn = (TYPE*)Alloc(sizeof(TYPE));
+                tn = Allocate<TYPE>();
                 tn->type = bt_any;
                 tn->rootType = tn;
                 tn->size = getSize(bt_int);
@@ -3013,7 +3013,7 @@ founddecltype:
             {
                 if (typeName || ISID(lex))
                 {
-                    tn = (TYPE*)Alloc(sizeof(TYPE));
+                    tn = Allocate<TYPE>();
                     tn->type = bt_any;
                     tn->rootType = tn;
                     tn->size = getSize(bt_int);
@@ -3084,7 +3084,7 @@ exit:
         error(ERR_TOO_MANY_TYPE_SPECIFIERS);
     if (!tn)
     {
-        tn = (TYPE*)Alloc(sizeof(TYPE));
+        tn = Allocate<TYPE>();
         tn->type = type;
         tn->rootType = tn;
         tn->size = getSize(type);
@@ -3192,7 +3192,7 @@ static LEXEME* getArrayType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, enum e_sc st
                 error(ERR_QUAL_LAST_ARRAY_ELEMENT);
             lex = getArrayType(lex, funcsp, tp, storage_class, vla, quals, false, msil);
         }
-        tpp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
+        tpp = Allocate<TYPE>();
         tpp->type = bt_pointer;
         tpp->btp = *tp;
         tpp->btp->msil = msil;  // tag the base type as managed, e.g. so we can't take address of it
@@ -3420,7 +3420,7 @@ LEXEME* getDeferredData(LEXEME* lex, LEXEME** savePos, bool braces)
             }
             else if (kw == end && !--paren)
             {
-                *cur = (LEXEME*)Alloc(sizeof(LEXEME));
+                *cur = Allocate<LEXEME>();
                 **cur = *lex;
                 (*cur)->prev = last;
                 last = *cur;
@@ -3467,7 +3467,7 @@ LEXEME* getDeferredData(LEXEME* lex, LEXEME** savePos, bool braces)
                 ltgt--;
             }
         }
-        *cur = (LEXEME*)Alloc(sizeof(LEXEME));
+        *cur = Allocate<LEXEME>();
         if (lex->type == l_id)
             lex->value.s.a = litlate(lex->value.s.a);
         **cur = *lex;
@@ -3501,7 +3501,7 @@ LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp,
     lex = getsym();
     if (*tp == nullptr)
         *tp = &stdint;
-    tp1 = (TYPE*)Alloc(sizeof(TYPE));
+    tp1 = Allocate<TYPE>();
     tp1->type = bt_func;
     tp1->size = getSize(bt_pointer);
     tp1->btp = *tp;
@@ -3532,7 +3532,7 @@ LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp,
                 spi = makeID(sc_parameter, tp1, nullptr, NewUnnamedID());
                 spi->sb->anonymous = true;
                 SetLinkerNames(spi, lk_none);
-                spi->tp = (TYPE*)Alloc(sizeof(TYPE));
+                spi->tp = Allocate<TYPE>();
                 spi->tp->type = bt_ellipse;
                 spi->tp->rootType = spi->tp;
                 insert(spi, (*tp)->syms);
@@ -3619,10 +3619,10 @@ LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp,
                     {
                         if (tp2->templateParam && tp2->templateParam->p->packed)
                         {
-                            TYPE* newtp1 = (TYPE*)Alloc(sizeof(TYPE));
+                            TYPE* newtp1 = Allocate<TYPE>();
                             TEMPLATEPARAMLIST* templateParams = tp2->templateParam->p->byPack.pack;
-                            TEMPLATEPARAMLIST* tplnew = (TEMPLATEPARAMLIST*)Alloc(sizeof(TEMPLATEPARAMLIST));
-                            TEMPLATEPARAM* tpnew = (TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
+                            TEMPLATEPARAMLIST* tplnew = Allocate<TEMPLATEPARAMLIST>();
+                            TEMPLATEPARAM* tpnew = Allocate<TEMPLATEPARAM>();
                             TEMPLATEPARAMLIST** newPack;
                             bool first = true;
                             *tplnew = *tp2->templateParam;
@@ -3642,7 +3642,7 @@ LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp,
 
                                     while (tpx)
                                     {
-                                        *last = (TYPE*)Alloc(sizeof(TYPE));
+                                        *last = Allocate<TYPE>();
                                         if (tpx->type == bt_templateparam)
                                         {
                                             tpx = templateParams->p->byClass.val;
@@ -3665,9 +3665,9 @@ LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp,
                                     {
                                         clone->tp->templateParam = tp1->templateParam;
                                     }
-                                    *newPack = (TEMPLATEPARAMLIST*)Alloc(sizeof(TEMPLATEPARAMLIST));
+                                    *newPack = Allocate<TEMPLATEPARAMLIST>();
                                     **newPack = *templateParams;
-                                    (*newPack)->p = (TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
+                                    (*newPack)->p = Allocate<TEMPLATEPARAM>();
                                     *(*newPack)->p = *templateParams->p;
                                     (*newPack)->p->packsym = clone;
                                     newPack = &(*newPack)->next;
@@ -3681,7 +3681,7 @@ LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp,
                             else
                             {
                                 SYMBOL* clone = clonesym(spi);
-                                TYPE* tp2 = (TYPE*)Alloc(sizeof(TYPE));
+                                TYPE* tp2 = Allocate<TYPE>();
                                 *tp2 = *clone->tp;
                                 clone->tp = tp2;
                                 clone->tp->templateParam = tp1->templateParam;
@@ -3699,7 +3699,7 @@ LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp,
                 {
                     if (tp1 && isfunction(tp1))
                     {
-                        TYPE* tp2 = (TYPE*)Alloc(sizeof(TYPE));
+                        TYPE* tp2 = Allocate<TYPE>();
                         tp2->type = bt_pointer;
                         tp2->size = getSize(bt_pointer);
                         tp2->btp = tp1;
@@ -3760,7 +3760,7 @@ LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp,
                             error(ERR_CANNOT_USE_ARRAY_OF_STRUCTURES_AS_FUNC_ARG);
                         if (tpb->vla)
                         {
-                            TYPE* tpx = (TYPE*)Alloc(sizeof(TYPE));
+                            TYPE* tpx = Allocate<TYPE>();
                             TYPE* tpn = tpb;
                             tpx->type = bt_pointer;
                             tpx->btp = tpb;
@@ -3842,7 +3842,7 @@ LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp,
                 spi = makeID(sc_parameter, tp1, nullptr, NewUnnamedID());
                 spi->sb->anonymous = true;
                 SetLinkerNames(spi, lk_none);
-                spi->tp = (TYPE*)Alloc(sizeof(TYPE));
+                spi->tp = Allocate<TYPE>();
                 spi->tp->type = bt_ellipse;
                 spi->tp->rootType = spi->tp;
                 lex = getsym();
@@ -3905,7 +3905,7 @@ LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp,
                         SetLinkerNames(spi, lk_none);
                         if (tpx && isfunction(tpx))
                         {
-                            TYPE* tp2 = (TYPE*)Alloc(sizeof(TYPE));
+                            TYPE* tp2 = Allocate<TYPE>();
                             tp2->type = bt_pointer;
                             tp2->size = getSize(bt_pointer);
                             tp2->btp = tpx;
@@ -3918,7 +3918,7 @@ LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp,
                         {
                             if (tpb->vla)
                             {
-                                TYPE* tpx = (TYPE*)Alloc(sizeof(TYPE));
+                                TYPE* tpx = Allocate<TYPE>();
                                 TYPE* tpn = tpb;
                                 tpx->type = bt_pointer;
                                 tpx->btp = tpb;
@@ -3970,7 +3970,7 @@ LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp,
                 {
                     if (Optimizer::cparams.prm_c99)
                         errorsym(ERR_MISSING_TYPE_FOR_PARAMETER, spi);
-                    spi->tp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
+                    spi->tp = Allocate<TYPE>();
                     spi->tp->type = bt_int;
                     spi->tp->size = getSize(bt_int);
                     spi->tp->rootType = spi->tp;
@@ -3988,7 +3988,7 @@ LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp,
         spi = makeID(sc_parameter, tp1, nullptr, NewUnnamedID());
         spi->sb->anonymous = true;
         SetLinkerNames(spi, lk_none);
-        spi->tp = (TYPE*)Alloc(sizeof(TYPE));
+        spi->tp = Allocate<TYPE>();
         spi->tp->type = bt_ellipse;
         spi->tp->rootType = spi->tp;
         insert(spi, (*tp)->syms);
@@ -4010,7 +4010,7 @@ LEXEME* getFunctionParams(LEXEME* lex, SYMBOL* funcsp, SYMBOL** spin, TYPE** tp,
             spi->sb->anonymous = true;
             spi->sb->attribs.inheritable.structAlign = getAlign(sc_parameter, &stdpointer);
             SetLinkerNames(spi, lk_none);
-            spi->tp = (TYPE*)Alloc(sizeof(TYPE));
+            spi->tp = Allocate<TYPE>();
             spi->tp->type = bt_void;
             spi->tp->rootType = spi->tp;
             insert(spi, (*tp)->syms);
@@ -4082,13 +4082,13 @@ LEXEME* getExceptionSpecifiers(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_s
                 {
                     sp->sb->xcMode = xc_none;
                     if (!sp->sb->xc)
-                        sp->sb->xc = (xcept*)Alloc(sizeof(struct xcept));
+                        sp->sb->xc = Allocate<xcept>();
                 }
                 else
                 {
                     sp->sb->xcMode = xc_dynamic;
                     if (!sp->sb->xc)
-                        sp->sb->xc = (xcept*)Alloc(sizeof(struct xcept));
+                        sp->sb->xc = Allocate<xcept>();
                     lex = backupsym();
                     do
                     {
@@ -4104,7 +4104,7 @@ LEXEME* getExceptionSpecifiers(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_s
                             else
                             {
                                 // this is reverse order but who cares?
-                                Optimizer::LIST* p = (Optimizer::LIST*)Alloc(sizeof(Optimizer::LIST));
+                                Optimizer::LIST* p = Allocate<Optimizer::LIST>();
                                 if (tp->type == bt_templateparam && tp->templateParam->p->packed)
                                 {
                                     if (!MATCHKW(lex, ellipse))
@@ -4142,7 +4142,7 @@ LEXEME* getExceptionSpecifiers(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_s
             {
                 sp->sb->xcMode = xc_none;
                 if (!sp->sb->xc)
-                    sp->sb->xc = (xcept*)Alloc(sizeof(struct xcept));
+                    sp->sb->xc = Allocate<xcept>();
             }
             break;
         default:
@@ -4233,7 +4233,7 @@ static LEXEME* getAfterType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** sp,
                                 error(ERR_TOO_MANY_QUALIFIERS);
                             if (foundVolatile)
                             {
-                                tp1 = (TYPE*)Alloc(sizeof(TYPE));
+                                tp1 = Allocate<TYPE>();
                                 tp1->size = (*tp)->size;
                                 tp1->type = bt_volatile;
                                 tp1->btp = *tp;
@@ -4242,7 +4242,7 @@ static LEXEME* getAfterType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** sp,
                             }
                             if (foundConst)
                             {
-                                tp1 = (TYPE*)Alloc(sizeof(TYPE));
+                                tp1 = Allocate<TYPE>();
                                 tp1->size = (*tp)->size;
                                 tp1->type = bt_const;
                                 tp1->btp = *tp;
@@ -4251,7 +4251,7 @@ static LEXEME* getAfterType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** sp,
                             }
                             if (foundand)
                             {
-                                tp1 = (TYPE*)Alloc(sizeof(TYPE));
+                                tp1 = Allocate<TYPE>();
                                 tp1->size = (*tp)->size;
                                 tp1->type = bt_lrqual;
                                 tp1->btp = *tp;
@@ -4260,7 +4260,7 @@ static LEXEME* getAfterType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** sp,
                             }
                             else if (foundland)
                             {
-                                tp1 = (TYPE*)Alloc(sizeof(TYPE));
+                                tp1 = Allocate<TYPE>();
                                 tp1->size = (*tp)->size;
                                 tp1->type = bt_rrqual;
                                 tp1->btp = *tp;
@@ -4292,14 +4292,14 @@ static LEXEME* getAfterType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** sp,
                                     if (isarray(tpx))
                                     {
                                         TYPE* tpn = nullptr;
-                                        tpn = (TYPE*)Alloc(sizeof(TYPE));
+                                        tpn = Allocate<TYPE>();
                                         tpn->type = bt_pointer;
                                         tpn->size = getSize(bt_pointer);
                                         tpn->btp = basetype(tpx)->btp;
                                         tpn->rootType = tpn;
                                         if (isconst(tpx))
                                         {
-                                            TYPE* tpq = (TYPE*)Alloc(sizeof(TYPE));
+                                            TYPE* tpq = Allocate<TYPE>();
                                             tpq->size = tpn->size;
                                             tpq->type = bt_const;
                                             tpq->btp = tpn;
@@ -4308,7 +4308,7 @@ static LEXEME* getAfterType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** sp,
                                         }
                                         if (isvolatile(tpx))
                                         {
-                                            TYPE* tpq = (TYPE*)Alloc(sizeof(TYPE));
+                                            TYPE* tpq = Allocate<TYPE>();
                                             tpq->size = tpn->size;
                                             tpq->type = bt_volatile;
                                             tpq->btp = tpn;
@@ -4380,7 +4380,7 @@ static LEXEME* getAfterType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** sp,
                     {
                         int n = (*tp)->size * Optimizer::chosenAssembler->arch->bits_per_mau;
                         TYPE **tp1 = tp, *tpb = basetype(*tp1);
-                        *tp1 = (TYPE*)Alloc(sizeof(TYPE));
+                        *tp1 = Allocate<TYPE>();
                         **tp1 = *tpb;
                         (*tp1)->bits = exp->v.i;
                         (*tp1)->hasbits = true;
@@ -4408,13 +4408,13 @@ static LEXEME* getAfterType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** sp,
                 }
                 else
                 {
-                    TEMPLATEPARAM* templateParam = (TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
+                    TEMPLATEPARAM* templateParam = Allocate<TEMPLATEPARAM>();
                     templateParam->type = kw_new;
                     lex = GetTemplateArguments(lex, funcsp, *sp, &templateParam->bySpecialization.types);
                     lex = getAfterType(lex, funcsp, tp, sp, inTemplate, storage_class, consdest);
                     if (*tp && isfunction(*tp))
                     {
-                        TEMPLATEPARAMLIST* lst = (TEMPLATEPARAMLIST*)Alloc(sizeof(TEMPLATEPARAMLIST));
+                        TEMPLATEPARAMLIST* lst = Allocate<TEMPLATEPARAMLIST>();
                         lst->p = templateParam;
                         DoInstantiateTemplateFunction(*tp, sp, nullptr, nullptr, lst, true);
                         if (!(*sp)->templateParams)
@@ -4519,7 +4519,7 @@ LEXEME* getBeforeType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMB
                     inparen = true;
                     lex = getsym();
                 }
-                ptype = (TYPE*)Alloc(sizeof(TYPE));
+                ptype = Allocate<TYPE>();
                 ptype->type = bt_memberptr;
                 ptype->rootType = ptype;
                 if (strSymX->tp->type == bt_templateselector)
@@ -4642,7 +4642,7 @@ LEXEME* getBeforeType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMB
         {
             Optimizer::LIST* nlist;
 
-            nlist = (Optimizer::LIST*)Alloc(sizeof(Optimizer::LIST));
+            nlist = Allocate<Optimizer::LIST>();
             nlist->next = nameSpaceList;
             nlist->data = nsvX->valueData->name;
             nameSpaceList = nlist;
@@ -4708,7 +4708,7 @@ LEXEME* getBeforeType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMB
                     }
                     else
                     {
-                        TYPE* tp1 = (TYPE*)Alloc(sizeof(TYPE));
+                        TYPE* tp1 = Allocate<TYPE>();
                         tp1->type = bt_pointer;
                         tp1->size = getSize(bt_pointer);
                         tp1->btp = *tp;
@@ -4850,7 +4850,7 @@ LEXEME* getBeforeType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMB
                 }
                 if (xtype == bt_none)
                     xtype = bt_pointer;
-                ptype = (TYPE*)Alloc(sizeof(TYPE));
+                ptype = Allocate<TYPE>();
                 ptype->type = xtype;
                 ptype->btp = *tp;
                 ptype->rootType = ptype;
@@ -4893,7 +4893,7 @@ LEXEME* getBeforeType(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, SYMBOL** spi, SYMB
                     TYPE* tp2;
                     if (!*tp || !isref(*tp))
                     {
-                        ptype = (TYPE*)Alloc(sizeof(TYPE));
+                        ptype = Allocate<TYPE>();
                         if (MATCHKW(lex, andx))
                             ptype->type = bt_lref;
                         else
@@ -4988,7 +4988,7 @@ static EXPRESSION* vlaSetSizes(EXPRESSION*** rptr, EXPRESSION* vlanode, TYPE* bt
     if (btp->vla)
     {
         mul = vlaSetSizes(rptr, vlanode, btp->btp, sp, index, vlaindex, sou);
-        mul1 = (EXPRESSION*)Alloc(sizeof(EXPRESSION));
+        mul1 = Allocate<EXPRESSION>();
         if (!btp->esize)
             btp->esize = intNode(en_c_i, 1);
         *mul1 = *btp->esize;
@@ -5002,7 +5002,7 @@ static EXPRESSION* vlaSetSizes(EXPRESSION*** rptr, EXPRESSION* vlanode, TYPE* bt
 #    error Sizeof vla of vla
 #endif
         mul = intNode(en_c_i, btp->size);
-        mul1 = (EXPRESSION*)Alloc(sizeof(EXPRESSION));
+        mul1 = Allocate<EXPRESSION>();
         *mul1 = *mul;
     }
     store = exprNode(en_add, vlanode, intNode(en_c_i, *index));
@@ -5031,13 +5031,13 @@ static EXPRESSION* llallocateVLA(SYMBOL* sp, EXPRESSION* ep1, EXPRESSION* ep2)
         }
         if (al && fr)
         {
-            FUNCTIONCALL* epx = (FUNCTIONCALL*)(FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
-            FUNCTIONCALL* ld = (FUNCTIONCALL*)(FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
+            FUNCTIONCALL* epx = Allocate<FUNCTIONCALL>();
+            FUNCTIONCALL* ld = Allocate<FUNCTIONCALL>();
             epx->ascall = true;
             epx->fcall = varNode(en_pc, al);
             epx->sp = al;
             epx->functp = al->tp;
-            epx->arguments = (INITLIST*)(INITLIST*)Alloc(sizeof(INITLIST));
+            epx->arguments = Allocate<INITLIST>();
             epx->arguments->tp = &stdint;
             epx->arguments->exp = ep2;
             ep2 = intNode(en_func, 0);
@@ -5047,7 +5047,7 @@ static EXPRESSION* llallocateVLA(SYMBOL* sp, EXPRESSION* ep1, EXPRESSION* ep2)
             ld->fcall = varNode(en_pc, fr);
             ld->sp = fr;
             ld->functp = fr->tp;
-            ld->arguments = (INITLIST*)(INITLIST*)Alloc(sizeof(INITLIST));
+            ld->arguments = Allocate<INITLIST>();
             ld->arguments->tp = &stdpointer;
             ld->arguments->exp = ep1;
             unloader = intNode(en_func, 0);
@@ -5268,18 +5268,18 @@ void injectThisPtr(SYMBOL* sp, HASHTABLE* syms)
         TYPE *type, *tpx;
         if (*hr && ((SYMBOL*)(*hr)->p)->sb->thisPtr)
             return;
-        type = tpx = (TYPE*)Alloc(sizeof(TYPE));
+        type = tpx = Allocate<TYPE>();
         tpx->type = bt_pointer;
         tpx->size = getSize(bt_pointer);
         if (isconst(sp->tp))
         {
-            tpx = tpx->btp = (TYPE*)Alloc(sizeof(TYPE));
+            tpx = tpx->btp = Allocate<TYPE>();
             tpx->type = bt_const;
             tpx->size = basetype(sp->sb->parentClass->tp)->size;
         }
         if (isvolatile(sp->tp))
         {
-            tpx = tpx->btp = (TYPE*)Alloc(sizeof(TYPE));
+            tpx = tpx->btp = Allocate<TYPE>();
             tpx->type = bt_volatile;
             tpx->size = basetype(sp->sb->parentClass->tp)->size;
         }
@@ -5296,7 +5296,7 @@ void injectThisPtr(SYMBOL* sp, HASHTABLE* syms)
         //    }
         //    else
         {
-            SYMLIST* hr1 = (SYMLIST*)Alloc(sizeof(SYMLIST));
+            SYMLIST* hr1 = Allocate<SYMLIST>();
             hr1->p = (SYMBOL*)ths;
             hr1->next = *hr;
             *hr = hr1;
@@ -5430,7 +5430,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                     globalNameSpace = globalNameSpace->next;
 #ifdef PARSER_ONLY
                     nsData.next = sp->sb->ccNamespaceData;
-                    sp->sb->ccNamespaceData = (_ccNamespaceData*)Alloc(sizeof(struct _ccNamespaceData));
+                    sp->sb->ccNamespaceData = Allocate<_ccNamespaceData>();
                     *sp->sb->ccNamespaceData = nsData;
 #endif
                 }
@@ -5492,7 +5492,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                     {
                         // safety net
                         notype = true;
-                        tp = tp1 = (TYPE*)Alloc(sizeof(TYPE));
+                        tp = tp1 = Allocate<TYPE>();
                         tp->type = bt_int;
                         tp->size = getSize(tp->type);
                         tp->rootType = tp;
@@ -5510,7 +5510,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                             while (!MATCHKW(lex, kw_operator))
                                 lex = lex->prev;
                             notype = true;
-                            tp = tp1 = (TYPE*)Alloc(sizeof(TYPE));
+                            tp = tp1 = Allocate<TYPE>();
                             tp->type = bt_int;
                             tp->size = getSize(tp->type);
                             tp->rootType = tp;
@@ -5559,7 +5559,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                         }
                         else if (strSym->tp->type != bt_templateselector && strSym->tp->type != bt_templatedecltype)
                         {
-                            STRUCTSYM* l = (STRUCTSYM*)Alloc(sizeof(STRUCTSYM));
+                            STRUCTSYM* l = Allocate<STRUCTSYM>();
                             l->str = strSym;
                             addStructureDeclaration(l);
                         }
@@ -5663,7 +5663,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                             if (asFriend)
                             {
                                 SYMBOL* sym = nullptr;
-                                Optimizer::LIST* l = (Optimizer::LIST*)Alloc(sizeof(Optimizer::LIST));
+                                Optimizer::LIST* l = Allocate<Optimizer::LIST>();
                                 STRUCTSYM* ls = structSyms;
                                 while (ls && !ls->str)
                                     ls = ls->next;
@@ -5781,7 +5781,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                         /*
                         if (sp->sb->constexpression && !sp->sb->isDestructor && !sp->sb->isConstructor)
                         {
-                            TYPE *tpx = (TYPE *)Alloc(sizeof(TYPE));
+                            TYPE *tpx = Allocate<TYPE>();
                             tpx->type = bt_const;
                             tpx->size = basetype(tp1)->size;
                             tpx->btp = tp1;
@@ -6084,7 +6084,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                             SYMBOL* special = FindSpecialization(spi, sp->templateParams);
                             if (!special)
                             {
-                                SYMLIST* member = (SYMLIST*)Alloc(sizeof(SYMLIST));
+                                SYMLIST* member = Allocate<SYMLIST>();
                                 member->p = sp;
                                 member->next = spi->sb->specializations;
                                 spi->sb->specializations = member;
@@ -6411,7 +6411,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                             if (isfunction(sp->tp))
                             {
                                 SYMBOL* sym = nullptr;
-                                Optimizer::LIST* l = (Optimizer::LIST*)Alloc(sizeof(Optimizer::LIST));
+                                Optimizer::LIST* l = Allocate<Optimizer::LIST>();
                                 STRUCTSYM* ls = structSyms;
                                 while (ls && !ls->str)
                                     ls = ls->next;
@@ -6468,7 +6468,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                     if (sp->sb->storage_class == sc_typedef)
                     {
                         // all this is so we can have multiple typedefs referring to the same thing...
-                        TYPE* tp = (TYPE*)Alloc(sizeof(TYPE));
+                        TYPE* tp = Allocate<TYPE>();
                         tp->type = bt_typedef;
                         tp->btp = sp->tp;
                         UpdateRootTypes(tp);

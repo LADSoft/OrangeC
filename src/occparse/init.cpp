@@ -115,11 +115,11 @@ EXPRESSION *ConvertToMSILString(EXPRESSION *val)
     val->type = en_c_string;
     SYMBOL *var = LookupMsilToString();
     
-    FUNCTIONCALL *fp = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
+    FUNCTIONCALL *fp = Allocate<FUNCTIONCALL>();
     fp->functp = var->tp;
     fp->sp = var;
     fp->fcall = varNode(en_global, var);
-    fp->arguments = (INITLIST*)Alloc(sizeof(INITLIST));
+    fp->arguments = Allocate<INITLIST>();
     fp->arguments->exp = val;
     fp->arguments->tp = &std__string;
     fp->ascall = true;
@@ -405,7 +405,7 @@ void insertDynamicInitializer(SYMBOL* sym, INITIALIZER* init)
 {
     if (!ignore_global_init && !templateNestingCount)
     {
-        DYNAMIC_INITIALIZER* di = (DYNAMIC_INITIALIZER*)Alloc(sizeof(DYNAMIC_INITIALIZER));
+        DYNAMIC_INITIALIZER* di = Allocate<DYNAMIC_INITIALIZER>();
         di->sp = sym;
         di->init = init;
         if (sym->sb->attribs.inheritable.linkage3 == lk_threadlocal)
@@ -422,7 +422,7 @@ void insertDynamicInitializer(SYMBOL* sym, INITIALIZER* init)
 }
 static void insertTLSInitializer(SYMBOL* sym, INITIALIZER* init)
 {
-    DYNAMIC_INITIALIZER* di = (DYNAMIC_INITIALIZER*)Alloc(sizeof(DYNAMIC_INITIALIZER));
+    DYNAMIC_INITIALIZER* di = Allocate<DYNAMIC_INITIALIZER>();
     di->sp = sym;
     di->init = init;
     di->next = TLSInitializers;
@@ -433,7 +433,7 @@ void insertDynamicDestructor(SYMBOL* sym, INITIALIZER* init)
 {
     if (!ignore_global_init && !templateNestingCount)
     {
-        DYNAMIC_INITIALIZER* di = (DYNAMIC_INITIALIZER*)Alloc(sizeof(DYNAMIC_INITIALIZER));
+        DYNAMIC_INITIALIZER* di = Allocate<DYNAMIC_INITIALIZER>();
         di->sp = sym;
         di->init = init;
         if (sym->sb->attribs.inheritable.linkage3 == lk_threadlocal)
@@ -465,9 +465,9 @@ static void callDynamic(const char* name, int startupType, int index, STATEMENT*
         char fullName[512];
         Optimizer::my_sprintf(fullName, "%s_%d", name, index);
         SYMBOL* funcsp;
-        TYPE* tp = (TYPE*)Alloc(sizeof(TYPE));
+        TYPE* tp = Allocate<TYPE>();
         tp->type = bt_ifunc;
-        tp->btp = (TYPE*)Alloc(sizeof(TYPE));
+        tp->btp = Allocate<TYPE>();
         tp->btp->type = bt_void;
         tp->rootType = tp;
         tp->btp->rootType = tp->btp;
@@ -564,9 +564,9 @@ static void dumpTLSInitializers(void)
     {
         STATEMENT *st = nullptr, **stp = &st;
         SYMBOL* funcsp;
-        TYPE* tp = (TYPE*)Alloc(sizeof(TYPE));
+        TYPE* tp = Allocate<TYPE>();
         tp->type = bt_ifunc;
-        tp->btp = (TYPE*)Alloc(sizeof(TYPE));
+        tp->btp = Allocate<TYPE>();
         tp->btp->type = bt_void;
         tp->rootType = tp;
         tp->btp->rootType = tp->btp;
@@ -635,9 +635,9 @@ static void dumpTLSDestructors(void)
     {
         STATEMENT *st = nullptr, **stp = &st;
         SYMBOL* funcsp;
-        TYPE* tp = (TYPE*)Alloc(sizeof(TYPE));
+        TYPE* tp = Allocate<TYPE>();
         tp->type = bt_ifunc;
-        tp->btp = (TYPE*)Alloc(sizeof(TYPE));
+        tp->btp = Allocate<TYPE>();
         tp->btp->type = bt_void;
         tp->rootType = tp;
         tp->btp->rootType = tp->btp;
@@ -884,7 +884,7 @@ int dumpInit(SYMBOL* sym, INITIALIZER* init)
                         Optimizer::genaddress(0);
                     if (!Optimizer::cparams.prm_cplusplus || sym->sb->storage_class != sc_localstatic)
                     {
-                        INITIALIZER* shim = (INITIALIZER*)Alloc(sizeof(INITIALIZER));
+                        INITIALIZER* shim = Allocate<INITIALIZER>();
                         *shim = *init;
                         shim->next = nullptr;
                         insertDynamicInitializer(sym, shim);
@@ -900,7 +900,7 @@ int dumpInit(SYMBOL* sym, INITIALIZER* init)
                     {
                         if (sym->sb->storage_class != sc_localstatic)
                         {
-                            INITIALIZER* shim = (INITIALIZER*)Alloc(sizeof(INITIALIZER));
+                            INITIALIZER* shim = Allocate<INITIALIZER>();
                             *shim = *init;
                             shim->next = nullptr;
                             insertDynamicInitializer(sym, shim);
@@ -1263,7 +1263,7 @@ void insertInitSym(SYMBOL* sym)
 {
     if (!sym->sb->indecltable)
     {
-        Optimizer::LIST* lst = (Optimizer::LIST*)Alloc(sizeof(Optimizer::LIST));
+        Optimizer::LIST* lst = Allocate<Optimizer::LIST>();
         lst->data = sym;
         if (symListHead)
             symListTail = symListTail->next = lst;
@@ -1274,7 +1274,7 @@ void insertInitSym(SYMBOL* sym)
 }
 INITIALIZER* initInsert(INITIALIZER** pos, TYPE* tp, EXPRESSION* exp, int offset, bool noassign)
 {
-    INITIALIZER* pos1 = (INITIALIZER*)Alloc(sizeof(INITIALIZER));
+    INITIALIZER* pos1 = Allocate<INITIALIZER>();
 
     pos1->basetp = tp;
     pos1->exp = exp;
@@ -2168,7 +2168,7 @@ static void allocate_desc(TYPE* tp, int offset, AGGREGATE_DESCRIPTOR** descin, A
     }
     if (!desc)
     {
-        desc = (AGGREGATE_DESCRIPTOR*)Alloc(sizeof(AGGREGATE_DESCRIPTOR));
+        desc = Allocate<AGGREGATE_DESCRIPTOR>();
         desc->tp = tp;
         desc->offset = offset;
     }
@@ -2463,7 +2463,7 @@ static INITIALIZER* sort_aggregate_initializers(INITIALIZER* data)
         // embedded in the compiler since it is non-standard.
         // a lot of this code does runup and rundown to get things in the
         // right format for qxsort...
-        INITIALIZER** base = (INITIALIZER**)localAlloc(sizeof(INITIALIZER*) * items);
+        INITIALIZER** base = localAllocate<INITIALIZER*>(items);
         INITIALIZER* find = data;
         INITIALIZER** rv = &data;
 
@@ -2768,7 +2768,7 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
         if (base->sb->storage_class != sc_member || MATCHKW(lex, openpa) || assn || MATCHKW(lex, begin))
         {
             // initialization via constructor
-            FUNCTIONCALL* funcparams = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
+            FUNCTIONCALL* funcparams = Allocate<FUNCTIONCALL>();
             EXPRESSION* exp;
             TYPE* ctype = itype;
             INITIALIZER* it = nullptr;
@@ -2850,7 +2850,7 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
                         EXPRESSION* exp1 = nullptr;
                         TYPE* tp1 = nullptr;
                         lex = init_expression(lex, funcsp, nullptr, &tp1, &exp1, false);
-                        funcparams->arguments = (INITLIST*)Alloc(sizeof(INITLIST));
+                        funcparams->arguments = Allocate<INITLIST>();
                         funcparams->arguments->tp = tp1;
                         funcparams->arguments->exp = exp1;
                         if (exp1->type == en_thisref && exp1->left->type == en_func)
@@ -2883,7 +2883,7 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
                 EXPRESSION* exp1 = nullptr;
                 TYPE* tp1 = nullptr;
                 lex = init_expression(lex, funcsp, nullptr, &tp1, &exp1, false);
-                funcparams->arguments = (INITLIST*)Alloc(sizeof(INITLIST));
+                funcparams->arguments = Allocate<INITLIST>();
                 funcparams->arguments->tp = tp1;
                 funcparams->arguments->exp = exp1;
             }
@@ -2998,7 +2998,7 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
             if (Optimizer::cparams.prm_cplusplus && isstructured(itype) && MATCHKW(lex, openpa))
             {
                 // conversion constructor params
-                FUNCTIONCALL* funcparams = (FUNCTIONCALL*)(FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
+                FUNCTIONCALL* funcparams = Allocate<FUNCTIONCALL>();
                 INITIALIZER* it = nullptr;
                 lex = getArgs(lex, funcsp, funcparams, closepa, true, 0);
                 if (funcparams->arguments && funcparams->arguments->next)
@@ -3007,7 +3007,7 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
                     error(ERR_INCOMPATIBLE_TYPE_CONVERSION);
                 else
                 {
-                    TYPE *ttp = (TYPE*)Alloc(sizeof(TYPE)), **ttp1 = &ttp;
+                    TYPE *ttp = Allocate<TYPE>(), **ttp1 = &ttp;
                     if (isconst(itype))
                     {
                         (*ttp1)->type = bt_const;
@@ -3025,7 +3025,7 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
                     tp1 = itype;
                     if (funcparams->arguments && !isref(funcparams->arguments->tp))
                     {
-                        TYPE *tpx = (TYPE*)Alloc(sizeof(TYPE));
+                        TYPE *tpx = Allocate<TYPE>();
                         *tpx = *funcparams->arguments->tp;
                         funcparams->arguments->tp = tpx;
                         funcparams->arguments->tp->lref = true;
@@ -3273,7 +3273,7 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
                     if (n > 1)
                     {
                         sz = intNode(en_c_i, n);
-                        tn = (TYPE*)Alloc(sizeof(TYPE));
+                        tn = Allocate<TYPE>();
                         tn->array = true;
                         tn->type = bt_pointer;
                         tn->size = n * s;
@@ -3314,7 +3314,7 @@ static LEXEME* initialize_aggregate_type(LEXEME* lex, SYMBOL* funcsp, SYMBOL* ba
                 if (n > 1)
                 {
                     sz = intNode(en_c_i, n);
-                    tn = (TYPE*)Alloc(sizeof(TYPE));
+                    tn = Allocate<TYPE>();
                     tn->array = true;
                     tn->type = bt_pointer;
                     tn->size = n * s;
@@ -3379,14 +3379,14 @@ static LEXEME* initialize_auto(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_s
         {
             if (isarray(tp))
             {
-                TYPE* itp = (TYPE*)Alloc(sizeof(TYPE));
+                TYPE* itp = Allocate<TYPE>();
                 itp->type = bt_pointer;
                 itp->size = getSize(bt_pointer);
                 itp->btp = basetype(tp)->btp;
                 itp->rootType = itp;
                 if (isconst(itp))
                 {
-                    TYPE* itp1 = (TYPE*)Alloc(sizeof(TYPE));
+                    TYPE* itp1 = Allocate<TYPE>();
                     itp1->type = bt_const;
                     itp1->size = itp->size;
                     itp1->btp = itp;
@@ -3395,7 +3395,7 @@ static LEXEME* initialize_auto(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_s
                 }
                 if (isvolatile(itp))
                 {
-                    TYPE* itp1 = (TYPE*)Alloc(sizeof(TYPE));
+                    TYPE* itp1 = Allocate<TYPE>();
                     itp1->type = bt_volatile;
                     itp1->size = itp->size;
                     itp1->btp = itp;
@@ -3406,7 +3406,7 @@ static LEXEME* initialize_auto(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_s
             }
             if (isconst(sym->tp) && !isconst(tp))
             {
-                TYPE* itp = (TYPE*)Alloc(sizeof(TYPE));
+                TYPE* itp = Allocate<TYPE>();
                 itp->type = bt_const;
                 itp->size = tp->size;
                 itp->btp = tp;
@@ -3415,7 +3415,7 @@ static LEXEME* initialize_auto(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_s
             }
             if (isvolatile(sym->tp) && !isvolatile(tp))
             {
-                TYPE* itp = (TYPE*)Alloc(sizeof(TYPE));
+                TYPE* itp = Allocate<TYPE>();
                 itp->type = bt_volatile;
                 itp->size = tp->size;
                 itp->btp = tp;
@@ -3953,7 +3953,7 @@ void RecalculateVariableTemplateInitializers(INITIALIZER** in, INITIALIZER*** ou
         }
         if ((*in)->basetp == 0)
         {
-            **out = (INITIALIZER*)(INITIALIZER*)Alloc(sizeof(INITIALIZER));
+            **out = Allocate<INITIALIZER>();
             ***out = **in;
             (**out)->offset = tp->size;
             *out = &(**out)->next;
@@ -3979,7 +3979,7 @@ void RecalculateVariableTemplateInitializers(INITIALIZER** in, INITIALIZER*** ou
         }
         if ((*in)->basetp == 0)
         {
-            **out = (INITIALIZER*)(INITIALIZER*)Alloc(sizeof(INITIALIZER));
+            **out = Allocate<INITIALIZER>();
             ***out = **in;
             (**out)->offset = tp->size;
             *out = &(**out)->next;
@@ -3987,7 +3987,7 @@ void RecalculateVariableTemplateInitializers(INITIALIZER** in, INITIALIZER*** ou
     }
     else
     {
-        **out = (INITIALIZER*)(INITIALIZER*)Alloc(sizeof(INITIALIZER));
+        **out = Allocate<INITIALIZER>();
         ***out = **in;
         *in = (*in)->next;
         (**out)->basetp = tp;
@@ -4099,10 +4099,10 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_c
                     lex = expression_no_check(lex, funcsp, nullptr, &tp1, &exp1, _F_TYPETEST);
                     if (tp1 && tp1->stringconst)
                     {
-                        TYPE* itp = (TYPE*)Alloc(sizeof(TYPE));
+                        TYPE* itp = Allocate<TYPE>();
                         itp->type = bt_pointer;
                         itp->size = getSize(bt_pointer);
-                        itp->btp = (TYPE*)Alloc(sizeof(TYPE));
+                        itp->btp = Allocate<TYPE>();
                         itp->btp->type = bt_const;
                         itp->btp->size = tp1->btp->size;
                         itp->btp->btp = tp1->btp;
@@ -4114,14 +4114,14 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_c
                     {
                         if (isarray(tp1))
                         {
-                            TYPE* itp = (TYPE*)Alloc(sizeof(TYPE));
+                            TYPE* itp = Allocate<TYPE>();
                             itp->type = bt_pointer;
                             itp->size = getSize(bt_pointer);
                             itp->btp = basetype(tp1)->btp;
                             itp->rootType = itp;
                             if (isconst(tp1))
                             {
-                                TYPE* itp1 = (TYPE*)Alloc(sizeof(TYPE));
+                                TYPE* itp1 = Allocate<TYPE>();
                                 itp1->type = bt_const;
                                 itp1->size = itp->size;
                                 itp1->btp = itp;
@@ -4130,7 +4130,7 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_c
                             }
                             if (isvolatile(tp1))
                             {
-                                TYPE* itp1 = (TYPE*)Alloc(sizeof(TYPE));
+                                TYPE* itp1 = Allocate<TYPE>();
                                 itp1->type = bt_volatile;
                                 itp1->size = itp->size;
                                 itp1->btp = itp;
@@ -4347,7 +4347,7 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_c
         }
         else if (!isfunction(tp))
         {
-            TYPE* t = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
+            TYPE* t = Allocate<TYPE>();
             t->btp = tp;
             t->type = bt_const;
             t->size = tp->size;
@@ -4414,7 +4414,7 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_c
         if (sym->sb->init == nullptr && needsAtomicLockFromType(sym->tp))
         {
             // sets the atomic_flag portion of a locked type to zero
-            sym->sb->init = (INITIALIZER*)Alloc(sizeof(INITIALIZER));
+            sym->sb->init = Allocate<INITIALIZER>();
             sym->sb->init->offset = sym->tp->size - ATOMIC_FLAG_SPACE;
             sym->sb->init->basetp = &stdint;
             sym->sb->init->exp = intNode(en_c_i, 0);

@@ -125,7 +125,7 @@ void InitIntermediate()
 static BaseData* AddData(DataType dt)
 {
 #ifndef PARSER_ONLY
-    BaseData* rv = (BaseData*)Alloc(sizeof(BaseData));
+    BaseData* rv = Allocate<BaseData>();
     rv->type = dt;
     baseData.push_back(rv);
     return rv;

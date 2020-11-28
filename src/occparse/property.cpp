@@ -60,7 +60,7 @@ static SYMBOL* CreateSetterPrototype(SYMBOL* sym)
     value = makeID(sc_parameter, sym->tp, nullptr, "value");
     value->sb->attribs.inheritable.used = true;  // to avoid unused variable errors
     rv->sb->access = ac_public;
-    rv->tp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
+    rv->tp = Allocate<TYPE>();
     rv->tp->sp = rv;
     rv->tp->type = bt_func;
     rv->tp->btp = &stdvoid;
@@ -78,7 +78,7 @@ static SYMBOL* CreateGetterPrototype(SYMBOL* sym)
     rv = makeID(sym->sb->storage_class, nullptr, nullptr, litlate(name));
     nullparam = makeID(sc_parameter, &stdvoid, nullptr, "__void");
     rv->sb->access = ac_public;
-    rv->tp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
+    rv->tp = Allocate<TYPE>();
     rv->tp->sp = rv;
     rv->tp->type = bt_func;
     rv->tp->btp = sym->tp;
@@ -97,7 +97,7 @@ static void insertfunc(SYMBOL* in, HASHTABLE* syms)
         funcs = (SYMBOL*)((*hr)->p);
     if (!funcs)
     {
-        TYPE* tp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
+        TYPE* tp = Allocate<TYPE>();
         tp->type = bt_aggregate;
         tp->rootType = tp;
         funcs = makeID(sc_overloads, tp, 0, litlate(in->name));

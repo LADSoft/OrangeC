@@ -84,7 +84,7 @@ static EXPRESSION* inlineGetThisPtr(EXPRESSION* exp)
         }
         else
         {
-            EXPRESSION* rv = (EXPRESSION*)Alloc(sizeof(EXPRESSION));
+            EXPRESSION* rv = Allocate<EXPRESSION>();
             *rv = *exp;
             rv->left = inlineGetThisPtr(rv->left);
             rv->right = inlineGetThisPtr(rv->right);
@@ -152,7 +152,7 @@ static void inlineBindArgs(SYMBOL* funcsp, SYMLIST* hr, INITLIST* args)
             hr1 = hr1->next;
         }
         hr1 = hr;
-        list = (EXPRESSION**)(EXPRESSION*)Alloc(sizeof(EXPRESSION*) * cnt);
+        list = Allocate<EXPRESSION*>(cnt);
         cnt = 0;
         while (hr && args)  // args might go to nullptr for a destructor, which currently has a VOID at the end of the arg list
         {

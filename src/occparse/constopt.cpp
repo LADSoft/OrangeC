@@ -456,7 +456,7 @@ void dooper(EXPRESSION** node, int mode)
                             temp = (unsigned long long)ep1->v.i;
                         else
                             temp = (long long)ep1->v.i;
-                        ep->v.f = (FPF*)Alloc(sizeof(FPF));
+                        ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = temp + (*ep2->v.f);
                         refloat(ep);
                         break;
@@ -466,13 +466,13 @@ void dooper(EXPRESSION** node, int mode)
                             temp = (unsigned long long)ep2->v.i;
                         else
                             temp = (long long)ep2->v.i;
-                        ep->v.f = (FPF*)Alloc(sizeof(FPF));
+                        ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = (*ep1->v.f) + temp;
                         refloat(ep);
                         break;
                     case 4:
                         ep->type = maxfloattype(ep1, ep2);
-                        ep->v.f = (FPF*)Alloc(sizeof(FPF));
+                        ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = (*ep1->v.f) + (*ep2->v.f);
                         refloat(ep);
                         break;
@@ -481,7 +481,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = (*ep1->v.f);
                         ep->v.c->i = (*ep2->v.f);
                         refloat(ep);
@@ -491,14 +491,14 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = (*ep2->v.f);
                         ep->v.c->i = (*ep1->v.f);
                         refloat(ep);
                         break;
                     case 11:
                         ep->type = maximaginarytype(ep1, ep2);
-                        ep->v.f = (FPF*)Alloc(sizeof(FPF));
+                        ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = (*ep1->v.f) + (*ep2->v.f);
                         refloat(ep);
                         break;
@@ -507,7 +507,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = (long long)ep2->v.i;
                         ep->v.c->i = (*ep1->v.f);
                         refloat(ep);
@@ -517,7 +517,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = (long long)ep1->v.i;
                         ep->v.c->i = (*ep2->v.f);
                         refloat(ep);
@@ -527,7 +527,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = ep2->v.c->r;
                         ep->v.c->i = (*ep1->v.f) + ep2->v.c->i;
                         refloat(ep);
@@ -537,7 +537,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = ep1->v.c->r;
                         ep->v.c->i = (*ep2->v.f) + ep1->v.c->i;
                         refloat(ep);
@@ -547,7 +547,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = (*ep1->v.f) + ep2->v.c->r;
                         ep->v.c->i = ep2->v.c->i;
                         refloat(ep);
@@ -557,7 +557,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = (*ep2->v.f) + ep1->v.c->r;
                         ep->v.c->i = ep1->v.c->i;
                         refloat(ep);
@@ -567,7 +567,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = ep1->v.c->r + ep2->v.c->r;
                         ep->v.c->i = ep1->v.c->i + ep2->v.c->i;
                         refloat(ep);
@@ -581,7 +581,7 @@ void dooper(EXPRESSION** node, int mode)
                             temp = (unsigned long long)ep2->v.i;
                         else
                             temp = (long long)ep2->v.i;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = ep1->v.c->r + temp;
                         ep->v.c->i = ep1->v.c->i;
                         refloat(ep);
@@ -595,7 +595,7 @@ void dooper(EXPRESSION** node, int mode)
                             temp = (unsigned long long)ep1->v.i;
                         else
                             temp = (long long)ep1->v.i;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = ep2->v.c->r + temp;
                         ep->v.c->i = ep2->v.c->i;
                         refloat(ep);
@@ -618,7 +618,7 @@ void dooper(EXPRESSION** node, int mode)
                             temp = (unsigned long long)ep1->v.i;
                         else
                             temp = (long long)ep1->v.i;
-                        ep->v.f = (FPF*)Alloc(sizeof(FPF));
+                        ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = temp - (*ep2->v.f);
                         refloat(ep);
                         break;
@@ -628,7 +628,7 @@ void dooper(EXPRESSION** node, int mode)
                             temp = (unsigned long long)ep2->v.i;
                         else
                             temp = (long long)ep2->v.i;
-                        ep->v.f = (FPF*)Alloc(sizeof(FPF));
+                        ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = (*ep1->v.f) - temp;
                         refloat(ep);
                         break;
@@ -638,7 +638,7 @@ void dooper(EXPRESSION** node, int mode)
                             temp = (unsigned long long)ep1->v.i;
                         else
                             temp = (long long)ep1->v.i;
-                        ep->v.f = (FPF*)Alloc(sizeof(FPF));
+                        ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = (*ep1->v.f) - (*ep2->v.f);
                         refloat(ep);
                         break;
@@ -647,7 +647,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = (*ep1->v.f);
                         ep->v.c->i = (*ep2->v.f);
                         ep->v.c->i.Negate();
@@ -658,7 +658,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = (*ep2->v.f);
                         ep->v.c->r.Negate();
                         ep->v.c->i = (*ep1->v.f);
@@ -666,7 +666,7 @@ void dooper(EXPRESSION** node, int mode)
                         break;
                     case 11:
                         ep->type = maximaginarytype(ep1, ep2);
-                        ep->v.f = (FPF*)Alloc(sizeof(FPF));
+                        ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = (*ep1->v.f) - (*ep2->v.f);
                         refloat(ep);
                         break;
@@ -675,7 +675,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         if (isunsignedexpr(ep2))
                             ep->v.c->r = (unsigned long long)ep2->v.i;
                         else
@@ -688,7 +688,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         if (isunsignedexpr(ep1))
                             ep->v.c->r = (unsigned long long)ep1->v.i;
                         else
@@ -702,7 +702,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = ep2->v.c->r;
                         ep->v.c->r.Negate();
                         ep->v.c->i = (*ep1->v.f) - ep2->v.c->i;
@@ -713,7 +713,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = ep1->v.c->r;
                         ep->v.c->i = ep1->v.c->i - (*ep2->v.f);
                         refloat(ep);
@@ -723,7 +723,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = (*ep1->v.f) - ep2->v.c->r;
                         ep->v.c->i = ep2->v.c->i;
                         ep->v.c->i.Negate();
@@ -734,7 +734,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = ep1->v.c->r - (*ep2->v.f);
                         ep->v.c->i = ep1->v.c->i;
                         refloat(ep);
@@ -744,7 +744,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = ep1->v.c->r - ep2->v.c->r;
                         ep->v.c->i = ep1->v.c->i - ep2->v.c->i;
                         refloat(ep);
@@ -758,7 +758,7 @@ void dooper(EXPRESSION** node, int mode)
                             temp = (unsigned long long)ep2->v.i;
                         else
                             temp = (long long)ep2->v.i;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = ep1->v.c->r - temp;
                         ep->v.c->i = ep1->v.c->i;
                         refloat(ep);
@@ -772,7 +772,7 @@ void dooper(EXPRESSION** node, int mode)
                             temp = (unsigned long long)ep1->v.i;
                         else
                             temp = (long long)ep1->v.i;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = temp - ep2->v.c->r;
                         ep->v.c->i = ep2->v.c->i;
                         ep->v.c->i.Negate();
@@ -798,7 +798,7 @@ void dooper(EXPRESSION** node, int mode)
                             temp = (unsigned long long)ep1->v.i;
                         else
                             temp = (long long)ep1->v.i;
-                        ep->v.f = (FPF*)Alloc(sizeof(FPF));
+                        ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = temp * (*ep2->v.f);
                         refloat(ep);
                         break;
@@ -808,31 +808,31 @@ void dooper(EXPRESSION** node, int mode)
                             temp = (unsigned long long)ep2->v.i;
                         else
                             temp = (long long)ep2->v.i;
-                        ep->v.f = (FPF*)Alloc(sizeof(FPF));
+                        ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = (*ep1->v.f) * temp;
                         refloat(ep);
                         break;
                     case 4:
                         ep->type = maxfloattype(ep1, ep2);
-                        ep->v.f = (FPF*)Alloc(sizeof(FPF));
+                        ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = (*ep1->v.f) * (*ep2->v.f);
                         refloat(ep);
                         break;
                     case 9:
                         ep->type = maximaginarytype(ep1, ep2);
-                        ep->v.f = (FPF*)Alloc(sizeof(FPF));
+                        ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = (*ep1->v.f) * (*ep2->v.f);
                         refloat(ep);
                         break;
                     case 10:
                         ep->type = maximaginarytype(ep1, ep2);
-                        ep->v.f = (FPF*)Alloc(sizeof(FPF));
+                        ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = (*ep1->v.f) * (*ep2->v.f);
                         refloat(ep);
                         break;
                     case 11:
                         ep->type = maxfloattype(ep1, ep2);
-                        ep->v.f = (FPF*)Alloc(sizeof(FPF));
+                        ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = (*ep1->v.f) * (*ep2->v.f);
                         ep->v.f->Negate();
                         refloat(ep);
@@ -843,7 +843,7 @@ void dooper(EXPRESSION** node, int mode)
                             temp = (unsigned long long)ep2->v.i;
                         else
                             temp = (long long)ep2->v.i;
-                        ep->v.f = (FPF*)Alloc(sizeof(FPF));
+                        ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = (*ep1->v.f) * temp;
                         refloat(ep);
                         break;
@@ -853,7 +853,7 @@ void dooper(EXPRESSION** node, int mode)
                             temp = (unsigned long long)ep1->v.i;
                         else
                             temp = (long long)ep1->v.i;
-                        ep->v.f = (FPF*)Alloc(sizeof(FPF));
+                        ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = temp * (*ep2->v.f);
                         refloat(ep);
                         break;
@@ -862,7 +862,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = (*ep1->v.f) * ep2->v.c->i;
                         ep->v.c->r.Negate();
                         ep->v.c->i = (*ep1->v.f) * ep2->v.c->r;
@@ -873,7 +873,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = (*ep2->v.f) * ep1->v.c->i;
                         ep->v.c->r.Negate();
                         ep->v.c->i = (*ep2->v.f) * ep1->v.c->r;
@@ -884,7 +884,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = (*ep1->v.f) * ep2->v.c->r;
                         ep->v.c->i = (*ep1->v.f) * ep2->v.c->i;
                         refloat(ep);
@@ -894,7 +894,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = (*ep2->v.f) * ep1->v.c->r;
                         ep->v.c->i = (*ep2->v.f) * ep1->v.c->i;
                         refloat(ep);
@@ -906,7 +906,7 @@ void dooper(EXPRESSION** node, int mode)
                             ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                                ? STD_PRAGMA_CXLIMITED
                                                : 0;
-                            ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                            ep->v.c = Allocate<_COMPLEX_S>();
                             ep->v.c->i = ep2->v.c->r * ep1->v.c->i;
                             ep->v.c->r = ep2->v.c->i * ep1->v.c->i;
                             ep->v.c->r.Negate();
@@ -917,7 +917,7 @@ void dooper(EXPRESSION** node, int mode)
                             ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                                ? STD_PRAGMA_CXLIMITED
                                                : 0;
-                            ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                            ep->v.c = Allocate<_COMPLEX_S>();
                             ep->v.c->r = ep2->v.c->r * ep1->v.c->r;
                             ep->v.c->i = ep2->v.c->i * ep1->v.c->r;
                         }
@@ -927,7 +927,7 @@ void dooper(EXPRESSION** node, int mode)
                             ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                                ? STD_PRAGMA_CXLIMITED
                                                : 0;
-                            ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                            ep->v.c = Allocate<_COMPLEX_S>();
                             ep->v.c->i = ep1->v.c->r * ep2->v.c->i;
                             ep->v.c->r = ep1->v.c->i * ep2->v.c->i;
                             ep->v.c->r.Negate();
@@ -938,7 +938,7 @@ void dooper(EXPRESSION** node, int mode)
                             ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                                ? STD_PRAGMA_CXLIMITED
                                                : 0;
-                            ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                            ep->v.c = Allocate<_COMPLEX_S>();
                             ep->v.c->r = ep1->v.c->r * ep2->v.c->r;
                             ep->v.c->i = ep1->v.c->i * ep2->v.c->r;
                         }
@@ -953,7 +953,7 @@ void dooper(EXPRESSION** node, int mode)
                             temp = (unsigned long long)ep1->v.i;
                         else
                             temp = (long long)ep1->v.i;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = temp * ep2->v.c->r;
                         ep->v.c->i = temp * ep2->v.c->i;
                         refloat(ep);
@@ -985,7 +985,7 @@ void dooper(EXPRESSION** node, int mode)
                             temp = (unsigned long long)ep1->v.i;
                         else
                             temp = (long long)ep1->v.i;
-                        ep->v.f = (FPF*)Alloc(sizeof(FPF));
+                        ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = temp / (*ep2->v.f);
                         refloat(ep);
                         break;
@@ -995,13 +995,13 @@ void dooper(EXPRESSION** node, int mode)
                             temp = (unsigned long long)ep2->v.i;
                         else
                             temp = (long long)ep2->v.i;
-                        ep->v.f = (FPF*)Alloc(sizeof(FPF));
+                        ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = (*ep1->v.f) / temp;
                         refloat(ep);
                         break;
                     case 4:
                         ep->type = maxfloattype(ep1, ep2);
-                        ep->v.f = (FPF*)Alloc(sizeof(FPF));
+                        ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = (*ep1->v.f) / (*ep2->v.f);
                         refloat(ep);
                         break;
@@ -1018,20 +1018,20 @@ void dooper(EXPRESSION** node, int mode)
                     break;
                     case 9:
                         ep->type = maximaginarytype(ep1, ep2);
-                        ep->v.f = (FPF*)Alloc(sizeof(FPF));
+                        ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = (*ep1->v.f) / (*ep2->v.f);
                         ep->v.f->Negate();
                         refloat(ep);
                         break;
                     case 10:
                         ep->type = maximaginarytype(ep1, ep2);
-                        ep->v.f = (FPF*)Alloc(sizeof(FPF));
+                        ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = (*ep1->v.f) / (*ep2->v.f);
                         refloat(ep);
                         break;
                     case 11:
                         ep->type = maximaginarytype(ep1, ep2);
-                        ep->v.f = (FPF*)Alloc(sizeof(FPF));
+                        ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = (*ep1->v.f) / (*ep2->v.f);
                         refloat(ep);
                         break;
@@ -1041,7 +1041,7 @@ void dooper(EXPRESSION** node, int mode)
                             temp = (unsigned long long)ep2->v.i;
                         else
                             temp = (long long)ep2->v.i;
-                        ep->v.f = (FPF*)Alloc(sizeof(FPF));
+                        ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = (*ep1->v.f) / temp;
                         refloat(ep);
                         break;
@@ -1051,7 +1051,7 @@ void dooper(EXPRESSION** node, int mode)
                             temp = (unsigned long long)ep1->v.i;
                         else
                             temp = (long long)ep1->v.i;
-                        ep->v.f = (FPF*)Alloc(sizeof(FPF));
+                        ep->v.f = Allocate<FPF>();
                         (*ep->v.f) = temp / (*ep2->v.f);
                         ep->v.f->Negate();
                         refloat(ep);
@@ -1061,7 +1061,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = ep1->v.c->i / (*ep2->v.f);
                         ep->v.c->i = ep1->v.c->r / (*ep2->v.f);
                         ep->v.c->i.Negate();
@@ -1072,7 +1072,7 @@ void dooper(EXPRESSION** node, int mode)
                         ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                            ? STD_PRAGMA_CXLIMITED
                                            : 0;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = ep1->v.c->i / (*ep2->v.f);
                         ep->v.c->i = ep1->v.c->r / (*ep2->v.f);
                         refloat(ep);
@@ -1084,7 +1084,7 @@ void dooper(EXPRESSION** node, int mode)
                             ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                                ? STD_PRAGMA_CXLIMITED
                                                : 0;
-                            ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                            ep->v.c = Allocate<_COMPLEX_S>();
                             ep->v.c->i = ep1->v.c->r / ep2->v.c->i;
                             ep->v.c->r = ep1->v.c->i / ep2->v.c->i;
                             ep->v.c->i.Negate();
@@ -1095,7 +1095,7 @@ void dooper(EXPRESSION** node, int mode)
                             ep->pragmas |= ((ep1->pragmas & STD_PRAGMA_CXLIMITED) && (ep2->pragmas & STD_PRAGMA_CXLIMITED))
                                                ? STD_PRAGMA_CXLIMITED
                                                : 0;
-                            ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                            ep->v.c = Allocate<_COMPLEX_S>();
                             ep->v.c->r = ep1->v.c->r / ep2->v.c->r;
                             ep->v.c->i = ep1->v.c->i / ep2->v.c->r;
                         }
@@ -1110,7 +1110,7 @@ void dooper(EXPRESSION** node, int mode)
                             temp = (unsigned long long)ep2->v.i;
                         else
                             temp = (long long)ep2->v.i;
-                        ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                        ep->v.c = Allocate<_COMPLEX_S>();
                         ep->v.c->r = ep1->v.c->r / temp;
                         ep->v.c->i = ep1->v.c->i / temp;
                         refloat(ep);
@@ -1311,7 +1311,7 @@ int opt0(EXPRESSION** node)
             {
                 rv = true;
                 ep->type = ep->left->type;
-                ep->v.f = (FPF*)Alloc(sizeof(FPF*));
+                ep->v.f = Allocate<FPF>();
                 (*ep->v.f) = *ep->left->v.f;
                 ep->v.f->Negate();
                 *node = ep;
@@ -1320,7 +1320,7 @@ int opt0(EXPRESSION** node)
             {
                 rv = true;
                 ep->type = ep->left->type;
-                ep->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                ep->v.c = Allocate<_COMPLEX_S>();
                 ep->v.c->r = ep->left->v.c->r;
                 ep->v.c->r.Negate();
                 ep->v.c->i = ep->left->v.c->i;
@@ -2168,10 +2168,10 @@ int opt0(EXPRESSION** node)
                         dropStructureDeclaration();
                         break;
                     }
-                    FUNCTIONCALL *func = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
+                    FUNCTIONCALL *func = Allocate<FUNCTIONCALL>();
                     *func = *next->v.func;
                     func->sp = sym;
-                    TYPE *thistp = (TYPE*)Alloc(sizeof(TYPE));
+                    TYPE *thistp = Allocate<TYPE>();
                     thistp->type = bt_pointer;
                     thistp->size = getSize(bt_pointer);
                     thistp->btp = tp;
@@ -3296,7 +3296,7 @@ int typedconsts(EXPRESSION* node1)
             {
                 FPF temp = refloat(node1->left);
                 rv = true;
-                node1->v.f = (FPF*)Alloc(sizeof(FPF));
+                node1->v.f = Allocate<FPF>();
                 *node1->v.f = Optimizer::CastToFloat(ISZ_FLOAT, &temp);
                 node1->type = en_c_f;
             }
@@ -3307,7 +3307,7 @@ int typedconsts(EXPRESSION* node1)
             {
                 FPF temp = refloat(node1->left);
                 rv = true;
-                node1->v.f = (FPF*)Alloc(sizeof(FPF));
+                node1->v.f = Allocate<FPF>();
                 *node1->v.f = Optimizer::CastToFloat(ISZ_IFLOAT, &temp);
                 node1->type = en_c_fi;
             }
@@ -3318,7 +3318,7 @@ int typedconsts(EXPRESSION* node1)
             {
                 FPF temp = refloat(node1->left);
                 rv = true;
-                node1->v.f = (FPF*)Alloc(sizeof(FPF));
+                node1->v.f = Allocate<FPF>();
                 *node1->v.f = Optimizer::CastToFloat(ISZ_DOUBLE, &temp);
                 node1->type = en_c_d;
             }
@@ -3329,7 +3329,7 @@ int typedconsts(EXPRESSION* node1)
             {
                 FPF temp = refloat(node1->left);
                 rv = true;
-                node1->v.f = (FPF*)Alloc(sizeof(FPF));
+                node1->v.f = Allocate<FPF>();
                 *node1->v.f = Optimizer::CastToFloat(ISZ_IDOUBLE, &temp);
                 node1->type = en_c_di;
             }
@@ -3340,7 +3340,7 @@ int typedconsts(EXPRESSION* node1)
             {
                 FPF temp = refloat(node1->left);
                 rv = true;
-                node1->v.f = (FPF*)Alloc(sizeof(FPF));
+                node1->v.f = Allocate<FPF>();
                 *node1->v.f = Optimizer::CastToFloat(ISZ_LDOUBLE, &temp);
                 node1->type = en_c_ld;
             }
@@ -3351,7 +3351,7 @@ int typedconsts(EXPRESSION* node1)
             {
                 FPF temp = refloat(node1->left);
                 rv = true;
-                node1->v.f = (FPF*)Alloc(sizeof(FPF));
+                node1->v.f = Allocate<FPF>();
                 *node1->v.f = Optimizer::CastToFloat(ISZ_ILDOUBLE, &temp);
                 node1->type = en_c_ldi;
             }
@@ -3364,7 +3364,7 @@ int typedconsts(EXPRESSION* node1)
                 if (isintconst(node1->left) || isfloatconst(node1->left))
                 {
                     FPF temp = refloat(node1->left);
-                    node1->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                    node1->v.c = Allocate<_COMPLEX_S>();
                     node1->v.c->r = Optimizer::CastToFloat(ISZ_ILDOUBLE, &temp);
                     node1->v.c->i.SetZero(0);
                 }
@@ -3373,7 +3373,7 @@ int typedconsts(EXPRESSION* node1)
                     FPF temp;
                     node1->left->type = en_c_ld;
                     temp = refloat(node1->left);
-                    node1->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                    node1->v.c = Allocate<_COMPLEX_S>();
                     node1->v.c->i = Optimizer::CastToFloat(ISZ_ILDOUBLE, &temp);
                     node1->v.c->r.SetZero(0);
                 }
@@ -3392,7 +3392,7 @@ int typedconsts(EXPRESSION* node1)
                 if (isintconst(node1->left) || isfloatconst(node1->left))
                 {
                     FPF temp = refloat(node1->left);
-                    node1->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                    node1->v.c = Allocate<_COMPLEX_S>();
                     node1->v.c->r = Optimizer::CastToFloat(ISZ_ILDOUBLE, &temp);
                     node1->v.c->i.SetZero(0);
                 }
@@ -3401,7 +3401,7 @@ int typedconsts(EXPRESSION* node1)
                     FPF temp;
                     node1->left->type = en_c_ld;
                     temp = refloat(node1->left);
-                    node1->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                    node1->v.c = Allocate<_COMPLEX_S>();
                     node1->v.c->i = Optimizer::CastToFloat(ISZ_ILDOUBLE, &temp);
                     node1->v.c->r.SetZero(0);
                 }
@@ -3420,7 +3420,7 @@ int typedconsts(EXPRESSION* node1)
                 if (isintconst(node1->left) || isfloatconst(node1->left))
                 {
                     FPF temp = refloat(node1->left);
-                    node1->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                    node1->v.c = Allocate<_COMPLEX_S>();
                     node1->v.c->r = Optimizer::CastToFloat(ISZ_ILDOUBLE, &temp);
                     node1->v.c->i.SetZero(0);
                 }
@@ -3429,7 +3429,7 @@ int typedconsts(EXPRESSION* node1)
                     FPF temp;
                     node1->left->type = en_c_ld;
                     temp = refloat(node1->left);
-                    node1->v.c = (_COMPLEX_S*)Alloc(sizeof(_COMPLEX_S));
+                    node1->v.c = Allocate<_COMPLEX_S>();
                     node1->v.c->i = Optimizer::CastToFloat(ISZ_ILDOUBLE, &temp);
                     node1->v.c->r.SetZero(0);
                 }

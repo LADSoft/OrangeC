@@ -541,7 +541,7 @@ void DeduceAuto(TYPE** pat, TYPE* nt, EXPRESSION* exp)
                 if (!nt->rref && basetype(nt)->type != bt_rref && !isarithmeticconst(exp))
                 {
                     // lref
-                    *pat = (TYPE*)Alloc(sizeof(TYPE));
+                    *pat = Allocate<TYPE>();
                     (*pat)->type = bt_lref;
                     (*pat)->size = getSize(bt_pointer);
                     (*pat)->rootType = (*pat);
@@ -560,7 +560,7 @@ void DeduceAuto(TYPE** pat, TYPE* nt, EXPRESSION* exp)
                     else
                         tp1 = basetype(nt);
                     // rref
-                    *pat = (TYPE*)Alloc(sizeof(TYPE));
+                    *pat = Allocate<TYPE>();
                     (*pat)->type = bt_rref;
                     (*pat)->size = getSize(bt_pointer);
                     (*pat)->rootType = (*pat);
@@ -603,7 +603,7 @@ void DeduceAuto(TYPE** pat, TYPE* nt, EXPRESSION* exp)
             if ((*pat)->decltypeauto)
                 if ((*pat)->decltypeautoextended)
                 {
-                    *pat = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
+                    *pat = Allocate<TYPE>();
                     (*pat)->type = bt_lref;
                     (*pat)->size = getSize(bt_pointer);
                     (*pat)->btp = nt;
@@ -656,7 +656,7 @@ LEXEME* concatStringsInternal(LEXEME* lex, STRING** str, int* elems)
     int pos = 0;
     enum e_lexType type = l_astr;
     STRING* string;
-    list = (Optimizer::SLCHAR**)(Optimizer::SLCHAR**)Alloc(sizeof(Optimizer::SLCHAR*) * count);
+    list = Allocate<Optimizer::SLCHAR*>(count);
     while (lex &&
            (lex->type == l_astr || lex->type == l_wstr || lex->type == l_ustr || lex->type == l_Ustr || lex->type == l_msilstr))
     {
@@ -682,7 +682,7 @@ LEXEME* concatStringsInternal(LEXEME* lex, STRING** str, int* elems)
         }
         if (pos >= count)
         {
-            Optimizer::SLCHAR** h = (Optimizer::SLCHAR**)(Optimizer::SLCHAR**)Alloc(sizeof(Optimizer::SLCHAR*) * (count + 10));
+            Optimizer::SLCHAR** h = Allocate<Optimizer::SLCHAR*>(count + 10);
             memcpy(h, list, sizeof(Optimizer::SLCHAR*) * count);
             list = h;
             count += 10;
@@ -692,10 +692,10 @@ LEXEME* concatStringsInternal(LEXEME* lex, STRING** str, int* elems)
         list[pos++] = (Optimizer::SLCHAR*)lex->value.s.w;
         lex = getsym();
     }
-    string = (STRING*)Alloc(sizeof(STRING));
+    string = Allocate<STRING>();
     string->strtype = type;
     string->size = pos;
-    string->pointers = (Optimizer::SLCHAR**)Alloc(pos * sizeof(Optimizer::SLCHAR*));
+    string->pointers = Allocate<Optimizer::SLCHAR*>(pos);
     string->suffix = suffix;
     memcpy(string->pointers, list, pos * sizeof(Optimizer::SLCHAR*));
     *str = string;
@@ -1809,13 +1809,13 @@ bool isconstaddress(EXPRESSION* exp)
 }
 SYMBOL*(clonesym)(SYMBOL* sym_in, bool full)
 {
-    SYMBOL* rv = (SYMBOL*)nzAlloc(sizeof(SYMBOL));
+    SYMBOL* rv = nzAllocate<SYMBOL>();
     *rv = *sym_in;
     if (rv->sb)
     {
         if (full)
         {
-            rv->sb = (sym::_symbody*)nzAlloc(sizeof(sym::_symbody));
+            rv->sb = nzAllocate<sym::_symbody>();
             *rv->sb = *sym_in->sb;
         }
         rv->sb->symRef = nullptr;
@@ -2115,7 +2115,7 @@ EXPRESSION* RemoveAutoIncDec(EXPRESSION* exp)
     EXPRESSION* newExp;
     if (exp->type == en_autoinc || exp->type == en_autodec)
         return RemoveAutoIncDec(exp->left);
-    newExp = (EXPRESSION*)Alloc(sizeof(EXPRESSION));
+    newExp = Allocate<EXPRESSION>();
     *newExp = *exp;
     if (newExp->left)
         newExp->left = RemoveAutoIncDec(newExp->left);

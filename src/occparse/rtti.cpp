@@ -710,7 +710,7 @@ static void XCExpression(EXPRESSION* node, XCLIST*** listPtr)
             XCExpression(node->left, listPtr);
             break;
         case en_thisref:
-            **listPtr = (XCLIST*)Alloc(sizeof(XCLIST));
+            **listPtr = Allocate<XCLIST>();
             (**listPtr)->exp = node;
             (*listPtr) = &(**listPtr)->next;
             XCExpression(node->left, listPtr);
@@ -752,7 +752,7 @@ static void XCStmt(STATEMENT* block, XCLIST*** listPtr)
             case st___catch:
             case st___finally:
             case st___fault:
-                **listPtr = (XCLIST*)Alloc(sizeof(XCLIST));
+                **listPtr = Allocate<XCLIST>();
                 (**listPtr)->stmt = block;
                 (**listPtr)->byStmt = true;
                 (*listPtr) = &(**listPtr)->next;

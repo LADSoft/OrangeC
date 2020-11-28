@@ -93,7 +93,7 @@ static LEXEME* SEH_catch(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
 {
     STATEMENT* st;
     TYPE* tp = nullptr;
-    BLOCKDATA* catchstmt = (BLOCKDATA*)Alloc(sizeof(BLOCKDATA));
+    BLOCKDATA* catchstmt = Allocate<BLOCKDATA>();
     SYMBOL* sym = nullptr;
     lex = getsym();
     ParseAttributeSpecifiers(&lex, funcsp, true);
@@ -137,7 +137,7 @@ static LEXEME* SEH_catch(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
 static LEXEME* SEH_finally(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
 {
     STATEMENT* st;
-    BLOCKDATA* catchstmt = (BLOCKDATA*)Alloc(sizeof(BLOCKDATA));
+    BLOCKDATA* catchstmt = Allocate<BLOCKDATA>();
     lex = getsym();
     ParseAttributeSpecifiers(&lex, funcsp, true);
     catchstmt->breaklabel = -1;
@@ -167,7 +167,7 @@ static LEXEME* SEH_finally(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
 static LEXEME* SEH_fault(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
 {
     STATEMENT* st;
-    BLOCKDATA* catchstmt = (BLOCKDATA*)Alloc(sizeof(BLOCKDATA));
+    BLOCKDATA* catchstmt = Allocate<BLOCKDATA>();
     lex = getsym();
     ParseAttributeSpecifiers(&lex, funcsp, true);
     catchstmt->breaklabel = -1;
@@ -197,7 +197,7 @@ static LEXEME* SEH_fault(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
 static LEXEME* SEH_try(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
 {
     STATEMENT *st, **tail = parent->head ? &parent->tail->next : &parent->head;
-    BLOCKDATA* trystmt = (BLOCKDATA*)Alloc(sizeof(BLOCKDATA));
+    BLOCKDATA* trystmt = Allocate<BLOCKDATA>();
     trystmt->breaklabel = -1;
     trystmt->next = nullptr;    // so we can't break or continue out of the block
     trystmt->defaultlabel = -1; /* no default */

@@ -54,17 +54,6 @@
 #include "memory.h"
 #include "outcode.h"
 
-#if 0
-#    include <new>
-void * operator new(std::size_t n) throw(std::bad_alloc)
-{
-    return (void *)Alloc(n);
-}
-void operator delete(void * p) throw()
-{
-    // noop
-}
-#endif
 #define FULLVERSION
 
 extern void adjustUsesESP();
@@ -439,7 +428,7 @@ ObjFile* MakeFile(ObjFactory& factory, std::string& name)
                 if (Optimizer::cparams.prm_debug)
                     s1->SetBaseType(types.Put(e->tp));
                 int resolved = 0;
-                Optimizer::SimpleExpression* exp = (Optimizer::SimpleExpression*)Alloc(sizeof(Optimizer::SimpleExpression));
+                Optimizer::SimpleExpression* exp = Allocate<Optimizer::SimpleExpression>();
                 exp->type = Optimizer::se_auto;
                 exp->sp = e;
                 s1->SetOffset(new ObjExpression(resolveoffset(exp, &resolved)));
@@ -560,8 +549,8 @@ void output_obj_file(void)
 
 void compile_start(char* name)
 {
-    Optimizer::LIST* newItem = (Optimizer::LIST*)(Optimizer::LIST*)beGlobalAlloc(sizeof(Optimizer::LIST));
-    newItem->data = beGlobalAlloc(strlen(name) + 1);
+    Optimizer::LIST* newItem = beGlobalAllocate<Optimizer::LIST>();
+    newItem->data = beGlobalAllocate<char>(strlen(name) + 1);
     strcpy((char*)newItem->data, name);
 
     oa_ini();
@@ -873,7 +862,7 @@ void outcode_end_virtual_seg(Optimizer::SimpleSymbol* sym) { outcode_enterseg(oa
 void InsertAttrib(ATTRIBDATA* ad) { InsertInstruction(new Instruction(ad)); }
 void InsertLine(Optimizer::LINEDATA* linedata)
 {
-    ATTRIBDATA* attrib = (ATTRIBDATA*)Alloc(sizeof(ATTRIBDATA));
+    ATTRIBDATA* attrib = Allocate<ATTRIBDATA>();
     attrib->type = e_ad_linedata;
     attrib->v.ld = linedata;
     InsertAttrib(attrib);
@@ -882,7 +871,7 @@ void InsertVarStart(Optimizer::SimpleSymbol* sym)
 {
     if (!strstr(sym->name, "++"))
     {
-        ATTRIBDATA* attrib = (ATTRIBDATA*)Alloc(sizeof(ATTRIBDATA));
+        ATTRIBDATA* attrib = Allocate<ATTRIBDATA>();
         attrib->type = e_ad_vardata;
         attrib->v.sp = sym;
 
@@ -895,7 +884,7 @@ void InsertFunc(Optimizer::SimpleSymbol* sym, int start)
 {
     if (oa_currentSeg == Optimizer::virtseg)
     {
-        ATTRIBDATA* attrib = (ATTRIBDATA*)Alloc(sizeof(ATTRIBDATA));
+        ATTRIBDATA* attrib = Allocate<ATTRIBDATA>();
         attrib->type = e_ad_vfuncdata;
         attrib->v.section = currentSection;
         attrib->start = !!start;
@@ -903,7 +892,7 @@ void InsertFunc(Optimizer::SimpleSymbol* sym, int start)
     }
     else
     {
-        ATTRIBDATA* attrib = (ATTRIBDATA*)Alloc(sizeof(ATTRIBDATA));
+        ATTRIBDATA* attrib = Allocate<ATTRIBDATA>();
         attrib->type = e_ad_funcdata;
         attrib->v.sp = sym;
         attrib->start = !!start;
@@ -912,7 +901,7 @@ void InsertFunc(Optimizer::SimpleSymbol* sym, int start)
 }
 void InsertBlock(int start)
 {
-    ATTRIBDATA* attrib = (ATTRIBDATA*)Alloc(sizeof(ATTRIBDATA));
+    ATTRIBDATA* attrib = Allocate<ATTRIBDATA>();
     attrib->type = e_ad_blockdata;
     attrib->start = !!start;
     InsertAttrib(attrib);

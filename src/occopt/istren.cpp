@@ -167,7 +167,7 @@ static void ScanVarStrength(INSTRUCTIONLIST* l, IMODE* multiplier, int tnum, int
                 ILIST* v = vars;
                 while (v)
                 {
-                    USES_STRENGTH* s1 = (USES_STRENGTH*)tAlloc(sizeof(USES_STRENGTH));
+                    USES_STRENGTH* s1 = tAllocate<USES_STRENGTH>();
                     IMODE* rv = InitTempOpt((ans)->size, (ans)->size);
                     int n = rv->offset->sp->i;
                     s1->next = tempInfo[v->data]->sl;
@@ -268,7 +268,7 @@ void ReduceStrengthAssign(QUAD* head)
             {
                 while (sla && sll)
                 {
-                    QUAD* ins = (QUAD*)Alloc(sizeof(QUAD));
+                    QUAD* ins = Allocate<QUAD>();
                     ins->dc.opcode = head->dc.opcode;
                     ins->ans = tempInfo[sla->strengthName]->enode->sp->imvalue;
                     ins->dc.left = tempInfo[sll->strengthName]->enode->sp->imvalue;
@@ -300,7 +300,7 @@ static IMODE* StrengthConstant(QUAD* head, IMODE* im1, IMODE* im2, int size)
             im2 = q->dc.left;
         }
 
-    ins = (QUAD*)Alloc(sizeof(QUAD));
+    ins = Allocate<QUAD>();
     if (im2->mode == i_immed)
     {
         IMODE* im = im1;
@@ -359,7 +359,7 @@ static IMODE* StrengthConstant(QUAD* head, IMODE* im1, IMODE* im2, int size)
         }
         else
         {
-            QUAD* q2 = (QUAD*)Alloc(sizeof(QUAD));
+            QUAD* q2 = Allocate<QUAD>();
             *q2 = q1;
             ReplaceHashReshape((QUAD*)ins->ans, (UBYTE*)q2, DAGCOMPARE, ins_hash);
             tempInfo[ins->ans->offset->sp->i]->preSSATemp = ins->ans->offset->sp->i;
@@ -367,7 +367,7 @@ static IMODE* StrengthConstant(QUAD* head, IMODE* im1, IMODE* im2, int size)
     }
     if (size != ins->dc.left->size)
     {
-        QUAD* ins1 = (QUAD*)Alloc(sizeof(QUAD));
+        QUAD* ins1 = Allocate<QUAD>();
         ins1->dc.left = ins->dc.left;
         ins1->ans = ins->dc.left = InitTempOpt(size, size);
         ins1->dc.opcode = i_assn;
@@ -436,7 +436,7 @@ static void ReduceStrengthAdd(QUAD* head)
             {
                 while (sla && sll)
                 {
-                    QUAD* ins = (QUAD*)Alloc(sizeof(QUAD));
+                    QUAD* ins = Allocate<QUAD>();
                     ins->dc.opcode = head->dc.opcode;
                     ins->ans = tempInfo[sla->strengthName]->enode->sp->imvalue;
                     ins->dc.left = tempInfo[sll->strengthName]->enode->sp->imvalue;
@@ -461,7 +461,7 @@ static void ReduceStrengthAdd(QUAD* head)
             {
                 while (sla && slr)
                 {
-                    QUAD* ins = (QUAD*)Alloc(sizeof(QUAD));
+                    QUAD* ins = Allocate<QUAD>();
                     ins->dc.opcode = head->dc.opcode;
                     ins->ans = tempInfo[sla->strengthName]->enode->sp->imvalue;
                     ins->dc.right = tempInfo[slr->strengthName]->enode->sp->imvalue;
@@ -489,7 +489,7 @@ static int HandlePhiInitVar(QUAD* insin, USES_STRENGTH* sl, int tnum)
     rv = StrengthConstant(head, rv, sl->multiplier, tempInfo[tnum]->size);
     if (rv->mode == i_immed)
     {
-        QUAD* ins = (QUAD*)Alloc(sizeof(QUAD));
+        QUAD* ins = Allocate<QUAD>();
         int n;
         ins->dc.left = rv;
         ins->ans = InitTempOpt(tempInfo[tnum]->size, tempInfo[tnum]->size);
@@ -514,8 +514,8 @@ static void ReduceStrengthPhi(QUAD* head)
         while (sl)
         {
             struct _phiblock *pb = pd->temps, **newpb;
-            QUAD* ins = (QUAD*)Alloc(sizeof(QUAD));
-            PHIDATA* newpd = (PHIDATA*)Alloc(sizeof(PHIDATA));
+            QUAD* ins = Allocate<QUAD>();
+            PHIDATA* newpd = Allocate<PHIDATA>();
             ins->dc.opcode = i_phi;
             ins->dc.v.phi = newpd;
             newpd->T0 = sl->strengthName;
@@ -525,7 +525,7 @@ static void ReduceStrengthPhi(QUAD* head)
             {
                 USES_STRENGTH* sl1 = tempInfo[pb->Tn]->sl;
                 int i;
-                *newpb = (_phiblock*)Alloc(sizeof(struct _phiblock));
+                *newpb = Allocate<_phiblock>();
                 (*newpb)->block = pb->block;
                 for (i = 0; sl1 && i < c; i++)
                     sl1 = sl1->next;

@@ -94,9 +94,9 @@ Optimizer::IMODE* imake_label(int label)
  */
 
 {
-    Optimizer::IMODE* ap = (Optimizer::IMODE*)(Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+    Optimizer::IMODE* ap = Allocate<Optimizer::IMODE>();
     ap->mode = Optimizer::i_immed;
-    ap->offset = (Optimizer::SimpleExpression*)Alloc(sizeof(Optimizer::SimpleExpression));
+    ap->offset = Allocate<Optimizer::SimpleExpression>();
     ap->offset->type = Optimizer::se_labcon;
     ap->offset->i = label;
     ap->size = ISZ_ADDR;
@@ -139,7 +139,7 @@ Optimizer::IMODE* set_symbol(const char* name, int isproc)
         sym = SymAlloc();
         sym->sb->storage_class = sc_external;
         sym->name = sym->sb->decoratedName = litlate(name);
-        sym->tp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
+        sym->tp = Allocate<TYPE>();
         sym->tp->type = isproc ? bt_func : bt_int;
         sym->sb->safefunc = true;
         insert(sym, globalNameSpace->valueData->syms);
@@ -153,8 +153,8 @@ Optimizer::IMODE* set_symbol(const char* name, int isproc)
         if (sym->sb->storage_class == sc_overloads)
             sym = (SYMBOL*)(sym->tp->syms->table[0]->p);
     }
-    result = (Optimizer::IMODE*)(Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
-    result->offset = (Optimizer::SimpleExpression*)Alloc(sizeof(Optimizer::SimpleExpression));
+    result = Allocate<Optimizer::IMODE>();
+    result->offset = Allocate<Optimizer::SimpleExpression>();
     result->offset->type = Optimizer::se_global;
     result->offset->sp = Optimizer::SymbolManager::Get(sym);
     result->mode = Optimizer::i_direct;
@@ -192,14 +192,14 @@ static void AddProfilerData(SYMBOL* funcsp)
         STRING* string;
         int i;
         int l = strlen(funcsp->sb->decoratedName);
-        pname = (LCHAR*)Alloc(sizeof(LCHAR) * l + 1);
+        pname = Allocate<LCHAR>(l + 1);
         for (i = 0; i < l + 1; i++)
             pname[i] = funcsp->sb->decoratedName[i];
-        string = (STRING*)Alloc(sizeof(STRING));
+        string = Allocate<STRING>();
         string->strtype = l_astr;
         string->size = 1;
-        string->pointers = (Optimizer::SLCHAR**)Alloc(sizeof(Optimizer::SLCHAR*));
-        string->pointers[0] = (Optimizer::SLCHAR*)Alloc(sizeof(Optimizer::SLCHAR));
+        string->pointers = Allocate<Optimizer::SLCHAR*>();
+        string->pointers[0] = Allocate<Optimizer::SLCHAR>();
         string->pointers[0]->str = pname;
         string->pointers[0]->count = l;
         string->suffix = nullptr;
@@ -240,7 +240,7 @@ void gather_cases(CASEDATA* cd, struct Optimizer::cases* cs)
     int pos = 0;
     if (!cs->ptrs)
     {
-        cs->ptrs = (struct Optimizer::caseptrs*)Alloc((cs->count) * sizeof(struct Optimizer::caseptrs));
+        cs->ptrs = Allocate<Optimizer::caseptrs>(cs->count);
     }
     while (cd)
     {
@@ -312,7 +312,7 @@ void genxswitch(STATEMENT* stmt, SYMBOL* funcsp)
             Optimizer::gen_icode(Optimizer::i_assn, ap3, ap, nullptr);
             ap = ap3;
         }
-        ap3 = (Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+        ap3 = Allocate<Optimizer::IMODE>();
         ap3->mode = Optimizer::i_direct;
         ap3->offset = Optimizer::SymbolManager::Get(en);
         ap3->size = -ISZ_UINT;
@@ -399,11 +399,11 @@ static STATEMENT* gen___try(SYMBOL* funcsp, STATEMENT* stmt)
                 mode = 2;
                 if (stmt->sp)
                 {
-                    left = (Optimizer::IMODE*)(Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+                    left = Allocate<Optimizer::IMODE>();
                     left->mode = Optimizer::i_direct;
                     left->size = ISZ_OBJECT;
                     left->offset =
-                        (Optimizer::SimpleExpression*)(Optimizer::SimpleExpression*)Alloc(sizeof(Optimizer::SimpleExpression));
+                        Allocate<Optimizer::SimpleExpression>();
                     left->offset->type = Optimizer::se_auto;
                     left->offset->sp = Optimizer::SymbolManager::Get(stmt->sp);
                 }
@@ -634,7 +634,7 @@ void gen_varstart(void* exp)
 {
     if (Optimizer::cparams.prm_debug)
     {
-        Optimizer::IMODE* ap = (Optimizer::IMODE*)(Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+        Optimizer::IMODE* ap = Allocate<Optimizer::IMODE>();
         ap->mode = Optimizer::i_immed;
         ap->offset = Optimizer::SymbolManager::Get((expr*)exp);
         ap->size = ISZ_ADDR;
@@ -643,7 +643,7 @@ void gen_varstart(void* exp)
 }
 void gen_func(void* exp, int start)
 {
-    Optimizer::IMODE* ap = (Optimizer::IMODE*)(Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+    Optimizer::IMODE* ap = Allocate<Optimizer::IMODE>();
     ap->mode = Optimizer::i_immed;
     ap->offset = Optimizer::SymbolManager::Get((expr*)exp);
     ap->size = ISZ_ADDR;
@@ -657,7 +657,7 @@ void gen_asm(STATEMENT* stmt)
  */
 {
     Optimizer::QUAD* newQuad;
-    newQuad = (Optimizer::QUAD*)(Optimizer::QUAD*)Alloc(sizeof(Optimizer::QUAD));
+    newQuad = Allocate<Optimizer::QUAD>();
     newQuad->dc.opcode = Optimizer::i_passthrough;
     newQuad->dc.left = (Optimizer::IMODE*)stmt->select; /* actually is defined by the INASM module*/
     // if (Optimizer::chosenAssembler->gen->adjust_codelab)
@@ -669,7 +669,7 @@ void gen_asm(STATEMENT* stmt)
 void gen_asmdata(STATEMENT* stmt)
 {
     Optimizer::QUAD* newQuad;
-    newQuad = (Optimizer::QUAD*)(Optimizer::QUAD*)Alloc(sizeof(Optimizer::QUAD));
+    newQuad = Allocate<Optimizer::QUAD>();
     newQuad->dc.opcode = Optimizer::i_datapassthrough;
     newQuad->dc.left = (Optimizer::IMODE*)stmt->select; /* actually is defined by the INASM module*/
     Optimizer::flush_dag();
@@ -818,7 +818,7 @@ static void StoreInBucket(Optimizer::IMODE* mem, Optimizer::IMODE* addr)
         }
         lst = lst->next;
     }
-    lst = (DATA*)Alloc(sizeof(DATA));
+    lst = Allocate<DATA>();
     lst->mem = mem;
     lst->addr = addr;
     lst->next = buckets[bucket];
@@ -869,7 +869,7 @@ static void InsertParameterThunks(SYMBOL* funcsp, Optimizer::BLOCK* b)
         }
         if (funcsp->sb->oldstyle && sym->tp->type == bt_float)
         {
-            Optimizer::IMODE* right = (Optimizer::IMODE*)(Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+            Optimizer::IMODE* right = Allocate<Optimizer::IMODE>();
             *right = *simpleSym->imvalue;
             right->size = ISZ_DOUBLE;
             if (!Optimizer::chosenAssembler->arch->hasFloatRegs)
@@ -916,7 +916,7 @@ static void SetReturnSym(SYMBOL *funcsp)
         auto exp = anonymousVar(sc_auto, basetype(funcsp->tp)->btp);
         auto sym = exp->v.sp;
         sym->sb->anonymous = false;
-        Optimizer::IMODE* ap = (Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+        Optimizer::IMODE* ap = Allocate<Optimizer::IMODE>();
         auto sym2 = Optimizer::SymbolManager::Get(sym);
         sym2->imvalue = ap;
         ap->offset = Optimizer::SymbolManager::Get(exp);

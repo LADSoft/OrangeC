@@ -73,7 +73,7 @@ AMODE* makedreg(int r)
  */
 {
     AMODE* ap;
-    ap = (AMODE*)beLocalAlloc(sizeof(AMODE));
+    ap = beLocalAllocate<AMODE>();
     ap->mode = am_dreg;
     ap->preg = r;
     ap->length = ISZ_UINT;
@@ -87,7 +87,7 @@ AMODE* makefreg(int r)
  */
 {
     AMODE* ap;
-    ap = (AMODE*)beLocalAlloc(sizeof(AMODE));
+    ap = beLocalAllocate<AMODE>();
     ap->mode = am_freg;
     ap->preg = r;
     ap->length = ISZ_LDOUBLE;
@@ -103,7 +103,7 @@ AMODE* copy_addr(AMODE* ap)
     AMODE* newap;
     if (ap == 0)
         return 0;
-    newap = (AMODE*)beLocalAlloc(sizeof(AMODE));
+    newap = beLocalAllocate<AMODE>();
     newap->mode = ap->mode;
     newap->preg = ap->preg;
     newap->sreg = ap->sreg;
@@ -165,7 +165,7 @@ OCODE* gen_code(int op, AMODE* ap1, AMODE* ap2)
 {
     OCODE* newitem;
 
-    newitem = (OCODE*)beLocalAlloc(sizeof(OCODE));
+    newitem = beLocalAllocate<OCODE>();
     newitem->opcode = (e_opcode)op;
     newitem->oper1 = copy_addr(ap1);
     newitem->oper2 = copy_addr(ap2);
@@ -207,7 +207,7 @@ OCODE* gen_code3(int op, AMODE* ap1, AMODE* ap2, AMODE* ap3)
  */
 {
     OCODE* newitem;
-    newitem = (OCODE*)beLocalAlloc(sizeof(OCODE));
+    newitem = beLocalAllocate<OCODE>();
     newitem->opcode = (e_opcode)op;
     newitem->oper1 = copy_addr(ap1);
     newitem->oper2 = copy_addr(ap2);
@@ -296,7 +296,7 @@ void gen_codelab(Optimizer::SimpleSymbol* lab)
  */
 {
     OCODE* newitem;
-    newitem = (OCODE*)beLocalAlloc(sizeof(OCODE));
+    newitem = beLocalAllocate<OCODE>();
     newitem->opcode = (e_opcode)op_funclabel;
     newitem->oper1 = (AMODE*)lab;
     newitem->oper2 = 0;
@@ -315,7 +315,7 @@ void gen_branch(int op, int label)
 
 void gen_comment(char* txt)
 {
-    OCODE* newitem = (OCODE*)beLocalAlloc(sizeof(OCODE));
+    OCODE* newitem = beLocalAllocate<OCODE>();
     newitem->opcode = (e_opcode)op_comment;
     newitem->oper2 = 0;
     newitem->oper1 = (AMODE*)txt;
@@ -352,7 +352,7 @@ void oa_gen_label(int labno)
  */
 {
     OCODE* newitem;
-    newitem = (OCODE*)beLocalAlloc(sizeof(OCODE));
+    newitem = beLocalAllocate<OCODE>();
     newitem->opcode = (e_opcode)op_label;
     newitem->oper1 = make_label(labno);
     add_peep(newitem);
@@ -1091,7 +1091,7 @@ void peep_movzx2(OCODE* ip)
                 }
                 else if (ip->oper1->preg <= EBX && (ip->oper2->preg & 3) != ip->oper1->preg)
                 {
-                    OCODE* c1 = (OCODE*)beLocalAlloc(sizeof(OCODE));
+                    OCODE* c1 = beLocalAllocate<OCODE>();
                     c1->opcode = op_xor;
                     c1->oper1 = makedreg(ip->oper1->preg);
                     c1->oper2 = makedreg(ip->oper1->preg);
@@ -1116,7 +1116,7 @@ void peep_movzx2(OCODE* ip)
                 }
                 else
                 {
-                    OCODE* c1 = (OCODE*)beLocalAlloc(sizeof(OCODE));
+                    OCODE* c1 = beLocalAllocate<OCODE>();
                     c1->opcode = op_xor;
                     c1->oper1 = makedreg(ip->oper1->preg);
                     c1->oper2 = makedreg(ip->oper1->preg);
@@ -1137,7 +1137,7 @@ void peep_movzx2(OCODE* ip)
                 if (((ip->oper2->mode != am_indisp && ip->oper2->mode != am_indispscale) || ip->oper2->preg != ip->oper1->preg) &&
                     (ip->oper2->mode != am_indispscale || ip->oper2->sreg != ip->oper1->preg))
                 {
-                    OCODE* c1 = (OCODE*)beLocalAlloc(sizeof(OCODE));
+                    OCODE* c1 = beLocalAllocate<OCODE>();
                     c1->opcode = op_xor;
                     c1->oper1 = makedreg(ip->oper1->preg);
                     c1->oper2 = makedreg(ip->oper1->preg);
@@ -1151,7 +1151,7 @@ void peep_movzx2(OCODE* ip)
                 }
                 else
                 {
-                    OCODE* c1 = (OCODE*)beLocalAlloc(sizeof(OCODE));
+                    OCODE* c1 = beLocalAllocate<OCODE>();
                     c1->opcode = op_and;
                     c1->oper1 = makedreg(ip->oper1->preg);
                     if (ip->oper2->length == ISZ_UCHAR)
@@ -1632,7 +1632,7 @@ void peep_fld(OCODE* ip)
 }
 void insert_peep_entry(OCODE* after, enum e_opcode opcode, int size, AMODE* ap1, AMODE* ap2)
 {
-    OCODE* a = (OCODE*)beLocalAlloc(sizeof(OCODE));
+    OCODE* a = beLocalAllocate<OCODE>();
     a->opcode = opcode;
     a->oper1 = ap1;
     a->oper2 = ap2;

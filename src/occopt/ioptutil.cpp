@@ -45,33 +45,33 @@ void BitInit(void)
 }
 BRIGGS_SET* briggsAlloc(int size)
 {
-    BRIGGS_SET* p = (BRIGGS_SET*)oAlloc(sizeof(BRIGGS_SET));
-    p->indexes = (unsigned short*)oAlloc(sizeof(*p->indexes) * size);
-    p->data = (unsigned short*)oAlloc(sizeof(*p->data) * size);
+    BRIGGS_SET* p = oAllocate<BRIGGS_SET>();
+    p->indexes = oAllocate<unsigned short>(size);
+    p->data = oAllocate<unsigned short>(size);
     p->size = size;
     return p;
 }
 BRIGGS_SET* briggsAlloct(int size)
 {
-    BRIGGS_SET* p = (BRIGGS_SET*)tAlloc(sizeof(BRIGGS_SET));
-    p->indexes = (unsigned short*)tAlloc(sizeof(*p->indexes) * size);
-    p->data = (unsigned short*)tAlloc(sizeof(*p->data) * size);
+    BRIGGS_SET* p = tAllocate<BRIGGS_SET>();
+    p->indexes = tAllocate<unsigned short>(size);
+    p->data = tAllocate<unsigned short>(size);
     p->size = size;
     return p;
 }
 BRIGGS_SET* briggsAllocc(int size)
 {
-    BRIGGS_SET* p = (BRIGGS_SET*)cAlloc(sizeof(BRIGGS_SET));
-    p->indexes = (unsigned short*)cAlloc(sizeof(*p->indexes) * size);
-    p->data = (unsigned short*)cAlloc(sizeof(*p->data) * size);
+    BRIGGS_SET* p = cAllocate<BRIGGS_SET>();
+    p->indexes = cAllocate<unsigned short>(size);
+    p->data = cAllocate<unsigned short>(size);
     p->size = size;
     return p;
 }
 BRIGGS_SET* briggsAllocs(int size)
 {
-    BRIGGS_SET* p = (BRIGGS_SET*)sAlloc(sizeof(BRIGGS_SET));
-    p->indexes = (unsigned short*)sAlloc(sizeof(*p->indexes) * size);
-    p->data = (unsigned short*)sAlloc(sizeof(*p->data) * size);
+    BRIGGS_SET* p = sAllocate<BRIGGS_SET>();
+    p->indexes = sAllocate<unsigned short>(size);
+    p->data = sAllocate<unsigned short>(size);
     p->size = size;
     return p;
 }

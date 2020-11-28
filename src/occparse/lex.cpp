@@ -390,9 +390,9 @@ void lexini(void)
 #endif
     llminus1 = 0;
     llminus1--;
-    context = (LEXCONTEXT*)Alloc(sizeof(LEXCONTEXT));
+    context = Allocate<LEXCONTEXT>();
     nextFree = 0;
-    pool = (LEXEME*)Alloc(sizeof(LEXEME) * MAX_LOOKBACK);
+    pool = Allocate<LEXEME>(MAX_LOOKBACK);
     currentLine = "";
     linePointer = (const unsigned char*)currentLine.c_str();
     while (parseStack.size())
@@ -805,8 +805,8 @@ Optimizer::SLCHAR* getString(const unsigned char** source, enum e_lexType* tp)
                         Optimizer::SLCHAR* rv;
                         int i;
                         *source = p;
-                        rv = (Optimizer::SLCHAR*)Alloc(sizeof(Optimizer::SLCHAR));
-                        rv->str = (LCHAR*)Alloc(1);
+                        rv = Allocate<Optimizer::SLCHAR>();
+                        rv->str = Allocate<LCHAR>(1);
                         rv->str[0] = 0;
                         rv->count = 1;
                         return rv;
@@ -968,8 +968,8 @@ Optimizer::SLCHAR* getString(const unsigned char** source, enum e_lexType* tp)
     {
         Optimizer::SLCHAR* rv;
         int i;
-        rv = (Optimizer::SLCHAR*)Alloc(sizeof(Optimizer::SLCHAR));
-        rv->str = (LCHAR*)Alloc(count * sizeof(LCHAR));
+        rv = Allocate<Optimizer::SLCHAR>();
+        rv->str = Allocate<LCHAR>(count);
         for (i = 0; i < count; i++)
             rv->str[i] = data[i];
         rv->count = count;
@@ -1714,7 +1714,7 @@ LEXEME* getsym(void)
                 }
                 else
                 {
-                    lex->value.f = (FPF*)Alloc(sizeof(FPF));
+                    lex->value.f = Allocate<FPF>();
                     *lex->value.f = rval;
                 }
                 if (suffix[0])
@@ -1836,7 +1836,7 @@ LEXEME* SetAlternateLex(LEXEME* lexList)
 {
     if (lexList)
     {
-        LEXCONTEXT* newContext = (LEXCONTEXT*)Alloc(sizeof(LEXCONTEXT));
+        LEXCONTEXT* newContext = Allocate<LEXCONTEXT>();
         newContext->next = context;
         context = newContext;
         context->cur = lexList->next;
@@ -1931,7 +1931,7 @@ void SetAlternateParse(bool set, const std::string& val)
 long long ParseExpression(std::string& line)
 {
     LEXCONTEXT* oldContext = context;
-    LEXCONTEXT* newContext = (LEXCONTEXT*)Alloc(sizeof(LEXCONTEXT));
+    LEXCONTEXT* newContext = Allocate<LEXCONTEXT>();
     context = newContext;
     TYPE* tp = nullptr;
     EXPRESSION* exp = nullptr;

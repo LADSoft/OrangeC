@@ -139,7 +139,7 @@ DAGLIST* ReplaceHash(Optimizer::QUAD* rv, UBYTE* key, int size, DAGLIST** table)
         }
         list = *(DAGLIST***)list;
     }
-    newDag = (DAGLIST*)oAlloc(sizeof(DAGLIST));
+    newDag = oAllocate<DAGLIST>();
     newDag->rv = (UBYTE*)rv;
     newDag->key = key;
     newDag->next = *flist;
@@ -208,7 +208,7 @@ Optimizer::IMODE* liveout2(Optimizer::QUAD* q)
 Optimizer::QUAD* liveout(Optimizer::QUAD* node)
 {
     Optimizer::QUAD* outnode;
-    outnode = (Optimizer::QUAD*)(Optimizer::QUAD*)Alloc(sizeof(Optimizer::QUAD));
+    outnode = Allocate<Optimizer::QUAD>();
     outnode->dc.opcode = node->dc.opcode;
     outnode->ans = node->ans;
     outnode->dc.v = node->dc.v;
@@ -261,7 +261,7 @@ int ToQuadConst(Optimizer::IMODE** im)
         rv = LookupNVHash((UBYTE*)&temp, DAGCOMPARE, ins_hash);
         if (!rv)
         {
-            rv = (Optimizer::QUAD*)Alloc(sizeof(Optimizer::QUAD));
+            rv = Allocate<Optimizer::QUAD>();
             *rv = temp;
             rv->ans = tempreg(ISZ_UINT, 0);
             add_intermed(rv);
@@ -345,7 +345,7 @@ static Optimizer::QUAD* add_dag(Optimizer::QUAD* newQuad)
         Optimizer::QUAD *tquad;
         Optimizer::IMODE *treg;
         treg = tempreg(newQuad->ans->size, 0);
-        tquad = (Optimizer::QUAD *)Alloc(sizeof(Optimizer::QUAD));
+        tquad = Allocate<Optimizer::QUAD>();
         tquad->ans = newQuad->ans;
         tquad->dc.left = treg;
         tquad->dc.opcode = i_assn;
@@ -434,7 +434,7 @@ static Optimizer::QUAD* add_dag(Optimizer::QUAD* newQuad)
     }
     else
     {
-        outnode = (Optimizer::QUAD*)(Optimizer::QUAD*)Alloc(sizeof(Optimizer::QUAD));
+        outnode = Allocate<Optimizer::QUAD>();
         outnode->dc.opcode = i_assn;
         outnode->ans = newQuad->ans;
         outnode->dc.left = node->ans;
@@ -490,8 +490,8 @@ void dag_rundown(void)
 /*-------------------------------------------------------------------------*/
 BLOCKLIST* newBlock(void)
 {
-    BLOCK* block = (BLOCK*)Alloc(sizeof(BLOCK));
-    BLOCKLIST* list = (BLOCKLIST*)Alloc(sizeof(BLOCKLIST));
+    BLOCK* block = Allocate<BLOCK>();
+    BLOCKLIST* list = Allocate<BLOCKLIST>();
     list->next = 0;
     list->block = block;
     block->blocknum = blockCount++;
@@ -526,7 +526,7 @@ void addblock(int val)
     }
 
     /* block statement gets included */
-    q = (Optimizer::QUAD*)(Optimizer::QUAD*)Alloc(sizeof(Optimizer::QUAD));
+    q = Allocate<Optimizer::QUAD>();
     q->dc.opcode = i_block;
     q->ans = q->dc.right = 0;
     q->dc.v.label = blockCount;
@@ -553,7 +553,7 @@ void gen_label(int labno)
     if (!wasgoto)
         addblock(i_label);
     wasgoto = false;
-    newQuad = (Optimizer::QUAD*)(Optimizer::QUAD*)Alloc(sizeof(Optimizer::QUAD));
+    newQuad = Allocate<Optimizer::QUAD>();
     newQuad->dc.opcode = i_label;
     newQuad->dc.v.label = labno;
     add_intermed(newQuad);
@@ -571,7 +571,7 @@ Optimizer::QUAD* gen_icode_with_conflict(enum i_ops op, Optimizer::IMODE* res, O
     {
         if (op != i_lsl && op != i_asr && op != i_lsr)
         {
-            Optimizer::IMODE* newRight = (Optimizer::IMODE*)Alloc(sizeof(Optimizer::IMODE));
+            Optimizer::IMODE* newRight = Allocate<Optimizer::IMODE>();
             *newRight = *right;
             right = newRight;
             right->size = left->size;
@@ -588,7 +588,7 @@ Optimizer::QUAD* gen_icode_with_conflict(enum i_ops op, Optimizer::IMODE* res, O
         default:
             break;
     }
-    newQuad = (Optimizer::QUAD*)(Optimizer::QUAD*)Alloc(sizeof(Optimizer::QUAD));
+    newQuad = Allocate<Optimizer::QUAD>();
     newQuad->genConflict = conflicting;
     newQuad->dc.opcode = op;
     newQuad->dc.left = left;
@@ -621,7 +621,7 @@ void gen_iiconst(Optimizer::IMODE* res, long long val)
 {
     Optimizer::QUAD* newQuad;
     Optimizer::IMODE* left = make_immed(ISZ_UINT, val);
-    newQuad = (Optimizer::QUAD*)(Optimizer::QUAD*)Alloc(sizeof(Optimizer::QUAD));
+    newQuad = Allocate<Optimizer::QUAD>();
     newQuad->dc.opcode = i_assn;
     newQuad->ans = res;
     newQuad->dc.left = left;
@@ -637,7 +637,7 @@ void gen_ifconst(Optimizer::IMODE* res, FPF val)
  */
 {
     Optimizer::QUAD* newQuad;
-    newQuad = (Optimizer::QUAD*)(Optimizer::QUAD*)Alloc(sizeof(Optimizer::QUAD));
+    newQuad = Allocate<Optimizer::QUAD>();
     newQuad->dc.opcode = i_fcon;
     newQuad->dc.v.f = val;
     newQuad->ans = res;
@@ -654,7 +654,7 @@ void gen_igoto(enum i_ops op, long label)
 {
     Optimizer::QUAD* newQuad;
     flush_dag();
-    newQuad = (Optimizer::QUAD*)(Optimizer::QUAD*)Alloc(sizeof(Optimizer::QUAD));
+    newQuad = Allocate<Optimizer::QUAD>();
     newQuad->dc.opcode = op;
     newQuad->dc.left = newQuad->dc.right = newQuad->ans = 0;
     newQuad->dc.v.label = label;
@@ -669,7 +669,7 @@ void gen_data(int val)
 {
     Optimizer::QUAD* newQuad;
     flush_dag();
-    newQuad = (Optimizer::QUAD*)(Optimizer::QUAD*)Alloc(sizeof(Optimizer::QUAD));
+    newQuad = Allocate<Optimizer::QUAD>();
     newQuad->dc.opcode = i_genword;
     newQuad->dc.left = newQuad->dc.right = newQuad->ans = 0;
     newQuad->dc.v.label = val;
@@ -688,7 +688,7 @@ void gen_icgoto(enum i_ops op, long label, Optimizer::IMODE* left, Optimizer::IM
     if (right && right->mode == i_immed /*&& right->size == ISZ_NONE*/)
         right->size = left->size;
 
-    newQuad = (Optimizer::QUAD*)(Optimizer::QUAD*)Alloc(sizeof(Optimizer::QUAD));
+    newQuad = Allocate<Optimizer::QUAD>();
     newQuad->dc.opcode = op;
     newQuad->dc.left = left;
     newQuad->dc.right = right;
@@ -709,7 +709,7 @@ Optimizer::QUAD* gen_igosub(enum i_ops op, Optimizer::IMODE* left)
 {
     Optimizer::QUAD* newQuad;
 
-    newQuad = (Optimizer::QUAD*)(Optimizer::QUAD*)Alloc(sizeof(Optimizer::QUAD));
+    newQuad = Allocate<Optimizer::QUAD>();
     newQuad->dc.opcode = op;
     newQuad->dc.left = left;
     newQuad->dc.right = 0;
@@ -731,7 +731,7 @@ void gen_icode2(enum i_ops op, Optimizer::IMODE* res, Optimizer::IMODE* left, Op
  */
 {
     Optimizer::QUAD* newQuad;
-    newQuad = (Optimizer::QUAD*)(Optimizer::QUAD*)Alloc(sizeof(Optimizer::QUAD));
+    newQuad = Allocate<Optimizer::QUAD>();
     newQuad->dc.opcode = op;
     newQuad->dc.left = left;
     newQuad->dc.right = right;
@@ -751,7 +751,7 @@ void gen_line(LINEDATA* data)
     Optimizer::QUAD* newQuad;
     if (data == 0)
         return;
-    newQuad = (Optimizer::QUAD*)(Optimizer::QUAD*)Alloc(sizeof(Optimizer::QUAD));
+    newQuad = Allocate<Optimizer::QUAD>();
     newQuad->dc.opcode = i_line;
     newQuad->dc.left = (Optimizer::IMODE*)data; /* text */
     add_intermed(newQuad);
@@ -767,7 +767,7 @@ void gen_nodag(enum i_ops op, Optimizer::IMODE* res, Optimizer::IMODE* left, Opt
  */
 {
     Optimizer::QUAD* newQuad;
-    newQuad = (Optimizer::QUAD*)(Optimizer::QUAD*)Alloc(sizeof(Optimizer::QUAD));
+    newQuad = Allocate<Optimizer::QUAD>();
     newQuad->dc.opcode = op;
     newQuad->dc.left = left;
     newQuad->dc.right = right;
@@ -790,7 +790,7 @@ void RemoveFromUses(Optimizer::QUAD* ins, int tnum)
 }
 void InsertUses(Optimizer::QUAD* ins, int tnum)
 {
-    INSTRUCTIONLIST* l = (INSTRUCTIONLIST*)oAlloc(sizeof(INSTRUCTIONLIST));
+    INSTRUCTIONLIST* l = oAllocate<INSTRUCTIONLIST>();
     l->next = tempInfo[tnum]->instructionUses;
     l->ins = ins;
     tempInfo[tnum]->instructionUses = l;

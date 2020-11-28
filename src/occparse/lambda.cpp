@@ -139,7 +139,7 @@ static TYPE* lambda_type(TYPE* tp, enum e_cm mode)
         {
             tp = tp->btp;
         }
-        tp1 = (TYPE*)Alloc(sizeof(TYPE));
+        tp1 = Allocate<TYPE>();
         tp1->type = bt_lref;
         tp1->size = getSize(bt_pointer);
         tp1->btp = tp;
@@ -157,7 +157,7 @@ static TYPE* lambda_type(TYPE* tp, enum e_cm mode)
         tp = basetype(tp);
         if (!lambdas->isMutable)
         {
-            tp1 = (TYPE*)Alloc(sizeof(TYPE));
+            tp1 = Allocate<TYPE>();
             tp1->type = bt_const;
             tp1->size = tp->size;
             tp1->btp = tp;
@@ -291,7 +291,7 @@ SYMBOL* lambda_capture(SYMBOL* sym, enum e_cm mode, bool isExplicit)
                     {
                         // we are replicating captures through intermediate lambdas
                         // to make it easier to handle inner lambda creation.
-                        LAMBDASP* ins = (LAMBDASP*)Alloc(sizeof(LAMBDASP));
+                        LAMBDASP* ins = Allocate<LAMBDASP>();
                         ins->name = sym->name;
                         ins->parent = sym;
                         sym = clonesym(sym);
@@ -323,7 +323,7 @@ static TYPE* cloneFuncType(SYMBOL* funcin)
     tp = &func->tp;
     while (tp_in)
     {
-        *tp = (TYPE*)Alloc(sizeof(TYPE));
+        *tp = Allocate<TYPE>();
         **tp = *(tp_in);
         tp_in = tp_in->btp;
         tp = &(*tp)->btp;
@@ -334,7 +334,7 @@ static TYPE* cloneFuncType(SYMBOL* funcin)
     src = basetype(funcin->tp)->syms->table[0];
     while (src)
     {
-        *dest = (SYMLIST*)Alloc(sizeof(SYMLIST));
+        *dest = Allocate<SYMLIST>();
         (*dest)->p = (SYMBOL*)clonesymfalse((SYMBOL*)src->p);
         dest = &(*dest)->next;
         src = src->next;
@@ -346,8 +346,8 @@ static void cloneTemplateParams(SYMBOL* func)
     TEMPLATEPARAMLIST** tplp = &func->templateParams;
     SYMLIST* hr = basetype(func->tp)->syms->table[0];
     int index = 0;
-    (*tplp) = (TEMPLATEPARAMLIST*)(TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
-    (*tplp)->p = (TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
+    (*tplp) = Allocate<TEMPLATEPARAMLIST>();
+    (*tplp)->p = Allocate<TEMPLATEPARAM>();
     (*tplp)->p->type = kw_new;
     tplp = &(*tplp)->next;
     while (hr)
@@ -355,13 +355,13 @@ static void cloneTemplateParams(SYMBOL* func)
         SYMBOL* arg = (SYMBOL*)(hr->p);
         if (!arg->sb->thisPtr)
         {
-            TYPE* tpn = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
+            TYPE* tpn = Allocate<TYPE>();
             *tpn = *arg->tp;
             arg->tp = tpn;
             UpdateRootTypes(tpn);
-            (*tplp) = (TEMPLATEPARAMLIST*)(TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
-            (*tplp)->p = (TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
-            (*tplp)->argsym = (SYMBOL*)Alloc(sizeof(SYMBOL));
+            (*tplp) = Allocate<TEMPLATEPARAMLIST>();
+            (*tplp)->p = Allocate<TEMPLATEPARAM>();
+            (*tplp)->argsym = Allocate<SYMBOL>();
             *(*tplp)->argsym = *arg;
             (*tplp)->argsym->sb = nullptr;
             (*tplp)->p->type = kw_typename;
@@ -376,8 +376,8 @@ static void convertCallToTemplate(SYMBOL* func)
 {
     TEMPLATEPARAMLIST** tplholder;
     SYMLIST* hr;
-    func->templateParams = (TEMPLATEPARAMLIST*)(TEMPLATEPARAMLIST*)Alloc(sizeof(TEMPLATEPARAMLIST));
-    func->templateParams->p = (TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
+    func->templateParams = Allocate<TEMPLATEPARAMLIST>();
+    func->templateParams->p = Allocate<TEMPLATEPARAM>();
     func->templateParams->p->type = kw_new;
     if (isautotype(lambdas->functp))
         basetype(func->tp)->btp = &stdauto;  // convert return type back to auto
@@ -389,12 +389,12 @@ static void convertCallToTemplate(SYMBOL* func)
         SYMBOL* arg = (SYMBOL*)hr->p;
         if (isautotype(arg->tp))
         {
-            (*tplholder) = (TEMPLATEPARAMLIST*)(TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
-            (*tplholder)->p = (TEMPLATEPARAM*)Alloc(sizeof(TEMPLATEPARAM));
-            (*tplholder)->argsym = (SYMBOL*)Alloc(sizeof(SYMBOL));
+            (*tplholder) = Allocate<TEMPLATEPARAMLIST>();
+            (*tplholder)->p = Allocate<TEMPLATEPARAM>();
+            (*tplholder)->argsym = Allocate<SYMBOL>();
             *(*tplholder)->argsym = *arg;
             (*tplholder)->argsym->sb = nullptr;
-            arg->tp = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
+            arg->tp = Allocate<TYPE>();
             arg->tp->type = bt_templateparam;
             arg->tp->templateParam = *tplholder;
             (*tplholder)->p->type = kw_typename;
@@ -410,7 +410,7 @@ static SYMBOL* createPtrToCaller(SYMBOL* self)
 {
     INITLIST** argptr;
     SYMLIST* hr;
-    FUNCTIONCALL* params = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
+    FUNCTIONCALL* params = Allocate<FUNCTIONCALL>();
     TYPE* args = cloneFuncType(lambdas->func);
     SYMBOL* func = makeID(sc_static, args, NULL, "___ptrcall");
     BLOCKDATA block1, block2;
@@ -441,7 +441,7 @@ static SYMBOL* createPtrToCaller(SYMBOL* self)
             break;
         sym = clonesym(sym);
         sym->sb->offset -= getSize(bt_pointer);
-        *argptr = (INITLIST*)Alloc(sizeof(INITLIST));
+        *argptr = Allocate<INITLIST>();
         if (isstructured(sym->tp) && !isref(sym->tp))
         {
             SYMBOL* sym2 = anonymousVar(sc_auto, sym->tp)->v.sp;
@@ -509,14 +509,14 @@ static void createConverter(SYMBOL* self)
 {
     SYMBOL* caller = createPtrToCaller(self);
     TYPE* args = cloneFuncType(lambdas->func);
-    SYMBOL* func = makeID(sc_member, (TYPE*)Alloc(sizeof(TYPE)), NULL, overloadNameTab[CI_CAST]);
+    SYMBOL* func = makeID(sc_member, Allocate<TYPE>(), NULL, overloadNameTab[CI_CAST]);
     BLOCKDATA block1, block2;
     STATEMENT* st;
     EXPRESSION* exp;
     SYMBOL* sym = makeID(sc_parameter, &stdvoid, NULL, AnonymousName());
-    SYMLIST* hr = (SYMLIST*)Alloc(sizeof(SYMLIST));
+    SYMLIST* hr = Allocate<SYMLIST>();
     func->tp->type = bt_func;
-    func->tp->btp = (TYPE*)Alloc(sizeof(TYPE));
+    func->tp->btp = Allocate<TYPE>();
     func->tp->btp->type = bt_pointer;
     func->tp->btp->size = getSize(bt_pointer);
     func->tp->btp->btp = args;
@@ -556,13 +556,13 @@ static void createConverter(SYMBOL* self)
     {
         LEXEME* lex1;
         TEMPLATEPARAMLIST *tpl, **tplp, **tplp2;
-        FUNCTIONCALL* f = (FUNCTIONCALL*)(FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
+        FUNCTIONCALL* f = Allocate<FUNCTIONCALL>();
         INITLIST** args = &f->arguments;
         SYMLIST* hr;
         func->templateParams = caller->templateParams;
         func->sb->templateLevel = templateNestingCount;
         func->sb->parentTemplate = func;
-        basetype(func->tp)->btp = (TYPE*)Alloc(sizeof(TYPE));
+        basetype(func->tp)->btp = Allocate<TYPE>();
         basetype(func->tp)->btp->type = bt_templatedecltype;
         basetype(func->tp)->btp->templateDeclType = exprNode(en_func, NULL, NULL);
         basetype(func->tp)->btp->templateDeclType->v.func = f;
@@ -577,7 +577,7 @@ static void createConverter(SYMBOL* self)
             }
             else
             {
-                (*args) = (INITLIST*)(INITLIST*)Alloc(sizeof(INITLIST));
+                (*args) = Allocate<INITLIST>();
                 (*args)->tp = sym->tp;
                 (*args)->exp = intNode(en_c_i, 0);
                 args = &(*args)->next;
@@ -623,7 +623,7 @@ static bool lambda_get_template_state(SYMBOL* func)
 }
 static void finishClass(void)
 {
-    TYPE* tps = (TYPE*)(TYPE*)Alloc(sizeof(TYPE));
+    TYPE* tps = Allocate<TYPE>();
     SYMBOL* self = makeID(sc_static, tps, NULL, "___self");
     SYMLIST* lst;
     tps->type = bt_pointer;
@@ -660,13 +660,13 @@ static void finishClass(void)
     if (!lambdas->isMutable)
     {
         SYMBOL* ths = (SYMBOL*)lambdas->func->tp->syms->table[0]->p;
-        TYPE* tp2 = (TYPE*)Alloc(sizeof(TYPE));
+        TYPE* tp2 = Allocate<TYPE>();
         tp2->type = bt_const;
         tp2->size = lambdas->func->tp->size;
         tp2->btp = lambdas->func->tp;
         tp2->rootType = lambdas->func->tp->rootType;
         lambdas->func->tp = tp2;
-        tp2 = (TYPE*)Alloc(sizeof(TYPE));
+        tp2 = Allocate<TYPE>();
         tp2->type = bt_const;
         tp2->size = basetype(ths->tp)->btp->size;
         tp2->btp = basetype(ths->tp)->btp;
@@ -841,8 +841,8 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
     STRUCTSYM ssl;
     if (funcsp)
         funcsp->sb->noinline = true;
-    self = (LAMBDA*)Alloc(sizeof(LAMBDA));
-    ltp = (TYPE*)Alloc(sizeof(TYPE));
+    self = Allocate<LAMBDA>();
+    ltp = Allocate<TYPE>();
     ltp->type = bt_struct;
     ltp->syms = CreateHashTable(1);
     ltp->tags = CreateHashTable(1);
@@ -1097,7 +1097,7 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
     }
     else
     {
-        TYPE* tp1 = (TYPE*)Alloc(sizeof(TYPE));
+        TYPE* tp1 = Allocate<TYPE>();
         SYMBOL* spi;
         tp1->type = bt_func;
         tp1->size = getSize(bt_pointer);
@@ -1107,14 +1107,14 @@ LEXEME* expression_lambda(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
         self->func->tp = tp1;
         spi = makeID(sc_parameter, tp1, NULL, AnonymousName());
         spi->sb->anonymous = true;
-        spi->tp = (TYPE*)Alloc(sizeof(TYPE));
+        spi->tp = Allocate<TYPE>();
         spi->tp->type = bt_void;
         spi->tp->rootType = spi->tp;
         insert(spi, localNameSpace->valueData->syms);
         SetLinkerNames(spi, lk_cpp);
         self->func->tp->syms = localNameSpace->valueData->syms;
         self->funcargs = self->func->tp->syms->table[0];
-        self->func->tp->syms->table[0] = (SYMLIST*)Alloc(sizeof(SYMLIST));
+        self->func->tp->syms->table[0] = Allocate<SYMLIST>();
         self->func->tp->syms->table[0]->p = makeID(sc_parameter, &stdvoid, NULL, AnonymousName());
     }
     basetype(self->func->tp)->btp = self->functp;

@@ -71,7 +71,7 @@ Optimizer::LIST* tablesearchone(const char* name, NAMESPACEVALUELIST* ns, bool t
         rv = search(name, ns->valueData->tags);
     if (rv)
     {
-        Optimizer::LIST* l = (Optimizer::LIST*)Alloc(sizeof(Optimizer::LIST));
+        Optimizer::LIST* l = Allocate<Optimizer::LIST>();
         l->data = rv;
         return l;
     }
@@ -181,7 +181,7 @@ SYMBOL* namespacesearch(const char* name, NAMESPACEVALUELIST* ns, bool qualified
             if (!a)
             {
                 SYMLIST** dest;
-                TYPE* tp = (TYPE*)Alloc(sizeof(TYPE));
+                TYPE* tp = Allocate<TYPE>();
                 SYMBOL* sym = makeID(sc_overloads, tp, nullptr, ((SYMBOL*)lst->data)->name);
                 tp->type = bt_aggregate;
                 tp->rootType = tp;
@@ -195,7 +195,7 @@ SYMBOL* namespacesearch(const char* name, NAMESPACEVALUELIST* ns, bool qualified
 
                     while (b)
                     {
-                        *dest = (SYMLIST*)Alloc(sizeof(SYMLIST));
+                        *dest = Allocate<SYMLIST>();
                         (*dest)->p = b->p;
                         dest = &(*dest)->next;
                         b = b->next;
@@ -274,10 +274,10 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
             lex = getsym();
             if (tp->type == bt_templatedecltype)
             {
-                *last = (TEMPLATESELECTOR*)(TEMPLATESELECTOR*)Alloc(sizeof(TEMPLATESELECTOR));
+                *last = Allocate<TEMPLATESELECTOR>();
                 (*last)->sp = strSym;
                 last = &(*last)->next;
-                *last = (TEMPLATESELECTOR*)(TEMPLATESELECTOR*)Alloc(sizeof(TEMPLATESELECTOR));
+                *last = Allocate<TEMPLATESELECTOR>();
                 (*last)->tp = tp;
                 (*last)->isDeclType = true;
                 last = &(*last)->next;
@@ -297,7 +297,7 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
         {
             lex = getIdName(lex, nullptr, buf, &ovdummy, nullptr);
             lex = getsym();
-            *last = (TEMPLATESELECTOR*)Alloc(sizeof(TEMPLATESELECTOR));
+            *last = Allocate<TEMPLATESELECTOR>();
             (*last)->name = litlate(buf);
             if (hasTemplate)
             {
@@ -369,10 +369,10 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
                                     break;
                                 lex = getsym();
                                 finalPos = lex;
-                                *last = (TEMPLATESELECTOR*)(TEMPLATESELECTOR*)Alloc(sizeof(TEMPLATESELECTOR));
+                                *last = Allocate<TEMPLATESELECTOR>();
                                 (*last)->sp = sp;
                                 last = &(*last)->next;
-                                *last = (TEMPLATESELECTOR*)(TEMPLATESELECTOR*)Alloc(sizeof(TEMPLATESELECTOR));
+                                *last = Allocate<TEMPLATESELECTOR>();
                                 (*last)->sp = sp;
                                 (*last)->templateParams = current;
                                 (*last)->isTemplate = true;
@@ -438,16 +438,16 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
                 dropStructureDeclaration();
                 if (!sp && templateNestingCount)
                 {
-                    *last = (TEMPLATESELECTOR*)(TEMPLATESELECTOR*)Alloc(sizeof(TEMPLATESELECTOR));
+                    *last = Allocate<TEMPLATESELECTOR>();
                     (*last)->sp = nullptr;
                     last = &(*last)->next;
-                    *last = (TEMPLATESELECTOR*)(TEMPLATESELECTOR*)Alloc(sizeof(TEMPLATESELECTOR));
+                    *last = Allocate<TEMPLATESELECTOR>();
                     (*last)->sp = strSym;
                     (*last)->templateParams = current;
                     (*last)->isTemplate = true;
                     last = &(*last)->next;
 
-                    *last = (TEMPLATESELECTOR*)Alloc(sizeof(TEMPLATESELECTOR));
+                    *last = Allocate<TEMPLATESELECTOR>();
                     (*last)->name = litlate(buf);
                     if (hasTemplate)
                     {
@@ -661,7 +661,7 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
                         TEMPLATESELECTOR* s = basetype(sp->tp)->sp->sb->templateSelector;
                         while (s)
                         {
-                            *last = (TEMPLATESELECTOR*)(TEMPLATESELECTOR*)Alloc(sizeof(TEMPLATESELECTOR));
+                            *last = Allocate<TEMPLATESELECTOR>();
                             **last = *s;
                             last = &(*last)->next;
                             s = s->next;
@@ -671,10 +671,10 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
                     }
                     else
                     {
-                        *last = (TEMPLATESELECTOR*)(TEMPLATESELECTOR*)Alloc(sizeof(TEMPLATESELECTOR));
+                        *last = Allocate<TEMPLATESELECTOR>();
                         (*last)->sp = strSym;
                         last = &(*last)->next;
-                        *last = (TEMPLATESELECTOR*)(TEMPLATESELECTOR*)Alloc(sizeof(TEMPLATESELECTOR));
+                        *last = Allocate<TEMPLATESELECTOR>();
                         (*last)->sp = sp;
                         (*last)->templateParams = current;
                         (*last)->isTemplate = true;
@@ -693,10 +693,10 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
                 }
                 else if (sp && (basetype(sp->tp)->type == bt_templateparam || basetype(sp->tp)->type == bt_templateselector))
                 {
-                    *last = (TEMPLATESELECTOR*)Alloc(sizeof(TEMPLATESELECTOR));
+                    *last = Allocate<TEMPLATESELECTOR>();
                     (*last)->sp = strSym;
                     last = &(*last)->next;
-                    *last = (TEMPLATESELECTOR*)Alloc(sizeof(TEMPLATESELECTOR));
+                    *last = Allocate<TEMPLATESELECTOR>();
                     (*last)->sp = sp;
                     last = &(*last)->next;
                 }
@@ -756,7 +756,7 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
     lex = prevsym(finalPos);
     if (templateSelector)
     {
-        TYPE* tp = (TYPE*)Alloc(sizeof(TYPE));
+        TYPE* tp = Allocate<TYPE>();
         tp->type = bt_templateselector;
         tp->rootType = tp;
         *sym = makeID(sc_global, tp, nullptr, AnonymousName());
@@ -1069,7 +1069,7 @@ LEXEME* nestedSearch(LEXEME* lex, SYMBOL** sym, SYMBOL** strSym, NAMESPACEVALUEL
                 l = l->next;
             if (destructor && *destructor && !encloser->sb->templateSelector->next->next)
             {
-                l->next = (TEMPLATESELECTOR*)Alloc(sizeof(TEMPLATESELECTOR));
+                l->next = Allocate<TEMPLATESELECTOR>();
                 l->next->name = l->sp->name;
                 l = l->next;
             }
@@ -1750,11 +1750,11 @@ static void GatherConversions(SYMBOL* sym, SYMBOL** spList, int n, FUNCTIONCALL*
                 int n1 = 0;
                 for (j = 0; j < argCount; j++)
                     n1 += counts[j];
-                icsList[i] = (enum e_cvsrn*)Alloc(sizeof(enum e_cvsrn) * n1);
+                icsList[i] = Allocate<e_cvsrn>(n1);
                 memcpy(icsList[i], arr, n1 * sizeof(enum e_cvsrn));
-                lenList[i] = (int*)Alloc(sizeof(int) * argCount);
+                lenList[i] = Allocate<int>(argCount);
                 memcpy(lenList[i], counts, argCount * sizeof(int));
-                funcList[i] = (SYMBOL**)(SYMBOL**)Alloc(sizeof(SYMBOL*) * argCount);
+                funcList[i] = Allocate<SYMBOL*>(argCount);
                 memcpy(funcList[i], funcs, argCount * sizeof(SYMBOL*));
             }
         }
@@ -1854,7 +1854,7 @@ static TYPE* toThis(TYPE* tp)
     TYPE* tpx;
     if (ispointer(tp))
         return tp;
-    tpx = (TYPE*)Alloc(sizeof(TYPE));
+    tpx = Allocate<TYPE>();
     tpx->type = bt_pointer;
     tpx->size = getSize(bt_pointer);
     tpx->btp = tp;
@@ -2534,7 +2534,7 @@ static Optimizer::LIST* GetMemberCasts(Optimizer::LIST* gather, SYMBOL* sym)
         SYMBOL* find = search(overloadNameTab[CI_CAST], basetype(sym->tp)->syms);
         if (find)
         {
-            Optimizer::LIST* lst = (Optimizer::LIST*)Alloc(sizeof(Optimizer::LIST));
+            Optimizer::LIST* lst = Allocate<Optimizer::LIST>();
             lst->data = find;
             lst->next = gather;
             gather = lst;
@@ -2557,7 +2557,7 @@ static Optimizer::LIST* GetMemberConstructors(Optimizer::LIST* gather, SYMBOL* s
         SYMBOL* find = search(overloadNameTab[CI_CONSTRUCTOR], basetype(sym->tp)->syms);
         if (find)
         {
-            Optimizer::LIST* lst = (Optimizer::LIST*)Alloc(sizeof(Optimizer::LIST));
+            Optimizer::LIST* lst = Allocate<Optimizer::LIST>();
             lst->data = find;
             lst->next = gather;
             gather = lst;
@@ -2647,10 +2647,10 @@ static SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* ex
                 }
                 lst2 = lst2->next;
             }
-            spList = (SYMBOL**)(SYMBOL**)Alloc(sizeof(SYMBOL*) * funcs);
-            spFilterList = (SYMBOL**)(SYMBOL**)Alloc(sizeof(SYMBOL*) * funcs);
-            icsList = (enum e_cvsrn**)Alloc(sizeof(enum e_cvsrn*) * funcs);
-            lenList = (int**)Alloc(sizeof(int*) * funcs);
+            spList = Allocate<SYMBOL*>(funcs);
+            spFilterList = Allocate<SYMBOL*>(funcs);
+            icsList = Allocate<e_cvsrn*>(funcs);
+            lenList = Allocate<int*>(funcs);
             lst2 = gather;
             i = 0;
             while (lst2)
@@ -2848,8 +2848,8 @@ static SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* ex
                             m1--;
                         if (j >= n2 + n3 && m1 <= 7)
                         {
-                            lenList[i] = (int*)Alloc(sizeof(int) * 2);
-                            icsList[i] = (e_cvsrn*)Alloc(sizeof(enum e_cvsrn) * (n2 + n3));
+                            lenList[i] = Allocate<int>(2);
+                            icsList[i] = Allocate<e_cvsrn>(n2 + n3);
                             lenList[i][0] = n2;
                             lenList[i][1] = n3;
                             memcpy(&icsList[i][0], seq3, (n2 + n3) * sizeof(enum e_cvsrn));
@@ -4153,7 +4153,7 @@ SYMBOL* detemplate(SYMBOL* sym, FUNCTIONCALL* args, TYPE* atp)
                 linked = true;
                 ns->sb->value.i++;
 
-                list = (Optimizer::LIST*)Alloc(sizeof(Optimizer::LIST));
+                list = Allocate<Optimizer::LIST>();
                 list->next = nameSpaceList;
                 list->data = ns;
                 nameSpaceList = list;
@@ -4250,11 +4250,11 @@ SYMBOL* GetOverloadedTemplate(SYMBOL* sp, FUNCTIONCALL* args)
         search = search->next;
         n++;
     }
-    spList = (SYMBOL**)(SYMBOL**)Alloc(sizeof(SYMBOL*) * n);
-    spFilterList = (SYMBOL**)(SYMBOL**)Alloc(sizeof(SYMBOL*) * n);
-    icsList = (enum e_cvsrn**)Alloc(sizeof(enum e_cvsrn*) * n);
-    lenList = (int**)Alloc(sizeof(int*) * n);
-    funcList = (SYMBOL***)Alloc(sizeof(SYMBOL**) * n);
+    spList = Allocate<SYMBOL*>(n);
+    spFilterList = Allocate<SYMBOL*>(n);
+    icsList = Allocate<e_cvsrn*>(n);
+    lenList = Allocate<int*>(n);
+    funcList = Allocate<SYMBOL**>(n);
 
     n = insertFuncs(spList, spFilterList, &gather, args, nullptr);
     if (n != 1 || (spList[0] && !spList[0]->sb->isDestructor))
@@ -4425,7 +4425,7 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                 }
                 if (!lst)
                 {
-                    lst = (Optimizer::LIST*)Alloc(sizeof(Optimizer::LIST));
+                    lst = Allocate<Optimizer::LIST>();
                     lst->data = sp;
                     lst->next = gather;
                     gather = lst;
@@ -4514,11 +4514,11 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                         argCount++;
                 }
 
-                spList = (SYMBOL**)(SYMBOL**)Alloc(sizeof(SYMBOL*) * n);
-                spFilterList = (SYMBOL**)(SYMBOL**)Alloc(sizeof(SYMBOL*) * n);
-                icsList = (enum e_cvsrn**)Alloc(sizeof(enum e_cvsrn*) * n);
-                lenList = (int**)Alloc(sizeof(int*) * n);
-                funcList = (SYMBOL***)Alloc(sizeof(SYMBOL**) * n);
+                spList = Allocate<SYMBOL*>(n);
+                spFilterList = Allocate<SYMBOL*>(n);
+                icsList = Allocate<e_cvsrn*>(n);
+                lenList = Allocate<int*>(n);
+                funcList = Allocate<SYMBOL**>(n);
                 n = insertFuncs(spList, spFilterList, gather, args, atp);
                 if (n != 1 || (spList[0] && !spList[0]->sb->isDestructor && !spList[0]->sb->specialized2))
                 {
@@ -4625,7 +4625,7 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                     {
                         int v = 1;
                         INITLIST* a = args->arguments;
-                        sym->tp = (TYPE*)Alloc(sizeof(TYPE));
+                        sym->tp = Allocate<TYPE>();
                         sym->tp->type = bt_func;
                         sym->tp->size = getSize(bt_pointer);
                         sym->tp->btp = &stdint;
@@ -4786,7 +4786,7 @@ SYMBOL* MatchOverloadedFunction(TYPE* tp, TYPE** mtp, SYMBOL* sym, EXPRESSION** 
     }
     else if (tp->type == bt_memberptr)
     {
-        fpargs.thistp = (TYPE*)Alloc(sizeof(TYPE));
+        fpargs.thistp = Allocate<TYPE>();
         fpargs.thistp->type = bt_pointer;
         fpargs.thistp->size = getSize(bt_pointer);
         fpargs.thistp->btp = tp->sp->tp;
@@ -4795,7 +4795,7 @@ SYMBOL* MatchOverloadedFunction(TYPE* tp, TYPE** mtp, SYMBOL* sym, EXPRESSION** 
     }
     while (hrp)
     {
-        *args = (INITLIST*)Alloc(sizeof(INITLIST));
+        *args = Allocate<INITLIST>();
         (*args)->tp = (hrp->p)->tp;
         (*args)->exp = intNode(en_c_i, 0);
         if (isref((*args)->tp))

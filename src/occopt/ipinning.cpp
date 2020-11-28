@@ -266,7 +266,7 @@ static IMODE* pinnedVar(SimpleType* tp)
     sym->sizeFromType = tp->sizeFromType;
     sym->anonymous = false;
     tp->pinned = true;
-    IMODE* ap = (IMODE*)(IMODE*)Alloc(sizeof(IMODE));
+    IMODE* ap = Allocate<IMODE>();
     sym->imvalue = ap;
     ap->offset = exp;
     ap->mode = i_direct;
@@ -287,13 +287,13 @@ static void InsertInitialLoad(QUAD* begin, std::deque<QUAD*>& addresses, IMODE*&
         exp = addresses.front()->dc.left;
     }
     SimpleType *tp;
-    tp = (SimpleType*)Alloc(sizeof(SimpleType));
+    tp = Allocate<SimpleType>();
     tp->type = st_lref;
     tp->size = sizeFromISZ(ISZ_ADDR);
     tp->sizeFromType = ISZ_ADDR;
     if (exp->offset->type == se_labcon)
     {
-        tp->btp = (SimpleType*)Alloc(sizeof(SimpleType));
+        tp->btp = Allocate<SimpleType>();
         tp->btp->type = st_i;
         tp->btp->size = 1;
         tp->btp->sizeFromType = -ISZ_UCHAR;
@@ -306,7 +306,7 @@ static void InsertInitialLoad(QUAD* begin, std::deque<QUAD*>& addresses, IMODE*&
         /*
         while (tp->btp->type == st_pointer)
         {
-            SimpleType* tp1 = (SimpleType*)Alloc(sizeof(SimpleType));
+            SimpleType* tp1 = Allocate<SimpleType>();
             *tp1 = *tp->btp;
             tp1->type = st_lref;
             tp->btp = tp1;
@@ -323,17 +323,17 @@ static void InsertInitialLoad(QUAD* begin, std::deque<QUAD*>& addresses, IMODE*&
     if (addresses.front()->dc.opcode == i_add)
     {
         // address of something global points to
-        QUAD *one = (QUAD *)Alloc(sizeof(QUAD));
+        QUAD *one = Allocate<QUAD>();
         *one = *addresses.front()->back;
         InsertInstruction(begin, one);
         begin = begin->fwd;
-        QUAD *two = (QUAD *)Alloc(sizeof(QUAD));
+        QUAD *two = Allocate<QUAD>();
         *two = *addresses.front();
         InsertInstruction(begin, two);
         begin = begin->fwd;
         exp = two->ans;
     }
-    QUAD *move = (QUAD*)Alloc(sizeof(QUAD));
+    QUAD *move = Allocate<QUAD>();
     move->ans = ans;
     move->dc.left = exp;
     move->dc.opcode = i_assn;
@@ -364,11 +364,11 @@ static void InsertFinalThunk(IMODE* managed, QUAD* end)
         end = end->back;
     if (end->back->dc.opcode == i_goto)
         end = end->back;
-    QUAD* load = (QUAD*)Alloc(sizeof(QUAD));
+    QUAD* load = Allocate<QUAD>();
     load->ans = InitTempOpt(ISZ_ADDR, ISZ_ADDR);
     load->dc.left = make_immed(ISZ_ADDR, 0);
     load->dc.opcode = i_assn;
-    QUAD* store = (QUAD*)Alloc(sizeof(QUAD));
+    QUAD* store = Allocate<QUAD>();
     store->ans = managed;
     store->dc.left = load->ans;
     store->dc.opcode = i_assn;

@@ -217,7 +217,7 @@ void dbgtypes::StructFields(ObjType::eType sel, ObjType* val, int sz, Optimizer:
             // we are setting sym->offset here for use later in this function
             if (sym->vbase)
             {
-                Optimizer::SimpleType* tpl = (Optimizer::SimpleType*)Alloc(sizeof(Optimizer::SimpleType));
+                Optimizer::SimpleType* tpl = Allocate<Optimizer::SimpleType>();
                 tpl->type = Optimizer::st_pointer;
                 tpl->size = Optimizer::sizeFromISZ(ISZ_ADDR);
                 tpl->sizeFromType = ISZ_ADDR;

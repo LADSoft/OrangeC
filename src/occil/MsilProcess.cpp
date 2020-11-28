@@ -1389,7 +1389,7 @@ Type* GetStringType(int lab, int type)
 }
 Value* GetStringFieldData(int lab, int type)
 {
-    Optimizer::SimpleSymbol* sp = (Optimizer::SimpleSymbol*)Alloc(sizeof(Optimizer::SimpleSymbol));
+    Optimizer::SimpleSymbol* sp = Allocate<Optimizer::SimpleSymbol>();
     sp->name = "$$$";
     sp->label = lab;
 

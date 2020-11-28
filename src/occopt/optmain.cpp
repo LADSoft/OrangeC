@@ -142,7 +142,7 @@ int PreRegAlloc(QUAD* tail, BRIGGS_SET* globalVars, BRIGGS_SET* eobGlobals, int 
 
 void CreateTempsAndBlocks(FunctionData* fd)
 {
-    blockArray = (BLOCK**)Alloc(sizeof(BLOCK*) * blockCount);
+    blockArray = Allocate<BLOCK*>(blockCount);
     blockMax = blockCount;
     for (auto im : fd->imodeList)
     {
@@ -168,7 +168,7 @@ void CreateTempsAndBlocks(FunctionData* fd)
                             break;
                         case i_ind:
                         {
-                            IMODELIST* iml = (IMODELIST*)Alloc(sizeof(IMODE));
+                            IMODELIST* iml = Allocate<IMODELIST>();
                             iml->next = im->offset->sp->imind;
                             iml->im = im;
                             im->offset->sp->imind = iml;

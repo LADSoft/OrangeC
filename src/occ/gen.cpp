@@ -70,7 +70,7 @@ bool BackendIntrinsic(Optimizer::QUAD* q);
 
 Optimizer::SimpleExpression* copy_expression(Optimizer::SimpleExpression* node)
 {
-    Optimizer::SimpleExpression* rv = (Optimizer::SimpleExpression*)Alloc(sizeof(Optimizer::SimpleExpression));
+    Optimizer::SimpleExpression* rv = Allocate<Optimizer::SimpleExpression>();
     memcpy(rv, node, sizeof(*rv));
     if (rv->left)
         rv->left = copy_expression(rv->left);
@@ -96,10 +96,10 @@ AMODE* make_label(int lab)
 {
     Optimizer::SimpleExpression* lnode;
     AMODE* ap;
-    lnode = (Optimizer::SimpleExpression*)(Optimizer::SimpleExpression*)beLocalAlloc(sizeof(Optimizer::SimpleExpression));
+    lnode = beLocalAllocate<Optimizer::SimpleExpression>();
     lnode->type = Optimizer::se_labcon;
     lnode->i = lab;
-    ap = (AMODE*)beLocalAlloc(sizeof(AMODE));
+    ap = beLocalAllocate<AMODE>();
     ap->mode = am_immed;
     ap->offset = lnode;
     ap->length = ISZ_UINT;
@@ -110,7 +110,7 @@ AMODE* make_label(int lab)
 
 AMODE* makesegreg(int seg)
 {
-    AMODE* ap = (AMODE*)beLocalAlloc(sizeof(AMODE));
+    AMODE* ap = beLocalAllocate<AMODE>();
     ap->mode = am_seg;
     ap->seg = seg;
     ap->length = ISZ_SEG;
@@ -119,7 +119,7 @@ AMODE* makesegreg(int seg)
 
 AMODE* makeSSE(int reg)
 {
-    AMODE* ap = (AMODE*)beLocalAlloc(sizeof(AMODE));
+    AMODE* ap = beLocalAllocate<AMODE>();
     ap->mode = am_xmmreg;
     ap->preg = reg;
     ap->length = 0;
@@ -207,10 +207,10 @@ AMODE* aimmed(unsigned long long i)
     AMODE* ap;
     Optimizer::SimpleExpression* ep;
     i &= 0xffffffffU;
-    ep = (Optimizer::SimpleExpression*)(Optimizer::SimpleExpression*)beLocalAlloc(sizeof(Optimizer::SimpleExpression));
+    ep = beLocalAllocate<Optimizer::SimpleExpression>();
     ep->type = Optimizer::se_i;
     ep->i = i;
-    ap = (AMODE*)beLocalAlloc(sizeof(AMODE));
+    ap = beLocalAllocate<AMODE>();
     ap->mode = am_immed;
     ap->offset = ep;
     ap->length = ISZ_ADDR;
@@ -268,7 +268,7 @@ AMODE* make_offset(Optimizer::SimpleExpression* node)
  */
 {
     AMODE* ap;
-    ap = (AMODE*)beLocalAlloc(sizeof(AMODE));
+    ap = beLocalAllocate<AMODE>();
     if (node->type == Optimizer::se_tempref)
     {
         diag("make_offset: orignode");
@@ -288,9 +288,9 @@ AMODE* make_offset(Optimizer::SimpleExpression* node)
 
 AMODE* make_stack(int number)
 {
-    AMODE* ap = (AMODE*)beLocalAlloc(sizeof(AMODE));
+    AMODE* ap = beLocalAllocate<AMODE>();
     Optimizer::SimpleExpression* ep =
-        (Optimizer::SimpleExpression*)(Optimizer::SimpleExpression*)beLocalAlloc(sizeof(Optimizer::SimpleExpression));
+        beLocalAllocate<Optimizer::SimpleExpression>();
     ep->type = Optimizer::se_i;
     ep->i = -number;
     ap->mode = am_indisp;
@@ -310,16 +310,16 @@ AMODE* setSymbol(const char* name)
     if (sym == 0)
     {
         Optimizer::LIST* l1;
-        sym = (Optimizer::SimpleSymbol*)Alloc(sizeof(Optimizer::SimpleSymbol));
+        sym = Allocate<Optimizer::SimpleSymbol>();
         sym->storage_class = Optimizer::scc_external;
         sym->name = sym->outputName = litlate(name);
-        sym->tp = (Optimizer::SimpleType*)Alloc(sizeof(Optimizer::SimpleType));
+        sym->tp = Allocate<Optimizer::SimpleType>();
         sym->tp->type = Optimizer::st_func;
         //        Optimizer::SymbolManager::Add(name, sym);
         Optimizer::externals.push_back(sym);
     }
-    result = (AMODE*)(AMODE*)Alloc(sizeof(AMODE));
-    result->offset = (Optimizer::SimpleExpression*)Alloc(sizeof(Optimizer::SimpleExpression));
+    result = Allocate<AMODE>();
+    result->offset = Allocate<Optimizer::SimpleExpression>();
     result->offset->type = Optimizer::se_global;
     result->offset->sp = sym;
     result->offset->type = Optimizer::se_pc;
@@ -339,7 +339,7 @@ static void callLibrary(const char* name, int size)
 }
 void oa_gen_vtt(int dataOffset, Optimizer::SimpleSymbol* func)
 {
-    Optimizer::SimpleExpression* n = (Optimizer::SimpleExpression*)Alloc(sizeof(Optimizer::SimpleExpression));
+    Optimizer::SimpleExpression* n = Allocate<Optimizer::SimpleExpression>();
     n->type = Optimizer::se_pc;
     n->sp = func;
     AMODE* ofs = make_offset(n);
@@ -361,9 +361,9 @@ void oa_gen_vc1(Optimizer::SimpleSymbol* func)
 }
 void oa_gen_importThunk(Optimizer::SimpleSymbol* func)
 {
-    AMODE* ofs = (AMODE*)Alloc(sizeof(AMODE));
+    AMODE* ofs = Allocate<AMODE>();
     ofs->mode = am_direct;
-    ofs->offset = (Optimizer::SimpleExpression*)Alloc(sizeof(Optimizer::SimpleExpression));
+    ofs->offset = Allocate<Optimizer::SimpleExpression>();
     ofs->offset->type = Optimizer::se_pc;
     ofs->offset->sp = func;  // was func->mainsym
     gen_code(op_jmp, ofs, NULL);
@@ -460,7 +460,7 @@ void floatchs(AMODE* ap, int sz)
             pushed = true;
             reg = EAX;
         }
-        AMODE* ap1 = (AMODE*)Alloc(sizeof(AMODE));
+        AMODE* ap1 = Allocate<AMODE>();
         *ap1 = *lbl;
         ap1->mode = am_direct;
         lbl = makedreg(reg);
@@ -516,7 +516,7 @@ AMODE* floatzero(AMODE* ap)
             pushlevel += 4;
             reg = EAX;
         }
-        AMODE* ap1 = (AMODE*)Alloc(sizeof(AMODE));
+        AMODE* ap1 = Allocate<AMODE>();
         *ap1 = *zerolabel;
         ap1->mode = am_direct;
         zerolabel = makedreg(reg);
@@ -626,7 +626,7 @@ void getAmodes(Optimizer::QUAD* q, enum e_opcode* op, Optimizer::IMODE* im, AMOD
         temp->offset = Optimizer::simpleExpressionNode(Optimizer::se_sub, im->offset, temp->offset);
         gen_code(op_push, temp, 0);
         callLibrary("___tlsaddr", 0);
-        *apl = (AMODE*)beLocalAlloc(sizeof(AMODE));
+        *apl = beLocalAllocate<AMODE>();
         (*apl)->preg = Optimizer::chosenAssembler->arch->regMap[beRegFromTemp(q, q->ans)][0];
         (*apl)->mode = am_dreg;
         gen_codes(op_pop, ISZ_ADDR, (*apl), 0);
@@ -640,7 +640,7 @@ void getAmodes(Optimizer::QUAD* q, enum e_opcode* op, Optimizer::IMODE* im, AMOD
             mode = am_indisp;
         else
             mode = am_direct;
-        *apl = (AMODE*)beLocalAlloc(sizeof(AMODE));
+        *apl = beLocalAllocate<AMODE>();
         {
             int reg = Optimizer::chosenAssembler->arch->regMap[beRegFromTempInd(q, im, 1)][0];
             if (im->offset)
@@ -702,7 +702,7 @@ void getAmodes(Optimizer::QUAD* q, enum e_opcode* op, Optimizer::IMODE* im, AMOD
         (*apl)->mode = mode;
         if (im->size >= ISZ_CFLOAT)
         {
-            *aph = (AMODE*)beLocalAlloc(sizeof(AMODE));
+            *aph = beLocalAllocate<AMODE>();
             **aph = **apl;
             (*aph)->offset = Optimizer::simpleExpressionNode(Optimizer::se_add, (*apl)->offset,
                                                              Optimizer::simpleIntNode(Optimizer::se_i, imaginary_offset(im->size)));
@@ -713,7 +713,7 @@ void getAmodes(Optimizer::QUAD* q, enum e_opcode* op, Optimizer::IMODE* im, AMOD
         }
         else if (im->size == ISZ_ULONGLONG || im->size == -ISZ_ULONGLONG)
         {
-            *aph = (AMODE*)beLocalAlloc(sizeof(AMODE));
+            *aph = beLocalAllocate<AMODE>();
             **aph = **apl;
             (*aph)->offset =
                 Optimizer::simpleExpressionNode(Optimizer::se_add, (*apl)->offset, Optimizer::simpleIntNode(Optimizer::se_i, 4));
@@ -727,14 +727,14 @@ void getAmodes(Optimizer::QUAD* q, enum e_opcode* op, Optimizer::IMODE* im, AMOD
     {
         if (im->size >= ISZ_CFLOAT)
         {
-            *apl = (AMODE*)beLocalAlloc(sizeof(AMODE));
-            *aph = (AMODE*)beLocalAlloc(sizeof(AMODE));
+            *apl = beLocalAllocate<AMODE>();
+            *aph = beLocalAllocate<AMODE>();
             (*apl)->offset = im->offset;
             make_complexconst(*apl, *aph);
         }
         else if (im->size >= ISZ_FLOAT)
         {
-            *apl = (AMODE*)beLocalAlloc(sizeof(AMODE));
+            *apl = beLocalAllocate<AMODE>();
             (*apl)->offset = im->offset;
             make_floatconst(*apl);
         }
@@ -754,14 +754,14 @@ void getAmodes(Optimizer::QUAD* q, enum e_opcode* op, Optimizer::IMODE* im, AMOD
         {
             if (iscomplexconst(im->offset))
             {
-                *apl = (AMODE*)beLocalAlloc(sizeof(AMODE));
+                *apl = beLocalAllocate<AMODE>();
                 (*apl)->offset = im->offset;
-                *aph = (AMODE*)beLocalAlloc(sizeof(AMODE));
+                *aph = beLocalAllocate<AMODE>();
                 make_complexconst(*apl, *aph);
             }
             else if (isfloatconst(im->offset) || isimaginaryconst(im->offset))
             {
-                *apl = (AMODE*)beLocalAlloc(sizeof(AMODE));
+                *apl = beLocalAllocate<AMODE>();
                 (*apl)->offset = im->offset;
                 make_floatconst(*apl);
             }
@@ -1806,14 +1806,14 @@ static void compactSwitchHeader(long long bottom)
     }
 
     peep_tail->noopt = true;
-    lnode = (Optimizer::SimpleExpression*)(Optimizer::SimpleExpression*)beLocalAlloc(sizeof(Optimizer::SimpleExpression));
+    lnode = beLocalAllocate<Optimizer::SimpleExpression>();
     lnode->type = Optimizer::se_labcon;
     lnode->i = tablab;
     if (bottom)
     {
         lnode = Optimizer::simpleExpressionNode(Optimizer::se_add, lnode, Optimizer::simpleIntNode(Optimizer::se_i, -bottom * 4));
     }
-    ap = (AMODE*)beLocalAlloc(sizeof(AMODE));
+    ap = beLocalAllocate<AMODE>();
     ap->mode = am_indispscale;
     ap->preg = -1;
     ap->scale = 2;
@@ -2239,33 +2239,33 @@ static void logicatomic(e_opcode op, Optimizer::QUAD* q)
 }
 void asm_line(Optimizer::QUAD* q) /* line number information and text */
 {
-    OCODE* newitem = (OCODE*)beLocalAlloc(sizeof(OCODE));
+    OCODE* newitem = beLocalAllocate<OCODE>();
     newitem->opcode = (e_opcode)op_line;
     newitem->oper1 = (AMODE*)(q->dc.left); /* line data */
     add_peep(newitem);
 }
 void asm_blockstart(Optimizer::QUAD* q) /* line number information and text */
 {
-    OCODE* newitem = (OCODE*)beLocalAlloc(sizeof(OCODE));
+    OCODE* newitem = beLocalAllocate<OCODE>();
     newitem->opcode = (e_opcode)op_blockstart;
     add_peep(newitem);
 }
 void asm_blockend(Optimizer::QUAD* q) /* line number information and text */
 {
-    OCODE* newitem = (OCODE*)beLocalAlloc(sizeof(OCODE));
+    OCODE* newitem = beLocalAllocate<OCODE>();
     newitem->opcode = (e_opcode)op_blockend;
     add_peep(newitem);
 }
 void asm_varstart(Optimizer::QUAD* q) /* line number information and text */
 {
-    OCODE* newitem = (OCODE*)beLocalAlloc(sizeof(OCODE));
+    OCODE* newitem = beLocalAllocate<OCODE>();
     newitem->opcode = (e_opcode)op_varstart;
     newitem->oper1 = (AMODE*)(q->dc.left->offset->sp); /* line data */
     add_peep(newitem);
 }
 void asm_func(Optimizer::QUAD* q) /* line number information and text */
 {
-    OCODE* newitem = (OCODE*)beLocalAlloc(sizeof(OCODE));
+    OCODE* newitem = beLocalAllocate<OCODE>();
     newitem->opcode = (e_opcode)(q->dc.v.label ? op_funcstart : op_funcend);
     newitem->oper1 = (AMODE*)(q->dc.left->offset->sp); /* line data */
     add_peep(newitem);
@@ -2315,7 +2315,7 @@ void asm_passthrough(Optimizer::QUAD* q) /* reserved */
 void asm_datapassthrough(Optimizer::QUAD* q) /* reserved */ { (void)q; }
 void asm_label(Optimizer::QUAD* q) /* put a label in the code stream */
 {
-    OCODE* out = (OCODE*)beLocalAlloc(sizeof(OCODE));
+    OCODE* out = beLocalAllocate<OCODE>();
     out->opcode = (e_opcode)op_label;
     out->oper1 = make_label(q->dc.v.label);
     add_peep(out);
@@ -3616,7 +3616,7 @@ void asm_assn(Optimizer::QUAD* q) /* assignment */
         Optimizer::SimpleExpression* node = Optimizer::simpleExpressionNode(Optimizer::se_f, 0, 0);
         node->sizeFromType = ISZ_LDOUBLE;
         node->f = q->dc.v.f;
-        apl = (AMODE*)beLocalAlloc(sizeof(AMODE));
+        apl = beLocalAllocate<AMODE>();
         apl->offset = node;
         make_floatconst(apl);
     }
@@ -5028,7 +5028,7 @@ void asm_unloadcontext(Optimizer::QUAD* q) /* load register context (e.g. at int
 }
 void asm_tryblock(Optimizer::QUAD* q) /* try/catch */
 {
-    AMODE* ap1 = (AMODE*)beLocalAlloc(sizeof(AMODE));
+    AMODE* ap1 = beLocalAllocate<AMODE>();
     ap1->mode = am_indisp;
     if (usingEsp)
     {

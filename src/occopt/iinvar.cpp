@@ -62,7 +62,7 @@ namespace Optimizer
 {
 static void EnterRef(QUAD* old, QUAD* newVal)
 {
-    struct reflist* newRef = (reflist*)oAlloc(sizeof(struct reflist));
+    struct reflist* newRef = oAllocate<reflist>();
     newRef->old = old;
     newRef->newVal = newVal;
     newRef->next = refs;
@@ -123,7 +123,7 @@ static bool IsAncestor(BLOCK* b1, BLOCK* b2)
 static void MoveTo(BLOCK* dest, BLOCK* src, QUAD* head)
 {
     QUAD* insert = beforeJmp(dest->tail, true);
-    QUAD* head2 = (QUAD*)Alloc(sizeof(QUAD));
+    QUAD* head2 = Allocate<QUAD>();
     *head2 = *head;
     EnterRef(head, head2);
     head = head2;

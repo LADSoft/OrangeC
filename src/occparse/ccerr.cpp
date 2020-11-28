@@ -1116,7 +1116,7 @@ void errorarg(int err, int argnum, SYMBOL* declsp, SYMBOL* funcsp)
 }
 static BALANCE* newbalance(LEXEME* lex, BALANCE* bal)
 {
-    BALANCE* rv = (BALANCE*)Alloc(sizeof(BALANCE));
+    BALANCE* rv = Allocate<BALANCE>();
     rv->back = bal;
     rv->count = 0;
     if (KW(lex) == openpa)
@@ -1374,10 +1374,10 @@ static void labelIndexes(STATEMENT* stmt, int* min, int* max)
 static VLASHIM* mkshim(_vlaTypes type, int level, int label, STATEMENT* stmt, VLASHIM* last, VLASHIM* parent, int blocknum,
                        int blockindex)
 {
-    VLASHIM* rv = (VLASHIM*)Alloc(sizeof(VLASHIM));
+    VLASHIM* rv = Allocate<VLASHIM>();
     if (last && last->type != v_return && last->type != v_goto)
     {
-        rv->backs = (Optimizer::LIST*)(Optimizer::LIST*)Alloc(sizeof(Optimizer::LIST));
+        rv->backs = Allocate<Optimizer::LIST>();
         rv->backs->data = last;
     }
     rv->type = type;
@@ -1535,7 +1535,7 @@ static void fillPrevious(VLASHIM* shim, VLASHIM** labels, int minLabel)
                 selected = labels[shim->label - minLabel];
                 if (selected)
                 {
-                    prev = (Optimizer::LIST*)(Optimizer::LIST*)Alloc(sizeof(Optimizer::LIST));
+                    prev = Allocate<Optimizer::LIST>();
                     prev->data = shim;
                     prev->next = selected->backs;
                     selected->backs = prev;
@@ -1672,7 +1672,7 @@ void checkGotoPastVLA(STATEMENT* stmt, bool first)
         labelIndexes(stmt, &min, &max);
         if (min > max)
             return;
-        VLASHIM** labels = (VLASHIM**)Alloc((max + 1 - min) * sizeof(VLASHIM*));
+        VLASHIM** labels = Allocate<VLASHIM*>(max + 1 - min);
 
         int blockNum = 0;
         bool branched = false;

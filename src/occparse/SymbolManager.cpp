@@ -105,7 +105,7 @@ Optimizer::SimpleExpression* Optimizer::SymbolManager::Get(struct Parser::expr* 
 {
     while (e && (e->type == en_lvalue || e->type == en_not_lvalue || e->type == en_x_string || e->type == en_x_object))
         e = e->left;
-    Optimizer::SimpleExpression* rv = (Optimizer::SimpleExpression*)Alloc(sizeof(Optimizer::SimpleExpression));
+    Optimizer::SimpleExpression* rv = Allocate<Optimizer::SimpleExpression>();
     rv->sizeFromType = natural_size(e);
     if (e->altdata)
         rv->altData = Get((EXPRESSION*)e->altdata);
@@ -238,7 +238,7 @@ Optimizer::SimpleExpression* Optimizer::SymbolManager::Get(struct Parser::expr* 
                         }
                     }
                 }
-                rv->astring.str = (char*)Alloc(dest - buf);
+                rv->astring.str = Allocate<char>(dest - buf);
                 memcpy(rv->astring.str, buf, dest - buf);
                 rv->astring.len = dest - buf;
             }
@@ -256,7 +256,7 @@ Optimizer::SimpleExpression* Optimizer::SymbolManager::Get(struct Parser::expr* 
 Optimizer::SimpleType* Optimizer::SymbolManager::Get(struct Parser::typ* tp)
 {
     int i = 0;
-    Optimizer::SimpleType* rv = (Optimizer::SimpleType*)Alloc(sizeof(Optimizer::SimpleType));
+    Optimizer::SimpleType* rv = Allocate<Optimizer::SimpleType>();
     bool isConst = isconst(tp);
     bool isVolatile = isvolatile(tp);
     bool isRestrict = isrestrict(tp);
@@ -317,13 +317,13 @@ Optimizer::SimpleType* Optimizer::SymbolManager::Get(struct Parser::typ* tp)
             Optimizer::LIST** p = &rv->sp->syms;
             while (list)
             {
-                *p = (Optimizer::LIST*)Alloc(sizeof(Optimizer::LIST));
+                *p = Allocate<Optimizer::LIST>();
                 (*p)->data = Get(list->p);
                 if (rv->sp->storage_class == scc_type || rv->sp->storage_class == scc_cast)
                 {
                     if (list->p->sb->storage_class == sc_static || isfunction(list->p->tp))
                     {
-                        Optimizer::SimpleSymbol* ns = (Optimizer::SimpleSymbol*)Alloc(sizeof(Optimizer::SimpleSymbol));
+                        Optimizer::SimpleSymbol* ns = Allocate<Optimizer::SimpleSymbol>();
                         *ns = *(Optimizer::SimpleSymbol*)(*p)->data;
                         (*p)->data = ns;
                     }
@@ -380,7 +380,7 @@ void refreshBackendParams(SYMBOL* funcsp)
 }  // namespace Parser
 Optimizer::SimpleSymbol* Optimizer::SymbolManager::Make(struct Parser::sym* sym)
 {
-    Optimizer::SimpleSymbol* rv = (Optimizer::SimpleSymbol*)Alloc(sizeof(Optimizer::SimpleSymbol));
+    Optimizer::SimpleSymbol* rv = Allocate<Optimizer::SimpleSymbol>();
     rv->name = sym->name;
     rv->align =
         sym->sb->attribs.inheritable.structAlign ? sym->sb->attribs.inheritable.structAlign : getAlign(sc_auto, basetype(sym->tp));
@@ -400,7 +400,7 @@ Optimizer::SimpleSymbol* Optimizer::SymbolManager::Make(struct Parser::sym* sym)
     BASECLASS* src = sym->sb->baseClasses;
     while (src)
     {
-        *p = (BaseList*)Alloc(sizeof(BaseList));
+        *p = Allocate<BaseList>();
         (*p)->offset = src->offset;
         (*p)->sym = Get(src->cls);
         if ((*p)->sym->tp && (*p)->sym->tp->type == st_i)

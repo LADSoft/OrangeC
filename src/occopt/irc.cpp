@@ -480,7 +480,7 @@ static IMODE* make_ioffset(SimpleExpression* exp)
     SimpleSymbol* sym = varsp(exp);
     if (sym && sym->imvalue && sym->imvalue->size == exp->sizeFromType)
         return sym->imvalue;
-    ap = (IMODE*)(IMODE*)Alloc(sizeof(IMODE));
+    ap = Allocate<IMODE>();
     ap->offset = exp;
     ap->mode = i_direct;
     ap->size = exp->sizeFromType;
@@ -493,11 +493,11 @@ static void GetSpillVar(int i)
     SPILL* spill;
     SimpleExpression* exp;
     exp = spillVar(scc_auto, tempInfo[i]->enode->sp->tp);
-    spill = (SPILL*)tAlloc(sizeof(SPILL));
+    spill = tAllocate<SPILL>();
     tempInfo[i]->spillVar = spill->imode = make_ioffset(exp);
     spill->imode->offset->sp->spillVar = true;
     spill->imode->size = tempInfo[i]->enode->sp->imvalue->size;
-    spill->uses = (LIST*)tAlloc(sizeof(LIST));
+    spill->uses = tAllocate<LIST>();
     spill->uses->data = (void*)i;
 }
 static void CopyLocalColors(void)
@@ -585,7 +585,7 @@ void SqueezeInit(void)
             if (tempInfo[i]->rawSqueeze)
                 memset(tempInfo[i]->rawSqueeze, 0, sizeof(tempInfo[0]->rawSqueeze[0]) * vertexCount);
             else
-                tempInfo[i]->rawSqueeze = (int*)aAlloc(sizeof(tempInfo[0]->rawSqueeze[0]) * vertexCount);
+                tempInfo[i]->rawSqueeze = aAllocate<int>(vertexCount);
             tempInfo[i]->degree = 0;
         }
     for (i = 0; i < tempCount; i++)
@@ -791,8 +791,8 @@ static void CountInstructions(bool first)
     frozenMoves = tallocbit(instructionCount);
     tempMoves[0] = tallocbit(instructionCount);
     tempMoves[1] = tallocbit(instructionCount);
-    hiMoves = (short*)tAlloc(sizeof(short) * (instructionCount));
-    instructionList = (QUAD**)tAlloc(sizeof(QUAD*) * (instructionCount));
+    hiMoves = tAllocate<short>(instructionCount);
+    instructionList = tAllocate<QUAD*>(instructionCount);
     instructionCount -= 1000;
     head = intermed_head;
     while (head)
@@ -1612,7 +1612,7 @@ static IMODE* InsertLoad(QUAD* head, IMODE* mem)
     tempInfo[t->offset->sp->i]->spilled = true;
     tempInfo[t->offset->sp->i]->ircinitial = true;
     head = head->back;
-    insert = (QUAD*)Alloc(sizeof(QUAD));
+    insert = Allocate<QUAD>();
     insert->dc.opcode = i_assn;
     insert->ans = t;
     insert->dc.left = mem;
@@ -1635,7 +1635,7 @@ static void InsertStore(QUAD* head, IMODE** im, IMODE* mem)
     tempInfo[tn]->color = tempInfo[ta]->color;
     tempInfo[tn]->ircinitial = true;
     *im = t;
-    insert = (QUAD*)Alloc(sizeof(QUAD));
+    insert = Allocate<QUAD>();
     insert->dc.opcode = i_assn;
     insert->ans = mem;
     insert->dc.left = t;
@@ -1714,7 +1714,7 @@ static void RewriteAllSpillNodes(void)
             }
         if (spillNodes[0] || spillNodes[1])
         {
-            IMODE* im = (IMODE*)Alloc(sizeof(IMODE));
+            IMODE* im = Allocate<IMODE>();
             *im = *head->ans;
             head->ans = im;
         }
@@ -1724,7 +1724,7 @@ static void RewriteAllSpillNodes(void)
             head->ans->offset2 = spillNodes[1]->offset;
         if (spillNodes[2] || spillNodes[3])
         {
-            IMODE* im = (IMODE*)Alloc(sizeof(IMODE));
+            IMODE* im = Allocate<IMODE>();
             *im = *head->dc.left;
             head->dc.left = im;
         }
@@ -1734,7 +1734,7 @@ static void RewriteAllSpillNodes(void)
             head->dc.left->offset2 = spillNodes[3]->offset;
         if (spillNodes[4] || spillNodes[5])
         {
-            IMODE* im = (IMODE*)Alloc(sizeof(IMODE));
+            IMODE* im = Allocate<IMODE>();
             *im = *head->dc.right;
             head->dc.right = im;
         }
@@ -1825,7 +1825,7 @@ static void SpillCoalesce(BRIGGS_SET* C, BRIGGS_SET* S)
                                                         }
                                                         if (!*l)
                                                         {
-                                                            *l = (LIST*)tAlloc(sizeof(LIST));
+                                                            *l = tAllocate<LIST>();
                                                             (*l)->data = (void*)head;
                                                             (*mt)->cost += head->block->spillCost;
                                                         }
@@ -1835,11 +1835,11 @@ static void SpillCoalesce(BRIGGS_SET* C, BRIGGS_SET* S)
                                                 }
                                                 if (!*mt)
                                                 {
-                                                    *mt = (MOVE*)tAlloc(sizeof(MOVE));
+                                                    *mt = tAllocate<MOVE>();
                                                     (*mt)->a = a;
                                                     (*mt)->b = b;
                                                     (*mt)->cost = head->block->spillCost;
-                                                    (*mt)->uses = (LIST*)tAlloc(sizeof(LIST));
+                                                    (*mt)->uses = tAllocate<LIST>();
                                                     (*mt)->uses->data = (void*)head;
                                                 }
                                             }
@@ -2119,7 +2119,7 @@ static void RewriteProgram(void)
 }
 static IMODE* copyImode(IMODE* in)
 {
-    IMODE* im = (IMODE*)Alloc(sizeof(IMODE));
+    IMODE* im = Allocate<IMODE>();
     *im = *in;
     if (im->offset)
     {
@@ -2359,7 +2359,7 @@ void AllocateRegisters(QUAD* head)
         CountInstructions(first);
         simplifyBottom = simplifyTop = 0;
         tempCount += 3000;
-        simplifyWorklist = (unsigned short*)tAlloc(tempCount * sizeof(unsigned short));
+        simplifyWorklist = tAllocate<unsigned short>(tempCount);
         freezeWorklist = briggsAlloct(tempCount);
         spillWorklist = briggsAlloct(tempCount);
         spilledNodes = briggsAlloct(tempCount);
@@ -2367,7 +2367,7 @@ void AllocateRegisters(QUAD* head)
         adjacent = tallocbit(tempCount);
         adjacent1 = tallocbit(tempCount);
         stackedTemps = tallocbit(tempCount);
-        tempStack = (int*)tAlloc(tempCount * sizeof(int));
+        tempStack = tAllocate<int>(tempCount);
         tempCount -= 3000;
         liveVariables();
         CalculateFunctionFlags();

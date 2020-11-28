@@ -370,7 +370,7 @@ void ccLoadIdsFromNameTable(const char* tabname, HASHTABLE* table)
                     done = true;
                     break;
                 case SQLITE_ROW:
-                    v = (SYMID*)Alloc(sizeof(SYMID));
+                    v = Allocate<SYMID>();
                     v->name = litlate((const char*)sqlite3_column_text(handle, 0));
                     v->id = sqlite3_column_int64(handle, 1);
                     AddName((SYMBOL*)v, table);
@@ -420,7 +420,7 @@ static int ccSelectIdFromNameTable(sqlite3_stmt** shndl, const char* name, const
                     done = true;
                     break;
                 case SQLITE_ROW:
-                    v = (SYMID *)Alloc(sizeof(SYMID));
+                    v = Allocate<SYMID>();
                     v->name = name;
                     *id = sqlite3_column_int64(*shndl, 0);
                     v->id = *id;
@@ -477,7 +477,7 @@ static int ccWriteNameInTable(sqlite3_stmt** whndl, sqlite3_stmt** shndl, const 
         }
         if (rc == SQLITE_OK)
         {
-            SYMID* v = (SYMID*)Alloc(sizeof(SYMID));
+            SYMID* v = Allocate<SYMID>();
             v->name = name;
             *id = sqlite3_last_insert_rowid(dbPointer);
             v->id = *id;
@@ -499,7 +499,7 @@ static int ccWriteMap(sqlite_int64 smpl_id, sqlite_int64 cplx_id, sqlite_int64 m
     if (!LookupName(id, map))
     {
         int done = false;
-        SYMID* v = (SYMID*)Alloc(sizeof(SYMID));
+        SYMID* v = Allocate<SYMID>();
         v->name = litlate(id);
         AddName((SYMBOL*)v, map);
         rc = SQLITE_DONE;

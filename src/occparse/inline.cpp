@@ -91,7 +91,7 @@ static void inInsert(SYMBOL* sym)
     /*
 // assumes the symbol isn't already there...
 SYMLIST** hr = GetHashLink(didInlines, sym->sb->decoratedName);
-SYMLIST* added = (SYMLIST*)Alloc(sizeof(SYMLIST));
+SYMLIST* added = Allocate<SYMLIST>();
 //    sym->sb->mainsym = nullptr;
 added->p = (SYMBOL*)sym;
 added->next = *hr;
@@ -338,7 +338,7 @@ SYMBOL* getvc1Thunk(int offset)
 void InsertInline(SYMBOL* sym)
 {
     SYMBOL* sp = sym;
-    Optimizer::LIST* temp = (Optimizer::LIST*)Alloc(sizeof(Optimizer::LIST));
+    Optimizer::LIST* temp = Allocate<Optimizer::LIST>();
     temp->data = sym;
     if (isfunction(sym->tp))
     {
@@ -357,7 +357,7 @@ void InsertInline(SYMBOL* sym)
 }
 void InsertInlineData(SYMBOL* sym)
 {
-    Optimizer::LIST* temp = (Optimizer::LIST*)Alloc(sizeof(Optimizer::LIST));
+    Optimizer::LIST* temp = Allocate<Optimizer::LIST>();
     temp->data = sym;
     if (inlineDataHead)
         inlineDataTail = inlineDataTail->next = temp;
@@ -379,7 +379,7 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
     (void)fromlval;
     if (node == 0)
         return 0;
-    temp = (EXPRESSION*)(EXPRESSION*)Alloc(sizeof(EXPRESSION));
+    temp = Allocate<EXPRESSION>();
     memcpy(temp, node, sizeof(EXPRESSION));
     switch (temp->type)
     {
@@ -641,13 +641,13 @@ EXPRESSION* inlineexpr(EXPRESSION* node, bool* fromlval)
             {
                 INITLIST* args = fp->arguments;
                 INITLIST** p;
-                temp->v.func = (FUNCTIONCALL*)Alloc(sizeof(FUNCTIONCALL));
+                temp->v.func = Allocate<FUNCTIONCALL>();
                 *temp->v.func = *fp;
                 p = &temp->v.func->arguments;
                 *p = nullptr;
                 while (args)
                 {
-                    *p = (INITLIST*)Alloc(sizeof(INITLIST));
+                    *p = Allocate<INITLIST>();
                     **p = *args;
                     (*p)->exp = inlineexpr((*p)->exp, nullptr);
                     args = args->next;
@@ -675,7 +675,7 @@ STATEMENT* inlinestmt(STATEMENT* block)
     STATEMENT *out = nullptr, **outptr = &out;
     while (block != nullptr)
     {
-        *outptr = (STATEMENT*)(STATEMENT*)Alloc(sizeof(STATEMENT));
+        *outptr = Allocate<STATEMENT>();
         memcpy(*outptr, block, sizeof(STATEMENT));
         (*outptr)->next = nullptr;
         switch (block->type)
@@ -1097,7 +1097,7 @@ static void setExp(SYMBOL* sx, EXPRESSION* exp, STATEMENT*** stp)
         deref(sx->tp, &tnode);
         sx->sb->inlineFunc.stmt = (STATEMENT*)tnode;
         tnode = exprNode(en_assign, tnode, exp);
-        **stp = (STATEMENT*)Alloc(sizeof(STATEMENT));
+        **stp = Allocate<STATEMENT>();
         (**stp)->type = st_expr;
         (**stp)->select = tnode;
         *stp = &(**stp)->next;
@@ -1203,7 +1203,7 @@ EXPRESSION* doinline(FUNCTIONCALL* params, SYMBOL* funcsp)
     if (stmt1)
     {
         // this will kill the ret val but we don't care since we've modified params
-        stmt = (STATEMENT*)Alloc(sizeof(STATEMENT));
+        stmt = Allocate<STATEMENT>();
         stmt->type = st_block;
         stmt->lower = stmt1;
     }

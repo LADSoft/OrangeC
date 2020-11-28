@@ -56,3 +56,61 @@ void ReleaseGlobalFlag(bool old);
 bool GetGlobalFlag(void);
 char* litlate(const char* name);
 LCHAR* wlitlate(const LCHAR* name);
+
+template <class T>
+T* Allocate(int sz = 1)
+{
+	return static_cast<T*>(Alloc(sz * sizeof(T)));
+}
+template <class T>
+T* nzAllocate(int sz = 1)
+{
+	return static_cast<T*>(nzAlloc(sz * sizeof(T)));
+}
+template <class T>
+T* oAllocate(int sz = 1)
+{
+	return static_cast<T*>(oAlloc(sz * sizeof(T)));
+}
+template <class T>
+T* aAllocate(int sz = 1)
+{
+	return static_cast<T*>(aAlloc(sz * sizeof(T)));
+}
+template <class T>
+T* tAllocate(int sz = 1)
+{
+	return static_cast<T*>(tAlloc(sz * sizeof(T)));
+}
+template <class T>
+T* cAllocate(int sz = 1)
+{
+	return static_cast<T*>(cAlloc(sz * sizeof(T)));
+}
+template <class T>
+T* sAllocate(int sz = 1)
+{
+	return static_cast<T*>(sAlloc(sz * sizeof(T)));
+}
+template <class T>
+T* localAllocate(int sz = 1)
+{
+    return static_cast<T*>(localAlloc(sz * sizeof(T)));
+}
+template <class T>
+T* beLocalAllocate(int sz = 1)
+{
+	return static_cast<T*>(beLocalAlloc(sz * sizeof(T)));
+}
+template <class T>
+T* globalAllocate(int sz = 1)
+{
+	return static_cast<T*>(globalAlloc(sz * sizeof(T)));
+}
+
+template <class T>
+T* beGlobalAllocate(int sz = 1)
+{
+	return static_cast<T*>(beGlobalAlloc(sz * sizeof(T)));
+}
+

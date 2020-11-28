@@ -59,20 +59,20 @@ static Optimizer::LIST* usingDirectives;
 
 void syminit(void)
 {
-    globalNameSpace = (NAMESPACEVALUELIST*)Alloc(sizeof(NAMESPACEVALUELIST));
-    globalNameSpace->valueData = (NAMESPACEVALUEDATA*)Alloc(sizeof(NAMESPACEVALUEDATA));
+    globalNameSpace = Allocate<NAMESPACEVALUELIST>();
+    globalNameSpace->valueData = Allocate<NAMESPACEVALUEDATA>();
     globalNameSpace->valueData->syms = CreateHashTable(GLOBALHASHSIZE);
     globalNameSpace->valueData->tags = CreateHashTable(GLOBALHASHSIZE);
 
-    localNameSpace = (NAMESPACEVALUELIST*)Alloc(sizeof(NAMESPACEVALUELIST));
-    localNameSpace->valueData = (NAMESPACEVALUEDATA*)Alloc(sizeof(NAMESPACEVALUEDATA));
+    localNameSpace = Allocate<NAMESPACEVALUELIST>();
+    localNameSpace->valueData = Allocate<NAMESPACEVALUEDATA>();
     usingDirectives = nullptr;
     matchOverloadLevel = 0;
 }
 HASHTABLE* CreateHashTable(int size)
 {
-    HASHTABLE* rv = (HASHTABLE*)Alloc(sizeof(HASHTABLE));
-    rv->table = (SYMLIST**)Alloc(sizeof(SYMLIST*) * size);
+    HASHTABLE* rv = Allocate<HASHTABLE>();
+    rv->table = Allocate<SYMLIST*>(size);
     rv->size = size;
     return rv;
 }
@@ -96,7 +96,7 @@ void AllocateLocalContext(BLOCKDATA* block, SYMBOL* sym, int label)
     if (sym)
         localNameSpace->valueData->tags->blockLevel = sym->sb->value.i++;
 
-    l = (Optimizer::LIST*)Alloc(sizeof(Optimizer::LIST));
+    l = Allocate<Optimizer::LIST>();
     l->data = localNameSpace->valueData->usingDirectives;
     l->next = usingDirectives;
     usingDirectives = l;
@@ -187,13 +187,13 @@ SYMLIST* AddName(SYMBOL* item, HASHTABLE* table)
                 return (r);
             q = q->next;
         }
-        newRec = (SYMLIST*)Alloc(sizeof(SYMLIST));
+        newRec = Allocate<SYMLIST>();
         r->next = newRec;
         newRec->p = (SYMBOL*)item;
     }
     else
     {
-        newRec = (SYMLIST*)Alloc(sizeof(SYMLIST));
+        newRec = Allocate<SYMLIST>();
         *p = newRec;
         newRec->p = (SYMBOL*)item;
     }
@@ -221,13 +221,13 @@ SYMLIST* AddOverloadName(SYMBOL* item, HASHTABLE* table)
                 return (r);
             q = q->next;
         }
-        newRec = (SYMLIST*)Alloc(sizeof(SYMLIST));
+        newRec = Allocate<SYMLIST>();
         r->next = newRec;
         newRec->p = (SYMBOL*)item;
     }
     else
     {
-        newRec = (SYMLIST*)Alloc(sizeof(SYMLIST));
+        newRec = Allocate<SYMLIST>();
         *p = newRec;
         newRec->p = (SYMBOL*)item;
     }

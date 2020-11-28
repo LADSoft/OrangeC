@@ -471,7 +471,7 @@ void ccInsertUsing(SYMBOL* ns, SYMBOL* parentns, const char* file, int line)
 {
     if (!skipThisFile)
     {
-        USING* susing = (USING*)Alloc(sizeof(USING));
+        USING* susing = Allocate<USING>();
         susing->line = line;
         susing->file = file;
         susing->sym = ns;
@@ -484,7 +484,7 @@ void ccSetSymbol(SYMBOL* sp)
 {
     if (!skipThisFile)
     {
-        Optimizer::LIST* newItem = (Optimizer::LIST*)Alloc(sizeof(Optimizer::LIST));
+        Optimizer::LIST* newItem = Allocate<Optimizer::LIST>();
         if (sp->sb->decoratedName)
         {
             newItem->next = symList;
@@ -512,7 +512,7 @@ std::string ccNewFile(char* fileName, bool main)
     skipThisFile = !!LookupName(s, ccHash);
     if (!skipThisFile)
     {
-        l = (LINEINCLUDES*)Alloc(sizeof(LINEINCLUDES));
+        l = Allocate<LINEINCLUDES>();
         l->name = litlate(s);
         lastFile = l;
         l->fileId = 0;

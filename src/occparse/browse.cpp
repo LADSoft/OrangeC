@@ -112,7 +112,7 @@ void browse_startfunc(SYMBOL* func, int lineno)
     Optimizer::BROWSEINFO* bri;
     if (!Optimizer::cparams.prm_browse || func->sb->declline <= 0)
         return;
-    bri = (Optimizer::BROWSEINFO*)Alloc(sizeof(Optimizer::BROWSEINFO));
+    bri = Allocate<Optimizer::BROWSEINFO>();
     bri->type = BRS_STARTFUNC;
     getBrowseName(name, func);
     bri->name = litlate(name);
@@ -131,7 +131,7 @@ void browse_endfunc(SYMBOL* func, int lineno)
     Optimizer::BROWSEINFO* bri;
     if (!Optimizer::cparams.prm_browse || func->sb->declline <= 0)
         return;
-    bri = (Optimizer::BROWSEINFO*)Alloc(sizeof(Optimizer::BROWSEINFO));
+    bri = Allocate<Optimizer::BROWSEINFO>();
     bri->type = BRS_ENDFUNC;
     getBrowseName(name, func);
     bri->name = litlate(name);
@@ -153,7 +153,7 @@ void browse_startfile(const char* name, int index)
         return;
     currentFile = index;
 
-    bri = (Optimizer::BROWSEINFO*)Alloc(sizeof(Optimizer::BROWSEINFO));
+    bri = Allocate<Optimizer::BROWSEINFO>();
     bri->type = BRS_STARTFILE;
     bri->filenum = currentFile;
     bri->name = "";
@@ -167,7 +167,7 @@ void browse_startfile(const char* name, int index)
     strcpy(exname, name);
     abspath(exname);
 
-    bf = (Optimizer::BROWSEFILE*)Alloc(sizeof(Optimizer::BROWSEFILE));
+    bf = Allocate<Optimizer::BROWSEFILE>();
     bf->name = litlate(exname);
     bf->filenum = index;
     browsefile(bf);
@@ -201,7 +201,7 @@ void browse_variable(SYMBOL* var)
                 return;
             break;
     }
-    bri = (Optimizer::BROWSEINFO*)Alloc(sizeof(Optimizer::BROWSEINFO));
+    bri = Allocate<Optimizer::BROWSEINFO>();
     bri->type = isfunction(var->tp) ? BRS_PROTOTYPE : BRS_VARIABLE;
     getBrowseName(name, var);
     bri->name = litlate(name);
@@ -225,7 +225,7 @@ void browse_usage(SYMBOL* var, int file)
         return;
     if (strstr(var->name, "++") || strstr(var->name, "$anontype"))
         return;
-    bri = (Optimizer::BROWSEINFO*)Alloc(sizeof(Optimizer::BROWSEINFO));
+    bri = Allocate<Optimizer::BROWSEINFO>();
     bri->type = BRS_USAGE;
     getBrowseName(name, var);
     bri->name = litlate(name);
@@ -245,7 +245,7 @@ void browse_define(char* name, int lineno, int charindex)
     Optimizer::BROWSEINFO* bri;
     if (!Optimizer::cparams.prm_browse || lineno <= 0)
         return;
-    bri = (Optimizer::BROWSEINFO*)Alloc(sizeof(Optimizer::BROWSEINFO));
+    bri = Allocate<Optimizer::BROWSEINFO>();
     bri->type = BRS_DEFINE;
     bri->name = litlate(name);
     bri->lineno = lineno;
@@ -262,7 +262,7 @@ void browse_blockstart(int lineno)
     Optimizer::BROWSEINFO* bri;
     if (!Optimizer::cparams.prm_browse || lineno <= 0)
         return;
-    bri = (Optimizer::BROWSEINFO*)Alloc(sizeof(Optimizer::BROWSEINFO));
+    bri = Allocate<Optimizer::BROWSEINFO>();
     bri->type = BRS_BLOCKSTART;
     bri->name = "";
     bri->lineno = lineno;
@@ -279,7 +279,7 @@ void browse_blockend(int lineno)
     Optimizer::BROWSEINFO* bri;
     if (!Optimizer::cparams.prm_browse || lineno <= 0)
         return;
-    bri = (Optimizer::BROWSEINFO*)Alloc(sizeof(Optimizer::BROWSEINFO));
+    bri = Allocate<Optimizer::BROWSEINFO>();
     bri->type = BRS_BLOCKEND;
     bri->name = "";
     bri->lineno = lineno;

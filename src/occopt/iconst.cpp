@@ -79,7 +79,7 @@ static void ReassignInt(QUAD* d, long long val)
     d->temps &= ~(TEMP_LEFT | TEMP_RIGHT);
     if (d->temps & TEMP_ANS)
     {
-        IMODE* im = (IMODE*)Alloc(sizeof(IMODE));
+        IMODE* im = Allocate<IMODE>();
         *im = *d->dc.left;
         d->dc.left = im;
         tempInfo[d->ans->offset->sp->i]->preSSATemp = -1;
@@ -1256,7 +1256,7 @@ static bool eval(QUAD* q)
                     set = vo_constant;
                     if (isintconst(q->dc.left->offset))
                     {
-                        val = (IMODE*)Alloc(sizeof(IMODE));
+                        val = Allocate<IMODE>();
                         *val = *q->dc.left;
                     }
                     else
@@ -1420,7 +1420,7 @@ static void pushBlock(BLOCK* block, BLOCK* source)
     }
     if (*edgereached && source == (*edgereached)->block)
         return;
-    bl = (BLOCKLIST*)tAlloc(sizeof(BLOCKLIST));
+    bl = tAllocate<BLOCKLIST>();
     bl->block = source;
     bl->next = *edgereached;
     *edgereached = bl;
@@ -1441,7 +1441,7 @@ static void pushBlock(BLOCK* block, BLOCK* source)
         }
         else
         {
-            l1 = (BLOCKLIST*)tAlloc(sizeof(BLOCKLIST));
+            l1 = tAllocate<BLOCKLIST>();
         }
         l1->block = block;
         l1->next = nullptr;
@@ -1601,7 +1601,7 @@ static bool emulInstruction(QUAD* head, BLOCK* b)
                     }
                     else
                     {
-                        l1 = (INSTRUCTIONLIST*)tAlloc(sizeof(INSTRUCTIONLIST));
+                        l1 = tAllocate<INSTRUCTIONLIST>();
                     }
                     l1->ins = uses->ins;
                     l1->next = nullptr;
@@ -1865,7 +1865,7 @@ void ConstantFlow(void)
     visited = briggsAlloc(blockCount);
     insWorkHead = insWorkTail = nullptr;
     listHolder = nullptr;
-    blockWorkHead = blockWorkTail = (BLOCKLIST*)tAlloc(sizeof(BLOCKLIST));
+    blockWorkHead = blockWorkTail = tAllocate<BLOCKLIST>();
 
     /* value defaults to top */
     /* now reassign any temp which is a parameter to bottom */

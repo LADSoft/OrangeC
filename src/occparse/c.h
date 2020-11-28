@@ -676,6 +676,7 @@ typedef struct sym
         unsigned postExpansion : 1;                      // template was post-expanded
         unsigned performedStructInitialization : 1;      // structure declaration was completed
         unsigned delegated : 1;                          // construct is delegated to another constructor
+        unsigned hasBody : 1;                            // function has a body
         int __func__label;                               /* label number for the __func__ keyword */
         int labelCount;                                  /* number of code labels within a function body */
         int offset;                                      /* address offset of data in the given seg, or optimize register */

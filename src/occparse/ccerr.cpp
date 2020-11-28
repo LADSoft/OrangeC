@@ -583,6 +583,7 @@ static struct
     {"typedef templates not allowed", ERROR},
     {"Missing 'typename' in front of dependent type '%s'", ERROR },
     {"'typename' only used for dependent types", WARNING },
+    {"Function '%s' already has a body", ERROR },
 };
 void EnterInstantiation(LEXEME* lex, SYMBOL *sym)
 {

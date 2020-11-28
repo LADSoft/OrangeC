@@ -6517,6 +6517,8 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                         }
                         if (basetype(sp->tp)->type == bt_func)
                         {
+                            if (sp->sb->hasBody && !instantiatingFunction && !instantiatingTemplate && MATCHKW(lex, begin))
+                                errorsym(ERR_FUNCTION_HAS_BODY, sp);
                             if (funcsp && storage_class == sc_localstatic)
                                 errorstr(ERR_INVALID_STORAGE_CLASS, "static");
                             if (storage_class == sc_member && !Optimizer::cparams.prm_cplusplus)
@@ -6553,6 +6555,8 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                                 SetTemplateNamespace(sp);
                             if (MATCHKW(lex, begin))
                             {
+                                if (!templateNestingCount)
+                                    sp->sb->hasBody = true;
                                 TYPE* tp = sp->tp;
                                 SYMLIST* hr;
                                 if (sp->sb->storage_class == sc_member && storage_class_in == sc_member)

@@ -72,7 +72,7 @@ bool reflectUsingType;
 int noTypeNameError;
 int inTemplateHeader;
 SYMBOL* instantiatingMemberFuncClass;
-static int instantiatingFunction;
+int instantiatingFunction;
 static int inTemplateArgs;
 
 struct templateListData* currents;

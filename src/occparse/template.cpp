@@ -5066,7 +5066,7 @@ static bool ValidArg(TYPE* tp)
                 {
                     TYPE* tp1 = TemplateLookupTypeFromDeclType(tp->sp->sb->templateSelector->next->tp);
                     if (!tp1 || tp1->type == bt_any || !isstructured(tp1))
-                        return &stdany;
+                        return false;
                     sp = basetype(tp1)->sp;
                 }
                 else if (tp->sp->sb->templateSelector->next->isTemplate)

@@ -69,8 +69,17 @@ char anonymousNameSpaceName[512];
 
 static bool MustSpecialize(const char *name)
 {
-    auto ss = getStructureDeclaration();
-    return !ss || strcmp(ss->name, name) != 0;
+    if (templateNestingCount && !instantiatingTemplate)
+        return false;
+    auto sst = structSyms;
+    while (sst)
+    {
+        if (sst->str && !strcmp(sst->str->name, name))
+            return false;
+        sst = sst->next;
+    }
+
+    return true;
 }
 void SpecializationError(char* str)
 {
@@ -3276,10 +3285,6 @@ LEXEME* insertUsing(LEXEME* lex, SYMBOL** sp_out, enum e_ac access, enum e_sc st
                         if (MATCHKW(lex, lt))
                         { 
                             lex = GetTemplateArguments(lex, nullptr, sym, &lst);
-                        }
-                        else
-                        {
-                            SpecializationError(sym);
                         }
                     }
                     else if (strsym && strsym->tp->type == bt_templateselector)

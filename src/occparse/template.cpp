@@ -1082,7 +1082,9 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
                 (!orig && startOfType(lex, true) && !constructedInt(lex, funcsp)))&& !MATCHKW(lex, kw_sizeof)))
             {
                 LEXEME* start = lex;
+                noTypeNameError++;
                 lex = get_type_id(lex, &tp, funcsp, sc_parameter, false, true, false);
+                noTypeNameError--;
                 if (!tp)
                     tp = &stdint;
                 else if (tp && !templateNestingCount)
@@ -5838,7 +5840,9 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, TEMPLATEPARAMLIST* dest, TEMPL
             {
                 case kw_typename:
                 {
+                    noTypeNameError++;
                     lex = get_type_id(lex, &dest->p->byClass.val, nullptr, sc_cast, false, true, false);
+                    noTypeNameError--;
                     if (!dest->p->byClass.val || dest->p->byClass.val->type == bt_any)
                     {
                         SwapDefaultNames(enclosing, src->p->byClass.txtargs);
@@ -7196,6 +7200,10 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, TEMPLATEPARAMLIST* args, b
             int oldInArgs = inTemplateArgs;
             int oldArgumentNesting = argument_nesting;
             int oldFuncLevel = funcLevel;
+            int oldintypedef = inTypedef;
+            int oldTypeNameError = noTypeNameError;
+            noTypeNameError = 0;
+            inTypedef = 0;
             funcLevel = 0;
             argument_nesting = 0;
             inTemplateArgs = 0;
@@ -7258,6 +7266,8 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, TEMPLATEPARAMLIST* args, b
             if (old.tp->syms)
                 TemplateTransferClassDeferred(cls, &old);
             PopTemplateNamespace(nsl);
+            noTypeNameError = oldTypeNameError;
+            inTypedef = oldintypedef;
             dontRegisterTemplate = oldRegisterTemplate;
             packIndex = oldPackIndex;
             lambdas = oldLambdas;
@@ -7420,6 +7430,10 @@ SYMBOL* TemplateFunctionInstantiate(SYMBOL* sym, bool warning, bool isExtern)
             int oldExpandingParams = expandingParams;
             int nsl = PushTemplateNamespace(sym);
             int oldArgumentNesting = argument_nesting;
+            int oldintypedef = inTypedef;
+            int oldTypeNameError = noTypeNameError;
+            noTypeNameError = 0;
+            inTypedef = 0;
             expandingParams = 0;
             instantiatingFunction++;
             argument_nesting = 0;
@@ -7462,6 +7476,8 @@ SYMBOL* TemplateFunctionInstantiate(SYMBOL* sym, bool warning, bool isExtern)
             }
             SetAlternateLex(nullptr);
             PopTemplateNamespace(nsl);
+            noTypeNameError = oldTypeNameError;
+            inTypedef = oldintypedef;
             argument_nesting = oldArgumentNesting;
             packIndex = oldPackIndex;
             inTemplateType = oldTemplateType;

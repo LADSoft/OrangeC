@@ -1911,7 +1911,6 @@ static LEXEME* statement_return(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent)
                     {
                         if (sameTemplate(tp, tp1))
                             basetype(funcsp->tp)->btp = tp1;
-                        ctype = tp1;
                         if (basetype(tp1)->sp->sb->templateLevel && basetype(tp1)->sp->templateParams &&
                             !basetype(tp1)->sp->sb->instantiated && !templateNestingCount)
                         {

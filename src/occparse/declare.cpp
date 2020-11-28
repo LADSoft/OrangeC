@@ -70,6 +70,7 @@ Optimizer::LIST* deferred;
 int structLevel;
 Optimizer::LIST* openStructs;
 int parsingTrailingReturnOrUsing;
+int inTypedef;
 
 static int unnamed_tag_id, unnamed_id;
 static char* importFile;
@@ -5190,6 +5191,7 @@ static LEXEME* getStorageAndType(LEXEME* lex, SYMBOL* funcsp, SYMBOL** strSym, b
 {
     bool foundType = false;
     bool first = true;
+    bool flaggedTypedef = false;
     *blocked = false;
     *constexpression = false;
 
@@ -5213,6 +5215,11 @@ static LEXEME* getStorageAndType(LEXEME* lex, SYMBOL* funcsp, SYMBOL** strSym, b
             lex = getStorageClass(lex, funcsp, storage_class, linkage, address, blocked, isExplicit, access);
             if (*blocked)
                 break;
+            if (*storage_class == sc_typedef)
+            {
+                flaggedTypedef = true;
+                inTypedef++;
+            }
         }
         else if (KWTYPE(lex, TT_POINTERQUAL | TT_LINKAGE))
         {
@@ -5242,6 +5249,8 @@ static LEXEME* getStorageAndType(LEXEME* lex, SYMBOL* funcsp, SYMBOL** strSym, b
             break;
         first = false;
     }
+    if (flaggedTypedef)
+        inTypedef--;
     return lex;
 }
 static bool mismatchedOverloadLinkage(SYMBOL* sp, HASHTABLE* table)
@@ -5453,7 +5462,6 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
             bool templateArg = false;
             bool asFriend = false;
             int consdest = CT_NONE;
-
             lex = getStorageAndType(lex, funcsp, &strSym, inTemplate, false, &storage_class, &storage_class_in, &address, &blocked,
                                     &isExplicit, &constexpression, &tp, &linkage, &linkage2, &linkage3, access, &notype, &defd,
                                     &consdest, &templateArg, &asFriend);

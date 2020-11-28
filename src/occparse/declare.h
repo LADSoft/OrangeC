@@ -37,6 +37,7 @@ extern Optimizer::LIST* deferred;
 extern int structLevel;
 extern Optimizer::LIST* openStructs;
 extern int parsingTrailingReturnOrUsing;
+extern int inTypedef;
 
 
 void declare_init(void);

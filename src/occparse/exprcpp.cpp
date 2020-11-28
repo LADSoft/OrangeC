@@ -624,7 +624,7 @@ LEXEME* expression_func_type_cast(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRES
         {
             (*tp) = basetype(*tp)->sp->tp;
             if (!(*tp)->size)
-                errorsym(ERR_STRUCT_NOT_DEFINED, basetype(*tp)->sp);
+                errorsym(ERR_STRUCT_NOT_DEFINED, basetype(*tp)->sp);    
         }
     }
     if (!MATCHKW(lex, openpa))
@@ -1166,7 +1166,9 @@ LEXEME* GetCastInfo(LEXEME* lex, SYMBOL* funcsp, TYPE** newType, TYPE** oldType,
     *oldType = nullptr;
     if (needkw(&lex, lt))
     {
+        noTypeNameError++;
         lex = get_type_id(lex, newType, funcsp, sc_cast, false, true, false);
+        noTypeNameError--;
         if (!*newType)
         {
             error(ERR_TYPE_NAME_EXPECTED);

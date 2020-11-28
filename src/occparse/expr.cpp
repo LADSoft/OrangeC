@@ -5177,7 +5177,6 @@ static LEXEME* expression_primary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE**
                     lex = expression_atomic_func(lex, funcsp, tp, exp, flags);
                     break;
                 case kw_typename:
-                    lex = getsym();
                     *tp = nullptr;
                     lex = expression_func_type_cast(lex, funcsp, tp, exp, flags);
                     break;

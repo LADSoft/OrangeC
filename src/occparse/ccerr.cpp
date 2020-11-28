@@ -978,7 +978,10 @@ void errorqualified(int err, SYMBOL* strSym, NAMESPACEVALUELIST* nsv, const char
     memset(buf, 0, sizeof(buf));
     if (strSym)
     {
-        unmangle(lastb, strSym->sb->decoratedName);
+        if (strSym->sb->decoratedName)
+            unmangle(lastb, strSym->sb->decoratedName);
+        else
+            strcpy(lastb, strSym->name);
         last = strrchr(lastb, ':');
         if (last)
             last++;

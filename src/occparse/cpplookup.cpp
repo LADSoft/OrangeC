@@ -518,7 +518,8 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
                         else if (MATCHKW(lex, classsel))
                         {
                             currentsp = sp;
-                            SpecializationError(sp);
+                            if (!istypedef)
+                                SpecializationError(sp);
                         }
                         if (!MATCHKW(lex, classsel))
                             break;
@@ -649,8 +650,7 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
                 }
                 if (sp && !deferred)
                     sp->tp = PerformDeferredInitialization(sp->tp, nullptr);
-                if (sp && (!sp->sb || (sp->sb->storage_class != sc_namespace && (!isstructured(sp->tp) 
-                   || (sp->templateParams && (!sp->sb->instantiated || sp->sb->attribs.inheritable.linkage != lk_virtual))))))
+                if (sp && (!sp->sb || (sp->sb->storage_class != sc_namespace && (!isstructured(sp->tp) || sp->templateParams))))
                     pastClassSel = true;
                 lex = getsym();
                 finalPos = lex;
@@ -728,23 +728,27 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
         }
         qualified = true;
     }
-    if (pastClassSel && !typeName && !hasTemplate && isType && !noTypeNameError)
+    if (pastClassSel && !typeName && !inTypedef && !hasTemplate && isType && !noTypeNameError)
     {
-        char buf[2000];
-        buf[0] = 0;
 
-        while (placeholder != finalPos->next)
+        if (!strSym || !allTemplateArgsSpecified(strSym, strSym->templateParams->next))
         {
-            if (ISKW(placeholder))
-                Optimizer::my_sprintf(buf + strlen(buf), "%s", placeholder->kw->name);
-            else if (ISID(placeholder))
-                Optimizer::my_sprintf(buf + strlen(buf), "%s", placeholder->value.s.a);
-            placeholder = placeholder->next;
-        }
+            char buf[2000];
+            buf[0] = 0;
 
-        errorstr(ERR_DEPENDENT_TYPE_NEEDS_TYPENAME, buf);
+            while (placeholder != finalPos->next)
+            {
+                if (ISKW(placeholder))
+                    Optimizer::my_sprintf(buf + strlen(buf), "%s", placeholder->kw->name);
+                else if (ISID(placeholder))
+                    Optimizer::my_sprintf(buf + strlen(buf), "%s", placeholder->value.s.a);
+                placeholder = placeholder->next;
+            }
+
+            errorstr(ERR_DEPENDENT_TYPE_NEEDS_TYPENAME, buf);
+        }
     }
-    if ((!pastClassSel || !isType) && typeName)
+    if (!pastClassSel && typeName && !inTypedef && (!templateNestingCount || instantiatingTemplate))
     {
         error(ERR_NO_TYPENAME_HERE);
          

@@ -4664,8 +4664,6 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
             }
             if (found1)
             {
-                if (!strcmp(found1->name, "nn"))
-                    printf("hi");
                 if (found1->sb->attribs.uninheritable.deprecationText)
                     deprecateMessage(found1);
                 if (!(flags & _F_SIZEOF))

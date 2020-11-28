@@ -1127,8 +1127,17 @@ char* unmangle(char* val, const char* name)
             }
             else if (*name == '$')
             {
+                if (name[1] == '$')
+                {
+                    // symbol name in a lambda function
+                    while (*name && *name != '@')
+                        *buf++ = *name++;
+                    *buf++ = ':';
+                    *buf++ = ':';
+                    *buf = 0;
+                }
                 // discard the template params if they are there
-                if (name[1] == 'b' || name[1] == 'o')
+                else if (name[1] == 'b' || name[1] == 'o')
                 {
                     name = unmang_intrins(buf, name, last);
                     buf += strlen(buf);

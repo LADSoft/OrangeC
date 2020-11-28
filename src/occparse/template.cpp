@@ -3360,11 +3360,6 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bo
                     }
                     tpl = tpl->next;
                 }
-                if (exp->v.func->arguments && isstructured(exp->v.func->arguments->tp))
-                {
-                    if (strstr(basetype(exp->v.func->arguments->tp)->sp->name, "merse"))
-                        printf("hi");
-                }
                 sp = GetOverloadedFunction(&tp1, &exp1, exp->v.func->sp, exp->v.func, nullptr, false, false, false, 0);
                 tpl = exp->v.func->templateParams;  
                 while (tpl)
@@ -5989,8 +5984,6 @@ void PushPopTemplateArgs(SYMBOL* func, bool push)
 }
 SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
 {
-    if (!strcmp(sym->name, "nn"))
-        printf("hi");
     TEMPLATEPARAMLIST* nparams = sym->templateParams;
     TYPE* thistp = args->thistp;
     INITLIST* arguments = args->arguments;
@@ -9300,8 +9293,6 @@ static void copySyms(SYMBOL* found1, SYMBOL* sym)
 }
 SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
 {
-    if (!strcmp(sp->name, "rr"))
-        printf("hi");
     int n = 1, i = 0;
     TEMPLATEPARAMLIST* unspecialized = sp->templateParams->next;
     SYMBOL *found1 = nullptr, *found2 = nullptr;

@@ -3801,39 +3801,25 @@ void asm_assn(Optimizer::QUAD* q) /* assignment */
         {
             if (q->ans->bits)
                 bit_store(apa, apl, q->ans->size, q->ans->bits, q->ans->startbit);
-            else if (q->ans->size == ISZ_BOOLEAN)
-            {
-                switch (q->dc.left->offset->type)
-                {
-                case Optimizer::se_f:
-                    if (q->dc.left->offset->f.ValueIsZero() )
-                    {
-                        gen_codes(op_mov, q->ans->size, apa, aimmed(0));
-                    }
-                    else
-                    {
-                        gen_codes(op_mov, q->ans->size, apa, aimmed(1));
-                    }
-                    break;
-                case Optimizer::se_i:
-                    if (!q->dc.left->offset->i)
-                    {
-                        gen_codes(op_mov, q->ans->size, apa, aimmed(0));
-                    }
-                    else
-                    {
-                        gen_codes(op_mov, q->ans->size, apa, aimmed(1));
-                    }
-                    break;
-                default:
-                    // address...
-                    gen_codes(op_mov, q->ans->size, apa, aimmed(1));
-                    break;
-                }
-            }
             else
             {
-                gen_codes(opl, q->ans->size, apa, apl);
+                if (sza < szl)
+                {
+                    if (q->ans->size == ISZ_BOOLEAN)
+                    {
+                        gen_codes(opl, q->dc.left->size, apa, apl);
+                        gen_codes(op_cmp, q->dc.left->size, apa, aimmed(0));
+                        gen_codes(op_setne, q->ans->size, apa, nullptr);
+                    }
+                    else
+                    {
+                        gen_codes(opl, q->dc.left->size, apa, apl);
+                    }
+                }
+                else
+                {
+                    gen_codes(opl, q->ans->size, apa, apl);
+                }
                 if (q->dc.opcode == Optimizer::i_assn && q->dc.left->bits)
                 {
                     int max;

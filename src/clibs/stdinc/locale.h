@@ -56,17 +56,20 @@
 #define LC_userdef 7
 #define LC_LAST LC_userdef
 
-#define LC_COLLATE_MASK (1 << LC_COLLATE)
-#define LC_CTYPE_MASK (1 << LC_CTYPE)
-#define LC_MESSAGES_MASK (1 << LC_MESSAGES)
-#define LC_MONETARY_MASK (1 << LC_MONETARY)
-#define LC_NUMERIC_MASK (1 << LC_NUMERIC)
-#define LC_TIME_MASK (1 << LC_TIME)
+#if !defined(_LIBCPP___LOCALE) || (_LIBCPP_VERSION < 10000) 
+#define LC_COLLATE_MASK ((1 << LC_COLLATE) >> 1)
+#define LC_CTYPE_MASK ((1 << LC_CTYPE) >> 1)
+#define LC_MESSAGES_MASK ((1 << LC_MESSAGES) >> 1)
+#define LC_MONETARY_MASK ((1 << LC_MONETARY) >> 1)
+#define LC_NUMERIC_MASK ((1 << LC_NUMERIC) >> 1)
+#define LC_TIME_MASK ((1 << LC_TIME) >> 1)
 #define LC_ALL_MASK (LC_COLLATE_MASK | LC_CTYPE_MASK | LC_MESSAGES_MASK | LC_MONETARY_MASK | LC_NUMERIC_MASK | LC_TIME_MASK)
+#endif
 
 #ifndef RC_INVOKED
 
 typedef void* locale_t;
+typedef locale_t _locale_t;
 #endif
 
 #ifdef __cplusplus

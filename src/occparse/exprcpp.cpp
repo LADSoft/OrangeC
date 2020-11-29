@@ -250,17 +250,13 @@ EXPRESSION* getMemberBase(SYMBOL* memberSym, SYMBOL* strSym, SYMBOL* funcsp, boo
         deref(&stdpointer, &en);
         if (enclosing != memberSym->sb->parentClass && enclosing->sb->mainsym != memberSym->sb->parentClass)
         {
-            if (classRefCount(memberSym->sb->parentClass, enclosing) != 1)
+            if (toError && classRefCount(memberSym->sb->parentClass, enclosing) != 1)
             {
-                if (toError)
-                    errorsym2(ERR_NOT_UNAMBIGUOUS_BASE, memberSym->sb->parentClass, enclosing);
+                errorsym2(ERR_NOT_UNAMBIGUOUS_BASE, memberSym->sb->parentClass, enclosing);
             }
-            else if (!isExpressionAccessible(nullptr, memberSym, funcsp, en, false))
+            else if (toError && !isExpressionAccessible(funcsp ? funcsp->sb->parentClass : nullptr, memberSym, funcsp, en, false))
             {
-                if (toError)
-                {
-                    errorsym(ERR_CANNOT_ACCESS, memberSym);
-                }
+                errorsym(ERR_CANNOT_ACCESS, memberSym);
             }
             en = baseClassOffset(memberSym->sb->parentClass, enclosing, en);
         }

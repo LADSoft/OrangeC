@@ -63,10 +63,10 @@ enum e_kw skim_closebr[] = {closebr, semicolon, end, kw_none};
 enum e_kw skim_comma[] = {comma, closepa, closebr, semicolon, end, kw_none};
 enum e_kw skim_colon[] = {colon, kw_case, kw_default, semicolon, end, kw_none};
 enum e_kw skim_templateend[] = {gt, semicolon, end, kw_none};
+std::deque<std::tuple<const char*, int, SYMBOL*>> instantiationList;
 
 static Optimizer::LIST* listErrors;
 static const char* currentErrorFile;
-static std::deque<std::tuple<const char*, int, SYMBOL*>> instantiationList;
 static bool disabledNote;
 
 static struct

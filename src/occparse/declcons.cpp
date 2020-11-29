@@ -2911,7 +2911,7 @@ void callDestructor(SYMBOL* sp, SYMBOL* against, EXPRESSION** exp, EXPRESSION* a
     FUNCTIONCALL* params = Allocate<FUNCTIONCALL>();
     SYMBOL* sym;
     if (!against)
-        against = sp;
+        against = theCurrentFunc ? theCurrentFunc->sb->parentClass : sp;
     if (sp->tp->size == 0)
         sp = PerformDeferredInitialization(sp->tp, nullptr)->sp;
     stp = sp->tp;
@@ -3011,7 +3011,7 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
     bool initializerRef = false;
     PerformDeferredInitialization(stp, nullptr);
     sp = basetype(*tp)->sp;
-    against = top ? sp : sp->sb->parentClass;
+    against = theCurrentFunc ? theCurrentFunc->sb->parentClass : top ? sp : sp->sb->parentClass;
 
     if (isAssign)
         cons = search(overloadNameTab[assign - kw_new + CI_NEW], basetype(sp->tp)->syms);
@@ -3084,7 +3084,7 @@ bool callConstructor(TYPE** tp, EXPRESSION** exp, FUNCTIONCALL* params, bool che
         }
         else
         {
-            if (!isAccessible(against, sp, cons1, nullptr,
+            if (!isAccessible(against, sp, cons1, theCurrentFunc,
                               top ? (theCurrentFunc && theCurrentFunc->sb->parentClass == sp ? ac_private : ac_public)
                                   : ac_private,
                               false))

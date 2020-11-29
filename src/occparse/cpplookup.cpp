@@ -1387,7 +1387,7 @@ SYMBOL* LookupSym(char* name)
         rv = namespacesearch(name, globalNameSpace, false, false);
     return rv;
 }
-static bool isFriend(SYMBOL* cls, SYMBOL* frnd)
+static bool IsFriend(SYMBOL* cls, SYMBOL* frnd)
 {
     if (cls && frnd)
     {
@@ -1396,6 +1396,9 @@ static bool isFriend(SYMBOL* cls, SYMBOL* frnd)
         {
             SYMBOL* sym = (SYMBOL*)l->data;
             if (sym == frnd || sym == frnd->sb->parentTemplate)
+                return true;
+            if (isfunction(sym->tp) && sym->sb->parentClass == frnd->sb->parentClass && 
+                !strcmp(sym->name, frnd->name) && searchOverloads(frnd, sym->sb->overloadName->tp->syms))
                 return true;
             if (sym->sb->templateLevel)
             {
@@ -1415,7 +1418,7 @@ static bool isFriend(SYMBOL* cls, SYMBOL* frnd)
 // works by searching the tree for the base or member symbol, and stopping any
 // time the access wouldn't work.  If the symbol is found it is accessible.
 static bool isAccessibleInternal(SYMBOL* derived, SYMBOL* currentBase, SYMBOL* member, SYMBOL* funcsp, enum e_ac minAccess,
-                                 int level, bool asAddress, bool friendly)
+                                 int level, bool asAddress)
 {
     BASECLASS* lst;
     SYMLIST* hr;
@@ -1429,9 +1432,9 @@ static bool isAccessibleInternal(SYMBOL* derived, SYMBOL* currentBase, SYMBOL* m
         if (ssp == member)
             return true;
     }
-    if (isFriend(derived, funcsp) || (funcsp && isFriend(derived, funcsp->sb->parentClass)) || isFriend(derived, ssp) ||
-        isFriend(member->sb->parentClass, funcsp))
-        friendly = true;
+    if (IsFriend(derived, funcsp) || (funcsp && IsFriend(derived, funcsp->sb->parentClass)) || IsFriend(derived, ssp) ||
+        IsFriend(member->sb->parentClass, funcsp) || IsFriend(member->sb->parentClass, derived))
+        return true;
     if (!basetype(currentBase->tp)->syms)
         return false;
     hr = basetype(currentBase->tp)->syms->table[0];
@@ -1527,10 +1530,8 @@ static bool isAccessibleInternal(SYMBOL* derived, SYMBOL* currentBase, SYMBOL* m
     if (matched)
     {
         SYMBOL* sym = member;
-        return friendly ||
-               ((level == 0 || (level == 1 && (minAccess < ac_public || sym->sb->access == ac_public))) &&
-                (derived == currentBase || sym->sb->access != ac_private)) ||
-               sym->sb->access >= minAccess;
+        return ((level == 0 || (level == 1 && (minAccess < ac_public || sym->sb->access == ac_public))) &&
+                derived == currentBase) || sym->sb->access >= minAccess;
     }
     lst = currentBase->sb->baseClasses;
     while (lst)
@@ -1547,70 +1548,106 @@ static bool isAccessibleInternal(SYMBOL* derived, SYMBOL* currentBase, SYMBOL* m
         }
         if (isAccessibleInternal(derived, sym, member, funcsp,
                                  level != 0 && (lst->accessLevel == ac_private || minAccess == ac_private) ? ac_none : minAccess,
-                                 level + 1, asAddress, friendly))
+                                 level + 1, asAddress))
             return true;
         lst = lst->next;
     }
     return false;
 }
+int count3;
 bool isAccessible(SYMBOL* derived, SYMBOL* currentBase, SYMBOL* member, SYMBOL* funcsp, enum e_ac minAccess, bool asAddress)
 {
-    return member->sb->accessibleTemplateArgument ||
-           isAccessibleInternal(derived, currentBase, member, funcsp, minAccess, 0, asAddress, false);
+    if (!((templateNestingCount && !instantiatingTemplate) || instantiatingFunction ||
+        member->sb->accessibleTemplateArgument ||
+        isAccessibleInternal(derived, currentBase, member, funcsp, minAccess, 0, asAddress)))
+    {
+        return (templateNestingCount && !instantiatingTemplate) || instantiatingFunction ||
+            member->sb->accessibleTemplateArgument ||
+            isAccessibleInternal(derived, currentBase, member, funcsp, minAccess, 0, asAddress);
+    }
+    return true;
+}
+static SYMBOL* AccessibleClassInstance(SYMBOL *parent)
+{
+    // search through all active structure declarations
+    // to try to find a structure which is derived from parent...
+    STRUCTSYM* s = structSyms;
+    while (s)
+    {
+        SYMBOL* ssp = s->str;
+        if (ssp)
+        {
+            SYMBOL *srch = ssp;
+            while (srch)
+            {
+                if (srch == parent || classRefCount(parent, srch))
+                    break;
+                srch = srch->sb->parentClass;
+            }
+            if (srch)
+                return srch;
+        }
+        s = s->next;
+    }
+    return nullptr;
 }
 bool isExpressionAccessible(SYMBOL* derived, SYMBOL* sym, SYMBOL* funcsp, EXPRESSION* exp, bool asAddress)
 {
     if (sym->sb->parentClass)
     {
-        SYMBOL* ssp = getStructureDeclaration();
         bool throughClass = sym->sb->throughClass;
         if (exp)
         {
             throughClass = true;
         }
-
-        if (ssp && throughClass && (ssp == sym->sb->parentClass || classRefCount(sym->sb->parentClass, ssp)))
+        SYMBOL* ssp;
+        if (throughClass && (ssp = AccessibleClassInstance(sym->sb->parentClass)) != nullptr)
         {
             if (!isAccessible(ssp, ssp, sym, funcsp, ac_protected, asAddress))
                 return false;
         }
         else
         {
-            if (!isAccessible(derived ? derived : sym->sb->parentClass, sym->sb->parentClass, sym, funcsp, ac_public, asAddress))
+            if (!isAccessible(derived, sym->sb->parentClass, sym, funcsp, ac_public, asAddress))
                 return false;
         }
     }
     return true;
 }
-bool checkDeclarationAccessible(TYPE* tp, SYMBOL* funcsp)
+bool checkDeclarationAccessible(SYMBOL* sp, SYMBOL* derived, SYMBOL* funcsp)
 {
+    TYPE *tp = sp->tp;
     while (tp)
     {
-        if (isstructured(tp) || tp->type == bt_enum)
+        if (isstructured(tp) || tp->type == bt_typedef || tp->type == bt_enum)
         {
-            SYMBOL* sym = basetype(tp)->sp;
+            SYMBOL* sym;
+            if (tp->type == bt_typedef)
+                sym = tp->sp;
+            else
+                sym = basetype(tp)->sp;
             if (sym->sb->parentClass)
             {
-                SYMBOL* ssp = getStructureDeclaration();
-                if (ssp && (ssp == sym->sb->parentClass || classRefCount(sym->sb->parentClass, ssp)))
+                SYMBOL* ssp = nullptr;
+                if ((ssp = AccessibleClassInstance(sym->sb->parentClass)) != nullptr)
                 {
                     if (!isAccessible(ssp, ssp, sym, funcsp, ac_protected, false))
                     {
                         currentErrorLine = 0;
-                        errorsym(ERR_CANNOT_ACCESS, tp->sp);
+                        errorsym(ERR_CANNOT_ACCESS, sym);
                         return false;
                     }
                 }
                 else
                 {
-                    if (!isAccessible(sym->sb->parentClass, sym->sb->parentClass, sym, funcsp, ac_public, false))
+                    if (!isAccessible(derived, sym->sb->parentClass, sym, funcsp, ac_public, false))
                     {
-                        currentErrorLine = 0;
-                        errorsym(ERR_CANNOT_ACCESS, basetype(tp)->sp);
+                        errorsym(ERR_CANNOT_ACCESS, sym);
                         return false;
                     }
                 }
             }
+            break;
         }
         else if (isfunction(tp))
         {
@@ -1618,7 +1655,7 @@ bool checkDeclarationAccessible(TYPE* tp, SYMBOL* funcsp)
             while (hr)
             {
                 SYMBOL* sym = hr->p;
-                if (!checkDeclarationAccessible(sym->tp, funcsp))
+                if (!checkDeclarationAccessible(sym, funcsp ? funcsp->sb->parentClass : nullptr, funcsp))
                     return false;
                 hr = hr->next;
             }

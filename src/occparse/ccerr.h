@@ -578,6 +578,7 @@ extern enum e_kw skim_closebr[];
 extern enum e_kw skim_comma[];
 extern enum e_kw skim_colon[];
 extern enum e_kw skim_templateend[];
+extern std::deque<std::tuple<const char*, int, SYMBOL*>> instantiationList;
 
 void DisableWarning(int num);
 void EnableWarning(int num);

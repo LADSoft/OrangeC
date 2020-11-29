@@ -6462,7 +6462,9 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                         }
                     }
                     if (!templateArg)
-                        checkDeclarationAccessible(sp->tp, isfunction(sp->tp) ? sp : nullptr);
+                    {
+                        checkDeclarationAccessible(sp, sp->sb->parentClass, isfunction(sp->tp) ? sp : nullptr);
+                    }
                     if (sp->sb->operatorId)
                         checkOperatorArgs(sp, asFriend);
                     if (sp->sb->storage_class == sc_typedef)

@@ -1524,7 +1524,7 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
                             ssp = ssp->sb->parentClass;
                         }
                         ssp = getStructureDeclaration();
-                        if (!isAccessible(basetype(typ2)->sp, basetype(typ2)->sp, sp2, funcsp, access, false))
+                        if (!isExpressionAccessible(funcsp ? funcsp->sb->parentClass : nullptr, sp2, funcsp, *exp, access))
                         {
                             errorsym(ERR_CANNOT_ACCESS, sp2);
                         }
@@ -3650,10 +3650,8 @@ LEXEME* expression_arguments(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION*
         else
         {
         operands = !ismember(funcparams->sp) && funcparams->thisptr && !addedThisPointer;
-        if (!isExpressionAccessible(funcparams->thistp ? basetype(basetype(funcparams->thistp)->btp)->sp : nullptr,
+        if (!isExpressionAccessible(funcsp ? funcsp->sb->parentClass : nullptr,
             funcparams->sp, funcsp, funcparams->thisptr, false))
-            if (!isExpressionAccessible(funcparams->thistp ? basetype(basetype(funcparams->thistp)->btp)->sp : nullptr,
-                funcparams->sp, funcsp, funcparams->thisptr, false))
                 errorsym(ERR_CANNOT_ACCESS, funcparams->sp);
         }
         if (sym)
@@ -3662,12 +3660,12 @@ LEXEME* expression_arguments(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION*
             *tp = sym->tp;
             if (hasThisPtr)
             {
-                test = isExpressionAccessible(basetype(basetype(funcparams->thistp)->btp)->sp, sym, funcsp, funcparams->thisptr,
+                test = isExpressionAccessible(funcsp ? funcsp->sb->parentClass : nullptr, sym, funcsp, funcparams->thisptr,
                     false);
             }
             else
             {
-                test = isExpressionAccessible(funcparams->thistp ? basetype(basetype(funcparams->thistp)->btp)->sp : nullptr, sym,
+                test = isExpressionAccessible(funcsp ? funcsp->sb->parentClass : nullptr, sym,
                     funcsp, funcparams->thisptr, false);
             }
             if (!test)

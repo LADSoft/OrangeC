@@ -52,7 +52,7 @@ LEXEME* id_expression(LEXEME* lex, SYMBOL* funcsp, SYMBOL** sym, SYMBOL** strSym
 SYMBOL* LookupSym(char* name);
 bool isAccessible(SYMBOL* derived, SYMBOL* currentBase, SYMBOL* member, SYMBOL* funcsp, enum e_ac minAccess, bool asAddress);
 bool isExpressionAccessible(SYMBOL* derived, SYMBOL* sym, SYMBOL* funcsp, EXPRESSION* exp, bool asAddress);
-bool checkDeclarationAccessible(TYPE* tp, SYMBOL* funcsp);
+bool checkDeclarationAccessible(SYMBOL *sp, SYMBOL* derived, SYMBOL* funcsp);
 SYMBOL* lookupGenericConversion(SYMBOL* sym, TYPE* tp);
 SYMBOL* lookupSpecificCast(SYMBOL* sym, TYPE* tp);
 SYMBOL* lookupNonspecificCast(SYMBOL* sym, TYPE* tp);

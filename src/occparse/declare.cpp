@@ -2142,6 +2142,7 @@ LEXEME* getQualifiers(LEXEME* lex, TYPE** tp, enum e_lk* linkage, enum e_lk* lin
             lex = getLinkageQualifiers(lex, linkage, linkage2, linkage3);
         }
     }
+    ParseAttributeSpecifiers(&lex, theCurrentFunc, true);
     return lex;
 }
 static LEXEME* nestedTypeSearch(LEXEME* lex, SYMBOL** sym)
@@ -5366,6 +5367,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
         {
             linkage = lk_inline;
             lex = getsym();
+            ParseAttributeSpecifiers(&lex, funcsp, true);
         }
         else if (!asExpression && MATCHKW(lex, kw_extern))
         {

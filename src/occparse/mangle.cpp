@@ -908,8 +908,10 @@ char* mangleType(char* in, TYPE* tp, bool first)
     *in = 0;
     return in;
 }
-void SetLinkerNames(SYMBOL* sym, enum e_lk linkage)
+void SetLinkerNames(SYMBOL* sym, enum e_lk linkage, bool isTemplateDefinition)
 {
+    if (!strcmp(sym->name, "nn"))
+        printf("hi");
     char errbuf[8192], *p = errbuf;
     memset(errbuf, 0, 8192);
     SYMBOL* lastParent;
@@ -982,6 +984,8 @@ void SetLinkerNames(SYMBOL* sym, enum e_lk linkage)
             }
             break;
         case lk_cpp:
+            if (isTemplateDefinition)
+                *p++ = '@';
             lastParent = sym;
             while (lastParent->sb->parentClass)
                 lastParent = lastParent->sb->parentClass;

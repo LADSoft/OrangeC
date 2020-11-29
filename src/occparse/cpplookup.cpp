@@ -1557,15 +1557,9 @@ static bool isAccessibleInternal(SYMBOL* derived, SYMBOL* currentBase, SYMBOL* m
 int count3;
 bool isAccessible(SYMBOL* derived, SYMBOL* currentBase, SYMBOL* member, SYMBOL* funcsp, enum e_ac minAccess, bool asAddress)
 {
-    if (!((templateNestingCount && !instantiatingTemplate) || instantiatingFunction ||
+    return (templateNestingCount && !instantiatingTemplate) || instantiatingFunction ||
         member->sb->accessibleTemplateArgument ||
-        isAccessibleInternal(derived, currentBase, member, funcsp, minAccess, 0, asAddress)))
-    {
-        return (templateNestingCount && !instantiatingTemplate) || instantiatingFunction ||
-            member->sb->accessibleTemplateArgument ||
-            isAccessibleInternal(derived, currentBase, member, funcsp, minAccess, 0, asAddress);
-    }
-    return true;
+        isAccessibleInternal(derived, currentBase, member, funcsp, minAccess, 0, asAddress);
 }
 static SYMBOL* AccessibleClassInstance(SYMBOL *parent)
 {

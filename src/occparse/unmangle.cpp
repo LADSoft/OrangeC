@@ -1116,6 +1116,8 @@ char* unmangle(char* val, const char* name)
     else
     {
         name++;
+        if (name[0] == '@') 
+            name++; // past the extra @ to denote template definitions
         last = buf;
         while (*name)
         {

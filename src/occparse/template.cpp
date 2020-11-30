@@ -11207,7 +11207,7 @@ LEXEME* TemplateDeclaration(LEXEME* lex, SYMBOL* funcsp, enum e_ac access, enum 
         if (lex)
         {
             templateNestingCount++;
-            inTemplateType = true;
+            inTemplateType = count != 0; // checks for full specialization...
             lex = declare(lex, funcsp, &tp, storage_class, lk_none, nullptr, true, false, true, access);
             inTemplateType = false;
             templateNestingCount--;

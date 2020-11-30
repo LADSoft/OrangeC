@@ -569,7 +569,7 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
                             deferred = true;
                         }
                     }
-                    else if (inTemplateType)  // || sp && sp->tp->type == bt_templateselector)
+                    else if (inTemplateType)
                     {
                         deferred = true;
                     }

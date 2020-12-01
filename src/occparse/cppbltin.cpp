@@ -78,7 +78,9 @@ static std::string cppbuiltin =
     "constexpr float __rtllinkage __builtin_nansf(const char *x);"
     "constexpr double __rtllinkage __builtin_nans(const char *x);"
     "constexpr long double __rtllinkage __builtin_nansl(const char *x);"
-    "}";
+    "}"
+    "template<class T> inline T __libcpp_atomic_load(T*__a) { return __atomic_load(__a, 6); }"
+    "template<class T> inline void __libcpp_atomic_exchange(T*__a, T __m) { return __atomic_modify(__a, =, __m, 6); }";
 TYPE stdXC = {bt_struct, XCTAB_SIZE, 0, &stdXC};
 void ParseBuiltins(void)
 {

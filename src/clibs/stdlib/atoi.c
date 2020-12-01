@@ -214,6 +214,14 @@ unsigned long _RTL_FUNC strtoul(const char* restrict s, char** restrict endptr, 
 {
     return (unsigned long)__xstrtol(s, INT_MAX, endptr, radix, ULONG_MAX, 1, STRT_ERR_RET_UNSIGNED);
 }
+LLONG_TYPE _RTL_FUNC _IMPORT _strtoi64(const char* restrict __s, char** restrict __endptr, int __radix)
+{
+    return strtoll(__s, __endptr, __radix);
+}
+LLONG_TYPE _RTL_FUNC _IMPORT _strtoi64_l(const char* restrict __s, char** restrict __endptr, int __radix, _locale_t __locale)
+{
+    return strtoll(__s, __endptr, __radix);
+}
 LLONG_TYPE _RTL_FUNC atoll(const char* s) { return (LLONG_TYPE)__xstrtol(s, INT_MAX, 0, 10, LLONG_MAX, 1, STRT_ERR_RET_CV); }
 __int64 _RTL_FUNC _atoi64(const char* s) { return (__int64)__xstrtol(s, INT_MAX, 0, 10, _I64_MAX, 1, STRT_ERR_RET_CV); }
 long _RTL_FUNC atol(const char* s) { return (long)__xstrtol(s, INT_MAX, 0, 10, LONG_MAX, 1, STRT_ERR_RET_CV); }

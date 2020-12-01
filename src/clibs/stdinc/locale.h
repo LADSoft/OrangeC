@@ -46,6 +46,10 @@
 #    include <stddef.h>
 #endif
 
+#ifndef __STDLIB_H
+#    include <stdlib.h>
+#endif
+
 #define LC_ALL 0
 #define LC_COLLATE 1
 #define LC_CTYPE 2
@@ -69,7 +73,6 @@
 #ifndef RC_INVOKED
 
 typedef void* locale_t;
-typedef locale_t _locale_t;
 #endif
 
 #ifdef __cplusplus

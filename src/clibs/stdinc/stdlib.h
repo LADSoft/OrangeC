@@ -95,6 +95,7 @@ extern "C"
 
 #ifndef RC_INVOKED
     typedef void (*atexit_t)(void);
+    typedef void* _locale_t;
 
     void _RTL_FUNC _IMPORT abort(void);
     void _RTL_FUNC _IMPORT _abort(void);
@@ -163,8 +164,10 @@ extern "C"
 #endif
     unsigned long _RTL_FUNC _IMPORT strtoul(const char* ZSTR __s, char* ZSTR* __endptr, int __radix);
 #if __STDC_VERSION__ >= 199901L || defined(__cplusplus)
-    long long _RTL_FUNC _IMPORT strtoull(const char* ZSTR restrict __s, char* ZSTR* restrict __endptr, int __radix);
+    unsigned long long _RTL_FUNC _IMPORT strtoull(const char* ZSTR restrict __s, char* ZSTR* restrict __endptr, int __radix);
 #endif
+    long long _RTL_FUNC _IMPORT _strtoi64(const char* ZSTR restrict __s, char* ZSTR* restrict __endptr, int __radix);
+    long long _RTL_FUNC _IMPORT _strtoi64_l(const char* ZSTR restrict __s, char* ZSTR* restrict __endptr, int __radix, _locale_t __locale);
     int _RTL_FUNC _IMPORT system(const char* ZSTR __command);
     size_t _RTL_FUNC _IMPORT wcstombs(char* ZSTR restrict __s, const wchar_t* restrict __pwcs, size_t __n);
     int _RTL_FUNC _IMPORT wctomb(char* ZSTR restrict __s, wchar_t __wc);

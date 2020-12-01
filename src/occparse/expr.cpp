@@ -1703,7 +1703,7 @@ static LEXEME* expression_bracket(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRES
                 error(ERR_NOT_AN_ALLOWED_TYPE);
             else if (basetype(tp2)->type == bt_memberptr || basetype(*tp)->type == bt_memberptr)
                 error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
-            else if (basetype(tp2)->scoped || basetype(*tp)->scoped)
+            else if ((basetype(tp2)->scoped || basetype(*tp)->scoped) && !(flags & _F_SCOPEDENUM))
                 error(ERR_SCOPED_TYPE_MISMATCH);
             else if (isarray(*tp) && (*tp)->msil)
             {
@@ -5915,7 +5915,7 @@ static LEXEME* expression_postfix(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE**
                         {
                             if (isvoid(*tp) || (*tp)->type == bt_aggregate || ismsil(*tp))
                                 error(ERR_NOT_AN_ALLOWED_TYPE);
-                            if (basetype(*tp)->scoped)
+                            if (basetype(*tp)->scoped && !(flags & _F_SCOPEDENUM))
                                 error(ERR_SCOPED_TYPE_MISMATCH);
                             if (basetype(*tp)->type == bt_memberptr)
                                 error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
@@ -5996,7 +5996,7 @@ LEXEME* expression_unary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPR
                         error(ERR_NOT_AN_ALLOWED_TYPE);
                     else if (basetype(*tp)->type == bt_memberptr)
                         error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
-                    else if (basetype(*tp)->scoped)
+                    else if (basetype(*tp)->scoped && !(flags & _F_SCOPEDENUM))
                         error(ERR_SCOPED_TYPE_MISMATCH);
                     else if (ispointer(*tp))
                         error(ERR_ILL_POINTER_OPERATION);
@@ -6037,7 +6037,7 @@ LEXEME* expression_unary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPR
                         error(ERR_NOT_AN_ALLOWED_TYPE);
                     else if (basetype(*tp)->type == bt_memberptr)
                         error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
-                    else if (basetype(*tp)->scoped)
+                    else if (basetype(*tp)->scoped && !(flags & _F_SCOPEDENUM))
                         error(ERR_SCOPED_TYPE_MISMATCH);
                     else if (ispointer(*tp))
                         error(ERR_ILL_POINTER_OPERATION);
@@ -6088,7 +6088,7 @@ LEXEME* expression_unary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPR
                         error(ERR_ILL_STRUCTURE_OPERATION);
                     else if (isvoid(*tp) || ismsil(*tp))
                         error(ERR_NOT_AN_ALLOWED_TYPE);
-                    else if (basetype(*tp)->scoped)
+                    else if (basetype(*tp)->scoped && !(flags & _F_SCOPEDENUM))
                         error(ERR_SCOPED_TYPE_MISMATCH);
                     /*
                 else
@@ -6145,7 +6145,7 @@ LEXEME* expression_unary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPR
                         error(ERR_NOT_AN_ALLOWED_TYPE);
                     else if (basetype(*tp)->type == bt_memberptr)
                         error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
-                    else if (basetype(*tp)->scoped)
+                    else if (basetype(*tp)->scoped && !(flags & _F_SCOPEDENUM))
                         error(ERR_SCOPED_TYPE_MISMATCH);
                     else if (atp && basetype(atp)->type < bt_int)
                     {
@@ -6190,7 +6190,7 @@ LEXEME* expression_unary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPR
                         error(ERR_NOT_AN_ALLOWED_TYPE);
                     else if (basetype(*tp)->type == bt_memberptr)
                         error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
-                    else if (basetype(*tp)->scoped)
+                    else if (basetype(*tp)->scoped && !(flags & _F_SCOPEDENUM))
                         error(ERR_SCOPED_TYPE_MISMATCH);
                     else if (!lvalue(*exp))
                     {
@@ -6377,7 +6377,7 @@ LEXEME* expression_cast(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRE
                                             {
                                                 if (isvoid(*tp) || (*tp)->type == bt_aggregate || ismsil(*tp))
                                                     error(ERR_NOT_AN_ALLOWED_TYPE);
-                                                if (basetype(*tp)->scoped)
+                                                if (basetype(*tp)->scoped && !(flags & _F_SCOPEDENUM))
                                                     error(ERR_SCOPED_TYPE_MISMATCH);
                                                 if (basetype(*tp)->type == bt_memberptr)
                                                     error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
@@ -6646,7 +6646,7 @@ static LEXEME* expression_times(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** t
                 error(ERR_NOT_AN_ALLOWED_TYPE);
             else if (basetype(*tp)->type == bt_memberptr || basetype(tp1)->type == bt_memberptr)
                 error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
-            else if (basetype(*tp)->scoped || basetype(tp1)->scoped)
+            else if ((basetype(*tp)->scoped || basetype(tp1)->scoped) && !(flags & _F_SCOPEDENUM))
                 error(ERR_SCOPED_TYPE_MISMATCH);
             else if (ispointer(*tp) || ispointer(tp1))
                 error(ERR_ILL_POINTER_OPERATION);
@@ -6801,7 +6801,7 @@ static LEXEME* expression_add(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp,
                 error(ERR_NOT_AN_ALLOWED_TYPE);
             else if (basetype(*tp)->type == bt_memberptr || basetype(tp1)->type == bt_memberptr)
                 error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
-            else if (basetype(*tp)->scoped || basetype(tp1)->scoped)
+            else if ((basetype(*tp)->scoped || basetype(tp1)->scoped) && !(flags & _F_SCOPEDENUM))
                 error(ERR_SCOPED_TYPE_MISMATCH);
             else if (kw != plus && !ispointer(*tp) && ispointer(tp1))
                 error(ERR_ILL_POINTER_SUBTRACTION);
@@ -6991,7 +6991,7 @@ static LEXEME* expression_shift(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** t
                 error(ERR_NOT_AN_ALLOWED_TYPE);
             else if (basetype(*tp)->type == bt_memberptr || basetype(tp1)->type == bt_memberptr)
                 error(ERR_ILLEGAL_USE_OF_MEMBER_PTR);
-            else if (basetype(*tp)->scoped || basetype(tp1)->scoped)
+            else if ((basetype(*tp)->scoped || basetype(tp1)->scoped) && !(flags & _F_SCOPEDENUM))
                 error(ERR_SCOPED_TYPE_MISMATCH);
             else if (ispointer(*tp) || ispointer(tp1))
                 error(ERR_ILL_POINTER_OPERATION);
@@ -7436,7 +7436,7 @@ static LEXEME* binop(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPRESSI
             error(ERR_ILL_STRUCTURE_OPERATION);
         else if (isvoid(*tp) || isvoid(tp1) || ismsil(*tp) || ismsil(tp1))
             error(ERR_NOT_AN_ALLOWED_TYPE);
-        else if ((basetype(*tp)->scoped || basetype(tp1)->scoped) &&
+        else if ((basetype(*tp)->scoped || basetype(tp1)->scoped) && !(flags & _F_SCOPEDENUM) &&
                  ((Optimizer::architecture != ARCHITECTURE_MSIL) || Optimizer::cparams.msilAllowExtensions))
             error(ERR_SCOPED_TYPE_MISMATCH);
         if (type != en_lor && type != en_land)

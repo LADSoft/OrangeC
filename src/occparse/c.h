@@ -286,6 +286,7 @@ typedef struct
 #define _F_NESTEDINIT 512
 #define _F_ASSIGNINIT 1024
 #define _F_NOEVAL 2048
+#define _F_SCOPEDENUM 4096
 
 #define _F_NOVIRTUALBASE 1
 #define _F_VALIDPOINTER 2

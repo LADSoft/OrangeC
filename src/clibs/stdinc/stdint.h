@@ -155,7 +155,7 @@ typedef uint64_t uintmax_t;
 
 #endif
 
-#if !defined(__cplusplus) || defined(__STDC_CONSTANT_MACROS)
+#if !defined(__cplusplus) || _LIBCPP_VERSION >= 10000 || defined(__STDC_CONSTANT_MACROS)
 
 #    define INT8_C(x) ((int_least8_t)x)
 #    define UINT8_C(x) ((uint_least8_t)x##U)

@@ -4328,7 +4328,7 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_c
         }
         else if (!sym->sb->init)
         {
-            if (sym->sb->storage_class != sc_external && !initialized)
+            if (sym->sb->storage_class != sc_external && !initialized && !isstructured(sp->tp))
                 error(ERR_CONSTEXPR_REQUIRES_INITIALIZER);
         }
         else if (isstructured(tp))

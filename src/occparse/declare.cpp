@@ -1461,7 +1461,12 @@ static LEXEME* enumbody(LEXEME* lex, SYMBOL* funcsp, SYMBOL* spi, enum e_sc stor
                     TYPE* tp = nullptr;
                     EXPRESSION* exp = nullptr;
                     lex = getsym();
-                    lex = optimized_expression(lex, funcsp, nullptr, &tp, &exp, false);
+                    lex = expression_no_comma(lex, funcsp, nullptr, &tp, &exp, nullptr, _F_SCOPEDENUM);
+                    if (tp)
+                    {
+                        optimize_for_constants(&exp);
+                    }
+
                     if (tp && isintconst(exp))  // type is redefined to nullptr here, is this intentional?
                     {
                         if (Optimizer::cparams.prm_cplusplus)
@@ -5169,12 +5174,19 @@ void sizeQualifiers(TYPE* tp)
         }
     }
 }
-static bool sameQuals(TYPE* tp1, TYPE* tp2)
+static bool sameQuals(SYMBOL* sp1, SYMBOL* sp2)
 {
+    TYPE* tp1 = sp1->tp, * tp2= sp2->tp;
     while (tp1 && tp2)
     {
         if (isconst(tp1) != isconst(tp2))
-            return false;
+        {
+            // constexpr matches const at top level
+            if (basetype(tp1)->btp || basetype(tp2)->btp ||
+                (isconst(tp1) && !sp2->sb->constexpression) ||
+                 (isconst(tp2) && !sp1->sb->constexpression))
+                return false;
+        }
         if (isvolatile(tp1) != isvolatile(tp2))
             return false;
         if (isrestrict(tp1) != isrestrict(tp2))
@@ -6165,7 +6177,7 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                                 {
                                     preverrorsym(ERR_TYPE_MISMATCH_IN_REDECLARATION, sp, spi->sb->declfile, spi->sb->declline);
                                 }
-                                else if (!sameQuals(sp->tp, spi->tp))
+                                else if (!sameQuals(sp, spi))
                                 {
                                     errorsym(ERR_DECLARATION_DIFFERENT_QUALIFIERS, sp);
                                 }
@@ -6672,7 +6684,8 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                                         sp->sb->ispure = true;
                                     }
                                 }
-                                else if (sp->sb->constexpression && sp->sb->storage_class != sc_external && !isfunction(sp->tp))
+                                else if (sp->sb->constexpression && sp->sb->storage_class != sc_external && !isfunction(sp->tp) && 
+                                      !isstructured(sp->tp))
                                 {
                                     error(ERR_CONSTEXPR_REQUIRES_INITIALIZER);
                                 }

@@ -54,6 +54,48 @@
 #endif
 
 #ifdef __cplusplus
+#include <limits>
+#ifdef __cplusplus
+    bool _RTL_FUNC _IMPORTMM fpclassify(float x);
+
+    bool _RTL_FUNC _IMPORTMM isfinite(float x);
+    bool _RTL_FUNC _IMPORTMM isinf(float x);
+    bool _RTL_FUNC _IMPORTMM isnan(float x);
+    bool _RTL_FUNC _IMPORTMM isnormal(float x);
+
+    bool _RTL_FUNC _IMPORTMM isgreater(float x, float y);
+    bool _RTL_FUNC _IMPORTMM isgreaterequal(float x, float y);
+    bool _RTL_FUNC _IMPORTMM isless(float x, float y);
+    bool _RTL_FUNC _IMPORTMM islessequal(float x, float y);
+    bool _RTL_FUNC _IMPORTMM islessgreater(float x, float y);
+    bool _RTL_FUNC _IMPORTMM isunordered(float x, float y);
+    bool _RTL_FUNC _IMPORTMM fpclassify(double x);
+
+    bool _RTL_FUNC _IMPORTMM isfinite(double x);
+    bool _RTL_FUNC _IMPORTMM isinf(double x);
+    bool _RTL_FUNC _IMPORTMM isnan(double x);
+    bool _RTL_FUNC _IMPORTMM isnormal(double x);
+
+    bool _RTL_FUNC _IMPORTMM isgreater(double x, double y);
+    bool _RTL_FUNC _IMPORTMM isgreaterequal(double x, double y);
+    bool _RTL_FUNC _IMPORTMM isless(double x, double y);
+    bool _RTL_FUNC _IMPORTMM islessequal(double x, double y);
+    bool _RTL_FUNC _IMPORTMM islessgreater(double x, double y);
+    bool _RTL_FUNC _IMPORTMM isunordered(double x, double y);
+    bool _RTL_FUNC _IMPORTMM fpclassify(long double x);
+
+    bool _RTL_FUNC _IMPORTMM isfinite(long double x);
+    bool _RTL_FUNC _IMPORTMM isinf(long double x);
+    bool _RTL_FUNC _IMPORTMM isnan(long double x);
+    bool _RTL_FUNC _IMPORTMM isnormal(long double x);
+
+    bool _RTL_FUNC _IMPORTMM isgreater(long double x, long double y);
+    bool _RTL_FUNC _IMPORTMM isgreaterequal(long double x, long double y);
+    bool _RTL_FUNC _IMPORTMM isless(long double x, long double y);
+    bool _RTL_FUNC _IMPORTMM islessequal(long double x, long double y);
+    bool _RTL_FUNC _IMPORTMM islessgreater(long double x, long double y);
+    bool _RTL_FUNC _IMPORTMM isunordered(long double x, long double y);
+#endif
 extern "C"
 {
 #endif
@@ -172,6 +214,8 @@ extern "C"
     int _RTL_FUNC _IMPORTMM signbit(double __x);
     int _RTL_FUNC _IMPORTMM signbitl(long double __x);
     int _RTL_FUNC _IMPORTMM __nancompare(long double __x, long double __y, int type);
+
+
 #endif
 
 #    define fpclassify(x) \

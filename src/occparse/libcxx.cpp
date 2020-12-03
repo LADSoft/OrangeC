@@ -609,21 +609,24 @@ static bool is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** t
             {
                 if (funcparams.arguments->next && !funcparams.arguments->next->next)
                 {
-                    if (isfunction(funcparams.arguments->next->tp))
+                    TYPE* tp3 = funcparams.arguments->next->tp;
+                    if (isref(tp3))
+                        tp3 = basetype(basetype(tp3)->btp);
+                    if (isfunction(tp3))
                     {
-                        rv = comparetypes(basetype(tp2)->btp, funcparams.arguments->next->tp, true);
+                        rv = comparetypes(basetype(tp2)->btp, tp3, true);
                     }
-                    else if (isstructured(funcparams.arguments->next->tp))
+                    else if (isstructured(tp3))
                     {
                         // look for operator () with args from tp2
                         SYMLIST* hr;
                         EXPRESSION* cexp = nullptr;
                         INITLIST** arg = &funcparams.arguments;
-                        SYMBOL* bcall = search(overloadNameTab[CI_FUNC], basetype(funcparams.arguments->next->tp)->syms);
+                        SYMBOL* bcall = search(overloadNameTab[CI_FUNC], basetype(tp3)->syms);
                         funcparams.thisptr = intNode(en_c_i, 0);
                         funcparams.thistp = Allocate<TYPE>();
                         funcparams.thistp->type = bt_pointer;
-                        funcparams.thistp->btp = basetype(funcparams.arguments->next->tp);
+                        funcparams.thistp->btp = basetype(tp3);
                         funcparams.thistp->rootType = funcparams.thistp;
                         funcparams.thistp->size = getSize(bt_pointer);
                         funcparams.ascall = true;
@@ -643,8 +646,13 @@ static bool is_constructible(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** t
                     }
                     else
                     {
-                        rv = comparetypes(tp2, funcparams.arguments->next->tp, true);
+                        // compare two function pointers...
+                        rv = comparetypes(tp2, tp3, true);
                     }
+                }
+                else
+                {
+                    rv = true;
                 }
             }
             else if (isarithmetic(tp2) || ispointer(tp2) || basetype(tp2)->type == bt_enum)

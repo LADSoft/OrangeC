@@ -3573,11 +3573,16 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                 {
                     tp->etype = SynthesizeType(tp->etype, enclosing, alt);
                 }
-                *last = Allocate<TYPE>();
-                **last = *tp;
-                (*last)->btp = SynthesizeType(tp->btp, enclosing, alt);
-                SynthesizeQuals(&last, &qual, &lastQual);
-                UpdateRootTypes(rv);
+                {
+                    TYPE* tp3 = tp->btp;
+                    tp->btp = nullptr;
+                    SynthesizeQuals(&last, &qual, &lastQual);
+                    tp->btp = tp3;
+                    *last = Allocate<TYPE>();
+                    **last = *tp;
+                    (*last)->btp = SynthesizeType(tp->btp, enclosing, alt);
+                    UpdateRootTypes(rv);
+                }
                 return rv;
             case bt_templatedecltype:
                 *last = LookupTypeFromExpression(tp->templateDeclType, enclosing, alt);
@@ -3788,6 +3793,7 @@ TYPE* SynthesizeType(TYPE* tp, TEMPLATEPARAMLIST* enclosing, bool alt)
                 }
                 // fallthrough
             case bt_lref:
+                SynthesizeQuals(&last, &qual, &lastQual);
                 *last = Allocate<TYPE>();
                 **last = *tp;
                 last = &(*last)->btp;
@@ -4883,6 +4889,12 @@ static bool Deduce(TYPE* P, TYPE* A, bool change, bool byClass, bool allowSelect
                 return true;
             return false;
         }
+        if (isfunction(Ab) && isfuncptr(Pb))
+        {
+            Pb = basetype(Pb)->btp;
+            Pin = basetype(Pin); // assume any qualifiers went with an enclosing ref
+            // can't have a const qualified non-member function anyway I think...
+        }
         if (Ab->type != Pb->type && (!isfunction(Ab) || !isfunction(Pb)) && Pb->type != bt_templateparam &&
             (!allowSelectors || Pb->type != bt_templateselector))
             return false;
@@ -5642,7 +5654,18 @@ static bool TemplateDeduceFromArg(TYPE* orig, TYPE* sym, EXPRESSION* exp, bool a
                 A = basetype(A)->btp;
         }
     }
-
+    if (ispointer(P) && isconstzero(A, exp))
+    {
+        // might get in here with a non-template argument that needs to be matched
+        // usually the two types would just match and it would be fine
+        // but in the case where we have pointer and a 'zero' constant
+        // we need to act specially
+        while (ispointer(P))
+            P = basetype(P)->btp;
+        if (isarithmetic(P) || isfunction(P) || (isstructured(P) && !basetype(P)->sp->sb->templateLevel))
+            return true;
+        return false;
+    }
     if (Deduce(P, A, true, false, allowSelectors))
     {
         return true;
@@ -9849,6 +9872,7 @@ void SpecifyTemplateSelector(TEMPLATESELECTOR** rvs, TEMPLATESELECTOR* old, bool
                             }
                             else if ((*x)->p->type == kw_typename && (*x)->p->byClass.dflt)
                             {
+                                if (!isfuncptr((*x)->p->byClass.dflt))
                                 if (!isstructured((*x)->p->byClass.dflt) || (basetype((*x)->p->byClass.dflt)->sp->sb->templateLevel && !(*x)->p->byClass.dflt->size))
                                     SearchAlias(name, *x, sym, args, origTemplate, origUsing);
                             }
@@ -10560,6 +10584,10 @@ TEMPLATEPARAMLIST* GetTypeAliasArgs(SYMBOL* sp, TEMPLATEPARAMLIST* args, TEMPLAT
 }
 SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args)
 {
+    if (!strcmp(sp->name, "_EnableIfDeleterConstructible") && !templateNestingCount)
+        printf("hi");
+    if (!strcmp(sp->name, "_LValRefType") && !templateNestingCount)
+        printf("hi");
     if (reflectUsingType)
         return sp;
     SYMBOL* rv;

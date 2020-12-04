@@ -1,7 +1,7 @@
 /**
- * This file has no copyright assigned and is placed in the Public Domain.
- * This file is part of the mingw-w64 runtime package.
- * No warranty is given; refer to the file DISCLAIMER.PD within this package.
+ * This file has no copyright assigned and _is placed in the Public Domain.
+ * This file _is part of the mingw-w64 runtime package.
+ * No warranty _is given; refer to the file DISCLAIMER.PD within this package.
  */
 #ifndef _XLOCINFO
 #define _XLOCINFO
@@ -75,8 +75,130 @@ typedef struct _Cvtvec {
   unsigned int _Page;
 } _Cvtvec;
 
-inline int _islower_l(int __c, locale_t larg) { return __c >= 'a' && __c <= 'z'; }
-inline int _isupper_l(int __c, locale_t larg) { return __c >= 'A' && __c <= 'Z'; }
+    inline long long _strtoi64_l(const char* restrict __s, char** restrict __endptr, int __radix, _locale_t __locale) { return _strtoi64(__s, __endptr, __radix); }
+    inline unsigned long long _strtoui64_l(const char* restrict __s, char** restrict __endptr, int __radix, _locale_t __locale) { return strtoull(__s, __endptr, __radix); }
+
+    inline int _isdigit_l(int c, _locale_t larg) { return c >= '0' && c <= '9'; }
+    inline int _isxdigit_l(int c, _locale_t larg) { return c >= '0' && c <= '9' || c >= 'a' && c <= 'f' || c >= 'A' && c <= 'F'; }
+    inline long long _strtod_l(const char* ZSTR restrict __s, char* ZSTR* restrict __endptr, _locale_t larg)
+    {
+        return strtod(__s, __endptr);
+    }
+    inline long long strtoll_l(const char* ZSTR restrict __s, char* ZSTR* restrict __endptr, int __radix, _locale_t larg)
+    {
+        return strtoll(__s, __endptr, __radix);
+    }
+    inline long long strtoull_l(const char* ZSTR restrict __s, char* ZSTR* restrict __endptr, int __radix, _locale_t larg)
+    {
+        return strtoull(__s, __endptr, __radix);
+    }
+    inline long double strtold_l(const char* ZSTR restrict __s, char* ZSTR* restrict __endptr, _locale_t larg)
+    {
+        return strtold(__s, __endptr);
+    }
+    inline int _sscanf_l(const char* ZSTR restrict __buffer, const char* ZSTR restrict __format, _locale_t larg, ...)
+    {
+        va_list arg;
+        va_start(arg, __format);
+        int rv = vsscanf(__buffer, __format, arg);
+        va_end(arg);
+        return rv;
+    }
+    inline int strcoll_l(const char* ZSTR __s1, const char* ZSTR __s2, _locale_t larg) { return strcoll(__s1, __s2); }
+    inline size_t strxfrm_l(char* ZSTR restrict __s1, const char* ZSTR restrict __s2, size_t __n, _locale_t larg)
+    {
+        return strxfrm(__s1, __s2, __n);
+    }
+    inline int wcscoll_l(const wchar_t* __s1, const wchar_t* __s2, _locale_t larg) { return wcscoll(__s1, __s2); }
+    inline size_t wcsxfrm_l(wchar_t* restrict __s1, const wchar_t* restrict __s2, size_t __n, _locale_t larg)
+    {
+        return wcsxfrm(__s1, __s2, __n);
+    }
+    inline int _islower_l(int __c, _locale_t larg) { return __c >= 'a' && __c <= 'z'; }
+    inline int _isupper_l(int __c, _locale_t larg) { return __c >= 'A' && __c <= 'Z'; }
+    inline int tolower_l(int __ch, _locale_t larg)
+    {
+        if (_isupper_l(__ch, 0))
+            __ch += 'a' - 'A';
+        return __ch;
+    }
+    inline int toupper_l(int __ch, _locale_t larg)
+    {
+        if (_islower_l(__ch, 0))
+            __ch -= 'a' - 'A';
+        return __ch;
+    }
+    inline int _iswcntrl_l(wint_t __wc, _locale_t larg) { return __STD_NS_QUALIFIER iswcntrl(__wc); }
+    inline int _iswdigit_l(wint_t __wc, _locale_t larg) { return __wc >= '0' && __wc <= '9'; }
+    inline int _iswgraph_l(wint_t __wc, _locale_t larg) { return __STD_NS_QUALIFIER iswgraph(__wc); }
+    inline int _iswlower_l(wint_t __wc, _locale_t larg) { return __wc >= 'a' && __wc <= 'z'; }
+    inline int _iswprint_l(wint_t __wc, _locale_t larg) { return __wc >= ' ' && __wc <= '~'; }
+    inline int _iswpunct_l(wint_t __wc, _locale_t larg) { return __STD_NS_QUALIFIER iswpunct(__wc); }
+    inline int _iswspace_l(wint_t __wc, _locale_t larg) { return __STD_NS_QUALIFIER iswspace(__wc); }
+    inline int _iswblank_l(wint_t __wc, _locale_t larg) { return __STD_NS_QUALIFIER iswblank(__wc); }
+    inline int _iswupper_l(wint_t __wc, _locale_t larg) { return __wc >= 'A' && __wc <= 'Z'; }
+    inline int _iswxdigit_l(wint_t __wc, _locale_t larg)
+    {
+        return _iswdigit_l(__wc, (locale_t)0) || __wc >= 'a' && __wc <= 'f' || __wc >= 'A' && __wc <= 'F';
+    }
+    inline int _iswalpha_l(wint_t __wc, _locale_t larg) { return _iswlower_l(__wc, (locale_t)0) || _iswupper_l(__wc, (locale_t)0); }
+    inline int _iswalnum_l(wint_t __wc, _locale_t larg) { return _iswalpha_l(__wc, (locale_t)0) || _iswdigit_l(__wc, (locale_t)0); }
+
+    inline wint_t towlower_l(wint_t __wc, _locale_t larg) { return tolower_l(__wc, (locale_t)0); }
+    inline wint_t towupper_l(wint_t __wc, _locale_t larg) { return toupper_l(__wc, (locale_t)0); }
+
+    inline wint_t btowc_l(int __c, _locale_t larg) { return btowc(__c); }
+    inline int wctob_l(wint_t __c, _locale_t larg) { return wctob(__c); }
+
+    inline size_t mbrtowc_l(wchar_t* restrict __pwc, const char* ZSTR restrict __s, size_t __n, mbstate_t* restrict __p,
+                            _locale_t larg)
+    {
+        return mbrtowc(__pwc, __s, __n, __p);
+    }
+    inline size_t mbtowc_l(wchar_t* restrict __pwc, const char* ZSTR restrict __s, size_t __n, _locale_t larg)
+    {
+        return mbtowc(__pwc, __s, __n);
+    }
+    inline size_t wcrtomb_l(char* ZSTR restrict __s, wchar_t __wc, mbstate_t* restrict __ps, _locale_t larg)
+    {
+        return wcrtomb(__s, __wc, __ps);
+    }
+    inline size_t mbrlen_l(const char* ZSTR restrict __s, size_t __n, mbstate_t* restrict __ps, _locale_t larg)
+    {
+        return mbrlen(__s, __n, __ps);
+    }
+    inline size_t mbsrtowcs_l(wchar_t* restrict __dst, const char* ZSTR* restrict __src, size_t __len, mbstate_t* restrict __ps,
+                              _locale_t larg)
+    {
+        return mbsrtowcs(__dst, __src, __len, __ps);
+    }
+    inline size_t wcsrtombs_l(char* ZSTR restrict __dst, const wchar_t** restrict __src, size_t __len, mbstate_t* restrict __ps,
+                              _locale_t larg)
+    {
+        return wcsrtombs(__dst, __src, __len, __ps);
+    }
+    inline size_t wcsnrtombs_l(char* ZSTR restrict __dst, const wchar_t** restrict __src, size_t __nms, size_t __len,
+                               mbstate_t* restrict __ps, _locale_t larg)
+    {
+        return wcsnrtombs(__dst, __src, __nms, __len, __ps);
+    }
+    inline size_t mbsnrtowcs_l(wchar_t* restrict __dst, const char* ZSTR* restrict __src, size_t nms, size_t __len,
+                               mbstate_t* restrict __ps, _locale_t larg)
+    {
+        return mbsnrtowcs(__dst, __src, nms, __len, __ps);
+    }
+
+    inline size_t strftime_l(char* ZSTR restrict __s, size_t __maxsize, const char* ZSTR restrict __fmt, const struct tm* restrict __t,
+                             _locale_t larg)
+    {
+        return strftime(__s, __maxsize, __fmt, __t);
+    }
+
+
+
+
+
+
 
 _Collvec _RTL_FUNC _Getcoll();
 _Ctypevec _RTL_FUNC _Getctype();
@@ -104,6 +226,11 @@ char *_RTL_FUNC _Getmonths();
 size_t _RTL_FUNC _Strftime(char *,size_t _Maxsize,const char *,const struct tm *,void *);
 
 _locale_t _RTL_FUNC _GetLocaleForCP(unsigned int);
+
+// unix
+inline locale_t uselocale(locale_t a) { return 0; }
+inline void _free_locale(locale_t a) { }
+void* newlocale(int __mask, const char *__locale, void* __base);
 
 #ifdef __cplusplus
 }

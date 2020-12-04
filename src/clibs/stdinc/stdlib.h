@@ -167,7 +167,6 @@ extern "C"
     unsigned long long _RTL_FUNC _IMPORT strtoull(const char* ZSTR restrict __s, char* ZSTR* restrict __endptr, int __radix);
 #endif
     long long _RTL_FUNC _IMPORT _strtoi64(const char* ZSTR restrict __s, char* ZSTR* restrict __endptr, int __radix);
-    long long _RTL_FUNC _IMPORT _strtoi64_l(const char* ZSTR restrict __s, char* ZSTR* restrict __endptr, int __radix, _locale_t __locale);
     int _RTL_FUNC _IMPORT system(const char* ZSTR __command);
     size_t _RTL_FUNC _IMPORT wcstombs(char* ZSTR restrict __s, const wchar_t* restrict __pwcs, size_t __n);
     int _RTL_FUNC _IMPORT wctomb(char* ZSTR restrict __s, wchar_t __wc);

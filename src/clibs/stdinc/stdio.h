@@ -244,6 +244,7 @@ extern "C"
     int _RTL_FUNC _IMPORT snprintf(char* ZSTR restrict __buffer, size_t n, const char* ZSTR restrict __format, ...);
     int _RTL_FUNC _IMPORT _snprintf(char* ZSTR restrict __buffer, size_t n, const char* ZSTR restrict __format, ...);
     int _RTL_FUNC _IMPORT sprintf(char* ZSTR restrict __buffer, const char* ZSTR restrict __format, ...);
+    int _RTL_FUNC _IMPORT asprintf(char** ZSTR restrict __buffer, const char* ZSTR restrict __format, ...);
     int _RTL_FUNC _IMPORT sscanf(const char* ZSTR restrict __buffer, const char* ZSTR restrict __format, ...);
     char* ZSTR _RTL_FUNC _IMPORT strerror(int __errnum);
     char* ZSTR _RTL_FUNC _IMPORT tempnam(char* ZSTR __dir, char* ZSTR __prefix);
@@ -260,6 +261,7 @@ extern "C"
     int _RTL_FUNC _IMPORT _vsnprintf(char* ZSTR restrict __buffer, size_t __n, const char* ZSTR restrict __format,
                                      va_list __arglist);
     int _RTL_FUNC _IMPORT vsprintf(char* ZSTR __buffer, const char* ZSTR __format, va_list __arglist);
+    int _RTL_FUNC _IMPORT vasprintf(char** ZSTR __buffer, const char* ZSTR __format, va_list __arglist);
     int _RTL_FUNC _IMPORT vsscanf(const char* ZSTR __buffer, const char* ZSTR __format, va_list __arglist);
     int _RTL_FUNC _IMPORT unlink(const char* ZSTR __path);
     int _RTL_FUNC _IMPORT _unlink(const char* ZSTR __path);

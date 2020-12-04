@@ -40,10 +40,10 @@
 #include <limits.h>
 
 #define imin(x, y) ((x) < 0 ? 0 : ((x) < (y) ? (x) : (y)))
-
+#define INTERNAL_BUFFER_SIZE 8192
 int _RTL_FUNC vsnprintf(char* restrict buf, size_t n, const char* restrict format, va_list arglist)
 {
-    char buffer[8192];
+    char buffer[INTERNAL_BUFFER_SIZE];
     FILE fil;
     struct __file2 fil2;
     int written;
@@ -83,4 +83,24 @@ int _RTL_FUNC vsprintf(char* restrict buffer, const char* restrict format, va_li
 int _RTL_FUNC sprintf(char* restrict buffer, const char* restrict format, ...)
 {
     return vsnprintf(buffer, INT_MAX, format, (((char*)&format) + sizeof(char*)));
+}
+int _RTL_FUNC vasprintf(char** restrict buffer, const char* restrict format, va_list arglist)
+{
+    char temp[INTERNAL_BUFFER_SIZE];
+    int rv = vsnprintf(temp, INTERNAL_BUFFER_SIZE, format, arglist);
+    if (rv >= 0)
+    {
+        *buffer = (char *)malloc(rv + 1);
+        if (*buffer)
+        {
+            memcpy(*buffer, temp, rv);
+            (*buffer)[rv] = 0;
+            return rv;
+        }
+    }
+    return -1;
+}
+int _RTL_FUNC asprintf(char** restrict buffer, const char* restrict format, ...)
+{
+    return vasprintf(buffer, format, (((char*)&format) + sizeof(char*)));
 }

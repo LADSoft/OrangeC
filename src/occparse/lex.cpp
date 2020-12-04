@@ -1672,6 +1672,7 @@ LEXEME* getsym(void)
                 lex->type = l_i;
             else
                 lex->type = tp;
+            lex->suffix = nullptr;
             if (isstartchar(*linePointer))
             {
                 char suffix[256], *p = suffix;
@@ -1688,6 +1689,7 @@ LEXEME* getsym(void)
         {
             lex->value.s.w = (LCHAR*)strptr;
             lex->type = tp == l_u8str ? l_astr : tp;
+            lex->suffix = nullptr;
             if (isstartchar(*linePointer) && !isspace(*(linePointer - 1)))
             {
                 char suffix[256], *p = suffix;

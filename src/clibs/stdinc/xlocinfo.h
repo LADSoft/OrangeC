@@ -84,15 +84,15 @@ typedef struct _Cvtvec {
     {
         return strtod(__s, __endptr);
     }
-    inline long long strtoll_l(const char* ZSTR restrict __s, char* ZSTR* restrict __endptr, int __radix, _locale_t larg)
+    inline long long _strtoll_l(const char* ZSTR restrict __s, char* ZSTR* restrict __endptr, int __radix, _locale_t larg)
     {
         return strtoll(__s, __endptr, __radix);
     }
-    inline long long strtoull_l(const char* ZSTR restrict __s, char* ZSTR* restrict __endptr, int __radix, _locale_t larg)
+    inline long long _strtoull_l(const char* ZSTR restrict __s, char* ZSTR* restrict __endptr, int __radix, _locale_t larg)
     {
         return strtoull(__s, __endptr, __radix);
     }
-    inline long double strtold_l(const char* ZSTR restrict __s, char* ZSTR* restrict __endptr, _locale_t larg)
+    inline long double _strtold_l(const char* ZSTR restrict __s, char* ZSTR* restrict __endptr, _locale_t larg)
     {
         return strtold(__s, __endptr);
     }
@@ -104,25 +104,25 @@ typedef struct _Cvtvec {
         va_end(arg);
         return rv;
     }
-    inline int strcoll_l(const char* ZSTR __s1, const char* ZSTR __s2, _locale_t larg) { return strcoll(__s1, __s2); }
-    inline size_t strxfrm_l(char* ZSTR restrict __s1, const char* ZSTR restrict __s2, size_t __n, _locale_t larg)
+    inline int _strcoll_l(const char* ZSTR __s1, const char* ZSTR __s2, _locale_t larg) { return strcoll(__s1, __s2); }
+    inline size_t _strxfrm_l(char* ZSTR restrict __s1, const char* ZSTR restrict __s2, size_t __n, _locale_t larg)
     {
         return strxfrm(__s1, __s2, __n);
     }
-    inline int wcscoll_l(const wchar_t* __s1, const wchar_t* __s2, _locale_t larg) { return wcscoll(__s1, __s2); }
-    inline size_t wcsxfrm_l(wchar_t* restrict __s1, const wchar_t* restrict __s2, size_t __n, _locale_t larg)
+    inline int _wcscoll_l(const wchar_t* __s1, const wchar_t* __s2, _locale_t larg) { return wcscoll(__s1, __s2); }
+    inline size_t _wcsxfrm_l(wchar_t* restrict __s1, const wchar_t* restrict __s2, size_t __n, _locale_t larg)
     {
         return wcsxfrm(__s1, __s2, __n);
     }
     inline int _islower_l(int __c, _locale_t larg) { return __c >= 'a' && __c <= 'z'; }
     inline int _isupper_l(int __c, _locale_t larg) { return __c >= 'A' && __c <= 'Z'; }
-    inline int tolower_l(int __ch, _locale_t larg)
+    inline int _tolower_l(int __ch, _locale_t larg)
     {
         if (_isupper_l(__ch, 0))
             __ch += 'a' - 'A';
         return __ch;
     }
-    inline int toupper_l(int __ch, _locale_t larg)
+    inline int _toupper_l(int __ch, _locale_t larg)
     {
         if (_islower_l(__ch, 0))
             __ch -= 'a' - 'A';
@@ -144,51 +144,51 @@ typedef struct _Cvtvec {
     inline int _iswalpha_l(wint_t __wc, _locale_t larg) { return _iswlower_l(__wc, (locale_t)0) || _iswupper_l(__wc, (locale_t)0); }
     inline int _iswalnum_l(wint_t __wc, _locale_t larg) { return _iswalpha_l(__wc, (locale_t)0) || _iswdigit_l(__wc, (locale_t)0); }
 
-    inline wint_t towlower_l(wint_t __wc, _locale_t larg) { return tolower_l(__wc, (locale_t)0); }
-    inline wint_t towupper_l(wint_t __wc, _locale_t larg) { return toupper_l(__wc, (locale_t)0); }
+    inline wint_t _towlower_l(wint_t __wc, _locale_t larg) { return _tolower_l(__wc, (locale_t)0); }
+    inline wint_t _towupper_l(wint_t __wc, _locale_t larg) { return _toupper_l(__wc, (locale_t)0); }
 
-    inline wint_t btowc_l(int __c, _locale_t larg) { return btowc(__c); }
-    inline int wctob_l(wint_t __c, _locale_t larg) { return wctob(__c); }
+    inline wint_t _btowc_l(int __c, _locale_t larg) { return btowc(__c); }
+    inline int _wctob_l(wint_t __c, _locale_t larg) { return wctob(__c); }
 
-    inline size_t mbrtowc_l(wchar_t* restrict __pwc, const char* ZSTR restrict __s, size_t __n, mbstate_t* restrict __p,
+    inline size_t _mbrtowc_l(wchar_t* restrict __pwc, const char* ZSTR restrict __s, size_t __n, mbstate_t* restrict __p,
                             _locale_t larg)
     {
         return mbrtowc(__pwc, __s, __n, __p);
     }
-    inline size_t mbtowc_l(wchar_t* restrict __pwc, const char* ZSTR restrict __s, size_t __n, _locale_t larg)
+    inline size_t _mbtowc_l(wchar_t* restrict __pwc, const char* ZSTR restrict __s, size_t __n, _locale_t larg)
     {
         return mbtowc(__pwc, __s, __n);
     }
-    inline size_t wcrtomb_l(char* ZSTR restrict __s, wchar_t __wc, mbstate_t* restrict __ps, _locale_t larg)
+    inline size_t _wcrtomb_l(char* ZSTR restrict __s, wchar_t __wc, mbstate_t* restrict __ps, _locale_t larg)
     {
         return wcrtomb(__s, __wc, __ps);
     }
-    inline size_t mbrlen_l(const char* ZSTR restrict __s, size_t __n, mbstate_t* restrict __ps, _locale_t larg)
+    inline size_t _mbrlen_l(const char* ZSTR restrict __s, size_t __n, mbstate_t* restrict __ps, _locale_t larg)
     {
         return mbrlen(__s, __n, __ps);
     }
-    inline size_t mbsrtowcs_l(wchar_t* restrict __dst, const char* ZSTR* restrict __src, size_t __len, mbstate_t* restrict __ps,
+    inline size_t _mbsrtowcs_l(wchar_t* restrict __dst, const char* ZSTR* restrict __src, size_t __len, mbstate_t* restrict __ps,
                               _locale_t larg)
     {
         return mbsrtowcs(__dst, __src, __len, __ps);
     }
-    inline size_t wcsrtombs_l(char* ZSTR restrict __dst, const wchar_t** restrict __src, size_t __len, mbstate_t* restrict __ps,
+    inline size_t _wcsrtombs_l(char* ZSTR restrict __dst, const wchar_t** restrict __src, size_t __len, mbstate_t* restrict __ps,
                               _locale_t larg)
     {
         return wcsrtombs(__dst, __src, __len, __ps);
     }
-    inline size_t wcsnrtombs_l(char* ZSTR restrict __dst, const wchar_t** restrict __src, size_t __nms, size_t __len,
+    inline size_t _wcsnrtombs_l(char* ZSTR restrict __dst, const wchar_t** restrict __src, size_t __nms, size_t __len,
                                mbstate_t* restrict __ps, _locale_t larg)
     {
         return wcsnrtombs(__dst, __src, __nms, __len, __ps);
     }
-    inline size_t mbsnrtowcs_l(wchar_t* restrict __dst, const char* ZSTR* restrict __src, size_t nms, size_t __len,
+    inline size_t _mbsnrtowcs_l(wchar_t* restrict __dst, const char* ZSTR* restrict __src, size_t nms, size_t __len,
                                mbstate_t* restrict __ps, _locale_t larg)
     {
         return mbsnrtowcs(__dst, __src, nms, __len, __ps);
     }
 
-    inline size_t strftime_l(char* ZSTR restrict __s, size_t __maxsize, const char* ZSTR restrict __fmt, const struct tm* restrict __t,
+    inline size_t _strftime_l(char* ZSTR restrict __s, size_t __maxsize, const char* ZSTR restrict __fmt, const struct tm* restrict __t,
                              _locale_t larg)
     {
         return strftime(__s, __maxsize, __fmt, __t);

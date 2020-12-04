@@ -528,6 +528,7 @@ bool isunion(TYPE* tp)
 }
 void DeduceAuto(TYPE** pat, TYPE* nt, EXPRESSION* exp)
 {
+    TYPE *patin = *pat;
     TYPE* in = nt;
     if (isautotype(*pat))
     {
@@ -578,25 +579,18 @@ void DeduceAuto(TYPE** pat, TYPE* nt, EXPRESSION* exp)
             pointerOrRef = true;
             pat = &basetype(*pat)->btp;
         }
-        while (!err && ispointer(*pat) && ispointer(nt))
+        while (ispointer(*pat) && ispointer(nt))
         {
-            if (!ispointer(nt))
-            {
-                err = true;
-            }
-            else
-            {
-                pointerOrRef = true;
-                pat = &basetype(*pat)->btp;
-                nt = basetype(nt)->btp;
-            }
+            pointerOrRef = true;
+            pat = &basetype(*pat)->btp;
+            nt = basetype(nt)->btp;
         }
-        if (basetype(*pat)->type != bt_auto)
+        if (ispointer(*pat))
             err = true;
         nt = basetype(nt);
         if (err)
         {
-            errortype(ERR_CANNOT_DEDUCE_AUTO_TYPE, in, in);
+            errortype(ERR_CANNOT_DEDUCE_AUTO_TYPE, patin, in);
         }
         else if (!pointerOrRef)
         {
@@ -620,6 +614,10 @@ void DeduceAuto(TYPE** pat, TYPE* nt, EXPRESSION* exp)
             {
                 *pat = nt;
             }
+        }
+        else if (ispointer(in))
+        {
+             *pat = nt;
         }
         else
         {

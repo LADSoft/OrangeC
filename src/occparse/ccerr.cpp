@@ -557,7 +557,7 @@ static struct
     {"__fault or __finally can appear only once per __try block", ERROR},
     {"static function '%s' is undefined", TRIVIALWARNING},
     {"Missing type specifier for identifier '%s'", WARNING},
-    {"Cannot deduce auto type from '%s'", ERROR},
+    {"Cannot deduce auto type '%s' from '%s'", ERROR},
     {"%s: dll interface member may not be declared in dll interface class", ERROR},
     {"%s: attempting to redefine dll interface linkage for class", WARNING},
     {"Ignoring __attribute__ specifier", WARNING},

@@ -4143,7 +4143,7 @@ static LEXEME* expression_string(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
     *exp = stringlit(data);
     if (data->suffix)
     {
-        enum e_bt tpb = (*tp)->type;
+        enum e_bt tpb;
         SYMBOL* sym;
         char name[512];
         switch (data->strtype)

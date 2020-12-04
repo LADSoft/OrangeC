@@ -4138,11 +4138,12 @@ LEXEME* initialize(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sym, enum e_sc storage_c
                                 itp = itp1;
                             }
                             tp1 = itp;
-                        }
+                        } 
+                        DeduceAuto(&sym->tp, tp1, exp1);
                         TYPE** tp2 = &sym->tp;
                         while (ispointer(*tp2) || isref(*tp2))
                             tp2 = &basetype(*tp2)->btp;
-                        *tp2 = tp1;
+//                        *tp2 = tp1;
                         if (isstructured(*tp2))
                             *tp2 = basetype(*tp2)->sp->tp;
 

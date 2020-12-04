@@ -194,7 +194,10 @@ void addTemplateDeclaration(STRUCTSYM* decl)
     decl->str = nullptr;
     structSyms = decl;
 }
-void dropStructureDeclaration(void) { structSyms = structSyms->next; }
+void dropStructureDeclaration(void) 
+{
+    structSyms = structSyms->next; 
+}
 SYMBOL* getStructureDeclaration(void)
 {
     STRUCTSYM* l = structSyms;

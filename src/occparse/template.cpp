@@ -5654,7 +5654,7 @@ static bool TemplateDeduceFromArg(TYPE* orig, TYPE* sym, EXPRESSION* exp, bool a
                 A = basetype(A)->btp;
         }
     }
-    if (ispointer(P) && isconstzero(A, exp))
+    if (ispointer(P) && isint(A) && isconstzero(A, exp))
     {
         // might get in here with a non-template argument that needs to be matched
         // usually the two types would just match and it would be fine
@@ -5662,7 +5662,7 @@ static bool TemplateDeduceFromArg(TYPE* orig, TYPE* sym, EXPRESSION* exp, bool a
         // we need to act specially
         while (ispointer(P))
             P = basetype(P)->btp;
-        if (isarithmetic(P) || isfunction(P) || (isstructured(P) && !basetype(P)->sp->sb->templateLevel))
+        if (isvoid(P) || isarithmetic(P) || isfunction(P) || (isstructured(P) && !basetype(P)->sp->sb->templateLevel))
             return true;
         return false;
     }
@@ -10584,10 +10584,6 @@ TEMPLATEPARAMLIST* GetTypeAliasArgs(SYMBOL* sp, TEMPLATEPARAMLIST* args, TEMPLAT
 }
 SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args)
 {
-    if (!strcmp(sp->name, "_EnableIfDeleterConstructible") && !templateNestingCount)
-        printf("hi");
-    if (!strcmp(sp->name, "_LValRefType") && !templateNestingCount)
-        printf("hi");
     if (reflectUsingType)
         return sp;
     SYMBOL* rv;
@@ -10617,7 +10613,14 @@ SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args)
         rv = clonesym(sp);
         rv->sb->mainsym = sp;
         if (!ParseTypeAliasDefaults(rv, args, sp->templateParams, sp->sb->typeAlias))
+        {
+            dropStructureDeclaration();
+            if (sp->sb->parentClass && sp->sb->parentClass->templateParams)
+            {
+                dropStructureDeclaration();
+            }
             return rv;
+        }
         SpecifyTemplateSelector(&rv->sb->templateSelector, basetp->sp->sb->templateSelector, false, sp, args, sp->templateParams, sp->sb->typeAlias);
         TYPE tp1 = { };
         tp1.type = bt_templateselector;

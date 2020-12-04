@@ -1554,7 +1554,6 @@ static bool isAccessibleInternal(SYMBOL* derived, SYMBOL* currentBase, SYMBOL* m
     }
     return false;
 }
-int count3;
 bool isAccessible(SYMBOL* derived, SYMBOL* currentBase, SYMBOL* member, SYMBOL* funcsp, enum e_ac minAccess, bool asAddress)
 {
     return (templateNestingCount && !instantiatingTemplate) || instantiatingFunction ||

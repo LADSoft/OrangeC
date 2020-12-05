@@ -822,6 +822,7 @@ typedef struct _templateParam
     int rref : 1;
     int resolved : 1;  // packed template has already been resolved.
     int ellipsis : 1; // ellipsis found after this item...
+    int replaced : 1; // replaced during type alias substitution
     SYMBOL* packsym;
     void* hold; /* value held during partial template ordering */
     Optimizer::LIST* stack;

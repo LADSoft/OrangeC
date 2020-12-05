@@ -863,6 +863,62 @@ TEMPLATEPARAMLIST** expandArgs(TEMPLATEPARAMLIST** lst, LEXEME* start, SYMBOL* f
     }
     return lst;
 }
+void UnrollTemplatePacks(TEMPLATEPARAMLIST* tpl)
+{
+    while (tpl)
+    {
+        if (tpl->p->type == kw_typename)
+        {
+            auto tpl2 = tpl;
+            if (tpl->p->packed)
+            {
+                if (tpl->p->byPack.pack && !tpl->p->byPack.pack->next && tpl->p->byPack.pack->p->packed)
+                    tpl->p->byPack.pack = tpl->p->byPack.pack->p->byPack.pack;
+            }
+            else if (tpl->p->byClass.dflt)
+            {
+                auto quals = tpl->p->byClass.dflt;
+                auto end = quals;
+                while (end->btp)
+                    end = end->btp;
+                if (end->type == bt_templateparam)
+                {
+                    auto ths = end->templateParam;
+                    if (ths->p->packed)
+                    {
+                        auto tpl2 = ths->p->byPack.pack;
+                        if (tpl2)
+                        {
+                            tpl->p = ths->p;
+                            if (quals != end)
+                            {
+                                TEMPLATEPARAMLIST *lst = tpl2;
+                                while (lst)
+                                {
+                                    TYPE *hold = nullptr, **last = &hold;
+                                    TYPE *scan = quals;
+                                    while (scan->type != bt_templateparam)
+                                    {
+                                        *last = Allocate<TYPE>();
+                                        **last = *scan;
+                                        last = &(*last)->btp;
+                                        scan = scan->btp;
+                                    }
+                                    *last = lst->p->byClass.val ? lst->p->byClass.val : lst->p->byClass.dflt;
+                                    UpdateRootTypes(hold);
+                                    CollapseReferences(hold);
+                                    lst->p->byClass.dflt = hold;
+                                    lst = lst->next;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        tpl = tpl->next;
+    }
+}
 TEMPLATEPARAMLIST** expandTemplateSelector(TEMPLATEPARAMLIST** lst, TEMPLATEPARAMLIST* orig, TYPE* tp)
 {
     if (tp->sp && tp->sp->sb->templateSelector)
@@ -1054,6 +1110,7 @@ bool constructedInt(LEXEME* lex, SYMBOL* funcsp)
 }
 LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLATEPARAMLIST** lst)
 {
+    TEMPLATEPARAMLIST **start = lst;
     int oldnoTn = noTypeNameError;
     noTypeNameError = 0;
     TEMPLATEPARAMLIST* orig = nullptr;
@@ -1168,7 +1225,7 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
                             else
                             {
                                 (*lst)->p->type = kw_typename;
-                                (*lst)->p->byClass.dflt = tp;
+                                (*lst)->p->byClass.dflt = tp1;
                             }
                             lst = &(*lst)->next;
                         }
@@ -1667,6 +1724,7 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
             needkw(&lex, gt);
         }
     }
+    UnrollTemplatePacks(*start);
     inTemplateArgs--;
     noTypeNameError = oldnoTn;
     return lex;
@@ -6242,11 +6300,11 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
         // set up default values for non-deduced and non-initialized args
         params = nparams->next;
 
-        if (TemplateParseDefaultArgs(sym, params, params, params) &&
-            (rv = ValidateArgsSpecified(sym->templateParams->next, sym, arguments, nparams)))
-        {
-            return rv;
-        }
+        if (TemplateParseDefaultArgs(sym, params, params, params))
+            if ((rv = ValidateArgsSpecified(sym->templateParams->next, sym, arguments, nparams)))
+            {
+                return rv;
+            }
         return nullptr;
     }
     rv = SynthesizeResult(sym, nparams);
@@ -9811,6 +9869,7 @@ void SearchAlias(const char *name, TEMPLATEPARAMLIST *x, SYMBOL* sym, TEMPLATEPA
         }
         if (x->p->byClass.dflt)
             SpecifyOneArg(sym, x, args, origTemplate, origUsing);
+        x->p->replaced = true;
     }
 }
 static TYPE* SpecifyArgType(SYMBOL* sym, TYPE* tp, TEMPLATEPARAM* tpt, TEMPLATEPARAMLIST* orig, TEMPLATEPARAMLIST* args, TEMPLATEPARAMLIST* origTemplate, TEMPLATEPARAMLIST* origUsing);
@@ -9872,8 +9931,14 @@ void SpecifyTemplateSelector(TEMPLATESELECTOR** rvs, TEMPLATESELECTOR* old, bool
                             }
                             else if ((*x)->p->type == kw_typename && (*x)->p->byClass.dflt)
                             {
-                                if (!isfuncptr((*x)->p->byClass.dflt))
-                                if (!isstructured((*x)->p->byClass.dflt) || (basetype((*x)->p->byClass.dflt)->sp->sb->templateLevel && !(*x)->p->byClass.dflt->size))
+                                // this is because a 'default' can either be from
+                                // a really defaulted value, or it can be from a previous
+                                // replacement.   We keep track of when a previous replacement
+                                // occurs and check it here.
+                                // it would be better if we set this up during th declaration phase,
+                                // however I don't want to duplicate the massive amounts of code that
+                                // go through the type & expression trees to locate such things...
+                                if ((*x)->p->replaced)
                                     SearchAlias(name, *x, sym, args, origTemplate, origUsing);
                             }
                             else
@@ -9967,10 +10032,7 @@ static EXPRESSION* SpecifyArgInt(SYMBOL* sym, EXPRESSION* exp, TEMPLATEPARAMLIST
         }
         else if (exp->type == en_templateselector)
         {
-            TEMPLATESELECTOR *old = exp->v.templateSelector;
-            {
-                SpecifyTemplateSelector(&exp->v.templateSelector, exp->v.templateSelector, true, sym, args, origTemplate, origUsing);
-            }
+            SpecifyTemplateSelector(&exp->v.templateSelector, exp->v.templateSelector, true, sym, args, origTemplate, origUsing);
             optimize_for_constants(&exp);
         }
         else if (exp->type == en_auto)

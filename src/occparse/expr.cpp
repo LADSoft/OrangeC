@@ -3320,7 +3320,7 @@ static TEMPLATEPARAMLIST *LiftTemplateParams(TEMPLATEPARAMLIST* tpl)
         (*last)->p = Allocate<TEMPLATEPARAM>();
         *(*last)->p = *tpl->p;
         TEMPLATEPARAMLIST* temp = tpl;
-        if (tpl->p->type == kw_typename && tpl->p->byClass.dflt && basetype(tpl->p->byClass.dflt)->type == bt_templateparam)
+        if (tpl->p->type == kw_typename && !tpl->p->packed && tpl->p->byClass.dflt && basetype(tpl->p->byClass.dflt)->type == bt_templateparam)
         {
             (*last)->p = Allocate<TEMPLATEPARAM>();
             temp = basetype(tpl->p->byClass.dflt)->templateParam;

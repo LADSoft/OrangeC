@@ -928,7 +928,7 @@ static bool is_pod(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** tp, EXPRESS
     }
     if (funcparams.arguments && !funcparams.arguments->next)
     {
-        rv = !!isPOD(funcparams.arguments->tp);
+        rv = isarithmetic(funcparams.arguments->tp) || !!isPOD(funcparams.arguments->tp);
     }
     *exp = intNode(en_c_i, rv);
     *tp = &stdint;
@@ -974,7 +974,7 @@ static bool is_standard_layout(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE**
     }
     if (funcparams.arguments && !funcparams.arguments->next)
     {
-        rv = !!isStandardLayout(funcparams.arguments->tp, nullptr);
+        rv = isarithmetic(funcparams.arguments->tp) || !!isStandardLayout(funcparams.arguments->tp, nullptr);
     }
     *exp = intNode(en_c_i, rv);
     *tp = &stdint;

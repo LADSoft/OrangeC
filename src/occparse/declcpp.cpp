@@ -2864,52 +2864,7 @@ void checkOperatorArgs(SYMBOL* sp, bool asFriend)
 }
 LEXEME* handleStaticAssert(LEXEME* lex)
 {
-    if (getStructureDeclaration())
-    {
-        SYMBOL* sym = getStructureDeclaration();
-        Optimizer::LIST* staticAssert = Allocate<Optimizer::LIST>();
-        LEXEME **cur = (LEXEME**)&staticAssert->data, *last = nullptr;
-        int paren = 0;
-        int brack = 0;
-        staticAssert->next = sym->sb->staticAsserts;
-        sym->sb->staticAsserts = staticAssert;
-        while (lex != nullptr)
-        {
-            enum e_kw kw = KW(lex);
-            if (kw == openpa)
-            {
-                paren++;
-            }
-            else if (kw == closepa)
-            {
-                if (paren-- == 0 && !brack)
-                {
-                    break;
-                }
-            }
-            else if (kw == openbr)
-            {
-                brack++;
-            }
-            else if (kw == closebr)
-            {
-                brack--;
-            }
-            *cur = Allocate<LEXEME>();
-            if (lex->type == l_id)
-                lex->value.s.a = litlate(lex->value.s.a);
-            **cur = *lex;
-            (*cur)->prev = last;
-            last = *cur;
-            cur = &(*cur)->next;
-            if (kw == semicolon)
-            {
-                break;
-            }
-            lex = getsym();
-        }
-    }
-    else if (!needkw(&lex, openpa))
+    if (!needkw(&lex, openpa))
     {
         errskim(&lex, skim_closepa);
         skip(&lex, closepa);

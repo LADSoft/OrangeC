@@ -548,7 +548,7 @@ void calculateStructOffsets(SYMBOL* sp)
     {
         SYMBOL* p = hr->p;
         TYPE* tp = basetype(p->tp);
-        if (p->sb->storage_class != sc_static && p->sb->storage_class != sc_external && p->sb->storage_class != sc_overloads &&
+        if (p->sb->storage_class != sc_static && p->sb->storage_class != sc_constant && p->sb->storage_class != sc_external && p->sb->storage_class != sc_overloads &&
             p->sb->storage_class != sc_enumconstant && !istype(p) && p != sp && p->sb->parentClass == sp)
         // not function, also not injected self or base class or static variable
         {

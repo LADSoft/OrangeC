@@ -1534,9 +1534,20 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
                             if (templateNestingCount && tp->type == bt_templateparam)
                             {
                                 *lst = Allocate<TEMPLATEPARAMLIST>();
-                                (*lst)->p = tp->templateParam->p;
+                                (*lst)->p = Allocate<TEMPLATEPARAM>();
+                                *(*lst)->p = *tp->templateParam->p;
                                 if (!tp->templateParam->p->packed)
+                                {
                                     error(ERR_PACK_SPECIFIER_REQUIRES_PACKED_TEMPLATE_PARAMETER);
+                                }
+                                else if (0)
+                                {
+                                    (*lst)->p->byPack.pack = Allocate<TEMPLATEPARAMLIST>();
+                                    (*lst)->p->byPack.pack->p = Allocate<TEMPLATEPARAM>();
+                                    (*lst)->p->byPack.pack->p->type = kw_int;
+                                    (*lst)->p->byPack.pack->p->byNonType.dflt = exp;
+                                    (*lst)->p->byPack.pack->p->byNonType.tp = tp->templateParam->p->byNonType.tp;
+                                }
                             }
                             else if (templateNestingCount)
                             {
@@ -9829,6 +9840,17 @@ bool ReplaceIntAliasParams(EXPRESSION**exp, SYMBOL* sym, TEMPLATEPARAMLIST* args
         }
         rv = true;
     }
+    else if ((*exp)->type == en_sizeofellipse)
+    {
+        const char *name = (*exp)->v.templateParam->argsym->name;
+        TEMPLATEPARAMLIST* found = TypeAliasSearch(name);
+        if (found)
+        {
+            (*exp)->v.templateParam->p = found->p;
+        }
+        rv = true;
+
+    }
     else if ((*exp)->type == en_templateselector)
     {
         SpecifyTemplateSelector(&(*exp)->v.templateSelector, (*exp)->v.templateSelector, true, sym, args, origTemplate, origUsing);
@@ -9912,8 +9934,11 @@ void SpecifyTemplateSelector(TEMPLATESELECTOR** rvs, TEMPLATESELECTOR* old, bool
                     if (tpl->p->type != kw_new)
                     {
                         bool replaced = false;
+                        (*x)->p = Allocate<TEMPLATEPARAM>();
+                        *(*x)->p = *tpl->p;
                         if (!expression && tpl->p->type == kw_int && tpl->p->byNonType.dflt)
                         {
+                            (*x)->p->byNonType.dflt = copy_expression((*x)->p->byNonType.dflt);
                             replaced = ReplaceIntAliasParams(&(*x)->p->byNonType.dflt, sym, args, origTemplate, origUsing);
                         }
                         if (!replaced && tpl->argsym && (expression || (tpl->p->type == kw_int || !tpl->p->byClass.dflt)))
@@ -9935,7 +9960,7 @@ void SpecifyTemplateSelector(TEMPLATESELECTOR** rvs, TEMPLATESELECTOR* old, bool
                                 // a really defaulted value, or it can be from a previous
                                 // replacement.   We keep track of when a previous replacement
                                 // occurs and check it here.
-                                // it would be better if we set this up during th declaration phase,
+                                // it would be better if we set this up during the declaration phase,
                                 // however I don't want to duplicate the massive amounts of code that
                                 // go through the type & expression trees to locate such things...
                                 if ((*x)->p->replaced)
@@ -10120,6 +10145,18 @@ static EXPRESSION* SpecifyArgInt(SYMBOL* sym, EXPRESSION* exp, TEMPLATEPARAMLIST
             exp = exp1;
             exp->v.construct.tp = SpecifyArgType(sym, exp->v.construct.tp, nullptr, orig, args, origTemplate, origUsing);
             optimize_for_constants(&exp);
+        }
+        else if (exp->type == en_sizeofellipse)
+        {
+            EXPRESSION* exp1 = Allocate<EXPRESSION>();
+            *exp1 = *exp;
+            exp = exp1;
+            const char *name = exp->v.templateParam->argsym->name;
+            TEMPLATEPARAMLIST* found = TypeAliasSearch(name);
+            if (found)
+            {
+                exp->v.templateParam->p = found->p;
+            }
         }
         else if (exp->left || exp->right)
         {
@@ -10392,11 +10429,15 @@ static void SpecifyOneArg(SYMBOL* sym, TEMPLATEPARAMLIST* temp, TEMPLATEPARAMLIS
         for (int i = 0; i < count; i++)
         {
             TEMPLATEPARAMLIST* rv = TypeAliasSearch(syms[i]->name);
-            if (rv && rv->p->packed)
+            // only care about unbound ellipsis at this level
+            if (!syms[i]->tp->templateParam->p->ellipsis)
             {
-                int n1 = CountPacks(rv->p->byPack.pack);
-                if (n1 > n)
-                    n = n1;
+                if (rv && rv->p->packed)
+                {
+                    int n1 = CountPacks(rv->p->byPack.pack);
+                    if (n1 > n)
+                        n = n1;
+                }
             }
         }
     }
@@ -10406,7 +10447,7 @@ static void SpecifyOneArg(SYMBOL* sym, TEMPLATEPARAMLIST* temp, TEMPLATEPARAMLIS
     TEMPLATEPARAMLIST* tpl = temp;
     if (tpl->p->packed)
         tpl = tpl->p->byPack.pack;
-    for (int i = n < 0 ? -1 : 0; i <= n; i++)
+    for (int i = count == 0 ? -1 : 0; i <= n; i++)
     {
         if (n >= 0)
             packIndex = i;
@@ -10452,7 +10493,7 @@ static void SpecifyOneArg(SYMBOL* sym, TEMPLATEPARAMLIST* temp, TEMPLATEPARAMLIS
         }
     }
     packIndex = oldIndex;
-    if (n >= 0)
+    if (count != 0)
     {
         TEMPLATEPARAMLIST *packList = nullptr;
         auto tplp = &packList;

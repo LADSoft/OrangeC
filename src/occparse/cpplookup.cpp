@@ -841,9 +841,14 @@ SYMBOL* templatesearch(const char* name, TEMPLATEPARAMLIST* arg)
         if (arg->argsym && !strcmp(arg->argsym->name, name))
         {
             if (arg->p->type == kw_template && arg->p->byTemplate.dflt)
+            {
                 return arg->p->byTemplate.dflt;
+            }
             else
+            {
+                arg->argsym->tp->templateParam = arg;
                 return arg->argsym;
+            }
         }
         arg = arg->next;
     }

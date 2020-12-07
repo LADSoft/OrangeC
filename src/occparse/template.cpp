@@ -1540,13 +1540,12 @@ LEXEME* GetTemplateArguments(LEXEME* lex, SYMBOL* funcsp, SYMBOL* templ, TEMPLAT
                                 {
                                     error(ERR_PACK_SPECIFIER_REQUIRES_PACKED_TEMPLATE_PARAMETER);
                                 }
-                                else if (0)
+                                else
                                 {
-                                    (*lst)->p->byPack.pack = Allocate<TEMPLATEPARAMLIST>();
-                                    (*lst)->p->byPack.pack->p = Allocate<TEMPLATEPARAM>();
-                                    (*lst)->p->byPack.pack->p->type = kw_int;
-                                    (*lst)->p->byPack.pack->p->byNonType.dflt = exp;
-                                    (*lst)->p->byPack.pack->p->byNonType.tp = tp->templateParam->p->byNonType.tp;
+                                    (*lst)->p->packed = false;
+                                    (*lst)->p->ellipsis = true;
+                                    (*lst)->p->byNonType.dflt = exp;
+                                    (*lst)->p->byNonType.tp = tp;
                                 }
                             }
                             else if (templateNestingCount)
@@ -9984,9 +9983,13 @@ static EXPRESSION* SpecifyArgInt(SYMBOL* sym, EXPRESSION* exp, TEMPLATEPARAMLIST
 {
     if (exp)
     {
-        if (exp->type == en_templateparam)
+        if (exp->type == en_templateparam || exp->type == en_auto && exp->v.sp->packed)
         {
-            TEMPLATEPARAMLIST* rv = TypeAliasSearch(exp->v.sp->tp->templateParam->argsym->name);
+            TEMPLATEPARAMLIST* rv;
+            if (exp->type == en_templateparam)
+                rv = TypeAliasSearch(exp->v.sp->tp->templateParam->argsym->name);
+            else
+                rv = TypeAliasSearch(exp->v.sp->name);
             if (rv)
             {
                 if (rv->p->type == kw_int)
@@ -10687,6 +10690,10 @@ TEMPLATEPARAMLIST* GetTypeAliasArgs(SYMBOL* sp, TEMPLATEPARAMLIST* args, TEMPLAT
 }
 SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args)
 {
+    if (!strcmp(sp->name, "__make_indices_imp"))
+        printf("hi");
+    if (!strcmp(sp->name, "__to_tuple_indices"))
+        printf("hi");
     if (reflectUsingType)
         return sp;
     SYMBOL* rv;

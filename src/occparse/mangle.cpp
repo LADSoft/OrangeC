@@ -103,7 +103,6 @@ const char* overloadXlateTab[] = {
 static char mangledNames[MAX_MANGLE_NAME_COUNT][256];
 int mangledNamesCount;
 
-static int declTypeIndex;
 static char* lookupName(char* in, const char* name);
 static int uniqueID;
 
@@ -203,6 +202,18 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
             case en_umod:
             case en_mod:
                 *buf++ = 'o';
+                buf = mangleExpressionInternal(buf, exp->left);
+                buf = mangleExpressionInternal(buf, exp->right);
+                *buf = 0;
+                break;
+            case en_dot:
+                *buf++ = 'D';
+                buf = mangleExpressionInternal(buf, exp->left);
+                buf = mangleExpressionInternal(buf, exp->right);
+                *buf = 0;
+                break;
+            case en_pointsto:
+                *buf++ = 'P';
                 buf = mangleExpressionInternal(buf, exp->left);
                 buf = mangleExpressionInternal(buf, exp->right);
                 *buf = 0;
@@ -385,12 +396,14 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
                 break;
             }
             case en_templateparam:
+            case en_auto:
                 *buf++ = 't';
                 *buf++ = 'p';
                 buf = lookupName(buf, exp->v.sp->name);
+                buf += strlen(buf);
                 *buf = 0;
                 break;
-
+            case en_thisref:
             case en_funcret:
                 buf = mangleExpressionInternal(buf, exp->left);
                 *buf = 0;
@@ -404,8 +417,11 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
                     buf = getName(buf, exp->v.func->sp);
                     while (args)
                     {
-                        *buf++ = 'f';
-                        buf = mangleExpressionInternal(buf, args->exp);
+                        if (args->exp)
+                        {
+                            *buf++ = 'f';
+                            buf = mangleExpressionInternal(buf, args->exp);
+                        }
                         args = args->next;
                     }
                 }
@@ -441,6 +457,16 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
                     *buf++ = '$';
                     *buf = 0;
                 }
+                break;
+            case en_sizeofellipse:
+                *buf++ = 'z';
+                buf = getName(buf, exp->v.templateParam->argsym);
+                buf += strlen(buf);
+                break;
+            case en_void:
+                *buf++ = 'v';
+                // ignoring args to void...
+                *buf = 0;
                 break;
             default:
                 *buf = 0;
@@ -885,12 +911,8 @@ char* mangleType(char* in, TYPE* tp, bool first)
                 }
                 break;
                 case bt_templatedecltype:
-                    // the index is being used to make names unique so two decltypes won't collide when storing them
-                    // in a symbol table...
-                    declTypeIndex = (declTypeIndex + 1) % 1000;
                     *in++ = 'E';
-                    Optimizer::my_sprintf(in, "%03d", declTypeIndex);
-                    in += 3;
+                    in = mangleExpression(in, tp->templateDeclType);
                     break;
                 case bt_aggregate:
                     in = getName(in, tp->sp);
@@ -910,6 +932,8 @@ char* mangleType(char* in, TYPE* tp, bool first)
 }
 void SetLinkerNames(SYMBOL* sym, enum e_lk linkage, bool isTemplateDefinition)
 {
+    if (!strcmp(sym->name, "__construct_at_end"))
+        printf("hi");
     char errbuf[8192], *p = errbuf;
     memset(errbuf, 0, 8192);
     SYMBOL* lastParent;

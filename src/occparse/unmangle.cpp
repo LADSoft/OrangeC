@@ -280,6 +280,17 @@ char* unmangleExpression(char* dest, const char** name)
                 *dest++ = '/';
                 dest = unmangleExpression(dest, name);
                 break;
+            case 'D':
+                dest = unmangleExpression(dest, name);
+                *dest++ = '.';
+                dest = unmangleExpression(dest, name);
+                break;
+            case 'P':
+                dest = unmangleExpression(dest, name);
+                *dest++ = '-';
+                *dest++ = '>';
+                dest = unmangleExpression(dest, name);
+                break;
             case 'h':
             {
                 char next = *(*name)++;
@@ -406,6 +417,7 @@ char* unmangleExpression(char* dest, const char** name)
                         while (isdigit(*(*name)))
                             v = v * 10 + *(*name)++ - '0';
                         strncpy(dest, (*name), v);
+                        dest[v] = 0;
                         (*name) += v;
                         dest += strlen(dest);
                     }
@@ -447,13 +459,13 @@ char* unmangleExpression(char* dest, const char** name)
                 else
                 {
                     int v;
-                    (*name)++;
                     if (isdigit(*(*name)))
                     {
                         v = *(*name)++ - '0';
                         while (isdigit(*(*name)))
                             v = v * 10 + *(*name)++ - '0';
                         strncpy(dest, (*name), v);
+                        dest[v] = 0;
                         (*name) += v;
                         dest += strlen(dest);
                     }
@@ -479,6 +491,7 @@ char* unmangleExpression(char* dest, const char** name)
                     while (isdigit(*(*name)))
                         v = v * 10 + *(*name)++ - '0';
                     strncpy(dest, (*name), v);
+                    dest[v] = 0;
                     (*name) += v;
                     dest += strlen(dest);
                 }
@@ -529,6 +542,36 @@ char* unmangleExpression(char* dest, const char** name)
                     (*name)++;
                 }
                 break;
+            case 'v':
+                break;
+            case 'z':
+            {
+                strcpy(dest, "sizeof...(");
+                dest += strlen(dest);
+                int v;
+                (*name)++;
+                if (isdigit(*(*name)))
+                {
+                    v = *(*name)++ - '0';
+                    while (isdigit(*(*name)))
+                        v = v * 10 + *(*name)++ - '0';
+                    strncpy(dest, (*name), v);
+                    dest[v] = 0;
+                    (*name) += v;
+                    dest += strlen(dest);
+                }
+                else if (*(*name) == 'n')
+                {
+                    (*name)++;
+                    v = *(*name)++ - '0';
+                    if (v > 9)
+                        v -= 7;
+                    strcpy(dest, manglenames[v]);
+                    dest += strlen(dest);
+                }
+                *dest++ = ')';
+                *dest = 0;
+            }
         }
     }
     *dest = 0;
@@ -1053,8 +1096,12 @@ const char* unmang1(char* buf, const char* name, const char* last, bool tof)
                 strcpy(buf, tn_ellipse);
                 break;
             case 'E':
-                name += 3;
-                strcpy(buf, "decltype(...) ");
+                name++; // past ?
+                strcpy(buf, "decltype(");
+                buf += strlen(buf);
+                buf = unmangleExpression(buf, &name);
+                *buf++ = ')';
+                *buf = 0;
                 break;
             case '#':
                 buf += strlen(buf);
@@ -1089,10 +1136,13 @@ static const char* unmangcpptype(char* buf, const char* name, const char* last)
     *buf = 0;
     return name;
 }
-
+char hold[10000];
 /* Name unmangling in general */
 char* unmangle(char* val, const char* name)
 {
+    if (strstr(name, "__construct_at_end$qE?Dtp"))
+        printf("hi");
+    strcpy(hold, name);
     char* buf = val;
     char* last = buf;
     buf[0] = 0;

@@ -3128,6 +3128,8 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bo
         case en_dot:
         case en_pointsto:
         {
+            if (!templateNestingCount)
+                printf("hi");
             TYPE *tp = LookupTypeFromExpression(exp->left, nullptr, false);
             if (!tp)
                 return tp;
@@ -3150,6 +3152,8 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bo
                 s.str = basetype(tp)->sp;
                 addStructureDeclaration(&s);
                 while (next->type == en_funcret)
+                    next = next->left;
+                if (next->type == en_thisref)
                     next = next->left;
                 if (next->type == en_func)
                 {
@@ -3238,7 +3242,6 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bo
             return rv;
         }
         case en_x_label:
-        case en_l_ref:
             return &stdpointer;
         case en_c_bit:
         case en_c_bool:
@@ -3320,7 +3323,14 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bo
             return &stdlongdouble;
         case en_c_p:
         case en_x_p:
-            return &stdpointer;
+            return LookupTypeFromExpression(exp->left, enclosing, alt);
+        case en_l_ref:
+        {
+            TYPE* tp = LookupTypeFromExpression(exp->left, enclosing, alt);
+            if (tp && isref(tp))
+                tp = basetype(tp)->btp;
+            return tp;
+        }
         case en_c_string:
         case en_l_string:
         case en_x_string:
@@ -10690,10 +10700,6 @@ TEMPLATEPARAMLIST* GetTypeAliasArgs(SYMBOL* sp, TEMPLATEPARAMLIST* args, TEMPLAT
 }
 SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args)
 {
-    if (!strcmp(sp->name, "__make_indices_imp"))
-        printf("hi");
-    if (!strcmp(sp->name, "__to_tuple_indices"))
-        printf("hi");
     if (reflectUsingType)
         return sp;
     SYMBOL* rv;

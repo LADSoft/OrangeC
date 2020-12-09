@@ -2134,7 +2134,7 @@ int opt0(EXPRESSION** node)
             break;
         case en_dot:
         case en_pointsto:
-        if (!templateNestingCount)
+        if (!templateNestingCount || instantiatingTemplate)
         {
             EXPRESSION *newExpr = ep->left;
             EXPRESSION *next = ep->right;

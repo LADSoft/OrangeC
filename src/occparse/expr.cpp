@@ -1032,47 +1032,28 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                              (!strSym->sb->templateLevel && strSym->tp->type != bt_templateselector &&
                               strSym->tp->type != bt_templatedecltype)))
                 {
-                    // no error if there are packed templates and we aren't parsing them
-                    bool found = false;
-                    /*
-                    if (!expandingParams)
+                    char buf[4000];
+                    buf[0] = 0;
+                    LEXEME *find = placeholder;
+                    while (lex != find)
                     {
-                        SYMBOL* spx = strSym;
-                        while (spx && !found)
+                        if (ISKW(find))
                         {
-                            TEMPLATEPARAMLIST* tpl = spx->templateParams;
-                            while (tpl && !found)
-                            {
-                                if (tpl->p->packed)
-                                    found = true;
-                                tpl = tpl->next;
-                            }
-                            spx = spx->sb->parentClass;
+                            strcat(buf, find->kw->name);
                         }
+                        else if (ISID(find))
+                        {
+                            strcat(buf, find->value.s.a);
+                        }
+                        find = find->next;
                     }
-                    */
-                    if (!found)
+                    if (!(flags & _F_MEMBER))
                     {
-                        char buf[4000];
-                        buf[0] = 0;
-                        LEXEME *find = placeholder;
-                        while (lex != find)
-                        {
-                            if (ISKW(find))
-                            {
-                                strcat(buf, find->kw->name);
-                            }
-                            else if (ISID(find))
-                            {
-                                strcat(buf, find->value.s.a);
-                            }
-                            find = find->next;
-                        }
                         errorstr(ERR_UNDEFINED_IDENTIFIER, buf);
-                        if (sym->sb->storage_class != sc_overloads &&
-                            (localNameSpace->valueData->syms || sym->sb->storage_class != sc_auto))
-                            InsertSymbol(sym, sym->sb->storage_class, lk_none, false);
                     }
+                    if (sym->sb->storage_class != sc_overloads &&
+                        (localNameSpace->valueData->syms || sym->sb->storage_class != sc_auto))
+                        InsertSymbol(sym, sym->sb->storage_class, lk_none, false);
                 }
                 if (nsv)
                 {
@@ -1253,9 +1234,9 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
             EXPRESSION **ptr = &(*exp)->right;
             while (ISID(lex) || MATCHKW(lex, kw_operator))
             {
-                TYPE* tp = nullptr;
+                TYPE* tp2 = nullptr;
                 EXPRESSION* exp = nullptr;
-                lex = expression_pm(lex, funcsp, nullptr, &tp, ptr, nullptr, 0);
+                lex = expression_pm(lex, funcsp, nullptr, &tp2, ptr, nullptr, _F_MEMBER);
                 if (!MATCHKW(lex, pointsto) && !MATCHKW(lex, dot))
                     break;
                 *ptr = exprNode(MATCHKW(lex, pointsto) ? en_pointsto : en_dot, *ptr, nullptr);
@@ -1265,6 +1246,12 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
             if (!*ptr)
             {
                 *ptr = intNode(en_c_i, 0);
+            }
+            else
+            {
+                *tp = Allocate<TYPE>();
+                (*tp)->type = bt_templatedecltype;
+                (*tp)->templateDeclType = *exp;
             }
         }
         else

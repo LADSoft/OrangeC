@@ -1402,6 +1402,9 @@ static LEXEME* initialize_bool_type(LEXEME* lex, SYMBOL* funcsp, int offset, enu
 }
 static LEXEME* initialize_arithmetic_type(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_sc sc, TYPE* itype, INITIALIZER** init)
 {
+    if (lex->errline == 0x96e && strstr(lex->errfile, "algorithm"))
+        printf("hi");
+
     TYPE* tp = nullptr;
     EXPRESSION* exp = nullptr;
     bool needend = false;

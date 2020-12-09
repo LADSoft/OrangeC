@@ -1844,11 +1844,13 @@ LEXEME* SetAlternateLex(LEXEME* lexList)
         context->cur = lexList->next;
         context->last = lexList;
         TemplateRegisterDeferred(lexList);
+        currentLex = lexList;
         return lexList;
     }
     else
     {
         context = context->next;
+        currentLex = context->cur;
         return nullptr;
     }
 }

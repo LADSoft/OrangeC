@@ -1850,7 +1850,7 @@ LEXEME* SetAlternateLex(LEXEME* lexList)
     else
     {
         context = context->next;
-        currentLex = context->cur;
+        currentLex = context->last;
         return nullptr;
     }
 }

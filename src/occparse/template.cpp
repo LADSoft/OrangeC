@@ -3128,8 +3128,6 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bo
         case en_dot:
         case en_pointsto:
         {
-            if (!templateNestingCount)
-                printf("hi");
             TYPE *tp = LookupTypeFromExpression(exp->left, nullptr, false);
             if (!tp)
                 return tp;
@@ -3149,6 +3147,7 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bo
                 STRUCTSYM s;
                 while (isref(tp))
                     tp = basetype(tp)->btp;
+//                tp = PerformDeferredInitialization(tp, nullptr);
                 s.str = basetype(tp)->sp;
                 addStructureDeclaration(&s);
                 while (next->type == en_funcret)
@@ -3526,10 +3525,6 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bo
         case en_not:
         case en_compl:
         case en_ascompl:
-        case en_lsh:
-        case en_rsh:
-        case en_ursh:
-        case en_rshd:
         case en_autoinc:
         case en_autodec:
         case en_bits:
@@ -3568,8 +3563,10 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bo
         case en_arraydiv:
         case en_arrayadd:
         case en_structadd:
-        case en_add:  // these are a little buggy because of the 'shortening' optimization
-        case en_sub:
+        case en_lsh:
+        case en_rsh:
+        case en_ursh:
+        case en_rshd:
         case en_mul:
         case en_mod:
         case en_div:
@@ -3579,7 +3576,70 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bo
         case en_umul:
         case en_udiv:
         case en_umod:
-            return LookupTypeFromExpression(exp->left, enclosing, alt);
+        {
+            TYPE* tp1 = LookupTypeFromExpression(exp->left, enclosing, alt);
+            if (!tp1)
+                return nullptr;
+            TYPE* tp1a = tp1;
+            if (isref(tp1a))
+                tp1a = basetype(tp1a)->btp;
+            TYPE* tp2 = LookupTypeFromExpression(exp->right, enclosing, alt);
+            if (!tp2)
+                return nullptr;
+            TYPE* tp2a = tp2;
+            if (isref(tp2a))
+                tp2a = basetype(tp2a)->btp;
+            return destSize(tp1a, tp2a, nullptr, nullptr, false, nullptr);
+        }
+        case en_add:  // these are a little buggy because of the 'shortening' optimization
+        {
+            TYPE* tp1 = LookupTypeFromExpression(exp->left, enclosing, alt);
+            if (!tp1)
+                return nullptr;
+            TYPE* tp1a = tp1;
+            if (isref(tp1a))
+                tp1a = basetype(tp1a)->btp;
+            TYPE* tp2 = LookupTypeFromExpression(exp->right, enclosing, alt);
+            if (!tp2)
+                return nullptr;
+            TYPE* tp2a = tp2;
+            if (isref(tp2a))
+                tp2a = basetype(tp2a)->btp;
+            if (ispointer(tp1a))
+                return tp1a;
+            else if (ispointer(tp2a))
+                return tp2a;
+            return destSize(tp1a, tp2a, nullptr, nullptr, false, nullptr);
+        }
+        break;
+        case en_sub:
+        {
+            TYPE* tp1 = LookupTypeFromExpression(exp->left, enclosing, alt);
+            if (!tp1)
+                return nullptr;
+            TYPE* tp1a = tp1;
+            if (isref(tp1a))
+                tp1a = basetype(tp1a)->btp;
+            TYPE* tp2 = LookupTypeFromExpression(exp->right, enclosing, alt);
+            if (!tp2)
+                return nullptr;
+            TYPE* tp2a = tp2;
+            if (isref(tp2a))
+                tp2a = basetype(tp2a)->btp;
+            if (ispointer(tp1a))
+            {
+                if (ispointer(tp2a))
+                    return &stdunsigned;
+                else
+                    return tp1a;
+            }
+            else if (ispointer(tp2a))
+            {
+                return tp2a;
+            }
+            return destSize(tp1a, tp2a, nullptr, nullptr, false, nullptr);
+        }
+        break;
         case en_blockclear:
         case en_stackblock:
         case en_blockassign:

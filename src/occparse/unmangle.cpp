@@ -1140,8 +1140,6 @@ char hold[10000];
 /* Name unmangling in general */
 char* unmangle(char* val, const char* name)
 {
-    if (strstr(name, "__construct_at_end$qE?Dtp"))
-        printf("hi");
     strcpy(hold, name);
     char* buf = val;
     char* last = buf;

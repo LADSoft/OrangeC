@@ -932,8 +932,6 @@ char* mangleType(char* in, TYPE* tp, bool first)
 }
 void SetLinkerNames(SYMBOL* sym, enum e_lk linkage, bool isTemplateDefinition)
 {
-    if (!strcmp(sym->name, "__construct_at_end"))
-        printf("hi");
     char errbuf[8192], *p = errbuf;
     memset(errbuf, 0, 8192);
     SYMBOL* lastParent;

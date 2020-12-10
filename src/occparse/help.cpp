@@ -1868,7 +1868,8 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
         return tp2;
     if (isvoid(tp1) || isvoid(tp2) || ismsil(tp1) || ismsil(tp2))
     {
-        error(ERR_NOT_AN_ALLOWED_TYPE);
+        if  (exp1 && exp2)
+            error(ERR_NOT_AN_ALLOWED_TYPE);
         return tp1;
     }
     if (isref(tp1))
@@ -1999,9 +2000,9 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
             tp = tp1;
         else
             tp = tp2;
-        if (tp->type != tp1->type && exp1 && tp2->type != bt_pointer)
+        if (exp1 && tp->type != tp1->type && exp1 && tp2->type != bt_pointer)
             cast(tp, exp1);
-        if (tp->type != tp2->type && exp1 && tp1->type != bt_pointer)
+        if (exp2 && tp->type != tp2->type && exp1 && tp1->type != bt_pointer)
             cast(tp, exp2);
         return tp;
     }
@@ -2033,9 +2034,9 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
             t2 = bt_int;
         t1 = btmax(t1, t2);
         rv = inttype(t1);
-        if (rv->type != tp1->type && exp1)
+        if (exp1 && rv->type != tp1->type && exp1)
             cast(rv, exp1);
-        if (rv->type != tp2->type && exp2)
+        if (exp2 && rv->type != tp2->type && exp2)
             cast(rv, exp2);
         if ((Optimizer::architecture == ARCHITECTURE_MSIL) && Optimizer::cparams.msilAllowExtensions)
         {
@@ -2065,30 +2066,10 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
         if (isstructured(tp1))
         {
             return tp2;
-            /*
-                        if (comparetypes(tp1, tp2, false))
-                            return tp1;
-                        if (Optimizer::cparams.prm_cplusplus) {
-                            cppcast(tp2, tp1, exp1, false, ERR_CPPMISMATCH);
-                        } else
-
-                            error(ERR_ILL_STRUCTURE_OPERATION);
-                        return tp2;
-            */
         }
         if (isstructured(tp2))
         {
             return tp1;
-            /*
-                        if (comparetypes(tp1, tp2, false))
-                            return tp2;
-                        if (Optimizer::cparams.prm_cplusplus) {
-                            cppcast(tp1, tp2, exp1, false, ERR_CPPMISMATCH);
-                        } else
-
-                            error(ERR_ILL_STRUCTURE_OPERATION);
-                        return tp1;
-            */
         }
 
         if (isfunction(tp1))
@@ -2100,9 +2081,6 @@ TYPE* destSize(TYPE* tp1, TYPE* tp2, EXPRESSION** exp1, EXPRESSION** exp2, bool 
         if (ispointer(tp1))
             if (ispointer(tp2))
             {
-                /*				if (tp1->type != tp2->type || !comparetypes(tp1->btp, tp2->btp, true))
-                                    generror(ERR_SUSPICIOUS, 0, 0);
-                */
                 return tp1;
             }
     }

@@ -1178,7 +1178,7 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
         }
         *tp = &stdvoid;
     }
-    else if (!isstructured(*tp) || (points && !ispointer(typein)))
+    else if (!isstructured(*tp) || (points && !ispointer(typein)) || (parsingTrailingReturnOrUsing && isstructured(*tp) && templateNestingCount && !instantiatingTemplate && basetype(*tp)->sp->sb->templateLevel))
     {
         if (Optimizer::cparams.prm_cplusplus && ISKW(lex) && (lex->kw->tokenTypes & TT_BASETYPE))
         {

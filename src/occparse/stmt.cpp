@@ -2973,7 +2973,8 @@ LEXEME* statement(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool viacontro
                   ((!Optimizer::cparams.prm_cplusplus &&
                     ((Optimizer::architecture != ARCHITECTURE_MSIL) || !Optimizer::cparams.msilAllowExtensions)) ||
                    resolveToDeclaration(lex)))) ||
-                MATCHKW(lex, kw_namespace) || MATCHKW(lex, kw_using) || MATCHKW(lex, kw_decltype) || MATCHKW(lex, kw_static_assert))
+                MATCHKW(lex, kw_namespace) || MATCHKW(lex, kw_using) || MATCHKW(lex, kw_constexpr) ||
+                MATCHKW(lex, kw_decltype) || MATCHKW(lex, kw_static_assert))
             {
                 if (!Optimizer::cparams.prm_c99 && !Optimizer::cparams.prm_cplusplus)
                 {
@@ -2987,7 +2988,7 @@ LEXEME* statement(LEXEME* lex, SYMBOL* funcsp, BLOCKDATA* parent, bool viacontro
                          ((!Optimizer::cparams.prm_cplusplus && (Optimizer::architecture != ARCHITECTURE_MSIL)) ||
                           resolveToDeclaration(lex)))) ||
                        MATCHKW(lex, kw_namespace) || MATCHKW(lex, kw_using) || MATCHKW(lex, kw_decltype) ||
-                       MATCHKW(lex, kw_static_assert))
+                       MATCHKW(lex, kw_static_assert) || MATCHKW(lex, kw_constexpr))
                 {
                     STATEMENT* current = parent->tail;
                     declareAndInitialize = false;

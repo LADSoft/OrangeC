@@ -757,10 +757,6 @@ static bool is_convertible_to(LEXEME** lex, SYMBOL* funcsp, SYMBOL* sym, TYPE** 
                     if (basetype(from)->type == bt_rref)
                         rv = false;
             }
-            else
-            {
-                rv = false;
-            }
         }
         if (isfunction(from))
             from = basetype(from)->btp;

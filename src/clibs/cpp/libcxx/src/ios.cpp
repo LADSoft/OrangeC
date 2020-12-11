@@ -136,7 +136,9 @@ ios_base::__call_callbacks(event ev)
 locale
 ios_base::imbue(const locale& newloc)
 {
+#ifndef __ORANGEC__
     static_assert(sizeof(locale) == sizeof(__loc_), "");
+#endif
     locale& loc_storage = *reinterpret_cast<locale*>(&__loc_);
     locale oldloc = loc_storage;
     loc_storage = newloc;

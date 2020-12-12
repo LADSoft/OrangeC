@@ -2823,6 +2823,7 @@ founddecltype:
                             tn = sp->tp;
                         }
                         if (tpx->sp->sb->templateSelector->next->next && tpx->sp->sb->templateSelector->next->sp &&
+                            !tpx->sp->sb->templateSelector->next->isDeclType &&
                             !strcmp(tpx->sp->sb->templateSelector->next->sp->name, tpx->sp->sb->templateSelector->next->next->name))
                         {
                             if (destructor)

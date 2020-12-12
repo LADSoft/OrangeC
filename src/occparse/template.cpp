@@ -9448,6 +9448,8 @@ static void copySyms(SYMBOL* found1, SYMBOL* sym)
 }
 SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
 {
+    if (!strcmp(sp->name, "_EnableIfDeleterConstructible"))
+        printf("hi");
     int n = 1, i = 0;
     TEMPLATEPARAMLIST* unspecialized = sp->templateParams->next;
     SYMBOL *found1 = nullptr, *found2 = nullptr;
@@ -10798,10 +10800,20 @@ SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args)
             return rv;
         }
         SpecifyTemplateSelector(&rv->sb->templateSelector, basetp->sp->sb->templateSelector, false, sp, args, sp->templateParams, sp->sb->typeAlias);
-        TYPE tp1 = { };
-        tp1.type = bt_templateselector;
-        tp1.sp = rv;
-        rv->tp = SynthesizeType(&tp1, args, false);
+        if (!inTemplateHeader)
+        {
+            TYPE tp1 = { };
+            tp1.type = bt_templateselector;
+            tp1.sp = rv;
+            rv->tp = SynthesizeType(&tp1, args, false);
+        }
+        else
+        {
+            TYPE* tp1 = Allocate<TYPE>();
+            tp1->type = bt_templateselector;
+            tp1->sp = rv;
+            rv->tp = tp1;
+        }
     }
     else if (basetp->type == bt_typedef || (isstructured(basetp) && basetype(basetp)->sp->sb->templateLevel))
     {

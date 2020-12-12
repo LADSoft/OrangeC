@@ -9959,7 +9959,9 @@ void SearchAlias(const char *name, TEMPLATEPARAMLIST *x, SYMBOL* sym, TEMPLATEPA
             x->p->byClass.dflt = x->p->byClass.val;
         }
         if (x->p->byClass.dflt)
+        {
             SpecifyOneArg(sym, x, args, origTemplate, origUsing);
+        }
         x->p->replaced = true;
     }
 }
@@ -10798,6 +10800,11 @@ SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args)
             return rv;
         }
         SpecifyTemplateSelector(&rv->sb->templateSelector, basetp->sp->sb->templateSelector, false, sp, args, sp->templateParams, sp->sb->typeAlias);
+        dropStructureDeclaration();
+        if (sp->sb->parentClass && sp->sb->parentClass->templateParams)
+        {
+            dropStructureDeclaration();
+        }
         if (!inTemplateHeader)
         {
             TYPE tp1 = { };
@@ -10812,6 +10819,7 @@ SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args)
             tp1->sp = rv;
             rv->tp = tp1;
         }
+        return rv;
     }
     else if (basetp->type == bt_typedef || (isstructured(basetp) && basetype(basetp)->sp->sb->templateLevel))
     {

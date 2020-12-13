@@ -118,6 +118,12 @@ void dumpInlines(void)
                 if (((sym->sb->attribs.inheritable.isInline && sym->sb->dumpInlineToFile) ||
                      (Optimizer::SymbolManager::Test(sym) && Optimizer::SymbolManager::Test(sym)->genreffed)))
                 {
+                    if (strstr(sym->name, "$bdtr"))
+                        if (strstr(sym->sb->parentClass->sb->decoratedName, "__deque_base"))
+                        {
+                            sym->sb->parentClass = PerformDeferredInitialization(sym->sb->parentClass->tp, nullptr)->sp;
+                            printf("hi");
+                        }
                     if ((sym->sb->parentClass && sym->sb->parentClass->sb->dontinstantiate && !sym->sb->templateLevel) ||
                         sym->sb->attribs.inheritable.linkage2 == lk_import)
                     {
@@ -181,7 +187,9 @@ void dumpInlines(void)
         while (dataList)
         {
             SYMBOL* sym = (SYMBOL*)dataList->data;
-            if (sym->sb->attribs.inheritable.linkage2 != lk_import && sym->sb->storage_class != sc_constant)
+            if (strstr(sym->name, "__block_size"))
+                printf("hi");
+            if (sym->sb->attribs.inheritable.linkage2 != lk_import)
             {
                 if (sym->sb->parentClass && sym->sb->parentClass->sb->parentTemplate)
                 {
@@ -220,14 +228,19 @@ void dumpInlines(void)
                         {
                             STRUCTSYM s1, s;
                             LEXEME* lex;
+                            SYMBOL *pc = sym;
+                            while (pc->sb->parentClass)
+                                pc = pc->sb->parentClass;
                             s1.str = sym->sb->parentClass;
                             addStructureDeclaration(&s1);
                             s.tmpl = sym->templateParams;
                             addTemplateDeclaration(&s);
+                            int n = PushTemplateNamespace(pc);
                             lex = SetAlternateLex(origsym->sb->deferredCompile);
                             sym->sb->init = nullptr;
                             lex = initialize(lex, nullptr, sym, sc_global, true, 0);
                             SetAlternateLex(nullptr);
+                            PopTemplateNamespace(n);
                             dropStructureDeclaration();
                             dropStructureDeclaration();
                         }
@@ -357,6 +370,8 @@ void InsertInline(SYMBOL* sym)
 }
 void InsertInlineData(SYMBOL* sym)
 {
+    if (!strcmp(sym->name, "__block_size"))
+        printf("hi");
     Optimizer::LIST* temp = Allocate<Optimizer::LIST>();
     temp->data = sym;
     if (inlineDataHead)

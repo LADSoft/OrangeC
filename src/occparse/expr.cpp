@@ -411,6 +411,9 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
     }
     if (sym)
     {
+        if (!strcmp(sym->name, "__block_size"))
+            if (sym->sb->parentClass && strstr(sym->sb->parentClass->name, "iterator"))
+                printf("hi");
         SYMLIST* hr;
         browse_usage(sym, lex->linedata->fileindex);
         *tp = sym->tp;
@@ -761,19 +764,16 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                 case sc_global:
                 case sc_external:
                     tagNonConst(funcsp, sym->tp);
-                    if (strSym)
+                    SYMBOL* tpl = sym;
+                    while (tpl)
                     {
-                        SYMBOL* tpl = sym;
-                        while (tpl)
-                        {
-                            if (tpl->sb->templateLevel)
-                                break;
-                            tpl = tpl->sb->parentClass;
-                        }
-                        if (tpl && tpl->sb->instantiated)
-                        {
-                            TemplateDataInstantiate(sym, false, false);
-                        }
+                        if (tpl->sb->templateLevel)
+                            break;
+                        tpl = tpl->sb->parentClass;
+                    }
+                    if (tpl && tpl->sb->instantiated)
+                    {
+                        TemplateDataInstantiate(sym, false, false);
                     }
                     if (sym->sb->parentClass && !isExpressionAccessible(nullptr, sym, funcsp, nullptr, false))
                         errorsym(ERR_CANNOT_ACCESS, sym);

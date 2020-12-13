@@ -950,6 +950,7 @@ struct errl
 #define BAL_PAREN 0
 #define BAL_BRACKET 1
 #define BAL_BEGIN 2
+#define BAL_LT 3
 #define ERRORS struct errl
 
 struct balance

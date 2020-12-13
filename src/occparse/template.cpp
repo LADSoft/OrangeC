@@ -383,7 +383,8 @@ bool exactMatchOnTemplateParams(TEMPLATEPARAMLIST* old, TEMPLATEPARAMLIST* sym)
         else if (old->p->type == kw_int)
         {
             if (!templatecomparetypes(old->p->byNonType.tp, sym->p->byNonType.tp, true))
-                break;
+                if (old->p->byNonType.tp->type != bt_templateparam && sym->p->byNonType.tp->type != bt_templateparam)
+                    break;
             if (old->p->byNonType.dflt && sym->p->byNonType.dflt &&
                 !templatecompareexpressions(old->p->byNonType.dflt, sym->p->byNonType.dflt))
                 break;
@@ -9459,8 +9460,6 @@ static void copySyms(SYMBOL* found1, SYMBOL* sym)
 }
 SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
 {
-    if (!strcmp(sp->name, "__is_implicitly_default_constructible_xxx"))
-        printf("hi");
     int n = 1, i = 0;
     TEMPLATEPARAMLIST* unspecialized = sp->templateParams->next;
     SYMBOL *found1 = nullptr, *found2 = nullptr;

@@ -1124,11 +1124,13 @@ static BALANCE* newbalance(LEXEME* lex, BALANCE* bal)
         rv->type = BAL_PAREN;
     else if (KW(lex) == openbr)
         rv->type = BAL_BRACKET;
+    else if (KW(lex) == lt)
+        rv->type = BAL_LT;
     else
         rv->type = BAL_BEGIN;
     return (rv);
 }
-static void setbalance(LEXEME* lex, BALANCE** bal)
+static void setbalance(LEXEME* lex, BALANCE** bal, bool assumeTemplate)
 {
     switch (KW(lex))
     {
@@ -1156,6 +1158,17 @@ static void setbalance(LEXEME* lex, BALANCE** bal)
             if (*bal && !(--(*bal)->count))
                 (*bal) = (*bal)->back;
             break;
+        case gt:
+        if (assumeTemplate)
+        {
+            while (*bal && (*bal)->type != BAL_LT)
+            {
+                (*bal) = (*bal)->back;
+            }
+            if (*bal && !(--(*bal)->count))
+                (*bal) = (*bal)->back;
+            break;
+        }
         case begin:
             if (!*bal || (*bal)->type != BAL_BEGIN)
                 *bal = newbalance(lex, *bal);
@@ -1172,6 +1185,14 @@ static void setbalance(LEXEME* lex, BALANCE** bal)
                 *bal = newbalance(lex, *bal);
             (*bal)->count++;
             break;
+        case lt:
+            if (assumeTemplate)
+            {
+                if (!*bal || (*bal)->type != BAL_LT)
+                    *bal = newbalance(lex, *bal);
+                (*bal)->count++;
+            }
+            break;
         default:
             break;
     }
@@ -1179,7 +1200,7 @@ static void setbalance(LEXEME* lex, BALANCE** bal)
 
 /*-------------------------------------------------------------------------*/
 
-void errskim(LEXEME** lex, enum e_kw* skimlist)
+void errskim(LEXEME** lex, enum e_kw* skimlist, bool assumeTemplate)
 {
     BALANCE* bal = 0;
     while (true)
@@ -1194,7 +1215,7 @@ void errskim(LEXEME** lex, enum e_kw* skimlist)
                 if (kw == skimlist[i])
                     return;
         }
-        setbalance(*lex, &bal);
+        setbalance(*lex, &bal, assumeTemplate);
         *lex = getsym();
     }
 }

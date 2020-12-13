@@ -3649,7 +3649,8 @@ LEXEME* initType(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_sc sc, INITIALI
             }
             else
             {
-                errskim(&lex, skim_comma);
+                // this assumes that any '<' is related to a template rather than an expression
+                errskim(&lex, skim_comma, true);
             }
             break;
     }

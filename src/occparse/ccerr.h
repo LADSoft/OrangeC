@@ -615,7 +615,7 @@ void errorstringtype(int err, char* str, TYPE* tp1);
 void errortype(int err, TYPE* tp1, TYPE* tp2);
 void errorabstract(int error, SYMBOL* sp);
 void errorarg(int err, int argnum, SYMBOL* declsp, SYMBOL* funcsp);
-void errskim(LEXEME** lex, enum e_kw* skimlist);
+void errskim(LEXEME** lex, enum e_kw* skimlist, bool assumeTemplate = false);
 void skip(LEXEME** lex, enum e_kw kw);
 bool needkw(LEXEME** lex, enum e_kw kw);
 void specerror(int err, const char* name, const char* file, int line);

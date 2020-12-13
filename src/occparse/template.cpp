@@ -4543,7 +4543,7 @@ static void PushPopValues(TEMPLATEPARAMLIST* params, bool push)
         params = params->next;
     }
 }
-static bool Deduce(TYPE* P, TYPE* A, bool change, bool byClass, bool allowSelectors);
+static bool Deduce(TYPE* P, TYPE* A, bool change, bool byClass, bool allowSelectors, bool baseClasses);
 static bool DeduceFromTemplates(TYPE* P, TYPE* A, bool change, bool byClass)
 {
     TYPE* pP = basetype(P);
@@ -4638,7 +4638,7 @@ static bool DeduceFromTemplates(TYPE* P, TYPE* A, bool change, bool byClass)
                     else
                         *tp = TA->p->byClass.val;
                     if (to->p->byClass.dflt && to->p->byClass.val &&
-                        !Deduce(to->p->byClass.dflt, to->p->byClass.val, change, byClass, false))
+                        !Deduce(to->p->byClass.dflt, to->p->byClass.val, change, byClass, false, false))
                         return false;
                     break;
                 }
@@ -4834,9 +4834,9 @@ static bool DeduceFromMemberPointer(TYPE* P, TYPE* A, bool change, bool byClass)
     TYPE* Ab = basetype(A);
     if (Ab->type == bt_memberptr)
     {
-        if (Pb->type != bt_memberptr || !Deduce(Pb->sp->tp, Ab->sp->tp, change, byClass, false))
+        if (Pb->type != bt_memberptr || !Deduce(Pb->sp->tp, Ab->sp->tp, change, byClass, false, false))
             return false;
-        if (!Deduce(Pb->btp, Ab->btp, change, byClass, false))
+        if (!Deduce(Pb->btp, Ab->btp, change, byClass, false, false))
             return false;
         return true;
     }
@@ -4847,9 +4847,9 @@ static bool DeduceFromMemberPointer(TYPE* P, TYPE* A, bool change, bool byClass)
         if (!isfunction(Ab))
             return false;
         if (basetype(Ab)->sp->sb->parentClass == nullptr || !ismember(basetype(Ab)->sp) || Pb->type != bt_memberptr ||
-            !Deduce(Pb->sp->tp, basetype(Ab)->sp->sb->parentClass->tp, change, byClass, false))
+            !Deduce(Pb->sp->tp, basetype(Ab)->sp->sb->parentClass->tp, change, byClass, false, false))
             return false;
-        if (!Deduce(Pb->btp, Ab, change, byClass, false))
+        if (!Deduce(Pb->btp, Ab, change, byClass, false, false))
             return false;
         return true;
     }
@@ -4996,7 +4996,7 @@ static bool DeduceTemplateParam(TEMPLATEPARAMLIST* Pt, TYPE* P, TYPE* A, bool ch
     }
     return false;
 }
-static bool Deduce(TYPE* P, TYPE* A, bool change, bool byClass, bool allowSelectors)
+static bool Deduce(TYPE* P, TYPE* A, bool change, bool byClass, bool allowSelectors, bool baseClasses)
 {
     TYPE *Pin = P, *Ain = A;
     if (!P || !A)
@@ -5084,12 +5084,12 @@ static bool Deduce(TYPE* P, TYPE* A, bool change, bool byClass, bool allowSelect
                 if ((hra->p)->sb->thisPtr)
                     hra = hra->next;
                 clearoutDeduction(P);
-                if (Pb->btp->type != bt_auto && !Deduce(Pb->btp, Ab->btp, change, byClass, allowSelectors))
+                if (Pb->btp->type != bt_auto && !Deduce(Pb->btp, Ab->btp, change, byClass, allowSelectors, baseClasses))
                     return false;
                 while (hra && hrp)
                 {
                     SYMBOL* sp = (SYMBOL*)hrp->p;
-                    if (!Deduce(sp->tp, (hra->p)->tp, change, byClass, allowSelectors))
+                    if (!Deduce(sp->tp, (hra->p)->tp, change, byClass, allowSelectors, baseClasses))
                         return false;
                     if (sp->tp->type == bt_templateparam)
                     {
@@ -5125,7 +5125,13 @@ static bool Deduce(TYPE* P, TYPE* A, bool change, bool byClass, bool allowSelect
             case bt_struct:
             case bt_union:
             case bt_class:
-                return templatecomparetypes(Pb, Ab, true);
+                if (templatecomparetypes(Pb, Ab, true))
+                    return true;
+                if (baseClasses && classRefCount(Pb->sp, Ab->sp) == 1)
+                {
+                    return true;
+                }
+                return false;
             default:
 
                 return true;
@@ -5763,7 +5769,7 @@ static TYPE* GetForwardType(TYPE* A, EXPRESSION *exp)
     }
     return A;
 }
-static bool TemplateDeduceFromArg(TYPE* orig, TYPE* sym, EXPRESSION* exp, bool allowSelectors)
+static bool TemplateDeduceFromArg(TYPE* orig, TYPE* sym, EXPRESSION* exp, bool allowSelectors, bool baseClasses)
 {
     TYPE *P = orig, *A = sym;
     if (!isref(P))
@@ -5804,7 +5810,7 @@ static bool TemplateDeduceFromArg(TYPE* orig, TYPE* sym, EXPRESSION* exp, bool a
             return true;
         return false;
     }
-    if (Deduce(P, A, true, false, allowSelectors))
+    if (Deduce(P, A, true, false, allowSelectors, baseClasses))
     {
         return true;
     }
@@ -5829,7 +5835,7 @@ static bool TemplateDeduceFromArg(TYPE* orig, TYPE* sym, EXPRESSION* exp, bool a
                 {
                     SYMBOL* sym = hr->p;
                     clearoutDeduction(P);
-                    if (Deduce(P->btp, sym->tp, false, false, allowSelectors))
+                    if (Deduce(P->btp, sym->tp, false, false, allowSelectors, baseClasses))
                     {
                         if (candidate)
                             return false;
@@ -5839,7 +5845,7 @@ static bool TemplateDeduceFromArg(TYPE* orig, TYPE* sym, EXPRESSION* exp, bool a
                     hr = hr->next;
                 }
                 if (candidate)
-                    return Deduce(P, candidate->tp, true, false, allowSelectors);
+                    return Deduce(P, candidate->tp, true, false, allowSelectors, baseClasses);
             }
         }
     }
@@ -5853,7 +5859,7 @@ void NormalizePacked(TYPE* tpo)
     if (basetype(tp)->templateParam)
         tpo->templateParam = basetype(tp)->templateParam;
 }
-static bool TemplateDeduceArgList(SYMLIST* funcArgs, SYMLIST* templateArgs, INITLIST* symArgs, bool allowSelectors)
+static bool TemplateDeduceArgList(SYMLIST* funcArgs, SYMLIST* templateArgs, INITLIST* symArgs, bool allowSelectors, bool baseClasses)
 {
     bool rv = true;
     while (templateArgs && symArgs)
@@ -5867,7 +5873,7 @@ static bool TemplateDeduceArgList(SYMLIST* funcArgs, SYMLIST* templateArgs, INIT
                 TEMPLATEPARAMLIST* params = sp->tp->templateParam->p->byPack.pack;
                 while (params && symArgs)
                 {
-                    if (!TemplateDeduceFromArg(params->p->byClass.val, symArgs->tp, symArgs->exp, allowSelectors))
+                    if (!TemplateDeduceFromArg(params->p->byClass.val, symArgs->tp, symArgs->exp, allowSelectors, baseClasses))
                     {
                         rv = false;
                     }
@@ -5892,7 +5898,7 @@ static bool TemplateDeduceArgList(SYMLIST* funcArgs, SYMLIST* templateArgs, INIT
         }
         else
         {
-            if (!TemplateDeduceFromArg(sp->tp, symArgs->tp, symArgs->exp, allowSelectors))
+            if (!TemplateDeduceFromArg(sp->tp, symArgs->tp, symArgs->exp, allowSelectors, baseClasses))
                 rv = false;
             symArgs = symArgs->next;
             if (funcArgs)
@@ -6286,7 +6292,7 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
                     break;
                 if (!params || !params->p->byClass.dflt)
                 {
-                    if (TemplateDeduceFromArg(sp->tp, symArgs->tp, symArgs->exp, false))
+                    if (TemplateDeduceFromArg(sp->tp, symArgs->tp, symArgs->exp, false, false))
                     {
                         if (isstructured(sp->tp) && basetype(sp->tp)->sp->templateParams)
                         {
@@ -6343,7 +6349,7 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
         }
         else
         {
-            bool rv = TemplateDeduceArgList(basetype(sym->tp)->syms->table[0], templateArgs, symArgs, false);
+            bool rv = TemplateDeduceArgList(basetype(sym->tp)->syms->table[0], templateArgs, symArgs, false, true);
             if (!rv)
             {
                 if (!allTemplateArgsSpecified(sym, nparams->next))
@@ -6396,7 +6402,7 @@ static bool TemplateDeduceFromType(TYPE* P, TYPE* A)
     if (P->type == bt_templatedecltype)
         P = LookupTypeFromExpression(P->templateDeclType, nullptr, false);
     if (P)
-        return Deduce(P, A, true, false, false);
+        return Deduce(P, A, true, false, false, false);
     return false;
 }
 SYMBOL* TemplateDeduceWithoutArgs(SYMBOL* sym)
@@ -6517,7 +6523,7 @@ int TemplatePartialDeduceFromType(TYPE* orig, TYPE* sym, bool byClass)
     }
     A = RemoveCVQuals(A);
     P = RemoveCVQuals(P);
-    if (!Deduce(P, A, true, byClass, false))
+    if (!Deduce(P, A, true, byClass, false, false))
         return 0;
     return which;
 }
@@ -8232,7 +8238,7 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* unspecialize
                             if (params->p->type == kw_typename)
                             {
                                 if (params->p->byClass.dflt &&
-                                    !Deduce(params->p->byClass.dflt, params->p->byClass.val, true, true, false))
+                                    !Deduce(params->p->byClass.dflt, params->p->byClass.val, true, true, false, false))
                                     rv = nullptr;
                                 else
                                     TransferClassTemplates(params, params, nparams->next);

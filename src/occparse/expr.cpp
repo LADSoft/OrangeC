@@ -907,7 +907,7 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
         {
             *exp = exprNode(en_templateselector, nullptr, nullptr);
             (*exp)->v.templateSelector = strSym->tp->sp->sb->templateSelector;
-            *tp = &stdany;
+            *tp = strSym->tp;
             lex = getsym();
             if (MATCHKW(lex, lt))
             {
@@ -918,7 +918,7 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
         }
         if (strSym && basetype(strSym->tp)->type == bt_templatedecltype)
         {
-            *tp = &stdany;
+            *tp = strSym->tp;
             *exp = intNode(en_c_i, 0);
             lex = getsym();
             return lex;

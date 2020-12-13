@@ -390,6 +390,7 @@ static char* mangleExpressionInternal(char* buf, EXPRESSION* exp)
                 {
                     *buf++ = 't';
                     buf = lookupName(buf, find->name);
+                    buf += strlen(buf);
                     find = find->next;
                 }
                 *buf = 0;

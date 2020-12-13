@@ -2697,9 +2697,7 @@ static SYMBOL* getUserConversion(int flags, TYPE* tpp, TYPE* tpa, EXPRESSION* ex
                     int n1;
                     for (n1 = 0; n1 < i; n1++)
                         if (spFilterList[n1] == sym || spFilterList[n1]->sb->mainsym == sym ||
-                            spFilterList[n1] == sym->sb->mainsym ||
-                            (matchOverload(sym->tp, spFilterList[n1]->tp, false) &&
-                             sym->sb->overlayIndex == spFilterList[n1]->sb->overlayIndex))
+                            spFilterList[n1] == sym->sb->mainsym)
                             break;
                     if (!sym->sb->instantiated && n1 >= i)
                     {

@@ -2426,7 +2426,9 @@ struct _LIBCPP_TYPE_VIS_ONLY default_delete
              typename enable_if<is_convertible<_Up*, _Tp*>::value>::type* = 0) _NOEXCEPT {}
     _LIBCPP_INLINE_VISIBILITY void operator() (_Tp* __ptr) const _NOEXCEPT
         {
+#ifndef __ORANGEC__
             static_assert(sizeof(_Tp) > 0, "default_delete can not delete incomplete type");
+#endif
             static_assert(!is_void<_Tp>::value, "default_delete can not delete incomplete type");
             delete __ptr;
         }

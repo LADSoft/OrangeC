@@ -5241,8 +5241,8 @@ static bool ValidArg(TYPE* tp)
                 }
                 if (sp)
                 {
-                    sp->tp = basetype(PerformDeferredInitialization(sp->tp, nullptr));
-                    sp = sp->tp->sp;
+                    sp->tp = PerformDeferredInitialization(sp->tp, nullptr);
+                    sp = basetype(sp->tp)->sp;
                     while (find && sp)
                     {
                         SYMBOL* spo = sp;

@@ -584,6 +584,7 @@ static struct
     {"Missing 'typename' in front of dependent type '%s'", ERROR },
     {"'typename' only used for dependent types", WARNING },
     {"Function '%s' already has a body", ERROR },
+    {"static_assert generated: %s", ERROR },
 };
 void EnterInstantiation(LEXEME* lex, SYMBOL *sym)
 {

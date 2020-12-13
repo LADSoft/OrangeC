@@ -533,6 +533,7 @@
 #define ERR_DEPENDENT_TYPE_NEEDS_TYPENAME 507
 #define ERR_NO_TYPENAME_HERE 508
 #define ERR_FUNCTION_HAS_BODY 509
+#define ERR_STATIC_ASSERT 510
 
 void diag(const char* fmt, ...);
 

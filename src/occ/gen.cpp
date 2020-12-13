@@ -3588,6 +3588,7 @@ void asm_assn(Optimizer::QUAD* q) /* assignment */
         szl = q->dc.left->size;
         if (szl < 0)
             szl = -szl;
+        // next is for sized constants
         getAmodes(q, &opl, q->dc.left, &apl, &apl1);
     }
     else if (q->dc.opcode == Optimizer::i_icon)
@@ -3810,6 +3811,10 @@ void asm_assn(Optimizer::QUAD* q) /* assignment */
                         gen_codes(opl, q->dc.left->size, apa, apl);
                         gen_codes(op_cmp, q->dc.left->size, apa, aimmed(0));
                         gen_codes(op_setne, q->ans->size, apa, nullptr);
+                    }
+                    else if (szl == ISZ_ULONGLONG)
+                    {
+                        gen_codes(opl, q->ans->size, apa, apl);
                     }
                     else
                     {

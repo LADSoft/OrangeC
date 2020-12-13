@@ -157,6 +157,8 @@ ifdef STLPORT
 else
 	$(COPYDIR) cpp\libcxx\include\%. $(DISTINC)
 	$(COPYDIR) cpp\libcxx\include\%.h $(DISTINC)
+	$(COPYDIR) cpp\libcxx\include\support\win32\%. $(DISTINC)\support\win32
+	$(COPYDIR) cpp\libcxx\include\support\win32\%.h $(DISTINC)\support\win32
 	$(COPYDIR) cpp\stdinc_libcxx\%. $(DISTINC)
 	$(COPYDIR) cpp\stdinc_libcxx\%.h $(DISTINC)
 endif

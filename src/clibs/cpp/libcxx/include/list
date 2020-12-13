@@ -814,8 +814,10 @@ class _LIBCPP_TYPE_VIS_ONLY list
 public:
     typedef _Tp                                      value_type;
     typedef _Alloc                                   allocator_type;
+#ifndef __ORANGEC__
     static_assert((is_same<value_type, typename allocator_type::value_type>::value),
                   "Invalid allocator::value_type");
+#endif
     typedef value_type&                              reference;
     typedef const value_type&                        const_reference;
     typedef typename base::pointer                   pointer;

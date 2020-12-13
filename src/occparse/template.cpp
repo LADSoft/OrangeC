@@ -81,6 +81,7 @@ static LEXEME* TemplateArg(LEXEME* lex, SYMBOL* funcsp, TEMPLATEPARAMLIST* arg, 
 TEMPLATEPARAMLIST* copyParams(TEMPLATEPARAMLIST* t, bool alsoSpecializations);
 static bool valFromDefault(TEMPLATEPARAMLIST* params, bool usesParams, INITLIST** args);
 static TEMPLATEPARAMLIST* ResolveTemplateSelectors(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool byVal);
+TEMPLATEPARAMLIST* ResolveDeclType(SYMBOL* sp, TEMPLATEPARAMLIST* tpl);
 static TEMPLATEPARAMLIST* GetTypeAliasArgs(SYMBOL* sp, TEMPLATEPARAMLIST* args, TEMPLATEPARAMLIST* origTemplate, TEMPLATEPARAMLIST* origUsing);
 static void TransferClassTemplates(TEMPLATEPARAMLIST* dflt, TEMPLATEPARAMLIST* val, TEMPLATEPARAMLIST* params);
 
@@ -8226,7 +8227,8 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* unspecialize
                     {
                         TEMPLATEPARAMLIST* next = params->next;
                         params->next = nullptr;
-                        auto temp = ResolveTemplateSelectors(sp, params, false);
+                        auto temp = ResolveDeclType(sp, params);
+                        temp = ResolveTemplateSelectors(sp, temp, false);
                         params->p->byClass.val = temp->p->byClass.dflt;
                         params->next = next;
                     }
@@ -8295,7 +8297,8 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* unspecialize
                 {
                     TEMPLATEPARAMLIST* next = primary->next;
                     primary->next = nullptr;
-                    auto temp = ResolveTemplateSelectors(sp, primary, false);
+                    auto temp = ResolveDeclType(sp, primary);
+                    temp = ResolveTemplateSelectors(sp, temp, false);
                     if (primary->p->byClass.dflt != temp->p->byClass.dflt)
                     {
                         primary->p->byClass.val = temp->p->byClass.dflt;
@@ -8340,6 +8343,8 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* unspecialize
                         {
                             case kw_typename:
                                 if (params->p->byClass.dflt->type != bt_templateparam &&
+                                    params->p->byClass.dflt->type != bt_templateselector &&
+                                    params->p->byClass.dflt->type != bt_templatedecltype &&
                                     (!isstructured(params->p->byClass.dflt) || !basetype(params->p->byClass.dflt)->sp->templateParams) &&
                                     !templatecomparetypes(params->p->byClass.val, params->p->byClass.dflt, true))
                                     rv = nullptr;
@@ -9454,6 +9459,8 @@ static void copySyms(SYMBOL* found1, SYMBOL* sym)
 }
 SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
 {
+    if (!strcmp(sp->name, "__is_implicitly_default_constructible_xxx"))
+        printf("hi");
     int n = 1, i = 0;
     TEMPLATEPARAMLIST* unspecialized = sp->templateParams->next;
     SYMBOL *found1 = nullptr, *found2 = nullptr;
@@ -10817,6 +10824,8 @@ SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args)
             tp1.type = bt_templateselector;
             tp1.sp = rv;
             rv->tp = SynthesizeType(&tp1, args, false);
+            if (isstructured(rv->tp))
+                rv = basetype(rv->tp)->sp;
         }
         else
         {

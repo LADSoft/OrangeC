@@ -596,7 +596,7 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
                                     sp->sb->mainsym->sb->templateLevel)
                                 {
                                     SYMBOL* sp1 = GetTypeAliasSpecialization(sp->sb->mainsym, current);
-                                    if (sp1 && sp1->sb->instantiated)
+                                    if (sp1 && (!sp1->sb->templateLevel || sp1->sb->instantiated))
                                     {
                                         sp = sp1;
                                         qualified = false;

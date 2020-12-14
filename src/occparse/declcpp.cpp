@@ -2884,13 +2884,9 @@ LEXEME* handleStaticAssert(LEXEME* lex)
             error(ERR_CONSTANT_VALUE_EXPECTED);
         v = expr2->v.i;
 
-        if (!needkw(&lex, comma))
+        if (MATCHKW(lex, comma))
         {
-            errskim(&lex, skim_closepa);
-            skip(&lex, closepa);
-        }
-        else
-        {
+            lex = getsym();
             if (lex->type != l_astr)
             {
                 error(ERR_NEEDSTRING);
@@ -2908,15 +2904,19 @@ LEXEME* handleStaticAssert(LEXEME* lex)
                 }
                 buf[pos] = 0;
             }
-            if (!needkw(&lex, closepa))
-            {
-                errskim(&lex, skim_closepa);
-                skip(&lex, closepa);
-            }
-            else if (!v && (!templateNestingCount))  // || instantiatingTemplate))
-            {
-                errorstr(ERR_PURESTRING, buf);
-            }
+        }
+        else
+        {
+            strcpy(buf, "(unspecified)");
+        }
+        if (!needkw(&lex, closepa))
+        {
+            errskim(&lex, skim_closepa);
+            skip(&lex, closepa);
+        }
+        else if (!v && (!templateNestingCount))  // || instantiatingTemplate))
+        {
+            errorstr(ERR_STATIC_ASSERT, buf);
         }
     }
     return lex;

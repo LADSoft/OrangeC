@@ -66,12 +66,12 @@ extern "C"
 extern "C" void __load_local_data(void);
 
 typedef std::map<HANDLE, std::pair<void*, void*>, std::less<HANDLE>,
-                 LocalAllocAllocator<std::pair<HANDLE, std::pair<void*, void*>>>>
+                 LocalAllocAllocator<std::pair<const HANDLE, std::pair<void*, void*>>>>
     Registered;
 
-typedef std::map<HANDLE, void*, std::less<HANDLE>, LocalAllocAllocator<std::pair<HANDLE, void*>>> HandleMap;
+typedef std::map<HANDLE, void*, std::less<HANDLE>, LocalAllocAllocator<std::pair<const HANDLE, void*>>> HandleMap;
 
-typedef std::map<int, HandleMap, std::less<int>, LocalAllocAllocator<std::pair<int, HandleMap>>> Handles;
+typedef std::map<int, HandleMap, std::less<int>, LocalAllocAllocator<std::pair<const int, HandleMap>>> Handles;
 
 static Registered* registered;
 static Handles* handles;

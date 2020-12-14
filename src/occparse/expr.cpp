@@ -763,6 +763,7 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                     sym->sb->attribs.inheritable.used = true;
                 case sc_global:
                 case sc_external:
+                {
                     tagNonConst(funcsp, sym->tp);
                     SYMBOL* tpl = sym;
                     while (tpl)
@@ -786,6 +787,7 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                         deref(&stdpointer, exp);
                     }
                     break;
+                }
                 case sc_namespace:
                 case sc_namespacealias:
                     errorsym(ERR_INVALID_USE_OF_NAMESPACE, sym);

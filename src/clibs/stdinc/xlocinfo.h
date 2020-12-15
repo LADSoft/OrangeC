@@ -230,7 +230,7 @@ _locale_t _RTL_FUNC _GetLocaleForCP(unsigned int);
 // unix
 inline locale_t uselocale(locale_t a) { return 0; }
 inline void _free_locale(locale_t a) { }
-void* newlocale(int __mask, const char *__locale, void* __base) { return 0; }
+inline void* newlocale(int __mask, const char *__locale, void* __base) { return 0; }
 
 #ifdef __cplusplus
 }

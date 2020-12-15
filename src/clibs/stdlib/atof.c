@@ -434,3 +434,4 @@ float _RTL_FUNC strtof(const char* restrict string, char** restrict endptr)
 }
 double _RTL_FUNC atof(const char* string) { return ((double)__strtod(string, 0, 256, DBL_MAX, DBL_MAX_EXP, DBL_MAX_10_EXP, 1)); }
 long double _RTL_FUNC _atold(const char* string) { return (__strtod(string, 0, 256, LDBL_MAX, LDBL_MAX_EXP, LDBL_MAX_10_EXP, 1)); }
+

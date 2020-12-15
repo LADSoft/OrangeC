@@ -35,6 +35,7 @@
 
 ASM_DEPENDENCIES = $(wildcard 386/*.nas)
 C_DEPENDENCIES = $(wildcard *.c)
+CPP_DEPENDENCIES = $(wildcard *.cpp)
 CIL_DEPENDENCIES = $(wildcard *.c) $(wildcard cil/*.c)
 H_FILES=$(wildcard *.h)
 

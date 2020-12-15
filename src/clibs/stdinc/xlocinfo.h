@@ -80,9 +80,13 @@ typedef struct _Cvtvec {
 
     inline int _isdigit_l(int c, _locale_t larg) { return c >= '0' && c <= '9'; }
     inline int _isxdigit_l(int c, _locale_t larg) { return c >= '0' && c <= '9' || c >= 'a' && c <= 'f' || c >= 'A' && c <= 'F'; }
-    inline long long _strtod_l(const char* ZSTR restrict __s, char* ZSTR* restrict __endptr, _locale_t larg)
+    inline double _strtod_l(const char* ZSTR restrict __s, char* ZSTR* restrict __endptr, _locale_t larg)
     {
         return strtod(__s, __endptr);
+    }
+    inline long double _strtold_l(const char* ZSTR restrict __s, char* ZSTR* restrict __endptr, _locale_t larg)
+    {
+        return strtold(__s, __endptr);
     }
     inline long long _strtoll_l(const char* ZSTR restrict __s, char* ZSTR* restrict __endptr, int __radix, _locale_t larg)
     {
@@ -91,10 +95,6 @@ typedef struct _Cvtvec {
     inline long long _strtoull_l(const char* ZSTR restrict __s, char* ZSTR* restrict __endptr, int __radix, _locale_t larg)
     {
         return strtoull(__s, __endptr, __radix);
-    }
-    inline long double _strtold_l(const char* ZSTR restrict __s, char* ZSTR* restrict __endptr, _locale_t larg)
-    {
-        return strtold(__s, __endptr);
     }
     inline int _sscanf_l(const char* ZSTR restrict __buffer, const char* ZSTR restrict __format, _locale_t larg, ...)
     {
@@ -230,7 +230,7 @@ _locale_t _RTL_FUNC _GetLocaleForCP(unsigned int);
 // unix
 inline locale_t uselocale(locale_t a) { return 0; }
 inline void _free_locale(locale_t a) { }
-void* newlocale(int __mask, const char *__locale, void* __base);
+void* newlocale(int __mask, const char *__locale, void* __base) { return 0; }
 
 #ifdef __cplusplus
 }

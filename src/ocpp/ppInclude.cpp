@@ -277,6 +277,10 @@ std::string ppInclude::SrchPath(bool system, const std::string& name, const std:
 				// TODO: find a fix that's faster than this, if compiled with any compiler that has vectorization this should be faster than strlen
 				// A possible fix to make this faster is to use std::string but that requires more knowledge than I have atm
 				memset(buf, 0, 260);
+				if (path == nullptr)
+				{
+					return "";
+				}
 				path = RetrievePath(buf, path);
 				if (!buf) // check if we haven't hit the end of all include paths yet, if we have, break and let FindFile handle the rest
 				{
@@ -289,6 +293,10 @@ std::string ppInclude::SrchPath(bool system, const std::string& name, const std:
 		else
 		{
 			path = RetrievePath(buf, path);
+		}
+		if (path == nullptr && skipUntilDepth)
+		{
+			return "";
 		}
 		if (reachedEndOfBuf)
 		{

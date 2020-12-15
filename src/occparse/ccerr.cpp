@@ -807,7 +807,8 @@ bool printerrinternal(int err, const char* file, int line, va_list args)
     const char* listerr;
     char nameb[265], *name = nameb;
     if (Optimizer::cparams.prm_makestubs || inDeduceArgs || (templateNestingCount && ignoreErrtemplateNestingCount(err)))
-        return false;
+        if (err != ERR_STATIC_ASSERT && !(errors[err].level & NOTE))
+            return false;
     if (!file)
     {
         if (context)

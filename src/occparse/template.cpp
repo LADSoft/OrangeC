@@ -8616,15 +8616,20 @@ void TemplateArgsAdd(TEMPLATEPARAMLIST* current, TEMPLATEPARAMLIST* dflt, TEMPLA
             {
                 if (base->p->byPack.pack)
                 {
-                    base->p->byPack.pack->p->byClass.val = current->p->byClass.val;
-                    base->p->byPack.pack->next = nullptr;
+                    TEMPLATEPARAMLIST *last = base->p->byPack.pack;
+                    TEMPLATEPARAMLIST *cur = current;
+                    while (cur && last)
+                    {
+                        last->p->byClass.val = cur->p->byClass.val;
+                        last = last->next;
+                        cur = cur->next;
+                    }
                 }
                 else
                 {
                     base->p->byPack.pack = Allocate<TEMPLATEPARAMLIST>();
                     base->p->byPack.pack->p = Allocate<TEMPLATEPARAM>();
                     *base->p->byPack.pack->p = *current->p;
-                    base->p->byPack.pack->next = nullptr;
                 }
             }
         }
@@ -9460,6 +9465,8 @@ static void copySyms(SYMBOL* found1, SYMBOL* sym)
 }
 SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
 {
+    if (!strcmp(sp->name, "conditional"))
+        printf("hi");
     int n = 1, i = 0;
     TEMPLATEPARAMLIST* unspecialized = sp->templateParams->next;
     SYMBOL *found1 = nullptr, *found2 = nullptr;
@@ -9911,7 +9918,7 @@ bool ReplaceIntAliasParams(EXPRESSION**exp, SYMBOL* sym, TEMPLATEPARAMLIST* args
         rv |= ReplaceIntAliasParams(&(*exp)->left, sym, args, origTemplate, origUsing);
     if ((*exp)->right)
         rv |= ReplaceIntAliasParams(&(*exp)->right, sym, args, origTemplate, origUsing);
-    else if ((*exp)->type == en_templateparam)
+    if ((*exp)->type == en_templateparam)
     {
         const char *name = (*exp)->v.sp->name;
         TEMPLATEPARAMLIST* found = TypeAliasSearch(name);
@@ -10048,6 +10055,8 @@ void SpecifyTemplateSelector(TEMPLATESELECTOR** rvs, TEMPLATESELECTOR* old, bool
                                 // go through the type & expression trees to locate such things...
                                 if ((*x)->p->replaced)
                                     SearchAlias(name, *x, sym, args, origTemplate, origUsing);
+                                else
+                                    SpecifyOneArg(sym, *x, args, origTemplate, origUsing);
                             }
                             else
                             {
@@ -10107,29 +10116,18 @@ static EXPRESSION* SpecifyArgInt(SYMBOL* sym, EXPRESSION* exp, TEMPLATEPARAMLIST
                         }
                         if (dflt)
                         {
-                            // typename, allocate space for a type and initialize it...
+                            // typename, allocate space for a type...
                             if (isstructured(dflt))
                             {
-                                EXPRESSION* dexp = exp;
-                                EXPRESSION* var = anonymousVar(sc_auto, dflt);
-                                TYPE* ctype = dflt;
-                                callConstructorParam(&ctype, &exp, nullptr, nullptr, true, true, true, false, true);
-                                callDestructor(var->v.sp, nullptr, &dexp, nullptr, true, false, false, true);
-                                if (dexp)
-                                {
-                                    initInsert(&var->v.sp->sb->dest, dflt, exp, 0, false);
-                                }
-
+                                exp = anonymousVar(sc_auto, dflt);
                             }
                             else
                             {
-                                exp = intNode(en_c_i, 0);
+                                exp = anonymousVar(sc_auto, dflt);
                                 if (isref(dflt))
                                 {
                                     TYPE *tp1 = basetype(dflt)->btp;
-                                    EXPRESSION* var = anonymousVar(sc_auto, dflt);
                                     deref(tp1, &exp);
-                                    exp = exprNode(en_assign, var, exp);
                                 }
                                 else
                                 {
@@ -10774,6 +10772,8 @@ TEMPLATEPARAMLIST* GetTypeAliasArgs(SYMBOL* sp, TEMPLATEPARAMLIST* args, TEMPLAT
 }
 SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args)
 {
+    if (!strcmp(sp->name, "_CheckTLC"))
+        printf("hi");
     if (reflectUsingType)
         return sp;
     SYMBOL* rv;

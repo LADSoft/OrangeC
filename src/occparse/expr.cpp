@@ -7820,6 +7820,8 @@ LEXEME* expression_assign(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
                 continue;
         }
         lex = getsym();
+        if (strstr(lex->errfile, "t4"))
+            printf("hi");
         switch (kw)
         {
             case assign:

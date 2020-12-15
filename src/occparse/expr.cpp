@@ -411,9 +411,6 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
     }
     if (sym)
     {
-        if (!strcmp(sym->name, "__block_size"))
-            if (sym->sb->parentClass && strstr(sym->sb->parentClass->name, "iterator"))
-                printf("hi");
         SYMLIST* hr;
         browse_usage(sym, lex->linedata->fileindex);
         *tp = sym->tp;
@@ -7820,8 +7817,6 @@ LEXEME* expression_assign(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXP
                 continue;
         }
         lex = getsym();
-        if (strstr(lex->errfile, "t4"))
-            printf("hi");
         switch (kw)
         {
             case assign:

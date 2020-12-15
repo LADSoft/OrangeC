@@ -118,12 +118,6 @@ void dumpInlines(void)
                 if (((sym->sb->attribs.inheritable.isInline && sym->sb->dumpInlineToFile) ||
                      (Optimizer::SymbolManager::Test(sym) && Optimizer::SymbolManager::Test(sym)->genreffed)))
                 {
-                    if (strstr(sym->name, "$bdtr"))
-                        if (strstr(sym->sb->parentClass->sb->decoratedName, "__deque_base"))
-                        {
-                            sym->sb->parentClass = PerformDeferredInitialization(sym->sb->parentClass->tp, nullptr)->sp;
-                            printf("hi");
-                        }
                     if ((sym->sb->parentClass && sym->sb->parentClass->sb->dontinstantiate && !sym->sb->templateLevel) ||
                         sym->sb->attribs.inheritable.linkage2 == lk_import)
                     {
@@ -187,8 +181,6 @@ void dumpInlines(void)
         while (dataList)
         {
             SYMBOL* sym = (SYMBOL*)dataList->data;
-            if (strstr(sym->name, "__block_size"))
-                printf("hi");
             if (sym->sb->attribs.inheritable.linkage2 != lk_import)
             {
                 if (sym->sb->parentClass && sym->sb->parentClass->sb->parentTemplate)
@@ -370,8 +362,6 @@ void InsertInline(SYMBOL* sym)
 }
 void InsertInlineData(SYMBOL* sym)
 {
-    if (!strcmp(sym->name, "__block_size"))
-        printf("hi");
     Optimizer::LIST* temp = Allocate<Optimizer::LIST>();
     temp->data = sym;
     if (inlineDataHead)

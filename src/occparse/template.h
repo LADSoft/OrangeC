@@ -96,7 +96,7 @@ SYMBOL* TemplateClassInstantiateInternal(SYMBOL* sym, TEMPLATEPARAMLIST* args, b
 SYMBOL* TemplateClassInstantiate(SYMBOL* sym, TEMPLATEPARAMLIST* args, bool isExtern, enum e_sc storage_class);
 void TemplateDataInstantiate(SYMBOL* sym, bool warning, bool isExtern);
 SYMBOL* TemplateFunctionInstantiate(SYMBOL* sym, bool warning, bool isExtern);
-bool allTemplateArgsSpecified(SYMBOL* sym, TEMPLATEPARAMLIST* args);
+bool allTemplateArgsSpecified(SYMBOL* sym, TEMPLATEPARAMLIST* args, bool checkDeduced = false);
 void DuplicateTemplateParamList(TEMPLATEPARAMLIST** pptr);
 SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr);
 SYMBOL* GetVariableTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args);

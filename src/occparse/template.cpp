@@ -4444,6 +4444,8 @@ static void ClearArgValues(TEMPLATEPARAMLIST* params, bool specialized)
 {
     while (params)
     {
+        params->p->deduced = false;
+        params->p->initialized = false;
         if (params->p->type != kw_new)
         {
             if (params->p->packed)
@@ -4638,7 +4640,10 @@ static bool DeduceFromTemplates(TYPE* P, TYPE* A, bool change, bool byClass)
                             return false;
                     }
                     else
+                    {
                         *tp = TA->p->byClass.val;
+                    }
+                    to->p->deduced = true;
                     if (to->p->byClass.dflt && to->p->byClass.val &&
                         !Deduce(to->p->byClass.dflt, to->p->byClass.val, change, byClass, false, false))
                         return false;
@@ -4671,6 +4676,7 @@ static bool DeduceFromTemplates(TYPE* P, TYPE* A, bool change, bool byClass)
                     {
                     }
                     exp = change ? &to->p->byNonType.val : &to->p->byNonType.temp;
+                    to->p->deduced = true;
                     *exp = TA->p->byNonType.val;
                     if (to->p->byNonType.dflt && to->p->byNonType.val &&
                         !equalTemplateIntNode(to->p->byNonType.dflt, *exp))
@@ -4733,6 +4739,7 @@ static bool DeduceFromTemplates(TYPE* P, TYPE* A, bool change, bool byClass)
                                 {
                                     *tp = TA->p->byClass.val;
                                 }
+                                TP->p->deduced = true;
                                 break;
                             }
                             case kw_template:
@@ -4951,12 +4958,14 @@ static bool DeduceTemplateParam(TEMPLATEPARAMLIST* Pt, TYPE* P, TYPE* A, bool ch
                     if (isconst(q))
                     {
                         *tp = FixConsts(P, A);
+                        Pt->p->deduced = true;
                         return true;
                     }
                     q = basetype(q)->btp;
                 }
             }
             *tp = A;
+            Pt->p->deduced = true;
         }
         return true;
     }
@@ -4990,8 +4999,10 @@ static bool DeduceTemplateParam(TEMPLATEPARAMLIST* Pt, TYPE* P, TYPE* A, bool ch
         if (!primary && !match)
         {
             SYMBOL** sp = change ? &Pt->p->byTemplate.val : &Pt->p->byTemplate.temp;
+            Pt->p->deduced = true;
             *sp = basetype(A)->sp;
             sp = change ? &Pt->p->byTemplate.orig->p->byTemplate.val : &Pt->p->byTemplate.orig->p->byTemplate.temp;
+            Pt->p->byTemplate.orig->p->deduced = true;
             *sp = basetype(A)->sp;
             return true;
         }
@@ -6242,6 +6253,7 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
                 tis.pop();
             }
         }
+        bool allArgsSpecified = params == nullptr;
 
         // check the specialization list for validity
         params = nparams->p->bySpecialization.types;
@@ -6354,16 +6366,8 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
             bool rv = TemplateDeduceArgList(basetype(sym->tp)->syms->table[0], templateArgs, symArgs, false, true);
             if (!rv)
             {
-                if (!allTemplateArgsSpecified(sym, nparams->next))
+                if (!allTemplateArgsSpecified(sym, nparams->next, true))
                     return nullptr;
-/*                params = nparams->next;
-                while (params)
-                {
-                    if (params->p->packed && !params->p->byPack.pack)
-                        return nullptr;
-                    params = params->next;
-                }
- */
             }
             SYMLIST* hr = basetype(sym->tp)->syms->table[0];
             while (hr)
@@ -8455,7 +8459,7 @@ static SYMBOL* ValidateClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* unspecialize
     }
     return rv;
 }
-static bool checkArgType(TYPE* tp)
+static bool checkArgType(TYPE* tp, bool checkDeduced)
 {
     while (ispointer(tp) || isref(tp))
         tp = basetype(tp)->btp;
@@ -8463,14 +8467,14 @@ static bool checkArgType(TYPE* tp)
     {
         SYMLIST* hr;
         SYMBOL* sym = basetype(tp)->sp;
-        if (!checkArgType(basetype(tp)->btp))
+        if (!checkArgType(basetype(tp)->btp, checkDeduced))
             return false;
         if (sym->tp->syms)
         {
             hr = sym->tp->syms->table[0];
             while (hr)
             {
-                if (!checkArgType(hr->p->tp))
+                if (!checkArgType(hr->p->tp, checkDeduced))
                     return false;
                 hr = hr->next;
             }
@@ -8484,7 +8488,7 @@ static bool checkArgType(TYPE* tp)
                 return true;
             if (basetype(tp)->sp->sb->templateLevel)
             {
-                return allTemplateArgsSpecified(basetype(tp)->sp, basetype(tp)->sp->templateParams->next);
+                return allTemplateArgsSpecified(basetype(tp)->sp, basetype(tp)->sp->templateParams->next, checkDeduced);
             }
         }
     }
@@ -8501,14 +8505,14 @@ static bool checkArgType(TYPE* tp)
     }
     else if (basetype(tp)->type == bt_memberptr)
     {
-        if (!checkArgType(basetype(tp)->sp->tp))
+        if (!checkArgType(basetype(tp)->sp->tp, checkDeduced))
             return false;
-        if (!checkArgType(basetype(tp)->btp))
+        if (!checkArgType(basetype(tp)->btp, checkDeduced))
             return false;
     }
     return true;
 }
-static bool checkArgSpecified(TEMPLATEPARAMLIST* args)
+static bool checkArgSpecified(TEMPLATEPARAMLIST* args, bool checkDeduced)
 {
     if (!args->p->byClass.val)
         return false;
@@ -8560,20 +8564,20 @@ static bool checkArgSpecified(TEMPLATEPARAMLIST* args)
         }
         case kw_typename:
         {
-            return checkArgType(args->p->byClass.val);
+            return checkArgType(args->p->byClass.val, checkDeduced);
         }
         default:
             break;
     }
     return true;
 }
-bool allTemplateArgsSpecified(SYMBOL* sym, TEMPLATEPARAMLIST* args)
+bool allTemplateArgsSpecified(SYMBOL* sym, TEMPLATEPARAMLIST* args, bool checkDeduced)
 {
     while (args)
     {
         if (args->p->packed)
         {
-            if ((templateNestingCount && !args->p->byPack.pack) || !allTemplateArgsSpecified(sym, args->p->byPack.pack))
+            if ((templateNestingCount && !args->p->byPack.pack) || !allTemplateArgsSpecified(sym, args->p->byPack.pack, checkDeduced))
                 return false;
         }
         else
@@ -8589,10 +8593,14 @@ bool allTemplateArgsSpecified(SYMBOL* sym, TEMPLATEPARAMLIST* args)
                         return false;
                 }
             }
-            if (!checkArgSpecified(args))
+            if (!checkArgSpecified(args, checkDeduced))
             {
                 return false;
             }
+        }
+        if (checkDeduced && !args->p->deduced && !args->p->initialized)
+        {
+            return false;
         }
         args = args->next;
     }
@@ -9465,8 +9473,6 @@ static void copySyms(SYMBOL* found1, SYMBOL* sym)
 }
 SYMBOL* GetClassTemplate(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool noErr)
 {
-    if (!strcmp(sp->name, "conditional"))
-        printf("hi");
     int n = 1, i = 0;
     TEMPLATEPARAMLIST* unspecialized = sp->templateParams->next;
     SYMBOL *found1 = nullptr, *found2 = nullptr;
@@ -10772,8 +10778,6 @@ TEMPLATEPARAMLIST* GetTypeAliasArgs(SYMBOL* sp, TEMPLATEPARAMLIST* args, TEMPLAT
 }
 SYMBOL* GetTypeAliasSpecialization(SYMBOL* sp, TEMPLATEPARAMLIST* args)
 {
-    if (!strcmp(sp->name, "_CheckTLC"))
-        printf("hi");
     if (reflectUsingType)
         return sp;
     SYMBOL* rv;

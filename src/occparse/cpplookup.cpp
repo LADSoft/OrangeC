@@ -4552,6 +4552,8 @@ SYMBOL* GetOverloadedFunction(TYPE** tp, EXPRESSION** exp, SYMBOL* sp, FUNCTIONC
                 icsList = Allocate<e_cvsrn*>(n);
                 lenList = Allocate<int*>(n);
                 funcList = Allocate<SYMBOL**>(n);
+                if (!strcmp(sp->name, "__lower_bound"))
+                    printf("hi");
                 n = insertFuncs(spList, spFilterList, gather, args, atp);
                 if (n != 1 || (spList[0] && !spList[0]->sb->isDestructor && !spList[0]->sb->specialized2))
                 {

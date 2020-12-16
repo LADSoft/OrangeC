@@ -65,7 +65,7 @@ public:
 		define = Define;
 		ctx = Ctx;
 		expr.SetParams(define);
-		pushFile(Name, Name);
+		pushFile(Name, Name, false);
 	}
 	bool Check(kw token, const std::string& line);
 	bool IsOpen() const
@@ -112,7 +112,7 @@ public:
 			return current->GetIndex();
 		return false;
 	}
-	void IncludeFile(const std::string& name) { pushFile(name, name); }
+	void IncludeFile(const std::string& name) { pushFile(name, name, false); }
 	void SetInProc(const std::string& name) { inProc = name; }
 	void Mark() { current->Mark(); }
 	void Drop() { current->Drop(); }
@@ -135,7 +135,7 @@ protected:
 	void StripAsmComment(std::string& line);
 	bool CheckInclude(kw token, const std::string& line);
 	bool CheckLine(kw token, const std::string& line);
-	void pushFile(const std::string& name, const std::string& errname, int dirs_traversed = 0);
+	void pushFile(const std::string& name, const std::string& errname, bool include_next, int dirs_traversed = 0);
 	bool popFile();
 	std::string ParseName(const std::string& args, bool& specifiedAsSystem);
 	// Put a throwaway value in dirs_skipped here unless you need to use it for #include_next shenanigans with pushFile

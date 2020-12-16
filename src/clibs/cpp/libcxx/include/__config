@@ -104,7 +104,7 @@
 // All the regex constants must be distinct and nonzero.
 #  define _LIBCPP_ABI_REGEX_CONSTANTS_NONZERO
 #elif _LIBCPP_ABI_VERSION == 1
-#  if !defined(_LIBCPP_OBJECT_FORMAT_COFF)
+#  if !defined(_LIBCPP_OBJECT_FORMAT_COFF) || defined(__ORANGEC__)
 // Enable compiling copies of now inline methods into the dylib to support
 // applications compiled against older libraries. This is unnecessary with
 // COFF dllexport semantics, since dllexport forces a non-inline definition

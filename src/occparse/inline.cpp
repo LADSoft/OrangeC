@@ -135,7 +135,8 @@ void dumpInlines(void)
                             {
                                 propagateTemplateDefinition(sym);
                             }
-                            if ((sym->sb->attribs.inheritable.isInline || sym->sb->attribs.inheritable.linkage == lk_virtual) &&
+                            if ((sym->sb->attribs.inheritable.isInline || sym->sb->attribs.inheritable.linkage == lk_virtual
+                                || sym->sb->forcedefault) &&
                                 sym->sb->inlineFunc.stmt)
                             {
                                 inInsert(sym);

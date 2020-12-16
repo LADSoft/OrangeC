@@ -12,6 +12,7 @@
  *     The Orange C Compiler package is distributed in the hope that it will be useful,
  *     but WITHOUT ANY WARRANTY; without even the implied warranty of
  *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+
  *     GNU General Public License for more details.
  *
  *     You should have received a copy of the GNU General Public License
@@ -50,7 +51,7 @@ namespace Parser
 {
 static void genAsnCall(BLOCKDATA* b, SYMBOL* cls, SYMBOL* base, int offset, EXPRESSION* thisptr, EXPRESSION* other, bool move,
                        bool isconst);
-static void createDestructor(SYMBOL* sp);
+void createDestructor(SYMBOL* sp);
 
 void ConsDestDeclarationErrors(SYMBOL* sp, bool notype)
 {
@@ -2836,7 +2837,7 @@ void thunkDestructorTail(BLOCKDATA* b, SYMBOL* sp, SYMBOL* dest, HASHTABLE* syms
         codeLabel = oldCodeLabel;
     }
 }
-static void createDestructor(SYMBOL* sp)
+void createDestructor(SYMBOL* sp)
 {
     HASHTABLE* syms;
     SYMBOL* dest = search(overloadNameTab[CI_DESTRUCTOR], basetype(sp->tp)->syms);

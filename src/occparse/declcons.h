@@ -39,6 +39,7 @@ EXPRESSION* destructLocal(EXPRESSION* exp);
 void destructBlock(EXPRESSION** exp, SYMLIST* hr, bool mainDestruct);
 SYMBOL* findClassName(const char* name, SYMBOL* cls, BASECLASS* bc, VBASEENTRY* vbase, int* offset);
 void ParseMemberInitializers(SYMBOL* cls, SYMBOL* cons);
+void createDestructor(SYMBOL* sp);
 EXPRESSION* thunkConstructorHead(BLOCKDATA* b, SYMBOL* sym, SYMBOL* cons, HASHTABLE* syms, bool parseInitializers, bool doCopy);
 void createConstructor(SYMBOL* sp, SYMBOL* consfunc);
 void asnVirtualBases(BLOCKDATA* b, SYMBOL* sp, VBASEENTRY* vbe, EXPRESSION* thisptr, EXPRESSION* other, bool move, bool isconst);

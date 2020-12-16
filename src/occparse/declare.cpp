@@ -6673,9 +6673,22 @@ LEXEME* declare(LEXEME* lex, SYMBOL* funcsp, TYPE** tprv, enum e_sc storage_clas
                                         if (strcmp(sp->name, overloadNameTab[CI_CONSTRUCTOR]) != 0 &&
                                             strcmp(sp->name, overloadNameTab[CI_DESTRUCTOR]) != 0 &&
                                             strcmp(sp->name, overloadNameTab[assign - kw_new + CI_NEW]) !=
-                                                0)  // this is meant to be a copy cons but is too loose
+                                            0)  // this is meant to be a copy cons but is too loose
+                                        {
                                             error(ERR_DEFAULT_ONLY_SPECIAL_FUNCTION);
-
+                                        }
+                                        else if (storage_class_in != sc_member)
+                                        {
+                                            // default declaration outside class definition forces the item to be instantiated
+                                            if (strcmp(sp->name, overloadNameTab[CI_CONSTRUCTOR]) == 0)
+                                                createConstructor(sp->sb->parentClass, sp);
+                                            else if (strcmp(sp->name, overloadNameTab[CI_DESTRUCTOR]) == 0)
+                                                createDestructor(sp->sb->parentClass);
+                                            else
+                                                createAssignment(sp->sb->parentClass, sp);
+                                            sp->sb->forcedefault = true;
+                                            Optimizer::SymbolManager::Get(sp)->genreffed = true;
+                                        }
                                         lex = getsym();
                                     }
                                     else if (lex->type != l_i || lex->value.i != 0)

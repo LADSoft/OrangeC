@@ -61,7 +61,7 @@ bool ppInclude::CheckInclude(kw token, const std::string& args)
 		std::string name = ParseName(line1, specifiedAsSystem);
 		int dirs_traversed = 0; // this is needed to get #include_next working correctly, the __has_include versions of this don't need to actually keep track tho cuz they don't actually include
 		name = FindFile(specifiedAsSystem, name, false, dirs_traversed);
-		pushFile(name, line1, dirs_traversed + 1);
+		pushFile(name, line1, false, dirs_traversed + 1);
 		return true;
 	}
 	else if (token == kw::INCLUDE_NEXT)
@@ -74,7 +74,7 @@ bool ppInclude::CheckInclude(kw token, const std::string& args)
 		std::string name = ParseName(line1, specifiedAsSystem);
 		int dirs_skipped = 0;
 		name = FindFile(false, name, true, dirs_skipped);
-		pushFile(name, line1, dirs_skipped + 1);
+		pushFile(name, line1, true, dirs_skipped + 1);
 		return true;
 	}
 	return false;
@@ -116,13 +116,20 @@ bool ppInclude::CheckLine(kw token, const std::string& args)
 	}
 	return false;
 }
-void ppInclude::pushFile(const std::string& name, const std::string& errname, int dirs_traversed)
+void ppInclude::pushFile(const std::string& name, const std::string& errname, bool include_next, int dirs_traversed)
 {
 	// gotta do the test first to get the error correct if it isn't there
 	std::fstream in(name, std::ios::in);
 	if (!piper.HasPipe() && name[0] != '-' && !in.is_open())
 	{
-		Errors::Error(std::string("Could not open ") + errname + " for input");
+		if (!include_next)
+		{
+			Errors::Error(std::string("Could not open ") + errname + " for input");
+		}
+		else
+		{
+			Errors::Error(std::string("Could not open using #include_next ") + errname + " for input");
+		}
 	}
 	else
 	{
@@ -277,6 +284,10 @@ std::string ppInclude::SrchPath(bool system, const std::string& name, const std:
 				// TODO: find a fix that's faster than this, if compiled with any compiler that has vectorization this should be faster than strlen
 				// A possible fix to make this faster is to use std::string but that requires more knowledge than I have atm
 				memset(buf, 0, 260);
+				if (path == nullptr)
+				{
+					return "";
+				}
 				path = RetrievePath(buf, path);
 				if (!buf) // check if we haven't hit the end of all include paths yet, if we have, break and let FindFile handle the rest
 				{
@@ -289,6 +300,10 @@ std::string ppInclude::SrchPath(bool system, const std::string& name, const std:
 		else
 		{
 			path = RetrievePath(buf, path);
+		}
+		if (path == nullptr && skipUntilDepth)
+		{
+			return "";
 		}
 		if (reachedEndOfBuf)
 		{

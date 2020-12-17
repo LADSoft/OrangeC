@@ -165,7 +165,7 @@ class Utils
 
   private:
       static int ScreenHeight();
-      static bool GetLine(const char **text, char *buf);
+      static bool GetLine(const char** text, std::string& buf);
       static void (*cleanup)();
 };
 #endif

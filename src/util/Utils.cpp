@@ -107,15 +107,21 @@ int Utils::ScreenHeight()
 #endif
 
 }
-bool Utils::GetLine(const char **text, char *buf)
+bool Utils::GetLine(const char **text, std::string& buf)
 {
     if (!**text)
         return false;
-    while (**text && **text != '\n')
-        *buf++ = *(*text)++;
-    if (**text)
-        *buf++ = *(*text)++;
-    *buf = 0;
+    char const *start = *text;
+    auto temp = strchr(*text, '\n');
+    if (!temp)
+    {
+        *text += strlen(*text);
+    }
+    else
+    {
+        *text = temp + 1;
+    }
+    buf = std::string(start, *text);
     return true;
 }
 void Utils::usage(const char* prog_name, const char* text)
@@ -123,14 +129,15 @@ void Utils::usage(const char* prog_name, const char* text)
     const int rows = ScreenHeight();
     fprintf(stderr, "\nUsage: %s ", ShortName(prog_name));
     int left = rows - 3;
-    char buf[512];
+    std::string buf;
     while (GetLine(&text, buf))
     {
-        printf("%s", buf);
+        std::cerr << buf;
         if (--left == 0)
         {
-            printf("Press <enter> to continue");
-            fgets(buf, 512, stdin);
+            fprintf(stderr, "Press <ENTER> to continue...");
+            char temp[512];
+            fgets(temp, sizeof(temp), stdin);
             left = rows - 1;
         }
     }

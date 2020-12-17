@@ -34,6 +34,7 @@
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
 #    define _access access
+#    include <sys/ioctl.h>
 #else
 #    include <io.h>
 extern "C" char* getcwd(char*, int);
@@ -93,9 +94,46 @@ void Utils::banner(const char* progName)
         exit(0);
     }
 }
+int Utils::ScreenHeight()
+{
+#ifdef _WIN32
+    CONSOLE_SCREEN_BUFFER_INFO csbi;
+    GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
+    return csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
+#else
+    struct winsize max;
+    ioctl(0, TIOCGWINSZ , &max);
+    return max.ws_row;
+#endif
+
+}
+bool Utils::GetLine(const char **text, char *buf)
+{
+    if (!**text)
+        return false;
+    while (**text && **text != '\n')
+        *buf++ = *(*text)++;
+    if (**text)
+        *buf++ = *(*text)++;
+    *buf = 0;
+    return true;
+}
 void Utils::usage(const char* prog_name, const char* text)
 {
-    fprintf(stderr, "\nUsage: %s %s", ShortName(prog_name), text);
+    const int rows = ScreenHeight();
+    fprintf(stderr, "\nUsage: %s ", ShortName(prog_name));
+    int left = rows - 3;
+    char buf[512];
+    while (GetLine(&text, buf))
+    {
+        printf("%s", buf);
+        if (--left == 0)
+        {
+            printf("Press <enter> to continue");
+            fgets(buf, 512, stdin);
+            left = rows - 1;
+        }
+    }
     exit(1);
 }
 char* Utils::GetModuleName()

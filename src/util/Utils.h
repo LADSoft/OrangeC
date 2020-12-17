@@ -164,6 +164,8 @@ class Utils
     static unsigned crctab[256];
 
   private:
-    static void (*cleanup)();
+      static int ScreenHeight();
+      static bool GetLine(const char **text, char *buf);
+      static void (*cleanup)();
 };
 #endif

@@ -11544,7 +11544,8 @@ LEXEME* TemplateDeclaration(LEXEME* lex, SYMBOL* funcsp, enum e_ac access, enum 
                     lex = GetTemplateArguments(lex, funcsp, cls, &templateParams);
                     instance = GetClassTemplate(cls, templateParams, false);
                     if (instance)
-                    {MarkDllLinkage(instance, linkage2);
+                    {
+                        MarkDllLinkage(instance, linkage2);
                         if (!isExtern)
                         {
                             instance->sb->dontinstantiate = false;
@@ -11592,7 +11593,7 @@ LEXEME* TemplateDeclaration(LEXEME* lex, SYMBOL* funcsp, enum e_ac access, enum 
             {
                 if (sym->sb->attribs.inheritable.linkage2 == lk_none)
                     sym->sb->attribs.inheritable.linkage2 = linkage2;
-                DoInstantiate(strSym, sym, tp, nsv, isExtern);
+                DoInstantiate(strSym, sym, tp, nsv, false);
             }
         }
     }

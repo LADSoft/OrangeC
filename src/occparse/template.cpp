@@ -7540,9 +7540,18 @@ SYMBOL* TemplateFunctionInstantiate(SYMBOL* sym, bool warning, bool isExtern)
         SYMBOL* data = hr->p;
         if (data->sb->instantiated && TemplateInstantiationMatch(data, sym) && matchOverload(sym->tp, data->tp, true))
         {
+            if (data->sb->attribs.inheritable.linkage == lk_virtual || isExtern)
+                return data;
+            if (!data->sb->deferredCompile && sym->sb->deferredCompile)
+            {
+                data->sb->deferredCompile = sym->sb->deferredCompile;
+                auto hrs = basetype(sym->tp)->syms->table[0];
+                for (auto hr = basetype(data->tp)->syms->table[0]; hr; hr = hr->next, hrs = hrs->next)
+                {
+                    hr->p->name = hrs->p->name;
+                }
+            }
             sym = data;
-            if (sym->sb->attribs.inheritable.linkage == lk_virtual || isExtern)
-                return sym;
             found = true;
             break;
         }
@@ -10931,12 +10940,16 @@ void DoInstantiateTemplateFunction(TYPE* tp, SYMBOL** sp, NAMESPACEVALUELIST* ns
     {
         ssp = getStructureDeclaration();
         if (ssp)
-            p = LookupName(sym->name, ssp->tp->syms);
-        if (!p)
-            p = LookupName(sym->name, globalNameSpace->valueData->syms);
-        if (p)
         {
-            spi = (SYMBOL*)(*p)->p;
+            p = LookupName(sym->name, ssp->tp->syms);
+            if (p)
+            {
+                spi = (SYMBOL*)(*p)->p;
+            }
+        }
+        if (!spi)
+        {
+            spi = namespacesearch(sym->name, globalNameSpace, false, false);
         }
     }
     if (spi)

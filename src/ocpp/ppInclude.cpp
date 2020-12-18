@@ -284,7 +284,7 @@ std::string ppInclude::SrchPath(bool system, const std::string& name, const std:
 				// TODO: find a fix that's faster than this, if compiled with any compiler that has vectorization this should be faster than strlen
 				// A possible fix to make this faster is to use std::string but that requires more knowledge than I have atm
 				memset(buf, 0, 260);
-				if (path == nullptr)
+				if (path == nullptr || strcmp(path, "") == 0)
 				{
 					return "";
 				}
@@ -301,7 +301,7 @@ std::string ppInclude::SrchPath(bool system, const std::string& name, const std:
 		{
 			path = RetrievePath(buf, path);
 		}
-		if (path == nullptr && skipUntilDepth)
+		if (path == nullptr && skipUntilDepth && strcmp(buf, "") == 0)
 		{
 			return "";
 		}

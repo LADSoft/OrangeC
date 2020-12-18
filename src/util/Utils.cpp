@@ -34,6 +34,7 @@
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
 #    define _access access
+#    define _isatty isatty
 #    include <sys/ioctl.h>
 #else
 #    include <io.h>
@@ -126,7 +127,15 @@ bool Utils::GetLine(const char **text, std::string& buf)
 }
 void Utils::usage(const char* prog_name, const char* text)
 {
-    const int rows = ScreenHeight();
+    
+    int rows = 10000;
+#ifdef _WIN32
+    if (_isatty(fileno(stderr))) 
+        rows = ScreenHeight();
+#else
+    if (_isatty(STDERR_FILENO)) 
+        rows = ScreenHeight();
+#endif
     fprintf(stderr, "\nUsage: %s ", ShortName(prog_name));
     int left = rows - 3;
     std::string buf;

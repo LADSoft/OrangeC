@@ -12,6 +12,11 @@
 #define _LCONV_C99
 #endif
 
+// force the startup routines in this module to be initialized first...
+#ifdef __ORANGEC__
+#pragma PRIORITYCPP
+#endif
+
 #include "string"
 #include "locale"
 #include "codecvt"

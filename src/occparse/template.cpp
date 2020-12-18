@@ -5068,7 +5068,9 @@ static bool Deduce(TYPE* P, TYPE* A, bool change, bool byClass, bool allowSelect
         }
         if (Ab->type != Pb->type && (!isfunction(Ab) || !isfunction(Pb)) && Pb->type != bt_templateparam &&
             (!allowSelectors || Pb->type != bt_templateselector))
-            return false;
+            // this next allows long and int to be considered the same, on architectures where there is no size difference
+            if (!isint(Ab) || !isint(Pb) || isunsigned(Ab) != isunsigned(Pb) || getSize(basetype(Ab)->type) != getSize(basetype(Pb)->type))
+                return false;
         switch (Pb->type)
         {
             case bt_pointer:

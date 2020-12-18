@@ -619,6 +619,12 @@ void setglbdefs(void)
     }
     preProcessor->Define("__STDC__", "1");
 
+    // for libcxx 10
+    preProcessor->Define("__need_size_t", "1");
+    preProcessor->Define("__need_FILE", "1");
+    preProcessor->Define("__need_wint_t", "1");
+    preProcessor->Define("__need_malloc_and_calloc", "1");
+
     if (Optimizer::cparams.prm_c99 || Optimizer::cparams.prm_c1x)
     {
         preProcessor->Define("__STDC_HOSTED__", Optimizer::chosenAssembler->hosted);  // hosted compiler, not embedded

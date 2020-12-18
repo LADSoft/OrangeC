@@ -151,6 +151,13 @@ int ppMain::Run(int argc, char* argv[])
             std::string ver = "199901L";
             pp.Define("__STDC_VERSION__", ver, true);
         }
+
+        // for libcxx 10
+        pp.Define("__need_size_t", "1");
+        pp.Define("__need_FILE", "1");
+        pp.Define("__need_wint_t", "1");
+        pp.Define("__need_malloc_and_calloc", "1");
+
         int n = defines.GetCount();
         int nu = undefines.GetCount();
         for (int i = 0, j = 0; i < n || j < nu;)

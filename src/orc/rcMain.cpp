@@ -120,6 +120,13 @@ int rcMain::Run(int argc, char* argv[])
     {
         std::string inName = Utils::QualifiedFile((*it).c_str(), ".rc");
         PreProcessor pp(inName, srchPth, sysSrchPth, false, false, '#', false, true, true, "");
+
+        // for libcxx 10
+        pp.Define("__need_size_t", "1");
+        pp.Define("__need_FILE", "1");
+        pp.Define("__need_wint_t", "1");
+        pp.Define("__need_malloc_and_calloc", "1");
+
         int n = Defines.GetCount();
         for (int i = 0; i < n; i++)
         {

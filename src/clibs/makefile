@@ -163,7 +163,7 @@ else
 	$(COPYDIR) cpp\stdinc_libcxx\%.h $(DISTINC)
 endif
 endif
-	$(COPYDIR) stdinc\%.h $(DISTINC)
+	$(COPYDIR) stdinc\%.h $(DISTINC)\c
 	$(COPYDIR) stdinc\sys\%.h $(DISTINC)\sys
 	$(COPYDIR) platform\win32\wininc\%.h $(DISTINC)
 	$(COPYDIR) platform\win32\wininc\win32\%.h $(DISTINC)\win32

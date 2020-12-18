@@ -171,9 +171,29 @@ bool templatecompareexpressions(EXPRESSION* exp1, EXPRESSION* exp2)
         case en_pc:
         case en_const:
         case en_threadlocal:
-            return exp1->v.sp == exp2->v.sp;
+            return comparetypes(exp1->v.sp->tp, exp2->v.sp->tp, true) || sameTemplate(exp1->v.sp->tp, exp1->v.sp->tp);
         case en_func:
-            return exp1->v.func->sp == exp2->v.func->sp;
+        {
+            TYPE* tp1 = basetype(exp1->v.sp->tp);
+            TYPE* tp2 = basetype(exp2->v.sp->tp);
+            if (isfunction(tp1) || isfunction(tp2))
+            {
+                tp1 = tp1->btp;
+                tp2 = tp2->btp;
+            }
+            else if (tp1->type == bt_aggregate || tp2->type == bt_aggregate)
+            {
+                return true;
+            }
+            else if (tp1->type != tp2->type)
+            {
+                return false;
+            }
+            if ((basetype(tp1)->type == bt_templateparam && tp2->type == bt_int) ||
+                (basetype(tp2)->type == bt_templateparam && tp1->type == bt_int)) // undefined
+                return true;
+            return comparetypes(tp1, tp2, false) || sameTemplate(tp1, tp2);
+        }
         case en_templateselector:
             return templateselectorcompare(exp1->v.templateSelector, exp2->v.templateSelector);
         default:
@@ -3171,7 +3191,7 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bo
                     TYPE *thistp = Allocate<TYPE>();
                     thistp->type = bt_pointer;
                     thistp->size = getSize(bt_pointer);
-                    thistp->btp = tp;
+                    thistp->btp = basetype(tp);
                     func->thistp = thistp;
                     func->thisptr = intNode(en_c_i, 0);
                     sym =

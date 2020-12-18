@@ -3084,6 +3084,17 @@ void AdjustParams(SYMBOL* func, SYMLIST* hr, INITLIST** lptr, bool operands, boo
                 }
                 else if (ispointer(sym->tp) && ispointer(p->tp))
                 {
+                    // handle vla to pointer conversion
+                    if (p->tp->vla && !sym->tp->vla)
+                    {
+                        TYPE* tpd1 = Allocate<TYPE>();
+                        *tpd1 = *p->tp;
+                        tpd1->vla = false;
+                        tpd1->array = false;
+                        tpd1->size = getSize(bt_pointer);
+                        p->tp = tpd1;
+                        deref(p->tp, &p->exp);
+                    }
                     // handle base class conversion
                     TYPE* tpb = basetype(sym->tp)->btp;
                     TYPE* tpd = basetype(p->tp)->btp;

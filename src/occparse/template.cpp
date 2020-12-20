@@ -80,7 +80,7 @@ struct templateListData* currents;
 static LEXEME* TemplateArg(LEXEME* lex, SYMBOL* funcsp, TEMPLATEPARAMLIST* arg, TEMPLATEPARAMLIST** lst);
 TEMPLATEPARAMLIST* copyParams(TEMPLATEPARAMLIST* t, bool alsoSpecializations);
 static bool valFromDefault(TEMPLATEPARAMLIST* params, bool usesParams, INITLIST** args);
-static TEMPLATEPARAMLIST* ResolveTemplateSelectors(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool byVal);
+TEMPLATEPARAMLIST* ResolveTemplateSelectors(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool byVal);
 TEMPLATEPARAMLIST* ResolveDeclType(SYMBOL* sp, TEMPLATEPARAMLIST* tpl);
 static TEMPLATEPARAMLIST* GetTypeAliasArgs(SYMBOL* sp, TEMPLATEPARAMLIST* args, TEMPLATEPARAMLIST* origTemplate, TEMPLATEPARAMLIST* origUsing);
 static void TransferClassTemplates(TEMPLATEPARAMLIST* dflt, TEMPLATEPARAMLIST* val, TEMPLATEPARAMLIST* params);
@@ -9171,6 +9171,7 @@ static TEMPLATEPARAMLIST* ResolveTemplateSelector(SYMBOL* sp, TEMPLATEPARAMLIST*
                             }
                             UpdateRootTypes(sp->tp);
                             *tx = sp->tp;
+                            UpdateRootTypes(byVal ? rv->p->byClass.val : rv->p->byClass.dflt);
                             if (isstructured(*tx) && !templateNestingCount && basetype(*tx)->sp->sb->templateLevel &&
                                 !basetype(*tx)->sp->sb->instantiated)
                             {
@@ -9283,7 +9284,7 @@ static TEMPLATEPARAMLIST* CopyArgsBack(TEMPLATEPARAMLIST* args, TEMPLATEPARAMLIS
     }
     return rv;
 }
-static TEMPLATEPARAMLIST * ResolveTemplateSelectors(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool byVal)
+TEMPLATEPARAMLIST * ResolveTemplateSelectors(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool byVal)
 {
     std::stack<TEMPLATEPARAMLIST*> tas;
     int k = 0;
@@ -9315,6 +9316,16 @@ static TEMPLATEPARAMLIST * ResolveTemplateSelectors(SYMBOL* sp, TEMPLATEPARAMLIS
         }
     }
     return CopyArgsBack(args, hold, k);
+}
+TYPE* ResolveTemplateSelectors(SYMBOL* sp, TYPE* tp)
+{
+    TEMPLATEPARAMLIST tpl = {};
+    TEMPLATEPARAM tpa = {};
+    tpl.p = &tpa;
+    tpa.type = kw_typename;
+    tpa.byClass.dflt = tp;
+    auto tpl2 = ResolveTemplateSelectors(sp, &tpl, false);
+    return tpl2->p->byClass.dflt;;
 }
 TEMPLATEPARAMLIST* ResolveDeclType(SYMBOL* sp, TEMPLATEPARAMLIST* tpl)
 {

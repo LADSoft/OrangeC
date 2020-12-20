@@ -770,8 +770,6 @@ static void resolveAnonymousGlobalUnion(SYMBOL* sp)
 void resolveAnonymousUnions(SYMBOL* sp)
 {
     SYMLIST** member = (SYMLIST**)&sp->tp->syms->table[0];
-    if (TotalErrors())
-        return;
     while (*member)
     {
         SYMBOL* spm = (SYMBOL*)(*member)->p;
@@ -871,8 +869,6 @@ static void baseFinishDeclareStruct(SYMBOL* funcsp)
                 SYMBOL* x = syms[j];
                 memmove(&syms[i + 1], &syms[i], sizeof(SYMBOL*) * (j - i));
                 syms[i] = x;
-                //                if (j != i + 1)
-                //                    j = i;
             }
     for (i = 0; i < n; i++)
     {
@@ -2814,11 +2810,11 @@ founddecltype:
                     {
                         if (templateArg)
                             *templateArg = true;
-                        if (!templateNestingCount)
-                        {
-                            tn = SynthesizeType(sp->tp, nullptr, false);
-                        }
-                        else
+//                        if (!templateNestingCount)
+//                        {
+//                            tn = SynthesizeType(sp->tp, nullptr, false);
+//                        }
+//                        else
                         {
                             tn = sp->tp;
                         }
@@ -2968,10 +2964,10 @@ founddecltype:
             }
             else if (strSym && basetype(strSym->tp)->type == bt_templateselector)
             {
-                if (!templateNestingCount && !inTemplateSpecialization && allTemplateArgsSpecified(strSym, strSym->templateParams))
-                    tn = SynthesizeType(strSym->tp, nullptr, false);
-                else
-                    tn = nullptr;
+//                if (!templateNestingCount && !inTemplateSpecialization && allTemplateArgsSpecified(strSym, strSym->templateParams))
+//                    tn = SynthesizeType(strSym->tp, nullptr, false);
+//                else
+//                    tn = nullptr;
                 if (!tn || tn->type == bt_any || basetype(tn)->type == bt_templateparam)
                     tn = strSym->tp;
                 else

@@ -68,6 +68,8 @@ LEXEME* TemplateArgGetDefault(LEXEME** lex, bool isExpression);
 bool TemplateIntroduceArgs(TEMPLATEPARAMLIST* sym, TEMPLATEPARAMLIST* args);
 TYPE* SolidifyType(TYPE* tp);
 TEMPLATEPARAMLIST* SolidifyTemplateParams(TEMPLATEPARAMLIST* in);
+TEMPLATEPARAMLIST* ResolveTemplateSelectors(SYMBOL* sp, TEMPLATEPARAMLIST* args, bool byVal);
+TYPE* ResolveTemplateSelectors(SYMBOL* sp, TYPE* tp);
 void SynthesizeQuals(TYPE*** last, TYPE** qual, TYPE*** lastQual);
 EXPRESSION* copy_expression(EXPRESSION* head);
 TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bool alt);

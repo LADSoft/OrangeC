@@ -3491,8 +3491,15 @@ LEXEME* initType(LEXEME* lex, SYMBOL* funcsp, int offset, enum e_sc sc, INITIALI
                 needkw(&lex, end);
                 return lex;
             }
-            TEMPLATEPARAMLIST* current = tp->sp->sb->templateSelector->next->templateParams;
-            sym = GetClassTemplate(ts, current, false);
+            if (!tp->sp->sb->templateSelector->next->sp->sb->instantiated && !tp->sp->sb->templateSelector->next->templateParams)
+            {
+                TEMPLATEPARAMLIST* current = tp->sp->sb->templateSelector->next->templateParams;
+                sym = GetClassTemplate(ts, current, false);
+            }
+            else
+            {
+                sym = tp->sp->sb->templateSelector->next->sp;
+            }
             tp = nullptr;
         }
         else if (basetype(ts->tp)->templateParam->p->type == kw_typename)

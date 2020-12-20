@@ -436,7 +436,7 @@ LEXEME* nestedPath(LEXEME* lex, SYMBOL** sym, NAMESPACEVALUELIST** ns, bool* thr
                 addStructureDeclaration(&s);
                 sp = classsearch(buf, false, false);
                 dropStructureDeclaration();
-                if (!sp && templateNestingCount)
+                if (!sp)// && templateNestingCount)
                 {
                     *last = Allocate<TEMPLATESELECTOR>();
                     (*last)->sp = nullptr;

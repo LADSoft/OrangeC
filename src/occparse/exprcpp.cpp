@@ -1170,6 +1170,7 @@ LEXEME* GetCastInfo(LEXEME* lex, SYMBOL* funcsp, TYPE** newType, TYPE** oldType,
             error(ERR_TYPE_NAME_EXPECTED);
             *newType = &stdpointer;
         }
+        *newType = ResolveTemplateSelectors(funcsp, *newType);
         if (needkw(&lex, gt))
         {
             if (needkw(&lex, openpa))

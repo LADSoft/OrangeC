@@ -870,6 +870,7 @@ static LEXEME* variableName(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, E
                     }
                 }
             }
+            *tp = ResolveTemplateSelectors(sym, *tp);
 
             if (lvalue(*exp) && (*exp)->type != en_l_object)
                 (*exp)->v.sp = sym;  // catch for constexpr
@@ -1405,6 +1406,7 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
                 lex = getsym();
                 sp2->sb->attribs.inheritable.used = true;
                 *tp = sp2->tp;
+                *tp = ResolveTemplateSelectors(sp2, *tp);
                 tpb = basetype(*tp);
                 if (sp2->sb->storage_class == sc_overloads)
                 {
@@ -1553,6 +1555,7 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
                         {
                             deref(*tp, exp);
                             *tp = basetype(*tp)->btp;
+                            *tp = ResolveTemplateSelectors(sp2, *tp);
                         }
                         if (typein2)
                             deref(typein2, exp);
@@ -3826,7 +3829,7 @@ LEXEME* expression_arguments(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION*
                 funcparams->functp = *tp;
                 {
                     TYPE** tp1;
-                    *tp = basetype(*tp)->btp;
+                    *tp = ResolveTemplateSelectors(basetype(*tp)->sp, basetype(*tp)->btp);
                     if (isref(*tp))
                     {
                         TYPE* tp1 = *tp;

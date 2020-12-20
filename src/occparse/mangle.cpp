@@ -889,7 +889,7 @@ char* mangleType(char* in, TYPE* tp, bool first)
                     char* p;
                     s = s->next;
                     if (s->isTemplate)
-                        p = mangleTemplate(nm, s->sp, s->templateParams);
+                        p = mangleTemplate(nm, s->sp, s->sp->sb->instantiated ? s->sp->templateParams : s->templateParams);
                     else
                         p = getName(nm, s->sp);
                     p[0] = 0;

@@ -34,6 +34,8 @@
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
 #    define _access access
+#    define _isatty isatty
+#    include <sys/ioctl.h>
 #else
 #    include <io.h>
 extern "C" char* getcwd(char*, int);
@@ -93,9 +95,61 @@ void Utils::banner(const char* progName)
         exit(0);
     }
 }
+int Utils::ScreenHeight()
+{
+#ifdef _WIN32
+    CONSOLE_SCREEN_BUFFER_INFO csbi;
+    GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
+    return csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
+#else
+    struct winsize max;
+    ioctl(0, TIOCGWINSZ , &max);
+    return max.ws_row;
+#endif
+
+}
+bool Utils::GetLine(const char **text, std::string& buf)
+{
+    if (!**text)
+        return false;
+    char const *start = *text;
+    auto temp = strchr(*text, '\n');
+    if (!temp)
+    {
+        *text += strlen(*text);
+    }
+    else
+    {
+        *text = temp + 1;
+    }
+    buf = std::string(start, *text);
+    return true;
+}
 void Utils::usage(const char* prog_name, const char* text)
 {
-    fprintf(stderr, "\nUsage: %s %s", ShortName(prog_name), text);
+    
+    int rows = 10000;
+#ifdef _WIN32
+    if (_isatty(fileno(stderr))) 
+        rows = ScreenHeight();
+#else
+    if (_isatty(STDERR_FILENO)) 
+        rows = ScreenHeight();
+#endif
+    fprintf(stderr, "\nUsage: %s ", ShortName(prog_name));
+    int left = rows - 3;
+    std::string buf;
+    while (GetLine(&text, buf))
+    {
+        std::cerr << buf;
+        if (--left == 0)
+        {
+            fprintf(stderr, "Press <ENTER> to continue...");
+            char temp[512];
+            fgets(temp, sizeof(temp), stdin);
+            left = rows - 1;
+        }
+    }
     exit(1);
 }
 char* Utils::GetModuleName()

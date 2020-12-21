@@ -4155,6 +4155,8 @@ bool MatchesConstFunction(SYMBOL* sym)
 }
 LEXEME* getDeclType(LEXEME* lex, SYMBOL* funcsp, TYPE** tn)
 {
+    if (lex->errline == 38)
+        printf("hi");
     bool hasAmpersand = false;
     bool hasAuto = false;
     EXPRESSION *exp, *exp2;
@@ -4217,6 +4219,13 @@ LEXEME* getDeclType(LEXEME* lex, SYMBOL* funcsp, TYPE** tn)
             else
             {
                 (*tn) = exp->v.func->functp = exp->v.func->sp->tp;
+            }
+        }
+        if ((*tn) && isfunction(*tn) && exp->type == en_func)
+        {
+            if (exp->v.func->ascall)
+            {
+                *tn = basetype(*tn)->btp;
             }
         }
         if ((*tn))

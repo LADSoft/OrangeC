@@ -3945,7 +3945,9 @@ LEXEME* expression_arguments(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESSION*
             else if (templateNestingCount && !instantiatingTemplate && (*tp)->type == bt_aggregate)
             {
                 *exp = exprNode(en_funcret, *exp, nullptr);
-                *tp = &stdvoid;
+                *tp = Allocate<TYPE>();
+                (*tp)->type = bt_templatedecltype;
+                (*tp)->templateDeclType = *exp;
             }
             else
             {
@@ -6193,7 +6195,7 @@ LEXEME* expression_unary(LEXEME* lex, SYMBOL* funcsp, TYPE* atp, TYPE** tp, EXPR
                     else if (!lvalue(*exp))
                     {
                         if ((*exp)->type != en_templateparam && basetype(*tp)->type != bt_templateparam &&
-                            basetype(*tp)->type != bt_templateselector)
+                            basetype(*tp)->type != bt_templateselector && basetype(*tp)->type != bt_templatedecltype)
                             error(ERR_LVALUE);
                     }
                     else

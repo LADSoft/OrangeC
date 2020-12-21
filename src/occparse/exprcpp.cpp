@@ -1180,6 +1180,28 @@ LEXEME* GetCastInfo(LEXEME* lex, SYMBOL* funcsp, TYPE** newType, TYPE** oldType,
                 {
                     errskim(&lex, skim_closepa);
                 }
+                if ((*oldType)->type == bt_aggregate)
+                {
+                    TYPE *tp = *newType;
+                    if (isref(tp))
+                        tp = basetype(tp)->btp;
+                    if (isfuncptr(tp))
+                    {
+                        tp = basetype(tp)->btp;
+                        auto sym = searchOverloads(basetype(tp)->sp, (*oldType)->syms);
+                        if (sym)
+                        {
+                            *oldType = Allocate<TYPE>();
+                            (*oldType)->type = bt_pointer;
+                            (*oldType)->size = getSize(bt_pointer);
+                            (*oldType)->btp = sym->tp;
+                            UpdateRootTypes(*oldType);
+                            (*oldExp)->v.func->sp = sym;
+                            (*oldExp)->v.func->functp = sym->tp;
+                            (*oldExp)->v.func->fcall = varNode(en_pc, sym);
+                        }
+                    }                    
+                }
             }
             else
             {

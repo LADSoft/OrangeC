@@ -505,7 +505,7 @@ char* unmangleExpression(char* dest, const char** name)
                     dest += strlen(dest);
                 }
                 *dest++ = '(';
-                while (*(*name) == 'f')
+                while (*(*name) == 'F')
                 {
                     (*name)++;
                     dest = unmangleExpression(dest, name);

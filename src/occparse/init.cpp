@@ -1368,7 +1368,7 @@ static LEXEME* initialize_bool_type(LEXEME* lex, SYMBOL* funcsp, int offset, enu
         {
             error(ERR_EXPRESSION_SYNTAX);
         }
-        else
+        else if (itype->type != bt_templateparam && !templateNestingCount)
         {
             ResolveTemplateVariable(&tp, &exp, itype, nullptr);
             castToArithmetic(false, &tp, &exp, (enum e_kw) - 1, itype, true);

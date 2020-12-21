@@ -1372,13 +1372,12 @@ static LEXEME* initialize_bool_type(LEXEME* lex, SYMBOL* funcsp, int offset, enu
         {
             ResolveTemplateVariable(&tp, &exp, itype, nullptr);
             castToArithmetic(false, &tp, &exp, (enum e_kw) - 1, itype, true);
-            if (sc != sc_auto && sc != sc_register && !Optimizer::cparams.prm_cplusplus)
-            {
-                if (isstructured(tp))
-                    error(ERR_ILL_STRUCTURE_ASSIGNMENT);
-                else if (!isarithmeticconst(exp) && !msilConstant(exp))
+            if (isstructured(tp))
+                error(ERR_ILL_STRUCTURE_ASSIGNMENT);
+            else if ((!isarithmetic(tp) && basetype(tp)->type != bt_enum) ||
+                (sc != sc_auto && sc != sc_register && !isarithmeticconst(exp) && !msilConstant(exp) && !Optimizer::cparams.prm_cplusplus))
                     error(ERR_CONSTANT_VALUE_EXPECTED);
-            }
+            
             /*	exp = exprNode(en_not, exp, nullptr);
                 exp = exprNode(en_not, exp, nullptr);
                 */

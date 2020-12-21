@@ -44,7 +44,7 @@ bool ppCond::Check(kw token, const std::string& line, int lineno)
         case kw::IF:
             define->replaceDefined(line1);
             define->Process(line1);
-            HandleIf(expr.Eval(line1, true), line1, lineno);
+            HandleIf(current.get() && current.get()->skipping ? true : expr.Eval(line1, true), line1, lineno);
             break;
         case kw::ELIF:
             define->replaceDefined(line1);

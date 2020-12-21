@@ -900,7 +900,6 @@ static void baseFinishDeclareStruct(SYMBOL* funcsp)
                 }
             }
             resolveAnonymousUnions(sp);
-
         }
     }
     for (i = 0; i < n; i++)
@@ -1017,6 +1016,7 @@ static LEXEME* structbody(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_ac cur
     }
     else
     {
+        resolveAnonymousUnions(sp);
         sp->sb->trivialCons = true;
     }
     makeFastTable(sp);

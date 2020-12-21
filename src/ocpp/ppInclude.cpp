@@ -33,6 +33,7 @@
 #include <fstream>
 #include <iostream>
 #include <cstdio>
+#include <algorithm>
 bool ppInclude::system;
 std::string ppInclude::srchPath, ppInclude::sysSrchPath;
 
@@ -145,7 +146,7 @@ void ppInclude::pushFile(const std::string& name, const std::string& errname, bo
 			std::make_unique<ppFile>(fullname, trigraphs, extendedComment, name, define, *ctx, unsignedchar, c89, asmpp, piper, dirs_traversed);
 		// if (current)
 		if (!current->Open())
-		{ 
+		{
 			Errors::Error(std::string("Could not open ") + errname + " for input");
 			popFile();
 		}
@@ -224,11 +225,12 @@ std::string ppInclude::FindFile(bool specifiedAsSystem, const std::string& name,
 	std::string rv;
 	int include_files_skipped = 0;
 	// search in system search path first, if they specified it with <>
-	if (specifiedAsSystem) 
+	if (specifiedAsSystem)
 	{
 		rv = SrchPath(true, name, sysSrchPath, skipFirst, include_files_skipped);
 		if (!rv.empty())
 		{
+			dirs_skipped = std::count(srchPath.cbegin(), srchPath.cend(), ';') + 1; // This counts the number of search directories we have using the same logic we use to split it up, semicolons, there are always n semicolon + 1 dirs
 			return rv;
 		}
 	}
@@ -276,7 +278,7 @@ std::string ppInclude::SrchPath(bool system, const std::string& name, const std:
 	do
 	{
 		bool reachedEndOfBuf = false;
-		if (skipUntilDepth && (filesSkipped != totalNumberofSkipsNeeded + 1)) 
+		if (skipUntilDepth && (filesSkipped != totalNumberofSkipsNeeded + 1))
 		{
 			while (filesSkipped != totalNumberofSkipsNeeded + 1)
 			{
@@ -284,7 +286,7 @@ std::string ppInclude::SrchPath(bool system, const std::string& name, const std:
 				// TODO: find a fix that's faster than this, if compiled with any compiler that has vectorization this should be faster than strlen
 				// A possible fix to make this faster is to use std::string but that requires more knowledge than I have atm
 				memset(buf, 0, 260);
-				if (path == nullptr || strcmp(path, "") == 0)
+				if (path == nullptr || *path == '\0') // slight speedup at the cost of readability, this is gauranteed to not be an NPE due to short-circuiting.
 				{
 					return "";
 				}
@@ -301,7 +303,7 @@ std::string ppInclude::SrchPath(bool system, const std::string& name, const std:
 		{
 			path = RetrievePath(buf, path);
 		}
-		if (path == nullptr && skipUntilDepth && strcmp(buf, "") == 0)
+		if (path == nullptr && skipUntilDepth && (buf != nullptr && *buf == '\0'))
 		{
 			return "";
 		}

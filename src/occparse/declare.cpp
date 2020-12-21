@@ -512,7 +512,6 @@ void calculateStructOffsets(SYMBOL* sp)
     int size = 0;
     int totalAlign = -1;
     BASECLASS* bases = sp->sb->baseClasses;
-
     if (bases)
     {
         if (sp->sb->hasvtab && !bases->cls->sb->hasvtab)
@@ -613,15 +612,11 @@ void calculateStructOffsets(SYMBOL* sp)
                     tp->startbit = startbit;
                     startbit += tp->bits;
                     nextoffset = tp->size;
-                    //				nextoffset = (startbit+ Optimizer::chosenAssembler->arch->bits_per_mau -1)
-                    //						/Optimizer::chosenAssembler->arch->bits_per_mau;
                     offset = 0;
                 }
                 else
                 {
                     offset = nextoffset;
-                    //				nextoffset = (tp->bits + Optimizer::chosenAssembler->arch->bits_per_mau -1)
-                    //					/Optimizer::chosenAssembler->arch->bits_per_mau;
                     nextoffset = tp->size;
                     bittype = tp->type;
                     startbit = tp->bits;
@@ -872,6 +867,44 @@ static void baseFinishDeclareStruct(SYMBOL* funcsp)
             }
     for (i = 0; i < n; i++)
     {
+        SYMBOL* sp = syms[i];
+        if (!sp->sb->performedStructInitialization)
+        {
+            if (!templateNestingCount)
+            {
+                for (auto s = sp->tp->syms->table[0]; s; s = s->next)
+                {
+                    if (!istype(s->p))
+                    {
+                        s->p->tp = ResolveTemplateSelectors(s->p, s->p->tp);
+                        s->p->tp = PerformDeferredInitialization(s->p->tp, funcsp);
+                    }
+                }
+            }
+        }
+    }
+           
+    for (i = 0; i < n; i++)
+    {
+        SYMBOL* sp = syms[i];
+        if (!sp->sb->performedStructInitialization)
+        {
+            if (n > 1 && !templateNestingCount)
+            {
+                calculateStructOffsets(sp);
+
+                if (Optimizer::cparams.prm_cplusplus)
+                {
+                    calculateVirtualBaseOffsets(sp);  // undefined in local context
+                    calculateVTabEntries(sp, sp, &sp->sb->vtabEntries, 0);
+                }
+            }
+            resolveAnonymousUnions(sp);
+
+        }
+    }
+    for (i = 0; i < n; i++)
+    {
         if (!syms[i]->sb->performedStructInitialization)
         {
             syms[i]->sb->performedStructInitialization = true;
@@ -986,7 +1019,6 @@ static LEXEME* structbody(LEXEME* lex, SYMBOL* funcsp, SYMBOL* sp, enum e_ac cur
     {
         sp->sb->trivialCons = true;
     }
-    resolveAnonymousUnions(sp);
     makeFastTable(sp);
     if (Optimizer::cparams.prm_cplusplus)
         deferredInitializeStructMembers(sp);

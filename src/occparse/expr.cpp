@@ -1406,7 +1406,6 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
                 lex = getsym();
                 sp2->sb->attribs.inheritable.used = true;
                 *tp = sp2->tp;
-                *tp = ResolveTemplateSelectors(sp2, *tp);
                 tpb = basetype(*tp);
                 if (sp2->sb->storage_class == sc_overloads)
                 {
@@ -1555,7 +1554,6 @@ static LEXEME* expression_member(LEXEME* lex, SYMBOL* funcsp, TYPE** tp, EXPRESS
                         {
                             deref(*tp, exp);
                             *tp = basetype(*tp)->btp;
-                            *tp = ResolveTemplateSelectors(sp2, *tp);
                         }
                         if (typein2)
                             deref(typein2, exp);

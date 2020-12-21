@@ -76,7 +76,7 @@ PPINT ppExpr::primary(std::string& line, bool& isunsigned)
             if (token->GetKeyword() == kw::closepa)
                 token = tokenizer->Next();
             else
-                Errors::Error("Expected 1 ')'");
+                Errors::Error("Expected ')'");
         }
     }
     else if (token->IsIdentifier())
@@ -109,7 +109,7 @@ PPINT ppExpr::primary(std::string& line, bool& isunsigned)
                         {
                             if (token->GetKeyword() != kw::closepa)
                             {
-                                Errors::Error("Expected 4 ')'");
+                                Errors::Error("Expected ')'");
                             }
                             else
                             {
@@ -131,7 +131,7 @@ PPINT ppExpr::primary(std::string& line, bool& isunsigned)
                     int n = line.find(")");
                     if (n == std::string::npos)
                     {
-                        Errors::Error("Expected 2 ')'");
+                        Errors::Error("Expected ')'");
                     }
                     else
                     {
@@ -160,7 +160,7 @@ PPINT ppExpr::primary(std::string& line, bool& isunsigned)
                     int n = line.find(")");
                     if (n == std::string::npos)
                     {
-                        Errors::Error("Expected 3 ')'");
+                        Errors::Error("Expected ')'");
                     }
                     else
                     {

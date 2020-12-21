@@ -273,6 +273,10 @@ std::string ppInclude::FindFile(bool specifiedAsSystem, const std::string& name,
 std::string ppInclude::SrchPath(bool system, const std::string& name, const std::string& searchPath, bool skipUntilDepth, int& filesSkipped)
 {
 	const char* path = searchPath.c_str();
+	if (path != nullptr && *path == '\0' && !system && skipUntilDepth)
+	{
+		filesSkipped++;
+	}
 	char buf[260];
 	const int totalNumberofSkipsNeeded = current->getDirsTravelled();
 	do

@@ -30,6 +30,13 @@
 #include <cstdlib>
 #include <algorithm>
 
+#if defined(WIN32) || defined(MICROSOFT)
+extern "C"
+{
+    char* __stdcall GetModuleFileNameA(void* handle, char* buf, int size);
+}
+#endif
+
 //#define TESTANNOTATE
 CmdSwitchParser ppMain::SwitchParser;
 CmdSwitchBool ppMain::assembly(SwitchParser, 'a', false);
@@ -111,10 +118,16 @@ static void TestCharInfo(std::ostream* outStream, PreProcessor& pp, std::string&
 #endif
 int ppMain::Run(int argc, char* argv[])
 {
+    char buffer[256];
+#if defined(WIN32) || defined(MICROSOFT)
+    GetModuleFileNameA(nullptr, buffer, sizeof(buffer));
+#else
+    strcpy(buffer, argv[0]);
+#endif
     Utils::banner(argv[0]);
     Utils::SetEnvironmentToPathParent("ORANGEC");
     CmdSwitchFile internalConfig(SwitchParser);
-    std::string configName = Utils::QualifiedFile(argv[0], ".cfg");
+    std::string configName = Utils::QualifiedFile(buffer, ".cfg");
     std::fstream configTest(configName, std::ios::in);
     if (!configTest.fail())
     {
@@ -153,10 +166,23 @@ int ppMain::Run(int argc, char* argv[])
         }
 
         // for libcxx 10
+#ifdef _WIN32
+        pp.Define("_WIN32", "1");
+#endif
+        pp.Define("__ORANGEC__", "1");
         pp.Define("__need_size_t", "1");
         pp.Define("__need_FILE", "1");
         pp.Define("__need_wint_t", "1");
         pp.Define("__need_malloc_and_calloc", "1");
+        static const std::list<std::string> cppExtensions = {".h", ".hh", ".hpp", ".hxx", ".hm", ".cpp", ".cxx", ".cc", ".c++"};
+        for (auto& str : cppExtensions)
+        {
+            if (Utils::HasExt((*it).c_str(), str.c_str()))
+            {
+                pp.Define("__cplusplus", "201402");
+                break;
+            }
+        }
 
         int n = defines.GetCount();
         int nu = undefines.GetCount();

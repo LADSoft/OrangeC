@@ -9,5 +9,5 @@
         copy clibs\stdinc\sys\*.h \orangec\include\sys
 	copy occ\target.cfg \orangec\bin\occ.cfg
 	copy occil\target.cfg \orangec\bin\occil.cfg
-	copy ocpp\target.cfg \orangec\bin\ocpp.cfgs
+	copy ocpp\target.cfg \orangec\bin\ocpp.cfg
 	copy orc\target.cfg \orangec\bin\orc.cfg

@@ -27,6 +27,7 @@
 #include "Errors.h"
 #include "ppInclude.h"
 #include "ppkw.h"
+#include <iostream>
 
 KeywordHash ppExpr::hash = {
     {"(", kw::openpa},      {")", kw::closepa}, {"+", kw::plus},   {"-", kw::minus}, {"!", kw::lnot},
@@ -75,7 +76,7 @@ PPINT ppExpr::primary(std::string& line, bool& isunsigned)
             if (token->GetKeyword() == kw::closepa)
                 token = tokenizer->Next();
             else
-                Errors::Error("Expected ')'");
+                Errors::Error("Expected 1 ')'");
         }
     }
     else if (token->IsIdentifier())
@@ -108,7 +109,7 @@ PPINT ppExpr::primary(std::string& line, bool& isunsigned)
                         {
                             if (token->GetKeyword() != kw::closepa)
                             {
-                                Errors::Error("Expected ')'");
+                                Errors::Error("Expected 4 ')'");
                             }
                             else
                             {
@@ -130,7 +131,7 @@ PPINT ppExpr::primary(std::string& line, bool& isunsigned)
                     int n = line.find(")");
                     if (n == std::string::npos)
                     {
-                        Errors::Error("Expected ')'");
+                        Errors::Error("Expected 2 ')'");
                     }
                     else
                     {
@@ -159,7 +160,7 @@ PPINT ppExpr::primary(std::string& line, bool& isunsigned)
                     int n = line.find(")");
                     if (n == std::string::npos)
                     {
-                        Errors::Error("Expected ')'");
+                        Errors::Error("Expected 3 ')'");
                     }
                     else
                     {
@@ -180,7 +181,21 @@ PPINT ppExpr::primary(std::string& line, bool& isunsigned)
         else
         {
             rv = 0;
+            int count = 0;
             token = tokenizer->Next();
+            if (token->GetKeyword() == kw::openpa)
+            {
+                token = tokenizer->Next();        
+                count++;
+                while (count && !token->IsEnd())
+                {
+                    if (token->GetKeyword() == kw::openpa)
+                        count++;
+                    if (token->GetKeyword() == kw::closepa)
+                        count--;
+                    token = tokenizer->Next();
+                }
+            }
         }
     }
     else if (token->IsNumeric())

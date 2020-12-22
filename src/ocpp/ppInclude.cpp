@@ -253,7 +253,7 @@ std::string ppInclude::FindFile(bool specifiedAsSystem, const std::string& name,
 		{
 			rv = rv.substr(0, npos);
 			rv = SrchPath(false, name, rv, skipFirst, throwaway);
-			include_files_skipped = current->getDirsTravelled();
+			//include_files_skipped = current->getDirsTravelled();
 		}
 		else
 		{
@@ -334,7 +334,7 @@ std::string ppInclude::SrchPath(bool system, const std::string& name, const std:
 		{
 			if (filesSkipped > 0) // we lie to ourselves about how many files we skip while searching so that we go past the current file's directory
 			{
-				filesSkipped--;
+				//filesSkipped--;
 			}
 			if (searchPath == ".")  // clean up for current directory searches
 				memmove(buf, buf + 2, strlen(buf) + 1);

@@ -62,7 +62,7 @@ bool ppInclude::CheckInclude(kw token, const std::string& args)
 		std::string name = ParseName(line1, specifiedAsSystem);
 		int dirs_traversed = 0; // this is needed to get #include_next working correctly, the __has_include versions of this don't need to actually keep track tho cuz they don't actually include
 		name = FindFile(specifiedAsSystem, name, false, dirs_traversed);
-		pushFile(name, line1, false, dirs_traversed + 1);
+		pushFile(name, line1, false, dirs_traversed);
 		return true;
 	}
 	else if (token == kw::INCLUDE_NEXT)
@@ -75,7 +75,7 @@ bool ppInclude::CheckInclude(kw token, const std::string& args)
 		std::string name = ParseName(line1, specifiedAsSystem);
 		int dirs_skipped = 0;
 		name = FindFile(false, name, true, dirs_skipped);
-		pushFile(name, line1, true, dirs_skipped + 1);
+		pushFile(name, line1, true, dirs_skipped);
 		return true;
 	}
 	return false;
@@ -233,6 +233,12 @@ std::string ppInclude::FindFile(bool specifiedAsSystem, const std::string& name,
 			dirs_skipped = std::count(srchPath.cbegin(), srchPath.cend(), ';') + 1; // This counts the number of search directories we have using the same logic we use to split it up, semicolons, there are always n semicolon + 1 dirs
 			return rv;
 		}
+		else
+		{
+			include_files_skipped = 0; // Reset the include files skipped if the file wasn't found in the system search path to "reset" the directories
+			// This bug was first encountered trying to build the C++ files due to the %ORANGEC%\include, etc. files being empty then going into the user-include directories
+			// This just makes it so that we ignore if we fail to find it in the system search path, because this actually matters in #include_next-ville
+		}
 	}
 	// if not there get the file path of the last included file, and search there
 	// #include_next cannot search in the same directory as the current file by definition, so skip the last included dir too
@@ -247,6 +253,7 @@ std::string ppInclude::FindFile(bool specifiedAsSystem, const std::string& name,
 		{
 			rv = rv.substr(0, npos);
 			rv = SrchPath(false, name, rv, skipFirst, throwaway);
+			include_files_skipped = current->getDirsTravelled();
 		}
 		else
 		{
@@ -282,9 +289,9 @@ std::string ppInclude::SrchPath(bool system, const std::string& name, const std:
 	do
 	{
 		bool reachedEndOfBuf = false;
-		if (skipUntilDepth && (filesSkipped != totalNumberofSkipsNeeded + 1))
+		if (skipUntilDepth && (filesSkipped < totalNumberofSkipsNeeded + 1))
 		{
-			while (filesSkipped != totalNumberofSkipsNeeded + 1)
+			while (filesSkipped < totalNumberofSkipsNeeded + 1)
 			{
 				// Prevent nullptr exceptions and clear out the value of buf
 				// TODO: find a fix that's faster than this, if compiled with any compiler that has vectorization this should be faster than strlen

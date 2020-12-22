@@ -254,7 +254,10 @@ std::string ppInclude::FindFile(bool specifiedAsSystem, const std::string& name,
 		{
 			rv = rv.substr(0, npos);
 			rv = SrchPath(false, name, rv, skipFirst, throwaway);
-			include_files_skipped = current->getDirsTravelled();
+			if (!rv.empty())
+			{
+				include_files_skipped = current->getDirsTravelled();
+			}
 		}
 		else
 		{
@@ -265,7 +268,12 @@ std::string ppInclude::FindFile(bool specifiedAsSystem, const std::string& name,
 	// #include_next does not search this, skip it.
 	if (rv.empty() && !skipFirst)
 	{
-		rv = SrchPath(false, name, ".", skipFirst, include_files_skipped);
+		int throwaway = 0;
+		rv = SrchPath(false, name, ".", skipFirst, throwaway);
+		if (!rv.empty())
+		{
+			include_files_skipped = current->getDirsTravelled();
+		}
 	}
 	// if not there search on user search path
 	// #include_next basically runs through only these two, and maybe the first, if the 2nd here doesn't run, but it's already an inconsistent feature so
@@ -290,9 +298,9 @@ std::string ppInclude::SrchPath(bool system, const std::string& name, const std:
 	do
 	{
 		bool reachedEndOfBuf = false;
-		if (skipUntilDepth && (filesSkipped < totalNumberofSkipsNeeded))
+		if (skipUntilDepth && (filesSkipped <= totalNumberofSkipsNeeded))
 		{
-			while (filesSkipped < totalNumberofSkipsNeeded)
+			while (filesSkipped <= totalNumberofSkipsNeeded)
 			{
 				// Prevent nullptr exceptions and clear out the value of buf
 				// TODO: find a fix that's faster than this, if compiled with any compiler that has vectorization this should be faster than strlen

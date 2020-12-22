@@ -3036,6 +3036,103 @@ static INITLIST* ExpandArguments(EXPRESSION* exp)
 {
     INITLIST *rv = nullptr, **ptr = &rv;
     INITLIST* arguments = exp->v.func->arguments;
+    bool doit = false;
+    while (arguments)
+    {
+        if (arguments->exp && arguments->exp->type == en_func)
+        {
+            doit = true;
+            break;
+        }
+        arguments = arguments->next;
+    }
+    if (doit)
+    {
+        arguments = exp->v.func->arguments;
+        while (arguments)
+        {
+            if (arguments->exp)
+            {
+                SYMBOL *syms[200];
+                int count = 0, n = 0;
+                GatherPackedVars(&count, syms, arguments->exp);
+                if (count)
+                {
+                    for (int i = 0; i < count; i++)
+                    {
+                        int n1 = CountPacks(syms[i]->tp->templateParam->p->byPack.pack);
+                        if (n1 > n)
+                            n = n1;
+                    }
+                    int oldIndex = packIndex;
+                    for (int i = 0; i < n; i++)
+                    {
+                        std::deque<TEMPLATEPARAM*> defaults;
+                        packIndex = i;
+                        *ptr = Allocate<INITLIST>();
+                        **ptr = *arguments;
+                        if ((*ptr)->exp->type == en_func)
+                        {
+                            TEMPLATEPARAMLIST* tpl = exp->v.func->templateParams;
+                            while (tpl)
+                            {
+                                if (tpl->p->type != kw_new)
+                                {
+                                    defaults.push_back(tpl->p);
+                                    if (tpl->p->packed)
+                                    {
+                                        TEMPLATEPARAM p1 = *tpl->p;
+                                        TEMPLATEPARAMLIST *srch = p1.byPack.pack;
+                                        for (int j = 0; j < packIndex && srch; j++, srch = srch->next);
+                                        if (srch)
+                                            tpl->p = srch->p;
+                                    }
+                                }
+                                tpl = tpl->next;
+                            }
+                        }
+                        (*ptr)->tp = LookupTypeFromExpression((*ptr)->exp, nullptr, false);
+                        if ((*ptr)->exp->type == en_func)
+                        {
+                            TEMPLATEPARAMLIST* tpl = exp->v.func->templateParams;
+                            while (tpl)
+                            {
+                                if (tpl->p->type != kw_new)
+                                {
+                                    tpl->p = defaults.front();
+                                    defaults.pop_front();
+                                }
+                                tpl = tpl->next;
+                            }
+                        }
+                        ptr = &(*ptr)->next;
+                    }
+                    packIndex = oldIndex;
+                }
+                else
+                {
+                    *ptr = Allocate<INITLIST>();
+                    **ptr = *arguments;
+                    (*ptr)->tp = LookupTypeFromExpression((*ptr)->exp, nullptr, false);
+                    if ((*ptr)->tp == nullptr)
+                        (*ptr)->tp = &stdany;
+                    ptr = &(*ptr)->next;
+                }
+            }
+            else
+            {
+                *ptr = Allocate<INITLIST>();
+                **ptr = *arguments;
+                ptr = &(*ptr)->next;
+            }
+            arguments = arguments->next;
+        }
+    }
+    else
+    {
+        rv = exp->v.func->arguments;
+    }
+    /*
     while (arguments)
     {
         if (arguments->exp->type == en_func)
@@ -3050,8 +3147,8 @@ static INITLIST* ExpandArguments(EXPRESSION* exp)
                 *ptr = nullptr;
                 TEMPLATEPARAMLIST* old1 = call->templateParams;
                 INITLIST* old2 = call->arguments;
-                TEMPLATEPARAMLIST tpl = {0};
-                TEMPLATEPARAM pm = {kw_typename};
+                TEMPLATEPARAMLIST tpl = { 0 };
+                TEMPLATEPARAM pm = { kw_typename };
                 tpl.p = &pm;
                 pm.type = kw_typename;
                 call->templateParams = &tpl;
@@ -3081,7 +3178,8 @@ static INITLIST* ExpandArguments(EXPRESSION* exp)
         }
         arguments = arguments->next;
     }
-    return exp->v.func->arguments;
+    */
+    return rv;
 }
 static void PushPopDefaults(std::deque<TYPE*>& defaults, TEMPLATEPARAMLIST* tpl, bool dflt, bool push)
 {
@@ -3459,7 +3557,10 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bo
                     }
                     tpl = tpl->next;
                 }
+                INITLIST* old = exp->v.func->arguments;
+                exp->v.func->arguments = ExpandArguments(exp);
                 sp = GetOverloadedFunction(&tp1, &exp1, exp->v.func->sp, exp->v.func, nullptr, false, false, false, 0);
+                exp->v.func->arguments = old;
                 tpl = exp->v.func->templateParams;  
                 while (tpl)
                 {
@@ -3567,7 +3668,27 @@ TYPE* LookupTypeFromExpression(EXPRESSION* exp, TEMPLATEPARAMLIST* enclosing, bo
         }
         case en_templateparam:
             if (exp->v.sp->tp->templateParam->p->type == kw_typename)
+            {
+                if (exp->v.sp->tp->templateParam->p->packed)
+                {
+                    TYPE* rv = &stdany;
+                    if (packIndex < 0)
+                    {
+                        if (exp->v.sp->tp->templateParam->p->byPack.pack)
+                            rv = exp->v.sp->tp->templateParam->p->byPack.pack->p->byClass.val;
+                    }
+                    else
+                    {
+                        TEMPLATEPARAMLIST* tpl = exp->v.sp->tp->templateParam->p->byPack.pack;
+                        for (int i = 0; i < packIndex && tpl; i++, tpl = tpl->next);
+                        if (tpl)
+                            rv = tpl->p->byClass.val;
+                    }
+                    return rv;
+
+                }
                 return exp->v.sp->tp->templateParam->p->byClass.val;
+            }
             return nullptr;
         case en_templateselector:
         {
@@ -6376,6 +6497,7 @@ SYMBOL* TemplateDeduceArgsFromArgs(SYMBOL* sym, FUNCTIONCALL* args)
                         if (forward && !templateNestingCount)
                         {
                             (*p)->p->byClass.val = GetForwardType((*p)->p->byClass.val, symArgs->exp);
+                            basetype((*p)->p->byClass.val)->rref = false;
                         }
                         p = &(*p)->next;
                         symArgs = symArgs->next;
@@ -9456,15 +9578,12 @@ TEMPLATEPARAMLIST* ResolveClassTemplateArgs(SYMBOL* sp, TEMPLATEPARAMLIST* args)
                 GatherPackedTypes(&count, syms, t->p->byClass.dflt);
             for (int i = 0; i < count; i++)
             {
-                for (int i = 0; i < count; i++)
+                TEMPLATEPARAMLIST* rv = TypeAliasSearch(syms[i]->name);
+                if (rv && rv->p->packed)
                 {
-                    TEMPLATEPARAMLIST* rv = TypeAliasSearch(syms[i]->name);
-                    if (rv && rv->p->packed)
-                    {
-                        int n1 = CountPacks(rv->p->byPack.pack);
-                        if (n1 > n)
-                            n = n1;
-                    }
+                    int n1 = CountPacks(rv->p->byPack.pack);
+                    if (n1 > n)
+                        n = n1;
                 }
             }
         }

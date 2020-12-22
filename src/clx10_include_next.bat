@@ -5,6 +5,7 @@
 	copy "clibs\cpp\stdinc_libcxx\*." \orangec\include
 	copy "clibs\cpp\stdinc_libcxx\*.h" \orangec\include
         copy "clibs\platform\win32\wininc\*.h" \orangec\include
+        copy "clibs\platform\win32\wininc\win32\*.h" \orangec\include\win32
         copy clibs\stdinc\*.h \orangec\include\c
         copy clibs\stdinc\sys\*.h \orangec\include\sys
 	copy occ\target.cfg \orangec\bin\occ.cfg
